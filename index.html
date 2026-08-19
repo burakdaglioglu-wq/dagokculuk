@@ -2464,7 +2464,7 @@ self.addEventListener('fetch',e=>{ if(e.request.method!=='GET') return; e.respon
                 satir += `<tr><td>${esc(ad)}</td><td style="text-align:center; color:${odendi ? 'green' : '#c00'}; font-weight:bold;">${odendi ? 'ÖDENDİ' : 'Ödenmedi'}</td><td style="text-align:right;">${odendi ? (rec.tutar || 0) + '₺' : '-'}</td></tr>`;
             });
             let w = window.open('', '_blank'); if(!w) { showToast('Açılır pencere engellendi.', 'error'); return; }
-            w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Raporu ${aidatAy}</title></head><body style="font-family:Arial; padding:24px;">
+            w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Raporu ${aidatAy}</title><link rel="icon" href="/favicon.png"></head><body style="font-family:Arial; padding:24px;">
                 <h2 style="text-align:center; color:#1b2a4a; margin:0;">DAĞ SPOR KULÜBÜ</h2>
                 <h3 style="text-align:center; color:#ff6200; margin:4px 0 2px;">Aidat Gelir Raporu</h3>
                 <p style="text-align:center; color:#555; margin:0 0 16px;">${aktifGrup === 'buyukler' ? 'Büyükler' : 'Küçükler'} · ${aidatAy}</p>

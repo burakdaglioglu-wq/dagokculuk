@@ -751,7 +751,7 @@ function miloAidatGelirRaporu() {
         satir += `<tr><td>${miloEsc(u.ad)}</td><td>${miloEsc(u.grup)}</td><td style="text-align:center; color:${odendi ? 'green' : '#c00'}; font-weight:bold;">${durumYazi}</td><td style="text-align:right;">${odendi ? (rec.tutar || 0) + '₺' : '-'}</td><td style="text-align:center;">${odendi && rec.odemeTarihi ? miloEsc(rec.odemeTarihi) : '-'}</td></tr>`;
     });
     let w = window.open('', '_blank'); if (!w) { showToast('Açılır pencere engellendi.', 'error'); return; }
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Raporu ${miloAidatAy}</title></head><body style="font-family:Arial; padding:24px;">
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Raporu ${miloAidatAy}</title><link rel="icon" href="/favicon.png"></head><body style="font-family:Arial; padding:24px;">
         <h2 style="text-align:center; color:#831843; margin:0;">MILO FITT KIDS</h2>
         <h3 style="text-align:center; color:#ec4899; margin:4px 0 2px;">Aidat Gelir Raporu</h3>
         <p style="text-align:center; color:#555; margin:0 0 16px;">${miloAidatAy}</p>
@@ -808,7 +808,7 @@ function miloAidatDetayliAnalizPDF() {
     let enIyiTahsilatGrup = dolu.length ? dolu.slice().sort((a, b) => b.tahsilat - a.tahsilat)[0] : null;
 
     let w = window.open('', '_blank'); if (!w) { showToast('Açılır pencere engellendi.', 'error'); return; }
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Analiz Raporu</title></head><body style="font-family:Arial; padding:24px; color:#222;">
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aidat Analiz Raporu</title><link rel="icon" href="/favicon.png"></head><body style="font-family:Arial; padding:24px; color:#222;">
         <h2 style="text-align:center; color:#831843; margin:0;">MILO FITT KIDS</h2>
         <h3 style="text-align:center; color:#ec4899; margin:4px 0 2px;">Aidat Gelir ve Üyelik Analiz Raporu</h3>
         <p style="text-align:center; color:#555; margin:0 0 20px; font-size:12px;">Oluşturulma: ${new Date().toLocaleString('tr-TR')}</p>
@@ -1128,7 +1128,7 @@ function miloDersYazdir(id) {
     let d = miloDersler.find(x => x.id === id); if (!d) return;
     let seviyeEtiket = MILO_SEVIYE_ETIKET[d.seviye] || d.seviye;
     let w = window.open('', '_blank'); if (!w) { showToast('Açılır pencere engellendi.', 'error'); return; }
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${miloEsc(d.baslik)}</title></head><body style="font-family:Arial; padding:24px; color:#222;">
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${miloEsc(d.baslik)}</title><link rel="icon" href="/favicon.png"></head><body style="font-family:Arial; padding:24px; color:#222;">
         <h2 style="text-align:center; color:#831843; margin:0;">MILO FITT KIDS</h2>
         <h3 style="text-align:center; color:#ec4899; margin:4px 0 16px;">${miloEsc(d.baslik)}</h3>
         <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px;" border="1" cellpadding="8">
@@ -1159,7 +1159,7 @@ function miloDerslerTopluYazdir() {
             ${d.kazanim ? `<div style="font-size:12px; color:#059669;">🎯 Kazanım: ${miloEsc(d.kazanim)}</div>` : ''}
         </div>`;
     }).join('');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Günlük Ders Planı</title></head><body style="font-family:Arial; padding:24px; color:#222;">
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Günlük Ders Planı</title><link rel="icon" href="/favicon.png"></head><body style="font-family:Arial; padding:24px; color:#222;">
         <h2 style="text-align:center; color:#831843; margin:0;">MILO FITT KIDS</h2>
         <h3 style="text-align:center; color:#ec4899; margin:4px 0 2px;">Günlük Ders Planı</h3>
         <p style="text-align:center; color:#555; margin:0 0 20px; font-size:12px;">${miloEsc(bugun)}${grupMetni ? ' · ' + miloEsc(grupMetni) : ''} · ${secili.length} ders</p>
