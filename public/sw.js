@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v67';
+const CACHE = 'dag-sk-v68';
 const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png'];
 
 self.addEventListener('install', (e) => {
