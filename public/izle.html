@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Canlı İzleme — DAĞ S.K.</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/tanitim-logo.png">
+<style>
+  :root{
+    --bg:#0a0b10; --panel:rgba(255,255,255,0.045); --border:rgba(255,255,255,0.11);
+    --ink:#f2f4f8; --ink-muted:#8d96a8; --orange:#ff6a1a; --cyan:#00e5ff; --red:#ef4444; --gold:#f5c04a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:
+      radial-gradient(ellipse 700px 400px at 10% -10%, rgba(255,106,26,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 450px at 95% 5%, rgba(0,229,255,0.08), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px 16px;
+  }
+  .kart{ width:100%; max-width:360px; background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:22px; }
+  .ust{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .logo-satiri{ display:flex; align-items:center; gap:8px; }
+  .logo-satiri img{ height:24px; }
+  .durum-rozet{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; padding:5px 10px; border-radius:999px; }
+  .durum-rozet.canli{ color:var(--red); background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); }
+  .durum-rozet.beklemede{ color:var(--ink-muted); background:rgba(255,255,255,0.05); border:1px solid var(--border); }
+  .nokta{ width:7px; height:7px; border-radius:50%; background:var(--red); }
+  .durum-rozet.canli .nokta{ animation:nabiz 1.3s infinite; }
+  @keyframes nabiz{ 0%,100%{ box-shadow:0 0 0 0 rgba(239,68,68,0.5);} 50%{ box-shadow:0 0 0 5px rgba(239,68,68,0);} }
+  .sporcu-ad{ font-size:19px; font-weight:900; margin-bottom:2px; text-align:center; }
+  .sporcu-grup{ font-size:12px; color:var(--ink-muted); text-align:center; margin-bottom:20px; }
+  .ok-rozetleri{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; min-height:34px; margin-bottom:16px; }
+  .ok-rozet{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; opacity:0; transform:scale(0.5); transition:all .35s cubic-bezier(.2,.9,.3,1); }
+  .ok-rozet.gorunur{ opacity:1; transform:scale(1); }
+  .toplam-kutu{ text-align:center; padding:16px; border-radius:14px; background:rgba(255,106,26,0.08); border:1px solid rgba(255,106,26,0.3); margin-bottom:10px; }
+  .toplam-sayi{ font-size:34px; font-weight:900; color:var(--orange); line-height:1; }
+  .toplam-etiket{ font-size:11px; color:var(--ink-muted); font-weight:700; margin-top:4px; text-transform:uppercase; letter-spacing:.04em; }
+  .bos-durum{ text-align:center; padding:30px 10px; color:var(--ink-muted); }
+  .bos-durum .buyuk-ikon{ font-size:34px; margin-bottom:10px; }
+  .hata-durum{ text-align:center; padding:30px 10px; color:var(--red); font-size:13px; }
+  footer{ text-align:center; font-size:10.5px; color:var(--ink-muted); margin-top:16px; }
+</style>
+</head>
+<body>
+  <div class="kart">
+    <div class="ust">
+      <div class="logo-satiri"><img src="/tanitim-logo.png" alt="DAĞ S.K."><span style="font-size:11px; font-weight:800; color:var(--ink-muted);">DAĞ S.K.</span></div>
+      <div id="durumRozeti" class="durum-rozet beklemede"><span class="nokta"></span><span>Yükleniyor...</span></div>
+    </div>
+    <div id="icerik">
+      <div class="bos-durum"><div class="buyuk-ikon">⏳</div>Yükleniyor...</div>
+    </div>
+    <footer>Bu sayfa ~2 saniyede bir otomatik güncellenir · dagsporkulubu.com</footer>
+  </div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const kod = params.get('kod') || '';
+  const OK_RENK = {
+    'X': { bg: '#ffd166', c: '#000' }, '10': { bg: '#ffd166', c: '#000' }, '9': { bg: '#ffd166', c: '#000' },
+    '8': { bg: '#ef4444', c: '#fff' }, '7': { bg: '#ef4444', c: '#fff' },
+    '6': { bg: '#3b82f6', c: '#fff' }, '5': { bg: '#3b82f6', c: '#fff' },
+    '4': { bg: '#1a1a1a', c: '#fff' }, '3': { bg: '#1a1a1a', c: '#fff' },
+    '2': { bg: '#f2f4f8', c: '#000' }, '1': { bg: '#f2f4f8', c: '#000' },
+    'M': { bg: 'transparent', c: '#8d96a8' },
+  };
+  const PUAN_DEGER = { X: 10, '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, '1': 1, M: 0 };
+  const GRUP_ETIKET = { buyukler: 'Büyükler', yildizlar: 'Yıldızlar', kucukler: 'Küçükler', minikler: 'Minikler' };
+  let _hataSayaci = 0;
+
+  function icerikCiz(veri) {
+    const rozet = document.getElementById('durumRozeti');
+    const icerik = document.getElementById('icerik');
+    if (!veri.aktif || !veri.oklar || !veri.oklar.length) {
+      rozet.className = 'durum-rozet beklemede';
+      rozet.innerHTML = '<span class="nokta" style="animation:none;"></span><span>Beklemede</span>';
+      icerik.innerHTML = `
+        <div class="sporcu-ad">${esc(veri.ad || '')}</div>
+        <div class="sporcu-grup">${esc(GRUP_ETIKET[veri.grup] || veri.grup || '')}</div>
+        <div class="bos-durum"><div class="buyuk-ikon">🏹</div>Şu an antrenman yapmıyor.<br>Başladığında burası otomatik canlanacak.</div>`;
+      return;
+    }
+    rozet.className = 'durum-rozet canli';
+    rozet.innerHTML = '<span class="nokta"></span><span>CANLI</span>';
+    const oklar = veri.oklar;
+    const toplam = oklar.reduce((a, o) => a + (PUAN_DEGER[o] ?? 0), 0);
+    const rozetlerHtml = oklar.map((o, i) => {
+      const r = OK_RENK[o] || OK_RENK.M;
+      return `<div class="ok-rozet" style="background:${r.bg}; color:${r.c}; border:1px solid rgba(255,255,255,0.12);" data-i="${i}">${o}</div>`;
+    }).join('');
+    icerik.innerHTML = `
+      <div class="sporcu-ad">${esc(veri.ad || '')}</div>
+      <div class="sporcu-grup">${esc(GRUP_ETIKET[veri.grup] || veri.grup || '')}</div>
+      <div class="ok-rozetleri">${rozetlerHtml}</div>
+      <div class="toplam-kutu">
+        <div class="toplam-sayi">${toplam}</div>
+        <div class="toplam-etiket">${oklar.length} ok · toplam puan</div>
+      </div>`;
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.ok-rozet').forEach((el, i) => setTimeout(() => el.classList.add('gorunur'), i * 60));
+    });
+  }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  async function guncelle() {
+    if (!kod) {
+      document.getElementById('icerik').innerHTML = '<div class="hata-durum">Geçersiz link.</div>';
+      document.getElementById('durumRozeti').style.display = 'none';
+      return;
+    }
+    try {
+      const res = await fetch('/api/canli-izle/' + encodeURIComponent(kod));
+      if (res.status === 404) {
+        document.getElementById('icerik').innerHTML = '<div class="hata-durum">Bu link artık geçerli değil.</div>';
+        document.getElementById('durumRozeti').style.display = 'none';
+        return;
+      }
+      const veri = await res.json();
+      _hataSayaci = 0;
+      icerikCiz(veri);
+    } catch (e) {
+      _hataSayaci++;
+      if (_hataSayaci > 3) {
+        document.getElementById('durumRozeti').className = 'durum-rozet beklemede';
+        document.getElementById('durumRozeti').innerHTML = '<span class="nokta" style="animation:none;"></span><span>Bağlantı sorunu</span>';
+      }
+    }
+  }
+
+  guncelle();
+  setInterval(guncelle, 2000);
+</script>
+</body>
+</html>

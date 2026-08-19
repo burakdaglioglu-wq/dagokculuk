@@ -1,0 +1,210 @@
+<title>Ders Programı Yol Haritası</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --void: #070b12;
+    --panel: rgba(255,255,255,0.045);
+    --panel-2: rgba(255,255,255,0.075);
+    --line: rgba(255,255,255,0.10);
+    --ink: #f0f4f8;
+    --ink-dim: #9aa7b5;
+    --ink-faint: #5c6674;
+    --cyan: #00d4e8;
+    --cyan-deep: #00a8ba;
+    --gold: #ffb347;
+    --emerald: #34d399;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--void); color: var(--ink); font-family: 'Outfit', system-ui, sans-serif;
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .bg { position: fixed; inset: 0; z-index: -1; }
+  .bg::before { content: ''; position: absolute; top: -10%; left: 10%; width: 60vh; height: 60vh; border-radius: 50%; background: radial-gradient(circle, var(--cyan), transparent 70%); opacity: 0.10; filter: blur(80px); }
+  .bg::after { content: ''; position: absolute; bottom: -15%; right: 5%; width: 50vh; height: 50vh; border-radius: 50%; background: radial-gradient(circle, var(--gold), transparent 70%); opacity: 0.08; filter: blur(80px); }
+
+  .shell { max-width: 720px; margin: 0 auto; padding: 30px 20px 70px; }
+
+  .intro { padding: 24px 26px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); margin-bottom: 26px; }
+  .intro-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--cyan); margin-bottom: 10px; background: rgba(0,212,232,0.1); border: 1px solid rgba(0,212,232,0.28); padding: 5px 11px; border-radius: 100px; }
+  .intro h1 { font-weight: 700; font-size: clamp(22px, 5vw, 28px); margin: 0 0 9px; line-height: 1.2; text-wrap: balance; }
+  .intro p { margin: 0; color: var(--ink-dim); font-size: 13.5px; line-height: 1.6; max-width: 60ch; }
+
+  .oneri-liste { display: flex; flex-direction: column; gap: 16px; }
+  .oneri {
+    border-radius: 20px; background: var(--panel); border: 1px solid var(--line); overflow: hidden;
+  }
+  .oneri-head { display: flex; align-items: center; gap: 13px; padding: 18px 20px 15px; }
+  .oneri-no { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--ink-faint); width: 20px; flex-shrink: 0; }
+  .oneri-ikon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.15); }
+  .oneri-baslik { font-weight: 700; font-size: 15.5px; margin-bottom: 2px; }
+  .oneri-alt { font-size: 12px; color: var(--ink-dim); line-height: 1.5; }
+  .oneri-govde { padding: 0 20px 20px; }
+  .mockup { border-radius: 14px; background: rgba(0,0,0,0.28); border: 1px solid var(--line); padding: 14px 16px; }
+
+  /* ---- Mockup 1: Ders Plani Notu ---- */
+  .m1-etiket { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .m1-not { background: rgba(0,212,232,0.07); border: 1px dashed rgba(0,212,232,0.35); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: var(--ink); line-height: 1.5; }
+  .m1-not b { color: var(--cyan); }
+
+  /* ---- Mockup 2: Kapasite ---- */
+  .m2-row { display: flex; gap: 10px; }
+  .m2-kart { flex: 1; border-radius: 12px; border: 1.3px solid var(--line); padding: 10px; position: relative; }
+  .m2-dolu { border-color: rgba(251,113,133,0.4); background: rgba(251,113,133,0.06); }
+  .m2-badge { position: absolute; top: 7px; right: 7px; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 100px; }
+  .m2-badge.ok { background: rgba(52,211,153,0.15); color: var(--emerald); }
+  .m2-badge.full { background: rgba(251,113,133,0.18); color: var(--rose); }
+  .m2-saat { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .m2-bar { height: 5px; border-radius: 100px; background: rgba(255,255,255,0.1); overflow: hidden; margin-top: 6px; }
+  .m2-bar-ic { height: 100%; border-radius: 100px; }
+
+  /* ---- Mockup 3: Cakisma ---- */
+  .m3-uyari { display: flex; gap: 10px; align-items: flex-start; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); border-radius: 12px; padding: 12px 14px; }
+  .m3-ikon { font-size: 18px; flex-shrink: 0; }
+  .m3-metin { font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+  .m3-metin b { color: var(--amber); }
+
+  /* ---- Mockup 4: Ozet Sayfasi ---- */
+  .m4-kapak { background: linear-gradient(160deg, #0b1e3d, #12305e); border-radius: 12px; padding: 16px; color: #fff; }
+  .m4-baslik { font-size: 13px; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .m4-stat-row { display: flex; gap: 8px; }
+  .m4-stat { flex: 1; background: rgba(255,255,255,0.08); border-radius: 9px; padding: 8px 6px; text-align: center; }
+  .m4-stat-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: var(--gold); }
+  .m4-stat-k { font-size: 7.5px; color: #bfdbfe; text-transform: uppercase; margin-top: 2px; }
+
+  /* ---- Mockup 5: Devam Orani ---- */
+  .m5-satir { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .m5-satir:last-child { border-bottom: none; }
+  .m5-nokta { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .m5-ad { flex: 1; }
+  .m5-yuzde { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-faint); }
+
+  .footnote { text-align: center; font-size: 11.5px; color: var(--ink-faint); margin-top: 28px; line-height: 1.6; }
+</style>
+
+<div class="bg"></div>
+
+<div class="shell">
+  <div class="intro">
+    <div class="intro-eyebrow">📅 DAĞ S.K. — DERS PROGRAMI YOL HARİTASI</div>
+    <h1>Ders Programı'nı bir adım öteye taşıyacak 5 fikir</h1>
+    <p>Bugün yaptığımız Yoklama Formu iyileştirmesinin devamı niteliğinde — hepsi mevcut haftalık ızgara + roster sistemine ekleniyor, hiçbiri baştan yazmıyor. Aşağıda her biri için küçük bir önizleme var.</p>
+  </div>
+
+  <div class="oneri-liste">
+
+    <div class="oneri">
+      <div class="oneri-head">
+        <div class="oneri-no">01</div>
+        <div class="oneri-ikon" style="background:linear-gradient(150deg,#3ce6fa,var(--cyan-deep));">📋</div>
+        <div>
+          <div class="oneri-baslik">Ders Planı Notu</div>
+          <div class="oneri-alt">Her ders için "bugün ne çalışacağız" kısa bir not — roster ekranında görünür, Yoklama Formu'na da basılır.</div>
+        </div>
+      </div>
+      <div class="oneri-govde">
+        <div class="mockup">
+          <div class="m1-etiket">Salı 18:00-19:30 — Ders Planı</div>
+          <div class="m1-not">🎯 Bugün: <b>nişan alma tekrarı</b> + 3x6 ok serbest atış. Yeni başlayanlarla temel duruş çalışılacak.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oneri">
+      <div class="oneri-head">
+        <div class="oneri-no">02</div>
+        <div class="oneri-ikon" style="background:linear-gradient(150deg,#fbbf6b,var(--gold));">🔢</div>
+        <div>
+          <div class="oneri-baslik">Kapasite Sınırı &amp; Doluluk Rozeti</div>
+          <div class="oneri-alt">Derse maksimum kişi sayısı tanımla — ızgara kartında "8/10 dolu" görünür, limit aşılınca uyarır.</div>
+        </div>
+      </div>
+      <div class="oneri-govde">
+        <div class="mockup">
+          <div class="m2-row">
+            <div class="m2-kart">
+              <div class="m2-badge ok">6/10</div>
+              <div class="m2-saat">17:00-18:00</div>
+              <div class="m2-bar"><div class="m2-bar-ic" style="width:60%; background:var(--emerald);"></div></div>
+            </div>
+            <div class="m2-kart m2-dolu">
+              <div class="m2-badge full">10/10 DOLU</div>
+              <div class="m2-saat">18:00-19:30</div>
+              <div class="m2-bar"><div class="m2-bar-ic" style="width:100%; background:var(--rose);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oneri">
+      <div class="oneri-head">
+        <div class="oneri-no">03</div>
+        <div class="oneri-ikon" style="background:linear-gradient(150deg,#fde68a,var(--amber));">⚠️</div>
+        <div>
+          <div class="oneri-baslik">Çakışma Uyarısı</div>
+          <div class="oneri-alt">Bir sporcuyu haftalık programa toplu atarken, aynı saatte başka bir derse zaten kayıtlıysa uyarır.</div>
+        </div>
+      </div>
+      <div class="oneri-govde">
+        <div class="mockup">
+          <div class="m3-uyari">
+            <div class="m3-ikon">⚠️</div>
+            <div class="m3-metin"><b>Ahmet</b>, Salı 18:00 dersine zaten kayıtlı (Büyükler). Bu dersi (Salı 18:00, Yıldızlar) de eklemek üst üste binecek — yine de eklensin mi?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oneri">
+      <div class="oneri-head">
+        <div class="oneri-no">04</div>
+        <div class="oneri-ikon" style="background:linear-gradient(150deg,#60a5fa,#2563eb);">📊</div>
+        <div>
+          <div class="oneri-baslik">Haftalık Özet Sayfası</div>
+          <div class="oneri-alt">Yoklama Formu PDF'inin başına, toplam ders/sporcu/en yoğun gün gibi bir "yönetici özeti" kapak sayfası eklenir.</div>
+        </div>
+      </div>
+      <div class="oneri-govde">
+        <div class="mockup">
+          <div class="m4-kapak">
+            <div class="m4-baslik">🏹 HAFTALIK ÖZET</div>
+            <div class="m4-stat-row">
+              <div class="m4-stat"><div class="m4-stat-v">14</div><div class="m4-stat-k">Ders</div></div>
+              <div class="m4-stat"><div class="m4-stat-v">47</div><div class="m4-stat-k">Sporcu</div></div>
+              <div class="m4-stat"><div class="m4-stat-v">Salı</div><div class="m4-stat-k">En Yoğun</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oneri">
+      <div class="oneri-head">
+        <div class="oneri-no">05</div>
+        <div class="oneri-ikon" style="background:linear-gradient(150deg,#6ee7b7,var(--emerald));">📉</div>
+        <div>
+          <div class="oneri-baslik">Devam Oranı Rozeti</div>
+          <div class="oneri-alt">Roster listesinde her ismin yanında son haftaların katılım oranı — kimin hatırlatmaya ihtiyacı var, tek bakışta belli olur.</div>
+        </div>
+      </div>
+      <div class="oneri-govde">
+        <div class="mockup">
+          <div class="m5-satir"><div class="m5-nokta" style="background:var(--emerald);"></div><div class="m5-ad">Ela Yıldız</div><div class="m5-yuzde">%92 devam</div></div>
+          <div class="m5-satir"><div class="m5-nokta" style="background:var(--amber);"></div><div class="m5-ad">Kerem Ak</div><div class="m5-yuzde">%64 devam</div></div>
+          <div class="m5-satir"><div class="m5-nokta" style="background:var(--rose);"></div><div class="m5-ad">Deniz Su</div><div class="m5-yuzde">%31 devam</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footnote">Bunlar sadece önizleme — hangileri işine yarıyor söyle, onları gerçek veriyle bağlayıp uygulamaya ekleyeyim.</div>
+</div>

@@ -1,0 +1,1 @@
+ALTER TABLE attendance_auto ADD COLUMN geldi INTEGER NOT NULL DEFAULT 1;

@@ -1,0 +1,1 @@
+ALTER TABLE attendance_auto ADD COLUMN elle INTEGER DEFAULT 0;

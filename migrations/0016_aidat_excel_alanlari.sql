@@ -1,0 +1,5 @@
+ALTER TABLE dues ADD COLUMN notMetin TEXT;
+ALTER TABLE athletes ADD COLUMN acilKisi TEXT;
+ALTER TABLE athletes ADD COLUMN acilTelefon TEXT;
+ALTER TABLE athletes ADD COLUMN antrenmanNotu TEXT;
+ALTER TABLE athletes ADD COLUMN genelNot TEXT;

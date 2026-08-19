@@ -1,0 +1,3 @@
+ALTER TABLE athletes ADD COLUMN donduruldu INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE athletes ADD COLUMN detayliOklar_json TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE athletes ADD COLUMN cinsiyet TEXT;

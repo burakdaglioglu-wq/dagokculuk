@@ -1,0 +1,36 @@
+name = "dagsk"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+[vars]
+VAPID_PUBLIC_KEY = "BJoUE7lqnbeHkP2OazmC7VgisBDxegUjDaHu_d300A__oRhynyNThVFkDinq9OnpKhcKznVvw_q2rtSK3OlHnno"
+VAPID_SUBJECT = "mailto:burakdaglioglu@gmail.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dagsk-db"
+database_id = "bae80c9e-a680-4b6c-9fd0-6a94c74ef1cf"
+migrations_dir = "migrations"
+
+[[d1_databases]]
+binding = "DB_MILO"
+database_name = "dagsk-milo-db"
+database_id = "26fb9b63-14a7-4549-8fe8-d0a194d184fc"
+migrations_dir = "migrations_milo"
+
+[[durable_objects.bindings]]
+name = "CLUB_SYNC"
+class_name = "ClubSync"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ClubSync"]

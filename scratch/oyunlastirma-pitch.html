@@ -1,0 +1,618 @@
+<title>Yay Macerası</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --void: #0a0e14;
+    --panel: #131a24;
+    --panel-2: #1a2330;
+    --line: rgba(255,255,255,0.09);
+    --ink: #f2f6f9;
+    --ink-dim: #a8b6c4;
+    --ink-faint: #66727e;
+    --gold: #ffce54;
+    --gold-deep: #f0a428;
+    --ember: #ff8447;
+    --ember-deep: #e6602a;
+    --moss: #4fd68c;
+    --nebula: #a48bff;
+    --danger: #ff6b6b;
+    --sari: #f6c453;
+    --kirmizi: #e5533d;
+    --mavi: #3f8ae0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--void);
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+  .display { font-family: 'Fredoka', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .shell { max-width: 460px; margin: 0 auto; padding: 18px 14px 70px; position: relative; }
+
+  /* ---------- Header ---------- */
+  .intro {
+    background: linear-gradient(160deg, #182131, #0e141d);
+    border: 1px solid var(--line); border-radius: 20px; padding: 18px 18px 16px; margin-bottom: 16px;
+  }
+  .intro-eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 7px; }
+  .intro h1 { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: clamp(21px, 6vw, 27px); margin: 0 0 7px; text-wrap: balance; line-height: 1.15; }
+  .intro p { margin: 0; color: var(--ink-dim); font-size: 13px; line-height: 1.55; }
+  .intro-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 11px; background: rgba(255,206,84,0.12); border: 1px solid rgba(255,206,84,0.35); color: var(--gold); font-weight: 700; font-size: 11.5px; padding: 6px 11px; border-radius: 100px; }
+
+  .tabbar { display: flex; gap: 7px; margin-bottom: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 5px; }
+  .tabbar button { flex: 1; border: none; background: transparent; color: var(--ink-dim); font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13.5px; padding: 10px; border-radius: 10px; cursor: pointer; }
+  .tabbar button.aktif { background: linear-gradient(135deg, var(--gold), var(--gold-deep)); color: #3a2600; box-shadow: 0 3px 10px rgba(255,206,84,0.25); }
+  .panel { display: none; } .panel.aktif { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Chunky game button, reused everywhere */
+  .gbtn {
+    width: 100%; border: none; border-radius: 16px; padding: 15px; cursor: pointer;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.01em;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+    color: #3a2600; position: relative;
+    box-shadow: 0 5px 0 #b87b12, 0 8px 18px rgba(0,0,0,0.35);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .gbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b87b12, 0 3px 8px rgba(0,0,0,0.3); }
+  .gbtn:disabled { opacity: 0.4; cursor: default; box-shadow: none; transform: none; }
+  .gbtn.ghost { background: var(--panel-2); color: var(--ink-dim); box-shadow: 0 4px 0 #060a0f, 0 6px 14px rgba(0,0,0,0.3); font-size: 13px; padding: 11px; margin-top: 9px; }
+
+  /* Oklar chip row — gerçek hedef renkleriyle (sarı/kırmızı/mavi/siyah/beyaz) */
+  .ok-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin: 10px 0; min-height: 30px; }
+  .ok-chip {
+    width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; flex-shrink: 0;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.3);
+    animation: chipIn 0.3s cubic-bezier(.34,1.56,.64,1) backwards;
+  }
+  @keyframes chipIn { from { opacity: 0; transform: scale(0.4) translateY(-6px); } to { opacity: 1; transform: none; } }
+  .ok-sari { background: var(--sari); color: #4a3400; }
+  .ok-kirmizi { background: var(--kirmizi); color: #fff; }
+  .ok-mavi { background: var(--mavi); color: #fff; }
+  .ok-siyah { background: #2a2a2e; color: #fff; }
+  .ok-beyaz { background: #eef0f2; color: #2a2a2e; border: 1px solid rgba(0,0,0,0.15); }
+  .ok-miss { background: transparent; border: 2px dashed var(--ink-faint); color: var(--ink-faint); box-shadow: none; }
+
+  .seri-toplam { text-align: center; font-family: 'Fredoka', sans-serif; font-size: 12.5px; color: var(--ink-dim); margin-bottom: 4px; min-height: 18px; }
+  .seri-toplam b { color: var(--gold); font-size: 15px; }
+
+  /* ================= RIVAL DUEL — battle screen ================= */
+  .zorluk-row { display: flex; gap: 7px; margin-bottom: 14px; }
+  .zorluk-chip { flex: 1; border: 1.5px solid var(--line); background: var(--panel); border-radius: 12px; padding: 9px 6px; text-align: center; cursor: pointer; }
+  .zorluk-chip .ad { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11.5px; display: block; color: var(--ink-dim); }
+  .zorluk-chip[data-z="rookie"].secili { border-color: var(--moss); background: rgba(79,214,140,0.1); } .zorluk-chip[data-z="rookie"].secili .ad { color: var(--moss); }
+  .zorluk-chip[data-z="dengeli"].secili { border-color: var(--gold); background: rgba(255,206,84,0.1); } .zorluk-chip[data-z="dengeli"].secili .ad { color: var(--gold); }
+  .zorluk-chip[data-z="usta"].secili { border-color: var(--danger); background: rgba(255,107,107,0.1); } .zorluk-chip[data-z="usta"].secili .ad { color: var(--danger); }
+
+  .arena {
+    position: relative; border-radius: 22px; padding: 18px 16px 16px; margin-bottom: 14px; overflow: hidden;
+    background: radial-gradient(120% 90% at 50% -10%, #2a2145, #0e1220 65%);
+    border: 1px solid rgba(164,139,255,0.25);
+  }
+  .arena::before, .arena::after {
+    content: ''; position: absolute; width: 160px; height: 160px; border-radius: 50%; filter: blur(30px); opacity: 0.35; z-index: 0;
+  }
+  .arena::before { background: var(--ember); top: -60px; left: -50px; }
+  .arena::after { background: var(--nebula); bottom: -60px; right: -50px; }
+  .round-tag { position: relative; z-index: 1; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 10px; text-transform: uppercase; }
+  .duel-vs { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .duel-side { flex: 1; text-align: center; }
+  .duel-side .avatar-ring {
+    width: 62px; height: 62px; border-radius: 50%; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; position: relative; transition: transform 0.15s;
+  }
+  .duel-side.sen .avatar-ring { background: radial-gradient(circle at 35% 30%, #ffd08a, var(--ember-deep)); box-shadow: 0 0 0 3px rgba(255,132,71,0.35), 0 6px 14px rgba(0,0,0,0.4); }
+  .duel-side.rakip .avatar-ring { background: radial-gradient(circle at 35% 30%, #cfc2ff, #6f57e0); box-shadow: 0 0 0 3px rgba(164,139,255,0.35), 0 6px 14px rgba(0,0,0,0.4); }
+  .duel-side .avatar-ring.vurdu { animation: bump 0.35s ease; }
+  @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+  .duel-side .isim { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11.5px; color: var(--ink-dim); }
+  .duel-side .puan { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 26px; }
+  .duel-side.sen .puan { color: var(--ember); } .duel-side.rakip .puan { color: var(--nebula); }
+  .duel-vs-mark { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; color: var(--ink-faint); width: 28px; text-align: center; flex-shrink: 0; }
+
+  .race-track { position: relative; z-index: 1; height: 12px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden; margin-bottom: 14px; }
+  .race-fill-sen, .race-fill-rakip { position: absolute; top: 0; bottom: 0; transition: width 0.5s cubic-bezier(.2,.8,.3,1); }
+  .race-fill-sen { left: 50%; background: linear-gradient(90deg, var(--ember-deep), var(--ember)); border-radius: 0 100px 100px 0; }
+  .race-fill-rakip { right: 50%; background: linear-gradient(90deg, var(--nebula), #7a5fe6); border-radius: 100px 0 0 100px; }
+  .race-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(255,255,255,0.4); z-index: 2; }
+
+  .feed-title { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin: 16px 0 8px; }
+  .feed { display: flex; flex-direction: column; gap: 7px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
+  .bubble { display: flex; gap: 8px; align-items: flex-start; animation: pop 0.3s ease; }
+  @keyframes pop { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .bubble .ic { width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-top: 1px; }
+  .bubble.rakip .ic { background: rgba(164,139,255,0.18); }
+  .bubble.sistem .ic { background: rgba(255,206,84,0.15); }
+  .bubble .metin { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px 12px 12px 12px; padding: 7px 10px; font-size: 12px; line-height: 1.4; color: var(--ink); }
+  .bubble.sistem .metin { color: var(--gold); font-weight: 700; border-color: rgba(255,206,84,0.25); background: rgba(255,206,84,0.06); border-radius: 12px; }
+
+  /* ================= ADVENTURE MODE — game map ================= */
+  .dunya-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .dunya-kart { flex: 1; border-radius: 16px; padding: 12px 8px; text-align: center; cursor: pointer; border: 1.5px solid var(--line); position: relative; overflow: hidden; }
+  .dunya-kart .ikon { font-size: 20px; display: block; margin-bottom: 3px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); }
+  .dunya-kart .ad { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11px; display: block; color: var(--ink-dim); }
+  .dunya-kart[data-d="orman"] { background: linear-gradient(160deg, #1c3a2a, #0e2118); }
+  .dunya-kart[data-d="uzay"] { background: linear-gradient(160deg, #241a4a, #130f28); }
+  .dunya-kart.secili { box-shadow: 0 0 0 2px var(--gold), 0 8px 18px rgba(255,206,84,0.18); }
+  .dunya-kart.secili .ad { color: var(--ink); }
+  .dunya-kart.yakinda { opacity: 0.5; cursor: default; background: var(--panel); }
+  .dunya-kart.yakinda .rozet { position: absolute; top: 5px; right: 5px; font-size: 8px; font-weight: 800; background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 100px; color: var(--ink-faint); }
+
+  .hud-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .hud-pill {
+    flex: 1; display: flex; align-items: center; gap: 7px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 100px; padding: 7px 12px 7px 7px;
+  }
+  .hud-pill .ic { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .hud-pill:nth-child(1) .ic { background: radial-gradient(circle at 35% 30%, #ffe9ad, var(--gold-deep)); }
+  .hud-pill:nth-child(2) .ic { background: radial-gradient(circle at 35% 30%, #ffe3a6, var(--sari)); }
+  .hud-pill:nth-child(3) .ic { background: radial-gradient(circle at 35% 30%, #9fe8c0, var(--moss)); }
+  .hud-pill .v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; line-height: 1.1; }
+  .hud-pill .k { font-size: 8px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .world-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .world-title-row .ikon { font-size: 26px; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
+  .yol-baslik { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+  .yol-alt { font-size: 12px; color: var(--ink-dim); margin: 4px 0 14px; line-height: 1.5; }
+
+  /* Winding path scene */
+  .sahne {
+    position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--line);
+    padding-top: 26px; padding-bottom: 34px;
+  }
+  .sahne.orman { background: linear-gradient(180deg, #0d1f18 0%, #14301f 55%, #1c3f27 100%); }
+  .sahne.uzay { background: linear-gradient(180deg, #0a0a1a 0%, #14103a 55%, #1c1650 100%); }
+  .sahne-dekor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+  /* orman: tepe silüetleri + ay */
+  .dekor-ay { position: absolute; top: 14px; right: 26px; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8dd, #ffe9a8); box-shadow: 0 0 26px rgba(255,233,168,0.5); }
+  .dekor-tepe { position: absolute; bottom: -6px; width: 0; height: 0; border-left: 90px solid transparent; border-right: 90px solid transparent; opacity: 0.55; }
+  .dekor-tepe.t1 { left: -30px; border-bottom: 70px solid #0e2417; }
+  .dekor-tepe.t2 { right: -40px; border-bottom: 95px solid #123020; opacity: 0.4; }
+  /* uzay: yıldızlar + gezegen */
+  .dekor-yildiz { position: absolute; border-radius: 50%; background: #fff; opacity: 0.7; animation: twinkle 2.4s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+  .dekor-gezegen { position: absolute; border-radius: 50%; }
+
+  .yol-svg { position: relative; z-index: 1; display: block; margin: 0 auto; }
+
+  .node-katman { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
+  .dugum { position: absolute; transform: translate(-50%, -50%); text-align: center; width: 92px; }
+  .dugum-daire {
+    width: 60px; height: 60px; border-radius: 50%; margin: 0 auto; position: relative;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    transition: transform 0.15s;
+  }
+  .dugum.aktif .dugum-daire { animation: nefes 1.8s ease-in-out infinite; cursor: pointer; }
+  @keyframes nefes { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  .dugum.kilit .dugum-daire { background: linear-gradient(180deg, #2a323c, #1a212a); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.35); filter: grayscale(1); opacity: 0.55; }
+  .dugum.aktif .dugum-daire { background: linear-gradient(180deg, var(--gold), var(--gold-deep)); box-shadow: 0 0 0 5px rgba(255,206,84,0.22), inset 0 -3px 0 rgba(0,0,0,0.2), 0 6px 14px rgba(0,0,0,0.4); }
+  .dugum.tamam .dugum-daire { background: linear-gradient(180deg, #6fe6a8, var(--moss)); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18), 0 4px 10px rgba(0,0,0,0.35); }
+  .dugum .rozet-check { position: absolute; bottom: -3px; right: -3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: var(--moss); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+  .dugum .kilit-ic { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .dugum-etiket { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10.5px; color: var(--ink-dim); margin-top: 6px; line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+  .dugum.aktif .dugum-etiket { color: var(--gold); }
+  .dugum.tamam .dugum-etiket { color: var(--moss); }
+
+  .karakter { position: absolute; z-index: 3; font-size: 26px; transform: translate(-50%, -132%); transition: left 0.6s cubic-bezier(.3,.7,.3,1), top 0.6s cubic-bezier(.3,.7,.3,1); animation: bob 1.6s ease-in-out infinite; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5)); }
+  @keyframes bob { 0%,100% { transform: translate(-50%, -132%); } 50% { transform: translate(-50%, -148%); } }
+
+  .gorev-karti {
+    position: relative; z-index: 1; margin: 12px 12px 0; background: rgba(10,14,20,0.7); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,206,84,0.3); border-radius: 14px; padding: 12px 13px;
+  }
+  .gorev-baslik { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .gorev-ikon { font-size: 19px; }
+  .gorev-ad { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; }
+  .gorev-aciklama { font-size: 11.5px; color: var(--ink-dim); line-height: 1.4; margin-bottom: 8px; }
+  .gorev-bar { height: 8px; border-radius: 100px; background: rgba(255,255,255,0.1); overflow: hidden; }
+  .gorev-bar-ic { height: 100%; background: linear-gradient(90deg, var(--gold), var(--ember)); border-radius: 100px; transition: width 0.4s; }
+  .gorev-durum { font-size: 10.5px; font-weight: 800; margin-top: 6px; color: var(--gold); }
+
+  .konfeti { position: fixed; width: 8px; height: 8px; border-radius: 2px; z-index: 80; pointer-events: none; }
+
+  .toast-katman { position: fixed; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; pointer-events: none; z-index: 90; }
+  .toast { background: var(--panel-2); border: 1px solid var(--gold); color: var(--ink); padding: 11px 18px; border-radius: 100px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: toastPop 2.8s ease forwards; }
+  @keyframes toastPop { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 12% { opacity: 1; transform: none; } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+
+  .footnote { text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 20px; line-height: 1.6; }
+</style>
+
+<div class="shell">
+  <div class="intro">
+    <div class="intro-eyebrow">🏹 DAĞ S.K. — ÖNİZLEME v2</div>
+    <h1 class="display">Gerçek bir oyun gibi hissettirmeli</h1>
+    <p>Geri bildirimine göre iki şeyi değiştirdim: artık tek tek ok değil, gerçekte olduğu gibi <b>3–6 oklu seri</b> giriliyor — ve harita, Duolingo/mobil oyun tadında, kıvrılan bir yol + karakterle çiziliyor.</p>
+    <div class="intro-tag">👆 Demo butonlarına dokun, yolun nasıl açıldığını izle</div>
+  </div>
+
+  <div class="tabbar">
+    <button class="aktif" data-tab="rakip" onclick="sekmeSec('rakip')">⚔️ Hayali Rakip</button>
+    <button data-tab="macera" onclick="sekmeSec('macera')">🗺️ Macera Modu</button>
+  </div>
+
+  <!-- ========================= TAB 1: HAYALİ RAKİP ========================= -->
+  <div class="panel aktif" id="panel-rakip">
+    <div class="zorluk-row">
+      <div class="zorluk-chip" data-z="rookie" onclick="zorlukSec('rookie')"><span class="ad">🟢 Çaylak</span></div>
+      <div class="zorluk-chip secili" data-z="dengeli" onclick="zorlukSec('dengeli')"><span class="ad">🟡 Dengeli</span></div>
+      <div class="zorluk-chip" data-z="usta" onclick="zorlukSec('usta')"><span class="ad">🔴 Usta</span></div>
+    </div>
+
+    <div class="arena">
+      <div class="round-tag" id="round-tag">1. SERİ / 3</div>
+      <div class="duel-vs">
+        <div class="duel-side sen"><div class="avatar-ring" id="avatar-sen">🏹</div><div class="isim">SEN</div><div class="puan mono" id="puan-sen">0</div></div>
+        <div class="duel-vs-mark">VS</div>
+        <div class="duel-side rakip"><div class="avatar-ring" id="avatar-rakip">🤖</div><div class="isim" id="rakip-isim">Dengeli Rakip</div><div class="puan mono" id="puan-rakip">0</div></div>
+      </div>
+      <div class="race-track"><div class="race-mid"></div><div class="race-fill-sen" id="race-sen" style="width:0%;"></div><div class="race-fill-rakip" id="race-rakip" style="width:0%;"></div></div>
+      <div class="seri-toplam" id="son-seri-metin" style="position:relative;z-index:1;"></div>
+      <div class="ok-row" id="son-seri-oklar" style="position:relative;z-index:1;"></div>
+    </div>
+
+    <button class="gbtn" id="atis-btn" onclick="seriGirDuel()">🎯 Seri Gir (3–6 Ok)</button>
+    <button class="gbtn ghost" onclick="maciSifirla()">↺ Maçı Sıfırla</button>
+
+    <div class="feed-title">Rakip ne diyor</div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <!-- ========================= TAB 2: MACERA MODU ========================= -->
+  <div class="panel" id="panel-macera">
+    <div class="dunya-row">
+      <div class="dunya-kart secili" data-d="orman" onclick="dunyaSec('orman')"><span class="ikon">🌲</span><span class="ad">Ormandan Kaçış</span></div>
+      <div class="dunya-kart" data-d="uzay" onclick="dunyaSec('uzay')"><span class="ikon">🚀</span><span class="ad">Uzay Macerası</span></div>
+      <div class="dunya-kart yakinda"><span class="rozet">YAKINDA</span><span class="ikon">🏴‍☠️</span><span class="ad">Hazine Adası</span></div>
+    </div>
+
+    <div class="hud-bar">
+      <div class="hud-pill"><div class="ic">🏆</div><div><div class="v mono" id="hud-toplam">0</div><div class="k">Puan</div></div></div>
+      <div class="hud-pill"><div class="ic">🎯</div><div><div class="v mono" id="hud-sari">0</div><div class="k">Sarı</div></div></div>
+      <div class="hud-pill"><div class="ic">🔥</div><div><div class="v mono" id="hud-streak">0</div><div class="k">Seri</div></div></div>
+    </div>
+
+    <div class="world-title-row"><span class="ikon" id="world-ikon">🌲</span><span class="yol-baslik" id="yol-baslik">Ormandan Kaçış</span></div>
+    <div class="yol-alt" id="yol-alt"></div>
+
+    <div class="sahne orman" id="sahne">
+      <div class="sahne-dekor" id="sahne-dekor"></div>
+      <div id="yol-svg-katman"></div>
+      <div class="node-katman" id="node-katman"></div>
+      <div class="karakter" id="karakter">🏃</div>
+    </div>
+
+    <div class="gorev-karti" id="gorev-karti" style="margin-top:12px;"></div>
+    <div id="son-seri-macera"></div>
+
+    <button class="gbtn" id="macera-atis-btn" onclick="seriGirMacera()" style="margin-top:12px;">🎯 Seri Gir (3–6 Ok)</button>
+    <button class="gbtn ghost" onclick="maceraSifirla()">↺ Maceraya Yeniden Başla</button>
+  </div>
+
+  <div class="footnote">Bu bir tasarım önizlemesi — sayılar/metinler örnek. Onaylarsan gerçek atış verisiyle (skor girişi ekranından) bağlayıp uygulamaya ekleyeceğim.</div>
+</div>
+
+<div class="toast-katman" id="toast-katman"></div>
+
+<script>
+  // ============================================================
+  // Ortak
+  // ============================================================
+  function toast(msg) {
+    var kat = document.getElementById('toast-katman');
+    var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+    kat.appendChild(el); setTimeout(function () { kat.removeChild(el); }, 2800);
+  }
+  function okDegeri(agirlik) {
+    var r = Math.random();
+    if (r < 0.05) return { deger: 0, etiket: 'M' };
+    var v = Math.round(agirlik + (Math.random() - 0.5) * 4);
+    if (v >= 10 && Math.random() < 0.3) return { deger: 10, etiket: 'X' };
+    v = Math.max(1, Math.min(10, v));
+    return { deger: v, etiket: String(v) };
+  }
+  function okSinifi(etiket) {
+    if (etiket === 'M') return 'miss';
+    var v = etiket === 'X' ? 10 : parseInt(etiket, 10);
+    if (v >= 9) return 'sari'; if (v >= 7) return 'kirmizi'; if (v >= 5) return 'mavi'; if (v >= 3) return 'siyah'; return 'beyaz';
+  }
+  function seriUret(agirlik) {
+    var n = 3 + Math.floor(Math.random() * 4); // 3-6
+    var oklar = [];
+    for (var i = 0; i < n; i++) oklar.push(okDegeri(agirlik));
+    return oklar;
+  }
+  function seriToplamHesap(oklar) { return oklar.reduce(function (a, o) { return a + o.deger; }, 0); }
+  function okChipHTML(o, gecikme) {
+    return '<div class="ok-chip ok-' + okSinifi(o.etiket) + '" style="animation-delay:' + gecikme + 'ms;">' + o.etiket + '</div>';
+  }
+  function konfetiPatlat(merkezX, merkezY, adet) {
+    var renkler = ['#ffce54', '#ff8447', '#4fd68c', '#a48bff', '#3f8ae0'];
+    for (var i = 0; i < adet; i++) {
+      var p = document.createElement('div'); p.className = 'konfeti';
+      p.style.left = merkezX + 'px'; p.style.top = merkezY + 'px';
+      p.style.background = renkler[Math.floor(Math.random() * renkler.length)];
+      var aci = Math.random() * Math.PI * 2, hiz = 60 + Math.random() * 90;
+      var dx = Math.cos(aci) * hiz, dy = Math.sin(aci) * hiz - 40;
+      p.animate([
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: 'translate(' + dx + 'px,' + (dy + 160) + 'px) rotate(' + (360 + Math.random() * 360) + 'deg)', opacity: 0 }
+      ], { duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      document.body.appendChild(p);
+      setTimeout(function (el) { return function () { el.remove(); }; }(p), 1400);
+    }
+  }
+  function sekmeSec(ad) {
+    document.querySelectorAll('.tabbar button').forEach(function (b) { b.classList.toggle('aktif', b.dataset.tab === ad); });
+    document.getElementById('panel-rakip').classList.toggle('aktif', ad === 'rakip');
+    document.getElementById('panel-macera').classList.toggle('aktif', ad === 'macera');
+  }
+
+  // ============================================================
+  // TAB 1 — Hayali Rakip (battle screen)
+  // ============================================================
+  var ZORLUKLAR = {
+    rookie: { ad: 'Çaylak Rakip', ort: 5.4, avatar: '🙂' },
+    dengeli: { ad: 'Dengeli Rakip', ort: 7.1, avatar: '🤖' },
+    usta: { ad: 'Usta Rakip', ort: 8.5, avatar: '😤' }
+  };
+  var SOZLER = {
+    baslangic: { rookie: ['Ben de yeni başlıyorum, nazik ol 🙂'], dengeli: ['Hazırım! Bakalım kim kazanacak 🎯'], usta: ['Hazır mısın? Çünkü ben hazırım 😏'] },
+    senOnde: { rookie: ['Vay be, güzel seri! Ben biraz daha pratik yapmalıyım 😅'], dengeli: ['Fena değil... ama ben de boş durmuyorum 💪'], usta: ['İyi başladın ama son sözü ben söylerim 😏'] },
+    rakipOnde: { rookie: ['Şansım yaver gitti sanırım 😄'], dengeli: ['Şimdi ben öndeyim, yetişebilir misin? 🎯'], usta: ['Bu seriyi ben aldım, standardım yüksek 😄'] },
+    iyiSeri: { rookie: ['O ne öyle! Harika bir seriydi 👏'], dengeli: ['Vay canına, güçlü bir seri attın 🎯'], usta: ['Etkileyici seri... ama izle bakalım 😏'] },
+    bitisKazandinSen: { rookie: ['Kazandın! Tebrikler 🎉'], dengeli: ['Bu maçı kazandın, rövanş ister misin? 🤝'], usta: ['Beni geçtin. Saygı duydum 🫡 Rövanş şart!'] },
+    bitisKazandinRakip: { rookie: ['Kazandım ama sen de çok iyiydin 👏'], dengeli: ['Yine ben kazandım, harika maçtı 🤝'], usta: ['Standardımı korudum, ama iyi dövüştün!'] }
+  };
+  var zorluk = 'dengeli', senPuan = 0, rakipPuan = 0, seriSayisi = 0;
+  var HEDEF_SERI = 3;
+
+  function feedEkle(kim, metin) {
+    var feed = document.getElementById('feed');
+    var el = document.createElement('div'); el.className = 'bubble ' + kim;
+    el.innerHTML = '<div class="ic">' + (kim === 'sistem' ? '⭐' : ZORLUKLAR[zorluk].avatar) + '</div><div class="metin">' + metin + '</div>';
+    feed.insertBefore(el, feed.firstChild);
+  }
+  function sozSec(k) { var a = SOZLER[k][zorluk]; return a[Math.floor(Math.random() * a.length)]; }
+  function zorlukSec(z) {
+    zorluk = z;
+    document.querySelectorAll('.zorluk-chip').forEach(function (c) { c.classList.toggle('secili', c.dataset.z === z); });
+    document.getElementById('rakip-isim').textContent = ZORLUKLAR[z].ad;
+    document.getElementById('avatar-rakip').textContent = ZORLUKLAR[z].avatar;
+    maciSifirla();
+  }
+  function raceGuncelle() {
+    var fark = senPuan - rakipPuan;
+    var pct = Math.max(-50, Math.min(50, fark * 1.2));
+    document.getElementById('race-sen').style.width = Math.max(0, pct) + '%';
+    document.getElementById('race-rakip').style.width = Math.max(0, -pct) + '%';
+  }
+  function seriGirDuel() {
+    if (seriSayisi >= HEDEF_SERI) return;
+    seriSayisi++;
+    document.getElementById('round-tag').textContent = Math.min(seriSayisi + 1, HEDEF_SERI) + '. SERİ / ' + HEDEF_SERI;
+
+    var oklarSen = seriUret(7.3), toplamSen = seriToplamHesap(oklarSen);
+    senPuan += toplamSen;
+    var oklarRakip = seriUret(ZORLUKLAR[zorluk].ort), toplamRakip = seriToplamHesap(oklarRakip);
+    rakipPuan += toplamRakip;
+
+    document.getElementById('puan-sen').textContent = senPuan;
+    document.getElementById('puan-rakip').textContent = rakipPuan;
+    document.getElementById('avatar-sen').classList.remove('vurdu'); void document.getElementById('avatar-sen').offsetWidth; document.getElementById('avatar-sen').classList.add('vurdu');
+    document.getElementById('avatar-rakip').classList.remove('vurdu'); void document.getElementById('avatar-rakip').offsetWidth; document.getElementById('avatar-rakip').classList.add('vurdu');
+
+    document.getElementById('son-seri-metin').innerHTML = 'Senin serin: <b>' + toplamSen + '</b> puan &nbsp;·&nbsp; Rakibin serisi: <b style="color:var(--nebula);">' + toplamRakip + '</b> puan';
+    document.getElementById('son-seri-oklar').innerHTML = oklarSen.map(function (o, i) { return okChipHTML(o, i * 60); }).join('');
+    raceGuncelle();
+
+    if (seriSayisi === 1) feedEkle('rakip', sozSec('baslangic'));
+    else if (toplamSen >= 25) feedEkle('rakip', sozSec('iyiSeri'));
+    else feedEkle('rakip', sozSec(senPuan >= rakipPuan ? 'senOnde' : 'rakipOnde'));
+
+    if (seriSayisi >= HEDEF_SERI) {
+      document.getElementById('atis-btn').disabled = true;
+      var kazSen = senPuan >= rakipPuan;
+      feedEkle('sistem', (kazSen ? '🏆 Sen kazandın! ' : '🏆 Rakip kazandı! ') + senPuan + ' — ' + rakipPuan);
+      feedEkle('rakip', sozSec(kazSen ? 'bitisKazandinSen' : 'bitisKazandinRakip'));
+      toast(kazSen ? '🎉 Maçı kazandın!' : '💪 Yakındı, tekrar dene!');
+      if (kazSen) { var r = document.getElementById('avatar-sen').getBoundingClientRect(); konfetiPatlat(r.left + r.width / 2, r.top + r.height / 2, 22); }
+    }
+  }
+  function maciSifirla() {
+    senPuan = 0; rakipPuan = 0; seriSayisi = 0;
+    document.getElementById('puan-sen').textContent = '0'; document.getElementById('puan-rakip').textContent = '0';
+    document.getElementById('round-tag').textContent = '1. SERİ / ' + HEDEF_SERI;
+    document.getElementById('son-seri-metin').innerHTML = ''; document.getElementById('son-seri-oklar').innerHTML = '';
+    document.getElementById('atis-btn').disabled = false;
+    document.getElementById('feed').innerHTML = '';
+    raceGuncelle();
+  }
+
+  // ============================================================
+  // TAB 2 — Macera Modu (Duolingo tarzı kıvrımlı yol)
+  // ============================================================
+  var DUNYALAR = {
+    orman: {
+      baslik: 'Ormandan Kaçış', ikon: '🌲', sahneClass: 'orman', karakter: '🏃',
+      alt: 'Ayı seni fark etti — ormandan güvenle çıkmak için görevleri sırayla tamamla.',
+      asamalar: [
+        { ikon: '🐻', ad: 'Ayı Karşında!', tip: 'sari', hedef: 2, birim: 'sarı isabet', aciklama: '2 sarı (9-10) vurup ayıyı korkut.' },
+        { ikon: '🍎', ad: 'Açlık Bastırdı', tip: 'toplam', hedef: 15, birim: 'puan', aciklama: 'Elma bulmak için 15 puana ulaş.' },
+        { ikon: '🌊', ad: 'Nehri Geç', tip: 'streak', hedef: 3, birim: 'art arda isabet', aciklama: 'Iskalamadan 3 atış üst üste vurup nehri geç.' },
+        { ikon: '⛈️', ad: 'Fırtınadan Sakla', tip: 'x', hedef: 1, birim: 'merkez (X) vuruş', aciklama: 'Bir X vurup sığınağı bul.' },
+        { ikon: '🔥', ad: 'Kamp Ateşini Yak', tip: 'toplam', hedef: 40, birim: 'puan', aciklama: 'Isınmak için 40 puana ulaş.' },
+        { ikon: '🏕️', ad: 'Eve Dönüş', tip: 'toplam', hedef: 55, birim: 'puan', aciklama: 'Toplam 55 puana ulaşırsan ormandan güvenle çıkarsın!' }
+      ]
+    },
+    uzay: {
+      baslik: 'Uzay Macerası', ikon: '🚀', sahneClass: 'uzay', karakter: '👨‍🚀',
+      alt: 'Gizemli bir sinyal yakalandı. Roketini fırlat, asteroidlerden kaçın, yeni bir gezegene in.',
+      asamalar: [
+        { ikon: '🛰️', ad: 'Sinyali Yakala', tip: 'atis', hedef: 3, birim: 'ok', aciklama: 'İlk seriyi at, macera başlasın.' },
+        { ikon: '🚀', ad: 'Fırlatmaya Hazır', tip: 'toplam', hedef: 10, birim: 'puan', aciklama: 'Roketi ateşlemek için 10 puana ulaş.' },
+        { ikon: '☄️', ad: 'Asteroid Alanı', tip: 'x', hedef: 2, birim: 'merkez (X) vuruş', aciklama: '2 X vurup asteroidlerden kaçın.' },
+        { ikon: '⛽', ad: 'Yakıt İstasyonu', tip: 'toplam', hedef: 30, birim: 'puan', aciklama: 'Yakıt doldurmak için 30 puana ulaş.' },
+        { ikon: '👽', ad: 'Yabancı Sinyali', tip: 'streak', hedef: 4, birim: 'art arda isabet', aciklama: 'Iskalamadan 4 atış üst üste vur.' },
+        { ikon: '🌌', ad: 'Yeni Dünyaya İniş', tip: 'toplam', hedef: 50, birim: 'puan', aciklama: '50 puana ulaşırsan gezegene güvenle inersin!' }
+      ]
+    }
+  };
+  var NODE_OFS = [0, 0.82, -0.7, 0.78, -0.82, 0]; // düğümlerin yatay ofset katsayısı (Duolingo tarzı zigzag)
+  var NODE_GAP = 108, NODE_TOP = 34, AMP = 84;
+  var dunya = 'orman';
+  var mToplam = 0, mSari = 0, mStreak = 0, mX = 0, mAtis = 0;
+
+  function dunyaSec(d) {
+    dunya = d;
+    document.querySelectorAll('.dunya-kart[data-d]').forEach(function (k) { k.classList.toggle('secili', k.dataset.d === d); });
+    var s = document.getElementById('sahne'); s.classList.remove('orman', 'uzay'); s.classList.add(DUNYALAR[d].sahneClass);
+    document.getElementById('world-ikon').textContent = DUNYALAR[d].ikon;
+    document.getElementById('karakter').textContent = DUNYALAR[d].karakter;
+    dekorCiz();
+    maceraSifirla();
+  }
+  function dekorCiz() {
+    var el = document.getElementById('sahne-dekor'); var d = DUNYALAR[dunya];
+    if (d.sahneClass === 'orman') {
+      el.innerHTML = '<div class="dekor-ay"></div><div class="dekor-tepe t1"></div><div class="dekor-tepe t2"></div>';
+    } else {
+      var html = '<div class="dekor-gezegen" style="width:70px;height:70px;top:40px;left:-20px;background:radial-gradient(circle at 35% 30%,#8a7bff,#3b2f8f);opacity:0.5;"></div>'
+        + '<div class="dekor-gezegen" style="width:36px;height:36px;bottom:60px;right:-8px;background:radial-gradient(circle at 35% 30%,#ffb199,#e5533d);opacity:0.6;"></div>';
+      for (var i = 0; i < 26; i++) {
+        var s = 1 + Math.random() * 2;
+        html += '<div class="dekor-yildiz" style="width:' + s + 'px;height:' + s + 'px;top:' + (Math.random() * 92) + '%;left:' + (Math.random() * 96) + '%;animation-delay:' + (Math.random() * 2) + 's;"></div>';
+      }
+      el.innerHTML = html;
+    }
+  }
+  function asamaIlerlemeDegeri(a) {
+    if (a.tip === 'toplam') return mToplam; if (a.tip === 'sari') return mSari;
+    if (a.tip === 'streak') return mStreak; if (a.tip === 'x') return mX; if (a.tip === 'atis') return mAtis;
+    return 0;
+  }
+  function dugumKonumlari(sayi, genislik) {
+    var noktalar = [];
+    for (var i = 0; i < sayi; i++) {
+      var ofs = NODE_OFS[i % NODE_OFS.length];
+      noktalar.push({ x: genislik / 2 + ofs * AMP, y: NODE_TOP + i * NODE_GAP });
+    }
+    return noktalar;
+  }
+  function egriYolu(noktalar) {
+    if (!noktalar.length) return '';
+    var d = 'M ' + noktalar[0].x + ' ' + noktalar[0].y;
+    for (var i = 0; i < noktalar.length - 1; i++) {
+      var p0 = noktalar[i], p1 = noktalar[i + 1], midY = (p0.y + p1.y) / 2;
+      d += ' C ' + p0.x + ' ' + midY + ' ' + p1.x + ' ' + midY + ' ' + p1.x + ' ' + p1.y;
+    }
+    return d;
+  }
+  function yolCiz() {
+    var d = DUNYALAR[dunya];
+    document.getElementById('yol-baslik').textContent = d.baslik;
+    document.getElementById('yol-alt').textContent = d.alt;
+
+    var genislik = document.getElementById('sahne').clientWidth || 400;
+    var noktalar = dugumKonumlari(d.asamalar.length, genislik);
+    var yukseklik = noktalar[noktalar.length - 1].y + 60;
+
+    // durum hesapla
+    var durumlar = [], aktifIndex = -1;
+    d.asamalar.forEach(function (a, i) {
+      var deger = asamaIlerlemeDegeri(a), tamam = deger >= a.hedef;
+      durumlar.push(tamam ? 'tamam' : 'kilit');
+    });
+    for (var i = 0; i < durumlar.length; i++) { if (durumlar[i] !== 'tamam') { durumlar[i] = 'aktif'; aktifIndex = i; break; } }
+    if (aktifIndex === -1) aktifIndex = durumlar.length - 1;
+
+    // SVG: tam yol (soluk) + tamamlanan kısım (parlak)
+    var tamFull = egriYolu(noktalar);
+    var tamamNoktalar = noktalar.slice(0, Math.max(1, aktifIndex + (durumlar[aktifIndex] === 'tamam' ? 1 : 0)));
+    var tamPartial = tamamNoktalar.length > 1 ? egriYolu(tamamNoktalar) : '';
+    document.getElementById('yol-svg-katman').innerHTML =
+      '<svg class="yol-svg" width="' + genislik + '" height="' + yukseklik + '" viewBox="0 0 ' + genislik + ' ' + yukseklik + '">'
+      + '<path d="' + tamFull + '" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="7" stroke-linecap="round" stroke-dasharray="1,14"/>'
+      + (tamPartial ? '<path d="' + tamPartial + '" fill="none" stroke="url(#gradYol)" stroke-width="7" stroke-linecap="round"/>' : '')
+      + '<defs><linearGradient id="gradYol" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4fd68c"/><stop offset="100%" stop-color="#ffce54"/></linearGradient></defs>'
+      + '</svg>';
+    document.getElementById('sahne').style.height = yukseklik + 'px';
+
+    // düğümler
+    var nodeHTML = '';
+    d.asamalar.forEach(function (a, i) {
+      var p = noktalar[i], durum = durumlar[i];
+      nodeHTML += '<div class="dugum ' + durum + '" style="left:' + p.x + 'px; top:' + p.y + 'px;" ' + (durum === 'aktif' ? 'onclick="gorevGoster(' + i + ')"' : '') + ' data-i="' + i + '">'
+        + '<div class="dugum-daire">' + (durum === 'kilit' ? '<span class="kilit-ic">🔒</span>' : a.ikon) + (durum === 'tamam' ? '<div class="rozet-check">✓</div>' : '') + '</div>'
+        + '<div class="dugum-etiket">' + a.ad + '</div>'
+        + '</div>';
+    });
+    document.getElementById('node-katman').innerHTML = nodeHTML;
+    document.getElementById('node-katman').style.height = yukseklik + 'px';
+
+    // karakter aktif düğümde dursun
+    var kp = noktalar[aktifIndex];
+    var kEl = document.getElementById('karakter');
+    kEl.style.left = kp.x + 'px'; kEl.style.top = kp.y + 'px';
+
+    gorevGoster(aktifIndex, true);
+    document.getElementById('hud-toplam').textContent = mToplam;
+    document.getElementById('hud-sari').textContent = mSari;
+    document.getElementById('hud-streak').textContent = mStreak;
+
+    return aktifIndex;
+  }
+  function gorevGoster(i, sessiz) {
+    var d = DUNYALAR[dunya], a = d.asamalar[i]; if (!a) return;
+    var deger = Math.min(asamaIlerlemeDegeri(a), a.hedef), pct = Math.round((deger / a.hedef) * 100);
+    var tamam = deger >= a.hedef;
+    document.getElementById('gorev-karti').innerHTML =
+      '<div class="gorev-baslik"><span class="gorev-ikon">' + a.ikon + '</span><span class="gorev-ad">' + a.ad + '</span></div>'
+      + '<div class="gorev-aciklama">' + a.aciklama + '</div>'
+      + '<div class="gorev-bar"><div class="gorev-bar-ic" style="width:' + pct + '%;"></div></div>'
+      + '<div class="gorev-durum">' + (tamam ? '✅ Tamamlandı' : deger + ' / ' + a.hedef + ' ' + a.birim) + '</div>';
+  }
+  function aktifIndexHesapla() {
+    var d = DUNYALAR[dunya];
+    for (var i = 0; i < d.asamalar.length; i++) { if (asamaIlerlemeDegeri(d.asamalar[i]) < d.asamalar[i].hedef) return i; }
+    return d.asamalar.length - 1;
+  }
+  function seriGirMacera() {
+    var d = DUNYALAR[dunya];
+    var oncekiAktif = aktifIndexHesapla();
+    var oncekiTamamMi = asamaIlerlemeDegeri(d.asamalar[oncekiAktif]) >= d.asamalar[oncekiAktif].hedef;
+
+    var oklar = seriUret(7.4), toplam = seriToplamHesap(oklar);
+    mAtis += oklar.length; mToplam += toplam;
+    oklar.forEach(function (o) { if (o.deger === 0) mStreak = 0; else mStreak++; if (o.deger >= 9) mSari++; if (o.etiket === 'X') mX++; });
+
+    document.getElementById('son-seri-macera').innerHTML =
+      '<div class="ok-row" style="margin-top:10px;">' + oklar.map(function (o, idx) { return okChipHTML(o, idx * 60); }).join('') + '</div>'
+      + '<div class="seri-toplam">Bu serin: <b>' + toplam + '</b> puan</div>';
+
+    var yeniAktif = yolCiz();
+    var yeniTamamMi = asamaIlerlemeDegeri(d.asamalar[oncekiAktif]) >= d.asamalar[oncekiAktif].hedef;
+    if (!oncekiTamamMi && yeniTamamMi) {
+      var tumTamam = d.asamalar.every(function (a) { return asamaIlerlemeDegeri(a) >= a.hedef; });
+      toast(tumTamam ? '🎉 Macera tamamlandı! Harika iş çıkardın!' : '⭐ Yeni görev açıldı!');
+      var sahneRect = document.getElementById('sahne').getBoundingClientRect();
+      konfetiPatlat(sahneRect.left + sahneRect.width / 2, sahneRect.top + 80, tumTamam ? 34 : 18);
+    }
+  }
+  function maceraSifirla() { mToplam = 0; mSari = 0; mStreak = 0; mX = 0; mAtis = 0; document.getElementById('son-seri-macera').innerHTML = ''; yolCiz(); }
+
+  // ilk çizim
+  raceGuncelle();
+  dekorCiz();
+  window.addEventListener('resize', yolCiz);
+  yolCiz();
+</script>

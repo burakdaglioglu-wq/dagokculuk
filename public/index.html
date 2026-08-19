@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAĞ Spor Kulübü — Okçuluk</title>
+<meta name="description" content="DAĞ Spor Kulübü'nde okçuluk: minik yaşlardan yarışma seviyesine, disiplinle ve kişiye özel takiple ilerleyen bir okçuluk topluluğu. Pendik, İstanbul.">
+<meta property="og:title" content="DAĞ Spor Kulübü — Okçuluk">
+<meta property="og:description" content="Her okun bir hikayesi var. Seninkini birlikte yazalım. Pendik'te lisanslı okçuluk eğitimi.">
+<meta property="og:image" content="https://dagsk.burakdaglioglu.workers.dev/tanitim-logo.png">
+<link rel="icon" href="tanitim-logo.png">
+<link rel="apple-touch-icon" href="tanitim-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SportsActivityLocation",
+  "name": "Dağ Okçuluk - Pendik Dağ Spor KULÜBÜ",
+  "image": "https://dagsk.burakdaglioglu.workers.dev/tanitim-logo.png",
+  "telephone": "+905469107893",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Yeni, Zişan Sokağı No:3",
+    "addressLocality": "Pendik",
+    "addressRegion": "İstanbul",
+    "postalCode": "34893",
+    "addressCountry": "TR"
+  },
+  "url": "https://dagsporkulubu.com",
+  "sameAs": ["https://www.instagram.com/dagokculuk/"],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5.0",
+    "reviewCount": "74"
+  }
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
+<style>
+  :root{
+    --bg:#0a0a0c; --bg-alt:#111114; --panel:rgba(255,255,255,0.04); --ink:#f5f5f6; --ink-soft:#9a9aa3;
+    --line:rgba(255,255,255,0.10); --accent:#ff6a1a; --accent-2:#ffd166;
+  }
+  *{box-sizing:border-box; margin:0;}
+  html{ scroll-behavior:smooth; }
+  body{ background:var(--bg); color:var(--ink); font-family:'Poppins',-apple-system,sans-serif; line-height:1.5; }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 28px; }
+  a{ color:inherit; text-decoration:none; }
+  section{ position:relative; }
+  h1,h2,h3{ text-wrap:balance; }
+  img{ max-width:100%; }
+
+  /* NAV */
+  header.nav{
+    position:sticky; top:0; z-index:40; background:rgba(10,10,12,0.72); backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 28px; gap:20px; }
+  .nav-logo{ display:flex; align-items:center; gap:10px; font-weight:900; font-size:15px; letter-spacing:1.5px; }
+  .nav-logo img{ height:38px; width:auto; }
+  .nav-links{ display:flex; gap:26px; font-size:13.5px; font-weight:600; color:var(--ink-soft); }
+  .nav-links a:hover{ color:var(--accent); }
+  .nav-cta{
+    background:var(--accent); color:#fff; padding:9px 18px; border-radius:9px; font-weight:700; font-size:13px;
+    box-shadow:0 6px 18px rgba(255,106,26,0.3); white-space:nowrap;
+  }
+  @media (max-width:760px){ .nav-links{ display:none; } }
+
+  /* HERO */
+  .hero{ padding:76px 0 90px; overflow:hidden; }
+  .hero-grid{ display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center; }
+  @media (max-width:860px){ .hero-grid{ grid-template-columns:1fr; } .hero{ padding:50px 0 60px; } }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px; font-size:11.5px; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent); background:rgba(255,106,26,0.10); border:1px solid rgba(255,106,26,0.3);
+    padding:6px 13px; border-radius:20px; margin-bottom:22px;
+  }
+  .hero h1{ font-size:44px; font-weight:900; line-height:1.14; letter-spacing:-.01em; margin-bottom:20px; }
+  .hero h1 span{
+    background-image:linear-gradient(120deg,#ffb36b 0%, var(--accent) 45%, var(--accent-2) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p{ font-size:16.5px; color:var(--ink-soft); max-width:46ch; margin-bottom:32px; }
+  .hero-cta-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn-birincil{
+    background:linear-gradient(135deg,var(--accent),#ff8c42); color:#fff; border:none;
+    padding:15px 26px; border-radius:12px; font-weight:800; font-size:14.5px; cursor:pointer; display:inline-block;
+    box-shadow:0 12px 30px rgba(255,106,26,0.32);
+  }
+  .btn-ikincil{
+    background:transparent; color:var(--ink); border:1.5px solid var(--line);
+    padding:15px 26px; border-radius:12px; font-weight:700; font-size:14.5px; cursor:pointer; display:inline-block;
+  }
+  .hero-logo-wrap{ display:flex; justify-content:center; }
+  .hero-logo-wrap img{ width:100%; max-width:340px; filter:drop-shadow(0 20px 50px rgba(255,106,26,0.25)); }
+
+  /* BOLUM */
+  .bolum{ padding:76px 0; border-top:1px solid var(--line); }
+  .bolum-alt{ background:var(--bg-alt); }
+  .bolum-baslik-grup{ max-width:600px; margin-bottom:44px; }
+  .bolum-etiket{ font-size:11.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+  .bolum-baslik{ font-size:29px; font-weight:900; letter-spacing:-.01em; margin-bottom:10px; }
+  .bolum-metin{ color:var(--ink-soft); font-size:15px; }
+
+  .deger-izgara{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:760px){ .deger-izgara{ grid-template-columns:1fr; } }
+  .deger-kart{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 22px; }
+  .deger-ikon{ font-size:26px; margin-bottom:14px; }
+  .deger-baslik{ font-weight:800; font-size:15.5px; margin-bottom:8px; }
+  .deger-metin{ font-size:13.5px; color:var(--ink-soft); }
+
+  /* VIZYON */
+  .vizyon-grid{ display:grid; grid-template-columns:0.5fr 1fr; gap:44px; align-items:center; }
+  @media (max-width:760px){ .vizyon-grid{ grid-template-columns:1fr; text-align:center; } }
+  .vizyon-grid img{ width:100%; max-width:220px; margin:0 auto; display:block; }
+  .vizyon-alinti{
+    font-size:22px; font-weight:700; font-style:italic; color:var(--accent-2); line-height:1.4;
+    border-left:3px solid var(--accent); padding-left:20px; margin:24px 0;
+  }
+  @media (max-width:760px){ .vizyon-alinti{ border-left:none; border-top:3px solid var(--accent); padding-left:0; padding-top:16px; } }
+  .vizyon-metin{ font-size:15px; color:var(--ink-soft); line-height:1.7; }
+
+  /* PROGRAMLAR */
+  .grup-izgara{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:860px){ .grup-izgara{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .grup-izgara{ grid-template-columns:1fr; } }
+  .grup-kart{ border:1px solid var(--line); border-radius:16px; padding:24px 20px; position:relative; overflow:hidden; background:var(--panel); }
+  .grup-kart::before{ content:''; position:absolute; top:-30%; right:-30%; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle, rgba(255,106,26,0.16), transparent 70%); }
+  .grup-ikon{ font-size:26px; margin-bottom:10px; }
+  .grup-ad{ font-weight:800; font-size:15px; margin-bottom:6px; }
+  .grup-aciklama{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+
+  /* GOOGLE YORUMLARI */
+  .google-ust{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:28px; }
+  .google-puan-buyuk{ font-size:44px; font-weight:900; color:var(--accent-2); }
+  .google-yildiz{ color:#ffb703; font-size:18px; letter-spacing:2px; }
+  .google-ust-detay{ font-size:13px; color:var(--ink-soft); }
+  .yorum-slayt{ position:relative; max-width:640px; margin:0 auto; }
+  .yorum-slayt-ok{ position:absolute; top:50%; transform:translateY(-50%); background:var(--panel); border:1px solid var(--line); color:var(--ink); width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer; z-index:2; }
+  .yorum-slayt-onceki{ left:-52px; } .yorum-slayt-sonraki{ right:-52px; }
+  @media (max-width:760px){ .yorum-slayt-onceki{ left:-6px; } .yorum-slayt-sonraki{ right:-6px; } }
+  .yorum-noktalar{ display:flex; justify-content:center; gap:6px; margin-top:16px; }
+  .yorum-nokta{ width:7px; height:7px; border-radius:50%; background:var(--line); cursor:pointer; border:none; padding:0; }
+  .yorum-nokta.aktif{ background:var(--accent); }
+  .yorum-kart{ animation:yorumFadeIn .4s ease; }
+  @keyframes yorumFadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+  .yorum-kart{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:10px; }
+  .yorum-ust{ display:flex; align-items:center; gap:10px; }
+  .yorum-avatar{ width:36px; height:36px; border-radius:50%; background:var(--line); object-fit:cover; flex-shrink:0; }
+  .yorum-yazar{ font-weight:700; font-size:13.5px; }
+  .yorum-zaman{ font-size:11px; color:var(--ink-soft); }
+  .yorum-yildiz{ color:#ffb703; font-size:13px; letter-spacing:1px; }
+  .yorum-metin{ font-size:13px; color:var(--ink-soft); line-height:1.55; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+  .google-attrib{ display:flex; align-items:center; gap:16px; margin-top:24px; font-size:12.5px; color:var(--ink-soft); }
+  .google-attrib a{ color:var(--accent); font-weight:700; }
+  #yorum-durum{ font-size:13px; color:var(--ink-soft); }
+
+  /* ILETISIM */
+  .iletisim-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px){ .iletisim-grid{ grid-template-columns:1fr; } }
+  .iletisim-kart{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px;
+    display:flex; align-items:flex-start; gap:14px;
+  }
+  .iletisim-ikon{ font-size:20px; flex-shrink:0; }
+  .iletisim-baslik{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:5px; }
+  .iletisim-deger{ font-size:14.5px; font-weight:600; }
+  .iletisim-deger a{ color:var(--accent-2); }
+  .harita-cerceve{ margin-top:16px; border-radius:16px; overflow:hidden; border:1px solid var(--line); aspect-ratio:16/6; }
+  @media (max-width:700px){ .harita-cerceve{ aspect-ratio:4/5; } }
+  .harita-cerceve iframe{ width:100%; height:100%; border:0; display:block; }
+
+  /* GALERI */
+  .galeri-izgara{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .galeri-izgara{ grid-template-columns:repeat(2,1fr); } }
+  .galeri-izgara-cim{ grid-template-columns:repeat(4,1fr); }
+  @media (max-width:860px){ .galeri-izgara-cim{ grid-template-columns:repeat(2,1fr); } }
+  .galeri-kare{ position:relative; aspect-ratio:1; border-radius:14px; overflow:hidden; cursor:pointer; border:1px solid var(--line); background:var(--panel); }
+  .galeri-kare img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease; }
+  .galeri-kare:hover img{ transform:scale(1.07); }
+  .galeri-kare::after{ content:'🔍'; position:absolute; right:8px; bottom:8px; font-size:13px; background:rgba(0,0,0,0.5); border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .25s; }
+  .galeri-kare:hover::after{ opacity:1; }
+
+  /* LIGHTBOX */
+  #lightbox{ display:none; position:fixed; inset:0; z-index:500; background:rgba(5,5,6,0.94); align-items:center; justify-content:center; padding:30px; }
+  #lightbox.acik{ display:flex; }
+  #lightbox img{ max-width:min(90vw,900px); max-height:80vh; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .lightbox-kapat{ position:absolute; top:22px; right:26px; background:rgba(255,255,255,0.1); border:1px solid var(--line); color:var(--ink); width:40px; height:40px; border-radius:50%; font-size:18px; cursor:pointer; }
+  .lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.1); border:1px solid var(--line); color:var(--ink); width:46px; height:46px; border-radius:50%; font-size:20px; cursor:pointer; }
+  .lightbox-onceki{ left:20px; } .lightbox-sonraki{ right:20px; }
+  @media (max-width:640px){ .lightbox-nav{ width:38px; height:38px; font-size:16px; } .lightbox-onceki{ left:6px; } .lightbox-sonraki{ right:6px; } }
+
+  /* YUZEN WHATSAPP + SABIT MOBIL CTA */
+  .yuzen-whatsapp{
+    position:fixed; right:20px; bottom:20px; z-index:300; width:56px; height:56px; border-radius:50%;
+    background:#25D366; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 22px rgba(37,211,102,0.45); animation:wpNabizAna 2.4s ease-in-out infinite;
+  }
+  @keyframes wpNabizAna{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.07); } }
+  .sabit-mobil-cta{ display:none; }
+  @media (max-width:760px){
+    .yuzen-whatsapp{ bottom:78px; width:48px; height:48px; }
+    .yuzen-whatsapp svg{ width:24px; height:24px; }
+    .sabit-mobil-cta{
+      display:block; position:fixed; left:0; right:0; bottom:0; z-index:290;
+      background:linear-gradient(135deg,var(--accent),#ff8c42); padding:13px; text-align:center;
+      box-shadow:0 -6px 18px rgba(0,0,0,0.35);
+    }
+    .sabit-mobil-cta a{ color:#0a0a0c; font-weight:800; font-size:13.5px; }
+    body{ padding-bottom:52px; }
+  }
+
+  /* SPORCU YOLCULUGU */
+  .yolculuk{ display:flex; justify-content:space-between; position:relative; margin-top:10px; }
+  .yolculuk::before{ content:''; position:absolute; top:23px; left:6%; right:6%; height:2px; background:var(--line); }
+  .yolculuk-adim{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; text-align:center; }
+  .yolculuk-nokta{ width:48px; height:48px; border-radius:50%; background:var(--bg-alt); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .yolculuk-baslik{ font-size:12.5px; font-weight:800; }
+  .yolculuk-etiket{ font-size:11px; color:var(--ink-soft); max-width:14ch; }
+  @media (max-width:700px){ .yolculuk{ flex-direction:column; gap:22px; align-items:flex-start; } .yolculuk::before{ display:none; } .yolculuk-adim{ flex-direction:row; text-align:left; } }
+
+  /* CANLI KULUP NABZI */
+  .nabiz-izgara{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media (max-width:700px){ .nabiz-izgara{ grid-template-columns:1fr 1fr; } }
+  .nabiz-kutu{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 16px; text-align:center; }
+  .nabiz-deger{ font-size:28px; font-weight:900; color:var(--accent-2); font-variant-numeric:tabular-nums; }
+  .nabiz-etiket{ font-size:11px; color:var(--ink-soft); margin-top:4px; }
+  .nabiz-not{ text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:16px; }
+
+  /* INSTAGRAM KARTI */
+  .insta-kart{ max-width:360px; margin:0 auto; background:linear-gradient(135deg, #F58529, #DD2A7B, #8134AF, #515BD4); padding:2px; border-radius:18px; }
+  .insta-ic{ background:var(--bg); border-radius:16px; padding:28px 24px; text-align:center; }
+  .insta-ic .ikon{ font-size:34px; margin-bottom:10px; }
+  .insta-ic .kullanici{ font-weight:800; font-size:16px; margin-bottom:4px; }
+  .insta-ic .aciklama2{ font-size:13px; color:var(--ink-soft); margin-bottom:18px; }
+  .insta-btn{ display:inline-block; background:linear-gradient(135deg, #F58529, #DD2A7B); color:#fff; padding:11px 24px; border-radius:10px; font-weight:800; font-size:13px; text-decoration:none; }
+
+  /* SCROLL-REVEAL */
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.9,.25,1); }
+  .reveal.gorunur{ opacity:1; transform:translateY(0); }
+  @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1 !important; transform:none !important; transition:none !important; } }
+
+  /* HIZLI BRANS GECIS BARI */
+  .hizli-gecis-bar{
+    position:fixed; top:65px; left:0; right:0; z-index:80; display:flex; justify-content:center; gap:8px;
+    padding:10px; background:rgba(10,10,12,0.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+    transform:translateY(-140px); transition:transform .3s ease;
+  }
+  .hizli-gecis-bar.gorunur{ transform:translateY(0); }
+  .hizli-gecis-bar a{ background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:7px 14px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
+  @media (max-width:600px){ .hizli-gecis-bar a{ padding:6px 10px; font-size:11px; } }
+
+  /* SKELETON YUKLEME */
+  .skel-satir, .skel-avatar, .nabiz-kutu.skel .nabiz-deger{
+    background:linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.14) 37%, rgba(255,255,255,0.06) 63%);
+    background-size:400% 100%; animation:skelAnim 1.4s ease infinite; border-radius:6px; color:transparent !important;
+  }
+  @keyframes skelAnim{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
+  .skel-satir{ height:12px; margin-bottom:10px; }
+  .skel-avatar{ width:36px; height:36px; border-radius:50%; }
+
+  /* FOOTER */
+  footer{ padding:50px 0 34px; border-top:1px solid var(--line); }
+  .footer-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:36px; margin-bottom:34px; }
+  @media (max-width:700px){ .footer-grid{ grid-template-columns:1fr; } }
+  .footer-logo{ font-weight:900; letter-spacing:2px; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .footer-logo img{ height:34px; width:auto; }
+  .footer-tagline{ font-size:12.5px; color:var(--ink-soft); max-width:32ch; }
+  .footer-col-baslik{ font-size:11.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+  .footer-col a{ display:block; font-size:13.5px; margin-bottom:9px; color:var(--ink-soft); }
+  .footer-col a:hover{ color:var(--accent); }
+  .footer-alt{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--ink-soft); padding-top:22px; border-top:1px solid var(--line); }
+  .footer-alt a{ color:var(--accent); font-weight:700; }
+
+  /* ===== HERO — YILDIZ TARLASI + HEDEF ===== */
+  @media (prefers-reduced-motion: reduce){ .arka-yazi, .yildiz-ok, .sonar-halka, .ok-yaklasan, .carpma-flash, .kurdele-donen, .kurdele-iz, .kurdele-tutamac{ animation:none !important; } }
+  .hero-yildiz{ position:relative; padding:76px 0 90px; overflow:hidden; }
+  @media (max-width:860px){ .hero-yildiz{ padding:50px 0 60px; } }
+  .hero-yildiz-grid{ position:relative; z-index:5; display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center; }
+  @media (max-width:860px){ .hero-yildiz-grid{ grid-template-columns:1fr; } }
+  .hero-poster{ font-size:clamp(36px,5.4vw,58px); font-weight:900; line-height:1.02; letter-spacing:-.01em; margin-bottom:20px; text-transform:uppercase; }
+  .hero-poster .accent{
+    background-image:linear-gradient(120deg,#ffb36b 0%, var(--accent) 45%, var(--accent-2) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .arka-yazi{ position:absolute; z-index:1; font-weight:900; text-transform:uppercase; color:rgba(255,255,255,0.045); white-space:nowrap; letter-spacing:.02em; user-select:none; pointer-events:none; font-size:9.5vw; top:15%; left:-8%; animation:arkaYaziKay 30s linear infinite; }
+  @keyframes arkaYaziKay{ from{ transform:translateX(0); } to{ transform:translateX(-8%); } }
+  .yildiz-katman{ position:absolute; inset:0; z-index:2; pointer-events:none; overflow:hidden; }
+  .yildiz-ok{ position:absolute; opacity:0; will-change:transform,opacity; }
+  @keyframes yildizKay{ 0%{transform:translate(0,0); opacity:0;} 10%{opacity:.55;} 90%{opacity:.55;} 100%{transform:translate(var(--dx),var(--dy)); opacity:0;} }
+  @keyframes yildizTwinkle{ 0%,100%{ opacity:0; } 50%{ opacity:0.7; } }
+
+  .hedef-sahne{ position:relative; z-index:5; width:100%; max-width:340px; aspect-ratio:1; margin:0 auto; }
+  .hedef-sahne svg{ width:100%; height:100%; filter:drop-shadow(0 0 40px rgba(255,106,26,0.3)); }
+  .sonar-halka{ position:absolute; inset:0; border-radius:50%; border:2px solid var(--accent); opacity:0; }
+  .sonar-halka.oynuyor{ animation:sonarNabiz 2.4s ease-out infinite; }
+  @keyframes sonarNabiz{ 0%{ transform:scale(0.6); opacity:0.7; } 100%{ transform:scale(1.6); opacity:0; } }
+  .ok-yaklasan{ position:absolute; left:50%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; opacity:0; z-index:4; }
+  .ok-yaklasan.gidiyor{ animation:okYaklas 2.6s cubic-bezier(.3,.6,.3,1) infinite; }
+  @keyframes okYaklas{
+    0%{ transform:translate(110px,-90px) scale(0.3) rotate(142deg); opacity:0; }
+    8%{ opacity:1; }
+    82%{ transform:translate(0,0) scale(2.2) rotate(142deg); opacity:1; }
+    92%{ opacity:0; transform:translate(0,0) scale(2.7) rotate(142deg); }
+    100%{ opacity:0; }
+  }
+  .carpma-flash{ position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; background:radial-gradient(circle, rgba(255,209,102,0.9), transparent 70%); opacity:0; z-index:4; }
+  .carpma-flash.oynuyor{ animation:carpmaFlash 2.6s ease-out infinite; }
+  @keyframes carpmaFlash{ 0%,78%{ opacity:0; transform:scale(0.5); } 83%{ opacity:1; transform:scale(1.4); } 92%{ opacity:0; transform:scale(2.2); } 100%{ opacity:0; } }
+
+  /* ===== CİMNASTİK — AKAN KURDELE ===== */
+  .cimnastik-bolum{ position:relative; background:#050506; overflow:hidden; padding:76px 0; }
+  .cim-arka-yazi{ color:rgba(255,255,255,0.045); top:20%; }
+  .cimnastik-grid{ position:relative; z-index:5; display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center; }
+  @media (max-width:860px){ .cimnastik-grid{ grid-template-columns:1fr; } }
+  .cim-eyebrow{ color:#1FADA0; background:rgba(31,173,160,0.10); border-color:rgba(31,173,160,0.3); }
+  .btn-cim{
+    display:inline-block; background:linear-gradient(135deg,#1FADA0,#3fd6c6); color:#05201d; border:none;
+    padding:15px 26px; border-radius:12px; font-weight:800; font-size:14.5px; cursor:pointer;
+    box-shadow:0 12px 30px rgba(31,173,160,0.32);
+  }
+  .kurdele-sahne{ position:relative; z-index:5; width:100%; max-width:340px; aspect-ratio:1; margin:0 auto; }
+  .kurdele-donen{ width:100%; height:100%; animation:kurdeleDon 16s linear infinite; filter:drop-shadow(0 0 26px rgba(31,173,160,0.3)); }
+  @keyframes kurdeleDon{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  .kurdele-iz{ stroke-dasharray:60 900; animation:kurdeleAk 3.2s linear infinite; }
+  @keyframes kurdeleAk{ from{ stroke-dashoffset:0; } to{ stroke-dashoffset:-960; } }
+  .kurdele-tutamac{ animation:tutamacNefes 2.4s ease-in-out infinite; transform-origin:center; }
+  @keyframes tutamacNefes{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.18); } }
+
+  /* UZMANLIK ALANLARI HUB */
+  .uzmanlik-izgara{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:860px){ .uzmanlik-izgara{ grid-template-columns:1fr; max-width:420px; margin:0 auto; } }
+  .uzmanlik-kart{ background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:28px 24px; position:relative; overflow:hidden; transition:transform .25s ease, border-color .25s; }
+  .uzmanlik-kart:hover{ transform:translateY(-6px); }
+  .uzmanlik-kart::before{ content:''; position:absolute; top:-40%; right:-30%; width:200px; height:200px; border-radius:50%; opacity:0.14; filter:blur(10px); }
+  .uzmanlik-ikon-wrap{ width:60px; height:60px; border-radius:15px; display:flex; align-items:center; justify-content:center; margin-bottom:18px; position:relative; z-index:2; }
+  .uzmanlik-ikon-wrap svg{ width:30px; height:30px; }
+  .uzmanlik-ikon-yildiz{ position:absolute; top:-4px; right:-4px; font-size:14px; }
+  .uzmanlik-etiket{ font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; position:relative; z-index:2; }
+  .uzmanlik-baslik{ font-size:19px; font-weight:900; margin-bottom:9px; position:relative; z-index:2; }
+  .uzmanlik-metin{ font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:20px; position:relative; z-index:2; }
+  .uzmanlik-cta{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; position:relative; z-index:2; padding:9px 15px; border-radius:9px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <symbol id="ico-arrow" viewBox="0 0 512 512"><path d="M19.656 20.688v36.437L73.5 110.97c6.515-14.93 17.988-27.23 32.313-34.814L50.25 20.686l-30.594.002zm119.47 65.906c-29.312 0-52.876 23.533-52.876 52.844 0 21.654 12.868 40.178 31.406 48.375 1.88-37.477 32.825-67.482 70.656-67.907-7.734-19.565-26.786-33.312-49.187-33.312zm213.843 44.25L312.06 145.47l97.032 253.436 7.5 19.625L397 410.97l-253.28-97.533-14.345 40.97L492.28 494.312l-139.31-363.47zm-163.845 7.72c-29.31 0-52.875 23.563-52.875 52.874 0 24.35 16.282 44.705 38.594 50.906 2.935-34.576 30.61-62.252 65.187-65.188-6.2-22.312-26.553-38.594-50.905-38.594zm113.5 34.53L278.75 273.688l-1.344 5.625-5.625 1.312-100.124 23.53L384.156 386l-81.53-212.906zm-56.5 22.47c-29.31 0-52.875 23.563-52.875 52.874 0 10.896 3.28 20.983 8.875 29.375l59.78-14.063 14.033-59.03c-8.473-5.784-18.724-9.157-29.813-9.157z" transform="rotate(-40 256 256)"/></symbol>
+    <symbol id="ico-star" viewBox="0 0 512 512"><path d="M256 38.013c-22.458 0-66.472 110.3-84.64 123.502-18.17 13.2-136.674 20.975-143.614 42.334-6.94 21.358 84.362 97.303 91.302 118.662 6.94 21.36-22.286 136.465-4.116 149.665 18.17 13.2 118.61-50.164 141.068-50.164 22.458 0 122.9 63.365 141.068 50.164 18.17-13.2-11.056-128.306-4.116-149.665 6.94-21.36 98.242-97.304 91.302-118.663-6.94-21.36-125.444-29.134-143.613-42.335-18.168-13.2-62.182-123.502-84.64-123.502z"/></symbol>
+
+    <radialGradient id="ringOranj" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#ff8c42"/><stop offset="100%" stop-color="#c94d0a"/></radialGradient>
+    <radialGradient id="ringKoyu" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#2a2620"/><stop offset="100%" stop-color="#100e0b"/></radialGradient>
+    <radialGradient id="ringAltin" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#ffe29a"/><stop offset="100%" stop-color="#ffb02e"/></radialGradient>
+    <symbol id="hedef-gorsel" viewBox="0 0 400 400">
+      <circle cx="200" cy="200" r="196" fill="url(#ringOranj)"/>
+      <circle cx="200" cy="200" r="152" fill="url(#ringKoyu)"/>
+      <circle cx="200" cy="200" r="108" fill="url(#ringOranj)"/>
+      <circle cx="200" cy="200" r="64" fill="url(#ringKoyu)"/>
+      <circle cx="200" cy="200" r="28" fill="url(#ringAltin)"/>
+      <ellipse cx="130" cy="110" rx="95" ry="55" fill="#fff" opacity="0.10"/>
+    </symbol>
+
+    <linearGradient id="kurdeleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffdd55"/>
+      <stop offset="45%" stop-color="#1FADA0"/>
+      <stop offset="100%" stop-color="#FF6B5E"/>
+    </linearGradient>
+
+    <symbol id="ico-bow-arrow" viewBox="0 0 512 512"><path d="M331.734 20.443a4.421 4.421 0 0 0-1.802.327c-27.736 11.543-47.295 57.495-29.899 76.671 33.52 38.946 72.835 55.573 90.147 128.434 2.607 20.15 1.218 40.094 0 60.25-17.312 72.861-56.627 89.488-90.147 128.434-17.396 19.176 2.163 65.128 29.899 76.671 9.038 3.762 28.025-26.165 21.752-25.209-16.34 2.491-37.8-20.941-28.387-28.93 38.47-32.65 105.49-100.055 100.277-135.552-2.211-15.057-9.35-30.36-15.574-45.539 6.225-15.18 13.363-30.482 15.574-45.54 5.214-35.496-61.806-102.901-100.277-135.552-9.412-7.988 12.047-31.42 28.387-28.93 5.881.897-10.44-25.35-19.95-25.535zM152 24.23l-21.441 53.602L152 99.273l21.441-21.441zm-9 91.497v296.546l9-9 9 9V115.727l-2.637 2.636-6.363 6.364zm160 9.847v260.824l18-17.53V143.104zM152 428.727l-23 23v38.546l23-23 23 23v-38.546z"/></symbol>
+    <symbol id="ico-balance" viewBox="0 0 512 512"><path d="M134.924 42.201c-8.034.11-27.397 3.323-49.424 6.893l7.604 22.027c43.938-5.873 43.678-7.054 46.89-2.572 32.14 44.839 59.603 88.148 74.676 135.023 32.603 2.41 71.533 9.14 98.31 23.852 34.083-36.34 89.673-55.812 135.497-71.701 12.157-4.216 25.246 7.4 42.47 10.068l4.848-17.264c-4.872-6.815-27.807-16.587-37.338-16.718-4.035-.056-15.496 3.15-18.969 4.341-56.98 11.002-103.367 13.182-162.199 32.575-37.228-37.914-76.205-75.414-120.932-113.803-9.238-7.93-9.691-12.88-21.433-12.72zm83.87 179.617c-14.884 26.18-24.332 32.5-44.718 46.17-17.912-4.68-35.784-9.45-56.758-6.986-21.017-2.805-29.586 4.975-55.086 13.9-7.727-2.6-16.961.997-22.898 3.528-9.757 4.976-21.342 12.282-18.766 24.588 3.949 12.712 20.223 8.898 27.655 5.703 6.245-2.98 12.055-8.777 16.357-13.34 21.38.569 30.874-.128 52.988-9.912 16.743 6.801 37.917 9.505 56.895 9.972a57.14 57.14 0 0 1 3.607-2.476c10.976-6.9 24.287-9.537 36.313-4.77 12.025 4.768 19.744 15.743 22.773 28.196 1.789 7.352 2.081 15.356.856 23.539 4.75 13.328 8.36 25.571 16.906 41.912-5.193 22.78-3.544 45.283-2.262 68.342l-22.781 8.55-4.34 11.069h70.213l-8.137-11.903-16.369-8.257c3.504-23.007 9.628-45.75 6.246-69.446.55-17.704-5.289-35.407-8.748-53.111 21.304-26.239 10.374-44.741 25.3-73.287a112.733 112.733 0 0 1 7.216-11.918c-27.363-11.34-54.484-18.839-82.461-20.063zm-18.15 81.842c-4.054.12-8.442 1.56-12.992 4.42-7.278 4.576-14.383 12.805-18.76 23.463-4.376 10.658-5.073 21.43-3.064 29.687 2.009 8.258 6.29 13.613 12.037 15.891 5.747 2.278 12.612 1.343 19.89-3.232 7.28-4.576 14.386-12.807 18.763-23.465 4.376-10.658 5.071-21.428 3.062-29.686s-6.289-13.614-12.035-15.892c-2.155-.855-4.468-1.258-6.9-1.186z"/></symbol>
+    <symbol id="ico-biceps" viewBox="0 0 512 512"><path d="M211.832 39.06c-15.022 15.31-15.894 22.83-23.473 43.903 2.69 9.14 5.154 16.927 9.148 25.117 5.158.283 10.765.47 15.342.43-6.11-10.208-8.276-19.32-4.733-35.274 4.3 19.05 12.847 29.993 21.203 34.332 3.032-.334 5.957-.714 8.776-1.146-6.255-10.337-8.494-19.47-4.914-35.588 3.897 17.27 11.287 27.876 18.86 32.94 4.658-1.043 9.283-2.243 13.927-3.534-5.517-9.69-7.36-18.692-3.97-33.957 3.357 14.876 9.307 24.81 15.732 30.516 5.095-1.57 9.296-2.898 13.852-4.347-.685-5.782-.416-12.187 1.064-19.115l1.883-8.8 17.603 3.76-1.88 8.804c-3.636 17.008 1.324 24.42 7.306 28.666 5.98 4.244 14.69 3.46 16.03 2.6l7.576-4.86 9.72 15.15c-3.857 2.34-7.9 5.44-11.822 7.06 18.65 27.678 32.183 61.465 24.756 93.55-2.365 9.474-6.03 18.243-11.715 24.986 12.725 12.13 21.215 22.026 31.032 34.5-3.713-2.387-7.586-4.844-11.692-7.37-11.397-7.01-23.832-14.214-34.98-19.802-16.012-7.8-31.367-18.205-47.73-20.523-22.552-2.967-46.27 4.797-73.32 21.06 7.872 8.72 13.282 15.474 20.312 24.288-6.98-4.338-14.652-9.07-23.16-14.23-32.554-17.48-65.39-48.227-100.438-49.99-30.56-1.092-59.952 14.955-89.677 38.568L18 254.293V494h31.963c45.184-17.437 80.287-57.654 97.03-94.52l.25-.564.325-.52c9.463-15.252 11.148-29.688 16.79-44.732 5.645-15.044 16.907-29.718 41.884-38.756 4.353-2.16 5.07-1.415 8.633 1.395 30.468 24.01 57.29 32.02 83.24 32.35 32.61-1.557 58.442-9.882 85.682-19.38-3.966 3.528-8.77 7.21-13.986 10.762-15.323 10.436-34.217 19.928-46.304 24.8-14.716 2.006-28.36 2.416-41.967.616-9.96 12.09-25.574 20.358-37.35 26.673 63.92 14.023 115.88.91 167.386-22.896-9.522-1.817-19.008-3.692-27.994-5.42 31.634-4.422 64.984-3.766 94.705-3.53 4.084-.02 7.213-.453 8.7-.886 14.167-51.072-4.095-97.893-34.294-145.216-30.263-47.425-72.18-94.107-101.896-143.04-21.1-17.257-48.6-31.455-77.522-46.175-20.386 4.25-41.026 9.336-61.443 14.1zm85.385 70.49c-11.678 3.6-23.71 7.425-33.852 10.012 2.527 4.93 3.735 10.664 3.395 16.202 11.028.877 21.082-2.018 28.965-6.356 4.845-2.666 8.74-6.048 11.414-8.96-3.854-2.735-7.26-6.41-9.923-10.9zm-54.213 14.698c-11.76 1.143-24.59 2.362-35.06 2.236 2.39 4.772 3.78 12.067 8.51 14.84 11.18 1.164 20.6 1.997 29.91-1.746 5.435-3.214 1.818-15.058-3.36-15.33zm-34.98 209.332c-17.593 7.233-22.586 15.14-26.813 26.406-3.998 10.66-6.227 25.076-14.48 41.014 32.29-6.38 69.625-21.23 93.852-40.088-17.017-5.098-34.553-13.852-52.557-27.332zm9.318 71.385c-18.723 7.237-40.836 16.144-59.696 14.062C143.774 446.68 124.012 474.03 91.762 494h84.68c21.564-29.798 38.067-56.575 40.9-89.035z"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="nav-row">
+    <div class="nav-logo"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
+    <nav class="nav-links">
+      <a href="#okculuk">Okçuluk</a>
+      <a href="#cimnastik">Cimnastik</a>
+      <a href="#programlar">Programlar</a>
+      <a href="#fotograflar">Fotoğraflar</a>
+      <a href="#yorumlar">Yorumlar</a>
+      <a href="#iletisim">İletişim</a>
+    </nav>
+    <a href="/app.html" class="nav-cta">Üye Girişi</a>
+  </div>
+</header>
+
+<div class="hizli-gecis-bar" id="hizliGecisBar">
+  <a href="#okculuk">🏹 Okçuluk</a>
+  <a href="#cimnastik">🤸 Cimnastik</a>
+  <a href="https://wa.me/905469107893?text=Merhaba%2C%20Performans%20Fitness%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener">⏱️ Performans</a>
+</div>
+
+<section class="bolum" style="padding:52px 0;">
+  <div class="wrap">
+    <div class="bolum-baslik-grup" style="text-align:center; margin:0 auto 32px;">
+      <div class="bolum-etiket">Uzmanlık Alanlarımız</div>
+      <h2 class="bolum-baslik">Hangi alanda ilerlemek istiyorsun?</h2>
+    </div>
+    <div class="uzmanlik-izgara">
+      <a href="#neden" class="uzmanlik-kart reveal" style="text-decoration:none; color:inherit;">
+        <div style="position:absolute; top:-40%; right:-30%; width:200px; height:200px; border-radius:50%; background:var(--accent); opacity:0.14; filter:blur(10px);"></div>
+        <div class="uzmanlik-ikon-wrap" style="background:rgba(255,106,26,0.14);">
+          <svg viewBox="0 0 512 512" fill="#ff6a1a"><use href="#ico-bow-arrow"/></svg>
+        </div>
+        <div class="uzmanlik-etiket" style="color:var(--accent);">🏹 Okçuluk</div>
+        <div class="uzmanlik-baslik">Modern Okçuluk</div>
+        <div class="uzmanlik-metin">Minik yaşlardan yarışma seviyesine, disiplinle ilerleyen okçuluk eğitimi.</div>
+        <span class="uzmanlik-cta" style="background:rgba(255,106,26,0.14); color:var(--accent);">Bilgi Al →</span>
+      </a>
+      <a href="#cimnastik" class="uzmanlik-kart reveal" style="text-decoration:none; color:inherit;">
+        <div style="position:absolute; top:-40%; right:-30%; width:200px; height:200px; border-radius:50%; background:#1FADA0; opacity:0.14; filter:blur(10px);"></div>
+        <div class="uzmanlik-ikon-wrap" style="background:rgba(31,173,160,0.14);">
+          <svg viewBox="0 0 512 512" fill="#1FADA0"><use href="#ico-balance"/></svg>
+        </div>
+        <div class="uzmanlik-etiket" style="color:#1FADA0;">🤸 Cimnastik</div>
+        <div class="uzmanlik-baslik">Milo Fitt Kids</div>
+        <div class="uzmanlik-metin">Denge, esneklik ve özgüveni oyunla birleştiren çocuk cimnastiği.</div>
+        <span class="uzmanlik-cta" style="background:rgba(31,173,160,0.14); color:#1FADA0;">Bilgi Al →</span>
+      </a>
+      <a href="https://wa.me/905469107893?text=Merhaba%2C%20Performans%20Fitness%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener" class="uzmanlik-kart reveal" style="text-decoration:none; color:inherit;">
+        <div style="position:absolute; top:-40%; right:-30%; width:200px; height:200px; border-radius:50%; background:#e63946; opacity:0.14; filter:blur(10px);"></div>
+        <div class="uzmanlik-ikon-wrap" style="background:rgba(230,57,70,0.14);">
+          <span class="uzmanlik-ikon-yildiz">⭐</span>
+          <svg viewBox="0 0 512 512" fill="#e63946"><use href="#ico-biceps"/></svg>
+        </div>
+        <div class="uzmanlik-etiket" style="color:#e63946;">⏱️ Performans</div>
+        <div class="uzmanlik-baslik">Performans Fitness</div>
+        <div class="uzmanlik-metin">Çocuklarda koordinasyon, denge, duyusal algı ve güç kazanımı — sağlıklı gelişimi destekleyen bireysel programlarla. Yetişkinler için performans odaklı antrenman da mevcut.</div>
+        <span class="uzmanlik-cta" style="background:rgba(230,57,70,0.14); color:#e63946;">Bilgi Al →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="hero-yildiz" id="okculuk">
+  <div class="arka-yazi">DAĞ SPOR KULÜBÜ · DAĞ SPOR KULÜBÜ</div>
+  <div class="yildiz-katman" id="yildizHero"></div>
+  <div class="wrap hero-yildiz-grid">
+    <div>
+      <div class="eyebrow">🏹 DAĞ Spor Kulübü · Okçuluk Branşı · Pendik</div>
+      <h1 class="hero-poster">ODAKLAN.<br><span class="accent">NİŞAN AL.</span></h1>
+      <p>Minik yaşlardan yarışma seviyesine kadar, disiplinle ve kişiye özel takiple ilerleyen bir okçuluk topluluğu. Attığın her ok kayıt altında, her gelişim adımı görünür.</p>
+      <div class="hero-cta-row">
+        <a href="https://wa.me/905469107893?text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." class="btn-birincil" target="_blank" rel="noopener">🎯 Ücretsiz Deneme Dersi</a>
+        <a href="#programlar" class="btn-ikincil">Programları Gör</a>
+      </div>
+    </div>
+    <div class="hedef-sahne">
+      <div class="sonar-halka oynuyor"></div>
+      <div class="sonar-halka oynuyor" style="animation-delay:1.2s;"></div>
+      <svg viewBox="0 0 400 400"><use href="#hedef-gorsel"/></svg>
+      <svg class="ok-yaklasan gidiyor" viewBox="0 0 512 512" fill="#ffd166"><use href="#ico-arrow"/></svg>
+      <div class="carpma-flash oynuyor"></div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt" id="fotograflar">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">Fotoğraflar</div>
+      <h2 class="bolum-baslik">Kulüpten kareler</h2>
+    </div>
+    <div class="galeri-izgara">
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',0)"><img src="/galeri/okculuk-1.jpg" alt="DAĞ Okçuluk — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',1)"><img src="/galeri/okculuk-2.jpg" alt="DAĞ Okçuluk — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',2)"><img src="/galeri/okculuk-3.jpg" alt="DAĞ Okçuluk — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',3)"><img src="/galeri/okculuk-4.jpg" alt="DAĞ Okçuluk — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',4)"><img src="/galeri/okculuk-5.jpg" alt="DAĞ Okçuluk — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('okculuk',5)"><img src="/galeri/okculuk-6.jpg" alt="DAĞ Okçuluk — kayıt afişi" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section class="cimnastik-bolum" id="cimnastik">
+  <div class="arka-yazi cim-arka-yazi">MILO FITT KIDS · MILO FITT KIDS</div>
+  <div class="yildiz-katman" id="yildizCim"></div>
+  <div class="wrap cimnastik-grid">
+    <div>
+      <img src="/milo-logo.png" alt="MILO FITT KIDS logosu" style="height:64px; width:auto; margin-bottom:18px; filter:drop-shadow(0 6px 16px rgba(31,173,160,0.25));">
+      <div class="eyebrow cim-eyebrow">🤸 MILO FITT KIDS · Cimnastik Branşı</div>
+      <h2 class="bolum-baslik" style="font-size:clamp(26px,3.4vw,34px);">Her hareket, <span style="color:#1FADA0;">bir sanat.</span></h2>
+      <p class="bolum-metin" style="max-width:46ch; margin:14px 0 28px; font-size:15px;">Denge, esneklik ve özgüveni oyunla birleştiren, minik yaşlardan başlayan bir cimnastik topluluğu — aynı çatı altında, ayrı bir dünya.</p>
+      <a href="/milo/" class="btn-cim">Milo Fitt Kids'i Keşfet →</a>
+    </div>
+    <div class="kurdele-sahne">
+      <svg class="kurdele-donen" viewBox="0 0 400 400">
+        <path d="M200,200 C260,120 340,120 340,200 C340,280 260,280 200,200 C140,120 60,120 60,200 C60,280 140,280 200,200 Z"
+              fill="none" stroke="url(#kurdeleGrad)" stroke-width="7" stroke-linecap="round" opacity="0.4"/>
+        <path class="kurdele-iz" d="M200,200 C260,120 340,120 340,200 C340,280 260,280 200,200 C140,120 60,120 60,200 C60,280 140,280 200,200 Z"
+              fill="none" stroke="url(#kurdeleGrad)" stroke-width="7" stroke-linecap="round"/>
+        <circle class="kurdele-tutamac" cx="200" cy="200" r="10" fill="#ffdd55"/>
+      </svg>
+    </div>
+  </div>
+  <div class="wrap" style="position:relative; z-index:5; margin-top:44px;">
+    <div class="galeri-izgara galeri-izgara-cim">
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',0)"><img src="/galeri/milo-4.jpg" alt="MILO FITT KIDS — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',1)"><img src="/galeri/milo-5.jpg" alt="MILO FITT KIDS — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',2)"><img src="/galeri/milo-6.jpg" alt="MILO FITT KIDS — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',3)"><img src="/galeri/milo-7.jpg" alt="MILO FITT KIDS — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',4)"><img src="/galeri/milo-8.jpg" alt="MILO FITT KIDS — kulüpten kare" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',5)"><img src="/galeri/milo-1.jpg" alt="MILO FITT KIDS — tanıtım görseli" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',6)"><img src="/galeri/milo-2.jpg" alt="MILO FITT KIDS — tanıtım görseli" loading="lazy"></div>
+      <div class="galeri-kare reveal" onclick="galeriAc('milo',7)"><img src="/galeri/milo-3.jpg" alt="MILO FITT KIDS — tanıtım görseli" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt" id="neden">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">Neden Biz</div>
+      <h2 class="bolum-baslik">Okçuluğa farklı bakıyoruz</h2>
+      <p class="bolum-metin">Genel bir spor okulu değiliz — her sporcunun gelişimini ayrı ayrı takip eden, teknik odaklı bir kulübüz.</p>
+    </div>
+    <div class="deger-izgara">
+      <div class="deger-kart reveal"><div class="deger-ikon">📈</div><div class="deger-baslik">Her antrenman kayıt altında</div><div class="deger-metin">Attığın her ok, her seri raporlanıyor — gelişimin rakamlarla önümüzde.</div></div>
+      <div class="deger-kart reveal"><div class="deger-ikon">🧑‍🏫</div><div class="deger-baslik">Kişiye özel teknik takip</div><div class="deger-metin">Genel bir program değil, senin seviyene göre şekillenen bir eğitim yolu.</div></div>
+      <div class="deger-kart reveal"><div class="deger-ikon">👨‍👩‍👧</div><div class="deger-baslik">Veliler süreçte, dışarıda değil</div><div class="deger-metin">Çocuğunuzun gelişim raporu düzenli ve anlaşılır şekilde sizinle paylaşılıyor.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt">
+  <div class="wrap">
+    <div class="bolum-baslik-grup" style="text-align:center; margin:0 auto 28px;">
+      <div class="bolum-etiket">Canlı Kulüp Nabzı</div>
+      <h2 class="bolum-baslik">Bu ay kulüpte gerçekten olanlar</h2>
+    </div>
+    <div class="nabiz-izgara" id="nabiz-izgara">
+      <div class="nabiz-kutu skel"><div class="nabiz-deger">000</div><div class="nabiz-etiket skel-satir" style="width:60%; margin:6px auto 0;"></div></div>
+      <div class="nabiz-kutu skel"><div class="nabiz-deger">000</div><div class="nabiz-etiket skel-satir" style="width:60%; margin:6px auto 0;"></div></div>
+      <div class="nabiz-kutu skel"><div class="nabiz-deger">000</div><div class="nabiz-etiket skel-satir" style="width:60%; margin:6px auto 0;"></div></div>
+      <div class="nabiz-kutu skel"><div class="nabiz-deger">000</div><div class="nabiz-etiket skel-satir" style="width:60%; margin:6px auto 0;"></div></div>
+    </div>
+    <div class="nabiz-not">*Uygulamamızdan çekilen gerçek, güncel veriler — uydurma değil.</div>
+  </div>
+</section>
+
+<section class="bolum">
+  <div class="wrap vizyon-grid">
+    <img src="tanitim-logo.png" alt="DAĞ Okçuluk rozeti">
+    <div>
+      <div class="bolum-etiket">Vizyonumuz</div>
+      <h2 class="bolum-baslik">Karakter inşa eden bir yolculuk</h2>
+      <div class="vizyon-alinti">"İyi bir okçu, dürüst olandır."</div>
+      <p class="vizyon-metin">DAĞ Spor Kulübü'nde okçuluğu sadece bir spor değil, karakter inşa eden bir yolculuk olarak görüyoruz. Her sporcumuzun kendi hızında, kendi hedefleriyle ilerlediği; disiplinin, sabrın ve dürüstlüğün teknikten önce geldiği bir ortam sunuyoruz. Amacımız sadece iyi okçular değil, iyi insanlar yetiştirmek.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt" id="programlar">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">Programlar</div>
+      <h2 class="bolum-baslik">Her yaşa uygun bir grup var</h2>
+    </div>
+    <div class="grup-izgara">
+      <div class="grup-kart reveal"><div class="grup-ikon">🌱</div><div class="grup-ad">Minikler</div><div class="grup-aciklama">İlk temas, temel duruş ve oyunla öğrenme.</div></div>
+      <div class="grup-kart reveal"><div class="grup-ikon">🟢</div><div class="grup-ad">Küçükler</div><div class="grup-aciklama">Teknik temeller ve düzenli antrenman alışkanlığı.</div></div>
+      <div class="grup-kart reveal"><div class="grup-ikon">⭐</div><div class="grup-ad">Yıldızlar</div><div class="grup-aciklama">Performans gelişimi ve ilk yarışma deneyimleri.</div></div>
+      <div class="grup-kart reveal"><div class="grup-ikon">🔵</div><div class="grup-ad">Büyükler</div><div class="grup-aciklama">İleri teknik, yarışma ve süreklilik.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">Sporcu Yolculuğu</div>
+      <h2 class="bolum-baslik">Bugün başlarsın, yıllar içinde nereye varırsın</h2>
+    </div>
+    <div class="yolculuk">
+      <div class="yolculuk-adim reveal"><div class="yolculuk-nokta">🌱</div><div class="yolculuk-baslik">Minik</div><div class="yolculuk-etiket">İlk temas</div></div>
+      <div class="yolculuk-adim reveal"><div class="yolculuk-nokta">🟢</div><div class="yolculuk-baslik">Küçük</div><div class="yolculuk-etiket">Teknik temel</div></div>
+      <div class="yolculuk-adim reveal"><div class="yolculuk-nokta">⭐</div><div class="yolculuk-baslik">Yıldız</div><div class="yolculuk-etiket">İlk yarışma</div></div>
+      <div class="yolculuk-adim reveal"><div class="yolculuk-nokta">🔵</div><div class="yolculuk-baslik">Büyük</div><div class="yolculuk-etiket">Süreklilik</div></div>
+      <div class="yolculuk-adim reveal"><div class="yolculuk-nokta" style="border-color:var(--accent-2);">🏆</div><div class="yolculuk-baslik">Yarışmacı</div><div class="yolculuk-etiket">Zirve</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum" id="yorumlar">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">Bizi Duyanlar</div>
+      <h2 class="bolum-baslik">Google'da bizim hakkımızda ne diyorlar</h2>
+    </div>
+    <div id="yorum-durum" style="max-width:640px; margin:0 auto;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;"><div class="skel-avatar"></div><div style="flex:1;"><div class="skel-satir" style="width:40%;"></div></div></div>
+      <div class="skel-satir" style="width:100%;"></div>
+      <div class="skel-satir" style="width:92%;"></div>
+      <div class="skel-satir" style="width:70%;"></div>
+    </div>
+    <div id="yorum-icerik" style="display:none;">
+      <div class="google-ust">
+        <div class="google-puan-buyuk" id="google-puan">—</div>
+        <div>
+          <div class="google-yildiz" id="google-yildiz"></div>
+          <div class="google-ust-detay" id="google-detay"></div>
+        </div>
+      </div>
+      <div class="yorum-slayt">
+        <button class="yorum-slayt-ok yorum-slayt-onceki" onclick="yorumGezin(-1)">‹</button>
+        <div id="yorum-tek-kart"></div>
+        <button class="yorum-slayt-ok yorum-slayt-sonraki" onclick="yorumGezin(1)">›</button>
+        <div class="yorum-noktalar" id="yorum-noktalar"></div>
+      </div>
+      <div class="google-attrib">
+        <span>Powered by Google</span>
+        <a href="https://www.google.com/maps/place/?q=place_id:ChIJpRYWXV3DyhQRKjfJEHX9B_E" target="_blank" rel="noopener">Tüm yorumları gör →</a>
+        <a href="https://search.google.com/local/writereview?placeid=ChIJpRYWXV3DyhQRKjfJEHX9B_E" target="_blank" rel="noopener">Yorum yaz</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum">
+  <div class="wrap">
+    <div class="insta-kart">
+      <div class="insta-ic">
+        <div class="ikon">📸</div>
+        <div class="kullanici">@dagokculuk</div>
+        <div class="aciklama2">Antrenmanlardan, yarışmalardan anlık kareler için takipte kal.</div>
+        <a href="https://www.instagram.com/dagokculuk/" target="_blank" rel="noopener" class="insta-btn">Takip Et →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bolum bolum-alt" id="iletisim">
+  <div class="wrap">
+    <div class="bolum-baslik-grup">
+      <div class="bolum-etiket">İletişim</div>
+      <h2 class="bolum-baslik">Bize ulaş, tanışalım</h2>
+    </div>
+    <div class="iletisim-grid">
+      <div class="iletisim-kart">
+        <div class="iletisim-ikon">📍</div>
+        <div><div class="iletisim-baslik">Adres</div><div class="iletisim-deger">Yeni, Zişan Sokağı No:3, 34893 Pendik/İstanbul <a href="https://www.google.com/maps/place/?q=place_id:ChIJpRYWXV3DyhQRKjfJEHX9B_E" target="_blank" rel="noopener">(Yol Tarifi)</a></div></div>
+      </div>
+      <div class="iletisim-kart">
+        <div class="iletisim-ikon">💬</div>
+        <div><div class="iletisim-baslik">WhatsApp / Telefon</div><div class="iletisim-deger"><a href="https://wa.me/905469107893" target="_blank" rel="noopener">0546 910 78 93</a></div></div>
+      </div>
+      <div class="iletisim-kart">
+        <div class="iletisim-ikon">📸</div>
+        <div><div class="iletisim-baslik">Instagram</div><div class="iletisim-deger"><a href="https://www.instagram.com/dagokculuk/" target="_blank" rel="noopener">@dagokculuk</a></div></div>
+      </div>
+      <div class="iletisim-kart">
+        <div class="iletisim-ikon">⭐</div>
+        <div><div class="iletisim-baslik">Google Puanı</div><div class="iletisim-deger">5.0 / 5 (74 değerlendirme)</div></div>
+      </div>
+      <div class="iletisim-kart" style="align-items:center; gap:16px;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=6&data=https%3A%2F%2Fwa.me%2F905469107893%3Ftext%3DMerhaba%2C%2520%25C3%25BCcretsiz%2520deneme%2520dersi%2520almak%2520istiyorum." alt="Deneme dersi WhatsApp QR kodu" style="border-radius:8px; flex-shrink:0;" loading="lazy">
+        <div><div class="iletisim-baslik">Karekod</div><div class="iletisim-deger" style="font-weight:600; font-size:13px;">Telefonunla okut, direkt WhatsApp'tan deneme dersi iste — kartvizit/afişe basılabilir.</div></div>
+      </div>
+    </div>
+    <div class="harita-cerceve">
+      <iframe src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&q=place_id:ChIJpRYWXV3DyhQRKjfJEHX9B_E&language=tr" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    </div>
+  </div>
+</section>
+
+<div id="lightbox">
+  <button class="lightbox-kapat" onclick="galeriKapat()">✕</button>
+  <button class="lightbox-nav lightbox-onceki" onclick="galeriGezin(-1)">‹</button>
+  <img id="lightbox-img" src="" alt="">
+  <button class="lightbox-nav lightbox-sonraki" onclick="galeriGezin(1)">›</button>
+</div>
+
+<a href="https://wa.me/905469107893?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener" class="yuzen-whatsapp" aria-label="WhatsApp'tan yaz">
+  <svg viewBox="0 0 32 32" width="28" height="28" fill="#fff"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.34.66 4.523 1.804 6.383L4 29l7.83-1.762A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3zm6.98 16.646c-.297.837-1.47 1.532-2.408 1.732-.64.135-1.475.243-4.287-.92-3.598-1.49-5.914-5.14-6.096-5.377-.176-.237-1.454-1.936-1.454-3.693 0-1.758.905-2.62 1.226-2.98.32-.36.7-.45.933-.45.234 0 .467.002.67.013.216.01.505-.082.79.603.297.71.966 2.35 1.05 2.52.086.17.144.372.03.61-.117.237-.176.384-.35.594-.174.21-.367.47-.523.63-.176.176-.36.366-.155.72.205.354.912 1.51 1.96 2.446 1.348 1.204 2.484 1.577 2.838 1.753.354.176.56.147.767-.088.207-.235.888-1.034 1.126-1.39.235-.354.47-.294.79-.176.32.118 2.028.958 2.376 1.132.35.176.58.264.667.41.088.147.088.85-.207 1.686z"/></svg>
+</a>
+
+<div class="sabit-mobil-cta">
+  <a href="https://wa.me/905469107893?text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." target="_blank" rel="noopener">🎯 Ücretsiz Deneme Dersi Al</a>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
+        <p class="footer-tagline">Okçuluk · Gelişim · Disiplin. Minik yaşlardan yarışma seviyesine, birlikte ilerliyoruz.</p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-baslik">Site</div>
+        <a href="#okculuk">Okçuluk</a>
+        <a href="#cimnastik">Cimnastik</a>
+        <a href="#programlar">Programlar</a>
+        <a href="#fotograflar">Fotoğraflar</a>
+        <a href="#yorumlar">Yorumlar</a>
+        <a href="#iletisim">İletişim</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-baslik">Kulüp</div>
+        <a href="/app.html">Üye Girişi</a>
+        <a href="https://www.instagram.com/dagokculuk/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://wa.me/905469107893" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+    <div class="footer-alt">
+      <div>© 2026 DAĞ Spor Kulübü</div>
+      <a href="/app.html">Üye Girişi →</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Foto galeri + lightbox
+  var GALERI = {
+    okculuk: ['/galeri/okculuk-1.jpg','/galeri/okculuk-2.jpg','/galeri/okculuk-3.jpg','/galeri/okculuk-4.jpg','/galeri/okculuk-5.jpg','/galeri/okculuk-6.jpg'],
+    milo: ['/galeri/milo-4.jpg','/galeri/milo-5.jpg','/galeri/milo-6.jpg','/galeri/milo-7.jpg','/galeri/milo-8.jpg','/galeri/milo-1.jpg','/galeri/milo-2.jpg','/galeri/milo-3.jpg'],
+  };
+  var _galeriAktifSet = null, _galeriAktifIndex = 0;
+  function galeriAc(set, index){
+    _galeriAktifSet = set; _galeriAktifIndex = index;
+    document.getElementById('lightbox-img').src = GALERI[set][index];
+    document.getElementById('lightbox').classList.add('acik');
+  }
+  function galeriKapat(){ document.getElementById('lightbox').classList.remove('acik'); }
+  function galeriGezin(yon){
+    if(!_galeriAktifSet) return;
+    var liste = GALERI[_galeriAktifSet];
+    _galeriAktifIndex = (_galeriAktifIndex + yon + liste.length) % liste.length;
+    document.getElementById('lightbox-img').src = liste[_galeriAktifIndex];
+  }
+  document.getElementById('lightbox').addEventListener('click', function(e){ if(e.target.id === 'lightbox') galeriKapat(); });
+  document.addEventListener('keydown', function(e){
+    if(!document.getElementById('lightbox').classList.contains('acik')) return;
+    if(e.key === 'Escape') galeriKapat();
+    if(e.key === 'ArrowLeft') galeriGezin(-1);
+    if(e.key === 'ArrowRight') galeriGezin(1);
+  });
+
+  // Kaydirinca beliren kartlar
+  var revealIo = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('gorunur'); revealIo.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(function(el){ revealIo.observe(el); });
+
+  // Hero'yu gectikten sonra beliren hizli branş geçiş barı
+  var hizliBar = document.getElementById('hizliGecisBar');
+  var heroEl = document.getElementById('okculuk');
+  if(hizliBar && heroEl){
+    window.addEventListener('scroll', function(){
+      hizliBar.classList.toggle('gorunur', window.scrollY > heroEl.offsetHeight - 100);
+    }, { passive: true });
+  }
+
+  // Yildiz tarlasi partikulleri — hero'da ok, cimnastikte yildiz. Salt gorsel, islevsel bir etkisi yok.
+  function yildizOlustur(kutuId, ikonId, renk){
+    var kutu = document.getElementById(kutuId); if(!kutu) return;
+    for(var i=0;i<28;i++){
+      var el = document.createElement('div');
+      el.className = 'yildiz-ok';
+      el.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 512 512" fill="' + renk + '"><use href="#' + ikonId + '"/></svg>';
+      var boyut = 6 + Math.random()*13;
+      el.style.width = boyut + 'px'; el.style.height = boyut + 'px';
+      el.style.left = (Math.random()*100) + '%'; el.style.top = (Math.random()*100) + '%';
+      var dx = (Math.random()*2-1) * 50, dy = (Math.random()*2-1) * 50;
+      el.style.setProperty('--dx', dx + 'px'); el.style.setProperty('--dy', dy + 'px');
+      el.style.animation = 'yildizKay ' + (16+Math.random()*20) + 's linear infinite';
+      el.style.animationDelay = (Math.random()*18) + 's';
+      kutu.appendChild(el);
+    }
+  }
+  yildizOlustur('yildizHero', 'ico-arrow', '#f5f5f6');
+  yildizOlustur('yildizCim', 'ico-star', '#7fe0d3');
+
+  // Ziyaret sayacı — yönetici panelinde aylık toplam olarak görünür, siteye hiçbir şey yazdırmaz.
+  fetch('/api/tanitim/ziyaret', { method: 'POST' }).catch(function(){});
+
+  // Canli Kulup Nabzi — gercek D1 verisinden bu ayin sayilari
+  fetch('/api/tanitim/nabiz').then(function(r){ return r.json(); }).then(function(d){
+    var kutu = document.getElementById('nabiz-izgara'); if(!kutu) return;
+    var tr = function(n){ return (n || 0).toLocaleString('tr-TR'); };
+    kutu.innerHTML =
+      '<div class="nabiz-kutu"><div class="nabiz-deger">' + tr(d.okSayisi) + '</div><div class="nabiz-etiket">OK ATILDI</div></div>' +
+      '<div class="nabiz-kutu"><div class="nabiz-deger">' + tr(d.seriSayisi) + '</div><div class="nabiz-etiket">SERİ ATILDI</div></div>' +
+      '<div class="nabiz-kutu"><div class="nabiz-deger">' + tr(d.sporcuSayisi) + '</div><div class="nabiz-etiket">AKTİF SPORCU</div></div>' +
+      '<div class="nabiz-kutu"><div class="nabiz-deger">' + tr(d.gunSayisi) + '</div><div class="nabiz-etiket">ANTRENMAN GÜNÜ</div></div>';
+  }).catch(function(){});
+
+  // Google yorumları — tarayıcıdan doğrudan Google Maps JS API (PlacesService) ile çekiliyor.
+  // Sunucu üzerinden (server-side fetch) legacy Places REST API'si Cloudflare Workers'ın paylaşılan
+  // IP havuzundan gelen isteklere Google tarafında REQUEST_DENIED döndürdüğü için bu yola geçildi.
+  var _yorumListesi = [], _yorumIndex = 0, _yorumZamanlayici = null;
+  // Belirli yorumcular istek üzerine gizleniyor (Google API kimin gösterileceğini seçtiriyor,
+  // biz sadece elimizdeki havuzdan bazılarını eleyebiliyoruz) — küçük harfe çevrilmiş ad içerir eşleşmesi.
+  var _yorumGizliYazarlar = ['ilknur'];
+  function _yorumGizliMi(yazar){
+    var y = String(yazar || '').toLocaleLowerCase('tr');
+    return _yorumGizliYazarlar.some(function(g){ return y.indexOf(g) !== -1; });
+  }
+  // Gizlilik: Google yorumcularının soyadı tam gösterilmiyor — "Ayşe Yılmaz" -> "Ayşe Y."
+  function _adSoyadKisalt(adSoyad){
+    var parcalar = String(adSoyad || '').trim().split(/\s+/).filter(Boolean);
+    if(parcalar.length <= 1) return parcalar[0] || '';
+    return parcalar[0] + ' ' + parcalar.slice(1).map(function(p){ return p.charAt(0) + '.'; }).join(' ');
+  }
+  function yorumKartCiz(){
+    var y = _yorumListesi[_yorumIndex]; if(!y) return;
+    var avatar = y.foto ? '<img class="yorum-avatar" src="' + y.foto + '" alt="">' : '<div class="yorum-avatar"></div>';
+    var yildiz = '★★★★★'.slice(0, y.puan) + '☆☆☆☆☆'.slice(0, 5 - y.puan);
+    var yazar = _adSoyadKisalt(y.yazar).replace(/</g, '&lt;');
+    var metin = String(y.metin || '').replace(/</g, '&lt;');
+    document.getElementById('yorum-tek-kart').innerHTML = '<div class="yorum-kart"><div class="yorum-ust">' + avatar + '<div><div class="yorum-yazar">' + yazar + '</div><div class="yorum-zaman">' + y.zaman + '</div></div></div><div class="yorum-yildiz">' + yildiz + '</div><div class="yorum-metin" style="-webkit-line-clamp:8;">' + metin + '</div></div>';
+    document.getElementById('yorum-noktalar').innerHTML = _yorumListesi.map(function(_, idx){
+      return '<button class="yorum-nokta' + (idx === _yorumIndex ? ' aktif' : '') + '" onclick="yorumGit(' + idx + ')"></button>';
+    }).join('');
+  }
+  function yorumGezin(yon){
+    _yorumIndex = (_yorumIndex + yon + _yorumListesi.length) % _yorumListesi.length;
+    yorumKartCiz();
+    yorumSlaytZamanlayiciSifirla();
+  }
+  function yorumGit(idx){ _yorumIndex = idx; yorumKartCiz(); yorumSlaytZamanlayiciSifirla(); }
+  function yorumSlaytZamanlayiciSifirla(){
+    if(_yorumZamanlayici) clearInterval(_yorumZamanlayici);
+    _yorumZamanlayici = setInterval(function(){ yorumGezin(1); }, 5000);
+  }
+  function yorumlariGoster(d){
+    document.getElementById('yorum-durum').style.display = 'none';
+    document.getElementById('yorum-icerik').style.display = 'block';
+    document.getElementById('google-puan').textContent = (d.puan || 0).toFixed(1);
+    document.getElementById('google-yildiz').textContent = '★★★★★'.slice(0, Math.round(d.puan || 0)) || '★★★★★';
+    document.getElementById('google-detay').textContent = d.toplamYorum + ' değerlendirme · Google';
+    // En dolu/anlamli yorumlar once gelsin diye metin uzunluguna gore sirala (Google hangi 5'i
+    // dondurdugunu kendi secip API'de degistirilemiyor, ama elimizdekiler arasinda oncelik verebiliriz).
+    _yorumListesi = d.yorumlar.filter(function(y){ return !_yorumGizliMi(y.yazar); }).sort(function(a, b){ return (b.metin || '').length - (a.metin || '').length; });
+    _yorumIndex = 0;
+    yorumKartCiz();
+    if(_yorumListesi.length > 1) yorumSlaytZamanlayiciSifirla();
+  }
+  function yorumlariYukle(deneme){
+    if(typeof google === 'undefined' || !google.maps || !google.maps.places){
+      if(deneme < 20) return setTimeout(function(){ yorumlariYukle(deneme + 1); }, 250);
+      document.getElementById('yorum-durum').textContent = 'Yorumlar şu an gösterilemiyor.';
+      return;
+    }
+    var service = new google.maps.places.PlacesService(document.createElement('div'));
+    service.getDetails({ placeId: 'ChIJpRYWXV3DyhQRKjfJEHX9B_E', fields: ['rating', 'user_ratings_total', 'reviews'] }, function(place, status){
+      if(status !== google.maps.places.PlacesServiceStatus.OK || !place){
+        document.getElementById('yorum-durum').textContent = 'Yorumlar şu an gösterilemiyor.';
+        return;
+      }
+      yorumlariGoster({
+        puan: place.rating || 0,
+        toplamYorum: place.user_ratings_total || 0,
+        yorumlar: (place.reviews || []).map(function(r){
+          return { yazar: r.author_name, foto: r.profile_photo_url, puan: r.rating, zaman: r.relative_time_description, metin: r.text };
+        }),
+      });
+    });
+  }
+  yorumlariYukle(0);
+</script>
+
+</body>
+</html>

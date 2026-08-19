@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DAĞ S.K.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DA%C4%9E%20S.K.%20Master%20OS&quot;,&quot;short_name&quot;:&quot;DA%C4%9E%20S.K.&quot;,&quot;start_url&quot;:&quot;/app.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f172a&quot;,&quot;theme_color&quot;:&quot;%230f172a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%230f172a'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%F0%9F%8F%B9%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    <title>DAĞ S.K. Master OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
+</head>
+<body>
+
+    <div id="toast">Bildirim Mesajı</div>
+
+    <!-- KOCAMAN HATA EKRANI -->
+    <div id="buyuk-hata" style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--neon-red); color:#fff; padding:30px 24px; border-radius:18px; text-align:center; max-width:420px; width:100%; box-shadow:0 12px 45px rgba(0,0,0,0.6); border:4px solid #fff;">
+            <div style="font-size:60px; line-height:1; margin-bottom:10px;">⚠️</div>
+            <div id="buyuk-hata-mesaj" style="font-size:22px; font-weight:900; line-height:1.35; white-space:pre-line;"></div>
+            <button onclick="document.getElementById('buyuk-hata').style.display='none'" style="margin-top:20px; background:#fff; color:var(--neon-red); border:none; padding:13px 34px; border-radius:12px; font-weight:900; font-size:17px;">TAMAM</button>
+        </div>
+    </div>
+
+    <!-- KULÜP SEÇİM EKRANI — okçuluk giriş akışının ÖNÜNE eklenmiş, tamamen ek bir katman.
+         Okçuluk seçilince sadece bu katman kapanır (mevcut #giris-ekrani akışı hiç değişmeden devam eder).
+         MILO FITT KIDS seçilince ayrı, izole bir uygulamaya (/milo/) yönlendirilir. -->
+    <div id="kulup-secim-ekrani" style="position:fixed; inset:0; z-index:20001; background:var(--bg-main); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px;">
+        <div style="font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px;">Hangi kulüp?</div>
+        <button class="giris-secim-btn" onclick="document.getElementById('kulup-secim-ekrani').style.display='none'">🏹 DAĞ Okçuluk <span>Sporcu kartı · antrenman · yarışma yönetimi</span></button>
+        <button class="giris-secim-btn" onclick="location.href='/milo/'" style="border-color:var(--neon-pink);">🤸 MILO FITT KIDS <span>Cimnastik üye ve aidat yönetimi</span></button>
+    </div>
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div id="giris-ekrani">
+        <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
+        <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
+        <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v105</b> · 22.06.2026</div>
+        <h2 id="giris-baslik">Platform Seçin</h2>
+        <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
+            <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
+            <button class="giris-secim-btn" onclick="platformSec('egitmen')">🎓 EĞİTMEN PLATFORMU <span>Yoklama · antrenman · karne · sınıf/grup · personel</span></button>
+            <button class="giris-secim-btn" onclick="platformSec('yonetici')">🛡️ YÖNETİCİ <span>Kullanıcı yönetimi · dondur · sil · kod sıfırla</span></button>
+        </div>
+        <div id="giris-lig" style="width:100%; display:none; flex-direction:column; align-items:center; gap:13px; max-height:75vh; max-height:75dvh; overflow-y:auto; padding:4px 2px 10px;">
+            <div class="lig-grid">
+                <div class="lig-tile" onclick="grupKurulumu('buyukler')"><div class="ikon">🔵</div><div class="ad">Büyükler</div><div class="detay">16+ yaş</div></div>
+                <div class="lig-tile" onclick="grupKurulumu('yildizlar')"><div class="ikon">⭐</div><div class="ad">Yıldızlar</div><div class="detay">13-15 yaş</div></div>
+                <div class="lig-tile" onclick="grupKurulumu('kucukler')"><div class="ikon">🟢</div><div class="ad">Küçükler</div><div class="detay">10-12 yaş</div></div>
+                <div class="lig-tile" onclick="grupKurulumu('minikler')"><div class="ikon">🌱</div><div class="ad">Minikler</div><div class="detay">6-9 yaş</div></div>
+            </div>
+            <div class="lig-ayrac">ya da</div>
+            <div id="km-giris-btn" class="km-secim-kart" onclick="kmAc()">
+                <div class="ikon">🎯</div>
+                <div class="metin">
+                    <div class="ad">Karışık Sınıf</div>
+                    <div class="detay">Farklı gruplardan sporcu seç · toplu skor girişi</div>
+                    <div class="chip"><span class="nokta"></span>DEVAM EDEN DERS — DOKUN VE SÜRDÜR</div>
+                </div>
+                <div class="ok">›</div>
+            </div>
+            <button onclick="platformGeri()" style="width:100%; max-width:350px; padding:10px; font-size:12px; font-weight:600; background:transparent; color:var(--text-muted); border:1px solid var(--border-color); border-radius:10px; cursor:pointer;">← Platform Seçimine Dön</button>
+        </div>
+        <div id="giris-sifre" style="width:100%; max-width:300px; display:none; flex-direction:column; align-items:center; gap:14px;">
+            <div style="color:var(--text-muted); font-size:12px;">🔒 Eğitmen şifresini girin</div>
+            <div id="sifre-display" style="margin:4px 0;"></div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%;">
+                <button class="pin-btn" onclick="sifreRakam('1')">1</button>
+                <button class="pin-btn" onclick="sifreRakam('2')">2</button>
+                <button class="pin-btn" onclick="sifreRakam('3')">3</button>
+                <button class="pin-btn" onclick="sifreRakam('4')">4</button>
+                <button class="pin-btn" onclick="sifreRakam('5')">5</button>
+                <button class="pin-btn" onclick="sifreRakam('6')">6</button>
+                <button class="pin-btn" onclick="sifreRakam('7')">7</button>
+                <button class="pin-btn" onclick="sifreRakam('8')">8</button>
+                <button class="pin-btn" onclick="sifreRakam('9')">9</button>
+                <button class="pin-btn" style="font-size:14px; color:var(--text-muted);" onclick="sifreGeri()">İptal</button>
+                <button class="pin-btn" onclick="sifreRakam('0')">0</button>
+                <button class="pin-btn" style="font-size:18px;" onclick="sifreSil()">⌫</button>
+            </div>
+        </div>
+        <div id="giris-sporcu" style="width:100%; max-width:320px; display:none; flex-direction:column; align-items:center; gap:12px;">
+            <div style="color:var(--text-muted); font-size:12px; text-align:center;">Adını ve kişisel kodunu gir<br>(kod verilmediyse <b>doğum yılın</b>)</div>
+            <button id="hizli-giris-btn" onclick="hatirlaGiris()" style="display:none; width:100%; padding:13px; background:var(--neon-green); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:15px; cursor:pointer;">⚡ Hızlı Giriş</button>
+            <input type="text" id="sporcu-giris-ad" placeholder="Ad Soyad" autocomplete="off" style="width:100%; padding:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; text-align:center; font-size:15px;">
+            <input type="text" id="sporcu-giris-kod" placeholder="Kişisel kod" inputmode="numeric" autocomplete="off" style="width:100%; padding:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; text-align:center; font-size:15px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main); align-self:flex-start; cursor:pointer;"><input type="checkbox" id="beni-hatirla-chk" checked style="width:19px; height:19px; accent-color:var(--accent-orange);"> ✅ Beni hatırla (çıkana kadar açık kal)</label>
+            <button onclick="sporcuGirisDene()" style="width:100%; padding:13px; background:var(--accent-orange); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:15px;">🎯 Giriş Yap</button>
+            <button onclick="platformGeri()" style="width:100%; padding:9px; font-size:12px; background:transparent; color:var(--text-muted); border:1px solid var(--border-color); border-radius:8px;">← Geri</button>
+        </div>
+    </div>
+    <!-- KARIŞIK SINIF MODAL -->
+    <div id="karisik-konum-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;background:rgba(0,0,0,0.88);z-index:25000;align-items:center;justify-content:center;padding:15px;box-sizing:border-box;">
+        <div class="adm-card" style="background:var(--bg-main);max-width:440px;width:100%;max-height:88vh;display:flex;flex-direction:column;padding:16px;margin-bottom:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-weight:900;font-size:15px;">📍 Karışık Sınıf — Konum Seç</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Aynı anda birden fazla yerde antrenman varsa, her konum kendi bağımsız dersini çalıştırır — biri diğerini etkilemez. Bu cihaz seçtiğin konuma bağlanır, ders bitene kadar orada kalır.</div>
+            <div id="km-konum-liste" style="overflow-y:auto;flex:1;min-height:120px;"></div>
+        </div>
+    </div>
+
+    <div id="karisik-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;background:rgba(0,0,0,0.88);z-index:25000;align-items:center;justify-content:center;padding:15px;box-sizing:border-box;">
+        <div class="adm-card" style="background:var(--bg-main);max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;padding:16px;margin-bottom:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:900;font-size:15px;">🎯 Karışık Sınıf</span>
+                <button onclick="document.getElementById('karisik-modal').style.display='none'" class="adm-btn adm-btn-sm">✕</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.</div>
+            <input id="km-ara" type="text" placeholder="🔍 Sporcu ara..." oninput="kmModalDoldur()" class="adm-input" style="margin-bottom:8px;">
+            <div id="km-liste" style="overflow-y:auto;flex:1;min-height:150px;"></div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+                <span id="km-sayac" style="font-size:11px;color:var(--text-muted);flex:1;">0 sporcu seçildi</span>
+                <button onclick="kmBaslat()" class="adm-btn" style="background:var(--accent-orange);color:#fff;border-color:var(--accent-orange);">▶ Dersi Başlat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KARIŞIK SINIF PLATFORM -->
+    <div id="karisik-platform" style="display:none;position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;background:var(--bg-main);z-index:20000;flex-direction:column;overflow:hidden;">
+        <div style="position:relative;display:flex;align-items:center;gap:8px;padding:12px;flex-shrink:0;
+            background:radial-gradient(circle at 12% 0%, rgba(0,240,255,0.16), transparent 55%), radial-gradient(circle at 100% 110%, rgba(255,47,208,0.16), transparent 55%), var(--bg-panel);
+            border-bottom:1px solid var(--border-color);">
+            <button onclick="kmGeri()" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px; flex-shrink:0;">←</button>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:13px;font-weight:900;">🎯 Karışık Sınıf</div>
+                <div id="km-ders-sayac" style="font-size:10px;color:var(--text-muted);"></div>
+            </div>
+            <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px; flex-shrink:0;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); kmSekme(_kmAktifSekme); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+            <div style="position:relative; flex-shrink:0;">
+                <button onclick="kmMenuAcKapat()" id="km-menu-btn" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px;">⋯</button>
+                <div id="km-menu-acilir" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);padding:6px;z-index:5;min-width:170px;">
+                    <button onclick="kmMenuAcKapat();kmSporcuEkle()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(251,191,36,0.12);color:var(--gold);border-color:var(--gold);">➕ Sporcu Ekle</button>
+                    <button onclick="kmMenuAcKapat();kmKonumDegistir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(0,240,255,0.12);color:var(--aurora-cyan);border-color:var(--aurora-cyan);">🔁 Konum Değiştir</button>
+                    <button onclick="kmMenuAcKapat();kmSonucKartiPaylas()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(155,59,255,0.12);color:#c4a3ff;border-color:#9B3BFF;">📸 Sonuç Kartını Paylaş</button>
+                    <button onclick="kmMenuAcKapat();kmOturumArsiviAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(180,140,255,0.12);color:#b48cff;border-color:#b48cff;">📚 Oturum Arşivi</button>
+                    <button onclick="kmMenuAcKapat();kmDersiBitir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;background:rgba(239,68,68,0.12);color:var(--neon-red);border-color:var(--neon-red);">🏁 Dersi Bitir</button>
+                </div>
+            </div>
+        </div>
+        <!-- Sekmeler -->
+        <div class="adm-nav-row" style="padding:7px 10px;background:var(--bg-panel);border-bottom:1px solid var(--border-color);flex-shrink:0;position:sticky;top:0;z-index:2;">
+            <button onclick="kmSekme('skor')" id="kms-skor" class="adm-nav-btn km-aurora-tab aktif" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎯 Skor</button>
+            <button onclick="kmSekme('lider')" id="kms-lider" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🏆 Liderlik</button>
+            <button onclick="kmSekme('klasman')" id="kms-klasman" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📊 Klasman</button>
+            <button onclick="kmSekme('canli')" id="kms-canli" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📡 Herkes</button>
+            <button onclick="kmSekme('yarisma')" id="kms-yarisma" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🏆 Yarışma</button>
+            <button onclick="kmSekme('veli')" id="kms-veli" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📤 Veli Bildirimi</button>
+            <button onclick="kmSekme('macera')" id="kms-macera" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🗺️ Macera</button>
+            <button onclick="kmSekme('disiplin')" id="kms-disiplin" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🚦 Disiplin Pusulası</button>
+            <button onclick="kmSekme('pozitif')" id="kms-pozitif" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎖️ Pozitif Pusula</button>
+        </div>
+        <div id="km-icerik" style="flex:1;overflow-y:auto;padding:10px 12px;"></div>
+    </div>
+
+    <!-- DERS SONU TOPLU VELİ RAPORU — hem normal ders (Yeni Antrenman Başlat) hem Karışık Sınıf
+         bitişinden tetiklenir, kendi bağımsız overlay'i (o an açık modaldan habersiz çalışır). -->
+    <div id="ders-sonu-rapor-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;background:rgba(0,0,0,0.6);z-index:26000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+        <div class="glass-panel" style="width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;border-radius:16px;padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:15px;font-weight:900;">🏁 Ders Sonu Raporu</div>
+                    <div id="ders-sonu-rapor-sayac" style="font-size:10px;color:var(--text-muted);"></div>
+                </div>
+                <button onclick="dersSonuRaporKapat()" class="adm-btn adm-btn-sm" style="min-width:38px;padding:0 10px;">✕</button>
+            </div>
+            <div id="ders-sonu-rapor-icerik" style="flex:1;overflow-y:auto;margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <div id="detay-modal" class="modal-overlay kolay-kapat">
+        <div class="modal-content glass-panel" style="max-width:550px; padding:20px;">
+            <div class="panel-header">
+                <h3 id="modal-sporcu-ad" style="color: var(--accent-orange); margin:0;">SPORCU ADI</h3>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="egitmenKarnePDF(detayKarneSporcu, 'whatsapp')" style="background:#25D366; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold;">📲 WhatsApp</button>
+                    <button onclick="egitmenKarnePDF(detayKarneSporcu)" style="background:var(--accent-orange); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold;">📄 PDF</button>
+                    <button onclick="kapatModal('detay-modal')" style="background:var(--neon-red); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold;">✖ Kapat</button>
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-around; background: var(--border-color); padding: 10px; border-radius: 8px; text-align: center; margin-bottom:12px;">
+                <div><span style="font-size: 10px;">Toplam</span><br><span id="modal-toplam-puan" style="font-size: 16px; font-weight: bold; color: var(--accent-orange);">0</span></div>
+                <div><span style="font-size: 10px;">Ort. Ok</span><br><span id="modal-ort-ok" style="font-size: 16px; font-weight: bold; color: var(--neon-blue);">0.0</span></div>
+                <div><span style="font-size: 10px;">Merkez (X)</span><br><span id="modal-toplam-x" style="font-size: 16px; font-weight: bold;">0</span></div>
+            </div>
+
+            <!-- HEDEF SEÇİCİ MENÜ (KARNE İÇİN) -->
+            <div style="margin-bottom:12px; width:100%;">
+                <select id="karne-hedef-secici" onchange="karneHedefTipiDegisti()" style="background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); padding:10px; border-radius:6px; width:100%; font-weight:bold; font-size:12px;">
+                    <option value="10ring">🎯 10 Halkalı Hedef Üzerinde Göster</option>
+                    <option value="6ring">🎯 6 Halkalı Hedef Üzerinde Göster</option>
+                    <option value="3spot">🎯 3'lü Spot Hedef Üzerinde Göster</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; justify-content:center; align-items:center;">
+                <!-- Karne Dinamik Isı Haritası Kapsayıcısı -->
+                <div style="width: 140px; height: 140px; position:relative; background:white; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; overflow:hidden; padding:5px;">
+                    <svg id="karne-hedef-svg-10ring" viewBox="-110 -110 220 220" style="width:100%; height:100%; display:block;">
+                        <defs><radialGradient id="heatGlow10"><stop offset="0%" stop-color="rgba(239, 68, 68, 0.9)"/><stop offset="50%" stop-color="rgba(239, 68, 68, 0.4)"/><stop offset="100%" stop-color="rgba(239, 68, 68, 0.0)"/></radialGradient></defs>
+                        <circle cx="0" cy="0" r="100" fill="#f8fafc" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="80" fill="#1e293b" stroke="#f8fafc" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="60" fill="#3b82f6" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle id="karne-heatmap-center-10ring" cx="0" cy="0" r="35" fill="url(#heatGlow10)" style="display:none; pointer-events:none;"></circle>
+                        <g id="karne-oklar-grup-10ring"></g>
+                    </svg>
+
+                    <svg id="karne-hedef-svg-6ring" viewBox="-110 -110 220 220" style="width:100%; height:100%; display:none; background:#2a2a2c; border-radius:50%;">
+                        <defs><radialGradient id="heatGlow6"><stop offset="0%" stop-color="rgba(239, 68, 68, 0.9)"/><stop offset="50%" stop-color="rgba(239, 68, 68, 0.4)"/><stop offset="100%" stop-color="rgba(239, 68, 68, 0.0)"/></radialGradient></defs>
+                        <circle cx="0" cy="0" r="60" fill="#3b82f6" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="1"></circle>
+                        <circle id="karne-heatmap-center-6ring" cx="0" cy="0" r="35" fill="url(#heatGlow6)" style="display:none; pointer-events:none;"></circle>
+                        <g id="karne-oklar-grup-6ring"></g>
+                    </svg>
+
+                    <svg id="karne-hedef-svg-3spot" viewBox="-110 -250 220 500" style="height:100%; display:none; background:#e2e8f0; width:60px; border-radius:6px;">
+                        <defs><radialGradient id="heatGlow3"><stop offset="0%" stop-color="rgba(239, 68, 68, 0.9)"/><stop offset="50%" stop-color="rgba(239, 68, 68, 0.4)"/><stop offset="100%" stop-color="rgba(239, 68, 68, 0.0)"/></radialGradient></defs>
+                        <g transform="translate(0, -140)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="1"></circle></g>
+                        <g transform="translate(0, 0)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="1"></circle></g>
+                        <g transform="translate(0, 140)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="1"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="1"></circle></g>
+                        <circle id="karne-heatmap-center-3spot" cx="0" cy="0" r="35" fill="url(#heatGlow3)" style="display:none; pointer-events:none;"></circle>
+                        <g id="karne-oklar-grup-3spot"></g>
+                    </svg>
+                </div>
+                
+                <!-- Borsa Stili Şık Çizgi Grafiği -->
+                <div style="flex:1; min-width: 200px; background: #111; border-radius: 8px; padding: 10px; height: 140px; box-sizing:border-box; border:1px solid #333;">
+                    <canvas id="gelisimGrafigi"></canvas>
+                </div>
+            </div>
+
+            <div id="yapay-zeka-analizi" style="background:var(--border-color); padding:10px; border-radius:6px; font-size:11px; line-height:1.5; border-left:3px solid var(--accent-orange); margin-bottom:10px;"></div>
+            <div id="karne-gecmis-seriler" style="max-height: 420px; overflow-y: auto; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-size: 11px;"></div>
+            <div id="karne-analiz-alani" style="margin-top:12px;"></div>
+        </div>
+    </div>
+
+    <!-- 3. SPORCU DÜZENLEME MODALI -->
+    <div id="duzenle-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:450px;">
+            <h3 style="margin-top:0; color:var(--accent-orange); border-bottom:1px solid var(--border-color); padding-bottom:10px;">Sporcu Bilgilerini Düzenle</h3>
+            <input type="hidden" id="duzenle-eski-ad">
+            <div style="margin-top:10px; margin-bottom:5px; font-size:12px;">Yeni İsim:</div>
+            <input type="text" id="duzenle-yeni-ad" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;">
+            <div style="margin-top:15px; margin-bottom:5px; font-size:12px;">Yay Tipi:</div>
+            <select id="duzenle-yay-tipi" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;">
+                <option value="Klasik">Klasik Yay</option>
+                <option value="Makaralı">Makaralı Yay</option>
+            </select>
+            <div style="margin-top:15px; margin-bottom:5px; font-size:12px;">🎂 Doğum Tarihi:</div>
+            <input type="date" id="duzenle-dogum-tarihi" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;">
+            <div id="duzenle-dogum-yil-ipucu" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+            <div style="margin-top:15px; margin-bottom:5px; font-size:12px;">🔑 Sporcu Giriş Kodu <span style="color:var(--text-muted);">(boş bırakırsan doğum yılı geçerli)</span>:</div>
+            <input type="text" id="duzenle-kod" inputmode="numeric" placeholder="Örn. 1234" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;">
+            <button onclick="veliQRGoster(document.getElementById('duzenle-eski-ad').value)" style="width:100%; margin-top:14px; background:rgba(59,130,246,0.13); border:1px solid var(--neon-blue); color:var(--text-main); padding:10px; border-radius:8px; font-weight:bold; font-size:13px;">📱 Veli QR Kodu Oluştur</button>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="kapatModal('duzenle-modal')" style="background:var(--border-color); color:var(--text-main); padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">İptal</button>
+                <button onclick="sporcuGuncelleKaydet()" style="background:var(--accent-orange); color:white; padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VELİ QR MODALI -->
+    <div id="veli-qr-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:360px; text-align:center;">
+            <h3 style="margin-top:0; color:var(--neon-blue); border-bottom:1px solid var(--border-color); padding-bottom:10px;">📱 Veli QR Kodu</h3>
+            <div style="font-weight:bold; font-size:15px; margin:6px 0;" id="veli-qr-ad">SPORCU</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Veli bu kodu okutunca doğrudan bu sporcunun <b>canlı karnesi</b> açılır — giriş yapmasına gerek yok.</div>
+            <img id="veli-qr-img" src="" alt="QR" style="width:240px; height:240px; max-width:100%; background:#fff; border-radius:12px; padding:6px;">
+            <input type="text" id="veli-qr-link" readonly style="width:100%; margin-top:10px; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px; font-size:11px; text-align:center;">
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="veliQRKopyala()" style="flex:1; background:var(--neon-blue); color:#fff; border:none; padding:9px; border-radius:8px; font-weight:bold; font-size:12px;">📋 Bağlantıyı Kopyala</button>
+                <button onclick="kapatModal('veli-qr-modal')" style="flex:1; background:var(--accent-orange); color:#fff; border:none; padding:9px; border-radius:8px; font-weight:bold; font-size:12px;">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. TAKIM DÜZENLEME MODALI -->
+    <div id="duzenle-takim-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:450px;">
+            <h3 style="margin-top:0; color:var(--gold); border-bottom:1px solid var(--border-color); padding-bottom:10px;">Takımı Düzenle</h3>
+            <input type="hidden" id="duzenle-takim-eski-ad">
+            <div style="margin-top:10px; margin-bottom:5px; font-size:12px;">Yeni Takım Adı:</div>
+            <input type="text" id="duzenle-takim-yeni-ad" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;">
+            
+            <div style="margin-top:15px; margin-bottom:5px; font-size:12px;">Üyeleri Değiştir:</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <select id="edit-takim-p1" style="width:100%; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;"><option value="">1. Sporcu Seç</option></select>
+                <select id="edit-takim-p2" style="width:100%; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;"><option value="">2. Sporcu Seç</option></select>
+                <select id="edit-takim-p3" style="width:100%; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px;"><option value="">3. Sporcu Seç</option></select>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="kapatModal('duzenle-takim-modal')" style="background:var(--border-color); color:var(--text-main); padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">İptal</button>
+                <button onclick="takimGuncelleKaydet()" style="background:var(--gold); color:black; padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">Güncelle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. PDF RAPOR MODALI -->
+    <div id="rapor-modal" class="modal-overlay kolay-kapat">
+        <div class="modal-content" style="max-width: 800px; display: flex; flex-direction: column;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; justify-content: flex-end;">
+                <button onclick="kapatModal('rapor-modal')" style="background:var(--neon-red); color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold;">✖ Kapat</button>
+                <button onclick="pdfOlarakKaydet()" style="background:var(--accent-orange); color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold;">📄 İndir</button>
+            </div>
+            <div id="rapor-pdf-icerik" style="background: white; color: black; border-radius: 8px; padding: 20px; overflow-y: auto; max-height: 80vh;"></div>
+        </div>
+    </div>
+
+    <!-- SERİ DÜZENLEME MODALI -->
+    <div id="seri-duzenle-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:420px;">
+            <h3 style="margin-top:0; color:var(--accent-orange); border-bottom:1px solid var(--border-color); padding-bottom:10px;">✏️ Seriyi Düzenle</h3>
+            <input type="hidden" id="seri-duz-ad"><input type="hidden" id="seri-duz-idx">
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Yanlış girilen okları aşağıdan düzeltip kaydedin.</div>
+            <div id="seri-duz-oklar" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:14px;"></div>
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+                <button onclick="seriSilModal()" style="background:rgba(239,68,68,0.15); border:1px solid var(--neon-red); color:var(--text-main); padding:8px 14px; border-radius:6px; font-weight:bold;">🗑️ Seriyi Sil</button>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="kapatModal('seri-duzenle-modal')" style="background:var(--border-color); color:var(--text-main); padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">İptal</button>
+                    <button onclick="seriDuzenleKaydet()" style="background:var(--accent-orange); color:white; padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMOJİ SİMGE SEÇME MODALI -->
+    <div id="emoji-modal" class="modal-overlay kolay-kapat">
+        <div class="modal-content glass-panel" style="max-width:380px;">
+            <h3 style="margin-top:0; color:var(--accent-orange); border-bottom:1px solid var(--border-color); padding-bottom:10px;">😀 Simgeni Seç</h3>
+            <input type="hidden" id="emoji-hedef-ad">
+            <div id="emoji-grid" style="display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:12px 0;"></div>
+            <div style="border-top:1px solid var(--border-color); padding-top:10px; margin-bottom:10px;">
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">✍️ Ya da kendi simgeni yaz/yapıştır:</div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="emoji-ozel-girdi" maxlength="4" placeholder="Örn: 🦂 veya ⚜️" style="flex:1; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-size:18px; text-align:center;">
+                    <button onclick="emojiOzelUygula()" style="background:var(--neon-green); color:#fff; border:none; padding:9px 16px; border-radius:6px; font-weight:bold; font-size:13px;">Uygula</button>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+                <button onclick="emojiSec('')" style="background:var(--border-color); color:var(--text-main); padding:8px 14px; border-radius:6px; border:none; font-weight:bold; font-size:12px;">Simgeyi Kaldır</button>
+                <button onclick="kapatModal('emoji-modal')" style="background:var(--accent-orange); color:#fff; padding:8px 15px; border-radius:6px; border:none; font-weight:bold;">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÜST BAR -->
+    <div id="ust-bar" class="glass-panel">
+        <div class="grup-satir">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="mini-logo">DAĞ S.K</div>
+                <span style="font-size:9px; color:var(--text-muted); font-weight:bold;">v99</span>
+                <div id="aktif-grup-etiket" class="baslik" style="font-weight:bold;">SEÇİLMEDİ</div>
+                <span id="bulut-durum" onclick="bulutManuelYenile()" title="Bulut senkron" style="font-size:11px; font-weight:bold; color:var(--text-muted); cursor:pointer; white-space:nowrap;">☁️ —</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <input type="number" id="toplam-seri-ayar" value="12" min="1" max="60" class="sadece-egitmen" title="Atış serisi sayısı" style="width: 50px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:6px; border-radius:6px; text-align:center;" onchange="seriSayisiAyarla(this.value)">
+                <button onclick="ligDegistirAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Lig Değiştir</button>
+                <button onclick="egitmenCikis()" class="sadece-egitmen" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🚪 Çıkış</button>
+                <button onclick="sporcuCikis()" class="sadece-sporcu" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">🚪 Çıkış</button>
+            </div>
+        </div>
+        <div class="sekme-grubu">
+            <button id="tab-ana" class="sekme-btn" onclick="sekmeAc('ana')">🏠 Ana Ekran</button>
+            <button id="tab-timer" class="sekme-btn aktif" onclick="sekmeAc('timer')">⏱️ Sayaç</button>
+            <button id="tab-skor" class="sekme-btn" onclick="sekmeAc('skor')">🎯 Skor</button>
+            <button id="tab-canlitakip" class="sekme-btn" onclick="sekmeAc('canlitakip')">📡 Canlı Takip</button>
+            <button id="tab-gelisim" class="sekme-btn" onclick="sekmeAc('gelisim')">📈 Gelişim</button>
+            <button id="tab-liderlik" class="sekme-btn" onclick="sekmeAc('liderlik')">🏆 Liderlik</button>
+            <button id="tab-klasman" class="sekme-btn" onclick="sekmeAc('klasman')">📊 Klasman</button>
+            <button id="tab-takimlar" class="sekme-btn" onclick="sekmeAc('takimlar')">🏅 Yarışmalar</button>
+            <button id="tab-dersicerik" class="sekme-btn" onclick="sekmeAc('dersicerik')">📚 Ders İçerikleri</button>
+            <button id="tab-teknik" class="sekme-btn" onclick="sekmeAc('teknik')">🏹 Teknik Çalışma</button>
+            <button id="tab-video" class="sekme-btn" onclick="sekmeAc('video')">🎥 Video</button>
+            <button id="tab-duello" class="sekme-btn" onclick="sekmeAc('duello')">⚔️ Düello<span id="duello-tab-rozet" class="duello-tab-rozet" style="display:none;"></span></button>
+            <button id="tab-basari" class="sekme-btn" onclick="sekmeAc('basari')">🏅 Başarılar</button>
+            <button id="tab-oyun" class="sekme-btn" onclick="sekmeAc('oyun')">🎮 Mağaza</button>
+            <button id="tab-refleks" class="sekme-btn" onclick="sekmeAc('refleks')">🧠 Reaksiyon</button>
+        </div>
+    </div>
+
+    <!-- SÜREÖLÇER SEKMESİ -->
+    <div id="icerik-ana" class="sekme-icerik"></div>
+    <div id="icerik-gelisim" class="sekme-icerik"></div>
+    <div id="icerik-timer" class="sekme-icerik aktif">
+        <div id="timer-panel" class="glass-panel" style="flex: 1; display: flex; flex-direction: column; padding: 15px; position: relative; align-items:center;">
+            <div class="panel-header" style="width:100%; border:none;">
+                <button class="btn-tam-ekran-ac" onclick="toggleFullscreen('timer-panel')">⛶ Tam Ekran</button>
+                <button class="btn-tam-ekran-kapat" onclick="toggleFullscreen('timer-panel')">✖ Kapat</button>
+            </div>
+            <div class="timer-controls">
+                <select id="sure-secici" onchange="kronometreSureAyarla()" style="background:rgba(0,240,255,0.1); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:8px; border-radius:8px; font-weight:bold; font-size:12px;">
+                    <option value="180">180 Saniye</option>
+                    <option value="120">120 Saniye</option>
+                    <option value="90">90 Saniye</option>
+                </select>
+                <div style="height:20px; width:1px; background:var(--border-color);"></div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" id="oto-toplama-dk" value="5" min="1" max="10" style="width:40px; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:6px; color:var(--text-main); text-align:center; font-weight:bold; padding:4px;">
+                    <span style="font-size:12px; font-weight:bold; color:var(--text-main);">Dk Oto Toplama</span>
+                </div>
+                <div style="height:20px; width:1px; background:var(--border-color);"></div>
+                <button onclick="kronometreSifirla()" style="background:linear-gradient(135deg, rgba(239,68,68,0.22), rgba(239,68,68,0.06)); border:1px solid var(--neon-red); color:var(--text-main); padding:8px 12px; border-radius:8px; font-weight:bold; font-size:12px; box-shadow:0 0 10px rgba(239,68,68,0.15);">↺ Sıfırla</button>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; margin-top:20px;">
+                <span id="sayac" onclick="toggleTimer()">180</span>
+                <span id="timer-alt" style="color:var(--accent-orange); font-weight:bold; margin-top:10px;">BAŞLAMAK İÇİN RAKAMA DOKUN</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKOR GİRİŞİ SEKMESİ -->
+    <div id="icerik-skor" class="sekme-icerik" style="padding:0;">
+        <div id="skor-liste-gorunumu" style="padding:15px;">
+            <div class="dagsk-yenile-satir">
+                <span class="dagsk-yenile-baslik">🎯 SKOR</span>
+                <button class="dagsk-yenile-fab" title="Sayfayı Yenile" onclick="this.classList.add('donuyor'); bulutManuelYenile(); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+            </div>
+            <div id="skor-tarih-banner" style="text-align:center; font-weight:bold; font-size:13px; color:var(--accent-orange); margin-bottom:12px; background:rgba(255,98,0,0.08); border:1px solid var(--accent-orange); border-radius:10px; padding:9px;">📅 Bugünün Antrenmanı</div>
+            <div id="haftalik-yedek-banner" class="sadece-egitmen" style="display:none; margin-bottom:12px; background:rgba(245,158,11,0.15); border:1px solid var(--gold); border-radius:10px; padding:10px 12px; font-size:12px;">
+                <span style="font-weight:bold;">📦 Haftalık yedek zamanı geldi.</span> Verilerini güvene almak için indir.
+                <button onclick="tumVeriyiYedekle()" style="margin-top:7px; width:100%; background:var(--gold); color:#000; border:none; padding:8px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">💾 Şimdi Yedekle</button>
+            </div>
+            <div id="hazir-olma-banner" style="display:none; margin-bottom:12px; background:rgba(0,240,255,0.1); border:1px solid var(--aurora-cyan); border-radius:10px; padding:10px 12px; font-size:12px;">
+                <span style="font-weight:bold;">🧠 Bugünkü hazır olma anketini doldurmadın.</span> 30 saniyeni al, antrenörünün seni daha iyi anlamasına yardım et.
+                <button onclick="hazirOlmaModalAc()" style="margin-top:7px; width:100%; background:var(--aurora-cyan); color:#000; border:none; padding:8px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">🧠 Anketi Doldur</button>
+            </div>
+            <div class="glass-panel sadece-egitmen" style="padding:12px; border-radius:12px; margin-bottom:15px; border:1px dashed var(--border-color); text-align:center;">
+                <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">➕ Yeni sporcu eklemek için</div>
+                <button onclick="yoneticiPaneliAc()" style="background:var(--accent-orange); color:white; border:none; border-radius:8px; padding:10px 20px; font-weight:bold; font-size:13px; cursor:pointer;">🛡️ Yönetici Paneli → Sporcu Ekle</button>
+            </div>
+
+            <button onclick="yeniDersBaslat()" class="sadece-egitmen" style="width:100%; background:rgba(59,130,246,0.15); border:1px solid var(--neon-blue); color:var(--text-main); border-radius:10px; padding:11px; font-weight:bold; font-size:13px; margin-bottom:12px;">🗂️ Yeni Antrenman Başlat (bugünün skorlarını arşivle, sıfırdan başla)</button>
+
+            <div class="sadece-egitmen" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding: 0 5px;">
+                <span id="skor-kayitli-sayi" style="color:var(--text-muted); font-size:11px; font-weight:bold;">Atıcılar</span>
+                <select id="liste-filtre" onchange="sporcuListesiniYenile()" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:8px 10px; border-radius:6px; font-size:11px; outline:none;">
+                    <option value="yeniKayit">Sıralama: En Yeni Kayıt</option>
+                    <option value="eskiKayit">Sıralama: En Eski Kayıt</option>
+                    <option value="erkek">Önce Erkekler</option>
+                    <option value="kadin">Önce Kadınlar</option>
+                    <option value="klasik">Klasik Yaylar</option>
+                    <option value="makarali">Makaralı Yaylar</option>
+                </select>
+            </div>
+            <div class="sadece-egitmen" style="margin-bottom:10px;">
+                <input type="text" id="skor-arama" placeholder="🔍 Sporcu ara (isim yaz)..." oninput="skorAramaFiltre=this.value; sporcuListesiniYenile(); let el=document.getElementById('skor-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" style="width:100%; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); padding:10px; border-radius:8px; font-size:13px;">
+            </div>
+            <div class="sadece-egitmen" style="margin-bottom:10px;">
+                <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px; padding-left:2px;">🏷️ Sınıf seç — sadece o sınıfın sporcuları görünür</div>
+                <select id="skor-sinif-filtre" onchange="skorSinifFiltre=this.value; sporcuListesiniYenile();" style="width:100%; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--neon-blue); padding:10px; border-radius:8px; font-size:13px; font-weight:bold; outline:none;"></select>
+            </div>
+            <details class="sadece-egitmen" style="margin-bottom:12px; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:10px; padding:0;">
+                <summary style="cursor:pointer; list-style:none; padding:10px; font-size:12px; font-weight:bold; color:var(--text-main); display:flex; align-items:center; gap:6px;">⚙️ Antrenman Ayarları <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(Tur Formatı · Hava Durumu · Seri Sayısı)</span><span style="margin-left:auto; font-size:11px; color:var(--text-muted);">▾</span></summary>
+                <div style="padding:0 10px 10px;">
+                <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">🏆 Resmi Tur Formatı</div>
+                    <div id="tur-formati-grup" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="button" onclick="turFormatiSec('serbest')" class="tur-formati-btn aktif" data-tur-id="serbest">Serbest</button>
+                        <button type="button" onclick="turFormatiSec('wa70')" class="tur-formati-btn" data-tur-id="wa70">WA 70m</button>
+                        <button type="button" onclick="turFormatiSec('wa18')" class="tur-formati-btn" data-tur-id="wa18">WA 18m</button>
+                        <button type="button" onclick="turFormatiSec('vegas300')" class="tur-formati-btn" data-tur-id="vegas300">Vegas 300</button>
+                        <button type="button" onclick="turFormatiSec('720round')" class="tur-formati-btn" data-tur-id="720round">720 Round</button>
+                    </div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">Seçince seri/ok sayısı ve hedef tipi otomatik ayarlanır.</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">🌬️ Bugünün Hava/Rüzgar Durumu (opsiyonel)</div>
+                    <div id="hava-durumu-grup" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="button" onclick="havaDurumuSec('')" class="hava-durumu-btn aktif" data-hava="">Belirtilmedi</button>
+                        <button type="button" onclick="havaDurumuSec('Sakin')" class="hava-durumu-btn" data-hava="Sakin">🍃 Sakin</button>
+                        <button type="button" onclick="havaDurumuSec('Hafif')" class="hava-durumu-btn" data-hava="Hafif">🌬️ Hafif</button>
+                        <button type="button" onclick="havaDurumuSec('Orta')" class="hava-durumu-btn" data-hava="Orta">💨 Orta</button>
+                        <button type="button" onclick="havaDurumuSec('Kuvvetli')" class="hava-durumu-btn" data-hava="Kuvvetli">🌪️ Kuvvetli</button>
+                    </div>
+                    <input type="text" id="hava-durumu-not" placeholder="Not (opsiyonel — yön, sıcaklık vb.)" oninput="havaDurumuNotGuncelle(this.value)" style="width:100%; box-sizing:border-box; margin-top:8px; padding:8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-size:12px;">
+                    <button type="button" onclick="havaDurumuOtomatikCek()" style="width:100%; margin-top:8px; background:rgba(0,240,255,0.12); border:1px solid var(--aurora-cyan); color:var(--text-main); padding:8px; border-radius:6px; font-weight:bold; font-size:11px; cursor:pointer;">📡 Otomatik Çek</button>
+                    <div style="display:flex; gap:6px; align-items:center; margin-top:8px;">
+                        <span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">📍 Kulüp şehri:</span>
+                        <input type="text" id="kulup-sehir-input" placeholder="örn. İzmir" style="flex:1; padding:6px 8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-size:11px;">
+                        <button type="button" onclick="kulupSehriKaydet()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">Kaydet</button>
+                    </div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:10px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">🎯 Atış Serisi Sayısı (her sporcu için)</div>
+                    <div id="seri-preset-grup" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                        <button type="button" onclick="seriSayisiAyarla(12)" class="seri-preset-btn">12</button>
+                        <button type="button" onclick="seriSayisiAyarla(16)" class="seri-preset-btn">16</button>
+                        <button type="button" onclick="seriSayisiAyarla(20)" class="seri-preset-btn">20</button>
+                        <button type="button" onclick="seriSayisiAyarla(24)" class="seri-preset-btn">24</button>
+                        <button type="button" onclick="seriSayisiAyarla(30)" class="seri-preset-btn">30</button>
+                        <div style="display:flex; align-items:center; gap:5px; margin-left:auto;">
+                            <span style="font-size:11px; color:var(--text-muted);">Özel:</span>
+                            <input type="number" id="seri-ozel-input" min="1" max="60" placeholder="örn 18" style="width:64px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:7px; border-radius:6px; text-align:center; font-size:13px;" onchange="seriSayisiAyarla(this.value)">
+                        </div>
+                    </div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">Şu an: <b id="seri-aktif-gosterge" style="color:var(--accent-orange);">12</b> seri</div>
+                </div>
+                </div>
+            </details>
+            <div id="sporcu-ana-liste"></div>
+        </div>
+
+        <!-- BÖLÜNMÜŞ (SPLIT) SKOR PANELİ -->
+        <div id="skor-grid-paneli-baba" style="display:none; height:100%;">
+            <div style="background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding: 12px; border-bottom: 1px solid var(--border-color); box-shadow:0 6px 20px rgba(0,0,0,0.25); box-sizing:border-box; width:100%; max-width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+                    <button onclick="skorEkraniniKapat()" style="background:rgba(255,255,255,0.04); border:1px solid var(--border-color); color:var(--text-main); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:bold; flex-shrink:0;">◀ Geri</button>
+                    <span id="giris-paneli-baslik" style="font-weight:bold; font-size:14px; color:var(--accent-orange); text-align:center; flex:1; min-width:0;">ATICI</span>
+                    <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    </button>
+                </div>
+                <div id="hizli-gecis-bar" class="sadece-egitmen" style="display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px 0; -webkit-overflow-scrolling:touch;"></div>
+                <button onclick="skorKaydet()" style="display:block; width:100%; box-sizing:border-box; background:linear-gradient(135deg, var(--neon-green), #0ea86f); color:white; border:none; padding:14px; border-radius:10px; font-weight:800; font-size:16px; box-shadow:0 3px 16px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.15);">💾 SERİYİ KAYDET ✔️</button>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button onclick="seriUzat()" style="flex:1; background:linear-gradient(135deg, rgba(255,98,0,0.16), rgba(255,98,0,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--accent-orange); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">➕ Seri Uzat</button>
+                    <button onclick="oncekiSeriyiDuzelt()" style="flex:1; background:linear-gradient(135deg, rgba(0,240,255,0.18), rgba(0,240,255,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer; box-shadow:0 0 10px rgba(0,240,255,0.18);">✏️ Önceki Skoru Düzelt</button>
+                </div>
+                <div style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:6px; font-style:italic;">🏹 İyi bir okçu, dürüst olandır.</div>
+            </div>
+            <div id="isim-flash" style="display:none; opacity:0; transition:opacity .3s; position:fixed; top:90px; left:50%; transform:translateX(-50%); z-index:9500; background:linear-gradient(135deg, var(--aurora-cyan), var(--aurora-magenta)); color:#fff; padding:10px 24px; border-radius:24px; font-weight:800; font-size:16px; box-shadow:0 5px 20px rgba(0,0,0,0.4), 0 0 24px rgba(0,240,255,0.4); pointer-events:none;"></div>
+            <div id="seri-tamam-banner" style="display:none; position:fixed; bottom:74px; left:50%; transform:translateX(-50%); z-index:8999; background:var(--accent-orange); color:#fff; padding:9px 22px; border-radius:22px; font-weight:800; font-size:14px; box-shadow:0 4px 16px rgba(255,98,0,0.55);">✅ SERİ TAMAMLANDI — Kaydet!</div>
+            <button onclick="skorKaydet()" id="yuzen-kaydet-btn" title="Seriyi Kaydet" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:9000; background:linear-gradient(135deg, var(--neon-green), #0ea86f); color:white; border:none; padding:14px 26px; border-radius:30px; font-weight:800; font-size:15px; box-shadow:0 5px 22px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.15);">💾 SERİYİ KAYDET ✔️</button>
+
+            <div style="padding: 15px; padding-bottom: 90px; overflow-y: auto; flex: 1;">
+                <div class="skor-split-layout">
+                    
+                    <!-- SOL PANEL: HEDEF VE ZOOM AYARLARI -->
+                    <div class="skor-left-panel">
+                        <div class="hedef-sec-grup">
+                            <button class="hedef-sec-btn aktif" id="btn-10ring" onclick="setHedefTipi('10ring')">10 Halkalı</button>
+                            <button class="hedef-sec-btn" id="btn-6ring" onclick="setHedefTipi('6ring')">6 Halkalı</button>
+                            <button class="hedef-sec-btn" id="btn-3spot" onclick="setHedefTipi('3spot')">3'lü Spot</button>
+                        </div>
+                        <!-- MOD SEÇİCİ — hedef yüzünün hemen üstü -->
+                        <button type="button" id="ciddi-mod-btn" onclick="ciddiModToggle()" style="display:flex; align-items:center; gap:10px; width:100%; box-sizing:border-box; border:none; padding:10px 14px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; user-select:none; margin-bottom:8px; transition:all 0.25s;">
+                            <span style="font-size:22px;" id="ciddi-mod-icon">🎉</span>
+                            <span style="flex:1; text-align:left;">
+                                <span id="ciddi-mod-label" style="display:block; font-size:13px; font-weight:900;">Eğlence Modu</span>
+                                <span id="ciddi-mod-alt" style="display:block; font-size:10px; opacity:0.75;">Konfeti & kutlamalar açık</span>
+                            </span>
+                            <span id="ciddi-mod-switch" style="display:inline-flex; align-items:center; width:44px; height:24px; border-radius:12px; background:#555; position:relative; transition:background 0.25s; flex-shrink:0;">
+                                <span id="ciddi-mod-knob" style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.3);"></span>
+                            </span>
+                        </button>
+                        <!-- 🐇 TAVŞAN ATLET — eğlence modundan bağımsız, kendi düğmesi -->
+                        <button type="button" id="tavsan-ana-btn" onclick="tavsanTikla()" style="display:block; width:100%; box-sizing:border-box; border:none; padding:0; background:transparent; margin-bottom:8px; cursor:pointer; text-align:left;"></button>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:7px 9px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">
+                            <span style="font-size:11px; font-weight:bold; flex:1;">🏹 Bu seride kaç ok?</span>
+                            <button id="oksayi-btn-oto" onclick="okSayisiAyarla(null)" style="padding:5px 9px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">Oto</button>
+                            <button id="oksayi-btn-3" onclick="okSayisiAyarla(3)" style="padding:5px 11px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">3</button>
+                            <button id="oksayi-btn-6" onclick="okSayisiAyarla(6)" style="padding:5px 11px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">6</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:7px 9px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">
+                            <span style="font-size:11px; font-weight:bold; flex:1;">🏹 Hangi fiziksel ok?</span>
+                            <select id="ok-numarasi-sec" onchange="okNumarasiSec(this.value ? parseInt(this.value) : null)" style="padding:5px 8px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main);">
+                                <option value="">Takip kapalı</option>
+                                <option value="1">Ok #1</option><option value="2">Ok #2</option><option value="3">Ok #3</option><option value="4">Ok #4</option>
+                                <option value="5">Ok #5</option><option value="6">Ok #6</option><option value="7">Ok #7</option><option value="8">Ok #8</option>
+                                <option value="9">Ok #9</option><option value="10">Ok #10</option><option value="11">Ok #11</option><option value="12">Ok #12</option>
+                            </select>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; text-align:center; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">🤏 <b>İki parmağınızla</b> hedefi yakınlaştırıp uzaklaştırın &nbsp;•&nbsp; ☝️ tek parmakla <b>sürükleyin</b> &nbsp;•&nbsp; 👆 tek dokunuş = ok girişi
+                        <button onclick="hedefGorunumSifirla()" style="display:block; margin:8px auto 0; background:linear-gradient(135deg, rgba(0,240,255,0.16), rgba(0,240,255,0.04)); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:5px 14px; border-radius:7px; font-weight:bold; font-size:11px;">🎯 Görünümü Sıfırla</button>
+                        </div>
+                        <div class="hedef-scroll-container">
+                            <div id="hedef-wrapper-id" class="hedef-wrapper">
+                                <svg id="hedef-svg-10ring" class="svg-hedef" viewBox="-110 -110 220 220" onclick="hedefTiklandi(event)">
+                                    <circle cx="0" cy="0" r="100" fill="#f8fafc" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="90" fill="#f8fafc" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="80" fill="#1e293b" stroke="#f8fafc" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="70" fill="#1e293b" stroke="#f8fafc" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="60" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle id="inner-10-normal" cx="0" cy="0" r="5" fill="none" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <g id="atilan-oklar-grup-10ring"></g>
+                                </svg>
+                                <svg id="hedef-svg-6ring" class="svg-hedef" viewBox="-110 -110 220 220" onclick="hedefTiklandi(event)" style="display:none; background:#2a2a2c;">
+                                    <circle cx="0" cy="0" r="100" fill="transparent"></circle>
+                                    <circle cx="0" cy="0" r="60" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <circle id="inner-10-6ring" cx="0" cy="0" r="5" fill="none" stroke="#1e293b" stroke-width="0.5"></circle>
+                                    <g id="atilan-oklar-grup-6ring"></g>
+                                </svg>
+                                <svg id="hedef-svg-3spot" class="svg-hedef svg-3spot" viewBox="-110 -250 220 500" onclick="hedefTiklandi(event)" style="display:none;">
+                                    <g transform="translate(0, -140)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle class="inner-10-3spot" cx="0" cy="0" r="5" fill="none" stroke="#1e293b" stroke-width="0.5"></circle></g>
+                                    <g transform="translate(0, 0)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle class="inner-10-3spot" cx="0" cy="0" r="5" fill="none" stroke="#1e293b" stroke-width="0.5"></circle></g>
+                                    <g transform="translate(0, 140)"><circle cx="0" cy="0" r="50" fill="#3b82f6" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="40" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="30" fill="#ef4444" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="20" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#1e293b" stroke-width="0.5"></circle><circle class="inner-10-3spot" cx="0" cy="0" r="5" fill="none" stroke="#1e293b" stroke-width="0.5"></circle></g>
+                                    <g id="atilan-oklar-grup-3spot"></g>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SAĞ: MANUEL GİRİŞ -->
+                    <div class="skor-right-panel">
+                        <div style="text-align:center; font-weight:bold; margin-bottom:8px; font-size:13px; color:var(--accent-orange);">⚡ HIZLI GİRİŞ</div>
+                        <div id="hizli-giris-pad" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:7px; width:100%; max-width:420px; margin-bottom:8px;"></div>
+                        <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; margin-bottom:12px; cursor:pointer;">
+                            <input type="checkbox" id="hizli-otokaydet" checked style="width:18px; height:18px; accent-color:var(--neon-green);">
+                            Seri dolunca otomatik kaydet & sonraki seriye geç
+                        </label>
+                        <div id="ok-rozetleri" class="ok-rozet-alani"></div>
+                        <div style="display:flex; gap:10px; margin-top:14px; width:100%;">
+                            <button class="hedef-kontrol-btn" onclick="karavanaEkle()">Karavana (M)</button>
+                            <button class="hedef-kontrol-btn" style="background:var(--accent-grey) !important; box-shadow:none;" onclick="sonOkuSil()">Geri Al ↺</button>
+                        </div>
+                        <details style="margin-top:12px; width:100%;">
+                            <summary style="cursor:pointer; font-size:12px; color:var(--text-muted); text-align:center;">▸ Manuel kart girişi (dropdown)</summary>
+                            <div class="manuel-giris-alani" id="manuel-giris-container" style="margin-top:10px;"></div>
+                        </details>
+                        <div style="text-align:center; margin-top:15px; font-size:14px; font-weight:bold;">Seri Toplamı: <span id="aktif-seri-toplam" style="color:var(--neon-green);">0</span> Puan</div>
+                        <div id="spot-uyari" style="text-align:center; margin-top:8px; font-size:11px; color:var(--neon-red); line-height:1.4;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOTOĞRAFTAN SKORLAMA MODALI -->
+    <div id="foto-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9999; overflow-y:auto; padding:14px; box-sizing:border-box;">
+        <div style="max-width:560px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:800; color:var(--accent-orange); font-size:16px;">📷 Fotoğraftan Skorla</span>
+                <button onclick="fotoModalKapat()" style="background:var(--neon-red); color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:bold;">✖ Kapat</button>
+            </div>
+            <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.5;">1) Fotoğrafı çek/seç → 2) <b>Merkez</b>'e dokun → 3) <b>Dış Kenar</b>'a dokun → 4) Okların deliklerine tek tek dokun. Sonra "Seriye Aktar".</div>
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <label style="flex:1; text-align:center; background:var(--accent-orange); color:#fff; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">📷 Fotoğraf Çek<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="fotoYukle(event)"></label>
+                <label style="flex:1; text-align:center; background:var(--neon-blue); color:#fff; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">🖼️ Galeriden Yükle<input type="file" accept="image/*" style="display:none;" onchange="fotoYukle(event)"></label>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                <button id="fmod-merkez" onclick="fotoModSet('merkez')" style="flex:1; min-width:80px; padding:9px 6px; border-radius:7px; font-weight:bold; font-size:11px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main);">1️⃣ Merkez</button>
+                <button id="fmod-kenar" onclick="fotoModSet('kenar')" style="flex:1; min-width:80px; padding:9px 6px; border-radius:7px; font-weight:bold; font-size:11px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main);">2️⃣ Dış Kenar</button>
+                <button id="fmod-ok" onclick="fotoModSet('ok')" style="flex:1; min-width:80px; padding:9px 6px; border-radius:7px; font-weight:bold; font-size:11px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main);">🎯 Ok Ekle</button>
+                <button onclick="fotoSonOkSil()" style="padding:9px 10px; border-radius:7px; font-weight:bold; font-size:11px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main);">↩️</button>
+            </div>
+            <div id="foto-durum" style="font-size:11px; color:var(--accent-orange); margin-bottom:8px; min-height:16px; text-align:center;"></div>
+            <canvas id="foto-canvas" onclick="fotoCanvasTap(event)" style="width:100%; border-radius:8px; background:#1a1a2e; display:block; touch-action:none; cursor:crosshair;"></canvas>
+            <div id="foto-skor-ozet" style="margin-top:10px; color:#fff;"></div>
+            <button onclick="fotoSeriyeAktar()" style="width:100%; background:var(--neon-green); color:#fff; border:none; padding:14px; border-radius:10px; font-weight:bold; font-size:15px; margin-top:10px;">✅ Okları Seriye Aktar</button>
+        </div>
+    </div>
+    <div id="icerik-takimlar" class="sekme-icerik">
+        <div class="sadece-egitmen" style="margin-bottom:15px;">
+            <button onclick="yarismalarSifirla()" style="width:100%; background:rgba(255,98,0,0.15); border:1px solid var(--accent-orange); color:var(--text-main); padding:11px; border-radius:8px; font-size:13px; font-weight:bold;">🔄 Yarışmaları Sıfırla (takımlar + eleme ağaçları)</button>
+        </div>
+        <!-- BİREYSEL YARIŞMA -->
+        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+            <span style="font-weight: 900; color: var(--neon-blue); font-size: 16px; display:block; margin-bottom:10px;">🏅 BİREYSEL YARIŞMA (ELEME AĞACI)</span>
+            <div class="sadece-egitmen">
+                <button style="background:var(--neon-blue); color:white; padding:12px; font-size:13px; font-weight:bold; border:none; border-radius:8px; width:100%; margin-bottom:15px;" onclick="elemeAgaciOlustur();">🏅 Bireysel Ağacı Başlat / Yenile</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button id="tree-tab-klasik" class="tree-cat-btn aktif-klasik" onclick="setTreeCategory('Klasik')">Klasik Yay</button>
+                <button id="tree-tab-makarali" class="tree-cat-btn" onclick="setTreeCategory('Makaralı')">Makaralı Yay</button>
+            </div>
+            <div id="eleme-agaci-alani" style="display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; background:rgba(0,0,0,0.1); border-radius:8px; min-height:180px;"></div>
+        </div>
+
+        <!-- TAKIM KURULUMU -->
+        <div class="glass-panel sadece-egitmen" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+            <span style="font-weight: 800; color: var(--gold); font-size: 16px;">👥 Dinamik Takım Yarışması Kurulumu</span>
+            <div style="margin-top:10px;" class="satir-inputs">
+                <input type="text" id="takim-adi-input" placeholder="TAKIM ADI">
+                <select id="takim-boyut-secici" onchange="takimFormatDegisti()" style="max-width:130px; font-weight:bold;">
+                    <option value="3">3 Kişilik Takım</option>
+                    <option value="2">2 Kişilik Takım</option>
+                </select>
+            </div>
+            <div class="satir-inputs">
+                <select id="takim-p1"><option value="">1. Sporcu Seç</option></select>
+                <select id="takim-p2"><option value="">2. Sporcu Seç</option></select>
+                <select id="takim-p3"><option value="">3. Sporcu Seç</option></select>
+            </div>
+            <button id="btn-takim-kaydet" onclick="takimOlusturKaydet()" style="background:var(--neon-blue); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; width:100%;">TAKIMI KAYDET VE HAVUZA EKLE 👥</button>
+        </div>
+        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+            <span style="font-weight: 800; color: var(--accent-orange); font-size: 14px; margin-bottom:10px; display:block;">📊 Takım Puan Durumu (Canlı Toplam)</span>
+            <div style="max-height:240px; overflow-y:auto;" id="takim-sirali-liste"></div>
+        </div>
+
+        <!-- TAKIM ELEME -->
+        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+            <span style="font-weight: 900; color: var(--gold); font-size: 16px; display:block; margin-bottom:10px;">👥 TAKIM YARIŞMASI (ELEME AĞACI)</span>
+            <div class="sadece-egitmen">
+                <button style="background:var(--gold); color:black; padding:12px; font-size:13px; font-weight:bold; border:none; border-radius:8px; width:100%; margin-bottom:15px;" onclick="takimElemeAgaciOlustur();">👥 Takım Turnuva Ağacını Başlat</button>
+            </div>
+            <div id="takim-eleme-agaci-alani" style="display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; background:rgba(0,0,0,0.1); border-radius:8px; min-height:180px;"></div>
+        </div>
+    </div>
+
+    <!-- LİDERLİK VE TURNUVA MERKEZİ -->
+    <div id="icerik-klasman" class="sekme-icerik">
+        <div class="dagsk-yenile-satir">
+            <span class="dagsk-yenile-baslik">📊 KLASMAN</span>
+            <button class="dagsk-yenile-fab" title="Sayfayı Yenile" onclick="this.classList.add('donuyor'); bulutManuelYenile(); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+        </div>
+        <div id="sezon-sayac-widget"></div>
+        <div id="klasman-icerik"></div>
+    </div>
+    <div id="icerik-canlitakip" class="sekme-icerik">
+        <div class="glass-panel" style="border-radius: 12px; padding: 15px; flex: 1; display:flex; flex-direction:column;">
+            <div class="panel-header">
+                <span class="panel-title">📡 CANLI SKOR TAKİP — TÜM LİGLER</span>
+                <button class="dagsk-yenile-fab" style="width:34px; height:34px;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); canliTakipCiz(); setTimeout(()=>{ this.classList.remove('donuyor'); canliTakipCiz(); }, 800);" title="Yenile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+                </button>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Bugün atış yapan tüm sporcular — hangi ligde olurlarsa olsun — her serideki her ok burada görünür. Otomatik güncellenir.</div>
+            <div id="canli-takip-liste" style="flex:1; overflow-y:auto;"></div>
+        </div>
+    </div>
+    <div id="icerik-liderlik" class="sekme-icerik">
+        <div class="glass-panel" id="liderlik-panel" style="border-radius: 12px; padding: 15px; flex: 1; display:flex; flex-direction:column; position:relative;">
+            <button class="btn-tam-ekran-kapat" onclick="toggleFullscreen('liderlik-panel')">✖ Kapat</button>
+            <div class="panel-header">
+                <span class="panel-title">🏆 LİDERLİK & TURNUVA MERKEZİ</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    </button>
+                    <button class="btn-tam-ekran-ac" onclick="toggleFullscreen('liderlik-panel')">⛶ Tam Ekran</button>
+                </div>
+            </div>
+            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:10px;">
+                <button onclick="raporOnizlemeAc()" style="flex:2; background:rgba(255,98,0,0.2); border:1px solid var(--accent-orange); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">📄 Renkli PDF Rapor</button>
+                <button onclick="veriSifirla()" style="flex:1; background:rgba(239,68,68,0.2); border:1px solid var(--neon-red); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">Sıfırla</button>
+            </div>
+            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:10px;">
+                <button onclick="bulutaYukleManuel()" style="flex:1; background:rgba(16,185,129,0.15); border:1px solid var(--neon-green); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">☁️⬆️ Buluta Yükle</button>
+                <button onclick="bulutManuelYenile()" style="flex:1; background:rgba(59,130,246,0.15); border:1px solid var(--neon-blue); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">☁️⬇️ Buluttan Çek</button>
+            </div>
+            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:15px;">
+                <button onclick="tumVeriyiYedekle()" style="flex:1; background:rgba(16,185,129,0.15); border:1px solid var(--neon-green); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">💾 Yedekle (JSON)</button>
+                <button onclick="yedekDosyaSec()" style="flex:1; background:rgba(59,130,246,0.15); border:1px solid var(--neon-blue); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">📂 Geri Yükle</button>
+                <input type="file" id="yedek-dosya-input" accept="application/json,.json" style="display:none;" onchange="yedektenGeriYukle(event)">
+            </div>
+            <div class="sadece-egitmen" style="margin-bottom:15px;">
+                <button onclick="acilKurtarma()" style="width:100%; background:rgba(245,158,11,0.18); border:1px solid var(--gold); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">🛟 Acil Kurtarma (son otomatik yedek)</button>
+            </div>
+            <div id="liderlik-istatistik" style="font-size:11px; text-align:center; margin-bottom:10px; color:var(--text-muted);"></div>
+
+            <div style="flex: 1; overflow-y: auto; padding-right:5px; -webkit-overflow-scrolling: touch;">
+                <div class="kategori-baslik">🏹 KLASİK YAY SIRA DURUMU</div>
+                <div id="sirali-tablo-klasik"></div>
+                <div class="kategori-baslik" style="color:var(--text-main); margin-top:20px;">⚙️ MAKARALI YAY SIRA DURUMU</div>
+                <div id="sirali-tablo-makarali"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DERS İÇERİKLERİ KÜTÜPHANESİ -->
+    <div id="icerik-dersicerik" class="sekme-icerik"></div>
+
+    <!-- TEKNİK ÇALIŞMA — dagsk-teknik-calisma.js'in mount ettiği bağımsız, statik referans kütüphanesi -->
+    <div id="icerik-teknik" class="sekme-icerik"></div>
+
+    <!-- VİDEO ANALİZ SEKMESİ -->
+    <div id="icerik-video" class="sekme-icerik">
+
+        <!-- Başlık -->
+        <div class="va-card">
+            <div class="va-title">🎥 Video Analiz</div>
+            <div class="va-sub">Atış anını gecikmeli izle ve duruşunu kontrol et, ya da videonu yapay zekâya analiz ettir.</div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-blue" style="flex:1;">🪞 Gecikmeli Ayna</button>
+            <button onclick="vaModSec('ai')" id="va-mod-ai-btn" class="va-btn va-btn-grey" style="flex:1;">🤖 AI Analiz</button>
+        </div>
+
+        <!-- ===== GECİKMELİ AYNA (5sn) + ÇİZİM ARAÇLARI ===== -->
+        <div id="va-mod-ayna">
+            <div class="va-card">
+                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🪞 5 Saniye Gecikmeli Ayna</div>
+                <div class="va-sub">Atışını bitirip ekrana baktığında kendi atış anını 5 saniye gecikmeyle izle. Omuz hizası veya çekiş mesafesini kontrol etmek için üzerine çizgi/açı çizebilirsin.</div>
+                <div class="va-row" style="margin-top:12px;">
+                    <button id="ayna-baslat-btn" class="va-btn va-btn-blue" onclick="aynaBaslat()">📷 Aynayı Başlat</button>
+                    <button id="ayna-durdur-btn" class="va-btn va-btn-grey" onclick="aynaDurdur()" style="display:none;">✖ Durdur</button>
+                </div>
+                <div id="ayna-gorunum" style="display:none; position:relative; margin-top:12px; border-radius:12px; overflow:hidden; background:#000; line-height:0;">
+                    <video id="ayna-canli-video" autoplay muted playsinline style="display:none;"></video>
+                    <canvas id="ayna-gecikmeli-canvas" style="width:100%; display:block;"></canvas>
+                    <canvas id="ayna-cizim-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; touch-action:none;"></canvas>
+                    <div style="position:absolute; top:8px; left:8px; background:rgba(220,38,38,0.85); color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800;">🔴 5sn GECİKMELİ</div>
+                    <div id="ayna-kayit-rozet" style="display:none; position:absolute; top:8px; right:8px; background:rgba(220,38,38,0.9); color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; align-items:center; gap:5px;"><span class="va-rec-dot"></span> <span id="ayna-kayit-sure">00:00</span></div>
+                    <button onclick="aynaTamEkranAcKapat()" id="ayna-tam-ekran-btn" title="Tam ekran" style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); width:34px; height:34px; border-radius:8px; font-size:15px; cursor:pointer;">⤢</button>
+                </div>
+                <div id="ayna-arac-cubugu" style="display:none; gap:6px; flex-wrap:wrap; margin-top:10px;">
+                    <button onclick="aynaAracSec('cizgi')" id="ayna-arac-cizgi" class="va-btn va-btn-grey">📏 Çizgi</button>
+                    <button onclick="aynaAracSec('aci')" id="ayna-arac-aci" class="va-btn va-btn-grey">📐 Açı</button>
+                    <button onclick="aynaCizimiTemizle()" class="va-btn va-btn-grey">🗑️ Çizimi Temizle</button>
+                    <button onclick="aynaKareKaydet()" class="va-btn va-btn-blue">📸 Kareyi Kaydet</button>
+                    <button id="ayna-kayit-baslat-btn" onclick="aynaKayitBaslat()" class="va-btn va-btn-red">⏺️ Videoyu Kaydet</button>
+                    <button id="ayna-kayit-durdur-btn" onclick="aynaKayitDurdur()" class="va-btn va-btn-grey" style="display:none;">⏹️ Kaydı Bitir & İndir</button>
+                </div>
+                <div id="ayna-hazir-acilar-baslik" style="display:none; font-size:11px; color:var(--text-muted); font-weight:700; margin-top:12px; margin-bottom:6px;">🎯 HAZIR AÇI ŞABLONLARI — birini seç, sonra 3 noktaya dokun</div>
+                <div id="ayna-hazir-acilar" style="display:none; gap:6px; flex-wrap:wrap;"></div>
+                <div id="ayna-hazir-aci-ipucu" style="display:none; font-size:11px; color:var(--gold); margin-top:6px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:8px 10px;"></div>
+                <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir (video kaydı gecikme/çizim içermez, ham görüntüdür) — hiçbiri hiçbir yere yüklenmez.</div>
+            </div>
+        </div>
+
+        <!-- ===== AI ANALİZ (Abacus.AI) ===== -->
+        <div id="va-mod-ai" style="display:none;">
+            <!-- API Anahtarı Ayarı -->
+            <div class="va-card">
+                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">⚙️ Abacus.AI API Anahtarı <span class="va-sub" style="font-weight:400;">(analiz için gereklidir)</span></div>
+                <div class="va-row" style="align-items:center;">
+                    <input id="va-api-key" type="password" class="va-input" style="flex:1; min-width:200px;" placeholder="Abacus.AI API anahtarınızı yapıştırın (sapps...)">
+                    <button class="va-btn va-btn-grey" onclick="vaToggleKey()" id="va-key-eye" title="Göster/Gizle">👁️</button>
+                    <button class="va-btn va-btn-green" onclick="vaSaveKey()">💾 Kaydet</button>
+                </div>
+                <div class="va-sub" style="margin-top:8px;">Anahtarınız yalnızca bu cihazda (tarayıcı hafızasında) saklanır, sunucuya gönderilmez. Anahtar almak için: <b>apps.abacus.ai → Profil → API Keys</b>.</div>
+            </div>
+
+            <!-- Video Yükleme / Kamera -->
+            <div class="va-card">
+                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">1️⃣ Video Kaynağı</div>
+                <div id="va-dropzone" class="va-dropzone" onclick="document.getElementById('va-file-input').click()">
+                    <div class="va-icon">📂</div>
+                    <div style="font-weight:700; margin-top:6px;">Videoyu buraya sürükleyip bırakın</div>
+                    <div class="va-sub">veya tıklayarak dosya seçin (.mp4, .mov, .webm)</div>
+                </div>
+                <input id="va-file-input" type="file" accept="video/*" style="display:none;" onchange="vaFileSelected(event)">
+
+                <div class="va-row" style="margin-top:12px;">
+                    <button id="va-cam-start" class="va-btn va-btn-blue" onclick="vaStartCamera()">📷 Kamerayı Aç</button>
+                    <button id="va-rec-start" class="va-btn va-btn-red" onclick="vaStartRecording()" style="display:none;">⏺ Kayda Başla</button>
+                    <button id="va-rec-stop" class="va-btn va-btn-grey" onclick="vaStopRecording()" style="display:none;">⏹ Kaydı Durdur</button>
+                    <button id="va-cam-stop" class="va-btn va-btn-grey" onclick="vaStopCamera()" style="display:none;">✖ Kamerayı Kapat</button>
+                    <span id="va-rec-status" style="display:none; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--neon-red);"><span class="va-rec-dot"></span> Kayıt: <span id="va-rec-time">00:00</span></span>
+                </div>
+            </div>
+
+            <!-- Oynatma -->
+            <div class="va-card" id="va-player-card" style="display:none;">
+                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">2️⃣ Önizleme & Oynatma</div>
+                <video id="va-camera-preview" class="va-video" autoplay muted playsinline style="display:none;"></video>
+                <video id="va-video" class="va-video" controls playsinline style="display:none;"></video>
+                <div class="va-row" style="margin-top:12px;">
+                    <button id="va-analyze-btn" class="va-btn va-btn-orange" onclick="vaAnalyze()" style="flex:1; min-width:180px;" disabled>🤖 Yapay Zekâ ile Analiz Et</button>
+                    <button class="va-btn va-btn-grey" onclick="vaResetVideo()">🗑️ Temizle</button>
+                </div>
+                <div class="va-sub" style="margin-top:8px;">İpucu: Okçuyu yandan, tüm vücut görünecek şekilde çeken videolar en doğru analizi verir.</div>
+            </div>
+
+            <!-- Sonuçlar -->
+            <div class="va-card" id="va-results-card" style="display:none;">
+                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">3️⃣ Analiz Sonuçları</div>
+                <div id="va-results"></div>
+            </div>
+
+            <canvas id="va-canvas" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- DÜELLO SEKMESİ (Davet Et / Davet Kabul) -->
+    <div id="icerik-duello" class="sekme-icerik">
+        <div class="va-card">
+            <div class="va-title">⚔️ Düello</div>
+            <div class="va-sub">Bir kulüp arkadaşına düello daveti gönder ya da sana gelen davetleri buradan kabul et/reddet. WebSocket bağlantın o an kopuk olsa bile (arka plan, ekran kilidi vb.) davetler burada kalıcı olarak seni bekler.</div>
+        </div>
+
+        <div class="va-card" id="duello-gelen-kart">
+            <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📥 Gelen Davetler</div>
+            <div id="duello-gelen-liste"><div class="va-sub">Yükleniyor...</div></div>
+        </div>
+
+        <div class="va-card" id="duello-gonderilen-kart" style="display:none;">
+            <div style="font-weight:700; font-size:13px; margin-bottom:8px;">📤 Gönderdiğim Davet</div>
+            <div id="duello-gonderilen-liste"></div>
+        </div>
+
+        <div class="va-card">
+            <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🆕 Yeni Düello Başlat</div>
+            <div class="va-sub" style="margin-bottom:10px;">Sanal rakiple pratik yap ya da kulüpten gerçek birine davet gönder.</div>
+            <button class="va-btn va-btn-blue" style="width:100%;" onclick="duelloSekmesindenBaslat()">⚔️ Düello Başlat</button>
+        </div>
+    </div>
+
+    <!-- BAŞARILAR SEKMESİ (Rozetler & Rekorlar) -->
+    <div id="icerik-basari" class="sekme-icerik">
+        <div class="bs-card">
+            <div class="bs-title">🏅 Başarılar & Rozetler</div>
+            <div class="bs-sub">Antrenmanlara katıl, seri tamamla ve yüksek puanlar yakalayarak rozetleri topla. Her yeni başarı kutlama ile gelir!</div>
+            <div id="bs-sporcu-secim-sarmal" style="margin-top:10px;">
+                <select id="bs-sporcu-secim" class="bs-select" onchange="basariSporcuDegisti(this.value)"></select>
+            </div>
+        </div>
+
+        <!-- PROFİL: kapak fotoğrafı + rozet vitrini -->
+        <div id="bs-profil-kart" class="bs-card" style="display:none;">
+            <div id="bs-profil"></div>
+            <input type="file" id="bs-kapak-input" accept="image/*" style="display:none;" onchange="profilKapakYukle(event)">
+        </div>
+
+        <div class="bs-card">
+            <div class="bs-title" style="font-size:15px;">🎖️ Rozet Vitrini</div>
+            <div id="rozet-vitrin" class="rozet-grid"></div>
+        </div>
+
+        <div class="bs-card">
+            <div class="bs-title" style="font-size:15px;">🏆 Kulüp Rekorları</div>
+            <div class="bs-sub">Kulübümüzde kırılan rekorlar burada listelenir.</div>
+            <div id="rekor-tahta" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- GÖREV & MAĞAZA SEKMESİ -->
+    <div id="icerik-refleks" class="sekme-icerik">
+        <div class="oy-coin-bar">
+            <div>
+                <div class="oy-coin-deger">💎 <span id="rfx-coin">0</span></div>
+                <div class="oy-coin-etiket">Oyna, elmas kazan, mağazada profilini özelleştir!</div>
+            </div>
+        </div>
+        <div id="rfx-sporcu-sarmal" style="margin-bottom:12px; display:none;">
+            <select id="rfx-sporcu-sec" onchange="rfxSporcuDegisti(this.value)" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-weight:bold;"></select>
+        </div>
+        <div id="rfx-profil" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:10px;"></div>
+        <div id="rfx-gorev" style="background:rgba(251,191,36,0.08); border:1px solid var(--gold); border-radius:12px; padding:12px; margin-bottom:10px;"></div>
+        <button id="rfx-lider-btn" onclick="rfxLiderTablosu()" style="width:100%; margin-bottom:14px; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#000; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;">🏆 Lider Tablosu & Rozetler</button>
+        <div id="rfx-menu">
+            <!-- Bilimsel giriş -->
+            <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.3); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:12px; color:var(--text-main); line-height:1.6;">
+                <b style="color:var(--neon-blue);">🔬 Reaksiyon neden önemli?</b><br>
+                Reaksiyon süresi (180–220ms), odak ve karar verme becerileri <b>antrenmanla gelişir</b>. Bu oyunlar sinir sistemini, ön korteksi ve serebellumu (denge/zamanlama) ayrı ayrı çalıştırır — tıpkı okçuluk gibi.
+            </div>
+
+            <!-- KATEGORİ 1: REAKSİYON & HIZ -->
+            <div style="font-weight:900; font-size:12px; color:var(--neon-red); letter-spacing:1px; margin:4px 0 8px; padding-left:4px;">⚡ REAKSİYON & HIZ</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:10px; margin-bottom:16px;">
+                <button onclick="rfxOyunAc('monopoly')" class="rozet-kart dag" style="grid-column:1/-1; background:linear-gradient(120deg, rgba(251,191,36,0.20), rgba(239,68,68,0.12), rgba(77,141,255,0.14)); border:2px solid var(--gold); border-radius:18px; padding:16px 12px; cursor:pointer; text-align:center; box-shadow:0 0 24px rgba(251,191,36,0.22); position:relative; overflow:hidden; animation:sporcuParla 3s ease-in-out infinite;"><div style="font-size:40px; filter:drop-shadow(0 3px 12px rgba(251,191,36,0.55));">🎩</div><div style="font-weight:900; color:var(--gold); margin-top:4px; font-size:17px; letter-spacing:1px; text-shadow:0 0 16px rgba(251,191,36,0.4);">MONOPOLY AYI</div><div style="display:inline-block; background:var(--gold); color:#78350f; font-size:9px; font-weight:900; letter-spacing:1.5px; padding:2px 10px; border-radius:12px; margin-top:3px;">👑 8/8 TAPU = ELİTE + ANTRENÖR HEDİYESİ 🎁</div><div style="font-size:11px; color:var(--text-muted); margin-top:3px;">🟡 Sarı vur → sarı para · 🔴 kırmızı → kırmızı · 🔵 mavi → mavi<br>Paralarınla mülk parçaları al, <b style="color:var(--gold);">TAPULARI</b> topla — stoklar sınırlı!</div></button>
+                <button onclick="rfxOyunAc('pod')" style="background:var(--bg-panel); border:1px solid var(--neon-red); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🔴</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Reaksiyon Pod</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Çıkan hedefe hızlı dokun · görsel-motor</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('gonogo')" style="background:var(--bg-panel); border:1px solid var(--neon-green); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🚦</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Yeşile Bas</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Dur/geç kararı · inhibisyon</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('tap')" style="background:var(--bg-panel); border:1px solid var(--accent-orange); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">💥</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Hızlı Dokunuş</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Motor hız · parmak çevikliği</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+            </div>
+
+            <!-- KATEGORİ 2: ODAK & ZİHİN -->
+            <div style="font-weight:900; font-size:12px; color:#a855f7; letter-spacing:1px; margin:4px 0 8px; padding-left:4px;">🧠 ODAK & ZİHİN</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:10px; margin-bottom:16px;">
+                <button onclick="rfxOyunAc('odak')" style="background:var(--bg-panel); border:1px solid #a855f7; border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🔢</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Odak Kilidi</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Görsel tarama · prefrontal korteks</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('hafiza')" style="background:var(--bg-panel); border:1px solid #a855f7; border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🧠</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Hafıza</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Kısa süreli bellek · sıra öğrenme</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('takip')" style="background:var(--bg-panel); border:1px solid #a855f7; border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">👁️</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Hedef Takip</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Yumuşak göz hareketi · vizyel kontrol</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('sayim')" style="background:var(--bg-panel); border:1px solid #a855f7; border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🔢</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Skor Sayımı</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Zihinsel hesap · X=10 · çalışan bellek</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('kaos')" style="background:var(--bg-panel); border:1px solid #a855f7; border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🌪️</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Kaos Odak</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Dikkat dağıtıcıya direniş · müsabaka</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+            </div>
+
+            <!-- KATEGORİ 3: TEKNİK ATIŞLAR -->
+            <div style="font-weight:900; font-size:12px; color:var(--accent-orange); letter-spacing:1px; margin:4px 0 8px; padding-left:4px;">🏹 TEKNİK ATIŞ BECERİLERİ</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:10px; margin-bottom:16px;">
+                <button onclick="rfxOyunAc('timing')" style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">⏱️</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Tam Zamanında</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Bırakış zamanlaması · kliker ritmi</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                
+                <button onclick="rfxOyunAc('dusus')" style="background:var(--bg-panel); border:1px solid var(--neon-green); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🏹</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Mükemmel Düşüş</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Tork önleme · bırakış sonrası</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                
+                <button onclick="rfxOyunAc('sabir')" style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">⏳</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Sabır</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Hedef panik · komutla atış</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                <button onclick="rfxOyunAc('grup')" style="background:var(--bg-panel); border:1px solid var(--neon-green); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🎯</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Grup At</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Tutarlılık · motor tekrar</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                
+                <button onclick="rfxOyunAc('kliker')" style="background:var(--bg-panel); border:1px solid var(--neon-red); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🖱️</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Kliker Duvarı</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Kliker sendromu · back tension</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                
+            </div>
+
+            <!-- KATEGORİ 4: SAKİNLİK & STRES -->
+            <div style="font-weight:900; font-size:12px; color:var(--neon-green); letter-spacing:1px; margin:4px 0 8px; padding-left:4px;">🫁 SAKİNLİK & STRES YÖNETİMİ</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:10px; margin-bottom:8px;">
+                <button onclick="rfxOyunAc('nefes')" style="background:var(--bg-panel); border:1px solid var(--neon-blue); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">🫁</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Nefes Ritmi</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">HRV kontrolü · parasempatik aktivasyon</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+                
+                <button onclick="rfxOyunAc('yorgunluk')" style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:14px; padding:14px 10px; cursor:pointer; text-align:center;"><div style="font-size:30px;">💪</div><div style="font-weight:800; color:var(--text-main); margin-top:5px; font-size:13px;">Son Okun Ağırlığı</div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Yorgunluk simülasyonu · zihin vs kas</div><div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:4px;">💎 max 10</div></button>
+            </div>
+        </div>
+        <div id="rfx-oyun-alani" style="display:none;"></div>
+    </div>
+    <div id="icerik-oyun" class="sekme-icerik">
+        <div class="oy-coin-bar">
+            <div>
+                <div class="oy-coin-deger">💎 <span id="oy-coin-deger">0</span></div>
+                <div class="oy-coin-etiket">Coin bakiyen — atış yap ve görevleri tamamla, mağazada harca!</div>
+            </div>
+            <div id="oy-sporcu-sarmal">
+                <select id="oy-sporcu-sec" class="oy-sporcu-sec" onchange="oyunSporcuDegisti(this.value)"></select>
+            </div>
+        </div>
+
+        <div class="oy-bolum">
+            <div class="oy-bolum-baslik">📋 Günlük Görevler</div>
+            <div class="oy-bolum-alt">Her gün yenilenir. Görevleri tamamladıkça coin kazanırsın! <span id="oy-gorev-ozet"></span></div>
+            <div id="oy-gorev-liste"></div>
+        </div>
+
+        <div class="oy-bolum">
+            <div class="oy-bolum-baslik">🔔 Akıllı Uyarılar</div>
+            <div class="oy-bolum-alt">Atışların otomatik analiz edilir, sana özel öneriler burada görünür.</div>
+            <div id="oy-uyari-liste"></div>
+        </div>
+
+        <div class="oy-bolum">
+            <div class="oy-bolum-baslik">🛒 Mağaza</div>
+            <div class="oy-bolum-alt">Kazandığın coin'lerle tema, çerçeve, aksesuar ve özel rozetler satın al.</div>
+            <div class="magaza-tab-grup">
+                <button class="magaza-tab aktif" id="mtab-tema" onclick="magazaTabSec('tema')">🌈 Temalar</button>
+                <button class="magaza-tab" id="mtab-cerceve" onclick="magazaTabSec('cerceve')">🖼️ Çerçeveler</button>
+                <button class="magaza-tab" id="mtab-aksesuar" onclick="magazaTabSec('aksesuar')">✨ Aksesuarlar</button>
+                <button class="magaza-tab" id="mtab-rozet" onclick="magazaTabSec('rozet')">💠 Özel Rozetler</button>
+            </div>
+            <div id="oy-magaza-grid" class="magaza-grid"></div>
+        </div>
+    </div>
+
+    <!-- KUTLAMA / KONFETİ OVERLAY -->
+    <div id="kutlama-overlay">
+        <canvas id="kutlama-konfeti"></canvas>
+        <div class="kutlama-kutu">
+            <div class="kutlama-banner" id="kutlama-banner">🎉 TEBRİKLER! 🎉</div>
+            <div class="kutlama-emoji" id="kutlama-emoji">🏅</div>
+            <div class="kutlama-ad" id="kutlama-ad">Rozet Adı</div>
+            <div class="kutlama-aciklama" id="kutlama-aciklama">Açıklama</div>
+            <div class="kutlama-deger" id="kutlama-deger"></div>
+            <button class="kutlama-kapat" onclick="kutlamaKapat()">Harika! 🎯</button>
+        </div>
+    </div>
+
+    <!-- GİRDİ (PROMPT) MODALI -->
+    <div id="girdi-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:360px; width:100%; text-align:center;">
+            <div id="girdi-mesaj" style="font-size:15px; font-weight:bold; margin-bottom:12px;"></div>
+            <input id="girdi-input" type="text" style="width:100%; padding:11px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; margin-bottom:14px; box-sizing:border-box; font-size:15px;">
+            <div style="display:flex; gap:10px;">
+                <button onclick="girdiKapat()" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">İptal</button>
+                <button onclick="girdiKaydet()" style="flex:1; background:var(--neon-green); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="yedek-dosya" accept=".json,application/json" onchange="yedekYukle(event)" style="display:none;">
+    <div id="pwa-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99000; background:#0f172a; border-top:1px solid var(--accent-orange); padding:12px 16px; align-items:center; gap:10px; box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
+        <div style="font-size:28px;">📱</div>
+        <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px; color:#fff;">Ana Ekrana Ekle</div><div style="font-size:11px; color:rgba(255,255,255,0.6);">DAĞ S.K. uygulaması gibi kullan</div></div>
+        <button onclick="pwaKur()" style="background:var(--accent-orange); color:#fff; border:none; padding:9px 16px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; flex-shrink:0;">Ekle</button>
+        <button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:transparent; color:rgba(255,255,255,0.5); border:none; padding:6px; font-size:18px; cursor:pointer; flex-shrink:0;">✕</button>
+    </div>
+    <!-- iOS/Safari'de "Ana Ekrana Ekle" programatik olarak tetiklenemiyor (Apple izin vermiyor) — bu yüzden
+         Android'deki #pwa-banner'dan ayrı, elle talimat veren bir banner. Asıl amaç: iOS Safari normal sekmede
+         arka plana atılınca WebSocket/zamanlayıcıları çok agresif durduruyor, düello davetleri kaçabiliyor;
+         Ana Ekrana eklenmiş halde hem bu daha az agresif hem de gerçek Web Push (iOS 16.4+) çalışabiliyor. -->
+    <div id="ios-ekle-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99000; background:#0f172a; border-top:1px solid var(--accent-orange); padding:12px 16px; align-items:center; gap:10px; box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
+        <div style="font-size:28px;">📲</div>
+        <div style="flex:1; min-width:0;">
+            <div style="font-weight:800; font-size:13px; color:#fff;">Düello davetlerini kaçırma!</div>
+            <div style="font-size:11px; color:rgba(255,255,255,0.65); margin-top:2px;">Safari altındaki <b>Paylaş</b> (⬆️) simgesine dokun → <b>"Ana Ekrana Ekle"</b> seç. Uygulama kapalıyken bile bildirim alırsın.</div>
+        </div>
+        <button onclick="iosEkleBannerKapat()" style="background:transparent; color:rgba(255,255,255,0.5); border:none; padding:6px; font-size:18px; cursor:pointer; flex-shrink:0;">✕</button>
+    </div>
+    <!-- BAYAT VERİ UYARISI: cihazın buluta bağlantısı gerçekten kopmuşsa yenilemeye yönlendir.
+         ÜSTTE duruyor (sürüm kilidi banner'ıyla aynı desen) — skor giriş ekranındaki alttaki
+         butonların üzerine binip skor girişini engellememesi için. Kapatılabilir de. -->
+    <div id="bayat-veri-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:98500; background:#7c2d12; border-bottom:2px solid var(--gold); padding:10px 14px; align-items:center; gap:10px; box-shadow:0 4px 18px rgba(0,0,0,0.5);">
+        <div style="font-size:22px;">⚠️</div>
+        <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:12px; color:#fff;">Bağlantı koptu — veri bir süredir güncellenmiyor</div><div style="font-size:10px; color:rgba(255,255,255,0.75);">Skor girmeye devam edebilirsin (kaybolmaz), ama en kısa sürede sayfayı yenile</div></div>
+        <button onclick="location.reload()" style="background:var(--gold); color:#000; border:none; padding:8px 14px; border-radius:8px; font-weight:900; font-size:12px; cursor:pointer; flex-shrink:0;">🔄 Yenile</button>
+        <button onclick="document.getElementById('bayat-veri-banner').style.display='none'" style="background:transparent; color:rgba(255,255,255,0.6); border:none; padding:4px; font-size:16px; cursor:pointer; flex-shrink:0;">✕</button>
+    </div>
+    <!-- İŞLEM YÜKLENİYOR BİNDİRMESİ — arka planda uzun sürebilecek işlemler (örn. Karışık Sınıf
+         dersi bitirirken tüm kulüp verisinin senkron JSON.stringify'ı) sırasında ekranın donmuş
+         gibi görünmesini engeller; islemYukleniyorGoster()/Gizle() ile açılıp kapanır. -->
+    <div id="islem-yukleniyor-overlay" class="modal-overlay">
+        <div class="islem-spinner"></div>
+        <div id="islem-yukleniyor-metin" style="color:#fff; font-weight:800; font-size:14px;">İşleniyor...</div>
+    </div>
+    <!-- SERİ TAMAMLANDI — native confirm() yerine: Karışık Sınıf'ta tablet çocuklar arasında elden
+         ele geçtiği için native pencere kafa karıştırıyordu. İki seçenek de GEÇERLİ/olumlu bir eylem
+         olduğu için ikisi de büyük ve net — biri "iptal" gibi kırmızı gösterilmiyor. -->
+    <div id="seri-tamamlandi-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:360px; width:100%; text-align:center;">
+            <div style="font-size:34px; margin-bottom:6px;">🎯</div>
+            <div id="seri-tamamlandi-baslik" style="font-size:16px; font-weight:900; margin-bottom:18px;">Bu tur bitti!</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="_seriTamamlandiDevamEt()" style="background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); color:#fff; border:none; padding:15px; border-radius:12px; font-weight:900; font-size:14.5px; cursor:pointer;">➕ Devam Et — Yeni Seri Ekle</button>
+                <button onclick="_seriTamamlandiBitir()" style="background:rgba(16,185,129,0.15); color:var(--neon-green); border:1.5px solid var(--neon-green); padding:15px; border-radius:12px; font-weight:900; font-size:14.5px; cursor:pointer;">✅ Bitti, Kapat</button>
+            </div>
+        </div>
+    </div>
+    <!-- DERS ROSTER MODALI — Ders Programı yeniden tasarımı: bir derse (haftalık ızgaradaki bir cipe)
+         dokununca o dersin GERÇEK katılımcı listesi açılır (grubun tamamı değil). Bir sporcu birden
+         fazla, farklı derse kayıtlı olabilir — bkz. dersRosterCiz()'deki "🔁 Ayrıca" çapraz-ders etiketi. -->
+    <div id="ders-roster-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:420px; width:100%; border:1px solid rgba(0,240,255,0.22); box-shadow:0 0 30px rgba(0,240,255,0.08);">
+            <!-- DÜZELTME (2. tur): 4 yönetim butonunu arama/listenin ÜSTÜNE aldık (basit, normal akış —
+                 position:sticky + negatif margin denemesi ayrı bir tıklama hatasına yol açtığı için
+                 TERK EDİLDİ, bkz. proje hafızası). Aşağıdaki asıl düzeltme: arama kutusu boşken
+                 "+ Sporcu Ekle" artık TÜM kulübü dökmüyor (dersRosterCiz) — modal artık kısa, bu 4 buton
+                 zaten kaydırmadan görünüyor. -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div>
+                    <div id="drm-baslik" style="font-size:16px; font-weight:900;"></div>
+                    <div id="drm-alt" style="font-size:12px; color:var(--text-muted); margin-top:2px;"></div>
+                </div>
+                <button onclick="dersRosterKapat()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-muted); width:30px; height:30px; border-radius:9px; cursor:pointer; font-size:14px; flex-shrink:0;">✕</button>
+            </div>
+            <div style="display:flex; gap:5px; margin-bottom:12px;">
+                <button id="drm-zil-btn" onclick="dersRosterZilToggle()" class="yon-quick-btn" style="flex:1;"><span class="yon-qb-icon">🔔</span>Hatırlatma</button>
+                <button onclick="dersRosterDuzenleAcKapat()" class="yon-quick-btn" style="flex:1;"><span class="yon-qb-icon">✏️</span>Gün/Saat</button>
+                <button onclick="dersRosterPdfIndir()" class="yon-quick-btn" style="flex:1; background:rgba(0,240,255,0.08); border-color:var(--aurora-cyan); color:var(--aurora-cyan);"><span class="yon-qb-icon">📄</span>PDF</button>
+                <button onclick="dersRosterSil()" class="yon-quick-btn" style="flex:1; background:rgba(239,68,68,0.1); border-color:var(--neon-red); color:var(--neon-red);"><span class="yon-qb-icon">🗑️</span>Sil</button>
+            </div>
+            <div id="drm-duzenle-alani" style="display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:12px;"></div>
+            <!-- Hatırlatma bildiriminin TAM olarak ne zaman/kime gideceğini gösterir (bkz. dersRosterCiz). -->
+            <div id="drm-hatirlatma-detay" style="margin-bottom:10px;"></div>
+            <!-- 📋 Ders Planı — "bugün ne çalışacağız" kısa notu (bkz. dersRosterCiz/dersPlaniDuzenle). -->
+            <div id="drm-plan-alani" style="margin-bottom:10px;"></div>
+            <!-- Tek seferlik iptal/erteleme — haftalık tanım BOZULMADAN sadece yaklaşan tek bir oluşum
+                 atlanabilir (bkz. antrenman_programi_istisna, migrations/0033). -->
+            <div id="drm-istisna-alani" style="margin-bottom:12px;"></div>
+            <input type="text" id="drm-ara" placeholder="🔍 Sporcu ara veya eklemek için yaz..." oninput="dersRosterCiz()" style="width:100%; box-sizing:border-box; padding:9px; margin-bottom:10px; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:13px;">
+            <div style="font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Bu Derse Kayıtlı Sporcular</div>
+            <div id="drm-roster-liste"></div>
+            <div style="font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin:14px 0 6px;">+ Sporcu Ekle</div>
+            <div id="drm-aday-liste"></div>
+        </div>
+    </div>
+    <!-- SPORCU HAFTALIK PROGRAM MODALI — bir sporcuyu haftanın birden fazla dersine TEK ekrandan,
+         tek kaydetmeyle atar (mevcut tekli katılımcı ekle/çıkar uçları bir döngüyle çağrılır). -->
+    <div id="sporcu-program-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:460px; width:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                <div>
+                    <div style="font-size:16px; font-weight:900;">📅 Haftalık Programı Düzenle</div>
+                    <div id="spm-alt" style="font-size:12px; color:var(--text-muted); margin-top:2px;"></div>
+                </div>
+                <button onclick="sporcuProgramKapat()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-muted); width:30px; height:30px; border-radius:9px; cursor:pointer; font-size:14px; flex-shrink:0;">✕</button>
+            </div>
+            <div style="font-size:10.5px; color:var(--text-muted); margin:8px 0 12px;">Bu sporcunun geleceği dersleri işaretle, sonra kaydet — hangi derste olduğu değil, hangi GÜNLERE geleceği önemli.</div>
+            <div id="spm-izgara"></div>
+            <button onclick="sporcuProgramKaydet()" style="width:100%; margin-top:14px; background:var(--accent-orange); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">✅ Kaydet</button>
+        </div>
+    </div>
+    <!-- KARIŞIK SINIF OTURUM ARŞİVİ (2026-08-20) — "Dersi Bitir" ile o oturumdan kalan tek özet, geçmiş
+         oturumlara göz atmak için. Tamamen localStorage-only (Yarışma Modu'nun _kmYarismaGecmisi'yle
+         AYNI, kasıtlı olarak cihazlar-arası senkron EDİLMİYOR — tek cihazlı bir "not defteri"). -->
+    <div id="km-oturum-arsiv-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:480px; width:100%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div style="font-size:16px; font-weight:900;">📚 Oturum Arşivi</div>
+                <button onclick="kmOturumArsiviKapat()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-muted); width:30px; height:30px; border-radius:9px; cursor:pointer; font-size:14px; flex-shrink:0;">✕</button>
+            </div>
+            <div id="km-oturum-arsiv-liste" style="max-height:65vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+    <!-- ONAY (CONFIRM) MODALI -->
+    <div id="onay-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:360px; width:100%; text-align:center;">
+            <div id="onay-mesaj" style="font-size:15px; font-weight:bold; margin-bottom:18px; line-height:1.5;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="onayKapat()" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">İptal</button>
+                <button id="onay-evet-btn" onclick="onayOnayla()" style="flex:1; background:var(--neon-red); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">Evet</button>
+            </div>
+        </div>
+    </div>
+    <div id="hazir-olma-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:360px; width:100%;">
+            <div style="font-weight:800; font-size:15px; margin-bottom:14px; text-align:center;">🧠 Bugün Nasılsın?</div>
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>😴 Uyku Kalitesi</span><span id="ho-uyku-deger">7</span></div>
+                <input type="range" id="ho-uyku" min="1" max="10" value="7" style="width:100%;" oninput="document.getElementById('ho-uyku-deger').innerText=this.value">
+            </div>
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>💪 Yorgunluk</span><span id="ho-yorgunluk-deger">5</span></div>
+                <input type="range" id="ho-yorgunluk" min="1" max="10" value="5" style="width:100%;" oninput="document.getElementById('ho-yorgunluk-deger').innerText=this.value">
+            </div>
+            <div style="margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>🔥 Motivasyon</span><span id="ho-motivasyon-deger">7</span></div>
+                <input type="range" id="ho-motivasyon" min="1" max="10" value="7" style="width:100%;" oninput="document.getElementById('ho-motivasyon-deger').innerText=this.value">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
+                    <input type="checkbox" id="ho-sakatlik" onchange="document.getElementById('ho-sakatlik-not-satir').style.display=this.checked?'block':'none'">
+                    <span>🤕 Ağrı/sakatlık var mı?</span>
+                </label>
+                <div id="ho-sakatlik-not-satir" style="display:none; margin-top:8px;">
+                    <input type="text" id="ho-sakatlik-notu" placeholder="Kısa not (nerede, ne zamandır?)" style="width:100%; box-sizing:border-box; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:12px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="kapatModal('hazir-olma-modal')" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">İptal</button>
+                <button onclick="hazirOlmaKaydet()" style="flex:1; background:var(--aurora-cyan); color:#000; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+    <div id="ihtiyac-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:360px; width:100%;">
+            <div style="font-weight:800; font-size:15px; margin-bottom:14px; text-align:center;">💬 Öneri, Övgü & Şikayet</div>
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px; margin-bottom:4px;">Konu</div>
+                <select id="ihtiyac-kategori" style="width:100%; box-sizing:border-box; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:13px;">
+                    <option value="Öneri">💡 Öneri</option>
+                    <option value="Övgü">👏 Övgü</option>
+                    <option value="Şikayet">😕 Şikayet</option>
+                    <option value="Diğer">💬 Diğer</option>
+                </select>
+            </div>
+            <div style="margin-bottom:18px;">
+                <div style="font-size:12px; margin-bottom:4px;">Açıklama</div>
+                <textarea id="ihtiyac-aciklama" maxlength="500" rows="4" placeholder="Kısaca anlat..." style="width:100%; box-sizing:border-box; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:13px; resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="kapatModal('ihtiyac-modal')" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">İptal</button>
+                <button onclick="ihtiyacGonder()" style="flex:1; background:var(--accent-orange); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">Gönder</button>
+            </div>
+        </div>
+    </div>
+    <div id="izle-linki-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:340px; width:100%; text-align:center;">
+            <div id="izle-linki-baslik" style="font-weight:800; font-size:14px; margin-bottom:12px;">🔗 Canlı İzleme Linki</div>
+            <img id="izle-linki-qr" style="width:150px; height:150px; border-radius:10px; margin-bottom:12px; background:#fff; padding:6px;" alt="QR kod">
+            <input id="izle-linki-input" type="text" readonly onclick="this.select()" style="width:100%; box-sizing:border-box; padding:9px; margin-bottom:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:11px; text-align:center;">
+            <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:14px;">Bu link PIN gerektirmez — sadece bu sporcunun canlı antrenmanını gösterir. Veliyle paylaşabilirsin.</div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="kapatModal('izle-linki-modal')" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">Kapat</button>
+                <button onclick="izleLinkiKopyala()" style="flex:1; background:var(--aurora-cyan); color:#000; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">📋 Kopyala</button>
+            </div>
+        </div>
+    </div>
+    <div id="sezon-ozeti-modal" class="modal-overlay" style="z-index:30000;">
+        <div class="modal-content glass-panel" style="max-width:380px; width:100%;">
+            <div id="sezon-ozeti-icerik"></div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button onclick="kapatModal('sezon-ozeti-modal')" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">Kapat</button>
+                <button onclick="sezonOzetiIndir()" style="flex:1; background:linear-gradient(120deg, #00F0FF, #9B3BFF); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">📥 İndir</button>
+            </div>
+        </div>
+    </div>
+    <!-- YÖNETİCİ PANELİ — komuta merkezi kabuğu (mobilde alt nav, ≥900px'te sidebar+aktivite sütunu) -->
+    <div id="yonetici-modal" class="modal-overlay" style="z-index:25000;">
+        <div class="modal-content glass-panel yon-shell" style="position:relative;">
+            <!-- SOL SIDEBAR — sadece masaüstünde görünür -->
+            <div class="yon-sidebar" id="yon-sidebar">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:0 6px 8px;">
+                    <div style="font-weight:900; font-size:14px;">🏹 DAĞ S.K.</div>
+                    <button onclick="yoneticiPaneliKapat()" class="adm-btn adm-btn-sm" style="min-width:30px; padding:0;">✕</button>
+                </div>
+                <div id="yon-sidebar-nav"></div>
+            </div>
+            <!-- ORTA ANA SÜTUN -->
+            <div class="yon-main">
+                <div class="yon-topbar" id="yonetici-modal-header">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <div id="yon-aktif-sekme-etiket" style="flex:1; min-width:0; display:flex; align-items:center; gap:7px; font-weight:900; color:var(--text-main); font-size:15px; letter-spacing:-.2px;"></div>
+                        <span id="yon-sync-badge-top" class="yon-sync-badge"></span>
+                        <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px; flex-shrink:0;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); yoneticiSekme(yoneticiSekmeAktif); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        </button>
+                        <button onclick="yoneticiPaneliKapat()" class="adm-btn" style="min-height:36px; width:36px; padding:0; font-size:14px; border-radius:11px; flex-shrink:0;">✕</button>
+                    </div>
+                    <div id="yon-lig-bar" style="display:none; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; flex-shrink:0;">
+                        <button id="yon-lig-buyukler" onclick="yoneticiLigSec('buyukler')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">🔵 Büyükler</button>
+                        <button id="yon-lig-yildizlar" onclick="yoneticiLigSec('yildizlar')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">⭐ Yıldızlar</button>
+                        <button id="yon-lig-kucukler" onclick="yoneticiLigSec('kucukler')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">🟢 Küçükler</button>
+                        <button id="yon-lig-minikler" onclick="yoneticiLigSec('minikler')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">🌱 Minikler</button>
+                    </div>
+                    <input id="yonetici-arama" oninput="yoneticiPaneliCiz()" placeholder="🔍 Sporcu ara..." class="adm-input" style="flex-shrink:0;">
+                </div>
+                <div id="yonetici-liste" class="yon-content-scroll"></div>
+            </div>
+            <!-- SAĞ AKTİVİTE SÜTUNU — sadece masaüstünde görünür -->
+            <div class="yon-activity" id="yon-activity">
+                <div>
+                    <div class="adm-section-header"><span class="adm-section-title" style="font-size:12px;">📡 Canlı Akış</span></div>
+                    <div id="yon-canli-akis"></div>
+                </div>
+                <div>
+                    <div class="adm-section-header"><span class="adm-section-title" style="font-size:12px; color:var(--neon-red);">⚠️ Devamsızlık</span></div>
+                    <div id="yon-devamsizlik-widget"></div>
+                </div>
+                <div>
+                    <div class="adm-section-header"><span class="adm-section-title" style="font-size:12px; color:var(--aurora-gold);">🎂 Doğum Günleri</span></div>
+                    <div id="yon-dogumgunu-widget"></div>
+                </div>
+            </div>
+            <!-- ALT NAVİGASYON BARI — sadece mobilde görünür -->
+            <div class="yon-bottom-nav" id="yon-bottom-nav"></div>
+            <!-- "Diğer" sayfası — mobilde alt navdaki taşma menüsü -->
+            <div class="yon-diger-sheet" id="yon-diger-sheet"></div>
+        </div>
+    </div>
+
+    <!-- DÜELLO MODU (Turnuva Simülatörü) -->
+    <div id="duello-modal">
+        <!-- EKRAN 1: Rakip Seçimi -->
+        <div id="duello-ekran-secim" class="duello-ekran aktif">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <button onclick="dueloKapat()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); width:36px; height:36px; border-radius:10px; font-size:14px; cursor:pointer; flex-shrink:0;">✕</button>
+                <div style="font-weight:900; font-size:16px;">⚔️ Düello Modu</div>
+            </div>
+            <div id="duello-secim-icerik"></div>
+        </div>
+        <!-- EKRAN 1.5: Davet Gönderildi, Bekleniyor -->
+        <div id="duello-ekran-bekleme" class="duello-ekran">
+            <div id="duello-bekleme-icerik"></div>
+        </div>
+        <!-- EKRAN 2: Düello Devam Ediyor -->
+        <div id="duello-ekran-devam" class="duello-ekran">
+            <div id="duello-devam-icerik"></div>
+        </div>
+        <!-- EKRAN 3: Sonuç -->
+        <div id="duello-ekran-sonuc" class="duello-ekran">
+            <div id="duello-sonuc-icerik"></div>
+        </div>
+    </div>
+
+    <!-- Gelen düello daveti banner'ı — uygulamanın herhangi bir ekranında görünebilir -->
+    <div id="duello-davet-banner">
+        <div id="duello-davet-banner-icerik"></div>
+    </div>
+
+    <!-- Küçültülmüş düello widget'ı — modal kapatılmadan gizlenip diğer sekmelerde gezinilebilir,
+         bağlantı/senkron arka planda devam eder. Tıklanınca tam ekrana geri döner. -->
+    <div id="duello-mini-widget" onclick="dueloMiniGenislet()">
+        <span id="duello-mini-icerik"></span>
+    </div>
+
+    <!-- SİSTEM ÇEKİRDEĞİ JAVASCRIPT (EKSİKSİZ TAM SÜRÜM) -->
+    <script src="dagsk-teknik-calisma.js"></script>
+    <script src="sync.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

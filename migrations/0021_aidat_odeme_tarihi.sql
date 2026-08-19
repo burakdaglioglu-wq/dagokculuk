@@ -1,0 +1,1 @@
+ALTER TABLE dues ADD COLUMN odemeTarihi TEXT;

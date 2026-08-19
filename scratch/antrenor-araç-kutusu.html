@@ -1,0 +1,473 @@
+<title>Antrenör Araç Kutusu</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --void: #060810;
+    --glass: rgba(255,255,255,0.055);
+    --glass-strong: rgba(255,255,255,0.09);
+    --glass-line: rgba(255,255,255,0.12);
+    --glass-line-soft: rgba(255,255,255,0.07);
+    --ink: #f3f6fa;
+    --ink-dim: #a2acba;
+    --ink-faint: #616c7c;
+    --violet: #8b6bff;
+    --violet-deep: #6a45f0;
+    --cyan: #2dd9ef;
+    --emerald: #34e0a1;
+    --amber: #ffb347;
+    --coral: #ff7a5c;
+    --coral-deep: #e85a3c;
+    --rose: #ff5fa8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--void);
+    color: var(--ink);
+    font-family: 'Outfit', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+  .display { font-family: 'Fredoka', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  /* Ambient mesh backdrop — sabit, tüm sayfanın arkasında */
+  .mesh { position: fixed; inset: 0; z-index: -1; background: var(--void); overflow: hidden; }
+  .mesh::before, .mesh::after {
+    content: ''; position: absolute; width: 70vh; height: 70vh; border-radius: 50%; filter: blur(90px);
+  }
+  .mesh::before { background: radial-gradient(circle, var(--violet), transparent 70%); top: -20%; left: -10%; opacity: 0.35; }
+  .mesh::after { background: radial-gradient(circle, var(--cyan), transparent 70%); bottom: -15%; right: -10%; opacity: 0.28; }
+  .mesh-mid { position: absolute; width: 55vh; height: 55vh; border-radius: 50%; background: radial-gradient(circle, var(--coral), transparent 70%); top: 40%; left: 55%; filter: blur(100px); opacity: 0.18; }
+
+  .shell { max-width: 480px; margin: 0 auto; padding: 20px 15px 70px; position: relative; }
+
+  .glass { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 22px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+
+  /* ---------- Header ---------- */
+  .intro { padding: 20px 20px 17px; margin-bottom: 16px; box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6); }
+  .intro-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--violet); margin-bottom: 9px; background: rgba(139,107,255,0.12); border: 1px solid rgba(139,107,255,0.3); padding: 5px 11px; border-radius: 100px; }
+  .intro h1 { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px, 6vw, 26px); margin: 0 0 8px; text-wrap: balance; line-height: 1.18; background: linear-gradient(120deg, #ffffff 20%, #b9c2ff 60%, var(--cyan) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .intro p { margin: 0; color: var(--ink-dim); font-size: 13px; line-height: 1.6; }
+
+  .tabbar { display: flex; gap: 6px; margin-bottom: 16px; padding: 5px; }
+  .tabbar button {
+    flex: 1; border: none; background: transparent; color: var(--ink-dim); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px;
+    padding: 11px 8px; border-radius: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .tabbar button.aktif { background: linear-gradient(135deg, var(--violet), var(--violet-deep)); color: #fff; box-shadow: 0 6px 16px -4px rgba(139,107,255,0.5); }
+  .panel { display: none; } .panel.aktif { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Glossy CTA — daha modern: yumuşak gölge + hover glow, "3D offset buton" yerine spring/scale */
+  .cta {
+    width: 100%; border: none; border-radius: 17px; padding: 15px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14.5px; letter-spacing: 0.01em;
+    background: linear-gradient(135deg, var(--violet), var(--cyan)); color: #06070d;
+    box-shadow: 0 10px 28px -8px rgba(139,107,255,0.55);
+    transition: transform 0.15s cubic-bezier(.34,1.4,.64,1), box-shadow 0.15s;
+  }
+  .cta:active { transform: scale(0.97); box-shadow: 0 4px 14px -6px rgba(139,107,255,0.5); }
+  .cta:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+  .cta.ghost { background: var(--glass); color: var(--ink-dim); border: 1px solid var(--glass-line); box-shadow: none; font-size: 12.5px; padding: 11px; margin-top: 9px; }
+
+  .seg { display: flex; gap: 5px; padding: 4px; border-radius: 15px; background: var(--glass); border: 1px solid var(--glass-line); margin-bottom: 14px; }
+  .seg > div { flex: 1; text-align: center; padding: 9px 6px; border-radius: 11px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink-dim); transition: all 0.18s; }
+  .seg > div.aktif { background: linear-gradient(135deg, var(--violet), var(--violet-deep)); color: #fff; box-shadow: 0 4px 12px -4px rgba(139,107,255,0.5); }
+
+  /* Ok chip — hedef renkleri, cam-tik yüzeyde */
+  .ok-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+  .ok-chip {
+    width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12.5px; cursor: pointer; flex-shrink: 0;
+    border: 1.5px solid transparent; transition: transform 0.12s;
+  }
+  .ok-chip:active { transform: scale(0.9); }
+  .ok-sari { background: linear-gradient(160deg,#ffe27a,#f6c453); color: #4a3400; }
+  .ok-kirmizi { background: linear-gradient(160deg,#ff7a68,#e5533d); color: #fff; }
+  .ok-mavi { background: linear-gradient(160deg,#5fa8f5,#3f8ae0); color: #fff; }
+  .ok-siyah { background: linear-gradient(160deg,#3d3d44,#232328); color: #fff; }
+  .ok-beyaz { background: #f4f5f7; color: #232328; }
+  .ok-miss { background: transparent; border: 1.5px dashed var(--ink-faint); color: var(--ink-faint); }
+  .ok-chip.secili { box-shadow: 0 0 0 2.5px var(--emerald), 0 4px 10px rgba(52,224,161,0.35); }
+  .ok-pending-row { display: flex; gap: 5px; flex-wrap: wrap; min-height: 34px; margin: 10px 0; justify-content: center; }
+  .ok-pending-bos { width: 34px; height: 34px; border-radius: 11px; border: 1.5px dashed var(--glass-line); flex-shrink: 0; }
+
+  /* ================= MACERA ================= */
+  .icon-tile { width: 30px; height: 30px; border-radius: 30%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 8px rgba(0,0,0,0.3); }
+
+  .hud-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .hud-pill { flex: 1; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 8px; }
+  .hud-pill .v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; line-height: 1.1; }
+  .hud-pill .k { font-size: 8px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .world-card { flex: 1; border-radius: 18px; padding: 13px 8px; text-align: center; cursor: pointer; border: 1.5px solid var(--glass-line); position: relative; overflow: hidden; transition: all 0.2s; }
+  .world-card .ikon { font-size: 21px; display: block; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+  .world-card .ad { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 10.5px; display: block; color: var(--ink-dim); }
+  .world-card[data-d="orman"] { background: linear-gradient(160deg, rgba(28,58,42,0.9), rgba(14,33,24,0.9)); }
+  .world-card[data-d="uzay"] { background: linear-gradient(160deg, rgba(36,26,74,0.9), rgba(19,15,40,0.9)); }
+  .world-card.secili { box-shadow: 0 0 0 2px var(--amber), 0 10px 24px -8px rgba(255,179,71,0.3); }
+  .world-card.secili .ad { color: #fff; }
+
+  .sahne { position: relative; border-radius: 22px; overflow: hidden; padding-top: 22px; padding-bottom: 30px; border: 1px solid var(--glass-line); }
+  .sahne.orman { background: linear-gradient(180deg, #0c1c16 0%, #123023 55%, #1a3d26 100%); }
+  .sahne.uzay { background: linear-gradient(180deg, #0a0a1a 0%, #14103a 55%, #1c1650 100%); }
+  .dekor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+  .dekor-orb { position: absolute; border-radius: 50%; }
+  .dekor-star { position: absolute; border-radius: 50%; background: #fff; opacity: 0.7; animation: tw 2.4s ease-in-out infinite; }
+  @keyframes tw { 0%,100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+
+  .yol-svg { position: relative; z-index: 1; display: block; margin: 0 auto; }
+  .node-katman { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
+  .dugum { position: absolute; transform: translate(-50%, -50%); text-align: center; width: 88px; }
+  .dugum-daire { width: 54px; height: 54px; border-radius: 30%; margin: 0 auto; position: relative; display: flex; align-items: center; justify-content: center; font-size: 21px; }
+  .dugum.aktif .dugum-daire { animation: nefes 2s ease-in-out infinite; cursor: pointer; }
+  @keyframes nefes { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.08) rotate(-2deg); } }
+  .dugum.kilit .dugum-daire { background: rgba(255,255,255,0.06); border: 1px solid var(--glass-line); backdrop-filter: blur(6px); filter: grayscale(1); opacity: 0.5; }
+  .dugum.aktif .dugum-daire { background: linear-gradient(150deg, var(--amber), #f0902a); box-shadow: 0 0 0 6px rgba(255,179,71,0.18), 0 8px 20px -6px rgba(255,179,71,0.5); }
+  .dugum.tamam .dugum-daire { background: linear-gradient(150deg, #57e6ab, var(--emerald)); box-shadow: 0 6px 16px -6px rgba(52,224,161,0.5); }
+  .dugum .check { position: absolute; bottom: -3px; right: -3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; color: var(--emerald); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; box-shadow: 0 2px 5px rgba(0,0,0,0.35); }
+  .etiket { font-weight: 600; font-size: 10px; color: var(--ink-dim); margin-top: 6px; line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+  .dugum.aktif .etiket { color: var(--amber); }
+  .dugum.tamam .etiket { color: var(--emerald); }
+  .karakter { position: absolute; z-index: 3; font-size: 24px; transform: translate(-50%, -128%); transition: left 0.6s cubic-bezier(.3,.7,.3,1), top 0.6s cubic-bezier(.3,.7,.3,1); animation: bob 1.7s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+  @keyframes bob { 0%,100% { transform: translate(-50%, -128%); } 50% { transform: translate(-50%, -142%); } }
+
+  /* Görev kartı — artık checklist */
+  .gorev { position: relative; z-index: 1; margin: 10px 12px 0; background: rgba(8,10,16,0.72); backdrop-filter: blur(10px); border: 1px solid rgba(255,179,71,0.28); border-radius: 18px; padding: 14px 15px; }
+  .gorev-head { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+  .gorev-ad { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; }
+  .gorev-aciklama { font-size: 11.5px; color: var(--ink-dim); line-height: 1.45; margin-bottom: 11px; }
+  .check-grid { display: flex; gap: 7px; flex-wrap: wrap; }
+  .check-item { width: 30px; height: 30px; border-radius: 10px; border: 1.5px solid var(--glass-line); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--ink-faint); transition: all 0.3s cubic-bezier(.3,1.5,.5,1); }
+  .check-item.dolu { background: linear-gradient(150deg, #57e6ab, var(--emerald)); border-color: transparent; color: #06251a; transform: scale(1.04); box-shadow: 0 4px 10px -4px rgba(52,224,161,0.5); }
+
+  .entry-box { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--glass-line-soft); }
+  .entry-title { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; text-align: center; }
+
+  .feed-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin: 16px 0 8px; }
+
+  /* ================= CEZA SİSTEMİ ================= */
+  .ceza-not { padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: var(--ink-dim); line-height: 1.55; border-left: 2px solid var(--coral); border-radius: 4px 16px 16px 4px; }
+  .ceza-kart { padding: 14px 15px; margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; }
+  .ceza-kart .icon-tile { width: 38px; height: 38px; font-size: 18px; background: linear-gradient(150deg, var(--coral), var(--coral-deep)); flex-shrink: 0; }
+  .ceza-baslik { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13.5px; margin-bottom: 3px; }
+  .ceza-aciklama { font-size: 11.5px; color: var(--ink-dim); line-height: 1.5; margin-bottom: 9px; }
+  .ceza-uygula-btn { border: none; background: rgba(255,122,92,0.14); color: var(--coral); font-weight: 700; font-size: 10.5px; padding: 7px 12px; border-radius: 100px; cursor: pointer; border: 1px solid rgba(255,122,92,0.3); }
+  .ceza-log-row { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 12px; margin-bottom: 6px; font-size: 11.5px; animation: fadeIn 0.3s ease; }
+
+  .toast-katman { position: fixed; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; pointer-events: none; z-index: 90; }
+  .toast { padding: 11px 18px; border-radius: 100px; font-weight: 600; font-size: 13px; box-shadow: 0 14px 34px -10px rgba(0,0,0,0.6); animation: toastPop 2.8s ease forwards; border: 1px solid var(--glass-line); }
+  @keyframes toastPop { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 12% { opacity: 1; transform: none; } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+
+  .footnote { text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 22px; line-height: 1.6; }
+</style>
+
+<div class="mesh"><div class="mesh-mid"></div></div>
+
+<div class="shell">
+  <div class="intro glass">
+    <div class="intro-eyebrow">🧭 DAĞ S.K. — ÖNİZLEME v3</div>
+    <h1 class="display">Daha net, daha modern, daha eksiksiz</h1>
+    <p>Geri bildirimine göre: Macera artık gerçek bir <b>checklist</b> + <b>okları oradan girebiliyorsun</b> + <b>takım modu</b> var. Ayrıca istediğin yeni <b>🚦 Ceza Sistemi</b> sekmesi — 10 hazır, yaşına uygun yöntemle.</p>
+  </div>
+
+  <div class="tabbar glass">
+    <button class="aktif" data-tab="macera" onclick="sekmeSec('macera')">🗺️ Macera Modu</button>
+    <button data-tab="ceza" onclick="sekmeSec('ceza')">🚦 Ceza Sistemi</button>
+  </div>
+
+  <!-- ========================= TAB 1: MACERA MODU 2.0 ========================= -->
+  <div class="panel aktif" id="panel-macera">
+    <div class="seg">
+      <div class="aktif" data-mod="birey" onclick="modSec('birey')">👤 Bireysel</div>
+      <div data-mod="takim" onclick="modSec('takim')">👥 Takım (3v3 vb.)</div>
+    </div>
+
+    <div id="takim-secici" style="display:none; margin-bottom:14px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:8px;">Takımı Kur (dokun → ekle/çıkar)</div>
+      <div class="ok-row" id="takim-uyeler" style="justify-content:flex-start;"></div>
+    </div>
+
+    <div class="hud-bar">
+      <div class="hud-pill glass"><div class="icon-tile" style="background:linear-gradient(150deg,#ffe27a,var(--amber));">🏆</div><div><div class="v mono" id="hud-toplam">0</div><div class="k">Puan</div></div></div>
+      <div class="hud-pill glass"><div class="icon-tile" style="background:linear-gradient(150deg,#ffe27a,#f6c453);">🎯</div><div><div class="v mono" id="hud-sari">0</div><div class="k">Sarı</div></div></div>
+      <div class="hud-pill glass"><div class="icon-tile" style="background:linear-gradient(150deg,#57e6ab,var(--emerald));">🔥</div><div><div class="v mono" id="hud-streak">0</div><div class="k">Seri</div></div></div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <div class="world-card secili" data-d="orman" onclick="dunyaSec('orman')"><span class="ikon">🌲</span><span class="ad">Ormandan Kaçış</span></div>
+      <div class="world-card" data-d="uzay" onclick="dunyaSec('uzay')"><span class="ikon">🚀</span><span class="ad">Uzay Macerası</span></div>
+    </div>
+
+    <div class="sahne orman" id="sahne">
+      <div id="yol-alani" style="position:relative;">
+        <div class="dekor" id="dekor"></div>
+        <div id="yol-svg-katman"></div>
+        <div class="node-katman" id="node-katman"></div>
+        <div class="karakter" id="karakter">🏃</div>
+      </div>
+      <div class="gorev" id="gorev"></div>
+    </div>
+
+    <div class="glass" style="padding:14px 15px; margin-top:12px;">
+      <div class="entry-title">🎯 Bu Turun Oklarını Gir (3-6 ok)</div>
+      <div class="ok-pending-row" id="pending-oklar"></div>
+      <div class="ok-row">
+        <div class="ok-chip ok-sari" onclick="okSec('X')">X</div>
+        <div class="ok-chip ok-sari" onclick="okSec('10')">10</div>
+        <div class="ok-chip ok-sari" onclick="okSec('9')">9</div>
+        <div class="ok-chip ok-kirmizi" onclick="okSec('8')">8</div>
+        <div class="ok-chip ok-kirmizi" onclick="okSec('7')">7</div>
+        <div class="ok-chip ok-mavi" onclick="okSec('6')">6</div>
+        <div class="ok-chip ok-mavi" onclick="okSec('5')">5</div>
+        <div class="ok-chip ok-siyah" onclick="okSec('4')">4</div>
+        <div class="ok-chip ok-siyah" onclick="okSec('3')">3</div>
+        <div class="ok-chip ok-miss" onclick="okSec('M')">M</div>
+      </div>
+      <button class="cta" id="kaydet-btn" style="margin-top:12px;" onclick="seriKaydet()" disabled>✅ Seriyi Kaydet</button>
+      <button class="cta ghost" onclick="pendingTemizle()">✕ Seçimi Temizle</button>
+    </div>
+    <button class="cta ghost" onclick="maceraSifirla()">↺ Maceraya Yeniden Başla</button>
+  </div>
+
+  <!-- ========================= TAB 2: CEZA SİSTEMİ ========================= -->
+  <div class="panel" id="panel-ceza">
+    <div class="ceza-not glass">🧡 Bunlar <b>cezalandırma</b> değil, <b>yapıcı yönlendirme</b> yöntemleri — hiçbiri utandırıcı ya da kalıcı değil, hepsi çocuğun derse geri dönmesiyle biter. Bir sporcunun kartına dokunup uygula, altta kısa bir kayıt tutulur (ne zaman/kime, sadece sen görürsün).</div>
+    <div id="ceza-listesi"></div>
+    <div class="feed-title">Bugün Uygulananlar</div>
+    <div id="ceza-log"></div>
+  </div>
+
+  <div class="footnote">Bu bir tasarım önizlemesi — sayılar/metinler örnek. Onaylarsan gerçek atış kaydı ve sporcu listesiyle bağlayıp uygulamaya ekleyeceğim.</div>
+</div>
+
+<div class="toast-katman" id="toast-katman"></div>
+
+<script>
+  function toast(msg, renk) {
+    var kat = document.getElementById('toast-katman');
+    var el = document.createElement('div'); el.className = 'toast';
+    el.style.background = 'rgba(15,18,26,0.92)'; el.style.color = renk || 'var(--ink)';
+    el.textContent = msg;
+    kat.appendChild(el); setTimeout(function () { kat.removeChild(el); }, 2800);
+  }
+  function sekmeSec(ad) {
+    document.querySelectorAll('.tabbar button').forEach(function (b) { b.classList.toggle('aktif', b.dataset.tab === ad); });
+    document.getElementById('panel-macera').classList.toggle('aktif', ad === 'macera');
+    document.getElementById('panel-ceza').classList.toggle('aktif', ad === 'ceza');
+  }
+
+  // ============================================================
+  // MACERA MODU 2.0
+  // ============================================================
+  var DUNYALAR = {
+    orman: {
+      baslik: 'Ormandan Kaçış', ikon: '🌲', karakter: '🏃',
+      asamalar: [
+        { ikon: '🐻', ad: 'Ayı Karşında!', tip: 'sari', hedef: 2, aciklama: '2 sarı (9-10-X) isabet et, ayıyı korkut.' },
+        { ikon: '🍎', ad: 'Açlık Bastırdı', tip: 'toplam', hedef: 16, aciklama: 'Elma bulmak için 16 puana ulaş.' },
+        { ikon: '🌊', ad: 'Nehri Geç', tip: 'streak', hedef: 3, aciklama: 'Iskalamadan 3 atış üst üste vur.' },
+        { ikon: '⛈️', ad: 'Fırtınadan Sakla', tip: 'x', hedef: 1, aciklama: 'Bir X (merkez) vur, sığınağı bul.' },
+        { ikon: '🔥', ad: 'Kamp Ateşini Yak', tip: 'toplam', hedef: 40, aciklama: 'Isınmak için 40 puana ulaş.' },
+        { ikon: '🏕️', ad: 'Eve Dönüş', tip: 'toplam', hedef: 56, aciklama: '56 puana ulaşırsan ormandan güvenle çıkarsın!' }
+      ]
+    },
+    uzay: {
+      baslik: 'Uzay Macerası', ikon: '🚀', karakter: '👨‍🚀',
+      asamalar: [
+        { ikon: '🛰️', ad: 'Sinyali Yakala', tip: 'atis', hedef: 3, aciklama: 'İlk seriyi at, macera başlasın.' },
+        { ikon: '🚀', ad: 'Fırlatmaya Hazır', tip: 'toplam', hedef: 12, aciklama: 'Roketi ateşlemek için 12 puana ulaş.' },
+        { ikon: '☄️', ad: 'Asteroid Alanı', tip: 'x', hedef: 2, aciklama: '2 X vur, asteroidlerden kaçın.' },
+        { ikon: '⛽', ad: 'Yakıt İstasyonu', tip: 'toplam', hedef: 32, aciklama: 'Yakıt doldurmak için 32 puana ulaş.' },
+        { ikon: '👽', ad: 'Yabancı Sinyali', tip: 'streak', hedef: 4, aciklama: 'Iskalamadan 4 atış üst üste vur.' },
+        { ikon: '🌌', ad: 'Yeni Dünyaya İniş', tip: 'toplam', hedef: 50, aciklama: '50 puana ulaşırsan gezegene güvenle inersin!' }
+      ]
+    }
+  };
+  var NODE_OFS = [0, 0.8, -0.68, 0.76, -0.8, 0], NODE_GAP = 100, NODE_TOP = 32, AMP = 78;
+  var dunya = 'orman', mod = 'birey';
+  var mToplam = 0, mSari = 0, mStreak = 0, mX = 0, mAtis = 0;
+  var pending = [];
+  var TAKIM_ADAYLARI = ['Ada', 'Kaan', 'Zeynep', 'Mert', 'Elif', 'Bora'];
+  var takimSecili = { 'Ada': true, 'Kaan': true, 'Zeynep': true };
+
+  function modSec(m) {
+    mod = m;
+    document.querySelectorAll('.seg > div[data-mod]').forEach(function (d) { d.classList.toggle('aktif', d.dataset.mod === m); });
+    document.getElementById('takim-secici').style.display = m === 'takim' ? 'block' : 'none';
+    if (m === 'takim') takimCiz();
+  }
+  function takimCiz() {
+    var el = document.getElementById('takim-uyeler');
+    el.innerHTML = TAKIM_ADAYLARI.map(function (ad) {
+      var secili = !!takimSecili[ad];
+      return '<div onclick="takimToggle(\'' + ad + '\')" style="padding:8px 14px; border-radius:100px; font-size:11.5px; font-weight:600; cursor:pointer; border:1.5px solid ' + (secili ? 'var(--emerald)' : 'var(--glass-line)') + '; background:' + (secili ? 'rgba(52,224,161,0.14)' : 'var(--glass)') + '; color:' + (secili ? 'var(--emerald)' : 'var(--ink-dim)') + ';">' + (secili ? '✓ ' : '') + ad + '</div>';
+    }).join('');
+  }
+  function takimToggle(ad) { takimSecili[ad] = !takimSecili[ad]; takimCiz(); }
+
+  function okSinifi(etiket) {
+    if (etiket === 'M') return 'miss';
+    var v = etiket === 'X' ? 10 : parseInt(etiket, 10);
+    if (v >= 9) return 'sari'; if (v >= 7) return 'kirmizi'; if (v >= 5) return 'mavi'; if (v >= 3) return 'siyah'; return 'beyaz';
+  }
+  function okSec(etiket) {
+    if (pending.length >= 6) return toast('En fazla 6 ok girilir.', '#ffb347');
+    pending.push(etiket);
+    pendingCiz();
+  }
+  function pendingCiz() {
+    var el = document.getElementById('pending-oklar');
+    var html = pending.map(function (o, i) { return '<div class="ok-chip ok-' + okSinifi(o) + ' secili" onclick="pendingSil(' + i + ')">' + o + '</div>'; }).join('');
+    for (var i = pending.length; i < Math.max(3, pending.length); i++) html += '';
+    el.innerHTML = html || '<div style="font-size:11px; color:var(--ink-faint); padding:8px 0;">↑ Yukarıdan 3-6 ok seç</div>';
+    document.getElementById('kaydet-btn').disabled = pending.length < 3;
+  }
+  function pendingSil(i) { pending.splice(i, 1); pendingCiz(); }
+  function pendingTemizle() { pending = []; pendingCiz(); }
+
+  function seriKaydet() {
+    if (pending.length < 3) return;
+    var toplam = 0;
+    pending.forEach(function (ok) {
+      mAtis++;
+      var v = ok === 'X' ? 10 : (ok === 'M' ? 0 : parseInt(ok, 10));
+      toplam += v;
+      if (ok === 'M') { mStreak = 0; } else { mStreak++; if (v >= 9) mSari++; }
+      if (ok === 'X') mX++;
+    });
+    mToplam += toplam;
+    toast('Seri kaydedildi: ' + toplam + ' puan', 'var(--emerald)');
+    pendingTemizle();
+    yolCiz();
+  }
+
+  function dunyaSec(d) {
+    dunya = d;
+    document.querySelectorAll('.world-card[data-d]').forEach(function (k) { k.classList.toggle('secili', k.dataset.d === d); });
+    var s = document.getElementById('sahne'); s.classList.remove('orman', 'uzay'); s.classList.add(DUNYALAR[d].sahneClass || d);
+    document.getElementById('karakter').textContent = DUNYALAR[d].karakter;
+    dekorCiz();
+    yolCiz();
+  }
+  function dekorCiz() {
+    var el = document.getElementById('dekor');
+    if (dunya === 'orman') {
+      el.innerHTML = '<div class="dekor-orb" style="width:46px;height:46px;top:14px;right:24px;background:radial-gradient(circle at 35% 30%,#fff8dd,#ffe9a8);box-shadow:0 0 30px rgba(255,233,168,0.45);"></div>';
+    } else {
+      var html = '<div class="dekor-orb" style="width:64px;height:64px;top:36px;left:-16px;background:radial-gradient(circle at 35% 30%,#a08bff,#3b2f8f);opacity:0.55;"></div>'
+        + '<div class="dekor-orb" style="width:34px;height:34px;bottom:56px;right:-6px;background:radial-gradient(circle at 35% 30%,#ffb199,#e5533d);opacity:0.6;"></div>';
+      for (var i = 0; i < 24; i++) { var s = 1 + Math.random() * 2; html += '<div class="dekor-star" style="width:' + s + 'px;height:' + s + 'px;top:' + (Math.random() * 90) + '%;left:' + (Math.random() * 96) + '%;animation-delay:' + (Math.random() * 2) + 's;"></div>'; }
+      el.innerHTML = html;
+    }
+  }
+  function deger(ist, a) { if (a.tip === 'toplam') return ist.toplam; if (a.tip === 'sari') return ist.sari; if (a.tip === 'streak') return ist.streak; if (a.tip === 'x') return ist.x; if (a.tip === 'atis') return ist.atis; return 0; }
+  function kutuSayisi(a) { return a.tip === 'toplam' ? Math.max(3, Math.round(a.hedef / 8)) : a.hedef; }
+
+  function konumlar(sayi, genislik) {
+    var n = [];
+    for (var i = 0; i < sayi; i++) { var o = NODE_OFS[i % NODE_OFS.length]; n.push({ x: genislik / 2 + o * AMP, y: NODE_TOP + i * NODE_GAP }); }
+    return n;
+  }
+  function egri(noktalar) {
+    if (!noktalar.length) return '';
+    var d = 'M ' + noktalar[0].x + ' ' + noktalar[0].y;
+    for (var i = 0; i < noktalar.length - 1; i++) { var p0 = noktalar[i], p1 = noktalar[i + 1], mY = (p0.y + p1.y) / 2; d += ' C ' + p0.x + ' ' + mY + ' ' + p1.x + ' ' + mY + ' ' + p1.x + ' ' + p1.y; }
+    return d;
+  }
+  function yolCiz() {
+    var d = DUNYALAR[dunya];
+    var ist = { toplam: mToplam, sari: mSari, streak: mStreak, x: mX, atis: mAtis };
+    document.getElementById('hud-toplam').textContent = mToplam;
+    document.getElementById('hud-sari').textContent = mSari;
+    document.getElementById('hud-streak').textContent = mStreak;
+
+    var sahne = document.getElementById('sahne');
+    var yolAlani = document.getElementById('yol-alani');
+    var genislik = sahne.clientWidth || 400;
+    var noktalar = konumlar(d.asamalar.length, genislik);
+    var yukseklik = noktalar[noktalar.length - 1].y + 56;
+
+    var durumlar = [], aktifIndex = -1;
+    d.asamalar.forEach(function (a) { durumlar.push(deger(ist, a) >= a.hedef ? 'tamam' : 'kilit'); });
+    for (var i = 0; i < durumlar.length; i++) { if (durumlar[i] !== 'tamam') { durumlar[i] = 'aktif'; aktifIndex = i; break; } }
+    if (aktifIndex === -1) aktifIndex = durumlar.length - 1;
+
+    var tamNoktalar = noktalar.slice(0, Math.max(1, aktifIndex + (durumlar[aktifIndex] === 'tamam' ? 1 : 0)));
+    document.getElementById('yol-svg-katman').innerHTML =
+      '<svg class="yol-svg" width="' + genislik + '" height="' + yukseklik + '" viewBox="0 0 ' + genislik + ' ' + yukseklik + '">'
+      + '<path d="' + egri(noktalar) + '" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="6" stroke-linecap="round" stroke-dasharray="1,13"/>'
+      + (tamNoktalar.length > 1 ? '<path d="' + egri(tamNoktalar) + '" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round"/>' : '')
+      + '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34e0a1"/><stop offset="100%" stop-color="#ffb347"/></linearGradient></defs></svg>';
+    yolAlani.style.height = yukseklik + 'px';
+
+    var nodeHTML = '';
+    d.asamalar.forEach(function (a, i) {
+      var p = noktalar[i], durum = durumlar[i];
+      nodeHTML += '<div class="dugum ' + durum + '" style="left:' + p.x + 'px; top:' + p.y + 'px;" ' + (durum === 'aktif' ? 'onclick="gorevGoster(' + i + ')"' : '') + '>'
+        + '<div class="dugum-daire">' + (durum === 'kilit' ? '🔒' : a.ikon) + (durum === 'tamam' ? '<div class="check">✓</div>' : '') + '</div>'
+        + '<div class="etiket">' + a.ad + '</div></div>';
+    });
+    var nk = document.getElementById('node-katman'); nk.innerHTML = nodeHTML; nk.style.height = yukseklik + 'px';
+    var kEl = document.getElementById('karakter'); kEl.style.left = noktalar[aktifIndex].x + 'px'; kEl.style.top = noktalar[aktifIndex].y + 'px';
+
+    window._aktifIst = ist;
+    gorevGoster(aktifIndex);
+  }
+  function gorevGoster(i) {
+    var d = DUNYALAR[dunya], a = d.asamalar[i]; if (!a) return;
+    var ist = window._aktifIst, v = Math.min(deger(ist, a), a.hedef), n = kutuSayisi(a), birim = a.hedef / n;
+    var kutular = '';
+    for (var k = 0; k < n; k++) { var dolu = v >= (k + 1) * birim - 0.001; kutular += '<div class="check-item' + (dolu ? ' dolu' : '') + '">' + (dolu ? '✓' : '') + '</div>'; }
+    document.getElementById('gorev').innerHTML =
+      '<div class="gorev-head"><span style="font-size:19px;">' + a.ikon + '</span><span class="gorev-ad display">' + a.ad + '</span></div>'
+      + '<div class="gorev-aciklama">' + a.aciklama + '</div>'
+      + '<div class="check-grid">' + kutular + '</div>';
+  }
+  function maceraSifirla() { mToplam = 0; mSari = 0; mStreak = 0; mX = 0; mAtis = 0; pendingTemizle(); yolCiz(); }
+
+  // ============================================================
+  // CEZA SİSTEMİ
+  // ============================================================
+  var CEZALAR = [
+    { ikon: '🧘', ad: '1 Dakika Nefes Molası', aciklama: 'Konuşma/dikkat dağıtma tekrarlanırsa, hattın kenarında 1 dakika sessizce nefes alıp sakinleşir.' },
+    { ikon: '🎯', ad: 'Ok Toplama Görevi', aciklama: 'O turun ok toplama görevi ona verilir — utandırıcı değil, sorumluluk kazandırıcı.' },
+    { ikon: '🪑', ad: 'Kısa Kenar Molası', aciklama: '2-3 dakika kenarda oturup ne olduğunu düşünür, kendi isteğiyle derse döner.' },
+    { ikon: '🤝', ad: 'Özür + El Sıkışma', aciklama: 'Bir arkadaşını rahatsız ettiyse küçük bir özür + el sıkışmayla kapatılır.' },
+    { ikon: '📝', ad: '"Ne Öğrendim" Kartı', aciklama: 'Ders sonunda kısa bir "bugün ne yapmalıydım" notu yazar, istenirse veliye gösterilir.' },
+    { ikon: '⏳', ad: 'Sırasını Erteleme', aciklama: 'O turda atış sırası en sona bırakılır — hemen hak yerine beklemeyi öğrenir.' },
+    { ikon: '🤸', ad: 'Enerji Boşaltma Seti', aciklama: '10 squat ya da germe hareketi — hem enerjiyi boşaltır hem ceza hissi vermeyen fiziksel bir görev olur.' },
+    { ikon: '🎖️', ad: 'Günün Tablosundan Muafiyet', aciklama: 'O gün için liderlik/ödül tablosuna dahil edilmez — ertesi derste otomatik geri döner.' },
+    { ikon: '🔇', ad: 'Rozet Ertelemesi', aciklama: 'Hak ettiği küçük bir rozet/ödül, sessiz kalırsa SONRAKİ derse ertelenir — doğal sonuç, ceza değil.' },
+    { ikon: '👨‍👩‍👧', ad: 'Veliye Kısa Not', aciklama: 'Sadece davranış TEKRARLANIRSA, kibar ve yapıcı bir dille veliye bilgi notu — işbirliği daveti.' }
+  ];
+  var cezaLog = [];
+  function cezaListesiCiz() {
+    document.getElementById('ceza-listesi').innerHTML = CEZALAR.map(function (c, i) {
+      return '<div class="ceza-kart glass"><div class="icon-tile">' + c.ikon + '</div><div style="flex:1; min-width:0;"><div class="ceza-baslik">' + c.ad + '</div><div class="ceza-aciklama">' + c.aciklama + '</div><button class="ceza-uygula-btn" onclick="cezaUygula(' + i + ')">🎯 ' + TAKIM_ADAYLARI[Math.floor(Math.random() * TAKIM_ADAYLARI.length)] + '’a Uygula</button></div></div>';
+    }).join('');
+  }
+  function cezaUygula(i) {
+    var c = CEZALAR[i];
+    var saat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    cezaLog.unshift({ ikon: c.ikon, ad: c.ad, saat: saat });
+    cezaLogCiz();
+    toast('Kaydedildi: ' + c.ad, 'var(--coral)');
+  }
+  function cezaLogCiz() {
+    var el = document.getElementById('ceza-log');
+    if (!cezaLog.length) { el.innerHTML = '<div style="font-size:11.5px; color:var(--ink-faint); text-align:center; padding:12px;">Henüz bir şey uygulanmadı.</div>'; return; }
+    el.innerHTML = cezaLog.map(function (l) {
+      return '<div class="ceza-log-row glass"><span>' + l.ikon + '</span><span style="flex:1;">' + l.ad + '</span><span class="mono" style="color:var(--ink-faint); font-size:10px;">' + l.saat + '</span></div>';
+    }).join('');
+  }
+
+  // ilk çizim
+  dekorCiz(); yolCiz(); cezaListesiCiz(); cezaLogCiz();
+  window.addEventListener('resize', yolCiz);
+</script>

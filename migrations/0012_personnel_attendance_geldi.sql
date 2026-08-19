@@ -1,0 +1,2 @@
+ALTER TABLE personnel_attendance ADD COLUMN elle INTEGER DEFAULT 0;
+ALTER TABLE personnel_attendance ADD COLUMN geldi INTEGER NOT NULL DEFAULT 1;
