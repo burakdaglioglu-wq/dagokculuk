@@ -340,12 +340,28 @@
   .uzmanlik-baslik{ font-size:19px; font-weight:900; margin-bottom:9px; position:relative; z-index:2; }
   .uzmanlik-metin{ font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:20px; position:relative; z-index:2; }
   .uzmanlik-cta{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; position:relative; z-index:2; padding:9px 15px; border-radius:9px; }
+
+  /* SSS - AKORDEON */
+  .sss-liste{ max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+  .sss-madde{ background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; transition:border-color .25s; }
+  .sss-madde.acik{ border-color:rgba(255,106,26,0.4); }
+  .sss-soru{
+    width:100%; background:none; border:none; color:var(--ink); text-align:left;
+    padding:18px 22px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    gap:16px; font-family:inherit; font-size:15px; font-weight:700;
+  }
+  .sss-ok{ font-size:20px; color:var(--accent); flex-shrink:0; transition:transform .3s cubic-bezier(.4,0,.2,1); line-height:1; }
+  .sss-madde.acik .sss-ok{ transform:rotate(45deg); }
+  .sss-yanit{ max-height:0; overflow:hidden; transition:max-height .38s cubic-bezier(.4,0,.2,1); }
+  .sss-yanit-ic{ padding:0 22px 18px; font-size:14px; color:var(--ink-soft); line-height:1.7; border-top:1px solid var(--line); padding-top:14px; }
+  .sss-yanit-ic a{ color:var(--accent); font-weight:700; }
 </style>
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute;">
-  <defs>
+  <link rel="icon" href="/favicon.png">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/favicon.png">
     <symbol id="ico-arrow" viewBox="0 0 512 512"><path d="M19.656 20.688v36.437L73.5 110.97c6.515-14.93 17.988-27.23 32.313-34.814L50.25 20.686l-30.594.002zm119.47 65.906c-29.312 0-52.876 23.533-52.876 52.844 0 21.654 12.868 40.178 31.406 48.375 1.88-37.477 32.825-67.482 70.656-67.907-7.734-19.565-26.786-33.312-49.187-33.312zm213.843 44.25L312.06 145.47l97.032 253.436 7.5 19.625L397 410.97l-253.28-97.533-14.345 40.97L492.28 494.312l-139.31-363.47zm-163.845 7.72c-29.31 0-52.875 23.563-52.875 52.874 0 24.35 16.282 44.705 38.594 50.906 2.935-34.576 30.61-62.252 65.187-65.188-6.2-22.312-26.553-38.594-50.905-38.594zm113.5 34.53L278.75 273.688l-1.344 5.625-5.625 1.312-100.124 23.53L384.156 386l-81.53-212.906zm-56.5 22.47c-29.31 0-52.875 23.563-52.875 52.874 0 10.896 3.28 20.983 8.875 29.375l59.78-14.063 14.033-59.03c-8.473-5.784-18.724-9.157-29.813-9.157z" transform="rotate(-40 256 256)"/></symbol>
     <symbol id="ico-star" viewBox="0 0 512 512"><path d="M256 38.013c-22.458 0-66.472 110.3-84.64 123.502-18.17 13.2-136.674 20.975-143.614 42.334-6.94 21.358 84.362 97.303 91.302 118.662 6.94 21.36-22.286 136.465-4.116 149.665 18.17 13.2 118.61-50.164 141.068-50.164 22.458 0 122.9 63.365 141.068 50.164 18.17-13.2-11.056-128.306-4.116-149.665 6.94-21.36 98.242-97.304 91.302-118.663-6.94-21.36-125.444-29.134-143.613-42.335-18.168-13.2-62.182-123.502-84.64-123.502z"/></symbol>
 
@@ -381,6 +397,7 @@
       <a href="#cimnastik">Cimnastik</a>
       <a href="#programlar">Programlar</a>
       <a href="#fotograflar">Fotoğraflar</a>
+      <a href="#sss">SSS</a>
       <a href="#yorumlar">Yorumlar</a>
       <a href="#iletisim">İletişim</a>
     </nav>
@@ -585,6 +602,62 @@
   </div>
 </section>
 
+<section class="bolum" id="sss">
+  <div class="wrap">
+    <div class="bolum-baslik-grup" style="text-align:center; margin:0 auto 36px;">
+      <div class="bolum-etiket">SSS</div>
+      <h2 class="bolum-baslik">Sıkça Sorulan Sorular</h2>
+      <p class="bolum-metin">Aklındaki soruların cevabı burada olmayabilir — o zaman bize yaz 🎯</p>
+    </div>
+    <div class="sss-liste">
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Kaç yaşında başlanabilir? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Okçuluk branşımıza <strong>5 yaşından</strong> itibaren kayıt yaptırabilirsiniz. Minikler grubumuz, küçük yaştaki sporcular için özel olarak tasarlanmış, oyun temelli bir eğitim süreciyle başlar. Üst sınır yok — yetişkinlerimiz de var.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Ekipman satın almam gerekir mi? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Hayır. Başlangıç sürecinde tüm ekipman (yay, ok, hedef) kulüp tarafından sağlanır. Belirli bir seviyeye gelince kişisel ekipman edinmek isteyenler için yönlendirme de yapıyoruz.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Deneme dersi veriyor musunuz? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Evet! <strong>Ücretsiz bir deneme dersimiz</strong> var. Kayıt yaptırmadan önce salonumuzu ve eğitim tarzımızı yakından görmek için <a href="https://wa.me/905469107893?text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." target="_blank" rel="noopener">WhatsApp'tan bize yazmanız</a> yeterli.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Antrenmanlar haftada kaç gün? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Gruba ve programa göre değişmekle birlikte antrenmanlar genellikle <strong>haftada 2–3 gün</strong> yapılmaktadır. Kesin program ve uygun gün/saat bilgisi için bizimle iletişime geçin; size en uygun grubu bulalım.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Milo Fitt Kids nedir, okçuluktan farkı ne? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Milo Fitt Kids, DAĞ Spor Kulübü bünyesinde aynı çatı altında yer alan <strong>çocuk cimnastiği</strong> programıdır. Denge, esneklik, özgüven ve koordinasyona odaklanır. Okçuluktan bağımsız bir branş olup farklı gruplar halinde yürütülmektedir.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Veli olarak süreci takip edebilir miyim? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Evet, kesinlikle. Kulüp uygulamamız üzerinden çocuğunuzun antrenman kayıtlarına, atış serilerine ve gelişim raporuna erişebilirsiniz. Veliler süreci "dışarıdan" değil, <strong>içeride</strong> takip eder.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Lisans çıkartmam şart mı? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Rekreatif düzeyde spor yapanlar için lisans zorunlu değildir. Ancak <strong>resmi yarışmalara katılmak</strong> isteyenler için federasyon lisansı gereklidir. Lisans süreçlerinde kulübümüz size yol gösterir.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Nerede bulunuyorsunuz? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Adresimiz: <strong>Yeni, Zişan Sokağı No:3, 34893 Pendik / İstanbul.</strong> <a href="https://www.google.com/maps/place/?q=place_id:ChIJpRYWXV3DyhQRKjfJEHX9B_E" target="_blank" rel="noopener">Google Haritalar'da aç →</a></div></div>
+      </div>
+
+    </div>
+    <div style="text-align:center; margin-top:32px;">
+      <a href="https://wa.me/905469107893?text=Merhaba%2C%20sormak%20istedi%C4%9Fim%20bir%20%C5%9Fey%20var." target="_blank" rel="noopener" class="btn-ikincil" style="display:inline-block;">Başka sorun mu var? WhatsApp'tan sor →</a>
+    </div>
+  </div>
+</section>
+
 <section class="bolum" id="yorumlar">
   <div class="wrap">
     <div class="bolum-baslik-grup">
@@ -695,6 +768,7 @@
         <a href="#cimnastik">Cimnastik</a>
         <a href="#programlar">Programlar</a>
         <a href="#fotograflar">Fotoğraflar</a>
+        <a href="#sss">SSS</a>
         <a href="#yorumlar">Yorumlar</a>
         <a href="#iletisim">İletişim</a>
       </div>
@@ -713,6 +787,23 @@
 </footer>
 
 <script>
+  // SSS Akordeon
+  function sssToggle(btn){
+    var madde = btn.parentElement;
+    var yanit = madde.querySelector('.sss-yanit');
+    var acikMi = madde.classList.contains('acik');
+    // Tüm açık maddeleri kapat
+    document.querySelectorAll('.sss-madde.acik').forEach(function(m){
+      m.classList.remove('acik');
+      m.querySelector('.sss-yanit').style.maxHeight = '0';
+    });
+    // Eğer kapalıysa aç
+    if(!acikMi){
+      madde.classList.add('acik');
+      yanit.style.maxHeight = yanit.scrollHeight + 'px';
+    }
+  }
+
   // Foto galeri + lightbox
   var GALERI = {
     okculuk: ['/galeri/okculuk-1.jpg','/galeri/okculuk-2.jpg','/galeri/okculuk-3.jpg','/galeri/okculuk-4.jpg','/galeri/okculuk-5.jpg','/galeri/okculuk-6.jpg'],

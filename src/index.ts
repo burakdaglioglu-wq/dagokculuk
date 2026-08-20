@@ -113,6 +113,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // Serve /app and /app/ as /app.html so the page (and its favicon) loads correctly
+    if (url.pathname === "/app" || url.pathname === "/app/") {
+      return env.ASSETS.fetch(new Request(`${url.origin}/app.html`, { method: "GET", headers: request.headers }));
+    }
+
     if (url.pathname === "/ws") {
       const id = env.CLUB_SYNC.idFromName("dagsk-club");
       return env.CLUB_SYNC.get(id).fetch(request);
