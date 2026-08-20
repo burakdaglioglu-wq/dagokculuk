@@ -118,6 +118,11 @@ export default {
       return env.ASSETS.fetch(new Request(`${url.origin}/app.html`, { method: "GET", headers: request.headers }));
     }
 
+    // Serve /favicon.ico by redirecting to the existing /favicon.png (some browsers better follow redirects)
+    if (url.pathname === "/favicon.ico") {
+      return Response.redirect(`${url.origin}/favicon.png`, 302);
+    }
+
     if (url.pathname === "/ws") {
       const id = env.CLUB_SYNC.idFromName("dagsk-club");
       return env.CLUB_SYNC.get(id).fetch(request);
