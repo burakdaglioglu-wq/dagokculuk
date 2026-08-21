@@ -11077,7 +11077,12 @@ ${(function(){
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
             if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
-            if(sekmeAd === 'video') vaInit();
+            if(sekmeAd === 'video') { vaInit(); }
+            else {
+                try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
+                try { aynaDurdur(); } catch(e) {}
+                try { if(vaMediaStream) vaStopCamera(); } catch(e) {}
+            }
             if(sekmeAd === 'duello') duelloTabDoldur();
             if(sekmeAd === 'basari') basariPaneliDoldur();
             if(sekmeAd === 'oyun') oyunPaneliDoldur();
@@ -13824,13 +13829,24 @@ ${(function(){
            Hiçbir kare sunucuya gönderilmez/kaydedilmez, sadece bu sekme açıkken bellekte tutulur.
         ========================================================= */
         function vaModSec(mod) {
-            let aynaEl = document.getElementById('va-mod-ayna'), aiEl = document.getElementById('va-mod-ai');
+            let aiPoseEl = document.getElementById('va-mod-ai-pose');
+            let aynaEl = document.getElementById('va-mod-ayna');
+            let aiEl = document.getElementById('va-mod-ai');
+
+            if(aiPoseEl) aiPoseEl.style.display = mod === 'ai_pose' ? 'block' : 'none';
             if(aynaEl) aynaEl.style.display = mod === 'ayna' ? 'block' : 'none';
             if(aiEl) aiEl.style.display = mod === 'ai' ? 'block' : 'none';
-            let aynaBtn = document.getElementById('va-mod-ayna-btn'), aiBtn = document.getElementById('va-mod-ai-btn');
+
+            let aiPoseBtn = document.getElementById('va-mod-aipose-btn');
+            let aynaBtn = document.getElementById('va-mod-ayna-btn');
+            let aiBtn = document.getElementById('va-mod-ai-btn');
+
+            if(aiPoseBtn) { aiPoseBtn.classList.toggle('va-btn-orange', mod === 'ai_pose'); aiPoseBtn.classList.toggle('va-btn-grey', mod !== 'ai_pose'); }
             if(aynaBtn) { aynaBtn.classList.toggle('va-btn-blue', mod === 'ayna'); aynaBtn.classList.toggle('va-btn-grey', mod !== 'ayna'); }
             if(aiBtn) { aiBtn.classList.toggle('va-btn-blue', mod === 'ai'); aiBtn.classList.toggle('va-btn-grey', mod !== 'ai'); }
-            // Sekme değişince kullanılmayan modun kamerası açık kalıp kafa karıştırmasın / pil tüketmesin.
+
+            // Sekme değişince kullanılmayan modun kamerası açık kalmasın
+            if(mod !== 'ai_pose') try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
             if(mod !== 'ayna') try { aynaDurdur(); } catch(e) {}
             if(mod !== 'ai') try { if(vaMediaStream) vaStopCamera(); } catch(e) {}
         }

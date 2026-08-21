@@ -1,5 +1,5 @@
-const CACHE = 'dag-sk-v69';
-const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png'];
+const CACHE = 'dag-sk-v70';
+const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png', '/dagsk-ai-pose.js', '/dagsk-teknik-calisma.js'];
 
 self.addEventListener('install', (e) => {
     e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE_URLS)));

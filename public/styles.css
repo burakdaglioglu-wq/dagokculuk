@@ -1,4 +1,4 @@
-﻿        /* EVRENSEL MOBİL TAŞMA KORUMASI */
+        /* EVRENSEL MOBİL TAŞMA KORUMASI */
         *, *::before, *::after { box-sizing: border-box !important; }
         html, body { overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; margin: 0; padding: 0; }
         * { box-sizing: border-box; }
@@ -1032,3 +1032,123 @@
             color: #fff; font-size: 12px; font-weight: 800; animation: dueloDavetGir .25s ease-out; touch-action: manipulation;
         }
         #duello-mini-widget:active { transform: scale(0.96); }
+
+        /* ===== AI POSE & FORM ANALİZİ MODÜLÜ ===== */
+        .ai-pose-box {
+            position: relative;
+            width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            line-height: 0;
+            border: 2px solid var(--border-color);
+            margin-bottom: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .ai-pose-video {
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            display: block;
+            object-fit: contain;
+            background: #000;
+        }
+        .ai-pose-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .ai-hud-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .ai-hud-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .ai-hud-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-hud-val {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--neon-blue);
+            line-height: 1.2;
+        }
+        .ai-hud-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .ai-hand-seg {
+            display: flex;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 4px;
+        }
+        .ai-hand-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .ai-hand-btn.aktif {
+            background: var(--accent-orange);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255,98,0,0.35);
+        }
+        .ai-feedback-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 12.5px;
+            line-height: 1.4;
+        }
+        .ai-fb-good {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        .ai-fb-warn {
+            background: rgba(251, 191, 36, 0.08);
+            border-color: rgba(251, 191, 36, 0.4);
+        }
+        .ai-fb-error {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        .ai-fb-badge {
+            font-weight: 800;
+            font-size: 12px;
+        }
+        .ai-fb-text {
+            color: var(--text-main);
+        }
+

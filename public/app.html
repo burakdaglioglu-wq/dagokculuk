@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
 </head>
 <body>
@@ -46,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v105</b> · 22.06.2026</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v106</b> · AI Duruş Analizi</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -792,17 +794,85 @@
 
         <!-- Başlık -->
         <div class="va-card">
-            <div class="va-title">🎥 Video Analiz</div>
-            <div class="va-sub">Atış anını gecikmeli izle ve duruşunu kontrol et, ya da videonu yapay zekâya analiz ettir.</div>
+            <div class="va-title">🎯 AI Video & Duruş Analizi</div>
+            <div class="va-sub">Gerçek zamanlı yapay zekâ ile atış formunu, yay kolu kilidini ve çekiş dirseği açılarını anlık analiz et.</div>
         </div>
 
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-blue" style="flex:1;">🪞 Gecikmeli Ayna</button>
-            <button onclick="vaModSec('ai')" id="va-mod-ai-btn" class="va-btn va-btn-grey" style="flex:1;">🤖 AI Analiz</button>
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1;">🤖 Canlı AI Duruş Analizi</button>
+            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1;">🪞 5sn Gecikmeli Ayna</button>
         </div>
 
-        <!-- ===== GECİKMELİ AYNA (5sn) + ÇİZİM ARAÇLARI ===== -->
-        <div id="va-mod-ayna">
+        <!-- ===== 1. MOD: GERÇEK ZAMANLI AI DURUŞ ANALİZİ (MediaPipe) ===== -->
+        <div id="va-mod-ai-pose">
+            <div class="va-card">
+                <!-- Okçu El ve Kamera Ayarları -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-weight:800; font-size:14px; color:var(--text-main);">🏹 Okçu Duruş Modu</div>
+                        <div class="va-sub">Yay tutuş eline göre otomatik açı optimizasyonu</div>
+                    </div>
+                    <div class="ai-hand-seg">
+                        <button id="ai-hand-right" class="ai-hand-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">🏹 Sağlak (Sol Yay Kolu)</button>
+                        <button id="ai-hand-left" class="ai-hand-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🏹 Solak (Sağ Yay Kolu)</button>
+                    </div>
+                </div>
+
+                <!-- Kamera & Video Ekranı -->
+                <div class="ai-pose-box">
+                    <video id="ai-pose-video" class="ai-pose-video" autoplay muted playsinline></video>
+                    <canvas id="ai-pose-canvas" class="ai-pose-canvas"></canvas>
+                    
+                    <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center;">
+                        <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
+                    </div>
+
+                    <!-- Canlı Form Skoru Rozeti (Ekran İçi) -->
+                    <div id="ai-pose-score-ring" style="position:absolute; top:10px; right:10px; z-index:3; background:rgba(15,23,42,0.85); border:2px solid var(--gold); border-radius:14px; padding:6px 12px; text-align:center; backdrop-filter:blur(4px);">
+                        <div style="font-size:9px; color:var(--text-muted); font-weight:700;">FORM PUANI</div>
+                        <div id="ai-pose-score" style="font-size:22px; font-weight:900; color:var(--gold); line-height:1;">--</div>
+                    </div>
+                </div>
+
+                <!-- Kontrol Butonları -->
+                <div class="va-row" style="margin-bottom:14px;">
+                    <button id="ai-pose-cam-start" class="va-btn va-btn-blue" onclick="DAGSK_AI_POSE.startLiveCamera()">📷 Canlı Kamerayı Aç</button>
+                    <button id="ai-pose-cam-stop" class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.stopLiveCamera()" style="display:none;">✖ Kamerayı Kapat</button>
+                    <button class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.toggleCameraFacing()" title="Ön/Arka Kamera Değiştir">🔄 Kamera Çevir</button>
+                    <button class="va-btn va-btn-green" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Duruş Kartını Kaydet</button>
+                </div>
+
+                <!-- Biomekanik Açı Ölçüm Göstergeleri -->
+                <div class="ai-hud-grid">
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Yay Kolu</div>
+                        <div id="ai-val-bowarm" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">İdeal: 175° - 180°</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Çekiş Dirseği</div>
+                        <div id="ai-val-drawelbow" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">Ok Ekseni Hizası</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Omuz Eğimi</div>
+                        <div id="ai-val-shoulder" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">Düz T-Hattı (&lt;6°)</div>
+                    </div>
+                </div>
+
+                <!-- Canlı Antrenör Geri Bildirimleri -->
+                <div style="font-weight:800; font-size:13px; margin-bottom:8px; color:var(--text-main);">📋 Canlı Antrenör Analizi & Form İpuçları</div>
+                <div id="ai-pose-feedbacks">
+                    <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                        Kamerayı açıp atış pozisyonuna geçin. Yapay zekâ eklemlerinizi ve formunuzu otomatik takip edecektir.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 2. MOD: GECİKMELİ AYNA (5sn) + ÇİZİM ARAÇLARI ===== -->
+        <div id="va-mod-ayna" style="display:none;">
             <div class="va-card">
                 <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🪞 5 Saniye Gecikmeli Ayna</div>
                 <div class="va-sub">Atışını bitirip ekrana baktığında kendi atış anını 5 saniye gecikmeyle izle. Omuz hizası veya çekiş mesafesini kontrol etmek için üzerine çizgi/açı çizebilirsin.</div>
@@ -829,61 +899,8 @@
                 <div id="ayna-hazir-acilar-baslik" style="display:none; font-size:11px; color:var(--text-muted); font-weight:700; margin-top:12px; margin-bottom:6px;">🎯 HAZIR AÇI ŞABLONLARI — birini seç, sonra 3 noktaya dokun</div>
                 <div id="ayna-hazir-acilar" style="display:none; gap:6px; flex-wrap:wrap;"></div>
                 <div id="ayna-hazir-aci-ipucu" style="display:none; font-size:11px; color:var(--gold); margin-top:6px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:8px 10px;"></div>
-                <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir (video kaydı gecikme/çizim içermez, ham görüntüdür) — hiçbiri hiçbir yere yüklenmez.</div>
+                <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir.</div>
             </div>
-        </div>
-
-        <!-- ===== AI ANALİZ (Abacus.AI) ===== -->
-        <div id="va-mod-ai" style="display:none;">
-            <!-- API Anahtarı Ayarı -->
-            <div class="va-card">
-                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">⚙️ Abacus.AI API Anahtarı <span class="va-sub" style="font-weight:400;">(analiz için gereklidir)</span></div>
-                <div class="va-row" style="align-items:center;">
-                    <input id="va-api-key" type="password" class="va-input" style="flex:1; min-width:200px;" placeholder="Abacus.AI API anahtarınızı yapıştırın (sapps...)">
-                    <button class="va-btn va-btn-grey" onclick="vaToggleKey()" id="va-key-eye" title="Göster/Gizle">👁️</button>
-                    <button class="va-btn va-btn-green" onclick="vaSaveKey()">💾 Kaydet</button>
-                </div>
-                <div class="va-sub" style="margin-top:8px;">Anahtarınız yalnızca bu cihazda (tarayıcı hafızasında) saklanır, sunucuya gönderilmez. Anahtar almak için: <b>apps.abacus.ai → Profil → API Keys</b>.</div>
-            </div>
-
-            <!-- Video Yükleme / Kamera -->
-            <div class="va-card">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">1️⃣ Video Kaynağı</div>
-                <div id="va-dropzone" class="va-dropzone" onclick="document.getElementById('va-file-input').click()">
-                    <div class="va-icon">📂</div>
-                    <div style="font-weight:700; margin-top:6px;">Videoyu buraya sürükleyip bırakın</div>
-                    <div class="va-sub">veya tıklayarak dosya seçin (.mp4, .mov, .webm)</div>
-                </div>
-                <input id="va-file-input" type="file" accept="video/*" style="display:none;" onchange="vaFileSelected(event)">
-
-                <div class="va-row" style="margin-top:12px;">
-                    <button id="va-cam-start" class="va-btn va-btn-blue" onclick="vaStartCamera()">📷 Kamerayı Aç</button>
-                    <button id="va-rec-start" class="va-btn va-btn-red" onclick="vaStartRecording()" style="display:none;">⏺ Kayda Başla</button>
-                    <button id="va-rec-stop" class="va-btn va-btn-grey" onclick="vaStopRecording()" style="display:none;">⏹ Kaydı Durdur</button>
-                    <button id="va-cam-stop" class="va-btn va-btn-grey" onclick="vaStopCamera()" style="display:none;">✖ Kamerayı Kapat</button>
-                    <span id="va-rec-status" style="display:none; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--neon-red);"><span class="va-rec-dot"></span> Kayıt: <span id="va-rec-time">00:00</span></span>
-                </div>
-            </div>
-
-            <!-- Oynatma -->
-            <div class="va-card" id="va-player-card" style="display:none;">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">2️⃣ Önizleme & Oynatma</div>
-                <video id="va-camera-preview" class="va-video" autoplay muted playsinline style="display:none;"></video>
-                <video id="va-video" class="va-video" controls playsinline style="display:none;"></video>
-                <div class="va-row" style="margin-top:12px;">
-                    <button id="va-analyze-btn" class="va-btn va-btn-orange" onclick="vaAnalyze()" style="flex:1; min-width:180px;" disabled>🤖 Yapay Zekâ ile Analiz Et</button>
-                    <button class="va-btn va-btn-grey" onclick="vaResetVideo()">🗑️ Temizle</button>
-                </div>
-                <div class="va-sub" style="margin-top:8px;">İpucu: Okçuyu yandan, tüm vücut görünecek şekilde çeken videolar en doğru analizi verir.</div>
-            </div>
-
-            <!-- Sonuçlar -->
-            <div class="va-card" id="va-results-card" style="display:none;">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">3️⃣ Analiz Sonuçları</div>
-                <div id="va-results"></div>
-            </div>
-
-            <canvas id="va-canvas" style="display:none;"></canvas>
         </div>
     </div>
 
@@ -1351,6 +1368,7 @@
 
     <!-- SİSTEM ÇEKİRDEĞİ JAVASCRIPT (EKSİKSİZ TAM SÜRÜM) -->
     <script src="dagsk-teknik-calisma.js"></script>
+    <script src="dagsk-ai-pose.js"></script>
     <script src="sync.js"></script>
     <script src="app.js"></script>
 </body>
