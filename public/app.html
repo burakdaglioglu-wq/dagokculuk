@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v111</b> · Çizim & Video Dışa Aktarma</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v112</b> · Çapa Takibi & Daire Çizim</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -836,9 +836,11 @@
 
                 <!-- Kamera & Video Ekranı -->
                 <div class="ai-pose-box">
-                    <video id="ai-pose-video" class="ai-pose-video" autoplay muted playsinline></video>
-                    <canvas id="ai-pose-canvas" class="ai-pose-canvas"></canvas>
-                    <canvas id="ai-draw-canvas" class="ai-draw-canvas"></canvas>
+                    <div class="ai-pose-inner" id="ai-pose-inner">
+                        <video id="ai-pose-video" class="ai-pose-video" autoplay muted playsinline></video>
+                        <canvas id="ai-pose-canvas" class="ai-pose-canvas"></canvas>
+                        <canvas id="ai-draw-canvas" class="ai-draw-canvas"></canvas>
+                    </div>
                     
                     <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center;">
                         <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
@@ -854,8 +856,9 @@
                 <!-- Video Üzerine Çizim Araç Çubuğu (Antrenör Notları) -->
                 <div class="ai-draw-toolbar">
                     <span style="font-size:11px; font-weight:800; color:var(--text-muted); margin-right:2px;">🎨 Çizim:</span>
-                    <button id="ai-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Serbest Çizim">✏️ Kalem</button>
+                    <button id="ai-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Serbest Kalem">✏️ Kalem</button>
                     <button id="ai-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Düz Çizgi">📏 Çizgi</button>
+                    <button id="ai-tool-circle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('circle')" title="Daire / Yuvarlak Çiz">⭕ Daire</button>
                     <button id="ai-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="3 Noktadan Açı Ölç">📐 Açı</button>
                     <button id="ai-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Çizimi Durdur">🖐️ Gezin</button>
 
@@ -917,6 +920,11 @@
                         <div class="ai-hud-label">Çekiş Dirseği</div>
                         <div id="ai-val-drawelbow" class="ai-hud-val">--°</div>
                         <div class="ai-hud-sub">Ok Ekseni Hizası</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Çapa (Anchor)</div>
+                        <div id="ai-val-anchor" class="ai-hud-val" style="font-size:16px;">--</div>
+                        <div id="ai-sub-anchor" class="ai-hud-sub">Çene / Yüz Teması</div>
                     </div>
                     <div class="ai-hud-card">
                         <div class="ai-hud-label">Omuz Eğimi</div>

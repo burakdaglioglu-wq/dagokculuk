@@ -1,6 +1,6 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v3
- * Canlı kamera, video yükleme, serbest/açı çizim araçları, açı giydirilmiş video kaydı ve WhatsApp veli paylaşımı.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v4
+ * Hassas açı kilitleme, Çapa (Anchor) noktası biomekanik takibi, Daire/Kalem/Çizgi çizim araçları, video kaydı ve WhatsApp.
  */
 
 (function (global) {
@@ -24,6 +24,7 @@
         drawElbowAngle: 45,
         shoulderTilt: 0,
         spineAngle: 90,
+        anchorStatus: 'Kilitli',
         feedbacks: [],
         timestamp: null
     };
@@ -32,7 +33,7 @@
     // 🎨 VİDEO ÜZERİNE ÇİZİM SİSTEMİ (ANNOTATIONS)
     // ==========================================
     const drawState = {
-        activeTool: null, // null (gezin) | 'pen' | 'line' | 'angle'
+        activeTool: null, // null (gezin) | 'pen' | 'line' | 'circle' | 'angle'
         currentColor: '#fbbf24',
         drawingsHistory: [],
         isDrawing: false,
@@ -112,7 +113,7 @@
     }
 
     /**
-     * Okçuluk Biomekanik Duruş Değerlendirmesi
+     * Okçuluk Biomekanik Duruş & Çapa (Anchor) Değerlendirmesi
      */
     function evaluateArcheryForm(landmarks, handedness = 'right') {
         const isRight = handedness === 'right';
@@ -243,15 +244,35 @@
             }
         }
 
-        // 5. Çapa Mesafesi
-        if (nose && drawWrist && nose.visibility > 0.4 && drawWrist.visibility > 0.4) {
-            const dist = Math.hypot(nose.x - drawWrist.x, nose.y - drawWrist.y);
-            if (dist > 0.28) {
-                score -= 10;
+        // 5. Çapa (Anchor Point) Kilidi ve Yüz Teması Analizi
+        let anchorStatus = 'Kilitli 🟢';
+        let anchorDist = 0;
+        const chinTarget = isRight ? (landmarks[10] || landmarks[8] || nose) : (landmarks[9] || landmarks[7] || nose);
+
+        if (chinTarget && drawWrist && chinTarget.visibility > 0.35 && drawWrist.visibility > 0.35) {
+            anchorDist = Math.hypot(chinTarget.x - drawWrist.x, chinTarget.y - drawWrist.y);
+            if (anchorDist > 0.24) {
+                anchorStatus = 'Açık 🔴';
+                score -= 15;
+                feedbacks.push({
+                    type: 'error',
+                    badge: '🔴 Çapa Noktası Ayrık',
+                    text: 'Çekiş eli çeneden/yüzden uzakta. Çapa noktasını çene altına veya ağız kenarına kilitle.'
+                });
+            } else if (anchorDist > 0.14) {
+                anchorStatus = 'Hafif Açık 🟡';
+                score -= 6;
                 feedbacks.push({
                     type: 'warn',
-                    badge: '🟡 Çapa Mesafesi Açık',
-                    text: 'Çekiş eli çeneden/yüzden uzakta görünüyor. Çapa noktanı sabitlemeyi unutma.'
+                    badge: '🟡 Çapa Teması Geliştirilmeli',
+                    text: 'Çekiş eli çapa noktasına yakın ama tam kilitlenmemiş.'
+                });
+            } else {
+                anchorStatus = 'Kilitli 🟢';
+                feedbacks.push({
+                    type: 'good',
+                    badge: '🟢 Çapa Noktası Kilitli',
+                    text: 'Çekiş eli ile çene/yüz referans teması mükemmel.'
                 });
             }
         }
@@ -264,6 +285,7 @@
             drawElbowAngle,
             shoulderTilt,
             spineAngle,
+            anchorStatus,
             feedbacks,
             timestamp: Date.now()
         };
@@ -388,7 +410,22 @@
                 ctx.fill();
             });
 
-            // 4. Şık Açı Rozetleri
+            // 4. Çapa (Anchor) Kilidi Hedef Çemberi
+            if (drawWrist && drawWrist.visibility > 0.35) {
+                const ax = drawWrist.x * width;
+                const ay = drawWrist.y * height;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(ax, ay, 13, 0, 2 * Math.PI);
+                ctx.strokeStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+
+            // 5. Şık Açı Rozetleri
             const bowElbow = isRight ? landmarks[13] : landmarks[14];
             const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
@@ -445,6 +482,7 @@
         const feedbacksList = document.getElementById('ai-pose-feedbacks');
         const bowArmEl = document.getElementById('ai-val-bowarm');
         const drawElbowEl = document.getElementById('ai-val-drawelbow');
+        const anchorEl = document.getElementById('ai-val-anchor');
         const shoulderTiltEl = document.getElementById('ai-val-shoulder');
 
         if (scoreEl) {
@@ -461,6 +499,11 @@
 
         if (drawElbowEl) {
             drawElbowEl.textContent = `${analysis.drawElbowAngle}°`;
+        }
+
+        if (anchorEl) {
+            anchorEl.textContent = analysis.anchorStatus || '--';
+            anchorEl.style.color = (analysis.anchorStatus && analysis.anchorStatus.includes('🟢')) ? 'var(--neon-green)' : ((analysis.anchorStatus && analysis.anchorStatus.includes('🟡')) ? 'var(--gold)' : 'var(--neon-red)');
         }
 
         if (shoulderTiltEl) {
@@ -519,6 +562,13 @@
                     p1: p,
                     p2: p
                 };
+            } else if (drawState.activeTool === 'circle') {
+                drawState.currentDraft = {
+                    type: 'circle',
+                    color: drawState.currentColor,
+                    center: p,
+                    radius: 0
+                };
             } else if (drawState.activeTool === 'angle') {
                 drawState.angleDraftPoints.push(p);
                 if (drawState.angleDraftPoints.length === 3) {
@@ -547,6 +597,9 @@
                 renderUserDrawings();
             } else if (drawState.activeTool === 'line' && drawState.currentDraft) {
                 drawState.currentDraft.p2 = p;
+                renderUserDrawings();
+            } else if (drawState.activeTool === 'circle' && drawState.currentDraft) {
+                drawState.currentDraft.radius = Math.hypot(p.x - drawState.currentDraft.center.x, p.y - drawState.currentDraft.center.y);
                 renderUserDrawings();
             }
         };
@@ -604,6 +657,16 @@
                 ctx.beginPath();
                 ctx.arc(item.p2.x * width, item.p2.y * height, 5, 0, 2 * Math.PI);
                 ctx.fill();
+            } else if (item.type === 'circle' && item.center) {
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(item.center.x * width, item.center.y * height, item.radius * width, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                // Merkez noktası
+                ctx.beginPath();
+                ctx.arc(item.center.x * width, item.center.y * height, 3.5, 0, 2 * Math.PI);
+                ctx.fill();
             } else if (item.type === 'angle' && item.p1 && item.p2 && item.p3) {
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -659,14 +722,14 @@
             drawCanvas.style.cursor = tool ? 'crosshair' : 'default';
         }
 
-        ['pen', 'line', 'angle', 'none'].forEach(t => {
+        ['pen', 'line', 'circle', 'angle', 'none'].forEach(t => {
             const btn = document.getElementById(`ai-tool-${t}`);
             if (btn) btn.classList.toggle('aktif', (tool === t) || (!tool && t === 'none'));
         });
 
         renderUserDrawings();
         if (window.showToast) {
-            const toolNames = { pen: '✏️ Serbest Kalem aktif', line: '📏 Düz Çizgi aktif', angle: '📐 3 noktaya dokunarak açı ölçün', null: '🖐️ Gezinme moduna geçildi' };
+            const toolNames = { pen: '✏️ Serbest Kalem aktif', line: '📏 Düz Çizgi aktif', circle: '⭕ Daire / Yuvarlak Çizim aktif', angle: '📐 3 noktaya dokunarak açı ölçün', null: '🖐️ Gezinme moduna geçildi' };
             window.showToast(toolNames[tool] || 'Çizim modu');
         }
     }
@@ -1016,7 +1079,6 @@
     async function exportAnalyzedVideo() {
         const videoElement = document.getElementById('ai-pose-video');
         const poseCanvas = document.getElementById('ai-pose-canvas');
-        const drawCanvas = document.getElementById('ai-draw-canvas');
         const recordBtn = document.getElementById('ai-vid-record-btn');
 
         if (!videoElement) return;
@@ -1210,10 +1272,11 @@
         const score = lastAnalysisResult.score || 100;
         const bowArm = lastAnalysisResult.bowArmAngle || 180;
         const drawElbow = lastAnalysisResult.drawElbowAngle || 45;
+        const anchor = lastAnalysisResult.anchorStatus || 'Kilitli';
         const shoulder = lastAnalysisResult.shoulderTilt ? `${lastAnalysisResult.shoulderTilt}°` : 'Dengeli';
         const dateStr = new Date().toLocaleDateString('tr-TR');
 
-        const message = `🎯 *DAĞ OKÇULUK SPOR KULÜBÜ*\n🏹 *Teknik Duruş & Biomekanik Atış Analizi*\n📅 Tarih: ${dateStr}\n\n👤 *Sporcu:* ${athleteName}\n📊 *Form Puanı:* %${score}\n📐 *Yay Kolu Açısı:* ${bowArm}° (İdeal: 175°-180°)\n🎯 *Çekiş Dirseği:* ${drawElbow}°\n⚖️ *Omuz Dengesi:* ${shoulder}\n\n✅ *Antrenör Notu:* Atış formu ve eklem açıları incelenmiştir. İndirilen detaylı analiz kartı/videosu ektedir.`;
+        const message = `🎯 *DAĞ OKÇULUK SPOR KULÜBÜ*\n🏹 *Teknik Duruş & Biomekanik Atış Analizi*\n📅 Tarih: ${dateStr}\n\n👤 *Sporcu:* ${athleteName}\n📊 *Form Puanı:* %${score}\n📐 *Yay Kolu Açısı:* ${bowArm}° (İdeal: 175°-180°)\n🎯 *Çekiş Dirseği:* ${drawElbow}°\n⚓ *Çapa Noktası:* ${anchor}\n⚖️ *Omuz Dengesi:* ${shoulder}\n\n✅ *Antrenör Notu:* Atış formu ve eklem açıları incelenmiştir. İndirilen detaylı analiz kartı/videosu ektedir.`;
 
         const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
         window.open(whatsappURL, '_blank');
