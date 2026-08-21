@@ -1,7 +1,8 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v8
- * Tam ekranda entegre çizim araçları, Yakınlaştırma (Zoom & Pan & Pinch),
- * dengelenmiş/küçültülmüş zarif eklem halkaları ve kusursuz PC/Tablet uyumluluğu.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v9
+ * Çift Tıklama/Dokunma ile Tam Ekran (Double Tap Fullscreen),
+ * Otomatik Makaralı (Compound) & Klasik (Recurve) Yay Tespiti ve Biomekanik Açı Kalibrasyonu,
+ * Tam Ekranda Entegre Çizim, Zoom & Pan.
  */
 
 (function (global) {
@@ -14,10 +15,15 @@
     let isVideoPlaying = false;
     let isProcessingVideoFrame = false;
     let currentHandedness = 'right'; // 'right' (sağlak) | 'left' (solak)
+    let currentBowType = 'auto'; // 'auto' | 'recurve' | 'compound'
     let currentSourceMode = 'camera'; // 'camera' | 'video'
     let currentFacingMode = 'environment'; // 'environment' | 'user'
     let animationFrameId = null;
     let videoProcessingRAF = null;
+
+    // Çift dokunma (Double Tap) durumu
+    let lastTapTimestamp = 0;
+    let singleTapTimer = null;
 
     // En son analiz sonucu
     let lastAnalysisResult = {
@@ -27,6 +33,8 @@
         shoulderTilt: 0,
         spineAngle: 90,
         anchorStatus: 'Kilitli 🟢',
+        bowType: 'recurve',
+        bowTypeLabel: '🏹 Klasik Yay',
         feedbacks: [],
         timestamp: null
     };
@@ -103,7 +111,7 @@
         const minDim = Math.min(width, height);
         const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth < 1024);
         
-        // Zarif, küçültülmüş ve dengeli boyutlandırma
+        // Zarif ve dengeli boyutlandırma
         const base = Math.max(0.75, minDim / 680);
         return isTouch ? base * 1.18 : base;
     }
@@ -199,8 +207,9 @@
 
     /**
      * Okçuluk Biomekanik Duruş & Çapa (Anchor) Değerlendirmesi
+     * Klasik (Recurve) ve Makaralı (Compound) Yay Kalibrasyonu ile
      */
-    function evaluateArcheryForm(landmarks, handedness = 'right') {
+    function evaluateArcheryForm(landmarks, handedness = 'right', bowTypePref = 'auto') {
         const isRight = handedness === 'right';
 
         const bowShoulder = isRight ? landmarks[11] : landmarks[12];
@@ -214,70 +223,128 @@
         const leftHip  = landmarks[23];
         const rightHip = landmarks[24];
         const nose     = landmarks[0];
+        const chin     = isRight ? (landmarks[10] || nose) : (landmarks[9] || nose);
+        const ear      = isRight ? (landmarks[8] || chin) : (landmarks[7] || chin);
 
         const feedbacks = [];
         let score = 100;
 
-        // 1. Yay Kolu Açısı -> İdeal: 172° - 185°
+        // 1. Ham Yay Kolu ve Çekiş Açıları
         let bowArmAngle = 180;
-        if (bowShoulder && bowElbow && bowWrist && (bowElbow.visibility === undefined || bowElbow.visibility > 0.3)) {
+        if (bowShoulder && bowElbow && bowWrist && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
             bowArmAngle = calculateAngle(bowShoulder, bowElbow, bowWrist);
-            if (bowArmAngle < 165) {
-                const diff = Math.round(180 - bowArmAngle);
-                score -= Math.min(25, diff * 1.5);
-                feedbacks.push({
-                    type: 'error',
-                    badge: '🔴 Yay Kolu Bükük',
-                    text: `Yay kolu dirseği bükülmüş (${bowArmAngle}°). Kolunu omuzdan ileri kilitlemelisin.`
-                });
-            } else if (bowArmAngle < 172) {
-                score -= 8;
-                feedbacks.push({
-                    type: 'warn',
-                    badge: '🟡 Yay Kolu Hafif Bükük',
-                    text: `Yay kolu tam düz değil (${bowArmAngle}°). İdeal düzlük: 175°-180°.`
-                });
+        }
+
+        let drawElbowAngle = 45;
+        if (drawShoulder && drawElbow && drawWrist && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
+            drawElbowAngle = calculateAngle(drawShoulder, drawElbow, drawWrist);
+        }
+
+        // 2. OTOMATİK YAY TÜRÜ TESPİTİ (Klasik vs Makaralı)
+        let effectiveBowType = bowTypePref;
+        if (bowTypePref === 'auto') {
+            // Makaralı yaylarda tetik kullanıldığı için el çenenin altından ziyade çene kemiği/kulak hizasındadır ve yay kolu hafif esnek tutulur (167°-177°)
+            if (drawWrist && ear && chin && drawWrist.visibility > 0.3) {
+                const distToEar = Math.hypot(ear.x - drawWrist.x, ear.y - drawWrist.y);
+                const distToChin = Math.hypot(chin.x - drawWrist.x, chin.y - drawWrist.y);
+                
+                // Makaralı heuristiği: Tetik eli kulak/çene arkasında veya yay kolu kontrollü mikro-açıda
+                if (distToEar < distToChin * 0.92 || (bowArmAngle >= 166 && bowArmAngle <= 177 && distToEar < 0.16)) {
+                    effectiveBowType = 'compound';
+                } else {
+                    effectiveBowType = 'recurve';
+                }
             } else {
-                feedbacks.push({
-                    type: 'good',
-                    badge: '🟢 Mükemmel Yay Kolu',
-                    text: `Yay kolu kilitli ve stabil (${bowArmAngle}°).`
-                });
+                effectiveBowType = 'recurve';
             }
         }
 
-        // 2. Çekiş Dirseği Açısı ve Yüksekliği
-        let drawElbowAngle = 45;
-        if (drawShoulder && drawElbow && drawWrist && (drawElbow.visibility === undefined || drawElbow.visibility > 0.3)) {
-            drawElbowAngle = calculateAngle(drawShoulder, drawElbow, drawWrist);
+        const isCompound = effectiveBowType === 'compound';
+        const bowTypeLabel = isCompound ? '⚙️ Makaralı Yay' : '🏹 Klasik Yay';
+
+        // 3. YAY KOLU AÇISI DEĞERLENDİRMESİ (Yay Türüne Göre Kalibre)
+        if (bowShoulder && bowElbow && bowWrist && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
+            if (isCompound) {
+                // Makaralı Yay: İdeal 168° - 178° (Hafif mikro-esnek kol, eklemi kitlemeden rahat tutuş)
+                if (bowArmAngle < 160) {
+                    const diff = Math.round(168 - bowArmAngle);
+                    score -= Math.min(22, diff * 1.5);
+                    feedbacks.push({
+                        type: 'error',
+                        badge: '🔴 Makaralı: Yay Kolu Fazla Bükük',
+                        text: `Makaralı yay kolu fazla bükülmüş (${bowArmAngle}°). Kolu 168°-176° aralığına uzat.`
+                    });
+                } else if (bowArmAngle > 183) {
+                    score -= 5;
+                    feedbacks.push({
+                        type: 'warn',
+                        badge: '🟡 Aşırı Kilitli Kol',
+                        text: `Makaralıda dirseği aşırı kitlemek titreşimi artırabilir (${bowArmAngle}°). Hafif mikro-esnek bırak.`
+                    });
+                } else {
+                    feedbacks.push({
+                        type: 'good',
+                        badge: '🟢 Makaralı Yay Kolu İdeal',
+                        text: `Makaralı yay kolu açısı ve duvar dengesi mükemmel (${bowArmAngle}°).`
+                    });
+                }
+            } else {
+                // Klasik Yay: İdeal 175° - 185° (Tam düz ve kilitli kemik hizalaması)
+                if (bowArmAngle < 165) {
+                    const diff = Math.round(180 - bowArmAngle);
+                    score -= Math.min(25, diff * 1.5);
+                    feedbacks.push({
+                        type: 'error',
+                        badge: '🔴 Klasik: Yay Kolu Bükük',
+                        text: `Klasik yay kolu dirseği bükülmüş (${bowArmAngle}°). Omuzdan ileri kilitlemelisin.`
+                    });
+                } else if (bowArmAngle < 172) {
+                    score -= 8;
+                    feedbacks.push({
+                        type: 'warn',
+                        badge: '🟡 Yay Kolu Hafif Bükük',
+                        text: `Yay kolu tam düz değil (${bowArmAngle}°). İdeal: 175°-180°.`
+                    });
+                } else {
+                    feedbacks.push({
+                        type: 'good',
+                        badge: '🟢 Klasik Yay Kolu Kilitli',
+                        text: `Klasik yay kolu tam kilitli ve stabil (${bowArmAngle}°).`
+                    });
+                }
+            }
+        }
+
+        // 4. ÇEKİŞ DİRSEĞİ AÇISI VE YÜKSEKLİĞİ
+        if (drawShoulder && drawElbow && drawWrist && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
             const elbowHeightDiff = (drawShoulder.y - drawElbow.y);
 
-            if (elbowHeightDiff < -0.05) {
+            if (elbowHeightDiff < -0.06) {
                 score -= 20;
                 feedbacks.push({
                     type: 'error',
                     badge: '🔴 Düşük Çekiş Dirseği',
-                    text: 'Çekiş dirseğin aşağıda kalmış! Sırt kaslarını kullanarak dirseğini omuz hizasına kaldır.'
+                    text: 'Çekiş dirseğin aşağıda kalmış! Sırt kaslarını kullanarak dirseği ok hizasına kaldır.'
                 });
-            } else if (elbowHeightDiff > 0.12) {
+            } else if (elbowHeightDiff > 0.14) {
                 score -= 10;
                 feedbacks.push({
                     type: 'warn',
                     badge: '🟡 Aşırı Yüksek Dirsek',
-                    text: 'Çekiş dirseği çok yukarı kalkmış. Rahat bir çapa için hafifçe dengele.'
+                    text: 'Çekiş dirseği çok yukarı kalkmış. Omuz ekseniyle dengele.'
                 });
             } else {
                 feedbacks.push({
                     type: 'good',
                     badge: '🟢 Çekiş Dirseği Hizası İdeal',
-                    text: 'Çekiş dirseği ok ekseni ve omuz hattıyla dengeli.'
+                    text: `${isCompound ? 'Makaralı tetik' : 'Klasik ok'} hattı ve omuz ekseni dengeli (${drawElbowAngle}°).`
                 });
             }
         }
 
-        // 3. Omuz Hizalanması & T-Duruşu
+        // 5. OMUZ HİZALANMASI (T-DURUŞU)
         let shoulderTilt = 0;
-        if (landmarks[11] && landmarks[12] && (landmarks[11].visibility === undefined || landmarks[11].visibility > 0.3)) {
+        if (landmarks[11] && landmarks[12] && (landmarks[11].visibility === undefined || landmarks[11].visibility > 0.25)) {
             shoulderTilt = Math.abs(calculateSlopeAngle(landmarks[11], landmarks[12]));
             if (shoulderTilt > 180) shoulderTilt = Math.abs(360 - shoulderTilt);
             if (shoulderTilt > 90) shoulderTilt = Math.abs(180 - shoulderTilt);
@@ -286,8 +353,8 @@
                 score -= 18;
                 feedbacks.push({
                     type: 'error',
-                    badge: '🔴 Omuzlar Eğik / Sıkışık',
-                    text: `Omuz eğimi yüksek (${shoulderTilt.toFixed(1)}°). Omuzlarını gevşetip aşağı bastır.`
+                    badge: '🔴 Omuzlar Eğik',
+                    text: `Omuz eğimi yüksek (${shoulderTilt.toFixed(1)}°). Omuzları gevşetip aşağı bastır.`
                 });
             } else if (shoulderTilt > 6) {
                 score -= 6;
@@ -305,7 +372,7 @@
             }
         }
 
-        // 4. Omurga Dikliği
+        // 6. OMURGA DİKLİĞİ
         let spineAngle = 90;
         if (leftHip && rightHip && landmarks[11] && landmarks[12]) {
             const midHip = { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 };
@@ -323,41 +390,45 @@
             } else {
                 feedbacks.push({
                     type: 'good',
-                    badge: '🟢 Dik Omurga & Dengeli Postür',
-                    text: 'Gövde dikliği ve ağırlık merkezi dengeli.'
+                    badge: '🟢 Dik Postür',
+                    text: 'Ağırlık merkezi ve omurga dengesi mükemmel.'
                 });
             }
         }
 
-        // 5. Çapa (Anchor Point) Kilidi ve Yüz Teması Analizi
+        // 7. ÇAPA (ANCHOR) & TETİK KİLİDİ ANALİZİ
         let anchorStatus = 'Kilitli 🟢';
         let anchorDist = 0;
-        const chinTarget = isRight ? (landmarks[10] || landmarks[8] || nose) : (landmarks[9] || landmarks[7] || nose);
+        // Makaralıda referans çene köşesi/kulak altı; Klasikte çene altı/ağız kenarı
+        const anchorTarget = isCompound ? ear : chin;
 
-        if (chinTarget && drawWrist && (drawWrist.visibility === undefined || drawWrist.visibility > 0.3)) {
-            anchorDist = Math.hypot(chinTarget.x - drawWrist.x, chinTarget.y - drawWrist.y);
-            if (anchorDist > 0.24) {
+        if (anchorTarget && drawWrist && (drawWrist.visibility === undefined || drawWrist.visibility > 0.25)) {
+            anchorDist = Math.hypot(anchorTarget.x - drawWrist.x, anchorTarget.y - drawWrist.y);
+            const limitErr = isCompound ? 0.26 : 0.24;
+            const limitWarn = isCompound ? 0.16 : 0.14;
+
+            if (anchorDist > limitErr) {
                 anchorStatus = 'Açık 🔴';
                 score -= 15;
                 feedbacks.push({
                     type: 'error',
-                    badge: '🔴 Çapa Noktası Ayrık',
-                    text: 'Çekiş eli çeneden/yüzden uzakta. Çapa noktasını çene altına veya ağız kenarına kilitle.'
+                    badge: isCompound ? '🔴 Makaralı Çapa Açık' : '🔴 Çene Altı Çapa Ayrık',
+                    text: isCompound ? 'Tetik eli çene kemiğinden/referanstan uzakta. Çapa kilidini sağla.' : 'Çekiş eli çene altından ayrılmış. Çapa noktasını kilitle.'
                 });
-            } else if (anchorDist > 0.14) {
+            } else if (anchorDist > limitWarn) {
                 anchorStatus = 'Hafif Açık 🟡';
                 score -= 6;
                 feedbacks.push({
                     type: 'warn',
                     badge: '🟡 Çapa Teması Geliştirilmeli',
-                    text: 'Çekiş eli çapa noktasına yakın ama tam kilitlenmemiş.'
+                    text: `${isCompound ? 'Tetik eli' : 'Çekiş eli'} çapa noktasına yakın ama tam kilitlenmemiş.`
                 });
             } else {
                 anchorStatus = 'Kilitli 🟢';
                 feedbacks.push({
                     type: 'good',
-                    badge: '🟢 Çapa Noktası Kilitli',
-                    text: 'Çekiş eli ile çene/yüz referans teması mükemmel.'
+                    badge: isCompound ? '🟢 Makaralı Çapa / Tetik Kilitli' : '🟢 Çene Altı Çapa Kilitli',
+                    text: `${isCompound ? 'Tetik elinin çene kemiği' : 'Çene altı'} referans teması mükemmel.`
                 });
             }
         }
@@ -371,6 +442,8 @@
             shoulderTilt,
             spineAngle,
             anchorStatus,
+            bowType: effectiveBowType,
+            bowTypeLabel,
             feedbacks,
             timestamp: Date.now()
         };
@@ -397,7 +470,7 @@
         try {
             const scale = getResponsiveScale(width, height);
             const landmarks = results.poseLandmarks;
-            const analysis = evaluateArcheryForm(landmarks, currentHandedness);
+            const analysis = evaluateArcheryForm(landmarks, currentHandedness, currentBowType);
             lastAnalysisResult = analysis;
 
             const isRight = currentHandedness === 'right';
@@ -449,7 +522,8 @@
 
                 if (isBowArm) {
                     ctx.lineWidth = Math.max(3.8, 4.2 * scale);
-                    ctx.strokeStyle = analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366';
+                    const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
+                    ctx.strokeStyle = isArmGood ? '#00e5ff' : '#ff3366';
                     ctx.shadowColor = ctx.strokeStyle;
                     ctx.shadowBlur = Math.round(8 * scale);
                 } else if (isDrawArm) {
@@ -516,15 +590,16 @@
             const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
             if (bowElbow && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
+                const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
                 drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - Math.round(18 * scale), 
-                    analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366', scale);
+                    isArmGood ? '#00e5ff' : '#ff3366', scale);
             }
 
             if (drawElbow && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
                 drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(18 * scale), '#fbbf24', scale);
             }
 
-            // 6. 📱 Sağ Alt Veli & Antrenör Analiz Özeti Rozeti
+            // 6. 📱 Sağ Alt Veli & Antrenör Analiz Özeti Rozeti (Makaralı/Klasik Belirteçli)
             drawCompactParentHUD(ctx, width, height, analysis, scale);
 
             updateHUDDashboard(analysis);
@@ -536,12 +611,12 @@
     }
 
     /**
-     * Videonun sağ altına şık ve okunaklı canlı antrenör analizi kutusu çizer
+     * Videonun sağ altına canlı antrenör analizi kutusu çizer (Yay türü başlıklı)
      */
     function drawCompactParentHUD(ctx, width, height, analysis, scale = 1) {
         ctx.save();
-        const boxW = Math.min(width * 0.46, Math.max(160 * scale, 135));
-        const boxH = Math.max(72, Math.round(76 * scale));
+        const boxW = Math.min(width * 0.48, Math.max(170 * scale, 140));
+        const boxH = Math.max(74, Math.round(78 * scale));
         const margin = Math.max(8, Math.round(8 * scale));
         const x = width - boxW - margin;
         const y = height - boxH - margin;
@@ -557,35 +632,36 @@
 
         const pX = Math.round(7 * scale);
 
-        // Başlık: Canlı Antrenör Analizi
+        // Başlık: Canlı Antrenör Analizi (Makaralı veya Klasik Belirteçli)
         ctx.font = `bold ${Math.max(9.5, Math.round(10 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#00f0ff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText('📋 ANTRENÖR ANALİZİ', x + pX, y + Math.round(6 * scale));
+        ctx.fillText(`📋 ANTRENÖR (${analysis.bowTypeLabel})`, x + pX, y + Math.round(6 * scale));
 
         // Satır 1: En Önemli Canlı Antrenör İpucu
         const topFeedback = (analysis.feedbacks && analysis.feedbacks[0]) ? analysis.feedbacks[0].badge : '🟢 Form Dengeli';
         ctx.font = `bold ${Math.max(9, Math.round(9.5 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#fbbf24' : '#10b981');
-        ctx.fillText(topFeedback, x + pX, y + Math.round(22 * scale));
+        ctx.fillText(topFeedback, x + pX, y + Math.round(23 * scale));
 
         // Satır 2: Yay Kolu & Çekiş Dirseği Açıları
         ctx.font = `${Math.max(8.5, Math.round(9 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(39 * scale));
+        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(40 * scale));
         ctx.textAlign = 'right';
-        ctx.fillStyle = analysis.bowArmAngle >= 172 ? '#10b981' : (analysis.bowArmAngle >= 165 ? '#fbbf24' : '#ff3366');
-        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(39 * scale));
+        const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
+        ctx.fillStyle = isArmGood ? '#10b981' : '#ff3366';
+        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(40 * scale));
 
         // Satır 3: Çekiş Dirsek & Çapa Durumu
         ctx.textAlign = 'left';
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(55 * scale));
+        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(56 * scale));
         ctx.textAlign = 'right';
         ctx.fillStyle = '#fbbf24';
         const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
-        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(55 * scale));
+        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(56 * scale));
 
         ctx.restore();
     }
@@ -638,7 +714,8 @@
 
         if (bowArmEl) {
             bowArmEl.textContent = `${analysis.bowArmAngle}°`;
-            bowArmEl.style.color = analysis.bowArmAngle >= 172 ? 'var(--neon-green)' : (analysis.bowArmAngle >= 165 ? 'var(--gold)' : 'var(--neon-red)');
+            const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
+            bowArmEl.style.color = isArmGood ? 'var(--neon-green)' : 'var(--neon-red)';
         }
 
         if (drawElbowEl) {
@@ -957,6 +1034,21 @@
         drawState.currentDraft = null;
         renderUserDrawings();
         if (window.showToast) window.showToast('Tüm çizimler temizlendi.');
+    }
+
+    function setBowType(type) {
+        currentBowType = type;
+        ['auto', 'recurve', 'compound'].forEach(t => {
+            const btn = document.getElementById(`ai-bow-${t}`);
+            if (btn) btn.classList.toggle('aktif', type === t);
+        });
+
+        const names = { auto: '🤖 Otomatik Yay Tespiti (AI)', recurve: '🏹 Klasik Yay (Recurve) Kalibrasyonu', compound: '⚙️ Makaralı Yay (Compound) Kalibrasyonu' };
+        if (window.showToast) window.showToast(names[type] || 'Yay tipi güncellendi');
+
+        if (currentSourceMode === 'video' && isVideoLoaded) {
+            analyzeCurrentVideoFrame();
+        }
     }
 
     /**
@@ -1474,10 +1566,11 @@
         const bowArm = lastAnalysisResult.bowArmAngle || 180;
         const drawElbow = lastAnalysisResult.drawElbowAngle || 45;
         const anchor = lastAnalysisResult.anchorStatus || 'Kilitli';
+        const bowType = lastAnalysisResult.bowTypeLabel || 'Klasik Yay';
         const shoulder = lastAnalysisResult.shoulderTilt ? `${lastAnalysisResult.shoulderTilt}°` : 'Dengeli';
         const dateStr = new Date().toLocaleDateString('tr-TR');
 
-        const message = `🎯 *DAĞ OKÇULUK SPOR KULÜBÜ*\n🏹 *Teknik Duruş & Biomekanik Atış Analizi*\n📅 Tarih: ${dateStr}\n\n👤 *Sporcu:* ${athleteName}\n📊 *Form Puanı:* %${score}\n📐 *Yay Kolu Açısı:* ${bowArm}° (İdeal: 175°-180°)\n🎯 *Çekiş Dirseği:* ${drawElbow}°\n⚓ *Çapa Noktası:* ${anchor}\n⚖️ *Omuz Dengesi:* ${shoulder}\n\n✅ *Antrenör Notu:* Atış formu ve eklem açıları incelenmiştir. İndirilen detaylı analiz kartı/videosu ektedir.`;
+        const message = `🎯 *DAĞ OKÇULUK SPOR KULÜBÜ*\n🏹 *Teknik Duruş & Biomekanik Atış Analizi*\n📅 Tarih: ${dateStr}\n\n👤 *Sporcu:* ${athleteName}\n🎯 *Yay Tipi:* ${bowType}\n📊 *Form Puanı:* %${score}\n📐 *Yay Kolu Açısı:* ${bowArm}°\n🎯 *Çekiş Dirseği:* ${drawElbow}°\n⚓ *Çapa / Tetik Kilidi:* ${anchor}\n⚖️ *Omuz Dengesi:* ${shoulder}\n\n✅ *Antrenör Notu:* Atış formu ve eklem açıları incelenmiştir. İndirilen detaylı analiz kartı/videosu ektedir.`;
 
         const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
         window.open(whatsappURL, '_blank');
@@ -1486,25 +1579,43 @@
     }
 
     /**
-     * Ekrana / Tablete dokunulduğunda oynat/durdur
+     * Ekrana / Tablete Dokunulduğunda:
+     * - Tek Tıklama: Play / Pause (220ms gecikmeli)
+     * - Çift Tıklama (Double Tap): Tam Ekran Aç / Kapat
      */
     function handleScreenTap(e) {
         // Eğer bir çizim aracı seçiliyse veya kaydırma/yakınlaştırma yapılıyorsa pas geç
         if (drawState.activeTool) return;
         if (zoomState.isPanning || zoomState.scale > 1.0) return;
-        if (currentSourceMode !== 'video' || !isVideoLoaded) return;
 
-        // Play/Pause yap
-        toggleVideoPlay();
+        const now = Date.now();
+        const timeDiff = now - lastTapTimestamp;
 
-        // Ortada Play/Pause animasyon ikonu göster
-        const splash = document.getElementById('ai-play-splash');
-        const videoElement = document.getElementById('ai-pose-video');
-        if (splash && videoElement) {
-            splash.textContent = videoElement.paused ? '⏸' : '▶';
-            splash.classList.add('show');
-            setTimeout(() => splash.classList.remove('show'), 400);
+        if (timeDiff > 0 && timeDiff < 320) {
+            // 🎯 ÇİFT TIKLAMA / DOUBLE TAP -> TAM EKRAN
+            if (singleTapTimer) {
+                clearTimeout(singleTapTimer);
+                singleTapTimer = null;
+            }
+            lastTapTimestamp = 0;
+            toggleFullScreen();
+            return;
         }
+
+        lastTapTimestamp = now;
+        singleTapTimer = setTimeout(() => {
+            if (currentSourceMode === 'video' && isVideoLoaded) {
+                toggleVideoPlay();
+                const splash = document.getElementById('ai-play-splash');
+                const videoElement = document.getElementById('ai-pose-video');
+                if (splash && videoElement) {
+                    splash.textContent = videoElement.paused ? '⏸' : '▶';
+                    splash.classList.add('show');
+                    setTimeout(() => splash.classList.remove('show'), 380);
+                }
+            }
+            lastTapTimestamp = 0;
+        }, 220);
     }
 
     /**
@@ -1538,6 +1649,7 @@
     global.DAGSK_AI_POSE = {
         init: initPoseEngine,
         setSourceMode,
+        setBowType,
         startLiveCamera,
         stopLiveCamera,
         loadVideoFile,
