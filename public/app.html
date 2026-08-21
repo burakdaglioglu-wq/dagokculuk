@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v121</b> · İkili Video Karşılaştırma & Senkron Analiz</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v122</b> · İkili Videoda Otomatik AI Açı Tespiti</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -1011,8 +1011,20 @@
             <!-- Görünüm Seçimi & Üst Çubuk -->
             <div class="ai-config-dock">
                 <div class="ai-pill-group">
-                    <button id="cmp-mode-split" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setViewMode('split')">🔲 Yan Yana (50/50)</button>
-                    <button id="cmp-mode-overlay" class="ai-pill-btn" onclick="DAGSK_COMPARE.setViewMode('overlay')">👻 Hayalet / Bindirme</button>
+                    <button id="cmp-ai-angles-btn" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.toggleAIAngles()">🤖 AI Açılar: AÇIK</button>
+                </div>
+                <div class="ai-pill-group">
+                    <button id="cmp-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setHandedness('right')">🏹 Sağlak</button>
+                    <button id="cmp-hand-left" class="ai-pill-btn" onclick="DAGSK_COMPARE.setHandedness('left')">🏹 Solak</button>
+                </div>
+                <div class="ai-pill-group">
+                    <button id="cmp-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setBowType('auto')">🤖 Oto Yay</button>
+                    <button id="cmp-bow-recurve" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('recurve')">🏹 Klasik</button>
+                    <button id="cmp-bow-compound" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('compound')">⚙️ Makaralı</button>
+                </div>
+                <div class="ai-pill-group">
+                    <button id="cmp-mode-split" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setViewMode('split')">🔲 Yan Yana</button>
+                    <button id="cmp-mode-overlay" class="ai-pill-btn" onclick="DAGSK_COMPARE.setViewMode('overlay')">👻 Bindirme</button>
                 </div>
                 <div id="cmp-opacity-wrap" style="display:none; align-items:center; gap:6px; font-size:11px; color:var(--accent-sand);">
                     <span>Saydamlık:</span>
@@ -1023,6 +1035,9 @@
                     <button class="va-btn" style="background:#25D366; color:#fff; padding:5px 10px; font-size:11.5px;" onclick="DAGSK_COMPARE.shareToWhatsApp()">📲 WhatsApp</button>
                 </div>
             </div>
+
+            <!-- İki Video Arasındaki Otomatik Açı Farkı Özeti -->
+            <div id="cmp-diff-banner" style="display:none; align-items:center; justify-content:space-around; background:rgba(255,106,26,0.08); border:1px solid rgba(255,106,26,0.3); border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; flex-wrap:wrap; gap:8px;"></div>
 
             <!-- İkili Video Konteyneri -->
             <div id="cmp-dual-container" class="cmp-dual-container">
