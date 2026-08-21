@@ -257,7 +257,7 @@
     }
 
     /**
-     * Pose sonuçlarını Canvas üzerine çizer (Modern Athletic Tech UI)
+     * Pose sonuçlarını Canvas üzerine çizer
      */
     function onPoseResults(results) {
         const canvas = document.getElementById('ai-pose-canvas');
@@ -274,126 +274,84 @@
             return;
         }
 
-        try {
-            const landmarks = results.poseLandmarks;
-            const analysis = evaluateArcheryForm(landmarks, currentHandedness);
-            lastAnalysisResult = analysis;
+        const landmarks = results.poseLandmarks;
+        const analysis = evaluateArcheryForm(landmarks, currentHandedness);
+        lastAnalysisResult = analysis;
 
-            const isRight = currentHandedness === 'right';
-            const bowWrist = isRight ? landmarks[15] : landmarks[16];
-            const drawWrist = isRight ? landmarks[16] : landmarks[15];
+        const connections = [
+            [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+            [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]
+        ];
 
-            // 1. Ok Doğrultusu Rehber Çizgisi (İnce kesikli çizgi)
-            if (bowWrist && drawWrist && bowWrist.visibility > 0.4 && drawWrist.visibility > 0.4) {
-                const x1 = drawWrist.x * width, y1 = drawWrist.y * height;
-                const x2 = bowWrist.x * width, y2 = bowWrist.y * height;
-                const angle = Math.atan2(y2 - y1, x2 - x1);
-                const xTarget = x2 + Math.cos(angle) * 70;
-                const yTarget = y2 + Math.sin(angle) * 70;
+        // 1. İskelet Kemikleri
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-                ctx.save();
-                ctx.setLineDash([5, 4]);
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = 'rgba(255, 98, 0, 0.75)';
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(xTarget, yTarget);
-                ctx.stroke();
-                ctx.restore();
+        connections.forEach(([i, j]) => {
+            const p1 = landmarks[i];
+            const p2 = landmarks[j];
+            if (!p1 || !p2 || p1.visibility < 0.4 || p2.visibility < 0.4) return;
+
+            const isBowArm = (currentHandedness === 'right' && (i === 11 || i === 13) && (j === 13 || j === 15)) ||
+                             (currentHandedness === 'left' && (i === 12 || i === 14) && (j === 14 || j === 16));
+            
+            const isDrawArm = (currentHandedness === 'right' && (i === 12 || i === 14) && (j === 14 || j === 16)) ||
+                              (currentHandedness === 'left' && (i === 11 || i === 13) && (j === 13 || j === 15));
+
+            ctx.beginPath();
+            ctx.moveTo(p1.x * width, p1.y * height);
+            ctx.lineTo(p2.x * width, p2.y * height);
+
+            if (isBowArm) {
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = analysis.bowArmAngle >= 170 ? '#00f0ff' : '#ff3366';
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.shadowBlur = 10;
+            } else if (isDrawArm) {
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#ffb703';
+                ctx.shadowColor = '#ffb703';
+                ctx.shadowBlur = 10;
+            } else {
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+                ctx.shadowBlur = 0;
             }
+            ctx.stroke();
+        });
 
-            // 2. İskelet Kemik Çizgileri
-            const connections = [
-                [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
-                [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]
-            ];
-
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            connections.forEach(([i, j]) => {
-                const p1 = landmarks[i];
-                const p2 = landmarks[j];
-                if (!p1 || !p2 || p1.visibility < 0.35 || p2.visibility < 0.35) return;
-
-                const isBowArm = (isRight && (i === 11 || i === 13) && (j === 13 || j === 15)) ||
-                                 (!isRight && (i === 12 || i === 14) && (j === 14 || j === 16));
-                
-                const isDrawArm = (isRight && (i === 12 || i === 14) && (j === 14 || j === 16)) ||
-                                  (!isRight && (i === 11 || i === 13) && (j === 13 || j === 15));
-
+        // 2. Eklemler
+        ctx.shadowBlur = 8;
+        landmarks.forEach((p, idx) => {
+            if (!p || p.visibility < 0.4) return;
+            if ([0, 11, 12, 13, 14, 15, 16, 23, 24].includes(idx)) {
                 ctx.beginPath();
-                ctx.moveTo(p1.x * width, p1.y * height);
-                ctx.lineTo(p2.x * width, p2.y * height);
-
-                if (isBowArm) {
-                    ctx.lineWidth = 4.5;
-                    ctx.strokeStyle = analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366';
-                    ctx.shadowColor = ctx.strokeStyle;
-                    ctx.shadowBlur = 8;
-                } else if (isDrawArm) {
-                    ctx.lineWidth = 4.5;
-                    ctx.strokeStyle = '#fbbf24';
-                    ctx.shadowColor = '#fbbf24';
-                    ctx.shadowBlur = 8;
-                } else if (i === 11 && j === 12) {
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#818cf8';
-                    ctx.shadowColor = '#818cf8';
-                    ctx.shadowBlur = 5;
-                } else {
-                    ctx.lineWidth = 2.5;
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-                    ctx.shadowColor = 'transparent';
-                    ctx.shadowBlur = 0;
-                }
-                ctx.stroke();
-            });
-
-            // 3. Modern Çift Katmanlı Eklem Noktaları (Dual-Ring Joints)
-            const keyJoints = [0, 11, 12, 13, 14, 15, 16, 23, 24];
-            keyJoints.forEach(idx => {
-                const p = landmarks[idx];
-                if (!p || p.visibility < 0.35) return;
-                const x = p.x * width, y = p.y * height;
-                const isArm = [11, 12, 13, 14, 15, 16].includes(idx);
-                const r = isArm ? 6 : 4;
-
-                // Dış halka
-                ctx.beginPath();
-                ctx.arc(x, y, r + 2.5, 0, 2 * Math.PI);
-                ctx.strokeStyle = isArm ? '#00e5ff' : 'rgba(255,255,255,0.7)';
-                ctx.lineWidth = 1.5;
-                ctx.shadowColor = '#00e5ff';
-                ctx.shadowBlur = isArm ? 6 : 0;
-                ctx.stroke();
-
-                // İç beyaz çekirdek
-                ctx.beginPath();
-                ctx.arc(x, y, r, 0, 2 * Math.PI);
+                ctx.arc(p.x * width, p.y * height, idx === 0 ? 5 : 7, 0, 2 * Math.PI);
                 ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#00f0ff';
                 ctx.fill();
-            });
-
-            // 4. Şık Açı Rozetleri
-            const bowElbow = isRight ? landmarks[13] : landmarks[14];
-            const drawElbow = isRight ? landmarks[14] : landmarks[13];
-
-            if (bowElbow && bowElbow.visibility > 0.35) {
-                drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - 18, 
-                    analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366');
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
             }
+        });
 
-            if (drawElbow && drawElbow.visibility > 0.35) {
-                drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - 18, '#fbbf24');
-            }
+        // 3. Açı Etiketleri
+        const isRight = currentHandedness === 'right';
+        const bowElbow = isRight ? landmarks[13] : landmarks[14];
+        const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
-            updateHUDDashboard(analysis);
-        } catch (err) {
-            console.error('Pose rendering error:', err);
-        } finally {
-            ctx.restore();
+        if (bowElbow && bowElbow.visibility > 0.4) {
+            drawAngleLabel(ctx, `${analysis.bowArmAngle}°`, bowElbow.x * width, bowElbow.y * height - 16, 
+                analysis.bowArmAngle >= 172 ? '#00f0ff' : '#ff3366');
         }
+
+        if (drawElbow && drawElbow.visibility > 0.4) {
+            drawAngleLabel(ctx, `${analysis.drawElbowAngle}°`, drawElbow.x * width, drawElbow.y * height - 16, '#ffb703');
+        }
+
+        ctx.restore();
+        updateHUDDashboard(analysis);
     }
 
     function drawAngleLabel(ctx, text, x, y, color) {
@@ -401,16 +359,14 @@
         ctx.font = 'bold 12px Poppins, sans-serif';
         const textWidth = ctx.measureText(text).width;
         
-        const pw = textWidth + 18;
-        const ph = 22;
-        const px = x - pw / 2;
-        const py = y - ph / 2;
-        
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 6;
+        
+        const px = x - textWidth / 2 - 6;
+        const py = y - 10;
+        const pw = textWidth + 12;
+        const ph = 20;
         
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(px, py, pw, ph, 6);
@@ -418,7 +374,6 @@
         ctx.fill();
         ctx.stroke();
 
-        ctx.shadowBlur = 0;
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
