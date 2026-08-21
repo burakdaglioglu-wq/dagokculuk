@@ -11,56 +11,23 @@
            görmezden geliyor) — touch-action:manipulation asıl çözüm, jest algılama gecikmesini kaldırıyor. */
         button, [onclick] { touch-action: manipulation; }
 
-        /* TEMA DEĞİŞKENLERİ — DAĞ S.K. Siyah, Turuncu, Gri & Ten Rengi Paleti */
+        /* TEMA DEĞİŞKENLERİ */
         :root {
-            --bg-main: #0a0a0d;
-            --bg-panel: rgba(20, 20, 24, 0.92);
-            --bg-card: rgba(28, 28, 34, 0.78);
-            --text-main: #f5f5f7;
-            --text-muted: #9e9ea8;
-            --accent-orange: #ff6a1a;
-            --accent-orange-hover: #ff7e38;
-            --accent-sand: #e8d7c5;            /* Ten Rengi / Sıcak Kum */
-            --accent-sand-subtle: rgba(232, 215, 197, 0.12);
-            --accent-sand-border: rgba(232, 215, 197, 0.28);
-            --accent-grey: #64748b;
-            --border-color: rgba(255, 255, 255, 0.09);
-            --border-hover: rgba(255, 106, 26, 0.35);
-            --neon-blue: #ff6a1a;             /* Ana Vurgu -> DAĞ Turuncusu */
-            --neon-pink: #f43f5e;
-            --neon-red: #ef4444;
-            --gold: #f59e0b;
-            --neon-green: #10b981;
-            --ring-yellow: #fbbf24;
-            --ring-red: #ef4444;
-            --ring-blue: #ff6a1a;
-            --ring-black: #1e293b;
-            --ring-white: #f8fafc;
-            --aurora-cyan: #ff6a1a;
-            --aurora-magenta: #e8d7c5;
-            --aurora-violet: #d97706;
-            --aurora-gold: #f59e0b;
-            --shadow-card: 0 6px 24px -2px rgba(0, 0, 0, 0.55);
-            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+            --bg-main: #0a0a0c; --bg-panel: rgba(28, 28, 32, 0.86); --text-main: #f5f5f6;
+            --text-muted: #9a9aa3; --accent-orange: #ff6a1a; --accent-grey: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.12); --neon-blue: #4d8dff;
+            --neon-pink: #ec4899; --neon-red: #ef4444; --gold: #fbbf24; --neon-green: #22c55e;
+            --ring-yellow: #fbbf24; --ring-red: #ef4444; --ring-blue: #3b82f6; --ring-black: #1e293b; --ring-white: #f8fafc;
+            /* "Aurora Sahne" — Gece Menzili'nin (mavi/pembe) yerini alan yeni aksan seti. Kasıtlı olarak
+               --neon-blue/--neon-pink'ten AYRI değişkenler: o ikisi zaten cinsiyet rengi (cizSira'daki cRenk)
+               gibi başka anlamlarda kullanılıyor, oraları yanlışlıkla boyamamak için özel token seti açıldı. */
+            --aurora-cyan: #00F0FF; --aurora-magenta: #FF2FD0; --aurora-violet: #9B3BFF; --aurora-gold: #FFD23F;
         }
 
         body.light-theme {
-            --bg-main: #f6f3ee;               /* Sıcak açık ten/kum zemini */
-            --bg-panel: #ffffff;
-            --bg-card: #ece6dc;
-            --text-main: #141417;
-            --text-muted: #6b6a74;
-            --border-color: #ded6cb;
-            --border-hover: #ff6a1a;
-            --accent-sand: #8c7159;
-            --accent-sand-subtle: rgba(140, 113, 89, 0.12);
-            --accent-sand-border: rgba(140, 113, 89, 0.28);
-            --aurora-cyan: #ff6a1a;
-            --aurora-magenta: #c25916;
-            --aurora-violet: #8c7159;
-            --aurora-gold: #d97706;
-            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.07);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --bg-main: #eef1f6; --bg-panel: #ffffff; --text-main: #111827;
+            --text-muted: #4b5563; --border-color: #d3dae6;
+            --aurora-cyan: #0090A0; --aurora-magenta: #C4179E; --aurora-violet: #6D28D9; --aurora-gold: #B8860B;
         }
 
         button, select, input { 
@@ -70,231 +37,38 @@
             outline: none !important;
         }
 
-        body { 
-            background: var(--bg-main); 
-            color: var(--text-main); 
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            overflow: hidden; 
-            transition: background 0.25s ease, color 0.25s ease; 
-        }
-        .glass-panel { 
-            background: var(--bg-panel); 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px); 
-            border: 1px solid var(--border-color); 
-            box-shadow: var(--shadow-card); 
-            border-radius: 14px; 
-        }
+        body { background: var(--bg-main); color: var(--text-main); font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 0.3s; }
+        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); border-radius: 12px; }
         
-        button { 
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            cursor: pointer; 
-            transition: all 0.18s ease-out; 
-        }
-        button:active { 
-            transform: scale(0.97); 
-        }
+        button { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; cursor: pointer; transition: all 0.2s; }
         button:hover { filter: brightness(1.1); }
         
-        .kurumsal-logo { 
-            font-size: clamp(24px, 5vw, 36px); 
-            font-weight: 900; 
-            color: var(--accent-orange); 
-            letter-spacing: 2px; 
-            padding: 8px 22px; 
-            border: 2px solid var(--accent-orange); 
-            border-radius: 16px; 
-            background: rgba(255, 106, 26, 0.04); 
-            margin-bottom: 12px; 
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(255, 106, 26, 0.15);
-        }
-        .mini-logo { 
-            font-size: 13px; 
-            font-weight: 900; 
-            color: var(--accent-orange); 
-            border: 1.5px solid var(--accent-orange); 
-            padding: 3px 9px; 
-            border-radius: 7px; 
-            white-space: nowrap; 
-        }
+        .kurumsal-logo { font-size: clamp(28px, 6vw, 42px); font-weight: 900; color: var(--accent-orange); letter-spacing: 4px; padding: 10px 25px; border: 3px solid var(--accent-orange); border-radius: 12px; background: rgba(0,0,0,0.3); margin-bottom: 15px; text-shadow: 0 2px 10px rgba(255,98,0,0.4); text-align: center;}
+        .mini-logo { font-size: 14px; font-weight: 900; color: var(--accent-orange); border: 2px solid var(--accent-orange); padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
 
         /* GİRİŞ EKRANI */
-        #giris-ekrani { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100vh; 
-            height: 100dvh; 
-            background: var(--bg-main); 
-            z-index: 10000; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 14px; 
-            padding: 20px; 
-            overflow-y: auto; 
-        }
-        #btn-tema-degistir { 
-            position: absolute; 
-            top: 20px; 
-            right: 20px; 
-            background: var(--bg-panel); 
-            color: var(--accent-sand); 
-            border: 1px solid var(--border-color); 
-            padding: 8px 14px; 
-            border-radius: 10px; 
-            font-weight: 700; 
-            font-size: 12px; 
-            z-index: 10001; 
-        }
-        #kapat-giris-btn { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            background: var(--neon-red); 
-            color: white; 
-            border: none; 
-            padding: 8px 14px; 
-            border-radius: 10px; 
-            font-weight: 700; 
-            font-size: 12px; 
-            display: none; 
-            z-index: 10001; 
-        }
-        #giris-ekrani h2 { 
-            color: var(--accent-sand); 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            margin-bottom: 12px; 
-            text-align: center; 
-            font-size: 14px; 
-            letter-spacing: 1px;
-        }
+        #giris-ekrani { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background: var(--bg-main); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; overflow-y: auto; }
+        #btn-tema-degistir { position: absolute; top: 20px; right: 20px; background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 12px; z-index: 10001; }
+        #kapat-giris-btn { position: absolute; top: 20px; left: 20px; background: var(--neon-red); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 12px; display: none; z-index: 10001; }
+        #giris-ekrani h2 { color: var(--text-main); font-weight: 600; text-transform: uppercase; margin-bottom: 20px; text-align: center; font-size: 16px; letter-spacing: 1px;}
         
-        .giris-secim-btn { 
-            width: 100%; 
-            max-width: 360px; 
-            padding: 16px 20px; 
-            font-size: 15px; 
-            font-weight: 800; 
-            color: var(--text-main) !important; 
-            background: var(--bg-card) !important; 
-            border: 1px solid var(--border-color) !important; 
-            cursor: pointer; 
-            border-radius: 14px; 
-            box-shadow: var(--shadow-sm); 
-            text-align: left; 
-            display: block; 
-            transition: all 0.2s ease;
-        }
-        body.light-theme .giris-secim-btn { 
-            background: #ffffff !important; 
-            color: #141417 !important; 
-            border-color: var(--border-color) !important; 
-        }
-        .giris-secim-btn:hover { 
-            border-color: var(--accent-orange) !important; 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 106, 26, 0.2);
-        }
-        .giris-secim-btn span { 
-            display: block; 
-            font-size: 11.5px; 
-            font-weight: 400; 
-            color: var(--text-muted); 
-            margin-top: 4px; 
-            text-transform: none; 
-        }
-        .pin-btn { 
-            padding: 16px 0; 
-            font-size: 20px; 
-            font-weight: 800; 
-            color: var(--text-main); 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            cursor: pointer; 
-            transition: all 0.15s ease;
-        }
-        body.light-theme .pin-btn { 
-            background: #fff; 
-            color: #141417; 
-            border-color: #cbd5e1; 
-        }
-        .pin-btn:active { 
-            background: var(--accent-orange); 
-            color: #fff; 
-        }
+        .giris-secim-btn { width: 100%; max-width: 350px; padding: 20px; font-size: 16px; font-weight: 800; color: #ffffff !important; background: #1a1a1c !important; border: 2px solid #333336 !important; cursor: pointer; text-transform: uppercase; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; display: block; }
+        body.light-theme .giris-secim-btn { background: #ffffff !important; color: #111827 !important; border-color: #cbd5e1 !important; }
+        .giris-secim-btn:hover { border-color: var(--accent-orange) !important; color: var(--accent-orange) !important; }
+        .giris-secim-btn span { display: block; font-size: 12px; font-weight: 400; color: var(--text-muted); margin-top: 4px; text-transform: none; }
+        .pin-btn { padding: 18px 0; font-size: 22px; font-weight: 800; color: var(--text-main); background: #1a1a1c; border: 2px solid #333336; border-radius: 12px; cursor: pointer; }
+        body.light-theme .pin-btn { background: #fff; color: #111827; border-color: #cbd5e1; }
+        .pin-btn:active { background: var(--accent-orange); color: #fff; }
         body.sporcu-uye-modu .sadece-egitmen { display: none !important; }
         body.sporcu-uye-modu .sadece-sporcu { display: inline-block !important; }
 
         /* ÜST BAR VE SEKMELER */
-        #ust-bar { 
-            padding: 10px 16px; 
-            border-bottom: 1px solid var(--border-color); 
-            flex-shrink: 0; 
-            background: var(--bg-panel);
-            backdrop-filter: blur(12px);
-        }
-        .grup-satir { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 10px; 
-            flex-wrap: wrap; 
-            gap: 10px;
-        }
-        .sekme-grubu { 
-            display: flex; 
-            gap: 4px; 
-            background: rgba(0, 0, 0, 0.35); 
-            padding: 4px; 
-            border-radius: 12px; 
-            margin-top: 8px; 
-            overflow-x: auto; 
-            border: 1px solid var(--border-color);
-        }
-        .sekme-btn { 
-            flex: 1; 
-            min-width: 85px; 
-            padding: 8px 8px; 
-            background: transparent; 
-            color: var(--text-muted); 
-            border: none; 
-            border-radius: 9px; 
-            font-weight: 700; 
-            font-size: 12px; 
-            text-align: center;
-            transition: all 0.16s ease;
-        }
-        .sekme-btn:hover {
-            color: var(--accent-sand);
-        }
-        .sekme-btn.aktif { 
-            background: linear-gradient(135deg, var(--accent-orange), #ea580c); 
-            color: #ffffff; 
-            font-weight: 800;
-            box-shadow: 0 3px 12px rgba(255, 106, 26, 0.4);
-        }
-        .sekme-icerik { 
-            display: none; 
-            flex: 1; 
-            padding: 16px; 
-            overflow-y: auto; 
-            overflow-x: hidden; 
-            box-sizing: border-box; 
-            height: calc(100vh - 110px); 
-            max-width: 960px; 
-            margin-left: auto; 
-            margin-right: auto; 
-            width: 100%; 
-        }
+        #ust-bar { padding: 10px 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .grup-satir { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;}
+        .sekme-grubu { display: flex; gap: 4px; background: var(--border-color); padding: 4px; border-radius: 8px; margin-top:10px; overflow-x: auto; }
+        .sekme-btn { flex: 1; min-width: 80px; padding: 8px 4px; background: transparent; color: var(--text-main); border: none; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center;}
+        .sekme-btn.aktif { background: var(--accent-orange); color: white; }
+        .sekme-icerik { display: none; flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; height: calc(100vh - 110px); max-width: 920px; margin-left: auto; margin-right: auto; width: 100%; }
         .sekme-icerik.aktif { display: flex; flex-direction: column; }
 
         /* TAM EKRAN MODU */
@@ -668,13 +442,13 @@
         .adm-input {
             width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px; font-size: 13.5px;
             background: rgba(0,0,0,0.22); border: 1px solid var(--border-color); color: var(--text-main);
-            font-family: 'Poppins', sans-serif; transition: border-color .2s ease, background .2s ease;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; transition: border-color .2s ease, background .2s ease;
         }
         .adm-input:focus { border-color: var(--neon-blue); background: rgba(0,0,0,0.32); }
         .adm-select {
             width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 700;
             background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
         }
         /* DÜZELTME: her satır ayrı bir gölgeli/çerçeveli "kart" olunca liste ekranları (Skor Girenler,
            Yoklama, Personel) kalabalık/eski görünüyordu ("kart yığını"). .adm-list TEK bir cam kapsayıcı,
@@ -847,123 +621,23 @@
         }
 
         /* ===== VIDEO ANALİZ SEKMESİ ===== */
-        .va-card { 
-            background: var(--bg-panel); 
-            border: 1px solid var(--border-color); 
-            border-radius: 14px; 
-            padding: 16px; 
-            margin-bottom: 14px; 
-            box-shadow: var(--shadow-card);
-        }
-        .va-title { 
-            font-weight: 800; 
-            font-size: 15px; 
-            color: var(--neon-blue); 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        .va-sub { 
-            color: var(--text-muted); 
-            font-size: 11.5px; 
-            margin-top: 3px; 
-            line-height: 1.4;
-        }
-        .va-dropzone { 
-            border: 1.5px dashed var(--neon-blue); 
-            border-radius: 14px; 
-            padding: 24px 16px; 
-            text-align: center; 
-            cursor: pointer; 
-            transition: all .2s ease; 
-            background: rgba(56, 189, 248, 0.03); 
-        }
-        .va-dropzone:hover { 
-            background: rgba(56, 189, 248, 0.08); 
-            border-color: var(--text-main);
-        }
-        .va-dropzone.dragover { 
-            background: rgba(56, 189, 248, 0.15); 
-            border-color: #fff; 
-        }
-        .va-dropzone .va-icon { 
-            font-size: 32px; 
-            margin-bottom: 4px;
-        }
-        .va-btn { 
-            border: none; 
-            border-radius: 10px; 
-            padding: 9px 15px; 
-            font-weight: 700; 
-            font-size: 12.5px; 
-            color: #fff; 
-            cursor: pointer; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 6px; 
-            justify-content: center; 
-            transition: all 0.16s ease;
-            box-shadow: var(--shadow-sm);
-        }
-        .va-btn-orange { 
-            background: var(--accent-orange); 
-            color: #fff;
-        }
-        .va-btn-blue { 
-            background: var(--neon-blue); 
-            color: #04101c; 
-            font-weight: 800;
-        }
-        .va-btn-red { 
-            background: var(--neon-red); 
-            color: #fff;
-        }
-        .va-btn-green { 
-            background: var(--neon-green); 
-            color: #04101c; 
-            font-weight: 800;
-        }
-        .va-btn-grey { 
-            background: var(--bg-card); 
-            color: var(--text-main); 
-            border: 1px solid var(--border-color); 
-        }
-        .va-btn-grey:hover {
-            border-color: var(--border-hover);
-        }
-        .va-btn:disabled { 
-            opacity: .45; 
-            cursor: not-allowed; 
-        }
-        .va-row { 
-            display: flex; 
-            gap: 8px; 
-            flex-wrap: wrap; 
-        }
-        .va-video { 
-            width: 100%; 
-            max-height: 60vh; 
-            background: #000; 
-            border-radius: 14px; 
-            border: 1px solid var(--border-color); 
-        }
-        .va-input { 
-            width: 100%; 
-            background: var(--bg-main); 
-            color: var(--text-main); 
-            border: 1px solid var(--border-color); 
-            padding: 10px 12px; 
-            border-radius: 10px; 
-            font-size: 13px; 
-        }
-        .va-rec-dot { 
-            width: 10px; 
-            height: 10px; 
-            border-radius: 50%; 
-            background: var(--neon-red); 
-            display: inline-block; 
-            animation: vaPulse 1s infinite; 
-        }
+        .va-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+        .va-title { font-weight: 800; font-size: 16px; color: var(--neon-blue); display: flex; align-items: center; gap: 8px; }
+        .va-sub { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+        .va-dropzone { border: 2px dashed var(--accent-orange); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all .2s; background: rgba(255,98,0,0.05); }
+        .va-dropzone.dragover { background: rgba(255,98,0,0.18); border-color: var(--gold); }
+        .va-dropzone .va-icon { font-size: 38px; }
+        .va-btn { border: none; border-radius: 8px; padding: 11px 16px; font-weight: 700; font-size: 13px; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+        .va-btn-orange { background: var(--accent-orange); }
+        .va-btn-blue { background: var(--neon-blue); }
+        .va-btn-red { background: var(--neon-red); }
+        .va-btn-green { background: var(--neon-green); }
+        .va-btn-grey { background: var(--accent-grey); }
+        .va-btn:disabled { opacity: .45; cursor: not-allowed; }
+        .va-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .va-video { width: 100%; max-height: 60vh; background: #000; border-radius: 12px; border: 1px solid var(--border-color); }
+        .va-input { width: 100%; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; font-size: 13px; }
+        .va-rec-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--neon-red); display: inline-block; animation: vaPulse 1s infinite; }
         @keyframes vaPulse { 0%,100%{opacity:1;} 50%{opacity:.25;} }
         /* Gecikmeli Ayna tam ekran: gerçek Fullscreen API yerine CSS position:fixed — iOS Safari dahil
            canvas gibi keyfi elemanlarda native fullscreen desteklemeyen tarayıcılarda da güvenilir çalışır. */
@@ -1360,61 +1034,18 @@
         #duello-mini-widget:active { transform: scale(0.96); }
 
         /* ===== AI POSE & FORM ANALİZİ MODÜLÜ ===== */
-        .ai-config-dock {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 6px 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-        }
-        .ai-pill-group {
-            display: inline-flex;
-            background: rgba(0, 0, 0, 0.35);
-            padding: 3px;
-            border-radius: 9px;
-            gap: 3px;
-            border: 1px solid var(--border-color);
-        }
-        .ai-pill-btn {
-            padding: 6px 12px;
-            border-radius: 7px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 11.5px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.16s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .ai-pill-btn:hover {
-            color: var(--accent-sand);
-        }
-        .ai-pill-btn.aktif {
-            background: linear-gradient(135deg, var(--accent-orange), #ea580c);
-            color: #ffffff;
-            font-weight: 800;
-            box-shadow: 0 2px 10px rgba(255, 106, 26, 0.35);
-        }
         .ai-pose-box {
             position: relative;
             width: 100%;
             border-radius: 14px;
             overflow: hidden;
-            background: #000000;
+            background: #020617;
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
             margin-bottom: 12px;
-            box-shadow: var(--shadow-card);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
             min-height: 240px;
             user-select: none;
             touch-action: none;
@@ -1470,7 +1101,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            background: rgba(14, 14, 18, 0.92);
+            background: rgba(15, 23, 42, 0.88);
             border: 1px solid var(--border-color);
             padding: 3px 6px;
             border-radius: 10px;
@@ -1478,8 +1109,8 @@
         }
         .ai-zoom-btn {
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: var(--accent-sand);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
             padding: 3px 7px;
             border-radius: 6px;
             font-size: 11px;
@@ -1488,13 +1119,13 @@
             transition: all .15s;
         }
         .ai-zoom-btn:hover {
-            background: var(--accent-orange);
-            color: #fff;
+            background: var(--neon-blue);
+            color: #000;
         }
         .ai-zoom-badge {
-            font-size: 10.5px;
+            font-size: 10px;
             font-weight: 800;
-            color: var(--accent-orange);
+            color: var(--neon-blue);
             min-width: 32px;
             text-align: center;
         }
@@ -1505,8 +1136,8 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            background: rgba(12, 12, 16, 0.95);
-            border: 1px solid rgba(255, 106, 26, 0.4);
+            background: rgba(10, 15, 30, 0.92);
+            border: 1px solid rgba(0, 240, 255, 0.4);
             border-radius: 14px;
             padding: 6px 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -1525,9 +1156,9 @@
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            background: rgba(18, 18, 22, 0.88);
-            border: 2px solid var(--accent-orange);
-            color: var(--accent-sand);
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid var(--neon-blue);
+            color: #fff;
             font-size: 26px;
             display: flex;
             align-items: center;
@@ -1548,7 +1179,7 @@
             margin-bottom: 14px;
         }
         .ai-hud-card {
-            background: var(--bg-card);
+            background: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 12px;
@@ -1557,20 +1188,19 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: var(--shadow-sm);
         }
         .ai-hud-label {
-            font-size: 10.5px;
+            font-size: 11px;
             color: var(--text-muted);
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .ai-hud-val {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: 900;
-            color: var(--accent-orange);
+            color: var(--neon-blue);
             line-height: 1.2;
         }
         .ai-hud-sub {
@@ -1578,11 +1208,35 @@
             color: var(--text-muted);
             margin-top: 2px;
         }
+        .ai-hand-seg {
+            display: flex;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 4px;
+        }
+        .ai-hand-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .ai-hand-btn.aktif {
+            background: var(--accent-orange);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255,98,0,0.35);
+        }
         .ai-feedback-item {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            padding: 10px 14px;
+            padding: 10px 12px;
             border-radius: 10px;
             margin-bottom: 8px;
             border: 1px solid var(--border-color);
@@ -1591,15 +1245,15 @@
         }
         .ai-fb-good {
             background: rgba(16, 185, 129, 0.08);
-            border-color: rgba(16, 185, 129, 0.35);
+            border-color: rgba(16, 185, 129, 0.4);
         }
         .ai-fb-warn {
-            background: rgba(245, 158, 11, 0.08);
-            border-color: rgba(245, 158, 11, 0.35);
+            background: rgba(251, 191, 36, 0.08);
+            border-color: rgba(251, 191, 36, 0.4);
         }
         .ai-fb-error {
             background: rgba(239, 68, 68, 0.08);
-            border-color: rgba(239, 68, 68, 0.35);
+            border-color: rgba(239, 68, 68, 0.4);
         }
         .ai-fb-badge {
             font-weight: 800;
@@ -1607,6 +1261,35 @@
         }
         .ai-fb-text {
             color: var(--text-main);
+        }
+        .ai-src-seg {
+            display: flex;
+            background: rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .ai-src-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .ai-src-btn.aktif {
+            background: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(0,240,255,0.3);
         }
         .ai-vid-controls-panel {
             background: rgba(255,255,255,0.03);
@@ -1635,9 +1318,9 @@
             cursor: pointer;
         }
         .ai-speed-btn.aktif {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
-            color: #fff;
+            background: var(--gold);
+            border-color: var(--gold);
+            color: #000;
         }
         .ai-draw-canvas {
             position: absolute;
@@ -1653,8 +1336,8 @@
             align-items: center;
             gap: 6px;
             flex-wrap: wrap;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.04);
             border: 1px solid var(--border-color);
             border-radius: 10px;
             margin-bottom: 12px;
@@ -1674,10 +1357,10 @@
             transition: all .15s;
         }
         .ai-tool-btn.aktif {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
-            color: #ffffff;
-            box-shadow: 0 0 10px rgba(255,106,26,0.35);
+            background: var(--neon-blue);
+            border-color: var(--neon-blue);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0,240,255,0.3);
         }
         .ai-color-dot {
             width: 20px;
@@ -1699,6 +1382,50 @@
         }
         .ai-rec-anim {
             animation: aiRecPulse 1.2s infinite ease-in-out;
+        }
+
+
+
+
+        /* ===== 🎛️ AI & VIDEO KONTROL DOCK ===== */
+        .ai-config-dock {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .ai-pill-group {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .ai-pill-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.16s ease;
+            white-space: nowrap;
+        }
+        .ai-pill-btn:hover {
+            color: var(--text-main);
+        }
+        .ai-pill-btn.aktif {
+            background: var(--accent-orange);
+            color: #ffffff;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(255, 98, 0, 0.35);
         }
 
         /* ===== ⚔️ İKİLİ VİDEO KARŞILAŞTIRMA MODÜLÜ ===== */
@@ -1734,14 +1461,14 @@
             pointer-events: none;
         }
         .cmp-pane {
-            background: var(--bg-card);
+            background: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 14px;
             padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
         .cmp-pane-header {
             display: flex;
@@ -1786,7 +1513,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            box-shadow: var(--shadow-card);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
         .cmp-toolbar {
             display: flex;
@@ -1794,7 +1521,7 @@
             gap: 6px;
             flex-wrap: wrap;
             padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-color);
             border-radius: 10px;
             margin-bottom: 12px;
@@ -1817,7 +1544,7 @@
             background: var(--accent-orange);
             border-color: var(--accent-orange);
             color: #ffffff;
-            box-shadow: 0 0 10px rgba(255,106,26,0.35);
+            box-shadow: 0 0 10px rgba(255,98,0,0.35);
         }
         .cmp-color-dot {
             width: 18px;
@@ -1844,7 +1571,7 @@
         }
         .cmp-dropzone:hover {
             border-color: var(--accent-orange);
-            background: rgba(255, 106, 26, 0.05);
+            background: rgba(255, 98, 0, 0.05);
         }
 
         /* ===== 🎙️ SESLİ ATIŞ RİTMİ & TIKIR METRONOMU ===== */
@@ -1877,6 +1604,3 @@
             text-align: center;
             pointer-events: none;
         }
-
-
-
