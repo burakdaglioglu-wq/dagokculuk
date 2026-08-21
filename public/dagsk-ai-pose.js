@@ -1,7 +1,7 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v6
- * Tablet & Mobil için dinamik DPI/çözünürlük ölçekleyici (büyük okunaklı açılar ve rozetler),
- * dokun-oynat, çapa takibi, daire çizim ve tam ekran desteği.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v7
+ * Hem Bilgisayarda hem Tablet/Mobilde %100 kusursuz, ultra uyumlu açı etiketleri,
+ * evrensel Canvas 2D çizim motoru, dinamik DPI ölçekleme, çapa takibi ve dokun-oynat.
  */
 
 (function (global) {
@@ -44,14 +44,34 @@
     };
 
     /**
-     * Tablet/Telefon ve Yüksek Çözünürlüklü Videolar İçin Dinamik Boyut Ölçekleyici (DPI/Scale Factor)
+     * Hem Masaüstü PC hem Tablet/Mobilde çalışan Çözünürlük Duyarlı Boyut Ölçekleyici
      */
     function getResponsiveScale(width, height) {
+        if (!width || !height) return 1;
         const minDim = Math.min(width, height);
-        // Temel çözünürlük 440px. 1080p telefonda 1080/440 ~ 2.45 kat büyütür.
         const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth < 1024);
-        const base = Math.max(1, minDim / 440);
-        return isTouch ? base * 1.35 : base;
+        
+        // PC / Masaüstü için net 1.0 - 1.6 kat, Tablet / Mobil için 1.4 - 2.4 kat
+        const base = Math.max(0.9, minDim / 540);
+        return isTouch ? base * 1.3 : base;
+    }
+
+    /**
+     * Tüm tarayıcılarda (Chrome, Firefox, Safari, Edge, WebKit) %100 hatasız yuvarlatılmış dikdörtgen çizer
+     */
+    function drawSafeRoundedRect(ctx, x, y, width, height, radius) {
+        radius = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
     }
 
     /**
@@ -148,7 +168,7 @@
 
         // 1. Yay Kolu Açısı -> İdeal: 172° - 185°
         let bowArmAngle = 180;
-        if (bowShoulder && bowElbow && bowWrist && bowElbow.visibility > 0.4) {
+        if (bowShoulder && bowElbow && bowWrist && (bowElbow.visibility === undefined || bowElbow.visibility > 0.3)) {
             bowArmAngle = calculateAngle(bowShoulder, bowElbow, bowWrist);
             if (bowArmAngle < 165) {
                 const diff = Math.round(180 - bowArmAngle);
@@ -176,7 +196,7 @@
 
         // 2. Çekiş Dirseği Açısı ve Yüksekliği
         let drawElbowAngle = 45;
-        if (drawShoulder && drawElbow && drawWrist && drawElbow.visibility > 0.4) {
+        if (drawShoulder && drawElbow && drawWrist && (drawElbow.visibility === undefined || drawElbow.visibility > 0.3)) {
             drawElbowAngle = calculateAngle(drawShoulder, drawElbow, drawWrist);
             const elbowHeightDiff = (drawShoulder.y - drawElbow.y);
 
@@ -205,7 +225,7 @@
 
         // 3. Omuz Hizalanması & T-Duruşu
         let shoulderTilt = 0;
-        if (landmarks[11] && landmarks[12] && landmarks[11].visibility > 0.4 && landmarks[12].visibility > 0.4) {
+        if (landmarks[11] && landmarks[12] && (landmarks[11].visibility === undefined || landmarks[11].visibility > 0.3)) {
             shoulderTilt = Math.abs(calculateSlopeAngle(landmarks[11], landmarks[12]));
             if (shoulderTilt > 180) shoulderTilt = Math.abs(360 - shoulderTilt);
             if (shoulderTilt > 90) shoulderTilt = Math.abs(180 - shoulderTilt);
@@ -262,7 +282,7 @@
         let anchorDist = 0;
         const chinTarget = isRight ? (landmarks[10] || landmarks[8] || nose) : (landmarks[9] || landmarks[7] || nose);
 
-        if (chinTarget && drawWrist && chinTarget.visibility > 0.35 && drawWrist.visibility > 0.35) {
+        if (chinTarget && drawWrist && (drawWrist.visibility === undefined || drawWrist.visibility > 0.3)) {
             anchorDist = Math.hypot(chinTarget.x - drawWrist.x, chinTarget.y - drawWrist.y);
             if (anchorDist > 0.24) {
                 anchorStatus = 'Açık 🔴';
@@ -305,7 +325,7 @@
     }
 
     /**
-     * Pose sonuçlarını Canvas üzerine çizer (Tablet / Mobil Dostu Büyük & Net UI)
+     * Pose sonuçlarını Canvas üzerine çizer (Hem PC Hem Tablet İçin Kusursuz)
      */
     function onPoseResults(results) {
         const canvas = document.getElementById('ai-pose-canvas');
@@ -333,7 +353,7 @@
             const drawWrist = isRight ? landmarks[16] : landmarks[15];
 
             // 1. Ok Doğrultusu Rehber Çizgisi (İnce kesikli çizgi)
-            if (bowWrist && drawWrist && bowWrist.visibility > 0.4 && drawWrist.visibility > 0.4) {
+            if (bowWrist && drawWrist && (bowWrist.visibility === undefined || bowWrist.visibility > 0.3) && (drawWrist.visibility === undefined || drawWrist.visibility > 0.3)) {
                 const x1 = drawWrist.x * width, y1 = drawWrist.y * height;
                 const x2 = bowWrist.x * width, y2 = bowWrist.y * height;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
@@ -363,7 +383,7 @@
             connections.forEach(([i, j]) => {
                 const p1 = landmarks[i];
                 const p2 = landmarks[j];
-                if (!p1 || !p2 || p1.visibility < 0.35 || p2.visibility < 0.35) return;
+                if (!p1 || !p2 || (p1.visibility !== undefined && p1.visibility < 0.25) || (p2.visibility !== undefined && p2.visibility < 0.25)) return;
 
                 const isBowArm = (isRight && (i === 11 || i === 13) && (j === 13 || j === 15)) ||
                                  (!isRight && (i === 12 || i === 14) && (j === 14 || j === 16));
@@ -403,7 +423,7 @@
             const keyJoints = [0, 11, 12, 13, 14, 15, 16, 23, 24];
             keyJoints.forEach(idx => {
                 const p = landmarks[idx];
-                if (!p || p.visibility < 0.35) return;
+                if (!p || (p.visibility !== undefined && p.visibility < 0.25)) return;
                 const x = p.x * width, y = p.y * height;
                 const isArm = [11, 12, 13, 14, 15, 16].includes(idx);
                 const r = Math.round((isArm ? 6.5 : 4.5) * scale);
@@ -425,7 +445,7 @@
             });
 
             // 4. Çapa (Anchor) Kilidi Hedef Çemberi
-            if (drawWrist && drawWrist.visibility > 0.35) {
+            if (drawWrist && (drawWrist.visibility === undefined || drawWrist.visibility > 0.25)) {
                 const ax = drawWrist.x * width;
                 const ay = drawWrist.y * height;
                 ctx.save();
@@ -439,16 +459,16 @@
                 ctx.restore();
             }
 
-            // 5. Şık Açı Rozetleri (Eklemler Üzerinde - Tablette Büyük & Okunaklı)
+            // 5. Şık Açı Rozetleri (Eklemler Üzerinde - PC & Tablette Net & Büyük)
             const bowElbow = isRight ? landmarks[13] : landmarks[14];
             const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
-            if (bowElbow && bowElbow.visibility > 0.35) {
+            if (bowElbow && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
                 drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - Math.round(22 * scale), 
                     analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366', scale);
             }
 
-            if (drawElbow && drawElbow.visibility > 0.35) {
+            if (drawElbow && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
                 drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(22 * scale), '#fbbf24', scale);
             }
 
@@ -469,8 +489,8 @@
     function drawCompactParentHUD(ctx, width, height, analysis, scale = 1) {
         ctx.save();
         const boxW = Math.min(width * 0.52, Math.max(180 * scale, 150));
-        const boxH = Math.round(82 * scale);
-        const margin = Math.round(10 * scale);
+        const boxH = Math.max(76, Math.round(82 * scale));
+        const margin = Math.max(8, Math.round(10 * scale));
         const x = width - boxW - margin;
         const y = height - boxH - margin;
 
@@ -478,16 +498,15 @@
         ctx.fillStyle = 'rgba(10, 15, 30, 0.88)';
         ctx.strokeStyle = 'rgba(0, 229, 255, 0.45)';
         ctx.lineWidth = Math.max(1.2, 1.5 * scale);
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, Math.round(10 * scale));
-        else ctx.rect(x, y, boxW, boxH);
+        
+        drawSafeRoundedRect(ctx, x, y, boxW, boxH, Math.round(8 * scale));
         ctx.fill();
         ctx.stroke();
 
         const pX = Math.round(8 * scale);
 
         // Başlık: Canlı Antrenör Analizi
-        ctx.font = `bold ${Math.round(10 * scale)}px Poppins, sans-serif`;
+        ctx.font = `bold ${Math.max(10, Math.round(10.5 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#00f0ff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
@@ -495,50 +514,49 @@
 
         // Satır 1: En Önemli Canlı Antrenör İpucu
         const topFeedback = (analysis.feedbacks && analysis.feedbacks[0]) ? analysis.feedbacks[0].badge : '🟢 Form Dengeli';
-        ctx.font = `bold ${Math.round(9.5 * scale)}px Poppins, sans-serif`;
+        ctx.font = `bold ${Math.max(9.5, Math.round(10 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#fbbf24' : '#10b981');
-        ctx.fillText(topFeedback, x + pX, y + Math.round(23 * scale));
+        ctx.fillText(topFeedback, x + pX, y + Math.round(24 * scale));
 
         // Satır 2: Yay Kolu & Çekiş Dirseği Açıları
-        ctx.font = `${Math.round(9 * scale)}px Poppins, sans-serif`;
+        ctx.font = `${Math.max(9, Math.round(9.5 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(41 * scale));
+        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(42 * scale));
         ctx.textAlign = 'right';
         ctx.fillStyle = analysis.bowArmAngle >= 172 ? '#10b981' : (analysis.bowArmAngle >= 165 ? '#fbbf24' : '#ff3366');
-        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(41 * scale));
+        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(42 * scale));
 
         // Satır 3: Çekiş Dirsek & Çapa Durumu
         ctx.textAlign = 'left';
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(58 * scale));
+        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(59 * scale));
         ctx.textAlign = 'right';
         ctx.fillStyle = '#fbbf24';
         const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
-        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(58 * scale));
+        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(59 * scale));
 
         ctx.restore();
     }
 
     function drawAngleLabel(ctx, text, x, y, color, scale = 1) {
         ctx.save();
-        const fontSize = Math.round(13 * scale);
-        ctx.font = `bold ${fontSize}px Poppins, sans-serif`;
+        const fontSize = Math.max(12, Math.round(14 * scale));
+        ctx.font = `bold ${fontSize}px Poppins, -apple-system, sans-serif`;
         const textWidth = ctx.measureText(text).width;
         
-        const pw = textWidth + Math.round(20 * scale);
-        const ph = Math.round(26 * scale);
+        const pw = Math.max(38, textWidth + Math.round(18 * scale));
+        const ph = Math.max(24, Math.round(26 * scale));
         const px = x - pw / 2;
         const py = y - ph / 2;
+        const rad = Math.round(7 * scale);
         
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(1.5, 2 * scale);
+        ctx.lineWidth = Math.max(1.8, 2 * scale);
         ctx.shadowColor = color;
         ctx.shadowBlur = Math.round(8 * scale);
         
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(px, py, pw, ph, Math.round(8 * scale));
-        else ctx.rect(px, py, pw, ph);
+        drawSafeRoundedRect(ctx, px, py, pw, ph, rad);
         ctx.fill();
         ctx.stroke();
 
