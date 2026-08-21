@@ -11076,7 +11076,10 @@ ${(function(){
             if(sekmeAd === 'canlitakip') canliTakipCiz();
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
-            if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
+            if(sekmeAd === 'ritim') { try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.renderIdleUI(); } catch(e) {} }
+            else {
+                try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
+            }
             if(sekmeAd === 'video') { vaInit(); }
             else {
                 try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
