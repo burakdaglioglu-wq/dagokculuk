@@ -1048,6 +1048,22 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.5);
             min-height: 240px;
         }
+        .ai-pose-box:fullscreen, .ai-pose-box:-webkit-full-screen, .ai-pose-box.ai-fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+            margin: 0 !important;
+            z-index: 99999 !important;
+            background: #000 !important;
+        }
+        .ai-pose-box:fullscreen .ai-pose-inner, .ai-pose-box:-webkit-full-screen .ai-pose-inner, .ai-pose-box.ai-fullscreen .ai-pose-inner {
+            max-height: 100vh !important;
+        }
+        .ai-pose-box:fullscreen .ai-pose-video, .ai-pose-box:-webkit-full-screen .ai-pose-video, .ai-pose-box.ai-fullscreen .ai-pose-video {
+            max-height: 100vh !important;
+        }
         .ai-pose-inner {
             position: relative;
             display: inline-block;
@@ -1055,6 +1071,7 @@
             max-height: 65vh;
             line-height: 0;
             margin: 0 auto;
+            cursor: pointer;
         }
         .ai-pose-video {
             max-width: 100%;
@@ -1072,6 +1089,30 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+        }
+        .ai-play-splash {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.6);
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid var(--neon-blue);
+            color: #fff;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all .25s ease-out;
+            z-index: 10;
+        }
+        .ai-play-splash.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
         .ai-hud-grid {
             display: grid;

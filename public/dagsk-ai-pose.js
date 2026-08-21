@@ -451,19 +451,19 @@
     }
 
     /**
-     * Videonun sağ altına şık, kompakt ve velilerin rahat okuyabileceği analiz kutusu çizer
+     * Videonun sağ altına şık, kompakt ve velilerin rahat okuyabileceği canlı antrenör analizi kutusu çizer
      */
     function drawCompactParentHUD(ctx, width, height, analysis) {
         ctx.save();
-        const boxW = Math.min(150, Math.max(120, width * 0.32));
-        const boxH = 76;
+        const boxW = Math.min(180, Math.max(140, width * 0.36));
+        const boxH = 78;
         const margin = 8;
         const x = width - boxW - margin;
         const y = height - boxH - margin;
 
         // Koyu cam arka plan
-        ctx.fillStyle = 'rgba(10, 15, 30, 0.84)';
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.35)';
+        ctx.fillStyle = 'rgba(10, 15, 30, 0.86)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 8);
@@ -471,42 +471,35 @@
         ctx.fill();
         ctx.stroke();
 
-        // Başlık: Form Skoru
+        // Başlık: Canlı Antrenör Analizi
         ctx.font = 'bold 9.5px Poppins, sans-serif';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#00f0ff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText('🎯 FORM SKORU', x + 7, y + 6);
+        ctx.fillText('📋 ANTRENÖR ANALİZİ', x + 7, y + 6);
 
-        ctx.textAlign = 'right';
-        ctx.fillStyle = analysis.score >= 80 ? '#10b981' : (analysis.score >= 60 ? '#fbbf24' : '#ff3366');
-        ctx.fillText(`%${analysis.score}`, x + boxW - 7, y + 6);
+        // Satır 1: En Önemli Canlı Antrenör İpucu
+        const topFeedback = (analysis.feedbacks && analysis.feedbacks[0]) ? analysis.feedbacks[0].badge : '🟢 Form Dengeli';
+        ctx.font = 'bold 9px Poppins, sans-serif';
+        ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#fbbf24' : '#10b981');
+        ctx.fillText(topFeedback, x + 7, y + 21);
 
-        // Satır 1: Yay Kolu
-        ctx.font = '9px Poppins, sans-serif';
+        // Satır 2: Yay Kolu & Çekiş Dirseği Açıları
+        ctx.font = '8.5px Poppins, sans-serif';
         ctx.fillStyle = '#94a3b8';
-        ctx.textAlign = 'left';
-        ctx.fillText('🏹 Yay Kolu:', x + 7, y + 23);
+        ctx.fillText('🏹 Yay Kolu:', x + 7, y + 38);
         ctx.textAlign = 'right';
         ctx.fillStyle = analysis.bowArmAngle >= 172 ? '#10b981' : (analysis.bowArmAngle >= 165 ? '#fbbf24' : '#ff3366');
-        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - 7, y + 23);
+        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - 7, y + 38);
 
-        // Satır 2: Çekiş Dirseği
-        ctx.fillStyle = '#94a3b8';
+        // Satır 3: Çekiş Dirsek & Çapa Durumu
         ctx.textAlign = 'left';
-        ctx.fillText('🎯 Çekiş Dirsek:', x + 7, y + 38);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('🎯 Çekiş / Çapa:', x + 7, y + 54);
         ctx.textAlign = 'right';
         ctx.fillStyle = '#fbbf24';
-        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}°`, x + boxW - 7, y + 38);
-
-        // Satır 3: Çapa Durumu
-        ctx.fillStyle = '#94a3b8';
-        ctx.textAlign = 'left';
-        ctx.fillText('⚓ Çapa:', x + 7, y + 53);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : (analysis.anchorStatus.includes('🟡') ? '#fbbf24' : '#ff3366');
         const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
-        ctx.fillText(cleanAnchor, x + boxW - 7, y + 53);
+        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - 7, y + 54);
 
         ctx.restore();
     }
@@ -1346,6 +1339,54 @@
         if (window.showToast) window.showToast('📲 WhatsApp veli mesajı hazırlandı!', 'success');
     }
 
+    /**
+     * Ekrana / Tablete dokunulduğunda oynat/durdur
+     */
+    function handleScreenTap(e) {
+        // Eğer bir çizim aracı seçiliyse, çizim önceliklidir
+        if (drawState.activeTool) return;
+        if (currentSourceMode !== 'video' || !isVideoLoaded) return;
+
+        // Play/Pause yap
+        toggleVideoPlay();
+
+        // Ortada YouTube/Tablet tarzı Play/Pause animasyon ikonu göster
+        const splash = document.getElementById('ai-play-splash');
+        const videoElement = document.getElementById('ai-pose-video');
+        if (splash && videoElement) {
+            splash.textContent = videoElement.paused ? '⏸' : '▶';
+            splash.classList.add('show');
+            setTimeout(() => splash.classList.remove('show'), 400);
+        }
+    }
+
+    /**
+     * Tam ekran modunu açar veya kapatır (Tablet ve mobil dostu)
+     */
+    function toggleFullScreen() {
+        const container = document.getElementById('ai-pose-box-container');
+        if (!container) return;
+
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (container.requestFullscreen) {
+                container.requestFullscreen().catch(() => container.classList.toggle('ai-fullscreen'));
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else {
+                container.classList.toggle('ai-fullscreen');
+            }
+            if (window.showToast) window.showToast('⛶ Tam ekran açıldı.');
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            container.classList.remove('ai-fullscreen');
+            if (window.showToast) window.showToast('Tam ekrandan çıkıldı.');
+        }
+    }
+
     // Dışa Aktarılan Modül Arayüzü
     global.DAGSK_AI_POSE = {
         init: initPoseEngine,
@@ -1363,6 +1404,8 @@
         setDrawColor,
         undoDraw,
         clearDrawings,
+        handleScreenTap,
+        toggleFullScreen,
         exportAnalyzedVideo,
         captureAnalysisCard,
         shareToWhatsApp,
@@ -1370,3 +1413,4 @@
     };
 
 })(typeof window !== 'undefined' ? window : this);
+
