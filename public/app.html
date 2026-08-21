@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v120</b> · DAĞ S.K. Özel Palet (Siyah & Turuncu & Ten)</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v121</b> · İkili Video Karşılaştırma & Senkron Analiz</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -798,9 +798,10 @@
             <div class="va-sub">Gerçek zamanlı yapay zekâ ile atış formunu, yay kolu kilidini ve çekiş dirseği açılarını anlık analiz et.</div>
         </div>
 
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1;">🤖 Canlı AI Duruş Analizi</button>
-            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1;">🪞 5sn Gecikmeli Ayna</button>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1; min-width:130px;">🤖 Canlı AI Duruş</button>
+            <button onclick="vaModSec('karsilastir')" id="va-mod-karsilastir-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">⚔️ İkili Karşılaştırma</button>
+            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">🪞 5sn Ayna</button>
         </div>
 
         <!-- ===== 1. MOD: GERÇEK ZAMANLI AI DURUŞ ANALİZİ (MediaPipe) ===== -->
@@ -1002,6 +1003,122 @@
                 <div id="ayna-hazir-acilar" style="display:none; gap:6px; flex-wrap:wrap;"></div>
                 <div id="ayna-hazir-aci-ipucu" style="display:none; font-size:11px; color:var(--gold); margin-top:6px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:8px 10px;"></div>
                 <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir.</div>
+            </div>
+        </div>
+
+        <!-- ===== 3. MOD: YAN YANA İKİLİ VİDEO KARŞILAŞTIRMA ===== -->
+        <div id="va-mod-karsilastir" style="display:none;">
+            <!-- Görünüm Seçimi & Üst Çubuk -->
+            <div class="ai-config-dock">
+                <div class="ai-pill-group">
+                    <button id="cmp-mode-split" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setViewMode('split')">🔲 Yan Yana (50/50)</button>
+                    <button id="cmp-mode-overlay" class="ai-pill-btn" onclick="DAGSK_COMPARE.setViewMode('overlay')">👻 Hayalet / Bindirme</button>
+                </div>
+                <div id="cmp-opacity-wrap" style="display:none; align-items:center; gap:6px; font-size:11px; color:var(--accent-sand);">
+                    <span>Saydamlık:</span>
+                    <input type="range" min="10" max="90" value="50" step="5" style="width:70px; accent-color:var(--accent-orange);" oninput="DAGSK_COMPARE.setOverlayOpacity(this.value)">
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="va-btn va-btn-grey" style="padding:5px 10px; font-size:11.5px;" onclick="DAGSK_COMPARE.captureComparisonCard()" title="Fotoğraf İndir">📸 Kart İndir</button>
+                    <button class="va-btn" style="background:#25D366; color:#fff; padding:5px 10px; font-size:11.5px;" onclick="DAGSK_COMPARE.shareToWhatsApp()">📲 WhatsApp</button>
+                </div>
+            </div>
+
+            <!-- İkili Video Konteyneri -->
+            <div id="cmp-dual-container" class="cmp-dual-container">
+                <!-- Video A (Sol) -->
+                <div class="cmp-pane" id="cmp-pane-a">
+                    <div class="cmp-pane-header">
+                        <span style="color:var(--accent-orange);">🔵 Video A <span id="cmp-filename-a" style="color:var(--text-muted); font-weight:400; font-size:11px;">(Referans / 1. Atış)</span></span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="DAGSK_COMPARE.setSyncAnchor('A')" title="Bu kareyi senkron başlangıcı yap">🎯 Çapa Kilitle</button>
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="document.getElementById('cmp-input-a').click()">📂 Değiştir</button>
+                        </div>
+                    </div>
+                    <div id="cmp-upload-a" class="cmp-dropzone" onclick="document.getElementById('cmp-input-a').click()">
+                        <div style="font-size:24px; margin-bottom:4px;">🎬</div>
+                        <div style="font-weight:700; font-size:12px;">Video A Seç / Sürükle</div>
+                    </div>
+                    <input id="cmp-input-a" type="file" accept="video/*" style="display:none;" onchange="DAGSK_COMPARE.loadVideo('A', this.files[0])">
+                    <div id="cmp-wrapper-a" style="display:none;">
+                        <div class="cmp-video-box">
+                            <video id="cmp-video-a" class="cmp-video" muted playsinline></video>
+                            <canvas id="cmp-canvas-a" class="cmp-canvas"></canvas>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input id="cmp-seek-a" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onSingleSeek('A', event)">
+                            <span id="cmp-time-a" style="font-size:10px; color:var(--text-muted); min-width:70px; text-align:right;">00:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video B (Sağ) -->
+                <div class="cmp-pane" id="cmp-pane-b">
+                    <div class="cmp-pane-header">
+                        <span style="color:var(--accent-sand);">🟠 Video B <span id="cmp-filename-b" style="color:var(--text-muted); font-weight:400; font-size:11px;">(Karşılaştırma / 2. Atış)</span></span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="DAGSK_COMPARE.setSyncAnchor('B')" title="Bu kareyi senkron başlangıcı yap">🎯 Çapa Kilitle</button>
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="document.getElementById('cmp-input-b').click()">📂 Değiştir</button>
+                        </div>
+                    </div>
+                    <div id="cmp-upload-b" class="cmp-dropzone" onclick="document.getElementById('cmp-input-b').click()">
+                        <div style="font-size:24px; margin-bottom:4px;">🎬</div>
+                        <div style="font-weight:700; font-size:12px;">Video B Seç / Sürükle</div>
+                    </div>
+                    <input id="cmp-input-b" type="file" accept="video/*" style="display:none;" onchange="DAGSK_COMPARE.loadVideo('B', this.files[0])">
+                    <div id="cmp-wrapper-b" style="display:none;">
+                        <div class="cmp-video-box">
+                            <video id="cmp-video-b" class="cmp-video" muted playsinline></video>
+                            <canvas id="cmp-canvas-b" class="cmp-canvas"></canvas>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input id="cmp-seek-b" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onSingleSeek('B', event)">
+                            <span id="cmp-time-b" style="font-size:10px; color:var(--text-muted); min-width:70px; text-align:right;">00:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Çizim ve Açı Ölçüm Araçları -->
+            <div class="cmp-toolbar">
+                <span style="font-size:11px; font-weight:800; color:var(--accent-sand); margin-right:2px;">🎨 Çizim & Ölçüm:</span>
+                <button id="cmp-tool-pen" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('pen')">✏️ Kalem</button>
+                <button id="cmp-tool-line" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('line')">📏 Çizgi</button>
+                <button id="cmp-tool-circle" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('circle')">⭕ Daire</button>
+                <button id="cmp-tool-angle" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('angle')">📐 Açı Ölç</button>
+                <button id="cmp-tool-none" class="cmp-tool-btn aktif" onclick="DAGSK_COMPARE.setDrawTool(null)">🖐️ Gezin</button>
+
+                <div style="display:flex; gap:5px; margin:0 4px; align-items:center;">
+                    <span class="cmp-color-dot aktif" style="background:#ff6a1a;" onclick="DAGSK_COMPARE.setDrawColor('#ff6a1a', this)"></span>
+                    <span class="cmp-color-dot" style="background:#e8d7c5;" onclick="DAGSK_COMPARE.setDrawColor('#e8d7c5', this)"></span>
+                    <span class="cmp-color-dot" style="background:#10b981;" onclick="DAGSK_COMPARE.setDrawColor('#10b981', this)"></span>
+                    <span class="cmp-color-dot" style="background:#ff3366;" onclick="DAGSK_COMPARE.setDrawColor('#ff3366', this)"></span>
+                </div>
+
+                <button class="cmp-tool-btn" onclick="DAGSK_COMPARE.undoDraw()" title="Geri Al">↩️ Geri</button>
+                <button class="cmp-tool-btn" onclick="DAGSK_COMPARE.clearDrawings()" title="Temizle">🗑️ Temizle</button>
+            </div>
+
+            <!-- Ana Senkron Oynatma & Kare Kare Denetim Barı -->
+            <div id="cmp-master-controls" class="cmp-master-bar" style="display:none;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input id="cmp-master-seek" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onMasterSeek(event)">
+                    <span id="cmp-master-time" style="font-size:11px; font-weight:700; color:var(--accent-sand); min-width:85px; text-align:right;">00:00 / 00:00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button id="cmp-master-play-btn" class="va-btn va-btn-orange" onclick="DAGSK_COMPARE.togglePlay()">▶ Senkron Oynat</button>
+                        <button class="va-btn va-btn-grey" onclick="DAGSK_COMPARE.stepFrame('both', -0.05)" title="1 kare geri">◀ −1k</button>
+                        <button class="va-btn va-btn-grey" onclick="DAGSK_COMPARE.stepFrame('both', 0.05)" title="1 kare ileri">+1k ▶</button>
+                        <button id="cmp-sync-lock-btn" class="va-btn va-btn-grey aktif" onclick="DAGSK_COMPARE.toggleSyncLock()">🔗 Senkron: Kilitli</button>
+                    </div>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <span style="font-size:11px; color:var(--text-muted);">Hız:</span>
+                        <button id="cmp-speed-025" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.25)">0.25x</button>
+                        <button id="cmp-speed-05" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.5)">0.5x</button>
+                        <button id="cmp-speed-1" class="ai-speed-btn aktif" onclick="DAGSK_COMPARE.setSpeed(1)">1x</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1471,6 +1588,7 @@
     <!-- SİSTEM ÇEKİRDEĞİ JAVASCRIPT (EKSİKSİZ TAM SÜRÜM) -->
     <script src="dagsk-teknik-calisma.js"></script>
     <script src="dagsk-ai-pose.js"></script>
+    <script src="dagsk-video-compare.js"></script>
     <script src="sync.js"></script>
     <script src="app.js"></script>
 </body>

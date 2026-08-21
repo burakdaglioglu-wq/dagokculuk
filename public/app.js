@@ -13830,20 +13830,28 @@ ${(function(){
         ========================================================= */
         function vaModSec(mod) {
             let aiPoseEl = document.getElementById('va-mod-ai-pose');
+            let karsilastirEl = document.getElementById('va-mod-karsilastir');
             let aynaEl = document.getElementById('va-mod-ayna');
             let aiEl = document.getElementById('va-mod-ai');
 
             if(aiPoseEl) aiPoseEl.style.display = mod === 'ai_pose' ? 'block' : 'none';
+            if(karsilastirEl) karsilastirEl.style.display = mod === 'karsilastir' ? 'block' : 'none';
             if(aynaEl) aynaEl.style.display = mod === 'ayna' ? 'block' : 'none';
             if(aiEl) aiEl.style.display = mod === 'ai' ? 'block' : 'none';
 
             let aiPoseBtn = document.getElementById('va-mod-aipose-btn');
+            let karsilastirBtn = document.getElementById('va-mod-karsilastir-btn');
             let aynaBtn = document.getElementById('va-mod-ayna-btn');
             let aiBtn = document.getElementById('va-mod-ai-btn');
 
             if(aiPoseBtn) { aiPoseBtn.classList.toggle('va-btn-orange', mod === 'ai_pose'); aiPoseBtn.classList.toggle('va-btn-grey', mod !== 'ai_pose'); }
-            if(aynaBtn) { aynaBtn.classList.toggle('va-btn-blue', mod === 'ayna'); aynaBtn.classList.toggle('va-btn-grey', mod !== 'ayna'); }
-            if(aiBtn) { aiBtn.classList.toggle('va-btn-blue', mod === 'ai'); aiBtn.classList.toggle('va-btn-grey', mod !== 'ai'); }
+            if(karsilastirBtn) { karsilastirBtn.classList.toggle('va-btn-orange', mod === 'karsilastir'); karsilastirBtn.classList.toggle('va-btn-grey', mod !== 'karsilastir'); }
+            if(aynaBtn) { aynaBtn.classList.toggle('va-btn-orange', mod === 'ayna'); aynaBtn.classList.toggle('va-btn-grey', mod !== 'ayna'); }
+            if(aiBtn) { aiBtn.classList.toggle('va-btn-orange', mod === 'ai'); aiBtn.classList.toggle('va-btn-grey', mod !== 'ai'); }
+
+            if(mod === 'karsilastir' && window.DAGSK_COMPARE) {
+                try { window.DAGSK_COMPARE.init(); } catch(e) {}
+            }
 
             // Sekme değişince kullanılmayan modun kamerası açık kalmasın
             if(mod !== 'ai_pose') try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
