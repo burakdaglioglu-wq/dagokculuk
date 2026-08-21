@@ -1,6 +1,6 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v4
- * Hassas açı kilitleme, Çapa (Anchor) noktası biomekanik takibi, Daire/Kalem/Çizgi çizim araçları, video kaydı ve WhatsApp.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v5
+ * Canlı video akışında kesintisiz gerçek zamanlı açı takibi, sağ alt veli özet rozeti, çapa analizi ve çizimler.
  */
 
 (function (global) {
@@ -11,6 +11,7 @@
     let isLiveActive = false;
     let isVideoLoaded = false;
     let isVideoPlaying = false;
+    let isProcessingVideoFrame = false;
     let currentHandedness = 'right'; // 'right' (sağlak) | 'left' (solak)
     let currentSourceMode = 'camera'; // 'camera' | 'video'
     let currentFacingMode = 'environment'; // 'environment' | 'user'
@@ -24,7 +25,7 @@
         drawElbowAngle: 45,
         shoulderTilt: 0,
         spineAngle: 90,
-        anchorStatus: 'Kilitli',
+        anchorStatus: 'Kilitli 🟢',
         feedbacks: [],
         timestamp: null
     };
@@ -425,7 +426,7 @@
                 ctx.restore();
             }
 
-            // 5. Şık Açı Rozetleri
+            // 5. Şık Açı Rozetleri (Eklemler Üzerinde)
             const bowElbow = isRight ? landmarks[13] : landmarks[14];
             const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
@@ -438,12 +439,76 @@
                 drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - 18, '#fbbf24');
             }
 
+            // 6. 📱 Sağ Alt Veli Analiz Özeti Rozeti (Kompakt & Şık)
+            drawCompactParentHUD(ctx, width, height, analysis);
+
             updateHUDDashboard(analysis);
         } catch (err) {
             console.error('Pose rendering error:', err);
         } finally {
             ctx.restore();
         }
+    }
+
+    /**
+     * Videonun sağ altına şık, kompakt ve velilerin rahat okuyabileceği analiz kutusu çizer
+     */
+    function drawCompactParentHUD(ctx, width, height, analysis) {
+        ctx.save();
+        const boxW = Math.min(150, Math.max(120, width * 0.32));
+        const boxH = 76;
+        const margin = 8;
+        const x = width - boxW - margin;
+        const y = height - boxH - margin;
+
+        // Koyu cam arka plan
+        ctx.fillStyle = 'rgba(10, 15, 30, 0.84)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 8);
+        else ctx.rect(x, y, boxW, boxH);
+        ctx.fill();
+        ctx.stroke();
+
+        // Başlık: Form Skoru
+        ctx.font = 'bold 9.5px Poppins, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('🎯 FORM SKORU', x + 7, y + 6);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = analysis.score >= 80 ? '#10b981' : (analysis.score >= 60 ? '#fbbf24' : '#ff3366');
+        ctx.fillText(`%${analysis.score}`, x + boxW - 7, y + 6);
+
+        // Satır 1: Yay Kolu
+        ctx.font = '9px Poppins, sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'left';
+        ctx.fillText('🏹 Yay Kolu:', x + 7, y + 23);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = analysis.bowArmAngle >= 172 ? '#10b981' : (analysis.bowArmAngle >= 165 ? '#fbbf24' : '#ff3366');
+        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - 7, y + 23);
+
+        // Satır 2: Çekiş Dirseği
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'left';
+        ctx.fillText('🎯 Çekiş Dirsek:', x + 7, y + 38);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}°`, x + boxW - 7, y + 38);
+
+        // Satır 3: Çapa Durumu
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'left';
+        ctx.fillText('⚓ Çapa:', x + 7, y + 53);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : (analysis.anchorStatus.includes('🟡') ? '#fbbf24' : '#ff3366');
+        const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
+        ctx.fillText(cleanAnchor, x + boxW - 7, y + 53);
+
+        ctx.restore();
     }
 
     function drawAngleLabel(ctx, text, x, y, color) {
@@ -886,6 +951,41 @@
     }
 
     /**
+     * Video Oynarken Kesintisiz Gerçek Zamanlı Analiz Döngüsü (Continuous Real-Time Video Loop)
+     */
+    function startContinuousVideoAnalysis() {
+        if (videoProcessingRAF) {
+            cancelAnimationFrame(videoProcessingRAF);
+            videoProcessingRAF = null;
+        }
+
+        const videoElement = document.getElementById('ai-pose-video');
+        if (!videoElement) return;
+
+        const loop = async () => {
+            if (!videoElement.paused && !videoElement.ended && currentSourceMode === 'video') {
+                if (videoElement.readyState >= 2 && poseInstance && !isProcessingVideoFrame) {
+                    isProcessingVideoFrame = true;
+                    try {
+                        await poseInstance.send({ image: videoElement });
+                    } catch (e) {
+                        // ignore dropped frames
+                    } finally {
+                        isProcessingVideoFrame = false;
+                    }
+                }
+                videoProcessingRAF = requestAnimationFrame(loop);
+            } else {
+                const playBtn = document.getElementById('ai-vid-play-btn');
+                if (playBtn && videoElement.ended) playBtn.innerHTML = '▶ Oynat';
+                isVideoPlaying = !videoElement.paused && !videoElement.ended;
+            }
+        };
+
+        videoProcessingRAF = requestAnimationFrame(loop);
+    }
+
+    /**
      * Video Dosyasını Yükler
      */
     async function loadVideoFile(file) {
@@ -922,7 +1022,7 @@
 
                 if (vidUploadBox) vidUploadBox.style.display = 'none';
                 if (vidControls) vidControls.style.display = 'flex';
-                if (statusText) statusText.textContent = '🎬 Video hazır. Oynatabilir veya durdurup çizim yapabilirsiniz.';
+                if (statusText) statusText.textContent = '🎬 Video hazır. Oynatırken canlı açılar akacaktır.';
 
                 updateVideoTimeline();
                 await analyzeCurrentVideoFrame();
@@ -931,9 +1031,25 @@
 
             videoElement.ontimeupdate = () => {
                 updateVideoTimeline();
-                if (videoElement.paused) {
-                    analyzeCurrentVideoFrame();
-                }
+            };
+
+            videoElement.onplay = () => {
+                const playBtn = document.getElementById('ai-vid-play-btn');
+                if (playBtn) playBtn.innerHTML = '⏸ Durdur';
+                isVideoPlaying = true;
+                startContinuousVideoAnalysis();
+            };
+
+            videoElement.onpause = () => {
+                const playBtn = document.getElementById('ai-vid-play-btn');
+                if (playBtn) playBtn.innerHTML = '▶ Oynat';
+                isVideoPlaying = false;
+                stopVideoPlayback();
+                analyzeCurrentVideoFrame();
+            };
+
+            videoElement.onseeked = () => {
+                analyzeCurrentVideoFrame();
             };
 
         } catch (err) {
@@ -959,37 +1075,22 @@
             await videoElement.play();
             if (playBtn) playBtn.innerHTML = '⏸ Durdur';
             isVideoPlaying = true;
-
-            const processVideoFrame = async () => {
-                if (!videoElement.paused && !videoElement.ended) {
-                    if (videoElement.readyState >= 2) {
-                        await poseInstance.send({ image: videoElement });
-                    }
-                    videoProcessingRAF = requestAnimationFrame(processVideoFrame);
-                } else {
-                    if (playBtn) playBtn.innerHTML = '▶ Oynat';
-                    isVideoPlaying = false;
-                }
-            };
-            processVideoFrame();
+            startContinuousVideoAnalysis();
         } else {
             videoElement.pause();
             if (playBtn) playBtn.innerHTML = '▶ Oynat';
             isVideoPlaying = false;
-            if (videoProcessingRAF) cancelAnimationFrame(videoProcessingRAF);
+            stopVideoPlayback();
             analyzeCurrentVideoFrame();
         }
     }
 
     function stopVideoPlayback() {
-        const videoElement = document.getElementById('ai-pose-video');
-        if (videoElement) {
-            videoElement.pause();
-        }
         if (videoProcessingRAF) {
             cancelAnimationFrame(videoProcessingRAF);
             videoProcessingRAF = null;
         }
+        isProcessingVideoFrame = false;
         isVideoPlaying = false;
     }
 
@@ -1151,23 +1252,6 @@
                 // 3. Kullanıcı çizimleri
                 renderUserDrawingsOnContext(compCtx, compCanvas.width, compCanvas.height);
 
-                // 4. Filigran & Skor Şeridi
-                compCtx.save();
-                compCtx.fillStyle = 'rgba(10, 15, 30, 0.85)';
-                compCtx.fillRect(10, 10, 240, 60);
-                compCtx.strokeStyle = '#00e5ff';
-                compCtx.lineWidth = 1.5;
-                compCtx.strokeRect(10, 10, 240, 60);
-
-                compCtx.fillStyle = '#ffffff';
-                compCtx.font = 'bold 12px Poppins, sans-serif';
-                compCtx.fillText('🎯 DAĞ S.K. Master OS', 20, 28);
-
-                compCtx.fillStyle = '#fbbf24';
-                compCtx.font = 'bold 11px Poppins, sans-serif';
-                compCtx.fillText(`Form: %${lastAnalysisResult.score} | Yay: ${lastAnalysisResult.bowArmAngle}° | Çekiş: ${lastAnalysisResult.drawElbowAngle}°`, 20, 48);
-                compCtx.restore();
-
                 if (!videoElement.paused && !videoElement.ended) {
                     exportAnimFrame = requestAnimationFrame(renderExportFrame);
                 } else {
@@ -1229,28 +1313,6 @@
 
         // 3. Kullanıcı çizimleri
         renderUserDrawingsOnContext(ctx, mergeCanvas.width, mergeCanvas.height);
-
-        // 4. DAĞ S.K. Master OS Filigran & Skor Rozeti
-        ctx.save();
-        ctx.fillStyle = 'rgba(10, 15, 30, 0.9)';
-        ctx.fillRect(14, 14, 260, 84);
-        ctx.strokeStyle = '#00e5ff';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(14, 14, 260, 84);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 13px Poppins, sans-serif';
-        ctx.fillText('🎯 DAĞ S.K. AI Duruş Analizi', 24, 36);
-
-        ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 11px Poppins, sans-serif';
-        ctx.fillText(`Form: %${lastAnalysisResult.score}  |  Yay Kolu: ${lastAnalysisResult.bowArmAngle}°`, 24, 56);
-
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.font = '10px Poppins, sans-serif';
-        const dateStr = new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-        ctx.fillText(dateStr, 24, 76);
-        ctx.restore();
 
         // İndir
         const link = document.createElement('a');
