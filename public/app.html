@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v124</b> · Genişletilmiş Ritim Süreleri (2x Sakin & Dengeli)</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v125</b> · 30 Saniye Sakin Ritim & Nişan Komutu</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -801,9 +801,9 @@
         <!-- Üst Kontrol & Şablon Dock'u -->
         <div class="ai-config-dock">
             <div class="ai-pill-group">
-                <button id="cadence-pre-mete_gazoz" class="ai-pill-btn aktif" onclick="DAGSK_CADENCE.selectPreset('mete_gazoz')">🏹 Klasik Sakin (17.5s)</button>
-                <button id="cadence-pre-fast_wind" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('fast_wind')">⚡ Dinamik (13.5s)</button>
-                <button id="cadence-pre-compound_pro" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('compound_pro')">⚙️ Makaralı (20s)</button>
+                <button id="cadence-pre-mete_gazoz" class="ai-pill-btn aktif" onclick="DAGSK_CADENCE.selectPreset('mete_gazoz')">🏹 30sn Sakin Nişan (30s)</button>
+                <button id="cadence-pre-fast_wind" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('fast_wind')">⚡ Dinamik (20s)</button>
+                <button id="cadence-pre-compound_pro" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('compound_pro')">⚙️ Makaralı (35s)</button>
             </div>
             <div class="ai-pill-group">
                 <button id="cadence-aud-voice_beep" class="ai-pill-btn aktif" onclick="DAGSK_CADENCE.setAudioMode('voice_beep')">🗣️🎵 Ses + Bip</button>
@@ -814,7 +814,7 @@
         </div>
 
         <div id="cadence-preset-desc" style="font-size:11.5px; color:var(--accent-sand); margin-bottom:12px; padding:6px 12px; background:rgba(232, 215, 197, 0.06); border-radius:8px; border-left:3px solid var(--accent-orange);">
-            Akıcı, derin nefesli hazırlık, kontrollü çekiş ve kararlı 3.0s tıkır genişlemesi.
+            Derin nefesli hazırlık, kontrollü akıcı çekiş, 5.0s tam nişan ve kararlı 4.0s tıkır genişlemesi.
         </div>
 
         <!-- Ana Ritim Halkası Kartı -->
@@ -830,7 +830,7 @@
                 <div class="cadence-center-content">
                     <div id="cadence-shot-counter" style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Ok 1/6 · Seri 1/5</div>
                     <div id="cadence-phase-name" style="font-size:20px; font-weight:900; color:var(--accent-sand); letter-spacing:1px; line-height:1.2; text-align:center;">HAZIR</div>
-                    <div id="cadence-phase-sec" style="font-size:38px; font-weight:900; color:var(--text-main); font-family:monospace; margin-top:2px;">17.5s</div>
+                    <div id="cadence-phase-sec" style="font-size:38px; font-weight:900; color:var(--text-main); font-family:monospace; margin-top:2px;">30.0s</div>
                 </div>
             </div>
 

@@ -13,58 +13,58 @@
 (function (global) {
     'use strict';
 
-    // Ritim Şablonları (Faz süreleri saniye cinsinden — Rahat ve Geniş 2x Süreler)
+    // Ritim Şablonları (Faz süreleri saniye cinsinden — 30 Saniye Sakin & Nişan Odaklı)
     const PRESETS = {
         mete_gazoz: {
-            name: '🏹 Klasik Yay Sakin & Dengeli Ritim (17.5s)',
-            desc: 'Akıcı, derin nefesli hazırlık, kontrollü çekiş ve kararlı 3.0s tıkır genişlemesi.',
+            name: '🏹 30 Saniye Sakin & Nişan Ritmi (30.0s)',
+            desc: 'Derin nefesli hazırlık, kontrollü akıcı çekiş, 5.0s tam nişan ve kararlı 4.0s tıkır genişlemesi.',
             phases: [
-                { id: 'set', name: 'Hazırlık & Duruş', duration: 4.0, color: '#9e9ea8', audio: 'Hazır' },
-                { id: 'lift', name: 'Yayı Kaldır', duration: 3.0, color: '#f59e0b', audio: 'Kaldır' },
-                { id: 'draw', name: 'Sakin Çekiş', duration: 4.5, color: '#ff6a1a', audio: 'Çek' },
-                { id: 'anchor', name: 'Çapa & Sırt Kilidi', duration: 3.0, color: '#ea580c', audio: 'Çapa' },
-                { id: 'expand', name: 'Genişleme & Bırak!', duration: 3.0, color: '#10b981', audio: 'Bırak', isRelease: true },
-                { id: 'follow', name: 'Takip (Duruşu Koru)', duration: 3.0, color: '#e8d7c5', audio: 'Koru' },
-                { id: 'rest', name: 'Ok Arası Dinlenme', duration: 8.0, color: '#64748b', audio: 'Dinlen' }
+                { id: 'set', name: 'Hazırlık & Duruş', duration: 6.0, color: '#9e9ea8', audio: 'Hazır' },
+                { id: 'lift', name: 'Yayı Kaldır', duration: 4.0, color: '#f59e0b', audio: 'Kaldır' },
+                { id: 'draw', name: 'Sakin Çekiş', duration: 6.0, color: '#ff6a1a', audio: 'Çek' },
+                { id: 'anchor', name: 'Nişan & Odak', duration: 5.0, color: '#ea580c', audio: 'Nişan' },
+                { id: 'expand', name: 'Genişleme & Bırak!', duration: 4.0, color: '#10b981', audio: 'Bırak', isRelease: true },
+                { id: 'follow', name: 'Takip (Duruşu Koru)', duration: 5.0, color: '#e8d7c5', audio: 'Koru' },
+                { id: 'rest', name: 'Ok Arası Dinlenme', duration: 10.0, color: '#64748b', audio: 'Dinlen' }
             ]
         },
         fast_wind: {
-            name: '⚡ Standart Dinamik Ritim (13.5s)',
-            desc: 'Dinamik, tempolu ve net bırakış ritmi.',
+            name: '⚡ Dinamik Nişan Ritmi (20.0s)',
+            desc: 'Dinamik, tempolu ve net nişan / bırakış ritmi.',
             phases: [
-                { id: 'set', name: 'Hazırlık & Duruş', duration: 3.0, color: '#9e9ea8', audio: 'Hazır' },
-                { id: 'lift', name: 'Yayı Kaldır', duration: 2.0, color: '#f59e0b', audio: 'Kaldır' },
-                { id: 'draw', name: 'Çekiş', duration: 3.5, color: '#ff6a1a', audio: 'Çek' },
-                { id: 'anchor', name: 'Çapa', duration: 2.5, color: '#ea580c', audio: 'Çapa' },
+                { id: 'set', name: 'Hazırlık & Duruş', duration: 4.0, color: '#9e9ea8', audio: 'Hazır' },
+                { id: 'lift', name: 'Yayı Kaldır', duration: 3.0, color: '#f59e0b', audio: 'Kaldır' },
+                { id: 'draw', name: 'Çekiş', duration: 4.0, color: '#ff6a1a', audio: 'Çek' },
+                { id: 'anchor', name: 'Nişan', duration: 3.5, color: '#ea580c', audio: 'Nişan' },
                 { id: 'expand', name: 'Bırak!', duration: 2.5, color: '#10b981', audio: 'Bırak', isRelease: true },
-                { id: 'follow', name: 'Takip', duration: 2.5, color: '#e8d7c5', audio: 'Koru' },
-                { id: 'rest', name: 'Dinlenme', duration: 7.0, color: '#64748b', audio: 'Dinlen' }
+                { id: 'follow', name: 'Takip', duration: 3.0, color: '#e8d7c5', audio: 'Koru' },
+                { id: 'rest', name: 'Dinlenme', duration: 8.0, color: '#64748b', audio: 'Dinlen' }
             ]
         },
         compound_pro: {
-            name: '⚙️ Makaralı Yay (Compound) Tetik Ritmi (20.0s)',
-            desc: 'Makaralı yay için kontrollü çapa, peep hizalaması ve sürpriz tetik ezme süresi.',
+            name: '⚙️ Makaralı Yay (Compound) Nişan & Tetik (35.0s)',
+            desc: 'Makaralı yay için kontrollü çapa, 8.0s derin peep nişanı ve sürpriz tetik ezme süresi.',
             phases: [
-                { id: 'set', name: 'Hazırlık', duration: 4.0, color: '#9e9ea8', audio: 'Hazır' },
-                { id: 'lift', name: 'Yayı Kaldır', duration: 3.0, color: '#f59e0b', audio: 'Kaldır' },
-                { id: 'draw', name: 'Durağa Kadar Çek', duration: 5.0, color: '#ff6a1a', audio: 'Çek' },
-                { id: 'anchor', name: 'Peep & Çapa Kilidi', duration: 3.0, color: '#ea580c', audio: 'Kilit' },
+                { id: 'set', name: 'Hazırlık', duration: 6.0, color: '#9e9ea8', audio: 'Hazır' },
+                { id: 'lift', name: 'Yayı Kaldır', duration: 4.0, color: '#f59e0b', audio: 'Kaldır' },
+                { id: 'draw', name: 'Durağa Kadar Çek', duration: 6.0, color: '#ff6a1a', audio: 'Çek' },
+                { id: 'anchor', name: 'Peep & Nişan', duration: 8.0, color: '#ea580c', audio: 'Nişan' },
                 { id: 'expand', name: 'Tetiği Ez & Bırak!', duration: 5.0, color: '#10b981', audio: 'Tetik', isRelease: true },
-                { id: 'follow', name: 'Takip', duration: 3.0, color: '#e8d7c5', audio: 'Koru' },
-                { id: 'rest', name: 'Dinlenme', duration: 10.0, color: '#64748b', audio: 'Dinlen' }
+                { id: 'follow', name: 'Takip', duration: 6.0, color: '#e8d7c5', audio: 'Koru' },
+                { id: 'rest', name: 'Dinlenme', duration: 12.0, color: '#64748b', audio: 'Dinlen' }
             ]
         },
         custom: {
-            name: '🛠️ Özel Kulüp / Sporcu Ritmi (16.0s)',
+            name: '🛠️ Özel Kulüp / Sporcu Ritmi (30.0s)',
             desc: 'Antrenör tarafından özelleştirilmiş saniye süreleri.',
             phases: [
-                { id: 'set', name: 'Hazırlık', duration: 4.0, color: '#9e9ea8', audio: 'Hazır' },
-                { id: 'lift', name: 'Kaldır', duration: 3.0, color: '#f59e0b', audio: 'Kaldır' },
-                { id: 'draw', name: 'Çekiş', duration: 4.0, color: '#ff6a1a', audio: 'Çek' },
-                { id: 'anchor', name: 'Çapa', duration: 3.0, color: '#ea580c', audio: 'Çapa' },
-                { id: 'expand', name: 'Bırak!', duration: 3.0, color: '#10b981', audio: 'Bırak', isRelease: true },
-                { id: 'follow', name: 'Takip', duration: 3.0, color: '#e8d7c5', audio: 'Koru' },
-                { id: 'rest', name: 'Dinlenme', duration: 8.0, color: '#64748b', audio: 'Dinlen' }
+                { id: 'set', name: 'Hazırlık', duration: 6.0, color: '#9e9ea8', audio: 'Hazır' },
+                { id: 'lift', name: 'Kaldır', duration: 4.0, color: '#f59e0b', audio: 'Kaldır' },
+                { id: 'draw', name: 'Çekiş', duration: 6.0, color: '#ff6a1a', audio: 'Çek' },
+                { id: 'anchor', name: 'Nişan', duration: 5.0, color: '#ea580c', audio: 'Nişan' },
+                { id: 'expand', name: 'Bırak!', duration: 4.0, color: '#10b981', audio: 'Bırak', isRelease: true },
+                { id: 'follow', name: 'Takip', duration: 5.0, color: '#e8d7c5', audio: 'Koru' },
+                { id: 'rest', name: 'Dinlenme', duration: 10.0, color: '#64748b', audio: 'Dinlen' }
             ]
         }
     };

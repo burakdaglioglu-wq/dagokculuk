@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v124';
+const CACHE = 'dag-sk-v125';
 const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png', '/dagsk-ai-pose.js', '/dagsk-teknik-calisma.js', '/dagsk-video-compare.js', '/dagsk-cadence-coach.js'];
 
 self.addEventListener('install', (e) => {
