@@ -11,49 +11,56 @@
            görmezden geliyor) — touch-action:manipulation asıl çözüm, jest algılama gecikmesini kaldırıyor. */
         button, [onclick] { touch-action: manipulation; }
 
-        /* TEMA DEĞİŞKENLERİ — Modern Minimalist Tasarım Sistemi */
+        /* TEMA DEĞİŞKENLERİ — DAĞ S.K. Siyah, Turuncu, Gri & Ten Rengi Paleti */
         :root {
-            --bg-main: #090d16;
-            --bg-panel: rgba(17, 24, 39, 0.88);
-            --bg-card: rgba(30, 41, 59, 0.65);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-orange: #f97316;
+            --bg-main: #0a0a0d;
+            --bg-panel: rgba(20, 20, 24, 0.92);
+            --bg-card: rgba(28, 28, 34, 0.78);
+            --text-main: #f5f5f7;
+            --text-muted: #9e9ea8;
+            --accent-orange: #ff6a1a;
+            --accent-orange-hover: #ff7e38;
+            --accent-sand: #e8d7c5;            /* Ten Rengi / Sıcak Kum */
+            --accent-sand-subtle: rgba(232, 215, 197, 0.12);
+            --accent-sand-border: rgba(232, 215, 197, 0.28);
             --accent-grey: #64748b;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.16);
-            --neon-blue: #38bdf8;
+            --border-color: rgba(255, 255, 255, 0.09);
+            --border-hover: rgba(255, 106, 26, 0.35);
+            --neon-blue: #ff6a1a;             /* Ana Vurgu -> DAĞ Turuncusu */
             --neon-pink: #f43f5e;
             --neon-red: #ef4444;
             --gold: #f59e0b;
             --neon-green: #10b981;
             --ring-yellow: #fbbf24;
             --ring-red: #ef4444;
-            --ring-blue: #38bdf8;
+            --ring-blue: #ff6a1a;
             --ring-black: #1e293b;
             --ring-white: #f8fafc;
-            --aurora-cyan: #38bdf8;
-            --aurora-magenta: #f43f5e;
-            --aurora-violet: #818cf8;
+            --aurora-cyan: #ff6a1a;
+            --aurora-magenta: #e8d7c5;
+            --aurora-violet: #d97706;
             --aurora-gold: #f59e0b;
-            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+            --shadow-card: 0 6px 24px -2px rgba(0, 0, 0, 0.55);
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
         }
 
         body.light-theme {
-            --bg-main: #f8fafc;
+            --bg-main: #f6f3ee;               /* Sıcak açık ten/kum zemini */
             --bg-panel: #ffffff;
-            --bg-card: #f1f5f9;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --border-hover: #cbd5e1;
-            --aurora-cyan: #0284c7;
-            --aurora-magenta: #e11d48;
-            --aurora-violet: #6366f1;
+            --bg-card: #ece6dc;
+            --text-main: #141417;
+            --text-muted: #6b6a74;
+            --border-color: #ded6cb;
+            --border-hover: #ff6a1a;
+            --accent-sand: #8c7159;
+            --accent-sand-subtle: rgba(140, 113, 89, 0.12);
+            --accent-sand-border: rgba(140, 113, 89, 0.28);
+            --aurora-cyan: #ff6a1a;
+            --aurora-magenta: #c25916;
+            --aurora-violet: #8c7159;
             --aurora-gold: #d97706;
-            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
-            --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.07);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         button, select, input { 
@@ -95,23 +102,23 @@
         .kurumsal-logo { 
             font-size: clamp(24px, 5vw, 36px); 
             font-weight: 900; 
-            color: var(--neon-blue); 
+            color: var(--accent-orange); 
             letter-spacing: 2px; 
-            padding: 8px 20px; 
-            border: 1.5px solid var(--border-color); 
+            padding: 8px 22px; 
+            border: 2px solid var(--accent-orange); 
             border-radius: 16px; 
-            background: rgba(255,255,255,0.03); 
+            background: rgba(255, 106, 26, 0.04); 
             margin-bottom: 12px; 
             text-align: center;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 20px rgba(255, 106, 26, 0.15);
         }
         .mini-logo { 
             font-size: 13px; 
             font-weight: 900; 
-            color: var(--neon-blue); 
-            border: 1px solid var(--border-color); 
-            padding: 3px 8px; 
-            border-radius: 6px; 
+            color: var(--accent-orange); 
+            border: 1.5px solid var(--accent-orange); 
+            padding: 3px 9px; 
+            border-radius: 7px; 
             white-space: nowrap; 
         }
 
@@ -138,7 +145,7 @@
             top: 20px; 
             right: 20px; 
             background: var(--bg-panel); 
-            color: var(--text-main); 
+            color: var(--accent-sand); 
             border: 1px solid var(--border-color); 
             padding: 8px 14px; 
             border-radius: 10px; 
@@ -161,7 +168,7 @@
             z-index: 10001; 
         }
         #giris-ekrani h2 { 
-            color: var(--text-muted); 
+            color: var(--accent-sand); 
             font-weight: 700; 
             text-transform: uppercase; 
             margin-bottom: 12px; 
@@ -188,13 +195,13 @@
         }
         body.light-theme .giris-secim-btn { 
             background: #ffffff !important; 
-            color: #0f172a !important; 
-            border-color: #e2e8f0 !important; 
+            color: #141417 !important; 
+            border-color: var(--border-color) !important; 
         }
         .giris-secim-btn:hover { 
-            border-color: var(--neon-blue) !important; 
+            border-color: var(--accent-orange) !important; 
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
+            box-shadow: 0 8px 25px rgba(255, 106, 26, 0.2);
         }
         .giris-secim-btn span { 
             display: block; 
@@ -217,12 +224,12 @@
         }
         body.light-theme .pin-btn { 
             background: #fff; 
-            color: #111827; 
+            color: #141417; 
             border-color: #cbd5e1; 
         }
         .pin-btn:active { 
-            background: var(--neon-blue); 
-            color: #04101c; 
+            background: var(--accent-orange); 
+            color: #fff; 
         }
         body.sporcu-uye-modu .sadece-egitmen { display: none !important; }
         body.sporcu-uye-modu .sadece-sporcu { display: inline-block !important; }
@@ -233,7 +240,7 @@
             border-bottom: 1px solid var(--border-color); 
             flex-shrink: 0; 
             background: var(--bg-panel);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
         }
         .grup-satir { 
             display: flex; 
@@ -246,7 +253,7 @@
         .sekme-grubu { 
             display: flex; 
             gap: 4px; 
-            background: rgba(0, 0, 0, 0.25); 
+            background: rgba(0, 0, 0, 0.35); 
             padding: 4px; 
             border-radius: 12px; 
             margin-top: 8px; 
@@ -267,13 +274,13 @@
             transition: all 0.16s ease;
         }
         .sekme-btn:hover {
-            color: var(--text-main);
+            color: var(--accent-sand);
         }
         .sekme-btn.aktif { 
-            background: var(--neon-blue); 
-            color: #04101c; 
+            background: linear-gradient(135deg, var(--accent-orange), #ea580c); 
+            color: #ffffff; 
             font-weight: 800;
-            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+            box-shadow: 0 3px 12px rgba(255, 106, 26, 0.4);
         }
         .sekme-icerik { 
             display: none; 
@@ -1367,10 +1374,11 @@
         }
         .ai-pill-group {
             display: inline-flex;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.35);
             padding: 3px;
             border-radius: 9px;
             gap: 3px;
+            border: 1px solid var(--border-color);
         }
         .ai-pill-btn {
             padding: 6px 12px;
@@ -1387,20 +1395,20 @@
             gap: 4px;
         }
         .ai-pill-btn:hover {
-            color: var(--text-main);
+            color: var(--accent-sand);
         }
         .ai-pill-btn.aktif {
-            background: var(--neon-blue);
-            color: #04101c;
+            background: linear-gradient(135deg, var(--accent-orange), #ea580c);
+            color: #ffffff;
             font-weight: 800;
-            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+            box-shadow: 0 2px 10px rgba(255, 106, 26, 0.35);
         }
         .ai-pose-box {
             position: relative;
             width: 100%;
             border-radius: 14px;
             overflow: hidden;
-            background: #020617;
+            background: #000000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1462,7 +1470,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            background: rgba(15, 23, 42, 0.88);
+            background: rgba(14, 14, 18, 0.92);
             border: 1px solid var(--border-color);
             padding: 3px 6px;
             border-radius: 10px;
@@ -1471,7 +1479,7 @@
         .ai-zoom-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #fff;
+            color: var(--accent-sand);
             padding: 3px 7px;
             border-radius: 6px;
             font-size: 11px;
@@ -1480,13 +1488,13 @@
             transition: all .15s;
         }
         .ai-zoom-btn:hover {
-            background: var(--neon-blue);
-            color: #000;
+            background: var(--accent-orange);
+            color: #fff;
         }
         .ai-zoom-badge {
-            font-size: 10px;
+            font-size: 10.5px;
             font-weight: 800;
-            color: var(--neon-blue);
+            color: var(--accent-orange);
             min-width: 32px;
             text-align: center;
         }
@@ -1497,8 +1505,8 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            background: rgba(10, 15, 30, 0.94);
-            border: 1px solid rgba(56, 189, 248, 0.4);
+            background: rgba(12, 12, 16, 0.95);
+            border: 1px solid rgba(255, 106, 26, 0.4);
             border-radius: 14px;
             padding: 6px 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -1517,9 +1525,9 @@
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid var(--neon-blue);
-            color: #fff;
+            background: rgba(18, 18, 22, 0.88);
+            border: 2px solid var(--accent-orange);
+            color: var(--accent-sand);
             font-size: 26px;
             display: flex;
             align-items: center;
@@ -1562,7 +1570,7 @@
         .ai-hud-val {
             font-size: 19px;
             font-weight: 900;
-            color: var(--neon-blue);
+            color: var(--accent-orange);
             line-height: 1.2;
         }
         .ai-hud-sub {
@@ -1612,7 +1620,7 @@
         }
         .ai-seek-bar {
             width: 100%;
-            accent-color: var(--neon-blue);
+            accent-color: var(--accent-orange);
             cursor: pointer;
             height: 6px;
         }
@@ -1627,9 +1635,9 @@
             cursor: pointer;
         }
         .ai-speed-btn.aktif {
-            background: var(--gold);
-            border-color: var(--gold);
-            color: #000;
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: #fff;
         }
         .ai-draw-canvas {
             position: absolute;
@@ -1666,10 +1674,10 @@
             transition: all .15s;
         }
         .ai-tool-btn.aktif {
-            background: var(--neon-blue);
-            border-color: var(--neon-blue);
-            color: #04101c;
-            box-shadow: 0 0 10px rgba(56,189,248,0.25);
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(255,106,26,0.35);
         }
         .ai-color-dot {
             width: 20px;

@@ -523,22 +523,22 @@
                 if (isBowArm) {
                     ctx.lineWidth = Math.max(3.8, 4.2 * scale);
                     const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
-                    ctx.strokeStyle = isArmGood ? '#00e5ff' : '#ff3366';
+                    ctx.strokeStyle = isArmGood ? '#ff6a1a' : '#ff3366';
                     ctx.shadowColor = ctx.strokeStyle;
                     ctx.shadowBlur = Math.round(8 * scale);
                 } else if (isDrawArm) {
                     ctx.lineWidth = Math.max(3.8, 4.2 * scale);
-                    ctx.strokeStyle = '#fbbf24';
-                    ctx.shadowColor = '#fbbf24';
-                    ctx.shadowBlur = Math.round(8 * scale);
+                    ctx.strokeStyle = '#e8d7c5';
+                    ctx.shadowColor = '#e8d7c5';
+                    ctx.shadowBlur = Math.round(7 * scale);
                 } else if (i === 11 && j === 12) {
                     ctx.lineWidth = Math.max(2.8, 3 * scale);
-                    ctx.strokeStyle = '#818cf8';
-                    ctx.shadowColor = '#818cf8';
-                    ctx.shadowBlur = Math.round(5 * scale);
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.shadowColor = '#94a3b8';
+                    ctx.shadowBlur = Math.round(4 * scale);
                 } else {
                     ctx.lineWidth = Math.max(2.2, 2.4 * scale);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+                    ctx.strokeStyle = 'rgba(232, 215, 197, 0.45)';
                     ctx.shadowColor = 'transparent';
                     ctx.shadowBlur = 0;
                 }
@@ -557,9 +557,9 @@
                 // Dış halka
                 ctx.beginPath();
                 ctx.arc(x, y, r + Math.round(2 * scale), 0, 2 * Math.PI);
-                ctx.strokeStyle = isArm ? '#00e5ff' : 'rgba(255,255,255,0.7)';
+                ctx.strokeStyle = isArm ? '#ff6a1a' : 'rgba(232,215,197,0.7)';
                 ctx.lineWidth = Math.max(1.2, 1.5 * scale);
-                ctx.shadowColor = '#00e5ff';
+                ctx.shadowColor = '#ff6a1a';
                 ctx.shadowBlur = isArm ? Math.round(6 * scale) : 0;
                 ctx.stroke();
 
@@ -577,7 +577,7 @@
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(ax, ay, Math.round(11 * scale), 0, 2 * Math.PI);
-                ctx.strokeStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : '#fbbf24';
+                ctx.strokeStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : '#ff6a1a';
                 ctx.lineWidth = Math.max(1.8, 2 * scale);
                 ctx.setLineDash([Math.round(3 * scale), Math.round(3 * scale)]);
                 ctx.stroke();
@@ -592,11 +592,11 @@
             if (bowElbow && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
                 const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
                 drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - Math.round(18 * scale), 
-                    isArmGood ? '#00e5ff' : '#ff3366', scale);
+                    isArmGood ? '#ff6a1a' : '#ff3366', scale);
             }
 
             if (drawElbow && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
-                drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(18 * scale), '#fbbf24', scale);
+                drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(18 * scale), '#e8d7c5', scale);
             }
 
             // 6. 📱 Sağ Alt Veli & Antrenör Analiz Özeti Rozeti (Makaralı/Klasik Belirteçli)
@@ -611,7 +611,7 @@
     }
 
     /**
-     * Videonun sağ altına canlı antrenör analizi kutusu çizer (Yay türü başlıklı)
+     * Videonun sağ altına canlı antrenör analizi kutusu çizer (Siyah/Turuncu/Ten Rengi)
      */
     function drawCompactParentHUD(ctx, width, height, analysis, scale = 1) {
         ctx.save();
@@ -622,8 +622,8 @@
         const y = height - boxH - margin;
 
         // Koyu cam arka plan
-        ctx.fillStyle = 'rgba(10, 15, 30, 0.88)';
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+        ctx.fillStyle = 'rgba(10, 10, 14, 0.92)';
+        ctx.strokeStyle = 'rgba(255, 106, 26, 0.45)';
         ctx.lineWidth = Math.max(1.2, 1.4 * scale);
         
         drawSafeRoundedRect(ctx, x, y, boxW, boxH, Math.round(7 * scale));
@@ -634,7 +634,7 @@
 
         // Başlık: Canlı Antrenör Analizi (Makaralı veya Klasik Belirteçli)
         ctx.font = `bold ${Math.max(9.5, Math.round(10 * scale))}px Poppins, -apple-system, sans-serif`;
-        ctx.fillStyle = '#00f0ff';
+        ctx.fillStyle = '#ff6a1a';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.fillText(`📋 ANTRENÖR (${analysis.bowTypeLabel})`, x + pX, y + Math.round(6 * scale));
@@ -642,24 +642,24 @@
         // Satır 1: En Önemli Canlı Antrenör İpucu
         const topFeedback = (analysis.feedbacks && analysis.feedbacks[0]) ? analysis.feedbacks[0].badge : '🟢 Form Dengeli';
         ctx.font = `bold ${Math.max(9, Math.round(9.5 * scale))}px Poppins, -apple-system, sans-serif`;
-        ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#fbbf24' : '#10b981');
+        ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#f59e0b' : '#10b981');
         ctx.fillText(topFeedback, x + pX, y + Math.round(23 * scale));
 
         // Satır 2: Yay Kolu & Çekiş Dirseği Açıları
         ctx.font = `${Math.max(8.5, Math.round(9 * scale))}px Poppins, -apple-system, sans-serif`;
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#9e9ea8';
         ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(40 * scale));
         ctx.textAlign = 'right';
         const isArmGood = analysis.bowType === 'compound' ? (analysis.bowArmAngle >= 166 && analysis.bowArmAngle <= 180) : (analysis.bowArmAngle >= 172);
-        ctx.fillStyle = isArmGood ? '#10b981' : '#ff3366';
+        ctx.fillStyle = isArmGood ? '#ff6a1a' : '#ff3366';
         ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(40 * scale));
 
         // Satır 3: Çekiş Dirsek & Çapa Durumu
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#9e9ea8';
         ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(56 * scale));
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#fbbf24';
+        ctx.fillStyle = '#e8d7c5';
         const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
         ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(56 * scale));
 
