@@ -1,6 +1,6 @@
 /**
  * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection)
- * Google MediaPipe Pose tabanlı, sıfır API anahtarı gerektiren %100 yerel okçuluk biomekanik analiz motoru.
+ * Google MediaPipe Pose tabanlı, %100 yerel canlı kamera ve kayıtlı video analiz motoru.
  */
 
 (function (global) {
@@ -8,42 +8,39 @@
 
     // Durum değişkenleri
     let poseInstance = null;
-    let cameraInstance = null;
     let isLiveActive = false;
-    let isProcessingVideo = false;
-    let currentHandedness = 'right'; // 'right' (sağlak - sol yay kolu) veya 'left' (solak - sağ yay kolu)
-    let activeSource = 'camera'; // 'camera' | 'video'
-    let currentFacingMode = 'environment'; // 'environment' (arka) | 'user' (ön kamera)
+    let isVideoLoaded = false;
+    let isVideoPlaying = false;
+    let currentHandedness = 'right'; // 'right' (sağlak) | 'left' (solak)
+    let currentSourceMode = 'camera'; // 'camera' | 'video'
+    let currentFacingMode = 'environment'; // 'environment' | 'user'
     let animationFrameId = null;
+    let videoProcessingRAF = null;
 
     // En son analiz sonucu
     let lastAnalysisResult = {
         score: 0,
         bowArmAngle: 0,
         drawElbowAngle: 0,
-        drawElbowElevation: 0,
         shoulderTilt: 0,
         spineAngle: 0,
-        headTilt: 0,
         feedbacks: [],
         timestamp: null
     };
 
     /**
-     * İki 2D nokta arasındaki açıyı veya 3 nokta arasındaki eklem açısını hesaplar (Derece cinsinden: 0-180)
+     * İki 2D nokta arasındaki açıyı hesaplar (Derece: 0-180)
      */
     function calculateAngle(a, b, c) {
         if (!a || !b || !c) return 0;
         const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
         let angle = Math.abs((radians * 180.0) / Math.PI);
-        if (angle > 180.0) {
-            angle = 360.0 - angle;
-        }
+        if (angle > 180.0) angle = 360.0 - angle;
         return Math.round(angle * 10) / 10;
     }
 
     /**
-     * İki nokta arasındaki yatay açı (Eğim)
+     * İki nokta arasındaki yatay eğim açısı
      */
     function calculateSlopeAngle(p1, p2) {
         if (!p1 || !p2) return 0;
@@ -103,18 +100,10 @@
 
     /**
      * Okçuluk Biomekanik Duruş Değerlendirmesi
-     * 
-     * Landmarks İndeksleri:
-     * 11: Sol Omuz, 12: Sağ Omuz
-     * 13: Sol Dirsek, 14: Sağ Dirsek
-     * 15: Sol Bilek,  16: Sağ Bilek
-     * 23: Sol Kalça,  24: Sağ Kalça
-     * 0: Burun, 7: Sol Kulak, 8: Sağ Kulak
      */
     function evaluateArcheryForm(landmarks, handedness = 'right') {
         const isRight = handedness === 'right';
 
-        // Yay kolu & Çekiş kolu eklemleri (Sağlak okçuda: Sol kol = Yay kolu, Sağ kol = Çekiş kolu)
         const bowShoulder = isRight ? landmarks[11] : landmarks[12];
         const bowElbow    = isRight ? landmarks[13] : landmarks[14];
         const bowWrist    = isRight ? landmarks[15] : landmarks[16];
@@ -130,7 +119,7 @@
         const feedbacks = [];
         let score = 100;
 
-        // 1. Yay Kolu Açısı (Bow Arm Lock) -> İdeal: 172° - 185°
+        // 1. Yay Kolu Açısı -> İdeal: 172° - 185°
         let bowArmAngle = 180;
         if (bowShoulder && bowElbow && bowWrist && bowElbow.visibility > 0.4) {
             bowArmAngle = calculateAngle(bowShoulder, bowElbow, bowWrist);
@@ -158,13 +147,11 @@
             }
         }
 
-        // 2. Çekiş Dirseği Açısı ve Yüksekliği (Draw Elbow Alignment)
+        // 2. Çekiş Dirseği Açısı ve Yüksekliği
         let drawElbowAngle = 45;
         if (drawShoulder && drawElbow && drawWrist && drawElbow.visibility > 0.4) {
             drawElbowAngle = calculateAngle(drawShoulder, drawElbow, drawWrist);
-
-            // Dirsek omuza göre nerede? (Y ekseninde piksel farkı - Y aşağı doğru artar)
-            const elbowHeightDiff = (drawShoulder.y - drawElbow.y); // pozitif = dirsek yüksek, negatif = dirsek düşük
+            const elbowHeightDiff = (drawShoulder.y - drawElbow.y);
 
             if (elbowHeightDiff < -0.05) {
                 score -= 20;
@@ -184,12 +171,12 @@
                 feedbacks.push({
                     type: 'good',
                     badge: '🟢 Çekiş Dirseği Hizası İdeal',
-                    text: 'Çekiş dirseği ok ekseni ve omuz hattıyla mükemmel hizada.'
+                    text: 'Çekiş dirseği ok ekseni ve omuz hattıyla dengeli.'
                 });
             }
         }
 
-        // 3. Omuz Hizalanması & T-Duruşu (Shoulder Tilt) -> İdeal: Yere paralel (< 7° eğim)
+        // 3. Omuz Hizalanması & T-Duruşu
         let shoulderTilt = 0;
         if (landmarks[11] && landmarks[12] && landmarks[11].visibility > 0.4 && landmarks[12].visibility > 0.4) {
             shoulderTilt = Math.abs(calculateSlopeAngle(landmarks[11], landmarks[12]));
@@ -201,14 +188,14 @@
                 feedbacks.push({
                     type: 'error',
                     badge: '🔴 Omuzlar Eğik / Sıkışık',
-                    text: `Omuz eğimi yüksek (${shoulderTilt.toFixed(1)}°). Omuzlarını gevşetip aşağı bastırarak T-duruşu oluştur.`
+                    text: `Omuz eğimi yüksek (${shoulderTilt.toFixed(1)}°). Omuzlarını gevşetip aşağı bastır.`
                 });
             } else if (shoulderTilt > 6) {
                 score -= 6;
                 feedbacks.push({
                     type: 'warn',
                     badge: '🟡 Omuz Dengesi',
-                    text: `Hafif omuz eğimi tespit edildi (${shoulderTilt.toFixed(1)}°). Yay omzunu aşağıda tutmaya çalış.`
+                    text: `Hafif omuz eğimi tespit edildi (${shoulderTilt.toFixed(1)}°).`
                 });
             } else {
                 feedbacks.push({
@@ -219,12 +206,11 @@
             }
         }
 
-        // 4. Omurga / Gövde Dikliği (Spine Angle) -> İdeal: 90° dik (85°-95°)
+        // 4. Omurga Dikliği
         let spineAngle = 90;
         if (leftHip && rightHip && landmarks[11] && landmarks[12]) {
             const midHip = { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 };
             const midShoulder = { x: (landmarks[11].x + landmarks[12].x) / 2, y: (landmarks[11].y + landmarks[12].y) / 2 };
-            
             const angleFromVert = Math.abs(Math.atan2(midShoulder.x - midHip.x, midHip.y - midShoulder.y) * 180 / Math.PI);
             spineAngle = Math.round(90 - angleFromVert);
 
@@ -233,7 +219,7 @@
                 feedbacks.push({
                     type: 'error',
                     badge: '🔴 Gövde Eğik',
-                    text: `Gövde dikey eksenden ${angleFromVert.toFixed(1)}° kaymış. Ağırlığı iki ayağa eşit dağıt, öne/arkaya yatma.`
+                    text: `Gövde dikey eksenden ${angleFromVert.toFixed(1)}° kaymış. Dik duruşunu koru.`
                 });
             } else {
                 feedbacks.push({
@@ -244,7 +230,7 @@
             }
         }
 
-        // 5. Çapa & Baş Pozisyonu (Anchor Stability)
+        // 5. Çapa Mesafesi
         if (nose && drawWrist && nose.visibility > 0.4 && drawWrist.visibility > 0.4) {
             const dist = Math.hypot(nose.x - drawWrist.x, nose.y - drawWrist.y);
             if (dist > 0.28) {
@@ -257,14 +243,12 @@
             }
         }
 
-        // Skoru 0 - 100 aralığında sınırla
         score = Math.max(0, Math.min(100, Math.round(score)));
 
         return {
             score,
             bowArmAngle,
             drawElbowAngle,
-            drawElbowElevation: 0,
             shoulderTilt,
             spineAngle,
             feedbacks,
@@ -273,7 +257,7 @@
     }
 
     /**
-     * Pose sonuçlarını Canvas üzerine fütüristik çizgiler ve açı göstergeleri ile çizer
+     * Pose sonuçlarını Canvas üzerine çizer
      */
     function onPoseResults(results) {
         const canvas = document.getElementById('ai-pose-canvas');
@@ -294,18 +278,12 @@
         const analysis = evaluateArcheryForm(landmarks, currentHandedness);
         lastAnalysisResult = analysis;
 
-        // Okçuluk Kemik Bağlantıları (Önemli üst gövde ve kollar)
         const connections = [
-            [11, 12], // Omuz - Omuz
-            [11, 13], [13, 15], // Sol Kol (Omuz-Dirsek-Bilek)
-            [12, 14], [14, 16], // Sağ Kol (Omuz-Dirsek-Bilek)
-            [11, 23], [12, 24], // Gövde (Omuz-Kalça)
-            [23, 24], // Kalça - Kalça
-            [23, 25], [25, 27], // Sol Bacak
-            [24, 26], [26, 28]  // Sağ Bacak
+            [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+            [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]
         ];
 
-        // 1. İskelet Çizgileri (Glow Efekti)
+        // 1. İskelet Kemikleri
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -342,7 +320,7 @@
             ctx.stroke();
         });
 
-        // 2. Eklem Noktaları
+        // 2. Eklemler
         ctx.shadowBlur = 8;
         landmarks.forEach((p, idx) => {
             if (!p || p.visibility < 0.4) return;
@@ -358,7 +336,7 @@
             }
         });
 
-        // 3. Ekranda Açı Etiketleri Çizimi
+        // 3. Açı Etiketleri
         const isRight = currentHandedness === 'right';
         const bowElbow = isRight ? landmarks[13] : landmarks[14];
         const drawElbow = isRight ? landmarks[14] : landmarks[13];
@@ -373,14 +351,9 @@
         }
 
         ctx.restore();
-
-        // UI Dashboard'ı Güncelle
         updateHUDDashboard(analysis);
     }
 
-    /**
-     * Canvas üzerine şık açı kutucuğu çizer
-     */
     function drawAngleLabel(ctx, text, x, y, color) {
         ctx.save();
         ctx.font = 'bold 12px Poppins, sans-serif';
@@ -396,11 +369,8 @@
         const ph = 20;
         
         ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(px, py, pw, ph, 6);
-        } else {
-            ctx.rect(px, py, pw, ph);
-        }
+        if (ctx.roundRect) ctx.roundRect(px, py, pw, ph, 6);
+        else ctx.rect(px, py, pw, ph);
         ctx.fill();
         ctx.stroke();
 
@@ -411,9 +381,6 @@
         ctx.restore();
     }
 
-    /**
-     * Arayüzdeki Skor ve İpuçları Panelini Günceller
-     */
     function updateHUDDashboard(analysis) {
         const scoreEl = document.getElementById('ai-pose-score');
         const scoreRing = document.getElementById('ai-pose-score-ring');
@@ -445,7 +412,7 @@
 
         if (feedbacksList) {
             if (!analysis.feedbacks || analysis.feedbacks.length === 0) {
-                feedbacksList.innerHTML = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:8px;">Kamera karşısında duruşa geçin...</div>';
+                feedbacksList.innerHTML = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:8px;">Atış duruşu algılanıyor...</div>';
             } else {
                 feedbacksList.innerHTML = analysis.feedbacks.map(f => `
                     <div class="ai-feedback-item ai-fb-${f.type}">
@@ -458,7 +425,38 @@
     }
 
     /**
-     * Canlı AI Kamerayı Başlatır
+     * Kaynak Modunu Değiştirir: 'camera' veya 'video'
+     */
+    function setSourceMode(mode) {
+        currentSourceMode = mode;
+        const camTabBtn = document.getElementById('ai-src-cam-btn');
+        const vidTabBtn = document.getElementById('ai-src-vid-btn');
+        const camControls = document.getElementById('ai-cam-controls');
+        const vidUploadBox = document.getElementById('ai-vid-upload-box');
+        const vidPlayerControls = document.getElementById('ai-vid-controls');
+        const statusText = document.getElementById('ai-pose-status');
+
+        if (mode === 'camera') {
+            if (camTabBtn) camTabBtn.classList.add('aktif');
+            if (vidTabBtn) vidTabBtn.classList.remove('aktif');
+            if (camControls) camControls.style.display = 'flex';
+            if (vidUploadBox) vidUploadBox.style.display = 'none';
+            if (vidPlayerControls) vidPlayerControls.style.display = 'none';
+            if (statusText) statusText.textContent = '📷 Kamera Bekleniyor';
+            stopVideoPlayback();
+        } else {
+            if (camTabBtn) camTabBtn.classList.remove('aktif');
+            if (vidTabBtn) vidTabBtn.classList.add('aktif');
+            if (camControls) camControls.style.display = 'none';
+            if (vidUploadBox) vidUploadBox.style.display = isVideoLoaded ? 'none' : 'block';
+            if (vidPlayerControls) vidPlayerControls.style.display = isVideoLoaded ? 'flex' : 'none';
+            if (statusText) statusText.textContent = isVideoLoaded ? '🎬 Video Analizi Hazır' : '📂 Video Yükleyin';
+            stopLiveCamera();
+        }
+    }
+
+    /**
+     * Canlı Kamerayı Başlatır
      */
     async function startLiveCamera() {
         const videoElement = document.getElementById('ai-pose-video');
@@ -470,12 +468,14 @@
         if (!videoElement || !canvasElement) return;
 
         try {
-            if (statusText) statusText.textContent = 'Yapay zekâ motoru hazırlanıyor...';
+            if (statusText) statusText.textContent = 'Motor hazırlanıyor...';
             await initPoseEngine();
 
             if (statusText) statusText.textContent = 'Kamera açılıyor...';
             
-            // Kamera akışını başlat
+            // Eğer video oynuyorsa durdur
+            stopVideoPlayback();
+
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: currentFacingMode,
@@ -494,14 +494,13 @@
             };
 
             isLiveActive = true;
-            activeSource = 'camera';
 
             if (startBtn) startBtn.style.display = 'none';
             if (stopBtn) stopBtn.style.display = 'inline-flex';
             if (statusText) statusText.textContent = '🟢 Canlı Duruş Takibi Aktif';
 
             const processFrame = async () => {
-                if (!isLiveActive || activeSource !== 'camera') return;
+                if (!isLiveActive || currentSourceMode !== 'camera') return;
                 if (videoElement.readyState >= 2) {
                     await poseInstance.send({ image: videoElement });
                 }
@@ -511,13 +510,13 @@
 
         } catch (err) {
             console.error('AI Kamera Başlatma Hatası:', err);
-            if (statusText) statusText.textContent = '⚠️ Kamera başlatılamadı: ' + (err.message || err);
+            if (statusText) statusText.textContent = '⚠️ Kamera açılamadı: ' + (err.message || err);
             if (window.showToast) window.showToast('Kamera açılamadı. Lütfen kamera izinlerini kontrol edin.', 'error');
         }
     }
 
     /**
-     * Canlı AI Kamerayı Durdurur
+     * Canlı Kamerayı Durdurur
      */
     function stopLiveCamera() {
         isLiveActive = false;
@@ -544,7 +543,175 @@
 
         if (startBtn) startBtn.style.display = 'inline-flex';
         if (stopBtn) stopBtn.style.display = 'none';
-        if (statusText) statusText.textContent = 'Kamera durduruldu.';
+        if (statusText && currentSourceMode === 'camera') statusText.textContent = 'Kamera durduruldu.';
+    }
+
+    /**
+     * Video Dosyasını Yükler ve Analiz İçin Hazırlar
+     */
+    async function loadVideoFile(file) {
+        if (!file) return;
+
+        const videoElement = document.getElementById('ai-pose-video');
+        const canvasElement = document.getElementById('ai-pose-canvas');
+        const statusText = document.getElementById('ai-pose-status');
+        const vidUploadBox = document.getElementById('ai-vid-upload-box');
+        const vidControls = document.getElementById('ai-vid-controls');
+
+        try {
+            stopLiveCamera();
+            if (statusText) statusText.textContent = 'Video yükleniyor ve AI hazırlanıyor...';
+            await initPoseEngine();
+
+            const videoURL = URL.createObjectURL(file);
+            videoElement.srcObject = null;
+            videoElement.src = videoURL;
+            videoElement.load();
+
+            videoElement.onloadeddata = async () => {
+                canvasElement.width = videoElement.videoWidth || 640;
+                canvasElement.height = videoElement.videoHeight || 480;
+                isVideoLoaded = true;
+
+                if (vidUploadBox) vidUploadBox.style.display = 'none';
+                if (vidControls) vidControls.style.display = 'flex';
+                if (statusText) statusText.textContent = '🎬 Video yüklendi. Oynatabilir veya kare kare inceleyebilirsiniz.';
+
+                updateVideoTimeline();
+                // İlk kareyi hemen analiz et
+                await analyzeCurrentVideoFrame();
+                if (window.showToast) window.showToast('✅ Video başarıyla yüklendi. Oynatın veya durdurup kareyi inceleyin.', 'success');
+            };
+
+            // Video oynatma/durdurma olayları
+            videoElement.ontimeupdate = () => {
+                updateVideoTimeline();
+                if (videoElement.paused) {
+                    analyzeCurrentVideoFrame();
+                }
+            };
+
+        } catch (err) {
+            console.error('Video yükleme hatası:', err);
+            if (statusText) statusText.textContent = '⚠️ Video yüklenemedi: ' + (err.message || err);
+        }
+    }
+
+    /**
+     * Tek bir video karesini anlık analiz eder
+     */
+    async function analyzeCurrentVideoFrame() {
+        const videoElement = document.getElementById('ai-pose-video');
+        if (!videoElement || videoElement.readyState < 2 || !poseInstance) return;
+        try {
+            await poseInstance.send({ image: videoElement });
+        } catch (e) {}
+    }
+
+    /**
+     * Video Oynat / Durdur
+     */
+    async function toggleVideoPlay() {
+        const videoElement = document.getElementById('ai-pose-video');
+        const playBtn = document.getElementById('ai-vid-play-btn');
+        if (!videoElement) return;
+
+        if (videoElement.paused) {
+            await videoElement.play();
+            if (playBtn) playBtn.innerHTML = '⏸ Durdur';
+            isVideoPlaying = true;
+
+            const processVideoFrame = async () => {
+                if (!videoElement.paused && !videoElement.ended) {
+                    if (videoElement.readyState >= 2) {
+                        await poseInstance.send({ image: videoElement });
+                    }
+                    videoProcessingRAF = requestAnimationFrame(processVideoFrame);
+                } else {
+                    if (playBtn) playBtn.innerHTML = '▶ Oynat';
+                    isVideoPlaying = false;
+                }
+            };
+            processVideoFrame();
+        } else {
+            videoElement.pause();
+            if (playBtn) playBtn.innerHTML = '▶ Oynat';
+            isVideoPlaying = false;
+            if (videoProcessingRAF) cancelAnimationFrame(videoProcessingRAF);
+            analyzeCurrentVideoFrame();
+        }
+    }
+
+    function stopVideoPlayback() {
+        const videoElement = document.getElementById('ai-pose-video');
+        if (videoElement) {
+            videoElement.pause();
+        }
+        if (videoProcessingRAF) {
+            cancelAnimationFrame(videoProcessingRAF);
+            videoProcessingRAF = null;
+        }
+        isVideoPlaying = false;
+    }
+
+    /**
+     * Videoda Kare Kare İlerleme (Örn: -0.1sn / +0.1sn)
+     */
+    function stepVideoFrame(seconds) {
+        const videoElement = document.getElementById('ai-pose-video');
+        if (!videoElement || !isVideoLoaded) return;
+        videoElement.pause();
+        const playBtn = document.getElementById('ai-vid-play-btn');
+        if (playBtn) playBtn.innerHTML = '▶ Oynat';
+
+        videoElement.currentTime = Math.max(0, Math.min(videoElement.duration || 0, videoElement.currentTime + seconds));
+    }
+
+    /**
+     * Oynatma Hızı Ayarı (0.25x, 0.5x, 1x)
+     */
+    function setVideoSpeed(speed) {
+        const videoElement = document.getElementById('ai-pose-video');
+        if (!videoElement) return;
+        videoElement.playbackRate = speed;
+        ['025', '05', '1'].forEach(s => {
+            const btn = document.getElementById(`ai-speed-${s}`);
+            if (btn) btn.classList.remove('aktif');
+        });
+        const currentBtn = document.getElementById(`ai-speed-${speed === 0.25 ? '025' : (speed === 0.5 ? '05' : '1')}`);
+        if (currentBtn) currentBtn.classList.add('aktif');
+    }
+
+    /**
+     * Zaman Çubuğu Kaydırma
+     */
+    function onVideoSeek(e) {
+        const videoElement = document.getElementById('ai-pose-video');
+        if (!videoElement || !videoElement.duration) return;
+        const pct = e.target.value / 100;
+        videoElement.currentTime = pct * videoElement.duration;
+    }
+
+    function updateVideoTimeline() {
+        const videoElement = document.getElementById('ai-pose-video');
+        const seekBar = document.getElementById('ai-vid-seek');
+        const timeLabel = document.getElementById('ai-vid-time');
+        if (!videoElement || !seekBar) return;
+
+        const cur = videoElement.currentTime || 0;
+        const dur = videoElement.duration || 0;
+        if (dur > 0) {
+            seekBar.value = (cur / dur) * 100;
+        }
+
+        if (timeLabel) {
+            const formatTime = (t) => {
+                const m = Math.floor(t / 60);
+                const s = (t % 60).toFixed(1);
+                return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+            timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+        }
     }
 
     /**
@@ -566,31 +733,16 @@
         const rBtn = document.getElementById('ai-hand-right');
         const lBtn = document.getElementById('ai-hand-left');
         if (rBtn && lBtn) {
-            if (handedness === 'right') {
-                rBtn.classList.add('aktif');
-                lBtn.classList.remove('aktif');
-            } else {
-                lBtn.classList.add('aktif');
-                rBtn.classList.remove('aktif');
-            }
+            rBtn.classList.toggle('aktif', handedness === 'right');
+            lBtn.classList.toggle('aktif', handedness === 'left');
         }
         if (window.showToast) {
             window.showToast(handedness === 'right' ? '🏹 Sağlak okçu modu seçildi (Sol kol yay kolu)' : '🏹 Solak okçu modu seçildi (Sağ kol yay kolu)');
         }
-    }
-
-    /**
-     * Yüklenen veya Mevcut Video Üzerinde Kare / Canlı Analiz
-     */
-    async function analyzeVideoElement(videoEl) {
-        if (!videoEl) return;
-        await initPoseEngine();
-        const canvasElement = document.getElementById('ai-pose-canvas');
-        if (canvasElement) {
-            canvasElement.width = videoEl.videoWidth || 640;
-            canvasElement.height = videoEl.videoHeight || 480;
+        // Eğer durdurulmuş bir video karesi varsa hemen tekrar analiz et
+        if (currentSourceMode === 'video' && isVideoLoaded) {
+            analyzeCurrentVideoFrame();
         }
-        await poseInstance.send({ image: videoEl });
     }
 
     /**
@@ -615,10 +767,10 @@
         // 3. DAĞ S.K. Master OS Filigran & Skor Rozeti
         ctx.save();
         ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-        ctx.fillRect(12, 12, 240, 78);
+        ctx.fillRect(12, 12, 250, 80);
         ctx.strokeStyle = '#00f0ff';
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(12, 12, 240, 78);
+        ctx.strokeRect(12, 12, 250, 80);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 13px Poppins, sans-serif';
@@ -646,11 +798,16 @@
     // Dışa Aktarılan Modül Arayüzü
     global.DAGSK_AI_POSE = {
         init: initPoseEngine,
+        setSourceMode,
         startLiveCamera,
         stopLiveCamera,
+        loadVideoFile,
+        toggleVideoPlay,
+        stepVideoFrame,
+        setVideoSpeed,
+        onVideoSeek,
         toggleCameraFacing,
         setHandedness,
-        analyzeVideoElement,
         captureAnalysisCard,
         getAnalysis: () => lastAnalysisResult
     };
