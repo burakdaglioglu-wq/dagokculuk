@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v118</b> · Makaralı Yay & Çift Tık Tam Ekran</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v119</b> · Sade & Modern Arayüz</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -798,42 +798,28 @@
             <div class="va-sub">Gerçek zamanlı yapay zekâ ile atış formunu, yay kolu kilidini ve çekiş dirseği açılarını anlık analiz et.</div>
         </div>
 
-        <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
             <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1;">🤖 Canlı AI Duruş Analizi</button>
             <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1;">🪞 5sn Gecikmeli Ayna</button>
         </div>
 
         <!-- ===== 1. MOD: GERÇEK ZAMANLI AI DURUŞ ANALİZİ (MediaPipe) ===== -->
         <div id="va-mod-ai-pose">
-            <div class="va-card">
-                <!-- Kaynak Seçimi (Canlı Kamera / Video Yükle) -->
-                <div class="ai-src-seg">
-                    <button id="ai-src-cam-btn" class="ai-src-btn aktif" onclick="DAGSK_AI_POSE.setSourceMode('camera')">📷 Canlı Kamera</button>
-                    <button id="ai-src-vid-btn" class="ai-src-btn" onclick="DAGSK_AI_POSE.setSourceMode('video')">📂 Kayıtlı Video Yükle</button>
-                </div>
-
-                <!-- Okçu El ve Yay Türü Ayarları -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-                    <div>
-                        <div style="font-weight:800; font-size:14px; color:var(--text-main);">🏹 Okçu Duruş Modu</div>
-                        <div class="va-sub">Yay tutuş eline göre otomatik açı optimizasyonu</div>
+            <div class="va-card" style="padding:12px;">
+                <!-- Akıllı & Kompakt Konfigürasyon Dock'u -->
+                <div class="ai-config-dock">
+                    <div class="ai-pill-group">
+                        <button id="ai-src-cam-btn" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setSourceMode('camera')">📷 Canlı Kamera</button>
+                        <button id="ai-src-vid-btn" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setSourceMode('video')">📂 Kayıtlı Video</button>
                     </div>
-                    <div class="ai-hand-seg">
-                        <button id="ai-hand-right" class="ai-hand-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">🏹 Sağlak (Sol Yay)</button>
-                        <button id="ai-hand-left" class="ai-hand-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🏹 Solak (Sağ Yay)</button>
+                    <div class="ai-pill-group">
+                        <button id="ai-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">🏹 Sağlak</button>
+                        <button id="ai-hand-left" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🏹 Solak</button>
                     </div>
-                </div>
-
-                <!-- Yay Tipi Seçimi (Klasik / Makaralı / Otomatik) -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
-                    <div>
-                        <div style="font-weight:800; font-size:14px; color:var(--text-main);">🎯 Yay Biomekaniği</div>
-                        <div class="va-sub">Klasik (çene altı) veya Makaralı (tetik/çene köşesi) açı kalibrasyonu</div>
-                    </div>
-                    <div class="ai-hand-seg">
-                        <button id="ai-bow-auto" class="ai-hand-btn aktif" onclick="DAGSK_AI_POSE.setBowType('auto')">🤖 Otomatik Algıla</button>
-                        <button id="ai-bow-recurve" class="ai-hand-btn" onclick="DAGSK_AI_POSE.setBowType('recurve')">🏹 Klasik</button>
-                        <button id="ai-bow-compound" class="ai-hand-btn" onclick="DAGSK_AI_POSE.setBowType('compound')">⚙️ Makaralı</button>
+                    <div class="ai-pill-group">
+                        <button id="ai-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setBowType('auto')">🤖 Oto Yay</button>
+                        <button id="ai-bow-recurve" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('recurve')">🏹 Klasik</button>
+                        <button id="ai-bow-compound" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('compound')">⚙️ Makaralı</button>
                     </div>
                 </div>
 
