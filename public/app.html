@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v116</b> · PC & Tablet Evrensel Açı</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v117</b> · Tam Ekran Çizim & Zoom</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -843,17 +843,43 @@
                         <div id="ai-play-splash" class="ai-play-splash">▶</div>
                     </div>
                     
-                    <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center;">
+                    <!-- Sol Üst: Durum ve Yakınlaştırma (Zoom) Araçları -->
+                    <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                         <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
+                        <div class="ai-zoom-bar">
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.zoomStep(-0.25)" title="Uzaklaştır">🔍−</button>
+                            <span id="ai-zoom-val" class="ai-zoom-badge">1.0x</span>
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.zoomStep(0.25)" title="Yakınlaştır">🔍+</button>
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.resetZoom()" title="Sıfırla">↺ 1x</button>
+                        </div>
                     </div>
 
-                    <!-- Tam Ekran ve Form Skoru Rozetleri (Ekran İçi) -->
+                    <!-- Sağ Üst: Tam Ekran ve Form Skoru Rozetleri -->
                     <div style="position:absolute; top:10px; right:10px; z-index:3; display:flex; gap:6px; align-items:center;">
                         <button class="va-btn va-btn-grey" style="padding:6px 10px; font-size:11px; border-radius:10px; background:rgba(15,23,42,0.85); border:1px solid var(--border-color);" onclick="DAGSK_AI_POSE.toggleFullScreen()" title="Tam Ekran Aç/Kapat">⛶ Tam Ekran</button>
                         <div id="ai-pose-score-ring" style="background:rgba(15,23,42,0.85); border:2px solid var(--gold); border-radius:12px; padding:4px 10px; text-align:center; backdrop-filter:blur(4px);">
                             <div style="font-size:8px; color:var(--text-muted); font-weight:700;">FORM</div>
                             <div id="ai-pose-score" style="font-size:18px; font-weight:900; color:var(--gold); line-height:1;">--</div>
                         </div>
+                    </div>
+
+                    <!-- Tam Ekrandayken Altta Beliren Yüzen Çizim & Kontrol Çubuğu -->
+                    <div class="ai-fs-floating-bottom">
+                        <button id="ai-fs-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Kalem">✏️ Kalem</button>
+                        <button id="ai-fs-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Çizgi">📏 Çizgi</button>
+                        <button id="ai-fs-tool-circle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('circle')" title="Daire">⭕ Daire</button>
+                        <button id="ai-fs-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="Açı">📐 Açı</button>
+                        <button id="ai-fs-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Gezin/Dokun-Oynat">🖐️ Gezin</button>
+                        <div style="display:flex; gap:5px; margin:0 4px; align-items:center;">
+                            <span class="ai-color-dot aktif" style="background:#fbbf24;" onclick="DAGSK_AI_POSE.setDrawColor('#fbbf24', this)"></span>
+                            <span class="ai-color-dot" style="background:#ff3366;" onclick="DAGSK_AI_POSE.setDrawColor('#ff3366', this)"></span>
+                            <span class="ai-color-dot" style="background:#00e5ff;" onclick="DAGSK_AI_POSE.setDrawColor('#00e5ff', this)"></span>
+                            <span class="ai-color-dot" style="background:#10b981;" onclick="DAGSK_AI_POSE.setDrawColor('#10b981', this)"></span>
+                        </div>
+                        <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.undoDraw()" title="Geri Al">↩️</button>
+                        <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.clearDrawings()" title="Temizle">🗑️</button>
+                        <button class="va-btn va-btn-blue" style="padding:6px 12px; font-size:11px;" onclick="DAGSK_AI_POSE.toggleVideoPlay()">▶/⏸</button>
+                        <button class="va-btn va-btn-grey" style="padding:6px 10px; font-size:11px;" onclick="DAGSK_AI_POSE.toggleFullScreen()">✖ Çıkış</button>
                     </div>
                 </div>
 

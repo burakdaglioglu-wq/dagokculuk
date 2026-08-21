@@ -1047,6 +1047,8 @@
             margin-bottom: 12px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.5);
             min-height: 240px;
+            user-select: none;
+            touch-action: none;
         }
         .ai-pose-box:fullscreen, .ai-pose-box:-webkit-full-screen, .ai-pose-box.ai-fullscreen {
             width: 100vw !important;
@@ -1064,6 +1066,9 @@
         .ai-pose-box:fullscreen .ai-pose-video, .ai-pose-box:-webkit-full-screen .ai-pose-video, .ai-pose-box.ai-fullscreen .ai-pose-video {
             max-height: 100vh !important;
         }
+        .ai-pose-box:fullscreen .ai-fs-floating-bottom, .ai-pose-box.ai-fullscreen .ai-fs-floating-bottom {
+            display: flex !important;
+        }
         .ai-pose-inner {
             position: relative;
             display: inline-block;
@@ -1072,6 +1077,8 @@
             line-height: 0;
             margin: 0 auto;
             cursor: pointer;
+            transform-origin: center center;
+            transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
         }
         .ai-pose-video {
             max-width: 100%;
@@ -1089,6 +1096,57 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+        }
+        .ai-zoom-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid var(--border-color);
+            padding: 3px 6px;
+            border-radius: 10px;
+            backdrop-filter: blur(4px);
+        }
+        .ai-zoom-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 3px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .ai-zoom-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+        }
+        .ai-zoom-badge {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--neon-blue);
+            min-width: 32px;
+            text-align: center;
+        }
+        .ai-fs-floating-bottom {
+            display: none;
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(10, 15, 30, 0.92);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: 14px;
+            padding: 6px 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            max-width: 95vw;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            gap: 6px;
+            align-items: center;
         }
         .ai-play-splash {
             position: absolute;

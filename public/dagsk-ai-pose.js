@@ -1,7 +1,7 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v7
- * Hem Bilgisayarda hem Tablet/Mobilde %100 kusursuz, ultra uyumlu açı etiketleri,
- * evrensel Canvas 2D çizim motoru, dinamik DPI ölçekleme, çapa takibi ve dokun-oynat.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v8
+ * Tam ekranda entegre çizim araçları, Yakınlaştırma (Zoom & Pan & Pinch),
+ * dengelenmiş/küçültülmüş zarif eklem halkaları ve kusursuz PC/Tablet uyumluluğu.
  */
 
 (function (global) {
@@ -32,6 +32,58 @@
     };
 
     // ==========================================
+    // 🔍 YAKINLAŞTIRMA & KAYDIRMA SİSTEMİ (ZOOM & PAN)
+    // ==========================================
+    const zoomState = {
+        scale: 1.0,
+        panX: 0,
+        panY: 0,
+        isPanning: false,
+        startX: 0,
+        startY: 0,
+        startPanX: 0,
+        startPanY: 0,
+        initialPinchDist: 0
+    };
+
+    function applyZoomTransform() {
+        const inner = document.getElementById('ai-pose-inner');
+        const badge = document.getElementById('ai-zoom-val');
+        if (!inner) return;
+
+        if (zoomState.scale <= 1.0) {
+            zoomState.scale = 1.0;
+            zoomState.panX = 0;
+            zoomState.panY = 0;
+            inner.style.transform = 'none';
+        } else {
+            inner.style.transform = `scale(${zoomState.scale.toFixed(2)}) translate(${zoomState.panX.toFixed(1)}px, ${zoomState.panY.toFixed(1)}px)`;
+        }
+
+        if (badge) badge.textContent = `${zoomState.scale.toFixed(1)}x`;
+    }
+
+    function zoomStep(delta) {
+        zoomState.scale = Math.max(1.0, Math.min(3.5, zoomState.scale + delta));
+        if (zoomState.scale === 1.0) {
+            zoomState.panX = 0;
+            zoomState.panY = 0;
+        }
+        applyZoomTransform();
+        if (window.showToast && zoomState.scale > 1.0) {
+            window.showToast(`🔍 Yakınlaştırma: ${zoomState.scale.toFixed(1)}x (Kaydırmak için sürükleyin)`);
+        }
+    }
+
+    function resetZoom() {
+        zoomState.scale = 1.0;
+        zoomState.panX = 0;
+        zoomState.panY = 0;
+        applyZoomTransform();
+        if (window.showToast) window.showToast('↺ Yakınlaştırma sıfırlandı (1.0x)');
+    }
+
+    // ==========================================
     // 🎨 VİDEO ÜZERİNE ÇİZİM SİSTEMİ (ANNOTATIONS)
     // ==========================================
     const drawState = {
@@ -44,20 +96,20 @@
     };
 
     /**
-     * Hem Masaüstü PC hem Tablet/Mobilde çalışan Çözünürlük Duyarlı Boyut Ölçekleyici
+     * Hem Masaüstü PC hem Tablet/Mobilde Dengeli Çözünürlük Ölçekleyici
      */
     function getResponsiveScale(width, height) {
         if (!width || !height) return 1;
         const minDim = Math.min(width, height);
         const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth < 1024);
         
-        // PC / Masaüstü için net 1.0 - 1.6 kat, Tablet / Mobil için 1.4 - 2.4 kat
-        const base = Math.max(0.9, minDim / 540);
-        return isTouch ? base * 1.3 : base;
+        // Zarif, küçültülmüş ve dengeli boyutlandırma
+        const base = Math.max(0.75, minDim / 680);
+        return isTouch ? base * 1.18 : base;
     }
 
     /**
-     * Tüm tarayıcılarda (Chrome, Firefox, Safari, Edge, WebKit) %100 hatasız yuvarlatılmış dikdörtgen çizer
+     * Tüm tarayıcılarda %100 uyumlu güvenli yuvarlak dikdörtgen çizer
      */
     function drawSafeRoundedRect(ctx, x, y, width, height, radius) {
         radius = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
@@ -97,7 +149,7 @@
     }
 
     /**
-     * MediaPipe kütüphanelerinin yüklü olup olmadığını denetler veya dinamik yükler
+     * MediaPipe kütüphanelerinin yüklü olup olmadığını denetler
      */
     async function ensureMediaPipeLoaded() {
         if (window.Pose) return true;
@@ -325,7 +377,7 @@
     }
 
     /**
-     * Pose sonuçlarını Canvas üzerine çizer (Hem PC Hem Tablet İçin Kusursuz)
+     * Pose sonuçlarını Canvas üzerine çizer (Dengeli, Zarif & Net)
      */
     function onPoseResults(results) {
         const canvas = document.getElementById('ai-pose-canvas');
@@ -352,17 +404,17 @@
             const bowWrist = isRight ? landmarks[15] : landmarks[16];
             const drawWrist = isRight ? landmarks[16] : landmarks[15];
 
-            // 1. Ok Doğrultusu Rehber Çizgisi (İnce kesikli çizgi)
+            // 1. Ok Doğrultusu Rehber Çizgisi
             if (bowWrist && drawWrist && (bowWrist.visibility === undefined || bowWrist.visibility > 0.3) && (drawWrist.visibility === undefined || drawWrist.visibility > 0.3)) {
                 const x1 = drawWrist.x * width, y1 = drawWrist.y * height;
                 const x2 = bowWrist.x * width, y2 = bowWrist.y * height;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const xTarget = x2 + Math.cos(angle) * (80 * scale);
-                const yTarget = y2 + Math.sin(angle) * (80 * scale);
+                const xTarget = x2 + Math.cos(angle) * (70 * scale);
+                const yTarget = y2 + Math.sin(angle) * (70 * scale);
 
                 ctx.save();
-                ctx.setLineDash([Math.round(6 * scale), Math.round(4 * scale)]);
-                ctx.lineWidth = Math.max(2, 2 * scale);
+                ctx.setLineDash([Math.round(5 * scale), Math.round(4 * scale)]);
+                ctx.lineWidth = Math.max(1.8, 1.8 * scale);
                 ctx.strokeStyle = 'rgba(255, 98, 0, 0.85)';
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
@@ -396,22 +448,22 @@
                 ctx.lineTo(p2.x * width, p2.y * height);
 
                 if (isBowArm) {
-                    ctx.lineWidth = Math.max(4.5, 5 * scale);
+                    ctx.lineWidth = Math.max(3.8, 4.2 * scale);
                     ctx.strokeStyle = analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366';
                     ctx.shadowColor = ctx.strokeStyle;
-                    ctx.shadowBlur = Math.round(10 * scale);
+                    ctx.shadowBlur = Math.round(8 * scale);
                 } else if (isDrawArm) {
-                    ctx.lineWidth = Math.max(4.5, 5 * scale);
+                    ctx.lineWidth = Math.max(3.8, 4.2 * scale);
                     ctx.strokeStyle = '#fbbf24';
                     ctx.shadowColor = '#fbbf24';
-                    ctx.shadowBlur = Math.round(10 * scale);
+                    ctx.shadowBlur = Math.round(8 * scale);
                 } else if (i === 11 && j === 12) {
-                    ctx.lineWidth = Math.max(3, 3.5 * scale);
+                    ctx.lineWidth = Math.max(2.8, 3 * scale);
                     ctx.strokeStyle = '#818cf8';
                     ctx.shadowColor = '#818cf8';
-                    ctx.shadowBlur = Math.round(6 * scale);
+                    ctx.shadowBlur = Math.round(5 * scale);
                 } else {
-                    ctx.lineWidth = Math.max(2.5, 3 * scale);
+                    ctx.lineWidth = Math.max(2.2, 2.4 * scale);
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
                     ctx.shadowColor = 'transparent';
                     ctx.shadowBlur = 0;
@@ -419,22 +471,22 @@
                 ctx.stroke();
             });
 
-            // 3. Modern Çift Katmanlı Eklem Noktaları (Dual-Ring Joints)
+            // 3. Küçültülmüş & Dengeli Eklem Noktaları (Dual-Ring Joints)
             const keyJoints = [0, 11, 12, 13, 14, 15, 16, 23, 24];
             keyJoints.forEach(idx => {
                 const p = landmarks[idx];
                 if (!p || (p.visibility !== undefined && p.visibility < 0.25)) return;
                 const x = p.x * width, y = p.y * height;
                 const isArm = [11, 12, 13, 14, 15, 16].includes(idx);
-                const r = Math.round((isArm ? 6.5 : 4.5) * scale);
+                const r = Math.round((isArm ? 4.5 : 3.2) * scale);
 
                 // Dış halka
                 ctx.beginPath();
-                ctx.arc(x, y, r + Math.round(3 * scale), 0, 2 * Math.PI);
+                ctx.arc(x, y, r + Math.round(2 * scale), 0, 2 * Math.PI);
                 ctx.strokeStyle = isArm ? '#00e5ff' : 'rgba(255,255,255,0.7)';
-                ctx.lineWidth = Math.max(1.5, 2 * scale);
+                ctx.lineWidth = Math.max(1.2, 1.5 * scale);
                 ctx.shadowColor = '#00e5ff';
-                ctx.shadowBlur = isArm ? Math.round(8 * scale) : 0;
+                ctx.shadowBlur = isArm ? Math.round(6 * scale) : 0;
                 ctx.stroke();
 
                 // İç beyaz çekirdek
@@ -450,29 +502,29 @@
                 const ay = drawWrist.y * height;
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(ax, ay, Math.round(15 * scale), 0, 2 * Math.PI);
+                ctx.arc(ax, ay, Math.round(11 * scale), 0, 2 * Math.PI);
                 ctx.strokeStyle = analysis.anchorStatus.includes('🟢') ? '#10b981' : '#fbbf24';
-                ctx.lineWidth = Math.max(2, 2.5 * scale);
-                ctx.setLineDash([Math.round(4 * scale), Math.round(4 * scale)]);
+                ctx.lineWidth = Math.max(1.8, 2 * scale);
+                ctx.setLineDash([Math.round(3 * scale), Math.round(3 * scale)]);
                 ctx.stroke();
                 ctx.setLineDash([]);
                 ctx.restore();
             }
 
-            // 5. Şık Açı Rozetleri (Eklemler Üzerinde - PC & Tablette Net & Büyük)
+            // 5. Şık & Dengeli Açı Rozetleri
             const bowElbow = isRight ? landmarks[13] : landmarks[14];
             const drawElbow = isRight ? landmarks[14] : landmarks[13];
 
             if (bowElbow && (bowElbow.visibility === undefined || bowElbow.visibility > 0.25)) {
-                drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - Math.round(22 * scale), 
+                drawAngleLabel(ctx, `${Math.round(analysis.bowArmAngle)}°`, bowElbow.x * width, bowElbow.y * height - Math.round(18 * scale), 
                     analysis.bowArmAngle >= 172 ? '#00e5ff' : '#ff3366', scale);
             }
 
             if (drawElbow && (drawElbow.visibility === undefined || drawElbow.visibility > 0.25)) {
-                drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(22 * scale), '#fbbf24', scale);
+                drawAngleLabel(ctx, `${Math.round(analysis.drawElbowAngle)}°`, drawElbow.x * width, drawElbow.y * height - Math.round(18 * scale), '#fbbf24', scale);
             }
 
-            // 6. 📱 Sağ Alt Veli & Antrenör Analiz Özeti Rozeti (Dinamik Ölçekli)
+            // 6. 📱 Sağ Alt Veli & Antrenör Analiz Özeti Rozeti
             drawCompactParentHUD(ctx, width, height, analysis, scale);
 
             updateHUDDashboard(analysis);
@@ -484,77 +536,77 @@
     }
 
     /**
-     * Videonun sağ altına şık, büyük ve velilerin/antrenörlerin rahat okuyabileceği canlı antrenör analizi kutusu çizer
+     * Videonun sağ altına şık ve okunaklı canlı antrenör analizi kutusu çizer
      */
     function drawCompactParentHUD(ctx, width, height, analysis, scale = 1) {
         ctx.save();
-        const boxW = Math.min(width * 0.52, Math.max(180 * scale, 150));
-        const boxH = Math.max(76, Math.round(82 * scale));
-        const margin = Math.max(8, Math.round(10 * scale));
+        const boxW = Math.min(width * 0.46, Math.max(160 * scale, 135));
+        const boxH = Math.max(72, Math.round(76 * scale));
+        const margin = Math.max(8, Math.round(8 * scale));
         const x = width - boxW - margin;
         const y = height - boxH - margin;
 
         // Koyu cam arka plan
         ctx.fillStyle = 'rgba(10, 15, 30, 0.88)';
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.45)';
-        ctx.lineWidth = Math.max(1.2, 1.5 * scale);
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+        ctx.lineWidth = Math.max(1.2, 1.4 * scale);
         
-        drawSafeRoundedRect(ctx, x, y, boxW, boxH, Math.round(8 * scale));
+        drawSafeRoundedRect(ctx, x, y, boxW, boxH, Math.round(7 * scale));
         ctx.fill();
         ctx.stroke();
 
-        const pX = Math.round(8 * scale);
+        const pX = Math.round(7 * scale);
 
         // Başlık: Canlı Antrenör Analizi
-        ctx.font = `bold ${Math.max(10, Math.round(10.5 * scale))}px Poppins, -apple-system, sans-serif`;
+        ctx.font = `bold ${Math.max(9.5, Math.round(10 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#00f0ff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText('📋 ANTRENÖR ANALİZİ', x + pX, y + Math.round(7 * scale));
+        ctx.fillText('📋 ANTRENÖR ANALİZİ', x + pX, y + Math.round(6 * scale));
 
         // Satır 1: En Önemli Canlı Antrenör İpucu
         const topFeedback = (analysis.feedbacks && analysis.feedbacks[0]) ? analysis.feedbacks[0].badge : '🟢 Form Dengeli';
-        ctx.font = `bold ${Math.max(9.5, Math.round(10 * scale))}px Poppins, -apple-system, sans-serif`;
+        ctx.font = `bold ${Math.max(9, Math.round(9.5 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = topFeedback.includes('🔴') ? '#ff3366' : (topFeedback.includes('🟡') ? '#fbbf24' : '#10b981');
-        ctx.fillText(topFeedback, x + pX, y + Math.round(24 * scale));
+        ctx.fillText(topFeedback, x + pX, y + Math.round(22 * scale));
 
         // Satır 2: Yay Kolu & Çekiş Dirseği Açıları
-        ctx.font = `${Math.max(9, Math.round(9.5 * scale))}px Poppins, -apple-system, sans-serif`;
+        ctx.font = `${Math.max(8.5, Math.round(9 * scale))}px Poppins, -apple-system, sans-serif`;
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(42 * scale));
+        ctx.fillText('🏹 Yay Kolu:', x + pX, y + Math.round(39 * scale));
         ctx.textAlign = 'right';
         ctx.fillStyle = analysis.bowArmAngle >= 172 ? '#10b981' : (analysis.bowArmAngle >= 165 ? '#fbbf24' : '#ff3366');
-        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(42 * scale));
+        ctx.fillText(`${Math.round(analysis.bowArmAngle)}°`, x + boxW - pX, y + Math.round(39 * scale));
 
         // Satır 3: Çekiş Dirsek & Çapa Durumu
         ctx.textAlign = 'left';
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(59 * scale));
+        ctx.fillText('🎯 Çekiş / Çapa:', x + pX, y + Math.round(55 * scale));
         ctx.textAlign = 'right';
         ctx.fillStyle = '#fbbf24';
         const cleanAnchor = analysis.anchorStatus.replace(/🟢|🟡|🔴/g, '').trim();
-        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(59 * scale));
+        ctx.fillText(`${Math.round(analysis.drawElbowAngle)}° · ${cleanAnchor}`, x + boxW - pX, y + Math.round(55 * scale));
 
         ctx.restore();
     }
 
     function drawAngleLabel(ctx, text, x, y, color, scale = 1) {
         ctx.save();
-        const fontSize = Math.max(12, Math.round(14 * scale));
+        const fontSize = Math.max(11, Math.round(12 * scale));
         ctx.font = `bold ${fontSize}px Poppins, -apple-system, sans-serif`;
         const textWidth = ctx.measureText(text).width;
         
-        const pw = Math.max(38, textWidth + Math.round(18 * scale));
-        const ph = Math.max(24, Math.round(26 * scale));
+        const pw = Math.max(34, textWidth + Math.round(14 * scale));
+        const ph = Math.max(22, Math.round(23 * scale));
         const px = x - pw / 2;
         const py = y - ph / 2;
-        const rad = Math.round(7 * scale);
+        const rad = Math.round(6 * scale);
         
         ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(1.8, 2 * scale);
+        ctx.lineWidth = Math.max(1.5, 1.8 * scale);
         ctx.shadowColor = color;
-        ctx.shadowBlur = Math.round(8 * scale);
+        ctx.shadowBlur = Math.round(6 * scale);
         
         drawSafeRoundedRect(ctx, px, py, pw, ph, rad);
         ctx.fill();
@@ -618,12 +670,13 @@
     }
 
     // ==========================================
-    // 🖌️ İNTERAKTİF ÇİZİM MOTORU (CANVAS ANNOTATION)
+    // 🖌️ İNTERAKTİF ÇİZİM & DOKUNMA MOTORU
     // ==========================================
 
     function setupDrawingCanvasListeners() {
         const drawCanvas = document.getElementById('ai-draw-canvas');
-        if (!drawCanvas) return;
+        const boxContainer = document.getElementById('ai-pose-box-container');
+        if (!drawCanvas || !boxContainer) return;
 
         const getPos = (e) => {
             const rect = drawCanvas.getBoundingClientRect();
@@ -635,7 +688,31 @@
             };
         };
 
+        // Mouse Wheel Zoom Desteği
+        boxContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.2 : -0.2;
+            zoomStep(delta);
+        }, { passive: false });
+
         const onPointerDown = (e) => {
+            // İki parmakla dokunulursa (Pinch-to-zoom başlangıcı)
+            if (e.touches && e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                zoomState.initialPinchDist = dist;
+                return;
+            }
+
+            // Eğer yakınlaştırılmışsa ve Gezinme modundaysa -> Kaydır (Pan)
+            if (!drawState.activeTool && zoomState.scale > 1.0) {
+                zoomState.isPanning = true;
+                zoomState.startX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                zoomState.startY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                zoomState.startPanX = zoomState.panX;
+                zoomState.startPanY = zoomState.panY;
+                return;
+            }
+
             if (!drawState.activeTool) return;
             e.preventDefault();
             const p = getPos(e);
@@ -680,6 +757,30 @@
         };
 
         const onPointerMove = (e) => {
+            // İki parmakla Pinch-to-zoom hareketi
+            if (e.touches && e.touches.length === 2 && zoomState.initialPinchDist > 0) {
+                e.preventDefault();
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const diff = (dist - zoomState.initialPinchDist) / 200;
+                zoomState.scale = Math.max(1.0, Math.min(3.5, zoomState.scale + diff));
+                zoomState.initialPinchDist = dist;
+                applyZoomTransform();
+                return;
+            }
+
+            // Yakınlaştırılmış ekranda kaydırma (Pan)
+            if (zoomState.isPanning) {
+                e.preventDefault();
+                const curX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                const curY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                const dx = (curX - zoomState.startX) / zoomState.scale;
+                const dy = (curY - zoomState.startY) / zoomState.scale;
+                zoomState.panX = zoomState.startPanX + dx;
+                zoomState.panY = zoomState.startPanY + dy;
+                applyZoomTransform();
+                return;
+            }
+
             if (!drawState.isDrawing || !drawState.activeTool) return;
             e.preventDefault();
             const p = getPos(e);
@@ -697,6 +798,9 @@
         };
 
         const onPointerUp = (e) => {
+            zoomState.isPanning = false;
+            zoomState.initialPinchDist = 0;
+
             if (!drawState.isDrawing) return;
             drawState.isDrawing = false;
 
@@ -714,7 +818,7 @@
     }
 
     /**
-     * Tüm kullanıcı çizimlerini belirtilen bir canvas üzerine çizer
+     * Tüm kullanıcı çizimlerini belirtilen canvas üzerine çizer
      */
     function renderUserDrawingsOnContext(ctx, width, height) {
         ctx.save();
@@ -729,10 +833,10 @@
             ctx.strokeStyle = item.color;
             ctx.fillStyle = item.color;
             ctx.shadowColor = item.color;
-            ctx.shadowBlur = Math.round(6 * scale);
+            ctx.shadowBlur = Math.round(5 * scale);
 
             if (item.type === 'pen' && item.points && item.points.length > 0) {
-                ctx.lineWidth = Math.max(3.5, 4 * scale);
+                ctx.lineWidth = Math.max(3, 3.5 * scale);
                 ctx.beginPath();
                 ctx.moveTo(item.points[0].x * width, item.points[0].y * height);
                 for (let i = 1; i < item.points.length; i++) {
@@ -740,7 +844,7 @@
                 }
                 ctx.stroke();
             } else if (item.type === 'line' && item.p1 && item.p2) {
-                ctx.lineWidth = Math.max(3.5, 4 * scale);
+                ctx.lineWidth = Math.max(3, 3.5 * scale);
                 ctx.beginPath();
                 ctx.moveTo(item.p1.x * width, item.p1.y * height);
                 ctx.lineTo(item.p2.x * width, item.p2.y * height);
@@ -748,20 +852,20 @@
 
                 // Ok başı / Uç nokta
                 ctx.beginPath();
-                ctx.arc(item.p2.x * width, item.p2.y * height, Math.round(5.5 * scale), 0, 2 * Math.PI);
+                ctx.arc(item.p2.x * width, item.p2.y * height, Math.round(4.5 * scale), 0, 2 * Math.PI);
                 ctx.fill();
             } else if (item.type === 'circle' && item.center) {
-                ctx.lineWidth = Math.max(3, 3.5 * scale);
+                ctx.lineWidth = Math.max(2.5, 3 * scale);
                 ctx.beginPath();
                 ctx.arc(item.center.x * width, item.center.y * height, item.radius * width, 0, 2 * Math.PI);
                 ctx.stroke();
 
                 // Merkez noktası
                 ctx.beginPath();
-                ctx.arc(item.center.x * width, item.center.y * height, Math.round(4 * scale), 0, 2 * Math.PI);
+                ctx.arc(item.center.x * width, item.center.y * height, Math.round(3.5 * scale), 0, 2 * Math.PI);
                 ctx.fill();
             } else if (item.type === 'angle' && item.p1 && item.p2 && item.p3) {
-                ctx.lineWidth = Math.max(3, 3.5 * scale);
+                ctx.lineWidth = Math.max(2.5, 3 * scale);
                 ctx.beginPath();
                 ctx.moveTo(item.p1.x * width, item.p1.y * height);
                 ctx.lineTo(item.p2.x * width, item.p2.y * height);
@@ -771,12 +875,12 @@
                 // Köşe noktaları
                 [item.p1, item.p2, item.p3].forEach(pt => {
                     ctx.beginPath();
-                    ctx.arc(pt.x * width, pt.y * height, Math.round(4.5 * scale), 0, 2 * Math.PI);
+                    ctx.arc(pt.x * width, pt.y * height, Math.round(4 * scale), 0, 2 * Math.PI);
                     ctx.fill();
                 });
 
                 // Açı etiketi
-                drawAngleLabel(ctx, `${item.angleVal}°`, item.p2.x * width, item.p2.y * height - Math.round(20 * scale), item.color, scale);
+                drawAngleLabel(ctx, `${item.angleVal}°`, item.p2.x * width, item.p2.y * height - Math.round(18 * scale), item.color, scale);
             }
         });
 
@@ -785,11 +889,11 @@
             ctx.fillStyle = drawState.currentColor;
             drawState.angleDraftPoints.forEach((pt, idx) => {
                 ctx.beginPath();
-                ctx.arc(pt.x * width, pt.y * height, Math.round(7 * scale), 0, 2 * Math.PI);
+                ctx.arc(pt.x * width, pt.y * height, Math.round(6 * scale), 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
-                ctx.font = `bold ${Math.round(11 * scale)}px Poppins, sans-serif`;
-                ctx.fillText(`${idx + 1}`, pt.x * width + Math.round(10 * scale), pt.y * height - Math.round(10 * scale));
+                ctx.font = `bold ${Math.round(10 * scale)}px Poppins, sans-serif`;
+                ctx.fillText(`${idx + 1}`, pt.x * width + Math.round(8 * scale), pt.y * height - Math.round(8 * scale));
             });
         }
 
@@ -815,21 +919,27 @@
             drawCanvas.style.cursor = tool ? 'crosshair' : 'default';
         }
 
+        // Hem normal toolbar hem tam ekran yüzen toolbar butonlarını güncelle
         ['pen', 'line', 'circle', 'angle', 'none'].forEach(t => {
             const btn = document.getElementById(`ai-tool-${t}`);
-            if (btn) btn.classList.toggle('aktif', (tool === t) || (!tool && t === 'none'));
+            const fsBtn = document.getElementById(`ai-fs-tool-${t}`);
+            const isActive = (tool === t) || (!tool && t === 'none');
+            if (btn) btn.classList.toggle('aktif', isActive);
+            if (fsBtn) fsBtn.classList.toggle('aktif', isActive);
         });
 
         renderUserDrawings();
         if (window.showToast) {
-            const toolNames = { pen: '✏️ Serbest Kalem aktif', line: '📏 Düz Çizgi aktif', circle: '⭕ Daire / Yuvarlak Çizim aktif', angle: '📐 3 noktaya dokunarak açı ölçün', null: '🖐️ Gezinme moduna geçildi' };
+            const toolNames = { pen: '✏️ Serbest Kalem aktif', line: '📏 Düz Çizgi aktif', circle: '⭕ Daire Çizim aktif', angle: '📐 3 noktaya dokunarak açı ölçün', null: '🖐️ Gezinme moduna geçildi' };
             window.showToast(toolNames[tool] || 'Çizim modu');
         }
     }
 
     function setDrawColor(color, el) {
         drawState.currentColor = color;
-        document.querySelectorAll('.ai-color-dot').forEach(dot => dot.classList.remove('aktif'));
+        document.querySelectorAll('.ai-color-dot').forEach(dot => {
+            dot.classList.toggle('aktif', dot.style.background.includes(color) || (color === '#fbbf24' && dot.style.background.includes('251')));
+        });
         if (el) el.classList.add('aktif');
     }
 
@@ -979,7 +1089,7 @@
     }
 
     /**
-     * Video Oynarken Kesintisiz Gerçek Zamanlı Analiz Döngüsü (Continuous Real-Time Video Loop)
+     * Video Oynarken Kesintisiz Gerçek Zamanlı Analiz Döngüsü (Continuous Loop)
      */
     function startContinuousVideoAnalysis() {
         if (videoProcessingRAF) {
@@ -997,7 +1107,7 @@
                     try {
                         await poseInstance.send({ image: videoElement });
                     } catch (e) {
-                        // ignore dropped frames
+                        // frame drop ignore
                     } finally {
                         isProcessingVideoFrame = false;
                     }
@@ -1028,6 +1138,7 @@
 
         try {
             stopLiveCamera();
+            resetZoom();
             if (statusText) statusText.textContent = 'Video yükleniyor ve AI hazırlanıyor...';
             await initPoseEngine();
 
@@ -1227,7 +1338,7 @@
                 recordBtn.innerHTML = '⏹️ Kaydı Bitir & İndir';
             }
 
-            // Birleşik Canvas (Composite Canvas)
+            // Birleşik Canvas
             const compCanvas = document.createElement('canvas');
             compCanvas.width = videoElement.videoWidth || 640;
             compCanvas.height = videoElement.videoHeight || 480;
@@ -1378,14 +1489,15 @@
      * Ekrana / Tablete dokunulduğunda oynat/durdur
      */
     function handleScreenTap(e) {
-        // Eğer bir çizim aracı seçiliyse, çizim önceliklidir
+        // Eğer bir çizim aracı seçiliyse veya kaydırma/yakınlaştırma yapılıyorsa pas geç
         if (drawState.activeTool) return;
+        if (zoomState.isPanning || zoomState.scale > 1.0) return;
         if (currentSourceMode !== 'video' || !isVideoLoaded) return;
 
         // Play/Pause yap
         toggleVideoPlay();
 
-        // Ortada YouTube/Tablet tarzı Play/Pause animasyon ikonu göster
+        // Ortada Play/Pause animasyon ikonu göster
         const splash = document.getElementById('ai-play-splash');
         const videoElement = document.getElementById('ai-pose-video');
         if (splash && videoElement) {
@@ -1396,7 +1508,7 @@
     }
 
     /**
-     * Tam ekran modunu açar veya kapatır (Tablet ve mobil dostu)
+     * Tam ekran modunu açar veya kapatır
      */
     function toggleFullScreen() {
         const container = document.getElementById('ai-pose-box-container');
@@ -1410,7 +1522,7 @@
             } else {
                 container.classList.toggle('ai-fullscreen');
             }
-            if (window.showToast) window.showToast('⛶ Tam ekran açıldı.');
+            if (window.showToast) window.showToast('⛶ Tam ekran açıldı. Çizim araçları alttadır.');
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
@@ -1441,6 +1553,8 @@
         clearDrawings,
         handleScreenTap,
         toggleFullScreen,
+        zoomStep,
+        resetZoom,
         exportAnalyzedVideo,
         captureAnalysisCard,
         shareToWhatsApp,
