@@ -9489,6 +9489,7 @@ ${(function(){
 
         function kmGeri() {
             // Ders bitmedi — platfomu kapat, ana ekrana dön (ders devam ediyor)
+            try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
             document.getElementById('karisik-platform').style.display = 'none';
         }
 
@@ -9508,10 +9509,13 @@ ${(function(){
 
         function kmSekme(s) {
             _kmAktifSekme = s;
-            ['skor','lider','klasman','canli','yarisma','veli','macera','disiplin','pozitif'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','macera','disiplin','pozitif','ritim'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
+            if(s !== 'ritim') {
+                try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
+            }
             if(s==='skor') kmSkorCiz();
             else if(s==='lider') kmLiderCiz();
             else if(s==='klasman') kmKlasmanCiz();
@@ -9521,6 +9525,71 @@ ${(function(){
             else if(s==='macera') kmMaceraCiz();
             else if(s==='disiplin') kmDisiplinCiz();
             else if(s==='pozitif') kmPozitifCiz();
+            else if(s==='ritim') kmRitimCiz();
+        }
+
+        // 🎙️ KARIŞIK SINIF — SESLİ ATIŞ RİTMİ & TIKIR KOÇU
+        function kmRitimCiz() {
+            let el = document.getElementById('km-icerik'); if(!el) return;
+            el.innerHTML = `
+                <!-- Başlık -->
+                <div class="va-card" style="margin-bottom:10px;">
+                    <div class="va-title">🎙️ Sesli Atış Ritmi & Tıkır Metronomu</div>
+                    <div class="va-sub">Karışık Sınıf için sesli yönlendirme, 30 saniye sakin atış ritmi ve tıkır (clicker) disiplini.</div>
+                </div>
+
+                <!-- Üst Kontrol & Şablon Dock'u -->
+                <div class="ai-config-dock" style="margin-bottom:10px;">
+                    <div class="ai-pill-group">
+                        <button id="cadence-pre-mete_gazoz" class="ai-pill-btn aktif" onclick="DAGSK_CADENCE.selectPreset('mete_gazoz')">🏹 30sn Sakin Nişan (30s)</button>
+                        <button id="cadence-pre-fast_wind" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('fast_wind')">⚡ Dinamik (20s)</button>
+                        <button id="cadence-pre-compound_pro" class="ai-pill-btn" onclick="DAGSK_CADENCE.selectPreset('compound_pro')">⚙️ Makaralı (35s)</button>
+                    </div>
+                    <div class="ai-pill-group">
+                        <button id="cadence-aud-voice_beep" class="ai-pill-btn aktif" onclick="DAGSK_CADENCE.setAudioMode('voice_beep')">🗣️🎵 Ses + Bip</button>
+                        <button id="cadence-aud-voice_only" class="ai-pill-btn" onclick="DAGSK_CADENCE.setAudioMode('voice_only')">🗣️ Yalnızca Ses</button>
+                        <button id="cadence-aud-beep_only" class="ai-pill-btn" onclick="DAGSK_CADENCE.setAudioMode('beep_only')">🎵 Bip / Tıkır</button>
+                        <button id="cadence-aud-silent" class="ai-pill-btn" onclick="DAGSK_CADENCE.setAudioMode('silent')">🔕 Sessiz</button>
+                    </div>
+                </div>
+
+                <div id="cadence-preset-desc" style="font-size:11.5px; color:var(--accent-sand); margin-bottom:12px; padding:6px 12px; background:rgba(232, 215, 197, 0.06); border-radius:8px; border-left:3px solid var(--accent-orange);">
+                    Derin nefesli hazırlık, kontrollü akıcı çekiş, 5.0s tam nişan ve kararlı 4.0s tıkır genişlemesi.
+                </div>
+
+                <!-- Ana Ritim Halkası Kartı -->
+                <div class="va-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 16px; position:relative; overflow:hidden; margin-bottom:10px;">
+                    <div id="cadence-ring-container" class="cadence-ring-box">
+                        <svg class="cadence-svg" viewBox="0 0 300 300">
+                            <circle cx="150" cy="150" r="130" stroke="rgba(255,255,255,0.08)" stroke-width="14" fill="none" />
+                            <circle id="cadence-svg-progress" cx="150" cy="150" r="130" stroke="var(--accent-orange)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="816.8" stroke-dashoffset="0" transform="rotate(-90 150 150)" style="transition: stroke-dashoffset 0.05s linear, stroke 0.2s ease;" />
+                        </svg>
+
+                        <div class="cadence-center-content">
+                            <div id="cadence-shot-counter" style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Ok 1/6 · Seri 1/5</div>
+                            <div id="cadence-phase-name" style="font-size:20px; font-weight:900; color:var(--accent-sand); letter-spacing:1px; line-height:1.2; text-align:center;">HAZIR</div>
+                            <div id="cadence-phase-sec" style="font-size:38px; font-weight:900; color:var(--text-main); font-family:monospace; margin-top:2px;">30.0s</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:360px; margin-top:20px;">
+                        <button id="cadence-start-btn" class="va-btn va-btn-orange" style="width:100%; padding:14px; font-size:15px; font-weight:900;" onclick="DAGSK_CADENCE.toggleCadence()">▶ Ritim Antrenmanını Başlat</button>
+                        <button class="va-btn va-btn-grey" style="width:100%; padding:12px; font-size:13px; font-weight:800; border-color:var(--accent-orange);" onclick="DAGSK_CADENCE.recordManualRelease()" title="Boşluk (Space) tuşuna da basabilirsiniz">💥 ŞU AN BIRAKTIM (Reaksiyon / Tıkır)</button>
+                    </div>
+                </div>
+
+                <!-- Tutarlılık ve Geçmiş Raporu -->
+                <div class="va-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-weight:800; font-size:14px; color:var(--accent-sand);">📊 Atış Ritim Tutarlılığı</div>
+                        <div style="font-size:12px; color:var(--text-muted);">Ortalama Skor: <b id="cadence-avg-score" style="color:var(--accent-orange); font-size:15px;">--</b></div>
+                    </div>
+                    <div id="cadence-history-list" style="max-height:220px; overflow-y:auto;">
+                        <div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:12px;">Henüz atış yapılmadı. Başlat'a basarak ritim antrenmanına başlayın.</div>
+                    </div>
+                </div>
+            `;
+            try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.renderIdleUI(); } catch(e) {}
         }
         // 📤 Veli Bildirimi — Karışık Sınıf'taki sporcular için, ders BİTMEDEN de istenildiği an
         // veliye gönderilecek rapor/özet üretir. Yönetici Paneli'nin Rapor sekmesindeki
@@ -11076,10 +11145,7 @@ ${(function(){
             if(sekmeAd === 'canlitakip') canliTakipCiz();
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
-            if(sekmeAd === 'ritim') { try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.renderIdleUI(); } catch(e) {} }
-            else {
-                try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
-            }
+            if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
             if(sekmeAd === 'video') { vaInit(); }
             else {
                 try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
