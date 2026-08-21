@@ -1,6 +1,6 @@
 /**
- * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection)
- * Google MediaPipe Pose tabanlı, %100 yerel canlı kamera ve kayıtlı video analiz motoru.
+ * DAĞ S.K. — Yapay Zekâ Destekli Duruş & Form Analizi (AI Pose Detection) — Pro v3
+ * Canlı kamera, video yükleme, serbest/açı çizim araçları, açı giydirilmiş video kaydı ve WhatsApp veli paylaşımı.
  */
 
 (function (global) {
@@ -19,13 +19,25 @@
 
     // En son analiz sonucu
     let lastAnalysisResult = {
-        score: 0,
-        bowArmAngle: 0,
-        drawElbowAngle: 0,
+        score: 100,
+        bowArmAngle: 180,
+        drawElbowAngle: 45,
         shoulderTilt: 0,
-        spineAngle: 0,
+        spineAngle: 90,
         feedbacks: [],
         timestamp: null
+    };
+
+    // ==========================================
+    // 🎨 VİDEO ÜZERİNE ÇİZİM SİSTEMİ (ANNOTATIONS)
+    // ==========================================
+    const drawState = {
+        activeTool: null, // null (gezin) | 'pen' | 'line' | 'angle'
+        currentColor: '#fbbf24',
+        drawingsHistory: [],
+        isDrawing: false,
+        currentDraft: null,
+        angleDraftPoints: []
     };
 
     /**
@@ -95,6 +107,7 @@
         });
 
         poseInstance.onResults(onPoseResults);
+        setupDrawingCanvasListeners();
         return poseInstance;
     }
 
@@ -469,6 +482,217 @@
         }
     }
 
+    // ==========================================
+    // 🖌️ İNTERAKTİF ÇİZİM MOTORU (CANVAS ANNOTATION)
+    // ==========================================
+
+    function setupDrawingCanvasListeners() {
+        const drawCanvas = document.getElementById('ai-draw-canvas');
+        if (!drawCanvas) return;
+
+        const getPos = (e) => {
+            const rect = drawCanvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            return {
+                x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+                y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+            };
+        };
+
+        const onPointerDown = (e) => {
+            if (!drawState.activeTool) return;
+            e.preventDefault();
+            const p = getPos(e);
+            drawState.isDrawing = true;
+
+            if (drawState.activeTool === 'pen') {
+                drawState.currentDraft = {
+                    type: 'pen',
+                    color: drawState.currentColor,
+                    points: [p]
+                };
+            } else if (drawState.activeTool === 'line') {
+                drawState.currentDraft = {
+                    type: 'line',
+                    color: drawState.currentColor,
+                    p1: p,
+                    p2: p
+                };
+            } else if (drawState.activeTool === 'angle') {
+                drawState.angleDraftPoints.push(p);
+                if (drawState.angleDraftPoints.length === 3) {
+                    const [p1, p2, p3] = drawState.angleDraftPoints;
+                    const deg = calculateAngle(p1, p2, p3);
+                    drawState.drawingsHistory.push({
+                        type: 'angle',
+                        color: drawState.currentColor,
+                        p1, p2, p3,
+                        angleVal: deg
+                    });
+                    drawState.angleDraftPoints = [];
+                    drawState.isDrawing = false;
+                }
+                renderUserDrawings();
+            }
+        };
+
+        const onPointerMove = (e) => {
+            if (!drawState.isDrawing || !drawState.activeTool) return;
+            e.preventDefault();
+            const p = getPos(e);
+
+            if (drawState.activeTool === 'pen' && drawState.currentDraft) {
+                drawState.currentDraft.points.push(p);
+                renderUserDrawings();
+            } else if (drawState.activeTool === 'line' && drawState.currentDraft) {
+                drawState.currentDraft.p2 = p;
+                renderUserDrawings();
+            }
+        };
+
+        const onPointerUp = (e) => {
+            if (!drawState.isDrawing) return;
+            drawState.isDrawing = false;
+
+            if (drawState.currentDraft) {
+                drawState.drawingsHistory.push(drawState.currentDraft);
+                drawState.currentDraft = null;
+                renderUserDrawings();
+            }
+        };
+
+        drawCanvas.addEventListener('pointerdown', onPointerDown);
+        drawCanvas.addEventListener('pointermove', onPointerMove);
+        drawCanvas.addEventListener('pointerup', onPointerUp);
+        drawCanvas.addEventListener('pointercancel', onPointerUp);
+    }
+
+    /**
+     * Tüm kullanıcı çizimlerini belirtilen bir canvas üzerine çizer
+     */
+    function renderUserDrawingsOnContext(ctx, width, height) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const allItems = [...drawState.drawingsHistory];
+        if (drawState.currentDraft) allItems.push(drawState.currentDraft);
+
+        allItems.forEach(item => {
+            ctx.strokeStyle = item.color;
+            ctx.fillStyle = item.color;
+            ctx.shadowColor = item.color;
+            ctx.shadowBlur = 6;
+
+            if (item.type === 'pen' && item.points && item.points.length > 0) {
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(item.points[0].x * width, item.points[0].y * height);
+                for (let i = 1; i < item.points.length; i++) {
+                    ctx.lineTo(item.points[i].x * width, item.points[i].y * height);
+                }
+                ctx.stroke();
+            } else if (item.type === 'line' && item.p1 && item.p2) {
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(item.p1.x * width, item.p1.y * height);
+                ctx.lineTo(item.p2.x * width, item.p2.y * height);
+                ctx.stroke();
+
+                // Ok başı / Uç nokta
+                ctx.beginPath();
+                ctx.arc(item.p2.x * width, item.p2.y * height, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            } else if (item.type === 'angle' && item.p1 && item.p2 && item.p3) {
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(item.p1.x * width, item.p1.y * height);
+                ctx.lineTo(item.p2.x * width, item.p2.y * height);
+                ctx.lineTo(item.p3.x * width, item.p3.y * height);
+                ctx.stroke();
+
+                // Köşe noktaları
+                [item.p1, item.p2, item.p3].forEach(pt => {
+                    ctx.beginPath();
+                    ctx.arc(pt.x * width, pt.y * height, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+
+                // Açı etiketi
+                drawAngleLabel(ctx, `${item.angleVal}°`, item.p2.x * width, item.p2.y * height - 16, item.color);
+            }
+        });
+
+        // Açı aracı taslağı (seçilen ilk veya ikinci nokta)
+        if (drawState.activeTool === 'angle' && drawState.angleDraftPoints.length > 0) {
+            ctx.fillStyle = drawState.currentColor;
+            drawState.angleDraftPoints.forEach((pt, idx) => {
+                ctx.beginPath();
+                ctx.arc(pt.x * width, pt.y * height, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Poppins, sans-serif';
+                ctx.fillText(`${idx + 1}`, pt.x * width + 8, pt.y * height - 8);
+            });
+        }
+
+        ctx.restore();
+    }
+
+    function renderUserDrawings() {
+        const drawCanvas = document.getElementById('ai-draw-canvas');
+        if (!drawCanvas) return;
+        const ctx = drawCanvas.getContext('2d');
+        ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        renderUserDrawingsOnContext(ctx, drawCanvas.width, drawCanvas.height);
+    }
+
+    function setDrawTool(tool) {
+        drawState.activeTool = tool;
+        drawState.angleDraftPoints = [];
+        drawState.currentDraft = null;
+
+        const drawCanvas = document.getElementById('ai-draw-canvas');
+        if (drawCanvas) {
+            drawCanvas.style.pointerEvents = tool ? 'auto' : 'none';
+            drawCanvas.style.cursor = tool ? 'crosshair' : 'default';
+        }
+
+        ['pen', 'line', 'angle', 'none'].forEach(t => {
+            const btn = document.getElementById(`ai-tool-${t}`);
+            if (btn) btn.classList.toggle('aktif', (tool === t) || (!tool && t === 'none'));
+        });
+
+        renderUserDrawings();
+        if (window.showToast) {
+            const toolNames = { pen: '✏️ Serbest Kalem aktif', line: '📏 Düz Çizgi aktif', angle: '📐 3 noktaya dokunarak açı ölçün', null: '🖐️ Gezinme moduna geçildi' };
+            window.showToast(toolNames[tool] || 'Çizim modu');
+        }
+    }
+
+    function setDrawColor(color, el) {
+        drawState.currentColor = color;
+        document.querySelectorAll('.ai-color-dot').forEach(dot => dot.classList.remove('aktif'));
+        if (el) el.classList.add('aktif');
+    }
+
+    function undoDraw() {
+        if (drawState.drawingsHistory.length > 0) {
+            drawState.drawingsHistory.pop();
+            renderUserDrawings();
+            if (window.showToast) window.showToast('Son çizim geri alındı.');
+        }
+    }
+
+    function clearDrawings() {
+        drawState.drawingsHistory = [];
+        drawState.angleDraftPoints = [];
+        drawState.currentDraft = null;
+        renderUserDrawings();
+        if (window.showToast) window.showToast('Tüm çizimler temizlendi.');
+    }
+
     /**
      * Kaynak Modunu Değiştirir: 'camera' veya 'video'
      */
@@ -506,6 +730,7 @@
     async function startLiveCamera() {
         const videoElement = document.getElementById('ai-pose-video');
         const canvasElement = document.getElementById('ai-pose-canvas');
+        const drawCanvas = document.getElementById('ai-draw-canvas');
         const startBtn = document.getElementById('ai-pose-cam-start');
         const stopBtn = document.getElementById('ai-pose-cam-stop');
         const statusText = document.getElementById('ai-pose-status');
@@ -518,7 +743,6 @@
 
             if (statusText) statusText.textContent = 'Kamera açılıyor...';
             
-            // Eğer video oynuyorsa durdur
             stopVideoPlayback();
 
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -534,8 +758,15 @@
             await videoElement.play();
 
             videoElement.onloadedmetadata = () => {
-                canvasElement.width = videoElement.videoWidth || 640;
-                canvasElement.height = videoElement.videoHeight || 480;
+                const w = videoElement.videoWidth || 640;
+                const h = videoElement.videoHeight || 480;
+                canvasElement.width = w;
+                canvasElement.height = h;
+                if (drawCanvas) {
+                    drawCanvas.width = w;
+                    drawCanvas.height = h;
+                    renderUserDrawings();
+                }
             };
 
             isLiveActive = true;
@@ -592,13 +823,14 @@
     }
 
     /**
-     * Video Dosyasını Yükler ve Analiz İçin Hazırlar
+     * Video Dosyasını Yükler
      */
     async function loadVideoFile(file) {
         if (!file) return;
 
         const videoElement = document.getElementById('ai-pose-video');
         const canvasElement = document.getElementById('ai-pose-canvas');
+        const drawCanvas = document.getElementById('ai-draw-canvas');
         const statusText = document.getElementById('ai-pose-status');
         const vidUploadBox = document.getElementById('ai-vid-upload-box');
         const vidControls = document.getElementById('ai-vid-controls');
@@ -614,21 +846,26 @@
             videoElement.load();
 
             videoElement.onloadeddata = async () => {
-                canvasElement.width = videoElement.videoWidth || 640;
-                canvasElement.height = videoElement.videoHeight || 480;
+                const w = videoElement.videoWidth || 640;
+                const h = videoElement.videoHeight || 480;
+                canvasElement.width = w;
+                canvasElement.height = h;
+                if (drawCanvas) {
+                    drawCanvas.width = w;
+                    drawCanvas.height = h;
+                    renderUserDrawings();
+                }
                 isVideoLoaded = true;
 
                 if (vidUploadBox) vidUploadBox.style.display = 'none';
                 if (vidControls) vidControls.style.display = 'flex';
-                if (statusText) statusText.textContent = '🎬 Video yüklendi. Oynatabilir veya kare kare inceleyebilirsiniz.';
+                if (statusText) statusText.textContent = '🎬 Video hazır. Oynatabilir veya durdurup çizim yapabilirsiniz.';
 
                 updateVideoTimeline();
-                // İlk kareyi hemen analiz et
                 await analyzeCurrentVideoFrame();
-                if (window.showToast) window.showToast('✅ Video başarıyla yüklendi. Oynatın veya durdurup kareyi inceleyin.', 'success');
+                if (window.showToast) window.showToast('✅ Video yüklendi.', 'success');
             };
 
-            // Video oynatma/durdurma olayları
             videoElement.ontimeupdate = () => {
                 updateVideoTimeline();
                 if (videoElement.paused) {
@@ -642,9 +879,6 @@
         }
     }
 
-    /**
-     * Tek bir video karesini anlık analiz eder
-     */
     async function analyzeCurrentVideoFrame() {
         const videoElement = document.getElementById('ai-pose-video');
         if (!videoElement || videoElement.readyState < 2 || !poseInstance) return;
@@ -653,9 +887,6 @@
         } catch (e) {}
     }
 
-    /**
-     * Video Oynat / Durdur
-     */
     async function toggleVideoPlay() {
         const videoElement = document.getElementById('ai-pose-video');
         const playBtn = document.getElementById('ai-vid-play-btn');
@@ -699,9 +930,6 @@
         isVideoPlaying = false;
     }
 
-    /**
-     * Videoda Kare Kare İlerleme (Örn: -0.1sn / +0.1sn)
-     */
     function stepVideoFrame(seconds) {
         const videoElement = document.getElementById('ai-pose-video');
         if (!videoElement || !isVideoLoaded) return;
@@ -712,9 +940,6 @@
         videoElement.currentTime = Math.max(0, Math.min(videoElement.duration || 0, videoElement.currentTime + seconds));
     }
 
-    /**
-     * Oynatma Hızı Ayarı (0.25x, 0.5x, 1x)
-     */
     function setVideoSpeed(speed) {
         const videoElement = document.getElementById('ai-pose-video');
         if (!videoElement) return;
@@ -727,9 +952,6 @@
         if (currentBtn) currentBtn.classList.add('aktif');
     }
 
-    /**
-     * Zaman Çubuğu Kaydırma
-     */
     function onVideoSeek(e) {
         const videoElement = document.getElementById('ai-pose-video');
         if (!videoElement || !videoElement.duration) return;
@@ -759,9 +981,6 @@
         }
     }
 
-    /**
-     * Ön / Arka Kamera Geçişi
-     */
     async function toggleCameraFacing() {
         currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
         if (isLiveActive) {
@@ -770,9 +989,6 @@
         }
     }
 
-    /**
-     * Sağlak / Solak Okçu Seçimi
-     */
     function setHandedness(handedness) {
         currentHandedness = handedness;
         const rBtn = document.getElementById('ai-hand-right');
@@ -782,53 +998,196 @@
             lBtn.classList.toggle('aktif', handedness === 'left');
         }
         if (window.showToast) {
-            window.showToast(handedness === 'right' ? '🏹 Sağlak okçu modu seçildi (Sol kol yay kolu)' : '🏹 Solak okçu modu seçildi (Sağ kol yay kolu)');
+            window.showToast(handedness === 'right' ? '🏹 Sağlak okçu modu seçildi (Sol yay kolu)' : '🏹 Solak okçu modu seçildi (Sağ yay kolu)');
         }
-        // Eğer durdurulmuş bir video karesi varsa hemen tekrar analiz et
         if (currentSourceMode === 'video' && isVideoLoaded) {
             analyzeCurrentVideoFrame();
         }
     }
 
-    /**
-     * O Anki Analizli Kareyi Fotoğraf / Rapor Olarak Kaydetme
-     */
+    // ==========================================
+    // 🎬 AÇILARIYLA BİRLİKTE VİDEO DIŞA AKTARMA (RECORDER)
+    // ==========================================
+    let isExportingVideo = false;
+    let exportRecorder = null;
+    let exportChunks = [];
+    let exportAnimFrame = null;
+
+    async function exportAnalyzedVideo() {
+        const videoElement = document.getElementById('ai-pose-video');
+        const poseCanvas = document.getElementById('ai-pose-canvas');
+        const drawCanvas = document.getElementById('ai-draw-canvas');
+        const recordBtn = document.getElementById('ai-vid-record-btn');
+
+        if (!videoElement) return;
+
+        // Eğer kayıt zaten çalışıyorsa, durdur
+        if (isExportingVideo) {
+            stopExportingVideo();
+            return;
+        }
+
+        try {
+            isExportingVideo = true;
+            exportChunks = [];
+
+            if (recordBtn) {
+                recordBtn.classList.add('ai-rec-anim');
+                recordBtn.innerHTML = '⏹️ Kaydı Bitir & İndir';
+            }
+
+            // Birleşik Canvas (Composite Canvas)
+            const compCanvas = document.createElement('canvas');
+            compCanvas.width = videoElement.videoWidth || 640;
+            compCanvas.height = videoElement.videoHeight || 480;
+            const compCtx = compCanvas.getContext('2d');
+
+            // Video format seçimi (MP4 / WebM)
+            let mime = 'video/mp4';
+            if (!MediaRecorder.isTypeSupported(mime)) {
+                mime = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+            }
+
+            const stream = compCanvas.captureStream(30);
+            exportRecorder = new MediaRecorder(stream, { mimeType: mime });
+
+            exportRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) exportChunks.push(e.data);
+            };
+
+            exportRecorder.onstop = () => {
+                if (exportChunks.length > 0) {
+                    const blob = new Blob(exportChunks, { type: mime });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `DAG_SK_Açı_Analizi_Video_${Date.now()}.${mime.includes('mp4') ? 'mp4' : 'webm'}`;
+                    link.href = url;
+                    link.click();
+                    if (window.showToast) window.showToast('✅ Açılarıyla video başarıyla indirildi!', 'success');
+                }
+                resetExportBtn();
+            };
+
+            exportRecorder.start();
+
+            // Video başa sarıp oynatılır
+            videoElement.currentTime = 0;
+            await videoElement.play();
+
+            const renderExportFrame = async () => {
+                if (!isExportingVideo) return;
+
+                // 1. Ham Video Karesi
+                compCtx.drawImage(videoElement, 0, 0, compCanvas.width, compCanvas.height);
+
+                // 2. Pose iskelet ve açı etiketleri
+                if (poseCanvas) {
+                    compCtx.drawImage(poseCanvas, 0, 0, compCanvas.width, compCanvas.height);
+                }
+
+                // 3. Kullanıcı çizimleri
+                renderUserDrawingsOnContext(compCtx, compCanvas.width, compCanvas.height);
+
+                // 4. Filigran & Skor Şeridi
+                compCtx.save();
+                compCtx.fillStyle = 'rgba(10, 15, 30, 0.85)';
+                compCtx.fillRect(10, 10, 240, 60);
+                compCtx.strokeStyle = '#00e5ff';
+                compCtx.lineWidth = 1.5;
+                compCtx.strokeRect(10, 10, 240, 60);
+
+                compCtx.fillStyle = '#ffffff';
+                compCtx.font = 'bold 12px Poppins, sans-serif';
+                compCtx.fillText('🎯 DAĞ S.K. Master OS', 20, 28);
+
+                compCtx.fillStyle = '#fbbf24';
+                compCtx.font = 'bold 11px Poppins, sans-serif';
+                compCtx.fillText(`Form: %${lastAnalysisResult.score} | Yay: ${lastAnalysisResult.bowArmAngle}° | Çekiş: ${lastAnalysisResult.drawElbowAngle}°`, 20, 48);
+                compCtx.restore();
+
+                if (!videoElement.paused && !videoElement.ended) {
+                    exportAnimFrame = requestAnimationFrame(renderExportFrame);
+                } else {
+                    stopExportingVideo();
+                }
+            };
+
+            renderExportFrame();
+
+        } catch (err) {
+            console.error('Video kayıt hatası:', err);
+            resetExportBtn();
+            if (window.showToast) window.showToast('⚠️ Video kaydedilemedi: ' + err.message, 'error');
+        }
+    }
+
+    function stopExportingVideo() {
+        isExportingVideo = false;
+        if (exportAnimFrame) {
+            cancelAnimationFrame(exportAnimFrame);
+            exportAnimFrame = null;
+        }
+        if (exportRecorder && exportRecorder.state !== 'inactive') {
+            exportRecorder.stop();
+        }
+        resetExportBtn();
+    }
+
+    function resetExportBtn() {
+        isExportingVideo = false;
+        const recordBtn = document.getElementById('ai-vid-record-btn');
+        if (recordBtn) {
+            recordBtn.classList.remove('ai-rec-anim');
+            recordBtn.innerHTML = '⏺️ Açılarıyla Videoyu İndir';
+        }
+    }
+
+    // ==========================================
+    // 📸 KARE ANALİZ KARTI & 📲 WHATSAPP VELİ PAYLAŞIMI
+    // ==========================================
+
     function captureAnalysisCard() {
         const videoElement = document.getElementById('ai-pose-video');
-        const canvasElement = document.getElementById('ai-pose-canvas');
-        if (!videoElement || !canvasElement) return;
+        const poseCanvas = document.getElementById('ai-pose-canvas');
+        if (!videoElement) return;
 
         const mergeCanvas = document.createElement('canvas');
-        mergeCanvas.width = canvasElement.width || 640;
-        mergeCanvas.height = canvasElement.height || 480;
+        mergeCanvas.width = videoElement.videoWidth || 640;
+        mergeCanvas.height = videoElement.videoHeight || 480;
         const ctx = mergeCanvas.getContext('2d');
 
         // 1. Video karesi
         ctx.drawImage(videoElement, 0, 0, mergeCanvas.width, mergeCanvas.height);
 
-        // 2. Üzerine AI iskelet ve açı çizgileri
-        ctx.drawImage(canvasElement, 0, 0, mergeCanvas.width, mergeCanvas.height);
+        // 2. AI iskelet ve açı çizgileri
+        if (poseCanvas) {
+            ctx.drawImage(poseCanvas, 0, 0, mergeCanvas.width, mergeCanvas.height);
+        }
 
-        // 3. DAĞ S.K. Master OS Filigran & Skor Rozeti
+        // 3. Kullanıcı çizimleri
+        renderUserDrawingsOnContext(ctx, mergeCanvas.width, mergeCanvas.height);
+
+        // 4. DAĞ S.K. Master OS Filigran & Skor Rozeti
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-        ctx.fillRect(12, 12, 250, 80);
-        ctx.strokeStyle = '#00f0ff';
+        ctx.fillStyle = 'rgba(10, 15, 30, 0.9)';
+        ctx.fillRect(14, 14, 260, 84);
+        ctx.strokeStyle = '#00e5ff';
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(12, 12, 250, 80);
+        ctx.strokeRect(14, 14, 260, 84);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 13px Poppins, sans-serif';
-        ctx.fillText('🎯 DAĞ S.K. AI Duruş Analizi', 22, 34);
+        ctx.fillText('🎯 DAĞ S.K. AI Duruş Analizi', 24, 36);
 
         ctx.fillStyle = '#fbbf24';
         ctx.font = 'bold 11px Poppins, sans-serif';
-        ctx.fillText(`Form Skoru: %${lastAnalysisResult.score}  |  Yay: ${lastAnalysisResult.bowArmAngle}°`, 22, 54);
+        ctx.fillText(`Form: %${lastAnalysisResult.score}  |  Yay Kolu: ${lastAnalysisResult.bowArmAngle}°`, 24, 56);
 
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.font = '10px Poppins, sans-serif';
         const dateStr = new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-        ctx.fillText(dateStr, 22, 72);
+        ctx.fillText(dateStr, 24, 76);
         ctx.restore();
 
         // İndir
@@ -837,7 +1196,29 @@
         link.href = mergeCanvas.toDataURL('image/png');
         link.click();
 
-        if (window.showToast) window.showToast('📸 Duruş analiz kartı cihaza kaydedildi!', 'success');
+        if (window.showToast) window.showToast('📸 Duruş analiz kartı kaydedildi!', 'success');
+    }
+
+    /**
+     * Veliye tek dokunuşla WhatsApp analiz mesajı gönderir
+     */
+    function shareToWhatsApp() {
+        // Kartı da otomatik indirir
+        captureAnalysisCard();
+
+        const athleteName = (window.aktifSporcu && window.aktifSporcu.ad) ? window.aktifSporcu.ad : 'Sporcumuz';
+        const score = lastAnalysisResult.score || 100;
+        const bowArm = lastAnalysisResult.bowArmAngle || 180;
+        const drawElbow = lastAnalysisResult.drawElbowAngle || 45;
+        const shoulder = lastAnalysisResult.shoulderTilt ? `${lastAnalysisResult.shoulderTilt}°` : 'Dengeli';
+        const dateStr = new Date().toLocaleDateString('tr-TR');
+
+        const message = `🎯 *DAĞ OKÇULUK SPOR KULÜBÜ*\n🏹 *Teknik Duruş & Biomekanik Atış Analizi*\n📅 Tarih: ${dateStr}\n\n👤 *Sporcu:* ${athleteName}\n📊 *Form Puanı:* %${score}\n📐 *Yay Kolu Açısı:* ${bowArm}° (İdeal: 175°-180°)\n🎯 *Çekiş Dirseği:* ${drawElbow}°\n⚖️ *Omuz Dengesi:* ${shoulder}\n\n✅ *Antrenör Notu:* Atış formu ve eklem açıları incelenmiştir. İndirilen detaylı analiz kartı/videosu ektedir.`;
+
+        const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+        window.open(whatsappURL, '_blank');
+
+        if (window.showToast) window.showToast('📲 WhatsApp veli mesajı hazırlandı!', 'success');
     }
 
     // Dışa Aktarılan Modül Arayüzü
@@ -853,7 +1234,13 @@
         onVideoSeek,
         toggleCameraFacing,
         setHandedness,
+        setDrawTool,
+        setDrawColor,
+        undoDraw,
+        clearDrawings,
+        exportAnalyzedVideo,
         captureAnalysisCard,
+        shareToWhatsApp,
         getAnalysis: () => lastAnalysisResult
     };
 

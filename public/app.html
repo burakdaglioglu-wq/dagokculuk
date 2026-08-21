@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v110</b> · Video & AI Duruş Analizi</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v111</b> · Çizim & Video Dışa Aktarma</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -838,6 +838,7 @@
                 <div class="ai-pose-box">
                     <video id="ai-pose-video" class="ai-pose-video" autoplay muted playsinline></video>
                     <canvas id="ai-pose-canvas" class="ai-pose-canvas"></canvas>
+                    <canvas id="ai-draw-canvas" class="ai-draw-canvas"></canvas>
                     
                     <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center;">
                         <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
@@ -850,12 +851,32 @@
                     </div>
                 </div>
 
+                <!-- Video Üzerine Çizim Araç Çubuğu (Antrenör Notları) -->
+                <div class="ai-draw-toolbar">
+                    <span style="font-size:11px; font-weight:800; color:var(--text-muted); margin-right:2px;">🎨 Çizim:</span>
+                    <button id="ai-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Serbest Çizim">✏️ Kalem</button>
+                    <button id="ai-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Düz Çizgi">📏 Çizgi</button>
+                    <button id="ai-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="3 Noktadan Açı Ölç">📐 Açı</button>
+                    <button id="ai-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Çizimi Durdur">🖐️ Gezin</button>
+
+                    <div style="display:flex; gap:6px; align-items:center; margin-left:4px; margin-right:4px;">
+                        <span class="ai-color-dot aktif" style="background:#fbbf24;" onclick="DAGSK_AI_POSE.setDrawColor('#fbbf24', this)" title="Sarı"></span>
+                        <span class="ai-color-dot" style="background:#ff3366;" onclick="DAGSK_AI_POSE.setDrawColor('#ff3366', this)" title="Neon Kırmızı"></span>
+                        <span class="ai-color-dot" style="background:#00e5ff;" onclick="DAGSK_AI_POSE.setDrawColor('#00e5ff', this)" title="Camgöbeği"></span>
+                        <span class="ai-color-dot" style="background:#10b981;" onclick="DAGSK_AI_POSE.setDrawColor('#10b981', this)" title="Yeşil"></span>
+                    </div>
+
+                    <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.undoDraw()" title="Son Çizgiyi Geri Al">↩️ Geri Al</button>
+                    <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.clearDrawings()" title="Tüm Çizimleri Temizle">🗑️ Temizle</button>
+                </div>
+
                 <!-- Canlı Kamera Kontrol Butonları -->
                 <div id="ai-cam-controls" class="va-row" style="margin-bottom:14px;">
                     <button id="ai-pose-cam-start" class="va-btn va-btn-blue" onclick="DAGSK_AI_POSE.startLiveCamera()">📷 Canlı Kamerayı Aç</button>
                     <button id="ai-pose-cam-stop" class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.stopLiveCamera()" style="display:none;">✖ Kamerayı Kapat</button>
                     <button class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.toggleCameraFacing()" title="Ön/Arka Kamera Değiştir">🔄 Kamera Çevir</button>
-                    <button class="va-btn va-btn-green" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Duruş Kartını Kaydet</button>
+                    <button class="va-btn va-btn-green" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Kare Kartını İndir</button>
+                    <button class="va-btn" style="background:#25D366; color:#fff;" onclick="DAGSK_AI_POSE.shareToWhatsApp()">📲 Veliye WhatsApp Gönder</button>
                 </div>
 
                 <!-- Video Oynatma & Kare Kare İnceleme Kontrolleri -->
@@ -876,8 +897,10 @@
                             <button id="ai-speed-05" class="ai-speed-btn" onclick="DAGSK_AI_POSE.setVideoSpeed(0.5)">0.5x</button>
                             <button id="ai-speed-1" class="ai-speed-btn aktif" onclick="DAGSK_AI_POSE.setVideoSpeed(1.0)">1.0x</button>
                         </div>
-                        <div style="display:flex; gap:6px;">
-                            <button class="va-btn va-btn-green" style="padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Bu Kareyi Kaydet</button>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="ai-vid-record-btn" class="va-btn va-btn-red" style="padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.exportAnalyzedVideo()">⏺️ Açılarıyla Videoyu İndir</button>
+                            <button class="va-btn va-btn-green" style="padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Kareyi Kaydet</button>
+                            <button class="va-btn" style="background:#25D366; color:#fff; padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.shareToWhatsApp()">📲 Veliye WhatsApp</button>
                             <button class="va-btn va-btn-grey" style="padding:7px 10px; font-size:12px;" onclick="document.getElementById('ai-vid-file-input').click()">📂 Değiştir</button>
                         </div>
                     </div>
