@@ -4674,9 +4674,9 @@
             let alan = document.getElementById(hedefId || 'canli-takip-liste'); if(!alan) return;
             let simdi = Date.now();
             let satirlar = [];
-            try { satirlar = await _canliTakipVerisiTopla(); } catch(e) { alan.innerHTML = `<div style="text-align:center; color:var(--neon-red); padding:30px;">Veri okunamadı, "🔄 Yenile" ile tekrar dene.</div>`; return; }
+            try { satirlar = await _canliTakipVerisiTopla(); } catch(e) { alan.innerHTML = `<div class="empty"><div class="empty-title" style="color:var(--status-danger);">Veri okunamadı</div><div class="empty-hint">"🔄 Yenile" ile tekrar dene.</div></div>`; return; }
             if(satirlar.length === 0) {
-                alan.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:30px;">Bugün henüz kimse atış yapmadı.</div>`;
+                alan.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">Bugün henüz kimse atış yapmadı</div></div>`;
                 return;
             }
             let html = '';
@@ -4687,30 +4687,32 @@
                 let toplamOkBugun = row.bugunSeriler.reduce((t, s) => t + (s.oklar || []).length, 0);
                 let gunPct = toplamOkBugun ? (toplamPuanBugun / (toplamOkBugun * 10)) * 100 : 0;
                 let durumHTML = row.canli
-                    ? `<span style="font-size:10px; font-weight:900; color:var(--neon-green); animation:canliAtisNabiz 1.2s infinite;">🎯 ŞU AN ATIYOR</span>`
-                    : (row.sonZaman ? `<span style="font-size:10px; font-weight:800; color:var(--text-muted);">🕐 Son atış: ${_gecenSureYazi(simdi - row.sonZaman)}</span>` : '');
-                let canliSeriHTML = (row.canli && row.canliOklar && row.canliOklar.length) ? `<div style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(16,185,129,0.10); border-radius:6px; margin-bottom:6px;"><span style="font-size:10px; color:var(--neon-green); font-weight:800; flex-shrink:0;">ŞİMDİ ATIYOR</span>${_canliOkCipleriHTML(row.canliOklar)}</div>` : '';
+                    ? `<span style="font-size:10px; font-weight:900; color:var(--status-success); animation:canliAtisNabiz 1.2s infinite;">🎯 ŞU AN ATIYOR</span>`
+                    : (row.sonZaman ? `<span style="font-size:10px; font-weight:800; color:var(--text-secondary);">🕐 Son atış: ${_gecenSureYazi(simdi - row.sonZaman)}</span>` : '');
+                let canliSeriHTML = (row.canli && row.canliOklar && row.canliOklar.length) ? `<div style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(16,185,129,0.10); border-radius:var(--radius-sm); margin-bottom:6px;"><span style="font-size:10px; color:var(--status-success); font-weight:800; flex-shrink:0;">ŞİMDİ ATIYOR</span>${_canliOkCipleriHTML(row.canliOklar)}</div>` : '';
                 let seriHTML = row.bugunSeriler.map((s, i) => {
-                    let oklarHTML = (s.oklar || []).map(o => { let r = getRenkForPuan(o); return `<span style="display:inline-block; min-width:18px; text-align:center; padding:2px 4px; margin:0 2px 2px 0; border-radius:4px; font-size:11px; font-weight:900; background:${r.bg}; color:${r.c};">${o}</span>`; }).join('');
-                    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 0; border-bottom:1px dashed var(--border-color);"><span style="font-size:10px; color:var(--text-muted); flex-shrink:0; width:26px;">S${i + 1}</span><span style="flex:1;">${oklarHTML}</span><b style="color:var(--accent-orange); font-size:12px; flex-shrink:0;">${s.puan} P</b></div>`;
+                    // FAZ 5 — .seri-cip (Faz 4b'de tanımlandı): ok rozetleri için tek görsel dil,
+                    // Skor ekranıyla AYNI class — üçüncü bir ayrı stil icat edilmedi.
+                    let oklarHTML = (s.oklar || []).map(o => { let r = getRenkForPuan(o); return `<span class="seri-cip" style="min-width:18px; height:20px; font-size:11px; background:${r.bg}; color:${r.c};">${o}</span>`; }).join('');
+                    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 0; border-bottom:1px dashed var(--surface-border);"><span style="font-size:10px; color:var(--text-secondary); flex-shrink:0; width:26px;">S${i + 1}</span><span style="flex:1;">${oklarHTML}</span><b style="color:var(--accent); font-size:12px; flex-shrink:0;">${s.puan} P</b></div>`;
                 }).join('');
-                html += `<div style="padding:12px 14px; border-radius:12px; margin-bottom:10px; border:1px solid ${row.canli ? 'var(--neon-green)' : 'var(--border-color)'}; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:0 6px 18px rgba(0,0,0,0.2); background:${row.canli ? 'rgba(16,185,129,0.05)' : 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.006)), var(--bg-panel)'};">
+                html += `<div class="card" style="padding:12px 14px; margin-bottom:10px; ${row.canli ? 'border-color:var(--status-success); background:rgba(34,197,94,0.06);' : ''}">
                     <div style="display:flex; align-items:center; gap:12px;">
                         ${row.bugunSeriler.length ? gmRingHTML(toplamPuanBugun, gunPct, {kucuk:true}) : ''}
                         <div style="flex:1; min-width:0;">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                                 <span style="font-weight:800; font-size:14px;">${row.ad}</span>
-                                <span style="font-size:10px; font-weight:800; color:${GRUP_RENK[row.grup] || 'var(--text-muted)'};">${gEtiket}</span>
+                                <span style="font-size:10px; font-weight:800; color:${GRUP_RENK[row.grup] || 'var(--text-secondary)'};">${gEtiket}</span>
                             </div>
                             <div style="margin-top:3px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                                 ${durumHTML}
-                                <span style="font-size:11px; color:var(--text-muted);">${row.bugunSeriler.length} seri</span>
+                                <span style="font-size:11px; color:var(--text-secondary);">${row.bugunSeriler.length} seri</span>
                             </div>
                         </div>
                     </div>
                     <div style="margin-top:8px;">
                         ${canliSeriHTML}
-                        ${seriHTML || '<div style="font-size:11px; color:var(--text-muted); font-style:italic;">Henüz tamamlanmış seri yok.</div>'}
+                        ${seriHTML || '<div style="font-size:11px; color:var(--text-secondary); font-style:italic;">Henüz tamamlanmış seri yok.</div>'}
                     </div>
                 </div>`;
               } catch(satirHata) { /* tek sporcu verisi bozuksa listeyi çökertme, sadece atla */ }

@@ -447,20 +447,34 @@
                 <button class="btn-tam-ekran-ac" onclick="toggleFullscreen('timer-panel')">⛶ Tam Ekran</button>
                 <button class="btn-tam-ekran-kapat" onclick="toggleFullscreen('timer-panel')">✖ Kapat</button>
             </div>
-            <div class="timer-controls">
-                <select id="sure-secici" onchange="kronometreSureAyarla()" style="background:rgba(0,240,255,0.1); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:8px; border-radius:8px; font-weight:bold; font-size:12px;">
-                    <option value="180">180 Saniye</option>
-                    <option value="120">120 Saniye</option>
-                    <option value="90">90 Saniye</option>
-                </select>
-                <div style="height:20px; width:1px; background:var(--border-color);"></div>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <input type="number" id="oto-toplama-dk" value="5" min="1" max="10" style="width:40px; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:6px; color:var(--text-main); text-align:center; font-weight:bold; padding:4px;">
-                    <span style="font-size:12px; font-weight:bold; color:var(--text-main);">Dk Oto Toplama</span>
+            <!-- FAZ 5 — katlanır "Sayaç ayarları" paneli (Faz 2 .card/.settings-row), varsayılan
+                 kapalı. Büyük sayaç rakamı (#sayac) tek birincil etkileşim olarak kalıyor.
+                 kronometreSureAyarla()/kronometreSifirla()'nın kendisine dokunulmadı. -->
+            <details id="sayac-ayarlari-panel" class="card" style="padding:0; margin-bottom:10px; width:100%; max-width:420px;">
+                <summary style="cursor:pointer; list-style:none; padding:10px 14px; font-size:12px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">Sayaç ayarları<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 12px;">
+                    <div class="settings-row">
+                        <div class="settings-label">Süre</div>
+                        <select id="sure-secici" onchange="kronometreSureAyarla()" style="padding:6px 8px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:1px solid var(--surface-border); background:var(--surface-2); color:var(--text-primary);">
+                            <option value="180">180 saniye</option>
+                            <option value="120">120 saniye</option>
+                            <option value="90">90 saniye</option>
+                        </select>
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-label">Otomatik toplama süresi</div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="number" id="oto-toplama-dk" value="5" min="1" max="10" style="width:48px; padding:6px; border-radius:var(--radius-sm); border:1px solid var(--surface-border); background:var(--surface-2); color:var(--text-primary); text-align:center; font-weight:700;">
+                            <span class="settings-hint" style="margin:0;">dakika</span>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="settings-label">Sayacı sıfırla</div>
+                        <button type="button" class="btn btn-sm" onclick="kronometreSifirla()">Sıfırla</button>
+                    </div>
                 </div>
-                <div style="height:20px; width:1px; background:var(--border-color);"></div>
-                <button onclick="kronometreSifirla()" style="background:linear-gradient(135deg, rgba(239,68,68,0.22), rgba(239,68,68,0.06)); border:1px solid var(--neon-red); color:var(--text-main); padding:8px 12px; border-radius:8px; font-weight:bold; font-size:12px; box-shadow:0 0 10px rgba(239,68,68,0.15);">↺ Sıfırla</button>
-            </div>
+            </details>
+            <script>(function(){var p=document.getElementById('sayac-ayarlari-panel');if(!p)return;try{if(localStorage.getItem('dag_sayac_ayarlari_acik')==='1')p.open=true;}catch(e){}p.ontoggle=function(){try{localStorage.setItem('dag_sayac_ayarlari_acik',p.open?'1':'0');}catch(e){}};})();</script>
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; margin-top:20px;">
                 <span id="sayac" onclick="toggleTimer()">180</span>
                 <span id="timer-alt" style="color:var(--accent-orange); font-weight:bold; margin-top:10px;">BAŞLAMAK İÇİN RAKAMA DOKUN</span>
@@ -810,23 +824,32 @@
                     <button class="btn-tam-ekran-ac" onclick="toggleFullscreen('liderlik-panel')">⛶ Tam Ekran</button>
                 </div>
             </div>
-            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:10px;">
-                <button onclick="raporOnizlemeAc()" style="flex:2; background:rgba(255,98,0,0.2); border:1px solid var(--accent-orange); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">📄 Renkli PDF Rapor</button>
-                <button onclick="veriSifirla()" style="flex:1; background:rgba(239,68,68,0.2); border:1px solid var(--neon-red); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">Sıfırla</button>
-            </div>
-            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:10px;">
-                <button onclick="bulutaYukleManuel()" style="flex:1; background:rgba(16,185,129,0.15); border:1px solid var(--neon-green); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">☁️⬆️ Buluta Yükle</button>
-                <button onclick="bulutManuelYenile()" style="flex:1; background:rgba(59,130,246,0.15); border:1px solid var(--neon-blue); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">☁️⬇️ Buluttan Çek</button>
-            </div>
-            <div class="sadece-egitmen" style="display:flex; gap:10px; margin-bottom:15px;">
-                <button onclick="tumVeriyiYedekle()" style="flex:1; background:rgba(16,185,129,0.15); border:1px solid var(--neon-green); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">💾 Yedekle (JSON)</button>
-                <button onclick="yedekDosyaSec()" style="flex:1; background:rgba(59,130,246,0.15); border:1px solid var(--neon-blue); color:var(--text-main); padding:8px; border-radius:6px; font-size:12px; font-weight:bold;">📂 Geri Yükle</button>
-                <input type="file" id="yedek-dosya-input" accept="application/json,.json" style="display:none;" onchange="yedektenGeriYukle(event)">
-            </div>
-            <div class="sadece-egitmen" style="margin-bottom:15px;">
-                <button onclick="acilKurtarma()" style="width:100%; background:rgba(245,158,11,0.18); border:1px solid var(--gold); color:var(--text-main); padding:9px; border-radius:6px; font-size:12px; font-weight:bold;">🛟 Acil Kurtarma (son otomatik yedek)</button>
-            </div>
-            <div id="liderlik-istatistik" style="font-size:11px; text-align:center; margin-bottom:10px; color:var(--text-muted);"></div>
+            <!-- FAZ 5 — katlanır "Yönetim" paneli (Faz 2 .card/.settings-row/.btn), varsayılan kapalı.
+                 İKİ AYRI grup: zararsız (Rapor ve yedek) ile yıkıcı/geri alınamaz (Tehlikeli işlemler)
+                 kasıtlı olarak birbirinden görsel mesafeyle ayrılıyor — yan yana durursa yanlış tuşa
+                 basma riski var (kullanıcının kendi gerekçesi). veriSifirla()/acilKurtarma()'nın
+                 kendi confirm() diyalogları zaten var, dokunulmadı. -->
+            <details id="liderlik-yonetim-panel" class="card sadece-egitmen" style="padding:0; margin-bottom:12px;">
+                <summary style="cursor:pointer; list-style:none; padding:10px 14px; font-size:12px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">Yönetim<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 14px;">
+                    <div class="settings-label" style="margin-bottom:var(--space-2);">Rapor ve yedek</div>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:var(--space-5);">
+                        <button type="button" class="btn" onclick="raporOnizlemeAc()">Renkli PDF rapor</button>
+                        <button type="button" class="btn" onclick="tumVeriyiYedekle()">Yedekle (JSON)</button>
+                        <button type="button" class="btn" onclick="yedekDosyaSec()">Geri yükle</button>
+                        <input type="file" id="yedek-dosya-input" accept="application/json,.json" style="display:none;" onchange="yedektenGeriYukle(event)">
+                        <button type="button" class="btn" onclick="bulutaYukleManuel()">Buluta yükle</button>
+                        <button type="button" class="btn" onclick="bulutManuelYenile()">Buluttan çek</button>
+                    </div>
+                    <div class="settings-label" style="color:var(--status-danger); border-top:1px solid var(--surface-border); padding-top:var(--space-3); margin-bottom:var(--space-2);">Tehlikeli işlemler</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button type="button" class="btn btn-danger" onclick="veriSifirla()">Sıfırla</button>
+                        <button type="button" class="btn btn-danger" onclick="acilKurtarma()">Acil kurtarma (son otomatik yedek)</button>
+                    </div>
+                </div>
+            </details>
+            <script>(function(){var p=document.getElementById('liderlik-yonetim-panel');if(!p)return;try{if(localStorage.getItem('dag_liderlik_yonetim_acik')==='1')p.open=true;}catch(e){}p.ontoggle=function(){try{localStorage.setItem('dag_liderlik_yonetim_acik',p.open?'1':'0');}catch(e){}};})();</script>
+            <div id="liderlik-istatistik" style="font-size:11px; text-align:center; margin-bottom:10px; color:var(--text-secondary);"></div>
 
             <div style="flex: 1; overflow-y: auto; padding-right:5px; -webkit-overflow-scrolling: touch;">
                 <div class="kategori-baslik">🏹 KLASİK YAY SIRA DURUMU</div>

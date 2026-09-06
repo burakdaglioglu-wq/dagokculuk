@@ -24,7 +24,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `562199b` — Tasarım sistemi Faz 0-2: token katmanı, PALETLER düzeltmeleri, bileşen kütüphanesi *(Faz 0 envanteri + Faz 1 tokenler + Faz 2 PALETLER/bileşen kütüphanesi — üçü de aralarında commit atılmadan tek commit'te toplandı)*
 - `c221721` — DEVIR.md ekle — tasarım sistemi geçiş belgesi
 - `69c097f` — Tasarım sistemi Faz 3: navigasyon
-- Faz 4 (Skor ekranı, 4a/4b/4c) — bu commit'te, aşağıda anlatılıyor
+- `109188d` — Tasarım sistemi Faz 4: Skor ekranı (4a/4b/4c)
+- Faz 5 grup 1 (Sayaç, Canlı Takip, Liderlik) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -139,6 +140,43 @@ YAZILMADI:
   nüansı örneği).
 - Bir UI tercihinin (panel açık/kapalı gibi) D1'e mi yoksa localStorage'a mı yazılacağı önceden
   netleştirilmeli — "bu veri cihazlar arası senkronize olmalı mı" sorusu cevaptır.
+
+## 2c. Faz 5, Grup 1 — Sayaç, Canlı Takip, Liderlik (tamamlandı)
+
+Üç ekran sırayla yapıldı, hiçbiri hesaplama/veri fonksiyonuna dokunmadı. Hepsi 360px'te
+yatay kaydırmasız doğrulandı.
+
+**Sayaç**: Süre/oto-toplama/sıfırla → katlanır `#sayac-ayarlari-panel` (`.card`+`.settings-row`),
+varsayılan kapalı, `localStorage['dag_sayac_ayarlari_acik']`. Büyük `#sayac` rakamı tek birincil
+etkileşim olarak kaldı, `toggleTimer()`/`kronometreSifirla()`'ya dokunulmadı.
+
+**Canlı Takip**: Katlanacak bir ayar YOKTU (kullanıcının onayladığı gibi) — sadece `canliTakipCiz()`'in
+ürettiği kart şablonu `.card` (eski ad-hoc inline kart stilinin yerine) ve `.seri-cip` (Faz 4b'nin
+ok-rozeti — Skor ekranıyla AYNI class, üçüncü bir stil icat edilmedi) kullanacak şekilde güncellendi.
+Boş/hata durumları da `.empty` bileşenine taşındı (Faz 2'de tanımlanmış ama hiç kullanılmamıştı).
+`_canliTakipVerisiTopla()`'ya dokunulmadı.
+
+**Liderlik**: 7 yönetim butonu katlanır `#liderlik-yonetim-panel`e taşındı (`.card`, varsayılan kapalı,
+`localStorage['dag_liderlik_yonetim_acik']`), **kullanıcının düzeltmesiyle İKİ ayrı gruba bölündü**:
+"Rapor ve yedek" (PDF Rapor, Yedekle, Geri Yükle, Buluta Yükle, Buluttan Çek — düz `.btn`) ile
+"Tehlikeli işlemler" (Sıfırla, Acil Kurtarma — `.btn-danger`), aralarında bir ayraç çizgisi + boşluk.
+Gerekçe: Sıfırla/Yedekle yan yana durursa yanlış tuşa basma riski gerçek ve sonuçları geri
+dönülemez biçimde farklı. `veriSifirla()`/`acilKurtarma()`'nın kendi `confirm()` diyalogları zaten
+vardı (kontrol edildi) — hiçbiri eklenmedi/değiştirilmedi, sadece buton class'ı ve grubu değişti.
+
+**⚠️ Bu grupta bulunan gerçek bug (Faz 3'ten kalma, şimdi düzeltildi)**: Sayaç ekranının alt
+metni (`#timer-alt`, "ATIŞA HAZIR") mobilde alt barın ARKASINA giriyordu. Sebep: Faz 3'te eklenen
+`@media(max-width:680px){.sekme-icerik{padding-bottom:calc(...)}}` kuralı, styles.css'te KENDİSİNDEN
+SONRA gelen eski `.sekme-icerik{padding:15px;...}` (satır ~316) tarafından eziliyordu — ikisi de
+aynı özgüllükte olduğu için kaynak sırası kazanıyordu, media sorgusu içinde olması onu korumuyordu.
+`!important` eklenerek düzeltildi. Bu bug Faz 4'te (Skor ekranı) fark edilmedi çünkü o ekranın
+sticky tuş takımı `--alt-bar-h`'a bağımsız bağlıydı, bu genel padding-bottom kuralına hiç
+güvenmiyordu — yani "bir ekranda çalışıyor" başka bir ekranda da çalıştığı anlamına gelmiyor.
+
+**Test notu**: `#hizli-otokaydet` ("Seri dolunca otomatik kaydet") varsayılan İŞARETLİ — son oku
+girince seri KENDİLİĞİNDEN kaydediliyor. Test scriptlerinde son oktan sonra AYRICA manuel
+`#skor-kaydet-btn`'e basmak, zaten boşalmış bir seriye ikinci kez basmak anlamına gelip yanlışlıkla
+"EKSİK SKOR" hatası gibi görünüyor — gerçek bir regresyon değildi, test tasarımı hatasıydı.
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -284,9 +322,9 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | # | Ekran | Durum | Not |
 |---|---|---|---|
 | — | Skor | ✅ bitti (Faz 4) | — |
-| 1 | Sayaç | ⏳ bekliyor | Basit — sadece kronometre + birkaç ayar. Her antrenmanda kullanılıyor, düşük risk, iyi bir ilk Faz-5 ekranı. |
-| 2 | Canlı Takip | ⏳ bekliyor | Antrenman/yarışma sırasında sürekli açık (Faz 3'te bu yüzden birincil sekmeye alındı). |
-| 3 | Liderlik | ⏳ bekliyor | Eğitmenin varsayılan iniş ekranı (`tablariPlatformaGoreAyarla()` → `sekmeAc('liderlik')`). |
+| 1 | Sayaç | ✅ bitti (Faz 5 grup 1) | Katlanır "Sayaç ayarları" paneli eklendi. |
+| 2 | Canlı Takip | ✅ bitti (Faz 5 grup 1) | Ayar yoktu, sadece `.card`/`.seri-cip`/`.empty`'ye taşındı. |
+| 3 | Liderlik | ✅ bitti (Faz 5 grup 1) | Katlanır "Yönetim" paneli, 2 alt grup (zararsız/tehlikeli, ayrı). |
 | 4 | Gelişim | ⏳ bekliyor | Sporcunun kendi ilerlemesi, sık bakılıyor. |
 | 5 | Ders İçerikleri | ⏳ bekliyor | İçerik kütüphanesi, antrenman öncesi/sonrası. `Ders Programı` İLE KARIŞTIRILMASIN — tamamen ayrı bir özellik (bkz. not aşağıda). |
 | 6 | Teknik Çalışma | ⏳ bekliyor | Ders İçerikleri'nden kasıtlı ayrı modül (bkz. hafıza `dagsk-teknik-calisma-modulu-2026-08`). |
@@ -363,6 +401,22 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   veri-okuyan bir widget üzerinden bağlı olabilir (bkz. §6 Faz 5 tablosu, Ana Ekran/
   `#sonraki-ders-widget`). Bir ekranı "bitti" ilan etmeden önce böyle gömülü bağımlılık var mı
   diye ara.
+- **Bir media sorgusu içindeki kural, media sorgusu DIŞINDAKİ aynı özgüllükte bir kuralı sadece
+  "media sorgusunda olduğu için" otomatik yenmez** — kazanan, ikisinden hangisi dosyada DAHA SONRA
+  geliyorsa o. Faz 3'te `@media(max-width:680px){.sekme-icerik{padding-bottom:...}}` bunun tam
+  önüne (satır numarası olarak) düşen, media sorgusuz eski bir `.sekme-icerik{padding:15px}`
+  tarafından eziliyordu — Faz 5'e kadar (Sayaç ekranının metni alt barın arkasına girene kadar)
+  fark edilmedi. Aynı selector'ı birden fazla yerde tanımlıyorsan (özellikle bir tasarım-sistemi
+  geçişinde eskisi/yenisi bir arada dururken) kazananın kim olduğunu VARSAYMA, ölç.
+- **Bir ekranda çalışan bir CSS/JS mekanizması başka bir ekranda da çalışıyor anlamına gelmez** —
+  Faz 4'ün Skor ekranı, sticky tuş takımını `--alt-bar-h`'a DOĞRUDAN bağladığı için yukarıdaki
+  padding-bottom bug'ından etkilenmedi; bu yüzden bug Faz 4'te değil Faz 5'te ortaya çıktı. Genel
+  bir CSS kuralı eklerken/değiştirirken, "bir ekranda test ettim, çalıştı" o kuralı kullanan HER
+  ekranı kapsamıyor — özellikle farklı ekranlar aynı genel kuralı farklı şekillerde kullanıyorsa.
+- **`#hizli-otokaydet` ("Seri dolunca otomatik kaydet") varsayılan İŞARETLİ** — test scriptinde son
+  oku girdikten hemen sonra AYRICA manuel kaydet butonuna basma, seri zaten otomatik kaydedilmiş
+  olabileceğinden yanlış "eksik skor" hatası gibi görünen ama gerçek bir regresyon OLMAYAN bir test
+  tuzağı yaratır. Skor ekranıyla ilgili test yazarken bunu hesaba kat.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
