@@ -60,18 +60,22 @@ export function registerAntrenmanProgramiRoutes(router: Router): void {
 
   router.post("/api/antrenman-programi", async (request, env) => {
     const body = await readJson<{
-      grup: string; gun: number; baslangicSaat: string; bitisSaat: string;
+      grup: string; gunler: number[]; baslangicSaat: string; bitisSaat: string;
       hatirlatmaAktif?: boolean; hatirlatmaDakika?: number; dersPlani?: string | null; kapasite?: number | null; deviceId?: string;
     }>(request);
-    if (!body.grup || body.gun === undefined || body.gun === null || !body.baslangicSaat || !body.bitisSaat) {
-      return badRequest("grup, gun, baslangicSaat, bitisSaat are required");
+    if (!body.grup || !Array.isArray(body.gunler) || !body.gunler.length || !body.baslangicSaat || !body.bitisSaat) {
+      return badRequest("grup, gunler (non-empty array), baslangicSaat, bitisSaat are required");
     }
-    const id = await createSlot(env, {
-      grup: body.grup, gun: body.gun, baslangicSaat: body.baslangicSaat, bitisSaat: body.bitisSaat,
-      hatirlatmaAktif: body.hatirlatmaAktif ? 1 : 0, hatirlatmaDakika: body.hatirlatmaDakika ?? 30,
-      dersPlani: body.dersPlani ?? null, kapasite: body.kapasite ?? null,
-      olusturulma: Date.now(),
-    });
+    const id = await createSlot(
+      env,
+      {
+        grup: body.grup, baslangicSaat: body.baslangicSaat, bitisSaat: body.bitisSaat,
+        hatirlatmaAktif: body.hatirlatmaAktif ? 1 : 0, hatirlatmaDakika: body.hatirlatmaDakika ?? 30,
+        dersPlani: body.dersPlani ?? null, kapasite: body.kapasite ?? null,
+        olusturulma: Date.now(),
+      },
+      body.gunler
+    );
     await broadcastMasterChanged(env, body.deviceId ?? null);
     return json({ applied: true, id });
   });
@@ -80,11 +84,12 @@ export function registerAntrenmanProgramiRoutes(router: Router): void {
     const id = Number(params.id);
     if (!id) return badRequest("invalid id");
     const body = await readJson<{
-      grup?: string; gun?: number; baslangicSaat?: string; bitisSaat?: string;
+      grup?: string; gunler?: number[]; baslangicSaat?: string; bitisSaat?: string;
       hatirlatmaAktif?: boolean; hatirlatmaDakika?: number; dersPlani?: string | null; kapasite?: number | null; deviceId?: string;
     }>(request);
+    if (body.gunler !== undefined && !body.gunler.length) return badRequest("gunler cannot be empty");
     await updateSlot(env, id, {
-      grup: body.grup, gun: body.gun, baslangicSaat: body.baslangicSaat, bitisSaat: body.bitisSaat,
+      grup: body.grup, gunler: body.gunler, baslangicSaat: body.baslangicSaat, bitisSaat: body.bitisSaat,
       hatirlatmaAktif: body.hatirlatmaAktif === undefined ? undefined : body.hatirlatmaAktif ? 1 : 0,
       hatirlatmaDakika: body.hatirlatmaDakika,
       dersPlani: body.dersPlani, kapasite: body.kapasite,

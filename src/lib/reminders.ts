@@ -1,5 +1,5 @@
 import type { Env } from "../env";
-import { listAllReminderActive, markReminded, listKatilimcilar, hasIstisna } from "../db/antrenmanProgrami";
+import { listReminderActiveForGun, markReminded, listKatilimcilar, hasIstisna } from "../db/antrenmanProgrami";
 import { sendPushToGroup, sendPushToAthlete } from "./push";
 
 const GUN_ADI = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
@@ -39,14 +39,16 @@ function turkiyeSaatBilgisi(simdi: Date): { gun: number; saat: number; dakika: n
  * derse kayıtlı olabilir (bkz. antrenman_programi_katilimci, migrations/0032). Roster boşsa (henüz
  * kimse eklenmemiş yeni bir slot) hiç kimseye gönderilmez — bu doğru davranış. */
 export async function checkAndSendReminders(env: Env): Promise<void> {
-  const slots = await listAllReminderActive(env);
+  const su = turkiyeSaatBilgisi(new Date());
+  // 2026-08-20: bir slot artık BİRDEN FAZLA güne bağlı olabiliyor (bkz. migrations/0035) — bugünün
+  // günüyle eşleşen satırlar artık DB tarafında (antrenman_programi_gun ile join) filtreleniyor,
+  // eskisi gibi tüm hatırlatma-açık satırlar çekilip JS'te tek bir `gun` koluna göre süzülmüyor.
+  const slots = await listReminderActiveForGun(env, su.gun);
   if (!slots.length) return;
 
-  const su = turkiyeSaatBilgisi(new Date());
   const nowDakika = su.saat * 60 + su.dakika;
 
   for (const slot of slots) {
-    if (slot.gun !== su.gun) continue;
     if (slot.sonHatirlatmaTarihi === su.tarih) continue;
 
     const [saat, dakika] = slot.baslangicSaat.split(":").map(Number);
@@ -65,7 +67,11 @@ export async function checkAndSendReminders(env: Env): Promise<void> {
       katilimcilar.map((k) =>
         sendPushToAthlete(env, k.grup, k.ad, {
           title: "⏰ Antrenman Hatırlatması",
-          body: `${GUN_ADI[slot.gun]} ${slot.baslangicSaat} dersin ${slot.hatirlatmaDakika} dakika sonra başlıyor!`,
+          // `slot.gun` LEGACY sütun (seçilen günlerin en küçüğü) — bir slot artık birden fazla güne
+          // bağlı olabildiği için burada `su.gun` (bugünün GERÇEK günü, zaten sorgu bu güne göre
+          // filtrelendi) kullanılıyor, yoksa haftada 2 kez ders "Perşembe" günü de yanlışlıkla
+          // "Salı" diye bildirim gönderebilirdi.
+          body: `${GUN_ADI[su.gun]} ${slot.baslangicSaat} dersin ${slot.hatirlatmaDakika} dakika sonra başlıyor!`,
           tag: "antrenman-" + slot.id,
           data: { kind: "antrenman-hatirlatma", grup: k.grup, slotId: slot.id },
         })

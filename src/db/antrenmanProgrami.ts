@@ -3,7 +3,8 @@ import type { Env } from "../env";
 export interface AntrenmanProgramiRow {
   id: number;
   grup: string;
-  gun: number; // JS Date.getDay(): 0=Pazar..6=Cumartesi
+  gun: number; // LEGACY, artık OKUNMUYOR — geriye dönük güvenlik ağı olarak seçilen günlerin en küçüğü
+  // yazılmaya devam ediyor (bkz. migrations/0035). Tek doğru kaynak antrenman_programi_gun tablosu.
   baslangicSaat: string; // "18:00"
   bitisSaat: string; // "19:30"
   hatirlatmaAktif: number; // D1'de 0/1
@@ -34,13 +35,14 @@ export interface Istisna {
   sebep: string | null;
 }
 
-/** Her slot'a kendi katılımcı listesini VE istisna (tek seferlik iptal) listesini gömerek döner —
- * istemci hem haftalık ızgarayı hem her dersin roster'ını/iptallerini TEK istekte alsın diye (N+1 fetch
- * olmasın). Sporcu tarafındaki "sıradaki ders" hesabı da aynı uç noktayı (grupsuz) kullanıyor. */
+/** Her slot'a kendi katılımcı listesini, istisna (tek seferlik iptal) listesini VE artık bağlı olduğu
+ * TÜM günleri (gunler, 2026-08-20 "haftada iki kez" desteği) gömerek döner — istemci hem haftalık
+ * ızgarayı hem her dersin roster'ını/iptallerini/günlerini TEK istekte alsın diye (N+1 fetch olmasın).
+ * Sporcu tarafındaki "sıradaki ders" hesabı da aynı uç noktayı (grupsuz) kullanıyor. */
 export async function listByGrupWithKatilimcilar(
   env: Env,
   grup?: string
-): Promise<(AntrenmanProgramiRow & { katilimcilar: Katilimci[]; istisnalar: Istisna[] })[]> {
+): Promise<(AntrenmanProgramiRow & { katilimcilar: Katilimci[]; istisnalar: Istisna[]; gunler: number[] })[]> {
   const slots = await listByGrup(env, grup);
   if (!slots.length) return [];
   const { results: katilimcilar } = await env.DB.prepare(`SELECT slotId, grup, ad FROM antrenman_programi_katilimci`).all<{ slotId: number; grup: string; ad: string }>();
@@ -55,7 +57,18 @@ export async function listByGrupWithKatilimcilar(
     if (!istisnaBySlot.has(i.slotId)) istisnaBySlot.set(i.slotId, []);
     istisnaBySlot.get(i.slotId)!.push({ tarih: i.tarih, sebep: i.sebep });
   }
-  return slots.map((s) => ({ ...s, katilimcilar: bySlot.get(s.id) ?? [], istisnalar: istisnaBySlot.get(s.id) ?? [] }));
+  const { results: gunRows } = await env.DB.prepare(`SELECT slotId, gun FROM antrenman_programi_gun`).all<{ slotId: number; gun: number }>();
+  const gunBySlot = new Map<number, number[]>();
+  for (const g of gunRows) {
+    if (!gunBySlot.has(g.slotId)) gunBySlot.set(g.slotId, []);
+    gunBySlot.get(g.slotId)!.push(g.gun);
+  }
+  return slots.map((s) => ({
+    ...s,
+    katilimcilar: bySlot.get(s.id) ?? [],
+    istisnalar: istisnaBySlot.get(s.id) ?? [],
+    gunler: (gunBySlot.get(s.id) ?? [s.gun]).slice().sort((a, b) => a - b),
+  }));
 }
 
 export async function listKatilimcilar(env: Env, slotId: number): Promise<Katilimci[]> {
@@ -93,61 +106,91 @@ export async function removeIstisna(env: Env, slotId: number, tarih: string): Pr
   await env.DB.prepare(`DELETE FROM antrenman_programi_istisna WHERE slotId = ? AND tarih = ?`).bind(slotId, tarih).run();
 }
 
+/** Bir slotun bağlı olduğu günleri (antrenman_programi_gun) TAMAMEN değiştirir — sil+yeniden-ekle,
+ * diff'lemeye gerek yok (bir dersin haftada kaç/hangi gün olduğu nadiren değişir, satır sayısı küçük). */
+async function setGunler(env: Env, slotId: number, gunler: number[]): Promise<void> {
+  await env.DB.prepare(`DELETE FROM antrenman_programi_gun WHERE slotId = ?`).bind(slotId).run();
+  for (const gun of gunler) {
+    await env.DB.prepare(`INSERT OR IGNORE INTO antrenman_programi_gun (slotId, gun) VALUES (?, ?)`).bind(slotId, gun).run();
+  }
+}
+
 export async function createSlot(
   env: Env,
-  row: Omit<AntrenmanProgramiRow, "id" | "sonHatirlatmaTarihi" | "guncelleme">
+  row: Omit<AntrenmanProgramiRow, "id" | "sonHatirlatmaTarihi" | "guncelleme" | "gun">,
+  gunler: number[]
 ): Promise<number> {
+  const gunLegacy = Math.min(...gunler);
   const res = await env.DB.prepare(
     `INSERT INTO antrenman_programi (grup, gun, baslangicSaat, bitisSaat, hatirlatmaAktif, hatirlatmaDakika, sonHatirlatmaTarihi, dersPlani, kapasite, olusturulma, guncelleme)
      VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`
   )
-    .bind(row.grup, row.gun, row.baslangicSaat, row.bitisSaat, row.hatirlatmaAktif, row.hatirlatmaDakika, row.dersPlani ?? null, row.kapasite ?? null, row.olusturulma, row.olusturulma)
+    .bind(row.grup, gunLegacy, row.baslangicSaat, row.bitisSaat, row.hatirlatmaAktif, row.hatirlatmaDakika, row.dersPlani ?? null, row.kapasite ?? null, row.olusturulma, row.olusturulma)
     .run();
-  return res.meta.last_row_id as number;
+  const id = res.meta.last_row_id as number;
+  await setGunler(env, id, gunler);
+  return id;
 }
 
-const SLOT_UPDATABLE_FIELDS = ["grup", "gun", "baslangicSaat", "bitisSaat", "hatirlatmaAktif", "hatirlatmaDakika", "dersPlani", "kapasite"] as const;
+const SLOT_UPDATABLE_FIELDS = ["grup", "baslangicSaat", "bitisSaat", "hatirlatmaAktif", "hatirlatmaDakika", "dersPlani", "kapasite"] as const;
 
 export async function updateSlot(
   env: Env,
   id: number,
-  fields: Partial<Pick<AntrenmanProgramiRow, (typeof SLOT_UPDATABLE_FIELDS)[number]>>
+  fields: Partial<Pick<AntrenmanProgramiRow, (typeof SLOT_UPDATABLE_FIELDS)[number]>> & { gunler?: number[] }
 ): Promise<void> {
   // Savunma derinliği: bugün tek çağıran (src/routes/antrenmanProgrami.ts) zaten sabit-şekilli bir
   // obje inşa ediyor, yani şu an dışarıdan gelen keyfi bir JSON key'i buraya asla ulaşamıyor — Milo'daki
   // aynı desen (routes/milo/antrenmanProgrami.ts) da KENDİ allowlist'iyle (MILO_SLOT_UPDATABLE_FIELDS)
-  // aynı korumaya sahip (2026-08-20 doğrulandı, önceki bir not burayı "enjekte edilebilir" diye
-  // işaretlemişti — o zamanki hal düzeltilmiş, bu satır güncel). İleride bu fonksiyona (ya da Milo'daki
-  // eşine) `body`'yi doğrudan geçiren yeni bir çağıran eklenirse aynı hataya düşülmesin diye burada da
-  // çalışma zamanı doğrulaması var.
+  // aynı korumaya sahip. İleride bu fonksiyona (ya da Milo'daki eşine) `body`'yi doğrudan geçiren yeni
+  // bir çağıran eklenirse aynı hataya düşülmesin diye burada da çalışma zamanı doğrulaması var.
+  const { gunler, ...rest } = fields;
   const cols: string[] = [];
   const values: unknown[] = [];
-  for (const [k, v] of Object.entries(fields)) {
+  for (const [k, v] of Object.entries(rest)) {
     if (v === undefined) continue;
     if (!(SLOT_UPDATABLE_FIELDS as readonly string[]).includes(k)) throw new Error(`invalid field: ${k}`);
     cols.push(`${k} = ?`);
     values.push(v);
   }
-  if (!cols.length) return;
-  cols.push("guncelleme = ?");
-  values.push(Date.now());
-  values.push(id);
-  await env.DB.prepare(`UPDATE antrenman_programi SET ${cols.join(", ")} WHERE id = ?`)
-    .bind(...values)
-    .run();
+  if (gunler !== undefined && gunler.length) {
+    cols.push("gun = ?");
+    values.push(Math.min(...gunler));
+  }
+  if (cols.length) {
+    cols.push("guncelleme = ?");
+    values.push(Date.now());
+    values.push(id);
+    await env.DB.prepare(`UPDATE antrenman_programi SET ${cols.join(", ")} WHERE id = ?`)
+      .bind(...values)
+      .run();
+  }
+  if (gunler !== undefined && gunler.length) {
+    await setGunler(env, id, gunler);
+  }
 }
 
 export async function deleteSlot(env: Env, id: number): Promise<void> {
   // D1/SQLite'ta FK ON DELETE CASCADE, bağlantı PRAGMA foreign_keys=ON olmadıkça garanti değil —
-  // katılımcı VE istisna satırlarını burada AÇIKÇA temizliyoruz, deklaratif CASCADE'e güvenmiyoruz.
+  // katılımcı/istisna/gün satırlarını burada AÇIKÇA temizliyoruz, deklaratif CASCADE'e güvenmiyoruz.
   await env.DB.prepare(`DELETE FROM antrenman_programi_katilimci WHERE slotId = ?`).bind(id).run();
   await env.DB.prepare(`DELETE FROM antrenman_programi_istisna WHERE slotId = ?`).bind(id).run();
+  await env.DB.prepare(`DELETE FROM antrenman_programi_gun WHERE slotId = ?`).bind(id).run();
   await env.DB.prepare(`DELETE FROM antrenman_programi WHERE id = ?`).bind(id).run();
 }
 
-/** Cron için: hatırlatması açık tüm satırlar. */
-export async function listAllReminderActive(env: Env): Promise<AntrenmanProgramiRow[]> {
-  const rows = await env.DB.prepare(`SELECT * FROM antrenman_programi WHERE hatirlatmaAktif = 1`).all<AntrenmanProgramiRow>();
+/** Cron için: hatırlatması açık VE bugün (verilen gun) buluşan satırlar — DB seviyesinde antrenman_
+ * programi_gun ile join edilerek filtreleniyor (eskiden tüm hatırlatma-açık satırlar çekilip JS'te
+ * tek bir `gun` koluna göre filtreleniyordu; artık bir slot birden fazla güne bağlı olabildiği için bu
+ * filtre veritabanı tarafında, doğru kaynaktan yapılıyor). */
+export async function listReminderActiveForGun(env: Env, gun: number): Promise<AntrenmanProgramiRow[]> {
+  const rows = await env.DB.prepare(
+    `SELECT p.* FROM antrenman_programi p
+     JOIN antrenman_programi_gun g ON g.slotId = p.id
+     WHERE p.hatirlatmaAktif = 1 AND g.gun = ?`
+  )
+    .bind(gun)
+    .all<AntrenmanProgramiRow>();
   return rows.results;
 }
 

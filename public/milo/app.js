@@ -210,7 +210,12 @@ async function miloSekmeYenile() {
             miloGunlukNot = (await miloApi('/gunluk-not/' + encodeURIComponent(miloYoklamaTarih))).notMetin || '';
             miloYoklamaCiz(att);
         } else if (miloAktifSekme === 'personel') { miloPersonel = (await miloApi('/personnel')).personnel; miloPersonelCiz(); }
-        else if (miloAktifSekme === 'program') { miloProgram = (await miloApi('/antrenman-programi')).slots; miloProgramCiz(); }
+        else if (miloAktifSekme === 'program') {
+            if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
+            miloProgram = (await miloApi('/antrenman-programi')).slots;
+            miloAttendanceTum = (await miloApi('/attendance/auto')).attendance;
+            miloProgramCiz();
+        }
         else if (miloAktifSekme === 'ders') {
             miloDersler = (await miloApi('/ders-icerikleri')).dersler;
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
@@ -252,6 +257,7 @@ function miloUyelerCiz() {
                     </div>
                     <div style="display:flex; gap:6px;">
                         <button onclick="miloProfilAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📋 Profil</button>
+                        <button onclick="miloSporcuProgramAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(31,173,160,0.12); border:1px solid var(--milo-teal); color:var(--milo-teal); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📅 Program</button>
                         <button onclick="miloUyeFormAc('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">✏️ Düzenle</button>
                         <button onclick="miloUyeSil('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--neon-red); border:none; color:#fff; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🗑️</button>
                     </div>
@@ -965,42 +971,690 @@ async function miloPersonelSil(id) {
     miloPersonelCiz();
 }
 
-// ===== ANTRENMAN PROGRAMI =====
+// ===== ANTRENMAN PROGRAMI (2026-08-20 genişlemesi — okçuluk ana app'teki Ders Programı'nın Milo'ya
+// taşınmış hali: haftalık ızgara, roster, kapasite, çakışma uyarısı, ders planı, tek-seferlik iptal,
+// devam oranı, haftalık+aylık PDF. Ana app'in AYNI mimarisi ama Milo'nun kendi konvansiyonlarıyla:
+// miloApi() fetch sarmalayıcısı, miloEsc/miloJsEsc kaçış, sıcak/tebeşir renk paleti (--milo-*), YENİ bir
+// özel-modal sistemi İCAT EDİLMEDİ — Milo'nun zaten kullandığı düz native confirm()/prompt() + inline
+// z-index'li modal deseni (bkz. #milo-ayarlar-modal) aynen sürdürüldü. =====
 const MILO_GUN_ADI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const MILO_GUN_KISA_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+function _miloBsIsoTarih(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _miloTrTranslit(s) { return String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').replace(/Ğ/g, 'G').replace(/ğ/g, 'g').replace(/Ş/g, 'S').replace(/ş/g, 's'); }
+// "Haftada iki kez" desteği (2026-08-20, DAĞ'daki AYNI ders programı özelliğinin Milo'ya taşınması) —
+// bir ders artık birden fazla güne bağlı olabiliyor (bkz. antrenman_programi_gun, migrations_milo/0007).
+// Tek bir <select> yerine çoklu-seçilebilir "chip" satırı.
+let _miloGunSeciciState = {}; // idOnEki -> Set<gun>
+function _miloGunSeciciHTML(idOnEki, seciliGunler) {
+    _miloGunSeciciState[idOnEki] = new Set(seciliGunler && seciliGunler.length ? seciliGunler : [new Date().getDay()]);
+    return '<div id="' + idOnEki + '-container" style="display:flex; gap:4px; width:100%;">' + _miloGunSeciciIcerikHTML(idOnEki) + '</div>';
+}
+function _miloGunSeciciIcerikHTML(idOnEki) {
+    let secili = _miloGunSeciciState[idOnEki] || new Set();
+    return MILO_GUN_KISA_TR.map(function(g, i) {
+        let on = secili.has(i);
+        return '<button type="button" onclick="_miloGunSeciciToggle(\'' + idOnEki + '\',' + i + ')" style="flex:1; min-width:0; padding:8px 2px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; border:1.3px solid ' + (on ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (on ? 'rgba(31,173,160,0.14)' : 'var(--milo-card-raised)') + '; color:' + (on ? 'var(--milo-teal)' : 'var(--milo-ink-dim)') + ';">' + g + '</button>';
+    }).join('');
+}
+function _miloGunSeciciToggle(idOnEki, gun) {
+    let secili = _miloGunSeciciState[idOnEki]; if (!secili) return;
+    if (secili.has(gun)) { if (secili.size > 1) secili.delete(gun); } else secili.add(gun);
+    let ic = document.getElementById(idOnEki + '-container'); if (ic) ic.innerHTML = _miloGunSeciciIcerikHTML(idOnEki);
+}
+function _miloGunSeciciOku(idOnEki) {
+    let secili = _miloGunSeciciState[idOnEki]; if (!secili || !secili.size) return [];
+    return Array.from(secili).sort(function(a, b) { return a - b; });
+}
+function _miloGunlerEtiketUzun(gunler) {
+    let liste = (gunler || []).slice().sort(function(a, b) { return a - b; }).map(function(g) { return MILO_GUN_ADI[g]; });
+    if (liste.length <= 1) return liste[0] || '';
+    return liste.slice(0, -1).join(', ') + ' & ' + liste[liste.length - 1];
+}
+function _miloGunlerEtiketKisa(gunler) {
+    return (gunler || []).slice().sort(function(a, b) { return a - b; }).map(function(g) { return MILO_GUN_KISA_TR[g]; }).join('+');
+}
+function _miloDersZamanCakisiyorMu(s1, s2) {
+    let ortakGunVar = (s1.gunler || [s1.gun]).some(function(g) { return (s2.gunler || [s2.gun]).includes(g); });
+    if (!ortakGunVar) return false;
+    return s1.baslangicSaat < s2.bitisSaat && s1.bitisSaat > s2.baslangicSaat;
+}
+function _miloDersCakismaBul(grup, ad, hedefSlot) {
+    return miloProgram.filter(function(x) {
+        if (x.id === hedefSlot.id) return false;
+        if (!(x.katilimcilar || []).some(function(k) { return k.grup === grup && k.ad === ad; })) return false;
+        return _miloDersZamanCakisiyorMu(x, hedefSlot);
+    });
+}
+function _miloGunSonrakiTarihISO(gun, baslangicSaat) {
+    let simdi = new Date();
+    let gunFarki = (gun - simdi.getDay() + 7) % 7;
+    if (gunFarki === 0) {
+        let parcalar = (baslangicSaat || '').split(':').map(Number);
+        let bugunSaat = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate(), parcalar[0] || 0, parcalar[1] || 0);
+        if (bugunSaat.getTime() < simdi.getTime() - 5 * 60000) gunFarki = 7;
+    }
+    let hedef = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() + gunFarki);
+    return _miloBsIsoTarih(hedef);
+}
+// 2026-08-20: bir slotun bağlı olduğu HER gün için ayrı bir "yaklaşan oluşum".
+function _miloDersYaklasanTarihler(s) {
+    return (s.gunler || [s.gun]).slice().sort(function(a, b) { return a - b; }).map(function(gun) {
+        return { gun: gun, tarih: _miloGunSonrakiTarihISO(gun, s.baslangicSaat) };
+    });
+}
+function _miloDersSonrakiTarihISO(s) {
+    let liste = _miloDersYaklasanTarihler(s);
+    return liste.length ? liste.slice().sort(function(a, b) { return a.tarih.localeCompare(b.tarih); })[0].tarih : null;
+}
+// Devam oranı — otomatikYoklamaDB (dict) yerine Milo'nun DÜZ dizi attendance_auto'sundan (miloAttendanceTum)
+// okur, mantık AYNI: bu slotun bağlı olduğu HERHANGİ bir gününe göre geriye doğru en fazla 6 geçmiş
+// oluşumu tarar (haftada 2 kez ise daha hızlı dolar).
+function _miloDersDevamOraniHesapla(s, grup, ad, haftaSayisi) {
+    haftaSayisi = haftaSayisi || 6;
+    let gunler = [];
+    let d = new Date();
+    let slotGunleri = s.gunler || [s.gun];
+    for (let i = 1; i <= haftaSayisi * 7 + 7 && gunler.length < haftaSayisi; i++) {
+        d.setDate(d.getDate() - 1);
+        if (slotGunleri.includes(d.getDay())) gunler.push(_miloBsIsoTarih(d));
+    }
+    if (!gunler.length) return null;
+    let gunSet = {}; gunler.forEach(function(t) { gunSet[t] = true; });
+    let geldiSet = {};
+    miloAttendanceTum.forEach(function(a) {
+        if (a.ad === ad && gunSet[a.tarih] && (!a.grup || a.grup === grup) && a.geldi !== false) geldiSet[a.tarih] = true;
+    });
+    return Math.round(Object.keys(geldiSet).length / gunler.length * 100);
+}
+// 2026-08-20 GÜNCELLEME ("yukarıdaki tarihleri butun aylarin gunlerini yaz"): artık dersin kendi
+// gününe SINIRLI değil, ayın TÜM günlerini döner — bkz. miloAylikYoklamaCizelgesiPdfIndir.
+function _miloAyTumGunTarihleri(ayYM) {
+    let parcalar = ayYM.split('-'), yil = parseInt(parcalar[0], 10), ayIndex = parseInt(parcalar[1], 10) - 1;
+    let sonGun = new Date(yil, ayIndex + 1, 0).getDate();
+    let tarihler = [];
+    for (let g = 1; g <= sonGun; g++) tarihler.push(_miloBsIsoTarih(new Date(yil, ayIndex, g)));
+    return tarihler;
+}
+
 function miloProgramCiz() {
     let alan = document.getElementById('milo-icerik');
     alan.innerHTML = `
         <div class="milo-card">
+            <div class="milo-accent" style="font-weight:900; font-size:15px; margin-bottom:10px;">📅 Antrenman Programı — Haftalık</div>
+            <div id="milo-program-izgara" style="margin-bottom:10px;">Yükleniyor...</div>
+            <button class="milo-btn-full" onclick="miloProgramTamPdfIndir()" style="margin-bottom:8px; background:var(--milo-teal);">📄 Haftalık Programı PDF Olarak İndir</button>
+            <div style="display:flex; gap:8px;">
+                <input type="month" id="milo-program-aylik-ay-sec" value="${bugunISO().slice(0, 7)}" class="milo-input" style="flex:1; margin-bottom:0;">
+                <button onclick="miloAylikYoklamaCizelgesiPdfIndir()" style="flex:1.3; background:var(--milo-sun); color:#4a3400; border:none; border-radius:12px; font-weight:800; font-size:12px; cursor:pointer;">🗓️ Aylık Çizelge</button>
+            </div>
+        </div>
+        <div class="milo-card">
+            <div style="font-weight:800; font-size:13px; color:var(--milo-ink-dim); margin-bottom:8px;">YENİ DERS EKLE</div>
             <input class="milo-input" id="milo-prf-grup" list="milo-grup-list" placeholder="Grup / Seviye">
-            <select class="milo-input" id="milo-prf-gun">${MILO_GUN_ADI.map((g, i) => `<option value="${i}">${g}</option>`).join('')}</select>
+            <datalist id="milo-grup-list">${[...new Set(miloUyeler.map(u => u.grup))].map(g => `<option value="${miloEsc(g)}">`).join('')}</datalist>
+            <div style="font-size:9.5px; color:var(--milo-ink-dim); margin-bottom:4px;">Gün(ler) — birden fazla seçilebilir (haftada 2 kez ders için)</div>
+            <div style="margin-bottom:10px;">${_miloGunSeciciHTML('milo-prf-gun', [new Date().getDay()])}</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
                 <input type="time" class="milo-input" id="milo-prf-bas" style="margin-bottom:0;">
                 <input type="time" class="milo-input" id="milo-prf-bit" style="margin-bottom:0;">
             </div>
-            <button class="milo-btn-full" onclick="miloProgramEkle()">➕ Ekle</button>
+            <input type="number" min="1" class="milo-input" id="milo-prf-kapasite" placeholder="Kapasite (opsiyonel, boş=sınırsız)">
+            <button class="milo-btn-full" onclick="miloProgramSlotEkle()">➕ Ekle</button>
         </div>
-        <datalist id="milo-grup-list">${[...new Set(miloUyeler.map(u => u.grup))].map(g => `<option value="${miloEsc(g)}">`).join('')}</datalist>
-        ${miloProgram.map(s => `<div class="milo-card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div><b>${miloEsc(s.grup)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${MILO_GUN_ADI[s.gun]} ${s.baslangicSaat}-${s.bitisSaat}</span></div>
-            <button onclick="miloProgramSil(${s.id})" style="background:var(--neon-red); border:none; color:#fff; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🗑️</button>
-        </div>`).join('') || '<div style="color:var(--text-muted); font-size:13px;">Henüz program yok.</div>'}
     `;
+    miloProgramIzgaraCiz();
 }
-async function miloProgramEkle() {
+function miloProgramIzgaraCiz() {
+    let ic = document.getElementById('milo-program-izgara'); if (!ic) return;
+    let bugunGun = new Date().getDay();
+    let html = '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:6px; align-items:start;">';
+    for (let gun = 0; gun < 7; gun++) {
+        let gunSlotlari = miloProgram.filter(s => (s.gunler || [s.gun]).includes(gun)).sort((a, b) => a.baslangicSaat.localeCompare(b.baslangicSaat));
+        html += '<div style="display:flex; flex-direction:column; gap:5px;">'
+            + '<div style="font-size:9.5px; font-weight:800; text-transform:uppercase; text-align:center; color:' + (gun === bugunGun ? 'var(--milo-coral)' : 'var(--milo-ink-dim)') + '; padding-bottom:4px; border-bottom:1px solid ' + (gun === bugunGun ? 'var(--milo-coral)' : 'var(--milo-line)') + ';">' + MILO_GUN_KISA_TR[gun] + (gun === bugunGun ? ' · bugün' : '') + '</div>'
+            // DÜZELTME (2026-08-21, DAĞ'da bulunan AYNI hata Milo'da da var — bkz. app.js
+            // programIzgaraCiz): CSS Grid'de bir satırdaki en uzun sütun, o satırdaki tüm sütunların
+            // yüksekliğini belirliyor. Her günün kart listesi artık kendi içinde sınırlı yükseklikte
+            // kayan (scroll) bir kutu.
+            + '<div style="max-height:230px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-right:1px;">';
+        gunSlotlari.forEach(s => {
+            let buGunYaklasan = _miloGunSonrakiTarihISO(gun, s.baslangicSaat);
+            let yaklasanIptalMi = (s.istisnalar || []).some(function(i) { return i.tarih === buGunYaklasan; });
+            let cokluGunMu = (s.gunler || [s.gun]).length > 1;
+            let katilimciSayisi = (s.katilimcilar || []).length;
+            let doluMu = s.kapasite && katilimciSayisi >= s.kapasite;
+            html += '<button type="button" onclick="miloDersRosterAc(' + s.id + ')" style="font-family:inherit; margin:0; box-sizing:border-box; display:block; width:100%; cursor:pointer; touch-action:manipulation; border-radius:9px; padding:7px 8px 6px; border:1.3px solid ' + (yaklasanIptalMi ? 'var(--neon-red)' : 'var(--milo-teal)') + '; background:' + (yaklasanIptalMi ? 'rgba(239,68,68,0.1)' : 'rgba(31,173,160,0.1)') + '; text-align:left; position:relative;' + (yaklasanIptalMi ? 'opacity:.7;' : '') + '">'
+                + (yaklasanIptalMi ? '<div style="position:absolute; top:5px; right:6px; font-size:8px; font-weight:900; color:var(--neon-red);">⚠️ İPTAL</div>' : '')
+                + '<div style="font-size:10.5px; font-weight:800; color:var(--milo-ink);">' + s.baslangicSaat + '–' + s.bitisSaat + (cokluGunMu ? ' <span title="Haftada ' + (s.gunler || []).length + ' kez" style="font-size:8px; font-weight:800; color:var(--milo-grape);">🔗' + (s.gunler || []).length + 'x</span>' : '') + '</div>'
+                + '<div style="font-size:9px; font-weight:700; color:var(--milo-teal);">' + miloEsc(s.grup) + (s.dersPlani ? ' 📋' : '') + '</div>'
+                + '<div style="font-size:8.5px; color:' + (doluMu ? 'var(--milo-coral)' : 'var(--milo-ink-dim)') + '; font-weight:' + (doluMu ? '800' : '400') + '; margin-top:2px;">👥 ' + katilimciSayisi + (s.kapasite ? '/' + s.kapasite + (doluMu ? ' DOLU' : '') : '') + '</div>'
+                + '</button>';
+        });
+        html += '</div>'; // kayan kart kutusu kapanışı
+        html += '<div onclick="_miloGunSeciciState[\'milo-prf-gun\']=new Set([' + gun + ']); let c=document.getElementById(\'milo-prf-gun-container\'); if(c) c.innerHTML=_miloGunSeciciIcerikHTML(\'milo-prf-gun\');" style="cursor:pointer; border-radius:9px; border:1.3px dashed var(--milo-line); padding:7px; text-align:center; font-size:9.5px; color:var(--milo-ink-dim); font-weight:700; flex-shrink:0;">+ ders</div>';
+        html += '</div>';
+    }
+    html += '</div>';
+    ic.innerHTML = html;
+}
+async function miloProgramSlotEkle() {
     let grup = (document.getElementById('milo-prf-grup').value || '').trim();
-    let gun = Number(document.getElementById('milo-prf-gun').value);
+    let gunler = _miloGunSeciciOku('milo-prf-gun');
+    if (!gunler.length) return showToast('En az bir gün seçmelisin.', 'error');
     let bas = document.getElementById('milo-prf-bas').value, bit = document.getElementById('milo-prf-bit').value;
+    let kapasite = parseInt(document.getElementById('milo-prf-kapasite').value) || null;
     if (!grup || !bas || !bit) return showToast('Grup, başlangıç ve bitiş saati zorunlu.', 'error');
-    await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup, gun, baslangicSaat: bas, bitisSaat: bit }) });
+    if (bit <= bas) return showToast('Bitiş saati başlangıçtan sonra olmalı.', 'error');
+    await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup, gunler, baslangicSaat: bas, bitisSaat: bit, kapasite }) });
     miloProgram = (await miloApi('/antrenman-programi')).slots;
+    document.getElementById('milo-prf-grup').value = ''; document.getElementById('milo-prf-bas').value = ''; document.getElementById('milo-prf-bit').value = ''; document.getElementById('milo-prf-kapasite').value = '';
     miloProgramCiz();
-    showToast('✅ Eklendi.', 'success');
+    showToast('✅ Ders eklendi.', 'success');
 }
-async function miloProgramSil(id) {
-    if (!confirm('Silinsin mi?')) return;
-    await miloApi('/antrenman-programi/' + id, { method: 'DELETE' });
-    miloProgram = miloProgram.filter(s => s.id !== id);
-    miloProgramCiz();
+
+// ===== DERS ROSTER MODALI =====
+let _miloDrmAcikSlotId = null;
+let _miloDrmDuzenleAcik = false;
+function _miloDrmSlot() { return miloProgram.find(s => s.id === _miloDrmAcikSlotId); }
+function miloDersRosterAc(slotId) {
+    _miloDrmAcikSlotId = slotId; _miloDrmDuzenleAcik = false;
+    let ara = document.getElementById('milo-drm-ara'); if (ara) ara.value = '';
+    let duzenleAlan = document.getElementById('milo-drm-duzenle-alani'); if (duzenleAlan) duzenleAlan.style.display = 'none';
+    miloDersRosterCiz();
+    document.getElementById('milo-ders-roster-modal').style.display = 'flex';
+}
+function miloDersRosterKapat() {
+    document.getElementById('milo-ders-roster-modal').style.display = 'none';
+    _miloDrmAcikSlotId = null;
+}
+function miloDersRosterCiz() {
+    let s = _miloDrmSlot(); if (!s) return;
+    document.getElementById('milo-drm-baslik').textContent = _miloGunlerEtiketUzun(s.gunler) + ' · ' + s.baslangicSaat + '–' + s.bitisSaat;
+    document.getElementById('milo-drm-alt').textContent = s.grup + ' · ' + (s.katilimcilar || []).length + (s.kapasite ? '/' + s.kapasite : '') + ' üye';
+
+    let planAlani = document.getElementById('milo-drm-plan-alani');
+    if (planAlani) {
+        planAlani.innerHTML = s.dersPlani
+            ? '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:rgba(31,173,160,0.08); border:1px dashed var(--milo-teal); border-radius:10px; padding:9px 11px;">'
+                + '<div style="font-size:11.5px; color:var(--milo-ink); line-height:1.4;">📋 <b>Ders Planı:</b> ' + miloEsc(s.dersPlani) + '</div>'
+                + '<button onclick="miloDersPlaniDuzenle()" style="background:transparent; border:none; color:var(--milo-teal); cursor:pointer; font-size:12px; flex-shrink:0;">✏️</button>'
+                + '</div>'
+            : '<div onclick="miloDersPlaniDuzenle()" style="cursor:pointer; text-align:center; font-size:11px; color:var(--milo-ink-dim); border:1px dashed var(--milo-line); border-radius:10px; padding:8px;">📋 + Ders planı ekle (bugün ne çalışılacak?)</div>';
+    }
+
+    // 2026-08-20: bir slot artık BİRDEN FAZLA güne bağlı olabiliyor — her bağlı günün kendi yaklaşan
+    // oluşumu ve iptal/geri-al kontrolü AYRI bir satır olarak gösterilir.
+    let istisnaAlani = document.getElementById('milo-drm-istisna-alani');
+    if (istisnaAlani) {
+        istisnaAlani.innerHTML = _miloDersYaklasanTarihler(s).map(function(giris) {
+            let gunEtiket = MILO_GUN_ADI[giris.gun];
+            let mevcutIstisna = (s.istisnalar || []).find(function(i) { return i.tarih === giris.tarih; });
+            if (mevcutIstisna) {
+                return '<div style="background:rgba(255,107,94,0.08); border:1.3px dashed var(--milo-coral); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
+                    + '<div style="font-size:11.5px; font-weight:800; color:var(--milo-coral);">❌ ' + gunEtiket + ' ' + giris.tarih + ' iptal edildi</div>'
+                    + (mevcutIstisna.sebep ? '<div style="font-size:10.5px; color:var(--milo-ink-dim); margin-top:2px;">' + miloEsc(mevcutIstisna.sebep) + '</div>' : '')
+                    + '<button onclick="miloDersIstisnaSil(' + giris.gun + ')" style="margin-top:7px; width:100%; background:rgba(31,173,160,0.1); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:6px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer;">✅ İptali Geri Al</button>'
+                    + '</div>';
+            }
+            return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--milo-card-raised); border:1px solid var(--milo-line); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
+                + '<div style="font-size:11px; color:var(--milo-ink-dim);">📅 ' + gunEtiket + ' yaklaşan: <b style="color:var(--milo-ink);">' + giris.tarih + '</b></div>'
+                + '<button onclick="miloDersIstisnaEkle(' + giris.gun + ')" style="background:rgba(255,107,94,0.08); color:var(--milo-coral); border:1px solid rgba(255,107,94,0.3); padding:6px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">🚫 Bu Tarihi İptal Et</button>'
+                + '</div>';
+        }).join('');
+    }
+
+    let roster = (s.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+    document.getElementById('milo-drm-roster-liste').innerHTML = roster.length ? roster.map(function(k) {
+        let oran = _miloDersDevamOraniHesapla(s, k.grup, k.ad, 6);
+        let oranRenk = oran === null ? null : oran >= 80 ? 'var(--milo-teal)' : oran >= 50 ? 'var(--milo-sun)' : 'var(--milo-coral)';
+        let oranHTML = oran === null ? '' : '<span title="Son 6 oluşumda devam oranı" style="display:inline-flex; align-items:center; gap:3px; margin-left:6px; font-size:9px; font-weight:700; color:' + oranRenk + ';"><span style="width:6px; height:6px; border-radius:50%; background:' + oranRenk + '; display:inline-block;"></span>%' + oran + '</span>';
+        return '<div style="display:flex; align-items:center; gap:7px; padding:8px 9px; border-radius:10px; background:var(--milo-card-raised); border:1px solid var(--milo-line); margin-bottom:5px;">'
+            + '<div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:800;">' + miloEsc(k.ad) + oranHTML + '</div></div>'
+            + '<button onclick="miloDersRosterKatilimciSil(\'' + miloJsEsc(k.grup) + '\',\'' + miloJsEsc(k.ad) + '\')" style="background:rgba(255,107,94,0.1); color:var(--milo-coral); border:1px solid rgba(255,107,94,0.3); width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;">✕</button>'
+            + '</div>';
+    }).join('') : '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:8px;">Henüz kimse yok.</div>';
+
+    let q = (document.getElementById('milo-drm-ara').value || '').trim().toLocaleLowerCase('tr');
+    if (!q) { document.getElementById('milo-drm-aday-liste').innerHTML = '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:10px; opacity:.7;">↑ Eklemek için yukarıya bir isim yaz</div>'; return; }
+    let mevcutSet = {}; roster.forEach(function(k) { mevcutSet[k.grup + '|' + k.ad] = true; });
+    let adaylar = miloUyeler.filter(function(u) { return !u.pasif && !mevcutSet[u.grup + '|' + u.ad] && u.ad.toLocaleLowerCase('tr').includes(q); }).sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+    document.getElementById('milo-drm-aday-liste').innerHTML = adaylar.length ? adaylar.slice(0, 30).map(function(a) {
+        return '<div style="display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:10px; background:var(--milo-card-raised); border:1px solid var(--milo-line); margin-bottom:5px;">'
+            + '<div style="flex:1; min-width:0; font-size:12px; font-weight:700;">' + miloEsc(a.ad) + ' <span style="font-size:9.5px; color:var(--milo-ink-dim); font-weight:600;">(' + miloEsc(a.grup) + ')</span></div>'
+            + '<button onclick="miloDersRosterKatilimciEkle(\'' + miloJsEsc(a.grup) + '\',\'' + miloJsEsc(a.ad) + '\')" style="background:rgba(31,173,160,0.12); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:5px 11px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800;">+ Ekle</button>'
+            + '</div>';
+    }).join('') : '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:8px;">Eşleşen üye yok.</div>';
+}
+async function miloDersRosterKatilimciEkle(grup, ad) {
+    let s = _miloDrmSlot(); if (!s) return;
+    let mevcutSayisi = (s.katilimcilar || []).length;
+    if (s.kapasite && mevcutSayisi >= s.kapasite) {
+        if (!confirm('Bu ders dolu (' + mevcutSayisi + '/' + s.kapasite + '). Yine de ' + ad + ' eklensin mi?')) return;
+    }
+    let cakisan = _miloDersCakismaBul(grup, ad, s);
+    if (cakisan.length) {
+        let liste = cakisan.map(function(x) { return _miloGunlerEtiketKisa(x.gunler) + ' ' + x.baslangicSaat + '-' + x.bitisSaat; }).join(', ');
+        if (!confirm('⚠️ ' + ad + ' zaten şu saatte başka bir derse kayıtlı: ' + liste + '.\n\nYine de eklensin mi?')) return;
+    }
+    await miloApi('/antrenman-programi/' + s.id + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: grup, ad: ad }) });
+    if (!s.katilimcilar) s.katilimcilar = [];
+    s.katilimcilar.push({ grup: grup, ad: ad });
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+}
+async function miloDersRosterKatilimciSil(grup, ad) {
+    let s = _miloDrmSlot(); if (!s) return;
+    await miloApi('/antrenman-programi/' + s.id + '/katilimci?grup=' + encodeURIComponent(grup) + '&ad=' + encodeURIComponent(ad), { method: 'DELETE' });
+    s.katilimcilar = (s.katilimcilar || []).filter(function(k) { return !(k.grup === grup && k.ad === ad); });
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+}
+function miloDersPlaniDuzenle() {
+    let s = _miloDrmSlot(); if (!s) return;
+    let yeni = prompt('Ders planı (bugün ne çalışılacak?)', s.dersPlani || '');
+    if (yeni === null) return;
+    s.dersPlani = yeni.trim() || null;
+    miloApi('/antrenman-programi/' + s.id, { method: 'PUT', body: JSON.stringify({ dersPlani: s.dersPlani }) });
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+}
+function miloDersIstisnaEkle(gun) {
+    let s = _miloDrmSlot(); if (!s) return;
+    let tarih = _miloGunSonrakiTarihISO(gun, s.baslangicSaat);
+    let sebep = prompt('İptal sebebi (opsiyonel):', '');
+    if (sebep === null) return;
+    if (!s.istisnalar) s.istisnalar = [];
+    s.istisnalar = s.istisnalar.filter(function(i) { return i.tarih !== tarih; });
+    s.istisnalar.push({ tarih: tarih, sebep: sebep.trim() || null });
+    miloApi('/antrenman-programi/' + s.id + '/istisna', { method: 'POST', body: JSON.stringify({ tarih: tarih, sebep: sebep.trim() || null }) });
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+    showToast('❌ Ders iptal edildi.', 'warning');
+}
+function miloDersIstisnaSil(gun) {
+    let s = _miloDrmSlot(); if (!s) return;
+    let tarih = _miloGunSonrakiTarihISO(gun, s.baslangicSaat);
+    s.istisnalar = (s.istisnalar || []).filter(function(i) { return i.tarih !== tarih; });
+    miloApi('/antrenman-programi/' + s.id + '/istisna?tarih=' + encodeURIComponent(tarih), { method: 'DELETE' });
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+    showToast('✅ İptal geri alındı.', 'success');
+}
+function miloDersRosterDuzenleAcKapat() {
+    _miloDrmDuzenleAcik = !_miloDrmDuzenleAcik;
+    let s = _miloDrmSlot(); if (!s) return;
+    let alan = document.getElementById('milo-drm-duzenle-alani');
+    if (_miloDrmDuzenleAcik) {
+        alan.style.display = 'block';
+        alan.innerHTML = `
+            <div style="font-size:9.5px; color:var(--milo-ink-dim); margin-bottom:4px;">Gün(ler)</div>
+            <div style="margin-bottom:8px;">${_miloGunSeciciHTML('milo-drm-gun', s.gunler || [s.gun])}</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+                <input type="time" class="milo-input" id="milo-drm-bas" value="${s.baslangicSaat}" style="margin-bottom:0;">
+                <input type="time" class="milo-input" id="milo-drm-bit" value="${s.bitisSaat}" style="margin-bottom:0;">
+            </div>
+            <input type="number" min="1" class="milo-input" id="milo-drm-kapasite" placeholder="Kapasite (boş=sınırsız)" value="${s.kapasite || ''}">
+            <button class="milo-btn-full" onclick="miloDersRosterDuzenleKaydet()" style="margin-bottom:6px;">💾 Kaydet</button>
+            <button onclick="miloDersRosterSil()" style="width:100%; background:transparent; color:var(--milo-coral); border:1px solid var(--milo-coral); padding:10px; border-radius:12px; font-weight:800; font-size:12px; cursor:pointer;">🗑️ Bu Dersi Sil</button>
+        `;
+    } else { alan.style.display = 'none'; }
+}
+async function miloDersRosterDuzenleKaydet() {
+    let s = _miloDrmSlot(); if (!s) return;
+    let gunler = _miloGunSeciciOku('milo-drm-gun');
+    if (!gunler.length) return showToast('En az bir gün seçmelisin.', 'error');
+    let bas = document.getElementById('milo-drm-bas').value, bit = document.getElementById('milo-drm-bit').value;
+    let kapasite = parseInt(document.getElementById('milo-drm-kapasite').value) || null;
+    if (bit <= bas) return showToast('Bitiş saati başlangıçtan sonra olmalı.', 'error');
+    await miloApi('/antrenman-programi/' + s.id, { method: 'PUT', body: JSON.stringify({ gunler: gunler, baslangicSaat: bas, bitisSaat: bit, kapasite: kapasite }) });
+    s.gunler = gunler; s.gun = Math.min.apply(null, gunler); s.baslangicSaat = bas; s.bitisSaat = bit; s.kapasite = kapasite;
+    _miloDrmDuzenleAcik = false;
+    miloDersRosterCiz(); miloProgramIzgaraCiz();
+    showToast('✅ Güncellendi.', 'success');
+}
+async function miloDersRosterSil() {
+    let s = _miloDrmSlot(); if (!s) return;
+    if (!confirm('Bu dersi tamamen silmek istiyor musun? Kayıtlı tüm üyeler de listeden çıkar.')) return;
+    await miloApi('/antrenman-programi/' + s.id, { method: 'DELETE' });
+    miloProgram = miloProgram.filter(function(x) { return x.id !== s.id; });
+    miloDersRosterKapat();
+    miloProgramIzgaraCiz();
+    showToast('🗑️ Ders silindi.', 'success');
+}
+
+// ===== ÜYEYİ HAFTALIK PROGRAMA TOPLU ATAMA =====
+let _miloSpmGrup = null, _miloSpmAd = null, _miloSpmBaslangicSet = null;
+function miloSporcuProgramAc(grup, ad) {
+    _miloSpmGrup = grup; _miloSpmAd = ad; _miloSpmBaslangicSet = null;
+    document.getElementById('milo-spm-alt').textContent = ad + ' · ' + grup;
+    document.getElementById('milo-sporcu-program-modal').style.display = 'flex';
+    miloSporcuProgramCiz();
+}
+function miloSporcuProgramKapat() {
+    document.getElementById('milo-sporcu-program-modal').style.display = 'none';
+    _miloSpmGrup = null; _miloSpmAd = null; _miloSpmBaslangicSet = null;
+}
+function miloSporcuProgramCiz() {
+    let izgara = document.getElementById('milo-spm-izgara'); if (!izgara) return;
+    let secili = {};
+    miloProgram.forEach(function(s) { if ((s.katilimcilar || []).some(function(k) { return k.grup === _miloSpmGrup && k.ad === _miloSpmAd; })) secili[s.id] = true; });
+    if (!_miloSpmBaslangicSet) _miloSpmBaslangicSet = Object.assign({}, secili);
+    let html = '';
+    for (let gun = 0; gun < 7; gun++) {
+        let gunSlotlari = miloProgram.filter(function(s) { return (s.gunler || [s.gun]).includes(gun); }).sort(function(a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); });
+        if (!gunSlotlari.length) continue;
+        html += '<div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:var(--milo-ink-dim); margin:10px 0 5px;">' + MILO_GUN_KISA_TR[gun] + '</div>';
+        gunSlotlari.forEach(function(s) {
+            let isSecili = !!secili[s.id];
+            html += '<div onclick="miloSporcuProgramToggle(' + s.id + ')" style="cursor:pointer; display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; border:1.3px solid ' + (isSecili ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (isSecili ? 'rgba(31,173,160,0.1)' : 'var(--milo-card-raised)') + '; margin-bottom:5px;">'
+                + '<div style="width:18px; height:18px; border-radius:5px; border:1.5px solid ' + (isSecili ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (isSecili ? 'var(--milo-teal)' : 'transparent') + '; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff;">' + (isSecili ? '✓' : '') + '</div>'
+                + '<div style="flex:1;"><b style="font-size:12px;">' + s.baslangicSaat + '–' + s.bitisSaat + '</b> <span style="font-size:10px; color:var(--milo-ink-dim);">' + miloEsc(s.grup) + '</span></div>'
+                + '</div>';
+        });
+    }
+    izgara.innerHTML = html || '<div style="text-align:center; color:var(--milo-ink-dim); padding:16px;">Henüz hiç ders eklenmemiş.</div>';
+}
+function miloSporcuProgramToggle(slotId) {
+    let s = miloProgram.find(function(x) { return x.id === slotId; }); if (!s) return;
+    if (!s.katilimcilar) s.katilimcilar = [];
+    let idx = s.katilimcilar.findIndex(function(k) { return k.grup === _miloSpmGrup && k.ad === _miloSpmAd; });
+    if (idx >= 0) { s.katilimcilar.splice(idx, 1); miloSporcuProgramCiz(); return; }
+    let cakisan = _miloDersCakismaBul(_miloSpmGrup, _miloSpmAd, s);
+    if (cakisan.length) {
+        let liste = cakisan.map(function(x) { return _miloGunlerEtiketKisa(x.gunler) + ' ' + x.baslangicSaat + '-' + x.bitisSaat; }).join(', ');
+        if (!confirm('⚠️ ' + _miloSpmAd + ' zaten şu saatte başka bir derse kayıtlı: ' + liste + '.\n\nYine de eklensin mi?')) return;
+    }
+    s.katilimcilar.push({ grup: _miloSpmGrup, ad: _miloSpmAd });
+    miloSporcuProgramCiz();
+}
+async function miloSporcuProgramKaydet() {
+    let simdikiSet = {};
+    miloProgram.forEach(function(s) { if ((s.katilimcilar || []).some(function(k) { return k.grup === _miloSpmGrup && k.ad === _miloSpmAd; })) simdikiSet[s.id] = true; });
+    let eklenecekler = Object.keys(simdikiSet).filter(function(id) { return !_miloSpmBaslangicSet[id]; });
+    let cikarilacaklar = Object.keys(_miloSpmBaslangicSet).filter(function(id) { return !simdikiSet[id]; });
+    if (!eklenecekler.length && !cikarilacaklar.length) { miloSporcuProgramKapat(); return; }
+    showToast('Kaydediliyor...', 'warning');
+    try {
+        await Promise.all(
+            eklenecekler.map(function(id) { return miloApi('/antrenman-programi/' + id + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: _miloSpmGrup, ad: _miloSpmAd }) }); })
+                .concat(cikarilacaklar.map(function(id) { return miloApi('/antrenman-programi/' + id + '/katilimci?grup=' + encodeURIComponent(_miloSpmGrup) + '&ad=' + encodeURIComponent(_miloSpmAd), { method: 'DELETE' }); }))
+        );
+        showToast('Haftalık program güncellendi ✅', 'success');
+        miloSporcuProgramKapat();
+        try { miloProgramIzgaraCiz(); } catch (e) {}
+    } catch (e) { showToast('Bazı değişiklikler kaydedilemedi — bağlantı hatası.', 'error'); }
+}
+
+// ===== YOKLAMA FORMU PDF'LERİ (native jsPDF — ana app'teki AYNI kanıtlanmış yöntem, html2canvas'a HİÇ
+// dokunmuyor; bu app'te html2canvas tabanlı PDF'lerin GERÇEKTEN boş çıktığı ana app'te kanıtlanmıştı) =====
+function _miloYeniPdfAl(orientation) {
+    orientation = orientation || 'portrait';
+    let trivial = document.createElement('div'); trivial.style.cssText = 'position:fixed;left:-9999px;top:0;width:10px;height:10px;'; trivial.innerHTML = 'x';
+    document.body.appendChild(trivial);
+    return html2pdf().set({ jsPDF: { unit: 'mm', format: 'a4', orientation: orientation } }).from(trivial).toPdf().get('pdf').then(function(pdf) {
+        if (trivial.parentNode) document.body.removeChild(trivial);
+        let pageW = orientation === 'landscape' ? 297 : 210, pageH = orientation === 'landscape' ? 210 : 297;
+        pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F');
+        return pdf;
+    });
+}
+function _miloKurumsalBaslikCiz(pdf, marginX, usableW, y, rozetMetni, altBaslik) {
+    pdf.setFillColor(31, 173, 160); pdf.roundedRect(marginX, y, usableW, 24, 3, 3, 'F');
+    pdf.setFillColor(255, 197, 66); pdf.rect(marginX, y + 24 - 1.4, usableW, 1.4, 'F');
+    pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
+    pdf.text('MILO FITT KIDS', marginX + 7, y + 10);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(220, 245, 240);
+    pdf.text(_miloTrTranslit(altBaslik || 'Antrenman Yoklama Formu'), marginX + 7, y + 16.5);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(255, 197, 66);
+    pdf.text(_miloTrTranslit(rozetMetni), marginX + usableW - 7, y + 10, { align: 'right' });
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(220, 245, 240);
+    pdf.text(_miloTrTranslit('Hazirlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
+    return y + 30;
+}
+function _miloKurumsalAltBilgiCiz(pdf, pageW, pageH) {
+    let sayfaSayisi = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= sayfaSayisi; i++) {
+        pdf.setPage(i);
+        pdf.setDrawColor(230, 230, 220); pdf.setLineWidth(0.2); pdf.line(14, pageH - 12, pageW - 14, pageH - 12);
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(150, 150, 140);
+        pdf.text('Milo Fitt Kids', 14, pageH - 7);
+        pdf.text(String(i) + ' / ' + sayfaSayisi, pageW / 2, pageH - 7, { align: 'center' });
+        pdf.text(new Date().toLocaleString('tr-TR'), pageW - 14, pageH - 7, { align: 'right' });
+    }
+}
+function _miloDersYoklamaTablosuCiz(pdf, roster, marginX, usableW, yBaslangic, baslikEtiketi) {
+    let y = yBaslangic, sayfaNo = 1;
+    function baslikSatiriCiz() {
+        if (sayfaNo > 1 && baslikEtiketi) {
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(20, 130, 120);
+            pdf.text(_miloTrTranslit(baslikEtiketi + ' (devami)'), marginX, y + 4);
+            y += 7;
+        }
+        pdf.setFillColor(241, 245, 249); pdf.rect(marginX, y, usableW, 7, 'F');
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(71, 85, 105);
+        pdf.text('GELDI', marginX + 4, y + 5);
+        pdf.text('#', marginX + 16, y + 5);
+        pdf.text('ISIM', marginX + 23, y + 5);
+        pdf.text('GRUP', marginX + usableW - 2, y + 5, { align: 'right' });
+        y += 8;
+    }
+    baslikSatiriCiz();
+    let satirlar = roster.map(function(k) { return { isim: _miloTrTranslit(k.ad), grup: _miloTrTranslit(k.grup), ekstra: false }; });
+    satirlar.push({ isim: '.......................................', grup: '', ekstra: true });
+    satirlar.push({ isim: '.......................................', grup: '', ekstra: true });
+    satirlar.forEach(function(satir, i) {
+        if (y + 8 > 281) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, 210, 297, 'F'); y = 16; sayfaNo++; baslikSatiriCiz(); }
+        if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(marginX, y, usableW, 8, 'F'); }
+        pdf.setDrawColor(180, 190, 205); pdf.setLineWidth(0.35);
+        pdf.rect(marginX + 3, y + 1.4, 5, 5);
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
+        pdf.text(String(i + 1) + '.', marginX + 16, y + 5.6);
+        pdf.setFont('helvetica', satir.ekstra ? 'italic' : 'normal'); pdf.setFontSize(9);
+        pdf.setTextColor(satir.ekstra ? 190 : 15, satir.ekstra ? 190 : 23, satir.ekstra ? 200 : 42);
+        pdf.text(satir.isim, marginX + 23, y + 5.6);
+        if (satir.grup) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(148, 163, 184); pdf.text(satir.grup, marginX + usableW - 2, y + 5.6, { align: 'right' }); }
+        y += 8;
+    });
+    return y;
+}
+// `vurguSet` dersin GERÇEK gün(ler)ine denk gelen tarihleri (teal başlık), `istisnaSet` o slotun iptal
+// edilmiş spesifik tarihlerini (kırmızı başlık) işaretler — diğer tüm günler nötr/soluk kalır. `pageH`
+// yatay/dikey sayfa yüksekliğine göre sayfa-taşması eşiğini doğru hesaplasın diye parametrik.
+function _miloAylikYoklamaTablosuCiz(pdf, roster, tarihler, marginX, usableW, yBaslangic, baslikEtiketi, vurguSet, istisnaSet, pageH) {
+    pageH = pageH || 297;
+    let altSinir = pageH - 16;
+    let y = yBaslangic, sayfaNo = 1;
+    let adKolonW = Math.max(38, usableW * 0.14), topKolonW = 12;
+    let tarihKolonW = Math.max(6, (usableW - adKolonW - topKolonW) / Math.max(1, tarihler.length));
+    let kucukKolon = tarihKolonW < 8;
+    let etiketFontu = kucukKolon ? 6 : 7;
+    function tarihEtiket(iso) { return iso.split('-')[2]; }
+    function baslikSatiriCiz() {
+        if (sayfaNo > 1 && baslikEtiketi) {
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(20, 130, 120);
+            pdf.text(_miloTrTranslit(baslikEtiketi + ' (devami)'), marginX, y + 4);
+            y += 7;
+        }
+        pdf.setFillColor(241, 245, 249); pdf.rect(marginX, y, usableW, 7, 'F');
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(etiketFontu); pdf.setTextColor(71, 85, 105);
+        pdf.text('ISIM', marginX + 3, y + 5);
+        let x = marginX + adKolonW;
+        tarihler.forEach(function(iso) {
+            let iptal = istisnaSet && istisnaSet.has(iso);
+            let vurgu = !iptal && vurguSet && vurguSet.has(iso);
+            pdf.setFont('helvetica', (vurgu || iptal) ? 'bold' : 'normal');
+            if (iptal) pdf.setTextColor(220, 38, 38); else if (vurgu) pdf.setTextColor(20, 130, 120); else pdf.setTextColor(148, 163, 184);
+            pdf.text(tarihEtiket(iso), x + tarihKolonW / 2, y + 5, { align: 'center' });
+            x += tarihKolonW;
+        });
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(etiketFontu); pdf.setTextColor(71, 85, 105);
+        pdf.text('TOP.', x + topKolonW / 2, y + 5, { align: 'center' });
+        y += 8;
+    }
+    baslikSatiriCiz();
+    let satirlar = roster.map(function(k) { return { isim: _miloTrTranslit(k.ad), ekstra: false }; });
+    satirlar.push({ isim: '.......................................', ekstra: true });
+    satirlar.push({ isim: '.......................................', ekstra: true });
+    let kutuBoyut = Math.max(2.6, Math.min(4, tarihKolonW - 2.5));
+    satirlar.forEach(function(satir, i) {
+        if (y + 7 > altSinir) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), pageH, 'F'); y = 16; sayfaNo++; baslikSatiriCiz(); }
+        if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(marginX, y, usableW, 7, 'F'); }
+        pdf.setFont('helvetica', satir.ekstra ? 'italic' : 'normal'); pdf.setFontSize(kucukKolon ? 7 : 8);
+        pdf.setTextColor(satir.ekstra ? 190 : 15, satir.ekstra ? 190 : 23, satir.ekstra ? 200 : 42);
+        pdf.text(satir.isim, marginX + 3, y + 5);
+        pdf.setDrawColor(180, 190, 205); pdf.setLineWidth(0.3);
+        let x = marginX + adKolonW;
+        tarihler.forEach(function() { pdf.rect(x + tarihKolonW / 2 - kutuBoyut / 2, y + 1.2, kutuBoyut, kutuBoyut); x += tarihKolonW; });
+        if (!satir.ekstra) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(etiketFontu); pdf.setTextColor(148, 163, 184); pdf.text('/' + tarihler.length, x + topKolonW / 2, y + 5, { align: 'center' }); }
+        y += 7;
+    });
+    return y;
+}
+function miloDersRosterPdfIndir() {
+    let s = _miloDrmSlot(); if (!s) return;
+    showToast('PDF hazırlanıyor...', 'warning');
+    _miloYeniPdfAl().then(function(pdf) {
+        let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX * 2;
+        let y = _miloKurumsalBaslikCiz(pdf, marginX, usableW, 14, 'YOKLAMA FORMU');
+        let roster = (s.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+        let gunlerEtiket = _miloGunlerEtiketUzun(s.gunler);
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(15, 23, 42);
+        pdf.text(_miloTrTranslit(gunlerEtiket) + ' * ' + s.baslangicSaat + '-' + s.bitisSaat, marginX, y);
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100, 116, 139);
+        pdf.text(_miloTrTranslit(s.grup) + ' - ' + roster.length + ' kayitli uye', marginX + usableW, y, { align: 'right' });
+        y += 5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(100, 116, 139);
+        pdf.text(_miloTrTranslit('Tarih: ......../......../.............'), marginX, y + 6);
+        y += 12;
+        if (s.dersPlani) {
+            pdf.setFillColor(230, 248, 245); pdf.setDrawColor(31, 173, 160); pdf.setLineWidth(0.3);
+            let planSatirlari = pdf.splitTextToSize(_miloTrTranslit('Ders Plani: ' + s.dersPlani), usableW - 8);
+            let planYuksekligi = 4 + planSatirlari.length * 4;
+            pdf.roundedRect(marginX, y, usableW, planYuksekligi, 2, 2, 'FD');
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(15, 23, 42);
+            pdf.text(planSatirlari, marginX + 4, y + 5);
+            y += planYuksekligi + 5;
+        }
+        _miloDersYoklamaTablosuCiz(pdf, roster, marginX, usableW, y, gunlerEtiket + ' ' + s.baslangicSaat + '-' + s.bitisSaat);
+        _miloKurumsalAltBilgiCiz(pdf, pageW, pageH);
+        pdf.save('Ders_' + _miloTrTranslit(_miloGunlerEtiketKisa(s.gunler)) + '_' + s.baslangicSaat.replace(':', '') + '.pdf');
+        showToast('PDF indirildi! 📄', 'success');
+    }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
+}
+function miloProgramTamPdfIndir() {
+    if (!miloProgram.length) return showToast('Program boş, önce ders ekleyin.', 'warning');
+    showToast('PDF hazırlanıyor...', 'warning');
+    _miloYeniPdfAl().then(function(pdf) {
+        let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX * 2;
+        let y = _miloKurumsalBaslikCiz(pdf, marginX, usableW, 14, 'HAFTALIK YOKLAMA');
+        y += 2;
+        let benzersizUye = {}; let gunBasinaSayac = {};
+        miloProgram.forEach(function(s) {
+            // 2026-08-20: bir slot birden fazla güne bağlı olabildiği için katılımcı sayısı bağlı
+            // olduğu HER güne ayrı ayrı ekleniyor (haftada 2 kez ders, o iki günün de yoğunluğuna katkı yapar).
+            (s.gunler || [s.gun]).forEach(function(gun) {
+                gunBasinaSayac[gun] = (gunBasinaSayac[gun] || 0) + (s.katilimcilar || []).length;
+            });
+            (s.katilimcilar || []).forEach(function(k) { benzersizUye[k.grup + '|' + k.ad] = true; });
+        });
+        let enYogunGun = null, enYogunSayi = -1;
+        Object.keys(gunBasinaSayac).forEach(function(g) { if (gunBasinaSayac[g] > enYogunSayi) { enYogunSayi = gunBasinaSayac[g]; enYogunGun = parseInt(g, 10); } });
+        let ozetKutu = function(x, w, deger, etiket) {
+            pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, w, 16, 2, 2, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(23, 60, 55);
+            pdf.text(String(deger), x + w / 2, y + 8, { align: 'center' });
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139);
+            pdf.text(_miloTrTranslit(etiket), x + w / 2, y + 13, { align: 'center' });
+        };
+        let kutuGenislik = (usableW - 8) / 3;
+        ozetKutu(marginX, kutuGenislik, miloProgram.length, 'TOPLAM DERS');
+        ozetKutu(marginX + kutuGenislik + 4, kutuGenislik, Object.keys(benzersizUye).length, 'BENZERSIZ UYE');
+        ozetKutu(marginX + (kutuGenislik + 4) * 2, kutuGenislik, enYogunGun !== null ? _miloTrTranslit(MILO_GUN_ADI[enYogunGun]) : '-', 'EN YOGUN GUN');
+        y += 22;
+
+        let GUN_SIRA = [1, 2, 3, 4, 5, 6, 0], birseyVarMi = false;
+        GUN_SIRA.forEach(function(gun) {
+            let slotlar = miloProgram.filter(function(s) { return (s.gunler || [s.gun]).includes(gun); }).sort(function(a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); });
+            if (!slotlar.length) return;
+            birseyVarMi = true;
+            if (y + 30 > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
+            pdf.setFillColor(31, 173, 160); pdf.rect(marginX, y, usableW, 8, 'F');
+            pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
+            pdf.text(_miloTrTranslit(MILO_GUN_ADI[gun].toUpperCase()), marginX + 3, y + 5.8);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(255, 197, 66);
+            pdf.text(_miloTrTranslit('Tarih: ......../......../.............'), marginX + usableW - 3, y + 5.8, { align: 'right' });
+            y += 12;
+            slotlar.forEach(function(s) {
+                let roster = (s.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+                let cokluGunMu = (s.gunler || [s.gun]).length > 1;
+                let satirSayisiTahmini = roster.length + 2;
+                let ilkBlokYukseklik = 8 + (s.dersPlani ? 8 : 0) + 8 + Math.min(4, satirSayisiTahmini) * 8;
+                if (y + ilkBlokYukseklik > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5); pdf.setTextColor(15, 23, 42);
+                pdf.text(s.baslangicSaat + '-' + s.bitisSaat + ' (' + _miloTrTranslit(s.grup) + ')' + (cokluGunMu ? _miloTrTranslit(' - Haftada ' + (s.gunler || []).length + ' kez') : ''), marginX + 1, y + 5);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(100, 116, 139);
+                pdf.text(roster.length + (s.kapasite ? '/' + s.kapasite : '') + ' kayitli uye', marginX + usableW - 1, y + 5, { align: 'right' });
+                y += 8;
+                if (s.dersPlani) {
+                    pdf.setFont('helvetica', 'italic'); pdf.setFontSize(7.5); pdf.setTextColor(20, 130, 120);
+                    let planSatirlari = pdf.splitTextToSize(_miloTrTranslit('Plan: ' + s.dersPlani), usableW - 2);
+                    pdf.text(planSatirlari, marginX + 1, y + 3);
+                    y += planSatirlari.length * 3.6 + 2;
+                }
+                y = _miloDersYoklamaTablosuCiz(pdf, roster, marginX, usableW, y, MILO_GUN_ADI[gun] + ' ' + s.baslangicSaat);
+                y += 6;
+            });
+        });
+        if (!birseyVarMi) { pdf.setTextColor(148, 163, 184); pdf.setFontSize(11); pdf.text('Henuz hic ders eklenmemis.', pageW / 2, y + 10, { align: 'center' }); }
+        _miloKurumsalAltBilgiCiz(pdf, pageW, pageH);
+        pdf.save('Haftalik_Antrenman_Programi.pdf');
+        showToast('PDF indirildi! 📄', 'success');
+    }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
+}
+// 2026-08-20 GÜNCELLEME ("yukarıdaki tarihleri butun aylarin gunlerini yaz"): tarih sütunları artık
+// dersin kendi gününe SINIRLI değil, AYIN TÜM GÜNLERİNİ listeler — hem haftada 2 kez ders artık mümkün
+// olduğu için (iki farklı haftalık gün aynı çizelgede görünsün), hem fiziksel esneklik için. Dersin
+// GERÇEK gün(ler)i başlıkta vurgulanır (teal), istisna (iptal) tarihleri kırmızı. 31 sütun sığması için
+// sayfa artık YATAY (landscape).
+function miloAylikYoklamaCizelgesiPdfIndir() {
+    if (!miloProgram.length) return showToast('Program boş, önce ders ekleyin.', 'warning');
+    let ay = (document.getElementById('milo-program-aylik-ay-sec') || {}).value || bugunISO().slice(0, 7);
+    showToast('PDF hazırlanıyor...', 'warning');
+    let tumTarihler = _miloAyTumGunTarihleri(ay);
+    _miloYeniPdfAl('landscape').then(function(pdf) {
+        let pageW = 297, pageH = 210, marginX = 14, usableW = pageW - marginX * 2;
+        let y = _miloKurumsalBaslikCiz(pdf, marginX, usableW, 8, 'AYLIK YOKLAMA');
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(15, 23, 42);
+        pdf.text(_miloTrTranslit(ay + ' - Aylik Yoklama Cizelgesi (Ayin Tum Gunleri)'), marginX, y);
+        y += 7;
+
+        // Bir slot artık BİRDEN FAZLA güne bağlı olabiliyor VE sütunlar zaten TÜM günleri kapsıyor —
+        // aynı slotu iki kez basmamak için her slot id'si sadece BİR kez işlenir.
+        let GUN_SIRA = [1, 2, 3, 4, 5, 6, 0], birseyVarMi = false, islenenSlotId = {};
+        GUN_SIRA.forEach(function(gun) {
+            let slotlar = miloProgram.filter(function(s) { return (s.gunler || [s.gun]).includes(gun); }).sort(function(a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); });
+            slotlar.forEach(function(s) {
+                if (islenenSlotId[s.id]) return;
+                islenenSlotId[s.id] = true;
+                birseyVarMi = true;
+                let roster = (s.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+                let slotGunleri = s.gunler || [s.gun];
+                let vurguSet = new Set(tumTarihler.filter(function(iso) { return slotGunleri.includes(new Date(iso + 'T00:00:00').getDay()); }));
+                let istisnaSet = new Set((s.istisnalar || []).map(function(i) { return i.tarih; }));
+                let etiket = _miloGunlerEtiketUzun(slotGunleri) + ' ' + s.baslangicSaat + '-' + s.bitisSaat;
+                let satirSayisiTahmini = roster.length + 2;
+                let ilkBlokYukseklik = 11 + 8 + Math.min(4, satirSayisiTahmini) * 7;
+                if (y + ilkBlokYukseklik > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
+                pdf.setFillColor(31, 173, 160); pdf.rect(marginX, y, usableW, 8, 'F');
+                pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10);
+                pdf.text(_miloTrTranslit(etiket) + ' (' + _miloTrTranslit(s.grup) + ')', marginX + 3, y + 5.6);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(255, 197, 66);
+                pdf.text(roster.length + ' kayitli uye', marginX + usableW - 3, y + 5.6, { align: 'right' });
+                y += 11;
+                y = _miloAylikYoklamaTablosuCiz(pdf, roster, tumTarihler, marginX, usableW, y, etiket, vurguSet, istisnaSet, pageH);
+                y += 6;
+            });
+        });
+        if (!birseyVarMi) { pdf.setTextColor(148, 163, 184); pdf.setFontSize(11); pdf.text(_miloTrTranslit('Bu ay icin ders bulunamadi.'), pageW / 2, y + 10, { align: 'center' }); }
+        _miloKurumsalAltBilgiCiz(pdf, pageW, pageH);
+        pdf.save('Aylik_Yoklama_' + ay + '.pdf');
+        showToast('PDF indirildi! 📄', 'success');
+    }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
 }
 
 // ===== DERS İÇERİKLERİ =====
@@ -1076,7 +1730,7 @@ function miloDersKartHTML(d) {
             <button onclick="miloDersAtamaAc('${miloEsc(d.id)}')" style="flex:1; min-width:100px; background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:7px; font-size:11px; font-weight:bold;">🎯 Sporculara Ata</button>
         </div>
         <div style="display:flex; gap:5px; margin-top:8px;">
-            ${[1, 2, 3, 4, 5].map(p => `<button onclick="miloDersDegerlendir('${miloEsc(d.id)}',${p})" style="flex:1; background:var(--milo-card-raised); border:none; color:var(--milo-sun); border-radius:10px; padding:7px; font-size:12px; font-weight:700; box-shadow:0 2px 6px rgba(35,48,46,0.06);">⭐${p}</button>`).join('')}
+            ${[1, 2, 3, 4, 5].map(p => `<button onclick="miloDersDegerlendir('${miloEsc(d.id)}',${p})" style="flex:1; background:var(--milo-card-raised); border:none; color:var(--milo-sun); border-radius:10px; padding:7px; font-size:12px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.4);">⭐${p}</button>`).join('')}
         </div>
         ${miloDersAtamaAcikId === d.id ? miloDersAtamaFormHTML(d) : ''}
     </div>`;
@@ -1335,7 +1989,9 @@ async function miloGrupProgramEkle(grupAdi) {
     let gun = Number(document.getElementById('milo-grup-prog-gun').value);
     let bas = document.getElementById('milo-grup-prog-bas').value, bit = document.getElementById('milo-grup-prog-bit').value;
     if (!bas || !bit) return showToast('Başlangıç ve bitiş saati zorunlu.', 'error');
-    await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup: grupAdi, gun, baslangicSaat: bas, bitisSaat: bit }) });
+    // 2026-08-20: backend artık `gun` yerine `gunler` (dizi) bekliyor — bkz. antrenman_programi_gun.
+    // Bu ekran BİLEREK tek-gün basit kaldı (miloProgramSlotEkle'nin çoklu-gün seçicisi burada yok).
+    await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup: grupAdi, gunler: [gun], baslangicSaat: bas, bitisSaat: bit }) });
     miloGrupDetayProgram = (await miloApi('/antrenman-programi?grup=' + encodeURIComponent(grupAdi))).slots;
     miloGrupDetayCiz();
     showToast('✅ Eklendi.', 'success');
