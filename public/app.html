@@ -378,22 +378,63 @@
                 <button onclick="sporcuCikis()" class="sadece-sporcu" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">🚪 Çıkış</button>
             </div>
         </div>
-        <div class="sekme-grubu">
-            <button id="tab-ana" class="sekme-btn" onclick="sekmeAc('ana')">🏠 Ana Ekran</button>
-            <button id="tab-timer" class="sekme-btn aktif" onclick="sekmeAc('timer')">⏱️ Sayaç</button>
-            <button id="tab-skor" class="sekme-btn" onclick="sekmeAc('skor')">🎯 Skor</button>
-            <button id="tab-canlitakip" class="sekme-btn" onclick="sekmeAc('canlitakip')">📡 Canlı Takip</button>
-            <button id="tab-gelisim" class="sekme-btn" onclick="sekmeAc('gelisim')">📈 Gelişim</button>
-            <button id="tab-liderlik" class="sekme-btn" onclick="sekmeAc('liderlik')">🏆 Liderlik</button>
-            <button id="tab-klasman" class="sekme-btn" onclick="sekmeAc('klasman')">📊 Klasman</button>
-            <button id="tab-takimlar" class="sekme-btn" onclick="sekmeAc('takimlar')">🏅 Yarışmalar</button>
-            <button id="tab-dersicerik" class="sekme-btn" onclick="sekmeAc('dersicerik')">📚 Ders İçerikleri</button>
-            <button id="tab-teknik" class="sekme-btn" onclick="sekmeAc('teknik')">🏹 Teknik Çalışma</button>
-            <button id="tab-video" class="sekme-btn" onclick="sekmeAc('video')">🎥 Video</button>
-            <button id="tab-duello" class="sekme-btn" onclick="sekmeAc('duello')">⚔️ Düello<span id="duello-tab-rozet" class="duello-tab-rozet" style="display:none;"></span></button>
-            <button id="tab-basari" class="sekme-btn" onclick="sekmeAc('basari')">🏅 Başarılar</button>
-            <button id="tab-oyun" class="sekme-btn" onclick="sekmeAc('oyun')">🎮 Mağaza</button>
-            <button id="tab-refleks" class="sekme-btn" onclick="sekmeAc('refleks')">🧠 Reaksiyon</button>
+        <!-- FAZ 3 — NAVİGASYON: sekmeAc() ve tüm tab-*/icerik-* id'leri DEĞİŞMEDİ, sadece görünür
+             kabuk yenilendi. 6 birincil sekme + "Daha" tetikleyicisi burada; kalan 9 sekme aşağıdaki
+             #daha-panel içine taşındı (fonksiyonel olarak hiçbir şey değişmedi, sadece konumları). -->
+        <div class="tabs" id="tabs-ana">
+            <button id="tab-ana" class="sekme-btn tabs-btn" onclick="sekmeAc('ana')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h5v-5h2v5h5v-9"/></svg><span>Ana Ekran</span></button>
+            <button id="tab-skor" class="sekme-btn tabs-btn" onclick="sekmeAc('skor')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skor</span></button>
+            <button id="tab-timer" class="sekme-btn tabs-btn aktif" onclick="sekmeAc('timer')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg><span>Sayaç</span></button>
+            <button id="tab-canlitakip" class="sekme-btn tabs-btn" onclick="sekmeAc('canlitakip')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="1.4"/><path d="M8.8 15.2a4.6 4.6 0 0 1 6.4 0"/><path d="M5.8 12.2a8.8 8.8 0 0 1 12.4 0"/></svg><span>Canlı Takip</span></button>
+            <button id="tab-gelisim" class="sekme-btn tabs-btn" onclick="sekmeAc('gelisim')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5 9.5 11l3.5 3.5L20 7"/><path d="M14.5 7H20v5.5"/></svg><span>Gelişim</span></button>
+            <button id="tab-liderlik" class="sekme-btn tabs-btn" onclick="sekmeAc('liderlik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/></svg><span>Liderlik</span></button>
+            <button id="daha-tab-btn" class="tabs-btn tabs-btn-daha" onclick="dahaPanelAc()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Daha</span></button>
+        </div>
+    </div>
+
+    <!-- FAZ 3 — mobil alt bar (≤680px). Aynı sekmeAc()/dahaPanelAc() çağrılarını kullanır, ayrı
+         yönlendirme mantığı yok. id kasıtlı olarak "alt-menu" DEĞİL — o id app.js'te başka (ölü) bir
+         kodun "varsa gizle" hedefi, çakışırsa bu bar sessizce kaybolurdu. -->
+    <div id="alt-bar" class="alt-bar">
+        <button id="altbar-ana" class="alt-bar-btn" data-hedef="ana" onclick="sekmeAc('ana')"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h5v-5h2v5h5v-9"/></svg><span>Ana</span></button>
+        <button id="altbar-skor" class="alt-bar-btn" data-hedef="skor" onclick="sekmeAc('skor')"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg><span>Skor</span></button>
+        <button id="altbar-sayac" class="alt-bar-btn" data-hedef="timer" onclick="sekmeAc('timer')"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg><span>Sayaç</span></button>
+        <button id="altbar-gelisim" class="alt-bar-btn" data-hedef="gelisim" onclick="sekmeAc('gelisim')"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5 9.5 11l3.5 3.5L20 7"/><path d="M14.5 7H20v5.5"/></svg><span>Gelişim</span></button>
+        <button id="altbar-daha" class="alt-bar-btn" onclick="dahaPanelAc()"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Daha</span></button>
+    </div>
+
+    <!-- FAZ 3 — "Daha" paneli: kalan sekmeler burada, 4 grup altında (hepsi AYNI kalıp). "Sık
+         kullanılan" grubu (Canlı Takip/Liderlik) SADECE mobilde görünür (.daha-grup-mobil, CSS ile) —
+         masaüstünde zaten üst barda birincil olarak duruyorlar, panelde ikinci kez göstermeye gerek yok. -->
+    <div id="daha-panel" class="modal-overlay" onclick="if(event.target===this) dahaPanelKapat()">
+        <div class="card" style="max-width:420px; width:100%; max-height:82vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-3);">
+                <div style="font-weight:800; font-size:var(--text-md); color:var(--text-primary);">Daha</div>
+                <button class="btn btn-ghost btn-sm" onclick="dahaPanelKapat()">Kapat</button>
+            </div>
+            <div class="daha-grup daha-grup-mobil">
+                <div class="daha-grup-baslik">Sık kullanılan</div>
+                <button id="daha-canlitakip-kisayol" class="sekme-btn daha-satir" onclick="sekmeAc('canlitakip')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="1.4"/><path d="M8.8 15.2a4.6 4.6 0 0 1 6.4 0"/><path d="M5.8 12.2a8.8 8.8 0 0 1 12.4 0"/></svg><span>Canlı Takip</span></button>
+                <button id="daha-liderlik-kisayol" class="sekme-btn daha-satir" onclick="sekmeAc('liderlik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/></svg><span>Liderlik</span></button>
+            </div>
+            <div class="daha-grup">
+                <div class="daha-grup-baslik">Antrenman</div>
+                <button id="tab-teknik" class="sekme-btn daha-satir" onclick="sekmeAc('teknik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 3.5c5.5 3 5.5 14 0 17"/><path d="M7.5 3.5v17"/><path d="M7.5 12h9"/></svg><span>Teknik Çalışma</span></button>
+                <button id="tab-dersicerik" class="sekme-btn daha-satir" onclick="sekmeAc('dersicerik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M12 4v16"/></svg><span>Ders İçerikleri</span></button>
+                <button id="tab-video" class="sekme-btn daha-satir" onclick="sekmeAc('video')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5 16 12l-6 3.5v-7z"/></svg><span>Video</span></button>
+            </div>
+            <div class="daha-grup">
+                <div class="daha-grup-baslik">Yarışma</div>
+                <button id="tab-takimlar" class="sekme-btn daha-satir" onclick="sekmeAc('takimlar')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18"/><path d="M6 4.5h12l-2.7 3.5 2.7 3.5H6"/></svg><span>Yarışmalar</span></button>
+                <button id="tab-duello" class="sekme-btn daha-satir" onclick="sekmeAc('duello')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M5 5l14 14"/><path d="M5 19l2-.5.5-2"/><path d="M19 5l-2 .5-.5 2"/></svg><span>Düello</span><span id="duello-tab-rozet" class="duello-tab-rozet" style="display:none;"></span></button>
+            </div>
+            <div class="daha-grup">
+                <div class="daha-grup-baslik">Kayıt</div>
+                <button id="tab-klasman" class="sekme-btn daha-satir" onclick="sekmeAc('klasman')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/></svg><span>Klasman</span></button>
+                <button id="tab-basari" class="sekme-btn daha-satir" onclick="sekmeAc('basari')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.6 6.1.6-4.6 4.1 1.4 6-5.5-3.3-5.5 3.3 1.4-6-4.6-4.1 6.1-.6z"/></svg><span>Başarılar</span></button>
+                <button id="tab-oyun" class="sekme-btn daha-satir" onclick="sekmeAc('oyun')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8h11l-1 12h-9l-1-12z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg><span>Mağaza</span></button>
+                <button id="tab-refleks" class="sekme-btn daha-satir" onclick="sekmeAc('refleks')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 14h6l-1 7 9-11h-6l1-7z"/></svg><span>Reaksiyon</span></button>
+            </div>
         </div>
     </div>
 

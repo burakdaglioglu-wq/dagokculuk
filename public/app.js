@@ -9435,6 +9435,15 @@ ${(function(){
                 try { sekmeAc('skor'); } catch(e) {}
             }
             try { let bar = document.getElementById('alt-menu'); if(bar) bar.style.display = 'none'; } catch(e) {}
+            // FAZ 3 — alt bar/Daha kısayol butonları kendi gerçek tab-* karşılıklarının o anki
+            // görünürlüğünü izler (ör. Sayaç sporcu rolünde gizli — kısayolu da gizlensin).
+            try {
+                [['altbar-ana','tab-ana'], ['altbar-skor','tab-skor'], ['altbar-sayac','tab-timer'], ['altbar-gelisim','tab-gelisim'],
+                 ['daha-canlitakip-kisayol','tab-canlitakip'], ['daha-liderlik-kisayol','tab-liderlik']].forEach(([aid, tid]) => {
+                    let a = document.getElementById(aid), t = document.getElementById(tid);
+                    if(a && t) a.style.display = (t.style.display === 'none') ? 'none' : '';
+                });
+            } catch(e) {}
         }
         
         const LIG_ETIKET = { buyukler: '🔵 BÜYÜKLER', yildizlar: '⭐ YILDIZLAR', kucukler: '🟢 KÜÇÜKLER', minikler: '🌱 MİNİKLER' };
@@ -15213,7 +15222,10 @@ ${(function(){
             tablariPlatformaGoreAyarla();
         }
         
-        function sekmeAc(sekmeAd) { 
+        // FAZ 3 — "Daha" paneli aç/kapat. sekmeAc()'ten bağımsız, sadece görünürlük kontrolü.
+        function dahaPanelAc() { let p = document.getElementById('daha-panel'); if(p) p.style.display = 'flex'; }
+        function dahaPanelKapat() { let p = document.getElementById('daha-panel'); if(p) p.style.display = 'none'; }
+        function sekmeAc(sekmeAd) {
             document.querySelectorAll('.sekme-btn').forEach(b => b.classList.remove('aktif')); 
             document.querySelectorAll('.sekme-icerik').forEach(c => c.classList.remove('aktif')); 
             document.getElementById('tab-' + sekmeAd).classList.add('aktif'); 
@@ -15236,6 +15248,18 @@ ${(function(){
             if(sekmeAd === 'oyun') oyunPaneliDoldur();
             try { if(typeof rfxTemizle === 'function') rfxTemizle(); } catch(e) {}
             if(sekmeAd === 'refleks') { try { rfxPaneliDoldur(); } catch(e) {} }
+            // FAZ 3 — alt bar/"Daha" tetikleyicilerinin aktif durumunu senkronize et (mevcut satırlara
+            // dokunmadan, sadece ekleme). Bir sekme Daha panelinden açıldıysa paneli de kapat.
+            try {
+                document.querySelectorAll('.alt-bar-btn').forEach(b => b.classList.remove('aktif'));
+                let altBtn = document.querySelector('.alt-bar-btn[data-hedef="' + sekmeAd + '"]');
+                if(altBtn) altBtn.classList.add('aktif');
+                let altDaha = document.getElementById('altbar-daha');
+                if(altDaha) altDaha.classList.toggle('aktif', !altBtn);
+                let dahaTab = document.getElementById('daha-tab-btn');
+                if(dahaTab) dahaTab.classList.toggle('aktif', ['klasman','takimlar','dersicerik','teknik','video','duello','basari','oyun','refleks'].includes(sekmeAd));
+                dahaPanelKapat();
+            } catch(e) {}
         }
         
         function toggleFullscreen(panelId) { document.getElementById(panelId).classList.toggle("full-screen-mode"); }

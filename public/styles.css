@@ -210,6 +210,66 @@
         .empty-title { font-family: var(--font-sans); font-weight: var(--weight-bold); font-size: var(--text-base); color: var(--text-primary); }
         .empty-hint { font-size: var(--text-sm); }
 
+        /* ============ FAZ 3 — NAVİGASYON ============
+           sekmeAc() (app.js) ve her tab-*/icerik-* id'si DEĞİŞMEDİ — bu blok sadece görünümü
+           yönetiyor. Eski .sekme-grubu/.sekme-btn.aktif (aşağıda ~line 248, ~1027, ~1090) artık
+           hiçbir elemente uygulanmıyor (id-seçiciler onlardan daha spesifik, her zaman kazanıyor) —
+           silinmedi, Faz 6 "ölü CSS" taramasına bırakıldı. */
+
+        /* Masaüstü/tablet üst bar (id-seçici ile eski .sekme-btn kurallarını geçersiz kılıyor) */
+        #tabs-ana { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--surface-border); margin-top: 10px; overflow-x: auto; }
+        #tabs-ana .sekme-btn {
+            display: flex; align-items: center; gap: var(--space-2); flex: 0 0 auto;
+            font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: var(--text-sm);
+            padding: var(--space-3) var(--space-4); border: none; background: transparent; color: var(--text-secondary);
+            border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+            cursor: pointer; white-space: nowrap; transition: color .15s ease, border-color .15s ease;
+        }
+        #tabs-ana .sekme-btn:hover { color: var(--text-primary); }
+        #tabs-ana .sekme-btn.aktif { background: transparent; color: var(--text-primary); border-bottom-color: var(--accent); }
+        #tabs-ana .tabs-btn-daha { margin-left: auto; }
+        #daha-tab-btn.aktif { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+        /* "Daha" paneli — .modal-overlay temel davranışı (display:none/backdrop) zaten var, sadece
+           z-index'i (id-seçici + !important, bu projedeki YERLEŞİK desen) ve iç düzeni ekleniyor. */
+        #daha-panel { z-index: 30950 !important; }
+        #daha-panel .sekme-btn {
+            display: flex; align-items: center; gap: var(--space-3); width: 100%;
+            font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: var(--text-sm);
+            padding: var(--space-3) var(--space-2); border: none; background: transparent; color: var(--text-primary);
+            border-radius: var(--radius-md); text-align: left; cursor: pointer; position: relative;
+        }
+        #daha-panel .sekme-btn:hover { background: var(--surface-2); }
+        #daha-panel .sekme-btn.aktif { background: var(--accent-soft); color: var(--accent); }
+        .daha-grup { margin-top: var(--space-4); }
+        .daha-grup-baslik { font-family: var(--font-sans); font-weight: var(--weight-bold); font-size: var(--text-xs); color: var(--text-tertiary); padding: 0 var(--space-2); margin-bottom: var(--space-1); }
+        /* "Sık kullanılan" (Canlı Takip/Liderlik) grubu diğer 3 grupla AYNI kalıp — sadece mobilde
+           görünür, çünkü masaüstünde bu ikisi zaten üst barda birincil, panelde tekrar etmesin. */
+        .daha-grup-mobil { display: none; }
+        @media (max-width: 680px) { .daha-grup-mobil { display: block; } }
+
+        /* Mobil alt bar — varsayılan gizli, ≤680px'te görünür (aşağıdaki medya sorgusu) */
+        .alt-bar {
+            display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 5000;
+            background: var(--surface-1); border-top: 1px solid var(--surface-border);
+            padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+            justify-content: space-around; align-items: stretch;
+        }
+        .alt-bar-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            flex: 1; min-width: 0; padding: 4px 2px; border: none; background: transparent; color: var(--text-secondary);
+            font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: 10px; cursor: pointer;
+        }
+        .alt-bar-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .alt-bar-btn.aktif { color: var(--accent); }
+
+        @media (max-width: 680px) {
+            #tabs-ana { display: none !important; }
+            .alt-bar { display: flex; }
+            /* Sabit alt bar içeriği örtmesin diye kaydırılabilir alanın altına pay bırakılıyor */
+            .sekme-icerik { padding-bottom: calc(15px + 60px + env(safe-area-inset-bottom, 0px)); }
+        }
+
         button, select, input {
             -webkit-appearance: none !important; 
             -moz-appearance: none !important; 

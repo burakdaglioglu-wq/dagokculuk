@@ -21,10 +21,66 @@ faz faz, ekranı bozmadan uygulamak.
 ## 2. Tamamlanan fazlar ve commit'ler
 
 - `55d8093` — WIP: Ders Programı, yarım *(bu tasarım işinden ÖNCEKİ, ilgisiz, bilerek yarım bırakılmış bir özellik — ayrı commit'e alındı ki tasarım commit'leriyle karışmasın)*
-- `562199b` — Tasarım sistemi Faz 0-2: token katmanı, PALETLER düzeltmeleri, bileşen kütüphanesi *(Faz 0 envanteri + Faz 1 tokenler + Faz 2 PALETLER/bileşen kütüphanesi — üçü de aralarında commit atılmadan tek commit'te toplandı, bkz. Kurallar bölümü)*
-- Bu commit (DEVIR.md) — aşağıda
+- `562199b` — Tasarım sistemi Faz 0-2: token katmanı, PALETLER düzeltmeleri, bileşen kütüphanesi *(Faz 0 envanteri + Faz 1 tokenler + Faz 2 PALETLER/bileşen kütüphanesi — üçü de aralarında commit atılmadan tek commit'te toplandı)*
+- `c221721` — DEVIR.md ekle — tasarım sistemi geçiş belgesi
+- Faz 3 (navigasyon) — bu commit'te, aşağıda anlatılıyor
 
-**Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılacak.** Bu, bu devrin kendisinin de bir sonucu — fazları biriktirmek devir belgesini yazmayı zorlaştırdı.
+**Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
+
+## 2a. Faz 3 — Navigasyon (tamamlandı)
+
+**Ne yapıldı:** `sekmeAc()`'in (app.js:15216 civarı) mevcut satırlarına ve hiçbir `tab-*`/`icerik-*`
+id'sine dokunmadan, görünür kabuk yenilendi:
+- Üst bar (masaüstü/tablet, `#tabs-ana`) 6 birincile indi: **Ana Ekran, Skor, Sayaç, Canlı Takip,
+  Gelişim, Liderlik** + sağda "Daha" (`#daha-tab-btn`).
+- **6'lık liste gerekçesi** (kullanıcının düzeltmesiyle): Sayaç öne alındı çünkü atış çizgisinde her
+  antrenmanda kullanılıyor. Klasman ÖNE ÇIKARILMADI (idari ekran, ayda birkaç kez açılıyor) — yerine
+  Canlı Takip geldi (antrenman/yarışma sırasında sürekli açık).
+- "Daha" paneli (`#daha-panel`, `.modal-overlay` + id-seçici `z-index:30950 !important`) kalan 9
+  sekmeyi 3 grupta topluyor: **Antrenman** (Teknik Çalışma, Ders İçerikleri, Video), **Yarışma**
+  (Yarışmalar, Düello), **Kayıt** (Klasman, Başarılar, Mağaza, Reaksiyon).
+- Mobil (`≤680px`): üst bar tamamen gizli (`#tabs-ana{display:none!important}`), sabit alt bar
+  (`#alt-bar`, 5 buton: Ana/Skor/Sayaç/Gelişim/Daha) — `env(safe-area-inset-bottom)` payı var,
+  `.sekme-icerik`e ekstra `padding-bottom` eklendi ki içerik barın altında kalmasın (360px'te
+  ekranın en altına kaydırılarak doğrulandı).
+- **Mobil grup düzeni kararı**: "Daha" panelinde Canlı Takip/Liderlik için AYRI bir görsel sistem
+  (kısayol satırı) YOK — diğer 3 grupla birebir aynı kalıpta 4. bir grup ("Sık kullanılan"),
+  `.daha-grup-mobil` class'ıyla sadece `≤680px`'te görünür. İlk tasarımda ayrı bir `.daha-kisayol-satir`
+  vardı, kullanıcı "tek kalıp, dört grup" diye düzeltti.
+- 15 ikon tek ailede: `viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`,
+  `stroke-width="1.7"`, `stroke-linecap/linejoin="round"` — hepsi app.html'e doğrudan inline
+  yazıldı (repo'da ikon kütüphanesi/CDN yok). Liderlik ve Klasman AYNI ikonu (kupa) paylaşıyor —
+  grup için ortak ikon kullanma izniyle.
+- Tüm butonlar (üst bar, alt bar, Daha paneli) hâlâ AYNI `sekmeAc('id')`/`dahaPanelAc()` çağrısını
+  kullanıyor — ayrı bir yönlendirme mantığı yazılmadı.
+
+**Rol senkron testi (3 gerçek rol taranıp doğrulandı — ⚠️ önemli düzeltme aşağıda):**
+`tablariPlatformaGoreAyarla()` (app.js ~9393) bazı sekmeleri role göre `style.display='none'` ile
+gizliyor (`g('tab-X', bool)` yardımcı fonksiyonuyla). Yeni alt bar/Daha-kısayol butonları AYRI
+elementler olduğu için (id çakışması olmasın diye — `tab-timer` iki yerde birden id olamaz), bu
+fonksiyonun sonuna küçük bir senkron bloğu eklendi: her kısayolun görünürlüğü kendi gerçek `tab-*`
+karşılığından okunuyor. **3 rol test edildi, TAMAMI doğru senkronize:**
+- **eğitmen** (antrenör) — 15 sekmenin 15'i de görünür, tüm alt bar/kısayol eşleşmeleri doğru.
+- **sporcu** — `tab-timer` (Sayaç) ve `tab-takimlar` (Yarışmalar) role göre gizli; `altbar-sayac`
+  bunu doğru izliyor (ikisi de `display:none`). Diğer 13 sekme görünür, hepsi senkron.
+- **"veli" rolü YOK** — kullanıcı "veli ve antrenör rollerinde test et" dedi ama kodda ana
+  navigasyona bağlı böyle bir platform/rol bulunmuyor (`grep`'le doğrulandı — "veli" sadece
+  Karışık Sınıf'ın kendi iç sekmesi `kmSekme('veli')`, bu Faz 3'ün değiştirdiği sistemle ilgisiz).
+  Gerçekte var olan 3. giriş türü **"yönetici"** de bu nav sistemine HİÇ GİRMİYOR — PIN doğru
+  girilince `sifreMod==='yonetici'` dalı doğrudan `yoneticiPaneliAc()` çağırıp `return` ediyor
+  (app.js:6562), `aktifPlatform`'u hiç set etmiyor, `tablariPlatformaGoreAyarla()`'ı hiç çağırmıyor.
+  Yani bu nav'ı gerçekten kullanan SADECE 2 rol var: sporcu ve eğitmen — ikisi de test edildi ve
+  doğru. Kullanıcıya bu düzeltme raporlandı, üçüncü bir rol icat edip test etmedim.
+
+**Faz 6 temizlik listesine eklenenler** (bkz. §6):
+- `#alt-menu` id'li ölü kod satırı (app.js ~9437: `document.getElementById('alt-menu')` — böyle bir
+  element hiç yok, no-op). Bu turda SİLİNMEDİ, sadece not edildi — Faz 3'ün yeni alt barına bilerek
+  bu id verilmedi (çakışsaydı her rol değişiminde sessizce gizlenirdi).
+- Eski `.sekme-grubu`/`.sekme-btn.aktif` kuralları (styles.css ~248, ~1027-1038, ~1090 — gradyan/
+  glow'lu eski görünüm) artık hiçbir elemente uygulanmıyor (yeni `#tabs-ana .sekme-btn`/`#daha-panel
+  .sekme-btn` id-seçicileri daha spesifik, her zaman kazanıyor) — silinmedi, ölü kod olarak duruyor.
+- 560px medya sorgusundaki eski `.sekme-grubu{gap:3px}`/`.sekme-btn{font-size:11px}` (styles.css
+  ~481-482) artık `#tabs-ana` zaten `display:none` olduğu için etkisiz.
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -114,42 +170,49 @@ her zaman ESKİ AD korunuyor, sadece değeri güncelleniyor. `--surface-*`/`--sp
 ## 5. Faz 2 bileşen kütüphanesi
 
 Hepsi styles.css'te, sadece Faz 1 tokenlarından besleniyor, gradyan/neon-gölge/
-büyük-harf yok. **Henüz hiçbir gerçek ekrana uygulanmadı** — sadece kütüphanenin
-kendisi var, kullanımı Faz 3-5'te ekran ekran olacak.
+büyük-harf yok. **Faz 3'te `.tabs`/`.tabs-btn`, `.btn`/`.btn-ghost`/`.btn-sm` ve `.card`
+gerçek navigasyonda (üst bar + "Daha" paneli) kullanılmaya başlandı** — geri kalanı
+(`.seg`, `.switch`, `.settings-row`, `.table`, `.empty`, `.chip`) hâlâ hiçbir ekrana
+uygulanmadı, Faz 4-5'te ekran ekran olacak.
 
-- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. `.btn-primary` = ekranın ana aksiyonu (ör. "Seriyi kaydet"), düz `.btn` = ikincil/vazgeç, `.btn-danger` = silme/iptal gibi geri alınamaz aksiyonlar, `.btn-ghost` = en düşük vurgulu (ör. "Daha fazla").
-- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için (ör. "Bugünkü antrenman" özeti). Tekdüze gölge yok, sadece kenarlık.
-- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti (ör. "Klasik yay", "Tamamlandı", "Bekliyor"). Sekme veya buton YERİNE değil, salt bilgi etiketi olarak.
-- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici (ör. mevcut `.tur-formati-btn` grubunun yerini alacak "Serbest/WA 70m/WA 18m" gibi).
-- **`.switch`** + `.slider` — açık/kapalı anahtar (ör. "Sesli anons"). Daha önce hiç kullanılmayan ölü bir class'tı, tokenlara bağlanıp resmileştirildi.
-- **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır (etiket + sağda kontrol). Faz 4'teki "Seri ayarları" katlanır panelinde kullanılacak.
-- **`.tabs`** + `.tabs-btn` — YENİ üst-seviye navigasyon deseni (Faz 3'ün 14→6+"Tümü" grubu için). Mevcut `.sekme-grubu`/`.sekme-btn`'in yerini ALACAK ama henüz o değiştirilmedi.
-- **`.table`** — düzenli veri tablosu (ör. seri/puan/ortalama listeleri) — app.js'te şu an onlarca yerde ayrı ayrı inline-style'lı `<table>` var, bunlar zamanla `.table`'a taşınabilir.
-- **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları (ör. "Henüz seri girilmedi").
+- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. `.btn-primary` = ekranın ana aksiyonu (ör. "Seriyi kaydet"), düz `.btn` = ikincil/vazgeç, `.btn-danger` = silme/iptal gibi geri alınamaz aksiyonlar, `.btn-ghost` = en düşük vurgulu. **Kullanımda**: "Daha" panelinin "Kapat" butonu (`.btn.btn-ghost.btn-sm`).
+- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için (ör. "Bugünkü antrenman" özeti). Tekdüze gölge yok, sadece kenarlık. **Kullanımda**: "Daha" panelinin kendisi.
+- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti. Henüz kullanılmadı.
+- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici (ör. mevcut `.tur-formati-btn` grubunun yerini alacak "Serbest/WA 70m/WA 18m" gibi). Henüz kullanılmadı.
+- **`.switch`** + `.slider` — açık/kapalı anahtar. Tokenlara bağlandı ama henüz hiçbir gerçek ekranda kullanılmadı.
+- **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır. Faz 4'teki "Seri ayarları" katlanır panelinde kullanılacak.
+- **`.tabs`** + `.tabs-btn` — üst-seviye navigasyon deseni. **Faz 3'te uygulandı**: `#tabs-ana` (masaüstü üst bar) ve `#daha-tab-btn` bunu kullanıyor. Eski `.sekme-grubu`/`.sekme-btn.aktif` (gradyan/glow'lu) artık hiçbir elemente uygulanmıyor (id-seçiciler kazanıyor) — silinmedi, Faz 6'da temizlenecek.
+- **`.table`** — düzenli veri tablosu. Henüz kullanılmadı — app.js'te onlarca ayrı inline-style'lı `<table>` var, zamanla buna taşınabilir.
+- **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları. Henüz kullanılmadı.
 
-Görsel kanıt: `component-preview-dark.png`/`component-preview-light.png` (kullanıcıya
-SendUserFile ile gönderildi, repo'da değil — gerekirse yeniden üretmek için scratchpad'de
-aynı yöntem: styles.css'i `file://` ile açan bir HTML, her bileşeni bir kez render et,
-`body.classList.add('light-theme')` ile ikinci kez çek).
+**Faz 3'te EKLENEN yeni class'lar** (bunlar orijinal Faz 2 listesinde yoktu, navigasyona özel):
+`.alt-bar`/`.alt-bar-btn` (mobil sabit alt bar), `.daha-grup`/`.daha-grup-baslik`/`.daha-grup-mobil`
+(Daha panelindeki gruplar — sonuncusu sadece ≤680px'te görünür), `#daha-panel .sekme-btn`/`#tabs-ana
+.sekme-btn` (id-seçici override'lar, eski `.sekme-btn` görselini geçersiz kılıyor).
+
+Görsel kanıt: `component-preview-dark.png`/`component-preview-light.png` (Faz 2, kullanıcıya
+SendUserFile ile gönderildi, repo'da değil) + Faz 3'ün 1280px/360px üst bar+Daha paneli
+ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
 
 ## 6. Kalan iş
 
-- **Faz 3 — Navigasyon**: 14 sekme (Reaksiyon hariç orijinal prompt sayımı) → 6 ana +
-  "Tümü/Daha" grubu paneli. Emoji ikonlar → tek-strok inline SVG ikonlar. `.tabs`
-  bileşeni burada devreye girecek, mevcut `.sekme-grubu`/`.sekme-btn` yapısı JS'te
-  (`sekmeAc()`, app.js:15216) YOĞUN referans ediliyor — id'ler (`tab-*`/`icerik-*`)
-  KESİNLİKLE korunmalı, sadece görsel/CSS değişebilir.
+- **Faz 3 — Navigasyon: TAMAMLANDI** (bkz. §2a). 15 sekme → 6 ana (`#tabs-ana`) + "Daha" paneli
+  (3 grup + mobilde 4. "Sık kullanılan" grubu), mobil sabit alt bar, 15 tek-aile SVG ikon,
+  rol senkronu (sporcu/eğitmen) test edildi ve doğru.
 - **Faz 4 — Skor ekranı**: ok-şeridi (girilen oklar kaydetmeden önce görünsün), tek birincil
   "Seriyi kaydet" aksiyonu + ilerleme sayacı, katlanır "Seri ayarları" paneli (`.settings-row`
-  burada kullanılacak).
-- **Faz 5 — Diğer 15 ekran** (hiçbiri başlanmadı, hepsi mevcut haliyle duruyor):
-  Ana Ekran, Sayaç, Skor (Faz 4'te), Canlı Takip, Gelişim, Liderlik, Klasman, Yarışmalar,
-  Ders İçerikleri, Teknik Çalışma, Video, Düello, Başarılar, Mağaza, Reaksiyon. Her biri
-  için önce tek cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
+  burada kullanılacak — henüz hiç kullanılmadı).
+- **Faz 5 — Diğer 14 ekran** (hiçbiri başlanmadı, hepsi mevcut haliyle duruyor):
+  Ana Ekran, Sayaç, Canlı Takip, Gelişim, Liderlik, Klasman, Yarışmalar,
+  Ders İçerikleri, Teknik Çalışma, Video, Düello, Başarılar, Mağaza, Reaksiyon (Skor Faz 4'te).
+  Her biri için önce tek cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
 - **Faz 6 — Temizlik/doğrulama**: kalan çıplak hex tarama (ana rapor + `renk-envanteri-uzun-kuyruk-2026-09.md`
   zaten hazır), kalan emoji ikon taraması, kontrast kontrolü, 360/768/1280px ekran görüntüleri,
-  özet rapor. **+ bu turda eklenen madde: token geçişinden sonra ölü kalan eski CSS
-  kurallarını tespit et ve raporla** (kullanıcının isteği).
+  özet rapor. Ölü CSS/JS listesi (şimdiye kadar birikenler):
+  - `#alt-menu` id'li ölü kod satırı (app.js ~9437, `document.getElementById('alt-menu')` — element yok, no-op).
+  - Eski `.sekme-grubu`/`.sekme-btn.aktif` gradyan/glow kuralları (styles.css ~248, ~1027-1038, ~1090).
+  - 560px medya sorgusundaki eski `.sekme-grubu`/`.sekme-btn` boyut override'ı (styles.css ~481-482).
+  - Faz 1'in "token geçişinden sonra ölü kalan eski CSS kurallarını tespit et" maddesi genel olarak geçerli, yukarıdakiler ilk somut örnekler.
 
 ## 7. Kurallar ve tuzaklar
 
@@ -181,6 +244,15 @@ aynı yöntem: styles.css'i `file://` ile açan bir HTML, her bileşeni bir kez 
   görüntüsüyle yakalandı, sayısal kontrol (`documentElement` üzerinde) onu kaçırmıştı.
 - **Faz onaylanır onaylanmaz hemen commit at** — bu turda atlanan bir adım, bir daha
   atlanmayacak (bkz. §2).
+- **Bir id role göre `style.display` ile gizleniyorsa (`tablariPlatformaGoreAyarla()`, `g('tab-X',bool)`)
+  ve o sekme için YENİ bir kısayol/kopya buton eklersen (ör. mobil alt bar), kısayolun görünürlüğünü
+  gerçek elemandan MANUEL senkronize et** — otomatik gelmiyor, ayrı bir DOM elemanı ayrı görünürlük
+  demektir. Faz 3'te bu gözden kaçırılabilirdi, `tablariPlatformaGoreAyarla()`'ın sonuna eklenen
+  senkron bloğuyla çözüldü. Yeni bir kısayol/kopya buton eklerken bu listeyi güncellemeyi unutma.
+- **Kullanıcının bahsettiği bir "rol" koddaki gerçek bir role karşılık gelmeyebilir** — bu turda
+  "veli" rolü diye bir şey navigasyon sisteminde yoktu (kod grep'lenerek doğrulandı), "yönetici" de
+  aslında bu nav'a hiç girmiyor (`yoneticiPaneliAc()`'a ayrı bir dal). Varsayılan/tahmini rol icat
+  edip test etmek yerine önce kodda gerçekten kaç rol/dal olduğunu doğrula, sonra ona göre test et.
 - Genel proje kuralları (bu tasarım işine özel olmayan ama geçerli olmaya devam eden):
   yerel D1 `egitmen_hash` test-giriş takası her zaman iş bitince geri alınır; `wrangler dev`
   oturumlar arası hayatta kalmaz, önce curl-healthcheck; PowerShell `-Raw`/`-replace`/
@@ -188,18 +260,13 @@ aynı yöntem: styles.css'i `file://` ile açan bir HTML, her bileşeni bir kez 
 
 ## 8. Çözülmemiş konular ve açık sorular
 
-- Faz 3'ün "6 ana + Tümü/Daha grubu" için hangi 6 sekmenin ana kalacağı, hangilerinin
-  "Daha" altına gireceği henüz kullanıcıyla netleşmedi — Faz 3 başlarken sorulacak.
-  (Muhtemel adaylar: Ana Ekran/Sayaç/Skor/Gelişim/Liderlik/Klasman ön planda, Yarışmalar/
-  Ders İçerikleri/Teknik Çalışma/Video/Düello/Başarılar/Mağaza/Reaksiyon "Daha"da —
-  ama bu sadece bir varsayım, onaylanmadı.)
-- Emoji ikonların yerini alacak "tek-strok inline SVG ikon" seti henüz hiç tasarlanmadı —
-  14+ ikon (🏠⏱️🎯📡📈🏆📊🏅📚🏹🎥⚔️🏅🎮🧠) için kaynak/stil kararı Faz 3'te verilecek.
-  Repo'da hazır bir ikon kütüphanesi/CDN bağımlılığı yok, muhtemelen elle SVG path
-  yazılacak.
-  - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
+- ~~Faz 3'ün 6'lık liste ve ikon seti~~ — **ÇÖZÜLDÜ**, bkz. §2a.
+- `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.
+- Faz 4'ün Skor ekranı tasarımı henüz somut bir plan/mockup'a dökülmedi — sadece DEVIR.md
+  §6'daki tek paragraflık tarif var (ok-şeridi, tek birincil aksiyon, katlanır ayarlar).
+  Faz 4 başlarken önce tek cümlelik plan sunulup onay beklenecek (promptun kendi yöntemi).
 - Bu tasarım işiyle ilgisiz ama proje genelinde açık kalan eski maddeler (KM Oyunlar
   Fullscreen-API taşma raporu, Yıldız Seferi/Dağ Tırmanışı içerik zenginleştirme) bu
   devrin kapsamı DIŞINDA — ayrı hafıza dosyasında (`dagsk-km-oyunlar-2026-09.md`) duruyor,
