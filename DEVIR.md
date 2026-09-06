@@ -164,12 +164,15 @@ Gerekçe: Sıfırla/Yedekle yan yana durursa yanlış tuşa basma riski gerçek 
 dönülemez biçimde farklı. `veriSifirla()`/`acilKurtarma()`'nın kendi `confirm()` diyalogları zaten
 vardı (kontrol edildi) — hiçbiri eklenmedi/değiştirilmedi, sadece buton class'ı ve grubu değişti.
 
-**⚠️ Bu grupta bulunan gerçek bug (Faz 3'ten kalma, şimdi düzeltildi)**: Sayaç ekranının alt
-metni (`#timer-alt`, "ATIŞA HAZIR") mobilde alt barın ARKASINA giriyordu. Sebep: Faz 3'te eklenen
-`@media(max-width:680px){.sekme-icerik{padding-bottom:calc(...)}}` kuralı, styles.css'te KENDİSİNDEN
-SONRA gelen eski `.sekme-icerik{padding:15px;...}` (satır ~316) tarafından eziliyordu — ikisi de
-aynı özgüllükte olduğu için kaynak sırası kazanıyordu, media sorgusu içinde olması onu korumuyordu.
-`!important` eklenerek düzeltildi. Bu bug Faz 4'te (Skor ekranı) fark edilmedi çünkü o ekranın
+**⚠️ Bu grupta bulunan gerçek bug (Faz 3'ten kalma, şimdi düzeltildi — KALICI çözümle)**: Sayaç
+ekranının alt metni (`#timer-alt`, "ATIŞA HAZIR") mobilde alt barın ARKASINA giriyordu. Sebep:
+Faz 3'te eklenen `@media(max-width:680px){.sekme-icerik{padding-bottom:calc(...)}}` kuralı,
+styles.css'te KENDİSİNDEN SONRA gelen eski `.sekme-icerik{padding:15px;...}` (satır ~316)
+tarafından eziliyordu — ikisi de aynı özgüllükte olduğu için kaynak sırası kazanıyordu, media
+sorgusu içinde olması onu korumuyordu. **İlk düzeltme `!important` ile yapılmıştı, kullanıcı bunu
+geri aldırdı** ("borcu Faz 6'ya erteler") — DOĞRU çözüm uygulandı: padding-bottom kuralı fiziksel
+olarak dosyada `.sekme-icerik`in asıl kuralından (satır ~316) SONRAYA taşındı, artık doğal kaynak
+sırasıyla kazanıyor, `!important` YOK. Bu bug Faz 4'te (Skor ekranı) fark edilmedi çünkü o ekranın
 sticky tuş takımı `--alt-bar-h`'a bağımsız bağlıydı, bu genel padding-bottom kuralına hiç
 güvenmiyordu — yani "bir ekranda çalışıyor" başka bir ekranda da çalıştığı anlamına gelmiyor.
 
@@ -310,6 +313,15 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   - 560px medya sorgusundaki eski `.sekme-grubu`/`.sekme-btn` boyut override'ı (styles.css ~481-482).
   - Faz 1'in "token geçişinden sonra ölü kalan eski CSS kurallarını tespit et" maddesi genel olarak geçerli, yukarıdakiler ilk somut örnekler.
   - (4b'de zaten SİLİNDİ, listeye eklenmesi GEREKMİYOR ama tarih için not: `#yuzen-kaydet-btn`, `#ok-rozetleri`/`.ok-rozet-alani`. `.ok-rozet` CSS class'ı — sadece bu iki elementi biçimlendiriyordu, styles.css:410-411'de hâlâ duruyor, artık kullanılmıyor, Faz 6'da silinebilir.)
+  - **styles.css'teki TÜM `!important` kurallarını tara ve raporla** — şu an 64 tane var (`grep -c
+    "!important" public/styles.css`). Hangileri gerçekten gerekli (ör. id-seçici modal z-index
+    deseni, `#tabs-ana{display:none!important}` gibi tema/durum zorlamaları) hangileri aslında bir
+    kaynak-sırası sorununu geçici olarak örtüyor (bu turda bulunan `.sekme-icerik` örneği gibi) —
+    ayrıştırılıp, ikincisi varsa kural taşınarak `!important` kaldırılmalı.
+  - **Faz 3-5'te eklenen kuralların dosyadaki konumu doğru mu kontrol et** — yani ezip ezilmedikleri
+    (kaynak-sırası çakışması) var mı. Bu turda `.sekme-icerik` padding-bottom'da TAM BÖYLE bir bug
+    bulunup düzeltildi (kuralı doğru yere taşıyarak, `!important` KULLANMADAN) — aynı sınıfın başka
+    örnekleri olabilir, sistemli taranmadı.
 
 ### Faz 5 ekran durum tablosu
 
@@ -417,6 +429,14 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   oku girdikten hemen sonra AYRICA manuel kaydet butonuna basma, seri zaten otomatik kaydedilmiş
   olabileceğinden yanlış "eksik skor" hatası gibi görünen ama gerçek bir regresyon OLMAYAN bir test
   tuzağı yaratır. Skor ekranıyla ilgili test yazarken bunu hesaba kat.
+- **Bir kaynak-sırası (source-order) çakışmasını `!important` ile "çözmek" borcu ertelemek, çözmek
+  değil** — kısa vadede işe yarar ama styles.css'te `!important` sayısını artırır, her yeni eklenen
+  biraz daha az öngörülebilir bir kaskad bırakır (bu dosyada zaten 64 tane var, bkz. §6 Faz 6
+  listesi). Doğru çözüm kuralı fiziksel olarak onu ezen kuraldan SONRAYA taşımak — bu genelde
+  mümkün, çünkü CSS'te iki kural arasındaki ilişkiyi SADECE ikisinin göreli konumu belirliyor,
+  aralarındaki başka kod önemli değil. Taşımak gerçekten mümkün değilse (ör. iki kuralın SIRASI,
+  ÜÇÜNCÜ bir kuralla olan ilişkisini bozacaksa) o zaman `!important` düşünülür — ama önce taşımayı
+  dene, `!important`'ı ilk çare yapma.
 
 ## 8. Çözülmemiş konular ve açık sorular
 

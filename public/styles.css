@@ -271,13 +271,9 @@
         @media (max-width: 680px) {
             #tabs-ana { display: none !important; }
             .alt-bar { display: flex; }
-            /* Sabit alt bar içeriği örtmesin diye kaydırılabilir alanın altına pay bırakılıyor.
-               !important ŞART: bu kuraldan SONRA gelen (satır ~316) eski ".sekme-icerik{padding:15px}"
-               kısayolu, media sorgusu içinde olmasına rağmen aynı özgüllükte olduğu için kaynak
-               sırasıyla kazanıp bunu sessizce eziyordu (Faz 5'te Sayaç ekranındaki alt metnin alt bara
-               girmesiyle fark edildi — bkz. DEVIR.md). */
-            .sekme-icerik { padding-bottom: calc(15px + 60px + env(safe-area-inset-bottom, 0px)) !important; }
         }
+        /* .sekme-icerik'in alt bar payı (padding-bottom) BİLEREK burada değil, aşağıda ".sekme-icerik"in
+           asıl kuralından SONRA tanımlı — bkz. o kuralın hemen altındaki not. */
 
         button, select, input {
             -webkit-appearance: none !important; 
@@ -319,6 +315,13 @@
         .sekme-btn.aktif { background: var(--accent-orange); color: white; }
         .sekme-icerik { display: none; flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; height: calc(100vh - 110px); max-width: 920px; margin-left: auto; margin-right: auto; width: 100%; }
         .sekme-icerik.aktif { display: flex; flex-direction: column; }
+        /* Faz 3 — sabit alt bar (mobil) içeriği örtmesin diye kaydırılabilir alanın altına pay
+           bırakılıyor. Bu kural BİLEREK yukarıdaki ".sekme-icerik{padding:15px}"tan SONRA duruyor —
+           ikisi de aynı özgüllükte (tek class), kaynak sırası kazanıyor, öncesinde !important
+           kullanılmıştı, artık gerek yok. */
+        @media (max-width: 680px) {
+            .sekme-icerik { padding-bottom: calc(15px + 60px + env(safe-area-inset-bottom, 0px)); }
+        }
 
         /* TAM EKRAN MODU */
         .full-screen-mode { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100vh !important; z-index: 9999 !important; margin: 0 !important; border-radius: 0 !important; background: var(--bg-main) !important; padding: 15px !important; display: flex !important; flex-direction: column !important; box-sizing: border-box !important; overflow-y: auto !important; }
