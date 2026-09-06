@@ -23,7 +23,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `55d8093` — WIP: Ders Programı, yarım *(bu tasarım işinden ÖNCEKİ, ilgisiz, bilerek yarım bırakılmış bir özellik — ayrı commit'e alındı ki tasarım commit'leriyle karışmasın)*
 - `562199b` — Tasarım sistemi Faz 0-2: token katmanı, PALETLER düzeltmeleri, bileşen kütüphanesi *(Faz 0 envanteri + Faz 1 tokenler + Faz 2 PALETLER/bileşen kütüphanesi — üçü de aralarında commit atılmadan tek commit'te toplandı)*
 - `c221721` — DEVIR.md ekle — tasarım sistemi geçiş belgesi
-- Faz 3 (navigasyon) — bu commit'te, aşağıda anlatılıyor
+- `69c097f` — Tasarım sistemi Faz 3: navigasyon
+- Faz 4 (Skor ekranı, 4a/4b/4c) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -81,6 +82,63 @@ karşılığından okunuyor. **3 rol test edildi, TAMAMI doğru senkronize:**
   .sekme-btn` id-seçicileri daha spesifik, her zaman kazanıyor) — silinmedi, ölü kod olarak duruyor.
 - 560px medya sorgusundaki eski `.sekme-grubu{gap:3px}`/`.sekme-btn{font-size:11px}` (styles.css
   ~481-482) artık `#tabs-ana` zaten `display:none` olduğu için etkisiz.
+
+## 2b. Faz 4 — Skor Ekranı (tamamlandı, en kritik ekran)
+
+Üç alt adımda yapıldı, her adım sonunda ekran görüntüsüyle onaylandı. **Puan hesaplama, seri
+toplama, kaydetme, D1 yazma mantığının (`skorKaydet()`, `efektifOklar()`, `puanDeger()`,
+`_skorKaydetCekirdek()`) HİÇBİRİNE dokunulmadı** — sadece görsel/yerleşim.
+
+**4a — Yerleşim**: Mevcut `850px` kırılımı korundu (`.skor-split-layout` zaten `flex-direction:
+column`'a dönüyordu). `≤850px`'te `.skor-right-panel` (tuş takımı) `position:STICKY` (fixed
+DEĞİL — kapsayıcı `overflow-y:auto` alanın içinde kalır) ile ekranın altına sabitlendi. `bottom`
+değeri sabit piksel DEĞİL — yeni `--alt-bar-h` CSS değişkeninden geliyor, bu da yeni
+`altBarYukseklikSenkron()` (app.js) fonksiyonuyla `#alt-bar`'ın GERÇEK `offsetHeight`'ından
+(`resize`/`load`'da) okunuyor; `.alt-bar`'ın kendi padding'i `env(safe-area-inset-bottom)`'u zaten
+içerdiği için ayrıca eklenmedi (iki kere sayılmasın diye). Ölçülen gerçek değer: **55px**.
+
+**4b — Seri şeridi + tek kaydet düğmesi**:
+- Yeni `#seri-seridi` (app.html, tuş takımının hemen üstünde) **SADECE OKUYAN** bir bileşen —
+  kendi state'i yok, `hedefGorseliGuncelle()`'in (app.js ~15751, zaten HER ok ekleme/silme/
+  kaydetmede çalışan tek render fonksiyonu) zaten hesapladığı `oklar`/`okAdet`/`toplam`
+  değişkenlerini okuyup çiziyor. Renkler `getRenkForPuan()`'dan (tuş takımıyla AYNI kaynak).
+- `#yuzen-kaydet-btn` (eski, `position:fixed`, ikinci bir "SERİYİ KAYDET" düğmesi) **kaldırıldı**
+  — önce arandı, hiçbir event listener/CSS kuralı/başka referansı yoktu. Artık TEK kaydet
+  düğmesi var: `#skor-kaydet-btn` (header'da), `.btn.btn-primary`, boşken `disabled` + "Seriyi
+  kaydet", dolarken "Seriyi kaydet (3/6)" — cümle düzeninde, büyük harf/emoji yok.
+- "İyi bir okçu, dürüst olandır" metni kaldırıldı.
+- `#ok-rozetleri` (eski, aynı bilgiyi farklı bir görselle — yuvarlak rozet — gösteren bileşen)
+  **kaldırıldı** — ama önce kontrol edildi: 3'lü spot cezası alan bir ok, eski rozette orijinal
+  puanı üstü çizili + "M" gösteriyordu, seri şeridi bunu YAPMIYORDU. Bu bilgi kaybolmasın diye
+  önce şeride taşındı (`<s>9</s>M` deseni, `.seri-cip-cezali`), SONRA `#ok-rozetleri` silindi.
+
+**4c — Katlanır "Seri ayarları" paneli**: Ciddi Yarışma Modu, DAĞCAN, "kaç ok", "hangi fiziksel
+ok", "Görünümü Sıfırla" → `<details id="seri-ayarlari-panel" class="card">`, **varsayılan
+kapalı**. Faz 2'nin `.settings-row`/`.switch`/`.seg`/`.btn` bileşenleri kullanıldı, yeni stil
+YAZILMADI:
+- Ciddi Mod'un eski elle-boyanan özel switch DOM'u (`#ciddi-mod-switch`/`#ciddi-mod-knob`/
+  `#ciddi-mod-btn`) tamamen kaldırıldı, gerçek `.switch`+checkbox ile değiştirildi.
+  `ciddiModGorunumGuncelle()` artık sadece `checkbox.checked` + etiket metnini senkronluyor —
+  **`ciddiModAcik` değişkenine ve onu okuyan oyun mantığına (konfeti/ödül vb.) dokunulmadı.**
+- "Kaç ok" segmenti `.seg`/`.seg-btn.aktif` oldu, `okSayisiGorunumGuncelle()` artık elle renk
+  boyamıyor, sadece `classList.toggle('aktif',...)`.
+- Dokunma ipucu metni ("İki parmağınızla...") artık panel kapalıyken hiç görünmüyor — kalıcı
+  değil, sadece "Görünümü Sıfırla" satırının `.settings-hint`'i olarak, panel açılınca görünür.
+- Panel açık/kapalı durumu **`localStorage['dag_seri_ayarlari_acik']`'a yazılıyor, D1'e DEĞİL**
+  — bu görsel/cihaz tercihi, senkronize edilecek veri değil (kullanıcının kararı).
+- **360×640 doğrulaması**: 4a'da hedef yüzeyi bu boyutta hiç görünmüyordu (Ciddi Mod/DAĞCAN/ok-
+  sayısı/fiziksel-ok/dokunma-ipucu içeriği tek başına ekranı dolduruyordu). 4c'nin panel-toplama
+  işlemiyle bu içerik ekrandan kalkınca hedef artık panel KAPALIYKEN tam görünür oldu —
+  `getBoundingClientRect()` ile ölçülüp ekran görüntüsüyle doğrulandı.
+
+**Faz 4'te öğrenilen/uygulanan yeni kurallar** (bkz. §7'ye de eklendi):
+- Var olan bir render fonksiyonuna (state tutmayan, sadece DOM'a yazan) yeni bir görsel özelliği
+  eklemek, YENİ bir state kurmaktan çok daha güvenli — `hedefGorseliGuncelle()` örneği.
+- Aynı bilgiyi iki farklı görselle göstermek sadeleştirmenin tersi — biri kaldırılacaksa önce
+  ikisinin de gerçekten AYNI bilgiyi taşıdığından emin ol (bkz. `#ok-rozetleri`'nin cezalı-ok
+  nüansı örneği).
+- Bir UI tercihinin (panel açık/kapalı gibi) D1'e mi yoksa localStorage'a mı yazılacağı önceden
+  netleştirilmeli — "bu veri cihazlar arası senkronize olmalı mı" sorusu cevaptır.
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -170,20 +228,23 @@ her zaman ESKİ AD korunuyor, sadece değeri güncelleniyor. `--surface-*`/`--sp
 ## 5. Faz 2 bileşen kütüphanesi
 
 Hepsi styles.css'te, sadece Faz 1 tokenlarından besleniyor, gradyan/neon-gölge/
-büyük-harf yok. **Faz 3'te `.tabs`/`.tabs-btn`, `.btn`/`.btn-ghost`/`.btn-sm` ve `.card`
-gerçek navigasyonda (üst bar + "Daha" paneli) kullanılmaya başlandı** — geri kalanı
-(`.seg`, `.switch`, `.settings-row`, `.table`, `.empty`, `.chip`) hâlâ hiçbir ekrana
-uygulanmadı, Faz 4-5'te ekran ekran olacak.
+büyük-harf yok. **Faz 3-4'te `.tabs`/`.btn`/`.card`/`.settings-row`/`.switch`/`.seg`
+gerçek ekranlarda kullanılmaya başlandı** — geri kalanı (`.table`, `.empty`, `.chip`)
+hâlâ hiçbir ekrana uygulanmadı, Faz 5'te ekran ekran olacak.
 
-- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. `.btn-primary` = ekranın ana aksiyonu (ör. "Seriyi kaydet"), düz `.btn` = ikincil/vazgeç, `.btn-danger` = silme/iptal gibi geri alınamaz aksiyonlar, `.btn-ghost` = en düşük vurgulu. **Kullanımda**: "Daha" panelinin "Kapat" butonu (`.btn.btn-ghost.btn-sm`).
-- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için (ör. "Bugünkü antrenman" özeti). Tekdüze gölge yok, sadece kenarlık. **Kullanımda**: "Daha" panelinin kendisi.
-- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti. Henüz kullanılmadı.
-- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici (ör. mevcut `.tur-formati-btn` grubunun yerini alacak "Serbest/WA 70m/WA 18m" gibi). Henüz kullanılmadı.
-- **`.switch`** + `.slider` — açık/kapalı anahtar. Tokenlara bağlandı ama henüz hiçbir gerçek ekranda kullanılmadı.
-- **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır. Faz 4'teki "Seri ayarları" katlanır panelinde kullanılacak.
+- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. **Kullanımda**: "Daha" panelinin "Kapat" butonu, Skor ekranının tek "Seriyi kaydet" düğmesi (`.btn-primary`), "Seri ayarları"nın "Sıfırla" düğmesi (`.btn-sm`).
+- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için. Tekdüze gölge yok, sadece kenarlık. **Kullanımda**: "Daha" paneli, Skor ekranının "Seri ayarları" katlanır paneli.
+- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti. Henüz kullanılmadı (karıştırma: Skor ekranının YENİ `.seri-cip`'i ayrı, kendi ok-rengi mantığı olan Faz 4b bileşeni).
+- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici. **Faz 4c'de uygulandı**: Skor ekranının "Bu seride kaç ok" (Oto/3/6) seçici.
+- **`.switch`** + `.slider` — açık/kapalı anahtar. **Faz 4c'de uygulandı**: Skor ekranının "Ciddi yarışma modu" anahtarı (eski elle-boyanan özel switch'in yerini aldı).
+- **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır. **Faz 4c'de uygulandı**: "Seri ayarları" panelinin 5 satırı.
 - **`.tabs`** + `.tabs-btn` — üst-seviye navigasyon deseni. **Faz 3'te uygulandı**: `#tabs-ana` (masaüstü üst bar) ve `#daha-tab-btn` bunu kullanıyor. Eski `.sekme-grubu`/`.sekme-btn.aktif` (gradyan/glow'lu) artık hiçbir elemente uygulanmıyor (id-seçiciler kazanıyor) — silinmedi, Faz 6'da temizlenecek.
 - **`.table`** — düzenli veri tablosu. Henüz kullanılmadı — app.js'te onlarca ayrı inline-style'lı `<table>` var, zamanla buna taşınabilir.
 - **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları. Henüz kullanılmadı.
+
+**Faz 4b'de EKLENEN yeni class'lar** (Skor ekranına özel, orijinal Faz 2 listesinde yoktu):
+`.seri-seridi`/`.seri-cip-satir`/`.seri-cip`/`.seri-cip-cezali`/`.seri-cip-toplam` — okuyan
+seri-şeridi bileşeni, `getRenkForPuan()`'dan renk alıyor, kendi state'i yok.
 
 **Faz 3'te EKLENEN yeni class'lar** (bunlar orijinal Faz 2 listesinde yoktu, navigasyona özel):
 `.alt-bar`/`.alt-bar-btn` (mobil sabit alt bar), `.daha-grup`/`.daha-grup-baslik`/`.daha-grup-mobil`
@@ -199,13 +260,10 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
 - **Faz 3 — Navigasyon: TAMAMLANDI** (bkz. §2a). 15 sekme → 6 ana (`#tabs-ana`) + "Daha" paneli
   (3 grup + mobilde 4. "Sık kullanılan" grubu), mobil sabit alt bar, 15 tek-aile SVG ikon,
   rol senkronu (sporcu/eğitmen) test edildi ve doğru.
-- **Faz 4 — Skor ekranı**: ok-şeridi (girilen oklar kaydetmeden önce görünsün), tek birincil
-  "Seriyi kaydet" aksiyonu + ilerleme sayacı, katlanır "Seri ayarları" paneli (`.settings-row`
-  burada kullanılacak — henüz hiç kullanılmadı).
-- **Faz 5 — Diğer 14 ekran** (hiçbiri başlanmadı, hepsi mevcut haliyle duruyor):
-  Ana Ekran, Sayaç, Canlı Takip, Gelişim, Liderlik, Klasman, Yarışmalar,
-  Ders İçerikleri, Teknik Çalışma, Video, Düello, Başarılar, Mağaza, Reaksiyon (Skor Faz 4'te).
-  Her biri için önce tek cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
+- **Faz 4 — Skor ekranı: TAMAMLANDI** (bkz. §2b). Sticky tuş takımı, okuyan seri şeridi, tek
+  kaydet düğmesi, katlanır "Seri ayarları" paneli. 360×640'ta hedef artık görünür.
+- **Faz 5 — Diğer 14 ekran**: aşağıdaki durum tablosuna bakılacak. Her biri için önce tek
+  cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
 - **Faz 6 — Temizlik/doğrulama**: kalan çıplak hex tarama (ana rapor + `renk-envanteri-uzun-kuyruk-2026-09.md`
   zaten hazır), kalan emoji ikon taraması, kontrast kontrolü, 360/768/1280px ekran görüntüleri,
   özet rapor. Ölü CSS/JS listesi (şimdiye kadar birikenler):
@@ -213,6 +271,38 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   - Eski `.sekme-grubu`/`.sekme-btn.aktif` gradyan/glow kuralları (styles.css ~248, ~1027-1038, ~1090).
   - 560px medya sorgusundaki eski `.sekme-grubu`/`.sekme-btn` boyut override'ı (styles.css ~481-482).
   - Faz 1'in "token geçişinden sonra ölü kalan eski CSS kurallarını tespit et" maddesi genel olarak geçerli, yukarıdakiler ilk somut örnekler.
+  - (4b'de zaten SİLİNDİ, listeye eklenmesi GEREKMİYOR ama tarih için not: `#yuzen-kaydet-btn`, `#ok-rozetleri`/`.ok-rozet-alani`. `.ok-rozet` CSS class'ı — sadece bu iki elementi biçimlendiriyordu, styles.css:410-411'de hâlâ duruyor, artık kullanılmıyor, Faz 6'da silinebilir.)
+
+### Faz 5 ekran durum tablosu
+
+Sıralama **kullanım sıklığına göre** (sık kullanılanlar önce) — istisna: **Ana Ekran bilerek EN
+SONA kondu**, çünkü içinde Ders Programı'nın sporcuya baktığı canlı bir bileşen var (aşağıya bkz).
+Sıklık tahminleri kod sinyallerinden çıkarıldı (varsayılan iniş ekranları, rol-görünürlük
+listeleri, kullanıcının Faz 3'te Klasman için söylediği "ayda birkaç kez") — gerçek kullanım
+analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
+
+| # | Ekran | Durum | Not |
+|---|---|---|---|
+| — | Skor | ✅ bitti (Faz 4) | — |
+| 1 | Sayaç | ⏳ bekliyor | Basit — sadece kronometre + birkaç ayar. Her antrenmanda kullanılıyor, düşük risk, iyi bir ilk Faz-5 ekranı. |
+| 2 | Canlı Takip | ⏳ bekliyor | Antrenman/yarışma sırasında sürekli açık (Faz 3'te bu yüzden birincil sekmeye alındı). |
+| 3 | Liderlik | ⏳ bekliyor | Eğitmenin varsayılan iniş ekranı (`tablariPlatformaGoreAyarla()` → `sekmeAc('liderlik')`). |
+| 4 | Gelişim | ⏳ bekliyor | Sporcunun kendi ilerlemesi, sık bakılıyor. |
+| 5 | Ders İçerikleri | ⏳ bekliyor | İçerik kütüphanesi, antrenman öncesi/sonrası. `Ders Programı` İLE KARIŞTIRILMASIN — tamamen ayrı bir özellik (bkz. not aşağıda). |
+| 6 | Teknik Çalışma | ⏳ bekliyor | Ders İçerikleri'nden kasıtlı ayrı modül (bkz. hafıza `dagsk-teknik-calisma-modulu-2026-08`). |
+| 7 | Yarışmalar | ⏳ bekliyor | Takım/turnuva yönetimi — orta karmaşıklık (eşleşme ağacı vb.). |
+| 8 | Düello | ⏳ bekliyor | Kendi modal/sayaç sistemi var (`#duello-modal`), orta-yüksek karmaşıklık. |
+| 9 | Başarılar | ⏳ bekliyor | Rozet vitrini, mağaza sistemine bağlı. |
+| 10 | Mağaza | ⏳ bekliyor | PALETLER (Faz 2'de düzeltildi)/çerçeve/aksesuar/rozet satın alma. |
+| 11 | Reaksiyon | ⏳ bekliyor | Çok sayıda mini-oyun (`rfx*`) — en yüksek iç karmaşıklık. |
+| 12 | Klasman | ⏳ bekliyor | Kullanıcının kendi ifadesiyle "ayda birkaç kez açılıyor" — bilerek geriye atıldı. |
+| 13 | Video | ⏳ bekliyor | "Gecikmeli Ayna" özelliği; düşük-orta sıklık. |
+| 14 | **Ana Ekran** | ⏳ bekliyor, **EN SON** | ⚠️ İçinde `#sonraki-ders-widget` var — `loggedInSporcu` için `/api/antrenman-programi`'den canlı veri çeken, **Ders Programı'na bağlı** bir bileşen (app.js:274, `sonrakiDersWidgetGuncelle()`). Ders Programı yarım bir özellik (bkz. §7) — bu widget'a dokunurken ekstra dikkat. Ayrıca `#canli-takip-widget-ana` da burada gömülü (Canlı Takip ekranıyla karışık bağımlılık). En sık kullanılan ekran olmasına rağmen en kırılgan bağımlılıklara sahip olduğu için en sona bırakıldı. |
+
+**Araştırma notu**: "Ders Programı" 15 ekranın hiçbirinin KENDİSİ değil — asıl CRUD'u (`yoneticiProgramCiz`,
+`sporcuProgramCiz`) Yönetici Paneli'nin kendi modallarında yaşıyor, o panel Faz 3'te doğrulandığı gibi
+sekme-tab navigasyonuna hiç girmiyor. Ana Ekran'daki `#sonraki-ders-widget` bu veriye SADECE OKUYARAK
+bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu ekran" ifadesi bunu işaret ediyor.
 
 ## 7. Kurallar ve tuzaklar
 
@@ -257,16 +347,36 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   yerel D1 `egitmen_hash` test-giriş takası her zaman iş bitince geri alınır; `wrangler dev`
   oturumlar arası hayatta kalmaz, önce curl-healthcheck; PowerShell `-Raw`/`-replace`/
   `Set-Content` app.js/styles.css için YASAK (Türkçe karakter bozulması) — Edit tool kullan.
+- **Var olan, state tutmayan bir render fonksiyonuna (ör. `hedefGorseliGuncelle()`) yeni bir
+  görsel özellik eklemek, YENİ bir state kurmaktan çok daha güvenli** — fonksiyon zaten doğru
+  anda (her veri değişiminde) çağrılıyor, sen sadece aynı zaten-hesaplanmış değişkenleri okuyup
+  ek bir DOM güncellemesi ekliyorsun. Faz 4b'nin seri şeridi bunun örneği.
+- **Bir eski bileşeni yeni bir bileşenle değiştirirken, ikisinin GERÇEKTEN aynı bilgiyi taşıyıp
+  taşımadığını kontrol et** — aynı görünen iki gösterim küçük ama önemli bir nüans farkı
+  taşıyabilir (Faz 4b: `#ok-rozetleri`'nin cezalı-ok için "orijinal puan üstü çizili + M"
+  göstermesi, yeni seri şeridinin bunu başta göstermemesi).
+- **Bir UI tercihinin (panel açık/kapalı, tema, vb.) D1'e mi yoksa localStorage'a mı yazılacağı
+  net bir soruya indirgeniyor: bu veri cihazlar/kullanıcılar arası senkronize olmalı mı?**
+  Hayırsa localStorage (Faz 4c: "Seri ayarları" panelinin açık/kapalı durumu).
+- **`Ders Programı` gibi yarım bırakılmış bir özelliğin başka ekranlara SIZINTISI olabilir** —
+  doğrudan "Ders Programı ekranı" diye bir şey yoksa bile, başka bir ekranın içine gömülü canlı-
+  veri-okuyan bir widget üzerinden bağlı olabilir (bkz. §6 Faz 5 tablosu, Ana Ekran/
+  `#sonraki-ders-widget`). Bir ekranı "bitti" ilan etmeden önce böyle gömülü bağımlılık var mı
+  diye ara.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
 - ~~Faz 3'ün 6'lık liste ve ikon seti~~ — **ÇÖZÜLDÜ**, bkz. §2a.
+- ~~Faz 4'ün Skor ekranı tasarımı~~ — **ÇÖZÜLDÜ**, bkz. §2b.
 - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.
-- Faz 4'ün Skor ekranı tasarımı henüz somut bir plan/mockup'a dökülmedi — sadece DEVIR.md
-  §6'daki tek paragraflık tarif var (ok-şeridi, tek birincil aksiyon, katlanır ayarlar).
-  Faz 4 başlarken önce tek cümlelik plan sunulup onay beklenecek (promptun kendi yöntemi).
+- **Faz 5 ekran sıralaması (§6 tablosu) bir TAHMİN** — gerçek kullanım analitiği yok, kod
+  sinyallerinden (varsayılan iniş ekranları, kullanıcının Klasman hakkında söylediği söz) ve
+  genel muhakemeden çıkarıldı. Yeni oturum bu sıraya körü körüne bağlı kalmak zorunda değil,
+  kullanıcı isterse değiştirilebilir.
+- Faz 5'in her ekranı için henüz somut bir plan yok — her birine başlarken promptun kendi
+  yöntemiyle (tek cümlelik plan → onay → uygula) ayrı ayrı başlanacak.
 - Bu tasarım işiyle ilgisiz ama proje genelinde açık kalan eski maddeler (KM Oyunlar
   Fullscreen-API taşma raporu, Yıldız Seferi/Dağ Tırmanışı içerik zenginleştirme) bu
   devrin kapsamı DIŞINDA — ayrı hafıza dosyasında (`dagsk-km-oyunlar-2026-09.md`) duruyor,

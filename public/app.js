@@ -15225,6 +15225,21 @@ ${(function(){
         // FAZ 3 — "Daha" paneli aç/kapat. sekmeAc()'ten bağımsız, sadece görünürlük kontrolü.
         function dahaPanelAc() { let p = document.getElementById('daha-panel'); if(p) p.style.display = 'flex'; }
         function dahaPanelKapat() { let p = document.getElementById('daha-panel'); if(p) p.style.display = 'none'; }
+
+        // FAZ 4a — #alt-bar'ın GERÇEK render yüksekliğini --alt-bar-h'a yazar (sticky skor tuş takımı
+        // bunu okuyor). offsetHeight, .alt-bar'ın kendi safe-area-inset-bottom içeren padding'ini de
+        // kapsar — bu yüzden sticky tarafta ayrıca env(safe-area-inset-bottom) eklemeye GEREK YOK,
+        // eklenirse pay iki kere sayılır. Bar gizliyse (>680px, display:none) offsetHeight zaten 0 döner.
+        function altBarYukseklikSenkron() {
+            try {
+                let bar = document.getElementById('alt-bar');
+                let h = (bar && getComputedStyle(bar).display !== 'none') ? bar.offsetHeight : 0;
+                document.documentElement.style.setProperty('--alt-bar-h', h + 'px');
+            } catch(e) {}
+        }
+        window.addEventListener('resize', altBarYukseklikSenkron);
+        window.addEventListener('load', altBarYukseklikSenkron);
+        document.addEventListener('DOMContentLoaded', altBarYukseklikSenkron);
         function sekmeAc(sekmeAd) {
             document.querySelectorAll('.sekme-btn').forEach(b => b.classList.remove('aktif')); 
             document.querySelectorAll('.sekme-icerik').forEach(c => c.classList.remove('aktif')); 
@@ -15564,13 +15579,12 @@ ${(function(){
             okSayisiGorunumGuncelle();
             try { hedefGorseliGuncelle(false); } catch(e) {}
         }
+        // FAZ 4c — .seg-btn.aktif (Faz 2 bileşeni) kullanıyor, elle renk boyamıyor.
         function okSayisiGorunumGuncelle() {
             let cur = getMaksOk();
             [['oto', manuelOkSayisi === null], ['3', manuelOkSayisi !== null && cur === 3], ['6', manuelOkSayisi !== null && cur === 6]].forEach(([v, aktif]) => {
                 let b = document.getElementById('oksayi-btn-' + v); if(!b) return;
-                b.style.background = aktif ? 'var(--accent-orange)' : 'var(--bg-main)';
-                b.style.color = aktif ? '#fff' : 'var(--text-main)';
-                b.style.borderColor = aktif ? 'var(--accent-orange)' : 'var(--border-color)';
+                b.classList.toggle('aktif', aktif);
             });
         }
         
@@ -15734,8 +15748,8 @@ ${(function(){
         }
         
         function hedefGorseliGuncelle(skipSelectUpdate = false) {
-            let g = document.getElementById(`atilan-oklar-grup-${aktifHedefTipi}`); let rozetAlani = document.getElementById('ok-rozetleri'); let toplamPuanEl = document.getElementById('aktif-seri-toplam');
-            if(g) g.innerHTML = ""; if(rozetAlani) rozetAlani.innerHTML = ""; let toplam = 0; let okAdet = getMaksOk();
+            let g = document.getElementById(`atilan-oklar-grup-${aktifHedefTipi}`); let toplamPuanEl = document.getElementById('aktif-seri-toplam');
+            if(g) g.innerHTML = ""; let toplam = 0; let okAdet = getMaksOk();
             let oklar = efektifOklar(); let cezaVar = false;
             oklar.forEach((ok, idx) => {
                 let efPuan = ok.cezali ? 'M' : ok.puan;
@@ -15744,15 +15758,39 @@ ${(function(){
                     let dotRenk = ok.cezali ? '#ef4444' : '#ff6200';
                     g.innerHTML += `<circle cx="${ok.x}" cy="${ok.y}" r="4" fill="${dotRenk}" stroke="#fff" stroke-width="0.5"></circle><text x="${ok.x}" y="${ok.y+1.5}" font-size="5" fill="#fff" text-anchor="middle" font-weight="bold">${idx+1}</text>`;
                 }
-                if(rozetAlani) {
-                    if(ok.cezali) rozetAlani.innerHTML += `<div class="ok-rozet" style="background:var(--accent-grey) !important; position:relative;" title="Aynı spota düştü - büyük ok karavana sayıldı"><span style="text-decoration:line-through; opacity:0.6; font-size:10px;">${ok.puan}</span><span style="font-size:9px;">M</span></div>`;
-                    else rozetAlani.innerHTML += `<div class="ok-rozet">${efPuan}</div>`;
-                }
                 toplam += puanDeger(efPuan);
                 if(!skipSelectUpdate) { let sel = document.getElementById(`ok_input_${idx}`); if(sel) sel.value = ok.puan; }
             });
             if(!skipSelectUpdate) { for(let i=anlikAtilanOklar.length; i<okAdet; i++) { let sel = document.getElementById(`ok_input_${i}`); if(sel) sel.value = ""; } }
             if(toplamPuanEl) toplamPuanEl.innerText = `${toplam}`;
+            // FAZ 4b — seri şeridi + kaydet düğmesi durumu: SADECE render, veri kaynağı yukarıdaki
+            // `oklar`/`okAdet`/`toplam` (zaten anlikAtilanOklar/efektifOklar()'dan hesaplanmış) — yeni
+            // bir state tutulmuyor.
+            let seridi = document.getElementById('seri-seridi');
+            if(seridi) {
+                if(oklar.length === 0) {
+                    seridi.innerHTML = '';
+                } else {
+                    let cipler = oklar.map(ok => {
+                        let efP = ok.cezali ? 'M' : ok.puan;
+                        let r = getRenkForPuan(efP);
+                        let bg = (efP === 'M') ? 'var(--accent-grey)' : r.bg;
+                        let c = (efP === 'M') ? '#fff' : r.c;
+                        // Eski #ok-rozetleri'nden taşındı: cezalı (3'lü spotta aynı spota fazladan
+                        // düşen) ok, sadece "M" değil "aslında ne atıldığı" bilgisini de taşımalı.
+                        let icerik = ok.cezali ? `<s>${ok.puan}</s>${efP}` : efP;
+                        let baslik = ok.cezali ? 'title="Aynı spota düştü - büyük ok karavana sayıldı"' : '';
+                        return `<span class="seri-cip${ok.cezali ? ' seri-cip-cezali' : ''}" style="background:${bg}; color:${c};" ${baslik}>${icerik}</span>`;
+                    }).join('');
+                    seridi.innerHTML = `<div class="seri-cip-satir">${cipler}</div><div class="seri-cip-toplam">${toplam}</div>`;
+                }
+            }
+            let kaydetBtn = document.getElementById('skor-kaydet-btn');
+            if(kaydetBtn) {
+                let dolu = anlikAtilanOklar.length;
+                kaydetBtn.disabled = dolu === 0;
+                kaydetBtn.textContent = dolu === 0 ? 'Seriyi kaydet' : `Seriyi kaydet (${dolu}/${okAdet})`;
+            }
             let stb = document.getElementById('seri-tamam-banner');
             if(stb) { if(okAdet > 0 && anlikAtilanOklar.length >= okAdet) { stb.innerHTML = `✅ ${okAdet} OK TAM GİRDİNİZ — Kaydet!`; stb.style.display = 'block'; } else stb.style.display = 'none'; }
             let uyari = document.getElementById('spot-uyari');
@@ -16132,32 +16170,21 @@ ${(function(){
             ciddiModAcik = !ciddiModAcik;
             ciddiModGorunumGuncelle();
         }
+        // FAZ 4c — artık .switch bileşenini kullanıyor (bkz. app.html), kendi anahtar/knob DOM'unu
+        // elle boyamıyor — sadece checkbox.checked + etiket metnini senkronluyor, ciddiModAcik'in
+        // KENDİSİNE dokunmuyor (o hâlâ ciddiModToggle()'da, oyun mantığı onu okumaya devam ediyor).
         function ciddiModGorunumGuncelle() {
-            let sw = document.getElementById('ciddi-mod-switch');
-            let knob = document.getElementById('ciddi-mod-knob');
+            let checkbox = document.getElementById('ciddi-mod-checkbox');
             let label = document.getElementById('ciddi-mod-label');
             let alt = document.getElementById('ciddi-mod-alt');
-            let icon = document.getElementById('ciddi-mod-icon');
-            let btn = document.getElementById('ciddi-mod-btn');
-            if(!sw || !knob || !label || !btn) return;
+            if(!checkbox || !label) return;
+            checkbox.checked = ciddiModAcik;
             if(ciddiModAcik) {
-                sw.style.background = 'var(--accent-orange)';
-                knob.style.left = '23px';
-                if(icon) icon.textContent = '🎯';
-                label.textContent = 'Ciddi Yarışma Modu';
-                if(alt) alt.textContent = 'Kutlamalar kapalı · Ödüller sessizce verilir';
-                btn.style.background = 'rgba(245,158,11,0.15)';
-                btn.style.border = '2px solid var(--accent-orange)';
-                btn.style.color = 'var(--accent-orange)';
+                label.textContent = 'Ciddi yarışma modu';
+                if(alt) alt.textContent = 'Kutlamalar kapalı, ödüller sessizce verilir';
             } else {
-                sw.style.background = '#555';
-                knob.style.left = '3px';
-                if(icon) icon.textContent = '🎉';
-                label.textContent = 'Eğlence Modu';
-                if(alt) alt.textContent = 'Konfeti & kutlamalar açık';
-                btn.style.background = 'rgba(16,185,129,0.1)';
-                btn.style.border = '2px solid var(--neon-green)';
-                btn.style.color = 'var(--neon-green)';
+                label.textContent = 'Eğlence modu';
+                if(alt) alt.textContent = 'Konfeti ve kutlamalar açık';
             }
         }
 

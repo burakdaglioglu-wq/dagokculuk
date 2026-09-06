@@ -85,6 +85,11 @@
             --text-lg: 20px; --text-xl: 26px; --text-2xl: 34px;
             --weight-regular: 400; --weight-medium: 600; --weight-bold: 800; --weight-black: 900;
             --leading-tight: 1.2; --leading-normal: 1.5;
+
+            /* Faz 4a — #alt-bar'ın GERÇEK render yüksekliği (app.js: altBarYukseklikSenkron()
+               tarafından yazılır, bar görünmüyorsa 0px). Sticky tuş takımının alt bara çarpmaması
+               için tek kaynak; burada 0px sadece JS henüz çalışmamışken güvenli varsayılan. */
+            --alt-bar-h: 0px;
         }
 
         body.light-theme {
@@ -341,6 +346,40 @@
         .skor-split-layout { display: flex; width: 100%; gap: 15px; flex-wrap: wrap; height: 100%; }
         .skor-left-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .skor-right-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+
+        /* FAZ 4a — dar ekranda (mevcut 850px kırılımı) tuş takımı ekranın altına sabitleniyor.
+           position:STICKY (fixed DEĞİL) — kapsayıcı scroll alanının (aşağıdaki overflow-y:auto div)
+           içinde kalır, klavye/adres çubuğu gibi viewport oynamalarında kaymaz. "bottom" değeri
+           --alt-bar-h değişkeninden geliyor: bu, app.js'teki altBarYukseklikSenkron() ile #alt-bar'ın
+           GERÇEK render edilmiş yüksekliğinden (safe-area-inset-bottom dahil, çünkü .alt-bar'ın kendi
+           padding'i zaten onu içeriyor) okunuyor — sabit piksel DEĞİL, alt bar görünmüyorsa (>680px)
+           otomatik 0 olur. Arkası opak olsun diye zemin --surface-1'e çekildi (yarı saydamsa hedef
+           içeriği sticky panelin altından/üstünden geçerken görünüp karışırdı). */
+        @media (max-width: 850px) {
+            #skor-grid-paneli-baba .skor-right-panel {
+                position: sticky;
+                bottom: var(--alt-bar-h, 0px);
+                z-index: 20;
+                background: var(--surface-1);
+                box-shadow: 0 -6px 16px rgba(0,0,0,0.25);
+            }
+        }
+
+        /* FAZ 4b — seri şeridi. Sadece OKUYAN bir bileşen (bkz. hedefGorseliGuncelle() app.js) — kendi
+           state'i yok, mevcut anlikAtilanOklar/efektifOklar()'ı görselleştiriyor. Boşken hiç render
+           edilmiyor (üstte gereksiz boşluk bırakmasın diye), .seri-cip renkleri getRenkForPuan()'dan
+           birebir okunuyor (tuş takımıyla AYNI renk kaynağı, ayrı bir palet yok). */
+        .seri-seridi:empty { display: none; }
+        .seri-seridi { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; max-width: 420px; margin-bottom: var(--space-2); }
+        .seri-cip-satir { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; min-width: 0; }
+        .seri-cip {
+            display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+            min-width: 26px; height: 26px; padding: 0 6px; border-radius: var(--radius-sm);
+            font-family: var(--font-sans); font-weight: var(--weight-bold); font-size: 12px;
+        }
+        /* Cezalı (3'lü spotta aynı spota fazladan düşen) ok — orijinal puan üstü çizili + M */
+        .seri-cip-cezali s { font-size: 9px; font-weight: var(--weight-medium); opacity: .75; }
+        .seri-cip-toplam { font-family: var(--font-sans); font-weight: var(--weight-black); font-size: var(--text-lg); color: var(--text-primary); flex-shrink: 0; }
 
         .hedef-scroll-container { width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; border: 1px dashed var(--border-color); border-radius: 12px; background: rgba(0,0,0,0.2); max-height: 48vh; padding: 10px; box-sizing: border-box; touch-action: none; }
         .hedef-wrapper { transition: transform 0.15s ease-out; transform-origin: center center; display: flex; justify-content: center; align-items: center; cursor: grab; touch-action: none; }

@@ -573,16 +573,14 @@
                     </button>
                 </div>
                 <div id="hizli-gecis-bar" class="sadece-egitmen" style="display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px 0; -webkit-overflow-scrolling:touch;"></div>
-                <button onclick="skorKaydet()" style="display:block; width:100%; box-sizing:border-box; background:linear-gradient(135deg, var(--neon-green), #0ea86f); color:white; border:none; padding:14px; border-radius:10px; font-weight:800; font-size:16px; box-shadow:0 3px 16px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.15);">💾 SERİYİ KAYDET ✔️</button>
+                <button id="skor-kaydet-btn" class="btn btn-primary" onclick="skorKaydet()" disabled style="width:100%; font-size:var(--text-base);">Seriyi kaydet</button>
                 <div style="display:flex; gap:8px; margin-top:8px;">
                     <button onclick="seriUzat()" style="flex:1; background:linear-gradient(135deg, rgba(255,98,0,0.16), rgba(255,98,0,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--accent-orange); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">➕ Seri Uzat</button>
                     <button onclick="oncekiSeriyiDuzelt()" style="flex:1; background:linear-gradient(135deg, rgba(0,240,255,0.18), rgba(0,240,255,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer; box-shadow:0 0 10px rgba(0,240,255,0.18);">✏️ Önceki Skoru Düzelt</button>
                 </div>
-                <div style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:6px; font-style:italic;">🏹 İyi bir okçu, dürüst olandır.</div>
             </div>
             <div id="isim-flash" style="display:none; opacity:0; transition:opacity .3s; position:fixed; top:90px; left:50%; transform:translateX(-50%); z-index:9500; background:linear-gradient(135deg, var(--aurora-cyan), var(--aurora-magenta)); color:#fff; padding:10px 24px; border-radius:24px; font-weight:800; font-size:16px; box-shadow:0 5px 20px rgba(0,0,0,0.4), 0 0 24px rgba(0,240,255,0.4); pointer-events:none;"></div>
             <div id="seri-tamam-banner" style="display:none; position:fixed; bottom:74px; left:50%; transform:translateX(-50%); z-index:8999; background:var(--accent-orange); color:#fff; padding:9px 22px; border-radius:22px; font-weight:800; font-size:14px; box-shadow:0 4px 16px rgba(255,98,0,0.55);">✅ SERİ TAMAMLANDI — Kaydet!</div>
-            <button onclick="skorKaydet()" id="yuzen-kaydet-btn" title="Seriyi Kaydet" style="position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:9000; background:linear-gradient(135deg, var(--neon-green), #0ea86f); color:white; border:none; padding:14px 26px; border-radius:30px; font-weight:800; font-size:15px; box-shadow:0 5px 22px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.15);">💾 SERİYİ KAYDET ✔️</button>
 
             <div style="padding: 15px; padding-bottom: 90px; overflow-y: auto; flex: 1;">
                 <div class="skor-split-layout">
@@ -594,37 +592,52 @@
                             <button class="hedef-sec-btn" id="btn-6ring" onclick="setHedefTipi('6ring')">6 Halkalı</button>
                             <button class="hedef-sec-btn" id="btn-3spot" onclick="setHedefTipi('3spot')">3'lü Spot</button>
                         </div>
-                        <!-- MOD SEÇİCİ — hedef yüzünün hemen üstü -->
-                        <button type="button" id="ciddi-mod-btn" onclick="ciddiModToggle()" style="display:flex; align-items:center; gap:10px; width:100%; box-sizing:border-box; border:none; padding:10px 14px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; user-select:none; margin-bottom:8px; transition:all 0.25s;">
-                            <span style="font-size:22px;" id="ciddi-mod-icon">🎉</span>
-                            <span style="flex:1; text-align:left;">
-                                <span id="ciddi-mod-label" style="display:block; font-size:13px; font-weight:900;">Eğlence Modu</span>
-                                <span id="ciddi-mod-alt" style="display:block; font-size:10px; opacity:0.75;">Konfeti & kutlamalar açık</span>
-                            </span>
-                            <span id="ciddi-mod-switch" style="display:inline-flex; align-items:center; width:44px; height:24px; border-radius:12px; background:#555; position:relative; transition:background 0.25s; flex-shrink:0;">
-                                <span id="ciddi-mod-knob" style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.3);"></span>
-                            </span>
-                        </button>
-                        <!-- 🐇 TAVŞAN ATLET — eğlence modundan bağımsız, kendi düğmesi -->
-                        <button type="button" id="tavsan-ana-btn" onclick="tavsanTikla()" style="display:block; width:100%; box-sizing:border-box; border:none; padding:0; background:transparent; margin-bottom:8px; cursor:pointer; text-align:left;"></button>
-                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:7px 9px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">
-                            <span style="font-size:11px; font-weight:bold; flex:1;">🏹 Bu seride kaç ok?</span>
-                            <button id="oksayi-btn-oto" onclick="okSayisiAyarla(null)" style="padding:5px 9px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">Oto</button>
-                            <button id="oksayi-btn-3" onclick="okSayisiAyarla(3)" style="padding:5px 11px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">3</button>
-                            <button id="oksayi-btn-6" onclick="okSayisiAyarla(6)" style="padding:5px 11px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); cursor:pointer;">6</button>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:7px 9px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">
-                            <span style="font-size:11px; font-weight:bold; flex:1;">🏹 Hangi fiziksel ok?</span>
-                            <select id="ok-numarasi-sec" onchange="okNumarasiSec(this.value ? parseInt(this.value) : null)" style="padding:5px 8px; border-radius:7px; font-size:11px; font-weight:bold; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main);">
-                                <option value="">Takip kapalı</option>
-                                <option value="1">Ok #1</option><option value="2">Ok #2</option><option value="3">Ok #3</option><option value="4">Ok #4</option>
-                                <option value="5">Ok #5</option><option value="6">Ok #6</option><option value="7">Ok #7</option><option value="8">Ok #8</option>
-                                <option value="9">Ok #9</option><option value="10">Ok #10</option><option value="11">Ok #11</option><option value="12">Ok #12</option>
-                            </select>
-                        </div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; text-align:center; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.008)), var(--bg-panel); backdrop-filter:blur(6px); border:1px solid var(--border-color); border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.18);">🤏 <b>İki parmağınızla</b> hedefi yakınlaştırıp uzaklaştırın &nbsp;•&nbsp; ☝️ tek parmakla <b>sürükleyin</b> &nbsp;•&nbsp; 👆 tek dokunuş = ok girişi
-                        <button onclick="hedefGorunumSifirla()" style="display:block; margin:8px auto 0; background:linear-gradient(135deg, rgba(0,240,255,0.16), rgba(0,240,255,0.04)); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:5px 14px; border-radius:7px; font-weight:bold; font-size:11px;">🎯 Görünümü Sıfırla</button>
-                        </div>
+                        <!-- FAZ 4c — katlanır "Seri ayarları" paneli: ciddi mod, DAĞCAN, ok sayısı,
+                             fiziksel ok takibi, görünümü sıfırla. Varsayılan kapalı. Açık/kapalı durumu
+                             localStorage'da hatırlanır (D1'e YAZILMIYOR — bu senkronize edilecek veri
+                             değil, salt bu cihazın görsel tercihi). .settings-row/.switch/.seg/.btn
+                             Faz 2 bileşenleri — yeni stil yazılmadı. -->
+                        <details id="seri-ayarlari-panel" class="card" style="padding:0; margin-bottom:10px;">
+                            <summary style="cursor:pointer; list-style:none; padding:10px 14px; font-size:12px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">Seri ayarları<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                            <div style="padding:0 14px 12px;">
+                                <div class="settings-row">
+                                    <div>
+                                        <div class="settings-label" id="ciddi-mod-label">Eğlence modu</div>
+                                        <div class="settings-hint" id="ciddi-mod-alt">Konfeti ve kutlamalar açık</div>
+                                    </div>
+                                    <label class="switch"><input type="checkbox" id="ciddi-mod-checkbox" onchange="ciddiModToggle()"><span class="slider"></span></label>
+                                </div>
+                                <div class="settings-row">
+                                    <!-- 🐇 TAVŞAN ATLET — eğlence modundan bağımsız, kendi düğmesi, kendi içeriğini kendi çiziyor -->
+                                    <button type="button" id="tavsan-ana-btn" onclick="tavsanTikla()" style="display:block; width:100%; box-sizing:border-box; border:none; padding:0; background:transparent; cursor:pointer; text-align:left;"></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">Bu seride kaç ok</div>
+                                    <div class="seg" style="max-width:170px;">
+                                        <button type="button" class="seg-btn" id="oksayi-btn-oto" onclick="okSayisiAyarla(null)">Oto</button>
+                                        <button type="button" class="seg-btn" id="oksayi-btn-3" onclick="okSayisiAyarla(3)">3</button>
+                                        <button type="button" class="seg-btn" id="oksayi-btn-6" onclick="okSayisiAyarla(6)">6</button>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-label">Hangi fiziksel ok</div>
+                                    <select id="ok-numarasi-sec" onchange="okNumarasiSec(this.value ? parseInt(this.value) : null)" style="padding:6px 8px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:1px solid var(--surface-border); background:var(--surface-2); color:var(--text-primary);">
+                                        <option value="">Takip kapalı</option>
+                                        <option value="1">Ok #1</option><option value="2">Ok #2</option><option value="3">Ok #3</option><option value="4">Ok #4</option>
+                                        <option value="5">Ok #5</option><option value="6">Ok #6</option><option value="7">Ok #7</option><option value="8">Ok #8</option>
+                                        <option value="9">Ok #9</option><option value="10">Ok #10</option><option value="11">Ok #11</option><option value="12">Ok #12</option>
+                                    </select>
+                                </div>
+                                <div class="settings-row">
+                                    <div>
+                                        <div class="settings-label">Görünümü sıfırla</div>
+                                        <div class="settings-hint">İki parmakla yakınlaştır/uzaklaştır, tek parmakla sürükle, tek dokunuş ok girer</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm" onclick="hedefGorunumSifirla()">Sıfırla</button>
+                                </div>
+                            </div>
+                        </details>
+                        <script>(function(){var p=document.getElementById('seri-ayarlari-panel');if(!p)return;try{if(localStorage.getItem('dag_seri_ayarlari_acik')==='1')p.open=true;}catch(e){}p.ontoggle=function(){try{localStorage.setItem('dag_seri_ayarlari_acik',p.open?'1':'0');}catch(e){}};})();</script>
                         <div class="hedef-scroll-container">
                             <div id="hedef-wrapper-id" class="hedef-wrapper">
                                 <svg id="hedef-svg-10ring" class="svg-hedef" viewBox="-110 -110 220 220" onclick="hedefTiklandi(event)">
@@ -665,12 +678,14 @@
                     <!-- SAĞ: MANUEL GİRİŞ -->
                     <div class="skor-right-panel">
                         <div style="text-align:center; font-weight:bold; margin-bottom:8px; font-size:13px; color:var(--accent-orange);">⚡ HIZLI GİRİŞ</div>
+                        <!-- FAZ 4b — seri şeridi: SADECE OKUYAN bileşen, kendi state'i yok. hedefGorseliGuncelle()
+                             (app.js) mevcut anlikAtilanOklar/efektifOklar() verisini burada da çiziyor. -->
+                        <div id="seri-seridi" class="seri-seridi"></div>
                         <div id="hizli-giris-pad" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:7px; width:100%; max-width:420px; margin-bottom:8px;"></div>
                         <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; margin-bottom:12px; cursor:pointer;">
                             <input type="checkbox" id="hizli-otokaydet" checked style="width:18px; height:18px; accent-color:var(--neon-green);">
                             Seri dolunca otomatik kaydet & sonraki seriye geç
                         </label>
-                        <div id="ok-rozetleri" class="ok-rozet-alani"></div>
                         <div style="display:flex; gap:10px; margin-top:14px; width:100%;">
                             <button class="hedef-kontrol-btn" onclick="karavanaEkle()">Karavana (M)</button>
                             <button class="hedef-kontrol-btn" style="background:var(--accent-grey) !important; box-shadow:none;" onclick="sonOkuSil()">Geri Al ↺</button>
