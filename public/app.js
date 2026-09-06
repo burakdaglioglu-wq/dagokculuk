@@ -769,7 +769,7 @@
         function teknikCalismaDoldur() {
             let el = document.getElementById('icerik-teknik'); if(!el) return;
             if(_teknikCalismaMonteEdildiMi) return;
-            if(typeof DAGSK_TEKNIK === 'undefined') { el.innerHTML = '<div style="text-align:center; padding:30px; color:var(--neon-red);">⚠️ Teknik Çalışma modülü yüklenemedi.</div>'; return; }
+            if(typeof DAGSK_TEKNIK === 'undefined') { el.innerHTML = '<div style="text-align:center; padding:30px; color:var(--status-danger);">⚠️ Teknik Çalışma modülü yüklenemedi.</div>'; return; }
             DAGSK_TEKNIK.mount(el);
             _teknikCalismaMonteEdildiMi = true;
         }
@@ -795,11 +795,11 @@
             let liste = dersIcerikFiltreliListe();
 
             let html = `<div style="padding:15px;">
-                <div class="glass-panel" style="padding:15px; border-radius:12px; margin-bottom:14px;">
+                <div class="card" style="margin-bottom:14px;">
                     <div style="font-weight:900; color:var(--accent-orange); font-size:16px; margin-bottom:10px;">📚 Ders İçerikleri Kütüphanesi</div>
-                    <input type="text" id="ders-icerik-arama" value="${(_dersIcerikArama||'').replace(/"/g,'&quot;')}" oninput="_dersIcerikArama=this.value; dersIcerikleriRenderla(); let el=document.getElementById('ders-icerik-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" placeholder="🔍 Ders ara (başlık, açıklama)..." style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:13px;">
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-                        ${['__hepsi','teknik','eglence','oyun'].map(t => `<button onclick="_dersIcerikTipFiltre='${t}'; dersIcerikleriRenderla();" style="flex:1; min-width:70px; padding:8px 4px; border-radius:8px; font-weight:bold; font-size:11px; border:1px solid var(--border-color); background:${_dersIcerikTipFiltre===t?'var(--accent-orange)':'var(--bg-panel)'}; color:${_dersIcerikTipFiltre===t?'#fff':'var(--text-main)'};">${t==='__hepsi'?'Tümü':DERS_TIP_ETIKET[t]}</button>`).join('')}
+                    <input type="text" id="ders-icerik-arama" value="${(_dersIcerikArama||'').replace(/"/g,'&quot;')}" oninput="_dersIcerikArama=this.value; dersIcerikleriRenderla(); let el=document.getElementById('ders-icerik-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" placeholder="🔍 Ders ara (başlık, açıklama)..." style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:10px; background:var(--surface-2); color:var(--text-primary); border:1px solid var(--surface-border); border-radius:8px; font-size:13px;">
+                    <div class="seg" style="margin-bottom:8px;">
+                        ${['__hepsi','teknik','eglence','oyun'].map(t => `<button type="button" class="seg-btn ${_dersIcerikTipFiltre===t?'aktif':''}" onclick="_dersIcerikTipFiltre='${t}'; dersIcerikleriRenderla();">${t==='__hepsi'?'Tümü':DERS_TIP_ETIKET[t]}</button>`).join('')}
                     </div>
                     <div style="display:flex; gap:6px; margin-bottom:10px;">
                         <select onchange="_dersIcerikGrupFiltre=this.value; dersIcerikleriRenderla();" class="adm-select" style="flex:1;">
@@ -816,17 +816,17 @@
                             <option value="ileri" ${_dersIcerikSeviyeFiltre==='ileri'?'selected':''}>🔴 İleri</option>
                         </select>
                     </div>
-                    <button onclick="dersIcerikRastgeleSec()" style="width:100%; background:var(--gold); color:#1b1b1b; border:none; padding:12px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; margin-bottom:8px;">🎲 Kararsız mısın? Rastgele Bir Ders Seç</button>
-                    <button onclick="dersEkleFormToggle()" class="sadece-egitmen" style="width:100%; background:rgba(59,130,246,0.12); color:var(--neon-blue); border:1px solid var(--neon-blue); padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; margin-bottom:8px;">${_dersEkleFormAcik ? '✕ Formu Kapat' : '➕ Yeni Ders Ekle'}</button>
-                    <button onclick="dersKullanimRaporuToggle()" class="sadece-egitmen" style="width:100%; background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">${_kullanimRaporuAcik ? '✕ Raporu Kapat' : '📊 Kullanım Raporu'}</button>
-                    <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${liste.length} ders bulundu</div>
+                    <button onclick="dersIcerikRastgeleSec()" class="btn btn-primary" style="width:100%; margin-bottom:8px;">🎲 Kararsız mısın? Rastgele Bir Ders Seç</button>
+                    <button onclick="dersEkleFormToggle()" class="sadece-egitmen btn" style="width:100%; margin-bottom:8px;">${_dersEkleFormAcik ? '✕ Formu Kapat' : '➕ Yeni Ders Ekle'}</button>
+                    <button onclick="dersKullanimRaporuToggle()" class="sadece-egitmen btn" style="width:100%;">${_kullanimRaporuAcik ? '✕ Raporu Kapat' : '📊 Kullanım Raporu'}</button>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:6px;">${liste.length} ders bulundu</div>
                 </div>
                 <div id="ders-kullanim-raporu-alani"></div>
                 <div id="ders-ekle-form-alani"></div>
             `;
 
             if(!liste.length) {
-                html += `<div style="text-align:center; color:var(--text-muted); padding:20px;">Bu filtrede ders bulunamadı.</div>`;
+                html += `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Bu filtrede ders bulunamadı</div></div>`;
                 el.innerHTML = html;
                 if(_dersEkleFormAcik) dersEkleFormCiz();
                 if(_kullanimRaporuAcik) dersKullanimRaporuCiz();
@@ -840,7 +840,7 @@
                     let idx = grupListe.findIndex(d => d.id === _dersIcerikVurgulu);
                     if(idx > 0) { let v = grupListe.splice(idx, 1); grupListe.unshift(v[0]); }
                 }
-                html += `<div style="font-weight:900; color:var(--accent-orange); font-size:14px; margin:16px 2px 8px;">${DERS_TIP_ETIKET[tip]} <span style="color:var(--text-muted); font-weight:600; font-size:11px;">· ${grupListe.length}</span></div>`;
+                html += `<div style="font-weight:900; color:var(--accent-orange); font-size:14px; margin:16px 2px 8px;">${DERS_TIP_ETIKET[tip]} <span style="color:var(--text-secondary); font-weight:600; font-size:11px;">· ${grupListe.length}</span></div>`;
                 html += grupListe.map(d => dersKartHTML(d, GRUP_ETIKET_KISA)).join('');
             });
 
@@ -859,31 +859,31 @@
                 ? `<span onclick="event.stopPropagation(); dersIcerikDegerlendir('${d.id}', ${n})" style="cursor:pointer; font-size:15px; color:${n <= yildizGosterim ? 'var(--gold)' : 'var(--border-color)'};">★</span>`
                 : `<span style="font-size:15px; color:${n <= yildizGosterim ? 'var(--gold)' : 'var(--border-color)'};">★</span>`
             ).join('');
-            return `<details ${vurgulu ? 'open' : ''} class="adm-card" style="margin-bottom:8px; border-color:${vurgulu ? 'var(--gold)' : 'var(--border-color)'};">
+            return `<details ${vurgulu ? 'open' : ''} class="card" style="margin-bottom:8px; ${vurgulu ? 'border-color:var(--gold);' : ''}">
                 <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-size:10px; font-weight:800; padding:3px 7px; border-radius:6px; background:${seviyeRenk}22; color:${seviyeRenk}; white-space:nowrap;">${DERS_SEVIYE_ETIKET[d.seviye] || d.seviye}</span>
                     <span style="flex:1; font-weight:700; font-size:13px; min-width:120px;">${d.baslik}</span>
-                    ${d.sure ? `<span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">⏱️ ${d.sure}dk</span>` : ''}
+                    ${d.sure ? `<span style="font-size:10px; color:var(--text-secondary); white-space:nowrap;">⏱️ ${d.sure}dk</span>` : ''}
                 </summary>
                 <div style="margin-top:10px; font-size:12px; line-height:1.5;">
-                    ${d.aciklama ? `<div style="color:var(--text-muted); margin-bottom:8px;">${d.aciklama}</div>` : ''}
+                    ${d.aciklama ? `<div style="color:var(--text-secondary); margin-bottom:8px;">${d.aciklama}</div>` : ''}
                     ${d.malzeme ? `<div style="margin-bottom:6px;"><b>📦 Malzeme:</b> ${d.malzeme}</div>` : ''}
                     <div style="margin-bottom:6px;"><b>👥 Uygun Grup:</b> ${d.gruplar.map(g => GRUP_ETIKET_KISA[g] || g).join(', ')}</div>
                     ${d.adimlar && d.adimlar.length ? `<div style="margin-bottom:6px;"><b>📋 Adımlar:</b><ol style="margin:4px 0 0 18px; padding:0;">${d.adimlar.map(a => `<li style="margin-bottom:3px;">${a}</li>`).join('')}</ol></div>` : ''}
-                    ${d.dikkat && d.dikkat.length ? `<div style="background:rgba(239,68,68,0.08); border:1px solid var(--neon-red); border-radius:8px; padding:8px 10px; margin-top:8px;"><b style="color:var(--neon-red);">⚠️ Dikkat Edilecekler:</b><ul style="margin:4px 0 0 18px; padding:0;">${d.dikkat.map(x => `<li style="margin-bottom:3px;">${x}</li>`).join('')}</ul></div>` : ''}
-                    ${d.cizim ? `<div style="margin-top:10px;"><b>✏️ Eğitmen Diyagramı:</b><img src="${d.cizim}" style="width:100%; border-radius:8px; margin-top:6px; background:#fff; border:1px solid var(--border-color);"></div>` : ''}
+                    ${d.dikkat && d.dikkat.length ? `<div style="background:rgba(239,68,68,0.08); border:1px solid var(--status-danger); border-radius:8px; padding:8px 10px; margin-top:8px;"><b style="color:var(--status-danger);">⚠️ Dikkat Edilecekler:</b><ul style="margin:4px 0 0 18px; padding:0;">${d.dikkat.map(x => `<li style="margin-bottom:3px;">${x}</li>`).join('')}</ul></div>` : ''}
+                    ${d.cizim ? `<div style="margin-top:10px;"><b>✏️ Eğitmen Diyagramı:</b><img src="${d.cizim}" style="width:100%; border-radius:8px; margin-top:6px; background:#fff; border:1px solid var(--surface-border);"></div>` : ''}
                     ${d.baglantiSlotId ? `<div style="margin-top:8px; font-size:11px; color:var(--neon-blue);">📅 Bir Antrenman Programı saatine bağlı</div>` : ''}
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
-                        <div>${yildizlar} <span style="font-size:11px; color:var(--text-muted);">${ortalama ? ortalama + ' (' + d.degerlendirmeSayisi + ')' : 'henüz puan yok'}</span></div>
-                        <div style="font-size:11px; color:var(--text-muted);">📊 ${d.kullanimSayisi} kez işlendi${d.sonKullanim ? ' · Son: ' + d.sonKullanim : ''}</div>
+                        <div>${yildizlar} <span style="font-size:11px; color:var(--text-secondary);">${ortalama ? ortalama + ' (' + d.degerlendirmeSayisi + ')' : 'henüz puan yok'}</span></div>
+                        <div style="font-size:11px; color:var(--text-secondary);">📊 ${d.kullanimSayisi} kez işlendi${d.sonKullanim ? ' · Son: ' + d.sonKullanim : ''}</div>
                     </div>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-                        <button onclick="event.stopPropagation(); dersIcerikIsledim('${d.id}')" class="sadece-egitmen" style="flex:1; min-width:110px; background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">✅ Bugün İşledim</button>
-                        <button onclick="event.stopPropagation(); dersIcerikYazdir('${d.id}')" style="flex:1; min-width:90px; background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">🖨️ Yazdır</button>
-                        <button onclick="event.stopPropagation(); dersIcerikDuzenle('${d.id}')" class="sadece-egitmen" style="flex:1; min-width:90px; background:rgba(59,130,246,0.12); color:var(--neon-blue); border:1px solid var(--neon-blue); padding:8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">✏️ Düzenle</button>
-                        <button onclick="event.stopPropagation(); dersIcerikSil('${d.id}')" class="sadece-egitmen" style="flex:1; min-width:70px; background:rgba(239,68,68,0.12); color:var(--neon-red); border:1px solid var(--neon-red); padding:8px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">🗑️ Sil</button>
+                        <button onclick="event.stopPropagation(); dersIcerikIsledim('${d.id}')" class="sadece-egitmen btn btn-sm" style="flex:1; min-width:110px;">✅ Bugün İşledim</button>
+                        <button onclick="event.stopPropagation(); dersIcerikYazdir('${d.id}')" class="btn btn-sm" style="flex:1; min-width:90px;">🖨️ Yazdır</button>
+                        <button onclick="event.stopPropagation(); dersIcerikDuzenle('${d.id}')" class="sadece-egitmen btn btn-sm" style="flex:1; min-width:90px;">✏️ Düzenle</button>
+                        <button onclick="event.stopPropagation(); dersIcerikSil('${d.id}')" class="sadece-egitmen btn btn-danger btn-sm" style="flex:1; min-width:70px;">🗑️ Sil</button>
                     </div>
-                    ${d.olusturan && d.olusturan !== 'Sistem' ? `<div style="margin-top:8px; font-size:10px; color:var(--text-muted);">Ekleyen: ${d.olusturan}</div>` : ''}
+                    ${d.olusturan && d.olusturan !== 'Sistem' ? `<div style="margin-top:8px; font-size:10px; color:var(--text-secondary);">Ekleyen: ${d.olusturan}</div>` : ''}
                 </div>
             </details>`;
         }
@@ -927,8 +927,8 @@
         function dersKullanimRaporuCiz() {
             let alan = document.getElementById('ders-kullanim-raporu-alani'); if(!alan) return;
             let LIG_ETIKET_KISA = { buyukler: '🔵 Büyükler', yildizlar: '⭐ Yıldızlar', kucukler: '🟢 Küçükler', minikler: '🌱 Minikler' };
-            alan.innerHTML = `<div class="glass-panel" style="padding:15px; border-radius:12px; margin-bottom:14px; border:1px solid var(--neon-green);">
-                <div style="font-weight:900; color:var(--neon-green); font-size:15px; margin-bottom:10px;">📊 Ders Kullanım Raporu</div>
+            alan.innerHTML = `<div class="card" style="margin-bottom:14px;">
+                <div style="font-weight:900; color:var(--status-success); font-size:15px; margin-bottom:10px;">📊 Ders Kullanım Raporu</div>
                 <div style="display:flex; gap:6px; margin-bottom:10px;">
                     <select id="kullanim-raporu-grup" class="adm-select" style="flex:1;" onchange="_kullanimRaporuGrup = this.value || null; _kullanimRaporuCache = null; dersKullanimRaporuCiz();">
                         <option value="">Tüm Gruplar</option>
@@ -950,7 +950,7 @@
                 dersKullanimRaporuIcCiz(d);
             }).catch(() => {
                 let ic = document.getElementById('kullanim-raporu-ic');
-                if(ic) ic.innerHTML = '<div style="color:var(--neon-red); font-size:12px;">Yüklenemedi.</div>';
+                if(ic) ic.innerHTML = '<div style="color:var(--status-danger); font-size:12px;">Yüklenemedi.</div>';
             });
         }
 
@@ -960,25 +960,25 @@
             let tipDagilimi = d.tipDagilimi || [];
             let toplamKullanim = tipDagilimi.reduce((t, x) => t + x.sayi, 0);
 
-            let tipHTML = !toplamKullanim ? `<div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Bu dönemde hiç ders işlenmemiş.</div>` :
+            let tipHTML = !toplamKullanim ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">Bu dönemde hiç ders işlenmemiş.</div>` :
                 ['teknik','eglence','oyun'].map(tip => {
                     let x = tipDagilimi.find(t => t.tip === tip);
                     let sayi = x ? x.sayi : 0;
                     let yuzde = toplamKullanim ? Math.round(sayi / toplamKullanim * 100) : 0;
                     return `<div style="margin-bottom:6px;">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;"><span>${DERS_TIP_ETIKET[tip]}</span><span style="color:var(--text-muted);">${sayi} kez · %${yuzde}</span></div>
-                        <div style="background:var(--bg-panel); border-radius:6px; height:8px; overflow:hidden;"><div style="width:${yuzde}%; height:100%; background:var(--accent-orange);"></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;"><span>${DERS_TIP_ETIKET[tip]}</span><span style="color:var(--text-secondary);">${sayi} kez · %${yuzde}</span></div>
+                        <div style="background:var(--surface-2); border-radius:6px; height:8px; overflow:hidden;"><div style="width:${yuzde}%; height:100%; background:var(--accent-orange);"></div></div>
                     </div>`;
                 }).join('');
 
             let topListeHTML = !kullanimlar.length ? '' : `<div style="font-weight:800; font-size:12px; margin:12px 0 6px;">En çok işlenenler:</div>` +
-                kullanimlar.slice(0, 8).map(k => `<div onclick="_dersIcerikVurgulu='${k.dersId}'; dersIcerikleriRenderla(); setTimeout(()=>{let el=document.querySelector('#icerik-dersicerik details[open]'); if(el) el.scrollIntoView({behavior:'smooth'});},100);" style="display:flex; justify-content:space-between; padding:6px 8px; margin-bottom:4px; background:var(--bg-panel); border-radius:6px; font-size:12px; cursor:pointer;"><span>${k.baslik}</span><span style="color:var(--neon-green); font-weight:700;">${k.sayi}×</span></div>`).join('');
+                kullanimlar.slice(0, 8).map(k => `<div onclick="_dersIcerikVurgulu='${k.dersId}'; dersIcerikleriRenderla(); setTimeout(()=>{let el=document.querySelector('#icerik-dersicerik details[open]'); if(el) el.scrollIntoView({behavior:'smooth'});},100);" style="display:flex; justify-content:space-between; padding:6px 8px; margin-bottom:4px; background:var(--surface-2); border-radius:6px; font-size:12px; cursor:pointer;"><span>${k.baslik}</span><span style="color:var(--status-success); font-weight:700;">${k.sayi}×</span></div>`).join('');
 
             let islenenIdSet = new Set(kullanimlar.map(k => k.dersId));
             let uygunDersler = (_dersleriCache || []).filter(x => !_kullanimRaporuGrup || x.gruplar.includes(_kullanimRaporuGrup));
             let hicIslenmeyenler = uygunDersler.filter(x => !islenenIdSet.has(x.id));
-            let eksikHTML = !hicIslenmeyenler.length ? '' : `<div style="font-weight:800; font-size:12px; margin:12px 0 6px; color:var(--neon-red);">⚠️ Bu dönemde hiç işlenmemiş (${hicIslenmeyenler.length}):</div>
-                <div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${hicIslenmeyenler.map(x => x.baslik).join(' · ')}</div>`;
+            let eksikHTML = !hicIslenmeyenler.length ? '' : `<div style="font-weight:800; font-size:12px; margin:12px 0 6px; color:var(--status-danger);">⚠️ Bu dönemde hiç işlenmemiş (${hicIslenmeyenler.length}):</div>
+                <div style="font-size:11px; color:var(--text-secondary); line-height:1.6;">${hicIslenmeyenler.map(x => x.baslik).join(' · ')}</div>`;
 
             ic.innerHTML = tipHTML + topListeHTML + eksikHTML;
         }
@@ -1051,7 +1051,7 @@
             let alan = document.getElementById('ders-ekle-form-alani'); if(!alan) return;
             let v = _dersDuzenlemeVeri || {};
             let esc = (s) => String(s||'').replace(/"/g,'&quot;');
-            alan.innerHTML = `<div class="glass-panel" style="padding:15px; border-radius:12px; margin-bottom:14px; border:1px solid var(--neon-blue);">
+            alan.innerHTML = `<div class="card" style="margin-bottom:14px;">
                 <div style="font-weight:900; color:var(--neon-blue); font-size:15px; margin-bottom:10px;">${_dersDuzenlemeId ? '✏️ Dersi Düzenle' : '➕ Yeni Ders Ekle'}</div>
                 <input type="text" id="ders-ekle-baslik" value="${esc(v.baslik)}" placeholder="Ders başlığı" style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px;">
                 <div style="display:flex; gap:6px; margin-bottom:8px;">
@@ -1100,8 +1100,8 @@
                 </div>
 
                 <div style="display:flex; gap:8px;">
-                    <button onclick="dersIcerikKaydet()" style="flex:1; background:var(--neon-green); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">✅ ${_dersDuzenlemeId ? 'Güncelle' : 'Dersi Kaydet'}</button>
-                    <button onclick="dersEkleFormToggle()" style="flex:1; background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:12px; border-radius:10px; font-weight:bold; font-size:13px; cursor:pointer;">İptal</button>
+                    <button onclick="dersIcerikKaydet()" class="btn btn-primary" style="flex:1;">✅ ${_dersDuzenlemeId ? 'Güncelle' : 'Dersi Kaydet'}</button>
+                    <button onclick="dersEkleFormToggle()" class="btn" style="flex:1;">İptal</button>
                 </div>
             </div>`;
             dersCizimCanvasKur();
@@ -17583,31 +17583,31 @@ ${(function(){
             ${hedefKartHTML(sp, ad, ekipmanDuzenlenebilir)}
             ${grafik || '<div class="glass-panel" style="padding:16px; text-align:center; color:var(--text-muted); margin-bottom:14px; font-size:13px;">📈 Grafik için en az 2 antrenman gerekli.</div>'}
             ${ritim}
-            <details style="margin-bottom:14px;">
-                <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:11px 14px; font-weight:800; font-size:13px;">🩺 Analiz & Teşhis <span style="float:right; color:var(--text-muted); font-weight:400;">▾</span></summary>
-                <div style="margin-top:8px;">
+            <details class="card" style="padding:0; margin-bottom:14px;">
+                <summary style="cursor:pointer; list-style:none; padding:11px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">🩺 Analiz & Teşhis<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 14px;">
                     ${sapma || ''}
                     ${bosluk}
                     ${aiAntrenmanOnerisiKartiHTML(ad)}
                     ${havaKiyaslamaHTML(sp)}
                 </div>
             </details>
-            <details style="margin-bottom:14px;">
-                <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:11px 14px; font-weight:800; font-size:13px;">💪 Fiziksel Takip <span style="float:right; color:var(--text-muted); font-weight:400;">▾</span></summary>
-                <div style="margin-top:8px;">${biyomotor}</div>
+            <details class="card" style="padding:0; margin-bottom:14px;">
+                <summary style="cursor:pointer; list-style:none; padding:11px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">💪 Fiziksel Takip<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 14px;">${biyomotor}</div>
             </details>
-            <details style="margin-bottom:14px;">
-                <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:11px 14px; font-weight:800; font-size:13px;">🏹 Ekipman & Nişangah <span style="float:right; color:var(--text-muted); font-weight:400;">▾</span></summary>
-                <div style="margin-top:8px;">${ekipman}</div>
+            <details class="card" style="padding:0; margin-bottom:14px;">
+                <summary style="cursor:pointer; list-style:none; padding:11px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">🏹 Ekipman & Nişangah<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 14px;">${ekipman}</div>
             </details>
-            <details style="margin-bottom:14px;">
-                <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:11px 14px; font-weight:800; font-size:13px;">📋 Geçmiş & Rozetler <span style="float:right; color:var(--text-muted); font-weight:400;">▾</span></summary>
-                <div style="margin-top:8px;">
+            <details class="card" style="padding:0; margin-bottom:14px;">
+                <summary style="cursor:pointer; list-style:none; padding:11px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">📋 Geçmiş & Rozetler<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>
+                <div style="padding:0 14px 14px;">
                     ${son5 ?`<div class="glass-panel" style="padding:14px; margin-bottom:14px;"><div style="font-weight:800; color:var(--accent-orange); margin-bottom:10px; font-size:13px;">📋 Son 5 Antrenman</div>${son5}</div>` : ''}
                     ${kazanilan.length ? `<div class="glass-panel" style="padding:14px; margin-bottom:14px;"><div style="font-weight:800; color:var(--gold); margin-bottom:10px; font-size:13px;">🏅 Kazanılan Rozetler (${kazanilan.length})</div><div style="display:flex; flex-wrap:wrap; gap:8px;">${kazanilan.map(r => `<div style="background:rgba(251,191,36,0.1); border:1px solid var(--gold); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:bold;">${r.e} ${r.ad}</div>`).join('')}</div></div>` : ''}
                 </div>
             </details>
-            <button onclick="sekmeAc('skor')" style="width:100%; background:var(--accent-orange); color:#fff; border:none; padding:14px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer; margin-top:4px;">🎯 Antrenman Başlat</button>`;
+            <button onclick="sekmeAc('skor')" class="btn btn-primary" style="width:100%; margin-top:4px;">🎯 Antrenman Başlat</button>`;
             biyomotorGrafikleriCiz(sp, '-oz');
         }
         let klasmanYay = 'hepsi';

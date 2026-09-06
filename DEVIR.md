@@ -25,7 +25,9 @@ faz faz, ekranı bozmadan uygulamak.
 - `c221721` — DEVIR.md ekle — tasarım sistemi geçiş belgesi
 - `69c097f` — Tasarım sistemi Faz 3: navigasyon
 - `109188d` — Tasarım sistemi Faz 4: Skor ekranı (4a/4b/4c)
-- Faz 5 grup 1 (Sayaç, Canlı Takip, Liderlik) — bu commit'te, aşağıda anlatılıyor
+- `3c75e63` — Tasarım sistemi Faz 5 grup 1: Sayaç, Canlı Takip, Liderlik
+- `4ccb205` — Faz 5 düzeltme: `!important` yerine doğru kural sırası
+- Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -181,6 +183,66 @@ girince seri KENDİLİĞİNDEN kaydediliyor. Test scriptlerinde son oktan sonra 
 `#skor-kaydet-btn`'e basmak, zaten boşalmış bir seriye ikinci kez basmak anlamına gelip yanlışlıkla
 "EKSİK SKOR" hatası gibi görünüyor — gerçek bir regresyon değildi, test tasarımı hatasıydı.
 
+## 2d. Faz 5, Grup 2 — Gelişim, Ders İçerikleri, Teknik Çalışma (tamamlandı)
+
+Üç ekran sırayla yapıldı, hiçbiri hesaplama/veri fonksiyonuna dokunmadı. 360/1280px'te,
+koyu VE açık temada (12 kombinasyon) yatay kaydırma yok, konsol hatası yok — doğrulandı.
+
+**Gelişim** (`sporcuGelisimDoldur()`): zaten var olan 4 katlanır bölüm (🩺 Analiz & Teşhis,
+💪 Fiziksel Takip, 🏹 Ekipman & Nişangah, 📋 Geçmiş & Rozetler — hepsi varsayılan kapalı)
+`.card` kabuğuna, özet satırları Faz 4c'nin özet deseniyle (`list-style:none` + sağa yaslı
+`▾`) hizalandı. Tek CTA ("🎯 Antrenman Başlat") `.btn.btn-primary` oldu. `gelisimGrafigiHTML`/
+`ritimGrafigiHTML`/`biyomotorGrafikleriCiz` gibi grafik/veri fonksiyonlarına dokunulmadı.
+
+**Ders İçerikleri** (`dersIcerikleriRenderla()`/`dersKartHTML()`): arama+filtre paneli `.card`,
+tip filtresi (Tümü/Teknik/Eğlenceli/Oyun) düz butonlardan `.seg`/`.seg-btn`'e taşındı, birincil
+eylem ("🎲 Rastgele Bir Ders Seç") `.btn.btn-primary`, eğitmen-özel "Yeni Ders Ekle"/"Kullanım
+Raporu" aç/kapa düğmeleri `.btn`, açılınca gösterdikleri panellerin (`dersEkleFormCiz()`,
+`dersKullanimRaporuCiz()`) dış kabukları `.card`. Her ders kartı (`<details class="adm-card">`)
+`.card`'a, aksiyon satırı (✅ İşledim/🖨️ Yazdır/✏️ Düzenle/🗑️ Sil) `.btn`/`.btn-sm`'e taşındı —
+**🗑️ Sil `.btn-danger`** (Liderlik'teki yıkıcı-eylem ayrımıyla aynı prensip). Boş sonuç durumu
+`.empty` bileşenine taşındı. `dersIcerikFiltreliListe()`, cache/fetch/CRUD fonksiyonlarının
+hiçbirine dokunulmadı; form içindeki çizim tuvali (`#ders-cizim-canvas`) ve tekil metin
+girişleri (henüz bir Faz 2 input bileşeni yok) olduğu gibi bırakıldı.
+
+**Teknik Çalışma** (`public/dagsk-teknik-calisma.js`, `DAGSK_TEKNIK.mount()`) — bu grubun en
+öğretici parçası. Modül kendi `.tk-` paletini kullanan, uygulamadan tamamen bağımsız,
+kendi CSS'ini enjekte eden bir kütüphane (bkz. hafıza `dagsk-teknik-calisma-modulu-2026-08`).
+**Kullanıcının sorusu üzerine** (bkz. §7) önce Gelişim ile Teknik Çalışma sekmeleri yan yana
+ekran görüntüsüyle karşılaştırıldı: uygulama koyu temadayken Teknik Çalışma sabit beyaz
+kartlarla açılıyordu — üst gezinme çubuğunun hemen altında "yabancı bir site yapıştırılmış"
+gibi duruyordu. Bu, sadece `--tk-orange`'ı bağlamanın (ilk teklif) sorunu ÇÖZMEYİP ERTELEYECEĞİNİ
+doğruladı; kart arkaplanlarını da `--surface-1`'e taşımaya (kapsam genişletme, kullanıcı onayıyla)
+karar verildi.
+
+**Asıl bulgu**: `--tk-navy` TEK bir hex ile ÜÇ farklı görsel rol oynuyordu — (1) başlık/etiket
+metni (kartın üstünde okunan "ink"), (2) opak, sabit koyu rozet arkaplanı (stat çipleri, 4 günlük
+plan paneli, alt video butonu — hepsi sabit beyaz metinle eşleşiyor). Kart `--surface-1`'e
+(temaya duyarlı) taşınınca, `--tk-navy`'yi TEK bir Faz 1 tokenına bağlamak imkansız hale geldi:
+metin rolü `--text-primary`'ye ihtiyaç duyarken, rozet-arkaplanı rolü SABİT kalmalıydı — çünkü
+o rozetler kendi içinde kapalı bir kontrast sistemi taşıyor (koyu zemin + beyaz metin, HER
+ZAMAN okunur, kartın rengi ne olursa olsun). **Karar**: `--tk-navy` → `var(--text-primary)`
+(sadece metin rolü), rozet arkaplanları (`.tk-stat`, `.tk-plan`, `.tk-vid.tk-alt`) modülün
+zaten var olan ikinci sabit tonuna (`--tk-navy2`, `#143A5E`, daha önce sadece hover'da
+kullanılıyordu) yönlendirildi — YENİ hex icat edilmedi, temaya BAĞLANMADI (bilerek — kendi
+kendine yetiyor). Aynı mantıkla 4 metin literali (`.tk-intro p`, `.tk-mat p`, `.tk-amac`,
+`.tk-steps li` — hiçbiri adlı `.tk-*` değişken kullanmıyordu, o yüzden ilk tabloda
+görünmemişlerdi) `--text-primary`/`--text-secondary`'ye taşındı, yoksa kart koyulaşınca bu
+metinler de okunmaz kalırdı. Toplam: 8 palet değişkeninden 7'si Faz 1 tokenına bağlandı
+(`--tk-navy2` bilerek sabit bırakıldı), 3 kart arkaplanı + 4 metin literali + 3 rozet-arkaplanı
+yönlendirmesi değişti. `DATA`/`PLAN`/`MALZEME` içerikleri, `mount()`/`render()`/`injectCSS()`
+mantığı, SVG çizimleri/ikonlar HİÇ dokunulmadı. `teknikCalismaDoldur()`'daki (app.js) hata
+mesajı rengi de `--neon-red` → `--status-danger` oldu.
+
+**Doğrulama**: koyu temada rozetlerin kart üstünde ayrıştığı hem gözle (ekran görüntüsü) hem
+ölçülerek (`getComputedStyle` ile okunan gerçek `backgroundColor` değerleri: kart
+`rgba(28,28,32,.86)`, rozetler `rgb(20,58,94)` — belirgin farklı ton, ek `--surface-border`
+kenarlığına gerek kalmadı) doğrulandı.
+
+**Kalan not**: proje kökündeki `./dagsk-teknik-calisma.js` (canlı `public/` kopyasının önceden
+BİREBİR AYNISI olan, hiçbir yerden yüklenmeyen ölü bir kopya) artık bu değişikliklerle
+UYUŞMUYOR — Faz 6 temizlik listesine eklendi (bkz. §6).
+
 ## 3. Token mimarisi (styles.css, tam liste)
 
 Hepsi `:root` içinde, aksi belirtilmedikçe. **Eski değişkenlerin hiçbiri silinmedi** —
@@ -269,19 +331,19 @@ her zaman ESKİ AD korunuyor, sadece değeri güncelleniyor. `--surface-*`/`--sp
 ## 5. Faz 2 bileşen kütüphanesi
 
 Hepsi styles.css'te, sadece Faz 1 tokenlarından besleniyor, gradyan/neon-gölge/
-büyük-harf yok. **Faz 3-4'te `.tabs`/`.btn`/`.card`/`.settings-row`/`.switch`/`.seg`
-gerçek ekranlarda kullanılmaya başlandı** — geri kalanı (`.table`, `.empty`, `.chip`)
+büyük-harf yok. **Faz 3-5'te `.tabs`/`.btn`/`.card`/`.settings-row`/`.switch`/`.seg`/
+`.empty` gerçek ekranlarda kullanılmaya başlandı** — geri kalanı (`.table`, `.chip`)
 hâlâ hiçbir ekrana uygulanmadı, Faz 5'te ekran ekran olacak.
 
-- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. **Kullanımda**: "Daha" panelinin "Kapat" butonu, Skor ekranının tek "Seriyi kaydet" düğmesi (`.btn-primary`), "Seri ayarları"nın "Sıfırla" düğmesi (`.btn-sm`).
-- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için. Tekdüze gölge yok, sadece kenarlık. **Kullanımda**: "Daha" paneli, Skor ekranının "Seri ayarları" katlanır paneli.
-- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti. Henüz kullanılmadı (karıştırma: Skor ekranının YENİ `.seri-cip`'i ayrı, kendi ok-rengi mantığı olan Faz 4b bileşeni).
-- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici. **Faz 4c'de uygulandı**: Skor ekranının "Bu seride kaç ok" (Oto/3/6) seçici.
+- **`.btn`** (+ `.btn-primary`, `.btn-danger`, `.btn-ghost`, `.btn-sm`) — her tıklanabilir aksiyon butonu. **Kullanımda**: "Daha" panelinin "Kapat" butonu, Skor ekranının tek "Seriyi kaydet" düğmesi, Liderlik'in yönetim butonları (`.btn-danger` dahil), Gelişim'in "Antrenman Başlat" CTA'sı, Ders İçerikleri'nin "Rastgele Seç"/"Yeni Ders Ekle"/"Kullanım Raporu"/kart aksiyonları (Sil → `.btn-danger`).
+- **`.card`** — bir bilgi/özet bloğunu diğerlerinden ayırmak için. Tekdüze gölge yok, sadece kenarlık. **Kullanımda**: "Daha" paneli, Skor/Sayaç/Liderlik'in katlanır ayar panelleri, Canlı Takip'in sporcu kartları, Gelişim'in 4 katlanır bölümü, Ders İçerikleri'nin filtre paneli + ders kartları + admin panelleri.
+- **`.chip`** (+ `.chip-success/-warning/-danger`) — küçük durum/etiket rozeti. Henüz kullanılmadı (karıştırma: Skor ekranının `.seri-cip`'i ayrı, kendi ok-rengi mantığı olan Faz 4b bileşeni).
+- **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici. **Kullanımda**: Skor ekranının "Bu seride kaç ok" seçici (Faz 4c), Ders İçerikleri'nin tip filtresi (Faz 5 grup 2).
 - **`.switch`** + `.slider` — açık/kapalı anahtar. **Faz 4c'de uygulandı**: Skor ekranının "Ciddi yarışma modu" anahtarı (eski elle-boyanan özel switch'in yerini aldı).
 - **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır. **Faz 4c'de uygulandı**: "Seri ayarları" panelinin 5 satırı.
 - **`.tabs`** + `.tabs-btn` — üst-seviye navigasyon deseni. **Faz 3'te uygulandı**: `#tabs-ana` (masaüstü üst bar) ve `#daha-tab-btn` bunu kullanıyor. Eski `.sekme-grubu`/`.sekme-btn.aktif` (gradyan/glow'lu) artık hiçbir elemente uygulanmıyor (id-seçiciler kazanıyor) — silinmedi, Faz 6'da temizlenecek.
 - **`.table`** — düzenli veri tablosu. Henüz kullanılmadı — app.js'te onlarca ayrı inline-style'lı `<table>` var, zamanla buna taşınabilir.
-- **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları. Henüz kullanılmadı.
+- **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları. **Kullanımda**: Canlı Takip'in boş/hata durumları (Faz 5 grup 1), Ders İçerikleri'nin "sonuç yok" durumu (Faz 5 grup 2).
 
 **Faz 4b'de EKLENEN yeni class'lar** (Skor ekranına özel, orijinal Faz 2 listesinde yoktu):
 `.seri-seridi`/`.seri-cip-satir`/`.seri-cip`/`.seri-cip-cezali`/`.seri-cip-toplam` — okuyan
@@ -322,6 +384,10 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
     (kaynak-sırası çakışması) var mı. Bu turda `.sekme-icerik` padding-bottom'da TAM BÖYLE bir bug
     bulunup düzeltildi (kuralı doğru yere taşıyarak, `!important` KULLANMADAN) — aynı sınıfın başka
     örnekleri olabilir, sistemli taranmadı.
+  - **Proje kökündeki `./dagsk-teknik-calisma.js`** — `public/dagsk-teknik-calisma.js`'in (canlı,
+    `app.html`'in yüklediği kopya) Faz 5 grup 2'den ÖNCE birebir aynısı olan, hiçbir yerden
+    yüklenmeyen ölü bir kopyaydı (bkz. §2d). Artık iki dosya UYUŞMUYOR — ya silinmeli ya da
+    (daha az riskli ama gereksiz) yeniden senkronlanmalı.
 
 ### Faz 5 ekran durum tablosu
 
@@ -337,9 +403,9 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | 1 | Sayaç | ✅ bitti (Faz 5 grup 1) | Katlanır "Sayaç ayarları" paneli eklendi. |
 | 2 | Canlı Takip | ✅ bitti (Faz 5 grup 1) | Ayar yoktu, sadece `.card`/`.seri-cip`/`.empty`'ye taşındı. |
 | 3 | Liderlik | ✅ bitti (Faz 5 grup 1) | Katlanır "Yönetim" paneli, 2 alt grup (zararsız/tehlikeli, ayrı). |
-| 4 | Gelişim | ⏳ bekliyor | Sporcunun kendi ilerlemesi, sık bakılıyor. |
-| 5 | Ders İçerikleri | ⏳ bekliyor | İçerik kütüphanesi, antrenman öncesi/sonrası. `Ders Programı` İLE KARIŞTIRILMASIN — tamamen ayrı bir özellik (bkz. not aşağıda). |
-| 6 | Teknik Çalışma | ⏳ bekliyor | Ders İçerikleri'nden kasıtlı ayrı modül (bkz. hafıza `dagsk-teknik-calisma-modulu-2026-08`). |
+| 4 | Gelişim | ✅ bitti (Faz 5 grup 2) | 4 katlanır bölüm `.card`'a taşındı, CTA `.btn-primary` oldu. |
+| 5 | Ders İçerikleri | ✅ bitti (Faz 5 grup 2) | Filtre `.seg`, kartlar `.card`, Sil `.btn-danger`. `Ders Programı` İLE KARIŞTIRILMAMIŞTIR — ayrı özellik. |
+| 6 | Teknik Çalışma | ✅ bitti (Faz 5 grup 2) | Kendi `.tk-` paleti Faz 1 tokenlarına bağlandı (bkz. §2d) — yapıya dokunulmadı. |
 | 7 | Yarışmalar | ⏳ bekliyor | Takım/turnuva yönetimi — orta karmaşıklık (eşleşme ağacı vb.). |
 | 8 | Düello | ⏳ bekliyor | Kendi modal/sayaç sistemi var (`#duello-modal`), orta-yüksek karmaşıklık. |
 | 9 | Başarılar | ⏳ bekliyor | Rozet vitrini, mağaza sistemine bağlı. |
@@ -437,11 +503,32 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   aralarındaki başka kod önemli değil. Taşımak gerçekten mümkün değilse (ör. iki kuralın SIRASI,
   ÜÇÜNCÜ bir kuralla olan ilişkisini bozacaksa) o zaman `!important` düşünülür — ama önce taşımayı
   dene, `!important`'ı ilk çare yapma.
+- **Bir CSS değişkeni yeniden adlandırmadan/bağlamadan önce ONU KULLANAN HER KURALI grep'le** —
+  aynı değişken görünüşte tek bir "renk" gibi dursa da, kodda farklı GÖRSEL ROLLER oynayabilir
+  (Faz 5 grup 2: `--tk-navy` hem kart üstünde okunan metin rengi hem de kendi içinde kapalı,
+  sabit beyaz metinle eşleşen bir rozet arkaplanıydı). Değişkeni tek bir yeni tokena bağlamak,
+  rollerden birini doğru yaparken diğerini kırabilir — önce her kullanım yerini listele, hangi
+  rollerin gerçekten temaya duyarlı olması GEREKTİĞİNİ (kartın üstünde duran metin/kenarlık) ve
+  hangilerinin kendi başına yeterli, sabit kalması gerektiğini (opak, kendi zıt-renkli metniyle
+  gelen rozet/buton) ayır, sonra taşı.
+- **Opak, kendi ön-plan rengiyle birlikte gelen bir rozet/buton arkaplanının temayı takip etmesine
+  GEREK YOK** — ör. koyu lacivert zemin + sabit beyaz metin, altındaki kart ister koyu ister açık
+  olsun okunur kalır, çünkü kontrastı KENDİ İÇİNDE taşıyor. Bunu bir tema-tokenına (`--surface-*`
+  gibi, kartın kendisiyle birlikte değişen) bağlamak aslında YANLIŞ hedef — kart karardığında rozet
+  de kararıp kendi zemini üstünde kaybolabilir (Faz 5 grup 2, Teknik Çalışma). Sadece kartın
+  YÜZEYİNDE duran düz metin/kenarlık temayı takip etmeli.
+- **Kendi CSS'ini enjekte eden, "bağımsız" diye tasarlanmış bir modül bile uygulamayla görsel
+  çakışabilir** — modülün kendi içinde tutarlı olması (Teknik Çalışma'nın .tk- paleti kendi
+  içinde gayet düzgündü) uygulamanın GENELİNE uyduğu anlamına gelmez. Böyle bir modülü
+  değerlendirirken, uygulamanın normal bir ekranıyla YAN YANA ekran görüntüsü almak (aynı üst
+  bar, farklı içerik zemini) "yabancı duruyor mu" sorusunu göz kararı tartışmaktan çok daha
+  hızlı ve kesin cevaplıyor.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
 - ~~Faz 3'ün 6'lık liste ve ikon seti~~ — **ÇÖZÜLDÜ**, bkz. §2a.
 - ~~Faz 4'ün Skor ekranı tasarımı~~ — **ÇÖZÜLDÜ**, bkz. §2b.
+- ~~Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma)~~ — **ÇÖZÜLDÜ**, bkz. §2d.
 - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.
