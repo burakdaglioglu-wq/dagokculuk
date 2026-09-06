@@ -1301,7 +1301,7 @@
 
             html += `<div class="glass-panel" style="padding:14px; border-radius:12px; margin-bottom:12px;">
                 <div style="font-size:12px; font-weight:bold; color:var(--gold); margin-bottom:6px;">📝 Genel Not (kalıcı)</div>
-                <textarea id="karne-genel-not" placeholder="Bu sporcu hakkında genel notunuz..." style="width:100%; min-height:60px; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; font-family:'Poppins'; font-size:13px; resize:vertical; box-sizing:border-box;">${sp.egitmenNotu||''}</textarea>
+                <textarea id="karne-genel-not" placeholder="Bu sporcu hakkında genel notunuz..." style="width:100%; min-height:60px; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; font-family:var(--font-sans); font-size:13px; resize:vertical; box-sizing:border-box;">${sp.egitmenNotu||''}</textarea>
                 <button onclick="karneGenelNotKaydet()" style="margin-top:8px; background:var(--neon-blue); color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; font-size:12px;">💾 Notu Kaydet</button>
             </div>`;
             alan.innerHTML = html;
@@ -1349,7 +1349,7 @@
                     ${girisAlani('denge','Denge','sn')}
                     ${girisAlani('plank','Plank','sn')}
                 </div>
-                <textarea id="biyo-not" placeholder="Not (opsiyonel)..." style="width:100%; min-height:44px; padding:8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-family:'Poppins'; font-size:12px; resize:vertical; box-sizing:border-box; margin-bottom:8px;"></textarea>
+                <textarea id="biyo-not" placeholder="Not (opsiyonel)..." style="width:100%; min-height:44px; padding:8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-family:var(--font-sans); font-size:12px; resize:vertical; box-sizing:border-box; margin-bottom:8px;"></textarea>
                 <button onclick="biyomotorEkle('${ad}')" style="width:100%; background:var(--neon-blue); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">💾 Test Kaydını Ekle</button>
             </div>`;
 
@@ -2203,7 +2203,7 @@
                                 <span style="font-size:11px; color:var(--gold); white-space:nowrap;">⭐ Değerlendirme:</span>
                                 <select id="psn-puan-${pi}" class="adm-select">${puanOpt}</select>
                             </div>
-                            <textarea id="psn-not-${pi}" placeholder="Eğitmen hakkında not / değerlendirme..." class="adm-input" style="min-height:44px; font-family:'Poppins';">${p.not||''}</textarea>
+                            <textarea id="psn-not-${pi}" placeholder="Eğitmen hakkında not / değerlendirme..." class="adm-input" style="min-height:44px; font-family:var(--font-sans);">${p.not||''}</textarea>
                             <div style="display:flex; gap:6px; margin-top:6px;">
                                 <button onclick="personelDegerlendir(${pi})" class="adm-btn" style="flex:1; background:var(--neon-blue); color:#fff; border:none;">💾 Değerlendirmeyi Kaydet</button>
                                 <button onclick="personelSil('${p.id}')" class="adm-btn" style="background:rgba(239,68,68,0.15); border-color:var(--neon-red); color:var(--neon-red);">🗑️ Sil</button>
@@ -7392,7 +7392,7 @@ ${(function(){
                 <div style="font-weight:900; font-size:14px; color:var(--neon-blue);">📄 Aile Atış Raporu</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Sporcunun tüm atış verilerini profesyonel bir PDF raporu olarak indir veya WhatsApp özeti kopyalayıp aileye gönder.</div>
             </div>
-            <button onclick="haftalikTopluRaporCiz()" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,var(--neon-green),#059669); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.25);">🗓️ CUMA RAPORU — Haftalık Toplu WhatsApp Özetleri</button>
+            <button onclick="haftalikTopluRaporCiz()" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,var(--neon-green),var(--status-success-strong)); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.25);">🗓️ CUMA RAPORU — Haftalık Toplu WhatsApp Özetleri</button>
             <button onclick="aylikBultenCiz()" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; box-shadow:0 4px 14px rgba(139,92,246,0.25);">📅 AYLIK BÜLTEN — Bu Ayın Toplu Özeti</button>
             <input type="text" id="yon-rapor-arama" placeholder="🔍 Sporcu ara..." value="${(_raporArama||'').replace(/"/g,'&quot;')}" oninput="_raporArama=this.value; yoneticiRaporCiz(); let el=document.getElementById('yon-rapor-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" class="adm-input" style="margin-bottom:10px;">`;
             let bulundu = false;
@@ -15858,7 +15858,7 @@ ${(function(){
                     </div>
                     <div style="text-align:center; font-size:12px; font-weight:900; color:${onde ? 'var(--neon-green)' : 'var(--gold)'}; margin-bottom:10px;">${seriler.length === 0 ? 'Henüz seri atılmadı — ilk okla yarış başlar! 🏹' : onde ? '🔥 ÖNDESİN — böyle devam!' : '🐐💨 DAĞCAN ' + (tavT - senT) + ' puan önde — yakala!'}</div>
                     <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:6px;"><div style="flex:1; height:11px; background:var(--bg-main); border-radius:8px; overflow:hidden;"><div style="width:${Math.round(senT/maxT*100)}%; height:100%; background:linear-gradient(90deg,var(--neon-green),#059669);"></div></div></div>
+                        <div style="display:flex; align-items:center; gap:6px;"><div style="flex:1; height:11px; background:var(--bg-main); border-radius:8px; overflow:hidden;"><div style="width:${Math.round(senT/maxT*100)}%; height:100%; background:linear-gradient(90deg,var(--neon-green),var(--status-success-strong));"></div></div></div>
                         <div style="display:flex; align-items:center; gap:6px;"><div style="flex:1; height:11px; background:var(--bg-main); border-radius:8px; overflow:hidden;"><div style="width:${Math.round(tavT/maxT*100)}%; height:100%; background:linear-gradient(90deg,var(--gold),#f59e0b);"></div></div></div>
                     </div>
                     ${satirlar ? `<div style="font-size:10px; font-weight:900; letter-spacing:1px; color:var(--text-muted); margin-bottom:6px;">SERİ SERİ SONUÇLAR</div>${satirlar}` : ''}
@@ -15881,7 +15881,7 @@ ${(function(){
                     </div>
                     <div style="display:flex; gap:6px; margin-bottom:6px;">${modBtn('isinma')}${modBtn('rakip')}${modBtn('sampiyon')}</div>
                     <div id="tavsan-mod-aciklama" style="font-size:11px; color:var(--text-muted); min-height:30px; margin-bottom:12px; padding:0 2px;">${TAVSAN_MODLAR[ay.mod].aciklama}</div>
-                    <button onclick="tavsanAcKapat()" style="width:100%; padding:13px; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; background:${ay.acik ? 'var(--bg-panel)' : 'linear-gradient(135deg,var(--neon-green),#059669)'}; color:${ay.acik ? 'var(--neon-red)' : '#fff'}; ${ay.acik ? 'border:1px solid var(--neon-red);' : ''}">${ay.acik ? '⏹ DAĞCAN’ı Uğurla' : '🐐 DAĞCAN ile Yarış!'}</button>
+                    <button onclick="tavsanAcKapat()" style="width:100%; padding:13px; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; background:${ay.acik ? 'var(--bg-panel)' : 'linear-gradient(135deg,var(--neon-green),var(--status-success-strong))'}; color:${ay.acik ? 'var(--neon-red)' : '#fff'}; ${ay.acik ? 'border:1px solid var(--neon-red);' : ''}">${ay.acik ? '⏹ DAĞCAN’ı Uğurla' : '🐐 DAĞCAN ile Yarış!'}</button>
                 </div>
             </div>`);
         }
@@ -17782,7 +17782,7 @@ ${(function(){
 
         function raporOnizlemeAc() {
             let veri = RaporVerisiOlustur(); if(veri.length === 0) return showToast("Veri yok!", "error");
-            let html = `<div style="text-align:center; margin-bottom: 10px;"><div style="font-size:24px; font-weight:900; color:#ff6200; border:2px solid #ff6200; display:inline-block; padding:4px 12px; border-radius:8px; margin-bottom:10px; background:rgba(0,0,0,0.1);">DAĞ S.K</div><h2 style="color:#ff6200; margin:0; font-family:'Poppins';">Turnuva Raporu (${aktifGrup.toUpperCase()})</h2></div>`;
+            let html = `<div style="text-align:center; margin-bottom: 10px;"><div style="font-size:24px; font-weight:900; color:#ff6200; border:2px solid #ff6200; display:inline-block; padding:4px 12px; border-radius:8px; margin-bottom:10px; background:rgba(0,0,0,0.1);">DAĞ S.K</div><h2 style="color:#ff6200; margin:0; font-family:var(--font-sans);">Turnuva Raporu (${aktifGrup.toUpperCase()})</h2></div>`;
             html += `<table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; color:#111; font-family:sans-serif;"><thead><tr style="background:#e5e7eb; border-bottom:2px solid #9ca3af;"><th style="padding:8px;">Sıra</th><th style="padding:8px;">Sporcu</th><th style="padding:8px;">Yay</th><th style="padding:8px;">Turnuva Durumu</th><th style="padding:8px;">Puan</th><th style="padding:8px;">X</th><th style="padding:8px;">Detaylı Seriler</th></tr></thead><tbody>`;
             veri.forEach(v => { html += `<tr style="border-bottom:1px solid #e5e7eb; background:#fff;"><td style="padding:8px;">${v["Sıra"]}</td><td style="padding:8px; font-weight:bold;">${v["Ad"]}</td><td style="padding:8px;">${v["Kategori"]}</td><td style="padding:8px;">${v["Durum"]}</td><td style="padding:8px; color:#ff6200;"><b>${v["Puan"]}</b></td><td style="padding:8px;">${v["X"]}</td><td style="padding:8px; font-size:10px;">${v["Detay"]}</td></tr>`; });
             html += `</tbody></table>`; document.getElementById('rapor-pdf-icerik').innerHTML = html; document.getElementById('rapor-modal').style.display = 'flex';
@@ -18937,18 +18937,30 @@ ${(function(){
         let magazaAktifTab = 'tema';
 
         // --- Renk paletleri (tema) ---
+        // "varsayilan" kendi rengini İKİNCİ KEZ tanımlamıyor — doğrudan CSS tokenlarından okunuyor,
+        // çünkü temaPaletUygula() varsayılan seçiliyken hiç inline stil basmıyor (bkz. aşağısı).
         const PALETLER = {
-            varsayilan: { orange: '#ff6200', gold: '#fbbf24', onizle: '#ff6200' },
+            varsayilan: { orange: 'var(--accent-orange)', gold: 'var(--gold)', onizle: 'var(--accent-orange)' },
             okyanus:    { orange: '#0ea5e9', gold: '#38bdf8', onizle: '#0ea5e9' },
             orman:      { orange: '#10b981', gold: '#34d399', onizle: '#10b981' },
             gece:       { orange: '#a855f7', gold: '#c084fc', onizle: '#a855f7' },
             alev:       { orange: '#ef4444', gold: '#f59e0b', onizle: '#ef4444' },
-            altin:      { orange: '#d4a017', gold: '#fde047', onizle: '#d4a017' }
+            altin:      { orange: '#d4a017', gold: '#fde047', onizle: '#d4a017' },
+            buz:        { orange: '#38bdf8', gold: '#93c5fd', onizle: '#38bdf8' },
+            pembe:      { orange: '#ff2d95', gold: '#ff8fc4', onizle: '#ff2d95' }
         };
         function temaPaletUygula(id) {
-            let p = PALETLER[id] || PALETLER.varsayilan;
-            document.documentElement.style.setProperty('--accent-orange', p.orange);
-            document.documentElement.style.setProperty('--gold', p.gold);
+            if(!PALETLER[id]) { console.warn('Bilinmeyen tema paleti: "' + id + '" — varsayılana dönülüyor.'); id = 'varsayilan'; }
+            if(id === 'varsayilan') {
+                // Varsayılanda hiç inline yazmıyoruz — sadece :root'taki --accent-orange/--gold geçerli olsun,
+                // aksi halde marka rengi ileride değişince palet burada eski değeri dondurmuş olurdu.
+                document.documentElement.style.removeProperty('--accent-orange');
+                document.documentElement.style.removeProperty('--gold');
+            } else {
+                let p = PALETLER[id];
+                document.documentElement.style.setProperty('--accent-orange', p.orange);
+                document.documentElement.style.setProperty('--gold', p.gold);
+            }
             localStorage.setItem('dag_sk_palette', id);
         }
 

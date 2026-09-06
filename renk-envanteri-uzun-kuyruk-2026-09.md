@@ -1,0 +1,384 @@
+# Renk Envanteri — Uzun Kuyruk (1-4 kez geçen 372 hex)
+
+Bu dosya, ana rapordaki 63 "yüksek etkili" (≥5 kullanım) rengin dışında kalan,
+her biri sadece 1-4 kez geçen 372 hex kodunu listeler. Sınıflandırma OTOMATİK
+ve SADECE renk tonuna bakarak yapıldı (gri/siyah/beyaz → A adayı, turuncu tonu
+→ A/accent adayı, diğer her şey → C). Bağlam OKUNMADI — bu yüzden düşük güvenli.
+Gerçek renk değişimi sırasında her biri tek tek koda bakılarak doğrulanacak;
+bu liste sadece "muhtemelen sorun çıkarmaz" ile "mutlaka bakılmalı" ayrımını
+kabaca yapmak için bir başlangıç noktası.
+
+| Hex | Toplam | Dosya | Öneri (otomatik ön-sınıf) |
+|---|---|---|---|
+| `#f3f4f6` | 4 | app.js×3, styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#eff6ff` | 4 | app.js×4 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#bfdbfe` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#00f0ff` | 4 | app.js×2, styles.css×1, app.html×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b91c1c` | 4 | app.js×2, styles.css×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#334155` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fffbeb` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#92400e` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7c3aed` | 4 | app.js×3, styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7c8cff` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7dd3fc` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e0685a` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fff6d8` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5a3f22` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7f1d1d` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4ade80` | 4 | app.js×4 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff8c38` | 4 | app.js×1, styles.css×3 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#0a0a0c` | 4 | styles.css×4 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#14b8a6` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0ea5e9` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ccc` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#111111` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#666` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#444` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#00e5ff` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff2fd0` | 3 | app.js×2, styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0b1e3d` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#12305e` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#93c5fd` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fef3c7` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffd6a5` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#26262e` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#e8e8ee` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a0a0a` | 3 | app.js×3 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#c084fc` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f87171` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#6b4a34` | 3 | app.js×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff6a1a` | 3 | app.js×1, styles.css×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#4d8dff` | 3 | app.js×1, styles.css×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#9b3bff` | 3 | styles.css×1, app.html×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1a0505` | 3 | styles.css×3 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#dd1111` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1155dd` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#25d366` | 2 | app.js×1, app.html×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ecfdf5` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#fff7ed` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a1a2e` | 2 | app.js×1, app.html×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f0f0f0` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#d97706` | 2 | app.js×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#6d28d9` | 2 | app.js×1, styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eef2ff` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#475569` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f5c04a` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eef6fb` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#ff2e9a` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8b6bf6` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2dd4f4` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff4fa3` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7c5cff` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0b0b10` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#3fa9ff` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff3b3b` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff9142` | 2 | app.js×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#3ddc84` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff3d6e` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e63946` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8d99ae` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#588157` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a1f42` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffb4a2` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#a7c7e7` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c8b6ff` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b5e6d5` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#081409` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0f2012` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#17301b` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#254a2b` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f3fbf0` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#a9d4ac` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5c8f60` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e14b4b` | 2 | app.js×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#3b7dd8` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f5f0e6` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#e0a800` | 2 | app.js×1, styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8a94a6` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a0f1a` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#6b4a2a` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4a3018` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a2814` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f1dfb0` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a2a32` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#46464f` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0a0714` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#fdf6e3` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0c1a0e` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#ff5a4d` | 2 | app.js×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#0c0904` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#581c87` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#86efac` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#15803d` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#14532d` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#991b1b` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a2405` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0d1a12` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#f472b6` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fb923c` | 2 | app.js×2 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#ffb057` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7c2d05` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a1a13` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#facc15` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fde047` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e8b84b` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#181c28` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#14171f` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0006` | 2 | app.js×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#3a4358` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a3348` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5a677e` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3d2c00` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0d0620` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#d4a017` | 2 | app.js×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1a1a1c` | 2 | styles.css×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#333336` | 2 | styles.css×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#ff7a5c` | 2 | styles.css×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2fae6d` | 2 | styles.css×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b48cff` | 2 | app.html×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a2a2c` | 2 | app.html×2 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0ea86f` | 2 | app.html×2 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f43f5e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c8283c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fdfaf2` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1e40af` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fef2f2` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#aaa` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#bbb` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#00d0e6` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8b5cf622` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8b5cf61a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c00` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eef1f7` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#777` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#222` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#fff8e1` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f0c419` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2563eb` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fafbfd` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#60a5fa` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f0fdf4` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#a7f3d0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#047857` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f5f3ff` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e7490` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ecfeff` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#050810` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e1420` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#141c2c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1c2636` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8497ac` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4a5a6e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#070818` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e1130` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#161a44` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#262c66` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eef1ff` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#9aa3d6` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#565f95` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#031b2c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#053349` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a4560` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0f5772` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eafff9` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8fd6ce` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4f8f92` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#141419` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1c1c24` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#2b2b35` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#f5f5f8` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#a3a3b0` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#5d5d6e` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#05040a` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0d0a17` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#15101f` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#241c33` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eef0ff` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#9a93b8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#544b6e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#122419` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a3322` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#254a30` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#eafff0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#9fd6b2` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4f8f64` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1a1210` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#241a16` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#302420` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#4a3830` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fff3ec` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#d6ada0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8f6f64` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1c1430` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#392c56` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4d3d70` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fff6ee` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#cbb8e8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#79689e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1c150f` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#261c12` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffb347` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1a1204` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffe27a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e53939` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c02929` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2f8fe0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1f6cb0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#111116` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#e4e4ea` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#c8c8d2` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#070b16` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0a1020` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0c1626` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#04141a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#131a4a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a0c26` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#05060f` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#4a56a8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8890d6` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#a9895a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#7a5230` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8a6440` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b5281f` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c98a1c` | 1 | app.js×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#6b4a10` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#bfe4f5` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#131318` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e0e13` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1c1c23` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#131317` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#6a6a78` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0c0c10` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0a0716` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#050409` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#020103` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#d8c9a0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#241a3d` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#150f24` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a1f45` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a3252` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8f89ad` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a2140` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1c1730` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e8d3ae` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#16341f` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#081208` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#ff8c42` | 1 | app.js×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#c65d3b` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#6b3226` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a1810` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8d6a52` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a2a5c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5c3a5e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#a85f5a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e0935f` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffe3b0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1e6b3e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#237a47` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fff3c2` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f3e6bf` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#8a5c10` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a2a08` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0d1117` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#5c3f0a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffe9b0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f0cd7e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fdeaea` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f7c9c9` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c95c5c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#a03030` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e8f4ff` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c9e4fb` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5c9ec9` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1d5a8a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a0505` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a1006` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e9d5ff` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#6b21a8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#08201c` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#050e0c` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1c1608` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0c0a05` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0a1510` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#071a24` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#040d14` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#b3450a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1a1206` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#173322` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0a1a11` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0f5c42` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#052e21` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5c1414` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2e0808` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#071019` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#050a12` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e0708` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#080506` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#050d09` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a1608` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0d0904` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0d0505` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#16a34a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#a16207` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff5f6d` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c77dff` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#bfe7ff` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1c2b45` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#10141c` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#c0392b` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e85d3d` | 1 | app.js×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#cd8a4a` | 1 | app.js×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#fff8e0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f0d9a8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffe9b8` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#141c30` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0d1322` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1b2440` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#111828` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#232f52` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#161f38` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffb27a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ffe0b0` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#3a241a` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#241510` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#4a2e20` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2c1a13` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#5c3a28` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#341f16` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#be185d` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fbbf2440` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#94a3b840` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#cd7f3240` | 1 | app.js×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#ffb703` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#04140c` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#1a0f2e` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#9ca3af` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b8bec9` | 1 | app.js×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#0e1626` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#1e3a2f` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#065f46` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#6ee7b7` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#fcd34d` | 1 | app.js×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#f5f5f6` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#9a9aa3` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#6b7280` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff8447` | 1 | styles.css×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#eef1f6` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#4b5563` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#d3dae6` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#0090a0` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c4179e` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#b8860b` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#27272a` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#d99a5b` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#ff8a68` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#e5533d` | 1 | styles.css×1 | A (turuncu aile — muhtemel accent varyasyonu) |
+| `#4fd68c` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#6be3a4` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#2a2a33` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#16161b` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#050505` | 1 | styles.css×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#ffb36b` | 1 | styles.css×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#c4a3ff` | 1 | app.html×1 | C (renkli/doygun — bağlam kontrolü gerekli) |
+| `#333` | 1 | app.html×1 | A (nötr gri/siyah/beyaz — muhtemel zemin/metin/kenarlık) |
+| `#7c2d12` | 1 | app.html×1 | C (renkli/doygun — bağlam kontrolü gerekli) |

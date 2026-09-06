@@ -14,33 +14,213 @@
         /* TEMA DEĞİŞKENLERİ */
         :root {
             --bg-main: #0a0a0c; --bg-panel: rgba(28, 28, 32, 0.86); --text-main: #f5f5f6;
-            --text-muted: #9a9aa3; --accent-orange: #ff6a1a; --accent-grey: #6b7280;
+            /* Marka turuncusu güncellendi: #ff6a1a hem app.js'te ayrıca yanlış yazılmış (#ff6200) bir
+               varyantı vardı, ikisi burada TEK yeni tona (#F26B1D) birleşti. İSİM AYNI KALDI —
+               app.js'teki var(--accent-orange) çağrıları kırılmadan yeni rengi otomatik alır. */
+            --text-muted: #9a9aa3; --accent-orange: #F26B1D; --accent-grey: #6b7280;
             --border-color: rgba(255, 255, 255, 0.12); --neon-blue: #4d8dff;
-            --neon-pink: #ec4899; --neon-red: #ef4444; --gold: #fbbf24; --neon-green: #22c55e;
+            /* --neon-green yeni palette değeri: #22c55e → #4FB07A (daha az doygun, "toprak" yeşili). */
+            --neon-pink: #ec4899; --neon-red: #ef4444; --gold: #fbbf24; --neon-green: #4FB07A;
             --ring-yellow: #fbbf24; --ring-red: #ef4444; --ring-blue: #3b82f6; --ring-black: #1e293b; --ring-white: #f8fafc;
+
+            /* OYUN İÇİ SABİT RENKLER — bilerek "ring" ve "neon" değişkenlerine ALIAS DEĞİL, kendi
+               bağımsız değerleri var. Arayüz renk paleti ileride değişse bile bu oyun tahtası
+               renkleri değişmemeli (Monopoly/Tapu mini-oyunu, MONOPOLY_RENK sözlüğü app.js'te). */
+            --tapu-sari: #fbbf24;
+            --tapu-kirmizi: #ef4444;
+            --tapu-mavi: #4d8dff;
             /* "Aurora Sahne" — Gece Menzili'nin (mavi/pembe) yerini alan yeni aksan seti. Kasıtlı olarak
                --neon-blue/--neon-pink'ten AYRI değişkenler: o ikisi zaten cinsiyet rengi (cizSira'daki cRenk)
                gibi başka anlamlarda kullanılıyor, oraları yanlışlıkla boyamamak için özel token seti açıldı. */
             --aurora-cyan: #00F0FF; --aurora-magenta: #FF2FD0; --aurora-violet: #9B3BFF; --aurora-gold: #FFD23F;
+
+            /* ============ TASARIM TOKEN KATMANI (Faz 1) ============
+               Yukarıdaki eski değişkenler SİLİNMEDİ — hâlâ canlı kullanımda.
+               Bu katman onların üstüne, tutarlı bir isimlendirmeyle eklendi.
+               app.js'teki çıplak hex kodları faz faz bu tokenlara taşınacak. */
+            --font-sans: 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
+
+            /* Yüzeyler — zeminden en öne doğru */
+            --surface-0: var(--bg-main);
+            --surface-1: var(--bg-panel);
+            --surface-2: rgba(255, 255, 255, 0.06);
+            --surface-border: var(--border-color);
+
+            /* Metin katmanları */
+            --text-primary: var(--text-main);
+            --text-secondary: var(--text-muted);
+            --text-tertiary: rgba(245, 245, 246, 0.45);
+            --text-on-accent: #fff;
+            --text-on-accent-dark: #000;
+
+            /* Marka aksanı */
+            --accent: var(--accent-orange);
+            --accent-strong: #ff9152;
+            --accent-soft: rgba(242, 107, 29, 0.15);
+
+            /* Durum renkleri — kendi değerleri YOK, mevcut isimlere ALIAS. Böylece "eski isim/yeni
+               isim" iki sistemi yan yana durmuyor: --neon-green vb. değişince bunlar otomatik izler. */
+            --status-success: var(--neon-green);
+            --status-success-strong: #059669;
+            --status-warning: var(--gold);
+            --status-danger: var(--neon-red);
+            --status-info: var(--neon-blue);
+
+            /* Skor halkası renkleri — WA hedef renkleri, anlam taşır, değişmeyecek */
+            --score-ring-yellow: var(--ring-yellow);
+            --score-ring-red: var(--ring-red);
+            --score-ring-blue: var(--ring-blue);
+            --score-ring-black: var(--ring-black);
+            --score-ring-white: var(--ring-white);
+
+            /* Boşluk ölçeği (4px taban) */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+            /* Köşe yuvarlama */
+            --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-pill: 999px;
+
+            /* Tipografi ölçeği */
+            --text-xs: 11px; --text-sm: 13px; --text-base: 15px; --text-md: 17px;
+            --text-lg: 20px; --text-xl: 26px; --text-2xl: 34px;
+            --weight-regular: 400; --weight-medium: 600; --weight-bold: 800; --weight-black: 900;
+            --leading-tight: 1.2; --leading-normal: 1.5;
         }
 
         body.light-theme {
             --bg-main: #eef1f6; --bg-panel: #ffffff; --text-main: #111827;
             --text-muted: #4b5563; --border-color: #d3dae6;
             --aurora-cyan: #0090A0; --aurora-magenta: #C4179E; --aurora-violet: #6D28D9; --aurora-gold: #B8860B;
+
+            --surface-2: rgba(0, 0, 0, 0.04);
+            --text-tertiary: rgba(17, 24, 39, 0.45);
+            --accent-soft: rgba(242, 107, 29, 0.12);
+
+            /* KRİTİK: --surface-1/--text-primary vb. ":root"ta var(--bg-panel) gibi başka bir tokena
+               ALIAS. Bir alias'ın değeri, TANIMLANDIĞI yerde (yani :root'ta, koyu değerlerle) bir kere
+               hesaplanıp öyle miras kalıyor — body.light-theme SADECE --bg-panel'i değiştirmek bunu
+               geriye dönük GÜNCELLEMİYOR. Değeri tema arası farklılaşan her alias'ın burada da AYRI AYRI
+               yeniden tanımlanması gerekiyor (bu component-preview ekran görüntüsünde yakalandı — kart/
+               tablo/ayar satırları açık temada hâlâ koyu arkaplan gösteriyordu). --accent/--status-*/
+               --score-ring-*/--tapu-* buraya GEREKMİYOR çünkü kaynakları (--accent-orange, --neon-*,
+               --ring-*) zaten iki temada da aynı değer — sadece zemin/metin/kenarlık tema ile değişiyor. */
+            --surface-0: var(--bg-main);
+            --surface-1: var(--bg-panel);
+            --surface-border: var(--border-color);
+            --text-primary: var(--text-main);
+            --text-secondary: var(--text-muted);
         }
 
-        button, select, input { 
+        /* ============ BASKI (PDF/YAZDIRMA) TOKEN KATMANI ============
+           Karne/rapor/PDF ekranları (Gelişim Karnesi, Aidat Raporu, Turnuva Raporu vb.) kağıda
+           basılıyor ve uygulamanın koyu/açık temasından TAMAMEN BAĞIMSIZ kalmalı — bu yüzden :root'a
+           değil, sadece .baski sınıfı taşıyan kapsayıcının içine tanımlandı. app.js'teki bu ekranların
+           çıplak hex kodları ileride bu tokenlara taşınırken kapsayıcılarına .baski class'ı eklenecek. */
+        .baski {
+            --print-bg: #ffffff;
+            --print-ink: #1b2a4a;
+            --print-line: #e2e8f0;
+            --print-muted: #64748b;
+            --print-accent: #F26B1D;
+            --print-warn: #78350f;
+        }
+
+        /* ============ BİLEŞEN KATMANI (Faz 2) ============
+           Yeni, sade bir bileşen seti — sadece Faz 1 tokenlarını kullanır (çıplak hex yok), parlama/neon
+           gölge yok, tekdüze kart gölgesi yok, buton metninde ok/emoji/BÜYÜK HARF yok. Henüz HİÇBİR
+           gerçek ekrana uygulanmadı — bu sadece kütüphanenin kendisi, var olan hiçbir şeyi değiştirmiyor.
+           Ekranlara uygulama (ve varsa eski/çakışan kuralların temizliği) sonraki fazlarda, ekran ekran. */
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+            font-family: var(--font-sans); font-weight: var(--weight-bold); font-size: var(--text-sm);
+            padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+            border: 1px solid var(--surface-border); background: var(--surface-2); color: var(--text-primary);
+            cursor: pointer; transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+        }
+        .btn:hover { background: var(--surface-1); }
+        .btn:active { opacity: .85; }
+        .btn:disabled { opacity: .5; cursor: default; }
+        .btn-sm { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent, #fff); }
+        .btn-primary:hover { background: var(--accent); filter: brightness(1.08); }
+        .btn-danger { background: var(--status-danger); border-color: var(--status-danger); color: #fff; }
+        .btn-ghost { background: transparent; border-color: transparent; }
+        .btn-ghost:hover { background: var(--surface-2); }
+
+        .card {
+            background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
+            padding: var(--space-4);
+        }
+
+        .chip {
+            display: inline-flex; align-items: center; gap: var(--space-1);
+            font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: var(--text-xs);
+            padding: 3px var(--space-2); border-radius: var(--radius-pill);
+            background: var(--surface-2); color: var(--text-secondary); border: 1px solid transparent;
+        }
+        /* color-mix() destekleyen tarayıcıda ikinci bildirim kazanır; desteklemeyende ilk (rgba) kalır. */
+        .chip-success { background: rgba(34,197,94,0.16); background: color-mix(in srgb, var(--status-success) 16%, transparent); color: var(--status-success); }
+        .chip-warning { background: rgba(251,191,36,0.18); background: color-mix(in srgb, var(--status-warning) 18%, transparent); color: var(--status-warning); }
+        .chip-danger { background: rgba(239,68,68,0.16); background: color-mix(in srgb, var(--status-danger) 16%, transparent); color: var(--status-danger); }
+
+        .seg { display: flex; gap: 2px; background: var(--surface-2); padding: 2px; border-radius: var(--radius-md); }
+        .seg-btn {
+            flex: 1; text-align: center; font-family: var(--font-sans); font-weight: var(--weight-medium);
+            font-size: var(--text-xs); padding: var(--space-2) var(--space-3); border-radius: calc(var(--radius-md) - 2px);
+            border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: background .15s ease, color .15s ease;
+        }
+        .seg-btn.aktif { background: var(--surface-1); color: var(--text-primary); }
+
+        /* .switch/.slider zaten vardı ama hiçbir ekranda kullanılmıyordu (kontrol ettim) — tokenlara
+           bağlayıp bileşen kütüphanesinin resmi anahtarı yaptım, yapısı aynı kaldı. */
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-2); border: 1px solid var(--surface-border); transition: .2s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: var(--text-secondary); transition: .2s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); border-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(16px); background-color: #fff; }
+
+        .settings-row {
+            display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+            padding: var(--space-3) 0; border-bottom: 1px solid var(--surface-border);
+        }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: var(--text-sm); color: var(--text-primary); }
+        .settings-hint { font-size: var(--text-xs); color: var(--text-secondary); margin-top: 2px; }
+
+        .tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--surface-border); }
+        .tabs-btn {
+            font-family: var(--font-sans); font-weight: var(--weight-medium); font-size: var(--text-sm);
+            padding: var(--space-3) var(--space-4); border: none; background: transparent; color: var(--text-secondary);
+            cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s ease, border-color .15s ease;
+        }
+        .tabs-btn.aktif { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+        .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+        .table th { text-align: left; font-weight: var(--weight-medium); font-size: var(--text-xs); color: var(--text-secondary); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--surface-border); }
+        .table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--surface-border); color: var(--text-primary); }
+        .table tr:last-child td { border-bottom: none; }
+
+        .empty {
+            display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-2);
+            padding: var(--space-7) var(--space-4); color: var(--text-secondary);
+        }
+        .empty-icon { font-size: 32px; opacity: .5; }
+        .empty-title { font-family: var(--font-sans); font-weight: var(--weight-bold); font-size: var(--text-base); color: var(--text-primary); }
+        .empty-hint { font-size: var(--text-sm); }
+
+        button, select, input {
             -webkit-appearance: none !important; 
             -moz-appearance: none !important; 
             appearance: none !important; 
             outline: none !important;
         }
 
-        body { background: var(--bg-main); color: var(--text-main); font-family: 'Poppins', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 0.3s; }
+        body { background: var(--bg-main); color: var(--text-main); font-family: var(--font-sans); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 0.3s; }
         .glass-panel { background: var(--bg-panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); border-radius: 12px; }
         
-        button { font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; }
+        button { font-family: var(--font-sans); cursor: pointer; transition: all 0.2s; }
         button:hover { filter: brightness(1.1); }
         
         .kurumsal-logo { font-size: clamp(28px, 6vw, 42px); font-weight: 900; color: var(--accent-orange); letter-spacing: 4px; padding: 10px 25px; border: 3px solid var(--accent-orange); border-radius: 12px; background: rgba(0,0,0,0.3); margin-bottom: 15px; text-shadow: 0 2px 10px rgba(255,98,0,0.4); text-align: center;}
@@ -110,7 +290,7 @@
 
         /* GÜVENLİ INPUTLAR VE BUTONLAR */
         .satir-inputs { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; margin-bottom: 10px;}
-        .satir-inputs input, .satir-inputs select { flex: 1; min-width: 100px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #fff; border-radius: 6px; font-family: 'Poppins'; font-size: 13px; }
+        .satir-inputs input, .satir-inputs select { flex: 1; min-width: 100px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #fff; border-radius: 6px; font-family: var(--font-sans); font-size: 13px; }
         body.light-theme .satir-inputs input, body.light-theme .satir-inputs select { background: #fff; color: #111827; }
 
         .cins-btn, .yay-btn { flex: 1; padding: 12px 10px; border: 1px solid var(--border-color); background: #27272a !important; color: #ffffff !important; border-radius: 6px; font-weight: bold; font-size: 11px; letter-spacing: 0.5px;}
@@ -387,13 +567,13 @@
         .adm-input {
             width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px; font-size: 13.5px;
             background: rgba(0,0,0,0.22); border: 1px solid var(--border-color); color: var(--text-main);
-            font-family: 'Poppins', sans-serif; transition: border-color .2s ease, background .2s ease;
+            font-family: var(--font-sans); transition: border-color .2s ease, background .2s ease;
         }
         .adm-input:focus { border-color: var(--neon-blue); background: rgba(0,0,0,0.32); }
         .adm-select {
             width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 700;
             background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
+            font-family: var(--font-sans);
         }
         /* DÜZELTME: her satır ayrı bir gölgeli/çerçeveli "kart" olunca liste ekranları (Skor Girenler,
            Yoklama, Personel) kalabalık/eski görünüyordu ("kart yığını"). .adm-list TEK bir cam kapsayıcı,
