@@ -27,7 +27,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `109188d` — Tasarım sistemi Faz 4: Skor ekranı (4a/4b/4c)
 - `3c75e63` — Tasarım sistemi Faz 5 grup 1: Sayaç, Canlı Takip, Liderlik
 - `4ccb205` — Faz 5 düzeltme: `!important` yerine doğru kural sırası
-- Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma) — bu commit'te, aşağıda anlatılıyor
+- `276fa1f` — Tasarım sistemi Faz 5 grup 2: Gelişim, Ders İçerikleri, Teknik Çalışma
+- Faz 5 grup 3 (Klasman, Başarılar) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -243,6 +244,32 @@ kenarlığına gerek kalmadı) doğrulandı.
 BİREBİR AYNISI olan, hiçbir yerden yüklenmeyen ölü bir kopya) artık bu değişikliklerle
 UYUŞMUYOR — Faz 6 temizlik listesine eklendi (bkz. §6).
 
+## 2e. Faz 5, Grup 3 — Klasman, Başarılar (tamamlandı, bilerek dar kapsamlı)
+
+Bu grup, önceki gruplardan FARKLI bir prensiple ilerledi: **iki ekranın da içeriğinin büyük
+kısmı anlam taşıyan renk kullanıyor** (madalya sıralaması, "bu sen" vurgusu, canlı-atış parıltısı,
+kazanılmış/kilitli rozet durumu, mağazadan satın alınmış çerçeve rengi) — kullanıcının Reaksiyon/
+Video için verdiği "oyun mekaniği renklerine dokunma" kuralı, aynı gerekçeyle burada da uygulandı
+(kullanıcı bu iki ekranı adıyla anmadı ama prensip birebir aynı, bkz. §7). Sonuç: bu grubun diffi
+Gelişim/Ders İçerikleri'ne göre kasıtlı olarak küçük.
+
+**Klasman** (`klasmanDoldur()`): sadece DIŞ ÇERÇEVE değişti — Yay filtresi (Tümü/Klasik/Makaralı)
+düz butonlardan `.seg`/`.seg-btn`'e taşındı, her ligin `<details>` grup başlığı Faz 4c/5'in
+kurulu özet desenine (`.card` + sağa yaslı `▾`) hizalandı. **Dokunulmadı**: her sporcu satırının
+madalya rengi/rozet/gradyanı, "SEN"/"LİDER"/"YAKLAŞIYOR"/"PODİUM" rozetleri, canlı-atış parıltısı
+(`canliAtisAktifMi`/`canliAtisRozetiHTML`), `gmRingHTML()` skor halkası — hepsi sıralama/durum
+anlamı taşıyor.
+
+**Başarılar** (`rozetVitrinDoldur()`): tek değişiklik "▼ Diğer N rozeti göster" aç/kapa butonunun
+`.btn`'e taşınması. Geri kalanı zaten ya token-tabanlıydı (`.bs-card`/`.bs-title`/`.bs-sub`/
+`.bs-select` — incelendi, `.card`/`.btn` ile FONKSİYONEL OLARAK ZATEN AYNI kaynaklardan besleniyor,
+yeniden adlandırmaya gerek yok) ya da anlamlı içerik rengiydi (kazanılan rozet altın parıltısı,
+kilitli rozet grileşmesi, çerçeve rengi `CERCEVE_RENK` — mağazadan satın alınan bir kozmetik,
+vitrin seçim durumu). `profilRender()`/`rekorTahtaDoldur()`/satın-alma mantığına dokunulmadı.
+
+**Doğrulama**: 5 sahte sporcu (`kartGecmisi` ile gerçekçi skor) + 1 seçili sporcu tohumlanarak
+360/1280px, koyu/açık temada (8 kombinasyon) ekran görüntüsü alındı, yatay taşma/konsol hatası yok.
+
 ## 3. Token mimarisi (styles.css, tam liste)
 
 Hepsi `:root` içinde, aksi belirtilmedikçe. **Eski değişkenlerin hiçbiri silinmedi** —
@@ -406,14 +433,19 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | 4 | Gelişim | ✅ bitti (Faz 5 grup 2) | 4 katlanır bölüm `.card`'a taşındı, CTA `.btn-primary` oldu. |
 | 5 | Ders İçerikleri | ✅ bitti (Faz 5 grup 2) | Filtre `.seg`, kartlar `.card`, Sil `.btn-danger`. `Ders Programı` İLE KARIŞTIRILMAMIŞTIR — ayrı özellik. |
 | 6 | Teknik Çalışma | ✅ bitti (Faz 5 grup 2) | Kendi `.tk-` paleti Faz 1 tokenlarına bağlandı (bkz. §2d) — yapıya dokunulmadı. |
-| 7 | Yarışmalar | ⏳ bekliyor | Takım/turnuva yönetimi — orta karmaşıklık (eşleşme ağacı vb.). |
-| 8 | Düello | ⏳ bekliyor | Kendi modal/sayaç sistemi var (`#duello-modal`), orta-yüksek karmaşıklık. |
-| 9 | Başarılar | ⏳ bekliyor | Rozet vitrini, mağaza sistemine bağlı. |
-| 10 | Mağaza | ⏳ bekliyor | PALETLER (Faz 2'de düzeltildi)/çerçeve/aksesuar/rozet satın alma. |
-| 11 | Reaksiyon | ⏳ bekliyor | Çok sayıda mini-oyun (`rfx*`) — en yüksek iç karmaşıklık. |
-| 12 | Klasman | ⏳ bekliyor | Kullanıcının kendi ifadesiyle "ayda birkaç kez açılıyor" — bilerek geriye atıldı. |
-| 13 | Video | ⏳ bekliyor | "Gecikmeli Ayna" özelliği; düşük-orta sıklık. |
+| 9 | Başarılar | ✅ bitti (Faz 5 grup 3) | Sadece "Diğer N rozeti göster" `.btn` oldu — gerisi ya zaten token-tabanlıydı ya anlamlı rozet/çerçeve rengiydi (bkz. §2e). |
+| 12 | Klasman | ✅ bitti (Faz 5 grup 3) | Yay filtresi `.seg`, grup başlığı `.card`. Madalya/canlı-parıltı renklerine dokunulmadı (bkz. §2e). |
+| 7 | Yarışmalar | ⏳ bekliyor, **Faz 5 grup 4** | Takım/turnuva yönetimi — orta karmaşıklık (eşleşme ağacı vb.). Korumasız "Yarışmaları Sıfırla" butonu var — `confirm()` var mı kontrol edilecek, yoksa (neyin silineceğini açıkça yazan bir metinle) eklenecek. |
+| 8 | Düello | ⏳ bekliyor, **Faz 5 grup 4** | Kendi `.va-*` sınıf ailesini kullanıyor (Video ile ortak) — incelendiğinde ZATEN Faz 1 tokenlarından besleniyor, yeniden adlandırma değil sadece JS'in ürettiği ad-hoc kısımlar hizalanacak. |
+| 13 | Video | ⏳ bekliyor, **Faz 5 grup 4** | "Gecikmeli Ayna" özelliği; Düello ile aynı `.va-*` ailesini paylaşıyor. Çizim araç çubuğunun renkleri (çizgi rengi seçimi vb.) mekanik olabilir — dokunulmadan önce sorulacak. |
+| 10 | Mağaza | ⏳ bekliyor, **Faz 5 grup 5** | PALETLER (Faz 2'de düzeltildi)/çerçeve/aksesuar/rozet satın alma. |
+| 11 | Reaksiyon | ⏳ bekliyor, **Faz 5 grup 5, EN SON (Ana Ekran hariç)** | Çok sayıda mini-oyun (`rfx*`, 103 fonksiyon) — en yüksek iç karmaşıklık. Oyun içi renkler (yeşile bas, odak kilidi vb.) mekaniğin parçası — sadece dış çerçeveye (mod/sporcu seçici, üst panel) dokunulacak, şüpheli her renk sorulacak. |
 | 14 | **Ana Ekran** | ⏳ bekliyor, **EN SON** | ⚠️ İçinde `#sonraki-ders-widget` var — `loggedInSporcu` için `/api/antrenman-programi`'den canlı veri çeken, **Ders Programı'na bağlı** bir bileşen (app.js:274, `sonrakiDersWidgetGuncelle()`). Ders Programı yarım bir özellik (bkz. §7) — bu widget'a dokunurken ekstra dikkat. Ayrıca `#canli-takip-widget-ana` da burada gömülü (Canlı Takip ekranıyla karışık bağımlılık). En sık kullanılan ekran olmasına rağmen en kırılgan bağımlılıklara sahip olduğu için en sona bırakıldı. |
+
+**Sıralama güncellemesi (Faz 5 grup 3 sonrası)**: kalan 7 ekranın gruplanışı kullanıcı tarafından
+zorluk/risk gözetilerek yeniden belirlendi — Grup 4: Yarışmalar + Düello + Video, Grup 5: Mağaza +
+Reaksiyon (Reaksiyon bilerek en son, Ana Ekran hariç en riskli/en büyük ekran). Tablodaki orijinal
+sıra numaraları (7-13) korundu, sadece grup ataması güncellendi.
 
 **Araştırma notu**: "Ders Programı" 15 ekranın hiçbirinin KENDİSİ değil — asıl CRUD'u (`yoneticiProgramCiz`,
 `sporcuProgramCiz`) Yönetici Paneli'nin kendi modallarında yaşıyor, o panel Faz 3'te doğrulandığı gibi
@@ -523,12 +555,30 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   değerlendirirken, uygulamanın normal bir ekranıyla YAN YANA ekran görüntüsü almak (aynı üst
   bar, farklı içerik zemini) "yabancı duruyor mu" sorusunu göz kararı tartışmaktan çok daha
   hızlı ve kesin cevaplıyor.
+- **Bir rengin "eski/ad-hoc" görünmesi, onun ANLAMSIZ olduğu anlamına gelmez** — Faz 5 grup 3'te
+  netleşen genel prensip: madalya/sıralama renkleri (Klasman), kazanılmış/kilitli rozet durumu ve
+  satın alınan çerçeve rengi (Başarılar), oyun mekaniği renkleri (kullanıcının Reaksiyon/Video için
+  verdiği kural) hepsi AYNI KATEGORİ — içerik durumunu/anlamını taşıyan renkler, kart/buton chrome'u
+  değil. Bir ekranı restyling yaparken önce rengin neyi TEMSİL ettiğini sor: "bu bir durumu mu
+  gösteriyor (sıra, kazanım, mekanik sonuç) yoksa sadece bir kutunun zemin rengi mi?" Öncekiyse
+  dokunma, sonrakiyse Faz 2 bileşenine taşı. Şüpheli bir renk çıkarsa varsayma, sor.
+- **Bir ekranın kendi `.xx-card`/`.xx-btn` gibi özel class ailesi olması, onu Faz 2 öncesi/eksik
+  yapmaz** — Faz 5 grup 3'te Başarılar'ın `.bs-*`'ı ve daha önce Düello/Video'nun `.va-*`'ı
+  incelendiğinde ikisinin de `.card`/`.btn` ile TAM OLARAK AYNI Faz 1 tokenlarından (`--bg-panel`,
+  `--border-color`, `--text-muted` vb.) beslendiği görüldü — yani zaten "Faz 2 uyumlu", sadece
+  farklı isimle. Böyle bir aileyi bulunca önce styles.css'te tanımını oku; gerçekten eski/hardcoded
+  renklere dayanıyorsa (Teknik Çalışma gibi) taşı, tokenlardan besleniyorsa yeniden adlandırma SAF
+  ÇALIŞMA OLUR — dokunma.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
 - ~~Faz 3'ün 6'lık liste ve ikon seti~~ — **ÇÖZÜLDÜ**, bkz. §2a.
 - ~~Faz 4'ün Skor ekranı tasarımı~~ — **ÇÖZÜLDÜ**, bkz. §2b.
 - ~~Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma)~~ — **ÇÖZÜLDÜ**, bkz. §2d.
+- ~~Faz 5 grup 3 (Klasman, Başarılar)~~ — **ÇÖZÜLDÜ**, bkz. §2e.
+- **Faz 5'in kalan sırası kesinleşti**: Grup 4 = Yarışmalar + Düello + Video, Grup 5 = Mağaza +
+  Reaksiyon (bkz. §6 tablosu ve "Sıralama güncellemesi" notu). Artık bir tahmin değil, kullanıcının
+  kendi verdiği sıra.
 - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.

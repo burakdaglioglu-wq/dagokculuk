@@ -17614,14 +17614,11 @@ ${(function(){
         function klasmanYaySec(y) { klasmanYay = y; klasmanDoldur(); }
         function klasmanDoldur() {
             let el = document.getElementById('klasman-icerik'); if(!el) return;
-            let fb = (y) => klasmanYay === y
-                ? 'background:var(--accent-orange);color:#fff;border-color:var(--accent-orange);'
-                : 'background:var(--bg-panel);color:var(--text-main);';
             let html = `
-            <div style="display:flex;gap:6px;margin-bottom:12px;">
-                <button onclick="klasmanYaySec('hepsi')" style="flex:1;${fb('hepsi')}border:1px solid var(--border-color);padding:9px 4px;border-radius:8px;font-weight:bold;font-size:12px;cursor:pointer;">Tümü</button>
-                <button onclick="klasmanYaySec('Klasik')" style="flex:1;${fb('Klasik')}border:1px solid var(--border-color);padding:9px 4px;border-radius:8px;font-weight:bold;font-size:12px;cursor:pointer;">🏹 Klasik</button>
-                <button onclick="klasmanYaySec('Makaralı')" style="flex:1;${fb('Makaralı')}border:1px solid var(--border-color);padding:9px 4px;border-radius:8px;font-weight:bold;font-size:12px;cursor:pointer;">⚙️ Makaralı</button>
+            <div class="seg" style="margin-bottom:12px;">
+                <button type="button" class="seg-btn ${klasmanYay==='hepsi'?'aktif':''}" onclick="klasmanYaySec('hepsi')">Tümü</button>
+                <button type="button" class="seg-btn ${klasmanYay==='Klasik'?'aktif':''}" onclick="klasmanYaySec('Klasik')">🏹 Klasik</button>
+                <button type="button" class="seg-btn ${klasmanYay==='Makaralı'?'aktif':''}" onclick="klasmanYaySec('Makaralı')">⚙️ Makaralı</button>
             </div>`;
 
             const GRUPLAR = [['buyukler','🔵 BÜYÜKLER'],['yildizlar','⭐ YILDIZLAR'],['kucukler','🟢 KÜÇÜKLER'],['minikler','🌱 MİNİKLER']];
@@ -17666,13 +17663,13 @@ ${(function(){
                 let madalya=['🥇','🥈','🥉'];
                 let grupId = 'kl-'+g;
                 html += `
-                <details open id="${grupId}" style="margin-bottom:10px;">
-                    <summary style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,98,0,0.08);border:1px solid rgba(255,98,0,0.2);border-radius:12px;list-style:none;user-select:none;">
-                        <span style="font-weight:900;font-size:14px;flex:1;">${etiket}</span>
-                        <span style="font-size:11px;color:var(--text-muted);">${arr.length} sporcu</span>
-                        <span style="font-size:12px;color:var(--text-muted);">▾</span>
+                <details open id="${grupId}" class="card" style="padding:0; margin-bottom:10px;">
+                    <summary style="cursor:pointer; list-style:none; padding:10px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px; user-select:none;">
+                        <span style="flex:1;">${etiket}</span>
+                        <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">${arr.length} sporcu</span>
+                        <span style="font-size:11px; color:var(--text-secondary);">▾</span>
                     </summary>
-                    <div style="padding:8px 0;">`;
+                    <div style="padding:0 14px 14px;">`;
 
                 arr.forEach((s,i)=>{
                     let benBu = loggedInSporcu && loggedInSporcu===s.ad;
@@ -18907,7 +18904,7 @@ ${(function(){
             });
             let ilk3 = rozetKartlar.slice(0, 3).join('');
             let kalan = rozetKartlar.slice(3).join('');
-            let toggleBtn = rozetKartlar.length > 3 ? `<button onclick="rozetHepsiToggle()" style="width:100%; margin-top:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; padding:9px; font-size:12px; font-weight:bold; cursor:pointer;">${rozetHepsiGoster ? '▲ Daha az göster' : `▼ Diğer ${rozetKartlar.length - 3} rozeti göster`}</button>` : '';
+            let toggleBtn = rozetKartlar.length > 3 ? `<button onclick="rozetHepsiToggle()" class="btn" style="width:100%; margin-top:10px;">${rozetHepsiGoster ? '▲ Daha az göster' : `▼ Diğer ${rozetKartlar.length - 3} rozeti göster`}</button>` : '';
             el.innerHTML = seviyeHtml + satinHtml + `<div class="rozet-vitrin-grid">${ilk3}${rozetHepsiGoster ? kalan : ''}</div>` + toggleBtn;
         }
         let rozetHepsiGoster = false;
