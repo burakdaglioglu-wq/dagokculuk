@@ -171,7 +171,7 @@
                         + '<div style="position:relative;padding-top:18px;">'
                         + '<div style="position:relative;">' + msHtml + '</div>'
                         + '<div style="background:rgba(0,0,0,0.35);border-radius:10px;height:12px;overflow:hidden;">'
-                        + '<div style="height:100%;background:linear-gradient(90deg,#ff6200,' + renk + ');border-radius:10px;width:' + yuzde + '%;transition:width 0.8s;position:relative;">'
+                        + '<div style="height:100%;background:linear-gradient(90deg,var(--accent-orange),' + renk + ');border-radius:10px;width:' + yuzde + '%;transition:width 0.8s;position:relative;">'
                         + '<div style="position:absolute;right:-1px;top:50%;transform:translateY(-50%);font-size:14px;">🏹</div>'
                         + '</div></div>'
                         + '</div>'
@@ -4397,7 +4397,18 @@
             return { say, toplamOk };
         }
         /* RENK/HALKA ANALİZİ (bar grafik + en çok vurulan renk) */
-        const HALKA_RENK = { 'X':'#fbbf24','10':'#fbbf24','9':'#fbbf24','8':'#ef4444','7':'#ef4444','6':'#3b82f6','5':'#3b82f6','4':'#1e293b','3':'#1e293b','2':'#e5e7eb','1':'#e5e7eb','M':'#10b981' };
+        const HALKA_RENK = { 'X':'var(--score-ring-yellow)','10':'var(--score-ring-yellow)','9':'var(--score-ring-yellow)','8':'var(--score-ring-red)','7':'var(--score-ring-red)','6':'var(--score-ring-blue)','5':'var(--score-ring-blue)','4':'var(--score-ring-black)','3':'var(--score-ring-black)','2':'var(--score-ring-white)','1':'var(--score-ring-white)','M':'#10b981' };
+        // Canvas (Chart.js dahil) fillStyle CSS var()'ı ÇÖZEMEZ — SVG/HTML'de var(--x) doğrudan
+        // çalışırken, canvas'a verilecek renk önce gerçek hesaplanmış değere çevrilmeli. Sadece
+        // HALKA_RENK/RENK_GRUP gibi var(...) içeren kaynaklar canvas'a giderken bunu kullan.
+        function _canvasRenkCoz(v) {
+            if(typeof v === 'string' && v.indexOf('var(') === 0) {
+                let ad = v.slice(4, -1).trim();
+                let cozulen = getComputedStyle(document.documentElement).getPropertyValue(ad).trim();
+                return cozulen || v;
+            }
+            return v;
+        }
 
         /* ===== CANLI ATIŞ — Liderlik/Klasman'da "şu an atıyor" göstergesi =====
          * Tamamen geçici (ephemeral): hiçbir zaman D1'e yazılmaz, turnuvaDB'ye karışmaz.
@@ -4719,7 +4730,7 @@
             });
             alan.innerHTML = html;
         }
-        const RENK_GRUP = [ ['Sarı', ['X','10','9'], '#fbbf24'], ['Kırmızı', ['8','7'], '#ef4444'], ['Mavi', ['6','5'], '#3b82f6'], ['Siyah', ['4','3'], '#1e293b'], ['Beyaz', ['2','1'], '#e5e7eb'], ['Karavana', ['M'], '#10b981'] ];
+        const RENK_GRUP = [ ['Sarı', ['X','10','9'], 'var(--score-ring-yellow)'], ['Kırmızı', ['8','7'], 'var(--score-ring-red)'], ['Mavi', ['6','5'], 'var(--score-ring-blue)'], ['Siyah', ['4','3'], 'var(--score-ring-black)'], ['Beyaz', ['2','1'], 'var(--score-ring-white)'], ['Karavana', ['M'], '#10b981'] ];
         function okAnaliziHTML(sp, sfx) {
             sfx = sfx || '';
             let { say, toplamOk } = okDagilimiSay(sp);
@@ -4785,7 +4796,7 @@
                 if(window['myOkAnalizChart' + sfx]) window['myOkAnalizChart' + sfx].destroy();
                 window['myOkAnalizChart' + sfx] = new Chart(ctx, {
                     type:'bar',
-                    data:{ labels: sira, datasets:[{ data: sira.map(k => say[k]), backgroundColor: sira.map(k => HALKA_RENK[k]), borderColor: sira.map(k => (k==='2'||k==='1') ? '#94a3b8' : 'transparent'), borderWidth: sira.map(k => (k==='2'||k==='1') ? 1 : 0), borderRadius:4 }] },
+                    data:{ labels: sira, datasets:[{ data: sira.map(k => say[k]), backgroundColor: sira.map(k => _canvasRenkCoz(HALKA_RENK[k])), borderColor: sira.map(k => (k==='2'||k==='1') ? '#94a3b8' : 'transparent'), borderWidth: sira.map(k => (k==='2'||k==='1') ? 1 : 0), borderRadius:4 }] },
                     options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{color:'#94a3b8', precision:0}, grid:{color:'rgba(255,255,255,0.05)'} }, x:{ ticks:{color:'#94a3b8', font:{weight:'bold'}}, grid:{display:false} } }, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=>`${c.parsed.y} ok`}} } }
                 });
                 let pv = document.getElementById('okAnalizPasta' + sfx);
@@ -4794,7 +4805,7 @@
                     if(window['myOkPastaChart' + sfx]) window['myOkPastaChart' + sfx].destroy();
                     window['myOkPastaChart' + sfx] = new Chart(pv.getContext('2d'), {
                         type:'pie',
-                        data:{ labels: dolu, datasets:[{ data: dolu.map(k => say[k]), backgroundColor: dolu.map(k => HALKA_RENK[k]), borderColor:'#fff', borderWidth:1.5 }] },
+                        data:{ labels: dolu, datasets:[{ data: dolu.map(k => say[k]), backgroundColor: dolu.map(k => _canvasRenkCoz(HALKA_RENK[k])), borderColor:'#fff', borderWidth:1.5 }] },
                         options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'right', labels:{color:'#94a3b8', font:{size:11}, boxWidth:14}}, tooltip:{callbacks:{label:(c)=>`${c.label}: ${c.parsed} ok`}} } }
                     });
                 }
@@ -15757,7 +15768,7 @@ ${(function(){
                 let efPuan = ok.cezali ? 'M' : ok.puan;
                 if(ok.cezali) cezaVar = true;
                 if(ok.x !== null && ok.y !== null && g && ok.tip === aktifHedefTipi) {
-                    let dotRenk = ok.cezali ? '#ef4444' : '#ff6200';
+                    let dotRenk = ok.cezali ? '#ef4444' : 'var(--accent-orange)';
                     g.innerHTML += `<circle cx="${ok.x}" cy="${ok.y}" r="4" fill="${dotRenk}" stroke="#fff" stroke-width="0.5"></circle><text x="${ok.x}" y="${ok.y+1.5}" font-size="5" fill="#fff" text-anchor="middle" font-weight="bold">${idx+1}</text>`;
                 }
                 toplam += puanDeger(efPuan);
@@ -16404,7 +16415,7 @@ ${(function(){
                     let cx = ok.x; let cy = ok.y;
                     if(tip === '3spot' && ok.tip !== '3spot') { cy = (ok.y % 100); } 
                     
-                    g.innerHTML += `<circle cx="${cx}" cy="${cy}" r="3" fill="#ff6200" stroke="#000" stroke-width="0.5" opacity="0.85"></circle>`;
+                    g.innerHTML += `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--accent-orange)" stroke="#000" stroke-width="0.5" opacity="0.85"></circle>`;
                     topX += cx; topY += cy; gecerli++;
                 }
             });

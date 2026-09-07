@@ -423,6 +423,79 @@ metne çeviriyor, ÇALIŞTIRMIYOR; bu turun bir bulgusu/regresyonu değil, sadec
 **FAZ 5 TAMAMLANDI** — 15 ekranın hepsi (Skor dahil, Faz 4'te) bitti. Kalan iş Faz 6 (temizlik/
 doğrulama, bkz. §6) ve §9'daki veri-katmanı iş kalemi.
 
+## 2i. Faz 6 — Temizlik (devam ediyor)
+
+Faz 6'nın 9 maddelik listesi (bkz. §6) önce TAMAMEN araştırılıp raporlandı, hiçbir şey onaysız
+silinmedi/değiştirilmedi. Madde 6 (çıplak hex) için ayrı bir arka-plan ajanı tüm app.js/app.html/
+styles.css'i yeniden taradı (2026-09'daki bayat rapor değil, güncel kod) — 437 farklı hex, ~2.150
+kullanım; büyük kısmı zaten izole alt sistemlerde (KM Oyunlar, Reaksiyon, Düello arenası, PDF'ler,
+madalya/nadirlik) — bunlara dokunulmadı, kullanıcı da onayladı.
+
+**Uygulanan (kullanıcı onayıyla, madde 6a/6b):**
+
+1. **`#ff6200` → `var(--accent-orange)`** — ama TÜM 25 değil, sadece **3 gerçekten canlı UI
+   kullanımı**: `sezonWidgetHTML()` (sezon ilerleme çubuğu gradyanı), `hedefGorseliGuncelle()`'nin
+   ok-işareti noktası, `cizKarneModalOklar()`'ın heat-map noktası. **Kalan ~22 kullanım BİLEREK
+   dokunulmadan bırakıldı** — hepsi ya print/PDF üretim fonksiyonları (`egitmenKarnePDF`,
+   `personelPDF`, `aidatGelirRaporu`, `aidatDetayliAnalizPDF`, `raporOnizlemeAc`, `dersIcerikYazdir`)
+   ya da korumalı kategoriler (foto-hedef çizim aracı `fotoCiz()`, konfeti). Rapor üreten
+   fonksiyonların bir kısmı `window.open()+document.write()` ile TAMAMEN AYRI bir belge açıyor — o
+   belgenin ana sayfanın `:root` CSS değişkenlerine HİÇ erişimi yok, `var(--accent-orange)` orada
+   sessizce geçersiz kalırdı. Diğerleri (`html2pdf().from(tempDiv)`) teknik olarak erişebilirdi
+   ama bu kod tabanında `html2pdf`/tempDiv'in daha önce başka yerlerde güvenilmez çıktığı
+   belgelenmiş (bkz. hafıza) — raporları kasıtlı olarak `.baski` felsefesiyle (temadan bağımsız,
+   kendi kendine yeten) tutarlı bırakmak, teorik bir kazanç için o riski almaktan daha güvenli
+   bulundu.
+
+2. **Hedef SVG'leri + `HALKA_RENK` + `RENK_GRUP` → `var(--score-ring-*)`** — en değerli düzeltme.
+   Kapsam: canlı Skor ekranının hedefi (`app.html` `#hedef-svg-10ring/6ring/3spot`, ~30 `fill`/
+   `stroke` değeri) + Karne/heat-map modalının aynı 3 hedef diyagramı (~30 değer daha) + iki
+   kanonik renk-eşleme sabiti `HALKA_RENK`/`RENK_GRUP` (app.js). **"Beyaz" (2/1) rengi bu sırada
+   `#e5e7eb`'den gerçek `--score-ring-white` (`#f8fafc`) değerine düzeltildi** — çok küçük ama
+   kasıtlı bir yan-iyileştirme, artık hedefin kendi beyazıyla birebir aynı.
+   - **SVG'lerde `fill="#hex"` yerine `style="fill:var(--score-ring-x)"` kullanıldı** — çıplak SVG
+     sunum niteliği (`fill="var(...)"`) yerine gerçek bir CSS `style` bildirimi tercih edildi, çünkü
+     tarayıcı desteği daha güvenilir.
+   - **Gerçek bug bulundu ve düzeltildi (uygulama SIRASINDA, onay beklemeden — aksi halde grafikler
+     kırılırdı)**: `HALKA_RENK`, Skor/Karne ekranlarındaki HTML dizeleri dışında Gelişim/Karne'nin
+     "Ok Analizi" Chart.js grafiklerinde (`okAnaliziCiz()`, bar+pasta) `backgroundColor` olarak da
+     kullanılıyor. **Canvas'ın `fillStyle`'ı CSS `var()`'ı çözemez** — bar/pasta dilimleri sessizce
+     yanlış (muhtemelen siyah) renk alırdı. Çözüm: `_canvasRenkCoz()` adlı küçük bir yardımcı
+     eklendi (`var(--x)` dizesini `getComputedStyle` ile gerçek değere çeviriyor), SADECE bu 2
+     Chart.js çağrısında kullanıldı — SVG/HTML tarafına dokunulmadı, onlar zaten `var()`'ı
+     doğrudan doğru çözüyor.
+   - **`--score-ring-*`'ın PALETLER'den yalıtık olduğu YAPISAL OLARAK doğrulandı, varsayıma
+     dayanmadı**: `temaPaletUygula()` SADECE `--accent-orange`/`--gold`'u `documentElement.style.
+     setProperty` ile eziyor, `--ring-*`/`--score-ring-*`'a hiç dokunmuyor — kod okunarak
+     doğrulandı. Sonra ampirik olarak da kanıtlandı: `temaPaletUygula('orman')` VE `('okyanus')`
+     gerçekten çağrılıp `--accent-orange`'ın değiştiği (kanıt: `#F26B1D`→`#10b981`→`#0ea5e9`)
+     ama hedefin 5 halka rengi ile skor klavyesinin 12 tuşunun TAMAMEN AYNI kaldığı hem
+     `getComputedStyle` ölçümüyle hem ekran görüntüsüyle (turuncu her yerde yeşile döndü, hedef
+     ve klavye hiç değişmedi) gösterildi. `getRenkForPuan()` (skor klavyesi/ok çipleri kaynağı)
+     zaten `var(--ring-*)` kullanıyordu, dokunulmadı — hedefle klavye artık aynı kaynaktan besleniyor.
+
+**Bilerek dokunulmayanlar (kullanıcı kararı):**
+- **`#10b981`** (34 kullanım, "başarı yeşili" ama hiçbir mevcut tokenla birebir eşleşmiyor) — HİÇBİR
+  tokena bağlanmadı, `HALKA_RENK`/`RENK_GRUP`'taki "Karavana/M" rengi dahil olduğu gibi bırakıldı.
+  Ayrı bir iş kalemi olarak burada not ediliyor (bkz. §9'a benzer, ayrı ele alınacak — bir sonraki
+  oturumda insan kararı gerekiyor: `--status-success`'e eşitle (görsel kayma kabul edilir) mi, yoksa
+  gerçek `--status-success-strong` değeri mi olsun).
+- **5 belirsiz nokta** (3-spot/6-ring hedef arkaplanı `#e2e8f0`/`#2a2a2c`, kutlama kutusu `#2a2a33`/
+  `#16161b`, düello/rfx sonuç ekranı zeminleri `#1f2937`/`#111827`) — hiçbiri değiştirilmedi.
+- İzole alt sistemler (KM Oyunlar, Reaksiyon, Düello arenası, takım/mağaza kozmetikleri, madalya/
+  nadirlik, PDF'ler, WhatsApp yeşili) — dokunulmadı, tespit doğru bulundu.
+- Madde 7 (emoji): dokunulmadı — navigasyon ikonları zaten Faz 3'te SVG ailesine taşınmıştı, içerik
+  emojileri (rozet/oyun/kutlama) kasıtlı bırakıldı.
+- Madde 8 (kontrast): sadece rapor edildi, düzeltme YAPILMADI — bkz. aşağıdaki kontrast bulguları.
+
+**Doğrulama**: `node --check` (sözdizimi), Playwright ile gerçek hedef/klavye renk ölçümü + palet
+değişimi öncesi/sonrası karşılaştırma (2 farklı palet, orman ve okyanus) + `_canvasRenkCoz()` birim
+testi + ekran görüntüsü (varsayılan ve orman paleti, yan yana karşılaştırılabilir).
+
+**Henüz karar bekleyen (madde 1-5)**: `!important` sayımı, ölü CSS kapsamı, `#alt-menu`/
+`.tree-cat-btn` — kullanıcıya kısa bir özet sunuldu, hangilerinin uygulanacağına dair onay bekleniyor.
+Detaylar bir önceki oturum turunda (bu commit'ten önce) verildi, tekrar edilmedi.
+
 ## 3. Token mimarisi (styles.css, tam liste)
 
 Hepsi `:root` içinde, aksi belirtilmedikçe. **Eski değişkenlerin hiçbiri silinmedi** —
@@ -521,7 +594,7 @@ hâlâ hiçbir ekrana uygulanmadı, Faz 5'te ekran ekran olacak.
 - **`.seg`** + `.seg-btn` — 2-4 seçenekli segmentli seçici. **Kullanımda**: Skor ekranının "Bu seride kaç ok" seçici (Faz 4c), Ders İçerikleri'nin tip filtresi (Faz 5 grup 2).
 - **`.switch`** + `.slider` — açık/kapalı anahtar. **Faz 4c'de uygulandı**: Skor ekranının "Ciddi yarışma modu" anahtarı (eski elle-boyanan özel switch'in yerini aldı).
 - **`.settings-row`** + `.settings-label`/`.settings-hint` — bir ayarlar panelindeki her satır. **Faz 4c'de uygulandı**: "Seri ayarları" panelinin 5 satırı.
-- **`.tabs`** + `.tabs-btn` — üst-seviye navigasyon deseni. **Faz 3'te uygulandı**: `#tabs-ana` (masaüstü üst bar) ve `#daha-tab-btn` bunu kullanıyor. Eski `.sekme-grubu`/`.sekme-btn.aktif` (gradyan/glow'lu) artık hiçbir elemente uygulanmıyor (id-seçiciler kazanıyor) — silinmedi, Faz 6'da temizlenecek.
+- **`.tabs`** + `.tabs-btn` — üst-seviye navigasyon deseni. **Faz 3'te uygulandı**: `#tabs-ana` (masaüstü üst bar) ve `#daha-tab-btn` bunu kullanıyor. **DÜZELTME (Faz 6 araştırmasında netleşti)**: `.sekme-grubu` (sarmalayıcı div) gerçekten TAMAMEN ölü — hiçbir elemente uygulanmıyor, 0 kullanım. Ama `.sekme-btn` (tek başına) YANLIŞ ANLAŞILMASIN — hâlâ gerçek düğmelerde kullanılan CANLI bir class (`#tabs-ana`'nın kendi butonları `class="sekme-btn tabs-btn"`), sadece kendi başına tanımlı kuralı (`.sekme-btn{...}`, `.sekme-btn.aktif{...}`) çoğunlukla daha özgül `#tabs-ana .sekme-btn`/`#daha-panel .sekme-btn` kuralları tarafından gölgeleniyor — ÖRTÜŞMEYEN özellikler (varsa) hâlâ sızabilir. Silmeden önce özellik özellik karşılaştırma gerekir, blanket silme YAPILMAMALI.
 - **`.table`** — düzenli veri tablosu. Henüz kullanılmadı — app.js'te onlarca ayrı inline-style'lı `<table>` var, zamanla buna taşınabilir.
 - **`.empty`** + `.empty-icon`/`.empty-title`/`.empty-hint` — "henüz veri yok" durumları. **Kullanımda**: Canlı Takip'in boş/hata durumları (Faz 5 grup 1), Ders İçerikleri'nin "sonuç yok" durumu (Faz 5 grup 2).
 
@@ -547,9 +620,12 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   kaydet düğmesi, katlanır "Seri ayarları" paneli. 360×640'ta hedef artık görünür.
 - **Faz 5 — Diğer 14 ekran**: aşağıdaki durum tablosuna bakılacak. Her biri için önce tek
   cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
-- **Faz 6 — Temizlik/doğrulama**: kalan çıplak hex tarama (ana rapor + `renk-envanteri-uzun-kuyruk-2026-09.md`
-  zaten hazır), kalan emoji ikon taraması, kontrast kontrolü, 360/768/1280px ekran görüntüleri,
-  özet rapor. Ölü CSS/JS listesi (şimdiye kadar birikenler):
+- **Faz 6 — Temizlik/doğrulama: BAŞLADI, bkz. §2i.** Madde 6 (çıplak hex) tamamen araştırıldı ve
+  kısmen uygulandı (`#ff6200`'ün 3 canlı kullanımı + hedef SVG'leri/`HALKA_RENK`/`RENK_GRUP` →
+  `var(--score-ring-*)`, gerçek bir canvas/Chart.js bug'ı yakalanıp düzeltildi). Madde 7 (emoji) ve
+  8 (kontrast) karara bağlandı (7: dokunma, 8: rapor edildi düzeltilmedi). Madde 1-5 (`!important`,
+  ölü CSS, `#alt-menu`, `.tree-cat-btn`) hâlâ kullanıcı onayı bekliyor. `renk-envanteri-uzun-kuyruk-
+  2026-09.md` artık BAYAT — güncel envanter §2i'de. Ölü CSS/JS listesi (şimdiye kadar birikenler):
   - `#alt-menu` id'li ölü kod satırı (app.js ~9437, `document.getElementById('alt-menu')` — element yok, no-op).
   - Eski `.sekme-grubu`/`.sekme-btn.aktif` gradyan/glow kuralları (styles.css ~248, ~1027-1038, ~1090).
   - 560px medya sorgusundaki eski `.sekme-grubu`/`.sekme-btn` boyut override'ı (styles.css ~481-482).
