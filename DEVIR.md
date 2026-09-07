@@ -32,7 +32,9 @@ faz faz, ekranı bozmadan uygulamak.
 - `f51cb68` — Tasarım sistemi Faz 5 grup 4: Yarışmalar, Düello, Video
 - `5cacd2c` — Tasarım sistemi Faz 5 grup 5: Mağaza, `#duello-modal`, Reaksiyon
 - `6a807d2` — DEVIR.md: fanOutMasterPayload veri-katmanı riski, Faz 6 sonrası iş kalemi (sadece belge, kod değişikliği yok)
-- Faz 5 grup 6 / SON (Ana Ekran) — bu commit'te, aşağıda anlatılıyor. **Bu commit ile Faz 5 TAMAMLANIYOR.**
+- `5e9c53d` — Tasarım sistemi Faz 5 grup 6 / SON: Ana Ekran — **FAZ 5 TAMAMLANDI**
+- `de0a085` — Faz 6 temizlik: `#ff6200` kaçağı + hedef SVG'leri `var(--score-ring-*)`'e bağlandı (madde 6a/6b)
+- Faz 6 madde 1-5 (`!important`/ölü CSS temizliği) — bu commit'te, aşağıda anlatılıyor. **Bu commit ile Faz 6 TAMAMLANIYOR.**
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -81,15 +83,16 @@ karşılığından okunuyor. **3 rol test edildi, TAMAMI doğru senkronize:**
   Yani bu nav'ı gerçekten kullanan SADECE 2 rol var: sporcu ve eğitmen — ikisi de test edildi ve
   doğru. Kullanıcıya bu düzeltme raporlandı, üçüncü bir rol icat edip test etmedim.
 
-**Faz 6 temizlik listesine eklenenler** (bkz. §6):
+**Faz 6 temizlik listesine eklenenler** (bkz. §6) — **HEPSİ Faz 6'da uygulandı, bkz. §2i "Madde
+1-5 — kullanıcı onayıyla uygulandı"**:
 - `#alt-menu` id'li ölü kod satırı (app.js ~9437: `document.getElementById('alt-menu')` — böyle bir
-  element hiç yok, no-op). Bu turda SİLİNMEDİ, sadece not edildi — Faz 3'ün yeni alt barına bilerek
-  bu id verilmedi (çakışsaydı her rol değişiminde sessizce gizlenirdi).
+  element hiç yok, no-op). **SİLİNDİ** (Faz 6).
 - Eski `.sekme-grubu`/`.sekme-btn.aktif` kuralları (styles.css ~248, ~1027-1038, ~1090 — gradyan/
-  glow'lu eski görünüm) artık hiçbir elemente uygulanmıyor (yeni `#tabs-ana .sekme-btn`/`#daha-panel
-  .sekme-btn` id-seçicileri daha spesifik, her zaman kazanıyor) — silinmedi, ölü kod olarak duruyor.
-- 560px medya sorgusundaki eski `.sekme-grubu{gap:3px}`/`.sekme-btn{font-size:11px}` (styles.css
-  ~481-482) artık `#tabs-ana` zaten `display:none` olduğu için etkisiz.
+  glow'lu eski görünüm) artık hiçbir elemente uygulanmıyordu (yeni `#tabs-ana .sekme-btn`/`#daha-panel
+  .sekme-btn` id-seçicileri daha spesifik, her zaman kazanıyor). **3 blok da SİLİNDİ** (Faz 6),
+  `.sekme-btn`'in kendisi dokunulmadan kaldı (hâlâ canlı, bkz. §6/§2i "sonraki iş").
+- 560px medya sorgusundaki eski `.sekme-grubu{gap:3px}` (styles.css ~481-482) **SİLİNDİ** (Faz 6);
+  `.sekme-btn{font-size:11px}` kardeş kuralı dokunulmadan kaldı (hâlâ canlı).
 
 ## 2b. Faz 4 — Skor Ekranı (tamamlandı, en kritik ekran)
 
@@ -496,6 +499,74 @@ testi + ekran görüntüsü (varsayılan ve orman paleti, yan yana karşılaşt�
 `.tree-cat-btn` — kullanıcıya kısa bir özet sunuldu, hangilerinin uygulanacağına dair onay bekleniyor.
 Detaylar bir önceki oturum turunda (bu commit'ten önce) verildi, tekrar edilmedi.
 
+### Madde 1-5 — kullanıcı onayıyla uygulandı
+
+**Silinenler** (hepsi grep ile "gerçekten sıfır referans" doğrulanarak):
+- `.sekme-grubu` — 3 blok (styles.css ~313, ~586 medya sorgusu, ~1131) tamamen silindi. `.sekme-btn`/
+  `.sekme-btn.aktif`/`.sekme-btn:hover` HİÇ DOKUNULMADI (hâlâ canlı, özellik-farkı analizi Faz 6'nın
+  ayrı bir sonraki adımı — aşağıya bkz).
+- `.cins-btn`/`.yay-btn` + `.secili-kiz`/`.secili-erkek`/`.secili-klasik`/`.secili-makarali` — 6 kural
+  tamamen silindi (0 kullanım doğrulandı).
+- `.ok-rozet`/`.ok-rozet-alani` (styles.css) + `app.js:6330`'daki ölü `.ok-rozet` seçici string'i
+  silindi. `.hedef-kontrol-btn`/`.skor-gir-btn` (aynı bölgede, CANLI) dokunulmadı.
+- `#alt-menu` ölü satırı (app.js, `tablariPlatformaGoreAyarla()` içinde) silindi.
+- `.tree-cat-btn`/`.aktif-klasik`/`.aktif-makarali` — 3 kural tamamen silindi.
+- **`.switch`/`.slider`'ın eski tanımı silindi** (styles.css'te Faz 2'ninkinden SONRA duran, kaynak
+  sırasıyla kazanan ikinci tanım) — Faz 2'nin kanonik tanımı (`--surface-2`/`--surface-border`/
+  `--text-secondary` kullanan) artık gerçekten tek başına geçerli.
+
+**Kaldırılan `!important`'lar** (rule SİLİNMEDİ, sadece anahtar kelime kaldırıldı — kaynak sırası
+zaten doğru olduğu için görsel etki YOK): `.giris-secim-btn` (ana kural + `body.light-theme`
+override'ı + `:hover`'ı, HER İKİ tekrarında da — toplam 2 blok), `.pin-btn`, `.rozet-kart`
+padding-top, `.rozet-emoji` font-size. Sayaç: 64 → 44 (`grep -c "!important" public/styles.css`).
+Kalan 44'ün ~20-25'i meşru (modal z-index, universal reset, fullscreen zorlama), geri kalanı henüz
+tek tek doğrulanmadı.
+
+**Bilerek dokunulmayanlar (kullanıcı kararı, DEVIR.md'ye not düşüldü):**
+- Mobil Skor paneli override'ları (`.skor-left-panel`/`.svg-hedef`/`#hizli-giris-pad`, styles.css
+  ~580-585, `@media(max-width:560px)`) — muhtemelen aynı "kaynak sırası zaten yeterli" kalıbı ama
+  **TEST EDİLMEDİ** — silinmeden/değiştirilmeden önce ampirik doğrulama gerekiyor. **SONRAKİ İŞ.**
+- `.sekme-btn`'in kendi tanımı (styles.css ~314, ~1137) — hâlâ canlı bir class, `#tabs-ana .sekme-btn`/
+  `#daha-panel .sekme-btn` tarafından çoğunlukla gölgelenmiş ama örtüşmeyen özellikler (ör.
+  `box-shadow`, `.sekme-btn.aktif`'te) sızıyor olabilir. Özellik-özellik karşılaştırma yapılmadan
+  silinmeyecek. **SONRAKİ İŞ.**
+
+**Tam regresyon doğrulaması** (kullanıcının istediği gibi, gerçek Playwright `.click()` ile):
+giriş ekranı → EĞİTMEN PLATFORMU → PIN (1234) → Büyükler ligi → **15 sekmenin hepsi** (6 ana +
+Daha panelindeki 9) tek tek açıldı → Skor ekranında 6 oklu bir seri gerçek tıklamayla girildi ve
+otomatik kaydedildi (`turnuvaDB[...].seriler.length > 0` doğrulandı) → **Ciddi Yarışma Modu
+anahtarı gerçek `.click()` ile** (checkbox'ın kendisi değil, görünür `.slider`'a — checkbox
+tasarım gereği `opacity:0`) iki yönde de test edildi, slider boyutu ölçüldü (36×20, Faz 2 spesine
+birebir uyuyor), etiket metni doğru güncellendi ("Ciddi yarışma modu" ↔ "Eğlence modu"). **Yatay
+taşma yok. Bu turun değişikliklerinden kaynaklanan SIFIR yeni konsol hatası** — testte görülen
+tüm hatalar (`ERR_INSUFFICIENT_RESOURCES` / "Failed to fetch") §9'da zaten teşhis edilmiş,
+etkileşimsiz bile tekrarlayan arka-plan senkron gürültüsü; hiçbiri bu commit'in değişiklikleriyle
+ilgili değil (aynı iki hata mesajı, başka hiçbir hata yok — kontrol edildi).
+
+**Madde 8 — kontrast raporu** (sadece rapor, düzeltme YAPILMADI, kullanıcı talimatı): sadece
+`--dim` değil TÜM metin/zemin çiftleri tarandı.
+| Çift | Oran | Durum | Kullanım |
+|---|---|---|---|
+| Beyaz metin / `--accent-orange` (`.btn-primary`) | 3.05:1 | **AA FAIL** (normal metin eşiği 4.5:1; AA-large/buton eşiği 3:1'i geçiyor) | 13 yer |
+| Beyaz metin / `--status-danger` (`.btn-danger`) | 3.76:1 | **AA FAIL** | 4 yer |
+| `--text-tertiary` / kart zemini | 4.21:1 | **AA FAIL** (kıl payı) | 1 yer, düşük etki |
+| Diğer tüm metin/zemin çiftleri | 6.3:1 – 18:1 | GEÇTİ | — |
+
+En kritik ikisi `.btn-primary`/`.btn-danger` — Faz 5'te "Skor Gir tek `.btn-primary` olsun" kararıyla
+en sık görülecek buton tam bu grupta. Karar kullanıcıda, **SONRAKİ İŞ**.
+
+**Madde 9 — ekran görüntüleri** (360/768/1280px, gerçek Playwright test, sonra gerçek PIN hash
+geri yüklendi): giriş ekranı, platform seçimi (`.giris-secim-btn`), PIN girişi (`.pin-btn`), Skor
+ekranı (hedef SVG `var(--score-ring-*)` + `HIZLI GİRİŞ` tuş takımı + Ciddi Yarışma Modu paneli/
+`.switch`), Yarışmalar (eski `.cins-btn`/`.tree-cat-btn`'in yerini alan `.seg`/`.seg-btn`),
+Başarılar (`.rozet-kart`/`.rozet-emoji`) — 3 genişlik × 7 ekran = 21 görüntü. Sonuç: hedef
+halkaları ve HIZLI GİRİŞ tuşları üç genişlikte de birebir aynı renkte (sarı/kırmızı/mavi/beyaz/
+siyah, "M" ayrı gri) — token bağlama sızıntı yaratmamış. Switch/slider Faz 2 pill görünümünde
+(36×20), eski tanımın kalıntısı yok. Rozet kartlarında üst boşluk düzgün (`!important` kaldırma
+`.rozet-kart`'ı bozmadı). `.seg`/`.seg-btn` (Tümü/Klasik/Makaralı) sorunsuz. 768px ilk kez bu
+turda test edilen bir genişlikti — regresyon yok. Hiçbir ekranda yatay taşma veya görsel bozulma
+gözlenmedi.
+
 ## 3. Token mimarisi (styles.css, tam liste)
 
 Hepsi `:root` içinde, aksi belirtilmedikçe. **Eski değişkenlerin hiçbiri silinmedi** —
@@ -620,37 +691,41 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   kaydet düğmesi, katlanır "Seri ayarları" paneli. 360×640'ta hedef artık görünür.
 - **Faz 5 — Diğer 14 ekran**: aşağıdaki durum tablosuna bakılacak. Her biri için önce tek
   cümlelik plan sun, onay bekle, sonra uygula (promptun kendi yöntemi).
-- **Faz 6 — Temizlik/doğrulama: BAŞLADI, bkz. §2i.** Madde 6 (çıplak hex) tamamen araştırıldı ve
+- **Faz 6 — Temizlik/doğrulama: TAMAMLANDI, bkz. §2i.** Madde 6 (çıplak hex) tamamen araştırıldı ve
   kısmen uygulandı (`#ff6200`'ün 3 canlı kullanımı + hedef SVG'leri/`HALKA_RENK`/`RENK_GRUP` →
-  `var(--score-ring-*)`, gerçek bir canvas/Chart.js bug'ı yakalanıp düzeltildi). Madde 7 (emoji) ve
-  8 (kontrast) karara bağlandı (7: dokunma, 8: rapor edildi düzeltilmedi). Madde 1-5 (`!important`,
-  ölü CSS, `#alt-menu`, `.tree-cat-btn`) hâlâ kullanıcı onayı bekliyor. `renk-envanteri-uzun-kuyruk-
-  2026-09.md` artık BAYAT — güncel envanter §2i'de. Ölü CSS/JS listesi (şimdiye kadar birikenler):
-  - `#alt-menu` id'li ölü kod satırı (app.js ~9437, `document.getElementById('alt-menu')` — element yok, no-op).
-  - Eski `.sekme-grubu`/`.sekme-btn.aktif` gradyan/glow kuralları (styles.css ~248, ~1027-1038, ~1090).
-  - 560px medya sorgusundaki eski `.sekme-grubu`/`.sekme-btn` boyut override'ı (styles.css ~481-482).
-  - Faz 1'in "token geçişinden sonra ölü kalan eski CSS kurallarını tespit et" maddesi genel olarak geçerli, yukarıdakiler ilk somut örnekler.
-  - (4b'de zaten SİLİNDİ, listeye eklenmesi GEREKMİYOR ama tarih için not: `#yuzen-kaydet-btn`, `#ok-rozetleri`/`.ok-rozet-alani`. `.ok-rozet` CSS class'ı — sadece bu iki elementi biçimlendiriyordu, styles.css:410-411'de hâlâ duruyor, artık kullanılmıyor, Faz 6'da silinebilir.)
-  - **styles.css'teki TÜM `!important` kurallarını tara ve raporla** — şu an 64 tane var (`grep -c
-    "!important" public/styles.css`). Hangileri gerçekten gerekli (ör. id-seçici modal z-index
-    deseni, `#tabs-ana{display:none!important}` gibi tema/durum zorlamaları) hangileri aslında bir
-    kaynak-sırası sorununu geçici olarak örtüyor (bu turda bulunan `.sekme-icerik` örneği gibi) —
-    ayrıştırılıp, ikincisi varsa kural taşınarak `!important` kaldırılmalı.
-  - **Faz 3-5'te eklenen kuralların dosyadaki konumu doğru mu kontrol et** — yani ezip ezilmedikleri
-    (kaynak-sırası çakışması) var mı. Bu turda `.sekme-icerik` padding-bottom'da TAM BÖYLE bir bug
-    bulunup düzeltildi (kuralı doğru yere taşıyarak, `!important` KULLANMADAN) — aynı sınıfın başka
-    örnekleri olabilir, sistemli taranmadı.
+  `var(--score-ring-*)`, gerçek bir canvas/Chart.js bug'ı yakalanıp düzeltildi; `#10b981` bilerek
+  dokunulmadı, bkz. §9). Madde 7 (emoji) ve 8 (kontrast) karara bağlandı (7: dokunma, 8: rapor
+  edildi düzeltilmedi). **Madde 1-5 (`!important`, ölü CSS, `#alt-menu`, `.tree-cat-btn`) kullanıcı
+  onayıyla UYGULANDI** — bkz. §2i "Madde 1-5 — kullanıcı onayıyla uygulandı" bölümü. `renk-envanteri-
+  uzun-kuyruk-2026-09.md` artık BAYAT — güncel envanter §2i'de. Ölü CSS/JS listesi (şimdiye kadar
+  birikenler, hepsi çözüldü tersi belirtilmedikçe):
+  - `#alt-menu` id'li ölü kod satırı (app.js ~9437, `document.getElementById('alt-menu')` — element yok, no-op). **SİLİNDİ** (Faz 6).
+  - Eski `.sekme-grubu`/`.sekme-btn.aktif` gradyan/glow kuralları (styles.css ~248, ~1027-1038, ~1090). **3 blok da SİLİNDİ** (Faz 6); `.sekme-btn`'in kendisi dokunulmadan kaldı (canlı, özellik-farkı analizi gerekiyor — bkz. §2i "sonraki iş").
+  - 560px medya sorgusundaki eski `.sekme-grubu{gap:3px}` boyut override'ı (styles.css ~481-482). **SİLİNDİ** (Faz 6); kardeş `.sekme-btn{font-size:11px}` kuralı dokunulmadan kaldı (canlı).
+  - Faz 1'in "token geçişinden sonra ölü kalan eski CSS kurallarını tespit et" maddesi Faz 6'da sistemli olarak ele alındı (bkz. §2i) — yukarıdakiler + `.cins-btn`/`.yay-btn`/`.secili-*`/`.ok-rozet`/`.tree-cat-btn` ailesi + eski `.switch`/`.slider` tanımı da bu turda silindi.
+  - (4b'de zaten SİLİNDİ, listeye eklenmesi GEREKMİYOR ama tarih için not: `#yuzen-kaydet-btn`, `#ok-rozetleri`/`.ok-rozet-alani`. `.ok-rozet` CSS class'ı da Faz 6'da SİLİNDİ.)
+  - **styles.css'teki TÜM `!important` kuralları tarandı ve raporlandı** (Faz 6, bkz. §2i) — 64
+    tane vardı, ~10'u gereksizdi (kaynak-sırası zaten kazandırıyordu — `.giris-secim-btn`/
+    `.pin-btn`/`.rozet-kart`/`.rozet-emoji`), kaldırıldı; ~6'sı ölü class'larla (`.cins-btn` vb.)
+    birlikte silindi; kalan ~20-25 meşru (id-seçici modal z-index deseni, tema/durum zorlamaları)
+    dokunulmadı. Sonuç: 44 (bkz. §2i sayım). Mobil Skor paneli override'ları (~10-15) test
+    edilmedi, **SONRAKİ İŞ**.
+  - **Faz 3-5'te eklenen kuralların dosyadaki konumu Faz 6'da kontrol edildi** — bu turda `.sekme-
+    icerik` padding-bottom'daki kaynak-sırası bug'ı (daha önce, Faz 5'te bulunup düzeltilmişti)
+    dışında yeni bir örnek bulunmadı. `.switch`/`.slider`'ın eski/yeni iki tanımının aynı anda var
+    olması (eskisi sonda olduğu için kazanıyordu) bu kontrolün bulduğu YENİ ve en ciddi örnekti —
+    düzeltildi (bkz. §2i).
   - **Proje kökündeki `./dagsk-teknik-calisma.js`** — `public/dagsk-teknik-calisma.js`'in (canlı,
     `app.html`'in yüklediği kopya) Faz 5 grup 2'den ÖNCE birebir aynısı olan, hiçbir yerden
     yüklenmeyen ölü bir kopyaydı (bkz. §2d). Artık iki dosya UYUŞMUYOR — ya silinmeli ya da
-    (daha az riskli ama gereksiz) yeniden senkronlanmalı.
+    (daha az riskli ama gereksiz) yeniden senkronlanmalı. **Faz 6 kapsamına girmedi, hâlâ açık.**
   - `.tree-cat-btn`/`.aktif-klasik`/`.aktif-makarali` (styles.css ~449-451) — Faz 5 grup 4'te
-    Yarışmalar'ın kategori sekmesi `.seg`/`.seg-btn`'e taşınınca kullanımdan kalktı (grep ile
-    doğrulandı, başka hiçbir yerde referans yok), silinebilir.
+    Yarışmalar'ın kategori sekmesi `.seg`/`.seg-btn`'e taşınınca kullanımdan kalktı. **SİLİNDİ** (Faz 6).
   - **Periyodik arka plan isteklerinin ara sıra "Failed to fetch" atması** — Faz 5 grup 5 testlerinde
     gözlendi, HİÇBİR kod değişikliğiyle ilgisiz olduğu doğrulandı (bkz. §2g) — muhtemelen düello
     yoklama/senkron `setInterval`'ının yerel `wrangler dev` altında ara sıra bağlantı reddi alması.
-    Prod'da (gerçek Workers ortamı) tekrar eder mi kontrol edilmemiş — Faz 6'da bakılabilir.
+    Faz 6 regresyon testinde de aynı, kod değişikliğiyle ilgisiz olarak tekrar gözlendi (bkz. §2i).
+    Prod'da (gerçek Workers ortamı) tekrar eder mi kontrol edilmemiş, ayrıca bkz. §9 `fanOutMasterPayload`.
 
 ### Faz 5 ekran durum tablosu
 
@@ -909,3 +984,17 @@ delta), (2) eşzamanlılık sınırı (ör. aynı anda en fazla N istek, kalan k
 art arda başarısız olan job sayısı bir eşiği aşınca kullanıcıya görünür bir uyarı (mevcut
 `bulutDurum()` göstergesine benzer), (4) aidat/yoklama gibi büyümeye devam eden koleksiyonlar için
 arşivleme/budama stratejisi.
+
+## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
+
+**Bağlam**: Madde 6 (çıplak hex) taramasında `#10b981` 34 yerde bulundu. Kullanıcı açık talimat
+verdi: **"hiçbir tokena bağlama, olduğu gibi bırak — 34 yerde ne olacağını bilmediğimiz renk
+kayması istemiyorum."** Faz 6'da bu hex koda HİÇ dokunulmadı (`HALKA_RENK`'in `'M'` anahtarı dahil,
+bilerek literal `'#10b981'` olarak bırakıldı — bkz. §2i).
+
+**Neden ayrı bir iş kalemi**: `#10b981` şu an "genel yeşil" gibi görünüyor ama 34 kullanımın hangi
+alt sistemlere ait olduğu (başarı/rozet rengi mi, "M" — miss/hata göstergesi mi, buton durumu mu,
+başka bir anlamlı-renk mi) Faz 6 kapsamında tek tek izlenmedi — Faz 5/6'da defalarca karşılaşılan
+"anlamlı renk vs. jenerik chrome" ayrımı (bkz. §7) bu hex için henüz yapılmadı. Bir sonraki oturumda
+ele alınacaksa önce her kullanım yeri tek tek sınıflandırılmalı (TOKEN-ADAYI / ANLAMLI-KORUNAN),
+sonra kullanıcıya rapor edilip onay alınmalı — Faz 6'nın 6a/6b'de izlediği yöntemin birebir aynısı.

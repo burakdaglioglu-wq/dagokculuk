@@ -217,9 +217,11 @@
 
         /* ============ FAZ 3 — NAVİGASYON ============
            sekmeAc() (app.js) ve her tab-*/icerik-* id'si DEĞİŞMEDİ — bu blok sadece görünümü
-           yönetiyor. Eski .sekme-grubu/.sekme-btn.aktif (aşağıda ~line 248, ~1027, ~1090) artık
-           hiçbir elemente uygulanmıyor (id-seçiciler onlardan daha spesifik, her zaman kazanıyor) —
-           silinmedi, Faz 6 "ölü CSS" taramasına bırakıldı. */
+           yönetiyor. Eski .sekme-grubu (tamamen ölüydü, 3 blok) Faz 6'da silindi. .sekme-btn
+           class'ı HÂLÂ CANLI (gerçek düğmeler bunu kullanıyor) — kendi tanımı çoğunlukla daha
+           spesifik #tabs-ana/#daha-panel kuralları tarafından gölgeleniyor ama örtüşmeyen
+           özellikler sızabilir, bilerek silinmedi (bkz. DEVIR.md §6/§2i, özellik-özellik
+           karşılaştırma gerekiyor). */
 
         /* Masaüstü/tablet üst bar (id-seçici ile eski .sekme-btn kurallarını geçersiz kılıyor) */
         #tabs-ana { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--surface-border); margin-top: 10px; overflow-x: auto; }
@@ -297,9 +299,9 @@
         #kapat-giris-btn { position: absolute; top: 20px; left: 20px; background: var(--neon-red); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 12px; display: none; z-index: 10001; }
         #giris-ekrani h2 { color: var(--text-main); font-weight: 600; text-transform: uppercase; margin-bottom: 20px; text-align: center; font-size: 16px; letter-spacing: 1px;}
         
-        .giris-secim-btn { width: 100%; max-width: 350px; padding: 20px; font-size: 16px; font-weight: 800; color: #ffffff !important; background: #1a1a1c !important; border: 2px solid #333336 !important; cursor: pointer; text-transform: uppercase; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; display: block; }
-        body.light-theme .giris-secim-btn { background: #ffffff !important; color: #111827 !important; border-color: #cbd5e1 !important; }
-        .giris-secim-btn:hover { border-color: var(--accent-orange) !important; color: var(--accent-orange) !important; }
+        .giris-secim-btn { width: 100%; max-width: 350px; padding: 20px; font-size: 16px; font-weight: 800; color: #ffffff; background: #1a1a1c; border: 2px solid #333336; cursor: pointer; text-transform: uppercase; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-align: center; display: block; }
+        body.light-theme .giris-secim-btn { background: #ffffff; color: #111827; border-color: #cbd5e1; }
+        .giris-secim-btn:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
         .giris-secim-btn span { display: block; font-size: 12px; font-weight: 400; color: var(--text-muted); margin-top: 4px; text-transform: none; }
         .pin-btn { padding: 18px 0; font-size: 22px; font-weight: 800; color: var(--text-main); background: #1a1a1c; border: 2px solid #333336; border-radius: 12px; cursor: pointer; }
         body.light-theme .pin-btn { background: #fff; color: #111827; border-color: #cbd5e1; }
@@ -310,7 +312,6 @@
         /* ÜST BAR VE SEKMELER */
         #ust-bar { padding: 10px 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         .grup-satir { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;}
-        .sekme-grubu { display: flex; gap: 4px; background: var(--border-color); padding: 4px; border-radius: 8px; margin-top:10px; overflow-x: auto; }
         .sekme-btn { flex: 1; min-width: 80px; padding: 8px 4px; background: transparent; color: var(--text-main); border: none; border-radius: 6px; font-weight: 600; font-size: 12px; text-align: center;}
         .sekme-btn.aktif { background: var(--accent-orange); color: white; }
         .sekme-icerik { display: none; flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; height: calc(100vh - 110px); max-width: 920px; margin-left: auto; margin-right: auto; width: 100%; }
@@ -341,13 +342,6 @@
         }
         #sayac { font-size: clamp(140px, 38vw, 260px); font-weight: 900; line-height: 0.85; text-align:center; color: var(--accent-orange); cursor:pointer; user-select:none; margin: auto 0; padding: 0 10px; letter-spacing: -2px; }
         .full-screen-mode #sayac { font-size: clamp(260px, 70vw, 650px); line-height: 0.8; margin-top: 10px; letter-spacing: -5px; }
-        
-        .switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: var(--text-muted); transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent-orange); }
-        input:checked + .slider:before { transform: translateX(16px); background-color: #fff; }
 
         /* BÖLÜNMÜŞ SKOR PANELİ (SPLIT-VIEW) */
         .skor-split-layout { display: flex; width: 100%; gap: 15px; flex-wrap: wrap; height: 100%; }
@@ -399,14 +393,6 @@
         .satir-inputs input, .satir-inputs select { flex: 1; min-width: 100px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #fff; border-radius: 6px; font-family: var(--font-sans); font-size: 13px; }
         body.light-theme .satir-inputs input, body.light-theme .satir-inputs select { background: #fff; color: #111827; }
 
-        .cins-btn, .yay-btn { flex: 1; padding: 12px 10px; border: 1px solid var(--border-color); background: #27272a !important; color: #ffffff !important; border-radius: 6px; font-weight: bold; font-size: 11px; letter-spacing: 0.5px;}
-        body.light-theme .cins-btn, body.light-theme .yay-btn { background: #f3f4f6 !important; color: #1f2937 !important; }
-
-        .cins-btn.secili-kiz { background: var(--neon-pink) !important; color: #fff !important; border-color: var(--neon-pink) !important; }
-        .cins-btn.secili-erkek { background: var(--neon-blue) !important; color: #fff !important; border-color: var(--neon-blue) !important; }
-        .yay-btn.secili-klasik { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; }
-        .yay-btn.secili-makarali { background: var(--accent-grey) !important; color: #fff !important; border-color: var(--accent-grey) !important; }
-
         /* SPORCU LİSTESİ DURUMU */
         .sporcu-satir { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 8px; box-sizing: border-box; width: 100%; position: relative; z-index: 1; }
         .sporcu-bilgi-bloku { display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
@@ -416,8 +402,6 @@
         .skor-gir-btn { background: var(--accent-orange) !important; color: #fff !important; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 12px; box-shadow: 0 4px 10px rgba(255,98,0,0.3); white-space: nowrap; pointer-events: auto; position: relative; z-index: 5; display: inline-block; }
 
         /* ROZETLER VE KONTROL BUTONLARI */
-        .ok-rozet-alani { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 15px; min-height: 40px;}
-        .ok-rozet { background: var(--accent-orange) !important; border: 2px solid #fff; color: white !important; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; box-shadow: 0 4px 10px rgba(255,98,0,0.4);}
         .hedef-kontrol-btn { background: var(--accent-orange) !important; color: white !important; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size:12px; width: 100%; box-shadow: 0 4px 12px rgba(255,98,0,0.2);}
         .hedef-sec-grup {
             display: flex; gap: 5px; width: 100%; margin-bottom: 15px;
@@ -446,9 +430,6 @@
         .puan-badge { background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; white-space: nowrap; border: 1px solid var(--border-color);}
         .incele-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; white-space: nowrap;}
         
-        .tree-cat-btn { flex: 1; padding: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); border-radius: 6px; font-weight: bold; }
-        .tree-cat-btn.aktif-klasik { background: var(--gold); color: black; border-color: var(--gold); }
-        .tree-cat-btn.aktif-makarali { background: var(--accent-grey); color: white; border-color: var(--accent-grey); }
         .bracket-round { display: flex; flex-direction: column; gap: 15px; min-width: 260px; }
         
         /* İZOLE MODAL YAPISI */
@@ -584,7 +565,6 @@
             .svg-hedef { width: 100% !important; max-width: 88vw; }
             .hedef-scroll-container { max-height: 56vh; padding: 6px; }
             #hizli-giris-pad { grid-template-columns: repeat(4, 1fr) !important; }
-            .sekme-grubu { gap: 3px; }
             .sekme-btn { font-size: 11px; padding: 7px 8px; }
         }
         /* ===== TABLET (851-1180px) — daha önce tanımsız aralık, telefon kurallarına düşüyordu ===== */
@@ -1065,8 +1045,8 @@
         }
         #giris-ekrani h2 { font-size: 13px; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 10px; }
         .giris-secim-btn {
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012)), rgba(24, 24, 28, 0.94) !important;
-            border: 1px solid rgba(148,163,184,0.20) !important;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012)), rgba(24, 24, 28, 0.94);
+            border: 1px solid rgba(148,163,184,0.20);
             border-radius: 16px; padding: 17px 18px;
             box-shadow: 0 8px 26px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
             text-align: left; position: relative; overflow: hidden;
@@ -1075,9 +1055,9 @@
             content: '\203A'; position: absolute; right: 16px; top: 50%; transform: translateY(-52%);
             font-size: 26px; font-weight: 400; color: var(--text-muted); transition: all 0.18s ease;
         }
-        .giris-secim-btn:hover { border-color: var(--accent-orange) !important; color: #fff !important; box-shadow: 0 10px 30px rgba(255,106,26,0.22), inset 0 1px 0 rgba(255,255,255,0.08); }
+        .giris-secim-btn:hover { border-color: var(--accent-orange); color: #fff; box-shadow: 0 10px 30px rgba(255,106,26,0.22), inset 0 1px 0 rgba(255,255,255,0.08); }
         .giris-secim-btn:hover::after { color: var(--accent-orange); right: 12px; }
-        body.light-theme .giris-secim-btn { background: #ffffff !important; box-shadow: 0 6px 20px rgba(15,23,42,0.10); }
+        body.light-theme .giris-secim-btn { background: #ffffff; box-shadow: 0 6px 20px rgba(15,23,42,0.10); }
 
         /* --- LİG SEÇ: 2×2 yaş ızgarası + ayrı Karışık Sınıf kartı ("Kontur" yönü) ---
            Kulüp renkleri gri/turuncu — yaş kategorileri kasıtlı olarak tamamen nötr, tek
@@ -1127,15 +1107,9 @@
         .km-secim-kart .ok { font-size: 19px; color: var(--text-muted); flex-shrink: 0; }
         @keyframes kmDevamNabiz { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        .pin-btn { border-radius: 14px !important; }
+        .pin-btn { border-radius: 14px; }
 
         /* --- ANA SEKMELER: hap tasarım --- */
-        .sekme-grubu {
-            background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.008)), var(--bg-panel) !important;
-            border: 1px solid var(--border-color); border-radius: 16px !important;
-            padding: 5px !important; gap: 3px;
-            box-shadow: 0 6px 22px rgba(0,0,0,0.30);
-        }
         .sekme-btn { border-radius: 12px; color: var(--text-muted); font-weight: 700; transition: all 0.18s ease; }
         .sekme-btn:hover { color: var(--text-main); background: rgba(148,163,184,0.10); }
         .sekme-btn.aktif {
@@ -1148,13 +1122,13 @@
         input:focus, select:focus { border-color: var(--accent-orange) !important; box-shadow: 0 0 0 3px rgba(255,106,26,0.16); }
 
         /* --- ÖZEL ROZET VİTRİNİ --- */
-        .rozet-kart { position: relative; overflow: hidden; padding-top: 26px !important; }
+        .rozet-kart { position: relative; overflow: hidden; padding-top: 26px; }
         .rozet-nadirlik {
             position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
             font-size: 8px; font-weight: 900; letter-spacing: 1.5px;
             border: 1px solid; border-radius: 20px; padding: 2px 9px; white-space: nowrap;
         }
-        .rozet-emoji { font-size: 34px !important; }
+        .rozet-emoji { font-size: 34px; }
         .rozet-aciklama { font-size: 9.5px; color: var(--text-muted); line-height: 1.35; min-height: 26px; margin: 2px 4px 6px; }
         .rozet-parla { animation: rozetParla 2.4s ease-in-out infinite; }
         @keyframes rozetParla {

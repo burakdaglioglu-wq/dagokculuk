@@ -6338,7 +6338,7 @@
             document.querySelectorAll('.modal-overlay').forEach(ov => {
                 ov.addEventListener('click', e => {
                     if(e.target === ov) { ov.style.display = 'none'; return; }
-                    if(ov.classList.contains('kolay-kapat') && !e.target.closest('button, select, input, textarea, canvas, svg, a, .incele-btn, .ok-rozet')) { ov.style.display = 'none'; }
+                    if(ov.classList.contains('kolay-kapat') && !e.target.closest('button, select, input, textarea, canvas, svg, a, .incele-btn')) { ov.style.display = 'none'; }
                 });
             });
             let fm = document.getElementById('foto-modal'); if(fm) fm.addEventListener('click', e => { if(e.target === fm) fotoModalKapat(); });
@@ -9447,7 +9447,6 @@ ${(function(){
                 ['ana','timer','skor','canlitakip','liderlik','klasman','egitmen','takimlar','dersicerik','video','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
                 try { sekmeAc('skor'); } catch(e) {}
             }
-            try { let bar = document.getElementById('alt-menu'); if(bar) bar.style.display = 'none'; } catch(e) {}
             // FAZ 3 — alt bar/Daha kısayol butonları kendi gerçek tab-* karşılıklarının o anki
             // görünürlüğünü izler (ör. Sayaç sporcu rolünde gizli — kısayolu da gizlensin).
             try {
