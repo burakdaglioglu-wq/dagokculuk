@@ -1033,9 +1033,9 @@
         <div id="rfx-sporcu-sarmal" style="margin-bottom:12px; display:none;">
             <select id="rfx-sporcu-sec" onchange="rfxSporcuDegisti(this.value)" style="width:100%; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-weight:bold;"></select>
         </div>
-        <div id="rfx-profil" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:10px;"></div>
+        <div id="rfx-profil" class="card" style="margin-bottom:10px;"></div>
         <div id="rfx-gorev" style="background:rgba(251,191,36,0.08); border:1px solid var(--gold); border-radius:12px; padding:12px; margin-bottom:10px;"></div>
-        <button id="rfx-lider-btn" onclick="rfxLiderTablosu()" style="width:100%; margin-bottom:14px; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#000; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;">🏆 Lider Tablosu & Rozetler</button>
+        <button id="rfx-lider-btn" onclick="rfxLiderTablosu()" class="btn btn-primary" style="width:100%; margin-bottom:14px; font-size:15px;">🏆 Lider Tablosu & Rozetler</button>
         <div id="rfx-menu">
             <!-- Bilimsel giriş -->
             <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.3); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:12px; color:var(--text-main); line-height:1.6;">
@@ -1402,7 +1402,7 @@
         <!-- EKRAN 1: Rakip Seçimi -->
         <div id="duello-ekran-secim" class="duello-ekran aktif">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
-                <button onclick="dueloKapat()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); width:36px; height:36px; border-radius:10px; font-size:14px; cursor:pointer; flex-shrink:0;">✕</button>
+                <button onclick="dueloKapat()" class="btn btn-sm" style="width:36px; height:36px; padding:0; flex-shrink:0;">✕</button>
                 <div style="font-weight:900; font-size:16px;">⚔️ Düello Modu</div>
             </div>
             <div id="duello-secim-icerik"></div>

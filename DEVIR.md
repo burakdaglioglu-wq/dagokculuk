@@ -29,7 +29,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `4ccb205` — Faz 5 düzeltme: `!important` yerine doğru kural sırası
 - `276fa1f` — Tasarım sistemi Faz 5 grup 2: Gelişim, Ders İçerikleri, Teknik Çalışma
 - `1c1fcf7` — Tasarım sistemi Faz 5 grup 3: Klasman, Başarılar
-- Faz 5 grup 4 (Yarışmalar, Düello, Video) — bu commit'te, aşağıda anlatılıyor
+- `f51cb68` — Tasarım sistemi Faz 5 grup 4: Yarışmalar, Düello, Video
+- Faz 5 grup 5 (Mağaza, `#duello-modal`, Reaksiyon) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -308,12 +309,74 @@ uygulamanın temasıyla değil, kamera görüntüsünün üzerinde HER ZAMAN gö
 `.duello-davet-satir` turuncu vurgusu da (gelen davet = "aksiyon bekliyor") anlamlı bir durum rengi
 olarak bırakıldı — giden davetler zaten kendi satırında nötr renge çevriliyor (`duelloTabDoldur()`).
 `#duello-modal` (aktif düello sırasında açılan tam ekran maç arayüzü) bu ekranın bir PARÇASI değil,
-ayrı, çoklu giriş noktalı bir modal sistemi — Faz 5'in "ekran ekran" kapsamının dışında bırakıldı,
-kendi başına ele alınması gerekirse ayrıca konuşulmalı.
+ayrı, çoklu giriş noktalı bir modal sistemi — bu grupta Faz 5 kapsamı dışında bırakılmıştı.
+**Kullanıcı bunu düzeltti**: modal, kullanıcı için "düellonun kendisi" — Faz 5 grup 5'te ele alındı,
+bkz. §2g.
 
 **Doğrulama**: 360/1280px, koyu/açık temada (8 kombinasyon) ekran görüntüsü + `.btn-danger` class
 kontrolü + `confirm()` metni okuma + `.seg-btn.aktif` geçiş testi — hepsi Playwright ile gerçek
 `.click()` üzerinden, yatay taşma/konsol hatası yok.
+
+## 2g. Faz 5, Grup 5 — Mağaza, `#duello-modal`, Reaksiyon (tamamlandı, Faz 5'in son grubu)
+
+Bu gruptan sonra Faz 5'te sadece **Ana Ekran** kalıyor.
+
+**Mağaza** (`#icerik-oyun`, `oyunPaneliDoldur()`): incelemede `.oy-coin-bar`/`.oy-bolum`/`.magaza-tab`
+ailesinin de (Başarılar/Düello/Video'daki gibi) `.card`/`.seg-btn` ile TAM OLARAK AYNI Faz 1
+tokenlarından beslendiği görüldü — dokunulmadı. `magazaGridDoldur()`'un rozet nadirlik renkleri
+(nadir/epik/efsanevi/dağ), sahiplik/aktif durum renkleri (`.magaza-kart.sahip/.aktif`,
+`.magaza-btn.al/uygula/aktif`), `uyariListeDoldur()`'un uyarı-şiddeti renkleri (`.uyari-kart.dusus/
+tutarsiz/iyi`) hepsi Başarılar'daki rozet sistemiyle AYNI kategori — anlamlı durum rengi, dokunulmadı.
+**Tek değişiklik**: `gorevListeDoldur()`'daki "▼ Diğer N görevi göster" aç/kapa butonu `.btn` oldu
+(Ders İçerikleri/Başarılar'daki aynı desenin üçüncü tekrarı).
+
+**`#duello-modal`** — kullanıcının istediği gibi kapsama alındı. Önce **tüm giriş noktaları** bulundu:
+1. Ana Ekran'ın "⚔️ DÜELLO MODU — Baskı Altında Yarış!" CTA'sı (`sporcuAnaDoldur()`, `.duello-cta-btn`) — **Ana Ekran'ın kendisi Faz 5'te henüz sırada, bu CTA'ya dokunulmadı**, sadece modalın kendisi işlendi.
+2. Düello sekmesinin "⚔️ Düello Başlat" butonu (`duelloSekmesindenBaslat()`, Faz 5 grup 4'te zaten `.va-btn` olarak bırakılmıştı).
+3. Gelen davet anlık bildirimi (`#duello-davet-banner`, `dueloDavetGoster()`) — uygulamanın HERHANGİ bir ekranında üstte belirebilir.
+4. Düello sekmesinin kalıcı davet listesi (`duelloTabDavetYanitla()`, WS bildirimini kaçıran cihazlar için yedek).
+5. Modalın kendi "🔄 Tekrar Oyna" butonu (`dueloTekrarOyna()`) — dıştan değil, sonuç ekranından kendi kendine yeniden başlatma.
+
+**Ne değişti (sadece dış çerçeve/butonlar)**: kurulum ekranının (`dueloSecimCiz()`) rakip tipi/zorluk/
+seri sayısı/ok sayısı/süre saniyesi seçici buton gruplarının hepsi `.seg`/`.seg-btn`'e taşındı (süre
+AÇIK/KAPALI ikili anahtarı tek bir küçük `.btn`/`.btn-primary` kaldı — tek boolean için `.switch`'e
+çevirmek orantısız bulundu). Dört ekrandaki (seçim/bekleme/devam/sonuç) navigasyon butonları (✕ kapat,
+🔽 küçült, İptal Et, Tekrar Oyna, Kapat, "değiştir") `.btn`/`.btn-primary`/`.btn-ghost`'a taşındı.
+Gelen davet banner'ının "✅ Kabul"/"✕" butonları da aynı diline (`.btn-primary`/`.btn`) çekildi — eskiden
+banner yeşil, sekme kalıcı listesi mavi kullanıyordu, artık ikisi de tutarlı.
+
+**Ne DOKUNULMADI (kullanıcının açıkça işaret ettiği kategoriler)**: `.duello-skor-satir`/
+`.duello-skor-kutu`/`.duello-skor-deger`/`.duello-vs` (skor karşılaştırması — SEN yeşil, rakip
+kırmızı, önde olan kenarlıkla vurgulanıyor), `.duello-sonuc-banner`/`banner.renk` (kazandın yeşil/
+kaybettin kırmızı/berabere gold + zıplama animasyonu — kazanan/kaybeden rengi), `.duello-ok-pad`/
+`.duello-ok-btn`/`.duello-anlik-oklar` (skor giriş klavyesi, Skor ekranıyla AYNI `getRenkForPuan()`
+kaynağı), `.duello-sayac`/`.duello-sayac.tehlike` (geri sayım + son-10-saniye kırmızı nabız animasyonu),
+`#duello-modal`/`#duello-davet-banner`/`#duello-mini-widget`'ın SABİT koyu kırmızı-siyah radyal gradyan
+arka planı (temayı takip ETMİYOR — bilerek, "düello arenası" atmosferi; bu Teknik Çalışma'nın kazara
+sabit-açık kalması gibi bir hata DEĞİL, kasıtlı bir tasarım kararı, bkz. §7). `dueloSeriTamamla()`/
+`dueloBitir()`/`dueloRakipOkGeldi()` gibi hiçbir hesaplama/skor/senkron fonksiyonuna dokunulmadı.
+
+**Reaksiyon** (`#icerik-refleks`, `rfxPaneliDoldur()`) — en büyük alt sistem (103 fonksiyon), ama
+"dış çerçeve" yüzeyi aslında küçük: `#rfx-profil`'in kabuğu `.card`'a taşındı (zaten birebir aynı
+tokenlerle stilliydi), "🏆 Lider Tablosu & Rozetler" butonu `.btn.btn-primary` oldu (bu Faz'daki her
+ekranın birincil CTA'sıyla aynı muamele), ve EN DEĞERLİ değişiklik: `rfxBaslikHtml()` — Lider Tablosu
+VE her bir oyunun kendi ekranı dahil TÜM alt-ekranların PAYLAŞTIĞI "← Geri" başlığı — `.btn`'e taşındı,
+yani tek bir küçük değişiklik onlarca oyun ekranına birden yayıldı. **Dokunulmadı**: kategori
+başlıklarının renk kodlaması (⚡ kırmızı, 🧠 mor, 🏹 turuncu, 🫁 yeşil — hangi oyun grubunda olduğunu
+gösteren kasıtlı bir yön bulma rengi), her oyun kutusunun kategori rengine göre kenarlığı, "MONOPOLY
+AYI" özel/parlayan promosyon kutusu (rozet nadirlik sistemiyle aynı `.rozet-kart.dag` class'ını
+yeniden kullanıyor), Lider Tablosu'nun madalya/sıralama renkleri, ve `#rfx-oyun-alani` içindeki HİÇBİR
+oyunun kendi mekaniği/canvas'ı/rengi (103 fonksiyonun tamamı).
+
+**Doğrulama**: 360/1280px, koyu/açık (8 kombinasyon, Mağaza+Reaksiyon menü+lider) + Düello modalının
+gerçek `.click()` akışı (kurulum → sanal rakip düellosu → 3 seri × 3 ok → sonuç ekranı) + gelen davet
+banner'ının veri-önizlemesi, hepsinde yatay taşma yok. **Not**: testler sırasında bazı bağlamlarda
+"Failed to fetch" konsol hatası gözlendi — kök neden arka planda 25 saniyede bir çalışan periyodik
+düello-yoklama/senkron isteği; bu turun HİÇBİR değişikliğiyle ilgisiz olduğu, hiçbir etkileşim
+yapılmadan sadece oturum açıp beklemekle de aynı hatanın oluştuğu ayrı bir temel-çizgi testiyle
+doğrulandı. Sunucu loglarında (`wrangler dev`) karşılık gelen hiçbir hata yok — istemci tarafı, muhtemelen
+yerel geliştirme sunucusunun art arda çok sayıda test bağlamı altında ara sıra bağlantı reddetmesi.
+Gerçek bir regresyon değil, ama Faz 6'ya bir not olarak eklendi (bkz. §6).
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -463,6 +526,10 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
   - `.tree-cat-btn`/`.aktif-klasik`/`.aktif-makarali` (styles.css ~449-451) — Faz 5 grup 4'te
     Yarışmalar'ın kategori sekmesi `.seg`/`.seg-btn`'e taşınınca kullanımdan kalktı (grep ile
     doğrulandı, başka hiçbir yerde referans yok), silinebilir.
+  - **Periyodik arka plan isteklerinin ara sıra "Failed to fetch" atması** — Faz 5 grup 5 testlerinde
+    gözlendi, HİÇBİR kod değişikliğiyle ilgisiz olduğu doğrulandı (bkz. §2g) — muhtemelen düello
+    yoklama/senkron `setInterval`'ının yerel `wrangler dev` altında ara sıra bağlantı reddi alması.
+    Prod'da (gerçek Workers ortamı) tekrar eder mi kontrol edilmemiş — Faz 6'da bakılabilir.
 
 ### Faz 5 ekran durum tablosu
 
@@ -486,8 +553,9 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | 7 | Yarışmalar | ✅ bitti (Faz 5 grup 4) | `.card`/`.seg`, "Yarışmaları Sıfırla" ayrı `.btn-danger` grubuna taşındı (confirm() zaten vardı, sadece doğrulandı — bkz. §2f). |
 | 8 | Düello | ✅ bitti (Faz 5 grup 4) | Değişiklik YOK — `.va-*` ailesi zaten Faz 1 tokenlarından besleniyordu (bkz. §2f). |
 | 13 | Video | ✅ bitti (Faz 5 grup 4) | Değişiklik YOK — aynı `.va-*` ailesi. Gecikmeli Ayna'nın çizim rengi (`#fbbf24`, canvas üzerinde sabit) mekanik olduğu için dokunulmadı. |
-| 10 | Mağaza | ⏳ bekliyor, **Faz 5 grup 5** | PALETLER (Faz 2'de düzeltildi)/çerçeve/aksesuar/rozet satın alma. |
-| 11 | Reaksiyon | ⏳ bekliyor, **Faz 5 grup 5, EN SON (Ana Ekran hariç)** | Çok sayıda mini-oyun (`rfx*`, 103 fonksiyon) — en yüksek iç karmaşıklık. Oyun içi renkler (yeşile bas, odak kilidi vb.) mekaniğin parçası — sadece dış çerçeveye (mod/sporcu seçici, üst panel) dokunulacak, şüpheli her renk sorulacak. |
+| 10 | Mağaza | ✅ bitti (Faz 5 grup 5) | Tek değişiklik: "Diğer N görevi göster" `.btn`. Rozet nadirlik/sahiplik/uyarı renkleri dokunulmadı (bkz. §2g). |
+| 11 | Reaksiyon | ✅ bitti (Faz 5 grup 5) | `#rfx-profil` `.card`, Lider Tablosu butonu `.btn-primary`, paylaşılan "← Geri" başlığı (`rfxBaslikHtml`) `.btn` — 103 fonksiyonun tamamı ve kategori renkleri dokunulmadı. |
+| — | `#duello-modal` | ✅ bitti (Faz 5 grup 5) | Düello ekranının (madde 8) PARÇASI, ayrı satır yok — kullanıcının isteğiyle grup 5'e eklendi. Kurulum ekranı `.seg`/`.seg-btn`, navigasyon butonları `.btn` — skor/kazanan renkleri, ok pad, sayaç, atmosferik koyu arka plan dokunulmadı (bkz. §2g). |
 | 14 | **Ana Ekran** | ⏳ bekliyor, **EN SON** | ⚠️ İçinde `#sonraki-ders-widget` var — `loggedInSporcu` için `/api/antrenman-programi`'den canlı veri çeken, **Ders Programı'na bağlı** bir bileşen (app.js:274, `sonrakiDersWidgetGuncelle()`). Ders Programı yarım bir özellik (bkz. §7) — bu widget'a dokunurken ekstra dikkat. Ayrıca `#canli-takip-widget-ana` da burada gömülü (Canlı Takip ekranıyla karışık bağımlılık). En sık kullanılan ekran olmasına rağmen en kırılgan bağımlılıklara sahip olduğu için en sona bırakıldı. |
 
 **Sıralama güncellemesi (Faz 5 grup 3 sonrası)**: kalan 7 ekranın gruplanışı kullanıcı tarafından
@@ -622,6 +690,21 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   renkli butona" diyordu; butonlar `.btn-primary` (turuncu) olunca bu metinler YANLIŞ hale geldi
   (bkz. §2f). Ekran görüntüsüyle yakalandı, kod okumakla değil — bu yüzden her rengi değiştirdiğin
   ekranın gerçek ekran görüntüsünü al ve OKU, sadece "yatay taşma var mı" diye bakma.
+- **Sabit (temayı takip etmeyen) bir arka plan her zaman bir bug değildir — bazen kasıtlı atmosfer
+  tasarımıdır, ikisini birbirinden ayırt et.** Teknik Çalışma'nın sabit beyaz kartları (Faz 5 grup 2)
+  KAZAYDI — modül aslında uygulamanın geri kalanıyla aynı yüzeyde durması gerekirken yanlışlıkla hep
+  açık kalmıştı. `#duello-modal`'ın sabit koyu kırmızı-siyah radyal gradyanı (Faz 5 grup 5) ise
+  KASITLI — "düello arenası" hissi için bilinçli bir tasarım kararı, CSS yorumunda da açıkça
+  belgeli. Ayırt etme testi: modül/ekran kendi içinde tutarlı, dramatik bir atmosfer taşıyor mu
+  (glow/pulse animasyonları, "arena" temalı metin, iddialı gradyanlar) yoksa sadece "unutulmuş,
+  varsayılan" mı görünüyor? Şüpheliyse sor — ama önce CSS'in yanındaki yorumu oku, çoğu zaman niyet
+  zaten yazılı duruyor.
+- **Bir modalin "hangi ekranın parçası" olduğuna karar verirken kullanıcıya sor, kendi başına
+  sınıflandırma** — `#duello-modal` ilk turda "ayrı, çoklu giriş noktalı bir sistem" diye Faz 5
+  kapsamı dışında bırakılmıştı; kullanıcı bunu düzeltti: "kullanıcı için düellonun kendisi bu."
+  Structural olarak ayrı bir dosya/id olması, kullanıcı deneyiminde ayrı bir şey olduğu anlamına
+  gelmiyor. Böyle bir modal bulunca, önce TÜM giriş noktalarını bulup listele (bkz. §2g) — bu hem
+  kapsam kararını daha bilgili verdirir hem de kullanıcının gördüğü gerçek resmi ortaya çıkarır.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
@@ -630,11 +713,11 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
 - ~~Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma)~~ — **ÇÖZÜLDÜ**, bkz. §2d.
 - ~~Faz 5 grup 3 (Klasman, Başarılar)~~ — **ÇÖZÜLDÜ**, bkz. §2e.
 - ~~Faz 5 grup 4 (Yarışmalar, Düello, Video)~~ — **ÇÖZÜLDÜ**, bkz. §2f.
-- **`#duello-modal` (aktif düello ekranı) Faz 5 kapsamı dışında bırakıldı** — 15 sekmenin biri
-  değil, çoklu giriş noktalı ayrı bir modal sistemi. Kullanıcı isterse ayrıca ele alınabilir.
-- **Faz 5'in kalan sırası kesinleşti**: Grup 4 = Yarışmalar + Düello + Video, Grup 5 = Mağaza +
-  Reaksiyon (bkz. §6 tablosu ve "Sıralama güncellemesi" notu). Artık bir tahmin değil, kullanıcının
-  kendi verdiği sıra.
+- ~~Faz 5 grup 5 (Mağaza, `#duello-modal`, Reaksiyon)~~ — **ÇÖZÜLDÜ**, bkz. §2g. `#duello-modal`
+  ilk turda kapsam dışı bırakılmıştı, kullanıcının düzeltmesiyle bu grupta ele alındı.
+- **Faz 5'te sadece Ana Ekran kaldı** (bkz. §6 tablosu, madde 14) — bir sonraki oturumun tek işi bu.
+  Ana Ekran'ın kendi `.duello-cta-btn`'i (aynı `#duello-modal`'ı açan) HENÜZ dokunulmadı — Ana Ekran
+  sırası gelince ele alınacak.
 - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.

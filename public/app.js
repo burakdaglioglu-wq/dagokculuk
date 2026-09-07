@@ -16842,29 +16842,29 @@ ${(function(){
         function dueloSecimCiz() {
             let el = document.getElementById('duello-secim-icerik'); if(!el || !_dueloState) return;
             let d = _dueloState;
-            let tipBtn = (tip, ikon, etiket) => `<button onclick="dueloTipSec('${tip}')" style="flex:1; padding:14px 8px; border-radius:12px; font-weight:900; font-size:13px; cursor:pointer; border:2px solid ${d.rakipTip === tip ? 'var(--accent-orange)' : 'var(--border-color)'}; background:${d.rakipTip === tip ? 'rgba(255,98,0,0.12)' : 'var(--bg-panel)'}; color:var(--text-main);">${ikon}<br>${etiket}</button>`;
-            let html = `<div style="display:flex; gap:8px; margin-bottom:14px;">${tipBtn('sanal', '🤖', 'Sanal Rakip')}${tipBtn('gercek', '🧑‍🤝‍🧑', 'Gerçek Rakip')}</div>`;
+            let tipBtn = (tip, ikon, etiket) => `<button type="button" class="seg-btn ${d.rakipTip === tip ? 'aktif' : ''}" onclick="dueloTipSec('${tip}')" style="padding:14px 8px;">${ikon}<br>${etiket}</button>`;
+            let html = `<div class="seg" style="margin-bottom:14px;">${tipBtn('sanal', '🤖', 'Sanal Rakip')}${tipBtn('gercek', '🧑‍🤝‍🧑', 'Gerçek Rakip')}</div>`;
             if(d.rakipTip === 'sanal') {
                 html += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; font-weight:700;">ZORLUK</div>
-                <div style="display:flex; gap:8px; margin-bottom:16px;">
-                    ${['kolay', 'orta', 'zor'].map(z => `<button onclick="dueloZorlukSec('${z}')" style="flex:1; padding:10px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; border:2px solid ${d.rakipZorluk === z ? 'var(--neon-green)' : 'var(--border-color)'}; background:${d.rakipZorluk === z ? 'rgba(16,185,129,0.12)' : 'var(--bg-panel)'}; color:var(--text-main); text-transform:capitalize;">${z === 'kolay' ? '😌 Kolay' : z === 'orta' ? '⚖️ Orta' : '🔥 Zor'}</button>`).join('')}
+                <div class="seg" style="margin-bottom:16px;">
+                    ${['kolay', 'orta', 'zor'].map(z => `<button type="button" class="seg-btn ${d.rakipZorluk === z ? 'aktif' : ''}" onclick="dueloZorlukSec('${z}')">${z === 'kolay' ? '😌 Kolay' : z === 'orta' ? '⚖️ Orta' : '🔥 Zor'}</button>`).join('')}
                 </div>`;
             } else if(d.rakipTip === 'gercek') {
                 html += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; font-weight:700;">RAKİP SEÇ</div><div id="duello-gercek-liste"></div>`;
             }
             if(d.rakipTip) {
                 html += `<div style="font-size:11px; color:var(--text-muted); margin:14px 0 8px; font-weight:700;">SERİ SAYISI</div>
-                <div style="display:flex; gap:8px; margin-bottom:14px;">${[3, 6].map(n => `<button onclick="_dueloState.seriSayisi=${n}; dueloSecimCiz();" style="flex:1; padding:9px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; border:2px solid ${d.seriSayisi === n ? 'var(--neon-blue)' : 'var(--border-color)'}; background:${d.seriSayisi === n ? 'rgba(59,130,246,0.12)' : 'var(--bg-panel)'}; color:var(--text-main);">${n} Seri</button>`).join('')}</div>
+                <div class="seg" style="margin-bottom:14px;">${[3, 6].map(n => `<button type="button" class="seg-btn ${d.seriSayisi === n ? 'aktif' : ''}" onclick="_dueloState.seriSayisi=${n}; dueloSecimCiz();">${n} Seri</button>`).join('')}</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; font-weight:700;">SERİ BAŞI OK SAYISI</div>
-                <div style="display:flex; gap:8px; margin-bottom:14px;">${[3, 6].map(n => `<button onclick="_dueloState.okSayisi=${n}; dueloSecimCiz();" style="flex:1; padding:9px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; border:2px solid ${d.okSayisi === n ? 'var(--neon-blue)' : 'var(--border-color)'}; background:${d.okSayisi === n ? 'rgba(59,130,246,0.12)' : 'var(--bg-panel)'}; color:var(--text-main);">${n} Ok</button>`).join('')}</div>
+                <div class="seg" style="margin-bottom:14px;">${[3, 6].map(n => `<button type="button" class="seg-btn ${d.okSayisi === n ? 'aktif' : ''}" onclick="_dueloState.okSayisi=${n}; dueloSecimCiz();">${n} Ok</button>`).join('')}</div>
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:${d.sureAktif ? '10px' : '20px'};">
                     <div style="font-size:11px; color:var(--text-muted); font-weight:700;">⏱️ SÜRE SINIRI <span style="opacity:0.7; font-weight:600;">(opsiyonel)</span></div>
-                    <button onclick="_dueloState.sureAktif=!_dueloState.sureAktif; dueloSecimCiz();" style="padding:6px 14px; border-radius:20px; font-weight:900; font-size:11px; cursor:pointer; border:2px solid ${d.sureAktif ? 'var(--accent-orange)' : 'var(--border-color)'}; background:${d.sureAktif ? 'rgba(255,98,0,0.15)' : 'var(--bg-panel)'}; color:${d.sureAktif ? 'var(--accent-orange)' : 'var(--text-muted)'};">${d.sureAktif ? 'AÇIK ✓' : 'KAPALI'}</button>
+                    <button type="button" class="btn btn-sm ${d.sureAktif ? 'btn-primary' : ''}" onclick="_dueloState.sureAktif=!_dueloState.sureAktif; dueloSecimCiz();">${d.sureAktif ? 'AÇIK ✓' : 'KAPALI'}</button>
                 </div>
-                ${d.sureAktif ? `<div style="display:flex; gap:8px; margin-bottom:20px;">${[30, 60, 90].map(s => `<button onclick="_dueloState.sureSaniye=${s}; dueloSecimCiz();" style="flex:1; padding:9px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; border:2px solid ${d.sureSaniye === s ? 'var(--gold)' : 'var(--border-color)'}; background:${d.sureSaniye === s ? 'rgba(251,191,36,0.12)' : 'var(--bg-panel)'}; color:var(--text-main);">${s}sn</button>`).join('')}</div>` : ''}`;
+                ${d.sureAktif ? `<div class="seg" style="margin-bottom:20px;">${[30, 60, 90].map(s => `<button type="button" class="seg-btn ${d.sureSaniye === s ? 'aktif' : ''}" onclick="_dueloState.sureSaniye=${s}; dueloSecimCiz();">${s}sn</button>`).join('')}</div>` : ''}`;
             }
             let hazir = d.rakipTip === 'sanal' || (d.rakipTip === 'gercek' && d.rakipAd);
-            html += `<button onclick="dueloOyunuBaslat()" ${hazir ? '' : 'disabled'} style="width:100%; padding:16px; border-radius:14px; border:none; font-weight:900; font-size:15px; cursor:${hazir ? 'pointer' : 'default'}; opacity:${hazir ? 1 : 0.4}; background:linear-gradient(135deg,#dc2626,#ea580c); color:#fff;">⚔️ DÜELLOYU BAŞLAT</button>`;
+            html += `<button onclick="dueloOyunuBaslat()" ${hazir ? '' : 'disabled'} class="btn btn-primary" style="width:100%; padding:16px; font-size:15px;">⚔️ DÜELLOYU BAŞLAT</button>`;
             el.innerHTML = html;
             if(d.rakipTip === 'gercek') dueloGercekRakipListesiCiz();
         }
@@ -16877,7 +16877,7 @@ ${(function(){
                 el.innerHTML = `<div style="display:flex; align-items:center; gap:8px; font-size:12px; padding:12px; border-radius:10px; background:rgba(16,185,129,0.1); border:1px solid var(--neon-green);">
                     <span style="font-size:18px;">✅</span>
                     <span style="flex:1;"><b>${d.rakipAd}</b> seçildi — düello daveti gönderilecek.</span>
-                    <button onclick="_dueloState.rakipAd=null; dueloSecimCiz();" style="background:none; border:none; color:var(--accent-orange); font-weight:800; cursor:pointer; font-size:11px;">değiştir</button>
+                    <button onclick="_dueloState.rakipAd=null; dueloSecimCiz();" class="btn btn-ghost btn-sm">değiştir</button>
                 </div>`;
                 return;
             }
@@ -16928,8 +16928,8 @@ ${(function(){
                     <div style="font-size:16px; font-weight:900; margin-bottom:6px;">Davet gönderildi</div>
                     <div style="font-size:13px; color:var(--text-muted); margin-bottom:24px;"><b>${d.rakipAd}</b>'in kabul etmesi bekleniyor...</div>
                     <div style="display:flex; gap:8px; justify-content:center;">
-                        <button onclick="dueloDavetIptalEt()" style="padding:12px 24px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:800; font-size:13px; cursor:pointer;">İptal Et</button>
-                        <button onclick="dueloKucult()" style="padding:12px 24px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:800; font-size:13px; cursor:pointer;">🔽 Küçült</button>
+                        <button onclick="dueloDavetIptalEt()" class="btn">İptal Et</button>
+                        <button onclick="dueloKucult()" class="btn">🔽 Küçült</button>
                     </div>
                 </div>`;
             dueloMiniGuncelle();
@@ -17034,9 +17034,9 @@ ${(function(){
                 <div class="duello-anlik-oklar" style="min-height:22px; margin-bottom:8px;">${(d.rakipAnlikOklar || []).map(v => _dueloOkCipHTML(v)).join('')}</div>` : '';
             el.innerHTML = `
                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
-                    <button onclick="dueloCikisOnayla()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); width:32px; height:32px; border-radius:9px; font-size:13px; cursor:pointer; flex-shrink:0;">✕</button>
+                    <button onclick="dueloCikisOnayla()" class="btn btn-sm" style="width:32px; height:32px; padding:0; flex-shrink:0;">✕</button>
                     <div style="flex:1; text-align:center; font-size:11px; font-weight:800; color:var(--text-muted);">SERİ ${d.aktifSeriIndex + 1} / ${d.seriSayisi}</div>
-                    <button onclick="dueloKucult()" title="Küçült, diğer sekmelerde gezin" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); width:32px; height:32px; border-radius:9px; font-size:13px; cursor:pointer; flex-shrink:0;">🔽</button>
+                    <button onclick="dueloKucult()" title="Küçült, diğer sekmelerde gezin" class="btn btn-sm" style="width:32px; height:32px; padding:0; flex-shrink:0;">🔽</button>
                 </div>
                 <div id="duello-baglanti-gosterge" style="text-align:center; font-size:10px; min-height:14px; margin-bottom:2px;"></div>
                 ${d.sureAktif ? `<div class="duello-sayac"><span id="duello-sayac-deger">${d.sayac}</span></div>` : ''}
@@ -17240,8 +17240,8 @@ ${(function(){
                     <div style="font-weight:900; font-size:14px;">${p.davetciAd} seni düelloya davet etti!</div>
                     <div style="font-size:11px; color:var(--text-muted);">${p.seriSayisi} seri × ${p.okSayisi} ok</div>
                 </div>
-                <button onclick="dueloDavetiYanitla(_dueloAktifDavet, true)" style="background:var(--neon-green); color:#04140c; border:none; padding:10px 14px; border-radius:10px; font-weight:900; font-size:12px; cursor:pointer; flex-shrink:0;">✅ Kabul</button>
-                <button onclick="dueloDavetiYanitla(_dueloAktifDavet, false)" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:10px 12px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; flex-shrink:0;">✕</button>`;
+                <button onclick="dueloDavetiYanitla(_dueloAktifDavet, true)" class="btn btn-primary btn-sm" style="flex-shrink:0;">✅ Kabul</button>
+                <button onclick="dueloDavetiYanitla(_dueloAktifDavet, false)" class="btn btn-sm" style="flex-shrink:0;">✕</button>`;
             let banner = document.getElementById('duello-davet-banner'); if(banner) banner.style.display = 'flex';
             try { sesCal(1200, 0.12); } catch(e) {}
             if(_dueloDavetTimer) clearTimeout(_dueloDavetTimer);
@@ -17432,8 +17432,8 @@ ${(function(){
                 </div>
                 <div style="background:rgba(0,0,0,0.15); border:1px solid var(--border-color); border-radius:10px; padding:8px 4px; margin:14px 0;">${satirlar}</div>
                 <div style="display:flex; gap:8px;">
-                    <button onclick="dueloTekrarOyna()" style="flex:1; padding:14px; border-radius:12px; border:none; font-weight:900; font-size:13px; cursor:pointer; background:linear-gradient(135deg,#dc2626,#ea580c); color:#fff;">🔄 Tekrar Oyna</button>
-                    <button onclick="dueloKapat()" style="flex:1; padding:14px; border-radius:12px; border:1px solid var(--border-color); font-weight:800; font-size:13px; cursor:pointer; background:var(--bg-panel); color:var(--text-main);">✕ Kapat</button>
+                    <button onclick="dueloTekrarOyna()" class="btn btn-primary" style="flex:1;">🔄 Tekrar Oyna</button>
+                    <button onclick="dueloKapat()" class="btn" style="flex:1;">✕ Kapat</button>
                 </div>`;
             if(kazandi) { try { kutlamaKuyrukEkle({ emoji: '🏆', banner: 'DÜELLO GALİBİ!', ad: d.benimAd, aciklama: `${rakipEtiket} rakibini ${benToplam}-${rakipToplam} yendin!`, deger: '' }); } catch(e) {} }
         }
@@ -19348,7 +19348,7 @@ ${(function(){
             let kalan = kartlar.slice(3).join('');
             let toggleBtn = '';
             if(kartlar.length > 3) {
-                toggleBtn = `<button onclick="gorevHepsiToggle()" style="width:100%; margin-top:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; padding:9px; font-size:12px; font-weight:bold; cursor:pointer;">${gorevHepsiGoster ? '▲ Daha az göster' : `▼ Diğer ${kartlar.length - 3} görevi göster`}</button>`;
+                toggleBtn = `<button onclick="gorevHepsiToggle()" class="btn" style="width:100%; margin-top:8px;">${gorevHepsiGoster ? '▲ Daha az göster' : `▼ Diğer ${kartlar.length - 3} görevi göster`}</button>`;
             }
             liste.innerHTML = ilk3 + (gorevHepsiGoster ? kalan : '') + toggleBtn;
             let toplamOdul = GUNLUK_GOREVLER.reduce((a,g) => a + g.odul, 0);
@@ -19622,7 +19622,7 @@ ${(function(){
             alan.innerHTML = html;
         }
         function rfxMenuyeDon() { rfxTemizle(); rfxPaneliDoldur(); }
-        function rfxBaslikHtml(ad, ikon) { return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button onclick="rfxMenuyeDon()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:7px 12px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">← Geri</button><span style="font-weight:800; font-size:15px;">${ikon} ${ad}${RFX_SEVIYELI.indexOf(rfxSonTip) >= 0 && rfxAktifSeviye > 1 ? ' <span style="font-size:11px; color:var(--gold);">· ' + RFX_SEVIYE_ADLAR[rfxAktifSeviye] + '</span>' : ''}</span><div style="width:54px;"></div></div>` + rfxSeviyeBarHtml(rfxSonTip); }
+        function rfxBaslikHtml(ad, ikon) { return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button onclick="rfxMenuyeDon()" class="btn btn-sm">← Geri</button><span style="font-weight:800; font-size:15px;">${ikon} ${ad}${RFX_SEVIYELI.indexOf(rfxSonTip) >= 0 && rfxAktifSeviye > 1 ? ' <span style="font-size:11px; color:var(--gold);">· ' + RFX_SEVIYE_ADLAR[rfxAktifSeviye] + '</span>' : ''}</span><div style="width:54px;"></div></div>` + rfxSeviyeBarHtml(rfxSonTip); }
         function rfxRekorAl(tip) { try { let d = JSON.parse(localStorage.getItem('okculuk_oyun_rekor') || '{}'); return d[tip] || 0; } catch(e) { return 0; } }
         function rfxRekorYaz(tip, puan) { try { let d = JSON.parse(localStorage.getItem('okculuk_oyun_rekor') || '{}'); if(puan > (d[tip] || 0)) { d[tip] = puan; localStorage.setItem('okculuk_oyun_rekor', JSON.stringify(d)); return true; } } catch(e) {} return false; }
         function rfxBitisIc(mesaj, kazanilan, tip, puan) {
