@@ -240,7 +240,7 @@
             let zamanMetni = gunFarki <= 0 ? 'Bugün' : gunFarki === 1 ? 'Yarın' : gunFarki + ' gün sonra';
             let saatMetni = String(sonraki.tarih.getHours()).padStart(2, '0') + ':' + String(sonraki.tarih.getMinutes()).padStart(2, '0');
             let zilHTML = sonraki.slot.hatirlatmaAktif ? '<span style="font-size:10px; color:var(--neon-green); font-weight:800; margin-left:6px;">🔔</span>' : '';
-            el.innerHTML = `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+            el.innerHTML = `<div class="card" style="margin-bottom:14px; display:flex; align-items:center; gap:10px;">
                 <div style="font-size:22px;">📅</div>
                 <div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">SIRADAKİ DERSİN</div><div style="font-size:14px; font-weight:800;">${GUN_ADI_TR[sonraki.gun]} ${saatMetni} · <span style="color:var(--accent-orange);">${zamanMetni}</span>${zilHTML}</div></div>
             </div>`;
@@ -256,7 +256,7 @@
                 (s.gunler || [s.gun]).forEach(function(gun) { satirlar.push({ s: s, gun: gun }); });
             });
             satirlar.sort(function(a,b){ return a.gun - b.gun || a.s.baslangicSaat.localeCompare(b.s.baslangicSaat); });
-            let html = '<div class="glass-panel" style="padding:12px; margin-bottom:14px;">'
+            let html = '<div class="card" style="margin-bottom:14px;">'
                 + '<div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">📅 HAFTALIK PROGRAM</div>';
             satirlar.forEach(function(satir) {
                 let s = satir.s;
@@ -4656,10 +4656,10 @@
                     <span style="font-size:13px; font-weight:900; color:var(--gold); flex-shrink:0;">${toplam} P</span>
                 </div>`;
             }).join('');
-            return `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:14px;">
+            return `<div class="card" style="margin-bottom:14px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
                     <div style="font-size:11px; font-weight:800; color:var(--neon-green);">📡 CANLI SKOR TAKİP</div>
-                    <button onclick="sekmeAc('canlitakip')" style="background:none; border:none; color:var(--accent-orange); font-weight:800; font-size:11px; cursor:pointer;">Tümünü Gör →</button>
+                    <button onclick="sekmeAc('canlitakip')" class="btn btn-ghost btn-sm">Tümünü Gör →</button>
                 </div>
                 ${satirHTML}
             </div>`;
@@ -16635,7 +16635,7 @@ ${(function(){
             let vitrinSec = sp.vitrinSec || []; let kazanilmis = sp.rozetler || [];
             let vitrinHtml = vitrinSec.length ? `<div style="display:flex; gap:4px; margin-top:4px;">${vitrinSec.slice(0,3).map(id => { let r = kazanilmis.find(x=>x.id===id); let def = (typeof ROZETLER!=='undefined') ? ROZETLER.find(x=>x.id===id) : null; let e = def ? def.emoji : r ? r.emoji : ''; return e ? `<div style="font-size:16px;" title="${def?def.ad:''}">${e}</div>` : ''; }).join('')}</div>` : '';
             el.innerHTML = `
-            <div class="glass-panel" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,98,0,0.12),rgba(59,130,246,0.08)); padding:16px; margin-bottom:14px;">
+            <div class="card" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,98,0,0.12),rgba(59,130,246,0.08)); margin-bottom:14px;">
                 <div style="position:relative; flex-shrink:0;">
                     <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); display:flex; align-items:center; justify-content:center; font-size:26px; border:3px solid ${cerceveRenk}; box-shadow:0 0 14px rgba(255,106,26,0.25); overflow:hidden;">${sp.fotoUrl ? `<img src="${sp.fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : avatarEmoji}</div>
                     ${aksEmoji ? `<div style="position:absolute; bottom:-2px; right:-2px; font-size:14px;">${aksEmoji}</div>` : ''}
@@ -16649,47 +16649,47 @@ ${(function(){
                 <div style="text-align:right; flex-shrink:0;"><div style="font-size:20px; font-weight:900; color:var(--gold);">💎 ${sp.coin || 0}</div><div style="font-size:10px; color:var(--text-muted);">elmas</div></div>
             </div>
 
-            <button onclick="ihtiyacBildirAc()" style="width:100%; margin-bottom:14px; padding:13px; border-radius:12px; border:none; cursor:pointer; font-weight:800; font-size:13.5px; color:#fff; background:linear-gradient(135deg,#7c3aed,#ec4899); box-shadow:0 6px 16px rgba(124,58,237,0.35);">💬 Öneri, Övgü & Şikayet — Bize Yaz</button>
+            <button onclick="ihtiyacBildirAc()" class="btn" style="width:100%; margin-bottom:14px;">💬 Öneri, Övgü & Şikayet — Bize Yaz</button>
 
             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-                <div class="glass-panel" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--accent-orange);">${sp.toplamSkor || 0}</div><div style="font-size:10px; color:var(--text-muted);">Bu Antr. Puan</div></div>
-                <div class="glass-panel" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-green);">${enIyi}</div><div style="font-size:10px; color:var(--text-muted);">En İyi Seri</div></div>
-                <div class="glass-panel" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-blue);">${toplamOk}</div><div style="font-size:10px; color:var(--text-muted);">Bugün Ok</div></div>
+                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--accent-orange);">${sp.toplamSkor || 0}</div><div style="font-size:10px; color:var(--text-muted);">Bu Antr. Puan</div></div>
+                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-green);">${enIyi}</div><div style="font-size:10px; color:var(--text-muted);">En İyi Seri</div></div>
+                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-blue);">${toplamOk}</div><div style="font-size:10px; color:var(--text-muted);">Bugün Ok</div></div>
             </div>
 
             <div id="canli-takip-widget-ana"></div>
             <div id="sonraki-ders-widget"></div>
             <div id="haftalik-program-widget"></div>
             <div id="sezon-sayac-ana"></div>
-            ${haftaOrt ? `<div class="glass-panel" style="padding:12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">7 ANTRENMAN ORTALAMASI</div><div style="font-size:22px; font-weight:900; color:var(--gold);">${haftaOrt} ${trend}</div></div><button onclick="sekmeAc('gelisim')" style="background:rgba(255,98,0,0.12); color:var(--accent-orange); border:1px solid var(--accent-orange); padding:8px 14px; border-radius:10px; font-weight:bold; font-size:12px; cursor:pointer;">Grafik →</button></div>` : ''}
-            ${seri.length ? `<div class="glass-panel" style="padding:12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">BUGÜNKÜ ORTALAMA</div><div style="font-size:22px; font-weight:900; color:var(--accent-orange);">${ortSeri}</div></div><div style="font-size:11px; color:var(--text-muted); text-align:right; max-width:140px;">${karsilastirma}</div></div>` : ''}
+            ${haftaOrt ? `<div class="card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">7 ANTRENMAN ORTALAMASI</div><div style="font-size:22px; font-weight:900; color:var(--gold);">${haftaOrt} ${trend}</div></div><button onclick="sekmeAc('gelisim')" class="btn btn-sm">Grafik →</button></div>` : ''}
+            ${seri.length ? `<div class="card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">BUGÜNKÜ ORTALAMA</div><div style="font-size:22px; font-weight:900; color:var(--accent-orange);">${ortSeri}</div></div><div style="font-size:11px; color:var(--text-muted); text-align:right; max-width:140px;">${karsilastirma}</div></div>` : ''}
 
-            <div class="glass-panel" style="background:${gorevTamam ? 'rgba(16,185,129,0.1)' : 'rgba(251,191,36,0.08)'}; border-color:${gorevTamam ? 'var(--neon-green)' : 'var(--gold)'}; padding:12px; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+            <div class="card" style="background:${gorevTamam ? 'rgba(16,185,129,0.1)' : 'rgba(251,191,36,0.08)'}; border-color:${gorevTamam ? 'var(--neon-green)' : 'var(--gold)'}; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
                 <div style="font-size:26px;">${gorevTamam ? '✅' : '🎯'}</div>
                 <div style="flex:1; min-width:0;"><div style="font-size:11px; font-weight:800; color:var(--gold);">GÜNLÜK GÖREV${gorevTamam ? ' — TAMAM!' : ' (+5 💎)'}</div><div style="font-size:12px;">${rfxGunlukGorev ? rfxGunlukGorev().metin : 'Reaksiyon Lab\'ı aç!'}</div></div>
-                <button onclick="sekmeAc('refleks')" style="background:var(--bg-main); color:var(--text-muted); border:1px solid var(--border-color); padding:7px 11px; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer;">Oyna →</button>
+                <button onclick="sekmeAc('refleks')" class="btn btn-sm">Oyna →</button>
             </div>
 
-            ${!rutinYapildi ? `<div class="glass-panel" style="background:rgba(59,130,246,0.08); border-color:var(--neon-blue); padding:12px; margin-bottom:14px;">
+            ${!rutinYapildi ? `<div class="card" style="background:rgba(59,130,246,0.08); border-color:var(--neon-blue); margin-bottom:14px;">
                 <div style="font-weight:800; color:var(--neon-blue); margin-bottom:6px; font-size:13px;">🎯 Atış Öncesi Rutin</div>
                 <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Antrenman başlamadan önce zihnini ve bedenini hazırla.</div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button onclick="rutinBaslat('${ad}')" style="background:var(--neon-blue); color:#fff; border:none; padding:9px 14px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">▶️ Rutin Başlat</button>
-                    <button onclick="sekmeAc('refleks')" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:9px 14px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">🧠 Reaksiyon Oyunu</button>
+                    <button onclick="rutinBaslat('${ad}')" class="btn btn-sm">▶️ Rutin Başlat</button>
+                    <button onclick="sekmeAc('refleks')" class="btn btn-sm">🧠 Reaksiyon Oyunu</button>
                 </div>
-            </div>` : `<div class="glass-panel" style="background:rgba(16,185,129,0.08); border-color:var(--neon-green); padding:12px; margin-bottom:14px; text-align:center; font-weight:800; color:var(--neon-green);">✅ Bugünkü rutin tamamlandı!</div>`}
+            </div>` : `<div class="card" style="background:rgba(16,185,129,0.08); border-color:var(--neon-green); margin-bottom:14px; text-align:center; font-weight:800; color:var(--neon-green);">✅ Bugünkü rutin tamamlandı!</div>`}
 
-            ${sonNot ? `<div class="glass-panel" style="border-left:3px solid var(--accent-orange); padding:12px; margin-bottom:14px;"><div style="font-size:11px; font-weight:800; color:var(--accent-orange); margin-bottom:4px;">📝 KOÇUN NOTU ${sonNot.tarih ? '<span style="font-weight:400; color:var(--text-muted);">· ' + esc(sonNot.tarih) + '</span>' : ''}</div><div style="font-size:13px; color:var(--text-main); white-space:pre-wrap;">${esc(sonNot.not)}</div></div>` : ''}
+            ${sonNot ? `<div class="card" style="border-left:3px solid var(--accent-orange); margin-bottom:14px;"><div style="font-size:11px; font-weight:800; color:var(--accent-orange); margin-bottom:4px;">📝 KOÇUN NOTU ${sonNot.tarih ? '<span style="font-weight:400; color:var(--text-muted);">· ' + esc(sonNot.tarih) + '</span>' : ''}</div><div style="font-size:13px; color:var(--text-main); white-space:pre-wrap;">${esc(sonNot.not)}</div></div>` : ''}
 
             <div id="duyuru-slayt-ana" style="margin-bottom:14px;"></div>
             <div id="google-yorum-slayt-ana" style="margin-bottom:14px;"></div>
 
-            <button onclick="dueloBaslat('${ad.replace(/'/g, "\\'")}')" class="duello-cta-btn">⚔️ DÜELLO MODU — Baskı Altında Yarış!</button>
+            <button onclick="dueloBaslat('${ad.replace(/'/g, "\\'")}')" class="btn" style="width:100%; margin-bottom:8px; padding:14px; font-size:13.5px;">⚔️ DÜELLO MODU — Baskı Altında Yarış!</button>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                <button onclick="sekmeAc('skor')" class="glass-panel" style="padding:14px; font-weight:800; font-size:13px; cursor:pointer; color:var(--text-main);">🎯 Skor Gir</button>
-                <button onclick="sekmeAc('basari')" class="glass-panel" style="padding:14px; font-weight:800; font-size:13px; cursor:pointer; color:var(--text-main);">🏅 Rozetlerim</button>
-                <button onclick="sekmeAc('oyun')" class="glass-panel" style="padding:14px; font-weight:800; font-size:13px; cursor:pointer; color:var(--text-main);">🎮 Mağaza</button>
-                <button onclick="sekmeAc('liderlik')" class="glass-panel" style="padding:14px; font-weight:800; font-size:13px; cursor:pointer; color:var(--text-main);">🏆 Sıralama</button>
+                <button onclick="sekmeAc('skor')" class="btn btn-primary" style="padding:14px; font-size:13px;">🎯 Skor Gir</button>
+                <button onclick="sekmeAc('basari')" class="btn" style="padding:14px; font-size:13px;">🏅 Rozetlerim</button>
+                <button onclick="sekmeAc('oyun')" class="btn" style="padding:14px; font-size:13px;">🎮 Mağaza</button>
+                <button onclick="sekmeAc('liderlik')" class="btn" style="padding:14px; font-size:13px;">🏆 Sıralama</button>
             </div>`;
             try { canliTakipWidgetGuncelle(); } catch(e) {}
             try { googleYorumSlaytiBaslat('google-yorum-slayt-ana'); } catch(e) {}
@@ -16734,7 +16734,7 @@ ${(function(){
                 let yildiz = '★★★★★'.slice(0, y.rating) + '☆☆☆☆☆'.slice(0, 5 - y.rating);
                 let yazar = _adSoyadKisalt(y.author_name).replace(/</g, '&lt;');
                 let metin = String(y.text || '').replace(/</g, '&lt;');
-                kutu.innerHTML = `<div class="glass-panel" style="padding:14px; position:relative; overflow:hidden;">
+                kutu.innerHTML = `<div class="card" style="position:relative; overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
                         <div style="font-size:11px; font-weight:800; color:var(--text-muted); letter-spacing:.4px;">⭐ GOOGLE YORUMLARI · ${veri.puan.toFixed(1)} (${veri.toplam})</div>
                         <div style="display:flex; gap:3px;">${veri.yorumlar.map((_, idx) => `<div style="width:5px; height:5px; border-radius:50%; background:${idx===i?'var(--accent-orange)':'var(--border-color)'};"></div>`).join('')}</div>
@@ -16771,7 +16771,7 @@ ${(function(){
             let i = 0;
             let ciz = () => {
                 let d = liste[i];
-                kutu.innerHTML = `<div class="glass-panel" style="padding:14px;">
+                kutu.innerHTML = `<div class="card">
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
                         <div style="font-weight:800; font-size:13px; flex:1;">📢 ${esc(d.baslik)}</div>
                         <div style="display:flex; gap:3px;">${liste.map((_, idx) => `<div style="width:5px; height:5px; border-radius:50%; background:${idx===i?'var(--accent-orange)':'var(--border-color)'};"></div>`).join('')}</div>

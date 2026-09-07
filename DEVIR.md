@@ -30,7 +30,9 @@ faz faz, ekranı bozmadan uygulamak.
 - `276fa1f` — Tasarım sistemi Faz 5 grup 2: Gelişim, Ders İçerikleri, Teknik Çalışma
 - `1c1fcf7` — Tasarım sistemi Faz 5 grup 3: Klasman, Başarılar
 - `f51cb68` — Tasarım sistemi Faz 5 grup 4: Yarışmalar, Düello, Video
-- Faz 5 grup 5 (Mağaza, `#duello-modal`, Reaksiyon) — bu commit'te, aşağıda anlatılıyor
+- `5cacd2c` — Tasarım sistemi Faz 5 grup 5: Mağaza, `#duello-modal`, Reaksiyon
+- `6a807d2` — DEVIR.md: fanOutMasterPayload veri-katmanı riski, Faz 6 sonrası iş kalemi (sadece belge, kod değişikliği yok)
+- Faz 5 grup 6 / SON (Ana Ekran) — bu commit'te, aşağıda anlatılıyor. **Bu commit ile Faz 5 TAMAMLANIYOR.**
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -371,12 +373,55 @@ oyunun kendi mekaniği/canvas'ı/rengi (103 fonksiyonun tamamı).
 **Doğrulama**: 360/1280px, koyu/açık (8 kombinasyon, Mağaza+Reaksiyon menü+lider) + Düello modalının
 gerçek `.click()` akışı (kurulum → sanal rakip düellosu → 3 seri × 3 ok → sonuç ekranı) + gelen davet
 banner'ının veri-önizlemesi, hepsinde yatay taşma yok. **Not**: testler sırasında bazı bağlamlarda
-"Failed to fetch" konsol hatası gözlendi — kök neden arka planda 25 saniyede bir çalışan periyodik
-düello-yoklama/senkron isteği; bu turun HİÇBİR değişikliğiyle ilgisiz olduğu, hiçbir etkileşim
-yapılmadan sadece oturum açıp beklemekle de aynı hatanın oluştuğu ayrı bir temel-çizgi testiyle
-doğrulandı. Sunucu loglarında (`wrangler dev`) karşılık gelen hiçbir hata yok — istemci tarafı, muhtemelen
-yerel geliştirme sunucusunun art arda çok sayıda test bağlamı altında ara sıra bağlantı reddetmesi.
-Gerçek bir regresyon değil, ama Faz 6'ya bir not olarak eklendi (bkz. §6).
+"Failed to fetch" konsol hatası gözlendi, bu turun HİÇBİR değişikliğiyle ilgisiz olduğu doğrulandı.
+**Düzeltme (bir sonraki turda)**: buradaki ilk kök-neden tahmini ("25sn'lik düello yoklaması") YANLIŞTI —
+kullanıcının isteğiyle yapılan tam teşhis gerçek nedeni buldu: `bulutaGonderKontrol()`'ün 10 saniyede
+bir tetiklediği `fanOutMasterPayload()`, bkz. §9. Doğru teşhis ve ölçüm orada.
+
+## 2h. Faz 5, Grup 6 / SON — Ana Ekran (tamamlandı) — **FAZ 5 BİTTİ**
+
+En içerik-yoğun ekran: profil kartı + 3'lü istatistik + 4 gömülü widget (canlı takip özeti, sıradaki
+ders, haftalık program, sezon sayacı) + 6 durum kartı (haftalık/bugünkü ortalama, günlük görev, atış
+rutini, koç notu, duyuru/Google yorum slaytı) + 6 aksiyon butonu. Bir "tek birincil eylem" görev
+ekranı değil, bir dashboard — o kural buraya zorlanmadı.
+
+**Ne değişti**: profil kartı, 3'lü istatistik grid'i, tüm durum kartları (`.glass-panel` →`.card`,
+kendi koşullu vurgu renkleri — görev tamam yeşili, rutin mavisi, koç notu turuncusu — AYNEN
+korunarak, sadece taban `.card` üstüne inline override olarak bindirildi), canlı takip özeti
+(`canliTakipOzetHTML`, "Tümünü Gör →" `.btn-ghost btn-sm`), duyuru + Google yorum slaytları (`.card`,
+yıldız/puan renkleri dokunulmadı) — hepsi `.card`'a taşındı. **6 aksiyon butonu, kullanıcının isteğiyle
+EŞİT AĞIRLIKTA değil**: "🎯 Skor Gir" tek `.btn-primary`, diğer beşi (İhtiyaç Bildir, Düello, Rozetlerim,
+Mağaza, Sıralama) düz `.btn` — dashboard'da "tek birincil eylem" kuralı geçmiyor ama görsel hiyerarşi
+gerekiyordu, sporcunun bu ekranı en çok skor girmek için açtığı gerekçesiyle. Düello'nun eski
+`.duello-cta-btn` (pulse animasyonlu gradyan) ve İhtiyaç Bildir'in mor-pembe gradyanı, Faz 5'in geri
+kalanında her ekranın CTA'sını düzleştirdiği gibi düzleştirildi.
+
+**Sıradaki ders + haftalık program widget'ları (`sonrakiDersRenderla`, `haftalikProgramWidgetGuncelle`)
+— EN KIRILGAN NOKTA, kullanıcının özellikle istediği ekstra testle doğrulandı**: SADECE dış kabuk
+(`background/border/radius` → `.card`) değişti, `_sporcuKendiDersleriCache`/fetch/`birSonrakiDersHesapla`/
+"benimMi" (SENİN DERSİN rozeti) mantığının TEK SATIRINA dokunulmadı. Ayrıca test edildi:
+- **Boş durum** (sporcunun ders programında hiç slotu yok): iki widget de `el.innerHTML=''` ile
+  TAMAMEN kayboluyor — boş kart, kesik kenarlık, artefakt YOK. 4 kombinasyonda (360/1280 × koyu/açık)
+  doğrulandı.
+- **Dolu durum** (sahte `_sporcuKendiDersleriCache` ile 3 slot, biri başka sporcuya ait): "Sıradaki
+  Dersin" doğru günü/saati/"Bugün" etiketini gösterdi, "Haftalık Program" 3 satırı da listeledi ve
+  SADECE gerçekten bu sporcunun katıldığı 2 slotta "★ SENİN DERSİN" rozetini gösterdi (üçüncüsü,
+  başka sporcuya ait slot, rozetsiz kaldı) — filtreleme mantığının restyling'den etkilenmediğinin
+  kanıtı. 360 ve 1280'de ayrı ayrı doğrulandı.
+
+**Sezon sayacı** (`sezonWidgetHTML`, `#sezon-sayac-ana`) — **dokunulmadı**. Klasman'ın `#sezon-sayac-
+widget`'ıyla AYNI fonksiyon (bkz. §2e); kalan-gün rengi (yeşil>30, amber 8-30, kırmızı≤7) anlamlı bir
+aciliyet göstergesi, zaten özenle tasarlanmış bespoke bir widget — Faz 5 boyunca hiçbir yerde
+dokunulmadı.
+
+**Doğrulama**: 360/1280px, koyu/açık (4 temel kombinasyon) + boş/dolu ders-widget durumları (6 ek
+ekran görüntüsü) + buton class'larının programatik kontrolü (`.btn-primary` sadece Skor Gir'de),
+hepsinde yatay taşma yok, konsol hatası yok. Ekranda görünen "`<script>alert(1)</script>`" başlıklı
+duyuru, eski bir güvenlik-testi turundan kalan yerel test verisi — `esc()` onu doğru şekilde düz
+metne çeviriyor, ÇALIŞTIRMIYOR; bu turun bir bulgusu/regresyonu değil, sadece görsel gürültü.
+
+**FAZ 5 TAMAMLANDI** — 15 ekranın hepsi (Skor dahil, Faz 4'te) bitti. Kalan iş Faz 6 (temizlik/
+doğrulama, bkz. §6) ve §9'daki veri-katmanı iş kalemi.
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -556,7 +601,7 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | 10 | Mağaza | ✅ bitti (Faz 5 grup 5) | Tek değişiklik: "Diğer N görevi göster" `.btn`. Rozet nadirlik/sahiplik/uyarı renkleri dokunulmadı (bkz. §2g). |
 | 11 | Reaksiyon | ✅ bitti (Faz 5 grup 5) | `#rfx-profil` `.card`, Lider Tablosu butonu `.btn-primary`, paylaşılan "← Geri" başlığı (`rfxBaslikHtml`) `.btn` — 103 fonksiyonun tamamı ve kategori renkleri dokunulmadı. |
 | — | `#duello-modal` | ✅ bitti (Faz 5 grup 5) | Düello ekranının (madde 8) PARÇASI, ayrı satır yok — kullanıcının isteğiyle grup 5'e eklendi. Kurulum ekranı `.seg`/`.seg-btn`, navigasyon butonları `.btn` — skor/kazanan renkleri, ok pad, sayaç, atmosferik koyu arka plan dokunulmadı (bkz. §2g). |
-| 14 | **Ana Ekran** | ⏳ bekliyor, **EN SON** | ⚠️ İçinde `#sonraki-ders-widget` var — `loggedInSporcu` için `/api/antrenman-programi`'den canlı veri çeken, **Ders Programı'na bağlı** bir bileşen (app.js:274, `sonrakiDersWidgetGuncelle()`). Ders Programı yarım bir özellik (bkz. §7) — bu widget'a dokunurken ekstra dikkat. Ayrıca `#canli-takip-widget-ana` da burada gömülü (Canlı Takip ekranıyla karışık bağımlılık). En sık kullanılan ekran olmasına rağmen en kırılgan bağımlılıklara sahip olduğu için en sona bırakıldı. |
+| 14 | **Ana Ekran** | ✅ bitti (Faz 5 grup 6, SON) | `.card` + buton hiyerarşisi (Skor Gir tek `.btn-primary`). `#sonraki-ders-widget`/`#haftalik-program-widget` sadece dış kabuk değişti, boş/dolu durumları ayrıca test edildi (bkz. §2h) — Ders Programı bağımlılığı sağlam. |
 
 **Sıralama güncellemesi (Faz 5 grup 3 sonrası)**: kalan 7 ekranın gruplanışı kullanıcı tarafından
 zorluk/risk gözetilerek yeniden belirlendi — Grup 4: Yarışmalar + Düello + Video, Grup 5: Mağaza +
@@ -715,9 +760,9 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
 - ~~Faz 5 grup 4 (Yarışmalar, Düello, Video)~~ — **ÇÖZÜLDÜ**, bkz. §2f.
 - ~~Faz 5 grup 5 (Mağaza, `#duello-modal`, Reaksiyon)~~ — **ÇÖZÜLDÜ**, bkz. §2g. `#duello-modal`
   ilk turda kapsam dışı bırakılmıştı, kullanıcının düzeltmesiyle bu grupta ele alındı.
-- **Faz 5'te sadece Ana Ekran kaldı** (bkz. §6 tablosu, madde 14) — bir sonraki oturumun tek işi bu.
-  Ana Ekran'ın kendi `.duello-cta-btn`'i (aynı `#duello-modal`'ı açan) HENÜZ dokunulmadı — Ana Ekran
-  sırası gelince ele alınacak.
+- ~~Faz 5 grup 6 / SON (Ana Ekran)~~ — **ÇÖZÜLDÜ**, bkz. §2h. **FAZ 5 TAMAMEN BİTTİ** — 15 ekranın
+  hepsi (Skor dahil) tasarım sistemine geçirildi. Sıradaki iş Faz 6 (bkz. §6) ve §9'daki veri-katmanı
+  iş kalemi — ikisi de yeni bir onay/başlama kararı bekliyor, otomatik başlanmayacak.
 - `renk-envanteri-uzun-kuyruk-2026-09.md`'deki 372 düşük-frekans hex OTOMATİK/bağlam
   okunmadan ön-sınıflandırıldı — Faz 6'ya kadar gerçek bir onay/işlem beklemiyor, ama
   o dosyanın "düşük güven" etiketi unutulmamalı.
