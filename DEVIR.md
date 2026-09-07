@@ -28,7 +28,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `3c75e63` — Tasarım sistemi Faz 5 grup 1: Sayaç, Canlı Takip, Liderlik
 - `4ccb205` — Faz 5 düzeltme: `!important` yerine doğru kural sırası
 - `276fa1f` — Tasarım sistemi Faz 5 grup 2: Gelişim, Ders İçerikleri, Teknik Çalışma
-- Faz 5 grup 3 (Klasman, Başarılar) — bu commit'te, aşağıda anlatılıyor
+- `1c1fcf7` — Tasarım sistemi Faz 5 grup 3: Klasman, Başarılar
+- Faz 5 grup 4 (Yarışmalar, Düello, Video) — bu commit'te, aşağıda anlatılıyor
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -270,6 +271,50 @@ vitrin seçim durumu). `profilRender()`/`rekorTahtaDoldur()`/satın-alma mantı�
 **Doğrulama**: 5 sahte sporcu (`kartGecmisi` ile gerçekçi skor) + 1 seçili sporcu tohumlanarak
 360/1280px, koyu/açık temada (8 kombinasyon) ekran görüntüsü alındı, yatay taşma/konsol hatası yok.
 
+## 2f. Faz 5, Grup 4 — Yarışmalar, Düello, Video (tamamlandı)
+
+**Yarışmalar** (`#icerik-takimlar`) — üç değişiklik: (1) 3 `.glass-panel` bölümü `.card`'a taşındı;
+(2) Klasik/Makaralı kategori sekmesi (`#tree-tab-klasik`/`#tree-tab-makarali`) `.seg`/`.seg-btn`'e
+taşındı — `setTreeCategory()` artık iki ayrı class (`aktif-klasik`/`aktif-makarali`) yerine tek
+`aktif` class'ı toggle'lıyor, `aktifTreeCat` durum değişkenine (bracket filtrelemeyi süren gerçek
+mantık) dokunulmadı; (3) **"🔄 Yarışmaları Sıfırla"** — kullanıcının özellikle işaret ettiği buton.
+`yarismalarSifirla()` içinde `confirm()` zaten VARDI ve ne silineceğini açıkça yazıyordu
+(`"Tüm takımlar ve eleme ağaçları (bireysel + takım) silinir. Sporcular ve skorlar SİLİNMEZ."`) —
+eklemeye gerek kalmadı, sadece doğrulandı (Playwright `dialog` event'iyle metnin ekrana geldiği
+teyit edildi). Buton ekranın EN ALTINA, kendi "Tehlikeli işlemler" başlıklı `.card`'ına taşındı,
+`.btn-danger` oldu — artık ne yapıcı akışların arasında ne de ekranın ilk göze çarpan öğesi.
+Bireysel/takım eleme ağaçları (`#eleme-agaci-alani`/`#takim-eleme-agaci-alani`, `elemeAgaciOlustur`/
+`takimElemeAgaciOlustur`/`maclariCiz`/`takimMaclariCiz`) HİÇ dokunulmadı — bunlar hesaplama/bracket
+katmanı. Bölüm başlıklarının rengi (BİREYSEL=mavi, TAKIM=gold) bilerek korundu — ekranı tararken
+"hangi bölümdeyim" ayrımını taşıyan bir kategorileme rengi, chrome değil.
+
+**Bulunan yan bug (bu turda düzeltildi)**: iki boş-durum metni doğrudan buton RENGİNE atıfta
+bulunuyordu — `"...yukarıdaki mavi butona basınız"` ve `"...yukarıdaki altın renkli butona basınız"`
+(`maclariCiz()`/`takimMaclariCiz()`). Butonlar `.btn-primary` (turuncu) olunca bu metinler yanlış
+hale geldi. Düzeltme: renk yerine buton METNİNE atıfta bulunacak şekilde yeniden yazıldı
+(`"...yukarıdaki 'Bireysel Ağacı Başlat / Yenile' butonuna basınız."` vb.) — **genel ders**: bir
+butonun rengini değiştirmeden önce, o rengi/o butonu SÖZLE anan başka bir metin var mı diye ara
+(bkz. §7).
+
+**Düello** (`#icerik-duello`, `duelloTabDoldur()`) ve **Video** (`#icerik-video`, `vaInit()`) —
+**hiçbir markup/stil değişikliği yapılmadı**. İkisi de zaten `.va-*` sınıf ailesini (`.va-card`,
+`.va-title`, `.va-sub`, `.va-btn` + renk varyantları) kullanıyor; styles.css'te incelendiğinde bu
+ailenin `.card`/`.btn` ile TAM OLARAK AYNI Faz 1 tokenlarından (`--bg-panel`, `--border-color`,
+`--text-muted`, `--accent-orange`, `--neon-*`) beslendiği görüldü — yeniden adlandırma saf çalışma
+olurdu. **Kullanıcının uyardığı mekanik renk** somut olarak bulundu: `aynaSekliCiz()` (Gecikmeli
+Ayna'nın çizim katmanı) `ctx.strokeStyle = '#fbbf24'` ile canvas'a SABİT bir renk çiziyor — bu,
+uygulamanın temasıyla değil, kamera görüntüsünün üzerinde HER ZAMAN görünür kalması gereken bir
+çizim rengi (video arka planı ne renk olursa olsun okunabilir kalmalı). Dokunulmadı. Düello'nun
+`.duello-davet-satir` turuncu vurgusu da (gelen davet = "aksiyon bekliyor") anlamlı bir durum rengi
+olarak bırakıldı — giden davetler zaten kendi satırında nötr renge çevriliyor (`duelloTabDoldur()`).
+`#duello-modal` (aktif düello sırasında açılan tam ekran maç arayüzü) bu ekranın bir PARÇASI değil,
+ayrı, çoklu giriş noktalı bir modal sistemi — Faz 5'in "ekran ekran" kapsamının dışında bırakıldı,
+kendi başına ele alınması gerekirse ayrıca konuşulmalı.
+
+**Doğrulama**: 360/1280px, koyu/açık temada (8 kombinasyon) ekran görüntüsü + `.btn-danger` class
+kontrolü + `confirm()` metni okuma + `.seg-btn.aktif` geçiş testi — hepsi Playwright ile gerçek
+`.click()` üzerinden, yatay taşma/konsol hatası yok.
+
 ## 3. Token mimarisi (styles.css, tam liste)
 
 Hepsi `:root` içinde, aksi belirtilmedikçe. **Eski değişkenlerin hiçbiri silinmedi** —
@@ -415,6 +460,9 @@ ekran görüntüleri (aynı şekilde gönderildi, repo'da değil).
     `app.html`'in yüklediği kopya) Faz 5 grup 2'den ÖNCE birebir aynısı olan, hiçbir yerden
     yüklenmeyen ölü bir kopyaydı (bkz. §2d). Artık iki dosya UYUŞMUYOR — ya silinmeli ya da
     (daha az riskli ama gereksiz) yeniden senkronlanmalı.
+  - `.tree-cat-btn`/`.aktif-klasik`/`.aktif-makarali` (styles.css ~449-451) — Faz 5 grup 4'te
+    Yarışmalar'ın kategori sekmesi `.seg`/`.seg-btn`'e taşınınca kullanımdan kalktı (grep ile
+    doğrulandı, başka hiçbir yerde referans yok), silinebilir.
 
 ### Faz 5 ekran durum tablosu
 
@@ -435,9 +483,9 @@ analitiği değil, kabaca bir tahmin; yanlışsa düzeltilebilir.
 | 6 | Teknik Çalışma | ✅ bitti (Faz 5 grup 2) | Kendi `.tk-` paleti Faz 1 tokenlarına bağlandı (bkz. §2d) — yapıya dokunulmadı. |
 | 9 | Başarılar | ✅ bitti (Faz 5 grup 3) | Sadece "Diğer N rozeti göster" `.btn` oldu — gerisi ya zaten token-tabanlıydı ya anlamlı rozet/çerçeve rengiydi (bkz. §2e). |
 | 12 | Klasman | ✅ bitti (Faz 5 grup 3) | Yay filtresi `.seg`, grup başlığı `.card`. Madalya/canlı-parıltı renklerine dokunulmadı (bkz. §2e). |
-| 7 | Yarışmalar | ⏳ bekliyor, **Faz 5 grup 4** | Takım/turnuva yönetimi — orta karmaşıklık (eşleşme ağacı vb.). Korumasız "Yarışmaları Sıfırla" butonu var — `confirm()` var mı kontrol edilecek, yoksa (neyin silineceğini açıkça yazan bir metinle) eklenecek. |
-| 8 | Düello | ⏳ bekliyor, **Faz 5 grup 4** | Kendi `.va-*` sınıf ailesini kullanıyor (Video ile ortak) — incelendiğinde ZATEN Faz 1 tokenlarından besleniyor, yeniden adlandırma değil sadece JS'in ürettiği ad-hoc kısımlar hizalanacak. |
-| 13 | Video | ⏳ bekliyor, **Faz 5 grup 4** | "Gecikmeli Ayna" özelliği; Düello ile aynı `.va-*` ailesini paylaşıyor. Çizim araç çubuğunun renkleri (çizgi rengi seçimi vb.) mekanik olabilir — dokunulmadan önce sorulacak. |
+| 7 | Yarışmalar | ✅ bitti (Faz 5 grup 4) | `.card`/`.seg`, "Yarışmaları Sıfırla" ayrı `.btn-danger` grubuna taşındı (confirm() zaten vardı, sadece doğrulandı — bkz. §2f). |
+| 8 | Düello | ✅ bitti (Faz 5 grup 4) | Değişiklik YOK — `.va-*` ailesi zaten Faz 1 tokenlarından besleniyordu (bkz. §2f). |
+| 13 | Video | ✅ bitti (Faz 5 grup 4) | Değişiklik YOK — aynı `.va-*` ailesi. Gecikmeli Ayna'nın çizim rengi (`#fbbf24`, canvas üzerinde sabit) mekanik olduğu için dokunulmadı. |
 | 10 | Mağaza | ⏳ bekliyor, **Faz 5 grup 5** | PALETLER (Faz 2'de düzeltildi)/çerçeve/aksesuar/rozet satın alma. |
 | 11 | Reaksiyon | ⏳ bekliyor, **Faz 5 grup 5, EN SON (Ana Ekran hariç)** | Çok sayıda mini-oyun (`rfx*`, 103 fonksiyon) — en yüksek iç karmaşıklık. Oyun içi renkler (yeşile bas, odak kilidi vb.) mekaniğin parçası — sadece dış çerçeveye (mod/sporcu seçici, üst panel) dokunulacak, şüpheli her renk sorulacak. |
 | 14 | **Ana Ekran** | ⏳ bekliyor, **EN SON** | ⚠️ İçinde `#sonraki-ders-widget` var — `loggedInSporcu` için `/api/antrenman-programi`'den canlı veri çeken, **Ders Programı'na bağlı** bir bileşen (app.js:274, `sonrakiDersWidgetGuncelle()`). Ders Programı yarım bir özellik (bkz. §7) — bu widget'a dokunurken ekstra dikkat. Ayrıca `#canli-takip-widget-ana` da burada gömülü (Canlı Takip ekranıyla karışık bağımlılık). En sık kullanılan ekran olmasına rağmen en kırılgan bağımlılıklara sahip olduğu için en sona bırakıldı. |
@@ -569,6 +617,11 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   farklı isimle. Böyle bir aileyi bulunca önce styles.css'te tanımını oku; gerçekten eski/hardcoded
   renklere dayanıyorsa (Teknik Çalışma gibi) taşı, tokenlardan besleniyorsa yeniden adlandırma SAF
   ÇALIŞMA OLUR — dokunma.
+- **Bir butonun rengini değiştirmeden önce, o rengi SÖZLE anan başka bir metin var mı diye ara** —
+  Faz 5 grup 4'te Yarışmalar'ın iki boş-durum mesajı "yukarıdaki mavi butona" / "yukarıdaki altın
+  renkli butona" diyordu; butonlar `.btn-primary` (turuncu) olunca bu metinler YANLIŞ hale geldi
+  (bkz. §2f). Ekran görüntüsüyle yakalandı, kod okumakla değil — bu yüzden her rengi değiştirdiğin
+  ekranın gerçek ekran görüntüsünü al ve OKU, sadece "yatay taşma var mı" diye bakma.
 
 ## 8. Çözülmemiş konular ve açık sorular
 
@@ -576,6 +629,9 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
 - ~~Faz 4'ün Skor ekranı tasarımı~~ — **ÇÖZÜLDÜ**, bkz. §2b.
 - ~~Faz 5 grup 2 (Gelişim, Ders İçerikleri, Teknik Çalışma)~~ — **ÇÖZÜLDÜ**, bkz. §2d.
 - ~~Faz 5 grup 3 (Klasman, Başarılar)~~ — **ÇÖZÜLDÜ**, bkz. §2e.
+- ~~Faz 5 grup 4 (Yarışmalar, Düello, Video)~~ — **ÇÖZÜLDÜ**, bkz. §2f.
+- **`#duello-modal` (aktif düello ekranı) Faz 5 kapsamı dışında bırakıldı** — 15 sekmenin biri
+  değil, çoklu giriş noktalı ayrı bir modal sistemi. Kullanıcı isterse ayrıca ele alınabilir.
 - **Faz 5'in kalan sırası kesinleşti**: Grup 4 = Yarışmalar + Düello + Video, Grup 5 = Mağaza +
   Reaksiyon (bkz. §6 tablosu ve "Sıralama güncellemesi" notu). Artık bir tahmin değil, kullanıcının
   kendi verdiği sıra.

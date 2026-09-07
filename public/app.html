@@ -741,24 +741,21 @@
         </div>
     </div>
     <div id="icerik-takimlar" class="sekme-icerik">
-        <div class="sadece-egitmen" style="margin-bottom:15px;">
-            <button onclick="yarismalarSifirla()" style="width:100%; background:rgba(255,98,0,0.15); border:1px solid var(--accent-orange); color:var(--text-main); padding:11px; border-radius:8px; font-size:13px; font-weight:bold;">🔄 Yarışmaları Sıfırla (takımlar + eleme ağaçları)</button>
-        </div>
         <!-- BİREYSEL YARIŞMA -->
-        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+        <div class="card" style="margin-bottom:15px;">
             <span style="font-weight: 900; color: var(--neon-blue); font-size: 16px; display:block; margin-bottom:10px;">🏅 BİREYSEL YARIŞMA (ELEME AĞACI)</span>
             <div class="sadece-egitmen">
-                <button style="background:var(--neon-blue); color:white; padding:12px; font-size:13px; font-weight:bold; border:none; border-radius:8px; width:100%; margin-bottom:15px;" onclick="elemeAgaciOlustur();">🏅 Bireysel Ağacı Başlat / Yenile</button>
+                <button class="btn btn-primary" style="width:100%; margin-bottom:15px;" onclick="elemeAgaciOlustur();">🏅 Bireysel Ağacı Başlat / Yenile</button>
             </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tree-tab-klasik" class="tree-cat-btn aktif-klasik" onclick="setTreeCategory('Klasik')">Klasik Yay</button>
-                <button id="tree-tab-makarali" class="tree-cat-btn" onclick="setTreeCategory('Makaralı')">Makaralı Yay</button>
+            <div class="seg" style="margin-bottom:15px;">
+                <button type="button" id="tree-tab-klasik" class="seg-btn aktif" onclick="setTreeCategory('Klasik')">Klasik Yay</button>
+                <button type="button" id="tree-tab-makarali" class="seg-btn" onclick="setTreeCategory('Makaralı')">Makaralı Yay</button>
             </div>
             <div id="eleme-agaci-alani" style="display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; background:rgba(0,0,0,0.1); border-radius:8px; min-height:180px;"></div>
         </div>
 
         <!-- TAKIM KURULUMU -->
-        <div class="glass-panel sadece-egitmen" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+        <div class="card sadece-egitmen" style="margin-bottom:15px;">
             <span style="font-weight: 800; color: var(--gold); font-size: 16px;">👥 Dinamik Takım Yarışması Kurulumu</span>
             <div style="margin-top:10px;" class="satir-inputs">
                 <input type="text" id="takim-adi-input" placeholder="TAKIM ADI">
@@ -772,20 +769,27 @@
                 <select id="takim-p2"><option value="">2. Sporcu Seç</option></select>
                 <select id="takim-p3"><option value="">3. Sporcu Seç</option></select>
             </div>
-            <button id="btn-takim-kaydet" onclick="takimOlusturKaydet()" style="background:var(--neon-blue); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; width:100%;">TAKIMI KAYDET VE HAVUZA EKLE 👥</button>
+            <button id="btn-takim-kaydet" onclick="takimOlusturKaydet()" class="btn btn-primary" style="width:100%;">TAKIMI KAYDET VE HAVUZA EKLE 👥</button>
         </div>
-        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+        <div class="card" style="margin-bottom:15px;">
             <span style="font-weight: 800; color: var(--accent-orange); font-size: 14px; margin-bottom:10px; display:block;">📊 Takım Puan Durumu (Canlı Toplam)</span>
             <div style="max-height:240px; overflow-y:auto;" id="takim-sirali-liste"></div>
         </div>
 
         <!-- TAKIM ELEME -->
-        <div class="glass-panel" style="padding: 15px; border-radius:12px; margin-bottom:15px;">
+        <div class="card" style="margin-bottom:15px;">
             <span style="font-weight: 900; color: var(--gold); font-size: 16px; display:block; margin-bottom:10px;">👥 TAKIM YARIŞMASI (ELEME AĞACI)</span>
             <div class="sadece-egitmen">
-                <button style="background:var(--gold); color:black; padding:12px; font-size:13px; font-weight:bold; border:none; border-radius:8px; width:100%; margin-bottom:15px;" onclick="takimElemeAgaciOlustur();">👥 Takım Turnuva Ağacını Başlat</button>
+                <button class="btn btn-primary" style="width:100%; margin-bottom:15px;" onclick="takimElemeAgaciOlustur();">👥 Takım Turnuva Ağacını Başlat</button>
             </div>
             <div id="takim-eleme-agaci-alani" style="display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; background:rgba(0,0,0,0.1); border-radius:8px; min-height:180px;"></div>
+        </div>
+
+        <!-- FAZ 5 grup 4 — yıkıcı eylem, ekranın geri kalanından bilerek ayrı ve en altta. confirm()
+             yarismalarSifirla() içinde zaten vardı (ne silineceğini açıkça yazıyor), dokunulmadı. -->
+        <div class="card sadece-egitmen" style="margin-bottom:15px;">
+            <div class="settings-label" style="color:var(--status-danger); margin-bottom:var(--space-2);">Tehlikeli işlemler</div>
+            <button onclick="yarismalarSifirla()" class="btn btn-danger" style="width:100%;">🔄 Yarışmaları Sıfırla (takımlar + eleme ağaçları)</button>
         </div>
     </div>
 

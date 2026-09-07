@@ -17841,7 +17841,7 @@ ${(function(){
         function pdfOlarakKaydet() { showToast("PDF İndiriliyor...", "warning"); const element = document.getElementById('rapor-pdf-icerik'); const opt = { margin: [10, 10, 10, 10], filename: `Rapor_${aktifGrup}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }; html2pdf().set(opt).from(element).save().then(() => { showToast("İndirildi!", "success"); document.getElementById('rapor-modal').style.display='none'; }); }
 
         /* BİREYSEL ELEME AĞACI */
-        function setTreeCategory(cat) { aktifTreeCat = cat; document.getElementById('tree-tab-klasik').classList.toggle('aktif-klasik', cat === 'Klasik'); document.getElementById('tree-tab-makarali').classList.toggle('aktif-makarali', cat === 'Makaralı'); maclariCiz(); }
+        function setTreeCategory(cat) { aktifTreeCat = cat; document.getElementById('tree-tab-klasik').classList.toggle('aktif', cat === 'Klasik'); document.getElementById('tree-tab-makarali').classList.toggle('aktif', cat === 'Makaralı'); maclariCiz(); }
         function getMatches(players, roundNum, cat) { let matches = []; let remaining = []; if (players.length % 2 !== 0) { let bp = players[0]; matches.push({ id: `tur${roundNum}_bye_${cat}_${Date.now()}`, tur: roundNum, kategori: cat, p1: bp.ad, p1Sira: bp.sira, p2: null, p2Sira: null, p1Skor: 6, p2Skor: 0, setler: [], durum: 'bitti', kazanan: bp.ad, isBye: true }); remaining = players.slice(1); } else { remaining = players; } let eslesmeSayisi = remaining.length / 2; for(let i = 0; i < eslesmeSayisi; i++) { let p1 = remaining[i]; let p2 = remaining[remaining.length - 1 - i]; matches.push({ id: `tur${roundNum}_mac_${cat}_${i}_${Date.now()}`, tur: roundNum, kategori: cat, p1: p1.ad, p1Sira: p1.sira, p2: p2.ad, p2Sira: p2.sira, p1Skor: 0, p2Skor: 0, setler: [], durum: 'devam', kazanan: null, isBye: false }); } return matches; }
         
         function elemeAgaciOlustur() {
@@ -17882,7 +17882,7 @@ ${(function(){
 
         function maclariCiz() {
             let alan = document.getElementById('eleme-agaci-alani'); if (!alan) return; let oKatMaclari = elemeEslesmeleri.filter(m => m.kategori === aktifTreeCat);
-            if (oKatMaclari.length === 0) { alan.innerHTML = `<div style='color:var(--text-muted); font-size:12px; margin-top:20px; width:100%; text-align:center;'>Bireysel ağacı başlatmak için yukarıdaki mavi butona basınız.</div>`; return; }
+            if (oKatMaclari.length === 0) { alan.innerHTML = `<div style='color:var(--text-muted); font-size:12px; margin-top:20px; width:100%; text-align:center;'>Bireysel ağacı başlatmak için yukarıdaki "Bireysel Ağacı Başlat / Yenile" butonuna basınız.</div>`; return; }
             let htmlIcerik = ""; let enBuyukTur = Math.max(...oKatMaclari.map(m => m.tur));
             for(let tur = 1; tur <= enBuyukTur; tur++) {
                 let oTurdakiMaclar = oKatMaclari.filter(m => m.tur === tur); if (oTurdakiMaclar.length === 0) continue; let macSayisi = oTurdakiMaclar.length; let turIsmi = `${tur}. Tur`; if (macSayisi === 8) turIsmi = "⚔️ 1/8 FİNAL"; else if (macSayisi === 4) turIsmi = "⚔️ ÇEYREK FİNAL"; else if (macSayisi === 2) turIsmi = "🔥 YARI FİNAL"; else if (macSayisi === 1) turIsmi = "🏆 BÜYÜK FİNAL";
@@ -17978,7 +17978,7 @@ ${(function(){
 
         function takimMaclariCiz() {
             let alan = document.getElementById('takim-eleme-agaci-alani'); if (!alan) return;
-            if (takimElemeEslesmeleri.length === 0) { alan.innerHTML = "<div style='color:var(--text-muted); text-align:center; width:100%; margin-top:20px; font-size:12px;'>Takım ağacı üretmek için yukarıdaki altın renkli butona basınız.</div>"; return; }
+            if (takimElemeEslesmeleri.length === 0) { alan.innerHTML = "<div style='color:var(--text-muted); text-align:center; width:100%; margin-top:20px; font-size:12px;'>Takım ağacı üretmek için yukarıdaki \"Takım Turnuva Ağacını Başlat\" butonuna basınız.</div>"; return; }
             let htmlIcerik = ""; let enBuyukTur = Math.max(...takimElemeEslesmeleri.map(m => m.tur));
             for(let t = 1; t <= enBuyukTur; t++) {
                 let oTurdakiMaclar = takimElemeEslesmeleri.filter(m => m.tur === t); if (oTurdakiMaclar.length === 0) continue;
