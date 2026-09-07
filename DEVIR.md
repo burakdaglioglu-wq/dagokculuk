@@ -731,3 +731,60 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   Fullscreen-API taşma raporu, Yıldız Seferi/Dağ Tırmanışı içerik zenginleştirme) bu
   devrin kapsamı DIŞINDA — ayrı hafıza dosyasında (`dagsk-km-oyunlar-2026-09.md`) duruyor,
   karıştırılmamalı.
+
+## 9. Sonraki iş (Faz 6 SONRASI — bu bir tasarım işi DEĞİL, veri katmanı işi, ayrı ele alınacak)
+
+**Bağlam**: Faz 5 grup 5 testlerinde (bkz. §2g) periyodik arka plan isteklerinin ara sıra
+"Failed to fetch" / `net::ERR_INSUFFICIENT_RESOURCES` verdiği gözlendi. Kullanıcının isteğiyle
+kök nedeni tam teşhis edildi (bu bölüm o teşhisin özeti) — **düzeltme YAPILMADI, bilerek**:
+tasarım işi bitmeden ikinci bir cepheye girilmiyor.
+
+**Sorun**: `bulutaGonderKontrol()` (app.js:6168), `setInterval` ile **10 saniyede bir** çalışıyor
+ve `fanOutMasterPayload()` (public/sync.js:219) üzerinden **kulübün TAMAMININ anlık görüntüsünü**
+— her sporcu (3 istek: `/api/athletes` POST + PATCH + `/gamification` PATCH), her aidat hücresi
+(`/api/dues/:ad/:ay` PUT), her yoklama kaydı (`/api/attendance/auto` POST), her personel/personel-
+yoklama/özel-sınıf kaydı — **toplu işlem yapmadan, eşzamanlılık sınırı olmadan**, hepsini aynı anda
+`Promise.all(jobs)` ile gönderiyor. Bu tasarım DEĞİŞENİ değil TÜMÜNÜ her seferinde yeniden gönderdiği
+için hacim sporcu/aidat/yoklama kaydı sayısıyla DOĞRUSAL büyüyor — ve aidat/yoklama kayıtları hiç
+silinmediğinden (arşivlenmiyor) hacim zamanla SADECE artar, asla küçülmez.
+
+**Riskli yanı**: `fanOutMasterPayload()`'daki HER job kendi `.catch(() => {})`'ine sahip — bir istek
+başarısız olunca sessizce yutuluyor, ne konsola uncaught hata düşüyor ne kullanıcıya bildiriliyor.
+Tek "kurtarma" bir sonraki 10 saniyelik döngünün aynı alanı yeniden göndermesi — bu bir retry
+TASARIMI değil, tesadüf. (İyi haber: skor kaydı — `seriBulutaYaz()` — bu kütleden tamamen ayrı,
+kendi write-ahead kuyruğuyla korumalı; bkz. teşhis raporu / bu oturumun sohbet geçmişi.)
+
+**Ölçüm (gerçek kulüp verisiyle)**: Bu oturumdan `wrangler d1 execute --remote` ile prod D1'i
+sorgulamayı denedim — **başarısız**: mevcut OAuth token'ın izin kapsamında (`wrangler whoami`
+çıktısı: account/user/workers/workers_kv/workers_routes/workers_scripts/workers_tail) **D1 hiç
+yok**, `code: 7403` ("account not authorized") döndü. Yerel `--local` D1'de onlarca oturumdan
+biriken test verisi var (gerçek sayıyı yansıtmıyor), o yüzden ORADAN da sayı üretmedim — kullanıcı
+özellikle "test verisini sayma" dedi. Bunun yerine `fanOutMasterPayload()`'ın kodundan **birim
+maliyet formülünü** çıkardım — gerçek sayılar elde edilince (D1 izni eklenip sorgulanarak ya da
+kullanıcının kendi bildiği rakamla) doğrudan yerine konabilir:
+
+```
+istek sayısı ≈ 3 × (aktif+pasif TÜM sporcu sayısı, 4 grup toplamı)
+             + 1 × (aidatDB hücre sayısı = dolu ay × sporcu, genelde sporcu×~12)
+             + 1 × (otomatikYoklamaDB kayıt sayısı = gün × o gün gelen sporcu)
+             + 1 × (personelDB sayısı)
+             + 1 × (personelYoklamaDB'deki gelen+gelmeyen personel-gün sayısı)
+             + 1 × (ozelSiniflar sayısı)
+             + 3 (credentials + min-surum + extra_blob — sabit)
+```
+Örnek: 60 sporculuk gerçek bir kulüpte SADECE sporcu+aidat kısmı bile 60×3 + 60×12 ≈ **900 isteğe**
+yakın olur — `ERR_INSUFFICIENT_RESOURCES`'a yol açan yerel testteki 500+ isteklik hacimle AYNI
+mertebede. **Bu riskin sanıldığından çok daha yakın olabileceğini gösteriyor** — küçük-orta
+büyüklükte gerçek bir kulüp bile bu sınıra yaklaşabilir. Kesin sayı için gerçek `athletes`/`dues`/
+`attendance_auto`/`personnel`/`personnel_attendance`/`custom_classes` satır sayıları prod D1'den
+çekilmeli (D1 izni olan bir hesapla `wrangler d1 execute dagsk-db --remote --command "SELECT
+(SELECT COUNT(*) FROM athletes) a, (SELECT COUNT(*) FROM dues) d, (SELECT COUNT(*) FROM
+attendance_auto) y, (SELECT COUNT(*) FROM personnel) p, (SELECT COUNT(*) FROM
+personnel_attendance) py, (SELECT COUNT(*) FROM custom_classes) o;"`) ya da kullanıcı kendi
+rakamını verirse formüle yerine konur.
+
+**Olası yön (uygulanmadı, sadece not)**: (1) değişen alanları gönder (tam anlık görüntü değil,
+delta), (2) eşzamanlılık sınırı (ör. aynı anda en fazla N istek, kalan kuyrukta), (3) hata sayacı —
+art arda başarısız olan job sayısı bir eşiği aşınca kullanıcıya görünür bir uyarı (mevcut
+`bulutDurum()` göstergesine benzer), (4) aidat/yoklama gibi büyümeye devam eden koleksiyonlar için
+arşivleme/budama stratejisi.
