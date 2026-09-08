@@ -3,6 +3,92 @@
 Bu dosya, bağlam penceresi dolduğu için yeni bir oturuma aktarılan işin durumunu özetler.
 Yeni oturum bu dosyayı okuyup, önceki oturumun tamamını bilmeden devam edebilmeli.
 
+## 0. KAPANIŞ — Tasarım Sistemi Geçişi TAMAMLANDI (2026-09-08)
+
+**Kullanıcı onayladı: tasarım geçişi bitti.** 15 ekranın hepsi (Skor dahil), navigasyon, bileşen
+kütüphanesi ve renk/tipografi/boşluk token katmanı uygulandı; ardından bir temizlik (Faz 6) ve bir
+kontrast düzeltme turu yapıldı. **Skor hesaplama, seri kaydetme, D1 senkron mantığının HİÇBİRİNE
+dokunulmadı** — bu proje boyunca hiçbir fazda.
+
+### Faz özeti
+
+| Faz | Kapsam | Commit(ler) |
+|---|---|---|
+| 0-2 | Envanter, token katmanı (renk/boşluk/tipografi), PALETLER düzeltmeleri, bileşen kütüphanesi (`.btn`, `.card`, `.settings-row`, `.switch`, `.seg`, `.tabs`, `.empty`) | `562199b` |
+| 3 | Navigasyon: 15 sekme → 6 ana + "Daha" paneli, tek-aile SVG ikon seti, mobil alt bar | `69c097f` |
+| 4 | Skor ekranı (en kritik, 3 alt adım: yerleşim/sticky tuş takımı/seri şeridi) | `109188d` |
+| 5 | Kalan 14 ekran, 6 grup halinde (Sayaç/Canlı Takip/Liderlik → Gelişim/Ders İçerikleri/Teknik Çalışma → Klasman/Başarılar → Yarışmalar/Düello/Video → Mağaza/Reaksiyon/`#duello-modal` → Ana Ekran/SON) | `3c75e63`, `4ccb205`, `276fa1f`, `1c1fcf7`, `f51cb68`, `5cacd2c`, `5e9c53d` |
+| 6 | Temizlik/doğrulama: hex denetimi (`--score-ring-*` tokenizasyonu + Chart.js canvas bug'ı düzeltildi), ölü CSS/JS silme (`.sekme-grubu`, `.cins-btn`/`.yay-btn`, `.ok-rozet`, `#alt-menu`, `.tree-cat-btn`), `!important` azaltma (64→44), 21 ekran görüntüsüyle regresyon doğrulaması | `6a807d2`, `de0a085`, `cecee0c` |
+| 6 sonrası | Kontrast düzeltmesi: `.btn-primary`/`.btn-danger` koyu metin (8 mağaza paletinin hepsinde AA geçiyor), `--text-tertiary` alfa düzeltmesi | `2c05e38` |
+
+Detaylar için §2-§2j; token mimarisi §3; isim eşleme §4; bileşen kütüphanesi §5; kurallar ve
+tuzaklar §7 (yeni oturum için en çok işe yarayacak bölüm — CSS kaynak-sırası, canvas/`var()`
+uyumsuzluğu, PALETLER izolasyonu gibi bu projeye özgü tuzakları listeliyor).
+
+### Kalan 5 iş kalemi — öncelik sırasıyla
+
+Bunların HİÇBİRİ tasarım geçişinin bir parçası değil — hepsi bilerek kapsam dışı bırakıldı, hiçbiri
+kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre, **veri riski taşıyan tek madde en
+üstte**:
+
+1. **`fanOutMasterPayload()` veri-katmanı riski** (bkz. §9) — TEK veri riski taşıyan madde. 10
+   saniyede bir kulübün TAMAMININ anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı olmadan
+   gönderiyor; büyüyen bir kulüpte `ERR_INSUFFICIENT_RESOURCES`'a gerçekten yaklaşabilir (tahmini
+   formül §9'da, gerçek sayı için D1 izni gerekiyor). Diğer 4 madde sadece kozmetik/teknik borç.
+2. **Mobil Skor paneli `!important` override'ları test edilmedi** (~10-15 kural, bkz. §2i/§6) — en
+   sık kullanılan ekranın (Skor) mobil görünümünde, henüz doğrulanmamış bir kaynak-sırası sorununu
+   gizliyor olabilirler (`.switch`/`.slider`'da bulunanla aynı sınıf risk). Test edilmeden
+   silinmemeli veya değiştirilmemeli.
+3. **`#10b981` tokenizasyonu** (34 kullanım, bkz. §9b) — kullanıcının açık isteğiyle Faz 6'da hiç
+   dokunulmadı. Bir sonraki turda önce her kullanım yeri TOKEN-ADAYI / ANLAMLI-KORUNAN olarak
+   sınıflandırılmalı (6a/6b'nin izlediği yöntem), sonra onay alınmalı.
+4. **`.sekme-btn` özellik-farkı analizi** (bkz. §2i/§6) — eski `.sekme-grubu` ailesi silindi ama
+   `.sekme-btn`'in kendisi, `#daha-panel .sekme-btn`'in tam olarak hangi özelliklerini (ör.
+   `box-shadow`) gölgelediği karşılaştırılmadan dokunulmadı bırakıldı. Düşük risk, kozmetik.
+5. **`./dagsk-teknik-calisma.js` kök kopya senkronsuzluğu** (bkz. §2d/§6) — `public/`
+   içindeki canlı kopyadan Faz 5'ten önce ayrışmış, hiçbir yerden yüklenmeyen ölü bir dosya.
+   Sıfır kullanıcı etkisi — saf hijyen, silinmesi ya da yeniden senkronlanması en düşük öncelik.
+
+### Yayına alma adımları
+
+**⚠️ ADIM 0 — ÖNCE BUNU ÇÖZ, atlanamaz:** Bu oturumda `git fetch origin main` ile doğrulandı —
+yerel `main` ve `origin/main` **`c542689` commit'inde ayrıştı** ve o zamandan beri iki ayrı yönde
+ilerlemiş:
+- Yerel `main`: bu tasarım geçişinin **16 commit'i** (Faz 0-6 + kontrast düzeltmesi) —
+  `public/app.js`'te +5589/-1064 satır, `public/styles.css`'te +423 satır.
+- `origin/main`: bambaşka **26 commit** (son tarih 2026-08-22) — video AI duruş/açı analizi,
+  Ritim/Nişan Koçluk modülü, VE **ayrı bir "modern renk paleti" değişikliği** (`65ab859`,
+  `ede7aa2`: "Sitenin ana renklerini... dönüştürme", "Tüm sitenin UI tasarımını sadeleştirme,
+  modern renk paleti") — **AYNI ÜÇ DOSYADA**: `public/app.html` (+355 satır), `public/styles.css`
+  (+582 satır), `public/app.js` (+107 satır), ayrıca `public/index.html` (+127 satır, bu oturum
+  hiç dokunmadı).
+
+  **Bu, iki bağımsız tasarım çalışmasının aynı dosyalarda çakışması demek.** `wrangler deploy`
+  yereldeki dosyaları olduğu gibi yükler, git durumuna bakmaz — yani şu an deploy edilirse
+  origin'deki 26 commit'lik iş (video analiz özellikleri dahil) **sessizce kaybolur**. Bunu
+  otomatik birleştirmedim — iki tarafın da `styles.css`/`app.html`'i ciddi oranda değiştirmiş
+  olması gerçek çakışma riski taşıyor. Önerilen yol: `git log origin/main --stat` ile origin'in
+  tam olarak neyi değiştirdiğini gözden geçir, sonra tek kullanımlık bir branch'te
+  (`git checkout -b merge-deneme && git merge origin/main`) birleştirmeyi dene ve çakışmaları
+  elle çöz — iki renk/tasarım çalışmasının hangi kısımlarının kalacağına sen karar vermelisin.
+
+1. **Ön kontroller**: `npm run typecheck` (backend TS, `src/`), `npm test` (vitest), `git status`
+   temiz olmalı (yukarıdaki birleştirme tamamlanmış olmalı).
+2. **D1 migration varsa uygula** (bu tasarım turunda YOK, ama genel adım): kod deploy edilmeden
+   ÖNCE `npm run db:migrate:remote` (ve Milo için ayrı `npm run db:migrate:milo:remote`).
+3. **Deploy**: `npm run deploy` (= `wrangler deploy`) — `src/index.ts`'i Worker olarak, `public/`
+   klasörünü (`[assets]` binding ile) statik varlık olarak yükler. Cloudflare içerik-hash'li önbellek
+   kullanıyor, elle cache-busting/versiyon query-string gerekmiyor.
+4. **Sürüm kilidi notu** (app.js:5213, `SURUM_KODU`/`MIN_SURUM_GEREKSINIMI`): bu sadece SENKRON/
+   VERİ mantığı değişince bump edilir (eski cihazların düzeltilen bir senkron hatasını buluta geri
+   yazmasını engellemek için). **Bu tasarım turu senkron mantığına dokunmadı, bump GEREKMİYOR.**
+   İleride veri katmanına dokunan bir değişiklik yapılırsa unutulmamalı.
+5. **Deploy sonrası duman testi**: prod URL'de sert yenileme (cache atlatmak için), `/app.html`
+   aç, PIN ile giriş yap, Skor ekranını aç (hedef renkleri + "Seriyi kaydet"/"Yarışmaları Sıfırla"
+   metinleri doğru mu), konsolda hata olmadığını doğrula.
+6. **GitHub'a push** (Cloudflare deploy'dan BAĞIMSIZ bir adım — `wrangler deploy` git'e hiç
+   bakmıyor): Adım 0'daki birleştirme tamamlandıktan sonra `git push origin main`.
+
 ## 1. Proje ve hedef
 
 DAĞ Spor Kulübü (okçuluk) için Cloudflare Workers üzerinde çalışan bir yönetim/skor
@@ -427,7 +513,7 @@ metne çeviriyor, ÇALIŞTIRMIYOR; bu turun bir bulgusu/regresyonu değil, sadec
 **FAZ 5 TAMAMLANDI** — 15 ekranın hepsi (Skor dahil, Faz 4'te) bitti. Kalan iş Faz 6 (temizlik/
 doğrulama, bkz. §6) ve §9'daki veri-katmanı iş kalemi.
 
-## 2i. Faz 6 — Temizlik (devam ediyor)
+## 2i. Faz 6 — Temizlik (tamamlandı)
 
 Faz 6'nın 9 maddelik listesi (bkz. §6) önce TAMAMEN araştırılıp raporlandı, hiçbir şey onaysız
 silinmedi/değiştirilmedi. Madde 6 (çıplak hex) için ayrı bir arka-plan ajanı tüm app.js/app.html/
