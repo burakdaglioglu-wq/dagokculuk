@@ -34,7 +34,8 @@ faz faz, ekranı bozmadan uygulamak.
 - `6a807d2` — DEVIR.md: fanOutMasterPayload veri-katmanı riski, Faz 6 sonrası iş kalemi (sadece belge, kod değişikliği yok)
 - `5e9c53d` — Tasarım sistemi Faz 5 grup 6 / SON: Ana Ekran — **FAZ 5 TAMAMLANDI**
 - `de0a085` — Faz 6 temizlik: `#ff6200` kaçağı + hedef SVG'leri `var(--score-ring-*)`'e bağlandı (madde 6a/6b)
-- Faz 6 madde 1-5 (`!important`/ölü CSS temizliği) — bu commit'te, aşağıda anlatılıyor. **Bu commit ile Faz 6 TAMAMLANIYOR.**
+- `cecee0c` — Faz 6 temizlik (madde 1-5): ölü CSS/JS silme, gereksiz `!important` kaldırma — **bu commit ile Faz 6 TAMAMLANDI**
+- Faz 6 SONRASI — kontrast düzeltmesi (`.btn-primary`/`.btn-danger`/`--text-tertiary`) — bu commit'te, aşağıda anlatılıyor (bkz. §2j).
 
 **Faz 3'ten itibaren: her faz onaylandığında HEMEN ayrı commit atılıyor** — bu kurala bu turda uyuldu.
 
@@ -553,7 +554,7 @@ ilgili değil (aynı iki hata mesajı, başka hiçbir hata yok — kontrol edild
 | Diğer tüm metin/zemin çiftleri | 6.3:1 – 18:1 | GEÇTİ | — |
 
 En kritik ikisi `.btn-primary`/`.btn-danger` — Faz 5'te "Skor Gir tek `.btn-primary` olsun" kararıyla
-en sık görülecek buton tam bu grupta. Karar kullanıcıda, **SONRAKİ İŞ**.
+en sık görülecek buton tam bu grupta. **Faz 6 SONRASI ayrı bir turda düzeltildi, bkz. §2j.**
 
 **Madde 9 — ekran görüntüleri** (360/768/1280px, gerçek Playwright test, sonra gerçek PIN hash
 geri yüklendi): giriş ekranı, platform seçimi (`.giris-secim-btn`), PIN girişi (`.pin-btn`), Skor
@@ -566,6 +567,76 @@ siyah, "M" ayrı gri) — token bağlama sızıntı yaratmamış. Switch/slider 
 `.rozet-kart`'ı bozmadı). `.seg`/`.seg-btn` (Tümü/Klasik/Makaralı) sorunsuz. 768px ilk kez bu
 turda test edilen bir genişlikti — regresyon yok. Hiçbir ekranda yatay taşma veya görsel bozulma
 gözlenmedi.
+
+## 2j. Faz 6 SONRASI — kontrast düzeltmesi (`.btn-primary`/`.btn-danger`/`--text-tertiary`)
+
+Faz 6 onaylandıktan sonra kullanıcı madde 8'in (kontrast) düzeltmesini istedi — en kritik ikisi
+`.btn-primary` (3.05:1) ve `.btn-danger` (3.76:1), ikisi de AA'yı (4.5:1) geçemiyordu. Kullanıcı 3
+seçenek istedi: (1) turuncu/kırmızı üstündeki metni koyulaştır (`--accent-ink`/`#1A0B02` — **not:
+kullanıcı bu tokenin zaten var olduğunu düşünüyordu, `grep` ile doğrulandı, YOKTU**, kullanıcıya
+söylendi, `#1A0B02` DEĞERİ verdiği gibi yeni bir token olarak eklendi), (2) turuncuyu/kırmızıyı
+koyulaştır beyaz metin kalsın, (3) ikisinin ortası.
+
+**Üç seçenek de gerçek Playwright testiyle (Skor ekranı "Seriyi kaydet" + Yarışmalar ekranı
+"Yarışmaları Sıfırla") görsel olarak karşılaştırıldı, ekran görüntüleriyle.** Sonuç ve seçilen:
+**Seçenek 1 (koyu metin, marka rengi DEĞİŞMEDEN)** — gerekçe:
+
+- `.btn-primary`'nin zemini sabit değil — `background: var(--accent)` → `var(--accent-orange)`,
+  ve bu token **Mağaza'nın 7 satın alınabilir paletinden** (`okyanus`/`orman`/`gece`/`alev`/
+  `altin`/`buz`/`pembe`, bkz. app.js `PALETLER` ~19002) her biri tarafından `temaPaletUygula()`
+  ile ÇALIŞMA ZAMANINDA `document.documentElement.style.setProperty('--accent-orange', ...)`
+  ile değiştiriliyor. Bu 8 rengin (varsayılan dahil) HEPSİNE karşı hem beyaz metin hem koyu ink
+  metin test edildi (gerçek Playwright'ta `temaPaletUygula()` çağrılıp `.15s` geçiş bitişi
+  beklenip ölçüldü — ilk denemede geçiş animasyonu bitmeden ölçüp yanlış pozitif almıştım, düzeltildi):
+  | Palet | Hex | Beyaz metin | Koyu ink metin |
+  |---|---|---|---|
+  | varsayılan | `#F26B1D` | 3.05:1 FAIL | 6.31:1 PASS |
+  | okyanus | `#0ea5e9` | 2.77:1 FAIL | 6.93:1 PASS |
+  | orman | `#10b981` | 2.54:1 FAIL | 7.58:1 PASS |
+  | gece | `#a855f7` | 3.96:1 FAIL | 4.86:1 PASS |
+  | alev | `#ef4444` | 3.76:1 FAIL | 5.11:1 PASS |
+  | altın | `#d4a017` | 2.38:1 FAIL | 8.09:1 PASS |
+  | buz | `#38bdf8` | 2.14:1 FAIL | 8.97:1 PASS |
+  | pembe | `#ff2d95` | 3.46:1 FAIL | 5.55:1 PASS |
+
+  **Beyaz metin 8 paletin HİÇBİRİNDE AA'yı geçmiyor; koyu ink metin HEPSİNDE geçiyor.** Bu tek
+  başına Seçenek 1'i zorunlu kılıyor — Seçenek 2 (turuncuyu koyulaştır) seçilseydi marka rengini
+  DEĞİL, 8 farklı paleti ayrı ayrı koyulaştırmak gerekirdi (kapsamı kullanıcının sorduğundan çok
+  daha büyük bir iş, üstelik her mağaza temasının görünümünü değiştirir).
+- `--status-danger` (`.btn-danger`, `#ef4444`, palet DEĞİŞTİRMİYOR) için de koyu ink metin
+  5.11:1 ile rahat geçiyor — aynı token, tek kural, iki yerde kullanılabiliyor.
+- Görsel karşılaştırma: Seçenek 2 (turuncuyu koyulaştırma) sadece `.btn-primary`'nin KENDİ
+  `background`'ını değiştirdiği için (token'ın kendisini değil), ekrandaki DİĞER turuncu
+  öğelerle (ör. "6 Halkalı" segment düğmesi, "TAKIM YARIŞMASI" başlığı) yan yana durunca gözle
+  görülür şekilde donuk/uyumsuz kaldı. Seçenek 3 (hafif koyulaştırma + ink metin) Seçenek 1'den
+  görsel olarak neredeyse ayırt edilemezdi — ekstra karmaşıklığı haklı çıkaracak bir fayda
+  sağlamadı (ink metin zaten hem turuncuda hem kırmızıda 1.8-4.5 puan pay bırakıyor, zemin
+  koyulaştırmaya gerek yok).
+- **Önemli, beklenmedik teknik bulgu**: kırmızı gibi orta parlaklıktaki bir zemin üstünde beyaz
+  ile koyu ink metin arasında düz bir RGB karışımı (%50 gri gibi) "orta yol" DEĞİL — kontrast
+  eğrisi U-şeklinde, tam ortada beyaz VEYA ink'in herhangi birinden daha KÖTÜ (test edilen bir
+  noktada 1.03:1'e kadar düştü). Metin rengi için "ortası" diye bir şey yok, sadece iki uç
+  (açık/koyu) işe yarıyor. Zemin koyulaştırmanın da ink metinle birlikte KULLANILAMAYACAĞI
+  ortaya çıktı — zemini koyulaştırmak ink (zaten koyu) metnin kontrastını ARTIRMAZ, AZALTIR
+  (ikisi de karanlığa yaklaşınca fark kapanıyor); koyulaştırma sadece BEYAZ metinle birlikte işe
+  yarıyor. Bu yüzden "gerçek bir orta yol" hem zemin hem metni kısmen değiştirmek değil, sadece
+  görsel zenginlik için isteğe bağlı hafif zemin koyulaştırması + ink metin (Seçenek 3) oluyor.
+
+**Uygulama** (`public/styles.css`, sadece bu dosya):
+- `--text-on-accent-dark` (Faz 1'den beri VARDI ama hiç kullanılmıyordu, değeri `#000`'dı) →
+  `#1A0B02` yapıldı ve `.btn-primary`/`.btn-danger`'ın `color`'una bağlandı (`.btn-primary`
+  eskiden `var(--text-on-accent, #fff)`, `.btn-danger` eskiden düz `#fff` idi).
+- `--accent-orange`, `--status-danger` ve PALETLER'in HİÇBİRİNE dokunulmadı — marka rengi
+  sözü tutuldu.
+- `--text-tertiary`: koyu temada alfa `0.45`→`0.6` (4.21:1 → 6.46:1), açık temada `0.45`→`0.65`
+  (**2.92:1 → 5.52:1** — açık temanın gerçek değeri madde 8 raporunda hiç ölçülmemişti, bu turda
+  fark edildi: aynı 0.45 alfa açık temada koyu temadan çok daha kötü sonuç veriyormuş, ikisi de
+  düzeltildi).
+
+**Doğrulama**: Gerçek uygulamada (Playwright, PIN ile giriş, geçici hash sonra geri yüklendi)
+`getComputedStyle` ile ölçülen gerçek renderlanan kontrast — "Seriyi kaydet" 6.31:1, "Yarışmaları
+Sıfırla" 5.11:1, `--text-tertiary` 0.6 alfa doğru uygulanmış. 8 paletin hepsinde ve açık temada
+tekrar ölçüldü, hepsi PASS. Sıfır konsol hatası. 360px ekran görüntüsü alındı (Skor ekranı).
 
 ## 3. Token mimarisi (styles.css, tam liste)
 
@@ -601,9 +672,9 @@ yenileri onların üstüne, tutarlı isimlendirmeyle eklendi.
 | `--surface-border` | `var(--border-color)` | Evet, iki yerde |
 | `--text-primary` | `var(--text-main)` | Evet, iki yerde |
 | `--text-secondary` | `var(--text-muted)` | Evet, iki yerde |
-| `--text-tertiary` | `rgba(245,245,246,.45)` (açıkta `rgba(17,24,39,.45)`) | Hayır, iki temada ayrı literal |
-| `--text-on-accent` | `#fff` | Hayır (tema-bağımsız) |
-| `--text-on-accent-dark` | `#000` | Hayır |
+| `--text-tertiary` | `rgba(245,245,246,.6)` (açıkta `rgba(17,24,39,.65)`) | Hayır, iki temada ayrı literal — Faz 6 SONRASI kontrast turunda alfa yükseltildi (eskiden `.45`/`.45`), bkz. §2j |
+| `--text-on-accent` | `#fff` | Hayır (tema-bağımsız) — artık hiçbir yerde kullanılmıyor (bkz. `--text-on-accent-dark`) |
+| `--text-on-accent-dark` | `#1A0B02` | Hayır — Faz 6 SONRASI `.btn-primary`/`.btn-danger` metin rengi olarak devreye alındı (eskiden tanımlıydı ama `#000` değeriyle hiç kullanılmıyordu), bkz. §2j |
 | `--accent` | `var(--accent-orange)` | Evet — ama tema-bağımsız kaynak, `body.light-theme`'de TEKRARA GEREK YOK |
 | `--accent-strong` | `#ff9152` | Hayır |
 | `--accent-soft` | `rgba(242,107,29,.15)` (açıkta `.12`) | Hayır, iki temada ayrı literal |

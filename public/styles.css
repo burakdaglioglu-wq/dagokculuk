@@ -49,9 +49,17 @@
             /* Metin katmanları */
             --text-primary: var(--text-main);
             --text-secondary: var(--text-muted);
-            --text-tertiary: rgba(245, 245, 246, 0.45);
+            /* Alfa 0.6'ya çıkarıldı (eskiden 0.45, 4.21:1 ile AA'yı kıl payı kaçırıyordu) —
+               bkz. DEVIR.md §2j kontrast düzeltmesi. */
+            --text-tertiary: rgba(245, 245, 246, 0.6);
             --text-on-accent: #fff;
-            --text-on-accent-dark: #000;
+            /* .btn-primary/.btn-danger metin rengi — turuncu/kırmızı zemin üzerinde beyaz metin
+               AA'yı geçemiyordu (3.05:1 / 3.76:1). Koyu "ink" tonu HEM marka turuncusunu/kırmızısını
+               DEĞİŞTİRMEDEN AA'yı geçiyor HEM DE --accent-orange'ı değiştiren 7 mağaza paletinin
+               (okyanus/orman/gece/alev/altın/buz/pembe) hepsinde geçerli — beyaz metin bu paletlerin
+               HİÇBİRİNDE AA'yı geçmiyordu (2.14-3.96:1), bu tonsa hepsinde geçiyor (4.86-8.97:1).
+               Bkz. DEVIR.md §2j. */
+            --text-on-accent-dark: #1A0B02;
 
             /* Marka aksanı */
             --accent: var(--accent-orange);
@@ -98,7 +106,9 @@
             --aurora-cyan: #0090A0; --aurora-magenta: #C4179E; --aurora-violet: #6D28D9; --aurora-gold: #B8860B;
 
             --surface-2: rgba(0, 0, 0, 0.04);
-            --text-tertiary: rgba(17, 24, 39, 0.45);
+            /* Açık temada aynı 0.45 alfa opak beyaz zeminde koyu tema muadilinden çok daha düşük
+               kontrast veriyordu (2.92:1) — 0.65'e çıkarıldı (5.52:1). Bkz. DEVIR.md §2j. */
+            --text-tertiary: rgba(17, 24, 39, 0.65);
             --accent-soft: rgba(242, 107, 29, 0.12);
 
             /* KRİTİK: --surface-1/--text-primary vb. ":root"ta var(--bg-panel) gibi başka bir tokena
@@ -147,9 +157,9 @@
         .btn:active { opacity: .85; }
         .btn:disabled { opacity: .5; cursor: default; }
         .btn-sm { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
-        .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent, #fff); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent-dark); }
         .btn-primary:hover { background: var(--accent); filter: brightness(1.08); }
-        .btn-danger { background: var(--status-danger); border-color: var(--status-danger); color: #fff; }
+        .btn-danger { background: var(--status-danger); border-color: var(--status-danger); color: var(--text-on-accent-dark); }
         .btn-ghost { background: transparent; border-color: transparent; }
         .btn-ghost:hover { background: var(--surface-2); }
 
