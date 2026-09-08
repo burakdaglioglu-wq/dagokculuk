@@ -10330,6 +10330,15 @@ ${(function(){
         const KM_OYUN_CSS = `
 #km-oyun-wrap{ position:relative; border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; }
 #km-oyun-wrap *{ box-sizing:border-box; }
+/* Tam Ekran çöküşü (2026-09-09) — #km-oyun-wrap:fullscreen .km-oyun-scene{flex:1} hiçbir zaman
+   çalışmıyordu çünkü GERÇEK ebeveyni #km-oyun-govde hiç flex değildi (varsayılan block). Normal
+   modda sorun görünmüyordu çünkü sahnenin boyutu flex'ten değil kendi aspect-ratio'sundan
+   geliyordu — ama fullscreen kuralı TAM O aspect-ratio'yu kapatıp yerine hiç işlemeyen flex:1'i
+   koyduğu için sahne 2px'e çöküyordu (gerçek testte 11 oyunun hepsinde doğrulandı). #km-oyun-wrap
+   zaten flex-column olduğu için govde'yi de aynı yönde flex yapmak, içindeki öğelerin (takım
+   anahtarı/kontrol noktası rayı/sahne/not) dikey sırasını DEĞİŞTİRMİYOR — sadece sahnenin flex:1'i
+   gerçekten bir şeye bağlanabiliyor. */
+#km-oyun-govde{ display:flex; flex-direction:column; min-height:0; }
 #km-oyun-wrap[data-tema="zirve"]{ --bg:#050810; --panel:#0e1420; --panel-hi:#141c2c; --line:#1c2636; --ink:#eef6fb; --ink-dim:#8497ac; --ink-faint:#4a5a6e; --a1:#00e5ff; --a2:#ff2e9a; --a3:#ffcc33; --a4:#8b6bf6; --a5:#3ddc97; --font-display:'Orbitron',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="yildiz"]{ --bg:#070818; --panel:#0e1130; --panel-hi:#161a44; --line:#262c66; --ink:#eef1ff; --ink-dim:#9aa3d6; --ink-faint:#565f95; --a1:#2dd4f4; --a2:#ff4fa3; --a3:#ffd166; --a4:#7c5cff; --a5:#3ddc97; --font-display:'Audiowide',system-ui,sans-serif; --font-body:'Exo 2',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="hazine"]{ --bg:#031b2c; --panel:#053349; --panel-hi:#0a4560; --line:#0f5772; --ink:#eafff9; --ink-dim:#8fd6ce; --ink-faint:#4f8f92; --a1:#5eead4; --a2:#ff6b6b; --a3:#f4c542; --a4:#7c8cff; --a5:#14b8a6; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
@@ -10365,6 +10374,14 @@ ${(function(){
 .km-oyun-takim-ipucu{ font-size:10px; color:var(--ink-faint); }
 /* Çoklu Takım (Yarış) alt-anahtarı (2026-09-06) — Takım Modu içinde, "tüm sınıf" yerine 2-4 AYRI takım. */
 .km-oyun-coklu-toggle-row{ display:flex; align-items:center; gap:8px; }
+/* 8a — Kontrol Noktası Rayı: Yarış (Çoklu Takım) açıkken sahnenin ÜSTÜNDE, her takım için ayrı bir
+   ilerleme çubuğu. Sahnenin kendisine hiç dokunmuyor, kmOyunLiderCiz ile aynı anda güncelleniyor. */
+.km-oyun-cp-rail{ display:flex; flex-direction:column; gap:4px; margin-bottom:8px; flex-shrink:0; }
+.km-oyun-cp-rail-satir{ display:flex; align-items:center; gap:8px; }
+.km-oyun-cp-rail-etiket{ font-size:10.5px; font-weight:800; width:88px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.km-oyun-cp-rail-bar{ position:relative; flex:1; height:8px; border-radius:5px; background:rgba(255,255,255,0.08); overflow:hidden; }
+.km-oyun-cp-rail-dolum{ position:absolute; left:0; top:0; bottom:0; border-radius:5px; transition:width .5s cubic-bezier(.2,.8,.2,1); }
+.km-oyun-cp-rail-tik{ position:absolute; top:0; bottom:0; width:1px; background:rgba(0,0,0,0.35); }
 
 /* Sağ panelin genişliği vw'a göre ölçekleniyor (2026-09-06) — masaüstünde sabit 200px, ama dar (mobil)
    ekranlarda otomatik daralıyor (min() sayesinde) — telefon için ayrı bir breakpoint kuralı YAZMADAN. */
@@ -10374,6 +10391,10 @@ ${(function(){
    (chip/pad/İlerlet) DOM'da kardeş eleman olduğu için ekranda hiç görünmüyordu — koç TV'ye
    yansıtınca skoru nereden gireceğini bulamıyordu, "çalışmıyor" olarak bildirildi. */
 #km-oyun-wrap:fullscreen{ width:100vw; height:100vh; max-height:none; border-radius:0; padding:16px; overflow-y:auto; }
+/* #km-oyun-govde da #km-oyun-wrap'in flex çocuğu — o büyümezse (varsayılan flex:0 1 auto) kendi
+   yüksekliği içeriğine göre kalır ve .km-oyun-scene'in flex:1'inin büyüyeceği boş alan hiç oluşmaz
+   (2026-09-09, ilk denemede govde'yi flex yapmak TEK BAŞINA yetmedi — gerçek testte yakalandı). */
+#km-oyun-wrap:fullscreen #km-oyun-govde{ flex:1; min-height:0; }
 #km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; max-height:none; min-height:0; --km-rail-w:min(260px, 18vw); --km-rail-w-kucuk:min(70px, 8vw); }
 .km-oyun-panel{ position:absolute; inset:0; display:none; flex-direction:column; padding:10px 14px; }
 #km-oyun-wrap[data-tema="zirve"] #km-oyun-panel-zirve,
@@ -10422,6 +10443,10 @@ ${(function(){
 .km-oyun-lider-nokta{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 .km-oyun-lider-ad{ flex:1; min-width:0; font-size:10.5px; font-weight:700; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .km-oyun-lider-skor{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); font-variant-numeric:tabular-nums; }
+/* 8a — Fark rozeti: Yarış Sıralaması satırının hemen altında, o takımın lidere göre puan farkı. */
+.km-oyun-fark-satir{ padding:0 0 4px 22px; min-height:1px; }
+.km-oyun-fark-rozet{ font-size:9.5px; font-weight:700; color:var(--ink-faint); }
+.km-oyun-fark-rozet.km-oyun-fark-onde{ color:#3ddc84; }
 /* Küçük mod — avatar/rozet dışındaki metinler gizlenir, panel dar bir ikon şeridine iner. Alkış/
    seviye ikonları da (44px tabana çıktıktan sonra) bu listeye eklendi — üçü aynı anda 44px'te yan
    yana sığmaz, "dar mod" felsefesiyle tutarlı şekilde sadece avatar (asıl seçim hedefi) kalıyor. */
@@ -10563,6 +10588,13 @@ ${(function(){
 .km-flag-num{ font-family:var(--font-display); font-weight:800; transition:fill .5s ease; }
 .km-summit-icon{ transition:filter .6s ease, opacity .6s ease; }
 .km-climber{ transition:filter .2s ease; }
+/* 8a — "sıradaki" vurgusu: 7 SVG temasının karakter grubu + Pist'in aracı + Hedef'in tahtası, hepsi
+   AYNI iki class'ı paylaşır. CSS transform KULLANILMIYOR — SVG karakterlerde Resync'in zaten yazdığı
+   translate(...) attribute'unu silip pozisyonu bozardı. Sadece filter/box-shadow (pozisyona dokunmaz). */
+.km-oyun-siradaki-vurgu{ filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px var(--a1, #5df)); }
+.km-oyun-siradaki-vurgu-canli{ animation:kmOyunSiradakiNabiz 1.3s ease-in-out infinite; }
+@keyframes kmOyunSiradakiNabiz{ 0%,100%{ filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px var(--a1, #5df)); } 50%{ filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 16px var(--a1, #5df)); } }
+div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-radius:8px; }
 .km-climber .km-head{ stroke:#eef6fb; stroke-width:3; }
 .km-climber .km-tag-bg{ fill:#0a0f1a; stroke-width:1.6; }
 .km-climber .km-tag-text{ font-family:var(--font-body); font-weight:700; fill:var(--ink); }
@@ -10627,7 +10659,7 @@ ${(function(){
 .km-lane-label{ display:flex; align-items:center; gap:6px; width:70px; flex-shrink:0; }
 .km-lane-av{ width:20px; height:20px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:8.5px; color:#0b0b10; flex-shrink:0; }
 .km-lane-nm{ font-size:9.5px; font-weight:800; color:var(--ink-dim); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.km-lane-track{ position:relative; flex:1; height:100%; border-radius:7px; border:1px solid var(--line); background:linear-gradient(180deg,#1a1a20,#131317); overflow:visible; }
+.km-lane-track{ position:relative; flex:1; height:100%; border-radius:7px; border:1px solid var(--line); background:linear-gradient(180deg,#1a1a20,#131317); overflow:hidden; }
 .km-lane-track::before{ content:''; position:absolute; left:0; right:0; top:50%; height:2px; margin-top:-1px; background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 16px, transparent 16px 32px); }
 .km-startline{ position:absolute; left:2px; top:2px; bottom:2px; width:4px; border-radius:2px; background-image:repeating-linear-gradient(#e8e8ee 0 4px, #1a1a20 4px 8px); opacity:.8; }
 .km-cp{ position:absolute; top:5px; width:11px; height:11px; margin-left:-5.5px; border-radius:2px; opacity:.55; transition:opacity .5s, transform .5s; overflow:hidden; background-image: conic-gradient(#2a2a32 90deg, #46464f 90deg 180deg, #2a2a32 180deg 270deg, #46464f 270deg); }
@@ -10828,6 +10860,11 @@ ${(function(){
 .km-oyun-sirada-metin{ display:flex; flex-direction:column; line-height:1.2; }
 .km-oyun-sirada-lbl{ font-size:8.5px; letter-spacing:.12em; font-weight:800; color:var(--a1); }
 .km-oyun-sirada-ad{ font-size:14px; font-weight:800; color:var(--ink); }
+/* 8a — Genişletilmiş sıra kartı: sadece o an sırada olan değil, ondan sonraki 2 sporcu da küçük
+   avatarlarla görünür — koç sırayı önceden görüp hazırlanabilsin. */
+.km-oyun-sirada-sonrakiler{ display:flex; align-items:center; gap:4px; padding-left:8px; margin-left:2px; border-left:1px solid rgba(255,255,255,0.18); }
+.km-oyun-sirada-sonra-lbl{ font-size:7.5px; letter-spacing:.08em; color:var(--ink-faint); text-transform:uppercase; margin-right:2px; }
+.km-oyun-sirada-sonraki-av{ width:20px; height:20px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:8px; color:#04081c; flex-shrink:0; opacity:.75; background:var(--panel-hi); }
 /* Dramatik Açıklama Modu — skor girildikten hemen sonra kısa bir gerilim perdesi. */
 .km-oyun-suspense{ position:absolute; inset:0; z-index:9; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,6,14,0.78); opacity:0; pointer-events:none; transition:opacity .15s; }
 .km-oyun-suspense.goster{ opacity:1; }
@@ -11252,6 +11289,153 @@ ${(function(){
                 _kmOyunRosterCache.forEach(function(o) { o.frac = _kmTakimDurum.frac; });
             }
         }
+        // Çoklu Takım (Yarış) — ortak yol/yörünge paylaşan 7 temada (Zirve/Yıldız/Hazine/Ninja/Monopoly/
+        // Dağ/Balon) takım üyeleri aynı frac'a eşitlenince sahnede tam üst üste biniyordu (2026-09-09,
+        // gerçek testte 5 kişilik bir takımda tek disk görünüp diğer 4'ünün kaybolduğu doğrulandı;
+        // kullanıcıyla (a) tek-disk / (b) kademeli-küme seçenekleri ekran görüntüsüyle karşılaştırıldı,
+        // (a) seçildi). Çözüm: her takımdan SADECE İLK üyenin sahne elemanı (ör. s.zirveEl) görünür
+        // kalır, üzerindeki ad etiketi takım adı/emoji/üye sayısına çevrilir; diğer üyelerin elemanı
+        // gizlenir. Pist (her sporcu zaten kendi şeridinde) ve Hedef Tahtası (her sporcunun kendi ayrı
+        // tahtası var) bu sorunu hiç yaşamıyor, dahil değiller. Sahne çizim fonksiyonlarının İÇİ hiç
+        // değişmiyor — bu, onların zaten dışarı açtığı elemanlar üzerinde çalışan bir kabuk-katmanı
+        // son işlemi (kmOyunResyncAktif/kmOyunSahneKurAktif'in sonunda çağrılıyor).
+        var KM_OYUN_TAKIM_TEMSILCI_TEMALAR = { zirve: 'zirveEl', yildiz: 'yildizEl', hazine: 'hazineEl', ninja: 'ninjaEl', monopoly: 'monopolyEl', dag: 'dagEl', balon: 'balonEl' };
+        function kmOyunTakimTemsilciUygula() {
+            let key = KM_OYUN_TAKIM_TEMSILCI_TEMALAR[_kmOyunAktifTema];
+            if(!key) return;
+            let takimMi = _kmOyunCokluMu && _kmOyunTakimlar.length >= 2;
+            if(!takimMi) { _kmOyunRosterCache.forEach(function(o) { let el = o[key]; if(el) el.style.display = ''; }); return; }
+            // Temsilci olarak, mümkünse o an SIRADAKİ olan üye seçiliyor (ilk üye değil) — böylece
+            // kamera/vurgu özellikleri, ekranda görünen TEK diskin ta kendisini takip edebiliyor.
+            let aktif = _kmOyunRosterCache[_kmOyunAktifIndex];
+            let takimUyeleri = {};
+            _kmOyunRosterCache.forEach(function(o) {
+                let ti = kmOyunSporcuTakimIndex(o.g, o.ad);
+                if(ti === -1) { let el = o[key]; if(el) el.style.display = ''; return; }
+                (takimUyeleri[ti] = takimUyeleri[ti] || []).push(o);
+            });
+            Object.keys(takimUyeleri).forEach(function(ti) {
+                let uyeler = takimUyeleri[ti];
+                let temsilci = uyeler.indexOf(aktif) !== -1 ? aktif : uyeler[0];
+                let t = _kmOyunTakimlar[ti];
+                let etiket = t.emoji + ' ' + t.ad + ' ×' + t.uyeler.length;
+                uyeler.forEach(function(o) {
+                    let el = o[key]; if(!el) return;
+                    if(o !== temsilci) { el.style.display = 'none'; return; }
+                    el.style.display = '';
+                    let tagText = el.querySelector('.km-tag-text');
+                    let tagBg = el.querySelector('.km-tag-bg');
+                    if(tagText) tagText.textContent = etiket;
+                    if(tagBg) { let w = Math.max(50, etiket.length * 7 + 16); tagBg.setAttribute('width', w); tagBg.setAttribute('x', -w / 2); }
+                });
+            });
+        }
+        // 8a — "sıradakini görünür kıl": o an sırası gelen sporcunun (Takım Yarışı'ndaysa zaten TEK
+        // görünen temsilci disk, Bireysel'de kendi tokenı) etrafına yumuşak bir parıltı/halka eklenir.
+        // Pozisyonu (transform) hiç DEĞİŞTİRMİYORUZ — SVG karakterlerinde CSS transform, Resync'in
+        // zaten oradaki translate(...) attribute'unu SİLER (ikisi çakışır, CSS kazanır). Bunun yerine
+        // salt CSS filter (drop-shadow) kullanılıyor — pozisyon attribute'una hiç dokunmuyor. Ciddi mod
+        // açıkken nabız animasyonu kapanır (sessiz/durağan halka kalır, "vurgu" tamamen kaybolmaz —
+        // aksi halde hangi sporcunun sırası geldiği anlaşılmaz olurdu).
+        var KM_OYUN_VURGU_TEMALAR = { zirve: 'zirveEl', yildiz: 'yildizEl', hazine: 'hazineEl', pist: 'pistEl', ninja: 'ninjaEl', monopoly: 'monopolyEl', dag: 'dagEl', balon: 'balonEl', hedef: 'hedefEl' };
+        function kmOyunSiradakiVurguUygula() {
+            let key = KM_OYUN_VURGU_TEMALAR[_kmOyunAktifTema];
+            if(!key) return;
+            let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            _kmOyunRosterCache.forEach(function(o, idx) {
+                let el = o[key]; if(!el) return;
+                let aktifMi = (idx === _kmOyunAktifIndex) && el.style.display !== 'none';
+                el.classList.toggle('km-oyun-siradaki-vurgu', aktifMi);
+                el.classList.toggle('km-oyun-siradaki-vurgu-canli', aktifMi && !ciddi);
+            });
+        }
+        // 8a — Kamera: 7 "ortak yol" teması (Zirve/Yıldız/Hazine/Ninja/Monopoly/Dağ/Balon) AYNI 1200x440
+        // SVG koordinat alanını kullanıyor — bu yüzden TEK bir viewBox-tabanlı kamera 7'sinde birden
+        // çalışabiliyor. Nokta hesaplaması için HER temanın KENDİ var olan nokta/poz fonksiyonu
+        // ÇAĞRILIYOR (5'i (frac)=>{x,y}, 2'si (i,n,frac)=>{x,y,heading} imzalı — kullanıcının istediği
+        // gibi tek tek doğrulandı). Pist (kendi DOM/left:% düzeni) ve Hedef Tahtası (mekansal konum
+        // kavramı yok) burada YOK — Pist'in kendi kmOyunPistKameraGuncelle'i var, Hedef'te kamera hiç
+        // uygulanmıyor (kullanıcı talimatı: sabit kalsın).
+        var KM_OYUN_KAMERA_NOKTA_TEMALAR = {
+            zirve: function(t, i, n) { return kmOyunZirveNokta(t.frac); },
+            hazine: function(t, i, n) { return kmOyunHazineNokta(t.frac); },
+            ninja: function(t, i, n) { return kmOyunNinjaNokta(t.frac); },
+            monopoly: function(t, i, n) { return kmOyunMonopolyNokta(t.frac); },
+            dag: function(t, i, n) { return kmOyunDagNokta(t.frac); },
+            yildiz: function(t, i, n) { return kmOyunYildizPoz(i, n, t.frac); },
+            balon: function(t, i, n) { return kmOyunBalonPoz(i, n, t.frac); }
+        };
+        var KM_OYUN_KAMERA_SVG_ID = { zirve: 'km-oyun-svg-zirve', hazine: 'km-oyun-svg-hazine', ninja: 'km-oyun-svg-ninja', monopoly: 'km-oyun-svg-monopoly', dag: 'km-oyun-svg-dag', yildiz: 'km-oyun-svg-yildiz', balon: 'km-oyun-svg-balon' };
+        var KM_OYUN_KAMERA_ZOOM = 0.5; // 1200x440'ın yarısı kadarlık bir pencere — figürler küçülmüyor.
+        var _kmOyunKameraUyarilanTema = {}; // aynı hata için konsolu spam'lememek adına tema başına 1 kez uyar.
+        var _kmOyunKameraRaf = null;
+        function kmOyunKameraHedefeGit(svg, x, y, w, h) {
+            if(_kmOyunKameraRaf) cancelAnimationFrame(_kmOyunKameraRaf);
+            let mevcut = (svg.getAttribute('viewBox') || `${x} ${y} ${w} ${h}`).split(/\s+/).map(Number);
+            let x0 = mevcut[0], y0 = mevcut[1], w0 = mevcut[2], h0 = mevcut[3];
+            if(Math.abs(x0 - x) < 0.5 && Math.abs(y0 - y) < 0.5 && Math.abs(w0 - w) < 0.5) return; // zaten oradayız
+            let basla = performance.now(), sure = 550;
+            function adim(now) {
+                let t = Math.min(1, (now - basla) / sure), e = 1 - Math.pow(1 - t, 3);
+                svg.setAttribute('viewBox', `${(x0 + (x - x0) * e).toFixed(1)} ${(y0 + (y - y0) * e).toFixed(1)} ${(w0 + (w - w0) * e).toFixed(1)} ${(h0 + (h - h0) * e).toFixed(1)}`);
+                if(t < 1) _kmOyunKameraRaf = requestAnimationFrame(adim);
+            }
+            _kmOyunKameraRaf = requestAnimationFrame(adim);
+        }
+        function kmOyunKameraGuncelle() {
+            let tema = _kmOyunAktifTema;
+            let svgId = KM_OYUN_KAMERA_SVG_ID[tema]; if(!svgId) return;
+            let svg = document.getElementById(svgId); if(!svg) return;
+            let fn = KM_OYUN_KAMERA_NOKTA_TEMALAR[tema];
+            let temsilci = _kmOyunRosterCache[_kmOyunAktifIndex];
+            if(!temsilci) { svg.setAttribute('viewBox', '0 0 1200 440'); return; }
+            let pt;
+            try { pt = fn(temsilci, _kmOyunAktifIndex, _kmOyunRosterCache.length); }
+            catch(e) { pt = null; }
+            if(!pt || typeof pt.x !== 'number' || typeof pt.y !== 'number' || isNaN(pt.x) || isNaN(pt.y)) {
+                if(!_kmOyunKameraUyarilanTema[tema]) {
+                    _kmOyunKameraUyarilanTema[tema] = true;
+                    console.warn('kmOyunKameraGuncelle: "' + tema + '" teması için nokta hesaplanamadı, kamera sabit (0 0 1200 440) kalıyor — 8a kamera dispatcher\'ı bu temada ÇALIŞMIYOR, bildirilmesi gerekiyor.');
+                }
+                svg.setAttribute('viewBox', '0 0 1200 440');
+                return;
+            }
+            let W = 1200, H = 440, Z = KM_OYUN_KAMERA_ZOOM, w = W * Z, h = H * Z;
+            let x = Math.max(0, Math.min(W - w, pt.x - w / 2));
+            let y = Math.max(0, Math.min(H - h, pt.y - h / 2));
+            kmOyunKameraHedefeGit(svg, x, y, w, h);
+        }
+        // 8a — Pist'in kamerası: SVG değil, her sporcu kendi `.km-lane-track`'inde (position:relative,
+        // left:% ile ilerleyen) ayrı bir DOM satırı. Bu yüzden viewBox değil, TÜM şeritlere AYNI
+        // scale+translateX uygulanıyor (matematik: bir noktanın "gerçek" konumu frac*genişlik; bu
+        // scale(Z) + translateX(tx%) ile önce tx kadar kaydırılıp sonra Z ile büyütülünce ekranda
+        // Z*(frac+tx)*genişlik konumuna düşer — merkezde durması için tx = 1/(2Z) - frac). Sahne
+        // fonksiyonunun içindeki left:% atamalarına hiç dokunulmuyor, sadece paint-time transform.
+        // 8 şerit dikeyde sınırlı yer paylaşıyor — yüksek bir zoom, aracı kendi şeridinin dışına taşırıp
+        // üstten/alttan kırpılmasına yol açıyordu (gerçek testte yakalandı). 1.5, "yakın çekim" hissini
+        // korurken şeritler arası kırpmayı gözle görülür şekilde azaltıyor.
+        var KM_OYUN_PIST_KAMERA_ZOOM = 1.5;
+        function kmOyunPistKameraGuncelle() {
+            let tracks = document.querySelectorAll('#km-oyun-lanes .km-lane-track');
+            if(!tracks.length) return;
+            let temsilci = _kmOyunRosterCache[_kmOyunAktifIndex];
+            if(!temsilci) { tracks.forEach(function(t) { t.style.transform = ''; }); return; }
+            let Z = KM_OYUN_PIST_KAMERA_ZOOM, yarim = 1 / (2 * Z);
+            let merkezFrac = Math.max(yarim, Math.min(1 - yarim, temsilci.frac));
+            let tx = ((yarim - merkezFrac) * 100).toFixed(2);
+            tracks.forEach(function(t) {
+                t.style.transformOrigin = '0 50%';
+                t.style.transform = `scale(${Z}) translateX(${tx}%)`;
+            });
+        }
+        // 8a'nın kabuk katmanı son-işlemlerinin TEK giriş noktası — temsilci disk, sıradaki vurgusu ve
+        // kamera hep BİRLİKTE, aynı zamanlamada güncellensin diye tek yerden çağrılıyor.
+        function kmOyunKabukGuncelle() {
+            kmOyunTakimTemsilciUygula();
+            kmOyunSiradakiVurguUygula();
+            kmOyunKameraGuncelle();
+            kmOyunPistKameraGuncelle();
+        }
         function kmTakimAnahtari() { return 'dag_km_takim_' + (_kmAktifKonum || 'varsayilan'); }
         function kmTakimDurumEmin() {
             if(_kmTakimYuklenenKonum !== _kmAktifKonum || !_kmTakimDurum) {
@@ -11279,6 +11463,7 @@ ${(function(){
             else if(tid === 'hedef') kmOyunResyncHedef();
             else if(tid === 'futbol') kmOyunResyncFutbol();
             else kmOyunResyncFutbolTakim();
+            kmOyunKabukGuncelle();
         }
         // Resync sadece KONUMU (transform) günceller — karakterin RENGİ/rozeti gibi bir kere çizilip
         // innerHTML'e gömülen şeyler DEĞİŞMEZ. Takım renkleri/emojisi gibi "karakterin GÖRÜNÜMÜNÜ"
@@ -11298,6 +11483,27 @@ ${(function(){
             else if(tid === 'hedef') kmOyunSahneKurHedef();
             else if(tid === 'futbol') kmOyunSahneKurFutbol();
             else kmOyunSahneKurFutbolTakim();
+            kmOyunKabukGuncelle();
+        }
+        // kmOyunSahneKurAktif() SADECE o an EKRANDA GÖRÜNEN temayı yeniden kurar — diğer 10 tema
+        // arkada, Oyunlar sekmesi ilk açıldığındaki (kmOyunlarCiz) rengiyle DONUK kalır. Takım verisi
+        // (kurma/kaydetme/Sınıf↔Yarış geçişi) değiştiğinde SADECE aktif temayı değil, TÜMÜNÜ yeniden
+        // kurmak gerekiyor — yoksa koç şimdi Zirve'deyken takım kursa, sonra Pist'e geçince Pist HÂLÂ
+        // takım öncesi bireysel renklerle görünür (2026-09-09, gerçek testte yakalandı). kmOyunlarCiz'in
+        // ilk kurulumdaki AYNI 11 çağrısı burada tekrar kullanılıyor.
+        function kmOyunSahneKurHepsi() {
+            kmOyunSahneKurZirve();
+            kmOyunSahneKurYildiz();
+            kmOyunSahneKurHazine();
+            kmOyunSahneKurPist();
+            kmOyunSahneKurNinja();
+            kmOyunSahneKurMonopoly();
+            kmOyunSahneKurDag();
+            kmOyunSahneKurBalon();
+            kmOyunSahneKurHedef();
+            kmOyunSahneKurFutbol();
+            kmOyunSahneKurFutbolTakim();
+            kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
         // ayrı Bireysel/Takım kartları var). Modlar arasında geçiş HİÇBİR veriyi silmez: bireysele dönünce
@@ -11327,8 +11533,9 @@ ${(function(){
             kmOyunTakimFracYay();
             // Sadece Resync YETMEZ — karakterin RENGİ/takım rozeti sahne İLK kurulduğunda gömülüyor,
             // Sınıf↔Yarış geçişinde HEMEN güncellenmesi için sahne baştan kurulmalı (2026-09-06,
-            // "takım renkleri bir olmalı" — gerçek testte renklerin değişmediği yakalandı).
-            kmOyunSahneKurAktif();
+            // "takım renkleri bir olmalı" — gerçek testte renklerin değişmediği yakalandı). TÜM temalar
+            // (sadece aktif olan değil) — bkz. kmOyunSahneKurHepsi() notu.
+            kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
         }
@@ -11386,8 +11593,9 @@ ${(function(){
             kmOyunCokluDurumEmin(); kmOyunCokluDurumKaydet();
             kmOyunTakimEditorKapat();
             kmOyunTakimFracYay();
-            // Sadece Resync YETMEZ — bkz. kmOyunSahneKurAktif() notu (renk/rozet güncellemesi için).
-            kmOyunSahneKurAktif();
+            // Sadece Resync YETMEZ — bkz. kmOyunSahneKurHepsi() notu (renk/rozet güncellemesi için,
+            // TÜM temalarda, sadece o an açık olanda değil).
+            kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
             showToast('Takımlar kaydedildi — 🏁 Yarış başlasın!', 'success');
@@ -11575,9 +11783,19 @@ ${(function(){
         // (aktif index değişen her yerde zaten çağrılıyor), ayrı bir çağrı noktası eklemeye gerek kalmadı.
         function kmOyunSiradaGuncelle() {
             let el = document.getElementById('km-oyun-sirada'); if(!el) return;
+            let n = _kmOyunRosterCache.length;
             let s = _kmOyunRosterCache[_kmOyunAktifIndex];
             if(!s) { el.innerHTML = ''; return; }
-            el.innerHTML = `<span class="km-oyun-sirada-av" style="background:${kmOyunRenk(_kmOyunAktifTema, _kmOyunAktifIndex)};">${kmOyunAvatarHTML(s)}</span><span class="km-oyun-sirada-metin"><span class="km-oyun-sirada-lbl">SIRADA</span><span class="km-oyun-sirada-ad">${s.ad}</span></span>`;
+            // 8a — genişletilmiş sıra kartı: hemen sonraki 2 sporcu da küçük avatarlarla görünür.
+            let sonrakiler = '';
+            if(n > 1) {
+                let adet = Math.min(2, n - 1), liste = [];
+                for(let k = 1; k <= adet; k++) liste.push(_kmOyunRosterCache[(_kmOyunAktifIndex + k) % n]);
+                sonrakiler = `<span class="km-oyun-sirada-sonrakiler"><span class="km-oyun-sirada-sonra-lbl">sonra</span>${liste.map(function(o) {
+                    return `<span class="km-oyun-sirada-sonraki-av" title="${esc(o.ad)}">${kmOyunAvatarHTML(o)}</span>`;
+                }).join('')}</span>`;
+            }
+            el.innerHTML = `<span class="km-oyun-sirada-av" style="background:${kmOyunRenk(_kmOyunAktifTema, _kmOyunAktifIndex)};">${kmOyunAvatarHTML(s)}</span><span class="km-oyun-sirada-metin"><span class="km-oyun-sirada-lbl">SIRADA</span><span class="km-oyun-sirada-ad">${s.ad}</span></span>${sonrakiler}`;
         }
         // Adil Sıralama (Menzil Sahnesi fikri) — koç her sporcuya BİR KEZ bir "seviye" etiketi verir
         // (chip'teki rozete dokunarak döngüsel değiştirilir), liderlik tablosu isteğe bağlı bu etikete
@@ -11793,8 +12011,22 @@ ${(function(){
                 ${takimRozetiHTML}
             </g>`;
         }
-        function kmOyunRenk(temaId, i) { let p = KM_OYUN_TEMALAR[temaId].renkler; return p[i % p.length]; }
+        // Çoklu Takım (Yarış) açıkken sporcu kendi bireysel rengi yerine TAKIMININ rengini alır (2026-09-09,
+        // "5 kişilik takımda tek disk görünür" düzeltmesinin bir parçası — bkz. kmOyunTakimTemsilciUygula).
+        // Futbol/Takım Futbolu kendi ayrı takım mekaniğine sahip, buraya dahil değil.
+        function kmOyunRenk(temaId, i) {
+            if(_kmOyunCokluMu && temaId !== 'futbol' && temaId !== 'futboltakim' && _kmOyunTakimlar.length >= 2 && _kmOyunRosterCache[i]) {
+                let o = _kmOyunRosterCache[i];
+                let ti = kmOyunSporcuTakimIndex(o.g, o.ad);
+                if(ti !== -1 && _kmOyunTakimlar[ti]) return _kmOyunTakimlar[ti].renk;
+            }
+            let p = KM_OYUN_TEMALAR[temaId].renkler;
+            return p[i % p.length];
+        }
         function kmOyunJitter(i, n) {
+            // Aynı sebep: takım üyeleri temsilci dışında zaten gizlenecek, temsilcinin path üzerinde
+            // TAM oturması için ofset sıfırlanıyor.
+            if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunRosterCache[i] && kmOyunSporcuTakimIndex(_kmOyunRosterCache[i].g, _kmOyunRosterCache[i].ad) !== -1) return [0, 0];
             if(n <= 1) return [0, 0];
             let spread = Math.min(50 * (n - 1), 320);
             let step = spread / (n - 1);
@@ -12009,7 +12241,7 @@ ${(function(){
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker Modu">${_kmOyunSesliMod ? '🔊' : '🔇'}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama Modu">🎬</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir tema öner">🎲</button>
-                        <button class="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
+                        <button class="km-oyun-tam-btn" id="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
                     </div>
                 </div>
                 <!-- FAZ 7 SONRASI — eski yatay tema şeridi (.km-oyun-modes) 360px'te 9/11 sekmeyi
@@ -12032,6 +12264,7 @@ ${(function(){
                     </div>
                     <span class="km-oyun-takim-ipucu">${_kmOyunCokluMu ? '2-4 takım aynı yolda birbirine karşı yarışır.' : 'Takım modunda tüm sınıf aynı yolda birlikte ilerler.'}</span>
                 </div>
+                <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
                     ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
@@ -12143,7 +12376,7 @@ ${(function(){
             }).join('');
             kmOyunSiradaGuncelle();
         }
-        function kmOyunSporcuSec(i) { _kmOyunAktifIndex = i; kmOyunChipleriCiz(); if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle(); }
+        function kmOyunSporcuSec(i) { _kmOyunAktifIndex = i; kmOyunChipleriCiz(); kmOyunKabukGuncelle(); if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle(); }
         // Alkış Butonu (2026-09-04, Heyecan Motoru araştırması — Strava Kudos: ücretsiz, bir dokunuşluk
         // sosyal tanınma). Sırası gelmeyen sporcular ya da koç, iyi bir seri sonrası chip'e dokunup
         // alkışlayabilir — gerçek skora/klasmana HİÇ dokunmaz, sadece görünürlük/tanınma sayacı.
@@ -12223,8 +12456,25 @@ ${(function(){
                 kmOyunSesliSoyle((onSoz ? onSoz + ' ' : '') + baslik + (alt ? '. ' + alt : ''));
             }
         }
+        // 8a — Kontrol Noktası Rayı: sahnenin üstünde, Yarış (Çoklu Takım) açıkken her takım için ayrı
+        // bir ilerleme çubuğu. kmOyunLiderCiz ile AYNI zamanlamada güncellensin diye oradan çağrılıyor.
+        function kmOyunCpRailCiz() {
+            let rail = document.getElementById('km-oyun-cp-rail'); if(!rail) return;
+            let gosterMi = _kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim';
+            rail.style.display = gosterMi ? '' : 'none';
+            if(!gosterMi) return;
+            let tikler = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f) { return `<span class="km-oyun-cp-rail-tik" style="left:${(f * 100).toFixed(2)}%;"></span>`; }).join('');
+            rail.innerHTML = _kmOyunTakimlar.map(function(t, idx) {
+                let frac = (_kmOyunCokluDurum[idx] || { frac: 0 }).frac;
+                return `<div class="km-oyun-cp-rail-satir">
+                    <span class="km-oyun-cp-rail-etiket" style="color:${t.renk};">${t.emoji} ${esc(t.ad)}</span>
+                    <div class="km-oyun-cp-rail-bar"><div class="km-oyun-cp-rail-dolum" style="width:${(Math.min(1, frac) * 100).toFixed(2)}%; background:${t.renk};"></div>${tikler}</div>
+                </div>`;
+            }).join('');
+        }
         function kmOyunLiderCiz() {
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
+            kmOyunCpRailCiz();
             if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') { kmOyunTakimYarisCiz(el); return; }
             if(_kmOyunLigMi) { kmOyunLigCiz(el); return; }
             // Adil Sıralama (2026-09-03) — karışık yaş/seviye grubunda ham puan yerine, koçun her sporcuya
@@ -12281,14 +12531,25 @@ ${(function(){
             let madalya = ['🥇', '🥈', '🥉'];
             let sirali = _kmOyunTakimlar.map(function(t, idx) {
                 let frac = (_kmOyunCokluDurum[idx] || { frac: 0 }).frac;
-                return { t: t, idx: idx, frac: frac, cp: Math.floor(frac * KM_OYUN_CP_SAYISI + 1e-6) };
+                // Fark rozeti GERÇEK PUAN üzerinden (takım üyelerinin toplamSkor'u toplanarak) — frac/
+                // kontrol-noktası birimi yerine "38 puan geride" gibi somut, tanıdık bir birim.
+                let puan = _kmOyunRosterCache.filter(function(o) { return t.uyeler.indexOf(o.g + '|' + o.ad) !== -1; })
+                    .reduce(function(top, o) { return top + (o.toplamSkor || 0); }, 0);
+                return { t: t, idx: idx, frac: frac, cp: Math.floor(frac * KM_OYUN_CP_SAYISI + 1e-6), puan: puan };
             }).sort(function(a, b) { return b.frac - a.frac; });
+            let lider = sirali[0];
             let html = '<div class="km-oyun-lider-baslik">🏁 Yarış Sıralaması</div>';
             html += sirali.map(function(o, rank) {
+                let fark = '';
+                if(sirali.length > 1) {
+                    if(rank === 0) { let gap = o.puan - sirali[1].puan; fark = gap > 0 ? `<span class="km-oyun-fark-rozet km-oyun-fark-onde">+${gap}p önde</span>` : '<span class="km-oyun-fark-rozet">berabere</span>'; }
+                    else { let gap = lider.puan - o.puan; fark = gap > 0 ? `<span class="km-oyun-fark-rozet">${gap}p geride</span>` : '<span class="km-oyun-fark-rozet">berabere</span>'; }
+                }
                 return `<div class="km-oyun-lider-satir"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
                     <span class="km-oyun-lider-nokta" style="background:${o.t.renk};"></span>
                     <span class="km-oyun-lider-ad">${o.t.emoji} ${esc(o.t.ad)}</span>
-                    <span class="km-oyun-lider-skor">${o.cp}/${KM_OYUN_CP_SAYISI}</span></div>`;
+                    <span class="km-oyun-lider-skor">${o.cp}/${KM_OYUN_CP_SAYISI}</span></div>
+                    <div class="km-oyun-fark-satir">${fark}</div>`;
             }).join('');
             el.innerHTML = html;
         }
@@ -12306,6 +12567,16 @@ ${(function(){
             let sonuc = istek.call(el);
             if(sonuc && sonuc.catch) sonuc.catch(function(err) { showToast('Tam ekran açılamadı: ' + (err && err.message ? err.message : 'bilinmeyen hata'), 'error'); });
         }
+        // Buton metni HER ZAMAN "Tam Ekran" diyordu, tıklayınca çıksa bile — koç için "hiçbir şey
+        // olmadı" izlenimi veriyordu. Esc tuşu/tarayıcı UI'sinden çıkışı da yakalasın diye kmOyunTamEkran()
+        // içinde değil, document.fullscreenElement'in KENDİSİ değiştiğinde çalışan tek bir dinleyicide.
+        function kmOyunTamEkranEtiketGuncelle() {
+            let btn = document.getElementById('km-oyun-tam-btn'); if(!btn) return;
+            let aktif = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            btn.textContent = aktif ? '🖥️ Tam Ekrandan Çık' : '🖥️ Tam Ekran';
+        }
+        document.addEventListener('fullscreenchange', kmOyunTamEkranEtiketGuncelle);
+        document.addEventListener('webkitfullscreenchange', kmOyunTamEkranEtiketGuncelle);
         function kmOyunSvgPct(svgId, x, y) {
             let svg = document.getElementById(svgId), scene = document.getElementById('km-oyun-sahne');
             if(!svg || !scene) return { xPct: 50, yPct: 50 };
@@ -13040,6 +13311,9 @@ ${(function(){
                     kmOyunResyncAktif();
                     kmOyunChipleriCiz();
                 }
+                // Bireysel modda yukarıdaki dallar hiç çalışmıyor (kmOyunResyncAktif zaten oradan
+                // kmOyunKabukGuncelle'i tetikliyor) — kamera/sıradaki-vurgu HER durumda güncellensin.
+                kmOyunKabukGuncelle();
                 _kmOyunSeriGirisleri = [];
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
                 setTimeout(function() { _kmOyunKilit = false; kmOyunSlotlariCiz(); document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.disabled = false; }); }, 200);
@@ -13652,21 +13926,12 @@ ${(function(){
             _kmOyunKilit = false;
             _kmOyunSonGiris = null;
             el.innerHTML = kmOyunHTML();
-            kmOyunSahneKurZirve();
-            kmOyunSahneKurYildiz();
-            kmOyunSahneKurHazine();
-            kmOyunSahneKurPist();
-            kmOyunSahneKurNinja();
-            kmOyunSahneKurMonopoly();
-            kmOyunSahneKurDag();
-            kmOyunSahneKurBalon();
-            kmOyunSahneKurHedef();
-            kmOyunSahneKurFutbol();
-            kmOyunSahneKurFutbolTakim();
+            kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             kmOyunPadCiz();
             kmOyunSlotlariCiz();
             kmOyunLiderCiz();
+            kmOyunTamEkranEtiketGuncelle();
         }
 
         // ===== KARIŞIK SINIF — ⚡ REAKSİYON (2026-09-02, "reaksiyon oyunlarını buraya da ekleyelim,
