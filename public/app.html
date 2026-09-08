@@ -8,13 +8,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DAĞ S.K.">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DA%C4%9E%20S.K.%20Master%20OS&quot;,&quot;short_name&quot;:&quot;DA%C4%9E%20S.K.&quot;,&quot;start_url&quot;:&quot;/app.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f172a&quot;,&quot;theme_color&quot;:&quot;%230f172a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%230f172a'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%F0%9F%8F%B9%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DA%C4%9E%20S.K.%20Master%20OS&quot;,&quot;short_name&quot;:&quot;DA%C4%9E%20S.K.&quot;,&quot;start_url&quot;:&quot;/app.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f172a&quot;,&quot;theme_color&quot;:&quot;%230f172a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;/favicon.png&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
     <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/favicon.png">
     <title>DAĞ S.K. Master OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
 </head>
 <body>
@@ -44,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v105</b> · 22.06.2026</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v127</b> · Tam Görsel & Animasyon Restorasyonu</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -162,6 +166,7 @@
             <button onclick="kmSekme('pozitif')" id="kms-pozitif" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎖️ Pozitif Pusula</button>
             <button onclick="kmSekme('oyunlar')" id="kms-oyunlar" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎮 Oyunlar</button>
             <button onclick="kmSekme('reaksiyon')" id="kms-reaksiyon" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">⚡ Reaksiyon</button>
+            <button onclick="kmSekme('ritim')" id="kms-ritim" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎙️ Ritim & Tıkır</button>
         </div>
         <div id="km-icerik" style="flex:1;overflow-y:auto;padding:10px 12px;"></div>
     </div>
@@ -875,17 +880,188 @@
 
         <!-- Başlık -->
         <div class="va-card">
-            <div class="va-title">🎥 Video Analiz</div>
-            <div class="va-sub">Atış anını gecikmeli izle ve duruşunu kontrol et, ya da videonu yapay zekâya analiz ettir.</div>
+            <div class="va-title">🎯 AI Video & Duruş Analizi</div>
+            <div class="va-sub">Gerçek zamanlı yapay zekâ ile atış formunu, yay kolu kilidini ve çekiş dirseği açılarını anlık analiz et.</div>
         </div>
 
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-blue" style="flex:1;">🪞 Gecikmeli Ayna</button>
-            <button onclick="vaModSec('ai')" id="va-mod-ai-btn" class="va-btn va-btn-grey" style="flex:1;">🤖 AI Analiz</button>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1; min-width:130px;">🤖 Canlı AI Duruş</button>
+            <button onclick="vaModSec('karsilastir')" id="va-mod-karsilastir-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">⚔️ İkili Karşılaştırma</button>
+            <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">🪞 5sn Ayna</button>
         </div>
 
-        <!-- ===== GECİKMELİ AYNA (5sn) + ÇİZİM ARAÇLARI ===== -->
-        <div id="va-mod-ayna">
+        <!-- ===== 1. MOD: GERÇEK ZAMANLI AI DURUŞ ANALİZİ (MediaPipe) ===== -->
+        <div id="va-mod-ai-pose">
+            <div class="va-card" style="padding:12px;">
+                <!-- Akıllı & Kompakt Konfigürasyon Dock'u -->
+                <div class="ai-config-dock">
+                    <div class="ai-pill-group">
+                        <button id="ai-src-cam-btn" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setSourceMode('camera')">📷 Canlı Kamera</button>
+                        <button id="ai-src-vid-btn" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setSourceMode('video')">📂 Kayıtlı Video</button>
+                    </div>
+                    <div class="ai-pill-group">
+                        <button id="ai-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">🏹 Sağlak</button>
+                        <button id="ai-hand-left" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🏹 Solak</button>
+                    </div>
+                    <div class="ai-pill-group">
+                        <button id="ai-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setBowType('auto')">🤖 Oto Yay</button>
+                        <button id="ai-bow-recurve" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('recurve')">🏹 Klasik</button>
+                        <button id="ai-bow-compound" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('compound')">⚙️ Makaralı</button>
+                    </div>
+                </div>
+
+                <!-- Video Yükleme Alanı (Dropzone - Yalnızca Video Modunda Aktif) -->
+                <div id="ai-vid-upload-box" style="display:none; margin-bottom:12px;">
+                    <div class="va-dropzone" onclick="document.getElementById('ai-vid-file-input').click()">
+                        <div class="va-icon">🎬</div>
+                        <div style="font-weight:800; font-size:14px; margin-top:6px;">İncelemek istediğin atış videosunu buraya sürükle</div>
+                        <div class="va-sub">veya dokunarak cihazından dosya seç (.mp4, .mov, .webm)</div>
+                    </div>
+                    <input id="ai-vid-file-input" type="file" accept="video/*" style="display:none;" onchange="DAGSK_AI_POSE.loadVideoFile(this.files[0])">
+                </div>
+
+                <!-- Kamera & Video Ekranı -->
+                <div class="ai-pose-box" id="ai-pose-box-container">
+                    <div class="ai-pose-inner" id="ai-pose-inner" onclick="DAGSK_AI_POSE.handleScreenTap(event)">
+                        <video id="ai-pose-video" class="ai-pose-video" autoplay muted playsinline></video>
+                        <canvas id="ai-pose-canvas" class="ai-pose-canvas"></canvas>
+                        <canvas id="ai-draw-canvas" class="ai-draw-canvas"></canvas>
+                        <div id="ai-play-splash" class="ai-play-splash">▶</div>
+                    </div>
+                    
+                    <!-- Sol Üst: Durum ve Yakınlaştırma (Zoom) Araçları -->
+                    <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
+                        <div class="ai-zoom-bar">
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.zoomStep(-0.25)" title="Uzaklaştır">🔍−</button>
+                            <span id="ai-zoom-val" class="ai-zoom-badge">1.0x</span>
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.zoomStep(0.25)" title="Yakınlaştır">🔍+</button>
+                            <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.resetZoom()" title="Sıfırla">↺ 1x</button>
+                        </div>
+                    </div>
+
+                    <!-- Sağ Üst: Tam Ekran ve Form Skoru Rozetleri -->
+                    <div style="position:absolute; top:10px; right:10px; z-index:3; display:flex; gap:6px; align-items:center;">
+                        <button class="va-btn va-btn-grey" style="padding:6px 10px; font-size:11px; border-radius:10px; background:rgba(15,23,42,0.85); border:1px solid var(--border-color);" onclick="DAGSK_AI_POSE.toggleFullScreen()" title="Tam Ekran Aç/Kapat">⛶ Tam Ekran</button>
+                        <div id="ai-pose-score-ring" style="background:rgba(15,23,42,0.85); border:2px solid var(--gold); border-radius:12px; padding:4px 10px; text-align:center; backdrop-filter:blur(4px);">
+                            <div style="font-size:8px; color:var(--text-muted); font-weight:700;">FORM</div>
+                            <div id="ai-pose-score" style="font-size:18px; font-weight:900; color:var(--gold); line-height:1;">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Tam Ekrandayken Altta Beliren Yüzen Çizim & Kontrol Çubuğu -->
+                    <div class="ai-fs-floating-bottom">
+                        <button id="ai-fs-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Kalem">✏️ Kalem</button>
+                        <button id="ai-fs-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Çizgi">📏 Çizgi</button>
+                        <button id="ai-fs-tool-circle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('circle')" title="Daire">⭕ Daire</button>
+                        <button id="ai-fs-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="Açı">📐 Açı</button>
+                        <button id="ai-fs-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Gezin/Dokun-Oynat">🖐️ Gezin</button>
+                        <div style="display:flex; gap:5px; margin:0 4px; align-items:center;">
+                            <span class="ai-color-dot aktif" style="background:#fbbf24;" onclick="DAGSK_AI_POSE.setDrawColor('#fbbf24', this)"></span>
+                            <span class="ai-color-dot" style="background:#ff3366;" onclick="DAGSK_AI_POSE.setDrawColor('#ff3366', this)"></span>
+                            <span class="ai-color-dot" style="background:#00e5ff;" onclick="DAGSK_AI_POSE.setDrawColor('#00e5ff', this)"></span>
+                            <span class="ai-color-dot" style="background:#10b981;" onclick="DAGSK_AI_POSE.setDrawColor('#10b981', this)"></span>
+                        </div>
+                        <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.undoDraw()" title="Geri Al">↩️</button>
+                        <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.clearDrawings()" title="Temizle">🗑️</button>
+                        <button class="va-btn va-btn-blue" style="padding:6px 12px; font-size:11px;" onclick="DAGSK_AI_POSE.toggleVideoPlay()">▶/⏸</button>
+                        <button class="va-btn va-btn-grey" style="padding:6px 10px; font-size:11px;" onclick="DAGSK_AI_POSE.toggleFullScreen()">✖ Çıkış</button>
+                    </div>
+                </div>
+
+                <!-- Video Üzerine Çizim Araç Çubuğu (Antrenör Notları) -->
+                <div class="ai-draw-toolbar">
+                    <span style="font-size:11px; font-weight:800; color:var(--text-muted); margin-right:2px;">🎨 Çizim:</span>
+                    <button id="ai-tool-pen" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('pen')" title="Serbest Kalem">✏️ Kalem</button>
+                    <button id="ai-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Düz Çizgi">📏 Çizgi</button>
+                    <button id="ai-tool-circle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('circle')" title="Daire / Yuvarlak Çiz">⭕ Daire</button>
+                    <button id="ai-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="3 Noktadan Açı Ölç">📐 Açı</button>
+                    <button id="ai-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Çizimi Durdur">🖐️ Gezin (Dokun-Oynat)</button>
+
+                    <div style="display:flex; gap:6px; align-items:center; margin-left:4px; margin-right:4px;">
+                        <span class="ai-color-dot aktif" style="background:#fbbf24;" onclick="DAGSK_AI_POSE.setDrawColor('#fbbf24', this)" title="Sarı"></span>
+                        <span class="ai-color-dot" style="background:#ff3366;" onclick="DAGSK_AI_POSE.setDrawColor('#ff3366', this)" title="Neon Kırmızı"></span>
+                        <span class="ai-color-dot" style="background:#00e5ff;" onclick="DAGSK_AI_POSE.setDrawColor('#00e5ff', this)" title="Camgöbeği"></span>
+                        <span class="ai-color-dot" style="background:#10b981;" onclick="DAGSK_AI_POSE.setDrawColor('#10b981', this)" title="Yeşil"></span>
+                    </div>
+
+                    <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.undoDraw()" title="Son Çizgiyi Geri Al">↩️ Geri Al</button>
+                    <button class="ai-tool-btn" onclick="DAGSK_AI_POSE.clearDrawings()" title="Tüm Çizimleri Temizle">🗑️ Temizle</button>
+                </div>
+
+                <!-- Canlı Kamera Kontrol Butonları -->
+                <div id="ai-cam-controls" class="va-row" style="margin-bottom:14px;">
+                    <button id="ai-pose-cam-start" class="va-btn va-btn-blue" onclick="DAGSK_AI_POSE.startLiveCamera()">📷 Canlı Kamerayı Aç</button>
+                    <button id="ai-pose-cam-stop" class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.stopLiveCamera()" style="display:none;">✖ Kamerayı Kapat</button>
+                    <button class="va-btn va-btn-grey" onclick="DAGSK_AI_POSE.toggleCameraFacing()" title="Ön/Arka Kamera Değiştir">🔄 Kamera Çevir</button>
+                    <button class="va-btn va-btn-green" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Kare Kartını İndir</button>
+                    <button class="va-btn" style="background:#25D366; color:#fff;" onclick="DAGSK_AI_POSE.shareToWhatsApp()">📲 Veliye WhatsApp Gönder</button>
+                </div>
+
+                <!-- Video Oynatma & Kare Kare İnceleme Kontrolleri -->
+                <div id="ai-vid-controls" class="ai-vid-controls-panel" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input id="ai-vid-seek" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_AI_POSE.onVideoSeek(event)">
+                        <span id="ai-vid-time" style="font-size:11px; font-weight:700; color:var(--text-muted); min-width:85px; text-align:right;">00:00 / 00:00</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button id="ai-vid-play-btn" class="va-btn va-btn-blue" style="padding:7px 14px; font-size:12px;" onclick="DAGSK_AI_POSE.toggleVideoPlay()">▶ Oynat</button>
+                            <button class="va-btn va-btn-grey" style="padding:7px 10px; font-size:12px;" onclick="DAGSK_AI_POSE.stepVideoFrame(-0.1)" title="1 Kare Geri (0.1sn)">⏮ Geri</button>
+                            <button class="va-btn va-btn-grey" style="padding:7px 10px; font-size:12px;" onclick="DAGSK_AI_POSE.stepVideoFrame(0.1)" title="1 Kare İleri (0.1sn)">⏭ İleri</button>
+                            <button class="va-btn va-btn-grey" style="padding:7px 10px; font-size:12px;" onclick="DAGSK_AI_POSE.toggleFullScreen()" title="Tam Ekran">⛶</button>
+                        </div>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <span style="font-size:11px; color:var(--text-muted); margin-right:4px;">Hız:</span>
+                            <button id="ai-speed-025" class="ai-speed-btn" onclick="DAGSK_AI_POSE.setVideoSpeed(0.25)">0.25x</button>
+                            <button id="ai-speed-05" class="ai-speed-btn" onclick="DAGSK_AI_POSE.setVideoSpeed(0.5)">0.5x</button>
+                            <button id="ai-speed-1" class="ai-speed-btn aktif" onclick="DAGSK_AI_POSE.setVideoSpeed(1.0)">1.0x</button>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="ai-vid-record-btn" class="va-btn va-btn-red" style="padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.exportAnalyzedVideo()">⏺️ Açılarıyla Videoyu İndir</button>
+                            <button class="va-btn va-btn-green" style="padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.captureAnalysisCard()">📸 Kareyi Kaydet</button>
+                            <button class="va-btn" style="background:#25D366; color:#fff; padding:7px 12px; font-size:12px;" onclick="DAGSK_AI_POSE.shareToWhatsApp()">📲 Veliye WhatsApp</button>
+                            <button class="va-btn va-btn-grey" style="padding:7px 10px; font-size:12px;" onclick="document.getElementById('ai-vid-file-input').click()">📂 Değiştir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Biomekanik Açı Ölçüm Göstergeleri -->
+                <div class="ai-hud-grid">
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Yay Kolu</div>
+                        <div id="ai-val-bowarm" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">İdeal: 175° - 180°</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Çekiş Dirseği</div>
+                        <div id="ai-val-drawelbow" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">Ok Ekseni Hizası</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Çapa (Anchor)</div>
+                        <div id="ai-val-anchor" class="ai-hud-val" style="font-size:16px;">--</div>
+                        <div id="ai-sub-anchor" class="ai-hud-sub">Çene / Yüz Teması</div>
+                    </div>
+                    <div class="ai-hud-card">
+                        <div class="ai-hud-label">Omuz Eğimi</div>
+                        <div id="ai-val-shoulder" class="ai-hud-val">--°</div>
+                        <div class="ai-hud-sub">Düz T-Hattı (&lt;6°)</div>
+                    </div>
+                </div>
+
+                <!-- Canlı Antrenör Geri Bildirimleri -->
+                <div style="font-weight:800; font-size:13px; margin-bottom:8px; color:var(--text-main);">📋 Canlı Antrenör Analizi & Form İpuçları</div>
+                <div id="ai-pose-feedbacks">
+                    <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                        Kamerayı açıp atış pozisyonuna geçin veya kayıtlı bir video yükleyin. Yapay zekâ eklemlerinizi ve formunuzu otomatik takip edecektir.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 2. MOD: GECİKMELİ AYNA (5sn) + ÇİZİM ARAÇLARI ===== -->
+        <div id="va-mod-ayna" style="display:none;">
             <div class="va-card">
                 <div style="font-weight:700; font-size:13px; margin-bottom:8px;">🪞 5 Saniye Gecikmeli Ayna</div>
                 <div class="va-sub">Atışını bitirip ekrana baktığında kendi atış anını 5 saniye gecikmeyle izle. Omuz hizası veya çekiş mesafesini kontrol etmek için üzerine çizgi/açı çizebilirsin.</div>
@@ -912,61 +1088,139 @@
                 <div id="ayna-hazir-acilar-baslik" style="display:none; font-size:11px; color:var(--text-muted); font-weight:700; margin-top:12px; margin-bottom:6px;">🎯 HAZIR AÇI ŞABLONLARI — birini seç, sonra 3 noktaya dokun</div>
                 <div id="ayna-hazir-acilar" style="display:none; gap:6px; flex-wrap:wrap;"></div>
                 <div id="ayna-hazir-aci-ipucu" style="display:none; font-size:11px; color:var(--gold); margin-top:6px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:8px 10px;"></div>
-                <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir (video kaydı gecikme/çizim içermez, ham görüntüdür) — hiçbiri hiçbir yere yüklenmez.</div>
+                <div class="va-sub" style="margin-top:8px;">ℹ️ Kamera görüntüsü hiçbir yere gönderilmez — sadece bu ekranda işlenir. "Kareyi Kaydet" o an ekrandaki gecikmeli+çizimli görüntüyü fotoğraf olarak indirir; "Videoyu Kaydet" antrenmanın tamamını kaydedip bitirince cihazına indirir.</div>
             </div>
         </div>
 
-        <!-- ===== AI ANALİZ (Abacus.AI) ===== -->
-        <div id="va-mod-ai" style="display:none;">
-            <!-- API Anahtarı Ayarı -->
-            <div class="va-card">
-                <div style="font-weight:700; font-size:13px; margin-bottom:8px;">⚙️ Abacus.AI API Anahtarı <span class="va-sub" style="font-weight:400;">(analiz için gereklidir)</span></div>
-                <div class="va-row" style="align-items:center;">
-                    <input id="va-api-key" type="password" class="va-input" style="flex:1; min-width:200px;" placeholder="Abacus.AI API anahtarınızı yapıştırın (sapps...)">
-                    <button class="va-btn va-btn-grey" onclick="vaToggleKey()" id="va-key-eye" title="Göster/Gizle">👁️</button>
-                    <button class="va-btn va-btn-green" onclick="vaSaveKey()">💾 Kaydet</button>
+        <!-- ===== 3. MOD: YAN YANA İKİLİ VİDEO KARŞILAŞTIRMA ===== -->
+        <div id="va-mod-karsilastir" style="display:none;">
+            <!-- Görünüm Seçimi & Üst Çubuk -->
+            <div class="ai-config-dock">
+                <div class="ai-pill-group">
+                    <button id="cmp-ai-angles-btn" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.toggleAIAngles()">🤖 AI Açılar: AÇIK</button>
                 </div>
-                <div class="va-sub" style="margin-top:8px;">Anahtarınız yalnızca bu cihazda (tarayıcı hafızasında) saklanır, sunucuya gönderilmez. Anahtar almak için: <b>apps.abacus.ai → Profil → API Keys</b>.</div>
-            </div>
-
-            <!-- Video Yükleme / Kamera -->
-            <div class="va-card">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">1️⃣ Video Kaynağı</div>
-                <div id="va-dropzone" class="va-dropzone" onclick="document.getElementById('va-file-input').click()">
-                    <div class="va-icon">📂</div>
-                    <div style="font-weight:700; margin-top:6px;">Videoyu buraya sürükleyip bırakın</div>
-                    <div class="va-sub">veya tıklayarak dosya seçin (.mp4, .mov, .webm)</div>
+                <div class="ai-pill-group">
+                    <button id="cmp-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setHandedness('right')">🏹 Sağlak</button>
+                    <button id="cmp-hand-left" class="ai-pill-btn" onclick="DAGSK_COMPARE.setHandedness('left')">🏹 Solak</button>
                 </div>
-                <input id="va-file-input" type="file" accept="video/*" style="display:none;" onchange="vaFileSelected(event)">
-
-                <div class="va-row" style="margin-top:12px;">
-                    <button id="va-cam-start" class="va-btn va-btn-blue" onclick="vaStartCamera()">📷 Kamerayı Aç</button>
-                    <button id="va-rec-start" class="va-btn va-btn-red" onclick="vaStartRecording()" style="display:none;">⏺ Kayda Başla</button>
-                    <button id="va-rec-stop" class="va-btn va-btn-grey" onclick="vaStopRecording()" style="display:none;">⏹ Kaydı Durdur</button>
-                    <button id="va-cam-stop" class="va-btn va-btn-grey" onclick="vaStopCamera()" style="display:none;">✖ Kamerayı Kapat</button>
-                    <span id="va-rec-status" style="display:none; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--neon-red);"><span class="va-rec-dot"></span> Kayıt: <span id="va-rec-time">00:00</span></span>
+                <div class="ai-pill-group">
+                    <button id="cmp-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setBowType('auto')">🤖 Oto Yay</button>
+                    <button id="cmp-bow-recurve" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('recurve')">🏹 Klasik</button>
+                    <button id="cmp-bow-compound" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('compound')">⚙️ Makaralı</button>
+                </div>
+                <div class="ai-pill-group">
+                    <button id="cmp-mode-split" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setViewMode('split')">🔲 Yan Yana</button>
+                    <button id="cmp-mode-overlay" class="ai-pill-btn" onclick="DAGSK_COMPARE.setViewMode('overlay')">👻 Bindirme</button>
+                </div>
+                <div id="cmp-opacity-wrap" style="display:none; align-items:center; gap:6px; font-size:11px; color:var(--accent-sand);">
+                    <span>Saydamlık:</span>
+                    <input type="range" min="10" max="90" value="50" step="5" style="width:70px; accent-color:var(--accent-orange);" oninput="DAGSK_COMPARE.setOverlayOpacity(this.value)">
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="va-btn va-btn-grey" style="padding:5px 10px; font-size:11.5px;" onclick="DAGSK_COMPARE.captureComparisonCard()" title="Fotoğraf İndir">📸 Kart İndir</button>
+                    <button class="va-btn" style="background:#25D366; color:#fff; padding:5px 10px; font-size:11.5px;" onclick="DAGSK_COMPARE.shareToWhatsApp()">📲 WhatsApp</button>
                 </div>
             </div>
 
-            <!-- Oynatma -->
-            <div class="va-card" id="va-player-card" style="display:none;">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">2️⃣ Önizleme & Oynatma</div>
-                <video id="va-camera-preview" class="va-video" autoplay muted playsinline style="display:none;"></video>
-                <video id="va-video" class="va-video" controls playsinline style="display:none;"></video>
-                <div class="va-row" style="margin-top:12px;">
-                    <button id="va-analyze-btn" class="va-btn va-btn-orange" onclick="vaAnalyze()" style="flex:1; min-width:180px;" disabled>🤖 Yapay Zekâ ile Analiz Et</button>
-                    <button class="va-btn va-btn-grey" onclick="vaResetVideo()">🗑️ Temizle</button>
+            <!-- İki Video Arasındaki Otomatik Açı Farkı Özeti -->
+            <div id="cmp-diff-banner" style="display:none; align-items:center; justify-content:space-around; background:rgba(255,106,26,0.08); border:1px solid rgba(255,106,26,0.3); border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; flex-wrap:wrap; gap:8px;"></div>
+
+            <!-- İkili Video Konteyneri -->
+            <div id="cmp-dual-container" class="cmp-dual-container">
+                <!-- Video A (Sol) -->
+                <div class="cmp-pane" id="cmp-pane-a">
+                    <div class="cmp-pane-header">
+                        <span style="color:var(--accent-orange);">🔵 Video A <span id="cmp-filename-a" style="color:var(--text-muted); font-weight:400; font-size:11px;">(Referans / 1. Atış)</span></span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="DAGSK_COMPARE.setSyncAnchor('A')" title="Bu kareyi senkron başlangıcı yap">🎯 Çapa Kilitle</button>
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="document.getElementById('cmp-input-a').click()">📂 Değiştir</button>
+                        </div>
+                    </div>
+                    <div id="cmp-upload-a" class="cmp-dropzone" onclick="document.getElementById('cmp-input-a').click()">
+                        <div style="font-size:24px; margin-bottom:4px;">🎬</div>
+                        <div style="font-weight:700; font-size:12px;">Video A Seç / Sürükle</div>
+                    </div>
+                    <input id="cmp-input-a" type="file" accept="video/*" style="display:none;" onchange="DAGSK_COMPARE.loadVideo('A', this.files[0])">
+                    <div id="cmp-wrapper-a" style="display:none;">
+                        <div class="cmp-video-box">
+                            <video id="cmp-video-a" class="cmp-video" muted playsinline></video>
+                            <canvas id="cmp-canvas-a" class="cmp-canvas"></canvas>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input id="cmp-seek-a" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onSingleSeek('A', event)">
+                            <span id="cmp-time-a" style="font-size:10px; color:var(--text-muted); min-width:70px; text-align:right;">00:00</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="va-sub" style="margin-top:8px;">İpucu: Okçuyu yandan, tüm vücut görünecek şekilde çeken videolar en doğru analizi verir.</div>
+
+                <!-- Video B (Sağ) -->
+                <div class="cmp-pane" id="cmp-pane-b">
+                    <div class="cmp-pane-header">
+                        <span style="color:var(--accent-sand);">🟠 Video B <span id="cmp-filename-b" style="color:var(--text-muted); font-weight:400; font-size:11px;">(Karşılaştırma / 2. Atış)</span></span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="DAGSK_COMPARE.setSyncAnchor('B')" title="Bu kareyi senkron başlangıcı yap">🎯 Çapa Kilitle</button>
+                            <button class="va-btn va-btn-grey" style="padding:2px 6px; font-size:10px;" onclick="document.getElementById('cmp-input-b').click()">📂 Değiştir</button>
+                        </div>
+                    </div>
+                    <div id="cmp-upload-b" class="cmp-dropzone" onclick="document.getElementById('cmp-input-b').click()">
+                        <div style="font-size:24px; margin-bottom:4px;">🎬</div>
+                        <div style="font-weight:700; font-size:12px;">Video B Seç / Sürükle</div>
+                    </div>
+                    <input id="cmp-input-b" type="file" accept="video/*" style="display:none;" onchange="DAGSK_COMPARE.loadVideo('B', this.files[0])">
+                    <div id="cmp-wrapper-b" style="display:none;">
+                        <div class="cmp-video-box">
+                            <video id="cmp-video-b" class="cmp-video" muted playsinline></video>
+                            <canvas id="cmp-canvas-b" class="cmp-canvas"></canvas>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input id="cmp-seek-b" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onSingleSeek('B', event)">
+                            <span id="cmp-time-b" style="font-size:10px; color:var(--text-muted); min-width:70px; text-align:right;">00:00</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Sonuçlar -->
-            <div class="va-card" id="va-results-card" style="display:none;">
-                <div style="font-weight:700; font-size:13px; margin-bottom:10px;">3️⃣ Analiz Sonuçları</div>
-                <div id="va-results"></div>
+            <!-- Çizim ve Açı Ölçüm Araçları -->
+            <div class="cmp-toolbar">
+                <span style="font-size:11px; font-weight:800; color:var(--accent-sand); margin-right:2px;">🎨 Çizim & Ölçüm:</span>
+                <button id="cmp-tool-pen" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('pen')">✏️ Kalem</button>
+                <button id="cmp-tool-line" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('line')">📏 Çizgi</button>
+                <button id="cmp-tool-circle" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('circle')">⭕ Daire</button>
+                <button id="cmp-tool-angle" class="cmp-tool-btn" onclick="DAGSK_COMPARE.setDrawTool('angle')">📐 Açı Ölç</button>
+                <button id="cmp-tool-none" class="cmp-tool-btn aktif" onclick="DAGSK_COMPARE.setDrawTool(null)">🖐️ Gezin</button>
+
+                <div style="display:flex; gap:5px; margin:0 4px; align-items:center;">
+                    <span class="cmp-color-dot aktif" style="background:#ff6a1a;" onclick="DAGSK_COMPARE.setDrawColor('#ff6a1a', this)"></span>
+                    <span class="cmp-color-dot" style="background:#e8d7c5;" onclick="DAGSK_COMPARE.setDrawColor('#e8d7c5', this)"></span>
+                    <span class="cmp-color-dot" style="background:#10b981;" onclick="DAGSK_COMPARE.setDrawColor('#10b981', this)"></span>
+                    <span class="cmp-color-dot" style="background:#ff3366;" onclick="DAGSK_COMPARE.setDrawColor('#ff3366', this)"></span>
+                </div>
+
+                <button class="cmp-tool-btn" onclick="DAGSK_COMPARE.undoDraw()" title="Geri Al">↩️ Geri</button>
+                <button class="cmp-tool-btn" onclick="DAGSK_COMPARE.clearDrawings()" title="Temizle">🗑️ Temizle</button>
             </div>
 
-            <canvas id="va-canvas" style="display:none;"></canvas>
+            <!-- Ana Senkron Oynatma & Kare Kare Denetim Barı -->
+            <div id="cmp-master-controls" class="cmp-master-bar" style="display:none;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input id="cmp-master-seek" type="range" min="0" max="100" value="0" step="0.1" class="ai-seek-bar" oninput="DAGSK_COMPARE.onMasterSeek(event)">
+                    <span id="cmp-master-time" style="font-size:11px; font-weight:700; color:var(--accent-sand); min-width:85px; text-align:right;">00:00 / 00:00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button id="cmp-master-play-btn" class="va-btn va-btn-orange" onclick="DAGSK_COMPARE.togglePlay()">▶ Senkron Oynat</button>
+                        <button class="va-btn va-btn-grey" onclick="DAGSK_COMPARE.stepFrame('both', -0.05)" title="1 kare geri">◀ −1k</button>
+                        <button class="va-btn va-btn-grey" onclick="DAGSK_COMPARE.stepFrame('both', 0.05)" title="1 kare ileri">+1k ▶</button>
+                        <button id="cmp-sync-lock-btn" class="va-btn va-btn-grey aktif" onclick="DAGSK_COMPARE.toggleSyncLock()">🔗 Senkron: Kilitli</button>
+                    </div>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <span style="font-size:11px; color:var(--text-muted);">Hız:</span>
+                        <button id="cmp-speed-025" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.25)">0.25x</button>
+                        <button id="cmp-speed-05" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.5)">0.5x</button>
+                        <button id="cmp-speed-1" class="ai-speed-btn aktif" onclick="DAGSK_COMPARE.setSpeed(1)">1x</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1434,6 +1688,9 @@
 
     <!-- SİSTEM ÇEKİRDEĞİ JAVASCRIPT (EKSİKSİZ TAM SÜRÜM) -->
     <script src="dagsk-teknik-calisma.js"></script>
+    <script src="dagsk-cadence-coach.js"></script>
+    <script src="dagsk-ai-pose.js"></script>
+    <script src="dagsk-video-compare.js"></script>
     <script src="sync.js"></script>
     <script src="app.js"></script>
 </body>
