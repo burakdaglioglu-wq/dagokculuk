@@ -10338,11 +10338,16 @@ ${(function(){
 #km-oyun-wrap[data-tema="monopoly"]{ --bg:#0d1b12; --panel:#122419; --panel-hi:#1a3322; --line:#254a30; --ink:#eafff0; --ink-dim:#9fd6b2; --ink-faint:#4f8f64; --a1:#f4c542; --a2:#ff6b6b; --a3:#ffd23f; --a4:#7c8cff; --a5:#3ddc97; --font-display:'Fredoka',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="dag"]{ --bg:#1a1210; --panel:#241a16; --panel-hi:#302420; --line:#4a3830; --ink:#fff3ec; --ink-dim:#d6ada0; --ink-faint:#8f6f64; --a1:#ff8a3d; --a2:#e63946; --a3:#ffd166; --a4:#8d99ae; --a5:#588157; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="balon"]{ --bg:#1c1430; --panel:#2a1f42; --panel-hi:#392c56; --line:#4d3d70; --ink:#fff6ee; --ink-dim:#cbb8e8; --ink-faint:#79689e; --a1:#ffb4a2; --a2:#a7c7e7; --a3:#ffd6a5; --a4:#c8b6ff; --a5:#b5e6d5; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Fredoka',system-ui,sans-serif; }
+/* Hedef Tahtası (2026-09-06'da eklendi) diğer 10 temanın hiçbirinde olmayan tek eksikti — bu blok
+   hiç yazılmamıştı. --bg/--panel/--ink vb. tanımsız kalınca .km-oyun-tam-btn gibi bu değişkenlere
+   bağlı her şey (arka plan/renk) geçersiz değere düşüp neredeyse görünmez oluyordu. Renkler
+   KM_OYUN_TEMALAR.hedef.renkler ile aynı (o oyunun kendi hedef halkası renkleri). */
+#km-oyun-wrap[data-tema="hedef"]{ --bg:#120c08; --panel:#1e140d; --panel-hi:#2a1d13; --line:#3d2a1a; --ink:#fff8f0; --ink-dim:#d9b8a0; --ink-faint:#8f6b52; --a1:#ffcc33; --a2:#ff5f6d; --a3:#5fb8ff; --a4:#3ddc97; --a5:#c77dff; --font-display:'Exo 2',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futbol"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futboltakim"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
-.km-oyun-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.km-oyun-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px 8px; flex-wrap:wrap; }
 .km-oyun-baslik{ margin:0; font-family:var(--font-display); font-weight:800; font-size:15px; background:linear-gradient(100deg,var(--a1) 8%, var(--ink) 46%, var(--a3) 92%); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .km-oyun-tam-btn{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:10px; padding:7px 12px; cursor:pointer; flex-shrink:0; }
 .km-oyun-tam-btn.aktif{ border-color:var(--a1); background:color-mix(in srgb, var(--a1) 16%, transparent); }
@@ -10363,7 +10368,7 @@ ${(function(){
 
 /* Sağ panelin genişliği vw'a göre ölçekleniyor (2026-09-06) — masaüstünde sabit 200px, ama dar (mobil)
    ekranlarda otomatik daralıyor (min() sayesinde) — telefon için ayrı bir breakpoint kuralı YAZMADAN. */
-.km-oyun-scene{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); aspect-ratio:2.3/1; min-height:380px; max-height:74vh; background:#000; flex-shrink:0; --km-rail-w:min(200px, 27vw); --km-rail-w-kucuk:min(56px, 16vw); }
+.km-oyun-scene{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); aspect-ratio:2.3/1; min-height:380px; max-height:74vh; background:#000; flex-shrink:0; --km-rail-w:min(200px, 27vw); --km-rail-w-kucuk:min(70px, 20vw); }
 /* Tam Ekran (2026-09-01, "Tam Ekran çalışmıyor" hatası) — TÜM oyun kutusu (skor girme paneli DAHİL)
    ekrana yayılıyor, sadece sahne değil. Eskiden sadece sahne fullscreen olunca skor girme dok'u
    (chip/pad/İlerlet) DOM'da kardeş eleman olduğu için ekranda hiç görünmüyordu — koç TV'ye
@@ -10417,11 +10422,14 @@ ${(function(){
 .km-oyun-lider-nokta{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 .km-oyun-lider-ad{ flex:1; min-width:0; font-size:10.5px; font-weight:700; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .km-oyun-lider-skor{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); font-variant-numeric:tabular-nums; }
-/* Küçük mod — avatar/rozet dışındaki metinler gizlenir, panel dar bir ikon şeridine iner. */
+/* Küçük mod — avatar/rozet dışındaki metinler gizlenir, panel dar bir ikon şeridine iner. Alkış/
+   seviye ikonları da (44px tabana çıktıktan sonra) bu listeye eklendi — üçü aynı anda 44px'te yan
+   yana sığmaz, "dar mod" felsefesiyle tutarlı şekilde sadece avatar (asıl seçim hedefi) kalıyor. */
 .km-oyun-rightpanel-kucuk{ width:var(--km-rail-w-kucuk, 56px); }
 .km-oyun-rightpanel-kucuk .km-oyun-lider-ad, .km-oyun-rightpanel-kucuk .km-oyun-lider-skor,
 .km-oyun-rightpanel-kucuk .km-oyun-lider-baslik, .km-oyun-rightpanel-kucuk .km-oyun-dok-lbl span:first-child,
 .km-oyun-rightpanel-kucuk .km-oyun-chip-nm, .km-oyun-rightpanel-kucuk .km-oyun-chip-cp,
+.km-oyun-rightpanel-kucuk .km-oyun-chip-alkis, .km-oyun-rightpanel-kucuk .km-oyun-chip-sev,
 .km-oyun-rightpanel-kucuk .km-oyun-rail-mercekler{ display:none; }
 .km-oyun-rightpanel-kucuk .km-oyun-chip{ justify-content:center; padding:5px; }
 
@@ -10474,9 +10482,9 @@ ${(function(){
    çoğunu kaplıyordu ("ekranı kaplıyor" şikayeti). */
 .km-oyun-chips{ display:flex; flex-direction:column; gap:6px; }
 .km-oyun-chip{ display:flex; align-items:center; gap:7px; background:rgba(255,255,255,0.03); border:1.5px solid var(--line); border-radius:11px; padding:5px 10px 5px 5px; cursor:pointer; flex-shrink:0; }
-.km-oyun-chip-sev{ font-size:14px; cursor:pointer; flex-shrink:0; padding:2px; border-radius:6px; }
+.km-oyun-chip-sev{ font-size:14px; cursor:pointer; flex-shrink:0; padding:2px; border-radius:6px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; }
 .km-oyun-chip-sev:hover{ background:rgba(255,255,255,0.08); }
-.km-oyun-chip-alkis{ font-size:13px; cursor:pointer; flex-shrink:0; padding:2px 4px; border-radius:6px; display:flex; align-items:center; gap:2px; }
+.km-oyun-chip-alkis{ font-size:13px; cursor:pointer; flex-shrink:0; padding:2px 4px; border-radius:6px; display:flex; align-items:center; gap:2px; min-width:44px; min-height:44px; justify-content:center; }
 .km-oyun-chip-alkis:hover{ background:rgba(255,209,102,0.14); }
 .km-oyun-chip-alkis b{ font-size:10.5px; color:var(--ink-dim); font-weight:700; }
 .km-oyun-chip-alkis-pop{ animation:kmOyunAlkisPop .5s ease; }
@@ -10485,7 +10493,9 @@ ${(function(){
 .km-oyun-chip-takim{ font-size:13px; flex-shrink:0; }
 .km-oyun-chip-takim-yok{ opacity:.4; }
 .km-oyun-chip.aktif{ border-color:var(--a1); background:color-mix(in srgb, var(--a1) 9%, transparent); }
-.km-oyun-chip-av{ width:26px; height:26px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:11px; color:#04081c; flex-shrink:0; }
+/* min-width/min-height 44px — çocuk kullanıcılar için dokunma hedefi tabanı (WCAG 2.5.5). width/
+   height (26px) SADECE geniş modda referans; min-* her zaman kazanıyor, gerçek boyut hep >=44px. */
+.km-oyun-chip-av{ width:26px; height:26px; min-width:44px; min-height:44px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:13px; color:#04081c; flex-shrink:0; }
 /* Sağ panel dar olduğu için (2026-09-06) uzun isimlerin çip'i kendi genişliğinin ÖTESİNE itip rail'den
    taşırma riski vardı — kapsayıcı div'e sınıf YOKTU, flex item olarak min-width:auto varsayılanı
    metni asla kırpmıyordu. flex:1 + min-width:0 olmadan text-overflow hiç çalışmaz. */
@@ -11017,13 +11027,14 @@ ${(function(){
        daralıp İlerlet butonu görünmez oldu) — bu yüzden panel ekran genişliğinden BAĞIMSIZ olarak
        HER ZAMAN dar/ikon modunda kalıyor (küçült/büyüt düğmesi burada gizleniyor), pad'e tüm
        genişlik kalıyor. Masaüstünde/tablette sorun yok, sadece EN dar telefonlarda zorlanıyor. */
-    .km-oyun-scene{ min-height:520px; max-height:76vh; --km-rail-w:min(50px, 15vw); }
+    .km-oyun-scene{ min-height:520px; max-height:76vh; --km-rail-w:min(64px, 18vw); }
     .km-oyun-dok{ padding:10px 9px 8px; max-height:min(30%, 190px); }
     .km-oyun-rightpanel{ padding:6px 4px; }
     .km-oyun-rail-boyut-btn{ display:none; }
     .km-oyun-rightpanel .km-oyun-lider-ad, .km-oyun-rightpanel .km-oyun-lider-skor,
     .km-oyun-rightpanel .km-oyun-lider-baslik, .km-oyun-rail-mercekler,
     .km-oyun-rightpanel .km-oyun-chip-nm, .km-oyun-rightpanel .km-oyun-chip-cp,
+    .km-oyun-rightpanel .km-oyun-chip-alkis, .km-oyun-rightpanel .km-oyun-chip-sev,
     .km-oyun-rightpanel .km-oyun-dok-lbl span:first-child{ display:none; }
     .km-oyun-rightpanel .km-oyun-chip{ justify-content:center; padding:5px; }
 }
@@ -11987,14 +11998,13 @@ ${(function(){
         }
 
         function kmOyunHTML() {
-            let modes = Object.keys(KM_OYUN_TEMALAR).map(function(tid) {
-                let t = KM_OYUN_TEMALAR[tid];
-                return `<button class="km-oyun-mode-btn${tid === _kmOyunAktifTema ? ' aktif' : ''}" data-tema="${tid}" onclick="kmOyunTemaSec('${tid}')">${t.ikon} ${t.ad}</button>`;
-            }).join('');
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
             return `<div id="km-oyun-wrap" data-tema="${_kmOyunAktifTema}">
                 <div class="km-oyun-topbar">
-                    <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                        <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
+                    </div>
                     <div style="display:flex; gap:6px;">
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker Modu">${_kmOyunSesliMod ? '🔊' : '🔇'}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama Modu">🎬</button>
@@ -12002,7 +12012,12 @@ ${(function(){
                         <button class="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
                     </div>
                 </div>
-                <div class="km-oyun-modes" id="km-oyun-modes">${modes}</div>
+                <!-- FAZ 7 SONRASI — eski yatay tema şeridi (.km-oyun-modes) 360px'te 9/11 sekmeyi
+                     kaydırma-ipucusuz gizliyordu. Yerine Karışık Sınıf araç ızgarasıyla AYNI kalıp:
+                     "Değiştir" düğmesi bunu açar, 11 oyunun HEPSİ (Futbol/Takım Futbolu dahil) kart
+                     olarak görünür. .km-arac-izgara/.card Faz 2/7'den — burada yeni stil yazılmadı. -->
+                <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
+                <div id="km-oyun-govde">
                 <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
@@ -12062,6 +12077,7 @@ ${(function(){
                     </div>
                 </div>
                 <div class="km-oyun-not" id="km-oyun-not"><b>Bu bir eğlence katmanı.</b> ${th.aciklama}</div>
+                </div>
             </div>
             <div class="modal-overlay" id="km-oyun-takim-editor-modal">
                 <div class="km-takim-editor-kutu">
@@ -12072,6 +12088,34 @@ ${(function(){
                     <div id="km-takim-editor-govde"></div>
                 </div>
             </div>`;
+        }
+
+        // FAZ 7 SONRASI — 11 oyunun kart ızgarası (eski yatay şeridin yerine). Sadece SEÇİM ekranı,
+        // hiçbir hesaplama/yazma yok — mevcut kmOyunTemaSec(tid) AYNEN çağrılıyor.
+        function kmOyunSeciciKartlari() {
+            return Object.keys(KM_OYUN_TEMALAR).map(function(tid) {
+                let t = KM_OYUN_TEMALAR[tid];
+                let aktifMi = tid === _kmOyunAktifTema;
+                return '<div class="card" onclick="kmOyunKartSec(\'' + tid + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;' + (aktifMi ? ' border-color:var(--accent);' : '') + '">'
+                    + '<div style="font-size:22px; line-height:1;">' + t.ikon + '</div>'
+                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + '</div>'
+                    + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + t.aciklama + '</div>'
+                    + '</div>';
+            }).join('');
+        }
+        function kmOyunSeciciAc() {
+            let secici = document.getElementById('km-oyun-secici'); if(!secici) return;
+            secici.innerHTML = kmOyunSeciciKartlari();
+            secici.style.display = '';
+            let govde = document.getElementById('km-oyun-govde'); if(govde) govde.style.display = 'none';
+        }
+        function kmOyunSeciciKapat() {
+            let secici = document.getElementById('km-oyun-secici'); if(secici) secici.style.display = 'none';
+            let govde = document.getElementById('km-oyun-govde'); if(govde) govde.style.display = '';
+        }
+        function kmOyunKartSec(tid) {
+            kmOyunTemaSec(tid);
+            kmOyunSeciciKapat();
         }
 
         function kmOyunChipleriCiz() {

@@ -1417,3 +1417,75 @@ anki durumuna göre farklı HTTP kodu), konum/liste fetch'lerinin sentetik test 
   bu Faz 7'den ÖNCE de böyleydi, bu turda dokunulmadı (kullanıcı sadece "geri dönüş yolu" — yani
   `kmIzgaraGeriDon()` — için bu kontrolü istedi, `kmGeri()` ayrı ve dokunulmayacaklar listesindeki
   platform kapatma mantığının bir parçası).
+
+## 12. Oyunlar bölümü incelemesi + 3 düzeltme (tamamlandı)
+
+**Bağlam**: Faz 7 sonrası kullanıcı "Oyunlar" bölümünü (11 tema, `KM_OYUN_TEMALAR`/`KM_OYUN_CSS`)
+salt inceleme istedi — kaç oyun var, ne yapıyorlar, konsol hatası/yarım kalmış oyun var mı, 360px'te
+bozulan var mı, `KM_OYUN_CSS`'in kapsamı ne (Reaksiyon'un 14 mini-oyununu da beslediği bulundu),
+oyunların ortak bir yapısı mı var yoksa her biri kendi başına mı. Rapor onaylandıktan sonra üç somut
+bulgu sırayla düzeltildi — **her düzeltmeden sonra Reaksiyon ayrıca açılıp kontrol edildi** (kullanıcı
+talimatı, KM_OYUN_CSS'in paylaşılan olması yüzünden).
+
+### Düzeltme 1 — Tema şeridi → oyun seçici ızgara
+
+Eski yatay `.km-oyun-modes` şeridi (360px'te 9/11 sekmeyi kaydırma-ipucusuz gizliyordu) tamamen
+kaldırıldı. Yerine: üst satırda oyun adı + "🔀 Değiştir" düğmesi; basınca `#km-oyun-secici`
+(`.km-arac-izgara`/`.card`, Faz 2/7'den — yeni stil yazılmadı) 11 oyunun tamamını (Futbol/Takım
+Futbolu dahil) kart olarak açıyor. Kart seçilince ızgara kapanıp mevcut `kmOyunTemaSec(tid)` AYNEN
+çağrılıyor (`kmOyunKartSec` sarmalayıcısı üzerinden) — dispatch mantığına dokunulmadı.
+
+**Bu adımda kendiliğinden bulunup düzeltilen 2 yan etki**:
+- "Değiştir" düğmesi başlığın yanına eklenince 360px'te sağdaki 4 ikon butonu (ses/dramatik/zar/
+  Tam Ekran) sıkışıp sonuncusu kırpılıyordu — `.km-oyun-topbar`'a `flex-wrap:wrap` eklendi.
+- Izgara ilk açıldığında kartlar tek sütuna yığılıyordu — sebep `.km-arac-izgara`'nın `1fr`
+  sütunlarının, oyun açıklamalarındaki `white-space:nowrap` metnin İÇERİK genişliğine göre
+  şişmesiydi (312px konteynerde 890px/792px sütun hesaplanmıştı, gerçek ölçümle bulundu).
+  `repeat(2, minmax(0,1fr))`/`repeat(4, minmax(0,1fr))` ile düzeltildi — bu, Faz 7'nin ORİJİNAL
+  araç ızgarasını da aynı riske karşı sağlamlaştırıyor (bonus, aynı class kullanılıyor).
+
+Eski `.km-oyun-modes`/`.km-oyun-mode-btn` CSS kuralları (3 medya sorgusu dahil, ~10 satır) ve
+`kmOyunTemaSec`/`kmOyunIlerlet` içindeki 3 `querySelectorAll('.km-oyun-mode-btn')` çağrısı artık
+hiçbir elementi bulamıyor — zararsız (boş NodeList üzerinde no-op), silinmedi, **düşük öncelikli
+ölü kod olarak not düşülüyor** (Faz 6'nın "sil ama önce raporla" disiplinine göre, bu turda
+kapsam dışı bırakıldı).
+
+### Düzeltme 2 — Hedef Tahtası kontrastı
+
+Kök neden bulundu: diğer 10 temanın hepsinin `#km-oyun-wrap[data-tema="X"]{ --bg:...; --panel:...;
+--ink:...; --a1..--a5:...; }` bloğu varken, **Hedef Tahtası'nın (2026-09-06'da eklenmiş) böyle bir
+bloğu HİÇ YOKTU**. `--bg`/`--ink` vb. tanımsız kalınca `.km-oyun-tam-btn` gibi bu değişkenlere bağlı
+her şeyin arka planı/rengi geçersiz değere düşüp neredeyse görünmez oluyordu. Eksik blok eklendi —
+renkler `KM_OYUN_TEMALAR.hedef.renkler` (oyunun kendi hedef halkası renkleri) ile aynı, yapı diğer
+10 blokla birebir aynı (aynı 11 CSS değişkeni, mevcut fontlardan bir çift — Exo 2/Rajdhani, yeni
+font eklenmedi). Sadece bu temaya özel, başka hiçbir yere sızmıyor. Gerçek renderlanan renklerle
+doğrulandı (`--bg:#120c08`, buton arka planı artık `rgb(42,29,19)`, metin `rgb(255,248,240)`).
+
+### Düzeltme 3 — Dokunma hedefleri (sporcu seçme daireleri)
+
+`.km-oyun-chip-av` (asıl "sporcuyu seç" dairesi, eskiden 26px sabit) artık `min-width:44px;
+min-height:44px;` — WCAG 2.5.5 tabanı. Aynı satırdaki ikincil ikonlar (`.km-oyun-chip-alkis` "👏
+alkışla", `.km-oyun-chip-sev` "seviye değiştir") de aynı tabana çıkarıldı, ÇÜNKÜ ilk denemede bunlar
+zaten kendi audit'imde `<30px` olarak ölçülmüştü.
+
+**"Viewport'a göre daralan mantığı koru" nasıl uygulandı**: üçü aynı anda 44px'te bir satıra
+sığmaz — bu yüzden rayın zaten var olan İKİ "dar/ikon modu" (360px'te otomatik zorlanan +
+▶/◀ ile manuel açılan "küçük mod") artık alkış/seviye ikonlarını da gizliyor (isim/durum metniyle
+AYNI gizleme listesine eklendi), sadece 44px avatar dairesi kalıyor. Rayın kendi genişliği
+(`--km-rail-w`/`--km-rail-w-kucuk`) bu 44px daireye + dolgusuna tam oturacak şekilde büyütüldü
+(360px'te dar mod: 50px→64px; manuel küçük mod: 56px→70px — fullscreen'in kendi küçük-mod değeri
+zaten 70px'ti, dokunulmadı). Geniş/masaüstü modda üçü de (avatar+alkış+seviye) görünür kalıyor,
+her biri kendi 44px tabanında.
+
+**Doğrulama**: gerçek testte 360px'te 8 sporculu bir listede avatar `44×44px` ölçüldü, yatay taşma
+YOK (sayfa da rayın kendisi de) — ray zaten var olan `overflow-y:auto` sayesinde gerekirse dikey
+kaydırıyor (bu turda 8 sporcu rayın mevcut yüksekliğine sığdı, kaydırmaya gerek kalmadı ama mekanizma
+zaten hazır ve dokunulmadı). 768px'te manuel "küçük mod" da ayrıca test edildi, aynı sonuç. 11
+oyunun tamamı tek tek yeniden tarandı: `<30px` dokunma hedefi sayısı oyun başına 7-26'dan 1-10'a
+düştü — kalanlar (`.km-oyun-tam-btn` üst araç çubuğu, Bireysel/Takım anahtarı, `.km-oyun-geri-al-btn`
+sıfırla ikonu) bu turun kapsamı DIŞINDAydı ("sporcu seçme daireleri" değiller), dokunulmadı.
+
+**Genel sonuç**: 3 düzeltme sonrası 11 oyunun hepsi + Reaksiyon'un 14 mini-oyunu tek tek yeniden
+açıldı — sıfır yeni konsol hatası (gözlenen tüm hatalar zaten teşhis edilmiş `fanOutMasterPayload`/
+konum-fetch sentetik veri/zararsız `camera_utils.js` 404 kümesinden), sıfır yatay taşma. `node --check`
+temiz.
