@@ -1155,3 +1155,83 @@ başka bir anlamlı-renk mi) Faz 6 kapsamında tek tek izlenmedi — Faz 5/6'da 
 "anlamlı renk vs. jenerik chrome" ayrımı (bkz. §7) bu hex için henüz yapılmadı. Bir sonraki oturumda
 ele alınacaksa önce her kullanım yeri tek tek sınıflandırılmalı (TOKEN-ADAYI / ANLAMLI-KORUNAN),
 sonra kullanıcıya rapor edilip onay alınmalı — Faz 6'nın 6a/6b'de izlediği yöntemin birebir aynısı.
+
+## 10. `merge-origin` dalı — origin/main ile birleştirme (main'e ALINMADI)
+
+**Bağlam**: Faz 6 + kontrast düzeltmesi bittikten sonra, `origin/main`'in (GitHub, "Hasan" adlı başka
+bir katkıcı tarafından, bu tasarım işinden habersiz) 26 farklı commit'le ayrıştığı keşfedildi —
+video AI duruş/açı analizi, İkili Video Karşılaştırma, Ritim & Tıkır Koçluk Modülü (Karışık Sınıf'a
+özel) ve ayrı bir "modern renk paleti" denemesi (`65ab859`/`ede7aa2`, sonradan origin'in KENDİSİ
+tarafından `1c71557`'de büyük ölçüde geri alındı). Kullanıcı onayıyla `merge-origin` adlı ayrı bir
+dal açıldı, `git merge origin/main` yapıldı, 6 çakışma blok (3 dosyada) elle çözüldü — **main hâlâ
+`3865dbb`'de, bu dal main'e hiç alınmadı.**
+
+**Çakışma çözümleri**: `styles.css` (3 blok, hepsi `font-family` — bizim `var(--font-sans)` kaldı);
+`app.html` (1 blok — Oyunlar/Reaksiyon/Ritim & Tıkır butonlarının üçü de yan yana tutuldu);
+`app.js` (2 blok — `kmSekme()` dizisi birleştirildi: yoklama/skor/lider/klasman/canli/yarisma/veli/
+disiplin/pozitif/oyunlar/reaksiyon/ritim, **origin'in `'macera'` girişi kullanıcının açık talimatıyla
+ALINMADI** — `kmYoklamaCiz` (bizim) ve `kmRitimCiz` (origin'in) fonksiyon gövdelerinin ikisi de
+tutuldu). Çözüm sırasında elle bir parantez hatası yapıldı (`kmYoklamaPdfIndir()`'in kendi kapanışı
+yanlışlıkla silinmişti), `node --check`'in "Unexpected end of input" uyarısıyla yakalanıp
+düzeltildi. Doğrulama: "macera" kelimesi app.js/app.html'de 0 kez; `kmSekme` dizisindeki 12 girişin
+(yoklama/skor/lider/klasman/canli/yarisma/veli/disiplin/pozitif/oyunlar/reaksiyon/ritim) hepsi için
+karşılık gelen fonksiyon tanımı tek tek doğrulandı (12/12); `node --check` + `npx tsc --noEmit` temiz.
+
+**`macera` kaldırma arkeolojisi** (main'e almadan önce kullanıcı istedi): Macera Modu `55d8093`
+(WIP: Ders Programı, yarım) commit'inde kaldırıldı — commit'i **BURAK** (burakdaglioglu@gmail.com)
+6 Eylül 2026'da attı. `git log --all -S"macera"` taraması, yerel `main`'in TÜM tarihinde (ve origin'in
+her branch/tag'i dahil) bu string'in geçiş sayısını değiştiren sadece 2 commit olduğunu gösterdi:
+`30b3edd` "ilk kayıt" (EKLEDİ) ve `55d8093` (KALDIRDI) — arada hiç dokunulmamış, daha önce kaldırılıp
+geri getirilmiş bir örüntü YOK. Kullanıcı bunu "bilerek kaldırdım, geri gelmesin" diye teyit etti.
+
+**Bu turun görsel/kod testi** (merge-origin dalında, `wrangler dev` + Playwright, PIN ile giriş,
+sonra gerçek hash geri yüklendi):
+
+1. **Origin'in yeni ekranları bizim tokenlarla nasıl duruyor** (360/1280px ekran görüntüsü): Video
+   AI Duruş Analizi, İkili Video Karşılaştırma, Ritim & Tıkır — üçü de HER İKİ genişlikte de tam
+   okunaklı, hiçbir görünmez metin/kayıp kenarlık yok. Ritim & Tıkır'a ulaşmak Karışık Sınıf'ın
+   konum-seçici + sporcu-seçici modallerinden geçmeyi gerektirdi (`kmKonumaBaglan`/`kmBaslat`) —
+   ekstra adımdı, ekran kendisi sorunsuz.
+2. **`.va-*`/`.ai-config-dock`/`.ai-pill-*` token çakışması**: **çakışma yok, ama origin'in KENDİ
+   kodunda önceden var olan bir kırıklık taşınıyor** — `kmRitimCiz()` içinde `var(--accent-sand)` 3
+   yerde kullanılıyor ama `--accent-sand` merge SONRASI styles.css'te TANIMLI DEĞİL. Nedeni: origin
+   bu tokeni `65ab859`'da (v120) eklemiş, sonra KENDİSİ `1c71557`'de (v127) `:root`'u sadeleştirirken
+   silmiş — ama `6be850d`'deki (v126, daha SONRAKİ) Ritim özelliği o tokeni hâlâ kullanıyor. Yani
+   **origin/main'in KENDİ, hiç merge edilmemiş hâlinde de bu üç `var(--accent-sand)` referansı
+   tanımsız** (doğrulandı: `git show origin/main:public/styles.css` içinde `--accent-sand` sıfır
+   kez geçiyor, `app.js`'te ise 3 kullanım var). Görünürde bozuk durmuyor çünkü `color` inherit
+   edilen bir özellik — tanımsız değişken ebeveynin metin rengini miras alıyor, bu da bu dark temada
+   tesadüfen okunaklı bir renk. Merge bunu DEĞİŞTİRMEDİ, sadece taşıdı.
+3. **Faz 6'da silinen ölü class'lar (`.sekme-grubu`, `.cins-btn`, `.yay-btn`, `.ok-rozet`,
+   `.tree-cat-btn`)**: origin'in getirdiği hiçbir dosyada (app.html, app.js, milo dosyaları) bu
+   class'lar element'e ATANMIŞ olarak kullanılmıyor — sıfır isabet. Tek isim çakışması `.ok-rozet`
+   — ama bu `public/izle.html`'de (canlı-izleme sayfası, `styles.css`'i hiç yüklemiyor) TAMAMEN
+   BAĞIMSIZ, kendi `<style>` bloğunda tanımlı bir class, bizim sildiğimizle hiçbir ilgisi yok.
+4. **`!important` sayısı**: merge sonrası styles.css'te **55** (bizim 44 + origin'in `.ai-config-dock`/
+   `.ai-pill-*`/`.cadence-*` gibi yeni eklentilerinin bir kısmı `!important` kullanıyor). Bizim 44'ten
+   yüksek ama origin'in kendi 70'inden düşük — beklenen bir ara değer, alarm verici değil.
+5. **Tam regresyon** (giriş→PIN→15 sekme→Skor seri girişi+otomatik kayıt): hepsi başarılı, yatay
+   taşma yok. Konsol hata TÜRÜ sadece 4 farklı mesaj (toplam ~5550 satır, çoğu tek bir tekrarlayan
+   mesajdan): `ERR_INSUFFICIENT_RESOURCES`/"Failed to fetch" (zaten teşhis edilmiş `fanOutMasterPayload`
+   arka plan gürültüsü, bkz. §9 — merge'den TAMAMEN bağımsız), `vaInit()`'in `addEventListener`
+   hatası (madde 2'deki gibi origin'in KENDİ önceden var olan hatası — `app.html`'de `#va-dropzone`
+   diye bir ID YOK, sadece `class="va-dropzone"` var; `vaInit()` bunu `getElementById` ile arıyor,
+   `null` dönüyor, `try/catch` YOK, throw ediyor), ve MediaPipe `camera_utils.js`'in jsdelivr'den
+   404 vermesi (yine origin'in kendi CDN referansı, merge'den bağımsız — bu ortamda internet erişimi
+   olsa bile pinlenen versiyon yolu 404 veriyor).
+   - **Merge-spesifik, yeni bir etkileşim bulundu**: `vaInit()`'in bu throw'u, bizim Faz 3'te
+     `sekmeAc()`'in SONUNA eklediğimiz `dahaPanelKapat()` çağrısının hiç ÇALIŞMAMASINA yol açıyor —
+     çünkü `if(sekmeAd === 'video') { vaInit(); }` satırı (origin'de de AYNI, try/catch'siz) hatayı
+     fırlatınca fonksiyonun geri kalanı (bizim FAZ 3 bloğumuz dahil) atlanıyor. Origin'in kendi
+     sürümünde bu fonksiyon `refleks` satırından hemen sonra bitiyor, ONLARDA bu sonradan-eklenen
+     temizlik adımı hiç yok — yani bu SEMPTOM (Video sekmesi "Daha" panelinden açılınca panelin
+     kapanmaması) sadece bizim navigasyon mimarimizle origin'in önceden var olan hatası birleşince
+     ORTAYA ÇIKIYOR. Kod DEĞİŞTİRİLMEDİ — muhtemel düzeltme, origin'in `vaInit();` çağrısını (o
+     satırdaki TEK korumasız çağrı, fonksiyondaki her diğer dal `try/catch` içinde) bir `try/catch`'e
+     almak, ama bu bilerek yapılmadı.
+
+**main'e almadan önce dikkat**: kökteki `deploy_output.txt` (muhtemelen kazayla commit'lenmiş bir
+deploy komut çıktısı) ve kökteki `dagsk-ai-pose.js` (public/ İÇİNDEKİ aynı adlı, canlı dosyadan AYRI
+— `public/dagsk-ai-pose.js` zaten route ediliyor, kök kopyasının hiçbir yerden yüklenmediği
+doğrulanmadı) kullanıcının isteğiyle bu turda ELLENMEDİ, sadece bu not düşüldü. main'e alınmadan
+önce ele alınıp alınmayacağına karar verilmeli.
