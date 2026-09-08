@@ -3,16 +3,18 @@
 Bu dosya, bağlam penceresi dolduğu için yeni bir oturuma aktarılan işin durumunu özetler.
 Yeni oturum bu dosyayı okuyup, önceki oturumun tamamını bilmeden devam edebilmeli.
 
-## 0. KAPANIŞ — Tasarım Sistemi Geçişi TAMAMLANDI (2026-09-08)
+## 0. KAPANIŞ — Tasarım Sistemi Geçişi + origin/main Merge TAMAMLANDI (2026-09-08)
 
-**Kullanıcı onayladı: tasarım geçişi bitti.** 15 ekranın hepsi (Skor dahil), navigasyon, bileşen
-kütüphanesi ve renk/tipografi/boşluk token katmanı uygulandı; ardından bir temizlik (Faz 6) ve bir
-kontrast düzeltme turu yapıldı. **Skor hesaplama, seri kaydetme, D1 senkron mantığının HİÇBİRİNE
-dokunulmadı** — bu proje boyunca hiçbir fazda.
+**Kullanıcı onayladı: tasarım geçişi bitti VE origin/main ile birleştirildi, main'e alındı.** 15
+ekranın hepsi (Skor dahil), navigasyon, bileşen kütüphanesi ve renk/tipografi/boşluk token katmanı
+uygulandı; bir temizlik (Faz 6) ve bir kontrast düzeltme turu yapıldı; ardından GitHub'daki
+`origin/main`'in bu tasarım işinden habersiz ilerlemiş 26 commit'i (başka bir katkıcı, "Hasan"
+tarafından) elle birleştirildi. **Skor hesaplama, seri kaydetme, D1 senkron mantığının HİÇBİRİNE
+dokunulmadı** — bu proje boyunca hiçbir fazda, merge dahil.
 
 ### Faz özeti
 
-| Faz | Kapsam | Commit(ler) |
+| Aşama | Kapsam | Commit(ler) |
 |---|---|---|
 | 0-2 | Envanter, token katmanı (renk/boşluk/tipografi), PALETLER düzeltmeleri, bileşen kütüphanesi (`.btn`, `.card`, `.settings-row`, `.switch`, `.seg`, `.tabs`, `.empty`) | `562199b` |
 | 3 | Navigasyon: 15 sekme → 6 ana + "Daha" paneli, tek-aile SVG ikon seti, mobil alt bar | `69c097f` |
@@ -20,74 +22,91 @@ dokunulmadı** — bu proje boyunca hiçbir fazda.
 | 5 | Kalan 14 ekran, 6 grup halinde (Sayaç/Canlı Takip/Liderlik → Gelişim/Ders İçerikleri/Teknik Çalışma → Klasman/Başarılar → Yarışmalar/Düello/Video → Mağaza/Reaksiyon/`#duello-modal` → Ana Ekran/SON) | `3c75e63`, `4ccb205`, `276fa1f`, `1c1fcf7`, `f51cb68`, `5cacd2c`, `5e9c53d` |
 | 6 | Temizlik/doğrulama: hex denetimi (`--score-ring-*` tokenizasyonu + Chart.js canvas bug'ı düzeltildi), ölü CSS/JS silme (`.sekme-grubu`, `.cins-btn`/`.yay-btn`, `.ok-rozet`, `#alt-menu`, `.tree-cat-btn`), `!important` azaltma (64→44), 21 ekran görüntüsüyle regresyon doğrulaması | `6a807d2`, `de0a085`, `cecee0c` |
 | 6 sonrası | Kontrast düzeltmesi: `.btn-primary`/`.btn-danger` koyu metin (8 mağaza paletinin hepsinde AA geçiyor), `--text-tertiary` alfa düzeltmesi | `2c05e38` |
+| Merge | `origin/main`'in 26 commit'i alındı (`merge-origin` dalında hazırlandı, sonra main'e fast-forward) + post-merge 2 düzeltme | `9841c1a` (main'in şu anki HEAD'i) |
 
 Detaylar için §2-§2j; token mimarisi §3; isim eşleme §4; bileşen kütüphanesi §5; kurallar ve
-tuzaklar §7 (yeni oturum için en çok işe yarayacak bölüm — CSS kaynak-sırası, canvas/`var()`
-uyumsuzluğu, PALETLER izolasyonu gibi bu projeye özgü tuzakları listeliyor).
+tuzaklar §7; merge'in tam detayı (çakışma çözümleri, macera arkeolojisi, test bulguları) §10.
 
-### Kalan 5 iş kalemi — öncelik sırasıyla
+### origin/main merge'i — özet
 
-Bunların HİÇBİRİ tasarım geçişinin bir parçası değil — hepsi bilerek kapsam dışı bırakıldı, hiçbiri
-kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre, **veri riski taşıyan tek madde en
-üstte**:
+**Gelen özellikler** (origin'in 26 commit'inden, bu tasarım işinden tamamen bağımsız geliştirilmiş):
+Video AI Duruş Analizi (MediaPipe `pose.js` ile canlı/kayıtlı video üzerinde yay kolu/çekiş
+dirseği/omuz açısı analizi), İkili Video Karşılaştırma (iki atışı yan yana/bindirmeli karşılaştırma),
+Ritim & Tıkır Koçluk Modülü (Karışık Sınıf'a özel sesli atış-ritmi metronomu). Üçü de yeni dosyalar
+olarak geldi: `public/dagsk-ai-pose.js`, `public/dagsk-ai-pose.stable.js`, `public/dagsk-video-compare.js`,
+`public/dagsk-cadence-coach.js`.
+
+**Çözülen çakışmalar** (3 dosya, 6 blok — tam detay §10): `styles.css` (3× `font-family`, bizim
+`var(--font-sans)` tokenimiz kaldı), `app.html` (1× Karışık Sınıf nav — Oyunlar/Reaksiyon/Ritim & Tıkır
+üçü de yan yana tutuldu), `app.js` (2× `kmSekme()` dizisi+dispatch — `kmYoklamaCiz` bizim + `kmRitimCiz`
+origin'in, ikisi de tutuldu).
+
+**Macera Modu kasıtlı olarak GERİ GETİRİLMEDİ**: Karışık Sınıf'ın eski "Macera Modu" özelliği bu
+tasarım işinden önce, `55d8093` commit'inde (BURAK, 6 Eylül 2026, "WIP: Ders Programı, yarım" başlıklı
+ama aslında Karışık Sınıf'a Yoklama/Oyunlar/Reaksiyon ekleyen büyük bir commit) tamamen kaldırılmıştı.
+`origin/main` bu özelliği hâlâ taşıyordu (`'macera'` sekme girişi + `kmMaceraCiz()` ve ~15 yardımcı
+fonksiyon). Kullanıcı arkeolojiyi (bkz. §10) inceledikten sonra "bilerek kaldırdım, geri gelmesin"
+dedi — merge çözümünde origin'in `'macera'` girişi ALINMADI, kod main'de yok. İleride biri origin'in
+tarihini tekrar inceleyip bunu sorgularsa: kaldırma kasıtlıydı, tekrar tartışmaya AÇIK değil.
+
+**Merge sonrası 2 düzeltme** (main'e almadan önce, `merge-origin` dalında yapıldı — tam detay §10):
+(1) `vaInit()`'in `#va-dropzone`/`#va-api-key` null-reference crash'i — hem kök neden (app.html'e
+`id="va-dropzone"` eklendi, `#va-api-key` null-guard'landı) hem savunma (`sekmeAc()`'teki `video`
+dalı da fonksiyonun geri kalanı gibi `try/catch`'e alındı) düzeltildi; bu crash bizim Faz 3
+`dahaPanelKapat()` temizliğini engelliyordu. (2) `--accent-sand` tanımlandı (`#a89a8c`,
+`--text-muted`'ın sıcak kardeşi, yeni bir marka rengi değil) — origin'in kendi kodu (Ritim özelliği)
+bu tokeni kullanıyordu ama origin KENDİSİ sonradan `:root`'tan silmişti.
+
+### Kalan iş kalemleri — öncelik sırasıyla
+
+Bunların HİÇBİRİ tasarım geçişinin/merge'in bir parçası değil — hepsi bilerek kapsam dışı bırakıldı,
+hiçbiri kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre:
 
 1. **`fanOutMasterPayload()` veri-katmanı riski** (bkz. §9) — TEK veri riski taşıyan madde. 10
    saniyede bir kulübün TAMAMININ anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı olmadan
    gönderiyor; büyüyen bir kulüpte `ERR_INSUFFICIENT_RESOURCES`'a gerçekten yaklaşabilir (tahmini
-   formül §9'da, gerçek sayı için D1 izni gerekiyor). Diğer 4 madde sadece kozmetik/teknik borç.
+   formül §9'da, gerçek sayı için D1 izni gerekiyor).
 2. **Mobil Skor paneli `!important` override'ları test edilmedi** (~10-15 kural, bkz. §2i/§6) — en
    sık kullanılan ekranın (Skor) mobil görünümünde, henüz doğrulanmamış bir kaynak-sırası sorununu
-   gizliyor olabilirler (`.switch`/`.slider`'da bulunanla aynı sınıf risk). Test edilmeden
-   silinmemeli veya değiştirilmemeli.
+   gizliyor olabilirler. Test edilmeden silinmemeli veya değiştirilmemeli.
 3. **`#10b981` tokenizasyonu** (34 kullanım, bkz. §9b) — kullanıcının açık isteğiyle Faz 6'da hiç
    dokunulmadı. Bir sonraki turda önce her kullanım yeri TOKEN-ADAYI / ANLAMLI-KORUNAN olarak
-   sınıflandırılmalı (6a/6b'nin izlediği yöntem), sonra onay alınmalı.
+   sınıflandırılmalı, sonra onay alınmalı.
 4. **`.sekme-btn` özellik-farkı analizi** (bkz. §2i/§6) — eski `.sekme-grubu` ailesi silindi ama
-   `.sekme-btn`'in kendisi, `#daha-panel .sekme-btn`'in tam olarak hangi özelliklerini (ör.
-   `box-shadow`) gölgelediği karşılaştırılmadan dokunulmadı bırakıldı. Düşük risk, kozmetik.
-5. **`./dagsk-teknik-calisma.js` kök kopya senkronsuzluğu** (bkz. §2d/§6) — `public/`
-   içindeki canlı kopyadan Faz 5'ten önce ayrışmış, hiçbir yerden yüklenmeyen ölü bir dosya.
-   Sıfır kullanıcı etkisi — saf hijyen, silinmesi ya da yeniden senkronlanması en düşük öncelik.
+   `.sekme-btn`'in kendisi, `#daha-panel .sekme-btn`'in tam olarak hangi özelliklerini gölgelediği
+   karşılaştırılmadan dokunulmadı bırakıldı. Düşük risk, kozmetik.
+5. **`./dagsk-teknik-calisma.js` kök kopya senkronsuzluğu** (bkz. §2d/§6) — `public/` içindeki
+   canlı kopyadan Faz 5'ten önce ayrışmış, hiçbir yerden yüklenmeyen ölü bir dosya. Sıfır kullanıcı
+   etkisi — saf hijyen.
+6. **`deploy_output.txt` ve kökteki `dagsk-ai-pose.js`** (merge'le geldi, bkz. §10) — `deploy_output.txt`
+   muhtemelen kazayla commit'lenmiş bir deploy komut çıktısı; kökteki `dagsk-ai-pose.js`,
+   `public/dagsk-ai-pose.js`'ten (canlı, route edilen kopya) AYRI bir dosya, hiçbir yerden
+   yüklenmediği doğrulanmadı. İkisi de main'e girdi, kullanıcının kararı bekleniyor (silinsin mi,
+   kalsın mı). Düşük öncelik, sıfır işlevsel etki.
+7. **`camera_utils.js` kırılgan yedek-dal bağımlılığı** (bkz. §10) — şu an AI Video özelliğini
+   ETKİLEMİYOR (asıl motor `pose.js` üzerinden çalışıyor, o başarıyla yükleniyor), ama
+   `ensureMediaPipeLoaded()`'ın yedek dalı hâlâ 404 veren bir CDN adresine bağlı. En düşük öncelik
+   — bir gün `pose.js`'in kendisi yüklenemezse (ağ sorunu, ad-blocker) o zaman gerçek bir etkisi olur.
 
 ### Yayına alma adımları
 
-**⚠️ ADIM 0 — ÖNCE BUNU ÇÖZ, atlanamaz:** Bu oturumda `git fetch origin main` ile doğrulandı —
-yerel `main` ve `origin/main` **`c542689` commit'inde ayrıştı** ve o zamandan beri iki ayrı yönde
-ilerlemiş:
-- Yerel `main`: bu tasarım geçişinin **16 commit'i** (Faz 0-6 + kontrast düzeltmesi) —
-  `public/app.js`'te +5589/-1064 satır, `public/styles.css`'te +423 satır.
-- `origin/main`: bambaşka **26 commit** (son tarih 2026-08-22) — video AI duruş/açı analizi,
-  Ritim/Nişan Koçluk modülü, VE **ayrı bir "modern renk paleti" değişikliği** (`65ab859`,
-  `ede7aa2`: "Sitenin ana renklerini... dönüştürme", "Tüm sitenin UI tasarımını sadeleştirme,
-  modern renk paleti") — **AYNI ÜÇ DOSYADA**: `public/app.html` (+355 satır), `public/styles.css`
-  (+582 satır), `public/app.js` (+107 satır), ayrıca `public/index.html` (+127 satır, bu oturum
-  hiç dokunmadı).
+Kod GitHub'a push edildi, artık sadece Cloudflare'e deploy adımı kaldı:
 
-  **Bu, iki bağımsız tasarım çalışmasının aynı dosyalarda çakışması demek.** `wrangler deploy`
-  yereldeki dosyaları olduğu gibi yükler, git durumuna bakmaz — yani şu an deploy edilirse
-  origin'deki 26 commit'lik iş (video analiz özellikleri dahil) **sessizce kaybolur**. Bunu
-  otomatik birleştirmedim — iki tarafın da `styles.css`/`app.html`'i ciddi oranda değiştirmiş
-  olması gerçek çakışma riski taşıyor. Önerilen yol: `git log origin/main --stat` ile origin'in
-  tam olarak neyi değiştirdiğini gözden geçir, sonra tek kullanımlık bir branch'te
-  (`git checkout -b merge-deneme && git merge origin/main`) birleştirmeyi dene ve çakışmaları
-  elle çöz — iki renk/tasarım çalışmasının hangi kısımlarının kalacağına sen karar vermelisin.
-
-1. **Ön kontroller**: `npm run typecheck` (backend TS, `src/`), `npm test` (vitest), `git status`
-   temiz olmalı (yukarıdaki birleştirme tamamlanmış olmalı).
-2. **D1 migration varsa uygula** (bu tasarım turunda YOK, ama genel adım): kod deploy edilmeden
-   ÖNCE `npm run db:migrate:remote` (ve Milo için ayrı `npm run db:migrate:milo:remote`).
+1. **Ön kontroller**: `node --check public/app.js`, `npx tsc --noEmit`, `npm test` (vitest) — hepsi
+   bu merge sonrası zaten çalıştırıldı ve temiz çıktı.
+2. **D1 migration**: bu tasarım/merge turunda YENİ bir migration YOK — `db:migrate:remote` adımı
+   atlanabilir (genel süreçte kod deploy'undan ÖNCE çalıştırılması gereken bir adım, sadece şu an
+   için gerekmiyor).
 3. **Deploy**: `npm run deploy` (= `wrangler deploy`) — `src/index.ts`'i Worker olarak, `public/`
-   klasörünü (`[assets]` binding ile) statik varlık olarak yükler. Cloudflare içerik-hash'li önbellek
-   kullanıyor, elle cache-busting/versiyon query-string gerekmiyor.
-4. **Sürüm kilidi notu** (app.js:5213, `SURUM_KODU`/`MIN_SURUM_GEREKSINIMI`): bu sadece SENKRON/
-   VERİ mantığı değişince bump edilir (eski cihazların düzeltilen bir senkron hatasını buluta geri
-   yazmasını engellemek için). **Bu tasarım turu senkron mantığına dokunmadı, bump GEREKMİYOR.**
-   İleride veri katmanına dokunan bir değişiklik yapılırsa unutulmamalı.
-5. **Deploy sonrası duman testi**: prod URL'de sert yenileme (cache atlatmak için), `/app.html`
-   aç, PIN ile giriş yap, Skor ekranını aç (hedef renkleri + "Seriyi kaydet"/"Yarışmaları Sıfırla"
-   metinleri doğru mu), konsolda hata olmadığını doğrula.
-6. **GitHub'a push** (Cloudflare deploy'dan BAĞIMSIZ bir adım — `wrangler deploy` git'e hiç
-   bakmıyor): Adım 0'daki birleştirme tamamlandıktan sonra `git push origin main`.
+   klasörünü statik varlık olarak yükler. Cloudflare içerik-hash'li önbellek kullanıyor, elle
+   cache-busting gerekmiyor.
+4. **Sürüm kilidi notu** (app.js, `SURUM_KODU`/`MIN_SURUM_GEREKSINIMI`): sadece SENKRON/VERİ
+   mantığı değişince bump edilir. Bu merge senkron mantığına dokunmadı (sadece UI/CSS/yeni bağımsız
+   video-analiz özellikleri), bump GEREKMİYOR.
+5. **Deploy sonrası duman testi**: prod URL'de sert yenileme, `/app.html` aç, PIN ile giriş yap,
+   Skor ekranını aç (hedef renkleri + buton metinleri doğru mu), Karışık Sınıf'ta Ritim & Tıkır
+   sekmesini aç (yeni özellik canlıda ilk kez), Video sekmesini aç (crash olmamalı), konsolda
+   yeni bir hata olmadığını doğrula.
 
 ## 1. Proje ve hedef
 
@@ -1156,7 +1175,7 @@ başka bir anlamlı-renk mi) Faz 6 kapsamında tek tek izlenmedi — Faz 5/6'da 
 ele alınacaksa önce her kullanım yeri tek tek sınıflandırılmalı (TOKEN-ADAYI / ANLAMLI-KORUNAN),
 sonra kullanıcıya rapor edilip onay alınmalı — Faz 6'nın 6a/6b'de izlediği yöntemin birebir aynısı.
 
-## 10. `merge-origin` dalı — origin/main ile birleştirme (main'e ALINMADI)
+## 10. `merge-origin` dalı — origin/main ile birleştirme (main'e ALINDI ✅)
 
 **Bağlam**: Faz 6 + kontrast düzeltmesi bittikten sonra, `origin/main`'in (GitHub, "Hasan" adlı başka
 bir katkıcı tarafından, bu tasarım işinden habersiz) 26 farklı commit'le ayrıştığı keşfedildi —
@@ -1285,4 +1304,9 @@ Skor seri girişi+otomatik kayıt, hepsi başarılı. Konsol hata türü **4'ten
 bkz. §9) ve `camera_utils.js`'in zararsız 404'ü (madde 3, bilerek dokunulmadı) — ikisi de zaten
 teşhis edilmiş, yeni bir şey yok. Yatay taşma yok. `node --check` temiz.
 
-**main'e alma kararı kullanıcıda — henüz onaylanmadı, bu dal main'e alınmadı.**
+**main'e ALINDI**: kullanıcı onayladı, `git checkout main && git merge merge-origin` çalıştırıldı —
+`main` `merge-origin` ile aynı noktada olduğu için (aradan hiç commit atılmamış) düz bir
+fast-forward oldu, yeni bir merge-commit YARATILMADI. `main`'in şu anki HEAD'i `9841c1a`. Merge
+sonrası `node --check public/app.js` ve `npx tsc --noEmit` main üzerinde de tekrar çalıştırıldı,
+ikisi de temiz. Özet ve kalan iş kalemleri için §0'a bakılmalı — bu bölüm (§10) sadece merge
+sürecinin arkeolojik/teknik detayını taşıyor.
