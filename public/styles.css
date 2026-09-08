@@ -185,6 +185,12 @@
         .chip-warning { background: rgba(251,191,36,0.18); background: color-mix(in srgb, var(--status-warning) 18%, transparent); color: var(--status-warning); }
         .chip-danger { background: rgba(239,68,68,0.16); background: color-mix(in srgb, var(--status-danger) 16%, transparent); color: var(--status-danger); }
 
+        /* FAZ 7 — Karışık Sınıf araç ızgarası. Sadece yerleşim (grid sütun sayısı) — renk/görsel
+           token içermiyor, .card zaten Faz 2'den geliyor. Telefonda 2, tablet/masaüstünde 4 sütun. */
+        .km-arac-izgara { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+        @media (min-width: 600px) { .km-arac-izgara { grid-template-columns: repeat(4, 1fr); } }
+        .km-arac-izgara .km-skor-gir-kart { grid-column: span 2; }
+
         .seg { display: flex; gap: 2px; background: var(--surface-2); padding: 2px; border-radius: var(--radius-md); }
         .seg-btn {
             flex: 1; text-align: center; font-family: var(--font-sans); font-weight: var(--weight-medium);

@@ -153,22 +153,19 @@
                 </div>
             </div>
         </div>
-        <!-- Sekmeler -->
-        <div class="adm-nav-row" style="padding:7px 10px;background:var(--bg-panel);border-bottom:1px solid var(--border-color);flex-shrink:0;position:sticky;top:0;z-index:2;">
-            <button onclick="kmSekme('yoklama')" id="kms-yoklama" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">✅ Yoklama</button>
-            <button onclick="kmSekme('skor')" id="kms-skor" class="adm-nav-btn km-aurora-tab aktif" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎯 Skor</button>
-            <button onclick="kmSekme('lider')" id="kms-lider" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🏆 Liderlik</button>
-            <button onclick="kmSekme('klasman')" id="kms-klasman" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📊 Klasman</button>
-            <button onclick="kmSekme('canli')" id="kms-canli" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📡 Herkes</button>
-            <button onclick="kmSekme('yarisma')" id="kms-yarisma" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🏆 Yarışma</button>
-            <button onclick="kmSekme('veli')" id="kms-veli" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">📤 Veli Bildirimi</button>
-            <button onclick="kmSekme('disiplin')" id="kms-disiplin" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🚦 Disiplin Pusulası</button>
-            <button onclick="kmSekme('pozitif')" id="kms-pozitif" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎖️ Pozitif Pusula</button>
-            <button onclick="kmSekme('oyunlar')" id="kms-oyunlar" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎮 Oyunlar</button>
-            <button onclick="kmSekme('reaksiyon')" id="kms-reaksiyon" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">⚡ Reaksiyon</button>
-            <button onclick="kmSekme('ritim')" id="kms-ritim" class="adm-nav-btn km-aurora-tab" style="flex-direction:row;min-height:38px;padding:7px 13px;">🎙️ Ritim & Tıkır</button>
+        <!-- FAZ 7 — Sınıf kartı: o dersteki sporcuları ve yoklama durumunu gösterir. Veri _kmListe/
+             otomatikYoklamaDB'den her çizimde taze okunuyor, kendi kopyasını tutmuyor (bkz. kmSinifKartiCiz). -->
+        <div id="km-sinif-karti" class="card" style="margin:10px 10px 0; flex-shrink:0;"></div>
+        <!-- FAZ 7 — Araç ızgarası: 12 aracın hepsi kart olarak (bkz. kmAracIzgaraCiz). Eski 12
+             butonluk sekme şeridinin YERİNE geçti (adım 4) — geri dönüş yolu (aşağıdaki
+             #km-icerik-geri-bar) ile birlikte, ızgara/araç arasında görünürlük değişiyor. -->
+        <div id="km-arac-izgara" class="km-arac-izgara" style="margin:10px; flex-shrink:0;"></div>
+        <!-- FAZ 7 — Seçilen aracın üstündeki geri dönüş yolu. kmGeri() DEĞİL (o tüm platformu
+             kapatır) — kmIzgaraGeriDon() ızgaraya döner. Başlangıçta gizli (varsayılan durum ızgara). -->
+        <div id="km-icerik-geri-bar" style="display:none; padding:0 10px 6px; flex-shrink:0;">
+            <button onclick="kmIzgaraGeriDon()" class="btn" style="min-height:44px;">← Karışık Sınıf</button>
         </div>
-        <div id="km-icerik" style="flex:1;overflow-y:auto;padding:10px 12px;"></div>
+        <div id="km-icerik" style="display:none; flex:1;overflow-y:auto;padding:10px 12px;"></div>
     </div>
 
     <!-- DERS SONU TOPLU VELİ RAPORU — hem normal ders (Yeni Antrenman Başlat) hem Karışık Sınıf

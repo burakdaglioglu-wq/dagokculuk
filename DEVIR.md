@@ -5,6 +5,10 @@ Yeni oturum bu dosyayı okuyup, önceki oturumun tamamını bilmeden devam edebi
 
 ## 0. KAPANIŞ — Tasarım Sistemi Geçişi + origin/main Merge TAMAMLANDI (2026-09-08)
 
+**GÜNCELLEME**: Bu kapanıştan SONRA, aynı gün içinde **Faz 7 — Karışık Sınıf yeniden tasarımı** da
+tamamlandı (sekme şeridi kalktı, sınıf kartı + araç ızgarası geldi) — bkz. §11. Aşağıdaki özet
+Faz 0-6 + merge'i kapsıyor, Faz 7 dahil değil.
+
 **Kullanıcı onayladı: tasarım geçişi bitti VE origin/main ile birleştirildi, main'e alındı.** 15
 ekranın hepsi (Skor dahil), navigasyon, bileşen kütüphanesi ve renk/tipografi/boşluk token katmanı
 uygulandı; bir temizlik (Faz 6) ve bir kontrast düzeltme turu yapıldı; ardından GitHub'daki
@@ -1310,3 +1314,106 @@ fast-forward oldu, yeni bir merge-commit YARATILMADI. `main`'in şu anki HEAD'i 
 sonrası `node --check public/app.js` ve `npx tsc --noEmit` main üzerinde de tekrar çalıştırıldı,
 ikisi de temiz. Özet ve kalan iş kalemleri için §0'a bakılmalı — bu bölüm (§10) sadece merge
 sürecinin arkeolojik/teknik detayını taşıyor.
+
+## 11. Faz 7 — Karışık Sınıf yeniden tasarımı (tamamlandı)
+
+**Bağlam**: Karışık Sınıf, Faz 0-6'nın hiç dokunmadığı tek büyük ekrandı — 12 alt aracı
+(yoklama/skor/lider/klasman/canli/yarisma/veli/disiplin/pozitif/oyunlar/reaksiyon/ritim) tek sırada
+yatay bir sekme şeridinde diziyordu. Kullanıcı harici bir prompt dosyasıyla (`karisik-sinif-
+uygulama-promptu.md`) yeni bir düzen istedi: şerit kalkıp yerine bir "sınıf kartı" (o dersteki
+sporcular + yoklama durumu) ve bir "araç ızgarası" (12 aracın hepsi kart olarak) geliyor. **Dispatch
+mantığı (`kmSekme()`), 12 çizim fonksiyonunun içi, `KM_OYUN_CSS`, `DAGSK_CADENCE`, yoklama/puan/
+disiplin/pozitif hesaplama ve D1 yazma yolları, konum/sporcu seçici modallerinin mantığı — HİÇBİRİNE
+dokunulmadı.** Adım adım (plan → onay → uygula → ekran görüntüsü → dur) ilerlendi, kullanıcı her
+adımı ayrı onayladı.
+
+### Sınıf kartı ("Bugün salonda")
+
+Yeni `#km-sinif-karti` (`.card`), yeni `kmSinifKartiCiz()` çiziyor. **Tek kaynak kuralı**: `_kmListe`
+ve `otomatikYoklamaDB[bugunISO()]` HER ÇAĞRIDA taze okunuyor, kendi kopyası tutulmuyor. Sporcular
+`.chip`/`.chip-success` (Faz 2) + baş-harf dairesi olarak gösteriliyor; tıklanınca **aynen mevcut**
+`kmYoklamaToggle(grup, ad)` çağrılıyor, yeni bir yazma mantığı yok. Üstte ince bir satırda: konum
+adı, gün+saat, geçen süre, sporcu sayısı.
+
+- **Kendi bulduğum bir hata**: `.chip-success` metni de yeşile boyuyordu — spec "yeşil daire, NORMAL
+  metin rengi" istiyordu. İlk ekran görüntüsünde fark edilip düzeltildi: daire yeşil kalıyor, isim
+  `--text-primary` (işaretsizde `--text-secondary`).
+- **"Geçen süre" için veri yoktu** — `kmBaslat()`'ta ders başlangıcı hiç kaydedilmiyordu. Kullanıcı
+  onayıyla yeni, SADECE yerel bir `_kmBaslangicZamani` değişkeni eklendi (D1'e/localStorage'a
+  YAZILMIYOR, sayfa yenilenince sıfırlanması kasıtlı). Kullanıcı "kmBaslat()'a ekle" dedi ama
+  platforma girişin ÜÇ farklı yolu olduğu (yeni ders/`kmBaslat`, yerelden devam/`kmAcYerel`,
+  sunucudan devam/`kmKonumaGir`'in fetch callback'i) fark edilince, üçünün ORTAK birleşim noktası
+  olan `kmPlatformGoster()`'a kondu — bu sapma kullanıcıya açıkça bildirildi, itiraz gelmedi.
+  Gösterim "42 dk" formatında, dakikada bir (`setInterval(...,60000)`) güncelleniyor, saniye YOK.
+
+### Araç ızgarası (12 kart)
+
+Yeni `#km-arac-izgara`, yeni `kmAracIzgaraCiz()` çiziyor. `.km-arac-izgara` grid CSS'i (`styles.css`)
+sadece YERLEŞİM — telefonda 2, ≥600px'te 4 sütun (`@media (min-width:600px)`), yeni bir renk
+tanımlamıyor. Skor Gir 2 sütun kaplıyor, `var(--accent)` dolgulu, `var(--text-on-accent-dark)`
+metinli (promptun istediği `--accent-ink` bu kod tabanında hiç yoktu — Faz 6 sonrası kontrast
+turunda kurulan gerçek token bu, kullanıcı "kodda ne varsa onu kullan" dedi). İkonlar: 4 tanesi
+mevcut ana navdan birebir aynı path'lerle (Skor, Liderlik, Canlı, Reaksiyon), 8 tanesi aynı kurala
+göre (viewBox 24, stroke-width 1.7, round cap/join, fill yok) yeni çizildi. İkon kutusu rengi
+grubu anlatıyor — `--status-success` (Yoklama, Pozitif), `--status-warning` (Lider, Klasman,
+Reaksiyon), `--status-info` (Ritim, Oyunlar, Veli, Canlı, Yarışma), `--status-danger` (Disiplin) —
+dördü de MEVCUT semantik tokenlar, yeni renk yok.
+
+**Durum satırları — kısmen canlı, kısmen sabit, kullanıcı onayladı**: Yoklama ("N/M işaretlendi",
+`otomatikYoklamaDB`'den), Liderlik ("X önde", `turnuvaDB[..].toplamSkor`'dan — `kmLiderCiz()`'in
+AYNEN okuduğu alan, hesaplama tekrarlanmadı) ve Skor Gir ("N sporcu hazır", `_kmListe.length`) canlı
+veri. Kalan 9 tanesi (Klasman, Herkes, Yarışma, Veli, Disiplin, Pozitif, Oyunlar, Reaksiyon, Ritim)
+sabit, açıklayıcı metin — o araçların kendi hesaplama mantığına dokunmadan güvenle tek satıra
+indirilemedi, tahmin edilmedi. Kullanıcı bunun böyle KALMASINI istedi, canlıya bağlanmaya çalışılmadı.
+
+### Geri dönüş yolu ve eski şeridin kaldırılması
+
+Eski 12 butonluk `.adm-nav-row` **tamamen silindi**. Yeni `kmAracSec(id)` (ızgara+kartı gizler,
+`#km-icerik`+geri barını gösterir, **aynen** `kmSekme(id)` çağırır) ve `kmIzgaraGeriDon()` (tersi,
+`kmGeri()` DEĞİL — o tüm platformu kapatır) eklendi. `kmPlatformGoster()` her çağrıldığında görünür
+başlangıç durumunu ızgaraya sıfırlıyor (`kmSekme('skor')` yine de arka planda çalışıyor —
+`_kmAktifSekme` ve `#km-icerik`'in içeriği doğru/güncel kalsın diye, sadece görünmüyor).
+
+- **Kritik, kullanıcının özellikle sorduğu bir bug potansiyeli bulundu ve düzeltildi**: `kmSekme(s)`
+  normalde Reaksiyon'dan çıkarken `kmRfxTemizle()`, Ritim'den çıkarken `DAGSK_CADENCE.stopCadence()`
+  çağırıyor — ama SADECE `kmSekme()` başka bir `s` ile tekrar çağrıldığında. `kmIzgaraGeriDon()`
+  `kmSekme()`'yi HİÇ çağırmıyor (sadece görünürlük değiştiriyor), yani bu iki temizlik hiç
+  tetiklenmeyip metronom/zamanlayıcı arka planda sessizce çalışmaya devam ederdi. Düzeltme:
+  `kmIzgaraGeriDon()` `_kmAktifSekme`'ye bakıp AYNI iki temizliği kendisi de yapıyor, sonra
+  `_kmAktifSekme = null` ile sıfırlıyor. Gerçek casus-fonksiyon testiyle doğrulandı (`DAGSK_CADENCE.
+  stopCadence`/`kmRfxTemizle` sarmalanıp çağrılıp çağrılmadığı ölçüldü) — ikisi de **true**.
+
+### Tam regresyon (gerçek `.click()`, hiçbir workaround yok)
+
+Giriş → PIN → **`#km-giris-btn`** ("ya da → Karışık Sınıf", `#tab-takimlar` DEĞİL — o ayrı bir özellik,
+Yarışmalar/turnuva ağacı ekranı, ilk denemede yanlışlıkla karıştırıldı, düzeltildi) → konum seç →
+sporcu seç → "Dersi Başlat" → **ızgara** (doğrulandı: ızgara görünür, içerik gizli) → **12 aracın
+HEPSİ** tek tek gerçek tıklamayla açıldı VE "← Karışık Sınıf" ile geri dönüldü (12/12 başarılı) →
+Oyunlar ("Zirve Yolu" — kendi `KM_OYUN_CSS` aurora temasıyla tam render, sporcu seçici/sıralama
+paneli sağlam) ve Reaksiyon (14 mini-oyun kartı, "Kim oynuyor?" seçici) **kendi izole sistemleriyle
+sorunsuz açıldı** → Ritim'den çıkışta `stopCadence` çağrıldı (yukarıya bkz.) → sınıf kartından
+gerçek tıklamayla yoklama işaretlendi, `.chip` → `.chip.chip-success` değişimi doğrulandı (kart
+kendini tazeledi) → Skor Gir'e girilip gerçek bir sporcu kartına tıklanıp 3 ok (X, 10, 9) gerçek
+tıklamayla girildi, "Seri Kaydedildi! (+29)" ile otomatik kaydedildi, ekran görüntüsüyle doğrulandı.
+Yatay taşma yok (360/768/1280 üçünde de, adım 2-3'te ayrıca test edilmişti).
+
+**Konsol hatası**: toplamda birkaç bin satır ama **5 farklı tür**, hepsi ÖNCEDEN teşhis edilmiş,
+Faz 7'yle ilgisiz: `fanOutMasterPayload` arka plan gürültüsü (`ERR_INSUFFICIENT_RESOURCES`, "Failed
+to fetch" tarzı — bkz. §9, bu turda 409 Conflict olarak da göründü, aynı kök neden, sadece D1'in o
+anki durumuna göre farklı HTTP kodu), konum/liste fetch'lerinin sentetik test verisiyle ürettiği
+`ERR_INVALID_URL` (daha önce de görülmüştü), ve zararsız `camera_utils.js` 404/MIME hatası (bkz.
+§10 madde 3). Hiçbiri Faz 7'nin yeni kodundan kaynaklanmıyor.
+
+### Bilerek yapılmayan/ertelenen
+
+- **Gereksiz render optimizasyonu** (kullanıcı notu, adım 2'de verildi): `kmYoklamaToggle()` kendi
+  işi bitince `kmYoklamaCiz()`'i çağırıp `#km-icerik`'i yeniden çiziyor — sınıf kartından tıklanınca
+  bu render `#km-icerik` GÖRÜNMÜYORKEN (ızgara açıkken) boşuna oluyor. Aynı kategori: yeni eklenen
+  60 saniyelik interval de platform kapalıyken/ızgaradayken `kmSinifKartiCiz`/`kmAracIzgaraCiz`'i
+  gereksiz yere tetikliyor (görünmeyen elementleri boşuna yeniden çiziyor). İkisi de zararsız ama
+  optimize edilebilir — **şimdi dokunulmadı**, ileride ele alınabilir.
+- **9 aracın durum satırı canlı veriye bağlanmadı** — kullanıcı açıkça "öyle kalsın" dedi (yukarıya bkz).
+- `kmGeri()` (platformu tamamen kapatan buton) Reaksiyon'dan çıkarken `kmRfxTemizle()` çağırmıyor —
+  bu Faz 7'den ÖNCE de böyleydi, bu turda dokunulmadı (kullanıcı sadece "geri dönüş yolu" — yani
+  `kmIzgaraGeriDon()` — için bu kontrolü istedi, `kmGeri()` ayrı ve dokunulmayacaklar listesindeki
+  platform kapatma mantığının bir parçası).

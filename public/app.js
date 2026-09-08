@@ -9545,6 +9545,9 @@ ${(function(){
         let _kmSecimler = {}; // { 'buyukler_Emir': {g,ad} }
         let _kmListe = []; // Aktif ders listesi (bu cihazın bağlı olduğu KONUMA ait)
         let _kmAktifSekme = 'skor';
+        // FAZ 7 — sınıf kartındaki "geçen süre" için SADECE yerel bir zaman damgası. D1'e/localStorage'a
+        // YAZILMIYOR — sayfa yenilenince sıfırlanması kasıtlı ve zararsız (bkz. kmPlatformGoster).
+        let _kmBaslangicZamani = null;
         // Birden fazla yerde (ör. "Ana Salon"/"İkinci Alan") AYNI ANDA bağımsız ders açılabilsin diye:
         // her konumun kendi sunucu anahtarı (karisik_sinif_liste_<id>) ve localStorage anahtarı var.
         // _kmAktifKonum bu cihazın hangi konuma bağlı olduğunu tutar (localStorage'da da kalıcı).
@@ -9761,6 +9764,23 @@ ${(function(){
         function kmPlatformGoster() {
             document.getElementById('karisik-platform').style.display = 'flex';
             kmSekme('skor');
+            // FAZ 7 — platform her açıldığında GÖRÜNÜR başlangıç durumu ızgara olsun (kmSekme('skor')
+            // yine de çalışıyor — _kmAktifSekme ve #km-icerik'in İÇERİĞİ doğru kalsın diye, sadece
+            // görünmüyor — "Skor Gir"e dokunulunca zaten dolu/güncel açılır).
+            document.getElementById('km-icerik-geri-bar').style.display = 'none';
+            document.getElementById('km-icerik').style.display = 'none';
+            document.getElementById('km-sinif-karti').style.display = '';
+            document.getElementById('km-arac-izgara').style.display = '';
+            // "Geçen süre" başlangıcı BURADA tutulur (kmBaslat() değil) çünkü platforma girişin üç
+            // yolu var — yeni ders (kmBaslat), yerelden devam (kmAcYerel), sunucudan devam (kmKonumaGir'in
+            // fetch callback'i) — üçü de burada birleşiyor, kmBaslat() sadece birini kapsardı. Zaten
+            // ayarlıysa ÜZERİNE YAZILMAZ (aynı oturumda tekrar tekrar çağrılabilir, sayaç sıfırlanmasın).
+            if (!_kmBaslangicZamani) {
+                _kmBaslangicZamani = Date.now();
+                setInterval(function() { try { kmSinifKartiCiz(); } catch(e) {} try { kmAracIzgaraCiz(); } catch(e) {} }, 60000);
+            }
+            try { kmSinifKartiCiz(); } catch(e) {}
+            try { kmAracIzgaraCiz(); } catch(e) {}
         }
 
         function kmGeri() {
@@ -9807,6 +9827,125 @@ ${(function(){
             else if(s==='oyunlar') kmOyunlarCiz();
             else if(s==='reaksiyon') kmReaksiyonCiz();
             else if(s==='ritim') kmRitimCiz();
+        }
+        // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
+        // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
+        function kmAracSec(id) {
+            document.getElementById('km-sinif-karti').style.display = 'none';
+            document.getElementById('km-arac-izgara').style.display = 'none';
+            document.getElementById('km-icerik-geri-bar').style.display = 'flex';
+            document.getElementById('km-icerik').style.display = 'block';
+            kmSekme(id);
+        }
+        // FAZ 7 — Izgaraya geri dönüş. kmGeri() DEĞİL (o tüm platformu kapatır). Reaksiyon/Ritim'den
+        // çıkarken kmSekme(s)'in NORMALDE yaptığı iki temizliği (zamanlayıcı/metronom durdurma)
+        // burada TEKRARLAMAK gerekiyor — kmSekme() burada ÇAĞRILMIYOR, o yüzden o temizlik hiç
+        // tetiklenmez ve arka planda sessizce çalışmaya devam ederdi.
+        function kmIzgaraGeriDon() {
+            if(_kmAktifSekme === 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
+            if(_kmAktifSekme === 'ritim') { try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {} }
+            _kmAktifSekme = null;
+            document.getElementById('km-icerik-geri-bar').style.display = 'none';
+            document.getElementById('km-icerik').style.display = 'none';
+            document.getElementById('km-sinif-karti').style.display = '';
+            document.getElementById('km-arac-izgara').style.display = '';
+            try { kmSinifKartiCiz(); } catch(e) {}
+            try { kmAracIzgaraCiz(); } catch(e) {}
+        }
+        // FAZ 7 — Sınıf kartı ("Bugün salonda"): tek kaynak kuralı — _kmListe (oturum listesi) ve
+        // otomatikYoklamaDB (yoklama durumu) her çağrıda TAZE okunur, kendi kopyasını TUTMAZ. Yazma
+        // yolu YOK — sadece var olan veriyi okuyup çiziyor, mutasyon kmYoklamaToggle()'a bırakılıyor
+        // (etiket tıklamasında AYNEN o çağrılıyor, burada tekrarlanmıyor).
+        function kmSinifKartiCiz() {
+            let kart = document.getElementById('km-sinif-karti'); if(!kart) return;
+            let tarih = bugunISO();
+            let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
+            let konum = (_kmKonumlar || []).find(function(k){ return k.id === (_kmAktifKonum || 'varsayilan'); });
+            let konumAd = konum ? konum.ad : 'Ana Salon';
+            let simdi = new Date();
+            let gunSaat = GUN_ADI_TR[simdi.getDay()] + ' ' + simdi.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+            // Sadece dakika — saniye gösterilmiyor, saniyede bir güncellenmiyor (kmPlatformGoster'daki
+            // 60sn'lik interval yeterli).
+            let gecenDk = _kmBaslangicZamani ? Math.max(0, Math.floor((Date.now() - _kmBaslangicZamani) / 60000)) : 0;
+            let liste = _kmListe.slice().sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
+            let etiketler = liste.map(function(k) {
+                let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null;
+                let geldi = !!(kayit && kayit.geldi !== false);
+                let bas = k.ad.trim().split(/\s+/).map(function(p){ return p[0] || ''; }).slice(0,2).join('').toUpperCase();
+                let adEsc = k.ad.replace(/'/g,"\\'");
+                // .chip-success'in metni de yeşile boyaması istenmiyor — sadece daire yeşil, ad
+                // "normal metin rengiyle" (spec) — bu yüzden ismin rengi ayrıca ezilir.
+                return '<div class="chip' + (geldi ? ' chip-success' : '') + '" onclick="kmYoklamaToggle(\'' + k.g + '\',\'' + adEsc + '\'); kmSinifKartiCiz(); try{kmAracIzgaraCiz();}catch(e){}" style="cursor:pointer; min-height:44px; padding:4px 12px 4px 4px; gap:7px;">'
+                    + '<span style="width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; background:' + (geldi ? 'var(--status-success)' : 'var(--surface-2)') + '; color:' + (geldi ? '#fff' : 'var(--text-secondary)') + ';">' + bas + '</span>'
+                    + '<span style="color:' + (geldi ? 'var(--text-primary)' : 'var(--text-secondary)') + ';">' + k.ad + '</span>'
+                    + '</div>';
+            }).join('');
+            kart.innerHTML = ''
+                + '<div style="font-size:10px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">'
+                + '<span>' + konumAd + '</span><span>·</span><span>' + gunSaat + '</span><span>·</span><span>' + gecenDk + ' dk</span><span>·</span><span>' + liste.length + ' sporcu</span>'
+                + '</div>'
+                + '<div style="font-weight:800; font-size:13px; margin-bottom:8px;">Bugün salonda</div>'
+                + '<div style="display:flex; flex-wrap:wrap; gap:6px;">'
+                + (liste.length ? etiketler : '<span style="font-size:11px; color:var(--text-muted);">Oturumda henüz kimse yok.</span>')
+                + '</div>';
+        }
+        // FAZ 7 — Araç ızgarası: 12 aracın hepsi kart olarak. Sadece ARAÇ SEÇİMİNİ gösterir, kendi
+        // hesaplama mantığı YOK — durum satırları ya zaten var olan, saklı bir alanı okuyor (Yoklama:
+        // otomatikYoklamaDB; Liderlik: turnuvaDB[..].toplamSkor, kmLiderCiz'in AYNEN okuduğu alan) ya
+        // da (henüz güvenle tek satıra indiremediğim araçlar için) sabit, açıklayıcı bir alt yazı.
+        // Tıklanınca AYNEN mevcut kmSekme(s) çağrılıyor — dispatch'e dokunulmadı.
+        const KM_ARAC_LISTESI = [
+            { id:'yoklama', ad:'Yoklama', grup:'yesil', icon:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 9l2 2 4-4"/>' },
+            { id:'skor', ad:'Skor Gir', grup:'birincil', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>' },
+            { id:'lider', ad:'Liderlik', grup:'sari', icon:'<path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/>' },
+            { id:'klasman', ad:'Klasman', grup:'sari', icon:'<path d="M5 19V13"/><path d="M12 19V8"/><path d="M19 19v-5"/>' },
+            { id:'canli', ad:'Herkes', grup:'mavi', icon:'<circle cx="12" cy="18" r="1.4"/><path d="M8.8 15.2a4.6 4.6 0 0 1 6.4 0"/><path d="M5.8 12.2a8.8 8.8 0 0 1 12.4 0"/>' },
+            { id:'yarisma', ad:'Yarışma', grup:'mavi', icon:'<path d="M6 21V4"/><path d="M6 4h12l-3 4 3 4H6"/>' },
+            { id:'veli', ad:'Veli Bildirimi', grup:'mavi', icon:'<path d="M4 12 20 4l-6 16-3-7-7-3z"/>' },
+            { id:'disiplin', ad:'Disiplin Pusulası', grup:'kirmizi', icon:'<circle cx="12" cy="12" r="8.5"/><path d="M15 9l-2 6-6 2 2-6 6-2z"/>' },
+            { id:'pozitif', ad:'Pozitif Pusula', grup:'yesil', icon:'<path d="M12 4l2.2 4.9 5.3.6-4 3.7 1.1 5.3L12 15.9 7.4 18.5l1.1-5.3-4-3.7 5.3-.6L12 4z"/>' },
+            { id:'oyunlar', ad:'Oyunlar', grup:'mavi', icon:'<rect x="3" y="9" width="18" height="8" rx="4"/><path d="M8 11v4M6 13h4"/><circle cx="16" cy="12" r="1"/><circle cx="18" cy="14" r="1"/>' },
+            { id:'reaksiyon', ad:'Reaksiyon', grup:'sari', icon:'<path d="M13 3 5 14h6l-1 7 9-11h-6l1-7z"/>' },
+            { id:'ritim', ad:'Ritim & Tıkır', grup:'mavi', icon:'<path d="M3 12h3l2-6 4 12 2-6h7"/>' },
+        ];
+        const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
+        function kmAracDurumSatiri(id) {
+            if(id === 'yoklama') {
+                let tarih = bugunISO();
+                let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
+                let gelen = _kmListe.filter(function(k){ let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null; return kayit && kayit.geldi !== false; }).length;
+                return gelen + ' / ' + _kmListe.length + ' işaretlendi';
+            }
+            if(id === 'lider') {
+                let enIyi = null;
+                _kmListe.forEach(function(k){ let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; let puan = sp ? (sp.toplamSkor||0) : 0; if(puan > 0 && (!enIyi || puan > enIyi.puan)) enIyi = { ad:k.ad, puan:puan }; });
+                return enIyi ? enIyi.ad + ' önde' : 'Henüz skor yok';
+            }
+            if(id === 'skor') return _kmListe.length + ' sporcu hazır';
+            const SABIT = {
+                klasman: 'Genel sıralama', canli: 'Canlı skor akışı', yarisma: 'Turnuva ve eşleşmeler',
+                veli: 'Veliye bugünün özeti', disiplin: 'Sınıf disiplin puanı', pozitif: 'Pozitif davranış puanı',
+                oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi'
+            };
+            return SABIT[id] || '';
+        }
+        function kmAracIzgaraCiz() {
+            let izgara = document.getElementById('km-arac-izgara'); if(!izgara) return;
+            izgara.innerHTML = KM_ARAC_LISTESI.map(function(a) {
+                let durum = kmAracDurumSatiri(a.id);
+                if(a.grup === 'birincil') {
+                    return '<div class="card km-skor-gir-kart" onclick="kmAracSec(\'' + a.id + '\')" style="cursor:pointer; background:var(--accent); border-color:var(--accent); display:flex; align-items:center; gap:12px; min-height:44px;">'
+                        + '<div style="width:36px; height:36px; border-radius:10px; background:rgba(0,0,0,0.15); color:var(--text-on-accent-dark); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></div>'
+                        + '<div style="min-width:0;"><div style="font-weight:900; font-size:14px; color:var(--text-on-accent-dark);">' + a.ad + '</div><div style="font-size:10.5px; color:var(--text-on-accent-dark); opacity:.75;">' + durum + '</div></div>'
+                        + '</div>';
+                }
+                let renk = KM_ARAC_GRUP_RENK[a.grup];
+                return '<div class="card" onclick="kmAracSec(\'' + a.id + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:8px; min-height:44px;">'
+                    + '<div style="width:34px; height:34px; border-radius:10px; background:color-mix(in srgb, ' + renk + ' 16%, transparent); color:' + renk + '; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></div>'
+                    + '<div style="font-weight:800; font-size:12.5px;">' + a.ad + '</div>'
+                    + '<div style="font-size:10px; color:var(--text-secondary);">' + durum + '</div>'
+                    + '</div>';
+            }).join('');
         }
         // ✅ Yoklama (2026-08-21, "yoklama alma ile ilgili bölüm eklemek ve yönetmek istiyorum") —
         // Karışık Sınıf'ın kendi yoklama-alma yeri. YENİ bir sistem İCAT EDİLMEDİ: Ders Programı'nın
