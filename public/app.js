@@ -15338,7 +15338,7 @@ ${(function(){
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
             if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
-            if(sekmeAd === 'video') { vaInit(); }
+            if(sekmeAd === 'video') { try { vaInit(); } catch(e) {} }
             else {
                 try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
                 try { aynaDurdur(); } catch(e) {}
@@ -18440,11 +18440,14 @@ ${(function(){
         function vaInit() {
             if (vaInited) return;
             vaInited = true;
-            // Kaydedilmiş API anahtarını yükle
+            // Kaydedilmiş API anahtarını yükle (elem bu ekranın güncel sürümünde artık YOK - eski
+            // bir markup'tan kalma referans, ama localStorage'da eski cihazlarda hâlâ değer olabilir)
             const k = localStorage.getItem('okculuk_abacus_apikey');
-            if (k) document.getElementById('va-api-key').value = k;
+            const keyInput = document.getElementById('va-api-key');
+            if (k && keyInput) keyInput.value = k;
             // Sürükle-bırak olayları
             const dz = document.getElementById('va-dropzone');
+            if (!dz) return;
             ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
             ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
             dz.addEventListener('drop', e => {

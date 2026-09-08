@@ -18,6 +18,12 @@
                varyantı vardı, ikisi burada TEK yeni tona (#F26B1D) birleşti. İSİM AYNI KALDI —
                app.js'teki var(--accent-orange) çağrıları kırılmadan yeni rengi otomatik alır. */
             --text-muted: #9a9aa3; --accent-orange: #F26B1D; --accent-grey: #6b7280;
+            /* --accent-sand: origin/main'in Ritim & Tıkır özelliği (kmRitimCiz, merge-origin dalı)
+               bu tokeni kullanıyor ama hiçbir yerde tanımlamıyordu (kendi tarihinde eklenip sonra
+               kendi paletini sadeleştirirken silinmiş, kalan referanslar --text-main'i miras
+               alarak tesadüfen okunaklı kalıyordu). --text-muted'ın aynı parlaklığında, sadece sıcak
+               (kum/ten) tonda — yeni bir marka rengi değil, --text-muted'ın sıcak kardeşi. */
+            --accent-sand: #a89a8c;
             --border-color: rgba(255, 255, 255, 0.12); --neon-blue: #4d8dff;
             /* --neon-green yeni palette değeri: #22c55e → #4FB07A (daha az doygun, "toprak" yeşili). */
             --neon-pink: #ec4899; --neon-red: #ef4444; --gold: #fbbf24; --neon-green: #4FB07A;

@@ -1235,3 +1235,54 @@ deploy komut çıktısı) ve kökteki `dagsk-ai-pose.js` (public/ İÇİNDEKİ a
 — `public/dagsk-ai-pose.js` zaten route ediliyor, kök kopyasının hiçbir yerden yüklenmediği
 doğrulanmadı) kullanıcının isteğiyle bu turda ELLENMEDİ, sadece bu not düşüldü. main'e alınmadan
 önce ele alınıp alınmayacağına karar verilmeli.
+
+### Üç düzeltme (main'e almadan önce, kullanıcı onayıyla)
+
+**1) `vaInit()` throw'u — hem kök neden hem savunma, ikisi de yapıldı**:
+- **Kök neden** (`public/app.html`): `<div class="va-dropzone" ...>` elementine `id="va-dropzone"`
+  eklendi (class kaldı, CSS ona bağlı). Bu, `vaInit()`'in `getElementById('va-dropzone')` ile aradığı
+  elementin GERÇEKTEN bulunmasını sağlıyor — sürükle-bırak video yükleme özelliği önceden TAMAMEN
+  çalışmıyordu (event listener'lar hiç bağlanamıyordu), şimdi çalışıyor.
+- **İkinci, ayrı bir kök neden daha bulundu**: `vaInit()` içinde `document.getElementById('va-api-key')`
+  de vardı — bu id'li/class'lı hiçbir element `app.html`'de YOK (muhtemelen origin'in eski bir API-key
+  giriş arayüzünden kalma ölü referans). `localStorage`'da eski bir cihazdan kalma anahtar varsa
+  (`k` truthy) bu satır da aynı şekilde throw ederdi. `if (k && keyInput)` ile korumaya alındı —
+  yeni bir UI eklenmedi, sadece var olmayan elemente yazma girişimi güvenli hale getirildi.
+- **Savunma** (`sekmeAc()`, app.js): `if(sekmeAd === 'video') { vaInit(); }` → `{ try { vaInit(); }
+  catch(e) {} }`. Gerekçe: bu fonksiyondaki `video` DIŞINDAKİ HER dal zaten `try/catch` içinde
+  (`sporcuGelisimDoldur`, `dersIcerikleriTabDoldur`, `teknikCalismaDoldur`, `rfxPaneliDoldur`, ...) —
+  `vaInit()` bu fonksiyonun kendi kuralına uymayan TEK istisnaydı. Kök neden düzeltmesi bilinen iki
+  hatayı gideriyor ama `vaInit()`'in İÇİNDE gelecekte çıkabilecek başka bir hata yine bizim Faz 3
+  `dahaPanelKapat()` temizliğini engelleyebilirdi — bu yüzden HEM kök nedeni düzelttim HEM bu
+  fonksiyonun kendi kuralına uydurdum, sadece biri değil.
+- **Doğrulama**: gerçek `.click()` ile (workaround YOK) "Daha" panelinden Video sekmesi açıldı,
+  panel doğru kapandı, `PAGEERROR` tamamen kayboldu.
+
+**2) `--accent-sand` tanımlandı** (`public/styles.css`, `:root`): `#a89a8c` — `--text-muted`
+(`#9a9aa3`) ile AYNI parlaklıkta (kontrast bg-main üzerinde 7.22:1 vs 7.09:1), sadece sıcak/kum
+tonuna kaydırılmış. Yeni bir marka rengi DEĞİL, `--text-muted`'ın sıcak kardeşi olarak eklendi —
+origin'in orijinal değeri (`#e8d7c5`, çok daha parlak/canlı) kasıtlı olarak kullanılmadı, o kendi
+başına bir aksan rengi gibi duruyordu. Gerçek renderlanan değer doğrulandı (`rgb(168,154,140)`),
+Ritim & Tıkır ekranında ekran görüntüsüyle kontrol edildi — okunaklı, dikkat çekmeden ayırt edici.
+
+**3) jsdelivr `camera_utils.js` 404 — incelendi, ETKİLEMİYOR, dokunulmadı**: `dagsk-ai-pose.js`
+kamera erişimi için düz `navigator.mediaDevices.getUserMedia()` kullanıyor, MediaPipe'ın `Camera`
+sınıfını (camera_utils.js'in sağladığı) HİÇBİR yerde çağırmıyor (`grep` ile doğrulandı). Asıl AI
+motoru `window.Pose` (ayrı paket, `pose.js`) üzerinden çalışıyor — bu URL gerçekten 200 dönüyor ve
+sayfa yüklendiğinde `window.Pose` gerçekten tanımlı oluyor (Playwright ile doğrulandı). `camera_utils.js`
+SADECE `ensureMediaPipeLoaded()`'ın bir YEDEK dalında (`window.Pose` zaten yoksa devreye giren
+dinamik script-yükleme) kullanılıyor — normal koşulda bu dal hiç çalışmıyor. **Sonuç: şu an hiçbir
+etkisi yok, ama kırılgan bir gizli bağımlılık** — `pose.js`'in statik yüklemesi HERHANGİ bir nedenle
+(ağ sorunu, reklam engelleyici, yarış durumu) başarısız olursa yedek dal devreye girer ve orada da
+`camera_utils.js` 404 vereceği için AI motoru tamamen başlatılamaz hale gelir. Kullanıcının talimatı
+gereği ("etkilenmiyorsa not düş ve geç") CDN adresi DEĞİŞTİRİLMEDİ — origin'in kodu, şu an gerçek bir
+etkisi olmayan bir şeyi düzeltmek kapsam dışı bırakıldı.
+
+**Son regresyon** (üç düzeltmeden sonra, `merge-origin` dalında, gerçek `.click()` ile — hiçbir
+workaround kullanılmadan): giriş→PIN→15 sekme (Video dahil, "Daha" panelinden gerçek tıklamayla)→
+Skor seri girişi+otomatik kayıt, hepsi başarılı. Konsol hata türü **4'ten 3'e düştü** — `vaInit()`
+`PAGEERROR`'ı tamamen kayboldu. Kalan 3 tür: `fanOutMasterPayload` arka plan gürültüsü (ilgisiz,
+bkz. §9) ve `camera_utils.js`'in zararsız 404'ü (madde 3, bilerek dokunulmadı) — ikisi de zaten
+teşhis edilmiş, yeni bir şey yok. Yatay taşma yok. `node --check` temiz.
+
+**main'e alma kararı kullanıcıda — henüz onaylanmadı, bu dal main'e alınmadı.**
