@@ -1130,6 +1130,18 @@ Tek "kurtarma" bir sonraki 10 saniyelik döngünün aynı alanı yeniden gönder
 TASARIMI değil, tesadüf. (İyi haber: skor kaydı — `seriBulutaYaz()` — bu kütleden tamamen ayrı,
 kendi write-ahead kuyruğuyla korumalı; bkz. teşhis raporu / bu oturumun sohbet geçmişi.)
 
+**DÜZELTME (2026-09-09, PIN'siz oturum "401 fırtınası" teşhisinde bulundu — bkz. §13c)**: yukarıdaki
+"bir sonraki döngü yeniden dener" varsayımı **YANLIŞ** çıktı. `fanOutMasterPayload()`'daki HER job'ın
+`.catch(() => {})`'i olması, sadece "sessizce yutuluyor" değil — `Promise.all(jobs)` bu yüzden ASLA
+reddedilmiyor, yani `bulutaGonderKontrol()`'ün `.then()` (BAŞARI) dalı yazmalar %100 başarısız olsa
+BİLE çalışıyor: `sonBulutJSON = json` yazılıyor, `guvenlikYedegiAl()` çağrılıyor — sanki her şey
+gönderildi gibi. Gerçek testte doğrulandı: PIN'siz (auth başlıksız) bir oturumda ~700 istek TEK bir
+patlamada 401 alıyor, ama `bekleyenGonderim` `false` kalıyor ve fonksiyon MANUEL tekrar çağrılınca bir
+DAHA istek atmıyor — çünkü "başarılı" sandığı için `sonBulutJSON` zaten güncel görünüyor. Yani gerçek
+risk "sürekli tekrar eden bir fırtına" değil, **"tek seferlik, sessiz, kalıcı bir yedekleme
+başarısızlığı"** — cihaz o oturumda hangi frac/yoklama olursa olsun bir daha denemez, ve bunu
+raporlayacak hiçbir mekanizma yok.
+
 **Ölçüm (gerçek kulüp verisiyle)**: Bu oturumdan `wrangler d1 execute --remote` ile prod D1'i
 sorgulamayı denedim — **başarısız**: mevcut OAuth token'ın izin kapsamında (`wrangler whoami`
 çıktısı: account/user/workers/workers_kv/workers_routes/workers_scripts/workers_tail) **D1 hiç
@@ -1489,3 +1501,254 @@ sıfırla ikonu) bu turun kapsamı DIŞINDAydı ("sporcu seçme daireleri" deği
 açıldı — sıfır yeni konsol hatası (gözlenen tüm hatalar zaten teşhis edilmiş `fanOutMasterPayload`/
 konum-fetch sentetik veri/zararsız `camera_utils.js` 404 kümesinden), sıfır yatay taşma. `node --check`
 temiz.
+
+## 13. Faz 8 — Oyunlar "yarış deneyimi" (8a tamamlandı + 3 ek iş, HENÜZ COMMIT EDİLMEDİ)
+
+**Genel bağlam ve kural**: §12'nin 3 düzeltmesinden sonra kullanıcı, 9 frac-tabanlı oyunun (Bireysel
+Futbol/Takım Futbolu hariç — ayrı mekanik) **ortak kabuğuna** bir dizi iyileştirme istedi — kural
+baştan nettti: **"Bu iyileştirmeler tek tek oyunlara yazılmayacak, hepsi ortak kabuğa bir kez
+yazılacak, 9 oyunda birden çalışacak."** Dokunmayacaklar listesi her aşamada aynı kaldı: puan
+hesaplama/frac ilerleme/seri toplama, takım kurma/sporcu seçme/sıra yönetimi mantığı, `KM_OYUN_CSS`
+içindeki `.km-rfx-*` sınıfları (Reaksiyon'un 14 mini-oyunu), 11 oyunun sahne çizim fonksiyonlarının
+İÇİ (sadece kabuk değişti), D1 yazma yolları. **Ciddi Yarışma Modu** (`ciddiModAcik`, var olan
+değişken, YENİ ayar eklenmedi) açıkken bu fazda eklenen HER animasyon/vurgu/kutlama sessiz/anında
+çalışıyor. Her aşama sonunda: Reaksiyon'un 14 mini-oyunu + 11 oyunun hepsi tek tek açılıp konsol
+hatası/yatay taşma (360/1280/1920px) + Tam Ekran kontrolü yapıldı — hiçbirinde bulunan bir konu YOK
+(hepsi bu bölümde ayrıca not düşülüyor).
+
+**⚠️ DURUM**: Bu bölümdeki TÜM işler kod olarak tamamlandı ve test edildi ama **commit edilmedi** —
+`public/app.js` çalışma alanında değişiklik olarak duruyor (`git status` ile doğrulanabilir). Yeni bir
+oturum bu dosyayı devralırsa önce `git diff public/app.js` ile neyin henüz commit'lenmediğini görmeli.
+
+### 13a. Kabuk: yarışı görünür kıl (8a)
+
+Amaç: koç sadece sırası gelen sporcuyu değil, tüm sınıfın/takımların yolda nerede olduğunu görsün.
+
+- **Takım tek-disk gösterimi** — Çoklu Takım (Yarış) açıkken bir takımın 4-5 üyesi aynı paylaşılan
+  frac'a eşitlenince sahnede tam üst üste biniyordu. Kullanıcıya **iki seçenek** (a: tek disk + takım
+  adı/sayısı, b: kademeli küçülen küme) canlı ekran görüntüsüyle sunuldu, kullanıcı ikisini
+  karşılaştırıp **(a)'yı seçti** — "5 kişilik takımda etiket yığılması kabul edilemez, (a) daha
+  temiz" gerekçesiyle. Uygulama: `kmOyunTakimTemsilciUygula()` — her takımdan SADECE bir temsilci
+  (mümkünse o an SIRADAKİ olan üye) görünür kalır, üzerindeki ad etiketi "🦅 Takım Adı ×N" olur,
+  diğer üyelerin zaten var olan sahne elemanı (`s.zirveEl` vb.) gizlenir. Sahne fonksiyonlarının
+  İÇİ hiç değişmedi — bu, onların dışa açtığı elemanlar üzerinde çalışan bir kabuk son-işlemi.
+- **Gerçek bug bulundu ve düzeltildi**: `kmOyunSahneKurAktif()` SADECE o an ekranda görünen temayı
+  yeniden kuruyordu — koç bir temada takım kurup başka temaya geçince, o tema HÂLÂ takım-öncesi
+  bireysel renklerle kalıyordu (gerçek testte yakalandı: Pist'te takım renkleri hiç uygulanmamış
+  görünüyordu). Yeni `kmOyunSahneKurHepsi()` — `kmOyunlarCiz()`'in ilk kurulumdaki AYNI 11 çağrıyı
+  tekrar kullanıyor, `kmOyunCokluDegistir()`/`kmOyunTakimEditorKaydet()` artık BUNU çağırıyor.
+- **Kontrol noktası rayı** (`.km-oyun-cp-rail`, `kmOyunCpRailCiz()`) — sahnenin üstünde, Yarış modunda
+  her takım için ayrı bir ilerleme çubuğu + checkpoint tik işaretleri. `kmOyunLiderCiz()`'in başında
+  çağrılıyor, aynı zamanlamada güncel kalıyor.
+- **Fark rozeti** (`.km-oyun-fark-rozet`, `kmOyunTakimYarisCiz()` içinde) — "Yarış Sıralaması"
+  panelinde her takımın lidere göre farkı, **gerçek puan** biriminde ("+38p önde" / "38p geride") —
+  frac/checkpoint birimi değil, takım üyelerinin `toplamSkor` toplamı.
+- **Genişletilmiş sıra kartı** (`kmOyunSiradaGuncelle()` genişletildi) — "SIRADA" kartı artık
+  sadece o anki değil, ondan sonraki 2 sporcuyu da küçük avatarlarla gösteriyor.
+- **Sıradaki figür vurgusu** (`kmOyunSiradakiVurguUygula()`, `.km-oyun-siradaki-vurgu[-canli]`) —
+  aktif sporcunun diskine/aracına/tahtasına parıltılı bir halka. Ciddi moddayken `-canli` (nabız
+  animasyonu) class'ı hiç eklenmiyor — durağan halka kalıyor, "kimin sırası" bilgisi kaybolmuyor ama
+  kutlama hissi yok.
+- **Kamera dispatcher'ın temeli** — `KM_OYUN_KAMERA_NOKTA_TEMALAR`/`KM_OYUN_KAMERA_SVG_ID` (7 SVG
+  teması, AYNI 1200×440 viewBox), `kmOyunKameraGuncelle()`, `kmOyunKameraHedefeGit()` (rAF tabanlı
+  yumuşak viewBox tween'i). Kullanıcının istediği gibi 9 temanın nokta fonksiyonu TEK TEK doğrulandı:
+  5'i `nokta(frac)=>{x,y}` (Zirve/Hazine/Ninja/Monopoly/Dağ), 2'si `poz(i,n,frac)=>{x,y,heading}`
+  (Yıldız/Balon — roster indeksi/toplam sayı da gerekiyor, çakışmayı önleyen yörünge/yayılma mantığı
+  için), Pist'in kendi ayrı DOM/left:% düzeni var (kamera kavramı farklı — bkz. §13d), Hedef
+  Tahtası'nda mekansal konum kavramı hiç yok. Pist için ayrı `kmOyunPistKameraGuncelle()` (scale+
+  translateX ile şeritleri yakınlaştırma) — bu aşamada her zaman "yakın" kalıyordu (koreografi §13d'ye
+  kadar yoktu).
+- **`kmOyunKabukGuncelle()`** — bu fazın TEK giriş noktası: temsilci disk, sıradaki vurgusu, kamera
+  (SVG + Pist) hep BİRLİKTE, aynı zamanlamada güncellensin diye buradan çağrılıyor. Sonraki alt
+  fazların (§13d-13f) hepsi bu fonksiyona yeni adımlar ekleyerek büyüdü.
+
+Doğrulama: takım/kamera aktifken 9 oyunun hepsinde ekran görüntüsü alındı, sıfır yeni konsol hatası.
+
+### 13b. Tam Ekran çöküşü düzeltmesi
+
+**Bulgu (kullanıcı "bir sorun var ama ne olduğu belirtilmedi" dedi, önce teşhis edildi)**: Tam Ekran
+moduna girince sahne (SVG/Pist/Hedef, hepsi) **2px'e çöküyordu** — tamamen boş görünüyordu. 11 oyunun
+hepsinde birebir aynı, çıkışta tamamen düzeliyordu (kalıcı değil).
+
+**Kök neden**: `#km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; }` kuralı sahnenin
+büyümesini `flex:1`'e bağlıyordu ama sahnenin GERÇEK ebeveyni `#km-oyun-govde` hiç `display:flex`
+değildi (varsayılan `block` — grep'le doğrulandı, HİÇ tanımı yoktu). Normal modda sorun görünmüyordu
+çünkü sahnenin boyutu flex'ten değil kendi `aspect-ratio:2.3/1`'inden geliyordu; fullscreen kuralı TAM
+o aspect-ratio'yu kapatıp yerine hiç işlemeyen `flex:1`'i koyuyordu.
+
+**Düzeltme (iki adım — ilk deneme TEK BAŞINA yetmedi, gerçek testte yakalandı)**:
+1. `#km-oyun-govde{ display:flex; flex-direction:column; min-height:0; }` — kullanıcının istediği
+   seçenek (elle yükseklik hesabı yerine).
+2. `#km-oyun-wrap:fullscreen #km-oyun-govde{ flex:1; min-height:0; }` — `#km-oyun-govde`'nin KENDİSİ
+   de `#km-oyun-wrap`'in flex çocuğu, o büyümezse (varsayılan `flex:0 1 auto`) sahnenin `flex:1`'inin
+   büyüyeceği boş alan hiç oluşmuyordu.
+
+**Yan düzeltme**: `.km-oyun-tam-btn` metni hep "🖥️ Tam Ekran" diyordu, tıklayınca çıksa bile — artık
+`document.fullscreenElement`'e göre "Tam Ekran" ↔ "Tam Ekrandan Çık" (`kmOyunTamEkranEtiketGuncelle()`,
+`fullscreenchange`/`webkitfullscreenchange` dinleyicisi — Esc tuşuyla çıkışı da yakalıyor).
+
+**Doğrulama**: 11 oyunun hepsinde fullscreen'e girip çıkıldı — sahne 700-800px'e genişliyor (öncesi
+2px), çıkışta hepsi birebir aynı boyuta (1232×535.64 @1280px) dönüyor. Normal mod boyutu hiç
+değişmedi (ilk denemede `#km-oyun-govde`'ye eklenen `gap:10px`'in gereksiz bir yan etki olduğu fark
+edilip kaldırıldı — normal moddaki eleman aralığı öncekiyle bit-bit aynı kaldı, 0px).
+
+### 13c. "401 fırtınası" teşhisi (SADECE teşhis, düzeltme YAPILMADI)
+
+Kullanıcı Faz 8a sırasında rastlanan (ve zaten §9'da genel hatlarıyla bilinen) arka plan
+gürültüsünü 7 somut soruyla teşhis ettirdi — **kod değişikliği istenmedi, sadece rapor**. Tam
+teşhis raporu bu oturumun sohbet geçmişinde; özet ve §9'un düzeltilmesi için bkz. yukarıdaki
+§9 "DÜZELTME" notu. Kısaca: `bulutaGonderKontrol()` (10sn'de bir) neredeyse HER sayfa açılışında bir
+kez tetikleniyor (yerel `bulutVeriJSON()` ile sunucudan yeniden kurulan JSON asla bit-bit eşleşmiyor),
+`fanOutMasterPayload()` ile TÜM kulübü (bu test ortamında 731 sporcu) tek seferde gönderiyor. PIN
+girilmemiş (yetkisiz) bir oturumda bu ~700 istek TEK patlamada 401 alıyor ama giriş yapılmış bir
+oturumda AYNI patlama sorunsuz 200 dönüyor — yani "401" kimlik doğrulamanın kendisinin bir hatası
+değil, doğru çalıştığının kanıtı; asıl mesele PIN'siz cihazların o oturumda hiç yedeklenememesi ve
+`fanOutMasterPayload`'ın per-job `.catch()`'i yüzünden bunun sessizce "başarılı" sanılması (bkz. §9
+düzeltmesi). Bu, Faz 8'den TAMAMEN bağımsız, önceden var olan bir bulgu — dokunulmadı.
+
+### 13d. Kamera koreografisi — otomatik geniş↔yakın döngüsü
+
+**Değişen yön**: 8a'nın kamerası SÜREKLİ sıradaki sporcuya yakın duruyordu — kullanıcı bunun hem
+"büyük görünme anı"nın değerini kaybettirdiğini hem koçun genel tabloyu (kim önde/geride, hedefe ne
+kadar kaldı) hiç göremediğini, bu yüzden sıradaki DIŞINDAKİ çocukların oyundan koptuğunu belirtti.
+Çözüm manuel bir düğme DEĞİL, otomatik bir döngü istendi — önceki turda planlanan (ama hiç
+uygulanmayan) "Geniş Görünüm düğmesi" fikri kullanıcı tarafından resmen İPTAL edilip yerine bu
+döngü kondu.
+
+**Durum makinesi** (`_kmOyunKameraDurum`: `'genis'|'yakin'`, varsayılan `'genis'`):
+1. **Varsayılan GENİŞ** — tam `0 0 1200 440` viewBox, tüm yol ve figürler görünür.
+2. **Sıra birine gelince → YAKIN** — hem elle seçim (`kmOyunSporcuSec`) hem `bitirOrtak()`'ın
+   otomatik ilerlemesinin 1.5sn SONRAKİ tetiklemesi (aşağıya bkz.) bu geçişi başlatıyor. 700ms yumuşak
+   viewBox tween'i (`kmOyunKameraHedefeGit`, kübik ease-out).
+3. **İlerlet'e basılınca ("hareket" adımı)** — `baslatAnimasyon()`'ın en başında kamera `yeniFrac`'a
+   (henüz yazılmamış, HENÜZ olacak konuma) doğru kaymaya başlıyor — `kmOyunKameraGuncelle(hedefFrac)`
+   yeni bir opsiyonel parametre aldı, figürün gerçek hareket animasyonuyla (protected, dokunulmadı)
+   yaklaşık eş zamanlı.
+4. **Hareket bitince (`bitirOrtak()`) → GENİŞ** — anında genişliyor, 1.5sn "genel tabloyu izle"
+   molasından sonra (2)'ye dönüyor — döngü kendini tekrarlıyor.
+
+**Kilit düğmesi** ("🔒 Geniş Görünümde Kal" / "🔓 Otomatik Kamera") — `_kmOyunKameraKilitli`,
+localStorage'da (`dag_km_kamerakilit_<konum>`, D1'e YAZILMIYOR). Açıkken kamera koreografiyi tamamen
+atlayıp hep geniş kalıyor. Sadece kameranın GERÇEKTEN çalıştığı 7 SVG temasında görünür — Pist/Hedef/
+Futbol/Takım Futbolu'nda gizli (bu kavram onlarda yok).
+
+**Pist ve Hedef döngü DIŞI bırakıldı** — kullanıcı bunları kendi mesajında "kamera olmayan iki tema"
+diye gruplamıştı (Pist'in kendi yatay-kaydırma mekanizması var ama koreografi kapsamına alınmadı,
+Hedef'te zaten hiç kamera yok). Bu, en muhafazakâr okuma: Pist'e ayrıca özel bir geniş/yakın mantığı
+İCAT ETMEK yerine onun mevcut (her zaman "yakın") davranışı hiç değiştirilmedi.
+
+**Ciddi Mod / `prefers-reduced-motion`** — `kmOyunKameraHedefeGit()` ikisini de okuyor (yeni ayar
+EKLENMEDİ), açıksa 700ms'lik tween yerine viewBox ANINDA hedefe atlıyor — konum hesabı hâlâ doğru,
+sadece animasyonsuz.
+
+**Doğrulama**: `requestAnimationFrame` bazlı örnekleme ile tween'in GERÇEKTEN 1200→600 genişliğe
+kübik-ease ile ~700ms'de yumuşak geçtiği (ciddi mod kapalıyken) ve ciddi mod açıkken ANINDA hedefe
+atladığı sayısal olarak doğrulandı. Gerçek bir seri girilip İlerlet'e basılarak TÜM döngü uçtan uca
+test edildi: +300ms (hareket sırasında) kamera "yakın" kalıp hedefe kayıyor, ~1500ms sonra
+(`bitirOrtak`) "genis"e dönüyor, +1700ms sonra tekrar "yakin"e geçiyor — dört zaman noktasında da
+JS durumu (`_kmOyunKameraDurum`) ve gerçek `viewBox` niteliği ölçülerek doğrulandı. Fullscreen
+modunda da (§13b'nin düzelttiği büyümüş sahne alanında) kamera doğru viewBox üretiyor — viewBox
+matematiği çözünürlükten bağımsız olduğu için ayrı bir hesap GEREKMEDİ.
+
+### 13e. Etiket ve panel çakışmaları
+
+Ekran görüntüsünde 3 somut sorun bulundu: sahnedeki isim etiketleri sağ paneldeki sıralama/sporcu
+listesinin ÜSTÜNE biniyordu (okunmaz), sağ panel sahnenin üzerine binmiş durumdaydı (sahne alanı
+onun ALTINA uzuyordu — ikisi aynı bölgeyi paylaşıyordu), yakın figürlerin etiketleri üst üste
+gelebiliyordu.
+
+**Sahne/panel ayrımı** — `.km-oyun-panel` (her temanın SVG/DOM kapsayıcısı) eskiden `inset:0` ile
+sahnenin TAMAMINI kaplıyordu, sağ panel bunun ÜSTÜNE yarı saydam bir katman olarak biniyordu
+(BİLEREK — skor dok'u için hâlâ geçerli bir tasarım, ona dokunulmadı). Artık
+`right:var(--km-rail-w, 200px)` (küçük modda `--km-rail-w-kucuk`, `.km-oyun-scene:has(.km-oyun-
+rightpanel-kucuk)` ile) — sahne İÇERİĞİ baştan panelin payı kadar dar çiziliyor, üst üste binme yok.
+Kamera hesabı viewBox tabanlı olduğu için bu daralmış genişliğe otomatik uyuyor, AYRI bir hesap
+gerekmedi.
+
+**Beklenmedik, kapsamı genişleten bulgu**: `kmOyunJitter()` (paylaşılan, 8a'dan önce de var olan bir
+fonksiyon) bir figürü kendi "temiz" noktasından ±160 dünya-birimine kadar kaydırabiliyor (çok sporcu
+aynı yerde kümelenince ayırmak için, KASITLI bir tasarım). 8 sporculu bir sınıfta bu, path'in UÇ
+noktalarına yakın sporcuları 1200 birimlik dünyanın DIŞINA (panelin/sahnenin ötesine) itebiliyordu.
+Standart CSS `overflow:hidden` + `clip-path:inset(0)` BEKLENDİĞİ gibi bunu kesmedi — gerçek testte
+(sağ panel gizlenip karakterin GERÇEKTEN sahne dışına taştığı doğrulandı) defalarca denendi, NEDENİ
+tam çözülemedi. **Kesin çözüm**: sadece etiketi değil, karakterin KENDİSİNİ de (Resync'in zaten
+yazdığı `translate(x,y)`'yi okuyup) güvenli dünya sınırına (`KM_OYUN_KARAKTER_SINIR_PAY=26` birim
+kenar payıyla) kelepçelemek (`kmOyunKarakterSinirKisitla()`) — frac/ilerleme/sıra mantığına hiç
+dokunmadan, SADECE görsel konum. Kapsamı "sadece etiket" yerine "etiket + karakter"e genişletmek
+bilinçli bir karar oldu (en güvenli/en kapsayıcı çözüm), raporda belirtildi.
+
+**Etiket kenar/çakışma düzeltmesi** (`kmOyunEtiketKenarDuzelt()`) — her etiketin dünya-x'i ARTIK
+karakterin fn(o,idx,n) ile yeniden hesaplanan "temiz" noktasından DEĞİL (ilk sürümde bu farklı bir
+kaynaktı, tutarsızlık yarattı — gerçek testte, kelepçelenmiş karakterin etiketi hâlâ dışarıda
+hesaplanıyordu, düzeltildi), karakterin KENDİ gerçek transform'undan (jitter+kelepçe UYGULANMIŞ nihai
+konum) okunuyor. (a) Kenara yakınsa (`KM_OYUN_ETIKET_KENAR_PAY=70` birim) içeri kayıyor. (b) Yatayda
+birbirine yakın (`KM_OYUN_ETIKET_YAKINLIK_ESIK=60` birim) etiketler basit 3 kademeli dikey kaydırmayla
+ayrılıyor (karmaşık bir yerleşim algoritması DEĞİL — sıralayıp sırayla kademe atayan basit bir geçiş).
+
+**Yan düzeltme**: Zirve/Ninja/Dağ'ın `preserveAspectRatio`si "slice"tan "meet"e çevrildi — daralan
+sahne kutusunda "slice" kenarlardan kırpma yapacağı (bir kısım sporcuyu tamamen görünmez kılacağı)
+için, "meet" (letterbox, hiçbir şey kaybetmeden sığdırma) Task 1'in "herkes görünsün" hedefiyle daha
+tutarlı bulundu.
+
+**Doğrulama**: 7-8 sporculu (bazıları path'in uçlarına, bazıları birbirine yakın frac'larla) dolu bir
+sahne 1280px VE 1920px'te ekran görüntüsüyle doğrulandı — sağ panel gizlenip TEKRAR gösterilerek
+karakterlerin gerçekten sahne sınırında kaldığı, sidebar'a hiç taşmadığı iki kez teyit edildi.
+
+### 13f. Skor girme paneli — esnek ve animasyonlu
+
+Panel eskiden sabit, sahnenin ALT KISMINDA tam genişlik bir şerit olarak büyük yer kaplıyordu.
+
+**Küçült/aç** — panel artık tek satıra inebiliyor: "🎯 Skor Gir N/M" özet satırı (`#km-oyun-dok-ozet-
+btn`, `kmOyunSlotlariCiz()` her ok girişinde/silinişinde `N/M`'yi güncelliyor). Tıklanınca tam haliyle
+açılıyor. Açılış/kapanış `.km-oyun-dok-icerik`'in `max-height`+`opacity` geçişiyle yumuşak (klasik CSS
+accordion — gerçek `auto` yükseklik animasyonu güvenilir değil). Kapalıyken sahne bütün alanı
+kullanıyor, kamera (viewBox tabanlı olduğu için) otomatik uyuyor.
+
+**Konum** — 3 seçenek: sol alt / alt orta (varsayılan) / sağ alt (`_kmOyunDokKonum`,
+`.km-oyun-dok-konum-sol/-sag`). Serbest sürükleme YOK (kullanıcının açık isteğiyle). Panel artık tam
+genişlik değil, içeriğine göre daralan (`width:fit-content; max-width:min(94%,480px)`) kompakt bir
+kutu — "orta"da `left:0;right:var(--km-rail-w);margin:0 auto` ile ortalanmış, köşelerde kendi
+kenarına yaslanmış. Sağ panelin payını (§13e'nin AYNI kuralı) hep hesaba katıyor.
+
+**Boyut** — küçük/normal (`_kmOyunDokBoyut`). Eski "🔍 Büyüt/🔎 Küçült" (54px, TV-uzaklığı) tek düğmesi
+KALDIRILDI, yerini bu ikili sisteme bıraktı — **bilinçli davranış değişikliği**: gerçek Tam Ekran'ın
+kendi ayrı büyütmesi (`#km-oyun-wrap:fullscreen .km-oyun-padbtn`, bu değişiklikten TAMAMEN bağımsız)
+hâlâ duruyor, TV-mesafesi ihtiyacı hâlâ o yoldan karşılanıyor. "Normal" = önceki varsayılan boyut
+(taban `min-height` 42px'ten 44px'e çıkarıldı — bu arada 360px medya sorgusundaki eski 36px'lik alt
+kırılım da bu tabanın ALTINDA kalıyordu, dolaylı olarak düzeltilmiş oldu). "Küçük" = daha dar pad
+(`max-width:300px`, daha dar padding/font) ama min-height'i **44px'in ALTINA HİÇ düşürmüyor** —
+gerçek testte `46.66×44px` ölçülerek doğrulandı.
+
+**Ayarlar** — panelin kendi üstündeki ⚙️'den açılan menüde (`#km-oyun-dok-ayar-menu`), ayrı bir ekrana
+gitmeye gerek yok. Konum/boyut/otomatik-davranış üçü de localStorage'da (`kmOyunDokAyarYukle/Kaydet`,
+`dag_km_dok<ad>_<konum>` anahtar kalıbı — D1'e YAZILMIYOR).
+
+**Otomatik davranış** (`_kmOyunDokOtomatikMi`, varsayılan açık) — kamera koreografisiyle (§13d) AYNI
+iki tetikleme noktasını paylaşıyor: `bitirOrtak()`'ta kamera "genis"e dönerken panel de
+`kmOyunDokOtomatikKapat()` ile kapanıyor; kameranın 1.5sn sonra "yakin"e dönüşünde (VE elle sporcu
+seçiminde, `kmOyunSporcuSec`) panel de `kmOyunDokOtomatikAc()` ile açılıyor — "tek bir hareket" hissi
+için. Panelin kendi `_kmOyunDokOtomatikMi` anahtarı kamera kilidinden BİLEREK BAĞIMSIZ (kullanıcı
+ikisini iki ayrı ayar olarak istedi — koç kamerayı genişte kilitleyip panel otomatiğini ayrıca açık/
+kapalı tutabilmeli). Otomatik açma/kapama `_kmOyunDokAcikMi`'yi localStorage'a YAZMIYOR (bilinçli —
+geçici bir oto-kapanış koçun kalıcı tercihini ezmesin diye, sadece elle değiştirme kalıcı oluyor).
+
+**Doğrulama**: gerçek bir seri girilip İlerlet'e basılarak tüm döngü ölçüldü — İlerlet sonrası +300ms
+panel hâlâ açık (kamera hedefe kayarken), ~1500ms sonra (`bitirOrtak`) panel kapanmış + kamera geniş,
++1700ms sonra ikisi birlikte tekrar açık/yakın. 3 konum × normal boyut × küçük boyut × açık/kapalı
+hepsi ekran görüntüsüyle (1280px), ayrıca 360px ve fullscreen'de ayrı ayrı doğrulandı.
+
+### 13g. Genel doğrulama (13a-13f, hepsi için ortak)
+
+Her alt-iş sonunda: 11 oyunun hepsi (Futbol/Takım Futbolu dahil) 360/1280/1920px'te **sıfır yatay
+taşma**, **sıfır yeni konsol hatası** (gözlenen tüm hatalar zaten bilinen `fanOutMasterPayload`/
+`camera_utils.js` 404/`ERR_INVALID_URL` kümesinden — bkz. §13c); gerçek Tam Ekran modunda ayrıca
+kontrol edildi; Reaksiyon'un 14 mini-oyunu (gerçek bir oyun açılıp) etkilenmediği doğrulandı. `node
+--check public/app.js` her adımdan sonra temiz. Test PIN'i (`03ac674216f3e15c761ee1a5e255f067953623c
+8b388b4459e13f978d7c846f4`) her test turunun sonunda gerçek `egitmen_hash`'e (`d88e4a72af6b2d5e7c737
+813df9e499a7acb92c308b62dc0ae7f429b154b4da4`) geri alındı — bkz. §7'nin yerel test deseni.
+
+**Kalan iş / açık notlar**: `_kmOyunKarakterSinirKisitla`/`kmOyunEtiketKenarDuzelt`'in CSS
+`overflow:hidden`/`clip-path` NEDEN çalışmadığı hâlâ tam anlaşılmadı (JS-tabanlı kelepçe işlevsel
+olarak sorunu çözdü ama kök neden not olarak açık kalıyor — ileride biri bu CSS davranışını gerçekten
+anlamak isterse burada bir bulmaca var). Bu bölümün TAMAMI commit edilmedi — bir sonraki oturum önce
+`git status`/`git diff public/app.js` ile mevcut durumu görmeli.

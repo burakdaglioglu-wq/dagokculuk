@@ -10396,7 +10396,16 @@ ${(function(){
    (2026-09-09, ilk denemede govde'yi flex yapmak TEK BAŞINA yetmedi — gerçek testte yakalandı). */
 #km-oyun-wrap:fullscreen #km-oyun-govde{ flex:1; min-height:0; }
 #km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; max-height:none; min-height:0; --km-rail-w:min(260px, 18vw); --km-rail-w-kucuk:min(70px, 8vw); }
-.km-oyun-panel{ position:absolute; inset:0; display:none; flex-direction:column; padding:10px 14px; }
+/* Sahne/panel çakışması (2026-09-09) — .km-oyun-panel eskiden inset:0 ile TAM sahne kutusunu
+   kaplıyordu, sağdaki .km-oyun-rightpanel bunun ÜSTÜNE yarı saydam bir katman olarak biniyordu
+   (bilerek — skor dok'u için hâlâ geçerli bir desen). Ama sağ panelin kendisi (sıralama/sporcu
+   seçme) yarı saydam olsa da üstündeki İSİM ETİKETLERİ (SVG metin) her zaman opak kaldığı için
+   panelin üstünde okunmaz hale geliyordu (gerçek ekran görüntüsünde "BURAK"/"NIDA" örneği). Çözüm:
+   panelin sağdan payı kadar (--km-rail-w) sahne İÇERİĞİ baştan dar çiziliyor — üst üste binme yok,
+   panel artık gerçekten AYRI bir sütun. Kamera zaten viewBox tabanlı (çözünürlükten bağımsız),
+   otomatik olarak bu yeni dar alana göre ölçekleniyor, ayrı bir hesap GEREKMEDİ. */
+.km-oyun-panel{ position:absolute; top:0; left:0; bottom:0; right:var(--km-rail-w, 200px); display:none; flex-direction:column; padding:10px 14px; overflow:hidden; }
+.km-oyun-scene:has(.km-oyun-rightpanel-kucuk) .km-oyun-panel{ right:var(--km-rail-w-kucuk, 56px); }
 #km-oyun-wrap[data-tema="zirve"] #km-oyun-panel-zirve,
 #km-oyun-wrap[data-tema="yildiz"] #km-oyun-panel-yildiz,
 #km-oyun-wrap[data-tema="hazine"] #km-oyun-panel-hazine,
@@ -10408,7 +10417,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="hedef"] #km-oyun-panel-hedef,
 #km-oyun-wrap[data-tema="futbol"] #km-oyun-panel-futbol,
 #km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim { display:flex; }
-.km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
 /* Hedef Tahtası (2026-09-06) — HTML/CSS (SVG değil, Futbol/Pist desenini izliyor). Halka deseni TEK bir
    radial-gradient (gerçek WA hedef renkleri: altın/kırmızı/mavi/siyah/beyaz), ok izleri önceden
    hesaplanmış sabit noktalarda, frac arttıkça teker teker "beliriyor" (pop-in). */
@@ -10489,14 +10498,42 @@ ${(function(){
    NOT: backdrop-filter (canlı blur) BİLEREK KULLANILMIYOR — altında sürekli hareket eden karakter
    animasyonuyla birleşince gerçek bir performans/takılma sorunu yaratıyordu (gerçek testte bulundu),
    düz alfa-gradyan aynı "şeffaf" hissi çok daha ucuza veriyor. */
-.km-oyun-dok{ position:absolute; left:0; right:var(--km-rail-w, 0); bottom:0; z-index:5; max-height:min(40%, 230px); overflow-y:auto;
-    background:linear-gradient(180deg, transparent, rgba(4,6,14,0.6) 25%, rgba(4,6,14,0.92));
-    border-top:1px solid var(--line); border-radius:0 0 13px 13px;
-    padding:14px 12px 10px; display:flex; flex-direction:column; gap:8px; transition:right .18s ease; }
+/* Skor girme paneli — esnek/animasyonlu (2026-09-09, "panel sabit/büyük, sahneyi daraltıyor").
+   ARTIK tam genişlik bir şerit değil — içeriğine göre daralan (fit-content, üst sınırlı), üç yerden
+   birine yaslanabilen kompakt bir kutu: varsayılan "orta" (left+right+margin:auto ile ortalanmış),
+   "sol"/"sağ" kendi köşesine yaslanıyor (bkz. .km-oyun-dok-konum-*). Sağdaki panelin payını
+   (--km-rail-w) hâlâ hesaba katıyor — üstüne binmiyor (Task 2'nin aynı kuralı). */
+.km-oyun-dok{ position:absolute; bottom:12px; left:0; right:var(--km-rail-w, 0); z-index:5;
+    width:fit-content; max-width:min(94%, 480px); margin:0 auto; max-height:min(88%, 460px); overflow-y:auto;
+    background:linear-gradient(180deg, rgba(4,6,14,0.55), rgba(4,6,14,0.94));
+    border:1px solid var(--line); border-radius:13px;
+    padding:10px 12px; display:flex; flex-direction:column; gap:8px;
+    transition:right .18s ease, left .25s ease, width .25s ease, max-width .25s ease; }
+.km-oyun-dok-konum-sol{ left:12px; right:auto; margin:0; }
+.km-oyun-dok-konum-sag{ left:auto; right:calc(var(--km-rail-w, 0) + 12px); margin:0; }
+.km-oyun-dok-boyut-kucuk{ max-width:min(94%, 340px); }
 /* flex-column + max-height + overflow-y:auto, çocuklara flex-shrink:0 verilmeden bırakılırsa,
    taşan içerik KAYDIRILMAK yerine SIKIŞTIRILIYOR (chips satırı görünmez şekilde ~6px'e çöktü,
    gerçek DOM ölçümüyle bulundu) — flexbox'ın "min-height:auto" varsayılanı. */
 .km-oyun-dok > *{ flex-shrink:0; }
+.km-oyun-dok-ust{ display:flex; align-items:center; gap:8px; }
+.km-oyun-dok-ozet-btn{ flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--ink); background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; min-height:44px; }
+.km-oyun-dok-ozet-sayi{ font-variant-numeric:tabular-nums; color:var(--a1); }
+.km-oyun-dok-ozet-ok{ color:var(--ink-faint); font-size:10px; }
+.km-oyun-dok-ayar-btn{ flex-shrink:0; width:44px; height:44px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid var(--line); color:var(--ink-dim); font-size:15px; cursor:pointer; }
+.km-oyun-dok-ayar-btn:hover{ border-color:var(--a1); color:var(--ink); }
+/* İçerik (slot/pad/İlerlet) — açık/kapalı geçişi max-height+opacity ile, "ani sıçrama" YOK. Sabit bir
+   üst sınıra (400px, gerçekte hiçbir içerik bu kadar uzun değil) tween edilip 0'a kapanıyor — klasik
+   CSS accordion tekniği, gerçek 'auto' yükseklik animasyonu güvenilir çalışmıyor. */
+.km-oyun-dok-icerik{ display:flex; flex-direction:column; gap:8px; max-height:400px; opacity:1; overflow:hidden; transition:max-height .32s ease, opacity .22s ease, margin-top .32s ease; margin-top:2px; }
+.km-oyun-dok-kapali .km-oyun-dok-icerik{ max-height:0; opacity:0; margin-top:0; pointer-events:none; }
+@media (prefers-reduced-motion: reduce){ .km-oyun-dok, .km-oyun-dok-icerik{ transition:none; } }
+.km-oyun-dok-ayar-menu{ display:flex; flex-direction:column; gap:8px; background:rgba(8,10,20,0.96); border:1px solid var(--line); border-radius:10px; padding:10px; }
+.km-oyun-dok-ayar-satir{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.km-oyun-dok-ayar-lbl{ font-size:10px; color:var(--ink-dim); font-weight:700; }
+.km-oyun-dok-ayar-grup{ display:flex; gap:4px; }
+.km-oyun-dok-ayar-grup button, .km-oyun-dok-oto-btn{ font-family:var(--font-body); font-weight:700; font-size:10.5px; color:var(--ink-faint); background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; min-height:32px; }
+.km-oyun-dok-ayar-grup button.aktif, .km-oyun-dok-oto-btn.aktif{ border-color:var(--a1); color:var(--ink); background:color-mix(in srgb, var(--a1) 16%, transparent); }
 .km-oyun-dok-lbl{ font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
 .km-oyun-geri-al-btn{ font-family:var(--font-body); font-weight:700; font-size:9.5px; letter-spacing:normal; text-transform:none; color:var(--ink-dim); background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:14px; padding:4px 10px; cursor:pointer; align-items:center; gap:4px; }
 .km-oyun-geri-al-btn:hover{ border-color:var(--a2); color:var(--ink); }
@@ -10530,7 +10567,7 @@ ${(function(){
 .km-oyun-chip-cp b{ color:var(--ink); font-family:var(--font-display); font-weight:700; }
 .km-oyun-dok-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .km-oyun-pad{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; flex:0 1 480px; min-width:260px; max-width:480px; }
-.km-oyun-padbtn{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:11px; padding:10px 4px; min-height:42px; cursor:pointer; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 8px rgba(0,0,0,0.22); }
+.km-oyun-padbtn{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:11px; padding:10px 4px; min-height:44px; cursor:pointer; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 8px rgba(0,0,0,0.22); }
 /* Dok artık sahnenin İÇİNDE, harita üstünde yarı saydam bir katman (2026-09-06) — bu yüzden
    varsayılan (pencere içi) boyutlar 18. turdaki TV-uzaklığı büyütmesinden GERİ alındı (kompakt),
    sadece GERÇEK Tam Ekran'da (koltuktan/TV'den uzakta izlenen 🖥️ Tam Ekran modu) o büyük punto
@@ -10541,15 +10578,15 @@ ${(function(){
 #km-oyun-wrap:fullscreen .km-oyun-chip-cp{ font-size:11px; }
 #km-oyun-wrap:fullscreen .km-oyun-pad{ flex:0 1 620px; max-width:620px; }
 #km-oyun-wrap:fullscreen .km-oyun-padbtn{ font-size:19px; padding:14px 4px; min-height:54px; }
-/* Skor girme tabelası büyüt/küçült (2026-09-06, "skor girme tabelasını da küçültüp büyütebilelim") —
-   gerçek Tam Ekran'dan BAĞIMSIZ, koç isterse pencere içindeyken de TV-boyutuna geçebiliyor (ör. büyük
-   bir harici monitörde, Fullscreen API'yi hiç kullanmadan). Değerler #km-oyun-wrap:fullscreen ile AYNI. */
-.km-oyun-dok.km-oyun-dok-buyuk .km-oyun-pad{ flex:0 1 620px; max-width:620px; }
-.km-oyun-dok.km-oyun-dok-buyuk .km-oyun-padbtn{ font-size:19px; padding:14px 4px; min-height:54px; }
-/* 2026-09-06 "skor büyütme küçültmede çalışmıyor gibi" — GERÇEK sebep buton ÇALIŞIYORDU ama sahnenin
-   üst kenarında (position:absolute; top:-11px) neredeyse görünmez, keşfedilmesi zor bir ikondu (gerçek
-   ekran görüntüsüyle doğrulandı). Artık "Bu Serinin Puanları" satırında, metin etiketli, normal akışta. */
-.km-oyun-dok-boyut-btn.aktif{ background:var(--a1); border-color:var(--a1); color:var(--bg); }
+/* Skor girme paneli — esnek/animasyonlu (2026-09-09). Eski "büyüt/küçült" (TV-punto) tek düğmesinin
+   yerini üç ayrı ayar aldı: açık/kapalı, konum (sol/orta/sağ), boyut (küçük/normal). "Normal" burada
+   MEVCUT varsayılan boyuttur — eski "büyük" (54px, TV-uzaklığı) tamamen ayrı, gerçek Tam Ekran'ın
+   kendi büyütmesi zaten değişmeden duruyor (#km-oyun-wrap:fullscreen .km-oyun-padbtn, yukarıda). Yeni
+   "Küçük" boyut ise TUŞLARI DARALTIYOR (pad genişliği/iç boşluk) ama min-height'i 44px'in ALTINA
+   HİÇ düşürmüyor — WCAG 2.5.5 tabanı, kullanıcının açık isteği. */
+.km-oyun-dok-boyut-kucuk .km-oyun-pad{ max-width:300px; min-width:220px; gap:4px; }
+.km-oyun-dok-boyut-kucuk .km-oyun-padbtn{ font-size:11px; padding:6px 2px; min-height:44px; border-radius:9px; }
+.km-oyun-dok-boyut-kucuk .km-oyun-ilerlet-btn{ font-size:12px; padding:12px 14px; }
 .km-oyun-padbtn:hover{ border-color:var(--a1); transform:translateY(-1px); box-shadow:0 5px 12px rgba(0,0,0,0.3); }
 .km-oyun-padbtn:active{ transform:translateY(0) scale(.95); box-shadow:0 2px 4px rgba(0,0,0,0.2); }
 /* Gerçek WA hedef halkası renkleri (2026-09-01, "skor renklerini hızlı [ayırt edilsin]") — koç
@@ -11056,6 +11093,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 @media (max-width: 480px) {
     .km-oyun-baslik{ font-size:12.5px; }
     .km-oyun-tam-btn{ padding:6px 9px; font-size:10px; }
+    /* Kamera kilit düğmesinin uzun etiketi ("🔒 Geniş Görünümde Kal") dar telefonda topbar'ı taşırıyordu
+       (gerçek testte 360px'te "Tam Ekran" kırpılırken yakalandı) — ikon kalıyor, metin gizleniyor. */
+    .km-oyun-kilit-etiket{ display:none; }
     .km-oyun-modes{ gap:5px; }
     .km-oyun-mode-btn{ font-size:10px; padding:6px 10px; }
     .km-oyun-pad{ gap:5px; }
@@ -11149,7 +11189,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // sonra "yap" denince gerçek uygulamaya geçirildi) — Kendi Rekorunla Yarış Anı HER ZAMAN açık
         // (otomatik tetiklenir), Sırada Kim Banner'ı da HER ZAMAN açık; Sesli Spiker/Dramatik Açıklama/
         // Adil Sıralama ise koçun açıp kapatabildiği, konum-bazlı kalıcı anahtarlar.
-        let _kmOyunSesliMod = false, _kmOyunDramatikMod = false, _kmOyunAdilMi = false, _kmOyunRailKucukMu = false, _kmOyunYukselenMi = false, _kmOyunDokBuyukMu = false;
+        let _kmOyunSesliMod = false, _kmOyunDramatikMod = false, _kmOyunAdilMi = false, _kmOyunRailKucukMu = false, _kmOyunYukselenMi = false;
+        // Skor girme paneli — esnek/animasyonlu (2026-09-09). Üç ayar (açık/kapalı, konum, boyut) +
+        // otomatik davranış anahtarı, HEPSİ localStorage'da (D1'e YAZILMIYOR — cihaz/görünüm tercihi,
+        // eski _kmOyunDokBuyukMu'nun yerini alıyor, bkz. kmOyunDokAyarYukle).
+        let _kmOyunDokAcikMi = true, _kmOyunDokKonum = 'orta', _kmOyunDokBoyut = 'normal', _kmOyunDokOtomatikMi = true;
         // İlerlemeye Göre Sıralama (2026-09-04, Menzil Sahnesi'nin kalan fikri) — "bu turda kim en çok
         // yükseldi" için, o oturumun BAŞLANGICINDAKİ toplamSkor'u saklıyoruz (sayfa yenilenene/konum
         // değişene kadar bellekte kalıcı — kalıcı depoya YAZILMIYOR, "bugünkü ders" anlamına gelsin diye).
@@ -11354,8 +11398,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // çalışabiliyor. Nokta hesaplaması için HER temanın KENDİ var olan nokta/poz fonksiyonu
         // ÇAĞRILIYOR (5'i (frac)=>{x,y}, 2'si (i,n,frac)=>{x,y,heading} imzalı — kullanıcının istediği
         // gibi tek tek doğrulandı). Pist (kendi DOM/left:% düzeni) ve Hedef Tahtası (mekansal konum
-        // kavramı yok) burada YOK — Pist'in kendi kmOyunPistKameraGuncelle'i var, Hedef'te kamera hiç
-        // uygulanmıyor (kullanıcı talimatı: sabit kalsın).
+        // kavramı yok) burada YOK — Pist'in kendi kmOyunPistKameraGuncelle'i var (koreografisiz, hep
+        // yakın — kullanıcı talimatıyla bu iki tema koreografi dışı bırakıldı), Hedef'te kamera hiç
+        // uygulanmıyor.
         var KM_OYUN_KAMERA_NOKTA_TEMALAR = {
             zirve: function(t, i, n) { return kmOyunZirveNokta(t.frac); },
             hazine: function(t, i, n) { return kmOyunHazineNokta(t.frac); },
@@ -11369,12 +11414,60 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         var KM_OYUN_KAMERA_ZOOM = 0.5; // 1200x440'ın yarısı kadarlık bir pencere — figürler küçülmüyor.
         var _kmOyunKameraUyarilanTema = {}; // aynı hata için konsolu spam'lememek adına tema başına 1 kez uyar.
         var _kmOyunKameraRaf = null;
+        // Kamera koreografisi (2026-09-09) — "geniş → yakın (sıra geldi) → hareket → geniş" döngüsü.
+        // Varsayılan GENİŞ: koç/sınıf her zaman tüm yolu ve herkesi görür. Sadece sırası gelen sporcuya
+        // kısa bir "şimdi sen" anı için yakınlaşılır, o hareket edince tekrar genişler. Kilit açıksa
+        // (_kmOyunKameraKilitli) koreografi tamamen devre dışı, kamera hep GENİŞ kalır.
+        var _kmOyunKameraDurum = 'genis'; // 'genis' | 'yakin'
+        var _kmOyunKameraBekleyenTimer = null; // "genişledikten sonra tekrar yaklaş" gecikmesi
+        var _kmOyunKameraKilitYuklenenKonum = null;
+        var _kmOyunKameraKilitli = false;
+        function kmOyunKameraKilitAnahtari() { return 'dag_km_kamerakilit_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunKameraKilitYukle() {
+            if(_kmOyunKameraKilitYuklenenKonum === _kmAktifKonum) return;
+            try { _kmOyunKameraKilitli = localStorage.getItem(kmOyunKameraKilitAnahtari()) === '1'; } catch(e) { _kmOyunKameraKilitli = false; }
+            _kmOyunKameraKilitYuklenenKonum = _kmAktifKonum;
+        }
+        function kmOyunKameraKilitKaydet() { try { localStorage.setItem(kmOyunKameraKilitAnahtari(), _kmOyunKameraKilitli ? '1' : '0'); } catch(e) {} }
+        function kmOyunKameraKilitliMi() { kmOyunKameraKilitYukle(); return _kmOyunKameraKilitli; }
+        function kmOyunKameraKilitDegistir() {
+            kmOyunKameraKilitYukle();
+            _kmOyunKameraKilitli = !_kmOyunKameraKilitli;
+            kmOyunKameraKilitKaydet();
+            if(_kmOyunKameraKilitli) {
+                if(_kmOyunKameraBekleyenTimer) { clearTimeout(_kmOyunKameraBekleyenTimer); _kmOyunKameraBekleyenTimer = null; }
+                _kmOyunKameraDurum = 'genis';
+            }
+            kmOyunKameraKilitButonGuncelle();
+            kmOyunKabukGuncelle();
+        }
+        // Kilit düğmesi sadece koreografinin GERÇEKTEN çalıştığı 7 temada görünür — Pist/Hedef/Futbol/
+        // Takım Futbolu'nda bu kavram yok, düğme yanıltıcı olmasın diye tamamen gizleniyor.
+        function kmOyunKameraKilitButonGuncelle() {
+            let btn = document.getElementById('km-oyun-kamera-kilit-btn'); if(!btn) return;
+            let varMi = !!KM_OYUN_KAMERA_SVG_ID[_kmOyunAktifTema];
+            btn.style.display = varMi ? '' : 'none';
+            if(!varMi) return;
+            kmOyunKameraKilitYukle();
+            btn.classList.toggle('aktif', _kmOyunKameraKilitli);
+            btn.innerHTML = (_kmOyunKameraKilitli ? '🔓' : '🔒') + '<span class="km-oyun-kilit-etiket">' + (_kmOyunKameraKilitli ? ' Otomatik Kamera' : ' Geniş Görünümde Kal') + '</span>';
+            btn.title = _kmOyunKameraKilitli ? 'Kamera geniş görünümde sabit — otomatik yakınlaşmayı açmak için dokun.' : 'Kamera otomatik yakınlaşıyor. Geniş görünümde sabitlemek için dokun.';
+        }
+        function kmOyunKameraAzaltilmisHareketMi() {
+            try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch(e) { return false; }
+        }
         function kmOyunKameraHedefeGit(svg, x, y, w, h) {
             if(_kmOyunKameraRaf) cancelAnimationFrame(_kmOyunKameraRaf);
             let mevcut = (svg.getAttribute('viewBox') || `${x} ${y} ${w} ${h}`).split(/\s+/).map(Number);
             let x0 = mevcut[0], y0 = mevcut[1], w0 = mevcut[2], h0 = mevcut[3];
             if(Math.abs(x0 - x) < 0.5 && Math.abs(y0 - y) < 0.5 && Math.abs(w0 - w) < 0.5) return; // zaten oradayız
-            let basla = performance.now(), sure = 550;
+            // Ciddi Mod / prefers-reduced-motion — bu fazda eklenen animasyonlar kapalı kalmalı (var olan
+            // ayarlar okunuyor, yeni ayar eklenmedi). Kamera yine doğru yere gidiyor, sadece ANINDA.
+            if((typeof ciddiModAcik !== 'undefined' && ciddiModAcik) || kmOyunKameraAzaltilmisHareketMi()) {
+                svg.setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+                return;
+            }
+            let basla = performance.now(), sure = 700; // "yaklaşık 600-800ms" — kullanıcı isteği
             function adim(now) {
                 let t = Math.min(1, (now - basla) / sure), e = 1 - Math.pow(1 - t, 3);
                 svg.setAttribute('viewBox', `${(x0 + (x - x0) * e).toFixed(1)} ${(y0 + (y - y0) * e).toFixed(1)} ${(w0 + (w - w0) * e).toFixed(1)} ${(h0 + (h - h0) * e).toFixed(1)}`);
@@ -11382,22 +11475,29 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             _kmOyunKameraRaf = requestAnimationFrame(adim);
         }
-        function kmOyunKameraGuncelle() {
+        // hedefFracOverride: SADECE hareket animasyonu başlarken kullanılıyor (bkz. baslatAnimasyon) —
+        // sporcunun HENÜZ yazılmamış yeni frac'ına doğru kamerayı önceden kaydırabilmek için. Verilmezse
+        // (normal çağrılarda) sporcunun O ANKİ frac'ı kullanılır — davranış öncekiyle birebir aynı kalır.
+        function kmOyunKameraGuncelle(hedefFracOverride) {
             let tema = _kmOyunAktifTema;
             let svgId = KM_OYUN_KAMERA_SVG_ID[tema]; if(!svgId) return;
             let svg = document.getElementById(svgId); if(!svg) return;
+            let genisMi = kmOyunKameraKilitliMi() || _kmOyunKameraDurum !== 'yakin';
+            if(genisMi) { kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440); return; }
             let fn = KM_OYUN_KAMERA_NOKTA_TEMALAR[tema];
             let temsilci = _kmOyunRosterCache[_kmOyunAktifIndex];
-            if(!temsilci) { svg.setAttribute('viewBox', '0 0 1200 440'); return; }
+            if(!temsilci) { kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440); return; }
+            let fracKullan = (typeof hedefFracOverride === 'number') ? hedefFracOverride : temsilci.frac;
+            let hedefNesne = (fracKullan === temsilci.frac) ? temsilci : Object.assign({}, temsilci, { frac: fracKullan });
             let pt;
-            try { pt = fn(temsilci, _kmOyunAktifIndex, _kmOyunRosterCache.length); }
+            try { pt = fn(hedefNesne, _kmOyunAktifIndex, _kmOyunRosterCache.length); }
             catch(e) { pt = null; }
             if(!pt || typeof pt.x !== 'number' || typeof pt.y !== 'number' || isNaN(pt.x) || isNaN(pt.y)) {
                 if(!_kmOyunKameraUyarilanTema[tema]) {
                     _kmOyunKameraUyarilanTema[tema] = true;
-                    console.warn('kmOyunKameraGuncelle: "' + tema + '" teması için nokta hesaplanamadı, kamera sabit (0 0 1200 440) kalıyor — 8a kamera dispatcher\'ı bu temada ÇALIŞMIYOR, bildirilmesi gerekiyor.');
+                    console.warn('kmOyunKameraGuncelle: "' + tema + '" teması için nokta hesaplanamadı, kamera geniş (0 0 1200 440) kalıyor — kamera dispatcher bu temada ÇALIŞMIYOR, bildirilmesi gerekiyor.');
                 }
-                svg.setAttribute('viewBox', '0 0 1200 440');
+                kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440);
                 return;
             }
             let W = 1200, H = 440, Z = KM_OYUN_KAMERA_ZOOM, w = W * Z, h = H * Z;
@@ -11428,6 +11528,83 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 t.style.transform = `scale(${Z}) translateX(${tx}%)`;
             });
         }
+        // Karakter dünya-sınırı kısıtlaması (2026-09-09, gerçek testte bulundu) — kmOyunJitter() bir
+        // karakteri kendi noktasından ±160 dünya-birimine kadar kaydırabiliyor (çok sporcu aynı yerde
+        // kümelenince ayırmak için, KASITLI). 8 sporculu bir sınıfta bu, path'in UÇ noktalarına yakın
+        // sporcuları 1200 dünya-birimlik alanın DIŞINA itebiliyor — CSS overflow/clip-path bunu
+        // BEKLENDİĞİ gibi kesmiyor (gerçek testte defalarca doğrulandı, sebebi netleşmedi), sonuç:
+        // karakter panelin/sahnenin dışına taşıp okunmaz oluyor. Kesin çözüm: Resync'in ZATEN yazdığı
+        // transform'u (translate(x,y)) okuyup x'i güvenli dünya sınırına (kenardan bir karakter
+        // yarıçapı payla) kelepçeliyoruz — frac/ilerleme/sıra mantığına dokunmuyor, SADECE görsel
+        // konumu, tıpkı etiket düzeltmesi gibi bir kabuk son-işlemi.
+        var KM_OYUN_KARAKTER_SINIR_PAY = 26;
+        function kmOyunKarakterSinirKisitla() {
+            let key = KM_OYUN_VURGU_TEMALAR[_kmOyunAktifTema];
+            if(!key || !KM_OYUN_KAMERA_SVG_ID[_kmOyunAktifTema]) return;
+            let alt = KM_OYUN_KARAKTER_SINIR_PAY, ust = 1200 - KM_OYUN_KARAKTER_SINIR_PAY;
+            _kmOyunRosterCache.forEach(function(o) {
+                let el = o[key]; if(!el || el.style.display === 'none') return;
+                let mevcut = el.getAttribute('transform') || '';
+                let m = mevcut.match(/translate\(([-\d.]+)[,\s]+([-\d.]+)\)/);
+                if(!m) return;
+                let x = parseFloat(m[1]);
+                let xKisitli = Math.max(alt, Math.min(ust, x));
+                // .replace(m[0], ...) — transform'da translate'den SONRA gelebilecek başka bir şeyi
+                // (ör. kmOyunSiradakiVurguUygula'nın eklediği " scale(1.22)") KORUR, sıfırdan kurmaz.
+                if(Math.abs(xKisitli - x) > 0.05) el.setAttribute('transform', mevcut.replace(m[0], `translate(${xKisitli.toFixed(1)},${m[2]})`));
+            });
+        }
+        // Etiket çakışma/taşma düzeltmesi (2026-09-09) — 7 kamera temasında geçerli. Etiketin DÜNYA x'i
+        // ARTIK karakterin fn(o,idx,n) ile YENİDEN hesaplanan "temiz" noktasından DEĞİL, karakterin
+        // KENDİ GERÇEK transform'undan okunuyor (kmOyunKarakterSinirKisitla'nın DA okuduğu, jitter +
+        // sınır-kelepçesi UYGULANMIŞ nihai konum) — ilk sürümde bu ikisi FARKLI kaynaklardı, bu yüzden
+        // kenara-yakınlık hesaplaması karakterin GERÇEKTE nerede durduğunu yansıtmıyordu (gerçek testte
+        // yakalandı: karakter kelepçelenip içeri çekiliyordu ama etiketi hâlâ dışarıda hesaplanıyordu).
+        // (a) Kenara yakınsa etiketi içeri kaydırır. (b) Yatayda birbirine yakın (60 birim içinde)
+        // etiketleri basit 3 kademeli dikey kaydırmayla ayırır — karmaşık bir yerleşim algoritması
+        // DEĞİL. Etiketin KENDİSİ (arka plan+metin) TEK bir <g> olarak taşınıyor — sahne çizim
+        // fonksiyonlarının içi hiç değişmiyor, sadece onların çizdiği <g>'nin transform'u dışarıdan
+        // ayarlanıyor (aynı "kabuk son-işlemi" deseni, bkz. kmOyunTakimTemsilciUygula).
+        var KM_OYUN_ETIKET_KENAR_PAY = 70; // dünya birimi (1200x440 alanında)
+        var KM_OYUN_ETIKET_YAKINLIK_ESIK = 60; // dünya birimi
+        function kmOyunEtiketKenarDuzelt() {
+            let tema = _kmOyunAktifTema;
+            let key = KM_OYUN_VURGU_TEMALAR[tema];
+            let svgId = KM_OYUN_KAMERA_SVG_ID[tema];
+            if(!key || !svgId) return; // Pist/Hedef/Futbol/Takım Futbolu — dünya-x kavramı yok
+            let svg = document.getElementById(svgId); if(!svg) return;
+            let vb = (svg.getAttribute('viewBox') || '0 0 1200 440').split(/\s+/).map(Number);
+            let vx = vb[0], vw = vb[2];
+            let noktalar = [];
+            _kmOyunRosterCache.forEach(function(o) {
+                let el = o[key]; if(!el || el.style.display === 'none') return;
+                let tagRect = el.querySelector('.km-tag-bg'); let tagGrp = tagRect && tagRect.parentElement;
+                if(!tagGrp) return;
+                let m = (el.getAttribute('transform') || '').match(/translate\(([-\d.]+)[,\s]+([-\d.]+)\)/);
+                if(!m) return;
+                let worldX = parseFloat(m[1]);
+                if(isNaN(worldX)) return;
+                if(tagGrp.dataset.kmBazY === undefined) {
+                    let ilkM = (tagGrp.getAttribute('transform') || 'translate(0,30)').match(/translate\(([-\d.]+)[,\s]+([-\d.]+)\)/);
+                    tagGrp.dataset.kmBazY = ilkM ? ilkM[2] : '30';
+                }
+                noktalar.push({ tagGrp: tagGrp, x: worldX, bazY: parseFloat(tagGrp.dataset.kmBazY) });
+            });
+            noktalar.sort(function(a, b) { return a.x - b.x; });
+            let kademe = 0, oncekiX = null;
+            noktalar.forEach(function(n) {
+                kademe = (oncekiX !== null && (n.x - oncekiX) < KM_OYUN_ETIKET_YAKINLIK_ESIK) ? (kademe + 1) % 3 : 0;
+                n.kademe = kademe;
+                oncekiX = n.x;
+            });
+            noktalar.forEach(function(n) {
+                let dY = n.kademe === 1 ? 16 : (n.kademe === 2 ? -16 : 0);
+                let kaymaX = 0;
+                if(n.x - vx < KM_OYUN_ETIKET_KENAR_PAY) kaymaX = KM_OYUN_ETIKET_KENAR_PAY - (n.x - vx);
+                else if((vx + vw) - n.x < KM_OYUN_ETIKET_KENAR_PAY) kaymaX = -(KM_OYUN_ETIKET_KENAR_PAY - ((vx + vw) - n.x));
+                n.tagGrp.setAttribute('transform', `translate(${kaymaX.toFixed(1)},${(n.bazY + dY).toFixed(1)})`);
+            });
+        }
         // 8a'nın kabuk katmanı son-işlemlerinin TEK giriş noktası — temsilci disk, sıradaki vurgusu ve
         // kamera hep BİRLİKTE, aynı zamanlamada güncellensin diye tek yerden çağrılıyor.
         function kmOyunKabukGuncelle() {
@@ -11435,6 +11612,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSiradakiVurguUygula();
             kmOyunKameraGuncelle();
             kmOyunPistKameraGuncelle();
+            kmOyunKarakterSinirKisitla();
+            kmOyunEtiketKenarDuzelt();
         }
         function kmTakimAnahtari() { return 'dag_km_takim_' + (_kmAktifKonum || 'varsayilan'); }
         function kmTakimDurumEmin() {
@@ -11664,14 +11843,84 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let el = document.getElementById('km-oyun-rightpanel'); if(el) el.classList.toggle('km-oyun-rightpanel-kucuk', _kmOyunRailKucukMu);
             let btn = document.querySelector('.km-oyun-rail-boyut-btn'); if(btn) btn.textContent = _kmOyunRailKucukMu ? '◀' : '▶';
         }
-        // Skor girme tabelası büyüt/küçült (2026-09-06) — gerçek Tam Ekran'dan BAĞIMSIZ, koç isterse
-        // pencere içindeyken de TV-boyutundaki (pad/buton) büyük punto ile çalışabiliyor.
-        function kmOyunDokBoyutDegistir() {
-            _kmOyunDokBuyukMu = !_kmOyunDokBuyukMu;
-            kmOyunBayrakKaydet('dokbuyuk', _kmOyunDokBuyukMu);
+        // Skor girme paneli — esnek/animasyonlu (2026-09-09). Üç görsel ayar + "otomatik davranış"
+        // anahtarı, dördü de string/bool localStorage'da (D1'e YAZILMIYOR, kullanıcının talimatı) —
+        // kmOyunBayrakAnahtari'nin AYNI anahtar kalıbı, sadece string değer taşıyor.
+        function kmOyunDokAyarAnahtari(ad) { return kmOyunBayrakAnahtari('dok' + ad); }
+        function kmOyunDokAyarYukle() {
+            try { _kmOyunDokAcikMi = localStorage.getItem(kmOyunDokAyarAnahtari('acik')) !== '0'; } catch(e) { _kmOyunDokAcikMi = true; } // varsayılan AÇIK
+            try { let k = localStorage.getItem(kmOyunDokAyarAnahtari('konum')); _kmOyunDokKonum = (k === 'sol' || k === 'sag') ? k : 'orta'; } catch(e) { _kmOyunDokKonum = 'orta'; }
+            try { _kmOyunDokBoyut = localStorage.getItem(kmOyunDokAyarAnahtari('boyut')) === 'kucuk' ? 'kucuk' : 'normal'; } catch(e) { _kmOyunDokBoyut = 'normal'; }
+            try { _kmOyunDokOtomatikMi = localStorage.getItem(kmOyunDokAyarAnahtari('otomatik')) !== '0'; } catch(e) { _kmOyunDokOtomatikMi = true; } // varsayılan AÇIK
+        }
+        function kmOyunDokAyarKaydet() {
+            try {
+                localStorage.setItem(kmOyunDokAyarAnahtari('acik'), _kmOyunDokAcikMi ? '1' : '0');
+                localStorage.setItem(kmOyunDokAyarAnahtari('konum'), _kmOyunDokKonum);
+                localStorage.setItem(kmOyunDokAyarAnahtari('boyut'), _kmOyunDokBoyut);
+                localStorage.setItem(kmOyunDokAyarAnahtari('otomatik'), _kmOyunDokOtomatikMi ? '1' : '0');
+            } catch(e) {}
+        }
+        // Panelin tüm görünümünü (açık/kapalı satırı + konum/boyut class'ları + ayar menüsü) TEK yerden
+        // DOM'a uygular — hem koçun elle tıklamasında hem otomatik davranışta (kamera koreografisiyle
+        // eşzamanlı) AYNI kod yolu kullanılsın diye. Ok girme/seri/İlerlet mantığına dokunmuyor.
+        function kmOyunDokGorunumUygula() {
             let el = document.getElementById('km-oyun-dok'); if(!el) return;
-            el.classList.toggle('km-oyun-dok-buyuk', _kmOyunDokBuyukMu);
-            let btn = el.querySelector('.km-oyun-dok-boyut-btn'); if(btn) { btn.textContent = _kmOyunDokBuyukMu ? '🔎 Küçült' : '🔍 Büyüt'; btn.classList.toggle('aktif', _kmOyunDokBuyukMu); }
+            el.classList.toggle('km-oyun-dok-kapali', !_kmOyunDokAcikMi);
+            el.classList.remove('km-oyun-dok-konum-sol', 'km-oyun-dok-konum-sag');
+            if(_kmOyunDokKonum === 'sol') el.classList.add('km-oyun-dok-konum-sol');
+            else if(_kmOyunDokKonum === 'sag') el.classList.add('km-oyun-dok-konum-sag');
+            el.classList.toggle('km-oyun-dok-boyut-kucuk', _kmOyunDokBoyut === 'kucuk');
+            let ozetOk = document.getElementById('km-oyun-dok-ozet-ok'); if(ozetOk) ozetOk.textContent = _kmOyunDokAcikMi ? '▾' : '▴';
+            kmOyunDokAyarMenusuGuncelle();
+        }
+        // Koçun elle "Skor Gir" özet satırına dokunması — otomatik davranıştan BAĞIMSIZ, her zaman çalışır
+        // (koç otomatik kapansa bile istediği an tekrar açabilmeli/kapatabilmeli).
+        function kmOyunDokAcikKapatDegistir() {
+            _kmOyunDokAcikMi = !_kmOyunDokAcikMi;
+            kmOyunDokAyarKaydet();
+            kmOyunDokGorunumUygula();
+        }
+        function kmOyunDokAyarMenusuAcKapat(zorlaKapat) {
+            let menu = document.getElementById('km-oyun-dok-ayar-menu'); if(!menu) return;
+            let acilsinMi = zorlaKapat ? false : (getComputedStyle(menu).display === 'none');
+            menu.style.display = acilsinMi ? 'flex' : 'none';
+        }
+        function kmOyunDokKonumDegistir(konum) {
+            _kmOyunDokKonum = konum;
+            kmOyunDokAyarKaydet();
+            kmOyunDokGorunumUygula();
+        }
+        function kmOyunDokBoyutDegistir(boyut) {
+            _kmOyunDokBoyut = boyut;
+            kmOyunDokAyarKaydet();
+            kmOyunDokGorunumUygula();
+        }
+        function kmOyunDokOtomatikDegistir() {
+            _kmOyunDokOtomatikMi = !_kmOyunDokOtomatikMi;
+            kmOyunDokAyarKaydet();
+            kmOyunDokAyarMenusuGuncelle();
+        }
+        function kmOyunDokAyarMenusuGuncelle() {
+            let menu = document.getElementById('km-oyun-dok-ayar-menu'); if(!menu) return;
+            menu.querySelectorAll('[data-km-konum]').forEach(function(b) { b.classList.toggle('aktif', b.dataset.kmKonum === _kmOyunDokKonum); });
+            menu.querySelectorAll('[data-km-boyut]').forEach(function(b) { b.classList.toggle('aktif', b.dataset.kmBoyut === _kmOyunDokBoyut); });
+            let otoBtn = menu.querySelector('.km-oyun-dok-oto-btn'); if(otoBtn) otoBtn.classList.toggle('aktif', _kmOyunDokOtomatikMi);
+        }
+        // Kamera koreografisiyle eşzamanlı otomatik davranış (2026-09-09) — "İlerlet'e basıldıktan sonra
+        // panel kendiliğinden küçülsün, sıra bir sonrakine geldiğinde tekrar açılsın... panel kapanırken
+        // kamera genişlesin, panel açılırken kamera yaklaşsın." Panelin kendi _kmOyunDokOtomatikMi
+        // anahtarı kamera kilidinden BAĞIMSIZ — koç kamerayı genişte kilitleyip panel otomatiğini ayrıca
+        // açık/kapalı tutabilmeli (kullanıcı bunları iki AYRI ayar olarak istedi).
+        function kmOyunDokOtomatikKapat() {
+            if(!_kmOyunDokOtomatikMi || !_kmOyunDokAcikMi) return;
+            _kmOyunDokAcikMi = false;
+            kmOyunDokGorunumUygula();
+        }
+        function kmOyunDokOtomatikAc() {
+            if(!_kmOyunDokOtomatikMi || _kmOyunDokAcikMi) return;
+            _kmOyunDokAcikMi = true;
+            kmOyunDokGorunumUygula();
         }
         // Liderlik tablosunun 4 "merceği" (ham puan / Adil / Yükselen / Lig) karşılıklı dışlamalı — aynı
         // anda tek görünüm. Diğer üçünü kapatan paylaşılan yardımcı.
@@ -12052,7 +12301,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunPanelHTML(tid) {
             if(tid === 'zirve') return `<div class="km-oyun-panel" id="km-oyun-panel-zirve">
                 <div class="km-oa-blob b1"></div><div class="km-oa-blob b2"></div><div class="km-oa-blob b3"></div>
-                <svg id="km-oyun-svg-zirve" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid slice">
+                <svg id="km-oyun-svg-zirve" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <linearGradient id="kmTrailGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#f0d9a8"/><stop offset="100%" stop-color="#ffe9b8"/></linearGradient>
                     <linearGradient id="kmMtn3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#141c30"/><stop offset="100%" stop-color="#0d1322"/></linearGradient>
@@ -12098,7 +12347,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div class="km-oyun-lanes" id="km-oyun-lanes"></div>
             </div>`;
             if(tid === 'ninja') return `<div class="km-oyun-panel" id="km-oyun-panel-ninja">
-                <svg id="km-oyun-svg-ninja" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid slice">
+                <svg id="km-oyun-svg-ninja" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <g id="km-oyun-stars-ninja-svg"></g>
                   <circle class="km-moon-glow" cx="1000" cy="70" r="70"/>
                   <circle class="km-moon" cx="1000" cy="70" r="40"/>
@@ -12153,7 +12402,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // sürpriz kutucuklarında (kaya/rüzgar) + arka planda sürekli düşen küçük kaya parçacıklarında.
             if(tid === 'dag') return `<div class="km-oyun-panel" id="km-oyun-panel-dag">
                 <div id="km-oyun-kayalar-dag"></div>
-                <svg id="km-oyun-svg-dag" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid slice">
+                <svg id="km-oyun-svg-dag" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <linearGradient id="kmDagTrailGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ffb27a"/><stop offset="100%" stop-color="#ffe0b0"/></linearGradient>
                     <linearGradient id="kmDagKaya3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3a241a"/><stop offset="100%" stop-color="#241510"/></linearGradient>
@@ -12231,6 +12480,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         function kmOyunHTML() {
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
+            kmOyunKameraKilitYukle();
+            kmOyunDokAyarYukle();
+            let kameraVarMi = !!KM_OYUN_KAMERA_SVG_ID[_kmOyunAktifTema];
             return `<div id="km-oyun-wrap" data-tema="${_kmOyunAktifTema}">
                 <div class="km-oyun-topbar">
                     <div style="display:flex; align-items:center; gap:8px; min-width:0;">
@@ -12241,6 +12493,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker Modu">${_kmOyunSesliMod ? '🔊' : '🔇'}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama Modu">🎬</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir tema öner">🎲</button>
+                        <button class="km-oyun-tam-btn${_kmOyunKameraKilitli ? ' aktif' : ''}" id="km-oyun-kamera-kilit-btn" onclick="kmOyunKameraKilitDegistir()" style="${kameraVarMi ? '' : 'display:none;'}" title="${_kmOyunKameraKilitli ? 'Kamera geniş görünümde sabit — otomatik yakınlaşmayı açmak için dokun.' : 'Kamera otomatik yakınlaşıyor. Geniş görünümde sabitlemek için dokun.'}">${_kmOyunKameraKilitli ? '🔓' : '🔒'}<span class="km-oyun-kilit-etiket">${_kmOyunKameraKilitli ? ' Otomatik Kamera' : ' Geniş Görünümde Kal'}</span></button>
                         <button class="km-oyun-tam-btn" id="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
                     </div>
                 </div>
@@ -12290,23 +12543,51 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         </div>
                         <div class="km-oyun-chips" id="km-oyun-chips"></div>
                     </div>
-                    <div class="km-oyun-dok${_kmOyunDokBuyukMu ? ' km-oyun-dok-buyuk' : ''}" id="km-oyun-dok">
-                        <div class="km-oyun-dok-lbl" id="km-oyun-ok-toggle-row" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                            <span id="km-oyun-ok-lbl">Bu Serinin Puanları — ${_kmOyunOkSayisi} Ok</span>
-                            <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="km-oyun-dok km-oyun-dok-konum-${_kmOyunDokKonum === 'sol' ? 'sol' : (_kmOyunDokKonum === 'sag' ? 'sag' : '')} km-oyun-dok-boyut-${_kmOyunDokBoyut === 'kucuk' ? 'kucuk' : ''}${_kmOyunDokAcikMi ? '' : ' km-oyun-dok-kapali'}" id="km-oyun-dok">
+                        <div class="km-oyun-dok-ust">
+                            <button class="km-oyun-dok-ozet-btn" id="km-oyun-dok-ozet-btn" onclick="kmOyunDokAcikKapatDegistir()">
+                                <span>🎯 Skor Gir</span>
+                                <span class="km-oyun-dok-ozet-sayi" id="km-oyun-dok-ozet-sayi">${_kmOyunSeriGirisleri.length}/${_kmOyunOkSayisi}</span>
+                                <span class="km-oyun-dok-ozet-ok" id="km-oyun-dok-ozet-ok">${_kmOyunDokAcikMi ? '▾' : '▴'}</span>
+                            </button>
+                            <button class="km-oyun-dok-ayar-btn" onclick="kmOyunDokAyarMenusuAcKapat()" title="Panel ayarları (konum, boyut, otomatik davranış)">⚙️</button>
+                        </div>
+                        <div class="km-oyun-dok-ayar-menu" id="km-oyun-dok-ayar-menu" style="display:none;">
+                            <div class="km-oyun-dok-ayar-satir">
+                                <span class="km-oyun-dok-ayar-lbl">Konum</span>
+                                <div class="km-oyun-dok-ayar-grup">
+                                    <button data-km-konum="sol" onclick="kmOyunDokKonumDegistir('sol')" class="${_kmOyunDokKonum === 'sol' ? 'aktif' : ''}">Sol Alt</button>
+                                    <button data-km-konum="orta" onclick="kmOyunDokKonumDegistir('orta')" class="${_kmOyunDokKonum === 'orta' ? 'aktif' : ''}">Alt Orta</button>
+                                    <button data-km-konum="sag" onclick="kmOyunDokKonumDegistir('sag')" class="${_kmOyunDokKonum === 'sag' ? 'aktif' : ''}">Sağ Alt</button>
+                                </div>
+                            </div>
+                            <div class="km-oyun-dok-ayar-satir">
+                                <span class="km-oyun-dok-ayar-lbl">Boyut</span>
+                                <div class="km-oyun-dok-ayar-grup">
+                                    <button data-km-boyut="kucuk" onclick="kmOyunDokBoyutDegistir('kucuk')" class="${_kmOyunDokBoyut === 'kucuk' ? 'aktif' : ''}">Küçük</button>
+                                    <button data-km-boyut="normal" onclick="kmOyunDokBoyutDegistir('normal')" class="${_kmOyunDokBoyut === 'normal' ? 'aktif' : ''}">Normal</button>
+                                </div>
+                            </div>
+                            <div class="km-oyun-dok-ayar-satir">
+                                <span class="km-oyun-dok-ayar-lbl">Otomatik küçül/aç</span>
+                                <button class="km-oyun-dok-oto-btn${_kmOyunDokOtomatikMi ? ' aktif' : ''}" onclick="kmOyunDokOtomatikDegistir()">${_kmOyunDokOtomatikMi ? 'Açık' : 'Kapalı'}</button>
+                            </div>
+                        </div>
+                        <div class="km-oyun-dok-icerik" id="km-oyun-dok-icerik">
+                            <div class="km-oyun-dok-lbl" id="km-oyun-ok-toggle-row" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span id="km-oyun-ok-lbl">Bu Serinin Puanları — ${_kmOyunOkSayisi} Ok</span>
                                 <div class="km-oyun-ok-toggle">
                                     <button class="${_kmOyunOkSayisi === 3 ? 'aktif' : ''}" data-n="3" onclick="kmOyunOkSayisiSec(3)">3 Ok</button>
                                     <button class="${_kmOyunOkSayisi === 6 ? 'aktif' : ''}" data-n="6" onclick="kmOyunOkSayisiSec(6)">6 Ok</button>
                                 </div>
-                                <button class="km-oyun-geri-al-btn km-oyun-dok-boyut-btn${_kmOyunDokBuyukMu ? ' aktif' : ''}" onclick="kmOyunDokBoyutDegistir()" title="Skor girme tabelasını büyüt/küçült">${_kmOyunDokBuyukMu ? '🔎 Küçült' : '🔍 Büyüt'}</button>
                             </div>
+                            <div class="km-oyun-dok-row">
+                                <div class="km-oyun-slots" id="km-oyun-slotlar"></div>
+                                <div class="km-oyun-pad" id="km-oyun-pad"></div>
+                            </div>
+                            <div class="km-oyun-futbol-dok-liste" id="km-oyun-futbol-dok-liste"></div>
+                            <button class="km-oyun-ilerlet-btn" id="km-oyun-ilerlet-btn" onclick="kmOyunIlerlet()" disabled>${th.btn}</button>
                         </div>
-                        <div class="km-oyun-dok-row">
-                            <div class="km-oyun-slots" id="km-oyun-slotlar"></div>
-                            <div class="km-oyun-pad" id="km-oyun-pad"></div>
-                        </div>
-                        <div class="km-oyun-futbol-dok-liste" id="km-oyun-futbol-dok-liste"></div>
-                        <button class="km-oyun-ilerlet-btn" id="km-oyun-ilerlet-btn" onclick="kmOyunIlerlet()" disabled>${th.btn}</button>
                     </div>
                 </div>
                 <div class="km-oyun-not" id="km-oyun-not"><b>Bu bir eğlence katmanı.</b> ${th.aciklama}</div>
@@ -12376,7 +12657,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }).join('');
             kmOyunSiradaGuncelle();
         }
-        function kmOyunSporcuSec(i) { _kmOyunAktifIndex = i; kmOyunChipleriCiz(); kmOyunKabukGuncelle(); if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle(); }
+        function kmOyunSporcuSec(i) {
+            _kmOyunAktifIndex = i;
+            // Koçun elle seçmesi de "sıra ona geldi" demek — koreografi anında yakınlaşsın (kilit
+            // açıksa zaten geniş kalacak, kmOyunKameraGuncelle bunu kendi karar veriyor).
+            if(_kmOyunKameraBekleyenTimer) { clearTimeout(_kmOyunKameraBekleyenTimer); _kmOyunKameraBekleyenTimer = null; }
+            _kmOyunKameraDurum = 'yakin';
+            kmOyunDokOtomatikAc();
+            kmOyunChipleriCiz();
+            kmOyunKabukGuncelle();
+            if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
+        }
         // Alkış Butonu (2026-09-04, Heyecan Motoru araştırması — Strava Kudos: ücretsiz, bir dokunuşluk
         // sosyal tanınma). Sırası gelmeyen sporcular ya da koç, iyi bir seri sonrası chip'e dokunup
         // alkışlayabilir — gerçek skora/klasmana HİÇ dokunmaz, sadece görünürlük/tanınma sayacı.
@@ -12411,6 +12702,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             w.innerHTML = html;
             let btn = document.getElementById('km-oyun-ilerlet-btn');
             if(btn) btn.disabled = _kmOyunSeriGirisleri.length < _kmOyunOkSayisi || _kmOyunKilit;
+            // Panel kapalıyken (esnek panel, 2026-09-09) özet satırındaki "N/M" tek görünen bilgi —
+            // her ok girişinde/silinişinde güncel kalsın.
+            let ozet = document.getElementById('km-oyun-dok-ozet-sayi'); if(ozet) ozet.textContent = `${_kmOyunSeriGirisleri.length}/${_kmOyunOkSayisi}`;
         }
         function kmOyunOkGir(v) {
             if(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi) return;
@@ -13080,6 +13374,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
+            // Yeni bir tema/sahne her zaman GENİŞ görünümle başlar (koreografi döngüsünün dinlenme
+            // durumu) — önceki temadan kalma bir "yakın" hedefi yeni sahnede anlamsız olurdu.
+            if(_kmOyunKameraBekleyenTimer) { clearTimeout(_kmOyunKameraBekleyenTimer); _kmOyunKameraBekleyenTimer = null; }
+            _kmOyunKameraDurum = 'genis';
             _kmOyunAktifTema = tid;
             kmOyunTemaKullanildiIsaretle(tid);
             let wrap = document.getElementById('km-oyun-wrap'); if(wrap) wrap.dataset.tema = tid;
@@ -13100,6 +13398,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
+            kmOyunKameraKilitButonGuncelle();
         }
         function kmOyunIlerlet() {
             if(_kmOyunSeriGirisleri.length < _kmOyunOkSayisi || _kmOyunKilit) return;
@@ -13311,6 +13610,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunResyncAktif();
                     kmOyunChipleriCiz();
                 }
+                // Kamera koreografisi — "sonra kamera tekrar geniş görünüme açılsın" adımı: hareket
+                // bitti, kamera genişler; kısa bir "genel tabloyu izle" molasından sonra YENİ sıradaki
+                // sporcuya (yukarıda zaten ilerletildi) otomatik yaklaşır — döngü kendini tekrar eder.
+                if(_kmOyunKameraBekleyenTimer) { clearTimeout(_kmOyunKameraBekleyenTimer); _kmOyunKameraBekleyenTimer = null; }
+                // Skor paneli — otomatik davranış (Faz "Skor girme paneli", 2026-09-09): panel
+                // kapanırken kamera genişlesin, panel açılırken kamera yaklaşsın — "tek bir hareket"
+                // hissi için AYNI iki tetikleme noktasını paylaşıyor.
+                kmOyunDokOtomatikKapat();
+                if(!kmOyunKameraKilitliMi()) {
+                    _kmOyunKameraDurum = 'genis';
+                    _kmOyunKameraBekleyenTimer = setTimeout(function() {
+                        _kmOyunKameraBekleyenTimer = null;
+                        if(kmOyunKameraKilitliMi()) return;
+                        _kmOyunKameraDurum = 'yakin';
+                        kmOyunKabukGuncelle();
+                        kmOyunDokOtomatikAc();
+                    }, 1500);
+                }
                 // Bireysel modda yukarıdaki dallar hiç çalışmıyor (kmOyunResyncAktif zaten oradan
                 // kmOyunKabukGuncelle'i tetikliyor) — kamera/sıradaki-vurgu HER durumda güncellensin.
                 kmOyunKabukGuncelle();
@@ -13320,6 +13637,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
 
             function baslatAnimasyon() {
+                // Kamera koreografisi — "hareket etsin" adımı: figür yeni konumuna doğru animasyonla
+                // giderken kamera da (kilitli değilse) AYNI hedefe doğru kaymaya başlıyor, hareketle
+                // yaklaşık eş zamanlı. Genişleme (bir sonraki adım) bitirOrtak()'ta.
+                if(!kmOyunKameraKilitliMi()) { _kmOyunKameraDurum = 'yakin'; kmOyunKameraGuncelle(yeniFrac); }
                 if(_kmOyunAktifTema === 'zirve') kmOyunAnimateZirve(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'yildiz') kmOyunAnimateYildiz(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'hazine') kmOyunAnimateHazine(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
@@ -13912,7 +14233,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunDramatikMod = kmOyunBayrakYukle('dramatik');
             _kmOyunAdilMi = kmOyunBayrakYukle('adil');
             _kmOyunRailKucukMu = kmOyunBayrakYukle('railkucuk');
-            _kmOyunDokBuyukMu = kmOyunBayrakYukle('dokbuyuk');
+            kmOyunDokAyarYukle();
             _kmOyunCokluMu = kmOyunBayrakYukle('coklu');
             if(_kmOyunCokluMu) kmOyunCokluDurumEmin();
             _kmOyunYukselenMi = kmOyunBayrakYukle('yukselen');
