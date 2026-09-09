@@ -1750,5 +1750,164 @@ kontrol edildi; Reaksiyon'un 14 mini-oyunu (gerçek bir oyun açılıp) etkilenm
 **Kalan iş / açık notlar**: `_kmOyunKarakterSinirKisitla`/`kmOyunEtiketKenarDuzelt`'in CSS
 `overflow:hidden`/`clip-path` NEDEN çalışmadığı hâlâ tam anlaşılmadı (JS-tabanlı kelepçe işlevsel
 olarak sorunu çözdü ama kök neden not olarak açık kalıyor — ileride biri bu CSS davranışını gerçekten
-anlamak isterse burada bir bulmaca var). Bu bölümün TAMAMI commit edilmedi — bir sonraki oturum önce
-`git status`/`git diff public/app.js` ile mevcut durumu görmeli.
+anlamak isterse burada bir bulmaca var).
+
+**GÜNCELLEME (2026-09-10)**: Bu bölümün TAMAMI `b95a043` ile commit edildi ("Oyunlar: kamera
+koreografisi, etiket/panel çakışması düzeltmesi, esnek skor paneli + Tam Ekran çökme düzeltmesi").
+Faz 9 (Pist Yarışı yeniden tasarımı) bu commit'in üzerine, AYRI bir fazda yapıldı — bkz. §14.
+
+## 14. Faz 9 — Pist Yarışı yeniden tasarımı (tek pist, gerçek yarış)
+
+**Neden değişti**: eski Pist 7 ayrı DOM şeridiydi (`.km-lane`/`.km-vehicle`, `left:%` bazlı) —
+sollama/çarpışma yoktu, hız farkı zar zor görünüyordu, ve diğer 7 "ortak yol" temasının paylaştığı
+`frac→{x,y}` kalıbına uymadığı için Faz 8'in kamera koreografisi/kabuk iyileştirmelerinden hiç
+faydalanamıyordu (kendi ayrı `kmOyunPistKameraGuncelle()` hack'i vardı). Kullanıcı 5 aşamalı bir
+yeniden tasarım istedi: (1) kapalı devre + konumlandırma, (2) tur sistemi, (3) hız eğrisi, (4) sıra
+rozetleri + sollama, (5) bitiş sekansı. Her aşamadan sonra ekran görüntüsü + onay ile ilerlendi.
+**Skor girme paneli, ortak kabuk fonksiyonları (`kmOyunKabukGuncelle` ve içindekiler), diğer 9 temanın
+frac artış formülü, ve `kmOyunJitter()` hiç değiştirilmedi** — kullanıcının en katı kuralıydı ("Pist
+kabuğa uyacak, kabuk Pist'e değil").
+
+### 14a. Stage 1 — Kapalı devre + konumlandırma
+
+Eski `.km-lane*`/`.km-vehicle*`/`.km-kart*`/`.km-startline`/eski `.km-cp*`/`.km-finish`/
+`.km-speedlines*`/`.km-flood*`/`.km-grandstand`/`.km-oyun-lanes` tamamen silindi (grep ile diğer hiçbir
+temanın bu class'ları paylaşmadığı doğrulandı). Yerine 1200×440 viewBox'ta (diğer 6 "ortak yol"
+temasıyla AYNI alan) kapalı bir SVG devre: `KM_OYUN_PIST_YOL_D` (yuvarlak köşeli dikdörtgen, başlangıç/
+bitiş noktası BİREBİR aynı — `Z` kapanışının görünmez bir "kısayol" segmenti üretmemesi için).
+
+**`kmOyunPistNokta(frac)`** diğer temaların `kmOyunZirveNokta` imzasını birebir taklit ediyor,
+içeride `((frac%1)+1)%1` ile SARIYOR — 2. aşamanın çok-turlu frac'ına (>1) baştan hazır. **`kmOyunPistTeget(frac)`**
+modülo-sarımlı epsilon örneklemesiyle (clamp DEĞİL) teğeti hesaplıyor — kullanıcının 3. dikkat
+noktasıydı ("virajlarda normal ters dönebilir"), clamp yerine modülo seçilmesinin sebebi tam bu.
+**`kmOyunPistKonum(frac,i,n)`** ikisini birleştirip sabit (rastgele DEĞİL) yanal ofseti uyguluyor.
+
+**Playwright ile ölçülerek doğrulanan 3 nokta** (kullanıcı bunları özellikle istedi):
+1. Sarım sıçramasız: frac 0.90→1.10 arası 0.002 adımla örneklendi, ardışık nokta mesafesi hep
+   ~4.78 birim (beklenen adım mesafesiyle birebir) — sıçrama yok.
+2. Teğet ters dönmüyor: tüm tur boyunca ardışık teğetlerin iç çarpımı en kötü 0.977 (1'e çok yakın).
+3. İki sütunun (iç/dış) işareti tüm turda HİÇ değişmedi (`signFlips=0`).
+
+**Gerçek testte bulunan ve düzeltilen bir kalabalık hatası**: 8 sporcuyu TEK bir enine çizgide 46
+birime sığdırmak (kişi başı ~6.5 birim) araba gövdelerini/sürücü dairelerini iç içe geçiriyordu (tek
+büyük renkli yığın gibi görünüyordu). Gerçek yarış ızgaralarındaki gibi **2 sütuna** bölünüp, aynı
+sütundaki arabalar teğet yönünde sabit küçük bir frac kaymasıyla (`kmOyunPistSiraKaymasi`,
+`KM_OYUN_PIST_SIRA_ADIMI=0.014`) öne/arkaya kaydırıldı — hâlâ tamamen deterministik (jitter/rastgele
+DEĞİL).
+
+Kamera dispatcher'ına (`KM_OYUN_KAMERA_SVG_ID`/`KM_OYUN_KAMERA_NOKTA_TEMALAR`) BİLEREK eklenmedi —
+kapalı devre her zaman tam görünür. Eski `kmOyunPistKameraGuncelle()`/`KM_OYUN_PIST_KAMERA_ZOOM` ve
+`kmOyunKabukGuncelle()`'daki çağrısı silindi. `pist:'pistEl'` artık `KM_OYUN_TAKIM_TEMSILCI_TEMALAR`'da
+da (`KM_OYUN_VURGU_TEMALAR` zaten 8a'dan beri içeriyordu).
+
+### 14b. Stage 2+3 — Tur sistemi + hız eğrisi (birlikte yapıldı)
+
+**"Yarış uzunluğu"**: 8 set → 2 tur, 12 set → 3 tur (`KM_OYUN_PIST_SET_TUR`), SADECE localStorage'da
+(`dag_km_pistuzunluk_<konum>`, D1'e YAZILMIYOR), üst yardımcı buton sırasında (skor paneline hiç
+dokunmadan) bir toggle butonu. Ortak `Math.min(1, eskiFrac+artis)` satırı `Math.min(pistToplamTur,
+...)` olarak genelleştirildi — diğer 9 temada `pistToplamTur` hep 1 olduğu için davranış AYNI kaldı
+(Zirve'de tek girişle regresyon testi: 26 puanlık aynı seri hâlâ eskisi gibi 0.13 artış veriyor).
+
+**Hız eğrisi**: okun DEĞERİNE göre katsayı (`KM_OYUN_PIST_HIZ_KATSAYI`) — NİTRO(X,10)=2.0/1.8,
+HIZLI(9)=1.5, GAZ(8,7)=1.0, YAVAŞ(6,5)=0.5, SAVRUL(M,1-4)=0.15. Set içindeki oklar TOPLANIYOR
+(ortalanmıyor) — bu yüzden 6 ok otomatik 3 okun TAM 2 katı ilerliyor (ölçüldü: 0.28→0.56, oran
+2.000), ayrı bir ayar gerekmedi. Artış SADECE `_kmOyunAktifTema==='pist'` dalında override ediliyor
+(futbol'un `artis=1/8` override'ıyla AYNI kalıp) — diğer temaların ortak formülüne dokunulmadı.
+
+**Kalibrasyon — İKİ TUR yapıldı** (ilk tur kullanıcıya sunuldu, "24-25 ortalaması hiç bitiremiyor,
+bitirememek kaybetmekten kötü bir his" geri bildirimiyle KISALTILDI):
+
+| Set ortalaması | İlk kalibrasyon (BİRİM=0.07), 8 set | Son kalibrasyon (BİRİM=1/12≈0.0833), 8 set | Son kalibrasyon, 12 set |
+|---|---|---|---|
+| 22p (7-8-7) | — | 8. set | 12. set |
+| 24p (8-8-8) | bitiremiyor (10 set gerekir) | **tam 8. set** | 12. set |
+| 25p (9-8-8) | bitiremiyor (9 set gerekir) | 7. set | 11. set |
+| 26p (9-9-8) | 8. set | 7. set | 9. set |
+| 27p (9-9-9) | 7. set | 6. set | 8. set |
+| 28p (10-9-9) | — | 6. set | 8. set |
+
+Son değer `KM_OYUN_PIST_BIRIM = 2/24` (tam kesir, ondalık yuvarlama HATASI yaşandı — `0.0833`
+yazınca 24p tam 8. sette DEĞİL 9. sette bitiyordu, `2/24` ifadesiyle çözüldü). Gerçek arayüzden tek
+girişle doğrulandı (8-8-8 → frac tam 0.25).
+
+**"Kimse bitiremeden set hakkı dolarsa en öndeki kazanır"**: bireysel modda kişi başı `pistSetSayaci`
+sayacı (`kmOyunSporcuSifirla`'da sıfırlanıyor). HERKES set hakkını tüketip kimse `pistToplamTur`'a
+ulaşmadıysa en yüksek frac'lı sporcu `_kmOyunPistYarisSonucu` guard'ıyla BİR KEZ ilan ediliyor (14d'de
+sonuç ekranına bağlandı).
+
+### 14c. Stage 4 — Sıra rozetleri, sıradaki büyütme, sollama, yüzdeli sıralama
+
+**Rozetler** (`kmOyunPistSiralamaHesapla`) TÜM roster'ın frac'ına göre holistik hesaplanıyor — tek
+kişi skor girse bile HERKESİN sırası yeniden çiziliyor. Ölçerek doğrulandı: index2 baştan 1.'ken,
+index0 26 puanlık seri girip index2'yi geçince rozetler doğru yer değiştirdi, ilgisiz index1
+etkilenmedi.
+
+**Sıradaki araba büyütme**: halka zaten paylaşılan `.km-oyun-siradaki-vurgu` sisteminden geliyordu
+(8a'dan beri Pist dahildi). "Büyük" kısmı **CSS class DEĞİL**, doğrudan JS transform string'ine
+(`kmOyunPistGovdeTransform`, `scale(1.18)`) eklendi — çünkü arabanın gövde transform'u zaten JS ile
+(rotate) yazılıyor; SVG'de bir CSS `transform` kuralı öznitelik `transform`'unu SESSİZCE geçersiz
+kılar, pozisyonu bozardı. Kullanıcı bu kararı özellikle onayladı.
+
+**Sağdaki liste**: Çoklu Takım'ın kendi ayrı görünümüyle (`kmOyunTakimYarisCiz`) AYNI önceliktte,
+bireysel Pist için ayrı bir dallanma (`kmOyunPistYarisCiz`) — `kmOyunLiderCiz`'in diğer 9 temaya ait
+gövdesine dokunulmadı. Liste artık gerçek toplamSkor yerine yarış yüzdesi (`frac/toplamTur`) ve
+"X% geride" rozetleri gösteriyor.
+
+**Sollama bildirimi**: girişten önce önümdeyken artık arkamda kalan sporcular varsa "🏎️ [isim(ler)]'i
+geçtin!" toast'ı (birden fazla kişiyi aynı anda geçmek de test edildi, isimler virgülle listeleniyor).
+**Ciddi modda sessiz** — ölçerek doğrulandı: ciddi kapalıyken toast çıktı, açıkken (varsayılan durum)
+hiç çıkmadı.
+
+### 14d. Stage 5 — Bitiş sekansı
+
+**"Son tur" işareti**: LİDERİN (frac'ı en yüksek sporcu, aktif/SIRADAN BAĞIMSIZ) son tura girip
+girmediği her resync'te hesaplanıyor (`kmOyunPistTurHudGuncelle` içinde), `#km-oyun-pist-sontur`
+SVG rozeti gösterilip gizleniyor.
+
+**Sonuç ekranı** (`kmOyunPistSonucGoster`, `.km-pist-sonuc`) — Monopoly'nin Şans Kartı overlay'iyle
+(`.km-sans-karti`) AYNI kalıp: sahnenin İÇİNDE, mutlak konumlu, `.goster` class'ıyla açılıp kapanan
+bir kart, kapatma (✕) butonu var. Kısa sonuç: kazananın adı, "🎯 N ok attı" (`pistOkSayaci` — BU
+yarışa özel sayaç, genel kişisel rekordan AYRI), "⭐ En iyi seri: [isim] — Np" (`pistEnIyiSeriBuYaris`
+— yine bu yarışa özel, TÜM roster'dan en yükseği). Hem GERÇEK bitiş (bayrağı geçmek) hem "set süresi
+doldu" (14b) AYNI `_kmOyunPistYarisSonucu` guard'ı ve AYNI `kmOyunPistSonucGoster` çağrısına bağlandı
+— hangi yoldan gelirse gelsin bir yarış SADECE BİR KEZ sonuçlanıyor. Bireysel Pist'in GERÇEK bitişi
+diğer temaların ortak banner/surpriz/ses akışını BİLEREK atlıyor (ciddi modda bu eski akış zaten
+çalışmaya devam ederdi, "kaçak kutlama" olurdu) — takım modunda (Pist dahil) eski akış DEĞİŞMEDEN
+duruyor. Zirve'de gerçek bitişin hâlâ eski banner'ı kullandığı ayrıca doğrulandı (regresyon yok).
+
+**Ciddi modda kutlama yok, sadece sonuç tablosu**: `.km-pist-sonuc.ciddi` class'ı SADECE giriş
+animasyonunu (`kmPistSonucFlipIn`, çift-küp-eksenli flip) durduruyor — kart yine de TAM içerikle
+gösteriliyor, sadece düz beliriyor. Konfeti/kutlama sesi de `if(!ciddi)` ile atlanıyor. İKİ ayrı
+mekanizma ölçülerek doğrulandı: ciddi AÇIKKEN `getComputedStyle(...).animationName === 'none'`,
+`prefers-reduced-motion: reduce` altında (ciddi KAPALI olsa bile) AYNI sonuç — paylaşılan genel
+`#km-oyun-wrap *{animation:none!important}` kuralı zaten kapsıyor, ayrı bir iş gerekmedi.
+
+### 14e. Genel doğrulama + kalan notlar
+
+Her aşamadan sonra: diğer 10 oyun + Reaksiyon döngüyle açıldı (hata yok), 360/1280/1920px + gerçek
+Tam Ekran'da taşma yok, `prefers-reduced-motion` altında Pist'in yeni hiçbir öğesinde aktif animasyon
+yok. `node --check` her adımdan sonra temiz. Test PIN'i her tur sonunda gerçek `egitmen_hash`'e geri
+alındı.
+
+**Test sırasında karşılaşılan, Pist'le İLGİSİZ bir arka plan sorunu**: hızlı art arda gerçek tıklama
+gerektiren kalibrasyon testlerinde (12 set art arda), önceki fazlardan bilinen "401 fırtınası"
+`/api/athletes`'i bombalayıp tarayıcıyı `ERR_INSUFFICIENT_RESOURCES` ile zorladı. Zirve'de tek girişle
+regresyon testi sorunsuz çalıştığı için Pist koduyla İLİŞKİSİ YOK — kalibrasyon tabloları bu yüzden
+gerçek arayüz yerine doğrudan `kmOyunPistSetArtis` formülüyle (ağ isteği olmadan) simüle edilip
+raporlandı, sadece TEK gerçek girişlerle çapraz doğrulandı.
+
+**Bilinen sınır**: aşırı uzun test-sporcu adları (`CanliTakipGoster_1788732305561` gibi, 30+ karakter)
+araba etiket kutusunu genişletip komşu etiketlerle çakışabiliyor — Pist, `kmOyunEtiketKenarDuzelt`'in
+çakışma-giderme sistemine BİLEREK dahil değil (o sistem `KM_OYUN_KAMERA_SVG_ID` varlığına bağlı,
+Pist'in kamerası yok). Gerçek sporcu adlarında (kısa Türkçe isimler) sorun oluşturmuyor, sadece
+pathological test verisinde görülüyor — bilinçli olarak Stage 1-5 kapsamı dışında bırakıldı.
+
+**Sonraya bırakılanlar** (kullanıcı talimatıyla bu fazda yapılmadı, sadece not): Slipstream (öndekinin
+arkasındayken ek hız), Nitro barı (üst üste iyi atışla biriken, istenen anda harcanan boost).
+
+**Ortak kabuğa dokunulmadı**: `kmOyunKabukGuncelle()` içindeki 5 fonksiyonun (`kmOyunTakimTemsilciUygula`,
+`kmOyunSiradakiVurguUygula`, `kmOyunKameraGuncelle`, `kmOyunKarakterSinirKisitla`,
+`kmOyunEtiketKenarDuzelt`) HİÇBİRİNİN gövdesi değişmedi — sadece `kmOyunPistKameraGuncelle()` çağrısı
+silindi (Pist artık kameraya girmiyor). `kmOyunSporcuSec`/`kmOyunIlerlet`/`kmOyunLiderCiz` gibi zaten
+tema-koşullu dallanması olan (Monopoly/futbol örnekleri gibi) fonksiyonlara Pist'in KENDİ dalı eklendi
+— bu, mevcut kod stiliyle tutarlı, "kabuğa dokunma" kuralının kapsamı dışında.

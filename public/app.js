@@ -10567,7 +10567,7 @@ ${(function(){
 .km-oyun-chip-cp b{ color:var(--ink); font-family:var(--font-display); font-weight:700; }
 .km-oyun-dok-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .km-oyun-pad{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; flex:0 1 480px; min-width:260px; max-width:480px; }
-.km-oyun-padbtn{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:11px; padding:10px 4px; min-height:44px; cursor:pointer; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 8px rgba(0,0,0,0.22); }
+.km-oyun-padbtn{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:11px; padding:10px 4px; min-height:44px; cursor:pointer; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 8px rgba(0,0,0,0.22); position:relative; }
 /* Dok artık sahnenin İÇİNDE, harita üstünde yarı saydam bir katman (2026-09-06) — bu yüzden
    varsayılan (pencere içi) boyutlar 18. turdaki TV-uzaklığı büyütmesinden GERİ alındı (kompakt),
    sadece GERÇEK Tam Ekran'da (koltuktan/TV'den uzakta izlenen 🖥️ Tam Ekran modu) o büyük punto
@@ -10598,6 +10598,11 @@ ${(function(){
 .km-oyun-padbtn.beyaz{ color:#111; background:linear-gradient(180deg,#ffffff,#e4e4ea); border-color:#c8c8d2; }
 .km-oyun-padbtn.gri{ color:var(--ink-faint); background:var(--panel-hi); border-color:var(--line); opacity:.8; }
 .km-oyun-padbtn:disabled{ opacity:.3; cursor:default; transform:none; }
+/* Faz 9, Stage 3 (2026-09-10) — Pist hız etiketi (NİTRO/HIZLI/GAZ/YAVAŞ/SAVRUL). MUTLAK konumlu
+   (akışa dahil DEĞİL) — tuşun kendi yüksekliğini/panelin ölçülerini bir piksel bile etkilemiyor.
+   Diğer 9 temada DOM'da var ama görünmez (kullanıcı talimatı: sadece Pist'te görünsün). */
+.km-oyun-pad-hiz{ display:none; }
+#km-oyun-wrap[data-tema="pist"] .km-oyun-pad-hiz{ display:block; position:absolute; left:2px; right:2px; bottom:2px; font-size:6.5px; font-weight:800; letter-spacing:.3px; line-height:1; opacity:.8; pointer-events:none; }
 .km-oyun-slots{ display:flex; gap:5px; align-items:center; }
 .km-oyun-slot{ width:32px; height:32px; border-radius:8px; border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--ink-faint); position:relative; }
 .km-oyun-slot.dolu{ border-style:solid; border-color:var(--a1); color:var(--a1); background:color-mix(in srgb, var(--a1) 8%, transparent); cursor:pointer; }
@@ -10685,41 +10690,42 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-ship-token.flying{ animation:kmShipGlow .3s ease-in-out infinite; }
 @keyframes kmShipGlow{ 0%,100%{ filter:drop-shadow(0 0 5px var(--_c)); } 50%{ filter:drop-shadow(0 0 10px var(--_c)); } }
 
-/* Pist Yarışı */
+/* Pist Yarışı — Faz 9 (2026-09-09): 7 ayrı DOM şeridi yerine TEK kapalı SVG devre. Diğer 6 "ortak yol"
+   temasıyla (Zirve/Yıldız/Hazine/Ninja/Monopoly/Dağ) AYNI 1200x440 SVG çizim alanını paylaşıyor —
+   kamerasız (devre her zaman tam görünür), kendi sabit-yanal-ofsetli konumlandırmasıyla. */
 #km-oyun-panel-pist{ background:linear-gradient(180deg,#131318 0%,#0e0e13 100%); }
-.km-flood{ position:absolute; width:44%; height:60%; filter:blur(50px); opacity:.22; pointer-events:none; border-radius:50%; }
-.km-flood.f1{ left:-6%; top:-16%; background:radial-gradient(circle,var(--a3),transparent 70%); }
-.km-flood.f2{ right:-6%; top:-16%; background:radial-gradient(circle,var(--a1),transparent 70%); }
-.km-grandstand{ position:absolute; left:0; right:0; top:0; height:14%; opacity:.5; background:repeating-linear-gradient(90deg,#26262e 0 10px,#1c1c23 10px 20px); mask-image:linear-gradient(180deg,#000,transparent); }
-.km-oyun-lanes{ position:relative; flex:1; display:flex; flex-direction:column; gap:5px; padding-right:44px; min-height:0; }
-.km-lane{ flex:1; display:flex; align-items:center; gap:8px; min-height:0; }
-.km-lane-label{ display:flex; align-items:center; gap:6px; width:70px; flex-shrink:0; }
-.km-lane-av{ width:20px; height:20px; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:8.5px; color:#0b0b10; flex-shrink:0; }
-.km-lane-nm{ font-size:9.5px; font-weight:800; color:var(--ink-dim); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.km-lane-track{ position:relative; flex:1; height:100%; border-radius:7px; border:1px solid var(--line); background:linear-gradient(180deg,#1a1a20,#131317); overflow:hidden; }
-.km-lane-track::before{ content:''; position:absolute; left:0; right:0; top:50%; height:2px; margin-top:-1px; background-image:repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 16px, transparent 16px 32px); }
-.km-startline{ position:absolute; left:2px; top:2px; bottom:2px; width:4px; border-radius:2px; background-image:repeating-linear-gradient(#e8e8ee 0 4px, #1a1a20 4px 8px); opacity:.8; }
-.km-cp{ position:absolute; top:5px; width:11px; height:11px; margin-left:-5.5px; border-radius:2px; opacity:.55; transition:opacity .5s, transform .5s; overflow:hidden; background-image: conic-gradient(#2a2a32 90deg, #46464f 90deg 180deg, #2a2a32 180deg 270deg, #46464f 270deg); }
-.km-cp span{ position:absolute; left:50%; bottom:-11px; margin-left:-3.5px; font-family:var(--font-display); font-weight:700; font-size:6.5px; color:#6a6a78; }
-.km-cp.hit{ opacity:1; transform:scale(1.25); background-image: conic-gradient(#fff 90deg, var(--_c) 90deg 180deg, #fff 180deg 270deg, var(--_c) 270deg); box-shadow:0 0 6px var(--_c); }
-.km-cp.hit span{ color:#fff; }
-.km-vehicle{ position:absolute; top:50%; left:2%; transform:translate(-50%,-50%); z-index:3; transition:left 1.15s cubic-bezier(.22,.75,.24,1); }
-.km-kart{ position:relative; width:32px; height:16px; }
-.km-speedlines{ position:absolute; right:100%; top:50%; width:0; height:2px; margin-top:-1px; overflow:visible; display:flex; flex-direction:column; gap:3px; opacity:0; }
-.km-vehicle.flying .km-speedlines{ opacity:.7; }
-.km-speedlines i{ display:block; width:16px; height:2px; border-radius:2px; background:var(--_c); transform:translateY(-3px); }
-.km-speedlines i:nth-child(2){ width:11px; transform:translateY(3px); opacity:.6; }
-.km-wheel{ position:absolute; bottom:0; width:6.5px; height:6.5px; border-radius:50%; background:#1a1a20; border:1.3px solid #444; }
-.km-wheel.f{ left:4px; } .km-wheel.b{ right:4px; }
-.km-kart .km-body{ position:absolute; left:3px; right:2px; top:2px; height:9px; border-radius:4px 7px 2px 2px; box-shadow:0 0 6px var(--_c); background:var(--_c); }
-.km-kart .km-spoiler{ position:absolute; right:1px; top:0; width:3px; height:7px; border-radius:2px; background:#26262e; border:1px solid #444; }
-.km-kart .km-visor{ position:absolute; left:11px; top:2px; width:7px; height:4px; border-radius:2px; background:#0c0c10; opacity:.85; }
-/* Sürücü başı — kart çok küçük (32x16px) olduğundan tam gövde karakteri OKUNMAZ olurdu, bunun yerine
-   fotoğraf/baş harfi vizörün hemen üstünde küçük bir "kask" dairesi olarak gösteriliyor. */
-.km-kart-surucu{ position:absolute; left:9px; top:-7px; width:11px; height:11px; border-radius:50%; overflow:hidden; z-index:2; display:flex; align-items:center; justify-content:center; font-size:6px; font-weight:800; color:#04081c; font-family:var(--font-display); box-shadow:0 0 0 1.4px #fff, 0 1px 3px rgba(0,0,0,0.45); }
-.km-vehicle.flying .km-kart{ animation:kmKartShake .1s linear infinite; }
-@keyframes kmKartShake{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-1.2px); } }
-.km-finish{ position:absolute; top:0; bottom:0; right:0; width:42px; overflow:hidden; border-radius:0 10px 10px 0; background-image: conic-gradient(#e8e8ee 90deg, #1a1a20 90deg 180deg, #e8e8ee 180deg 270deg, #1a1a20 270deg); background-size:14px 14px; opacity:.9; }
+.km-pist-asfalt-glow{ fill:none; stroke:var(--a1); stroke-width:56; stroke-linejoin:round; opacity:.16; filter:blur(6px); }
+.km-pist-asfalt{ fill:none; stroke:#26262e; stroke-width:46; stroke-linejoin:round; }
+.km-pist-orta-cizgi{ fill:none; stroke:#54545f; stroke-width:2; stroke-dasharray:10 9; stroke-linejoin:round; }
+.km-pist-cp-isaret circle{ fill:#1a1a20; stroke:#46464f; stroke-width:1.4; opacity:.7; }
+.km-pist-cp-isaret text{ font-family:var(--font-display); font-weight:700; font-size:9px; fill:#8a8a96; text-anchor:middle; dominant-baseline:middle; }
+.km-pist-dama{ stroke:#0c0c10; stroke-width:1; }
+.km-pist-golge{ fill:#000; opacity:.3; }
+.km-pist-teker{ fill:#1a1a20; stroke:#444; stroke-width:1; }
+.km-pist-spoiler{ fill:#26262e; stroke:#444; stroke-width:.8; }
+.km-pist-vizor{ fill:#0c0c10; opacity:.85; }
+.km-pist-govde-sekli{ stroke:#04081c; stroke-width:1; }
+.km-pist-surucu{ stroke:#fff; stroke-width:1.4; }
+.km-pist-tur-hud-bg{ fill:#000; opacity:.5; stroke:var(--a3); stroke-width:1.4; }
+.km-pist-tur-hud-text{ font-family:var(--font-display); font-weight:800; font-size:13px; fill:#fff; letter-spacing:.4px; }
+.km-pist-rozet circle{ fill:#0c0c10; stroke:#fff; stroke-width:1.4; }
+.km-pist-rozet-text{ font-family:var(--font-display); font-weight:800; font-size:8px; fill:#fff; text-anchor:middle; }
+.km-pist-sontur-bg{ fill:#7a1414; opacity:.9; stroke:#ff3b3b; stroke-width:1.2; }
+.km-pist-sontur-text{ font-family:var(--font-display); font-weight:800; font-size:10.5px; fill:#fff; letter-spacing:.3px; }
+/* Faz 9, Stage 5 (2026-09-10) — Pist bitiş sonuç ekranı. .km-sans-karti (Monopoly Şans Kartı) İLE AYNI
+   kalıp: sahnenin İÇİNDE, mutlak konumlu, .goster class'ıyla açılıp kapanan bir kart. "Ciddi modda
+   kutlama yok" kuralı SADECE giriş animasyonuna uygulanıyor (.ciddi class'ı varken flip-in atlanıyor,
+   kart yine de DÜZ görünüyor) — sonuç tablosunun kendisi HER ZAMAN gösteriliyor. */
+.km-pist-sonuc{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:10; opacity:0; perspective:700px; transition:opacity .15s; }
+.km-pist-sonuc.goster{ opacity:1; }
+.km-pist-sonuc.goster .km-pist-sonuc-ic{ pointer-events:auto; }
+.km-pist-sonuc-ic{ position:relative; width:230px; padding:22px 18px; border-radius:16px; background:linear-gradient(160deg,#1c1c24,#111116); border:3px solid #ffd23f; box-shadow:0 14px 38px rgba(0,0,0,0.6); text-align:center; }
+.km-pist-sonuc-bayrak{ font-size:36px; margin-bottom:6px; }
+.km-pist-sonuc-kazanan{ font-family:var(--font-display); font-weight:800; font-size:15px; color:#fff; letter-spacing:.03em; margin-bottom:2px; }
+.km-pist-sonuc-sebep{ font-family:var(--font-body); font-weight:600; font-size:10.5px; color:var(--ink-dim); margin-bottom:10px; }
+.km-pist-sonuc-satir{ font-family:var(--font-body); font-weight:700; font-size:12.5px; color:#e8e8ee; line-height:1.6; }
+@keyframes kmPistSonucFlipIn{ 0%{ transform:scale(.7) rotateY(90deg); } 60%{ transform:scale(1.06) rotateY(0deg); } 100%{ transform:scale(1) rotateY(0deg); } }
+.km-pist-sonuc.goster:not(.ciddi) .km-pist-sonuc-ic{ animation:kmPistSonucFlipIn .6s cubic-bezier(.2,.7,.3,1) forwards; }
 
 /* Ninja Oyunu */
 #km-oyun-panel-ninja{ background:linear-gradient(180deg,#0a0716 0%,#050409 60%,#020103 100%); }
@@ -11343,7 +11349,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // tahtası var) bu sorunu hiç yaşamıyor, dahil değiller. Sahne çizim fonksiyonlarının İÇİ hiç
         // değişmiyor — bu, onların zaten dışarı açtığı elemanlar üzerinde çalışan bir kabuk-katmanı
         // son işlemi (kmOyunResyncAktif/kmOyunSahneKurAktif'in sonunda çağrılıyor).
-        var KM_OYUN_TAKIM_TEMSILCI_TEMALAR = { zirve: 'zirveEl', yildiz: 'yildizEl', hazine: 'hazineEl', ninja: 'ninjaEl', monopoly: 'monopolyEl', dag: 'dagEl', balon: 'balonEl' };
+        var KM_OYUN_TAKIM_TEMSILCI_TEMALAR = { zirve: 'zirveEl', yildiz: 'yildizEl', hazine: 'hazineEl', ninja: 'ninjaEl', monopoly: 'monopolyEl', dag: 'dagEl', balon: 'balonEl', pist: 'pistEl' };
         function kmOyunTakimTemsilciUygula() {
             let key = KM_OYUN_TAKIM_TEMSILCI_TEMALAR[_kmOyunAktifTema];
             if(!key) return;
@@ -11398,9 +11404,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // çalışabiliyor. Nokta hesaplaması için HER temanın KENDİ var olan nokta/poz fonksiyonu
         // ÇAĞRILIYOR (5'i (frac)=>{x,y}, 2'si (i,n,frac)=>{x,y,heading} imzalı — kullanıcının istediği
         // gibi tek tek doğrulandı). Pist (kendi DOM/left:% düzeni) ve Hedef Tahtası (mekansal konum
-        // kavramı yok) burada YOK — Pist'in kendi kmOyunPistKameraGuncelle'i var (koreografisiz, hep
-        // yakın — kullanıcı talimatıyla bu iki tema koreografi dışı bırakıldı), Hedef'te kamera hiç
-        // uygulanmıyor.
+        // kavramı yok) burada YOK. Faz 9 (2026-09-09): Pist artık kapalı bir devre — devre her zaman
+        // TAMAMEN görünür olduğu için kameraya hiç gerek yok, kasıtlı olarak bu haritaya EKLENMEDİ
+        // (kullanıcı talimatı: "Pist kabuğa uyacak, kabuk Pist'e değil" / "kamera olmayan"). Hedef
+        // Tahtası'nda da kamera hiç uygulanmıyor.
         var KM_OYUN_KAMERA_NOKTA_TEMALAR = {
             zirve: function(t, i, n) { return kmOyunZirveNokta(t.frac); },
             hazine: function(t, i, n) { return kmOyunHazineNokta(t.frac); },
@@ -11505,29 +11512,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let y = Math.max(0, Math.min(H - h, pt.y - h / 2));
             kmOyunKameraHedefeGit(svg, x, y, w, h);
         }
-        // 8a — Pist'in kamerası: SVG değil, her sporcu kendi `.km-lane-track`'inde (position:relative,
-        // left:% ile ilerleyen) ayrı bir DOM satırı. Bu yüzden viewBox değil, TÜM şeritlere AYNI
-        // scale+translateX uygulanıyor (matematik: bir noktanın "gerçek" konumu frac*genişlik; bu
-        // scale(Z) + translateX(tx%) ile önce tx kadar kaydırılıp sonra Z ile büyütülünce ekranda
-        // Z*(frac+tx)*genişlik konumuna düşer — merkezde durması için tx = 1/(2Z) - frac). Sahne
-        // fonksiyonunun içindeki left:% atamalarına hiç dokunulmuyor, sadece paint-time transform.
-        // 8 şerit dikeyde sınırlı yer paylaşıyor — yüksek bir zoom, aracı kendi şeridinin dışına taşırıp
-        // üstten/alttan kırpılmasına yol açıyordu (gerçek testte yakalandı). 1.5, "yakın çekim" hissini
-        // korurken şeritler arası kırpmayı gözle görülür şekilde azaltıyor.
-        var KM_OYUN_PIST_KAMERA_ZOOM = 1.5;
-        function kmOyunPistKameraGuncelle() {
-            let tracks = document.querySelectorAll('#km-oyun-lanes .km-lane-track');
-            if(!tracks.length) return;
-            let temsilci = _kmOyunRosterCache[_kmOyunAktifIndex];
-            if(!temsilci) { tracks.forEach(function(t) { t.style.transform = ''; }); return; }
-            let Z = KM_OYUN_PIST_KAMERA_ZOOM, yarim = 1 / (2 * Z);
-            let merkezFrac = Math.max(yarim, Math.min(1 - yarim, temsilci.frac));
-            let tx = ((yarim - merkezFrac) * 100).toFixed(2);
-            tracks.forEach(function(t) {
-                t.style.transformOrigin = '0 50%';
-                t.style.transform = `scale(${Z}) translateX(${tx}%)`;
-            });
-        }
         // Karakter dünya-sınırı kısıtlaması (2026-09-09, gerçek testte bulundu) — kmOyunJitter() bir
         // karakteri kendi noktasından ±160 dünya-birimine kadar kaydırabiliyor (çok sporcu aynı yerde
         // kümelenince ayırmak için, KASITLI). 8 sporculu bir sınıfta bu, path'in UÇ noktalarına yakın
@@ -11611,7 +11595,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunTakimTemsilciUygula();
             kmOyunSiradakiVurguUygula();
             kmOyunKameraGuncelle();
-            kmOyunPistKameraGuncelle();
             kmOyunKarakterSinirKisitla();
             kmOyunEtiketKenarDuzelt();
         }
@@ -12342,9 +12325,43 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <g id="km-oyun-ships"></g>
                 </svg>
             </div>`;
+            // Faz 9 (2026-09-09) — Pist artık 7 ayrı DOM şeridi değil, diğer 7 temayla AYNI frac→{x,y}
+            // kalıbında TEK kapalı bir SVG devre (bkz. kmOyunPistNokta). Kamera dispatcher'ına BİLEREK
+            // eklenmedi (kapalı devre zaten her zaman tam görünür) — sadece paylaşılan vurgu/etiket
+            // sistemleri (KM_OYUN_VURGU_TEMALAR zaten 'pist' içeriyordu) bu SVG yapısıyla otomatik çalışır.
             if(tid === 'pist') return `<div class="km-oyun-panel" id="km-oyun-panel-pist">
-                <div class="km-flood f1"></div><div class="km-flood f2"></div><div class="km-grandstand"></div>
-                <div class="km-oyun-lanes" id="km-oyun-lanes"></div>
+                <svg id="km-oyun-svg-pist" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <radialGradient id="kmPistZemin" cx="50%" cy="35%" r="75%"><stop offset="0%" stop-color="#1b232e"/><stop offset="100%" stop-color="#0b0e13"/></radialGradient>
+                    <pattern id="kmPistDama" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="8" height="8" fill="#e8e8ee"/><rect width="4" height="4" fill="#1a1a20"/><rect x="4" y="4" width="4" height="4" fill="#1a1a20"/></pattern>
+                  </defs>
+                  <rect x="0" y="0" width="1200" height="440" fill="url(#kmPistZemin)"/>
+                  <g id="km-oyun-pist-seyirci"></g>
+                  <path id="km-oyun-pist-yol" class="km-pist-asfalt-glow" d="${KM_OYUN_PIST_YOL_D}"/>
+                  <path class="km-pist-asfalt" d="${KM_OYUN_PIST_YOL_D}"/>
+                  <path class="km-pist-orta-cizgi" d="${KM_OYUN_PIST_YOL_D}"/>
+                  <g id="km-oyun-pist-bayrak"></g>
+                  <g id="km-oyun-pist-cp"></g>
+                  <g id="km-oyun-pist-arabalar"></g>
+                  <g id="km-oyun-pist-tur-hud" transform="translate(600,24)">
+                    <rect x="-58" y="-16" width="116" height="28" rx="14" class="km-pist-tur-hud-bg"/>
+                    <text x="0" y="4" text-anchor="middle" class="km-pist-tur-hud-text">TUR 1 / 2</text>
+                  </g>
+                  <g id="km-oyun-pist-sontur" transform="translate(600,58)" style="display:none;">
+                    <rect x="-46" y="-11" width="92" height="22" rx="11" class="km-pist-sontur-bg"/>
+                    <text x="0" y="5" text-anchor="middle" class="km-pist-sontur-text">🔥 SON TUR!</text>
+                  </g>
+                </svg>
+                <div class="km-pist-sonuc" id="km-oyun-pist-sonuc">
+                  <div class="km-pist-sonuc-ic">
+                    <button class="km-sans-kapat" onclick="kmOyunPistSonucKapat()" title="Kapat">✕</button>
+                    <div class="km-pist-sonuc-bayrak">🏁</div>
+                    <div class="km-pist-sonuc-kazanan" id="km-oyun-pist-sonuc-kazanan">— kazandı!</div>
+                    <div class="km-pist-sonuc-sebep" id="km-oyun-pist-sonuc-sebep"></div>
+                    <div class="km-pist-sonuc-satir" id="km-oyun-pist-sonuc-ok"></div>
+                    <div class="km-pist-sonuc-satir" id="km-oyun-pist-sonuc-seri"></div>
+                  </div>
+                </div>
             </div>`;
             if(tid === 'ninja') return `<div class="km-oyun-panel" id="km-oyun-panel-ninja">
                 <svg id="km-oyun-svg-ninja" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
@@ -12494,6 +12511,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama Modu">🎬</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir tema öner">🎲</button>
                         <button class="km-oyun-tam-btn${_kmOyunKameraKilitli ? ' aktif' : ''}" id="km-oyun-kamera-kilit-btn" onclick="kmOyunKameraKilitDegistir()" style="${kameraVarMi ? '' : 'display:none;'}" title="${_kmOyunKameraKilitli ? 'Kamera geniş görünümde sabit — otomatik yakınlaşmayı açmak için dokun.' : 'Kamera otomatik yakınlaşıyor. Geniş görünümde sabitlemek için dokun.'}">${_kmOyunKameraKilitli ? '🔓' : '🔒'}<span class="km-oyun-kilit-etiket">${_kmOyunKameraKilitli ? ' Otomatik Kamera' : ' Geniş Görünümde Kal'}</span></button>
+                        <button class="km-oyun-tam-btn" id="km-oyun-pist-uzunluk-btn" onclick="kmOyunPistUzunlukDegistir()" style="${_kmOyunAktifTema === 'pist' ? '' : 'display:none;'}" title="Yarışın kaç setten oluştuğunu ve kaç tur olduğunu ayarlar (sadece bu cihazda hatırlanır)">${_kmOyunAktifTema === 'pist' ? kmOyunPistUzunlukBtnMetni() : ''}</button>
                         <button class="km-oyun-tam-btn" id="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
                     </div>
                 </div>
@@ -12667,6 +12685,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunChipleriCiz();
             kmOyunKabukGuncelle();
             if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
+            else if(_kmOyunAktifTema === 'pist') kmOyunResyncPist();
         }
         // Alkış Butonu (2026-09-04, Heyecan Motoru araştırması — Strava Kudos: ücretsiz, bir dokunuşluk
         // sosyal tanınma). Sırası gelmeyen sporcular ya da koç, iyi bir seri sonrası chip'e dokunup
@@ -12688,8 +12707,15 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         const KM_OYUN_PAD_RENK = { X: 'altin', '10': 'altin', '9': 'altin', '8': 'kirmizi', '7': 'kirmizi', '6': 'mavi', '5': 'mavi', '4': 'siyah', '3': 'siyah', '2': 'beyaz', '1': 'beyaz', M: 'gri' };
         function kmOyunPadCiz() {
             let g = document.getElementById('km-oyun-pad'); if(!g) return;
+            // Faz 9, Stage 3 (2026-09-10) — Pist "hız eğrisi" etiketi (NİTRO/HIZLI/GAZ/YAVAŞ/SAVRUL).
+            // Kullanıcı talimatı: tuşun konumu/boyutu/düzeni HİÇ değişmeyecek, sadece Pist temasındayken
+            // görünsün. Bu yüzden etiket HER temada aynı şekilde (boş span olarak) DOM'a yazılıyor ama
+            // mutlak konumlandırılmış (position:absolute, akışa dahil değil — buton yüksekliğini/panelin
+            // ölçülerini ETKİLEMİYOR) ve CSS'te SADECE [data-tema="pist"] altında görünür kılınıyor
+            // (bkz. .km-oyun-pad-hiz kuralı). Diğer 9 temada span DOM'da var ama display:none.
             g.innerHTML = KM_OYUN_PAD.map(function(v) {
-                return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmOyunOkGir('${v}')" ${_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi ? 'disabled' : ''}>${v}</button>`;
+                let etiket = KM_OYUN_PIST_HIZ_ETIKET[v] || '';
+                return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmOyunOkGir('${v}')" ${_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi ? 'disabled' : ''}>${v}<span class="km-oyun-pad-hiz">${etiket}</span></button>`;
             }).join('');
         }
         function kmOyunSlotlariCiz() {
@@ -12770,6 +12796,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
             kmOyunCpRailCiz();
             if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') { kmOyunTakimYarisCiz(el); return; }
+            // Pist — Çoklu Takım'ın (kmOyunTakimYarisCiz) AYNI dallanma önceliğinde: bireysel modda
+            // GERÇEK toplamSkor yerine frac'a (yarış ilerlemesine) göre sıralı, yüzdeli bir liste
+            // (Faz 9, Stage 4: "sağdaki listede sıralama ve yüzde"). kmOyunLiderCiz'in geri kalanına
+            // (diğer 9 tema, Adil/Yükselen/Lig) HİÇ dokunulmadı.
+            if(_kmOyunAktifTema === 'pist' && !_kmOyunTakimModu) { kmOyunPistYarisCiz(el); return; }
             if(_kmOyunLigMi) { kmOyunLigCiz(el); return; }
             // Adil Sıralama (2026-09-03) — karışık yaş/seviye grubunda ham puan yerine, koçun her sporcuya
             // taktığı seviye etiketine göre ağırlıklandırılmış bir "adil puan" gösterilir. GERÇEK toplamSkor
@@ -12844,6 +12875,30 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <span class="km-oyun-lider-ad">${o.t.emoji} ${esc(o.t.ad)}</span>
                     <span class="km-oyun-lider-skor">${o.cp}/${KM_OYUN_CP_SAYISI}</span></div>
                     <div class="km-oyun-fark-satir">${fark}</div>`;
+            }).join('');
+            el.innerHTML = html;
+        }
+        // Pist Yarışı standingsi (Faz 9, Stage 4) — kmOyunTakimYarisCiz'in AYNI kalıbı, ama frac zaten
+        // HER sporcunun kendi tur ilerlemesi olduğu için "puan geride" yerine "% geride" (yarış yüzdesi).
+        // GERÇEK toplamSkor'a dokunmuyor, sadece bu tabloda gösteriliyor.
+        function kmOyunPistYarisCiz(el) {
+            let madalya = ['🥇', '🥈', '🥉'];
+            let toplamTur = kmOyunPistToplamTur();
+            let sirali = _kmOyunRosterCache.map(function(s, i) { return { s: s, i: i, frac: s.frac }; }).sort(function(a, b) { return b.frac - a.frac; });
+            let lider = sirali[0];
+            let html = '<div class="km-oyun-lider-baslik">🏁 Yarış Sıralaması</div>';
+            html += sirali.map(function(o, rank) {
+                let yuzde = Math.round(Math.min(100, (o.frac / toplamTur) * 100));
+                let fark = '';
+                if(sirali.length > 1 && rank > 0) {
+                    let gapYuzde = Math.round(((lider.frac - o.frac) / toplamTur) * 100);
+                    fark = gapYuzde > 0 ? `<span class="km-oyun-fark-rozet">${gapYuzde}% geride</span>` : '<span class="km-oyun-fark-rozet">berabere</span>';
+                }
+                return `<div class="km-oyun-lider-satir"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
+                    <span class="km-oyun-lider-nokta" style="background:${kmOyunRenk('pist', o.i)};"></span>
+                    <span class="km-oyun-lider-ad">${o.s.ad.split(' ')[0]}</span>
+                    <span class="km-oyun-lider-skor">${yuzde}%</span></div>
+                    ${fark ? `<div class="km-oyun-fark-satir">${fark}</div>` : ''}`;
             }).join('');
             el.innerHTML = html;
         }
@@ -13141,69 +13196,261 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
-        // ---- PIST YARISI ----
-        function kmOyunSahneKurPist() {
-            let wrap = document.getElementById('km-oyun-lanes'); if(!wrap) return;
+        // ---- PIST YARISI (Faz 9, 2026-09-09 — 7 ayrı DOM şeridinden TEK kapalı SVG devreye) ----
+        // Diğer 7 temanın frac→{x,y} kalıbına BİREBİR uyuyor (kmOyunPistNokta ~ kmOyunZirveNokta) —
+        // bilerek KM_OYUN_KAMERA_SVG_ID/KM_OYUN_KAMERA_NOKTA_TEMALAR'a EKLENMEDİ (kapalı devre zaten
+        // her zaman tam görünür, kameraya gerek yok — kullanıcı talimatı). KM_OYUN_VURGU_TEMALAR zaten
+        // 'pist' içeriyordu (8a'dan beri) — bu yüzden sıradaki-vurgu/karakter-sınırı gibi paylaşılan
+        // kabuk işlevleri BU SVG yapısıyla otomatik/değişiklik gerekmeden çalışıyor.
+        var KM_OYUN_PIST_YOL_D = 'M 300 380 L 900 380 Q 1080 380 1080 300 L 1080 140 Q 1080 60 900 60 L 300 60 Q 120 60 120 140 L 120 300 Q 120 380 300 380 Z';
+        var KM_OYUN_PIST_GENISLIK = 46; // yolun görsel kalınlığından biraz dar — arabalar asfaltın içinde kalsın
+        var _kmOyunPistTotalLen = 0;
+        function kmOyunPistYol() { return document.getElementById('km-oyun-pist-yol'); }
+        // kmOyunZirveNokta ile AYNI imza: {x,y} döndürür. frac%1 kullanımı BİLEREK — 2. adımda (tur
+        // sayısı) frac 1'i geçebilecek, bu yüzden yapı şimdiden buna hazır (kullanıcı talimatı).
+        function kmOyunPistNokta(frac) {
+            let p = kmOyunPistYol(); if(!p) return { x: 0, y: 0 };
+            if(!_kmOyunPistTotalLen) _kmOyunPistTotalLen = p.getTotalLength();
+            let lapFrac = ((frac % 1) + 1) % 1;
+            return p.getPointAtLength(_kmOyunPistTotalLen * lapFrac);
+        }
+        // Yolun o noktadaki BİRİM teğet vektörü — kapalı devre olduğu için sınırların yakınında da
+        // (frac≈0/1) uzunluk MODÜLO ile sarılıyor (clamp DEĞİL) ki teğet başlangıç/bitiş noktasında da
+        // doğru hesaplansın — kullanıcının işaret ettiği "virajda normal ters dönebilir" riskine karşı
+        // bilerek clamp değil modulo seçildi (clamp, sınıra yakın örneklerde teğeti kısaltıp/bozup yanlış
+        // yön verebilirdi).
+        function kmOyunPistTeget(frac) {
+            let p = kmOyunPistYol(); if(!p) return { x: 1, y: 0 };
+            if(!_kmOyunPistTotalLen) _kmOyunPistTotalLen = p.getTotalLength();
+            let total = _kmOyunPistTotalLen, lapFrac = ((frac % 1) + 1) % 1;
+            let len = total * lapFrac, eps = Math.max(1, total * 0.004);
+            let len1 = ((len - eps) % total + total) % total, len2 = ((len + eps) % total + total) % total;
+            let p1 = p.getPointAtLength(len1), p2 = p.getPointAtLength(len2);
+            let dx = p2.x - p1.x, dy = p2.y - p1.y, mag = Math.sqrt(dx * dx + dy * dy) || 1;
+            return { x: dx / mag, y: dy / mag };
+        }
+        // Yanal kayma — SABİT, sporcunun roster indeksine göre (rastgele DEĞİL, araba titremesin).
+        // Yolun normaline (teğetin 90° döndürülmüşü) göre uygulanıyor ki virajlarda da arabalar
+        // birbirine göre HEP aynı taraflarında kalsın (iç/dış yer değiştirmesin). Gerçek testte 8
+        // sporcuyu TEK bir enine çizgide 46 birime sığdırmanın (kişi başı ~6.5 birim) araba gövdesi/
+        // sürücü daireleriyle iç içe geçtiği görüldü — gerçek yarış ızgaralarındaki gibi İKİ SÜTUNA
+        // bölünüp, aynı sütundaki arabalar teğet yönünde sabit küçük bir mesafeyle ÖNE/ARKAYA
+        // kaydırılıyor (kmOyunPistSiraKaymasi). Bu kayma frac'e eklenip nokta/teğet O KAYDIRILMIŞ
+        // frac'ten hesaplanıyor — jitter'ın da zaten yaptığı gibi saf görsel bir ayrıştırma, gerçek
+        // ilerlemeyi/skoru değiştirmiyor.
+        var KM_OYUN_PIST_SIRA_ADIMI = 0.014; // iki sıra arası sabit teğet-yönü frac kayması (~tur uzunluğunun %1.4'ü)
+        function kmOyunPistYanalOfset(i, n) {
+            if(n <= 1) return 0;
+            let kolonSayisi = Math.min(n, 2);
+            if(kolonSayisi === 1) return 0;
+            return (i % 2 === 0) ? -KM_OYUN_PIST_GENISLIK / 2 : KM_OYUN_PIST_GENISLIK / 2;
+        }
+        function kmOyunPistSiraKaymasi(i, n) {
+            if(n <= 2) return 0;
+            let siraSayisi = Math.ceil(n / 2), sira = Math.floor(i / 2);
+            return (sira - (siraSayisi - 1) / 2) * KM_OYUN_PIST_SIRA_ADIMI;
+        }
+        // Nokta + teğet + sabit yanal/sıra kaymasını TEK seferde birleştiren yardımcı — hem kuruluş hem
+        // resync hem animasyon AYNI hesabı kullanıyor ki üçü arasında sapma olmasın (8a'nın etiket/
+        // kamera tutarsızlığından alınan ders, bkz. DEVIR.md §13e).
+        function kmOyunPistKonum(frac, i, n) {
+            let kaymaliFrac = frac + kmOyunPistSiraKaymasi(i, n);
+            let pt = kmOyunPistNokta(kaymaliFrac), teg = kmOyunPistTeget(kaymaliFrac);
+            let normal = { x: -teg.y, y: teg.x };
+            let ofset = kmOyunPistYanalOfset(i, n);
+            return { x: pt.x + normal.x * ofset, y: pt.y + normal.y * ofset, aci: Math.atan2(teg.y, teg.x) * 180 / Math.PI };
+        }
+        // ---- PIST YARISI — Stage 2 (Tur Sistemi) + Stage 3 (Hız Eğrisi), 2026-09-10 ----
+        // "Yarış uzunluğu": 8 set → 2 tur, 12 set → 3 tur. SADECE localStorage'da (konum bazlı), D1'e
+        // hiç yazılmıyor — bu eğlence katmanının kendi ayarı, gerçek antrenman/kayıt sistemine karışmıyor.
+        var KM_OYUN_PIST_SET_TUR = { 8: 2, 12: 3 };
+        function kmOyunPistUzunlukAnahtari() { return 'dag_km_pistuzunluk_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunPistSetSayisiAl() {
+            try { return (parseInt(localStorage.getItem(kmOyunPistUzunlukAnahtari()), 10) === 12) ? 12 : 8; } catch(e) { return 8; }
+        }
+        function kmOyunPistToplamTur() { return KM_OYUN_PIST_SET_TUR[kmOyunPistSetSayisiAl()] || 2; }
+        function kmOyunPistUzunlukBtnMetni() { let n = kmOyunPistSetSayisiAl(); return '🏁 ' + n + ' Set · ' + KM_OYUN_PIST_SET_TUR[n] + ' Tur'; }
+        function kmOyunPistUzunlukBtnGuncelle() {
+            let b = document.getElementById('km-oyun-pist-uzunluk-btn'); if(b) b.textContent = kmOyunPistUzunlukBtnMetni();
+        }
+        function kmOyunPistUzunlukDegistir() {
+            let yeni = (kmOyunPistSetSayisiAl() === 8) ? 12 : 8;
+            try { localStorage.setItem(kmOyunPistUzunlukAnahtari(), String(yeni)); } catch(e) {}
+            kmOyunPistUzunlukBtnGuncelle();
+            kmOyunPistTurHudGuncelle();
+            showToast('Yarış uzunluğu: ' + yeni + ' set (' + KM_OYUN_PIST_SET_TUR[yeni] + ' tur)', 'success');
+        }
+        // Hız eğrisi — okun DEĞERİNE göre (toplam puana göre DEĞİL) bir "hız katsayısı". Aynı kategori
+        // (X/10, 8/7, 6/5) AYNI katsayıyı paylaşıyor — Stage 3'ün istediği 5 kademeyle birebir örtüşüyor.
+        // KM_OYUN_PIST_BIRIM kalibrasyonu (2026-09-10, ikinci geçiş — "24 ortalaması da bitirebilsin,
+        // bitirememek kaybetmekten daha kötü bir his" geri bildirimiyle DAHA KISA/hızlı yapıldı):
+        // bkz. DEVIR.md Faz 9 notu — 24p/set (8-8-8) 8 set/2 turda TAM 8. sette, 26-27p/set 6. sette
+        // bitiriyor artık (önceki turda 24p hiç bitmiyordu).
+        var KM_OYUN_PIST_HIZ_KATSAYI = { 'X': 2.0, '10': 1.8, '9': 1.5, '8': 1.0, '7': 1.0, '6': 0.5, '5': 0.5, '4': 0.15, '3': 0.15, '2': 0.15, '1': 0.15, 'M': 0.15 };
+        var KM_OYUN_PIST_HIZ_ETIKET = { 'X': 'NİTRO', '10': 'NİTRO', '9': 'HIZLI', '8': 'GAZ', '7': 'GAZ', '6': 'YAVAŞ', '5': 'YAVAŞ', '4': 'SAVRUL', '3': 'SAVRUL', '2': 'SAVRUL', '1': 'SAVRUL', 'M': 'SAVRUL' };
+        var KM_OYUN_PIST_BIRIM = 2 / 24; // = 1/12 — 24p/set (8-8-8, katsayı toplamı 3.0) TAM 8 sette bitirsin diye
+        // kaydedilecek: [{puan: 'X'|'10'|...|'M'}, ...] — HAM pad değerleri (henüz sayıya çevrilmemiş).
+        // 6 oklu bir seri, katsayıları TOPLAYARAK (ortalama DEĞİL) doğal olarak 3 oklunun ~2 katı ilerleme
+        // üretiyor — ayrı bir "6 ok = 2 kat" ayarına gerek kalmadı (kullanıcı talimatı: ayrı ayar olmasın).
+        function kmOyunPistSetArtis(kaydedilecek) {
+            let toplamKatsayi = kaydedilecek.reduce(function(a, k) { return a + (KM_OYUN_PIST_HIZ_KATSAYI[k.puan] || 0); }, 0);
+            return toplamKatsayi * KM_OYUN_PIST_BIRIM;
+        }
+        // "Kimse bitiremeden set sayısı dolarsa en öndeki kazanır" (Stage 2) sonucu — bir kez belirlenip
+        // guard olarak tutuluyor (bkz. kmOyunIlerlet içindeki SET SÜRESİ DOLDU kontrolü).
+        var _kmOyunPistYarisSonucu = null;
+        // Üst HUD — aktif/SIRADA sporcunun tur durumunu gösterir (bkz. panel HTML'indeki
+        // #km-oyun-pist-tur-hud). Skor girme paneline HİÇ dokunmuyor, panelin ÜSTÜNDE, SVG içinde ayrı
+        // bir HUD elemanı.
+        function kmOyunPistTurHudGuncelle() {
+            let hud = document.getElementById('km-oyun-pist-tur-hud');
+            let toplamTur = kmOyunPistToplamTur();
+            if(hud) {
+                let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+                if(s) {
+                    let tur = Math.min(toplamTur, Math.floor(s.frac + 1e-9) + 1);
+                    let txt = hud.querySelector('text'); if(txt) txt.textContent = 'TUR ' + tur + ' / ' + toplamTur;
+                    hud.style.display = '';
+                } else { hud.style.display = 'none'; }
+            }
+            // Stage 5 — "Lider son tura girdiğinde üstte 'Son tur' işareti." Lider = frac'ı en yüksek
+            // sporcu (aktif/SIRADA olan DEĞİL) — yarış zaten bitmişse (guard) gösterilmiyor.
+            let sonTurEl = document.getElementById('km-oyun-pist-sontur');
+            if(sonTurEl) {
+                let lider = _kmOyunRosterCache.reduce(function(a, o) { return (!a || o.frac > a.frac) ? o : a; }, null);
+                let sonTurMu = !_kmOyunPistYarisSonucu && lider && Math.floor(lider.frac + 1e-9) === toplamTur - 1;
+                sonTurEl.style.display = sonTurMu ? '' : 'none';
+            }
+        }
+        // ---- PIST YARISI — Stage 5 (Bitiş sekansı) ----
+        // Gerçek bitiş (bayrağı geçmek) VE "set süresi doldu" (Stage 2) AYNI sonuç ekranına bağlanıyor —
+        // kullanıcı talimatı. _kmOyunPistYarisSonucu TEK guard: hangi yoldan gelirse gelsin bir yarış
+        // SADECE BİR KEZ sonuçlanır.
+        function kmOyunPistSonucGoster(kazananAd, sebep) {
+            let modal = document.getElementById('km-oyun-pist-sonuc'); if(!modal) return;
+            let kazanan = _kmOyunRosterCache.find(function(o) { return o.ad === kazananAd; });
+            let kazananOk = kazanan ? (kmOyunDurumAl(kazanan.g, kazanan.ad).pistOkSayaci || 0) : 0;
+            let enIyi = null;
+            _kmOyunRosterCache.forEach(function(o) {
+                let puan = kmOyunDurumAl(o.g, o.ad).pistEnIyiSeriBuYaris || 0;
+                if(puan > 0 && (!enIyi || puan > enIyi.puan)) enIyi = { ad: o.ad, puan: puan };
+            });
+            let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let kazananTxt = document.getElementById('km-oyun-pist-sonuc-kazanan'); if(kazananTxt) kazananTxt.textContent = (kazananAd || '?') + ' kazandı!';
+            let sebepTxt = document.getElementById('km-oyun-pist-sonuc-sebep'); if(sebepTxt) sebepTxt.textContent = sebep === 'sure-doldu' ? 'Set süresi doldu, en önde bitirdi' : 'Bayrağı ilk geçti';
+            let okTxt = document.getElementById('km-oyun-pist-sonuc-ok'); if(okTxt) okTxt.textContent = '🎯 ' + kazananOk + ' ok attı';
+            let seriTxt = document.getElementById('km-oyun-pist-sonuc-seri'); if(seriTxt) seriTxt.textContent = enIyi ? ('⭐ En iyi seri: ' + enIyi.ad.split(' ')[0] + ' — ' + enIyi.puan + 'p') : '⭐ En iyi seri: —';
+            modal.classList.toggle('ciddi', ciddi);
+            modal.classList.remove('goster'); void modal.offsetWidth; modal.classList.add('goster');
+            // "Ciddi modda kutlama yok, sadece sonuç tablosu" — konfeti/ses SADECE ciddi değilken;
+            // giriş animasyonu zaten .ciddi class'ıyla CSS'te kapatılıyor (bkz. .km-pist-sonuc.ciddi).
+            if(!ciddi) {
+                kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 40, '#ffd23f', 30, true);
+                try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 100); setTimeout(function() { try { sesCal(1568, 0.2); } catch(e) {} }, 200); setTimeout(function() { try { sesCal(2093, 0.25); } catch(e) {} }, 320); } catch(e) {}
+            }
+        }
+        function kmOyunPistSonucKapat() {
+            let modal = document.getElementById('km-oyun-pist-sonuc'); if(modal) modal.classList.remove('goster');
+        }
+        // ---- PIST YARISI — Stage 4 (Sıra rozetleri, sıradaki büyütme, yüzdeli sıralama) ----
+        // Rozet numaraları TÜM roster'ın frac'ına göre — tek kişi frac değiştirse bile HERKESİN sırası
+        // değişebilir, bu yüzden holistik hesaplanıp roster indeksine göre döndürülüyor.
+        function kmOyunPistSiralamaHesapla() {
             let roster = _kmOyunRosterCache;
-            wrap.innerHTML = roster.map(function(s, i) {
-                let c = kmOyunRenk('pist', i);
-                return `<div class="km-lane">
-                    <div class="km-lane-label"><div class="km-lane-av" style="background:${c};">${kmOyunAvatarHTML(s)}</div><div class="km-lane-nm">${s.ad.split(' ')[0]}</div></div>
-                    <div class="km-lane-track">
-                        <div class="km-startline"></div>
-                        ${KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) { return `<div class="km-cp" id="km-oyun-cp-${i}-${ci}" style="left:${(f * 100).toFixed(2)}%; --_c:${c};"><span>${ci + 1}</span></div>`; }).join('')}
-                        <div class="km-vehicle" id="km-oyun-veh-${i}" style="left:${(s.frac * 100).toFixed(2)}%; --_c:${c};"><div class="km-speedlines"><i></i><i></i></div><div class="km-kart"><div class="km-kart-surucu" style="background:${c};">${kmOyunAvatarHTML(s)}</div><div class="km-spoiler"></div><div class="km-body"></div><div class="km-visor"></div><div class="km-wheel f"></div><div class="km-wheel b"></div></div></div>
-                    </div>
-                </div>`;
-            }).join('') + '<div class="km-finish"></div>';
-            roster.forEach(function(s, i) { s.pistEl = document.getElementById('km-oyun-veh-' + i); });
+            let sirali = roster.map(function(s, i) { return { i: i, frac: s.frac }; }).sort(function(a, b) { return b.frac - a.frac; });
+            let ranks = new Array(roster.length);
+            sirali.forEach(function(item, idx) { ranks[item.i] = idx + 1; });
+            return ranks;
+        }
+        // Arabanın gövde transform'unu üretir — SIRADAKİ araba görsel olarak BÜYÜR (kullanıcı talimatı:
+        // "belirgin biçimde büyük"). CSS class DEĞİL, doğrudan JS transform string'ine ekleniyor — çünkü
+        // gövdenin transform'u zaten JS ile (rotate) yazılıyor; bir CSS transform kuralı bunu SESSİZCE
+        // ezip pozisyonu bozardı (SVG'de CSS transform, öznitelik transform'u geçersiz kılar).
+        function kmOyunPistGovdeTransform(aci, aktifMi) {
+            return 'rotate(' + aci.toFixed(1) + ')' + (aktifMi ? ' scale(1.18)' : '');
+        }
+        function kmOyunSahneKurPist() {
+            let cg = document.getElementById('km-oyun-pist-arabalar'); if(!cg) return;
+            _kmOyunPistTotalLen = 0; // path her sahne kurulumunda aynı ama garanti olsun
+            let cpG = document.getElementById('km-oyun-pist-cp');
+            if(cpG) {
+                cpG.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
+                    let pt = kmOyunPistNokta(f);
+                    return `<g class="km-pist-cp-isaret"><circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="9"/><text x="${pt.x.toFixed(1)}" y="${(pt.y + 3.5).toFixed(1)}" text-anchor="middle">${ci + 1}</text></g>`;
+                }).join('');
+            }
+            let bayrakG = document.getElementById('km-oyun-pist-bayrak');
+            if(bayrakG) {
+                let pt = kmOyunPistNokta(0), teg = kmOyunPistTeget(0), aci = Math.atan2(teg.y, teg.x) * 180 / Math.PI;
+                let yarim = (KM_OYUN_PIST_GENISLIK / 2 + 4).toFixed(1);
+                bayrakG.innerHTML = `<g transform="translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)}) rotate(${(aci + 90).toFixed(1)})"><rect class="km-pist-dama" x="-${yarim}" y="-3" width="${(KM_OYUN_PIST_GENISLIK + 8).toFixed(1)}" height="6" fill="url(#kmPistDama)"/></g>`;
+            }
+            let roster = _kmOyunRosterCache;
+            cg.innerHTML = '';
+            roster.forEach(function(s, i) {
+                let renk = kmOyunRenk('pist', i);
+                let konum = kmOyunPistKonum(s.frac, i, roster.length);
+                let ilkAd = s.ad.split(' ')[0];
+                let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
+                let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                el.setAttribute('class', 'km-pist-araba');
+                el.setAttribute('transform', `translate(${konum.x.toFixed(1)},${konum.y.toFixed(1)})`);
+                el.innerHTML = `<g class="km-pist-araba-govde" transform="rotate(${konum.aci.toFixed(1)})">
+                        <ellipse class="km-pist-golge" cx="0" cy="7" rx="14" ry="4"/>
+                        <circle class="km-pist-teker" cx="-8" cy="6" r="4"/><circle class="km-pist-teker" cx="8" cy="6" r="4"/>
+                        <rect class="km-pist-govde-sekli" x="-13" y="-6" width="26" height="12" rx="4" fill="${renk}"/>
+                        <rect class="km-pist-spoiler" x="9" y="-7" width="3" height="9" rx="1"/>
+                        <rect class="km-pist-vizor" x="-4" y="-9" width="8" height="4" rx="1.5"/>
+                    </g>
+                    <g transform="translate(0,-13)"><circle class="km-pist-surucu" r="9" fill="${renk}"/>${kmOyunAvatarSVG(s, 7, 'pist-' + i)}</g>
+                    <g class="km-pist-rozet" transform="translate(11,-19)"><circle r="6.5"/><text class="km-pist-rozet-text" y="2.5">${i + 1}</text></g>
+                    <g transform="translate(0,26)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${ilkAd}</text></g>`;
+                cg.appendChild(el);
+                s.pistEl = el;
+            });
             kmOyunResyncPist();
         }
         function kmOyunResyncPist() {
             let roster = _kmOyunRosterCache;
+            let ranks = kmOyunPistSiralamaHesapla();
             roster.forEach(function(s, i) {
-                if(s.pistEl) s.pistEl.style.left = (s.frac * 100) + '%';
-                let hitCount = Math.floor(s.frac * KM_OYUN_CP_SAYISI + 1e-6);
-                for(let ci = 0; ci < KM_OYUN_CP_SAYISI - 1; ci++) { let m = document.getElementById('km-oyun-cp-' + i + '-' + ci); if(m) m.classList.toggle('hit', ci < hitCount); }
+                if(!s.pistEl) return;
+                let konum = kmOyunPistKonum(s.frac, i, roster.length);
+                s.pistEl.setAttribute('transform', `translate(${konum.x.toFixed(1)},${konum.y.toFixed(1)})`);
+                let govde = s.pistEl.querySelector('.km-pist-araba-govde');
+                if(govde) govde.setAttribute('transform', kmOyunPistGovdeTransform(konum.aci, i === _kmOyunAktifIndex));
+                let rozetTxt = s.pistEl.querySelector('.km-pist-rozet-text');
+                if(rozetTxt) rozetTxt.textContent = String(ranks[i]);
             });
+            kmOyunPistTurHudGuncelle();
         }
-        function kmOyunPuffPist(el, renk) {
-            let scene = document.getElementById('km-oyun-sahne'); if(!scene) return;
-            let r = el.getBoundingClientRect(), sr = scene.getBoundingClientRect();
-            let xPct = ((r.left + r.width * 0.85 - sr.left) / sr.width) * 100, yPct = ((r.top + r.height / 2 - sr.top) / sr.height) * 100;
-            let p = document.createElement('div'), w = 8 + Math.random() * 8;
-            p.style.cssText = `position:absolute; left:${xPct}%; top:${yPct}%; width:${w}px; height:2.4px; border-radius:2px; background:${renk}; opacity:.55; pointer-events:none;`;
-            let burstLayer = document.getElementById('km-oyun-burst'); if(!burstLayer) return;
-            burstLayer.appendChild(p);
-            p.animate([{ transform: 'translate(0,-50%) scaleX(1)', opacity: .6 }, { transform: 'translate(-30px,-50%) scaleX(.3)', opacity: 0 }], { duration: 380, easing: 'ease-out' }).onfinish = function() { p.remove(); };
-        }
+        // Hareket animasyonu — Zirve'nin AYNI rAF/eased-interpolasyon deseni (kmOyunAnimateZirve).
+        // eskiFrac→yeniFrac ARASI HAM (mod alınmamış) değerler kullanılıyor — kmOyunPistNokta/Teget
+        // KENDİSİ mod alıyor, bu yüzden 0.97→1.03 gibi bir geçiş path'in sonundan başına DOĞRU AKARAK
+        // geçmesi beklenir, sıçrama olmamalı (kullanıcının 2. dikkat noktası — Playwright ile ayrıca test edildi).
         function kmOyunAnimatePist(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
-            let veh = s.pistEl; if(!veh) { done(); return; }
-            let c = kmOyunRenk('pist', i);
-            let hareketVar = Math.abs(yeniFrac - eskiFrac) > 1e-9;
-            veh.classList.add('flying');
-            let trailTimer = hareketVar ? setInterval(function() { kmOyunPuffPist(veh, c); }, 55) : null;
-            if(hareketVar) veh.style.left = (yeniFrac * 100) + '%';
-            function tamamla() {
-                veh.classList.remove('flying');
-                let scr = kmOyunEltPct(veh);
-                kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, c, 14, false);
-                if(yeniCp > eskiCp) {
-                    for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) { let m = document.getElementById('km-oyun-cp-' + i + '-' + cp); if(m) m.classList.add('hit'); }
-                    if(yeniFrac >= 1) kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 26, true);
+            let n = _kmOyunRosterCache.length, sure = 1250, basla = performance.now();
+            function frame(now) {
+                let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
+                let konum = kmOyunPistKonum(eskiFrac + (yeniFrac - eskiFrac) * eased, i, n);
+                if(s.pistEl) {
+                    s.pistEl.setAttribute('transform', `translate(${konum.x.toFixed(1)},${konum.y.toFixed(1)})`);
+                    let govde = s.pistEl.querySelector('.km-pist-araba-govde');
+                    if(govde) govde.setAttribute('transform', kmOyunPistGovdeTransform(konum.aci, i === _kmOyunAktifIndex));
                 }
-                if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('pist', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('pist', 1), 16, true); }, 80);
-                done();
+                if(t < 1) { requestAnimationFrame(frame); }
+                else {
+                    let scr = kmOyunSvgPct('km-oyun-svg-pist', konum.x, konum.y);
+                    kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('pist', i), 14, false);
+                    // Stage 2 — GERÇEK bir tur sınırı geçildiğinde (Math.floor artışı) altın patlama;
+                    // eski "yeniFrac>=1" koşulu çok turlu yarışta HER checkpoint'te tekrar tetiklenirdi.
+                    if(Math.floor(yeniFrac + 1e-9) > Math.floor(eskiFrac + 1e-9)) kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 26, true);
+                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('pist', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('pist', Math.min(1, n - 1)), 16, true); }, 80);
+                    kmOyunPistTurHudGuncelle();
+                    done();
+                }
             }
-            if(hareketVar) {
-                let onDone = function(e) {
-                    if(e.propertyName !== 'left') return;
-                    veh.removeEventListener('transitionend', onDone);
-                    if(trailTimer) clearInterval(trailTimer);
-                    tamamla();
-                };
-                veh.addEventListener('transitionend', onDone);
-            } else { tamamla(); }
+            requestAnimationFrame(frame);
         }
 
         // ---- NINJA OYUNU ----
@@ -13395,6 +13642,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // gizli) — diğer 8 temada tema değişse de mod korunuyor, anahtarın kendisi sadece görünürlük.
             let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = futbolMu ? 'none' : 'flex';
             if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
+            // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
+            // kendisine dokunmuyor, üst yardımcı buton sırasında).
+            let pistUzunlukBtn = document.getElementById('km-oyun-pist-uzunluk-btn');
+            if(pistUzunlukBtn) { pistUzunlukBtn.style.display = (tid === 'pist') ? '' : 'none'; if(tid === 'pist') pistUzunlukBtn.textContent = kmOyunPistUzunlukBtnMetni(); }
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
@@ -13469,13 +13720,29 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // "her seri 3 ok atışı anlamına geliyor, 8 seri = 24 ok gibi düşün"). Skor/gol ayrımı ayrı
             // hesaplanıyor (aşağıda), frac SADECE "kaç seri kaldı"yı temsil ediyor.
             if(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') artis = 1 / 8;
-            let yeniFrac = Math.min(1, eskiFrac + artis);
+            // Faz 9, Stage 2+3 (2026-09-10) — Pist'in KENDİ "hız eğrisi": toplam/maxPuan ORANINA değil,
+            // OKUN KENDİ DEĞERİNE göre (bkz. kmOyunPistSetArtis). Diğer 9 temanın yukarıdaki ORTAK
+            // formülüne HİÇ dokunulmadı — bu satır SADECE _kmOyunAktifTema==='pist' iken devreye giriyor.
+            if(_kmOyunAktifTema === 'pist') artis = kmOyunPistSetArtis(kaydedilecek) * (cokluAktifMi ? KM_OYUN_COKLU_ARTIS_CARPANI : 1);
+            // Pist çok turlu (frac 1'i aşabilir) — diğer 9 tema için maxFrac hep 1, davranış AYNI kalıyor;
+            // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor.
+            let pistToplamTur = (_kmOyunAktifTema === 'pist') ? kmOyunPistToplamTur() : 1;
+            let yeniFrac = Math.min(pistToplamTur, eskiFrac + artis);
             let eskiCp = Math.floor(eskiFrac * KM_OYUN_CP_SAYISI + 1e-6);
             let yeniCp = Math.floor(yeniFrac * KM_OYUN_CP_SAYISI + 1e-6);
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
 
             s.toplamSkor += toplam;
             let d0 = kmOyunDurumAl(s.g, s.ad); d0.toplamSkor = s.toplamSkor;
+            // Pist "Yarış uzunluğu" — sadece BİREYSEL modda kişi başı set sayacı (takım modunda paylaşılan
+            // frac zaten farklı bir mekanizma, Stage 2 kapsamına alınmadı). GERÇEK skora dokunmuyor.
+            // pistOkSayaci/pistEnIyiSeriBuYaris (Stage 5) — "kaç ok attı"/"en iyi seri kimin" sonuç
+            // ekranı için, BU YARIŞA özel (genel kişisel rekordan/d0.enIyiSeri'den AYRI).
+            if(_kmOyunAktifTema === 'pist' && !takimAktifMi) {
+                d0.pistSetSayaci = (d0.pistSetSayaci || 0) + 1;
+                d0.pistOkSayaci = (d0.pistOkSayaci || 0) + kaydedilecek.length;
+                if(toplam > (d0.pistEnIyiSeriBuYaris || 0)) d0.pistEnIyiSeriBuYaris = toplam;
+            }
 
             // Haftalık Kademe Ligi — GERÇEK toplamSkor'dan AYRI, sadece bu haftaya ait bir sayaç.
             // Takım Modu'nda da BİLEREK işliyor (paylaşılan yol farklı bir şey, kişisel haftalık katkı ayrı).
@@ -13561,18 +13828,60 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
                 } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') {
-                    // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<1'den
-                    // yeniFrac>=1'e geçiş) bir kez ateşlenir.
-                    if(yeniFrac >= 1 && eskiFrac < 1) {
+                    // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
+                    // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
+                    // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
+                    let pistTurAtlandiMi = (_kmOyunAktifTema === 'pist') && (Math.floor(yeniFrac + 1e-9) > Math.floor(eskiFrac + 1e-9)) && yeniFrac < pistToplamTur;
+                    if(yeniFrac >= pistToplamTur && eskiFrac < pistToplamTur) {
+                        // Pist bireysel — GERÇEK bitiş artık kendi sonuç ekranına bağlı (Stage 5); genel
+                        // banner/surpriz/ses burada BİLEREK atlanıyor, çünkü "ciddi modda kutlama yok"
+                        // kuralı SADECE kmOyunPistSonucGoster içinde uygulanıyor — ikisi birden çalışsa
+                        // ciddi modda bile eski banner/ses kaçak kutlama olurdu. Takım modunda (Pist dahil)
+                        // DAVRANIŞ DEĞİŞMEDİ — eski genel banner/surpriz/ses aynen çalışmaya devam ediyor.
+                        if(_kmOyunAktifTema === 'pist' && !takimAktifMi) {
+                            if(!_kmOyunPistYarisSonucu) { _kmOyunPistYarisSonucu = { kazananAd: s.ad, sebep: 'bitis' }; kmOyunPistSonucGoster(s.ad, 'bitis'); }
+                        } else {
+                            kmOyunSurprizGoster(_kmOyunAktifTema, scr.xPct, scr.yPct);
+                            try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
+                            kmOyunBanner(th.finish, aktor, 'bitis');
+                            try { setTimeout(function() { try { sesCal(1200, 0.35); } catch(e) {} }, 260); } catch(e) {}
+                        }
+                        if(!takimAktifMi) kmOyunSahneBitirmeSerisiGuncelle(d0, s.ad);
+                    } else if(pistTurAtlandiMi) {
+                        // Pist'in kendi "tur tamamlandı" olayı — ara kontrol noktalarında (8'de biri) DEĞİL,
+                        // SADECE gerçek bir tur sınırı geçildiğinde. Genel yeniCp>eskiCp dalı Pist için
+                        // ATLANIYOR (aşağıdaki else-if'e hiç girmiyor) — yoksa her 1/8 turda bir "TUR
+                        // TAMAMLANDI" spam'i olurdu.
                         kmOyunSurprizGoster(_kmOyunAktifTema, scr.xPct, scr.yPct);
                         try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
-                        kmOyunBanner(th.finish, aktor, 'bitis');
-                        try { setTimeout(function() { try { sesCal(1200, 0.35); } catch(e) {} }, 260); } catch(e) {}
-                        if(!takimAktifMi) kmOyunSahneBitirmeSerisiGuncelle(d0, s.ad);
-                    } else if(yeniCp > eskiCp) {
+                        kmOyunBanner(th.cp, aktor + ' — ' + (Math.floor(eskiFrac + 1e-9) + 2) + '. Tur / ' + pistToplamTur, 'checkpoint');
+                    } else if(_kmOyunAktifTema !== 'pist' && yeniCp > eskiCp) {
                         kmOyunSurprizGoster(_kmOyunAktifTema, scr.xPct, scr.yPct);
                         try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
                         kmOyunBanner(th.cp, aktor + ' — ' + yeniCp + '/' + KM_OYUN_CP_SAYISI, 'checkpoint');
+                    }
+                    // Sollama bildirimi (Faz 9, Stage 4) — SADECE bireysel modda: bu girişten önce
+                    // ÖNÜMDEYKEN artık ARKAMDA kalan sporcular varsa kısa bir toast. Ciddi modda sessiz
+                    // (kullanıcı talimatı). GERÇEK skora/sıralamaya dokunmuyor, sadece bir bildirim.
+                    if(_kmOyunAktifTema === 'pist' && !takimAktifMi) {
+                        let gecilenler = _kmOyunRosterCache.filter(function(o) { return o !== s && o.frac > eskiFrac && o.frac < yeniFrac; });
+                        if(gecilenler.length && !(typeof ciddiModAcik !== 'undefined' && ciddiModAcik)) {
+                            showToast('🏎️ ' + gecilenler.map(function(o) { return o.ad.split(' ')[0]; }).join(', ') + "'i geçtin!", 'success');
+                        }
+                    }
+                    // Pist "kimse bitiremeden set sayısı dolarsa en öndeki kazanır" (Stage 2) — sadece
+                    // bireysel modda, sadece BİR KEZ (guard: _kmOyunPistYarisSonucu). GERÇEK skora dokunmuyor.
+                    if(_kmOyunAktifTema === 'pist' && !takimAktifMi && !_kmOyunPistYarisSonucu) {
+                        let pistSetSayisi = kmOyunPistSetSayisiAl();
+                        let herkesSetiniDoldurduMu = _kmOyunRosterCache.every(function(o) { return (kmOyunDurumAl(o.g, o.ad).pistSetSayaci || 0) >= pistSetSayisi; });
+                        if(herkesSetiniDoldurduMu) {
+                            let kimseBitirmediMi = _kmOyunRosterCache.every(function(o) { return o.frac < pistToplamTur; });
+                            if(kimseBitirmediMi) {
+                                let lider = _kmOyunRosterCache.reduce(function(a, o) { return (!a || o.frac > a.frac) ? o : a; }, null);
+                                _kmOyunPistYarisSonucu = { kazananAd: lider ? lider.ad : '?', sebep: 'sure-doldu' };
+                                kmOyunPistSonucGoster(lider ? lider.ad : '?', 'sure-doldu');
+                            }
+                        }
                     }
                     if(toplam >= maxPuan * 0.9 && yeniCp <= eskiCp) { kmOyunBanner('HARİKA SERİ!', aktor + ' — ' + toplam + '/' + maxPuan, 'harika'); try { sesCal(1000, 0.2); } catch(e) {} }
                 } else if(_kmOyunAktifTema === 'futbol' && yeniFrac >= 1 && eskiFrac < 1) {
@@ -13597,6 +13906,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunChipleriCiz();
                 kmOyunLiderCiz();
                 if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
+                // Pist — sıra rozetleri (1,2,3...) TÜM roster'ın frac'ına bağlı, tek bir kişi girse bile
+                // herkesin sırası değişebilir; büyütme/halka efekti de YENİ aktif indekse taşınmalı.
+                else if(_kmOyunAktifTema === 'pist' && !takimAktifMi && !cokluAktifMi) kmOyunResyncPist();
                 // Takım Modu — sadece giren sporcunun token'ı değil, TÜM roster (Sınıf) ya da SADECE
                 // AYNI TAKIMIN üyeleri (Çoklu Takım) paylaşılan yeni frac'a taşınır (var olan tema
                 // Resync'i, her atletin KENDİ frac'ında konumlandırdığı için, hepsi otomatik olarak
@@ -13674,9 +13986,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunSporcuSifirla() {
             let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
             if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
-            _kmOyunDurum[s.g + '|' + s.ad] = { frac: 0, toplamSkor: 0, futbolSeri: 0, futbolGol: 0, futbolStreak: 0, futbolTakimGol: 0 };
+            _kmOyunDurum[s.g + '|' + s.ad] = { frac: 0, toplamSkor: 0, futbolSeri: 0, futbolGol: 0, futbolStreak: 0, futbolTakimGol: 0, pistSetSayaci: 0, pistOkSayaci: 0, pistEnIyiSeriBuYaris: 0 };
             kmOyunDurumKaydet();
             s.frac = 0; s.toplamSkor = 0; s.futbolSeri = 0; s.futbolGol = 0; s.futbolStreak = 0; s.futbolTakimGol = 0;
+            if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
             kmOyunResyncAktif();
             kmOyunChipleriCiz(); kmOyunLiderCiz();
             showToast(s.ad + ' oyun ilerlemesi sıfırlandı.', 'warning');
