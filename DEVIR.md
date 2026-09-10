@@ -2073,3 +2073,55 @@ girişle tam bitirildi — 2. ve 3. eşleşme bu süre boyunca HİÇ dokunulmada
 
 Test PIN'i her tur sonunda gerçek `egitmen_hash`'e geri alındı. `node --check` her adımdan sonra
 temiz.
+
+## 16. Faz 13 — Karışık Sınıf → Yarışma sekmesi (devam ediyor)
+
+**Ne yapıyor**: Karışık Sınıf'ın kendi "🏆 Yarışma Modu" sekmesi (`kmSekme('yarisma')` →
+`kmYarismaCiz()`, `_kmTakimlar`/`kmYarisma*`, §2f'deki AYRI/farklı main-app "Yarışmalar" eleme
+ağacından — `#icerik-takimlar`/`elemeAgaciOlustur` — kesin biçimde farklı, KARIŞTIRILMAYACAK) — 2-4
+takımlı puan-farkı yarışması, kalıcılık ve takım boyutu iyileştirmesi alıyor.
+
+### 16a. Stage 1 — Teşhis (kod değişikliği yok)
+
+Kullanıcının "eşleşmeler kayboluyor" şikayeti ile "eleme ağacı/Çeyrek Final-Yarı Final-Final" beklentisi
+AYNI ekrana ait değildi — kod okumasıyla doğrulandı: Karışık Sınıf'ın Yarışma sekmesinde hiçbir zaman
+eşleşme/bracket YOKTU (düz çok-takımlı puan farkı), o yüzden hem "kayboluyor" hem "eleme ağacı" aynı
+anda doğru olamazdı. Asıl bracket+tur-adlandırma (§2f'deki main-app Yarışmalar) zaten iyi kalıcıydı
+(`bracketleriKaydet()` → localStorage + bulut senkron birleştirme) — kullanıcıya İKİ ekranın da gerçek
+durumu ayrı ayrı raporlandı, `AskUserQuestion` ile hangisinin hedef olduğu netleştirildi: **Karışık
+Sınıf'ın KENDİ Yarışma sekmesi, mevcut haliyle** (bracket'sız) — yani Stage 3-4 mevcut bir mekanizmayı
+GENİŞLETMEK değil, eşleşme/tur fikrini SIFIRDAN kurmak anlamına geliyor.
+
+Teşhis sonucu: `_kmTakimlar` ([app.js:16377] civarı) salt bellekte yaşayan bir `let`, HİÇ
+localStorage'a yazılmıyordu (tek istisna: `_kmYarismaGecmisi`, o da sadece BİTMİŞ maç geçmişi).
+Sekme içi geçiş `_kmTakimlar`'a dokunmuyordu (`kmSekme`/`kmIzgaraGeriDon` temiz), ama TAM SAYFA
+YENİLEME (tablet arkaplanda kapatılması/PWA yeniden başlaması dahil) garanti sıfırlıyordu — gerçek
+şikayetin en olası kaynağı buydu.
+
+### 16b. Stage 2 — Kalıcılık düzeltmesi (tamamlandı, deploy edildi)
+
+**Depolama kararı** (kullanıcı onaylı): localStorage, konum bazlı (`dag_km_yarisma_kurulum_<konum>`,
+`dag_km_liste_<konum>` ile AYNI isimlendirme deseni), main-app Yarışmalar'ın `bracketleriKaydet()`
+deseniyle birebir — yeni migration/route/senkron döngüsü YOK. Kayıt tarih damgalı: farklı güne aitse
+geri yüklenmez VE anahtar silinir, böylece eski bir dersin kurulumu farkında olmadan geri gelmez, ayrı
+bir temizlik görevi de gerekmez (bir sonraki girişte kendiliğinden temizlenir).
+
+**Davranış değişikliği (kullanıcı onaylı, bilerek)**: eskiden `kmYarismaSifirla()` hem ders bitişinde
+HEM DE her maç bitişinde otomatik çağrılıyordu — kalıcılık eklense bile kurulum saniyeler içinde
+silinirdi. `kmYarismaSifirla()` ikiye ayrıldı: `_kmYarismaAktifMaciTemizle()` (SADECE aktif maçı
+kapatır — zamanlayıcı/can/hayali-rakip geçici state, takıma DOKUNMAZ) artık maç bitişinde çağrılıyor;
+TAM `kmYarismaSifirla()` (takımları da sıfırlar + localStorage anahtarını siler) sadece ders bitişinde
+(`kmDersiBitir`) ve yeni "🔄 Yeni Turnuva" düğmesinde (`kmYarismaYeniTurnuva()`, kurulum ekranının
+başlığında, sadece dolu bir takım varsa görünür, `confirm()` korumalı).
+
+**Gerçek Playwright testiyle doğrulandı** (5 senaryo): (1) gerçek sporcularla takım kurulup maç
+başlatılıp bitirildi — kurulum SİLİNMEDİ; (2) sekmeden çıkıp geri girildi — kurulum durdu; (3) **tam
+sayfa yenileme + yeniden PIN girişi + Karışık Sınıf'a yeniden giriş** (asıl şikayet senaryosu) —
+takımlar/üyeler AYNEN geri geldi; (4) "Yeni Turnuva" — kurulum boşaldı; (5) bir gün önceki tarihle
+elle bayatlatılmış kayıt — geri yüklenmedi, boş kaldı (öz-temizlik kuralı doğrulandı). Ayrıca: diğer
+10 Karışık Sınıf aracı + Oyunlar hatasız çizildi, skor girme paneli piksel piksel aynı kaldı,
+360/1280/1920px hepsi temiz. Test PIN'i sonrasında gerçek `egitmen_hash`'e geri alındı.
+
+Sıradaki: Stage 3 (takım boyutları — 2-5 takım, takım başına 5 kişiye kadar, açıkta kalan mesajı,
+otomatik dağıtım, düzenlenebilir isim/renk) ve Stage 4 (görsel — eşleşme/eleme ağacı arayüzü, SIFIRDAN
+kurulacak, 16a'daki netleştirmeye göre).

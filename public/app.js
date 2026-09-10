@@ -9583,6 +9583,7 @@ ${(function(){
             // (bu kontrolün asıl amacı budur, bkz. altdaki not) birkaç yüz ms içinde sessizce onunla
             // değiştirilir; yoksa kullanıcı zaten doğru ekranı (seçim ya da kendi platformu) görüyordur.
             kmAcYerel();
+            try { _kmYarismaKurulumYukle(); } catch(e) {}
             // Sunucudaki paylaşılan kopyayı da kontrol et — Karışık Sınıf eskiden SADECE bu cihazın
             // localStorage'ında yaşıyordu (hiç senkronize olmuyordu), bu yüzden başka bir cihazda/
             // oturumda açılınca ya da tarayıcı verisi temizlenince "kayboluyordu".
@@ -16387,6 +16388,46 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmYarismaGecmisAcik = false;
         function _kmYarismaGecmisiKaydet() { try { localStorage.setItem('dag_km_yarisma_gecmisi', JSON.stringify(_kmYarismaGecmisi)); } catch(e) {} }
 
+        // 💾 KURULUM KALICILIĞI (2026-09) — eskiden _kmTakimlar sadece bellekte yaşıyordu, sekme/sayfa
+        // yenilenince sessizce sıfırlanıyordu. Konum bazlı (aynı desende: dag_km_liste_<konum>) ve
+        // TARİH DAMGALI kaydediliyor — bugüne ait değilse geri yüklenmez ve anahtar silinir, yoksa
+        // geçen haftanın kurulumu farkında olmadan yeni bir derste geri gelirdi.
+        function _kmYarismaKurulumAnahtari() { return 'dag_km_yarisma_kurulum_' + (_kmAktifKonum || 'varsayilan'); }
+        function _kmYarismaKurulumKaydet() {
+            try {
+                let paket = {
+                    tarih: bugunISO(), takimSayisi: _kmYarismaTakimSayisi, takimlar: _kmTakimlar, format: _kmYarismaFormat,
+                    rakipTipi: _kmRakipTipi, hayaliZorluk: _kmHayaliZorluk, suresi: _kmYarismaSuresi,
+                    aktif: _kmYarismaAktif, baslangicPuan: _kmYarismaBaslangicPuan, bitis: _kmYarismaBitis
+                };
+                localStorage.setItem(_kmYarismaKurulumAnahtari(), JSON.stringify(paket));
+            } catch(e) {}
+        }
+        function _kmYarismaKurulumYukle() {
+            try {
+                let ham = localStorage.getItem(_kmYarismaKurulumAnahtari()); if(!ham) return;
+                let p = JSON.parse(ham);
+                if(!p || p.tarih !== bugunISO()) { localStorage.removeItem(_kmYarismaKurulumAnahtari()); return; }
+                _kmYarismaTakimSayisi = p.takimSayisi || 2;
+                _kmTakimlar = p.takimlar || _kmTakimlarOlustur(_kmYarismaTakimSayisi);
+                _kmYarismaFormat = p.format || 2;
+                _kmRakipTipi = p.rakipTipi || 'gercek';
+                _kmHayaliZorluk = p.hayaliZorluk || 'dengeli';
+                _kmYarismaSuresi = p.suresi || 0;
+                _kmYarismaBaslangicPuan = p.baslangicPuan || {};
+                _kmYarismaBitis = p.bitis || 0;
+                _kmYarismaAktif = !!p.aktif;
+                // Hayali Rakip'in kendi puanı/yorumları kalıcı değil — kmYarismaSkorbordCiz zaten her
+                // çizimde _kmHayaliRakipGuncelle ile gerçek turlardan yeniden türetiyor, tek kaynak
+                // _kmYarismaBaslangicPuan (yukarıda geri yüklendi).
+                if(_kmYarismaAktif && _kmYarismaSuresi > 0) {
+                    if(_kmYarismaTimer) clearInterval(_kmYarismaTimer);
+                    _kmYarismaTimer = setInterval(kmYarismaTikTak, 1000);
+                    kmYarismaTikTak(); // süre zaten dolmuşsa (uzun süre kapalı kalınmışsa) hemen bitirsin
+                }
+            } catch(e) {}
+        }
+
         // ⚔️ HAYALİ RAKİP — gerçek bir 2. takım/sporcu yokken de yarışma hissi versin diye (kullanıcı
         // isteği: "tek başına ya da iki kişi atınca sıkılıyorlar"). Skor GİRİŞİNE hiç dokunmuyor, sadece
         // Takım A gerçekten yeni bir TUR attığında (bkz. _kmYarismaTurBazliPuanlar) eşleşen sayıda sanal
@@ -16448,11 +16489,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
         }
 
-        function kmYarismaSifirla() {
+        // Sadece AKTİF MAÇI kapatır — takım kurulumuna (kimin hangi takımda olduğuna) dokunmaz.
+        // Maç bitişinde ("otomatik rakip yok" kuralıyla ilgisiz, ayrı bir kural: "maç biter, turnuva
+        // bitmez") kmYarismaSifirla() YERİNE bu çağrılır, yoksa yeni eklenen kalıcılık anlamsız kalırdı
+        // — kurulum bir sonraki maça saniyeler içinde silinmiş olurdu.
+        function _kmYarismaAktifMaciTemizle() {
             if(_kmYarismaTimer) { clearInterval(_kmYarismaTimer); _kmYarismaTimer = null; }
-            _kmYarismaAktif = false; _kmYarismaBaslangicPuan = {}; _kmYarismaSuresi = 0; _kmYarismaBitis = 0;
+            _kmYarismaAktif = false; _kmYarismaBaslangicPuan = {}; _kmYarismaBitis = 0;
             _kmHayaliPuan = 0; _kmHayaliTurlar = []; _kmHayaliYorumGecmisi = [];
+        }
+        // TAM sıfırlama — sadece ders bitişinde (kmDersiBitir) ve koçun açık "Yeni Turnuva" isteğinde
+        // (kmYarismaYeniTurnuva) çağrılır. Kalıcı kayıt da burada silinir ki bir sonraki girişte geri
+        // gelmesin.
+        function kmYarismaSifirla() {
+            _kmYarismaAktifMaciTemizle();
+            _kmYarismaSuresi = 0;
             _kmTakimlar = _kmTakimlarOlustur(_kmYarismaTakimSayisi);
+            try { localStorage.removeItem(_kmYarismaKurulumAnahtari()); } catch(e) {}
+        }
+        function kmYarismaYeniTurnuva() {
+            let doluVarMi = _kmTakimlar.some(t => t.uyeler.length > 0);
+            if(doluVarMi && !confirm('Yeni turnuva başlatılsın mı?\n\nMevcut takım kurulumu silinecek. (Geçmiş sonuçlar silinmez.)')) return;
+            kmYarismaSifirla(); kmYarismaKurulumCiz(); showToast('Yeni turnuva için kurulum sıfırlandı.', 'success');
         }
         // Takım sayısı değişince atamalar BİLEREK sıfırlanır (yeniden dağıtmaya çalışmak yerine basit
         // ve öngörülebilir — kurulum aşamasında birkaç dokunuşla yeniden atanabilir).
@@ -16545,7 +16603,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let takimSayisiBtn = (n) => `<div onclick="kmYarismaTakimSayisiSec(${n})" style="flex:1; text-align:center; padding:7px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:11px; font-weight:700; cursor:pointer; ${_kmYarismaTakimSayisi===n ? 'background:var(--gold); color:#3d2c00; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${n} Takım</div>`;
             let takimKolonlarHTML = _kmRakipTipi === 'hayali' ? (takimKolon(_kmTakimlar[0]) + hayaliKolon()) : _kmTakimlar.map(takimKolon).join('');
             let html = `
-                <div style="font-size:14px; font-weight:900; margin-bottom:12px;">🏆 Yarışma Modu — Takım Kur</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-size:14px; font-weight:900;">🏆 Yarışma Modu — Takım Kur</div>
+                    ${doluTakimSayisi > 0 ? `<div onclick="kmYarismaYeniTurnuva()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">🔄 Yeni Turnuva</div>` : ''}
+                </div>
                 <div style="display:flex; gap:6px; margin-bottom:10px;">${rakipTipiBtn('gercek','🧑‍🤝‍🧑 Gerçek Takım')}${rakipTipiBtn('hayali','🤖 Hayali Rakip')}</div>
                 ${_kmRakipTipi === 'gercek' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 6px 2px;">Kaç Takım?</div><div style="display:flex; gap:6px; margin-bottom:8px;">${[2,3,4].map(takimSayisiBtn).join('')}</div>` : ''}
                 <div style="display:flex; gap:6px; margin-bottom:8px;">${[1,2,3,4].map(formatBtn).join('')}</div>
@@ -16566,6 +16627,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ${kmYarismaGecmisiHTML()}
             `;
             el.innerHTML = html;
+            _kmYarismaKurulumKaydet();
         }
         function kmYarismaBaslat() {
             if(_kmRakipTipi === 'hayali' ? _kmTakimlar[0].uyeler.length === 0 : _kmYarismaAktifTakimlar().length < 2) return showToast('En az 2 takımda sporcu olmalı.', 'error');
@@ -16584,6 +16646,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmYarismaTimer = setInterval(kmYarismaTikTak, 1000);
             }
             _kmYarismaAktif = true;
+            _kmYarismaKurulumKaydet();
             kmYarismaCiz();
         }
         // Bir sporcunun yarışma BAŞLADIKTAN SONRA attığı puan farkı — hem takım toplamı hem MVP
@@ -16758,7 +16821,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmYarismaGecmisi = _kmYarismaGecmisi.slice(0, 50); // geçmiş sınırsız büyümesin
             _kmYarismaGecmisiKaydet();
             try { bekleyenGonderim = true; bulutaGonderKontrol(); } catch(e) {}
-            kmYarismaSifirla();
+            // Maç biter, turnuva bitmez — takım kurulumu KORUNUR, sadece aktif maç kapatılır.
+            // Tam sıfırlama (kmYarismaSifirla) artık sadece ders bitişinde ve "Yeni Turnuva"da.
+            _kmYarismaAktifMaciTemizle();
             kmYarismaCiz();
         }
         function kmYarismaGecmisiAcKapat() { _kmYarismaGecmisAcik = !_kmYarismaGecmisAcik; kmYarismaKurulumCiz(); }
