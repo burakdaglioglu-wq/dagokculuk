@@ -68,10 +68,12 @@ hiçbiri kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre:
 
 1. ~~**`fanOutMasterPayload()` sessiz başarı hatası**~~ — **DÜZELTİLDİ 2026-09-10 (bkz. §9c)**: artık
    kısmi/tam başarısızlıkta gerçekten reddediyor, kalıcı hatada üstel geri çekilme var, 401'e özel
-   uyarı var. **AYRI, hâlâ ele alınmamış bir alt-madde kalıyor**: 10 saniyede bir kulübün TAMAMININ
-   anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı olmadan gönderme — büyüyen bir kulüpte
-   `ERR_INSUFFICIENT_RESOURCES`'a gerçekten yaklaşabilir (tahmini formül §9'da, gerçek sayı için D1
-   izni gerekiyor). Kullanıcı bunu bilerek ayrı bıraktı ("istek sayısını azaltmaya çalışma, o ayrı iş").
+   uyarı var — sorun artık SESSİZCE değil, GÖRÜNÜR şekilde başarısız oluyor (aciliyeti düşürür,
+   ORTADAN KALDIRMAZ). **AYRI, hâlâ ele alınmamış, GERÇEK prod verisiyle ölçülmüş bir alt-madde
+   kalıyor**: 10 saniyede bir kulübün TAMAMININ anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı
+   olmadan gönderme — gerçek prod D1 sayılarıyla (95 sporcu/75 aidat/406 yoklama, bkz. §9) tam bir
+   fan-out **771 istek** üretiyor, `ERR_INSUFFICIENT_RESOURCES`'a yol açan yerel test hacmiyle AYNI
+   mertebede. Kullanıcı bunu bilerek ayrı bıraktı ("istek sayısını azaltmaya çalışma, o ayrı iş").
 2. **Mobil Skor paneli `!important` override'ları test edilmedi** (~10-15 kural, bkz. §2i/§6) — en
    sık kullanılan ekranın (Skor) mobil görünümünde, henüz doğrulanmamış bir kaynak-sırası sorununu
    gizliyor olabilirler. Test edilmeden silinmemeli veya değiştirilmemeli.
@@ -1147,6 +1149,15 @@ detay §9c'de. Aşağıdaki orijinal teşhis (hacim/istek-sayısı analizi) hâl
 alınmamış bir iş olarak duruyor — SADECE sessiz-başarı kısmı çözüldü, istek hacmi/toplu-işlem
 sorunu değil (kullanıcı özellikle bunu ayrı bir iş olarak bıraktı, bkz. §9c).
 
+**Aciliyet notu (kullanıcının kendi değerlendirmesi)**: istek hacmi sorununun KENDİSİ hâlâ duruyor
+(aşağıdaki "Ölçüm" — gerçek prod verisiyle 771 istek/döngü, bkz. güncellenmiş bölüm) ama artık
+SESSİZCE başarısız olmuyor — §9c'nin düzeltmesinden sonra bir fan-out gerçekten tıkanırsa (ör.
+`ERR_INSUFFICIENT_RESOURCES`) `bekleyenGonderim` true kalır, backoff'a düşer, ve eğer neden 401 ise
+kullanıcı görünür bir uyarı görür; diğer başarısızlık türlerinde de en azından veri sessizce
+"gönderilmiş" SANILMAZ, `bulutDurum()`/`bekleyenGonderim` durumu gerçeği yansıtır. **Bu, sorunun
+ortaya çıktığı anda fark edilmesini sağlıyor — aciliyeti düşürüyor ama sorunu ORTADAN KALDIRMIYOR.**
+İstek hacmi kendisi (§9'un asıl konusu) hâlâ ayrı, çözülmemiş bir madde.
+
 **Bağlam (orijinal teşhis, Faz 6 SONRASI)**: Faz 5 grup 5 testlerinde (bkz. §2g) periyodik arka plan
 isteklerinin ara sıra "Failed to fetch" / `net::ERR_INSUFFICIENT_RESOURCES` verdiği gözlendi.
 Kullanıcının isteğiyle kök nedeni tam teşhis edildi (bu bölüm o teşhisin özeti).
@@ -1178,34 +1189,36 @@ risk "sürekli tekrar eden bir fırtına" değil, **"tek seferlik, sessiz, kalı
 başarısızlığı"** — cihaz o oturumda hangi frac/yoklama olursa olsun bir daha denemez, ve bunu
 raporlayacak hiçbir mekanizma yok.
 
-**Ölçüm (gerçek kulüp verisiyle)**: Bu oturumdan `wrangler d1 execute --remote` ile prod D1'i
-sorgulamayı denedim — **başarısız**: mevcut OAuth token'ın izin kapsamında (`wrangler whoami`
-çıktısı: account/user/workers/workers_kv/workers_routes/workers_scripts/workers_tail) **D1 hiç
-yok**, `code: 7403` ("account not authorized") döndü. Yerel `--local` D1'de onlarca oturumdan
-biriken test verisi var (gerçek sayıyı yansıtmıyor), o yüzden ORADAN da sayı üretmedim — kullanıcı
-özellikle "test verisini sayma" dedi. Bunun yerine `fanOutMasterPayload()`'ın kodundan **birim
-maliyet formülünü** çıkardım — gerçek sayılar elde edilince (D1 izni eklenip sorgulanarak ya da
-kullanıcının kendi bildiği rakamla) doğrudan yerine konabilir:
+**Ölçüm (GERÇEK prod verisiyle, 2026-09-10 — güncellendi)**: Bu oturumun başında `wrangler d1
+execute --remote` denendiğinde OAuth token'ın izin kapsamında D1 yoktu (`code: 7403`). Faz 13
+sonrasında AYNI komut TEKRAR denendi — bu kez **çalıştı** (`wrangler whoami` artık `d1 (write)`
+listeliyor; token izinleri sohbetler arası büyümüş/yenilenmiş olmalı — gelecekteki oturumlar önce
+`wrangler whoami`'yle kontrol etsin, artık uzak D1'e doğrudan erişim MÜMKÜN). Gerçek prod sayıları:
 
 ```
-istek sayısı ≈ 3 × (aktif+pasif TÜM sporcu sayısı, 4 grup toplamı)
-             + 1 × (aidatDB hücre sayısı = dolu ay × sporcu, genelde sporcu×~12)
-             + 1 × (otomatikYoklamaDB kayıt sayısı = gün × o gün gelen sporcu)
-             + 1 × (personelDB sayısı)
-             + 1 × (personelYoklamaDB'deki gelen+gelmeyen personel-gün sayısı)
-             + 1 × (ozelSiniflar sayısı)
-             + 3 (credentials + min-surum + extra_blob — sabit)
+$ wrangler d1 execute dagsk-db --remote --command "SELECT (SELECT COUNT(*) FROM athletes) sporcu,
+  (SELECT COUNT(*) FROM dues) aidat, (SELECT COUNT(*) FROM attendance_auto) yoklama,
+  (SELECT COUNT(*) FROM personnel) personel, (SELECT COUNT(*) FROM personnel_attendance) personel_yoklama,
+  (SELECT COUNT(*) FROM custom_classes) ozel_sinif;"
+
+sporcu: 95 (hepsi aktif, pasif=0)   aidat: 75   yoklama: 406   personel: 2   personel_yoklama: 0   ozel_sinif: 0
 ```
-Örnek: 60 sporculuk gerçek bir kulüpte SADECE sporcu+aidat kısmı bile 60×3 + 60×12 ≈ **900 isteğe**
-yakın olur — `ERR_INSUFFICIENT_RESOURCES`'a yol açan yerel testteki 500+ isteklik hacimle AYNI
-mertebede. **Bu riskin sanıldığından çok daha yakın olabileceğini gösteriyor** — küçük-orta
-büyüklükte gerçek bir kulüp bile bu sınıra yaklaşabilir. Kesin sayı için gerçek `athletes`/`dues`/
-`attendance_auto`/`personnel`/`personnel_attendance`/`custom_classes` satır sayıları prod D1'den
-çekilmeli (D1 izni olan bir hesapla `wrangler d1 execute dagsk-db --remote --command "SELECT
-(SELECT COUNT(*) FROM athletes) a, (SELECT COUNT(*) FROM dues) d, (SELECT COUNT(*) FROM
-attendance_auto) y, (SELECT COUNT(*) FROM personnel) p, (SELECT COUNT(*) FROM
-personnel_attendance) py, (SELECT COUNT(*) FROM custom_classes) o;"`) ya da kullanıcı kendi
-rakamını verirse formüle yerine konur.
+
+Formüle yerine konunca:
+
+```
+istek sayısı ≈ 3×95 (sporcu) + 1×75 (aidat) + 1×406 (yoklama) + 1×2 (personel) + 1×0 + 1×0 + 3 (sabit)
+             = 285 + 75 + 406 + 2 + 0 + 0 + 3
+             = 771 istek / tam fan-out döngüsü
+```
+
+**771 gerçek, GÜNCEL bir sayı — tahmin değil.** Bu, yerel testte `ERR_INSUFFICIENT_RESOURCES`'a yol
+açan hacimle AYNI mertebede. Kulüp büyüdükçe (özellikle `yoklama` — 406 kayıt, günlük biriken tek
+koleksiyon, hiç arşivlenmiyor) bu sayı SADECE büyüyecek. Bu ölçüm için kullanılan komut, gelecekte
+tekrar ölçmek isteyen biri için: yukarıdaki `wrangler d1 execute dagsk-db --remote --command "..."`
+tek satırı yeniden çalıştırılabilir. **D1 izni OLMASAYDI** alternatif: kullanıcı Cloudflare
+dashboard'unda (dash.cloudflare.com → Workers & Pages → D1 → `dagsk-db` → Console) aynı SQL'i elle
+çalıştırıp sonucu buraya yapıştırabilir — komut satırı erişimi gerekmez.
 
 **Olası yön (uygulanmadı, sadece not)**: (1) değişen alanları gönder (tam anlık görüntü değil,
 delta), (2) eşzamanlılık sınırı (ör. aynı anda en fazla N istek, kalan kuyrukta), (3) hata sayacı —
