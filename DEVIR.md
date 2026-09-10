@@ -1361,6 +1361,43 @@ hiç katkı yapmadan. Test verisi silindi, PIN geri alındı. `node --check publ
 **Sonuç**: 771 → **696** istek/döngü (75 aidat isteği düştü). Sonraki adım (kullanıcı onayı bekliyor):
 İş 2/3, yoklama arşivleme.
 
+**Ölçüm (2026-09-11, kullanıcı istedi, sadece SAY — silme YAPILMADI)**: `yoneticiSil()`'in bu hatası
+gerçek prod verisinde ne kadar öksüz kayıt bırakmış? Gerçek D1'e karşı `NOT EXISTS (SELECT 1 FROM
+athletes WHERE ad=...)` ile ölçüldü:
+
+| | Toplam | Öksüz | Oran |
+|---|---|---|---|
+| Aidat (dues) | 75 | 2 | %2.7 |
+| Yoklama (attendance_auto) | 406 | 11 | %2.7 |
+
+Kullanıcının kendi "%20 olsaydı anlamlı olurdu" eşiğinin çok altında — **anlamsız, ayrı bir temizlik
+turu gerektirmiyor**. Örneklem incelendi: aidat'taki 2 kayıt ("Ali Veli", "BABABABA") ve yoklamadaki
+bazıları ("BABABABA", "DENEME") kullanıcının kendi eski TEST kayıtları (bkz. aşağıdaki not); ama
+yoklamadaki bazı isimler (CAN GÖKTAŞ, İLYA, EYMEN YAVUZ — 3 farklı `grup` değeriyle, DENIZ TUNA
+YILMAZ, GÖKTUĞ) gerçek/silinmiş sporcular gibi görünüyor — **ölçüm `yoneticiSil()`'in aidat YANINDA
+yoklamayı da bıraktığını doğruluyor**. Yan bulgu: `attendance_auto.grup`'ta `athletes.grup`'un CHECK
+kısıtlamasının kapsamadığı bir değer (`'karisik'`) bulundu — kısıtlama olmadığı için mümkün, ayrı ve
+düşük öncelikli bir veri-kalitesi notu.
+
+**`yoneticiSil()` hatasının kendisi — KÜÇÜK, SONRAKİ İŞ olarak not düşüldü (henüz düzeltilmedi)**:
+`app.js:9222`'deki `if(typeof aidatDB !== 'undefined' && aidatDB[g]) delete aidatDB[g][ad];` satırı
+YANLIŞ anahtar şekliyle çalışıyor (`aidatDB` düz `aidatDB[ad]`, `aidatDB[grup][ad]` DEĞİL) — bu yüzden
+hem aidat HEM yoklama (yoklama tarafı ayrıca kontrol edilmeli, aynı fonksiyonun içinde benzer bir satır
+var) bir sporcu silindiğinde temizlenmiyor. Ucuz bir düzeltme (doğru anahtarla silme + sunucuya da
+haber verme) ama kapsamı KARIŞTIRILMASIN diye arşivleme işinden SONRAYA bırakıldı — kullanıcı talimatı.
+
+**Prod'daki test kayıtları (BABABABA, DENEME, "Ali Veli") — SİLİNMEDİ, kullanıcı karar verecek**:
+kullanıcı bunların kendi eski denemeleri olduğunu doğruladı ve silinmelerinin etkisini sordu. Etki
+analizi: `athletes` tablosunda bu adlarla eşleşen GERÇEK bir satır zaten yok (tam da bu yüzden
+"öksüz" sayıldılar) — yani bu isimler `turnuvaDB`'de aktif olarak GÖRÜNMÜYOR, hiçbir ekranda
+listelenmiyor, hiçbir raporun/istatistiğin toplamına girmiyor (aidat geliri, devamsızlık, klasman —
+hepsi `turnuvaDB`/`athletes` üzerinden hesaplanıyor, bu öksüz satırlar zaten dışarıda). Silmenin
+tek etkisi: `dues`/`attendance_auto` tablolarındaki birkaç fazlalık satırın kalıcı olarak temizlenmesi
+— ölçülebilir bir davranış değişikliği YOK, sadece hijyen. Silinirse geri alınamaz (D1'de tombstone/
+`deleted_athletes` mekanizması SADECE `athletes` silmeleri için var, `dues`/`attendance_auto` için
+yok) ama zaten kullanılmayan veri olduğu için pratik risk yok. Silme işlemi istenirse ayrı, açık bir
+onayla yapılacak.
+
 ## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
 
 **Bağlam**: Madde 6 (çıplak hex) taramasında `#10b981` 34 yerde bulundu. Kullanıcı açık talimat
