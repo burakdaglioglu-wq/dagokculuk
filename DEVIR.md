@@ -946,6 +946,22 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
 
 ## 7. Kurallar ve tuzaklar
 
+- **KALICI İŞ AKIŞI KURALI (2026-09-10, kullanıcının kendi ifadesiyle)**: "bir iş onaylandığında
+  commit + push + deploy, üçü birlikte, ayrıca söylememe gerek yok. Sonucu raporla." Yani bir
+  aşama/iş kullanıcı tarafından onaylanıp o onayın doğal sonucu işin bittiğiyse (yeni bir aşamaya
+  geçiş istenmiyorsa) — SORULMADAN: (1) DEVIR.md güncellenir, (2) `git commit` atılır, (3)
+  `git push origin main` yapılır (push'tan ÖNCE `git fetch origin` + `git rev-list --count
+  main..origin/main` ile origin'de yerelde olmayan commit var mı kontrol edilir — 0 değilse
+  KÖRLEMESİNE push edilmez, kullanıcıya sorulur; bu kontrol 2026-09-10'a kadar HİÇ push
+  yapılmamış olmasından, yani yerel `main`'in haftalarca origin'den habersiz ilerlemiş
+  olabileceğinden kaynaklı bir gerçek risk), (4) `npm run deploy` ile canlıya alınır, (5) sonuç
+  (commit hash, push durumu, deploy version ID, canlı URL sağlık kontrolü) kısaca raporlanır.
+  Cloudflare Workers'ın GitHub Git-entegrasyonu (push'ta otomatik build+deploy) BİLEREK
+  KURULMADI — kullanıcı iki gerekçeyle reddetti: (a) D1 migration'ları (`migrations/`,
+  `migrations_milo/`) deploy'un parçası değil, otomatik akış migration'sız kod deploy edebilir,
+  (b) push→production arasında hiçbir onay adımı yok, sahadan çalışırken bu ikisi tehlikeli.
+  Mevcut akış (Claude commit+push+deploy yapar, kullanıcı ekran görüntüsüyle onaylar) BİLEREK
+  korunuyor.
 - **Dokunulmayacaklar**: Firestore/D1 fark etmez, veri katmanı çağrıları (`turnuvaDB`,
   `bulutaGonderKontrol()`, `_skorKaydetCekirdek()`); `_vT` zaman damgası senkron mantığı;
   sürüm kilidi sistemi; SHA-256 PIN doğrulama; puan hesaplama fonksiyonları; JS'in
