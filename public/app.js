@@ -16253,7 +16253,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     + '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:12px;"><span>' + formatTarih(k.tarih) + ' · ' + (k.saat || '') + '</span><span style="color:var(--aurora-gold);">👥 ' + k.katilimciSayisi + ' sporcu</span></div>'
                     + (k.katilimcilar && k.katilimcilar.length ? '<div style="font-size:10.5px; color:var(--text-muted); margin-top:4px;">' + k.katilimcilar.join(', ') + '</div>' : '')
                     + (k.enYuksekSkor ? '<div style="font-size:11px; margin-top:5px;">🎯 En yüksek skor: <b>' + k.enYuksekSkor + '</b></div>' : '')
-                    + (k.yarismaSonucu ? '<div style="font-size:11px; margin-top:3px; color:var(--aurora-cyan);">🏆 Yarışma: ' + (k.yarismaSonucu.kazananAd === 'Berabere' ? 'Berabere' : k.yarismaSonucu.kazananAd + ' kazandı') + ' (' + k.yarismaSonucu.takimlar.map(function(t) { return t.ad + ' ' + t.puan; }).join(' — ') + ')</div>' : '')
+                    + (k.yarismaSonucu ? '<div style="font-size:11px; margin-top:3px; color:var(--aurora-cyan);">🏆 Yarışma: ' + (k.yarismaSonucu.kazananAd === 'Berabere' ? 'Berabere' : esc(k.yarismaSonucu.kazananAd) + ' kazandı') + ' (' + k.yarismaSonucu.takimlar.map(function(t) { return esc(t.ad) + ' ' + t.puan; }).join(' — ') + ')</div>' : '')
                     + (k.gununYildizi ? '<div style="font-size:11px; margin-top:3px; color:var(--gold);">🌟 Günün Yıldızı: <b>' + k.gununYildizi + '</b></div>' : '')
                     + '</div>';
             }).join('');
@@ -16368,7 +16368,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // — Hayali Rakip HARİÇ (o mod her zaman TAM 2 takıma zorlar, gerçek sporcu+sanal rakip mantığı
         // 3+ takıma anlamsız). `_kmYarismaTakimSayisi` de `_kmYarismaFormat` gibi maçtan maça kalıcı bir
         // "tercih" — kmYarismaSifirla'da sıfırlanmıyor.
-        const KM_TAKIM_RENKLERI = ['var(--aurora-cyan)', 'var(--aurora-magenta)', 'var(--gold)', 'var(--neon-green)'];
+        const KM_TAKIM_RENKLERI = ['var(--aurora-cyan)', 'var(--aurora-magenta)', 'var(--gold)', 'var(--neon-green)', 'var(--aurora-violet)'];
         function _kmTakimlarOlustur(sayi) {
             let arr = [];
             for(let i = 0; i < sayi; i++) arr.push({ ad: 'Takım ' + (i + 1), renk: KM_TAKIM_RENKLERI[i % KM_TAKIM_RENKLERI.length], uyeler: [] });
@@ -16529,6 +16529,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmTakimlar.forEach(t => { if(t.uyeler.length > n) t.uyeler = t.uyeler.slice(0, n); });
             kmYarismaKurulumCiz();
         }
+        // 🏷️ Takım adı/rengi düzenleme (Faz 13 Stage 3) — isim artık serbest metin, HTML'e her
+        // koyulduğu yerde esc() ile kaçırılıyor (bkz. kmYarismaKurulumCiz/kmYarismaSkorbordCiz/
+        // kmYarismaGecmisiHTML/kmYarismaRaporuPDF). Renk sabit KM_TAKIM_RENKLERI listesinden seçiliyor,
+        // serbest metin DEĞİL — enjeksiyon riski yok.
+        function kmYarismaTakimAdiDegis(idx, yeniAd) {
+            let t = _kmTakimlar[idx]; if(!t) return;
+            yeniAd = (yeniAd || '').trim();
+            t.ad = yeniAd ? yeniAd.slice(0, 20) : ('Takım ' + (idx + 1));
+            kmYarismaKurulumCiz();
+        }
+        function kmYarismaTakimRenkSec(idx, renk) {
+            let t = _kmTakimlar[idx]; if(!t || KM_TAKIM_RENKLERI.indexOf(renk) < 0) return;
+            t.renk = renk;
+            kmYarismaKurulumCiz();
+        }
         function kmYarismaSureSec(sn) { _kmYarismaSuresi = sn; kmYarismaKurulumCiz(); }
         function kmYarismaOzelSureAyarla() {
             let dk = parseInt(document.getElementById('km-yarisma-ozel-dk').value) || 0;
@@ -16539,10 +16554,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // 🎲 Rastgele Karıştır — elle atama sistemini DEĞİŞTİRMEZ, sadece hızlı bir başlangıç sunar;
         // istenirse sonrasında yine tek tek dokunup düzeltilebilir.
+        // 🎲 Otomatik Dağıt (Faz 13 Stage 3, 2026-09) — RASTGELE karıştırır, sonra takımlara TEK TEK
+        // DÖNGÜSEL (round-robin) dağıtır: her takım format sınırına ulaşana kadar sırayla dolar, bu
+        // yüzden takım sayıları en fazla 1 farkla eşitlenir. Kullanıcı isteği: "sporcuların
+        // ortalamalarına göre dengeleme yapma" — sadece rastgelelik + eşit sayı, seviye/skor hiç
+        // hesaba katılmıyor. Havuz takımlar×format kapasitesinden büyükse kalan açıkta bırakılır (elle
+        // atama sistemini DEĞİŞTİRMEZ, sonrasında yine tek tek dokunup düzeltilebilir).
         function kmYarismaRastgeleKaristir() {
             let karisik = [..._kmListe];
             for(let i = karisik.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [karisik[i], karisik[j]] = [karisik[j], karisik[i]]; }
-            _kmTakimlar.forEach(function(t, idx) { t.uyeler = karisik.slice(idx * _kmYarismaFormat, (idx + 1) * _kmYarismaFormat); });
+            _kmTakimlar.forEach(t => t.uyeler = []);
+            let n = _kmTakimlar.length, sira = 0, atanan = 0;
+            for(let s of karisik) {
+                if(_kmTakimlar.every(t => t.uyeler.length >= _kmYarismaFormat)) break; // tüm takımlar dolu
+                while(_kmTakimlar[sira % n].uyeler.length >= _kmYarismaFormat) sira++;
+                _kmTakimlar[sira % n].uyeler.push(s); sira++; atanan++;
+            }
+            let acikta = karisik.length - atanan;
+            if(acikta > 0) showToast(`${acikta} sporcu açıkta kaldı — takımlar dolu.`, 'warning');
             kmYarismaKurulumCiz();
         }
         // Tek dokunuşla döngü: Havuzda → Takım 1'e → Takım 2'ye → ... → Takım N'ye → tekrar Havuza (dolu takım atlanır).
@@ -16585,8 +16614,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let havuz = _kmListe.filter(item => !atanmis.has(item.g + '|' + item.ad));
             let formatBtn = (n) => `<div onclick="kmYarismaFormatSec(${n})" style="flex:1; text-align:center; padding:9px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:12px; font-weight:700; cursor:pointer; ${_kmYarismaFormat===n ? 'background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta)); color:#0d1016; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${n}v${n}</div>`;
             let sureBtn = (sn, etiket) => `<div onclick="kmYarismaSureSec(${sn})" style="flex:1; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:11px; font-weight:700; cursor:pointer; ${_kmYarismaSuresi===sn ? 'background:var(--gold); color:#3d2c00; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${etiket}</div>`;
-            let takimKolon = (t) => `<div style="flex:1 1 150px; background:var(--bg-panel); border:1.5px solid ${t.renk}; border-radius:14px; padding:10px;">
-                <div style="font-size:12px; font-weight:900; color:${t.renk}; margin-bottom:8px; text-align:center;">${t.ad}</div>
+            // 🏷️ İsim/renk düzenleme (2026-09, Faz 13 Stage 3): isim serbest metin olduğu için HTML'e
+            // her koyulduğu yerde esc() ile kaçırılıyor (artık "Takım 1" gibi sabit bir string değil).
+            // Renk SERBEST metin DEĞİL — sadece KM_TAKIM_RENKLERI'nden tıkla-seç, enjeksiyon riski yok.
+            let renkSeciciHTML = (idx, t) => `<div style="display:flex; gap:5px; justify-content:center; margin-bottom:8px;">${KM_TAKIM_RENKLERI.map(r => `<div onclick="kmYarismaTakimRenkSec(${idx},'${r}')" title="Renk seç" style="width:15px; height:15px; border-radius:50%; background:${r}; cursor:pointer; box-shadow:0 0 0 2px ${t.renk===r ? r : 'transparent'}, 0 0 0 1px ${t.renk===r ? '#fff' : 'transparent'};"></div>`).join('')}</div>`;
+            let takimKolon = (t, idx) => `<div style="flex:1 1 150px; background:var(--bg-panel); border:1.5px solid ${t.renk}; border-radius:14px; padding:10px;">
+                <input type="text" value="${esc(t.ad).replace(/"/g,'&quot;')}" maxlength="20" onchange="kmYarismaTakimAdiDegis(${idx}, this.value)" style="width:100%; background:transparent; border:none; border-bottom:1px dashed ${t.renk}; color:${t.renk}; font-size:12px; font-weight:900; text-align:center; margin-bottom:6px; padding:2px 0 4px;">
+                ${renkSeciciHTML(idx, t)}
                 ${t.uyeler.map(u => `<div onclick="kmYarismaAtaTiklama('${u.g}','${u.ad.replace(/'/g,"\\'")}')" style="background:var(--bg-main); border-radius:8px; padding:6px 8px; margin-bottom:5px; font-size:11px; font-weight:700; cursor:pointer;">${u.ad}</div>`).join('')}
                 ${Array.from({length: Math.max(0, _kmYarismaFormat - t.uyeler.length)}).map(() => `<div style="border:1.5px dashed var(--border-color); border-radius:8px; padding:7px 8px; font-size:10px; color:var(--text-muted); text-align:center; margin-bottom:5px;">+ havuzdan sporcu dokun</div>`).join('')}
             </div>`;
@@ -16601,18 +16635,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let hazirMi = _kmRakipTipi === 'hayali' ? _kmTakimlar[0].uyeler.length > 0 : doluTakimSayisi >= 2;
             let rakipTipiBtn = (tip, etiket) => `<div onclick="kmYarismaRakipTipiSec('${tip}')" style="flex:1; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:11.5px; font-weight:700; cursor:pointer; ${_kmRakipTipi===tip ? 'background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta)); color:#0d1016; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${etiket}</div>`;
             let takimSayisiBtn = (n) => `<div onclick="kmYarismaTakimSayisiSec(${n})" style="flex:1; text-align:center; padding:7px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:11px; font-weight:700; cursor:pointer; ${_kmYarismaTakimSayisi===n ? 'background:var(--gold); color:#3d2c00; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${n} Takım</div>`;
-            let takimKolonlarHTML = _kmRakipTipi === 'hayali' ? (takimKolon(_kmTakimlar[0]) + hayaliKolon()) : _kmTakimlar.map(takimKolon).join('');
+            let takimKolonlarHTML = _kmRakipTipi === 'hayali' ? (takimKolon(_kmTakimlar[0], 0) + hayaliKolon()) : _kmTakimlar.map(takimKolon).join('');
             let html = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <div style="font-size:14px; font-weight:900;">🏆 Yarışma Modu — Takım Kur</div>
                     ${doluTakimSayisi > 0 ? `<div onclick="kmYarismaYeniTurnuva()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">🔄 Yeni Turnuva</div>` : ''}
                 </div>
                 <div style="display:flex; gap:6px; margin-bottom:10px;">${rakipTipiBtn('gercek','🧑‍🤝‍🧑 Gerçek Takım')}${rakipTipiBtn('hayali','🤖 Hayali Rakip')}</div>
-                ${_kmRakipTipi === 'gercek' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 6px 2px;">Kaç Takım?</div><div style="display:flex; gap:6px; margin-bottom:8px;">${[2,3,4].map(takimSayisiBtn).join('')}</div>` : ''}
-                <div style="display:flex; gap:6px; margin-bottom:8px;">${[1,2,3,4].map(formatBtn).join('')}</div>
-                <div onclick="kmYarismaRastgeleKaristir()" style="text-align:center; cursor:pointer; font-size:11px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:9px; padding:7px; margin-bottom:14px;">🎲 Rastgele Karıştır</div>
+                ${_kmRakipTipi === 'gercek' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 6px 2px;">Kaç Takım?</div><div style="display:flex; gap:6px; margin-bottom:8px;">${[2,3,4,5].map(takimSayisiBtn).join('')}</div>` : ''}
+                <div style="display:flex; gap:6px; margin-bottom:8px;">${[1,2,3,4,5].map(formatBtn).join('')}</div>
+                <div onclick="kmYarismaRastgeleKaristir()" style="text-align:center; cursor:pointer; font-size:11px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:9px; padding:7px; margin-bottom:14px;">🎲 Otomatik Dağıt</div>
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">${takimKolonlarHTML}</div>
                 <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Atanmamış Sporcular (dokun → takıma ekle)</div>
+                ${(havuz.length && doluTakimSayisi > 0) ? `<div style="font-size:11px; font-weight:700; color:var(--accent-orange); margin-bottom:6px;">⚠️ ${havuz.length === 1 ? esc(havuz[0].ad) + ' bu turda açıkta' : havuz.length + ' sporcu bu turda açıkta'} — henüz bir takımda değil.</div>` : ''}
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;">
                     ${havuz.length ? havuz.map(item => `<div onclick="kmYarismaAtaTiklama('${item.g}','${item.ad.replace(/'/g,"\\'")}')" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">${item.ad}</div>`).join('') : `<div style="font-size:11px; color:var(--text-muted);">Tüm sporcular atandı.</div>`}
                 </div>
@@ -16724,22 +16759,22 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let oranA = _kmYarismaDengeliOran(_kmTakimlar[0]);
                 let hayaliFeedHTML = () => {
                     if(!_kmHayaliYorumGecmisi.length) return '';
-                    return `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:12px 0 8px 2px;">${HAYALI_ZORLUKLER[_kmHayaliZorluk].avatar} ${_kmTakimlar[1].ad} ne diyor</div>`
+                    return `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:12px 0 8px 2px;">${HAYALI_ZORLUKLER[_kmHayaliZorluk].avatar} ${esc(_kmTakimlar[1].ad)} ne diyor</div>`
                         + _kmHayaliYorumGecmisi.map(y => `<div style="display:flex; gap:8px; align-items:flex-start; margin-bottom:6px;"><div style="width:24px;height:24px;border-radius:8px;background:${_kmTakimlar[1].renk}22;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">${HAYALI_ZORLUKLER[_kmHayaliZorluk].avatar}</div><div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:4px 12px 12px 12px; padding:7px 10px; font-size:11.5px; line-height:1.4;">${y.metin}</div></div>`).join('');
                 };
                 el.innerHTML = `
                     ${sureBarHTML}
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                        <div style="flex:1; background:var(--bg-panel); border:1.5px solid ${_kmTakimlar[0].renk}; border-radius:16px; padding:16px 10px; text-align:center;"><div style="font-size:12px; font-weight:800; color:${_kmTakimlar[0].renk}; margin-bottom:6px;">${_kmTakimlar[0].ad}</div><div style="font-size:32px; font-weight:900;">${puanA}</div><div style="display:flex; justify-content:center;">${turCipleriListe(_kmYarismaTurBazliPuanlar(_kmTakimlar[0]))}</div></div>
+                        <div style="flex:1; background:var(--bg-panel); border:1.5px solid ${_kmTakimlar[0].renk}; border-radius:16px; padding:16px 10px; text-align:center;"><div style="font-size:12px; font-weight:800; color:${_kmTakimlar[0].renk}; margin-bottom:6px;">${esc(_kmTakimlar[0].ad)}</div><div style="font-size:32px; font-weight:900;">${puanA}</div><div style="display:flex; justify-content:center;">${turCipleriListe(_kmYarismaTurBazliPuanlar(_kmTakimlar[0]))}</div></div>
                         <div style="font-size:13px; font-weight:900; color:var(--text-muted);">VS</div>
-                        <div style="flex:1; background:var(--bg-panel); border:1.5px solid ${_kmTakimlar[1].renk}; border-radius:16px; padding:16px 10px; text-align:center;"><div style="font-size:12px; font-weight:800; color:${_kmTakimlar[1].renk}; margin-bottom:6px;">${HAYALI_ZORLUKLER[_kmHayaliZorluk].avatar} ${_kmTakimlar[1].ad}</div><div style="font-size:32px; font-weight:900;">${puanB}</div><div style="display:flex; justify-content:center;">${turCipleriListe(_kmHayaliTurlar)}</div></div>
+                        <div style="flex:1; background:var(--bg-panel); border:1.5px solid ${_kmTakimlar[1].renk}; border-radius:16px; padding:16px 10px; text-align:center;"><div style="font-size:12px; font-weight:800; color:${_kmTakimlar[1].renk}; margin-bottom:6px;">${HAYALI_ZORLUKLER[_kmHayaliZorluk].avatar} ${esc(_kmTakimlar[1].ad)}</div><div style="font-size:32px; font-weight:900;">${puanB}</div><div style="display:flex; justify-content:center;">${turCipleriListe(_kmHayaliTurlar)}</div></div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:10px; color:var(--text-muted); text-align:center;">
                         <div style="flex:1;">⚖️ %${oranA} <span style="opacity:.7;">(kişisel ort.)</span></div>
                         <div style="width:24px;"></div>
                         <div style="flex:1;"><span style="opacity:.6;">sanal rakip</span></div>
                     </div>
-                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">${_kmTakimlar[0].ad}</div>
+                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">${esc(_kmTakimlar[0].ad)}</div>
                     ${_kmTakimlar[0].uyeler.map(uyeSatir).join('')}
                     ${hayaliFeedHTML()}
                     ${bitirBtnHTML}
@@ -16757,13 +16792,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let kartHTML = siraliTakimlar.map((x, sira) => `
                 <div style="flex:1 1 150px; background:var(--bg-panel); border:1.5px solid ${x.t.renk}; border-radius:16px; padding:16px 10px; text-align:center; position:relative;">
                     ${sira === 0 && liderVarMi ? '<div style="position:absolute; top:7px; right:9px; font-size:15px;">👑</div>' : ''}
-                    <div style="font-size:12px; font-weight:800; color:${x.t.renk}; margin-bottom:6px;">${x.t.ad}</div>
+                    <div style="font-size:12px; font-weight:800; color:${x.t.renk}; margin-bottom:6px;">${esc(x.t.ad)}</div>
                     <div style="font-size:28px; font-weight:900;">${x.puan}</div>
                     <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">⚖️ %${x.oran}</div>
                     <div style="display:flex; justify-content:center;">${turCipleriListe(x.turlar)}</div>
                 </div>`).join('');
             let uyeListesiHTML = siraliTakimlar.map(x =>
-                `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:12px 0 8px 2px;">${x.t.ad}</div>${x.t.uyeler.map(uyeSatir).join('')}`
+                `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:12px 0 8px 2px;">${esc(x.t.ad)}</div>${x.t.uyeler.map(uyeSatir).join('')}`
             ).join('');
             el.innerHTML = `
                 ${sureBarHTML}
@@ -16833,8 +16868,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // kayıtlarda hep 2 eleman var, ikisi de aynı map+join deseniyle sorunsuz çalışır.
             let satir = (k, i) => `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:9px 11px; margin-bottom:6px; font-size:11px;">
                 <div style="display:flex; justify-content:space-between; font-weight:800;"><span>${formatTarih(k.tarih)} · ${k.saat || ''}</span><span style="color:var(--gold);">${k.format}v${k.format}</span></div>
-                <div style="color:var(--text-muted); margin-top:3px;">${k.takimlar.map(t => `${t.ad} (${(t.uyeler||[]).join(', ') || '🤖'}) <b style="color:var(--text-main);">${t.puan}</b>`).join(' — ')}</div>
-                <div style="margin-top:3px; font-weight:800; color:${k.kazananAd==='Berabere' ? 'var(--text-muted)' : 'var(--neon-green)'};">${k.kazananAd === 'Berabere' ? '🤝 Berabere' : '🏆 ' + k.kazananAd}${k.mvpAd ? ' · 🌟 MVP: ' + k.mvpAd : ''}</div>
+                <div style="color:var(--text-muted); margin-top:3px;">${k.takimlar.map(t => `${esc(t.ad)} (${(t.uyeler||[]).map(esc).join(', ') || '🤖'}) <b style="color:var(--text-main);">${t.puan}</b>`).join(' — ')}</div>
+                <div style="margin-top:3px; font-weight:800; color:${k.kazananAd==='Berabere' ? 'var(--text-muted)' : 'var(--neon-green)'};">${k.kazananAd === 'Berabere' ? '🤝 Berabere' : '🏆 ' + esc(k.kazananAd)}${k.mvpAd ? ' · 🌟 MVP: ' + esc(k.mvpAd) : ''}</div>
                 <button onclick="event.stopPropagation(); kmYarismaRaporuPDF(${i})" style="width:100%; margin-top:7px; background:rgba(59,130,246,0.12); color:var(--neon-blue); border:1px solid var(--neon-blue); padding:6px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer;">📄 PDF İndir</button>
             </div>`;
             return `<div onclick="kmYarismaGecmisiAcKapat()" style="cursor:pointer; font-size:11px; font-weight:800; color:var(--text-muted); text-align:center; padding:8px; margin-top:4px;">📋 Geçmiş (${_kmYarismaGecmisi.length}) ${_kmYarismaGecmisAcik ? '▲' : '▼'}</div>
@@ -16846,19 +16881,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let k = _kmYarismaGecmisi[i]; if(!k) return showToast('Kayıt bulunamadı.', 'error');
             let [ta, tb] = k.takimlar;
             let kazandiMi = (t) => k.kazananAd !== 'Berabere' && t.ad === k.kazananAd;
-            let uyeSatirlari = (t) => (t.uyeler || []).map(ad => `<div style="display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #eef2f7; font-size:12px;"><span style="font-weight:700;">${ad}${k.mvpAd === ad ? ' 🌟' : ''}</span></div>`).join('');
+            let uyeSatirlari = (t) => (t.uyeler || []).map(ad => `<div style="display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #eef2f7; font-size:12px;"><span style="font-weight:700;">${esc(ad)}${k.mvpAd === ad ? ' 🌟' : ''}</span></div>`).join('');
             let takimKutu = (t, renk) => `
                 <div style="flex:1; background:${kazandiMi(t) ? '#fffbeb' : '#f8fafc'}; border:1.5px solid ${kazandiMi(t) ? '#f59e0b' : '#e2e8f0'}; border-radius:14px; padding:14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <div style="font-size:14px; font-weight:900; color:${renk};">${t.ad}${kazandiMi(t) ? ' 🏆' : ''}</div>
+                        <div style="font-size:14px; font-weight:900; color:${renk};">${esc(t.ad)}${kazandiMi(t) ? ' 🏆' : ''}</div>
                         <div style="font-size:24px; font-weight:900; color:#0f172a;">${t.puan}</div>
                     </div>
                     <div style="font-size:10px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:4px;">⚖️ KİŞİSEL ORTALAMAYA GÖRE: %${t.dengelenmisOran != null ? t.dengelenmisOran : '—'}</div>
                     <div style="background:#fff; border-radius:8px; overflow:hidden; border:1px solid #eef2f7;">${uyeSatirlari(t) || '<div style="padding:8px 10px; font-size:11px; color:#94a3b8;">Üye yok</div>'}</div>
                 </div>`;
-            let sonuc = k.kazananAd === 'Berabere' ? 'Berabere bitti — iki takım da güzel bir mücadele verdi!' : `${k.kazananAd} kazandı!`;
+            let sonuc = k.kazananAd === 'Berabere' ? 'Berabere bitti — iki takım da güzel bir mücadele verdi!' : `${esc(k.kazananAd)} kazandı!`;
             let yorum = k.mvpAd
-                ? `Bugünkü karışık sınıf yarışmasında ${sonuc} 🌟 <b>${k.mvpAd}</b> en yüksek bireysel katkıyla bu yarışmanın yıldızı oldu. Farklı yaş gruplarından oluşan takımlar birlikte harika bir performans sergiledi — desteğiniz için teşekkür ederiz! 🧡`
+                ? `Bugünkü karışık sınıf yarışmasında ${sonuc} 🌟 <b>${esc(k.mvpAd)}</b> en yüksek bireysel katkıyla bu yarışmanın yıldızı oldu. Farklı yaş gruplarından oluşan takımlar birlikte harika bir performans sergiledi — desteğiniz için teşekkür ederiz! 🧡`
                 : `Bugünkü karışık sınıf yarışmasında ${sonuc} Farklı yaş gruplarından oluşan takımlar birlikte güzel bir mücadele verdi. 🧡`;
             let html = `
             <div style="font-family:'Segoe UI', Arial, sans-serif; color:#0f172a; width:720px;">

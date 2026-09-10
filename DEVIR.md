@@ -2125,3 +2125,50 @@ elle bayatlatılmış kayıt — geri yüklenmedi, boş kaldı (öz-temizlik kur
 Sıradaki: Stage 3 (takım boyutları — 2-5 takım, takım başına 5 kişiye kadar, açıkta kalan mesajı,
 otomatik dağıtım, düzenlenebilir isim/renk) ve Stage 4 (görsel — eşleşme/eleme ağacı arayüzü, SIFIRDAN
 kurulacak, 16a'daki netleştirmeye göre).
+
+### 16c. Stage 3 — Takım boyutları (tamamlandı, deploy edildi)
+
+**Önce mevcut sınır raporlandı**: 2-4 takım (`KM_TAKIM_RENKLERI` 4 renkli), takım başına 1-4 kişi
+(`formatBtn` `[1,2,3,4]`). Genişletme: 2-5 takım + 5. renk (`--aurora-violet`), takım başına 5 kişiye
+kadar — sadece iki dizi sınırı değişti (`[2,3,4,5]`/`[1,2,3,4,5]`), kurulum akışının geri kalanı
+AYNEN kaldı ("mevcut kurulum mantığını genişlet, yeniden yazma" talimatına uyularak).
+
+**Otomatik dağıtım** — YENİ bir buton yerine var olan "🎲 Rastgele Karıştır" GENİŞLETİLDİ (etiketi
+"🎲 Otomatik Dağıt" oldu, fonksiyon adı `kmYarismaRastgeleKaristir` aynı kaldı — iki ayrı, örtüşen
+buton olmasın diye bilinçli tercih). Eski hali havuzu karıştırıp `slice(idx*format,(idx+1)*format)`
+ile blok blok bölüyordu — havuz format×takım sayısından küçükse İLK takımlar dolup SONRAKİLER aç
+kalabiliyordu (eşit değildi). Yeni hali: karıştır, sonra TEK TEK DÖNGÜSEL (round-robin) dağıt — her
+takım format sınırına ulaşana kadar sırayla dolar, sayılar en fazla 1 farkla eşitlenir. Kullanıcı
+isteği gereği hiçbir yerde sporcu ortalamasına göre denge YOK, sadece rastgelelik + round-robin.
+Havuz kapasiteyi aşarsa kalan "açıkta" — hem bir toast (`"N sporcu açıkta kaldı — takımlar dolu."`)
+hem kurulum ekranında kalıcı bir satır (`havuz.length===1` tekil/`>1` çoğul cümle, Arena Stage 1'in
+"[İsim] bu turda açıkta" üslubuyla aynı) gösteriyor — sadece en az bir takım doluyken (`doluTakimSayisi
+> 0`) görünüyor, boş bir ekranda yanlışlıkla alarm vermesin diye.
+
+**İsim/renk düzenleme**: isim artık serbest metin bir `<input>` (onchange → `kmYarismaTakimAdiDegis`),
+renk sabit `KM_TAKIM_RENKLERI` listesinden tıkla-seç bir nokta sırası (`kmYarismaTakimRenkSec`) —
+renk SERBEST metin değil, enjeksiyon riski yok. Kalıcılık için AYRI bir kayıt yolu AÇILMADI — isim/
+renk zaten `_kmTakimlar` nesnesinin bir parçası, Stage 2'nin `_kmYarismaKurulumKaydet()`'i tüm diziyi
+zaten JSON olarak kaydediyor.
+
+**Gerçek bir güvenlik bulgusu, kendiliğinden düzeltildi**: takım isimleri bugüne kadar HEP makine
+üretimliydi ("Takım 1", zorluk adı) — hiçbir render noktası kaçırma (esc()) yapmıyordu çünkü hiç
+gerek yoktu. Serbest metin olunca bu ~12 render noktası (kurulum kartı, gerçek/hayali skorbord,
+geçmiş listesi, PDF raporu, Oturum Arşivi modalı) gerçek bir HTML-enjeksiyon yüzeyi haline geldi.
+Hepsi `esc()` ile kaçırıldı (paylaşılan `esc()`, app.js:584 — bkz. [[dagsk-genel-kontrol-2026-08]]'in
+"3 gerçek XSS açığı" kalıbı, AYNI sınıf hata). **Gerçek bir `<b>XSS</b>` payload'ıyla test edildi**:
+takım adı olarak girildi, ekran görüntüsünde `<input>` alanında DÜZ METİN olarak (`&lt;b&gt;` kaçmış
+halde) göründü, kalın yazılmadı — DOM'da gerçek bir `<b>` etiketi OLUŞMADI, sadece görüntülendi.
+
+**Playwright ile doğrulandı**: 2/3/5 takım kurulumları (ekran görüntüsü alındı, 8 kişilik gerçek
+roster'la 3 takımda 3/3/2 — round-robin'in eşitliği; 5 takım+1v1'de 5 atandı/3 açıkta — hem toast hem
+kalıcı satır göründü), isim+renk değişikliği aynı anda test edildi, 360/1280px temiz, diğer sekmeler
+ve skor paneli piksel piksel aynı kaldı, `node --check` temiz. Test PIN'i sonrasında gerçek
+`egitmen_hash`'e geri alındı.
+
+Sıradaki: Stage 4 — görsel eşleşme/eleme ağacı arayüzü. Kullanıcı talimatı: Düello Arena'nın (§15)
+eşleştirme ekranını (sporcuya dokun→eşleş, otomatik eşleştir, eşleşme listesi) buraya uyarla — AYNI
+kalıp iki yerde iki farklı arayüz olarak tekrarlanmasın. Fark: Arena bire-bir düello (tur kavramı yok),
+burası turnuva (tur tur ilerler, kazanan üst tura çıkar, görünür eleme ağacı — Çeyrek Final/Yarı
+Final/Final adlandırmasıyla, dallar finale birleşir). Takım renkleri ağaç+liste+sonuç ekranında HEP
+aynı olacak.
