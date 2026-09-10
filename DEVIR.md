@@ -1220,6 +1220,16 @@ tek satırı yeniden çalıştırılabilir. **D1 izni OLMASAYDI** alternatif: ku
 dashboard'unda (dash.cloudflare.com → Workers & Pages → D1 → `dagsk-db` → Console) aynı SQL'i elle
 çalıştırıp sonucu buraya yapıştırabilir — komut satırı erişimi gerekmez.
 
+**📏 EŞİK (kullanıcı belirledi, 2026-09-10): bu sayı 1000'i geçerse istek hacmi işi ÖNCELİK 1 olur.**
+Şu an 771 — sınıra %77 uzaklıkta. Ayda bir yukarıdaki tek satır komut tekrar çalıştırılıp sonuç
+buraya (yeni bir tarih damgasıyla) eklenerek trend izlenebilir:
+
+| Tarih | sporcu | aidat | yoklama | personel | Toplam istek | Eşiğe uzaklık |
+|---|---|---|---|---|---|---|
+| 2026-09-10 | 95 | 75 | 406 | 2 | **771** | 1000 − 771 = 229 |
+
+(Yeni ölçümler bu tabloya SATIR olarak eklensin, üzerine yazılmasın — trend görünür kalsın.)
+
 **Olası yön (uygulanmadı, sadece not)**: (1) değişen alanları gönder (tam anlık görüntü değil,
 delta), (2) eşzamanlılık sınırı (ör. aynı anda en fazla N istek, kalan kuyrukta), (3) hata sayacı —
 art arda başarısız olan job sayısı bir eşiği aşınca kullanıcıya görünür bir uyarı (mevcut
@@ -1277,6 +1287,46 @@ küçülterek izole edildi:
 
 `node --check` (her iki dosya), `npx tsc --noEmit` temiz. `npm test` bu projede hiç yazılmış test
 dosyası yok, çalıştırılamadı (önceden var olan durum, bu değişiklikle ilgisiz).
+
+## 9d. İstek hacmi — iki yön değerlendirmesi (2026-09-10, SADECE ANALİZ, uygulanmadı)
+
+Kullanıcı iki yönün risk/kazanç dengesini sordu: (a) sadece değişeni gönderme (delta senkron), (b)
+yoklama arşivleme. Kod okunarak (uygulama yapılmadan) şu bulundu — **bu bulgu değerlendirmeyi
+değiştiriyor**: `aidatDB` (75 kayıt) ZATEN kendi kalıcı, tekrar-denemeli kuyruğuna sahip
+(`_aidatBekleyenPutler`/`_aidatDuesGonder`, app.js:5866 — dues bir hücre her değiştiğinde ANINDA ve
+bağımsız gönderiliyor, tıpkı §9c'de fanOut için yapılan düzeltmenin AYNI deseniyle, ZATEN önceden
+yapılmış). Yani fan-out'un aidat kısmı (771'in 75'i) **saf tekrar** — zaten güvenilir şekilde
+senkronlanan veriyi 10 saniyede bir gereksiz yere tekrar gönderiyor. `otomatikYoklamaDB` (406 kayıt,
+771'in en büyük dilimi) için ise böyle bir kuyruk YOK — sadece fan-out'ta yaşıyor.
+
+**Değerlendirme**:
+- **(b) Yoklama arşivleme daha az riskli.** İzole bir veri-yaşam-döngüsü değişikliği — çekirdek
+  senkron doğruluğuna hiç dokunmuyor, sadece `otomatikYoklamaDB`'nin BOYUTUNU sınırlıyor. Kapsamı dar
+  (sadece yoklama okuma yolları — aylık rapor, devamsızlık radarı vb. — eski kayıtlara nasıl
+  erişeceğini yeniden düşünmek gerekir) ama hatası da o kadar dar kalır.
+- **(a) tam/genel hali ("bütün kulübü diff'le") daha riskli ve kullanıcının sezgisi doğru** — en çok
+  kod dokunuşu bu. Skor/veri katmanına EN yakın değişiklik, kısmi başarısızlıkta HANGİ alanların
+  gönderildiğini doğru izlemek zorunda (yoksa §9'un aynı sınıfı bir sessiz-kayıp riski yeniden
+  doğar), ve "cihaz günlerce kapalıydı" soğuk-başlangıç senaryosu için YİNE tam bir senkron yoluna
+  ihtiyaç var — yani tam diff motoru ASLA fan-out'un yerini tamamen almaz, üstüne eklenir.
+- **Ama (a)'nın DAR bir dilimi neredeyse bedava**: `aidatDB`'yi (ve muhtemelen km-liste alanlarını)
+  fan-out'un job listesinden ÇIKARMAK — zaten var, ZATEN test edilmiş, ZATEN §9c'yle aynı deseni
+  taşıyan bir kuyruğa güvenmek — yeni senkron mantığı İCAT ETMEDEN 75 isteği anında düşürür. Bu,
+  kullanıcının "en çok kod dokunuşu" endişesinin haklı olduğu GENEL diff motorundan tamamen farklı,
+  çok daha küçük bir değişiklik.
+- **`otomatikYoklamaDB` için böyle bir kısayol YOK** (kendi kuyruğu yok) — bu yüzden onun için gerçek
+  seçenek ya (b) arşivleme ya da dues'unkiyle AYNI deseni taşıyan YENİ bir yoklama kuyruğu kurmak
+  (bu da (a)'nın dar, düşük riskli bir dilimi olurdu — dues'ta zaten kanıtlanmış bir kalıbı kopyalamak,
+  genel bir diff motoru icat etmek değil).
+
+**Sonuç**: (b) ve (a)'nın DAR dilimi (aidat'ı fan-out'tan düşürmek + yoklama için dues'unkiyle aynı
+kalıpta bir kuyruk) BİRLİKTE yapılmalı — ikisi FARKLI sorunları çözüyor (biri her-10-saniyelik hacmi,
+diğeri sınırsız büyümeyi/soğuk-başlangıç ağırlığını). (a)'nın GENEL/tam hali ("bütün kulübü diff'le")
+şimdilik ÖNERİLMİYOR — daha yüksek risk, ve dues+yoklama çözülünce muhtemelen hiç gerekmeyecek (kalan
+en büyük kalem sporcu profilleri, 285/771, roster büyüklüğüyle orantılı ve YAVAŞ büyüyor — ders başına
+değil, yeni kayıt başına). Öncelik sırası önerisi: önce (b) (izole, hızlı, "yeni sporcu almasak bile
+büyür" endişesini doğrudan öldürür), sonra dues'u fan-out'tan düşürmek (neredeyse bedava), sonra
+(isteğe bağlı) yoklama için dues-benzeri bir kuyruk.
 
 ## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
 
