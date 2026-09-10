@@ -292,21 +292,13 @@
       });
     });
 
-    Object.keys(p.aidatDB || {}).forEach((ad) => {
-      Object.keys(p.aidatDB[ad]).forEach((ay) => {
-        const cell = p.aidatDB[ad][ay];
-        jobs.push(
-          put(`/api/dues/${encodeURIComponent(ad)}/${encodeURIComponent(ay)}`, {
-            odendi: !!cell.odendi,
-            tutar: cell.tutar ?? null,
-            tarih: cell.tarih ?? null,
-            notMetin: cell.notMetin ?? null,
-            odemeTarihi: cell.odemeTarihi ?? null,
-            deviceId,
-          })
-        );
-      });
-    });
+    // DÜZELTME (2026-09-11, DEVIR.md §9d): aidatDB burada ARTIK gönderilmiyor — her hücre değişikliği
+    // zaten kendi kalıcı, tekrar-denemeli kuyruğuyla (app.js:5866 _aidatBekleyenPutler/_aidatDuesPut,
+    // aidatAySave/aidatAyTemizle içinde çağrılıyor) anında ve bağımsız gönderiliyordu; burada AYRICA
+    // göndermek 75 (gerçek prod sayısı) saf tekrar isteğiydi. Tüm mutasyon yolları (toplu içe aktarma/
+    // ay değişimi dahil) tek tek doğrulandı — ikisi de canlı kodda YOK, months lazy oluşuyor. Silinen
+    // bir sporcunun aidatDB hücreleri zaten (ayrı, önceden var olan bir hata yüzünden) hiç
+    // temizlenmiyordu — bu değişiklik o davranışı DEĞİŞTİRMEDİ, sadece tekrar gönderimi kaldırdı.
 
     Object.keys(p.otomatikYoklamaDB || {}).forEach((tarih) => {
       Object.keys(p.otomatikYoklamaDB[tarih]).forEach((ad) => {

@@ -69,11 +69,10 @@ hiçbiri kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre:
 1. ~~**`fanOutMasterPayload()` sessiz başarı hatası**~~ — **DÜZELTİLDİ 2026-09-10 (bkz. §9c)**: artık
    kısmi/tam başarısızlıkta gerçekten reddediyor, kalıcı hatada üstel geri çekilme var, 401'e özel
    uyarı var — sorun artık SESSİZCE değil, GÖRÜNÜR şekilde başarısız oluyor (aciliyeti düşürür,
-   ORTADAN KALDIRMAZ). **AYRI, hâlâ ele alınmamış, GERÇEK prod verisiyle ölçülmüş bir alt-madde
-   kalıyor**: 10 saniyede bir kulübün TAMAMININ anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı
-   olmadan gönderme — gerçek prod D1 sayılarıyla (95 sporcu/75 aidat/406 yoklama, bkz. §9) tam bir
-   fan-out **771 istek** üretiyor, `ERR_INSUFFICIENT_RESOURCES`'a yol açan yerel test hacmiyle AYNI
-   mertebede. Kullanıcı bunu bilerek ayrı bıraktı ("istek sayısını azaltmaya çalışma, o ayrı iş").
+   ORTADAN KALDIRMAZ). **İstek hacmi işi başladı** (bkz. §9d analiz, §9e Adım 1/3): aidat
+   `fanOutMasterPayload`'tan düşürüldü (kendi kalıcı kuyruğu zaten vardı, saf tekrardı) — 771→**696**
+   istek/döngü. **Eşik: 1000'i geçerse bu madde öncelik 1 olur** (§9'daki trend tablosuna bkz.).
+   Sıradaki adımlar (2/3 yoklama arşivleme, 3/3 opsiyonel yoklama kuyruğu) kullanıcı onayı bekliyor.
 2. **Mobil Skor paneli `!important` override'ları test edilmedi** (~10-15 kural, bkz. §2i/§6) — en
    sık kullanılan ekranın (Skor) mobil görünümünde, henüz doğrulanmamış bir kaynak-sırası sorununu
    gizliyor olabilirler. Test edilmeden silinmemeli veya değiştirilmemeli.
@@ -1221,12 +1220,16 @@ dashboard'unda (dash.cloudflare.com → Workers & Pages → D1 → `dagsk-db` �
 çalıştırıp sonucu buraya yapıştırabilir — komut satırı erişimi gerekmez.
 
 **📏 EŞİK (kullanıcı belirledi, 2026-09-10): bu sayı 1000'i geçerse istek hacmi işi ÖNCELİK 1 olur.**
-Şu an 771 — sınıra %77 uzaklıkta. Ayda bir yukarıdaki tek satır komut tekrar çalıştırılıp sonuç
-buraya (yeni bir tarih damgasıyla) eklenerek trend izlenebilir:
+Ayda bir yukarıdaki tek satır komut tekrar çalıştırılıp sonuç buraya (yeni bir tarih damgasıyla)
+eklenerek trend izlenebilir. **2026-09-11 GÜNCELLEMESİ (bkz. §9e)**: aidat artık fan-out'ta
+SAYILMIYOR (kendi kalıcı kuyruğuna bırakıldı) — "Toplam istek" sütunu bu tarihten sonra
+`3×sporcu + yoklama + personel + 3` formülünü kullanıyor, `aidat` sütunu SADECE referans/trend için
+tutulmaya devam ediyor (o kolon büyürse dues kuyruğunun kendi hacmi artar, ama fan-out'u etkilemez):
 
-| Tarih | sporcu | aidat | yoklama | personel | Toplam istek | Eşiğe uzaklık |
+| Tarih | sporcu | aidat (fan-out'a dahil DEĞİL) | yoklama | personel | Toplam istek (fan-out) | Eşiğe uzaklık |
 |---|---|---|---|---|---|---|
-| 2026-09-10 | 95 | 75 | 406 | 2 | **771** | 1000 − 771 = 229 |
+| 2026-09-10 | 95 | 75 | 406 | 2 | 771 (aidat dahil, eski formül) | 1000 − 771 = 229 |
+| 2026-09-11 | 95 | 75 | 406 | 2 | **696** (aidat düşürüldü) | 1000 − 696 = 304 |
 
 (Yeni ölçümler bu tabloya SATIR olarak eklensin, üzerine yazılmasın — trend görünür kalsın.)
 
@@ -1327,6 +1330,36 @@ en büyük kalem sporcu profilleri, 285/771, roster büyüklüğüyle orantılı
 değil, yeni kayıt başına). Öncelik sırası önerisi: önce (b) (izole, hızlı, "yeni sporcu almasak bile
 büyür" endişesini doğrudan öldürür), sonra dues'u fan-out'tan düşürmek (neredeyse bedava), sonra
 (isteğe bağlı) yoklama için dues-benzeri bir kuyruk.
+
+## 9e. İş 1/3 — Aidatı fan-out'tan düşürme (2026-09-11, TAMAMLANDI, deploy edildi)
+
+**Önce kanıt (kullanıcı istedi)**: `aidatDB`'ye yazan HER kod yolu tek tek bulunup okundu:
+`aidatAySave`/`aidatAyTemizle` (coach hücre düzenler/temizler) → ikisi de `_aidatDuesPut`'u çağırıyor,
+tam kapsama. `aidatMuafToggle`/`aidatDogumTarihiKaydet`/`aidatKatilmaTarihiKaydet`/`aidatAlanKaydet` →
+bunlar `aidatDB`'ye HİÇ dokunmuyor, `turnuvaDB[grup][ad]` (sporcu alanı) yazıyorlar — ayrı, dokunulmayan
+bir yol (sporcu PATCH'i, hâlâ fan-out'ta). `_aidatSporcuEkleGerceklestir` (Aidat ekranından yeni sporcu)
+→ sadece sporcu kaydı oluşturuyor, `aidatDB` hücresi YOK. **Toplu içe aktarma canlı kodda YOK** (2026-07
+Excel içe aktarımı uygulama dışında, bir kereliğine yapılmıştı). **Ay değişimi/rollover YOK** — aylar
+tembel oluşuyor, sadece coach bir hücreye dokununca. **Bulunan tek gerçek boşluk, ÖNCEDEN VAR OLAN bir
+hata**: `yoneticiSil()` (app.js:9222) `aidatDB[g]` (g=grup adı) siliyor ama `aidatDB` DÜZ `aidatDB[ad]`
+şeklinde anahtarlanıyor (grup katmanı YOK) — bu satır hep `undefined` üzerinde çalışıp hiçbir şey
+silmiyordu (muhtemelen hemen üstündeki `otomatikYoklamaDB[t][ad].grup===g` satırından kopyalanmış,
+farklı bir veri şekli). Sporcu silindiğinde `aidatDB` hücreleri zaten temizlenmiyordu — bu değişiklik bu
+davranışı DEĞİŞTİRMEDİ, sadece tekrar-gönderimi kaldırdı. Ayrı, ele alınmamış bir hata olarak not
+düşüldü, bu işin kapsamı dışı.
+
+**Değişiklik**: `fanOutMasterPayload()`'ın (public/sync.js) aidat job-oluşturma döngüsü SİLİNDİ —
+`p.aidatDB` artık hiç okunmuyor/gönderilmiyor. Fonksiyonun geri kalanı (§9c'nin allSettled/hata-sayma
+mantığı dahil) DOKUNULMADI.
+
+**Gerçek test**: (1) `_aidatDuesPut` çağrılınca gerçek bir `/api/dues/...` PUT isteği ANINDA, fan-out'tan
+bağımsız olarak atıldığı doğrulandı; (2) hemen ardından tam bir `bulutaGonderKontrol()` döngüsü
+tetiklendi — `/api/athletes` isteği (kıyas için) atıldı ama `/api/dues/...` isteği HİÇ atılmadı; (3) uçtan
+uca kanıt: test hücresi (`odendi:1, tutar:500`) gerçekten yerel D1'e yazıldı — SADECE kuyruktan, fan-out
+hiç katkı yapmadan. Test verisi silindi, PIN geri alındı. `node --check public/sync.js` temiz.
+
+**Sonuç**: 771 → **696** istek/döngü (75 aidat isteği düştü). Sonraki adım (kullanıcı onayı bekliyor):
+İş 2/3, yoklama arşivleme.
 
 ## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
 
