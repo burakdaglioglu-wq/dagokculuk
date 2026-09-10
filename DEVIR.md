@@ -1081,6 +1081,19 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   Structural olarak ayrı bir dosya/id olması, kullanıcı deneyiminde ayrı bir şey olduğu anlamına
   gelmiyor. Böyle bir modal bulunca, önce TÜM giriş noktalarını bulup listele (bkz. §2g) — bu hem
   kapsam kararını daha bilgili verdirir hem de kullanıcının gördüğü gerçek resmi ortaya çıkarır.
+- **Sıfır-etkili bir seri (ör. M-M-M, ya da hasarı/ilerlemeyi sıfır çıkan başka bir kombinasyon) TEK
+  BAŞINA bir mekaniği doğrulamaz — yanlış bir yön/hedef/index hesabını GİZLEYEBİLİR.** Faz 11'de
+  (Düello Arena, §15d) tam bu şekilde yakalandı: `bitirOrtak()`'ın paylaşılan otomatik-sıradaki-geçiş
+  satırı Arena'nın kendi senkronunu 3. girişten itibaren sessizce eziyordu, ama Stage 3'ün test
+  sırasının 3. girişi tesadüfen M-M-M idi (0 hasar) — yön yanlış olsa bile hasar hep 0 olduğu için
+  fark edilmedi, Stage 3 "doğrulandı" diye raporlandı. Gerçek hata ancak Stage 4'te ART ARDA GERÇEKTEN
+  ETKİLİ (X/10/9 gibi) girişlerle adım adım iz sürülünce ortaya çıktı. **Kural**: bir mekaniği (hasar,
+  ilerleme, hasar yönü, hedef seçimi vb.) test ederken en az BİR gerçek etkili giriş/seri ZORUNLU —
+  "sıfır sonuç" veren bir test senaryosu sadece "hata vermedi" kanıtı, "doğru çalışıyor" kanıtı DEĞİL.
+  Ardışık birden fazla GERÇEK etkili girişle (en az 2-3, art arda) adım adım durum izlenmeli, sadece
+  tek bir girişten sonraki tek bir okumaya güvenilmemeli (asenkron/animasyonlu akışlarda tek okuma
+  yanlışlıkla "tesadüfen doğru" görünebilir — bkz. Faz 11'in `_kmOyunAktifIndex` örneği, ilk girişte
+  paylaşılan formül ile Arena'nın kendi senkronu TESADÜFEN aynı değeri üretmişti).
 
 ## 8. Çözülmemiş konular ve açık sorular
 
@@ -1911,3 +1924,136 @@ arkasındayken ek hız), Nitro barı (üst üste iyi atışla biriken, istenen a
 silindi (Pist artık kameraya girmiyor). `kmOyunSporcuSec`/`kmOyunIlerlet`/`kmOyunLiderCiz` gibi zaten
 tema-koşullu dallanması olan (Monopoly/futbol örnekleri gibi) fonksiyonlara Pist'in KENDİ dalı eklendi
 — bu, mevcut kod stiliyle tutarlı, "kabuğa dokunma" kuralının kapsamı dışında.
+
+## 15. Faz 11 — Düello Arena (çoklu eşleşme, yeni tema)
+
+**Ne yapıyor**: Oyunlar'a 12. tema. Karşılıklı ok atışlı çoklu düello — koç eşleştirmeyi kendisi
+yapıyor, TÜM düellolar aynı anda ekranda; kimse sıra beklemiyor, koç hangi karta dokunursa skor girişi
+ONA bağlanıyor. Mekaniği diğer 9 temadan farklı: frac/yol YOK, can (HP) var (Bireysel/Takım
+Futbolu'nun "kendi mekaniği" emsaliyle aynı kategori). **Kritik kural, baştan sona**: otomatik/
+rastgele/yapay rakip hasarı YOK — hasar SADECE koçun girdiği gerçek skordan, o eşleşmenin GERÇEKTEN
+atan tarafından karşı tarafa. Fonksiyon/id öneki BİLEREK "arena" — mevcut `#duello-modal` (davet-
+tabanlı, SİMÜLE rakipli, tamamen ayrı bir özellik, bkz. §2g/§7) ile karışmasın diye "duello"/"duelo"
+hiç kullanılmadı. Her aşama sonunda: diğer 11 oyun + Reaksiyon'un 14 mini-oyunu döngüyle açıldı,
+360/1280/1920px + gerçek Tam Ekran'da taşma yok, `prefers-reduced-motion`'da aktif animasyon yok, skor
+girme paneli (tuş yerleri/boyutları/esnek panel davranışı) hiç değişmedi — Zirve ile piksel piksel
+karşılaştırıldı.
+
+### 15a. Stage 1 — Eşleştirme ekranı
+
+Eşleştirme ekranı Takım Editörü'ndeki gibi ayrı bir `.modal-overlay` DEĞİL — panelin kendi varsayılan
+içeriği (`_kmOyunArenaGorunum`: `'eslestirme'|'oyun'`, `kmOyunPanelHTML('arena')`'nın govde div'i
+`kmOyunArenaCiz()` ile dinamik değiştiriliyor). Üstte sporcu havuzu (TÜM roster her zaman görünür,
+eşleşmiş olanlar soluklaşır — kaybolmaz), altta eşleşme listesi (kaldırma düğmeli), "🎲 Otomatik
+Eşleştir" (kalanı karıştırıp ikişerli dağıtır), "🗑️ Temizle", "▶ Turu Başlat".
+
+**Kullanıcı notu 1 uygulandı**: eşleştirme ekranındayken "İlerlet" düğmesi boş görünmesin diye üzerinde
+"Önce eşleştirme yapın" yazıyor (disabled), panelin boyutuna hiç dokunulmadan.
+
+**Kullanıcı notu 2 uygulandı**: tek sayıda sporcu kalırsa "⚠️ [İsim] bu turda açıkta — eşi yok,
+bekleyecek." net bir satır (hem manuel eşleştirmede hem Otomatik Eşleştir'de aynı).
+
+**Gerçek testte bulunan 2 çakışma**:
+1. Paylaşılan `#km-oyun-sirada` rozeti (position:absolute, top:8px, left:8px) diğer temalarda sahnenin
+   dekoratif pikselleri ÜZERİNE biniyor, sorun olmuyordu — burada gerçek metinle çakışıyordu, üst
+   boşlukla düzeltildi.
+2. Skor dok'u panelin ALT KISMINA sabit (`position:absolute; bottom:12px`), içeriğin kaydırılmasıyla
+   YER DEĞİŞTİRMEZ — "Turu Başlat" ilk denemede dok'un ARKASINDA kalıp tıklamayı yutuyordu.
+   **Kullanıcı geri bildirimiyle** (sabit piksel boşluk kırılgan olur) düzeltildi: Faz 4a'nın
+   `--alt-bar-h` deseninin AYNISı — `ResizeObserver` dok'u (`#km-oyun-dok`) izliyor, gerçek
+   `offsetHeight`'ı `--km-arena-dok-h` CSS değişkenine yazıyor (`kmOyunArenaDokYukseklikSenkron`),
+   panelin alt boşluğu `calc(var(--km-arena-dok-h,300px) + 40px)`. Dok "Küçük" boyuta geçince (297px→
+   429px, bu özel durumda küçültme paradoksal şekilde dok'u UZATTI — pad'in kendi 44px taban kuralı
+   yüzünden, Arena'yla ilgisiz) değişken de otomatik güncellendi, "Turu Başlat" iki durumda da gerçek
+   tıklamayla erişilebilir kaldı.
+
+### 15b. Stage 2 — Çoklu arena ızgarası
+
+Her eşleşme bir kart, ızgara dar ekranda tek sütun / ≥620px'te iki sütun. Kart: başlık (kaçıncı
+eşleşme + ETKİN/BEKLİYOR/BİTTİ rozeti), iki can barı (portre+isim+yüzde), küçük SVG saha (iki okçu
+karşılıklı, degrade gövde+kenar aydınlığı+zemin gölgesiyle derinlik, yay+sadak görünür), "Diğer okçuya
+geç" düğmesi. Karta dokununca `kmOyunArenaMacSec` o eşleşmeyi etkinleştirir — ortak
+`kmOyunIlerlet`/`kmOyunPadCiz`/SIRADA rozeti HÂLÂ `_kmOyunAktifIndex` okuduğu için (kabuğa dokunmadan
+yeniden kullanım), sadece "hangi maç/hangi okçu etkin" değiştiğinde `_kmOyunAktifIndex`
+`kmOyunArenaAktifIndexGuncelle()` ile senkronize ediliyor.
+
+**Gerçek testte bulunan 2 hata**:
+1. Paylaşılan `.km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; }` kuralı
+   (tek-parça tam-sahne SVG'li diğer temalar için) her kartın KENDİ küçük SVG'sini panelin TAMAMINA
+   yayıp "Diğer okçuya geç" düğmesinin tıklamasını yutuyordu. Paylaşılan kurala dokunmadan, SADECE
+   `.km-arena-mac-kart svg.km-arena-saha-svg` (daha yüksek özgüllük — iki class+element) ile geçersiz
+   kılındı.
+2. Okçu gövdesine yanlışlıkla panel kapsayıcısıyla AYNI class adı (`km-arena-govde`) verilmişti —
+   `km-arena-okcu-govde` olarak yeniden adlandırıldı. (Bu hata bir Playwright arka plan görevinin GEÇ
+   gelen hata bildirimiyle bir sonraki oturumda tekrar gündeme geldi — aslında AYNI turda zaten
+   yakalanıp düzeltilmişti, sadece bildirim gecikmişti; DEVIR güncellemesi bu tekrar-teyit anını da
+   kapsıyor, bkz. §7'nin yeni "tek okuma yeterli değil" kuralı ile aynı ruh: geç/asenkron sinyalleri
+   körü körüne yeni bir sorun sanmadan önce mevcut düzeltmeye karşı kontrol et.)
+
+### 15c. Stage 3 — Ok uçuşu ve hasar
+
+Her ok ayrı uçuyor (`kmOyunAnimateArena`'nın `birOkIsle` özyinelemesi, sırayla — hepsi bir arada
+DEĞİL). Uçuş kademesi (`KM_OYUN_ARENA_UCUS_TIER`): X/10 hızlı+altın iz, 9/8/7 normal, 6-1 alçalan
+("zar zor ulaşır"), M havada sönüp hasar vermiyor. Hasar `KM_OYUN_ARENA_HASAR`'dan geliyor (girilen
+PUANIN KENDİSİNİ değiştirmiyor — `_skorKaydetCekirdek` her zamanki gibi GERÇEK kayda gidiyor). Üç ok
+da "altın" (X/10/9, `KM_OYUN_PAD_RENK`'in mevcut kategorisi) ise +bonus hasar ve "🎯 MÜKEMMEL SERİ!"
+banner'ı.
+
+**Mimari kararlar (gerçek testle doğrulandı)**:
+- Uçan ok/hasar sayısı **SVG öznitelik transform'u DEĞİL, düz HTML div** (`kmOyunBurst`'ün AYNI,
+  kanıtlanmış deseni) — WAAPI'nin SVG transform üzerinde bu kod tabanında hiç denenmemiş davranışına
+  girmemek için. `.km-arena-saha-wrap{position:relative}` bu div'lerin konumlandığı yer.
+- Sarsıntı efekti **ayrı bir İÇ `<g>`'ye** uygulandı — dış `<g>`'nin `translate/scale` ÖZNİTELİĞİNE
+  bir CSS `animation` doğrudan uygulansaydı (Pist'in araba-ölçekleme dersiyle AYNI risk) SESSİZCE
+  ezip pozisyonu/yönü bozardı.
+- Sarsıntı CSS `@keyframes` (WAAPI DEĞİL) — paylaşılan genel
+  `@media(prefers-reduced-motion:reduce){#km-oyun-wrap *{animation:none!important}}` kuralı OTOMATİK
+  kapatıyor. Ama uçan ok/hasar sayısı WAAPI (`.animate()`) kullandığı için bu genel kural onları
+  KAPSAMIYOR — `kmOyunKameraAzaltilmisHareketMi()` (mevcut, kamera için yazılmış ama tamamen jenerik
+  bir fonksiyon) + `ciddiModAcik` AYRICA kontrol edilip WAAPI çağrıları manuel atlandı; ölçüldü,
+  `reduced-motion` altında uçan ok/hasar sayısı DOM'da hiç oluşmadı (0/0), hasar yine de anında
+  uygulandı.
+- `baslatAnimasyon()`/`bitirOrtak()`'taki genel banner/checkpoint/"HARİKA SERİ" dalına Arena BİLEREK
+  hiç girmiyor (`_kmOyunAktifTema !== 'arena'` eklendi) — kendi "MÜKEMMEL SERİ" kutlaması var,
+  ikisi birden çalışsaydı ciddi modda "kaçak kutlama" olurdu (Pist'in Stage 5'teki AYNI dersi).
+
+### 15d. Stage 4 — Bitiş ve yeniden eşleştirme
+
+Can 0 olunca kart "BİTTİ" olur, kartta "🏆 [İsim] kazandı!" görünür. Sıra değişimi SADECE maç hâlâ
+sürüyorsa oluyor. Tüm eşleşmeler bitince "🏆 Tur Sonu" ekranı (Pist'in `.km-pist-sonuc`'uyla — Faz 9
+§14d — AYNI kalıp: sahnenin içinde, mutlak konumlu, `.goster`/`.ciddi` class'ları) her eşleşme için
+kazanan/kaybeden + kaç ok atıldı + en iyi seri kimin listeler; koç bunu görüp kazananları
+karşılaştırıp eleme yapabilir. "🔄 Yeniden Eşleştir" eşleştirmeyi TAMAMEN temizleyip boş eşleştirme
+ekranına döner (otomatik bir sonraki tur ÜRETMİYOR — kullanıcı talimatı: "koç ... kurabilsin").
+
+**KRİTİK bulgu — bu turun en ciddi hatası**: `bitirOrtak()`'ın paylaşılan otomatik-sıradaki-geçiş
+satırı (`_kmOyunAktifIndex = (i+1)%n`, TÜM temalar için sırayla bir sonraki roster üyesine geçmek
+üzere yazılmış) Arena'yı hiç dışlamıyordu. Arena'nın kendi `kmOyunArenaAktifIndexGuncelle()`'i
+`kmOyunAnimateArena`'nın `bitir()`'inde `_kmOyunAktifIndex`'i doğru okçuya ayarlıyordu, ama HEMEN
+ARDINDAN çağrılan `bitirOrtak()` bu satırla onu SESSİZCE eziyordu — 3. gerçek girişten itibaren
+`_kmOyunAktifIndex` maçın gerçek iki okçusundan tamamen kopuyor, bir SONRAKİ girişin hasarı YANLIŞ
+tarafa gidiyordu (roster'da rastgele bir 3. kişiye). **Stage 3'ün kendi testleri bunu YAKALAMAMIŞTI**
+çünkü test sırasının 3. girişi tesadüfen M-M-M idi — M hep 0 hasar verdiği için, hangi tarafa
+uygulandığının önemi yoktu, hata GÖRÜNMEDEN kaldı. Gerçek hata ancak Stage 4'ün ART ARDA GERÇEKTEN
+ETKİLİ girişlerle bir maçı tam bitirmeye çalışırken (adım adım `aktifIndex`/can izlenerek) ortaya
+çıktı. **Düzeltme**: tek satır — `if(_kmOyunAktifTema !== 'arena') _kmOyunAktifIndex = (i+1)%n;`.
+Düzeltmeden SONRA 5 girişlik bir maç adım adım yeniden izlendi (`aktifIndex` her girişte doğru
+alternatif okçuyla eşleşti, hasar hep doğru tarafa gitti), Zirve'nin kendi otomatik-geçişi AYRICA test
+edilip bozulmadığı doğrulandı. **Bu olay §7'ye yeni bir kalıcı test kuralı olarak eklendi** (bkz. §7,
+sıfır-etkili seri kuralı).
+
+**Kalibrasyon** (`KM_OYUN_ARENA_HASAR`, formülle simüle edildi): hızlı=14, normal=10, zayıf=5,
+mükemmel bonus=12, can=100. 20-27 puan/set gerçekçi aralığın TAMAMINDA (simetrik/eşit seviyeli iki
+okçu varsayımıyla) bir eşleşme 3-4 sette bitiyor (20p→4, 24-25p→4, 27p→3) — kullanıcının "koç 8-12
+set atıyor" bütçesinin rahat içinde, sarkma riski yok.
+
+**Ciddi mod, iki ayrı ekranda ayrı ayrı doğrulandı**: "EŞLEŞME BİTTİ!" banner'ı VE "Tur Sonu"
+ekranının giriş animasyonu/konfetisi ciddi modda atlanıyor (`animationName:'none'` ölçüldü), ama HER
+İKİSİNDE de hasar/sonuç/liste HER ZAMAN uygulanıyor+gösteriliyor, "Yeniden Eşleştir" ciddi modda da
+tıklanabilir kaldı (`pointer-events` sadece `.goster`'a bağlı, `.ciddi`'ye değil).
+
+**Kritik izolasyon testi** (bu fazın temel kuralı): 3 eşleşmeli bir turda SADECE 1. eşleşme 5 gerçek
+girişle tam bitirildi — 2. ve 3. eşleşme bu süre boyunca HİÇ dokunulmadan `100/100 · bekliyor` kaldı.
+
+Test PIN'i her tur sonunda gerçek `egitmen_hash`'e geri alındı. `node --check` her adımdan sonra
+temiz.

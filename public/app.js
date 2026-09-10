@@ -10354,6 +10354,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="hedef"]{ --bg:#120c08; --panel:#1e140d; --panel-hi:#2a1d13; --line:#3d2a1a; --ink:#fff8f0; --ink-dim:#d9b8a0; --ink-faint:#8f6b52; --a1:#ffcc33; --a2:#ff5f6d; --a3:#5fb8ff; --a4:#3ddc97; --a5:#c77dff; --font-display:'Exo 2',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futbol"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futboltakim"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
 .km-oyun-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px 8px; flex-wrap:wrap; }
@@ -10416,7 +10417,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="balon"] #km-oyun-panel-balon,
 #km-oyun-wrap[data-tema="hedef"] #km-oyun-panel-hedef,
 #km-oyun-wrap[data-tema="futbol"] #km-oyun-panel-futbol,
-#km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim { display:flex; }
+#km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim,
+#km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena { display:flex; }
 .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
 /* Hedef Tahtası (2026-09-06) — HTML/CSS (SVG değil, Futbol/Pist desenini izliyor). Halka deseni TEK bir
    radial-gradient (gerçek WA hedef renkleri: altın/kırmızı/mavi/siyah/beyaz), ok izleri önceden
@@ -10853,6 +10855,107 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-futbol-dok-liste .km-fdl-ad{ font-weight:800; font-size:16px; color:var(--ink); }
 .km-oyun-futbol-dok-liste .km-fdl-gol{ font-family:var(--font-display); font-weight:700; font-size:22px; color:var(--a1); margin-left:2px; }
 
+/* Düello Arena (Faz 11, 2026-09-10) — Stage 1: eşleştirme ekranı. Panelin KENDİ içeriği, kabuğa/skor
+   paneline hiç dokunmuyor. .km-oyun-panel zaten sağ rail payı kadar daraltılmış olduğundan (right
+   değişkeni, bkz. §13e) burada AYRICA bir rail-payı EKLENMEDİ — futbol-hedef-bar'ın aksine bu sade
+   bir flex sütun çocuğu, tam genişlik taşma riski yok. */
+.km-arena-govde{ flex:1; min-height:0; overflow-y:auto; }
+/* Paylaşılan #km-oyun-sirada rozeti (kabuktan, position:absolute; top:8px; left:8px;) diğer temalarda
+   sahnenin dekoratif pikselleri ÜZERİNE biner, sorun olmaz — burada gerçek metin olduğu için üstte
+   boşluk bırakılıyor ki "SIRADA" kartıyla çakışmasın (gerçek testte yakalandı).
+   ALT boşluk --km-arena-dok-h DEĞİŞKENİNDEN geliyor (kmOyunArenaDokYukseklikSenkron, Faz 4a'nın
+   --alt-bar-h desenİYLE AYNI — sabit piksel DEĞİL, dok'un GERÇEK offsetHeight'ı). Skor dok'u panelin
+   ALT KISMINA sabit (position:absolute; bottom:12px), İÇERİĞİN kaydırılmasıyla YER DEĞİŞTİRMEZ — bu
+   yüzden "Turu Başlat" gibi gerçek bir tıklanabilir düğmeyi dok'un HER ZAMAN kapladığı bölgenin
+   altına DEĞİL, bu payla kaydırılınca dok'un ÜSTÜNE çıkacak şekilde yerleştiriyoruz (gerçek testte
+   dok'un pad'i düğmenin tıklamasını yuttuğu doğrudan yakalandı; sabit sayı yerine değişken kullanmak
+   dok küçültülünce/büyüyünce otomatik doğru payı versin diye). */
+.km-arena-eslestirme{ display:flex; flex-direction:column; gap:10px; padding:54px 2px calc(var(--km-arena-dok-h, 300px) + 40px); }
+.km-arena-baslik{ font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--ink-dim); }
+.km-arena-havuz{ display:flex; flex-wrap:wrap; gap:8px; }
+.km-arena-havuz-kart{ display:flex; align-items:center; gap:7px; background:var(--panel-hi); border:1.5px solid var(--line); border-radius:12px; padding:6px 12px 6px 6px; min-height:44px; cursor:pointer; transition:opacity .15s, border-color .15s, transform .1s; }
+.km-arena-havuz-kart:active{ transform:scale(.96); }
+.km-arena-havuz-kart.secili{ border-color:var(--_c); box-shadow:0 0 0 2px var(--_c); }
+.km-arena-havuz-kart.eslesmis{ opacity:.35; cursor:default; pointer-events:none; }
+.km-arena-havuz-av{ width:36px; height:36px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:13px; color:#04081c; background:var(--_c); flex-shrink:0; }
+.km-arena-havuz-ad{ font-weight:800; font-size:12.5px; color:var(--ink); white-space:nowrap; }
+.km-arena-acikta-not{ font-family:var(--font-body); font-weight:700; font-size:11.5px; color:var(--a3); background:color-mix(in srgb, var(--a3) 14%, transparent); border:1px solid var(--a3); border-radius:10px; padding:7px 11px; }
+.km-arena-liste-baslik{ font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-top:4px; }
+.km-arena-liste{ display:flex; flex-direction:column; gap:6px; }
+.km-arena-eslesme-satir{ display:flex; align-items:center; justify-content:space-between; background:var(--panel-hi); border:1.5px solid var(--line); border-radius:10px; padding:8px 8px 8px 14px; font-weight:700; font-size:12.5px; color:var(--ink); }
+.km-arena-eslesme-satir b{ color:var(--a1); font-family:var(--font-display); margin:0 4px; }
+.km-arena-eslesme-satir button{ width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid var(--line); color:var(--ink-dim); font-size:13px; cursor:pointer; flex-shrink:0; }
+.km-arena-bos-not{ font-size:11.5px; color:var(--ink-faint); font-style:italic; padding:4px 2px; }
+.km-arena-eslestirme-btnler{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.km-arena-yer-tutucu{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; height:100%; color:var(--ink-dim); font-weight:700; font-size:13px; text-align:center; }
+/* Stage 2 — çoklu arena ızgarası. Dar ekranda tek sütun, geniş ekranda iki (kullanıcı talimatı). Alt
+   boşluk aynı --km-arena-dok-h değişkenini kullanıyor (eşleştirme ekranıyla AYNI dok-çakışması riski). */
+.km-arena-izgara{ display:grid; grid-template-columns:1fr; gap:10px; padding:54px 2px calc(var(--km-arena-dok-h, 300px) + 40px); }
+@media (min-width:620px){ .km-arena-izgara{ grid-template-columns:1fr 1fr; } }
+.km-arena-mac-kart{ background:var(--panel-hi); border:1.5px solid var(--line); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+.km-arena-mac-kart.aktif-kart{ border-color:var(--a1); box-shadow:0 0 0 2px var(--a1); }
+.km-arena-mac-kart.bitti{ opacity:.68; cursor:default; }
+.km-arena-mac-baslik{ display:flex; align-items:center; justify-content:space-between; font-family:var(--font-display); font-weight:700; font-size:11.5px; color:var(--ink-dim); }
+.km-arena-durum-rozet{ font-size:9px; font-weight:800; letter-spacing:.06em; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--ink-faint); }
+.km-arena-durum-rozet.etkin{ background:var(--a1); color:#1a0505; }
+.km-arena-durum-rozet.bitti{ background:var(--a3); color:#1a1204; }
+.km-arena-can-satir{ display:flex; align-items:center; gap:8px; }
+.km-arena-can-taraf{ flex:1; display:flex; align-items:center; gap:6px; min-width:0; }
+.km-arena-can-taraf.saga{ flex-direction:row-reverse; text-align:right; }
+.km-arena-can-av{ width:30px; height:30px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:11px; color:#04081c; flex-shrink:0; }
+.km-arena-can-bilgi{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.km-arena-can-ad{ font-size:10.5px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-arena-can-bar{ height:7px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
+.km-arena-can-ic{ height:100%; border-radius:4px; transition:width .3s ease; }
+.km-arena-can-yuzde{ font-size:9px; color:var(--ink-faint); font-weight:700; font-variant-numeric:tabular-nums; }
+.km-arena-vs{ font-family:var(--font-display); font-weight:800; font-size:11px; color:var(--ink-faint); flex-shrink:0; }
+/* Paylaşılan .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; } kuralı TEK
+   parça tam-sahne SVG'li diğer temalar için — burada HER kartın KENDİ küçük SVG'sini panelin
+   TAMAMINA yayıp düğmenin tıklamasını yutuyordu (gerçek testte yakalandı, "svg intercepts pointer
+   events"). Paylaşılan kurala hiç dokunmadan, SADECE bu SVG için daha yüksek özgüllükle (iki class +
+   element) geçersiz kılınıyor. */
+.km-arena-mac-kart svg.km-arena-saha-svg{ position:static; inset:auto; width:100%; height:auto; aspect-ratio:220/110; border-radius:10px; background:radial-gradient(ellipse at 50% 75%, rgba(255,255,255,.06), transparent 70%); overflow:visible; clip-path:none; }
+.km-arena-zemin{ fill:#000; opacity:.35; }
+.km-arena-golge{ fill:#000; opacity:.3; }
+.km-arena-okcu-govde{ stroke:rgba(255,255,255,.55); stroke-width:1; }
+.km-arena-kafa-bg{ fill:#1a1a20; stroke:#fff; stroke-width:1.2; }
+.km-arena-yay{ fill:none; stroke:#8a5a2a; stroke-width:2.5; stroke-linecap:round; }
+.km-arena-sadak{ fill:#3a2414; stroke:#1a1004; stroke-width:.8; }
+.km-arena-sira-btn{ font-size:10.5px; }
+/* Stage 3 — ok uçuşu + hasar. Uçan ok/hasar sayısı SVG DEĞİL, düz HTML div (kmOyunBurst'ün AYNI,
+   bu kod tabanında zaten kanıtlanmış deseni — WAAPI'nin SVG transform üzerinde emin olunmayan
+   davranışına girmek yerine). .km-arena-saha-wrap position:relative, bu div'lerin konumlandığı yer. */
+.km-arena-saha-wrap{ position:relative; }
+/* Ok şekli: ince gövde + basit bir ok ucu (clip-path ile). Yön (sola/sağa) JS'te inline transform'a
+   rotate(180deg) eklenerek veriliyor — WAAPI SADECE left/top'u animasyonluyor, bu satır sabit kalıyor. */
+.km-arena-ucan-ok{ position:absolute; width:20px; height:4px; background:#d8d8e0; clip-path:polygon(0% 15%, 75% 15%, 75% 0%, 100% 50%, 75% 100%, 75% 85%, 0% 85%); pointer-events:none; z-index:3; }
+.km-arena-ucan-ok.hizli{ background:linear-gradient(90deg,#ffd23f,#fff3c2); filter:drop-shadow(0 0 4px #ffd23f); }
+.km-arena-ucan-ok.zayif{ opacity:.85; background:#8a8a96; }
+.km-arena-ucan-ok.iskalama{ background:#5a5a62; }
+.km-arena-hasar-sayi{ position:absolute; font-family:var(--font-display); font-weight:800; font-size:15px; color:#ff5a4d; text-shadow:0 1px 3px rgba(0,0,0,.6); pointer-events:none; z-index:4; }
+/* Sarsıntı — CSS keyframe (WAAPI DEĞİL) BİLEREK: paylaşılan genel
+   @media(prefers-reduced-motion:reduce){#km-oyun-wrap *{animation:none!important}} kuralı bunu
+   OTOMATİK kapatıyor, ayrı bir kontrol gerekmedi. */
+@keyframes kmArenaSarsinti{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
+.km-arena-okcu-a.sarsiliyor, .km-arena-okcu-b.sarsiliyor{ animation:kmArenaSarsinti .3s ease-in-out; }
+/* Stage 4 — BİTTİ kartındaki kazanan satırı + tur sonu ekranı. Pist'in .km-pist-sonuc (Faz 9 §14d)
+   İLE AYNI kalıp: sahnenin İÇİNDE, mutlak konumlu kart, .ciddi class'ı SADECE giriş animasyonunu
+   durduruyor (içerik her zaman gösteriliyor). */
+.km-arena-kazanan-satir{ font-family:var(--font-display); font-weight:800; font-size:12px; color:#ffd23f; text-align:center; }
+.km-arena-tur-sonu{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:10; opacity:0; perspective:700px; transition:opacity .15s; }
+.km-arena-tur-sonu.goster{ opacity:1; }
+.km-arena-tur-sonu.goster .km-arena-tur-sonu-ic{ pointer-events:auto; }
+.km-arena-tur-sonu-ic{ position:relative; width:min(94%,320px); max-height:80%; overflow-y:auto; padding:22px 18px; border-radius:16px; background:linear-gradient(160deg,#241212,#170b0b); border:3px solid #ffd23f; box-shadow:0 14px 38px rgba(0,0,0,0.6); text-align:center; }
+.km-arena-tur-sonu-bayrak{ font-size:32px; margin-bottom:4px; }
+.km-arena-tur-sonu-baslik{ font-family:var(--font-display); font-weight:800; font-size:16px; color:#fff; margin-bottom:12px; }
+.km-arena-tur-sonu-liste{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.km-arena-tur-sonu-satir{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:left; }
+.km-arena-tur-sonu-satir-baslik{ font-family:var(--font-body); font-weight:700; font-size:11.5px; color:var(--ink); }
+.km-arena-tur-sonu-satir-baslik b{ color:#ffd23f; }
+.km-arena-tur-sonu-satir-detay{ font-size:10px; color:var(--ink-dim); margin-top:3px; }
+@keyframes kmArenaTurSonucFlipIn{ 0%{ transform:scale(.7) rotateY(90deg); } 60%{ transform:scale(1.06) rotateY(0deg); } 100%{ transform:scale(1) rotateY(0deg); } }
+.km-arena-tur-sonu.goster:not(.ciddi) .km-arena-tur-sonu-ic{ animation:kmArenaTurSonucFlipIn .6s cubic-bezier(.2,.7,.3,1) forwards; }
+
 /* Şans Kartı (2026-09-01→02, "kartları buton olarak koy, ne çıktığı belli olsun, kart orada kalsın")
    — artık otomatik AÇILMIYOR: tahta ortasındaki rozet bir DÜĞME, koç tıklayınca kart çevrilip açılıyor
    ve YENİ bir kart çekilene / ✕'e basılana kadar EKRANDA KALIYOR (eski 2.3sn'de otomatik kaybolma yok). */
@@ -11267,6 +11370,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 surprizler: [] },
             futboltakim: { ad: 'Takım Futbolu', ikon: '🤝', renkler: ['#ffcc33', '#ff6b6b', '#5fb8ff', '#3ddc97', '#e0685a'], aciklama: 'Tüm sınıf TEK takım — sırayla aynı panelden 3\'er ok girilir, bir seride toplanan sarı/kırmızılar bankaya eklenir (3 sarı ya da 5 kırmızı = 1 gol). Hoca bir hedef gol sayısı belirler, sınıf ders bitene kadar bu hedefe çalışır.', btn: '⚽ Şut Çek', finish: 'HEDEF TAMAMLANDI!', cp: 'GOL!', birim: 'gol katkısı', bitis: 'Hedefi tamamladı! 🏆',
                 surprizler: [] },
+            // Faz 11 (2026-09-10) — Düello Arena: frac/yol YOK, can (HP) var (Bireysel/Takım Futbolu'nun
+            // "kendi mekaniği" emsaliyle aynı kategori). Fonksiyon/id öneki BİLEREK "duello"/"duelo"
+            // DEĞİL "arena" — mevcut #duello-modal (davet-tabanlı, SİMÜLE rakipli, tamamen ayrı bir
+            // özellik) ile karışmasın diye.
+            arena: { ad: 'Düello Arena', ikon: '⚔️', renkler: ['#ff3b3b', '#3fa9ff', '#ffd23f', '#3ddc84', '#c77dff'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — çoklu düello: eşleştirin, herkes aynı anda kendi hedefine atar, otomatik rakip yoktur.', btn: '🏹 İlerlet', finish: 'ARENA TAMAMLANDI!', cp: 'İSABET!', birim: 'isabet', bitis: 'Maçı kazandı! ⚔️',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -11624,7 +11733,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'balon') kmOyunResyncBalon();
             else if(tid === 'hedef') kmOyunResyncHedef();
             else if(tid === 'futbol') kmOyunResyncFutbol();
-            else kmOyunResyncFutbolTakim();
+            else if(tid === 'futboltakim') kmOyunResyncFutbolTakim();
+            else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
         // Resync sadece KONUMU (transform) günceller — karakterin RENGİ/rozeti gibi bir kere çizilip
@@ -11644,7 +11754,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'balon') kmOyunSahneKurBalon();
             else if(tid === 'hedef') kmOyunSahneKurHedef();
             else if(tid === 'futbol') kmOyunSahneKurFutbol();
-            else kmOyunSahneKurFutbolTakim();
+            else if(tid === 'futboltakim') kmOyunSahneKurFutbolTakim();
+            else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
         // kmOyunSahneKurAktif() SADECE o an EKRANDA GÖRÜNEN temayı yeniden kurar — diğer 10 tema
@@ -11665,6 +11776,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurHedef();
             kmOyunSahneKurFutbol();
             kmOyunSahneKurFutbolTakim();
+            kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -12475,7 +12587,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             </div>`;
             // Takım Futbolu (2026-09-03) — sınıf TEK takım, banka (sarı/kırmızı) dolunca gol; hedef gol
             // sayısı hoca tarafından ayarlanabilir, konum-bazlı kalıcı (bkz. _kmFutbolTakimDurum).
-            return `<div class="km-oyun-panel km-oyun-panel-futbol" id="km-oyun-panel-futboltakim">
+            if(tid === 'futboltakim') return `<div class="km-oyun-panel km-oyun-panel-futbol" id="km-oyun-panel-futboltakim">
                 <div class="km-futbol-hedef-bar">
                     <div class="km-futbol-hedef-ust">
                         <span>Hedef: <b id="km-oyun-ft-gol">0</b>/<b id="km-oyun-ft-hedef">10</b> gol</span>
@@ -12491,6 +12603,22 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-futbol-top" id="km-oyun-ft-top">⚽</div>
                     <div class="km-futbol-takim-av" id="km-oyun-ft-oyuncular"></div>
                     <div class="km-futbol-durum" id="km-oyun-ft-durum"></div>
+                </div>
+            </div>`;
+            // Faz 11 (2026-09-10) — Düello Arena. Bu panel İKİ alt-görünüm arasında geçiş yapıyor
+            // (_kmOyunArenaGorunum: 'eslestirme'|'oyun') — TEK bir sabit sahne DEĞİL, diğer temaların
+            // hiçbirinde olmayan bir kalıp. Görünüm değişimi kmOyunArenaCiz()'in bu govde div'inin
+            // innerHTML'ini değiştirmesiyle oluyor — panelin KENDİSİ (konum/boyut) hiç değişmiyor.
+            if(tid === 'arena') return `<div class="km-oyun-panel km-oyun-panel-arena" id="km-oyun-panel-arena">
+                <div id="km-oyun-panel-arena-govde" class="km-arena-govde"></div>
+                <div class="km-arena-tur-sonu" id="km-oyun-arena-tur-sonu">
+                  <div class="km-arena-tur-sonu-ic">
+                    <button class="km-sans-kapat" onclick="kmOyunArenaTurSonucKapat()" title="Kapat">✕</button>
+                    <div class="km-arena-tur-sonu-bayrak">🏆</div>
+                    <div class="km-arena-tur-sonu-baslik">Tur Sonu</div>
+                    <div class="km-arena-tur-sonu-liste" id="km-oyun-arena-tur-sonu-liste"></div>
+                    <button class="km-oyun-ilerlet-btn" onclick="kmOyunArenaYenidenEslestir()">🔄 Yeniden Eşleştir</button>
+                  </div>
                 </div>
             </div>`;
         }
@@ -12537,7 +12665,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-burst" id="km-oyun-burst"></div>
                     <div class="km-oyun-banner" id="km-oyun-banner"><b id="km-oyun-banner-t"></b><span id="km-oyun-banner-s"></span></div>
@@ -13646,6 +13774,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
             let pistUzunlukBtn = document.getElementById('km-oyun-pist-uzunluk-btn');
             if(pistUzunlukBtn) { pistUzunlukBtn.style.display = (tid === 'pist') ? '' : 'none'; if(tid === 'pist') pistUzunlukBtn.textContent = kmOyunPistUzunlukBtnMetni(); }
+            // Düello Arena — "İlerlet" düğmesinin ÜZERİNDEKİ metin (yukarıdaki genel th.btn atamasını
+            // eşleştirme ekranındayken override ediyor). Panelin/butonun boyutuna hiç dokunmuyor.
+            if(tid === 'arena') kmOyunArenaIlerletBtnGuncelle();
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
@@ -13724,6 +13855,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // OKUN KENDİ DEĞERİNE göre (bkz. kmOyunPistSetArtis). Diğer 9 temanın yukarıdaki ORTAK
             // formülüne HİÇ dokunulmadı — bu satır SADECE _kmOyunAktifTema==='pist' iken devreye giriyor.
             if(_kmOyunAktifTema === 'pist') artis = kmOyunPistSetArtis(kaydedilecek) * (cokluAktifMi ? KM_OYUN_COKLU_ARTIS_CARPANI : 1);
+            // Düello Arena — frac/yol YOK, can (HP) var (Bireysel Futbol'un kendi mekaniği emsaliyle
+            // aynı kategori). Artış BİLEREK sıfır — bu tema hasarı kendi kmOyunAnimateArena'sında
+            // doğrudan can'a uyguluyor, frac hiç kullanılmıyor/gösterilmiyor.
+            if(_kmOyunAktifTema === 'arena') artis = 0;
             // Pist çok turlu (frac 1'i aşabilir) — diğer 9 tema için maxFrac hep 1, davranış AYNI kalıyor;
             // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor.
             let pistToplamTur = (_kmOyunAktifTema === 'pist') ? kmOyunPistToplamTur() : 1;
@@ -13827,7 +13962,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -13889,6 +14024,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunSahneBitirmeSerisiGuncelle(d0, s.ad);
                 } else if(_kmOyunAktifTema === 'futboltakim' && futbolGolMu && _kmFutbolTakimDurum.gol >= _kmFutbolTakimDurum.hedef) {
                     kmOyunBanner(th.finish, _kmFutbolTakimDurum.gol + ' gol!', 'futboltakim-bitis');
+                } else if(_kmOyunAktifTema === 'arena') {
+                    // Hasar/uçuş/sıra-değişimi/MÜKEMMEL SERİ hepsi kmOyunAnimateArena içinde, animasyon
+                    // BİTMEDEN (done'dan ÖNCE) işlendi — buraya (done sonrası) taşınacak bir şey yok.
+                    // Genel frac-tabanlı banner/checkpoint/"HARİKA SERİ" dalına BİLEREK hiç girmiyor
+                    // (yukarıdaki dışlama), Bitiş/yeniden-eşleştirme Stage 4'ün işi.
                 }
 
                 // Anlık Teknik İpucu Balonu (2026-09-04 Menzil Sahnesi fikri) — sadece atılan okların
@@ -13901,8 +14041,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
                 // "birden fazla kişiye skor gireceksek girişi yaptıysak diğer sporcuya otomatik geçebilir
                 // mi" — sırayla listedeki bir sonraki sporcuya geç, aynı çocuğa yanlışlıkla iki kez
-                // girmeyi zorlaştırsın.
-                _kmOyunAktifIndex = (i + 1) % _kmOyunRosterCache.length;
+                // girmeyi zorlaştırsın. Arena BUNU KULLANMIYOR — "sıradaki" o eşleşmenin İKİ okçusu
+                // arasında (kmOyunArenaAktifIndexGuncelle, kmOyunAnimateArena'nın bitir()'inde ZATEN
+                // doğru okçuya ayarlandı); bu genel (i+1)%n satırı çalışsaydı sessizce YANLIŞ bir roster
+                // üyesine atlayıp bir SONRAKİ girişin hasarını YANLIŞ tarafa uygulardı (gerçek testte
+                // TAM BUNU yakaladım: aCan yerine bCan düşmesi gerekirken aCan düştü).
+                if(_kmOyunAktifTema !== 'arena') _kmOyunAktifIndex = (i + 1) % _kmOyunRosterCache.length;
                 kmOyunChipleriCiz();
                 kmOyunLiderCiz();
                 if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
@@ -13963,7 +14107,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'balon') kmOyunAnimateBalon(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'hedef') kmOyunAnimateHedef(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futbol') kmOyunAnimateFutbol(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
-                else kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
+                else if(_kmOyunAktifTema === 'futboltakim') kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
+                else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
             // yerine kısa bir gerilim perdesi (davul tıkırtısı + nabız atan ikon) gösterilip SONRA normal
@@ -14535,6 +14680,398 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 done();
                 kmOyunResyncFutbolTakim();
             }, 600);
+        }
+
+        // ---- DÜELLO ARENA (Faz 11, 2026-09-10) — Stage 1: Eşleştirme ekranı ----
+        // Frac/yol YOK, can (HP) var (Bireysel/Takım Futbolu'nun "kendi mekaniği" emsaliyle aynı
+        // kategori). "arena" öneki BİLEREK — mevcut #duello-modal (davet-tabanlı, SİMÜLE rakipli,
+        // tamamen ayrı bir özellik) ile karışmasın diye "duello"/"duelo" hiç kullanılmadı.
+        // Bu görünüm SADECE bu panelin İÇİNDE (kmOyunPanelHTML('arena')'nın govde div'i) çalışıyor —
+        // ortak kabuk/skor paneline hiç dokunulmadı.
+        let _kmOyunArenaGorunum = 'eslestirme'; // 'eslestirme' | 'oyun'
+        let _kmOyunArenaEslesmeler = []; // [{a: rosterIndex, b: rosterIndex}]
+        let _kmOyunArenaSecili = null; // eşleştirme bekleyen, tek dokunulmuş roster indexi
+        function kmOyunArenaEslesmeIndex(i) {
+            for(let k = 0; k < _kmOyunArenaEslesmeler.length; k++) { if(_kmOyunArenaEslesmeler[k].a === i || _kmOyunArenaEslesmeler[k].b === i) return k; }
+            return -1;
+        }
+        // Skor dok'unun GERÇEK render yüksekliğini --km-arena-dok-h'a yazar — Faz 4a'nın #alt-bar
+        // deseninin AYNISI (sabit piksel YAZILMIYOR, kullanıcı talimatı: "dok küçültülünce gereksiz
+        // boşluk, ileride büyürse yutulma olur"). ResizeObserver dok'un HERHANGİ bir sebeple (aç/kapa,
+        // boyut, 3/6 ok slot satırı, pencere genişliği) boyut değiştirmesini kendiliğinden yakalıyor —
+        // dok'un kendi aç/kapa/boyut fonksiyonlarına HİÇ dokunulmadı, sadece salt-okunur gözlem.
+        let _kmOyunArenaDokGozlemci = null;
+        function kmOyunArenaDokYukseklikSenkron() {
+            try {
+                let dok = document.getElementById('km-oyun-dok');
+                let h = (dok && getComputedStyle(dok).display !== 'none') ? dok.offsetHeight : 0;
+                document.documentElement.style.setProperty('--km-arena-dok-h', h + 'px');
+            } catch(e) {}
+        }
+        function kmOyunArenaDokGozlemciKur() {
+            if(_kmOyunArenaDokGozlemci) { kmOyunArenaDokYukseklikSenkron(); return; }
+            let dok = document.getElementById('km-oyun-dok'); if(!dok) return;
+            kmOyunArenaDokYukseklikSenkron();
+            try {
+                _kmOyunArenaDokGozlemci = new ResizeObserver(kmOyunArenaDokYukseklikSenkron);
+                _kmOyunArenaDokGozlemci.observe(dok);
+                window.addEventListener('resize', kmOyunArenaDokYukseklikSenkron);
+            } catch(e) {}
+        }
+        function kmOyunArenaCiz() {
+            let govde = document.getElementById('km-oyun-panel-arena-govde'); if(!govde) return;
+            kmOyunArenaDokGozlemciKur();
+            govde.innerHTML = (_kmOyunArenaGorunum === 'oyun') ? kmOyunArenaOyunHTML() : kmOyunArenaEslestirmeHTML();
+        }
+        function kmOyunArenaEslestirmeHTML() {
+            let roster = _kmOyunRosterCache;
+            let acikta = roster.map(function(s, i) { return i; }).filter(function(i) { return kmOyunArenaEslesmeIndex(i) === -1; });
+            let havuzHTML = roster.map(function(s, i) {
+                let esIdx = kmOyunArenaEslesmeIndex(i);
+                let renk = kmOyunRenk('arena', i);
+                let sinif = 'km-arena-havuz-kart' + (esIdx !== -1 ? ' eslesmis' : '') + (_kmOyunArenaSecili === i ? ' secili' : '');
+                return `<div class="${sinif}" onclick="kmOyunArenaHavuzTikla(${i})" style="--_c:${renk};">
+                    <span class="km-arena-havuz-av">${kmOyunAvatarHTML(s)}</span>
+                    <span class="km-arena-havuz-ad">${esc(s.ad.split(' ')[0])}</span>
+                </div>`;
+            }).join('');
+            let listeHTML = _kmOyunArenaEslesmeler.length ? _kmOyunArenaEslesmeler.map(function(e, idx) {
+                let adA = roster[e.a] ? roster[e.a].ad.split(' ')[0] : '?';
+                let adB = roster[e.b] ? roster[e.b].ad.split(' ')[0] : '?';
+                return `<div class="km-arena-eslesme-satir"><span>${idx + 1}. ${esc(adA)} <b>VS</b> ${esc(adB)}</span><button onclick="kmOyunArenaEslesmeSil(${idx})" title="Eşleşmeyi kaldır">✕</button></div>`;
+            }).join('') : '<div class="km-arena-bos-not">Henüz eşleşme yok — havuzdan iki sporcuya dokunun.</div>';
+            // Tek sayıda sporcu kalırsa (kimse seçili değilken) açıkta kalan TEK kişi bu — hem manuel
+            // eşleştirmede hem "Otomatik Eşleştir" sonrasında aynı satır kullanılıyor (kullanıcı talimatı:
+            // sadece belirtme, "bu turda açıkta" gibi net bir cümle).
+            let acikNot = '';
+            if(acikta.length === 1) {
+                let ad = roster[acikta[0]] ? roster[acikta[0]].ad.split(' ')[0] : '?';
+                acikNot = `<div class="km-arena-acikta-not">⚠️ ${esc(ad)} bu turda açıkta — eşi yok, bekleyecek.</div>`;
+            }
+            return `<div class="km-arena-eslestirme">
+                <div class="km-arena-baslik">⚔️ Eşleştirme — sporcu havuzundan iki kişiye dokunun</div>
+                <div class="km-arena-havuz">${havuzHTML}</div>
+                ${acikNot}
+                <div class="km-arena-liste-baslik">Kurulan Eşleşmeler</div>
+                <div class="km-arena-liste">${listeHTML}</div>
+                <div class="km-arena-eslestirme-btnler">
+                    <button class="km-oyun-geri-al-btn" onclick="kmOyunArenaOtomatikEslestir()">🎲 Otomatik Eşleştir</button>
+                    <button class="km-oyun-geri-al-btn" onclick="kmOyunArenaTemizle()">🗑️ Temizle</button>
+                    <button class="km-oyun-ilerlet-btn" ${_kmOyunArenaEslesmeler.length ? '' : 'disabled'} onclick="kmOyunArenaTuruBaslat()">▶ Turu Başlat</button>
+                </div>
+            </div>`;
+        }
+        function kmOyunArenaHavuzTikla(i) {
+            if(kmOyunArenaEslesmeIndex(i) !== -1) return; // zaten eşleşmiş, dokunulmaz
+            if(_kmOyunArenaSecili === i) { _kmOyunArenaSecili = null; kmOyunArenaCiz(); return; }
+            if(_kmOyunArenaSecili === null) { _kmOyunArenaSecili = i; kmOyunArenaCiz(); return; }
+            _kmOyunArenaEslesmeler.push({ a: _kmOyunArenaSecili, b: i });
+            _kmOyunArenaSecili = null;
+            kmOyunArenaCiz();
+        }
+        function kmOyunArenaEslesmeSil(idx) {
+            _kmOyunArenaEslesmeler.splice(idx, 1);
+            kmOyunArenaCiz();
+        }
+        function kmOyunArenaOtomatikEslestir() {
+            let kalanlar = _kmOyunRosterCache.map(function(s, i) { return i; }).filter(function(i) { return kmOyunArenaEslesmeIndex(i) === -1; });
+            for(let i = kalanlar.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let tmp = kalanlar[i]; kalanlar[i] = kalanlar[j]; kalanlar[j] = tmp; }
+            while(kalanlar.length >= 2) { let a = kalanlar.pop(), b = kalanlar.pop(); _kmOyunArenaEslesmeler.push({ a: a, b: b }); }
+            _kmOyunArenaSecili = null;
+            kmOyunArenaCiz(); // kalanlar'da 1 kişi kalmışsa render fonksiyonu "açıkta" notunu kendisi gösterir
+        }
+        function kmOyunArenaTemizle() {
+            _kmOyunArenaEslesmeler = [];
+            _kmOyunArenaSecili = null;
+            kmOyunArenaCiz();
+        }
+        // ---- DÜELLO ARENA — Stage 2: Çoklu arena ızgarası ----
+        // Can (HP) mekaniği (frac YOK). KM_OYUN_ARENA_CAN_BASLANGIC şimdilik yuvarlak bir sayı —
+        // Stage 3'ün hasar eğrisi ve Stage 4'ün "3-4 set sürsün" kalibrasyonu bu sabiti ayarlayacak,
+        // ŞİMDİLİK sadece can barlarının dolu göründüğü bir başlangıç durumu.
+        const KM_OYUN_ARENA_CAN_BASLANGIC = 100;
+        let _kmOyunArenaMaclar = []; // [{aIndex,bIndex,aCan,bCan,siradaki:'a'|'b',durum:'etkin'|'bekliyor'|'bitti',kazanan:null,aOk,bOk,aEnIyiSeri,bEnIyiSeri}]
+        let _kmOyunArenaAktifMac = 0;
+        function kmOyunArenaTuruBaslat() {
+            if(!_kmOyunArenaEslesmeler.length) return;
+            _kmOyunArenaMaclar = _kmOyunArenaEslesmeler.map(function(e) {
+                return { aIndex: e.a, bIndex: e.b, aCan: KM_OYUN_ARENA_CAN_BASLANGIC, bCan: KM_OYUN_ARENA_CAN_BASLANGIC, siradaki: 'a', durum: 'bekliyor', kazanan: null, aOk: 0, bOk: 0, aEnIyiSeri: 0, bEnIyiSeri: 0 };
+            });
+            _kmOyunArenaAktifMac = 0;
+            if(_kmOyunArenaMaclar.length) _kmOyunArenaMaclar[0].durum = 'etkin';
+            kmOyunArenaAktifIndexGuncelle();
+            _kmOyunArenaGorunum = 'oyun';
+            kmOyunArenaCiz();
+            kmOyunArenaIlerletBtnGuncelle();
+        }
+        // Ortak kmOyunIlerlet/kmOyunPadCiz/SIRADA rozeti HÂLÂ _kmOyunAktifIndex okuyor (kabuğa
+        // dokunmadan yeniden kullanım) — bu yüzden "hangi maç/hangi okçu etkin" değiştiğinde global
+        // aktif indeks BURADAN senkronize ediliyor, kabuğun kendisi hiç değişmiyor.
+        function kmOyunArenaAktifIndexGuncelle() {
+            let mac = _kmOyunArenaMaclar[_kmOyunArenaAktifMac]; if(!mac) return;
+            _kmOyunAktifIndex = (mac.siradaki === 'a') ? mac.aIndex : mac.bIndex;
+            kmOyunSiradaGuncelle();
+        }
+        function kmOyunArenaMacSec(idx) {
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
+            _kmOyunArenaMaclar.forEach(function(m) { if(m.durum !== 'bitti') m.durum = 'bekliyor'; });
+            mac.durum = 'etkin';
+            _kmOyunArenaAktifMac = idx;
+            kmOyunArenaAktifIndexGuncelle();
+            kmOyunArenaCiz();
+        }
+        function kmOyunArenaDigerOkcuyaGec(idx) {
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
+            mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
+            if(idx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
+            kmOyunArenaCiz();
+        }
+        function kmOyunArenaOyunHTML() {
+            if(!_kmOyunArenaMaclar.length) return '<div class="km-arena-yer-tutucu">Eşleşme yok.</div>';
+            return '<div class="km-arena-izgara">' + _kmOyunArenaMaclar.map(function(mac, idx) { return kmOyunArenaMacKartHTML(mac, idx); }).join('') + '</div>';
+        }
+        // Karakterler SVG — derinlik hissi degrade gövde (üstte açık/kendi rengi, altta koyulaşan),
+        // kenar aydınlığı (yarı saydam beyaz stroke) ve zemin gölgesinden (ellipse) geliyor. Yay+sadak
+        // görünüyor (kullanıcı talimatı: "okçu olsunlar").
+        // Sarsıntı için AYRI bir iç <g> (rol class'ı BURADA) — dış <g>'nin translate/scale ÖZNİTELİĞİNE
+        // CSS animasyonu HİÇ dokunmuyor (Pist'in araba-ölçekleme dersiyle AYNI risk: bir CSS transform
+        // kuralı SVG öznitelik transform'unu SESSİZCE ezip pozisyonu/yön çevirmesini bozardı).
+        function kmOyunArenaOkcuSVG(s, x, uid, sagaBakiyorMu, rolSinifi) {
+            let yon = sagaBakiyorMu ? 1 : -1;
+            return `<g transform="translate(${x},55) scale(${yon},1)">
+                <g class="${rolSinifi}">
+                    <ellipse class="km-arena-golge" cx="0" cy="38" rx="14" ry="4"/>
+                    <rect class="km-arena-sadak" x="-13" y="-18" width="5" height="20" rx="2.5" transform="rotate(-15)"/>
+                    <path class="km-arena-yay" d="M9,-16 Q20,12 9,38"/>
+                    <path class="km-arena-okcu-govde" d="M-7,-6 Q-9,16 -6,36 L6,36 Q9,16 7,-6 Z" fill="url(#kmArenaGrad-${uid})"/>
+                    <circle class="km-arena-kafa-bg" cx="0" cy="-16" r="9"/>
+                    ${kmOyunAvatarSVG(s, 7, 'arena-' + uid, 0, -16)}
+                </g>
+            </g>`;
+        }
+        function kmOyunArenaMacKartHTML(mac, idx) {
+            let a = _kmOyunRosterCache[mac.aIndex], b = _kmOyunRosterCache[mac.bIndex];
+            if(!a || !b) return '';
+            let renkA = kmOyunRenk('arena', mac.aIndex), renkB = kmOyunRenk('arena', mac.bIndex);
+            let yuzdeA = Math.round(Math.max(0, mac.aCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
+            let yuzdeB = Math.round(Math.max(0, mac.bCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
+            let durumEtiket = { etkin: 'ETKİN', bekliyor: 'BEKLİYOR', bitti: 'BİTTİ' }[mac.durum] || '';
+            let bittiMi = mac.durum === 'bitti';
+            let siradakiAd = (mac.siradaki === 'a' ? a : b).ad.split(' ')[0];
+            let kazananAd = bittiMi ? (mac.kazanan === 'a' ? a : b).ad.split(' ')[0] : '';
+            return `<div class="km-arena-mac-kart ${mac.durum}${mac.durum === 'etkin' ? ' aktif-kart' : ''}" ${bittiMi ? '' : `onclick="kmOyunArenaMacSec(${idx})"`}>
+                <div class="km-arena-mac-baslik">
+                    <span>${idx + 1}. Eşleşme</span>
+                    <span class="km-arena-durum-rozet ${mac.durum}">${durumEtiket}</span>
+                </div>
+                ${bittiMi ? `<div class="km-arena-kazanan-satir">🏆 ${esc(kazananAd)} kazandı!</div>` : ''}
+                <div class="km-arena-can-satir">
+                    <div class="km-arena-can-taraf">
+                        <span class="km-arena-can-av" style="background:${renkA};">${kmOyunAvatarHTML(a)}</span>
+                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${esc(a.ad.split(' ')[0])}</span><div class="km-arena-can-bar"><div class="km-arena-can-ic" style="width:${yuzdeA}%; background:${renkA};"></div></div><span class="km-arena-can-yuzde">${yuzdeA}%</span></div>
+                    </div>
+                    <div class="km-arena-vs">VS</div>
+                    <div class="km-arena-can-taraf saga">
+                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${esc(b.ad.split(' ')[0])}</span><div class="km-arena-can-bar"><div class="km-arena-can-ic" style="width:${yuzdeB}%; background:${renkB};"></div></div><span class="km-arena-can-yuzde">${yuzdeB}%</span></div>
+                        <span class="km-arena-can-av" style="background:${renkB};">${kmOyunAvatarHTML(b)}</span>
+                    </div>
+                </div>
+                <div class="km-arena-saha-wrap" id="km-arena-saha-${idx}">
+                    <svg class="km-arena-saha-svg" viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <linearGradient id="kmArenaGrad-${idx}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${renkA}" stop-opacity=".95"/><stop offset="100%" stop-color="#000" stop-opacity=".4"/></linearGradient>
+                            <linearGradient id="kmArenaGrad-${idx}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${renkB}" stop-opacity=".95"/><stop offset="100%" stop-color="#000" stop-opacity=".4"/></linearGradient>
+                        </defs>
+                        <ellipse class="km-arena-zemin" cx="110" cy="96" rx="95" ry="8"/>
+                        ${kmOyunArenaOkcuSVG(a, 45, idx + 'a', true, 'km-arena-okcu-a')}
+                        ${kmOyunArenaOkcuSVG(b, 175, idx + 'b', false, 'km-arena-okcu-b')}
+                    </svg>
+                </div>
+                ${bittiMi ? '' : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`}
+            </div>`;
+        }
+        // ---- DÜELLO ARENA — Stage 3: Ok uçuşu ve hasar ----
+        // KRİTİK KURAL: otomatik/rastgele/yapay rakip hasarı YOK. Hasar SADECE bu fonksiyona gelen
+        // `kaydedilecek` (kmOyunIlerlet'in GERÇEK, koçun girdiği okları) üzerinden, o anki AKTİF maçın
+        // İKİ tarafından biri (siradaki okçu, roster indeksi `i` ile eşleşen) diğerine uygulanıyor.
+        // Hiçbir setTimeout/Math.random ile rakip canı DEĞİŞMİYOR.
+        const KM_OYUN_ARENA_UCUS_TIER = { 'X': 'hizli', '10': 'hizli', '9': 'normal', '8': 'normal', '7': 'normal', '6': 'zayif', '5': 'zayif', '4': 'zayif', '3': 'zayif', '2': 'zayif', '1': 'zayif', 'M': 'iskalama' };
+        // Hasar değerleri — Stage 4 kalibrasyonu (bkz. DEVIR.md): 25-27p/set (9-8-8/10-9-8 gibi)
+        // gerçekçi ortalamayla bir raunt 3-4 sette bitiyor, formülle simüle edilip doğrulandı (24p/set
+        // gibi daha zayıf bir ortalama bile 4 sette bitiyor, sarkmıyor).
+        const KM_OYUN_ARENA_HASAR = { hizli: 14, normal: 10, zayif: 5, iskalama: 0 };
+        const KM_OYUN_ARENA_MUKEMMEL_BONUS = 12;
+        function kmOyunAnimateArena(s, i, kaydedilecek, done) {
+            let macIdx = _kmOyunArenaAktifMac, mac = _kmOyunArenaMaclar[macIdx];
+            if(!mac) { done(); return; }
+            // Hangi taraf attı (roster indeksi `i`, GERÇEKTEN skoru giren okçu) — hasar KARŞI tarafa.
+            let atanA = (mac.aIndex === i);
+            let hedefA = !atanA;
+            let kapali = kmOyunKameraAzaltilmisHareketMi() || (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let mukemmelMi = kaydedilecek.length > 0 && kaydedilecek.every(function(k) { return KM_OYUN_PAD_RENK[k.puan] === 'altin'; });
+            // Stage 4 — "kaç ok attı"/"en iyi seri kimin" tur sonu ekranı için, BU RAUNTA özel sayaçlar
+            // (GERÇEK skora/klasmana dokunmuyor, `toplam` zaten kmOyunIlerlet'te GERÇEK kayda gitti).
+            let atanToplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
+            if(atanA) { mac.aOk += kaydedilecek.length; if(atanToplam > mac.aEnIyiSeri) mac.aEnIyiSeri = atanToplam; }
+            else { mac.bOk += kaydedilecek.length; if(atanToplam > mac.bEnIyiSeri) mac.bEnIyiSeri = atanToplam; }
+            function birOkIsle(idx) {
+                if(idx >= kaydedilecek.length) { bitir(); return; }
+                let deger = kaydedilecek[idx].puan;
+                let tier = KM_OYUN_ARENA_UCUS_TIER[deger] || 'normal';
+                let hasar = KM_OYUN_ARENA_HASAR[tier] || 0;
+                function isabetUygula() {
+                    if(hasar > 0) {
+                        if(hedefA) mac.aCan = Math.max(0, mac.aCan - hasar); else mac.bCan = Math.max(0, mac.bCan - hasar);
+                        kmOyunArenaCanBarGuncelle(macIdx, mac);
+                        if(!kapali) kmOyunArenaHasarGoster(macIdx, hasar, hedefA);
+                    }
+                    setTimeout(function() { birOkIsle(idx + 1); }, kapali ? 40 : 160);
+                }
+                if(kapali) { isabetUygula(); return; }
+                kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, isabetUygula);
+            }
+            function bitir() {
+                if(mukemmelMi) {
+                    if(hedefA) mac.aCan = Math.max(0, mac.aCan - KM_OYUN_ARENA_MUKEMMEL_BONUS); else mac.bCan = Math.max(0, mac.bCan - KM_OYUN_ARENA_MUKEMMEL_BONUS);
+                    kmOyunArenaCanBarGuncelle(macIdx, mac);
+                    if(!kapali) { kmOyunBanner('🎯 MÜKEMMEL SERİ!', s.ad + ' — ek hasar!', 'harika'); try { sesCal(1000, 0.2); } catch(e) {} }
+                }
+                // Stage 4 — "Can 0 olunca o kart BİTTİ olur, kazananın adı görünür." Sıra değişimi SADECE
+                // maç HÂLÂ sürüyorsa oluyor (bitmiş bir maçta "diğer okçuya geç" anlamsız).
+                let hedefCanSonrasi = hedefA ? mac.aCan : mac.bCan;
+                let yeniBitti = hedefCanSonrasi <= 0 && mac.durum !== 'bitti';
+                if(yeniBitti) {
+                    mac.durum = 'bitti';
+                    mac.kazanan = atanA ? 'a' : 'b';
+                    if(!kapali) {
+                        let kazananAd = _kmOyunRosterCache[atanA ? mac.aIndex : mac.bIndex].ad;
+                        try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
+                        kmOyunBanner('🏆 EŞLEŞME BİTTİ!', kazananAd.split(' ')[0] + ' kazandı!', 'bitis');
+                    }
+                    if(kmOyunArenaTumMaclarBittiMi()) kmOyunArenaTurSonucGoster();
+                } else {
+                    mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
+                }
+                if(macIdx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
+                kmOyunArenaCiz();
+                done();
+            }
+            birOkIsle(0);
+        }
+        function kmOyunArenaTumMaclarBittiMi() {
+            return _kmOyunArenaMaclar.length > 0 && _kmOyunArenaMaclar.every(function(m) { return m.durum === 'bitti'; });
+        }
+        // ---- DÜELLO ARENA — Stage 4: Tur sonu + yeniden eşleştirme ----
+        // Pist'in bitiş sonuç ekranıyla (.km-pist-sonuc, Faz 9 §14d) AYNI kalıp: sahnenin İÇİNDE,
+        // mutlak konumlu, .goster class'ıyla açılıp kapanan kart. TEK farkı: burada BİRDEN FAZLA
+        // eşleşme sonucu listeleniyor (çoklu düello, tek bir "kazanan" yok) — koç bu listeye bakıp
+        // kazananları karşılaştırıp eleme yapabilir ya da tamamen yeni eşleşmeler kurabilir.
+        function kmOyunArenaTurSonucGoster() {
+            let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(!modal) return;
+            let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let liste = document.getElementById('km-oyun-arena-tur-sonu-liste');
+            if(liste) {
+                liste.innerHTML = _kmOyunArenaMaclar.map(function(mac, idx) {
+                    let a = _kmOyunRosterCache[mac.aIndex], b = _kmOyunRosterCache[mac.bIndex];
+                    if(!a || !b) return '';
+                    let kazanan = mac.kazanan === 'a' ? a : b, kaybeden = mac.kazanan === 'a' ? b : a;
+                    let kazananOk = mac.kazanan === 'a' ? mac.aOk : mac.bOk;
+                    let enIyi = Math.max(mac.aEnIyiSeri, mac.bEnIyiSeri);
+                    let enIyiSahibi = mac.aEnIyiSeri >= mac.bEnIyiSeri ? a : b;
+                    return `<div class="km-arena-tur-sonu-satir">
+                        <div class="km-arena-tur-sonu-satir-baslik">${idx + 1}. Eşleşme — <b>${esc(kazanan.ad.split(' ')[0])}</b> kazandı (vs ${esc(kaybeden.ad.split(' ')[0])})</div>
+                        <div class="km-arena-tur-sonu-satir-detay">🎯 ${kazananOk} ok attı ${enIyi > 0 ? '· ⭐ En iyi seri: ' + esc(enIyiSahibi.ad.split(' ')[0]) + ' — ' + enIyi + 'p' : ''}</div>
+                    </div>`;
+                }).join('');
+            }
+            modal.classList.toggle('ciddi', ciddi);
+            modal.classList.remove('goster'); void modal.offsetWidth; modal.classList.add('goster');
+            if(!ciddi) {
+                kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 40, '#ffd23f', 30, true);
+                try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 100); setTimeout(function() { try { sesCal(1568, 0.2); } catch(e) {} }, 200); setTimeout(function() { try { sesCal(2093, 0.25); } catch(e) {} }, 320); } catch(e) {}
+            }
+        }
+        function kmOyunArenaTurSonucKapat() {
+            let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(modal) modal.classList.remove('goster');
+        }
+        // "Yeniden eşleştir" — koç kazananları karşılaştırıp eleme yapabilsin ya da tamamen yeni
+        // eşleşmeler kurabilsin diye eşleştirme ekranına DÜZ (boş) döner — otomatik bir eşleştirme
+        // ÜRETMİYOR, kullanıcı talimatı "koç ... kurabilsin" (koç kendi kuruyor).
+        function kmOyunArenaYenidenEslestir() {
+            kmOyunArenaTurSonucKapat();
+            _kmOyunArenaMaclar = [];
+            _kmOyunArenaEslesmeler = [];
+            _kmOyunArenaSecili = null;
+            _kmOyunArenaGorunum = 'eslestirme';
+            kmOyunArenaCiz();
+            kmOyunArenaIlerletBtnGuncelle();
+        }
+        // Sadece can barını (yüzde+genişlik) günceller — kmOyunArenaCiz()'in TAM yeniden çizimini
+        // beklemeden, her ok isabet ettiğinde ANINDA görünür olsun diye (kmOyunArenaCiz zaten seri
+        // bitince bir kez daha çağrılıyor, bu ondan BAĞIMSIZ ara güncelleme).
+        function kmOyunArenaCanBarGuncelle(macIdx, mac) {
+            let kart = document.querySelectorAll('.km-arena-mac-kart')[macIdx]; if(!kart) return;
+            let yuzdeA = Math.round(Math.max(0, mac.aCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
+            let yuzdeB = Math.round(Math.max(0, mac.bCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
+            let taraflar = kart.querySelectorAll('.km-arena-can-taraf');
+            if(taraflar[0]) { let ic = taraflar[0].querySelector('.km-arena-can-ic'); if(ic) ic.style.width = yuzdeA + '%'; let yz = taraflar[0].querySelector('.km-arena-can-yuzde'); if(yz) yz.textContent = yuzdeA + '%'; }
+            if(taraflar[1]) { let ic = taraflar[1].querySelector('.km-arena-can-ic'); if(ic) ic.style.width = yuzdeB + '%'; let yz = taraflar[1].querySelector('.km-arena-can-yuzde'); if(yz) yz.textContent = yuzdeB + '%'; }
+        }
+        // Uçan ok — düz HTML div (kmOyunBurst ile AYNI, kanıtlanmış desen), SVG'nin KENDİSİ değil
+        // (SVG transform'unu WAAPI ile animasyonlamanın bu kod tabanında hiç denenmemiş/emin olunmayan
+        // davranışına girmemek için). Uçuş stili kullanıcının verdiği 4 kademeye birebir uyuyor.
+        function kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, cb) {
+            let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) { cb(); return; }
+            let baslaYuzde = atanA ? 20.5 : 79.5, bitisYuzde = atanA ? 79.5 : 20.5, dx = bitisYuzde - baslaYuzde;
+            let ok = document.createElement('div');
+            ok.className = 'km-arena-ucan-ok ' + tier;
+            // Yön: sabit inline transform (WAAPI SADECE left/top'u animasyonluyor, bu satıra dokunmuyor).
+            ok.style.transform = 'translate(-50%,-50%) rotate(' + (atanA ? 0 : 180) + 'deg)';
+            ok.style.left = baslaYuzde + '%'; ok.style.top = '50%';
+            wrap.appendChild(ok);
+            let sureler = { hizli: 320, normal: 480, zayif: 680, iskalama: 460 };
+            let anahtarlar;
+            if(tier === 'iskalama') {
+                anahtarlar = [
+                    { left: baslaYuzde + '%', top: '50%', opacity: 1 },
+                    { left: (baslaYuzde + dx * 0.4) + '%', top: '76%', opacity: 0 }
+                ];
+            } else if(tier === 'zayif') {
+                anahtarlar = [
+                    { left: baslaYuzde + '%', top: '50%' },
+                    { left: (baslaYuzde + dx * 0.55) + '%', top: '68%', offset: .6 },
+                    { left: bitisYuzde + '%', top: '50%' }
+                ];
+            } else {
+                anahtarlar = [{ left: baslaYuzde + '%', top: '50%' }, { left: bitisYuzde + '%', top: '50%' }];
+            }
+            ok.animate(anahtarlar, { duration: sureler[tier] || 480, easing: tier === 'zayif' ? 'ease-in' : 'linear' }).onfinish = function() { ok.remove(); cb(); };
+        }
+        // Hasar sayısı havalanır + hedef sarsılır. Sarsıntı CSS keyframe (WAAPI DEĞİL) — paylaşılan
+        // genel reduced-motion kuralı otomatik kapatıyor. Bu fonksiyonun kendisi zaten sadece
+        // !kapali (ciddi/azaltılmış hareket KAPALIYKEN) çağrılıyor.
+        function kmOyunArenaHasarGoster(macIdx, hasar, hedefA) {
+            let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) return;
+            let yuzde = hedefA ? 20.5 : 79.5;
+            let el = document.createElement('div');
+            el.className = 'km-arena-hasar-sayi';
+            el.style.left = yuzde + '%'; el.style.top = '30%';
+            el.textContent = '-' + hasar;
+            wrap.appendChild(el);
+            el.animate([
+                { transform: 'translate(-50%,-50%)', opacity: 1 },
+                { transform: 'translate(-50%,-160%)', opacity: 0 }
+            ], { duration: 700, easing: 'ease-out' }).onfinish = function() { el.remove(); };
+            let hedefG = wrap.querySelector(hedefA ? '.km-arena-okcu-a' : '.km-arena-okcu-b');
+            if(hedefG) { hedefG.classList.add('sarsiliyor'); setTimeout(function() { hedefG.classList.remove('sarsiliyor'); }, 320); }
+        }
+        // Skor paneli HİÇ değişmiyor (kullanıcı kuralı) — sadece "İlerlet" düğmesinin ÜZERİNDEKİ yazı,
+        // eşleştirme ekranındayken ne yapılması gerektiğini söylüyor ("boş buton" izlenimi olmasın diye).
+        // Panelin boyutu/yerleşimi bundan hiç etkilenmiyor, tek bir metin/disabled değişimi.
+        function kmOyunArenaIlerletBtnGuncelle() {
+            let btn = document.getElementById('km-oyun-ilerlet-btn'); if(!btn || _kmOyunAktifTema !== 'arena') return;
+            if(_kmOyunArenaGorunum === 'eslestirme') { btn.textContent = 'Önce eşleştirme yapın'; btn.disabled = true; }
+            else { btn.textContent = KM_OYUN_TEMALAR.arena.btn; btn.disabled = _kmOyunSeriGirisleri.length < _kmOyunOkSayisi; }
         }
 
         function kmOyunlarCiz() {
