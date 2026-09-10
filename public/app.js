@@ -16663,12 +16663,40 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let turMaclari = _kmYarismaBracketMaclar.filter(m => m.tur === tur);
             if(!turMaclari.length || !turMaclari.every(m => m.durum === 'bitti')) return;
             if(tur >= _kmYarismaBracketToplamTur) {
-                let sampiyon = _kmTakimlar[turMaclari[0].kazananIdx];
+                let finalMac = turMaclari[0];
+                let sampiyon = _kmTakimlar[finalMac.kazananIdx];
                 // kutlamalarSessiz BURADA yanlış bayrak olurdu — o sadece _seriSonrasiOdulVeLog'un
                 // geçici bir sarmalayıcısı (finally'de hep false'a dönüyor). Ciddi mod kontrolü
                 // Oyunlar/Arena'nın HER YERDE kullandığı gerçek desenle aynı: ciddiModAcik'i doğrudan oku.
                 let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
                 if(sampiyon && !ciddi) kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 TURNUVA ŞAMPİYONU! 🏆', ad: sampiyon.ad, aciklama: 'Tebrikler!', deger: '🎉' });
+                // Turnuva sonucu da AYNI geçmişe/PDF'e giriyor — kullanıcı isteği: "yarısı Hayali Rakip
+                // yarısı Gerçek Takım olmasın". `tur:true` işareti kmYarismaRaporuPDF'in N-takımlı
+                // (2'den fazla) dalını tetikliyor. Girdi referansı maça asılıyor ki "↩️ Düzelt" bu
+                // maçı geri alırsa (koç yanlış şampiyon işaretlemişse) geçmişten de silinip yeniden
+                // karar verilince DOĞRU sonuçla tekrar eklensin — yarım kalmış/yanlış bir kayıt
+                // PDF'te kalmasın.
+                if(sampiyon && !finalMac._gecmisGirdisi) {
+                    let katilimciIdxSeti = new Set();
+                    _kmYarismaBracketMaclar.forEach(m => { katilimciIdxSeti.add(m.aIdx); if(m.bIdx != null) katilimciIdxSeti.add(m.bIdx); });
+                    let takimSonuclari = Array.from(katilimciIdxSeti).map(idx => {
+                        let t = _kmTakimlar[idx];
+                        // "puan" burada skor farkı DEĞİL, turnuvada kazanılan maç sayısı — geçmiş/PDF
+                        // renderer'ı (kmYarismaGecmisiHTML/kmYarismaRaporuPDF) AYNEN reuse edildiği için
+                        // alan adı aynı kaldı, anlamı turnuva girdilerinde farklı.
+                        let kazandigi = _kmYarismaBracketMaclar.filter(m => !m.isBye && m.durum === 'bitti' && m.kazananIdx === idx).length;
+                        return { ad: t.ad, uyeler: t.uyeler.map(u => u.ad), puan: kazandigi, dengelenmisOran: null };
+                    }).sort((a, b) => b.puan - a.puan);
+                    let girdi = {
+                        tarih: bugunISO(), saat: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+                        format: _kmYarismaFormat, tur: true, takimlar: takimSonuclari, kazananAd: sampiyon.ad, mvpAd: null
+                    };
+                    _kmYarismaGecmisi.unshift(girdi);
+                    _kmYarismaGecmisi = _kmYarismaGecmisi.slice(0, 50);
+                    _kmYarismaGecmisiKaydet();
+                    try { bekleyenGonderim = true; bulutaGonderKontrol(); } catch(e) {}
+                    finalMac._gecmisGirdisi = girdi;
+                }
                 return;
             }
             if(_kmYarismaBracketMaclar.some(m => m.tur === tur + 1)) return; // zaten üretilmiş
@@ -16702,6 +16730,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(etkilenen.some(x => x.durum === 'bitti')) { showToast('Bu takım bir sonraki turda da maçını bitirmiş — önce o sonucu geri al.', 'warning'); return; }
             _kmYarismaBracketMaclar = _kmYarismaBracketMaclar.filter(x => x.tur <= m.tur);
             m.durum = 'devam'; m.kazananIdx = null;
+            // Finali geri alıyorsak, o (artık geçersiz) şampiyon kaydı geçmişten/PDF'ten de silinsin —
+            // yeniden karar verilince kmYarismaBracketTurKontrolEt DOĞRU sonuçla tekrar ekleyecek.
+            if(m._gecmisGirdisi) {
+                let idx = _kmYarismaGecmisi.indexOf(m._gecmisGirdisi);
+                if(idx >= 0) { _kmYarismaGecmisi.splice(idx, 1); _kmYarismaGecmisiKaydet(); }
+                delete m._gecmisGirdisi;
+            }
             kmYarismaBracketAgacCiz();
         }
         function kmYarismaBracketMacKartHTML(m) {
@@ -17119,24 +17154,38 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // 📄 Yarışma Sonu PDF Raporu — aileRaporuPDF/dersRaporuPDF ile AYNI görsel dil (lacivert/altın
         // gradient başlık, stat kutucukları, html2pdf opt/temp kalıbı) reuse edildi, yeniden yazılmadı.
+        // Turnuva (N takım) girdileri için ayrı, sabit bir PDF paleti — takımların canlı ekrandaki
+        // KM_TAKIM_RENKLERI'si (aurora/neon, KOYU zemin için) beyaz PDF zemininde soluk/düşük kontrast
+        // kalırdı; bu yüzden PDF'e özel, beyazda okunaklı 5 renk kullanılıyor (mevcut 2 renkle uyumlu).
+        const KM_YARISMA_PDF_RENKLERI = ['#1d4ed8', '#be185d', '#b45309', '#15803d', '#7c3aed'];
         function kmYarismaRaporuPDF(i) {
             let k = _kmYarismaGecmisi[i]; if(!k) return showToast('Kayıt bulunamadı.', 'error');
-            let [ta, tb] = k.takimlar;
             let kazandiMi = (t) => k.kazananAd !== 'Berabere' && t.ad === k.kazananAd;
             let uyeSatirlari = (t) => (t.uyeler || []).map(ad => `<div style="display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #eef2f7; font-size:12px;"><span style="font-weight:700;">${esc(ad)}${k.mvpAd === ad ? ' 🌟' : ''}</span></div>`).join('');
-            let takimKutu = (t, renk) => `
-                <div style="flex:1; background:${kazandiMi(t) ? '#fffbeb' : '#f8fafc'}; border:1.5px solid ${kazandiMi(t) ? '#f59e0b' : '#e2e8f0'}; border-radius:14px; padding:14px;">
+            let takimKutu = (t, renk, puanEtiket) => `
+                <div style="flex:1 1 210px; background:${kazandiMi(t) ? '#fffbeb' : '#f8fafc'}; border:1.5px solid ${kazandiMi(t) ? '#f59e0b' : '#e2e8f0'}; border-radius:14px; padding:14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <div style="font-size:14px; font-weight:900; color:${renk};">${esc(t.ad)}${kazandiMi(t) ? ' 🏆' : ''}</div>
                         <div style="font-size:24px; font-weight:900; color:#0f172a;">${t.puan}</div>
                     </div>
-                    <div style="font-size:10px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:4px;">⚖️ KİŞİSEL ORTALAMAYA GÖRE: %${t.dengelenmisOran != null ? t.dengelenmisOran : '—'}</div>
+                    <div style="font-size:10px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:4px;">${puanEtiket}</div>
                     <div style="background:#fff; border-radius:8px; overflow:hidden; border:1px solid #eef2f7;">${uyeSatirlari(t) || '<div style="padding:8px 10px; font-size:11px; color:#94a3b8;">Üye yok</div>'}</div>
                 </div>`;
-            let sonuc = k.kazananAd === 'Berabere' ? 'Berabere bitti — iki takım da güzel bir mücadele verdi!' : `${esc(k.kazananAd)} kazandı!`;
+            let takimlarHTML, rozetMetin, sonuc;
+            if(k.tur) {
+                // Turnuva girdisi — 2'den fazla takım olabilir, sabit iki sütun yerine esnek ızgara.
+                takimlarHTML = `<div style="display:flex; flex-wrap:wrap; gap:12px; margin:14px 0;">${k.takimlar.map((t, idx) => takimKutu(t, KM_YARISMA_PDF_RENKLERI[idx % KM_YARISMA_PDF_RENKLERI.length], '🏅 KAZANILAN MAÇ SAYISI')).join('')}</div>`;
+                rozetMetin = `TURNUVA RAPORU — ${k.format}v${k.format} · ${k.takimlar.length} Takım`;
+                sonuc = `${esc(k.kazananAd)} turnuvayı kazandı! 🏆`;
+            } else {
+                let [ta, tb] = k.takimlar;
+                takimlarHTML = `<div style="display:flex; gap:12px; margin:14px 0;">${takimKutu(ta, '#1d4ed8', '⚖️ KİŞİSEL ORTALAMAYA GÖRE: %' + (ta.dengelenmisOran != null ? ta.dengelenmisOran : '—'))}${takimKutu(tb, '#be185d', '⚖️ KİŞİSEL ORTALAMAYA GÖRE: %' + (tb.dengelenmisOran != null ? tb.dengelenmisOran : '—'))}</div>`;
+                rozetMetin = `YARIŞMA RAPORU — ${k.format}v${k.format}`;
+                sonuc = k.kazananAd === 'Berabere' ? 'Berabere bitti — iki takım da güzel bir mücadele verdi!' : `${esc(k.kazananAd)} kazandı!`;
+            }
             let yorum = k.mvpAd
                 ? `Bugünkü karışık sınıf yarışmasında ${sonuc} 🌟 <b>${esc(k.mvpAd)}</b> en yüksek bireysel katkıyla bu yarışmanın yıldızı oldu. Farklı yaş gruplarından oluşan takımlar birlikte harika bir performans sergiledi — desteğiniz için teşekkür ederiz! 🧡`
-                : `Bugünkü karışık sınıf yarışmasında ${sonuc} Farklı yaş gruplarından oluşan takımlar birlikte güzel bir mücadele verdi. 🧡`;
+                : `Bugünkü karışık sınıf ${k.tur ? 'turnuvasında' : 'yarışmasında'} ${sonuc} Farklı yaş gruplarından oluşan takımlar birlikte ${k.tur ? 'heyecanlı bir turnuva' : 'güzel bir mücadele'} geçirdi. 🧡`;
             let html = `
             <div style="font-family:'Segoe UI', Arial, sans-serif; color:#0f172a; width:720px;">
                 <div style="background:linear-gradient(135deg,#0b1e3d 0%,#12305e 55%,#1d4ed8 100%); border-radius:16px; padding:20px 24px; position:relative; overflow:hidden;">
@@ -17144,7 +17193,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:22px; font-weight:900; letter-spacing:1px; color:#fff;">🏹 DAĞ SPOR KULÜBÜ</div>
-                            <div style="display:inline-block; background:#fbbf24; color:#78350f; font-size:11px; font-weight:900; letter-spacing:2px; padding:3px 12px; border-radius:20px; margin-top:6px;">YARIŞMA RAPORU — ${k.format}v${k.format}</div>
+                            <div style="display:inline-block; background:#fbbf24; color:#78350f; font-size:11px; font-weight:900; letter-spacing:2px; padding:3px 12px; border-radius:20px; margin-top:6px;">${rozetMetin}</div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:10px; color:#93c5fd; font-weight:700; letter-spacing:1px;">TARİH</div>
@@ -17152,7 +17201,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; gap:12px; margin:14px 0;">${takimKutu(ta, '#1d4ed8')}${takimKutu(tb, '#be185d')}</div>
+                ${takimlarHTML}
                 <div style="background:linear-gradient(135deg,#eff6ff,#eef2ff); border:1px solid #bfdbfe; border-radius:14px; padding:13px 16px;">
                     <div style="font-size:11px; font-weight:900; color:#1d4ed8; letter-spacing:1px; margin-bottom:5px;">💬 ANTRENÖR DEĞERLENDİRMESİ</div>
                     <div style="font-size:12.5px; color:#1e293b; line-height:1.65;">${yorum}</div>

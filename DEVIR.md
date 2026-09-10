@@ -2246,6 +2246,53 @@ edildi, hem eşleştirme hem ağaç ekranında `innerHTML`'de gerçek bir `<img>
 Test PIN'i sonrasında gerçek `egitmen_hash`'e geri alındı, `node --check` temiz, diğer 10 Karışık
 Sınıf aracı + Oyunlar hatasız çizildi, skor paneli piksel piksel aynı kaldı, 360/1280px temiz.
 
-**Faz 13 bu noktada durumu**: Stage 1-4 tamamlandı. Bilinçli olarak ele ALINMAYAN: turnuva sonuçlarının
-eski `_kmYarismaGecmisi`/PDF geçmişine eklenmesi (o mekanizma artık sadece Hayali Rakip'ten besleniyor;
-turnuva şampiyonlarının kendi geçmişi yok) — kullanıcı isterse ayrı bir iş olarak ele alınabilir.
+**Faz 13 bu noktada durumu**: Stage 1-4 tamamlandı.
+
+### 16e. Turnuva şampiyonu → geçmiş/PDF (tamamlandı, deploy edildi)
+
+16d'de bilinçli olarak ele alınmamıştı — kullanıcı istedi: "yarısı Hayali Rakip yarısı Gerçek Takım
+olmasın." `kmYarismaBracketTurKontrolEt()`'in final dalı artık şampiyon belli olunca `_kmYarismaGecmisi`ye
+`tur:true` işaretli bir girdi ekliyor (`takimlar[].puan` bu girdilerde skor farkı DEĞİL, turnuvada
+kazanılan GERÇEK maç sayısı — bay'lar hariç, alan adı mevcut renderer'la uyumlu kalsın diye aynı
+bırakıldı). Girdi, kazanan maça (`finalMac._gecmisGirdisi`) asılı tutuluyor: koç finali "↩️ Düzelt"le
+geri alırsa (yanlış şampiyon işaretlemişse) o kayıt geçmişten/PDF'ten de SİLİNİYOR, yeniden karar
+verilince DOĞRU sonuçla tekrar ekleniyor — yarım/yanlış bir kayıt kalıcı kalmıyor.
+
+`kmYarismaRaporuPDF()` eskiden `let [ta,tb]=k.takimlar` ile SERT 2 takım varsayıyordu (3+ takımlı bir
+turnuva girdisinde takım 3+ sessizce KAYBOLURDU) — `k.tur` kontrolüyle ayrıldı: turnuva girdileri esnek
+bir `flex-wrap` ızgarada TÜM takımları gösteriyor (sabit `KM_YARISMA_PDF_RENKLERI`, 5 renk — canlı
+ekranın koyu-zemin `KM_TAKIM_RENKLERI`si beyaz PDF'te düşük kontrast kalırdı, PDF'e özel ayrı palet),
+rozet "TURNUVA RAPORU — NvN · X Takım", yorum metni "turnuvayı kazandı" diline geçiyor. Eski 2 takımlı
+(Hayali Rakip) dal HİÇ değişmedi. Gerçek testte doğrulandı: 3 takımlı bir turnuva sonuna kadar
+oynatıldı, `kmYarismaGecmisiHTML()` çıktısında "undefined" YOK, PDF şablonu (html2pdf'in save()'i
+stub'lanıp temp div canlı tutularak) ekran görüntüsüyle doğrulandı — şampiyon altın çerçeveli, 3 takım
+da düzgün ızgarada, "KAZANILAN MAÇ SAYISI" etiketi doğru. Final geri alınınca geçmiş kaydının da
+silindiği (1→0) ayrıca doğrulandı.
+
+### 16f. "perşembe 22:00" commit soruşturması (2026-09-10)
+
+Bu fazın ortasında yerel `main`'de kullanıcının ATMADIĞINI belirttiği bir commit bulundu:
+`b66e0ce "perşembe 22:00"`, yazar/committer BURAK <burakdaglioglu@gmail.com>, Thu Sep 10 21:40:34
+2026 +0300, imzasız. İçeriği tam olarak o an yazılmakta olan Stage 4 bracket kodu (245 satır ekleme) —
+zararlı/yabancı bir şey YOK, ama kaynağı bilinmiyordu. Kullanıcı isteğiyle 5 noktadan araştırıldı:
+
+1. `.git/hooks/` — SADECE `.sample` dosyalar var, hiçbiri aktif değil. Hook DEĞİL.
+2. `.git/config` — `core.hooksPath` override yok, şüpheli alias yok.
+3. VS Code — kullanıcı `settings.json`'da (`%APPDATA%\Code\User\settings.json`) tek satır var
+   (`claudeCode.preferredLocation`), hiçbir `git.*` ayarı YOK; zaten VS Code'un varsayılan/yerleşik bir
+   "periyodik otomatik commit" özelliği hiç yok. Kurulu eklentiler sadece 2 tane: Claude Code'un kendisi
+   + bir PDF görüntüleyici — commit otomasyonuyla ilgili hiçbir eklenti YOK.
+4. `package.json`/repo scriptleri — `git commit`/`git add` çağıran hiçbir script yok.
+5. Başka bir Claude oturumu — `ListAgents` o an ulaşılabilir başka bir oturum göstermedi; süreç listesi
+   tüm gün boyunca TEK bir `claude` süreci gösterdi (12:18'de başlamış, commit saatinden çok önce).
+   Windows Görev Zamanlayıcı'da da git/backup ile ilgili özel bir görev yok (sadece standart Windows
+   sistem görevleri).
+
+**Bulunan tek somut ipucu**: bir `cmd.exe` (PID 4716) + `WindowsTerminal` (PID 23896) çifti tam
+**21:40:02-03**'te başlamış — commit'ten SADECE 32 saniye önce. PowerShell (PSReadLine) geçmişinde bu
+saate ait bir `git commit` komutu YOK (cmd.exe'nin kendi geçmişi diske kalıcı yazılmıyor, bu yüzden
+kanıt bekleniyordu değil). **Sonuç**: 4 otomasyon yolu da (hook/config, VS Code, proje scripti,
+zamanlanmış görev) NEGATİF — kapatılacak bir şey bulunamadı. Kanıtlar (yeni açılan bir terminal
+penceresi, hemen ardından gelen commit) elle, bir terminalden atılmış bir commit'e işaret ediyor,
+otomatik bir mekanizmaya değil. Kim attığı OS kayıtlarından çıkarılamadı — kullanıcıya "sizin
+bilgisayarınızda o saatte başka biri/bir şey olabilir mi" sorusu açık bırakıldı.
