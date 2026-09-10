@@ -16664,7 +16664,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(!turMaclari.length || !turMaclari.every(m => m.durum === 'bitti')) return;
             if(tur >= _kmYarismaBracketToplamTur) {
                 let sampiyon = _kmTakimlar[turMaclari[0].kazananIdx];
-                if(sampiyon) kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 TURNUVA ŞAMPİYONU! 🏆', ad: sampiyon.ad, aciklama: 'Tebrikler!', deger: '🎉' });
+                // kutlamalarSessiz BURADA yanlış bayrak olurdu — o sadece _seriSonrasiOdulVeLog'un
+                // geçici bir sarmalayıcısı (finally'de hep false'a dönüyor). Ciddi mod kontrolü
+                // Oyunlar/Arena'nın HER YERDE kullandığı gerçek desenle aynı: ciddiModAcik'i doğrudan oku.
+                let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+                if(sampiyon && !ciddi) kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 TURNUVA ŞAMPİYONU! 🏆', ad: sampiyon.ad, aciklama: 'Tebrikler!', deger: '🎉' });
                 return;
             }
             if(_kmYarismaBracketMaclar.some(m => m.tur === tur + 1)) return; // zaten üretilmiş

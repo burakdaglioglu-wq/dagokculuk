@@ -2172,3 +2172,80 @@ kalıp iki yerde iki farklı arayüz olarak tekrarlanmasın. Fark: Arena bire-bi
 burası turnuva (tur tur ilerler, kazanan üst tura çıkar, görünür eleme ağacı — Çeyrek Final/Yarı
 Final/Final adlandırmasıyla, dallar finale birleşir). Takım renkleri ağaç+liste+sonuç ekranında HEP
 aynı olacak.
+
+### 16d. Stage 4 — Turnuva ağacı (tamamlandı, deploy edildi)
+
+**Mimari karar — kopyala/uyarla, ortak bileşene ZORLAMA**: Düello Arena'nın Stage 1 eşleştirme kalıbı
+(dokun→seç, tekrar dokun→eşleş, 🎲 Otomatik Eşleştir, kaldırılabilir eşleşme listesi) YENİ, PARALEL
+bir fonksiyon setine (`kmYarismaBracket*`) KOPYALANDI, Arena'nın kendi state'ine (`_kmOyunArena*`) hiç
+dokunulmadı. Gerekçe (kullanıcı onaylı): Arena üretimde çalışan, 4 aşama boyunca test edilmiş bir
+özellik — ortak bir soyutlamaya zorlamak o kodu riske atardı. Bedeli: aynı etkileşim deseni iki yerde
+ayrı ayrı yaşıyor, ileride biri değişirse öbürü otomatik takip etmez — bu bilinçli bir ödünleşim.
+
+**"Gerçek Takım" modu artık turnuvaya gidiyor, "Hayali Rakip" HİÇ değişmedi**: turnuva kavramı 1
+simüle rakibe uymadığı için Hayali Rakip eski akışında (`kmYarismaBaslat`/`kmYarismaSkorbordCiz`/
+`kmYarismaBitir`, hiç dokunulmadı) kaldı. Gerçek Takım'da "Yarışmayı Başlat" düğmesi
+"▶ Turnuvayı Başlat (Eşleştir)" oldu ve `kmYarismaBracketEslestirmeyeGec()`'e gidiyor. Eski "gerçek
+çok-takımlı" skorbord dalı (`kmYarismaSkorbordCiz` içinde) SİLİNMEDİ ama artık hiçbir UI yolundan
+ULAŞILAMIYOR — bilinçli olarak: çalışan kodu silmek yeni bir risk, gerekirse geri açmak kolay.
+"Ortak Tur Süresi" seçici de artık sadece Hayali Rakip'te görünüyor (turnuvada süre/timer YOK, kazananı
+SADECE koç seçiyor — aşağıya bkz).
+
+**Maç sonucunu SADECE koç belirler, otomatik/canlı-bitirme YOK**: her aktif maç kartında iki takım
+adına dokunmak o takımı kazanan ilan eder — ana uygulamanın mevcut bracket'inin (`setSonucu`, §2f)
+elle-sonuç kalıbıyla AYNI, ama mevcut `kmYarismaBaslat/Bitir`/zamanlayıcı state machine'ine HİÇ
+dokunulmadı (proje kuralı: skor/veri katmanı onaysız değiştirilmez). "Canlı puan" yine de gösteriliyor
+— Stage 2/3'ün AYNI skor-farkı formülüyle (`Math.max(0, toplam-baz)`), ama `baz` her MAÇA ÖZEL bir
+anlık görüntü (maç kurulurken alınıyor, `_kmYarismaBracketBaslangicSnapshot`) — global
+`_kmYarismaBaslangicPuan`'a hiç dokunmuyor, salt okunur.
+
+**İstek #1 — bay geçme açıkça gösteriliyor**: takım sayısı 2'nin katı olmadığında (3, 5) eşleştirme
+ekranında havuzda TEK takım kalırsa turuncu bir uyarı satırı çıkıyor ("⚠️ [Takım] bu turda açıkta — eşi
+yok, otomatik bir üst tura çıkacak (bay)."), "Turnuvayı Başlat"a basılınca o takım için otomatik
+`durum:'bitti'` bir "bay" maçı üretiliyor ve ağaçta KENDİNE ÖZGÜ, kesikli çerçeveli bir kart olarak
+("🎫 [Takım] bay geçti — otomatik üst tura çıktı.") ayrı gösteriliyor — normal bir maç gibi GÖRÜNMÜYOR,
+koç nedenini görüyor. 5 takımda bu zincirleme iki kez de olabiliyor (round1'de 1 bay, round2'de 1 bay)
+— gerçek testte doğrulandı.
+
+**İstek #2 — kalıcılık, Stage 2'nin AYNI mekanizması, yeni bir yol AÇILMADI**: `_kmYarismaBracketGorunum/
+Eslesmeler/Maclar/ToplamTur` Stage 2'nin `_kmYarismaKurulumKaydet/Yukle()`'sindeki AYNI pakete, AYNI
+tarih damgasına eklendi. Bir gün önceki tarihle bayatlatılmış bir turnuva verisi gerçek testte
+doğrulandı: geri yüklenmedi, temiz kurulum ekranına düştü.
+
+**İstek #3 — geri alma (küçük düzelt, tam sıfırlama değil)**: bitmiş her maçın altında "↩️ Düzelt"
+var. Basınca SADECE o maç `devam`'a döner VE bu takımın kazandığı varsayımıyla ÜRETİLMİŞ bir sonraki
+tur (henüz oynanmamışsa) tamamen silinir — ağaç o sonuca göre kurulmuştu, yanlış kazananla üretilmiş
+bir sonraki tur anlamsız kalırdı. O sonraki maç ZATEN bitmişse (koç orada da ilerlemişse) geri alma
+engellenir ("önce o sonucu geri al" uyarısı) — sessizce ağacı bozmasın diye. Gerçek testte doğrulandı:
+3 takımlı bir turnuvada round1 geri alındı, round2 (finale) tamamen silindiği görüldü, yeniden
+oynanıp şampiyona ulaşıldı.
+
+**Tur adları — maç sayısına göre DEĞİL, finale olan uzaklığa göre**: bay'lı turlarda maç sayısı
+yanıltıcı olurdu (3 takımda 1. tur sadece 1 gerçek maç içeriyor ama Final DEĞİL, Yarı Final'dir — 2.
+tur hâlâ var). `_kmYarismaTurAdi(tur, toplamTur)`, `toplamTur = Math.ceil(log2(takımSayısı))`
+üzerinden "finale kaç tur kaldığı"na bakıyor: 0→FİNAL, 1→YARI FİNAL, 2→ÇEYREK FİNAL. 2/3/4/5 takımın
+hepsinde gerçek oynatılarak doğrulandı (2→direkt FİNAL, 3 ve 4→YARI FİNAL sonra FİNAL, 5→ÇEYREK FİNAL
+sonra YARI FİNAL sonra FİNAL, 3 tur boyunca zincirleme bay dahil).
+
+**Renk tutarlılığı**: hiçbir yerde renk KOPYALANMIYOR — eşleştirme ekranı, maç kartları, şampiyon
+kutusu HEP `_kmTakimlar[idx].renk`'i canlı okuyor (indeks referanslı model). Stage 3'te bir takımın
+rengi değiştirilirse ağaçtaki HER görünüm otomatik takip eder, ayrı senkron gerekmez.
+
+**Gerçek bir ikinci güvenlik/mantık bulgusu, kendiliğinden yakalandı**: ilk yazımda şampiyon
+kutlamasını `kutlamaKuyrukEkle`'nin kendi `kutlamalarSessiz` bayrağına güvenerek tetikliyordum — ama
+o bayrak SADECE `_seriSonrasiOdulVeLog`'un geçici bir sarmalayıcısı (finally'de hep `false`'a dönüyor),
+Ciddi Mod'un GERÇEK göstergesi değil. Test ciddi modu doğrularken bu fark edildi: Oyunlar/Arena'nın
+HER YERDE kullandığı gerçek desen (`typeof ciddiModAcik !== 'undefined' && ciddiModAcik`) yerine
+konuldu, ciddi modda kutlama/konfeti KAPALI ama şampiyon kutusu (sonuç) YİNE görünür olduğu gerçek
+testle doğrulandı.
+
+**XSS**: takım adları serbest metin olduğu için (Stage 3'ten miras) eşleştirme ekranı, maç kartları,
+şampiyon kutusu — hepsi `esc()` ile kaçırıyor. Gerçek `<img src=x onerror=...>` payload'ıyla test
+edildi, hem eşleştirme hem ağaç ekranında `innerHTML`'de gerçek bir `<img>` etiketi OLUŞMADI.
+
+Test PIN'i sonrasında gerçek `egitmen_hash`'e geri alındı, `node --check` temiz, diğer 10 Karışık
+Sınıf aracı + Oyunlar hatasız çizildi, skor paneli piksel piksel aynı kaldı, 360/1280px temiz.
+
+**Faz 13 bu noktada durumu**: Stage 1-4 tamamlandı. Bilinçli olarak ele ALINMAYAN: turnuva sonuçlarının
+eski `_kmYarismaGecmisi`/PDF geçmişine eklenmesi (o mekanizma artık sadece Hayali Rakip'ten besleniyor;
+turnuva şampiyonlarının kendi geçmişi yok) — kullanıcı isterse ayrı bir iş olarak ele alınabilir.
