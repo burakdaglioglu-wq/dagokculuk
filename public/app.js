@@ -16388,6 +16388,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmYarismaGecmisAcik = false;
         function _kmYarismaGecmisiKaydet() { try { localStorage.setItem('dag_km_yarisma_gecmisi', JSON.stringify(_kmYarismaGecmisi)); } catch(e) {} }
 
+        // 🏆 TURNUVA AĞACI (Faz 13 Stage 4, 2026-09) — SADECE "Gerçek Takım" modunda kullanılıyor;
+        // "Hayali Rakip" bire-bir simüle rakip mantığı bir turnuva kavramına uymuyor, o hep eski akışta
+        // kalıyor (kmYarismaBaslat/kmYarismaSkorbordCiz/kmYarismaBitir HİÇ değiştirilmedi). Gerçek
+        // Takım modunda "Yarışmayı Başlat" artık BU akışa gidiyor: önce eşleştirme (Düello Arena'nın
+        // Stage 1 kalıbından KOPYALANIP UYARLANDI — ortak bileşene çıkarmak Arena'nın çalışan halini
+        // bozma riski taşıdığı için bilinçli olarak yapılmadı, bkz. DEVIR.md §16d), sonra tur tur
+        // ilerleyen eleme ağacı. `_kmTakimlar`'a DOKUNMUYOR — sadece hangi takımın hangi takımla
+        // eşleştiğini ve kimin kazandığını, indeks referanslarıyla tutuyor (isim/renk HER ZAMAN
+        // `_kmTakimlar[idx]`'den okunuyor — tek kaynak, ağaç/liste/sonuç ekranı otomatik tutarlı kalır).
+        let _kmYarismaBracketGorunum = null;   // null (turnuva yok) | 'eslestirme' | 'agac'
+        let _kmYarismaBracketEslesmeler = [];  // [{aIdx,bIdx}] — SADECE 1. tur kurulurken kullanılıyor
+        let _kmYarismaBracketSecili = null;    // eşleştirme ekranında dokunulup eş bekleyen takım idx'i
+        let _kmYarismaBracketMaclar = [];      // [{id,tur,aIdx,bIdx(null=bay),durum,kazananIdx,isBye,baslangicPuan}]
+        let _kmYarismaBracketToplamTur = 0;    // turnuva başlarken bir kere hesaplanır: Math.ceil(log2(takımSayısı))
+
         // 💾 KURULUM KALICILIĞI (2026-09) — eskiden _kmTakimlar sadece bellekte yaşıyordu, sekme/sayfa
         // yenilenince sessizce sıfırlanıyordu. Konum bazlı (aynı desende: dag_km_liste_<konum>) ve
         // TARİH DAMGALI kaydediliyor — bugüne ait değilse geri yüklenmez ve anahtar silinir, yoksa
@@ -16398,7 +16413,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let paket = {
                     tarih: bugunISO(), takimSayisi: _kmYarismaTakimSayisi, takimlar: _kmTakimlar, format: _kmYarismaFormat,
                     rakipTipi: _kmRakipTipi, hayaliZorluk: _kmHayaliZorluk, suresi: _kmYarismaSuresi,
-                    aktif: _kmYarismaAktif, baslangicPuan: _kmYarismaBaslangicPuan, bitis: _kmYarismaBitis
+                    aktif: _kmYarismaAktif, baslangicPuan: _kmYarismaBaslangicPuan, bitis: _kmYarismaBitis,
+                    // Faz 13 Stage 4 — turnuva ağacı da AYNI paket/AYNI tarih damgası kuralına biniyor,
+                    // ayrı bir kayıt yolu açılmadı.
+                    bracketGorunum: _kmYarismaBracketGorunum, bracketEslesmeler: _kmYarismaBracketEslesmeler,
+                    bracketMaclar: _kmYarismaBracketMaclar, bracketToplamTur: _kmYarismaBracketToplamTur
                 };
                 localStorage.setItem(_kmYarismaKurulumAnahtari(), JSON.stringify(paket));
             } catch(e) {}
@@ -16417,6 +16436,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmYarismaBaslangicPuan = p.baslangicPuan || {};
                 _kmYarismaBitis = p.bitis || 0;
                 _kmYarismaAktif = !!p.aktif;
+                _kmYarismaBracketGorunum = p.bracketGorunum || null;
+                _kmYarismaBracketEslesmeler = p.bracketEslesmeler || [];
+                _kmYarismaBracketMaclar = p.bracketMaclar || [];
+                _kmYarismaBracketToplamTur = p.bracketToplamTur || 0;
                 // Hayali Rakip'in kendi puanı/yorumları kalıcı değil — kmYarismaSkorbordCiz zaten her
                 // çizimde _kmHayaliRakipGuncelle ile gerçek turlardan yeniden türetiyor, tek kaynak
                 // _kmYarismaBaslangicPuan (yukarıda geri yüklendi).
@@ -16505,12 +16528,224 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmYarismaAktifMaciTemizle();
             _kmYarismaSuresi = 0;
             _kmTakimlar = _kmTakimlarOlustur(_kmYarismaTakimSayisi);
+            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
+            _kmYarismaBracketMaclar = []; _kmYarismaBracketToplamTur = 0;
             try { localStorage.removeItem(_kmYarismaKurulumAnahtari()); } catch(e) {}
         }
         function kmYarismaYeniTurnuva() {
-            let doluVarMi = _kmTakimlar.some(t => t.uyeler.length > 0);
-            if(doluVarMi && !confirm('Yeni turnuva başlatılsın mı?\n\nMevcut takım kurulumu silinecek. (Geçmiş sonuçlar silinmez.)')) return;
+            let doluVarMi = _kmTakimlar.some(t => t.uyeler.length > 0) || _kmYarismaBracketMaclar.length > 0;
+            if(doluVarMi && !confirm('Yeni turnuva başlatılsın mı?\n\nMevcut takım kurulumu ve turnuva ağacı silinecek. (Geçmiş sonuçlar silinmez.)')) return;
             kmYarismaSifirla(); kmYarismaKurulumCiz(); showToast('Yeni turnuva için kurulum sıfırlandı.', 'success');
+        }
+
+        // ═══════════ TURNUVA AĞACI (Faz 13 Stage 4) ═══════════
+        // Eşleştirme ekranı Düello Arena'nın Stage 1'inden (§15a) KOPYALANIP UYARLANDI — aynı etkileşim
+        // kalıbı (dokun→seç, tekrar dokun→eşleş, 🎲 Otomatik Eşleştir, kaldırılabilir eşleşme listesi)
+        // ama ATLET yerine TAKIM üzerinde çalışıyor. Ortak bir fonksiyona çıkarılmadı — Arena'nın kendi
+        // state'i (_kmOyunArena*) ve kabuğu (kmOyunPanelHTML/kmOyunIlerlet dispatch zinciri) bu ekranla
+        // hiç kesişmiyor, ortak bir soyutlamaya zorlamak çalışan Arena kodunu riske atardı (bkz. DEVIR.md
+        // §16d). Bu yüzden BİLEREK ayrı, paralel bir fonksiyon seti: kmYarismaBracket*.
+        function kmYarismaBracketEslestirmeyeGec() {
+            if(_kmYarismaAktifTakimlar().length < 2) return showToast('En az 2 takımda sporcu olmalı.', 'error');
+            _kmYarismaBracketGorunum = 'eslestirme'; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
+            kmYarismaCiz();
+        }
+        function kmYarismaBracketKurulumaDon() {
+            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
+            kmYarismaKurulumCiz();
+        }
+        function _kmYarismaBracketKatilimciIdx() { return _kmTakimlar.map((t, i) => i).filter(i => _kmTakimlar[i].uyeler.length > 0); }
+        function kmYarismaBracketHavuzTikla(idx) {
+            if(_kmYarismaBracketSecili === null) _kmYarismaBracketSecili = idx;
+            else if(_kmYarismaBracketSecili === idx) _kmYarismaBracketSecili = null;
+            else { _kmYarismaBracketEslesmeler.push({ aIdx: _kmYarismaBracketSecili, bIdx: idx }); _kmYarismaBracketSecili = null; }
+            kmYarismaBracketEslestirmeCiz();
+        }
+        function kmYarismaBracketEslesmeSil(i) { _kmYarismaBracketEslesmeler.splice(i, 1); kmYarismaBracketEslestirmeCiz(); }
+        function kmYarismaBracketOtomatikEslestir() {
+            let eslesmis = new Set(_kmYarismaBracketEslesmeler.flatMap(e => [e.aIdx, e.bIdx]));
+            let havuz = _kmYarismaBracketKatilimciIdx().filter(i => !eslesmis.has(i));
+            for(let i = havuz.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [havuz[i], havuz[j]] = [havuz[j], havuz[i]]; }
+            for(let i = 0; i + 1 < havuz.length; i += 2) _kmYarismaBracketEslesmeler.push({ aIdx: havuz[i], bIdx: havuz[i + 1] });
+            _kmYarismaBracketSecili = null;
+            kmYarismaBracketEslestirmeCiz();
+        }
+        function kmYarismaBracketEslestirmeCiz() {
+            let el = document.getElementById('km-icerik'); if(!el) return;
+            let katilimciIdx = _kmYarismaBracketKatilimciIdx();
+            let eslesmis = new Set(_kmYarismaBracketEslesmeler.flatMap(e => [e.aIdx, e.bIdx]));
+            let havuzIdx = katilimciIdx.filter(i => !eslesmis.has(i));
+            let takimChip = (idx) => {
+                let t = _kmTakimlar[idx]; let seciliMi = _kmYarismaBracketSecili === idx;
+                return `<div onclick="kmYarismaBracketHavuzTikla(${idx})" style="cursor:pointer; padding:8px 12px; border-radius:20px; font-size:12px; font-weight:800; border:1.5px solid ${t.renk}; background:${seciliMi ? t.renk : 'var(--bg-panel)'}; color:${seciliMi ? '#0d1016' : t.renk};">${esc(t.ad)}</div>`;
+            };
+            let eslesmeSatiri = (e, i) => `<div style="display:flex; align-items:center; gap:8px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:8px 10px; margin-bottom:6px;">
+                <div style="flex:1; font-weight:800; font-size:12px; color:${_kmTakimlar[e.aIdx].renk};">${esc(_kmTakimlar[e.aIdx].ad)}</div>
+                <div style="font-size:10px; color:var(--text-muted);">VS</div>
+                <div style="flex:1; text-align:right; font-weight:800; font-size:12px; color:${_kmTakimlar[e.bIdx].renk};">${esc(_kmTakimlar[e.bIdx].ad)}</div>
+                <div onclick="kmYarismaBracketEslesmeSil(${i})" style="cursor:pointer; color:var(--neon-red); font-size:15px; padding:0 4px; font-weight:900;">✕</div>
+            </div>`;
+            let baslatMi = havuzIdx.length <= 1 && _kmYarismaBracketEslesmeler.length > 0;
+            let html = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-size:14px; font-weight:900;">⚔️ Turnuva — Takımları Eşleştir</div>
+                    <div onclick="kmYarismaBracketKurulumaDon()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">← Kuruluma Dön</div>
+                </div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Takımlar (dokun, sonra eşleşecek takıma dokun)</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                    ${havuzIdx.length ? havuzIdx.map(takimChip).join('') : `<div style="font-size:11px; color:var(--text-muted);">Tüm takımlar eşleşti.</div>`}
+                </div>
+                ${havuzIdx.length === 1 ? `<div style="font-size:11px; font-weight:700; color:var(--accent-orange); margin-bottom:10px;">⚠️ ${esc(_kmTakimlar[havuzIdx[0]].ad)} bu turda açıkta — eşi yok, otomatik bir üst tura çıkacak (bay).</div>` : ''}
+                <div onclick="kmYarismaBracketOtomatikEslestir()" style="text-align:center; cursor:pointer; font-size:11px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:9px; padding:7px; margin-bottom:14px;">🎲 Otomatik Eşleştir</div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Eşleşmeler (${_kmYarismaBracketEslesmeler.length})</div>
+                <div style="margin-bottom:16px;">${_kmYarismaBracketEslesmeler.length ? _kmYarismaBracketEslesmeler.map(eslesmeSatiri).join('') : `<div style="font-size:11px; color:var(--text-muted);">Henüz eşleşme yok.</div>`}</div>
+                <button onclick="kmYarismaBracketTuruBaslat()" ${baslatMi ? '' : 'disabled'} style="width:100%; padding:13px; border-radius:12px; border:none; background:${baslatMi ? 'linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta))' : 'var(--bg-panel)'}; color:${baslatMi ? '#0d1016' : 'var(--text-muted)'}; font-weight:900; font-size:14px; cursor:${baslatMi ? 'pointer' : 'not-allowed'};">${baslatMi ? '▶ Turnuvayı Başlat' : (havuzIdx.length > 1 ? 'Önce herkesi eşleştirin' : 'En az bir eşleşme gerekli')}</button>
+            `;
+            el.innerHTML = html;
+            _kmYarismaKurulumKaydet();
+        }
+        function _kmYarismaBracketToplamTurSayisi(n) { return Math.max(1, Math.ceil(Math.log2(n))); }
+        // Tur adı MAÇ SAYISINA göre değil, FİNALE OLAN UZAKLIĞA göre — bay'lı turlarda maç sayısı
+        // yanıltıcı olurdu (ör. 3 takımda 1. tur sadece 1 gerçek maç+1 bay içerir ama bu FİNAL değil,
+        // henüz 2. tur var; "uzaklık" kuralı bunu doğru YARI FİNAL olarak adlandırır).
+        function _kmYarismaTurAdi(tur, toplamTur) {
+            let uzaklik = toplamTur - tur;
+            if(uzaklik <= 0) return '🏆 FİNAL';
+            if(uzaklik === 1) return '🔥 YARI FİNAL';
+            if(uzaklik === 2) return '⚔️ ÇEYREK FİNAL';
+            if(uzaklik === 3) return '⚔️ 1/8 FİNAL';
+            return tur + '. TUR';
+        }
+        // Bir maçın "canlı puanı" — Stage 2/3'ün skor-farkı formülüyle AYNI (Math.max(0, toplam-baz)),
+        // sadece baz her MAÇA özel bir anlık görüntü (maç kurulurken alınıyor), global
+        // _kmYarismaBaslangicPuan'a hiç dokunmuyor. Salt okunur — hiçbir yazma yolu değiştirilmedi.
+        function _kmYarismaBracketBaslangicSnapshot(idxListesi) {
+            let snap = {};
+            idxListesi.forEach(idx => { _kmTakimlar[idx].uyeler.forEach(u => {
+                let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad];
+                snap[u.g + '|' + u.ad] = sp ? (sp.toplamSkor || 0) : 0;
+            }); });
+            return snap;
+        }
+        function _kmYarismaBracketMacPuani(m, taraf) {
+            let idx = taraf === 'a' ? m.aIdx : m.bIdx; if(idx == null) return 0;
+            let t = _kmTakimlar[idx]; if(!t) return 0;
+            return t.uyeler.reduce((toplam, u) => {
+                let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad]; if(!sp) return toplam;
+                let baz = (m.baslangicPuan && m.baslangicPuan[u.g + '|' + u.ad]) || 0;
+                return toplam + Math.max(0, (sp.toplamSkor || 0) - baz);
+            }, 0);
+        }
+        function _kmYarismaBracketMacOlustur(tur, aIdx, bIdx) {
+            let bay = (bIdx === null || bIdx === undefined);
+            return {
+                id: 'kmybmac_' + tur + '_' + aIdx + '_' + (bay ? 'bay' : bIdx) + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+                tur, aIdx, bIdx: bay ? null : bIdx, durum: bay ? 'bitti' : 'devam', kazananIdx: bay ? aIdx : null, isBye: bay,
+                baslangicPuan: bay ? null : _kmYarismaBracketBaslangicSnapshot([aIdx, bIdx])
+            };
+        }
+        function kmYarismaBracketTuruBaslat() {
+            let katilimciIdx = _kmYarismaBracketKatilimciIdx();
+            let eslesmis = new Set(_kmYarismaBracketEslesmeler.flatMap(e => [e.aIdx, e.bIdx]));
+            let acikta = katilimciIdx.filter(i => !eslesmis.has(i));
+            if(acikta.length > 1) return showToast('Önce tüm takımları eşleştirin.', 'warning');
+            if(!_kmYarismaBracketEslesmeler.length) return showToast('En az bir eşleşme gerekli.', 'warning');
+            _kmYarismaBracketToplamTur = _kmYarismaBracketToplamTurSayisi(katilimciIdx.length);
+            _kmYarismaBracketMaclar = _kmYarismaBracketEslesmeler.map(e => _kmYarismaBracketMacOlustur(1, e.aIdx, e.bIdx));
+            if(acikta.length === 1) _kmYarismaBracketMaclar.push(_kmYarismaBracketMacOlustur(1, acikta[0], null));
+            _kmYarismaBracketGorunum = 'agac';
+            kmYarismaCiz();
+        }
+        // Bir tur TAMAMEN bittiğinde (bay'lar zaten 'bitti' doğuyor) kazananları bir sonraki tura
+        // OTOMATİK taşır — ana uygulamanın mevcut checkTurBittiMi() ile AYNI tetikleme deseni (§2f),
+        // ama takım/renk modeli farklı olduğu için ayrı yazıldı.
+        function kmYarismaBracketTurKontrolEt(tur) {
+            let turMaclari = _kmYarismaBracketMaclar.filter(m => m.tur === tur);
+            if(!turMaclari.length || !turMaclari.every(m => m.durum === 'bitti')) return;
+            if(tur >= _kmYarismaBracketToplamTur) {
+                let sampiyon = _kmTakimlar[turMaclari[0].kazananIdx];
+                if(sampiyon) kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 TURNUVA ŞAMPİYONU! 🏆', ad: sampiyon.ad, aciklama: 'Tebrikler!', deger: '🎉' });
+                return;
+            }
+            if(_kmYarismaBracketMaclar.some(m => m.tur === tur + 1)) return; // zaten üretilmiş
+            let kazananlar = turMaclari.map(m => m.kazananIdx);
+            let yeniMaclar = [];
+            for(let i = 0; i + 1 < kazananlar.length; i += 2) yeniMaclar.push(_kmYarismaBracketMacOlustur(tur + 1, kazananlar[i], kazananlar[i + 1]));
+            if(kazananlar.length % 2 !== 0) yeniMaclar.push(_kmYarismaBracketMacOlustur(tur + 1, kazananlar[kazananlar.length - 1], null));
+            _kmYarismaBracketMaclar = _kmYarismaBracketMaclar.concat(yeniMaclar);
+            kmYarismaBracketTurKontrolEt(tur + 1); // yeni tur da tamamen bay'lardan oluşuyorsa zincirlensin
+        }
+        // Kritik kural: otomatik/rastgele kazanan YOK — kazananı SADECE koç, takıma dokunarak seçer.
+        // Bu, canlı puan sadece BİLGİ amaçlı gösterilse de (aynı skor-farkı formülüyle, salt okunur),
+        // maçı KİMİN bitirdiğine karar veren tek şey koçun dokunuşu — mevcut ana uygulama bracket'inin
+        // (setSonucu, §2f) elle-sonuç kalıbıyla AYNI, sadece süre/timer entegrasyonu YOK (bilinçli
+        // seçim — mevcut kmYarismaBaslat/Bitir/timer state machine'ine HİÇ dokunulmadı).
+        function kmYarismaBracketKazananSec(macId, taraf) {
+            let m = _kmYarismaBracketMaclar.find(x => x.id === macId); if(!m || m.durum !== 'devam') return;
+            m.kazananIdx = taraf === 'a' ? m.aIdx : m.bIdx;
+            m.durum = 'bitti';
+            kmYarismaBracketTurKontrolEt(m.tur);
+            kmYarismaBracketAgacCiz();
+        }
+        // Geri al (Stage 4 istek #3): sadece bu maçı DEĞİL, bu maçın kazananının bir sonraki turda
+        // ZATEN oluşturulmuş (ama henüz oynanmamış) maçını da siler — ağaç bu maçın sonucundan
+        // türetilmişti, yanlış kazananla üretilmiş bir sonraki tur anlamsız kalırdı. O sonraki maç
+        // ZATEN bitmişse (koç orada da ilerlemişse) geri alma engellenir, önce O geri alınmalı.
+        function kmYarismaBracketMacGeriAl(macId) {
+            let m = _kmYarismaBracketMaclar.find(x => x.id === macId); if(!m || m.durum !== 'bitti' || m.isBye) return;
+            let sonrakiTur = m.tur + 1;
+            let etkilenen = _kmYarismaBracketMaclar.filter(x => x.tur === sonrakiTur && (x.aIdx === m.kazananIdx || x.bIdx === m.kazananIdx));
+            if(etkilenen.some(x => x.durum === 'bitti')) { showToast('Bu takım bir sonraki turda da maçını bitirmiş — önce o sonucu geri al.', 'warning'); return; }
+            _kmYarismaBracketMaclar = _kmYarismaBracketMaclar.filter(x => x.tur <= m.tur);
+            m.durum = 'devam'; m.kazananIdx = null;
+            kmYarismaBracketAgacCiz();
+        }
+        function kmYarismaBracketMacKartHTML(m) {
+            if(m.isBye) {
+                let t = _kmTakimlar[m.aIdx]; if(!t) return '';
+                return `<div style="background:var(--bg-panel); border:1.5px dashed ${t.renk}; border-radius:10px; padding:12px; font-size:11.5px; font-weight:700; color:${t.renk}; min-width:220px; margin-bottom:12px;">🎫 ${esc(t.ad)} bay geçti — otomatik üst tura çıktı.</div>`;
+            }
+            let a = _kmTakimlar[m.aIdx], b = _kmTakimlar[m.bIdx]; if(!a || !b) return '';
+            let bitti = m.durum === 'bitti';
+            let aKazandi = bitti && m.kazananIdx === m.aIdx, bKazandi = bitti && m.kazananIdx === m.bIdx;
+            let aPuan = !bitti ? _kmYarismaBracketMacPuani(m, 'a') : null;
+            let bPuan = !bitti ? _kmYarismaBracketMacPuani(m, 'b') : null;
+            let tarafHTML = (ad, renk, kazandiMi, puan, tarafKodu) => `<div ${!bitti ? `onclick="kmYarismaBracketKazananSec('${m.id}','${tarafKodu}')"` : ''} style="cursor:${!bitti ? 'pointer' : 'default'}; display:flex; justify-content:space-between; align-items:center; padding:7px 9px; border-radius:8px; margin-bottom:4px; background:${kazandiMi ? renk + '22' : 'var(--bg-main)'}; border:1px solid ${kazandiMi ? renk : 'transparent'};">
+                <span style="font-weight:800; font-size:12px; color:${renk}; ${bitti && !kazandiMi ? 'opacity:.5;' : ''}">${esc(ad)}${kazandiMi ? ' 🏆' : ''}</span>
+                ${puan != null ? `<span style="font-size:11px; color:var(--text-muted);">${puan}p</span>` : ''}
+            </div>`;
+            return `<div style="background:var(--bg-panel); border:1.5px solid ${bitti ? 'var(--gold)' : 'var(--border-color)'}; border-radius:12px; padding:10px; min-width:220px; margin-bottom:12px;">
+                ${tarafHTML(a.ad, a.renk, aKazandi, aPuan, 'a')}
+                <div style="text-align:center; font-size:9px; color:var(--text-muted); margin:2px 0;">${bitti ? 'BİTTİ' : 'DEVAM EDİYOR — KAZANANA DOKUN'}</div>
+                ${tarafHTML(b.ad, b.renk, bKazandi, bPuan, 'b')}
+                ${bitti ? `<div onclick="kmYarismaBracketMacGeriAl('${m.id}')" style="text-align:center; margin-top:6px; font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; text-decoration:underline;">↩️ Düzelt</div>` : ''}
+            </div>`;
+        }
+        function kmYarismaBracketAgacCiz() {
+            let el = document.getElementById('km-icerik'); if(!el) return;
+            let enBuyukTur = _kmYarismaBracketMaclar.length ? Math.max(..._kmYarismaBracketMaclar.map(m => m.tur)) : 1;
+            let sonTur = _kmYarismaBracketMaclar.filter(m => m.tur === _kmYarismaBracketToplamTur);
+            let sampiyonIdx = (sonTur.length === 1 && sonTur[0].durum === 'bitti') ? sonTur[0].kazananIdx : null;
+            let sampiyon = sampiyonIdx != null ? _kmTakimlar[sampiyonIdx] : null;
+            let turlarHTML = '';
+            for(let tur = 1; tur <= enBuyukTur; tur++) {
+                let turMaclari = _kmYarismaBracketMaclar.filter(m => m.tur === tur);
+                turlarHTML += `<div class="bracket-round"><div style="font-weight:800; text-align:center; font-size:12px; border-bottom:1px solid var(--border-color); padding-bottom:6px; margin-bottom:8px; color:var(--gold);">${_kmYarismaTurAdi(tur, _kmYarismaBracketToplamTur)}</div>${turMaclari.map(kmYarismaBracketMacKartHTML).join('')}</div>`;
+            }
+            let html = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-size:14px; font-weight:900;">🏆 Turnuva Ağacı</div>
+                    <div onclick="kmYarismaYeniTurnuva()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">🔄 Yeni Turnuva</div>
+                </div>
+                ${sampiyon ? `<div style="background:linear-gradient(135deg,${sampiyon.renk}22,transparent); border:2px solid ${sampiyon.renk}; border-radius:14px; padding:16px; text-align:center; margin-bottom:16px;">
+                    <div style="font-size:22px;">🏆</div>
+                    <div style="font-size:11px; font-weight:800; color:var(--text-muted); letter-spacing:.08em; text-transform:uppercase; margin:4px 0;">ŞAMPİYON</div>
+                    <div style="font-size:18px; font-weight:900; color:${sampiyon.renk};">${esc(sampiyon.ad)}</div>
+                </div>` : ''}
+                <div style="display:flex; gap:14px; overflow-x:auto; padding-bottom:10px;">${turlarHTML}</div>
+            `;
+            el.innerHTML = html;
+            _kmYarismaKurulumKaydet();
         }
         // Takım sayısı değişince atamalar BİLEREK sıfırlanır (yeniden dağıtmaya çalışmak yerine basit
         // ve öngörülebilir — kurulum aşamasında birkaç dokunuşla yeniden atanabilir).
@@ -16521,7 +16756,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmYarismaCiz() {
             let el = document.getElementById('km-icerik'); if(!el) return;
-            if(_kmYarismaAktif) kmYarismaSkorbordCiz(); else kmYarismaKurulumCiz();
+            if(_kmYarismaBracketGorunum === 'eslestirme') kmYarismaBracketEslestirmeCiz();
+            else if(_kmYarismaBracketGorunum === 'agac') kmYarismaBracketAgacCiz();
+            else if(_kmYarismaAktif) kmYarismaSkorbordCiz();
+            else kmYarismaKurulumCiz();
         }
         function kmYarismaFormatSec(n) {
             _kmYarismaFormat = n;
@@ -16651,14 +16889,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;">
                     ${havuz.length ? havuz.map(item => `<div onclick="kmYarismaAtaTiklama('${item.g}','${item.ad.replace(/'/g,"\\'")}')" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">${item.ad}</div>`).join('') : `<div style="font-size:11px; color:var(--text-muted);">Tüm sporcular atandı.</div>`}
                 </div>
-                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Ortak Tur Süresi</div>
+                ${_kmRakipTipi === 'hayali' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Ortak Tur Süresi</div>
                 <div style="display:flex; gap:6px; margin-bottom:8px;">${sureBtn(0,'Süresiz')}${sureBtn(60,'1 dk')}${sureBtn(120,'2 dk')}${sureBtn(180,'3 dk')}${sureBtn(300,'5 dk')}</div>
                 <div style="display:flex; gap:6px; align-items:center; margin-bottom:16px;">
                     <input type="number" id="km-yarisma-ozel-dk" min="0" placeholder="dk" style="width:56px; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-size:12px; text-align:center;">
                     <input type="number" id="km-yarisma-ozel-sn" min="0" max="59" placeholder="sn" style="width:56px; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-size:12px; text-align:center;">
                     <button onclick="kmYarismaOzelSureAyarla()" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-muted); font-size:11px; font-weight:700; cursor:pointer;">✏️ Özel Süreyi Ayarla</button>
-                </div>
-                <button onclick="kmYarismaBaslat()" ${hazirMi ? '' : 'disabled'} style="width:100%; padding:13px; border-radius:12px; border:none; background:${hazirMi ? 'linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta))' : 'var(--bg-panel)'}; color:${hazirMi ? '#0d1016' : 'var(--text-muted)'}; font-weight:900; font-size:14px; cursor:${hazirMi?'pointer':'not-allowed'}; margin-bottom:10px;">▶ Yarışmayı Başlat</button>
+                </div>` : ''}
+                <button onclick="${_kmRakipTipi === 'hayali' ? 'kmYarismaBaslat()' : 'kmYarismaBracketEslestirmeyeGec()'}" ${hazirMi ? '' : 'disabled'} style="width:100%; padding:13px; border-radius:12px; border:none; background:${hazirMi ? 'linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta))' : 'var(--bg-panel)'}; color:${hazirMi ? '#0d1016' : 'var(--text-muted)'}; font-weight:900; font-size:14px; cursor:${hazirMi?'pointer':'not-allowed'}; margin-bottom:10px;">${_kmRakipTipi === 'hayali' ? '▶ Yarışmayı Başlat' : '▶ Turnuvayı Başlat (Eşleştir)'}</button>
                 ${kmYarismaGecmisiHTML()}
             `;
             el.innerHTML = html;
