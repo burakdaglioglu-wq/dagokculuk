@@ -2074,12 +2074,48 @@ girişle tam bitirildi — 2. ve 3. eşleşme bu süre boyunca HİÇ dokunulmada
 Test PIN'i her tur sonunda gerçek `egitmen_hash`'e geri alındı. `node --check` her adımdan sonra
 temiz.
 
-## 16. Faz 13 — Karışık Sınıf → Yarışma sekmesi (devam ediyor)
+## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
 **Ne yapıyor**: Karışık Sınıf'ın kendi "🏆 Yarışma Modu" sekmesi (`kmSekme('yarisma')` →
 `kmYarismaCiz()`, `_kmTakimlar`/`kmYarisma*`, §2f'deki AYRI/farklı main-app "Yarışmalar" eleme
-ağacından — `#icerik-takimlar`/`elemeAgaciOlustur` — kesin biçimde farklı, KARIŞTIRILMAYACAK) — 2-4
-takımlı puan-farkı yarışması, kalıcılık ve takım boyutu iyileştirmesi alıyor.
+ağacından — `#icerik-takimlar`/`elemeAgaciOlustur` — kesin biçimde farklı, KARIŞTIRILMADI, ikisi de
+hâlâ ayrı ayrı yaşıyor) — kalıcılık kazandı, takım boyutu 2-5'e çıktı, gerçek bir turnuva/eleme ağacı
+mekaniği SIFIRDAN kuruldu.
+
+### Aşama özeti
+
+| Aşama | Kapsam | Commit(ler) |
+|---|---|---|
+| 1 | Teşhis (kod değişikliği yok) — "eşleşmeler kayboluyor" şikayetiyle "eleme ağacı" beklentisinin AYNI ekrana ait olmadığı bulundu, `AskUserQuestion` ile hedef netleştirildi | — |
+| 2 | Kalıcılık — `_kmTakimlar` konum bazlı+tarih damgalı localStorage'a taşındı, maç-bitince-otomatik-sıfırlama kaldırıldı ("Yeni Turnuva" düğmesiyle değiştirildi) | `5661a73` |
+| 3 | Takım boyutları — 2-5 takım (5. renk: `--aurora-violet`), takım başı 5 kişiye kadar, round-robin "Otomatik Dağıt" (seviyeye göre denge YOK), düzenlenebilir isim/renk + bunun açtığı gerçek bir XSS yüzeyinin kapatılması | `8c59937` |
+| 4 | Turnuva ağacı — Arena'nın eşleştirme kalıbı kopyalanıp takımlara uyarlandı, tur tur ilerleyen eleme ağacı, bay geçme, finale-uzaklık bazlı tur adlandırma (Çeyrek Final/Yarı Final/Final), "↩️ Düzelt" ile geri alma, gerçek bir ciddi-mod bayrak hatasının yakalanıp düzeltilmesi | `b66e0ce` (elle atılmış, içerik doğrulandı — bkz. 16f) + `d8af076` |
+| 4 eki | Turnuva şampiyonu → `_kmYarismaGecmisi`/PDF raporu (eskiden sadece Hayali Rakip besliyordu); bu sırada `kmYarismaRaporuPDF()`'in sert 2-takım varsayımı bulundu ve düzeltildi (3+ takımlı bir turnuva PDF'i eskiden takımları sessizce keserdi) | `1ceb09c` |
+
+### Kalıcı kararlar (gelecekte "neden böyle yapılmış" diye sorulursa)
+
+- **Arena'yla ortak bileşene ZORLANMADI** — eşleştirme kalıbı bilerek KOPYALANDI (`kmYarismaBracket*`,
+  Arena'nın `_kmOyunArena*`sine hiç dokunulmadı). Gerekçe: Arena üretimde çalışan, test edilmiş bir
+  özellik, ortak soyutlama o kodu riske atardı. Bedeli: aynı desen iki yerde ayrı yaşıyor.
+- **"Hayali Rakip" tamamen ayrı, eski akışında kaldı** — turnuva kavramı 1 simüle rakibe uymuyor.
+  `kmYarismaBaslat`/`kmYarismaSkorbordCiz`/`kmYarismaBitir`'e HİÇ dokunulmadı.
+- **Maç sonucunu SADECE koç belirler** — otomatik/timer'lı bitirme YOK, mevcut skor state machine'ine
+  dokunulmadı (proje kuralı: skor/veri katmanı onaysız değiştirilmez). Canlı puan salt-okunur bilgi.
+- **Kalıcılık için ayrı bir yol AÇILMADI** — turnuva ağacı da Stage 2'nin AYNI konum-bazlı, tarih-
+  damgalı localStorage paketine eklendi.
+
+### Bilerek ele ALINMAYAN / kalan iş kalemleri
+
+1. Eski "gerçek çok-takımlı" düz skorbord dalı (`kmYarismaSkorbordCiz` içinde) koddan SİLİNMEDİ ama
+   artık hiçbir UI yolundan ulaşılamıyor — çalışan kodu silmenin riskine girilmedi, gerekirse geri
+   açmak kolay.
+2. Turnuva girdilerinde MVP hesaplanmıyor (`mvpAd` hep `null`) — Hayali Rakip/eski düz mod MVP
+   hesaplıyor, turnuva modunda bu kavram henüz karşılığı olmayan bir iş.
+3. "📋 Geçmiş" (turnuva PDF'leri dahil) SADECE kurulum ekranında görünüyor — şampiyon olduktan sonra
+   koç oraya dönmek için "🔄 Yeni Turnuva"ya basmak zorunda (turnuva zaten geçmişe kaydedildiği için
+   veri kaybı yok, ama akış küçük bir sürtünme). Kullanıcı istemedi, dokunulmadı.
+4. Main-app "Yarışmalar" (§2f, `#icerik-takimlar`/`elemeAgaciOlustur`) tamamen ayrı, dokunulmadı —
+   iki sistem kasıtlı olarak birleştirilmedi.
 
 ### 16a. Stage 1 — Teşhis (kod değişikliği yok)
 
