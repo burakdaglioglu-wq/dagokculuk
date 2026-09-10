@@ -23,7 +23,13 @@
       ...options,
       headers: { "content-type": "application/json", ...(options && options.headers) },
     });
-    if (!res.ok && res.status !== 409) throw new Error("api " + path + " -> " + res.status);
+    if (!res.ok && res.status !== 409) {
+      // .status eklendi ki fanOutMasterPayload hangi job'ın 401 (yetkisiz/PIN'siz) yüzünden
+      // başarısız olduğunu ayırt edebilsin — mesaj metni değişmedi, bu SADECE ek bir alan.
+      const err = new Error("api " + path + " -> " + res.status);
+      err.status = res.status;
+      throw err;
+    }
     return res.json();
   }
   const get = (path) => api(path, { method: "GET" });
@@ -216,6 +222,13 @@
   }
 
   /* ===== Master blob fan-out (SET side) ===== */
+  // DÜZELTME (2026-09-10, DEVIR.md §9): eskiden HER job kendi .catch(() => {})'ine sahipti, bu yüzden
+  // Promise.all(jobs) yazmalar %100 başarısız olsa BİLE HİÇ reddetmiyordu — bulutaGonderKontrol()'ün
+  // .then() (BAŞARI) dalı sessizce çalışıp sonBulutJSON'ı güncelliyordu, sanki her şey gönderilmiş gibi.
+  // Artık: (1) job'lar kendi hatalarını YUTMUYOR, (2) Promise.allSettled ile hepsi denenip kaç
+  // tanesinin başarısız olduğu sayılıyor, (3) en az biri başarısızsa fonksiyon GERÇEKTEN reddediyor —
+  // bu, app.js'teki 8 çağrı noktasının ZATEN yazılmış olan .catch() işleyicilerini (hepsi
+  // bekleyenGonderim=true yapıyor) ilk kez gerçekten çalıştırır, tek tek değiştirmeye gerek kalmadan.
   async function fanOutMasterPayload(json) {
     const p = JSON.parse(json);
     const deviceId = myDeviceId();
@@ -275,7 +288,6 @@
                 deviceId,
               })
             )
-            .catch(() => {})
         );
       });
     });
@@ -291,7 +303,7 @@
             notMetin: cell.notMetin ?? null,
             odemeTarihi: cell.odemeTarihi ?? null,
             deviceId,
-          }).catch(() => {})
+          })
         );
       });
     });
@@ -299,21 +311,21 @@
     Object.keys(p.otomatikYoklamaDB || {}).forEach((tarih) => {
       Object.keys(p.otomatikYoklamaDB[tarih]).forEach((ad) => {
         const cell = p.otomatikYoklamaDB[tarih][ad];
-        jobs.push(post("/api/attendance/auto", { tarih, ad, grup: cell.grup ?? null, saat: cell.saat, elle: !!cell.elle, geldi: cell.geldi !== false, deviceId }).catch(() => {}));
+        jobs.push(post("/api/attendance/auto", { tarih, ad, grup: cell.grup ?? null, saat: cell.saat, elle: !!cell.elle, geldi: cell.geldi !== false, deviceId }));
       });
     });
 
     (p.personelDB || []).forEach((person) => {
-      jobs.push(post("/api/personnel", { ...person, deviceId }).catch(() => {}));
+      jobs.push(post("/api/personnel", { ...person, deviceId }));
     });
 
     (p.personelYoklamaDB || []).forEach((kayit) => {
-      (kayit.gelenler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: true, deviceId }).catch(() => {})));
-      (kayit.gelmediler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: false, deviceId }).catch(() => {})));
+      (kayit.gelenler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: true, deviceId })));
+      (kayit.gelmediler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: false, deviceId })));
     });
 
     (p.ozelSiniflar || []).forEach((ad) => {
-      jobs.push(post("/api/custom-classes", { ad, deviceId }).catch(() => {}));
+      jobs.push(post("/api/custom-classes", { ad, deviceId }));
     });
 
     if (p.sifreler && p.sifreler.yonetici) {
@@ -323,12 +335,12 @@
           egitmenHash: p.sifreler.egitmen,
           aidatHash: p.sifreler.aidat || null,
           degisim: p.sifreler.degisim || 0,
-        }).catch(() => {})
+        })
       );
     }
 
     if (typeof p.minSurum === "number") {
-      jobs.push(put("/api/meta/min-surum", { minSurum: p.minSurum }).catch(() => {}));
+      jobs.push(put("/api/meta/min-surum", { minSurum: p.minSurum }));
     }
 
     jobs.push(
@@ -343,10 +355,19 @@
           aktifTur: p.aktifTur || 1,
           aktifTakimTur: p.aktifTakimTur || 1,
         }),
-      }).catch(() => {})
+      })
     );
 
-    await Promise.all(jobs);
+    const sonuclar = await Promise.allSettled(jobs);
+    const basarisizlar = sonuclar.filter((r) => r.status === "rejected");
+    if (basarisizlar.length > 0) {
+      const bazi401Mi = basarisizlar.some((r) => r.reason && r.reason.status === 401);
+      const err = new Error(`fanOutMasterPayload: ${basarisizlar.length}/${jobs.length} job başarısız oldu`);
+      err.basarisizSayisi = basarisizlar.length;
+      err.toplamSayisi = jobs.length;
+      err.bazi401Mi = bazi401Mi;
+      throw err;
+    }
   }
 
   /* ===== Firestore-shaped shim ===== */

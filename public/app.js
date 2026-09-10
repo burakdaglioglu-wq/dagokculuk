@@ -5742,7 +5742,16 @@
             } catch(e) { bulutDurum('☁️ hata: ' + (e.message || e.code || 'bilinmiyor'), 'var(--neon-red)'); }
         }
         let bekleyenGonderim = false;
-        
+        // Master fan-out backoff (2026-09-10, DEVIR.md §9) — fanOutMasterPayload artık kalıcı bir
+        // hatada (ör. PIN'siz oturum → 401) GERÇEKTEN reddediyor. Bu düzeltme olmadan bulutaGonderKontrol
+        // 10sn'lik setInterval'ıyla SONSUZA dek aynı tam anlık görüntüyü yeniden deneyip her turda
+        // yüzlerce isteğe yol açardı. WS yeniden bağlanma deseniyle (sync.js wsBackoff) AYNI: ×1.5
+        // büyüme, 120sn tavan, ±%25 jitter, başarıda tabana sıfırlanır. Tek bir merkezi kapı olduğu
+        // için hem 10sn'lik periyodik tetikleyiciyi hem de onlarca eylem-tetiklemeli çağrıyı KORUR.
+        let _bulutFanOutBackoffMs = 10000;
+        let _bulutFanOutSonrakiDeneme = 0;
+        let _bulut401UyariGosterildi = false;
+
         // ===== KİŞİ BAZLI SYNC =====
         // Her sporcu Firestore'da ayrı belge: sporcular/{grup}_{ad}
         // İki cihaz aynı anda farklı sporcuya skor girince ASLA çakışmaz
@@ -6209,9 +6218,22 @@
             if(json === sonBulutJSON && !bekleyenGonderim) return;
             let yerelSayi = sporcuSayisi(turnuvaDB);
             if(yerelSayi === 0 && jsonSporcuSayisi(sonBulutJSON) > 0) return;
+            if(Date.now() < _bulutFanOutSonrakiDeneme) return; // kalıcı bir hatadan sonra geri çekiliyor
             dbBulut.collection('kulup').doc('master').set({ veri: json, guncelleme: Date.now() })
-                .then(() => { sonBulutJSON = json; bekleyenGonderim = false; guvenlikYedegiAl(); try { gunlukYedekKontrol(json); } catch(e) {} })
-                .catch(() => { bekleyenGonderim = true; });
+                .then(() => {
+                    sonBulutJSON = json; bekleyenGonderim = false; guvenlikYedegiAl(); try { gunlukYedekKontrol(json); } catch(e) {}
+                    _bulutFanOutBackoffMs = 10000; _bulutFanOutSonrakiDeneme = 0; _bulut401UyariGosterildi = false;
+                })
+                .catch((err) => {
+                    bekleyenGonderim = true;
+                    let tavanli = Math.min(_bulutFanOutBackoffMs, 120000);
+                    _bulutFanOutSonrakiDeneme = Date.now() + tavanli * (0.75 + Math.random() * 0.5); // ±%25 jitter
+                    _bulutFanOutBackoffMs *= 1.5;
+                    if(err && err.bazi401Mi && !_bulut401UyariGosterildi) {
+                        _bulut401UyariGosterildi = true;
+                        showToast('Yedekleme için PIN girişi gerekiyor', 'error');
+                    }
+                });
         }
         // İnternet gelince otomatik gönder
         window.addEventListener('online', () => {

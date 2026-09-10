@@ -66,10 +66,12 @@ bu tokeni kullanıyordu ama origin KENDİSİ sonradan `:root`'tan silmişti.
 Bunların HİÇBİRİ tasarım geçişinin/merge'in bir parçası değil — hepsi bilerek kapsam dışı bırakıldı,
 hiçbiri kullanıcı onayı olmadan başlanmayacak. Sıralama risk/etkiye göre:
 
-1. **`fanOutMasterPayload()` veri-katmanı riski** (bkz. §9) — TEK veri riski taşıyan madde. 10
-   saniyede bir kulübün TAMAMININ anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı olmadan
-   gönderiyor; büyüyen bir kulüpte `ERR_INSUFFICIENT_RESOURCES`'a gerçekten yaklaşabilir (tahmini
-   formül §9'da, gerçek sayı için D1 izni gerekiyor).
+1. ~~**`fanOutMasterPayload()` sessiz başarı hatası**~~ — **DÜZELTİLDİ 2026-09-10 (bkz. §9c)**: artık
+   kısmi/tam başarısızlıkta gerçekten reddediyor, kalıcı hatada üstel geri çekilme var, 401'e özel
+   uyarı var. **AYRI, hâlâ ele alınmamış bir alt-madde kalıyor**: 10 saniyede bir kulübün TAMAMININ
+   anlık görüntüsünü, toplu işlem/eşzamanlılık sınırı olmadan gönderme — büyüyen bir kulüpte
+   `ERR_INSUFFICIENT_RESOURCES`'a gerçekten yaklaşabilir (tahmini formül §9'da, gerçek sayı için D1
+   izni gerekiyor). Kullanıcı bunu bilerek ayrı bıraktı ("istek sayısını azaltmaya çalışma, o ayrı iş").
 2. **Mobil Skor paneli `!important` override'ları test edilmedi** (~10-15 kural, bkz. §2i/§6) — en
    sık kullanılan ekranın (Skor) mobil görünümünde, henüz doğrulanmamış bir kaynak-sırası sorununu
    gizliyor olabilirler. Test edilmeden silinmemeli veya değiştirilmemeli.
@@ -1137,12 +1139,17 @@ bakan tek sekme-içi bağlantı — kullanıcının "Ders Programı'nın olduğu
   devrin kapsamı DIŞINDA — ayrı hafıza dosyasında (`dagsk-km-oyunlar-2026-09.md`) duruyor,
   karıştırılmamalı.
 
-## 9. Sonraki iş (Faz 6 SONRASI — bu bir tasarım işi DEĞİL, veri katmanı işi, ayrı ele alınacak)
+## 9. Sessiz başarı hatası — DÜZELTİLDİ (2026-09-10, bkz. §9c)
 
-**Bağlam**: Faz 5 grup 5 testlerinde (bkz. §2g) periyodik arka plan isteklerinin ara sıra
-"Failed to fetch" / `net::ERR_INSUFFICIENT_RESOURCES` verdiği gözlendi. Kullanıcının isteğiyle
-kök nedeni tam teşhis edildi (bu bölüm o teşhisin özeti) — **düzeltme YAPILMADI, bilerek**:
-tasarım işi bitmeden ikinci bir cepheye girilmiyor.
+**GÜNCELLEME**: Bu bölümün asıl veri-kaybı riski (§9'un "Riskli yanı"/"DÜZELTME" alt bölümleri —
+`fanOutMasterPayload`'ın HER zaman başarılı dönmesi) düzeltildi, test edildi, deploy edildi. Tam
+detay §9c'de. Aşağıdaki orijinal teşhis (hacim/istek-sayısı analizi) hâlâ geçerli ve AYRI, ele
+alınmamış bir iş olarak duruyor — SADECE sessiz-başarı kısmı çözüldü, istek hacmi/toplu-işlem
+sorunu değil (kullanıcı özellikle bunu ayrı bir iş olarak bıraktı, bkz. §9c).
+
+**Bağlam (orijinal teşhis, Faz 6 SONRASI)**: Faz 5 grup 5 testlerinde (bkz. §2g) periyodik arka plan
+isteklerinin ara sıra "Failed to fetch" / `net::ERR_INSUFFICIENT_RESOURCES` verdiği gözlendi.
+Kullanıcının isteğiyle kök nedeni tam teşhis edildi (bu bölüm o teşhisin özeti).
 
 **Sorun**: `bulutaGonderKontrol()` (app.js:6168), `setInterval` ile **10 saniyede bir** çalışıyor
 ve `fanOutMasterPayload()` (public/sync.js:219) üzerinden **kulübün TAMAMININ anlık görüntüsünü**
@@ -1203,8 +1210,60 @@ rakamını verirse formüle yerine konur.
 **Olası yön (uygulanmadı, sadece not)**: (1) değişen alanları gönder (tam anlık görüntü değil,
 delta), (2) eşzamanlılık sınırı (ör. aynı anda en fazla N istek, kalan kuyrukta), (3) hata sayacı —
 art arda başarısız olan job sayısı bir eşiği aşınca kullanıcıya görünür bir uyarı (mevcut
-`bulutDurum()` göstergesine benzer), (4) aidat/yoklama gibi büyümeye devam eden koleksiyonlar için
+`bulutDurum()` göstergesine benzer — **BU MADDE §9c'de UYGULANDI**, sadece istek-hacmi azaltma (1)/(2)
+hâlâ AYRI, ele alınmamış bir iş), (4) aidat/yoklama gibi büyümeye devam eden koleksiyonlar için
 arşivleme/budama stratejisi.
+
+## 9c. Sessiz başarı hatasının düzeltilmesi (2026-09-10, TAMAMLANDI)
+
+**Kapsam (kullanıcı tarafından bilerek dar tutuldu)**: SADECE §9'un "sessiz başarı" riski — istek
+hacmini azaltma (yukarıdaki (1)/(2)) AYRI bir iş, `/api/series` yazma yoluna dokunulmadı (zaten
+korumalı), auth mantığına dokunulmadı (doğru kurulmuş, sadece `res.status` okunuyor).
+
+**Değişiklik 1 — `fanOutMasterPayload()` (public/sync.js:225) artık GERÇEKTEN reddediyor**: her job'ın
+kendi `.catch(() => {})`'i kaldırıldı, `Promise.all` yerine `Promise.allSettled` ile hepsi denenip kaç
+tanesinin başarısız olduğu sayılıyor; en az biri başarısızsa fonksiyon bir `Error` fırlatıyor
+(`err.basarisizSayisi`/`err.toplamSayisi`/`err.bazi401Mi`). **Fonksiyonu yeniden yazmadan** — sadece
+hata yutma kaldırıldı — bu tek değişiklik, app.js'teki `.doc('master').set()`'in 8 çağrı noktasının
+ZATEN doğru yazılmış `.catch()` işleyicilerini (hepsi `bekleyenGonderim=true` yapıyor) ilk kez
+gerçekten tetikler; sekizi de tek tek okunup doğrulandı (hiçbiri catch'inde yıkıcı bir şey yapmıyor —
+hepsi ya sadece durum bayrağı/toast, ya da yerel veri zaten cloud denemesinden ÖNCE localStorage'a
+yazılmış oluyor). `api()` (sync.js:21) fırlattığı Error'a `.status` ekledi — mevcut hiçbir kod bunu
+okumuyordu, saf ekleme.
+
+**Değişiklik 2 — kalıcı hatada sonsuz istek fırtınası riski (kullanıcı endişesi)**: `bulutaGonderKontrol`
+(app.js:6179) 10sn'lik `setInterval`le (app.js:5730) SONSUZA dek çalışıyor; düzeltme 1 olmadan bu,
+kalıcı bir 401'de her turda YÜZLERCE isteğin sonsuza dek tekrarlanması demekti. Çözüm: sync.js'nin
+KENDİ WebSocket yeniden-bağlanma deseniyle (`wsBackoff`, ×1.5 büyüme/120sn tavan/±%25 jitter) AYNI
+mekanizma, `bulutaGonderKontrol()`'e eklendi (`_bulutFanOutBackoffMs`/`_bulutFanOutSonrakiDeneme`).
+Tek bir merkezi kapı (`.set()` çağrısından hemen önce) — hem 10sn'lik periyodik tetikleyiciyi hem de
+onlarca eylem-tetiklemeli çağrıyı (`bulutaGonderKontrol()`'ün diğer ~15 çağrı noktası) TEK yerden
+korur. Başarıda tabana (10sn) sıfırlanır.
+
+**Değişiklik 3 — 401'e özel uyarı**: `bulutaGonderKontrol()`'ün catch'i `err.bazi401Mi` görürse
+(sadece BU site'de — diğer 7 çağrı noktasına dokunulmadı, onlar zaten kendi geri bildirimini
+gösteriyor) bir kerelik `showToast('Yedekleme için PIN girişi gerekiyor', 'error')` gösterir
+(`_bulut401UyariGosterildi` bayrağıyla, her 10sn'de tekrar etmez; başarıda sıfırlanır).
+
+**Gerçek senaryolarla test edildi** (sıfır-etkili test YETERSİZ sayıldı, üç gerçek senaryo da
+doğrulandı): yerel test D1'inde 740 sporcu birikmiş olduğu için (haftalardır süren test oturumları)
+GERÇEK `turnuvaDB` ile tam bir fan-out denemesi tek başına yerel `wrangler dev`'i tıkayıp yanıltıcı
+"Failed to fetch" hataları üretiyordu — bu AYRI, zaten bilinen istek-hacmi sorunuydu (kapsam dışı).
+Testler bu yüzden `turnuvaDB`'yi (SADECE bellek-içi, D1'e hiç yazılmadan) tek bir test sporcusuna
+küçülterek izole edildi:
+1. **PIN'siz oturum (`_dagskYetkiHash=null`)** → gerçek istekler gerçek 401 aldı → `bekleyenGonderim=true`,
+   backoff 10sn→15sn büyüdü, **"Yedekleme için PIN girişi gerekiyor" toast'ı gerçekten göründü**.
+2. **Backoff aktifken hemen tekrar çağrıldığında** → yeni bir `/api/athletes` isteği ATILMADI (ağ
+   sekmesi izlenerek doğrulandı) — kapı çalışıyor.
+3. **PIN geri "girilip" (`_dagskYetkiHash` gerçek hash'e döndürülüp) backoff süresi dolunca tekrar
+   çağrıldığında** → gerçek bir istek atıldı, `bekleyenGonderim=false`'a döndü, backoff tabana
+   sıfırlandı, hata toast'ı YOKTU — ve en kritik kanıt: **test sporcusu gerçekten yerel D1'e yazıldı**
+   (`SELECT ... FROM athletes WHERE ad LIKE '__fot%'` ile doğrulandı, sonra silindi). Bu üçü birlikte
+   "kalıcı hata → geri çekilme → düzelince gerçekten tekrar deneyip başarma" döngüsünün uçtan uca
+   çalıştığını kanıtlıyor.
+
+`node --check` (her iki dosya), `npx tsc --noEmit` temiz. `npm test` bu projede hiç yazılmış test
+dosyası yok, çalıştırılamadı (önceden var olan durum, bu değişiklikle ilgisiz).
 
 ## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
 
