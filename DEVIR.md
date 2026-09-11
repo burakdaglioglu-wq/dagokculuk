@@ -2364,6 +2364,52 @@ girişle tam bitirildi — 2. ve 3. eşleşme bu süre boyunca HİÇ dokunulmada
 Test PIN'i her tur sonunda gerçek `egitmen_hash`'e geri alındı. `node --check` her adımdan sonra
 temiz.
 
+## 15e. Canlıda "oklar uçmuyor" bulgusu — DÜZELTİLDİ (2026-09-11, gece görevi, henüz DEPLOY EDİLMEDİ)
+
+**Bağlam**: kullanıcı canlı ortamda skor girildiğinde okun uçmadığını bildirdi ("yerel testte
+çalışıyordu, canlıda farklı"). Görsel bir değişiklik (Faz 13'ün turnuva ağacı, aidat/yoklama işi vb.
+DEĞİL) olduğu için kullanıcı sabah kendi gözüyle onaylayana kadar DEPLOY EDİLMEDİ — sadece commit +
+push. **İKİ ayrı, birbirinden bağımsız kök neden bulundu, ikisi de gerçek testle doğrulandı.**
+
+**1. neden — `ciddiModAcik` varsayılan AÇIK (app.js:18293) ok görselinin KENDİSİNİ de kapatıyordu**:
+`kmOyunAnimateArena`'daki `kapali` bayrağı (`kmOyunKameraAzaltilmisHareketMi() || ciddiModAcik`)
+`kmOyunArenaOkUcurGorsel()`'in HİÇ çağrılmamasına yol açıyordu — ok uçuşu bir "kutlama" değil, Arena'nın
+kimin vurduğunu/ıskaladığını GÖSTEREN çekirdek mekaniği. Ciddi Mod varsayılan açık olduğu için (bkz.
+"CİDDİ YARIŞMA MODU: ... varsayılan AÇIK") HİÇBİR koç bunu bilerek kapatmadıkça (ki "ok görmekle" alakası
+yokmuş gibi görünen bir ayar) arenanın çekirdek görsel geri bildirimi HİÇ görünmüyordu — bu neredeyse
+KESİN olarak canlıdaki asıl şikayetin nedeni. **Düzeltme**: ok görselini SADECE gerçek
+`prefers-reduced-motion` (meşru erişilebilirlik sinyali) kapatıyor artık; `ciddiModAcik` hâlâ SADECE
+ekstra kutlamaları (banner/ses/hasar sayısı patlaması/mükemmel-seri bonus banner'ı) susturuyor.
+
+**2. neden (bağımsız, İKİNCİ bir gerçek hata — hızlı/çoklu maç kullanımında tetiklenir)**:
+`kmOyunArenaCiz()` TÜM ızgarayı `innerHTML` ile yeniden kuruyor. Bir maçın oku HÂLÂ uçarken (WAAPI/
+setTimeout zinciri sürerken) koç BAŞKA bir maça dokunursa (`kmOyunArenaMacSec`/
+`kmOyunArenaDigerOkcuyaGec` — Arena'nın TAM amacı: birden fazla düelloyu aynı anda yürütmek) bu tam
+redraw uçmakta olan okun DOM düğümünü SESSİZCE siliyordu — hasar yine uygulanıyordu (state DOM'a bağlı
+değil), sadece görsel kayboluyordu. **Düzeltme**: `_kmOyunArenaMesgulSayisi` sayacı + `_kmOyunArenaCizErtele`
+bayrağı eklendi (`kmOyunArenaCizGuvenli()`) — bir animasyon sürerken (`kmOyunAnimateArena` başında
+sayaç artar, `bitir()`'de azalır) BAŞKA bir maça dokunmanın tetiklediği redraw ERTELENİYOR (en fazla
+~700ms, tek bir okun süresi); animasyonu biten maçın KENDİ `bitir()`'i HER ZAMAN direkt çizer (hem
+kendi sonucunu gösterir hem ertelenmiş isteği karşılar).
+
+**Neden yerel testte hiç yakalanmamıştı**: Stage 3'ün orijinal testleri tek tek, aralarda bekleyerek
+(`waitForTimeout`) yapılmıştı — ne varsayılan `ciddiModAcik=true` durumunda test edilmiş (hep açıkça
+`false`'a çekilmişti) ne de GERÇEKÇİ hızlı/çok-maçlı bir senaryo denenmişti. İkisi de gerçek testle
+DOĞRULANDI (aşağıda).
+
+**Gerçek testle doğrulandı** (yerel D1, sıfır etkili senaryo kullanılmadı):
+- `ciddiModAcik` varsayılan (`true`) haliyle: DÜZELTMEDEN ÖNCE ok hiç görünmüyordu (`false`);
+  DÜZELTMEDEN SONRA görünüyor (`true`), banner hâlâ gizli kalıyor (ciddi mod kutlamaları hâlâ susuyor).
+- `prefers-reduced-motion: reduce` (gerçek Playwright context emülasyonu) + ciddi mod KAPALI: ok
+  GÖRÜNMÜYOR (doğru, erişilebilirlik korundu), hasar YİNE DE uygulanıyor.
+- Hızlı, beklemesiz, 3 FARKLI maça art arda seri girişi (gerçek "birden fazla düelloyu yöneten koç"
+  davranışı): DÜZELTMEDEN ÖNCE ok hiç görünmüyordu; DÜZELTMEDEN SONRA görünüyor, hasar üç maça da
+  doğru uygulandı.
+- Regresyon: 12 Oyunlar teması + Reaksiyon hatasız gezildi, konsol hatası yok.
+
+**Deploy durumu**: SADECE commit + push yapıldı, `npm run deploy` YAPILMADI — kullanıcı görsel/davranış
+değişikliği olduğu için sabah kendi gözüyle bakıp onaylayacak.
+
 ## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
 **Ne yapıyor**: Karışık Sınıf'ın kendi "🏆 Yarışma Modu" sekmesi (`kmSekme('yarisma')` →

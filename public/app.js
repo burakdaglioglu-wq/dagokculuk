@@ -14753,6 +14753,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunArenaDokGozlemciKur();
             govde.innerHTML = (_kmOyunArenaGorunum === 'oyun') ? kmOyunArenaOyunHTML() : kmOyunArenaEslestirmeHTML();
         }
+        // DÜZELTME (2026-09-11, canlı ortamda "oklar uçmuyor" bulgusunun 2. nedeni): kmOyunArenaCiz()
+        // TÜM ızgarayı innerHTML ile yeniden kuruyor — bir maçın oku HÂLÂ uçarken (setTimeout/WAAPI
+        // zincirinde) koç BAŞKA bir maça dokunup onu "etkin" yaparsa (Arena'nın TAM amacı — birden
+        // fazla maçı aynı anda yürütmek), o redraw uçmakta olan okun DOM'unu SESSİZCE siliyordu — hasar
+        // yine de uygulanıyordu (state DOM'a bağlı değil), sadece görsel kayboluyordu. Gerçek testte
+        // doğrulandı: yavaş/tek-tek girişte ok görünüyordu, hızlı/çok-maçlı girişte HİÇ görünmüyordu.
+        // Çözüm: bir animasyon sürerken TAM redraw ERTELENİYOR (en fazla ~700ms, tek bir okun süresi) —
+        // state değişikliği (hangi maç etkin, sıra kimde) zaten senkron uygulandı, sadece EKRANIN
+        // kendisi son animasyon bitince bir kez güncelleniyor. kmOyunArenaCiz()'in KENDİSİ değişmedi,
+        // SADECE oyun-içi (maç seçme/sıra değiştirme/animasyon bitişi) çağrıları bu güvenli sarmalayıcıya
+        // yönlendirildi — eşleştirme ekranı fonksiyonları (maç henüz yok, ertelemeye gerek yok) aynı kaldı.
+        let _kmOyunArenaMesgulSayisi = 0;
+        let _kmOyunArenaCizErtele = false;
+        function kmOyunArenaCizGuvenli() {
+            if(_kmOyunArenaMesgulSayisi > 0) { _kmOyunArenaCizErtele = true; return; }
+            kmOyunArenaCiz();
+        }
         function kmOyunArenaEslestirmeHTML() {
             let roster = _kmOyunRosterCache;
             let acikta = roster.map(function(s, i) { return i; }).filter(function(i) { return kmOyunArenaEslesmeIndex(i) === -1; });
@@ -14848,13 +14865,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             mac.durum = 'etkin';
             _kmOyunArenaAktifMac = idx;
             kmOyunArenaAktifIndexGuncelle();
-            kmOyunArenaCiz();
+            kmOyunArenaCizGuvenli();
         }
         function kmOyunArenaDigerOkcuyaGec(idx) {
             let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
             mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
             if(idx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
-            kmOyunArenaCiz();
+            kmOyunArenaCizGuvenli();
         }
         function kmOyunArenaOyunHTML() {
             if(!_kmOyunArenaMaclar.length) return '<div class="km-arena-yer-tutucu">Eşleşme yok.</div>';
@@ -14937,8 +14954,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Hangi taraf attı (roster indeksi `i`, GERÇEKTEN skoru giren okçu) — hasar KARŞI tarafa.
             let atanA = (mac.aIndex === i);
             let hedefA = !atanA;
-            let kapali = kmOyunKameraAzaltilmisHareketMi() || (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            // DÜZELTME (2026-09-11, canlı ortamda "oklar uçmuyor" bulgusunun 1. nedeni): ciddiModAcik
+            // VARSAYILAN AÇIK (bkz. app.js ~18293) — `kapali` ok uçuşunun GÖRSELİNİN KENDİSİNİ de
+            // kapatıyordu, yani hiçbir koç ciddi modu bilerek kapatmadıkça (ki "ok görmekle" hiç ilgisi
+            // yokmuş gibi görünen bir ayar) Arena'nın ÇEKİRDEK geri bildirimi hiç görünmüyordu. Ok
+            // uçuşu bir "kutlama" değil — kimin vurduğunu/ıskaladığını GÖSTEREN asıl mekanik. Artık
+            // SADECE gerçek prefers-reduced-motion (meşru erişilebilirlik sinyali) ok görselini
+            // kapatıyor; `kapali` (ikisi birden) hâlâ SADECE ekstra kutlamaları (banner/ses/hasar
+            // sayısı patlaması/mükemmel-seri bonusu) susturmaya devam ediyor.
+            let azaltilmisHareket = kmOyunKameraAzaltilmisHareketMi();
+            let kapali = azaltilmisHareket || (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
             let mukemmelMi = kaydedilecek.length > 0 && kaydedilecek.every(function(k) { return KM_OYUN_PAD_RENK[k.puan] === 'altin'; });
+            // 2. bulgu: kmOyunArenaCiz() TAM ızgara innerHTML'i — bu maç "meşgul" (ok uçuyor) sayacı
+            // bitene kadar başka bir maça dokunulunca tetiklenen redraw'lar ERTELENİYOR (kmOyunArenaCizGuvenli).
+            _kmOyunArenaMesgulSayisi++;
             // Stage 4 — "kaç ok attı"/"en iyi seri kimin" tur sonu ekranı için, BU RAUNTA özel sayaçlar
             // (GERÇEK skora/klasmana dokunmuyor, `toplam` zaten kmOyunIlerlet'te GERÇEK kayda gitti).
             let atanToplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
@@ -14957,7 +14986,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     }
                     setTimeout(function() { birOkIsle(idx + 1); }, kapali ? 40 : 160);
                 }
-                if(kapali) { isabetUygula(); return; }
+                if(azaltilmisHareket) { isabetUygula(); return; }
                 kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, isabetUygula);
             }
             function bitir() {
@@ -14983,6 +15012,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
                 }
                 if(macIdx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
+                _kmOyunArenaMesgulSayisi = Math.max(0, _kmOyunArenaMesgulSayisi - 1);
+                // Bu maçın kendi animasyonu bitti — HER ZAMAN çiz (bu maçın SONUCUNU göstermek zaten
+                // gerekiyor). Aynı çizim, arada BAŞKA bir maça dokunulduğu için ertelenmiş isteği de
+                // (varsa) karşılar — TÜM state zaten güncel, ayrıca bir çizime gerek kalmaz.
+                _kmOyunArenaCizErtele = false;
                 kmOyunArenaCiz();
                 done();
             }
