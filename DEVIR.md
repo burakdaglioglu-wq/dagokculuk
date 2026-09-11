@@ -2410,6 +2410,28 @@ DOĞRULANDI (aşağıda).
 **Deploy durumu**: SADECE commit + push yapıldı, `npm run deploy` YAPILMADI — kullanıcı görsel/davranış
 değişikliği olduğu için sabah kendi gözüyle bakıp onaylayacak.
 
+## 15f. Gerçek okçu karakterleri — BLOKE, kod DEĞİŞİKLİĞİ YOK (2026-09-11, gece görevi)
+
+**Bağlam**: gece görevinin 3. işi, Arena'daki SVG okçu figürlerini 6 hazır WebP karaktere
+(`okcu-kirmizi-genc.webp`, `okcu-orman-elfi.webp`, `okcu-elf-kadin.webp`, `okcu-tilki.webp`,
+`okcu-pelerinli.webp`, `okcu-sari-sacli.webp`) çevirmekti — kaynak `okcu-karakterler.zip` dosyası
+içinde olacaktı.
+
+**Bulgu**: bu zip dosyası dosya sisteminde HİÇBİR YERDE bulunamadı. Aranan yerler: `Desktop\dagsk`
+(proje kökü dahil), `Desktop` (3 seviye), `Downloads` (tüm `.zip` dosyaları tek tek isim kontrolü +
+`*okcu*`/`*archer*` deseni), `OneDrive\Masaüstü`, `OneDrive` (3 seviye), oturumun scratchpad/temp
+klasörü. En yakın isim eşleşen iki zip (`archer-2.zip`, `sf_archery_black.zip`) açılıp içeriği
+kontrol edildi — ikisi de font dosyası (`.otf`/`.ttf`), karakterle ilgisi yok.
+
+**Karar**: kullanıcının kendi talimatı gereği ("emin olmadığın bir karar çıkarsa en muhafazakâr
+seçeneği uygula") — burada muhafazakâr seçenek görsel UYDURMAK veya farklı bir kaynaktan yer
+tutucu görsel koymak DEĞİL, hiçbir kod değişikliği yapmadan durup kullanıcıdan dosyayı istemekti.
+Bu yüzden Arena'nın SVG okçuları AYNEN bırakıldı, `public/assets/okcu/` klasörü oluşturulmadı,
+ilgili hiçbir kod yazılmadı. **Bekleyen tek adım**: kullanıcı zip'i projeye (ör. `Desktop\dagsk\`
+köküne veya scratchpad'e) koyduğunda bu iş doğrudan devam edebilir — plan (sıralı sabit atama,
+localStorage'da tutma, D1'e yazmama, scaleX(-1) sağ taraf, renklerin sadece isim etiketi+can
+barında kalması, mevcut atış animasyonlarının korunması) zaten netti, sadece girdi eksik.
+
 ## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
 **Ne yapıyor**: Karışık Sınıf'ın kendi "🏆 Yarışma Modu" sekmesi (`kmSekme('yarisma')` →
