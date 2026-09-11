@@ -10947,10 +10947,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-arena-mac-kart svg.km-arena-saha-svg{ position:static; inset:auto; width:100%; height:auto; aspect-ratio:220/110; border-radius:10px; background:radial-gradient(ellipse at 50% 75%, rgba(255,255,255,.06), transparent 70%); overflow:visible; clip-path:none; }
 .km-arena-zemin{ fill:#000; opacity:.35; }
 .km-arena-golge{ fill:#000; opacity:.3; }
-.km-arena-okcu-govde{ stroke:rgba(255,255,255,.55); stroke-width:1; }
-.km-arena-kafa-bg{ fill:#1a1a20; stroke:#fff; stroke-width:1.2; }
-.km-arena-yay{ fill:none; stroke:#8a5a2a; stroke-width:2.5; stroke-linecap:round; }
-.km-arena-sadak{ fill:#3a2414; stroke:#1a1004; stroke-width:.8; }
 .km-arena-sira-btn{ font-size:10.5px; }
 /* Stage 3 — ok uçuşu + hasar. Uçan ok/hasar sayısı SVG DEĞİL, düz HTML div (kmOyunBurst'ün AYNI,
    bu kod tabanında zaten kanıtlanmış deseni — WAAPI'nin SVG transform üzerinde emin olunmayan
@@ -14877,22 +14873,56 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(!_kmOyunArenaMaclar.length) return '<div class="km-arena-yer-tutucu">Eşleşme yok.</div>';
             return '<div class="km-arena-izgara">' + _kmOyunArenaMaclar.map(function(mac, idx) { return kmOyunArenaMacKartHTML(mac, idx); }).join('') + '</div>';
         }
-        // Karakterler SVG — derinlik hissi degrade gövde (üstte açık/kendi rengi, altta koyulaşan),
-        // kenar aydınlığı (yarı saydam beyaz stroke) ve zemin gölgesinden (ellipse) geliyor. Yay+sadak
-        // görünüyor (kullanıcı talimatı: "okçu olsunlar").
+        // Gerçek okçu karakterleri (2026-09-11, gece görevi iş 3) — 6 hazır saydam WebP, elle çizilmiş
+        // SVG figürlerin (gövde/yay/sadak/kafa) yerine. Görseller zaten sağa bakıp ok çekiyor (kaynak
+        // dosyalar) — soldaki okçu (A, sagaBakiyorMu=true, yon=1) OLDUĞU GİBİ kalır, sağdaki okçu (B,
+        // yon=-1) dış <g>'nin ZATEN var olan scale(-1,1)'i ile çevrilir — bu FAZ 11'den beri var olan
+        // mekanizma, yeni bir flip kodu YAZILMADI. Karakterin ÜZERİNDE takım/sporcu rengi YOK (kullanıcı
+        // talimatı: "renkleri değiştirme") — eski govde'nin kmArenaGrad-${uid} degrade dolgusu bu yüzden
+        // kaldırıldı, takım rengi SADECE isim etiketi + can barında (kmOyunArenaMacKartHTML, HTML tarafı).
+        var KM_OYUN_ARENA_KARAKTERLER = ['okcu-kirmizi-genc', 'okcu-orman-elfi', 'okcu-elf-kadin', 'okcu-tilki', 'okcu-pelerinli', 'okcu-sari-sacli'];
+        // Her görsel 440px yükseklikte ama farklı genişlikte (saydam WebP, kırpılmamış) — SVG <image>
+        // otomatik en-boy koruması yapmadığı için gerçek piksel genişlikleri (Node ile WebP header'ından
+        // okundu) burada sabit tutuluyor, yoksa karakterler gerilip deforme görünürdü.
+        var KM_OYUN_ARENA_KARAKTER_EN = { 'okcu-kirmizi-genc': 402, 'okcu-orman-elfi': 296, 'okcu-elf-kadin': 322, 'okcu-tilki': 317, 'okcu-pelerinli': 373, 'okcu-sari-sacli': 429 };
+        var _kmOyunArenaKarakterMap = null; // {ad: 0..5} — bellek-içi cache, ders boyunca aynı obje
+        function _kmOyunArenaKarakterAnahtari() { return 'dag_km_arena_karakter_' + (_kmAktifKonum || 'varsayilan'); }
+        // Atama SADECE localStorage'da — D1'e/buluta hiç yazılmıyor (kullanıcı talimatı). Diğer
+        // konum-scoped km-anahtarlarıyla (ör. _kmYarismaKurulumAnahtari) AYNI "bugünün tarihi değilse
+        // sıfırla" deseni: her ders/gün yeni bir atama turu başlar, önceki dersten kalıntı olmaz.
+        function _kmOyunArenaKarakterYukle() {
+            if(_kmOyunArenaKarakterMap) return;
+            _kmOyunArenaKarakterMap = {};
+            try {
+                let ham = localStorage.getItem(_kmOyunArenaKarakterAnahtari());
+                if(ham) { let p = JSON.parse(ham); if(p && p.tarih === bugunISO()) _kmOyunArenaKarakterMap = p.atamalar || {}; }
+            } catch(e) {}
+        }
+        function _kmOyunArenaKarakterKaydet() {
+            try { localStorage.setItem(_kmOyunArenaKarakterAnahtari(), JSON.stringify({ tarih: bugunISO(), atamalar: _kmOyunArenaKarakterMap })); } catch(e) {}
+        }
+        // Sırayla sabit atama: bir sporcu Arena'da İLK görüldüğü anda o ana kadar atanmış sayısına göre
+        // sıradaki karaktere (6'dan sonra başa döner) atanır, sonra HEP aynı kalır (ders/gün boyunca).
+        function _kmOyunArenaKarakterAta(ad) {
+            _kmOyunArenaKarakterYukle();
+            if(_kmOyunArenaKarakterMap[ad] === undefined) {
+                _kmOyunArenaKarakterMap[ad] = Object.keys(_kmOyunArenaKarakterMap).length % KM_OYUN_ARENA_KARAKTERLER.length;
+                _kmOyunArenaKarakterKaydet();
+            }
+            return KM_OYUN_ARENA_KARAKTERLER[_kmOyunArenaKarakterMap[ad]];
+        }
         // Sarsıntı için AYRI bir iç <g> (rol class'ı BURADA) — dış <g>'nin translate/scale ÖZNİTELİĞİNE
         // CSS animasyonu HİÇ dokunmuyor (Pist'in araba-ölçekleme dersiyle AYNI risk: bir CSS transform
-        // kuralı SVG öznitelik transform'unu SESSİZCE ezip pozisyonu/yön çevirmesini bozardı).
+        // kuralı SVG öznitelik transform'unu SESSİZCE ezip pozisyonu/yön çevirmesini bozardı) — YAPI
+        // AYNEN korundu, içeriği (paths → image) değişti.
         function kmOyunArenaOkcuSVG(s, x, uid, sagaBakiyorMu, rolSinifi) {
             let yon = sagaBakiyorMu ? 1 : -1;
+            let karakter = _kmOyunArenaKarakterAta(s.ad);
+            let boy = 64, en = boy * ((KM_OYUN_ARENA_KARAKTER_EN[karakter] || 350) / 440);
             return `<g transform="translate(${x},55) scale(${yon},1)">
                 <g class="${rolSinifi}">
                     <ellipse class="km-arena-golge" cx="0" cy="38" rx="14" ry="4"/>
-                    <rect class="km-arena-sadak" x="-13" y="-18" width="5" height="20" rx="2.5" transform="rotate(-15)"/>
-                    <path class="km-arena-yay" d="M9,-16 Q20,12 9,38"/>
-                    <path class="km-arena-okcu-govde" d="M-7,-6 Q-9,16 -6,36 L6,36 Q9,16 7,-6 Z" fill="url(#kmArenaGrad-${uid})"/>
-                    <circle class="km-arena-kafa-bg" cx="0" cy="-16" r="9"/>
-                    ${kmOyunAvatarSVG(s, 7, 'arena-' + uid, 0, -16)}
+                    <image href="/okcu-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(38 - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
                 </g>
             </g>`;
         }
@@ -14925,10 +14955,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-arena-saha-wrap" id="km-arena-saha-${idx}">
                     <svg class="km-arena-saha-svg" viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet">
-                        <defs>
-                            <linearGradient id="kmArenaGrad-${idx}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${renkA}" stop-opacity=".95"/><stop offset="100%" stop-color="#000" stop-opacity=".4"/></linearGradient>
-                            <linearGradient id="kmArenaGrad-${idx}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${renkB}" stop-opacity=".95"/><stop offset="100%" stop-color="#000" stop-opacity=".4"/></linearGradient>
-                        </defs>
                         <ellipse class="km-arena-zemin" cx="110" cy="96" rx="95" ry="8"/>
                         ${kmOyunArenaOkcuSVG(a, 45, idx + 'a', true, 'km-arena-okcu-a')}
                         ${kmOyunArenaOkcuSVG(b, 175, idx + 'b', false, 'km-arena-okcu-b')}

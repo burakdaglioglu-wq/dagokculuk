@@ -2410,27 +2410,103 @@ DOĞRULANDI (aşağıda).
 **Deploy durumu**: SADECE commit + push yapıldı, `npm run deploy` YAPILMADI — kullanıcı görsel/davranış
 değişikliği olduğu için sabah kendi gözüyle bakıp onaylayacak.
 
-## 15f. Gerçek okçu karakterleri — BLOKE, kod DEĞİŞİKLİĞİ YOK (2026-09-11, gece görevi)
+## 15f. Gerçek okçu karakterleri — TAMAMLANDI, deploy edilmedi (2026-09-11, gece görevi + sabah devamı)
 
 **Bağlam**: gece görevinin 3. işi, Arena'daki SVG okçu figürlerini 6 hazır WebP karaktere
 (`okcu-kirmizi-genc.webp`, `okcu-orman-elfi.webp`, `okcu-elf-kadin.webp`, `okcu-tilki.webp`,
-`okcu-pelerinli.webp`, `okcu-sari-sacli.webp`) çevirmekti — kaynak `okcu-karakterler.zip` dosyası
-içinde olacaktı.
+`okcu-pelerinli.webp`, `okcu-sari-sacli.webp`) çevirmekti.
 
-**Bulgu**: bu zip dosyası dosya sisteminde HİÇBİR YERDE bulunamadı. Aranan yerler: `Desktop\dagsk`
-(proje kökü dahil), `Desktop` (3 seviye), `Downloads` (tüm `.zip` dosyaları tek tek isim kontrolü +
-`*okcu*`/`*archer*` deseni), `OneDrive\Masaüstü`, `OneDrive` (3 seviye), oturumun scratchpad/temp
-klasörü. En yakın isim eşleşen iki zip (`archer-2.zip`, `sf_archery_black.zip`) açılıp içeriği
-kontrol edildi — ikisi de font dosyası (`.otf`/`.ttf`), karakterle ilgisi yok.
+**Gece bulgusu**: kaynak `okcu-karakterler.zip` dosyası gece boyunca dosya sisteminde HİÇBİR YERDE
+bulunamadı (Desktop/dagsk, Desktop, Downloads'taki tüm zip'ler tek tek, OneDrive, scratchpad). En
+yakın isim eşleşen iki zip (`archer-2.zip`, `sf_archery_black.zip`) açılıp kontrol edildi — ikisi de
+font dosyası, ilgisiz. Kullanıcının kendi talimatı gereği ("emin olmadığın bir karar çıkarsa en
+muhafazakâr seçeneği uygula") hiçbir kod değişikliği yapılmadan durulup sabah raporunda bildirildi.
 
-**Karar**: kullanıcının kendi talimatı gereği ("emin olmadığın bir karar çıkarsa en muhafazakâr
-seçeneği uygula") — burada muhafazakâr seçenek görsel UYDURMAK veya farklı bir kaynaktan yer
-tutucu görsel koymak DEĞİL, hiçbir kod değişikliği yapmadan durup kullanıcıdan dosyayı istemekti.
-Bu yüzden Arena'nın SVG okçuları AYNEN bırakıldı, `public/assets/okcu/` klasörü oluşturulmadı,
-ilgili hiçbir kod yazılmadı. **Bekleyen tek adım**: kullanıcı zip'i projeye (ör. `Desktop\dagsk\`
-köküne veya scratchpad'e) koyduğunda bu iş doğrudan devam edebilir — plan (sıralı sabit atama,
-localStorage'da tutma, D1'e yazmama, scaleX(-1) sağ taraf, renklerin sadece isim etiketi+can
-barında kalması, mevcut atış animasyonlarının korunması) zaten netti, sadece girdi eksik.
+**Sabah**: kullanıcı 6 WebP'yi bizzat `public/okcu-karakterler/` klasörüne koydu (toplam 208KB,
+hepsi 440px yükseklik, farklı genişlik — `okcu-kirmizi-genc` 402px'den `okcu-orman-elfi` 296px'e).
+Yol kararını kullanıcıya bıraktı ("public/assets/okcu/ altına taşı, istersen olduğu yerden kullan").
+
+**Karar — dosya yolu**: `public/okcu-karakterler/` OLDUĞU YERDE bırakıldı, `public/assets/` klasörü
+AÇILMADI. Gerekçe: projede `public/assets/` diye bir klasör hiç yok — tüm statik görseller şimdiye
+kadar `public/galeri/` gibi düz, tek-seviye klasörlerde tutulmuş (`/galeri/okculuk-1.jpg` şeklinde
+kök-göreli yol). Yeni bir `assets/` iç-içe katmanı açmak sadece bu 6 dosya için tek seferlik bir
+istisna olurdu, mevcut desenle (`/okcu-karakterler/...`) taşımadan kullanmak hem daha tutarlı hem
+sıfır ekstra iş.
+
+**Uygulama** (`public/app.js`, `kmOyunArenaOkcuSVG` ve çevresi):
+- `KM_OYUN_ARENA_KARAKTERLER` (6 isim) + `KM_OYUN_ARENA_KARAKTER_EN` (her birinin gerçek piksel
+  genişliği, WebP header'ından Node ile okunup sabitlendi — SVG `<image>` en-boy oranını KENDİSİ
+  korumadığı için bu olmadan karakterler gerilip deforme görünürdü).
+- `_kmOyunArenaKarakterAta(ad)`: bir sporcu Arena'da ilk görüldüğünde sırayla (0'dan başlayıp 6'da
+  bir başa dönerek) bir karaktere atanır, `_kmOyunArenaKarakterMap` (bellek + `localStorage`,
+  `_kmYarismaKurulumKaydet`'le AYNI "bugünün tarihi değilse sıfırla" deseni) içinde saklanır — D1'e/
+  buluta HİÇ yazılmıyor, gün/ders değişince sıfırlanıyor.
+- Eski elle-çizilmiş SVG (gövde/yay/sadak/kafa-daire + `kmOyunAvatarSVG` yüz) tamamen kaldırıldı,
+  yerine tek bir `<image href="/okcu-karakterler/${karakter}.webp" .../>` kondu — zemin gölgesi
+  (`km-arena-golge` ellipse) korundu. Görsellerin ÜZERİNDE takım rengi YOK (eski govde'nin
+  `kmArenaGrad-${uid}` degrade dolgusu ve artık kullanılmayan `<defs>` blokları kaldırıldı) — takım/
+  sporcu rengi SADECE isim etiketi + can barında (değişmedi, zaten HTML tarafındaydı).
+- Yön çevirme İÇİN YENİ KOD YAZILMADI: dış `<g transform="translate(x,55) scale(yon,1)">` Faz 11'den
+  beri var olan mekanizma — soldaki okçu (`sagaBakiyorMu=true`, yon=1) olduğu gibi kalıyor, sağdaki
+  (`yon=-1`) otomatik `scaleX(-1)` ile çevriliyor. Karakterler zaten sağa bakıp ok çektiği için bu
+  BİREBİR kullanıcının istediği sonucu veriyor.
+- Sarsıntı (`.sarsiliyor`, hedef isabet aldığında) ve ok uçuşu (`kmOyunArenaOkUcurGorsel`) hiç
+  dokunulmadı — ikisi de aynı `.km-arena-okcu-a`/`.km-arena-okcu-b` iç `<g>`'ye ve `#km-arena-saha-N`
+  wrapper'ına bağlı, sadece bu g'nin İÇERİĞİ (path'ler → image) değişti, YAPI aynı kaldı.
+- Artık kullanılmayan CSS (`.km-arena-okcu-govde`, `.km-arena-kafa-bg`, `.km-arena-yay`,
+  `.km-arena-sadak`) silindi.
+
+**Gerçek testle doğrulandı** (yerel D1 + gerçek Playwright `.click()`, 8 sporculu bir sınıfla):
+8 sporcu 6 karaktere doğru sırayla atandı (0,1,2,3,4,5,0,1 — 6'da biri başa döndü); tüm 6 WebP
+`/okcu-karakterler/...` yolundan 200 döndü; SVG `<image>` boyutları her karakterin gerçek en/boy
+oranına göre doğru hesaplandı (deforme yok); ekran görüntüsünde soldaki karakter sağa, sağdaki
+karakter (aynı karakter türü olsa bile) sola bakıyor — flip doğru çalışıyor; küçük maç kartına
+taşmadan sığıyor (1280px VE 360px'te ayrıca doğrulandı, mobilde tek sütuna düşüyor, karakter yine
+düzgün); gerçek bir seri (9-8-7) girilip can barının doğru yüzdeye düştüğü görüldü (hasar mekaniği
+etkilenmemiş); ok uçuşu animasyonu hâlâ çalışıyor (`.km-arena-ucan-ok` DOM'da görüldü); 12 Oyun
+teması + Reaksiyon regresyon taraması temiz, `node --check` temiz.
+
+**Deploy durumu**: SADECE commit + push — kullanıcı görsel değişikliği kendi gözüyle onaylayana
+kadar `npm run deploy` YAPILMADI (dosyalar zaten iş 2'nin deploy'unda statik asset olarak yüklendi,
+ama app.js henüz onları KULLANMIYOR haliyle canlıda — kod tarafı bu commit'le push edildi, deploy
+ayrı bir adım).
+
+## 15g. KURAL — Ciddi Mod SADECE ekstraları susturur, mekaniğin görünürlüğünü ASLA kapatmaz (2026-09-11)
+
+**Kural** (§15e'nin Arena bulgusundan genelleştirildi, kullanıcı talimatıyla buraya yazılıyor):
+`ciddiModAcik` (varsayılan AÇIK, kullanıcıya "Ciddi yarışma modu" / "Kutlamalar kapalı, ödüller
+sessizce verilir" olarak gösteriliyor) SADECE şunları susturabilir: banner, ses (`sesCal`), konfeti/
+patlama (`kmOyunBurst`), animasyonlu vurgu/nabız efekti, "kutlama kuyruğu" (`kutlamaKuyrukEkle`),
+sosyal/motivasyonel yorum metni (ör. "arkandaki sana çok yakın!"). **ASLA** şunu kapatamaz: bir olayın
+GERÇEKTEN olup olmadığını gösteren görsel/mekanik geri bildirim (ok uçuşu, çarpışma, skor/sıralama
+değişimi, sonuç ekranının KENDİSİ), gerçek veri/skor/rozet/geçmiş kaydı. Ayrım testi: **"Bunu
+kapatırsam kullanıcı hâlâ ne olduğunu anlayabilir mi?"** — cevap hayırsa (Arena'daki ok gibi) bu bir
+mekanik, ciddiModAcik'e asla bağlanmaz; cevap evetse (sonuç zaten metin/skor olarak ekranda) bu bir
+ekstra, güvenle susturulabilir. `prefers-reduced-motion` ile karıştırılmasın: o gerçek bir erişilebilirlik
+sinyali, `ciddiModAcik` ise bir koç tercihi — ikisi aynı OR ifadesinde SADECE sonucu etkilemeyen saf
+zamanlama/animasyon değişikliklerinde (ör. kamera aninda mı yumuşak mı gitsin) birleştirilebilir,
+görsel/mekanik varlığın kendisini kapatan bir ifadede asla birleştirilmemeli.
+
+**2026-09-11 taraması** (kullanıcı istedi: "başka yerlerde de aynı hata olabilir, özellikle Pist ve
+diğer oyunlarda listele") — `ciddiModAcik`'in app.js'teki TÜM kullanım yerleri (tanım/toggle hariç 9
+site) tek tek okunup sınıflandırıldı:
+
+| Yer | Ne susturuyor | Sınıf |
+|---|---|---|
+| `kmOyunSiradakiVurguUygula` (11533) | Sıradaki sporcunun halkasının NABIZ animasyonu (halkanın kendisi hep kalıyor) | Ekstra ✅ |
+| `kmOyunKameraHedefeGit` (11612, reduced-motion ile OR'lu) | Kamera geçişinin YUMUŞAKLIĞI (hedefe hep doğru gidiyor, sadece anında) | Ekstra ✅ |
+| `kmOyunPistSonucGoster` (13496, Pist bitiş) | SADECE konfeti+ses (`.ciddi` CSS'i sadece giriş animasyonunu kapatıyor, `opacity:1` koşulsuz — kazanan/ok sayısı/en iyi seri metni HER ZAMAN yazılıyor) | Ekstra ✅ |
+| Pist "sollama" toastı (14033) | Sadece "X'i geçtin!" bildirimi — gerçek sıra rozetleri (`kmOyunPistSiralamaHesapla`) ayrı, hiç gizlenmiyor | Ekstra ✅ |
+| `kmOyunAnimateArena` (14966) | **DÜZELTİLDİ (§15e) — ESKİDEN ok görselini de kapatıyordu, ŞİMDİ sadece banner/ses/hasar-patlaması/mükemmel-bonus** | Düzeltildi ✅ |
+| `kmOyunArenaTurSonucGoster` (15035) | SADECE konfeti+ses — eşleşme sonuçları listesi (`innerHTML`) koşulsuz yazılıyor | Ekstra ✅ |
+| `kmYarismaBracketTurKontrolEt` şampiyon kutlaması (16734) | SADECE `kutlamaKuyrukEkle` banner'ı — şampiyonun geçmiş/PDF kaydı (`_gecmisGirdisi`) ciddiModAcik'ten TAMAMEN bağımsız, hep yazılıyor (bu, önceki bir oturumda `kutlamalarSessiz` yerine doğru bayrağa taşınarak zaten düzeltilmişti) | Ekstra ✅ |
+| `tavsanVeTakipGoster` "yakın takip" satırı (18140) | Sadece sıralama-karşılaştırma yorum metni (tavşan sonucunun kendisi HER modda gösteriliyor, gerçek puanlar zaten Klasman'da her zaman görünür) | Ekstra ✅ (bilinçli tasarım) |
+| `_seriSonrasiOdulVeLog` (18365 civarı) | `kutlamalarSessiz=true` + kuyruk temizleme — ödül/rozet/coin YİNE VERİLİYOR, sadece sessizce | Ekstra ✅ |
+
+**Sonuç**: Arena'nın ok görseli (§15e, düzeltildi) DIŞINDA, mevcut 9 kullanım yerinin hepsi kuralı
+doğru uyguluyor — hiçbiri gerçek bir mekaniği/sonucu gizlemiyor. Pist'te (2 site) ve turnuva/bracket
+şampiyonluğunda ayrıca dikkatli kontrol edildi, iki yerde de sorun yok. Yeni bir `ciddiModAcik` kontrolü
+eklenirken yukarıdaki ayrım testi uygulanmalı.
 
 ## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
