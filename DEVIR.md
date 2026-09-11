@@ -1398,6 +1398,104 @@ tek etkisi: `dues`/`attendance_auto` tablolarındaki birkaç fazlalık satırın
 yok) ama zaten kullanılmayan veri olduğu için pratik risk yok. Silme işlemi istenirse ayrı, açık bir
 onayla yapılacak.
 
+## 9f. İş 2/3 — Yoklama arşivleme, GÜVENLİK BAYRAKLI (2026-09-11, gece görevi, TAMAMLANDI, deploy edildi)
+
+**Bağlam**: kullanıcı gece için üç iş bıraktı, ara onay istemeden bitirilip sabah tek raporla
+sunulacak şekilde. Bu iş, önceden sunulan ve onaylanan plandı — TEK fark, kullanıcının son eklediği
+güvenlik bayrağı (aşağıda).
+
+**Neden bir güvenlik bayrağı gerekti**: plan sunulurken `_raporKatilimAy`/`_raporKatilimSezon`
+fonksiyonlarının "3 yer"den çağrıldığı düşünülüyordu — kod adım adım okunduğunda gerçekte **7 farklı
+rapor fonksiyonundan** (`_aylikBultenMetni`, `sporcuAylikRaporPdfIndir`, `aylikBultenCiz`,
+`aileRaporuPDF`, `aileRaporuMetin`, `_dersSonuOzetMetni`, `yoneticiAylikKatilimCiz`) çağrıldığı
+bulundu — hepsini AYNI gece arşiv-farkında hale getirmek çok daha büyük bir değişiklik yüzeyi
+olurdu. Kullanıcı bunun yerine bir güvenlik bayrağı istedi: mekanizmanın kendisi (tablo, cron, log)
+BUGÜN kurulsun ama gerçek veri taşıma o 7 fonksiyon hazır olana kadar kapalı kalsın.
+
+**Kurulan mekanizma**:
+1. **Migration `0036_attendance_archive.sql`**: `attendance_auto_archive` (aynı şema) + `archive_runs`
+   (log) tabloları. SIFIR veri taşır — sadece boş tablo oluşturur. Yerel D1'de uygulanıp test edildi.
+2. **`src/lib/attendanceArchive.ts`** — yeni modül, `export const ARSIV_RAPORLAR_HAZIR = false`.
+   `archiveOldAttendance(env)`: 90 günlük eşiği Türkiye saatiyle hesaplar (`reminders.ts`'teki
+   `turkiyeSaatBilgisi`'i export edip REUSE etti — proje genelindeki "Workers runtime'ında Date yerel
+   getter'ları UTC döner" uyarısına uyularak, yeni bir tarih hesaplama deseni İCAT EDİLMEDİ).
+   Bayrak `false` iken: eski satır sayısını SAYAR ama TAŞIMAZ, sayı bir önceki "kuru" log'dan
+   FARKLIYSA `archive_runs`'a `bayrak_durumu='kuru'` bir satır yazar (aynı sayıyı tekrar tekrar
+   loglamaz — yoksa bu log tablosu kendisi her 5 dakikada büyüyen bir koleksiyon olurdu). Bayrak
+   `true` olduğunda: satırları arşive kopyalar + canlı tablodan siler + sonucu loglar, hepsi TEK bir
+   `env.DB.batch()` içinde (atomik — yarım kalmış bir taşıma riski yok).
+3. **`src/index.ts`**: `scheduled()`'a `archiveOldAttendance(env)` eklendi — YENİ bir cron değil, VAR
+   OLAN 5 dakikalık tetikleyiciye (hatırlatmalarla birlikte) eklendi.
+4. **`GET /api/attendance/auto`** genişletildi: `?from=&to=` verilirse `attendance_auto` ∪
+   `attendance_auto_archive`'ı birleştirip döner (7 fonksiyon hazır olunca kullanacağı yol) —
+   parametresiz/`?tarih=` eski davranış BİREBİR aynı kaldı, geriye dönük tam uyumlu.
+5. **Devamsızlık Radarı "yaklaşık" işareti**: `_sonGelisGun()` artık `{gun, yaklasikMi}` döndürüyor —
+   gerçek bir yoklama/antrenman kaydı yerine `sp.sonSkorZamani`'ye (bir skor girişi, yoklamanın
+   kendisi değil) düşüldüyse `yaklasikMi=true`. 3 render noktası (`yoneticiDevamsizlikWidgetCiz`,
+   `yoneticiOzetCiz`, `yoneticiDevamsizlikSekmesiCiz` — ikincisi ve üçüncüsü birebir aynı satırdı,
+   tek `replace_all` ile ikisi de düzeltildi) artık `~14 gündür yok (yaklaşık)` gibi gösteriyor.
+   Bugün itibariyle bu SADECE hiç yoklama kaydı olmayan ama skor girmiş biri için tetikleniyor;
+   bayrak `true` olup gerçek taşıma başlayınca 90 günden eski gerçek bir yoklama kaydı da bu duruma
+   düşebilir — TASARLANDIĞI gibi.
+
+**Gerçek testle doğrulandı** (yerel D1, migration uygulanmış haliyle): cron tetiklendi (`wrangler dev`
++ `/cdn-cgi/handler/scheduled`), `archive_runs`'a `cutoff_tarih:'2026-06-13'` (bugünden 90 gün önce,
+doğru), `tasinan_satir:20`, `bayrak_durumu:'kuru'` yazıldığı görüldü — AMA `attendance_auto_archive`
+HÂLÂ BOŞ, o 20 satır HÂLÂ `attendance_auto`'da (gerçekten taşınmadı, bayrak doğru çalışıyor). Cron
+ikinci kez tetiklenince YENİ bir log satırı YAZILMADI (dedup doğru çalışıyor). Yeni `?from=&to=`
+sorgusu gerçek veri döndürdü, parametresiz eski çağrı hâlâ 200 dönüyor.
+
+**Geri alma (kullanıcı istedi — "aylar sonra bakacağım, hatırlamayacağım")**: bayrak `false` kaldığı
+sürece hiçbir şey taşınmadığı için "geri alma" pratik olarak GEREKMEZ. Ama bayrak bir gün `true`
+yapılıp gerçek taşıma başladıktan SONRA bir şey ters giderse, arşivlenmiş satırları canlı tabloya
+geri taşımak için:
+```sql
+-- TÜM arşivi geri taşı (dikkat: attendance_auto'da bugün aynı (tarih,ad) satırı varsa ÜZERİNE YAZAR)
+INSERT OR REPLACE INTO attendance_auto (tarih, ad, grup, saat, elle, geldi)
+  SELECT tarih, ad, grup, saat, elle, geldi FROM attendance_auto_archive;
+DELETE FROM attendance_auto_archive;
+
+-- SADECE belirli bir tarihten sonrasını geri taşı (daha güvenli, kısmi geri alma):
+INSERT OR REPLACE INTO attendance_auto (tarih, ad, grup, saat, elle, geldi)
+  SELECT tarih, ad, grup, saat, elle, geldi FROM attendance_auto_archive WHERE tarih >= '2026-XX-XX';
+DELETE FROM attendance_auto_archive WHERE tarih >= '2026-XX-XX';
+```
+Şema geri alma (tabloları tamamen kaldırmak istenirse, veri kaybı YARATIR, sadece tablolar boşsa/
+kullanılmıyorsa güvenli): `DROP TABLE attendance_auto_archive; DROP TABLE archive_runs;`
+
+**Ne zaman izlenmeli**: `SELECT * FROM archive_runs ORDER BY id DESC LIMIT 20;` — `bayrak_durumu='kuru'`
+satırları "arşivlenecekti ama bayrak kapalı" anlamına gelir, `tasinan_satir` sütunu büyüdükçe gerçek
+veri 90 günü ne kadar aştığını gösterir (bugün: 0, veri sadece 77 gün — bkz. §9 trend tablosu, ~1 ay
+içinde ilk gerçek adaylar oluşacak).
+
+## 9g. Sonraki iş — 7 rapor fonksiyonunu arşiv-farkında yapmak, SONRA `ARSIV_RAPORLAR_HAZIR = true`
+
+**Bayrağın yeri**: `src/lib/attendanceArchive.ts`, `export const ARSIV_RAPORLAR_HAZIR = false;` —
+gerçek taşımayı açmak için bu TEK satır `true` yapılır (kod başka hiçbir yerde değişmez).
+
+**Önce yapılması gereken**: aşağıdaki 7 fonksiyon şu an SADECE `otomatikYoklamaDB` (bellek-içi, sıcak
+pencere) okuyor — bayrak `true` yapılıp gerçek taşıma başladıktan sonra, bu fonksiyonlardan biri
+90 günden eski bir ay/sezon için çağrılırsa o eski günleri SESSİZCE eksik sayar (veri kaybolmaz,
+D1'de güvende kalır, ama EKRANDA/PDF'te eksik görünür):
+
+1. `_aylikBultenMetni(g, ad, ay)` — aylık veli bülteni metni
+2. `sporcuAylikRaporPdfIndir()` — sporcu bazlı aylık PDF rapor
+3. `aylikBultenCiz()` — aylık bülten ekran render'ı
+4. `aileRaporuPDF(ad, g)` — aile/veli PDF raporu (sezon bazlı)
+5. `aileRaporuMetin(ad, g)` — aile raporu metni (WhatsApp kopyala)
+6. `_dersSonuOzetMetni(g, ad)` — ders sonu özet metni (sezon bazlı)
+7. `yoneticiAylikKatilimCiz()` — yönetici aylık katılım listesi ekranı
+
+**Yapılacak değişiklik şekli** (henüz uygulanmadı): bu 7 fonksiyon değil, SADECE `_raporKatilimAy`/
+`_raporKatilimSezon`/`_sonGelisGun`/`devamsizlikListesi` "arşiv verisi" alan OPSİYONEL bir parametre
+alacak şekilde genişletilecek (varsayılan boş/`null` — mevcut TÜM çağrılar davranış değişikliği
+OLMADAN çalışmaya devam eder). Bu 7 üst-seviye fonksiyon kendi başında `async` olup, ihtiyaç duyduğu
+aralık 90 günün dışına taşıyorsa YENİ `GET /api/attendance/auto?from=&to=` uç noktasını bir kez
+çağırıp sonucu bu parametre üzerinden geçirecek — hesaplama fonksiyonlarının KENDİSİ değişmeyecek,
+sadece bir veri kaynağı daha kabul edecek. `otomatikYoklamaDB` (paylaşılan global) hiçbir zaman
+arşiv verisiyle KİRLETİLMEYECEK (aksi halde fan-out'a geri sızma riski olurdu — tam çözülen sorunun
+aynısı). Bu iş kullanıcı onayı bekliyor, henüz BAŞLANMADI.
+
 ## 9b. Sonraki iş — `#10b981` tokenizasyonu (Faz 6'da bilerek ele alınmadı)
 
 **Bağlam**: Madde 6 (çıplak hex) taramasında `#10b981` 34 yerde bulundu. Kullanıcı açık talimat

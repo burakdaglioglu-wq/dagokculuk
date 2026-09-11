@@ -12,10 +12,23 @@ interface AttendanceRow {
 
 export function registerAttendanceRoutes(router: Router): void {
   router.get("/api/attendance/auto", async (request, env) => {
-    const tarih = new URL(request.url).searchParams.get("tarih");
-    const stmt = tarih
-      ? env.DB.prepare("SELECT * FROM attendance_auto WHERE tarih = ?").bind(tarih)
-      : env.DB.prepare("SELECT * FROM attendance_auto");
+    const params = new URL(request.url).searchParams;
+    const tarih = params.get("tarih");
+    const from = params.get("from");
+    const to = params.get("to");
+    // Arşiv-farkında aralık sorgusu (2026-09-11, DEVIR.md §9f) — 90 günlük sıcak pencerenin dışına
+    // taşmış olabilecek raporlar (sezon/ay seçici) için hem canlı hem arşiv tablosunu birleştirir.
+    // `tarih`/parametresiz eski davranış TAMAMEN aynı kaldı — bu SADECE yeni, opsiyonel bir yol.
+    const stmt =
+      from && to
+        ? env.DB.prepare(
+            `SELECT tarih, ad, grup, saat, elle, geldi FROM attendance_auto WHERE tarih BETWEEN ?1 AND ?2
+             UNION ALL
+             SELECT tarih, ad, grup, saat, elle, geldi FROM attendance_auto_archive WHERE tarih BETWEEN ?1 AND ?2`
+          ).bind(from, to)
+        : tarih
+        ? env.DB.prepare("SELECT * FROM attendance_auto WHERE tarih = ?").bind(tarih)
+        : env.DB.prepare("SELECT * FROM attendance_auto");
     const { results } = await stmt.all<AttendanceRow>();
     return json({ attendance: results });
   });

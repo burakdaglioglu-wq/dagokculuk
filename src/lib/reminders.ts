@@ -10,7 +10,7 @@ const GUN_KISA_MAP: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, T
  * antrenman saatleri (baslangicSaat "18:00" gibi) hep Türkiye duvar saati anlamına gelir. Bu yüzden
  * cron mantığı UTC'yi Intl ile Europe/Istanbul'a çevirerek "şu an Türkiye'de kaçıncı gün/saat"i
  * kendi hesaplıyor — Date'in yerel getter'larına asla güvenmiyor. */
-function turkiyeSaatBilgisi(simdi: Date): { gun: number; saat: number; dakika: number; tarih: string } {
+export function turkiyeSaatBilgisi(simdi: Date): { gun: number; saat: number; dakika: number; tarih: string } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Istanbul",
     year: "numeric",

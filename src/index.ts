@@ -36,6 +36,7 @@ import { registerMiloGruplarRoutes } from "./routes/milo/gruplar";
 import { registerTanitimRoutes } from "./routes/tanitim";
 import { registerIhtiyacRoutes } from "./routes/ihtiyac";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
+import { archiveOldAttendance } from "./lib/attendanceArchive";
 
 export { ClubSync } from "./durable-objects/ClubSync";
 
@@ -152,5 +153,6 @@ export default {
     ctx.waitUntil(checkAndSendAidatReminders(env));
     ctx.waitUntil(checkAndSendBelgeReminders(env));
     ctx.waitUntil(checkAndSendBirthdayReminders(env));
+    ctx.waitUntil(archiveOldAttendance(env));
   },
 };

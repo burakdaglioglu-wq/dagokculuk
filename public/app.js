@@ -6748,7 +6748,7 @@
             el.innerHTML = dev.slice(0, 6).map(x => {
                 let adEsc = x.ad.replace(/'/g, "\\'");
                 return `<div class="yon-alert-card" style="padding:8px 10px;">
-                    <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:11px;">${x.ad}</div><div style="font-size:9px; color:var(--text-muted);">${x.gun === null ? 'hiç kayıt yok' : x.gun + ' gündür yok'}</div></div>
+                    <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:11px;">${x.ad}</div><div style="font-size:9px; color:var(--text-muted);">${x.gun === null ? 'hiç kayıt yok' : (x.yaklasikMi ? '~' : '') + x.gun + ' gündür yok' + (x.yaklasikMi ? ' (yaklaşık)' : '')}</div></div>
                     <button onclick="devamsizlikWhatsApp('${adEsc}', ${x.gun === null ? 0 : x.gun})" class="adm-btn adm-btn-sm" style="min-height:28px; padding:0 8px; font-size:9px; background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green);">💬</button>
                 </div>`;
             }).join('') + (dev.length > 6 ? `<div style="font-size:9px; color:var(--text-muted); text-align:center;">+${dev.length - 6} daha</div>` : '');
@@ -6929,14 +6929,21 @@
         }
         // ===== GENEL BAKIŞ (YÖNETİCİ ÖZET PANELİ) =====
         // ===== DEVAMSIZLIK RADARI =====
+        // DÖNÜŞ ARTIK {gun, yaklasikMi} (2026-09-11, DEVIR.md §9f — yoklama arşivleme): "son geliş"
+        // GERÇEK bir yoklama/antrenman kaydından bulunamayıp sp.sonSkorZamani'ye (bir skor girişi,
+        // yoklamanın kendisi değil) düşüldüyse yaklasikMi=true — koç kesin bir tarih sanmasın diye.
+        // Bugün itibariyle (90 günlük sıcak pencere) bu SADECE gerçekten hiç yoklama kaydı olmayan
+        // ama skor girmiş biri için tetiklenir; arşivleme gerçek taşımaya başlayınca (ARSIV_RAPORLAR_HAZIR
+        // true olunca) 90 günden eski bir yoklama kaydı da bu duruma düşebilir.
         function _sonGelisGun(g, ad, sp) {
             let son = '';
             Object.keys(otomatikYoklamaDB || {}).forEach(tr => { if(otomatikYoklamaDB[tr][ad] && otomatikYoklamaDB[tr][ad].grup === g && otomatikYoklamaDB[tr][ad].geldi !== false && tr > son) son = tr; });
             (antrenmanlarDB || []).forEach(a => { if(a.lig === g && (a.tarih || '') > son && (a.kayitlar || []).some(x => x.ad === ad && x.geldi)) son = a.tarih; });
             let sonT = son ? new Date(son + 'T12:00:00').getTime() : 0;
-            if(sp.sonSkorZamani && sp.sonSkorZamani > sonT) sonT = sp.sonSkorZamani;
-            if(!sonT) return null; // hiç kaydı yok
-            return Math.floor((Date.now() - sonT) / 86400000);
+            let yaklasikMi = false;
+            if(sp.sonSkorZamani && sp.sonSkorZamani > sonT) { sonT = sp.sonSkorZamani; yaklasikMi = true; }
+            if(!sonT) return { gun: null, yaklasikMi: false }; // hiç kaydı yok
+            return { gun: Math.floor((Date.now() - sonT) / 86400000), yaklasikMi };
         }
         function devamsizlikListesi(esikGun) {
             let liste = [];
@@ -6944,8 +6951,8 @@
                 Object.keys(turnuvaDB[g] || {}).forEach(ad => {
                     let sp = turnuvaDB[g][ad];
                     if(sp.pasif || sp.donduruldu) return;
-                    let gun = _sonGelisGun(g, ad, sp);
-                    if(gun === null || gun >= esikGun) liste.push({ g: g, ad: ad, gun: gun });
+                    let sonuc = _sonGelisGun(g, ad, sp);
+                    if(sonuc.gun === null || sonuc.gun >= esikGun) liste.push({ g: g, ad: ad, gun: sonuc.gun, yaklasikMi: sonuc.yaklasikMi });
                 });
             });
             return liste.sort((a, b) => (b.gun === null ? 9999 : b.gun) - (a.gun === null ? 9999 : a.gun));
@@ -7123,7 +7130,7 @@ ${(function(){
                         let adEsc = x.ad.replace(/'/g, "\\'");
                         return `<div class="yon-alert-card">
                             <div style="font-size:18px; flex-shrink:0;">🔴</div>
-                            <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · ${x.gun === null ? 'hiç kayıt yok' : x.gun + ' gündür gelmiyor'}</div></div>
+                            <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · ${x.gun === null ? 'hiç kayıt yok' : (x.yaklasikMi ? '~' : '') + x.gun + ' gündür gelmiyor' + (x.yaklasikMi ? ' (yaklaşık)' : '')}</div></div>
                             <button onclick="devamsizlikWhatsApp('${adEsc}', ${x.gun === null ? 0 : x.gun})" class="adm-btn adm-btn-sm" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green); flex-shrink:0;">💬 Veliye Yaz</button>
                         </div>`;
                     }).join('') + (dev.length > 8 ? `<button onclick="yoneticiSekme('yoklama'); yoneticiYoklamaTip='devamsizlik'; yoneticiYoklamaCiz();" style="width:100%; margin:2px 0 10px; background:rgba(239,68,68,0.1); color:var(--neon-red); border:1px solid var(--neon-red); border-radius:8px; padding:8px; font-size:11px; font-weight:bold; cursor:pointer;">+ ${dev.length - 8} sporcu daha — Tümünü Gör →</button>` : '');
@@ -8415,7 +8422,7 @@ ${(function(){
                 let adEsc = x.ad.replace(/'/g, "\\'");
                 return `<div class="adm-list-row">
                     <div style="font-size:18px; flex-shrink:0;">🔴</div>
-                    <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · ${x.gun === null ? 'hiç kayıt yok' : x.gun + ' gündür gelmiyor'}</div></div>
+                    <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · ${x.gun === null ? 'hiç kayıt yok' : (x.yaklasikMi ? '~' : '') + x.gun + ' gündür gelmiyor' + (x.yaklasikMi ? ' (yaklaşık)' : '')}</div></div>
                     <button onclick="devamsizlikWhatsApp('${adEsc}', ${x.gun === null ? 0 : x.gun})" class="adm-btn adm-btn-sm" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green); flex-shrink:0;">💬 Veliye Yaz</button>
                 </div>`;
             }).join('') + '</div>';
