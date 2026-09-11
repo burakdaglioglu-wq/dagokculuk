@@ -2410,7 +2410,7 @@ DOĞRULANDI (aşağıda).
 **Deploy durumu**: SADECE commit + push yapıldı, `npm run deploy` YAPILMADI — kullanıcı görsel/davranış
 değişikliği olduğu için sabah kendi gözüyle bakıp onaylayacak.
 
-## 15f. Gerçek okçu karakterleri — TAMAMLANDI, deploy edilmedi (2026-09-11, gece görevi + sabah devamı)
+## 15f. Gerçek okçu karakterleri — TAMAMLANDI, deploy edildi (2026-09-11, gece görevi + sabah devamı)
 
 **Bağlam**: gece görevinin 3. işi, Arena'daki SVG okçu figürlerini 6 hazır WebP karaktere
 (`okcu-kirmizi-genc.webp`, `okcu-orman-elfi.webp`, `okcu-elf-kadin.webp`, `okcu-tilki.webp`,
@@ -2466,10 +2466,9 @@ düzgün); gerçek bir seri (9-8-7) girilip can barının doğru yüzdeye düşt
 etkilenmemiş); ok uçuşu animasyonu hâlâ çalışıyor (`.km-arena-ucan-ok` DOM'da görüldü); 12 Oyun
 teması + Reaksiyon regresyon taraması temiz, `node --check` temiz.
 
-**Deploy durumu**: SADECE commit + push — kullanıcı görsel değişikliği kendi gözüyle onaylayana
-kadar `npm run deploy` YAPILMADI (dosyalar zaten iş 2'nin deploy'unda statik asset olarak yüklendi,
-ama app.js henüz onları KULLANMIYOR haliyle canlıda — kod tarafı bu commit'le push edildi, deploy
-ayrı bir adım).
+**Deploy durumu**: kullanıcı ekran görüntülerine bakıp onayladıktan sonra deploy edildi —
+`de00e8d2-6a3b-4a09-ad68-1e0cad8d4eb1` (2026-09-11). WebP'ler zaten iş 2'nin deploy'unda statik
+asset olarak yüklenmişti, bu deploy sadece `app.js`'i güncelledi.
 
 ## 15g. KURAL — Ciddi Mod SADECE ekstraları susturur, mekaniğin görünürlüğünü ASLA kapatmaz (2026-09-11)
 
