@@ -2765,3 +2765,118 @@ zamanlanmış görev) NEGATİF — kapatılacak bir şey bulunamadı. Kanıtlar 
 penceresi, hemen ardından gelen commit) elle, bir terminalden atılmış bir commit'e işaret ediyor,
 otomatik bir mekanizmaya değil. Kim attığı OS kayıtlarından çıkarılamadı — kullanıcıya "sizin
 bilgisayarınızda o saatte başka biri/bir şey olabilir mi" sorusu açık bırakıldı.
+
+## 17. Faz 14 — Zirve Yolu gerçek tırmanış (5 adım, gece görevi 2026-09-12/13)
+
+**Bağlam**: kullanıcı "Zirve Yolu" temasının adına rağmen düz/yatay bir yol olduğunu, tırmanış
+hissi vermediğini bildirdi. 5 aşamalı bir plan onaylandı (1-3 aşama akşam onaylı yapıldı, kullanıcı
+sonra "uyuyacağım, sen bu oyunu tamamla, yayına çık, bana sorma" diyerek 4-5. adımları VE deploy'u
+onay beklemeden tamamlamamı istedi — bu bölüm o gece işinin TAMAMINI belgeliyor).
+
+### 17a. Adım 1 — Serpantin patika + dikey kamera takibi
+
+`<path id="km-oyun-trail">`'in `d`'si tek seferlik elle yeniden çizilmedi — 20 noktalık bir dizi
+(`KM_OYUN_ZIRVE_YOL_NOKTALARI`) + bir orta-nokta yumuşatma algoritması (`kmOyunZirveYolDStr`) ile
+üretiliyor, aşağıdan yukarı 5 bacaklı gerçek bir switchback. `kmOyunZirveNokta(frac)` imzası
+DEĞİŞMEDİ. Kamera dikey takibi YENİ bir mekanizma GEREKTİRMEDİ — `kmOyunKameraGuncelle`'in var olan
+zum penceresi zaten hem x hem y'yi merkezliyordu, sadece patikanın kendisi dikey olunca otomatik
+çalışmaya başladı.
+
+**Bulgu ve düzeltme (kullanıcı istedi)**: dik bacaklarda eski `kmOyunJitter` (küresel x/y ofseti)
+karakterleri artık doğru ayrıştırmıyordu. Pist'in teğet+normal tekniğinin Zirve'ye özel bir ikizi
+yazıldı: `kmOyunZirveTeget`/`kmOyunZirveJitter`/`kmOyunZirveKonum` — AYRICA yeni bir risk ortaya
+çıktı (büyük yayılma payı artık dikey eksene düşüp karakterleri kanvas dışına taşırabilirdi),
+Zirve'ye özel bir dikey kelepçe (`KM_OYUN_ZIRVE_Y_PAY`) eklendi.
+
+**360px "geniş" görünüm — iki aşamalı düzeltme**: (1) önce SADECE "yakın" kameranın zum penceresi
+kutunun gerçek oranına göre daraltıldı (`kmOyunZirveKutuOrani`/`kmOyunZirveGenisKutu`) — dikey alan
+kullanılmaya başladı ama en dıştaki bacaklar kırpılıyordu. (2) kullanıcı "kırpılmayı kabul etmeden
+önce dene" dedi — patikanın KENDİSİ dar kutularda x=600 etrafında sıkıştırılıyor
+(`kmOyunZirveYolSenkron`, AYNI 20 nokta + AYNI yumuşatma, sadece x'ler ölçekli), 0.22 tabanlı (altı
+okunaksız olurdu). Sonuç: 360px'te artık hiçbir bacak kayboluyor, en dar durumda bile sadece
+birkaç dünya-biriminlik (gözle fark edilmeyen) bir pay kalıyor. Gerçek pencere yeniden boyutlandırma
+için `#km-oyun-panel-zirve` üzerinde bir `ResizeObserver` kuruldu.
+
+### 17b. Adım 2 — Dağ arka planı + dikey parallax
+
+Sky gradyanı (koyu altta/açık üstte), 3 derinlik katmanı (`km-oyun-zirve-dag-uzak/orta/yakin`, hız
+0.15/0.35/0.6 — `kmOyunZirveParallaxUygula`, formül: `ty = kameraY*(1-hiz)`, `kmOyunKameraHedefeGit`
+tween'inin HER karesinde SADECE `svg.id==='km-oyun-svg-zirve'` iken çağrılıyor). Eski 3 prosedürel
+silüet (kmMtn1/2/3) ATILMADI — daha uzun ölçeklendi + koyu kaya/orman yeşili→beyaz kar/buz gradyanına
+çevrildi. `zirve-dag-mavi.webp`'in 7 kopyası (uzak: küçük/soluk/bulanık, yakın: büyük/net) üç
+katmana dağıtıldı. Yıldızlar artık sadece alt/koyu banda (y 250-440).
+
+### 17c. Adım 3 — Gerçek karakterler + kamp isimleri
+
+**Cinsiyet kontrolü** (kullanıcı istedi): `athletes.cinsiyet` GERÇEKTEN var (migration 0003, 'K'/'E',
+2026-07'den beri dolduruluyor, 12 kullanım yeri) — "sırayla dağıt" yedek planı hiç gerekmedi. Atama
+deterministik: K→`zirve-tirmanici-kiz`, E→`zirve-izci-erkek`, boş/nadir eski kayıt→`zirve-buz-tirmanici`
+(kullanıcının kendi "üçüncü seçenek"i). Cinsiyet sabit olduğu için ayrı bir localStorage hafızası
+GEREKMEDİ (Arena'nın sıralı atamasından farklı). `_kmOyunRosterCache`'e SADECE Zirve'nin okuduğu
+saf-katkısal bir `cinsiyet` alanı eklendi (`kmOyunRosterYenile`).
+
+Eski paylaşılan `kmOyunKarakterSVG` (6 temalık soyut maskot) yerine Zirve'ye özel
+`kmOyunZirveKarakterSVG` — takım rozeti/kilit-çerçevesi/nefes animasyonu KORUNDU, sporcu fotoğrafı/baş
+harfi ARTIK YOK (Arena'nın okçu kararıyla AYNI gerekçe: gerçek illüstrasyonun yüzü yok). Dağ
+Tırmanışı (`kmOyunSahneKurDag`/`kmOyunKarakterSVG(...,'dagci',...)`) AYRI bir tema, hiç dokunulmadı —
+doğrulandı.
+
+**Kamp isimleri**: 7 durak (Orman Kapısı→Son Kamp) + Zirve (statik metin, `#km-oyun-summit` içinde).
+Eski numaralı bayrak yerine `zirve-ahsap-tabela.webp` + isim metni; "geçildi" göstergesi artık
+sporcunun rengiyle parlayan küçük bir rozet halkası (`kmOyunZirveBayrakGuncelle`).
+
+### 17d. Adım 4-5 — Yükseklik, kar fırtınası, ekipman (gece, ONAY BEKLENMEDEN tamamlandı)
+
+**SAYI UYUŞMAZLIĞI bulundu, EN MUHAFAZAKÂR şekilde çözüldü, ONAY BEKLİYOR**: "her kontrol noktası
+bir ekipman açsın" dendi ama 7 durağa karşı SADECE 5 ekipman kalemi (halat/kramponlar/buz baltası/
+oksijen tüpü/telsiz) verildi. Kullanıcı uyuduğu için sorulamadı. 5 kalem EN DOĞAL 5 durağa
+yerleştirildi — `KM_OYUN_ZIRVE_CP_EKIPMAN = {0:'telsiz', 1:'halat', 3:'buzbaltasi', 4:'kramponlar',
+5:'oksijen'}` (Şelale ve Son Kamp'ta YENİ ekipman yok, sadece dinlenme noktası — gerçek dağcılıkta da
+her kamp malzeme vermez). Oksijen BİLEREK fırtına bölgesinden (frac .8) ÖNCEKİ durağa (Rüzgâr Sırtı,
+.75) değil, "ince hava" cezasının BAŞLADIĞI yerden (Buzul, .625) SONRAKİ bir durağa kondu — böylece
+"oksijensiz ince hava" cezasının GERÇEK bir penceresi (.625→.75 arası) oluşuyor; ekipman hep BİR
+ÖNCEKİ durakta açılsaydı ceza asla ELE GEÇMEZ bir duruma düşerdi (frac tek yönlü arttığı için bir
+durağı geçmeden geriye o durağın ekipmanı olmadan "yüksek irtifada" bulunmak imkansız olurdu).
+
+**Yükseklik**: `Math.round(frac*3000)` m, `#km-oyun-zirve-hud` — SVG dünya-koordinatlarının DIŞINDA,
+`#km-oyun-sahne`'nin paylaşılan overlay katmanında (`#km-oyun-sirada` ile AYNI konum deseni) —
+SVG içinde olsaydı kamera "yakın" zum yaptığında dünya-sabit bir HUD ekrandan kayıp giderdi.
+
+**Kar fırtınası**: frac ≥ .8 (Rüzgâr Sırtı sonrası, Son Kamp'a doğru son çıkış). `zirve-kar-tabelasi.webp`
+girişte duruyor (`kmOyunZirveNokta(0.8)`'de dinamik konumlanıyor — sıkıştırılmış patikada da doğru
+yerde kalır). O bölgede her 'M' EKSTRA `KM_OYUN_ZIRVE_STORM_CEZA_ISKALAMA=0.025` frac kaybettiriyor
+— ilerleme durmakla kalmıyor, gerçekten GERİ KAYABİLİYOR (`yeniFrac` alt sınırı olmayan tek satıra
+`Math.max(0,...)` eklendi — diğer 9 temada artis hep ≥0 olduğu için bu davranışlarını DEĞİŞTİRMEDİ).
+Kar görseli — Dağ Tırmanışı'nın `kmKayaDusme` deseninin AYNISI (düşen parçacık, reduced-motion
+otomatik kapatıyor), "aşırıya kaçmasın" (kullanıcı talimatı): ciddi modda 7, normalde 14 parçacık.
+
+**Ekipman**: durak geçilince `kmOyunZirveEkipmanKontrol` — durum (`d0.zirveEkipman`, D1'e YAZILMIYOR)
+ve HUD şeridi HER ZAMAN güncellenir; SADECE banner+ses ciddi modda susuyor (DEVIR §15g kuralıyla
+BİREBİR aynı ayrım). Oksijen tüpü kazanılmadan (frac .625-.75 arası) ilerleme ×0.55 yavaş — GERÇEK
+bir mekanik etki, süs değil (gerçek testte doğrulandı: 0.07425 vs 0.135 artis, oran tam 0.55).
+
+**Kullanılmayan asset**: `zirve-rota-ikon.webp` hiçbir adımda kullanılmadı — orijinal 8 asset
+listesinde vardı ama hiçbir adımın açıklamasında bir işlevi belirtilmemişti, bir amaç UYDURULMADI.
+Kullanıcının nereye koymak istediğini sabah sorması gerekiyor.
+
+**Ortak frac formülüne dokunulmadı**: `kmOyunZirveArtisHesapla`, Pist'in `kmOyunPistSetArtis`
+EMSALİYLE birebir aynı desen (kullanıcının kendi talimatı: "gerekirse kendi dalında override et").
+GERÇEK skora (`_skorKaydetCekirdek`, toplam) hiç dokunulmuyor — SADECE bu eğlence katmanının görsel
+frac'ı etkileniyor.
+
+### 17e. Doğrulama (5 adımın TAMAMI için)
+
+Gerçek testle (sıfır etkili senaryo değil): ince hava oranı (0.55, sayısal doğrulandı), fırtına
+cezası (temiz seri +0.135, 2 ıskalamalı seri -0.005 — GERÇEK bir `kmOyunOkGir`+`kmOyunIlerlet` akışıyla
+frac 0.85→0.845 GERİ KAYDI doğrulandı), ekipman sıralı kazanımı (6 ardışık gerçek seri, 5 kalemin
+hepsi doğru duraklarda, çoklu-durak-atlayan tek seride BİRDEN FAZLA ekipman doğru kazanılıyor), kar
+parçacık sayısı (ciddi mod açık/kapalı 7/14, doğrulandı). 12 tema + Reaksiyon regresyon taraması ve
+`node --check` her adımdan sonra temiz. 360/1280/1920/tam ekran hepsinde hatasız. Skor paneline
+hiç dokunulmadığı `git diff`'te anahtar kelime taramasıyla teyit edildi.
+
+**Bilinen küçük pürüz (düzeltilmedi, düşük öncelik)**: 360px'te `#km-oyun-sirada` (SIRADA kartı) ile
+yeni `#km-oyun-zirve-hud` üst üste biniyor gibi görünüyor — işlevsel değil, sadece kozmetik, dar
+ekranda iki üst-bar aynı köşede sıkışıyor.
+
+**Deploy durumu**: TAMAMI (adım 1-5) commit + push + DEPLOY edildi — kullanıcının açık talimatı
+("sen bu oyunu tamamla, yayına çık, bana sorma"). Deploy version ID ve commit hash'leri aşağıda.

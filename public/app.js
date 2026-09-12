@@ -10675,6 +10675,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-climber .km-init-text{ font-family:var(--font-display); font-weight:800; fill:#04141a; pointer-events:none; }
 .km-climber .km-ground-shadow{ fill:#000; opacity:.4; }
 .km-climber-inner{ transform-origin:center; }
+/* Faz 14, 4-5. adım (2026-09-12) — yükseklik/ekipman HUD'u. Zirve'nin SVG dünya-koordinatlarının
+   DIŞINDA, paylaşılan overlay katmanında (kmOyunPanelHTML'in DEĞİL, #km-oyun-sahne'nin çocuğu) —
+   SVG içine konsaydı kamera "yakın" zum yaptığında ekrandan kayıp giderdi (dünya-sabit bir HUD,
+   kameranın viewBox'ı değiştikçe görünmez olurdu). #km-oyun-sirada ile AYNI konumlandırma deseni. */
+.km-oyun-zirve-hud{ position:absolute; left:50%; top:8px; transform:translateX(-50%); z-index:7; display:flex; flex-direction:column; align-items:center; gap:3px; background:rgba(4,6,14,0.78); border:1.5px solid var(--a1); border-radius:12px; padding:6px 14px; pointer-events:none; }
+.km-zirve-yukseklik{ font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--ink); white-space:nowrap; }
+.km-zirve-yukseklik-max{ font-weight:600; font-size:10.5px; color:var(--ink-faint); }
+.km-zirve-ekipman-serit{ display:flex; gap:6px; }
+.km-zirve-ekipman-ikon{ font-size:14px; opacity:.25; filter:grayscale(1); transition:opacity .4s ease, filter .4s ease; }
+.km-zirve-ekipman-ikon.sahip{ opacity:1; filter:drop-shadow(0 0 4px var(--a3)); }
+/* Kar fırtınası — Dağ Tırmanışı'nın kmKayaDusme'siyle AYNI desen (düşen parçacık, reduced-motion
+   otomatik kapatıyor) — "aşırıya kaçmasın" (kullanıcı talimatı): az sayıda, düşük opaklık. */
+.km-zirve-kar{ position:absolute; top:-10px; background:#fff; border-radius:50%; opacity:0; animation-name:kmZirveKarDusme; animation-timing-function:linear; animation-iteration-count:infinite; pointer-events:none; }
+@keyframes kmZirveKarDusme{ 0%{ transform:translate(0,0); opacity:0; } 10%{ opacity:.75; } 90%{ opacity:.4; } 100%{ transform:translate(var(--kmKarDx,10px),360px); opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .km-zirve-kar{ animation:none; opacity:0; } }
 @keyframes kmClimberBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3.5px); } }
 #km-oyun-stars circle{ animation:kmTwinkle 3.2s ease-in-out infinite; }
 @keyframes kmTwinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.85; } }
@@ -11426,7 +11441,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunRosterCache = _kmListe.map(function(item) {
                 let d = kmOyunDurumAl(item.g, item.ad);
                 let sp = turnuvaDB[item.g] && turnuvaDB[item.g][item.ad];
-                return { g: item.g, ad: item.ad, kisa: kmOyunKisaAd(item.ad), frac: d.frac, toplamSkor: d.toplamSkor, foto: (sp && sp.fotoUrl) || null };
+                // cinsiyet — SADECE Zirve'nin gerçek karakter ataması (2026-09-12) okuyor, başka
+                // hiçbir tema/ekran bu alanı kullanmıyor — ekleme saf katkısal (mevcut hiçbir okuma
+                // yeri etkilenmiyor).
+                return { g: item.g, ad: item.ad, kisa: kmOyunKisaAd(item.ad), frac: d.frac, toplamSkor: d.toplamSkor, foto: (sp && sp.fotoUrl) || null, cinsiyet: (sp && sp.cinsiyet) || null };
             });
             // Takım Modu açıksa (ve futbol değilse) taze kurulan cache'teki HERKESİN frac'ı, kişisel
             // kayıtları değil, PAYLAŞILAN takım frac'ını göstersin — sayfa yenilense/tema değişse bile.
@@ -11603,16 +11621,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let mevcut = (svg.getAttribute('viewBox') || `${x} ${y} ${w} ${h}`).split(/\s+/).map(Number);
             let x0 = mevcut[0], y0 = mevcut[1], w0 = mevcut[2], h0 = mevcut[3];
             if(Math.abs(x0 - x) < 0.5 && Math.abs(y0 - y) < 0.5 && Math.abs(w0 - w) < 0.5) return; // zaten oradayız
+            // Zirve'nin dağ katmanları kameranın DÜŞEY konumuna göre kayıyor (Faz 14, 2. adım) — SADECE
+            // bu SVG için, kamera her nereye giderse (tween'in HER karesinde) katmanlar da senkron
+            // güncelleniyor. Diğer 6 tema bu id ile eşleşmediği için etkilenmiyor.
+            let zirveMi = svg.id === 'km-oyun-svg-zirve';
             // Ciddi Mod / prefers-reduced-motion — bu fazda eklenen animasyonlar kapalı kalmalı (var olan
             // ayarlar okunuyor, yeni ayar eklenmedi). Kamera yine doğru yere gidiyor, sadece ANINDA.
             if((typeof ciddiModAcik !== 'undefined' && ciddiModAcik) || kmOyunKameraAzaltilmisHareketMi()) {
                 svg.setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+                if(zirveMi) kmOyunZirveParallaxUygula(y);
                 return;
             }
             let basla = performance.now(), sure = 700; // "yaklaşık 600-800ms" — kullanıcı isteği
             function adim(now) {
                 let t = Math.min(1, (now - basla) / sure), e = 1 - Math.pow(1 - t, 3);
-                svg.setAttribute('viewBox', `${(x0 + (x - x0) * e).toFixed(1)} ${(y0 + (y - y0) * e).toFixed(1)} ${(w0 + (w - w0) * e).toFixed(1)} ${(h0 + (h - h0) * e).toFixed(1)}`);
+                let yeniY = y0 + (y - y0) * e;
+                svg.setAttribute('viewBox', `${(x0 + (x - x0) * e).toFixed(1)} ${yeniY.toFixed(1)} ${(w0 + (w - w0) * e).toFixed(1)} ${(h0 + (h - h0) * e).toFixed(1)}`);
+                if(zirveMi) kmOyunZirveParallaxUygula(yeniY);
                 if(t < 1) _kmOyunKameraRaf = requestAnimationFrame(adim);
             }
             _kmOyunKameraRaf = requestAnimationFrame(adim);
@@ -11620,15 +11645,47 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // hedefFracOverride: SADECE hareket animasyonu başlarken kullanılıyor (bkz. baslatAnimasyon) —
         // sporcunun HENÜZ yazılmamış yeni frac'ına doğru kamerayı önceden kaydırabilmek için. Verilmezse
         // (normal çağrılarda) sporcunun O ANKİ frac'ı kullanılır — davranış öncekiyle birebir aynı kalır.
+        // Faz 14 (2026-09-12) — hem "yakın" hem "geniş" kameranın ihtiyaç duyduğu tek ölçüm: SVG
+        // kutusunun GERÇEK render oranı (dar/uzun mobil ekranlarda 1200x440'ın 2.73:1'inden çok
+        // farklı olabiliyor). null dönerse (kutu henüz layout almamış) çağıran eski davranışta kalır.
+        function kmOyunZirveKutuOrani(svg) {
+            let kutu = svg.getBoundingClientRect();
+            return (kutu.width > 0 && kutu.height > 0) ? kutu.width / kutu.height : null;
+        }
+        // "Geniş" (tam) görünüm — normalde koşulsuz 0,0,1200,440. Aynı sorunun diğer yarısı
+        // (kullanıcı talimatı, 2026-09-12): GENİŞ görünüm de dikey kutuda AYNI letterbox'ı yaşıyordu
+        // — tüm patikayı (1200 birim) göstermeye çalışırken yüksekliğin çoğu boş kalıyordu. SADECE
+        // Zirve + SADECE dikey kutu: tam YÜKSEKLİK (440, "genel görünüm" hâlâ başlangıçtan zirveye
+        // HER ŞEYİ dikeyde gösteriyor) korunuyor, GENİŞLİK kutunun oranına daraltılıp kanvas
+        // ortasına (x=600) ortalanıyor — patikanın en uçtaki bacakları (x≈100/1090) bu darlıkta
+        // kırpılabilir, kabul edilen ödünleşim ("ekranın çoğu boş kalmasın" > "her bacak her an
+        // görünsün"). Diğer 6 temada VE Zirve'nin yatay kutularında bu fonksiyon eskisiyle birebir
+        // aynı `{x:0,y:0,w:1200,h:440}`'ı döndürüyor. İki "geniş'e düş" çağrısı da (kilit/sıradaki
+        // yok/nokta hesaplanamadı) AYNI fonksiyonu kullanıyor ki üçü arasında sapma olmasın.
+        function kmOyunZirveGenisKutu(svg, tema) {
+            let W = 1200, H = 440, w = W, h = H, x = 0, y = 0;
+            if(tema === 'zirve') {
+                let kutuOran = kmOyunZirveKutuOrani(svg);
+                if(kutuOran !== null && kutuOran < 1.4) {
+                    w = Math.max(150, h * kutuOran);
+                    x = Math.max(0, Math.min(W - w, 600 - w / 2));
+                }
+            }
+            return { x: x, y: y, w: w, h: h };
+        }
         function kmOyunKameraGuncelle(hedefFracOverride) {
             let tema = _kmOyunAktifTema;
             let svgId = KM_OYUN_KAMERA_SVG_ID[tema]; if(!svgId) return;
             let svg = document.getElementById(svgId); if(!svg) return;
             let genisMi = kmOyunKameraKilitliMi() || _kmOyunKameraDurum !== 'yakin';
-            if(genisMi) { kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440); return; }
+            if(genisMi) {
+                let k = kmOyunZirveGenisKutu(svg, tema);
+                kmOyunKameraHedefeGit(svg, k.x, k.y, k.w, k.h);
+                return;
+            }
             let fn = KM_OYUN_KAMERA_NOKTA_TEMALAR[tema];
             let temsilci = _kmOyunRosterCache[_kmOyunAktifIndex];
-            if(!temsilci) { kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440); return; }
+            if(!temsilci) { let k = kmOyunZirveGenisKutu(svg, tema); kmOyunKameraHedefeGit(svg, k.x, k.y, k.w, k.h); return; }
             let fracKullan = (typeof hedefFracOverride === 'number') ? hedefFracOverride : temsilci.frac;
             let hedefNesne = (fracKullan === temsilci.frac) ? temsilci : Object.assign({}, temsilci, { frac: fracKullan });
             let pt;
@@ -11639,10 +11696,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     _kmOyunKameraUyarilanTema[tema] = true;
                     console.warn('kmOyunKameraGuncelle: "' + tema + '" teması için nokta hesaplanamadı, kamera geniş (0 0 1200 440) kalıyor — kamera dispatcher bu temada ÇALIŞMIYOR, bildirilmesi gerekiyor.');
                 }
-                kmOyunKameraHedefeGit(svg, 0, 0, 1200, 440);
+                let k = kmOyunZirveGenisKutu(svg, tema);
+                kmOyunKameraHedefeGit(svg, k.x, k.y, k.w, k.h);
                 return;
             }
             let W = 1200, H = 440, Z = KM_OYUN_KAMERA_ZOOM, w = W * Z, h = H * Z;
+            // "Yakın" (takip) kamerası için AYNI daraltma (bkz. kmOyunZirveGenisKutu'nun üstündeki
+            // yorum) — burada yükseklik 220 (yarı), genişlik yine kutu portreyse daraltılıyor; merkez
+            // x=600 sabiti DEĞİL, aşağıda takip edilen sporcunun GERÇEK noktası (pt.x).
+            if(tema === 'zirve') {
+                let kutuOran = kmOyunZirveKutuOrani(svg);
+                if(kutuOran !== null && kutuOran < 1.4) w = Math.max(150, h * kutuOran);
+            }
             let x = Math.max(0, Math.min(W - w, pt.x - w / 2));
             let y = Math.max(0, Math.min(H - h, pt.y - h / 2));
             kmOyunKameraHedefeGit(svg, x, y, w, h);
@@ -12425,18 +12490,41 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <svg id="km-oyun-svg-zirve" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <linearGradient id="kmTrailGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#f0d9a8"/><stop offset="100%" stop-color="#ffe9b8"/></linearGradient>
-                    <linearGradient id="kmMtn3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#141c30"/><stop offset="100%" stop-color="#0d1322"/></linearGradient>
-                    <linearGradient id="kmMtn2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1b2440"/><stop offset="100%" stop-color="#111828"/></linearGradient>
-                    <linearGradient id="kmMtn1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#232f52"/><stop offset="100%" stop-color="#161f38"/></linearGradient>
+                    <linearGradient id="kmZirveGokyuzu" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#0a0e1c"/><stop offset="100%" stop-color="#5b7ba8"/></linearGradient>
+                    <linearGradient id="kmMtnUzakGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3a4a6b"/><stop offset="100%" stop-color="#dce8f5"/></linearGradient>
+                    <linearGradient id="kmMtnOrtaGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#28331f"/><stop offset="100%" stop-color="#eef3fa"/></linearGradient>
+                    <linearGradient id="kmMtnYakinGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#1a1f18"/><stop offset="100%" stop-color="#ffffff"/></linearGradient>
                   </defs>
+                  <rect id="km-oyun-zirve-gokyuzu" x="0" y="0" width="1200" height="440" fill="url(#kmZirveGokyuzu)"/>
                   <g id="km-oyun-stars"></g>
-                  <polygon fill="url(#kmMtn3)" points="0,340 100,260 200,330 320,270 420,335 540,275 650,340 760,270 880,335 1000,280 1120,335 1200,290 1200,440 0,440"/>
-                  <polygon fill="url(#kmMtn2)" points="0,380 120,300 230,370 350,300 460,375 580,310 690,380 800,305 920,375 1040,310 1150,375 1200,330 1200,440 0,440"/>
-                  <polygon fill="url(#kmMtn1)" points="0,420 140,330 260,410 380,335 520,420 650,340 780,415 900,335 1040,415 1150,350 1200,400 1200,440 0,440"/>
-                  <path id="km-oyun-trail" class="km-trail-glow" d="M 160 410 Q 260 432 280 350 Q 300 260 160 235 Q 40 213 130 145 Q 220 75 380 120 Q 480 150 430 230 Q 390 290 560 300 Q 700 312 680 200 Q 670 120 820 110 Q 920 102 880 190 Q 850 255 1000 230 Q 1100 210 1080 120 Q 1068 60 1160 45"/>
-                  <path class="km-trail" d="M 160 410 Q 260 432 280 350 Q 300 260 160 235 Q 40 213 130 145 Q 220 75 380 120 Q 480 150 430 230 Q 390 290 560 300 Q 700 312 680 200 Q 670 120 820 110 Q 920 102 880 190 Q 850 255 1000 230 Q 1100 210 1080 120 Q 1068 60 1160 45"/>
-                  <g id="km-oyun-flags"></g><g id="km-oyun-climbers"></g>
-                  <g id="km-oyun-summit" class="km-summit-icon" opacity="0.55"><line x1="1160" y1="45" x2="1160" y2="13" stroke="#8a94a6" stroke-width="2"/><path d="M1160,13 L1184,20 L1160,27 Z" fill="var(--a3)"/></g>
+                  <!-- Faz 14, 2. adım (2026-09-12) — "dağ arka planı", 3 derinlik katmanı. Her katman
+                       kmOyunZirveParallaxUygula() tarafından kameranın DÜŞEY konumuna göre AYRI hızda
+                       kaydırılıyor (uzak yavaş/geride kalır, yakın hızlı) — bkz. KM_OYUN_ZIRVE_PARALLAX_KATMANLARI.
+                       Eski 3 prosedürel silüet (kmMtn1/2/3) ATILMADI, sadece daha uzun (tüm patika
+                       boyunu kapsayacak) yeniden ölçeklendi + rengi koyu kaya/orman → beyaz kar-buz
+                       geçişine çevrildi ("aşağıda ağaç sınırı/koyu kaya, yukarıda kar/buz" — kullanıcı
+                       talimatı) ve gerçek zirve-dag-mavi.webp kopyalarıyla (uzaktakiler küçük/soluk/
+                       bulanık, yakındakiler büyük/net — AYNI kullanıcı talimatı) birlikte gruplandı. -->
+                  <g id="km-oyun-zirve-dag-uzak">
+                    <polygon fill="url(#kmMtnUzakGrad)" opacity="0.9" points="0,229 100,60 200,208 320,81 420,218 540,92 650,229 760,81 880,218 1000,102 1120,218 1200,123 1200,440 0,440"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="225" y="81.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="425" y="41.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="875" y="101.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
+                  </g>
+                  <g id="km-oyun-zirve-dag-orta">
+                    <polygon fill="url(#kmMtnOrtaGrad)" opacity="0.92" points="0,313 120,144 230,292 350,144 460,303 580,166 690,313 800,155 920,303 1040,166 1150,303 1200,208 1200,440 0,440"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="20" y="147" width="260" height="153" opacity="0.65" style="filter:blur(0.5px);"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="870" y="117" width="260" height="153" opacity="0.65" style="filter:blur(0.5px);"/>
+                  </g>
+                  <g id="km-oyun-zirve-dag-yakin">
+                    <polygon fill="url(#kmMtnYakinGrad)" points="0,398 140,208 260,377 380,218 520,398 650,229 780,387 900,218 1040,387 1150,250 1200,356 1200,440 0,440"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="-130" y="194.7" width="400" height="235.2" opacity="0.95"/>
+                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="950" y="174.7" width="400" height="235.2" opacity="0.95"/>
+                  </g>
+                  <path id="km-oyun-trail" class="km-trail-glow" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
+                  <path class="km-trail" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
+                  <g id="km-oyun-flags"></g><g id="km-oyun-zirve-firtina-tabela"></g><g id="km-oyun-climbers"></g>
+                  <g id="km-oyun-summit" class="km-summit-icon" opacity="0.55" transform="translate(600,45)"><image href="/zirve-karakterler/zirve-zirve-bayrak.webp" x="-41.5" y="-120" width="83.0" height="120" preserveAspectRatio="xMidYMax meet"/><text x="0" y="17" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">🏔️ Zirve</text></g>
                 </svg>
             </div>`;
             if(tid === 'yildiz') return `<div class="km-oyun-panel" id="km-oyun-panel-yildiz">
@@ -12693,6 +12781,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div class="km-oyun-scene" id="km-oyun-sahne">
                     ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
+                    <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
+                    <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
                     <div class="km-oyun-burst" id="km-oyun-burst"></div>
                     <div class="km-oyun-banner" id="km-oyun-banner"><b id="km-oyun-banner-t"></b><span id="km-oyun-banner-s"></span></div>
                     <div class="km-oyun-suspense" id="km-oyun-suspense"><div class="km-oyun-suspense-ikon">🥁</div><div class="km-oyun-suspense-yazi">AÇIKLANIYOR...</div></div>
@@ -13096,15 +13186,293 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
 
         // ---- ZIRVE YOLU ----
+        // Faz 14, 3. adım (2026-09-12) — "sayı değil isim, çocuk yerleri hatırlar, sayıları
+        // hatırlamaz" (kullanıcı talimatı). 7 durak (KM_OYUN_CP_FRAC.slice(0,-1), aşağıdan yukarı) +
+        // zirvenin kendisi (frac=1, ayrı — statik #km-oyun-summit metni) = 8 isim.
+        var KM_OYUN_ZIRVE_KAMP_ISIMLERI = ['Orman Kapısı', 'Çam Kampı', 'Şelale', 'Kaya Geçidi', 'Buzul', 'Rüzgâr Sırtı', 'Son Kamp'];
+        // Faz 14, 4-5. adım (2026-09-12, gece — kullanıcı uyurken "oyunu tamamla" talimatıyla) —
+        // yükseklik/ekipman/fırtına. SAYI UYUŞMAZLIĞI bulundu ve EN MUHAFAZAKÂR şekilde çözüldü:
+        // "her kontrol noktası bir ekipman açsın" dendi ama 7 durağa karşı SADECE 5 ekipman kalemi
+        // verildi. Kullanıcı uyuduğu için soramadım — 5 kalemi TÜM 7 durağa zorla dağıtıp anlamsız
+        // bir eşleştirme uydurmak yerine, EN DOĞAL 5 durağa yerleştirdim (Şelale ve Son Kamp'ta YENİ
+        // ekipman yok, sadece dinlenme/manzara noktası — gerçek dağcılıkta da her kamp yeni malzeme
+        // vermez). Oksijen BİLEREK fırtına bölgesinden (0.8) ÖNCEKİ durağa (Rüzgâr Sırtı, 0.75)
+        // kondu ki "ince hava" cezasının (aşağıda) GERÇEK bir penceresi olsun — sabah raporunda ayrıca
+        // belirtilecek, onay bekleyen bir karar.
+        var KM_OYUN_ZIRVE_EKIPMAN_BILGI = {
+            telsiz: { ikon: '📻', ad: 'Telsiz' },
+            halat: { ikon: '🪢', ad: 'Halat' },
+            buzbaltasi: { ikon: '🪓', ad: 'Buz Baltası' },
+            kramponlar: { ikon: '🥾', ad: 'Kramponlar' },
+            oksijen: { ikon: '🫁', ad: 'Oksijen Tüpü' }
+        };
+        var KM_OYUN_ZIRVE_EKIPMAN_SIRA = ['telsiz', 'halat', 'buzbaltasi', 'kramponlar', 'oksijen'];
+        // Durak indeksi (0-based, KM_OYUN_ZIRVE_KAMP_ISIMLERI ile hizalı) → o durakta açılan ekipman.
+        var KM_OYUN_ZIRVE_CP_EKIPMAN = { 0: 'telsiz', 1: 'halat', 3: 'buzbaltasi', 4: 'kramponlar', 5: 'oksijen' };
+        // "İnce hava" — Buzul'dan (durak 4, frac .625) itibaren, oksijen tüpü kazanılana (Rüzgâr
+        // Sırtı, durak 5, frac .75) kadar ilerleme YAVAŞ — kullanıcı talimatı: "bir mekanik etkisi
+        // olsun, sadece süs olmasın". Bu ARALIK BİLİNÇLİ: ekipman hep BİR ÖNCEKİ durakta açılan bir
+        // sistemde olsaydı ceza hiç ELE GEÇMEZ bir pencereye düşerdi (frac hep tek yönlü arttığı için
+        // "durağı geçmeden o durağın ekipmanına sahip olamama" durumu ancak İKİ farklı durak arasında
+        // gerçek bir boşluk varsa ortaya çıkar).
+        var KM_OYUN_ZIRVE_YUKSEK_IRTIFA_FRAC = 0.625;
+        var KM_OYUN_ZIRVE_YUKSEK_IRTIFA_YAVASLAMA = 0.55; // oksijensiz iken artış çarpanı
+        // Kar fırtınası — Rüzgâr Sırtı'ndan (oksijen alındıktan) SONRA, Son Kamp'a doğru son çıkış.
+        var KM_OYUN_ZIRVE_FIRTINA_FRAC = 0.8;
+        var KM_OYUN_ZIRVE_STORM_CEZA_ISKALAMA = 0.025; // her 'M' için EKSTRA frac kaybı (geri kayma)
+        // Ortak frac artış formülüne (kmOyunIlerlet) HİÇ dokunulmuyor — Pist'in kmOyunPistSetArtis
+        // EMSALİYLE aynı desen (kullanıcının kendi talimatı: "gerekirse kendi dalında override et").
+        // GERÇEK skora (toplam/_skorKaydetCekirdek) HİÇ dokunmuyor — SADECE bu eğlence katmanının
+        // görsel "frac" ilerlemesini etkiliyor.
+        function kmOyunZirveArtisHesapla(kaydedilecek, toplam, maxPuan, eskiFrac, d0) {
+            let artis = (toplam / maxPuan) * 0.15;
+            let ekipman = d0.zirveEkipman || {};
+            if(eskiFrac >= KM_OYUN_ZIRVE_YUKSEK_IRTIFA_FRAC && !ekipman.oksijen) artis *= KM_OYUN_ZIRVE_YUKSEK_IRTIFA_YAVASLAMA;
+            if(eskiFrac >= KM_OYUN_ZIRVE_FIRTINA_FRAC) {
+                let iskalama = kaydedilecek.filter(function(k) { return k.puan === 'M'; }).length;
+                if(iskalama > 0) artis -= iskalama * KM_OYUN_ZIRVE_STORM_CEZA_ISKALAMA;
+            }
+            return artis;
+        }
+        // Bir durak GEÇERKEN (eskiCp'den yeniCp'ye) yeni açılan ekipman(lar) — Ciddi Modda BİLDİRİM
+        // sessiz ama ekipmanın KENDİSİ (durum + HUD) HER ZAMAN güncellenir (kullanıcı talimatı,
+        // DEVIR §15g ile aynı ayrım: mekanik görünürlüğü ASLA kapanmaz, sadece kutlama sessizleşir).
+        function kmOyunZirveEkipmanKontrol(d0, eskiCp, yeniCp) {
+            if(!d0.zirveEkipman) d0.zirveEkipman = {};
+            for(let cp = eskiCp; cp < yeniCp; cp++) {
+                let anahtar = KM_OYUN_ZIRVE_CP_EKIPMAN[cp];
+                if(anahtar && !d0.zirveEkipman[anahtar]) {
+                    d0.zirveEkipman[anahtar] = true;
+                    let bilgi = KM_OYUN_ZIRVE_EKIPMAN_BILGI[anahtar];
+                    if(!(typeof ciddiModAcik !== 'undefined' && ciddiModAcik)) {
+                        kmOyunBanner('🎒 EKİPMAN KAZANILDI!', bilgi.ad.toUpperCase() + ' KAZANILDI', 'harika');
+                        try { sesCal(700, 0.1); setTimeout(function() { try { sesCal(1050, 0.15); } catch(e) {} }, 90); } catch(e) {}
+                    }
+                }
+            }
+        }
+        function kmOyunZirveHudGuncelle() {
+            let el = document.getElementById('km-oyun-zirve-hud'); if(!el) return;
+            if(_kmOyunAktifTema !== 'zirve') { el.style.display = 'none'; return; }
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+            if(!s) { el.style.display = 'none'; return; }
+            el.style.display = '';
+            let metre = Math.round(Math.max(0, Math.min(1, s.frac)) * 3000);
+            let d0 = kmOyunDurumAl(s.g, s.ad);
+            let ekipman = d0.zirveEkipman || {};
+            let ekipmanHTML = KM_OYUN_ZIRVE_EKIPMAN_SIRA.map(function(k) {
+                let bilgi = KM_OYUN_ZIRVE_EKIPMAN_BILGI[k], sahipMi = !!ekipman[k];
+                return `<span class="km-zirve-ekipman-ikon${sahipMi ? ' sahip' : ''}" title="${esc(bilgi.ad)}${sahipMi ? ' — kazanıldı' : ' — henüz kazanılmadı'}">${bilgi.ikon}</span>`;
+            }).join('');
+            el.innerHTML = `<div class="km-zirve-yukseklik">⛰️ ${metre.toLocaleString('tr-TR')} m <span class="km-zirve-yukseklik-max">/ 3.000 m</span></div><div class="km-zirve-ekipman-serit">${ekipmanHTML}</div>`;
+        }
+        // Kar fırtınası görseli — SADECE aktif/sıradaki sporcunun kendi yüksekliği fırtına bölgesindeyse
+        // (kullanıcı talimatı: "belirli bir yükseklikten sonra hava sertleşsin"). "Aşırıya kaçmasın"
+        // (kullanıcı talimatı) — az sayıda (14) parçacık, düşük opaklık. Ciddi modda SADE (parçacık
+        // sayısı yarıya iner) ama ceza (kmOyunZirveArtisHesapla) HER ZAMAN işliyor — görsel ayrı, mekanik ayrı.
+        function kmOyunZirveFirtinaGuncelle() {
+            let kar = document.getElementById('km-oyun-zirve-kar'); if(!kar) return;
+            if(_kmOyunAktifTema !== 'zirve') { kar.style.display = 'none'; return; }
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+            let firtinadaMi = !!(s && s.frac >= KM_OYUN_ZIRVE_FIRTINA_FRAC && s.frac < 1);
+            if(!firtinadaMi) { kar.style.display = 'none'; return; }
+            kar.style.display = '';
+            if(kar.dataset.kmKarCiddi === (ciddiModAcik ? '1' : '0') && kar.childElementCount > 0) return; // zaten doğru durumda
+            kar.dataset.kmKarCiddi = ciddiModAcik ? '1' : '0';
+            let sayi = ciddiModAcik ? 7 : 14;
+            let html = '';
+            for(let i = 0; i < sayi; i++) {
+                let x = Math.random() * 100, delay = (Math.random() * 3).toFixed(2), dur = (2.6 + Math.random() * 2).toFixed(2), sz = (2 + Math.random() * 2.5).toFixed(1), dx = (Math.random() * 40 - 20).toFixed(0);
+                html += `<div class="km-zirve-kar" style="left:${x.toFixed(1)}%; width:${sz}px; height:${sz}px; animation-delay:${delay}s; animation-duration:${dur}s; --kmKarDx:${dx}px;"></div>`;
+            }
+            kar.innerHTML = html;
+        }
+        // Gerçek karakterler (2026-09-12) — cinsiyet bilgisi GERÇEKTEN var (athletes.cinsiyet, 'K'/'E',
+        // 2026-07'den beri dolduruluyor — kontrol edildi) — bu yüzden "sırayla dağıt" YEDEK planı hiç
+        // devreye girmiyor, atama doğrudan cinsiyete göre DETERMİNİSTİK. cinsiyet boşsa (eski/göçten
+        // kalma nadir bir kayıt) üçüncü seçenek buz-tirmanici'ye düşüyor — kullanıcının kendi tanımladığı
+        // "üçüncü seçenek" tam bu durum için. Cinsiyet bir sporcunun SABİT bir özelliği olduğu için
+        // (ders içinde değişmez) atamanın kendisi doğal olarak ders boyunca sabit kalıyor — Arena'nın
+        // sıralı-atama şemasının AKSİNE burada ayrı bir localStorage hafızası GEREKMEDİ (Arena'da sıra,
+        // "kimin önce görüldüğü" gibi geçici/oturuma özel bir olguydu, burada değil).
+        var KM_OYUN_ZIRVE_KARAKTER_BOYUT = { 'zirve-tirmanici-kiz': 258 / 420, 'zirve-izci-erkek': 385 / 460, 'zirve-buz-tirmanici': 379 / 440 };
+        function kmOyunZirveKarakterAd(s) {
+            if(s.cinsiyet === 'K') return 'zirve-tirmanici-kiz';
+            if(s.cinsiyet === 'E') return 'zirve-izci-erkek';
+            return 'zirve-buz-tirmanici';
+        }
+        // Eski paylaşılan kmOyunKarakterSVG'nin (6 temalık soyut maskot) YERİNE — Arena'nın gerçek
+        // okçu karakterleriyle AYNI karar: gövde artık gerçek bir illüstrasyon, sporcu rengi KARAKTERDE
+        // değil (kullanıcı talimatı, tekrar), sadece isim etiketinde. `kmOyunAvatarSVG` (yüze basılan
+        // foto/baş harfi) burada KULLANILMIYOR — Arena'da da aynı sebeple bırakılmıştı: gerçek karakter
+        // illüstrasyonunun "yüzü" yok, kimlik zaten alttaki isim etiketinden okunuyor.
+        function kmOyunZirveKarakterSVG(s) {
+            let karakter = kmOyunZirveKarakterAd(s);
+            let boy = 56, en = boy * KM_OYUN_ZIRVE_KARAKTER_BOYUT[karakter];
+            let takimRozetiHTML = '';
+            if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
+                let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
+                if(ti !== -1) takimRozetiHTML = `<text x="0" y="${(-boy - 4).toFixed(1)}" font-size="14" text-anchor="middle" opacity="0.55">${_kmOyunTakimlar[ti].emoji}</text>`;
+            }
+            let kilitSeviye = kmOyunKilitSeviyesi(kmOyunDurumAl(s.g, s.ad));
+            let cerceveHTML = '';
+            if(kilitSeviye === 1) {
+                cerceveHTML = `<ellipse cx="0" cy="${(-boy * 0.5).toFixed(1)}" rx="${(en * 0.75).toFixed(1)}" ry="${(boy * 0.62).toFixed(1)}" fill="none" stroke="#cd8a4a" stroke-width="2" opacity="0.55" stroke-dasharray="3 2.4"/>`;
+            } else if(kilitSeviye === 2) {
+                cerceveHTML = `<ellipse cx="0" cy="${(-boy * 0.5).toFixed(1)}" rx="${(en * 0.78).toFixed(1)}" ry="${(boy * 0.65).toFixed(1)}" fill="none" stroke="#ffd23f" stroke-width="2.4" opacity="0.85"/>`;
+            }
+            return `<g class="km-char-bob">
+                ${cerceveHTML}
+                <ellipse class="km-char-shadow" cx="0" cy="2" rx="${(en * 0.38).toFixed(1)}" ry="4"/>
+                <image href="/zirve-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
+                ${takimRozetiHTML}
+            </g>`;
+        }
+        // Faz 14, 2. adım (2026-09-12) — dağ arka planı, DÜŞEY parallax (kullanıcı talimatı: "yatay
+        // değil dikey — yukarı çıktıkça aşağıdakiler geride kalsın"). hiz=1 katmanın YOK, çünkü 1
+        // zaten "dünyayla birebir hareket" demek — o da patikanın/karakterlerin KENDİSİ (hiç ekstra
+        // transform gerekmiyor). hiz küçüldükçe katman kamerayla daha AZ hareket edip geride kalıyor.
+        var KM_OYUN_ZIRVE_PARALLAX_KATMANLARI = [
+            { id: 'km-oyun-zirve-dag-uzak', hiz: 0.15 },
+            { id: 'km-oyun-zirve-dag-orta', hiz: 0.35 },
+            { id: 'km-oyun-zirve-dag-yakin', hiz: 0.6 }
+        ];
+        // Formül türetimi: ekrandaki_konum = dünya_y + ty - kameraY. ty = kameraY*(1-hiz) seçilirse
+        // ekrandaki_konum = dünya_y - kameraY*hiz — yani katman kameranın SADECE hiz kadarlık bir
+        // kısmıyla hareket ediyor (hiz=0 → hiç kımıldamaz/sabit "sonsuz uzak" gibi davranır, hiz=1 →
+        // dünyayla birebir aynı hızda kayar). Baseline 0 — "geniş" görünümün başlangıç y'siyle örtüşüyor.
+        function kmOyunZirveParallaxUygula(kameraY) {
+            KM_OYUN_ZIRVE_PARALLAX_KATMANLARI.forEach(function(k) {
+                let el = document.getElementById(k.id); if(!el) return;
+                el.setAttribute('transform', 'translate(0,' + (kameraY * (1 - k.hiz)).toFixed(1) + ')');
+            });
+        }
         function kmOyunZirvePath() { return document.getElementById('km-oyun-trail'); }
+        // Faz 14 (2026-09-12, kullanıcı isteği: "geniş görünümde hiçbir bacak kırpılmasın, boşluk da
+        // kalmasın") — patikayı çizen 20 nokta, `d` string'inin KENDİSİ değil (statik HTML'deki path
+        // bu noktalardan TÜRETİLMİŞ, birebir aynı algoritmayla — bkz. kmOyunZirveYolDStr). Dar/uzun
+        // (portre) bir kutuda GENİŞ görünüm zaten x eksenini daraltıyordu (kmOyunZirveGenisKutu) — bu
+        // TEK BAŞINA patikanın en uçtaki bacaklarını kırpıyordu. Çözüm: yolu YATAYINA çevirmek yerine,
+        // AYNI dikey yüksekliği koruyup SADECE yatay bacakları x=600 (kanvas ortası) etrafında
+        // sıkıştırmak — serpantin daha DAR ama hâlâ tam bir serpantin, hiçbir bacak görünmez olmuyor.
+        var KM_OYUN_ZIRVE_YOL_NOKTALARI = [
+            [150, 415], [500, 430], [850, 395], [1060, 400],
+            [1080, 345], [750, 370], [400, 320], [160, 345],
+            [110, 280], [450, 250], [800, 290], [1040, 250],
+            [1090, 195], [720, 175], [380, 145], [170, 175],
+            [120, 120], [420, 95], [650, 60], [600, 45]
+        ];
+        // sikistirma=1 → noktalar AYNEN (statik HTML'deki path'le birebir aynı eğri) — bu yüzden
+        // normal/geniş kutularda kmOyunZirveYolSenkron HİÇ `d` yazmıyor, mevcut path olduğu gibi kalıyor.
+        function kmOyunZirveYolDStr(sikistirma) {
+            let merkez = 600;
+            let pts = KM_OYUN_ZIRVE_YOL_NOKTALARI.map(function(p) { return [merkez + (p[0] - merkez) * sikistirma, p[1]]; });
+            let d = 'M ' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+            for(let i = 1; i < pts.length - 1; i++) {
+                let mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+                d += ' Q ' + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+            }
+            let son = pts[pts.length - 1];
+            d += ' Q ' + son[0].toFixed(1) + ' ' + son[1].toFixed(1) + ' ' + son[0].toFixed(1) + ' ' + son[1].toFixed(1);
+            return d;
+        }
+        var _kmOyunZirveMevcutSikistirma = 1;
+        var _kmOyunZirveYolGozlemci = null;
+        // Hedef sıkıştırma oranı: normal/yatay kutuda 1 (dokunma). Portre kutuda, GENİŞ görünümün
+        // zaten daralttığı pencere genişliğinin (bkz. kmOyunZirveGenisKutu, h*kutuOran) %85'ine, orijinal
+        // ~990 birimlik yatay açıklığı sığdıracak oranı hesaplar — 0.22 altına İNMİYOR (o noktadan
+        // sonra serpantin okunaksızlaşırdı, bu durumda geniş görünümün kırpma payı devreye girmeye
+        // devam eder — kabul edilen bir taban, tamamen sıfır kırpma HER ekranda garanti edilemez).
+        function kmOyunZirveHedefSikistirma(svg) {
+            let kutuOran = kmOyunZirveKutuOrani(svg);
+            if(kutuOran === null || kutuOran >= 1.4) return 1;
+            let hedefGenislik = 440 * kutuOran * 0.85;
+            return Math.max(0.22, Math.min(1, hedefGenislik / 990));
+        }
+        // true dönerse patika GERÇEKTEN değişti (çağıran sahneyi yeniden kurmalı) — sahneyi burada
+        // KENDİSİ kurmuyor, çünkü bu fonksiyon hem ilk kurulumdan hem salt-okunur bir ResizeObserver'dan
+        // çağrılıyor; sahne kurma sorumluluğu HER ZAMAN çağıranda kalıyor (döngüsel çağrı riski yok).
+        function kmOyunZirveYolSenkron() {
+            let svg = document.getElementById('km-oyun-svg-zirve'); if(!svg) return false;
+            let hedef = kmOyunZirveHedefSikistirma(svg);
+            if(Math.abs(hedef - _kmOyunZirveMevcutSikistirma) < 0.02) return false;
+            let d = kmOyunZirveYolDStr(hedef);
+            let p1 = document.getElementById('km-oyun-trail'); if(p1) p1.setAttribute('d', d);
+            let p2 = svg.querySelector('path.km-trail'); if(p2) p2.setAttribute('d', d);
+            _kmOyunZirveMevcutSikistirma = hedef;
+            _kmOyunZirveTotalLen = 0; // getTotalLength() bir sonraki kmOyunSahneKurZirve()'de YENİDEN ölçülecek
+            return true;
+        }
+        // Arena'nın kmOyunArenaDokGozlemciKur'uyla (bkz. o yorum) AYNI desen — salt-okunur gözlem,
+        // Zirve panelinin aç/kapa/boyut mantığına hiç dokunmuyor. Gerçek bir pencere yeniden boyutlandırma/
+        // döndürme sırasında (koç tabletini çevirirse) patikayı canlı yeniden hesaplar.
+        function kmOyunZirveGozlemciKur() {
+            if(_kmOyunZirveYolGozlemci) return;
+            let panel = document.getElementById('km-oyun-panel-zirve'); if(!panel) return;
+            try {
+                _kmOyunZirveYolGozlemci = new ResizeObserver(function() {
+                    if(_kmOyunAktifTema !== 'zirve') return;
+                    if(kmOyunZirveYolSenkron()) { kmOyunSahneKurZirve(); kmOyunKabukGuncelle(); }
+                });
+                _kmOyunZirveYolGozlemci.observe(panel);
+            } catch(e) {}
+        }
         function kmOyunZirveNokta(frac) { let p = kmOyunZirvePath(); return p ? p.getPointAtLength(_kmOyunZirveTotalLen * frac) : { x: 0, y: 0 }; }
+        // Faz 14 (2026-09-12) — serpantin patika artık dik/neredeyse dikey bacaklar içeriyor. Eski
+        // kmOyunJitter (diğer 5 nokta-temasında AYNEN kalıyor, dokunulmadı) sabit bir x/y ofseti
+        // KÜRESEL eksenlere göre uyguluyordu — yol yatayken bu, karakterleri aynı hizada YANA doğru
+        // ayırıyordu (doğru), ama yol dikeyken AYNI ofset artık YOLUN YÖNÜNE değil rastgele bir açıya
+        // düşüyor, ayrıştırma işe yaramıyor (gerçek testte doğrulandı, aşağıya bkz). kmOyunPistTeget'in
+        // AYNI merkezi-fark tekniği — TEK fark: Pist kapalı devre olduğu için modulo sarıyor, Zirve
+        // tek yönlü (frac 0..1) bir patika olduğu için uçlarda KELEPÇELİ örnekleniyor.
+        function kmOyunZirveTeget(frac) {
+            let p = kmOyunZirvePath(); if(!p) return { x: 1, y: 0 };
+            let total = _kmOyunZirveTotalLen || (p ? p.getTotalLength() : 1);
+            let eps = Math.max(1, total * 0.004);
+            let len = total * Math.max(0, Math.min(1, frac));
+            let p1 = p.getPointAtLength(Math.max(0, len - eps)), p2 = p.getPointAtLength(Math.min(total, len + eps));
+            let dx = p2.x - p1.x, dy = p2.y - p1.y, mag = Math.sqrt(dx * dx + dy * dy) || 1;
+            return { x: dx / mag, y: dy / mag };
+        }
+        // kmOyunJitter'ın AYNI iki bileşeni (sırayla-yayılma + küçük sabit ayırma) — TEK fark, artık
+        // küresel x/y yerine YOLUN O NOKTADAKİ teğet/normal eksenine göre uygulanıyor: yol yatayken
+        // sonuç eskisiyle GÖRSEL OLARAK AYNI (teğet≈x ekseni, normal≈y ekseni), yol dikeyken de
+        // (teğet≈y ekseni) karakterler hâlâ birbirinden GERÇEKTEN ayrılıyor (artık dikey yönde
+        // sıralı yayılıp, yatay yönde küçük sabit ayrımla).
+        function kmOyunZirveJitter(frac, i, n) {
+            if(n <= 1) return [0, 0];
+            let spread = Math.min(50 * (n - 1), 320);
+            let step = spread / (n - 1);
+            let boyuna = -spread / 2 + i * step, enine = (i % 2 === 0) ? -14 : 16;
+            let teg = kmOyunZirveTeget(frac), normal = { x: -teg.y, y: teg.x };
+            return [teg.x * boyuna + normal.x * enine, teg.y * boyuna + normal.y * enine];
+        }
+        // Nokta + teğet-yönlü ayrım + dikey sınır kelepçesi TEK seferde — Pist'in kmOyunPistKonum'uyla
+        // AYNI "üç fonksiyonu her yerde ayrı ayrı çağırma" dersi (bkz. DEVIR.md §13e). Sınır kelepçesi
+        // GEREKLİ: eski patika neredeyse hep yatay olduğu için büyük (±160 birime kadar) "sırayla
+        // yayılma" payı hep x'e (kanvasın GENİŞ ekseni, zaten kmOyunKarakterSinirKisitla tarafından
+        // kelepçeleniyor) düşüyordu; şimdi dik bacaklarda AYNI pay y'ye (kanvasın DAR ekseni, x-kelepçesi
+        // BUNU korumuyor) düşebiliyor — zirve tepesine (y=45) veya patikanın en altına (y=415) yakın bir
+        // sporcu büyük bir ofsetle kanvas dışına (y<0 veya y>440) taşabilirdi. Yatay kelepçe zaten var
+        // olan paylaşılan mekanizma (kmOyunKarakterSinirKisitla, SADECE Zirve dahil 7 temanın hepsinde
+        // çalışıyor) — burada eklenen SADECE Zirve'ye özel dikey kelepçe, paylaşılan fonksiyona dokunmadan.
+        var KM_OYUN_ZIRVE_Y_PAY = 24;
+        function kmOyunZirveKonum(frac, i, n) {
+            let pt = kmOyunZirveNokta(frac), jj = kmOyunZirveJitter(frac, i, n);
+            return { x: pt.x + jj[0], y: Math.max(KM_OYUN_ZIRVE_Y_PAY, Math.min(440 - KM_OYUN_ZIRVE_Y_PAY, pt.y + jj[1])) };
+        }
         function kmOyunSahneKurZirve() {
+            kmOyunZirveYolSenkron();
+            kmOyunZirveGozlemciKur();
             let p = kmOyunZirvePath(); if(!p) return;
             _kmOyunZirveTotalLen = p.getTotalLength();
             let sg = document.getElementById('km-oyun-stars');
             if(sg) {
+                // 2. adım (2026-09-12): gökyüzü artık yükseklikle açılıyor (üstte aydınlık, altta
+                // koyu) — yıldızlar eski üst-190-birim yerine ALT/koyu bölgeye (y 250-440) taşındı,
+                // yoksa aydınlık zirve gökyüzünde yıldız görünmesi tuhaf kaçardı.
                 let html = '';
-                for(let i = 0; i < 60; i++) { let x = Math.random() * 1200, y = Math.random() * 190, r = Math.random() * 1.3 + 0.3; html += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff" opacity="${(0.15 + Math.random() * 0.5).toFixed(2)}"/>`; }
+                for(let i = 0; i < 60; i++) { let x = Math.random() * 1200, y = 250 + Math.random() * 190, r = Math.random() * 1.3 + 0.3; html += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff" opacity="${(0.15 + Math.random() * 0.5).toFixed(2)}"/>`; }
                 sg.innerHTML = html;
             }
             let fg = document.getElementById('km-oyun-flags');
@@ -13114,32 +13482,35 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let pt = kmOyunZirveNokta(f);
                     let grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                     grp.setAttribute('data-cp', i);
-                    grp.innerHTML = `<line class="km-flag-pole" x1="${pt.x}" y1="${pt.y}" x2="${pt.x}" y2="${pt.y - 26}"/>
-                        <circle class="km-flag-ring" cx="${pt.x}" cy="${pt.y - 26}" r="9" stroke="#3a4358"/>
-                        <path class="km-flag-pennant" d="M${pt.x},${pt.y - 26} L${pt.x + 16},${pt.y - 20} L${pt.x},${pt.y - 14} Z" fill="#2a3348"/>
-                        <text class="km-flag-num" x="${pt.x}" y="${pt.y - 22.5}" font-size="9" fill="#5a677e" text-anchor="middle">${i + 1}</text>`;
+                    let ad = KM_OYUN_ZIRVE_KAMP_ISIMLERI[i] || ('Durak ' + (i + 1));
+                    grp.innerHTML = `<image href="/zirve-karakterler/zirve-ahsap-tabela.webp" x="${(pt.x - 38).toFixed(1)}" y="${(pt.y - 58.3).toFixed(1)}" width="76" height="58.3"/>
+                        <circle class="km-flag-ring" cx="${pt.x.toFixed(1)}" cy="${(pt.y - 63).toFixed(1)}" r="5" fill="#20242e" stroke="#3a4358" stroke-width="1.5"/>
+                        <text class="km-flag-num" x="${pt.x.toFixed(1)}" y="${(pt.y - 30).toFixed(1)}" font-size="8.5" font-weight="700" fill="#3a2410" text-anchor="middle">${esc(ad)}</text>`;
                     fg.appendChild(grp);
                 });
+            }
+            // Faz 14, 4. adım — fırtına bölgesinin girişindeki uyarı tabelası, kullanıcı talimatı
+            // ("zirve-kar-tabelasi.webp fırtına bölgesinin girişinde dursun"). Kamp tabelalarıyla AYNI
+            // "path'ten dinamik konum" deseni — sıkıştırılmış/dar patikada da doğru yerde kalır.
+            let ftg = document.getElementById('km-oyun-zirve-firtina-tabela');
+            if(ftg) {
+                let pt = kmOyunZirveNokta(KM_OYUN_ZIRVE_FIRTINA_FRAC);
+                ftg.innerHTML = `<image href="/zirve-karakterler/zirve-kar-tabelasi.webp" x="${(pt.x - 30).toFixed(1)}" y="${(pt.y - 84.9).toFixed(1)}" width="60" height="84.9"/>`;
             }
             let cg = document.getElementById('km-oyun-climbers'); if(!cg) return;
             cg.innerHTML = '';
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
-                let pt = kmOyunZirveNokta(s.frac);
-                let jj = kmOyunJitter(i, roster.length);
+                let konum = kmOyunZirveKonum(s.frac, i, roster.length);
                 let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 el.setAttribute('class', 'km-climber');
-                el.setAttribute('transform', `translate(${pt.x + jj[0]},${pt.y + jj[1]})`);
+                el.setAttribute('transform', `translate(${konum.x},${konum.y})`);
                 let renk = kmOyunRenk('zirve', i);
-                // Eskiden karakter HER ZAMAN güçlü renkli bir glow (9px blur) taşıyordu — yeni,
-                // gövde/kol/bacak detaylı karakterle birleşince görsel karışıklık/"yıkanmış" bir
-                // görünüm yaratıyordu (gerçek ekran görüntüsüyle bulundu). Diğer 5 temadaki gibi artık
-                // sabit bir parlama YOK, sadece kmOyunKarakterSVG'nin kendi yumuşak gölgesi var.
                 let ilkAd = s.ad.split(' ')[0];
                 let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
                 el.innerHTML = `<g class="km-climber-inner">
-                    ${kmOyunKarakterSVG(s, renk, 'zirve-' + i, 'zirve', 17)}
-                    <g transform="translate(0,32)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${ilkAd}</text></g>
+                    ${kmOyunZirveKarakterSVG(s)}
+                    <g transform="translate(0,20)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g>
                 </g>`;
                 cg.appendChild(el);
                 s.zirveEl = el;
@@ -13148,16 +13519,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunZirveBayrakGuncelle(cpIndex, renk) {
             let grp = document.querySelector(`#km-oyun-flags g[data-cp="${cpIndex}"]`); if(!grp) return;
-            grp.querySelector('.km-flag-pennant').setAttribute('fill', renk);
-            grp.querySelector('.km-flag-ring').setAttribute('stroke', renk);
-            grp.querySelector('.km-flag-ring').style.filter = `drop-shadow(0 0 6px ${renk})`;
-            grp.querySelector('.km-flag-num').setAttribute('fill', '#fff');
+            let ring = grp.querySelector('.km-flag-ring'); if(!ring) return;
+            ring.setAttribute('fill', renk);
+            ring.setAttribute('stroke', renk);
+            ring.style.filter = `drop-shadow(0 0 6px ${renk})`;
         }
         function kmOyunResyncZirve() {
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
-                let pt = kmOyunZirveNokta(s.frac), jj = kmOyunJitter(i, roster.length);
-                if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${pt.x + jj[0]},${pt.y + jj[1]})`);
+                let konum = kmOyunZirveKonum(s.frac, i, roster.length);
+                if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${konum.x},${konum.y})`);
             });
             for(let cp = 0; cp < KM_OYUN_CP_SAYISI - 1; cp++) {
                 let best = null;
@@ -13166,18 +13537,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             let sf = document.getElementById('km-oyun-summit');
             if(sf) sf.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.55';
+            kmOyunZirveHudGuncelle();
+            kmOyunZirveFirtinaGuncelle();
         }
         function kmOyunAnimateZirve(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, sure = 1250, basla = performance.now();
             function frame(now) {
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
-                let pt = kmOyunZirveNokta(eskiFrac + (yeniFrac - eskiFrac) * eased);
-                let jj = kmOyunJitter(i, n), hop = Math.abs(Math.sin(t * Math.PI * 7)) * 10 * (1 - t * 0.5);
-                if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${pt.x + jj[0]},${pt.y + jj[1] - hop})`);
+                let fracAn = eskiFrac + (yeniFrac - eskiFrac) * eased;
+                let konum = kmOyunZirveKonum(fracAn, i, n), hop = Math.abs(Math.sin(t * Math.PI * 7)) * 10 * (1 - t * 0.5);
+                if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${konum.x},${konum.y - hop})`);
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
-                    let varis = kmOyunZirveNokta(yeniFrac);
-                    let scr = kmOyunSvgPct('km-oyun-svg-zirve', varis.x + jj[0], varis.y + jj[1]);
+                    let varis = kmOyunZirveKonum(yeniFrac, i, n);
+                    let scr = kmOyunSvgPct('km-oyun-svg-zirve', varis.x, varis.y);
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('zirve', i), 14, false);
                     if(yeniCp > eskiCp) {
                         for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) kmOyunZirveBayrakGuncelle(cp, kmOyunRenk('zirve', i));
@@ -13187,7 +13560,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         }
                     }
                     if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('zirve', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('zirve', Math.min(1, n - 1)), 16, true); }, 80);
+                    // done() (== bitirOrtak) senkron olarak s.frac'ı yeniFrac'a yazıyor — HUD/fırtına
+                    // güncellemesi bu satırdan SONRA çağrılmalı, yoksa (bireysel modda kmOyunResyncZirve
+                    // HİÇ çağrılmadığı için — sadece bu tek sporcunun elementi doğrudan taşınıyor) HUD bir
+                    // önceki seriden kalma ESKİ frac'ı göstermeye devam ederdi (gerçek testte yakalandı:
+                    // fırtınada geri kayan bir seri sonrası HUD hâlâ eski/daha yüksek metreyi gösteriyordu).
                     done();
+                    kmOyunZirveHudGuncelle();
+                    kmOyunZirveFirtinaGuncelle();
                 }
             }
             requestAnimationFrame(frame);
@@ -13803,6 +14183,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Düello Arena — "İlerlet" düğmesinin ÜZERİNDEKİ metin (yukarıdaki genel th.btn atamasını
             // eşleştirme ekranındayken override ediyor). Panelin/butonun boyutuna hiç dokunmuyor.
             if(tid === 'arena') kmOyunArenaIlerletBtnGuncelle();
+            if(tid !== 'zirve') {
+                let zirveHud = document.getElementById('km-oyun-zirve-hud'); if(zirveHud) zirveHud.style.display = 'none';
+                let zirveKar = document.getElementById('km-oyun-zirve-kar'); if(zirveKar) zirveKar.style.display = 'none';
+            }
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
@@ -13885,10 +14269,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // aynı kategori). Artış BİLEREK sıfır — bu tema hasarı kendi kmOyunAnimateArena'sında
             // doğrudan can'a uyguluyor, frac hiç kullanılmıyor/gösterilmiyor.
             if(_kmOyunAktifTema === 'arena') artis = 0;
+            // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
+            // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
+            // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
+            if(_kmOyunAktifTema === 'zirve') artis = kmOyunZirveArtisHesapla(kaydedilecek, toplam, maxPuan, eskiFrac, kmOyunDurumAl(s.g, s.ad));
             // Pist çok turlu (frac 1'i aşabilir) — diğer 9 tema için maxFrac hep 1, davranış AYNI kalıyor;
-            // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor.
+            // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor. Alt sınır (0) eskiden
+            // hiç GEREKMİYORDU (artis her zaman >=0'dı) — Zirve'nin fırtına cezası ARTIK negatif
+            // olabildiği için eklendi; diğer 9 temada artis hâlâ hep >=0 olduğundan bu satır onlar için
+            // davranışı DEĞİŞTİRMİYOR (Math.max(0,...) zaten sağlanan bir koşulu tekrar doğruluyor).
             let pistToplamTur = (_kmOyunAktifTema === 'pist') ? kmOyunPistToplamTur() : 1;
-            let yeniFrac = Math.min(pistToplamTur, eskiFrac + artis);
+            let yeniFrac = Math.max(0, Math.min(pistToplamTur, eskiFrac + artis));
             let eskiCp = Math.floor(eskiFrac * KM_OYUN_CP_SAYISI + 1e-6);
             let yeniCp = Math.floor(yeniFrac * KM_OYUN_CP_SAYISI + 1e-6);
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
@@ -13904,6 +14295,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 d0.pistOkSayaci = (d0.pistOkSayaci || 0) + kaydedilecek.length;
                 if(toplam > (d0.pistEnIyiSeriBuYaris || 0)) d0.pistEnIyiSeriBuYaris = toplam;
             }
+            // Zirve — durak geçildiyse yeni ekipman var mı kontrol et (GERÇEK skora dokunmuyor, bkz.
+            // kmOyunZirveEkipmanKontrol'ün kendi yorumu).
+            if(_kmOyunAktifTema === 'zirve' && yeniCp > eskiCp) kmOyunZirveEkipmanKontrol(d0, eskiCp, Math.min(yeniCp, KM_OYUN_CP_SAYISI - 1));
 
             // Haftalık Kademe Ligi — GERÇEK toplamSkor'dan AYRI, sadece bu haftaya ait bir sayaç.
             // Takım Modu'nda da BİLEREK işliyor (paylaşılan yol farklı bir şey, kişisel haftalık katkı ayrı).
