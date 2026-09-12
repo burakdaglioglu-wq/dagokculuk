@@ -2853,9 +2853,10 @@ doğrulandı.
 Eski numaralı bayrak yerine `zirve-ahsap-tabela.webp` + isim metni; "geçildi" göstergesi artık
 sporcunun rengiyle parlayan küçük bir rozet halkası (`kmOyunZirveBayrakGuncelle`).
 
-### 17d. Adım 4-5 — Yükseklik, kar fırtınası, ekipman (gece, ONAY BEKLENMEDEN tamamlandı)
+### 17d. Adım 4-5 — Yükseklik, kar fırtınası, ekipman (gece, ONAY BEKLENMEDEN tamamlandı, sonradan ONAYLANDI 2026-09-13)
 
-**SAYI UYUŞMAZLIĞI bulundu, EN MUHAFAZAKÂR şekilde çözüldü, ONAY BEKLİYOR**: "her kontrol noktası
+**SAYI UYUŞMAZLIĞI bulundu, EN MUHAFAZAKÂR şekilde çözüldü, kullanıcı sonradan ONAYLADI (kod değişikliği
+yapılmadı, mevcut dağılım kalıcı)**: "her kontrol noktası
 bir ekipman açsın" dendi ama 7 durağa karşı SADECE 5 ekipman kalemi (halat/kramponlar/buz baltası/
 oksijen tüpü/telsiz) verildi. Kullanıcı uyuduğu için sorulamadı. 5 kalem EN DOĞAL 5 durağa
 yerleştirildi — `KM_OYUN_ZIRVE_CP_EKIPMAN = {0:'telsiz', 1:'halat', 3:'buzbaltasi', 4:'kramponlar',
