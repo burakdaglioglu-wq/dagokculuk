@@ -3014,3 +3014,6 @@ BAĞIMSIZ yüklediği için deploy'a otomatik dahil olacaklar (zararsız, sadece
 
 Gerçek testle doğrulandı: 8 sporculu cinsiyet ataması %100 doğru, tüm görseller (27 image elemanı)
 200 dönüyor, 12 tema + Reaksiyon regresyon taraması temiz, 360/1280px hatasız.
+
+**Deploy durumu**: commit `656dcca`, push edildi, deploy version `ee5ff062-a198-4efc-b15d-af5be8b96f20`
+— canlıda doğrulandı (prod'dan `/korsan-karakterler/hazine-sandik.webp` 200 dönüyor).
