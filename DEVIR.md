@@ -2879,4 +2879,13 @@ yeni `#km-oyun-zirve-hud` üst üste biniyor gibi görünüyor — işlevsel de�
 ekranda iki üst-bar aynı köşede sıkışıyor.
 
 **Deploy durumu**: TAMAMI (adım 1-5) commit + push + DEPLOY edildi — kullanıcının açık talimatı
-("sen bu oyunu tamamla, yayına çık, bana sorma"). Deploy version ID ve commit hash'leri aşağıda.
+("sen bu oyunu tamamla, yayına çık, bana sorma"). Commit `bd23ddc`, deploy version
+`84cdb0b4-5c25-4eac-9123-ea2f52b006c3` (2026-09-12/13 gece).
+
+**Beklenmedik dosyalar (dokunulmadı, sadece bildiriliyor)**: commit sırasında `public/hazine.png`
+ve `public/korsan/korsan.png` untracked halde bulundu (23:59'da oluşturulmuş — muhtemelen kullanıcı
+uyumadan hemen önce bir sonraki iş için bıraktı). Bu gece işinin HİÇBİR yerinde bahsi geçmediği için
+bilerek DOKUNULMADI, commit'e dahil edilmedi — ama `wrangler deploy` public/ klasöründeki HER dosyayı
+git'ten bağımsız yüklediği için bu deploy'la birlikte ONLAR DA canlıya çıktı (kod hiçbir yerde
+kullanmıyor, sadece pasif statik dosya olarak duruyorlar, zararsız). Sabah ne için olduklarını
+sormak gerekiyor.
