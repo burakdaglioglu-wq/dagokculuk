@@ -3007,11 +3007,11 @@ kullanıyor, ek bir mekanizma gerekmedi).
 **Hazine (bitiş)**: eski prosedürel X+dikdörtgen sandık kaldırıldı, yerine gerçek `hazine-sandik.webp`
 + yanında yakut/elmas flörtü — glow (`km-treasure-glow`) AYNEN kaldı.
 
-**Kullanılmayan dosyalar**: `public/korsan/korsan.png` (1.17MB) ve `public/hazine.png` (662KB) artık
-kod tarafından hiç kullanılmıyor (sadece kırpılmış halleri, `korsan-karakterler/` altında ~500KB
-kullanılıyor) — kullanıcıya silip silmeme kararı soruldu, YANIT BEKLENİYOR, bu yüzden bilerek
-commit'e DAHİL EDİLMEDİ (git'te izlenmiyor) — ama `wrangler deploy` `public/`'daki HER dosyayı git'ten
-BAĞIMSIZ yüklediği için deploy'a otomatik dahil olacaklar (zararsız, sadece gereksiz ~1.8MB).
+**Kullanılmayan dosyalar — SİLİNDİ (2026-09-13, kullanıcı onayı)**: `public/korsan/korsan.png` (1.17MB)
+ve `public/hazine.png` (662KB) kod tarafından hiç kullanılmıyordu (sadece kırpılmış halleri,
+`korsan-karakterler/` altında ~500KB kullanılıyor) — hiç git'te izlenmedikleri için silme işlemi bir
+commit gerektirmedi, sadece dosya sisteminden kaldırılıp `npm run deploy` ile canlı asset listesinden
+düşürüldüler (deploy version `9f6033b6-f8a5-45d6-9e1c-bc195a38af5a`).
 
 Gerçek testle doğrulandı: 8 sporculu cinsiyet ataması %100 doğru, tüm görseller (27 image elemanı)
 200 dönüyor, 12 tema + Reaksiyon regresyon taraması temiz, 360/1280px hatasız.
