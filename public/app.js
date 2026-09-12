@@ -15257,6 +15257,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunArenaAktifIndexGuncelle();
             kmOyunArenaCizGuvenli();
         }
+        // Faz 14 (2026-09-13, gece işi) — kullanıcı istedi: "düello bittikten sonra tekrar et/yeniden
+        // başla seçeneği yok; birden fazla sporcu yarışıyorsa (bazı eşleşmeler hâlâ sürerken) bir
+        // ikilinin oyunu bitince yeni oyun seçeneği sun." Bu, TÜM tur bitmesini bekleyen
+        // kmOyunArenaYenidenEslestir'DEN FARKLI — SADECE bu tek eşleşmeyi (AYNI iki sporcu) sıfırlayıp
+        // hemen aktif hale getiriyor, DİĞER devam eden maçlara hiç dokunmuyor. Yeni maç nesnesi
+        // kmOyunArenaTuruBaslat'ın kendi oluşturduğu şekille BİREBİR aynı (can/ok/en-iyi-seri sıfır).
+        function kmOyunArenaMacYenile(idx) {
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum !== 'bitti') return;
+            _kmOyunArenaMaclar[idx] = { aIndex: mac.aIndex, bIndex: mac.bIndex, aCan: KM_OYUN_ARENA_CAN_BASLANGIC, bCan: KM_OYUN_ARENA_CAN_BASLANGIC, siradaki: 'a', durum: 'bekliyor', kazanan: null, aOk: 0, bOk: 0, aEnIyiSeri: 0, bEnIyiSeri: 0 };
+            kmOyunArenaMacSec(idx);
+        }
         function kmOyunArenaDigerOkcuyaGec(idx) {
             let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
             mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
@@ -15354,7 +15365,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         ${kmOyunArenaOkcuSVG(b, 175, idx + 'b', false, 'km-arena-okcu-b')}
                     </svg>
                 </div>
-                ${bittiMi ? '' : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`}
+                ${bittiMi ? `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaMacYenile(${idx})">🆕 Yeni Oyun (${esc(a.ad.split(' ')[0])} vs ${esc(b.ad.split(' ')[0])})</button>` : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`}
             </div>`;
         }
         // ---- DÜELLO ARENA — Stage 3: Ok uçuşu ve hasar ----

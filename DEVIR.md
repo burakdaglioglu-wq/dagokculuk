@@ -2507,6 +2507,33 @@ doğru uyguluyor — hiçbiri gerçek bir mekaniği/sonucu gizlemiyor. Pist'te (
 şampiyonluğunda ayrıca dikkatli kontrol edildi, iki yerde de sorun yok. Yeni bir `ciddiModAcik` kontrolü
 eklenirken yukarıdaki ayrım testi uygulanmalı.
 
+## 15h. Bitmiş eşleşme için "Yeni Oyun" (2026-09-13, gece işi)
+
+**Bağlam**: kullanıcı bildirdi — Arena'da bir düello bitince tekrar/yeniden başlama seçeneği yok;
+birden fazla eşleşme aynı anda sürerken (normal kullanım — "çoklu düello: eşleştirin, herkes aynı
+anda kendi hedefine atar") bir ikili bitirdiğinde SADECE o ikiliye yeni bir oyun sunulmalı, TÜM
+turun bitmesini beklemeden.
+
+**Ayrım (önemli)**: bu, var olan `kmOyunArenaYenidenEslestir` (Stage 4, TÜM maçlar bitince açılan tur
+sonu ekranındaki "yeniden eşleştir") ile KARIŞTIRILMAMALI — o TÜM eşleşmeleri sıfırlayıp yeni bir
+eşleştirme ekranına dönüyor. Yeni `kmOyunArenaMacYenile(idx)` SADECE tek bir eşleşmeyi (aynı iki
+sporcu, `aIndex`/`bIndex` DEĞİŞMEDEN) `kmOyunArenaTuruBaslat`'ın oluşturduğu şekille BİREBİR aynı
+taze bir nesneyle değiştirip `kmOyunArenaMacSec(idx)` ile hemen aktif hale getiriyor — diğer devam
+eden eşleşmelere HİÇ dokunmuyor.
+
+**Arayüz**: `kmOyunArenaMacKartHTML`'de, `bittiMi` iken eski boş buton alanı yerine
+"🆕 Yeni Oyun (A vs B)" butonu — devam eden eşleşmelerdeki "🔁 Diğer okçuya geç" butonuyla AYNI yerde,
+sadece durum farklı olduğu için içeriği değişiyor.
+
+**Gerçek testle doğrulandı**: 4 eşleşmeli bir turda 1. eşleşme GERÇEK X'lerle bitirildi (diğer 3
+`bekliyor`/100-100 can, hiç dokunulmadı). "Yeni Oyun" butonuna GERÇEK `.click()` ile basıldı — 1.
+eşleşme can/ok/en-iyi-seri sıfırlandı, `etkin` oldu, AYNI iki sporcu (aIndex/bIndex değişmedi), diğer
+3 eşleşme YİNE hiç etkilenmedi. Ardından GERÇEK bir seri (9-8-7) girilip hasarın doğru uygulandığı
+(100→90) doğrulandı — sıfırlama sonrası maç GERÇEKTEN oynanabilir durumda. 12 tema + Reaksiyon
+regresyon taraması temiz.
+
+**Deploy durumu**: commit + push + DEPLOY edildi (kullanıcının aynı gece talimatı kapsamında).
+
 ## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
 **Ne yapıyor**: Karışık Sınıf'ın kendi "🏆 Yarışma Modu" sekmesi (`kmSekme('yarisma')` →
