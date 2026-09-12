@@ -1133,6 +1133,16 @@
         .km-secim-kart .ok { font-size: 19px; color: var(--text-muted); flex-shrink: 0; }
         @keyframes kmDevamNabiz { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
+        /* ANA MENÜ (koç için, 2026-09-13) — "yönetici panelinde ana menüye dön yok" bulgusu üzerine.
+           Var olan .lig-tile stiliyle AYNI görsel dil (giriş ekranındaki yaş kartlarıyla tutarlı),
+           SADECE ızgara daha fazla öğeye (8) göre esnek sarılıyor. z-index #yonetici-modal'ın (20000
+           tabanına iniyor, İNLİNE 25000'i .modal-overlay'in !important'ı zaten geçersiz kılıyor —
+           bkz. proje geneli "inline z-index asla çalışmaz" dersi) ÜSTÜNDE dursun diye id-seçici +
+           !important ile — inline DEĞİL. */
+        #ana-menu-modal { z-index: 21000 !important; }
+        .anamenu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; width: 100%; }
+        .anamenu-grid .lig-tile { max-width: none; }
+
         .pin-btn { border-radius: 14px; }
 
         /* --- ANA SEKMELER: hap tasarım --- */

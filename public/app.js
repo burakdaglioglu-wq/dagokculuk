@@ -6806,6 +6806,23 @@
             try { sporcuListesiniYenile(); } catch(e) {}
             try { siralamaListesiDoldur(); } catch(e) {}
         }
+        // ANA MENÜ (2026-09-13) — kullanıcı bulgusu: "yönetici panelinde ana menüye dön yok, genel
+        // olarak banner'a ana menüye dön de, ana menüde seçim menüsü olsun". Var olan "Ana Ekran"
+        // sekmesi (tab-ana) İNCELENDİ — o sporcuya özel bir profil ekranı (sporcuAnaDoldur,
+        // loggedInSporcu gerektiriyor), koç girişinde anlamsız bir "Sporcu girişi yap" mesajı
+        // gösteriyor — GERÇEK bir koç ana menüsü değil, bu yüzden ona dokunulmadı, YENİ bir seçim
+        // ekranı kuruldu. Her buton var olan, zaten test edilmiş bir navigasyon fonksiyonunu
+        // çağırıyor (sekmeAc/kmAc/yoneticiPaneliAc/ligDegistirAc) — burada YENİ bir ekran/mantık
+        // İCAT EDİLMEDİ, sadece hepsine TEK bir yerden ulaşan bir kapı eklendi.
+        function anaMenuAc() {
+            try { let ym = document.getElementById('yonetici-modal'); if(ym && ym.style.display !== 'none') yoneticiPaneliKapat(); } catch(e) {}
+            let m = document.getElementById('ana-menu-modal'); if(m) m.style.display = 'flex';
+        }
+        function anaMenuKapat() { let m = document.getElementById('ana-menu-modal'); if(m) m.style.display = 'none'; }
+        function anaMenuGit(sekmeAd) { anaMenuKapat(); try { sekmeAc(sekmeAd); } catch(e) {} }
+        function anaMenuKmAc() { anaMenuKapat(); try { kmAc(); } catch(e) {} }
+        function anaMenuYoneticiAc() { anaMenuKapat(); try { yoneticiPaneliAc(); } catch(e) {} }
+        function anaMenuLigDegistir() { anaMenuKapat(); try { ligDegistirAc(); } catch(e) {} }
         let yoneticiSekmeAktif = 'panel';
         let yoneticiYoklamaTip = 'gunluk';
         // DÜZELTME: eskiden 9 buton her zaman 3'lü sabit grid'lerde basılıyordu (ANTRENMAN grubunda

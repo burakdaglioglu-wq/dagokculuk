@@ -375,6 +375,7 @@
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
                 <input type="number" id="toplam-seri-ayar" value="12" min="1" max="60" class="sadece-egitmen" title="Atış serisi sayısı" style="width: 50px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:6px; border-radius:6px; text-align:center;" onchange="seriSayisiAyarla(this.value)">
+                <button onclick="anaMenuAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🏠 Ana Menü</button>
                 <button onclick="ligDegistirAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Lig Değiştir</button>
                 <button onclick="egitmenCikis()" class="sadece-egitmen" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🚪 Çıkış</button>
                 <button onclick="sporcuCikis()" class="sadece-sporcu" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">🚪 Çıkış</button>
@@ -1599,8 +1600,9 @@
         <div class="modal-content glass-panel yon-shell" style="position:relative;">
             <!-- SOL SIDEBAR — sadece masaüstünde görünür -->
             <div class="yon-sidebar" id="yon-sidebar">
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:0 6px 8px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:0 6px 8px; gap:6px;">
                     <div style="font-weight:900; font-size:14px;">🏹 DAĞ S.K.</div>
+                    <button onclick="anaMenuAc()" class="adm-btn adm-btn-sm" title="Ana Menü" style="min-width:30px; padding:0 8px; font-size:11px; font-weight:800;">🏠</button>
                     <button onclick="yoneticiPaneliKapat()" class="adm-btn adm-btn-sm" style="min-width:30px; padding:0;">✕</button>
                 </div>
                 <div id="yon-sidebar-nav"></div>
@@ -1614,6 +1616,7 @@
                         <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px; flex-shrink:0;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); yoneticiSekme(yoneticiSekmeAktif); setTimeout(()=>this.classList.remove('donuyor'), 800);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         </button>
+                        <button onclick="anaMenuAc()" class="adm-btn" title="Ana Menü" style="min-height:36px; padding:0 10px; font-size:12px; font-weight:800; border-radius:11px; flex-shrink:0; white-space:nowrap;">🏠 Ana Menü</button>
                         <button onclick="yoneticiPaneliKapat()" class="adm-btn" style="min-height:36px; width:36px; padding:0; font-size:14px; border-radius:11px; flex-shrink:0;">✕</button>
                     </div>
                     <div id="yon-lig-bar" style="display:none; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; flex-shrink:0;">
@@ -1645,6 +1648,28 @@
             <div class="yon-bottom-nav" id="yon-bottom-nav"></div>
             <!-- "Diğer" sayfası — mobilde alt navdaki taşma menüsü -->
             <div class="yon-diger-sheet" id="yon-diger-sheet"></div>
+        </div>
+    </div>
+
+    <!-- ANA MENÜ (koç için seçim ekranı, 2026-09-13) — "yönetici panelinde ana menüye dön yok,
+         genel olarak banner'a ana menüye dön, ana menüde seçim menüsü olsun" bulgusu üzerine.
+         Yönetici Paneli'nin başlığından VE ana uygulamanın üst bar'ından açılıyor. -->
+    <div id="ana-menu-modal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:480px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <span style="font-weight:900; font-size:16px;">🏠 Ana Menü</span>
+                <button onclick="anaMenuKapat()" class="adm-btn adm-btn-sm" style="min-width:30px; padding:0;">✕</button>
+            </div>
+            <div class="anamenu-grid">
+                <div class="lig-tile" onclick="anaMenuGit('canlitakip')"><div class="ikon">📡</div><div class="ad">Canlı Takip</div></div>
+                <div class="lig-tile" onclick="anaMenuGit('skor')"><div class="ikon">🎯</div><div class="ad">Skor Gir</div></div>
+                <div class="lig-tile" onclick="anaMenuGit('timer')"><div class="ikon">⏱️</div><div class="ad">Sayaç</div></div>
+                <div class="lig-tile" onclick="anaMenuGit('klasman')"><div class="ikon">🏆</div><div class="ad">Klasman</div></div>
+                <div class="lig-tile" onclick="anaMenuGit('liderlik')"><div class="ikon">🏅</div><div class="ad">Liderlik</div></div>
+                <div class="lig-tile" onclick="anaMenuKmAc()"><div class="ikon">🎮</div><div class="ad">Karışık Sınıf</div></div>
+                <div class="lig-tile" onclick="anaMenuYoneticiAc()"><div class="ikon">⚙️</div><div class="ad">Yönetici Paneli</div></div>
+                <div class="lig-tile" onclick="anaMenuLigDegistir()"><div class="ikon">🔄</div><div class="ad">Lig Değiştir</div></div>
+            </div>
         </div>
     </div>
 

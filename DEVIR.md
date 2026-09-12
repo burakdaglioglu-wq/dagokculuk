@@ -3017,3 +3017,41 @@ Gerçek testle doğrulandı: 8 sporculu cinsiyet ataması %100 doğru, tüm gör
 
 **Deploy durumu**: commit `656dcca`, push edildi, deploy version `ee5ff062-a198-4efc-b15d-af5be8b96f20`
 — canlıda doğrulandı (prod'dan `/korsan-karakterler/hazine-sandik.webp` 200 dönüyor).
+
+## 21. Ana Menü — eğitmen için yeni seçim ekranı (2026-09-13)
+
+**Bağlam**: kullanıcı "yönetici panelinde ana menüye dön yok, genel olarak bannera ana menüye dön de,
+ana menüde seçim menüsü olsun" dedi. Var olan tek "ana ekran"-benzeri şey `sekmeAc('ana')` sekmesiydi
+ama kod okunduğunda (`sporcuAnaDoldur()`) bunun TAMAMEN sporcu-profili içeriği olduğu, `loggedInSporcu`
+gerektirdiği ve eğitmen girişinde sadece "Sporcu girişi yap" mesajı gösterdiği doğrulandı — yani eğitmen
+için işe yaramaz bir sekme. AskUserQuestion ile soruldu, kullanıcı "yeni bir seçim ekranı kur" seçeneğini
+onayladı (var olan sekmeyi yeniden amaçlandırmak yerine).
+
+**Yapılan**: yeni `#ana-menu-modal` (`app.html`, `#yonetici-modal`'dan hemen sonra) — giriş ekranının yaş
+grubu kartlarıyla AYNI `.lig-tile` stilini yeniden kullanan, 8 kutulu responsive bir `.anamenu-grid`
+(`grid-template-columns: repeat(auto-fit, minmax(120px,1fr))`): Canlı Takip, Skor Gir, Sayaç, Klasman,
+Liderlik, Karışık Sınıf, Yönetici Paneli, Lig Değiştir. `styles.css`'e id-seçici + `!important` ile
+`#ana-menu-modal { z-index: 21000 !important; }` eklendi (proje kuralı: inline `style="z-index:..."`
+`.modal-overlay`'in temel `20000 !important` kuralını ASLA ezmiyor — `#yonetici-modal`'ın kendi inline
+`z-index:25000`'i de bu yüzden zaten ölü, önceden var olan küçük bir sorun, dokunulmadı). `app.js`'e
+`yoneticiPaneliKapat()`'in hemen ardına `anaMenuAc/Kapat/Git/KmAc/YoneticiAc/LigDegistir` fonksiyonları
+eklendi.
+
+**3 tetikleyici nokta**: ana `#ust-bar`'da "🏠 Ana Menü" (Lig Değiştir'in yanında); `#yonetici-modal`
+masaüstü sidebar başlığında ikon-only "🏠" (logo ile "✕" arası); `#yonetici-modal-header` mobil
+topbar'da etiketli "🏠 Ana Menü" (yenile butonu ile "✕" arası) — yani yönetici panelinin İÇİNDEN de tek
+tıkla ana menüye dönülebiliyor, oradan da istenen herhangi bir yere.
+
+**Doğrulama**: `node --check` temiz. Gerçek Playwright akışı (PIN giriş → normal lig seçimi → ust-bar
+butonu GERÇEK `click()` → modal açıldı → Klasman'a git → modal kapandı/sekme değişti; ayrıca Yönetici
+Paneli aç → içindeki buton → panel kapandı/modal açıldı → "Yönetici Paneli" kartına tıkla → panel tekrar
+açıldı) 1280px'te tamamen temiz, hatasız. 360px'te ayrıca doğrulandı: hem ust-bar butonu hem yönetici
+paneli içindeki buton görünür ve tıklanabilir, modal 2 sütunlu düzende taşmadan sığıyor, alt sekme
+çubuğuyla çakışmıyor. 12 tema + Reaksiyon regresyon taraması bu değişiklikten sonra da temiz (hiçbir
+tema/oyun etkilenmedi — değişiklik tamamen ust-bar/yönetici-paneli katmanında).
+
+**Not**: yerel test için `credentials.egitmen_hash` geçici olarak test PIN'ine (1234) çevrilmişti, test
+bitince GERÇEK hash'e geri döndürüldü ve doğrulandı.
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor (gece işi değil, canlı/
+takip edilen bir oturum, "sorma" muafiyeti bu istek için geçerli değil).
