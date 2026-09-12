@@ -10569,6 +10569,12 @@ ${(function(){
 .km-oyun-dok-lbl{ font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:700; }
 .km-oyun-geri-al-btn{ font-family:var(--font-body); font-weight:700; font-size:9.5px; letter-spacing:normal; text-transform:none; color:var(--ink-dim); background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:14px; padding:4px 10px; cursor:pointer; align-items:center; gap:4px; }
 .km-oyun-geri-al-btn:hover{ border-color:var(--a2); color:var(--ink); }
+/* Faz 14 (2026-09-13) — kullanıcı istedi: "butonu görünür yere yerleştir her düello için" — Arena'nın
+   "Yeni Oyun" butonu artık HER eşleşme kartında var (devam eden VEYA bitmiş), diğer nötr
+   km-oyun-geri-al-btn'lerden BİLEREK farklı/dikkat çekici bir renkte (aksi halde "diğer okçuya geç"
+   ile karışıp gözden kaçardı). */
+.km-arena-yeni-oyun-btn{ background:linear-gradient(135deg,#ffd23f,#ff9f1c); color:#241a04; border:none; font-weight:800; margin-top:4px; }
+.km-arena-yeni-oyun-btn:hover{ filter:brightness(1.08); color:#241a04; }
 .km-oyun-ok-toggle{ display:flex; gap:4px; }
 .km-oyun-ok-toggle button{ font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:normal; text-transform:none; color:var(--ink-faint); background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:12px; padding:4px 9px; cursor:pointer; }
 .km-oyun-ok-toggle button.aktif{ border-color:var(--a1); color:var(--ink); background:color-mix(in srgb, var(--a1) 14%, transparent); }
@@ -10715,20 +10721,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
 /* Hazine Adası */
 #km-oyun-panel-hazine{ background:#a9895a; }
-.km-blotch{ opacity:.08; fill:#5a3f22; }
 .km-grid{ stroke:#7a5230; stroke-width:1; opacity:.16; }
 .km-compass circle{ fill:none; stroke:#6b4a2a; stroke-width:1.4; opacity:.55; }
 .km-compass path{ fill:#6b4a2a; }
 .km-compass text{ font-family:var(--font-display); font-weight:700; font-size:11px; fill:#4a3018; }
 .km-map-route-glow{ fill:none; stroke:#3a2814; stroke-width:5; opacity:.15; }
 .km-map-route{ fill:none; stroke:#5a3f22; stroke-width:2.2; stroke-dasharray:1 8; stroke-linecap:round; opacity:.75; }
-.km-seal-ring{ fill:#8a6440; stroke:#4a3018; stroke-width:1.5; transition:fill .5s, filter .5s; }
-.km-seal.hit .km-seal-ring{ fill:var(--_c); filter:drop-shadow(0 0 6px var(--_c)); }
-.km-seal-num{ font-family:var(--font-display); font-weight:700; font-size:9px; fill:#f1dfb0; pointer-events:none; }
+/* Faz 15 (2026-09-13) — mühür artık dolgu yerine ÇERÇEVE: içinde gerçek bir altın sikke görseli
+   duruyor (bkz. kmOyunSahneKurHazine), ring SADECE "geçildi mi" durumunu gösteriyor. */
+.km-seal-ring{ fill:none; stroke:#8a6440; stroke-width:2; opacity:.6; transition:opacity .5s, filter .5s, stroke .5s; }
+.km-seal.hit .km-seal-ring{ stroke:var(--_c); opacity:1; filter:drop-shadow(0 0 6px var(--_c)); }
 .km-dock rect{ fill:#5a3f22; }
 .km-dock line{ stroke:#5a3f22; stroke-width:3; }
-.km-treasure-x line{ stroke:#b5281f; stroke-width:5; stroke-linecap:round; }
-.km-treasure-chest{ fill:#c98a1c; stroke:#6b4a10; stroke-width:1.5; }
 .km-treasure-glow{ fill:var(--a3); opacity:.18; filter:blur(6px); animation:kmCorePulse 2.6s ease-in-out infinite; }
 .km-ship-token .km-wake{ fill:#bfe4f5; opacity:.35; }
 .km-ship-token .km-tag-bg{ fill:#3a2814; stroke:var(--_c); stroke-width:1.3; }
@@ -12540,14 +12544,32 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             </div>`;
             if(tid === 'hazine') return `<div class="km-oyun-panel" id="km-oyun-panel-hazine">
                 <svg id="km-oyun-svg-hazine" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
-                  <circle class="km-blotch" cx="220" cy="120" r="60"/><circle class="km-blotch" cx="900" cy="340" r="80"/><circle class="km-blotch" cx="1020" cy="90" r="46"/>
                   <g><line class="km-grid" x1="0" y1="110" x2="1200" y2="110"/><line class="km-grid" x1="0" y1="220" x2="1200" y2="220"/><line class="km-grid" x1="0" y1="330" x2="1200" y2="330"/><line class="km-grid" x1="300" y1="0" x2="300" y2="440"/><line class="km-grid" x1="600" y1="0" x2="600" y2="440"/><line class="km-grid" x1="900" y1="0" x2="900" y2="440"/></g>
                   <g class="km-compass" transform="translate(1090,78)"><circle r="34"/><path d="M0,-28 L6,0 L0,28 L-6,0 Z"/><path d="M-28,0 L0,6 L28,0 L0,-6 Z" opacity=".6"/><text y="-40" text-anchor="middle">K</text></g>
+                  <!-- Faz 15 (2026-09-13) — kullanıcının sağladığı korsan-karakterler/ sprite'larından
+                       gerçek dekor: eski soyut mürekkep lekelerinin (km-blotch) YERİNE, haritanın
+                       etrafına dağıtılmış gemi dümeni/şişe/yengeç/papağanlar/kılıçlar. Rota/kontrol
+                       noktası mekaniğine hiç dokunulmuyor, sadece arka plan zenginleşti. -->
+                  <g id="km-oyun-hazine-dekor">
+                    <image href="/korsan-karakterler/korsan-gemi-dumeni.webp" x="105" y="347.5" width="90" height="85" opacity="0.92"/>
+                    <image href="/korsan-karakterler/korsan-sise.webp" x="505.9" y="302.5" width="28.3" height="95" opacity="0.85"/>
+                    <image href="/korsan-karakterler/korsan-yengec.webp" x="189.7" y="100" width="80.6" height="60" opacity="0.9"/>
+                    <image href="/korsan-karakterler/korsan-papagan-kilic.webp" x="997" y="70" width="66.1" height="90" opacity="0.92"/>
+                    <image href="/korsan-karakterler/korsan-papagan-tabela.webp" x="515.1" y="12.5" width="69.7" height="85" opacity="0.9"/>
+                    <image href="/korsan-karakterler/korsan-papagan-seker.webp" x="747.6" y="347.5" width="64.7" height="75" opacity="0.9"/>
+                    <image href="/korsan-karakterler/korsan-kilic-cift.webp" x="970" y="167.5" width="59.9" height="65" opacity="0.85"/>
+                    <image href="/korsan-karakterler/hazine-durbun.webp" x="221" y="355" width="58" height="55" opacity="0.9"/>
+                    <image href="/korsan-karakterler/hazine-ada-haritasi.webp" x="290" y="15" width="102.2" height="80" opacity="0.88"/>
+                  </g>
                   <path id="km-oyun-hazine-path" class="km-map-route-glow" d="M 90 330 Q 200 360 260 300 Q 320 240 260 190 Q 200 140 300 110 Q 400 80 460 150 Q 510 205 600 180 Q 700 150 680 230 Q 665 290 760 300 Q 860 312 870 240 Q 878 180 970 190 Q 1050 198 1060 130 Q 1065 95 1130 85"/>
                   <path class="km-map-route" d="M 90 330 Q 200 360 260 300 Q 320 240 260 190 Q 200 140 300 110 Q 400 80 460 150 Q 510 205 600 180 Q 700 150 680 230 Q 665 290 760 300 Q 860 312 870 240 Q 878 180 970 190 Q 1050 198 1060 130 Q 1065 95 1130 85"/>
                   <g class="km-dock" transform="translate(90,330)"><line x1="0" y1="0" x2="0" y2="-22"/><rect x="-13" y="-30" width="26" height="9" rx="1.5"/></g>
                   <g id="km-oyun-seals"></g>
-                  <g transform="translate(1130,85)"><circle class="km-treasure-glow" r="26"/><g class="km-treasure-x"><line x1="-9" y1="-9" x2="9" y2="9"/><line x1="9" y1="-9" x2="-9" y2="9"/></g><rect class="km-treasure-chest" x="-11" y="9" width="22" height="13" rx="2"/></g>
+                  <!-- Faz 15 — hazine artık gerçek bir sandık görseli (hazine-sandik.webp, kullanıcının
+                       sonradan bulduğu ikinci sprite sheet'ten — plan sunulurken "elimde sandık yok"
+                       denmişti, kullanıcı zaten hazırlamış). Eski prosedürel X+dikdörtgen kaldırıldı,
+                       glow AYNEN kaldı (kmOyunResyncHazine/AnimateHazine hiç dokunmuyor, id sabit). -->
+                  <g transform="translate(1130,85)"><circle class="km-treasure-glow" r="26"/><image href="/korsan-karakterler/hazine-yakut.webp" x="-44" y="-2" width="22.3" height="25" opacity="0.95"/><image href="/korsan-karakterler/hazine-elmas.webp" x="20" y="2" width="24.2" height="22" opacity="0.95"/><image href="/korsan-karakterler/hazine-sandik.webp" x="-32.3" y="-48" width="64.5" height="55"/></g>
                   <g id="km-oyun-ships"></g>
                 </svg>
             </div>`;
@@ -13656,6 +13678,54 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
 
         // ---- HAZINE ADASI ----
+        // Faz 15 (2026-09-13) — gerçek korsan karakterleri, Arena/Zirve'deki AYNI kadın/erkek/nötr
+        // deseni (kullanıcı talimatı tekrar onaylandı: "kadına kadın erkeğe erkek"). Sette kadın
+        // karakter SADECE 1 (şişeli korsan kız) — havuz asimetrik ama işlevsel, şeffafça not edildi.
+        // Nötr (cinsiyet yoksa) seçenek haritalı papağan — tema zaten "hazine haritası", tam oturuyor.
+        var KM_OYUN_HAZINE_KARAKTERLER_KADIN = ['korsan-kiz-sise'];
+        var KM_OYUN_HAZINE_KARAKTERLER_ERKEK = ['korsan-cocuk-mavi', 'korsan-cocuk-kanca', 'korsan-yasli-korsan'];
+        var KM_OYUN_HAZINE_KARAKTER_NOTR = 'korsan-papagan-harita';
+        // Gerçek piksel boyutları (crop sonrası) — SVG <image> en-boy korumadığı için sabit tutuluyor.
+        var KM_OYUN_HAZINE_KARAKTER_EN = { 'korsan-kiz-sise': 286 / 444, 'korsan-cocuk-mavi': 401 / 604, 'korsan-cocuk-kanca': 258 / 429, 'korsan-yasli-korsan': 348 / 390, 'korsan-papagan-harita': 413 / 470 };
+        var _kmOyunHazineKarakterMap = null;
+        function _kmOyunHazineKarakterAnahtari() { return 'dag_km_hazine_karakter_' + (_kmAktifKonum || 'varsayilan'); }
+        function _kmOyunHazineKarakterYukle() {
+            if(_kmOyunHazineKarakterMap) return;
+            _kmOyunHazineKarakterMap = {};
+            try {
+                let ham = localStorage.getItem(_kmOyunHazineKarakterAnahtari());
+                if(ham) { let p = JSON.parse(ham); if(p && p.tarih === bugunISO()) _kmOyunHazineKarakterMap = p.atamalar || {}; }
+            } catch(e) {}
+        }
+        function _kmOyunHazineKarakterKaydet() {
+            try { localStorage.setItem(_kmOyunHazineKarakterAnahtari(), JSON.stringify({ tarih: bugunISO(), atamalar: _kmOyunHazineKarakterMap })); } catch(e) {}
+        }
+        // Arena'nın _kmOyunArenaKarakterAta'sıyla BİREBİR aynı desen (sırayla sabit atama, kendi
+        // cinsiyet havuzunda), D1'e YAZILMIYOR, gün/ders değişince sıfırlanıyor.
+        function kmOyunHazineKarakterAta(s) {
+            _kmOyunHazineKarakterYukle();
+            let mevcut = _kmOyunHazineKarakterMap[s.ad];
+            if(typeof mevcut === 'string' && KM_OYUN_HAZINE_KARAKTER_EN[mevcut]) return mevcut;
+            let havuz = s.cinsiyet === 'K' ? KM_OYUN_HAZINE_KARAKTERLER_KADIN : (s.cinsiyet === 'E' ? KM_OYUN_HAZINE_KARAKTERLER_ERKEK : null);
+            let karakter;
+            if(havuz) {
+                let kullanilan = Object.values(_kmOyunHazineKarakterMap).filter(function(k) { return havuz.indexOf(k) !== -1; }).length;
+                karakter = havuz[kullanilan % havuz.length];
+            } else {
+                karakter = KM_OYUN_HAZINE_KARAKTER_NOTR;
+            }
+            _kmOyunHazineKarakterMap[s.ad] = karakter;
+            _kmOyunHazineKarakterKaydet();
+            return karakter;
+        }
+        // Eski paylaşılan kmOyunKarakterSVG'nin ('kaptan' kostümlü soyut maskot) YERİNE — Zirve/Arena'daki
+        // AYNI karar: gövde gerçek illüstrasyon, sporcu rengi KARAKTERDE değil isim etiketinde/gemi
+        // izinde (aşağıda `--_c` CSS değişkeni ile, HİÇ değişmedi).
+        function kmOyunHazineKarakterSVG(s) {
+            let karakter = kmOyunHazineKarakterAta(s);
+            let boy = 50, en = boy * KM_OYUN_HAZINE_KARAKTER_EN[karakter];
+            return `<image href="/korsan-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>`;
+        }
         function kmOyunHazinePath() { return document.getElementById('km-oyun-hazine-path'); }
         function kmOyunHazineNokta(frac) { let p = kmOyunHazinePath(); return p ? p.getPointAtLength(_kmOyunHazineTotalLen * frac) : { x: 0, y: 0 }; }
         function kmOyunHazineHeading(frac) {
@@ -13671,7 +13741,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(sealsG) {
                 sealsG.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
                     let pt = kmOyunHazineNokta(f);
-                    return `<g class="km-seal" id="km-oyun-seal-${ci}"><circle class="km-seal-ring" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="10"/><text class="km-seal-num" x="${pt.x.toFixed(1)}" y="${(pt.y + 3.5).toFixed(1)}" text-anchor="middle">${ci + 1}</text></g>`;
+                    // Faz 15 — numaralı mühür yerine gerçek altın sikke ikonu (kullanıcı onayladı);
+                    // "geçildi mi" göstergesi hâlâ AYNI ring elementi (kmOyunResyncHazine/AnimateHazine
+                    // hiç değişmedi, sadece CSS'i dolgudan çerçeveye döndü — bkz. .km-seal-ring).
+                    return `<g class="km-seal" id="km-oyun-seal-${ci}"><circle class="km-seal-ring" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="14"/><image href="/korsan-karakterler/korsan-altin.webp" x="${(pt.x - 11).toFixed(1)}" y="${(pt.y - 11).toFixed(1)}" width="22" height="22"/></g>`;
                 }).join('');
             }
             let shipsG = document.getElementById('km-oyun-ships'); if(!shipsG) return;
@@ -13681,8 +13754,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let c = kmOyunRenk('hazine', i), ad = s.ad.split(' ')[0];
                 return `<g class="km-ship-token" id="km-oyun-ship-${i}" style="--_c:${c};">
                     <g id="km-oyun-ship-iz-${i}"><ellipse class="km-wake" cx="0" cy="14" rx="15" ry="4"/></g>
-                    ${kmOyunKarakterSVG(s, c, 'hazine-' + i, 'kaptan', 15)}
-                    <g transform="translate(0,30)"><rect class="km-tag-bg" x="-15" y="-8" width="30" height="16" rx="8"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${ad}</text></g>
+                    ${kmOyunHazineKarakterSVG(s)}
+                    <g transform="translate(0,30)"><rect class="km-tag-bg" x="-15" y="-8" width="30" height="16" rx="8"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${esc(ad)}</text></g>
                 </g>`;
             }).join('');
             roster.forEach(function(s, i) { s.hazineEl = document.getElementById('km-oyun-ship-' + i); });
@@ -15263,8 +15336,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // kmOyunArenaYenidenEslestir'DEN FARKLI — SADECE bu tek eşleşmeyi (AYNI iki sporcu) sıfırlayıp
         // hemen aktif hale getiriyor, DİĞER devam eden maçlara hiç dokunmuyor. Yeni maç nesnesi
         // kmOyunArenaTuruBaslat'ın kendi oluşturduğu şekille BİREBİR aynı (can/ok/en-iyi-seri sıfır).
+        // GÜNCELLEME (2026-09-13, aynı gece devamı) — kullanıcı "her spor karşılaşması için ayarla"
+        // dedi: buton artık SADECE bitmiş değil, DEVAM EDEN eşleşmelerde de görünüyor (koç yanlış
+        // eşleşmeyi baştan başlatmak isteyebilir). Devam eden bir maçta GERÇEK ilerleme kaybolacağı
+        // için `confirm()` ile onay isteniyor (kmOyunTakimSifirla'daki AYNI desen) — bitmiş bir maçta
+        // kaybedilecek bir şey olmadığı için onay İSTENMİYOR (eski, zaten test edilmiş davranış).
         function kmOyunArenaMacYenile(idx) {
-            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum !== 'bitti') return;
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac) return;
+            if(mac.durum !== 'bitti') {
+                let a = _kmOyunRosterCache[mac.aIndex], b = _kmOyunRosterCache[mac.bIndex];
+                let isim = (a && b) ? (a.ad.split(' ')[0] + ' vs ' + b.ad.split(' ')[0]) : 'Bu eşleşme';
+                if(!confirm(isim + ' henüz bitmedi — yeniden başlatılırsa şu anki can/ok durumu kaybolur.\n\nYeni bir oyunla baştan başlansın mı?')) return;
+            }
             _kmOyunArenaMaclar[idx] = { aIndex: mac.aIndex, bIndex: mac.bIndex, aCan: KM_OYUN_ARENA_CAN_BASLANGIC, bCan: KM_OYUN_ARENA_CAN_BASLANGIC, siradaki: 'a', durum: 'bekliyor', kazanan: null, aOk: 0, bOk: 0, aEnIyiSeri: 0, bEnIyiSeri: 0 };
             kmOyunArenaMacSec(idx);
         }
@@ -15285,12 +15368,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // mekanizma, yeni bir flip kodu YAZILMADI. Karakterin ÜZERİNDE takım/sporcu rengi YOK (kullanıcı
         // talimatı: "renkleri değiştirme") — eski govde'nin kmArenaGrad-${uid} degrade dolgusu bu yüzden
         // kaldırıldı, takım rengi SADECE isim etiketi + can barında (kmOyunArenaMacKartHTML, HTML tarafı).
-        var KM_OYUN_ARENA_KARAKTERLER = ['okcu-kirmizi-genc', 'okcu-orman-elfi', 'okcu-elf-kadin', 'okcu-tilki', 'okcu-pelerinli', 'okcu-sari-sacli'];
+        // Faz 14 (2026-09-13) — kullanıcı istedi: "karakterler kadına kadın erkeğe erkek olarak
+        // ayarla". 6 görsel tek tek incelendi: kadın (elf-kadin, sari-sacli — ikisi de açıkça kadın
+        // figürü), erkek (kirmizi-genc, orman-elfi — Legolas tarzı erkek elf, pelerinli — sakallı/
+        // topuzlu erkek savaşçı), tilki (antropomorfik, cinsiyeti belirsiz — cinsiyet bilgisi YOKSA
+        // nötr seçenek olarak kullanılıyor, Zirve'nin "üçüncü seçenek" desenindeki AYNI mantık).
+        var KM_OYUN_ARENA_KARAKTERLER_KADIN = ['okcu-elf-kadin', 'okcu-sari-sacli'];
+        var KM_OYUN_ARENA_KARAKTERLER_ERKEK = ['okcu-kirmizi-genc', 'okcu-orman-elfi', 'okcu-pelerinli'];
+        var KM_OYUN_ARENA_KARAKTER_NOTR = 'okcu-tilki';
         // Her görsel 440px yükseklikte ama farklı genişlikte (saydam WebP, kırpılmamış) — SVG <image>
         // otomatik en-boy koruması yapmadığı için gerçek piksel genişlikleri (Node ile WebP header'ından
         // okundu) burada sabit tutuluyor, yoksa karakterler gerilip deforme görünürdü.
         var KM_OYUN_ARENA_KARAKTER_EN = { 'okcu-kirmizi-genc': 402, 'okcu-orman-elfi': 296, 'okcu-elf-kadin': 322, 'okcu-tilki': 317, 'okcu-pelerinli': 373, 'okcu-sari-sacli': 429 };
-        var _kmOyunArenaKarakterMap = null; // {ad: 0..5} — bellek-içi cache, ders boyunca aynı obje
+        var _kmOyunArenaKarakterMap = null; // {ad: 'okcu-...'} — bellek-içi cache, ders boyunca aynı obje
         function _kmOyunArenaKarakterAnahtari() { return 'dag_km_arena_karakter_' + (_kmAktifKonum || 'varsayilan'); }
         // Atama SADECE localStorage'da — D1'e/buluta hiç yazılmıyor (kullanıcı talimatı). Diğer
         // konum-scoped km-anahtarlarıyla (ör. _kmYarismaKurulumAnahtari) AYNI "bugünün tarihi değilse
@@ -15306,15 +15396,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function _kmOyunArenaKarakterKaydet() {
             try { localStorage.setItem(_kmOyunArenaKarakterAnahtari(), JSON.stringify({ tarih: bugunISO(), atamalar: _kmOyunArenaKarakterMap })); } catch(e) {}
         }
-        // Sırayla sabit atama: bir sporcu Arena'da İLK görüldüğü anda o ana kadar atanmış sayısına göre
-        // sıradaki karaktere (6'dan sonra başa döner) atanır, sonra HEP aynı kalır (ders/gün boyunca).
-        function _kmOyunArenaKarakterAta(ad) {
+        // Sırayla sabit atama, ARTIK cinsiyete göre AYRI havuzdan: sporcu Arena'da İLK görüldüğünde
+        // KENDİ havuzunda (kadın/erkek) o ana kadar atanmış sayıya göre sıradaki karaktere (havuz
+        // sonunda başa döner) atanır, sonra HEP aynı kalır. Cinsiyet bilgisi yoksa (nadir/eski kayıt)
+        // tilki'ye düşer. Eski (bugünün tarihiyle kaydedilmiş ama SAYISAL indeks olan) kayıtlar
+        // GEÇERSİZ sayılıp yeniden (doğru, cinsiyete göre) atanıyor — `typeof ... === 'string'`
+        // kontrolü bu geçişi güvenli hale getiriyor, aynı gün içinde önceki (sayısal) şemadan
+        // güncellenen bir oturumda bozuk bir görsel referansı KALMASIN diye.
+        function _kmOyunArenaKarakterAta(s) {
             _kmOyunArenaKarakterYukle();
-            if(_kmOyunArenaKarakterMap[ad] === undefined) {
-                _kmOyunArenaKarakterMap[ad] = Object.keys(_kmOyunArenaKarakterMap).length % KM_OYUN_ARENA_KARAKTERLER.length;
-                _kmOyunArenaKarakterKaydet();
+            let mevcut = _kmOyunArenaKarakterMap[s.ad];
+            if(typeof mevcut === 'string' && KM_OYUN_ARENA_KARAKTER_EN[mevcut]) return mevcut;
+            let havuz = s.cinsiyet === 'K' ? KM_OYUN_ARENA_KARAKTERLER_KADIN : (s.cinsiyet === 'E' ? KM_OYUN_ARENA_KARAKTERLER_ERKEK : null);
+            let karakter;
+            if(havuz) {
+                let kullanilan = Object.values(_kmOyunArenaKarakterMap).filter(function(k) { return havuz.indexOf(k) !== -1; }).length;
+                karakter = havuz[kullanilan % havuz.length];
+            } else {
+                karakter = KM_OYUN_ARENA_KARAKTER_NOTR;
             }
-            return KM_OYUN_ARENA_KARAKTERLER[_kmOyunArenaKarakterMap[ad]];
+            _kmOyunArenaKarakterMap[s.ad] = karakter;
+            _kmOyunArenaKarakterKaydet();
+            return karakter;
         }
         // Sarsıntı için AYRI bir iç <g> (rol class'ı BURADA) — dış <g>'nin translate/scale ÖZNİTELİĞİNE
         // CSS animasyonu HİÇ dokunmuyor (Pist'in araba-ölçekleme dersiyle AYNI risk: bir CSS transform
@@ -15322,7 +15425,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // AYNEN korundu, içeriği (paths → image) değişti.
         function kmOyunArenaOkcuSVG(s, x, uid, sagaBakiyorMu, rolSinifi) {
             let yon = sagaBakiyorMu ? 1 : -1;
-            let karakter = _kmOyunArenaKarakterAta(s.ad);
+            let karakter = _kmOyunArenaKarakterAta(s);
             let boy = 64, en = boy * ((KM_OYUN_ARENA_KARAKTER_EN[karakter] || 350) / 440);
             return `<g transform="translate(${x},55) scale(${yon},1)">
                 <g class="${rolSinifi}">
@@ -15365,7 +15468,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         ${kmOyunArenaOkcuSVG(b, 175, idx + 'b', false, 'km-arena-okcu-b')}
                     </svg>
                 </div>
-                ${bittiMi ? `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaMacYenile(${idx})">🆕 Yeni Oyun (${esc(a.ad.split(' ')[0])} vs ${esc(b.ad.split(' ')[0])})</button>` : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`}
+                ${bittiMi ? '' : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`}
+                <button class="km-oyun-geri-al-btn km-arena-sira-btn km-arena-yeni-oyun-btn" onclick="event.stopPropagation(); kmOyunArenaMacYenile(${idx})">🆕 Yeni Oyun (${esc(a.ad.split(' ')[0])} vs ${esc(b.ad.split(' ')[0])})</button>
             </div>`;
         }
         // ---- DÜELLO ARENA — Stage 3: Ok uçuşu ve hasar ----

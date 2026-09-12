@@ -2945,3 +2945,72 @@ skor hesaplama/D1 yazma yoluna yapılmadı.
    (CDN sürümünü güncellemek mi, özelliği kaldırmak mı).
 
 **Sonuç**: gerçek/aktif bir hata bulunmadı — bu yüzden bir "düzeltme" commit'i YOK, sadece bu rapor.
+
+## 19. Arena — her düello için görünür "Yeni Oyun" + cinsiyete göre karakter (2026-09-13)
+
+**"Yeni Oyun" artık her eşleşmede, her zaman görünür**: önceden sadece BİTMİŞ maçlarda çıkıyordu.
+Kullanıcı istedi: "her spor karşılaşması için ayarla, butonu görünür yere yerleştir." `kmOyunArenaMacKartHTML`
+artık `bittiMi` durumundan BAĞIMSIZ olarak "🆕 Yeni Oyun (A vs B)" butonunu HER kartta gösteriyor —
+devam eden maçlarda "🔁 Diğer okçuya geç"in ALTINDA, dikkat çeksin diye turuncu/altın gradyanlı ayrı bir
+renkte (`.km-arena-yeni-oyun-btn`, diğer nötr `km-oyun-geri-al-btn`'lerden BİLEREK farklı). Devam eden
+bir maçı sıfırlamak GERÇEK ilerlemeyi (can/ok) kaybettirdiği için `confirm()` ile onay isteniyor
+(`kmOyunTakimSifirla`'daki AYNI desen) — bitmiş bir maçta kaybedilecek bir şey olmadığı için onay
+İSTENMİYOR (dünkü, zaten test edilmiş davranış korunuyor). Gerçek testle doğrulandı: devam eden bir
+maçta buton görünür, tıklayınca confirm() çıkıyor, onaylanınca can/ok/en-iyi-seri sıfırlanıp maç
+`etkin` oluyor, DİĞER maçlara hiç dokunulmuyor.
+
+**Karakterler artık cinsiyete göre**: kullanıcı istedi: "karakterler kadına kadın erkeğe erkek olarak
+ayarla." 6 okçu görseli tek tek incelenip sınıflandırıldı — kadın havuzu: `okcu-elf-kadin`,
+`okcu-sari-sacli` (2). Erkek havuzu: `okcu-kirmizi-genc`, `okcu-orman-elfi`, `okcu-pelerinli` (3).
+`okcu-tilki` (antropomorfik, insan değil, cinsiyeti belirsiz) — cinsiyet bilgisi YOKSA (nadir/eski
+kayıt) nötr seçenek. Atama hâlâ sırayla-sabit (`_kmOyunArenaKarakterMap`, localStorage, D1'e
+YAZILMIYOR, gün değişince sıfırlanıyor) ama artık KENDİ cinsiyet havuzu İÇİNDE sırayla dönüyor.
+Aynı gün içinde ÖNCEKİ (sayısal indeks) şemadan kalma kayıtlar `typeof ... === 'string'` kontrolüyle
+GEÇERSİZ sayılıp yeniden (doğru) atanıyor — yarım kalmış bir görsel referansı riski yok. Gerçek 8
+sporculu testle doğrulandı: K→sadece kadın havuzundan, E→sadece erkek havuzundan, boş→tilki, %100 doğru.
+
+Deploy: aşağıda §20 ile birlikte.
+
+## 20. Hazine Adası — gerçek korsan karakterleri + hazine (2026-09-13)
+
+**Bağlam**: kullanıcı `public/korsan/korsan.png`'deki ikonları Hazine Adası'na entegre etmemi istedi.
+Dosya tek görsel değil, 15 ikonluk bir sprite sheet çıktı — `sharp` ile (proje `node_modules`'ında zaten
+vardı, transitif bağımlılık) alfa-kanalı bağlı-bileşen tespitiyle otomatik sınır kutuları bulunup her
+ikon ayrı transparan WebP'ye kırpıldı (`public/korsan-karakterler/`). 2 kırpımda komşu sprite'tan küçük
+bir sızıntı bulunup elle düzeltildi.
+
+**Bonus bulgu**: commit'ten önce fark edildi — `public/hazine.png` (AYNI gece, aynı dakikada
+oluşturulmuş, daha önce §17'de "beklenmedik dosya" olarak not edilmişti) de İKİNCİ bir sprite sheet
+çıktı: gerçek bir hazine sandığı, yakut, elmas, dürbün, katlı harita, ada haritası. Kullanıcının
+talimatı SADECE "korsan" klasörünü işaret ediyordu ama bu ikinci dosya AÇIKÇA aynı iş için hazırlanmıştı
+(plan sunulurken "elimde gerçek bir sandık görseli yok" denmişti, tam bunu kapatıyor) — kullanmamak
+yanlış olurdu, o da aynı işin kapsamına dahil edildi ve kullanıcıya AYRICA bildirildi (rapor).
+
+**Karakterler**: Arena/Zirve'deki AYNI kadın/erkek/nötr deseni (`kmOyunHazineKarakterAta`) — kadın
+havuzu sadece 1 (`korsan-kiz-sise`, sette başka kadın karakter yok, asimetrik ama işlevsel — şeffafça
+not edildi), erkek havuzu 3 (`korsan-cocuk-mavi/kanca`, `korsan-yasli-korsan`), cinsiyet yoksa
+`korsan-papagan-harita` (tema zaten "hazine haritası", tam oturuyor). Eski paylaşılan
+`kmOyunKarakterSVG(...,'kaptan',...)` çağrısı kaldırıldı, `kmOyunHazineKarakterSVG` gerçek illüstrasyon
+kullanıyor — takım rengi/wake-izi/etiket mekanizmasına HİÇ dokunulmadı (`--_c` CSS değişkeni aynen).
+
+**Sahne**: eski soyut mürekkep lekeleri (`km-blotch`) kaldırıldı, yerine `#km-oyun-hazine-dekor`
+grubunda gemi dümeni, mesaj şişesi, yengeç, dürbün, ada haritası ve 3 papağan haritanın etrafına
+dağıtıldı — Zirve'nin dağ katmanlarıyla AYNI "gerçek görsel dekor" mantığı, ama parallax YOK (Hazine'nin
+rotası Zirve gibi dikey bir tırmanış değil, yatay bir harita — kamera zaten var olan zoom/pan'ı
+kullanıyor, ek bir mekanizma gerekmedi).
+
+**Kontrol noktaları**: numaralı mühür daireleri yerine gerçek altın sikke ikonu (`korsan-altin.webp`) —
+"geçildi mi" göstergesi hâlâ AYNI `.km-seal-ring` elementi/`hit` class'ı (`kmOyunResyncHazine`/
+`kmOyunAnimateHazine`'e HİÇ dokunulmadı), sadece CSS dolgudan çerçeveye döndü.
+
+**Hazine (bitiş)**: eski prosedürel X+dikdörtgen sandık kaldırıldı, yerine gerçek `hazine-sandik.webp`
++ yanında yakut/elmas flörtü — glow (`km-treasure-glow`) AYNEN kaldı.
+
+**Kullanılmayan dosyalar**: `public/korsan/korsan.png` (1.17MB) ve `public/hazine.png` (662KB) artık
+kod tarafından hiç kullanılmıyor (sadece kırpılmış halleri, `korsan-karakterler/` altında ~500KB
+kullanılıyor) — kullanıcıya silip silmeme kararı soruldu, YANIT BEKLENİYOR, bu yüzden bilerek
+commit'e DAHİL EDİLMEDİ (git'te izlenmiyor) — ama `wrangler deploy` `public/`'daki HER dosyayı git'ten
+BAĞIMSIZ yüklediği için deploy'a otomatik dahil olacaklar (zararsız, sadece gereksiz ~1.8MB).
+
+Gerçek testle doğrulandı: 8 sporculu cinsiyet ataması %100 doğru, tüm görseller (27 image elemanı)
+200 dönüyor, 12 tema + Reaksiyon regresyon taraması temiz, 360/1280px hatasız.
