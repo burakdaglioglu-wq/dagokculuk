@@ -2917,3 +2917,31 @@ bilerek DOKUNULMADI, commit'e dahil edilmedi — ama `wrangler deploy` public/ k
 git'ten bağımsız yüklediği için bu deploy'la birlikte ONLAR DA canlıya çıktı (kod hiçbir yerde
 kullanmıyor, sadece pasif statik dosya olarak duruyorlar, zararsız). Sabah ne için olduklarını
 sormak gerekiyor.
+
+## 18. Karışık Sınıf genel kontrol (2026-09-13, gece işi — "temel şeyleri kontrol et, düzelt, raporla")
+
+**Kapsam**: kullanıcının "en sonunda karışık sınıf içerisinde temel şeyleri kontrol et düzelt
+raporlar" talimatı üzerine yapılan bir denetim — SADECE okuma/gözlem + bugünkü değişikliklerin
+(Zirve, Arena) kendi kendine denetimi. Skor/veri katmanına dokunma yasağı gereği hiçbir "düzeltme"
+skor hesaplama/D1 yazma yoluna yapılmadı.
+
+**Bulgular**:
+1. **12 sekmenin tamamı** (yoklama/skor/lider/klasman/canlı/yarışma/veli/disiplin/pozitif/oyunlar/
+   reaksiyon/ritim) `kmSekme()` ile tek tek gezildi, hepsi hatasız render oldu, boş/şüpheli bir
+   ekran yok.
+2. **Veri bütünlüğü** (salt okuma): `_kmListe`'deki (KM roster) her sporcu `turnuvaDB`'de karşılık
+   buluyor — "listede olup gerçek kayıtta olmayan" sporcu YOK (bu, DEVIR'de daha önce belgelenen
+   "yerel turnuvaDB bayatlık" hata sınıfının bir belirtisi olurdu — bulunmadı). Aidat senkron
+   kuyruğu (`dag_aidat_bekleyen_putler`) boş — birikmiş, gönderilememiş bir yazma yok.
+3. **Tonight'ın kendi değişiklikleri** (Zirve `cinsiyet` alanı eklemesi, yeni HUD, Arena "Yeni Oyun")
+   `git diff` ile XSS açısından tekrar tarandı — her yeni `.ad` interpolasyonu (`kmOyunZirveKarakterSVG`
+   etiketi, Arena "Yeni Oyun" butonu, kamp isimleri) zaten `esc()` içinden geçiyor, yeni bir açık
+   bulunmadı.
+4. **Ön yükleme hatası (ÖNCEDEN VAR, bu geceki işlerle İLGİSİZ, DÜZELTİLMEDİ)**: konsolda
+   `@mediapipe/camera_utils@0.4.1675466862/camera_utils.js` için 404 + `ERR_ABORTED` görüldü —
+   `DAGSK_AI_POSE` (video duruş analizi) özelliğinin kullandığı bir CDN betiği, o pinlenmiş sürüm
+   artık jsDelivr'de yok gibi görünüyor. Karışık Sınıf'ın 12 sekmesinin HİÇBİRİNİ engellemiyor (sadece
+   o AI-duruş özelliği muhtemelen çalışmıyor) — kapsam dışı bırakıldı, sabah ayrı bir karar gerekiyor
+   (CDN sürümünü güncellemek mi, özelliği kaldırmak mı).
+
+**Sonuç**: gerçek/aktif bir hata bulunmadı — bu yüzden bir "düzeltme" commit'i YOK, sadece bu rapor.
