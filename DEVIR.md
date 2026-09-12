@@ -2533,6 +2533,7 @@ eşleşme can/ok/en-iyi-seri sıfırlandı, `etkin` oldu, AYNI iki sporcu (aInde
 regresyon taraması temiz.
 
 **Deploy durumu**: commit + push + DEPLOY edildi (kullanıcının aynı gece talimatı kapsamında).
+Commit `a17f5ec`, deploy version `0d5fab8b-187b-4f12-90b6-b1e9a6e24c5b`.
 
 ## 16. KAPANIŞ — Faz 13, Karışık Sınıf → Yarışma sekmesi TAMAMLANDI (2026-09-10)
 
