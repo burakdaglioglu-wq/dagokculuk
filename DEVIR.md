@@ -3099,4 +3099,45 @@ sıra doğru şekilde insana geri döndü. Eşleşme Değiştir gerçek tıklama
 değişti (1→3), can/ok sıfırlandı. 360/1280px temiz, 12 tema + Reaksiyon regresyon taraması temiz,
 konsol hatası yok.
 
+**Deploy durumu**: onaylandı, commit `666e843`, push edildi, deploy version `7db34c52-ca96-4b21-a75d-0d3279eccd9c`.
+
+## 23. Düello Arena — yeni erkek/kadın karakter seti (2026-09-15)
+
+**Bağlam**: kullanıcı `public/Düello Arena/erkek.png` (8 erkek okçu) ve `kadın.png` (6 kadın okçu) —
+iki gerçek şeffaf PNG sprite sheet — bıraktı, "erkeklere erkek, kadınlara kadın, rastgele" dedi. Eski
+5 karakterin (kirmizi-genc/orman-elfi/pelerinli/elf-kadin/sari-sacli) FARKLI bir çizim stilinde
+(gerçekçi/anime) olduğu, yenilerin düz-vektör çocuk illüstrasyonu olduğu görülünce, iki stilin aynı
+düelloda karşılaşmasının tutarsız görüneceği kullanıcıya soruldu — **tamamen değiştir** onayı alındı
+(havuza eklemek yerine).
+
+**Çıkarma**: `sharp` ile alfa-kanalı bağlı-bileşen tespiti — kadın.png'nin 6 karakteri TEK seferde
+temiz izole oldu, erkek.png'nin sağ 2 sütunundaki 5 karakter ise birbirine çok yakın yay/ok çizgileri
+yüzünden TEK bir dev bölgeye birleşiyordu (flood-fill gap eşiği düşürmek işe yaramadı — çizgiler
+GERÇEKTEN değiyor). Bunlar için ızgara-hücre kırpma + elle sınır ayarı kullanıldı (komşu karakterin
+sızıntısı görülen her kenar, boş bir aralık bulunana kadar daraltıldı — ör. elf/kırmızı-sportif sınırı
+x=1300'den x=1450'ye, pelerinli'nin üst sınırı elf'in bacaklarını dışarıda bırakacak şekilde y=800'den
+y=905'e çekildi). Ayrıca gerçek bir kod hatası bulundu: `trimCrop` yardımcı fonksiyonu `.metadata()`'yı
+`.trim()` işlem hattı SONLANDIRILMADAN çağırıyordu, bu yüzden trim SESSİZCE hiç uygulanmıyordu (çıktı
+boyutu kırpma kutusuyla birebir aynıydı) — `toBuffer()` ile ayrı bir aşamaya bölünerek düzeltildi
+(korsan/hazine çıkarmasındaki `.extract().trim()` zincirleme hatasıyla AYNI aile, farklı kök neden).
+
+**Havuzlar**: `KM_OYUN_ARENA_KARAKTERLER_KADIN` 6, `KM_OYUN_ARENA_KARAKTERLER_ERKEK` 8 karaktere
+çıkarıldı (`okcu-k-*`/`okcu-e-*` önekli yeni dosyalar), `KM_OYUN_ARENA_KARAKTER_EN` genişlik tablosu
+her yeni görsel için yeniden hesaplandı (440px yükseklikte orantılı genişlik). Nötr (`okcu-tilki`,
+cinsiyet bilgisi yoksa) HİÇ DOKUNULMADI — kullanıcı sadece erkek/kadın için yeni set istedi. Var olan
+atama mantığı (`_kmOyunArenaKarakterAta`, sıralı-havuz-içi + günlük sıfırlama) hiç değişmedi; eski
+(artık `KM_OYUN_ARENA_KARAKTER_EN`'de bulunmayan) karakter adlarına sahip bugünkü kalıntı atamalar
+zaten var olan "geçersiz kabul et, yeniden ata" koruması sayesinde otomatik düzeliyor.
+
+**Doğrulama**: gerçek testte roster'da cinsiyet bilgisi olmadığı görülünce (Ana Salon test oturumu),
+bellek-içi 6 sporcuya (3K+3E) test amaçlı cinsiyet atanıp GERÇEK `kmOyunArenaHavuzTikla`+
+`kmOyunArenaTuruBaslat` akışından geçirildi — 6/6 atama doğru önekte (`okcu-k-`/`okcu-e-`), 27 karakter
+görseli 200 döndü, konsol hatası yok, 360/1280px temiz, 12 tema + Reaksiyon regresyon taraması temiz.
+
+**Kullanılmayan dosyalar (dokunulmadı)**: eski 5 karakter webp'i (`okcu-elf-kadin.webp`,
+`okcu-kirmizi-genc.webp`, `okcu-orman-elfi.webp`, `okcu-pelerinli.webp`, `okcu-sari-sacli.webp`) artık
+hiç referans edilmiyor; kaynak sprite sheet'ler (`public/Düello Arena/erkek.png` 671KB, `kadın.png`
+488KB) de çıkarma sonrası kullanılmıyor — hazine.png/korsan.png emsaliyle AYNI şekilde kullanıcıya
+silinip silinmeyeceği soruldu.
+
 **Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.

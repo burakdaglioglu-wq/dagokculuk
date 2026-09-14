@@ -15424,17 +15424,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // talimatı: "renkleri değiştirme") — eski govde'nin kmArenaGrad-${uid} degrade dolgusu bu yüzden
         // kaldırıldı, takım rengi SADECE isim etiketi + can barında (kmOyunArenaMacKartHTML, HTML tarafı).
         // Faz 14 (2026-09-13) — kullanıcı istedi: "karakterler kadına kadın erkeğe erkek olarak
-        // ayarla". 6 görsel tek tek incelendi: kadın (elf-kadin, sari-sacli — ikisi de açıkça kadın
-        // figürü), erkek (kirmizi-genc, orman-elfi — Legolas tarzı erkek elf, pelerinli — sakallı/
-        // topuzlu erkek savaşçı), tilki (antropomorfik, cinsiyeti belirsiz — cinsiyet bilgisi YOKSA
-        // nötr seçenek olarak kullanılıyor, Zirve'nin "üçüncü seçenek" desenindeki AYNI mantık).
-        var KM_OYUN_ARENA_KARAKTERLER_KADIN = ['okcu-elf-kadin', 'okcu-sari-sacli'];
-        var KM_OYUN_ARENA_KARAKTERLER_ERKEK = ['okcu-kirmizi-genc', 'okcu-orman-elfi', 'okcu-pelerinli'];
+        // ayarla". Faz 16 (2026-09-15) — kullanıcı public/Düello Arena/erkek.png+kadın.png içinde YENİ
+        // bir kadın/erkek karakter seti bıraktı ("erkeklere erkek, kadınlara kadın, rastgele") —
+        // ESKİ 5 karakter (kirmizi-genc/orman-elfi/pelerinli/elf-kadin/sari-sacli, farklı bir "gerçekçi"
+        // çizim stiliydi) kullanıcı onayıyla TAMAMEN bu YENİ, tutarlı düz-vektör setiyle DEĞİŞTİRİLDİ —
+        // iki stil aynı düelloda karşılaşmasın diye karıştırılmadı. 14 görsel `sharp` ile (alfa-kanalı
+        // bağlı-bileşen tespiti + komşu karakterlerin ince yay/ok çizgileriyle birbirine değdiği
+        // durumlar için elle ayarlanmış ızgara kırpma) çıkarıldı, `public/okcu-karakterler/`'e
+        // `okcu-e-*`/`okcu-k-*` önekiyle eklendi. tilki (nötr, cinsiyet bilgisi yoksa) DOKUNULMADI.
+        var KM_OYUN_ARENA_KARAKTERLER_KADIN = ['okcu-k-ponytail-turuncu', 'okcu-k-kahve-sacli-kiz', 'okcu-k-stilize-sari', 'okcu-k-elf-sari', 'okcu-k-sportif-mavi', 'okcu-k-pembe-turuncu-etek'];
+        var KM_OYUN_ARENA_KARAKTERLER_ERKEK = ['okcu-e-kirmizi-cocuk', 'okcu-e-elf', 'okcu-e-sportif-kirmizi', 'okcu-e-tilki', 'okcu-e-pelerinli', 'okcu-e-sportif-mavi', 'okcu-e-sari-cocuk', 'okcu-e-sportif-kirmizi-sacli'];
         var KM_OYUN_ARENA_KARAKTER_NOTR = 'okcu-tilki';
         // Her görsel 440px yükseklikte ama farklı genişlikte (saydam WebP, kırpılmamış) — SVG <image>
         // otomatik en-boy koruması yapmadığı için gerçek piksel genişlikleri (Node ile WebP header'ından
         // okundu) burada sabit tutuluyor, yoksa karakterler gerilip deforme görünürdü.
-        var KM_OYUN_ARENA_KARAKTER_EN = { 'okcu-kirmizi-genc': 402, 'okcu-orman-elfi': 296, 'okcu-elf-kadin': 322, 'okcu-tilki': 317, 'okcu-pelerinli': 373, 'okcu-sari-sacli': 429 };
+        var KM_OYUN_ARENA_KARAKTER_EN = { 'okcu-tilki': 317, 'okcu-e-elf': 336, 'okcu-e-kirmizi-cocuk': 401, 'okcu-e-pelerinli': 323, 'okcu-e-sari-cocuk': 294, 'okcu-e-sportif-kirmizi-sacli': 387, 'okcu-e-sportif-kirmizi': 347, 'okcu-e-sportif-mavi': 341, 'okcu-e-tilki': 312, 'okcu-k-elf-sari': 319, 'okcu-k-kahve-sacli-kiz': 262, 'okcu-k-pembe-turuncu-etek': 202, 'okcu-k-ponytail-turuncu': 227, 'okcu-k-sportif-mavi': 207, 'okcu-k-stilize-sari': 430 };
         var _kmOyunArenaKarakterMap = null; // {ad: 'okcu-...'} — bellek-içi cache, ders boyunca aynı obje
         function _kmOyunArenaKarakterAnahtari() { return 'dag_km_arena_karakter_' + (_kmAktifKonum || 'varsayilan'); }
         // Atama SADECE localStorage'da — D1'e/buluta hiç yazılmıyor (kullanıcı talimatı). Diğer
