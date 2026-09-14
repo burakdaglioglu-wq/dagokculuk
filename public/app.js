@@ -14095,7 +14095,57 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
-        // ---- NINJA OYUNU ----
+        // ---- NINJA OYUNU — Faz 16 (2026-09-15): gerçek erkek/kadın karakterler ----
+        // Kullanıcı public/ninja/erkek.png+kadın.png bıraktı ("aynısını yapalım" — Arena'daki AYNI
+        // erkek/kadın rastgele atama deseni). Ninja'nın DAHA ÖNCE cinsiyete göre HİÇ ayrımı yoktu —
+        // herkes AYNI paylaşılan `kmOyunKarakterSVG(...,'ninja',...)` prosedürel maskotunu görüyordu.
+        // Bu YENİ bir mekanik (var olanı değiştirmek değil): cinsiyet BİLİNEN sporcular artık gerçek
+        // görsel karakter alıyor, cinsiyet bilgisi YOKSA eski prosedürel maskot AYNEN korunuyor (üçüncü
+        // bir "nötr" görsel İCAT EDİLMEDİ — kullanıcı sadece erkek/kadın istedi). erkek.png'deki 6
+        // pozdan biri (uygunsuz bir el hareketi içeriyordu) BİLEREK hariç tutuldu, kalan 5 kullanıldı.
+        var KM_OYUN_NINJA_KARAKTERLER_KADIN = ['ninja-k-gri-kaptanli', 'ninja-k-siluet-kilic', 'ninja-k-siyah-tekme', 'ninja-k-pembe-samuray', 'ninja-k-lacivert-tekme'];
+        var KM_OYUN_NINJA_KARAKTERLER_ERKEK = ['ninja-e-tekme', 'ninja-e-firlatma', 'ninja-e-kilic', 'ninja-e-kosuyor', 'ninja-e-baslik'];
+        var KM_OYUN_NINJA_KARAKTER_EN = { 'ninja-e-tekme': 354, 'ninja-e-firlatma': 270, 'ninja-e-kilic': 250, 'ninja-e-kosuyor': 373, 'ninja-e-baslik': 521, 'ninja-k-gri-kaptanli': 293, 'ninja-k-siluet-kilic': 378, 'ninja-k-siyah-tekme': 432, 'ninja-k-pembe-samuray': 427, 'ninja-k-lacivert-tekme': 382 };
+        var _kmOyunNinjaKarakterMap = null;
+        function _kmOyunNinjaKarakterAnahtari() { return 'dag_km_ninja_karakter_' + (_kmAktifKonum || 'varsayilan'); }
+        function _kmOyunNinjaKarakterYukle() {
+            if(_kmOyunNinjaKarakterMap) return;
+            _kmOyunNinjaKarakterMap = {};
+            try {
+                let ham = localStorage.getItem(_kmOyunNinjaKarakterAnahtari());
+                if(ham) { let p = JSON.parse(ham); if(p && p.tarih === bugunISO()) _kmOyunNinjaKarakterMap = p.atamalar || {}; }
+            } catch(e) {}
+        }
+        function _kmOyunNinjaKarakterKaydet() {
+            try { localStorage.setItem(_kmOyunNinjaKarakterAnahtari(), JSON.stringify({ tarih: bugunISO(), atamalar: _kmOyunNinjaKarakterMap })); } catch(e) {}
+        }
+        // Arena'nın AYNI sıralı-havuz-içi atama deseni — cinsiyet yoksa null döner (çağıran taraf eski
+        // prosedürel maskota düşer, bkz. kmOyunNinjaKarakterSVG).
+        function kmOyunNinjaKarakterAta(s) {
+            if(s.cinsiyet !== 'K' && s.cinsiyet !== 'E') return null;
+            _kmOyunNinjaKarakterYukle();
+            let mevcut = _kmOyunNinjaKarakterMap[s.ad];
+            if(typeof mevcut === 'string' && KM_OYUN_NINJA_KARAKTER_EN[mevcut]) return mevcut;
+            let havuz = s.cinsiyet === 'K' ? KM_OYUN_NINJA_KARAKTERLER_KADIN : KM_OYUN_NINJA_KARAKTERLER_ERKEK;
+            let sayilan = Object.keys(_kmOyunNinjaKarakterMap).filter(function(ad) { return KM_OYUN_NINJA_KARAKTER_EN[_kmOyunNinjaKarakterMap[ad]] && havuz.indexOf(_kmOyunNinjaKarakterMap[ad]) !== -1; }).length;
+            let karakter = havuz[sayilan % havuz.length];
+            _kmOyunNinjaKarakterMap[s.ad] = karakter;
+            _kmOyunNinjaKarakterKaydet();
+            return karakter;
+        }
+        // Cinsiyet biliniyorsa gerçek görsel <image>, yoksa AYNEN eski paylaşılan prosedürel maskot
+        // (kmOyunKarakterSVG) — bu fonksiyonun imzası/çağrı yeri hiç değişmedi, sadece İÇİNDE dallanıyor.
+        // Eski maskotun (r=15) kendi iç ölçeğiyle AYNI "ayak izi"nde kalınıyor — kafa tepesi ~y=-31,
+        // ayak/gölge ~y=14 (kmOyunKarakterSVG'nin gövde/gölge çizimindeki r*0.92 ile birebir), böylece
+        // ÇAĞIRAN taraftaki etiket offseti (`translate(0,30)`) ve jitter matematiği HİÇ değişmeden aynı
+        // görsel yerleşim korunuyor.
+        function kmOyunNinjaKarakterSVG(s, renk, uid) {
+            let karakter = kmOyunNinjaKarakterAta(s);
+            if(!karakter) return kmOyunKarakterSVG(s, renk, uid, 'ninja', 15);
+            let ayakY = 14, boy = 45, en = boy * ((KM_OYUN_NINJA_KARAKTER_EN[karakter] || 350) / 440);
+            return `<ellipse class="km-char-shadow" cx="0" cy="${ayakY.toFixed(1)}" rx="12" ry="3.6"/>
+                <image href="/ninja-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(ayakY - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>`;
+        }
         function kmOyunNinjaPath() { return document.getElementById('km-oyun-ninja-path'); }
         let _kmOyunNinjaTotalLen = 0;
         function kmOyunNinjaNokta(frac) { let p = kmOyunNinjaPath(); return p ? p.getPointAtLength(_kmOyunNinjaTotalLen * frac) : { x: 0, y: 0 }; }
@@ -14128,7 +14178,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 el.style.setProperty('--_c', renk);
                 let ilkAd = s.ad.split(' ')[0];
                 let genislik = Math.max(38, ilkAd.length * 7 + 14);
-                el.innerHTML = `${kmOyunKarakterSVG(s, renk, 'ninja-' + i, 'ninja', 15)}
+                el.innerHTML = `${kmOyunNinjaKarakterSVG(s, renk, 'ninja-' + i)}
                     <g transform="translate(0,30)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${ilkAd}</text></g>`;
                 cg.appendChild(el);
                 s.ninjaEl = el;

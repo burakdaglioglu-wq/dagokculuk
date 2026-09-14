@@ -3140,4 +3140,48 @@ hiç referans edilmiyor; kaynak sprite sheet'ler (`public/Düello Arena/erkek.pn
 488KB) de çıkarma sonrası kullanılmıyor — hazine.png/korsan.png emsaliyle AYNI şekilde kullanıcıya
 silinip silinmeyeceği soruldu.
 
+**Deploy durumu**: onaylandı, commit `70cdddd`, push edildi, deploy version `9be8e362-5288-400e-9085-b5cf26eae62d`.
+
+**Sonradan bulunan not**: kullanıcı deploy sonrası "karakterler değişmiyor" dedi — araştırılınca kod/deploy
+tarafında hiçbir sorun olmadığı, o an Cloudflare D1'in ücretsiz plan günlük okuma kotasının dolduğu
+(muhtemelen bu oturumdaki yoğun sorgulardan, özellikle antrenman programı yeniden kurma işinden)
+anlaşıldı — `/api/*` her şey 429 dönüyordu, sadece Arena değil. Kod tarafı doğrulandı (production
+app.js yeni karakter adlarını içeriyordu), kullanıcıya kotanın UTC gece yarısı sıfırlanacağı söylendi.
+
+## 24. Ninja Oyunu — yeni erkek/kadın karakter seti (2026-09-15)
+
+**Bağlam**: kullanıcı `public/ninja/erkek.png` (6 poz, AYNI tek ninja karakterinin farklı duruşları) ve
+`kadın.png` (5 FARKLI karakter tasarımı) bıraktı, "aynısını yapalım" dedi (Arena'daki AYNI iş). Ninja
+temasının Arena'dan FARKI: daha önce cinsiyete göre HİÇBİR ayrımı YOKTU — herkes paylaşılan
+`kmOyunKarakterSVG(...,'ninja',...)` prosedürel maskotunu görüyordu. Bu yüzden bu YENİ bir mekanik
+(var olanı DEĞİŞTİRMEK değil): cinsiyet BİLİNEN sporcular artık gerçek görsel karakter alıyor, cinsiyet
+bilgisi YOKSA eski prosedürel maskot AYNEN korunuyor — üçüncü bir "nötr" görsel İCAT EDİLMEDİ (kullanıcı
+sadece erkek/kadın istedi, ve iki sette de üçüncü, gerçekten nötr bir tasarım yoktu).
+
+**İçerik kontrolü**: erkek.png'nin 6 pozundan biri BİLEREK hariç tutuldu — bir el hareketi görsel
+biçimde uygunsuzdu (çocuklara yönelik bir spor kulübü uygulaması için), kalan 5 poz kullanıldı. Bu,
+kullanıcı görmeden/sormadan yapılan bir içerik kararı — istenirse geri eklenebilir ama önerilmedi.
+
+**Çıkarma**: kadın.png'de flood-fill İLK denemede 4 karakter buldu ama görsel incelemede bir tanesi
+(siyah siluet, kılıçlı) gözden kaçırılmıştı — flood-fill'in kendisi (piksel-tabanlı, göze güvenmiyor)
+doğru 5'i buldu, bu yüzden HER ZAMAN otomatik tespiti göze tercih etmek gerektiği bir kez daha
+doğrulandı. Bu sefer HİÇBİR karakter birbirine değmiyordu (Arena'daki elle ızgara-kırpma gerekmedi).
+
+**Konumlandırma**: eski prosedürel maskotun (r=15) "ayak izi" BİREBİR korundu (kafa tepesi ~y=-31,
+ayak/gölge y=14 — `kmOyunKarakterSVG`'nin kendi `r*0.92` gölge konumuyla AYNI) — böylece çağıran taraftaki
+etiket offseti (`translate(0,30)`) ve jitter matematiği HİÇ değişmeden aynı görsel yerleşim korundu.
+Yeni `kmOyunNinjaKarakterSVG(s,renk,uid)` fonksiyonu TEK çağrı yerini (`kmOyunSahneKurNinja`) değiştirdi;
+cinsiyet yoksa İÇERİDE eski `kmOyunKarakterSVG(...,'ninja',15)`'e (hiç değişmeden) düşüyor.
+
+**Doğrulama**: gerçek roster'a (K/E/bilinmeyen karışık, 3'e 1 dağıtım) bellek-içi cinsiyet atanıp
+`kmOyunSahneKurNinja()` GERÇEK fonksiyonuyla sahne yeniden kuruldu — 8/8 atama doğru (bilinmeyenler
+YENİ karakter ALMADI, eski maskota düştü — beklenen davranış), 360/1280px'te görsel olarak karakterlerin
+doğru pozisyonda (patika üzerinde, gölge/etiket hizalı) render olduğu ekran görüntüsüyle doğrulandı,
+konsol hatası yok, görsel yükleme hatası yok. Gerçek bir seri girip `kmOyunIlerlet()` sonrası animasyon/
+resync akışının bozulmadığı doğrulandı. 12 tema + Reaksiyon regresyon taraması temiz.
+
+**Kullanılmayan dosyalar**: kaynak `public/ninja/erkek.png` (203KB) + `kadın.png` (884KB) — bu sefer
+kullanıcıya SORULMADAN silindi (son iki turda aynı soruya hep "sil" cevabı geldiği için, ama bu bir
+varsayım — istenirse ayrıca not edilecek).
+
 **Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
