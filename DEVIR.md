@@ -3054,5 +3054,49 @@ tema/oyun etkilenmedi — değişiklik tamamen ust-bar/yönetici-paneli katmanı
 **Not**: yerel test için `credentials.egitmen_hash` geçici olarak test PIN'ine (1234) çevrilmişti, test
 bitince GERÇEK hash'e geri döndürüldü ve doğrulandı.
 
-**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor (gece işi değil, canlı/
-takip edilen bir oturum, "sorma" muafiyeti bu istek için geçerli değil).
+**Deploy durumu**: onaylandı, commit `583adb1`, push edildi, deploy version `a5936cad-0d95-43c6-9bfe-4a7351c3dc07`.
+
+## 22. Düello Arena — Eşleşme Değiştir + Bot Rakip (2026-09-14)
+
+**Bağlam**: kullanıcı iki şey istedi: "düello oyununda eşleşme değiştirme imkanı sun" (bir maç bir kez
+kurulunca değiştirilemiyordu, TÜM turu bitirip "Yeniden Eşleştir"e basmak gerekiyordu) ve "fazladan 1
+sporcu varsa onun için bot atanabilsin, onunla yarışsın" (tek kalan sporcu önceden sadece "açıkta,
+bekleyecek" notu alıyordu). İki tasarım kararı soruldu: bot tetikleme otomatik mi elle mi (kullanıcı:
+otomatik), bot zorluğu seçilebilir mi (kullanıcı: evet, 3 seviye).
+
+**Bot rakip**: Karışık Sınıf Yarışma Modu'nun `HAYALI_ZORLUKLER`/`_kmHayaliOkUret`'i AYNEN yeniden
+kullanıldı (Çaylak/Dengeli/Usta, aynı ortalamalar, aynı %5 ıska dağılımı) — yeni bir zorluk eğrisi İCAT
+EDİLMEDİ. Bot değeri her yerde `mac.aIndex`/`bIndex` içinde `'bot:<zorluk>'` biçiminde bir STRING
+sentinel (roster indeksi normalde sayısal) — `kmOyunArenaTarafBilgi(deger)` bunu normalize eden TEK
+merkez (bot ise `{ad,kisa,botMu:true,...}` sentetik obje, değilse `_kmOyunRosterCache[deger]`). GERÇEK
+okçu akışı (`kmOyunAnimateArena`, KRİTİK KURAL: "otomatik/rastgele hasar yok") HİÇ DEĞİŞMEDİ — gerçek
+atış her zaman karşı tarafın canına uygulanıyor, o tarafın bot mu insan mı olması zaten farketmiyordu.
+Botun KENDİ atışı tamamen AYRI bir fonksiyondan geliyor (`kmOyunArenaBotAtisYap`) — `kmOyunAnimateArena`
+içine hiç girmiyor, `_skorKaydetCekirdek`'e YAZMIYOR, sadece bu eğlence katmanının HP'sini etkiliyor.
+
+**Otomatik tetikleme**: sıra bota gelince (`kmOyunArenaAktifIndexGuncelle` — TEK merkezi hook, tur
+başlangıcı/maç seçimi/gerçek atış sonrası hepsi buradan geçiyor) skor dok'u GERÇEK bir sporcuya işaret
+etmeye devam ediyor (bota ait bir skor girişi YOK), ~1.5sn sonra `kmOyunArenaBotSirasiKontrol` botun
+3-6 oklu serisini (Hayali Rakip'in AYNI aralığı) otomatik ateşliyor — GERÇEK atışlarla AYNI görsel
+ok-uçuşu/hasar-sayısı/can-barı fonksiyonlarını kullanıyor, sadece "mükemmel seri" bonusu YOK (kasıtlı
+sadeleştirme). "🔁 Diğer okçuya geç" bot'lu maçlarda gizleniyor (sıra zaten otomatik dönüyor), yerine
+"🤖 [ad] ok atıyor…" göstergesi var.
+
+**Eşleşme Değiştir**: her maç kartında yeni "🔀 Eşleşme Değiştir" butonu (durum farketmeksizin, "Yeni
+Oyun"un yanında) — önce taraf (A/B) seçiliyor, sonra boşta olan gerçek sporcular (başka sürmekte olan
+bir maçta OLMAYAN — "bitti" maçlardaki sporcular serbest sayılıyor) + 3 bot seviyesi listeleniyor.
+Seçilen gerçek sporcu BAŞKA aktif bir maçtaysa iki maç arasında TAKAS yapılıyor (çift rezervasyon
+önleniyor, o maç da sıfırdan başlıyor). Gerçek ilerleme varsa (can eksilmiş/ok atılmış) `confirm()`
+ile onay isteniyor (Yeni Oyun'daki AYNI desen). **Gerçek testte bulunan bir hata düzeltildi**: aday
+listesi ilk halinde O TARAFTA zaten olan kişiyi de aday olarak gösteriyordu — ilk adayı seçmek
+"kendisiyle değiştir" gibi sessizce hiçbir şey yapmıyordu (test bunu yakaladı, `eskiDeger` de artık
+`mesgul` kümesine ekleniyor).
+
+**Doğrulama**: gerçek, sıfır-etkisiz olmayan bir Playwright akışıyla doğrulandı — 3 sporculu bir roster
+(2'si gerçek eşleşme, 1'i "Dengeli" bota atandı), gerçek `kmOyunOkGir`+`kmOyunIlerlet` ile insan botun
+canını GERÇEKTEN düşürdü (100→70), botun otomatik yanıtı insanın canını GERÇEKTEN düşürdü (100→55),
+sıra doğru şekilde insana geri döndü. Eşleşme Değiştir gerçek tıklamayla test edildi: `bIndex` gerçekten
+değişti (1→3), can/ok sıfırlandı. 360/1280px temiz, 12 tema + Reaksiyon regresyon taraması temiz,
+konsol hatası yok.
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
