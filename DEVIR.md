@@ -3184,4 +3184,45 @@ resync akışının bozulmadığı doğrulandı. 12 tema + Reaksiyon regresyon t
 kullanıcıya SORULMADAN silindi (son iki turda aynı soruya hep "sil" cevabı geldiği için, ama bu bir
 varsayım — istenirse ayrıca not edilecek).
 
+**Deploy durumu**: onaylandı ("et"), commit `0df2835`, push edildi, deploy version `80c03cc9-91da-46ea-b76c-a7ca68eb6436`.
+
+## 25. Haftalık Yoklama PDF — yeniden tasarım (2026-09-15)
+
+**Bağlam**: kullanıcı "şu anki çıktı biraz karmaşık ve anlamsız, 3 pratik görsel sunum yap, tarayıcıdan
+açayım" dedi. Eski `programTamPdfIndir()` 19 ayrı ders için 19 ayrı küçük tablo art arda diziyordu.
+Kodlamaya girmeden ÖNCE bir Artifact'te (gerçek program verisiyle) 3 farklı konsept sunuldu: (1) Tek
+Sayfa Haftalık Matris, (2) Büyütülmüş Ders Kartları, (3) Haftalık Bakış + Ayrı Günlük Sayfalar.
+Kullanıcı 3'ü seçti.
+
+**Yeni yapı**: TEK PDF, KARIŞIK sayfa boyutu — sayfa 1 YATAY (haftalık renkli ızgara: satır=saat,
+sütun=gün, kadro rengiyle dolu hücreler, boş slotlar nötr gri — hiç tik kutusu YOK, sadece "hafta böyle
+görünüyor"), sayfa 2+ DİKEY (HER GÜN kendi sayfasında başlıyor, `pdf.addPage('a4','portrait')` ile —
+tek bir günü ayrı yazdırmak isteyen bir koç o sayfaları seçip basabilir). Her ders kendi çerçeveli
+kartında (kadro renkli sol şerit + başlık zemini), büyük (4.2mm) tik kutuları, ferah satır yüksekliği.
+
+**Kadro renklendirmesi ARTIK yaş grubuna değil dersin GRUP ETİKETİNE göre** (Zirve Ekibi/Temel Kadro/
+Sınıf Listesi — bugün kurulan yeni program yapısı, bkz. §"Antrenman Programı yeniden kurulumu") — eski
+`PROGRAM_GRUP_RENK` (buyukler/yildizlar/...) burada YANLIŞ olurdu, kullanılmadı. Yeni
+`HAFTALIK_KADRO_PALET` sabit 3 renk + tanınmayan/yeni bir kadro adı gelirse (koç ileride farklı isim de
+kullanabilir) sabit hash ile YEDEK paletten HER ZAMAN aynı rengi veren bir fallback — kırılmaz.
+
+**Paylaşılan koda DOKUNULMADI**: `_dersYoklamaTablosuCiz` (tek-ders roster PDF'i, `dersRosterPdfIndir`
+hâlâ kullanıyor) ve `_kurumsalAltBilgiCiz` (TEK sabit sayfa boyutuyla çalışıyor, bu PDF'in KARIŞIK
+boyutlu sayfalarında YANLIŞ olurdu) yerine kendi ayrı fonksiyonları yazıldı
+(`_gunKartiCiz`/`_haftalikBakisIzgarasiCiz`/`_sayfaAltBilgileriCizKarisikBoy` — sonuncusu her sayfanın
+KENDİ gerçek boyutunu `pdf.internal.pageSize` ile okuyor, ileride başka karışık-boyutlu bir PDF de
+onu güvenle yeniden kullanabilir).
+
+**Gerçek testte bulunan bir tutarsızlık düzeltildi**: haftalık bakış ızgarası boş (0 kayıtlı) slotları
+zaten nötr gri gösteriyordu ama günlük sayfa kartları göstermiyordu — "Genel Sınıf" gibi bir yer
+tutucu etiket gerçek bir kadromuş gibi (hash-fallback rengiyle, pembe) renkleniyordu. `_gunKartiCiz`
+artık AYNI "boş = nötr" kuralını kullanıyor.
+
+**Doğrulama**: yerel D1'e bugünkü gerçek 19-slotluk program uygulanıp GERÇEK bir Playwright akışıyla
+(Yönetici Paneli → Antrenman Programı → "Haftalık Programı PDF Olarak İndir" GERÇEK tıklama) PDF
+indirildi, `poppler` (`pdftoppm`) ile TÜM 10 sayfa PNG'ye render edilip görsel olarak incelendi —
+sayfa 1 (ızgara+özet), tüm gün sayfaları, iki "(devamı)" taşma sayfası (Pazartesi ve Cumartesi, gerçekten
+çok ders olduğu için) doğru içerik/renk/sıralamayla doğrulandı. Konsol hatası yok (bilinen ilgisiz
+mediapipe CDN gürültüsü hariç).
+
 **Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.

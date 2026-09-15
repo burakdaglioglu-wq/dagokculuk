@@ -3036,86 +3036,221 @@
                 showToast('PDF indirildi! 📄', 'success');
             }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }
+        // Haftalık Yoklama — Faz 17 (2026-09-15, kullanıcı: "şu anki 19 ayrı küçük tablo karışık
+        // duruyor"): 3 tasarım taslağı bir Artifact'te sunuldu, kullanıcı "Bakış + Günlük Sayfa"
+        // konseptini seçti. Yeni yapı: 1 YATAY sayfa (haftalık renkli ızgara, hiç tik yok — "hafta
+        // böyle görünüyor") + ardından HER GÜN kendi DİKEY sayfasında (sadece Cumartesi'yi yazdırmak
+        // isteyen bir koç o sayfayı seçip basabilsin). Eski `_dersYoklamaTablosuCiz`'e (dersRosterPdfIndir
+        // hâlâ kullanıyor) HİÇ dokunulmadı — bu tamamen YENİ, kendi kartı içinde çerçeveli/büyük tik
+        // kutulu bir çizim ailesi (`_gunKartiCiz`).
+        //
+        // Kadro renklendirmesi artık YAŞ GRUBUNA değil, dersin `grup` ETİKETİNE (Zirve Ekibi/Temel
+        // Kadro/Sınıf Listesi gibi serbest metin, bkz. DEVIR §"Antrenman Programı yeniden kurulumu")
+        // göre — PROGRAM_GRUP_RENK (buyukler/yildizlar/...) burada YANLIŞ olurdu. Bilinmeyen/yeni bir
+        // kadro adı gelirse (koç ileride başka isim de kullanabilir) sabit bir hash ile YEDEK paletten
+        // HER ZAMAN aynı rengi alır — kırılmaz, ama tahmin edilebilir.
+        var HAFTALIK_KADRO_PALET = {
+            'Zirve Ekibi': { bg: [251, 238, 219], cizgi: [201, 130, 42], metin: [161, 100, 30] },
+            'Temel Kadro': { bg: [232, 242, 236], cizgi: [47, 110, 82], metin: [30, 84, 60] },
+            'Sınıf Listesi': { bg: [233, 237, 245], cizgi: [90, 107, 140], metin: [64, 79, 110] }
+        };
+        var HAFTALIK_KADRO_YEDEK_PALET = [
+            { bg: [245, 232, 240], cizgi: [176, 79, 128], metin: [140, 55, 98] },
+            { bg: [255, 241, 214], cizgi: [199, 145, 35], metin: [153, 108, 20] },
+            { bg: [225, 239, 246], cizgi: [42, 122, 155], metin: [30, 92, 117] }
+        ];
+        function _haftalikKadroRenkleri(grup) {
+            if (HAFTALIK_KADRO_PALET[grup]) return HAFTALIK_KADRO_PALET[grup];
+            let h = 0; for (let i = 0; i < grup.length; i++) h = (h * 31 + grup.charCodeAt(i)) >>> 0;
+            return HAFTALIK_KADRO_YEDEK_PALET[h % HAFTALIK_KADRO_YEDEK_PALET.length];
+        }
+        // Karışık yatay/dikey sayfa boyutlu bir PDF'te `_kurumsalAltBilgiCiz` YANLIŞ olur (TEK sabit
+        // pageW/pageH ile tüm sayfaları çiziyor) — bu yüzden her sayfanın KENDİ gerçek boyutunu
+        // (`pdf.internal.pageSize`) okuyan ayrı, paylaşılabilir bir alt bilgi fonksiyonu.
+        function _sayfaAltBilgileriCizKarisikBoy(pdf) {
+            let sayfaSayisi = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= sayfaSayisi; i++) {
+                pdf.setPage(i);
+                let pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.line(14, ph - 12, pw - 14, ph - 12);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(148, 163, 184);
+                pdf.text(_trTranslit('DAG S.K. Master OS'), 14, ph - 7);
+                pdf.text(String(i) + ' / ' + sayfaSayisi, pw / 2, ph - 7, { align: 'center' });
+                pdf.text(new Date().toLocaleString('tr-TR'), pw - 14, ph - 7, { align: 'right' });
+            }
+        }
+        // Sayfa 1 — haftalık renkli ızgara: satır=SAAT (programdaki tüm ders saatleri, benzersiz),
+        // sütun=GÜN. Satır yüksekliği ızgaranın TEK sayfaya sığması için dinamik (kaç farklı saat
+        // varsa ona göre küçülüp büyüyor) — kullanıcının onayladığı taslakta "önce büyük resim" tek
+        // sayfada bitmeliydi, hiçbir zaman ikinci yatay sayfaya taşmıyor.
+        function _haftalikBakisIzgarasiCiz(pdf, marginX, usableW, y, pageH) {
+            let GUN_SIRA = [1, 2, 3, 4, 5, 6, 0];
+            let saatKume = {};
+            _programSlotlar.forEach(function(s) { saatKume[s.baslangicSaat + '|' + s.bitisSaat] = { bas: s.baslangicSaat, bit: s.bitisSaat }; });
+            let saatler = Object.keys(saatKume).sort(function(a, b) { return saatKume[a].bas.localeCompare(saatKume[b].bas); });
+            if (!saatler.length) return y;
+
+            let saatKolW = Math.max(20, usableW * 0.09), gunKolW = (usableW - saatKolW) / 7;
+            let basligYuk = 9;
+            let kalanYukseklik = (pageH - 16 - 14) - (y + basligYuk);
+            let satirYuk = Math.max(11, Math.min(17, kalanYukseklik / saatler.length));
+
+            pdf.setFillColor(9, 22, 43); pdf.rect(marginX, y, usableW, basligYuk, 'F');
+            pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5);
+            pdf.text('SAAT', marginX + saatKolW / 2, y + basligYuk - 2.8, { align: 'center' });
+            let x = marginX + saatKolW;
+            GUN_SIRA.forEach(function(gun) { pdf.text(_trTranslit(GUN_ADI_TR[gun].toUpperCase()), x + gunKolW / 2, y + basligYuk - 2.8, { align: 'center' }); x += gunKolW; });
+            y += basligYuk;
+
+            saatler.forEach(function(saatKey, ri) {
+                if (ri % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(marginX, y, usableW, satirYuk, 'F'); }
+                pdf.setDrawColor(216, 220, 232); pdf.setLineWidth(0.25); pdf.rect(marginX, y, saatKolW, satirYuk);
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.8); pdf.setTextColor(71, 85, 105);
+                pdf.text(saatKume[saatKey].bas + '-' + saatKume[saatKey].bit, marginX + saatKolW / 2, y + satirYuk / 2 + 1, { align: 'center' });
+
+                let xx = marginX + saatKolW;
+                GUN_SIRA.forEach(function(gun) {
+                    pdf.setDrawColor(216, 220, 232); pdf.rect(xx, y, gunKolW, satirYuk);
+                    let slot = _programSlotlar.find(function(s) { return (s.gunler || [s.gun]).includes(gun) && s.baslangicSaat === saatKume[saatKey].bas && s.bitisSaat === saatKume[saatKey].bit; });
+                    if (slot) {
+                        let dolu = (slot.katilimcilar || []).length > 0;
+                        let renk = dolu ? _haftalikKadroRenkleri(slot.grup) : { bg: [246, 244, 238], cizgi: [216, 220, 232], metin: [148, 163, 184] };
+                        pdf.setFillColor(renk.bg[0], renk.bg[1], renk.bg[2]); pdf.rect(xx + 0.6, y + 0.6, gunKolW - 1.2, satirYuk - 1.2, 'F');
+                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.6); pdf.setTextColor(renk.metin[0], renk.metin[1], renk.metin[2]);
+                        let etiketSatirlari = pdf.splitTextToSize(_trTranslit(slot.grup), gunKolW - 4);
+                        pdf.text(etiketSatirlari.slice(0, 2), xx + gunKolW / 2, y + satirYuk / 2 - (dolu ? 1.4 : -1), { align: 'center' });
+                        if (dolu) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.8); pdf.text((slot.katilimcilar || []).length + ' sporcu', xx + gunKolW / 2, y + satirYuk - 2, { align: 'center' }); }
+                    }
+                    xx += gunKolW;
+                });
+                y += satirYuk;
+            });
+
+            y += 5;
+            let lejantX = marginX;
+            Object.keys(HAFTALIK_KADRO_PALET).forEach(function(ad) {
+                let renk = HAFTALIK_KADRO_PALET[ad];
+                pdf.setFillColor(renk.bg[0], renk.bg[1], renk.bg[2]); pdf.setDrawColor(renk.cizgi[0], renk.cizgi[1], renk.cizgi[2]); pdf.setLineWidth(0.3);
+                pdf.roundedRect(lejantX, y, 4, 4, 0.6, 0.6, 'FD');
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(71, 85, 105);
+                pdf.text(_trTranslit(ad), lejantX + 6, y + 3.2);
+                lejantX += pdf.getTextWidth(_trTranslit(ad)) + 16;
+            });
+            pdf.setFillColor(246, 244, 238); pdf.setDrawColor(216, 220, 232);
+            pdf.roundedRect(lejantX, y, 4, 4, 0.6, 0.6, 'FD');
+            pdf.setTextColor(71, 85, 105); pdf.text('Bos / kayit yok', lejantX + 6, y + 3.2);
+            return y + 10;
+        }
+        // Günlük sayfaların koyu üst şeridi — `_kurumsalBaslikCiz`'in tam kurumsal bandı yerine daha
+        // sade bir gün etiketi (kurumsal bant sadece sayfa 1'de BİR KEZ, mevcut PDF'lerin hepsindeki
+        // "tüm belgede 1 kurumsal banner" kuralıyla AYNI, bkz. diğer PDF fonksiyonları).
+        function _haftalikGunEtiketiCiz(pdf, marginX, usableW, y, metin) {
+            pdf.setFillColor(9, 22, 43); pdf.roundedRect(marginX, y, usableW, 13, 2.4, 2.4, 'F');
+            pdf.setFillColor(251, 191, 36); pdf.rect(marginX, y + 13 - 1.2, usableW, 1.2, 'F');
+            pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12.5);
+            pdf.text(_trTranslit(metin), marginX + 6, y + 8.6);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(148, 197, 255);
+            pdf.text(_trTranslit('Tarih: ......../......../.............'), marginX + usableW - 6, y + 8.6, { align: 'right' });
+            return y + 13 + 6;
+        }
+        // Tek ders = tek çerçeveli kart (kadro renginde sol şerit + başlık zemini), büyük tik kutulu
+        // isim listesi. Gerçek kulüp verisiyle (en kalabalık ders ~11 kişi) bir kart HER ZAMAN tek
+        // sayfaya sığar — bu yüzden "kart ortadan bölünmesin" basitliği bilerek tercih edildi: kart
+        // sığmıyorsa TAMAMI yeni sayfaya taşınır (yarım kart YOK).
+        function _gunKartiCiz(pdf, slot, marginX, usableW, y, pageH, gunEtiketi) {
+            let altSinir = pageH - 16;
+            let roster = (slot.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+            // Bos (kayitli kimse yok) slotlar haftalik bakis izgarasindaki AYNI kuralla notr gri kalir
+            // — "Genel Sinif" gibi yer tutucu bir etiket gercek bir kadromus gibi renklenmesin.
+            let renk = roster.length ? _haftalikKadroRenkleri(slot.grup) : { bg: [246, 244, 238], cizgi: [216, 220, 232], metin: [148, 163, 184] };
+            let planSatirlari = slot.dersPlani ? pdf.splitTextToSize(_trTranslit('Plan: ' + slot.dersPlani), usableW - 14) : [];
+            let baslikYuk = 13, planYuk = planSatirlari.length ? (planSatirlari.length * 3.6 + 4) : 0;
+            let satirYuk = 7.4, gosterSatir = roster.length + 1; // +1 bos imza satırı
+            let kartYuk = baslikYuk + planYuk + gosterSatir * satirYuk + 4;
+
+            if (y + kartYuk > altSinir) {
+                pdf.addPage('a4', 'portrait'); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, 210, 297, 'F');
+                y = _haftalikGunEtiketiCiz(pdf, marginX, usableW, 16, gunEtiketi + ' (devami)');
+            }
+
+            let kartY0 = y;
+            pdf.setDrawColor(renk.cizgi[0], renk.cizgi[1], renk.cizgi[2]); pdf.setLineWidth(0.5); pdf.setFillColor(255, 255, 255);
+            pdf.roundedRect(marginX, kartY0, usableW, kartYuk, 2.4, 2.4, 'FD');
+            pdf.setFillColor(renk.cizgi[0], renk.cizgi[1], renk.cizgi[2]); pdf.rect(marginX, kartY0, 2.4, kartYuk, 'F');
+
+            pdf.setFillColor(renk.bg[0], renk.bg[1], renk.bg[2]); pdf.rect(marginX + 2.4, kartY0, usableW - 2.4, baslikYuk, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(15, 23, 42);
+            pdf.text(slot.baslangicSaat + '-' + slot.bitisSaat, marginX + 9, kartY0 + 8.6);
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(renk.metin[0], renk.metin[1], renk.metin[2]);
+            pdf.text(_trTranslit(slot.grup) + '  -  ' + roster.length + (slot.kapasite ? '/' + slot.kapasite : '') + ' sporcu', marginX + usableW - 6, kartY0 + 8.6, { align: 'right' });
+
+            let yy = kartY0 + baslikYuk;
+            if (planSatirlari.length) {
+                pdf.setFillColor(250, 248, 240); pdf.rect(marginX + 2.4, yy, usableW - 2.4, planYuk, 'F');
+                pdf.setFont('helvetica', 'italic'); pdf.setFontSize(7.8); pdf.setTextColor(138, 106, 31);
+                pdf.text(planSatirlari, marginX + 9, yy + 4.2);
+                yy += planYuk;
+            }
+
+            let satirlar = roster.map(function(k) { return { isim: _trTranslit(k.ad), ekstra: false }; });
+            satirlar.push({ isim: '.......................................', ekstra: true });
+            satirlar.forEach(function(satir, i) {
+                if (i % 2 === 1) { pdf.setFillColor(250, 249, 246); pdf.rect(marginX + 2.4, yy, usableW - 2.4, satirYuk, 'F'); }
+                pdf.setDrawColor(120, 130, 150); pdf.setLineWidth(0.4);
+                pdf.rect(marginX + 9, yy + satirYuk / 2 - 2.1, 4.2, 4.2);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(148, 163, 184);
+                pdf.text(String(i + 1) + '.', marginX + 17, yy + satirYuk / 2 + 1.3);
+                pdf.setFont('helvetica', satir.ekstra ? 'italic' : 'normal'); pdf.setFontSize(9.5);
+                pdf.setTextColor(satir.ekstra ? 190 : 15, satir.ekstra ? 190 : 23, satir.ekstra ? 200 : 42);
+                pdf.text(satir.isim, marginX + 24, yy + satirYuk / 2 + 1.3);
+                yy += satirYuk;
+            });
+            return kartY0 + kartYuk + 6;
+        }
         function programTamPdfIndir() {
             if (!_programSlotlar.length) return showToast('Program boş, önce ders ekleyin.', 'warning');
             showToast('PDF hazırlanıyor...', 'warning');
-            _yeniPdfAl().then(function(pdf) {
-                let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX * 2;
-                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'HAFTALIK YOKLAMA');
-                y += 2;
+            _yeniPdfAl('landscape').then(function(pdf) {
+                let pageWL = 297, pageHL = 210, marginXL = 16, usableWL = pageWL - marginXL * 2;
+                let y = _kurumsalBaslikCiz(pdf, marginXL, usableWL, 12, 'HAFTALIK BAKIS', 'Haftalik Antrenman Programi - Genel Gorunum');
 
-                // 📊 Haftalık Özet — "şirket sunumu gibi olsun" isteğiyle eklenen bir yönetici-özeti şeridi.
-                let benzersizSporcu = new Set();
-                let gunBasinaSayac = {};
+                let benzersizSporcu = new Set(), gunBasinaSayac = {}, kadroSet = new Set();
                 _programSlotlar.forEach(function(s) {
-                    // 2026-08-20: bir slot birden fazla güne bağlı olabildiği için katılımcı sayısı
-                    // bağlı olduğu HER güne ayrı ayrı ekleniyor (haftada 2 kez ders, o iki günün de
-                    // yoğunluğuna katkı yapar).
-                    (s.gunler || [s.gun]).forEach(function(gun) {
-                        gunBasinaSayac[gun] = (gunBasinaSayac[gun] || 0) + (s.katilimcilar || []).length;
-                    });
+                    (s.gunler || [s.gun]).forEach(function(gun) { gunBasinaSayac[gun] = (gunBasinaSayac[gun] || 0) + (s.katilimcilar || []).length; });
                     (s.katilimcilar || []).forEach(function(k) { benzersizSporcu.add(k.grup + '|' + k.ad); });
+                    kadroSet.add(s.grup);
                 });
                 let enYogunGun = null, enYogunSayi = -1;
                 Object.keys(gunBasinaSayac).forEach(function(g) { if (gunBasinaSayac[g] > enYogunSayi) { enYogunSayi = gunBasinaSayac[g]; enYogunGun = parseInt(g, 10); } });
-                let ozetKutu = function(x, w, deger, etiket) {
-                    pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, w, 16, 2, 2, 'F');
-                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(9, 22, 43);
-                    pdf.text(String(deger), x + w / 2, y + 8, { align: 'center' });
-                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139);
-                    pdf.text(_trTranslit(etiket), x + w / 2, y + 13, { align: 'center' });
-                };
-                let kutuGenislik = (usableW - 8) / 3;
-                ozetKutu(marginX, kutuGenislik, _programSlotlar.length, 'TOPLAM DERS');
-                ozetKutu(marginX + kutuGenislik + 4, kutuGenislik, benzersizSporcu.size, 'BENZERSIZ SPORCU');
-                ozetKutu(marginX + (kutuGenislik + 4) * 2, kutuGenislik, enYogunGun !== null ? _trTranslit(GUN_ADI_TR[enYogunGun]) : '-', 'EN YOGUN GUN');
-                y += 22;
 
-                let GUN_SIRA = [1, 2, 3, 4, 5, 6, 0], birseyVarMi = false;
+                let ozetKutu = function(x, w, deger, etiket) {
+                    pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, w, 15, 2, 2, 'F');
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(9, 22, 43);
+                    pdf.text(String(deger), x + w / 2, y + 7.5, { align: 'center' });
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139);
+                    pdf.text(_trTranslit(etiket), x + w / 2, y + 12, { align: 'center' });
+                };
+                let kutuGenislik = (usableWL - 12) / 4;
+                ozetKutu(marginXL, kutuGenislik, _programSlotlar.length, 'TOPLAM DERS');
+                ozetKutu(marginXL + (kutuGenislik + 4), kutuGenislik, benzersizSporcu.size, 'BENZERSIZ SPORCU');
+                ozetKutu(marginXL + (kutuGenislik + 4) * 2, kutuGenislik, enYogunGun !== null ? _trTranslit(GUN_ADI_TR[enYogunGun]) : '-', 'EN YOGUN GUN');
+                ozetKutu(marginXL + (kutuGenislik + 4) * 3, kutuGenislik, kadroSet.size, 'FARKLI KADRO');
+                y += 21;
+
+                y = _haftalikBakisIzgarasiCiz(pdf, marginXL, usableWL, y, pageHL);
+
+                let GUN_SIRA = [1, 2, 3, 4, 5, 6, 0];
+                let pageWP = 210, pageHP = 297, marginXP = 16, usableWP = pageWP - marginXP * 2;
                 GUN_SIRA.forEach(function(gun) {
-                    // 2026-08-20: bir slot artık birden fazla güne bağlı olabiliyor — bu günün bölümüne
-                    // girmesi için `.gunler` içinde bu günün olması yeterli, aynı slot her bağlı olduğu
-                    // günün altında (roster/plan/kapasite ortak) ayrı ayrı basılır.
-                    let slotlar = _programSlotlar.filter(function(s) { return (s.gunler||[s.gun]).includes(gun); }).sort(function(a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); });
+                    let slotlar = _programSlotlar.filter(function(s) { return (s.gunler || [s.gun]).includes(gun); }).sort(function(a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); });
                     if (!slotlar.length) return;
-                    birseyVarMi = true;
-                    if (y + 30 > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
-                    pdf.setFillColor(9, 22, 43); pdf.rect(marginX, y, usableW, 8, 'F');
-                    pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
-                    pdf.text(_trTranslit(GUN_ADI_TR[gun].toUpperCase()), marginX + 3, y + 5.8);
-                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(251, 191, 36);
-                    pdf.text(_trTranslit('Tarih: ......../......../.............'), marginX + usableW - 3, y + 5.8, { align: 'right' });
-                    y += 12;
-                    slotlar.forEach(function(s) {
-                        let roster = (s.katilimcilar || []).slice().sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
-                        // DÜZELTME (2026-08-20, "sayfa fazlalığından karışık duruyor"): eskiden sadece
-                        // saat-başlığının (26mm) sığıp sığmadığına bakılıyordu — tablo kendisi hemen
-                        // ardından, sayfanın en altına denk gelip 1 satır sığıp hemen kesilebiliyordu
-                        // ("yetim satır"). Artık en az ilk birkaç tablo satırının da (başlık + 4 satıra
-                        // kadar) sığıp sığmadığı ÖNCEDEN hesaplanıyor — sığmıyorsa saat başlığı DAHİL tüm
-                        // blok bir sonraki sayfaya taşınıyor, ders hiçbir zaman 1 satırla yalnız kalmıyor.
-                        let satirSayisiTahmini = roster.length + 2;
-                        let ilkBlokYukseklik = 8 + (s.dersPlani ? 8 : 0) + 8 + Math.min(4, satirSayisiTahmini) * 8;
-                        if (y + ilkBlokYukseklik > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
-                        let cokluGunMu = (s.gunler||[s.gun]).length > 1;
-                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5); pdf.setTextColor(15, 23, 42);
-                        pdf.text(s.baslangicSaat + '-' + s.bitisSaat + (cokluGunMu ? _trTranslit(' (Haftada ' + (s.gunler||[]).length + ' kez)') : ''), marginX + 1, y + 5);
-                        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(100, 116, 139);
-                        pdf.text((s.hatirlatmaAktif ? 'Hatirlatma acik' : 'Hatirlatma kapali') + ' - ' + roster.length + (s.kapasite ? '/' + s.kapasite : '') + ' kayitli sporcu', marginX + usableW - 1, y + 5, { align: 'right' });
-                        y += 8;
-                        if (s.dersPlani) {
-                            pdf.setFont('helvetica', 'italic'); pdf.setFontSize(7.5); pdf.setTextColor(0, 138, 152);
-                            let planSatirlari = pdf.splitTextToSize(_trTranslit('Plan: ' + s.dersPlani), usableW - 2);
-                            pdf.text(planSatirlari, marginX + 1, y + 3);
-                            y += planSatirlari.length * 3.6 + 2;
-                        }
-                        y = _dersYoklamaTablosuCiz(pdf, roster, marginX, usableW, y, GUN_ADI_TR[gun] + ' ' + s.baslangicSaat);
-                        y += 6;
-                    });
+                    pdf.addPage('a4', 'portrait'); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageWP, pageHP, 'F');
+                    let yy = _haftalikGunEtiketiCiz(pdf, marginXP, usableWP, 16, GUN_ADI_TR[gun].toUpperCase());
+                    slotlar.forEach(function(s) { yy = _gunKartiCiz(pdf, s, marginXP, usableWP, yy, pageHP, GUN_ADI_TR[gun].toUpperCase()); });
                 });
-                if (!birseyVarMi) { pdf.setTextColor(148, 163, 184); pdf.setFontSize(11); pdf.text('Henuz hic ders eklenmemis.', pageW / 2, y + 10, { align: 'center' }); }
-                _kurumsalAltBilgiCiz(pdf, pageW, pageH);
-                pdf.save('Haftalik_Antrenman_Programi.pdf');
+
+                _sayfaAltBilgileriCizKarisikBoy(pdf);
+                pdf.save('Haftalik_Yoklama.pdf');
                 showToast('PDF indirildi! 📄', 'success');
             }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }
