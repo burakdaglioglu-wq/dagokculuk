@@ -3455,4 +3455,73 @@ ilerlet-btn`) Arena ile birebir aynı sınıf/genişlik. 360/1280/1920px ekran g
 — SVG `preserveAspectRatio` sayesinde dar ekranda otomatik küçülüyor, eski ızgaranın aksine ELLE bir
 `@media` breakpoint'i bile GEREKMEDİ.
 
+**Deploy durumu**: Onaylandı ("onayladımm") ve yayına alındı — commit `bd4299e`, deploy version
+`9d554371-c578-45db-9081-d52beb50a15e`.
+
+## 27. İki gerçek kullanım hatası: Cinsiyet verisi eksikliği + Düello Arena bitmiş maç kilidi (2026-09-18)
+
+**Bağlam**: kullanıcı iki ayrı gerçek sorun bildirdi: (1) `public/okcu-karakterler/` klasöründeki
+karakterlerin Düello Arena'da hâlâ seçilmediğini, (2) bir düello bitince (bir tarafın canı sıfırlanınca)
+diğer tarafın (kaybedenin) bir daha skor giremediğini.
+
+### 27a. Cinsiyet verisi eksikliği — "karakterler seçilmiyor"
+
+**Kök neden bulundu (canlı veriyle doğrulandı)**: Arena'nın (ve Zirve/Hazine/Ninja'nın) karakter ataması
+TAMAMEN `sp.cinsiyet` alanına dayanıyor (`_kmOyunArenaKarakterAta`, `KM_OYUN_ARENA_KARAKTERLER_KADIN`/
+`_ERKEK` havuzları) — cinsiyet boşsa nötr "tilki" karaktere düşülüyor. Canlı D1'de gerçek sorgu:
+`SELECT cinsiyet, COUNT(*) FROM athletes GROUP BY cinsiyet` → **109 sporcunun 109'u da null**. Mekanizmanın
+KENDİSİ bozuk değil (gerçek testte K/E atandığında birebir doğru karaktere düşüp 200 dönüyor) — sorun,
+mevcut sporcuları düzenleyecek hiçbir yerde cinsiyet alanının OLMAMASIYDI ("Yeni Sporcu Ekle" formunda
+vardı, ama var olan 109 sporcu muhtemelen bu alan eklenmeden ÖNCE kaydedilmiş, geriye dönük düzeltecek
+bir yol yoktu).
+
+**Çözüm**: `yoneticiPaneliCiz()`'in sporcu kartındaki "👤 Sporcu Bilgileri" bölümüne (isim/doğum tarihi
+inputlarının hemen altına) bir Kız/Erkek anahtarı eklendi — `yonCinsiyetSec`'in (Yeni Sporcu Ekle
+formundaki) AYNI görsel deseni, ama TEK bir global değişken yerine karta özgü `data-secili` attribute'u
+(`yoneticiSporcuCinsiyetSec(key, c)`) — aynı anda birden fazla sporcu kartı açık olabildiği için. Cinsiyet
+BOŞSA hiçbir düğme vurgulanmıyor ("(ayarlanmamış)" etiketiyle birlikte) — yanlışlıkla "zaten Kız" izlenimi
+vermesin diye. Var olan "💾 Bilgileri Kaydet" düğmesiyle AYNI anda kaydediliyor (`yoneticiSporcuBilgiGuncelle`
+içine `if(yeniCinsiyet==='K'||yeniCinsiyet==='E') sp.cinsiyet=yeniCinsiyet;` eklendi) — yeni bir kaydetme
+yolu AÇILMADI, var olan (halihazırda isim/doğum tarihi için çalışan) localStorage+bulut yazma akışına
+bindirildi.
+
+**Gerçek testte doğrulanan**: GERÇEK tıklamayla bir sporcu kartı açıldı, "👦 Erkek" düğmesine GERÇEK
+tıklama yapıldı (`data-secili` doğru şekilde 'E' oldu, DOĞRU sporcunun kartına scoped — ilk denemede
+YANLIŞLIKLA başka bir kartın gizli düğmesi yakalanmıştı, düzeltildi), "💾 Bilgileri Kaydet" GERÇEK
+tıklamasıyla kaydedildi — `turnuvaDB[grup][ad].cinsiyet` GERÇEKTEN `null`'dan `'E'`'ye değişti, "✅ Sporcu
+bilgileri güncellendi" toast'ı göründü. 13 tema + Reaksiyon regresyon taraması etkilenmedi (dokunulan tek
+yer sporcu-düzenleme kartı).
+
+### 27b. Düello Arena — bitmiş bir maçta taraflara skor girilememesi
+
+**Kök neden bulundu (gerçek 1v1 testle doğrulandı)**: bir maç bitince (`mac.durum='bitti'`) ÜÇ yerde
+sertçe kilitleniyordu: (1) `kmOyunArenaMacSec(idx)` bitmiş bir maçı SEÇMEYİ tamamen reddediyordu, (2)
+maç kartının `onclick`'i bittiğinde HİÇ atanmıyordu (kart tıklanamaz hale geliyordu), (3) "🔁 Diğer
+okçuya geç" düğmesi bittiğinde TAMAMEN kayboluyordu (`kmOyunArenaDigerOkcuyaGec` de aynı şekilde
+reddediyordu). Sonuç: maç biter bitmez skor paneli o anki "sırada" olan TEK sporcuda (genelde kazanan)
+sonsuza dek kilitli kalıyor, kaybeden (ya da kazananın kendisi bile) bir daha o maçtan skor giremiyordu
+— "Yeni Oyun" (SONUCU SİLER) ya da "Eşleşme Değiştir" DIŞINDA çıkış yoktu. Gerçek antrenman skoru
+oyunun bitmesiyle durmadığı için bu, dersin geri kalanında o iki sporcu için Arena'yı kullanılamaz
+hale getiriyordu.
+
+**Çözüm**: üç kilit de KALDIRILDI — `kmOyunArenaMacSec` artık bitmiş bir maçı da "aktif" (skor
+yönlendirme hedefi) yapabiliyor, SADECE `durum`'u zorla 'etkin'e ÇEVİRMİYOR (kazanan rozeti/banner'ı
+korunuyor). Kart `onclick`'i artık HER ZAMAN var. "🔁 Diğer okçuya geç" düğmesi artık bittiğinde de
+gösteriliyor, `kmOyunArenaDigerOkcuyaGec`'in `durum==='bitti'` reddi kaldırıldı. Kazanan satırına
+"(taraflara skor girmeye devam edebilirsin)" notu eklendi. GERÇEK skor yazma yolu (`_skorKaydetCekirdek`,
+`kmOyunIlerlet`'in başında koşulsuz çalışıyor) hiç değişmedi — sadece Arena'nın KENDİ maç-durumu
+yönlendirme mantığı gevşetildi, `kmOyunAnimateArena`'nın `yeniBitti` hesaplaması zaten `mac.durum !==
+'bitti'` kontrolü içerdiği için maç bittikten sonra devam eden skorlar "EŞLEŞME BİTTİ" banner'ını
+tekrar tetiklemiyor/kazananı bozmuyor (sadece can 0'ın altına inmeye devam ediyor, zaten `Math.max(0,...)`
+ile kelepçeli).
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: GERÇEK X-X-X serileriyle bir 1v1 maç GERÇEKTEN
+bitirildi (B'nin canı 0'a indi, A kazandı). Bitmiş maç kartında "🔁 Diğer okçuya geç" düğmesi GÖRÜNÜR
+olduğu doğrulandı (eskiden tamamen kayboluyordu). Otomatik açılan "Tur Sonu" modalı GERÇEK ✕ tıklamasıyla
+kapatıldı. "Diğer okçuya geç" GERÇEK tıklamasıyla aktif sporcu kaybedene (Test Kerem) geçti, `mac.durum`
+'bitti' KALDI (kazanan bilgisi bozulmadı). Kaybeden için GERÇEK 9-9-9 serisi girildi — `toplamSkor`
+GERÇEKTEN 30'dan 57'ye çıktı (gerçek klasman kaydı doğrulandı), maç HÂLÂ "bitti" durumunda kaldı. Bitmiş
+maç kartına GERÇEK tıklamayla tekrar seçim de doğrulandı (`_kmOyunArenaAktifMac` doğru güncellendi,
+`durum` bozulmadı). 13 tema + Reaksiyon regresyon taraması temiz.
+
 **Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.

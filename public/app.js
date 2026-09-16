@@ -8765,9 +8765,20 @@ ${(function(){
 
                             <!-- Sporcu Bilgileri -->
                             <div style="font-size:11px;font-weight:700;color:var(--neon-blue);margin-bottom:6px;">👤 Sporcu Bilgileri</div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
                                 <input id="duz-ad-${key}" value="${ad}" placeholder="İsim" style="padding:6px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;color:var(--text-main);font-size:12px;">
                                 <input id="duz-tarih-${key}" type="date" value="${sp.dogumTarihi||''}" title="${(!sp.dogumTarihi && sp.dogumYili) ? 'Sistemde sadece yıl ('+sp.dogumYili+') kayıtlı' : 'Doğum tarihi'}" style="padding:6px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;color:var(--text-main);font-size:12px;">
+                            </div>
+                            <!-- Cinsiyet (2026-09-18) — Zirve/Hazine/Ninja/Düello Arena karakter atamasının
+                                 GERÇEKTEN kullandığı alan bu (sp.cinsiyet); ama mevcut sporcuları düzenleyecek
+                                 bir yer YOKTU (sadece "Yeni Sporcu Ekle" formunda vardı) — canlıda 109/109
+                                 sporcunun cinsiyeti boştu, bu yüzden Arena hep nötr "tilki" karaktere düşüp
+                                 "karakterler seçilmiyor" izlenimi veriyordu. Boşsa HİÇBİR düğme vurgulanmıyor
+                                 (yanlışlıkla "zaten Kız" izlenimi vermesin) — coach dokunmazsa kaydedilmiyor. -->
+                            <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">Cinsiyet ${!sp.cinsiyet ? '<span style="color:var(--gold);">(ayarlanmamış)</span>' : ''}</div>
+                            <div id="duz-cinsiyet-${key}" data-secili="${sp.cinsiyet||''}" style="display:flex;gap:6px;margin-bottom:10px;">
+                                <button type="button" onclick="yoneticiSporcuCinsiyetSec('${key}','K')" id="duz-cinsiyet-K-${key}" class="adm-btn adm-btn-sm" style="flex:1;font-weight:800;${sp.cinsiyet==='K' ? 'background:rgba(236,72,153,0.15);color:#ec4899;border-color:#ec4899;' : 'background:var(--bg-panel);color:var(--text-muted);'}">👧 Kız</button>
+                                <button type="button" onclick="yoneticiSporcuCinsiyetSec('${key}','E')" id="duz-cinsiyet-E-${key}" class="adm-btn adm-btn-sm" style="flex:1;font-weight:800;${sp.cinsiyet==='E' ? 'background:rgba(59,130,246,0.15);color:var(--neon-blue);border-color:var(--neon-blue);' : 'background:var(--bg-panel);color:var(--text-muted);'}">👦 Erkek</button>
                             </div>
                             <button onclick="yoneticiSporcuBilgiGuncelle('${g}','${adEsc}')" style="width:100%;background:var(--neon-blue);color:#fff;border:none;padding:7px;border-radius:7px;font-weight:700;font-size:11px;cursor:pointer;margin-bottom:8px;">💾 Bilgileri Kaydet</button>
 
@@ -9116,15 +9127,29 @@ ${(function(){
             showToast(`✅ ${sayi} geçmiş kart silindi`, 'success');
         }
 
+        // Kart-içi Kız/Erkek düğmeleri — SADECE görsel vurguyu günceller ve seçimi data-secili'de
+        // saklar; gerçek yazma `yoneticiSporcuBilgiGuncelle`'in "💾 Bilgileri Kaydet" düğmesiyle olur
+        // (`yonCinsiyetSec`'in AYNI görsel deseni, ama tek bir global değişken yerine kart başına
+        // data-attribute — aynı anda birden fazla sporcu kartı açık olabildiği için).
+        function yoneticiSporcuCinsiyetSec(key, c) {
+            let wrap = document.getElementById('duz-cinsiyet-' + key); if(!wrap) return;
+            wrap.dataset.secili = c;
+            let kizBtn = document.getElementById('duz-cinsiyet-K-' + key), erkekBtn = document.getElementById('duz-cinsiyet-E-' + key);
+            if(kizBtn) { kizBtn.style.background = c === 'K' ? 'rgba(236,72,153,0.15)' : 'var(--bg-panel)'; kizBtn.style.color = c === 'K' ? '#ec4899' : 'var(--text-muted)'; kizBtn.style.borderColor = c === 'K' ? '#ec4899' : 'var(--border-color)'; }
+            if(erkekBtn) { erkekBtn.style.background = c === 'E' ? 'rgba(59,130,246,0.15)' : 'var(--bg-panel)'; erkekBtn.style.color = c === 'E' ? 'var(--neon-blue)' : 'var(--text-muted)'; erkekBtn.style.borderColor = c === 'E' ? 'var(--neon-blue)' : 'var(--border-color)'; }
+        }
         function yoneticiSporcuBilgiGuncelle(g, ad) {
             let key = `${g}_${ad.replace(/[^a-z0-9]/gi,'_')}`;
             let yeniAd = (document.getElementById('duz-ad-'+key)||{}).value?.trim().toUpperCase();
             let yeniTarih = (document.getElementById('duz-tarih-'+key)||{}).value?.trim();
+            let cinsiyetWrap = document.getElementById('duz-cinsiyet-'+key);
+            let yeniCinsiyet = cinsiyetWrap ? cinsiyetWrap.dataset.secili : '';
             if(!yeniAd) return showToast('İsim boş olamaz','error');
             if(yeniTarih && yeniTarih > bugunISO()) return showToast('Doğum tarihi gelecekte olamaz.', 'error');
             let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return;
             let bitir = () => {
                 if(yeniTarih) { sp.dogumTarihi = yeniTarih; sp.dogumYili = parseInt(yeniTarih.slice(0, 4)); }
+                if(yeniCinsiyet === 'K' || yeniCinsiyet === 'E') sp.cinsiyet = yeniCinsiyet;
                 sp.lastModified = Date.now();
                 // Firestore'a direkt yaz — master güncelle
                 localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
@@ -15740,10 +15765,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunAktifIndex = deger;
             kmOyunSiradaGuncelle();
         }
+        // DÜZELTME (2026-09-18, gerçek kullanımdan gelen hata bildirimi: "düellosu biten bir sporcunun
+        // rakibine bir daha skor giremiyorum") — bitmiş bir maç eskiden BURADA tamamen reddediliyordu
+        // (koç kartına tıklayamıyordu), bu yüzden o maçın HİÇBİR tarafı (ne kazanan ne kaybeden) bir
+        // daha skor giremiyordu — "Yeni Oyun" (sonucu SİLER) ya da "Eşleşme Değiştir" DIŞINDA çıkış
+        // yoktu. Gerçek antrenman skoru oyun bitince durmuyor; artık bitmiş bir maç da seçilebiliyor
+        // (sadece skor panelini o maçın taraflarına yönlendirmek için) — `durum` KASITLI OLARAK 'bitti'
+        // kalıyor (kazanan rozeti/banner'ı korunuyor), sadece 'etkin' DEĞİLKEN bu değere zorlanmıyor.
         function kmOyunArenaMacSec(idx) {
-            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac) return;
             _kmOyunArenaMaclar.forEach(function(m) { if(m.durum !== 'bitti') m.durum = 'bekliyor'; });
-            mac.durum = 'etkin';
+            if(mac.durum !== 'bitti') mac.durum = 'etkin';
             _kmOyunArenaAktifMac = idx;
             kmOyunArenaAktifIndexGuncelle();
             kmOyunArenaCizGuvenli();
@@ -15772,8 +15804,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // Faz 15 (2026-09-14) — bot'lu maçlarda sıra otomatik döndüğü için bu manuel geçiş anlamsız
         // (kartta zaten gösterilmiyor), fonksiyon yine de savunmacı olarak koruma altına alındı.
+        // 2026-09-18: `mac.durum === 'bitti'` reddi KALDIRILDI — bkz. kmOyunArenaMacSec'in üzerindeki
+        // yorum, AYNI düzeltmenin bir parçası (bitmiş bir maçta da taraf değiştirilebilsin).
         function kmOyunArenaDigerOkcuyaGec(idx) {
-            let mac = _kmOyunArenaMaclar[idx]; if(!mac || mac.durum === 'bitti') return;
+            let mac = _kmOyunArenaMaclar[idx]; if(!mac) return;
             if(kmOyunArenaBotMu(mac.aIndex) || kmOyunArenaBotMu(mac.bIndex)) return;
             mac.siradaki = (mac.siradaki === 'a') ? 'b' : 'a';
             if(idx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
@@ -15873,15 +15907,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let kazananAd = bittiMi ? (mac.kazanan === 'a' ? a : b).ad.split(' ')[0] : '';
             // Faz 15 (2026-09-14, bot rakip) — bot'un sırası otomatik döndüğü için "diğer okçuya geç"
             // yerine bir "bekleme" göstergesi var, tıklanabilir değil.
-            let siraSatiri = bittiMi ? '' : (siradakiTaraf.botMu
+            // DÜZELTME (2026-09-18) — eskiden bittiMi iken bu satır TAMAMEN boştu, yani maç bitince
+            // koçun taraf değiştirip kaybedene (ya da kazanana) gerçek antrenman skoru girmeye devam
+            // etmesinin HİÇBİR yolu kalmıyordu. Artık bittiğinde de gösteriliyor (bot değilse).
+            let siraSatiri = siradakiTaraf.botMu
                 ? `<div class="km-oyun-geri-al-btn km-arena-sira-btn km-arena-bot-bekleme">🤖 ${esc(siradakiAd)} ok atıyor…</div>`
-                : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`);
-            return `<div class="km-arena-mac-kart ${mac.durum}${mac.durum === 'etkin' ? ' aktif-kart' : ''}" ${bittiMi ? '' : `onclick="kmOyunArenaMacSec(${idx})"`}>
+                : `<button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDigerOkcuyaGec(${idx})">🔁 Diğer okçuya geç (${esc(siradakiAd)} sırada)</button>`;
+            return `<div class="km-arena-mac-kart ${mac.durum}${mac.durum === 'etkin' ? ' aktif-kart' : ''}" onclick="kmOyunArenaMacSec(${idx})">
                 <div class="km-arena-mac-baslik">
                     <span>${idx + 1}. Eşleşme</span>
                     <span class="km-arena-durum-rozet ${mac.durum}">${durumEtiket}</span>
                 </div>
-                ${bittiMi ? `<div class="km-arena-kazanan-satir">🏆 ${esc(kazananAd)} kazandı!</div>` : ''}
+                ${bittiMi ? `<div class="km-arena-kazanan-satir">🏆 ${esc(kazananAd)} kazandı! <span style="font-weight:400; opacity:.8;">(taraflara skor girmeye devam edebilirsin)</span></div>` : ''}
                 <div class="km-arena-can-satir">
                     <div class="km-arena-can-taraf">
                         <span class="km-arena-can-av" style="background:${renkA};">${kmOyunAvatarHTML(a)}</span>
