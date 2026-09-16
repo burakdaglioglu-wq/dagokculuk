@@ -3227,7 +3227,7 @@ mediapipe CDN gürültüsü hariç).
 
 **Deploy durumu**: onaylandı ("evet"), commit `53ec1fa`, push edildi, deploy version `b9e2974a-303f-4cdc-9c49-29da6dd507ff`.
 
-## 26. Faz 15 — Sis Haritası (keşif oyunu), Adım 1-4 (2026-09-16/17, İLERLEMEDE — Adım 4 onay bekliyor)
+## 26. Faz 15 — Sis Haritası (keşif oyunu), Adım 1-4 + 2. sürüm pivotu (2026-09-16/17, İLERLEMEDE — 2. sürüm onay bekliyor, bkz. §26e)
 
 **Bağlam**: kullanıcı "eski açık bir işi bitir" dedi ve TAMAMEN YENİ, ayrıntılı bir spesifikasyon
 verdi — Oyunlar bölümüne 13. bir tema: sınıf birlikte bir haritayı sisin altından çıkarıyor, frac/yol
@@ -3391,3 +3391,68 @@ ekran görüntüsüyle (yeni düğme dar ekranda kendi satırına düşüyor) ko
 
 **Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 4 ekran görüntüsüyle kullanıcıya sunulup durulacak. Bu,
 Faz 15'in (Sis Haritası) son adımıydı — onaylanırsa yayına alınabilir.
+
+### 26e. Sis Haritası — 2. sürüm: kare/sis mekaniği TERK EDİLDİ (2026-09-17)
+
+**Bağlam**: Adım 1-4 (kare açma/sis kaldırma, yukarıdaki §26-26d) onaylanıp YAYINA ALINMIŞTI
+(`088215e`/`69bfce4`). Kullanıcı canlıda deneyip **"bu oyunun mantığı çok kötü"** dedi, 3 alternatif
+mockup istedi (Design Canvas Artifact'i ile `Sıralı Yol`/`Yayılan Kamp`/`Sporcu İzleri` — üçü de
+"seçmeli değil, ilerlemeli" fikrini gösteren interaktif prototipler), sonra hepsini reddedip NET bir
+yön verdi: **"harita kalsın, haritadaki çizgilerden ilerleme gerçekleşsin, diğer oyunlar gibi"**. Bu,
+kare/sis/seçim mekaniğinin TAMAMEN kaldırılıp diğer 7 yol-temasıyla (Zirve/Yıldız/Hazine/Pist/Ninja/
+Monopoly/Dağ) AYNI frac→yol iskeletine geçilmesi demek — Faz 15'in ORİJİNAL "kendi mekaniği olsun,
+Arena/Futbol gibi" öncülü artık GEÇERSİZ, tema artık standart iskeleti kullanıyor.
+
+**Ne kaldırıldı**: `KM_SIS_SUTUN/SATIR/TOPLAM`, `_kmSisAcikKareler`, `_kmSisSeciliKare`,
+`KM_SIS_KOMSU_BUTCE`, `kmOyunSisKareSec/Ac/Kapat/Komsular/Karistir`, `kmOyunSisYeniHarita`,
+`kmOyunSisEnCokBulanCiz`, `kmOyunSisKesifListesiCiz`, tarih-damgalı `kmOyunSisHaritasiAnahtari/Kaydet/
+Yukle`, TÜM `.km-sis-kare/-ortu/-zemin/-izgara/-govde/-kesif-panel/-kesif-katman` CSS'i, panel'deki
+grid `<div>` yapısı. `kmOyunSlotlariCiz`'deki "önce kare seç" (`sisKareGerekliMi`) kilidi kaldırıldı —
+artık sadece 3 ok yeterli, diğer temalarla AYNI.
+
+**Ne eklendi (Dağ Tırmanışı/Hazine'den BİREBİR türetildi)**: Panel artık tek bir `<svg viewBox="0 0
+1200 440">` — `harita-zemin.webp` tam ekran arka plan, üzerinde SABİT bir patika (`KM_SIS_YOL_D`,
+`.km-map-route`/`.km-map-route-glow` — PAYLAŞILAN sınıflar, Hazine/Dağ ile birebir aynı görünüm dili).
+Her sporcu `kmOyunSisNokta(frac)` (Hazine'nin `kmOyunHazineNokta` kalıbı) ile patikada kendi konumunda,
+`kmOyunKarakterSVG(s, renk, uid, 'kasif', 17)` (PAYLAŞILAN karakter üreteci, `'kasif'` kostümü tanımlı
+DEĞİL — bilerek no-op, ileride eklenebilir) ile çizilir. `kmOyunResyncSisHaritasi`/
+`kmOyunAnimateSisHaritasi(s,i,eskiFrac,yeniFrac,eskiCp,yeniCp,toplam,done)` — Dağ'ın Resync/Animate
+çiftinin BİREBİR kopyası (aynı easing/hop/burst), `baslatAnimasyon()`'daki 8 parametreli dispatch
+grubuna taşındı (eskiden Arena/Futbol'un 4 parametreli grubundaydı). `kmOyunIlerlet()`'teki
+`artis = 0` override'ı ve `bitirOrtak()`'taki banner-hariç-tutma satırından `sisharita` ÇIKARILDI —
+artık GENEL frac formülü ve GENEL checkpoint/bitiş banner'ı (`th.cp`/`th.finish`) diğer 7 temayla
+AYNI şekilde çalışıyor. `elMap`'e `sisharita: s.sisharitaEl` eklendi (banner'ın patlama konumu için).
+Takım Modu artık GİZLENMİYOR (`kmOyunHTML`/`kmOyunTemaSec`'teki özel `sisharita` istisnaları
+kaldırıldı) — `KM_OYUN_TAKIM_TEMSILCI_TEMALAR`/`KM_OYUN_VURGU_TEMALAR`/`KM_OYUN_KAMERA_NOKTA_TEMALAR`/
+`KM_OYUN_KAMERA_SVG_ID`'ye `sisharita` eklendi (kamera yakınlaştırma + "sırada" vurgusu + Takım Modu
+temsilcisi diğer temalarla AYNI şekilde çalışıyor).
+
+**Keşifler — tek KENDİNE ÖZGÜ katman**: 7 sabit keşif noktası, `KM_OYUN_CP_FRAC`'ın (paylaşılan, 8
+kontrol noktalı) ilk 7'sine birebir denk düşüyor — Zirve'nin sabit kamp isimleri gibi tür ataması da
+ARTIK SABİT (rastgelelik/"her ders farklı" fikri, kalıcı bir yolculuk olduğu için anlamını yitirdi).
+Hazine/Dağ'ın bayrak/mühür halkası "şu an önde kim" mantığından BİLEREK FARKLI: `kmOyunSisKesifBul`
+İLK ulaşan sporcuyu KALICI kredilendiriyor (`_kmSisKesifler[cp].bulanAd`, bir daha değişmiyor) —
+orijinal Faz 15 spesifikasyonunun "isim haritada kalıcı olsun" ilkesi, artık checkpoint-tabanlı yeni
+mekanikte de korunuyor. Kalıcılık konum bazlı ama ARTIK TARİH DAMGASIZ (`dag_km_sisharita_kesif_
+<konum>`) — diğer temalardaki `_kmOyunDurum` (frac) da tarihsiz/kalıcı olduğu için tutarlı. Ciddi modda
+ikon/isim HER ZAMAN gösteriliyor (§15g), sadece ekstra "🗺️ ... bir keşif buldu" toast'ı susuyor (ses
+efekti kasıtlı olarak YOK — genel checkpoint sesiyle çakışmasın diye).
+
+**Basitleştirilen/bırakılan parçalar** (kullanıcıya raporlanacak): eski "sağda keşif listesi" ve "en
+çok bulan" özet paneli KALDIRILDI — Hazine/Dağ'da da böyle bir yan panel yok, ikon+isim doğrudan
+haritada duruyor; istenirse ayrı bir ekleme olarak geri getirilebilir. 3 fazlalık ikon (`kesif-dag.webp`,
+`kesif-antik-testi.webp`, `kesif-gizemli-kertenkele.webp`) artık HİÇ kullanılmıyor (10 türden sadece 7'si
+7 kontrol noktasına sığıyor) — dosyalar silinmedi, kullanılmıyor olarak bırakıldı.
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: eski kare ızgarası tamamen yok (0 `.km-sis-
+kare`), yeni SVG panel + harita görseli + patika var, 7 keşif işareti başta hiçbiri "bulundu" değil.
+Bireysel/Takım anahtarı artık GÖRÜNÜR (eskiden gizliydi). Kare SEÇMEDEN 3 GERÇEK ok girilince buton
+aktifleşiyor (artık seçim şartı yok). GERÇEK bir X-X-X serisi sonrası frac 0'dan 0.15'e çıktı (genel
+formülle BİREBİR uyumlu: (30/30)×0.15). 12 GERÇEK seri sonrasında en az 1 keşif GERÇEKTEN bulundu,
+bulan sporcunun adı haritada kalıcı yazılı. 13 tema + Reaksiyon regresyon taraması TAMAMEN TEMİZ (0
+hata — önceki "Failed to fetch" gürültüsü bile bu turda çıkmadı). Skor paneli CSS'i (dock/`#km-oyun-
+ilerlet-btn`) Arena ile birebir aynı sınıf/genişlik. 360/1280/1920px ekran görüntüsüyle kontrol edildi
+— SVG `preserveAspectRatio` sayesinde dar ekranda otomatik küçülüyor, eski ızgaranın aksine ELLE bir
+`@media` breakpoint'i bile GEREKMEDİ.
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
