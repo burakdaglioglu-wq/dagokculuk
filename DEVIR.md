@@ -3227,7 +3227,7 @@ mediapipe CDN gürültüsü hariç).
 
 **Deploy durumu**: onaylandı ("evet"), commit `53ec1fa`, push edildi, deploy version `b9e2974a-303f-4cdc-9c49-29da6dd507ff`.
 
-## 26. Faz 15 — Sis Haritası (keşif oyunu), Adım 1-3 (2026-09-16, İLERLEMEDE)
+## 26. Faz 15 — Sis Haritası (keşif oyunu), Adım 1-4 (2026-09-16/17, İLERLEMEDE — Adım 4 onay bekliyor)
 
 **Bağlam**: kullanıcı "eski açık bir işi bitir" dedi ve TAMAMEN YENİ, ayrıntılı bir spesifikasyon
 verdi — Oyunlar bölümüne 13. bir tema: sınıf birlikte bir haritayı sisin altından çıkarıyor, frac/yol
@@ -3350,6 +3350,44 @@ Düello Arena ile birebir aynı — tek fark her temada zaten var olan buton met
 ekran görüntüsüyle kontrol edildi, konsol hatası yok (testte görülen "Failed to fetch" hataları Sis
 Haritası'ndan BAĞIMSIZ, Adım 2'nin değişmemiş test script'inde de aynen çıkıyor — pre-existing).
 
-**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 3 ekran görüntüsüyle kullanıcıya sunulup durulacak.
-Adım 4 (Sonuç ve kalıcılık — ders sonu özeti, Faz 13 konum-tabanlı localStorage kalıcılığı, "Yeni
-harita" sıfırlama düğmesi) BAŞLANMADI, onay bekliyor.
+**Deploy durumu**: Adım 1-3 onaylandı ve yayına alındı ("YAYINA ÇIK EVET") — commit `088215e`, deploy
+version `eea93be6-f86e-4fb7-8688-e9948f1207ba`. Kaynak sprite sayfaları (`public/sis-haritasi/`,
+kullanılan/çıkarılmış `.webp` dosyaları DEĞİL) `korsan.png`/`hazine.png` emsaliyle commit dışı bırakıldı.
+
+### 26d. Adım 4 — Sonuç ve kalıcılık (2026-09-17)
+
+**Kalıcılık**: Faz 13'ün Yarışma Kurulumu ile BİREBİR aynı desen (`_kmYarismaKurulumAnahtari/Kaydet/
+Yukle`'nin kopyası, uyarlanmış): `kmOyunSisHaritasiAnahtari()` konum bazlı (`dag_km_sisharita_<konum>`)
+anahtar üretiyor, `kmOyunSisHaritasiKaydet()` `{tarih:bugunISO(), acikKareler, kesifler}` paketini
+localStorage'a yazıyor, `kmOyunSisHaritasiYukle()` geri okurken tarih damgası BUGÜNE ait değilse
+anahtarı silip `false` dönüyor (yeni bir harita üretilmesi gerektiği sinyali). Kayıt, her
+`kmOyunAnimateSisHaritasi` turunun sonunda (`kmOyunSisHaritasiSayacGuncelle()`'in hemen ardından)
+tetikleniyor — sekme değişimi/gerçek sayfa yenilemesi boyunca harita AYNEN kalıyor, sadece gün değişince
+taze bir dağıtım yapılıyor.
+
+**"Yeni Harita" düğmesi**: üst sayaç şeridinin sağında (`.km-sis-yenile-btn`, `flex-wrap` sayesinde dar
+ekranda kendi satırına düşüyor). `confirm()` ile onay istiyor (diğer sıfırlama düğmeleriyle AYNI ilke
+— "gerçek skorlar/klasman ETKİLENMEZ" vurgusu), onaylanırsa açık kareleri/keşifleri temizleyip
+localStorage kaydını siliyor ve sahneyi yeniden kuruyor (`kmOyunSahneKurSisHaritasi` zaten taze bir
+rastgele dağıtım üretip hemen kaydediyor).
+
+**Ders sonu özeti**: "kaç kare açıldı"/"kaç keşif bulundu" üst barda ZATEN her an canlı görünüyordu; eksik
+kalan tek parça "kim en çok buldu" idi — bunun için ayrı bir modal/ekran AÇILMADI (ortak kabuğa/"Dersi
+Bitir" akışına dokunmamak için, Arena'nın kendi sonuç ekranı gibi kendi paneli İÇİNDE kalan bir çözüm
+tercih edildi). `kmOyunSisEnCokBulanCiz()` `_kmSisKesifler`'i bulan-adına göre gruplayıp en yüksek sayıya
+sahip olan(lar)ı `#km-sis-en-cok-bulan` satırına yazıyor (eşitlik varsa hepsi listelenir), her keşif
+listesi güncellemesinde (`kmOyunSisKesifListesiCiz`'in sonunda) otomatik tazeleniyor — koç istediği an
+panele bakıp üçünü birden (açılan kare/keşif sayısı/en çok bulan) görebiliyor.
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: bilinen bir keşif hücresi GERÇEK tıklamayla
+bulundurulduktan sonra `page.reload()` ile GERÇEK bir sayfa yenilemesi yapıldı — açık kare sayısı, keşif
+sayacı, bulunan keşfin `.goster` durumu VE "en çok bulan" satırı yenilemeden ÖNCEKİYLE birebir aynı
+çıktı (localStorage'daki paketten doğru geri yüklendi). Ardından "🔄 Yeni Harita" GERÇEK tıklamayla
+(`confirm()` otomatik kabul edilerek) çalıştırıldı — açık kare/keşif sayısı 0'a döndü, "en çok bulan"
+satırı boşaldı, localStorage'daki `acikKareler` dizisi boşaldı. Son olarak localStorage'a DÜNÜN tarih
+damgasıyla sahte bir kayıt yazılıp sayfa yeniden yüklendi — bu kayıt GERİ YÜKLENMEDİ (tarih damgası
+kontrolü doğrulandı), taze bir harita üretildi. 13 tema + Reaksiyon regresyon taraması ve 360/1280/1920px
+ekran görüntüsüyle (yeni düğme dar ekranda kendi satırına düşüyor) kontrol edildi, konsol hatası yok.
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 4 ekran görüntüsüyle kullanıcıya sunulup durulacak. Bu,
+Faz 15'in (Sis Haritası) son adımıydı — onaylanırsa yayına alınabilir.
