@@ -3225,4 +3225,131 @@ sayfa 1 (ızgara+özet), tüm gün sayfaları, iki "(devamı)" taşma sayfası (
 çok ders olduğu için) doğru içerik/renk/sıralamayla doğrulandı. Konsol hatası yok (bilinen ilgisiz
 mediapipe CDN gürültüsü hariç).
 
-**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
+**Deploy durumu**: onaylandı ("evet"), commit `53ec1fa`, push edildi, deploy version `b9e2974a-303f-4cdc-9c49-29da6dd507ff`.
+
+## 26. Faz 15 — Sis Haritası (keşif oyunu), Adım 1-3 (2026-09-16, İLERLEMEDE)
+
+**Bağlam**: kullanıcı "eski açık bir işi bitir" dedi ve TAMAMEN YENİ, ayrıntılı bir spesifikasyon
+verdi — Oyunlar bölümüne 13. bir tema: sınıf birlikte bir haritayı sisin altından çıkarıyor, frac/yol
+YOK (Futbol/Arena'nın "kendi mekaniği" emsaliyle aynı kategori). 4 adımlı, her adım sonunda ekran
+görüntüsü + onay bekleniyor — bu bölüm SADECE Adım 1'i (statik ızgara+sis iskeleti) kapsıyor.
+
+**Varlık raporu** (`public/sis-haritasi/`, kullanıcı talimatıyla önce raporlandı): `fantasy map.png`
+kullanılabilir ama SABİT çizili öğeleri var (deniz feneri/sandık/mağara/rota/X — dinamik keşif
+sistemiyle görsel çakışma riski, kabul edilerek kullanıldı). `sis.png` TEK parça, döşemeye uygun değil
+— sprite-izgara tekniğiyle dilimlenip düz bir fog-tonu üstüne bindirildi. `9.png` (9 ikonluk sprite) —
+istenen 8 keşiften SADECE 6'sı karşılık buluyor (mağara/batık gemi/deniz feneri/harabe/volkan/kamp
+ateşi); **"ada" ve "vaha" için ayrı ikon YOK** — 3. adımda çözülecek, yer tutucu uydurulmadı.
+
+**Mimari** (Arena/Futbol'un emsaliyle): `KM_OYUN_TEMALAR.sisharita` yeni giriş (`surprizler:[]`, frac'a
+bağlı sürpriz hiç tetiklenmiyor). Sabit 8×6=48 kare, HTML/CSS grid (Hedef Tahtası'nın SVG-değil deseni)
+— roster boyutundan bağımsız, TEK paylaşılan sınıf haritası (Takım Futbolu'nun paylaşılan banka
+mantığına yakın, bireysel/takım ayrımı YOK). Harita zemini + sis dokusu AYNI "CSS sprite-izgara"
+tekniğiyle dilimleniyor (`background-size:800% 600%`, her karenin `background-position`'u kendi
+satır/sütununa göre) — tek büyük görsel ızgara boyunca kesintisiz okunuyor. `.km-sis-ortu.acik{opacity:0}`
+geçişi (solarak açılma) HAZIR ama Adım 1'de hiçbir şey tetiklemiyor — Adım 2'nin işi.
+
+**Gerçek testte bulunan 2 entegrasyon eksiği** (ikisi de "yeni bir tema eklerken unutulması kolay 3.
+kayıt noktası" örneği): (1) `kmOyunHTML()`'de TÜM panellerin markup'ı TEK bir template literal
+içinde elle zincirlenmiş 12 `kmOyunPanelHTML(tid)` çağrısıydı — yeni tema eklendiğini `KM_OYUN_TEMALAR`
++ `kmOyunSahneKurAktif`'e kaydetmek YETMEDİ, bu zincire de eklenmeden panel HİÇ DOM'a girmiyordu
+(ilk testte 48 yerine 0 kare bulundu, sessizce). (2) `kmOyunTemaSec`'te Bireysel/Takım anahtarını
+gizleyen `futbolMu` kontrolü ayrı bir yerde (panel HTML'inin ilk-render inline stiliyle AYNI koşulu
+TEKRARLIYOR, tek kaynaktan değil) — sadece ilkini güncellemek yetmedi, tema seçilince ikincisi eskiyi
+eziyordu. Ayrıca paylaşılan `#km-oyun-sirada` kartı (TÜM panellerin sol-üst köşesine mutlak konumlu
+biniyor) sayaç şeridimle çakışıyordu — `margin-top` ile aşağı itildi.
+
+**Doğrulama**: 13 tema + Reaksiyon regresyon taraması (mevcut betik `KM_OYUN_TEMALAR`'dan OTOMATİK
+tema listesi çıkardığı için yeni tema kendiliğinden dahil oldu) temiz. Skor paneli "ölçülerek" (dock
+innerHTML'i pist/monopoly arasında bile FARKLI çıktığı görülüp önce bu metodolojinin kendisi
+doğrulandı — fark SADECE `th.btn` buton metni, HER temada zaten var olan bir mekanizma) sisharita'da
+da AYNI TEK farkla (buton metni "🌫️ Sisi Aç") doğrulandı, yapısal hiçbir değişiklik yok. 360/1280/1920px
+ekran görüntüsüyle kontrol edildi, konsol/görsel yükleme hatası yok.
+
+**Deploy durumu**: Adım 1 onaylandı ("onay"), commit henüz atılmadı (Adım 2 bitince BİRLİKTE
+commit'lenecek — kullanıcı ayrıca deploy istemedi, adım adım ilerleniyor).
+
+### 26b. Adım 2 — Kare seçme ve açma (2026-09-16)
+
+**Mekanik**: koç önce kapalı bir kareye GERÇEK bir tıklamayla dokunur (`kmOyunSisKareSec`, Arena'nın
+havuz-tıkla toggle deseniyle AYNI — aynı kareye tekrar dokunmak seçimi kaldırır), sonra 3 ok girer.
+"İlerlet" düğmesi hem 3 ok HEM seçili kare şartını birlikte arıyor — `kmOyunSlotlariCiz`'in paylaşılan
+disabled hesabı `_kmOyunAktifTema==='sisharita' && _kmSisSeciliKare===null` ile genişletildi (Arena'nın
+"önce eşleştirme yapın" emsaliyle aynı ilke, PAYLAŞILAN fonksiyona eklenen TEK ek koşul, diğer 12 temada
+her zaman false).
+
+**Puanlama yorumu (kullanıcıya netçe belirtilmesi gereken bir tasarım kararı)**: spesifikasyon "atış
+kalitesi kaç kare açılacağını belirliyor" + "serideki üç ok BİRLİKTE değerlendirilsin, TOPLAM açılacak
+kare sayısı hesaplansın" diyordu. Bu, üç okun komşu-bütçesinin TOPLANDIĞI (X=3,10=3,9=2,8/7=1,6/5=0)
+şeklinde okundu — yani X-X-X gibi mükemmel bir seri 9'a kadar komşu açabiliyor (mevcut komşu sayısıyla
+sınırlı). Bu EN OLASI okuma ("toplam" kelimesi) ama tempoyu hızlı kılıyor olabilir — kullanıcı isterse
+kolayca ayarlanabilir bir sabit tablo (`KM_SIS_KOMSU_BUTCE`), tek satırlık bir değişiklik.
+
+**M (ıskalama)**: seçilen kare SADECE seride en az bir isabet (M olmayan ok) varsa açılır — üç M'lik
+bir seri hiçbir şey açmaz (spesifikasyonla birebir). Her M AYRICA rastgele bir AÇIK kareyi (bu turda
+YENİ açılanlar HARİÇ — aynı turda açılıp aynı anda kapanma karışıklığı önleniyor) geri sisle kaplar.
+
+**Komşu seçimi**: `kmOyunSisKomsular(i)` sınır-güvenli 8 komşu döndürür (kenar/köşede daha az),
+`kmOyunSisKaristir` (Fisher-Yates) ile karıştırılıp bütçe kadarı alınır — "hep aynı yöne gitmesin"
+talimatı karşılanıyor.
+
+**Gerçek testte bulunan 2 entegrasyon eksiği daha** (Adım 1'deki 2 eksiğin AYNI ailesinden — "yeni tema
+eklerken kolay unutulan 3./4. kayıt noktası"): pad butonlarının metni gizli bir Pist hız-etiketiyle
+BİRLEŞİK geldiği (ör. "XNİTRO") gerçek testte keşfedildi — bu Sis Haritası'ndan BAĞIMSIZ, önceden var
+olan bir davranış, test script'i buna göre düzeltildi (kod değişikliği gerekmedi). `kmOyunTemaSec`'te
+Bireysel/Takım anahtarını `futbolMu` diye AYRI bir değişkenle gizleyen ikinci bir kontrol noktası daha
+bulundu (ilk panel-render'daki inline stilden BAĞIMSIZ) — Adım 1'de SADECE ilkini güncellemek yetmedi,
+tema seçilince ikincisi eskiyi eziyordu; artık `takimAnahtariGizliMi` ile ikisi de kapsıyor.
+
+**Doğrulama**: GERÇEK tıklamalarla (kare tıklama + pad tıklama + İlerlet tıklama, hiç `evaluate()` ile
+element tıklaması YOK) uçtan uca test edildi — sıfır-etkili değil: (1) kare seçilmeden 3 ok girilse
+bile buton kilitli kaldığı, (2) gerçek bir kareye tıklayınca `.secili` class'ının uygulandığı, (3)
+X-X-X serisiyle 9 kare GERÇEKTEN açıldığı (harita zemini kesintisiz, tek parça görüntü olarak ortaya
+çıktı — sprite-izgara tekniği doğrulandı), (4) YENİ bir kare seçilip M-M-M girilince o kare AÇILMADIĞI
+VE 3 açık karenin GERÇEKTEN sise geri döndüğü (9→6) ekran görüntüsüyle doğrulandı. Gerçek skor da
+normal şekilde klasmana yazıldı (sıralama panelinde görünen puan), skor kaydı yoluna hiç dokunulmadı.
+13 tema + Reaksiyon regresyon taraması ve 360/1280px hatasız.
+
+**Deploy durumu**: Adım 2 onaylandı ("ONAYLADIM"), commit henüz atılmadı — adım adım ilerleniyor.
+
+### 26c. Adım 3 — Keşifler (2026-09-16)
+
+**İkon çıkarma**: `9.png` (2000×2000, 10 ikonluk sprite sayfası) düzensiz/tutarsız boşluklu — tek bir
+flood-fill birleştirme-boşluğu parametresiyle ayrıştırılamadı (gap=8 → 23 parça, gap=70 → dağ/deniz
+feneri/çadır birbirine karıştı, gap=28 → hâlâ birleşik). Otomatik yaklaşım terk edilip elle tanımlı,
+birbirine değmeyen geniş kırpma kutuları + her biri için ayrı `sharp().trim()` kullanıldı — ilk
+denemede 10 temiz ikon (`public/sisharita-gorseller/kesif-*.webp`) çıktı. **"Ada"/"vaha" boşluğu**
+(Adım 1'de raporlanan) kullanıcıya soruldu — "6 gerçek türü kullan + sayfadaki 4 fazlalığı (hazine
+sandığı/dağ/antik testi/gizemli kertenkele) kendi adıyla ekle" seçildi; nihai 10'lu keşif listesi
+`KM_SIS_KESIF_TURLERI`.
+
+**Yerleştirme ve kalıcılık**: `kmOyunSisKesifleriHazirla()` oturum başına BİR KEZ, 48 kareden 10'unu
+rastgele seçip 10 türü karıştırarak eşliyor (her ders farklı). Keşif katmanı (`kesifHTML`) her hücrede
+kesif nesnesi varsa DOM'a giriyor ama görünürlüğü sis/açık durumundan BAĞIMSIZ, `bulanAd` doluluğuna
+bağlı (`.goster` class'ı) — yani sis açılsa bile keşif bulunmadıysa GİZLİ kalıyor (harita altındaki
+konumlar önceden sızmıyor). "İsim kalıcı olsun" kuralı için `kmOyunAnimateSisHaritasi`'teki M-kapama
+mantığı, zaten bulunmuş keşifli kareleri kapatılabilir aday havuzundan AÇIKÇA dışlıyor — bir kare bir
+kez bulunduktan sonra asla yeniden sislenemiyor.
+
+**Ciddi mod (§15g)**: `kmOyunSisKesifKontrol` içinde `kapali` SADECE burst/ses/toast'ı (kutlama)
+susturuyor — ikon, bulan adı, üst sayaç, sağ liste HER ZAMAN yazılıyor/gösteriliyor (mekanik, asla
+gizlenmiyor). Sağda "🏆 Keşifler" listesi (`kmOyunSisKesifListesiCiz`, `#km-sis-kesif-liste`) panel
+HTML'i `.km-sis-govde` (flex row: solda ızgara, sağda liste; 860px altında dikey yığın) ile yeniden
+yapılandırılarak eklendi — paylaşılan sağ rafa (Sporcu Seç/Liderlik) DOKUNULMADI, sadece bu temanın
+kendi gövdesi genişletildi.
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: bilinen bir keşif hücresine GERÇEK tıklama
++ X-X-X GERÇEK pad tıklaması + İlerlet GERÇEK tıklaması sonrası: (1) açılmadan önce `.goster` sınıfı
+YOK (gizli), (2) açıldıktan sonra ikon+isim göründü ("Test Elif"), (3) üst sayaç ve sağ liste
+güncellendi, (4) ikinci bir keşif hücresinde ciddi mod açıkken AYNI akış çalıştırıldı — ikon/isim YİNE
+göründü, `showToast` çağrıları yakalanıp içerikleri incelendi: sadece Sis Haritası'ndan BAĞIMSIZ,
+önceden var olan "Teknik İpucu" toast'ı ("🔥 Harika bir seri!") tetiklendi, keşif-bulma toast'ı
+("... buldu: ...") HİÇ tetiklenmedi — ciddi mod kutlamayı doğru şekilde susturdu. 13 tema + Reaksiyon
+regresyon taraması ve skor paneli CSS karşılaştırması (dock/`#km-oyun-ilerlet-btn` computed style,
+Düello Arena ile birebir aynı — tek fark her temada zaten var olan buton metni) temiz. 360/1280/1920px
+ekran görüntüsüyle kontrol edildi, konsol hatası yok (testte görülen "Failed to fetch" hataları Sis
+Haritası'ndan BAĞIMSIZ, Adım 2'nin değişmemiş test script'inde de aynen çıkıyor — pre-existing).
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 3 ekran görüntüsüyle kullanıcıya sunulup durulacak.
+Adım 4 (Sonuç ve kalıcılık — ders sonu özeti, Faz 13 konum-tabanlı localStorage kalıcılığı, "Yeni
+harita" sıfırlama düğmesi) BAŞLANMADI, onay bekliyor.

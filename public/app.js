@@ -10600,7 +10600,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="hedef"] #km-oyun-panel-hedef,
 #km-oyun-wrap[data-tema="futbol"] #km-oyun-panel-futbol,
 #km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim,
-#km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena { display:flex; }
+#km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena,
+#km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita { display:flex; }
 .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
 /* Hedef Tahtası (2026-09-06) — HTML/CSS (SVG değil, Futbol/Pist desenini izliyor). Halka deseni TEK bir
    radial-gradient (gerçek WA hedef renkleri: altın/kırmızı/mavi/siyah/beyaz), ok izleri önceden
@@ -10616,6 +10617,45 @@ ${(function(){
 .km-hedef-isaret.km-hedef-isaret-goster{ transform:scale(1) rotate(45deg); }
 .km-hedef-ad{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); text-align:center; max-width:118px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width: 860px) { .km-hedef-tahta{ width:84px; height:84px; } .km-hedef-alan{ gap:12px; } }
+
+/* Sis Haritası — Faz 15 (2026-09-16), Adım 1. 8x6 izgara, HTML/CSS (Hedef Tahtası'nın AYNI SVG-degil
+   deseni). Harita zemini VE sis dokusu aynı "sprite-izgara" tekniğiyle dilimleniyor: background-size
+   800%/600% (8 sutun/6 satir), her karenin background-position'u kendi c/r'ına gore hesaplaniyor - TEK
+   buyuk gorsel butun izgara boyunca kesintisiz okunuyor, 48 ayri/kopuk parca gibi degil. */
+.km-oyun-panel-sisharita{ background:linear-gradient(180deg,#141b28,#1c2536); }
+/* margin-top: paylaşılan #km-oyun-sirada kartı (position:absolute, sol-üst köşe, ~44px yüksek) tüm
+   panellerin ÜSTÜNE biniyor — diğer temalarda bu köşe zaten boş/dekoratif olduğu için sorun olmuyor,
+   ama BURADA sayaç şeridi TAM o köşede olduğu için gerçek testte çakıştığı görüldü, aşağı itiliyor. */
+.km-sis-ust-bar{ display:flex; gap:10px; flex-wrap:wrap; padding:2px 2px 10px; margin-top:46px; flex-shrink:0; }
+.km-sis-sayac{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:5px 12px; font-family:var(--font-body); font-size:11.5px; font-weight:600; color:var(--ink-dim); }
+.km-sis-sayac b{ color:#ffd23f; font-family:var(--font-display); font-variant-numeric:tabular-nums; }
+.km-sis-izgara-dis{ flex:1; overflow-x:auto; overflow-y:hidden; padding-bottom:4px; }
+.km-sis-izgara{ display:grid; grid-template-columns:repeat(8,minmax(72px,1fr)); grid-template-rows:repeat(6,minmax(72px,1fr)); gap:3px; min-width:610px; height:100%; }
+.km-sis-kare{ position:relative; border-radius:5px; overflow:hidden; box-shadow:0 0 0 1px rgba(255,255,255,0.06); cursor:pointer; transition:box-shadow .15s ease; }
+.km-sis-kare.acik{ cursor:default; }
+.km-sis-kare.secili{ box-shadow:0 0 0 3px #ffd23f, 0 0 14px rgba(255,210,63,0.6); z-index:2; }
+.km-sis-zemin{ position:absolute; inset:0; background-image:url(/sisharita-gorseller/harita-zemin.webp); background-size:800% 600%; }
+.km-sis-ortu{ position:absolute; inset:0; background-color:rgb(194,193,187); background-image:url(/sisharita-gorseller/sis-doku.webp); background-size:800% 600%; background-blend-mode:soft-light; opacity:1; transition:opacity .6s ease; }
+.km-sis-ortu.acik{ opacity:0; pointer-events:none; }
+@media (prefers-reduced-motion: reduce){ .km-sis-ortu{ transition:none; } }
+@media (max-width: 860px) { .km-sis-izgara{ grid-template-columns:repeat(8,minmax(60px,1fr)); grid-template-rows:repeat(6,minmax(60px,1fr)); min-width:510px; } }
+
+/* Sis Haritası — Adım 3 (2026-09-16), Keşifler. Izgara solda, keşif listesi sağda — sağ panel
+   (Sporcu Seç/Liderlik) zaten var olan .km-oyun-rightpanel'den AYRI, panelin kendi içinde. */
+.km-sis-govde{ display:flex; gap:10px; flex:1; min-height:0; }
+.km-sis-kesif-katman{ position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:2px; pointer-events:none; z-index:3; opacity:0; transition:opacity .4s ease; }
+.km-sis-kesif-katman.goster{ display:flex; opacity:1; }
+.km-sis-kesif-ikon{ width:56%; height:56%; object-fit:contain; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6)); }
+.km-sis-kesif-isim{ font-family:var(--font-body); font-weight:700; font-size:9px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.6); text-align:center; max-width:96%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.km-sis-kesif-panel{ width:168px; flex-shrink:0; overflow-y:auto; scrollbar-width:thin; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; }
+.km-sis-kesif-panel-baslik{ font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 6px; }
+.km-sis-kesif-satir{ display:flex; align-items:center; gap:7px; padding:5px 4px; border-radius:6px; background:rgba(255,255,255,0.03); margin-bottom:4px; }
+.km-sis-kesif-liste-ikon{ width:22px; height:22px; object-fit:contain; flex-shrink:0; }
+.km-sis-kesif-liste-metin{ min-width:0; display:flex; flex-direction:column; }
+.km-sis-kesif-liste-tur{ font-family:var(--font-body); font-weight:700; font-size:10px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.km-sis-kesif-liste-isim{ font-size:9px; color:var(--ink-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.km-sis-kesif-liste-bos{ font-size:10.5px; color:var(--ink-faint); padding:6px 4px; line-height:1.5; }
+@media (max-width: 860px) { .km-sis-govde{ flex-direction:column; } .km-sis-kesif-panel{ width:auto; max-height:120px; } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -11583,6 +11623,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // özellik) ile karışmasın diye.
             arena: { ad: 'Düello Arena', ikon: '⚔️', renkler: ['#ff3b3b', '#3fa9ff', '#ffd23f', '#3ddc84', '#c77dff'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — çoklu düello: eşleştirin, herkes aynı anda kendi hedefine atar, otomatik rakip yoktur.', btn: '🏹 İlerlet', finish: 'ARENA TAMAMLANDI!', cp: 'İSABET!', birim: 'isabet', bitis: 'Maçı kazandı! ⚔️',
                 surprizler: [] },
+            // Faz 15 (2026-09-16) — Sis Haritası: frac/yol YOK, Arena/Futbol'un "kendi mekaniği" emsaliyle
+            // AYNI kategori (surprizler:[] de aynı sebeple boş — frac'a bağlı sürpriz mekanizması burada
+            // hiç tetiklenmiyor). Tüm sınıf TEK paylaşılan haritayı açıyor (Takım Futbolu'nun paylaşılan
+            // banka mantığına yakın), bireysel/takım ayrımı YOK.
+            sisharita: { ad: 'Sis Haritası', ikon: '🗺️', renkler: ['#7dd3fc', '#ffd23f', '#ff8a3d', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — sınıf BİRLİKTE bir haritayı sisin altından çıkarır, atış kalitesi kaç karenin açılacağını belirler.', btn: '🌫️ Sisi Aç', finish: 'HARİTA TAMAMLANDI!', cp: 'YENİ KEŞİF!', birim: 'kare', bitis: 'Harita açıldı! 🗺️',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -12012,6 +12058,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'hedef') kmOyunSahneKurHedef();
             else if(tid === 'futbol') kmOyunSahneKurFutbol();
             else if(tid === 'futboltakim') kmOyunSahneKurFutbolTakim();
+            else if(tid === 'sisharita') kmOyunSahneKurSisHaritasi();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -12034,6 +12081,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurFutbol();
             kmOyunSahneKurFutbolTakim();
             kmOyunArenaCiz();
+            kmOyunSahneKurSisHaritasi();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -12927,6 +12975,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   </div>
                 </div>
             </div>`;
+            // Faz 15 (2026-09-16), Adım 1 — Sis Haritası. Diğer temalardaki tek büyük <svg>/patika YOK,
+            // Hedef Tahtası'nın AYNI HTML/CSS deseni. İzgara `kmOyunSahneKurSisHaritasi`'te doldurulur.
+            if(tid === 'sisharita') return `<div class="km-oyun-panel km-oyun-panel-sisharita" id="km-oyun-panel-sisharita">
+                <div class="km-sis-ust-bar">
+                    <div class="km-sis-sayac"><b id="km-sis-acik-sayisi">0</b> / 48 kare açıldı</div>
+                    <div class="km-sis-sayac">🏆 <b id="km-sis-kesif-sayisi">0</b> keşif bulundu</div>
+                </div>
+                <div class="km-sis-govde">
+                    <div class="km-sis-izgara-dis"><div class="km-sis-izgara" id="km-sis-izgara"></div></div>
+                    <div class="km-sis-kesif-panel">
+                        <div class="km-sis-kesif-panel-baslik">🏆 Keşifler</div>
+                        <div id="km-sis-kesif-liste"></div>
+                    </div>
+                </div>
+            </div>`;
         }
 
         function kmOyunHTML() {
@@ -12955,7 +13018,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                      olarak görünür. .km-arac-izgara/.card Faz 2/7'den — burada yeni stil yazılmadı. -->
                 <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
                 <div id="km-oyun-govde">
-                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') ? 'display:none;' : ''}">
+                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'sisharita') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
                         <button class="${_kmOyunTakimModu ? 'aktif' : ''}" data-takim="1" onclick="kmOyunModSec(true)">🤝 Takım</button>
@@ -12971,7 +13034,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
@@ -13163,7 +13226,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             for(let i = 0; i < _kmOyunOkSayisi; i++) { let v = _kmOyunSeriGirisleri[i]; html += `<div class="km-oyun-slot${v !== undefined ? ' dolu' : ''}" ${v !== undefined ? `onclick="kmOyunOkSil(${i})" title="Silmek için dokun"` : ''}>${v !== undefined ? v : ''}</div>`; }
             w.innerHTML = html;
             let btn = document.getElementById('km-oyun-ilerlet-btn');
-            if(btn) btn.disabled = _kmOyunSeriGirisleri.length < _kmOyunOkSayisi || _kmOyunKilit;
+            // Sis Haritası — "önce kapalı bir kareye dokun" kuralı: seri tamamlansa bile kare seçili
+            // değilse İlerlet kilitli kalır (Arena'nın "önce eşleştirme yapın" emsaliyle AYNI ilke).
+            let sisKareGerekliMi = _kmOyunAktifTema === 'sisharita' && _kmSisSeciliKare === null;
+            if(btn) btn.disabled = _kmOyunSeriGirisleri.length < _kmOyunOkSayisi || _kmOyunKilit || sisKareGerekliMi;
             // Panel kapalıyken (esnek panel, 2026-09-09) özet satırındaki "N/M" tek görünen bilgi —
             // her ok girişinde/silinişinde güncel kalsın.
             let ozet = document.getElementById('km-oyun-dok-ozet-sayi'); if(ozet) ozet.textContent = `${_kmOyunSeriGirisleri.length}/${_kmOyunOkSayisi}`;
@@ -14445,6 +14511,206 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
+        // ---- SİS HARİTASI — Faz 15 (2026-09-16). Diğer temalardaki "her sporcu kendi konumunda"
+        // mantığı YOK — TEK paylaşılan sınıf haritası (Takım Futbolu'nun paylaşılan banka mantığına
+        // yakın). Izgara sabit 8x6=48 kare, roster boyutundan bağımsız. Kalıcılık (Adım 4) HENÜZ
+        // BAĞLANMADI.
+        var KM_SIS_SUTUN = 8, KM_SIS_SATIR = 6, KM_SIS_TOPLAM = KM_SIS_SUTUN * KM_SIS_SATIR;
+        var _kmSisAcikKareler = new Set(); // açılmış kare indeksleri (0-47) — Adım 4'te kalıcı hale gelecek
+        var _kmSisSeciliKare = null; // sıradaki koçun işaretlediği, henüz puanlanmamış kare
+        // Adım 3 (2026-09-16) — kullanıcı 8 keşif türü istedi (ada, mağara, batık gemi, harabe, kamp
+        // ateşi, deniz feneri, volkan, vaha) ama public/sis-haritasi/9.png'de SADECE 6'sı için net bir
+        // ikon vardı ("ada"/"vaha" YOK) — kullanıcıya soruldu, "6 gerçek tür + kalan 4 fazlalığı kendi
+        // adıyla ekle" onaylandı. Hiçbir ikon yanlış etiketlenmedi (yer tutucu uydurulmadı).
+        var KM_SIS_KESIF_TURLERI = [
+            { id: 'magara', ad: 'Mağara' },
+            { id: 'batik-gemi', ad: 'Batık Gemi' },
+            { id: 'harabe', ad: 'Harabe' },
+            { id: 'kamp-atesi', ad: 'Kamp Ateşi' },
+            { id: 'deniz-feneri', ad: 'Deniz Feneri' },
+            { id: 'volkan', ad: 'Volkan' },
+            { id: 'hazine-sandigi', ad: 'Hazine Sandığı' },
+            { id: 'dag', ad: 'Dağ' },
+            { id: 'antik-testi', ad: 'Antik Testi' },
+            { id: 'gizemli-kertenkele', ad: 'Gizemli Kertenkele' }
+        ];
+        var _kmSisKesifler = {}; // kareIndex -> {tur, bulanAd|null} — SADECE keşif taşıyan kareler
+        var _kmSisKesiflerHazirMi = false;
+        // "Keşifler oyun başında rastgele dağıtılsın, her ders farklı olsun" — bu oturumda TEK sefer
+        // (lazy) çalışır; Adım 4 kalıcılık geldiğinde AYNI yer (localStorage'dan okunup burada
+        // atlanacak) kolayca genişletilebilir.
+        function kmOyunSisKesifleriHazirla() {
+            if(_kmSisKesiflerHazirMi) return;
+            _kmSisKesiflerHazirMi = true;
+            let hucreler = kmOyunSisKaristir(Array.from({ length: KM_SIS_TOPLAM }, function(_, i) { return i; })).slice(0, KM_SIS_KESIF_TURLERI.length);
+            let turler = kmOyunSisKaristir(KM_SIS_KESIF_TURLERI);
+            hucreler.forEach(function(h, idx) { _kmSisKesifler[h] = { tur: turler[idx], bulanAd: null }; });
+        }
+        function kmOyunSahneKurSisHaritasi() {
+            let izgara = document.getElementById('km-sis-izgara'); if(!izgara) return;
+            kmOyunSisKesifleriHazirla();
+            let html = '';
+            for(let r = 0; r < KM_SIS_SATIR; r++) {
+                for(let c = 0; c < KM_SIS_SUTUN; c++) {
+                    let i = r * KM_SIS_SUTUN + c;
+                    // Standart CSS "sprite-izgara" yüzdesi: background-size NxM*100 iken bu formül HER
+                    // hücreyi büyük görselin doğru diliminde konumlar (uç hücreler dahil).
+                    let bgX = (KM_SIS_SUTUN > 1 ? (c / (KM_SIS_SUTUN - 1)) * 100 : 0).toFixed(2);
+                    let bgY = (KM_SIS_SATIR > 1 ? (r / (KM_SIS_SATIR - 1)) * 100 : 0).toFixed(2);
+                    let acikMi = _kmSisAcikKareler.has(i);
+                    let kesif = _kmSisKesifler[i];
+                    // Keşif katmanı SADECE bulunduysa (`bulanAd`) görünür — açık/kapalı sis durumundan
+                    // BAĞIMSIZ, "isim haritada kalıcı olsun" kuralı (bkz. kmOyunAnimateSisHaritasi'ndeki
+                    // "bulunan kare bir daha kapanamaz" koruması).
+                    let kesifHTML = kesif ? `<div class="km-sis-kesif-katman${kesif.bulanAd ? ' goster' : ''}" id="km-sis-kesif-${i}">
+                        <img class="km-sis-kesif-ikon" src="/sisharita-gorseller/kesif-${kesif.tur.id}.webp" alt="${esc(kesif.tur.ad)}">
+                        <div class="km-sis-kesif-isim" id="km-sis-kesif-isim-${i}">${kesif.bulanAd ? esc(kesif.bulanAd) : ''}</div>
+                    </div>` : '';
+                    html += `<div class="km-sis-kare${acikMi ? ' acik' : ''}" id="km-sis-kare-${i}" data-i="${i}" onclick="kmOyunSisKareSec(${i})">
+                        <div class="km-sis-zemin" style="background-position:${bgX}% ${bgY}%;"></div>
+                        <div class="km-sis-ortu${acikMi ? ' acik' : ''}" id="km-sis-ortu-${i}" style="background-position:${bgX}% ${bgY}%;"></div>
+                        ${kesifHTML}
+                    </div>`;
+                }
+            }
+            izgara.innerHTML = html;
+            kmOyunSisKesifListesiCiz();
+            kmOyunSisHaritasiSayacGuncelle();
+        }
+        function kmOyunSisHaritasiSayacGuncelle() {
+            let acikEl = document.getElementById('km-sis-acik-sayisi'); if(acikEl) acikEl.textContent = String(_kmSisAcikKareler.size);
+            let bulunanSayisi = Object.keys(_kmSisKesifler).filter(function(k) { return _kmSisKesifler[k].bulanAd; }).length;
+            let kesifEl = document.getElementById('km-sis-kesif-sayisi'); if(kesifEl) kesifEl.textContent = String(bulunanSayisi);
+        }
+        // "Sağda bulunan keşiflerin listesi dursun: hangi keşif, kim buldu" — panelin KENDİ içinde
+        // (paylaşılan sağ rafa DOKUNULMADI, sadece bu temanın kendi govdesi genişletildi).
+        function kmOyunSisKesifListesiCiz() {
+            let el = document.getElementById('km-sis-kesif-liste'); if(!el) return;
+            let bulunanlar = Object.keys(_kmSisKesifler).map(function(k) { return _kmSisKesifler[k]; }).filter(function(k) { return k.bulanAd; });
+            if(!bulunanlar.length) { el.innerHTML = '<div class="km-sis-kesif-liste-bos">Henüz keşif yok.</div>'; return; }
+            el.innerHTML = bulunanlar.map(function(k) {
+                return `<div class="km-sis-kesif-satir">
+                    <img class="km-sis-kesif-liste-ikon" src="/sisharita-gorseller/kesif-${k.tur.id}.webp" alt="${esc(k.tur.ad)}">
+                    <div class="km-sis-kesif-liste-metin"><div class="km-sis-kesif-liste-tur">${esc(k.tur.ad)}</div><div class="km-sis-kesif-liste-isim">${esc(k.bulanAd)}</div></div>
+                </div>`;
+            }).join('');
+        }
+        // "Bir keşif açıldığında: simge belirsin, kısa bir vurgu olsun, bulan sporcunun adı yazılsın."
+        // Ciddi modda vurgu (burst/ses/toast) SESSİZ, ama simge/isim/liste HER ZAMAN görünür (§15g
+        // kuralı — bunlar gerçek mekanik geri bildirim, ekstra değil).
+        function kmOyunSisKesifKontrol(yeniAcilanlar, bulanAd) {
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let bulunanlar = [];
+            yeniAcilanlar.forEach(function(i) {
+                let k = _kmSisKesifler[i];
+                if(!k || k.bulanAd) return; // keşif yok ya da zaten önceden bulunmuş
+                k.bulanAd = bulanAd;
+                bulunanlar.push({ i: i, kesif: k });
+                let katman = document.getElementById('km-sis-kesif-' + i); if(katman) katman.classList.add('goster');
+                let isimEl = document.getElementById('km-sis-kesif-isim-' + i); if(isimEl) isimEl.textContent = bulanAd;
+            });
+            if(bulunanlar.length) {
+                kmOyunSisKesifListesiCiz();
+                if(!kapali) {
+                    bulunanlar.forEach(function(b) {
+                        let scr = kmOyunEltPct(document.getElementById('km-sis-kare-' + b.i));
+                        kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 22, true);
+                    });
+                    try { sesCal(880, 0.12); setTimeout(function() { try { sesCal(1175, 0.18); } catch(e) {} }, 110); } catch(e) {}
+                    let ilkTurAd = bulunanlar[0].kesif.tur.ad;
+                    showToast('🗺️ ' + bulanAd.split(' ')[0] + ' bir keşif buldu: ' + ilkTurAd + (bulunanlar.length > 1 ? ' (+' + (bulunanlar.length - 1) + ')' : '') + '!', 'success');
+                }
+            }
+            return bulunanlar;
+        }
+        // Faz 15, Adım 2 (2026-09-16) — "koç haritada kapalı bir kareye dokunuyor, o kare işaretleniyor,
+        // sonra seri giriliyor." Açık bir kareye dokunmak yok sayılır. Aynı kareye tekrar dokunmak
+        // seçimi kaldırır (Arena'nın havuz-tıkla deseniyle AYNI toggle mantığı). Skor paneli her
+        // seçim değişiminde YENİDEN değerlendirilmeli — kmOyunSlotlariCiz zaten "kare seçili mi"
+        // kontrolünü kendi disabled hesabına dahil ediyor (bkz. aşağıdaki değişiklik).
+        function kmOyunSisKareSec(i) {
+            if(_kmOyunKilit || _kmSisAcikKareler.has(i)) return;
+            let eski = document.getElementById('km-sis-kare-' + _kmSisSeciliKare);
+            if(eski) eski.classList.remove('secili');
+            _kmSisSeciliKare = (_kmSisSeciliKare === i) ? null : i;
+            if(_kmSisSeciliKare !== null) { let yeni = document.getElementById('km-sis-kare-' + i); if(yeni) yeni.classList.add('secili'); }
+            kmOyunSlotlariCiz();
+        }
+        // 8 komşu (kenar/köşede daha az) — sınır dışına taşmıyor.
+        function kmOyunSisKomsular(i) {
+            let row = Math.floor(i / KM_SIS_SUTUN), col = i % KM_SIS_SUTUN, komsular = [];
+            for(let dr = -1; dr <= 1; dr++) {
+                for(let dc = -1; dc <= 1; dc++) {
+                    if(dr === 0 && dc === 0) continue;
+                    let nr = row + dr, nc = col + dc;
+                    if(nr < 0 || nr >= KM_SIS_SATIR || nc < 0 || nc >= KM_SIS_SUTUN) continue;
+                    komsular.push(nr * KM_SIS_SUTUN + nc);
+                }
+            }
+            return komsular;
+        }
+        function kmOyunSisKaristir(arr) {
+            let a = arr.slice();
+            for(let i = a.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = a[i]; a[i] = a[j]; a[j] = t; }
+            return a;
+        }
+        function kmOyunSisKareAc(i) {
+            if(_kmSisAcikKareler.has(i)) return;
+            _kmSisAcikKareler.add(i);
+            let kare = document.getElementById('km-sis-kare-' + i); if(kare) kare.classList.add('acik');
+            let ortu = document.getElementById('km-sis-ortu-' + i); if(ortu) ortu.classList.add('acik');
+        }
+        function kmOyunSisKareKapat(i) {
+            if(!_kmSisAcikKareler.has(i)) return;
+            _kmSisAcikKareler.delete(i);
+            let kare = document.getElementById('km-sis-kare-' + i); if(kare) kare.classList.remove('acik');
+            let ortu = document.getElementById('km-sis-ortu-' + i); if(ortu) ortu.classList.remove('acik');
+        }
+        // Atış kalitesi → komşu bütçesi (kullanıcının verdiği tablo). M ayrı ele alınıyor (bütçeye
+        // katkısı yok, ayrıca bir kareyi geri kapatıyor).
+        var KM_SIS_KOMSU_BUTCE = { 'X': 3, '10': 3, '9': 2, '8': 1, '7': 1, '6': 0, '5': 0 };
+        // Serideki oklar BİRLİKTE değerlendirilir (kullanıcı talimatı): seçilen kare, en az bir isabet
+        // varsa (M olmayan herhangi bir ok) AÇILIR; komşu bütçesi ÜÇ okun toplamıdır; her M hem hiçbir
+        // katkı yapmaz hem de rastgele AÇIK bir kareyi (bu turda YENİ açılanlar hariç) geri kapatır.
+        function kmOyunAnimateSisHaritasi(s, i, kaydedilecek, done) {
+            let secilen = _kmSisSeciliKare;
+            if(secilen === null) { done(); return; } // güvenlik: teorik olarak kmOyunSlotlariCiz zaten engelliyor
+            let butce = 0, iskalamaSayisi = 0, isabetVarMi = false;
+            kaydedilecek.forEach(function(k) {
+                if(k.puan === 'M') { iskalamaSayisi++; return; }
+                isabetVarMi = true;
+                butce += KM_SIS_KOMSU_BUTCE[k.puan] || 0;
+            });
+            let yeniAcilanlar = [];
+            if(isabetVarMi && !_kmSisAcikKareler.has(secilen)) { kmOyunSisKareAc(secilen); yeniAcilanlar.push(secilen); }
+            if(butce > 0) {
+                let komsuAday = kmOyunSisKomsular(secilen).filter(function(n) { return !_kmSisAcikKareler.has(n); });
+                let secilenKomsular = kmOyunSisKaristir(komsuAday).slice(0, butce);
+                secilenKomsular.forEach(function(n) { kmOyunSisKareAc(n); yeniAcilanlar.push(n); });
+            }
+            // "İsim haritada kalıcı olsun, ders boyunca görünsün" — bu turda AÇILAN kareler arasında
+            // keşif varsa hemen işaretlenir (bulanAd = s.ad). kmOyunSisKareKapat'a ASLA gitmeyecekler
+            // (aşağıdaki filtre) çünkü bir keşif artık geri sisle kaplanamaz.
+            if(yeniAcilanlar.length) kmOyunSisKesifKontrol(yeniAcilanlar, s.ad);
+            for(let m = 0; m < iskalamaSayisi; m++) {
+                let kapatilabilir = Array.from(_kmSisAcikKareler).filter(function(n) {
+                    if(yeniAcilanlar.indexOf(n) !== -1) return false;
+                    if(_kmSisKesifler[n] && _kmSisKesifler[n].bulanAd) return false; // bulunmuş keşif kalıcı
+                    return true;
+                });
+                if(!kapatilabilir.length) break;
+                let secilenKapatma = kapatilabilir[Math.floor(Math.random() * kapatilabilir.length)];
+                kmOyunSisKareKapat(secilenKapatma);
+            }
+            kmOyunSisHaritasiSayacGuncelle();
+            _kmSisSeciliKare = null;
+            let kareEl = document.getElementById('km-sis-kare-' + secilen); if(kareEl) kareEl.classList.remove('secili');
+            // Sis solarak açılıyor (.6s CSS geçişi) — animasyon bitmeden "sıradaki sporcuya geç" akışına
+            // dönmek karışık dururdu, kısa bir gecikmeyle senkronlanıyor (Arena'nın kendi animate'indeki
+            // AYNI "görsel bitmeden done() çağırma" ilkesi).
+            setTimeout(done, 650);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -14466,8 +14732,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let okToggleRow = document.getElementById('km-oyun-ok-toggle-row'); if(okToggleRow) okToggleRow.style.display = futbolMu ? 'none' : 'flex';
             let futbolDokListe = document.getElementById('km-oyun-futbol-dok-liste'); if(futbolDokListe) futbolDokListe.style.display = futbolMu ? 'flex' : 'none';
             // Bireysel/Takım anahtarı (futbolün kendi ayrı Bireysel/Takım kartları olduğu için burada
-            // gizli) — diğer 8 temada tema değişse de mod korunuyor, anahtarın kendisi sadece görünürlük.
-            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = futbolMu ? 'none' : 'flex';
+            // gizli, Sis Haritası'nda da TEK paylaşılan sınıf haritası olduğu için anlamsız) — diğer
+            // temalarda tema değişse de mod korunuyor, anahtarın kendisi sadece görünürlük.
+            let takimAnahtariGizliMi = futbolMu || tid === 'sisharita';
+            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = takimAnahtariGizliMi ? 'none' : 'flex';
             if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
             // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
@@ -14562,6 +14830,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // aynı kategori). Artış BİLEREK sıfır — bu tema hasarı kendi kmOyunAnimateArena'sında
             // doğrudan can'a uyguluyor, frac hiç kullanılmıyor/gösterilmiyor.
             if(_kmOyunAktifTema === 'arena') artis = 0;
+            // Sis Haritası — frac/yol YOK, açılan kare sayısı var (Arena'nın can/Futbol'un gol emsaliyle
+            // AYNI kategori). Artış BİLEREK sıfır, kmOyunAnimateSisHaritasi kaydedilecek'i DOĞRUDAN
+            // kullanarak hangi karelerin açılacağını hesaplıyor.
+            if(_kmOyunAktifTema === 'sisharita') artis = 0;
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -14675,7 +14947,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'sisharita') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -14821,6 +15093,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'hedef') kmOyunAnimateHedef(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futbol') kmOyunAnimateFutbol(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futboltakim') kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
+                else if(_kmOyunAktifTema === 'sisharita') kmOyunAnimateSisHaritasi(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
