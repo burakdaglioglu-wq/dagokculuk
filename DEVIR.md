@@ -3610,5 +3610,82 @@ görüntüsüyle kontrol edildi.
 **Not**: `uc-yeni-oyun.html` prototipi kullanılmadı (bulunamadı, kullanıcı aramayı istemedi) —
 mekanik tamamen yazılı spesifikasyondaki tablolardan uygulandı.
 
-**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 1 ekran görüntüsüyle kullanıcıya sunulup durulacak.
-Adım 2 (görsel zenginleştirme: yıldız haritası/kadran/madalyon) ve Gizli Kelime/Kule BAŞLANMADI.
+**Deploy durumu**: Adım 1 onaylandı, commit+push yapıldı (`244b10f`) — **deploy BİLEREK ertelendi**,
+kullanıcı "üç oyun bitince birlikte çıkacak" dedi.
+
+### 28b. Kehanet — Adım 2 (görsel zenginleştirme)
+
+Adım 1'in mekaniği (id'ler/JS akışı/kmOyunPadCiz'deki kilit) HİÇ değişmedi — sadece görsel katman
+eklendi, kullanıcının istediği 6 madde birebir:
+
+- **Yıldız zemini**: Zirve'nin gökyüzü tekniğiyle AYNI (rastgele 44 nokta + CSS titreşim animasyonu),
+  atmosfer için — sahne kurulunca bir kez çiziliyor.
+- **Tahminin mühürlenmesi**: DEDİN artık dairesel bir "madalyon" (`.km-kehanet-medalyon`, tahmin
+  düğmeleriyle AYNI görsel dil). Gerçek tıklamayla tahmin seçilince kısa bir "kapanma" animasyonu
+  (küçülüp dönerek büyüyor, mor parlama) oynuyor — `kmOyunKehanetTahminSec` içinde class
+  kaldırılıp-yeniden-eklenerek (reflow zorlanarak) art arda aynı sayıya tıklansa bile HER SEFERİNDE
+  tetikleniyor.
+- **DEDİN/ATTIN mesafesi**: aralarına kesikli çizgi + ortada bekleyen bir 🏹 ikonu eklendi (hafif
+  yatay salınım animasyonu) — atış "yolda" hissi. Sonuç açıklanınca ikon sakinleşiyor.
+- **Açılışta sayarak yükselme**: ATTIN artık anında değil, `kmOyunKehanetSayarakYukselt` ile 0'dan
+  gerçek toplama ~650ms'de sayarak çıkıyor (gerçek testte ara-değer yakalanarak doğrulandı — mekaniğin
+  KENDİSİ değil, salt sunum; reduced-motion'da anında atlıyor).
+- **Fark azaldıkça artan ışık + tam isabette parlama**: ATTIN kutusuna kademeli mor parlaklık (fark
+  1-2: güçlü, 3-4: orta), tam isabette (fark 0) altın parlama + kısa bir ekran-geneli beyaz flaş
+  (`#km-kehanet-flash`) — "ekran bir an parlasın" isteği.
+- **Üst üste tam isabet alevi**: `d0.kehanetUstUsteTam >= 2` olunca "🔥 N üst üste tam isabet!" rozeti
+  görünüyor — ciddi modda da (§15g: bu bir sayaç/bilgi, kutlama efekti değil, sadece titreşim animasyonu
+  reduced-motion ile kapanıyor).
+- **"En İyi Kâhin" unvanı**: sıralama panelinde (`kmOyunLiderCiz`), Adil Sıralama/En Çok Yükselen'in
+  AYNI ilkesiyle GERÇEK skora göre sıralanan listenin ÜSTÜNE ek bir satır — ortalama sapması en düşük
+  (en az 1 seri girmiş) sporcuyu gösteriyor, ana sıralama mantığına dokunulmadı.
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: GERÇEK tıklamayla tahmin seçilince
+mühürleniyor sınıfı ANINDA eklendi (doğrulandı). GERÇEK 3 ok + İlerlet sonrası, animasyon SIRASINDA
+(250ms) ATTIN'in ARA DEĞERİ (8/9, hedef değer olan 18 DEĞİL) okunarak sayma animasyonunun gerçekten
+çalıştığı kanıtlandı — son değer doğru şekilde 18'e oturdu. Tam isabette `km-kehanet-tam` sınıfı
+eklendi. Aynı sporcu GERÇEK ikinci bir tam isabet yaptığında (1 tam isabette alev GİZLİ kaldığı,
+eşiğin doğru çalıştığı da ayrıca doğrulandı) "🔥 2 üst üste tam isabet!" rozeti gerçekten göründü.
+Sağ panelde "🔮 En İyi Kâhin: ... — ort. sapma 0.0" satırı gerçek veriyle doğru hesaplandı. 14 tema +
+Reaksiyon regresyon taraması temiz, skor dok'unun CSS'i (padding/gap/genişlik/pad buton sayısı) Adım
+1'deki ölçümle birebir aynı kaldı. 360/1280/1920px ekran görüntüsüyle kontrol edildi.
+
+**Deploy durumu**: Adım 2 ekran görüntüsüyle sunuldu; kullanıcı görsel işi onayladı ama bir tutarlılık
+sorunu bulundu — bkz. 28c. Gizli Kelime ve Kule BAŞLANMADI.
+
+### 28c. Kehanet — emoji → SVG ikon düzeltmesi (2026-09-18)
+
+Kullanıcı geri bildirimi: Faz 3'te navigasyondaki emojiler kaldırılıp tek çizgi SVG ikon ailesine
+geçilmişti (`viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+stroke-linecap="round" stroke-linejoin="round"`); Kehanet'in arayüz elemanlarında (🏹/🔥/🔮) bu dile
+uyulmamıştı — 3 emoji de aynı kalıpla SVG'ye çevrildi:
+
+- `.km-kehanet-uyari` metni (🔮 → göz/kâhin SVG: badem gövde + iris).
+- `.km-kehanet-mesafe-ikon` (🏹 → ok SVG: çizgi + ok ucu).
+- `kmOyunKehanetAlevGuncelle()`'nin ürettiği rozet (🔥 → alev SVG: damla/alev hattı).
+
+Oyun İÇERİĞİ emojileri (kutlama toast'ları, sıralamadaki madalya/rozet emojileri, "En İyi Kâhin"
+satırındaki mevcut ikon deseni gibi Adil Sıralama/En Çok Yükselen'le paylaşılan öntanımlı kalıplar)
+kullanıcının açık isteğiyle BİLEREK dokunulmadı — bunlar ayrı bir kategori.
+
+**Gerçek bir CSS regresyonu bulundu ve düzeltildi**: yeni SVG'ler `.km-oyun-panel` içinde olduğu için,
+diğer temaların (Zirve/Hazine/Sis Haritası vb.) arka plan yol-haritası SVG'leri için var olan paylaşılan
+kural (`.km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; }`) onları da yakalayıp
+TÜM PANELİ kaplayacak şekilde büyütüyordu — bu da tahmin düğmelerinin tıklanamaz hale gelmesine yol
+açıyordu (gerçek Playwright tıklamasıyla yakalandı: "svg path ... intercepts pointer events"). Düzeltme:
+`.km-oyun-panel .km-kehanet-svg-ikon{ position:static; width:auto; height:auto; ... }` ile paylaşılan
+kuralın TÜM özniteliklerini yeni, daha spesifik bir kuralla açıkça geri alan bir override eklendi.
+Paylaşılan `.km-oyun-panel svg` kuralının kendisi HİÇ değiştirilmedi. Bu, ileride panel içine ikon SVG'si
+ekleyecek herhangi bir temanın da karşılaşabileceği genel bir risk sınıfı — not düşüldü.
+
+**Gerçek testte doğrulanan**: SVG'lerin gerçek boyutu (16x16/18x18/15x15px, `position:static`) ve tıklama
+noktasında artık gerçekten hedef düğmenin üstte olduğu `elementFromPoint` ile doğrulandı. Emoji'lerin
+DOM'dan tamamen kalktığı (`innerHTML` regex kontrolü), pad'in tahmin seçilmeden hâlâ kilitli başladığı,
+üst üste 2. tam isabette alev rozetinin (artık SVG ile) gerçekten göründüğü GERÇEK tıklamalarla
+doğrulandı. 14 tema + Reaksiyon regresyon taraması temiz. 360/1280/1920px ekran görüntüsüyle kontrol
+edildi.
+
+**Deploy durumu**: Commit + push edilecek (kullanıcı önceden onay verdi: "Düzeltince onaylıyorum, commit
++ push yap"). Deploy YOK — "Deploy'u beklet, üç oyun bitince birlikte çıkacak." Sıradaki iş: Gizli Kelime
+(mekanik → ekran görüntüsü → dur, sonra görsel zenginleştirme → ekran görüntüsü → dur). En önemli kısım
+olarak vurgulandı: kelime çözülünce açılan bilgi kartı (terimin okçuluk tarihindeki anlamı/kullanımı).
