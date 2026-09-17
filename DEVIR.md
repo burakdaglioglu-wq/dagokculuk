@@ -3556,3 +3556,59 @@ ZEYNEP AKSOY→K, DENIZ→null, TEST OKCU→null, VELİ NORMAL→null) tek tek s
 **Not**: bu GERÇEK VERİ işlemiydi, kod değişikliği/commit/deploy GEREKMEDİ — sadece `athletes` tablosundaki
 mevcut `cinsiyet` alanları dolduruldu, hiçbir sporcu eklenmedi/silinmedi/isim değiştirilmedi. 15 atlanan
 isim + "Sınıflar" hızlı-ekle formunun sessiz 'E' varsayımı, ileride ele alınabilecek açık kalan öğeler.
+
+## 28. Faz 16 — Üç yeni oyun: Kehanet, Gizli Kelime, Kule (2026-09-18, İLERLEMEDE — Kehanet Adım 1 onay bekliyor)
+
+**Bağlam**: kullanıcı detaylı bir spesifikasyon verdi (`uc-oyun-uygulama-promptu.md`) — Oyunlar'a üç yeni
+tema. Referans olarak verilen `uc-yeni-oyun.html` prototipi bulunamadı (Downloads'ta sadece prompt
+dosyası vardı) — kullanıcı "aramaya gerek yok, spesifikasyon yeterli" dedi, prototipsiz devam edildi.
+Üçü de Arena/Futbol/Sis-Haritası'nın "kendi mekaniği" emsaliyle aynı kategoride: frac/yol YOK.
+Sıra: Kehanet → Gizli Kelime → Kule, her biri "mekaniği kur, dur" + "görsel zenginleştir, dur" olmak
+üzere 2 alt-adımda ilerliyor.
+
+### 28a. Kehanet — Adım 1 (mekanik)
+
+**Mekanik**: sporcu ATMADAN ÖNCE 7 sabit düğmeden (12/15/18/21/24/27/30) birine basarak tahmin
+"mühürlüyor" — `kmOyunKehanetTahminSec(v)` sadece seri BAŞLAMADIYSA (`_kmOyunSeriGirisleri.length===0`)
+değişime izin veriyor. Gerçek atıştan sonra `kmOyunAnimateKehanet(s,i,kaydedilecek,done)` GERÇEK toplamı
+tahminle karşılaştırıp farka göre (0→50, 1-2→30, 3-4→15, 5+→0) AYRI bir "kehanet puanı" hesaplıyor —
+gerçek skor/klasman zaten `kmOyunIlerlet`'te koşulsuz kaydediliyor, bu SADECE eğlence katmanı. İstatistikler
+(`kehanetToplamPuan/Sapma/SeriSayisi/UstUsteTam/ToplamTamIsabet`) Pist'in `pistSetSayaci`/Futbol'un
+`futbolSeri` emsaliyle AYNI ilkeyle paylaşılan `d0` (kmOyunDurumAl) nesnesine yazılıyor — bu, konum bazlı
+`kmOyunDurumKaydet` ile ZATEN kalıcı (Faz 13 tarzı AYRI bir localStorage şeması GEREKMEDİ, mevcut
+mekanizma yeterli). Standart kayıt noktaları: `KM_OYUN_TEMALAR.kehanet`, CSS görünürlük seçicisi,
+`kmOyunPanelHTML`'in zincirine ekleme, `kmOyunSahneKurAktif`/`Hepsi`, `kmOyunIlerlet`'te `artis=0`,
+`bitirOrtak`'ın banner-hariç-tutma listesi, `baslatAnimasyon`'un 4-parametreli (Arena/Futbol) dispatch
+grubu — hepsi Sis Haritası v1/Arena'daki AYNI şablon.
+
+**Kullanıcının akış düzeltmesi ve 2 gerçek hata**: kullanıcı planı onaylarken kritik bir sıra kuralı
+ekledi — "koç sporcu attıktan sonra tahmine basarsa oyun anlamsız olur", ve SADECE İlerlet değil PAD
+BUTONLARININ KENDİSİNİN de tahmin kilitlenmeden pasif olmasını istedi (paylaşılan panele dokunmadan).
+Bu `kmOyunPadCiz()`'e TEK bir ek disabled şartı (`kehanetKilitli`) eklenerek yapıldı — Sis Haritası
+Adım 2'nin "önce kare seç" kilidiyle birebir aynı desen. Gerçek testte bu şart YOK sayılıyordu ilk
+denemede — kök neden: **`kmOyunTemaSec()` hiçbir zaman `kmOyunPadCiz()`'i çağırmıyordu**, yani pad'in
+disabled durumu tema değişince yeniden değerlendirilmiyordu (önceki temadan kalma bayat haliyle
+kalıyordu) — DÜZELTİLDİ (`kmOyunTemaSec`'in sonuna `kmOyunPadCiz();` eklendi, bu genel bir düzeltme,
+ileride pad'e bağlı başka bir tema-özel şart eklenirse de gerekecekti). İKİNCİ gerçek hata: paylaşılan
+skor dok'u (`.km-oyun-dok`) panelin ALT %88'ine kadar büyüyebiliyor — Kehanet'in dikey ORTALANMIŞ
+içeriği (tahmin düğmeleri) dok'un ARKASINDA kalıp gerçek tıklamayla erişilemez oldu (ekran görüntüsü
+almadan fark edilmeyecek bir hataydı). Düzeltme: `.km-kehanet-govde`'nin `justify-content`'i `center`
+yerine `flex-start` yapılıp içerik panelin ÜST kısmına sabitlendi — Arena'nın maç kartlarının üstten
+akan yerleşimiyle AYNI ilke, panelin/dok'un kendisine dokunulmadı.
+
+**Gerçek testte doğrulanan (sıfır-etkili SENARYO değil)**: tahmin seçilmeden GERÇEK bir pad tıklaması
+denendi — hiçbir ok girilmedi (0/3, buton disabled). GERÇEK tahmin seçimi (18) sonrası pad AÇILDI,
+DEDİN kutusu güncellendi. Seri başladıktan (1 GERÇEK ok) SONRA başka bir tahmine tıklamak disabled
+kaldı (kilit doğrulandı). GERÇEK 9-9-9 serisi (toplam 27, tahmin 18, fark 9) İlerlet'e GERÇEK tıklamayla
+gönderildi — ATTIN kutusu 27 oldu, sonuç satırı "Fark: 9 — +0 kehanet puanı" yazdı, `d0.kehanetSeriSayisi`
+GERÇEKTEN 0'dan 1'e, `kehanetToplamSapma` 0'dan 9'a çıktı, tahmin sıfırlanıp pad yeni tur için tekrar
+kilitlendi. AYRI bir GERÇEK TAM İSABET senaryosu (tahmin 24, atış 8-8-8=24, fark 0) "TAM İSABET! +50
+kehanet puanı" verdi. 14 tema (13+Kehanet) + Reaksiyon regresyon taraması temiz. Skor paneli CSS'i
+(dock/`#km-oyun-ilerlet-btn`/pad buton sayısı) Arena ile birebir aynı. 360/1280/1920px ekran
+görüntüsüyle kontrol edildi.
+
+**Not**: `uc-yeni-oyun.html` prototipi kullanılmadı (bulunamadı, kullanıcı aramayı istemedi) —
+mekanik tamamen yazılı spesifikasyondaki tablolardan uygulandı.
+
+**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — Adım 1 ekran görüntüsüyle kullanıcıya sunulup durulacak.
+Adım 2 (görsel zenginleştirme: yıldız haritası/kadran/madalyon) ve Gizli Kelime/Kule BAŞLANMADI.

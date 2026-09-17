@@ -10626,7 +10626,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="futbol"] #km-oyun-panel-futbol,
 #km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim,
 #km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena,
-#km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita { display:flex; }
+#km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita,
+#km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet { display:flex; }
 .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
 /* Hedef Tahtası (2026-09-06) — HTML/CSS (SVG değil, Futbol/Pist desenini izliyor). Halka deseni TEK bir
    radial-gradient (gerçek WA hedef renkleri: altın/kırmızı/mavi/siyah/beyaz), ok izleri önceden
@@ -10656,6 +10657,32 @@ ${(function(){
 .km-kesif-isim{ font-family:var(--font-body); font-weight:700; fill:#fff; opacity:0; transition:opacity .4s ease; }
 .km-kesif-isaret.bulundu .km-kesif-isim{ opacity:1; }
 @media (prefers-reduced-motion: reduce){ .km-kesif-isaret image, .km-kesif-ring, .km-kesif-isim{ transition:none; } }
+
+/* Kehanet — Faz 16, Adım 1 (2026-09-18). SADECE mekanik: tahmin düğmeleri + DEDİN/ATTIN karşılaştırması.
+   Görsel zenginleştirme (yıldız haritası/kadran/madalyon) Adım 2'nin işi — burada Faz 1 paylaşılan
+   token'ları (var(--ink)/var(--font-*)/var(--line)) kullanılıyor, SADECE tema-özel vurgu rengi (mor,
+   diğer 13 temanın her birinin kendi renkler[0]'ı gibi) yeni. margin-top: paylaşılan #km-oyun-sirada
+   kartı (sol-üst köşe) her panelin ÜSTÜNE biniyor — Sis Haritası'nın Adım 1'inde aynı çakışma bulunup
+   AYNI şekilde aşağı itilmişti. */
+.km-oyun-panel-kehanet{ background:linear-gradient(180deg,#181425,#0f0d1a); }
+/* justify-content:flex-start + margin-top (46px #km-oyun-sirada çakışması İÇİN, Sis Haritası'nda da
+   aynı değer) — dikey ORTALAMA DEĞİL: paylaşılan skor dok'u (.km-oyun-dok) panelin ALT %88'ine kadar
+   açılabiliyor (gerçek testte tahmin düğmeleri dock'un ARKASINDA kalıp tıklanamaz oldu, ekran görüntüsü
+   olmadan fark edilmezdi) — tahmin düğmeleri bu yüzden ÜSTTE tutulup dock'un büyüme alanına hiç
+   girmiyor, diğer temaların (Arena'nın maç kartları gibi) üstten-akan yerleşimiyle AYNI ilke. */
+.km-kehanet-govde{ position:absolute; inset:0; margin-top:46px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; padding:24px 16px; }
+.km-kehanet-uyari{ font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--ink); background:rgba(167,139,250,0.14); border:1px solid rgba(167,139,250,0.4); border-radius:999px; padding:8px 18px; text-align:center; }
+.km-kehanet-secenekler{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:480px; }
+.km-kehanet-secenek-btn{ width:56px; height:56px; border-radius:50%; border:2px solid rgba(167,139,250,0.4); background:rgba(255,255,255,0.05); color:var(--ink); font-family:var(--font-display); font-weight:700; font-size:16px; cursor:pointer; transition:transform .15s ease, border-color .15s ease, background .15s ease; }
+.km-kehanet-secenek-btn:hover:not(:disabled){ border-color:#a78bfa; transform:translateY(-2px); }
+.km-kehanet-secenek-btn.secili{ background:#a78bfa; border-color:#a78bfa; color:#181425; transform:scale(1.08); }
+.km-kehanet-secenek-btn:disabled{ opacity:.35; cursor:default; }
+.km-kehanet-karsilastirma{ display:flex; gap:14px; }
+.km-kehanet-kutu{ min-width:96px; background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:12px; padding:10px 18px; text-align:center; }
+.km-kehanet-kutu-baslik{ font-family:var(--font-body); font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+.km-kehanet-kutu-deger{ font-family:var(--font-display); font-weight:800; font-size:28px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.km-kehanet-sonuc{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#a78bfa; min-height:18px; text-align:center; }
+@media (max-width: 860px) { .km-kehanet-secenek-btn{ width:46px; height:46px; font-size:14px; } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -11630,6 +11657,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // bırakıldı (istenirse sonradan eklenebilir, iskelet zaten destekliyor).
             sisharita: { ad: 'Sis Haritası', ikon: '🗺️', renkler: ['#7dd3fc', '#ffd23f', '#ff8a3d', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her sporcu haritadaki kendi yolunda ilerler, yol üzerindeki keşifleri sırayla ortaya çıkarır.', btn: '🧭 Yolda İlerle', finish: 'HARİTA TAMAMLANDI!', cp: 'YENİ KEŞİF!', birim: 'nokta', bitis: 'Harita tamamlandı! 🗺️',
                 surprizler: [] },
+            // Faz 16, Adım 1 (2026-09-18) — Kehanet: frac/yol YOK, Arena/Futbol/Sis Haritası'nın "kendi
+            // mekaniği" emsaliyle AYNI kategori. Sporcu atmadan ÖNCE tahmin kilitleniyor (kmOyunPadCiz'e
+            // eklenen tek ek şart), gerçek atıştan sonra fark hesaplanıp AYRI bir "kehanet puanı" veriliyor
+            // — gerçek skora/klasmana dokunmuyor. birim/bitis burada kullanılmıyor (roster chip'i Adım 2'de
+            // kendi göstergesine kavuşacak), sadece tutarlılık için dolduruldu.
+            kehanet: { ad: 'Kehanet', ikon: '🔮', renkler: ['#a78bfa', '#7dd3fc', '#ffd23f', '#f472b6', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — sporcu atmadan önce kaç puan yapacağını tahmin eder, fark ne kadar azsa o kadar çok kehanet puanı kazanır.', btn: '🔮 Aç', finish: '', cp: '', birim: 'kehanet', bitis: '',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -12061,6 +12095,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'futbol') kmOyunSahneKurFutbol();
             else if(tid === 'futboltakim') kmOyunSahneKurFutbolTakim();
             else if(tid === 'sisharita') kmOyunSahneKurSisHaritasi();
+            else if(tid === 'kehanet') kmOyunSahneKurKehanet();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -12084,6 +12119,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurFutbolTakim();
             kmOyunArenaCiz();
             kmOyunSahneKurSisHaritasi();
+            kmOyunSahneKurKehanet();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -12992,6 +13028,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <g id="km-oyun-sis-gezginler"></g>
                 </svg>
             </div>`;
+            // Faz 16, Adım 1 (2026-09-18) — Kehanet. SADECE mekanik: tahmin düğmeleri + DEDİN/ATTIN
+            // karşılaştırması + sonuç satırı. Görsel zenginleştirme (yıldız haritası/kadran/madalyon)
+            // Adım 2'nin işi — kullanıcının kendi "kur, dur; zenginleştir, dur" iki adımlı yöntemi.
+            if(tid === 'kehanet') return `<div class="km-oyun-panel" id="km-oyun-panel-kehanet">
+                <div class="km-kehanet-govde">
+                    <div class="km-kehanet-uyari">🔮 Sporcu atmadan önce sorun — kaç atacaksın?</div>
+                    <div class="km-kehanet-secenekler" id="km-kehanet-secenekler"></div>
+                    <div class="km-kehanet-karsilastirma">
+                        <div class="km-kehanet-kutu"><div class="km-kehanet-kutu-baslik">DEDİN</div><div class="km-kehanet-kutu-deger" id="km-kehanet-dedin">—</div></div>
+                        <div class="km-kehanet-kutu"><div class="km-kehanet-kutu-baslik">ATTIN</div><div class="km-kehanet-kutu-deger" id="km-kehanet-attin">—</div></div>
+                    </div>
+                    <div class="km-kehanet-sonuc" id="km-kehanet-sonuc"></div>
+                </div>
+            </div>`;
         }
 
         function kmOyunHTML() {
@@ -13036,7 +13086,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
@@ -13214,9 +13264,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // mutlak konumlandırılmış (position:absolute, akışa dahil değil — buton yüksekliğini/panelin
             // ölçülerini ETKİLEMİYOR) ve CSS'te SADECE [data-tema="pist"] altında görünür kılınıyor
             // (bkz. .km-oyun-pad-hiz kuralı). Diğer 9 temada span DOM'da var ama display:none.
+            // Kehanet (Faz 16, 2026-09-18, kullanıcı talimatı: "koç sporcu attıktan sonra tahmine basarsa
+            // oyun anlamsız olur") — tahmin kilitlenmeden PAD BUTONLARININ KENDİSİ de pasif, sadece
+            // İlerlet değil. Buton yerleşimi/boyutu/panel davranışı HİÇ değişmiyor — kmOyunSlotlariCiz'in
+            // Sis Haritası Adım 2'deki "önce kare seç" kilidiyle AYNI ilke, tek bir ek disabled şartı.
+            let kehanetKilitli = _kmOyunAktifTema === 'kehanet' && _kmKehanetTahmin === null;
             g.innerHTML = KM_OYUN_PAD.map(function(v) {
                 let etiket = KM_OYUN_PIST_HIZ_ETIKET[v] || '';
-                return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmOyunOkGir('${v}')" ${_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi ? 'disabled' : ''}>${v}<span class="km-oyun-pad-hiz">${etiket}</span></button>`;
+                return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmOyunOkGir('${v}')" ${(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi || kehanetKilitli) ? 'disabled' : ''}>${v}<span class="km-oyun-pad-hiz">${etiket}</span></button>`;
             }).join('');
         }
         function kmOyunSlotlariCiz() {
@@ -14645,6 +14700,76 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
+        // ---- KEHANET — Faz 16, Adım 1 (2026-09-18). frac/yol YOK, Arena'nın "kendi mekaniği" emsaliyle
+        // AYNI kategori. Sporcu atmadan ÖNCE tahmin ediyor (kullanıcı talimatı: sıra ASLA tersine
+        // dönemez — bkz. kmOyunPadCiz'deki kehanetKilitli şartı), gerçek atıştan sonra fark hesaplanıp
+        // AYRI bir "kehanet puanı" (gerçek skordan bağımsız) veriliyor.
+        var KM_KEHANET_SECENEKLER = [12, 15, 18, 21, 24, 27, 30];
+        var _kmKehanetTahmin = null; // kilitlenen tahmin (sayı) ya da null — SADECE mevcut/sıradaki seri için, ders boyunca kalıcı DEĞİL (Arena'nın _kmOyunArenaSecili'siyle AYNI ömür)
+        function kmOyunKehanetPuanHesapla(fark) {
+            if(fark === 0) return 50;
+            if(fark <= 2) return 30;
+            if(fark <= 4) return 15;
+            return 0;
+        }
+        function kmOyunSahneKurKehanet() {
+            kmOyunKehanetSecenekleriCiz();
+            let sonucEl = document.getElementById('km-kehanet-sonuc'); if(sonucEl) sonucEl.textContent = '';
+            let attinEl = document.getElementById('km-kehanet-attin'); if(attinEl) attinEl.textContent = '—';
+        }
+        function kmOyunKehanetSecenekleriCiz() {
+            let el = document.getElementById('km-kehanet-secenekler'); if(!el) return;
+            el.innerHTML = KM_KEHANET_SECENEKLER.map(function(v) {
+                let seciliMi = _kmKehanetTahmin === v;
+                let kilitliMi = _kmKehanetTahmin !== null && !seciliMi;
+                return `<button class="km-kehanet-secenek-btn${seciliMi ? ' secili' : ''}" onclick="kmOyunKehanetTahminSec(${v})" ${kilitliMi ? 'disabled' : ''}>${v}</button>`;
+            }).join('');
+            let dedinEl = document.getElementById('km-kehanet-dedin'); if(dedinEl) dedinEl.textContent = _kmKehanetTahmin !== null ? _kmKehanetTahmin : '—';
+        }
+        // "Tahmin değiştirilebilir ama seri başlayınca kilitlensin" (kullanıcı talimatı) — bir ok
+        // girildiği anda bir daha değiştirilemez, koç önce Ok Sil ile seriyi boşaltmalı.
+        function kmOyunKehanetTahminSec(v) {
+            if(_kmOyunKilit) return;
+            if(_kmOyunSeriGirisleri.length > 0) return;
+            _kmKehanetTahmin = v;
+            kmOyunKehanetSecenekleriCiz();
+            kmOyunSlotlariCiz(); kmOyunPadCiz();
+        }
+        function kmOyunAnimateKehanet(s, i, kaydedilecek, done) {
+            let tahmin = _kmKehanetTahmin;
+            let toplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
+            let fark = tahmin !== null ? Math.abs(toplam - tahmin) : null;
+            let kehanetPuan = fark !== null ? kmOyunKehanetPuanHesapla(fark) : 0;
+            // Kehanet puanı/istatistikleri GERÇEK skordan (yukarıda kmOyunIlerlet'te ZATEN koşulsuz
+            // kaydedildi) TAMAMEN BAĞIMSIZ — d0 üzerinde Pist'in pistSetSayaci/Futbol'un futbolSeri
+            // emsaliyle AYNI ilke: paylaşılan kmOyunDurumAl/kmOyunDurumKaydet ile konum bazlı KALICI.
+            let d0 = kmOyunDurumAl(s.g, s.ad);
+            d0.kehanetToplamPuan = (d0.kehanetToplamPuan || 0) + kehanetPuan;
+            d0.kehanetToplamSapma = (d0.kehanetToplamSapma || 0) + (fark !== null ? fark : 0);
+            d0.kehanetSeriSayisi = (d0.kehanetSeriSayisi || 0) + 1;
+            if(fark === 0) { d0.kehanetUstUsteTam = (d0.kehanetUstUsteTam || 0) + 1; d0.kehanetToplamTamIsabet = (d0.kehanetToplamTamIsabet || 0) + 1; }
+            else { d0.kehanetUstUsteTam = 0; }
+            kmOyunDurumKaydet();
+
+            let attinEl = document.getElementById('km-kehanet-attin'); if(attinEl) attinEl.textContent = String(toplam);
+            let sonucEl = document.getElementById('km-kehanet-sonuc');
+            if(sonucEl) {
+                sonucEl.textContent = fark === 0 ? 'TAM İSABET! +50 kehanet puanı' : ('Fark: ' + fark + ' — +' + kehanetPuan + ' kehanet puanı');
+            }
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            if(!kapali) {
+                if(fark === 0) {
+                    try { sesCal(880, 0.12); setTimeout(function() { try { sesCal(1175, 0.18); } catch(e) {} }, 110); } catch(e) {}
+                    showToast('🔮 ' + s.ad.split(' ')[0] + ' TAM İSABET! Dediği gibi ' + toplam + ' attı!', 'success');
+                } else if(kehanetPuan > 0) {
+                    try { sesCal(750, 0.1); } catch(e) {}
+                }
+            }
+            _kmKehanetTahmin = null;
+            kmOyunKehanetSecenekleriCiz();
+            setTimeout(done, 900);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -14687,6 +14812,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
             kmOyunKameraKilitButonGuncelle();
+            // DÜZELTME (Faz 16, 2026-09-18, gerçek testte yakalandı) — kmOyunPadCiz() burada HİÇ
+            // çağrılmıyordu, yani pad'in disabled durumu tema değişince YENİDEN DEĞERLENDİRİLMİYORDU
+            // (bir önceki temadan kalma bayat haliyle kalıyordu). Kehanet'in "tahmin kilitlenmeden pad
+            // pasif" şartı (kmOyunPadCiz içindeki kehanetKilitli) bu yüzden Kehanet'e YENİ geçildiğinde
+            // hiç devreye girmiyordu — gerçek tıklamayla koç tahminsiz ok girebiliyordu. Panelin
+            // KENDİSİNE (yerleşim/boyut) dokunulmuyor, sadece var olan çizim fonksiyonu artık doğru anda
+            // da çağrılıyor.
+            kmOyunPadCiz();
         }
         function kmOyunIlerlet() {
             if(_kmOyunSeriGirisleri.length < _kmOyunOkSayisi || _kmOyunKilit) return;
@@ -14768,6 +14901,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Sis Haritası (2026-09-17'den itibaren) — artık diğer 7 yol-temasıyla AYNI genel formülü
             // kullanıyor (frac/yol VAR), bu yüzden BURADA hiçbir override YOK — kendi mekaniği yerine
             // Dağ/Hazine'nin frac→yol iskeletine geçti.
+            // Kehanet (Faz 16, 2026-09-18) — frac/yol YOK, Arena'nın can/Sis Haritası'nın eski kare-sayısı
+            // emsaliyle AYNI kategori. Artış BİLEREK sıfır — gerçek fark/kehanet puanı kendi
+            // kmOyunAnimateKehanet'inde hesaplanıp AYRI bir sayaca (d0.kehanet*) yazılıyor.
+            if(_kmOyunAktifTema === 'kehanet') artis = 0;
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -14881,7 +15018,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -15028,6 +15165,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'sisharita') kmOyunAnimateSisHaritasi(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futbol') kmOyunAnimateFutbol(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futboltakim') kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
+                else if(_kmOyunAktifTema === 'kehanet') kmOyunAnimateKehanet(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
