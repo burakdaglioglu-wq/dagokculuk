@@ -3524,4 +3524,35 @@ GERÇEKTEN 30'dan 57'ye çıktı (gerçek klasman kaydı doğrulandı), maç HÂ
 maç kartına GERÇEK tıklamayla tekrar seçim de doğrulandı (`_kmOyunArenaAktifMac` doğru güncellendi,
 `durum` bozulmadı). 13 tema + Reaksiyon regresyon taraması temiz.
 
-**Deploy durumu**: HENÜZ COMMIT EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
+**Deploy durumu**: Onaylandı ("onayladım") ve yayına alındı — commit `7c07b61`, deploy version
+`07fd2e27-b3f5-4498-a9c2-18857f2fda43`.
+
+### 27c. Canlı veride toplu cinsiyet ataması (2026-09-18, KOD DEĞİL — tek seferlik veri işlemi)
+
+**Bağlam**: kullanıcı 109 sporcuyu tek tek elle düzenlemenin (27a'daki yeni UI ile) pratik olmadığını
+söyleyip isimlerden cinsiyet çıkarımı yapıp toplu atama istedi; ayrıca "kayıt yaparken zaten soruyorsun,
+neden oradan çekmiyorsun" dedi. Önce bu iddiayı araştırdım (Explore ajanıyla) — gerçek bir sporcu
+öz-kayıt akışı YOK (sporcuGirisDene/veliGiris SADECE var olan kayıtla giriş yapıyor, yeni kayıt
+oluşturmuyor); cinsiyet soran 2 admin formu daha bulundu (Aidat sekmesi "Yeni Sporcu Ekle" — DOĞRU
+alana yazıyor; "Sınıflar" sekmesi hızlı ekle — cinsiyet HİÇ SORMADAN sessizce 'E' varsayıyor, ayrı,
+küçük bir hata ama bu oturumun kapsamı dışında bırakıldı). Sonuç: kullanıcının hatırladığı akış muhtemelen
+Aidat formu ya da tamamen ayrı Milo uygulamasıyla karışıyor — gerçek 109 sporcu bu alan eklenmeden ÖNCE
+ya da soru sorulmayan bir yoldan kaydedilmiş.
+
+**Yöntem**: canlı `GET /api/athletes`'ten gerçek 109 sporcunun tam listesi çekildi. Türkçe isimler
+cinsiyet konusunda oldukça güvenilir olduğu için (Ahmet/Mehmet/Yusuf/Ali → erkek, Zeynep/Elif/Ayşe/Esra
+→ kız gibi) 94 isim kendi bilgimle YÜKSEK GÜVENLE sınıflandırıldı. **15 isim BİLEREK ATLANDI** — ya
+gerçek unisex Türkçe isim (Deniz, Ege, Bulut, Can, Toprak — yanlış tahmin gerçek bir çocuğun yanlış
+cinsiyette görünmesine yol açar) ya da test/placeholder görünümlü kayıt (`TEST OKCU`, `VELİ NORMAL`) ya
+da standart olmayan/takma ada benzeyen bir isim (`CEY`, `GIZOŞKA`, `ESMAN KAYA`). Bu 15 isim `cinsiyet`
+NULL bırakıldı — koç bunları 27a'daki yeni Kız/Erkek düğmesiyle elle tamamlayabilir.
+
+**Uygulama**: `PATCH /api/athletes/:grup/:ad` (gerçek admin route, `X-Dagsk-Auth` ile — koçun kendi
+gerçek eğitmen PIN özeti kullanıldı, credentials'a HİÇ dokunulmadı) ile 94 gerçek yazma isteği atıldı,
+94/94 başarılı. Doğrulama: `SELECT cinsiyet, COUNT(*) FROM athletes GROUP BY cinsiyet` canlıda
+`null:15, E:52, K:42` döndü — TAM olarak beklenen dağılımla eşleşti. Birkaç isim (BURAK DAĞLIOĞLU→E,
+ZEYNEP AKSOY→K, DENIZ→null, TEST OKCU→null, VELİ NORMAL→null) tek tek sorgulanıp doğrulandı.
+
+**Not**: bu GERÇEK VERİ işlemiydi, kod değişikliği/commit/deploy GEREKMEDİ — sadece `athletes` tablosundaki
+mevcut `cinsiyet` alanları dolduruldu, hiçbir sporcu eklenmedi/silinmedi/isim değiştirilmedi. 15 atlanan
+isim + "Sınıflar" hızlı-ekle formunun sessiz 'E' varsayımı, ileride ele alınabilecek açık kalan öğeler.
