@@ -4360,4 +4360,4 @@ sabitleri/fonksiyonları (`KM_YILDIZ_*`, `kmOyunYildizAci/RingR`, `km-oyun-ring-
 **Not**: dev sunucu bu oturumda 8789'da, sonra 8787'de kalktı — port sabit değil, testten önce
 healthcheck şart (bkz. memory).
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit aa47f79, version 5cd764ae...).
