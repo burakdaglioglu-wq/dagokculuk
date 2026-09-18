@@ -4231,3 +4231,45 @@ doğrulandı. Bir araç açılıp (Kule teması test edildi) içeriğin doğru g
 Reaksiyon tam regresyon sweep'i temiz.
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit 54d460a, version 3b201a34...).
+
+## 36. Sayaç: Büyük/taşınabilir mod + manuel süre girişi (2026-09-18)
+
+Kullanıcı talimatı: "sayaçlar çok küçük, sporcular görmez — büyütme seçeneği + ekranda istediğim yere
+koyabileyim. Süre hem manuel hem 90/120/180 üzerinden olsun."
+
+**Büyük sayaç** (`km-oyun-sayac-buyuk`, app.js ~13590): `position:fixed`, TEK bir örnek `document.body`'e
+lazy-ekli — Oyunlar sahnesinden ya da Yarışma dok'undan hangisinden açılırsa açılsın (`🔍 Büyüt` düğmesi
+her ikisinde de var), DOM ağacındaki yerden bağımsız görünür kalır. Metin `clamp(42px, 13vw, 128px)` —
+gerçek testte 128px ölçüldü (eski küçük rozetin ~14px'i ile karşılaştırılınca kullanıcının "görmezler"
+şikayetini gerçekten çözüyor). Süre kontrolleri (90/120/180 hazır düğme + "✏️ Özel" manuel giriş, `prompt()`
+ile — projede zaten 5 yerde kullanılan bir desen) aynı anda görünür, gizli bir "dokunup döndür" değil.
+
+**Sürükleme**: Pointer Events API, tutamaç (`⠿ ⠿ ⠿`) üzerinden. `setPointerCapture` çağrılıyor ama
+sürüklemenin devam edip etmediği KARARI `hasPointerCapture()`'a bağlı DEĞİL — basit bir `aktifPointerId`
+bayrağı kullanılıyor. **GERÇEK BİR BUG bulundu ve düzeltildi**: ilk yazımda `hasPointerCapture()`'a
+bağımlıydı, gerçek DOKUNMATİK sürükleme testinde beklenen anda `true` dönmüyordu — ilk `pointermove`
+olayları sessizce yok sayılıyor, sürükleme hiç başlamamış gibi görünüyordu (fare ile sorunsuzdu, sadece
+dokunmatik etkileniyordu — tam olarak kullanıcının "telefonda" da kullanacağı yol). Bayrak tabanlı desene
+geçilince hem fare hem dokunmatik sürükleme gerçek testte doğrulandı.
+
+**Kalıcılık**: konum (`{left, top}` px) + açık/kapalı durumu + süre, var olan `dag_km_oyun_sayac_<konum>`
+localStorage anahtarına eklendi (`buyukAcik`/`buyukKonum` alanları). Süre artık SADECE 3 hazır değerle
+sınırlı değil — 5-1800sn arası herhangi bir tam sayı kabul ediliyor (manuel girilen değer de kalıcı).
+Ekran boyutu değişirse (döndürme/farklı cihaz) kaydedilmiş konum her açılışta yeniden kelepçeleniyor,
+ekran dışına taşmıyor.
+
+**GERÇEK BİR BUG bulundu ve düzeltildi (Yarışma tarafında)**: Yarışma dok'undaki "⏱️ Sayaç Açık/Kapalı"
+metin düğmesi `kmOyunSayacDegistir()` tarafından tetiklenince GERÇEKTEN açılıyordu ama etiketin metni/
+rengi "Kapalı" görünümünde TAKILI kalıyordu — çünkü o metin sadece `_kmYarismaCanliMacHTML`'in İLK
+render'ında yazılıyor, `kmOyunSayacCiz()` (her state değişiminde çalışan ortak güncelleyici) o span'a
+hiç dokunmuyordu. `#km-yarisma-sayac-toggle` id'si eklenip `kmOyunSayacCiz()`'e senkronizasyon eklendi.
+
+**Gerçek testte doğrulanan**: 🔍 Büyüt GERÇEK tıklamayla açılıyor (Oyunlar + Yarışma'nın ikisinden de),
+font 128px ölçüldü, 3 hazır süre düğmesi + manuel `prompt()` girişi (45sn test edildi) GERÇEK tıklamayla
+çalışıyor ve aktif süreyi doğru vurguluyor. Fare ile sürükleme (masaüstü) VE dokunmatik sürükleme (360px
+mobil, sentetik PointerEvent ile) ikisi de konum değişikliğini doğru şekilde uyguluyor ve `localStorage`'a
+kalıcı yazıyor — sayfa yenilenince (yeni oturum) aynı konumda açık kalıyor. Küçült (✕) düğmesi GERÇEK
+tıklamayla kapatıyor. Yarışma'daki toggle etiketi artık anında senkron. 16 tema + Reaksiyon tam regresyon
+sweep'i temiz.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.

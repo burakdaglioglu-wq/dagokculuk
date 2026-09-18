@@ -11036,6 +11036,22 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 /* Yarışma dok başlığı içindeki AKIŞ-İÇİ örnek — sahne köşesindeki mutlak konumlanmış rozetten farklı
    bir bağlamda (Karışık Sınıf'ın düz panel akışı), position:absolute burada anlamsız olurdu. */
 .km-oyun-sayac-inline{ position:static; display:inline-block; font-size:11px; padding:3px 8px; border-radius:8px; }
+/* Büyük, taşınabilir sayaç (2026-09-18, kullanıcı talimatı: "sporcular sayaçları görmezler, büyütme
+   seçeneği + istediğim yere koyabileyim") — position:fixed, TEK bir örnek, document.body'e ekli,
+   hangi ekrandan açılırsa açılsın (Oyunlar ya da Yarışma) görünür kalır. z-index:99999, #karisik-platform
+   (z-index:20000) ile AYNI "her zaman üstte" desenini kullanıyor (bkz. Faz 17c modal bulgusu). */
+.km-oyun-sayac-buyuk{ position:fixed; z-index:99999; display:none; flex-direction:column; align-items:center; gap:6px; background:rgba(4,6,14,0.93); border:2px solid var(--gold); border-radius:20px; padding:8px 18px 14px; box-shadow:0 12px 44px rgba(0,0,0,0.55); user-select:none; -webkit-user-select:none; max-width:min(92vw, 480px); }
+.km-oyun-sayac-buyuk-tutamac{ font-size:13px; color:var(--text-muted); cursor:grab; letter-spacing:3px; padding:4px 16px; touch-action:none; }
+.km-oyun-sayac-buyuk-tutamac:active{ cursor:grabbing; }
+.km-oyun-sayac-buyuk-metin{ font-family:var(--font-display, inherit); font-weight:900; font-size:clamp(42px, 13vw, 128px); line-height:1; color:var(--text-main); letter-spacing:1px; white-space:nowrap; }
+.km-oyun-sayac-buyuk.km-oyun-sayac-kritik .km-oyun-sayac-buyuk-metin{ color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
+.km-oyun-sayac-buyuk.km-oyun-sayac-bitti .km-oyun-sayac-buyuk-metin{ color:#ff2e2e; animation:none; }
+.km-oyun-sayac-buyuk-ayarlar{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.km-oyun-sayac-buyuk-ayarlar button{ font-family:inherit; font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:9px; border:1.5px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; min-height:36px; }
+.km-oyun-sayac-buyuk-ayarlar button.aktif{ border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,0.14); }
+.km-oyun-sayac-buyuk-kapat{ position:absolute; top:-12px; right:-12px; width:30px; height:30px; border-radius:50%; background:var(--bg-panel); border:1.5px solid var(--border-color); color:var(--text-main); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.km-oyun-sayac-buyut-btn{ font-family:var(--font-display, inherit); font-weight:700; font-size:11px; padding:4px 9px; border-radius:8px; border:1px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; }
+.km-oyun-sayac-buyut-btn.aktif{ border-color:var(--gold); color:var(--gold); }
 .km-oyun-sayac-kritik{ color:#ff5f6d; border-color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
 .km-oyun-sayac-bitti{ color:#ff2e2e; border-color:#ff2e2e; background:rgba(255,46,46,0.18); animation:none; }
 @keyframes kmSayacYanip{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
@@ -13268,6 +13284,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama Modu">🎬</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir tema öner">🎲</button>
                         <button class="km-oyun-tam-btn${_kmOyunSayacAcik ? ' aktif' : ''}" id="km-oyun-sayac-btn" onclick="kmOyunSayacDegistir()" title="Sayaç (Shot Clock) — açıkken her yeni seride otomatik geri sayar, gerçek yarışma temposu verir">⏱️</button>
+                        <button class="km-oyun-tam-btn km-oyun-sayac-buyut-btn${_kmOyunSayacBuyukAcik ? ' aktif' : ''}" onclick="kmOyunSayacBuyukAcKapat()" style="${_kmOyunSayacAcik ? '' : 'display:none;'}" title="Sayacı büyüt — ekranın istediğin yerine sürükleyebilirsin, sporcular uzaktan da görebilir">🔍 Büyüt</button>
                         <button class="km-oyun-tam-btn${_kmOyunKameraKilitli ? ' aktif' : ''}" id="km-oyun-kamera-kilit-btn" onclick="kmOyunKameraKilitDegistir()" style="${kameraVarMi ? '' : 'display:none;'}" title="${_kmOyunKameraKilitli ? 'Kamera geniş görünümde sabit — otomatik yakınlaşmayı açmak için dokun.' : 'Kamera otomatik yakınlaşıyor. Geniş görünümde sabitlemek için dokun.'}">${_kmOyunKameraKilitli ? '🔓' : '🔒'}<span class="km-oyun-kilit-etiket">${_kmOyunKameraKilitli ? ' Otomatik Kamera' : ' Geniş Görünümde Kal'}</span></button>
                         <button class="km-oyun-tam-btn" id="km-oyun-pist-uzunluk-btn" onclick="kmOyunPistUzunlukDegistir()" style="${_kmOyunAktifTema === 'pist' ? '' : 'display:none;'}" title="Yarışın kaç setten oluştuğunu ve kaç tur olduğunu ayarlar (sadece bu cihazda hatırlanır)">${_kmOyunAktifTema === 'pist' ? kmOyunPistUzunlukBtnMetni() : ''}</button>
                         <button class="km-oyun-tam-btn" id="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
@@ -13474,6 +13491,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // bağlamak iki ekranı da birbirine kilitlerdi, istenmeyen bir bağımlılık olurdu.
         var KM_OYUN_SAYAC_SURELER = [90, 120, 180];
         let _kmOyunSayacAcik = false, _kmOyunSayacSuresi = 120, _kmOyunSayacFaz = 0, _kmOyunSayacKalan = 0, _kmOyunSayacTimerId = null, _kmOyunSayacYuklenenKonum = null;
+        // Büyük/taşınabilir sayaç (2026-09-18, kullanıcı talimatı: "sporcular sayaçları görmezler,
+        // büyütme seçeneği + istediğim yere koyabileyim") — bkz. aşağısı, "BÜYÜK SAYAÇ" bloğu.
+        let _kmOyunSayacBuyukAcik = false, _kmOyunSayacBuyukKonum = null;
         function kmOyunSayacAnahtari() { return 'dag_km_oyun_sayac_' + (_kmAktifKonum || 'varsayilan'); }
         function kmOyunSayacAyarYukle() {
             if(_kmOyunSayacYuklenenKonum === _kmAktifKonum) return;
@@ -13481,10 +13501,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try {
                 let raw = localStorage.getItem(kmOyunSayacAnahtari()), p = raw ? JSON.parse(raw) : null;
                 _kmOyunSayacAcik = !!(p && p.acik);
-                _kmOyunSayacSuresi = (p && KM_OYUN_SAYAC_SURELER.indexOf(p.sure) !== -1) ? p.sure : 120;
-            } catch(e) { _kmOyunSayacAcik = false; _kmOyunSayacSuresi = 120; }
+                // Manuel girilen süreler de kalıcı olmalı (kullanıcı talimatı: "hem manuel hem 90/120/180") —
+                // artık SADECE 3 hazır değerle sınırlı değil, 5-1800sn arası herhangi bir tam sayı kabul ediliyor.
+                _kmOyunSayacSuresi = (p && typeof p.sure === 'number' && p.sure >= 5 && p.sure <= 1800) ? Math.round(p.sure) : 120;
+                _kmOyunSayacBuyukAcik = !!(p && p.buyukAcik);
+                _kmOyunSayacBuyukKonum = (p && p.buyukKonum && typeof p.buyukKonum.left === 'number') ? p.buyukKonum : null;
+            } catch(e) { _kmOyunSayacAcik = false; _kmOyunSayacSuresi = 120; _kmOyunSayacBuyukAcik = false; _kmOyunSayacBuyukKonum = null; }
         }
-        function kmOyunSayacAyarKaydet() { try { localStorage.setItem(kmOyunSayacAnahtari(), JSON.stringify({ acik: _kmOyunSayacAcik, sure: _kmOyunSayacSuresi })); } catch(e) {} }
+        function kmOyunSayacAyarKaydet() { try { localStorage.setItem(kmOyunSayacAnahtari(), JSON.stringify({ acik: _kmOyunSayacAcik, sure: _kmOyunSayacSuresi, buyukAcik: _kmOyunSayacBuyukAcik, buyukKonum: _kmOyunSayacBuyukKonum })); } catch(e) {} }
         // NOT: faz'ı SIFIRLAMIYOR — süre doğal olarak biterse (faz=2, kalan=0) rozet "SÜRE DOLDU"
         // olarak KALMALI, GERÇEK testte yakalanan bir bug yüzünden ayrıldı: eskiden burada faz=0'a
         // dönüyordu, bu da kmOyunSayacMetni'nin "boşta" dalına düşüp YANLIŞLIKLA tam süreyi ("⏱ 2:00")
@@ -13523,27 +13547,171 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunSayacCiz() {
             kmOyunSayacAyarYukle();
+            let kritikMi = _kmOyunSayacFaz === 1 || (_kmOyunSayacFaz === 2 && _kmOyunSayacKalan > 0 && _kmOyunSayacKalan <= 10);
+            let bittiMi = _kmOyunSayacFaz === 2 && _kmOyunSayacKalan <= 0;
             document.querySelectorAll('.km-oyun-sayac').forEach(function(el) {
                 if(!_kmOyunSayacAcik) { el.style.display = 'none'; return; }
                 el.style.display = '';
                 el.textContent = kmOyunSayacMetni();
-                el.classList.toggle('km-oyun-sayac-kritik', _kmOyunSayacFaz === 1 || (_kmOyunSayacFaz === 2 && _kmOyunSayacKalan > 0 && _kmOyunSayacKalan <= 10));
-                el.classList.toggle('km-oyun-sayac-bitti', _kmOyunSayacFaz === 2 && _kmOyunSayacKalan <= 0);
+                el.classList.toggle('km-oyun-sayac-kritik', kritikMi);
+                el.classList.toggle('km-oyun-sayac-bitti', bittiMi);
             });
+            // Büyük sayaç — AÇIK ve sayaç genel olarak AÇIKSA görünür (bkz. kmOyunSayacBuyukEmin).
+            // Sayfa yeni yüklendiğinde (önceki oturumdan _kmOyunSayacBuyukAcik=true kalmışsa) eleman
+            // henüz DOM'da olmayabilir — burada lazy-oluşturuluyor, tekrar tekrar çağrılması ZARARSIZ
+            // (kmOyunSayacBuyukEmin zaten var olan elemanı bulursa onu döndürüyor, yeniden yaratmıyor).
+            if(_kmOyunSayacAcik && _kmOyunSayacBuyukAcik) kmOyunSayacBuyukEmin();
+            let buyuk = document.getElementById('km-oyun-sayac-buyuk');
+            if(buyuk) {
+                let gosterMi = _kmOyunSayacAcik && _kmOyunSayacBuyukAcik;
+                buyuk.style.display = gosterMi ? 'flex' : 'none';
+                if(gosterMi) {
+                    let metinEl = document.getElementById('km-oyun-sayac-buyuk-metin');
+                    if(metinEl) metinEl.textContent = kmOyunSayacMetni();
+                    buyuk.classList.toggle('km-oyun-sayac-kritik', kritikMi);
+                    buyuk.classList.toggle('km-oyun-sayac-bitti', bittiMi);
+                    document.querySelectorAll('.km-oyun-sayac-buyuk-ayarlar [data-sure]').forEach(function(b) {
+                        b.classList.toggle('aktif', parseInt(b.dataset.sure, 10) === _kmOyunSayacSuresi);
+                    });
+                }
+            }
+            document.querySelectorAll('.km-oyun-sayac-buyut-btn').forEach(function(b) {
+                b.classList.toggle('aktif', _kmOyunSayacBuyukAcik);
+                b.style.display = _kmOyunSayacAcik ? '' : 'none';
+            });
+            // Yarışma'daki "⏱️ Sayaç Açık/Kapalı" metin düğmesi — kmOyunSayacDegistir() Yarışma
+            // ekranını YENİDEN ÇİZMİYOR (sadece .km-oyun-sayac* sınıflarını güncelliyor), bu yüzden
+            // GERÇEK testte yakalanan bir bug: dokununca sayaç gerçekten açılıyordu ama etiket metni/
+            // rengi "Kapalı" olarak takılı kalıyordu. Burada elle senkronize ediliyor.
+            let yarismaToggle = document.getElementById('km-yarisma-sayac-toggle');
+            if(yarismaToggle) {
+                yarismaToggle.textContent = '⏱️ Sayaç ' + (_kmOyunSayacAcik ? 'Açık' : 'Kapalı');
+                yarismaToggle.style.color = _kmOyunSayacAcik ? 'var(--gold)' : 'var(--text-muted)';
+                yarismaToggle.style.borderColor = _kmOyunSayacAcik ? 'var(--gold)' : 'var(--border-color)';
+            }
         }
         function kmOyunSayacDegistir() {
             kmOyunSayacAyarYukle();
             _kmOyunSayacAcik = !_kmOyunSayacAcik;
             kmOyunSayacAyarKaydet();
-            let btn = document.getElementById('km-oyun-sayac-btn'); if(btn) btn.classList.toggle('aktif', _kmOyunSayacAcik);
+            document.querySelectorAll('#km-oyun-sayac-btn').forEach(function(b) { b.classList.toggle('aktif', _kmOyunSayacAcik); });
             if(_kmOyunSayacAcik) kmOyunSayacYeniSeri(); else { kmOyunSayacDurdur(); _kmOyunSayacFaz = 0; _kmOyunSayacKalan = 0; kmOyunSayacCiz(); }
         }
+        // Eski "dokununca döndür" davranışı — küçük rozetlerde hâlâ çalışıyor (bkz. onclick'leri).
         function kmOyunSayacSureDegistir() {
             kmOyunSayacAyarYukle();
             let idx = KM_OYUN_SAYAC_SURELER.indexOf(_kmOyunSayacSuresi);
-            _kmOyunSayacSuresi = KM_OYUN_SAYAC_SURELER[(idx + 1) % KM_OYUN_SAYAC_SURELER.length];
+            let yeni = KM_OYUN_SAYAC_SURELER[(idx === -1 ? 0 : idx + 1) % KM_OYUN_SAYAC_SURELER.length];
+            kmOyunSayacSureAyarla(yeni);
+        }
+        // Kullanıcı talimatı (2026-09-18): "sayaç süresi hem manuel hem 90/120/180 üzerinden olsun" —
+        // hazır düğmeler (büyük sayacın kontrol satırı) VE manuel giriş AYNI ortak fonksiyona çıkıyor.
+        function kmOyunSayacSureAyarla(sn) {
+            kmOyunSayacAyarYukle();
+            sn = Math.round(sn);
+            if(!(sn >= 5 && sn <= 1800)) return;
+            _kmOyunSayacSuresi = sn;
             kmOyunSayacAyarKaydet();
             if(_kmOyunSayacFaz === 0) kmOyunSayacCiz();
+        }
+        function kmOyunSayacManuelSure() {
+            kmOyunSayacAyarYukle();
+            let girdi = prompt('Sayaç süresi (saniye, 5-1800 arası):', String(_kmOyunSayacSuresi));
+            if(girdi === null) return;
+            let sn = parseInt(girdi.trim(), 10);
+            if(!Number.isFinite(sn) || sn < 5 || sn > 1800) { showToast('Geçersiz süre — 5 ile 1800 saniye arası bir sayı gir.', 'error'); return; }
+            kmOyunSayacSureAyarla(sn);
+        }
+
+        // ---- BÜYÜK SAYAÇ (2026-09-18, kullanıcı talimatı) ----
+        // position:fixed, TEK bir örnek document.body'e lazy-ekli — hangi ekrandan açılırsa açılsın
+        // (Oyunlar sahnesi ya da Yarışma dok'u) görünür kalır, DOM ağacındaki konumdan bağımsız.
+        // Sürükleme paylaşılan Pointer Events API ile (mouse+touch aynı kod yolu, setPointerCapture
+        // sayesinde ayrı touch/mouse dallarına GEREK yok — kmSayacBuyukSurukle'nin AYNI tutamaç için
+        // hem fare hem parmakla çalıştığı gerçek testte doğrulandı).
+        function kmOyunSayacBuyukVarsayilanKonum(genislik, yukseklik) {
+            return {
+                left: Math.max(8, Math.round((window.innerWidth - genislik) / 2)),
+                top: Math.max(8, Math.round(window.innerHeight * 0.12)),
+            };
+        }
+        function kmOyunSayacBuyukKonumUygula(el) {
+            let k = _kmOyunSayacBuyukKonum;
+            if(!k) { k = kmOyunSayacBuyukVarsayilanKonum(el.offsetWidth || 260, el.offsetHeight || 160); }
+            // Ekran boyutu değişmiş olabilir (döndürme, farklı cihaz) — kaydedilmiş konum ekran dışına
+            // taşmasın diye HER uygulamada yeniden kelepçeleniyor.
+            let maxLeft = Math.max(8, window.innerWidth - (el.offsetWidth || 260) - 8);
+            let maxTop = Math.max(8, window.innerHeight - (el.offsetHeight || 160) - 8);
+            el.style.left = Math.min(Math.max(8, k.left), maxLeft) + 'px';
+            el.style.top = Math.min(Math.max(8, k.top), maxTop) + 'px';
+        }
+        function kmOyunSayacBuyukEmin() {
+            let el = document.getElementById('km-oyun-sayac-buyuk');
+            if(el) return el;
+            el = document.createElement('div');
+            el.id = 'km-oyun-sayac-buyuk';
+            el.className = 'km-oyun-sayac-buyuk';
+            let sureBtnHTML = KM_OYUN_SAYAC_SURELER.map(function(s) {
+                return `<button data-sure="${s}" onclick="kmOyunSayacSureAyarla(${s})">${Math.floor(s/60)}:${(s%60<10?'0':'')+(s%60)}</button>`;
+            }).join('');
+            el.innerHTML = `
+                <button class="km-oyun-sayac-buyuk-kapat" onclick="kmOyunSayacBuyukAcKapat()" title="Küçült">✕</button>
+                <div class="km-oyun-sayac-buyuk-tutamac" id="km-oyun-sayac-buyuk-tutamac" title="Sürükleyerek taşı">⠿ ⠿ ⠿</div>
+                <div class="km-oyun-sayac-buyuk-metin" id="km-oyun-sayac-buyuk-metin"></div>
+                <div class="km-oyun-sayac-buyuk-ayarlar">
+                    ${sureBtnHTML}
+                    <button onclick="kmOyunSayacManuelSure()">✏️ Özel</button>
+                </div>`;
+            document.body.appendChild(el);
+            kmOyunSayacBuyukKonumUygula(el);
+            kmOyunSayacBuyukSurukleKur(el);
+            window.addEventListener('resize', function() { if(el.style.display !== 'none') kmOyunSayacBuyukKonumUygula(el); });
+            return el;
+        }
+        function kmOyunSayacBuyukSurukleKur(el) {
+            let tutamac = el.querySelector('#km-oyun-sayac-buyuk-tutamac');
+            if(!tutamac) return;
+            // Basit bayrak tabanlı takip (setPointerCapture'ın kendisi hâlâ çağrılıyor — parmak/imleç
+            // tutamacın dışına çıksa bile olayları almaya devam etsin diye — ama SÜRÜKLEMENİN devam edip
+            // etmediği `hasPointerCapture()`'a BAĞLI DEĞİL). GERÇEK BİR BUG buradan düzeltildi: gerçek
+            // dokunmatik sürükleme testinde `hasPointerCapture` beklenen anda true dönmüyordu, ilk
+            // pointermove olayları sessizce YOK SAYILIYOR, sürükleme hiç başlamamış gibi görünüyordu —
+            // `aktifPointerId` (basit bir durum bayrağı) ile değiştirildi, capture sadece "olayları
+            // elementin dışına çıksa bile almaya devam et" için, karar verici DEĞİL.
+            let basX = 0, basY = 0, elBasLeft = 0, elBasTop = 0, aktifPointerId = null, suruklendi = false;
+            tutamac.addEventListener('pointerdown', function(e) {
+                aktifPointerId = e.pointerId;
+                suruklendi = false;
+                basX = e.clientX; basY = e.clientY;
+                elBasLeft = el.offsetLeft; elBasTop = el.offsetTop;
+                try { tutamac.setPointerCapture(e.pointerId); } catch(err) {}
+            });
+            tutamac.addEventListener('pointermove', function(e) {
+                if(aktifPointerId === null || e.pointerId !== aktifPointerId) return;
+                let dx = e.clientX - basX, dy = e.clientY - basY;
+                if(Math.hypot(dx, dy) > 4) suruklendi = true;
+                let maxLeft = Math.max(8, window.innerWidth - el.offsetWidth - 8);
+                let maxTop = Math.max(8, window.innerHeight - el.offsetHeight - 8);
+                el.style.left = Math.min(Math.max(8, elBasLeft + dx), maxLeft) + 'px';
+                el.style.top = Math.min(Math.max(8, elBasTop + dy), maxTop) + 'px';
+            });
+            let birak = function(e) {
+                if(aktifPointerId === null || (e && e.pointerId !== undefined && e.pointerId !== aktifPointerId)) return;
+                aktifPointerId = null;
+                if(!suruklendi) return;
+                suruklendi = false;
+                _kmOyunSayacBuyukKonum = { left: el.offsetLeft, top: el.offsetTop };
+                kmOyunSayacAyarKaydet();
+            };
+            tutamac.addEventListener('pointerup', birak);
+            tutamac.addEventListener('pointercancel', birak);
+        }
+        function kmOyunSayacBuyukAcKapat() {
+            kmOyunSayacAyarYukle();
+            kmOyunSayacBuyukEmin();
+            _kmOyunSayacBuyukAcik = !_kmOyunSayacBuyukAcik;
+            kmOyunSayacAyarKaydet();
+            kmOyunSayacCiz();
         }
 
         // Pad renkleri GERÇEK WA hedef halkası renkleriyle eşleşiyor (2026-09-01, "skor renklerini
@@ -19852,7 +20020,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ${hedefSatiriHTML}
                 <div style="display:flex; justify-content:center; gap:8px;">
                     <span onclick="kmYarismaTakimDuzenleAc()" style="cursor:pointer; font-size:10px; font-weight:700; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 10px; margin-bottom:8px;">✏️ Takımları Düzenle</span>
-                    <span onclick="kmOyunSayacDegistir()" style="cursor:pointer; font-size:10px; font-weight:700; color:${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--text-muted)'}; border:1px dashed ${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--border-color)'}; border-radius:8px; padding:5px 10px; margin-bottom:8px;">⏱️ Sayaç ${_kmOyunSayacAcik ? 'Açık' : 'Kapalı'}</span>
+                    <span id="km-yarisma-sayac-toggle" onclick="kmOyunSayacDegistir()" style="cursor:pointer; font-size:10px; font-weight:700; color:${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--text-muted)'}; border:1px dashed ${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--border-color)'}; border-radius:8px; padding:5px 10px; margin-bottom:8px;">⏱️ Sayaç ${_kmOyunSayacAcik ? 'Açık' : 'Kapalı'}</span>
+                    <span onclick="kmOyunSayacBuyukAcKapat()" class="km-oyun-sayac-buyut-btn" style="cursor:pointer; font-size:10px; font-weight:700; border-radius:8px; padding:5px 10px; margin-bottom:8px; ${_kmOyunSayacAcik ? '' : 'display:none;'}">🔍 Büyüt</span>
                 </div>
                 ${dokHTML}
                 ${sonGirisHTML}
