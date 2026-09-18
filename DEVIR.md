@@ -3824,4 +3824,109 @@ span'inin ("10NİTRO", "1SAVRUL" gibi) her temada var olduğu keşfedildi — bu
 tamamen bağımsız bir davranış (bkz. `KM_OYUN_PAD_RENK` yakınındaki Faz 9 Stage 3 yorumu), test locator'ı
 buna göre düzeltildi, ürün kodunda hiçbir değişiklik yapılmadı.
 
-**Deploy durumu**: Üç oyun (Kehanet + Gizli Kelime + Kule) TAMAMLANDI — commit + push + DEPLOY yapılacak.
+**Deploy durumu**: Üç oyun (Kehanet + Gizli Kelime + Kule) TAMAMLANDI — commit + push + deploy yapıldı.
+
+## 29. Faz 17 — Karışık Sınıf → Yarışma sekmesi yeniden tasarımı (2026-09-18, TAMAMLANDI — gece görevi)
+
+**Bağlam**: kullanıcı gece boyunca yanıt veremeyeceğini belirtip üç oyunun yanı sıra Yarışma sekmesinin
+yeniden tasarımını da istedi — ayrı, önemli bir iş olarak işaretlendi. "Emin olamadığın bir karar çıkarsa
+en muhafazakâr seçeneği uygula ve raporda belirt" talimatıyla, hiçbir adımda onay beklenmeden tamamlandı.
+
+**Önce araştırma yapıldı — iki ayrı iş**:
+1. Bir Explore ajanıyla var olan `_kmYarisma*`/`kmYarisma*` mimarisi tam olarak çıkarıldı (kurulum ekranı,
+   bracket/eleme sistemi, skorbord, kalıcılık, `_skorKaydetCekirdek` ilişkisi). Kritik bulgu: Yarışma
+   sekmesi TAMAMEN salt-okunur bir izleyici katmanıydı — skor girişi HİÇBİR YERDE yoktu, koç mutlaka
+   Skor Gir sekmesine gidip (`kmSkorSonrasiGeriDon()` bile bilerek oraya geri döndürüyordu, Yarışma'ya
+   DEĞİL) skor girip elle geri dönmek zorundaydı. Ayrıca ZATEN sağlam bir 2-5 takımlı tek-eleme turnuva
+   ağacı (eşleştirme → tur tur ilerleme → şampiyon) ve bir "Hayali Rakip" (bot) modu vardı — bunlar
+   SİLİNMEDİ, üzerine inşa edildi.
+2. Gerçek okçuluk yarışma formatları araştırıldı (World Archery + TOF kaynakları — Kaynaklar bölümüne
+   bak). **Seçilen format: Set Puanı Usulü (World Archery'nin klasik/olimpik takım maçı set sistemine
+   adapte)** — her "set"i (buradaki karşılığı: bir takımın o turda attığı serilerin toplamı) kazanan 2
+   set puanı, berabere 1'er set puanı alır. Gerekçe: ranking-round+eleme (72 ok/12 seri gerektirir) ya da
+   makaralı-tipi "5 seri toplam puan" formatları bir ders süresine (8-12 seri) sığmaz; set sistemi ise
+   zaten var olan "seri" birimiyle bire bir örtüşüyor (**yeni bir veri modeli GEREKMEDİ** — set puanları
+   TAMAMEN var olan türetilmiş "tur bazlı puan" dizilerinden hesaplanıyor, bkz. aşağıda). Gerçek WA takım
+   maçları 3 sabit sporcudan oluşuyor; burada takım büyüklüğü esnek bırakıldı (sınıf rosterı gerçek WA
+   formatına zorlanamaz).
+
+**Mimari kararlar (muhafazakâr, additive)**:
+- `_kmTakimlar`ın ZATEN var olan Faz 13 konum-bazlı + tarih-damgalı kalıcılığı (`_kmYarismaKurulumAnahtari`/
+  `_kmYarismaKurulumKaydet`/`_kmYarismaKurulumYukle`) HİÇ değiştirilmedi — yeni bir kayıt yolu AÇILMADI,
+  sadece var olan pakete yeni alanlar (`ikon`) otomatik olarak dahil oldu (zaten `takimlar: _kmTakimlar`
+  bütün objeyi kaydediyordu).
+- **Set puanı hesaplaması yeni state GEREKTİRMEDİ**: `_kmYarismaTurBazliPuanlar`/yeni eklenen
+  `_kmYarismaBracketMacTurBazliPuanlar` zaten "her turda kim ne attı" dizisini üretiyordu — yeni
+  `_kmYarismaSetPuanlariHesapla(turlarListesi)` bunun üzerine SAF bir hesaplama katmanı. Bir set SADECE
+  TÜM taraflar o tura ulaştıysa değerlendiriliyor (sırayla, atlamadan).
+- **DÜZELTME (bracket'in maç-bazlı anlık görüntüsü)**: `_kmYarismaBracketBaslangicSnapshot` eskiden
+  sadece ham puan (sayı) tutuyordu, set sistemi için "hangi turdan itibaren yeni seri" bilgisi
+  (seriSayisi) de gerekiyordu — obje haline getirildi (`{puan, seriSayisi}`), OKUYAN her yer (
+  `_kmYarismaBracketMacPuani`, yeni `_kmYarismaBracketBireyselFark`) hem eski (düz sayı) hem yeni (obje)
+  biçimi okuyabiliyor — yarı yolda bir maç varken deploy edilse bile kırılmasın diye.
+- **Gömülü skor girişi** (asıl istenen özellik): kullanıcı "mevcut skor girme panelini kullan, yeni bir
+  giriş arayüzü yazma" dedi — Oyunlar'ın PAYLAŞILAN `.km-oyun-pad`/`.km-oyun-padbtn`/`.km-oyun-slot` CSS
+  sınıfları (bunlar `#km-oyun-wrap`'e özel DEĞİL, düz global kurallar) AYNEN yeniden kullanıldı, ama
+  KENDİ, tamamen ayrı state'iyle (`_kmYarismaAktifSporcuKey`/`_kmYarismaSeriGirisleri`/`_kmYarismaOkSayisi`)
+  — Oyunlar'ın `_kmOyunKilit` vb. hiçbir globaline dokunulmadı. Gerçek yazma yolu Oyunlar'la AYNI:
+  `_skorKaydetCekirdek` doğrudan çağrılıyor (limit-doldu kurtarma deseni dahil, `kmOyunIlerlet`'le AYNI).
+- **Konsolide "canlı maç" bileşeni** (`_kmYarismaCanliMacHTML`): takım kimliği (SVG ikon+renk) + set puanı
+  + sporcu rosteri + gömülü skor girişi TEK EKRANDA — hem flat (2-4 takım / Hayali Rakip) skorbord hem
+  bracket'in "şimdi oynanan maç" paneli AYNI fonksiyonu kullanıyor (kod tekrarı yok, davranış tutarlı).
+- Bracket ağacındaki İLK 'devam' durumundaki maç artık ağacın ÜSTÜNDE canlı set puanı + skor girişiyle
+  gösteriliyor (`_kmYarismaAktifBracketMacCiz`) — mevcut statik kart (`kmYarismaBracketMacKartHTML`) ve
+  "kazananı SADECE koç seçer" kuralı (`kmYarismaBracketKazananSec`) HİÇ değiştirilmedi, set puanları
+  sadece ÖNERİ olarak liderdeki takımın butonunu vurguluyor — otomatik karar YOK (var olan bilinçli
+  tasarım kararı korundu).
+
+**Yeni özellikler (kullanıcı spesifikasyonu)**:
+- **Takım kimliği**: 8 basit SVG ikon (ok/hedef/yay/kalkan/yıldırım/taç/yıldız/alev — Faz 3 kalıbı:
+  viewBox 24x24, stroke currentColor, stroke-width 1.7, fill yok), renk seçiciyle AYNI tıkla-seç desende
+  kurulum ekranına eklendi (`kmYarismaTakimIkonSec`). Eski kayıtlı takımlarda `ikon` alanı yoksa
+  `_kmTakimIkonAl` index'e göre bir öntanımlı atıyor (göç adımı gerekmedi).
+- **"İsim S." kısaltması** (`kmYarismaKisaAdListesi`): canlı maç görünümündeki sporcu çiplerinde kullanılıyor
+  — aynı ilk isim + aynı soyadı baş harfiyle çakışan sporcular için soyadın kısaltılan kısmı harf harf
+  uzatılıyor (tekil olana kadar). Kurulum ekranındaki (takıma atama) tam isim listesi BİLEREK değiştirilmedi
+  — orada pratik netlik tam isimle daha iyi.
+- MVP/⚖️ yaş-dengeleme oranı/geçmiş/PDF — HİÇBİRİ kaldırılmadı, hepsi korunup yeni ekranın altına taşındı.
+
+**Gerçek testte doğrulanan (iki ayrı senaryo, GERÇEK tıklamalarla)**:
+1. **Hayali Rakip**: ikon seçimi gerçek tıklamayla çalıştı, gerçek sporcuya gerçek 3 oklu seri (9+9+9=27)
+   girildi, `turnuvaDB`'ye GERÇEKTEN yazıldığı doğrulandı (`_skorKaydetCekirdek` üzerinden), set puanı
+   kartları ve "Tamamlanan set" doğru göründü.
+2. **Gerçek Takım (2 takım, bracket)**: kurulum → eşleştirme → ağaç akışı gerçek tıklamalarla tamamlandı,
+   "Şimdi Oynanan Maç" paneli GERÇEKTEN göründü, İKİ takımdan da GERÇEK tıklamalarla skor girildi
+   (30p vs 3p), set puanları doğru hesaplandı (2-0), kazanan gerçek tıklamayla onaylandı, maç `bitti`
+   durumuna geçti, tek-maçlık turnuva doğru şekilde şampiyonu ("Takım 1") ilan etti — VAR OLAN
+   `kmYarismaBracketTurKontrolEt` zincirleme mantığı hiç bozulmadı.
+3. **Gerçek testte bulunan bir kullanılabilirlik sorunu düzeltildi**: set kaydedilince aktif sporcu seçimi
+   ESKİDEN temizlenmiyordu — bu yüzden "sıradaki sporcuyu seç" tıklaması AYNI (hâlâ seçili) sporcuya denk
+   gelirse seçim SESSİZCE null'a düşüyordu (toggle mantığı). `kmYarismaSeriKaydet()` artık seti kaydedince
+   `_kmYarismaAktifSporcuKey`'i de temizliyor — hem bu tuzağı ortadan kaldırıyor hem doğal akışa uyuyor
+   (koç bir sonraki sporcuyu bilinçli seçsin).
+
+16 tema + Reaksiyon (Oyunlar) regresyon taraması temiz — Yarışma değişiklikleri Karışık Sınıf'ın geri
+kalanını hiç etkilemedi. 360px'te canlı maç paneli (takım kartları + roster + pad) taşmadan sığdı.
+
+**Kaynaklar** (yarışma formatı araştırması):
+- World Archery set sistemi (bireysel: 3 ok/set, 6 set puanına ilk ulaşan kazanır; takım: 3 sporcu,
+  6 ok/set, 5 set puanına ilk ulaşan kazanır) — genel arama sonuçlarından derlendi (worldarchery.sport,
+  ESPN Tokyo Olimpiyat açıklaması).
+- TOF/Türkçe kaynaklardan çapraz doğrulama: "Set Sistemi (Klasik/Olimpik Yay): her 3 okluk seri bir set,
+  kazanan 2 puan/berabere 1'er puan, ilk 6 puana ulaşan kazanır" — "Toplam Puan Sistemi (Makaralı Yay):
+  5 seri/15 ok üzerinden toplam puan" (makaralı format, arrow-budget nedeniyle ders içi kullanım için
+  ELENDİ).
+
+**Emin olunamayan kararlar (kullanıcının bakması gereken)**:
+- Set sistemi mi yoksa var olan "ham toplam puan" karşılaştırması mı daha iyi anlaşılır — set sistemi
+  gerçek yarışma kurallarına daha yakın ama "set puanı" kavramı çocuklar/koçlar için yeni; ham puan
+  (toplam skor farkı) da HÂLÂ her takım kartında küçük yazıyla gösteriliyor, tamamen kaybolmadı.
+- Bracket ağacındaki eski statik "DEVAM EDİYOR — KAZANANA DOKUN" kartı bilerek KALDIRILMADI (yeni canlı
+  panelle biraz tekrarlı) — riski azaltmak için var olan, test edilmiş yol korundu. İstenirse ileride
+  sadeleştirilebilir.
+- Takım büyüklüğü gerçek WA formatındaki gibi (3 sporcu) sabitlenmedi, esnek bırakıldı — sınıf rosterının
+  gerçek yarışma kurallarına zorlanması pratik değildi, bu bir yorum kararı.
+- "İsim S." kısaltması SADECE canlı maç görünümünde kullanılıyor, kurulum ekranındaki atama listesinde
+  DEĞİL (orada tam isim daha pratik) — bu bir kapsam kararı, spesifikasyon açıkça belirtmiyordu.
+
+**Deploy durumu**: commit + push + deploy yapıldı.
