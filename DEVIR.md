@@ -4101,4 +4101,55 @@ konumlarda görünüyor, kamp tabelalarıyla/tırmanıcı etiketleriyle çakış
 sweep + 360px mobil görünüm hatasız. Yerel D1 test kimlik bilgisi (`egitmen_hash`) her test öncesi/sonrası
 doğru şekilde değiştirilip geri yüklendi.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya ekran görüntüsüyle sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (kullanıcı onayı sonrası, commit 7ac9bcd, version 6fb3aedd...).
+
+## 33. Sayaç (Shot Clock) — Oyunlar'ın köşesi + Yarışma dok'u (2026-09-18)
+
+Kullanıcı talimatı: "oyunların bir köşesine var olan sayaç kısmını eklemeni istiyorum sporcular gerçek
+yarışma gibi sayaca göre atmasını istiyorum — yarışma sekmesine de eklemeni istiyorum". Uygulamada
+ZATEN ayrı bir "Süreölçer" sekmesi (`#icerik-timer`, `toggleTimer`/`sayacIntervalBaslat`/`kronometreSifirla`/
+`sesCal`) vardı — 3 fazlı (HAZIRLANIN 10sn → ATIŞ SERBEST süre → isteğe bağlı OK TOPLAMA), 180/120/90sn
+seçenekli. O motor DOKUNULMADAN, AYNI faz dili/ses efekti (`sesCal`, paylaşılan) ile ama BİLEREK AYRI bir
+durum makinesi kuruldu — o sekmenin sabit DOM id'lerine (`#sayac`/`#timer-alt`) bağlı TEK bir global
+kronometreyi, aynı anda hem Oyunlar sahnesinde hem Yarışma dok'unda görünmesi gereken bir rozetle
+paylaştırmak istenmeyen bir bağımlılık yaratırdı.
+
+**Yeni paylaşılan altyapı** (`kmOyunSayac*`, app.js ~13460): `_kmOyunSayacAcik`/`_kmOyunSayacSuresi`
+(90/120/180, varsayılan 120) konum bazlı localStorage'da (`dag_km_oyun_sayac_<konum>`) — Oyunlar'da
+AÇILIRSA Yarışma'da da açık görünür (BİLEREK tek paylaşılan tercih, iki ayrı özellik değil). `kmOyunSayacYeniSeri()`
+her YENİ seri başladığında çağrılıyor (Oyunlar: `bitirOrtak()`'ın kilidi açtığı an + `kmOyunlarCiz()`
+ilk açılış; Yarışma: `kmYarismaSporcuSec()` bir sporcu SEÇİLDİĞİNDE, deseçimde değil) — 10sn "HAZIRLAN"
+→ süre dolunca "ATIŞ SERBEST" (seçili süre) → son 10sn'de kırmızı yanıp sönme + bip → süre dolunca
+"SÜRE DOLDU" (kırmızı, sabit). Koçu ASLA ENGELLEMİYOR — skor girişi her an serbest, sadece görsel+sesli
+baskı unsuru.
+
+**Görünüm**: `.km-oyun-sayac` sınıflı BİRDEN FAZLA rozet (Oyunlar sahnesinin köşesinde mutlak konumlu +
+Yarışma dok başlığında akış-içi `.km-oyun-sayac-inline`), `kmOyunSayacCiz()` `querySelectorAll('.km-oyun-sayac')`
+ile HEPSİNİ birlikte günceller. Dokununca `kmOyunSayacSureDegistir()` süreyi 90→120→180 arası döndürür
+(Pist'in "tap-to-cycle" deseniyle aynı). Oyunlar topbar'ında yeni "⏱️" aç/kapa düğmesi, Yarışma'da
+"✏️ Takımları Düzenle"nin yanında "⏱️ Sayaç Açık/Kapalı" metin düğmesi.
+
+**GERÇEK 3 BUG bulundu ve düzeltildi (gerçek testte)**:
+1. Rozet ilk yerleşimi (`left:10px`) `.km-oyun-sirada` (SIRADA rozeti) ile AYNI köşeye denk geliyordu,
+   üst üste biniyordu — sağ üst köşeye (`right:calc(var(--km-rail-w) + 10px)`) taşındı.
+2. Süre doğal olarak bitince (`kmOyunSayacDurdur()` eskiden faz'ı sıfırlıyordu) rozet YANLIŞLIKLA "boşta"
+   diline düşüp TAM süreyi ("⏱ 2:00") gösteriyordu — kırmızı/bitmiş görünümle birlikte kafa karıştırıcıydı.
+   `kmOyunSayacDurdur()` artık faz'a dokunmuyor, "SÜRE DOLDU" metni ayrı bir dal.
+3. Yarışma'da `_kmYarismaCanliMacHTML` sadece HTML STRING döndürüyor — DOM'a innerHTML ile çağıran taraf
+   basıyor. Sayaç AÇIK ama o an interval ÇALIŞMIYORKEN (kimse seçili değilken) ekran yeniden çizilince
+   (dok aç/kapa gibi) yeni basılan span hep boş/gizli kalıyordu. `setTimeout(kmOyunSayacCiz, 0)` ile
+   DOM basıldıktan hemen sonra senkronize edildi.
+4. 360px'te rozet önce üst rozetlerle, sağa taşıyınca sağ rail'in liderlik sütunuyla çakıştı — `@media
+   (max-width:600px)` altında SIRADA rozetinin hemen altına (sol, top:44px) indirildi.
+
+**CSS token tuzağı** (Faz 17c'nin `.km-oyun-dok-ozet-btn` bulgusuyla AYNI kategori, bu sefer BAŞTAN
+önlendi): `--ink`/`--a1` gibi Oyunlar temasına özgü tokenlar SADECE `#km-oyun-wrap[data-tema="X"]`
+altında tanımlı — Yarışma dok'u (`#karisik-platform`) bunun DIŞINDA. `.km-oyun-sayac` BİLEREK app
+genelindeki global tokenları (`--text-main`/`--gold`/`--border-color`, styles.css `:root`) kullanıyor.
+
+**Gerçek testte doğrulanan**: Oyunlar'da GERÇEK tıklamayla aç/kapa, 3 faz (HAZIRLAN→ATIŞ SERBEST→SÜRE
+DOLDU) geçişleri, kritik/bitti CSS sınıfları doğru anlarda. Yarışma'da bir sporcuya GERÇEK tıklamayla
+seçilince sayaç sıfırdan başlıyor, dok başlığında görünüyor. 16 tema + Reaksiyon regresyonu temiz,
+360px mobilde her iki ekranda da çakışma yok.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor/ekran görüntüsüyle sunulup onay bekleniyor.
