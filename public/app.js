@@ -10628,7 +10628,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena,
 #km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita,
 #km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet,
-#km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime { display:flex; }
+#km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime,
+#km-oyun-wrap[data-tema="kule"] #km-oyun-panel-kule { display:flex; }
 /* KÖK NEDEN DÜZELTMESİ (2026-09-18) — bu kural eskiden ".km-oyun-panel svg" idi (HERHANGİ derinlikte
    torun), bu yüzden panel içine gömülü küçük ikon SVG'lerini (Kehanet'in uyarı/mesafe/alev ikonları,
    Gizli Kelime'nin bilgi kartı ikonu) yakalayıp TÜM PANELİ kaplayacak şekilde büyütüyordu — iki ayrı
@@ -10777,6 +10778,24 @@ ${(function(){
 .km-gk-bilgi-devam-btn{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#1a1512; background:#e8b96a; border:none; border-radius:10px; padding:9px 20px; cursor:pointer; margin-top:12px; }
 @media (max-width: 860px) { .km-gk-tas{ width:28px; height:36px; font-size:15px; } }
 @media (prefers-reduced-motion: reduce){ .km-gk-taslar.km-gk-sars{ animation:none; } .km-gk-tas.km-gk-tas-yeni{ animation:none; } }
+
+/* ---- KULE (Faz 16, Adım 1, 3. oyun, 2026-09-18, gece görevi) — UI kromu. SVG'nin kendisi (taşlar,
+   eğim, rekor çizgisi, sallanma) tamamen JS'te (kmOyunKuleCiz/kmOyunAnimateKule) çiziliyor; burada sadece
+   sabit HTML iskeleti (durum rozeti/rüzgâr göstergesi/katkı paneli/yıkılış banner'ı) var. */
+.km-oyun-panel-kule{ overflow:hidden; }
+#km-oyun-svg-kule{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.km-kule-durum-rozet{ position:absolute; top:8px; left:8px; font-family:var(--font-body); font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:#3ddc97; background:rgba(0,0,0,0.45); border:1px solid rgba(61,220,151,0.4); border-radius:999px; padding:5px 12px; z-index:2; }
+.km-kule-durum-rozet.km-kule-sallaniyor{ color:#ffd23f; border-color:rgba(255,210,63,0.5); }
+.km-kule-durum-rozet.km-kule-kritik{ color:#ff5f6d; border-color:rgba(255,95,109,0.6); animation:kmKuleRozetNabiz 1s ease-in-out infinite; }
+@keyframes kmKuleRozetNabiz{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+.km-kule-ruzgar{ position:absolute; top:8px; right:8px; font-family:var(--font-body); font-weight:700; font-size:11px; color:#7dd3fc; background:rgba(0,0,0,0.45); border:1px solid rgba(125,211,252,0.4); border-radius:999px; padding:5px 12px; z-index:2; }
+.km-kule-katki-panel{ position:absolute; bottom:8px; left:8px; max-width:180px; max-height:120px; overflow-y:auto; font-family:var(--font-body); font-size:10.5px; color:var(--ink-faint); background:rgba(0,0,0,0.4); border:1px solid var(--line); border-radius:8px; padding:6px 8px; z-index:2; }
+.km-kule-katki-satir{ display:flex; justify-content:space-between; gap:8px; padding:1.5px 0; }
+.km-kule-katki-ad{ color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:96px; }
+.km-kule-yikilis-banner{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:rgba(10,8,6,0.82); z-index:6; }
+.km-kule-yikilis-baslik{ font-family:var(--font-display); font-weight:800; font-size:22px; color:#ff5f6d; }
+.km-kule-yikilis-alt{ font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--ink); }
+@media (prefers-reduced-motion: reduce){ .km-kule-durum-rozet.km-kule-kritik{ animation:none; } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -11766,6 +11785,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // YOK (Kehanet'in aksine, buradaki sıra sorunu yok).
             gizlikelime: { ad: 'Gizli Kelime', ikon: '📜', renkler: ['#e8b96a', '#c96a4d', '#7dd3fc', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her seri gizli kelimenin harflerini açar, herhangi bir sporcu istediği an tahmin edebilir.', btn: '📜 Aç', finish: '', cp: '', birim: 'gizlikelime', bitis: '',
                 surprizler: [] },
+            // Faz 16, Adım 1, 3. oyun (2026-09-18, gece görevi) — Kule: frac/yol YOK, Gizli Kelime'nin
+            // "sınıf çapında paylaşılan durum" emsaliyle AYNI kategori. Her seri kuleye bir taş ekliyor,
+            // taşın hizası (sapma) seri toplamına bağlı; sapmalar net bir yön üzerinde birikip kuleyi
+            // EĞİYOR — eşiği geçince yıkılıyor. Rekor (en yüksek ulaşılan kat) İNDEFİNİTE saklanıyor
+            // (d0/Arena karakter-map gibi tarih damgasız — bir rekorun ertesi gün sıfırlanması anlamsız
+            // olurdu), güncel kulenin durumu ise Gizli Kelime'nin AYNI tarih damgalı/konum bazlı deseniyle.
+            kule: { ad: 'Kule', ikon: '🗼', renkler: ['#c9a876', '#8c7355', '#7dd3fc', '#ff8a3d', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — sınıf birlikte kule örüyor, her seri bir taş ekler, taşın hizası seri toplamına bağlı. Kule aşırı eğilirse yıkılır.', btn: '🗼 Aç', finish: '', cp: '', birim: 'kule', bitis: '',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -12199,6 +12226,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'sisharita') kmOyunSahneKurSisHaritasi();
             else if(tid === 'kehanet') kmOyunSahneKurKehanet();
             else if(tid === 'gizlikelime') kmOyunSahneKurGizliKelime();
+            else if(tid === 'kule') kmOyunSahneKurKule();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -12224,6 +12252,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurSisHaritasi();
             kmOyunSahneKurKehanet();
             kmOyunSahneKurGizliKelime();
+            kmOyunSahneKurKule();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -13172,6 +13201,31 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             </div>
             <div class="km-gk-modal" id="km-gk-modal" style="display:none;"></div>
         </div>`;
+        // Faz 16, Adım 1, 3. oyun (2026-09-18, gece görevi) — Kule paneli. SVG (diğer 9 arka-plan-SVG'li
+        // temayla AYNI ".km-oyun-panel > svg" desenine uyuyor — doğrudan çocuk). Katkı paneli + durum
+        // rozeti/rüzgâr göstergesi panel içinde, sağdaki paylaşılan Sıralama/Sporcu Seç rayına dokunmuyor.
+        if(tid === 'kule') return `<div class="km-oyun-panel" id="km-oyun-panel-kule">
+            <svg id="km-oyun-svg-kule" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <linearGradient id="km-kule-tas-a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a68a63"/><stop offset="1" stop-color="#7a6144"/></linearGradient>
+                    <linearGradient id="km-kule-tas-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b69870"/><stop offset="1" stop-color="#8a7050"/></linearGradient>
+                    <linearGradient id="km-kule-tas-kusursuz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe3ac"/><stop offset="1" stop-color="#e8b96a"/></linearGradient>
+                    <linearGradient id="km-kule-gokyuzu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2733"/><stop offset="1" stop-color="#0d1218"/></linearGradient>
+                </defs>
+                <rect x="0" y="0" width="1200" height="1400" fill="url(#km-kule-gokyuzu)"/>
+                <line id="km-kule-rekor-cizgi" x1="0" y1="0" x2="1200" y2="0" stroke="#ffd23f" stroke-width="1.5" stroke-dasharray="6 6" opacity="0" />
+                <text id="km-kule-rekor-etiket" x="1180" y="0" text-anchor="end" font-size="13" font-weight="700" fill="#ffd23f" opacity="0">REKOR</text>
+                <g id="km-kule-govde">
+                    <g id="km-kule-taslar"></g>
+                </g>
+                <rect x="0" y="396" width="1200" height="44" fill="#0a0d10"/>
+                <text id="km-kule-kusursuz-yazi" x="600" y="200" text-anchor="middle" font-size="30" font-weight="800" fill="#ffe3ac" opacity="0">KUSURSUZ</text>
+            </svg>
+            <div class="km-kule-durum-rozet" id="km-kule-durum-rozet">Sağlam</div>
+            <div class="km-kule-ruzgar" id="km-kule-ruzgar" style="display:none;">💨 Rüzgâr</div>
+            <div class="km-kule-katki-panel" id="km-kule-katki-panel"></div>
+            <div class="km-kule-yikilis-banner" id="km-kule-yikilis-banner" style="display:none;"></div>
+        </div>`;
         }
 
         function kmOyunHTML() {
@@ -13216,7 +13270,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
@@ -15239,6 +15293,257 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmGizliKelimeTaslariKademeliAc(acilanlar, done);
         }
 
+        // ---- KULE — Faz 16, Adım 1, 3. oyun (2026-09-18, gece görevi). frac/yol YOK, Gizli Kelime'nin
+        // "sınıf çapında paylaşılan durum" emsaliyle AYNI kategori. Kule (yükseklik/eğim/taşlar/katkı)
+        // konum bazlı + tarih damgalı ayrı bir localStorage anahtarında (Gizli Kelime'yle AYNI ilke) —
+        // ders bitip yeni gün başlayınca sıfırlanır. Rekor (en yüksek ulaşılan kat) ise İNDEFİNİTE ayrı
+        // bir anahtarda — bir rekorun ertesi gün sıfırlanması anlamsız olurdu (d0.enIyiSeri ile aynı ilke).
+        const KM_KULE_STONE_H = 22, KM_KULE_GAP = 2, KM_KULE_UNIT = KM_KULE_STONE_H + KM_KULE_GAP;
+        const KM_KULE_TABAN_Y = 396, KM_KULE_ESIK_BAZ = 40, KM_KULE_RUZGAR_YUKSEKLIK = 10, KM_KULE_MAX_ACI = 16;
+        let _kmKule = null, _kmKuleYuklenenKonum = null;
+        let _kmKuleRekor = null, _kmKuleRekorYuklenenKonum = null;
+        let _kmKuleEgimAci = 0;
+        let _kmKuleSallanmaAktif = false;
+        function kmKuleAnahtari() { return 'dag_km_kule_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmKuleRekorAnahtari() { return 'dag_km_kule_rekor_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmKuleKaydet() { try { localStorage.setItem(kmKuleAnahtari(), JSON.stringify(_kmKule)); } catch(e) {} }
+        function kmKuleRekorKaydet() { try { localStorage.setItem(kmKuleRekorAnahtari(), JSON.stringify(_kmKuleRekor)); } catch(e) {} }
+        function kmKuleDurumEmin() {
+            if(_kmKule && _kmKuleYuklenenKonum === _kmAktifKonum && _kmKule.tarih === bugunISO()) return;
+            _kmKuleYuklenenKonum = _kmAktifKonum;
+            try {
+                let ham = localStorage.getItem(kmKuleAnahtari());
+                let veri = ham ? JSON.parse(ham) : null;
+                if(veri && veri.tarih === bugunISO()) { _kmKule = veri; return; }
+            } catch(e) {}
+            _kmKule = { tarih: bugunISO(), yukseklik: 0, netSapma: 0, taslar: [], katki: {} };
+            kmKuleKaydet();
+        }
+        function kmKuleRekorEmin() {
+            if(_kmKuleRekor && _kmKuleRekorYuklenenKonum === _kmAktifKonum) return;
+            _kmKuleRekorYuklenenKonum = _kmAktifKonum;
+            try {
+                let ham = localStorage.getItem(kmKuleRekorAnahtari());
+                _kmKuleRekor = ham ? JSON.parse(ham) : { yukseklik: 0 };
+            } catch(e) { _kmKuleRekor = { yukseklik: 0 }; }
+        }
+        function kmOyunKuleSapmaMagnitude(toplam) {
+            if(toplam >= 27) return 0;
+            if(toplam >= 24) return 3;
+            if(toplam >= 18) return 8;
+            if(toplam >= 12) return 15;
+            return 24;
+        }
+        // Rüzgâr (kullanıcı spesifikasyonu: "belli yükseklikten sonra rüzgâr efekti, sapma eşiği
+        // düşsün") — KM_KULE_RUZGAR_YUKSEKLIK'ten sonra her 5 katta bir eşik biraz daha düşer, min 18'de
+        // taban buluyor (asla imkansız hale gelmesin diye).
+        function kmOyunKuleEsikHesapla(yukseklik) {
+            if(yukseklik < KM_KULE_RUZGAR_YUKSEKLIK) return KM_KULE_ESIK_BAZ;
+            let kademe = Math.floor((yukseklik - KM_KULE_RUZGAR_YUKSEKLIK) / 5) + 1;
+            return Math.max(18, KM_KULE_ESIK_BAZ - kademe * 4);
+        }
+        function kmOyunKuleTehlikeSeviyesi(netSapma, esik) {
+            let oran = Math.abs(netSapma) / esik;
+            if(oran >= 0.75) return 'kritik';
+            if(oran >= 0.4) return 'sallaniyor';
+            return 'saglam';
+        }
+        // Taş bazlı deterministik "rastgele" jitter — her taş HER çizimde AYNI hafif dönüşü alsın diye
+        // (Math.random() kullanılsaydı her re-render'da taşlar titrer gibi görünürdü).
+        function kmOyunKulePseudoRandom(seed) {
+            let x = Math.sin(seed * 12.9898) * 43758.5453;
+            return x - Math.floor(x);
+        }
+        function kmOyunKuleKatkiCiz() {
+            let panel = document.getElementById('km-kule-katki-panel'); if(!panel) return;
+            let girdiler = Object.keys(_kmKule.katki).map(function(k) {
+                let parts = k.split('|'); let ad = parts[1] || k;
+                let v = _kmKule.katki[k];
+                return { ad: ad, tas: v.tas || 0, kusursuz: v.kusursuz || 0 };
+            }).sort(function(a, b) { return b.tas - a.tas; });
+            if(!girdiler.length) { panel.innerHTML = '<div class="km-kule-katki-satir"><span>Henüz taş yok</span></div>'; return; }
+            panel.innerHTML = girdiler.map(function(g) {
+                return `<div class="km-kule-katki-satir"><span class="km-kule-katki-ad">${esc(g.ad)}</span><span>${g.tas} taş${g.kusursuz ? ' · ' + g.kusursuz + ' \u{1F3C6}' : ''}</span></div>`;
+            }).join('');
+        }
+        // Ana çizim — taşlar, kamera (viewBox zoom-out), rekor çizgisi, durum rozeti/rüzgâr, katkı paneli.
+        // Eğim açısının KENDİSİ burada hesaplanır (_kmKuleEgimAci) ama DOM'a uygulanması sürekli çalışan
+        // kmOyunKuleSallanmaBaslat() döngüsüne bırakılır (sallanma + eğim aynı transform'da birleşiyor).
+        function kmOyunKuleCiz() {
+            kmKuleDurumEmin(); kmKuleRekorEmin();
+            let taslarEl = document.getElementById('km-kule-taslar'); if(!taslarEl) return;
+            let html = '';
+            _kmKule.taslar.forEach(function(t, i) {
+                let y = KM_KULE_TABAN_Y - (i + 1) * KM_KULE_UNIT;
+                let w = Math.max(70, 140 - i * 2.2);
+                let x = 600 - w / 2;
+                let jitter = (kmOyunKulePseudoRandom(i) - 0.5) * 3.5;
+                let grad = t.kusursuz ? 'km-kule-tas-kusursuz' : (i % 2 === 0 ? 'km-kule-tas-a' : 'km-kule-tas-b');
+                html += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${KM_KULE_STONE_H}" rx="2" fill="url(#${grad})" stroke="rgba(0,0,0,0.35)" stroke-width="1" transform="rotate(${jitter.toFixed(2)}, ${(x + w / 2).toFixed(1)}, ${(y + KM_KULE_STONE_H / 2).toFixed(1)})"/>`;
+            });
+            taslarEl.innerHTML = html;
+
+            let esik = kmOyunKuleEsikHesapla(_kmKule.yukseklik);
+            let egimOran = Math.max(-1, Math.min(1, _kmKule.netSapma / esik));
+            _kmKuleEgimAci = egimOran * KM_KULE_MAX_ACI;
+
+            let svg = document.getElementById('km-oyun-svg-kule');
+            if(svg) {
+                let kuleTepe = KM_KULE_TABAN_Y - _kmKule.taslar.length * KM_KULE_UNIT;
+                let gerekliUst = KM_KULE_TABAN_Y - kuleTepe + 90;
+                let viewH = Math.max(440, Math.min(1400, gerekliUst + 44));
+                let viewY = KM_KULE_TABAN_Y + 44 - viewH;
+                svg.setAttribute('viewBox', `0 ${viewY.toFixed(0)} 1200 ${viewH.toFixed(0)}`);
+            }
+
+            let rekorY = KM_KULE_TABAN_Y - _kmKuleRekor.yukseklik * KM_KULE_UNIT;
+            let cizgi = document.getElementById('km-kule-rekor-cizgi');
+            let etiket = document.getElementById('km-kule-rekor-etiket');
+            if(cizgi && etiket) {
+                if(_kmKuleRekor.yukseklik > 0) {
+                    cizgi.setAttribute('y1', rekorY.toFixed(1)); cizgi.setAttribute('y2', rekorY.toFixed(1)); cizgi.setAttribute('opacity', '0.8');
+                    etiket.setAttribute('y', (rekorY - 6).toFixed(1)); etiket.setAttribute('opacity', '0.8');
+                } else { cizgi.setAttribute('opacity', '0'); etiket.setAttribute('opacity', '0'); }
+            }
+
+            let seviye = kmOyunKuleTehlikeSeviyesi(_kmKule.netSapma, esik);
+            let rozet = document.getElementById('km-kule-durum-rozet');
+            if(rozet) {
+                rozet.classList.remove('km-kule-sallaniyor', 'km-kule-kritik');
+                if(seviye === 'sallaniyor') { rozet.classList.add('km-kule-sallaniyor'); rozet.textContent = 'Sallanıyor'; }
+                else if(seviye === 'kritik') { rozet.classList.add('km-kule-kritik'); rozet.textContent = 'Kritik!'; }
+                else rozet.textContent = 'Sağlam';
+            }
+            let ruzgarEl = document.getElementById('km-kule-ruzgar');
+            if(ruzgarEl) ruzgarEl.style.display = (_kmKule.yukseklik >= KM_KULE_RUZGAR_YUKSEKLIK) ? '' : 'none';
+
+            kmOyunKuleKatkiCiz();
+        }
+        // Sürekli (idle) sallanma döngüsü — kule aktif tema OLMAKTAN ÇIKINCA kendi kendine durur (bkz.
+        // içindeki _kmOyunAktifTema kontrolü), yeniden girilince kmOyunSahneKurKule() tekrar başlatır.
+        // Genlik tehlike seviyesine göre büyür — "sayıya bakmadan tehlikeyi hissettir" (spesifikasyon).
+        function kmOyunKuleSallanmaBaslat() {
+            if(_kmKuleSallanmaAktif) return;
+            _kmKuleSallanmaAktif = true;
+            function frame(t) {
+                if(_kmOyunAktifTema !== 'kule') { _kmKuleSallanmaAktif = false; return; }
+                let g = document.getElementById('km-kule-govde');
+                if(g && _kmKule) {
+                    let esik = kmOyunKuleEsikHesapla(_kmKule.yukseklik);
+                    let seviye = kmOyunKuleTehlikeSeviyesi(_kmKule.netSapma, esik);
+                    let amp = kmOyunKameraAzaltilmisHareketMi() ? 0 : (seviye === 'kritik' ? 2.2 : seviye === 'sallaniyor' ? 1 : 0.3);
+                    let sway = amp ? Math.sin(t / 550) * amp : 0;
+                    g.setAttribute('transform', `rotate(${(_kmKuleEgimAci + sway).toFixed(2)}, 600, ${KM_KULE_TABAN_Y})`);
+                }
+                requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+        function kmOyunSahneKurKule() {
+            kmKuleDurumEmin();
+            kmKuleRekorEmin();
+            let banner = document.getElementById('km-kule-yikilis-banner'); if(banner) banner.style.display = 'none';
+            kmOyunKuleCiz();
+            kmOyunKuleSallanmaBaslat();
+        }
+        // Yıkılış — "ciddi bir an olsun, taşlar tek tek düşsün, toz kalksın, kaç katta yıkıldığı
+        // yazsın, sonra temizlensin ve yeniden başlasın" (kullanıcı spesifikasyonu). Hangi sporcunun
+        // taşının yıkılmaya sebep olduğu BİLEREK hiçbir yerde gösterilmiyor/isimlendirilmiyor.
+        function kmOyunKuleYikilisBaslat(done) {
+            let katSayisi = _kmKule.yukseklik;
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let banner = document.getElementById('km-kule-yikilis-banner');
+            let taslarEl = document.getElementById('km-kule-taslar');
+            let azaltilmisMi = kmOyunKameraAzaltilmisHareketMi();
+
+            function sifirlaVeBitir() {
+                _kmKule = { tarih: _kmKule.tarih, yukseklik: 0, netSapma: 0, taslar: [], katki: {} };
+                kmKuleKaydet();
+                _kmKuleEgimAci = 0;
+                kmOyunKuleCiz();
+                if(banner) banner.style.display = 'none';
+                done();
+            }
+
+            if(azaltilmisMi) {
+                if(banner) { banner.style.display = 'flex'; banner.innerHTML = `<div class="km-kule-yikilis-baslik">Kule Yıkıldı</div><div class="km-kule-yikilis-alt">${katSayisi}. katta yıkıldı</div>`; }
+                if(!kapali) { try { sesCal(150, 0.2); } catch(e) {} }
+                setTimeout(sifirlaVeBitir, 900);
+                return;
+            }
+
+            let scrKonum = kmOyunSvgPct('km-oyun-svg-kule', 600, KM_KULE_TABAN_Y);
+            kmOyunBurst(document.getElementById('km-oyun-burst'), scrKonum.xPct, scrKonum.yPct, '#8c7355', 22, true);
+
+            let cocukSayisi = taslarEl ? taslarEl.children.length : 0;
+            if(taslarEl) {
+                Array.from(taslarEl.children).reverse().forEach(function(el, idx) {
+                    setTimeout(function() {
+                        el.style.transition = 'transform .6s cubic-bezier(.5,0,1,.5), opacity .6s ease';
+                        let mevcutTransform = el.getAttribute('transform') || '';
+                        el.setAttribute('transform', mevcutTransform + ` translate(${(Math.random() * 300 - 150).toFixed(0)},260) rotate(${(Math.random() * 200 - 100).toFixed(0)})`);
+                        el.style.opacity = '0';
+                    }, idx * 55);
+                });
+            }
+            if(!kapali) { try { sesCal(150, 0.25); setTimeout(function() { try { sesCal(110, 0.3); } catch(e) {} }, 200); } catch(e) {} }
+
+            setTimeout(function() {
+                if(banner) { banner.style.display = 'flex'; banner.innerHTML = `<div class="km-kule-yikilis-baslik">Kule Yıkıldı</div><div class="km-kule-yikilis-alt">${katSayisi}. katta yıkıldı — toz duruluyor...</div>`; }
+                setTimeout(sifirlaVeBitir, 1400);
+            }, Math.min(1600, cocukSayisi * 55 + 700));
+        }
+        // Her seri toplamına göre bir taş ekler — HANGİ sporcunun attığından bağımsız (paylaşılan/
+        // oturum durumu), sadece KATKI paneli için kimin kaç taş koyduğu ayrıca tutuluyor. Gerçek skora
+        // (kmOyunIlerlet'te YUKARIDA zaten koşulsuz yazıldı) hiç dokunmuyor.
+        function kmOyunAnimateKule(s, i, kaydedilecek, done) {
+            kmKuleDurumEmin(); kmKuleRekorEmin();
+            let toplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let kusursuzMu = toplam >= 27;
+            let mag = kmOyunKuleSapmaMagnitude(toplam);
+            let sapma = kusursuzMu ? 0 : Math.round((Math.random() * 2 - 1) * mag);
+
+            let anahtar = s.g + '|' + s.ad;
+            if(!_kmKule.katki[anahtar]) _kmKule.katki[anahtar] = { tas: 0, kusursuz: 0 };
+            _kmKule.katki[anahtar].tas++;
+            if(kusursuzMu) _kmKule.katki[anahtar].kusursuz++;
+            _kmKule.taslar.push({ sapma: sapma, kusursuz: kusursuzMu, g: s.g, ad: s.ad });
+            _kmKule.yukseklik = _kmKule.taslar.length;
+            _kmKule.netSapma += sapma;
+            kmKuleKaydet();
+
+            let esik = kmOyunKuleEsikHesapla(_kmKule.yukseklik);
+            let yikildiMi = Math.abs(_kmKule.netSapma) >= esik;
+
+            kmOyunKuleCiz();
+
+            // Kusursuz taş vurgusu (§15g: mekaniğin görünürlüğü ciddi modda da kalır, SADECE ses/toast
+            // gibi kutlama ekstraları susar — Kehanet'in tam-isabet parlamasıyla AYNI ilke).
+            if(kusursuzMu && !kmOyunKameraAzaltilmisHareketMi()) {
+                let yazi = document.getElementById('km-kule-kusursuz-yazi');
+                if(yazi) {
+                    yazi.setAttribute('opacity', '0'); void yazi.getBoundingClientRect();
+                    yazi.style.transition = 'opacity .15s ease';
+                    yazi.setAttribute('opacity', '1');
+                    setTimeout(function() { yazi.setAttribute('opacity', '0'); }, 900);
+                }
+            }
+            if(kusursuzMu && !kapali) {
+                try { sesCal(880, 0.12); setTimeout(function() { try { sesCal(1175, 0.16); } catch(e) {} }, 100); } catch(e) {}
+                showToast('\u{1F3C6} Kusursuz taş! ' + s.ad.split(' ')[0], 'success');
+            }
+
+            if(_kmKule.yukseklik > _kmKuleRekor.yukseklik) {
+                _kmKuleRekor = { yukseklik: _kmKule.yukseklik };
+                kmKuleRekorKaydet();
+                if(!kapali && _kmKule.yukseklik > 1) kmOyunBanner('YENİ REKOR YÜKSEKLİK!', _kmKule.yukseklik + '. kat', 'rekor');
+            }
+
+            if(yikildiMi) setTimeout(function() { kmOyunKuleYikilisBaslat(done); }, 500);
+            else setTimeout(done, 500);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -15378,6 +15683,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Gerçek "ilerleme" harf açma şeklinde, kmOyunAnimateGizliKelime içinde AYRICA hesaplanıp
             // paylaşılan _kmGizliKelime durumuna uygulanıyor.
             if(_kmOyunAktifTema === 'gizlikelime') artis = 0;
+            // Kule (Faz 16, 2026-09-18) — frac/yol YOK, Gizli Kelime'nin emsaliyle AYNI kategori.
+            if(_kmOyunAktifTema === 'kule') artis = 0;
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -15491,7 +15798,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -15640,6 +15947,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'futboltakim') kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'kehanet') kmOyunAnimateKehanet(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'gizlikelime') kmOyunAnimateGizliKelime(s, i, kaydedilecek, bitirOrtak);
+                else if(_kmOyunAktifTema === 'kule') kmOyunAnimateKule(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek

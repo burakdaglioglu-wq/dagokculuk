@@ -3778,3 +3778,50 @@ onayı için not düşüldü).
 Skor dok'unun CSS'i hiç değişmedi (sadece z-index karşılaştırması yapıldı, kendi kuralı dokunulmadı).
 
 **Deploy durumu**: Commit + push edildi, DEPLOY YOK — "Üç oyun bitince deploy et" (Kule bekleniyor).
+
+### 28f. Kule (Faz 16, Adım 1, 3. oyun, 2026-09-18, TAMAMLANDI — gece görevi)
+
+**Gece görevi** kapsamında kullanıcı uyanık değilken tek geçişte (mekanik + görsel birlikte, ara onay
+BEKLENMEDEN) kuruldu. Gizli Kelime'nin "sınıf çapında paylaşılan durum" emsaliyle AYNI kategori (frac/yol
+YOK, artis=0, bitirOrtak'tan hariç, 4 parametreli baslatAnimasyon dispatch'i).
+
+**Mimari**: `_kmKule` (yükseklik/netSapma/taşlar/katkı) Gizli Kelime'yle AYNI konum bazlı + tarih damgalı
+localStorage deseninde (`dag_km_kule_<konum>`, gün değişince sıfırlanır). `_kmKuleRekor` (en yüksek
+ulaşılan kat) ise AYRI, İNDEFİNİTE bir anahtarda (`dag_km_kule_rekor_<konum>`, tarih damgası YOK — bir
+rekorun ertesi gün sıfırlanması anlamsız olurdu, `d0.enIyiSeri` ile aynı ilke).
+
+**Mekanik**: her gerçek seri toplamına göre sapma tablosundan (27+→0/kusursuz, 24-26→±3, 18-23→±8,
+12-17→±15, 0-11→±24) rastgele yönlü bir sapma üretilip TEK bir net (signed) toplam sapmaya ekleniyor —
+bu net değer hem çökme tetikleyicisi hem de kulenin görsel eğim açısını aynı anda besliyor. Eşik (esik)
+tabanı 40; kule 10 kattan sonra "rüzgâr" ile her 5 katta 4 azalıyor (min 18'de taban buluyor, asla
+imkansız hale gelmiyor). Tehlike kademesi (sağlam/sallanıyor/kritik) net sapmanın eşiğe oranına göre.
+27+ seri kusursuz taş (altın renk, kısa "KUSURSUZ" yanıp sönmesi — §15g: bu görsel HER ZAMAN gösteriliyor,
+sadece ses/toast ciddi modda susuyor, Kehanet'in tam-isabet parlamasıyla aynı ilke). Eşik aşılınca yıkılış:
+taşlar tek tek (55ms arayla) düşüp toz efekti + "N katta yıkıldı" banner'ı, ~2.4sn sonra kule sıfırlanıp
+REKOR korunarak devam ediyor. Yıkılmaya sebep olan sporcunun adı HİÇBİR YERDE gösterilmiyor/anılmıyor
+(kullanıcının açık talimatı).
+
+**Görsel**: SVG tabanlı kule (diğer 9 arka-plan-SVG'li temayla AYNI `.km-oyun-panel > svg` desenine
+uyuyor), taşlar alttan üste hafif küçülüyor (perspektif), her taşın deterministik (seed'li, re-render'da
+titremeyen) hafif rastgele dönüşü var — "gerçek yapı hissi". Kamera, kule uzunluğa göre viewBox'ı büyüterek
+("zoom out") hem üstü hem tabanı HER ZAMAN görünür tutuyor (saf pan yerine — taban asla tamamen
+kaybolmuyor, spesifikasyonun "alt katlar aşağıda kalsın ama tamamen kaybolmasın" isteğini pan'den daha
+sağlam karşılıyor). Kulenin eğimi + sürekli çalışan (aktif tema kule olduğu sürece, kendi kendine duran/
+başlayan) hafif sallanma animasyonu AYNI transform'da birleşiyor, genliği tehlike kademesine göre büyüyor,
+reduced-motion'da sıfır. Rekor çizgisi kesikli sarı çizgi + etiket. Katkı paneli (kim kaç taş/kaç kusursuz)
+panelin kendi içinde, sağdaki paylaşılan Sıralama/Sporcu Seç rayına dokunmuyor.
+
+**Gerçek testte doğrulanan**: kusursuz seri (10+10+10=30) → sapma:0, kusursuz:true. Düşük seri sonrası
+net sapma gerçekten değişti. 5 taş sonrası rekor çizgisi doğru yükseklikte, opacity doğru. Deterministik
+hale getirilmiş (Math.random test içinde sabitlendi) bir GERÇEK tıklamayla eşik aşıldığında: yıkılış
+banner'ı doğru gecikmeyle belirdi, ~2.5sn sonra yükseklik/netSapma sıfırlandı, REKOR korundu (hatta
+yıkılış anında kırılan yeni rekor bile doğru kaydedildi). Katkı paneli gerçek verilerle doğru güncellendi.
+16 tema + Reaksiyon regresyon taraması temiz (0 hata). 360/1280/1920px ekran görüntüsüyle kontrol edildi,
+skor dok'unun kendi CSS kuralı hiç değişmedi.
+
+**Not**: test sırasında pad butonlarının DOM'unda (görünmez, `display:none`) Pist'e özel bir hız-etiketi
+span'inin ("10NİTRO", "1SAVRUL" gibi) her temada var olduğu keşfedildi — bu ÖNCEDEN VAR OLAN, Kule'den
+tamamen bağımsız bir davranış (bkz. `KM_OYUN_PAD_RENK` yakınındaki Faz 9 Stage 3 yorumu), test locator'ı
+buna göre düzeltildi, ürün kodunda hiçbir değişiklik yapılmadı.
+
+**Deploy durumu**: Üç oyun (Kehanet + Gizli Kelime + Kule) TAMAMLANDI — commit + push + DEPLOY yapılacak.
