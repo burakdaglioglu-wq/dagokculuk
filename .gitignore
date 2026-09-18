@@ -3,3 +3,6 @@ node_modules/
 *.log
 .dev.vars
 yedek/
+
+# Yerel/telifli ham gorseller - ASLA commit/deploy edilmez (bkz. DEVIR.md 38)
+_yerel-gorseller/

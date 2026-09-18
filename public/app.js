@@ -11065,24 +11065,32 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 #km-oyun-stars circle{ animation:kmTwinkle 3.2s ease-in-out infinite; }
 @keyframes kmTwinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.85; } }
 
-/* Yıldız Seferi */
-#km-oyun-panel-yildiz{ background:radial-gradient(120% 120% at 50% 50%,#131a4a 0%,#0a0c26 55%,#05060f 100%); }
+/* Hendek Akını (2026-09-19) — eski "Yıldız Seferi"nin yerine. Derinlik eksenli perspektif koridor. */
+#km-oyun-panel-yildiz{ background:linear-gradient(180deg,#03050c 0%,#080e1c 62%,#0a1020 100%); }
 .km-star{ position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:.5; animation:kmTwinkle 3.2s ease-in-out infinite; pointer-events:none; }
-.km-star-core{ animation:kmCorePulse 2.4s ease-in-out infinite; }
-.km-star-dot{ filter:drop-shadow(0 0 8px #fff6d8); }
+/* kmCorePulse Hazine'nin .km-treasure-glow'u tarafından da kullanılıyor — burada KALMALI.
+   (.km-star-core/.km-star-dot kuralları, eski merkez yıldız elemanlarıyla birlikte kaldırıldı.) */
 @keyframes kmCorePulse{ 0%,100%{ opacity:.82; } 50%{ opacity:1; } }
-.km-ring{ fill:none; stroke:#4a56a8; stroke-width:1.6; stroke-dasharray:2 7; transition:stroke .5s, opacity .5s; opacity:.7; }
-.km-ring.hit{ stroke:var(--_c); opacity:1; stroke-width:2; filter:drop-shadow(0 0 6px var(--_c)); }
-.km-ring-num{ font-family:var(--font-display); font-weight:700; font-size:10px; fill:#8890d6; }
-#km-oyun-gate{ fill:none; stroke:var(--a1); stroke-width:2.5; stroke-dasharray:3 6; opacity:.5; filter:drop-shadow(0 0 10px var(--a1)); animation:kmGateSpin 24s linear infinite; }
-@keyframes kmGateSpin{ to{ stroke-dashoffset:-180; } }
-.km-rocket-token .km-flame{ fill:var(--a3); opacity:.9; }
-.km-rocket-token .km-body{ fill:var(--_c); stroke:#04081c; stroke-width:1; }
-.km-rocket-token .km-tag-bg{ fill:#0a0f1a; stroke:var(--_c); stroke-width:1.4; }
-.km-rocket-token .km-tag-text{ font-family:var(--font-body); font-weight:700; fill:var(--ink); font-size:9.5px; }
-.km-rocket-token{ transition:filter .2s ease; }
-.km-rocket-token.flying{ animation:kmRocketGlow .3s ease-in-out infinite; }
-@keyframes kmRocketGlow{ 0%,100%{ filter:drop-shadow(0 0 6px var(--_c)); } 50%{ filter:drop-shadow(0 0 13px var(--_c)); } }
+/* Sektör kapısı (kontrol noktası) — geçilince mavi yanar. Eski .km-ring'in rolünü devraldı. */
+.km-hendek-kapi{ transition:opacity .5s ease; }
+.km-hendek-kapi .km-hk-govde{ fill:#1d2640; stroke:#43587a; stroke-width:1.1; transition:stroke .5s ease; }
+.km-hendek-kapi .km-hk-lamba{ fill:#43587a; transition:fill .5s ease; }
+.km-hendek-kapi.hit .km-hk-govde{ stroke:var(--_c); }
+.km-hendek-kapi.hit .km-hk-lamba{ fill:var(--_c); filter:drop-shadow(0 0 6px var(--_c)); }
+/* Reaktör ağzı (hedef) */
+#km-oyun-reaktor{ transition:opacity .6s ease; }
+#km-oyun-reaktor .km-rk-halka{ fill:none; stroke:#8fe8ff; animation:kmReaktorNabiz 2.6s ease-in-out infinite; }
+@keyframes kmReaktorNabiz{ 0%,100%{ opacity:.45; } 50%{ opacity:.95; } }
+/* Avcı (sporcu gemisi) — arkadan görünüm: X dizilimli 4 kanat + 4 motor közü */
+.km-avci{ transition:filter .2s ease; }
+.km-avci .km-avci-govde{ fill:#111a2c; stroke:var(--_c); stroke-width:1.5; stroke-opacity:.8; }
+.km-avci .km-avci-koz{ fill:var(--_c); }
+.km-avci .km-tag-bg{ fill:rgba(5,9,18,0.86); stroke:var(--_c); stroke-width:1.2; }
+.km-avci .km-tag-text{ font-family:var(--font-display); font-weight:700; fill:#e8f2ff; font-size:10.5px; }
+.km-avci.flying{ animation:kmAvciKoz .3s ease-in-out infinite; }
+@keyframes kmAvciKoz{ 0%,100%{ filter:drop-shadow(0 0 5px var(--_c)); } 50%{ filter:drop-shadow(0 0 14px var(--_c)); } }
+/* Hiperuzay çizgileri — yüksek seride kaçış noktasından dışarı fırlar */
+.km-hiper-cizgi{ stroke:#cfe9ff; stroke-linecap:round; opacity:0; }
 
 /* Hazine Adası */
 #km-oyun-panel-hazine{ background:#a9895a; }
@@ -11761,13 +11769,29 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         const KM_OYUN_CP_SAYISI = 8;
         const KM_OYUN_CP_FRAC = Array.from({ length: KM_OYUN_CP_SAYISI }, function(_, i) { return (i + 1) / KM_OYUN_CP_SAYISI; });
-        const KM_YILDIZ_CX = 600, KM_YILDIZ_CY = 220, KM_YILDIZ_R0 = 34, KM_YILDIZ_R1 = 490, KM_YILDIZ_SQUASH = 0.44, KM_YILDIZ_TURNS = 1.15;
+        // ---- HENDEK AKINI (2026-09-19) — eski "Yıldız Seferi"nin (iç içe elips yörünge + prosedürel
+        // astronot) YERİNE geçti. Diğer 16 temanın HEPSİ 2B bir çizgi üzerinde ilerliyordu; bu tema
+        // DERİNLİK ekseninde ilerliyor (tek-nokta perspektif koridor, ekranın içine doğru) — bu yüzden
+        // "bir kıvrımlı yol daha" hissi vermiyor. frac/kontrol-noktası iskeleti AYNEN korundu, o yüzden
+        // Bireysel/Takım/Yarış/PB/lig/rozet/sayaç hiç dokunulmadan çalışıyor.
+        // Kamera düzlemi (t=0) kasten çerçevenin DIŞINA taşıyor (l=-190, r=1390) — hendeğin İÇİNDE
+        // olduğumuz hissi bundan geliyor, kenarları görünen bir kutu değil.
+        // VPY ve avcı yüksekliği (KM_HENDEK_AVCI_Y) skor dock'una göre seçildi: dock sahnenin ALT-ORTASINI
+        // (yaklaşık y>195) kaplıyor, oysa tek-nokta perspektifte bütün hareket kaçış noktasında toplanıyor.
+        // İlk denemede VPY=200 idi ve avcıların TAMAMI dock'un arkasında kalıyordu — gerçek testte yakalandı.
+        const KM_HENDEK_VPX = 600, KM_HENDEK_VPY = 142;                  // kaçış noktası = reaktör ağzı
+        const KM_HENDEK_NEAR = { l: -190, r: 1390, f: 600, t: 34 };      // t=0 düzleminde hendek kesiti
+        const KM_HENDEK_AVCI_Y = 0.74;                                   // avcı, hendek kesitinin tabandan bu oranı kadar yukarısında uçar
+        const KM_HENDEK_K = 2.15;                                        // perspektif eğrilik
+        const KM_HENDEK_TMAX = 2.0;                                      // frac=1 -> bu derinlik (reaktör ağzı)
+        const KM_HENDEK_DILIM = 34;                                      // duvar/zemin panel dilimi sayısı
+        const KM_HENDEK_TSON = 4.2;                                      // geometri bu derinliğe kadar çizilir (VP'ye pratik olarak yapışsın diye yüksek)
 
         const KM_OYUN_TEMALAR = {
             zirve: { ad: 'Zirve Yolu', ikon: '🏔️', renkler: ['#00e5ff', '#ff2e9a', '#ffcc33', '#8b6bf6', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o sporcuyu zirveye doğru ilerletir.', btn: '🚀 İlerlet', finish: 'ZİRVEYE ULAŞTI!', cp: 'KONTROL NOKTASI!', birim: 'kontrol noktası', bitis: 'Zirvede! 🏔️',
                 surprizler: [{ikon:'🦅',metin:'Bir kartal gördü!'},{ikon:'🐐',metin:'Yaban keçisi selam verdi!'},{ikon:'🌤️',metin:'Hava açtı!'},{ikon:'⛰️',metin:'Yeni bir manzara keşfetti!'},{ikon:'🧭',metin:'Doğru rotayı buldu!'}] },
-            yildiz: { ad: 'Yıldız Seferi', ikon: '🚀', renkler: ['#2dd4f4', '#ff4fa3', '#ffd166', '#7c5cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o roketi galaksi kapısına doğru ilerletir.', btn: '🚀 İlerlet', finish: 'GALAKSİYE ULAŞTI!', cp: 'İSTASYONA ULAŞTI!', birim: 'istasyon', bitis: 'Kapıdan geçti! 🌌',
-                surprizler: [{ikon:'🪐',metin:'Yeni bir gezegen keşfetti!'},{ikon:'☄️',metin:'Bir kuyruklu yıldız geçti!'},{ikon:'👽',metin:'Uzaylı dostlarla selamlaştı!'},{ikon:'🌟',metin:'Nadir bir yıldız gördü!'},{ikon:'🛰️',metin:'Uydu sinyali yakaladı!'}] },
+            yildiz: { ad: 'Hendek Akını', ikon: '🚀', renkler: ['#2dd4f4', '#ff4fa3', '#ffd166', '#7c5cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o avcıyı hendekte reaktör ağzına doğru bir sektör ilerletir.', btn: '🚀 İlerlet', finish: 'TAM İSABET!', cp: 'SEKTÖR GEÇİLDİ!', birim: 'sektör', bitis: 'Reaktörü vurdu! 💥',
+                surprizler: [{ikon:'☄️',metin:'Göktaşı yağmurunu sıyırdı!'},{ikon:'🛰️',metin:'Devriye uydusunu atlattı!'},{ikon:'⚡',metin:'Kalkanı tam zamanında açtı!'},{ikon:'🌌',metin:'Hiperuzay izini yakaladı!'},{ikon:'🎯',metin:'Hedef kilidi tuttu!'}] },
             hazine: { ad: 'Hazine Adası', ikon: '🏝️', renkler: ['#5eead4', '#ff6b6b', '#f4c542', '#7c8cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o tekneyi hazine adasına doğru ilerletir.', btn: '⛵ İlerlet', finish: 'HAZİNEYİ BULDU!', cp: 'ŞAMANDIRAYA ULAŞTI!', birim: 'şamandıra', bitis: 'Adaya vardı! 🏝️',
                 surprizler: [{ikon:'🪙',metin:'Küçük bir altın buldu!'},{ikon:'🐬',metin:'Yunuslar eşlik etti!'},{ikon:'🦜',metin:'Konuşan papağanla tanıştı!'},{ikon:'🗺️',metin:'Haritada gizli bir iz buldu!'},{ikon:'🐚',metin:'Nadir bir deniz kabuğu buldu!'}] },
             pist: { ad: 'Pist Yarışı', ikon: '🏎️', renkler: ['#ff3b3b', '#3fa9ff', '#ffd23f', '#3ddc84', '#ff9142'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o karta bayrağa doğru gaz verdirir.', btn: '🏁 İlerlet', finish: 'YARIŞI BİTİRDİ!', cp: 'TUR TAMAMLANDI!', birim: 'tur bayrağı', bitis: 'Bayrağı gördü! 🏁',
@@ -11981,11 +12005,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             ninja: function(t, i, n) { return kmOyunNinjaNokta(t.frac); },
             monopoly: function(t, i, n) { return kmOyunMonopolyNokta(t.frac); },
             dag: function(t, i, n) { return kmOyunDagNokta(t.frac); },
-            yildiz: function(t, i, n) { return kmOyunYildizPoz(i, n, t.frac); },
+            // yildiz (Hendek Akını) BİLEREK YOK (2026-09-19): tek-nokta perspektif sahnede kamera
+            // zoom'u illüzyonu bozuyor — yakındaki avcı perspektif gereği zaten büyük, üstüne 2× zoom
+            // gelince dev X kanatlar bütün çerçeveyi kaplayıp hendeği yok ediyordu (gerçek testte
+            // yakalandı). Perspektifin kendisi zaten "kamera"; bu tema diğer 8 kamerasız tema gibi
+            // (hedef/futbol/arena/kehanet/…) haritada olmayarak dışarıda kalıyor — tüm tüketiciler
+            // `if(!svgId) return` ile korunuyor, ek dal gerekmedi.
             balon: function(t, i, n) { return kmOyunBalonPoz(i, n, t.frac); },
             sisharita: function(t, i, n) { return kmOyunSisNokta(t.frac); }
         };
-        var KM_OYUN_KAMERA_SVG_ID = { zirve: 'km-oyun-svg-zirve', hazine: 'km-oyun-svg-hazine', ninja: 'km-oyun-svg-ninja', monopoly: 'km-oyun-svg-monopoly', dag: 'km-oyun-svg-dag', yildiz: 'km-oyun-svg-yildiz', balon: 'km-oyun-svg-balon', sisharita: 'km-oyun-svg-sisharita' };
+        var KM_OYUN_KAMERA_SVG_ID = { zirve: 'km-oyun-svg-zirve', hazine: 'km-oyun-svg-hazine', ninja: 'km-oyun-svg-ninja', monopoly: 'km-oyun-svg-monopoly', dag: 'km-oyun-svg-dag', balon: 'km-oyun-svg-balon', sisharita: 'km-oyun-svg-sisharita' };
         var KM_OYUN_KAMERA_ZOOM = 0.5; // 1200x440'ın yarısı kadarlık bir pencere — figürler küçülmüyor.
         var _kmOyunKameraUyarilanTema = {}; // aynı hata için konsolu spam'lememek adına tema başına 1 kez uyar.
         var _kmOyunKameraRaf = null;
@@ -12951,14 +12980,36 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <g id="km-oyun-summit" class="km-summit-icon" opacity="0.55" transform="translate(600,45)"><image href="/zirve-karakterler/zirve-zirve-bayrak.webp" x="-41.5" y="-120" width="83.0" height="120" preserveAspectRatio="xMidYMax meet"/><text x="0" y="17" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">🏔️ Zirve</text></g>
                 </svg>
             </div>`;
+            // Hendek Akını — katman sırası ÖNEMLİ: nebula/yıldız → istasyon yüzeyi → hendek duvar/zemin
+            // → greebling → kenar ışıkları → sektör kapıları → reaktör ağzı → avcılar (en üstte, uzaktan
+            // yakına sıralı çizilir, bkz. kmOyunResyncYildiz'deki derinlik sıralaması).
             if(tid === 'yildiz') return `<div class="km-oyun-panel" id="km-oyun-panel-yildiz">
                 <div id="km-oyun-stars-yildiz"></div>
                 <svg id="km-oyun-svg-yildiz" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
-                  <defs><radialGradient id="kmStarCore" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff6d8"/><stop offset="45%" stop-color="var(--a3)"/><stop offset="100%" stop-color="var(--a3)" stop-opacity="0"/></radialGradient></defs>
-                  <g id="km-oyun-rings"></g>
-                  <ellipse id="km-oyun-gate" cx="600" cy="220" rx="500" ry="215"/>
-                  <circle class="km-star-core" cx="600" cy="220" r="32" fill="url(#kmStarCore)"/>
-                  <circle class="km-star-dot" cx="600" cy="220" r="8" fill="#fff6d8"/>
+                  <defs>
+                    <radialGradient id="kmReaktorGrad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#ffffff"/><stop offset="26%" stop-color="#a9f6ff"/>
+                      <stop offset="60%" stop-color="#2ba6d6" stop-opacity="0.72"/><stop offset="100%" stop-color="#0b6f96" stop-opacity="0"/>
+                    </radialGradient>
+                    <radialGradient id="kmNebula1" cx="20%" cy="14%" r="42%">
+                      <stop offset="0%" stop-color="#4b2f7d" stop-opacity="0.5"/><stop offset="100%" stop-color="#4b2f7d" stop-opacity="0"/>
+                    </radialGradient>
+                    <radialGradient id="kmNebula2" cx="84%" cy="10%" r="34%">
+                      <stop offset="0%" stop-color="#7d2f55" stop-opacity="0.38"/><stop offset="100%" stop-color="#7d2f55" stop-opacity="0"/>
+                    </radialGradient>
+                    <filter id="kmReaktorBloom" x="-70%" y="-70%" width="240%" height="240%">
+                      <feGaussianBlur stdDeviation="8"/><feComponentTransfer><feFuncA type="linear" slope="1.5"/></feComponentTransfer>
+                    </filter>
+                  </defs>
+                  <rect x="0" y="0" width="1200" height="440" fill="url(#kmNebula1)"/>
+                  <rect x="0" y="0" width="1200" height="440" fill="url(#kmNebula2)"/>
+                  <g id="km-oyun-hendek-yuzey"></g>
+                  <g id="km-oyun-hendek-duvar"></g>
+                  <g id="km-oyun-hendek-greeble"></g>
+                  <g id="km-oyun-hendek-isik"></g>
+                  <g id="km-oyun-hendek-kapilar"></g>
+                  <g id="km-oyun-reaktor"></g>
+                  <g id="km-oyun-hiper"></g>
                   <g id="km-oyun-rockets"></g>
                 </svg>
             </div>`;
@@ -14397,61 +14448,210 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
-        // ---- YILDIZ SEFERI ----
-        function kmOyunYildizAci(i, n) { return -90 + i * (360 / Math.max(1, n)); }
-        function kmOyunYildizRingR(ci) { return KM_YILDIZ_R0 + (ci + 1) * ((KM_YILDIZ_R1 - KM_YILDIZ_R0) / KM_OYUN_CP_SAYISI); }
+        // ---- HENDEK AKINI ----
+        // Tek-nokta perspektif: derinlik t -> ölçek s(t)=1/(1+K*t). frac (0..1) -> t = frac*TMAX.
+        // frac=0 kameranın dibinde (büyük, alt), frac=1 reaktör ağzında (küçük, kaçış noktasında).
+        function kmOyunHendekOlcek(t) { return 1 / (1 + KM_HENDEK_K * t); }
+        function kmOyunHendekDilim(t) {
+            let sc = kmOyunHendekOlcek(t);
+            return {
+                l: KM_HENDEK_VPX + (KM_HENDEK_NEAR.l - KM_HENDEK_VPX) * sc,
+                r: KM_HENDEK_VPX + (KM_HENDEK_NEAR.r - KM_HENDEK_VPX) * sc,
+                f: KM_HENDEK_VPY + (KM_HENDEK_NEAR.f - KM_HENDEK_VPY) * sc,
+                t: KM_HENDEK_VPY + (KM_HENDEK_NEAR.t - KM_HENDEK_VPY) * sc,
+                sc: sc
+            };
+        }
+        // Sporcular hendek genişliğine yayılıyor (şerit) — hepsi ortada üst üste binmesin diye.
+        function kmOyunHendekSerit(i, n) { return n <= 1 ? 0 : (-0.62 + (i / (n - 1)) * 1.24); }
+        // DİKKAT: fonksiyon adı kasten "kmOyunYildizPoz" kaldı — kamera haritası
+        // (KM_OYUN_KAMERA_NOKTA_TEMALAR.yildiz) ve animasyon bu imzayı çağırıyor, imza değişmedi.
+        // V-FORMASYONU (2026-09-19, gerçek testte yakalandı): oturum başında herkes frac=0'da olunca
+        // 8 avcı aynı derinlikte düz bir sıra oluşturup etiketleri üst üste bindiriyordu. Şerit merkezden
+        // uzaklaştıkça küçük bir derinlik ofseti (kanatlar hafif GERİDE = kameraya daha yakın) ekleniyor —
+        // gerçek filo düzeni gibi. Ofset (en fazla ~0.07 t) tek bir serinin ilerlemesinden (~0.29 t) çok
+        // daha küçük, bu yüzden kim önde/kim arkada okunurluğunu BOZMUYOR; frac'a dokunmuyor, salt görsel.
+        // POZİTİF ofset (merkez ileri), negatif değil: t 0'da kelepçelendiği için negatif ofset tam da
+        // düzeltmek istediğimiz frac=0 durumunda etkisiz kalırdı.
+        function kmOyunHendekFormasyonOfset(i, n) { return (0.62 - Math.abs(kmOyunHendekSerit(i, n))) * 0.115; }
         function kmOyunYildizPoz(i, n, frac) {
-            let r = KM_YILDIZ_R0 + frac * (KM_YILDIZ_R1 - KM_YILDIZ_R0);
-            let angleDeg = kmOyunYildizAci(i, n) + frac * KM_YILDIZ_TURNS * 360;
-            let rad = angleDeg * Math.PI / 180;
-            return { x: KM_YILDIZ_CX + r * Math.cos(rad), y: KM_YILDIZ_CY + r * KM_YILDIZ_SQUASH * Math.sin(rad), heading: angleDeg + 90 };
+            let t = Math.max(0, Math.min(1, frac) * KM_HENDEK_TMAX + kmOyunHendekFormasyonOfset(i, n));
+            let a = kmOyunHendekDilim(t);
+            let orta = (a.l + a.r) / 2;
+            return {
+                x: orta + kmOyunHendekSerit(i, n) * (a.r - a.l) * 0.30,
+                y: a.f - (a.f - a.t) * KM_HENDEK_AVCI_Y,
+                olcek: Math.max(0.13, a.sc * 1.42),
+                heading: 0
+            };
+        }
+        // Derinlikle arka plana doğru solma (atmosferik perspektif) — derinlik hissinin ana kaynağı.
+        function kmOyunHendekSolgun(t, c) {
+            let f = Math.min(1, t * 0.95), m = function(a, b) { return Math.round(a + (b - a) * f); };
+            return 'rgb(' + m(c[0], 16) + ',' + m(c[1], 23) + ',' + m(c[2], 40) + ')';
         }
         function kmOyunSahneKurYildiz() {
+            // Yıldızlar SADECE üst bölgede (hendeğin üstündeki açık uzay) — aşağıda duvarlar var.
             let sg = document.getElementById('km-oyun-stars-yildiz');
             if(sg) {
                 let html = '';
-                for(let i = 0; i < 60; i++) { let x = Math.random() * 100, y = Math.random() * 100, r = Math.random() * 1.6 + 0.6; html += `<div class="km-star" style="left:${x.toFixed(1)}%; top:${y.toFixed(1)}%; width:${r.toFixed(1)}px; height:${r.toFixed(1)}px; animation-delay:${(Math.random() * 3).toFixed(2)}s;"></div>`; }
+                for(let i = 0; i < 70; i++) {
+                    let x = Math.random() * 100, y = Math.random() * 42, r = Math.random() * 1.5 + 0.5;
+                    html += `<div class="km-star" style="left:${x.toFixed(1)}%; top:${y.toFixed(1)}%; width:${r.toFixed(1)}px; height:${r.toFixed(1)}px; animation-delay:${(Math.random() * 3).toFixed(2)}s;"></div>`;
+                }
                 sg.innerHTML = html;
             }
-            let roster = _kmOyunRosterCache, n = roster.length;
-            let ringsG = document.getElementById('km-oyun-rings');
-            if(ringsG) {
-                ringsG.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
-                    let rx = kmOyunYildizRingR(ci), ry = rx * KM_YILDIZ_SQUASH;
-                    return `<ellipse class="km-ring" id="km-oyun-ring-${ci}" cx="${KM_YILDIZ_CX}" cy="${KM_YILDIZ_CY}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"/><text class="km-ring-num" x="${KM_YILDIZ_CX}" y="${(KM_YILDIZ_CY - ry - 6).toFixed(1)}" text-anchor="middle">${ci + 1}</text>`;
+            let a0 = kmOyunHendekDilim(0);
+            // İstasyon yüzeyi — hendeğin dışında kalan zırh, ufka kaçar.
+            let yz = document.getElementById('km-oyun-hendek-yuzey');
+            if(yz) {
+                let h = `<polygon points="0,${a0.t} ${a0.l.toFixed(1)},${a0.t} ${KM_HENDEK_VPX},${KM_HENDEK_VPY} 0,${KM_HENDEK_VPY}" fill="#121a2b"/>
+                    <polygon points="1200,${a0.t} ${a0.r.toFixed(1)},${a0.t} ${KM_HENDEK_VPX},${KM_HENDEK_VPY} 1200,${KM_HENDEK_VPY}" fill="#0f1726"/>`;
+                for(let i = 1; i <= 7; i++) {
+                    let p = i / 8;
+                    h += `<line x1="${(a0.l * (1 - p)).toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#1d2941" stroke-width="1" opacity="0.55"/>`;
+                    h += `<line x1="${(a0.r + (1200 - a0.r) * p).toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#1b2540" stroke-width="1" opacity="0.5"/>`;
+                }
+                // Hendeği uzaydan ayıran keskin üst kenar
+                h += `<line x1="${a0.l.toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#8fb6d9" stroke-width="2" opacity="0.75"/>
+                    <line x1="${a0.r.toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#6f94b8" stroke-width="2" opacity="0.7"/>`;
+                yz.innerHTML = h;
+            }
+            // Duvar + zemin panelleri, greebling (ILM'in yüzey detayı — jenerik sci-fi'dan ayıran şey), kenar ışıkları
+            let duvarH = '', greebleH = '', isikH = '';
+            for(let i = 0; i < KM_HENDEK_DILIM; i++) {
+                let ta = Math.pow(i / KM_HENDEK_DILIM, 0.72) * KM_HENDEK_TSON;
+                let tb = Math.pow((i + 1) / KM_HENDEK_DILIM, 0.72) * KM_HENDEK_TSON;
+                let a = kmOyunHendekDilim(ta), b = kmOyunHendekDilim(tb), tm = (ta + tb) / 2, alt = i % 2 === 0;
+                duvarH += `<polygon points="${a.l.toFixed(1)},${a.t.toFixed(1)} ${b.l.toFixed(1)},${b.t.toFixed(1)} ${b.l.toFixed(1)},${b.f.toFixed(1)} ${a.l.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [42,52,72] : [33,42,60])}"/>`;
+                duvarH += `<polygon points="${a.r.toFixed(1)},${a.t.toFixed(1)} ${b.r.toFixed(1)},${b.t.toFixed(1)} ${b.r.toFixed(1)},${b.f.toFixed(1)} ${a.r.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [26,34,50] : [21,28,42])}"/>`;
+                duvarH += `<polygon points="${a.l.toFixed(1)},${a.f.toFixed(1)} ${b.l.toFixed(1)},${b.f.toFixed(1)} ${b.r.toFixed(1)},${b.f.toFixed(1)} ${a.r.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [24,31,46] : [19,25,38])}"/>`;
+                if(a.sc > 0.055) {
+                    let yukA = a.f - a.t, yukB = b.f - b.t, op = Math.max(0, 0.55 - tm * 0.5).toFixed(2);
+                    for(let g = 0; g < 5; g++) {
+                        let p = 0.12 + g * 0.19, ya = a.t + yukA * p, yb = b.t + yukB * p;
+                        let ha = Math.max(0.6, yukA * 0.035), hb = Math.max(0.4, yukB * 0.035);
+                        greebleH += `<polygon points="${a.l.toFixed(1)},${ya.toFixed(1)} ${b.l.toFixed(1)},${yb.toFixed(1)} ${b.l.toFixed(1)},${(yb+hb).toFixed(1)} ${a.l.toFixed(1)},${(ya+ha).toFixed(1)}" fill="#6e88ad" opacity="${op}"/>`;
+                        greebleH += `<polygon points="${a.r.toFixed(1)},${ya.toFixed(1)} ${b.r.toFixed(1)},${yb.toFixed(1)} ${b.r.toFixed(1)},${(yb+hb).toFixed(1)} ${a.r.toFixed(1)},${(ya+ha).toFixed(1)}" fill="#4a5f82" opacity="${op}"/>`;
+                    }
+                    if(i % 2 === 0) {
+                        let sw = (0.9 * a.sc + 0.3).toFixed(2);
+                        greebleH += `<line x1="${a.l.toFixed(1)}" y1="${a.t.toFixed(1)}" x2="${a.l.toFixed(1)}" y2="${a.f.toFixed(1)}" stroke="#7b95bd" stroke-width="${sw}" opacity="${op}"/>`;
+                        greebleH += `<line x1="${a.r.toFixed(1)}" y1="${a.t.toFixed(1)}" x2="${a.r.toFixed(1)}" y2="${a.f.toFixed(1)}" stroke="#556b92" stroke-width="${sw}" opacity="${op}"/>`;
+                    }
+                }
+                if(i % 2 === 0 && a.sc > 0.05) {
+                    let op = Math.max(0, 0.95 - tm * 1.0).toFixed(2), rr = Math.max(0.7, 3.2 * a.sc).toFixed(1);
+                    isikH += `<circle cx="${a.l.toFixed(1)}" cy="${a.f.toFixed(1)}" r="${rr}" fill="#ffb347" opacity="${op}"/>`;
+                    isikH += `<circle cx="${a.r.toFixed(1)}" cy="${a.f.toFixed(1)}" r="${rr}" fill="#ffb347" opacity="${op}"/>`;
+                }
+            }
+            let dv = document.getElementById('km-oyun-hendek-duvar'); if(dv) dv.innerHTML = duvarH;
+            let gr = document.getElementById('km-oyun-hendek-greeble'); if(gr) gr.innerHTML = greebleH;
+            let ik = document.getElementById('km-oyun-hendek-isik'); if(ik) ik.innerHTML = isikH;
+            // Sektör kapıları = kontrol noktaları (KM_OYUN_CP_FRAC ile birebir aynı fraclar)
+            let kp = document.getElementById('km-oyun-hendek-kapilar');
+            if(kp) {
+                kp.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
+                    let a = kmOyunHendekDilim(f * KM_HENDEK_TMAX);
+                    // Çapraz çubuk YOK, pilonlar KISA (0.13): ilk iki denemede (0.46 sonra 0.26 + tam
+                    // genişlik çubuk) yakındaki kapılar hendeği boydan boya kesen dev sarı kale
+                    // direklerine dönüşüp sahneyi eziyordu (gerçek testte iki kez görüldü). Şimdi sadece
+                    // iki duvara yaslı kısa pilon + tepesinde lamba — geçilince lamba yanıyor.
+                    let kuleH = (a.f - a.t) * 0.13, gen = Math.max(1.4, 9 * a.sc);
+                    let op = Math.max(0.3, 0.9 - f * KM_HENDEK_TMAX * 0.2).toFixed(2);
+                    let sw = Math.max(0.5, 1.0 * a.sc).toFixed(2), lr = Math.max(1.0, 3.8 * a.sc).toFixed(1);
+                    let ust = (a.f - kuleH).toFixed(1);
+                    return `<g class="km-hendek-kapi" id="km-oyun-kapi-${ci}" opacity="${op}">
+                        <rect class="km-hk-govde" x="${(a.l - gen / 2).toFixed(1)}" y="${ust}" width="${gen.toFixed(1)}" height="${kuleH.toFixed(1)}" stroke-width="${sw}"/>
+                        <rect class="km-hk-govde" x="${(a.r - gen / 2).toFixed(1)}" y="${ust}" width="${gen.toFixed(1)}" height="${kuleH.toFixed(1)}" stroke-width="${sw}"/>
+                        <circle class="km-hk-lamba" cx="${a.l.toFixed(1)}" cy="${ust}" r="${lr}"/>
+                        <circle class="km-hk-lamba" cx="${a.r.toFixed(1)}" cy="${ust}" r="${lr}"/>
+                    </g>`;
                 }).join('');
             }
-            let rocketsG = document.getElementById('km-oyun-rockets'); if(!rocketsG) return;
-            // Karakter (astronot) İKİ SEBEPTEN ayrı bir alt-grupta duruyor: (1) roket eskiden yörünge
-            // yönüne göre dönerdi (rotate(heading)) — bir insan figürünü de aynı şekilde döndürürsek
-            // yörüngede TAKLA atıyormuş gibi görünürdü, bu yüzden döngü artık SADECE küçük jet alevine
-            // uygulanıyor, karakter hep dik kalıyor.
-            rocketsG.innerHTML = roster.map(function(s, i) {
+            // Reaktör ağzı (hedef) — kaçış noktasında
+            let rk = document.getElementById('km-oyun-reaktor');
+            if(rk) {
+                rk.innerHTML = `<circle cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="66" fill="url(#kmReaktorGrad)" filter="url(#kmReaktorBloom)"/>
+                    <circle cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="13" fill="#ffffff" opacity="0.95"/>
+                    <circle class="km-rk-halka" cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="24" stroke-width="2.2"/>
+                    <circle class="km-rk-halka" cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="37" stroke-width="1.4" style="animation-delay:.8s"/>`;
+            }
+            // Avcılar
+            let rg = document.getElementById('km-oyun-rockets'); if(!rg) return;
+            let roster = _kmOyunRosterCache;
+            rg.innerHTML = roster.map(function(s, i) {
                 let c = kmOyunRenk('yildiz', i), ad = s.ad.split(' ')[0];
-                return `<g class="km-rocket-token" id="km-oyun-rkt-${i}" style="--_c:${c};">
-                    <g id="km-oyun-rkt-alev-${i}"><ellipse class="km-flame" cx="-24" cy="8" rx="7" ry="4"/></g>
-                    ${kmOyunKarakterSVG(s, c, 'yildiz-' + i, 'uzay', 15)}
-                    <g transform="translate(0,30)"><rect class="km-tag-bg" x="-16" y="-8" width="32" height="16" rx="8"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${ad}</text></g>
-                </g>`;
+                return `<g class="km-avci" id="km-oyun-rkt-${i}" style="--_c:${c};">${kmOyunHendekAvciSVG(ad, c, i)}</g>`;
             }).join('');
             roster.forEach(function(s, i) { s.yildizEl = document.getElementById('km-oyun-rkt-' + i); });
             kmOyunResyncYildiz();
         }
+        // Avcı çizimi SABİT taban boyutta (g=44); derinlik ölçeği transform'daki scale() ile veriliyor —
+        // böylece tek bir çizim her derinlikte yeniden üretilmeden kullanılabiliyor.
+        function kmOyunHendekAvciSVG(ad, c, i) {
+            let g = 44;
+            // Etiket komşu şeritlerde sırayla ALT/ÜST — yan yana iki avcının etiketi çakışmasın.
+            let etiketY = (i % 2 === 0) ? g * 0.90 : -g * 0.78;
+            let kanat = function(sx, sy) {
+                return `<path class="km-avci-govde" d="M 0 0 L ${(sx * g).toFixed(1)} ${(sy * g * 0.46).toFixed(1)} L ${(sx * g * 0.90).toFixed(1)} ${(sy * g * 0.22).toFixed(1)} L 0 ${(-sy * g * 0.05).toFixed(1)} Z"/>`;
+            };
+            let koz = function(sx, sy) {
+                return `<ellipse class="km-avci-koz" cx="${(sx * g * 0.52).toFixed(1)}" cy="${(sy * g * 0.30).toFixed(1)}" rx="${(g * 0.10).toFixed(1)}" ry="${(g * 0.072).toFixed(1)}"/>`;
+            };
+            return `${koz(-1,-1)}${koz(1,-1)}${koz(-1,1)}${koz(1,1)}
+                ${kanat(-1,-1)}${kanat(1,-1)}${kanat(-1,1)}${kanat(1,1)}
+                <rect class="km-avci-govde" x="${(-g * 0.13).toFixed(1)}" y="${(-g * 0.17).toFixed(1)}" width="${(g * 0.26).toFixed(1)}" height="${(g * 0.34).toFixed(1)}" rx="${(g * 0.08).toFixed(1)}"/>
+                <ellipse class="km-avci-koz" cx="0" cy="${(-g * 0.03).toFixed(1)}" rx="${(g * 0.085).toFixed(1)}" ry="${(g * 0.065).toFixed(1)}" opacity="0.55"/>
+                <g class="km-avci-etiket" transform="translate(0,${etiketY.toFixed(1)})">
+                    <rect class="km-tag-bg" x="${(-ad.length * 3.3 - 8).toFixed(1)}" y="-9.5" width="${(ad.length * 6.6 + 16).toFixed(1)}" height="18" rx="9"/>
+                    <text class="km-tag-text" x="0" y="4" text-anchor="middle">${esc(ad)}</text>
+                </g>`;
+        }
         function kmOyunResyncYildiz() {
             let roster = _kmOyunRosterCache, n = roster.length;
             roster.forEach(function(s, i) {
+                if(!s.yildizEl) return;
                 let p = kmOyunYildizPoz(i, n, s.frac);
-                if(s.yildizEl) s.yildizEl.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
-                let fw = document.getElementById('km-oyun-rkt-alev-' + i); if(fw) fw.setAttribute('transform', `rotate(${p.heading.toFixed(1)})`);
+                s.yildizEl.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${p.olcek.toFixed(3)})`);
+                // Uzaktaki avcıda etiket okunmuyor, kalabalık yapıyor — belli bir ölçeğin altında gizle.
+                let et = s.yildizEl.querySelector('.km-avci-etiket');
+                if(et) et.setAttribute('opacity', p.olcek > 0.5 ? '1' : '0');
             });
+            // Derinlik sıralaması: UZAK olan ÖNCE çizilmeli ki yakındaki onun üstünü örtsün.
+            // frac büyük = uzak, o yüzden azalan frac sırasıyla DOM'a yeniden ekleniyor.
+            let rg = document.getElementById('km-oyun-rockets');
+            if(rg) {
+                roster.slice().sort(function(a, b) { return b.frac - a.frac; }).forEach(function(s) {
+                    if(s.yildizEl) rg.appendChild(s.yildizEl);
+                });
+            }
             for(let ci = 0; ci < KM_OYUN_CP_SAYISI - 1; ci++) {
                 let best = null;
                 roster.forEach(function(s, i) { if(s.frac >= KM_OYUN_CP_FRAC[ci] - 1e-9 && (!best || s.frac > best.frac)) best = { frac: s.frac, i: i }; });
-                let ring = document.getElementById('km-oyun-ring-' + ci);
-                if(ring) { ring.classList.toggle('hit', !!best); if(best) ring.style.setProperty('--_c', kmOyunRenk('yildiz', best.i)); }
+                let kapi = document.getElementById('km-oyun-kapi-' + ci);
+                if(kapi) { kapi.classList.toggle('hit', !!best); if(best) kapi.style.setProperty('--_c', kmOyunRenk('yildiz', best.i)); }
             }
-            let gate = document.getElementById('km-oyun-gate');
-            if(gate) gate.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.5';
+            let rk = document.getElementById('km-oyun-reaktor');
+            if(rk) rk.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.62';
+        }
+        // Hiperuzay çizgileri — kaçış noktasından dışarı fırlayan ışık izleri (yüksek seride).
+        function kmOyunHendekHiperuzay() {
+            let hg = document.getElementById('km-oyun-hiper'); if(!hg) return;
+            let html = '';
+            for(let i = 0; i < 26; i++) {
+                let aci = Math.random() * Math.PI * 2, r0 = 26 + Math.random() * 40, uz = 90 + Math.random() * 230;
+                let x1 = KM_HENDEK_VPX + Math.cos(aci) * r0, y1 = KM_HENDEK_VPY + Math.sin(aci) * r0 * 0.6;
+                let x2 = KM_HENDEK_VPX + Math.cos(aci) * (r0 + uz), y2 = KM_HENDEK_VPY + Math.sin(aci) * (r0 + uz) * 0.6;
+                html += `<line class="km-hiper-cizgi" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke-width="${(1 + Math.random() * 1.8).toFixed(1)}"/>`;
+            }
+            hg.innerHTML = html;
+            hg.querySelectorAll('.km-hiper-cizgi').forEach(function(ln, idx) {
+                ln.animate([{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 0.9, offset: 0.3 }, { opacity: 0, transform: 'scale(1.35)' }],
+                    { duration: 620 + Math.random() * 280, delay: idx * 9, easing: 'cubic-bezier(.2,.7,.3,1)' });
+            });
+            setTimeout(function() { if(hg) hg.innerHTML = ''; }, 1100);
         }
         function kmOyunAnimateYildiz(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, el = s.yildizEl; if(!el) { done(); return; }
@@ -14460,8 +14660,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             function frame(now) {
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
                 let p = kmOyunYildizPoz(i, n, eskiFrac + (yeniFrac - eskiFrac) * eased);
-                el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
-                let fw = document.getElementById('km-oyun-rkt-alev-' + i); if(fw) fw.setAttribute('transform', `rotate(${p.heading.toFixed(1)})`);
+                el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${p.olcek.toFixed(3)})`);
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
                     el.classList.remove('flying');
@@ -14469,16 +14668,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let scr = kmOyunSvgPct('km-oyun-svg-yildiz', varis.x, varis.y);
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('yildiz', i), 14, false);
                     if(yeniCp > eskiCp) {
-                        for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) { let r = document.getElementById('km-oyun-ring-' + cp); if(r) { r.classList.add('hit'); r.style.setProperty('--_c', kmOyunRenk('yildiz', i)); } }
-                        if(yeniFrac >= 1) { kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 26, true); let g = document.getElementById('km-oyun-gate'); if(g) g.style.opacity = '1'; }
+                        for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) {
+                            let k = document.getElementById('km-oyun-kapi-' + cp);
+                            if(k) { k.classList.add('hit'); k.style.setProperty('--_c', kmOyunRenk('yildiz', i)); }
+                        }
+                        if(yeniFrac >= 1) {
+                            kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 26, true);
+                            let rk = document.getElementById('km-oyun-reaktor'); if(rk) rk.style.opacity = '1';
+                        }
                     }
-                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('yildiz', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('yildiz', Math.min(1, n - 1)), 16, true); }, 80);
+                    // Yüksek seri -> hiperuzay çizgileri (o ikonik efekt, mevcut eşikle aynı)
+                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) { kmOyunHendekHiperuzay(); }
+                    kmOyunResyncYildiz();
                     done();
                 }
             }
             requestAnimationFrame(frame);
         }
-
         // ---- HAZINE ADASI ----
         // Faz 15 (2026-09-13) — gerçek korsan karakterleri, Arena/Zirve'deki AYNI kadın/erkek/nötr
         // deseni (kullanıcı talimatı tekrar onaylandı: "kadına kadın erkeğe erkek"). Sette kadın

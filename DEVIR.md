@@ -4299,3 +4299,65 @@ doğru ilerliyor (görselde çizili olan TAM rotayı takip ediyor). 360px mobild
 Reaksiyon tam regresyon sweep'i temiz.
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit 672de11, version 66c06250...).
+
+## 38. Hendek Akını — "Yıldız Seferi"nin yerine geçti (2026-09-19)
+
+Kullanıcı talimatı: "Yıldız Seferi için alternatif, ilerlemeli, görsel açıdan Star Wars gibi bir oyun
+sun; detayları sen araştır; diğerleri gibi kötü olmasın." Önce teşhis + görsel prototip sunuldu, kullanıcı
+üç kararı da onayladı (isim/marka, görsel kaynağı, yerine geçsin) — "yap bakalım sana güveniyorum".
+
+**Teşhis (neden kötüydü)**: Yıldız Seferi tamamen prosedüreldi — 7 iç içe noktalı elips yörünge +
+`kmOyunKarakterSVG`'nin generic figürüne bir kask halkası (`kostum==='uzay'`). Gerçek illüstrasyon alan
+temaların (Zirve/Hazine/Sis/Ninja) yanında tek zayıf kalan buydu. Herkes aynı merkez etrafında döndüğü için
+kim önde okunmuyor, etiketler çakışıyordu.
+
+**Tasarım kararı — neden hendek**: 16 temanın HEPSİ 2B bir çizgi üzerinde ilerliyordu. Hendek Akını
+DERİNLİK ekseninde ilerliyor (tek-nokta perspektif koridor, ekranın içine doğru) — "bir kıvrımlı yol
+daha" hissi vermemesinin sebebi bu. Panel 1200×440 (2.73:1) zaten anamorfik sinema oranına yakın.
+
+**Araştırılan/uygulanan Star Wars görsel dili** (tamamı prosedürel SVG, harici görsel YOK):
+açık hendek (yukarısı uzaya açık — kapalı tünel metro gibi durur, ilk prototipte o hata yapılıp
+düzeltildi); greebling (ILM'in ince mekanik yüzey detayı — jenerik sci-fi'dan ayıran şey); atmosferik
+perspektif (uzaklaşan geometri arka plana solar); arkadan görünüm avcılar (X dizilimli 4 kanat + 4 motor
+közü — derinlik ölçeği = kim önde); kaçış noktasında bloom'lu reaktör ağzı; kehribar seyir ışıkları;
+yüksek seride kaçış noktasından fırlayan hiperuzay çizgileri (`kmOyunHendekHiperuzay`).
+
+**Mekanik**: frac/kontrol-noktası iskeleti AYNEN korundu (frac→t=frac·TMAX derinlik, 7 sektör kapısı =
+KM_OYUN_CP_FRAC, bitiş = reaktör). Bu yüzden Bireysel/Takım/Yarış/PB/lig/rozet/sayaç sıfır ek işle
+çalışıyor. `kmOyunYildizPoz(i,n,frac)` imzası ve tema id'si (`yildiz`) BİLEREK korundu — 6 entegrasyon
+noktası (registry/CSS/panelHTML/SahneKur/Resync/Animate dispatch) hiç değişmeden çalıştı.
+
+**MARKA/TELİF (kritik, kullanıcıyla konuşuldu)**: İsimler kasten Star Wars terimleri DEĞİL ("Hendek
+Akını", "avcı", "reaktör ağzı", "sektör") — tescilli. Kullanıcı `public/yıldız/fantasy map.png` olarak
+BİREBİR Star Wars karakterleri + "Darth Vader"/"DARK SIDE" logoları içeren bir sprite sheet bıraktı
+(Disney/Lucasfilm IP, tişört baskısı). `public/` altındaki her şey deploy'a gittiği için bu dosya
+**`_yerel-gorseller/yildiz-ham/`** altına TAŞINDI (silinmedi, git'e eklenmedi). Kullanıcıya açıkça
+söylendi; özgün/telifsiz sci-fi görsel isterse sonradan eklenebilir, tema görselsiz de tam çalışıyor.
+
+**GERÇEK testte yakalanıp düzeltilen 4 sorun**:
+1. Mockup boş çerçeveye göreydi; canlıda skor dock'u (y>195) tam kaçış noktasını kapatıyordu, avcıların
+   TAMAMI dock'un arkasındaydı → VPY 200→142, avcı yüksekliği `KM_HENDEK_AVCI_Y=0.74` (hendek kesitinin
+   üst kısmında uçuyorlar, dock'un üstünde kalıyorlar).
+2. Sektör kapıları hendeği boydan boya kesen dev sarı kale direklerine dönüşüyordu (iki denemede) →
+   çapraz çubuk kaldırıldı, sadece iki duvara yaslı kısa pilon (0.13) + geçilince yanan lamba.
+3. **Kamera koreografisi** (`KM_OYUN_KAMERA_*`, 2× zoom) perspektif sahnede illüzyonu bozuyordu — yakın
+   avcı zaten büyük, üstüne zoom gelince dev X kanatlar bütün çerçeveyi kaplıyordu → `yildiz` her iki
+   kamera haritasından ÇIKARILDI (diğer 8 kamerasız tema gibi; tüm tüketiciler `if(!svgId) return` ile
+   korunuyor). Yan etki: "Geniş Görünümde Kal" düğmesi bu temada artık doğru şekilde görünmüyor.
+4. Oturum başında herkes frac=0'da → 8 avcı aynı derinlikte düz sıra, etiketler çakışıyor →
+   **V-formasyonu** (`kmOyunHendekFormasyonOfset`: merkez şerit ileri, kanatlar geride; ofset ~0.07 t,
+   bir serinin ~0.29 t ilerlemesinden çok küçük, sıralama okunurluğunu BOZMUYOR, frac'a dokunmuyor) +
+   etiketler komşu şeritlerde sırayla alt/üst. Dikkat: ofset POZİTİF (merkez ileri) olmalıydı — negatif
+   (kanatlar geri) yapınca t'nin 0'da kelepçelenmesi yüzünden tam da frac=0 durumunda etkisiz kalıyordu.
+5. (temizlik) `.km-star-core/.km-star-dot` ölü CSS'i silindi; `kmCorePulse` keyframe'i KALDI — Hazine'nin
+   `.km-treasure-glow`'u kullanıyor.
+
+**Gerçek testte doğrulanan**: GERÇEK tıklamayla 3 ok (10,9,X) + İlerlet → frac 0→0.145, "SEKTÖR GEÇİLDİ!"
+afişi, sürpriz mesajı, hiperuzay 26 çizgi, viewBox `0 0 1200 440` sabit (zoom yok), derinlik ölçeği
+0.96→0.29 monoton azalan. 16 tema + Reaksiyon regresyonu temiz. 360px mobil sorunsuz. Eski sarmal
+sabitleri/fonksiyonları (`KM_YILDIZ_*`, `kmOyunYildizAci/RingR`, `km-oyun-ring-*`, `kmStarCore`) 0 referans.
+
+**Not**: dev sunucu bu oturumda 8789'da, sonra 8787'de kalktı — port sabit değil, testten önce
+healthcheck şart (bkz. memory).
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
