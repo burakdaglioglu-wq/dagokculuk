@@ -4298,4 +4298,4 @@ karakterleri artık gerçekten deniz fenerinin yanından geçip küçük adanın
 doğru ilerliyor (görselde çizili olan TAM rotayı takip ediyor). 360px mobilde de sorunsuz. 16 tema +
 Reaksiyon tam regresyon sweep'i temiz.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit 672de11, version 66c06250...).
