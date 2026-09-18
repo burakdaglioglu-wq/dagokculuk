@@ -3998,3 +3998,53 @@ tıklamayla doğrulandı. 16 tema + Reaksiyon regresyonu ve önceki bracket/3-ta
 360px'te tüm yeni ekranlar taşmadan sığdı.
 
 **Deploy durumu**: commit + push + deploy yapıldı.
+
+## 31. Faz 17c — Yarışma: zengin skor dok'u + maç içinde takım düzenleme (2026-09-18)
+
+Kullanıcının iki isteği: (1) skor girişi "var olan oyun sekmesindeki skor girişinden" gibi görsel olarak
+zengin olsun, (2) maç sırasında da "Takımları Düzenle" ile sporcu ekle/çıkar seçeneği sunulsun.
+
+**1. Zengin skor dok'u**: `.km-oyun-dok`'un KENDİSİ `position:absolute` (sahne üzerine yüzen bir panel)
+olduğu için Yarışma'da OLDUĞU GİBİ kullanılamadı (Yarışma'da böyle bir "sahne" yok, normal doküman akışı
+var) — bunun yerine AYNI görsel kimliği (katlanır "🎯 Skor Gir N/M ▾" başlık çubuğu, koyu gradyanlı kart)
+taklit eden, Yarışma'nın kendi normal-akış düzenine uyarlanmış bir eşdeğer yazıldı (`_kmYarismaDokAcikMi`,
+`kmYarismaDokAcikKapatDegistir`). Skor girme paneli/pad'in KENDİSİ (`.km-oyun-pad`/`.km-oyun-padbtn`/
+`.km-oyun-slot`) zaten Faz 17'den beri paylaşılan sınıflarla çiziliyordu, dokunulmadı.
+
+**GERÇEK BİR CSS BUG'I bulundu ve düzeltildi**: `.km-oyun-dok-ozet-btn` (paylaşılan sınıf) Yarışma
+bağlamında beklenmedik şekilde tarayıcı varsayılan buton görünümüne (gri, kabartma kenarlık) düşüyordu —
+gerçek testte ekran görüntüsüyle yakalandı. Kesin sebep tam doğrulanamadı ama güvenli/garanti çözüm olarak
+açık inline stil kullanıldı (diğer tüm Yarışma butonlarının zaten yaptığı gibi) — sorun ortadan kalktı.
+
+**2. "Takımları Düzenle" — maç sırasında sporcu ekle/çıkar**: Canlı maç ekranındaki (hem flat hem bracket)
+`_kmYarismaCanliMacHTML`'e yeni bir "✏️ Takımları Düzenle" bağlantısı eklendi, `kmYarismaTakimDuzenleAc()`
+lazy-oluşturulan tam ekran bir modal açıyor (kurulum ekranındaki AYNI tap-to-cycle roster atama fonksiyonu
+— `kmYarismaAtaTiklama` — hiç değiştirilmeden yeniden kullanıldı, format/takım sayısı/rakip tipi kontrolleri
+BİLEREK YOK, maç sırasında bunları değiştirmek riskli olurdu).
+
+**KRİTİK VERİ DOĞRULUĞU KORUMASI**: maç SIRASINDA yeni eklenen bir sporcunun hayat boyu skoru "maç içi
+puan" sanılmasın diye `_kmYarismaBaslangicSnapshotEksikleriTamamla()` eklendi — atama her değiştiğinde
+(hem flat `_kmYarismaBaslangicPuan` hem aktif bracket maçının kendi `baslangicPuan`'ı için) eksik baseline
+anlık görüntüleri O ANDAKİ toplam skorla dolduruluyor. Gerçek testte doğrulandı: 54 puanlık bir "hayat
+boyu" skoru olan bir sporcu maça eklenince, `_kmYarismaBireyselFark()` onun için doğru şekilde 0 döndürdü
+(54 DEĞİL) — koruma çalışıyor.
+
+**GERÇEK BİR BUG bulundu ve düzeltildi**: `kmYarismaAtaTiklama` da (`kmYarismaTakimAdiDegis`'teki AYNI
+sınıftan) her zaman kurulum ekranını zorla çiziyordu — yeni modal'dan çağrılınca koçu kurulum ekranına
+geri atıyordu. Yeni `kmYarismaKurulumVeyaDuzenleCiz()` dispatcher'ı hangi ekran/modal açıksa onu doğru
+çiziyor.
+
+**GERÇEK BİR Z-INDEX BUG'I bulundu ve düzeltildi**: modal ilk yazımda `z-index:9999` idi ama gerçek
+testte tıklamalar modal'ın ARKASINDAKİ `#km-icerik`'e düşüyordu (`elementFromPoint` ile kanıtlandı) —
+sebep: `#karisik-platform` kendi z-index:20000 ile üst-seviye bir yığılma bağlamı kuruyor, 9999 onun
+ALTINDA kalıyordu. Modal z-index'i uygulamanın "her zaman en üstte" deseniyle (banner, z-index:99999)
+AYNI değere çıkarılarak düzeltildi.
+
+**Gerçek testte doğrulanan**: dok GERÇEK tıklamayla açılıp kapanıyor (pad gizleniyor/gösteriliyor).
+Modal GERÇEK tıklamayla açılıyor, havuzdan bir sporcuya GERÇEK tıklamayla eklendiğinde hem takıma
+katıldığı hem doğru baseline'ın oluştuğu hem maç-içi farkının 0'dan başladığı doğrulandı. Modal
+kapatılınca GERÇEKTEN maç ekranına (skor dok'u görünür) dönüldüğü doğrulandı. 16 tema + Reaksiyon ve
+önceki tüm Yarışma testleri (otomatik bitiş, shoot-off, 3 takım/bay, 6 ok) hâlâ temiz. 360px'te modal
+taşmadan sığdı.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya ekran görüntüsüyle sunulup onay bekleniyor.

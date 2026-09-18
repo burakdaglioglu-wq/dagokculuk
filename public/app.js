@@ -19150,6 +19150,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmHayaliZorlukSec(z) { _kmHayaliZorluk = z; kmYarismaKurulumCiz(); }
         function kmYarismaAtaTiklama(g, ad) {
+            // DÜZELTME (Faz 17c, 2026-09-18) — eskiden HER ZAMAN kurulum ekranını çiziyordu; bu fonksiyon
+            // artık "Takımları Düzenle" modalından da (maç sırasında) çağrılıyor —
+            // kmYarismaKurulumVeyaDuzenleCiz o an hangisi açıksa onu doğru çiziyor (bkz. kmYarismaTakimAdiDegis'te
+            // yakalanan AYNI sınıftan bug'ın genel çözümü).
             // Hayali Rakip modunda Takım B'ye GERÇEK üye atanmıyor — döngü sadece Havuz↔Takım A arasında.
             if(_kmRakipTipi === 'hayali') {
                 let ta = _kmTakimlar[0];
@@ -19157,7 +19161,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(iA >= 0) ta.uyeler.splice(iA, 1);
                 else if(ta.uyeler.length < _kmYarismaFormat) ta.uyeler.push({ g, ad });
                 else { showToast('Takım dolu — formatı değiştir ya da bir üyeyi çıkar.', 'warning'); return; }
-                kmYarismaKurulumCiz(); return;
+                _kmYarismaBaslangicSnapshotEksikleriTamamla();
+                kmYarismaKurulumVeyaDuzenleCiz(); return;
             }
             // Gerçek çok-takımlı mod: sporcu hangi takımdaysa oradan çıkar, SIRADAKİ takıma (müsaitse)
             // taşı; son takımdan çıkarsa havuza düşer. Havuzdaysa ilk müsait takıma eklenir.
@@ -19165,14 +19170,107 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(mevcutIndex >= 0) {
                 _kmTakimlar[mevcutIndex].uyeler = _kmTakimlar[mevcutIndex].uyeler.filter(function(u) { return !(u.g === g && u.ad === ad); });
                 for(let i = mevcutIndex + 1; i < _kmTakimlar.length; i++) {
-                    if(_kmTakimlar[i].uyeler.length < _kmYarismaFormat) { _kmTakimlar[i].uyeler.push({ g, ad }); kmYarismaKurulumCiz(); return; }
+                    if(_kmTakimlar[i].uyeler.length < _kmYarismaFormat) { _kmTakimlar[i].uyeler.push({ g, ad }); _kmYarismaBaslangicSnapshotEksikleriTamamla(); kmYarismaKurulumVeyaDuzenleCiz(); return; }
                 }
-                kmYarismaKurulumCiz(); return; // hiçbir sonraki takım müsait değildi -> havuza düştü
+                kmYarismaKurulumVeyaDuzenleCiz(); return; // hiçbir sonraki takım müsait değildi -> havuza düştü
             }
             for(let i = 0; i < _kmTakimlar.length; i++) {
-                if(_kmTakimlar[i].uyeler.length < _kmYarismaFormat) { _kmTakimlar[i].uyeler.push({ g, ad }); kmYarismaKurulumCiz(); return; }
+                if(_kmTakimlar[i].uyeler.length < _kmYarismaFormat) { _kmTakimlar[i].uyeler.push({ g, ad }); _kmYarismaBaslangicSnapshotEksikleriTamamla(); kmYarismaKurulumVeyaDuzenleCiz(); return; }
             }
             showToast('Tüm takımlar dolu — formatı değiştir ya da bir üyeyi çıkar.', 'warning');
+        }
+        // ===== Faz 17c (2026-09-18) — "Takımları Düzenle" maç SIRASINDA da açılabiliyor =====
+        // Kullanıcı: "x sporcuyu çıkartmak istiyorum ya da eklemek istiyorum bu seçeneğini de sun bana".
+        // kmYarismaAtaTiklama'nın KENDİSİ (üstteki, hiç değişmeden) hem kurulum ekranından hem bu yeni
+        // modaldan çağrılabiliyor — hangi ekranın yeniden çizileceğine `kmYarismaKurulumVeyaDuzenleCiz`
+        // karar veriyor. Modal, kurulum ekranının aynısı DEĞİL — sadece takım isim/renk/ikon YOK, format/
+        // takım sayısı/rakip tipi YOK (maç sırasında bunları değiştirmek anlamsız/riskli olurdu) — sadece
+        // roster atama (tap-to-cycle, aynı fonksiyon).
+        let _kmYarismaTakimDuzenleAcikMi = false;
+        function _kmYarismaModalEmin() {
+            let modal = document.getElementById('km-yarisma-takim-duzenle-modal');
+            if(!modal) {
+                modal = document.createElement('div');
+                modal.id = 'km-yarisma-takim-duzenle-modal';
+                // z-index:99999 — #karisik-platform'un KENDİSİ z-index:20000 ile kendi üst-seviye
+                // yığılma bağlamını kuruyor (gerçek testte yakalandı: 9999 onun ALTINDA kalıp tıklamalar
+                // #km-icerik'e düşüyordu) — burada da uygulamanın "her zaman en üstte" deseniyle
+                // (bkz. app.js:5358'teki banner, z-index:99999) AYNI değer kullanıldı.
+                modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:99999; align-items:center; justify-content:center; padding:16px; overflow-y:auto;';
+                document.body.appendChild(modal);
+            }
+            return modal;
+        }
+        function kmYarismaTakimDuzenleAc() {
+            _kmYarismaTakimDuzenleAcikMi = true;
+            kmYarismaTakimDuzenleModalCiz();
+        }
+        function kmYarismaTakimDuzenleKapat() {
+            _kmYarismaTakimDuzenleAcikMi = false;
+            let modal = document.getElementById('km-yarisma-takim-duzenle-modal');
+            if(modal) modal.style.display = 'none';
+            kmYarismaCiz(); // arkadaki maç/kurulum ekranı GÜNCEL rosterla yeniden çizilsin
+        }
+        function kmYarismaKurulumVeyaDuzenleCiz() {
+            if(_kmYarismaTakimDuzenleAcikMi) kmYarismaTakimDuzenleModalCiz();
+            else kmYarismaKurulumCiz();
+        }
+        // "Maç SIRASINDA eklenen bir sporcunun hayat boyu skoru maç-içi puan sanılmasın" — baseline
+        // (başlangıç anlık görüntüsü) eksikse ŞİMDİ oluşturulur. Hem flat (Hayali Rakip/_kmYarismaBaslangicPuan)
+        // hem bracket (aktif maçın kendi baslangicPuan'ı) için. Çıkarma için özel bir işlem GEREKMİYOR —
+        // sporcu t.uyeler'den çıkınca hesaplamalar onu zaten dahil etmiyor, geçmiş gerçek skoru dokunulmadan
+        // turnuvaDB'de kalıyor.
+        function _kmYarismaBaslangicSnapshotEksikleriTamamla() {
+            if(_kmYarismaAktif) {
+                _kmTakimlar.forEach(function(t) { t.uyeler.forEach(function(u) {
+                    let key = u.g + '|' + u.ad;
+                    if(!_kmYarismaBaslangicPuan[key]) {
+                        let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad];
+                        _kmYarismaBaslangicPuan[key] = { puan: sp ? (sp.toplamSkor || 0) : 0, seriSayisi: sp ? (sp.seriler || []).length : 0 };
+                    }
+                }); });
+            }
+            if(_kmYarismaBracketGorunum === 'agac') {
+                let m = _kmYarismaBracketMaclar.find(function(x) { return x.durum === 'devam' && !x.isBye; });
+                if(m && m.baslangicPuan) {
+                    [m.aIdx, m.bIdx].forEach(function(idx) {
+                        let t = _kmTakimlar[idx]; if(!t) return;
+                        t.uyeler.forEach(function(u) {
+                            let key = u.g + '|' + u.ad;
+                            if(!m.baslangicPuan[key]) {
+                                let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad];
+                                m.baslangicPuan[key] = { puan: sp ? (sp.toplamSkor || 0) : 0, seriSayisi: sp ? (sp.seriler || []).length : 0 };
+                            }
+                        });
+                    });
+                }
+            }
+        }
+        function kmYarismaTakimDuzenleModalCiz() {
+            let modal = _kmYarismaModalEmin();
+            modal.style.display = 'flex';
+            _kmYarismaBaslangicSnapshotEksikleriTamamla();
+            let atanmis = new Set([].concat.apply([], _kmTakimlar.map(function(t) { return t.uyeler; })).map(function(u) { return u.g + '|' + u.ad; }));
+            let havuz = _kmListe.filter(function(item) { return !atanmis.has(item.g + '|' + item.ad); });
+            let takimKolon = function(t, idx) {
+                return `<div style="flex:1 1 140px; background:var(--bg-panel); border:1.5px solid ${t.renk}; border-radius:14px; padding:10px;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:${t.renk}; font-weight:900; font-size:12px; margin-bottom:8px;">${kmYarismaIkonSvg(_kmTakimIkonAl(t, idx), 15)} ${esc(t.ad)}</div>
+                    ${t.uyeler.map(function(u) { return `<div onclick="kmYarismaAtaTiklama('${u.g}','${u.ad.replace(/'/g, "\\'")}')" style="background:var(--bg-main); border-radius:8px; padding:7px 9px; margin-bottom:5px; font-size:11.5px; font-weight:700; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:6px;"><span>${esc(u.ad)}</span><span style="color:var(--neon-red); font-weight:900;">✕</span></div>`; }).join('')}
+                    ${!t.uyeler.length ? '<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">Henüz kimse yok</div>' : ''}
+                </div>`;
+            };
+            modal.innerHTML = `<div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:16px; padding:16px; max-width:520px; width:100%; max-height:86vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:14px; font-weight:900;">✏️ Takımları Düzenle</span>
+                    <button onclick="kmYarismaTakimDuzenleKapat()" style="background:none; border:1px solid var(--border-color); border-radius:8px; width:30px; height:30px; color:var(--text-muted); cursor:pointer; font-size:14px;">✕</button>
+                </div>
+                <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:12px;">Bir sporcuya dokunup çıkar, havuzdan dokunup ekle. Değişiklik anında maça yansır.</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">${_kmTakimlar.map(takimKolon).join('')}</div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Havuz (${havuz.length})</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                    ${havuz.length ? havuz.map(function(item) { return `<div onclick="kmYarismaAtaTiklama('${item.g}','${item.ad.replace(/'/g, "\\'")}')" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">${esc(item.ad)}</div>`; }).join('') : '<div style="font-size:11px; color:var(--text-muted);">Tüm sporcular bir takımda.</div>'}
+                </div>
+            </div>`;
         }
         function kmYarismaKurulumCiz() {
             let el = document.getElementById('km-icerik'); if(!el) return;
@@ -19417,6 +19515,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmYarismaSeriGirisleri = [];
         let _kmYarismaOkSayisi = 3;
         let _kmYarismaSonGiris = null; // { grup, ad, seriId, seriPuan, oklar } — "son girişi geri al" için
+        // Faz 17c (2026-09-18, kullanıcı: "skor giriş butonlarını var olan oyun sekmesi içerisindeki skor
+        // girişinden yapmanı istiyorum, görsel açıdan da zengin olalım") — Oyunlar'ın gerçek skor dok'u
+        // ("🎯 Skor Gir N/M ▾" başlıklı, açılır/kapanır) ile AYNI GÖRSEL DİLİ (aynı CSS sınıfları:
+        // .km-oyun-dok-ozet-btn/-sayi/-ok) kullanan bir katlanır başlık eklendi. `.km-oyun-dok`'un
+        // KENDİSİ position:absolute (sahne üzerine yüzen bir panel) olduğu için Yarışma'da OLDUĞU GİBİ
+        // kullanılmadı — Yarışma'nın kendi normal akış (döküman içi, sahne yok) düzenine uyarlanmış bir
+        // eşdeğeri yazıldı, aynı görsel kimlik + katlanma davranışıyla.
+        let _kmYarismaDokAcikMi = true;
+        function kmYarismaDokAcikKapatDegistir() {
+            _kmYarismaDokAcikMi = !_kmYarismaDokAcikMi;
+            kmYarismaCiz();
+        }
         function kmYarismaSporcuSec(key) {
             _kmYarismaAktifSporcuKey = (_kmYarismaAktifSporcuKey === key) ? null : key;
             _kmYarismaSeriGirisleri = [];
@@ -19608,11 +19718,27 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>`;
             }
 
+            // Katlanır dok — Oyunlar'ın .km-oyun-dok-ozet-btn/-sayi/-ok sınıflarıyla AYNI görsel kimlik.
+            let dokIcerikHTML = `<div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:${rosterChipHTML ? '10' : '0'}px;">${rosterChipHTML}</div>${padHTML}`;
+            // DÜZELTME (Faz 17c, gerçek testte yakalandı): .km-oyun-dok-ozet-btn class'ı burada (Karışık
+            // Sınıf'ın #karisik-platform'u, kendi yüksek z-index'li yığılma bağlamı içinde) beklenmedik
+            // şekilde tarayıcı varsayılan buton görünümüne (gri, kabartma kenarlık) düşüyordu — kesin
+            // neden bulunamadı, güvenli/garanti çözüm olarak açık inline stil kullanıldı (diğer tüm
+            // Yarışma butonlarının zaten yaptığı gibi).
+            let dokHTML = `<div style="margin-top:14px; background:linear-gradient(180deg, rgba(4,6,14,0.4), rgba(4,6,14,0.7)); border:1px solid var(--border-color); border-radius:13px; padding:10px 12px;">
+                <button onclick="kmYarismaDokAcikKapatDegistir()" style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--text-main); background:rgba(255,255,255,0.06); border:1px solid var(--border-color); border-radius:10px; padding:9px 12px; cursor:pointer; min-height:44px;">
+                    <span>🎯 Skor Gir</span>
+                    <span style="font-variant-numeric:tabular-nums; color:var(--gold);">${_kmYarismaAktifSporcuKey ? _kmYarismaSeriGirisleri.length + '/' + _kmYarismaOkSayisi : ''}</span>
+                    <span style="color:var(--text-muted); font-size:10px;">${_kmYarismaDokAcikMi ? '▾' : '▴'}</span>
+                </button>
+                ${_kmYarismaDokAcikMi ? `<div style="margin-top:10px;">${dokIcerikHTML}</div>` : ''}
+            </div>`;
+
             return `
                 <div style="display:flex; align-items:stretch; gap:6px; margin-bottom:8px;">${takimKartlari.join(vsHTML)}</div>
                 ${hedefSatiriHTML}
-                <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">${rosterChipHTML}</div>
-                ${padHTML}
+                <div style="display:flex; justify-content:center;"><span onclick="kmYarismaTakimDuzenleAc()" style="cursor:pointer; font-size:10px; font-weight:700; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 10px; margin-bottom:8px;">✏️ Takımları Düzenle</span></div>
+                ${dokHTML}
                 ${sonGirisHTML}
                 ${ekBtnHTML || ''}
             `;
