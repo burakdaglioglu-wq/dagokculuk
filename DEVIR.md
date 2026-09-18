@@ -4272,4 +4272,4 @@ kalıcı yazıyor — sayfa yenilenince (yeni oturum) aynı konumda açık kalı
 tıklamayla kapatıyor. Yarışma'daki toggle etiketi artık anında senkron. 16 tema + Reaksiyon tam regresyon
 sweep'i temiz.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit 9411d21, version a5818e3a...).
