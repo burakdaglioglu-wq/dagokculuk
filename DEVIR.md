@@ -3929,4 +3929,14 @@ kalanını hiç etkilemedi. 360px'te canlı maç paneli (takım kartları + rost
 - "İsim S." kısaltması SADECE canlı maç görünümünde kullanılıyor, kurulum ekranındaki atama listesinde
   DEĞİL (orada tam isim daha pratik) — bu bir kapsam kararı, spesifikasyon açıkça belirtmiyordu.
 
+**Ek doğrulama (2026-09-18, deploy sonrası, kod değişikliği YOK)**: rapor sonrası "devam et" mesajı
+üzerine iki uç durum daha GERÇEK tıklamalarla test edildi: (1) **3 takımlı turnuva** — tek sayıda takım
+bay (bye) üretiyor, bay kartı doğru göründü ("Takım 3 bay geçti"), tur adı doğru hesaplandı ("YARI
+FİNAL"), canlı maç paneli bay OLMAYAN maç için doğru göründü. (2) **6 Ok toggle** — canlı maç panelindeki
+"6 Ok" düğmesine gerçek tıklamayla geçildi, 6 gerçek ok girildi, `turnuvaDB`'ye 6 oklu/54 puanlık seri
+olarak GERÇEKTEN yazıldığı doğrulandı. Ayrıca "set kaydedilince aktif sporcu seçimi temizleniyor mu"
+düzeltmesi bu senaryoda da doğru çalıştığı teyit edildi. Set tamamlanma mantığının SIRALI çalıştığı da
+görsel olarak doğrulandı — bir takım set girip diğeri henüz girmediyse "Tamamlanan set: 0" doğru kaldı
+(atlama yapmıyor). Hiçbir kod değişikliği gerekmedi, mevcut deploy zaten doğru.
+
 **Deploy durumu**: commit + push + deploy yapıldı.
