@@ -4048,3 +4048,57 @@ kapatılınca GERÇEKTEN maç ekranına (skor dok'u görünür) dönüldüğü d
 taşmadan sığdı.
 
 **Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya ekran görüntüsüyle sunulup onay bekleniyor.
+
+## 32. Hayvan Karakterler + Zirve Yolu tabelaları (2026-09-18)
+
+Kullanıcı `public/hayvankarakter/` içine iki sprite sheet bıraktı: `sevimlihayvan.png` (3x3 grid, 9
+sevimli hayvan — kaplumbağa/kurbağa/kirpi/köpek/ayı/tembel hayvan/zürafa/arı/penguen) ve `tabela.png`
+(7 düzensiz boyutlu dağ temalı tabela — çığ uyarısı, çerçeveli manzara tabelası, yönlendirme tabelası,
+uyarı levhası, büyük ahşap yol tabelası vb). Talimat: bu 9 hayvanı **Zirve Yolu, Ninja Oyunu, Dağ
+Tırmanışı, Sis Haritası** temalarında sporculara RASTGELE ata; Zirve Yolu'nda ayrıca yol üstüne rastgele
+tabelalar ekle.
+
+**Sprite dilimleme**: `scripts/slice-sprites.mjs` (yeni, `sharp` ile) — alfa kanalı üzerinde basit bir
+bağlı-bileşen (flood-fill/BFS) dedektörü, şeffaf-olmayan bölgeleri bulup ayrı PNG olarak kaydediyor.
+ImageMagick yok, `sharp` zaten wrangler/miniflare üzerinden proje kök dizininde kullanılabilir durumda
+(ayrı kurulum gerekmedi). Grid'e bağımlı DEĞİL (tabela.png düzensiz) — her iki sprite sheet için de
+`node scripts/slice-sprites.mjs hayvan|tabela` ile çalıştırıldı, sırasıyla 9 ve 7 bölge doğru şekilde
+tespit edildi, `public/hayvankarakter/parcalar/hayvan-1..9.png` ve `tabela-1..7.png` olarak kaydedildi.
+Her ikisi de görsel olarak açılıp doğrulandı (temiz kırpma, bölme hatası yok).
+
+**Karakter ataması — paylaşılan yeni altyapı**: `kmOyunHayvanKarakterAta(s)`/`kmOyunHayvanKarakterSVG(s,
+renk, boy)` — Ninja'nın eski `_kmOyunNinjaKarakterMap` deseniyle AYNI mantık: isme göre RASTGELE ama
+KALICI atama, konum bazlı ayrı bir localStorage anahtarında (`dag_km_oyun_hayvan_<konum>`), tarih
+damgasız (bir sporcunun hayvanı ders ders değişmemeli — Arena'nın karakter-map emsaliyle aynı karar).
+`kmOyunHayvanKarakterSVG` Zirve'nin eski `kmOyunZirveKarakterSVG`'siyle AYNI görsel iskeleti (gölge,
+kilit çerçevesi, takım rozeti) koruyor — sadece görsel kaynağı `/hayvankarakter/parcalar/hayvan-N.png`'ye
+döndü.
+
+**4 temaya bağlanma**: her temanın KENDİ eski karakter fonksiyonu artık bu paylaşılan fonksiyonu çağırıyor
+(çağrı yerleri/imzaları DEĞİŞMEDİ, animasyon/resync kodu dokunulmadı):
+- **Zirve**: `kmOyunZirveKarakterSVG(s)` artık `kmOyunHayvanKarakterSVG(s, null, 56)` — eski cinsiyet
+  bazlı `zirve-tirmanici-kiz/zirve-izci-erkek/zirve-buz-tirmanici` webp'leri ve `KM_OYUN_ZIRVE_KARAKTER_BOYUT`/
+  `kmOyunZirveKarakterAd` KALDIRILDI (başka hiçbir yerde kullanılmıyorlardı, grep ile doğrulandı).
+- **Ninja**: `kmOyunNinjaKarakterSVG(s, renk, uid)` artık `kmOyunHayvanKarakterSVG(s, renk, 45)` — eski
+  cinsiyet bazlı erkek/kadın ninja görselleri + `_kmOyunNinjaKarakterMap` altyapısının TAMAMI KALDIRILDI.
+- **Dağ Tırmanışı**: `kmOyunSahneKurDag`'daki çağrı `kmOyunKarakterSVG(s, renk, 'dag-'+i, 'dagci', 17)`
+  (prosedürel maskot) → `kmOyunHayvanKarakterSVG(s, renk, 45)`. `kmOyunKarakterSVG` içindeki `'dagci'`
+  kostüm dalı artık erişilemez ama fonksiyonun kendisi (diğer 7 temada hâlâ aktif) DOKUNULMADI.
+- **Sis Haritası**: aynı desen, `'sisharita-'+i, 'kasif', 17` çağrısı → `kmOyunHayvanKarakterSVG(s, renk, 45)`.
+
+**Zirve Yolu tabelaları**: yeni `<g id="km-oyun-zirve-tabelalar">` grubu (kamp tabelaları/tırmanıcılar
+grubundan ÖNCE, statik SVG'ye eklendi), `kmOyunSahneKurZirve()` her sahne kurulumunda 4 tabelayı rastgele
+frac (0.1-0.9) + yol kenarına (dx ofset, kamp tabelalarını/tırmanıcıları örtmesin diye) yerleştiriyor —
+tamamen dekoratif, oyun mekaniğine/duruma dokunmuyor (her yeniden çizimde yeniden rastgele — Zirve'nin
+zaten var olan yıldız/kaya parçacığı deseniyle AYNI karar).
+
+**Gerçek testte doğrulanan**: `#km-oyun-climbers`/`#km-oyun-ninjalar`/`#km-oyun-dag-climbers`/
+`#km-oyun-sis-gezginler` içindeki `<image>` elemanlarının gerçek ekran koordinatları (`getBoundingClientRect`)
+alınıp o bölge kırpılarak ekran görüntüsü alındı — 4 temanın hepsinde farklı hayvanlar (zürafa, kirpi,
+penguen, kaplumbağa, arı, köpek, ayı) gerçekten görünüyor. Zirve'de tabela grubu da aynı yöntemle
+doğrulandı — çığ uyarı üçgeni, çerçeveli manzara tabelası, ahşap yol tabelaları yol boyunca rastgele
+konumlarda görünüyor, kamp tabelalarıyla/tırmanıcı etiketleriyle çakışmıyor. 16 temalık tam regresyon
+sweep + 360px mobil görünüm hatasız. Yerel D1 test kimlik bilgisi (`egitmen_hash`) her test öncesi/sonrası
+doğru şekilde değiştirilip geri yüklendi.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya ekran görüntüsüyle sunulup onay bekleniyor.

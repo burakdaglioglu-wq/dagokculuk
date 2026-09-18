@@ -12908,6 +12908,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   </g>
                   <path id="km-oyun-trail" class="km-trail-glow" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
                   <path class="km-trail" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
+                  <g id="km-oyun-zirve-tabelalar"></g>
                   <g id="km-oyun-flags"></g><g id="km-oyun-zirve-firtina-tabela"></g><g id="km-oyun-climbers"></g>
                   <g id="km-oyun-summit" class="km-summit-icon" opacity="0.55" transform="translate(600,45)"><image href="/zirve-karakterler/zirve-zirve-bayrak.webp" x="-41.5" y="-120" width="83.0" height="120" preserveAspectRatio="xMidYMax meet"/><text x="0" y="17" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">🏔️ Zirve</text></g>
                 </svg>
@@ -13799,28 +13800,41 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             kar.innerHTML = html;
         }
-        // Gerçek karakterler (2026-09-12) — cinsiyet bilgisi GERÇEKTEN var (athletes.cinsiyet, 'K'/'E',
-        // 2026-07'den beri dolduruluyor — kontrol edildi) — bu yüzden "sırayla dağıt" YEDEK planı hiç
-        // devreye girmiyor, atama doğrudan cinsiyete göre DETERMİNİSTİK. cinsiyet boşsa (eski/göçten
-        // kalma nadir bir kayıt) üçüncü seçenek buz-tirmanici'ye düşüyor — kullanıcının kendi tanımladığı
-        // "üçüncü seçenek" tam bu durum için. Cinsiyet bir sporcunun SABİT bir özelliği olduğu için
-        // (ders içinde değişmez) atamanın kendisi doğal olarak ders boyunca sabit kalıyor — Arena'nın
-        // sıralı-atama şemasının AKSİNE burada ayrı bir localStorage hafızası GEREKMEDİ (Arena'da sıra,
-        // "kimin önce görüldüğü" gibi geçici/oturuma özel bir olguydu, burada değil).
-        var KM_OYUN_ZIRVE_KARAKTER_BOYUT = { 'zirve-tirmanici-kiz': 258 / 420, 'zirve-izci-erkek': 385 / 460, 'zirve-buz-tirmanici': 379 / 440 };
-        function kmOyunZirveKarakterAd(s) {
-            if(s.cinsiyet === 'K') return 'zirve-tirmanici-kiz';
-            if(s.cinsiyet === 'E') return 'zirve-izci-erkek';
-            return 'zirve-buz-tirmanici';
+        // Hayvan Karakterler (2026-09-18, kullanıcı talimatı) — sevimlihayvan.png'den kesilen 9
+        // sevimli hayvan, Zirve Yolu/Ninja Oyunu/Dağ Tırmanışı/Sis Haritası'nda sporcuların eski
+        // cinsiyet-bazlı/prosedürel karakterlerinin YERİNE geçiyor. Atama RASTGELE ama KALICI —
+        // Ninja'nın _kmOyunNinjaKarakterMap emsaliyle AYNI desen (isme göre saklanan, konum bazlı,
+        // tarih damgasız — bir sporcunun hayvanı ders ders değişmemeli).
+        var KM_OYUN_HAYVAN_SAYISI = 9;
+        var KM_OYUN_HAYVAN_ORAN = [535 / 397, 461 / 472, 565 / 548, 473 / 525, 519 / 469, 488 / 455, 371 / 614, 473 / 466, 382 / 471];
+        // tabela.png'den kesilen 7 dağ temalı tabela (yalnız Zirve Yolu'nda, dekoratif) — bkz. kmOyunSahneKurZirve.
+        var KM_OYUN_ZIRVE_TABELA_SAYISI = 7;
+        var KM_OYUN_ZIRVE_TABELA_ORAN = [462 / 519, 523 / 464, 435 / 474, 323 / 598, 816 / 566, 473 / 413, 463 / 411];
+        let _kmOyunHayvanKarakterMap = null, _kmOyunHayvanKarakterYuklenenKonum = null;
+        function kmOyunHayvanKarakterAnahtari() { return 'dag_km_oyun_hayvan_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunHayvanKarakterYukle() {
+            if(_kmOyunHayvanKarakterYuklenenKonum !== _kmAktifKonum) {
+                try { let raw = localStorage.getItem(kmOyunHayvanKarakterAnahtari()); _kmOyunHayvanKarakterMap = raw ? JSON.parse(raw) : {}; } catch(e) { _kmOyunHayvanKarakterMap = {}; }
+                _kmOyunHayvanKarakterYuklenenKonum = _kmAktifKonum;
+            }
         }
-        // Eski paylaşılan kmOyunKarakterSVG'nin (6 temalık soyut maskot) YERİNE — Arena'nın gerçek
-        // okçu karakterleriyle AYNI karar: gövde artık gerçek bir illüstrasyon, sporcu rengi KARAKTERDE
-        // değil (kullanıcı talimatı, tekrar), sadece isim etiketinde. `kmOyunAvatarSVG` (yüze basılan
-        // foto/baş harfi) burada KULLANILMIYOR — Arena'da da aynı sebeple bırakılmıştı: gerçek karakter
-        // illüstrasyonunun "yüzü" yok, kimlik zaten alttaki isim etiketinden okunuyor.
-        function kmOyunZirveKarakterSVG(s) {
-            let karakter = kmOyunZirveKarakterAd(s);
-            let boy = 56, en = boy * KM_OYUN_ZIRVE_KARAKTER_BOYUT[karakter];
+        function kmOyunHayvanKarakterKaydet() { try { localStorage.setItem(kmOyunHayvanKarakterAnahtari(), JSON.stringify(_kmOyunHayvanKarakterMap)); } catch(e) {} }
+        function kmOyunHayvanKarakterAta(s) {
+            kmOyunHayvanKarakterYukle();
+            let key = s.g + '|' + s.ad;
+            let mevcut = _kmOyunHayvanKarakterMap[key];
+            if(typeof mevcut === 'number' && mevcut >= 1 && mevcut <= KM_OYUN_HAYVAN_SAYISI) return mevcut;
+            let no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI);
+            _kmOyunHayvanKarakterMap[key] = no;
+            kmOyunHayvanKarakterKaydet();
+            return no;
+        }
+        // `boy`=görsel yükseklik (px, SVG birimi). Zirve'nin eski kmOyunZirveKarakterSVG'siyle AYNI
+        // iskelet (gölge/kilit çerçevesi/takım rozeti) — sadece görsel kaynağı hayvan PNG'sine döndü.
+        function kmOyunHayvanKarakterSVG(s, renk, boy) {
+            boy = boy || 56;
+            let no = kmOyunHayvanKarakterAta(s);
+            let en = boy * KM_OYUN_HAYVAN_ORAN[no - 1];
             let takimRozetiHTML = '';
             if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
                 let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
@@ -13836,9 +13850,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return `<g class="km-char-bob">
                 ${cerceveHTML}
                 <ellipse class="km-char-shadow" cx="0" cy="2" rx="${(en * 0.38).toFixed(1)}" ry="4"/>
-                <image href="/zirve-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
+                <image href="/hayvankarakter/parcalar/hayvan-${no}.png" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
                 ${takimRozetiHTML}
             </g>`;
+        }
+        // Zirve'nin karakteri artık Hayvan Karakterler havuzundan geliyor (bkz. yukarısı) — eski
+        // cinsiyet-bazlı zirve-tirmanici-kiz/zirve-izci-erkek/zirve-buz-tirmanici webp'leri KALDIRILDI.
+        function kmOyunZirveKarakterSVG(s) {
+            return kmOyunHayvanKarakterSVG(s, null, 56);
         }
         // Faz 14, 2. adım (2026-09-12) — dağ arka planı, DÜŞEY parallax (kullanıcı talimatı: "yatay
         // değil dikey — yukarı çıktıkça aşağıdakiler geride kalsın"). hiz=1 katmanın YOK, çünkü 1
@@ -13978,6 +13997,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunZirveGozlemciKur();
             let p = kmOyunZirvePath(); if(!p) return;
             _kmOyunZirveTotalLen = p.getTotalLength();
+            // Yol üstü rastgele tabelalar (2026-09-18, kullanıcı talimatı) — tabela.png'den kesilen 7
+            // dağ temalı tabela, sadece dekoratif (mekanik yok, oyun durumuna dokunmuyor). Kamp
+            // tabelalarının AYNI "path'ten dinamik konum" desenini kullanıyor, ama yol üzerinde DEĞİL,
+            // yolun yanına (dx ofset) yerleştiriliyor ki tırmanıcı/kamp tabelalarını örtmesin.
+            let tbg = document.getElementById('km-oyun-zirve-tabelalar');
+            if(tbg) {
+                let html = '';
+                for(let i = 0; i < 4; i++) {
+                    let frac = 0.1 + Math.random() * 0.8;
+                    let pt = kmOyunZirveNokta(frac);
+                    let no = 1 + Math.floor(Math.random() * KM_OYUN_ZIRVE_TABELA_SAYISI);
+                    let boy = 46 + Math.random() * 14, en = boy * KM_OYUN_ZIRVE_TABELA_ORAN[no - 1];
+                    let dx = (Math.random() < 0.5 ? -1 : 1) * (36 + Math.random() * 26);
+                    html += `<image href="/hayvankarakter/parcalar/tabela-${no}.png" x="${(pt.x + dx - en / 2).toFixed(1)}" y="${(pt.y - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy.toFixed(1)}" opacity="0.92"/>`;
+                }
+                tbg.innerHTML = html;
+            }
             let sg = document.getElementById('km-oyun-stars');
             if(sg) {
                 // 2. adım (2026-09-12): gökyüzü artık yükseklikle açılıyor (üstte aydınlık, altta
@@ -14550,56 +14586,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
-        // ---- NINJA OYUNU — Faz 16 (2026-09-15): gerçek erkek/kadın karakterler ----
-        // Kullanıcı public/ninja/erkek.png+kadın.png bıraktı ("aynısını yapalım" — Arena'daki AYNI
-        // erkek/kadın rastgele atama deseni). Ninja'nın DAHA ÖNCE cinsiyete göre HİÇ ayrımı yoktu —
-        // herkes AYNI paylaşılan `kmOyunKarakterSVG(...,'ninja',...)` prosedürel maskotunu görüyordu.
-        // Bu YENİ bir mekanik (var olanı değiştirmek değil): cinsiyet BİLİNEN sporcular artık gerçek
-        // görsel karakter alıyor, cinsiyet bilgisi YOKSA eski prosedürel maskot AYNEN korunuyor (üçüncü
-        // bir "nötr" görsel İCAT EDİLMEDİ — kullanıcı sadece erkek/kadın istedi). erkek.png'deki 6
-        // pozdan biri (uygunsuz bir el hareketi içeriyordu) BİLEREK hariç tutuldu, kalan 5 kullanıldı.
-        var KM_OYUN_NINJA_KARAKTERLER_KADIN = ['ninja-k-gri-kaptanli', 'ninja-k-siluet-kilic', 'ninja-k-siyah-tekme', 'ninja-k-pembe-samuray', 'ninja-k-lacivert-tekme'];
-        var KM_OYUN_NINJA_KARAKTERLER_ERKEK = ['ninja-e-tekme', 'ninja-e-firlatma', 'ninja-e-kilic', 'ninja-e-kosuyor', 'ninja-e-baslik'];
-        var KM_OYUN_NINJA_KARAKTER_EN = { 'ninja-e-tekme': 354, 'ninja-e-firlatma': 270, 'ninja-e-kilic': 250, 'ninja-e-kosuyor': 373, 'ninja-e-baslik': 521, 'ninja-k-gri-kaptanli': 293, 'ninja-k-siluet-kilic': 378, 'ninja-k-siyah-tekme': 432, 'ninja-k-pembe-samuray': 427, 'ninja-k-lacivert-tekme': 382 };
-        var _kmOyunNinjaKarakterMap = null;
-        function _kmOyunNinjaKarakterAnahtari() { return 'dag_km_ninja_karakter_' + (_kmAktifKonum || 'varsayilan'); }
-        function _kmOyunNinjaKarakterYukle() {
-            if(_kmOyunNinjaKarakterMap) return;
-            _kmOyunNinjaKarakterMap = {};
-            try {
-                let ham = localStorage.getItem(_kmOyunNinjaKarakterAnahtari());
-                if(ham) { let p = JSON.parse(ham); if(p && p.tarih === bugunISO()) _kmOyunNinjaKarakterMap = p.atamalar || {}; }
-            } catch(e) {}
-        }
-        function _kmOyunNinjaKarakterKaydet() {
-            try { localStorage.setItem(_kmOyunNinjaKarakterAnahtari(), JSON.stringify({ tarih: bugunISO(), atamalar: _kmOyunNinjaKarakterMap })); } catch(e) {}
-        }
-        // Arena'nın AYNI sıralı-havuz-içi atama deseni — cinsiyet yoksa null döner (çağıran taraf eski
-        // prosedürel maskota düşer, bkz. kmOyunNinjaKarakterSVG).
-        function kmOyunNinjaKarakterAta(s) {
-            if(s.cinsiyet !== 'K' && s.cinsiyet !== 'E') return null;
-            _kmOyunNinjaKarakterYukle();
-            let mevcut = _kmOyunNinjaKarakterMap[s.ad];
-            if(typeof mevcut === 'string' && KM_OYUN_NINJA_KARAKTER_EN[mevcut]) return mevcut;
-            let havuz = s.cinsiyet === 'K' ? KM_OYUN_NINJA_KARAKTERLER_KADIN : KM_OYUN_NINJA_KARAKTERLER_ERKEK;
-            let sayilan = Object.keys(_kmOyunNinjaKarakterMap).filter(function(ad) { return KM_OYUN_NINJA_KARAKTER_EN[_kmOyunNinjaKarakterMap[ad]] && havuz.indexOf(_kmOyunNinjaKarakterMap[ad]) !== -1; }).length;
-            let karakter = havuz[sayilan % havuz.length];
-            _kmOyunNinjaKarakterMap[s.ad] = karakter;
-            _kmOyunNinjaKarakterKaydet();
-            return karakter;
-        }
-        // Cinsiyet biliniyorsa gerçek görsel <image>, yoksa AYNEN eski paylaşılan prosedürel maskot
-        // (kmOyunKarakterSVG) — bu fonksiyonun imzası/çağrı yeri hiç değişmedi, sadece İÇİNDE dallanıyor.
-        // Eski maskotun (r=15) kendi iç ölçeğiyle AYNI "ayak izi"nde kalınıyor — kafa tepesi ~y=-31,
-        // ayak/gölge ~y=14 (kmOyunKarakterSVG'nin gövde/gölge çizimindeki r*0.92 ile birebir), böylece
-        // ÇAĞIRAN taraftaki etiket offseti (`translate(0,30)`) ve jitter matematiği HİÇ değişmeden aynı
-        // görsel yerleşim korunuyor.
+        // ---- NINJA OYUNU ----
+        // Karakter artık Hayvan Karakterler havuzundan geliyor (2026-09-18, kullanıcı talimatı) —
+        // eski cinsiyet-bazlı erkek/kadın ninja görselleri KALDIRILDI.
         function kmOyunNinjaKarakterSVG(s, renk, uid) {
-            let karakter = kmOyunNinjaKarakterAta(s);
-            if(!karakter) return kmOyunKarakterSVG(s, renk, uid, 'ninja', 15);
-            let ayakY = 14, boy = 45, en = boy * ((KM_OYUN_NINJA_KARAKTER_EN[karakter] || 350) / 440);
-            return `<ellipse class="km-char-shadow" cx="0" cy="${ayakY.toFixed(1)}" rx="12" ry="3.6"/>
-                <image href="/ninja-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(ayakY - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>`;
+            return kmOyunHayvanKarakterSVG(s, renk, 45);
         }
         function kmOyunNinjaPath() { return document.getElementById('km-oyun-ninja-path'); }
         let _kmOyunNinjaTotalLen = 0;
@@ -14841,7 +14832,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let ilkAd = s.ad.split(' ')[0];
                 let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
                 el.innerHTML = `<g class="km-climber-inner">
-                    ${kmOyunKarakterSVG(s, renk, 'sisharita-' + i, 'kasif', 17)}
+                    ${kmOyunHayvanKarakterSVG(s, renk, 45)}
                     <g transform="translate(0,32)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g>
                 </g>`;
                 gg.appendChild(el);
@@ -16165,7 +16156,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let ilkAd = s.ad.split(' ')[0];
                 let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
                 el.innerHTML = `<g class="km-climber-inner">
-                    ${kmOyunKarakterSVG(s, renk, 'dag-' + i, 'dagci', 17)}
+                    ${kmOyunHayvanKarakterSVG(s, renk, 45)}
                     <g transform="translate(0,32)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${ilkAd}</text></g>
                 </g>`;
                 cg.appendChild(el);
