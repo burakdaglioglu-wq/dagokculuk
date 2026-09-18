@@ -3689,3 +3689,92 @@ edildi.
 + push yap"). Deploy YOK — "Deploy'u beklet, üç oyun bitince birlikte çıkacak." Sıradaki iş: Gizli Kelime
 (mekanik → ekran görüntüsü → dur, sonra görsel zenginleştirme → ekran görüntüsü → dur). En önemli kısım
 olarak vurgulandı: kelime çözülünce açılan bilgi kartı (terimin okçuluk tarihindeki anlamı/kullanımı).
+
+### 28d. Gizli Kelime — kelime listesi araştırması (2026-09-18)
+
+İlk araştırma turunda 15 Osmanlı/geleneksel okçuluk terimi (kemankeş, zihgir, sadak, kiriş, kabza,
+temren, yelek, gez, puta, menzil, kepade, kolçak, öndül, kalkan, binci — kaynak: İ. Uçar, "Osmanlı
+Döneminde Okçuluk Alanında Yapılan Çalışmalar ve Okçuluk Terimleri", Universal Journal of History and
+Culture, C.4 S.2 (2022), s.136-138; TDV İslâm Ansiklopedisi "Ok" maddesi) hazırlandı ve kullanıcıya
+sunuldu. Kullanıcı bunun yerine ÇOCUĞUN ANTRENMANDA GERÇEKTEN DUYDUĞU modern ekipman terimlerini istedi
+— **Osmanlı listesi SİLİNMEDİ, ileride ayrı bir "Tarih Modu" kelime seti olarak kullanılmak üzere burada
+saklanıyor** (yukarıdaki 15 terim + tanımlar + kaynaklar bu paragrafta korunmuştur, uygulamaya hiç
+girmedi).
+
+Modern liste 3 kategoriye ayrıldı — Klasik (Olimpik) yay, Makaralı yay, Ortak — ve şu kaynaklarla
+araştırıldı: okculuk.com (`/blog/icerik/okculuk-terimleri`, en kapsamlı yapılandırılmış sözlük),
+sipahiokculuk.com (`/okculuk-malzemeleri/`), genel arama sonuçlarından derlenen "berger buton"/kisser
+button terminolojisi.
+
+**ONAYLANAN SON LİSTE (24 terim)** — kullanıcı 25 terimlik taslaktan sadece "Yunuslama"yı çıkardı
+(makara-spesifik bir fenomen, ekipman değil), diğer 24'ü onayladı:
+
+- **Klasik (8)**: Gövde, Kanat, Nişangah, Stabilizatör, Kliker, Buton, Tab, Göğüslük.
+- **Makaralı (5)**: Kam, Kablo, Dudaklık, Tetik, Mercek.
+- **Ortak (11)**: Duruş, Çekiş, Kiriş, Gez, Temren, Yelek, Sadak, Denge, Bırakış, Ayaklık, Spine.
+
+Her terimin ipucu + bilgi kartı metni + kaynağı sohbet geçmişinde tam olarak yazılmış durumda (bu özet
+onları tekrar etmiyor, uygulama sırasında oradan aktarılacak). Önemli tasarım kararları: Kabza, Gövde'nin
+eşanlamlısı olduğu için (okculuk.com "Kabza/Gövde" diye tek başlık altında veriyor) ayrı bir kelime
+yapılmadı, Gövde'nin bilgi kartında eşanlamlı olarak anıldı; Gez için "arkalık" (modern), Çekiş için
+"germe", Bırakış için "salma", Temren için "ok ucu", Yelek için "tüy/vane" eşanlamlıları da bilgi
+kartlarında belirtiliyor (Kliker/Clicker ile aynı ikili-adlandırma deseni). "Buton" en düşük güvenli
+kaynağa sahipti (federasyon düzeyinde tek-kelime kaynak yok, genel "berger buton" terminolojisi) ama
+kullanıcı onayladı.
+
+Sırada: mekanik kurulumu (harf açma eşik tablosu, çoktan seçmeli tahmin, bilgi kartı, paylaşılan/oturum
+bazlı kelime durumu için Arena karakter-map'i örnek alan yeni tarih damgalı localStorage anahtarı).
+
+### 28e. Gizli Kelime — mekanik + görsel zenginleştirme (2026-09-18, TAMAMLANDI — gece görevi)
+
+Kullanıcı "gizli-kelime-terim-listesi.md" adlı bir spesifikasyon dosyasına atıfta bulundu ama böyle bir
+dosya sistemde (Downloads dahil) BULUNAMADI — muhafazakâr seçenek olarak, kullanıcının bir önceki mesajda
+zaten açıkça onayladığı ("yunuslama yok o haric digerleri okey") kaynaklı 24 terimlik liste AYNEN
+kullanıldı (bkz. 28d). Gece görevi talimatındaki tüm gereksinimler (≥18 terim, kaynaklı, ipucu + bilgi
+kartı + kategori etiketi + basit SVG simge, emoji yasağı) bu listeyle zaten karşılanıyordu.
+
+**Mimari**: Kehanet/Arena ile AYNI "kendi mekaniği" şablonu (artis=0, bitirOrtak'tan hariç, 4 parametreli
+baslatAnimasyon dispatch'i). Kelimenin kendisi (hangi kelime, hangi harfler açık, kaçıncı kelime, bu
+derste kaç çözüldü) SINIF ÇAPINDA paylaşılan tek bir durum — kişiye özel d0 DEĞİL, Arena'nın karakter-
+atama haritasıyla AYNI ilke: `_kmGizliKelime`, konum bazlı + tarih damgalı yeni bir localStorage anahtarı
+(`dag_km_gizlikelime_<konum>`, gün değişince otomatik sıfırlanıyor). Doğru/yanlış tahmin puanı ise KİŞİYE
+özel — Kehanet'teki AYNI d0 mekanizmasıyla (`gizliKelimeToplamPuan/DogruSayisi/YanlisSayisi`).
+
+**Mekanik**: her GERÇEK seri girişi (skor girme paneli hiç değişmedi) toplamına göre eşik tablosundan
+(27+→4, 21-26→3, 15-20→2, 8-14→1, 0-7→0) N harf açar — kapalı pozisyonlar arasından RASTGELE seçilerek,
+tek tek (260ms arayla) açılır. Herhangi bir an "Tahmin Et" ile 4 şıklı (doğru + listeden 3 rastgele yanlış)
+bir tahmin açılabilir — Kehanet'in aksine pad KİLİTLENMİYOR (bu oyunda sıra sorunu yok). Seçimden 500ms
+sonra sonuç açıklanıyor (spesifikasyondaki "gerilim" isteği). Doğru: kalan kapalı harf sayısı × 12 + 20
+puan (gerçek testte 2 harf kapalıyken 44 puan olarak doğrulandı — "erken bilen çok kazanır" formülü
+çalışıyor), kelime tamamen açılır, bilgi kartı (SVG ikon + 3-4 cümle) açılır, "Devam Et" ile yeni kelimeye
+geçilir (aynı derste tekrarsız, liste tükenirse sıfırlanıp yeniden karılır). Yanlış: -10 puan (0'da
+tabanlanıyor), kısa bir sarsıntı animasyonu, sıra otomatik bir sonraki sporcuya geçer — harfler
+DEĞİŞMEDEN kalır.
+
+**Görsel**: "eski elyazması/arşiv/müze, taş zemin, sıcak ışık" — tek bir sıcak radial ışık kaynağı +
+taş dokulu kutucuklar (iç gölgeyle "oyulmuş" hissi), açık taşlar amber ışıkla parlıyor. Yeni açılan her
+taş kısa bir "çevrilme" animasyonuyla (dikey flip + parlama) açılıyor, reduced-motion'da anında. 24
+terimin HER biri için basit, Faz 3 kalıbıyla (viewBox 24x24, stroke currentColor, stroke-width 1.7, fill
+yok) eşleşen özgün bir SVG ikon yazıldı, bilgi kartında görünüyor. Arayüz elemanlarında (uyarı/buton/taş)
+emoji YOK; theme-picker ikonu (📜) ve kutlama toast'ı (📜 ... doğru bildi!) Kehanet'teki AYNI gerekçeyle
+emoji olarak KALDI (ayrı, dokunulmayan bir kategori — tüm 15 temanın picker ikonu tutarlı kalsın diye
+sadece bu tema için SVG'ye çevirmek DAHA fazla tutarsızlık yaratırdı; bu bir yorum kararı, kullanıcı
+onayı için not düşüldü).
+
+**Gerçek testte 2 bağımsız regresyon bulundu ve düzeltildi**:
+1. Tahmin/bilgi kartı modal'ı (`z-index:2`), paylaşılan skor dok'unun (`z-index:5`) ALTINDA kalıp ikinci
+   turda tıklanamaz hale geliyordu (Kehanet'teki panel/dok çakışmasının farklı bir türü) — modal'ın kendi
+   `z-index:8`'e çıkarılmasıyla düzeltildi, paylaşılan dok'un kendisi hiç değişmedi.
+2. **Kök neden düzeltmesi**: bilgi kartındaki SVG ikonu, panelin arka plan yol-haritası SVG'leri için var
+   olan paylaşılan `.km-oyun-panel svg{ position:absolute; width:100%; height:100%; }` kuralı yüzünden
+   (Kehanet'te 3 kez yaşanan AYNI bug) tüm kartı kaplayacak şekilde büyüyordu. Bu sefer TEK TEK override
+   eklemek yerine kuralın KENDİSİ kök nedenden düzeltildi: `.km-oyun-panel svg` → `.km-oyun-panel > svg`
+   (sadece DOĞRUDAN çocuk). Tüm 9 arka-plan-SVG'li temanın (Zirve/Yıldız/Hazine/Pist/Ninja/Monopoly/Dağ/
+   Balon/Sis Haritası) SVG'si zaten doğrudan çocuk olduğu doğrulandı (grep ile), gerçek ekran görüntüsüyle
+   3 temada (Zirve/Dağ/Sis Haritası) boyutların DEĞİŞMEDİĞİ (tam panel dolusu, ~1030x534px) ayrıca
+   kanıtlandı. Bu, Kule'nin de faydalanacağı genel bir düzeltme.
+
+15 tema + Reaksiyon regresyon taraması temiz (0 hata). 360/1280/1920px ekran görüntüsüyle kontrol edildi.
+Skor dok'unun CSS'i hiç değişmedi (sadece z-index karşılaştırması yapıldı, kendi kuralı dokunulmadı).
+
+**Deploy durumu**: Commit + push edildi, DEPLOY YOK — "Üç oyun bitince deploy et" (Kule bekleniyor).

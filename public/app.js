@@ -10627,8 +10627,17 @@ ${(function(){
 #km-oyun-wrap[data-tema="futboltakim"] #km-oyun-panel-futboltakim,
 #km-oyun-wrap[data-tema="arena"] #km-oyun-panel-arena,
 #km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita,
-#km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet { display:flex; }
-.km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
+#km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet,
+#km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime { display:flex; }
+/* KÖK NEDEN DÜZELTMESİ (2026-09-18) — bu kural eskiden ".km-oyun-panel svg" idi (HERHANGİ derinlikte
+   torun), bu yüzden panel içine gömülü küçük ikon SVG'lerini (Kehanet'in uyarı/mesafe/alev ikonları,
+   Gizli Kelime'nin bilgi kartı ikonu) yakalayıp TÜM PANELİ kaplayacak şekilde büyütüyordu — iki ayrı
+   temada AYNI bug gerçek testte yakalanıp her seferinde tek tek override edildi. Kural artık SADECE
+   DOĞRUDAN çocuk (>) SVG'lere uygulanıyor — tüm mevcut arka plan yol-haritası SVG'leri (Zirve/Yıldız/
+   Hazine/Pist/Ninja/Monopoly/Dağ/Balon/Sis Haritası) zaten .km-oyun-panel'in DOĞRUDAN çocuğu, davranışları
+   HİÇ değişmedi; iç içe geçmiş küçük ikonlar artık hiç yakalanmıyor, tema-özel override'lara gerek kalmadı
+   (var olanlar zararsız/gereksiz olarak kaldı, dokunulmadı). */
+.km-oyun-panel > svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; clip-path:inset(0); }
 /* Hedef Tahtası (2026-09-06) — HTML/CSS (SVG değil, Futbol/Pist desenini izliyor). Halka deseni TEK bir
    radial-gradient (gerçek WA hedef renkleri: altın/kırmızı/mavi/siyah/beyaz), ok izleri önceden
    hesaplanmış sabit noktalarda, frac arttıkça teker teker "beliriyor" (pop-in). */
@@ -10720,6 +10729,54 @@ ${(function(){
 /* En İyi Kâhin (Adım 2, sıralama paneli) — Adil Sıralama/En Çok Yükselen'in AYNI ilkesiyle: gerçek
    sıralamanın ÜSTÜNE ek bir bilgi satırı, mevcut sıralama mantığına dokunmadan. */
 .km-kehanet-en-iyi-kahin{ font-family:var(--font-body); font-weight:700; font-size:10.5px; color:#ffd23f; background:rgba(255,210,63,0.1); border:1px solid rgba(255,210,63,0.3); border-radius:8px; padding:6px 8px; margin-bottom:8px; line-height:1.4; }
+
+/* ---- GİZLİ KELİME (Faz 16, Adım 1, 2026-09-18) — mekanik CSS'i. Kehanet Adım 1'deki AYNI kural:
+   görsel zenginlik (eski elyazması/taş dokusu, harf-çevirme animasyonu) Adım 2'nin işi — burada sadece
+   işlevsel/okunabilir bir iskelet var. .km-gk-govde ÜSTE yaslı (justify-content:flex-start) — Kehanet'te
+   öğrenilen dersle AYNI: paylaşılan skor dok'u (.km-oyun-dok) panelin alt %88'ine kadar büyüyebiliyor,
+   dikey ortalanmış içerik onun altında kalıp tıklanamaz hale gelirdi. */
+/* Atmosfer (Adım 2, 2026-09-18) — "eski elyazması/arşiv/müze, taş zemin, sıcak ışık" (kullanıcı
+   spesifikasyonu). Tek bir sıcak radial ışık kaynağı + hafif taş dokusu (tekrarlayan çok-alçak-kontrast
+   linear-gradient çizgileri, harici görsel YOK — Kehanet'in yıldız zemini gibi CSS/SVG-only). */
+.km-oyun-panel-gizlikelime{ background:radial-gradient(ellipse at 50% 20%, #3a2a1a 0%, #1a1310 55%, #100c0a 100%); overflow:hidden; }
+.km-gk-govde{ position:absolute; inset:0; margin-top:46px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:14px; padding:20px 16px; }
+.km-gk-ust{ display:flex; align-items:center; gap:10px; }
+.km-gk-kategori{ font-family:var(--font-body); font-weight:700; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink); background:rgba(232,185,106,0.16); border:1px solid rgba(232,185,106,0.4); border-radius:999px; padding:4px 10px; }
+.km-gk-ilerleme{ font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--ink-faint); }
+.km-gk-taslar{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; max-width:560px; }
+/* "Harfler taşa oyulmuş gibi dursun" — düz kutu yerine hafif iç gölge (oyulmuş hissi) + taş rengi
+   gradyanı, kapalı taşlar boş/koyu, açık taşlar sıcak altın ışıkla aydınlanmış. */
+.km-gk-tas{ width:34px; height:42px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, #2b241d, #1c1712); color:var(--ink); box-shadow:inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.04); }
+.km-gk-tas.km-gk-tas-acik{ border-color:rgba(232,185,106,0.55); background:linear-gradient(160deg, #4a3620, #2e2213); color:#ffe3ac; box-shadow:inset 0 2px 4px rgba(0,0,0,0.35), 0 0 10px 1px rgba(232,185,106,0.35); }
+/* Yeni açılan taş — "taş bloğu çevrilsin/toz kalksın" hissi: kısa bir dikey flip + parlama. */
+@keyframes kmGkTasAcilma{ 0%{ transform:rotateX(0deg) scale(1); filter:brightness(1); } 35%{ transform:rotateX(90deg) scale(.85); filter:brightness(2.2); } 36%{ transform:rotateX(-90deg) scale(.85); } 70%{ transform:rotateX(0deg) scale(1.08); filter:brightness(1.6); } 100%{ transform:rotateX(0deg) scale(1); filter:brightness(1); } }
+.km-gk-tas.km-gk-tas-yeni{ animation:kmGkTasAcilma .5s ease; }
+.km-gk-ipucu{ font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--ink-faint); text-align:center; max-width:420px; }
+.km-gk-tahmin-btn{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#1a1512; background:#e8b96a; border:none; border-radius:10px; padding:10px 22px; cursor:pointer; }
+.km-gk-tahmin-btn:hover{ filter:brightness(1.08); }
+.km-gk-taslar.km-gk-sars{ animation:kmGkSars .4s ease; }
+@keyframes kmGkSars{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-6px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
+/* z-index:8 — paylaşılan skor dok'unun (.km-oyun-dok, z-index:5) ÜSTÜNDE kalmalı: bu bir modal, açıkken
+   dok'un altında kalıp tıklanamaz hale gelmemeli (Kehanet'te aynı sınıftan bir çakışma vardı, orada
+   içerik dok'un büyüme alanından KAÇIRILMIŞTI; burada modal zaten kasıtlı bir engelleyici katman
+   olduğu için doğru çözüm dok'un ÜSTÜNE çıkmak — paylaşılan .km-oyun-dok'un kendisi hiç değişmedi). */
+.km-gk-modal{ position:absolute; inset:0; background:rgba(10,8,6,0.9); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; z-index:8; }
+.km-gk-modal-baslik{ font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink); text-align:center; }
+.km-gk-secenekler{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:280px; }
+.km-gk-secenek-btn{ font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--ink); background:rgba(255,255,255,0.06); border:2px solid var(--line); border-radius:10px; padding:10px 16px; cursor:pointer; }
+.km-gk-secenek-btn:hover:not(:disabled){ border-color:#e8b96a; }
+.km-gk-secenek-btn:disabled{ opacity:.5; cursor:default; }
+.km-gk-modal-kapat{ font-family:var(--font-body); font-weight:600; font-size:12px; color:var(--ink-faint); background:none; border:1px solid var(--line); border-radius:8px; padding:6px 14px; cursor:pointer; }
+.km-gk-bilgi-karti{ background:rgba(255,255,255,0.05); border:1px solid rgba(232,185,106,0.4); border-radius:12px; padding:16px; max-width:340px; text-align:center; }
+/* .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; } paylaşılan kuralı burada da
+   Kehanet'teki AYNI şekilde devreye giriyor (bu ikon da .km-oyun-panel içinde) — açıkça geri alınıyor. */
+.km-gk-bilgi-ikon{ color:#e8b96a; display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+.km-oyun-panel .km-gk-bilgi-ikon svg{ position:static; inset:auto; width:30px; height:30px; display:block; overflow:visible; clip-path:none; }
+.km-gk-bilgi-kelime{ font-family:var(--font-display); font-weight:800; font-size:17px; color:#e8b96a; margin-bottom:8px; }
+.km-gk-bilgi-metin{ font-family:var(--font-body); font-weight:500; font-size:13px; color:var(--ink); line-height:1.5; }
+.km-gk-bilgi-devam-btn{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#1a1512; background:#e8b96a; border:none; border-radius:10px; padding:9px 20px; cursor:pointer; margin-top:12px; }
+@media (max-width: 860px) { .km-gk-tas{ width:28px; height:36px; font-size:15px; } }
+@media (prefers-reduced-motion: reduce){ .km-gk-taslar.km-gk-sars{ animation:none; } .km-gk-tas.km-gk-tas-yeni{ animation:none; } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -11701,6 +11758,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // kendi göstergesine kavuşacak), sadece tutarlılık için dolduruldu.
             kehanet: { ad: 'Kehanet', ikon: '🔮', renkler: ['#a78bfa', '#7dd3fc', '#ffd23f', '#f472b6', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — sporcu atmadan önce kaç puan yapacağını tahmin eder, fark ne kadar azsa o kadar çok kehanet puanı kazanır.', btn: '🔮 Aç', finish: '', cp: '', birim: 'kehanet', bitis: '',
                 surprizler: [] },
+            // Faz 16, Adım 1, 2. oyun (2026-09-18) — Gizli Kelime: frac/yol YOK, Kehanet/Arena'nın "kendi
+            // mekaniği" emsaliyle AYNI kategori. Kelimenin kendisi SINIF ÇAPINDA paylaşılan (kişiye özel
+            // DEĞİL) tek bir durum — Arena'nın karakter-atama haritasıyla aynı, tarih damgalı/konum bazlı
+            // ayrı bir localStorage anahtarında (_kmGizliKelime, bkz. "---- GİZLİ KELİME" bloğu). Her seri
+            // toplamına göre harf açılır, herhangi bir an "Tahmin Et" ile çözülmeye çalışılır — kilitli pad
+            // YOK (Kehanet'in aksine, buradaki sıra sorunu yok).
+            gizlikelime: { ad: 'Gizli Kelime', ikon: '📜', renkler: ['#e8b96a', '#c96a4d', '#7dd3fc', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her seri gizli kelimenin harflerini açar, herhangi bir sporcu istediği an tahmin edebilir.', btn: '📜 Aç', finish: '', cp: '', birim: 'gizlikelime', bitis: '',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -12133,6 +12198,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'futboltakim') kmOyunSahneKurFutbolTakim();
             else if(tid === 'sisharita') kmOyunSahneKurSisHaritasi();
             else if(tid === 'kehanet') kmOyunSahneKurKehanet();
+            else if(tid === 'gizlikelime') kmOyunSahneKurGizliKelime();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -12157,6 +12223,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunArenaCiz();
             kmOyunSahneKurSisHaritasi();
             kmOyunSahneKurKehanet();
+            kmOyunSahneKurGizliKelime();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -13089,6 +13156,22 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-kehanet-flash" id="km-kehanet-flash"></div>
             </div>`;
+        // Faz 16, Adım 1, 2. oyun (2026-09-18) — Gizli Kelime mekaniği. Görsel olarak BİLEREK çıplak
+        // (eski elyazması/taş atmosferi Adım 2'nin işi) — sadece kategori etiketi, ilerleme satırı, harf
+        // kutuları, ipucu ve "Tahmin Et" düğmesi. Tahmin/bilgi kartı modal'ı AYNI panel içinde, gösterme/
+        // gizleme #km-gk-modal'ın display'iyle kontrol ediliyor (kmGizliKelimeTahminCiz).
+        if(tid === 'gizlikelime') return `<div class="km-oyun-panel" id="km-oyun-panel-gizlikelime">
+            <div class="km-gk-govde">
+                <div class="km-gk-ust">
+                    <span class="km-gk-kategori" id="km-gk-kategori"></span>
+                    <span class="km-gk-ilerleme" id="km-gk-ilerleme"></span>
+                </div>
+                <div class="km-gk-taslar" id="km-gk-taslar"></div>
+                <div class="km-gk-ipucu" id="km-gk-ipucu"></div>
+                <button class="km-gk-tahmin-btn" id="km-gk-tahmin-btn" onclick="kmGizliKelimeTahminAc()">Tahmin Et</button>
+            </div>
+            <div class="km-gk-modal" id="km-gk-modal" style="display:none;"></div>
+        </div>`;
         }
 
         function kmOyunHTML() {
@@ -13133,7 +13216,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
@@ -14903,6 +14986,259 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             });
         }
 
+        // ---- GİZLİ KELİME — Faz 16, Adım 1, 2. oyun (2026-09-18). frac/yol YOK, Kehanet'in "kendi
+        // mekaniği" emsaliyle AYNI kategori. Kelimenin kendisi (hangi kelime, hangi harfler açık, bu
+        // derste kaç kelime çözüldü) SINIF ÇAPINDA PAYLAŞILAN tek bir durum — kişiye özel d0 DEĞİL,
+        // Arena'nın karakter-atama haritasıyla (_kmOyunArenaKarakterMap) AYNI ilke: konum bazlı + tarih
+        // damgalı ayrı bir localStorage anahtarı (kullanıcı: "Faz 13'teki konum bazlı localStorage
+        // desenini ve tarih damgası kuralını kullan" — Kehanet'te kişiye-özel d0 mekanizması bu ihtiyacı
+        // zaten karşıladığı için gerekmemişti, burada GERÇEKTEN gerekiyor çünkü durum kişiye değil
+        // OTURUMA ait). Doğru/yanlış tahmin puanı ise KİŞİYE özel — o da Kehanet'teki AYNI d0 deseniyle
+        // (gizliKelime* alanları).
+        //
+        // Kaynaklar (kullanıcı onayı: "yunuslama yok o haric digerleri okey" — 24 terim onaylandı):
+        // İ. Uçar/okculuk.com/sipahiokculuk.com — tam liste ve kaynak notları DEVIR.md §28d'de.
+        const KM_GIZLIKELIME_LISTE = [
+            { kelime: 'GÖVDE', kategori: 'klasik', ipucu: `Yayın okçunun elinin dokunduğu, en sağlam ana parçası.`, bilgi: `Gövde, yayın orta ve en sağlam parçasıdır — okçu yayı buradan tutar. Kanatlar (yayın esneyen kolları) gövdeye takılır. Bazı antrenörler buna "kabza" da der, ikisi aynı şeydir.`, ikonSvg: `<rect x="9" y="3" width="6" height="18" rx="3"/>` },
+            { kelime: 'KANAT', kategori: 'klasik', ipucu: `Yayın gövdeye takılan, esneyen iki kolu.`, bilgi: `Kanatlar, yayın gövdesinin altına ve üstüne takılan esnek kollardır. Kiriş çekilince kanatlar bükülür ve enerji depolar. Ok bırakılınca bu enerji oka aktarılır.`, ikonSvg: `<path d="M3 19c5-11 13-15 18-16"/><path d="M3 19c3-7 8-11 13-13"/>` },
+            { kelime: 'NİŞANGAH', kategori: 'klasik', ipucu: `Yaya takılan, hedefe nişan almaya yarayan ayarlanabilir parça.`, bilgi: `Nişangah, mesafeye göre ayarlanabilen bir nişan alma cihazıdır. Okçu hedefe göre nişangahı yukarı ya da aşağı kaydırır. Nişangahsız atan okçulara "barebow" (yalın yay) denir.`, ikonSvg: `<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>` },
+            { kelime: 'STABİLİZATÖR', kategori: 'klasik', ipucu: `Yaya takılan, titremeyi azaltan uzun çubuk(lar).`, bilgi: `Stabilizatör, atış sonrası titreşimi ve istenmeyen sarsıntıyı azaltan çubuk ve ağırlıklardan oluşur. Yayı daha dengeli tutmaya yardım eder. Uzun, kısa ve yana açılan çeşitleri vardır.`, ikonSvg: `<path d="M2 12h14"/><circle cx="19" cy="12" r="3"/>` },
+            { kelime: 'KLİKER', kategori: 'klasik', ipucu: `Ok tam istenen uzunlukta çekilince ses çıkaran ince metal parça.`, bilgi: `Kliker (İngilizcesiyle "clicker"), klasik yaya takılan ince bir çubuktur. Ok doğru uzunlukta çekilince "klik" sesi çıkarır, okçu o sesi duyunca bırakır. Böylece her atış aynı uzunlukta olur, isabet artar.`, ikonSvg: `<path d="M6 3v14h13"/><circle cx="6" cy="3" r="1.6"/>` },
+            { kelime: 'BUTON', kategori: 'klasik', ipucu: `Ok çıkarken yana sapmasını önleyen küçük yaylı parça.`, bilgi: `Buton (tam adıyla "berger buton" ya da "basınç düğmesi"), okun fırlarken sağa sola sapmasını dengeleyen küçük, yaylı bir parçadır. Ok yatağının hemen yanına takılır. Sıkılığı ayarlanarak okun uçuşu inceltilebilir.`, ikonSvg: `<circle cx="9" cy="12" r="4.5"/><path d="M13.5 12h2l1.5-3 2 6 1.5-3h2"/>` },
+            { kelime: 'TAB', kategori: 'klasik', ipucu: `Parmakları kirişin baskısından koruyan, elde takılan koruyucu.`, bilgi: `Tab (Türkçesi "parmaklık"), kirişi çeken parmakları korur ve daha düzgün bir bırakış sağlar. Deri ya da sentetik malzemeden yapılır. Tab olmadan kiriş parmaklara zamanla zarar verebilir.`, ikonSvg: `<path d="M5 20c-3-7-1-15 7-17 5-1 9 2 10 6"/>` },
+            { kelime: 'GÖĞÜSLÜK', kategori: 'klasik', ipucu: `Kirişin kıyafete takılmasını önleyen göğüs koruyucusu.`, bilgi: `Göğüslük, kirişin fırlarken kıyafete takılıp okçuyu yaralamasını ya da atışı bozmasını önleyen bir koruyucudur. Özellikle bol kıyafetle atış yapanlar için önemlidir. Bir tarafı vücuda oturacak şekilde tasarlanır.`, ikonSvg: `<path d="M6 5l6 4 6-4"/><path d="M6 5v15h12V5"/>` },
+            { kelime: 'KAM', kategori: 'makarali', ipucu: `Makaralı yayın uçlarındaki, dönerek gücü ayarlayan gerçek parça.`, bilgi: `Kam, günlük dilde "makara" denen parçanın gerçek adıdır. Yayın uçlarında döner ve çekiş gücünün sonlara doğru azalmasını sağlar. Bu sayede okçu, tam çekilmiş yayı daha az güçle tutabilir.`, ikonSvg: `<ellipse cx="12" cy="13" rx="7" ry="6"/><circle cx="11" cy="9" r="1.4"/>` },
+            { kelime: 'KABLO', kategori: 'makarali', ipucu: `Kamları birbirine bağlayıp aynı anda döndüren ipler.`, bilgi: `Kablolar, makaralı yayda kamları senkronize (aynı anda hareket eder) tutan yardımcı iplerdir. Kiriş kadar göze çarpmasalar da makaralı yayın çalışması için gereklidirler. Zamanla gerilip ayarlarının kontrol edilmesi gerekir.`, ikonSvg: `<path d="M3 9c4.5 0 4.5 5 9 5s4.5-5 9-5"/><path d="M3 17c4.5 0 4.5-3 9-3s4.5 3 9 3"/>` },
+            { kelime: 'DUDAKLIK', kategori: 'makarali', ipucu: `Kiriş tam çekilince dudağa denk gelen küçük plastik parça.`, bilgi: `Dudaklık, makaralı yayın kirişine takılan küçük bir plastik parçadır. Yay tam çekilince tam dudağa denk gelir, böylece okçu her seferinde aynı noktadan çeker. Sahada bazen İngilizcesiyle "peep" olarak da anılır.`, ikonSvg: `<path d="M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3.2"/>` },
+            { kelime: 'TETİK', kategori: 'makarali', ipucu: `Bileğe ya da ele takılan, kirişi bırakmaya yarayan araç.`, bilgi: `Tetik (İngilizcesiyle "release"), makaralı yayda kirişi çekmek ve bırakmak için kullanılan, bileğe takılan ya da elde tutulan bir araçtır. Parmaklarla değil, bu araçla kiriş bırakılır. Bu, her atışın daha tutarlı olmasını sağlar.`, ikonSvg: `<path d="M8 3v9a4 4 0 0 0 8 0"/><path d="M16 3v6"/>` },
+            { kelime: 'MERCEK', kategori: 'makarali', ipucu: `Nişangaha takılan, hedefi yakınlaştıran büyüteç.`, bilgi: `Mercek, makaralı yayın nişangahına takılan bir büyüteçtir, hedefi daha yakın ve net gösterir. Üzerinde küçük bir su terazisi de bulunur, bu da yayın sağa sola yatmasını önler. Klasik yaylarda mercek yerine küçük bir arpacık kullanılır.`, ikonSvg: `<circle cx="10" cy="10" r="6.2"/><path d="M14.6 14.6L21 21"/>` },
+            { kelime: 'DURUŞ', kategori: 'ortak', ipucu: `Atıştan önce ayakların ve vücudun aldığı pozisyon.`, bilgi: `Duruş, bir okçunun atıştan önce ayaklarını ve vücudunu nasıl yerleştirdiğidir. Sağlam bir duruş, dengeli ve tutarlı atışın ilk adımıdır. Çoğu okçu hedefe yan dönerek durur.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'ÇEKİŞ', kategori: 'ortak', ipucu: `Kirişin geriye doğru çekilmesi.`, bilgi: `Çekiş, kirişin çene ya da yanağa kadar geriye çekilmesidir (bazı antrenörler buna "germe" de der). Her okçunun kendine göre bir çekiş boyu vardır. Çekiş ne kadar tutarlıysa atış da o kadar tutarlı olur.`, ikonSvg: `<path d="M7 3a15 15 0 0 0 0 18"/><path d="M7 6.5l12 5.5-12 5.5"/>` },
+            { kelime: 'KİRİŞ', kategori: 'ortak', ipucu: `Yayın iki ucu arasına gerilen, okun takıldığı ip.`, bilgi: `Kiriş, yayın iki ucu arasına gerilen esnek bağdır. Ok kirişe takılıp geriye çekilerek fırlatılır. Kirişi olmayan bir yay, sadece eğilmiş bir parçadır.`, ikonSvg: `<path d="M8 3a14 14 0 0 0 0 18"/><path d="M8 3v18"/>` },
+            { kelime: 'GEZ', kategori: 'ortak', ipucu: `Okun kirişe takıldığı ucundaki küçük çentik.`, bilgi: `Gez, okun arka ucundaki, kirişe tam oturan küçük bir çentiktir. Modern oklarda bu parçaya küçük plastik bir parça (arkalık) takılır. Gez sağlam olmazsa ok kirişten kayabilir.`, ikonSvg: `<path d="M3 12h13"/><path d="M16 9l4 3-4 3"/>` },
+            { kelime: 'TEMREN', kategori: 'ortak', ipucu: `Okun en ucundaki, hedefe ilk çarpan sivri parça.`, bilgi: `Temren, okun ucuna takılan sivri metal parçadır (bazı antrenörler buna kısaca "ok ucu" da der). Hedefe ilk çarpan kısım burasıdır. Farklı ağırlıkta temrenler okun uçuşunu değiştirir.`, ikonSvg: `<path d="M3 12h11"/><path d="M14 6l7 6-7 6z"/>` },
+            { kelime: 'YELEK', kategori: 'ortak', ipucu: `Okun havada düz gitmesini sağlayan tüyler.`, bilgi: `Yelek, okun arka ucuna takılan tüylerdir (plastikten yapılanlara "vane" da denir). Bu tüyler ok havadayken onu dengede tutar. Yeleksiz bir ok havada yalpalar, hedefi bulamaz.`, ikonSvg: `<path d="M12 3v18"/><path d="M12 6l-6 4 6 2z"/><path d="M12 6l6 4-6 2z"/>` },
+            { kelime: 'SADAK', kategori: 'ortak', ipucu: `Okların ve bazı aksesuarların taşındığı çanta.`, bilgi: `Sadak, okların, tetiğin ya da tab'ın taşındığı bir çanta gibi kullanılır. Okçular sadaklarını bellerine takarak taşırlar. Hem klasik hem makaralı yay okçuları sadak kullanır.`, ikonSvg: `<path d="M7 21V7a5 5 0 0 1 10 0v14"/><path d="M9 7V4M12 7V2M15 7V4"/>` },
+            { kelime: 'DENGE', kategori: 'ortak', ipucu: `Yayın ve okçunun duruşunda sağlanması gereken şey.`, bilgi: `Denge, hem yayın iki kanadı arasında hem de okçunun duruşunda sağlanması gereken şeydir. Dengesiz bir yay ya da dengesiz bir duruş, okun sapmasına yol açar. Stabilizatörler de dengeye yardımcı olur.`, ikonSvg: `<path d="M12 3v16"/><path d="M4 9h16"/><path d="M4 9l-2 5h6z"/><path d="M20 9l-2 5h6z"/>` },
+            { kelime: 'BIRAKIŞ', kategori: 'ortak', ipucu: `Kirişin parmaklardan ya da tetikten ayrıldığı an.`, bilgi: `Bırakış, kirişin parmaklardan (ya da tetikten) ayrılıp okun fırladığı andır (bazı antrenörler "salma" da der). İyi bir bırakış yumuşak ve ani olmalıdır. Çoğu hatalı atış, bozuk bir bırakıştan kaynaklanır.`, ikonSvg: `<path d="M5 12h10"/><path d="M13 8l6 4-6 4"/>` },
+            { kelime: 'AYAKLIK', kategori: 'ortak', ipucu: `Yayın yere değmeden dinlendiği küçük stand.`, bilgi: `Ayaklık, yayın atışlar arasında yere ya da toza değmeden dinlenmesini sağlayan küçük bir stanttır. Yayın kirlenmesini ve çizilmesini önler. Her iki yay türü için de kullanılır.`, ikonSvg: `<path d="M12 3v12"/><path d="M12 15l-6 6M12 15l6 6M12 15v6"/>` },
+            { kelime: 'SPİNE', kategori: 'ortak', ipucu: `Bir okun ne kadar eğilebilir olduğunu gösteren sayı.`, bilgi: `Spine, bir okun ne kadar esnek ya da sert olduğunu gösteren bir sayıdır. Her yaya göre doğru spine'da ok seçilmelidir. Yanlış spine'lı bir ok düzgün uçamaz.`, ikonSvg: `<path d="M3 12c3-6 6 6 9 0s6-6 9 0"/>` },
+        ];
+        const KM_GK_KATEGORI_AD = { klasik: 'Klasik Yay', makarali: 'Makaralı Yay', ortak: 'Ortak' };
+        let _kmGizliKelime = null; // { tarih, kelimeIndex, acikPozisyonlar:[bool], cozulenSayisi, kullanilanIndexler:[int] } — SINIF ÇAPINDA paylaşılan, kişiye özel DEĞİL
+        let _kmGizliKelimeYuklenenKonum = null;
+        let _kmGizliKelimeTahminAcik = false;
+        let _kmGizliKelimeBilgiKartiAcik = false;
+        let _kmGizliKelimeSecenekIndexleri = [];
+        let _kmGizliKelimeKilit = false; // tahmin şıkkına basıldıktan sonra 500ms'lik gerilim boyunca ikinci tıklamayı engeller
+        function kmGizliKelimeAnahtari() { return 'dag_km_gizlikelime_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmGizliKelimeKaydet() { try { localStorage.setItem(kmGizliKelimeAnahtari(), JSON.stringify(_kmGizliKelime)); } catch(e) {} }
+        // Arena'nın karakter-atama haritasıyla (dag_km_arena_karakter_*) AYNI desen — konum bazlı +
+        // tarih damgalı: gün değişince (ya da konum değişince) kelime baştan seçilir, ders İÇİNDE tab
+        // değişse/sayfa yenilense bile kalır.
+        function kmGizliKelimeDurumEmin() {
+            if(_kmGizliKelime && _kmGizliKelimeYuklenenKonum === _kmAktifKonum && _kmGizliKelime.tarih === bugunISO()) return;
+            _kmGizliKelimeYuklenenKonum = _kmAktifKonum;
+            try {
+                let ham = localStorage.getItem(kmGizliKelimeAnahtari());
+                let veri = ham ? JSON.parse(ham) : null;
+                if(veri && veri.tarih === bugunISO() && KM_GIZLIKELIME_LISTE[veri.kelimeIndex]) { _kmGizliKelime = veri; return; }
+            } catch(e) {}
+            _kmGizliKelime = kmGizliKelimeYeniKelimeSec({ tarih: bugunISO(), cozulenSayisi: 0, kullanilanIndexler: [] });
+            kmGizliKelimeKaydet();
+        }
+        function kmGizliKelimeYeniKelimeSec(taban) {
+            let tumIndexler = KM_GIZLIKELIME_LISTE.map(function(_, idx) { return idx; });
+            let havuz = tumIndexler.filter(function(idx) { return taban.kullanilanIndexler.indexOf(idx) === -1; });
+            // Liste tükendiyse (bir derste 24 kelimenin hepsi çözüldüyse) havuz sıfırlanıp baştan başlar —
+            // "bir derste tekrar etmesin" isteği 24 kelimelik havuzla zaten fazlasıyla karşılanıyor.
+            if(!havuz.length) { taban.kullanilanIndexler = []; havuz = tumIndexler; }
+            let idx = havuz[Math.floor(Math.random() * havuz.length)];
+            let kelime = KM_GIZLIKELIME_LISTE[idx].kelime;
+            return { tarih: taban.tarih, kelimeIndex: idx, acikPozisyonlar: Array.from(kelime).map(function() { return false; }), cozulenSayisi: taban.cozulenSayisi, kullanilanIndexler: taban.kullanilanIndexler };
+        }
+        function kmOyunGizliKelimeHarfSayisi(toplam) {
+            if(toplam >= 27) return 4;
+            if(toplam >= 21) return 3;
+            if(toplam >= 15) return 2;
+            if(toplam >= 8) return 1;
+            return 0;
+        }
+        // Kapalı pozisyonlar arasından RASTGELE `adet` tanesini açar (sırayla soldan sağa değil —
+        // "harfler taşa oyulmuş gibi" hissi Adım 2'de gelecek ama hangi harfin ne zaman açılacağı
+        // ÖNGÖRÜLEMEZ olsun diye şimdiden rastgele). `adet` kapalı sayısından fazlaysa fazlası yok sayılır.
+        function kmGizliKelimeHarfAc(adet) {
+            let kapali = [];
+            _kmGizliKelime.acikPozisyonlar.forEach(function(v, idx) { if(!v) kapali.push(idx); });
+            for(let k = kapali.length - 1; k > 0; k--) { let j = Math.floor(Math.random() * (k + 1)); let t = kapali[k]; kapali[k] = kapali[j]; kapali[j] = t; }
+            let acilanlar = kapali.slice(0, adet);
+            acilanlar.forEach(function(idx) { _kmGizliKelime.acikPozisyonlar[idx] = true; });
+            kmGizliKelimeKaydet();
+            return acilanlar;
+        }
+        function kmOyunSahneKurGizliKelime() {
+            kmGizliKelimeDurumEmin();
+            _kmGizliKelimeTahminAcik = false;
+            _kmGizliKelimeBilgiKartiAcik = false;
+            _kmGizliKelimeKilit = false;
+            kmGizliKelimeTasCiz();
+            kmGizliKelimeModalCiz();
+        }
+        function kmGizliKelimeTasCiz() {
+            let taslarEl = document.getElementById('km-gk-taslar'); if(!taslarEl) return;
+            kmGizliKelimeDurumEmin();
+            let giris = KM_GIZLIKELIME_LISTE[_kmGizliKelime.kelimeIndex];
+            let harfler = Array.from(giris.kelime);
+            taslarEl.innerHTML = harfler.map(function(h, idx) {
+                let acikMi = _kmGizliKelime.acikPozisyonlar[idx];
+                return `<div class="km-gk-tas${acikMi ? ' km-gk-tas-acik' : ''}">${acikMi ? esc(h) : ''}</div>`;
+            }).join('');
+            let kategoriEl = document.getElementById('km-gk-kategori'); if(kategoriEl) kategoriEl.textContent = KM_GK_KATEGORI_AD[giris.kategori] || '';
+            let ilerlemeEl = document.getElementById('km-gk-ilerleme'); if(ilerlemeEl) ilerlemeEl.textContent = (_kmGizliKelime.cozulenSayisi + 1) + '. kelime · Bu derste çözülen: ' + _kmGizliKelime.cozulenSayisi;
+            let ipucuEl = document.getElementById('km-gk-ipucu'); if(ipucuEl) ipucuEl.textContent = giris.ipucu;
+        }
+        // Tahmin/bilgi kartı — AYNI #km-gk-modal içinde iki farklı içerik, hangisinin gösterileceği
+        // _kmGizliKelimeTahminAcik / _kmGizliKelimeBilgiKartiAcik bayraklarıyla belirleniyor (ikisi asla
+        // aynı anda açık olmuyor).
+        function kmGizliKelimeModalCiz() {
+            let modal = document.getElementById('km-gk-modal'); if(!modal) return;
+            if(_kmGizliKelimeBilgiKartiAcik) {
+                let giris = KM_GIZLIKELIME_LISTE[_kmGizliKelime.kelimeIndex];
+                modal.style.display = 'flex';
+                modal.innerHTML = `<div class="km-gk-bilgi-karti">
+                    <div class="km-gk-bilgi-ikon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${giris.ikonSvg}</svg></div>
+                    <div class="km-gk-bilgi-kelime">${esc(giris.kelime)}</div>
+                    <div class="km-gk-bilgi-metin">${esc(giris.bilgi)}</div>
+                    <button class="km-gk-bilgi-devam-btn" onclick="kmGizliKelimeBilgiKartiKapat()">Devam Et</button>
+                </div>`;
+            } else if(_kmGizliKelimeTahminAcik) {
+                modal.style.display = 'flex';
+                modal.innerHTML = `<div class="km-gk-modal-baslik">Kelime ne?</div>
+                    <div class="km-gk-secenekler">${_kmGizliKelimeSecenekIndexleri.map(function(idx) {
+                        return `<button class="km-gk-secenek-btn" ${_kmGizliKelimeKilit ? 'disabled' : ''} onclick="kmGizliKelimeTahminSec(${idx})">${esc(KM_GIZLIKELIME_LISTE[idx].kelime)}</button>`;
+                    }).join('')}</div>
+                    <button class="km-gk-modal-kapat" ${_kmGizliKelimeKilit ? 'disabled' : ''} onclick="kmGizliKelimeTahminKapat()">Vazgeç</button>`;
+            } else {
+                modal.style.display = 'none';
+                modal.innerHTML = '';
+            }
+        }
+        function kmGizliKelimeTahminAc() {
+            if(!_kmOyunRosterCache.length) return;
+            kmGizliKelimeDurumEmin();
+            let dogruIdx = _kmGizliKelime.kelimeIndex;
+            let digerleri = KM_GIZLIKELIME_LISTE.map(function(_, idx) { return idx; }).filter(function(idx) { return idx !== dogruIdx; });
+            for(let k = digerleri.length - 1; k > 0; k--) { let j = Math.floor(Math.random() * (k + 1)); let t = digerleri[k]; digerleri[k] = digerleri[j]; digerleri[j] = t; }
+            let secenekler = [dogruIdx].concat(digerleri.slice(0, 3));
+            for(let k = secenekler.length - 1; k > 0; k--) { let j = Math.floor(Math.random() * (k + 1)); let t = secenekler[k]; secenekler[k] = secenekler[j]; secenekler[j] = t; }
+            _kmGizliKelimeSecenekIndexleri = secenekler;
+            _kmGizliKelimeTahminAcik = true;
+            _kmGizliKelimeKilit = false;
+            kmGizliKelimeModalCiz();
+        }
+        function kmGizliKelimeTahminKapat() {
+            if(_kmGizliKelimeKilit) return;
+            _kmGizliKelimeTahminAcik = false;
+            kmGizliKelimeModalCiz();
+        }
+        // "Şıklar seçilirken kısa bir gerilim olsun — seçtikten sonra hemen sonuç vermesin, yarım saniye
+        // beklesin" (kullanıcı spesifikasyonu) — bu yarım saniye boyunca şıklar kilitli (_kmGizliKelimeKilit).
+        function kmGizliKelimeTahminSec(idx) {
+            if(_kmGizliKelimeKilit) return;
+            _kmGizliKelimeKilit = true;
+            kmGizliKelimeModalCiz();
+            let dogruMu = idx === _kmGizliKelime.kelimeIndex;
+            setTimeout(function() { kmGizliKelimeSonucIsle(dogruMu); }, 500);
+        }
+        function kmGizliKelimeSonucIsle(dogruMu) {
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            _kmGizliKelimeKilit = false;
+            _kmGizliKelimeTahminAcik = false;
+            if(!s) { kmGizliKelimeModalCiz(); return; }
+            let d0 = kmOyunDurumAl(s.g, s.ad);
+            if(dogruMu) {
+                // Puan, TAHMİN ANINDA kapalı kalan harf sayısına göre — "erken bilen çok kazanır"
+                // (kullanıcı spesifikasyonu): 20 + kapalı harf × 12.
+                let kapaliKalan = _kmGizliKelime.acikPozisyonlar.filter(function(v) { return !v; }).length;
+                let puan = 20 + kapaliKalan * 12;
+                d0.gizliKelimeToplamPuan = (d0.gizliKelimeToplamPuan || 0) + puan;
+                d0.gizliKelimeDogruSayisi = (d0.gizliKelimeDogruSayisi || 0) + 1;
+                kmOyunDurumKaydet();
+                _kmGizliKelime.acikPozisyonlar = _kmGizliKelime.acikPozisyonlar.map(function() { return true; });
+                _kmGizliKelime.cozulenSayisi = (_kmGizliKelime.cozulenSayisi || 0) + 1;
+                if(_kmGizliKelime.kullanilanIndexler.indexOf(_kmGizliKelime.kelimeIndex) === -1) _kmGizliKelime.kullanilanIndexler.push(_kmGizliKelime.kelimeIndex);
+                kmGizliKelimeKaydet();
+                kmGizliKelimeTasCiz();
+                if(!kapali) {
+                    try { sesCal(880, 0.12); setTimeout(function() { try { sesCal(1175, 0.18); } catch(e) {} }, 110); } catch(e) {}
+                    showToast('📜 ' + s.ad.split(' ')[0] + ' doğru bildi! +' + puan + ' puan', 'success');
+                }
+                _kmGizliKelimeBilgiKartiAcik = true;
+                kmGizliKelimeModalCiz();
+            } else {
+                d0.gizliKelimeToplamPuan = Math.max(0, (d0.gizliKelimeToplamPuan || 0) - 10);
+                d0.gizliKelimeYanlisSayisi = (d0.gizliKelimeYanlisSayisi || 0) + 1;
+                kmOyunDurumKaydet();
+                if(!kapali) showToast(s.ad.split(' ')[0] + ' yanlış bildi — sıra geçti (-10 puan)', 'error');
+                // "Yanlış bilirse ... sıra geçer" (kullanıcı spesifikasyonu) — diğer temalardaki normal
+                // seri-sonrası otomatik geçişle AYNI davranış, burada elle tetikleniyor çünkü tahmin
+                // kmOyunIlerlet akışının DIŞINDA, ayrı bir kullanıcı eylemi.
+                _kmOyunAktifIndex = (_kmOyunAktifIndex + 1) % _kmOyunRosterCache.length;
+                kmOyunChipleriCiz();
+                kmOyunKabukGuncelle();
+                kmGizliKelimeModalCiz();
+                let taslarEl = document.getElementById('km-gk-taslar');
+                if(taslarEl && !kmOyunKameraAzaltilmisHareketMi()) {
+                    taslarEl.classList.remove('km-gk-sars'); void taslarEl.offsetWidth;
+                    taslarEl.classList.add('km-gk-sars');
+                }
+            }
+        }
+        function kmGizliKelimeBilgiKartiKapat() {
+            _kmGizliKelimeBilgiKartiAcik = false;
+            _kmGizliKelime = kmGizliKelimeYeniKelimeSec({ tarih: _kmGizliKelime.tarih, cozulenSayisi: _kmGizliKelime.cozulenSayisi, kullanilanIndexler: _kmGizliKelime.kullanilanIndexler });
+            kmGizliKelimeKaydet();
+            kmGizliKelimeModalCiz();
+            kmGizliKelimeTasCiz();
+        }
+        // "Her harf ayrı ayrı açılsın, hepsi aynı anda değil, aralarında kısa gecikme olsun" (kullanıcı
+        // spesifikasyonu) — mevcut taş DOM elemanlarını TEK TEK, aralarında 260ms'lik gecikmeyle açar,
+        // her biri kendi "taş çevrilme" animasyonuyla (km-gk-tas-yeni, CSS). Reduced-motion'da hepsi
+        // ANINDA açılır (kmGizliKelimeTasCiz zaten final/doğru durumu çiziyor).
+        function kmGizliKelimeTaslariKademeliAc(acilanlar, bitince) {
+            let taslarEl = document.getElementById('km-gk-taslar');
+            if(!taslarEl || !acilanlar.length || kmOyunKameraAzaltilmisHareketMi()) { kmGizliKelimeTasCiz(); bitince(); return; }
+            let giris = KM_GIZLIKELIME_LISTE[_kmGizliKelime.kelimeIndex];
+            let harfler = Array.from(giris.kelime);
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let k = 0;
+            function birAc() {
+                if(k >= acilanlar.length) { bitince(); return; }
+                let idx = acilanlar[k];
+                let tas = taslarEl.children[idx];
+                if(tas) {
+                    tas.textContent = harfler[idx];
+                    tas.classList.add('km-gk-tas-acik', 'km-gk-tas-yeni');
+                    if(!kapali) { try { sesCal(640 + k * 35, 0.06); } catch(e) {} }
+                    setTimeout(function() { tas.classList.remove('km-gk-tas-yeni'); }, 480);
+                }
+                k++;
+                setTimeout(birAc, 260);
+            }
+            birAc();
+        }
+        // Her seri toplamına göre harf açar — HANGİ sporcunun attığından bağımsız (paylaşılan/oturum
+        // durumu). Gerçek skora (kmOyunIlerlet'te YUKARIDA zaten koşulsuz yazıldı) hiç dokunmuyor.
+        function kmOyunAnimateGizliKelime(s, i, kaydedilecek, done) {
+            kmGizliKelimeDurumEmin();
+            let toplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
+            let adet = kmOyunGizliKelimeHarfSayisi(toplam);
+            let acilanlar = adet > 0 ? kmGizliKelimeHarfAc(adet) : [];
+            if(!acilanlar.length) { setTimeout(done, 300); return; }
+            kmGizliKelimeTaslariKademeliAc(acilanlar, done);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -15038,6 +15374,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // emsaliyle AYNI kategori. Artış BİLEREK sıfır — gerçek fark/kehanet puanı kendi
             // kmOyunAnimateKehanet'inde hesaplanıp AYRI bir sayaca (d0.kehanet*) yazılıyor.
             if(_kmOyunAktifTema === 'kehanet') artis = 0;
+            // Gizli Kelime (Faz 16, 2026-09-18) — frac/yol YOK, Kehanet'in emsaliyle AYNI kategori.
+            // Gerçek "ilerleme" harf açma şeklinde, kmOyunAnimateGizliKelime içinde AYRICA hesaplanıp
+            // paylaşılan _kmGizliKelime durumuna uygulanıyor.
+            if(_kmOyunAktifTema === 'gizlikelime') artis = 0;
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -15151,7 +15491,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -15299,6 +15639,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'futbol') kmOyunAnimateFutbol(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'futboltakim') kmOyunAnimateFutbolTakim(s, i, futbolOklar, futbolGolMu, toplam, bitirOrtak);
                 else if(_kmOyunAktifTema === 'kehanet') kmOyunAnimateKehanet(s, i, kaydedilecek, bitirOrtak);
+                else if(_kmOyunAktifTema === 'gizlikelime') kmOyunAnimateGizliKelime(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
