@@ -153,19 +153,28 @@
                 </div>
             </div>
         </div>
-        <!-- FAZ 7 — Sınıf kartı: o dersteki sporcuları ve yoklama durumunu gösterir. Veri _kmListe/
-             otomatikYoklamaDB'den her çizimde taze okunuyor, kendi kopyasını tutmuyor (bkz. kmSinifKartiCiz). -->
-        <div id="km-sinif-karti" class="card" style="margin:10px 10px 0; flex-shrink:0;"></div>
-        <!-- FAZ 7 — Araç ızgarası: 12 aracın hepsi kart olarak (bkz. kmAracIzgaraCiz). Eski 12
-             butonluk sekme şeridinin YERİNE geçti (adım 4) — geri dönüş yolu (aşağıdaki
-             #km-icerik-geri-bar) ile birlikte, ızgara/araç arasında görünürlük değişiyor. -->
-        <div id="km-arac-izgara" class="km-arac-izgara" style="margin:10px; flex-shrink:0;"></div>
-        <!-- FAZ 7 — Seçilen aracın üstündeki geri dönüş yolu. kmGeri() DEĞİL (o tüm platformu
-             kapatır) — kmIzgaraGeriDon() ızgaraya döner. Başlangıçta gizli (varsayılan durum ızgara). -->
-        <div id="km-icerik-geri-bar" style="display:none; padding:0 10px 6px; flex-shrink:0;">
-            <button onclick="kmIzgaraGeriDon()" class="btn" style="min-height:44px;">← Karışık Sınıf</button>
+        <!-- Bütün gövde (sınıf kartı + araç ızgarası + geri-bar + içerik) TEK bir kaydırılabilir
+             sarmalayıcı içinde (2026-09-18, gerçek kullanıcı raporu: "menüler sabit, aşağı inmiyor,
+             seçemiyorum"). #karisik-platform sabit yükseklikte + overflow:hidden olduğu için, araç
+             ızgarası (özellikle çok araç eklendikçe) ekrandan taşınca ALTINDA KALAN araçlara hiçbir
+             şekilde ulaşılamıyordu — kaydırma yoktu. min-height:0 ŞART: flex-column içindeki bir
+             flex öğesi varsayılan olarak içeriği kadar büyümeye çalışır (min-height:auto), bu da
+             overflow-y:auto'yu devre dışı bırakırdı. -->
+        <div style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;">
+            <!-- FAZ 7 — Sınıf kartı: o dersteki sporcuları ve yoklama durumunu gösterir. Veri _kmListe/
+                 otomatikYoklamaDB'den her çizimde taze okunuyor, kendi kopyasını tutmuyor (bkz. kmSinifKartiCiz). -->
+            <div id="km-sinif-karti" class="card" style="margin:10px 10px 0; flex-shrink:0;"></div>
+            <!-- FAZ 7 — Araç ızgarası: 12 aracın hepsi kart olarak (bkz. kmAracIzgaraCiz). Eski 12
+                 butonluk sekme şeridinin YERİNE geçti (adım 4) — geri dönüş yolu (aşağıdaki
+                 #km-icerik-geri-bar) ile birlikte, ızgara/araç arasında görünürlük değişiyor. -->
+            <div id="km-arac-izgara" class="km-arac-izgara" style="margin:10px; flex-shrink:0;"></div>
+            <!-- FAZ 7 — Seçilen aracın üstündeki geri dönüş yolu. kmGeri() DEĞİL (o tüm platformu
+                 kapatır) — kmIzgaraGeriDon() ızgaraya döner. Başlangıçta gizli (varsayılan durum ızgara). -->
+            <div id="km-icerik-geri-bar" style="display:none; padding:0 10px 6px; flex-shrink:0;">
+                <button onclick="kmIzgaraGeriDon()" class="btn" style="min-height:44px;">← Karışık Sınıf</button>
+            </div>
+            <div id="km-icerik" style="display:none; flex:1;padding:10px 12px;"></div>
         </div>
-        <div id="km-icerik" style="display:none; flex:1;overflow-y:auto;padding:10px 12px;"></div>
     </div>
 
     <!-- DERS SONU TOPLU VELİ RAPORU — hem normal ders (Yeni Antrenman Başlat) hem Karışık Sınıf

@@ -4196,3 +4196,38 @@ hatayla çalışıyor. 16 tema + Reaksiyon tam regresyon sweep'i temiz (paylaş�
 dokunulduğu için tekrar koşuldu).
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit f804e8a, version 913c507f...).
+
+## 35. Karışık Sınıf araç ızgarası (menü) kaydırma bug'ı düzeltildi (2026-09-18)
+
+Kullanıcı raporu (gerçek kullanım, hem telefon hem PC): "Karışık sınıf menüleri sabit olduğu için
+oynatamıyorum seçemiyorum aşağı inmediği için."
+
+**Kök sebep**: `#karisik-platform` (Karışık Sınıf'ın tam ekran sarmalayıcısı, `public/app.html` ~satır 133)
+`position:fixed; height:100vh; overflow:hidden;` — sabit yükseklik, kaydırma YOK. İçindeki araç ızgarası
+(`#km-arac-izgara`, 12 araç kartı: Yoklama/Skor Gir/Liderlik/Klasman/Yarışma/Veli Bildirimi/Disiplin
+Pusulası/Pozitif Pusula/Oyunlar/Reaksiyon/vb.) kendi başına HİÇBİR kaydırma kabına sahip değildi
+(`flex-shrink:0`, overflow tanımsız). Araç sayısı arttıkça (özellikle son aylarda pek çok yeni araç
+eklendi) ızgara ekran yüksekliğini aşınca, alttaki kartlara ULAŞMANIN HİÇBİR YOLU yoktu — tam olarak
+kullanıcının tarif ettiği "sabit, aşağı inmiyor, seçemiyorum" durumu.
+
+**Düzeltme**: sınıf kartı + araç ızgarası + geri-dönüş barı + `#km-icerik` TEK bir ortak kaydırılabilir
+sarmalayıcıya alındı (`flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;`).
+`min-height:0` KRİTİK — flex-column içindeki bir öğe varsayılan olarak içeriği kadar büyümeye çalışır
+(`min-height:auto`), bu `overflow-y:auto`'yu etkisiz kılardı. `#km-icerik`'in kendi eski `overflow-y:auto`'su
+kaldırıldı (artık gereksiz — TEK bir dış kaydırma alanı yeterli, iç içe iki kaydırma çubuğu kafa
+karıştırırdı). `kmAracSec`/`kmIzgaraGeriDon` zaten ızgara ile içerik ASLA aynı anda görünmüyor (biri
+gizlenip diğeri gösteriliyor) — bu yüzden tek ortak sarmalayıcı her iki durumda da doğru çalışıyor,
+davranış değişikliği yok, sadece kaydırma eklendi.
+
+**Ayrıca kontrol edildi**: sporcu-seçim modalı (`#karisik-modal`, "🎯 Karışık Sınıf — Dersi Başlat")
+ZATEN doğru kurulmuştu (`#km-liste` kendi `overflow-y:auto`'suna sahip, 714 sporculuk bir listede
+GERÇEK wheel-kaydırma ile test edildi, sorunsuz) — kullanıcının "menüler" ifadesi araç ızgarasını
+kastediyordu, bu modalda DEĞİŞİKLİK YAPILMADI.
+
+**Gerçek testte doğrulanan**: 375px (küçük telefon) genişlikte, GERÇEK fare tekerleği (wheel) olayıyla
+`scrollTop` 0'dan 421-776 aralığına (viewport'a göre) hareket etti, önceden ekran dışında kalan
+kartlar (Yarışma/Veli Bildirimi/Disiplin Pusulası/Pozitif Pusula/Oyunlar/Reaksiyon) ekran görüntüsüyle
+doğrulandı. Bir araç açılıp (Kule teması test edildi) içeriğin doğru göründüğü onaylandı. 16 tema +
+Reaksiyon tam regresyon sweep'i temiz.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
