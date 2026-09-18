@@ -15038,7 +15038,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // frac→yol iskeleti: her sporcu TEK sabit patikada kendi frac'ına göre ilerliyor, seçim YOK.
         // Yapı, kmOyunSahneKurDag/kmOyunResyncDag/kmOyunAnimateDag üçlüsünden BİREBİR türetildi —
         // sadece Dağ'ın bayrak/numara işaretleri yerine keşif ikonu + KALICI bulan-adı var (aşağıya bkz).
-        var KM_SIS_YOL_D = 'M 80 380 Q 210 420 300 350 Q 390 280 320 210 Q 260 150 360 110 Q 460 68 560 130 Q 630 175 715 145 Q 800 112 850 185 Q 890 245 985 220 Q 1075 197 1120 115';
+        // 2026-09-18, kullanıcı talimatı: "arkadaki fotoğraftaki çizgileri kullan, kendi çizgilerini
+        // değil" — bu yol artık harita-zemin.webp'nin ÜZERİNDE ÇİZİLİ olan gerçek kırmızı kesikli çizgiyi
+        // BİREBİR takip ediyor (piksel analiziyle çıkarıldı: kırmızı piksel kümeleme + en-yakın-komşu
+        // zinciriyle sıralama + Catmull-Rom yumuşatma — gerçek testte yeşil overlay ile görsel olarak
+        // doğrulandı, iki çizgi neredeyse birebir üst üste düşüyor). Eski prosedürel/uydurma path TAMAMEN
+        // değiştirildi.
+        var KM_SIS_YOL_D = 'M 675.4 432.9 C 679.0 420.6, 704.2 379.5, 696.9 359.1 C 689.6 338.7, 656.7 320.6, 631.7 310.3 C 606.7 300.0, 572.2 306.4, 546.9 297.4 C 521.6 288.4, 480.6 271.1, 480 256.3 C 479.4 241.5, 518.7 215.0, 543.4 208.3 C 568.1 201.6, 600.6 210.2, 628.3 216 C 656.0 221.8, 682.3 235.8, 709.7 243.4 C 737.1 251.0, 764.9 259.3, 792.9 261.4 C 820.9 263.5, 854.9 267.3, 877.7 256.3 C 900.6 245.3, 929.4 216.1, 930 195.4 C 930.6 174.7, 903.3 144.1, 881.1 132 C 859.0 119.9, 825.4 122.2, 797.1 122.6 C 768.8 123.0, 739.5 129.6, 711.4 134.6 C 683.3 139.6, 656.4 149.0, 628.3 152.6 C 600.2 156.2, 569.0 161.7, 542.6 156 C 516.2 150.3, 477.4 136.9, 469.7 118.3 C 462.0 99.7, 479.1 62.9, 496.3 44.6 C 513.5 26.3, 559.9 14.6, 572.6 8.6';
         var _kmOyunSisTotalLen = 0;
         function kmOyunSisPath() { return document.getElementById('km-oyun-sis-path'); }
         function kmOyunSisNokta(frac) { let p = kmOyunSisPath(); return p ? p.getPointAtLength(_kmOyunSisTotalLen * frac) : { x: 0, y: 0 }; }

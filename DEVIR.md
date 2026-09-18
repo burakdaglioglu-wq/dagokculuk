@@ -4273,3 +4273,29 @@ tıklamayla kapatıyor. Yarışma'daki toggle etiketi artık anında senkron. 16
 sweep'i temiz.
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit 9411d21, version a5818e3a...).
+
+## 37. Sis Haritası — yol artık gerçek arka plan çizimini takip ediyor (2026-09-18)
+
+Kullanıcı talimatı: "Sis Haritası'ndaki arkadaki fotoğraftaki çizgileri kullan, kendi çizgilerini değil."
+Eski `KM_SIS_YOL_D` tamamen UYDURMA/prosedürel bir eğriydi (`harita-zemin.webp` üzerindeki GERÇEK kırmızı
+kesikli hazine haritası çizgisiyle hiç örtüşmüyordu, sadece görsel olarak "bir yol" hissi veriyordu).
+
+**Nasıl çıkarıldı**: `harita-zemin.webp` 1400×1400 kare, sahne 1200×440 geniş — `preserveAspectRatio="xMidYMid
+slice"` görüntüyü 0.857 ölçekleyip SADECE dikey orta bandını (orijinalde y≈443-957) gösteriyor. O bandı
+kırpıp (`sharp`) kırmızı pikselleri eşikleme ile tespit ettim (R yüksek, G/B düşük), bağlı-bileşen
+kümelemeyle 43 ayrı "dash" parçasına ayırdım (deniz feneri'nin kırmızı çizgileri + hazine X işareti gibi
+YANLIŞ pozitifleri boyut filtresiyle eledim), en-yakın-komşu zinciriyle sıraladım, 19 noktaya
+downsample edip Catmull-Rom→kübik-bezier ile yumuşattım. Sonucu şeffaf bir overlay olarak gerçek arka
+plan görselinin ÜZERİNE çizip (`sis-path-check.html`) ekran görüntüsüyle doğruladım — iz neredeyse
+birebir çizimin kırmızı kesikli çizgisinin üstüne düşüyor.
+
+**Değişen tek şey**: `KM_SIS_YOL_D` sabiti (app.js ~15057). `kmOyunSisNokta`/`kmOyunSisPath`/kontrol
+noktası (checkpoint) sistemi, keşif ikonları — hiçbiri değişmedi, hepsi zaten frac-tabanlı ve yeni path'i
+otomatik olarak takip ediyor.
+
+**Gerçek testte doğrulanan**: roster fracları yayılıp gerçek sahne ekran görüntüsü alındı — hayvan
+karakterleri artık gerçekten deniz fenerinin yanından geçip küçük adanın ETRAFINDA DÖNEREK hazine X'ine
+doğru ilerliyor (görselde çizili olan TAM rotayı takip ediyor). 360px mobilde de sorunsuz. 16 tema +
+Reaksiyon tam regresyon sweep'i temiz.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
