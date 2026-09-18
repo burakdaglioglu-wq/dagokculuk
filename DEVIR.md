@@ -4195,4 +4195,4 @@ açılışta 0 hata. 3 alt-mod butonunun (Canlı AI Duruş/Karşılaştırma/Ayn
 hatayla çalışıyor. 16 tema + Reaksiyon tam regresyon sweep'i temiz (paylaşılan `sekmeAc` dispatcher'ına
 dokunulduğu için tekrar koşuldu).
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit f804e8a, version 913c507f...).
