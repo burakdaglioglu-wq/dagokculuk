@@ -20163,11 +20163,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
             if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
-            if(sekmeAd === 'video') { try { vaInit(); } catch(e) {} }
-            else {
+            if(sekmeAd !== 'video') {
                 try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
                 try { aynaDurdur(); } catch(e) {}
-                try { if(vaMediaStream) vaStopCamera(); } catch(e) {}
             }
             if(sekmeAd === 'duello') duelloTabDoldur();
             if(sekmeAd === 'basari') basariPaneliDoldur();
@@ -22939,22 +22937,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let aiPoseEl = document.getElementById('va-mod-ai-pose');
             let karsilastirEl = document.getElementById('va-mod-karsilastir');
             let aynaEl = document.getElementById('va-mod-ayna');
-            let aiEl = document.getElementById('va-mod-ai');
 
             if(aiPoseEl) aiPoseEl.style.display = mod === 'ai_pose' ? 'block' : 'none';
             if(karsilastirEl) karsilastirEl.style.display = mod === 'karsilastir' ? 'block' : 'none';
             if(aynaEl) aynaEl.style.display = mod === 'ayna' ? 'block' : 'none';
-            if(aiEl) aiEl.style.display = mod === 'ai' ? 'block' : 'none';
 
             let aiPoseBtn = document.getElementById('va-mod-aipose-btn');
             let karsilastirBtn = document.getElementById('va-mod-karsilastir-btn');
             let aynaBtn = document.getElementById('va-mod-ayna-btn');
-            let aiBtn = document.getElementById('va-mod-ai-btn');
 
             if(aiPoseBtn) { aiPoseBtn.classList.toggle('va-btn-orange', mod === 'ai_pose'); aiPoseBtn.classList.toggle('va-btn-grey', mod !== 'ai_pose'); }
             if(karsilastirBtn) { karsilastirBtn.classList.toggle('va-btn-orange', mod === 'karsilastir'); karsilastirBtn.classList.toggle('va-btn-grey', mod !== 'karsilastir'); }
             if(aynaBtn) { aynaBtn.classList.toggle('va-btn-orange', mod === 'ayna'); aynaBtn.classList.toggle('va-btn-grey', mod !== 'ayna'); }
-            if(aiBtn) { aiBtn.classList.toggle('va-btn-orange', mod === 'ai'); aiBtn.classList.toggle('va-btn-grey', mod !== 'ai'); }
 
             if(mod === 'karsilastir' && window.DAGSK_COMPARE) {
                 try { window.DAGSK_COMPARE.init(); } catch(e) {}
@@ -22963,7 +22957,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Sekme değişince kullanılmayan modun kamerası açık kalmasın
             if(mod !== 'ai_pose') try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
             if(mod !== 'ayna') try { aynaDurdur(); } catch(e) {}
-            if(mod !== 'ai') try { if(vaMediaStream) vaStopCamera(); } catch(e) {}
         }
         let _aynaStream = null, _aynaYakalamaTimer = null, _aynaRenderRAF = null;
         let _aynaBuffer = []; // { canvas, t } — küçük kare anlık görüntüleri, zaman damgalı
@@ -23132,8 +23125,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else ipucu.style.display = 'none';
             }
         }
-        // ---- Kayıt: RAW kamera akışını (kanvas değil) doğrudan kaydeder — VİDEO ANALİZ modülündeki
-        // vaStartRecording ile birebir aynı, kanıtlanmış kararlı yöntem. DÜZELTME: ilk denemede
+        // ---- Kayıt: RAW kamera akışını (kanvas değil) doğrudan kaydeder — eskiden kaldırılan Video
+        // Analiz modülünün kayıt yöntemiyle birebir aynı, kanıtlanmış kararlı yöntem. DÜZELTME: ilk denemede
         // gecikmeli+çizim bindirilmiş KANVAS'ı canvas.captureStream() ile kaydetmeyi denemiştim — testte
         // bu kombinasyon (sahte kamera + sürekli drawImage güncellenen kanvas + MediaRecorder) tekrar tekrar
         // sekmeyi/sayfayı ÇÖKERTTİ (hem headless hem gerçek pencerede, düşük bit hızı/VP8/10fps denesem bile
@@ -23254,294 +23247,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         window.addEventListener('resize', () => { try { aynaCizimBoyutSenkronla(); } catch(e) {} });
 
         /* =========================================================
-           VİDEO ANALİZ MODÜLÜ (Yapay Zekâ Destekli Okçuluk Analizi)
-           Abacus.AI vision API (RouteLLM / OpenAI uyumlu uç nokta)
+           ESKİ VİDEO ANALİZ MODÜLÜ KALDIRILDI (2026-09-18, kullanıcı talimatı) —
+           Abacus.AI API-anahtarı + video-yükle/kaydet akışı, canlı MediaPipe tabanlı
+           DAGSK_AI_POSE sistemi tarafından yerinden edilmişti (API anahtarı girme
+           kutusu HTML'den zaten kaldırılmıştı, bu eski akışa giden TEK yol dropzone'a
+           sürükle-bırak'tı — o da kırık bir deneyime çıkıyordu). VA_API_URL/VA_MODEL/
+           vaGetKey KORUNDU — "🧭 AI Antrenman Önerisi" (~satır 5244, aiAntrenmanOnerisiGetir)
+           hâlâ AYNI Abacus.AI uç noktasını/anahtarını kullanıyor. vaGetKey artık var
+           olmayan #va-api-key elemanına dokunmuyor (KIRIK bir çağrıydı — kaldırılan
+           modülün silinmesiyle ortaya çıkan gerçek bir bug, aynı anda düzeltildi).
         ========================================================= */
         const VA_API_URL = 'https://routellm.abacus.ai/v1/chat/completions';
         const VA_MODEL = 'gpt-4o';
-        let vaMediaStream = null, vaMediaRecorder = null, vaRecChunks = [], vaRecTimer = null, vaRecSeconds = 0;
-        let vaCurrentVideoURL = null, vaHasVideo = false, vaInited = false;
-
-        function vaInit() {
-            if (vaInited) return;
-            vaInited = true;
-            // Kaydedilmiş API anahtarını yükle (elem bu ekranın güncel sürümünde artık YOK - eski
-            // bir markup'tan kalma referans, ama localStorage'da eski cihazlarda hâlâ değer olabilir)
-            const k = localStorage.getItem('okculuk_abacus_apikey');
-            const keyInput = document.getElementById('va-api-key');
-            if (k && keyInput) keyInput.value = k;
-            // Sürükle-bırak olayları
-            const dz = document.getElementById('va-dropzone');
-            if (!dz) return;
-            ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
-            ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
-            dz.addEventListener('drop', e => {
-                const f = e.dataTransfer.files && e.dataTransfer.files[0];
-                if (f) vaLoadVideoFile(f);
-            });
-        }
-
-        function vaToggleKey() {
-            const inp = document.getElementById('va-api-key');
-            inp.type = inp.type === 'password' ? 'text' : 'password';
-        }
-        function vaSaveKey() {
-            const v = document.getElementById('va-api-key').value.trim();
-            if (!v) return showToast("Lütfen geçerli bir API anahtarı girin.", "error");
-            localStorage.setItem('okculuk_abacus_apikey', v);
-            showToast("API anahtarı kaydedildi.", "success");
-        }
         function vaGetKey() {
-            return (document.getElementById('va-api-key').value || localStorage.getItem('okculuk_abacus_apikey') || '').trim();
-        }
-
-        /* ---- Dosya seçimi / yükleme ---- */
-        function vaFileSelected(e) {
-            const f = e.target.files && e.target.files[0];
-            if (f) vaLoadVideoFile(f);
-        }
-        function vaLoadVideoFile(file) {
-            if (!file.type.startsWith('video/')) return showToast("Lütfen bir video dosyası seçin.", "error");
-            vaStopCamera();
-            if (vaCurrentVideoURL) URL.revokeObjectURL(vaCurrentVideoURL);
-            vaCurrentVideoURL = URL.createObjectURL(file);
-            const vid = document.getElementById('va-video');
-            vid.src = vaCurrentVideoURL;
-            vid.style.display = 'block';
-            document.getElementById('va-camera-preview').style.display = 'none';
-            document.getElementById('va-player-card').style.display = 'block';
-            vaHasVideo = true;
-            document.getElementById('va-analyze-btn').disabled = false;
-            document.getElementById('va-results-card').style.display = 'none';
-            showToast("Video yüklendi. Analiz edebilirsiniz.", "success");
-        }
-        function vaResetVideo() {
-            const vid = document.getElementById('va-video');
-            vid.pause(); vid.removeAttribute('src'); vid.load(); vid.style.display = 'none';
-            if (vaCurrentVideoURL) { URL.revokeObjectURL(vaCurrentVideoURL); vaCurrentVideoURL = null; }
-            vaHasVideo = false;
-            document.getElementById('va-analyze-btn').disabled = true;
-            document.getElementById('va-player-card').style.display = 'none';
-            document.getElementById('va-results-card').style.display = 'none';
-            document.getElementById('va-file-input').value = '';
-        }
-
-        /* ---- Kamera & Kayıt ---- */
-        async function vaStartCamera() {
-            try {
-                vaMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-                const prev = document.getElementById('va-camera-preview');
-                prev.srcObject = vaMediaStream;
-                prev.style.display = 'block';
-                document.getElementById('va-video').style.display = 'none';
-                document.getElementById('va-player-card').style.display = 'block';
-                document.getElementById('va-cam-start').style.display = 'none';
-                document.getElementById('va-rec-start').style.display = 'inline-flex';
-                document.getElementById('va-cam-stop').style.display = 'inline-flex';
-                document.getElementById('va-analyze-btn').disabled = true;
-                showToast("Kamera açıldı. Kayda başlayabilirsiniz.", "success");
-            } catch (err) {
-                showToast("Kameraya erişilemedi: " + err.message, "error");
-            }
-        }
-        function vaStartRecording() {
-            if (!vaMediaStream) return;
-            vaRecChunks = [];
-            let mime = 'video/webm;codecs=vp9';
-            if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
-            try { vaMediaRecorder = new MediaRecorder(vaMediaStream, { mimeType: mime }); }
-            catch(e){ vaMediaRecorder = new MediaRecorder(vaMediaStream); }
-            vaMediaRecorder.ondataavailable = e => { if (e.data.size > 0) vaRecChunks.push(e.data); };
-            vaMediaRecorder.onstop = () => {
-                const blob = new Blob(vaRecChunks, { type: 'video/webm' });
-                if (vaCurrentVideoURL) URL.revokeObjectURL(vaCurrentVideoURL);
-                vaCurrentVideoURL = URL.createObjectURL(blob);
-                const vid = document.getElementById('va-video');
-                vid.src = vaCurrentVideoURL;
-                vid.style.display = 'block';
-                document.getElementById('va-camera-preview').style.display = 'none';
-                vaHasVideo = true;
-                document.getElementById('va-analyze-btn').disabled = false;
-                showToast("Kayıt tamamlandı. Analiz edebilirsiniz.", "success");
-            };
-            vaMediaRecorder.start();
-            vaRecSeconds = 0;
-            document.getElementById('va-rec-status').style.display = 'inline-flex';
-            document.getElementById('va-rec-start').style.display = 'none';
-            document.getElementById('va-rec-stop').style.display = 'inline-flex';
-            vaRecTimer = setInterval(() => {
-                vaRecSeconds++;
-                const m = String(Math.floor(vaRecSeconds/60)).padStart(2,'0');
-                const s = String(vaRecSeconds%60).padStart(2,'0');
-                document.getElementById('va-rec-time').innerText = m + ':' + s;
-            }, 1000);
-        }
-        function vaStopRecording() {
-            if (vaMediaRecorder && vaMediaRecorder.state !== 'inactive') vaMediaRecorder.stop();
-            clearInterval(vaRecTimer);
-            document.getElementById('va-rec-status').style.display = 'none';
-            document.getElementById('va-rec-stop').style.display = 'none';
-            document.getElementById('va-rec-start').style.display = 'inline-flex';
-        }
-        function vaStopCamera() {
-            if (vaMediaRecorder && vaMediaRecorder.state !== 'inactive') { try { vaMediaRecorder.stop(); } catch(e){} }
-            clearInterval(vaRecTimer);
-            if (vaMediaStream) { vaMediaStream.getTracks().forEach(t => t.stop()); vaMediaStream = null; }
-            document.getElementById('va-camera-preview').style.display = 'none';
-            document.getElementById('va-cam-start').style.display = 'inline-flex';
-            document.getElementById('va-rec-start').style.display = 'none';
-            document.getElementById('va-rec-stop').style.display = 'none';
-            document.getElementById('va-cam-stop').style.display = 'none';
-            document.getElementById('va-rec-status').style.display = 'none';
-        }
-
-        /* ---- Videodan kare yakalama ---- */
-        function vaCaptureFrames(numFrames) {
-            return new Promise((resolve, reject) => {
-                const vid = document.getElementById('va-video');
-                const canvas = document.getElementById('va-canvas');
-                const dur = vid.duration;
-                if (!dur || !isFinite(dur) || dur <= 0) {
-                    // Süre bilinmiyorsa (bazı webm kayıtları) tek kare al
-                    return vaCaptureSingleFrame(vid, canvas).then(f => resolve([f])).catch(reject);
-                }
-                // Videonun başını/sonunu hafifçe kırp
-                const start = dur * 0.08, end = dur * 0.92;
-                const times = [];
-                for (let i = 0; i < numFrames; i++) times.push(start + (end - start) * (i / (numFrames - 1)));
-                const frames = [];
-                let idx = 0;
-                const ctx = canvas.getContext('2d');
-                const onSeek = () => {
-                    const maxW = 720;
-                    const scale = vid.videoWidth > maxW ? maxW / vid.videoWidth : 1;
-                    canvas.width = Math.round(vid.videoWidth * scale);
-                    canvas.height = Math.round(vid.videoHeight * scale);
-                    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-                    frames.push(canvas.toDataURL('image/jpeg', 0.8));
-                    idx++;
-                    if (idx < times.length) { vid.currentTime = times[idx]; }
-                    else { vid.removeEventListener('seeked', onSeek); resolve(frames); }
-                };
-                vid.addEventListener('seeked', onSeek);
-                vid.addEventListener('error', () => reject(new Error('Video okunamadı')), { once: true });
-                vid.currentTime = times[0];
-            });
-        }
-        function vaCaptureSingleFrame(vid, canvas) {
-            return new Promise((resolve) => {
-                const grab = () => {
-                    const ctx = canvas.getContext('2d');
-                    const maxW = 720;
-                    const w = vid.videoWidth || 640, h = vid.videoHeight || 480;
-                    const scale = w > maxW ? maxW / w : 1;
-                    canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale);
-                    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.8));
-                };
-                if (vid.readyState >= 2) grab();
-                else vid.addEventListener('loadeddata', grab, { once: true });
-            });
-        }
-
-        /* ---- Yapay zekâ analizi ---- */
-        async function vaAnalyze() {
-            const key = vaGetKey();
-            if (!key) { showToast("Önce Abacus.AI API anahtarınızı kaydedin.", "error"); return; }
-            if (!vaHasVideo) { showToast("Önce bir video yükleyin veya kaydedin.", "error"); return; }
-
-            const btn = document.getElementById('va-analyze-btn');
-            btn.disabled = true;
-            const resCard = document.getElementById('va-results-card');
-            const resDiv = document.getElementById('va-results');
-            resCard.style.display = 'block';
-            resDiv.innerHTML = '<div style="text-align:center; padding:18px;"><div class="va-spin"></div><div class="va-sub" style="margin-top:12px;">Videodan kareler alınıyor...</div></div>';
-            resCard.scrollIntoView({ behavior: 'smooth' });
-
-            try {
-                const vid = document.getElementById('va-video');
-                if (vid.paused) { try { await vid.play(); vid.pause(); } catch(e){} }
-                const frames = await vaCaptureFrames(6);
-                resDiv.innerHTML = '<div style="text-align:center; padding:18px;"><div class="va-spin"></div><div class="va-sub" style="margin-top:12px;">Yapay zekâ okçunun formunu analiz ediyor... (bu işlem 15-40 sn sürebilir)</div></div>';
-
-                const prompt = `Sen uzman bir okçuluk antrenörüsün. Sana bir okçunun atış anından alınmış ardışık video kareleri veriliyor. Bu kareleri inceleyerek okçunun TEKNİĞİNİ analiz et.\n\nŞu unsurları değerlendir:\n- Duruş ve postür (stance)\n- Çekiş tekniği (draw)\n- Çapa noktası tutarlılığı (anchor point)\n- Bırakış formu (release)\n- Devam hareketi / takip (follow-through)\n- Vücut hizalanması (body alignment)\n- Görülen teknik hatalar\n\nTÜM cevabını TÜRKÇE ver. SADECE aşağıdaki JSON formatında, başka hiçbir metin olmadan yanıt ver:\n{\n  "genel_puan": <0-100 arası tam sayı>,\n  "genel_yorum": "<1-2 cümle genel değerlendirme>",\n  "dogrular": ["<doğru yapılan teknik 1>", "..."],\n  "hatalar": ["<tespit edilen hata 1>", "..."],\n  "oneriler": ["<geliştirme önerisi 1>", "..."]\n}\nEğer kareler okçuluk içermiyorsa veya analiz edilemiyorsa, hatalar dizisine bunu Türkçe açıkla ve genel_puan değerini 0 yap.`;
-
-                const content = [{ type: 'text', text: prompt }];
-                frames.forEach(f => content.push({ type: 'image_url', image_url: { url: f } }));
-
-                const resp = await fetch(VA_API_URL, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: VA_MODEL, messages: [{ role: 'user', content: content }], max_tokens: 1200, temperature: 0.3 })
-                });
-
-                if (!resp.ok) {
-                    const t = await resp.text();
-                    throw new Error('API hatası (' + resp.status + '): ' + t.slice(0, 200));
-                }
-                const data = await resp.json();
-                let txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-                vaRenderResult(txt, frames.length);
-            } catch (err) {
-                resDiv.innerHTML = '<div class="va-result-box va-box-bad"><div class="va-box-head" style="color:var(--neon-red);">⚠️ Analiz Başarısız</div><div class="va-list-item">' + (err.message || err) + '</div><div class="va-sub" style="margin-top:8px;">API anahtarınızı ve internet bağlantınızı kontrol edip tekrar deneyin.</div></div>';
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        function vaRenderResult(txt, frameCount) {
-            const resDiv = document.getElementById('va-results');
-            // JSON'u ayıkla
-            let obj = null;
-            try {
-                let clean = txt.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-                const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
-                if (s !== -1 && e !== -1) clean = clean.slice(s, e + 1);
-                obj = JSON.parse(clean);
-            } catch (e) { obj = null; }
-
-            if (!obj) {
-                resDiv.innerHTML = '<div class="va-result-box va-box-tip"><div class="va-box-head">📋 Analiz</div><div class="va-list-item" style="white-space:pre-wrap;">' + (txt || 'Sonuç alınamadı.') + '</div></div>';
-                return;
-            }
-
-            const puan = (typeof obj.genel_puan === 'number') ? obj.genel_puan : (parseInt(obj.genel_puan) || 0);
-            const renk = puan >= 75 ? 'var(--neon-green)' : (puan >= 50 ? 'var(--gold)' : 'var(--neon-red)');
-            const dogrular = Array.isArray(obj.dogrular) ? obj.dogrular : [];
-            const hatalar = Array.isArray(obj.hatalar) ? obj.hatalar : [];
-            const oneriler = Array.isArray(obj.oneriler) ? obj.oneriler : [];
-
-            let html = '';
-            // Özet
-            html += '<div class="va-result-box" style="display:flex; align-items:center; gap:16px;">';
-            html += '<div class="va-score-circle" style="border-color:' + renk + '; color:' + renk + ';">' + puan + '<span style="font-size:11px; font-weight:600;">/100</span></div>';
-            html += '<div style="flex:1;"><div style="font-weight:800; font-size:14px;">Genel Değerlendirme</div><div class="va-sub" style="margin-top:4px; font-size:13px;">' + (obj.genel_yorum || '') + '</div><div class="va-sub" style="margin-top:6px;">' + frameCount + ' video karesi analiz edildi.</div></div>';
-            html += '</div>';
-
-            // Doğrular
-            html += '<div class="va-result-box va-box-good"><div class="va-box-head" style="color:var(--neon-green);">✓ Doğrular</div>';
-            if (dogrular.length) dogrular.forEach(d => html += '<div class="va-list-item">✅ ' + vaEsc(d) + '</div>');
-            else html += '<div class="va-list-item va-sub">Belirgin doğru teknik tespit edilemedi.</div>';
-            html += '</div>';
-
-            // Hatalar
-            html += '<div class="va-result-box va-box-bad"><div class="va-box-head" style="color:var(--neon-red);">✗ Hatalar</div>';
-            if (hatalar.length) hatalar.forEach(h => html += '<div class="va-list-item">❌ ' + vaEsc(h) + '</div>');
-            else html += '<div class="va-list-item va-sub">Belirgin bir hata tespit edilmedi. Tebrikler!</div>';
-            html += '</div>';
-
-            // Öneriler
-            html += '<div class="va-result-box va-box-tip"><div class="va-box-head" style="color:var(--neon-blue);">💡 Geliştirme Önerileri</div>';
-            if (oneriler.length) oneriler.forEach(o => html += '<div class="va-list-item">▶️ ' + vaEsc(o) + '</div>');
-            else html += '<div class="va-list-item va-sub">Ek öneri bulunmuyor.</div>';
-            html += '</div>';
-
-            html += '<div class="va-sub" style="text-align:center;">⚠️ Bu analiz yapay zekâ tarafından üretilmiştir ve bir antrenörün gözlemi yerine geçmez.</div>';
-
-            resDiv.innerHTML = html;
-        }
-        function vaEsc(s) {
-            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return (localStorage.getItem('okculuk_abacus_apikey') || '').trim();
         }
 
         /* ===================================================================

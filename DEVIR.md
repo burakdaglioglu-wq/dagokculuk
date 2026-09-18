@@ -4152,4 +4152,47 @@ DOLDU) geçişleri, kritik/bitti CSS sınıfları doğru anlarda. Yarışma'da b
 seçilince sayaç sıfırdan başlıyor, dok başlığında görünüyor. 16 tema + Reaksiyon regresyonu temiz,
 360px mobilde her iki ekranda da çakışma yok.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor/ekran görüntüsüyle sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (kullanıcı onayı sonrası, commit 62fdde6, version 8181274b...).
+
+## 34. Eski "Video Analiz" (Abacus.AI, metin tabanlı) sistemi kaldırıldı (2026-09-18)
+
+Kullanıcı talimatı: sistematik bir "hiç kullanılmayan kod" taraması istendi (her fonksiyonun app.js+
+app.html'de tanımı DIŞINDA en az bir referansı var mı diye — parantezsiz/dispatch-tablosu referanslarını
+da sayan bare-word eşleştirmesiyle, sahte pozitifleri elemek için). İki aday bulundu, kullanıcı SADECE
+video analiz sistemini onayladı (`_dersGrupmanSVG` — ders sonu raporu için kullanılmayan bir grupman
+haritası SVG'si, ~satır 7782 — HENÜZ SİLİNMEDİ, ayrı onay bekliyor).
+
+**Ne kaldırıldı**: `vaInit`, `vaToggleKey`, `vaSaveKey`, `vaFileSelected`, `vaLoadVideoFile`, `vaResetVideo`,
+`vaStartCamera`, `vaStartRecording`, `vaStopRecording`, `vaStopCamera`, `vaCaptureFrames`,
+`vaCaptureSingleFrame`, `vaAnalyze`, `vaRenderResult`, `vaEsc` + durum değişkenleri (`vaMediaStream`,
+`vaMediaRecorder`, `vaRecChunks`, `vaRecTimer`, `vaRecSeconds`, `vaCurrentVideoURL`, `vaHasVideo`, `vaInited`).
+Bu, "🎬 Video" sekmesindeki ESKİ Abacus.AI API-anahtarı + video yükle/kaydet + kare-yakala + metin analizi
+akışıydı — canlı MediaPipe tabanlı `DAGSK_AI_POSE` sistemi (aynı sekmede "🤖 Canlı AI Duruş" modu)
+tarafından YERİNDEN EDİLMİŞTİ. Kanıtlar: API anahtarı girme kutusu (`#va-api-key`) HTML'den zaten
+kaldırılmıştı (fonksiyonların kendi içindeki bir yorum bile "elem artık YOK, eski markup'tan kalma"
+diyordu — daha önceki bir oturum bunu fark etmiş ama hiç temizlememiş); video yükleme butonu artık
+`DAGSK_AI_POSE.loadVideoFile`'a bağlıydı, eski `vaLoadVideoFile`'a değil; TEK canlı giriş noktası
+dropzone'a sürükle-bırak'tı (`vaInit`'in kurduğu bir olay dinleyicisi) — o da API anahtarı girilemediği
+için kırık bir deneyime çıkıyordu.
+
+**GERÇEK BİR BUG bulundu ve düzeltildi (silme sırasında)**: `vaGetKey()` — "🧭 AI Antrenman Önerisi"
+özelliği (satır ~5244, `aiAntrenmanOnerisiGetir`, sporcunun antrenman verilerini özetleyip Abacus.AI'dan
+kişisel öneri isteyen AYRI ve HÂLÂ CANLI bir özellik) tarafından da kullanılıyordu — `VA_API_URL`/
+`VA_MODEL`/`vaGetKey` bu yüzden KORUNDU, silinmedi. Ama eski hâliyle `vaGetKey()` `document.getElementById
+('va-api-key').value` okumaya çalışıyordu — element artık YOK, bu `null.value` okuması HER ÇAĞRIDA
+throw ediyordu (üstteki try/catch'in dışında, yakalanmıyordu) — yani "🤖 Öneri Al" butonu SESSİZCE
+KIRIKTI (uncaught exception, hiçbir hata mesajı görünmüyordu). `vaGetKey()` artık sadece localStorage'a
+bakıyor, çağrıldığında (test edildi) artık throw ETMİYOR.
+
+**`vaModSec`'ten temizlenenler**: `va-mod-ai`/`va-mod-ai-btn` dalları (HTML'de karşılığı olmayan 4.
+bir "ai" modu — muhtemelen aynı eski sistemin bir kalıntısı) ve `vaMediaStream`/`vaStopCamera` referansı.
+`vaModSec`'in kendisi KALDI (3 canlı moda geçişi hâlâ o yönetiyor: 🤖 Canlı AI / ⚔️ Karşılaştırma / 🪞 Ayna).
+`sekmeAc()`'teki `vaInit()` çağrısı ve `vaStopCamera` guard'ı da kaldırıldı.
+
+**Gerçek testte doğrulanan**: silinen fonksiyonlar artık `typeof === 'undefined'`, `vaGetKey`/`vaModSec`
+hâlâ `'function'`, `vaGetKey()` çağrısı artık throw ETMİYOR (boş string dönüyor). Video sekmesi GERÇEK
+açılışta 0 hata. 3 alt-mod butonunun (Canlı AI Duruş/Karşılaştırma/Ayna) ÜÇÜ de GERÇEK tıklamayla 0 yeni
+hatayla çalışıyor. 16 tema + Reaksiyon tam regresyon sweep'i temiz (paylaşılan `sekmeAc` dispatcher'ına
+dokunulduğu için tekrar koşuldu).
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
