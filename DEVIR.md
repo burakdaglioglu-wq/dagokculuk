@@ -3940,3 +3940,61 @@ görsel olarak doğrulandı — bir takım set girip diğeri henüz girmediyse "
 (atlama yapmıyor). Hiçbir kod değişikliği gerekmedi, mevcut deploy zaten doğru.
 
 **Deploy durumu**: commit + push + deploy yapıldı.
+
+## 30. Faz 17b — Yarışma: gerçek set kuralları + Dünya Kupası tarzı bracket + düzeltmeler (2026-09-18)
+
+Kullanıcı uyanıp ekran görüntüleriyle (Dünya Kupası eleme aşaması + puan durumu tabloları) somut bir
+yön verdi ve 5 madde istedi. Kahvaltı molası boyunca onay beklenmeden tamamlandı.
+
+**1. Maç yapısı → gerçek World Archery set kuralları**: Araştırma (worldarchery.sport + genel arama)
+doğrulandı: bireysel/eşli maç 3 ok/set, ilk 6 set puanına ulaşan kazanır, max 5 set, 5-5 berabere kalırsa
+1 oklu ek atış (merkeze yakınlık verisi yok, bu yüzden puan eşitse ART ARDA tekli atış tekrarlanıyor —
+gerçek kuralın "mesafe de eşitse ardışık atışlar" maddesiyle aynı ilke). Takım maçı (herhangi bir tarafta
+2+ sporcu) 6 ok/set, ilk 5 set puanına ulaşan kazanır, max 4 set, aynı ek atış deseni. Yeni fonksiyonlar:
+`kmYarismaMacKuralSecimi`, `_kmYarismaShootoffDegerlendir`, `kmYarismaMacSonucDegerlendir` — hepsi VAR
+OLAN `_kmYarismaSetPuanlariHesapla`/tur-bazlı-puan dizilerinin üzerine SAF bir değerlendirme katmanı,
+yeni veri modeli gerekmedi. Maç artık "koç ne zaman isterse bitirir" değil — her set kaydından sonra
+`kmYarismaMacTamamlanmaKontrolEt()` otomatik kontrol ediyor, hedefe ulaşılınca (ya da ek atış çözülünce)
+maç KENDİLİĞİNDEN bitiyor (bracket'te `kmYarismaBracketKazananSec`'i otomatik çağırıyor, Hayali Rakip'te
+`kmYarismaBitir()`'i). Manuel "Takım Kazandı" düğmeleri KALDIRILMADI — artık normalde gerekmiyor ama
+düzeltme/erken bitirme için hâlâ çalışıyor.
+
+**GERÇEK BİR BUG bulundu ve düzeltildi**: `kmYarismaMacSonucDegerlendir`'in döndürdüğü `kazananIdx`
+taraflar dizisindeki KONUMDUR (0=ilk taraf/a, 1=ikinci taraf/b) — `m.aIdx`/`m.bIdx` (gerçek takım dizisi
+indeksi) İLE AYNI ŞEY DEĞİL. İlk yazımda ikisi karıştırılmıştı; eşleştirme aIdx/bIdx'i 0/1 dışında bir
+sırada kurunca (ki bu sık rastlanan bir durum) YANLIŞ taraf kazanan seçiliyordu — GERÇEK testte
+yakalandı (A takımı üstün atıyordu ama B kazanan seçiliyordu). Hem otomatik tamamlanma tetikleyicisinde
+hem canlı kart vurgusunda düzeltildi.
+
+**2. Takım isimleri maç başlayınca da değiştirilebiliyor** — `kmYarismaTakimAdiDegis` artık `kmYarismaCiz()`
+(o an hangi ekran açıksa onu yeniden çizen genel dispatcher) çağırıyor. **GERÇEK BİR BUG bulundu ve
+düzeltildi**: fonksiyon eskiden HER ZAMAN kurulum ekranını (`kmYarismaKurulumCiz`) zorla çiziyordu — canlı
+maç ekranındaki yeni isim input'undan çağrılınca koçu YANLIŞLIKLA kurulum ekranına geri atıyordu, gerçek
+testte yakalandı (isim değişti ama ekran koptu, sonraki tıklamalar başarısız oldu).
+
+**3. Skor girme tablosunda takım rozeti** — sporcu çiplerinde artık takım rengindeki kenarlığın yanında
+küçük bir SVG takım ikonu rozeti de var (`kmYarismaIkonSvg` ile aynı ikon ailesi).
+
+**4. Renklendirme + düzeltme** — girilen son serinin okları `KM_OYUN_PAD_RENK` renkleriyle (pad'in
+kendisiyle AYNI renk dili) küçük çipler halinde gösteriliyor, yanında "↩️ Geri Al" (Oyunlar'ın
+`kmOyunSonGirisiGeriAl`'ıyla aynı silme deseni — `seriIptalEkle` + `sporcuPuanlariYenidenHesapla`).
+Gerçek testte bir yanlış pozitif oldu (test scripti'nde `confirm()` dialog handler'ı unutulmuştu, bu
+yüzden geri alma başarısız görünmüştü) — dialog handler'lı DOĞRU testte 6→5 serisi silinip 3 saniye
+boyunca stabil kaldığı doğrulandı, ürün kodunda düzeltme gerekmedi.
+
+**5. Bracket görseli → Dünya Kupası tarzı** — `kmYarismaBracketMacKartHTML` artık gerçek set skorunu
+("MS"/"● CANLI" rozeti, sağda büyük/renkli skor, kazananda "◂" ilerleme oku) gösteriyor — bitmiş ya da
+devam eden farketmeksizin skor her zaman turnuvaDB'deki serilerden TÜRETİLİYOR. Yeni bir CSS sınıf ailesi
+AÇILMADI, Yarışma'nın var olan inline-style deseniyle tutarlı kalındı. SVG bağlayıcı çizgiler (gerçek
+görseldeki eğrisel çizgiler) BİLİNÇLİ OLARAK atlandı — farklı takım sayılarında dinamik/kırılgan olurdu,
+kart tasarımı + rozetler + round başlıkları görsel dili yeterince taşıyor.
+
+**Gerçek testte doğrulanan**: (a) 3 gerçek set boyunca A takımı üstün atınca 6 set puanına ulaşıp OTOMATİK
+bitti (hiç manuel tıklama olmadan), şampiyon doğru ilan edildi. (b) 5 set boyunca HER SETTE eşit skorla
+5-5 berabere kalındı, "EK ATIŞ" banner'ı doğru göründü, GERÇEK 1 oklu atışla (A:9, B:5) shootoff doğru
+sonuçlandı, final skor kartı "7-5" olarak (5 normal set + 1 karar seti) doğru göründü. (c) Takım ismi
+canlı maç ekranında GERÇEK tıklamayla değişti, ekran kopmadı. (d) Renkli ok çipleri + geri al GERÇEK
+tıklamayla doğrulandı. 16 tema + Reaksiyon regresyonu ve önceki bracket/3-takım/6-ok testleri hâlâ temiz.
+360px'te tüm yeni ekranlar taşmadan sığdı.
+
+**Deploy durumu**: commit + push + deploy yapıldı.

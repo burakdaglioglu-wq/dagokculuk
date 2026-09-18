@@ -18864,6 +18864,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function _kmYarismaBracketMacOlustur(tur, aIdx, bIdx) {
             let bay = (bIdx === null || bIdx === undefined);
+            if(!bay) {
+                // Faz 17b — yeni oynanabilir bir maç kurulunca ok sayısı/aktif sporcu/son-giriş bir
+                // ÖNCEKİ maçtan kalmasın diye sıfırlanıyor (bireysel 3 / takım 6 kuralına göre).
+                _kmYarismaOkSayisi = kmYarismaMacKuralSecimi([{ t: _kmTakimlar[aIdx], idx: aIdx }, { t: _kmTakimlar[bIdx], idx: bIdx }]).okSayisi;
+                _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = []; _kmYarismaSonGiris = null;
+            }
             return {
                 id: 'kmybmac_' + tur + '_' + aIdx + '_' + (bay ? 'bay' : bIdx) + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
                 tur, aIdx, bIdx: bay ? null : bIdx, durum: bay ? 'bitti' : 'devam', kazananIdx: bay ? aIdx : null, isBye: bay,
@@ -18971,25 +18977,37 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             kmYarismaBracketAgacCiz();
         }
+        // Faz 17b (2026-09-18, kullanıcı: "dünya kupası için yapılmış eleme görselleri gibi") — kart
+        // artık gerçek SET SKORUNU (bitmiş ya da devam eden farketmeksizin — turnuvaDB'deki serilerden
+        // her zaman türetiliyor) "MS"/"CANLI" rozetiyle gösteriyor, kazanan tarafta küçük bir ilerleme
+        // oku (◂) var. Yeni bir CSS sınıf ailesi AÇILMADI — Yarışma'nın var olan inline-style deseniyle
+        // tutarlı kalındı.
         function kmYarismaBracketMacKartHTML(m) {
             if(m.isBye) {
                 let t = _kmTakimlar[m.aIdx]; if(!t) return '';
-                return `<div style="background:var(--bg-panel); border:1.5px dashed ${t.renk}; border-radius:10px; padding:12px; font-size:11.5px; font-weight:700; color:${t.renk}; min-width:220px; margin-bottom:12px;">🎫 ${esc(t.ad)} bay geçti — otomatik üst tura çıktı.</div>`;
+                return `<div style="background:var(--bg-panel); border:1.5px dashed ${t.renk}; border-radius:12px; padding:12px; margin-bottom:12px; min-width:220px;">
+                    <div style="display:flex; align-items:center; gap:8px; color:${t.renk}; font-size:11px; font-weight:700;">${kmYarismaIkonSvg(_kmTakimIkonAl(t, m.aIdx), 16)} ${esc(t.ad)} bay geçti — üst tura çıktı</div>
+                </div>`;
             }
             let a = _kmTakimlar[m.aIdx], b = _kmTakimlar[m.bIdx]; if(!a || !b) return '';
             let bitti = m.durum === 'bitti';
             let aKazandi = bitti && m.kazananIdx === m.aIdx, bKazandi = bitti && m.kazananIdx === m.bIdx;
-            let aPuan = !bitti ? _kmYarismaBracketMacPuani(m, 'a') : null;
-            let bPuan = !bitti ? _kmYarismaBracketMacPuani(m, 'b') : null;
-            let tarafHTML = (ad, renk, kazandiMi, puan, tarafKodu) => `<div ${!bitti ? `onclick="kmYarismaBracketKazananSec('${m.id}','${tarafKodu}')"` : ''} style="cursor:${!bitti ? 'pointer' : 'default'}; display:flex; justify-content:space-between; align-items:center; padding:7px 9px; border-radius:8px; margin-bottom:4px; background:${kazandiMi ? renk + '22' : 'var(--bg-main)'}; border:1px solid ${kazandiMi ? renk : 'transparent'};">
-                <span style="font-weight:800; font-size:12px; color:${renk}; ${bitti && !kazandiMi ? 'opacity:.5;' : ''}">${esc(ad)}${kazandiMi ? ' 🏆' : ''}</span>
-                ${puan != null ? `<span style="font-size:11px; color:var(--text-muted);">${puan}p</span>` : ''}
-            </div>`;
+            let aTurlar = _kmYarismaBracketMacTurBazliPuanlar(m, 'a'), bTurlar = _kmYarismaBracketMacTurBazliPuanlar(m, 'b');
+            let setSonuc = _kmYarismaSetPuanlariHesapla([aTurlar, bTurlar]);
+            let tarafSatiri = function(t, idx, kazandiMi, setPuani, tarafKodu) {
+                return `<div ${!bitti ? `onclick="kmYarismaBracketKazananSec('${m.id}','${tarafKodu}')"` : ''} style="cursor:${!bitti ? 'pointer' : 'default'}; display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; ${kazandiMi ? 'background:' + t.renk + '1c;' : ''}">
+                    <span style="display:flex; align-items:center; gap:7px; font-weight:${kazandiMi ? '800' : '600'}; font-size:12px; color:${bitti && !kazandiMi ? 'var(--text-muted)' : 'var(--text-main)'};">${kmYarismaIkonSvg(_kmTakimIkonAl(t, idx), 14)} ${esc(t.ad)}</span>
+                    <span style="font-weight:900; font-size:14px; color:${kazandiMi ? t.renk : 'var(--text-muted)'};">${setPuani}${kazandiMi ? ' ◂' : ''}</span>
+                </div>`;
+            };
             return `<div style="background:var(--bg-panel); border:1.5px solid ${bitti ? 'var(--gold)' : 'var(--border-color)'}; border-radius:12px; padding:10px; min-width:220px; margin-bottom:12px;">
-                ${tarafHTML(a.ad, a.renk, aKazandi, aPuan, 'a')}
-                <div style="text-align:center; font-size:9px; color:var(--text-muted); margin:2px 0;">${bitti ? 'BİTTİ' : 'DEVAM EDİYOR — KAZANANA DOKUN'}</div>
-                ${tarafHTML(b.ad, b.renk, bKazandi, bPuan, 'b')}
-                ${bitti ? `<div onclick="kmYarismaBracketMacGeriAl('${m.id}')" style="text-align:center; margin-top:6px; font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; text-decoration:underline;">↩️ Düzelt</div>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px 6px; font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
+                    <span>${_kmYarismaTurAdi(m.tur, _kmYarismaBracketToplamTur)}</span>
+                    <span style="${bitti ? 'color:var(--gold);' : 'color:var(--neon-green);'}">${bitti ? 'MS' : '● CANLI'}</span>
+                </div>
+                ${tarafSatiri(a, m.aIdx, aKazandi, setSonuc.setPuanlari[0], 'a')}
+                ${tarafSatiri(b, m.bIdx, bKazandi, setSonuc.setPuanlari[1], 'b')}
+                ${bitti ? `<div onclick="kmYarismaBracketMacGeriAl('${m.id}')" style="text-align:center; margin-top:4px; padding-top:6px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; text-decoration:underline;">↩️ Düzelt</div>` : `<div style="text-align:center; font-size:9px; color:var(--text-muted); padding-top:2px;">Hedefe ulaşınca otomatik biter — istersen kazanana dokun</div>`}
             </div>`;
         }
         // Faz 17 (2026-09-18, gece görevi) — "hangi maç oynanıyor, hangi seri, kim atıyor... set puanı
@@ -19072,7 +19090,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let t = _kmTakimlar[idx]; if(!t) return;
             yeniAd = (yeniAd || '').trim();
             t.ad = yeniAd ? yeniAd.slice(0, 20) : ('Takım ' + (idx + 1));
-            kmYarismaKurulumCiz();
+            // DÜZELTME (Faz 17b, 2026-09-18) — eskiden HER ZAMAN kurulum ekranını yeniden çiziyordu; bu
+            // fonksiyon artık canlı maç ekranındaki (kmYarismaSkorbordCiz/kmYarismaBracketAgacCiz) takım
+            // adı input'undan da çağrılıyor ("maç başlayınca da değiştirilebilmeli" — kullanıcı
+            // spesifikasyonu). Gerçek testte yakalandı: kurulum ekranını zorla çizmek koçu YANLIŞLIKLA
+            // aktif maçtan kurulum ekranına geri atıyordu. kmYarismaCiz() o an HANGİ ekran açıksa (kurulum/
+            // bracket/skorbord) onu doğru şekilde yeniden çiziyor.
+            kmYarismaCiz();
         }
         function kmYarismaTakimRenkSec(idx, renk) {
             let t = _kmTakimlar[idx]; if(!t || KM_TAKIM_RENKLERI.indexOf(renk) < 0) return;
@@ -19223,6 +19247,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmHayaliPuan = 0; _kmHayaliTurlar = []; _kmHayaliYorumGecmisi = [];
                 _kmTakimlar[1].ad = HAYALI_ZORLUKLER[_kmHayaliZorluk].ad;
             }
+            // Faz 17b — yeni maç başlarken ok sayısı GERÇEK kurala göre (bireysel 3 / takım 6) sıfırlanıyor,
+            // önceki maçtan kalma ek-atış (1 ok) ya da farklı bir seçim taşınmasın.
+            _kmYarismaOkSayisi = kmYarismaMacKuralSecimi(_kmTakimlar.map(function(t, i) { return { t: t, idx: i }; })).okSayisi;
+            _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = []; _kmYarismaSonGiris = null;
             if(_kmYarismaSuresi > 0) {
                 _kmYarismaBitis = Date.now() + _kmYarismaSuresi * 1000;
                 _kmYarismaTimer = setInterval(kmYarismaTikTak, 1000);
@@ -19270,6 +19298,58 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 buTur.forEach(function(p, idx) { setPuanlari[idx] += (kazananSayisi === n) ? 1 : (p === maxPuan ? 2 : 0); });
             }
             return { setPuanlari: setPuanlari, tamamlananSet: tamamlananSet };
+        }
+        // Faz 17b (2026-09-18, kullanıcı: "turnuva amaca yönelik olmalı... set sayısına göre, okçulukta
+        // setler kaçta bitiyor onu araştır") — GERÇEK World Archery set kurallarına geçiş. Araştırma:
+        // bireysel maç 3 ok/set, ilk 6 set puanına ulaşan kazanır, max 5 set (5-5 berabere kalırsa tek
+        // oklu ek atış — merkeze yakınlık bizim veri modelimizde YOK, bu yüzden puan eşitliğinde ART ARDA
+        // tek oklu ek atışlar tekrarlanıyor, gerçek kuralın "mesafe de eşitse ardışık tekli atışlar"
+        // maddesiyle aynı ilke). Takım maçı 6 ok/set, ilk 5 set puanına ulaşan kazanır, max 4 set (4-4
+        // berabere kalırsa sporcu başına 1 ok'luk ek atış — burada basitleştirilip AYNI 1 ok/tur ek atış
+        // deseni kullanıldı, taraf başına kaç sporcu olursa olsun).
+        var KM_YARISMA_KURAL_BIREYSEL = { maxSet: 5, hedefSetPuani: 6, okSayisi: 3, tip: 'bireysel' };
+        var KM_YARISMA_KURAL_TAKIM = { maxSet: 4, hedefSetPuani: 5, okSayisi: 6, tip: 'takim' };
+        function kmYarismaMacKuralSecimi(taraflar) {
+            let takimMi = taraflar.some(function(x) { return x.t.uyeler.length > 1; });
+            return takimMi ? KM_YARISMA_KURAL_TAKIM : KM_YARISMA_KURAL_BIREYSEL;
+        }
+        // Normal setlerin (kuralın maxSet'i içindeki turlar) ötesindeki turları, İLK KESİN SONUÇLANAN
+        // (berabere olmayan) turdan itibaren ek atış olarak değerlendirir — art arda ek atış deseni.
+        function _kmYarismaShootoffDegerlendir(turlarListesi, kural) {
+            let maxTur = turlarListesi.reduce(function(m, t) { return Math.max(m, t.length); }, 0);
+            for(let i = kural.maxSet; i < maxTur; i++) {
+                let buTur = turlarListesi.map(function(t) { return t[i]; });
+                if(buTur.some(function(p) { return p === undefined; })) return { bittiMi: false, kazananIdx: null };
+                let maxPuan = Math.max.apply(null, buTur);
+                let kazananlar = buTur.filter(function(p) { return p === maxPuan; }).length;
+                if(kazananlar === 1) return { bittiMi: true, kazananIdx: buTur.indexOf(maxPuan) };
+                // Puan eşit — ART ARDA bir sonraki ek atış turuna geç (gerçek kuraldaki "mesafe de eşitse
+                // ardışık tekli atışlar" ilkesiyle aynı, sadece mesafe yerine puan eşitliği tekrar ediyor).
+            }
+            return { bittiMi: false, kazananIdx: null };
+        }
+        // Bir maçın TAM durumunu tek seferde değerlendirir — set puanları, hedefe ulaşıldı mı, max set
+        // doldu mu, ek atış gerekiyor mu/bitti mi. `taraflar` HER ZAMAN 2 elemanlı (bracket maçları ve
+        // Hayali Rakip/2-takımlı skorbord hep 2 taraflı) — flat 3-4 takımlı N'li karşılaştırma bu
+        // fonksiyonu KULLANMIYOR (orada set puanı sadece bilgi amaçlı, "maç bitişi" kavramı yok).
+        function kmYarismaMacSonucDegerlendir(taraflar) {
+            let kural = kmYarismaMacKuralSecimi(taraflar);
+            let turlarListesi = taraflar.map(function(x) { return x.turlar; });
+            let normalTurlar = turlarListesi.map(function(t) { return t.slice(0, kural.maxSet); });
+            let setSonuc = _kmYarismaSetPuanlariHesapla(normalTurlar);
+            if(setSonuc.setPuanlari.some(function(p) { return p >= kural.hedefSetPuani; })) {
+                let kazananIdx = setSonuc.setPuanlari.indexOf(Math.max.apply(null, setSonuc.setPuanlari));
+                return { kural: kural, setSonuc: setSonuc, durum: 'bitti', kazananIdx: kazananIdx, shootoffAktif: false };
+            }
+            if(setSonuc.tamamlananSet >= kural.maxSet) {
+                let maxPuan = Math.max.apply(null, setSonuc.setPuanlari);
+                let kazananSayisi = setSonuc.setPuanlari.filter(function(p) { return p === maxPuan; }).length;
+                if(kazananSayisi === 1) return { kural: kural, setSonuc: setSonuc, durum: 'bitti', kazananIdx: setSonuc.setPuanlari.indexOf(maxPuan), shootoffAktif: false };
+                let so = _kmYarismaShootoffDegerlendir(turlarListesi, kural);
+                if(so.bittiMi) return { kural: kural, setSonuc: setSonuc, durum: 'bitti', kazananIdx: so.kazananIdx, shootoffAktif: true };
+                return { kural: kural, setSonuc: setSonuc, durum: 'shootoff', kazananIdx: null, shootoffAktif: true };
+            }
+            return { kural: kural, setSonuc: setSonuc, durum: 'devam', kazananIdx: null, shootoffAktif: false };
         }
         // Bir sporcunun yarışma BAŞLADIKTAN SONRA attığı puan farkı — hem takım toplamı hem MVP
         // seçimi bunu kullanıyor, iki yerde aynı hesap tekrar yazılmasın diye tek yardımcıya çıkarıldı.
@@ -19336,6 +19416,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmYarismaAktifSporcuKey = null;
         let _kmYarismaSeriGirisleri = [];
         let _kmYarismaOkSayisi = 3;
+        let _kmYarismaSonGiris = null; // { grup, ad, seriId, seriPuan, oklar } — "son girişi geri al" için
         function kmYarismaSporcuSec(key) {
             _kmYarismaAktifSporcuKey = (_kmYarismaAktifSporcuKey === key) ? null : key;
             _kmYarismaSeriGirisleri = [];
@@ -19374,45 +19455,117 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(!sonuc.ok) { showToast('Sporcu bulunamadı — kayıt yapılamadı.', 'error'); return; }
             try { klasmanDoldur(); } catch(e) {}
             try { otomatikYoklamaIsaretle(ad); } catch(e) {}
+            // Faz 17b (2026-09-18) — "skor yanlış girilmişse düzeltilmeli" (kullanıcı spesifikasyonu):
+            // Oyunlar'ın _kmOyunSonGiris deseniyle AYNI ilke, basitleştirilmiş (Yarışma'da frac/futbol
+            // yok) — sadece GERÇEK seriyi turnuvaDB'den geri siliyor.
+            _kmYarismaSonGiris = { grup: g, ad: ad, seriId: sonuc.seriDoc.id, seriPuan: sonuc.seriPuan, oklar: sonuc.okDegerleri };
             // Set kaydedilince aktif sporcu SEÇİMİ de temizleniyor (2026-09-18) — koç doğal olarak
             // sıradaki sporcuyu/takımı seçsin diye; aynı sporcu üst üste yanlışlıkla ikinci kez
             // seçili kalmasın (gerçek testte fark edildi: bu olmayınca "sıradaki sporcuyu seç" tıklaması
             // AYNI zaten-seçili sporcuya denk gelirse seçim SESSİZCE null'a düşüyordu).
             _kmYarismaAktifSporcuKey = null;
             _kmYarismaSeriGirisleri = [];
+            kmYarismaMacTamamlanmaKontrolEt();
             kmYarismaCiz();
+        }
+        // "↩️ Geri Al" — Oyunlar'ın kmOyunSonGirisiGeriAl'ıyla AYNI silme deseni (seriIptalEkle +
+        // sporcuPuanlariYenidenHesapla), Yarışma'da frac/futbol gibi ek durum olmadığı için basitleştirildi.
+        function kmYarismaSonGirisiGeriAl() {
+            let g = _kmYarismaSonGiris; if(!g) return;
+            let sp = turnuvaDB[g.grup] && turnuvaDB[g.grup][g.ad];
+            if(!sp || !sp.seriler) { showToast('Kayıt bulunamadı.', 'error'); _kmYarismaSonGiris = null; kmYarismaCiz(); return; }
+            let idx = sp.seriler.findIndex(function(x) { return x.seriId === g.seriId; });
+            if(idx === -1) { showToast('Bu seri zaten değişmiş, geri alınamıyor.', 'error'); _kmYarismaSonGiris = null; kmYarismaCiz(); return; }
+            if(!confirm(g.ad + ' için az önce girdiğin seri (' + g.seriPuan + ' puan) silinsin mi?')) return;
+            try { seriIptalEkle([g.seriId]); } catch(e) {}
+            sp.seriler.splice(idx, 1);
+            try { sporcuPuanlariYenidenHesapla(sp); } catch(e) {}
+            sp.lastModified = Date.now();
+            try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
+            bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
+            try { klasmanDoldur(); } catch(e) {}
+            _kmYarismaSonGiris = null;
+            kmYarismaCiz();
+        }
+        // Faz 17b (2026-09-18) — "turnuva amaca yönelik olmalı... set sayısına göre" (kullanıcı
+        // spesifikasyonu): her set kaydından sonra aktif maçın hedefe ulaşıp ulaşmadığı OTOMATİK
+        // kontrol ediliyor. Sadece 2 taraflı maçlar (bracket maçı ya da Hayali Rakip) için geçerli —
+        // gerçek World Archery kuralları hep 1'e1 ya da takım'a takım, hiçbir zaman 3-4 taraflı değil.
+        function kmYarismaMacTamamlanmaKontrolEt() {
+            if(_kmYarismaBracketGorunum === 'agac') {
+                let m = _kmYarismaBracketMaclar.find(function(x) { return x.durum === 'devam' && !x.isBye; });
+                if(!m) return;
+                let a = _kmTakimlar[m.aIdx], b = _kmTakimlar[m.bIdx]; if(!a || !b) return;
+                let taraflar = [
+                    { t: a, idx: m.aIdx, turlar: _kmYarismaBracketMacTurBazliPuanlar(m, 'a') },
+                    { t: b, idx: m.bIdx, turlar: _kmYarismaBracketMacTurBazliPuanlar(m, 'b') },
+                ];
+                let deg = kmYarismaMacSonucDegerlendir(taraflar);
+                // DÜZELTME: kmYarismaMacSonucDegerlendir'in kazananIdx'i taraflar dizisi içindeki
+                // KONUM'dur (0=ilk taraf/a, 1=ikinci taraf/b) — m.aIdx/m.bIdx (gerçek takım dizisi
+                // indeksi) İLE AYNI ŞEY DEĞİL. Gerçek testte yakalandı: eşleştirme aIdx/bIdx'i 0/1
+                // dışında bir sırada kurunca (ör. aIdx=1,bIdx=0) yanlış taraf kazanan seçiliyordu.
+                if(deg.durum === 'bitti') { _kmYarismaSonGiris = null; kmYarismaBracketKazananSec(m.id, deg.kazananIdx === 0 ? 'a' : 'b'); }
+                return;
+            }
+            if(_kmYarismaAktif && _kmRakipTipi === 'hayali') {
+                let taraflar = [
+                    { t: _kmTakimlar[0], idx: 0, turlar: _kmYarismaTurBazliPuanlar(_kmTakimlar[0]) },
+                    { t: _kmTakimlar[1], idx: 1, turlar: _kmHayaliTurlar },
+                ];
+                let deg = kmYarismaMacSonucDegerlendir(taraflar);
+                if(deg.durum === 'bitti') { _kmYarismaSonGiris = null; kmYarismaBitir(); }
+            }
         }
         // Konsolide "canlı maç" görünümü — takım kimliği (SVG ikon+renk) + set puanı + sporcu listesi
         // ("İsim S." formatında) + gömülü skor girişi, HEPSİ TEK EKRANDA (kullanıcı spesifikasyonu:
         // "İkisi aynı ekranda, geçiş yapmaya gerek kalmadan"). Hem flat (2-4 takım) skorbord hem bracket
         // maçı bu AYNI fonksiyonu kullanıyor — `taraflar`: [{t, idx, turlar, bireyselFark(u), puan, oran}].
         function _kmYarismaCanliMacHTML(taraflar, ekBtnHTML) {
-            let turlarListesi = taraflar.map(function(x) { return x.turlar; });
-            let setSonuc = _kmYarismaSetPuanlariHesapla(turlarListesi);
+            // Faz 17b (2026-09-18) — 2 taraflı maçlarda GERÇEK kural (hedef set puanı/max set/ek atış)
+            // devreye giriyor; 3-4 taraflı (flat, artık pratikte erişilemeyen eski dal) N'li karşılaştırma
+            // hâlâ sınırsız/bilgi-amaçlı set puanı gösteriyor (hedef kavramı yok, WA kuralları hep 2 taraflı).
+            let degerlendirme = taraflar.length === 2 ? kmYarismaMacSonucDegerlendir(taraflar) : null;
+            let setSonuc = degerlendirme ? degerlendirme.setSonuc : _kmYarismaSetPuanlariHesapla(taraflar.map(function(x) { return x.turlar; }));
             let tumUyeler = [].concat.apply([], taraflar.map(function(x) { return x.t.uyeler; }));
             let kisaAdlar = kmYarismaKisaAdListesi(tumUyeler);
             let kisaAdMap = {};
             tumUyeler.forEach(function(u, i) { kisaAdMap[u.g + '|' + u.ad] = kisaAdlar[i]; });
 
-            let takimKartlari = taraflar.map(function(x) {
+            let hedefSatiriHTML = degerlendirme ? `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">
+                ${degerlendirme.kural.tip === 'takim' ? 'Takım maçı' : 'Bireysel maç'} · İlk ${degerlendirme.kural.hedefSetPuani} set puanına ulaşan kazanır (max ${degerlendirme.kural.maxSet} set) · Tamamlanan set: ${setSonuc.tamamlananSet}
+                ${degerlendirme.durum === 'shootoff' ? '<br><span style="color:var(--gold); font-weight:800;">⚡ BERABERE — EK ATIŞ (1 ok, kazanana kadar tekrar)</span>' : ''}
+            </div>` : `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">Tamamlanan set: ${setSonuc.tamamlananSet}</div>`;
+
+            let takimKartlari = taraflar.map(function(x, i) {
+                // Faz 17b — "takım isimleri yarışma başlayınca da değiştirilebilmeli" (kullanıcı
+                // spesifikasyonu): input, kurulum ekranındaki AYNI kmYarismaTakimAdiDegis'i çağırıyor.
                 let ikonSvg = kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 20);
                 let altBilgi = (x.puan != null) ? `<div style="font-size:9.5px; color:var(--text-muted); margin-top:4px;">${x.puan}p toplam${x.oran != null ? ' · ⚖️%' + x.oran : ''}</div>` : '';
-                return `<div style="flex:1 1 130px; background:var(--bg-panel); border:2px solid ${x.t.renk}; border-radius:14px; padding:12px 8px; text-align:center;">
-                    <div style="color:${x.t.renk}; display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:2px;">${ikonSvg}<span style="font-size:11.5px; font-weight:800;">${esc(x.t.ad)}</span></div>
-                    <div style="font-size:26px; font-weight:900;">${setSonuc.setPuanlari[taraflar.indexOf(x)]}</div>
-                    <div style="font-size:8.5px; color:var(--text-muted); letter-spacing:.04em;">SET PUANI</div>
+                // kazananIdx taraflar dizisindeki KONUM (0/1) — m.aIdx/m.bIdx gibi gerçek takım dizisi
+                // indeksiyle DEĞİL, buradaki `i` (map konumu) ile karşılaştırılmalı (bkz. gerçek testte
+                // yakalanan kazananIdx/m.aIdx karışıklığı, kmYarismaMacTamamlanmaKontrolEt'te de düzeltildi).
+                let kazandiMi = degerlendirme && degerlendirme.durum === 'bitti' && degerlendirme.kazananIdx === i;
+                return `<div style="flex:1 1 130px; background:var(--bg-panel); border:2px solid ${x.t.renk}; border-radius:14px; padding:12px 8px; text-align:center; ${kazandiMi ? 'box-shadow:0 0 0 3px ' + x.t.renk + '44;' : ''}">
+                    <div style="color:${x.t.renk}; display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:4px;">${ikonSvg}<input type="text" value="${esc(x.t.ad).replace(/"/g,'&quot;')}" maxlength="20" onchange="kmYarismaTakimAdiDegis(${x.idx}, this.value)" style="width:80px; background:transparent; border:none; border-bottom:1px dashed ${x.t.renk}66; color:${x.t.renk}; font-size:11.5px; font-weight:800; text-align:center; padding:1px 0;"></div>
+                    <div style="font-size:26px; font-weight:900;">${setSonuc.setPuanlari[i]}</div>
+                    <div style="font-size:8.5px; color:var(--text-muted); letter-spacing:.04em;">SET PUANI${kazandiMi ? ' · 🏆 KAZANDI' : ''}</div>
                     ${altBilgi}
                 </div>`;
             });
             let vsHTML = '<div style="display:flex; align-items:center; font-size:11px; font-weight:900; color:var(--text-muted); padding:0 2px;">VS</div>';
 
+            // Faz 17b — "sporcunun hangi takımda olduğu küçük kutucukla işaretlenmeli": her çipte takım
+            // ikonu KÜÇÜK bir rozet olarak, isimden ayrı, tekrar görünüyor (kenarlık rengi zaten vardı
+            // ama sadece renk körlüğü olmayanlar için ayırt ediciydi — ikon rozeti bunu netleştiriyor).
             let rosterChipHTML = taraflar.map(function(x) {
+                let ikonRozetSvg = kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 11);
                 return x.t.uyeler.map(function(u) {
                     let key = u.g + '|' + u.ad;
                     let secili = _kmYarismaAktifSporcuKey === key;
                     let fark = x.bireyselFark(u);
                     return `<button onclick="kmYarismaSporcuSec('${key.replace(/'/g, "\\'")}')" style="display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 10px; border-radius:10px; border:1.5px solid ${secili ? x.t.renk : 'var(--border-color)'}; background:${secili ? x.t.renk + '22' : 'var(--bg-panel)'}; cursor:pointer;">
-                        <span style="font-size:11px; font-weight:700;">${esc(kisaAdMap[key] || u.ad)}</span>
+                        <span style="display:flex; align-items:center; gap:4px; color:${x.t.renk};">${ikonRozetSvg}<span style="font-size:11px; font-weight:700; color:var(--text-main);">${esc(kisaAdMap[key] || u.ad)}</span></span>
                         <span style="font-size:9px; color:var(--text-muted);">${fark}p</span>
                     </button>`;
                 }).join('');
@@ -19420,13 +19573,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
             let padHTML;
             if(_kmYarismaAktifSporcuKey) {
+                // Ek atış (shoot-off) sırasında ok sayısı 1'e SABİTLENİYOR ve düğme gizleniyor — gerçek
+                // kuraldaki "tek ok" ek atışıyla aynı; normalde kural.okSayisi (3 bireysel/6 takım) öneriliyor.
+                let ekAtisMi = degerlendirme && degerlendirme.durum === 'shootoff';
+                if(ekAtisMi && _kmYarismaOkSayisi !== 1) _kmYarismaOkSayisi = 1;
                 let slotlar = '';
                 for(let i = 0; i < _kmYarismaOkSayisi; i++) { let v = _kmYarismaSeriGirisleri[i]; slotlar += `<div class="km-oyun-slot${v !== undefined ? ' dolu' : ''}" ${v !== undefined ? `onclick="kmYarismaOkSil(${i})" title="Silmek için dokun"` : ''}>${v !== undefined ? v : ''}</div>`; }
                 let padBtns = KM_OYUN_PAD.map(function(v) { return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmYarismaOkGir('${v}')" ${_kmYarismaSeriGirisleri.length >= _kmYarismaOkSayisi ? 'disabled' : ''}>${v}</button>`; }).join('');
+                let okToggleHTML = ekAtisMi ? `<span style="font-size:10px; font-weight:800; color:var(--gold);">EK ATIŞ — 1 OK</span>` : `<div class="km-oyun-ok-toggle">${[3, 6].map(function(n) { return `<button class="${_kmYarismaOkSayisi === n ? 'aktif' : ''}" onclick="kmYarismaOkSayisiSec(${n})">${n} Ok</button>`; }).join('')}</div>`;
                 padHTML = `<div style="margin-top:14px; padding:12px; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-color);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                         <span style="font-size:11px; font-weight:800;">${esc(kisaAdMap[_kmYarismaAktifSporcuKey] || '')} atıyor</span>
-                        <div class="km-oyun-ok-toggle">${[3, 6].map(function(n) { return `<button class="${_kmYarismaOkSayisi === n ? 'aktif' : ''}" onclick="kmYarismaOkSayisiSec(${n})">${n} Ok</button>`; }).join('')}</div>
+                        ${okToggleHTML}
                     </div>
                     <div style="display:flex; gap:6px; justify-content:center; margin-bottom:10px;">${slotlar}</div>
                     <div class="km-oyun-pad" style="margin:0 auto;">${padBtns}</div>
@@ -19436,11 +19594,26 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 padHTML = `<div style="margin-top:12px; text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">Skor girmek için yukarıdan bir sporcuya dokun.</div>`;
             }
 
+            // Faz 17b — "skor tabelası renklendirilmeli, yanlış girilmişse düzeltilmeli": son girilen
+            // serinin okları KM_OYUN_PAD_RENK renkleriyle (pad'in kendisiyle AYNI renk dili) gösteriliyor,
+            // yanında "Geri Al" — Oyunlar'ın renk sistemini yeniden kullanıyor, yeni bir renk şeması icat
+            // edilmedi.
+            let sonGirisHTML = '';
+            if(_kmYarismaSonGiris) {
+                let sg = _kmYarismaSonGiris;
+                let okChipler = sg.oklar.map(function(v) { return `<span class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; min-height:0; padding:0; font-size:9.5px; border-radius:6px;">${v}</span>`; }).join(' ');
+                sonGirisHTML = `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; padding:8px 10px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span style="font-size:9.5px; color:var(--text-muted);">Son giriş (${esc(kisaAdMap[sg.grup + '|' + sg.ad] || sg.ad)}):</span>${okChipler}<span style="font-size:11px; font-weight:800;">${sg.seriPuan}p</span></div>
+                    <button onclick="kmYarismaSonGirisiGeriAl()" style="font-size:10px; font-weight:700; color:var(--neon-red); background:none; border:1px solid var(--neon-red); border-radius:8px; padding:4px 10px; cursor:pointer; white-space:nowrap;">↩️ Geri Al</button>
+                </div>`;
+            }
+
             return `
                 <div style="display:flex; align-items:stretch; gap:6px; margin-bottom:8px;">${takimKartlari.join(vsHTML)}</div>
-                <div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">Tamamlanan set: ${setSonuc.tamamlananSet}</div>
+                ${hedefSatiriHTML}
                 <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">${rosterChipHTML}</div>
                 ${padHTML}
+                ${sonGirisHTML}
                 ${ekBtnHTML || ''}
             `;
         }
