@@ -4230,4 +4230,4 @@ kartlar (Yarışma/Veli Bildirimi/Disiplin Pusulası/Pozitif Pusula/Oyunlar/Reak
 doğrulandı. Bir araç açılıp (Kule teması test edildi) içeriğin doğru göründüğü onaylandı. 16 tema +
 Reaksiyon tam regresyon sweep'i temiz.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit 54d460a, version 3b201a34...).
