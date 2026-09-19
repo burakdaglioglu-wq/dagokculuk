@@ -4441,4 +4441,4 @@ girilmedi. (Temizlik: yerel `.wrangler/state` test verisi bir gün budanabilir.)
 **Regresyon**: 16 tema + Reaksiyon temiz; Faz 17b ek atış testi ve Faz 17c dok/takım-düzenleme testi
 aynen geçiyor; 360px mobil sığıyor.
 
-**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
+**Deploy durumu**: DEPLOY EDİLDİ (commit db3681f, version 11ce5dbe...).
