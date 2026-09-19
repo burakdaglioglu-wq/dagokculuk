@@ -4493,3 +4493,49 @@ Sıralama turunda magenta takım rengi chip+avatar+seg+slot+kaydet'e akıyor. ya
 sıralama, tohumlama, atış sırası, skor kartı, PDF) ve 16 tema regresyonu (0 hata) temiz. 390px OK.
 
 **Deploy durumu (39b + 39c)**: Kullanıcı onayladı (2026-09-19), commit + push + deploy edildi.
+
+## 40. Sis Haritası → "Kayıp Ada" yeniden tasarımı (2026-09-20)
+
+**Neden**: kullanıcı "Sis Haritası çok kötü oldu, oynatmıyorum, ne yapacağımı da bilmiyorum". Gerçek
+tarayıcıda bakınca: zemin kare formatlı stok korsan-haritası clip-art'ıydı ve 1200×440 sahneye "slice"
+ile basılınca sadece ortadan dar bir şerit görünüyordu; adı "sis" ama sis mekaniği önceki turda
+kaldırılmıştı (kimliksiz "harita üstünde Dağ Tırmanışı"); karakterler küçük, keşif ikonları 26px webp,
+tema token bloğu (`--bg/--a1…`) hiç yoktu. Kullanıcı 3 seçenekten "sıfırdan yeniden tasarla"yı seçti,
+eklerden sadece (c) Tam Ekran yağmuru istedi.
+
+**Yeni tasarım** (tema anahtarı `sisharita`, adı hâlâ "Sis Haritası"; sahne içi HUD'da "Kayıp Ada"):
+- **Özgün SVG ada** (`<g id="km-sis-ada">`, stok görsel YOK): deniz gradyanı + dalga deseni, kumsal,
+  çimen, orman kümeleri + ağaçlar, nehir, karlı dağlar, tüten volkan, palmiyeler, iskele; vinyet, pusula.
+- **Gerçek sis**: `mask#km-sis-mask` (userSpaceOnUse; beyaz = sis kalır, siyah = açık). Açık alan =
+  `#km-sis-acik-yol` (rotanın 230px kalın kopyası, `stroke-dasharray` = sınıfın en öndeki sporcusuna
+  kadar) + `#km-sis-fenerler` içindeki sporcu başına daire (r 70, lider 95), hepsi 12px blur. Sis katmanı
+  = koyu rect (.5) + iki `feTurbulence` bulut katmanı (`.km-sis-bulut`, CSS translateX ile yavaş
+  kayıyor, ters yönlü ikincisi). ~55 fps ölçüldü. `kmOyunSisMaskeGuncelle(hareketli)` hem Resync'te hem
+  animasyonun HER karesinde çağrılıyor (hareketli sporcunun anlık frac'ı ile — s.frac o anda henüz
+  güncellenmemiş oluyor, roster'dan okumaya güvenme).
+- **7 keşif sis altında**: `KM_SIS_KESIF_TURLERI` sırası yolculuk sırasına çevrildi (kamp-atesi,
+  batik-gemi, magara, harabe, deniz-feneri, volkan, hazine-sandigi); her biri panel `<defs>`'inde
+  `<symbol id="km-sis-sym-<id>">` olarak çizili (webp'ler silindi). Bulunmadan: "?" rozeti (hazine ✕);
+  bulununca `.bulundu` → sembol scale(0→1) belirir, ad (büyük harf, -64) + "🏅 Ad buldu" (-50) yazısı,
+  altın halka; hazine ek olarak nabız gibi parlar (`.km-kesif-hazine`). Kalıcılık (`_kmSisKesifler`,
+  localStorage `dag_km_sisharita_kesif_<konum>`) DEĞİŞMEDİ — eski kayıtlardaki index→tür eşlemesi
+  sıra değiştiği için farklı türe düşer; sadece "kim buldu" etiketi, zararsız.
+- **Karakterler** 52px hayvan sprite + `.km-sis-fener` ışık halkası (radial gradient, yavaş nabız).
+- **HUD** `#km-sis-hud` (üst-orta; ≤600px'te sol üst, dikey): "🗺️ Kayıp Ada · n/7 keşif" + "Sis açıldı %".
+- **(c) Yağmur**: `.km-sis-yagmur` salt CSS (repeating-linear-gradient kayması), SADECE
+  `#km-oyun-wrap:fullscreen`'de görünür.
+- **Dünya kutusu**: viewBox `0 -40 1200 600` + slice (rail yüzünden panel ~2:1; 440'lık dünya kenarları
+  kırpıyordu). Kamera hardcoded 1200×440 kullandığı için YENİ `KM_OYUN_KAMERA_DUNYA` haritası +
+  `kmOyunKameraDunya(tema)` eklendi; `kmOyunZirveGenisKutu` ve yakın kamera clamp'i bunu okuyor (diğer
+  temalar için varsayılan aynen 0 0 1200 440). Panel oranı <1.4 ise (telefon) sahne kurulurken
+  `preserveAspectRatio` 'meet'e çevrilir.
+- Tema token bloğu eklendi: `#km-oyun-wrap[data-tema="sisharita"]{ --bg:#061321 … --a1:#7dd3fc … }`.
+- Rota `KM_SIS_YOL_D` yeniden yazıldı (iskele 160,425 → hazine 1110,75).
+- Silinen: `public/sisharita-gorseller/` (12 webp) ve git dışı `public/sis-haritasi/` (eski ham dosyalar).
+
+**Gerçek testte doğrulanan**: taze oturum, gerçek pad tıklamaları (10-10-10 + "🧭 Yolda İlerle") →
+frac 0→0.15, Kamp Ateşi bulundu (1/7), maske dasharray 40→202, HUD %15, "YENİ KEŞİF!" banner'ı; kamera
+yakın çekim takip ediyor; geniş görünüm (kilit) tüm adayı sisli gösteriyor; 16 tema regresyonu 0 hata;
+360px'te meet ile tam ada; fps ~51-57 (sis animasyonu açıkken).
+
+**Deploy durumu (40)**: Kullanıcı onayladı (2026-09-20), commit + push + deploy edildi.

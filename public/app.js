@@ -10544,6 +10544,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="hedef"]{ --bg:#120c08; --panel:#1e140d; --panel-hi:#2a1d13; --line:#3d2a1a; --ink:#fff8f0; --ink-dim:#d9b8a0; --ink-faint:#8f6b52; --a1:#ffcc33; --a2:#ff5f6d; --a3:#5fb8ff; --a4:#3ddc97; --a5:#c77dff; --font-display:'Exo 2',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futbol"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futboltakim"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="sisharita"]{ --bg:#061321; --panel:#0c2236; --panel-hi:#123049; --line:#1f4a66; --ink:#eef8ff; --ink-dim:#a9cde0; --ink-faint:#5f8aa3; --a1:#7dd3fc; --a2:#ffd23f; --a3:#ff8a3d; --a4:#a78bfa; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
@@ -10637,19 +10638,45 @@ ${(function(){
 .km-hedef-ad{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); text-align:center; max-width:118px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width: 860px) { .km-hedef-tahta{ width:84px; height:84px; } .km-hedef-alan{ gap:12px; } }
 
-/* Sis Haritası — Faz 15, 2. sürüm (2026-09-17). Kare/sis ızgarası TAMAMEN kaldırıldı (kullanıcı:
-   "kareler olmasın, sis de olmasın, diğer oyunlar gibi ilerleme gerçekleşsin") — artık Dağ Tırmanışı/
-   Hazine ile AYNI frac→yol iskeleti: harita görseli tam ekran arkaplan, üzerinde sabit bir patika,
-   patika üzerindeki 7 sabit noktada keşif işaretleri. .km-map-route/.km-map-route-glow/.km-climber/
-   .km-tag-bg/.km-tag-text zaten PAYLAŞILAN sınıflar (Hazine/Dağ ile birebir aynı görünüm dili) —
-   burada sadece keşif işaretine özel yeni sınıflar tanımlanıyor. */
-.km-kesif-isaret image{ opacity:.45; transition:opacity .5s ease; }
-.km-kesif-isaret.bulundu image{ opacity:1; }
-.km-kesif-ring{ fill:none; stroke:#8a6440; stroke-width:2; opacity:.6; transition:opacity .5s ease, filter .5s ease, stroke .5s ease; }
-.km-kesif-isaret.bulundu .km-kesif-ring{ stroke:#ffd23f; opacity:1; filter:drop-shadow(0 0 6px #ffd23f); }
-.km-kesif-isim{ font-family:var(--font-body); font-weight:700; fill:#fff; opacity:0; transition:opacity .4s ease; }
-.km-kesif-isaret.bulundu .km-kesif-isim{ opacity:1; }
-@media (prefers-reduced-motion: reduce){ .km-kesif-isaret image, .km-kesif-ring, .km-kesif-isim{ transition:none; } }
+/* Sis Haritası — 3. sürüm "Kayıp Ada" (2026-09-20). Kullanıcı: "çok kötü oldu, oynatmıyorum" —
+   stok korsan-haritası clip-art'ı (kare görsel, yatay sahneye kesilip sığdırılıyordu) ve kimliksiz
+   "harita üstünde Dağ Tırmanışı" hâli tamamen atıldı. Artık: tamamen SVG ile çizilmiş özgün ada,
+   GERÇEK sis (feTurbulence, iki katman, yavaş kayan) + maske ile açılan alan (yürünen yol kalıcı açık +
+   her sporcunun fener halkası), sis altında "?" olarak gizli 7 keşif (bulununca belirir, bulanın adı
+   kalıcı), büyük karakterler, üstte keşif/sis HUD'u, Tam Ekran'da yağmur. frac→yol iskeleti ve keşif
+   kalıcılığı (kmOyunSisNokta/_kmSisKesifler) HİÇ değişmedi. Sahne ölçüsü 1200x520 + slice: .km-oyun-scene
+   2.3:1 olduğundan neredeyse kırpmasız tam doldurur (siyah bant kalmaz). */
+.km-oyun-panel-sisharita{ background:#0d2f4a; padding:0; }
+.km-sis-rota-glow{ fill:none; stroke:#2a1a08; stroke-opacity:.5; stroke-width:5; stroke-dasharray:14 12; stroke-linecap:round; }
+.km-sis-rota{ fill:none; stroke:#fff3c4; stroke-opacity:.75; stroke-width:2; stroke-dasharray:14 12; stroke-linecap:round; }
+.km-sis-katman{ pointer-events:none; }
+.km-sis-bulut{ will-change:transform; animation:kmSisKay 34s linear infinite; }
+.km-sis-bulut.ters{ animation-duration:52s; animation-direction:reverse; }
+@keyframes kmSisKay{ from{ transform:translateX(0); } to{ transform:translateX(-140px); } }
+.km-sis-fener{ animation:kmSisFener 2.6s ease-in-out infinite; }
+@keyframes kmSisFener{ 0%,100%{ opacity:.4; } 50%{ opacity:.85; } }
+/* keşif işareti: sis altında sadece "?" rozeti; bulununca sembol büyüyerek belirir, isim + bulan yazısı */
+.km-kesif-isaret .km-kesif-sembol{ transform-box:fill-box; transform-origin:center; transform:scale(0); opacity:0; transition:transform .55s cubic-bezier(.3,1.5,.4,1), opacity .3s ease; }
+.km-kesif-isaret.bulundu .km-kesif-sembol{ transform:scale(1); opacity:1; }
+.km-kesif-isaret .km-kesif-soru{ transition:opacity .3s ease; }
+.km-kesif-isaret.bulundu .km-kesif-soru{ opacity:0; }
+.km-kesif-ring{ fill:none; stroke:#ffd23f; stroke-width:2; opacity:0; transition:opacity .5s ease; }
+.km-kesif-isaret.bulundu .km-kesif-ring{ opacity:.9; filter:drop-shadow(0 0 6px #ffd23f); }
+.km-kesif-ad{ font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.06em; fill:#fff8e6; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .2s; text-transform:uppercase; }
+.km-kesif-isim{ font-family:var(--font-body); font-weight:700; font-size:10px; fill:#ffd23f; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .35s; }
+.km-kesif-isaret.bulundu .km-kesif-ad, .km-kesif-isaret.bulundu .km-kesif-isim{ opacity:1; }
+.km-kesif-isaret.bulundu.km-kesif-hazine .km-kesif-sembol{ animation:kmSisHazineParla 1.8s ease-in-out infinite; }
+@keyframes kmSisHazineParla{ 0%,100%{ filter:drop-shadow(0 0 4px #ffd23f); } 50%{ filter:drop-shadow(0 0 14px #ffe98a); } }
+.km-sis-hud{ position:absolute; left:50%; top:8px; transform:translateX(-50%); z-index:7; display:flex; gap:8px; pointer-events:none; }
+.km-sis-hud span{ font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:rgba(4,6,14,0.78); border:1.5px solid var(--a1); border-radius:999px; padding:6px 13px; white-space:nowrap; }
+.km-sis-hud b{ color:var(--a2); }
+/* (c) Tam Ekran'da yağmur — sadece fullscreen, sis üstünde, salt CSS (arka planı kaydırılan çizgiler) */
+.km-sis-yagmur{ display:none; position:absolute; inset:0; pointer-events:none; z-index:6; opacity:.35;
+    background:repeating-linear-gradient(112deg, transparent 0 11px, rgba(220,235,255,0.55) 11px 12px, transparent 12px 26px); background-size:260px 520px; animation:kmSisYagmur .9s linear infinite; }
+#km-oyun-wrap:fullscreen .km-sis-yagmur{ display:block; }
+@keyframes kmSisYagmur{ from{ background-position:0 0; } to{ background-position:-120px 520px; } }
+@media (max-width:600px){ .km-sis-hud{ left:8px; top:56px; transform:none; flex-direction:column; align-items:flex-start; gap:4px; } .km-sis-hud span{ font-size:9.5px; padding:4px 8px; } }
+@media (prefers-reduced-motion: reduce){ .km-sis-bulut, .km-sis-fener, .km-sis-yagmur, .km-kesif-isaret.bulundu.km-kesif-hazine .km-kesif-sembol{ animation:none; } .km-kesif-isaret .km-kesif-sembol, .km-kesif-ring, .km-kesif-ad, .km-kesif-isim{ transition:none; } }
 
 /* Kehanet — Faz 16, Adım 2 (2026-09-18), görsel zenginleştirme. Adım 1'in mekaniği (id'ler/JS akışı)
    HİÇ değişmedi — burada SADECE atmosfer: yıldız zemini, "mühürlenen" madalyon, DEDİN/ATTIN arası
@@ -11897,7 +11924,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // kullanıyor (bkz. "---- SİS HARİTASI ----" bloğu, Dağ Tırmanışı'nın kmOyunSahneKurDag/
             // kmOyunResyncDag/kmOyunAnimateDag üçlüsünden BİREBİR türetildi). surprizler yine boş
             // bırakıldı (istenirse sonradan eklenebilir, iskelet zaten destekliyor).
-            sisharita: { ad: 'Sis Haritası', ikon: '🗺️', renkler: ['#7dd3fc', '#ffd23f', '#ff8a3d', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her sporcu haritadaki kendi yolunda ilerler, yol üzerindeki keşifleri sırayla ortaya çıkarır.', btn: '🧭 Yolda İlerle', finish: 'HARİTA TAMAMLANDI!', cp: 'YENİ KEŞİF!', birim: 'nokta', bitis: 'Harita tamamlandı! 🗺️',
+            sisharita: { ad: 'Sis Haritası', ikon: '🗺️', renkler: ['#7dd3fc', '#ffd23f', '#ff8a3d', '#a78bfa', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — Kayıp Ada sisle kaplı; her sporcunun feneri ilerledikçe sisi açar, sisin altındaki 7 gizli yeri ilk bulan sporcunun adı haritaya yazılır.', btn: '🧭 Yolda İlerle', finish: 'HARİTA TAMAMLANDI!', cp: 'YENİ KEŞİF!', birim: 'nokta', bitis: 'Harita tamamlandı! 🗺️',
                 surprizler: [] },
             // Faz 16, Adım 1 (2026-09-18) — Kehanet: frac/yol YOK, Arena/Futbol/Sis Haritası'nın "kendi
             // mekaniği" emsaliyle AYNI kategori. Sporcu atmadan ÖNCE tahmin kilitleniyor (kmOyunPadCiz'e
@@ -12173,8 +12200,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // görünsün"). Diğer 6 temada VE Zirve'nin yatay kutularında bu fonksiyon eskisiyle birebir
         // aynı `{x:0,y:0,w:1200,h:440}`'ı döndürüyor. İki "geniş'e düş" çağrısı da (kilit/sıradaki
         // yok/nokta hesaplanamadı) AYNI fonksiyonu kullanıyor ki üçü arasında sapma olmasın.
+        // Tema başına dünya kutusu — varsayılan 0 0 1200 440. Kayıp Ada (2026-09-20) 1200x600'lük
+        // (y -40..560) daha kare bir dünya kullanıyor: rail yüzünden panel ~2:1 olduğundan 440'lık
+        // dünya slice ile kenarlardan kırpılıyor, iskele/ilk sporcular dışarıda kalıyordu.
+        var KM_OYUN_KAMERA_DUNYA = { sisharita: { x: 0, y: -40, w: 1200, h: 600 } };
+        function kmOyunKameraDunya(tema) { return KM_OYUN_KAMERA_DUNYA[tema] || { x: 0, y: 0, w: 1200, h: 440 }; }
         function kmOyunZirveGenisKutu(svg, tema) {
-            let W = 1200, H = 440, w = W, h = H, x = 0, y = 0;
+            let d = kmOyunKameraDunya(tema);
+            let W = d.w, H = d.h, w = W, h = H, x = d.x, y = d.y;
             if(tema === 'zirve') {
                 let kutuOran = kmOyunZirveKutuOrani(svg);
                 if(kutuOran !== null && kutuOran < 1.4) {
@@ -12211,7 +12244,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunKameraHedefeGit(svg, k.x, k.y, k.w, k.h);
                 return;
             }
-            let W = 1200, H = 440, Z = KM_OYUN_KAMERA_ZOOM, w = W * Z, h = H * Z;
+            let d = kmOyunKameraDunya(tema);
+            let W = d.w, H = d.h, Z = KM_OYUN_KAMERA_ZOOM, w = W * Z, h = H * Z;
             // "Yakın" (takip) kamerası için AYNI daraltma (bkz. kmOyunZirveGenisKutu'nun üstündeki
             // yorum) — burada yükseklik 220 (yarı), genişlik yine kutu portreyse daraltılıyor; merkez
             // x=600 sabiti DEĞİL, aşağıda takip edilen sporcunun GERÇEK noktası (pt.x).
@@ -12219,8 +12253,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let kutuOran = kmOyunZirveKutuOrani(svg);
                 if(kutuOran !== null && kutuOran < 1.4) w = Math.max(150, h * kutuOran);
             }
-            let x = Math.max(0, Math.min(W - w, pt.x - w / 2));
-            let y = Math.max(0, Math.min(H - h, pt.y - h / 2));
+            let x = Math.max(d.x, Math.min(d.x + W - w, pt.x - w / 2));
+            let y = Math.max(d.y, Math.min(d.y + H - h, pt.y - h / 2));
             kmOyunKameraHedefeGit(svg, x, y, w, h);
         }
         // Karakter dünya-sınırı kısıtlaması (2026-09-09, gerçek testte bulundu) — kmOyunJitter() bir
@@ -13308,15 +13342,66 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // göre bu patikada ilerliyor, yol üzerindeki 7 sabit noktada keşif işaretleri duruyor.
             // Eski kare/sis ızgarası tamamen kaldırıldı (kullanıcı talimatı: "kareler olmasın, sis de
             // olmasın, diğer oyunlar gibi ilerleme gerçekleşsin").
-            if(tid === 'sisharita') return `<div class="km-oyun-panel" id="km-oyun-panel-sisharita">
-                <svg id="km-oyun-svg-sisharita" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
-                  <image href="/sisharita-gorseller/harita-zemin.webp" x="0" y="0" width="1200" height="440" preserveAspectRatio="xMidYMid slice"/>
-                  <rect x="0" y="0" width="1200" height="440" fill="#0b1220" opacity="0.16"/>
-                  <path id="km-oyun-sis-path" class="km-map-route-glow" d="${KM_SIS_YOL_D}"/>
-                  <path class="km-map-route" d="${KM_SIS_YOL_D}"/>
+            if(tid === 'sisharita') return `<div class="km-oyun-panel km-oyun-panel-sisharita" id="km-oyun-panel-sisharita">
+                <svg id="km-oyun-svg-sisharita" viewBox="0 -40 1200 600" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <radialGradient id="km-sis-deniz" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#2a8fbf"/><stop offset=".6" stop-color="#1b5f8a"/><stop offset="1" stop-color="#0d2f4a"/></radialGradient>
+                    <pattern id="km-sis-dalga" width="90" height="40" patternUnits="userSpaceOnUse"><path d="M0 20 q 11 -8 22 0 t 22 0 t 22 0 t 22 0" fill="none" stroke="#7fd0f2" stroke-opacity=".28" stroke-width="1.6"/></pattern>
+                    <linearGradient id="km-sis-kum" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1dc9e"/><stop offset="1" stop-color="#d9b96c"/></linearGradient>
+                    <linearGradient id="km-sis-cimen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fca5a"/><stop offset="1" stop-color="#4f9a3b"/></linearGradient>
+                    <linearGradient id="km-sis-orman" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7d3a"/><stop offset="1" stop-color="#1c5227"/></linearGradient>
+                    <linearGradient id="km-sis-dag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa3ad"/><stop offset="1" stop-color="#4d5560"/></linearGradient>
+                    <linearGradient id="km-sis-lav" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ff3d1f"/></linearGradient>
+                    <radialGradient id="km-sis-fener-isik"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="km-sis-vinyet" cx="50%" cy="50%" r="70%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
+                    <filter id="km-sis-bulut-f" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.007 0.012" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.86  0 0 0 0 0.9  0 0 0 0 0.96  0 0 0 -0.9 1.25"/><feGaussianBlur stdDeviation="2"/></filter>
+                    <filter id="km-sis-yumusak" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+                    <filter id="km-sis-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    <mask id="km-sis-mask" maskUnits="userSpaceOnUse" x="0" y="-40" width="1200" height="600">
+                      <rect y="-40" width="1200" height="600" fill="#fff"/>
+                      <g filter="url(#km-sis-yumusak)">
+                        <path id="km-sis-acik-yol" d="${KM_SIS_YOL_D}" fill="none" stroke="#000" stroke-width="230" stroke-linecap="round" stroke-dasharray="0 9999"/>
+                        <g id="km-sis-fenerler"></g>
+                      </g>
+                    </mask>
+                    <!-- 7 keşif sembolü (stok görsel yok) -->
+                    <symbol id="km-sis-sym-kamp-atesi" viewBox="-20 -20 40 40"><path d="M-10 8 l6 -16 l4 8 l4 -12 l6 20 z" fill="url(#km-sis-lav)" filter="url(#km-sis-glow)"/><rect x="-14" y="8" width="28" height="5" rx="2" fill="#6b4a1e"/></symbol>
+                    <symbol id="km-sis-sym-batik-gemi" viewBox="-20 -20 40 40"><path d="M-16 6 h32 l-6 10 h-20 z" fill="#4a2f14"/><path d="M0 -14 v20" stroke="#e8dcc0" stroke-width="2"/><path d="M0 -14 l14 8 h-14 z" fill="#e8dcc0"/></symbol>
+                    <symbol id="km-sis-sym-magara" viewBox="-20 -20 40 40"><path d="M-18 10 a18 18 0 0 1 36 0 z" fill="#2b2f3a"/><path d="M-9 10 a9 9 0 0 1 18 0 z" fill="#0b0d12"/></symbol>
+                    <symbol id="km-sis-sym-harabe" viewBox="-20 -20 40 40"><rect x="-16" y="-6" width="8" height="18" fill="#b9b1a0"/><rect x="-2" y="-14" width="8" height="26" fill="#cfc7b6"/><rect x="12" y="-2" width="7" height="14" fill="#b9b1a0"/><rect x="-20" y="12" width="42" height="4" fill="#8f877a"/></symbol>
+                    <symbol id="km-sis-sym-deniz-feneri" viewBox="-20 -20 40 40"><rect x="-6" y="-14" width="12" height="28" fill="#fff"/><rect x="-6" y="-8" width="12" height="5" fill="#e53939"/><rect x="-6" y="2" width="12" height="5" fill="#e53939"/><rect x="-8" y="-20" width="16" height="7" rx="2" fill="#2b2f3a"/><circle cy="-16" r="3" fill="#ffd23f" filter="url(#km-sis-glow)"/></symbol>
+                    <symbol id="km-sis-sym-volkan" viewBox="-20 -20 40 40"><path d="M-18 14 L-4 -12 L4 -12 L18 14 Z" fill="#5a3f3a"/><path d="M-5 -12 h10 l3 8 h-16 z" fill="url(#km-sis-lav)" filter="url(#km-sis-glow)"/><ellipse cx="2" cy="-16" rx="7" ry="3" fill="#9aa3ad" opacity=".6"/></symbol>
+                    <symbol id="km-sis-sym-hazine-sandigi" viewBox="-20 -20 40 40"><rect x="-15" y="-4" width="30" height="16" rx="2" fill="#8a5a2b"/><path d="M-15 -4 a15 9 0 0 1 30 0 z" fill="#a86f38"/><rect x="-15" y="-4" width="30" height="3" fill="#ffd23f"/><rect x="-3" y="-2" width="6" height="7" rx="1" fill="#ffd23f"/></symbol>
+                  </defs>
+                  <rect y="-40" width="1200" height="600" fill="url(#km-sis-deniz)"/>
+                  <rect y="-40" width="1200" height="600" fill="url(#km-sis-dalga)"/>
+                  <g id="km-sis-ada">
+                    <path d="M60 480 C 40 400, 120 345, 200 325 C 240 270, 330 250, 400 260 C 460 215, 560 225, 620 270 C 700 225, 800 195, 860 160 C 900 105, 1000 80, 1080 52 C 1130 42, 1160 80, 1150 128 C 1140 192, 1050 220, 1000 256 C 960 312, 900 348, 840 366 C 780 422, 700 432, 640 422 C 560 460, 460 478, 380 460 C 300 498, 200 516, 120 503 C 90 498, 70 494, 60 480 Z" fill="url(#km-sis-kum)" stroke="#c9a15a" stroke-width="3"/>
+                    <path d="M110 462 C 100 418, 160 375, 225 360 C 265 312, 340 294, 405 300 C 460 262, 545 272, 600 312 C 675 270, 770 246, 830 210 C 870 162, 960 135, 1030 108 C 1075 98, 1100 122, 1095 155 C 1085 202, 1020 230, 975 264 C 940 310, 885 342, 830 360 C 775 406, 705 414, 650 406 C 580 434, 480 452, 405 440 C 330 470, 240 480, 160 472 Z" fill="url(#km-sis-cimen)"/>
+                    <g fill="url(#km-sis-orman)"><ellipse cx="330" cy="352" rx="55" ry="32"/><ellipse cx="290" cy="334" rx="35" ry="22"/><ellipse cx="370" cy="370" rx="30" ry="19"/><ellipse cx="700" cy="392" rx="60" ry="28"/><ellipse cx="750" cy="372" rx="36" ry="22"/><ellipse cx="880" cy="278" rx="40" ry="24"/><ellipse cx="920" cy="306" rx="30" ry="17"/></g>
+                    <g fill="#1f6b2e"><path d="M300 326 l8 -18 l8 18 z M320 346 l7 -16 l7 16 z M350 328 l8 -18 l8 18 z M690 378 l8 -18 l8 18 z M715 396 l8 -18 l8 18 z M740 368 l7 -16 l7 16 z M870 272 l8 -18 l8 18 z M905 296 l7 -16 l7 16 z"/></g>
+                    <path d="M 520 280 C 540 325, 500 372, 540 418 C 560 446, 600 455, 640 437" fill="none" stroke="#5fc3ee" stroke-width="9" stroke-linecap="round"/>
+                    <path d="M 520 280 C 540 325, 500 372, 540 418 C 560 446, 600 455, 640 437" fill="none" stroke="#cbefff" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 10"/>
+                    <g><path d="M 600 306 L 660 204 L 720 306 Z" fill="url(#km-sis-dag)"/><path d="M 645 232 L 660 204 L 675 232 Z" fill="#eef2f6"/><path d="M 690 306 L 740 232 L 790 306 Z" fill="url(#km-sis-dag)"/><path d="M 728 250 L 740 232 L 752 250 Z" fill="#eef2f6"/></g>
+                    <g><path d="M 930 232 L 985 130 L 1040 232 Z" fill="#5a3f3a"/><path d="M 968 140 L 985 130 L 1002 140 L 995 163 L 975 163 Z" fill="url(#km-sis-lav)" filter="url(#km-sis-glow)"/><ellipse cx="985" cy="112" rx="22" ry="10" fill="#9aa3ad" opacity=".55"/><ellipse cx="1000" cy="95" rx="16" ry="8" fill="#9aa3ad" opacity=".4"/></g>
+                    <g stroke="#6b4a1e" stroke-width="4" stroke-linecap="round" fill="none"><path d="M150 446 q 6 -30 20 -50"/><path d="M1090 92 q 4 -22 18 -38"/></g>
+                    <g fill="#3c9a4a"><path d="M170 396 q -30 -10 -50 5 q 25 -25 50 -5 z"/><path d="M170 396 q 30 -10 45 10 q -20 -22 -45 -10 z"/><path d="M170 396 q 5 -30 25 -35 q -22 8 -25 35 z"/><path d="M1108 54 q -25 -8 -40 4 q 20 -20 40 -4 z"/><path d="M1108 54 q 25 -8 36 8 q -16 -18 -36 -8 z"/></g>
+                    <g transform="translate(150,432)"><rect x="-16" y="-3" width="32" height="6" rx="2" fill="#6b4a1e"/><rect x="-12" y="3" width="4" height="10" fill="#4a2f14"/><rect x="8" y="3" width="4" height="10" fill="#4a2f14"/></g>
+                  </g>
+                  <path id="km-oyun-sis-path" class="km-sis-rota-glow" d="${KM_SIS_YOL_D}"/>
+                  <path class="km-sis-rota" d="${KM_SIS_YOL_D}"/>
                   <g id="km-oyun-sis-kesifler"></g>
                   <g id="km-oyun-sis-gezginler"></g>
+                  <g class="km-sis-katman" mask="url(#km-sis-mask)">
+                    <rect y="-40" width="1200" height="600" fill="#0a0f1a" opacity=".5"/>
+                    <g class="km-sis-bulut"><rect x="-140" y="-60" width="1480" height="640" filter="url(#km-sis-bulut-f)" fill="#dfe6f0" opacity=".8"/></g>
+                    <g class="km-sis-bulut ters"><rect x="-140" y="-60" width="1480" height="640" filter="url(#km-sis-bulut-f)" fill="#c9d3e0" opacity=".5"/></g>
+                  </g>
+                  <rect y="-40" width="1200" height="600" fill="url(#km-sis-vinyet)" pointer-events="none"/>
+                  <g transform="translate(1140,500)" opacity=".85"><circle r="24" fill="#06080f" stroke="#ffd23f" stroke-width="1.5"/><path d="M0 -18 L5 0 L0 18 L-5 0 Z" fill="#ffd23f"/><path d="M0 -18 L5 0 L-5 0 Z" fill="#ff3d1f"/><text y="-28" text-anchor="middle" fill="#fff" font-size="10" font-weight="900">K</text></g>
                 </svg>
+                <div class="km-sis-yagmur"></div>
+                <div class="km-sis-hud" id="km-sis-hud"></div>
             </div>`;
             // Faz 16, Adım 2 (2026-09-18) — Kehanet görsel zenginleştirme: mühürlenen tahmin madalyonu,
             // DEDİN/ATTIN arasında görünür mesafe, sayarak yükselen açılış, fark azaldıkça artan ışık +
@@ -15386,18 +15471,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // zinciriyle sıralama + Catmull-Rom yumuşatma — gerçek testte yeşil overlay ile görsel olarak
         // doğrulandı, iki çizgi neredeyse birebir üst üste düşüyor). Eski prosedürel/uydurma path TAMAMEN
         // değiştirildi.
-        var KM_SIS_YOL_D = 'M 675.4 432.9 C 679.0 420.6, 704.2 379.5, 696.9 359.1 C 689.6 338.7, 656.7 320.6, 631.7 310.3 C 606.7 300.0, 572.2 306.4, 546.9 297.4 C 521.6 288.4, 480.6 271.1, 480 256.3 C 479.4 241.5, 518.7 215.0, 543.4 208.3 C 568.1 201.6, 600.6 210.2, 628.3 216 C 656.0 221.8, 682.3 235.8, 709.7 243.4 C 737.1 251.0, 764.9 259.3, 792.9 261.4 C 820.9 263.5, 854.9 267.3, 877.7 256.3 C 900.6 245.3, 929.4 216.1, 930 195.4 C 930.6 174.7, 903.3 144.1, 881.1 132 C 859.0 119.9, 825.4 122.2, 797.1 122.6 C 768.8 123.0, 739.5 129.6, 711.4 134.6 C 683.3 139.6, 656.4 149.0, 628.3 152.6 C 600.2 156.2, 569.0 161.7, 542.6 156 C 516.2 150.3, 477.4 136.9, 469.7 118.3 C 462.0 99.7, 479.1 62.9, 496.3 44.6 C 513.5 26.3, 559.9 14.6, 572.6 8.6';
+        // Kayıp Ada rotası (2026-09-20): iskeleden (sol alt) hazineye (sağ üst), viewBox 1200x520.
+        var KM_SIS_YOL_D = 'M 160 425 C 200 395, 220 440, 260 400 S 360 300, 430 300 S 520 370, 600 350 S 700 275, 760 230 S 900 185, 960 140 S 1080 95, 1110 75';
         var _kmOyunSisTotalLen = 0;
         function kmOyunSisPath() { return document.getElementById('km-oyun-sis-path'); }
         function kmOyunSisNokta(frac) { let p = kmOyunSisPath(); return p ? p.getPointAtLength(_kmOyunSisTotalLen * frac) : { x: 0, y: 0 }; }
         // 7 sabit keşif noktası = KM_OYUN_CP_SAYISI-1 ara kontrol noktasına birebir denk düşüyor. Tür
         // ataması SABİT (Zirve'nin sabit kamp isimleriyle AYNI ilke) — rastgelelik/"her ders farklı"
         // artık YOK, çünkü bu tema artık diğerleri gibi kalıcı bir yolculuk (bir kere biter/sıfırlanır).
+        // Sıra = yolculuk sırası (kıyıdan içeriye, sonra volkan ve hazine). Sembol id'leri panel
+        // <defs>'indeki km-sis-sym-<id> ile birebir.
         var KM_SIS_KESIF_TURLERI = [
-            { id: 'magara', ad: 'Mağara' },
-            { id: 'batik-gemi', ad: 'Batık Gemi' },
-            { id: 'harabe', ad: 'Harabe' },
             { id: 'kamp-atesi', ad: 'Kamp Ateşi' },
+            { id: 'batik-gemi', ad: 'Batık Gemi' },
+            { id: 'magara', ad: 'Mağara' },
+            { id: 'harabe', ad: 'Harabe' },
             { id: 'deniz-feneri', ad: 'Deniz Feneri' },
             { id: 'volkan', ad: 'Volkan' },
             { id: 'hazine-sandigi', ad: 'Hazine Sandığı' }
@@ -15426,21 +15514,53 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let k = _kmSisKesifler[cp]; if(!k) return;
             let grp = document.getElementById('km-oyun-kesif-' + cp); if(!grp) return;
             grp.classList.toggle('bulundu', !!k.bulanAd);
-            let isimEl = grp.querySelector('.km-kesif-isim'); if(isimEl) isimEl.textContent = k.bulanAd ? k.bulanAd.split(' ')[0] : '';
+            let isimEl = grp.querySelector('.km-kesif-isim'); if(isimEl) isimEl.textContent = k.bulanAd ? '🏅 ' + k.bulanAd.split(' ')[0] + ' buldu' : '';
+        }
+        // Sis maskesi: yürünen yol (sınıfın en öndeki sporcusuna kadar) + her sporcunun fener halkası.
+        // Maske userSpaceOnUse olduğu için kamera zoom'undan etkilenmez. Ayrıca üstteki HUD güncellenir.
+        function kmOyunSisMaskeGuncelle(hareketli) {
+            let yol = document.getElementById('km-sis-acik-yol'), fg = document.getElementById('km-sis-fenerler');
+            if(!yol || !fg || !_kmOyunSisTotalLen) return;
+            let roster = _kmOyunRosterCache, maxFrac = 0;
+            roster.forEach(function(s) { if(s.frac > maxFrac) maxFrac = s.frac; });
+            if(hareketli && hareketli.frac > maxFrac) maxFrac = hareketli.frac;
+            yol.setAttribute('stroke-dasharray', (_kmOyunSisTotalLen * Math.min(1, maxFrac) + 40).toFixed(1) + ' 9999');
+            if(fg.children.length !== roster.length) {
+                fg.innerHTML = roster.map(function() { return '<circle r="70" fill="#000"/>'; }).join('');
+            }
+            roster.forEach(function(s, i) {
+                let c = fg.children[i]; if(!c) return;
+                let f = (hareketli && hareketli.s === s) ? hareketli.frac : s.frac;
+                let pt = kmOyunSisNokta(f), jj = kmOyunJitter(i, roster.length);
+                c.setAttribute('cx', (pt.x + jj[0]).toFixed(1)); c.setAttribute('cy', (pt.y + jj[1]).toFixed(1));
+                c.setAttribute('r', s.frac >= maxFrac - 1e-6 ? 95 : 70);
+            });
+            let hud = document.getElementById('km-sis-hud');
+            if(hud) {
+                let bulunan = _kmSisKesifler.filter(function(k) { return k.bulanAd; }).length;
+                hud.innerHTML = '<span>🗺️ Kayıp Ada · <b>' + bulunan + '/' + KM_SIS_KESIF_TURLERI.length + '</b> keşif</span><span>Sis açıldı <b>%' + Math.round(Math.min(1, maxFrac) * 100) + '</b></span>';
+            }
         }
         function kmOyunSahneKurSisHaritasi() {
             kmOyunSisKesiflerEmin();
             let p = kmOyunSisPath(); if(!p) return;
+            // Dar/dik panelde (telefon) slice sadece ortayı gösterip sporcuları saklıyordu — panel
+            // oranı 1.4'ün altındaysa 'meet' (tüm ada görünür, üst/altta deniz rengi bant).
+            let svgEl = document.getElementById('km-oyun-svg-sisharita'), panelEl = svgEl && svgEl.parentElement;
+            if(svgEl && panelEl) { let r = panelEl.getBoundingClientRect(); svgEl.setAttribute('preserveAspectRatio', (r.height && r.width / r.height < 1.4) ? 'xMidYMid meet' : 'xMidYMid slice'); }
             _kmOyunSisTotalLen = p.getTotalLength();
             let kg = document.getElementById('km-oyun-sis-kesifler');
             if(kg) {
                 kg.innerHTML = KM_SIS_KESIF_TURLERI.map(function(tur, cp) {
                     let pt = kmOyunSisNokta(KM_OYUN_CP_FRAC[cp]);
                     let bulanAd = _kmSisKesifler[cp].bulanAd;
-                    return `<g class="km-kesif-isaret${bulanAd ? ' bulundu' : ''}" id="km-oyun-kesif-${cp}">
-                        <circle class="km-kesif-ring" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="15"/>
-                        <image href="/sisharita-gorseller/kesif-${tur.id}.webp" x="${(pt.x - 13).toFixed(1)}" y="${(pt.y - 13).toFixed(1)}" width="26" height="26"/>
-                        <text class="km-kesif-isim" x="${pt.x.toFixed(1)}" y="${(pt.y + 28).toFixed(1)}" font-size="9.5" text-anchor="middle">${bulanAd ? esc(bulanAd.split(' ')[0]) : ''}</text>
+                    let x = pt.x.toFixed(1), y = pt.y.toFixed(1);
+                    return `<g class="km-kesif-isaret${bulanAd ? ' bulundu' : ''}${tur.id === 'hazine-sandigi' ? ' km-kesif-hazine' : ''}" id="km-oyun-kesif-${cp}">
+                        <circle class="km-kesif-ring" cx="${x}" cy="${y}" r="26"/>
+                        <g class="km-kesif-soru" transform="translate(${x},${y})"><circle r="14" fill="#1a1208" opacity=".55"/><text y="6" text-anchor="middle" fill="${tur.id === 'hazine-sandigi' ? '#ffd23f' : '#fff'}" font-size="16" font-weight="900">${tur.id === 'hazine-sandigi' ? '✕' : '?'}</text></g>
+                        <use class="km-kesif-sembol" href="#km-sis-sym-${tur.id}" x="${(pt.x - 22).toFixed(1)}" y="${(pt.y - 22).toFixed(1)}" width="44" height="44"/>
+                        <text class="km-kesif-ad" x="${x}" y="${(pt.y - 64).toFixed(1)}" text-anchor="middle">${esc(tur.ad)}</text>
+                        <text class="km-kesif-isim" x="${x}" y="${(pt.y - 50).toFixed(1)}" text-anchor="middle">${bulanAd ? '🏅 ' + esc(bulanAd.split(' ')[0]) + ' buldu' : ''}</text>
                     </g>`;
                 }).join('');
             }
@@ -15454,10 +15574,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 el.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1]).toFixed(1)})`);
                 let renk = kmOyunRenk('sisharita', i);
                 let ilkAd = s.ad.split(' ')[0];
-                let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
+                let genislik = Math.max(44, ilkAd.length * 7.5 + 18);
                 el.innerHTML = `<g class="km-climber-inner">
-                    ${kmOyunHayvanKarakterSVG(s, renk, 45)}
-                    <g transform="translate(0,32)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g>
+                    <circle class="km-sis-fener" r="52" fill="url(#km-sis-fener-isik)"/>
+                    ${kmOyunHayvanKarakterSVG(s, renk, 52)}
+                    <g transform="translate(0,36)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g>
                 </g>`;
                 gg.appendChild(el);
                 s.sisharitaEl = el;
@@ -15471,6 +15592,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(s.sisharitaEl) s.sisharitaEl.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1]).toFixed(1)})`);
             });
             for(let cp = 0; cp < KM_OYUN_CP_SAYISI - 1; cp++) kmOyunSisKesifIsaretGuncelle(cp);
+            kmOyunSisMaskeGuncelle(null);
         }
         // "Bir keşif bulunduğunda ikon parlar, bulan sporcunun adı KALICI kalır" — Hazine/Dağ'ın "şu an
         // önde olan kim" (canlı yeniden hesaplanan) bayrak-rengi mantığından BİLEREK FARKLI: burada İLK
@@ -15490,7 +15612,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunSisKesifKaydet();
                 if(!kapali) {
                     let ilkTurAd = yeniBulunanlar[0].tur.ad;
-                    showToast('🗺️ ' + bulanAd.split(' ')[0] + ' bir keşif buldu: ' + ilkTurAd + (yeniBulunanlar.length > 1 ? ' (+' + (yeniBulunanlar.length - 1) + ')' : '') + '!', 'success');
+                    showToast('🧭 ' + bulanAd.split(' ')[0] + ' sisin altından yeni bir yer çıkardı: ' + ilkTurAd + (yeniBulunanlar.length > 1 ? ' (+' + (yeniBulunanlar.length - 1) + ')' : '') + '!', 'success');
                 }
             }
         }
@@ -15502,12 +15624,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let pt = kmOyunSisNokta(eskiFrac + (yeniFrac - eskiFrac) * eased);
                 let hop = Math.abs(Math.sin(t * Math.PI * 7)) * 8 * (1 - t * 0.5);
                 el.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1] - hop).toFixed(1)})`);
+                kmOyunSisMaskeGuncelle({ s: s, frac: eskiFrac + (yeniFrac - eskiFrac) * eased });
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
                     let varis = kmOyunSisNokta(yeniFrac);
                     let scr = kmOyunSvgPct('km-oyun-svg-sisharita', varis.x + jj[0], varis.y + jj[1]);
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('sisharita', i), 14, false);
                     if(yeniCp > eskiCp) kmOyunSisKesifBul(eskiCp, yeniCp, s.ad);
+                    // s.frac bu noktada henüz yeniFrac olmayabilir (çağıran taraf done() sonrası
+                    // yazıyor) — maske/HUD'u hedef frac ile güncelle, roster'dan okuma.
+                    kmOyunSisMaskeGuncelle({ s: s, frac: yeniFrac });
                     if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('sisharita', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('sisharita', Math.min(1, n - 1)), 16, true); }, 80);
                     done();
                 }
