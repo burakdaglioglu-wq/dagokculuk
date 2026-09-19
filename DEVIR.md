@@ -4442,3 +4442,54 @@ girilmedi. (Temizlik: yerel `.wrangler/state` test verisi bir gün budanabilir.)
 aynen geçiyor; 360px mobil sığıyor.
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit db3681f, version 11ce5dbe...).
+
+### 39b — ℹ️ Bilgi rozetleri ("WA'ları açıkla, sporcular anlasın, üstüne gelince şeffaf açılsın")
+`KM_YARISMA_BILGI` sözlüğü (wa/set/sp/toplam/tur/sira/tohum/ok) + `_kmBilgi(anahtar, kucuk)` rozeti:
+masaüstünde `:hover`, dokunmatikte `kmBilgiAcKapat` ile `.acik` (dışarı dokununca kapanır — document
+click). Yarı saydam koyu kutu, altın kenar, ok işareti. 9 yer: Yarışma Şablonu, Maç Ayarları, seri
+başına ok, toplam puan, Skor Kartı (SP), atış sırası rozeti, sıralama turu paneli+ekranı, canlı maç kural
+satırı (moda göre set/toplam/tur açıklaması). `kmBilgiKonumla` kutuyu ekran kenarında kırpılmasın diye
+kaydırır (gerçek testte sol kenarda "WA = World" → "A = World" kırpılması görüldü; ok işareti `--ok-x`
+ile ikonu takip eder).
+
+**GERÇEK KÖK NEDEN BULUNDU (Faz 17c'nin çözülmemiş gizemi)**: `KM_OYUN_CSS` yalnızca `kmOyunlarCiz`/
+Reaksiyon içinden (`kmOyunKaynaklarYukle`) enjekte ediliyordu. Yarışma'nın kullandığı `.km-oyun-pad`/
+`.km-oyun-padbtn`/`.km-oyun-slot`/`.km-oyun-ok-toggle`/sayaç rozeti/`.km-bilgi` sınıfları, koç DOĞRUDAN
+Yarışma'ya girdiğinde (Oyunlar'ı o sayfa oturumunda hiç açmadıysa) TAMAMEN stilsizdi — üretimde de
+öyleydi. Testler hep önce Oyunlar'ı açtığı için maskelenmişti; bu turda ilk kez doğrudan Yarışma'ya
+giden bir test bunu ortaya çıkardı (bilgi kutusu inline aktı). Düzeltme: `kmSekme('yarisma')` artık
+`kmOyunKaynaklarYukle()` çağırıyor (idempotent). Faz 17c'deki inline-stil geçici çözümü zararsız,
+kalabilir.
+
+### 39c — "Skor Gir" doku yeniden tasarımı ("skor girme bölümü arıza verdi, görsel kötü, daha modern olsun")
+
+**Arıza teşhisi**: kullanıcının gördüğü "bozuk" pad = 39b'deki KM_OYUN_CSS lazy-load kök nedeni
+(Yarışma'ya Oyunlar'a hiç uğramadan girince `.km-oyun-pad*` stilsizdi). Üstüne, stil yüklense bile
+eski pad Oyunlar tema token'larına (`--ink/--a1/--line/--panel-hi`, sadece `#km-oyun-wrap[data-tema]`
+altında tanımlı) bağlıydı → Yarışma içinde slotlar kenarlıksız/beyaz, M tuşu düz, dolu slot rengi yok.
+
+**Yeni tasarım** — Yarışma'ya özel, tamamen bağımsız `.km-ydok-*` sınıf ailesi (KM_OYUN_CSS içinde,
+`.km-oyun-sayac-serbest`'ten hemen önce; SADECE global token'lar + inline `--ydok-renk` = seçili
+sporcunun TAKIM RENGİ):
+- `.km-ydok-kapsul`: gradyan kenarlı (takım rengi → magenta → menekşe) cam panel; başlıkta ok
+  ilerleme noktaları (`.km-ydok-nokta`, girilen ok WA rengiyle dolar) + inline sayaç rozeti korunuyor.
+- `.km-ydok-chip`: sporcu seçim hapları (ikon dairesi + ad + puan), seçili olan takım rengiyle parlar.
+  Canlı maç VE sıralama turu chip'leri aynı sınıfı kullanıyor.
+- `.km-ydok` (pad kartı): baş harfli avatar + ad + "atıyor · N ok kaldı / Seri tamam — kaydet",
+  segment 3/6 ok anahtarı (`.km-ydok-seg`; ek atışta `.km-ydok-ekatis` rozeti), sağda CANLI SERİ
+  TOPLAMI (30px) + "n/N ok".
+- `.km-ydok-slot`: 50px; boş slotlar 1..N numaralı, sıradaki nabız animasyonu (reduced-motion'da
+  kapalı), dolu slot WA rengini alır (`.altin/.kirmizi/.mavi/.siyah/.beyaz/.gri` — pad tuşuyla aynı
+  dil), hover'da ✕ silme örtüsü.
+- `.km-ydok-tus`: 6 sütun, min 54px, 17px; `.km-ydok-kaydet`: takım rengi → altın gradyan, metni
+  "✔ Seti Kaydet · N puan" (dolu değilken pasif, gri).
+- `_kmYarismaPadHTML(atanAd, ekAtisMi, renk)` — 3. parametre eklendi; canlı maç `seciliTaraf`
+  (taraflar içinde arama), sıralama turu `v.takimlar` içinde arama ile veriyor.
+- 600px altı: slot 44px, tuş 50px, toplam 26px.
+
+**Gerçek testte doğrulanan** (taze context, doğrudan Yarışma): 10-9-M girişi → toplam 19, kaydet
+"✔ Seti Kaydet · 19 puan" aktif; dolu slota GERÇEK tıklama M'yi sildi (3→2 dolu); 9 eklendi → 28.
+Sıralama turunda magenta takım rengi chip+avatar+seg+slot+kaydet'e akıyor. yarisma-b-test (şablon,
+sıralama, tohumlama, atış sırası, skor kartı, PDF) ve 16 tema regresyonu (0 hata) temiz. 390px OK.
+
+**Deploy durumu (39b + 39c)**: Kullanıcı onayladı (2026-09-19), commit + push + deploy edildi.
