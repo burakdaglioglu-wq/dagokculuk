@@ -4160,7 +4160,7 @@ Kullanıcı talimatı: sistematik bir "hiç kullanılmayan kod" taraması istend
 app.html'de tanımı DIŞINDA en az bir referansı var mı diye — parantezsiz/dispatch-tablosu referanslarını
 da sayan bare-word eşleştirmesiyle, sahte pozitifleri elemek için). İki aday bulundu, kullanıcı SADECE
 video analiz sistemini onayladı (`_dersGrupmanSVG` — ders sonu raporu için kullanılmayan bir grupman
-haritası SVG'si, ~satır 7782 — HENÜZ SİLİNMEDİ, ayrı onay bekliyor).
+haritası SVG'si — 2026-09-19'da kullanıcı onayıyla SİLİNDİ, 22 satır).
 
 **Ne kaldırıldı**: `vaInit`, `vaToggleKey`, `vaSaveKey`, `vaFileSelected`, `vaLoadVideoFile`, `vaResetVideo`,
 `vaStartCamera`, `vaStartRecording`, `vaStopRecording`, `vaStopCamera`, `vaCaptureFrames`,

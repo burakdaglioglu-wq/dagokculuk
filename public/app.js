@@ -7775,28 +7775,6 @@ ${(function(){
             html2pdf().set(opt).from(temp).save().then(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('Rapor indirildi! Aileye gönderebilirsin 📄✅', 'success'); }).catch(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('PDF hatası.', 'error'); });
         }
 
-        // Tek oturumun oklarını (_okKonumu ile aynı 3-spot normalizasyonu) hedef diyagramı üzerinde
-        // gösterir — aileRaporuPDF'in "Gelişim Grafiği"nin (sezonluk, çok-oturumlu) YERİNE değil,
-        // ders raporunda YANINA konan session-özel bir panel. CSS değişkeni KULLANMIYOR (rapor beyaz
-        // zeminde sabit renklerle basılıyor, uygulamanın koyu tema renkleri burada işe yaramaz).
-        function _dersGrupmanSVG(detayliOklar) {
-            let nok = (detayliOklar || []).filter(o => o && o.x != null && o.y != null && o.puan !== 'M').map(_okKonumu);
-            if(nok.length < 3) return `<div style="font-size:10.5px; color:#94a3b8; padding:20px 0; text-align:center;">Grupman haritası için en az 3 işaretli atış gerekli (şu an ${nok.length}).</div>`;
-            let s = 110, cl = v => Math.max(-s, Math.min(s, v));
-            let noktalar = nok.map(k => `<circle cx="${cl(k.x).toFixed(1)}" cy="${cl(k.y).toFixed(1)}" r="4" fill="#1d4ed8" opacity="0.78"/>`).join('');
-            let mx = nok.reduce((a,k) => a+k.x, 0) / nok.length, my = nok.reduce((a,k) => a+k.y, 0) / nok.length;
-            let merkezNokta = `<circle cx="${cl(mx).toFixed(1)}" cy="${cl(my).toFixed(1)}" r="7" fill="#f59e0b" stroke="#fff" stroke-width="2"/>`;
-            let yon = _yonMetniUret(mx, my);
-            return `<svg viewBox="-120 -120 240 240" width="128" height="128" style="display:block; margin:0 auto;">
-                <circle cx="0" cy="0" r="100" fill="#fff" stroke="#e2e8f0"/>
-                <circle cx="0" cy="0" r="60" fill="#fef3c7" stroke="#fde68a"/>
-                <circle cx="0" cy="0" r="25" fill="#fbbf24" stroke="#f59e0b"/>
-                <line x1="-112" y1="0" x2="112" y2="0" stroke="#e2e8f0"/>
-                <line x1="0" y1="-112" x2="0" y2="112" stroke="#e2e8f0"/>
-                ${noktalar}${merkezNokta}
-            </svg><div style="font-size:10px; color:#334155; text-align:center; margin-top:6px; font-weight:700;">Ortalama nokta: ${yon === 'MERKEZ' ? 'Merkez (dengeli)' : yon}</div>`;
-        }
-
         // Tek bir derse/oturuma özel PDF — aileRaporuPDF (sezonluk) ile AYNI görsel dil, ama istatistikler
         // sadece bu oturuma ait. "Bugün Ok Atanlar" listesindeki kaynak (canlı ya da 24 saat penceresi)
         // ne olursa olsun, veri her zaman sp.seriler (henüz arşivlenmemişse) ya da en yakın (bugün/dün)
