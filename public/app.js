@@ -11046,6 +11046,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-sayac-buyuk-metin{ font-family:var(--font-display, inherit); font-weight:900; font-size:clamp(42px, 13vw, 128px); line-height:1; color:var(--text-main); letter-spacing:1px; white-space:nowrap; }
 .km-oyun-sayac-buyuk.km-oyun-sayac-kritik .km-oyun-sayac-buyuk-metin{ color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
 .km-oyun-sayac-buyuk.km-oyun-sayac-bitti .km-oyun-sayac-buyuk-metin{ color:#ff2e2e; animation:none; }
+.km-oyun-sayac-buyuk.km-oyun-sayac-serbest .km-oyun-sayac-buyuk-metin{ color:var(--neon-green); }
+.km-oyun-sayac-buyuk.km-oyun-sayac-toplama .km-oyun-sayac-buyuk-metin{ color:var(--accent-orange); }
+.km-oyun-sayac-buyuk.km-oyun-sayac-duraklatildi{ opacity:.65; }
+.km-oyun-sayac-buyuk-etiket{ font-family:var(--font-display, inherit); font-weight:800; font-size:13px; letter-spacing:1.6px; color:var(--accent-orange); margin-top:-2px; }
 .km-oyun-sayac-buyuk-ayarlar{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
 .km-oyun-sayac-buyuk-ayarlar button{ font-family:inherit; font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:9px; border:1.5px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; min-height:36px; }
 .km-oyun-sayac-buyuk-ayarlar button.aktif{ border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,0.14); }
@@ -11054,6 +11058,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-sayac-buyut-btn.aktif{ border-color:var(--gold); color:var(--gold); }
 .km-oyun-sayac-kritik{ color:#ff5f6d; border-color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
 .km-oyun-sayac-bitti{ color:#ff2e2e; border-color:#ff2e2e; background:rgba(255,46,46,0.18); animation:none; }
+/* Süreölçer'in renk kuralı birebir: ATIŞ SERBEST yeşil, OK TOPLAMA turuncu, DURAKLATILDI soluk (opacity .6) */
+.km-oyun-sayac-serbest{ color:var(--neon-green); border-color:var(--neon-green); }
+.km-oyun-sayac-toplama{ color:var(--accent-orange); border-color:var(--accent-orange); }
+.km-oyun-sayac-duraklatildi{ opacity:.6; animation:none; }
 @keyframes kmSayacYanip{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
 .km-zirve-ekipman-ikon.sahip{ opacity:1; filter:drop-shadow(0 0 4px var(--a3)); }
 /* Kar fırtınası — Dağ Tırmanışı'nın kmKayaDusme'siyle AYNI desen (düşen parçacık, reduced-motion
@@ -13366,7 +13374,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
-                    <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacSureDegistir()" title="Dokunarak süreyi değiştir" style="display:none;"></div>
+                    <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
                     <div class="km-oyun-burst" id="km-oyun-burst"></div>
                     <div class="km-oyun-banner" id="km-oyun-banner"><b id="km-oyun-banner-t"></b><span id="km-oyun-banner-s"></span></div>
@@ -13541,9 +13549,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // FAZLA rozet var (querySelectorAll ile hepsi birlikte güncelleniyor) — ikisini aynı state'e
         // bağlamak iki ekranı da birbirine kilitlerdi, istenmeyen bir bağımlılık olurdu.
         var KM_OYUN_SAYAC_SURELER = [90, 120, 180];
-        let _kmOyunSayacAcik = false, _kmOyunSayacSuresi = 120, _kmOyunSayacFaz = 0, _kmOyunSayacKalan = 0, _kmOyunSayacTimerId = null, _kmOyunSayacYuklenenKonum = null;
-        // Büyük/taşınabilir sayaç (2026-09-18, kullanıcı talimatı: "sporcular sayaçları görmezler,
-        // büyütme seçeneği + istediğim yere koyabileyim") — bkz. aşağısı, "BÜYÜK SAYAÇ" bloğu.
+        // FAZLAR — Süreölçer sekmesiyle (toggleTimer/sayacIntervalBaslat, ~23295) BİREBİR AYNI:
+        //   0 = ATIŞA HAZIR (kurulu, dokununca başlar)   1 = HAZIRLANIN (10 sn, her saniye bip)
+        //   2 = ATIŞ SERBEST (seçili süre, son 10 sn kırmızı+bip)   3 = OK TOPLAMA VE SKOR GİRİŞİ (dakika ayarlı)
+        //   ayrıca geçici "STOP" / "BİTTİ" gösterimi (_kmOyunSayacSonMetin) ve DURAKLATILDI (calisiyor=false).
+        // 2026-09-19 kullanıcı talimatı: "saniye olmamış, var olan sayaç gibi yap, mantığı dahil" —
+        // önceki sürüm sporcu seçilince KENDİLİĞİNDEN başlıyordu, m:ss gösteriyordu, duraklatma ve
+        // ok toplama fazı YOKTU. Şimdi: yeni seri sayacı sadece KURAR (ATIŞA HAZIR), koç dokununca başlar
+        // (gerçek yarışmada hakem "hazır" deyince başlatır), tekrar dokununca duraklar/devam eder.
+        let _kmOyunSayacAcik = false, _kmOyunSayacSuresi = 120, _kmOyunSayacFaz = 0, _kmOyunSayacKalan = 120, _kmOyunSayacTimerId = null, _kmOyunSayacYuklenenKonum = null;
+        let _kmOyunSayacCalisiyor = false, _kmOyunSayacSonMetin = null, _kmOyunSayacBeklemeTimer = null;
+        // Ok toplama fazı: 0 = kapalı, aksi hâlde dakika (Süreölçer'deki oto-toplama-cb + oto-toplama-dk'nın karşılığı)
+        let _kmOyunSayacToplamaDk = 0;
         let _kmOyunSayacBuyukAcik = false, _kmOyunSayacBuyukKonum = null;
         function kmOyunSayacAnahtari() { return 'dag_km_oyun_sayac_' + (_kmAktifKonum || 'varsayilan'); }
         function kmOyunSayacAyarYukle() {
@@ -13552,30 +13569,36 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try {
                 let raw = localStorage.getItem(kmOyunSayacAnahtari()), p = raw ? JSON.parse(raw) : null;
                 _kmOyunSayacAcik = !!(p && p.acik);
-                // Manuel girilen süreler de kalıcı olmalı (kullanıcı talimatı: "hem manuel hem 90/120/180") —
-                // artık SADECE 3 hazır değerle sınırlı değil, 5-1800sn arası herhangi bir tam sayı kabul ediliyor.
                 _kmOyunSayacSuresi = (p && typeof p.sure === 'number' && p.sure >= 5 && p.sure <= 1800) ? Math.round(p.sure) : 120;
+                _kmOyunSayacToplamaDk = (p && [0, 3, 5].indexOf(p.toplamaDk) !== -1) ? p.toplamaDk : 0;
                 _kmOyunSayacBuyukAcik = !!(p && p.buyukAcik);
                 _kmOyunSayacBuyukKonum = (p && p.buyukKonum && typeof p.buyukKonum.left === 'number') ? p.buyukKonum : null;
-            } catch(e) { _kmOyunSayacAcik = false; _kmOyunSayacSuresi = 120; _kmOyunSayacBuyukAcik = false; _kmOyunSayacBuyukKonum = null; }
+            } catch(e) { _kmOyunSayacAcik = false; _kmOyunSayacSuresi = 120; _kmOyunSayacToplamaDk = 0; _kmOyunSayacBuyukAcik = false; _kmOyunSayacBuyukKonum = null; }
+            _kmOyunSayacKalan = _kmOyunSayacSuresi;
         }
-        function kmOyunSayacAyarKaydet() { try { localStorage.setItem(kmOyunSayacAnahtari(), JSON.stringify({ acik: _kmOyunSayacAcik, sure: _kmOyunSayacSuresi, buyukAcik: _kmOyunSayacBuyukAcik, buyukKonum: _kmOyunSayacBuyukKonum })); } catch(e) {} }
-        // NOT: faz'ı SIFIRLAMIYOR — süre doğal olarak biterse (faz=2, kalan=0) rozet "SÜRE DOLDU"
-        // olarak KALMALI, GERÇEK testte yakalanan bir bug yüzünden ayrıldı: eskiden burada faz=0'a
-        // dönüyordu, bu da kmOyunSayacMetni'nin "boşta" dalına düşüp YANLIŞLIKLA tam süreyi ("⏱ 2:00")
-        // gösteriyordu — kırmızı/bitmiş görünümle birlikte kafa karıştırıcıydı. Faz'ı sıfırlamak
-        // isteyen çağıranlar (kapatma, yeni seri) kendileri açıkça atıyor.
-        function kmOyunSayacDurdur() { if(_kmOyunSayacTimerId) { clearInterval(_kmOyunSayacTimerId); _kmOyunSayacTimerId = null; } }
-        // Her YENİ seri başladığında (koç bir sonraki sporcunun/atışın girişine hazır hale geldiğinde)
-        // çağrılıyor — bkz. çağrı yerleri: kmOyunPadCiz'in bitirOrtak() içindeki kilidi açan noktası +
-        // Yarışma'nın kmYarismaSporcuSec'i. Kapalıyken sadece rozetleri gizler, hiçbir şey başlatmaz.
+        function kmOyunSayacAyarKaydet() { try { localStorage.setItem(kmOyunSayacAnahtari(), JSON.stringify({ acik: _kmOyunSayacAcik, sure: _kmOyunSayacSuresi, toplamaDk: _kmOyunSayacToplamaDk, buyukAcik: _kmOyunSayacBuyukAcik, buyukKonum: _kmOyunSayacBuyukKonum })); } catch(e) {} }
+        function kmOyunSayacIntervalDurdur() {
+            if(_kmOyunSayacTimerId) { clearInterval(_kmOyunSayacTimerId); _kmOyunSayacTimerId = null; }
+            _kmOyunSayacCalisiyor = false;
+        }
+        // kronometreSifirla() karşılığı — faz 0, süre dolu, "ATIŞA HAZIR".
+        function kmOyunSayacSifirla() {
+            kmOyunSayacIntervalDurdur();
+            if(_kmOyunSayacBeklemeTimer) { clearTimeout(_kmOyunSayacBeklemeTimer); _kmOyunSayacBeklemeTimer = null; }
+            _kmOyunSayacFaz = 0; _kmOyunSayacKalan = _kmOyunSayacSuresi; _kmOyunSayacSonMetin = null;
+            kmOyunSayacCiz();
+        }
+        // Her YENİ seri başladığında çağrılır (Oyunlar: bitirOrtak kilidi açınca + ilk açılış; Yarışma:
+        // sporcu seçilince). Sayacı SADECE KURAR — başlatmaz. Kapalıyken rozetleri gizler.
         function kmOyunSayacYeniSeri() {
             kmOyunSayacAyarYukle();
-            kmOyunSayacDurdur();
-            if(!_kmOyunSayacAcik) { _kmOyunSayacFaz = 0; kmOyunSayacCiz(); return; }
-            _kmOyunSayacFaz = 1; _kmOyunSayacKalan = 10;
-            try { sesCal(900, 0.3); } catch(e) {}
-            kmOyunSayacCiz();
+            if(!_kmOyunSayacAcik) { kmOyunSayacIntervalDurdur(); _kmOyunSayacFaz = 0; kmOyunSayacCiz(); return; }
+            kmOyunSayacSifirla();
+        }
+        // sayacIntervalBaslat() karşılığı — Süreölçer'in faz geçişleri/sesleri/renkleri birebir.
+        function kmOyunSayacIntervalBaslat() {
+            kmOyunSayacIntervalDurdur();
+            _kmOyunSayacCalisiyor = true;
             _kmOyunSayacTimerId = setInterval(function() {
                 _kmOyunSayacKalan--;
                 if(_kmOyunSayacFaz === 1) {
@@ -13583,34 +13606,83 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     else { _kmOyunSayacFaz = 2; _kmOyunSayacKalan = _kmOyunSayacSuresi; try { sesCal(1100, 0.6); } catch(e) {} }
                 } else if(_kmOyunSayacFaz === 2) {
                     if(_kmOyunSayacKalan <= 10 && _kmOyunSayacKalan > 0) { try { sesCal(1400, 0.1); } catch(e) {} }
-                    if(_kmOyunSayacKalan <= 0) { try { sesCal(900, 0.3); } catch(e) {} kmOyunSayacDurdur(); }
+                    if(_kmOyunSayacKalan <= 0) {
+                        kmOyunSayacIntervalDurdur();
+                        _kmOyunSayacSonMetin = 'STOP';
+                        try { sesCal(900, 0.3); } catch(e) {}
+                        kmOyunSayacCiz();
+                        _kmOyunSayacBeklemeTimer = setTimeout(function() {
+                            _kmOyunSayacBeklemeTimer = null;
+                            if(_kmOyunSayacToplamaDk > 0) kmOyunSayacOkToplamaBaslat(); else kmOyunSayacSifirla();
+                        }, 2000);
+                        return;
+                    }
+                } else if(_kmOyunSayacFaz === 3) {
+                    if(_kmOyunSayacKalan <= 5 && _kmOyunSayacKalan > 0) { try { sesCal(1200, 0.1); } catch(e) {} }
+                    if(_kmOyunSayacKalan <= 0) {
+                        kmOyunSayacIntervalDurdur();
+                        _kmOyunSayacSonMetin = 'BİTTİ';
+                        try { sesCal(1000, 0.8); } catch(e) {}
+                        kmOyunSayacCiz();
+                        _kmOyunSayacBeklemeTimer = setTimeout(function() { _kmOyunSayacBeklemeTimer = null; kmOyunSayacSifirla(); }, 2000);
+                        return;
+                    }
                 }
                 kmOyunSayacCiz();
             }, 1000);
         }
+        // baslatOkToplama() karşılığı
+        function kmOyunSayacOkToplamaBaslat() {
+            _kmOyunSayacFaz = 3; _kmOyunSayacKalan = _kmOyunSayacToplamaDk * 60; _kmOyunSayacSonMetin = null;
+            try { sesCal(600, 0.4); } catch(e) {}
+            kmOyunSayacCiz();
+            kmOyunSayacIntervalBaslat();
+        }
+        // toggleTimer() karşılığı — rozete/büyük rakama dokununca: çalışıyorsa DURAKLAT, değilse
+        // (faz 0 ise HAZIRLANIN'dan) BAŞLAT ya da kaldığı yerden DEVAM ET.
+        function kmOyunSayacDokun() {
+            kmOyunSayacAyarYukle();
+            if(!_kmOyunSayacAcik) return;
+            if(_kmOyunSayacSonMetin) return; // STOP/BİTTİ gösterilirken (2 sn) dokunuş yok sayılır
+            if(_kmOyunSayacCalisiyor) { kmOyunSayacIntervalDurdur(); kmOyunSayacCiz(); return; }
+            if(_kmOyunSayacFaz === 0) { _kmOyunSayacFaz = 1; _kmOyunSayacKalan = 10; try { sesCal(900, 0.3); } catch(e) {} }
+            kmOyunSayacIntervalBaslat();
+            kmOyunSayacCiz();
+        }
+        // Büyük rakam (Süreölçer'in #sayac'ı) — düz saniye; STOP/BİTTİ geçici metinleri de burada.
+        function kmOyunSayacRakam() { return _kmOyunSayacSonMetin ? _kmOyunSayacSonMetin : String(_kmOyunSayacKalan); }
+        // Alt etiket (Süreölçer'in #timer-alt'ı)
+        function kmOyunSayacEtiket() {
+            let e = _kmOyunSayacFaz === 1 ? 'HAZIRLANIN...' : _kmOyunSayacFaz === 2 ? 'ATIŞ SERBEST!' : _kmOyunSayacFaz === 3 ? 'OK TOPLAMA VE SKOR GİRİŞİ' : 'ATIŞA HAZIR';
+            if(!_kmOyunSayacCalisiyor && _kmOyunSayacFaz !== 0 && !_kmOyunSayacSonMetin) e += ' (DURAKLATILDI)';
+            return e;
+        }
+        // Küçük rozet — tek satır: etiketin kısa hâli + rakam
         function kmOyunSayacMetni() {
-            if(_kmOyunSayacFaz === 1) return 'HAZIRLAN ' + _kmOyunSayacKalan;
-            if(_kmOyunSayacFaz === 2) {
-                if(_kmOyunSayacKalan <= 0) return '⏱ SÜRE DOLDU';
-                let m = Math.floor(_kmOyunSayacKalan / 60), s = _kmOyunSayacKalan % 60; return '⏱ ' + m + ':' + (s < 10 ? '0' : '') + s;
-            }
-            return '⏱ ' + Math.floor(_kmOyunSayacSuresi / 60) + ':' + (_kmOyunSayacSuresi % 60 < 10 ? '0' : '') + (_kmOyunSayacSuresi % 60);
+            if(_kmOyunSayacSonMetin) return '⏱ ' + _kmOyunSayacSonMetin;
+            let kisa = _kmOyunSayacFaz === 1 ? 'HAZIRLANIN' : _kmOyunSayacFaz === 2 ? 'ATIŞ' : _kmOyunSayacFaz === 3 ? 'TOPLAMA' : 'HAZIR';
+            return '⏱ ' + kisa + ' ' + _kmOyunSayacKalan + (!_kmOyunSayacCalisiyor && _kmOyunSayacFaz !== 0 ? ' ⏸' : '');
+        }
+        // Süreölçer'deki renk kuralı: atış=yeşil, son 10 sn=kırmızı, toplama=turuncu, hazırlanın/hazır=normal
+        function kmOyunSayacRenkSinifi() {
+            if(_kmOyunSayacSonMetin) return 'km-oyun-sayac-bitti';
+            if(_kmOyunSayacFaz === 2) return (_kmOyunSayacKalan <= 10) ? 'km-oyun-sayac-kritik' : 'km-oyun-sayac-serbest';
+            if(_kmOyunSayacFaz === 3) return (_kmOyunSayacKalan <= 5) ? 'km-oyun-sayac-kritik' : 'km-oyun-sayac-toplama';
+            return '';
         }
         function kmOyunSayacCiz() {
             kmOyunSayacAyarYukle();
-            let kritikMi = _kmOyunSayacFaz === 1 || (_kmOyunSayacFaz === 2 && _kmOyunSayacKalan > 0 && _kmOyunSayacKalan <= 10);
-            let bittiMi = _kmOyunSayacFaz === 2 && _kmOyunSayacKalan <= 0;
+            let renk = kmOyunSayacRenkSinifi();
+            let tumSiniflar = ['km-oyun-sayac-kritik', 'km-oyun-sayac-bitti', 'km-oyun-sayac-serbest', 'km-oyun-sayac-toplama', 'km-oyun-sayac-duraklatildi'];
+            let duraklatildi = !_kmOyunSayacCalisiyor && _kmOyunSayacFaz !== 0 && !_kmOyunSayacSonMetin;
             document.querySelectorAll('.km-oyun-sayac').forEach(function(el) {
                 if(!_kmOyunSayacAcik) { el.style.display = 'none'; return; }
                 el.style.display = '';
                 el.textContent = kmOyunSayacMetni();
-                el.classList.toggle('km-oyun-sayac-kritik', kritikMi);
-                el.classList.toggle('km-oyun-sayac-bitti', bittiMi);
+                tumSiniflar.forEach(function(s) { el.classList.remove(s); });
+                if(renk) el.classList.add(renk);
+                if(duraklatildi) el.classList.add('km-oyun-sayac-duraklatildi');
             });
-            // Büyük sayaç — AÇIK ve sayaç genel olarak AÇIKSA görünür (bkz. kmOyunSayacBuyukEmin).
-            // Sayfa yeni yüklendiğinde (önceki oturumdan _kmOyunSayacBuyukAcik=true kalmışsa) eleman
-            // henüz DOM'da olmayabilir — burada lazy-oluşturuluyor, tekrar tekrar çağrılması ZARARSIZ
-            // (kmOyunSayacBuyukEmin zaten var olan elemanı bulursa onu döndürüyor, yeniden yaratmıyor).
             if(_kmOyunSayacAcik && _kmOyunSayacBuyukAcik) kmOyunSayacBuyukEmin();
             let buyuk = document.getElementById('km-oyun-sayac-buyuk');
             if(buyuk) {
@@ -13618,22 +13690,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 buyuk.style.display = gosterMi ? 'flex' : 'none';
                 if(gosterMi) {
                     let metinEl = document.getElementById('km-oyun-sayac-buyuk-metin');
-                    if(metinEl) metinEl.textContent = kmOyunSayacMetni();
-                    buyuk.classList.toggle('km-oyun-sayac-kritik', kritikMi);
-                    buyuk.classList.toggle('km-oyun-sayac-bitti', bittiMi);
+                    if(metinEl) metinEl.textContent = kmOyunSayacRakam();
+                    let etiketEl = document.getElementById('km-oyun-sayac-buyuk-etiket');
+                    if(etiketEl) etiketEl.textContent = kmOyunSayacEtiket();
+                    tumSiniflar.forEach(function(s) { buyuk.classList.remove(s); });
+                    if(renk) buyuk.classList.add(renk);
+                    if(duraklatildi) buyuk.classList.add('km-oyun-sayac-duraklatildi');
                     document.querySelectorAll('.km-oyun-sayac-buyuk-ayarlar [data-sure]').forEach(function(b) {
                         b.classList.toggle('aktif', parseInt(b.dataset.sure, 10) === _kmOyunSayacSuresi);
                     });
+                    let topBtn = document.getElementById('km-oyun-sayac-toplama-btn');
+                    if(topBtn) { topBtn.textContent = '📦 Toplama: ' + (_kmOyunSayacToplamaDk ? _kmOyunSayacToplamaDk + ' dk' : 'Kapalı'); topBtn.classList.toggle('aktif', _kmOyunSayacToplamaDk > 0); }
                 }
             }
             document.querySelectorAll('.km-oyun-sayac-buyut-btn').forEach(function(b) {
                 b.classList.toggle('aktif', _kmOyunSayacBuyukAcik);
                 b.style.display = _kmOyunSayacAcik ? '' : 'none';
             });
-            // Yarışma'daki "⏱️ Sayaç Açık/Kapalı" metin düğmesi — kmOyunSayacDegistir() Yarışma
-            // ekranını YENİDEN ÇİZMİYOR (sadece .km-oyun-sayac* sınıflarını güncelliyor), bu yüzden
-            // GERÇEK testte yakalanan bir bug: dokununca sayaç gerçekten açılıyordu ama etiket metni/
-            // rengi "Kapalı" olarak takılı kalıyordu. Burada elle senkronize ediliyor.
             let yarismaToggle = document.getElementById('km-yarisma-sayac-toggle');
             if(yarismaToggle) {
                 yarismaToggle.textContent = '⏱️ Sayaç ' + (_kmOyunSayacAcik ? 'Açık' : 'Kapalı');
@@ -13646,24 +13719,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunSayacAcik = !_kmOyunSayacAcik;
             kmOyunSayacAyarKaydet();
             document.querySelectorAll('#km-oyun-sayac-btn').forEach(function(b) { b.classList.toggle('aktif', _kmOyunSayacAcik); });
-            if(_kmOyunSayacAcik) kmOyunSayacYeniSeri(); else { kmOyunSayacDurdur(); _kmOyunSayacFaz = 0; _kmOyunSayacKalan = 0; kmOyunSayacCiz(); }
+            if(_kmOyunSayacAcik) kmOyunSayacSifirla(); else { kmOyunSayacIntervalDurdur(); _kmOyunSayacFaz = 0; _kmOyunSayacSonMetin = null; kmOyunSayacCiz(); }
         }
-        // Eski "dokununca döndür" davranışı — küçük rozetlerde hâlâ çalışıyor (bkz. onclick'leri).
-        function kmOyunSayacSureDegistir() {
-            kmOyunSayacAyarYukle();
-            let idx = KM_OYUN_SAYAC_SURELER.indexOf(_kmOyunSayacSuresi);
-            let yeni = KM_OYUN_SAYAC_SURELER[(idx === -1 ? 0 : idx + 1) % KM_OYUN_SAYAC_SURELER.length];
-            kmOyunSayacSureAyarla(yeni);
-        }
-        // Kullanıcı talimatı (2026-09-18): "sayaç süresi hem manuel hem 90/120/180 üzerinden olsun" —
-        // hazır düğmeler (büyük sayacın kontrol satırı) VE manuel giriş AYNI ortak fonksiyona çıkıyor.
+        // Süre kalıpları (büyük sayaç düğmeleri) + manuel giriş AYNI ortak fonksiyona çıkar.
+        // Süre değişince sayaç kurulu (faz 0) ise yeni süreyle yeniden kurulur; çalışırken değişmez.
         function kmOyunSayacSureAyarla(sn) {
             kmOyunSayacAyarYukle();
             sn = Math.round(sn);
             if(!(sn >= 5 && sn <= 1800)) return;
             _kmOyunSayacSuresi = sn;
             kmOyunSayacAyarKaydet();
-            if(_kmOyunSayacFaz === 0) kmOyunSayacCiz();
+            if(_kmOyunSayacFaz === 0 && !_kmOyunSayacCalisiyor) { _kmOyunSayacKalan = sn; }
+            kmOyunSayacCiz();
         }
         function kmOyunSayacManuelSure() {
             kmOyunSayacAyarYukle();
@@ -13672,6 +13739,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let sn = parseInt(girdi.trim(), 10);
             if(!Number.isFinite(sn) || sn < 5 || sn > 1800) { showToast('Geçersiz süre — 5 ile 1800 saniye arası bir sayı gir.', 'error'); return; }
             kmOyunSayacSureAyarla(sn);
+        }
+        // Ok toplama: Kapalı → 3 dk → 5 dk → Kapalı (Süreölçer'in checkbox + dakika kutusunun tek-dokunuş hâli)
+        function kmOyunSayacToplamaDegistir() {
+            kmOyunSayacAyarYukle();
+            _kmOyunSayacToplamaDk = _kmOyunSayacToplamaDk === 0 ? 3 : _kmOyunSayacToplamaDk === 3 ? 5 : 0;
+            kmOyunSayacAyarKaydet();
+            kmOyunSayacCiz();
         }
 
         // ---- BÜYÜK SAYAÇ (2026-09-18, kullanıcı talimatı) ----
@@ -13708,10 +13782,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             el.innerHTML = `
                 <button class="km-oyun-sayac-buyuk-kapat" onclick="kmOyunSayacBuyukAcKapat()" title="Küçült">✕</button>
                 <div class="km-oyun-sayac-buyuk-tutamac" id="km-oyun-sayac-buyuk-tutamac" title="Sürükleyerek taşı">⠿ ⠿ ⠿</div>
-                <div class="km-oyun-sayac-buyuk-metin" id="km-oyun-sayac-buyuk-metin"></div>
+                <div class="km-oyun-sayac-buyuk-metin" id="km-oyun-sayac-buyuk-metin" onclick="kmOyunSayacDokun()" title="Başlat / Duraklat" style="cursor:pointer;"></div>
+                <div class="km-oyun-sayac-buyuk-etiket" id="km-oyun-sayac-buyuk-etiket"></div>
                 <div class="km-oyun-sayac-buyuk-ayarlar">
                     ${sureBtnHTML}
                     <button onclick="kmOyunSayacManuelSure()">✏️ Özel</button>
+                    <button id="km-oyun-sayac-toplama-btn" onclick="kmOyunSayacToplamaDegistir()" title="Atış bitince ok toplama / skor girişi geri sayımı">📦 Toplama</button>
+                    <button onclick="kmOyunSayacSifirla()" title="Sıfırla">↺</button>
                 </div>`;
             document.body.appendChild(el);
             kmOyunSayacBuyukKonumUygula(el);
@@ -19096,6 +19173,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let paket = {
                     tarih: bugunISO(), takimSayisi: _kmYarismaTakimSayisi, takimlar: _kmTakimlar, format: _kmYarismaFormat,
                     rakipTipi: _kmRakipTipi, hayaliZorluk: _kmHayaliZorluk, suresi: _kmYarismaSuresi,
+                    okTercih: _kmYarismaOkTercih, hedef: _kmYarismaHedef, siralama: _kmYarismaSiralama,
                     aktif: _kmYarismaAktif, baslangicPuan: _kmYarismaBaslangicPuan, bitis: _kmYarismaBitis,
                     // Faz 13 Stage 4 — turnuva ağacı da AYNI paket/AYNI tarih damgası kuralına biniyor,
                     // ayrı bir kayıt yolu açılmadı.
@@ -19116,6 +19194,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmRakipTipi = p.rakipTipi || 'gercek';
                 _kmHayaliZorluk = p.hayaliZorluk || 'dengeli';
                 _kmYarismaSuresi = p.suresi || 0;
+                _kmYarismaOkTercih = (p.okTercih === 3 || p.okTercih === 6) ? p.okTercih : null;
+                _kmYarismaSiralama = (p.siralama && p.siralama.snapshot) ? p.siralama : null;
+                _kmYarismaHedef = (p.hedef && (p.hedef.tip === 'set' || p.hedef.tip === 'toplam' || p.hedef.tip === 'tur') && typeof p.hedef.deger === 'number') ? p.hedef : null;
                 _kmYarismaBaslangicPuan = p.baslangicPuan || {};
                 _kmYarismaBitis = p.bitis || 0;
                 _kmYarismaAktif = !!p.aktif;
@@ -19158,14 +19239,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmHayaliPuan = 0;
         let _kmHayaliTurlar = [];
         let _kmHayaliYorumGecmisi = []; // [{metin}]
+        // Maç ayarları (2026-09-19, kullanıcı talimatı): koçun seçtiği ok sayısı ve yarışma hedefi.
+        //   _kmYarismaOkTercih: null = otomatik (WA: bireysel 3 / takım 6), ya da 3 | 6
+        //   _kmYarismaHedef:    null = otomatik WA set usulü (bireysel 6 / takım 5), ya da
+        //                       { tip:'set', deger:N } (ilk N set puanı) | { tip:'toplam', deger:N } (ilk N puan)
+        let _kmYarismaOkTercih = null, _kmYarismaHedef = null;
         function _kmHayaliOkUret(ort) {
             if(Math.random() < 0.05) return 0; // ıska
             return Math.max(0, Math.min(10, Math.round(ort + (Math.random() - 0.5) * 4)));
         }
+        // GERÇEK BUG düzeltmesi (2026-09-19, kullanıcı raporu: "hayali rakiple bazen 6 oklu rakiple
+        // karşılaşıyorum"): eskiden her turda `3 + rastgele(0-3)` ok atıyordu — sen 3 atarken bot 6
+        // atabiliyordu, adil değildi. Artık bot O TUR için geçerli ok sayısını (_kmYarismaOkSayisi:
+        // 3/6 seçimi, ek atışta 1) BİREBİR atıyor; skorbord her gerçek turdan SONRA çizildiği için
+        // değer o turun ok sayısını yansıtıyor.
         function _kmHayaliTurUret() {
             let ort = HAYALI_ZORLUKLER[_kmHayaliZorluk].ort, toplam = 0;
+            let okSayisi = Math.max(1, _kmYarismaOkSayisi || 3);
             for(let i = 0; i < _kmYarismaFormat; i++) { // takım büyüklüğü kadar "sanal okçu" katkısı
-                let okSayisi = 3 + Math.floor(Math.random() * 4); // gerçekte olduğu gibi 3-6 ok
                 for(let j = 0; j < okSayisi; j++) toplam += _kmHayaliOkUret(ort);
             }
             return toplam;
@@ -19211,7 +19302,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmYarismaAktifMaciTemizle();
             _kmYarismaSuresi = 0;
             _kmTakimlar = _kmTakimlarOlustur(_kmYarismaTakimSayisi);
-            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
+            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null; _kmYarismaSiralama = null;
             _kmYarismaBracketMaclar = []; _kmYarismaBracketToplamTur = 0;
             try { localStorage.removeItem(_kmYarismaKurulumAnahtari()); } catch(e) {}
         }
@@ -19228,13 +19319,139 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // state'i (_kmOyunArena*) ve kabuğu (kmOyunPanelHTML/kmOyunIlerlet dispatch zinciri) bu ekranla
         // hiç kesişmiyor, ortak bir soyutlamaya zorlamak çalışan Arena kodunu riske atardı (bkz. DEVIR.md
         // §16d). Bu yüzden BİLEREK ayrı, paralel bir fonksiyon seti: kmYarismaBracket*.
+        // ---- SIRALAMA TURU → TOHUMLAMA (B5, 2026-09-19) ----
+        // Bracket'tan ÖNCE isteğe bağlı kısa bir sıralama turu: her takımın her üyesi N seri atar,
+        // takım toplamına göre 1..N sıralanır, bracket gerçek WA gibi tohumlanır (1–N, 2–(N−1), ...;
+        // tek sayıda takımda 1 numaralı tohum bay geçer — mevcut "tek açıkta kalan bay" desenine uyar).
+        // Skor girişi CANLI MAÇLA AYNI yoldan (kmYarismaSporcuSec + _kmYarismaPadHTML + kmYarismaSeriKaydet)
+        // — gerçek seriler turnuvaDB'ye yazılır, sıralama tur toplamı kendi anlık görüntüsünden türetilir.
+        let _kmYarismaSiralama = null; // { seriSayisi, snapshot:{ 'g|ad': seriSayisi }, tamam:false, siralama:[idx...] }
+        function kmYarismaSiralamaBaslat(seriSayisi) {
+            let idxler = _kmYarismaBracketKatilimciIdx(); if(idxler.length < 2) return showToast('En az 2 takımda sporcu olmalı.', 'error');
+            let snapshot = {};
+            idxler.forEach(function(i) { _kmTakimlar[i].uyeler.forEach(function(u) { let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad]; snapshot[u.g + '|' + u.ad] = sp ? (sp.seriler || []).length : 0; }); });
+            _kmYarismaSiralama = { seriSayisi: seriSayisi || 2, snapshot: snapshot, tamam: false, siralama: null };
+            _kmYarismaOkSayisi = (_kmYarismaOkTercih === 6) ? 6 : 3;
+            _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = []; _kmYarismaSonGiris = null;
+            _kmYarismaBracketGorunum = 'siralama';
+            kmYarismaCiz();
+        }
+        function kmYarismaSiralamaVerisi() {
+            let s = _kmYarismaSiralama; if(!s) return null;
+            let takimlar = _kmYarismaBracketKatilimciIdx().map(function(idx) {
+                let t = _kmTakimlar[idx];
+                let uyeler = t.uyeler.map(function(u) {
+                    let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad];
+                    let baz = s.snapshot[u.g + '|' + u.ad] || 0;
+                    let seriler = sp ? (sp.seriler || []).slice(baz, baz + s.seriSayisi) : [];
+                    return { key: u.g + '|' + u.ad, ad: u.ad, atilan: seriler.length, toplam: seriler.reduce(function(a, x) { return a + (x.puan || 0); }, 0), tamam: seriler.length >= s.seriSayisi };
+                });
+                return { idx: idx, t: t, uyeler: uyeler, toplam: uyeler.reduce(function(a, u) { return a + u.toplam; }, 0), tamam: uyeler.length > 0 && uyeler.every(function(u) { return u.tamam; }) };
+            });
+            let sirali = takimlar.slice().sort(function(a, b) { return b.toplam - a.toplam || a.idx - b.idx; });
+            return { takimlar: takimlar, sirali: sirali, hepsiTamam: takimlar.every(function(t) { return t.tamam; }) };
+        }
+        function kmYarismaSiralamaCiz() {
+            let el = document.getElementById('km-icerik'); if(!el) return;
+            let v = kmYarismaSiralamaVerisi(); if(!v) { _kmYarismaBracketGorunum = 'eslestirme'; kmYarismaBracketEslestirmeCiz(); return; }
+            let s = _kmYarismaSiralama;
+            let kisaAdMap = {};
+            let tumUyeler = [].concat.apply([], v.takimlar.map(function(x) { return x.t.uyeler; }));
+            kmYarismaKisaAdListesi(tumUyeler).forEach(function(k, i) { kisaAdMap[tumUyeler[i].g + '|' + tumUyeler[i].ad] = k; });
+            let siraSatiri = v.sirali.map(function(x, r) {
+                let uyeMetni = x.uyeler.map(function(u) { return esc(kisaAdMap[u.key] || u.ad) + ' ' + u.atilan + '/' + s.seriSayisi; }).join(' · ');
+                return `<div style="display:flex; align-items:center; gap:10px; background:var(--bg-panel); border:1.5px solid ${x.t.renk}; border-radius:12px; padding:9px 12px; margin-bottom:6px; ${x.tamam ? '' : 'opacity:.85;'}">
+                    <div style="width:26px; height:26px; border-radius:50%; background:${r === 0 ? 'var(--gold)' : 'var(--bg-main)'}; color:${r === 0 ? '#3d2c00' : 'var(--text-main)'}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; border:1px solid var(--border-color);">${r + 1}</div>
+                    <div style="flex:1; min-width:0;"><div style="font-weight:900; font-size:12.5px; color:${x.t.renk}; display:flex; align-items:center; gap:6px;">${kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 15)} ${esc(x.t.ad)}</div><div style="font-size:10px; color:var(--text-muted);">${uyeMetni}</div></div>
+                    <div style="font-size:18px; font-weight:900; color:${x.t.renk};">${x.toplam}<span style="font-size:9px; color:var(--text-muted);">p</span></div>
+                    ${x.tamam ? '<span style="font-size:11px;">✅</span>' : ''}
+                </div>`;
+            }).join('');
+            let chipler = v.takimlar.map(function(x) {
+                return x.uyeler.map(function(u) {
+                    let secili = _kmYarismaAktifSporcuKey === u.key;
+                    return `<button ${u.tamam ? 'disabled' : `onclick="kmYarismaSporcuSec('${u.key.replace(/'/g, "\\'")}')"`} style="display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 10px; border-radius:10px; border:1.5px solid ${secili ? x.t.renk : 'var(--border-color)'}; background:${secili ? x.t.renk + '22' : 'var(--bg-panel)'}; cursor:${u.tamam ? 'default' : 'pointer'}; opacity:${u.tamam ? '.45' : '1'};">
+                        <span style="display:flex; align-items:center; gap:4px; color:${x.t.renk};">${kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 11)}<span style="font-size:11px; font-weight:700; color:var(--text-main);">${esc(kisaAdMap[u.key] || u.ad)}</span></span>
+                        <span style="font-size:9px; color:var(--text-muted);">${u.tamam ? '✅ ' + u.toplam + 'p' : u.atilan + '/' + s.seriSayisi + ' seri'}</span>
+                    </button>`;
+                }).join('');
+            }).join('');
+            let sonGirisHTML = '';
+            if(_kmYarismaSonGiris) {
+                let sg = _kmYarismaSonGiris;
+                let okChipler = sg.oklar.map(function(x) { return `<span class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[x]}" style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; min-height:0; padding:0; font-size:9.5px; border-radius:6px;">${x}</span>`; }).join(' ');
+                sonGirisHTML = `<div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:10.5px; color:var(--text-muted);"><span>Son: <b style="color:var(--text-main);">${esc(sg.ad.split(' ')[0])}</b> ${okChipler} = <b style="color:var(--gold);">${sg.seriPuan}</b></span><span onclick="kmYarismaSonGirisiGeriAl()" style="cursor:pointer; text-decoration:underline;">↩️ Geri Al</span></div>`;
+            }
+            el.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="font-size:14px; font-weight:900;">🎯 Sıralama Turu <span style="font-size:10px; font-weight:700; color:var(--text-muted);">her sporcu ${s.seriSayisi} seri · ${_kmYarismaOkSayisi} ok</span></div>
+                    <div onclick="kmYarismaSiralamaIptal()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">← Eşleştirmeye Dön</div>
+                </div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Canlı Sıralama</div>
+                <div style="margin-bottom:12px;">${siraSatiri}</div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Skor Gir (sporcuya dokun)</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">${chipler}</div>
+                ${_kmYarismaPadHTML(kisaAdMap[_kmYarismaAktifSporcuKey] || '', false)}
+                ${sonGirisHTML}
+                <button onclick="kmYarismaSiralamaEslestir()" style="width:100%; margin-top:14px; padding:13px; border-radius:12px; border:none; background:${v.hepsiTamam ? 'linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta))' : 'var(--bg-panel)'}; color:${v.hepsiTamam ? '#0d1016' : 'var(--text-main)'}; font-weight:900; font-size:14px; cursor:pointer; border:${v.hepsiTamam ? 'none' : '1px solid var(--border-color)'};">🏆 Sıralamaya Göre Eşleştir${v.hepsiTamam ? '' : ' (herkes bitirmeden de olur)'}</button>
+            `;
+            _kmYarismaKurulumKaydet();
+        }
+        function kmYarismaSiralamaIptal() {
+            _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = [];
+            _kmYarismaBracketGorunum = 'eslestirme';
+            kmYarismaCiz();
+        }
+        // Tohumlama: sıralamaya göre 1–N, 2–(N−1), ... Tek sayıda takımda 1 numara bay (havuzda kalır,
+        // eşleştirme ekranı zaten "açıkta kalan otomatik üst tura çıkar" diye gösteriyor).
+        function kmYarismaSiralamaEslestir() {
+            let v = kmYarismaSiralamaVerisi(); if(!v) return;
+            if(!v.hepsiTamam && !confirm('Herkes seri sayısını tamamlamadı. Mevcut toplamlara göre sıralayıp eşleştirelim mi?')) return;
+            let tohumlar = v.sirali.map(function(x) { return x.idx; });
+            _kmYarismaSiralama.siralama = tohumlar.slice();
+            _kmYarismaSiralama.tamam = true;
+            let havuz = tohumlar.slice();
+            if(havuz.length % 2 === 1) havuz.shift(); // 1 numaralı tohum bay
+            _kmYarismaBracketEslesmeler = [];
+            for(let i = 0; i < Math.floor(havuz.length / 2); i++) _kmYarismaBracketEslesmeler.push({ aIdx: havuz[i], bIdx: havuz[havuz.length - 1 - i] });
+            _kmYarismaBracketSecili = null;
+            _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = []; _kmYarismaSonGiris = null;
+            _kmYarismaBracketGorunum = 'eslestirme';
+            showToast('Bracket sıralamaya göre tohumlandı: 1–' + tohumlar.length + ', 2–' + (tohumlar.length - 1) + ' …', 'success');
+            kmYarismaCiz();
+        }
+        function _kmYarismaTohumNo(idx) {
+            if(!_kmYarismaSiralama || !_kmYarismaSiralama.siralama) return null;
+            let i = _kmYarismaSiralama.siralama.indexOf(idx); return i === -1 ? null : i + 1;
+        }
+        // Eşleştirme ekranının üstüne eklenen bölüm.
+        function kmYarismaSiralamaPanelHTML() {
+            let s = _kmYarismaSiralama;
+            if(s && s.tamam && s.siralama) {
+                let ozet = s.siralama.map(function(idx, i) { let t = _kmTakimlar[idx]; return t ? `<span style="color:${t.renk}; font-weight:800;">${i + 1}. ${esc(t.ad)}</span>` : ''; }).join(' <span style="color:var(--text-muted);">·</span> ');
+                return `<div style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:12px; padding:10px 12px; margin-bottom:12px;">
+                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:6px;">🎯 Sıralama turu tamamlandı — tohumlar</div>
+                    <div style="font-size:11px; line-height:1.7;">${ozet}</div>
+                    <div style="display:flex; gap:6px; margin-top:8px;">
+                        <div onclick="kmYarismaSiralamaEslestir()" style="flex:1; text-align:center; cursor:pointer; font-size:10.5px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:6px;">↻ Sıralamaya göre yeniden eşleştir</div>
+                        <div onclick="kmYarismaSiralamaBaslat(${s.seriSayisi})" style="flex:1; text-align:center; cursor:pointer; font-size:10.5px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:6px;">🎯 Yeni sıralama turu</div>
+                    </div>
+                </div>`;
+            }
+            let btn = function(n) { return `<div onclick="kmYarismaSiralamaBaslat(${n})" style="flex:1; text-align:center; cursor:pointer; padding:9px 6px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-size:11px; font-weight:800;">▶ ${n} seri</div>`; };
+            return `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:10px 12px; margin-bottom:12px;">
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">🎯 Sıralama Turu <span style="font-weight:600; text-transform:none; letter-spacing:0;">(isteğe bağlı)</span></div>
+                <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:8px;">Her sporcu kısa bir tur atar, bracket gerçek WA gibi tohumlanır (1–8, 2–7 …). Atlayıp elle/rastgele de eşleştirebilirsin.</div>
+                <div style="display:flex; gap:6px;">${btn(1)}${btn(2)}${btn(3)}</div>
+            </div>`;
+        }
         function kmYarismaBracketEslestirmeyeGec() {
             if(_kmYarismaAktifTakimlar().length < 2) return showToast('En az 2 takımda sporcu olmalı.', 'error');
             _kmYarismaBracketGorunum = 'eslestirme'; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
             kmYarismaCiz();
         }
         function kmYarismaBracketKurulumaDon() {
-            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null;
+            _kmYarismaBracketGorunum = null; _kmYarismaBracketEslesmeler = []; _kmYarismaBracketSecili = null; _kmYarismaSiralama = null;
             kmYarismaKurulumCiz();
         }
         function _kmYarismaBracketKatilimciIdx() { return _kmTakimlar.map((t, i) => i).filter(i => _kmTakimlar[i].uyeler.length > 0); }
@@ -19260,12 +19477,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let havuzIdx = katilimciIdx.filter(i => !eslesmis.has(i));
             let takimChip = (idx) => {
                 let t = _kmTakimlar[idx]; let seciliMi = _kmYarismaBracketSecili === idx;
-                return `<div onclick="kmYarismaBracketHavuzTikla(${idx})" style="cursor:pointer; padding:8px 12px; border-radius:20px; font-size:12px; font-weight:800; border:1.5px solid ${t.renk}; background:${seciliMi ? t.renk : 'var(--bg-panel)'}; color:${seciliMi ? '#0d1016' : t.renk};">${esc(t.ad)}</div>`;
+                let tohum = _kmYarismaTohumNo(idx);
+                return `<div onclick="kmYarismaBracketHavuzTikla(${idx})" style="cursor:pointer; padding:8px 12px; border-radius:20px; font-size:12px; font-weight:800; border:1.5px solid ${t.renk}; background:${seciliMi ? t.renk : 'var(--bg-panel)'}; color:${seciliMi ? '#0d1016' : t.renk};">${tohum ? '<span style="opacity:.7; font-size:10px;">#' + tohum + '</span> ' : ''}${esc(t.ad)}</div>`;
             };
             let eslesmeSatiri = (e, i) => `<div style="display:flex; align-items:center; gap:8px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:8px 10px; margin-bottom:6px;">
-                <div style="flex:1; font-weight:800; font-size:12px; color:${_kmTakimlar[e.aIdx].renk};">${esc(_kmTakimlar[e.aIdx].ad)}</div>
+                <div style="flex:1; font-weight:800; font-size:12px; color:${_kmTakimlar[e.aIdx].renk};">${_kmYarismaTohumNo(e.aIdx) ? '<span style="opacity:.6; font-size:10px;">#' + _kmYarismaTohumNo(e.aIdx) + '</span> ' : ''}${esc(_kmTakimlar[e.aIdx].ad)}</div>
                 <div style="font-size:10px; color:var(--text-muted);">VS</div>
-                <div style="flex:1; text-align:right; font-weight:800; font-size:12px; color:${_kmTakimlar[e.bIdx].renk};">${esc(_kmTakimlar[e.bIdx].ad)}</div>
+                <div style="flex:1; text-align:right; font-weight:800; font-size:12px; color:${_kmTakimlar[e.bIdx].renk};">${esc(_kmTakimlar[e.bIdx].ad)}${_kmYarismaTohumNo(e.bIdx) ? ' <span style="opacity:.6; font-size:10px;">#' + _kmYarismaTohumNo(e.bIdx) + '</span>' : ''}</div>
                 <div onclick="kmYarismaBracketEslesmeSil(${i})" style="cursor:pointer; color:var(--neon-red); font-size:15px; padding:0 4px; font-weight:900;">✕</div>
             </div>`;
             let baslatMi = havuzIdx.length <= 1 && _kmYarismaBracketEslesmeler.length > 0;
@@ -19274,6 +19492,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div style="font-size:14px; font-weight:900;">⚔️ Turnuva — Takımları Eşleştir</div>
                     <div onclick="kmYarismaBracketKurulumaDon()" style="font-size:10px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 9px; cursor:pointer; white-space:nowrap;">← Kuruluma Dön</div>
                 </div>
+                ${kmYarismaSiralamaPanelHTML()}
                 <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Takımlar (dokun, sonra eşleşecek takıma dokun)</div>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
                     ${havuzIdx.length ? havuzIdx.map(takimChip).join('') : `<div style="font-size:11px; color:var(--text-muted);">Tüm takımlar eşleşti.</div>`}
@@ -19474,6 +19693,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let aKazandi = bitti && m.kazananIdx === m.aIdx, bKazandi = bitti && m.kazananIdx === m.bIdx;
             let aTurlar = _kmYarismaBracketMacTurBazliPuanlar(m, 'a'), bTurlar = _kmYarismaBracketMacTurBazliPuanlar(m, 'b');
             let setSonuc = _kmYarismaSetPuanlariHesapla([aTurlar, bTurlar]);
+            // Toplam-puan hedefinde kartta set puanı değil kümülatif toplam gösterilir (2026-09-19).
+            let kural = kmYarismaMacKuralSecimi([{ t: a, idx: m.aIdx }, { t: b, idx: m.bIdx }]);
+            let gosterilen = (kural.hedefTip === 'toplam' || kural.hedefTip === 'tur')
+                ? [aTurlar.reduce(function(x, y) { return x + y; }, 0), bTurlar.reduce(function(x, y) { return x + y; }, 0)]
+                : setSonuc.setPuanlari;
             let tarafSatiri = function(t, idx, kazandiMi, setPuani, tarafKodu) {
                 return `<div ${!bitti ? `onclick="kmYarismaBracketKazananSec('${m.id}','${tarafKodu}')"` : ''} style="cursor:${!bitti ? 'pointer' : 'default'}; display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; ${kazandiMi ? 'background:' + t.renk + '1c;' : ''}">
                     <span style="display:flex; align-items:center; gap:7px; font-weight:${kazandiMi ? '800' : '600'}; font-size:12px; color:${bitti && !kazandiMi ? 'var(--text-muted)' : 'var(--text-main)'};">${kmYarismaIkonSvg(_kmTakimIkonAl(t, idx), 14)} ${esc(t.ad)}</span>
@@ -19485,8 +19709,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <span>${_kmYarismaTurAdi(m.tur, _kmYarismaBracketToplamTur)}</span>
                     <span style="${bitti ? 'color:var(--gold);' : 'color:var(--neon-green);'}">${bitti ? 'MS' : '● CANLI'}</span>
                 </div>
-                ${tarafSatiri(a, m.aIdx, aKazandi, setSonuc.setPuanlari[0], 'a')}
-                ${tarafSatiri(b, m.bIdx, bKazandi, setSonuc.setPuanlari[1], 'b')}
+                ${tarafSatiri(a, m.aIdx, aKazandi, gosterilen[0], 'a')}
+                ${tarafSatiri(b, m.bIdx, bKazandi, gosterilen[1], 'b')}
                 ${bitti ? `<div onclick="kmYarismaBracketMacGeriAl('${m.id}')" style="text-align:center; margin-top:4px; padding-top:6px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; text-decoration:underline;">↩️ Düzelt</div>` : `<div style="text-align:center; font-size:9px; color:var(--text-muted); padding-top:2px;">Hedefe ulaşınca otomatik biter — istersen kazanana dokun</div>`}
             </div>`;
         }
@@ -19552,6 +19776,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmYarismaCiz() {
             let el = document.getElementById('km-icerik'); if(!el) return;
             if(_kmYarismaBracketGorunum === 'eslestirme') kmYarismaBracketEslestirmeCiz();
+            else if(_kmYarismaBracketGorunum === 'siralama') kmYarismaSiralamaCiz();
             else if(_kmYarismaBracketGorunum === 'agac') kmYarismaBracketAgacCiz();
             else if(_kmYarismaAktif) kmYarismaSkorbordCiz();
             else kmYarismaKurulumCiz();
@@ -19800,6 +20025,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;">
                     ${havuz.length ? havuz.map(item => `<div onclick="kmYarismaAtaTiklama('${item.g}','${item.ad.replace(/'/g,"\\'")}')" style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">${item.ad}</div>`).join('') : `<div style="font-size:11px; color:var(--text-muted);">Tüm sporcular atandı.</div>`}
                 </div>
+                ${kmYarismaMacAyarlariHTML()}
                 ${_kmRakipTipi === 'hayali' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Ortak Tur Süresi</div>
                 <div style="display:flex; gap:6px; margin-bottom:8px;">${sureBtn(0,'Süresiz')}${sureBtn(60,'1 dk')}${sureBtn(120,'2 dk')}${sureBtn(180,'3 dk')}${sureBtn(300,'5 dk')}</div>
                 <div style="display:flex; gap:6px; align-items:center; margin-bottom:16px;">
@@ -19812,6 +20038,79 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             `;
             el.innerHTML = html;
             _kmYarismaKurulumKaydet();
+        }
+        // ---- MAÇ AYARLARI (2026-09-19, kullanıcı talimatı) — ok sayısı + yarışma hedefi seçimi ----
+        // Kurulum ekranında hem Gerçek Takım hem Hayali Rakip için görünür; seçimler _kmYarismaKurulumKaydet
+        // ile kalıcı. Değerlendirme kmYarismaMacKuralSecimi üzerinden tek noktadan besleniyor.
+        var KM_YARISMA_HEDEF_SET_KALIPLARI = [6, 8, 10];
+        var KM_YARISMA_HEDEF_TOPLAM_KALIPLARI = [150, 300, 500];
+        var KM_YARISMA_SABLONLAR = [
+            { ikon: '🏹', ad: 'WA Bireysel', alt: '6 set puanı · 3 ok', ok: 3, hedef: { tip: 'set', deger: 6 }, aciklama: 'World Archery bireysel eleme: 3 ok/set, ilk 6 set puanı' },
+            { ikon: '🤝', ad: 'WA Takım', alt: '5 set puanı · 6 ok', ok: 6, hedef: { tip: 'set', deger: 5 }, aciklama: 'World Archery takım eleme: 6 ok/set, ilk 5 set puanı' },
+            { ikon: '⚡', ad: 'Kısa Maç', alt: '4 set puanı · 3 ok', ok: 3, hedef: { tip: 'set', deger: 4 }, aciklama: 'Hızlı maç: ilk 4 set puanı (en fazla 3 set)' },
+            { ikon: '🎯', ad: '300 Puan Yarışı', alt: 'ilk 300p · 3 ok', ok: 3, hedef: { tip: 'toplam', deger: 300 }, aciklama: 'Toplam puanı ilk 300\'e ulaşan kazanır' },
+            { ikon: '🏋️', ad: 'Antrenman Maçı', alt: '10 tur · kazanan yok', ok: 3, hedef: { tip: 'tur', deger: 10 }, aciklama: '10 tur atılır, sadece toplamlar gösterilir' },
+        ];
+        function kmYarismaSablonUygula(i) {
+            let sb = KM_YARISMA_SABLONLAR[i]; if(!sb) return;
+            _kmYarismaOkTercih = sb.ok;
+            _kmYarismaHedef = { tip: sb.hedef.tip, deger: sb.hedef.deger };
+            kmYarismaKurulumCiz();
+        }
+        function kmYarismaMacAyarlariHTML() {
+            let chip = function(aktif, onclick, etiket, renk) {
+                return `<div onclick="${onclick}" style="flex:1; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--border-color); font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; ${aktif ? 'background:' + (renk || 'var(--gold)') + '; color:#0d1016; border-color:transparent;' : 'background:var(--bg-panel); color:var(--text-muted);'}">${etiket}</div>`;
+            };
+            let okOto = _kmYarismaOkTercih === null;
+            let hedefOto = _kmYarismaHedef === null;
+            let setAktif = function(n) { return !hedefOto && _kmYarismaHedef.tip === 'set' && _kmYarismaHedef.deger === n; };
+            let topAktif = function(n) { return !hedefOto && _kmYarismaHedef.tip === 'toplam' && _kmYarismaHedef.deger === n; };
+            let setOzelMi = !hedefOto && _kmYarismaHedef.tip === 'set' && KM_YARISMA_HEDEF_SET_KALIPLARI.indexOf(_kmYarismaHedef.deger) === -1;
+            let topOzelMi = !hedefOto && _kmYarismaHedef.tip === 'toplam' && KM_YARISMA_HEDEF_TOPLAM_KALIPLARI.indexOf(_kmYarismaHedef.deger) === -1;
+            let ozet = hedefOto ? 'WA standardı: bireysel ilk 6 set puanı (3 ok), takım ilk 5 (6 ok)'
+                : _kmYarismaHedef.tip === 'set' ? 'İlk ' + _kmYarismaHedef.deger + ' set puanına ulaşan kazanır (en fazla ' + (_kmYarismaHedef.deger - 1) + ' set, beraberlikte ek atış)'
+                : _kmYarismaHedef.tip === 'tur' ? 'Antrenman maçı: ' + _kmYarismaHedef.deger + ' tur atılır, kazanan vurgusu yok — sadece toplamlar gösterilir'
+                : 'Maç içi toplam puanı ilk ' + _kmYarismaHedef.deger + '\'e ulaşan kazanır (aynı turda eşitlik → ek atış)';
+            // Şablonlar (B1, 2026-09-19): tek dokunuşla ok sayısı + hedef birlikte ayarlanır.
+            let sablonAktifMi = function(sb) { return _kmYarismaOkTercih === sb.ok && !hedefOto && _kmYarismaHedef.tip === sb.hedef.tip && _kmYarismaHedef.deger === sb.hedef.deger; };
+            let sablonHTML = KM_YARISMA_SABLONLAR.map(function(sb, i) {
+                let aktif = sablonAktifMi(sb);
+                return `<div onclick="kmYarismaSablonUygula(${i})" title="${sb.aciklama}" style="flex:1 1 120px; text-align:center; padding:9px 6px; border-radius:10px; border:1.5px solid ${aktif ? 'var(--gold)' : 'var(--border-color)'}; background:${aktif ? 'rgba(251,191,36,0.14)' : 'var(--bg-main)'}; color:${aktif ? 'var(--gold)' : 'var(--text-main)'}; font-size:11px; font-weight:800; cursor:pointer;">${sb.ikon} ${sb.ad}<div style="font-size:9px; font-weight:600; color:var(--text-muted); margin-top:2px;">${sb.alt}</div></div>`;
+            }).join('');
+            return `
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Yarışma Şablonu</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">${sablonHTML}</div>
+                <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Maç Ayarları <span style="font-weight:600; text-transform:none; letter-spacing:0;">(ince ayar)</span></div>
+                <div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:10px; margin-bottom:14px;">
+                    <div style="font-size:10px; font-weight:800; color:var(--text-muted); margin-bottom:5px;">Seri başına ok</div>
+                    <div style="display:flex; gap:6px; margin-bottom:10px;">
+                        ${chip(okOto, "kmYarismaOkTercihSec(null)", 'Otomatik (WA)')}
+                        ${chip(_kmYarismaOkTercih === 3, "kmYarismaOkTercihSec(3)", '3 Ok')}
+                        ${chip(_kmYarismaOkTercih === 6, "kmYarismaOkTercihSec(6)", '6 Ok')}
+                    </div>
+                    <div style="font-size:10px; font-weight:800; color:var(--text-muted); margin-bottom:5px;">Hedef — set usulü</div>
+                    <div style="display:flex; gap:6px; margin-bottom:8px;">
+                        ${chip(hedefOto, "kmYarismaHedefSec(null)", 'WA (oto)')}
+                        ${KM_YARISMA_HEDEF_SET_KALIPLARI.map(function(n) { return chip(setAktif(n), "kmYarismaHedefSec('set'," + n + ")", 'İlk ' + n); }).join('')}
+                        ${chip(setOzelMi, "kmYarismaHedefOzel('set')", setOzelMi ? '✏️ ' + _kmYarismaHedef.deger : '✏️ Özel')}
+                    </div>
+                    <div style="font-size:10px; font-weight:800; color:var(--text-muted); margin-bottom:5px;">Hedef — toplam puan yarışı</div>
+                    <div style="display:flex; gap:6px; margin-bottom:8px;">
+                        ${KM_YARISMA_HEDEF_TOPLAM_KALIPLARI.map(function(n) { return chip(topAktif(n), "kmYarismaHedefSec('toplam'," + n + ")", 'İlk ' + n + 'p', 'var(--aurora-cyan)'); }).join('')}
+                        ${chip(topOzelMi, "kmYarismaHedefOzel('toplam')", topOzelMi ? '✏️ ' + _kmYarismaHedef.deger + 'p' : '✏️ Özel', 'var(--aurora-cyan)')}
+                    </div>
+                    <div style="font-size:10.5px; color:var(--text-muted); line-height:1.4;">ℹ️ ${ozet}</div>
+                </div>`;
+        }
+        function kmYarismaOkTercihSec(n) { _kmYarismaOkTercih = (n === 3 || n === 6) ? n : null; kmYarismaKurulumCiz(); }
+        function kmYarismaHedefSec(tip, deger) { _kmYarismaHedef = tip ? { tip: tip, deger: deger } : null; kmYarismaKurulumCiz(); }
+        function kmYarismaHedefOzel(tip) {
+            let setMi = tip === 'set';
+            let girdi = prompt(setMi ? 'Kaç set puanına ilk ulaşan kazansın? (2-20)' : 'Kaç puana ilk ulaşan kazansın? (10-2000)', setMi ? '8' : '300');
+            if(girdi === null) return;
+            let n = parseInt(girdi.trim(), 10);
+            if(!Number.isFinite(n) || (setMi ? (n < 2 || n > 20) : (n < 10 || n > 2000))) { showToast(setMi ? '2 ile 20 arası bir sayı gir.' : '10 ile 2000 arası bir sayı gir.', 'error'); return; }
+            kmYarismaHedefSec(tip, n);
         }
         function kmYarismaBaslat() {
             if(_kmRakipTipi === 'hayali' ? _kmTakimlar[0].uyeler.length === 0 : _kmYarismaAktifTakimlar().length < 2) return showToast('En az 2 takımda sporcu olmalı.', 'error');
@@ -19887,9 +20186,30 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // deseni kullanıldı, taraf başına kaç sporcu olursa olsun).
         var KM_YARISMA_KURAL_BIREYSEL = { maxSet: 5, hedefSetPuani: 6, okSayisi: 3, tip: 'bireysel' };
         var KM_YARISMA_KURAL_TAKIM = { maxSet: 4, hedefSetPuani: 5, okSayisi: 6, tip: 'takim' };
+        // Koçun maç ayarları (2026-09-19) WA varsayılanının ÜZERİNE biniyor — tek nokta: bütün
+        // değerlendirme/ok sayısı/başlatma kodu zaten buradan besleniyor, başka yere dokunmak gerekmedi.
+        //   hedefTip 'set'   → hedefSetPuani'ne ilk ulaşan kazanır, maxSet = hedef−1 (WA 6→5, 5→4 ile tutarlı;
+        //                      beraberlikte mevcut ek atış mantığı aynen çalışır)
+        //   hedefTip 'toplam'→ maç içi TOPLAM puanı hedefe ilk ulaşan kazanır (bkz. kmYarismaMacSonucDegerlendir)
         function kmYarismaMacKuralSecimi(taraflar) {
             let takimMi = taraflar.some(function(x) { return x.t.uyeler.length > 1; });
-            return takimMi ? KM_YARISMA_KURAL_TAKIM : KM_YARISMA_KURAL_BIREYSEL;
+            let temel = takimMi ? KM_YARISMA_KURAL_TAKIM : KM_YARISMA_KURAL_BIREYSEL;
+            let kural = { maxSet: temel.maxSet, hedefSetPuani: temel.hedefSetPuani, okSayisi: temel.okSayisi, tip: temel.tip, hedefTip: 'set', hedefPuan: null };
+            if(_kmYarismaOkTercih === 3 || _kmYarismaOkTercih === 6) kural.okSayisi = _kmYarismaOkTercih;
+            if(_kmYarismaHedef && _kmYarismaHedef.tip === 'set' && _kmYarismaHedef.deger >= 2) {
+                kural.hedefSetPuani = Math.round(_kmYarismaHedef.deger);
+                kural.maxSet = kural.hedefSetPuani - 1;
+            } else if(_kmYarismaHedef && _kmYarismaHedef.tip === 'toplam' && _kmYarismaHedef.deger >= 10) {
+                kural.hedefTip = 'toplam';
+                kural.hedefPuan = Math.round(_kmYarismaHedef.deger);
+                kural.maxSet = 9999; // set sınırı yok — hedefe ulaşana kadar
+            } else if(_kmYarismaHedef && _kmYarismaHedef.tip === 'tur' && _kmYarismaHedef.deger >= 1) {
+                // Antrenman maçı: sabit N tur, toplam puan yüksek olan önde biter (eşitlikte ek atış).
+                kural.hedefTip = 'tur';
+                kural.hedefTur = Math.round(_kmYarismaHedef.deger);
+                kural.maxSet = kural.hedefTur;
+            }
+            return kural;
         }
         // Normal setlerin (kuralın maxSet'i içindeki turlar) ötesindeki turları, İLK KESİN SONUÇLANAN
         // (berabere olmayan) turdan itibaren ek atış olarak değerlendirir — art arda ek atış deseni.
@@ -19915,6 +20235,38 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let turlarListesi = taraflar.map(function(x) { return x.turlar; });
             let normalTurlar = turlarListesi.map(function(t) { return t.slice(0, kural.maxSet); });
             let setSonuc = _kmYarismaSetPuanlariHesapla(normalTurlar);
+            // TOPLAM PUAN yarışı (2026-09-19): İLK k turunda (her iki taraf da o turu tamamlamışken) en az
+            // bir tarafın kümülatif puanı hedefe ulaşıyorsa maç O turda karar bulur — aynı tur sayısında
+            // karşılaştırma yapıldığı için "bir taraf bir tur fazla attı diye kazandı" adaletsizliği yok.
+            // Aynı turda ikisi de geçip EŞİTSE → sonraki turlar ek atış (mevcut art-arda-tek-ok deseni).
+            if(kural.hedefTip === 'toplam') {
+                let toplamlar = turlarListesi.map(function(t) { return t.reduce(function(a, b) { return a + b; }, 0); });
+                let minTur = Math.min.apply(null, turlarListesi.map(function(t) { return t.length; }));
+                for(let k = 0; k < minTur; k++) {
+                    let kum = turlarListesi.map(function(t) { return t.slice(0, k + 1).reduce(function(a, b) { return a + b; }, 0); });
+                    if(!kum.some(function(p) { return p >= kural.hedefPuan; })) continue;
+                    let maxP = Math.max.apply(null, kum);
+                    let kazSayisi = kum.filter(function(p) { return p === maxP; }).length;
+                    if(kazSayisi === 1) return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'bitti', kazananIdx: kum.indexOf(maxP), shootoffAktif: false };
+                    let so = _kmYarismaShootoffDegerlendir(turlarListesi, { maxSet: k + 1 });
+                    if(so.bittiMi) return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'bitti', kazananIdx: so.kazananIdx, shootoffAktif: true };
+                    return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'shootoff', kazananIdx: null, shootoffAktif: true };
+                }
+                return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'devam', kazananIdx: null, shootoffAktif: false };
+            }
+            // ANTRENMAN MAÇI (sabit N tur, 2026-09-19): her iki taraf da N turu tamamlayınca biter;
+            // toplam puanı yüksek olan önde (bracket'ta ilerlemek için bir "kazanan" gerekir), eşitlikte
+            // ek atış. Hayali/flat ekranda bitiş afişi "ANTRENMAN TAMAMLANDI" der, "KAZANDI" demez.
+            if(kural.hedefTip === 'tur') {
+                let toplamlar = turlarListesi.map(function(t) { return t.slice(0, kural.hedefTur).reduce(function(a, b) { return a + b; }, 0); });
+                let tamam = turlarListesi.every(function(t) { return t.length >= kural.hedefTur; });
+                if(!tamam) return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'devam', kazananIdx: null, shootoffAktif: false };
+                let maxP = Math.max.apply(null, toplamlar);
+                if(toplamlar.filter(function(p) { return p === maxP; }).length === 1) return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'bitti', kazananIdx: toplamlar.indexOf(maxP), shootoffAktif: false };
+                let so = _kmYarismaShootoffDegerlendir(turlarListesi, { maxSet: kural.hedefTur });
+                if(so.bittiMi) return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'bitti', kazananIdx: so.kazananIdx, shootoffAktif: true };
+                return { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'shootoff', kazananIdx: null, shootoffAktif: true };
+            }
             if(setSonuc.setPuanlari.some(function(p) { return p >= kural.hedefSetPuani; })) {
                 let kazananIdx = setSonuc.setPuanlari.indexOf(Math.max.apply(null, setSonuc.setPuanlari));
                 return { kural: kural, setSonuc: setSonuc, durum: 'bitti', kazananIdx: kazananIdx, shootoffAktif: false };
@@ -19929,6 +20281,181 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             return { kural: kural, setSonuc: setSonuc, durum: 'devam', kazananIdx: null, shootoffAktif: false };
         }
+        // ATIŞ SIRASI (B3, 2026-09-19) — WA set kuralı: set puanı GERİDE olan sonraki sete ÖNCE başlar;
+        // eşitse ilk sette önce atan (burada hep 1. taraf) önce atar. Toplam/antrenman modunda toplamı
+        // geride olan önce atar. Set içi ok-ok sıralama modellenmiyor (dok bir seriyi tek seferde
+        // giriyor) — gösterge SET düzeyinde. Maç bitmişse null.
+        function kmYarismaAtisSirasi(degerlendirme, taraflar) {
+            if(!degerlendirme || !taraflar || taraflar.length !== 2 || degerlendirme.durum === 'bitti') return null;
+            let k = degerlendirme.kural, ss = degerlendirme.setSonuc, idx = 0;
+            if(k.hedefTip === 'set') {
+                if(ss.tamamlananSet > 0 && ss.setPuanlari[0] !== ss.setPuanlari[1]) idx = ss.setPuanlari[0] < ss.setPuanlari[1] ? 0 : 1;
+            } else {
+                let t = degerlendirme.toplamlar || [0, 0];
+                if(t[0] !== t[1]) idx = t[0] < t[1] ? 0 : 1;
+            }
+            return { idx: idx, setNo: ss.tamamlananSet + 1, shootoff: degerlendirme.durum === 'shootoff' };
+        }
+        // ---- SKOR KARTI (B2, 2026-09-19) — WA formatında set tablosu: satır = set, sütun = her tarafın
+        // OKLARI + set toplamı + set puanı (toplam/antrenman modunda kümülatif). Ok-ok veri sporcunun
+        // `seriler[i].oklar`ından geliyor (yarışma başlangıcı anlık görüntüsünden sonraki seriler).
+        // Hayali rakibin ok-ok verisi YOK (sadece tur toplamı üretiliyor) → o hücrede "—".
+        let _kmYarismaSkorKartiAcik = true;
+        function kmYarismaSkorKartiAcKapat() { _kmYarismaSkorKartiAcik = !_kmYarismaSkorKartiAcik; kmYarismaCiz(); }
+        // Hangi başlangıç anlık görüntüsü geçerli: bracket'ta aktif maçınki, değilse flat/hayali'ninki.
+        function _kmYarismaAktifBaslangicMap() {
+            if(_kmYarismaBracketGorunum === 'agac') {
+                let m = _kmYarismaBracketMaclar.find(function(x) { return x.durum === 'devam' && !x.isBye; });
+                if(m && m.baslangicPuan) return m.baslangicPuan;
+            }
+            return _kmYarismaBaslangicPuan || {};
+        }
+        function _kmYarismaUyeSerileri(t, baslangicMap) {
+            return t.uyeler.map(function(u) {
+                let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad]; if(!sp) return { ad: u.ad, seriler: [] };
+                let baz = baslangicMap[u.g + '|' + u.ad];
+                let seriSayisi = (baz && typeof baz === 'object') ? (baz.seriSayisi || 0) : (typeof baz === 'number' ? 0 : (sp.seriler || []).length);
+                return { ad: u.ad, seriler: (sp.seriler || []).slice(seriSayisi) };
+            });
+        }
+        function kmYarismaSkorKartiVerisi(taraflar, degerlendirme) {
+            let kural = degerlendirme ? degerlendirme.kural : kmYarismaMacKuralSecimi(taraflar);
+            let bmap = _kmYarismaAktifBaslangicMap();
+            let uyeler = taraflar.map(function(x) { return x.t.uyeler.length ? _kmYarismaUyeSerileri(x.t, bmap) : null; });
+            let turSayisi = Math.max.apply(null, taraflar.map(function(x) { return x.turlar.length; }).concat([0]));
+            let setPuanKum = taraflar.map(function() { return 0; }), kum = taraflar.map(function() { return 0; });
+            let setler = [];
+            for(let i = 0; i < turSayisi; i++) {
+                let buTur = taraflar.map(function(x) { return x.turlar[i]; });
+                let tamam = buTur.every(function(p) { return p !== undefined; });
+                let maxP = tamam ? Math.max.apply(null, buTur) : null;
+                let kazSayisi = tamam ? buTur.filter(function(p) { return p === maxP; }).length : 0;
+                let ekAtisMi = kural.hedefTip === 'set' && i >= kural.maxSet;
+                let satir = { no: i + 1, ekAtis: ekAtisMi, taraflar: [] };
+                taraflar.forEach(function(x, ti) {
+                    let oklar = uyeler[ti] ? uyeler[ti].map(function(u) { return (u.seriler[i] && u.seriler[i].oklar) ? u.seriler[i].oklar.slice() : null; }) : null;
+                    let toplam = buTur[ti];
+                    if(toplam !== undefined) kum[ti] += toplam;
+                    let setPuan = 0;
+                    if(tamam && !ekAtisMi) setPuan = (kazSayisi === taraflar.length) ? 1 : (buTur[ti] === maxP ? 2 : 0);
+                    if(tamam && !ekAtisMi) setPuanKum[ti] += setPuan;
+                    satir.taraflar.push({ oklar: oklar, toplam: toplam, kumulatif: toplam === undefined ? null : kum[ti], setPuan: tamam ? setPuan : null, setPuanKum: setPuanKum[ti], kazandi: tamam && kazSayisi === 1 && buTur[ti] === maxP });
+                });
+                setler.push(satir);
+            }
+            return { kural: kural, setler: setler, uyeler: uyeler, setPuanKum: setPuanKum, kum: kum, degerlendirme: degerlendirme };
+        }
+        function _kmYarismaOklarMetni(oklar) {
+            if(!oklar) return '—';
+            let parcalar = oklar.map(function(o) { return o ? o.join(' ') : '·'; });
+            return parcalar.join(' | ');
+        }
+        function kmYarismaSkorKartiHTML(taraflar, degerlendirme) {
+            if(!taraflar || taraflar.length !== 2) return '';
+            let v = kmYarismaSkorKartiVerisi(taraflar, degerlendirme);
+            let setModu = v.kural.hedefTip === 'set';
+            let A = taraflar[0], B = taraflar[1];
+            let th = function(txt, renk, hiza) { return `<th style="padding:5px 6px; font-size:9px; font-weight:800; letter-spacing:.06em; color:${renk || 'var(--text-muted)'}; text-align:${hiza || 'center'}; border-bottom:1px solid var(--border-color); white-space:nowrap;">${txt}</th>`; };
+            let td = function(txt, stil) { return `<td style="padding:5px 6px; font-size:11px; text-align:center; border-bottom:1px solid var(--border-color); white-space:nowrap; ${stil || ''}">${txt}</td>`; };
+            let satirlar = v.setler.map(function(s) {
+                let a = s.taraflar[0], b = s.taraflar[1];
+                let vurgu = function(x, renk) { return x.kazandi ? 'font-weight:900; color:' + renk + ';' : ''; };
+                let puanA = setModu ? (a.setPuan === null ? '' : a.setPuanKum) : (a.kumulatif === null ? '' : a.kumulatif);
+                let puanB = setModu ? (b.setPuan === null ? '' : b.setPuanKum) : (b.kumulatif === null ? '' : b.kumulatif);
+                return `<tr style="${s.ekAtis ? 'background:rgba(251,191,36,0.08);' : ''}">
+                    ${td(s.ekAtis ? '⚡' : s.no, 'font-weight:800; color:var(--text-muted);')}
+                    ${td(_kmYarismaOklarMetni(a.oklar), 'text-align:right; font-variant-numeric:tabular-nums; color:var(--text-main);')}
+                    ${td(a.toplam === undefined ? '' : a.toplam, 'font-weight:800; ' + vurgu(a, A.t.renk))}
+                    ${td(puanA, 'font-weight:900; color:' + A.t.renk + '; background:' + A.t.renk + '12;')}
+                    ${td(puanB, 'font-weight:900; color:' + B.t.renk + '; background:' + B.t.renk + '12;')}
+                    ${td(b.toplam === undefined ? '' : b.toplam, 'font-weight:800; ' + vurgu(b, B.t.renk))}
+                    ${td(_kmYarismaOklarMetni(b.oklar), 'text-align:left; font-variant-numeric:tabular-nums; color:var(--text-main);')}
+                </tr>`;
+            }).join('');
+            if(!satirlar) satirlar = `<tr><td colspan="7" style="padding:10px; text-align:center; font-size:11px; color:var(--text-muted);">Henüz set atılmadı.</td></tr>`;
+            let ortaBaslik = setModu ? 'SP' : 'TOPLAM';
+            return `<div style="margin-top:12px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:13px; padding:10px 12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <button onclick="kmYarismaSkorKartiAcKapat()" style="flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--text-main); background:rgba(255,255,255,0.06); border:1px solid var(--border-color); border-radius:10px; padding:9px 12px; cursor:pointer; min-height:44px;">
+                        <span>📋 Skor Kartı</span><span style="color:var(--text-muted); font-size:10px;">${_kmYarismaSkorKartiAcik ? '▾' : '▴'}</span>
+                    </button>
+                    <button onclick="kmYarismaSkorKartiPdf()" title="PDF indir" style="min-height:44px; padding:0 12px; border-radius:10px; border:1px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); font-weight:800; font-size:12px; cursor:pointer;">📄 PDF</button>
+                </div>
+                ${_kmYarismaSkorKartiAcik ? `<div style="overflow-x:auto; margin-top:8px;"><table style="width:100%; border-collapse:collapse;">
+                    <thead><tr>${th('SET')}${th(esc(A.t.ad) + ' · OKLAR', A.t.renk, 'right')}${th('TOP')}${th(ortaBaslik, A.t.renk)}${th(ortaBaslik, B.t.renk)}${th('TOP')}${th(esc(B.t.ad) + ' · OKLAR', B.t.renk, 'left')}</tr></thead>
+                    <tbody>${satirlar}</tbody>
+                </table></div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:6px;">
+                    <span>${esc(A.t.ad)}: <b style="color:${A.t.renk};">${v.kum[0]}p</b>${setModu ? ' · ' + v.setPuanKum[0] + ' SP' : ''}</span>
+                    <span>${setModu ? 'SP = set puanı (kazanan 2, berabere 1)' : 'kümülatif toplam'}</span>
+                    <span>${esc(B.t.ad)}: <b style="color:${B.t.renk};">${v.kum[1]}p</b>${setModu ? ' · ' + v.setPuanKum[1] + ' SP' : ''}</span>
+                </div>` : ''}
+            </div>`;
+        }
+        // PDF — native jsPDF + _trTranslit (html2pdf bu projede boş sayfa üretiyor, bkz. memory/DEVIR).
+        // Canlı ekrandaki AYNI veri/aynı hesap (kmYarismaSkorKartiVerisi) — iki yerde farklı sonuç çıkamaz.
+        function kmYarismaSkorKartiPdf() {
+            let taraflar = _kmYarismaSonSkorKartiTaraflar; if(!taraflar || taraflar.length !== 2) return showToast('Skor kartı için aktif 2 taraflı maç yok.', 'warning');
+            let degerlendirme = kmYarismaMacSonucDegerlendir(taraflar);
+            let v = kmYarismaSkorKartiVerisi(taraflar, degerlendirme);
+            let setModu = v.kural.hedefTip === 'set';
+            showToast('PDF hazırlanıyor...', 'warning');
+            _yeniPdfAl().then(function(pdf) {
+                let pageW = 210, pageH = 297, marginX = 14, usableW = pageW - marginX * 2;
+                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'YARISMA', 'Karisik Sinif - Yarisma Skor Karti');
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(15, 23, 42);
+                pdf.text(_trTranslit('Skor Karti — ' + taraflar[0].t.ad + '  vs  ' + taraflar[1].t.ad), marginX, y);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(100, 116, 139);
+                let format = setModu ? ('Set usulu: ilk ' + v.kural.hedefSetPuani + ' set puani, ' + v.kural.okSayisi + ' ok/set')
+                    : v.kural.hedefTip === 'toplam' ? ('Toplam puan yarisi: ilk ' + v.kural.hedefPuan + ' puan, ' + v.kural.okSayisi + ' ok/tur')
+                    : ('Antrenman maci: ' + v.kural.hedefTur + ' tur, ' + v.kural.okSayisi + ' ok/tur');
+                pdf.text(_trTranslit(formatTarih(bugunISO()) + ' · ' + format), marginX, y + 5);
+                y += 12;
+                // Sütunlar (mm): SET 12 | A oklar 52 | A top 14 | A SP 14 | B SP 14 | B top 14 | B oklar 52
+                let cols = [12, 52, 14, 14, 14, 14, usableW - (12 + 52 + 14 * 4)];
+                let xs = []; let acc = marginX; cols.forEach(function(w) { xs.push(acc); acc += w; });
+                let ortaBaslik = setModu ? 'SP' : 'TOPLAM';
+                pdf.setFillColor(241, 245, 249); pdf.rect(marginX, y, usableW, 8, 'F');
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(71, 85, 105);
+                let basliklar = ['SET', _trTranslit(taraflar[0].t.ad + ' - OKLAR'), 'TOP', ortaBaslik, ortaBaslik, 'TOP', _trTranslit(taraflar[1].t.ad + ' - OKLAR')];
+                basliklar.forEach(function(b, i) { pdf.text(b, xs[i] + cols[i] / 2, y + 5.5, { align: 'center' }); });
+                y += 9;
+                let hexToRgb = function(h) { let m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h || ''); return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [15, 23, 42]; };
+                let rA = hexToRgb(taraflar[0].t.renk), rB = hexToRgb(taraflar[1].t.renk);
+                v.setler.forEach(function(s, i) {
+                    if(y + 9 > 280) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
+                    if(i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(marginX, y, usableW, 8, 'F'); }
+                    let a = s.taraflar[0], b = s.taraflar[1];
+                    let hucre = function(txt, ci, kalin, renk, hiza) {
+                        pdf.setFont('helvetica', kalin ? 'bold' : 'normal'); pdf.setFontSize(8.5);
+                        pdf.setTextColor(renk[0], renk[1], renk[2]);
+                        let x = hiza === 'right' ? xs[ci] + cols[ci] - 2 : hiza === 'left' ? xs[ci] + 2 : xs[ci] + cols[ci] / 2;
+                        pdf.text(String(txt), x, y + 5.6, { align: hiza || 'center' });
+                    };
+                    hucre(s.ekAtis ? 'EK' : s.no, 0, true, [100, 116, 139]);
+                    hucre(_trTranslit(_kmYarismaOklarMetni(a.oklar)), 1, false, [15, 23, 42], 'right');
+                    hucre(a.toplam === undefined ? '' : a.toplam, 2, a.kazandi, a.kazandi ? rA : [15, 23, 42]);
+                    hucre(setModu ? (a.setPuan === null ? '' : a.setPuanKum) : (a.kumulatif === null ? '' : a.kumulatif), 3, true, rA);
+                    hucre(setModu ? (b.setPuan === null ? '' : b.setPuanKum) : (b.kumulatif === null ? '' : b.kumulatif), 4, true, rB);
+                    hucre(b.toplam === undefined ? '' : b.toplam, 5, b.kazandi, b.kazandi ? rB : [15, 23, 42]);
+                    hucre(_trTranslit(_kmYarismaOklarMetni(b.oklar)), 6, false, [15, 23, 42], 'left');
+                    y += 8;
+                });
+                y += 6;
+                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.line(marginX, y - 3, marginX + usableW, y - 3);
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(15, 23, 42);
+                let sonuc = degerlendirme.durum === 'bitti' && degerlendirme.kazananIdx !== null
+                    ? (v.kural.hedefTip === 'tur' ? 'Antrenman tamamlandi' : 'Kazanan: ' + taraflar[degerlendirme.kazananIdx].t.ad)
+                    : (degerlendirme.durum === 'shootoff' ? 'Berabere — ek atis' : 'Mac devam ediyor');
+                pdf.text(_trTranslit(sonuc), marginX, y + 3);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(71, 85, 105);
+                pdf.text(_trTranslit(taraflar[0].t.ad + ' ' + v.kum[0] + 'p' + (setModu ? ' (' + v.setPuanKum[0] + ' SP)' : '') + '   —   ' + taraflar[1].t.ad + ' ' + v.kum[1] + 'p' + (setModu ? ' (' + v.setPuanKum[1] + ' SP)' : '')), marginX + usableW, y + 3, { align: 'right' });
+                pdf.save('Skor_Karti_' + _trTranslit(taraflar[0].t.ad).replace(/\s+/g, '_') + '_vs_' + _trTranslit(taraflar[1].t.ad).replace(/\s+/g, '_') + '_' + bugunISO() + '.pdf');
+                showToast('Skor kartı indirildi! 📄', 'success');
+            }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
+        }
+        // Canlı ekran her çizildiğinde en son 2 taraflı maçın taraflar'ı burada tutulur (PDF düğmesi için).
+        let _kmYarismaSonSkorKartiTaraflar = null;
         // Bir sporcunun yarışma BAŞLADIKTAN SONRA attığı puan farkı — hem takım toplamı hem MVP
         // seçimi bunu kullanıyor, iki yerde aynı hesap tekrar yazılmasın diye tek yardımcıya çıkarıldı.
         function _kmYarismaBireyselFark(g, ad) {
@@ -20102,6 +20629,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 return;
             }
             if(_kmYarismaAktif && _kmRakipTipi === 'hayali') {
+                // GERÇEK BUG (2026-09-19, toplam-puan modu testinde yakalandı ama set modunda da vardı):
+                // bot kendi turunu SKORBORD ÇİZİLİNCE üretiyor (_kmHayaliRakipGuncelle lazy), bu kontrol
+                // ise kmYarismaSeriKaydet'in içinde kmYarismaCiz'den ÖNCE çalışıyor — yani bot'un o
+                // tura karşılığı henüz yokken değerlendiriyordu: otomatik bitiş hep BİR TUR GEÇ geliyor,
+                // son turda ise hiç gelmiyordu (ekran "KAZANDI" gösterirken maç aktif kalıyordu).
+                // Önce botu güncelle (idempotent — sadece eksik turları doldurur), sonra değerlendir.
+                _kmHayaliRakipGuncelle();
                 let taraflar = [
                     { t: _kmTakimlar[0], idx: 0, turlar: _kmYarismaTurBazliPuanlar(_kmTakimlar[0]) },
                     { t: _kmTakimlar[1], idx: 1, turlar: _kmHayaliTurlar },
@@ -20114,6 +20648,26 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // ("İsim S." formatında) + gömülü skor girişi, HEPSİ TEK EKRANDA (kullanıcı spesifikasyonu:
         // "İkisi aynı ekranda, geçiş yapmaya gerek kalmadan"). Hem flat (2-4 takım) skorbord hem bracket
         // maçı bu AYNI fonksiyonu kullanıyor — `taraflar`: [{t, idx, turlar, bireyselFark(u), puan, oran}].
+        // Skor girişi pad'i — canlı maç VE sıralama turu (B5) tarafından paylaşılıyor (2026-09-19).
+        // Ek atış (shoot-off) sırasında ok sayısı 1'e SABİTLENİYOR ve düğme gizleniyor — gerçek
+        // kuraldaki "tek ok" ek atışıyla aynı; normalde kural.okSayisi (3 bireysel/6 takım) öneriliyor.
+        function _kmYarismaPadHTML(atanAd, ekAtisMi) {
+            if(!_kmYarismaAktifSporcuKey) return `<div style="margin-top:12px; text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">Skor girmek için yukarıdan bir sporcuya dokun.</div>`;
+            if(ekAtisMi && _kmYarismaOkSayisi !== 1) _kmYarismaOkSayisi = 1;
+            let slotlar = '';
+            for(let i = 0; i < _kmYarismaOkSayisi; i++) { let v = _kmYarismaSeriGirisleri[i]; slotlar += `<div class="km-oyun-slot${v !== undefined ? ' dolu' : ''}" ${v !== undefined ? `onclick="kmYarismaOkSil(${i})" title="Silmek için dokun"` : ''}>${v !== undefined ? v : ''}</div>`; }
+            let padBtns = KM_OYUN_PAD.map(function(v) { return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmYarismaOkGir('${v}')" ${_kmYarismaSeriGirisleri.length >= _kmYarismaOkSayisi ? 'disabled' : ''}>${v}</button>`; }).join('');
+            let okToggleHTML = ekAtisMi ? `<span style="font-size:10px; font-weight:800; color:var(--gold);">EK ATIŞ — 1 OK</span>` : `<div class="km-oyun-ok-toggle">${[3, 6].map(function(n) { return `<button class="${_kmYarismaOkSayisi === n ? 'aktif' : ''}" onclick="kmYarismaOkSayisiSec(${n})">${n} Ok</button>`; }).join('')}</div>`;
+            return `<div style="margin-top:14px; padding:12px; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-color);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                    <span style="font-size:11px; font-weight:800;">${esc(atanAd)} atıyor</span>
+                    ${okToggleHTML}
+                </div>
+                <div style="display:flex; gap:6px; justify-content:center; margin-bottom:10px;">${slotlar}</div>
+                <div class="km-oyun-pad" style="margin:0 auto;">${padBtns}</div>
+                <button onclick="kmYarismaSeriKaydet()" ${_kmYarismaSeriGirisleri.length < _kmYarismaOkSayisi ? 'disabled' : ''} style="width:100%; margin-top:10px; padding:11px; border-radius:10px; border:none; background:var(--gold); color:#1a1512; font-weight:800; font-size:12.5px; cursor:pointer;">Seti Kaydet</button>
+            </div>`;
+        }
         function _kmYarismaCanliMacHTML(taraflar, ekBtnHTML) {
             kmOyunSayacAyarYukle();
             // GERÇEK BİR SENKRON BUG'I (gerçek testte yakalandı): bu fonksiyon sadece HTML STRING
@@ -20134,8 +20688,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let kisaAdMap = {};
             tumUyeler.forEach(function(u, i) { kisaAdMap[u.g + '|' + u.ad] = kisaAdlar[i]; });
 
+            let toplamModu = !!(degerlendirme && (degerlendirme.kural.hedefTip === 'toplam' || degerlendirme.kural.hedefTip === 'tur'));
             let hedefSatiriHTML = degerlendirme ? `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">
-                ${degerlendirme.kural.tip === 'takim' ? 'Takım maçı' : 'Bireysel maç'} · İlk ${degerlendirme.kural.hedefSetPuani} set puanına ulaşan kazanır (max ${degerlendirme.kural.maxSet} set) · Tamamlanan set: ${setSonuc.tamamlananSet}
+                ${degerlendirme.kural.tip === 'takim' ? 'Takım maçı' : 'Bireysel maç'} · ${toplamModu
+                    ? (degerlendirme.kural.hedefTip === 'tur' ? 'Antrenman maçı: ' + degerlendirme.kural.hedefTur + ' tur · Tamamlanan tur: ' + setSonuc.tamamlananSet : 'İlk ' + degerlendirme.kural.hedefPuan + ' puana ulaşan kazanır · Tamamlanan tur: ' + setSonuc.tamamlananSet)
+                    : 'İlk ' + degerlendirme.kural.hedefSetPuani + ' set puanına ulaşan kazanır (max ' + degerlendirme.kural.maxSet + ' set) · Tamamlanan set: ' + setSonuc.tamamlananSet}
                 ${degerlendirme.durum === 'shootoff' ? '<br><span style="color:var(--gold); font-weight:800;">⚡ BERABERE — EK ATIŞ (1 ok, kazanana kadar tekrar)</span>' : ''}
             </div>` : `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">Tamamlanan set: ${setSonuc.tamamlananSet}</div>`;
 
@@ -20150,12 +20707,26 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let kazandiMi = degerlendirme && degerlendirme.durum === 'bitti' && degerlendirme.kazananIdx === i;
                 return `<div style="flex:1 1 130px; background:var(--bg-panel); border:2px solid ${x.t.renk}; border-radius:14px; padding:12px 8px; text-align:center; ${kazandiMi ? 'box-shadow:0 0 0 3px ' + x.t.renk + '44;' : ''}">
                     <div style="color:${x.t.renk}; display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:4px;">${ikonSvg}<input type="text" value="${esc(x.t.ad).replace(/"/g,'&quot;')}" maxlength="20" onchange="kmYarismaTakimAdiDegis(${x.idx}, this.value)" style="width:80px; background:transparent; border:none; border-bottom:1px dashed ${x.t.renk}66; color:${x.t.renk}; font-size:11.5px; font-weight:800; text-align:center; padding:1px 0;"></div>
-                    <div style="font-size:26px; font-weight:900;">${setSonuc.setPuanlari[i]}</div>
-                    <div style="font-size:8.5px; color:var(--text-muted); letter-spacing:.04em;">SET PUANI${kazandiMi ? ' · 🏆 KAZANDI' : ''}</div>
+                    <div style="font-size:26px; font-weight:900;">${toplamModu ? (degerlendirme.toplamlar[i] || 0) : setSonuc.setPuanlari[i]}</div>
+                    <div style="font-size:8.5px; color:var(--text-muted); letter-spacing:.04em;">${toplamModu ? (degerlendirme.kural.hedefTip === 'tur' ? 'TOPLAM PUAN' : 'TOPLAM PUAN / ' + degerlendirme.kural.hedefPuan) : 'SET PUANI'}${kazandiMi ? ' · 🏆 KAZANDI' : ''}</div>
                     ${altBilgi}
                 </div>`;
             });
             let vsHTML = '<div style="display:flex; align-items:center; font-size:11px; font-weight:900; color:var(--text-muted); padding:0 2px;">VS</div>';
+            // B3 — Atış sırası rozeti (büyük, uzaktan okunur). Hayali rakipte "rakip önce" durumu bilgi
+            // amaçlı: bot turunu koç kendi serisini girince otomatik üretiyor, beklemek gerekmiyor.
+            let sira = kmYarismaAtisSirasi(degerlendirme, taraflar);
+            let siraHTML = '';
+            if(sira) {
+                let x = taraflar[sira.idx], botMu = _kmRakipTipi === 'hayali' && sira.idx === 1;
+                let etiket = sira.shootoff ? 'EK ATIŞ' : ((degerlendirme.kural.hedefTip === 'set' ? 'SET ' : 'TUR ') + sira.setNo);
+                siraHTML = `<div id="km-yarisma-sira-rozet" style="display:flex; align-items:center; justify-content:center; gap:10px; margin:0 0 10px; padding:10px 14px; border-radius:14px; border:2px solid ${x.t.renk}; background:${x.t.renk}1a; box-shadow:0 0 18px ${x.t.renk}55;">
+                    <span style="font-size:22px;">🏹</span>
+                    <span style="font-family:var(--font-display, inherit); font-size:10px; font-weight:800; letter-spacing:.14em; color:var(--text-muted);">${etiket} · ŞİMDİ ATIYOR</span>
+                    <span style="display:flex; align-items:center; gap:6px; font-size:18px; font-weight:900; color:${x.t.renk};">${kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 20)} ${esc(x.t.ad)}</span>
+                    ${botMu ? '<span style="font-size:10px; color:var(--text-muted);">(otomatik — sen girince gelir)</span>' : ''}
+                </div>`;
+            }
 
             // Faz 17b — "sporcunun hangi takımda olduğu küçük kutucukla işaretlenmeli": her çipte takım
             // ikonu KÜÇÜK bir rozet olarak, isimden ayrı, tekrar görünüyor (kenarlık rengi zaten vardı
@@ -20173,28 +20744,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }).join('');
             }).join('');
 
-            let padHTML;
-            if(_kmYarismaAktifSporcuKey) {
-                // Ek atış (shoot-off) sırasında ok sayısı 1'e SABİTLENİYOR ve düğme gizleniyor — gerçek
-                // kuraldaki "tek ok" ek atışıyla aynı; normalde kural.okSayisi (3 bireysel/6 takım) öneriliyor.
-                let ekAtisMi = degerlendirme && degerlendirme.durum === 'shootoff';
-                if(ekAtisMi && _kmYarismaOkSayisi !== 1) _kmYarismaOkSayisi = 1;
-                let slotlar = '';
-                for(let i = 0; i < _kmYarismaOkSayisi; i++) { let v = _kmYarismaSeriGirisleri[i]; slotlar += `<div class="km-oyun-slot${v !== undefined ? ' dolu' : ''}" ${v !== undefined ? `onclick="kmYarismaOkSil(${i})" title="Silmek için dokun"` : ''}>${v !== undefined ? v : ''}</div>`; }
-                let padBtns = KM_OYUN_PAD.map(function(v) { return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmYarismaOkGir('${v}')" ${_kmYarismaSeriGirisleri.length >= _kmYarismaOkSayisi ? 'disabled' : ''}>${v}</button>`; }).join('');
-                let okToggleHTML = ekAtisMi ? `<span style="font-size:10px; font-weight:800; color:var(--gold);">EK ATIŞ — 1 OK</span>` : `<div class="km-oyun-ok-toggle">${[3, 6].map(function(n) { return `<button class="${_kmYarismaOkSayisi === n ? 'aktif' : ''}" onclick="kmYarismaOkSayisiSec(${n})">${n} Ok</button>`; }).join('')}</div>`;
-                padHTML = `<div style="margin-top:14px; padding:12px; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-color);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-                        <span style="font-size:11px; font-weight:800;">${esc(kisaAdMap[_kmYarismaAktifSporcuKey] || '')} atıyor</span>
-                        ${okToggleHTML}
-                    </div>
-                    <div style="display:flex; gap:6px; justify-content:center; margin-bottom:10px;">${slotlar}</div>
-                    <div class="km-oyun-pad" style="margin:0 auto;">${padBtns}</div>
-                    <button onclick="kmYarismaSeriKaydet()" ${_kmYarismaSeriGirisleri.length < _kmYarismaOkSayisi ? 'disabled' : ''} style="width:100%; margin-top:10px; padding:11px; border-radius:10px; border:none; background:var(--gold); color:#1a1512; font-weight:800; font-size:12.5px; cursor:pointer;">Seti Kaydet</button>
-                </div>`;
-            } else {
-                padHTML = `<div style="margin-top:12px; text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">Skor girmek için yukarıdan bir sporcuya dokun.</div>`;
-            }
+            // Pad artık paylaşılan _kmYarismaPadHTML'de (B5 sıralama turu da aynı pad'i kullanıyor).
+            let padHTML = _kmYarismaPadHTML(kisaAdMap[_kmYarismaAktifSporcuKey] || '', !!(degerlendirme && degerlendirme.durum === 'shootoff'));
 
             // Faz 17b — "skor tabelası renklendirilmeli, yanlış girilmişse düzeltilmeli": son girilen
             // serinin okları KM_OYUN_PAD_RENK renkleriyle (pad'in kendisiyle AYNI renk dili) gösteriliyor,
@@ -20220,7 +20771,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let dokHTML = `<div style="margin-top:14px; background:linear-gradient(180deg, rgba(4,6,14,0.4), rgba(4,6,14,0.7)); border:1px solid var(--border-color); border-radius:13px; padding:10px 12px;">
                 <button onclick="kmYarismaDokAcikKapatDegistir()" style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--text-main); background:rgba(255,255,255,0.06); border:1px solid var(--border-color); border-radius:10px; padding:9px 12px; cursor:pointer; min-height:44px;">
                     <span>🎯 Skor Gir</span>
-                    <span class="km-oyun-sayac km-oyun-sayac-inline" onclick="event.stopPropagation(); kmOyunSayacSureDegistir();" title="Dokunarak süreyi değiştir" style="display:none;"></span>
+                    <span class="km-oyun-sayac km-oyun-sayac-inline" onclick="event.stopPropagation(); kmOyunSayacDokun();" title="Dokun: Başlat / Duraklat" style="display:none;"></span>
                     <span style="font-variant-numeric:tabular-nums; color:var(--gold);">${_kmYarismaAktifSporcuKey ? _kmYarismaSeriGirisleri.length + '/' + _kmYarismaOkSayisi : ''}</span>
                     <span style="color:var(--text-muted); font-size:10px;">${_kmYarismaDokAcikMi ? '▾' : '▴'}</span>
                 </button>
@@ -20230,7 +20781,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return `
                 <div style="display:flex; align-items:stretch; gap:6px; margin-bottom:8px;">${takimKartlari.join(vsHTML)}</div>
                 ${hedefSatiriHTML}
-                <div style="display:flex; justify-content:center; gap:8px;">
+                ${siraHTML}
+                ${(function() { if(taraflar.length === 2) { _kmYarismaSonSkorKartiTaraflar = taraflar; return kmYarismaSkorKartiHTML(taraflar, degerlendirme); } return ''; })()}
+                <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
                     <span onclick="kmYarismaTakimDuzenleAc()" style="cursor:pointer; font-size:10px; font-weight:700; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 10px; margin-bottom:8px;">✏️ Takımları Düzenle</span>
                     <span id="km-yarisma-sayac-toggle" onclick="kmOyunSayacDegistir()" style="cursor:pointer; font-size:10px; font-weight:700; color:${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--text-muted)'}; border:1px dashed ${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--border-color)'}; border-radius:8px; padding:5px 10px; margin-bottom:8px;">⏱️ Sayaç ${_kmOyunSayacAcik ? 'Açık' : 'Kapalı'}</span>
                     <span onclick="kmOyunSayacBuyukAcKapat()" class="km-oyun-sayac-buyut-btn" style="cursor:pointer; font-size:10px; font-weight:700; border-radius:8px; padding:5px 10px; margin-bottom:8px; ${_kmOyunSayacAcik ? '' : 'display:none;'}">🔍 Büyüt</span>
@@ -20292,10 +20845,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let puanA = _kmYarismaTakimPuani(_kmTakimlar[0]), puanB = _kmHayaliPuan;
                 let oranA = _kmYarismaDengeliOran(_kmTakimlar[0]);
                 let kazananAd = puanA === puanB ? 'Berabere' : (puanA > puanB ? _kmTakimlar[0].ad : _kmTakimlar[1].ad);
+                // Antrenman maçı (hedefTip 'tur', 2026-09-19): "kazanan yok" — afiş toplamları gösterir, KAZANDI demez.
+                let antrenmanMi = kmYarismaMacKuralSecimi([{ t: _kmTakimlar[0], idx: 0 }, { t: _kmTakimlar[1], idx: 1 }]).hedefTip === 'tur';
                 let hayaliKapanis = '';
-                if(kazananAd !== 'Berabere') { _kmHayaliYorumEkle(kazananAd === _kmTakimlar[0].ad ? 'bitisKazandiSiz' : 'bitisKazandiBen'); hayaliKapanis = ' · "' + _kmHayaliYorumGecmisi[0].metin + '"'; }
+                if(kazananAd !== 'Berabere' && !antrenmanMi) { _kmHayaliYorumEkle(kazananAd === _kmTakimlar[0].ad ? 'bitisKazandiSiz' : 'bitisKazandiBen'); hayaliKapanis = ' · "' + _kmHayaliYorumGecmisi[0].metin + '"'; }
                 try {
-                    kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 YARIŞMA BİTTİ! 🏆', ad: kazananAd === 'Berabere' ? 'BERABERE!' : kazananAd + ' KAZANDI', aciklama: `${_kmTakimlar[0].ad} ${puanA} — ${puanB} ${_kmTakimlar[1].ad}${mvp && mvp.fark > 0 ? ' · 🌟 MVP: ' + mvp.ad : ''}${hayaliKapanis}`, deger: '🎉' });
+                    kutlamaKuyrukEkle({ emoji: antrenmanMi ? '🏋️' : '🏆', banner: antrenmanMi ? '🏋️ ANTRENMAN TAMAMLANDI' : '🏆 YARIŞMA BİTTİ! 🏆', ad: antrenmanMi ? 'İYİ ÇALIŞMA!' : (kazananAd === 'Berabere' ? 'BERABERE!' : kazananAd + ' KAZANDI'), aciklama: `${_kmTakimlar[0].ad} ${puanA} — ${puanB} ${_kmTakimlar[1].ad}${mvp && mvp.fark > 0 ? ' · 🌟 MVP: ' + mvp.ad : ''}${hayaliKapanis}`, deger: '🎉' });
                 } catch(e) {}
                 _kmYarismaGecmisi.unshift({
                     tarih: bugunISO(), saat: new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }),

@@ -4361,3 +4361,84 @@ sabitleri/fonksiyonları (`KM_YILDIZ_*`, `kmOyunYildizAci/RingR`, `km-oyun-ring-
 healthcheck şart (bkz. memory).
 
 **Deploy durumu**: DEPLOY EDİLDİ (commit aa47f79, version 5cd764ae...).
+
+## 39. Yarışma sekmesi — 3 düzeltme + 4 özellik (2026-09-19)
+
+Kullanıcı talimatı (sıralı): "önce istediklerimi düzelt, sonra şunları ekle". Hepsi tek turda yapıldı,
+her biri GERÇEK tıklamayla test edildi.
+
+### A1 — Sayaç, Süreölçer sekmesiyle birebir mantık
+Önceki sürüm sporcu seçilince kendiliğinden başlıyor, m:ss gösteriyor, duraklatma ve ok-toplama fazı
+yoktu. Kullanıcı: "saniye olmamış, var olan sayaç gibi yap, mantığı dahil". Yeniden yazıldı
+(`kmOyunSayac*`, app.js ~13543): faz 0 ATIŞA HAZIR (kurulu, DOKUNUNCA başlar) → 1 HAZIRLANIN (10 sn,
+her sn bip) → 2 ATIŞ SERBEST (yeşil, son 10 sn kırmızı+bip) → "STOP" (2 sn) → isteğe bağlı 3 OK TOPLAMA
+VE SKOR GİRİŞİ (turuncu, 3/5 dk, son 5 sn bip) → "BİTTİ". Tekrar dokun = DURAKLATILDI (opacity .6),
+tekrar = devam. Düz saniye ("120"), büyük sayaçta ayrı etiket satırı (`#km-oyun-sayac-buyuk-etiket`).
+Sesler `sesCal` ile birebir aynı frekans/süreler. **Yeni seri sayacı sadece KURAR, başlatmaz** (gerçek
+yarışmada hakem "hazır" deyince başlatır). Küçük rozetlerin onclick'i süre-döndürmeden `kmOyunSayacDokun`'a
+alındı; süre değişimi büyük sayaçtaki düğmelerde (90/120/180/✏️ Özel), ok toplama `📦 Toplama` düğmesi
+(Kapalı→3 dk→5 dk), `↺` sıfırla. 11 adımlık gerçek test geçti.
+
+### A2 — Hayali rakip ok sayısı (GERÇEK BUG)
+`_kmHayaliTurUret` her turda `3 + rastgele(0-3)` ok attırıyordu → sen 3 atarken bot 6 atabiliyordu.
+Artık bot O TUR için geçerli `_kmYarismaOkSayisi`'nı (3/6, ek atışta 1) birebir atıyor. Testte 6 okla
+bot 47 attı (3 okla en fazla 30 olabilirdi).
+
+### A3 — Yarışma hedefi seçimi
+`kmYarismaMacKuralSecimi` artık koç tercihini WA varsayılanının üstüne bindiriyor: `_kmYarismaOkTercih`
+(null/3/6) ve `_kmYarismaHedef` ({tip:'set'|'toplam'|'tur', deger}). `set`: hedef−1 = maxSet (WA 6→5
+tutarlı). `toplam`: kmYarismaMacSonucDegerlendir'de yeni dal — İLK k turunda (her iki taraf da o turu
+tamamlamışken) kümülatif hedefe ulaşan varsa maç o turda karar bulur (aynı tur sayısında karşılaştırma,
+adalet), eşitlikte ek atış. `tur` (antrenman): N tur bitince toplamı yüksek olan önde, hayali bitiş afişi
+"ANTRENMAN TAMAMLANDI / İYİ ÇALIŞMA!" der, KAZANDI demez. Kurulumda "Maç Ayarları" bölümü (ok 3/6/oto,
+set 6/8/10/özel, toplam 150/300/500/özel — özel `prompt()` ile, projede zaten 5 yerde var). Canlı ekran
+ve bracket kartı toplam/tur modunda set puanı yerine kümülatif toplam gösterir. Kalıcılık: kurulum
+paketine `okTercih`/`hedef`/`siralama` eklendi.
+
+### GİZLİ ESKİ BUG (toplam-puan testi ortaya çıkardı)
+`kmYarismaMacTamamlanmaKontrolEt` hayali modda botun turu üretilmeden ÖNCE değerlendiriyordu (bot
+turunu skorbord çizilince lazy üretiyor) → otomatik bitiş hep bir tur GEÇ geliyor, son turda hiç
+gelmiyordu (ekran KAZANDI derken maç aktif kalıyordu). Kontrolden önce `_kmHayaliRakipGuncelle()`
+çağrılıyor (idempotent). Set modunda da vardı, sadece fark edilmemişti.
+
+### B1 — Yarışma Şablonları
+`KM_YARISMA_SABLONLAR` (5 şablon: WA Bireysel / WA Takım / Kısa Maç / 300 Puan Yarışı / Antrenman Maçı 10
+tur) — tek dokunuşla ok + hedef. Kurulumun üstünde, "Maç Ayarları (ince ayar)" altında kalır.
+
+### B2 — Skor Kartı (WA formatı) + PDF
+`kmYarismaSkorKartiVerisi/HTML/Pdf`. Satır = set, sütun = `SET | A oklar | A top | A SP | B SP | B top |
+B oklar` (aynalı WA düzeni). Ok-ok veri `seriler[i].oklar`'dan (yarışma başlangıcı anlık görüntüsünden
+sonra; bracket'ta aktif maçın `baslangicPuan`'ı, flat/hayali'de `_kmYarismaBaslangicPuan` —
+`_kmYarismaAktifBaslangicMap`). Hayali botun ok verisi yok → "—". Toplam/tur modunda SP yerine kümülatif.
+PDF native jsPDF + `_trTranslit` + `_kurumsalBaslikCiz` (html2pdf bu projede boş sayfa üretiyor).
+GERÇEK indirme olayıyla test edildi, `pdftotext` ile içeriği doğrulandı (tablo dolu). Katlanır, PDF
+düğmesi yanında. `_kmYarismaSonSkorKartiTaraflar` canlı ekran her çizildiğinde güncellenir.
+Not: pad markup'ı `_kmYarismaPadHTML(atanAd, ekAtisMi)`'ye çıkarıldı (B5 de kullanıyor).
+
+### B3 — Atış Sırası Göstergesi
+`kmYarismaAtisSirasi`: WA kuralı — set puanı GERİDE olan sonraki sete ÖNCE başlar, eşitse ilk sette önce
+atan (1. taraf). Toplam/tur modunda toplamı geride olan. Set İÇİ ok-ok sıralama modellenmedi (dok bir
+seriyi tek seferde giriyor). Büyük renkli rozet `#km-yarisma-sira-rozet`, hayali için "(otomatik — sen
+girince gelir)" notu. Testte: set 1 A → A 24-27 kaybetti → set 2 yine A (geride) ✓.
+
+### B5 — Sıralama Turu → Tohumlama
+Eşleştirme ekranında isteğe bağlı panel: 1/2/3 seri. `_kmYarismaSiralama = {seriSayisi, snapshot,
+tamam, siralama}`; skor girişi CANLI MAÇLA AYNI yoldan (kmYarismaSporcuSec + _kmYarismaPadHTML +
+kmYarismaSeriKaydet → gerçek seriler turnuvaDB'ye yazılır), toplam kendi anlık görüntüsünden türetilir.
+`kmYarismaSiralamaEslestir`: sıraya göre 1–N, 2–(N−1)… ("fold"); tek sayıda takımda 1 numara bay
+(mevcut tek-açıkta-bay desenine uyar). Eşleştirme ekranında çip/eşleşme satırlarında `#tohum` etiketi.
+Yeni görünüm `'siralama'` `kmYarismaCiz` dispatcher'ına eklendi; `kmYarismaMacTamamlanmaKontrolEt` bu
+görünümde no-op (agac değil, aktif hayali değil). Sıfırlama noktalarında (`kmYarismaSifirla`,
+`kmYarismaBracketKurulumaDon`) `_kmYarismaSiralama = null`. Testte 4 takım 30/27/24/21 → (0v1),(2v3) ✓.
+
+### Ortam notu (kod dışı)
+Testlerde "Failed to fetch" pageerror'ları görüldü; `window.fetch` sarılarak izlendi: HEPSİ `/api/*`
+senkron push'ları (yüzlerce `POST /api/athletes`) — yerel D1'de aylardır biriken test sporcuları (620 KB
+`/api/athletes`) tek seferde push edilirken tarayıcı bazı bağlantıları kesiyor. curl ve sunucu logu 200.
+Aynı test aynı gün taze sunucuda `[]` verdi. Dokunulan kodla ilgisi yok, veri katmanına onaysız
+girilmedi. (Temizlik: yerel `.wrangler/state` test verisi bir gün budanabilir.)
+
+**Regresyon**: 16 tema + Reaksiyon temiz; Faz 17b ek atış testi ve Faz 17c dok/takım-düzenleme testi
+aynen geçiyor; 360px mobil sığıyor.
+
+**Deploy durumu**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya rapor sunulup onay bekleniyor.
