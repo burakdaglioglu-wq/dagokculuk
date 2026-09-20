@@ -6967,7 +6967,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt']]],
             ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
@@ -7072,6 +7072,7 @@
             if(k === 'program') { renderHedefId = 'yonetici-liste'; yoneticiProgramCiz(); return; }
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
+            if(k === 'ciftkayit') { yoneticiCiftKayitCiz(); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
             if(k === 'ihtiyac') { renderHedefId = 'yonetici-liste'; yoneticiIhtiyacCiz(); return; }
             if(k === 'belge') { renderHedefId = 'yonetici-liste'; yoneticiBelgeCiz(); return; }
@@ -9387,6 +9388,97 @@ ${(function(){
                 try { siralamaListesiDoldur(); } catch(e) {}
             }, '🗑️ Evet, Sil');
         }
+        // ---- ÇİFT KAYIT BUL & BİRLEŞTİR (2026-09-20, kullanıcı: "bazı sporcular 2'şerli şekilde kulübe
+        // kayıtlı") — aynı kişinin büyük/küçük harf, fazla boşluk ya da noktalama farkıyla iki kez kayıtlı
+        // olduğu çiftleri (aynı grupta VEYA farklı gruplarda) listeler. Birleştirme SUNUCUDA tek bir batch
+        // (POST /api/athletes/:grup/:ad/merge — seriler/aidat/yoklama/atış günlüğü/ders katılımı hedefe
+        // taşınır, kaynak silinir, moveAthlete ile AYNI tombstone+yönlendirme yazılır), ardından yerel
+        // turnuvaDB/aidatDB/otomatikYoklamaDB aynı şekilde güncellenir. Her çift tek tek onaylanır.
+        function _ciftKayitNormalize(ad) {
+            return String(ad || '').toLocaleLowerCase('tr-TR').normalize('NFC').replace(/[.\-_'’]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+        function yoneticiCiftKayitBul() {
+            let m = {};
+            Object.keys(turnuvaDB).forEach(g => {
+                Object.keys(turnuvaDB[g] || {}).forEach(ad => {
+                    let sp = turnuvaDB[g][ad]; if(!sp || typeof sp !== 'object') return;
+                    let k = _ciftKayitNormalize(ad);
+                    (m[k] = m[k] || []).push({ g: g, ad: ad, sp: sp });
+                });
+            });
+            return Object.values(m).filter(v => v.length > 1).map(v => v.sort((a, b) => ((b.sp.seriler || []).length - (a.sp.seriler || []).length)));
+        }
+        function yoneticiCiftKayitCiz() {
+            let alan = document.getElementById('yonetici-liste'); if(!alan) return;
+            let gruplar = yoneticiCiftKayitBul();
+            let grupAdi = g => ({buyukler:'🔵 Büyükler', yildizlar:'⭐ Yıldızlar', kucukler:'🟢 Küçükler', minikler:'🌱 Minikler'})[g] || g;
+            let bas = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+                <div style="font-weight:800; color:var(--gold);">🧹 Çift Kayıt (${gruplar.length} şüpheli çift)</div>
+                <button onclick="yoneticiCiftKayitCiz()" style="font-size:11px; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); cursor:pointer;">↻ Yeniden Tara</button>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">Aynı ismin büyük/küçük harf, boşluk ya da noktalama farkıyla iki kez kayıtlı olduğu kişiler. <b>Kalacak</b> kaydı seç; diğerinin serileri, aidatı, yoklaması ve atış günlüğü ona taşınır, sonra silinir. Her birleştirme ayrı onay ister ve geri alınamaz.</div>`;
+            if(!gruplar.length) { alan.innerHTML = bas + '<div style="text-align:center; color:var(--text-muted); padding:30px 12px;">✅ Şüpheli çift kayıt bulunamadı.</div>'; return; }
+            let html = bas;
+            gruplar.forEach((v, gi) => {
+                html += `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:10px;">
+                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Çift #${gi + 1} · "${esc(_ciftKayitNormalize(v[0].ad))}"</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">`;
+                v.forEach((x, xi) => {
+                    let seri = (x.sp.seriler || []).length;
+                    let son = x.sp.sonSkorZamani ? new Date(x.sp.sonSkorZamani).toLocaleDateString('tr-TR') : '—';
+                    let digerleri = v.filter((_, j) => j !== xi);
+                    let onclick = digerleri.map(d => `yoneticiCiftKayitBirlestir('${d.g}','${d.ad.replace(/'/g, "\\'")}','${x.g}','${x.ad.replace(/'/g, "\\'")}')`).join(';');
+                    html += `<div style="border:1.5px solid ${xi === 0 ? 'var(--neon-green)' : 'var(--border-color)'}; border-radius:10px; padding:10px;">
+                        <div style="font-weight:800; font-size:13px; word-break:break-word;">${esc(x.ad)}</div>
+                        <div style="font-size:10.5px; color:var(--text-muted); margin:3px 0 8px;">${grupAdi(x.g)} · ${seri} seri · ${x.sp.toplamSkor || 0}p · son skor ${son}${x.sp.kod || x.sp.dogumYili ? ' · ' + esc(String(x.sp.kod || x.sp.dogumYili)) : ''}${x.sp.pasif ? ' · <span style="color:var(--neon-red);">pasif</span>' : ''}</div>
+                        <button onclick="${onclick}" style="width:100%; font-size:11.5px; font-weight:800; padding:8px; border-radius:8px; border:none; background:${xi === 0 ? 'var(--neon-green)' : 'var(--bg-main)'}; color:${xi === 0 ? '#06210f' : 'var(--text-main)'}; cursor:pointer;">${xi === 0 ? '✔ Bu kalsın (önerilen)' : 'Bu kalsın'}</button>
+                    </div>`;
+                });
+                html += '</div></div>';
+            });
+            alan.innerHTML = html;
+        }
+        function yoneticiCiftKayitBirlestir(kaynakG, kaynakAd, hedefG, hedefAd) {
+            let kaynak = turnuvaDB[kaynakG] && turnuvaDB[kaynakG][kaynakAd], hedef = turnuvaDB[hedefG] && turnuvaDB[hedefG][hedefAd];
+            if(!kaynak || !hedef) { showToast('Kayıt bulunamadı.', 'error'); return; }
+            let kSeri = (kaynak.seriler || []).length;
+            onayIste(`<b>${esc(kaynakAd)}</b> kaydı <b>${esc(hedefAd)}</b> ile birleştirilsin mi?<br><span style="font-size:12px; color:var(--text-muted);">${kSeri} seri, aidat ve yoklama kayıtları ${esc(hedefAd)}'a taşınır; ${esc(kaynakAd)} silinir. Geri alınamaz.</span>`, async () => {
+                let btnKilit = document.getElementById('yonetici-liste'); if(btnKilit) btnKilit.style.opacity = '.5';
+                try {
+                    let r = await fetch('/api/athletes/' + encodeURIComponent(kaynakG) + '/' + encodeURIComponent(kaynakAd) + '/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toGrup: hedefG, toAd: hedefAd, deviceId: _cihazId }) });
+                    if(!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch(e) {} throw new Error(t || ('HTTP ' + r.status)); }
+                    let sonuc = await r.json();
+                    // Yerel veri — sunucudaki AYNI birleştirme: seriler/detaylı oklar birleşir, boş alanlar dolar
+                    let ids = new Set((hedef.seriler || []).map(x => x.seriId).filter(Boolean));
+                    (kaynak.seriler || []).forEach(x => { if(!x.seriId || !ids.has(x.seriId)) (hedef.seriler = hedef.seriler || []).push(x); });
+                    hedef.seriler.sort((a, b) => (a.t || 0) - (b.t || 0));
+                    hedef.detayliOklar = (hedef.detayliOklar || []).concat(kaynak.detayliOklar || []);
+                    ['kod','dogumYili','sinif','yay','cinsiyet','fotoUrl','dogumTarihi','katilmaTarihi','acilKisi','acilTelefon','aileMeslek','genelNot','antrenmanNotu','saglikRaporuBitis','lisansBitis'].forEach(f => { if((hedef[f] === undefined || hedef[f] === null || hedef[f] === '') && kaynak[f]) hedef[f] = kaynak[f]; });
+                    hedef.coin = (hedef.coin || 0) + (kaynak.coin || 0);
+                    hedef.sonSkorZamani = Math.max(hedef.sonSkorZamani || 0, kaynak.sonSkorZamani || 0) || null;
+                    try { sporcuPuanlariYenidenHesapla(hedef); } catch(e) {}
+                    hedef.lastModified = Date.now();
+                    delete turnuvaDB[kaynakG][kaynakAd];
+                    if(!silindiMi(kaynakG, kaynakAd)) silinenlerDB.push({ ad: kaynakAd, grup: kaynakG, tarih: Date.now(), tasindi: true, kod: kaynak.kod || kaynak.dogumYili || '' });
+                    silinenlerKaydet();
+                    if(aidatDB[kaynakAd]) {
+                        aidatDB[hedefAd] = aidatDB[hedefAd] || {};
+                        Object.keys(aidatDB[kaynakAd]).forEach(ay => { let k = aidatDB[kaynakAd][ay], h = aidatDB[hedefAd][ay]; if(!h || (!h.odendi && k && k.odendi)) aidatDB[hedefAd][ay] = k; });
+                        delete aidatDB[kaynakAd]; aidatKaydet();
+                    }
+                    Object.keys(otomatikYoklamaDB || {}).forEach(t => { let gun = otomatikYoklamaDB[t]; if(gun && gun[kaynakAd]) { if(!gun[hedefAd]) gun[hedefAd] = Object.assign({}, gun[kaynakAd], { grup: hedefG }); delete gun[kaynakAd]; } });
+                    otomatikYoklamaKaydet();
+                    yoneticiKaydet();
+                    try { egitmenRenderSiniflar(); } catch(e) {} try { siralamaListesiDoldur(); } catch(e) {} try { sporcuListesiniYenile(); } catch(e) {}
+                    let m = sonuc.moved || {};
+                    showToast('🧹 ' + kaynakAd + ' → ' + hedefAd + ' birleştirildi (' + (m.seri || 0) + ' seri, ' + (m.aidat || 0) + ' aidat, ' + (m.yoklama || 0) + ' yoklama).', 'success');
+                } catch(e) {
+                    showToast('Birleştirme başarısız: ' + (e && e.message ? e.message : 'bağlantı hatası') + ' — hiçbir şey değişmedi.', 'error');
+                }
+                if(btnKilit) btnKilit.style.opacity = '';
+                yoneticiCiftKayitCiz();
+            }, '🧹 Evet, Birleştir');
+        }
         function yoneticiSilinenlerCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
             let gercekSilinenler = silinenlerDB.filter(s => !s.tasindi); // kategori taşıma kayıtları listede görünmesin
@@ -10545,6 +10637,11 @@ ${(function(){
 #km-oyun-wrap[data-tema="futbol"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="futboltakim"]{ --bg:#081409; --panel:#0f2012; --panel-hi:#17301b; --line:#254a2b; --ink:#f3fbf0; --ink-dim:#a9d4ac; --ink-faint:#5c8f60; --a1:#ffcc33; --a2:#ff6b6b; --a3:#5fb8ff; --a4:#3ddc97; --a5:#e0685a; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="sisharita"]{ --bg:#061321; --panel:#0c2236; --panel-hi:#123049; --line:#1f4a66; --ink:#eef8ff; --ink-dim:#a9cde0; --ink-faint:#5f8aa3; --a1:#7dd3fc; --a2:#ffd23f; --a3:#ff8a3d; --a4:#a78bfa; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
+/* Gizli Kelime / Kehanet / Kule için tema token blokları HİÇ yazılmamıştı (2026-09-20'de fark edildi):
+   --a1/--ink tanımsız kalınca oyun başlığı (gradyan yazı) görünmez oluyor, Yarışma'daki AYNI tuzak. */
+#km-oyun-wrap[data-tema="gizlikelime"]{ --bg:#14100c; --panel:#1f1811; --panel-hi:#2a2016; --line:#4a3a28; --ink:#fff6e8; --ink-dim:#d9c3a5; --ink-faint:#8f7a5e; --a1:#e8b96a; --a2:#c96a4d; --a3:#7dd3fc; --a4:#a78bfa; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="kehanet"]{ --bg:#0f0d1a; --panel:#181425; --panel-hi:#221c33; --line:#3a2f55; --ink:#f3eeff; --ink-dim:#c9bce6; --ink-faint:#7f6fa8; --a1:#a78bfa; --a2:#7dd3fc; --a3:#ffd23f; --a4:#f472b6; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="kule"]{ --bg:#0d1218; --panel:#161d26; --panel-hi:#1f2833; --line:#34424f; --ink:#f2f6fa; --ink-dim:#b8c6d4; --ink-faint:#6f8294; --a1:#c9a876; --a2:#8c7355; --a3:#7dd3fc; --a4:#ff8a3d; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
@@ -10750,20 +10847,24 @@ ${(function(){
    spesifikasyonu). Tek bir sıcak radial ışık kaynağı + hafif taş dokusu (tekrarlayan çok-alçak-kontrast
    linear-gradient çizgileri, harici görsel YOK — Kehanet'in yıldız zemini gibi CSS/SVG-only). */
 .km-oyun-panel-gizlikelime{ background:radial-gradient(ellipse at 50% 20%, #3a2a1a 0%, #1a1310 55%, #100c0a 100%); overflow:hidden; }
-.km-gk-govde{ position:absolute; inset:0; margin-top:46px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:14px; padding:20px 16px; }
+.km-gk-govde{ position:absolute; inset:0; display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:center; align-content:flex-start; gap:14px 22px; padding:12px 16px 0; }
+.km-gk-ust, .km-gk-taslar{ flex-basis:100%; }
+/* Kategori kurdelesi — büyütme (2026-09-20, "kelimeli oyunun boyutu küçük") */
+.km-gk-ust{ flex-wrap:wrap; justify-content:center; }
 .km-gk-ust{ display:flex; align-items:center; gap:10px; }
-.km-gk-kategori{ font-family:var(--font-body); font-weight:700; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink); background:rgba(232,185,106,0.16); border:1px solid rgba(232,185,106,0.4); border-radius:999px; padding:4px 10px; }
-.km-gk-ilerleme{ font-family:var(--font-body); font-weight:600; font-size:11px; color:var(--ink-faint); }
-.km-gk-taslar{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; max-width:560px; }
+.km-gk-kategori{ font-family:var(--font-body); font-weight:800; font-size:12px; letter-spacing:.1em; padding:6px 14px; border-radius:999px; text-transform:uppercase; color:var(--ink); background:rgba(232,185,106,0.16); border:1px solid rgba(232,185,106,0.4); border-radius:999px; padding:4px 10px; }
+.km-gk-ilerleme{ font-family:var(--font-body); font-weight:700; font-size:13px; color:var(--ink-faint); }
+.km-gk-taslar{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:880px; perspective:600px; }
 /* "Harfler taşa oyulmuş gibi dursun" — düz kutu yerine hafif iç gölge (oyulmuş hissi) + taş rengi
    gradyanı, kapalı taşlar boş/koyu, açık taşlar sıcak altın ışıkla aydınlanmış. */
-.km-gk-tas{ width:34px; height:42px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:18px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, #2b241d, #1c1712); color:var(--ink); box-shadow:inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.04); }
+.km-gk-tas{ width:58px; height:70px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:32px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(160deg, #2b241d, #1c1712); color:var(--ink); box-shadow:inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.04); }
 .km-gk-tas.km-gk-tas-acik{ border-color:rgba(232,185,106,0.55); background:linear-gradient(160deg, #4a3620, #2e2213); color:#ffe3ac; box-shadow:inset 0 2px 4px rgba(0,0,0,0.35), 0 0 10px 1px rgba(232,185,106,0.35); }
 /* Yeni açılan taş — "taş bloğu çevrilsin/toz kalksın" hissi: kısa bir dikey flip + parlama. */
 @keyframes kmGkTasAcilma{ 0%{ transform:rotateX(0deg) scale(1); filter:brightness(1); } 35%{ transform:rotateX(90deg) scale(.85); filter:brightness(2.2); } 36%{ transform:rotateX(-90deg) scale(.85); } 70%{ transform:rotateX(0deg) scale(1.08); filter:brightness(1.6); } 100%{ transform:rotateX(0deg) scale(1); filter:brightness(1); } }
 .km-gk-tas.km-gk-tas-yeni{ animation:kmGkTasAcilma .5s ease; }
-.km-gk-ipucu{ font-family:var(--font-body); font-weight:600; font-size:12.5px; color:var(--ink-faint); text-align:center; max-width:420px; }
-.km-gk-tahmin-btn{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#1a1512; background:#e8b96a; border:none; border-radius:10px; padding:10px 22px; cursor:pointer; }
+.km-gk-ipucu{ font-family:var(--font-body); font-weight:600; font-size:17px; color:var(--ink-dim); text-align:center; max-width:640px; line-height:1.4; }
+.km-gk-ipucu::before{ content:'İPUCU'; display:block; font-size:10px; font-weight:800; letter-spacing:.14em; color:var(--a1); margin-bottom:4px; }
+.km-gk-tahmin-btn{ font-family:var(--font-display); font-weight:800; font-size:17px; letter-spacing:.02em; color:#1a1512; background:linear-gradient(120deg,#ffe3ac,#e8b96a); border:none; border-radius:14px; padding:14px 34px; cursor:pointer; box-shadow:0 8px 24px rgba(232,185,106,0.3); }
 .km-gk-tahmin-btn:hover{ filter:brightness(1.08); }
 .km-gk-taslar.km-gk-sars{ animation:kmGkSars .4s ease; }
 @keyframes kmGkSars{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-6px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
@@ -10772,21 +10873,24 @@ ${(function(){
    içerik dok'un büyüme alanından KAÇIRILMIŞTI; burada modal zaten kasıtlı bir engelleyici katman
    olduğu için doğru çözüm dok'un ÜSTÜNE çıkmak — paylaşılan .km-oyun-dok'un kendisi hiç değişmedi). */
 .km-gk-modal{ position:absolute; inset:0; background:rgba(10,8,6,0.9); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; z-index:8; }
-.km-gk-modal-baslik{ font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink); text-align:center; }
-.km-gk-secenekler{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:280px; }
-.km-gk-secenek-btn{ font-family:var(--font-body); font-weight:700; font-size:14px; color:var(--ink); background:rgba(255,255,255,0.06); border:2px solid var(--line); border-radius:10px; padding:10px 16px; cursor:pointer; }
+.km-gk-modal-baslik{ font-family:var(--font-display); font-weight:800; font-size:22px; color:var(--ink); text-align:center; }
+.km-gk-secenekler{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; width:100%; max-width:560px; }
+.km-gk-secenek-btn{ font-family:var(--font-display); font-weight:800; font-size:19px; letter-spacing:.03em; color:var(--ink); background:rgba(255,255,255,0.06); border:2px solid var(--line); border-radius:14px; min-height:60px; padding:12px 16px; cursor:pointer; }
 .km-gk-secenek-btn:hover:not(:disabled){ border-color:#e8b96a; }
 .km-gk-secenek-btn:disabled{ opacity:.5; cursor:default; }
 .km-gk-modal-kapat{ font-family:var(--font-body); font-weight:600; font-size:12px; color:var(--ink-faint); background:none; border:1px solid var(--line); border-radius:8px; padding:6px 14px; cursor:pointer; }
-.km-gk-bilgi-karti{ background:rgba(255,255,255,0.05); border:1px solid rgba(232,185,106,0.4); border-radius:12px; padding:16px; max-width:340px; text-align:center; }
+.km-gk-bilgi-karti{ background:rgba(255,255,255,0.05); border:1px solid rgba(232,185,106,0.4); border-radius:16px; padding:22px 24px; max-width:560px; text-align:center; }
 /* .km-oyun-panel svg{ position:absolute; inset:0; width:100%; height:100%; } paylaşılan kuralı burada da
    Kehanet'teki AYNI şekilde devreye giriyor (bu ikon da .km-oyun-panel içinde) — açıkça geri alınıyor. */
 .km-gk-bilgi-ikon{ color:#e8b96a; display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
 .km-oyun-panel .km-gk-bilgi-ikon svg{ position:static; inset:auto; width:30px; height:30px; display:block; overflow:visible; clip-path:none; }
-.km-gk-bilgi-kelime{ font-family:var(--font-display); font-weight:800; font-size:17px; color:#e8b96a; margin-bottom:8px; }
-.km-gk-bilgi-metin{ font-family:var(--font-body); font-weight:500; font-size:13px; color:var(--ink); line-height:1.5; }
+.km-gk-bilgi-kelime{ font-family:var(--font-display); font-weight:800; font-size:26px; letter-spacing:.04em; color:#e8b96a; margin-bottom:10px; }
+.km-gk-bilgi-metin{ font-family:var(--font-body); font-weight:500; font-size:16px; color:var(--ink); line-height:1.55; }
 .km-gk-bilgi-devam-btn{ font-family:var(--font-body); font-weight:700; font-size:13px; color:#1a1512; background:#e8b96a; border:none; border-radius:10px; padding:9px 20px; cursor:pointer; margin-top:12px; }
-@media (max-width: 860px) { .km-gk-tas{ width:28px; height:36px; font-size:15px; } }
+#km-oyun-wrap:fullscreen .km-gk-tas{ width:74px; height:90px; font-size:40px; }
+#km-oyun-wrap:fullscreen .km-gk-ipucu{ font-size:20px; max-width:760px; }
+#km-oyun-wrap:fullscreen .km-gk-kategori{ font-size:13px; }
+@media (max-width: 860px) { .km-gk-tas{ width:40px; height:50px; font-size:22px; } .km-gk-taslar{ gap:6px; } .km-gk-ipucu{ font-size:14px; } .km-gk-govde{ gap:10px 14px; padding-top:52px; } .km-gk-secenekler{ grid-template-columns:1fr; } .km-gk-secenek-btn{ font-size:16px; min-height:50px; } }
 @media (prefers-reduced-motion: reduce){ .km-gk-taslar.km-gk-sars{ animation:none; } .km-gk-tas.km-gk-tas-yeni{ animation:none; } }
 
 /* ---- KULE (Faz 16, Adım 1, 3. oyun, 2026-09-18, gece görevi) — UI kromu. SVG'nin kendisi (taşlar,
@@ -11145,6 +11249,22 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
   .km-ydok-ad{ font-size:13.5px; }
 }
 @media (prefers-reduced-motion: reduce){ .km-ydok-slot.sirada{ animation:none; } }
+/* Karakter seçimi (2026-09-20) */
+.km-oyun-chip-karakter{ font-size:13px; cursor:pointer; opacity:.7; padding:2px 3px; border-radius:6px; }
+.km-oyun-chip-karakter:hover{ opacity:1; background:rgba(255,255,255,0.08); }
+.km-oyun-karakter-modal{ position:absolute; inset:0; z-index:60; background:rgba(4,6,14,0.78); display:flex; align-items:center; justify-content:center; padding:16px; }
+#km-oyun-wrap:fullscreen .km-oyun-karakter-modal{ position:fixed; }
+.km-oyun-karakter-kutu{ width:min(680px, 100%); max-height:100%; overflow:auto; background:var(--panel, #10141c); border:1.5px solid var(--a1, #7dd3fc); border-radius:18px; padding:14px 16px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+.km-oyun-karakter-baslik{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink, #fff); margin-bottom:12px; }
+.km-oyun-karakter-baslik button{ background:none; border:1px solid var(--line, #445); color:var(--ink, #fff); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:14px; }
+.km-oyun-karakter-izgara{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; }
+.km-oyun-karakter-sec{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px 8px; border-radius:14px; border:2px solid var(--line, #445); background:rgba(255,255,255,0.04); color:var(--ink, #fff); cursor:pointer; transition:transform .12s, border-color .12s; }
+.km-oyun-karakter-sec img{ width:64px; height:64px; object-fit:contain; }
+.km-oyun-karakter-sec span{ font-family:var(--font-body); font-weight:700; font-size:11px; text-align:center; }
+.km-oyun-karakter-sec:hover{ transform:translateY(-2px); border-color:var(--a1, #7dd3fc); }
+.km-oyun-karakter-sec.secili{ border-color:var(--a1, #7dd3fc); background:color-mix(in srgb, var(--a1, #7dd3fc) 16%, transparent); box-shadow:0 0 0 3px color-mix(in srgb, var(--a1, #7dd3fc) 25%, transparent); }
+.km-oyun-karakter-alt{ display:flex; justify-content:flex-end; margin-top:12px; }
+.km-oyun-karakter-alt button{ font-family:var(--font-body); font-weight:700; font-size:12px; color:var(--ink, #fff); background:rgba(255,255,255,0.06); border:1px solid var(--line, #445); border-radius:10px; padding:8px 14px; cursor:pointer; }
 .km-oyun-sayac-serbest{ color:var(--neon-green); border-color:var(--neon-green); }
 .km-oyun-sayac-toplama{ color:var(--accent-orange); border-color:var(--accent-orange); }
 .km-oyun-sayac-duraklatildi{ opacity:.6; animation:none; }
@@ -13431,7 +13551,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // (eski elyazması/taş atmosferi Adım 2'nin işi) — sadece kategori etiketi, ilerleme satırı, harf
         // kutuları, ipucu ve "Tahmin Et" düğmesi. Tahmin/bilgi kartı modal'ı AYNI panel içinde, gösterme/
         // gizleme #km-gk-modal'ın display'iyle kontrol ediliyor (kmGizliKelimeTahminCiz).
-        if(tid === 'gizlikelime') return `<div class="km-oyun-panel" id="km-oyun-panel-gizlikelime">
+        if(tid === 'gizlikelime') return `<div class="km-oyun-panel km-oyun-panel-gizlikelime" id="km-oyun-panel-gizlikelime">
             <div class="km-gk-govde">
                 <div class="km-gk-ust">
                     <span class="km-gk-kategori" id="km-gk-kategori"></span>
@@ -13651,6 +13771,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-oyun-chip-info"><div class="km-oyun-chip-nm">${s.ad}${seri > 1 ? ` <span class="km-oyun-chip-seri" title="${seri} ders üst üste bir sahne bitirdi">🔥${seri}</span>` : ''}</div><div class="km-oyun-chip-cp">${durum} · <b>${s.toplamSkor}p</b></div></div>
                     ${takimRozeti}
                     <span class="km-oyun-chip-alkis" onclick="event.stopPropagation(); kmOyunAlkisla(${i})" title="Alkışla">👏${d.alkis ? `<b>${d.alkis}</b>` : ''}</span>
+                    <span class="km-oyun-chip-karakter" onclick="event.stopPropagation(); kmOyunKarakterSecAc(${i})" title="Karakter seç">🎭</span>
                     <span class="km-oyun-chip-sev" onclick="event.stopPropagation(); kmOyunSeviyeDegistir(${i})" title="Adil Sıralama seviyesi — değiştirmek için dokun">${KM_SEVIYE_IKON[sev]}</span>
                 </div>`;
             }).join('');
@@ -14353,8 +14474,27 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // cinsiyet-bazlı/prosedürel karakterlerinin YERİNE geçiyor. Atama RASTGELE ama KALICI —
         // Ninja'nın _kmOyunNinjaKarakterMap emsaliyle AYNI desen (isme göre saklanan, konum bazlı,
         // tarih damgasız — bir sporcunun hayvanı ders ders değişmemeli).
+        // Karakter seçimi (2026-09-20, kullanıcı: "oyunlarda karakter seçimi yapabilir") — 9 hayvan + 3 Zirve
+        // figürü (eski cinsiyet-bazlı webp'ler, artık seçilebilir kostüm). 1..9 hayvan PNG, 10..12 Zirve webp.
+        // Seçim sporcu başına KALICI (_kmOyunHayvanKarakterMap — rastgele atamayla AYNI kayıt), Zirve/Ninja/
+        // Dağ/Kayıp Ada'da geçerli. Seçimden sonra sahne tam yeniden kurulur (Resync görünümü değiştirmez).
         var KM_OYUN_HAYVAN_SAYISI = 9;
-        var KM_OYUN_HAYVAN_ORAN = [535 / 397, 461 / 472, 565 / 548, 473 / 525, 519 / 469, 488 / 455, 371 / 614, 473 / 466, 382 / 471];
+        var KM_OYUN_KARAKTERLER = [
+            { no: 1, ad: 'Kaplumbağa', src: '/hayvankarakter/parcalar/hayvan-1.png', oran: 535 / 397 },
+            { no: 2, ad: 'Kurbağa', src: '/hayvankarakter/parcalar/hayvan-2.png', oran: 461 / 472 },
+            { no: 3, ad: 'Kirpi', src: '/hayvankarakter/parcalar/hayvan-3.png', oran: 565 / 548 },
+            { no: 4, ad: 'Köpek', src: '/hayvankarakter/parcalar/hayvan-4.png', oran: 473 / 525 },
+            { no: 5, ad: 'Ayı', src: '/hayvankarakter/parcalar/hayvan-5.png', oran: 519 / 469 },
+            { no: 6, ad: 'Tembel Hayvan', src: '/hayvankarakter/parcalar/hayvan-6.png', oran: 488 / 455 },
+            { no: 7, ad: 'Zürafa', src: '/hayvankarakter/parcalar/hayvan-7.png', oran: 371 / 614 },
+            { no: 8, ad: 'Arı', src: '/hayvankarakter/parcalar/hayvan-8.png', oran: 473 / 466 },
+            { no: 9, ad: 'Penguen', src: '/hayvankarakter/parcalar/hayvan-9.png', oran: 382 / 471 },
+            { no: 10, ad: 'İzci', src: '/zirve-karakterler/zirve-izci-erkek.webp', oran: 385 / 460 },
+            { no: 11, ad: 'Tırmanıcı', src: '/zirve-karakterler/zirve-tirmanici-kiz.webp', oran: 258 / 420 },
+            { no: 12, ad: 'Buz Tırmanıcısı', src: '/zirve-karakterler/zirve-buz-tirmanici.webp', oran: 379 / 440 }
+        ];
+        var KM_OYUN_HAYVAN_ORAN = KM_OYUN_KARAKTERLER.map(function(k) { return k.oran; });
+        function kmOyunKarakterBilgi(no) { return KM_OYUN_KARAKTERLER[(no || 1) - 1] || KM_OYUN_KARAKTERLER[0]; }
         // tabela.png'den kesilen 7 dağ temalı tabela (yalnız Zirve Yolu'nda, dekoratif) — bkz. kmOyunSahneKurZirve.
         var KM_OYUN_ZIRVE_TABELA_SAYISI = 7;
         var KM_OYUN_ZIRVE_TABELA_ORAN = [462 / 519, 523 / 464, 435 / 474, 323 / 598, 816 / 566, 473 / 413, 463 / 411];
@@ -14371,8 +14511,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunHayvanKarakterYukle();
             let key = s.g + '|' + s.ad;
             let mevcut = _kmOyunHayvanKarakterMap[key];
-            if(typeof mevcut === 'number' && mevcut >= 1 && mevcut <= KM_OYUN_HAYVAN_SAYISI) return mevcut;
-            let no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI);
+            if(typeof mevcut === 'number' && mevcut >= 1 && mevcut <= KM_OYUN_KARAKTERLER.length) return mevcut;
+            let no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI); // rastgele atama yine 9 hayvandan
             _kmOyunHayvanKarakterMap[key] = no;
             kmOyunHayvanKarakterKaydet();
             return no;
@@ -14398,12 +14538,40 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return `<g class="km-char-bob">
                 ${cerceveHTML}
                 <ellipse class="km-char-shadow" cx="0" cy="2" rx="${(en * 0.38).toFixed(1)}" ry="4"/>
-                <image href="/hayvankarakter/parcalar/hayvan-${no}.png" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
+                <image href="${kmOyunKarakterBilgi(no).src}" x="${(-en / 2).toFixed(1)}" y="${(-boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
                 ${takimRozetiHTML}
             </g>`;
         }
         // Zirve'nin karakteri artık Hayvan Karakterler havuzundan geliyor (bkz. yukarısı) — eski
         // cinsiyet-bazlı zirve-tirmanici-kiz/zirve-izci-erkek/zirve-buz-tirmanici webp'leri KALDIRILDI.
+        function kmOyunKarakterSecAc(i) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            let mevcut = kmOyunHayvanKarakterAta(s);
+            let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
+            m.innerHTML = `<div class="km-oyun-karakter-kutu">
+                <div class="km-oyun-karakter-baslik"><span>🎭 ${esc(s.ad)} — karakter seç</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat">✕</button></div>
+                <div class="km-oyun-karakter-izgara">${KM_OYUN_KARAKTERLER.map(function(k) { return `<button class="km-oyun-karakter-sec${k.no === mevcut ? ' secili' : ''}" onclick="kmOyunKarakterSec(${i}, ${k.no})"><img src="${k.src}" alt=""><span>${esc(k.ad)}</span></button>`; }).join('')}</div>
+                <div class="km-oyun-karakter-alt"><button onclick="kmOyunKarakterSec(${i}, 0)">🎲 Rastgele</button></div>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
+            (document.getElementById('km-oyun-wrap') || document.body).appendChild(m);
+        }
+        function kmOyunKarakterSecKapat() { let m = document.getElementById('km-oyun-karakter-modal'); if(m) m.remove(); }
+        function kmOyunKarakterSec(i, no) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            kmOyunHayvanKarakterYukle();
+            if(!no) no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI);
+            _kmOyunHayvanKarakterMap[s.g + '|' + s.ad] = no;
+            kmOyunHayvanKarakterKaydet();
+            kmOyunKarakterSecKapat();
+            try { sesCal(900, 0.06); } catch(e) {}
+            // Görünüm karakterin İÇİNE gömülü — Resync yetmez, sahne baştan kurulur (bkz. KM Oyunlar notu).
+            kmOyunSahneKurHepsi();
+            kmOyunChipleriCiz();
+            showToast('🎭 ' + s.ad.split(' ')[0] + ' artık ' + kmOyunKarakterBilgi(no).ad + '!', 'success');
+        }
         function kmOyunZirveKarakterSVG(s) {
             return kmOyunHayvanKarakterSVG(s, null, 56);
         }
@@ -15817,9 +15985,61 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { kelime: 'DENGE', kategori: 'ortak', ipucu: `Yayın ve okçunun duruşunda sağlanması gereken şey.`, bilgi: `Denge, hem yayın iki kanadı arasında hem de okçunun duruşunda sağlanması gereken şeydir. Dengesiz bir yay ya da dengesiz bir duruş, okun sapmasına yol açar. Stabilizatörler de dengeye yardımcı olur.`, ikonSvg: `<path d="M12 3v16"/><path d="M4 9h16"/><path d="M4 9l-2 5h6z"/><path d="M20 9l-2 5h6z"/>` },
             { kelime: 'BIRAKIŞ', kategori: 'ortak', ipucu: `Kirişin parmaklardan ya da tetikten ayrıldığı an.`, bilgi: `Bırakış, kirişin parmaklardan (ya da tetikten) ayrılıp okun fırladığı andır (bazı antrenörler "salma" da der). İyi bir bırakış yumuşak ve ani olmalıdır. Çoğu hatalı atış, bozuk bir bırakıştan kaynaklanır.`, ikonSvg: `<path d="M5 12h10"/><path d="M13 8l6 4-6 4"/>` },
             { kelime: 'AYAKLIK', kategori: 'ortak', ipucu: `Yayın yere değmeden dinlendiği küçük stand.`, bilgi: `Ayaklık, yayın atışlar arasında yere ya da toza değmeden dinlenmesini sağlayan küçük bir stanttır. Yayın kirlenmesini ve çizilmesini önler. Her iki yay türü için de kullanılır.`, ikonSvg: `<path d="M12 3v12"/><path d="M12 15l-6 6M12 15l6 6M12 15v6"/>` },
+            // ---- Arşiv genişletme (2026-09-20, "kelime olarak arşivi büyüt"): +47 terim, 3 yeni kategori
+            // (teknik / yarisma / tarih). Aynı yapı, aynı şık/harf mantığı; kategori adları KM_GK_KATEGORI_AD'da.
+            { kelime: 'ANKRAJ', kategori: 'teknik', ipucu: `Çekişin bittiği yerde elin yüzde sabitlendiği nokta.`, bilgi: `Ankraj (çapa noktası), çeken elin her atışta yüzde aynı yere — klasik yayda genellikle çene altına — oturmasıdır. Bu nokta değişirse ok da farklı yere gider. Tutarlı ankraj, tutarlı isabetin temelidir.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'TAKİP', kategori: 'teknik', ipucu: `Ok gittikten sonra bile vücudun bozulmadan kalması.`, bilgi: `Takip (İngilizcesiyle "follow-through"), bırakıştan sonra vücudun ve kolların bir an daha aynı pozisyonda kalmasıdır. Ok kirişten çıkarken yapılan en küçük hareket bile onu saptırır. İyi okçular ok hedefe varana kadar "donmuş" gibi durur.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'KAVRAMA', kategori: 'teknik', ipucu: `Yay elinin kabzayı tutuş biçimi.`, bilgi: `Kavrama, yay elinin kabzaya nasıl oturduğudur. Yay sıkılmaz; avuç içinin baş parmak tarafına gevşekçe yaslanır. Sıkı kavrama yayı burar ve oku sağa sola savurur.`, ikonSvg: `<path d="M5 20c-3-7-1-15 7-17 5-1 9 2 10 6"/>` },
+            { kelime: 'TORK', kategori: 'teknik', ipucu: `Yay elinin kabzayı istemeden burması.`, bilgi: `Tork, yay elinin kabzayı çevirmesiyle yaya binen burulma kuvvetidir. Çoğunlukla sıkı kavramadan kaynaklanır ve oku yana saptırır. Gevşek kavrama ve parmak askısı torku azaltır.`, ikonSvg: `<path d="M5 20c-3-7-1-15 7-17 5-1 9 2 10 6"/>` },
+            { kelime: 'SIRT', kategori: 'teknik', ipucu: `Çekişi parmaklar değil buradaki kaslar bitirmeli.`, bilgi: `İyi bir çekiş kolla değil sırt kaslarıyla (kürek kemiklerini birbirine yaklaştırarak) tamamlanır. Antrenörlerin "sırt gerilimi" dediği şey budur. Sırt kasları koldan çok daha güçlü ve dayanıklı olduğu için atış da daha tutarlı olur.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'HİZALAMA', kategori: 'teknik', ipucu: `Omuz, dirsek ve okun aynı çizgiye gelmesi.`, bilgi: `Hizalama, tam çekişte yay omzu, çeken kolun dirseği ve okun neredeyse tek bir çizgide olmasıdır. Bu çizgi bozulursa kuvvet dağılır ve bırakış temiz olmaz. Antrenörler çoğu zaman sporcuyu arkadan izleyerek hizalamayı kontrol eder.`, ikonSvg: `<path d="M3 17L17 3l4 4L7 21z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>` },
+            { kelime: 'NEFES', kategori: 'teknik', ipucu: `Atış boyunca kontrol edilmesi gereken, herkesin yaptığı şey.`, bilgi: `Nefes kontrolü, atışın sakin ve tutarlı olmasını sağlar. Çoğu okçu çekişte nefes alır, nişan sırasında nefesini yarım tutar, bırakıştan sonra verir. Nişan alırken derin nefes almak göğsü hareket ettirip ankrajı bozar.`, ikonSvg: `<path d="M12 21V9"/><path d="M12 9c-4 0-7-3-7-6 4 0 7 2 7 6z"/><path d="M12 9c4 0 7-3 7-6-4 0-7 2-7 6z"/>` },
+            { kelime: 'GRUPMAN', kategori: 'teknik', ipucu: `Okların hedefte birbirine yakın toplanması.`, bilgi: `Grupman, bir serideki okların hedefte ne kadar bir arada durduğudur. Sıkı bir grupman, sarıda olmasa bile tekniğin tutarlı olduğunu gösterir. Tutarlı grupman yapan okçu, nişangah ayarıyla gruptaki tüm okları sarıya taşıyabilir.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'RİTİM', kategori: 'teknik', ipucu: `Her atışın aynı sürede, aynı akışla yapılması.`, bilgi: `Ritim, atışın adımlarının her seferinde aynı tempoda akmasıdır. Çok uzun nişan alan okçu yorulur ve titrer; çok hızlı atan ise kontrolü kaybeder. İyi bir ritim, baskı altında bile atışın bozulmamasını sağlar.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>` },
+            { kelime: 'DİRSEK', kategori: 'teknik', ipucu: `Çeken kolda okla aynı hizada olması gereken eklem.`, bilgi: `Çeken kolun dirseği tam çekişte okun uzantısında olmalıdır. Dirsek düşük ya da dışarıda kalırsa kuvvet sırta değil kola biner. Yay kolunun dirseği ise kirişin çarpmaması için hafif dışa döndürülür.`, ikonSvg: `<path d="M4 14c3 0 5-4 9-4h7"/><path d="M4 18c3 0 5-2 9-2h7"/>` },
+            { kelime: 'NİŞAN', kategori: 'teknik', ipucu: `Nişangahı hedefin ortasına getirme anı.`, bilgi: `Nişan, tam çekişte nişangah (ya da ok ucu) ile hedefin sarısını üst üste getirmektir. Nişangah asla tam sabit durmaz, hafifçe salınır; okçu bunu kabullenip bırakışa odaklanır. Uzun süre nişan almak isabeti artırmaz, yorgunluğu artırır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'SET', kategori: 'yarisma', ipucu: `Bireysel eleme maçlarında 3 oklu her bölümün adı.`, bilgi: `Klasik yayda eleme maçları set sistemiyle oynanır: her sette iki okçu 3'er ok atar. Seti kazanan 2, berabere kalanlar 1'er set puanı alır. 6 set puanına ilk ulaşan maçı kazanır.`, ikonSvg: `<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>` },
+            { kelime: 'BARAJ', kategori: 'yarisma', ipucu: `Maç berabere bitince tek okla yapılan ek atış.`, bilgi: `Set puanları 5-5 olursa maç tek oklu baraj atışıyla (İngilizcesi "shoot-off") çözülür. Her iki okçu birer ok atar; oku merkeze daha yakın olan kazanır. Bu yüzden barajda 10 atmak bile yetmeyebilir, mesafe ölçülür.`, ikonSvg: `<path d="M3 12h13"/><path d="M14 6l7 6-7 6"/>` },
+            { kelime: 'SIRALAMA', kategori: 'yarisma', ipucu: `Eleme maçlarından önce herkesin 72 ok attığı tur.`, bilgi: `Sıralama turunda tüm sporcular 72 ok (12 seri × 6 ok) atar ve toplam puana göre sıralanır. Bu sıralama eleme tablosundaki eşleşmeleri belirler: 1. ile 64., 2. ile 63. eşleşir. İyi bir sıralama, ilk turlarda daha kolay rakip demektir.`, ikonSvg: `<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>` },
+            { kelime: 'ELEME', kategori: 'yarisma', ipucu: `Sıralamadan sonra kaybedenin evine gittiği maçlar.`, bilgi: `Eleme turlarında sporcular ikili maçlar yapar, kaybeden turnuvadan çıkar. Tablo 1/32, 1/16, 1/8, çeyrek, yarı final ve final şeklinde ilerler. Sıralamada ilk sıralarda olmak, ilk turda güçlü rakiplerden kaçınmayı sağlar.`, ikonSvg: `<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>` },
+            { kelime: 'FİNAL', kategori: 'yarisma', ipucu: `Altın madalyanın belirlendiği son maç.`, bilgi: `Final, turnuvanın en son maçıdır; kazanan altın, kaybeden gümüş madalya alır. Bronz madalya ise yarı finalde kaybeden iki sporcu arasındaki ayrı bir maçla belirlenir. Büyük yarışmalarda finaller tek hedefte, seyirci önünde atılır.`, ikonSvg: `<path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/>` },
+            { kelime: 'MESAFE', kategori: 'yarisma', ipucu: `Klasik yayda 70, makaralı yayda 50 metre.`, bilgi: `Olimpik klasik yay yarışmalarında hedef 70 metrede, makaralı yayda 50 metrededir. Küçük yaş kategorilerinde mesafeler kısalır (örneğin 60, 40 ya da 30 m). Salon (indoor) yarışmaları ise 18 metrede yapılır.`, ikonSvg: `<path d="M3 17L17 3l4 4L7 21z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>` },
+            { kelime: 'HALKA', kategori: 'yarisma', ipucu: `Hedef yüzündeki iç içe geçmiş 10 puan bölgesi.`, bilgi: `Hedef yüzü 10 halkadan oluşur: en dışta beyaz (1-2), sonra siyah (3-4), mavi (5-6), kırmızı (7-8) ve ortada sarı (9-10). 70 metrede 122 cm'lik, makaralı yayda 50 metrede 80 cm'lik hedef kullanılır. Merkezdeki en küçük halka "X" olarak sayılır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'ÇİZGİ', kategori: 'yarisma', ipucu: `Ok buna değiyorsa yüksek puan sayılır.`, bilgi: `Ok iki halkayı ayıran çizgiye değiyorsa (çizgiyi kesiyorsa) yüksek olan puan yazılır. Bu yüzden oklar hedeften çekilmeden önce puanlar okunur; oka dokunmak yasaktır. Tartışmalı durumlarda hakem büyüteçle bakar.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'HAKEM', kategori: 'yarisma', ipucu: `Yarışmada kuralları uygulayan, tartışmalı okları değerlendiren görevli.`, bilgi: `Hakem, yarışmada süreyi, güvenliği ve puanlamayı denetler. Tartışmalı bir okun değeri sadece hakem tarafından belirlenir. Ekipman kontrolü de hakemlerin görevidir; kurala uymayan ekipmanla yarışılamaz.`, ikonSvg: `<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>` },
+            { kelime: 'DÜDÜK', kategori: 'yarisma', ipucu: `İki kere çalınca çizgiye gidilir, bir kere çalınca atış başlar.`, bilgi: `Yarışmada komutlar düdükle verilir: 2 düdük "atış çizgisine gel", 1 düdük "atışa başla", 3 düdük "okları toplamaya git". Çok sayıda kesintisiz düdük ise acil durum demektir; herkes atışı hemen bırakır.`, ikonSvg: `<circle cx="9" cy="14" r="5"/><path d="M13 12l8-4v6l-8-2"/>` },
+            { kelime: 'IŞIK', kategori: 'yarisma', ipucu: `Yeşil, sarı ve kırmızıyla atış süresini gösterir.`, bilgi: `Atış çizgisinin yanındaki ışıklar süreyi bildirir: yeşil "atış serbest", sarı "son 30 saniye", kırmızı "süre bitti, atış yasak". Kırmızıda atılan ok, o serideki en yüksek okun puanının silinmesine yol açar.`, ikonSvg: `<rect x="9" y="2" width="6" height="20" rx="3"/><circle cx="12" cy="6" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="18" r="1.4"/>` },
+            { kelime: 'SÜRE', kategori: 'yarisma', ipucu: `3 ok için 2 dakika, 6 ok için 4 dakika.`, bilgi: `Sıralama turunda 3 oklu seride 2 dakika, 6 oklu seride 4 dakika süre vardır. Eleme maçlarında ise dönüşümlü atışta her ok için 20 saniye verilir. Süre bittikten sonra atılan ok cezalıdır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>` },
+            { kelime: 'TAKIM', kategori: 'yarisma', ipucu: `Üç sporcunun birlikte yarıştığı, her sette 6 ok atılan format.`, bilgi: `Takım yarışmasında 3 sporcu birlikte yarışır; her sette takım toplam 6 ok (her sporcu 2 ok) atar. Setler 4'er ok yerine 6 okla oynandığı için süre de 2 dakikadır. Sporcular sırayla çizgiye çıkar, aynı anda sadece bir kişi atar.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'KARIŞIK', kategori: 'yarisma', ipucu: `Bir kadın ve bir erkek sporcunun oluşturduğu takım.`, bilgi: `Karışık takım, bir kadın ve bir erkek sporcudan oluşur; her sette toplam 4 ok atarlar. Bu format 2020 Tokyo'dan itibaren Olimpiyat programındadır. Türkiye bu formatta dünya ve Avrupa madalyaları kazanmıştır.`, ikonSvg: `<circle cx="12" cy="4.2" r="2.2"/><path d="M12 6.4v7.6M8 11l4-1 4 1M9 21l3-7 3 7"/>` },
+            { kelime: 'BEKLEME', kategori: 'yarisma', ipucu: `Atış sırası gelmeyen sporcunun arkasında durduğu çizgi.`, bilgi: `Bekleme çizgisi, atış çizgisinin birkaç metre gerisindedir. Sırası gelmeyen sporcular ve antrenörler bu çizginin arkasında durur. Böylece atan sporcunun dikkati dağılmaz ve güvenlik sağlanır.`, ikonSvg: `<path d="M3 17L17 3l4 4L7 21z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>` },
+            { kelime: 'YALIN', kategori: 'yarisma', ipucu: `Nişangahsız ve stabilizatörsüz atılan yay sınıfı.`, bilgi: `Yalın yay (İngilizcesiyle "barebow"), nişangah, kliker ve stabilizatör olmadan atılan klasik yay sınıfıdır. Okçu ok ucunu ya da kirişi referans alarak nişan alır. Dünya Okçuluk'ta ayrı bir kategori olarak yarışılır.`, ikonSvg: `<path d="M7 3a15 15 0 0 0 0 18"/><path d="M7 3v18"/>` },
+            { kelime: 'LİBRE', kategori: 'yarisma', ipucu: `Yayın çekiş gücünün ölçüldüğü birim.`, bilgi: `Yay gücü libre (pound, kısaltması "lb") ile ölçülür; 1 libre yaklaşık 0,45 kilogramdır. Çocuk yayları 10-18 libre, yetişkin yarışma yayları 35-50 libre civarındadır. Gücü fazla olan yay teknik hatalara yol açar, azı ise uzun mesafede yetersiz kalır.`, ikonSvg: `<path d="M12 3v16"/><path d="M4 9h16"/><path d="M4 9l-2 5h6z"/><path d="M20 9l-2 5h6z"/>` },
+            { kelime: 'KEMANKEŞ', kategori: 'tarih', ipucu: `Osmanlı'da usta okçuya verilen unvan.`, bilgi: `Kemankeş, "yay çeken" anlamına gelir; Osmanlı'da ustalığını kanıtlamış okçulara verilen unvandı. Kemankeş olmak için Okçular Tekkesi'nde uzun bir eğitimden geçmek ve belirli bir menzili aşmak gerekirdi. Kemankeş Mustafa Paşa gibi devlet adamları da bu unvanı taşımıştır.`, ikonSvg: `<path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>` },
+            { kelime: 'ZİHGİR', kategori: 'tarih', ipucu: `Türk usulü çekişte baş parmağa takılan yüzük.`, bilgi: `Zihgir, kirişi baş parmakla çekerken parmağı koruyan yüzüktür; kemik, fildişi ya da metalden yapılırdı. Türk okçuluğunda kiriş üç parmakla değil baş parmakla çekilir. Bugün geleneksel okçuluk yarışmalarında hâlâ kullanılır.`, ikonSvg: `<circle cx="12" cy="13" r="6"/><circle cx="12" cy="13" r="2.5"/>` },
+            { kelime: 'TİRKEŞ', kategori: 'tarih', ipucu: `Osmanlı okçusunun oklarını taşıdığı kılıf.`, bilgi: `Tirkeş, okların taşındığı deri ya da kumaş kılıftır; bugünkü sadağın atasıdır. Bele takılır ve oklar temrenleri aşağı gelecek şekilde konurdu. Süslü tirkeşler Osmanlı sanatının önemli örneklerindendir.`, ikonSvg: `<rect x="3" y="7" width="18" height="12" rx="3"/><path d="M12 3v4"/>` },
+            { kelime: 'MENZİL', kategori: 'tarih', ipucu: `Osmanlı'da en uzağa ok atma yarışı.`, bilgi: `Menzil atışı, oku mümkün olan en uzağa atma yarışıdır; hedef değil mesafe önemlidir. Rekor kıranların adına Okmeydanı'na "menzil taşı" dikilirdi. Bazı rekorlar 800 metreyi aşmıştır ve günümüz yaylarıyla bile ulaşılması zordur.`, ikonSvg: `<path d="M8 21V6l4-3 4 3v15"/><path d="M8 21h8"/>` },
+            { kelime: 'PUTA', kategori: 'tarih', ipucu: `Osmanlı okçularının içi doldurulmuş deri hedefi.`, bilgi: `Puta, içi pamuk ya da talaşla doldurulmuş, armut biçimli deri hedeftir. Osmanlı okçuları hedef atışı talimini putaya yapardı. Günümüzde geleneksel Türk okçuluğu yarışmalarında puta atışı ayrı bir daldır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'OKMEYDANI', kategori: 'tarih', ipucu: `İstanbul'da yüzyıllarca ok atılan tarihi alan.`, bilgi: `Okmeydanı, Fatih Sultan Mehmet döneminden itibaren okçuların talim ve yarışma yaptığı İstanbul'daki geniş alandır. Menzil rekorlarının taşları burada dikilirdi. Bugün aynı yerde Okçular Tekkesi yeniden açılmış ve geleneksel okçuluk yaşatılmaktadır.`, ikonSvg: `<path d="M3 20h18"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/>` },
+            { kelime: 'TEKKE', kategori: 'tarih', ipucu: `Okçuların eğitim aldığı, kabul töreni yaptığı ocak.`, bilgi: `Okçular Tekkesi, Osmanlı'da okçuluğun öğretildiği ve yönetildiği kurumdu. Okçu adayları burada yıllarca eğitim görür, yeterli olunca törenle "kabza alır" yani ustalığa kabul edilirdi. Sadece bir spor okulu değil, ahlak ve edep de öğreten bir ocaktı.`, ikonSvg: `<path d="M3 20h18"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/>` },
+            { kelime: 'KEPAZE', kategori: 'tarih', ipucu: `Yeni başlayanların çalıştığı zayıf yay — bugün başka anlamda kullanılır.`, bilgi: `Kepaze, Osmanlı'da acemilerin kol kaslarını alıştırmak için kullandığı çok zayıf yaydı. Kolay çekildiği için zamanla "değersiz, ciddiye alınmayan" anlamı kazandı. Bugün günlük dilde kullandığımız "kepaze" sözü işte bu yaydan gelir.`, ikonSvg: `<path d="M7 3a15 15 0 0 0 0 18"/><path d="M7 3v18"/>` },
+            { kelime: 'SİPER', kategori: 'tarih', ipucu: `Menzil okçusunun kısa oku kabzanın gerisine çekmesini sağlayan alet.`, bilgi: `Siper, yay eline takılan oluklu bir parçadır; menzil atışında kullanılan kısa okların kabzanın gerisine kadar çekilmesini sağlar. Böylece ok daha uzun çekilir ve daha uzağa gider. Sipersiz böyle bir çekiş okçunun elini yaralar.`, ikonSvg: `<path d="M5 20c-3-7-1-15 7-17 5-1 9 2 10 6"/>` },
+            { kelime: 'ÇİLE', kategori: 'tarih', ipucu: `Osmanlı okçusunun kirişe verdiği ad.`, bilgi: `Çile, geleneksel Türk okçuluğunda yay kirişinin adıdır; ipek ya da bağırsaktan yapılırdı. "Çile çekmek" deyiminin bu kirişi çekmenin zorluğundan geldiği söylenir. Yayı kurmaya da "çileye koymak" denirdi.`, ikonSvg: `<path d="M7 3a15 15 0 0 0 0 18"/><path d="M7 3v18"/>` },
+            { kelime: 'TOZKOPARAN', kategori: 'tarih', ipucu: `Okmeydanı'nın en ünlü menzil rekortmeninin lakabı.`, bilgi: `Tozkoparan İskender, 16. yüzyılda Okmeydanı'nda birçok menzil rekoru kıran efsanevi okçudur. Attığı okun yerden toz kopardığı için bu lakabı aldığı anlatılır. Adına dikilen menzil taşları hâlâ ayaktadır.`, ikonSvg: `<path d="M8 21V6l4-3 4 3v15"/><path d="M8 21h8"/>` },
+            { kelime: 'KOLLUK', kategori: 'ortak', ipucu: `Kirişin yay koluna çarpmasını önleyen koruyucu.`, bilgi: `Kolluk, yay kolunun iç tarafına takılır ve kirişin kola çarpıp morartmasını önler. Ayrıca bol kıyafetin kirişe takılmasını engeller. Yeni başlayanların en sık ihtiyaç duyduğu koruyucudur.`, ikonSvg: `<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>` },
+            { kelime: 'ASKI', kategori: 'ortak', ipucu: `Gevşek tutulan yayın yere düşmesini önleyen ip.`, bilgi: `Askı (parmak ya da bilek askısı), yay elinin parmaklarına ya da bileğe takılır. Sayesinde okçu yayı sıkmadan, avucunda serbest bırakabilir; bırakıştan sonra yay öne düşer ama askı onu tutar. Tork'u azaltmanın en etkili yollarından biridir.`, ikonSvg: `<path d="M5 20c-3-7-1-15 7-17 5-1 9 2 10 6"/>` },
+            { kelime: 'YATAK', kategori: 'ortak', ipucu: `Okun yay üzerinde durduğu küçük parça.`, bilgi: `Ok yatağı, okun çekiş sırasında üzerinde durduğu küçük parçadır. Klasik yayda ince bir plastik ya da metal kol, makaralı yayda düşen ("drop-away") yataklar kullanılır. Yatak bozuksa okun uçuşu düzelmez.`, ikonSvg: `<path d="M3 12h13"/><path d="M14 6l7 6-7 6"/>` },
+            { kelime: 'ŞAFT', kategori: 'ortak', ipucu: `Okun temren ile gez arasındaki boru gövdesi.`, bilgi: `Şaft, okun ana gövdesidir; karbon, alüminyum ya da ikisinin karışımından yapılır. Şaftın sertliğine "spine", uzunluğuna ise "ok boyu" denir. Çatlamış bir şaft asla atılmaz, kırılıp ele saplanabilir.`, ikonSvg: `<path d="M3 12h13"/><path d="M14 6l7 6-7 6"/>` },
+            { kelime: 'KARBON', kategori: 'ortak', ipucu: `Modern okların çoğunun yapıldığı hafif ve sert malzeme.`, bilgi: `Karbon fiber, modern yarışma oklarının en yaygın malzemesidir; hafif, sert ve rüzgârdan az etkilenir. Alüminyum oklar daha ucuz ve dayanıklıdır, bu yüzden başlangıçta tercih edilir. En üst seviye oklar karbon-alüminyum karışımıdır.`, ikonSvg: `<path d="M3 12h13"/><path d="M14 6l7 6-7 6"/>` },
+            { kelime: 'ARPACIK', kategori: 'ortak', ipucu: `Nişangahın hedefe tutulan küçük ucu.`, bilgi: `Arpacık, klasik yay nişangahının üzerindeki küçük pim ya da halkadır; okçu bunu hedefin sarısına tutar. Adını eski tüfeklerdeki arpa tanesi biçimli nişan parçasından alır. Makaralı yayda arpacığın yerini mercek ve içindeki nokta alır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
+            { kelime: 'SARGI', kategori: 'ortak', ipucu: `Kirişin gezin oturduğu bölgesindeki koruyucu iplik sarımı.`, bilgi: `Sargı (İngilizcesiyle "serving"), kirişin ortasına ve uçlarına sarılan koruyucu ipliktir. Gez tam bu sargının üzerine takılır; sargı olmazsa kiriş kısa sürede aşınır. Gezin kiriş üzerindeki yeri de sargı üzerine takılan küçük "gez noktası" ile işaretlenir.`, ikonSvg: `<path d="M3 12c3-6 6 6 9 0s6-6 9 0"/>` },
+            { kelime: 'MİNDER', kategori: 'ortak', ipucu: `Hedef kâğıdının takıldığı, okları tutan yastık.`, bilgi: `Minder (hedef yastığı), ok atılan hedefin arkasındaki kalın, okları durduran gövdedir. Sıkıştırılmış saman, köpük ya da sentetik malzemeden yapılır. Hedef kâğıdı bunun üzerine iğnelenir; eskiyen minder oku tutmaz, ok arkaya geçer.`, ikonSvg: `<rect x="3" y="7" width="18" height="12" rx="3"/><path d="M12 3v4"/>` },
+            { kelime: 'DÜRBÜN', kategori: 'ortak', ipucu: `Uzaktaki okların hedefte nereye gittiğini görmeye yarar.`, bilgi: `Dürbün (ya da tripod üstünde "spotting scope"), 70 metredeki okların yerini görmek için kullanılır. Okçu her okun nereye gittiğini görüp nişangahını ayarlar. Yarışmada dürbün bekleme çizgisinin önünde, atış çizgisinde durabilir.`, ikonSvg: `<circle cx="7" cy="15" r="4"/><circle cx="17" cy="15" r="4"/><path d="M9 6h6l2 6H7z"/>` },
+            { kelime: 'İNÇ', kategori: 'ortak', ipucu: `Ok boyu ve çekiş boyunun ölçüldüğü küçük birim.`, bilgi: `Okçulukta uzunluklar inç ile ölçülür; 1 inç 2,54 santimetredir. Çekiş boyu, ok boyu ve kiriş yüksekliği hep inçle söylenir (örneğin "28 inç çekiş"). Yay boyu da inçtir: 66, 68 ve 70 inçlik yaylar en yaygın olanlardır.`, ikonSvg: `<path d="M3 17L17 3l4 4L7 21z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>` },
+            { kelime: 'HEDEF', kategori: 'ortak', ipucu: `Okun ulaşması istenen renkli yüz.`, bilgi: `Hedef, okçunun oklarını gönderdiği renkli halkalı yüzdür. Sarıya "merkez", en içteki küçük halkaya "X" denir. Bir hedefte genellikle 3 ya da 4 sporcu birlikte atar ve oklar hedefte kimin olduğu bilinsin diye numaralandırılır.`, ikonSvg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>` },
             { kelime: 'SPİNE', kategori: 'ortak', ipucu: `Bir okun ne kadar eğilebilir olduğunu gösteren sayı.`, bilgi: `Spine, bir okun ne kadar esnek ya da sert olduğunu gösteren bir sayıdır. Her yaya göre doğru spine'da ok seçilmelidir. Yanlış spine'lı bir ok düzgün uçamaz.`, ikonSvg: `<path d="M3 12c3-6 6 6 9 0s6-6 9 0"/>` },
         ];
-        const KM_GK_KATEGORI_AD = { klasik: 'Klasik Yay', makarali: 'Makaralı Yay', ortak: 'Ortak' };
+        const KM_GK_KATEGORI_AD = { klasik: 'Klasik Yay', makarali: 'Makaralı Yay', ortak: 'Ortak', teknik: 'Atış Tekniği', yarisma: 'Yarışma Kuralları', tarih: 'Türk Okçuluğu' };
         let _kmGizliKelime = null; // { tarih, kelimeIndex, acikPozisyonlar:[bool], cozulenSayisi, kullanilanIndexler:[int] } — SINIF ÇAPINDA paylaşılan, kişiye özel DEĞİL
         let _kmGizliKelimeYuklenenKonum = null;
         let _kmGizliKelimeTahminAcik = false;
@@ -15924,6 +16144,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let dogruIdx = _kmGizliKelime.kelimeIndex;
             let digerleri = KM_GIZLIKELIME_LISTE.map(function(_, idx) { return idx; }).filter(function(idx) { return idx !== dogruIdx; });
             for(let k = digerleri.length - 1; k > 0; k--) { let j = Math.floor(Math.random() * (k + 1)); let t = digerleri[k]; digerleri[k] = digerleri[j]; digerleri[j] = t; }
+            // Şıklar harf sayısına göre elenmesin (2026-09-20, 74 kelimelik arşivle fark edilir oldu):
+            // taş sayısı görünür olduğundan çeldiriciler önce AYNI uzunluktakilerden, sonra en yakın
+            // uzunluktakilerden seçiliyor (karıştırma korunuyor: eşit uzunluklar arasında sıra rastgele).
+            let dogruUz = Array.from(KM_GIZLIKELIME_LISTE[dogruIdx].kelime).length;
+            digerleri.sort(function(a, b) { return Math.abs(Array.from(KM_GIZLIKELIME_LISTE[a].kelime).length - dogruUz) - Math.abs(Array.from(KM_GIZLIKELIME_LISTE[b].kelime).length - dogruUz); });
             let secenekler = [dogruIdx].concat(digerleri.slice(0, 3));
             for(let k = secenekler.length - 1; k > 0; k--) { let j = Math.floor(Math.random() * (k + 1)); let t = secenekler[k]; secenekler[k] = secenekler[j]; secenekler[j] = t; }
             _kmGizliKelimeSecenekIndexleri = secenekler;

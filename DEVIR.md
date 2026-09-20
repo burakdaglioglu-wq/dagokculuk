@@ -4539,3 +4539,62 @@ yakın çekim takip ediyor; geniş görünüm (kilit) tüm adayı sisli gösteri
 360px'te meet ile tam ada; fps ~51-57 (sis animasyonu açıkken).
 
 **Deploy durumu (40)**: Kullanıcı onayladı (2026-09-20), commit + push + deploy edildi.
+
+## 41. Gizli Kelime arşivi + büyütme, karakter seçimi, Çift Kayıt aracı (2026-09-20)
+
+Kullanıcı bildirimleri: "gizli kelimeyi geliştirelim, yetişkinler de sevdi → şu anlık kelime arşivini
+büyüt", sonra 5 maddelik liste; bu turda onaylananlar: (1) karakter seçimi, (2) kelime oyunu küçük,
+(5) çift kayıtlı sporcular. (3)+(4) Sis Haritası'nın gün damgalı ilerlemesi ve D1 okuma limiti kararı
+AYRI bekliyor (bkz. §41 sonu).
+
+**Gizli Kelime**
+- `KM_GIZLIKELIME_LISTE` 24 → 74 terim (+50): 3 yeni kategori `teknik` (Atış Tekniği: ankraj, takip,
+  kavrama, tork, sırt, hizalama, nefes, grupman, ritim, dirsek, nişan), `yarisma` (Yarışma Kuralları:
+  set, baraj, sıralama, eleme, final, mesafe, halka, çizgi, hakem, düdük, ışık, süre, takım, karışık,
+  bekleme, yalın, libre), `tarih` (Türk Okçuluğu: kemankeş, zihgir, tirkeş, menzil, puta, Okmeydanı,
+  tekke, kepaze, siper, çile, Tozkoparan) + ortak ekler (kolluk, askı, yatak, şaft, karbon, arpacık,
+  sargı, minder, dürbün, inç, hedef). `KM_GK_KATEGORI_AD` genişletildi. Boşluklu kelime YOK (taşlar).
+- Şıklar artık hedef kelimeyle AYNI/en yakın uzunluktaki çeldiricilerden (74 kelimeyle taş sayısı
+  cevabı ele veriyordu) — `kmGizliKelimeTahminAc` içinde uzunluk-farkına göre sıralama.
+- GERÇEK BUG: `.km-oyun-panel-gizlikelime` CSS'i markup'ta olmayan bir sınıfı bekliyordu → parşömen
+  zemini hiç görünmüyordu; ayrıca gizlikelime/kehanet/kule için tema token blokları
+  (`#km-oyun-wrap[data-tema=…]{ --bg … --a1 }`) HİÇ yazılmamıştı → oyun başlığı (gradyan yazı) görünmezdi.
+  Üçü de eklendi, sınıf markup'a eklendi.
+- Büyütme: taş 34×42 → 58×70 (harf 32px; tam ekranda 74×90/40px; ≤860px 40×50), ipucu 17px + "İPUCU"
+  etiketi, kategori kurdelesi, "Tahmin Et" 17px gradyan, şıklar 2 sütun 19px/60px, bilgi kartı 560px/16px.
+  Düzen: `.km-gk-govde` artık flex-wrap satır düzeni — kategori ve taşlar tam satır, ipucu + buton AYNI
+  satırda → skor doku (~sahnenin alt 300px'i) ile çakışmıyor.
+
+**Karakter seçimi (Oyunlar)**
+- `KM_OYUN_KARAKTERLER` (12): 9 hayvan + 3 Zirve figürü (`zirve-izci-erkek/tirmanici-kiz/buz-tirmanici`
+  webp'leri, artık seçilebilir kostüm). `KM_OYUN_HAYVAN_ORAN` bu listeden türetiliyor,
+  `kmOyunHayvanKarakterSVG` `kmOyunKarakterBilgi(no).src` kullanıyor; rastgele atama hâlâ 9 hayvandan.
+- Sağ ray sporcu çipinde yeni 🎭 (`.km-oyun-chip-karakter`) → `kmOyunKarakterSecAc(i)` modalı
+  (`#km-oyun-karakter-modal`, 12'li ızgara, 🎲 Rastgele). Seçim `_kmOyunHayvanKarakterMap`'e (konum bazlı,
+  tarihsiz, kalıcı) yazılır, `kmOyunSahneKurHepsi()` ile TAM yeniden kurulur (Resync görünümü
+  değiştirmez — bilinen kural). Zirve/Ninja/Dağ/Kayıp Ada'da geçerli (hayvan karakteri kullanan temalar).
+
+**Çift Kayıt (Yönetici → 🧹 Çift Kayıt)**
+- Sunucu: `src/db/athletesMerge.ts` `mergeAthlete()` + `POST /api/athletes/:grup/:ad/merge`
+  {toGrup, toAd}. Tek D1 batch: series/shot_log yeniden anahtarlanır; dues/aidat_hatirlatma_log/
+  attendance_auto(+archive)/antrenman_programi_katilimci INSERT OR IGNORE ile taşınır (PK çakışmasında
+  hedefinki kalır; aidatta hedef ödenmemiş + kaynak ödenmişse kaynak kazanır), kaynak satırları silinir;
+  hedef athletes satırında boş skalerler kaynaktan dolar, JSON listeleri birleşir, coin/xAdet/toplamSkor
+  toplanır; kaynak athletes satırı silinir + `deleted_athletes(tasindi=1)` + `athlete_moves` yönlendirmesi
+  (moveAthlete ile aynı — gecikmiş yazmalar hedefe akar). Admin-gated (yazma yolu, PUBLIC listesinde değil).
+- İstemci: `yoneticiCiftKayitBul()` (`_ciftKayitNormalize`: tr-lower + boşluk/noktalama sadeleştirme;
+  aynı grupta VEYA farklı gruplarda), `yoneticiCiftKayitCiz()`, `yoneticiCiftKayitBirlestir()` — önerilen
+  = daha çok serisi olan; `onayIste` ile tek tek onay; sunucu OK dönerse yerel turnuvaDB (seriler seriId'ye
+  göre birleşir, `sporcuPuanlariYenidenHesapla`), aidatDB, otomatikYoklamaDB güncellenir, kaynak
+  `silinenlerDB`'ye `tasindi:true` ile eklenir (listede görünmez ama dirilmez), `yoneticiKaydet()`.
+  Sunucu hata verirse yerelde HİÇBİR şey değişmez.
+- Gerçek test (yerel D1): kopya sporcu + 1 seri oluşturuldu → araç 1 çift buldu → "Bu kalsın (önerilen)"
+  → onay → yerelde kopya yok, hedef seri +1, tombstone var, 0 çift; sunucuda kopya yok, taşınan seri
+  hedefte. 16 tema regresyonu 0 hata.
+
+**Bekleyenler**: (3)+(4) Sis Haritası'nda ilerleme/keşiflerin her ders (gün) sıfırlanması ve "tek
+sporcu sisi açıyor" görünümü (kök neden: paylaşılan kalıcı frac + sınıf-maks açılım) — plan hazır, onay
+bekliyor. D1 ÜCRETSİZ KATMAN GÜNLÜK OKUMA LİMİTİ 2026-09-20'de doldu (canlı sorgular gece 03:00 TR'ye
+kadar hata verir) — Paid plan ya da polling azaltma kararı kullanıcıda.
+
+**Deploy durumu (41)**: Kullanıcı onayladı (2026-09-20), commit + push + deploy edildi.

@@ -4,6 +4,7 @@ import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json"
 import { broadcast } from "../lib/broadcast";
 import { isAuthorized } from "../auth";
 import * as athletesDb from "../db/athletes";
+import { mergeAthlete } from "../db/athletesMerge";
 
 // "/api/athletes/:grup/:ad" hem sporcunun kendi öz-servis girişleri (ör. günlük Hazır Olma anketi)
 // HEM DE yönetici-only alan düzenlemeleri (sağlık raporu/lisans bitiş tarihi gibi hassas belgeler)
@@ -116,6 +117,26 @@ export function registerAthleteRoutes(router: Router): void {
       type: "athlete-updated",
       deviceId: body.deviceId ?? null,
       payload: { grup: body.toGrup, ad: toAd, fields: { movedFrom: { grup: params.grup, ad: params.ad } }, lastModified: Date.now() },
+    });
+    return json(result);
+  });
+
+  // Çift Kayıt Birleştir (2026-09-20) — :grup/:ad KAYNAK (silinecek), body.toGrup/toAd HEDEF (kalacak).
+  router.post("/api/athletes/:grup/:ad/merge", async (request, env, params) => {
+    const body = await readJson<{ toGrup: string; toAd: string; deviceId?: string }>(request);
+    if (!body.toGrup || !body.toAd) return badRequest("toGrup and toAd are required");
+    const zaman = Date.now();
+    const result = await mergeAthlete(env, params.grup, params.ad, body.toGrup, body.toAd, zaman);
+    if (!result.applied) return badRequest(result.reason || "merge-failed");
+    await broadcast(env, {
+      type: "athlete-updated",
+      deviceId: body.deviceId ?? null,
+      payload: { grup: params.grup, ad: params.ad, fields: { deleted: true, mergedInto: { grup: body.toGrup, ad: body.toAd } }, lastModified: zaman },
+    });
+    await broadcast(env, {
+      type: "athlete-updated",
+      deviceId: body.deviceId ?? null,
+      payload: { grup: body.toGrup, ad: body.toAd, fields: { merged: true }, lastModified: zaman },
     });
     return json(result);
   });
