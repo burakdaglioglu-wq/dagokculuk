@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v127</b> · Tam Görsel & Animasyon Restorasyonu</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v129</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -894,6 +894,7 @@
         <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
             <button onclick="vaModSec('ai_pose')" id="va-mod-aipose-btn" class="va-btn va-btn-orange" style="flex:1; min-width:130px;">🤖 Canlı AI Duruş</button>
             <button onclick="vaModSec('karsilastir')" id="va-mod-karsilastir-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">⚔️ İkili Karşılaştırma</button>
+            <button onclick="vaModSec('hedef_kamera')" id="va-mod-hedef-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">🎯 Kamera Hedef Hakemi</button>
             <button onclick="vaModSec('ayna')" id="va-mod-ayna-btn" class="va-btn va-btn-grey" style="flex:1; min-width:130px;">🪞 5sn Ayna</button>
         </div>
 
@@ -1225,6 +1226,117 @@
                         <button id="cmp-speed-025" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.25)">0.25x</button>
                         <button id="cmp-speed-05" class="ai-speed-btn" onclick="DAGSK_COMPARE.setSpeed(0.5)">0.5x</button>
                         <button id="cmp-speed-1" class="ai-speed-btn aktif" onclick="DAGSK_COMPARE.setSpeed(1)">1x</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 4. MOD: OPTİK KAMERA HEDEF HAKEMİ & OTOMATİK PUANLAMA ===== -->
+        <div id="va-mod-hedef-kamera" style="display:none;">
+            <!-- Üst Kontrol & Durum Paneli -->
+            <div class="ai-config-dock">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span id="target-status-badge" style="font-size:12px; font-weight:800; color:#94a3b8;">⚪ Kamera Kapalı</span>
+                        <select id="target-cam-select" onchange="DAGSK_TARGET_CV.startCamera(this.value)" class="ai-pill-btn" style="background:rgba(0,0,0,0.5); color:#fff; border:1px solid var(--border-color); padding:5px 8px;">
+                            <option value="">📷 Kamera Seçin</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <button onclick="DAGSK_TARGET_CV.startCamera()" class="va-btn va-btn-blue" style="font-size:11.5px; padding:6px 10px;">📷 Kamerayı Başlat</button>
+                        <button onclick="DAGSK_TARGET_CV.showHikvisionHelp()" class="va-btn va-btn-orange" style="font-size:11.5px; padding:6px 10px;">📹 HIKVISION DVR Ayarı</button>
+                        <button onclick="DAGSK_TARGET_CV.startDemoMode()" class="va-btn va-btn-grey" style="font-size:11.5px; padding:6px 10px;">🎯 Simülasyon / Test</button>
+                        <button id="target-calib-btn" onclick="DAGSK_TARGET_CV.toggleCalibration()" class="va-btn va-btn-grey" style="font-size:11.5px; padding:6px 10px;">📐 Hedefi Kalibre Et</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canlı Hedef ve Puanlama Izgarası -->
+            <div class="target-cv-grid">
+                <!-- Sol: Canlı Kamera / Hedef Ekranı -->
+                <div class="target-cv-viewer-box">
+                    <video id="target-cv-video" autoplay muted playsinline style="display:none;"></video>
+                    <canvas id="target-cv-canvas-proc" style="display:none;"></canvas>
+                    <canvas id="target-cv-canvas-live" class="target-cv-canvas"></canvas>
+                    
+                    <!-- Canlı Darbe / Puan Bildirim Kartı -->
+                    <div id="target-impact-banner" class="target-impact-banner" style="display:none;"></div>
+                </div>
+
+                <!-- Sağ: Tespit Edilen Oklar & Skor Kartı -->
+                <div class="target-cv-sidebar">
+                    <div class="target-cv-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                            <div>
+                                <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Canlı Seri Özeti</div>
+                                <div id="target-end-sum" style="font-size:17px; font-weight:900; color:var(--accent-orange); margin-top:2px;">Toplam: 0 Puan (0 Ok)</div>
+                            </div>
+                            <button onclick="DAGSK_TARGET_CV.clearEnd()" class="va-btn va-btn-grey" style="font-size:11px; padding:4px 8px;">🗑️ Temizle</button>
+                        </div>
+
+                        <!-- Tespit Edilen Ok Listesi -->
+                        <div id="target-detected-arrows" class="target-arrows-list">
+                            <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:24px 8px;">
+                                Kamera açıldığında atılan oklar otomatik tespit edilip puanlandırılacaktır.
+                            </div>
+                        </div>
+
+                        <!-- Skor Kartına Aktarım Butonları -->
+                        <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
+                            <button onclick="DAGSK_TARGET_CV.applyToScorecard()" class="va-btn va-btn-orange" style="width:100%; font-size:13.5px; font-weight:900; padding:12px; border-radius:10px;">
+                                📥 Skor Kartına / Seriye Aktar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HIKVISION DVR MODAL PENCERESİ -->
+            <div id="target-hikvision-modal" class="target-modal-backdrop" style="display:none;">
+                <div class="target-modal-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0; font-size:15px; font-weight:900; color:var(--accent-orange);">📹 HIKVISION DS-7108HGHI-M1 DVR Bağlantısı</h3>
+                        <button onclick="DAGSK_TARGET_CV.closeHikvisionHelp()" class="va-btn va-btn-grey" style="padding:2px 8px;">✖</button>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:14px;">
+                        Salondaki 8 kanallı Hikvision DVR cihazınızdan tarayıcıya en yüksek hızda görüntü aktarmak için:
+                    </div>
+
+                    <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:12px;">
+                        <div style="font-weight:800; font-size:12px; color:var(--gold); margin-bottom:6px;">⭐ Yöntem 1 (Önerilen En Akıcı Yol - 60 FPS Sanal Kamera):</div>
+                        <div style="font-size:11.5px; color:var(--text-main); line-height:1.5;">
+                            Bilgisayarınızda <b>OBS Studio</b> veya <b>VLC</b> açın ➔ Ortam Kaynağı olarak DVR RTSP adresinizi ekleyin:
+                            <div style="background:rgba(255,255,255,0.06); padding:6px; border-radius:6px; font-family:monospace; margin:5px 0; user-select:all;">rtsp://admin:sifre@192.168.1.64:554/Streaming/Channels/102</div>
+                            OBS'te <b>"Sanal Kamerayı Başlat"</b> (Start Virtual Camera) deyin. Tarayıcıdan <i>"OBS Virtual Camera"</i>yı seçtiğiniz anda salon kamerası sıfır gecikmeyle sisteme akar!
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:14px;">
+                        <div style="font-weight:800; font-size:12px; color:#38bdf8; margin-bottom:6px;">🌐 Yöntem 2 (Yerel Ağ Snapshot IP Ayarı):</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+                            <div>
+                                <label style="font-size:10px; color:var(--text-muted);">DVR IP Adresi:</label>
+                                <input id="hik-ip-input" type="text" value="192.168.1.64" class="va-input" style="width:100%; font-size:11.5px; padding:6px;">
+                            </div>
+                            <div>
+                                <label style="font-size:10px; color:var(--text-muted);">Kamera Kanalı (1-8):</label>
+                                <select id="hik-channel-select" class="va-input" style="width:100%; font-size:11.5px; padding:6px;">
+                                    <option value="1">Kanal 1</option>
+                                    <option value="2">Kanal 2</option>
+                                    <option value="3">Kanal 3</option>
+                                    <option value="4">Kanal 4</option>
+                                    <option value="5">Kanal 5</option>
+                                    <option value="6">Kanal 6</option>
+                                    <option value="7">Kanal 7</option>
+                                    <option value="8">Kanal 8</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button onclick="DAGSK_TARGET_CV.closeHikvisionHelp()" class="va-btn va-btn-grey">Kapat</button>
+                        <button onclick="DAGSK_TARGET_CV.saveHikvisionSettings()" class="va-btn va-btn-orange">Ayarları Kaydet</button>
                     </div>
                 </div>
             </div>
@@ -1722,6 +1834,7 @@
     <script src="dagsk-cadence-coach.js"></script>
     <script src="dagsk-ai-pose.js"></script>
     <script src="dagsk-video-compare.js"></script>
+    <script src="dagsk-target-cv.js"></script>
     <script src="sync.js"></script>
     <script src="app.js"></script>
 </body>

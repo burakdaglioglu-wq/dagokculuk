@@ -24343,26 +24343,34 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let aiPoseEl = document.getElementById('va-mod-ai-pose');
             let karsilastirEl = document.getElementById('va-mod-karsilastir');
             let aynaEl = document.getElementById('va-mod-ayna');
+            let hedefEl = document.getElementById('va-mod-hedef-kamera');
 
             if(aiPoseEl) aiPoseEl.style.display = mod === 'ai_pose' ? 'block' : 'none';
             if(karsilastirEl) karsilastirEl.style.display = mod === 'karsilastir' ? 'block' : 'none';
             if(aynaEl) aynaEl.style.display = mod === 'ayna' ? 'block' : 'none';
+            if(hedefEl) hedefEl.style.display = mod === 'hedef_kamera' ? 'block' : 'none';
 
             let aiPoseBtn = document.getElementById('va-mod-aipose-btn');
             let karsilastirBtn = document.getElementById('va-mod-karsilastir-btn');
             let aynaBtn = document.getElementById('va-mod-ayna-btn');
+            let hedefBtn = document.getElementById('va-mod-hedef-btn');
 
             if(aiPoseBtn) { aiPoseBtn.classList.toggle('va-btn-orange', mod === 'ai_pose'); aiPoseBtn.classList.toggle('va-btn-grey', mod !== 'ai_pose'); }
             if(karsilastirBtn) { karsilastirBtn.classList.toggle('va-btn-orange', mod === 'karsilastir'); karsilastirBtn.classList.toggle('va-btn-grey', mod !== 'karsilastir'); }
             if(aynaBtn) { aynaBtn.classList.toggle('va-btn-orange', mod === 'ayna'); aynaBtn.classList.toggle('va-btn-grey', mod !== 'ayna'); }
+            if(hedefBtn) { hedefBtn.classList.toggle('va-btn-orange', mod === 'hedef_kamera'); hedefBtn.classList.toggle('va-btn-grey', mod !== 'hedef_kamera'); }
 
             if(mod === 'karsilastir' && window.DAGSK_COMPARE) {
                 try { window.DAGSK_COMPARE.init(); } catch(e) {}
+            }
+            if(mod === 'hedef_kamera' && window.DAGSK_TARGET_CV) {
+                try { window.DAGSK_TARGET_CV.init(); } catch(e) {}
             }
 
             // Sekme değişince kullanılmayan modun kamerası açık kalmasın
             if(mod !== 'ai_pose') try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
             if(mod !== 'ayna') try { aynaDurdur(); } catch(e) {}
+            if(mod !== 'hedef_kamera') try { if(window.DAGSK_TARGET_CV) DAGSK_TARGET_CV.stop(); } catch(e) {}
         }
         let _aynaStream = null, _aynaYakalamaTimer = null, _aynaRenderRAF = null;
         let _aynaBuffer = []; // { canvas, t } — küçük kare anlık görüntüleri, zaman damgalı
