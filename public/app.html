@@ -48,7 +48,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v129</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v130</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
@@ -431,6 +431,11 @@
             </div>
             <div class="daha-grup">
                 <div class="daha-grup-baslik">Antrenman</div>
+                <button id="tab-hedef-hakemi-daha" class="sekme-btn daha-satir" onclick="sekmeAc('video'); setTimeout(()=>vaModSec('hedef_kamera'), 50); dahaPanelKapat();" style="border-left:3px solid var(--accent-orange); background:rgba(255,106,26,0.08);">
+                    <span style="font-size:18px; margin-right:4px;">🎯</span>
+                    <span style="font-weight:800; color:var(--accent-orange);">Kamera Hedef Hakemi</span>
+                    <span style="font-size:9px; font-weight:800; background:var(--accent-orange); color:#fff; padding:2px 6px; border-radius:6px; margin-left:auto;">YENİ</span>
+                </button>
                 <button id="tab-teknik" class="sekme-btn daha-satir" onclick="sekmeAc('teknik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 3.5c5.5 3 5.5 14 0 17"/><path d="M7.5 3.5v17"/><path d="M7.5 12h9"/></svg><span>Teknik Çalışma</span></button>
                 <button id="tab-dersicerik" class="sekme-btn daha-satir" onclick="sekmeAc('dersicerik')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M12 4v16"/></svg><span>Ders İçerikleri</span></button>
                 <button id="tab-video" class="sekme-btn daha-satir" onclick="sekmeAc('video')"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M10 8.5 16 12l-6 3.5v-7z"/></svg><span>Video</span></button>
@@ -613,6 +618,9 @@
                     
                     <!-- SOL PANEL: HEDEF VE ZOOM AYARLARI -->
                     <div class="skor-left-panel">
+                        <button onclick="sekmeAc('video'); setTimeout(()=>vaModSec('hedef_kamera'), 50);" class="va-btn va-btn-orange" style="width:100%; margin-bottom:12px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; border-radius:10px; box-shadow:0 4px 14px rgba(255,106,26,0.35);">
+                            🎯 Kameradan Oku Puanla (HIKVISION / WebCam)
+                        </button>
                         <div class="hedef-sec-grup">
                             <button class="hedef-sec-btn aktif" id="btn-10ring" onclick="setHedefTipi('10ring')">10 Halkalı</button>
                             <button class="hedef-sec-btn" id="btn-6ring" onclick="setHedefTipi('6ring')">6 Halkalı</button>
