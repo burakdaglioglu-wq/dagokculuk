@@ -16387,22 +16387,75 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { id: 'hazine-sandigi', ad: 'Hazine Sandığı' }
         ];
         var _kmSisKesifler = KM_SIS_KESIF_TURLERI.map(function(t) { return { tur: t, bulanAd: null }; }); // index = checkpoint (0..6)
-        // Kalıcılık — konum bazlı, TARİH DAMGASI YOK: diğer yol-temalarındaki _kmOyunDurum (frac) da
-        // tarihsiz/kalıcıdır (koç elle sıfırlamadıkça kalır) — "kim buldu" kaydı AYNI ömre sahip.
-        var _kmSisKesiflerYuklenenKonum = null;
+        // GÜN DAMGALI KALICILIK (2026-09-24 düzeltmesi — kullanıcı: "her oyunda açılan sisteki açan
+        // kişi isimleri sıfırlanmıyor"). Eskiden tarihsizdi (diğer yol-temalarındaki paylaşılan çok-
+        // günlük frac ile AYNI ömür) — ama Kayıp Ada bir keşif oyunu: "kim buldu" etiketleri ders ders
+        // birikirse anlamsızlaşıyor (geçen haftanın bulguları bugün de "bulunmuş" görünüyordu). Artık
+        // GÜNLÜK: yeni bir gün başlayınca (ya da konum değişince) hem "kim buldu" etiketleri HEM DE
+        // sisin açılma ilerlemesi (bkz. kmOyunSisFracUygula — sadece BİREYSEL modda, ayrı bir günlük
+        // frac deposu kullanıyor, diğer 7 yol-temasının PAYLAŞILAN çok-günlük frac'ına DOKUNMUYOR)
+        // sıfırdan başlıyor. Eski (tarihsiz, düz dizi) kayıtlar otomatik olarak "bayat" sayılıp atılıyor.
+        var _kmSisKesiflerYuklenenKonum = null, _kmSisKesiflerYuklenenTarih = null;
         function kmOyunSisKesifAnahtari() { return 'dag_km_sisharita_kesif_' + (_kmAktifKonum || 'varsayilan'); }
         function kmOyunSisKesifKaydet() {
-            try { localStorage.setItem(kmOyunSisKesifAnahtari(), JSON.stringify(_kmSisKesifler.map(function(k) { return k.bulanAd; }))); } catch(e) {}
+            try { localStorage.setItem(kmOyunSisKesifAnahtari(), JSON.stringify({ tarih: bugunISO(), bulanlar: _kmSisKesifler.map(function(k) { return k.bulanAd; }) })); } catch(e) {}
         }
         function kmOyunSisKesiflerEmin() {
-            if(_kmSisKesiflerYuklenenKonum === _kmAktifKonum) return;
+            if(_kmSisKesiflerYuklenenKonum === _kmAktifKonum && _kmSisKesiflerYuklenenTarih === bugunISO()) return;
             _kmSisKesifler = KM_SIS_KESIF_TURLERI.map(function(t) { return { tur: t, bulanAd: null }; });
             try {
                 let ham = localStorage.getItem(kmOyunSisKesifAnahtari());
-                let arr = ham ? JSON.parse(ham) : null;
-                if(Array.isArray(arr)) arr.forEach(function(ad, i) { if(_kmSisKesifler[i]) _kmSisKesifler[i].bulanAd = ad || null; });
+                let veri = ham ? JSON.parse(ham) : null;
+                if(veri && !Array.isArray(veri) && veri.tarih === bugunISO() && Array.isArray(veri.bulanlar)) {
+                    veri.bulanlar.forEach(function(ad, i) { if(_kmSisKesifler[i]) _kmSisKesifler[i].bulanAd = ad || null; });
+                }
+                // (eski, tarihsiz düz-dizi format ya da dünün kaydı ise: bilerek YOK sayılıyor, yeni gün temiz başlıyor)
             } catch(e) {}
             _kmSisKesiflerYuklenenKonum = _kmAktifKonum;
+            _kmSisKesiflerYuklenenTarih = bugunISO();
+        }
+        // ---- Kayıp Ada'nın KENDİ günlük frac deposu (SADECE bireysel/Sınıf-dışı mod) — diğer 7 yol
+        // temasının (Zirve/Hendek/Hazine/Pist/Ninja/Monopoly/Dağ) paylaştığı _kmOyunDurum.frac ÇOK
+        // GÜNLÜKtür ve BİLEREK dokunulmuyor (bir sporcunun Zirve'deki tırmanışı Kayıp Ada'yı oynayınca
+        // etkilenmemeli). Kayıp Ada'ya girerken roster.frac bu depodan, çıkarken PAYLAŞILAN depodan
+        // geri yükleniyor — var olan roster nesneleri KORUNUYOR (yeniden oluşturulmuyor), yoksa
+        // sahnedeki DOM element referansları (ör. s.sisharitaEl) kopardı.
+        var _kmSisGunluk = null, _kmSisGunlukYuklenenKonum = null;
+        function kmOyunSisGunlukAnahtari() { return 'dag_km_sisharita_gunluk_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunSisGunlukEmin() {
+            if(_kmSisGunluk && _kmSisGunlukYuklenenKonum === _kmAktifKonum && _kmSisGunluk.tarih === bugunISO()) return;
+            _kmSisGunlukYuklenenKonum = _kmAktifKonum;
+            try {
+                let ham = localStorage.getItem(kmOyunSisGunlukAnahtari());
+                let veri = ham ? JSON.parse(ham) : null;
+                if(veri && veri.tarih === bugunISO()) { _kmSisGunluk = veri; return; }
+            } catch(e) {}
+            _kmSisGunluk = { tarih: bugunISO(), frac: {} };
+            try { localStorage.setItem(kmOyunSisGunlukAnahtari(), JSON.stringify(_kmSisGunluk)); } catch(e) {}
+        }
+        function kmOyunSisGunlukKaydet() { try { localStorage.setItem(kmOyunSisGunlukAnahtari(), JSON.stringify(_kmSisGunluk)); } catch(e) {} }
+        // sisharita'ya GİRERKEN çağrılır — roster'daki her sporcunun frac'ını (var olan nesneler
+        // KORUNARAK) günlük depodaki değerle değiştirir. Sadece Takım Modu KAPALIYKEN (bireysel) —
+        // takım/çoklu-takım modunda kapsam dışında bırakıldı, o modlar şimdilik eski (çok-günlük)
+        // paylaşılan davranışı koruyor.
+        function kmOyunSisFracUygula() {
+            // Keşif etiketleri (kim buldu) normalde SADECE ilk sahne kurulumunda (kmOyunSahneKurSisHaritasi
+            // → kmOyunSisKesiflerEmin) okunuyor — gün ortasında (gece yarısını geçip) sekmeler arası
+            // gidip gelirse bayat kalabilirdi. Buraya (tema'ya HER girişte çalışan tek yer) da eklendi.
+            kmOyunSisKesiflerEmin();
+            if(!_kmOyunTakimModu) {
+                kmOyunSisGunlukEmin();
+                _kmOyunRosterCache.forEach(function(s) { s.frac = _kmSisGunluk.frac[s.g + '|' + s.ad] || 0; });
+            }
+            // Resync ucuzdur ve DOM henüz kurulmamışsa (ilk açılış) sessizce no-op'tur — güncel frac VE
+            // güncel keşif verisiyle konum/işaretleri tazeler.
+            kmOyunResyncSisHaritasi();
+        }
+        // sisharita'dan ÇIKARKEN çağrılır — roster frac'ını PAYLAŞILAN (çok-günlük) kaynağa geri
+        // döndürür ki başka bir temaya (ör. Zirve) geçince orası kendi doğru yüksekliğini göstersin.
+        function kmOyunSisFracGeriYukle() {
+            if(_kmOyunTakimModu) return;
+            _kmOyunRosterCache.forEach(function(s) { let d = kmOyunDurumAl(s.g, s.ad); s.frac = d.frac; });
         }
         // Bir işaretin DOM görünümünü güncelle (ikon parlaklığı + halka + kalıcı isim) — hem ilk
         // kurulumda hem sonradan bulunduğunda kullanılan TEK yer.
@@ -17245,7 +17298,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // durumu) — önceki temadan kalma bir "yakın" hedefi yeni sahnede anlamsız olurdu.
             if(_kmOyunKameraBekleyenTimer) { clearTimeout(_kmOyunKameraBekleyenTimer); _kmOyunKameraBekleyenTimer = null; }
             _kmOyunKameraDurum = 'genis';
+            // Kayıp Ada'nın günlük frac deposu ile diğer 7 yol-temasının paylaşılan çok-günlük frac'ı
+            // arasında geçiş — bkz. kmOyunSisFracUygula/GeriYukle tanımları (2026-09-24 düzeltmesi).
+            if(_kmOyunAktifTema === 'sisharita' && tid !== 'sisharita') kmOyunSisFracGeriYukle();
             _kmOyunAktifTema = tid;
+            if(tid === 'sisharita') kmOyunSisFracUygula();
             kmOyunTemaKullanildiIsaretle(tid);
             let wrap = document.getElementById('km-oyun-wrap'); if(wrap) wrap.dataset.tema = tid;
             document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.classList.toggle('aktif', b.dataset.tema === tid); });
@@ -17473,6 +17530,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 s.frac = yeniFrac;
                 if(cokluAktifMi) { _kmOyunCokluDurum[cokluTakimIndex].frac = yeniFrac; kmOyunCokluDurumKaydet(); }
                 else if(takimAktifMi) { _kmTakimDurum.frac = yeniFrac; kmTakimDurumKaydet(); }
+                else if(_kmOyunAktifTema === 'sisharita') {
+                    // Kayıp Ada — SADECE kendi GÜNLÜK deposuna yazılır; paylaşılan d.frac'a BİLEREK
+                    // dokunulmuyor (gerçek testte yakalandı: eskiden ikisine de yazılıyordu, bu da
+                    // Kayıp Ada'nın küçük günlük değeri diğer 7 yol-temasının çok-günlük ilerlemesinin
+                    // ÜZERİNE yazıp onu GERİYE düşürüyordu — ör. Zirve 0.40 iken Kayıp Ada'da bir seri
+                    // girince Zirve'nin kendisi de 0.15'e düşüyordu).
+                    kmOyunSisGunlukEmin(); _kmSisGunluk.frac[s.g + '|' + s.ad] = yeniFrac; kmOyunSisGunlukKaydet();
+                }
                 else { let d = kmOyunDurumAl(s.g, s.ad); d.frac = yeniFrac; kmOyunDurumKaydet(); }
 
                 let elMap = { zirve: s.zirveEl, yildiz: s.yildizEl, hazine: s.hazineEl, pist: s.pistEl, ninja: s.ninjaEl, monopoly: s.monopolyEl, dag: s.dagEl, balon: s.balonEl, hedef: s.hedefEl, futbol: s.futbolEl, futboltakim: s.futboltakimEl, sisharita: s.sisharitaEl };
@@ -17665,8 +17730,15 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunSporcuSifirla() {
             let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
             if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
-            _kmOyunDurum[s.g + '|' + s.ad] = { frac: 0, toplamSkor: 0, futbolSeri: 0, futbolGol: 0, futbolStreak: 0, futbolTakimGol: 0, pistSetSayaci: 0, pistOkSayaci: 0, pistEnIyiSeriBuYaris: 0 };
-            kmOyunDurumKaydet();
+            if(_kmOyunAktifTema === 'sisharita') {
+                // Kayıp Ada artık BAĞIMSIZ (bkz. kmOyunSisFracUygula/GeriYukle) — sıfırlama SADECE
+                // kendi günlük deposunu temizler, paylaşılan _kmOyunDurum'a (diğer 7 yol-temasının
+                // ÇOK GÜNLÜK ilerlemesi) DOKUNMAZ.
+                kmOyunSisGunlukEmin(); delete _kmSisGunluk.frac[s.g + '|' + s.ad]; kmOyunSisGunlukKaydet();
+            } else {
+                _kmOyunDurum[s.g + '|' + s.ad] = { frac: 0, toplamSkor: 0, futbolSeri: 0, futbolGol: 0, futbolStreak: 0, futbolTakimGol: 0, pistSetSayaci: 0, pistOkSayaci: 0, pistEnIyiSeriBuYaris: 0 };
+                kmOyunDurumKaydet();
+            }
             s.frac = 0; s.toplamSkor = 0; s.futbolSeri = 0; s.futbolGol = 0; s.futbolStreak = 0; s.futbolTakimGol = 0;
             if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
             kmOyunResyncAktif();
@@ -17707,7 +17779,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     _kmOyunRosterCache.forEach(function(o) { o.frac = g.eskiFrac; });
                 } else {
                     s.frac = g.eskiFrac;
-                    d.frac = g.eskiFrac;
+                    // Kayıp Ada bağımsız — SADECE günlük deposu geri alınır, paylaşılan d.frac'a (diğer
+                    // 7 yol-temasının çok-günlük ilerlemesi) dokunulmaz (bkz. bitirOrtak'taki AYNI kural).
+                    if(_kmOyunAktifTema === 'sisharita') { kmOyunSisGunlukEmin(); _kmSisGunluk.frac[g.grup + '|' + g.ad] = g.eskiFrac; kmOyunSisGunlukKaydet(); }
+                    else d.frac = g.eskiFrac;
                 }
                 // Futbol (Bireysel/Takım) — frac/toplamSkor geri almak yetmez, gol/banka sayaçları da
                 // GERÇEKTEN eski haline dönmeli, yoksa "geri al" sonrası gol tablosu yanlış kalır.

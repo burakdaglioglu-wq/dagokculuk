@@ -4786,3 +4786,37 @@ olarak doğru yazıldı; aynı maddeye tekrar tıklayınca nötrlendiği doğrul
 "Hata: dirsek dusuk kaldi" kırmızı olarak göründü. 390px'te taşma yok. 16 tema Oyunlar regresyonu 0 hata.
 
 **Deploy durumu (45+46)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
+
+## 47. Kayıp Ada (Sis Haritası) — günlük sıfırlanma hatası düzeltmesi (2026-09-24)
+
+Kullanıcı: "sis oyununda hatalar var, her oyunda açılan sisteki açan kişi isimleri sıfırlanmıyor".
+
+**Kök neden**: Kayıp Ada (`sisharita` teması), §-önceki bir tasarım kararıyla (bkz. eski not: "artık
+diğer 7 yol temasıyla AYNI frac→yol iskeleti kullanıyor") diğer 7 "yol" oyunuyla (Zirve, Hendek, Hazine,
+Pist, Ninja, Monopoly, Dağ) AYNI paylaşılan, çok-günlü, hiç otomatik sıfırlanmayan `_kmOyunDurum[g+'|'+ad].frac`
+alanını kullanıyordu. Bu diğer 7 oyun için doğru davranış (uzun vadeli ilerleme), ama Kayıp Ada'nın
+kendi doğasına (her ders/oturumda YENİDEN keşfedilen bir sis haritası) aykırıydı. Aynı şekilde
+`_kmSisKesifler` (hangi sporcu hangi kontrol noktasını buldu) de tarihsiz bir dizi olarak saklanıyordu,
+o yüzden hiçbir zaman sıfırlanmıyordu.
+
+**Düzeltme**: Kayıp Ada artık kendi GÜN'e-özel, ayrı bir depoya yazıyor (`_kmSisGunluk`,
+`kmOyunSisGunlukAnahtari()` → `{tarih, frac:{'g|ad':deger}}`), diğer 7 oyunun paylaşılan deposuna hiç
+dokunmuyor. `kmOyunSisKesifKaydet()` de artık `{tarih, bulanlar:[...]}` şeklinde tarih damgalı yazıyor.
+Temaya her girişte (`kmOyunTemaSec`) tarih kontrol ediliyor — bugünden farklıysa veya hiç yoksa, hem
+frac hem keşif listesi sıfırdan başlıyor. Diğer 7 oyuna geçilip geri dönüldüğünde veya sayfa aynı gün
+içinde yeniden açıldığında Kayıp Ada'nın günlük ilerlemesi korunuyor; ertesi gün otomatik temiz sis ile
+başlıyor. Sporcu bazlı "🔄 Sıfırla" ve "geri al" butonları da artık sadece Kayıp Ada'nın kendi günlük
+deposuna dokunuyor, paylaşılan `_kmOyunDurum`'u etkilemiyor.
+
+**Bilinen kapsam dışı**: Takım Modu'nda Kayıp Ada hâlâ eski paylaşılan/sıfırlanmayan davranışta
+bırakıldı (bilinçli, bu turda ele alınmadı) — takım modu smoke testinde 0 hata ile doğrulandı ama
+günlük-sıfırlama takım moduna henüz uygulanmadı.
+
+**Gerçek testte doğrulanan** (Playwright, gerçek pad tıklamaları): aynı sporcu için Zirve frac=0.4
+iken Kayıp Ada frac=0'dan başladı; 3 ok (10-10-10) girip "Yolda İlerle" ile Kayıp Ada frac=0.15'e
+çıktı ve kesif0.bulanAd sporcu adıyla dolduruldu; Zirve'ye geçilip geri dönüldüğünde Zirve hâlâ 0.4,
+Kayıp Ada hâlâ 0.15 (çapraz bulaşma yok); simüle edilen "ertesi gün"de Kayıp Ada frac=0'a ve
+kesif0.bulanAd=null'a döndü, Zirve HÂLÂ 0.4 olarak kaldı (izolasyon tam). 16 tema Oyunlar regresyonu
+ve Takım Modu smoke testi 0 hata.
+
+**Deploy durumu (47)**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
