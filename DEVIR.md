@@ -4865,3 +4865,60 @@ ekleme (1 kayıt, mini önizleme) → PDF indirme ve poppler ile render: kart A4
 oranda, kesik çizgili olarak çıktı. 16 tema Oyunlar regresyonu 0 hata.
 
 **Deploy durumu (48)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
+
+## 49. 🐉 Ortak Canavar — yeni Oyunlar teması (işbirlikçi boss savaşı) (2026-09-24)
+
+Kullanıcı "başka bir oyun öner" dedi, 4 öneriden **Ortak Canavar**'ı seçti: "bunu fable kalitesinde
+mükemmel bir oyun yap, görsel ile birlikte". Kule'nin (§Faz 16) "sınıf çapında paylaşılan, güne özel
+durum" iskeleti birebir kullanıldı — frac/yol YOK, kendi mekaniği var.
+
+**Mekanik**: Tüm sınıf TEK canavara karşı. Her seri toplamı kadar hasar (X=10, M=0); toplam ≥ maxPuan×0.9
+ise **KRİTİK** (×1.5, yuvarlanır). Ok sayısı 3 veya 6 olabilir (hasar ve can birlikte ölçeklenir).
+Canavar canı doğduğu anda sabitlenir: `max(90, n×2×(okSayısı×10×0.6)) × (1 + 0.3×(no−1))` — sınıfın her
+üyesinden ~2 seri istesin, her sonraki canavar %30 daha dayanıklı (8 kişi/3 ok: 288 → 374 → 461…).
+Evreler: can ≤%50 "Öfkelendi" (turuncu bar, hızlı soluma, banner), ≤%20 "Sendeliyor" (kırmızı bar,
+sallanma, banner). Can 0 → yenilme sekansı (flaş + dağılma + 3 patlama + parti zıplaması + banner "💀 …
+YENİLDİ! — son vuruş: <ad>") → 1.7 sn sonra bir sonraki canavar yerden doğar ("⚠️ N. CANAVAR GELİYOR").
+Iska serisi (0 hasar): canavar "alay" zıplaması + toast. 5 canavar tipi döngüsel (Sis Ejderi, Kaya
+Golemi, Buz Devi, Gölge Kurdu, Volkan Kralı; 6.'dan itibaren "II", "III"…).
+
+**Görsel**: 5 canavar TAMAMEN SVG ilkelleriyle çizildi (`kmOyunCanavarSVG`, stok görsel/emoji karakter
+yok), her birinin kendi gradyanı/aura rengi. Boşta soluma, göz kırpma, kanat çırpma (ejder), çatlak
+parıltısı (golem/volkan), kar (buz), gölge tutamları (kurt), lav damlaları — HEPSİ salt CSS
+transform/opacity. Sınıfın hayvan karakterleri (`kmOyunHayvanKarakterSVG`) solda 6'şarlı sıralarda
+parti olarak diziliyor, sıradaki okçunun halkası yanıyor. Vuruşta okçudan canavara N ok uçuyor (pad
+rengiyle, WAAPI transform; M oklar üstten ıskalayıp sönüyor), varışta patlama + sarsıntı + uçan "−N"
+(kritikte altın, büyük, ekran flaşı + "KRİTİK!" yazısı). HUD: can barı (evreye göre yeşil/turuncu/
+kırmızı, segmentli), canavar adı/no/evre rozeti, sol alt ⚔️ Hasar tablosu (👑 en çok hasar, ⚡kritik
+sayısı), sağ alt 🏆 Yenilenler rafı (ikonlar + bugün/rekor), "🔄 Yeni Savaş" düğmesi (confirm'lı).
+Sıralama rayına Kehanet'in "En İyi Kâhin" deseniyle "👑 En Çok Hasar: … · Sınıf toplam …" satırı;
+chip durumu "N hasar".
+
+**Kalıcılık**: `dag_km_canavar_<konum>` {tarih, aktif{no,can,maxCan,tip}, hasarlar{'g|ad':{ad,hasar,
+seri,kritik,sonVurus}}, yenilenler[], toplamHasar, seriSayisi} — güne özel (Kule ilkesi). Rekor
+`dag_km_canavar_rekor_<konum>` {gunlukEnCok, toplam} — süresiz. **Geri al**: vuruş ÖNCESİ `_kmCanavar`'ın
+tam JSON kopyası `_kmOyunSonGiris.canavar`'da; geri alınca aynen geri yüklenir ve sahne baştan kurulur
+(canavar öldü/yenisi doğdu olsa bile doğru önceki duruma döner — Kule'nin desteklemediği bir şey).
+
+**Kabuk bağlantıları** (Kule ile aynı liste + birkaç ek): KM_OYUN_TEMALAR `canavar`; token bloğu
+`[data-tema="canavar"]` (Bungee/Rajdhani — eksik-token-bloğu tuzağı §41); panel display kuralı;
+kmOyunPanelHTML + kmOyunHTML panel listesi; Resync/SahneKur/SahneKurHepsi dispatch; kmOyunIlerlet'te
+`artis=0`, `takimGecerliMi` dışlaması, `elMap.canavar` (uçan +N okçunun üstünde), bitirOrtak genel-banner
+dışlaması, baslatAnimasyon dispatch, `_kmOyunSonGiris.canavar`; kmOyunSonGirisiGeriAl; kmOyunTemaSec ve
+kmOyunHTML'de Bireysel/Takım anahtarı GİZLİ (futbol gibi — işbirlikçi oyunda anlamsız);
+kmOyunLiderCiz'de Çoklu Takım dalı dışlaması + özel satır; kmOyunChipleriCiz durum; KM_SPIKER_CUMLE
+3 yeni kategori. Kamera/vurgu/etiket haritalarına BİLEREK eklenmedi (sabit sahne, kamera gereksiz).
+
+**Gerçek testte doğrulanan** (Playwright, gerçek "Değiştir → kart" ve pad tıklamaları): 10-10-10 → 45
+hasar (288→243, bar %84.4, ⚡1); 7-8-9 → 24; M-M-M → 0 (can aynı, alay); 10-9-9 sonra Geri Al → can
+177→219 (tam geri); 5 seride Sis Ejderi yenildi → "Öfkelendi!/Sendeliyor!" evreleri sırayla görüldü,
+banner "💀 SIS EJDERI YENİLDİ!", 2. canavar Kaya Golemi 374 can ile doğdu, ganimet 🐉 + Bugün 1/Rekor 1;
+Zirve'ye gidip dönünce ve bellek temizlenip yeniden yüklenince durum korundu; 390px mobilde 0 hata.
+16 tema regresyonu 0 hata. Görsel düzeltmeler (gerçek testte yakalandı): paylaşılan "Sırada" rozeti
+canavar adının üstüne biniyordu → isim satırı sağa yaslandı (mobilde rozetin altına); Hasar tablosu ön
+sıranın isim etiketlerini örtüyordu → parti x=230'dan başlatıldı; HUD panelleri skor dock'unun (z=10)
+üstünden görünüyordu → z=1'e indirildi. Yerel test verisinde turnuvaDB'de olmayan bayat sporcular
+otomatik sıra ilerlemesini tıkıyor (`sporcu-yok`) — test her seride geçerli sporcu seçiyor; kod hatası
+değil (§7 gerçek-etkili-seri kuralı bu yüzden önemli).
+
+**Deploy durumu (49)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.

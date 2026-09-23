@@ -11643,6 +11643,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="gizlikelime"]{ --bg:#14100c; --panel:#1f1811; --panel-hi:#2a2016; --line:#4a3a28; --ink:#fff6e8; --ink-dim:#d9c3a5; --ink-faint:#8f7a5e; --a1:#e8b96a; --a2:#c96a4d; --a3:#7dd3fc; --a4:#a78bfa; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="kehanet"]{ --bg:#0f0d1a; --panel:#181425; --panel-hi:#221c33; --line:#3a2f55; --ink:#f3eeff; --ink-dim:#c9bce6; --ink-faint:#7f6fa8; --a1:#a78bfa; --a2:#7dd3fc; --a3:#ffd23f; --a4:#f472b6; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="kule"]{ --bg:#0d1218; --panel:#161d26; --panel-hi:#1f2833; --line:#34424f; --ink:#f2f6fa; --ink-dim:#b8c6d4; --ink-faint:#6f8294; --a1:#c9a876; --a2:#8c7355; --a3:#7dd3fc; --a4:#ff8a3d; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="canavar"]{ --bg:#0b0712; --panel:#150d1f; --panel-hi:#1f1430; --line:#3a2a52; --ink:#f6efff; --ink-dim:#cbb8e6; --ink-faint:#7f6a9e; --a1:#ffd23f; --a2:#ff5f3d; --a3:#7dd3fc; --a4:#c77dff; --a5:#3ddc97; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
@@ -11711,7 +11712,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="sisharita"] #km-oyun-panel-sisharita,
 #km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet,
 #km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime,
-#km-oyun-wrap[data-tema="kule"] #km-oyun-panel-kule { display:flex; }
+#km-oyun-wrap[data-tema="kule"] #km-oyun-panel-kule,
+#km-oyun-wrap[data-tema="canavar"] #km-oyun-panel-canavar { display:flex; }
 /* KÖK NEDEN DÜZELTMESİ (2026-09-18) — bu kural eskiden ".km-oyun-panel svg" idi (HERHANGİ derinlikte
    torun), bu yüzden panel içine gömülü küçük ikon SVG'lerini (Kehanet'in uyarı/mesafe/alev ikonları,
    Gizli Kelime'nin bilgi kartı ikonu) yakalayıp TÜM PANELİ kaplayacak şekilde büyütüyordu — iki ayrı
@@ -11917,6 +11919,93 @@ ${(function(){
 .km-kule-yikilis-baslik{ font-family:var(--font-display); font-weight:800; font-size:22px; color:#ff5f6d; }
 .km-kule-yikilis-alt{ font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--ink); }
 @media (prefers-reduced-motion: reduce){ .km-kule-durum-rozet.km-kule-kritik{ animation:none; } }
+/* 🐉 ORTAK CANAVAR (2026-09-24) — arena zemini + canavar + parti + HUD. Tüm boşta hareketler SALT
+   transform/opacity (compositor); JS'in attribute transform yazdığı .km-cnv-okcu'ya CSS transform YOK,
+   onun İÇİNDEKİ .km-cnv-okcu-ic'e uygulanıyor. --cnv-renk/--cnv-renk2 panel üzerinde JS'ten set edilir. */
+.km-oyun-panel-canavar{ padding:0; background:radial-gradient(ellipse at 74% 60%, #2a1540 0%, #150d1f 45%, #0b0712 100%); --cnv-renk:#7dd3fc; --cnv-renk2:#a78bfa; }
+.km-cnv-sarsinti, .km-cnv-nefes, .km-cnv-goz, .km-cnv-kanat, .km-cnv-okcu-ic, .km-cnv-aura, .km-cnv-alev, .km-cnv-golge-tutam, .km-cnv-kar, .km-cnv-lav, .km-cnv-nefes-duman, .km-cnv-catlak{ transform-box:fill-box; }
+.km-cnv-nefes{ transform-origin:50% 100%; animation:kmCnvNefes 3.4s ease-in-out infinite; }
+.km-cnv-evre-ofkeli .km-cnv-nefes{ animation-duration:1.5s; }
+.km-cnv-evre-sendeliyor .km-cnv-nefes{ animation:kmCnvSendele 2.2s ease-in-out infinite; }
+@keyframes kmCnvNefes{ 0%,100%{ transform:scale(1,1); } 50%{ transform:scale(1.025,.975); } }
+@keyframes kmCnvSendele{ 0%,100%{ transform:rotate(-3deg) translateY(0); } 50%{ transform:rotate(3deg) translateY(6px); } }
+.km-cnv-goz{ transform-origin:center; animation:kmCnvKirp 4.6s ease-in-out infinite; }
+@keyframes kmCnvKirp{ 0%,92%,100%{ transform:scaleY(1); } 95%{ transform:scaleY(.08); } }
+.km-cnv-kanat-sol{ transform-origin:100% 25%; animation:kmCnvKanatSol 2.6s ease-in-out infinite; }
+.km-cnv-kanat-sag{ transform-origin:0% 25%; animation:kmCnvKanatSag 2.6s ease-in-out infinite; }
+@keyframes kmCnvKanatSol{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(-9deg); } }
+@keyframes kmCnvKanatSag{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(9deg); } }
+.km-cnv-aura{ transform-origin:center; animation:kmCnvAura 3s ease-in-out infinite; }
+.km-cnv-evre-ofkeli .km-cnv-aura{ animation-duration:1.1s; opacity:.9; }
+@keyframes kmCnvAura{ 0%,100%{ transform:scale(1); opacity:.45; } 50%{ transform:scale(1.08); opacity:.75; } }
+.km-cnv-alev, .km-cnv-lav, .km-cnv-catlak{ animation:kmCnvParilti 1.3s ease-in-out infinite; }
+.km-cnv-lav.l2, .km-cnv-kar.k2{ animation-delay:.6s; } .km-cnv-kar.k3{ animation-delay:1.1s; }
+@keyframes kmCnvParilti{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+.km-cnv-golge-tutam{ animation:kmCnvTutam 3.8s ease-in-out infinite; } .km-cnv-golge-tutam.t2{ animation-delay:1.7s; }
+@keyframes kmCnvTutam{ 0%,100%{ transform:translateX(0) scale(1); opacity:.22; } 50%{ transform:translateX(-14px) scale(1.15); opacity:.38; } }
+.km-cnv-kar{ animation:kmCnvKar 3.2s linear infinite; }
+@keyframes kmCnvKar{ 0%{ transform:translateY(-16px); opacity:0; } 30%{ opacity:.7; } 100%{ transform:translateY(40px); opacity:0; } }
+.km-cnv-nefes-duman{ animation:kmCnvDuman 2.4s ease-out infinite; } .km-cnv-nefes-duman.d2{ animation-delay:1.2s; }
+@keyframes kmCnvDuman{ 0%{ transform:translate(0,0) scale(.6); opacity:.5; } 100%{ transform:translate(-22px,-34px) scale(1.8); opacity:0; } }
+/* vuruş / kritik / ıska / ölüm / doğuş — hepsi .km-cnv-sarsinti sargısında, transform-origin zemin merkezi */
+.km-cnv-sarsinti{ transform-origin:50% 100%; }
+.km-cnv-sarsinti.km-cnv-vurus{ animation:kmCnvVurus .5s cubic-bezier(.3,.6,.4,1); }
+@keyframes kmCnvVurus{ 0%{ transform:translate(0,0); filter:brightness(1); } 15%{ transform:translate(14px,-6px) scale(1.02,.98); filter:brightness(2.2); } 35%{ transform:translate(-10px,3px); } 55%{ transform:translate(7px,-2px); filter:brightness(1.3); } 100%{ transform:translate(0,0); filter:brightness(1); } }
+.km-cnv-sarsinti.km-cnv-kritik-vurus{ animation:kmCnvKritik .7s cubic-bezier(.3,.6,.4,1); }
+@keyframes kmCnvKritik{ 0%{ transform:translate(0,0) scale(1); filter:brightness(1); } 12%{ transform:translate(26px,-14px) scale(1.06,.94); filter:brightness(3) saturate(0); } 30%{ transform:translate(-20px,6px) scale(.97,1.03); filter:brightness(1.6); } 50%{ transform:translate(12px,-4px); } 70%{ transform:translate(-6px,2px); } 100%{ transform:translate(0,0) scale(1); filter:brightness(1); } }
+.km-cnv-sarsinti.km-cnv-alay{ animation:kmCnvAlay .9s ease-in-out; }
+@keyframes kmCnvAlay{ 0%,100%{ transform:translateY(0) scale(1,1); } 25%{ transform:translateY(-22px) scale(.96,1.06); } 50%{ transform:translateY(0) scale(1.05,.95); } 75%{ transform:translateY(-10px) scale(.98,1.02); } }
+.km-cnv-sarsinti.km-cnv-olum{ animation:kmCnvOlum 1.1s cubic-bezier(.5,0,.8,.4) forwards; }
+@keyframes kmCnvOlum{ 0%{ transform:scale(1); filter:brightness(1); opacity:1; } 15%{ transform:scale(1.08,.95); filter:brightness(4) saturate(0); } 40%{ transform:scale(.96,1.06) rotate(-4deg); filter:brightness(1.4); opacity:1; } 100%{ transform:scale(.2,.05) translateY(40px); filter:brightness(3) blur(6px); opacity:0; } }
+.km-cnv-sarsinti.km-cnv-dogus{ animation:kmCnvDogus 1.2s cubic-bezier(.2,.8,.3,1.1); }
+@keyframes kmCnvDogus{ 0%{ transform:translateY(160px) scale(.6,.2); opacity:0; filter:brightness(3); } 55%{ transform:translateY(-18px) scale(1.04,1.08); opacity:1; filter:brightness(1.6); } 100%{ transform:translateY(0) scale(1); filter:brightness(1); } }
+/* parti */
+.km-cnv-okcu .km-cnv-okcu-halka{ display:none; }
+.km-cnv-okcu.km-cnv-aktif .km-cnv-okcu-halka{ display:block; filter:drop-shadow(0 0 6px rgba(255,255,255,.7)); }
+.km-cnv-okcu.km-cnv-aktif .km-tag-bg{ stroke-width:2.5; }
+.km-cnv-parti.km-cnv-zafer .km-cnv-okcu-ic{ animation:kmCnvZafer .55s ease-in-out 3; }
+@keyframes kmCnvZafer{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-26px); } }
+.km-cnv-ok{ pointer-events:none; }
+/* HUD */
+/* z-index 1 (skor dock'unun ALTINDA kalsın — gerçek testte hasar tablosu dock'un üstünden görünüyordu);
+   yine de SVG'nin üstünde, çünkü SVG'nin z-index'i yok ve HUD DOM'da ondan sonra geliyor. */
+.km-cnv-hud{ position:absolute; left:12px; right:12px; top:8px; z-index:1; pointer-events:none; display:flex; flex-direction:column; gap:5px; }
+/* İsim satırı SAĞA yaslı — sol üstte paylaşılan kabuk elemanı "Sırada" rozeti (#km-oyun-sirada) duruyor,
+   gerçek testte canavar adının üstüne biniyordu. */
+.km-cnv-isim{ display:flex; align-items:baseline; justify-content:flex-end; gap:10px; flex-wrap:wrap; padding-left:240px; }
+.km-cnv-no{ font-family:var(--font-body); font-weight:700; font-size:11px; letter-spacing:.14em; color:var(--ink-faint); }
+.km-cnv-isim b{ font-family:var(--font-display); font-weight:400; font-size:19px; letter-spacing:.02em; color:var(--cnv-renk); text-shadow:0 0 14px var(--cnv-renk), 0 2px 0 rgba(0,0,0,.6); }
+.km-cnv-evre{ font-family:var(--font-body); font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#3ddc97; background:rgba(0,0,0,0.45); border:1px solid rgba(61,220,151,0.4); border-radius:999px; padding:3px 10px; }
+.km-cnv-evre-ofkeli .km-cnv-evre{ color:#ff8a3d; border-color:rgba(255,138,61,.55); }
+.km-cnv-evre-sendeliyor .km-cnv-evre{ color:#ff5f6d; border-color:rgba(255,95,109,.6); animation:kmKuleRozetNabiz 1s ease-in-out infinite; }
+.km-cnv-canbar{ position:relative; height:22px; border-radius:11px; background:rgba(0,0,0,.55); border:1.5px solid rgba(255,255,255,.18); overflow:hidden; box-shadow:inset 0 2px 6px rgba(0,0,0,.6); }
+.km-cnv-can-dolu{ position:absolute; left:0; top:0; bottom:0; width:100%; border-radius:11px; background:linear-gradient(180deg,#5ef0a8,#22c55e 55%,#15803d); box-shadow:0 0 14px rgba(94,240,168,.55); transition:width .5s cubic-bezier(.2,.7,.3,1), background .4s; }
+.km-cnv-can-dolu::after{ content:''; position:absolute; inset:0; background:repeating-linear-gradient(90deg, transparent 0 22px, rgba(0,0,0,.18) 22px 24px); }
+.km-cnv-evre-ofkeli .km-cnv-can-dolu{ background:linear-gradient(180deg,#ffb95c,#ff8a3d 55%,#c2410c); box-shadow:0 0 14px rgba(255,138,61,.6); }
+.km-cnv-evre-sendeliyor .km-cnv-can-dolu{ background:linear-gradient(180deg,#ff8a8a,#ff3b3b 55%,#991b1b); box-shadow:0 0 16px rgba(255,59,59,.7); }
+.km-cnv-can-yazi{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-weight:700; font-size:12.5px; letter-spacing:.06em; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.9); }
+.km-cnv-katki, .km-cnv-ganimet{ position:absolute; bottom:8px; z-index:1; pointer-events:none; font-family:var(--font-body); font-size:11px; color:var(--ink-dim); background:rgba(0,0,0,.42); border:1px solid var(--line); border-radius:10px; padding:6px 9px; backdrop-filter:none; }
+.km-cnv-katki{ left:8px; min-width:130px; max-width:190px; }
+.km-cnv-ganimet{ right:8px; min-width:110px; text-align:right; }
+.km-cnv-katki-baslik{ font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:3px; }
+.km-cnv-katki-satir{ display:flex; justify-content:space-between; gap:10px; padding:1px 0; }
+.km-cnv-katki-satir.lider .km-cnv-katki-ad, .km-cnv-katki-satir.lider .km-cnv-katki-deger{ color:#ffd23f; }
+.km-cnv-katki-ad{ color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100px; }
+.km-cnv-katki-deger{ font-weight:700; } .km-cnv-katki-deger i{ font-style:normal; font-size:10px; color:#ffd23f; }
+.km-cnv-ganimet-ikonlar{ font-size:18px; letter-spacing:2px; line-height:1.2; } .km-cnv-ganimet-bos{ color:var(--ink-faint); }
+.km-cnv-ganimet-alt{ font-size:10px; color:var(--ink-faint); margin-top:2px; } .km-cnv-ganimet-alt b{ color:var(--ink); }
+.km-cnv-yeni-btn{ position:absolute; right:10px; top:66px; z-index:2; font-family:var(--font-body); font-weight:700; font-size:10.5px; letter-spacing:.05em; color:var(--ink-dim); background:rgba(0,0,0,.45); border:1px solid var(--line); border-radius:999px; padding:5px 10px; cursor:pointer; }
+.km-cnv-yeni-btn:hover{ color:var(--ink); border-color:var(--a1); }
+.km-cnv-flash{ position:absolute; inset:0; z-index:5; pointer-events:none; background:#fff; opacity:0; }
+.km-cnv-flash.goster{ animation:kmCnvFlash .45s ease-out; }
+@keyframes kmCnvFlash{ 0%{ opacity:.85; } 100%{ opacity:0; } }
+.km-cnv-kritik-yazi{ position:absolute; left:50%; top:38%; z-index:6; pointer-events:none; font-family:var(--font-display); font-size:44px; color:#ffd23f; text-shadow:0 0 22px #ff8a3d, 0 4px 0 #7c2d12; opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(-6deg); }
+.km-cnv-kritik-yazi.goster{ animation:kmCnvKritikYazi 1.1s cubic-bezier(.2,.8,.3,1) forwards; }
+@keyframes kmCnvKritikYazi{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(-6deg); } 20%{ opacity:1; transform:translate(-50%,-50%) scale(1.25) rotate(2deg); } 40%{ transform:translate(-50%,-50%) scale(1) rotate(-1deg); } 75%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-80%) scale(1.1); } }
+.km-cnv-hasar-yazi{ position:absolute; font-family:var(--font-display); font-size:30px; color:#ff5f3d; text-shadow:0 0 12px rgba(255,95,61,.8), 0 2px 0 rgba(0,0,0,.8); pointer-events:none; white-space:nowrap; }
+.km-cnv-hasar-yazi.kritik{ font-size:44px; color:#ffd23f; text-shadow:0 0 18px #ff8a3d, 0 3px 0 rgba(0,0,0,.85); }
+@media (max-width:600px){ .km-cnv-isim{ padding-left:0; padding-top:46px; justify-content:flex-start; gap:6px; } .km-cnv-isim b{ font-size:15px; } .km-cnv-yeni-btn{ top:auto; bottom:72px; right:6px; } .km-cnv-katki{ max-width:120px; font-size:10px; } .km-cnv-ganimet{ min-width:80px; font-size:10px; } .km-cnv-ganimet-ikonlar{ font-size:14px; } .km-cnv-yeni-btn{ top:60px; font-size:9.5px; padding:4px 8px; } .km-cnv-kritik-yazi{ font-size:28px; } .km-cnv-hasar-yazi{ font-size:22px; } .km-cnv-hasar-yazi.kritik{ font-size:30px; } }
+@media (prefers-reduced-motion: reduce){ .km-cnv-nefes, .km-cnv-goz, .km-cnv-kanat, .km-cnv-aura, .km-cnv-alev, .km-cnv-lav, .km-cnv-catlak, .km-cnv-golge-tutam, .km-cnv-kar, .km-cnv-nefes-duman, .km-cnv-okcu.km-cnv-aktif .km-cnv-okcu-halka, .km-cnv-evre-sendeliyor .km-cnv-evre{ animation:none; } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -13077,6 +13166,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // olurdu), güncel kulenin durumu ise Gizli Kelime'nin AYNI tarih damgalı/konum bazlı deseniyle.
             kule: { ad: 'Kule', ikon: '🗼', renkler: ['#c9a876', '#8c7355', '#7dd3fc', '#ff8a3d', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — sınıf birlikte kule örüyor, her seri bir taş ekler, taşın hizası seri toplamına bağlı. Kule aşırı eğilirse yıkılır.', btn: '🗼 Aç', finish: '', cp: '', birim: 'kule', bitis: '',
                 surprizler: [] },
+            // Ortak Canavar (2026-09-24) — frac/yol YOK, Kule'nin paylaşılan-sınıf-durumu emsali. Bkz.
+            // kmOyunAnimateCanavar ve üstündeki blok.
+            canavar: { ad: 'Ortak Canavar', ikon: '🐉', renkler: ['#ffd23f', '#ff5f3d', '#7dd3fc', '#c77dff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — tüm sınıf TEK bir canavara karşı: her seri toplamı kadar hasar verir, %90+ seri KRİTİK vuruştur. Canavar yenilince daha güçlüsü gelir.', btn: '⚔️ Vur', finish: '', cp: '', birim: 'hasar', bitis: '',
+                surprizler: [] },
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
@@ -13498,6 +13591,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'hedef') kmOyunResyncHedef();
             else if(tid === 'futbol') kmOyunResyncFutbol();
             else if(tid === 'futboltakim') kmOyunResyncFutbolTakim();
+            else if(tid === 'canavar') kmOyunCanavarCiz();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -13523,6 +13617,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'kehanet') kmOyunSahneKurKehanet();
             else if(tid === 'gizlikelime') kmOyunSahneKurGizliKelime();
             else if(tid === 'kule') kmOyunSahneKurKule();
+            else if(tid === 'canavar') kmOyunSahneKurCanavar();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -13549,6 +13644,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurKehanet();
             kmOyunSahneKurGizliKelime();
             kmOyunSahneKurKule();
+            kmOyunSahneKurCanavar();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -13875,6 +13971,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             harika: ['Vay canına!', 'Bu neydi öyle!', 'İnanılmaz bir seri!', 'Tam isabet!'],
             'futbol-bitis': ['Maç bitti!', 'Düdük çaldı!', 'Ve işte final skoru!'],
             'futboltakim-bitis': ['Hedef tamamlandı!', 'Sınıf başardı!', 'İşte bu takım ruhu!'],
+            'canavar-oldu': ['Yere serdiler!', 'Sınıf birlikte başardı!', 'Canavar devrildi!', 'İşte takım gücü!'],
+            'canavar-geliyor': ['Dikkat!', 'Yer sarsılıyor!', 'Daha güçlüsü geliyor!'],
+            'canavar-evre': ['Sıkı durun!', 'Şimdi zamanı!', 'Devam edin!'],
         };
         function kmOyunSpikerRastgele(kategori) {
             let havuz = KM_SPIKER_CUMLE[kategori]; if(!havuz) return '';
@@ -14596,6 +14695,41 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             <div class="km-kule-katki-panel" id="km-kule-katki-panel"></div>
             <div class="km-kule-yikilis-banner" id="km-kule-yikilis-banner" style="display:none;"></div>
         </div>`;
+        // 🐉 Ortak Canavar paneli (2026-09-24) — SVG doğrudan çocuk (.km-oyun-panel > svg deseni). Parti
+        // solda, canavar sağda (x=900); HUD (can barı/evre), hasar tablosu, ganimet rafı HTML overlay.
+        if(tid === 'canavar') return `<div class="km-oyun-panel km-oyun-panel-canavar" id="km-oyun-panel-canavar">
+            <svg id="km-oyun-svg-canavar" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <linearGradient id="km-cnv-grad-ejder" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fe3ff"/><stop offset=".55" stop-color="#4f9fd6"/><stop offset="1" stop-color="#2a4d86"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-golem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9b48d"/><stop offset=".6" stop-color="#8f7754"/><stop offset="1" stop-color="#5a4733"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-buz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf8ff"/><stop offset=".5" stop-color="#8fd0f5"/><stop offset="1" stop-color="#3f86b8"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-kurt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4fa0"/><stop offset=".6" stop-color="#3a2560"/><stop offset="1" stop-color="#1a1030"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-volkan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b3428"/><stop offset=".6" stop-color="#3d1a14"/><stop offset="1" stop-color="#1c0a08"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-alev" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff3d1f"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#ffe680"/></linearGradient>
+                    <radialGradient id="km-cnv-grad-aura"><stop offset="0" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:.55;"/><stop offset=".7" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:.12;"/><stop offset="1" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:0;"/></radialGradient>
+                    <radialGradient id="km-cnv-grad-zemin" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="#3a2352"/><stop offset="1" stop-color="#120a1c"/></radialGradient>
+                    <filter id="km-cnv-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    <filter id="km-cnv-golge" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <g opacity=".5"><circle cx="150" cy="70" r="1.6" fill="#fff"/><circle cx="330" cy="40" r="1.2" fill="#fff"/><circle cx="520" cy="90" r="1.5" fill="#fff"/><circle cx="700" cy="30" r="1.1" fill="#fff"/><circle cx="1050" cy="60" r="1.4" fill="#fff"/><circle cx="1150" cy="140" r="1.1" fill="#fff"/><circle cx="60" cy="160" r="1.2" fill="#fff"/></g>
+                <path d="M0 300 L 90 250 L 160 290 L 250 230 L 340 285 L 420 240 L 520 300 L 640 250 L 720 295 L 830 220 L 940 290 L 1040 230 L 1120 280 L 1200 240 L 1200 440 L 0 440 Z" fill="#160c22" opacity=".9"/>
+                <rect x="0" y="360" width="1200" height="80" fill="url(#km-cnv-grad-zemin)"/>
+                <ellipse cx="${KM_CANAVAR_X}" cy="${KM_CANAVAR_ZEMIN_Y}" rx="230" ry="26" fill="#000" opacity=".45"/>
+                <ellipse class="km-cnv-aura" cx="${KM_CANAVAR_X}" cy="${KM_CANAVAR_ZEMIN_Y - 150}" rx="250" ry="200" fill="url(#km-cnv-grad-aura)"/>
+                <g class="km-cnv-parti" id="km-cnv-parti"></g>
+                <g id="km-cnv-sarsinti" class="km-cnv-sarsinti"><g class="km-cnv-nefes"><g id="km-cnv-canavar-ic" transform="translate(${KM_CANAVAR_X},${KM_CANAVAR_ZEMIN_Y})"></g></g></g>
+                <g id="km-cnv-oklar"></g>
+            </svg>
+            <div class="km-cnv-hud">
+                <div class="km-cnv-isim"><span class="km-cnv-no" id="km-cnv-no">1. CANAVAR</span><b id="km-cnv-ad">—</b><span class="km-cnv-evre" id="km-cnv-evre">Sağlam</span></div>
+                <div class="km-cnv-canbar"><div class="km-cnv-can-dolu" id="km-cnv-can-dolu"></div><div class="km-cnv-can-yazi" id="km-cnv-can-yazi"></div></div>
+            </div>
+            <div class="km-cnv-katki" id="km-cnv-katki"></div>
+            <div class="km-cnv-ganimet" id="km-cnv-ganimet"></div>
+            <button class="km-cnv-yeni-btn" onclick="kmOyunCanavarYeniSavas()" title="Bugünkü savaşı sıfırla, 1. canavardan başla">🔄 Yeni Savaş</button>
+            <div class="km-cnv-flash" id="km-cnv-flash"></div>
+            <div class="km-cnv-kritik-yazi" id="km-cnv-kritik-yazi">KRİTİK!</div>
+        </div>`;
         }
 
         function kmOyunHTML() {
@@ -14627,7 +14761,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                      olarak görünür. .km-arac-izgara/.card Faz 2/7'den — burada yeni stil yazılmadı. -->
                 <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
                 <div id="km-oyun-govde">
-                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') ? 'display:none;' : ''}">
+                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
                         <button class="${_kmOyunTakimModu ? 'aktif' : ''}" data-takim="1" onclick="kmOyunModSec(true)">🤝 Takım</button>
@@ -14643,7 +14777,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
@@ -14766,6 +14900,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Takım Futbolu'nda "N/8" değil, gerçek katkı sayısı gösterilir — bu temada seri sayısının
                 // 8'de bitmesi diye bir kural yok (maç, paylaşılan hedef gole ulaşınca biter).
                 let durum = _kmOyunAktifTema === 'futboltakim' ? `${s.futbolTakimGol || 0} ${th.birim}` : (s.frac >= 1 ? th.bitis : `${Math.floor(s.frac * KM_OYUN_CP_SAYISI)}/${KM_OYUN_CP_SAYISI} ${th.birim}`);
+                // Ortak Canavar — frac yok; bugünkü toplam hasarı göster.
+                if(_kmOyunAktifTema === 'canavar') { kmCanavarDurumEmin(); let hh = _kmCanavar.hasarlar[s.g + '|' + s.ad]; durum = `${hh ? hh.hasar : 0} ${th.birim}`; }
                 let d = kmOyunDurumAl(s.g, s.ad);
                 let sev = d.seviye || 'orta';
                 let seri = d.bitisSerisi || 0;
@@ -15214,7 +15350,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunLiderCiz() {
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
             kmOyunCpRailCiz();
-            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') { kmOyunTakimYarisCiz(el); return; }
+            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar') { kmOyunTakimYarisCiz(el); return; }
             // Pist — Çoklu Takım'ın (kmOyunTakimYarisCiz) AYNI dallanma önceliğinde: bireysel modda
             // GERÇEK toplamSkor yerine frac'a (yarış ilerlemesine) göre sıralı, yüzdeli bir liste
             // (Faz 9, Stage 4: "sağdaki listede sıralama ve yüzde"). kmOyunLiderCiz'in geri kalanına
@@ -15248,6 +15384,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let enIyi = adaylar[0];
                     kehanetOzel = '<div class="km-kehanet-en-iyi-kahin">🔮 En İyi Kâhin: <b>' + esc(enIyi.ad.split(' ')[0]) + '</b> — ort. sapma ' + enIyi.ortalama.toFixed(1) + '</div>';
                 }
+            }
+            // Ortak Canavar — Kehanet'in "En İyi Kâhin" satırıyla AYNI ilke: sıralamaya dokunmadan, üstüne
+            // bugünün en çok hasar vereni (👑) ve sınıfın toplam hasarı.
+            if(_kmOyunAktifTema === 'canavar') {
+                kmCanavarDurumEmin();
+                let liste = Object.keys(_kmCanavar.hasarlar).map(function(k) { return _kmCanavar.hasarlar[k]; }).sort(function(a, b) { return b.hasar - a.hasar; });
+                if(liste.length) kehanetOzel = '<div class="km-kehanet-en-iyi-kahin">👑 En Çok Hasar: <b>' + esc(liste[0].ad.split(' ')[0]) + '</b> — ' + liste[0].hasar + ' · Sınıf toplam ' + _kmCanavar.toplamHasar + '</div>';
             }
             el.innerHTML = kehanetOzel + '<div class="km-oyun-lider-baslik">' + baslik + '</div>' + sirali.map(function(o, rank) {
                 let puanGoster = _kmOyunYukselenMi ? (o.puan > 0 ? '+' + o.puan : o.puan) : o.puan;
@@ -17594,6 +17737,366 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else setTimeout(done, 500);
         }
 
+        // ==================================================================================
+        // 🐉 ORTAK CANAVAR (2026-09-24, kullanıcı: "bunu fable kalitesinde mükemmel bir oyun yap, görsel
+        // ile birlikte") — Kule'nin "sınıf çapında paylaşılan, güne özel durum" emsaliyle AYNI kategori
+        // (frac/yol YOK). Tüm sınıf TEK bir canavara karşı: her seri, toplamı kadar hasar verir; %90+
+        // seri KRİTİK (×1.5). Can bitince canavar yenilir, kısa bir kutlamadan sonra bir sonraki (daha
+        // dayanıklı) canavar doğar. Rekabet değil İŞBİRLİĞİ — Takım Modu/Çoklu Takım burada anlamsız,
+        // anahtar gizli. GERÇEK skora (kmOyunIlerlet'te YUKARIDA zaten yazıldı) HİÇ dokunmaz.
+        // §15g: ciddi modda can barı / hasar sayısı / evre rozeti HER ZAMAN güncellenir, sadece ses/
+        // toast/banner susar. Tüm canavarlar SVG ilkelleriyle çizildi (stok görsel/emoji karakter YOK);
+        // boşta soluma/göz kırpma/kanat çırpma SALT CSS transform+opacity (JS'in transform attribute'u
+        // yazdığı hiçbir <g>'ye CSS transform uygulanmıyor — Faz 9 Stage 4 dersi).
+        const KM_CANAVAR_TIPLERI = [
+            { id: 'ejder',  ad: 'Sis Ejderi',   ikon: '🐉', renk: '#7dd3fc', renk2: '#a78bfa', koyu: '#1e3a5f' },
+            { id: 'golem',  ad: 'Kaya Golemi',  ikon: '🗿', renk: '#a8906a', renk2: '#ff8a3d', koyu: '#4a3b2a' },
+            { id: 'buz',    ad: 'Buz Devi',     ikon: '🧊', renk: '#bfe9ff', renk2: '#5fb8ff', koyu: '#2b5c80' },
+            { id: 'kurt',   ad: 'Gölge Kurdu',  ikon: '🐺', renk: '#6b4fa0', renk2: '#ff4fa3', koyu: '#1a1030' },
+            { id: 'volkan', ad: 'Volkan Kralı', ikon: '🌋', renk: '#5a2a22', renk2: '#ffd23f', koyu: '#2a100c' }
+        ];
+        const KM_CANAVAR_KRITIK_CARPAN = 1.5;
+        const KM_CANAVAR_X = 900, KM_CANAVAR_ZEMIN_Y = 400;
+        let _kmCanavar = null, _kmCanavarYuklenenKonum = null;
+        let _kmCanavarRekor = null, _kmCanavarRekorYuklenenKonum = null;
+        function kmCanavarAnahtari() { return 'dag_km_canavar_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmCanavarRekorAnahtari() { return 'dag_km_canavar_rekor_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmCanavarKaydet() { try { localStorage.setItem(kmCanavarAnahtari(), JSON.stringify(_kmCanavar)); } catch(e) {} }
+        function kmCanavarRekorKaydet() { try { localStorage.setItem(kmCanavarRekorAnahtari(), JSON.stringify(_kmCanavarRekor)); } catch(e) {} }
+        function kmCanavarTip(no) { return KM_CANAVAR_TIPLERI[(no - 1) % KM_CANAVAR_TIPLERI.length]; }
+        function kmCanavarAd(no) {
+            let t = kmCanavarTip(no), tur = Math.floor((no - 1) / KM_CANAVAR_TIPLERI.length);
+            return t.ad + (tur > 0 ? ' ' + (['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][Math.min(tur - 1, 8)]) : '');
+        }
+        // Can: sınıf büyüklüğüne ve ok sayısına göre — her canavar sınıfın HER üyesinden yaklaşık 2 seri
+        // istesin (ortalama seri ≈ maxPuan×0.6 varsayımı), sonraki her canavar %30 daha dayanıklı.
+        // Canavar doğduğu anda sabitlenir (sonradan ok sayısı/roster değişse de can DEĞİŞMEZ).
+        function kmCanavarMaxCan(no) {
+            let n = Math.max(1, _kmOyunRosterCache.length);
+            let ortSeri = _kmOyunOkSayisi * 10 * 0.6;
+            return Math.round(Math.max(90, n * 2 * ortSeri) * (1 + 0.3 * (no - 1)));
+        }
+        function kmCanavarYeni(no) { let mc = kmCanavarMaxCan(no); return { no: no, can: mc, maxCan: mc, tip: kmCanavarTip(no).id }; }
+        function kmCanavarDurumEmin() {
+            if(_kmCanavar && _kmCanavarYuklenenKonum === _kmAktifKonum && _kmCanavar.tarih === bugunISO()) return;
+            _kmCanavarYuklenenKonum = _kmAktifKonum;
+            try {
+                let ham = localStorage.getItem(kmCanavarAnahtari());
+                let veri = ham ? JSON.parse(ham) : null;
+                if(veri && veri.tarih === bugunISO() && veri.aktif) { _kmCanavar = veri; return; }
+            } catch(e) {}
+            _kmCanavar = { tarih: bugunISO(), aktif: kmCanavarYeni(1), hasarlar: {}, yenilenler: [], toplamHasar: 0, seriSayisi: 0 };
+            kmCanavarKaydet();
+        }
+        function kmCanavarRekorEmin() {
+            if(_kmCanavarRekor && _kmCanavarRekorYuklenenKonum === _kmAktifKonum) return;
+            _kmCanavarRekorYuklenenKonum = _kmAktifKonum;
+            try { let ham = localStorage.getItem(kmCanavarRekorAnahtari()); _kmCanavarRekor = ham ? JSON.parse(ham) : { gunlukEnCok: 0, toplam: 0 }; }
+            catch(e) { _kmCanavarRekor = { gunlukEnCok: 0, toplam: 0 }; }
+        }
+        function kmCanavarEvre(c) {
+            let oran = c.maxCan ? c.can / c.maxCan : 1;
+            if(oran <= 0.2) return 'sendeliyor';
+            if(oran <= 0.5) return 'ofkeli';
+            return 'saglam';
+        }
+        // ---- Canavar çizimleri: yerel koordinat, x=0 gövde merkezi, y=0 ZEMİN (gövde yukarı, negatif y).
+        function kmOyunCanavarSVG(tipId) {
+            let t = KM_CANAVAR_TIPLERI.find(function(x) { return x.id === tipId; }) || KM_CANAVAR_TIPLERI[0];
+            let g = 'url(#km-cnv-grad-' + t.id + ')';
+            let goz = function(cx, cy, rx, ry) { return `<ellipse class="km-cnv-goz" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff"/><circle class="km-cnv-gozbebek" cx="${cx}" cy="${cy}" r="${Math.min(rx, ry) * 0.55}" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>`; };
+            if(t.id === 'ejder') return `
+                <path class="km-cnv-kanat km-cnv-kanat-sol" d="M-40 -150 C -150 -260, -260 -230, -300 -160 C -240 -170, -200 -150, -170 -120 C -220 -125, -250 -105, -270 -80 C -210 -95, -160 -90, -120 -70 Z" fill="${g}" opacity=".78" stroke="${t.koyu}" stroke-width="3"/>
+                <path class="km-cnv-kanat km-cnv-kanat-sag" d="M40 -150 C 150 -260, 260 -230, 300 -160 C 240 -170, 200 -150, 170 -120 C 220 -125, 250 -105, 270 -80 C 210 -95, 160 -90, 120 -70 Z" fill="${g}" opacity=".78" stroke="${t.koyu}" stroke-width="3"/>
+                <path d="M60 -60 C 150 -40, 220 -10, 260 -40 C 300 -70, 280 -110, 240 -100 C 280 -80, 270 -60, 240 -70" fill="none" stroke="${g}" stroke-width="22" stroke-linecap="round"/>
+                <ellipse cx="0" cy="-105" rx="95" ry="72" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <ellipse cx="0" cy="-90" rx="55" ry="45" fill="${t.koyu}" opacity=".35"/>
+                <path d="M-70 -160 l14 -28 l14 28 M-40 -172 l14 -30 l14 30 M-8 -176 l14 -32 l14 32 M26 -170 l14 -28 l14 28 M58 -158 l12 -24 l12 24" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="2"/>
+                <path d="M-40 -150 C -70 -200, -90 -230, -95 -250" fill="none" stroke="${g}" stroke-width="34" stroke-linecap="round"/>
+                <ellipse cx="-105" cy="-255" rx="52" ry="36" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <path d="M-150 -250 L -175 -238 L -150 -226 Z" fill="${t.koyu}"/>
+                <path d="M-125 -288 l-8 -30 l22 18 Z M-95 -290 l4 -32 l16 26 Z" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="2"/>
+                <circle class="km-cnv-nefes-duman" cx="-160" cy="-240" r="6" fill="#fff" opacity=".5"/>
+                <circle class="km-cnv-nefes-duman d2" cx="-172" cy="-256" r="4" fill="#fff" opacity=".35"/>
+                ${goz(-118, -262, 11, 9)}
+                <path d="M-45 -40 l-10 40 l30 0 l-6 -40 M45 -40 l10 40 l-30 0 l6 -40" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>`;
+            if(t.id === 'golem') return `
+                <rect x="-150" y="-140" width="70" height="140" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <rect x="80" y="-140" width="70" height="140" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <circle cx="-115" cy="-12" r="34" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <circle cx="115" cy="-12" r="34" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <rect x="-70" y="-70" width="60" height="70" rx="14" fill="${t.koyu}"/><rect x="10" y="-70" width="60" height="70" rx="14" fill="${t.koyu}"/>
+                <rect x="-105" y="-215" width="210" height="165" rx="34" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
+                <path class="km-cnv-catlak" d="M-60 -190 l18 30 l-10 22 l22 28 M40 -200 l-14 34 l16 20 l-8 30 M-20 -120 l24 18 l-6 26" fill="none" stroke="${t.renk2}" stroke-width="4" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
+                <ellipse cx="-70" cy="-205" rx="26" ry="9" fill="#5f8a4a" opacity=".8"/><ellipse cx="60" cy="-70" rx="18" ry="7" fill="#5f8a4a" opacity=".7"/>
+                <rect x="-70" y="-290" width="140" height="90" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
+                <rect x="-76" y="-262" width="152" height="18" rx="6" fill="${t.koyu}"/>
+                <rect class="km-cnv-goz" x="-48" y="-250" width="30" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                <rect class="km-cnv-goz" x="18" y="-250" width="30" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                <path d="M-30 -218 h60" stroke="${t.koyu}" stroke-width="5" stroke-linecap="round"/>`;
+            if(t.id === 'buz') return `
+                <polygon points="-40,0 -210,-30 -150,-150 -90,-120" fill="${g}" opacity=".85" stroke="${t.koyu}" stroke-width="3"/>
+                <polygon points="40,0 210,-30 150,-150 90,-120" fill="${g}" opacity=".85" stroke="${t.koyu}" stroke-width="3"/>
+                <polygon points="-120,0 -40,-250 40,-250 120,0" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
+                <polygon points="-60,-40 -20,-200 10,-200 30,-40" fill="#fff" opacity=".28"/>
+                <polygon points="-40,-250 -70,-330 -20,-300 0,-360 20,-300 70,-330 40,-250" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="3" filter="url(#km-cnv-glow)"/>
+                <polygon points="-50,-250 -60,-190 60,-190 50,-250" fill="${t.koyu}" opacity=".55"/>
+                ${goz(-24, -222, 12, 10)}${goz(24, -222, 12, 10)}
+                <circle class="km-cnv-kar" cx="-160" cy="-200" r="4" fill="#fff" opacity=".7"/><circle class="km-cnv-kar k2" cx="170" cy="-240" r="3" fill="#fff" opacity=".6"/><circle class="km-cnv-kar k3" cx="-200" cy="-90" r="3" fill="#fff" opacity=".6"/><circle class="km-cnv-kar k2" cx="200" cy="-120" r="4" fill="#fff" opacity=".6"/>`;
+            if(t.id === 'kurt') return `
+                <ellipse class="km-cnv-golge-tutam" cx="-150" cy="-30" rx="60" ry="20" fill="${t.renk}" opacity=".25"/>
+                <ellipse class="km-cnv-golge-tutam t2" cx="150" cy="-50" rx="50" ry="16" fill="${t.renk}" opacity=".22"/>
+                <path d="M150 -100 C 230 -150, 260 -230, 225 -265 C 238 -215, 205 -165, 165 -130" fill="${g}" stroke="${t.renk}" stroke-width="3"/>
+                <path d="M-118 -40 L -140 0 M-64 -36 L -60 0 M62 -36 L 66 0 M118 -40 L 142 0" fill="none" stroke="${g}" stroke-width="24" stroke-linecap="round"/>
+                <path d="M-152 4 h30 M-74 4 h30 M52 4 h30 M128 4 h30" stroke="${t.koyu}" stroke-width="8" stroke-linecap="round"/>
+                <path d="M-160 -50 C -185 -120, -90 -152, 20 -148 C 125 -144, 185 -112, 172 -52 C 160 -22, -140 -18, -160 -50 Z" fill="${g}" stroke="${t.renk}" stroke-width="3" filter="url(#km-cnv-golge)"/>
+                <path d="M-120 -142 l8 -34 l16 30 M-82 -150 l6 -36 l18 32 M-42 -152 l4 -34 l18 30 M-2 -150 l4 -30 l16 26" fill="${t.koyu}" stroke="${t.renk}" stroke-width="2"/>
+                <path d="M-150 -120 C -200 -172, -275 -152, -292 -120 C -288 -92, -256 -80, -206 -86 L -160 -98 Z" fill="${g}" stroke="${t.renk}" stroke-width="3"/>
+                <path d="M-268 -92 l-4 14 l10 -6 Z M-250 -88 l-2 14 l10 -7 Z" fill="#fff"/>
+                <path d="M-215 -170 l-10 -52 l36 36 Z M-176 -176 l12 -50 l16 44 Z" fill="${g}" stroke="${t.renk}" stroke-width="2"/>
+                <circle cx="-284" cy="-126" r="5" fill="${t.koyu}"/>
+                ${goz(-232, -136, 12, 7)}${goz(-198, -140, 11, 7)}`;
+            return `
+                <ellipse class="km-cnv-golge-tutam" cx="0" cy="-8" rx="150" ry="16" fill="${t.renk2}" opacity=".18"/>
+                <path d="M-120 0 L -140 -160 L -90 -240 L 90 -240 L 140 -160 L 120 0 Z" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
+                <path class="km-cnv-catlak" d="M-80 -200 l20 40 l-12 30 l26 40 l-10 50 M60 -210 l-16 44 l18 30 l-12 48 l14 40 M-10 -150 l14 28 l-8 30" fill="none" stroke="${t.renk2}" stroke-width="5" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
+                <path d="M-150 -170 C -200 -190, -220 -130, -190 -100 L -160 -120 Z M150 -170 C 200 -190, 220 -130, 190 -100 L 160 -120 Z" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <path d="M-70 -240 C -60 -300, 60 -300, 70 -240 Z" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
+                <path class="km-cnv-alev" d="M-70 -270 l-20 -60 l34 30 l6 -70 l18 46 l16 -56 l12 62 l30 -34 l-16 62 l34 -18 l-44 48 Z" fill="url(#km-cnv-grad-alev)" filter="url(#km-cnv-glow)"/>
+                <circle class="km-cnv-lav" cx="-40" cy="-60" r="7" fill="${t.renk2}" filter="url(#km-cnv-glow)"/><circle class="km-cnv-lav l2" cx="30" cy="-100" r="5" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                ${goz(-28, -258, 12, 8)}${goz(28, -258, 12, 8)}
+                <path d="M-24 -232 h48" stroke="${t.renk2}" stroke-width="4" stroke-linecap="round" filter="url(#km-cnv-glow)"/>`;
+        }
+        // Parti (sınıfın hayvan karakterleri) — soldan canavara bakan sıralar; 6'şarlı sıralar, arka
+        // sıralar hafif yukarıda ve kaydırılmış. Konum SADECE attribute transform ile (Resync deseni).
+        function kmOyunCanavarOkcuPoz(i) {
+            let cap = 6, row = Math.floor(i / cap), col = i % cap;
+            // x başlangıcı 230: sol alttaki Hasar tablosu (~190 dünya birimi) ön sıranın isim etiketlerini
+            // örtmesin (gerçek testte yakalandı).
+            return { x: 230 + col * 72 + (row % 2) * 36, y: KM_CANAVAR_ZEMIN_Y - row * 46 };
+        }
+        function kmOyunSahneKurCanavar() {
+            kmCanavarDurumEmin(); kmCanavarRekorEmin();
+            let pg = document.getElementById('km-cnv-parti'); if(!pg) return;
+            pg.innerHTML = '';
+            let roster = _kmOyunRosterCache;
+            roster.forEach(function(s, i) {
+                let p = kmOyunCanavarOkcuPoz(i);
+                let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                el.setAttribute('class', 'km-climber km-cnv-okcu');
+                el.setAttribute('transform', `translate(${p.x},${p.y})`);
+                let renk = kmOyunRenk('canavar', i);
+                let ilkAd = s.ad.split(' ')[0];
+                let genislik = Math.max(44, ilkAd.length * 7.5 + 18);
+                // Halka: CSS transform DEĞİL, SMIL r-nabzı — fill-box/transform-origin ile gerçek testte
+                // halka karakterden yana kayıyordu; SMIL'de hiç transform yok, merkez hep karakterde.
+                el.innerHTML = `<g class="km-cnv-okcu-ic"><circle class="km-cnv-okcu-halka" r="34" cy="-26" fill="none" stroke="${renk}" stroke-width="3"><animate attributeName="r" values="32;37;32" dur="1.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="1;.5;1" dur="1.4s" repeatCount="indefinite"/></circle>
+                    ${kmOyunHayvanKarakterSVG(s, renk, 56)}
+                    <g transform="translate(0,16)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g></g>`;
+                pg.appendChild(el);
+                s.canavarEl = el;
+            });
+            kmOyunCanavarGovdeKur(false);
+            kmOyunCanavarCiz();
+        }
+        function kmOyunCanavarGovdeKur(dogusMu) {
+            let ic = document.getElementById('km-cnv-canavar-ic'); if(!ic) return;
+            let c = _kmCanavar.aktif;
+            ic.innerHTML = kmOyunCanavarSVG(c.tip);
+            ic.dataset.tip = c.tip; ic.dataset.no = String(c.no);
+            let sar = document.getElementById('km-cnv-sarsinti');
+            if(sar) {
+                sar.classList.remove('km-cnv-olum', 'km-cnv-vurus', 'km-cnv-kritik-vurus', 'km-cnv-dogus', 'km-cnv-alay');
+                if(dogusMu && !kmOyunKameraAzaltilmisHareketMi()) { void sar.getBoundingClientRect(); sar.classList.add('km-cnv-dogus'); setTimeout(function() { sar.classList.remove('km-cnv-dogus'); }, 1300); }
+            }
+        }
+        function kmOyunCanavarHudGuncelle() {
+            kmCanavarDurumEmin(); kmCanavarRekorEmin();
+            let c = _kmCanavar.aktif, t = kmCanavarTip(c.no), evre = kmCanavarEvre(c);
+            let panel = document.getElementById('km-oyun-panel-canavar'); if(!panel) return;
+            panel.classList.remove('km-cnv-evre-saglam', 'km-cnv-evre-ofkeli', 'km-cnv-evre-sendeliyor');
+            panel.classList.add('km-cnv-evre-' + evre);
+            panel.style.setProperty('--cnv-renk', t.renk); panel.style.setProperty('--cnv-renk2', t.renk2);
+            let noEl = document.getElementById('km-cnv-no'); if(noEl) noEl.textContent = c.no + '. CANAVAR';
+            let adEl = document.getElementById('km-cnv-ad'); if(adEl) adEl.textContent = t.ikon + ' ' + kmCanavarAd(c.no);
+            let evreEl = document.getElementById('km-cnv-evre'); if(evreEl) evreEl.textContent = evre === 'sendeliyor' ? 'Sendeliyor!' : (evre === 'ofkeli' ? 'Öfkelendi!' : 'Sağlam');
+            let dolu = document.getElementById('km-cnv-can-dolu'); if(dolu) dolu.style.width = (c.maxCan ? Math.max(0, Math.min(100, c.can / c.maxCan * 100)) : 0).toFixed(1) + '%';
+            let yazi = document.getElementById('km-cnv-can-yazi'); if(yazi) yazi.textContent = c.can + ' / ' + c.maxCan;
+            let katki = document.getElementById('km-cnv-katki');
+            if(katki) {
+                let liste = Object.keys(_kmCanavar.hasarlar).map(function(k) { return _kmCanavar.hasarlar[k]; }).sort(function(a, b) { return b.hasar - a.hasar; });
+                katki.innerHTML = '<div class="km-cnv-katki-baslik">⚔️ Hasar</div>' + (liste.length ? liste.slice(0, 8).map(function(h, i) {
+                    return `<div class="km-cnv-katki-satir${i === 0 ? ' lider' : ''}"><span class="km-cnv-katki-ad">${i === 0 ? '👑 ' : ''}${esc(h.ad.split(' ')[0])}</span><span class="km-cnv-katki-deger">${h.hasar}${h.kritik ? ' <i>⚡' + h.kritik + '</i>' : ''}</span></div>`;
+                }).join('') : '<div class="km-cnv-katki-satir"><span>Henüz vuruş yok</span></div>');
+            }
+            let gan = document.getElementById('km-cnv-ganimet');
+            if(gan) {
+                let y = _kmCanavar.yenilenler;
+                gan.innerHTML = '<div class="km-cnv-katki-baslik">🏆 Yenilenler</div><div class="km-cnv-ganimet-ikonlar">' + (y.length ? y.map(function(k) { let tt = KM_CANAVAR_TIPLERI.find(function(x) { return x.id === k.tip; }); return `<span title="${esc(k.ad)} — son vuruş: ${esc(k.sonVuran)}">${tt ? tt.ikon : '💀'}</span>`; }).join('') : '<span class="km-cnv-ganimet-bos">—</span>') + '</div>'
+                    + `<div class="km-cnv-ganimet-alt">Bugün <b>${y.length}</b> · Rekor <b>${_kmCanavarRekor.gunlukEnCok}</b></div>`;
+            }
+        }
+        function kmOyunCanavarCiz() {
+            kmCanavarDurumEmin();
+            let ic = document.getElementById('km-cnv-canavar-ic'); if(!ic) return;
+            if(ic.dataset.tip !== _kmCanavar.aktif.tip || ic.dataset.no !== String(_kmCanavar.aktif.no)) kmOyunCanavarGovdeKur(false);
+            _kmOyunRosterCache.forEach(function(s, i) {
+                if(!s.canavarEl) return;
+                let p = kmOyunCanavarOkcuPoz(i);
+                s.canavarEl.setAttribute('transform', `translate(${p.x},${p.y})`);
+                s.canavarEl.classList.toggle('km-cnv-aktif', i === _kmOyunAktifIndex);
+            });
+            kmOyunCanavarHudGuncelle();
+        }
+        function kmOyunCanavarYeniSavas() {
+            if(!confirm('Canavar savaşı baştan başlasın mı?\n\nBugünkü hasar tablosu ve yenilen canavarlar sıfırlanır. Gerçek skor/klasman ETKİLENMEZ.')) return;
+            kmCanavarDurumEmin();
+            _kmCanavar = { tarih: bugunISO(), aktif: kmCanavarYeni(1), hasarlar: {}, yenilenler: [], toplamHasar: 0, seriSayisi: 0 };
+            kmCanavarKaydet();
+            kmOyunCanavarGovdeKur(true);
+            kmOyunCanavarCiz();
+            kmOyunChipleriCiz(); kmOyunLiderCiz();
+            showToast('🐉 Yeni savaş başladı!', 'success');
+        }
+        // Hasar sayısı — canavarın üstünde kırmızı/altın uçan "-N" (kmOyunFloatingSkor'un "+N"i okçunun
+        // üstünde ayrıca uçuyor: okçu puan kazanır, canavar can kaybeder — iki ayrı bilgi).
+        function kmOyunCanavarHasarYazisi(hasar, kritikMi) {
+            let layer = document.getElementById('km-oyun-burst'); if(!layer) return;
+            let scr = kmOyunSvgPct('km-oyun-svg-canavar', KM_CANAVAR_X + (Math.random() * 60 - 30), 200);
+            let el = document.createElement('div');
+            el.className = 'km-cnv-hasar-yazi' + (kritikMi ? ' kritik' : '');
+            el.style.cssText = `left:${scr.xPct}%; top:${scr.yPct}%;`;
+            el.textContent = hasar > 0 ? '-' + hasar : 'ISKA';
+            layer.appendChild(el);
+            el.animate([
+                { transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 },
+                { transform: 'translate(-50%,-90%) scale(' + (kritikMi ? 1.5 : 1.15) + ')', opacity: 1, offset: .25 },
+                { transform: 'translate(-50%,-170%) scale(1)', opacity: 0 }
+            ], { duration: kritikMi ? 1400 : 1000, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = function() { el.remove(); };
+        }
+        // Ok uçuşu — okçudan canavara N ok (her biri kendi pad rengiyle), 90ms arayla; M oklar canavarın
+        // ÜSTÜNDEN ıskalayıp söner. Konum SALT CSS transform (WAAPI) ile — bu <g>'lerin attribute
+        // transform'u YOK, çakışma yok. Son ok vardığında `vur()` çağrılır.
+        function kmOyunCanavarOklariFirlat(s, oklar, vur) {
+            let svg = document.getElementById('km-oyun-svg-canavar'), katman = document.getElementById('km-cnv-oklar');
+            if(!svg || !katman || !s.canavarEl) { vur(); return; }
+            let m = (s.canavarEl.getAttribute('transform') || '').match(/translate\(([-\d.]+)[,\s]+([-\d.]+)\)/);
+            let x0 = m ? parseFloat(m[1]) + 14 : 300, y0 = m ? parseFloat(m[2]) - 34 : 360;
+            let renkMap = { altin: '#ffd23f', kirmizi: '#ff5f3d', mavi: '#5fb8ff', siyah: '#cbd5e1', beyaz: '#f8fafc', miss: '#94a3b8' };
+            let kalan = oklar.length;
+            oklar.forEach(function(v, k) {
+                setTimeout(function() {
+                    let iskaMi = v === 'M';
+                    let x1 = iskaMi ? KM_CANAVAR_X + 220 : KM_CANAVAR_X - 60 + Math.random() * 100;
+                    let y1 = iskaMi ? 60 + Math.random() * 60 : 160 + Math.random() * 120;
+                    let aci = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI;
+                    let renk = renkMap[KM_OYUN_PAD_RENK[v]] || '#fff';
+                    let ok = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    ok.setAttribute('class', 'km-cnv-ok');
+                    ok.innerHTML = `<line x1="-26" y1="0" x2="10" y2="0" stroke="#e2c58a" stroke-width="3.5" stroke-linecap="round"/><path d="M10 -5 L22 0 L10 5 Z" fill="${renk}" filter="url(#km-cnv-glow)"/><path d="M-26 -5 L-18 0 L-26 5 Z" fill="${renk}"/>`;
+                    katman.appendChild(ok);
+                    let anim = ok.animate([
+                        { transform: `translate(${x0}px,${y0}px) rotate(${aci}deg)`, opacity: 1 },
+                        { transform: `translate(${x1}px,${y1}px) rotate(${aci}deg)`, opacity: iskaMi ? 0 : 1 }
+                    ], { duration: 420, easing: 'cubic-bezier(.3,.5,.4,1)', fill: 'forwards' });
+                    anim.onfinish = function() {
+                        if(!iskaMi) { let scr = kmOyunSvgPct('km-oyun-svg-canavar', x1, y1); kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, renk, 8, false); }
+                        setTimeout(function() { ok.remove(); }, iskaMi ? 0 : 500);
+                        kalan--; if(kalan === 0) vur();
+                    };
+                }, k * 90);
+            });
+        }
+        // Yenilme sekansı — flaş + dağılma + 3 patlama + banner, sonra bir sonraki canavar yerden doğar.
+        // done() dağılma bitmeden çağrılır (koç bir sonraki sporcuya hemen geçebilsin; doğuş arka planda sürer).
+        function kmOyunCanavarYenilme(s, done) {
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let azaltilmis = kmOyunKameraAzaltilmisHareketMi();
+            let sar = document.getElementById('km-cnv-sarsinti');
+            let c = _kmCanavar.aktif, yenilenAd = kmCanavarAd(c.no), yenilenTip = kmCanavarTip(c.no);
+            let scr = kmOyunSvgPct('km-oyun-svg-canavar', KM_CANAVAR_X, 220);
+            let bittiMi = false; function bitir() { if(bittiMi) return; bittiMi = true; done(); }
+            function sonrakiDogsun() {
+                _kmCanavar.aktif = kmCanavarYeni(c.no + 1);
+                kmCanavarKaydet();
+                kmOyunCanavarGovdeKur(true);
+                kmOyunCanavarHudGuncelle();
+                if(!kapali) setTimeout(function() { kmOyunBanner('⚠️ ' + _kmCanavar.aktif.no + '. CANAVAR GELİYOR', kmCanavarTip(_kmCanavar.aktif.no).ikon + ' ' + kmCanavarAd(_kmCanavar.aktif.no) + ' — ' + _kmCanavar.aktif.maxCan + ' can', 'canavar-geliyor'); }, 400);
+            }
+            if(azaltilmis) {
+                if(!kapali) { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', 'Sınıf birlikte başardı — son vuruş: ' + s.ad.split(' ')[0], 'canavar-oldu'); }
+                setTimeout(function() { sonrakiDogsun(); bitir(); }, 900);
+                return;
+            }
+            if(sar) { sar.classList.remove('km-cnv-vurus', 'km-cnv-kritik-vurus'); void sar.getBoundingClientRect(); sar.classList.add('km-cnv-olum'); }
+            let burst = document.getElementById('km-oyun-burst');
+            kmOyunBurst(burst, scr.xPct, scr.yPct, yenilenTip.renk2, 30, true);
+            setTimeout(function() { kmOyunBurst(burst, scr.xPct - 6, scr.yPct + 10, '#fff', 24, true); }, 220);
+            setTimeout(function() { kmOyunBurst(burst, scr.xPct + 6, scr.yPct - 8, yenilenTip.renk, 30, true); }, 440);
+            let parti = document.getElementById('km-cnv-parti');
+            if(parti) { parti.classList.remove('km-cnv-zafer'); void parti.getBoundingClientRect(); parti.classList.add('km-cnv-zafer'); setTimeout(function() { parti.classList.remove('km-cnv-zafer'); }, 1800); }
+            if(!kapali) {
+                try { sesCal(660, 0.12); setTimeout(function() { try { sesCal(880, 0.14); } catch(e) {} }, 120); setTimeout(function() { try { sesCal(1175, 0.18); } catch(e) {} }, 240); setTimeout(function() { try { sesCal(1568, 0.3); } catch(e) {} }, 380); } catch(e) {}
+                setTimeout(function() { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', 'Sınıf birlikte başardı — son vuruş: ' + s.ad.split(' ')[0], 'canavar-oldu'); }, 300);
+            }
+            setTimeout(bitir, 700);
+            setTimeout(sonrakiDogsun, 1700);
+        }
+        function kmOyunAnimateCanavar(s, i, kaydedilecek, done) {
+            kmCanavarDurumEmin(); kmCanavarRekorEmin();
+            let oklar = kaydedilecek.map(function(k) { return k.puan; });
+            let toplam = oklar.reduce(function(a, k) { return a + kmOyunDegerSayi(k); }, 0);
+            let maxPuan = _kmOyunOkSayisi * 10;
+            let kritikMi = toplam > 0 && toplam >= maxPuan * 0.9;
+            let hasar = kritikMi ? Math.round(toplam * KM_CANAVAR_KRITIK_CARPAN) : toplam;
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            let azaltilmis = kmOyunKameraAzaltilmisHareketMi();
+
+            // Durum HEMEN güncellenir (kalıcılık) — animasyon sadece görsel gecikme.
+            let c = _kmCanavar.aktif, anahtar = s.g + '|' + s.ad;
+            let h = _kmCanavar.hasarlar[anahtar] || (_kmCanavar.hasarlar[anahtar] = { ad: s.ad, hasar: 0, seri: 0, kritik: 0, sonVurus: 0 });
+            h.hasar += hasar; h.seri++; if(kritikMi) h.kritik++;
+            _kmCanavar.toplamHasar += hasar; _kmCanavar.seriSayisi++;
+            let eskiEvre = kmCanavarEvre(c);
+            c.can = Math.max(0, c.can - hasar);
+            let olduMu = c.can <= 0;
+            let yeniEvre = kmCanavarEvre(c);
+            if(olduMu) {
+                h.sonVurus++;
+                _kmCanavar.yenilenler.push({ no: c.no, tip: c.tip, ad: kmCanavarAd(c.no), sonVuran: s.ad, t: Date.now() });
+                _kmCanavarRekor.toplam = (_kmCanavarRekor.toplam || 0) + 1;
+                if(_kmCanavar.yenilenler.length > (_kmCanavarRekor.gunlukEnCok || 0)) { _kmCanavarRekor.gunlukEnCok = _kmCanavar.yenilenler.length; kmCanavarRekorKaydet(); }
+                kmCanavarRekorKaydet();
+            }
+            kmCanavarKaydet();
+
+            function vur() {
+                let sar = document.getElementById('km-cnv-sarsinti');
+                let scr = kmOyunSvgPct('km-oyun-svg-canavar', KM_CANAVAR_X, 230);
+                if(hasar > 0) {
+                    if(sar && !azaltilmis) { sar.classList.remove('km-cnv-vurus', 'km-cnv-kritik-vurus', 'km-cnv-alay'); void sar.getBoundingClientRect(); sar.classList.add(kritikMi ? 'km-cnv-kritik-vurus' : 'km-cnv-vurus'); setTimeout(function() { sar.classList.remove('km-cnv-vurus', 'km-cnv-kritik-vurus'); }, 520); }
+                    kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kritikMi ? '#ffd23f' : kmCanavarTip(c.no).renk2, kritikMi ? 26 : 12, kritikMi);
+                    if(kritikMi) {
+                        let flash = document.getElementById('km-cnv-flash'); if(flash && !azaltilmis) { flash.classList.remove('goster'); void flash.getBoundingClientRect(); flash.classList.add('goster'); }
+                        let yazi = document.getElementById('km-cnv-kritik-yazi'); if(yazi && !azaltilmis) { yazi.classList.remove('goster'); void yazi.getBoundingClientRect(); yazi.classList.add('goster'); }
+                        if(!kapali) { try { sesCal(200, 0.12, 'square'); setTimeout(function() { try { sesCal(1320, 0.2); } catch(e) {} }, 60); } catch(e) {} }
+                    } else if(!kapali) { try { sesCal(180 + Math.random() * 40, 0.1, 'square'); } catch(e) {} }
+                } else {
+                    if(sar && !azaltilmis) { sar.classList.remove('km-cnv-alay'); void sar.getBoundingClientRect(); sar.classList.add('km-cnv-alay'); setTimeout(function() { sar.classList.remove('km-cnv-alay'); }, 900); }
+                    if(!kapali) showToast(kmCanavarTip(c.no).ikon + ' Canavar güldü — bu seri ıskaladı, sıradaki!', 'warning');
+                }
+                kmOyunCanavarHasarYazisi(hasar, kritikMi);
+                kmOyunCanavarHudGuncelle();
+                if(olduMu) { kmOyunCanavarYenilme(s, done); return; }
+                if(yeniEvre !== eskiEvre && !kapali) {
+                    if(yeniEvre === 'ofkeli') { kmOyunBanner('🔥 CANAVAR ÖFKELENDİ!', 'Canı yarıya indi — sıkı durun!', 'canavar-evre'); try { sesCal(120, 0.25, 'sawtooth'); } catch(e) {} }
+                    else if(yeniEvre === 'sendeliyor') { kmOyunBanner('💫 SENDELİYOR!', 'Son ' + c.can + ' can — bitirin!', 'canavar-evre'); try { sesCal(520, 0.14); setTimeout(function() { try { sesCal(420, 0.14); } catch(e) {} }, 140); } catch(e) {} }
+                }
+                setTimeout(done, 380);
+            }
+            if(azaltilmis) vur(); else kmOyunCanavarOklariFirlat(s, oklar, vur);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -17623,7 +18126,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Sis Haritası artık diğer 7 yol-temasıyla AYNI iskeleti kullandığı için (2026-09-17, kare/sis
             // mekaniği terk edildi) burada ARTIK gizlenmiyor — Takım Modu diğer temalarda çalıştığı gibi
             // burada da çalışır.
-            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = futbolMu ? 'none' : 'flex';
+            // Ortak Canavar — doğası gereği tüm sınıf zaten birlikte; Bireysel/Takım anahtarı anlamsız, gizli.
+            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar') ? 'none' : 'flex';
             if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
             // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
@@ -17702,7 +18206,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Çoklu Takım (Yarış) (2026-09-06) — "Sınıf" (tek paylaşılan frac) yerine, sporcunun KENDİ
             // takımının frac'ı kullanılıyor; sporcu HİÇBİR takıma atanmamışsa (çoklu modda unutulmuş
             // olabilir) sessizce bireysel moda düşüyor, girişi engellemiyor.
-            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim';
+            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar';
             let cokluTakimIndex = (takimGecerliMi && _kmOyunCokluMu) ? kmOyunSporcuTakimIndex(s.g, s.ad) : -1;
             let cokluAktifMi = cokluTakimIndex !== -1;
             let takimAktifMi = takimGecerliMi && (!_kmOyunCokluMu || cokluAktifMi);
@@ -17739,6 +18243,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'gizlikelime') artis = 0;
             // Kule (Faz 16, 2026-09-18) — frac/yol YOK, Gizli Kelime'nin emsaliyle AYNI kategori.
             if(_kmOyunAktifTema === 'kule') artis = 0;
+            // Ortak Canavar (2026-09-24) — frac/yol YOK; hasar kmOyunAnimateCanavar'da paylaşılan cana uygulanır.
+            if(_kmOyunAktifTema === 'canavar') { artis = 0; kmCanavarDurumEmin(); }
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -17826,7 +18332,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // "yanlışlıkla girilmiş skorları düzeltebilir miyiz" — bir adımlık geri al için son girişi sakla.
             _kmOyunSonGiris = { grup: s.g, ad: s.ad, seriId: sonuc.seriDoc.id, seriPuan: toplam, eskiFrac: eskiFrac, takim: takimAktifMi, cokluTakim: cokluAktifMi ? cokluTakimIndex : -1,
                 futbol: (_kmOyunAktifTema === 'futbol') ? { eskiSeri: futbolEskiSeri, eskiGol: futbolEskiGol, eskiStreak: futbolEskiStreak } : null,
-                futboltakim: futbolTakimOncesi };
+                futboltakim: futbolTakimOncesi,
+                // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
+                // geri yükler (canavar öldüyse ve yenisi doğduysa bile doğru şekilde önceki canavara döner).
+                canavar: (_kmOyunAktifTema === 'canavar') ? JSON.parse(JSON.stringify(_kmCanavar)) : null };
             kmOyunGeriAlBtnGuncelle();
 
             function bitirOrtak() {
@@ -17843,7 +18352,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }
                 else { let d = kmOyunDurumAl(s.g, s.ad); d.frac = yeniFrac; kmOyunDurumKaydet(); }
 
-                let elMap = { zirve: s.zirveEl, yildiz: s.yildizEl, hazine: s.hazineEl, pist: s.pistEl, ninja: s.ninjaEl, monopoly: s.monopolyEl, dag: s.dagEl, balon: s.balonEl, hedef: s.hedefEl, futbol: s.futbolEl, futboltakim: s.futboltakimEl, sisharita: s.sisharitaEl };
+                let elMap = { zirve: s.zirveEl, yildiz: s.yildizEl, hazine: s.hazineEl, pist: s.pistEl, ninja: s.ninjaEl, monopoly: s.monopolyEl, dag: s.dagEl, balon: s.balonEl, hedef: s.hedefEl, futbol: s.futbolEl, futboltakim: s.futboltakimEl, sisharita: s.sisharitaEl, canavar: s.canavarEl };
                 let scr = elMap[_kmOyunAktifTema] ? kmOyunEltPct(elMap[_kmOyunAktifTema]) : { xPct: 50, yPct: 50 };
 
                 try { sesCal(500, 0.08); } catch(e) {}
@@ -17860,7 +18369,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule' && _kmOyunAktifTema !== 'canavar') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -18010,6 +18519,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'kehanet') kmOyunAnimateKehanet(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'gizlikelime') kmOyunAnimateGizliKelime(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'kule') kmOyunAnimateKule(s, i, kaydedilecek, bitirOrtak);
+                else if(_kmOyunAktifTema === 'canavar') kmOyunAnimateCanavar(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
@@ -18098,6 +18608,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     _kmFutbolTakimDurum.sari = g.futboltakim.sari; _kmFutbolTakimDurum.kirmizi = g.futboltakim.kirmizi; _kmFutbolTakimDurum.gol = g.futboltakim.gol;
                     d.futbolTakimGol = g.futboltakim.katki; s.futbolTakimGol = g.futboltakim.katki;
                     kmFutbolTakimDurumKaydet();
+                }
+                // Ortak Canavar — vuruş öncesi tam kopyayı geri yükle, sahneyi baştan kur (canavar
+                // değiştiyse eski canavar geri gelir, hasar tablosu/ganimet de eski haline döner).
+                if(g.canavar) {
+                    _kmCanavar = g.canavar; _kmCanavarYuklenenKonum = _kmAktifKonum;
+                    kmCanavarKaydet();
+                    if(_kmOyunAktifTema === 'canavar') kmOyunSahneKurCanavar();
                 }
                 kmOyunDurumKaydet();
                 kmOyunResyncAktif();
