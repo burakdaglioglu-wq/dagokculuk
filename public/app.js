@@ -12091,6 +12091,11 @@ ${(function(){
    gerçek DOM ölçümüyle bulundu) — flexbox'ın "min-height:auto" varsayılanı. */
 .km-oyun-dok > *{ flex-shrink:0; }
 .km-oyun-dok-ust{ display:flex; align-items:center; gap:8px; }
+/* Sürükleme tutamacı (2026-09-24) — sayacın 🔍 Büyüt tutamacıyla AYNI görsel dil (⠿ karakter, cursor:
+   grab, touch-action:none — parmakla sürüklerken sayfa kaymasın). */
+.km-oyun-dok-tutamac{ flex-shrink:0; width:24px; min-height:44px; display:flex; align-items:center; justify-content:center; color:var(--ink-faint); font-size:16px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; border-radius:8px; }
+.km-oyun-dok-tutamac:hover{ color:var(--ink); background:rgba(255,255,255,0.05); }
+.km-oyun-dok-tutamac:active{ cursor:grabbing; }
 .km-oyun-dok-ozet-btn{ flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--ink); background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; min-height:44px; }
 .km-oyun-dok-ozet-sayi{ font-variant-numeric:tabular-nums; color:var(--a1); }
 .km-oyun-dok-ozet-ok{ color:var(--ink-faint); font-size:10px; }
@@ -13046,6 +13051,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // otomatik davranış anahtarı, HEPSİ localStorage'da (D1'e YAZILMIYOR — cihaz/görünüm tercihi,
         // eski _kmOyunDokBuyukMu'nun yerini alıyor, bkz. kmOyunDokAyarYukle).
         let _kmOyunDokAcikMi = true, _kmOyunDokKonum = 'orta', _kmOyunDokBoyut = 'normal', _kmOyunDokOtomatikMi = true;
+        // Serbest sürükleme (2026-09-24, kullanıcı: "bütün oyunlarda skor gir butonunu serbestçe hareket
+        // ettirebilmeliyim") — sahnenin (#km-oyun-sahne) GENİŞLİK/YÜKSEKLİĞİNE oranla (0..1) saklanıyor,
+        // piksel DEĞİL: sahne boyutu pencere/Tam Ekran/mobil arasında ÇOK değişiyor (sayacın sabit
+        // viewport'a göre px sakladığı desenden BİLEREK farklı). _kmOyunDokKonum 'serbest' olunca bu
+        // oran uygulanır; sol/orta/sağ preset'lerinden birine dönülünce inline stil temizlenir.
+        let _kmOyunDokSerbestX = null, _kmOyunDokSerbestY = null;
         // İlerlemeye Göre Sıralama (2026-09-04, Menzil Sahnesi'nin kalan fikri) — "bu turda kim en çok
         // yükseldi" için, o oturumun BAŞLANGICINDAKİ toplamSkor'u saklıyoruz (sayfa yenilenene/konum
         // değişene kadar bellekte kalıcı — kalıcı depoya YAZILMIYOR, "bugünkü ders" anlamına gelsin diye).
@@ -13812,9 +13823,15 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunDokAyarAnahtari(ad) { return kmOyunBayrakAnahtari('dok' + ad); }
         function kmOyunDokAyarYukle() {
             try { _kmOyunDokAcikMi = localStorage.getItem(kmOyunDokAyarAnahtari('acik')) !== '0'; } catch(e) { _kmOyunDokAcikMi = true; } // varsayılan AÇIK
-            try { let k = localStorage.getItem(kmOyunDokAyarAnahtari('konum')); _kmOyunDokKonum = (k === 'sol' || k === 'sag') ? k : 'orta'; } catch(e) { _kmOyunDokKonum = 'orta'; }
+            try { let k = localStorage.getItem(kmOyunDokAyarAnahtari('konum')); _kmOyunDokKonum = (k === 'sol' || k === 'sag' || k === 'serbest') ? k : 'orta'; } catch(e) { _kmOyunDokKonum = 'orta'; }
             try { _kmOyunDokBoyut = localStorage.getItem(kmOyunDokAyarAnahtari('boyut')) === 'kucuk' ? 'kucuk' : 'normal'; } catch(e) { _kmOyunDokBoyut = 'normal'; }
             try { _kmOyunDokOtomatikMi = localStorage.getItem(kmOyunDokAyarAnahtari('otomatik')) !== '0'; } catch(e) { _kmOyunDokOtomatikMi = true; } // varsayılan AÇIK
+            try {
+                let x = parseFloat(localStorage.getItem(kmOyunDokAyarAnahtari('sx')));
+                let y = parseFloat(localStorage.getItem(kmOyunDokAyarAnahtari('sy')));
+                _kmOyunDokSerbestX = (x >= 0 && x <= 1) ? x : null;
+                _kmOyunDokSerbestY = (y >= 0 && y <= 1) ? y : null;
+            } catch(e) { _kmOyunDokSerbestX = null; _kmOyunDokSerbestY = null; }
         }
         function kmOyunDokAyarKaydet() {
             try {
@@ -13822,6 +13839,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 localStorage.setItem(kmOyunDokAyarAnahtari('konum'), _kmOyunDokKonum);
                 localStorage.setItem(kmOyunDokAyarAnahtari('boyut'), _kmOyunDokBoyut);
                 localStorage.setItem(kmOyunDokAyarAnahtari('otomatik'), _kmOyunDokOtomatikMi ? '1' : '0');
+                if(_kmOyunDokSerbestX !== null) localStorage.setItem(kmOyunDokAyarAnahtari('sx'), String(_kmOyunDokSerbestX));
+                if(_kmOyunDokSerbestY !== null) localStorage.setItem(kmOyunDokAyarAnahtari('sy'), String(_kmOyunDokSerbestY));
             } catch(e) {}
         }
         // Panelin tüm görünümünü (açık/kapalı satırı + konum/boyut class'ları + ayar menüsü) TEK yerden
@@ -13831,12 +13850,97 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let el = document.getElementById('km-oyun-dok'); if(!el) return;
             el.classList.toggle('km-oyun-dok-kapali', !_kmOyunDokAcikMi);
             el.classList.remove('km-oyun-dok-konum-sol', 'km-oyun-dok-konum-sag');
-            if(_kmOyunDokKonum === 'sol') el.classList.add('km-oyun-dok-konum-sol');
-            else if(_kmOyunDokKonum === 'sag') el.classList.add('km-oyun-dok-konum-sag');
+            if(_kmOyunDokKonum === 'serbest') {
+                kmOyunDokSerbestUygula(el);
+            } else {
+                el.style.left = ''; el.style.top = ''; el.style.right = ''; el.style.bottom = ''; el.style.margin = '';
+                if(_kmOyunDokKonum === 'sol') el.classList.add('km-oyun-dok-konum-sol');
+                else if(_kmOyunDokKonum === 'sag') el.classList.add('km-oyun-dok-konum-sag');
+            }
             el.classList.toggle('km-oyun-dok-boyut-kucuk', _kmOyunDokBoyut === 'kucuk');
             let ozetOk = document.getElementById('km-oyun-dok-ozet-ok'); if(ozetOk) ozetOk.textContent = _kmOyunDokAcikMi ? '▾' : '▴';
             kmOyunDokAyarMenusuGuncelle();
         }
+        // Kaydedilmiş oranı (sahne genişlik/yükseklikine göre) piksele çevirip UYGULAR — HER uygulamada
+        // güncel sahne boyutuna göre yeniden kelepçelenir (kmOyunSayacBuyukKonumUygula'nın AYNI ilkesi),
+        // yoksa Tam Ekran'a geçince ya da farklı bir cihazda dok ekran dışına taşabilirdi. offsetWidth
+        // henüz 0'sa (ilk boyama tamamlanmadan) bir sonraki frame'e ertelenir.
+        function kmOyunDokSerbestUygula(el) {
+            let sahne = document.getElementById('km-oyun-sahne'); if(!sahne) return;
+            let uygula = function() {
+                if(!sahne.clientWidth || !sahne.clientHeight) return;
+                let left = (_kmOyunDokSerbestX || 0) * sahne.clientWidth;
+                let top = (_kmOyunDokSerbestY || 0) * sahne.clientHeight;
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth);
+                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                el.style.left = Math.min(Math.max(0, left), maxLeft) + 'px';
+                el.style.top = Math.min(Math.max(0, top), maxTop) + 'px';
+                el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.margin = '0';
+            };
+            if(el.offsetWidth) uygula(); else requestAnimationFrame(uygula);
+        }
+        // Dok'un tutamacından (⠿) sürükleme — sayacın kmOyunSayacBuyukSurukleKur'uyla AYNI "bayrak
+        // tabanlı takip" deseni (bkz. oradaki yorum: hasPointerCapture KARAR VERİCİ değil, sadece
+        // olayları elementin dışına taşsa bile almaya devam etmek için). Sadece GERÇEKTEN sürüklenince
+        // (4px eşik) _kmOyunDokKonum 'serbest'e geçer ve konum kaydedilir — kazara dokunuşlar/tıklamalar
+        // konumu bozmasın diye. #km-oyun-dok her Oyunlar açılışında YENİDEN kurulduğu için (kmOyunlarCiz)
+        // bu fonksiyon da HER açılışta bir kez çağrılıyor — eski dinleyiciler eski (kaldırılmış) DOM
+        // elemanlarıyla birlikte çöp toplanır, birikme riski yok.
+        function kmOyunDokSurukleKur() {
+            let el = document.getElementById('km-oyun-dok');
+            let tutamac = document.getElementById('km-oyun-dok-tutamac');
+            let sahne = document.getElementById('km-oyun-sahne');
+            if(!el || !tutamac || !sahne) return;
+            let basX = 0, basY = 0, elBasLeft = 0, elBasTop = 0, aktifPointerId = null, suruklendi = false;
+            tutamac.addEventListener('pointerdown', function(e) {
+                aktifPointerId = e.pointerId;
+                suruklendi = false;
+                basX = e.clientX; basY = e.clientY;
+                elBasLeft = el.offsetLeft; elBasTop = el.offsetTop;
+                try { tutamac.setPointerCapture(e.pointerId); } catch(err) {}
+            });
+            tutamac.addEventListener('pointermove', function(e) {
+                if(aktifPointerId === null || e.pointerId !== aktifPointerId) return;
+                let dx = e.clientX - basX, dy = e.clientY - basY;
+                if(Math.hypot(dx, dy) > 4) suruklendi = true;
+                if(!suruklendi) return;
+                // GERÇEK BUG (2026-09-24, gerçek testte yakalandı): dok'un kendi CSS'inde preset (sol/
+                // orta/sağ) geçişlerini yumuşatan `transition:left .25s ease` kuralı VAR — sürükleme
+                // sırasında her pointermove'da left'i YENİDEN hedeflediği için konum HİÇ hedefe
+                // ulaşmadan sürekli "yolda" kalıyor, bırakınca offsetLeft son hedefi değil, o anki
+                // YARI-ANİMELİ ara değeri yansıtıyordu (kaydedilen konum, parmağın bıraktığı yerden
+                // önemli ölçüde SAPIYORDU). Sürükleme SIRASINDA transition tamamen kapatılıyor — anlık,
+                // 1:1 takip; bırakınca preset tıklamaları için tekrar açılıyor (aşağıda, birak()'ta).
+                el.style.transition = 'none';
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth);
+                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                el.style.left = Math.min(Math.max(0, elBasLeft + dx), maxLeft) + 'px';
+                el.style.top = Math.min(Math.max(0, elBasTop + dy), maxTop) + 'px';
+                el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.margin = '0';
+                el.classList.remove('km-oyun-dok-konum-sol', 'km-oyun-dok-konum-sag');
+            });
+            let birak = function(e) {
+                if(aktifPointerId === null || (e && e.pointerId !== undefined && e.pointerId !== aktifPointerId)) return;
+                aktifPointerId = null;
+                el.style.transition = '';
+                if(!suruklendi) return;
+                suruklendi = false;
+                _kmOyunDokKonum = 'serbest';
+                _kmOyunDokSerbestX = sahne.clientWidth ? (el.offsetLeft / sahne.clientWidth) : 0;
+                _kmOyunDokSerbestY = sahne.clientHeight ? (el.offsetTop / sahne.clientHeight) : 0;
+                kmOyunDokAyarKaydet();
+                kmOyunDokAyarMenusuGuncelle();
+            };
+            tutamac.addEventListener('pointerup', birak);
+            tutamac.addEventListener('pointercancel', birak);
+        }
+        // Pencere/ekran boyutu değişince (döndürme, Tam Ekran aç/kapa) serbest konumu güncel sahne
+        // ölçüsüne göre yeniden kelepçele — bir kere eklenir, "canavar" temasındaki kanat gibi tema
+        // değişse de kaybolmaz (window'a bağlı, DOM'a değil).
+        window.addEventListener('resize', function() {
+            if(_kmOyunDokKonum !== 'serbest') return;
+            let el = document.getElementById('km-oyun-dok'); if(el) kmOyunDokSerbestUygula(el);
+        });
         // Koçun elle "Skor Gir" özet satırına dokunması — otomatik davranıştan BAĞIMSIZ, her zaman çalışır
         // (koç otomatik kapansa bile istediği an tekrar açabilmeli/kapatabilmeli).
         function kmOyunDokAcikKapatDegistir() {
@@ -14806,6 +14910,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     </div>
                     <div class="km-oyun-dok km-oyun-dok-konum-${_kmOyunDokKonum === 'sol' ? 'sol' : (_kmOyunDokKonum === 'sag' ? 'sag' : '')} km-oyun-dok-boyut-${_kmOyunDokBoyut === 'kucuk' ? 'kucuk' : ''}${_kmOyunDokAcikMi ? '' : ' km-oyun-dok-kapali'}" id="km-oyun-dok">
                         <div class="km-oyun-dok-ust">
+                            <span class="km-oyun-dok-tutamac" id="km-oyun-dok-tutamac" title="Sürükleyerek istediğin yere taşı">⠿</span>
                             <button class="km-oyun-dok-ozet-btn" id="km-oyun-dok-ozet-btn" onclick="kmOyunDokAcikKapatDegistir()">
                                 <span>🎯 Skor Gir</span>
                                 <span class="km-oyun-dok-ozet-sayi" id="km-oyun-dok-ozet-sayi">${_kmOyunSeriGirisleri.length}/${_kmOyunOkSayisi}</span>
@@ -19875,6 +19980,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunLiderCiz();
             kmOyunTamEkranEtiketGuncelle();
             kmOyunSayacYeniSeri();
+            kmOyunDokSurukleKur();
+            if(_kmOyunDokKonum === 'serbest') kmOyunDokGorunumUygula();
         }
 
         // ===== KARIŞIK SINIF — ⚡ REAKSİYON (2026-09-02, "reaksiyon oyunlarını buraya da ekleyelim,

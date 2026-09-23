@@ -4922,3 +4922,35 @@ otomatik sıra ilerlemesini tıkıyor (`sporcu-yok`) — test her seride geçerl
 değil (§7 gerçek-etkili-seri kuralı bu yüzden önemli).
 
 **Deploy durumu (49)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
+
+## 50. Oyunlar — Skor Gir panelinin serbest sürüklenmesi (2026-09-24)
+
+Kullanıcı: "bütün oyunlarda skor gir butonunu serbestçe hareket ettirebilmeliyim". Panel (`.km-oyun-dok`,
+tüm 17 temada AYNI paylaşılan eleman) zaten sol/orta/sağ×küçük/normal preset'lere sahipti (2026-09-09) —
+gerçek serbest sürükleme YOKTU. Sayacın 🔍 Büyüt tutamacıyla (`kmOyunSayacBuyukSurukleKur`) AYNI "bayrak
+tabanlı pointer takibi" deseni kullanılarak eklendi: panel başlığına yeni bir ⠿ tutamaç kondu, panel
+sahnenin (#km-oyun-sahne) içinde herhangi bir yere sürüklenebiliyor, ekran dışına taşmıyor (piksel
+kelepçeleme). Konum sahnenin genişlik/yüksekliğine ORAN olarak saklanıyor (piksel DEĞİL — sayacın sabit
+viewport'una göre px sakladığı desenden BİLEREK farklı, çünkü sahne boyutu pencere/Tam Ekran/mobil
+arasında ÇOK değişiyor), `dag_km_oyun_bayrak_doksx/doksy` + `dagkonum`='serbest' olarak kalıcı — konum
+GÜNE ÖZEL değil, süresiz (kullanıcı D1'e yazılmasını istemedi, localStorage'da).
+
+**Sol/Orta/Sağ preset'leri** hâlâ duruyor (⚙️ menüsünde) — tıklanınca 'serbest' modundan çıkılır, inline
+stil temizlenir, CSS'in kendi (transition'lı, yumuşak) konumlandırmasına geri dönülür.
+
+**GERÇEK BUG (testte yakalandı, düzeltildi)**: Panelin kendi CSS'inde preset geçişlerini yumuşatan
+`transition:left .25s ease` kuralı VARDI. Sürükleme sırasında her `pointermove` left'i yeniden
+hedeflediği için panel HİÇ hedefe ulaşmadan sürekli "yolda" kalıyordu — bırakınca kaydedilen konum,
+parmağın GERÇEKTEN bıraktığı yerden ciddi ölçüde sapıyordu (gerçek testte: parmak x=603px'te bırakıyor,
+kaydedilen konum x=204px çıkıyordu — offsetLeft transition'ın YARI-ANİMELİ ara değerini yansıtıyordu).
+Düzeltme: sürükleme SIRASINDA `transition:none` (anlık, 1:1 takip), bırakınca tekrar açılıyor (SADECE
+preset tıklamaları hâlâ yumuşak geçiş yapıyor).
+
+**Gerçek testte doğrulanan** (Playwright, gerçek pointer sürükleme — masaüstü VE 390px dokunmatik
+mobil): sürükleme sonrası konum = bırakılan piksel (transition düzeltmesinden SONRA tam eşleşti); tema
+değiştirip geri dönünce korunuyor (dok DOM'u tema geçişinde yeniden kurulmuyor); Oyunlar sekmesinden
+çıkıp GERİ GİRİNCE de (DOM'un TAMAMEN yeniden kurulduğu an) korunuyor (oran→piksel dönüşümü doğru);
+preset'e dönünce inline stiller tamamen temizleniyor; agresif bir sürükleme (sahnenin sağ-alt köşesine)
+sahne sınırları İÇİNDE kalacak şekilde kelepçelendi (taşma yok). 16 tema Oyunlar regresyonu 0 hata.
+
+**Deploy durumu (50)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
