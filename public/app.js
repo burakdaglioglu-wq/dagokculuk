@@ -10686,7 +10686,7 @@ ${(function(){
                 let data = await r.json().catch(function(){ return null; });
                 if(!r.ok || !data) { showToast('Analiz bulunamadı.', 'error'); return; }
                 let fazlar = JSON.parse(data.fazlarJson || '[]');
-                _kmTaDetayVeri = { ad: data.ad, tarih: data.tarih, yay: data.yay, fazlar: fazlar };
+                _kmTaDetayVeri = { ad: data.ad, grup: data.grup, tarih: data.tarih, yay: data.yay, skor: data.skor, fazlar: fazlar };
                 let etiketler = KM_TA_FAZLAR[data.yay] || KM_TA_FAZLAR.klasik;
                 let eski = document.getElementById('km-ta-detay-modal'); if(eski) eski.remove();
                 let m = document.createElement('div'); m.id = 'km-ta-detay-modal'; m.className = 'km-ta-detay-modal';
@@ -10708,7 +10708,7 @@ ${(function(){
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
                         <div style="font-family:'Fraunces',Georgia,serif; font-size:18px;">${esc(data.ad)} — ${esc(data.tarih)} (${data.yay==='klasik'?'Klasik':'Makaralı'})</div>
                         <div style="display:flex; gap:8px;">
-                            <button class="km-ta-btn" onclick="kmTaPdfOlustur(_kmTaDetayVeri.ad, _kmTaDetayVeri.tarih, _kmTaDetayVeri.yay, _kmTaDetayVeri.fazlar)">📄 PDF</button>
+                            <button class="km-ta-btn" onclick="kmTaPdfDetaydanIndir()">📄 PDF</button>
                             <button class="km-ta-geri" onclick="document.getElementById('km-ta-detay-modal').remove()">✕ Kapat</button>
                         </div>
                     </div>
@@ -10745,52 +10745,166 @@ ${(function(){
             else { try { let ta = document.createElement('textarea'); ta.value = metin; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); kopyalandi(); } catch(e) { prompt('Kopyala:', metin); } }
         }
 
-        // "PDF çıktısını düzgün bir şekilde almam lazım" (2026-09-23) — html2pdf bu projede genel
+        // "PDF çıktısını güzel ve detaylandıralım" (2026-09-23, v3) — html2pdf bu projede genel
         // olarak bozuk (bkz. Ders Programı notu, DEVIR.md) — diğer tüm gerçek PDF'ler gibi NATIVE
         // jsPDF (_yeniPdfAl/_kurumsalBaslikCiz/_trTranslit paylaşılan yardımcıları) kullanılıyor.
-        // Kaydedilmemiş sihirbaz durumu (canlı) VE geçmişten açılan kayıtlı bir analiz AYNI
-        // kmTaPdfOlustur(ad, tarih, yay, fazlar) fonksiyonunu kullanıyor.
+        // v3'te eklenenler: sporcu/grup/doğum yılı satırı, genel puan rozeti (önceki karneyle
+        // karşılaştırmalı), sağlam/odak özeti, 8 fazlık mini bar grafik, her fazda 5 noktalı puan
+        // göstergesi, madde bazlı checkbox+not, ve DÜŞÜK puanlı (1-3) fazlara otomatik "İpucu" kutusu
+        // — KM_TA_REHBER'deki gerçek araştırma notundan (World Archery/Archery 360) geliyor, koç PDF'i
+        // yazdırınca zaten ilgili tavsiyeyi elinde buluyor.
+        const KM_TA_GRUP_ETIKET = { buyukler: 'Buyukler', yildizlar: 'Yildizlar', kucukler: 'Kucukler', minikler: 'Minikler' };
+        function kmTaPuanRenk(p) { if(!p) return [200, 196, 180]; if(p >= 4) return [111, 146, 87]; if(p === 3) return [201, 151, 76]; return [163, 59, 44]; }
+        function kmTaRehberBul(yay, i) {
+            let cizId = KM_TA_CIZ_ID[i];
+            let liste = KM_TA_REHBER[yay] || KM_TA_REHBER.klasik;
+            return liste.find(function(r) { return r.id === cizId; });
+        }
         function kmTaPdfIndir() {
             let toplanan = kmTaFazlarTopla();
-            kmTaPdfOlustur(_kmTaSporcu.ad, bugunISO(), _kmTaYay, toplanan.fazlar);
+            let sp = turnuvaDB[_kmTaSporcu.g] && turnuvaDB[_kmTaSporcu.g][_kmTaSporcu.ad];
+            let onceki = _kmTaGecmis[0];
+            kmTaPdfOlustur({
+                ad: _kmTaSporcu.ad, grup: _kmTaSporcu.g, dogumYili: (sp && sp.dogumYili) || null,
+                tarih: bugunISO(), yay: _kmTaYay, skor: toplanan.skor,
+                analizNo: _kmTaAnaliziSayisi + 1, oncekiSkor: onceki ? onceki.skor : null
+            }, toplanan.fazlar);
         }
-        function kmTaPdfOlustur(ad, tarih, yay, fazlar) {
+        function kmTaPdfDetaydanIndir() {
+            if(!_kmTaDetayVeri) return;
+            let sp = turnuvaDB[_kmTaDetayVeri.grup] && turnuvaDB[_kmTaDetayVeri.grup][_kmTaDetayVeri.ad];
+            kmTaPdfOlustur({
+                ad: _kmTaDetayVeri.ad, grup: _kmTaDetayVeri.grup, dogumYili: (sp && sp.dogumYili) || null,
+                tarih: _kmTaDetayVeri.tarih, yay: _kmTaDetayVeri.yay, skor: _kmTaDetayVeri.skor,
+                analizNo: null, oncekiSkor: null
+            }, _kmTaDetayVeri.fazlar);
+        }
+        function kmTaPdfOlustur(bilgi, fazlar) {
             showToast('PDF hazırlanıyor...', 'warning');
             _yeniPdfAl().then(function(pdf) {
                 let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX * 2;
-                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'SAHA KARNESI', 'Teknik Analiz - ' + (yay === 'klasik' ? 'Klasik Yay' : 'Makarali Yay'));
-                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(15, 23, 42);
-                pdf.text(_trTranslit(ad), marginX, y);
+                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'SAHA KARNESI', 'Teknik Analiz - ' + (bilgi.yay === 'klasik' ? 'Klasik Yay' : 'Makarali Yay'));
+
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.setTextColor(15, 23, 42);
+                pdf.text(_trTranslit(bilgi.ad), marginX, y);
+                let altParcalar = [];
+                if(bilgi.grup) altParcalar.push(KM_TA_GRUP_ETIKET[bilgi.grup] || bilgi.grup);
+                if(bilgi.dogumYili) altParcalar.push(bilgi.dogumYili + ' dogumlu');
                 pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100, 116, 139);
-                pdf.text(_trTranslit('Tarih: ') + tarih, marginX + usableW, y, { align: 'right' });
-                y += 8;
-                let etiketler = KM_TA_FAZLAR[yay] || KM_TA_FAZLAR.klasik;
+                if(altParcalar.length) pdf.text(_trTranslit(altParcalar.join(' - ')), marginX, y + 6);
+                pdf.text(_trTranslit('Tarih: ') + bilgi.tarih, marginX + usableW, y, { align: 'right' });
+                if(bilgi.analizNo) pdf.text(_trTranslit(bilgi.analizNo + '. Analiz'), marginX + usableW, y + 6, { align: 'right' });
+                y += 12;
+
+                let renkGenel = kmTaPuanRenk(bilgi.skor ? Math.ceil(bilgi.skor / 20) : 0);
+                pdf.setFillColor(renkGenel[0], renkGenel[1], renkGenel[2]);
+                pdf.roundedRect(marginX, y, usableW, 18, 2, 2, 'F');
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(255, 255, 255);
+                pdf.text('GENEL PUAN', marginX + 6, y + 7);
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(19);
+                pdf.text(bilgi.skor != null ? String(bilgi.skor) : '-', marginX + 6, y + 15);
+                if(bilgi.oncekiSkor != null && bilgi.skor != null) {
+                    let fark = bilgi.skor - bilgi.oncekiSkor;
+                    let okYazi = fark > 0 ? ('+' + fark) : (fark < 0 ? String(fark) : '=');
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5);
+                    pdf.text(_trTranslit('Onceki: ' + bilgi.oncekiSkor + ' (' + okYazi + ')'), marginX + 36, y + 12);
+                }
+                y += 22;
+
+                // Sağlam/Odak özeti — banner'ın YANINDA değil, TAM GENİŞLİK ayrı bir satırda: dar bir
+                // sütuna sıkıştırılınca uzun sporcu/faz adlarıyla ikinci parça (gerçek testte "Odak: X,")
+                // kırpılıp kayboluyordu.
+                let saglam = [], odak = [];
+                fazlar.forEach(function(f) { if(f.puan >= 4) saglam.push(f.ad); else if(f.puan > 0 && f.puan <= 3) odak.push(f.ad); });
+                if(saglam.length || odak.length) {
+                    let ozetParcalar = [];
+                    if(saglam.length) ozetParcalar.push('Saglam: ' + saglam.join(', '));
+                    if(odak.length) ozetParcalar.push('Odak: ' + odak.join(', '));
+                    let ozetWrapped = pdf.splitTextToSize(_trTranslit(ozetParcalar.join('   |   ')), usableW);
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(60, 50, 36);
+                    pdf.text(ozetWrapped, marginX, y + 4);
+                    y += ozetWrapped.length * 4.2 + 4;
+                }
+
+                let sutunGenislik = usableW / fazlar.length, grafikY = y, grafikYukseklik = 18;
+                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2);
+                pdf.line(marginX, grafikY + grafikYukseklik, marginX + usableW, grafikY + grafikYukseklik);
+                fazlar.forEach(function(f, i) {
+                    let cx = marginX + sutunGenislik * i + sutunGenislik / 2;
+                    let barW = Math.min(9, sutunGenislik - 4);
+                    let barH = f.puan ? (f.puan / 5) * grafikYukseklik : 1;
+                    let renk = kmTaPuanRenk(f.puan);
+                    pdf.setFillColor(renk[0], renk[1], renk[2]);
+                    pdf.rect(cx - barW / 2, grafikY + grafikYukseklik - barH, barW, barH, 'F');
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(60, 50, 36);
+                    pdf.text(f.puan ? String(f.puan) : '-', cx, grafikY + grafikYukseklik - barH - 2, { align: 'center' });
+                    let kisaAd = _trTranslit(f.ad.split(' ')[0].replace(/[&(),]/g, ''));
+                    if(kisaAd.length > 9) kisaAd = kisaAd.slice(0, 8) + '.';
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+                    pdf.text(kisaAd, cx, grafikY + grafikYukseklik + 5, { align: 'center' });
+                });
+                y += grafikYukseklik + 10;
+
+                pdf.setFont('helvetica', 'italic'); pdf.setFontSize(6.5); pdf.setTextColor(148, 163, 184);
+                pdf.text(_trTranslit('Arastirma notlari kaynagi: World Archery Teknik Rehberi, Archery 360, saha antrenorlugu yazilari.'), marginX, y);
+                y += 7;
+
+                let etiketler = KM_TA_FAZLAR[bilgi.yay] || KM_TA_FAZLAR.klasik;
                 fazlar.forEach(function(f, i) {
                     let etikFaz = etiketler[i];
-                    let notSatirlari = f.not ? pdf.splitTextToSize(_trTranslit(f.not), usableW - 10) : [];
+                    let rehber = kmTaRehberBul(bilgi.yay, i);
+                    let ipucuVar = f.puan > 0 && f.puan <= 3 && rehber && rehber.arast;
+                    // Fotoğraf varsa metin sütunu onun genişliği kadar DARALIR — satırlar önce foto
+                    // GENİŞLİĞİ hesaba katılmadan sarılıp sonra dar bir kutuya çizilince taşıyordu
+                    // (gerçek testte yakalandı: ipucu kutusu metni fotoğrafın üzerine taşıyordu).
+                    let fotoBoy = f.foto ? 30 : 0;
+                    let sagBosluk = fotoBoy ? fotoBoy + 6 : 0;
+                    let notSatirlari = f.not ? pdf.splitTextToSize(_trTranslit(f.not), usableW - 16 - sagBosluk) : [];
                     let checkSatirlari = (f.k || []).map(function(cv, j) {
                         let lbl = (etikFaz && etikFaz.k[j]) || ('Madde ' + (j + 1));
                         let notMetin = (f.kNot && f.kNot[j]) || '';
-                        return _trTranslit((cv ? '[X] ' : '[ ] ') + lbl + (notMetin ? ' - ' + notMetin : ''));
+                        return { cv: cv, satir: pdf.splitTextToSize(_trTranslit(lbl + (notMetin ? ' - ' + notMetin : '')), usableW - 20 - sagBosluk) };
                     });
-                    let fotoBoy = f.foto ? 28 : 0;
-                    let ihtiyacYukseklik = 10 + checkSatirlari.length * 4.6 + notSatirlari.length * 4 + fotoBoy + 6;
-                    if(y + ihtiyacYukseklik > 281) { pdf.addPage(); pdf.setFillColor(255,255,255); pdf.rect(0,0,pageW,pageH,'F'); y = 16; }
-                    pdf.setFillColor(241, 233, 212); pdf.setDrawColor(181, 80, 46); pdf.setLineWidth(0.4);
+                    let checkYukseklik = checkSatirlari.reduce(function(top, c) { return top + c.satir.length * 4; }, 0);
+                    let ipucuSatirlari = ipucuVar ? pdf.splitTextToSize(_trTranslit('Ipucu: ' + rehber.arast), usableW - 20 - sagBosluk) : [];
+                    let ihtiyacYukseklik = 12 + checkYukseklik + notSatirlari.length * 4 + (ipucuSatirlari.length ? ipucuSatirlari.length * 3.6 + 8 : 0) + 6;
+                    if(fotoBoy) ihtiyacYukseklik = Math.max(ihtiyacYukseklik, 12 + fotoBoy + 6);
+                    if(y + ihtiyacYukseklik > 275) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
+
+                    let renkFaz = kmTaPuanRenk(f.puan);
+                    pdf.setFillColor(241, 233, 212); pdf.setDrawColor(renkFaz[0], renkFaz[1], renkFaz[2]); pdf.setLineWidth(0.5);
                     pdf.roundedRect(marginX, y, usableW, ihtiyacYukseklik - 4, 2, 2, 'FD');
+                    pdf.setFillColor(renkFaz[0], renkFaz[1], renkFaz[2]); pdf.rect(marginX, y, 2.2, ihtiyacYukseklik - 4, 'F');
+
                     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(42, 33, 24);
-                    pdf.text(_trTranslit((i + 1) + '. ' + f.ad), marginX + 5, y + 7);
-                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(181, 80, 46);
-                    pdf.text(f.puan ? String(f.puan) + ' / 5' : '- / 5', marginX + usableW - 5, y + 7, { align: 'right' });
+                    pdf.text(_trTranslit((i + 1) + '. ' + f.ad), marginX + 6, y + 7);
+                    for(let d = 0; d < 5; d++) {
+                        let dx = marginX + usableW - 5 - (4 - d) * 4.2;
+                        if(d < (f.puan || 0)) { pdf.setFillColor(renkFaz[0], renkFaz[1], renkFaz[2]); pdf.circle(dx, y + 5.2, 1.5, 'F'); }
+                        else { pdf.setDrawColor(200, 196, 180); pdf.setLineWidth(0.3); pdf.circle(dx, y + 5.2, 1.5, 'S'); }
+                    }
                     let cy = y + 13;
-                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(60, 50, 36);
-                    checkSatirlari.forEach(function(satir) { pdf.text(satir, marginX + 6, cy); cy += 4.6; });
-                    if(notSatirlari.length) { pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8.5); pdf.setTextColor(91, 76, 55); pdf.text(notSatirlari, marginX + 6, cy); cy += notSatirlari.length * 4; }
-                    if(f.foto) { try { pdf.addImage(f.foto, 'JPEG', marginX + usableW - 5 - fotoBoy, y + 11, fotoBoy, fotoBoy); } catch(e) {} }
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(60, 50, 36);
+                    checkSatirlari.forEach(function(c) {
+                        pdf.setDrawColor(120, 105, 80); pdf.setLineWidth(0.35);
+                        if(c.cv) { pdf.setFillColor(renkFaz[0], renkFaz[1], renkFaz[2]); pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'F'); }
+                        else pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'S');
+                        pdf.text(c.satir, marginX + 10.5, cy);
+                        cy += c.satir.length * 4;
+                    });
+                    if(notSatirlari.length) { pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8); pdf.setTextColor(91, 76, 55); pdf.text(notSatirlari, marginX + 6, cy); cy += notSatirlari.length * 4; }
+                    if(ipucuSatirlari.length) {
+                        cy += 2;
+                        pdf.setFillColor(230, 238, 222); pdf.setDrawColor(111, 146, 87); pdf.setLineWidth(0.3);
+                        pdf.roundedRect(marginX + 6, cy - 3, usableW - 12 - sagBosluk, ipucuSatirlari.length * 3.6 + 4, 1.5, 1.5, 'FD');
+                        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(42, 59, 32);
+                        pdf.text(ipucuSatirlari, marginX + 9, cy + 1.6);
+                    }
+                    if(f.foto) { try { pdf.setDrawColor(181, 169, 121); pdf.setLineWidth(0.4); pdf.rect(marginX + usableW - 5 - fotoBoy, y + 8, fotoBoy, fotoBoy, 'S'); pdf.addImage(f.foto, 'JPEG', marginX + usableW - 5 - fotoBoy, y + 8, fotoBoy, fotoBoy); } catch(e) {} }
                     y += ihtiyacYukseklik;
                 });
                 _kurumsalAltBilgiCiz(pdf, pageW, pageH);
-                pdf.save('Teknik_Analiz_' + _trTranslit(ad).replace(/\s+/g, '_') + '_' + tarih + '.pdf');
+                pdf.save('Teknik_Analiz_' + _trTranslit(bilgi.ad).replace(/\s+/g, '_') + '_' + bilgi.tarih + '.pdf');
                 showToast('PDF indirildi! 📄', 'success');
             }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }

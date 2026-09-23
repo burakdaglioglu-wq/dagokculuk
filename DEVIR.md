@@ -4690,3 +4690,42 @@ Oyunlar regresyonu 0 hata, 390px'te madde-notu alanları taşmadan sığıyor.
 **Deploy durumu (43)**: Kullanıcı onayladı (2026-09-23), commit + push + deploy edildi. (Not: bu iş şema
 değişikliği İÇERMİYOR — `teknik_analiz` tablosu §42'deki haliyle kalıyor, sadece `fazlar_json`
 içeriğine `kNot` alanı eklendi.)
+
+## 44. Teknik Analiz PDF v3 — detaylandırma (2026-09-23)
+
+Kullanıcı: "Analiz içine geri dönelim oradaki PDF çıktısının içini güzel ve detaylandıralım".
+`kmTaPdfOlustur` yeniden yazıldı, önceki (§43) sürümdekinden çok daha zengin:
+
+- **Sporcu/grup/doğum yılı satırı** + "N. Analiz" (canlı sihirbazdan biliniyor, geçmiş kayıttan değil).
+- **Genel puan rozeti** (0-100, tier rengiyle — yeşil/amber/kırmızı/gri) + önceki karneyle karşılaştırma
+  ("Onceki: 54 (+12)") — sadece canlı sihirbazdan indirilen PDF'te (geçmişte hangi analizin öncesi
+  olduğunu ek sorgu olmadan bilmediğimiz için detay modalından indirilende gösterilmiyor).
+- **Sağlam/Odak özeti** tam genişlik ayrı bir satırda (Veliye Özet'le aynı eşik: puan≥4 sağlam, 1-3 odak).
+- **8 fazlık mini bar grafik** (renkli, puan yüksekliğinde çubuklar + kısa faz adları) — genel duruma tek
+  bakışta göz atma.
+- Her fazda **5 noktalı puan göstergesi** (jsPDF `circle` ile çizilmiş, ilk kez bu projede kullanıldı —
+  daha önce sadece dikdörtgen/yuvarlatılmış kutular vardı), sol kenarda puan rengine göre renkli şerit.
+- Kontrol listesi artık gerçek **çizilmiş checkbox** (dolu/boş kare) + madde notu aynı satırda.
+- **"İpucu" kutusu** — puanı 1-3 olan (odak gerektiren) fazlarda otomatik olarak `KM_TA_REHBER`'deki
+  gerçek araştırma notunu (World Archery/Archery 360 kaynaklı) yeşil vurgulu bir kutuda gösteriyor; 4-5
+  puan alan fazlarda gösterilmiyor (zaten sağlam). Bu, önceki turda konuşulan "araştırma notlarını
+  başka nasıl değerlendirebiliriz" sorusuna somut bir cevap: PDF'i yazdıran koç, zayıf fazın ilgili
+  bilimsel tavsiyesini otomatik olarak elinde buluyor.
+- Fotoğraf 30mm'e büyütüldü, ince çerçeveli.
+
+**Gerçek testte yakalanan 2 bug, düzeltildi**:
+1. Sağlam/Odak özeti banner'ın yanına (dar ~86mm sütuna) sıkıştırılmıştı — 2. maddeden sonrası
+   (`"Odak: Durus & Kurulum,"` kırpılıp `Çekis` kayboluyordu) görsel olarak kesiliyordu. Düzeltme: özet
+   artık banner'ın ALTINDA, tam genişlikte, kaç satır gerekiyorsa o kadar.
+2. Fotoğraf olan bir fazda checklist/not/ipucu metinleri fotoğrafın GENİŞLİĞİ hesaba katılmadan
+   sarılıyordu (`splitTextToSize` tam `usableW` ile), sonra dar bir kutuya çizilince metin fotoğrafın
+   üzerine taşıyordu. Düzeltme: `fotoBoy`/`sagBosluk` artık satır sarma hesabından ÖNCE hesaplanıyor ve
+   üç metin bloğu da (checklist/faz notu/ipucu) aynı daralmış genişliği kullanıyor.
+
+**Gerçek testte doğrulanan** (`pdftoppm` ile sayfa görüntüleri incelendi): düşük puanlı fazda ipucu
+kutusu kutunun İÇİNDE kalıyor, fotoğrafla çakışmıyor; sağlam/odak özeti tam metniyle görünüyor; 5
+noktalı puan göstergesi doğru sayıda dolu/boş; bar grafik puanlarla eşleşiyor; sayfa taşması doğru
+yerden bölünüyor (8 faz 2 sayfaya yayılıyor). 16 tema Oyunlar regresyonu + Teknik Analiz uçtan uca akış
+(kaydet/PDF/detay) tekrar 0 hata.
+
+**Deploy durumu (44)**: Kullanıcı onayladı (2026-09-23), commit + push + deploy edildi.
