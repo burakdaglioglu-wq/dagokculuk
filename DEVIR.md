@@ -4598,3 +4598,53 @@ bekliyor. D1 ÜCRETSİZ KATMAN GÜNLÜK OKUMA LİMİTİ 2026-09-20'de doldu (can
 kadar hata verir) — Paid plan ya da polling azaltma kararı kullanıcıda.
 
 **Deploy durumu (41)**: Kullanıcı onayladı (2026-09-20), commit + push + deploy edildi.
+
+## 42. Teknik Analiz — "Saha Karnesi" (Karışık Sınıf aracı, 2026-09-23)
+
+Kullanıcı isteği: "çocukları puanlayabileceğimiz, fotoğrafları atabileceğimiz bir analiz formu" +
+"düşük/yüksek dirsek, çekiş ritmi, çapa, bırakış (klasik) / duvar-creep, pin float, punching
+(makaralı)" gibi gerçek antrenörlük bilgisini içersin. İki tarayıcı prototipi sunuldu (Aurora
+neon-dashboard vs. "Saha Karnesi" sıcak/saha-defteri kimliği, tek-fazlı sihirbaz akışı) — kullanıcı
+Saha Karnesi'ni onayladı ve **Karışık Sınıf içine gerçek bir araç olarak** istedi.
+
+**Sunucu** (gerçek D1 tablosu, admin-gated — `src/index.ts` PUBLIC_YAZMA_YOLLARI istisnası DEĞİL):
+- `migrations/0037_teknik_analiz.sql` → `teknik_analiz(id, grup, ad, yay, tarih, skor, fazlar_json,
+  olusturan, lastModified)`, `idx_teknik_analiz_grup_ad`.
+- `src/db/teknikAnaliz.ts`: `listTeknikAnaliz` (fotoğrafları HİÇ okumaz — sadece id/tarih/yay/skor,
+  D1 okuma hacmini büyütmemek için, bkz. §41'deki günlük-limit dolması), `getTeknikAnaliz` (tam kayıt,
+  fotoğraflar dahil, tek analiz açılırken), `createTeknikAnaliz`, `deleteTeknikAnaliz`.
+- `src/routes/teknikAnaliz.ts`: `GET /api/teknik-analiz?grup&ad` (liste), `GET /api/teknik-analiz/:id`
+  (tam kayıt), `POST /api/teknik-analiz` (kaydet), `DELETE /api/teknik-analiz/:id`.
+
+**İstemci** (`public/app.js`, `KM_ARAC_LISTESI`'ne "🧾 Teknik Analiz" kartı eklendi, `kmSekme`
+dispatch'ine `kmTeknikAnalizCiz()` bağlandı — `#km-icerik` içine render ediyor, diğer 12 araçla AYNI
+desen):
+- Sporcu seçici (mevcut `_kmListe` oturum listesinden) → 8 fazlı sihirbaz (Duruş/Kabza/Çekiş/Çapa/
+  Genişleme·Kliker/Nişan/Bırakış/Takip — klasik; Duruş/Kabza·Tork/Çekiş·Duvar/Çapa·Peep/Nişan·Float/
+  Tetik/Takip/Ritim — makaralı), her fazda 1-5 puan + kontrol listesi + saha yorumu + fotoğraf
+  (athletes.fotoUrl ile AYNI desen: canvas'ta 220px'e küçültülmüş JPEG, R2 bu projede hiç kurulmadı).
+- Sağda "Saha Notu" paneli: World Archery Teknik Rehberi/Archery 360/antrenörlük yazılarından
+  derlenen gerçek "Araştırma notu"ları (kaynak satırıyla birlikte).
+- Kaydet → gerçek `POST /api/teknik-analiz`; kayıt sonrası sihirbaz aynı sporcu için sıfırlanır,
+  "X. analiz · önceki N" güncellenir, sağdaki "Geçmiş Analizler" şeridine yeni kayıt eklenir.
+- Geçmiş şeridindeki bir kayda tıklayınca `kmTaDetayAc(id)` tam kaydı çeker (fotoğraflar dahil) ve
+  salt-okunur bir modalda gösterir.
+- "💬 Veliye Özet": güçlü fazlar / bu hafta odak fazları özetini WhatsApp formatında panoya kopyalar
+  (mevcut sezon raporu deseniyle aynı).
+- CSS/font lazy-load: `kmTeknikAnalizKaynaklarYukle()` (Fraunces + IBM Plex Sans/Mono, `.km-ta-*`
+  sınıfları) — Yarışma'nın KM_OYUN_CSS kök-neden dersiyle AYNI ilke, araç açılırken çağrılıyor.
+
+**Gerçek bug bulundu ve düzeltildi**: detay modalı `document.body`'e ekleniyordu ama
+`#karisik-platform` kendisi `z-index:20000` ile kendi üst-seviye yığılma bağlamını kuruyor — modal
+CSS'çe "görünür" (display:flex, opacity:1, doğru boyut) raporlanıyordu ama hiç boyanmıyordu (bir
+kardeş öğe onu görsel olarak kaplıyordu). Düzeltme: `km-yarisma-takim-duzenle-modal`'daki AYNI
+99999 z-index deseni kullanıldı.
+
+**Gerçek testte doğrulanan**: sporcu seç → 3 fazı puanla (4/2/5) + kontrol işaretle + not yaz →
+kaydet → gerçek D1 satırı yazıldı (sunucudan GET ile doğrulandı) → sihirbaz sıfırlandı, "2. analiz ·
+önceki 54" göründü → geçmiş şeridinden GERÇEK tıklamayla detay modalı açıldı, puanlar (4/2/5) birebir
+eşleşti → Veliye Özet panoya kopyalandı → diğer araçlara (Yoklama) geçiş sorunsuz → 16 tema Oyunlar
+regresyonu 0 hata → 390px/1920px'te taşma yok.
+
+**Deploy durumu (42)**: Migration REMOTE'a uygulandı (`0037_teknik_analiz.sql` ✅). Commit + push +
+`npm run deploy` kullanıcı onayıyla yapıldı.

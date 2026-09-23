@@ -35,6 +35,7 @@ import { registerMiloSporcuGirisiRoutes } from "./routes/milo/sporcuGirisi";
 import { registerMiloGruplarRoutes } from "./routes/milo/gruplar";
 import { registerTanitimRoutes } from "./routes/tanitim";
 import { registerIhtiyacRoutes } from "./routes/ihtiyac";
+import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
@@ -74,6 +75,7 @@ registerMiloSporcuGirisiRoutes(router);
 registerMiloGruplarRoutes(router);
 registerTanitimRoutes(router);
 registerIhtiyacRoutes(router);
+registerTeknikAnalizRoutes(router);
 
 // Sunucu tarafında hiçbir yazma isteği (POST/PUT/PATCH/DELETE) doğrulanmıyordu — PIN sadece
 // ekranda bir kilitti, API'nin kendisi açıktı (URL'i bilen biri PIN'i hiç bilmeden veri

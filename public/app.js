@@ -10085,7 +10085,7 @@ ${(function(){
             // arkada çalışmaya devam etmesin diye temizlenir.
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10109,6 +10109,7 @@ ${(function(){
             else if(s==='oyunlar') kmOyunlarCiz();
             else if(s==='reaksiyon') kmReaksiyonCiz();
             else if(s==='ritim') kmRitimCiz();
+            else if(s==='teknikanaliz') kmTeknikAnalizCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10189,6 +10190,7 @@ ${(function(){
             { id:'oyunlar', ad:'Oyunlar', grup:'mavi', icon:'<rect x="3" y="9" width="18" height="8" rx="4"/><path d="M8 11v4M6 13h4"/><circle cx="16" cy="12" r="1"/><circle cx="18" cy="14" r="1"/>' },
             { id:'reaksiyon', ad:'Reaksiyon', grup:'sari', icon:'<path d="M13 3 5 14h6l-1 7 9-11h-6l1-7z"/>' },
             { id:'ritim', ad:'Ritim & Tıkır', grup:'mavi', icon:'<path d="M3 12h3l2-6 4 12 2-6h7"/>' },
+            { id:'teknikanaliz', ad:'Teknik Analiz', grup:'sari', icon:'<path d="M9 3h6l1 3h3v14H5V6h3l1-3z"/><path d="M12 10v6"/><path d="M9 13h6"/>' },
         ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
         function kmAracDurumSatiri(id) {
@@ -10207,7 +10209,7 @@ ${(function(){
             const SABIT = {
                 klasman: 'Genel sıralama', canli: 'Canlı skor akışı', yarisma: 'Turnuva ve eşleşmeler',
                 veli: 'Veliye bugünün özeti', disiplin: 'Sınıf disiplin puanı', pozitif: 'Pozitif davranış puanı',
-                oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi'
+                oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi', teknikanaliz: 'Duruş, çekiş, bırakış puanla'
             };
             return SABIT[id] || '';
         }
@@ -10229,6 +10231,470 @@ ${(function(){
                     + '</div>';
             }).join('');
         }
+
+        // ==================================================================================
+        // TEKNİK ANALİZ — Karışık Sınıf aracı (2026-09-23, "analiz formu ... puanlayabileceğimiz,
+        // fotoğrafları atabileceğimiz" isteği; kullanıcı 2 tasarım arasından "Saha Karnesi" kimliğini
+        // onayladı — sıcak/tarla-defteri paleti, tek-fazlı sihirbaz akışı). Klasik ve makaralı yay
+        // AYRI 8 fazlı kontrol listesiyle (World Archery Teknik Rehberi/Archery 360/antrenörlük
+        // yazılarından derlenen "Araştırma notu"ları dahil) değerlendiriliyor. Kayıt gerçek: D1
+        // `teknik_analiz` tablosu (migrations/0037), admin-gated (src/index.ts PUBLIC_YAZMA_YOLLARI
+        // İSTİSNASI DEĞİL). Fotoğraflar athletes.fotoUrl ile AYNI desen — canvas'ta küçültülmüş base64
+        // data URL (bu projede R2 hiç kurulmadı). Liste uç noktası fotoğrafları HİÇ döndürmez (D1
+        // okuma limiti — bkz. DEVIR.md §41); tam kayıt (fotoğraflı) sadece tek analiz açılırken çekilir.
+        const KM_TA_CIZ = {
+            durus:`<svg viewBox="0 0 90 120"><line x1="8" y1="104" x2="82" y2="104" stroke="#b5502e" stroke-width="2" stroke-dasharray="4 4"/><ellipse cx="34" cy="104" rx="11" ry="4" fill="#5b4c37"/><ellipse cx="58" cy="104" rx="11" ry="4" fill="#5b4c37"/><circle cx="45" cy="26" r="9" fill="#2a2118"/><path d="M45 35 V72" stroke="#2a2118" stroke-width="5" stroke-linecap="round"/><path d="M45 44 L20 40" stroke="#6f9257" stroke-width="4" stroke-linecap="round"/><path d="M45 44 L66 52" stroke="#c9974c" stroke-width="4" stroke-linecap="round"/><path d="M45 72 L34 100 M45 72 L58 100" stroke="#2a2118" stroke-width="5" stroke-linecap="round"/><path d="M45 12 V104" stroke="#b5502e" stroke-width="1" stroke-dasharray="3 4" opacity=".7"/></svg>`,
+            kabza:`<svg viewBox="0 0 90 120"><rect x="38" y="14" width="13" height="92" rx="6" fill="#5b4c37" stroke="#6f9257" stroke-width="1.5"/><path d="M30 56 q 22 -10 30 0 q -22 12 -30 0z" fill="#2a2118" opacity=".85"/><path d="M60 40 q 14 22 0 42" stroke="#c9974c" stroke-width="2" fill="none"/><text x="66" y="36" font-size="9" fill="#c9974c" font-family="IBM Plex Mono">45°</text></svg>`,
+            cekis:`<svg viewBox="0 0 90 120"><circle cx="34" cy="26" r="9" fill="#2a2118"/><path d="M34 35 V78" stroke="#2a2118" stroke-width="5" stroke-linecap="round"/><path d="M34 44 H70" stroke="#6f9257" stroke-width="4" stroke-linecap="round"/><path d="M34 44 L14 40 L6 54" stroke="#b5502e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M70 18 q 10 26 0 52" stroke="#2a2118" stroke-width="2.5" fill="none"/><path d="M70 18 L70 70" stroke="#c9974c" stroke-width="1.6"/><circle cx="14" cy="40" r="4" fill="#c9974c"/></svg>`,
+            capa:`<svg viewBox="0 0 90 120"><path d="M26 28 q 22 -12 36 6 q 8 20 -4 34 q -16 14 -28 2 q -12 -14 -4 -42z" fill="#5b4c37" stroke="#2a2118" stroke-width="1.5"/><path d="M62 34 V88" stroke="#c9974c" stroke-width="2"/><circle cx="62" cy="52" r="4" fill="none" stroke="#6f9257" stroke-width="2"/><path d="M40 62 H62" stroke="#b5502e" stroke-width="2" stroke-dasharray="3 3"/><path d="M44 74 H62" stroke="#b5502e" stroke-width="2" stroke-dasharray="3 3"/></svg>`,
+            nisan:`<svg viewBox="0 0 90 120"><circle cx="45" cy="60" r="34" fill="none" stroke="#5b4c37" stroke-width="2"/><circle cx="45" cy="60" r="23" fill="none" stroke="#6f9257" stroke-width="1.6"/><circle cx="45" cy="60" r="11" fill="none" stroke="#c9974c" stroke-width="2"/><circle cx="45" cy="60" r="3" fill="#c9974c"/><path d="M45 18 V30 M45 90 V102 M3 60 H15 M75 60 H87" stroke="#8a8064" stroke-width="1.6"/><ellipse cx="45" cy="60" rx="18" ry="12" fill="none" stroke="#b5502e" stroke-width="1.4" stroke-dasharray="3 3"/></svg>`,
+            birakis:`<svg viewBox="0 0 90 120"><path d="M20 30 q 12 30 0 60" stroke="#2a2118" stroke-width="2.5" fill="none"/><path d="M20 30 L20 90" stroke="#c9974c" stroke-width="1.6"/><path d="M24 60 H74" stroke="#6f9257" stroke-width="3" stroke-linecap="round"/><path d="M74 60 l-9 -5 M74 60 l-9 5" stroke="#6f9257" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M40 44 q 16 -10 26 -4" stroke="#b5502e" stroke-width="2.4" fill="none" stroke-linecap="round"/><text x="52" y="38" font-size="9" fill="#b5502e" font-family="IBM Plex Mono">el geri</text></svg>`
+        };
+        const KM_TA_REHBER = {
+            klasik: [
+                { id:'durus', ad:'Duruş', ciz:'durus', b:'Zemin: ayaklar ve gövde',
+                  p:'İyi atışın yarısı ayakta başlar. Amaç her atışta aynı zemini kurmak.',
+                  l:['<b>Ayak</b> omuz genişliğinde, kare ya da hafif açık duruş — hangisini seçtiysen her atışta aynı.','<b>Ağırlık</b> iki ayağa eşit, topuk–parmak arasında ortada.','<b>Kalça ve omuz</b> üst üste; bel ne çökük ne aşırı dik.','<b>Baş</b> yaya dönmez, gövde hedefe döner.'],
+                  h:'gövdenin hedefe doğru öne yatması (yaslanma) — ok her serinin sonunda yukarı kaçar.' },
+                { id:'kabza', ad:'Kabza', ciz:'kabza', b:'Yay eli: gevşek ve tekrarlanabilir',
+                  p:'Yay kavranmaz, avuca <i>yaslanır</i>. Kavrayan el yayı burar (tork) ve okları yana savurur.',
+                  l:['Baskı noktası <b>baş parmak yastığı</b>, avuç içinin can alıcı tek noktası.','Baş parmak–işaret parmağı arası <b>45°</b> açık, diğer parmaklar gevşek/sarkık.','<b>Parmak askısı</b> takılı olmalı — yay düşmesin diye sıkma refleksini ortadan kaldırır.','Bilek ne kırık ne aşırı gergin, ön kol ile aynı hizada.'],
+                  h:'bırakıştan sonra yay ileri/aşağı düşüyorsa kavrama doğru; elde kalıyorsa sıkıyor demektir.' },
+                { id:'cekis', ad:'Çekiş & Sırt', ciz:'cekis', b:'Kolla değil sırtla çek',
+                  p:'Çekişi bitiren kas kol değil, kürek kemiklerini birbirine yaklaştıran sırt kaslarıdır.',
+                  l:['Çeken kolun <b>dirseği okun uzantısında</b> ve omuz hizasında ya da hafif üstünde.','<b>Kürek kemiği</b> hissedilir şekilde omurgaya doğru toplanır.','İki omuz da <b>düşük</b> — çekerken omuz kulağa yaklaşmamalı.','Üç parmak kirişte eşit yük; işaret parmağına fazla yük binmemeli.'],
+                  h:'kliker "beklenerek" geçirilmez; genişleme devam ederken geçmeli. Bekleme = donma ve yüksek/alçak oklar.',
+                  arast:'World Archery’nin resmi teknik rehberi çekiş dirseğinin okla aynı hizada, hatta hafif üstünde olmasını vurgular — düşük dirsek, sırt yerine kolla çekildiğinin işaretidir. Aynı kaynak, tutarlı bir çekiş ritminin form bozulmalarını en çok azaltan tek alışkanlık olduğunu belirtiyor.' },
+                { id:'capa', ad:'Çapa (Ankraj)', ciz:'capa', b:'Her atışta aynı üç temas',
+                  p:'Çapa, çekişin bittiği ve nişanın başladığı sabit referans noktasıdır.',
+                  l:['<b>Çene altı</b> — işaret parmağı çene kemiğine oturur.','<b>Kiriş burna</b> ve <b>çeneye</b> hafifçe değer (üç nokta teması).','Tab, çeneye tam oturur; baş öne/yana eğilmez.','Çapaya <b>yavaş</b> gelinir, çarpılarak değil.'],
+                  h:'kirişin yüzündeki izi her atışta aynı yerde mi? Değişiyorsa çapa oturmamış.',
+                  arast:'Antrenörlük kaynakları çapayı klasik yayda en çok üzerinde durulan unsur sayar: yüzle temas noktasındaki en küçük kayma bile uzun mesafede isabeti ciddi değiştirir.' },
+                { id:'nisan', ad:'Nişan', ciz:'nisan', b:'Salınımı kabul et',
+                  p:'Nişangah asla tam sabit durmaz. Amaç salınımı durdurmak değil, küçük ve merkez etrafında tutmak.',
+                  l:['Nişangah salınımı <b>sarının içinde</b> kalıyorsa yeterlidir.','Gözler nişangaha değil <b>hedefin merkezine</b> odaklanır.','Nişan süresi 3–6 sn; uzarsa yorgunluk başlar.','Kiriş bulanık görüntüsü her atışta aynı yerde (kiriş hizası).'],
+                  h:'"tam ortaya gelsin" diye beklemek — 8+ saniyede kas titremesi başlar, isabet düşer.' },
+                { id:'birakis', ad:'Bırakış & Takip', ciz:'birakis', b:'Parmaklar gevşer, el geri gider',
+                  p:'Bırakış bir hareket değil, gerilimin sürdüğü anda parmakların gevşemesidir.',
+                  l:['Parmaklar <b>açılmaz</b>, gevşer; kiriş kendi kendine çıkar.','Çeken el <b>boyun boyunca geriye</b> kayar — öne fırlamaz.','Yay kolu <b>ok gidene kadar</b> hedefe dönük kalır.','Takip: duruş 1–2 saniye bozulmadan korunur.'],
+                  h:'el bırakıştan sonra omuz hizasında duruyorsa gerilim yoktu; kulak arkasına gidiyorsa sırt çalışıyor.',
+                  arast:'Antrenörlerin ortak vurgusu: iyi bir bırakış "düşünülmez" — parmaklar aynı anda ve pasif gevşer. Bilinçli "yapma" çabası genelde ani/erken bir çekişe (yank) yol açar.' }
+            ],
+            makarali: [
+                { id:'durus', ad:'Duruş', ciz:'durus', b:'Zemin: dengeli ve kapalı',
+                  p:'Let-off sayesinde tam çekişte yük azdır; hatalı duruş bu yüzden daha uzun süre gizlenir, seri sonunda ortaya çıkar.',
+                  l:['Ayaklar omuz genişliğinde, ağırlık eşit.','Gövde dik; yaslanma yok, "asılma" yok.','Yay kolu omzu <b>düşük</b> ve kilitli.','Duruş her atışta aynı — ayak izi bantla işaretlenebilir.'],
+                  h:'ağır stabilizatörler duruştaki dengesizliği büyütür; önce duruşu, sonra ağırlığı ayarla.' },
+                { id:'kabza', ad:'Kabza', ciz:'kabza', b:'Baskı tek noktada, kavrama yok',
+                  p:'Makaralı yayda kabza hatası (tork) klasikten daha çok cezalandırır — pin merkezde olsa bile ok yana gider.',
+                  l:['Bilek <b>düz</b>, ön kolla aynı çizgide; kırık bilek tork üretir.','Baskı noktası her atışta <b>aynı</b> — baş parmak yastığı.','Parmaklar gevşek; <b>parmak askısı</b> zorunlu sayılmalı.','Kabza açısı sporcuya göre seçilir ve değiştirilmez.'],
+                  h:'atıştan sonra yay hep aynı yöne dönüyorsa (sağa/sola), tork var demektir.' },
+                { id:'cekis', ad:'Çekiş, Duvar & Valley', ciz:'cekis', b:'Duvara otur, duvarda kal',
+                  p:'Kamlar dönüp let-off başlayınca yük düşer; tam çekişte "duvar" (wall) hissi vardır. Nişan bu duvara yaslanarak yapılır.',
+                  l:['Çekiş kolla değil <b>sırtla</b> tamamlanır; dirsek okun uzantısında.','Valley içinde gevşeyip öne kayma (creep) yok — duvara sabit baskı.','Çekiş boyu doğru mu? Kısa çekiş = duvarsız, kaygan atış.','Omuz yukarı kalkmadan, iki omuz düşük.'],
+                  h:'let-off rahat diye tam çekişte gerilimi bırakmak — ok aşağı düşer, tetik "atılır".',
+                  arast:'World Archery’nin derlediği yaygın makaralı hatalarında, duvarda gerilimi bırakıp öne kayma (creep) en sık tekrarlanan sorunlardan biri — sporcu fark etmeden pozisyon kayar, her atış farklı noktadan bırakılır.' },
+                { id:'capa', ad:'Çapa, Peep & Mercek', ciz:'capa', b:'İki daire iç içe',
+                  p:'Makaralının çapası göz–dudaklık–mercek hizasıyla tanımlanır; hizalama doğruysa nişan zaten yarısı tamamdır.',
+                  l:['<b>Dudaklık (peep)</b> dairesi, merceğin dış halkasıyla <b>eşmerkezli</b> görünür.','Kiriş burun/dudak teması her atışta aynı.','Çene ve ense pozisyonu sabit; başı yaya götürme.','<b>Su terazisi</b> yatay — yay yana yatmıyor.'],
+                  h:'peep içinde mercek halkası kaçık görünüyorsa çapa oturmamıştır; düzeltmeden nişan alma.' },
+                { id:'nisan', ad:'Nişan & Float', ciz:'nisan', b:'Pin merkezde yüzsün',
+                  p:'Merkez pinin salınımı (float) normaldir; sabitlemeye çalışmak titremeyi artırır.',
+                  l:['Pin salınımı <b>10 halkası içinde</b> kalıyorsa yeterli.','Su terazisi ve peep hizası nişan boyunca korunur.','Nişan süresi kısa: 3–5 sn; uzadıkça göz yorulur.','Gözler pine değil hedefin merkezine odaklı kalır.'],
+                  h:'mercekte bulanıklık varsa büyütme (magnification) sporcu için fazla olabilir.',
+                  arast:'Antrenörlük kaynakları pin salınımını (float) durdurulması gereken bir hata değil, doğal bir olgu olarak tanımlıyor: sürece güvenen sporcularda "hedef paniği" çok daha az görülüyor.' },
+                { id:'birakis', ad:'Tetik & Takip', ciz:'birakis', b:'Sürpriz atış, arka gerilim',
+                  p:'İyi bir makaralı bırakışı "ne zaman olacağını bilmediğin" bırakıştır — sırt gerilimiyle tetiğin kendi kendine kopması.',
+                  l:['Tetik <b>sırt gerilimiyle</b> geçer; parmak aniden sıkmaz.','El, bırakıştan sonra <b>geriye</b> gider; öne fırlamaz.','Yay elde kalır (askı sayesinde), pin bir an hedefte kalır.','Takip: pozisyon 1–2 sn korunur.'],
+                  h:'tetiği "yakalamak" (punching) — ok merkezden aşağı/yana kaçar, sporcu atıştan önce irkilir.',
+                  arast:'Kaynaklar en yaygın hatayı "pini tam ortada durdurmaya" odaklanmak olarak gösteriyor: pin merkeze girer girmez tetiği sıkma refleksi gelişir — çözüm sırt gerilimiyle çalışan bir tetik alışkanlığı.' }
+            ]
+        };
+        const KM_TA_FAZLAR = {
+            klasik: [
+                { ad:'Duruş & Kurulum', alt:'Ayak, gövde, omuz hattı', foto:'ÖNDEN', k:['Ayak duruşu her atışta aynı','Ağırlık iki ayağa eşit','Gövde dik, yaslanma yok','Yay kolu omzu düşük'] },
+                { ad:'Kabza & Yay Eli', alt:'Baskı noktası, tork', foto:'YAY ELİ', k:['Gevşek kavrama, parmaklar sarkık','Baskı baş parmak yastığında','Bilek ön kolla aynı hizada','Parmak askısı kullanılıyor'] },
+                { ad:'Çekiş', alt:'Sırt kasları, dirsek hattı', foto:'ARKADAN', k:['Dirsek ok hizasında','Kürek kemiği toplanıyor','Omuzlar yukarı kalkmıyor','Parmaklarda yük dengeli'] },
+                { ad:'Çapa (Ankraj)', alt:'Üç nokta teması', foto:'YÜZ YAKIN', k:['Çene altı teması sabit','Kiriş burun–çene teması var','Her atışta aynı nokta','Çapaya yavaş geliniyor'] },
+                { ad:'Genişleme & Kliker', alt:'Transfer, kliker geçişi', foto:'YANDAN', k:['Genişleme çapadan sonra sürüyor','Kliker beklenmeden geçiyor','Duraklama/donma yok','Nefes kontrollü'] },
+                { ad:'Nişan', alt:'Salınım, odak, süre', foto:null, k:['Salınım sarının içinde','Nişan süresi 3–6 sn','Kiriş hizası tutarlı','Gözler hedefe odaklı'] },
+                { ad:'Bırakış', alt:'Parmak gevşemesi', foto:'ANI', k:['Parmaklar gevşiyor (açmıyor)','El boyunca geriye kayıyor','Yay kolu hedefte kalıyor','İrkilme/öne fırlatma yok'] },
+                { ad:'Takip & Ritim', alt:'Atış sonrası, tempo', foto:'SONRASI', k:['Duruş 1–2 sn korunuyor','Yay askıda öne düşüyor','Atış temposu her seride aynı','Seri sonuna doğru form bozulmuyor'] }
+            ],
+            makarali: [
+                { ad:'Duruş & Kurulum', alt:'Ayak, gövde, denge', foto:'ÖNDEN', k:['Ayak duruşu her atışta aynı','Ağırlık iki ayağa eşit','Gövde dik, yaslanma yok','Stabilizatör dengesi uygun'] },
+                { ad:'Kabza & Tork', alt:'Bilek, baskı noktası', foto:'YAY ELİ', k:['Bilek düz, kırık değil','Baskı tek ve sabit noktada','Parmaklar kavramıyor','Parmak askısı kullanılıyor'] },
+                { ad:'Çekiş & Duvar', alt:'Let-off, valley, creep', foto:'ARKADAN', k:['Dirsek ok hizasında','Duvara sabit baskı (creep yok)','Çekiş boyu doğru','Omuzlar düşük'] },
+                { ad:'Çapa & Peep', alt:'Hizalama, su terazisi', foto:'YÜZ YAKIN', k:['Peep–mercek eşmerkezli','Kiriş burun/dudak teması sabit','Su terazisi yatay','Baş pozisyonu sabit'] },
+                { ad:'Nişan & Float', alt:'Pin salınımı, süre', foto:null, k:['Pin salınımı 10 halkasında','Nişan süresi 3–5 sn','Terazi nişan boyunca yatay','Gözler hedefe odaklı'] },
+                { ad:'Tetik (Release)', alt:'Sürpriz atış, arka gerilim', foto:'ANI', k:['Tetik sırt gerilimiyle geçiyor','Parmakla "yakalama" yok','El geriye gidiyor','Atış öncesi irkilme yok'] },
+                { ad:'Takip', alt:'Atış sonrası duruş', foto:'SONRASI', k:['Pozisyon 1–2 sn korunuyor','Pin bir an hedefte kalıyor','Yay elde/askıda dengeli','Baş dönmüyor'] },
+                { ad:'Ritim & Dayanıklılık', alt:'Tempo, seri sonu', foto:null, k:['Atış temposu tutarlı','Seri sonunda form korunuyor','Nefes düzeni var','Atışlar arası rutin aynı'] }
+            ]
+        };
+        const KM_TA_CIZ_ID = { 0:'durus', 1:'kabza', 2:'cekis', 3:'capa', 4:'cekis', 5:'nisan', 6:'birakis', 7:'birakis' };
+        const KM_TA_CSS = `
+.km-ta-topo{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.45;overflow:hidden;border-radius:14px}
+.km-ta-topo svg{width:100%;height:100%}
+.km-ta-root{position:relative;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#eef0e6;
+  background:radial-gradient(ellipse 60% 40% at 15% 0%, rgba(111,146,87,.10), transparent), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(201,151,76,.08), transparent), #10160f;
+  border-radius:14px;padding:16px}
+.km-ta-ust{position:relative;z-index:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:6px;background:linear-gradient(180deg,#171f14,#10160f);border:1px solid #33402c;margin-bottom:14px}
+.km-ta-rozet{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:#10160f;background:radial-gradient(circle at 35% 30%,#e3b567,#c9974c 60%,#96702f);border:2px solid #4a3a1f;flex-shrink:0}
+.km-ta-kim{flex:1;min-width:150px}
+.km-ta-kim b{font-family:'Fraunces',Georgia,serif;font-size:18px}
+.km-ta-kim div{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#a9b39c;margin-top:3px}
+.km-ta-kim div b{color:#e3b567;font-family:'IBM Plex Mono',monospace;font-size:10.5px}
+.km-ta-damga{display:inline-flex;border:1.5px solid #33402c;border-radius:5px;overflow:hidden}
+.km-ta-damga button{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#a9b39c;background:#171f14;border:0;padding:10px 13px;cursor:pointer;min-height:40px;border-right:1px solid #33402c}
+.km-ta-damga button:last-child{border-right:0}
+.km-ta-damga button.on{color:#10160f;background:linear-gradient(180deg,#e3b567,#c9974c)}
+.km-ta-geri{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a9b39c;background:#171f14;border:1px solid #33402c;border-radius:5px;padding:8px 12px;cursor:pointer}
+.km-ta-duz{position:relative;z-index:1;display:grid;grid-template-columns:56px minmax(0,1fr) 280px;gap:14px;align-items:start}
+@media(max-width:980px){.km-ta-duz{grid-template-columns:1fr}}
+.km-ta-rail{display:flex;flex-direction:row;gap:7px;overflow-x:auto;padding-bottom:4px}
+@media(min-width:981px){.km-ta-rail{flex-direction:column}}
+.km-ta-rail button{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:2px solid #33402c;background:#171f14;color:#66715c;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;position:relative}
+.km-ta-rail button.done{border-color:#6f9257;color:#6f9257;background:rgba(111,146,87,.12)}
+.km-ta-rail button.now{border-color:#e3b567;color:#10160f;background:radial-gradient(circle at 35% 30%,#e3b567,#c9974c);box-shadow:0 0 0 3px rgba(201,151,76,.18)}
+.km-ta-rail button .km-ta-nokta{position:absolute;right:-3px;top:-3px;width:13px;height:13px;border-radius:50%;font-size:7.5px;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;border:1.5px solid #10160f}
+.km-ta-rail button[data-p="1"] .km-ta-nokta,.km-ta-rail button[data-p="2"] .km-ta-nokta{background:#a33b2c;color:#fff}
+.km-ta-rail button[data-p="3"] .km-ta-nokta{background:#c9974c;color:#241a06}
+.km-ta-rail button[data-p="4"] .km-ta-nokta,.km-ta-rail button[data-p="5"] .km-ta-nokta{background:#6f9257;color:#fff}
+.km-ta-kart{background:repeating-linear-gradient(0deg, transparent 0 27px, rgba(90,70,30,.05) 27px 28px), linear-gradient(165deg,#f1e9d4,#e7dcc0);color:#2a2118;border-radius:4px;padding:18px 18px 16px;position:relative;box-shadow:0 10px 26px rgba(0,0,0,.35);border:1px solid #b7a679}
+.km-ta-kart::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:1.5px;background:#b5502e;opacity:.35}
+.km-ta-kart-ust{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-left:10px}
+.km-ta-kart-ust .km-ta-no{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5b4c37;letter-spacing:.08em;text-transform:uppercase}
+.km-ta-kart-ust h2{font-family:'Fraunces',Georgia,serif;font-size:22px;color:#2a2118;line-height:1.1;margin:3px 0 0}
+.km-ta-kart-ust .km-ta-alt{font-size:11.5px;color:#5b4c37;margin-top:3px}
+.km-ta-muhur{width:56px;height:56px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;position:relative}
+.km-ta-muhur svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.km-ta-muhur b{font-family:'IBM Plex Mono',monospace;font-size:16px;color:#2a2118;position:relative;z-index:1}
+.km-ta-govde{display:grid;grid-template-columns:130px minmax(0,1fr);gap:16px;padding:14px 10px 4px;margin-top:6px;border-top:1.5px dashed #c9b98c}
+@media(max-width:640px){.km-ta-govde{grid-template-columns:1fr}}
+.km-ta-cizim{background:rgba(255,255,255,.35);border:1.5px solid #c9b98c;border-radius:6px;padding:7px}
+.km-ta-cizim svg{width:100%;display:block}
+.km-ta-cizim-et{font-family:'IBM Plex Mono',monospace;font-size:9px;text-align:center;color:#5b4c37;margin-top:5px}
+.km-ta-puansatir{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.km-ta-puansatir span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#5b4c37}
+.km-ta-stud{width:32px;height:32px;border-radius:50%;border:2px solid #c9b98c;background:rgba(255,255,255,.4);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:#5b4c37}
+.km-ta-stud.se{color:#fff;border-color:transparent}
+.km-ta-stud.se[data-v="1"],.km-ta-stud.se[data-v="2"]{background:#a33b2c}
+.km-ta-stud.se[data-v="3"]{background:#c9974c;color:#241a06}
+.km-ta-stud.se[data-v="4"],.km-ta-stud.se[data-v="5"]{background:#6f9257}
+.km-ta-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#b5502e;margin:0 0 7px}
+.km-ta-check{display:flex;align-items:flex-start;gap:8px;padding:5px 3px;cursor:pointer}
+.km-ta-check input{appearance:none;width:17px;height:17px;border:1.8px solid #5b4c37;border-radius:2px;flex-shrink:0;margin-top:1px;cursor:pointer;position:relative;background:rgba(255,255,255,.5)}
+.km-ta-check input:checked{background:#6f9257;border-color:#6f9257}
+.km-ta-check input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+.km-ta-check span{font-size:12.5px;color:#2a2118;line-height:1.4}
+.km-ta-gunluk{margin-top:12px}
+.km-ta-gunluk textarea{width:100%;min-height:58px;border:0;border-bottom:1.5px solid #c9b98c;background:repeating-linear-gradient(0deg, transparent 0 21px, rgba(90,70,30,.14) 21px 22px);font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#2a2118;resize:vertical;padding:4px 2px;line-height:22px}
+.km-ta-gunluk textarea:focus{outline:none;border-bottom-color:#b5502e}
+.km-ta-foto-alan{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
+.km-ta-foto{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:5px;width:98px;padding:7px 7px 8px;background:#fff;border:1px solid #d8cfa8;box-shadow:0 3px 8px rgba(0,0,0,.2);cursor:pointer;transform:rotate(-1.6deg)}
+.km-ta-foto .km-ta-kare{width:100%;aspect-ratio:1/1;background:#dfe3d6;display:grid;place-items:center;overflow:hidden;color:#66715c;font-size:18px}
+.km-ta-foto .km-ta-kare img{width:100%;height:100%;object-fit:cover}
+.km-ta-foto .km-ta-altyazi{font-family:'IBM Plex Mono',monospace;font-size:8px;color:#5b4c37;text-align:center}
+.km-ta-foto input{display:none}
+.km-ta-gezinme{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding-top:12px;border-top:1.5px dashed #c9b98c}
+.km-ta-gez-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:#2a2118;background:transparent;border:1.5px solid #5b4c37;border-radius:4px;padding:9px 14px;cursor:pointer;min-height:40px}
+.km-ta-gez-btn:disabled{opacity:.3;cursor:default}
+.km-ta-gez-orta{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5b4c37}
+.km-ta-notkart{background:#f1e9d4;color:#2a2118;border-radius:2px;padding:14px 14px 12px;position:relative;box-shadow:0 8px 20px rgba(0,0,0,.3);transform:rotate(.6deg);border:1px solid #cbb98a;margin-bottom:12px}
+.km-ta-notkart h3{font-family:'Fraunces',Georgia,serif;font-size:14px;margin:0 0 9px}
+.km-ta-sek{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.km-ta-sek button{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;color:#5b4c37;background:rgba(255,255,255,.5);border:1px solid #c9b98c;border-radius:3px;padding:5px 8px;cursor:pointer}
+.km-ta-sek button.on{color:#fff;background:#b5502e;border-color:#b5502e}
+.km-ta-not-b{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:13.5px;margin-bottom:5px}
+.km-ta-not-p{font-size:11.5px;line-height:1.5;color:#5b4c37;margin:0 0 7px}
+.km-ta-not-l{margin:0 0 7px;padding-left:15px}
+.km-ta-not-l li{font-size:11.5px;line-height:1.55;color:#5b4c37;margin-bottom:2px}
+.km-ta-not-l b{color:#2a2118}
+.km-ta-uyari{margin-top:7px;padding:7px 9px;background:rgba(181,80,46,.1);border-left:3px solid #b5502e;font-size:11px;line-height:1.45;color:#5b2515}
+.km-ta-arast{margin-top:7px;padding:7px 9px;background:rgba(111,146,87,.12);border-left:3px solid #6f9257;font-size:11px;line-height:1.45;color:#2a3b20}
+.km-ta-kaynak{margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;line-height:1.5;color:#8a8064}
+.km-ta-ozet{background:linear-gradient(180deg,#171f14,#10160f);border:1px solid #33402c;border-radius:6px;padding:14px}
+.km-ta-ozet h3{font-size:11.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:#a9b39c;margin:0 0 9px}
+.km-ta-ilercubuk{display:flex;gap:4px;margin-bottom:9px}
+.km-ta-ilercubuk i{flex:1;height:5px;border-radius:2px;background:#33402c;font-style:normal}
+.km-ta-ilercubuk i.dolu{background:linear-gradient(90deg,#c9974c,#6f9257)}
+.km-ta-ozetsatir{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a9b39c;margin-bottom:5px}
+.km-ta-ozetsatir b{color:#e3b567}
+.km-ta-altbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.km-ta-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;border:1.5px solid #33402c;padding:11px 16px;cursor:pointer;min-height:42px;color:#eef0e6;background:#171f14}
+.km-ta-btn.ana{color:#10160f;background:linear-gradient(180deg,#e3b567,#c9974c);border-color:transparent}
+.km-ta-btn:disabled{opacity:.4;cursor:default}
+.km-ta-secim-liste{display:flex;flex-wrap:wrap;gap:8px}
+.km-ta-secim-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1.5px solid #33402c;background:#171f14;color:#eef0e6;cursor:pointer;font-size:12.5px;font-weight:700}
+.km-ta-secim-chip:hover{border-color:#c9974c}
+.km-ta-secim-av{width:26px;height:26px;border-radius:50%;background:#c9974c;color:#10160f;display:grid;place-items:center;font-size:10.5px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.km-ta-gecmis{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.km-ta-gecmis-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#a9b39c;background:#171f14;border:1px solid #33402c;border-radius:5px;padding:6px 9px;cursor:pointer}
+.km-ta-gecmis-chip:hover{border-color:#c9974c;color:#eef0e6}
+/* z-index:99999 — #karisik-platform KENDİSİ z-index:20000 ile kendi yığılma bağlamını kuruyor
+   (gerçek testte yakalandı: 200 onun ALTINDA kalıp modal CSS'çe "görünür" raporlanıyordu ama hiç
+   boyanmıyordu) — km-yarisma-takim-duzenle-modal'daki AYNI 99999 deseni kullanıldı. */
+.km-ta-detay-modal{position:fixed;inset:0;z-index:99999;background:rgba(8,10,7,.82);display:flex;align-items:center;justify-content:center;padding:16px}
+.km-ta-detay-kutu{width:min(760px,100%);max-height:92vh;overflow:auto;border-radius:10px}
+@media(max-width:620px){.km-ta-ust{gap:8px}.km-ta-kim b{font-size:16px}.km-ta-damga button{padding:9px 10px;font-size:9.5px}}
+`;
+        let _kmTaKaynakYuklendi = false;
+        function kmTeknikAnalizKaynaklarYukle() {
+            if(_kmTaKaynakYuklendi) return;
+            if(!document.querySelector('link[href*="fonts.googleapis.com/css2?family=Fraunces"]')) {
+                let l = document.createElement('link'); l.rel = 'stylesheet';
+                l.href = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap';
+                document.head.appendChild(l);
+            }
+            let st = document.createElement('style'); st.id = 'km-ta-style'; st.textContent = KM_TA_CSS;
+            document.head.appendChild(st);
+            _kmTaKaynakYuklendi = true;
+        }
+
+        // Aktif oturum durumu — sporcu seçilince dolar, "Ana Menü"ye dönünce/aynı araç yeniden
+        // açılınca sıfırlanmaz (kullanıcı yarım kalan bir analize geri dönebilsin diye).
+        let _kmTaSporcu = null; // { g, ad }
+        let _kmTaYay = 'klasik';
+        let _kmTaAktifFaz = 0;
+        let _kmTaRehSecili = 0;
+        let _kmTaDurum = {}; // key: yay+i -> {puan, k:{}, not, foto}
+        let _kmTaGecmis = []; // son analizler listesi (fotosuz)
+        let _kmTaAnaliziSayisi = 0;
+
+        function kmTaD(i) { let k = _kmTaYay + i; return _kmTaDurum[k] || (_kmTaDurum[k] = { puan:0, k:{}, not:'', foto:null }); }
+
+        function kmTeknikAnalizCiz() {
+            kmTeknikAnalizKaynaklarYukle();
+            let ic = document.getElementById('km-icerik'); if(!ic) return;
+            if(!_kmTaSporcu) { kmTeknikAnalizSporcuSeciciCiz(); return; }
+            kmTeknikAnalizAnaCiz();
+        }
+        function kmTeknikAnalizSporcuSeciciCiz() {
+            let ic = document.getElementById('km-icerik'); if(!ic) return;
+            let liste = _kmListe.slice().sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
+            let chips = liste.map(function(k) {
+                let bas = k.ad.trim().split(/\s+/).map(function(p){ return p[0]||''; }).slice(0,2).join('').toUpperCase();
+                return `<button class="km-ta-secim-chip" onclick="kmTeknikAnalizSporcuSec('${k.g}','${k.ad.replace(/'/g,"\\'")}')"><span class="km-ta-secim-av">${esc(bas)}</span>${esc(k.ad)}</button>`;
+            }).join('');
+            ic.innerHTML = `<div class="km-ta-root"><div class="km-ta-topo"><svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#6f9257" stroke-width="1"><ellipse cx="640" cy="40" rx="90" ry="60" opacity=".22"/><ellipse cx="640" cy="40" rx="150" ry="100" opacity=".14"/></g></svg></div>
+                <div style="position:relative; z-index:1;">
+                    <div style="font-family:'Fraunces',Georgia,serif; font-size:19px; margin-bottom:4px;">🧭 Teknik Analiz — Saha Karnesi</div>
+                    <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--text-secondary,#a9b39c); margin-bottom:14px;">Değerlendirilecek sporcuyu seç.</div>
+                    ${liste.length ? `<div class="km-ta-secim-liste">${chips}</div>` : `<div style="font-size:12px; color:#a9b39c;">Oturumda henüz kimse yok — önce Karışık Sınıf listesine sporcu ekle.</div>`}
+                </div>
+            </div>`;
+        }
+        async function kmTeknikAnalizSporcuSec(g, ad) {
+            _kmTaSporcu = { g:g, ad:ad };
+            _kmTaYay = 'klasik'; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; _kmTaDurum = {}; _kmTaGecmis = []; _kmTaAnaliziSayisi = 0;
+            kmTeknikAnalizAnaCiz();
+            try {
+                let r = await fetch('/api/teknik-analiz?grup=' + encodeURIComponent(g) + '&ad=' + encodeURIComponent(ad));
+                let data = await r.json().catch(function(){ return {}; });
+                _kmTaGecmis = (data && data.list) || [];
+                _kmTaAnaliziSayisi = _kmTaGecmis.length;
+                kmTeknikAnalizAnaCiz();
+            } catch(e) {}
+        }
+        function kmTeknikAnalizGeriDon() { _kmTaSporcu = null; kmTeknikAnalizSporcuSeciciCiz(); }
+
+        function kmTaMuhurSVG(pct, renk) {
+            let r = 22, c = 2 * Math.PI * r, off = c * (1 - pct);
+            return `<svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="#d8cca0" stroke-width="4.5"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${renk}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg>`;
+        }
+        function kmTeknikAnalizAnaCiz() {
+            let ic = document.getElementById('km-icerik'); if(!ic) return;
+            let sp = turnuvaDB[_kmTaSporcu.g] && turnuvaDB[_kmTaSporcu.g][_kmTaSporcu.ad];
+            let bas = _kmTaSporcu.ad.trim().split(/\s+/).map(function(p){ return p[0]||''; }).slice(0,2).join('').toUpperCase();
+            let dogum = sp && sp.dogumYili ? sp.dogumYili + ' doğumlu · ' : '';
+            let sonAnaliz = _kmTaGecmis[0];
+            let oncekiHTML = sonAnaliz && sonAnaliz.skor != null ? ` · önceki <b>${sonAnaliz.skor}</b>` : '';
+            let list = KM_TA_FAZLAR[_kmTaYay], f = list[_kmTaAktifFaz], st = kmTaD(_kmTaAktifFaz);
+            let pct = st.puan ? st.puan/5 : 0;
+            let renk = st.puan>=4?'#6f9257':st.puan===3?'#c9974c':st.puan?'#a33b2c':'#c9b98c';
+            let cizId = KM_TA_CIZ_ID[_kmTaAktifFaz];
+            let railHTML = list.map(function(fz, i) {
+                let s2 = kmTaD(i);
+                return `<button class="${i===_kmTaAktifFaz?'now':s2.puan?'done':''}" data-p="${s2.puan||''}" onclick="kmTaGit(${i})">${i+1}${s2.puan?`<span class="km-ta-nokta">${s2.puan}</span>`:''}</button>`;
+            }).join('');
+            let checkHTML = f.k.map(function(t, j) {
+                return `<label class="km-ta-check"><input type="checkbox" ${st.k[j]?'checked':''} onchange="kmTaKriVer(${j},this.checked)"><span>${esc(t)}</span></label>`;
+            }).join('');
+            let fotoHTML = f.foto !== null ? `<div class="km-ta-foto-alan"><label class="km-ta-foto"><span class="km-ta-kare">${st.foto?`<img src="${st.foto}">`:'📷'}</span><span class="km-ta-altyazi">${esc(f.foto)}</span><input type="file" accept="image/*" capture="environment" onchange="kmTaFotoVer(this)"></label></div>` : '';
+            let r = KM_TA_REHBER[_kmTaYay], x = r[_kmTaRehSecili];
+            let rehSekHTML = r.map(function(it, i) { return `<button class="${i===_kmTaRehSecili?'on':''}" onclick="kmTaRehSec(${i})">${esc(it.ad)}</button>`; }).join('');
+            let adet = 0, top = 0;
+            let ilerHTML = list.map(function(fz, i) {
+                let s2 = kmTaD(i);
+                let kOran = Object.values(s2.k).filter(Boolean).length / fz.k.length;
+                if(s2.puan) { top += (s2.puan/5)*70 + kOran*30; adet++; }
+                return `<i class="${s2.puan?'dolu':''}"></i>`;
+            }).join('');
+            let genelSkor = adet ? Math.round(top/adet) : null;
+
+            ic.innerHTML = `<div class="km-ta-root">
+                <div class="km-ta-ust">
+                    <button class="km-ta-geri" onclick="kmTeknikAnalizGeriDon()">‹ Sporcu Değiştir</button>
+                    <div class="km-ta-rozet">${esc(bas)}</div>
+                    <div class="km-ta-kim"><b>${esc(_kmTaSporcu.ad)}</b><div>${dogum}${_kmTaAnaliziSayisi+1}. ANALİZ${oncekiHTML}</div></div>
+                    <div class="km-ta-damga" id="km-ta-yay-seg">
+                        <button class="${_kmTaYay==='klasik'?'on':''}" data-yay="klasik" onclick="kmTaYaySec('klasik')">Klasik Yay</button>
+                        <button class="${_kmTaYay==='makarali'?'on':''}" data-yay="makarali" onclick="kmTaYaySec('makarali')">Makaralı Yay</button>
+                    </div>
+                    <div class="km-ta-geri" style="cursor:default;">${bugunISO().split('-').reverse().join('.')}</div>
+                </div>
+                <div class="km-ta-duz">
+                    <div class="km-ta-rail">${railHTML}</div>
+                    <div>
+                        <div class="km-ta-kart">
+                            <div class="km-ta-kart-ust">
+                                <div><div class="km-ta-no">FAZ ${_kmTaAktifFaz+1} / ${list.length}</div><h2>${esc(f.ad)}</h2><div class="km-ta-alt">${esc(f.alt)}</div></div>
+                                <div class="km-ta-muhur">${kmTaMuhurSVG(pct,renk)}<b>${st.puan||'–'}</b></div>
+                            </div>
+                            <div class="km-ta-govde">
+                                <div><div class="km-ta-cizim">${KM_TA_CIZ[cizId]}</div><div class="km-ta-cizim-et">REFERANS ÇİZİM</div></div>
+                                <div>
+                                    <div class="km-ta-puansatir"><span>PUAN VER</span>${[1,2,3,4,5].map(function(v){ return `<button class="km-ta-stud${st.puan===v?' se':''}" data-v="${v}" onclick="kmTaPuanVer(${v})">${v}</button>`; }).join('')}</div>
+                                    <div class="km-ta-lbl">Kontrol Listesi</div>
+                                    ${checkHTML}
+                                    <div class="km-ta-gunluk"><div class="km-ta-lbl">Saha Yorumu</div><textarea placeholder="Gözlem yaz…" oninput="kmTaNotVer(this.value)">${esc(st.not)}</textarea></div>
+                                    ${fotoHTML}
+                                </div>
+                            </div>
+                            <div class="km-ta-gezinme">
+                                <button class="km-ta-gez-btn" ${_kmTaAktifFaz===0?'disabled':''} onclick="kmTaGit(${_kmTaAktifFaz-1})">‹ Önceki</button>
+                                <span class="km-ta-gez-orta">${_kmTaAktifFaz+1} / ${list.length}</span>
+                                <button class="km-ta-gez-btn" ${_kmTaAktifFaz===list.length-1?'disabled':''} onclick="kmTaGit(${_kmTaAktifFaz+1})">Sonraki ›</button>
+                            </div>
+                        </div>
+                        <div class="km-ta-altbar">
+                            <span style="margin-right:auto; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#66715c;">${adet}/${list.length} faz puanlandı${genelSkor!=null?' · genel '+genelSkor:''}</span>
+                            <button class="km-ta-btn" onclick="kmTaVeliOzet()">💬 Veliye Özet</button>
+                            <button class="km-ta-btn ana" ${adet===0?'disabled':''} onclick="kmTaKaydet()">✔ Karneyi Kaydet</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="km-ta-notkart">
+                            <h3>🧭 ${_kmTaYay==='klasik'?'Klasik':'Makaralı'} Yayda Saha Notu</h3>
+                            <div class="km-ta-sek">${rehSekHTML}</div>
+                            <div class="km-ta-not-b">${esc(x.b)}</div>
+                            <p class="km-ta-not-p">${x.p}</p>
+                            <ul class="km-ta-not-l">${x.l.map(function(li){ return `<li>${li}</li>`; }).join('')}</ul>
+                            <div class="km-ta-uyari"><b>Sık görülen hata —</b> ${esc(x.h)}</div>
+                            ${x.arast ? `<div class="km-ta-arast"><b>Araştırma notu —</b> ${esc(x.arast)}</div>` : ''}
+                            <div class="km-ta-kaynak">Kaynak: World Archery Teknik Rehberi · Archery 360 · saha antrenörlüğü yazıları (genel bilgi)</div>
+                        </div>
+                        <div class="km-ta-ozet">
+                            <h3>Saha Karnesi Durumu</h3>
+                            <div class="km-ta-ilercubuk">${ilerHTML}</div>
+                            <div class="km-ta-ozetsatir"><span>Genel puan</span><b>${genelSkor!=null?genelSkor:'—'}</b></div>
+                            <div class="km-ta-ozetsatir"><span>Puanlanan</span><b>${adet}/${list.length}</b></div>
+                            ${_kmTaGecmis.length ? `<div class="km-ta-lbl" style="margin-top:10px;">Geçmiş Analizler</div><div class="km-ta-gecmis">${_kmTaGecmis.slice(0,6).map(function(a){ return `<button class="km-ta-gecmis-chip" onclick="kmTaDetayAc('${a.id}')">${a.tarih.slice(5).split('-').reverse().join('.')} · ${a.skor!=null?a.skor:'–'}</button>`; }).join('')}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+        function kmTaGit(i) { _kmTaAktifFaz = i; kmTeknikAnalizAnaCiz(); }
+        function kmTaPuanVer(v) { let st = kmTaD(_kmTaAktifFaz); st.puan = st.puan===v?0:v; kmTeknikAnalizAnaCiz(); }
+        function kmTaKriVer(j, val) { kmTaD(_kmTaAktifFaz).k[j] = val; kmTeknikAnalizAnaCiz(); }
+        function kmTaNotVer(v) { kmTaD(_kmTaAktifFaz).not = v; }
+        function kmTaFotoVer(inp) {
+            let file = inp.files && inp.files[0]; if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = new Image();
+                img.onload = function() {
+                    let c = document.createElement('canvas'); let mw = 220; let oran = Math.min(1, mw / img.width);
+                    c.width = img.width * oran; c.height = img.height * oran;
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    kmTaD(_kmTaAktifFaz).foto = c.toDataURL('image/jpeg', 0.72);
+                    kmTeknikAnalizAnaCiz();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        function kmTaYaySec(y) { _kmTaYay = y; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; kmTeknikAnalizAnaCiz(); }
+        function kmTaRehSec(i) { _kmTaRehSecili = i; kmTeknikAnalizAnaCiz(); }
+
+        async function kmTaKaydet() {
+            let list = KM_TA_FAZLAR[_kmTaYay];
+            let fazlar = [], top = 0, adet = 0;
+            list.forEach(function(f, i) {
+                let st = kmTaD(i);
+                let kOran = Object.values(st.k).filter(Boolean).length / f.k.length;
+                if(st.puan) { top += (st.puan/5)*70 + kOran*30; adet++; }
+                fazlar.push({ ad: f.ad, puan: st.puan || 0, k: f.k.map(function(_,j){ return !!st.k[j]; }), not: st.not || '', foto: st.foto || null });
+            });
+            let skor = adet ? Math.round(top/adet) : null;
+            try {
+                let r = await fetch('/api/teknik-analiz', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ grup: _kmTaSporcu.g, ad: _kmTaSporcu.ad, yay: _kmTaYay, tarih: bugunISO(), skor: skor, fazlar: fazlar, olusturan: (typeof _cihazId !== 'undefined' ? _cihazId : null) })
+                });
+                let data = await r.json().catch(function(){ return {}; });
+                if(!r.ok || !data.applied) { showToast('Karne kaydedilemedi, tekrar dene.', 'error'); return; }
+                showToast('✔ ' + _kmTaSporcu.ad.split(' ')[0] + ' için saha karnesi kaydedildi' + (skor!=null?' — ' + skor + ' puan':'') + '.', 'success');
+                let sporcuSnapshot = _kmTaSporcu;
+                _kmTaYay = 'klasik'; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; _kmTaDurum = {};
+                await kmTeknikAnalizSporcuSec(sporcuSnapshot.g, sporcuSnapshot.ad);
+            } catch(e) { showToast('Karne kaydedilemedi (bağlantı hatası).', 'error'); }
+        }
+        async function kmTaDetayAc(id) {
+            try {
+                let r = await fetch('/api/teknik-analiz/' + encodeURIComponent(id));
+                let data = await r.json().catch(function(){ return null; });
+                if(!r.ok || !data) { showToast('Analiz bulunamadı.', 'error'); return; }
+                let fazlar = JSON.parse(data.fazlarJson || '[]');
+                let eski = document.getElementById('km-ta-detay-modal'); if(eski) eski.remove();
+                let m = document.createElement('div'); m.id = 'km-ta-detay-modal'; m.className = 'km-ta-detay-modal';
+                let govde = fazlar.map(function(f) {
+                    return `<div class="km-ta-kart" style="margin-bottom:10px;">
+                        <div class="km-ta-kart-ust"><div><h2 style="font-size:17px;">${esc(f.ad)}</h2></div><div class="km-ta-muhur" style="width:40px; height:40px;"><b style="font-size:13px;">${f.puan||'–'}</b></div></div>
+                        ${f.not ? `<div class="km-ta-not-p" style="margin-top:6px;">${esc(f.not)}</div>` : ''}
+                        ${f.foto ? `<img src="${f.foto}" style="max-width:120px; border-radius:6px; margin-top:6px; display:block;">` : ''}
+                    </div>`;
+                }).join('');
+                m.innerHTML = `<div class="km-ta-detay-kutu"><div class="km-ta-root" style="border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="font-family:'Fraunces',Georgia,serif; font-size:18px;">${esc(data.ad)} — ${esc(data.tarih)} (${data.yay==='klasik'?'Klasik':'Makaralı'})</div>
+                        <button class="km-ta-geri" onclick="document.getElementById('km-ta-detay-modal').remove()">✕ Kapat</button>
+                    </div>
+                    ${govde}
+                </div></div>`;
+                m.addEventListener('click', function(ev) { if(ev.target === m) m.remove(); });
+                document.body.appendChild(m);
+            } catch(e) { showToast('Analiz açılamadı (bağlantı hatası).', 'error'); }
+        }
+        function kmTaVeliOzet() {
+            let list = KM_TA_FAZLAR[_kmTaYay];
+            let iyi = [], odak = [];
+            list.forEach(function(f, i) {
+                let st = kmTaD(i);
+                if(st.puan >= 4) iyi.push(f.ad);
+                else if(st.puan > 0 && st.puan <= 3) odak.push(f.ad);
+            });
+            let ilkAd = _kmTaSporcu.ad.split(' ')[0];
+            let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
+            let satirlar = [
+                `🏹 *DAĞ SPOR KULÜBÜ*`,
+                `📋 _${ilkAdB}'in Teknik Analizi_ — ${new Date().toLocaleDateString('tr-TR', { day:'2-digit', month:'long', year:'numeric' })}`,
+                `Yay: ${_kmTaYay === 'klasik' ? 'Klasik' : 'Makaralı'}`,
+                ``
+            ];
+            if(iyi.length) satirlar.push(`✅ Sağlam: *${iyi.join(', ')}*`);
+            if(odak.length) satirlar.push(`🎯 Bu hafta odak: *${odak.join(', ')}*`);
+            if(!iyi.length && !odak.length) satirlar.push(`Henüz hiçbir faz puanlanmadı.`);
+            satirlar.push(``);
+            satirlar.push(`${ilkAdB} her antrenmanda biraz daha gelişiyor — desteğiniz için teşekkür ederiz! 🧡`);
+            let metin = satirlar.join('\n');
+            let kopyalandi = function() { showToast('💬 Özet kopyalandı — WhatsApp\'ta aileye yapıştırabilirsin!', 'success'); };
+            if(navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(metin).then(kopyalandi).catch(function(){ prompt('Kopyala:', metin); }); }
+            else { try { let ta = document.createElement('textarea'); ta.value = metin; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); kopyalandi(); } catch(e) { prompt('Kopyala:', metin); } }
+        }
+
         // ✅ Yoklama (2026-08-21, "yoklama alma ile ilgili bölüm eklemek ve yönetmek istiyorum") —
         // Karışık Sınıf'ın kendi yoklama-alma yeri. YENİ bir sistem İCAT EDİLMEDİ: Ders Programı'nın
         // roster-yoklama'sıyla (dersRosterYoklamaToggle/Hepsi) AYNI var olan otomatikYoklamaDB'ye
