@@ -4820,3 +4820,48 @@ kesif0.bulanAd=null'a döndü, Zirve HÂLÂ 0.4 olarak kaldı (izolasyon tam). 1
 ve Takım Modu smoke testi 0 hata.
 
 **Deploy durumu (47)**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
+
+## 48. Kayıp Ada geliştirmeleri — yağmur perf düzeltmesi, sürpriz olaylar, gün paleti, Kaşif Kartı (2026-09-24)
+
+Kullanıcı, §47'deki günlük-sıfırlama düzeltmesinin ardından: "oyun bazen yağmur nedeniyle kasıyor, onu
+da düzelt; bu oyunu daha da geliştirelim; gün sonunda sporcuya çıkarabileceğimiz [referans görseldeki gibi
+kart-tarzı bir görsel] olsun, küçük A4 kağıdına 9'a bölünecek şekilde, büyük olursa olmaz" istedi.
+
+**a) Yağmur performans düzeltmesi**: `.km-sis-yagmur` eskiden `background-position` animasyonluydu —
+repeating-linear-gradient'i her karede CPU'da yeniden boyuyordu (kasmanın gerçek nedeni). Artık aynı
+gradyan TEK SEFER statik çiziliyor, hareket `::before` üzerinde `transform: translate3d` (GPU/compositor)
+ile veriliyor — aynı görsel, kasma yok.
+
+**b) Sürpriz olaylar**: Diğer 7 yol-oyununun (Zirve/Hendek/vb.) zaten sahip olduğu, ama Kayıp Ada'da hiç
+bağlanmamış `kmOyunSurprizGoster` flavor-popup mekanizması `sisharita`'ya da eklendi (ada temalı 5 mesaj +
+`kmOyunAnimateSisHaritasi` içine tek satır çağrı). Son (7.) keşif noktası olan "Hazine Sandığı"
+bulunduğunda ayrıca özel bir `kmOyunBanner` ("💰 HAZİNE SANDIĞI BULUNDU!") çıkıyor. İkisi de mevcut,
+zaten hafif (transform/opacity) altyapıyı kullanıyor — yeni ağır animasyon YOK, gerçek skora dokunmuyor.
+
+**c) Gün paleti**: Yağmur yerine, performans riski taşımayan bir çeşitlilik olarak `KM_SIS_GUN_PALETLERI`
+(Gündüz/Gün Batımı/Alacakaranlık/Yıldızlı Gece) eklendi — deniz gradyanı ve panel arka planı güne göre
+(deterministik, `kmOyunSisGunPaleti()`) değişiyor. Sahne zaten tek seferde (`kmOyunSahneKurSisHaritasi`)
+kurulduğu için ek render/animasyon maliyeti sıfır.
+
+**d) 🎴 Kaşif Kartı (yeni araç)**: Karışık Sınıf araç ızgarasına yeni bir araç eklendi (`kasifkarti`).
+Sporcu seçilir → eğitmen o an fotoğraf çeker (`capture="environment"`, athletes.fotoUrl'a YAZILMIYOR,
+sadece bu kart için geçici) → skor/seviye (Çaylak Kaşif/Nişancı/Usta Okçu/Şampiyon/Efsane, toplamSkor
+eşikli) ve "En İyi Atış"/"Ortalama" (bugünkü seriler varsa onlardan, yoksa genelden) + "Macera Yolcusu"
+(paylaşılan `kmOyunDurumAl` frac'ı — 7 yol-oyunu TEK bir paylaşılan ilerleme kullandığı için "en iyi oyun"
+gibi yanlış bir metrik BİLEREK eklenmedi) gerçek verilerden otomatik hesaplanan bir kart Canvas ile
+çiziliyor. "PNG İndir" ile tek kart indirilebiliyor; "Bugünün Kartlarına Ekle" ile gün+konum bazlı
+(`dag_km_kasifkart_<konum>`, günlük otomatik sıfırlanan) bir listeye ekleniyor; "Hepsini Yazdır" bu listeyi
+`_yeniPdfAl` (native jsPDF) ile A4'e **3x3 (9 kart/sayfa)** ızgarada, kesik çizgili, ~63x92mm kart
+boyutunda bastırıyor — 9'dan fazla kart varsa otomatik yeni sayfaya geçiyor. CSS, KM_TA_CSS ile aynı
+lazy-load stiline eklendi (`kmKasifKartiCiz()` de `kmTeknikAnalizKaynaklarYukle()`'yi çağırıyor — Teknik
+Analiz hiç açılmadan doğrudan bu araca girilse bile stilsiz kalmıyor).
+
+**Gerçek testte doğrulanan**: sisharita'da checkpoint 0→7 tek hamlede geçirilip 7. (hazine) keşfi
+tetiklendi — hem genel toast hem özel "HAZİNE SANDIĞI BULUNDU" banner'ı doğru metinle göründü (ciddi mod
+kapalıyken); `kmOyunSurprizGoster('sisharita',...)` hatasız çalıştı. Kaşif Kartı: sporcu seçimi → gerçek
+dosya seçici ile fotoğraf yükleme → canvas'ta doğru çizim (skor 74 → "NİŞANCI" rozeti, "Henüz kayıtlı
+atışı yok"/"‌%0 Macera Yolcusu" doğru fallback'lerle) → PNG indirme (gerçek download event) → listeye
+ekleme (1 kayıt, mini önizleme) → PDF indirme ve poppler ile render: kart A4'ün sol-üst 1/9'unda, doğru
+oranda, kesik çizgili olarak çıktı. 16 tema Oyunlar regresyonu 0 hata.
+
+**Deploy durumu (48)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
