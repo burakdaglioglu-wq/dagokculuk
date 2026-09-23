@@ -4648,3 +4648,45 @@ regresyonu 0 hata → 390px/1920px'te taşma yok.
 
 **Deploy durumu (42)**: Migration REMOTE'a uygulandı (`0037_teknik_analiz.sql` ✅). Commit + push +
 `npm run deploy` kullanıcı onayıyla yapıldı.
+
+## 43. Teknik Analiz v2 — kaydet-her-zaman, madde notları, gerçek PDF (2026-09-23)
+
+Kullanıcı bulguları: "Karneyi Kaydet bir işlem bile yapsam kaydetsin" (buton sadece bir faza 1-5 puan
+verilince aktifleşiyordu — sadece kontrol listesi işaretleyip not yazan bir koç hiç kaydedemiyordu),
+"bunun PDF çıktısını düzgün almam lazım" (PDF hiç yoktu), "kontrol listesindeki checklerin yanına da
+not alabilelim" (her checklist maddesi tek bir faz-geneli nota sığmıyordu), "kaydedildiği yer var mı?"
+(sporcu seçmeden önce kaydedilenleri görecek bir yer yoktu).
+
+**Dört düzeltme/ekleme**:
+1. **Kaydet artık gerçekten "her şeyi" tetikliyor** — buton `hasAnyData` ile aktifleşiyor: herhangi bir
+   fazda puan VEYA işaretli kontrol maddesi VEYA madde notu VEYA faz notu VEYA fotoğraf varsa yeterli
+   (eskiden sadece puan sayılıyordu). `kmTaKaydet` ortak `kmTaFazlarTopla()`'ya ayrıldı (PDF de aynısını
+   kullanıyor).
+2. **Kontrol listesi madde notları** — her checklist satırının yanında küçük bir "not…" alanı
+   (`.km-ta-check-not`, defter-altçizgili), `kmTaCheckNotVer(j,val)` ile `kmTaD(i).kn[j]`'ye yazılıyor,
+   kayıtla birlikte `fazlar[i].kNot[]` olarak D1'e gidiyor (şema değişmedi, `fazlar_json` zaten genel
+   JSON).
+3. **Gerçek PDF** — `kmTaPdfOlustur(ad,tarih,yay,fazlar)`: bu projedeki html2pdf'in genel olarak bozuk
+   olduğu kuralına uyarak (bkz. Ders Programı notu) NATIVE jsPDF (`_yeniPdfAl`/`_kurumsalBaslikCiz`/
+   `_trTranslit` paylaşılan yardımcıları) kullanıyor. Her faz kendi kutusunda: puan, ✓/✗ + madde metni +
+   madde notu, faz notu, fotoğraf (`pdf.addImage`, ilk kez bu projede kullanıldı). Sayfa taşınca
+   `pdf.addPage()` (diğer PDF'lerle aynı desen). İki giriş noktası: sihirbazdaki **📄 PDF** (henüz
+   kaydedilmemiş canlı durumu da indirir — `kmTaPdfIndir()` → `kmTaFazlarTopla()`), ve geçmişten açılan
+   detay modalındaki **📄 PDF** (kaydedilmiş `_kmTaDetayVeri`'den).
+4. **"Son Kaydedilen Karneler"** — sporcu seçim ekranına, oturumdaki HERKESİN en son karnesini (tarih·
+   skor·yay) gösteren bir liste eklendi (`kmTeknikAnalizSonKarneleriYukle`, roster kadar paralel istek,
+   TEK SEFERLİK — bir polling döngüsü değil). Tıklanınca `kmTaDetayAc` ile aynı detay modalı açılır.
+   Detay modalındaki checklist görünümü de zenginleştirildi (madde metni + ✓/✗ + not, eskiden sadece faz
+   notu/fotoğraf gösteriyordu).
+
+**Gerçek testte doğrulanan**: sadece 1 checklist maddesi işaretleyip not yazarak (puan VERMEDEN) Kaydet
+butonu aktifti ve kayıt gerçekten D1'e gitti; sporcu seçim ekranında bu kayıt "Son Karneler"de göründü;
+canlı (kaydetmeden) PDF indirildi; puanlı+notlu ikinci analiz kaydedilip geçmişten GERÇEK tıklamayla
+detay modalı açıldı (madde notu "parmak askısı yok" doğru göründü) ve o kayıttan da PDF indirildi —
+`pdftotext -enc UTF-8` ile içerik doğrulandı (8 faz, checklist durumu, madde notu, Türkçe ö/ü karakterleri
+doğru; ı/ğ/ş `_trTranslit` ile bilinçli olarak ASCII'ye çevriliyor, diğer tüm PDF'lerle aynı). 16 tema
+Oyunlar regresyonu 0 hata, 390px'te madde-notu alanları taşmadan sığıyor.
+
+**Deploy durumu (43)**: Kullanıcı onayladı (2026-09-23), commit + push + deploy edildi. (Not: bu iş şema
+değişikliği İÇERMİYOR — `teknik_analiz` tablosu §42'deki haliyle kalıyor, sadece `fazlar_json`
+içeriğine `kNot` alanı eklendi.)

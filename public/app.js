@@ -10388,6 +10388,11 @@ ${(function(){
 .km-ta-check input:checked{background:#6f9257;border-color:#6f9257}
 .km-ta-check input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
 .km-ta-check span{font-size:12.5px;color:#2a2118;line-height:1.4}
+.km-ta-check-satir{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:1px 0}
+.km-ta-check-satir .km-ta-check{flex-shrink:0;padding:4px 0}
+.km-ta-check-not{flex:1;min-width:90px;border:0;border-bottom:1px dashed #c9b98c;background:transparent;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-style:italic;color:#5b4c37;padding:2px 3px}
+.km-ta-check-not:focus{outline:none;border-bottom-color:#b5502e}
+.km-ta-check-not::placeholder{color:#b7a679}
 .km-ta-gunluk{margin-top:12px}
 .km-ta-gunluk textarea{width:100%;min-height:58px;border:0;border-bottom:1.5px solid #c9b98c;background:repeating-linear-gradient(0deg, transparent 0 21px, rgba(90,70,30,.14) 21px 22px);font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#2a2118;resize:vertical;padding:4px 2px;line-height:22px}
 .km-ta-gunluk textarea:focus{outline:none;border-bottom-color:#b5502e}
@@ -10462,7 +10467,7 @@ ${(function(){
         let _kmTaGecmis = []; // son analizler listesi (fotosuz)
         let _kmTaAnaliziSayisi = 0;
 
-        function kmTaD(i) { let k = _kmTaYay + i; return _kmTaDurum[k] || (_kmTaDurum[k] = { puan:0, k:{}, not:'', foto:null }); }
+        function kmTaD(i) { let k = _kmTaYay + i; return _kmTaDurum[k] || (_kmTaDurum[k] = { puan:0, k:{}, kn:{}, not:'', foto:null }); }
 
         function kmTeknikAnalizCiz() {
             kmTeknikAnalizKaynaklarYukle();
@@ -10482,8 +10487,31 @@ ${(function(){
                     <div style="font-family:'Fraunces',Georgia,serif; font-size:19px; margin-bottom:4px;">🧭 Teknik Analiz — Saha Karnesi</div>
                     <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--text-secondary,#a9b39c); margin-bottom:14px;">Değerlendirilecek sporcuyu seç.</div>
                     ${liste.length ? `<div class="km-ta-secim-liste">${chips}</div>` : `<div style="font-size:12px; color:#a9b39c;">Oturumda henüz kimse yok — önce Karışık Sınıf listesine sporcu ekle.</div>`}
+                    <div class="km-ta-lbl" style="margin-top:16px;">Son Kaydedilen Karneler</div>
+                    <div id="km-ta-son-karneler" style="font-size:11.5px; color:#66715c;">Yükleniyor…</div>
                 </div>
             </div>`;
+            kmTeknikAnalizSonKarneleriYukle(liste);
+        }
+        // "Kaydedildiği yer var mı?" (2026-09-23) — sporcu seçmeden ÖNCE, oturumdaki herkesin en son
+        // karnesini gösteren bir özet: her satır D1'deki teknik_analiz tablosundan GERÇEK bir kayıt,
+        // tıklanınca kmTaDetayAc ile (fotoğraflar dahil) açılır. Tek seferlik, N paralel istek (oturum
+        // rosteri kadar) — bir polling döngüsü DEĞİL, sadece bu ekran açılınca bir kez.
+        async function kmTeknikAnalizSonKarneleriYukle(liste) {
+            let el = document.getElementById('km-ta-son-karneler'); if(!el) return;
+            try {
+                let sonuclar = await Promise.all(liste.map(function(k) {
+                    return fetch('/api/teknik-analiz?grup=' + encodeURIComponent(k.g) + '&ad=' + encodeURIComponent(k.ad) + '&limit=1')
+                        .then(function(r) { return r.json(); }).then(function(d) { let a = d && d.list && d.list[0]; return a ? Object.assign({}, a, { sporcuAd: k.ad }) : null; }).catch(function() { return null; });
+                }));
+                let dolu = sonuclar.filter(Boolean).sort(function(a,b) { return b.lastModified - a.lastModified; }).slice(0, 10);
+                let elYeni = document.getElementById('km-ta-son-karneler'); if(!elYeni) return;
+                if(!dolu.length) { elYeni.innerHTML = 'Henüz hiç karne kaydedilmemiş.'; return; }
+                elYeni.innerHTML = '<div style="display:flex; flex-direction:column; gap:5px;">' + dolu.map(function(a) {
+                    return '<button class="km-ta-gecmis-chip" style="text-align:left; display:flex; justify-content:space-between; gap:10px;" onclick="kmTaDetayAc(\'' + a.id + '\')">'
+                        + '<span>' + esc(a.sporcuAd) + '</span><span>' + a.tarih.slice(5).split('-').reverse().join('.') + ' · ' + (a.skor!=null?a.skor:'–') + ' · ' + (a.yay==='klasik'?'Klasik':'Makaralı') + '</span></button>';
+                }).join('') + '</div>';
+            } catch(e) { let elErr = document.getElementById('km-ta-son-karneler'); if(elErr) elErr.textContent = 'Yüklenemedi.'; }
         }
         async function kmTeknikAnalizSporcuSec(g, ad) {
             _kmTaSporcu = { g:g, ad:ad };
@@ -10519,16 +10547,17 @@ ${(function(){
                 return `<button class="${i===_kmTaAktifFaz?'now':s2.puan?'done':''}" data-p="${s2.puan||''}" onclick="kmTaGit(${i})">${i+1}${s2.puan?`<span class="km-ta-nokta">${s2.puan}</span>`:''}</button>`;
             }).join('');
             let checkHTML = f.k.map(function(t, j) {
-                return `<label class="km-ta-check"><input type="checkbox" ${st.k[j]?'checked':''} onchange="kmTaKriVer(${j},this.checked)"><span>${esc(t)}</span></label>`;
+                return `<div class="km-ta-check-satir"><label class="km-ta-check"><input type="checkbox" ${st.k[j]?'checked':''} onchange="kmTaKriVer(${j},this.checked)"><span>${esc(t)}</span></label><input type="text" class="km-ta-check-not" placeholder="not…" value="${esc(st.kn[j]||'')}" oninput="kmTaCheckNotVer(${j},this.value)"></div>`;
             }).join('');
             let fotoHTML = f.foto !== null ? `<div class="km-ta-foto-alan"><label class="km-ta-foto"><span class="km-ta-kare">${st.foto?`<img src="${st.foto}">`:'📷'}</span><span class="km-ta-altyazi">${esc(f.foto)}</span><input type="file" accept="image/*" capture="environment" onchange="kmTaFotoVer(this)"></label></div>` : '';
             let r = KM_TA_REHBER[_kmTaYay], x = r[_kmTaRehSecili];
             let rehSekHTML = r.map(function(it, i) { return `<button class="${i===_kmTaRehSecili?'on':''}" onclick="kmTaRehSec(${i})">${esc(it.ad)}</button>`; }).join('');
-            let adet = 0, top = 0;
+            let adet = 0, top = 0, hasAnyData = false;
             let ilerHTML = list.map(function(fz, i) {
                 let s2 = kmTaD(i);
                 let kOran = Object.values(s2.k).filter(Boolean).length / fz.k.length;
                 if(s2.puan) { top += (s2.puan/5)*70 + kOran*30; adet++; }
+                if(s2.puan || Object.values(s2.k).some(Boolean) || Object.values(s2.kn||{}).some(function(v){ return v && v.trim(); }) || (s2.not||'').trim() || s2.foto) hasAnyData = true;
                 return `<i class="${s2.puan?'dolu':''}"></i>`;
             }).join('');
             let genelSkor = adet ? Math.round(top/adet) : null;
@@ -10570,8 +10599,9 @@ ${(function(){
                         </div>
                         <div class="km-ta-altbar">
                             <span style="margin-right:auto; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#66715c;">${adet}/${list.length} faz puanlandı${genelSkor!=null?' · genel '+genelSkor:''}</span>
+                            <button class="km-ta-btn" onclick="kmTaPdfIndir()">📄 PDF</button>
                             <button class="km-ta-btn" onclick="kmTaVeliOzet()">💬 Veliye Özet</button>
-                            <button class="km-ta-btn ana" ${adet===0?'disabled':''} onclick="kmTaKaydet()">✔ Karneyi Kaydet</button>
+                            <button class="km-ta-btn ana" ${!hasAnyData?'disabled':''} onclick="kmTaKaydet()">✔ Karneyi Kaydet</button>
                         </div>
                     </div>
                     <div>
@@ -10599,6 +10629,7 @@ ${(function(){
         function kmTaGit(i) { _kmTaAktifFaz = i; kmTeknikAnalizAnaCiz(); }
         function kmTaPuanVer(v) { let st = kmTaD(_kmTaAktifFaz); st.puan = st.puan===v?0:v; kmTeknikAnalizAnaCiz(); }
         function kmTaKriVer(j, val) { kmTaD(_kmTaAktifFaz).k[j] = val; kmTeknikAnalizAnaCiz(); }
+        function kmTaCheckNotVer(j, val) { kmTaD(_kmTaAktifFaz).kn[j] = val; }
         function kmTaNotVer(v) { kmTaD(_kmTaAktifFaz).not = v; }
         function kmTaFotoVer(inp) {
             let file = inp.files && inp.files[0]; if(!file) return;
@@ -10619,16 +10650,22 @@ ${(function(){
         function kmTaYaySec(y) { _kmTaYay = y; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; kmTeknikAnalizAnaCiz(); }
         function kmTaRehSec(i) { _kmTaRehSecili = i; kmTeknikAnalizAnaCiz(); }
 
-        async function kmTaKaydet() {
+        // Sihirbazın anlık durumunu {fazlar[], skor} olarak toplar — Kaydet VE canlı PDF (henüz
+        // kaydedilmemiş bir karneyi de indirebilmek için) AYNI bu fonksiyonu kullanıyor.
+        function kmTaFazlarTopla() {
             let list = KM_TA_FAZLAR[_kmTaYay];
             let fazlar = [], top = 0, adet = 0;
             list.forEach(function(f, i) {
                 let st = kmTaD(i);
                 let kOran = Object.values(st.k).filter(Boolean).length / f.k.length;
                 if(st.puan) { top += (st.puan/5)*70 + kOran*30; adet++; }
-                fazlar.push({ ad: f.ad, puan: st.puan || 0, k: f.k.map(function(_,j){ return !!st.k[j]; }), not: st.not || '', foto: st.foto || null });
+                fazlar.push({ ad: f.ad, puan: st.puan || 0, k: f.k.map(function(_,j){ return !!st.k[j]; }), kNot: f.k.map(function(_,j){ return st.kn[j] || ''; }), not: st.not || '', foto: st.foto || null });
             });
             let skor = adet ? Math.round(top/adet) : null;
+            return { fazlar: fazlar, skor: skor };
+        }
+        async function kmTaKaydet() {
+            let toplanan = kmTaFazlarTopla(), fazlar = toplanan.fazlar, skor = toplanan.skor;
             try {
                 let r = await fetch('/api/teknik-analiz', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -10642,25 +10679,38 @@ ${(function(){
                 await kmTeknikAnalizSporcuSec(sporcuSnapshot.g, sporcuSnapshot.ad);
             } catch(e) { showToast('Karne kaydedilemedi (bağlantı hatası).', 'error'); }
         }
+        let _kmTaDetayVeri = null;
         async function kmTaDetayAc(id) {
             try {
                 let r = await fetch('/api/teknik-analiz/' + encodeURIComponent(id));
                 let data = await r.json().catch(function(){ return null; });
                 if(!r.ok || !data) { showToast('Analiz bulunamadı.', 'error'); return; }
                 let fazlar = JSON.parse(data.fazlarJson || '[]');
+                _kmTaDetayVeri = { ad: data.ad, tarih: data.tarih, yay: data.yay, fazlar: fazlar };
+                let etiketler = KM_TA_FAZLAR[data.yay] || KM_TA_FAZLAR.klasik;
                 let eski = document.getElementById('km-ta-detay-modal'); if(eski) eski.remove();
                 let m = document.createElement('div'); m.id = 'km-ta-detay-modal'; m.className = 'km-ta-detay-modal';
-                let govde = fazlar.map(function(f) {
+                let govde = fazlar.map(function(f, i) {
+                    let etikFaz = etiketler[i];
+                    let checkHTML = (f.k || []).map(function(cv, j) {
+                        let lbl = (etikFaz && etikFaz.k[j]) || ('Madde ' + (j + 1));
+                        let notMetin = (f.kNot && f.kNot[j]) || '';
+                        return `<div style="display:flex; align-items:flex-start; gap:6px; font-size:11.5px; padding:2px 0;"><span style="flex-shrink:0;">${cv ? '✅' : '⬜'}</span><span>${esc(lbl)}${notMetin ? ` — <i style="color:#5b4c37;">${esc(notMetin)}</i>` : ''}</span></div>`;
+                    }).join('');
                     return `<div class="km-ta-kart" style="margin-bottom:10px;">
                         <div class="km-ta-kart-ust"><div><h2 style="font-size:17px;">${esc(f.ad)}</h2></div><div class="km-ta-muhur" style="width:40px; height:40px;"><b style="font-size:13px;">${f.puan||'–'}</b></div></div>
+                        ${checkHTML ? `<div style="margin-top:8px;">${checkHTML}</div>` : ''}
                         ${f.not ? `<div class="km-ta-not-p" style="margin-top:6px;">${esc(f.not)}</div>` : ''}
                         ${f.foto ? `<img src="${f.foto}" style="max-width:120px; border-radius:6px; margin-top:6px; display:block;">` : ''}
                     </div>`;
                 }).join('');
                 m.innerHTML = `<div class="km-ta-detay-kutu"><div class="km-ta-root" style="border-radius:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
                         <div style="font-family:'Fraunces',Georgia,serif; font-size:18px;">${esc(data.ad)} — ${esc(data.tarih)} (${data.yay==='klasik'?'Klasik':'Makaralı'})</div>
-                        <button class="km-ta-geri" onclick="document.getElementById('km-ta-detay-modal').remove()">✕ Kapat</button>
+                        <div style="display:flex; gap:8px;">
+                            <button class="km-ta-btn" onclick="kmTaPdfOlustur(_kmTaDetayVeri.ad, _kmTaDetayVeri.tarih, _kmTaDetayVeri.yay, _kmTaDetayVeri.fazlar)">📄 PDF</button>
+                            <button class="km-ta-geri" onclick="document.getElementById('km-ta-detay-modal').remove()">✕ Kapat</button>
+                        </div>
                     </div>
                     ${govde}
                 </div></div>`;
@@ -10693,6 +10743,56 @@ ${(function(){
             let kopyalandi = function() { showToast('💬 Özet kopyalandı — WhatsApp\'ta aileye yapıştırabilirsin!', 'success'); };
             if(navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(metin).then(kopyalandi).catch(function(){ prompt('Kopyala:', metin); }); }
             else { try { let ta = document.createElement('textarea'); ta.value = metin; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); kopyalandi(); } catch(e) { prompt('Kopyala:', metin); } }
+        }
+
+        // "PDF çıktısını düzgün bir şekilde almam lazım" (2026-09-23) — html2pdf bu projede genel
+        // olarak bozuk (bkz. Ders Programı notu, DEVIR.md) — diğer tüm gerçek PDF'ler gibi NATIVE
+        // jsPDF (_yeniPdfAl/_kurumsalBaslikCiz/_trTranslit paylaşılan yardımcıları) kullanılıyor.
+        // Kaydedilmemiş sihirbaz durumu (canlı) VE geçmişten açılan kayıtlı bir analiz AYNI
+        // kmTaPdfOlustur(ad, tarih, yay, fazlar) fonksiyonunu kullanıyor.
+        function kmTaPdfIndir() {
+            let toplanan = kmTaFazlarTopla();
+            kmTaPdfOlustur(_kmTaSporcu.ad, bugunISO(), _kmTaYay, toplanan.fazlar);
+        }
+        function kmTaPdfOlustur(ad, tarih, yay, fazlar) {
+            showToast('PDF hazırlanıyor...', 'warning');
+            _yeniPdfAl().then(function(pdf) {
+                let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX * 2;
+                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'SAHA KARNESI', 'Teknik Analiz - ' + (yay === 'klasik' ? 'Klasik Yay' : 'Makarali Yay'));
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(15, 23, 42);
+                pdf.text(_trTranslit(ad), marginX, y);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100, 116, 139);
+                pdf.text(_trTranslit('Tarih: ') + tarih, marginX + usableW, y, { align: 'right' });
+                y += 8;
+                let etiketler = KM_TA_FAZLAR[yay] || KM_TA_FAZLAR.klasik;
+                fazlar.forEach(function(f, i) {
+                    let etikFaz = etiketler[i];
+                    let notSatirlari = f.not ? pdf.splitTextToSize(_trTranslit(f.not), usableW - 10) : [];
+                    let checkSatirlari = (f.k || []).map(function(cv, j) {
+                        let lbl = (etikFaz && etikFaz.k[j]) || ('Madde ' + (j + 1));
+                        let notMetin = (f.kNot && f.kNot[j]) || '';
+                        return _trTranslit((cv ? '[X] ' : '[ ] ') + lbl + (notMetin ? ' - ' + notMetin : ''));
+                    });
+                    let fotoBoy = f.foto ? 28 : 0;
+                    let ihtiyacYukseklik = 10 + checkSatirlari.length * 4.6 + notSatirlari.length * 4 + fotoBoy + 6;
+                    if(y + ihtiyacYukseklik > 281) { pdf.addPage(); pdf.setFillColor(255,255,255); pdf.rect(0,0,pageW,pageH,'F'); y = 16; }
+                    pdf.setFillColor(241, 233, 212); pdf.setDrawColor(181, 80, 46); pdf.setLineWidth(0.4);
+                    pdf.roundedRect(marginX, y, usableW, ihtiyacYukseklik - 4, 2, 2, 'FD');
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(42, 33, 24);
+                    pdf.text(_trTranslit((i + 1) + '. ' + f.ad), marginX + 5, y + 7);
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(181, 80, 46);
+                    pdf.text(f.puan ? String(f.puan) + ' / 5' : '- / 5', marginX + usableW - 5, y + 7, { align: 'right' });
+                    let cy = y + 13;
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(60, 50, 36);
+                    checkSatirlari.forEach(function(satir) { pdf.text(satir, marginX + 6, cy); cy += 4.6; });
+                    if(notSatirlari.length) { pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8.5); pdf.setTextColor(91, 76, 55); pdf.text(notSatirlari, marginX + 6, cy); cy += notSatirlari.length * 4; }
+                    if(f.foto) { try { pdf.addImage(f.foto, 'JPEG', marginX + usableW - 5 - fotoBoy, y + 11, fotoBoy, fotoBoy); } catch(e) {} }
+                    y += ihtiyacYukseklik;
+                });
+                _kurumsalAltBilgiCiz(pdf, pageW, pageH);
+                pdf.save('Teknik_Analiz_' + _trTranslit(ad).replace(/\s+/g, '_') + '_' + tarih + '.pdf');
+                showToast('PDF indirildi! 📄', 'success');
+            }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }
 
         // ✅ Yoklama (2026-08-21, "yoklama alma ile ilgili bölüm eklemek ve yönetmek istiyorum") —
