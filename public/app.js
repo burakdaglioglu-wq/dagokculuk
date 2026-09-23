@@ -10393,6 +10393,14 @@ ${(function(){
 .km-ta-check-not{flex:1;min-width:90px;border:0;border-bottom:1px dashed #c9b98c;background:transparent;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-style:italic;color:#5b4c37;padding:2px 3px}
 .km-ta-check-not:focus{outline:none;border-bottom-color:#b5502e}
 .km-ta-check-not::placeholder{color:#b7a679}
+.km-ta-check-not.hata{border-bottom-color:#a33b2c;border-bottom-style:solid}
+.km-ta-check-not.hata::placeholder{color:#c76a56}
+.km-ta-ikili{display:flex;gap:3px;flex-shrink:0}
+.km-ta-ikili button{width:24px;height:24px;border-radius:6px;border:1.6px solid #c9b98c;background:rgba(255,255,255,.45);font-size:12px;font-weight:800;color:#8a8064;cursor:pointer;line-height:1;padding:0}
+.km-ta-ikili-dogru.aktif{background:#6f9257;border-color:#6f9257;color:#fff}
+.km-ta-ikili-hatali.aktif{background:#a33b2c;border-color:#a33b2c;color:#fff}
+.km-ta-check-lbl{font-size:12.5px;color:#2a2118;line-height:1.3}
+.km-ta-check-lbl.hatali{color:#a33b2c;font-weight:700}
 .km-ta-gunluk{margin-top:12px}
 .km-ta-gunluk textarea{width:100%;min-height:58px;border:0;border-bottom:1.5px solid #c9b98c;background:repeating-linear-gradient(0deg, transparent 0 21px, rgba(90,70,30,.14) 21px 22px);font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#2a2118;resize:vertical;padding:4px 2px;line-height:22px}
 .km-ta-gunluk textarea:focus{outline:none;border-bottom-color:#b5502e}
@@ -10468,6 +10476,12 @@ ${(function(){
         let _kmTaAnaliziSayisi = 0;
 
         function kmTaD(i) { let k = _kmTaYay + i; return _kmTaDurum[k] || (_kmTaDurum[k] = { puan:0, k:{}, kn:{}, not:'', foto:null }); }
+        // "Formaları tersine yapmak" (2026-09-24, kullanıcı: "bırakış hatalı veya doğru gibi ikili
+        // seçenek olsun, hatada hata nedenini yazabileyim") — kontrol listesi maddeleri artık tek bir
+        // belirsiz kutucuk (işaretli/işaretsiz — işaretsiz "yanlış" mı yoksa "hiç bakılmadı" mı belli
+        // değildi) DEĞİL, üç durumlu: değerlendirilmedi (nötr) / DOĞRU / HATALI. Eski kayıtlarda madde
+        // durumu boolean (true=işaretli) olarak saklıydı — kmTaKV geriye dönük uyumluluk sağlıyor.
+        function kmTaKV(v) { if(v === true) return 'dogru'; if(v === 'dogru' || v === 'hatali') return v; return null; }
 
         function kmTeknikAnalizCiz() {
             kmTeknikAnalizKaynaklarYukle();
@@ -10547,7 +10561,16 @@ ${(function(){
                 return `<button class="${i===_kmTaAktifFaz?'now':s2.puan?'done':''}" data-p="${s2.puan||''}" onclick="kmTaGit(${i})">${i+1}${s2.puan?`<span class="km-ta-nokta">${s2.puan}</span>`:''}</button>`;
             }).join('');
             let checkHTML = f.k.map(function(t, j) {
-                return `<div class="km-ta-check-satir"><label class="km-ta-check"><input type="checkbox" ${st.k[j]?'checked':''} onchange="kmTaKriVer(${j},this.checked)"><span>${esc(t)}</span></label><input type="text" class="km-ta-check-not" placeholder="not…" value="${esc(st.kn[j]||'')}" oninput="kmTaCheckNotVer(${j},this.value)"></div>`;
+                let durum = st.k[j];
+                let hatali = durum === 'hatali';
+                return `<div class="km-ta-check-satir">
+                    <div class="km-ta-ikili">
+                        <button type="button" class="km-ta-ikili-dogru${durum==='dogru'?' aktif':''}" onclick="kmTaKriVer(${j},'dogru')" title="Doğru">✔</button>
+                        <button type="button" class="km-ta-ikili-hatali${hatali?' aktif':''}" onclick="kmTaKriVer(${j},'hatali')" title="Hatalı">✕</button>
+                    </div>
+                    <span class="km-ta-check-lbl${hatali?' hatali':''}">${esc(t)}</span>
+                    <input type="text" class="km-ta-check-not${hatali?' hata':''}" placeholder="${hatali?'Hata nedeni…':'not…'}" value="${esc(st.kn[j]||'')}" oninput="kmTaCheckNotVer(${j},this.value)">
+                </div>`;
             }).join('');
             let fotoHTML = f.foto !== null ? `<div class="km-ta-foto-alan"><label class="km-ta-foto"><span class="km-ta-kare">${st.foto?`<img src="${st.foto}">`:'📷'}</span><span class="km-ta-altyazi">${esc(f.foto)}</span><input type="file" accept="image/*" capture="environment" onchange="kmTaFotoVer(this)"></label></div>` : '';
             let r = KM_TA_REHBER[_kmTaYay], x = r[_kmTaRehSecili];
@@ -10555,7 +10578,7 @@ ${(function(){
             let adet = 0, top = 0, hasAnyData = false;
             let ilerHTML = list.map(function(fz, i) {
                 let s2 = kmTaD(i);
-                let kOran = Object.values(s2.k).filter(Boolean).length / fz.k.length;
+                let kOran = Object.values(s2.k).filter(function(v){ return v === 'dogru'; }).length / fz.k.length;
                 if(s2.puan) { top += (s2.puan/5)*70 + kOran*30; adet++; }
                 if(s2.puan || Object.values(s2.k).some(Boolean) || Object.values(s2.kn||{}).some(function(v){ return v && v.trim(); }) || (s2.not||'').trim() || s2.foto) hasAnyData = true;
                 return `<i class="${s2.puan?'dolu':''}"></i>`;
@@ -10628,7 +10651,7 @@ ${(function(){
         }
         function kmTaGit(i) { _kmTaAktifFaz = i; kmTeknikAnalizAnaCiz(); }
         function kmTaPuanVer(v) { let st = kmTaD(_kmTaAktifFaz); st.puan = st.puan===v?0:v; kmTeknikAnalizAnaCiz(); }
-        function kmTaKriVer(j, val) { kmTaD(_kmTaAktifFaz).k[j] = val; kmTeknikAnalizAnaCiz(); }
+        function kmTaKriVer(j, deger) { let d = kmTaD(_kmTaAktifFaz); d.k[j] = (d.k[j] === deger) ? null : deger; kmTeknikAnalizAnaCiz(); }
         function kmTaCheckNotVer(j, val) { kmTaD(_kmTaAktifFaz).kn[j] = val; }
         function kmTaNotVer(v) { kmTaD(_kmTaAktifFaz).not = v; }
         function kmTaFotoVer(inp) {
@@ -10657,15 +10680,32 @@ ${(function(){
             let fazlar = [], top = 0, adet = 0;
             list.forEach(function(f, i) {
                 let st = kmTaD(i);
-                let kOran = Object.values(st.k).filter(Boolean).length / f.k.length;
+                let kOran = Object.values(st.k).filter(function(v){ return v === 'dogru'; }).length / f.k.length;
                 if(st.puan) { top += (st.puan/5)*70 + kOran*30; adet++; }
-                fazlar.push({ ad: f.ad, puan: st.puan || 0, k: f.k.map(function(_,j){ return !!st.k[j]; }), kNot: f.k.map(function(_,j){ return st.kn[j] || ''; }), not: st.not || '', foto: st.foto || null });
+                fazlar.push({ ad: f.ad, puan: st.puan || 0, k: f.k.map(function(_,j){ return st.k[j] || null; }), kNot: f.k.map(function(_,j){ return st.kn[j] || ''; }), not: st.not || '', foto: st.foto || null });
             });
             let skor = adet ? Math.round(top/adet) : null;
             return { fazlar: fazlar, skor: skor };
         }
+        // "Bugün analizde kaydetme sorunu yaşadım" (2026-09-24, gerçek D1 kaydı incelenerek teşhis
+        // edildi) — Kaydet HER ZAMAN sihirbazı sıfırlıyordu (hiç uyarı yok), ve bir tek kutucuk
+        // işaretlemek yeterince buton aktifleştirdiği için (§43'teki "bir işlem bile yapsam kaydetsin"
+        // isteği) erken/yanlışlıkla bir tıklama TÜM ilerlemeyi sessizce siliyordu — koç 8 fazın hepsini
+        // yeniden doldurmak zorunda kalmıştı. Artık karne EKSİKSE (8 fazın hepsinde veri yoksa) önce
+        // onay isteniyor; tam dolu bir karne hâlâ tek tıkla, sorgusuz kaydediliyor.
         async function kmTaKaydet() {
-            let toplanan = kmTaFazlarTopla(), fazlar = toplanan.fazlar, skor = toplanan.skor;
+            let toplanan = kmTaFazlarTopla();
+            let doluSayisi = toplanan.fazlar.filter(function(f) {
+                return f.puan || f.k.some(Boolean) || (f.kNot || []).some(function(t) { return t && t.trim(); }) || (f.not || '').trim() || f.foto;
+            }).length;
+            if(doluSayisi < toplanan.fazlar.length) {
+                onayIste('Sadece <b>' + doluSayisi + '/' + toplanan.fazlar.length + '</b> faz için veri girildi. Kaydedince sihirbaz sıfırlanacak — <b>doldurulmamış fazlara geri dönüp devam edemeyeceksin.</b> Bu haliyle kaydedilsin mi?', function() { kmTaKaydetGerceklestir(toplanan); }, '✔ Evet, Bu Haliyle Kaydet');
+                return;
+            }
+            await kmTaKaydetGerceklestir(toplanan);
+        }
+        async function kmTaKaydetGerceklestir(toplanan) {
+            let fazlar = toplanan.fazlar, skor = toplanan.skor;
             try {
                 let r = await fetch('/api/teknik-analiz', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -10695,7 +10735,10 @@ ${(function(){
                     let checkHTML = (f.k || []).map(function(cv, j) {
                         let lbl = (etikFaz && etikFaz.k[j]) || ('Madde ' + (j + 1));
                         let notMetin = (f.kNot && f.kNot[j]) || '';
-                        return `<div style="display:flex; align-items:flex-start; gap:6px; font-size:11.5px; padding:2px 0;"><span style="flex-shrink:0;">${cv ? '✅' : '⬜'}</span><span>${esc(lbl)}${notMetin ? ` — <i style="color:#5b4c37;">${esc(notMetin)}</i>` : ''}</span></div>`;
+                        let durum = kmTaKV(cv);
+                        let ikon = durum === 'dogru' ? '✅' : (durum === 'hatali' ? '❌' : '⬜');
+                        let renk = durum === 'hatali' ? '#a33b2c' : '#5b4c37';
+                        return `<div style="display:flex; align-items:flex-start; gap:6px; font-size:11.5px; padding:2px 0;"><span style="flex-shrink:0;">${ikon}</span><span>${esc(lbl)}${notMetin ? ` — <i style="color:${renk};">${durum === 'hatali' ? 'Hata: ' : ''}${esc(notMetin)}</i>` : ''}</span></div>`;
                     }).join('');
                     return `<div class="km-ta-kart" style="margin-bottom:10px;">
                         <div class="km-ta-kart-ust"><div><h2 style="font-size:17px;">${esc(f.ad)}</h2></div><div class="km-ta-muhur" style="width:40px; height:40px;"><b style="font-size:13px;">${f.puan||'–'}</b></div></div>
@@ -10863,7 +10906,9 @@ ${(function(){
                     let checkSatirlari = (f.k || []).map(function(cv, j) {
                         let lbl = (etikFaz && etikFaz.k[j]) || ('Madde ' + (j + 1));
                         let notMetin = (f.kNot && f.kNot[j]) || '';
-                        return { cv: cv, satir: pdf.splitTextToSize(_trTranslit(lbl + (notMetin ? ' - ' + notMetin : '')), usableW - 20 - sagBosluk) };
+                        let durum = kmTaKV(cv);
+                        let onEk = durum === 'hatali' ? '[HATALI] ' : (durum === 'dogru' ? '[DOGRU] ' : '[ ] ');
+                        return { durum: durum, satir: pdf.splitTextToSize(_trTranslit(onEk + lbl + (notMetin ? (durum === 'hatali' ? ' - Hata: ' : ' - ') + notMetin : '')), usableW - 20 - sagBosluk) };
                     });
                     let checkYukseklik = checkSatirlari.reduce(function(top, c) { return top + c.satir.length * 4; }, 0);
                     let ipucuSatirlari = ipucuVar ? pdf.splitTextToSize(_trTranslit('Ipucu: ' + rehber.arast), usableW - 20 - sagBosluk) : [];
@@ -10887,9 +10932,12 @@ ${(function(){
                     pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(60, 50, 36);
                     checkSatirlari.forEach(function(c) {
                         pdf.setDrawColor(120, 105, 80); pdf.setLineWidth(0.35);
-                        if(c.cv) { pdf.setFillColor(renkFaz[0], renkFaz[1], renkFaz[2]); pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'F'); }
+                        if(c.durum === 'dogru') { pdf.setFillColor(111, 146, 87); pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'F'); }
+                        else if(c.durum === 'hatali') { pdf.setFillColor(163, 59, 44); pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'F'); }
                         else pdf.rect(marginX + 6, cy - 2.6, 2.6, 2.6, 'S');
+                        pdf.setTextColor(c.durum === 'hatali' ? 163 : 60, c.durum === 'hatali' ? 59 : 50, c.durum === 'hatali' ? 44 : 36);
                         pdf.text(c.satir, marginX + 10.5, cy);
+                        pdf.setTextColor(60, 50, 36);
                         cy += c.satir.length * 4;
                     });
                     if(notSatirlari.length) { pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8); pdf.setTextColor(91, 76, 55); pdf.text(notSatirlari, marginX + 6, cy); cy += notSatirlari.length * 4; }

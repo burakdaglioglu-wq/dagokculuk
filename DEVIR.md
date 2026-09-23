@@ -4729,3 +4729,60 @@ yerden bölünüyor (8 faz 2 sayfaya yayılıyor). 16 tema Oyunlar regresyonu + 
 (kaydet/PDF/detay) tekrar 0 hata.
 
 **Deploy durumu (44)**: Kullanıcı onayladı (2026-09-23), commit + push + deploy edildi.
+
+## 45. Teknik Analiz — "kaydetme sorunu" teşhisi ve düzeltmesi (2026-09-24, gece/hızlı iş)
+
+Kullanıcı: "bugün analizde kaydetme sorunu yaşadım". Canlı D1'de bugünün kayıtları incelendi (veri
+KAYBOLMAMIŞ/BOZULMAMIŞ — gerçek kök neden bir UX tuzağıydı):
+
+**Teşhis**: "MELEK PORSUK" için aynı gün 19 saniye arayla İKİ kayıt bulundu — ilki sadece 1. fazın 2/4
+kutucuğu işaretliyken (geri kalan 7 faz tamamen boş), ikincisi 8 fazın HEPSİ dolu ama hiç puan
+verilmemiş. Demek ki koç ilk denemede erken/yanlışlıkla Kaydet'e bastı, sihirbaz SESSİZCE sıfırlandı
+(§43'teki "bir işlem bile yapsam kaydetsin" isteğiyle buton artık tek kutucukla bile aktifti), ilerlemesi
+silindi, 8 fazı BAŞTAN doldurmak zorunda kaldı — "kaydetme sorunu" hissi buradan geliyordu.
+
+**Düzeltme**: `kmTaKaydet()` artık kaydetmeden önce kontrol ediyor — karnenin 8 fazından biri bile boşsa
+(`kmTaFazlarTopla` çıktısında dolu faz sayısı < 8), gerçek bir onay istiyor: "Sadece N/8 faz için veri
+girildi. Kaydedince sihirbaz sıfırlanacak — doldurulmamış fazlara geri dönüp devam edemeyeceksin. Bu
+haliyle kaydedilsin mi?" (`onayIste`, app-wide paylaşılan onay modalı). İptal edilirse hiçbir şey
+kaydedilmez VE sihirbazdaki veri (kutucuklar/notlar/fotoğraf) olduğu gibi kalır. Tam dolu (8/8) bir karne
+hâlâ tek tıkla, sorgusuz kaydediliyor — §43'teki "her işlemde kaydetsin" davranışı korunuyor, sadece
+YANLIŞLIKLA erken kaydetme artık sessiz veri kaybına yol açmıyor.
+
+**Gerçek testte doğrulanan**: 1 faz dolu → Kaydet → onay modalı çıktı, metin doğru (1/8); İptal → aynı
+kutucuklar hâlâ işaretli duruyordu (veri kaybı yok); 8/8 faz dolduruldu → Kaydet → onay modalı ÇIKMADI,
+direkt kaydedildi ve sihirbaz "1. ANALİZ" ile sıfırlandı. 16 tema Oyunlar regresyonu 0 hata.
+
+**Not**: bugünkü iki gerçek kayıt (Melek Porsuk, 2026-09-23) canlıda duruyor — ilk (sparse, 1/8 faz)
+muhtemelen istenmeyen erken kayıt, ikinci (8/8 faz, puansız) muhtemelen asıl niyet edilen kayıt.
+Kullanıcıya sorulmadan silinmedi.
+
+**Deploy durumu (45)**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
+
+## 46. Teknik Analiz — kontrol listesi "Doğru/Hatalı" ikili seçenek (2026-09-24)
+
+Kullanıcı: "formaları tersine yapmak lazım, bırakış hatalı veya doğru gibi ikili seçenekli olsun,
+hatada hata nedenini yazabileyim". Eskiden kontrol listesi maddeleri TEK bir belirsiz kutucuktu
+(işaretli/işaretsiz — işaretsiz "yanlış" mı yoksa "hiç bakılmadı" mı belli değildi). Artık üç durumlu:
+**değerlendirilmedi (nötr)** / **✔ Doğru** / **✕ Hatalı** — iki ayrı buton, karşılıklı dışlayıcı
+(aynısına tekrar tıklamak nötrlüğe döndürür).
+
+- **Veri modeli**: `st.k[j]` artık boolean değil, `'dogru' | 'hatali' | null`. Kaydedilen `fazlar[i].k[j]`
+  aynı üç durumu D1'e yazıyor (şema değişmedi, `fazlar_json` genel JSON). **Geriye dönük uyumluluk**:
+  eski kayıtlardaki `true` değerleri `kmTaKV()` normalize edici ile 'dogru' olarak okunuyor (detay modalı
+  ve PDF'te) — bugünkü eski kayıtlar (Melek Porsuk dahil) bozulmadan görüntülenmeye devam ediyor.
+- **"Hatalı" seçilince** o maddenin not alanı otomatik "Hata nedeni…" placeholder'ına ve kırmızı alt
+  çizgiye dönüyor — koç neden yanlış olduğunu doğrudan oraya yazıyor.
+- Puan hesaplaması (`kOran`, genel skor formülünün %30'luk kısmı) SADECE 'dogru' işaretli maddeleri
+  sayıyor — 'hatali' işaretli bir madde artık "işaretli" gibi puana katkı vermiyor (önceki checkbox
+  modelinde hem "doğru" hem "yanlış" aynı şekilde puanı yukarı çekiyordu, bu mantık hatası da düzeldi).
+- **Detay modalı**: ✅/❌/⬜ + hatalıysa "— Hata: <neden>" kırmızı italik.
+- **PDF**: madde kutucuğu yeşil (dolu, [DOGRU]) / kırmızı (dolu, [HATALI], metin de kırmızı) / boş
+  çerçeveli (değerlendirilmedi, [ ]) olarak çiziliyor; hata nedeni "- Hata: ..." olarak ekleniyor.
+
+**Gerçek testte doğrulanan**: bir maddeyi Doğru, başka bir maddeyi Hatalı + "dirsek düşük kaldı" notuyla
+işaretleyip kaydettim; D1'de `k:["dogru","hatali",null,null]`, `kNot:["","dirsek dusuk kaldi","",""]`
+olarak doğru yazıldı; aynı maddeye tekrar tıklayınca nötrlendiği doğrulandı; detay modalında ve PDF'te
+"Hata: dirsek dusuk kaldi" kırmızı olarak göründü. 390px'te taşma yok. 16 tema Oyunlar regresyonu 0 hata.
+
+**Deploy durumu (45+46)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
