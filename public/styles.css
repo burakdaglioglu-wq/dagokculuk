@@ -226,14 +226,20 @@
            Üç mockup denendi (Artifact canvas, gerçek app CSS'i değil — sıfırdan çizilmiş .dc.html
            örnekleri): Sabah Sisi (açık/mat), Akşam Salonu (koyu/sıcak), Buzlu Cam (açık şeftali/lavanta/
            nane mesh zemin + yarı saydam bulanık kartlar). Kullanıcı "buzlu cam güzelmiş bütün uygulamayı
-           o tarz yapalım" dedi — bu FAZ 1: SADECE Karışık Sınıf (Oyunlar/#km-oyun-wrap HARİÇ, kullanıcının
-           önceki net talimatı "oyun katmanı kalsın" hâlâ geçerli + orada backdrop-filter gerçek animasyon
-           takılmasına yol açmıştı, bkz. DEVIR.md). Sonraki fazlarda ana uygulamanın geri kalanına taşınacak.
-           STRATEJİ: --accent'i mora çekip --text-on-accent-dark'ı beyaza çevirmek, KM_ARAC_LISTESI'ndeki
-           "birincil" (Skor Gir) kartını app.js'e hiç dokunmadan otomatik doğru boyuyor (zaten
-           var(--accent)/var(--text-on-accent-dark) okuyor). .card'ın backdrop-filter'ı SADECE bu scope'ta
-           — Oyunlar'daki "backdrop-filter YOK" kuralına dokunulmuyor, id-scope zaten ayrık. */
-        #karisik-platform {
+           o tarz yapalım" dedi. Oyunlar/#km-oyun-wrap HARİÇ (kullanıcının önceki net talimatı "oyun katmanı
+           kalsın" hâlâ geçerli + orada backdrop-filter gerçek animasyon takılmasına yol açmıştı, bkz.
+           DEVIR.md). STRATEJİ: --accent'i mora çekip --text-on-accent-dark'ı beyaza çevirmek,
+           KM_ARAC_LISTESI'ndeki "birincil" (Skor Gir) kartını app.js'e hiç dokunmadan otomatik doğru
+           boyuyor (zaten var(--accent)/var(--text-on-accent-dark) okuyor). .card'ın backdrop-filter'ı
+           SADECE bu scope'ta — Oyunlar'daki "backdrop-filter YOK" kuralına dokunulmuyor, id-scope zaten
+           ayrık.
+           EK (aynı gün, sonra): kullanıcı ekran görüntüsü gönderip "BUNUN DARK MODUNU DA YAP" dedi — bu
+           blok o zamana kadar body.light-theme/koyu ayrımı GÖZETMEDEN (id-scope tek başına) her zaman
+           AÇIK sürümü gösteriyordu, ana uygulama dark Buzlu Cam'a kavuşsa bile Karışık Sınıf hep açık
+           kalıyordu. Şimdi aynı ana uygulama koyu paletiyle (--bg-main:#15121F, --accent:#8B7FFF vb.,
+           bkz. :root'taki "Buzlu Cam — KOYU sürüm" notu) body.light-theme/body:not(.light-theme) olarak
+           ikiye ayrıldı — kullanıcı "🌙/☀️ Tema" ile hangisini seçerse Karışık Sınıf da onu takip ediyor. */
+        body.light-theme #karisik-platform {
             --bg-main: #F3F1F9;
             --border-color: rgba(38, 36, 71, 0.12);
             --surface-0: var(--bg-main);
@@ -260,39 +266,72 @@
                 var(--bg-main) !important;
             background-attachment: fixed, fixed, fixed, fixed;
         }
-        /* Kartlar: yuvarlak köşe + yarı saydam beyaz dolgu + arkadaki mesh'i bulanıklaştıran
-           backdrop-filter — gerçek "buzlu cam" (düz yarı saydam renk tek başına arkada bulanan bir
-           şey olmadan cam gibi durmuyor, mesh zemin tam da bunun için var). */
-        #karisik-platform .card, #karisik-platform .adm-btn, #karisik-platform .adm-stat {
-            border-radius: 22px; box-shadow: 0 18px 44px -26px rgba(60, 50, 110, 0.32);
+        body:not(.light-theme) #karisik-platform {
+            --bg-main: #15121F;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --surface-0: var(--bg-main);
+            --surface-border: var(--border-color);
+            --accent-orange: #8B7FFF;
+            --accent: #8B7FFF;
+            --accent-strong: #A79AFF;
+            --accent-soft: rgba(139, 127, 255, 0.18);
+            --text-on-accent: #FFFFFF;
+            --text-on-accent-dark: #FFFFFF;
+            --bg-panel: rgba(32, 28, 48, 0.68);
+            --text-main: #F1EEF7;
+            --text-muted: #ACA3C4;
+            --font-sans: 'Plus Jakarta Sans', 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(620px 460px at 6% 4%, rgba(255,205,180,0.14), transparent 70%),
+                radial-gradient(680px 520px at 97% 14%, rgba(196,186,255,0.16), transparent 70%),
+                radial-gradient(760px 460px at 46% 106%, rgba(178,232,214,0.12), transparent 70%),
+                var(--bg-main) !important;
+            background-attachment: fixed, fixed, fixed, fixed;
         }
+        /* Kartlar: yuvarlak köşe + yarı saydam dolgu + arkadaki mesh'i bulanıklaştıran backdrop-filter —
+           gerçek "buzlu cam" (düz yarı saydam renk tek başına arkada bulanan bir şey olmadan cam gibi
+           durmuyor, mesh zemin tam da bunun için var). Açık/koyu SADECE renk değerlerinde ayrışıyor. */
+        #karisik-platform .card, #karisik-platform .adm-btn, #karisik-platform .adm-stat {
+            border-radius: 22px;
+        }
+        body.light-theme #karisik-platform .card, body.light-theme #karisik-platform .adm-btn, body.light-theme #karisik-platform .adm-stat { box-shadow: 0 18px 44px -26px rgba(60, 50, 110, 0.32); }
+        body:not(.light-theme) #karisik-platform .card, body:not(.light-theme) #karisik-platform .adm-btn, body:not(.light-theme) #karisik-platform .adm-stat { box-shadow: 0 18px 44px -26px rgba(0, 0, 0, 0.5); }
         #karisik-platform .card {
-            background: rgba(255, 255, 255, 0.58);
             backdrop-filter: blur(20px) saturate(1.3);
             -webkit-backdrop-filter: blur(20px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.85);
         }
-        #karisik-platform .km-arac-izgara .card { box-shadow: 0 14px 34px -22px rgba(60, 50, 110, 0.26); }
+        body.light-theme #karisik-platform .card { background: rgba(255, 255, 255, 0.58); border: 1px solid rgba(255, 255, 255, 0.85); }
+        body:not(.light-theme) #karisik-platform .card { background: rgba(32, 28, 48, 0.62); border: 1px solid rgba(255, 255, 255, 0.10); }
+        body.light-theme #karisik-platform .km-arac-izgara .card { box-shadow: 0 14px 34px -22px rgba(60, 50, 110, 0.26); }
+        body:not(.light-theme) #karisik-platform .km-arac-izgara .card { box-shadow: 0 14px 34px -22px rgba(0, 0, 0, 0.4); }
         #karisik-platform .adm-btn { box-shadow: none; }
         /* .btn'in varsayılan (birincil OLMAYAN) hali eskiden koyu zemin varsayıyordu — açık zeminde
            görünmez/okunmaz oluyordu (gerçek ekran görüntüsünde "← Karışık Sınıf" kayboluyordu). Kartlarla
-           AYNI cam dili: --bg-panel zaten yarı saydam beyaza çekildi (yukarıda), burada sadece kenarlık/
-           metin ekleniyor. */
+           AYNI cam dili: --bg-panel zaten yarı saydam çekildi (yukarıda, temaya göre), burada sadece
+           kenarlık/metin ekleniyor. */
         #karisik-platform .btn:not(.btn-primary):not(.btn-danger) {
-            background: var(--bg-panel); color: var(--text-main); border-color: rgba(38,36,71,.10);
+            background: var(--bg-panel); color: var(--text-main);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         }
-        #karisik-platform .adm-input { background: #FFFFFF; color: #262447; border-color: rgba(38,36,71,.14); }
-        #karisik-platform .adm-input:focus { background: #FFFFFF; border-color: var(--accent); }
-        #karisik-platform .adm-input::placeholder { color: rgba(38,36,71,.4); }
+        body.light-theme #karisik-platform .btn:not(.btn-primary):not(.btn-danger) { border-color: rgba(38,36,71,.10); }
+        body:not(.light-theme) #karisik-platform .btn:not(.btn-primary):not(.btn-danger) { border-color: rgba(255,255,255,.10); }
+        body.light-theme #karisik-platform .adm-input { background: #FFFFFF; color: #262447; border-color: rgba(38,36,71,.14); }
+        body.light-theme #karisik-platform .adm-input:focus { background: #FFFFFF; border-color: var(--accent); }
+        body.light-theme #karisik-platform .adm-input::placeholder { color: rgba(38,36,71,.4); }
+        body:not(.light-theme) #karisik-platform .adm-input { background: rgba(255,255,255,.08); color: #F1EEF7; border-color: rgba(255,255,255,.14); }
+        body:not(.light-theme) #karisik-platform .adm-input:focus { background: rgba(255,255,255,.11); border-color: var(--accent); }
+        body:not(.light-theme) #karisik-platform .adm-input::placeholder { color: rgba(241,238,247,.4); }
         /* Skor ekranının sporcu kartları (.card DEĞİL — kmSkorCiz'de elle kurulan, lig rengiyle ~%5
            opaklıkta boyanan eski kartlar, bkz. app.js data-km-skor-g) inline stil olduğu için sadece
            !important ile ezilebiliyor, BİLİNÇLİ ve dar kapsamlı bir istisna — .card ile aynı cam dili. */
         #karisik-platform [data-km-skor-g] {
-            background: rgba(255, 255, 255, 0.58) !important;
             backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
         }
-        #karisik-platform ::-webkit-scrollbar-thumb { background: rgba(38, 36, 71, 0.18); }
+        body.light-theme #karisik-platform [data-km-skor-g] { background: rgba(255, 255, 255, 0.58) !important; }
+        body:not(.light-theme) #karisik-platform [data-km-skor-g] { background: rgba(32, 28, 48, 0.62) !important; }
+        body.light-theme #karisik-platform ::-webkit-scrollbar-thumb { background: rgba(38, 36, 71, 0.18); }
+        body:not(.light-theme) #karisik-platform ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); }
 
         .seg { display: flex; gap: 2px; background: var(--surface-2); padding: 2px; border-radius: var(--radius-md); }
         .seg-btn {
