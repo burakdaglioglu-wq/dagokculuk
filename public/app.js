@@ -11644,6 +11644,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="kehanet"]{ --bg:#0f0d1a; --panel:#181425; --panel-hi:#221c33; --line:#3a2f55; --ink:#f3eeff; --ink-dim:#c9bce6; --ink-faint:#7f6fa8; --a1:#a78bfa; --a2:#7dd3fc; --a3:#ffd23f; --a4:#f472b6; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="kule"]{ --bg:#0d1218; --panel:#161d26; --panel-hi:#1f2833; --line:#34424f; --ink:#f2f6fa; --ink-dim:#b8c6d4; --ink-faint:#6f8294; --a1:#c9a876; --a2:#8c7355; --a3:#7dd3fc; --a4:#ff8a3d; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="canavar"]{ --bg:#0b0712; --panel:#150d1f; --panel-hi:#1f1430; --line:#3a2a52; --ink:#f6efff; --ink-dim:#cbb8e6; --ink-faint:#7f6a9e; --a1:#ffd23f; --a2:#ff5f3d; --a3:#7dd3fc; --a4:#c77dff; --a5:#3ddc97; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="yukselis"]{ --bg:#06080f; --panel:#0b0f18; --panel-hi:#121826; --line:#1c2636; --ink:#e8eef7; --ink-dim:#a9b7cc; --ink-faint:#5d6b82; --a1:#22d3a0; --a2:#ff5470; --a3:#5fb8ff; --a4:#f5c451; --a5:#a78bfa; --font-display:'Exo 2',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
 
@@ -11713,7 +11714,8 @@ ${(function(){
 #km-oyun-wrap[data-tema="kehanet"] #km-oyun-panel-kehanet,
 #km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime,
 #km-oyun-wrap[data-tema="kule"] #km-oyun-panel-kule,
-#km-oyun-wrap[data-tema="canavar"] #km-oyun-panel-canavar { display:flex; }
+#km-oyun-wrap[data-tema="canavar"] #km-oyun-panel-canavar,
+#km-oyun-wrap[data-tema="yukselis"] #km-oyun-panel-yukselis { display:flex; }
 /* KÖK NEDEN DÜZELTMESİ (2026-09-18) — bu kural eskiden ".km-oyun-panel svg" idi (HERHANGİ derinlikte
    torun), bu yüzden panel içine gömülü küçük ikon SVG'lerini (Kehanet'in uyarı/mesafe/alev ikonları,
    Gizli Kelime'nin bilgi kartı ikonu) yakalayıp TÜM PANELİ kaplayacak şekilde büyütüyordu — iki ayrı
@@ -12006,6 +12008,67 @@ ${(function(){
 .km-cnv-hasar-yazi.kritik{ font-size:44px; color:#ffd23f; text-shadow:0 0 18px #ff8a3d, 0 3px 0 rgba(0,0,0,.85); }
 @media (max-width:600px){ .km-cnv-isim{ padding-left:0; padding-top:46px; justify-content:flex-start; gap:6px; } .km-cnv-isim b{ font-size:15px; } .km-cnv-yeni-btn{ top:auto; bottom:72px; right:6px; } .km-cnv-katki{ max-width:120px; font-size:10px; } .km-cnv-ganimet{ min-width:80px; font-size:10px; } .km-cnv-ganimet-ikonlar{ font-size:14px; } .km-cnv-yeni-btn{ top:60px; font-size:9.5px; padding:4px 8px; } .km-cnv-kritik-yazi{ font-size:28px; } .km-cnv-hasar-yazi{ font-size:22px; } .km-cnv-hasar-yazi.kritik{ font-size:30px; } }
 @media (prefers-reduced-motion: reduce){ .km-cnv-nefes, .km-cnv-goz, .km-cnv-kanat, .km-cnv-aura, .km-cnv-alev, .km-cnv-lav, .km-cnv-catlak, .km-cnv-golge-tutam, .km-cnv-kar, .km-cnv-nefes-duman, .km-cnv-okcu.km-cnv-aktif .km-cnv-okcu-halka, .km-cnv-evre-sendeliyor .km-cnv-evre{ animation:none; } }
+/* 📈 YÜKSELİŞ (2026-09-24) — yetişkin modu: terminal estetiği, tabular sayılar, yeşil/kırmızı mumlar.
+   Amblemler: emoji gri-tonlu + metalik halka (renkli karikatür değil). */
+.km-oyun-panel-yukselis{ padding:0; background:#06080f; }
+.km-yks-amblem{ display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:radial-gradient(circle at 35% 30%, #3a4152, #14171f 70%); border:2px solid var(--c,#9aa); box-shadow:0 0 0 1px rgba(255,255,255,.08), inset 0 0 6px rgba(0,0,0,.7), 0 0 8px color-mix(in srgb, var(--c,#9aa) 40%, transparent); flex-shrink:0; }
+.km-yks-amblem > span{ filter:grayscale(1) brightness(1.35) contrast(1.15); line-height:1; }
+.km-yks-ticker{ position:absolute; top:8px; left:236px; right:8px; z-index:1; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+.km-yks-ticker::-webkit-scrollbar{ display:none; }
+.km-yks-tick{ display:inline-flex; align-items:center; gap:6px; flex-shrink:0; font-family:'Rajdhani',var(--font-body); font-weight:700; font-size:11px; letter-spacing:.06em; color:var(--ink-dim); background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:8px; padding:3px 8px 3px 4px; cursor:pointer; font-variant-numeric:tabular-nums; }
+.km-yks-tick.aktif{ border-color:var(--a3); background:rgba(95,184,255,.08); color:var(--ink); }
+.km-yks-tick-deger{ color:var(--ink); }
+.km-yks-tick.up .km-yks-tick-degisim{ color:#22d3a0; } .km-yks-tick.down .km-yks-tick-degisim{ color:#ff5470; }
+.km-yks-grid{ stroke:rgba(255,255,255,.06); stroke-width:1; }
+.km-yks-eksen{ fill:var(--ink-faint); font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600; }
+.km-yks-mum line{ stroke-width:1.5; } .km-yks-mum rect{ stroke-width:1; }
+.km-yks-mum.up line, .km-yks-mum.up rect{ stroke:#22d3a0; } .km-yks-mum.up rect{ fill:#22d3a0; }
+.km-yks-mum.down line, .km-yks-mum.down rect{ stroke:#ff5470; } .km-yks-mum.down rect{ fill:#ff5470; }
+.km-yks-mum.km-yks-yeni rect{ transform-box:fill-box; transform-origin:50% 100%; animation:kmYksMum .5s cubic-bezier(.2,.8,.3,1); }
+@keyframes kmYksMum{ from{ transform:scaleY(0); } to{ transform:scaleY(1); } }
+.km-yks-ma{ fill:none; stroke:#5fb8ff; stroke-width:1.5; opacity:.8; }
+.km-yks-zirve-cizgi{ stroke:#f5c451; stroke-width:1; stroke-dasharray:5 5; opacity:.8; }
+.km-yks-zirve-etiket{ fill:#f5c451; font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em; }
+.km-yks-taban{ stroke:rgba(255,255,255,.2); stroke-dasharray:3 4; }
+.km-yks-bos{ fill:var(--ink-faint); font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:600; }
+.km-yks-son-cizgi{ stroke:rgba(255,255,255,.25); stroke-dasharray:2 4; }
+.km-yks-son-etiket rect{ fill:#22d3a0; } .km-yks-son-etiket.down rect{ fill:#ff5470; }
+.km-yks-son-etiket text{ fill:#06080f; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; }
+.km-yks-son-etiket.km-yks-flas{ animation:kmYksFlas .9s ease-out; }
+@keyframes kmYksFlas{ 0%{ filter:brightness(2.2); } 100%{ filter:brightness(1); } }
+.km-yks-kart{ position:absolute; top:50px; right:8px; width:min(36%, 290px); z-index:1; background:rgba(6,8,15,.84); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Rajdhani',var(--font-body); font-variant-numeric:tabular-nums; pointer-events:none; }
+.km-yks-baslik{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.km-yks-baslik-ad{ font-weight:700; font-size:14px; color:var(--ink); line-height:1.1; }
+.km-yks-baslik-alt{ font-size:10px; letter-spacing:.08em; color:var(--ink-faint); }
+.km-yks-kart-ust{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+.km-yks-kart-lbl{ font-size:10px; letter-spacing:.14em; color:var(--ink-faint); font-weight:700; }
+.km-yks-kart-endeks{ font-family:'Exo 2',var(--font-display); font-weight:800; font-size:26px; color:var(--ink); line-height:1; }
+.km-yks-kart-gun{ font-size:12px; font-weight:700; color:var(--ink-dim); }
+.km-yks-kart .up{ color:#22d3a0; } .km-yks-kart .down{ color:#ff5470; }
+.km-yks-kart-satir{ display:flex; justify-content:space-between; gap:10px; font-size:11.5px; padding:2px 0; color:var(--ink-dim); }
+.km-yks-kart-satir b{ color:var(--ink); font-weight:700; text-align:right; }
+.km-yks-kart-satir i{ font-style:normal; color:var(--ink-faint); font-weight:600; font-size:10px; }
+.km-yks-kart-grup b{ font-size:10.5px; }
+.km-yks-piyasa{ position:absolute; left:12px; bottom:6px; z-index:1; display:flex; gap:14px; flex-wrap:wrap; font-family:'Rajdhani',var(--font-body); font-size:11px; font-weight:700; color:var(--ink-dim); pointer-events:none; font-variant-numeric:tabular-nums; }
+.km-yks-piyasa i{ font-style:normal; font-size:9px; letter-spacing:.14em; color:var(--ink-faint); margin-right:4px; }
+.km-yks-ucan{ position:absolute; font-family:'Exo 2',var(--font-display); font-weight:800; font-size:30px; pointer-events:none; white-space:nowrap; text-shadow:0 2px 8px rgba(0,0,0,.8); }
+.km-yks-ucan.up{ color:#22d3a0; } .km-yks-ucan.down{ color:#ff5470; }
+.km-yks-amblem-kutu .km-oyun-karakter-sec{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+@media (max-width:600px){ .km-yks-ticker{ top:auto; bottom:28px; left:8px; } .km-yks-kart{ top:52px; width:46%; padding:6px 8px; } .km-yks-kart-endeks{ font-size:20px; } .km-yks-kart-satir{ font-size:10px; } .km-yks-piyasa{ font-size:10px; gap:8px; } }
+@media (prefers-reduced-motion: reduce){ .km-yks-mum.km-yks-yeni rect, .km-yks-son-etiket.km-yks-flas{ animation:none; } }
+/* 🎯 Dock hedef-giriş modu (2026-09-24) — pad'in yanında ikinci giriş yolu: ok nereye düştüyse oraya
+   dokun, halka değeri (ve konum) alınır. Konumlar gerçek kayda (detayliOklar → ısı haritası) gider. */
+.km-oyun-giris-toggle{ margin-right:6px; }
+.km-oyun-hedefgiris{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+.km-oyun-hedefgiris svg{ width:min(46vw, 230px); height:auto; aspect-ratio:1; border-radius:12px; background:#15171d; cursor:crosshair; touch-action:manipulation; display:block; }
+.km-oyun-hedefgiris.dolu svg{ opacity:.45; cursor:not-allowed; }
+.km-oyun-hedef-ok{ pointer-events:none; }
+.km-oyun-hedefgiris-ipucu{ font-size:9px; color:var(--ink-faint); font-weight:700; letter-spacing:.04em; text-align:center; }
+#km-oyun-wrap:fullscreen .km-oyun-hedefgiris svg{ width:min(40vw, 320px); }
+/* Hedef modunda dock'un mobil max-height sınırı (190-210px) hedef yüzünü kaydırma alanına gömüyordu
+   (gerçek 390px testinde dokunuşlar hiç kaydolmadı) — id seçicisi medya kurallarını yener. */
+#km-oyun-wrap .km-oyun-dok.km-oyun-dok-hedef{ max-height:min(88%, 460px); }
+@media (max-width:600px){ .km-oyun-hedefgiris svg{ width:min(56vw, 200px); } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
    liderlik sol-üst köşede kendi başına duruyordu ve bazen karakterlerin üstüne geliyordu; Sporcu Seç
@@ -13009,6 +13072,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         let _kmOyunAktifTema = 'zirve';
         let _kmOyunAktifIndex = 0;
         let _kmOyunSeriGirisleri = [];
+        // Dock hedef-giriş modu (2026-09-24): _kmOyunSeriGirisleri ile PARALEL — pad'den girilen ok için
+        // null, hedefe dokunarak girilen ok için {x,y} (normal Skor ekranıyla AYNI viewBox birimi, -110..110).
+        let _kmOyunSeriKonumlari = [], _kmOyunGirisModu = 'rakam';
         let _kmOyunKilit = false;
         let _kmOyunDurum = {};
         let _kmOyunYuklenenKonum;
@@ -13180,6 +13246,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Ortak Canavar (2026-09-24) — frac/yol YOK, Kule'nin paylaşılan-sınıf-durumu emsali. Bkz.
             // kmOyunAnimateCanavar ve üstündeki blok.
             canavar: { ad: 'Ortak Canavar', ikon: '🐉', renkler: ['#ffd23f', '#ff5f3d', '#7dd3fc', '#c77dff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — tüm sınıf TEK bir canavara karşı: her seri toplamı kadar hasar verir, %90+ seri KRİTİK vuruştur. Canavar yenilince daha güçlüsü gelir.', btn: '⚔️ Vur', finish: '', cp: '', birim: 'hasar', bitis: '',
+                surprizler: [] },
+            // Yükseliş (2026-09-24) — YETİŞKİN modu: maskot yok, mum grafiği/istatistik. Bkz. kmOyunAnimateYukselis.
+            yukselis: { ad: 'Yükseliş', ikon: '📈', renkler: ['#22d3a0', '#5fb8ff', '#f5c451', '#a78bfa', '#ff5470', '#38bdf8'], aciklama: 'Yetişkin modu — sporcular gerçekten atış yapar, siz sonucu girersiniz; her sporcu bir hisse gibi: seri kendi ortalamasını geçerse endeks yükselir, altında kalırsa düşer. Mum grafiği, zirve, tutarlılık ve grup istatistikleri.', btn: '📈 İşle', finish: '', cp: '', birim: 'endeks', bitis: '',
                 surprizler: [] },
         };
 
@@ -13603,6 +13672,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'futbol') kmOyunResyncFutbol();
             else if(tid === 'futboltakim') kmOyunResyncFutbolTakim();
             else if(tid === 'canavar') kmOyunCanavarCiz();
+            else if(tid === 'yukselis') kmOyunYukselisCiz();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -13629,6 +13699,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'gizlikelime') kmOyunSahneKurGizliKelime();
             else if(tid === 'kule') kmOyunSahneKurKule();
             else if(tid === 'canavar') kmOyunSahneKurCanavar();
+            else if(tid === 'yukselis') kmOyunSahneKurYukselis();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
         }
@@ -13656,6 +13727,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurGizliKelime();
             kmOyunSahneKurKule();
             kmOyunSahneKurCanavar();
+            kmOyunSahneKurYukselis();
             kmOyunKabukGuncelle();
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
@@ -13822,6 +13894,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // kmOyunBayrakAnahtari'nin AYNI anahtar kalıbı, sadece string değer taşıyor.
         function kmOyunDokAyarAnahtari(ad) { return kmOyunBayrakAnahtari('dok' + ad); }
         function kmOyunDokAyarYukle() {
+            kmOyunGirisModuYukle();
             try { _kmOyunDokAcikMi = localStorage.getItem(kmOyunDokAyarAnahtari('acik')) !== '0'; } catch(e) { _kmOyunDokAcikMi = true; } // varsayılan AÇIK
             try { let k = localStorage.getItem(kmOyunDokAyarAnahtari('konum')); _kmOyunDokKonum = (k === 'sol' || k === 'sag' || k === 'serbest') ? k : 'orta'; } catch(e) { _kmOyunDokKonum = 'orta'; }
             try { _kmOyunDokBoyut = localStorage.getItem(kmOyunDokAyarAnahtari('boyut')) === 'kucuk' ? 'kucuk' : 'normal'; } catch(e) { _kmOyunDokBoyut = 'normal'; }
@@ -14078,6 +14151,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             'canavar-oldu': ['Yere serdiler!', 'Sınıf birlikte başardı!', 'Canavar devrildi!', 'İşte takım gücü!'],
             'canavar-geliyor': ['Dikkat!', 'Yer sarsılıyor!', 'Daha güçlüsü geliyor!'],
             'canavar-evre': ['Sıkı durun!', 'Şimdi zamanı!', 'Devam edin!'],
+            'yukselis-zirve': ['Yeni bir zirve!', 'Rekor kırıldı!', 'Tarihi seviye!'],
+            'yukselis-guclu': ['Güçlü bir seri!', 'Piyasa yükselişte!', 'Sağlam performans!'],
         };
         function kmOyunSpikerRastgele(kategori) {
             let havuz = KM_SPIKER_CUMLE[kategori]; if(!havuz) return '';
@@ -14834,6 +14909,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             <div class="km-cnv-flash" id="km-cnv-flash"></div>
             <div class="km-cnv-kritik-yazi" id="km-cnv-kritik-yazi">KRİTİK!</div>
         </div>`;
+        // 📈 Yükseliş paneli (2026-09-24) — grafik SVG (sol %63), sağda istatistik kartı, üstte ticker
+        // (sol üstteki paylaşılan "Sırada" rozeti için 236px sol pay), altta piyasa özeti.
+        if(tid === 'yukselis') return `<div class="km-oyun-panel km-oyun-panel-yukselis" id="km-oyun-panel-yukselis">
+            <svg id="km-oyun-svg-yukselis" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
+                <defs><linearGradient id="km-yks-zemin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1020"/><stop offset="1" stop-color="#06080f"/></linearGradient></defs>
+                <rect width="1200" height="440" fill="url(#km-yks-zemin)"/>
+                <g id="km-yks-grafik"></g>
+            </svg>
+            <div class="km-yks-ticker" id="km-yks-ticker"></div>
+            <div class="km-yks-kart"><div class="km-yks-baslik" id="km-yks-baslik"></div><div id="km-yks-kart"></div></div>
+            <div class="km-yks-piyasa" id="km-yks-piyasa"></div>
+        </div>`;
         }
 
         function kmOyunHTML() {
@@ -14865,7 +14952,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                      olarak görünür. .km-arac-izgara/.card Faz 2/7'den — burada yeni stil yazılmadı. -->
                 <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
                 <div id="km-oyun-govde">
-                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar') ? 'display:none;' : ''}">
+                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar' || _kmOyunAktifTema === 'yukselis') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
                         <button class="${_kmOyunTakimModu ? 'aktif' : ''}" data-takim="1" onclick="kmOyunModSec(true)">🤝 Takım</button>
@@ -14881,7 +14968,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}${kmOyunPanelHTML('yukselis')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
@@ -14942,14 +15029,32 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <div class="km-oyun-dok-icerik" id="km-oyun-dok-icerik">
                             <div class="km-oyun-dok-lbl" id="km-oyun-ok-toggle-row" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                 <span id="km-oyun-ok-lbl">Bu Serinin Puanları — ${_kmOyunOkSayisi} Ok</span>
-                                <div class="km-oyun-ok-toggle">
-                                    <button class="${_kmOyunOkSayisi === 3 ? 'aktif' : ''}" data-n="3" onclick="kmOyunOkSayisiSec(3)">3 Ok</button>
-                                    <button class="${_kmOyunOkSayisi === 6 ? 'aktif' : ''}" data-n="6" onclick="kmOyunOkSayisiSec(6)">6 Ok</button>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <div class="km-oyun-ok-toggle km-oyun-giris-toggle" title="Giriş yöntemi: rakam tuşları ya da hedefe dokunma">
+                                        <button class="${_kmOyunGirisModu !== 'hedef' ? 'aktif' : ''}" data-giris="rakam" onclick="kmOyunGirisModuSec('rakam')">123</button>
+                                        <button class="${_kmOyunGirisModu === 'hedef' ? 'aktif' : ''}" data-giris="hedef" onclick="kmOyunGirisModuSec('hedef')">🎯</button>
+                                    </div>
+                                    <div class="km-oyun-ok-toggle">
+                                        <button class="${_kmOyunOkSayisi === 3 ? 'aktif' : ''}" data-n="3" onclick="kmOyunOkSayisiSec(3)">3 Ok</button>
+                                        <button class="${_kmOyunOkSayisi === 6 ? 'aktif' : ''}" data-n="6" onclick="kmOyunOkSayisiSec(6)">6 Ok</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="km-oyun-dok-row">
                                 <div class="km-oyun-slots" id="km-oyun-slotlar"></div>
                                 <div class="km-oyun-pad" id="km-oyun-pad"></div>
+                                <div class="km-oyun-hedefgiris" id="km-oyun-hedefgiris" style="display:none;">
+                                    <svg id="km-oyun-hedef-svg" viewBox="-110 -110 220 220" onclick="kmOyunHedefTiklandi(event)">
+                                        <circle r="100" fill="#f5f5f5" stroke="#1f1f24" stroke-width=".6"/><circle r="90" fill="#f5f5f5" stroke="#1f1f24" stroke-width=".6"/>
+                                        <circle r="80" fill="#1f1f24" stroke="#f5f5f5" stroke-width=".6"/><circle r="70" fill="#1f1f24" stroke="#f5f5f5" stroke-width=".6"/>
+                                        <circle r="60" fill="#2f8fe0" stroke="#1f1f24" stroke-width=".6"/><circle r="50" fill="#2f8fe0" stroke="#1f1f24" stroke-width=".6"/>
+                                        <circle r="40" fill="#e53939" stroke="#1f1f24" stroke-width=".6"/><circle r="30" fill="#e53939" stroke="#1f1f24" stroke-width=".6"/>
+                                        <circle r="20" fill="#ffcc33" stroke="#1f1f24" stroke-width=".6"/><circle r="10" fill="#ffcc33" stroke="#1f1f24" stroke-width=".6"/>
+                                        <circle r="5" fill="none" stroke="#1f1f24" stroke-width=".6"/>
+                                        <g id="km-oyun-hedef-oklar"></g>
+                                    </svg>
+                                    <div class="km-oyun-hedefgiris-ipucu">Ok nereye düştüyse oraya dokun · halkaların dışı = M · silmek için üstteki kutucuğa dokun</div>
+                                </div>
                             </div>
                             <div class="km-oyun-futbol-dok-liste" id="km-oyun-futbol-dok-liste"></div>
                             <button class="km-oyun-ilerlet-btn" id="km-oyun-ilerlet-btn" onclick="kmOyunIlerlet()" disabled>${th.btn}</button>
@@ -15007,6 +15112,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let durum = _kmOyunAktifTema === 'futboltakim' ? `${s.futbolTakimGol || 0} ${th.birim}` : (s.frac >= 1 ? th.bitis : `${Math.floor(s.frac * KM_OYUN_CP_SAYISI)}/${KM_OYUN_CP_SAYISI} ${th.birim}`);
                 // Ortak Canavar — frac yok; bugünkü toplam hasarı göster.
                 if(_kmOyunAktifTema === 'canavar') { kmCanavarDurumEmin(); let hh = _kmCanavar.hasarlar[s.g + '|' + s.ad]; durum = `${hh ? hh.hasar : 0} ${th.birim}`; }
+                if(_kmOyunAktifTema === 'yukselis') { let st = kmYksIstatistik(s.g + '|' + s.ad); durum = `${st.endeks.toFixed(1)} ${th.birim}`; }
                 let d = kmOyunDurumAl(s.g, s.ad);
                 let sev = d.seviye || 'orta';
                 let seri = d.bitisSerisi || 0;
@@ -15036,6 +15142,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunChipleriCiz();
             kmOyunKabukGuncelle();
             if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
+            if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisCiz();
             else if(_kmOyunAktifTema === 'pist') kmOyunResyncPist();
             else if(_kmOyunAktifTema === 'kehanet') kmOyunKehanetAlevGuncelle();
         }
@@ -15377,6 +15484,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let etiket = KM_OYUN_PIST_HIZ_ETIKET[v] || '';
                 return `<button class="km-oyun-padbtn ${KM_OYUN_PAD_RENK[v]}" onclick="kmOyunOkGir('${v}')" ${(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi || kehanetKilitli) ? 'disabled' : ''}>${v}<span class="km-oyun-pad-hiz">${etiket}</span></button>`;
             }).join('');
+            // 🎯 Hedef-giriş modu: pad gizlenir, hedef yüzü gösterilir (aynı disabled şartları görsel olarak).
+            let hedefMi = _kmOyunGirisModu === 'hedef';
+            g.style.display = hedefMi ? 'none' : '';
+            let hg = document.getElementById('km-oyun-hedefgiris');
+            if(hg) { hg.style.display = hedefMi ? '' : 'none'; hg.classList.toggle('dolu', _kmOyunSeriGirisleri.length >= _kmOyunOkSayisi || kehanetKilitli); }
+            let dokEl = document.getElementById('km-oyun-dok'); if(dokEl) dokEl.classList.toggle('km-oyun-dok-hedef', hedefMi);
+            document.querySelectorAll('.km-oyun-giris-toggle button').forEach(function(b) { b.classList.toggle('aktif', b.dataset.giris === _kmOyunGirisModu); });
+            if(hedefMi) kmOyunHedefOklariCiz();
         }
         function kmOyunSlotlariCiz() {
             let w = document.getElementById('km-oyun-slotlar'); if(!w) return;
@@ -15395,17 +15510,53 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunOkGir(v) {
             if(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi) return;
             _kmOyunSeriGirisleri.push(v);
+            _kmOyunSeriKonumlari[_kmOyunSeriGirisleri.length - 1] = null;
             kmOyunSlotlariCiz(); kmOyunPadCiz();
         }
         function kmOyunOkSil(index) {
             if(_kmOyunKilit) return;
             _kmOyunSeriGirisleri.splice(index, 1);
+            _kmOyunSeriKonumlari.splice(index, 1);
             kmOyunSlotlariCiz(); kmOyunPadCiz();
+        }
+        // ---- 🎯 Hedef-giriş modu: pad yerine hedef yüzüne dokunarak ok girme (tüm temalarda ortak dock özelliği)
+        const KM_OYUN_HEDEF_RENK = { altin: '#ffcc33', kirmizi: '#e53939', mavi: '#2f8fe0', siyah: '#1f1f24', beyaz: '#f5f5f5', gri: '#6b7280' };
+        function kmOyunGirisModuYukle() { try { _kmOyunGirisModu = localStorage.getItem(kmOyunDokAyarAnahtari('giris')) === 'hedef' ? 'hedef' : 'rakam'; } catch(e) { _kmOyunGirisModu = 'rakam'; } }
+        function kmOyunGirisModuSec(mod) {
+            _kmOyunGirisModu = mod === 'hedef' ? 'hedef' : 'rakam';
+            try { localStorage.setItem(kmOyunDokAyarAnahtari('giris'), _kmOyunGirisModu); } catch(e) {}
+            kmOyunPadCiz();
+        }
+        function kmOyunHedefTiklandi(ev) {
+            if(_kmOyunKilit) return;
+            if(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi) return;
+            if(_kmOyunAktifTema === 'kehanet' && _kmKehanetTahmin === null) return;
+            let svg = document.getElementById('km-oyun-hedef-svg'); if(!svg) return;
+            // Normal Skor ekranındaki hedefTiklandi ile AYNI koordinat dönüşümü (zoom/ölçekten bağımsız) ve
+            // AYNI halka kuralı (hedefeMesafePuan — çizgiye değen üst puanı alır, dış = M).
+            let rect = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+            let sx = vb.x + ((ev.clientX - rect.left) / rect.width) * vb.width;
+            let sy = vb.y + ((ev.clientY - rect.top) / rect.height) * vb.height;
+            let res = hedefeMesafePuan(Math.hypot(sx, sy), false, '10ring');
+            _kmOyunSeriGirisleri.push(res.puan);
+            _kmOyunSeriKonumlari[_kmOyunSeriGirisleri.length - 1] = { x: Math.round(sx * 10) / 10, y: Math.round(sy * 10) / 10 };
+            try { sesCal(res.puan === 'M' ? 200 : 520 + kmOyunDegerSayi(res.puan) * 30, 0.04); } catch(e) {}
+            kmOyunSlotlariCiz(); kmOyunPadCiz();
+        }
+        function kmOyunHedefOklariCiz() {
+            let g = document.getElementById('km-oyun-hedef-oklar'); if(!g) return;
+            g.innerHTML = _kmOyunSeriGirisleri.map(function(v, i) {
+                let k = _kmOyunSeriKonumlari[i]; if(!k) return '';
+                let renk = KM_OYUN_HEDEF_RENK[KM_OYUN_PAD_RENK[v]] || '#fff', yazi = (v === 'X' || v === '10' || v === '9' || v === '2' || v === '1') ? '#111' : '#fff';
+                // İşaretler tıklanamaz (pointer-events:none) — gerçek testte yakalandı: sıkı bir grupta 2. ok,
+                // 1. okun işaretinin ÜSTÜNE denk gelip onu SİLİYORDU. Silme, üstteki dolu slot kutucuğundan.
+                return `<g class="km-oyun-hedef-ok"><circle cx="${k.x}" cy="${k.y}" r="6.5" fill="${renk}" stroke="#fff" stroke-width="1.2"/><text x="${k.x}" y="${k.y + 2.6}" text-anchor="middle" font-size="7" font-weight="800" fill="${yazi}">${i + 1}</text></g>`;
+            }).join('');
         }
         function kmOyunOkSayisiSec(n) {
             if(_kmOyunKilit) return;
             _kmOyunOkSayisi = n;
-            _kmOyunSeriGirisleri = [];
+            _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
             document.querySelectorAll('.km-oyun-ok-toggle button').forEach(function(b) { b.classList.toggle('aktif', parseInt(b.dataset.n, 10) === n); });
             let lbl = document.getElementById('km-oyun-ok-lbl'); if(lbl) lbl.textContent = 'Bu Serinin Puanları — ' + n + ' Ok';
             kmOyunSlotlariCiz(); kmOyunPadCiz();
@@ -15455,7 +15606,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunLiderCiz() {
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
             kmOyunCpRailCiz();
-            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar') { kmOyunTakimYarisCiz(el); return; }
+            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') { kmOyunTakimYarisCiz(el); return; }
             // Pist — Çoklu Takım'ın (kmOyunTakimYarisCiz) AYNI dallanma önceliğinde: bireysel modda
             // GERÇEK toplamSkor yerine frac'a (yarış ilerlemesine) göre sıralı, yüzdeli bir liste
             // (Faz 9, Stage 4: "sağdaki listede sıralama ve yüzde"). kmOyunLiderCiz'in geri kalanına
@@ -15496,6 +15647,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmCanavarDurumEmin();
                 let liste = Object.keys(_kmCanavar.hasarlar).map(function(k) { return _kmCanavar.hasarlar[k]; }).sort(function(a, b) { return b.hasar - a.hasar; });
                 if(liste.length) kehanetOzel = '<div class="km-kehanet-en-iyi-kahin">👑 En Çok Hasar: <b>' + esc(liste[0].ad.split(' ')[0]) + '</b> — ' + liste[0].hasar + ' · Sınıf toplam ' + _kmCanavar.toplamHasar + '</div>';
+            }
+            if(_kmOyunAktifTema === 'yukselis' && _kmOyunRosterCache.length) {
+                let liste = _kmOyunRosterCache.map(function(o) { return { ad: o.ad, st: kmYksIstatistik(o.g + '|' + o.ad) }; }).sort(function(a, b) { return b.st.endeks - a.st.endeks; });
+                kehanetOzel = '<div class="km-kehanet-en-iyi-kahin">📈 En Yüksek Endeks: <b>' + esc(liste[0].ad.split(' ')[0]) + '</b> — ' + liste[0].st.endeks.toFixed(1) + (liste[0].st.tutarlilik !== null ? ' · tutarlılık %' + liste[0].st.tutarlilik : '') + '</div>';
             }
             el.innerHTML = kehanetOzel + '<div class="km-oyun-lider-baslik">' + baslik + '</div>' + sirali.map(function(o, rank) {
                 let puanGoster = _kmOyunYukselenMi ? (o.puan > 0 ? '+' + o.puan : o.puan) : o.puan;
@@ -15802,6 +15957,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // cinsiyet-bazlı zirve-tirmanici-kiz/zirve-izci-erkek/zirve-buz-tirmanici webp'leri KALDIRILDI.
         function kmOyunKarakterSecAc(i) {
             let s = _kmOyunRosterCache[i]; if(!s) return;
+            // Yükseliş (yetişkin modu) — hayvan karakteri yerine ciddi amblem seçici.
+            if(_kmOyunAktifTema === 'yukselis') { kmOyunAmblemSecAc(i); return; }
             let mevcut = kmOyunHayvanKarakterAta(s);
             let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
             let m = document.createElement('div');
@@ -18202,6 +18359,281 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(azaltilmis) vur(); else kmOyunCanavarOklariFirlat(s, oklar, vur);
         }
 
+        // ==================================================================================
+        // 📈 YÜKSELİŞ (2026-09-24, kullanıcı: "yetişkinler için oyun gibi ama çocuk oyunu gibi
+        // hissetmesinler… fable kalitesinde mükemmel bir yetişkin oyunu, istatistikler bizim için önemli").
+        // Maskot/karakter YOK: her sporcu bir "hisse" — ENDEKS 100'den başlar, her seri bir MUM (candle)
+        // ekler. Değişim, serinin KENDİ kişisel ortalamasına göre hesaplanır (ilk 3 seri sabit %60 tabana
+        // göre): kendi ortalamasını geçen seri YEŞİL, altında kalan KIRMIZI — çocuk oyunlarındaki "her
+        // seri ilerletir" yerine yetişkinin "kendimi geçtim mi" sorusunu ölçer. Fitil = seri içi yayılım
+        // (en iyi-en kötü ok). ENDEKS ve ZİRVE (ATH) günler arası KALICI (rekor mantığı), mumlar günlük.
+        // Kule/Canavar ile aynı "kendi mekaniği" kategorisi (frac/yol YOK); Takım Modu anahtarı gizli.
+        // İstatistik kartı: ok ortalaması (bugün/kariyer), tutarlılık (std sapma), en iyi seri, X/10,
+        // trend, volatilite, seri, ve dock'un 🎯 hedef-giriş modu kullanıldıysa GRUP analizi (merkez
+        // sapması + yayılım, halka biriminde). Tüm sayılar tabular-nums, terminal estetiği.
+        const KM_YKS_TABAN = 0.6, KM_YKS_KAZANC = 60, KM_YKS_MAX_DEGISIM = 25, KM_YKS_GORUNUR_MUM = 24;
+        // Ciddi amblemler — çocuk hayvan karakterlerinin yetişkin karşılığı. Emoji, CSS'te gri-tonlu +
+        // metalik rozet halkası içinde çiziliyor (renkli/karikatür değil, tek renk amblem gibi okunuyor).
+        const KM_OYUN_AMBLEMLER = [
+            { id: 'kurt', ad: 'Kurt', emoji: '🐺' }, { id: 'kaplan', ad: 'Kaplan', emoji: '🐯' }, { id: 'kartal', ad: 'Kartal', emoji: '🦅' },
+            { id: 'panda', ad: 'Panda', emoji: '🐼' }, { id: 'ayi', ad: 'Ayı', emoji: '🐻' }, { id: 'baykus', ad: 'Baykuş', emoji: '🦉' },
+            { id: 'mamba', ad: 'Black Mamba', emoji: '🐍' }, { id: 'aslan', ad: 'Aslan', emoji: '🦁' }, { id: 'panter', ad: 'Panter', emoji: '🐆' },
+            { id: 'kopekbaligi', ad: 'Köpekbalığı', emoji: '🦈' }, { id: 'akrep', ad: 'Akrep', emoji: '🦂' }, { id: 'boga', ad: 'Boğa', emoji: '🐂' },
+            { id: 'gergedan', ad: 'Gergedan', emoji: '🦏' }, { id: 'timsah', ad: 'Timsah', emoji: '🐊' }, { id: 'goril', ad: 'Goril', emoji: '🦍' },
+            { id: 'yarasa', ad: 'Yarasa', emoji: '🦇' }, { id: 'orka', ad: 'Orka', emoji: '🐋' }, { id: 'ejder', ad: 'Ejder', emoji: '🐉' }
+        ];
+        let _kmOyunAmblemMap = null, _kmOyunAmblemYuklenenKonum = null;
+        function kmOyunAmblemAnahtari() { return 'dag_km_oyun_amblem_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunAmblemYukle() {
+            if(_kmOyunAmblemYuklenenKonum === _kmAktifKonum && _kmOyunAmblemMap) return;
+            try { let raw = localStorage.getItem(kmOyunAmblemAnahtari()); _kmOyunAmblemMap = raw ? JSON.parse(raw) : {}; } catch(e) { _kmOyunAmblemMap = {}; }
+            _kmOyunAmblemYuklenenKonum = _kmAktifKonum;
+        }
+        function kmOyunAmblemKaydet() { try { localStorage.setItem(kmOyunAmblemAnahtari(), JSON.stringify(_kmOyunAmblemMap)); } catch(e) {} }
+        // Varsayılan atama DETERMİNİSTİK (isim hash'i) — rastgele değil ki aynı sporcu her cihazda aynı amblemle görünsün.
+        function kmOyunAmblemBilgi(s) {
+            kmOyunAmblemYukle();
+            let key = s.g + '|' + s.ad, id = _kmOyunAmblemMap[key];
+            let a = KM_OYUN_AMBLEMLER.find(function(x) { return x.id === id; });
+            if(a) return a;
+            let h = 0; for(let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+            return KM_OYUN_AMBLEMLER[h % KM_OYUN_AMBLEMLER.length];
+        }
+        function kmOyunAmblemHTML(s, renk, boy) {
+            let a = kmOyunAmblemBilgi(s);
+            return `<span class="km-yks-amblem" style="--c:${renk}; width:${boy}px; height:${boy}px; font-size:${Math.round(boy * 0.56)}px;" title="${esc(a.ad)}"><span>${a.emoji}</span></span>`;
+        }
+        function kmOyunAmblemSecAc(i) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            let mevcut = kmOyunAmblemBilgi(s).id;
+            let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
+            let renk = kmOyunRenk('yukselis', i);
+            m.innerHTML = `<div class="km-oyun-karakter-kutu km-yks-amblem-kutu">
+                <div class="km-oyun-karakter-baslik"><span>◈ ${esc(s.ad)} — amblem seç</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat">✕</button></div>
+                <div class="km-oyun-karakter-izgara">${KM_OYUN_AMBLEMLER.map(function(a) { return `<button class="km-oyun-karakter-sec${a.id === mevcut ? ' secili' : ''}" onclick="kmOyunAmblemSec(${i}, '${a.id}')"><span class="km-yks-amblem" style="--c:${renk}; width:52px; height:52px; font-size:29px;"><span>${a.emoji}</span></span><span>${esc(a.ad)}</span></button>`; }).join('')}</div>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
+            (document.getElementById('km-oyun-wrap') || document.body).appendChild(m);
+        }
+        function kmOyunAmblemSec(i, id) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            kmOyunAmblemYukle();
+            _kmOyunAmblemMap[s.g + '|' + s.ad] = id;
+            kmOyunAmblemKaydet();
+            kmOyunKarakterSecKapat();
+            try { sesCal(900, 0.06); } catch(e) {}
+            kmOyunYukselisCiz();
+            let a = KM_OYUN_AMBLEMLER.find(function(x) { return x.id === id; });
+            showToast('◈ ' + s.ad.split(' ')[0] + ' — ' + (a ? a.ad : id), 'success');
+        }
+        // ---- Durum: günlük (mumlar) + kalıcı (endeks/zirve/kariyer sayaçları)
+        let _kmYks = null, _kmYksYuklenenKonum = null;     // { tarih, sp: { 'g|ad': { mumlar:[{o,c,h,l,toplam,oklar,konumlar,t}] } } }
+        let _kmYksKalici = null, _kmYksKaliciYuklenenKonum = null; // { 'g|ad': { endeks, zirve, zirveTarih, seri, ok, puan, x10 } }
+        function kmYksAnahtari() { return 'dag_km_yukselis_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmYksKaliciAnahtari() { return 'dag_km_yukselis_kalici_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmYksKaydet() { try { localStorage.setItem(kmYksAnahtari(), JSON.stringify(_kmYks)); } catch(e) {} }
+        function kmYksKaliciKaydet() { try { localStorage.setItem(kmYksKaliciAnahtari(), JSON.stringify(_kmYksKalici)); } catch(e) {} }
+        function kmYksDurumEmin() {
+            if(!_kmYks || _kmYksYuklenenKonum !== _kmAktifKonum || _kmYks.tarih !== bugunISO()) {
+                _kmYksYuklenenKonum = _kmAktifKonum;
+                let veri = null;
+                try { let ham = localStorage.getItem(kmYksAnahtari()); veri = ham ? JSON.parse(ham) : null; } catch(e) {}
+                _kmYks = (veri && veri.tarih === bugunISO() && veri.sp) ? veri : { tarih: bugunISO(), sp: {} };
+            }
+            if(!_kmYksKalici || _kmYksKaliciYuklenenKonum !== _kmAktifKonum) {
+                _kmYksKaliciYuklenenKonum = _kmAktifKonum;
+                try { let ham = localStorage.getItem(kmYksKaliciAnahtari()); _kmYksKalici = ham ? JSON.parse(ham) : {}; } catch(e) { _kmYksKalici = {}; }
+            }
+        }
+        function kmYksSporcu(key) {
+            kmYksDurumEmin();
+            if(!_kmYks.sp[key]) _kmYks.sp[key] = { mumlar: [] };
+            if(!_kmYksKalici[key]) _kmYksKalici[key] = { endeks: 100, zirve: 100, zirveTarih: null, seri: 0, ok: 0, puan: 0, x10: 0 };
+            return { gun: _kmYks.sp[key], kalici: _kmYksKalici[key] };
+        }
+        function kmYksStd(dizi) {
+            if(dizi.length < 2) return 0;
+            let ort = dizi.reduce(function(a, b) { return a + b; }, 0) / dizi.length;
+            return Math.sqrt(dizi.reduce(function(a, b) { return a + (b - ort) * (b - ort); }, 0) / dizi.length);
+        }
+        // Tüm istatistikler TEK yerden — kart, sıralama satırı, chip durumu hepsi bunu okur.
+        function kmYksIstatistik(key) {
+            let d = kmYksSporcu(key), m = d.gun.mumlar, k = d.kalici;
+            let oklar = []; m.forEach(function(c) { (c.oklar || []).forEach(function(v) { oklar.push(kmOyunDegerSayi(v)); }); });
+            let bugunOrt = oklar.length ? oklar.reduce(function(a, b) { return a + b; }, 0) / oklar.length : null;
+            let kariyerOrt = k.ok ? k.puan / k.ok : null;
+            let std = kmYksStd(oklar);
+            let tutarlilik = oklar.length >= 3 ? Math.max(0, Math.min(100, Math.round(100 - std * 12))) : null;
+            let enIyiSeri = m.length ? Math.max.apply(null, m.map(function(c) { return c.toplam; })) : null;
+            let x10 = 0; m.forEach(function(c) { (c.oklar || []).forEach(function(v) { if(v === 'X' || v === '10') x10++; }); });
+            let degisimler = m.map(function(c) { return c.o ? (c.c - c.o) / c.o * 100 : 0; });
+            let volatilite = degisimler.length >= 2 ? kmYksStd(degisimler) : null;
+            let trend = null;
+            if(m.length >= 4) {
+                let son = m.slice(-3).reduce(function(a, c) { return a + c.toplam; }, 0) / 3;
+                let onceki = m.slice(0, -3).reduce(function(a, c) { return a + c.toplam; }, 0) / (m.length - 3);
+                trend = son - onceki;
+            }
+            let seri = 0; for(let i = m.length - 1; i >= 0; i--) { if(m[i].c >= m[i].o) seri++; else break; }
+            let gunDegisim = m.length ? (k.endeks - m[0].o) / m[0].o * 100 : 0;
+            let sonDegisim = m.length ? degisimler[degisimler.length - 1] : 0;
+            // Grup analizi — SADECE hedefe dokunarak girilen oklar (x,y var). Halka birimi: 10 birim = 1 halka.
+            let noktalar = []; m.forEach(function(c) { (c.konumlar || []).forEach(function(p) { if(p && typeof p.x === 'number' && p.puan !== 'M') noktalar.push(p); }); });
+            let grup = null;
+            if(noktalar.length >= 3) {
+                let mx = noktalar.reduce(function(a, p) { return a + p.x; }, 0) / noktalar.length;
+                let my = noktalar.reduce(function(a, p) { return a + p.y; }, 0) / noktalar.length;
+                let yay = noktalar.reduce(function(a, p) { return a + Math.hypot(p.x - mx, p.y - my); }, 0) / noktalar.length;
+                grup = { dx: mx / 10, dy: -my / 10, yayilim: yay / 10, n: noktalar.length };
+            }
+            return { endeks: k.endeks, zirve: k.zirve, zirveTarih: k.zirveTarih, mumSayisi: m.length, bugunOrt: bugunOrt, kariyerOrt: kariyerOrt, kariyerSeri: k.seri, tutarlilik: tutarlilik, std: std, enIyiSeri: enIyiSeri, x10: x10, volatilite: volatilite, trend: trend, seri: seri, gunDegisim: gunDegisim, sonDegisim: sonDegisim, grup: grup, okSayisi: oklar.length };
+        }
+        function kmYksYon(dx, dy) {
+            let p = [];
+            if(Math.abs(dy) >= 0.25) p.push(dy > 0 ? 'yukarı' : 'aşağı');
+            if(Math.abs(dx) >= 0.25) p.push(dx > 0 ? 'sağ' : 'sol');
+            return p.length ? p.join('-') : 'merkezde';
+        }
+        function kmYksFmt(v, d) { return (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(d === undefined ? 1 : d); }
+        function kmYksPct(v) { if(v === null || v === undefined || isNaN(v)) return '—'; return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
+        function kmOyunSahneKurYukselis() { kmYksDurumEmin(); kmOyunYukselisCiz(); }
+        // Ana çizim: ticker (tüm sporcular) + aktif sporcunun mum grafiği + istatistik kartı + piyasa özeti.
+        function kmOyunYukselisCiz(yeniMumMu) {
+            kmYksDurumEmin();
+            let svg = document.getElementById('km-oyun-svg-yukselis'); if(!svg) return;
+            let roster = _kmOyunRosterCache;
+            let s = roster[_kmOyunAktifIndex] || roster[0];
+            let ticker = document.getElementById('km-yks-ticker');
+            if(ticker) {
+                ticker.innerHTML = roster.map(function(o, i) {
+                    let st = kmYksIstatistik(o.g + '|' + o.ad);
+                    let yon = st.sonDegisim > 0.05 ? 'up' : (st.sonDegisim < -0.05 ? 'down' : '');
+                    return `<button class="km-yks-tick${o === s ? ' aktif' : ''} ${yon}" onclick="kmOyunSporcuSec(${i})">${kmOyunAmblemHTML(o, kmOyunRenk('yukselis', i), 22)}<span class="km-yks-tick-ad">${esc(o.ad.split(' ')[0].toUpperCase().slice(0, 8))}</span><span class="km-yks-tick-deger">${kmYksFmt(st.endeks)}</span><span class="km-yks-tick-degisim">${st.mumSayisi ? kmYksPct(st.sonDegisim) : '—'}</span></button>`;
+                }).join('');
+            }
+            let g = document.getElementById('km-yks-grafik'); if(!g || !s) return;
+            let key = s.g + '|' + s.ad, d = kmYksSporcu(key), st = kmYksIstatistik(key);
+            let mumlar = d.gun.mumlar.slice(-KM_YKS_GORUNUR_MUM);
+            let X0 = 70, X1 = 760, Y0 = 62, Y1 = 400, slot = (X1 - X0) / KM_YKS_GORUNUR_MUM, govde = Math.min(18, slot * 0.6);
+            let degerler = [];
+            mumlar.forEach(function(c) { degerler.push(c.h, c.l); });
+            if(!mumlar.length) degerler.push(d.kalici.endeks);
+            if(d.kalici.zirve && Math.abs(d.kalici.zirve - d.kalici.endeks) / d.kalici.endeks < 0.35) degerler.push(d.kalici.zirve);
+            let vMin = Math.min.apply(null, degerler), vMax = Math.max.apply(null, degerler);
+            if(vMax - vMin < 4) { vMin -= 2; vMax += 2; }
+            let pad = (vMax - vMin) * 0.12; vMin -= pad; vMax += pad;
+            let yOf = function(v) { return Y1 - (v - vMin) / (vMax - vMin) * (Y1 - Y0); };
+            let html = '';
+            for(let i = 0; i <= 4; i++) {
+                let v = vMin + (vMax - vMin) * i / 4, y = yOf(v);
+                html += `<line x1="${X0}" y1="${y.toFixed(1)}" x2="${X1}" y2="${y.toFixed(1)}" class="km-yks-grid"/><text x="${X0 - 8}" y="${(y + 4).toFixed(1)}" class="km-yks-eksen" text-anchor="end">${v.toFixed(0)}</text>`;
+            }
+            if(d.kalici.zirve > 100.5 && d.kalici.zirve >= vMin && d.kalici.zirve <= vMax) {
+                let y = yOf(d.kalici.zirve);
+                html += `<line x1="${X0}" y1="${y.toFixed(1)}" x2="${X1}" y2="${y.toFixed(1)}" class="km-yks-zirve-cizgi"/><text x="${X1 - 4}" y="${(y - 5).toFixed(1)}" class="km-yks-zirve-etiket" text-anchor="end">ZİRVE ${d.kalici.zirve.toFixed(1)}</text>`;
+            }
+            if(!mumlar.length) {
+                let y = yOf(d.kalici.endeks);
+                html += `<line x1="${X0}" y1="${y.toFixed(1)}" x2="${X1}" y2="${y.toFixed(1)}" class="km-yks-taban"/><text x="${(X0 + X1) / 2}" y="${(Y0 + Y1) / 2}" class="km-yks-bos" text-anchor="middle">İlk seri bekleniyor — endeks ${d.kalici.endeks.toFixed(1)}</text>`;
+            }
+            let maNoktalar = [];
+            mumlar.forEach(function(c, i) {
+                let cx = X0 + slot * (i + 0.5), yo = yOf(c.o), yc = yOf(c.c), yh = yOf(c.h), yl = yOf(c.l);
+                let yukari = c.c >= c.o, cls = yukari ? 'up' : 'down';
+                let top = Math.min(yo, yc), hgt = Math.max(1.5, Math.abs(yc - yo));
+                let sonMu = i === mumlar.length - 1;
+                html += `<g class="km-yks-mum ${cls}${sonMu && yeniMumMu ? ' km-yks-yeni' : ''}"><line x1="${cx.toFixed(1)}" y1="${yh.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${yl.toFixed(1)}"/><rect x="${(cx - govde / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${govde.toFixed(1)}" height="${hgt.toFixed(1)}" rx="1.5"/></g>`;
+                if((i + 1) % 5 === 0 || i === 0) html += `<text x="${cx.toFixed(1)}" y="${Y1 + 18}" class="km-yks-eksen" text-anchor="middle">${d.gun.mumlar.length - mumlar.length + i + 1}</text>`;
+                let ma = mumlar.slice(Math.max(0, i - 2), i + 1); if(ma.length === 3) maNoktalar.push(cx.toFixed(1) + ',' + yOf(ma.reduce(function(a, q) { return a + q.c; }, 0) / 3).toFixed(1));
+            });
+            if(maNoktalar.length >= 2) html += `<polyline points="${maNoktalar.join(' ')}" class="km-yks-ma"/>`;
+            if(mumlar.length) {
+                let son = mumlar[mumlar.length - 1], y = yOf(son.c), cx = X0 + slot * (mumlar.length - 0.5);
+                html += `<line x1="${cx.toFixed(1)}" y1="${y.toFixed(1)}" x2="${X1}" y2="${y.toFixed(1)}" class="km-yks-son-cizgi"/><g class="km-yks-son-etiket ${son.c >= son.o ? 'up' : 'down'}${yeniMumMu ? ' km-yks-flas' : ''}"><rect x="${X1 + 4}" y="${(y - 11).toFixed(1)}" width="62" height="22" rx="4"/><text x="${X1 + 35}" y="${(y + 4.5).toFixed(1)}" text-anchor="middle">${son.c.toFixed(1)}</text></g>`;
+            }
+            g.innerHTML = html;
+            let bas = document.getElementById('km-yks-baslik');
+            if(bas) bas.innerHTML = `${kmOyunAmblemHTML(s, kmOyunRenk('yukselis', _kmOyunAktifIndex), 34)}<div><div class="km-yks-baslik-ad">${esc(s.ad)}</div><div class="km-yks-baslik-alt">${esc(kmOyunAmblemBilgi(s).ad.toUpperCase())} · ${st.mumSayisi} seri bugün · ${kmYksIstatistik(key).kariyerSeri} kariyer</div></div>`;
+            let kart = document.getElementById('km-yks-kart');
+            if(kart) {
+                let gunCls = st.gunDegisim > 0.05 ? 'up' : (st.gunDegisim < -0.05 ? 'down' : '');
+                let trendTxt = st.trend === null ? '—' : ((st.trend >= 0 ? '▲ +' : '▼ ') + st.trend.toFixed(1) + ' p/seri');
+                let grupTxt = st.grup ? (`${kmYksYon(st.grup.dx, st.grup.dy)} ${Math.hypot(st.grup.dx, st.grup.dy).toFixed(1)} halka · yayılım ${st.grup.yayilim.toFixed(1)}`) : '🎯 modunda girilirse';
+                kart.innerHTML = `
+                    <div class="km-yks-kart-ust"><span class="km-yks-kart-lbl">ENDEKS</span><span class="km-yks-kart-endeks ${gunCls}">${st.endeks.toFixed(1)}</span><span class="km-yks-kart-gun ${gunCls}">${st.mumSayisi ? kmYksPct(st.gunDegisim) + ' bugün' : 'bugün açılış'}</span></div>
+                    <div class="km-yks-kart-satir"><span>Zirve (ATH)</span><b>${st.zirve.toFixed(1)}${st.zirveTarih ? ' <i>' + esc(st.zirveTarih.slice(5)) + '</i>' : ''}</b></div>
+                    <div class="km-yks-kart-satir"><span>Ok ortalaması</span><b>${kmYksFmt(st.bugunOrt, 2)} <i>bugün</i> · ${kmYksFmt(st.kariyerOrt, 2)} <i>kariyer</i></b></div>
+                    <div class="km-yks-kart-satir"><span>Tutarlılık</span><b>${st.tutarlilik === null ? '—' : '%' + st.tutarlilik}${st.tutarlilik !== null ? ' <i>σ ' + st.std.toFixed(2) + '</i>' : ''}</b></div>
+                    <div class="km-yks-kart-satir"><span>En iyi seri</span><b>${st.enIyiSeri === null ? '—' : st.enIyiSeri + ' / ' + (_kmOyunOkSayisi * 10)}</b></div>
+                    <div class="km-yks-kart-satir"><span>X + 10</span><b>${st.x10}${st.okSayisi ? ' <i>/ ' + st.okSayisi + ' ok</i>' : ''}</b></div>
+                    <div class="km-yks-kart-satir"><span>Trend</span><b class="${st.trend === null ? '' : (st.trend >= 0 ? 'up' : 'down')}">${trendTxt}</b></div>
+                    <div class="km-yks-kart-satir"><span>Volatilite</span><b>${st.volatilite === null ? '—' : '%' + st.volatilite.toFixed(1)}</b></div>
+                    <div class="km-yks-kart-satir"><span>Yeşil seri</span><b>${st.seri ? st.seri + ' üst üste' : '—'}</b></div>
+                    <div class="km-yks-kart-satir km-yks-kart-grup"><span>Grup</span><b>${grupTxt}</b></div>`;
+            }
+            let piyasa = document.getElementById('km-yks-piyasa');
+            if(piyasa && roster.length) {
+                let hepsi = roster.map(function(o) { return { o: o, st: kmYksIstatistik(o.g + '|' + o.ad) }; });
+                let ort = hepsi.reduce(function(a, x) { return a + x.st.endeks; }, 0) / hepsi.length;
+                let enYuksek = hepsi.slice().sort(function(a, b) { return b.st.gunDegisim - a.st.gunDegisim; })[0];
+                let tutarlilar = hepsi.filter(function(x) { return x.st.tutarlilik !== null; }).sort(function(a, b) { return b.st.tutarlilik - a.st.tutarlilik; });
+                piyasa.innerHTML = `<span><i>PİYASA</i> ${ort.toFixed(1)}</span>${enYuksek && enYuksek.st.mumSayisi ? `<span><i>GÜNÜN YÜKSELENİ</i> ${esc(enYuksek.o.ad.split(' ')[0])} ${kmYksPct(enYuksek.st.gunDegisim)}</span>` : ''}${tutarlilar.length ? `<span><i>EN TUTARLI</i> ${esc(tutarlilar[0].o.ad.split(' ')[0])} %${tutarlilar[0].st.tutarlilik}</span>` : ''}`;
+            }
+        }
+        function kmOyunYukselisSifirla() {
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
+            if(!confirm(s.ad + ' için Yükseliş verisi (endeks, zirve, bugünkü mumlar, kariyer sayaçları) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ.')) return;
+            kmYksDurumEmin();
+            let key = s.g + '|' + s.ad;
+            delete _kmYks.sp[key]; delete _kmYksKalici[key];
+            kmYksKaydet(); kmYksKaliciKaydet();
+            kmOyunYukselisCiz(); kmOyunChipleriCiz(); kmOyunLiderCiz();
+            showToast('📈 ' + s.ad.split(' ')[0] + ' endeksi 100\'e döndü.', 'warning');
+        }
+        function kmOyunAnimateYukselis(s, i, kaydedilecek, done) {
+            kmYksDurumEmin();
+            let key = s.g + '|' + s.ad, d = kmYksSporcu(key), k = d.kalici, m = d.gun.mumlar;
+            let oklar = kaydedilecek.map(function(x) { return x.puan; });
+            let sayilar = oklar.map(kmOyunDegerSayi);
+            let toplam = sayilar.reduce(function(a, b) { return a + b; }, 0), maxPuan = _kmOyunOkSayisi * 10;
+            let p = maxPuan ? toplam / maxPuan : 0;
+            // Kişisel taban: kariyerde en az 3 seri varsa kendi ok ortalaması (0..1), yoksa sabit taban.
+            let taban = (k.seri >= 3 && k.ok) ? (k.puan / k.ok) / 10 : KM_YKS_TABAN;
+            let degisim = Math.max(-KM_YKS_MAX_DEGISIM, Math.min(KM_YKS_MAX_DEGISIM, (p - taban) * KM_YKS_KAZANC));
+            let o = k.endeks, c = Math.max(1, Math.round(o * (1 + degisim / 100) * 100) / 100);
+            let yayilim = sayilar.length ? (Math.max.apply(null, sayilar) - Math.min.apply(null, sayilar)) / 10 : 0;
+            let fitil = Math.abs(c - o) * 0.35 + yayilim * o * 0.006;
+            let konumlar = kaydedilecek.map(function(x) { return (typeof x.x === 'number' && typeof x.y === 'number') ? { x: x.x, y: x.y, puan: x.puan } : null; });
+            m.push({ o: o, c: c, h: Math.max(o, c) + fitil, l: Math.max(0.5, Math.min(o, c) - fitil), toplam: toplam, oklar: oklar, konumlar: konumlar, t: Date.now() });
+            k.endeks = c; k.seri++; k.ok += sayilar.length; k.puan += toplam;
+            oklar.forEach(function(v) { if(v === 'X' || v === '10') k.x10++; });
+            let eskiZirve = k.zirve || 100, yeniZirveMi = c > eskiZirve && m.length + (k.seri - m.length) > 1;
+            if(c > (k.zirve || 0)) { k.zirve = c; k.zirveTarih = bugunISO(); }
+            kmYksKaydet(); kmYksKaliciKaydet();
+
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            kmOyunYukselisCiz(true);
+            // Uçan yüzde etiketi — puan (+N) zaten bitirOrtak'ta genel olarak uçuyor; burada yüzde.
+            let layer = document.getElementById('km-oyun-burst');
+            if(layer) {
+                let el = document.createElement('div');
+                el.className = 'km-yks-ucan ' + (degisim >= 0 ? 'up' : 'down');
+                el.style.cssText = 'left:36%; top:34%;';
+                el.textContent = kmYksPct(degisim);
+                layer.appendChild(el);
+                el.animate([{ transform: 'translate(-50%,-50%) scale(.7)', opacity: 0 }, { transform: 'translate(-50%,-110%) scale(1.1)', opacity: 1, offset: .3 }, { transform: 'translate(-50%,-200%) scale(1)', opacity: 0 }], { duration: 1300, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = function() { el.remove(); };
+            }
+            if(!kapali) {
+                if(yeniZirveMi) { kmOyunBanner('📈 YENİ ZİRVE', s.ad.split(' ')[0] + ' — endeks ' + c.toFixed(1), 'yukselis-zirve'); try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1318, 0.16); } catch(e) {} }, 110); } catch(e) {} }
+                else if(degisim >= 15) { kmOyunBanner('▲ GÜÇLÜ YÜKSELİŞ', s.ad.split(' ')[0] + ' ' + kmYksPct(degisim), 'yukselis-guclu'); try { sesCal(740, 0.1); } catch(e) {} }
+                else if(degisim <= -15) { try { sesCal(220, 0.08); } catch(e) {} }
+                else { try { sesCal(degisim >= 0 ? 620 : 380, 0.05); } catch(e) {} }
+            }
+            setTimeout(done, 420);
+        }
+
         // ---- ORTAK: TEMA GECISI, ILERLET, ANA CIZIM ----
         function kmOyunTemaSec(tid) {
             if(_kmOyunKilit) return;
@@ -18232,7 +18664,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // mekaniği terk edildi) burada ARTIK gizlenmiyor — Takım Modu diğer temalarda çalıştığı gibi
             // burada da çalışır.
             // Ortak Canavar — doğası gereği tüm sınıf zaten birlikte; Bireysel/Takım anahtarı anlamsız, gizli.
-            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar') ? 'none' : 'flex';
+            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar' || tid === 'yukselis') ? 'none' : 'flex';
             if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
             // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
@@ -18272,7 +18704,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // yoklama hepsi normal akışla aynı şekilde güncelleniyor. Oyun ekranındaki "toplamSkor" (liderlik
             // tablosu) BİLEREK ayrı tutuluyor — o günkü oyun oturumunun kendi mini-yarışması, sporcunun
             // ömür boyu toplamıyla karışmasın diye.
-            let kaydedilecek = _kmOyunSeriGirisleri.map(function(v) { return { puan: v }; });
+            // Hedef-giriş modunda (2026-09-24) okun konumu da gider — _skorKaydetCekirdek bunu detayliOklar'a
+            // yazar, normal Skor ekranındaki ısı haritası/grup analizleri bu okları da görür.
+            let kaydedilecek = _kmOyunSeriGirisleri.map(function(v, idx) { let k = _kmOyunSeriKonumlari[idx]; return k ? { puan: v, x: k.x, y: k.y, tip: '10ring' } : { puan: v }; });
             let sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
             // Seri limiti doluysa artık burada TIKANIP kalınmıyor (2026-09-06, "bazen sporcuların
             // serileri bitiyor, skor giremiyorum, bu programı bilmeyen biri için sorun verici") — var
@@ -18292,7 +18726,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else showToast('Sporcu bulunamadı — kayıt yapılamadı.', 'error');
                 // Reddedilen giriş slotlarda takılı kalmasın — yoksa pad kilitli görünür, koç bir daha
                 // hiçbir seri giremez (gerçek kullanımda nadir ama gerçek bir tuzak, testte yakalandı).
-                _kmOyunSeriGirisleri = [];
+                _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
                 return;
             }
@@ -18311,7 +18745,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Çoklu Takım (Yarış) (2026-09-06) — "Sınıf" (tek paylaşılan frac) yerine, sporcunun KENDİ
             // takımının frac'ı kullanılıyor; sporcu HİÇBİR takıma atanmamışsa (çoklu modda unutulmuş
             // olabilir) sessizce bireysel moda düşüyor, girişi engellemiyor.
-            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar';
+            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis';
             let cokluTakimIndex = (takimGecerliMi && _kmOyunCokluMu) ? kmOyunSporcuTakimIndex(s.g, s.ad) : -1;
             let cokluAktifMi = cokluTakimIndex !== -1;
             let takimAktifMi = takimGecerliMi && (!_kmOyunCokluMu || cokluAktifMi);
@@ -18350,6 +18784,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'kule') artis = 0;
             // Ortak Canavar (2026-09-24) — frac/yol YOK; hasar kmOyunAnimateCanavar'da paylaşılan cana uygulanır.
             if(_kmOyunAktifTema === 'canavar') { artis = 0; kmCanavarDurumEmin(); }
+            // Yükseliş (2026-09-24) — frac/yol YOK; endeks kmOyunAnimateYukselis'te hesaplanır.
+            if(_kmOyunAktifTema === 'yukselis') { artis = 0; kmYksDurumEmin(); }
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
@@ -18440,7 +18876,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 futboltakim: futbolTakimOncesi,
                 // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
                 // geri yükler (canavar öldüyse ve yenisi doğduysa bile doğru şekilde önceki canavara döner).
-                canavar: (_kmOyunAktifTema === 'canavar') ? JSON.parse(JSON.stringify(_kmCanavar)) : null };
+                canavar: (_kmOyunAktifTema === 'canavar') ? JSON.parse(JSON.stringify(_kmCanavar)) : null,
+                yukselis: (_kmOyunAktifTema === 'yukselis') ? { gun: JSON.parse(JSON.stringify(_kmYks)), kalici: JSON.parse(JSON.stringify(_kmYksKalici)) } : null };
             kmOyunGeriAlBtnGuncelle();
 
             function bitirOrtak() {
@@ -18474,7 +18911,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule' && _kmOyunAktifTema !== 'canavar') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -18599,7 +19036,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Bireysel modda yukarıdaki dallar hiç çalışmıyor (kmOyunResyncAktif zaten oradan
                 // kmOyunKabukGuncelle'i tetikliyor) — kamera/sıradaki-vurgu HER durumda güncellensin.
                 kmOyunKabukGuncelle();
-                _kmOyunSeriGirisleri = [];
+                _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
                 setTimeout(function() { _kmOyunKilit = false; kmOyunSlotlariCiz(); document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.disabled = false; }); kmOyunSayacYeniSeri(); }, 200);
             }
@@ -18625,6 +19062,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'gizlikelime') kmOyunAnimateGizliKelime(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'kule') kmOyunAnimateKule(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'canavar') kmOyunAnimateCanavar(s, i, kaydedilecek, bitirOrtak);
+                else if(_kmOyunAktifTema === 'yukselis') kmOyunAnimateYukselis(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
@@ -18647,6 +19085,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // kart-hakkı sayaçları dahil, tam temiz bir başlangıç olsun diye).
         function kmOyunSporcuSifirla() {
             let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
+            if(_kmOyunAktifTema === 'yukselis') { kmOyunYukselisSifirla(); return; }
             if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
             if(_kmOyunAktifTema === 'sisharita') {
                 // Kayıp Ada artık BAĞIMSIZ (bkz. kmOyunSisFracUygula/GeriYukle) — sıfırlama SADECE
@@ -18720,6 +19159,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     _kmCanavar = g.canavar; _kmCanavarYuklenenKonum = _kmAktifKonum;
                     kmCanavarKaydet();
                     if(_kmOyunAktifTema === 'canavar') kmOyunSahneKurCanavar();
+                }
+                if(g.yukselis) {
+                    _kmYks = g.yukselis.gun; _kmYksKalici = g.yukselis.kalici;
+                    _kmYksYuklenenKonum = _kmAktifKonum; _kmYksKaliciYuklenenKonum = _kmAktifKonum;
+                    kmYksKaydet(); kmYksKaliciKaydet();
+                    if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisCiz();
                 }
                 kmOyunDurumKaydet();
                 kmOyunResyncAktif();
@@ -19969,7 +20414,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunBaslangicSkorEmin();
             kmOyunLigEmin();
             if(_kmOyunAktifIndex >= _kmOyunRosterCache.length) _kmOyunAktifIndex = 0;
-            _kmOyunSeriGirisleri = [];
+            _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
             _kmOyunKilit = false;
             _kmOyunSonGiris = null;
             el.innerHTML = kmOyunHTML();

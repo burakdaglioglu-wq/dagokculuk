@@ -4954,3 +4954,55 @@ preset'e dönünce inline stiller tamamen temizleniyor; agresif bir sürükleme 
 sahne sınırları İÇİNDE kalacak şekilde kelepçelendi (taşma yok). 16 tema Oyunlar regresyonu 0 hata.
 
 **Deploy durumu (50)**: Kullanıcı onayladı (2026-09-24), commit + push + deploy edildi.
+
+## 51. 📈 Yükseliş (yetişkin modu) + ciddi amblem seçici + dock 🎯 hedef-giriş modu (2026-09-24, gece — kullanıcı "deploy et, sabah bakarım" dedi)
+
+Kullanıcı: "yetişkinler için oyun gibi ama çocuk oyunu gibi hissetmesinler… fable kalitesinde mükemmel bir
+yetişkin oyunu, istatistikler bizim için önemli" + "karakterlerin yanında ciddi görünümlü ikon seçme
+(kurt, kaplan, kartal, panda, ayı, baykuş, black mamba…)" + "var olan skor board'un yanında okları
+hedefe tıklayarak girme seçeneğini de buraya aktar, iki seçenek olsun".
+
+**a) 📈 Yükseliş (tema `yukselis`)** — maskot YOK. Her sporcu bir "hisse": ENDEKS 100'den başlar, her seri
+bir MUM ekler. Değişim = (seri oranı − kişisel taban) × 60, ±%25 kelepçeli; taban = kariyerde ≥3 seri
+varsa sporcunun KENDİ ok ortalaması (0..1), yoksa 0.60. Yani kendi ortalamasını geçen seri YEŞİL, altında
+kalan KIRMIZI (gerçek testte: 10-10-10 → +24%; sonra 9-9-8 → +16%, 10-9-10 → +22%, ardından 6-7-5 → −21%
+(taban artık 0.94), 10-10-X → +8.5%). Fitil = seri içi yayılım. ENDEKS/ZİRVE/kariyer sayaçları
+(`dag_km_yukselis_kalici_<konum>`) günler arası KALICI; mumlar günlük (`dag_km_yukselis_<konum>`).
+Grafik: mum + 3-seri hareketli ortalama + ZİRVE (ATH) kesikli altın çizgi + son fiyat etiketi; üstte tüm
+sporcuların ticker'ı (amblem + endeks + son değişim, tıklanınca sporcu seçilir); sağda istatistik kartı:
+endeks/gün değişimi, zirve+tarihi, ok ortalaması (bugün·kariyer), tutarlılık (%, σ), en iyi seri, X+10,
+trend (son 3 seri vs öncesi), volatilite, yeşil seri, GRUP (hedef modu okları ≥3 ise: merkez sapması
+yön+halka, yayılım halka); altta PİYASA (sınıf ortalaması, günün yükseleni, en tutarlı). Banner: 2.
+seriden itibaren yeni zirve → "📈 YENİ ZİRVE", ≥+15% → "▲ GÜÇLÜ YÜKSELİŞ" (ciddi modda sessiz). Uçan
+"+%x" etiketi. Sıralama rayında "📈 En Yüksek Endeks" satırı; chip durumu "N endeks"; 🔄 sıfırla bu
+temada Yükseliş verisini sıfırlar. Geri Al: iki deponun tam kopyası (`_kmOyunSonGiris.yukselis`).
+Kabuk bağlantıları Canavar (§49) ile birebir aynı liste.
+
+**b) ◈ Ciddi amblemler** — `KM_OYUN_AMBLEMLER` (18: Kurt, Kaplan, Kartal, Panda, Ayı, Baykuş, Black
+Mamba, Aslan, Panter, Köpekbalığı, Akrep, Boğa, Gergedan, Timsah, Goril, Yarasa, Orka, Ejder). Emoji,
+CSS'te gri-tonlu + metalik rozet halkası (sporcu rengiyle) — renkli karikatür değil, tek renk amblem gibi.
+Varsayılan atama isim hash'iyle DETERMİNİSTİK. Yükseliş temasındayken chip'teki 🎭, hayvan yerine amblem
+seçiciyi açar (`kmOyunAmblemSecAc`, aynı modal CSS'i). Depo `dag_km_oyun_amblem_<konum>`.
+
+**c) 🎯 Dock hedef-giriş modu (TÜM temalarda ortak)** — dock'ta yeni "123 | 🎯" anahtarı (kalıcı,
+`dok`+`giris`). 🎯 modunda pad yerine 10 halkalı hedef yüzü: dokunulan yerin halkası
+`hedefeMesafePuan` (normal Skor ekranıyla AYNI kural: çizgiye değen üst puanı alır, dış = M) ile alınır,
+konum `_kmOyunSeriKonumlari` paralel dizisinde tutulur (normal ekranla AYNI viewBox birimi) ve
+`_skorKaydetCekirdek`'e {puan,x,y} olarak gider → `detayliOklar`'a yazılır, yani normal ekranın ısı
+haritası/grup analizleri bu okları da görür. İşaretler numaralı, pad renkleriyle. Silme: dolu slot
+kutucuğuna dokunarak (mevcut davranış). Kehanet kilidi/seri dolu şartları görsel olarak uygulanır.
+
+**Gerçek testte yakalanıp düzeltilen 2 bug**: (1) hedef işaretleri tıklanabilir yapılmıştı ("işarete
+dokun = sil") — sıkı bir grupta 2. ok 1. okun işaretinin ÜSTÜNE denk gelip onu SİLİYORDU (3 dokunuş → 1
+kayıt); işaretler artık pointer-events:none. (2) Mobilde dock'un max-height sınırı (190-210px) hedef
+yüzünü kaydırma alanına gömüyordu, dokunuşlar hiç kaydolmuyordu — hedef modunda dock `km-oyun-dok-hedef`
+sınıfıyla büyüyor (id seçicili kural medya kurallarını yeniyor).
+
+**Gerçek testte doğrulanan** (Playwright, masaüstü + 390px dokunmatik): endeks matematiği yukarıdaki
+değerlerle birebir; 🎯 modunda X/9/7 dokunuşları doğru halka+konumla; M dış dokunuş; slot'tan silme;
+seri kaydında detayliOklar +3 (konumlu); grup analizi "yukarı-sağ 1.9 halka · yayılım 0.5"; geri al
+endeks/mum geri; zirve banner; MA/ZİRVE çizgileri; lider satırı; piyasa; amblem seçici 18 seçenek, Kartal
+seçimi ticker'a yansıdı ve kalıcı; bellek temizlenip yeniden yükleme + tema gidip gelme korundu; 16 tema
+regresyonu 0 hata; 0 JS hatası.
+
+**Deploy durumu (51)**: Kullanıcının ön onayıyla ("deploy et sabah bakarım") commit + push + deploy edildi.
