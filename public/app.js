@@ -11930,9 +11930,16 @@ ${(function(){
 .km-sis-rota-glow{ fill:none; stroke:#2a1a08; stroke-opacity:.5; stroke-width:5; stroke-dasharray:14 12; stroke-linecap:round; }
 .km-sis-rota{ fill:none; stroke:#fff3c4; stroke-opacity:.75; stroke-width:2; stroke-dasharray:14 12; stroke-linecap:round; }
 .km-sis-katman{ pointer-events:none; }
-.km-sis-bulut{ will-change:transform; animation:kmSisKay 34s linear infinite; }
-.km-sis-bulut.ters{ animation-duration:52s; animation-direction:reverse; }
-@keyframes kmSisKay{ from{ transform:translateX(0); } to{ transform:translateX(-140px); } }
+/* PERFORMANS DÜZELTMESİ (2026-09-24, kullanıcı: "sis haritası çok donmaya başladı" — yağmurdan SONRA
+   bulunan ikinci/asıl kaynak): bu iki bulut katmanı feTurbulence+feGaussianBlur filtreli DEV (1480x640)
+   dikdörtgenler — rain'in aksine bunlar animate ediliyordu (kmSisKay, sonsuz döngü). Filtre + mask (üstteki
+   .km-sis-katman zaten mask="url(#km-sis-mask)" içinde) + sürekli transform kombinasyonu bazı motorlarda
+   (özellikle WebKit/Safari) her karede TAM YENİDEN filtreleme/rasterize zorluyor — tam da "yağmur"
+   düzeltmesinin (yukarıda) kaçındığı GPU'ya binmeyen repaint durumu, sadece burada transform bile
+   yetmiyor çünkü filtre canlı. Ekibin kendi KM_SIS_GUN_PALETLERI kararıyla (aşağıda, aynı gün) AYNI
+   ilke: animasyon YOK = performans riski YOK. Bulutlar artık İLK ÇİZİMDE bir kere render edilip
+   duruyor — "yavaş kayan sis" hissi gitti ama dondurma da gitti; sahne zaten tek seferlik kuruluyor. */
+.km-sis-bulut{ }
 .km-sis-fener{ animation:kmSisFener 2.6s ease-in-out infinite; }
 @keyframes kmSisFener{ 0%,100%{ opacity:.4; } 50%{ opacity:.85; } }
 /* keşif işareti: sis altında sadece "?" rozeti; bulununca sembol büyüyerek belirir, isim + bulan yazısı */
