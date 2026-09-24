@@ -11804,7 +11804,7 @@ ${(function(){
 #km-oyun-wrap[data-tema="yildiz"]{ --bg:#070818; --panel:#0e1130; --panel-hi:#161a44; --line:#262c66; --ink:#eef1ff; --ink-dim:#9aa3d6; --ink-faint:#565f95; --a1:#2dd4f4; --a2:#ff4fa3; --a3:#ffd166; --a4:#7c5cff; --a5:#3ddc97; --font-display:'Audiowide',system-ui,sans-serif; --font-body:'Exo 2',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="hazine"]{ --bg:#031b2c; --panel:#053349; --panel-hi:#0a4560; --line:#0f5772; --ink:#eafff9; --ink-dim:#8fd6ce; --ink-faint:#4f8f92; --a1:#5eead4; --a2:#ff6b6b; --a3:#f4c542; --a4:#7c8cff; --a5:#14b8a6; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="pist"]{ --bg:#0b0b10; --panel:#141419; --panel-hi:#1c1c24; --line:#2b2b35; --ink:#f5f5f8; --ink-dim:#a3a3b0; --ink-faint:#5d5d6e; --a1:#3fa9ff; --a2:#ff3b3b; --a3:#ffd23f; --a4:#ff9142; --a5:#3ddc84; --font-display:'Racing Sans One',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
-#km-oyun-wrap[data-tema="ninja"]{ --bg:#05040a; --panel:#0d0a17; --panel-hi:#15101f; --line:#241c33; --ink:#eef0ff; --ink-dim:#9a93b8; --ink-faint:#544b6e; --a1:#7dd3fc; --a2:#ff3d6e; --a3:#ffd23f; --a4:#a78bfa; --a5:#34d399; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="ninja"]{ --bg:#030605; --panel:#08110e; --panel-hi:#0e1b16; --line:#1a2e26; --ink:#eaf5ef; --ink-dim:#94b3a6; --ink-faint:#4d6b5f; --a1:#7fe0b8; --a2:#ff5a3c; --a3:#ffd23f; --a4:#a78bfa; --a5:#7dd3fc; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="monopoly"]{ --bg:#0d1b12; --panel:#122419; --panel-hi:#1a3322; --line:#254a30; --ink:#eafff0; --ink-dim:#9fd6b2; --ink-faint:#4f8f64; --a1:#f4c542; --a2:#ff6b6b; --a3:#ffd23f; --a4:#7c8cff; --a5:#3ddc97; --font-display:'Fredoka',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="dag"]{ --bg:#1a1210; --panel:#241a16; --panel-hi:#302420; --line:#4a3830; --ink:#fff3ec; --ink-dim:#d6ada0; --ink-faint:#8f6f64; --a1:#ff8a3d; --a2:#e63946; --a3:#ffd166; --a4:#8d99ae; --a5:#588157; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Barlow Condensed',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="balon"]{ --bg:#1c1430; --panel:#2a1f42; --panel-hi:#392c56; --line:#4d3d70; --ink:#fff6ee; --ink-dim:#cbb8e8; --ink-faint:#79689e; --a1:#ffb4a2; --a2:#a7c7e7; --a3:#ffd6a5; --a4:#c8b6ff; --a5:#b5e6d5; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Fredoka',system-ui,sans-serif; }
@@ -12729,30 +12729,39 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 @keyframes kmPistSonucFlipIn{ 0%{ transform:scale(.7) rotateY(90deg); } 60%{ transform:scale(1.06) rotateY(0deg); } 100%{ transform:scale(1) rotateY(0deg); } }
 .km-pist-sonuc.goster:not(.ciddi) .km-pist-sonuc-ic{ animation:kmPistSonucFlipIn .6s cubic-bezier(.2,.7,.3,1) forwards; }
 
-/* Ninja Oyunu */
-#km-oyun-panel-ninja{ background:linear-gradient(180deg,#0a0716 0%,#050409 60%,#020103 100%); }
-.km-moon-glow{ fill:var(--a3); opacity:.18; filter:blur(20px); }
-.km-moon{ fill:#fff6d8; opacity:.92; }
-.km-moon-crater{ fill:#d8c9a0; opacity:.35; }
-.km-skyline-back rect{ fill:#241a3d; opacity:.8; }
-.km-skyline-front rect{ fill:#150f24; stroke:#2a1f45; stroke-width:1; }
-.km-ninja-path{ fill:none; stroke:var(--a1); stroke-width:2; stroke-dasharray:1 8; stroke-linecap:round; opacity:.65; }
-.km-ninja-path-glow{ fill:none; stroke:var(--a1); stroke-width:6; opacity:.06; filter:blur(3px); }
-.km-shuriken{ fill:#3a3252; stroke:#0a0714; stroke-width:1; transition:fill .5s, filter .5s; transform-origin:center; transform-box:fill-box; }
-.km-shuriken.hit{ fill:var(--_c); filter:drop-shadow(0 0 6px var(--_c)); animation:kmShurikenSpin 2.4s linear infinite; }
-@keyframes kmShurikenSpin{ to{ transform:rotate(360deg); } }
-.km-shuriken-num{ font-family:var(--font-display); font-weight:400; font-size:8px; fill:#8f89ad; pointer-events:none; }
-.km-dojo-icon path{ fill:#2a2140; }
-.km-dojo-icon rect{ fill:#1c1730; }
-.km-dojo-lantern{ fill:var(--a2); filter:drop-shadow(0 0 5px var(--a2)); }
-.km-ninja-token{ transition:filter .2s ease; }
-.km-ninja-token .km-ninja-body{ fill:var(--_c); stroke:#04081c; stroke-width:1; }
-.km-ninja-token .km-ninja-head{ fill:#e8d3ae; }
-.km-ninja-token .km-ninja-band{ fill:var(--_c); opacity:.9; }
-.km-ninja-token .km-tag-bg{ fill:#0a0714; stroke:var(--_c); stroke-width:1.4; }
+/* Ninja Oyunu — "Bambu Yolu" silüet sahnesi (2026-09-24, kullanıcı bir silüet platform oyunu ekran
+   görüntüsü gönderip "ninja oyununu bu şekilde yapabilir miyiz" dedi; özgün çizim, oyunun görselleri
+   kopyalanmadı). Sisli yeşil bambu katmanları + siyah silüet zemin/karakterler. Performans: Sis
+   Haritası dersi — canlı filtre YOK, bambu/zemin tek seferlik statik path, sürekli animasyon sadece
+   birkaç küçük düşen yaprakta ve sadece transform. Panel zemini yarı yeşil/yarı siyah: meet ile
+   üstte kalan bant gökyüzüne, altta kalan bant siyah zemine uysun diye. */
+#km-oyun-panel-ninja{ background:linear-gradient(180deg,#66b59e 0%,#3b8872 40%,#1f5a4b 50%,#030504 50%,#030504 100%); }
+.km-ninja-gok-isik{ pointer-events:none; }
+.km-ninja-sis{ pointer-events:none; }
+.km-ninja-zemin{ fill:#030504; }
+.km-ninja-cim{ fill:#030504; }
+.km-ninja-sil{ fill:#030504; }
+.km-ninja-path{ fill:none; stroke:none; }
+.km-ninja-cp .km-ninja-cp-sil{ fill:#030504; }
+.km-ninja-cp .km-ninja-cp-isik{ fill:#1d3a31; transition:fill .6s ease; }
+.km-ninja-cp.hit .km-ninja-cp-isik{ fill:var(--_c); }
+.km-ninja-cp .km-ninja-cp-hale{ fill:var(--_c); opacity:0; transition:opacity .6s ease; }
+.km-ninja-cp.hit .km-ninja-cp-hale{ opacity:.28; }
+.km-ninja-cp-num{ font-family:var(--font-display); font-weight:400; font-size:9px; fill:#3f6155; pointer-events:none; }
+.km-ninja-tapinak-fener{ fill:#ffb347; }
+.km-ninja-tapinak-hale{ fill:#ffb347; opacity:.22; }
+.km-ninja-yaprak{ fill:#1b4a3d; transform-box:fill-box; transform-origin:center; animation:kmNinjaYaprak 12s linear infinite; }
+.km-ninja-yaprak.y2{ fill:#2f7a64; }
+@keyframes kmNinjaYaprak{ 0%{ transform:translate(0,-30px) rotate(0deg); opacity:0; } 8%{ opacity:.9; } 92%{ opacity:.9; } 100%{ transform:translate(-140px,480px) rotate(520deg); opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .km-ninja-yaprak{ animation:none; opacity:0; } }
+.km-ninja-token .km-sil-govde{ fill:#030504; }
+.km-ninja-token .km-sil-atki{ fill:var(--_c); }
+.km-ninja-token .km-sil-goz{ fill:var(--_c); }
+.km-ninja-token .km-sil-kilic{ stroke:#030504; stroke-width:2.2; stroke-linecap:round; fill:none; }
+.km-ninja-token .km-sil-poz{ transform-box:fill-box; transform-origin:50% 100%; transition:transform .18s ease; }
+.km-ninja-token.flying .km-sil-poz{ transform:rotate(9deg); }
+.km-ninja-token .km-tag-bg{ fill:rgba(3,5,4,.88); stroke:var(--_c); stroke-width:1.4; }
 .km-ninja-token .km-tag-text{ font-family:var(--font-body); font-weight:700; fill:var(--ink); font-size:9px; }
-.km-ninja-token.flying{ animation:kmNinjaGlow .28s ease-in-out infinite; }
-@keyframes kmNinjaGlow{ 0%,100%{ filter:drop-shadow(0 0 5px var(--_c)); } 50%{ filter:drop-shadow(0 0 12px var(--_c)); } }
 
 /* Mini Monopoly */
 #km-oyun-panel-monopoly{ background:radial-gradient(120% 100% at 50% 45%,#16341f 0%,#0d1b12 60%,#081208 100%); }
@@ -13383,8 +13392,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 surprizler: [{ikon:'🪙',metin:'Küçük bir altın buldu!'},{ikon:'🐬',metin:'Yunuslar eşlik etti!'},{ikon:'🦜',metin:'Konuşan papağanla tanıştı!'},{ikon:'🗺️',metin:'Haritada gizli bir iz buldu!'},{ikon:'🐚',metin:'Nadir bir deniz kabuğu buldu!'}] },
             pist: { ad: 'Pist Yarışı', ikon: '🏎️', renkler: ['#ff3b3b', '#3fa9ff', '#ffd23f', '#3ddc84', '#ff9142'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o karta bayrağa doğru gaz verdirir.', btn: '🏁 İlerlet', finish: 'YARIŞI BİTİRDİ!', cp: 'TUR TAMAMLANDI!', birim: 'tur bayrağı', bitis: 'Bayrağı gördü! 🏁',
                 surprizler: [{ikon:'⚡',metin:'Turbo boost aldı!'},{ikon:'🔧',metin:"Pit stop'ta hız kazandı!"},{ikon:'📣',metin:'Seyirciler çılgına döndü!'},{ikon:'🌪️',metin:'Rüzgar arkasından esti!'},{ikon:'🏁',metin:'En hızlı turu attı!'}] },
-            ninja: { ad: 'Ninja Oyunu', ikon: '🥷', renkler: ['#7dd3fc', '#ff3d6e', '#ffd23f', '#a78bfa', '#34d399'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o ninjayı çatıdan çatıya, dojoya doğru sıçratır.', btn: '🥷 İlerlet', finish: 'DOJOYA ULAŞTI!', cp: 'YENİ ÇATIYA SIÇRADI!', birim: 'çatı', bitis: 'Dojoda! 🥷',
-                surprizler: [{ikon:'🌙',metin:'Ay ışığında saklandı!'},{ikon:'🎯',metin:'Suriken tam vurdu!'},{ikon:'🐾',metin:'Sessizce sıçradı!'},{ikon:'🏮',metin:'Gizli bir fener buldu!'},{ikon:'⚔️',metin:'Gölgeler arasından geçti!'}] },
+            ninja: { ad: 'Ninja Oyunu', ikon: '🥷', renkler: ['#7dd3fc', '#ff3d6e', '#ffd23f', '#a78bfa', '#34d399'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o ninjayı sisli bambu ormanında kapıdan kapıya, dağdaki tapınağa doğru koşturur.', btn: '🥷 İlerlet', finish: 'TAPINAĞA ULAŞTI!', cp: 'YENİ KAPIDAN GEÇTİ!', birim: 'kapı', bitis: 'Tapınakta! 🥷',
+                surprizler: [{ikon:'🎋',metin:'Bambuların arasından süzüldü!'},{ikon:'🎯',metin:'Suriken tam vurdu!'},{ikon:'🐾',metin:'Uçurumun üstünden sessizce sıçradı!'},{ikon:'🏮',metin:'Gizli bir fener yaktı!'},{ikon:'⚔️',metin:'Sisin içinden geçti!'}] },
             monopoly: { ad: 'Mini Monopoly', ikon: '🏠', renkler: ['#f4c542', '#ff6b6b', '#5fb8ff', '#7c8cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o piyonu tahtada bir sonraki kareye ilerletir. 3. seriden sonra bazen bir Şans Kartı çıkar!', btn: '🏠 İlerlet', finish: 'TURU TAMAMLADI!', cp: 'YENİ KAREYE GEÇTİ!', birim: 'kare', bitis: 'Turu tamamladı! 🎉',
                 surprizler: [{ikon:'🎩',metin:'Şık bir şapka taktı!'},{ikon:'🏆',metin:'Küçük bir kupa kazandı!'},{ikon:'🏠',metin:'Küçük bir ev inşa etti!'},{ikon:'🐕',metin:'Maskotla tanıştı!'},{ikon:'⭐',metin:'Yıldız kazandı!'}] },
             dag: { ad: 'Dağ Tırmanışı', ikon: '⛰️', renkler: ['#ff8a3d', '#e63946', '#ffd166', '#8d99ae', '#588157'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o dağcıyı zorlu kayalıklardan yukarı, tepeye doğru tırmandırır.', btn: '🧗 İlerlet', finish: 'TEPEYE ULAŞTI!', cp: 'YENİ ÇIKINTIYA ULAŞTI!', birim: 'çıkıntı', bitis: 'Tepede! ⛰️',
@@ -14789,24 +14798,57 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   </div>
                 </div>
             </div>`;
+            // Ninja — "Bambu Yolu" (2026-09-24): silüet platform sahnesi. Bambu katmanları, zemin ve
+            // çimen kmOyunSahneKurNinja'da TEK SEFER, tohumlu (her açılışta aynı) üretiliyor.
             if(tid === 'ninja') return `<div class="km-oyun-panel" id="km-oyun-panel-ninja">
                 <svg id="km-oyun-svg-ninja" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
-                  <g id="km-oyun-stars-ninja-svg"></g>
-                  <circle class="km-moon-glow" cx="1000" cy="70" r="70"/>
-                  <circle class="km-moon" cx="1000" cy="70" r="40"/>
-                  <circle class="km-moon-crater" cx="988" cy="58" r="7"/><circle class="km-moon-crater" cx="1014" cy="82" r="5"/><circle class="km-moon-crater" cx="1006" cy="56" r="4"/>
-                  <g class="km-skyline-back">
-                    <rect x="0" y="260" width="70" height="180"/><rect x="90" y="230" width="60" height="210"/><rect x="170" y="280" width="80" height="160"/><rect x="270" y="200" width="65" height="240"/><rect x="355" y="250" width="75" height="190"/><rect x="450" y="180" width="60" height="260"/><rect x="530" y="240" width="90" height="200"/><rect x="640" y="150" width="70" height="290"/><rect x="730" y="220" width="80" height="220"/><rect x="830" y="120" width="65" height="320"/><rect x="915" y="200" width="90" height="240"/><rect x="1030" y="90" width="75" height="350"/><rect x="1130" y="180" width="70" height="260"/>
+                  <defs>
+                    <linearGradient id="kmNinjaGok" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440"><stop offset="0" stop-color="#66b59e"/><stop offset=".55" stop-color="#3b8872"/><stop offset="1" stop-color="#1f5a4b"/></linearGradient>
+                    <radialGradient id="kmNinjaIsik" gradientUnits="userSpaceOnUse" cx="912" cy="18" r="760"><stop offset="0" stop-color="#eafff5" stop-opacity=".5"/><stop offset="1" stop-color="#eafff5" stop-opacity="0"/></radialGradient>
+                    <linearGradient id="kmNinjaSis1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440"><stop offset="0" stop-color="#c4efe0" stop-opacity="0"/><stop offset=".62" stop-color="#c4efe0" stop-opacity=".32"/><stop offset="1" stop-color="#c4efe0" stop-opacity=".1"/></linearGradient>
+                    <linearGradient id="kmNinjaSis2" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440"><stop offset="0" stop-color="#a3e3cb" stop-opacity="0"/><stop offset=".72" stop-color="#a3e3cb" stop-opacity=".2"/><stop offset="1" stop-color="#a3e3cb" stop-opacity="0"/></linearGradient>
+                    <radialGradient id="kmNinjaFenerHale"><stop offset="0" stop-color="#ffb347" stop-opacity=".6"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+                  </defs>
+                  <!-- meet ile panel oranı viewBox'tan farklıysa SVG kendi kutusunda viewBox DIŞINI da çizer
+                       (üst/alt ya da sol/sağ bant). Gökyüzü/bambu/zemin bilerek viewBox'ın çok dışına taşıyor ki
+                       her ekran oranında bantlar kesintisiz sahne olsun, düz renk şerit kalmasın. -->
+                  <rect x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaGok)"/>
+                  <rect class="km-ninja-gok-isik" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaIsik)"/>
+                  <path fill="#6cb9a3" opacity=".55" d="M-400 310 L0 300 L60 272 L130 290 L210 242 L280 262 L350 214 L420 250 L500 226 L560 192 L640 236 L720 206 L800 242 L880 202 L950 226 L1030 188 L1110 216 L1200 196 L1600 214 L1600 440 L-400 440 Z"/>
+                  <g fill="#5aa690" opacity=".85" transform="translate(560,192)"><rect x="-1.5" y="-40" width="3" height="10"/><path d="M-13,-26 L0,-32 L13,-26 L10,-24 L-10,-24 Z"/><rect x="-7" y="-24" width="14" height="6"/><path d="M-17,-16 L0,-23 L17,-16 L13,-14 L-13,-14 Z"/><rect x="-9" y="-14" width="18" height="14"/></g>
+                  <path id="km-ninja-bambu-uzak" fill="#4f9f88" opacity=".62"/>
+                  <rect class="km-ninja-sis" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaSis1)"/>
+                  <path id="km-ninja-bambu-orta" fill="#2d725f" opacity=".86"/>
+                  <rect class="km-ninja-sis" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaSis2)"/>
+                  <path id="km-ninja-bambu-yakin" fill="#1b4f42" opacity=".92"/>
+                  <g id="km-ninja-yapraklar"></g>
+                  <rect x="-400" y="440" width="2000" height="600" fill="#030504"/>
+                  <g class="km-ninja-sil" transform="translate(58,390)">
+                    <path d="M-66,-148 Q0,-158 66,-148 L71,-159 Q0,-171 -71,-159 Z"/>
+                    <rect x="-58" y="-139" width="116" height="7"/><rect x="-4" y="-148" width="8" height="10"/>
+                    <path d="M-50,-148 L-40,-148 L-38,0 L-52,0 Z"/><path d="M40,-148 L50,-148 L52,0 L38,0 Z"/>
                   </g>
-                  <g class="km-skyline-front">
-                    <rect x="20" y="300" width="100" height="140"/><rect x="150" y="340" width="90" height="100"/><rect x="260" y="280" width="110" height="160"/><rect x="400" y="330" width="80" height="110"/><rect x="500" y="260" width="120" height="180"/><rect x="650" y="320" width="90" height="120"/><rect x="760" y="240" width="100" height="200"/><rect x="880" y="300" width="85" height="140"/><rect x="990" y="200" width="110" height="240"/><rect x="1120" y="280" width="80" height="160"/>
+                  <path id="km-ninja-zemin" class="km-ninja-zemin"/>
+                  <path id="km-ninja-cim" class="km-ninja-cim"/>
+                  <g class="km-ninja-sil">
+                    <ellipse cx="612" cy="311" rx="12" ry="5"/><ellipse cx="612" cy="302" rx="9" ry="4.5"/><ellipse cx="612" cy="294.5" rx="6" ry="3.5"/>
+                    <g transform="translate(1004,205)"><rect x="-12" y="-3" width="24" height="3"/><rect x="-3.5" y="-22" width="7" height="19"/><rect x="-10" y="-25" width="20" height="4"/><rect x="-8" y="-38" width="16" height="13"/><path d="M-15,-38 L0,-48 L15,-38 Z"/><rect x="-2" y="-53" width="4" height="6"/></g>
                   </g>
-                  <path id="km-oyun-ninja-path" class="km-ninja-path-glow" d="M 70 400 L 200 400 Q 220 400 220 380 L 220 300 L 340 300 Q 360 300 360 280 L 360 220 L 480 220 Q 500 220 500 200 L 500 150 L 620 150 Q 640 150 640 130 L 640 260 L 760 260 Q 780 260 780 240 L 780 170 L 900 170 Q 920 170 920 150 L 920 90 L 1040 90 Q 1060 90 1060 70 L 1060 40 L 1150 40"/>
-                  <path class="km-ninja-path" d="M 70 400 L 200 400 Q 220 400 220 380 L 220 300 L 340 300 Q 360 300 360 280 L 360 220 L 480 220 Q 500 220 500 200 L 500 150 L 620 150 Q 640 150 640 130 L 640 260 L 760 260 Q 780 260 780 240 L 780 170 L 900 170 Q 920 170 920 150 L 920 90 L 1040 90 Q 1060 90 1060 70 L 1060 40 L 1150 40"/>
+                  <rect x="998" y="171" width="12" height="7" fill="#ffb347" opacity=".85"/>
+                  <g transform="translate(1152,205)">
+                    <circle cx="0" cy="-30" r="46" fill="url(#kmNinjaFenerHale)"/>
+                    <g class="km-ninja-sil">
+                      <rect x="-32" y="-6" width="64" height="6"/>
+                      <rect x="-25" y="-31" width="5" height="25"/><rect x="20" y="-31" width="5" height="25"/><rect x="-23" y="-31" width="46" height="3"/>
+                      <path d="M-40,-30 Q-20,-34 0,-44 Q20,-34 40,-30 L35,-37 Q16,-41 0,-51 Q-16,-41 -35,-37 Z"/>
+                      <rect x="-15" y="-60" width="30" height="11"/>
+                      <path d="M-29,-58 Q-14,-62 0,-70 Q14,-62 29,-58 L25,-64 Q12,-67 0,-76 Q-12,-67 -25,-64 Z"/>
+                      <rect x="-1.5" y="-90" width="3" height="16"/>
+                    </g>
+                    <rect class="km-ninja-tapinak-fener" x="-7" y="-25" width="14" height="15" rx="2"/>
+                  </g>
+                  <path id="km-oyun-ninja-path" class="km-ninja-path" d="M 110 390 L 190 390 Q 205 360 222 365 L 315 365 Q 330 332 348 340 L 455 340 Q 505 280 555 315 L 675 315 Q 690 280 708 285 L 785 285 Q 800 250 818 255 L 885 255 Q 930 185 975 205 L 1110 205"/>
                   <g id="km-oyun-shurikenler"></g>
-                  <g transform="translate(1150,40)" class="km-dojo-icon" opacity="0.55">
-                    <path d="M-16,0 L0,-16 L16,0 Z"/><rect x="-11" y="0" width="22" height="12"/><circle class="km-dojo-lantern" cx="0" cy="6" r="4"/>
-                  </g>
                   <g id="km-oyun-ninjalar"></g>
                 </svg>
             </div>`;
@@ -17078,46 +17120,166 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             requestAnimationFrame(frame);
         }
 
-        // ---- NINJA OYUNU ----
-        // Karakter artık Hayvan Karakterler havuzundan geliyor (2026-09-18, kullanıcı talimatı) —
-        // eski cinsiyet-bazlı erkek/kadın ninja görselleri KALDIRILDI.
+        // ---- NINJA OYUNU — "Bambu Yolu" (2026-09-24 silüet yeniden çizimi) ----
+        // Yol artık bambu ormanında soldan sağa bir platform rotası: basamaklar arası kısa sıçrama
+        // yayları, iki uçurum (471-539, 901-959) üstünden gerçek atlayış. Karakterler siyah silüet
+        // ninjalar — hepsi siyah olduğu için ayırt edici olan: sporcunun renginde atkı + göz yarığı +
+        // isim etiketi. Kilit çerçevesi ve takım rozeti hayvan karakterlerdeki mantıkla aynı.
+        const KM_NINJA_PLATFORMLAR = [[0, 200, 390], [200, 330, 365], [330, 470, 340], [540, 690, 315], [690, 800, 285], [800, 900, 255], [960, 1200, 205]];
+        function kmOyunNinjaZeminY(x) {
+            for(let k = 0; k < KM_NINJA_PLATFORMLAR.length; k++) { let p = KM_NINJA_PLATFORMLAR[k]; if(x >= p[0] && x <= p[1]) return p[2]; }
+            return null;
+        }
+        function kmOyunNinjaTohum(seed) {
+            let a = seed >>> 0;
+            return function() { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        }
+        // Bir bambu katmanını TEK <path> olarak üretir (gövde + boğum halkaları + yaprak kümeleri) —
+        // yüzlerce ayrı eleman yerine tek bir dolgu, tek seferlik; animasyon/filtre yok.
+        function kmOyunNinjaBambuD(seed, adet, kalMin, kalMax, yaprakBoy, ustMax) {
+            let r = kmOyunNinjaTohum(seed), d = '', f = function(v) { return v.toFixed(1); };
+            // Gövdeler viewBox'ın dışına (x -320..1520, y -420'ye kadar) uzanıyor — bkz. panel HTML'deki
+            // "meet bantları" notu; yaprak kümeleri de o yüksekliğe yayılıyor.
+            const TEPE = -420;
+            for(let i = 0; i < adet; i++) {
+                let x = (i + r() * 0.85) * (1840 / adet) - 320, w = kalMin + r() * (kalMax - kalMin);
+                let egim = (r() - 0.5) * 30, ust = -30 + r() * ustMax;
+                d += `M${f(x)} 445 L${f(x + w)} 445 L${f(x + egim + w * 0.82)} ${TEPE} L${f(x + egim)} ${TEPE} Z`;
+                let bog = 38 + r() * 22;
+                for(let y = 440 - bog; y > TEPE; y -= bog * (0.85 + r() * 0.3)) {
+                    let t = (445 - y) / (445 - TEPE), nx = x + egim * t;
+                    d += `M${f(nx - 1.2)} ${f(y)} h${f(w + 2.4)} v2.2 h${f(-(w + 2.4))} Z`;
+                }
+                let kume = 3 + Math.floor(r() * 3);
+                for(let k = 0; k < kume; k++) {
+                    let y = ust - 150 + r() * 400, t = (445 - y) / (445 - TEPE), nx = x + egim * t + w / 2;
+                    let yon = r() < 0.5 ? -1 : 1, adetY = 3 + Math.floor(r() * 3);
+                    for(let j = 0; j < adetY; j++) {
+                        let a = yon > 0 ? (0.25 + r() * 0.95) : (Math.PI - 0.25 - r() * 0.95);
+                        let L = yaprakBoy * (0.7 + r() * 0.6), W = L * 0.15;
+                        let bx = nx + yon * r() * 5, by = y + j * 3.2;
+                        let ca = Math.cos(a), sa = Math.sin(a), tx = bx + L * ca, ty = by + L * sa, mx = bx + L * 0.5 * ca, my = by + L * 0.5 * sa;
+                        d += `M${f(bx)} ${f(by)} Q${f(mx - sa * W)} ${f(my + ca * W)} ${f(tx)} ${f(ty)} Q${f(mx + sa * W)} ${f(my - ca * W)} ${f(bx)} ${f(by)} Z`;
+                    }
+                }
+            }
+            return d;
+        }
+        let _kmNinjaSahneOnbellek = null;
+        function kmOyunNinjaSahneParcalari() {
+            if(_kmNinjaSahneOnbellek) return _kmNinjaSahneOnbellek;
+            let zemin = 'M-400 445', cim = '', r = kmOyunNinjaTohum(71), f = function(v) { return v.toFixed(1); };
+            // Çizim için iki uca viewBox dışı devam (sol: başlangıç zemini, sağ: tapınak yaylası) —
+            // oyun mantığı (kmOyunNinjaZeminY) yine sadece KM_NINJA_PLATFORMLAR'ı kullanıyor.
+            let cizim = [[-400, 0, 390]].concat(KM_NINJA_PLATFORMLAR, [[1200, 1600, 205]]);
+            cizim.forEach(function(p, k) {
+                zemin += ` L${p[0]} ${p[2]} L${p[1]} ${p[2]}`;
+                let sonraki = cizim[k + 1];
+                if(sonraki && sonraki[0] > p[1]) zemin += ` L${p[1]} 445 L${sonraki[0]} 445`;
+                for(let x = p[0] + 1; x < p[1] - 1; x += 2.6 + r() * 2.4) {
+                    let h = 3 + r() * 8, egim = (r() - 0.35) * 5;
+                    cim += `M${f(x)} ${p[2] + 0.5} L${f(x + egim + 1.1)} ${f(p[2] - h)} L${f(x + 2.4)} ${p[2] + 0.5} Z`;
+                }
+            });
+            zemin += ' L1600 445 Z';
+            _kmNinjaSahneOnbellek = {
+                zemin: zemin, cim: cim,
+                uzak: kmOyunNinjaBambuD(11, 50, 3.5, 6.5, 15, 90),
+                orta: kmOyunNinjaBambuD(23, 28, 6, 10, 22, 60),
+                yakin: kmOyunNinjaBambuD(37, 10, 10, 15, 30, 40)
+            };
+            return _kmNinjaSahneOnbellek;
+        }
         function kmOyunNinjaKarakterSVG(s, renk, uid) {
-            return kmOyunHayvanKarakterSVG(s, renk, 45);
+            let takimRozetiHTML = '';
+            if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
+                let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
+                if(ti !== -1) takimRozetiHTML = `<text x="0" y="-56" font-size="14" text-anchor="middle" opacity="0.85">${_kmOyunTakimlar[ti].emoji}</text>`;
+            }
+            let kilitSeviye = kmOyunKilitSeviyesi(kmOyunDurumAl(s.g, s.ad)), cerceveHTML = '';
+            if(kilitSeviye === 1) cerceveHTML = '<ellipse cx="0" cy="-25" rx="21" ry="29" fill="none" stroke="#cd8a4a" stroke-width="2" opacity="0.65" stroke-dasharray="3 2.4"/>';
+            else if(kilitSeviye === 2) cerceveHTML = '<ellipse cx="0" cy="-25" rx="22" ry="30" fill="none" stroke="#ffd23f" stroke-width="2.4" opacity="0.9"/>';
+            return `<g class="km-char-bob">${cerceveHTML}<g class="km-sil-poz">
+                <path class="km-sil-atki" d="M-2,-33 C-10,-36 -19,-31 -30,-36 C-23,-28 -12,-28 -2,-30 Z M-2,-31 C-9,-29 -16,-24 -25,-25 C-17,-20 -9,-24 -2,-28 Z"/>
+                <line class="km-sil-kilic" x1="-11" y1="-18" x2="9" y2="-47"/>
+                <path class="km-sil-govde" d="M-15,-38 L0,-50 L15,-38 Q0,-35.5 -15,-38 Z M-4.5,-36 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 Z M-5,-31 C-8,-24 -7,-17 -4,-13 L6,-14 C9,-20 9,-26 7,-31 Z M5,-28 L14,-21 L12,-18.5 L3.5,-24 Z M-4,-28 L-11,-21 L-9,-19 L-2.5,-24.5 Z M2,-15 L10,-8 L8,-1 L13,0 L13,-1.6 L10.6,-2 L12.6,-8.6 L6,-16.5 Z M-4,-15 L-9,-6 L-14,-1 L-11,0 L-6,-4.5 L1,-13 Z"/>
+                <rect class="km-sil-goz" x="2.4" y="-37.3" width="4" height="1.4" rx=".7"/>
+            </g>${takimRozetiHTML}</g>`;
         }
         function kmOyunNinjaPath() { return document.getElementById('km-oyun-ninja-path'); }
         let _kmOyunNinjaTotalLen = 0;
         function kmOyunNinjaNokta(frac) { let p = kmOyunNinjaPath(); return p ? p.getPointAtLength(_kmOyunNinjaTotalLen * frac) : { x: 0, y: 0 }; }
+        // Yol UZUNLUĞU cinsinden nokta — iki uçta düz zeminde (başta y=390, sonda y=205) yatay uzatılıyor,
+        // böylece aynı yerde duran sporcular yolun başı/sonunda üst üste yığılmıyor.
+        function kmOyunNinjaUzunlukNokta(len) {
+            let p = kmOyunNinjaPath(); if(!p) return { x: 0, y: 0 };
+            let L = _kmOyunNinjaTotalLen;
+            if(len < 0) { let b = p.getPointAtLength(0); return { x: Math.max(22, b.x + len), y: b.y }; }
+            if(len > L) { let e = p.getPointAtLength(L); return { x: Math.min(1188, e.x + (len - L)), y: e.y }; }
+            return p.getPointAtLength(len);
+        }
+        // Aynı frac'taki sporcular yol boyunca (x değil, yol UZUNLUĞU olarak) aralanıyor — nokta her
+        // zaman yolun üstünde kalıyor, kimse zemine gömülmüyor/havada asılı kalmıyor.
+        function kmOyunNinjaAralik(i, n) { return kmOyunJitter(i, n)[0] * 0.5; }
+        // Dururken sıçrama yayının ortasında havada kalmasın: zeminde değilse sıçrayış noktasına geri yürüt.
+        function kmOyunNinjaDurusKonum(len) {
+            let pt = kmOyunNinjaUzunlukNokta(len);
+            for(let k = 0; k < 60; k++) {
+                let zy = kmOyunNinjaZeminY(pt.x);
+                if(zy !== null && Math.abs(pt.y - zy) < 2.5) return { x: pt.x, y: zy };
+                len -= 4; pt = kmOyunNinjaUzunlukNokta(len);
+            }
+            return { x: pt.x, y: pt.y };
+        }
+        function kmOyunNinjaSporcuKonum(frac, i, n) { return kmOyunNinjaDurusKonum(frac * _kmOyunNinjaTotalLen + kmOyunNinjaAralik(i, n)); }
+        function kmOyunNinjaCpSVG(ci) {
+            let isik, sil;
+            if(ci % 2 === 0) {
+                sil = '<path d="M-27,-50 Q0,-54 27,-50 L29,-56 Q0,-61 -29,-56 Z"/><rect x="-23" y="-46" width="46" height="3.5"/><path d="M-20,-50 L-15.5,-50 L-14.5,0 L-21,0 Z"/><path d="M15.5,-50 L20,-50 L21,0 L14.5,0 Z"/>';
+                isik = '<rect class="km-ninja-cp-isik" x="-6" y="-44" width="12" height="8" rx="1.5"/>';
+            } else {
+                sil = '<rect x="-11" y="-3" width="22" height="3"/><rect x="-3.5" y="-21" width="7" height="18"/><rect x="-9.5" y="-24" width="19" height="3.5"/><rect x="-8" y="-36" width="16" height="12"/><path d="M-14,-36 L0,-45 L14,-36 Z"/><rect x="-2" y="-50" width="4" height="6"/>';
+                isik = '<rect class="km-ninja-cp-isik" x="-4.5" y="-33.5" width="9" height="7" rx="1"/>';
+            }
+            return `<circle class="km-ninja-cp-hale" cx="0" cy="${ci % 2 === 0 ? -40 : -30}" r="20"/><g class="km-ninja-cp-sil">${sil}</g>${isik}<text class="km-ninja-cp-num" x="0" y="16" text-anchor="middle">${ci + 1}</text>`;
+        }
         function kmOyunSahneKurNinja() {
             let p = kmOyunNinjaPath(); if(!p) return;
             _kmOyunNinjaTotalLen = p.getTotalLength();
-            let sg = document.getElementById('km-oyun-stars-ninja-svg');
-            if(sg) {
-                let html = '';
-                for(let i = 0; i < 40; i++) { let x = Math.random() * 1200, y = Math.random() * 220, r = Math.random() * 1.1 + 0.3; html += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff" opacity="${(0.12 + Math.random() * 0.4).toFixed(2)}"/>`; }
-                sg.innerHTML = html;
+            let parca = kmOyunNinjaSahneParcalari();
+            [['km-ninja-bambu-uzak', parca.uzak], ['km-ninja-bambu-orta', parca.orta], ['km-ninja-bambu-yakin', parca.yakin], ['km-ninja-zemin', parca.zemin], ['km-ninja-cim', parca.cim]].forEach(function(c) {
+                let el = document.getElementById(c[0]); if(el) el.setAttribute('d', c[1]);
+            });
+            let yg = document.getElementById('km-ninja-yapraklar');
+            if(yg) {
+                let r = kmOyunNinjaTohum(5), html = '';
+                for(let k = 0; k < 7; k++) {
+                    let x = 80 + r() * 1100, sure = 10 + r() * 7, gecikme = -r() * sure;
+                    html += `<g transform="translate(${x.toFixed(0)},0)"><path class="km-ninja-yaprak${k % 2 ? ' y2' : ''}" style="animation-duration:${sure.toFixed(1)}s; animation-delay:${gecikme.toFixed(1)}s;" d="M0,0 Q6,-2.6 13,0 Q6,2.6 0,0 Z"/></g>`;
+                }
+                yg.innerHTML = html;
             }
             let sgroup = document.getElementById('km-oyun-shurikenler');
             if(sgroup) {
-                sgroup.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
-                    let pt = kmOyunNinjaNokta(f);
-                    return `<g class="km-shuriken" id="km-oyun-shuriken-${ci}" transform="translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})"><path d="M0,-9 L3,-3 L9,0 L3,3 L0,9 L-3,3 L-9,0 L-3,-3 Z"/><text class="km-shuriken-num" x="0" y="16" text-anchor="middle">${ci + 1}</text></g>`;
+                sgroup.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(frac, ci) {
+                    let pt = kmOyunNinjaDurusKonum(frac * _kmOyunNinjaTotalLen);
+                    return `<g class="km-ninja-cp" id="km-oyun-shuriken-${ci}" transform="translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})">${kmOyunNinjaCpSVG(ci)}</g>`;
                 }).join('');
             }
             let cg = document.getElementById('km-oyun-ninjalar'); if(!cg) return;
             cg.innerHTML = '';
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
-                let pt = kmOyunNinjaNokta(s.frac);
-                let jj = kmOyunJitter(i, roster.length);
+                let pt = kmOyunNinjaSporcuKonum(s.frac, i, roster.length);
                 let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 el.setAttribute('class', 'km-ninja-token');
-                el.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1]).toFixed(1)})`);
+                el.setAttribute('transform', `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
                 let renk = kmOyunRenk('ninja', i);
                 el.style.setProperty('--_c', renk);
                 let ilkAd = s.ad.split(' ')[0];
                 let genislik = Math.max(38, ilkAd.length * 7 + 14);
                 el.innerHTML = `${kmOyunNinjaKarakterSVG(s, renk, 'ninja-' + i)}
-                    <g transform="translate(0,30)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${ilkAd}</text></g>`;
+                    <g transform="translate(0,16)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9"/><text class="km-tag-text" x="0" y="4" text-anchor="middle">${esc(ilkAd)}</text></g>`;
                 cg.appendChild(el);
                 s.ninjaEl = el;
             });
@@ -17131,8 +17293,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncNinja() {
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
-                let pt = kmOyunNinjaNokta(s.frac), jj = kmOyunJitter(i, roster.length);
-                if(s.ninjaEl) s.ninjaEl.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1]).toFixed(1)})`);
+                let pt = kmOyunNinjaSporcuKonum(s.frac, i, roster.length);
+                if(s.ninjaEl) s.ninjaEl.setAttribute('transform', `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
             });
             for(let cp = 0; cp < KM_OYUN_CP_SAYISI - 1; cp++) {
                 let best = null;
@@ -17144,15 +17306,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunAnimateNinja(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, el = s.ninjaEl; if(!el) { done(); return; }
             el.classList.add('flying');
+            let L = _kmOyunNinjaTotalLen, aralik = kmOyunNinjaAralik(i, n);
+            let bas = kmOyunNinjaSporcuKonum(eskiFrac, i, n), son = kmOyunNinjaSporcuKonum(yeniFrac, i, n);
+            let lenBas = eskiFrac * L + aralik, lenSon = yeniFrac * L + aralik;
             let sure = 1150, basla = performance.now();
             function frame(now) {
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
-                let pt = kmOyunNinjaNokta(eskiFrac + (yeniFrac - eskiFrac) * eased);
-                let jj = kmOyunJitter(i, n), hop = Math.abs(Math.sin(t * Math.PI * 6)) * 9 * (1 - t * 0.5);
-                el.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1] - hop).toFixed(1)})`);
+                let pt = kmOyunNinjaUzunlukNokta(lenBas + (lenSon - lenBas) * eased);
+                // Başta/sonda duruş noktasına (sıçrama yayında havada kalmamak için geri yürütülmüş olabilir)
+                // yumuşak geçiş — ani bir "ışınlanma" olmasın.
+                let kb = Math.max(0, 1 - t * 5), ks = Math.max(0, t * 5 - 4);
+                let x = pt.x + (bas.x - pt.x) * kb + (son.x - pt.x) * ks, y = pt.y + (bas.y - pt.y) * kb + (son.y - pt.y) * ks;
+                let hop = Math.abs(Math.sin(t * Math.PI * 7)) * 4 * (1 - t);
+                el.setAttribute('transform', `translate(${x.toFixed(1)},${(y - hop).toFixed(1)})`);
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
-                    let varis = kmOyunNinjaNokta(yeniFrac);
+                    el.classList.remove('flying');
+                    let varis = son, jj = [0, 0];
                     let scr = kmOyunSvgPct('km-oyun-svg-ninja', varis.x + jj[0], varis.y + jj[1]);
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('ninja', i), 14, false);
                     if(yeniCp > eskiCp) {
