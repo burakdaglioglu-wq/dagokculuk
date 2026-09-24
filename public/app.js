@@ -11957,17 +11957,14 @@ ${(function(){
 .km-sis-hud{ position:absolute; left:50%; top:8px; transform:translateX(-50%); z-index:7; display:flex; gap:8px; pointer-events:none; }
 .km-sis-hud span{ font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:rgba(4,6,14,0.78); border:1.5px solid var(--a1); border-radius:999px; padding:6px 13px; white-space:nowrap; }
 .km-sis-hud b{ color:var(--a2); }
-/* (c) Tam Ekran'da yağmur — sadece fullscreen, sis üstünde, salt CSS (arka planı kaydırılan çizgiler).
-   PERFORMANS DÜZELTMESİ (2026-09-24, kullanıcı: "oyun bazen yağmur nedeniyle kasıyor"): eskiden
-   background-position animasyonluydu — repeating-linear-gradient'i her karede YENİDEN BOYUYORDU (CPU),
-   compositor'a hiç binmiyordu. Artık aynı gradyan TEK SEFER statik çiziliyor, hareket sadece transform
-   (GPU/compositor) ile veriliyor — aynı görsel, kasma yok. ::before konteynerden büyük (±140/520px taşma)
-   tutuluyor ki transform sırasında kenar boşluğu görünmesin, dıştaki overflow:hidden onu geri kırpıyor. */
-.km-sis-yagmur{ display:none; position:absolute; inset:0; pointer-events:none; z-index:6; opacity:.35; overflow:hidden; }
-.km-sis-yagmur::before{ content:''; position:absolute; left:-140px; right:-140px; top:-520px; bottom:-520px;
-    background:repeating-linear-gradient(112deg, transparent 0 11px, rgba(220,235,255,0.55) 11px 12px, transparent 12px 26px); background-size:260px 520px; will-change:transform; animation:kmSisYagmur .9s linear infinite; }
-#km-oyun-wrap:fullscreen .km-sis-yagmur{ display:block; }
-@keyframes kmSisYagmur{ from{ transform:translate3d(0,0,0); } to{ transform:translate3d(-120px,520px,0); } }
+/* Tam Ekran yağmur TAMAMEN KALDIRILDI (2026-09-24, kullanıcı: "yağmur başlamıyor tam ekran yapınca
+   hemen yağmur devreye giriyor vs yine donuyor tam ekranda"). Önceki "sadece transform/compositor"
+   düzeltmesi (bkz. git geçmişi) küçük ekranda yeterliydi ama gerçek Tam Ekran'da bu katman koca
+   ekranın tamamını (±140/520px taşmayla) kaplıyor, 0.9s'de bir sonsuz döngüyle translate ediyordu —
+   büyük bir alanı sürekli canlı tutmak zayıf donanımda (tablet/kiosk) hâlâ donduruyordu. Bulut sisi
+   zaten (aynı gün) statik hale getirildi; yağmur burada TÜMÜYLE çıkarıldı, geri eklenmedi — sis
+   haritası artık hiçbir sürekli animasyon taşımıyor. */
+.km-sis-yagmur{ display:none; }
 @media (max-width:600px){ .km-sis-hud{ left:8px; top:56px; transform:none; flex-direction:column; align-items:flex-start; gap:4px; } .km-sis-hud span{ font-size:9.5px; padding:4px 8px; } }
 @media (prefers-reduced-motion: reduce){ .km-sis-bulut, .km-sis-fener, .km-sis-yagmur, .km-kesif-isaret.bulundu.km-kesif-hazine .km-kesif-sembol{ animation:none; } .km-kesif-isaret .km-kesif-sembol, .km-kesif-ring, .km-kesif-ad, .km-kesif-isim{ transition:none; } }
 
