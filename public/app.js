@@ -15197,6 +15197,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <button class="km-oyun-geri-al-btn" id="km-oyun-sifirla-btn" onclick="kmOyunSporcuSifirla()" title="Seçili sporcunun oyun ilerlemesini sıfırla" style="${_kmOyunTakimModu ? 'display:none;' : ''}">🔄</button>
                                 <button class="km-oyun-geri-al-btn" id="km-oyun-takim-sifirla-btn" onclick="kmOyunTakimSifirla()" title="Takımın paylaşılan ilerlemesini sıfırla" style="${_kmOyunTakimModu ? '' : 'display:none;'}">↻</button>
+                                <button class="km-oyun-geri-al-btn" id="km-oyun-hepsi-sifirla-btn" onclick="kmOyunHepsiSifirla()" title="Tüm sınıfın oyun ilerlemesini sıfırla (yeniden başlat)">🔄🏫</button>
                                 <button class="km-oyun-geri-al-btn" id="km-oyun-geri-al-btn" onclick="kmOyunSonGirisiGeriAl()" style="display:none;" title="Son Girişi Geri Al">↩️</button>
                             </div>
                         </div>
@@ -18883,13 +18884,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 piyasa.innerHTML = `<span><i>PİYASA</i> ${ort.toFixed(1)}</span>${enYuksek && enYuksek.st.mumSayisi ? `<span><i>GÜNÜN YÜKSELENİ</i> ${esc(enYuksek.o.ad.split(' ')[0])} ${kmYksPct(enYuksek.st.gunDegisim)}</span>` : ''}${tutarlilar.length ? `<span><i>EN TUTARLI</i> ${esc(tutarlilar[0].o.ad.split(' ')[0])} %${tutarlilar[0].st.tutarlilik}</span>` : ''}`;
             }
         }
-        function kmOyunYukselisSifirla() {
-            let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
-            if(!confirm(s.ad + ' için Yükseliş verisi (endeks, zirve, bugünkü mumlar, kariyer sayaçları) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ.')) return;
+        // Çekirdek (bkz. kmOyunSporcuSifirlaCekirdek'in üstündeki not — aynı sebep, tekli VE toplu sıfırlama
+        // tarafından paylaşılıyor).
+        function kmOyunYukselisSifirlaCekirdek(s) {
             kmYksDurumEmin();
             let key = s.g + '|' + s.ad;
             delete _kmYks.sp[key]; delete _kmYksKalici[key];
             kmYksKaydet(); kmYksKaliciKaydet();
+        }
+        function kmOyunYukselisSifirla() {
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
+            if(!confirm(s.ad + ' için Yükseliş verisi (endeks, zirve, bugünkü mumlar, kariyer sayaçları) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ.')) return;
+            kmOyunYukselisSifirlaCekirdek(s);
             kmOyunYukselisCiz(); kmOyunChipleriCiz(); kmOyunLiderCiz();
             showToast('📈 ' + s.ad.split(' ')[0] + ' endeksi 100\'e döndü.', 'warning');
         }
@@ -19395,10 +19401,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // oynamak isteyen bir sporcunun bu EĞLENCE katmanı ilerlemesini (yol + oyun-içi puan) sıfırlar.
         // GERÇEK skora/klasmana DOKUNMAZ — sadece _kmOyunDurum'daki fun-layer kaydı sıfırlanır (Monopoly'nin
         // kart-hakkı sayaçları dahil, tam temiz bir başlangıç olsun diye).
-        function kmOyunSporcuSifirla() {
-            let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
-            if(_kmOyunAktifTema === 'yukselis') { kmOyunYukselisSifirla(); return; }
-            if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
+        // Tek sporcunun ilerlemesini gerçekten sıfırlayan ÇEKİRDEK — confirm/toast/redraw YOK, hem tekli
+        // (kmOyunSporcuSifirla) hem TÜM SINIF (kmOyunHepsiSifirla, 2026-09-24 — "bütün oyunlarda yeniden
+        // başlatma özelliği gelsin") tarafından çağrılıyor, aynı mantık iki yerde tekrar etmesin diye.
+        function kmOyunSporcuSifirlaCekirdek(s) {
             if(_kmOyunAktifTema === 'sisharita') {
                 // Kayıp Ada artık BAĞIMSIZ (bkz. kmOyunSisFracUygula/GeriYukle) — sıfırlama SADECE
                 // kendi günlük deposunu temizler, paylaşılan _kmOyunDurum'a (diğer 7 yol-temasının
@@ -19409,10 +19415,44 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunDurumKaydet();
             }
             s.frac = 0; s.toplamSkor = 0; s.futbolSeri = 0; s.futbolGol = 0; s.futbolStreak = 0; s.futbolTakimGol = 0;
+        }
+        function kmOyunSporcuSifirla() {
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex]; if(!s) return;
+            if(_kmOyunAktifTema === 'yukselis') { kmOyunYukselisSifirla(); return; }
+            if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
+            kmOyunSporcuSifirlaCekirdek(s);
             if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
             kmOyunResyncAktif();
             kmOyunChipleriCiz(); kmOyunLiderCiz();
             showToast(s.ad + ' oyun ilerlemesi sıfırlandı.', 'warning');
+        }
+        // TÜM SINIFI SIFIRLA (2026-09-24, kullanıcı: "tekrar oynanabilirlik, bütün oyunlarda yeniden
+        // başlatma özelliği gelsin" — Kayıp Ada özelinde sorulmuştu, tüm temalara genellendi). Tek tek
+        // sporcu sporcu 🔄'ya basmak yerine tek onayla TÜM sınıfın bu eğlence katmanı ilerlemesi baştan
+        // başlıyor. Kayıp Ada'da ayrıca paylaşılan "kim buldu" etiketleri de temizlenir — normalde bunlar
+        // GÜNLÜK olarak kendiliğinden sıfırlanıyor (bkz. kmOyunSisKesiflerEmin), bu düğme gün içinde de
+        // aynı temiz adayı istendiğinde ANINDA verir. onayIste() kullanıldı — native confirm() burada da
+        // aynı tablet güvenilirlik sorununu taşırdı (bkz. Oyunlar'daki önceki seri-limit düzeltmesi).
+        function kmOyunHepsiSifirla() {
+            let roster = _kmOyunRosterCache; if(!roster || !roster.length) return;
+            let mesaj = 'TÜM SINIFIN (' + roster.length + ' sporcu) bu eğlence katmanı ilerlemesi sıfırlansın mı?<br><br>Gerçek skor/klasman ETKİLENMEZ' +
+                (_kmOyunAktifTema === 'sisharita' ? ', Kayıp Ada da yeniden sisleniyor.' : '.');
+            onayIste(mesaj, function() {
+                roster.forEach(function(s) {
+                    if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisSifirlaCekirdek(s);
+                    else kmOyunSporcuSifirlaCekirdek(s);
+                });
+                if(_kmOyunAktifTema === 'sisharita') {
+                    _kmSisKesifler = KM_SIS_KESIF_TURLERI.map(function(t) { return { tur: t, bulanAd: null }; });
+                    kmOyunSisKesifKaydet();
+                }
+                if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
+                // Resync DEĞİL — kaşif rozetleri "bulundu" görünümünden "?" görünümüne dönüyor, bu bir
+                // GÖRÜNÜM değişikliği (bkz. proje hafızası: Resync sadece konum/transform günceller).
+                kmOyunSahneKurAktif();
+                kmOyunChipleriCiz(); kmOyunLiderCiz();
+                showToast('🔄 Tüm sınıfın oyun ilerlemesi sıfırlandı.', 'warning');
+            }, 'Evet, Sıfırla');
         }
         function kmOyunSonGirisiGeriAl() {
             let g = _kmOyunSonGiris; if(!g) return;
