@@ -11791,18 +11791,18 @@ ${(function(){
 .km-kh-yerlesim{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(290px,1fr);gap:14px;align-items:start}
 @media (max-width:900px){.km-kh-yerlesim{grid-template-columns:minmax(0,1fr)}}
 .km-kh-tahta-kutu{background:#15213b;border-radius:16px;padding:10px;box-shadow:0 14px 34px -18px rgba(0,0,0,.6)}
-.km-kh-tahta{display:grid;gap:3px;width:100%;margin:0 auto}
-.km-kh-h{aspect-ratio:1;border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(11px,2.2vw,21px);user-select:none;-webkit-user-select:none}
+.km-kh-tahta{display:grid;gap:3px;width:100%;margin:0 auto;container-type:inline-size;max-width:min(100%,calc(620px * var(--oran,1)))}
+.km-kh-h{aspect-ratio:1;border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(11px,2.2vw,21px);font-size:calc(100cqw / var(--kol,13) * .56);user-select:none;-webkit-user-select:none}
 .km-kh-bos{background:rgba(255,255,255,.035)}
 .km-kh-slot{background:#f3efe6}
 .km-kh-slot.x2{background:#fcd34d}
 .km-kh-slot.x3{background:#f9a8d4}
-.km-kh-crp{font-size:clamp(6px,.85vw,9px);font-weight:800;color:rgba(50,35,10,.55)}
-.km-kh-no{position:absolute;top:1px;left:3px;font-size:clamp(6px,.85vw,9px);font-weight:800;color:rgba(20,20,40,.6);line-height:1}
+.km-kh-crp{font-size:clamp(6px,.85vw,9px);font-size:calc(100cqw / var(--kol,13) * .2);font-weight:800;color:rgba(50,35,10,.55)}
+.km-kh-no{position:absolute;top:1px;left:3px;font-size:clamp(6px,.85vw,9px);font-size:calc(100cqw / var(--kol,13) * .2);font-weight:800;color:rgba(20,20,40,.6);line-height:1}
 .km-kh-slot.aday{outline:3px solid #22d3ee;outline-offset:-2px;cursor:pointer;animation:kmKhAday 1s ease-in-out infinite}
 @keyframes kmKhAday{50%{outline-color:#a5f3fc}}
 .km-kh-tas{background:linear-gradient(180deg,#fbe7a8,#f2cf74);color:#2b2112;box-shadow:inset 0 -4px 0 var(--kc,#b58a2a)}
-.km-kh-p{position:absolute;right:3px;bottom:3px;font-size:clamp(6px,.85vw,9px);font-weight:800;color:#5a4418}
+.km-kh-p{position:absolute;right:3px;bottom:3px;font-size:clamp(6px,.85vw,9px);font-size:calc(100cqw / var(--kol,13) * .2);font-weight:800;color:#5a4418}
 .km-kh-tas.yeni{animation:kmKhYeni .45s cubic-bezier(.3,1.5,.4,1)}
 @keyframes kmKhYeni{0%{transform:scale(.4)}100%{transform:scale(1)}}
 .km-kh-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:14px;padding:12px;margin-bottom:10px}
@@ -11833,6 +11833,42 @@ ${(function(){
 .km-kh-secbtn{min-height:44px;padding:0 14px;border-radius:11px;border:1.5px solid var(--border-color);background:var(--bg-panel);color:var(--text-main);font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
 .km-kh-secbtn.aktif{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 @media (prefers-reduced-motion: reduce){.km-kh-slot.aday,.km-kh-tas.yeni{animation:none}}
+.km-kh-boyut{display:inline-flex;gap:2px;background:var(--surface-2);border:1px solid var(--border-color);border-radius:11px;padding:3px}
+.km-kh-boyut button{min-height:38px;min-width:40px;border:none;border-radius:8px;background:transparent;color:var(--text-secondary);font-family:inherit;font-weight:900;cursor:pointer}
+.km-kh-boyut button.aktif{background:var(--accent);color:#fff}
+.km-kh-bil{margin-left:auto;flex-shrink:0;min-height:30px;padding:0 9px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-family:inherit;font-weight:800;font-size:11px;cursor:pointer}
+.km-kh-bonus{display:inline-flex;gap:4px;align-items:center;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:rgba(255,210,63,.18);color:#e8b400;margin:2px 4px 2px 0}
+.km-kh-tahmin-kutu{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.km-kh-tahmin-kutu span{width:34px;height:38px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;background:#f3efe6;color:#2b2112}
+.km-kh-tahmin-kutu span.acik{background:linear-gradient(180deg,#fbe7a8,#f2cf74)}
+.km-kh-tahmin-input{width:100%;min-height:48px;font-family:inherit;font-weight:900;font-size:20px;letter-spacing:.12em;text-transform:uppercase;text-align:center;border-radius:11px;border:2px solid var(--border-color);background:var(--surface-2);color:var(--text-main)}
+.km-kh-tahmin-input:focus{outline:none;border-color:var(--accent)}
+/* Büyük ve TV modları — tahta ve harfler büyür, yan panel yazıları da okunur hale gelir. */
+.km-kh.boyut-buyuk .km-kh-tahta{max-width:min(100%,calc(900px * var(--oran,1)))}
+.km-kh.boyut-tv .km-kh-tahta{max-width:min(100%,calc((100vh - 240px) * var(--oran,1)))}
+#km-icerik:fullscreen .km-kh.boyut-tv .km-kh-tahta{max-width:min(100%,calc((100vh - 130px) * var(--oran,1)))}
+.km-kh.boyut-tv .km-kh-bil{font-size:14px;min-height:38px;padding:0 12px}
+.km-kh.boyut-buyuk .km-kh-bil{font-size:12.5px;min-height:34px}
+.km-kh.boyut-tv .km-kh-yerlesim{grid-template-columns:minmax(0,1.9fr) minmax(330px,1fr)}
+.km-kh.boyut-buyuk .km-kh-ipucu{font-size:14.5px}
+.km-kh.boyut-tv .km-kh-ipucu{font-size:17px;padding:7px 0}
+.km-kh.boyut-buyuk .km-kh-oyuncu-ad{font-size:15px}
+.km-kh.boyut-tv .km-kh-oyuncu-ad{font-size:19px}
+.km-kh.boyut-buyuk .km-kh-puan{font-size:24px}
+.km-kh.boyut-tv .km-kh-puan{font-size:32px}
+.km-kh.boyut-tv .km-kh-oyuncu-uye{font-size:12px}
+.km-kh.boyut-buyuk .km-kh-rtas{width:56px;height:58px;font-size:26px}
+.km-kh.boyut-tv .km-kh-rtas{width:70px;height:72px;font-size:34px}
+.km-kh.boyut-tv .km-kh-rtas small{font-size:12px}
+.km-kh.boyut-buyuk .km-kh-okbtn{min-height:52px;font-size:17px}
+.km-kh.boyut-tv .km-kh-okbtn{min-height:60px;font-size:20px}
+.km-kh.boyut-tv .km-kh-panel{font-size:16px}
+.km-kh.boyut-tv .km-kh-alt,.km-kh.boyut-tv .km-kh-log{font-size:14px}
+.km-kh.boyut-tv .km-kh-bilgi{font-size:16px}
+.km-kh.boyut-tv .km-kh-baslik{font-size:22px}
+.km-kh.boyut-tv .km-kh-btn{min-height:52px;font-size:16px}
+.km-kh.boyut-tv .km-kh-panel-baslik{font-size:13px}
+#km-icerik:fullscreen{background:var(--bg-main,#15121F);padding:16px;overflow:auto}
 `;
         let _kmKelimeCssYuklendi = false;
         function kmKelimeKaynaklarYukle() {
@@ -11963,27 +11999,35 @@ ${(function(){
             _kmKelimeOklar.push(v); kmKelimeCiz();
         }
         function kmKelimeOkSil() { _kmKelimeOklar.pop(); kmKelimeCiz(); }
+        // Bonus harfler (2026-09-25, kullanıcı: "X atan ya da 2 sarı atan ekipte ekstra harf ver"):
+        // seride en az bir X → +1, en az iki sarı (X/10/9) → +1; ikisi birden olursa +2.
+        function kmKelimeCekimHesap(oklar, ok) {
+            let toplam = oklar.reduce(function(a, v) { return a + kmKelimeOkDeger(v); }, 0);
+            let taban = kmKelimeHarfSayisi(toplam, ok);
+            let xVar = oklar.indexOf('X') !== -1;
+            let sari = oklar.filter(function(v) { return v === 'X' || v === 10 || v === 9; }).length;
+            let bonuslar = [];
+            if(xVar) bonuslar.push('🎯 X');
+            if(sari >= 2) bonuslar.push('🟡 ' + sari + ' sarı');
+            return { toplam: toplam, taban: taban, bonus: bonuslar.length, bonuslar: bonuslar, adet: taban + bonuslar.length };
+        }
         function kmKelimeHarfCek() {
             let s = _kmKelime; if(!s || s.faz !== 'atis' || _kmKelimeOklar.length < s.ok) return;
             let o = s.oyuncular[s.sira];
-            let toplam = _kmKelimeOklar.reduce(function(a, v) { return a + kmKelimeOkDeger(v); }, 0);
-            let n = Math.min(kmKelimeHarfSayisi(toplam, s.ok), s.torba.length);
+            let h = kmKelimeCekimHesap(_kmKelimeOklar, s.ok);
+            let n = Math.min(h.adet, s.torba.length);
             let cekilen = s.torba.splice(0, n);
             Array.prototype.push.apply(o.raf, cekilen);
-            s.log.unshift(o.ad + ': ' + toplam + ' puan → ' + (n ? n + ' harf (' + cekilen.join(' ') + ')' : 'harf yok, ıska!'));
+            s.log.unshift(o.ad + ': ' + h.toplam + ' puan → ' + (n ? n + ' harf' + (h.bonus ? ' (' + h.bonuslar.join(', ') + ' bonusu dahil)' : '') + ': ' + cekilen.join(' ') : 'harf yok, ıska!'));
             s.faz = 'yerlestir'; _kmKelimeOklar = []; _kmKelimeSeciliHarf = null;
-            if(n >= 4) showToast('🎯 Altın seri! ' + n + ' harf çekildi', 'success');
+            if(h.bonus) showToast('✨ Bonus! ' + h.bonuslar.join(' + ') + ' → toplam ' + n + ' harf', 'success');
+            else if(n >= 4) showToast('🎯 Altın seri! ' + n + ' harf çekildi', 'success');
             kmKelimeKaydet(); kmKelimeCiz();
         }
         function kmKelimeHarfSec(i) { _kmKelimeSeciliHarf = (_kmKelimeSeciliHarf === i) ? null : i; kmKelimeCiz(); }
-        function kmKelimeHucreTikla(key) {
-            let s = _kmKelime; if(!s || s.faz === 'bitti') return;
-            let o = s.oyuncular[s.sira], i = _kmKelimeSeciliHarf; if(i === null || i === undefined) return;
-            let harf = o.raf[i], h = s.hucre[key];
-            if(!h || h.acik || h.h !== harf) return;
-            h.acik = true; h.koyan = s.sira; o.raf.splice(i, 1); _kmKelimeSeciliHarf = null; s.sonKoyulan = key;
-            o.puan += (KM_KELIME_PUAN[harf] || 1) * (h.carpan || 1);
-            let tamamlanan = [];
+        // Tamamlanan kelimeleri kredilendir + oyun bitti mi — hem harf yerleştirme hem "Kelimeyi Bil" kullanıyor.
+        function kmKelimeTamamlamaKontrol(ekBonus) {
+            let s = _kmKelime, o = s.oyuncular[s.sira], tamamlanan = [];
             s.kelimeler.forEach(function(w, wi) {
                 if(w.tamamlayan !== null) return;
                 if(kmKelimeHucreler(w).every(function(k) { return s.hucre[k].acik; })) { w.tamamlayan = s.sira; o.puan += 10; tamamlanan.push(wi); }
@@ -11991,8 +12035,9 @@ ${(function(){
             if(tamamlanan.length) {
                 s.sonKelime = tamamlanan[tamamlanan.length - 1];
                 let adlar = tamamlanan.map(function(wi) { return s.kelimeler[wi].g; }).join(', ');
-                s.log.unshift('🎯 ' + o.ad + ' tamamladı: ' + adlar + ' (+' + (10 * tamamlanan.length) + ')');
-                showToast('🎯 ' + adlar + ' tamamlandı! +' + (10 * tamamlanan.length), 'success');
+                let kazanc = 10 * tamamlanan.length + (ekBonus || 0);
+                s.log.unshift('🎯 ' + o.ad + ' tamamladı: ' + adlar + ' (+' + kazanc + ')');
+                showToast('🎯 ' + adlar + ' tamamlandı! +' + kazanc, 'success');
                 try { sesCal(880, 0.12); } catch(e) {}
             }
             if(Object.keys(s.hucre).every(function(k) { return s.hucre[k].acik; })) {
@@ -12001,6 +12046,15 @@ ${(function(){
                 let kaz = s.oyuncular.filter(function(x) { return x.puan === enY; }).map(function(x) { return x.ad; }).join(' & ');
                 s.log.unshift('🏆 Bulmaca bitti! Kazanan: ' + kaz + ' (' + enY + ' puan)');
             }
+        }
+        function kmKelimeHucreTikla(key) {
+            let s = _kmKelime; if(!s || s.faz === 'bitti') return;
+            let o = s.oyuncular[s.sira], i = _kmKelimeSeciliHarf; if(i === null || i === undefined) return;
+            let harf = o.raf[i], h = s.hucre[key];
+            if(!h || h.acik || h.h !== harf) return;
+            h.acik = true; h.koyan = s.sira; o.raf.splice(i, 1); _kmKelimeSeciliHarf = null; s.sonKoyulan = key;
+            o.puan += (KM_KELIME_PUAN[harf] || 1) * (h.carpan || 1);
+            kmKelimeTamamlamaKontrol(0);
             kmKelimeKaydet(); kmKelimeCiz();
         }
         function kmKelimeSiraBitir() {
@@ -12011,8 +12065,76 @@ ${(function(){
                 if(s.torba.length || s.oyuncular[s.sira].raf.length) break;
             }
             s.faz = s.torba.length ? 'atis' : 'yerlestir';
+            s.tahminYapildi = false;
             _kmKelimeOklar = []; _kmKelimeSeciliHarf = null;
             kmKelimeKaydet(); kmKelimeCiz();
+        }
+        // 💡 KELİMEYİ BİL (2026-09-25): sıradaki takım bir ipucunun cevabını yazar. Doğruysa kelimenin
+        // kalan harfleri anında açılır (harf puanları + kelime +10 + bilgi bonusu +5); yanlışsa sıra geçer.
+        // Sırada bir kere. Açılan hücrelerin harfleri torbadan (yoksa raflardan) düşülür — "her raf
+        // harfinin tahtada boş bir yeri var" kuralı bozulmasın, kimse takılı kalmasın.
+        function kmKelimeTahminAc(wi) {
+            let s = _kmKelime; if(!s || s.faz === 'bitti' || s.tahminYapildi) return;
+            let w = s.kelimeler[wi]; if(!w || w.tamamlayan !== null) return;
+            let kutu = kmKelimeHucreler(w).map(function(k) { let h = s.hucre[k]; return `<span class="${h.acik ? 'acik' : ''}">${h.acik ? h.h : ''}</span>`; }).join('');
+            let eski = document.getElementById('km-kh-tahmin-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'km-kh-tahmin-modal'; m.className = 'modal-overlay'; m.style.display = 'flex';
+            m.innerHTML = `<div class="modal-content glass-panel" style="max-width:460px; width:100%;">
+                <div style="font-size:16px; font-weight:900; margin-bottom:4px;">💡 Kelimeyi Bil — ${esc(s.oyuncular[s.sira].ad)}</div>
+                <div style="font-size:13px; color:var(--text-secondary);"><b>${w.no}. ${w.yon === 'y' ? 'Yatay' : 'Dikey'}:</b> ${esc(w.i)} (${w.k.length} harf)</div>
+                <div class="km-kh-tahmin-kutu">${kutu}</div>
+                <input id="km-kh-tahmin-input" class="km-kh-tahmin-input" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="${w.k.length + 4}" placeholder="Cevabı yaz" onkeydown="if(event.key==='Enter') kmKelimeTahminKontrol(${wi})">
+                <div style="font-size:11px; color:var(--text-muted); margin:8px 0 12px;">Doğru: kalan harfler açılır, +5 bilgi bonusu. Yanlış: sıra geçer. Sırada bir kez kullanılabilir.</div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="km-kh-btn ikincil" onclick="document.getElementById('km-kh-tahmin-modal').remove()">Vazgeç</button>
+                    <button class="km-kh-btn" onclick="kmKelimeTahminKontrol(${wi})">Kontrol Et</button>
+                </div>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) m.remove(); });
+            (document.getElementById('km-icerik') || document.body).appendChild(m);
+            setTimeout(function() { let inp = document.getElementById('km-kh-tahmin-input'); if(inp) inp.focus(); }, 30);
+        }
+        function kmKelimeTahminKontrol(wi) {
+            let s = _kmKelime; if(!s || s.faz === 'bitti' || s.tahminYapildi) return;
+            let w = s.kelimeler[wi]; if(!w || w.tamamlayan !== null) return;
+            let inp = document.getElementById('km-kh-tahmin-input'); if(!inp) return;
+            let tahmin = inp.value.toLocaleUpperCase('tr-TR').replace(/[^A-ZÇĞİIÖŞÜ]/g, '');
+            if(!tahmin) { inp.focus(); return; }
+            let modal = document.getElementById('km-kh-tahmin-modal'); if(modal) modal.remove();
+            let o = s.oyuncular[s.sira];
+            s.tahminYapildi = true;
+            if(tahmin === w.k.join('')) {
+                let kazanc = 0;
+                kmKelimeHucreler(w).forEach(function(k) {
+                    let h = s.hucre[k]; if(h.acik) return;
+                    h.acik = true; h.koyan = s.sira; s.sonKoyulan = k;
+                    kazanc += (KM_KELIME_PUAN[h.h] || 1) * (h.carpan || 1);
+                    let ti = s.torba.indexOf(h.h);
+                    if(ti !== -1) { s.torba.splice(ti, 1); return; }
+                    let sahip = [s.sira].concat(s.oyuncular.map(function(_, pi) { return pi; }).filter(function(pi) { return pi !== s.sira; }));
+                    for(let q = 0; q < sahip.length; q++) { let raf = s.oyuncular[sahip[q]].raf, ri = raf.indexOf(h.h); if(ri !== -1) { raf.splice(ri, 1); break; } }
+                });
+                o.puan += kazanc + 5;
+                s.log.unshift('💡 ' + o.ad + ' kelimeyi bildi: ' + w.g + ' (+' + (kazanc + 5) + ' harf ve bilgi puanı)');
+                _kmKelimeSeciliHarf = null;
+                kmKelimeTamamlamaKontrol(kazanc + 5);
+                kmKelimeKaydet(); kmKelimeCiz();
+            } else {
+                s.log.unshift('❌ ' + o.ad + ' yanlış tahmin (' + tahmin + ') — sıra geçti');
+                showToast('❌ Yanlış tahmin — sıra geçiyor', 'warning');
+                kmKelimeSiraBitir();
+            }
+        }
+        let _kmKelimeBoyut = (function() { try { return localStorage.getItem('dag_km_kelime_boyut') || 'normal'; } catch(e) { return 'normal'; } })();
+        function kmKelimeBoyutSec(b) { _kmKelimeBoyut = b; try { localStorage.setItem('dag_km_kelime_boyut', b); } catch(e) {} kmKelimeCiz(); }
+        // Tam ekran #km-icerik'e uygulanıyor (her çizimde yeniden kurulan iç kök değil) — yoksa ilk
+        // yeniden çizimde tam ekrandan düşerdi. Tam ekrana girerken boyut "normal"se TV'ye geçer.
+        function kmKelimeTamEkran() {
+            let el = document.getElementById('km-icerik'); if(!el) return;
+            if(document.fullscreenElement) { try { document.exitFullscreen(); } catch(e) {} return; }
+            if(_kmKelimeBoyut === 'normal') kmKelimeBoyutSec('tv');
+            try { let p = el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null); if(p && p.catch) p.catch(function() {}); } catch(e) {}
         }
         function kmKelimeYeniOyun() {
             onayIste('Bulmaca sıfırlansın mı?<br><br>Bu oyunun puanları ve tahtası silinir. Gerçek skor/klasman ETKİLENMEZ.', function() {
@@ -12036,10 +12158,10 @@ ${(function(){
             let onizleme = kmKelimeOyunculariKur(k.mod).map(function(o) {
                 return `<div class="km-kh-oyuncu" style="--kc:${o.renk}"><span class="km-kh-nokta"></span><div class="km-kh-oyuncu-ic"><div class="km-kh-oyuncu-ad">${esc(o.ad)}</div>${o.uyeler.length ? `<div class="km-kh-oyuncu-uye">${esc(o.uyeler.join(', '))}</div>` : ''}</div></div>`;
             }).join('') || '<div class="km-kh-alt">Bu derste henüz sporcu yok.</div>';
-            return `<div class="km-kh">
+            return `<div class="km-kh boyut-${_kmKelimeBoyut}">
                 <button class="km-kh-btn ikincil" style="margin-bottom:12px;" onclick="kmSekme('oyunlar')">← Oyunlar</button>
                 <div class="km-kh-baslik">🔤 Kelime Hedefi — Okçuluk Bulmacası</div>
-                <div class="km-kh-alt" style="margin:4px 0 14px; max-width:640px;">Tahtada okçuluk kelimeleri saklı (Mete Gazoz, sadak, kiriş…). Sıradaki takım gerçek serisini atar, okları buraya girersin; seri ne kadar iyiyse o kadar harf çekerler. Harfleri ipuçlarına bakarak doğru karelere koyarlar — kelimeyi tamamlayan +10 alır. Oyun içi puanlar gerçek skora yazılmaz.</div>
+                <div class="km-kh-alt" style="margin:4px 0 14px; max-width:640px;">Tahtada okçuluk kelimeleri saklı (Mete Gazoz, sadak, kiriş…). Sıradaki takım gerçek serisini atar, okları buraya girersin; seri ne kadar iyiyse o kadar harf çekerler. Harfleri ipuçlarına bakarak doğru karelere koyarlar — kelimeyi tamamlayan +10 alır. X atan ve en az 2 sarı atan ekstra harf kazanır; cevabı bilen takım 💡 Bil ile kelimeyi tek hamlede açabilir. Oyun içi puanlar gerçek skora yazılmaz.</div>
                 <div class="km-kh-panel-baslik">Kim oynuyor?</div>
                 <div class="km-kh-secim">${modlar}</div>
                 <div class="km-kh-panel-baslik">Seri kaç ok?</div>
@@ -12073,42 +12195,53 @@ ${(function(){
             if(s.faz === 'bitti') {
                 sira = `<div style="font-weight:900; font-size:16px; margin-bottom:8px;">🏆 Bulmaca tamamlandı!</div><div class="km-kh-alt" style="margin-bottom:10px;">${esc(s.log[0] || '')}</div><button class="km-kh-btn" onclick="kmKelimeYeniOyun()">🔄 Yeni Bulmaca</button>`;
             } else if(s.faz === 'atis' && s.torba.length) {
-                let toplam = _kmKelimeOklar.reduce(function(a, v) { return a + kmKelimeOkDeger(v); }, 0);
                 let tamamMi = _kmKelimeOklar.length >= s.ok;
-                let harfN = Math.min(kmKelimeHarfSayisi(toplam, s.ok), s.torba.length);
+                let hesap = kmKelimeCekimHesap(_kmKelimeOklar, s.ok), toplam = hesap.toplam;
+                let harfN = Math.min(hesap.adet, s.torba.length);
+                let bonusRozet = hesap.bonuslar.map(function(b) { return `<span class="km-kh-bonus">+1 ${b}</span>`; }).join('');
                 let girilen = _kmKelimeOklar.map(function(v) { return `<span style="${kmKelimeOkRenk(v)}">${v}</span>`; }).join('') + (tamamMi ? '' : `<span style="opacity:.45;">${_kmKelimeOklar.length + 1}. ok</span>`);
                 let pad = ['X', 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 'M'].map(function(v) { return `<button class="km-kh-okbtn" style="${kmKelimeOkRenk(v)}" onclick="kmKelimeOkEkle(${typeof v === 'string' ? "'" + v + "'" : v})"${tamamMi ? ' disabled' : ''}>${v}</button>`; }).join('');
                 sira = `<div style="font-weight:800; margin-bottom:6px;">🏹 ${esc(o.ad)} serisini atsın — okları gir</div>
                     <div class="km-kh-girilen">${girilen}${_kmKelimeOklar.length ? `<button class="km-kh-btn ikincil" style="min-height:32px; padding:0 10px;" onclick="kmKelimeOkSil()">⌫</button>` : ''}</div>
                     <div class="km-kh-oklar">${pad}</div>
+                    ${bonusRozet ? `<div style="margin-top:8px;">${bonusRozet}</div>` : ''}
                     <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
                         <button class="km-kh-btn" onclick="kmKelimeHarfCek()"${tamamMi ? '' : ' disabled'}>🔤 ${tamamMi ? (harfN ? harfN + ' Harf Çek (' + toplam + ' puan)' : 'Iska — Harf Yok') : 'Harf Çek'}</button>
                         <button class="km-kh-btn ikincil" onclick="kmKelimeSiraBitir()">Pas ➜</button>
                     </div>
-                    <div class="km-kh-alt" style="margin-top:8px;">Seri %90+ → 4 harf · %70+ → 3 · %45+ → 2 · altı → 1</div>`;
+                    <div class="km-kh-alt" style="margin-top:8px;">Seri %90+ → 4 harf · %70+ → 3 · %45+ → 2 · altı → 1 · <b>X atan +1</b> · <b>2+ sarı (X/10/9) +1</b></div>`;
             } else {
                 sira = `<div style="font-weight:800; margin-bottom:4px;">🧩 ${esc(o.ad)} harflerini yerleştirsin</div>
-                    <div class="km-kh-alt" style="margin-bottom:10px;">${s.torba.length ? '' : 'Torba boşaldı — raftaki harfleri yerleştirin. '}Raftan bir taşa dokun, tahtada parlayan kareye koy. Kelimeyi tamamlayan +10 alır.</div>
+                    <div class="km-kh-alt" style="margin-bottom:10px;">${s.torba.length ? '' : 'Torba boşaldı — raftaki harfleri yerleştirin. '}Raftan bir taşa dokun, tahtada parlayan kareye koy. Kelimeyi tamamlayan +10 alır.${s.tahminYapildi ? '' : ' Cevabı bilen varsa ipucunun yanındaki 💡 Bil düğmesini kullanın.'}</div>
                     <button class="km-kh-btn" onclick="kmKelimeSiraBitir()">Sırayı Bitir ➜</button>`;
             }
             let rafHTML = o.raf.length ? o.raf.map(function(h, i) { return `<button class="km-kh-rtas${_kmKelimeSeciliHarf === i ? ' secili' : ''}" onclick="kmKelimeHarfSec(${i})">${h}<small>${KM_KELIME_PUAN[h] || 1}</small></button>`; }).join('') : '<span class="km-kh-alt">Rafta harf yok.</span>';
             let ipucuListe = function(yon) {
                 return s.kelimeler.map(function(w, wi) { return { w: w, wi: wi }; }).filter(function(x) { return x.w.yon === yon; }).sort(function(a, b) { return a.w.no - b.w.no; }).map(function(x) {
                     let w = x.w, tamam = w.tamamlayan !== null, renk = tamam ? s.oyuncular[w.tamamlayan].renk : 'transparent';
-                    return `<div class="km-kh-ipucu${tamam ? ' tamam' : ''}"${tamam ? ` onclick="kmKelimeBilgiGoster(${x.wi})" style="cursor:pointer;"` : ''}><span class="km-kh-nokta" style="--kc:${renk}; ${tamam ? '' : 'border:1px solid var(--border-color);'}"></span><span><b>${w.no}.</b> ${esc(w.i)} <span style="color:var(--text-muted);">(${w.k.length})</span>${tamam ? ` — <b>${esc(w.g)}</b>` : ''}</span></div>`;
+                    let bilBtn = (!tamam && s.faz !== 'bitti' && !s.tahminYapildi) ? `<button class="km-kh-bil" onclick="kmKelimeTahminAc(${x.wi})">💡 Bil</button>` : '';
+                    return `<div class="km-kh-ipucu${tamam ? ' tamam' : ''}"${tamam ? ` onclick="kmKelimeBilgiGoster(${x.wi})" style="cursor:pointer;"` : ''}><span class="km-kh-nokta" style="--kc:${renk}; ${tamam ? '' : 'border:1px solid var(--border-color);'}"></span><span><b>${w.no}.</b> ${esc(w.i)} <span style="color:var(--text-muted);">(${w.k.length})</span>${tamam ? ` — <b>${esc(w.g)}</b>` : ''}</span>${bilBtn}</div>`;
                 }).join('');
             };
             let sonK = (s.sonKelime !== null && s.kelimeler[s.sonKelime]) ? s.kelimeler[s.sonKelime] : null;
             let bilgiHTML = sonK ? `<div class="km-kh-panel"><div class="km-kh-panel-baslik">📜 Biliyor muydun?</div><div class="km-kh-bilgi"><b>${esc(sonK.g)}</b> — ${esc(sonK.b)}</div></div>` : '';
             let tamamSay = s.kelimeler.filter(function(w) { return w.tamamlayan !== null; }).length;
-            return `<div class="km-kh">
+            let boyutBtn = [['normal', 'A', 'Normal'], ['buyuk', 'A+', 'Büyük'], ['tv', 'TV', 'TV / projeksiyon']].map(function(b) {
+                return `<button class="${_kmKelimeBoyut === b[0] ? 'aktif' : ''}" title="${b[2]}" onclick="kmKelimeBoyutSec('${b[0]}')">${b[1]}</button>`;
+            }).join('');
+            return `<div class="km-kh boyut-${_kmKelimeBoyut}">
                 <div class="km-kh-ust">
                     <div><div class="km-kh-baslik">🔤 Kelime Hedefi</div><div class="km-kh-alt">${tamamSay}/${s.kelimeler.length} kelime · torbada ${s.torba.length} harf · ${s.tur}. tur</div></div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;"><button class="km-kh-btn ikincil" onclick="kmSekme('oyunlar')">← Oyunlar</button><button class="km-kh-btn ikincil" onclick="kmKelimeYeniOyun()">🔄 Yeni Bulmaca</button></div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                        <div class="km-kh-boyut" title="Yazı ve tahta boyutu">${boyutBtn}</div>
+                        <button class="km-kh-btn ikincil" onclick="kmKelimeTamEkran()">⛶ Tam Ekran</button>
+                        <button class="km-kh-btn ikincil" onclick="kmSekme('oyunlar')">← Oyunlar</button>
+                        <button class="km-kh-btn ikincil" onclick="kmKelimeYeniOyun()">🔄 Yeni Bulmaca</button>
+                    </div>
                 </div>
                 <div class="km-kh-yerlesim">
                     <div>
-                        <div class="km-kh-tahta-kutu"><div class="km-kh-tahta" style="grid-template-columns:repeat(${kolon}, minmax(0,1fr)); max-width:${Math.round(620 * Math.min(1, kolon / satir))}px;">${hucreHTML}</div></div>
+                        <div class="km-kh-tahta-kutu"><div class="km-kh-tahta" style="grid-template-columns:repeat(${kolon}, minmax(0,1fr)); --kol:${kolon}; --oran:${(kolon / satir).toFixed(3)};">${hucreHTML}</div></div>
                         <div class="km-kh-panel" style="margin-top:10px;"><div class="km-kh-panel-baslik">${esc(o.ad)} — Raf</div><div class="km-kh-raf">${rafHTML}</div></div>
                     </div>
                     <div>
