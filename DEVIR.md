@@ -5055,3 +5055,77 @@ saydam üst kenarı (`rgba(...,0.55)`) ile kartın metni görsel olarak karışa
 oraya sürüklerse olur).
 
 **Deploy durumu (52)**: Kullanıcı onayıyla ("bunları yaptıktan sonra yayına geç") commit + push + deploy edildi.
+
+## 53. 📊 Baskı Altında Performans — Yarışma verisini gelişim aracına çevirme (2026-09-25)
+
+Kullanıcı: "Karışık sınıf içerisinde yarışma bölümünü geliştirelim... sporcunun gelişimiyle alakalı önemli
+bir adım atmamız lazım... aklımda bir şey yok, onu senin bulman gerek". Yarışma Modu (bkz.
+[[dagsk-yarisma-hedef-siralama-2026-09]]) zaten olgun bir altyapıya sahip (Gerçek Takım/Hayali Rakip,
+2-4 takım, eşleştirme/ağaç/sıralama turu, Oturum Arşivi, Günün Yıldızı) ama TÜM bu veri "kim kazandı"
+ile sınırlıydı — asıl değerli soru hiç sorulmuyordu: **bir sporcu maç ortamında normal antrenmanına göre
+nasıl atıyor?**
+
+**Mimari — yeni alan/tablo İCAT EDİLMEDİ:** `_skorKaydetCekirdek(grup, sporcu, kaydedilecek, okAraliklari,
+kaynak)`'e opsiyonel 5. parametre eklendi; SADECE `kmYarismaSeriKaydet()` `'yarisma'` geçiyor, normal
+Skor Gir/Oyunlar hiç geçmiyor (undefined → "antrenman" sayılıyor, geriye dönük TAM uyumlu — eski
+kayıtlarda bu alan hiç yok). Her serinin `turnuvaDB[g][ad].seriler[]` kaydına `kaynak` damgalanıyor.
+
+**`kmYarismaGelisimVeri(g, ad)`**: `sp.seriler` + `sp.kartGecmisi[].seriler` (Dersi Bitir sonrası
+arşivlenen geçmiş günler de dahil — tek bir günün verisiyle sınırlı kalınmasın diye) birleştirilip
+`kaynak==='yarisma'` olanlar/olmayanlar ayrılıyor, her ikisinin ok ortalaması hesaplanıp **Baskı
+Endeksi** = `(maçOrt - antrenmanOrt) / antrenmanOrt * 100` çıkarılıyor. Minimum 3+3 seri (≈9-18 ok) şartı
+var, altındaki sporcular ayrı bir "henüz yeterli veri yok" satırında listeleniyor (sessizce gizlenmiyor).
+
+**UI**: Karışık Sınıf'ın global `⋯` menüsüne (Oturum Arşivi'nin yanına) yeni "📊 Baskı Altında Performans"
+girişi + `#km-gelisim-modal` (aynı glass-panel modal deseni). Sınıf ortalaması üstte; her sporcu kartı
+🔥 (≥+5%, "baskı altında parlıyor") / 😰 (≤-5%, "baskı altında zorlanıyor") / ➖ (nötr) rozetiyle, maç
+ortalaması vs antrenman ortalaması ve kaç seriye dayandığı gösteriliyor, en yüksek baskı endeksine göre
+sıralı.
+
+**Gerçek testte doğrulanan** (Playwright, gerçek `⋯`→buton tıklaması, masaüstü + 390px mobil): bir
+sporcuya 5 antrenman serisi (7-7-7, ort 7.00) + 5 gerçek Yarışma serisi (`kmYarismaSeriKaydet` ile
+9-9-9, ort 9.00) yazıldı → hesaplanan Baskı Endeksi tam **+28.6%** (matematik doğru), kart 🔥 rozetiyle
+doğru göründü; diğer sporcular (yeterli veri yoksa) "yetersiz" satırında adlarıyla listelendi; kapatma
+çalışıyor; boş/veri-yok durumu mobilde düzgün render ediliyor. 16 tema Oyunlar regresyonu 0 hata,
+0 JS hatası.
+
+**Deploy durumu (53)**: HENÜZ DEPLOY EDİLMEDİ — kullanıcıya sunulup onay bekleniyor.
+
+## 54. 🔍 Teknik Hata Deseni Paneli — Teknik Analiz sekmesine entegre (2026-09-25)
+
+Kullanıcı "Karışık sınıf içerisinde yarışma bölümünü geliştirelim" dedi → süreç birkaç kez düzeltildi
+("bunu yap demedim, ben bulamadım, sen bana daha derin araştırmanla öneriler sun" → "yarışma olarak
+bakma unut, sporcunun hataları/gelişimi için ne yapmamız gerektiğini araştır, 6 teklifle gel") → 6
+araştırılmış öneri sunuldu, kullanıcı **1. maddeyi** ("Teknik Hata Deseni Paneli") seçip **"Teknik Analiz
+sekmesinin içine entegre et"** dedi (ayrı bir ekran/modal DEĞİL). Yol boyunca yanlış anlaşılan bir "Baskı
+Altında Performans" (Yarışma verisine dayalı) taslağı tamamen geri alındı — kod tabanında iz bırakmadan.
+
+**Kök sorun**: Teknik Analiz (Saha Karnesi) her derste 8 fazı Doğru/Hatalı + hata nedeni notuyla
+kaydediyordu ama bu kayıtlar dağınık, tek tek karneler halinde duruyordu — bir sporcunun HANGİ fazda
+tekrar tekrar hata yaptığını görmenin yolu yoktu.
+
+**Backend (migration YOK, şema değişmedi)**: `listTeknikAnaliz` (mevcut liste ucu) fotoğrafları/`fazlar_json`'ı
+HİÇ okumuyor (D1 okuma limiti kısıtı, §41). Var olan kayıtları tek tek (`getTeknikAnaliz`, fotoğraflı tam
+kayıt) N kez çekmek yerine, YENİ ve AYRI bir uç nokta eklendi: `GET /api/teknik-analiz/hata-deseni` —
+TEK bir D1 sorgusuyla son N (varsayılan 10) kaydın `fazlar_json`'ını okuyup **worker'da** `foto` alanını
+tamamen ayıklayıp sadece `{k, kn}` (checklist durumları + hata nedenleri) client'a gönderiyor — fotoğraf
+asla telden geçmiyor. **Gerçek veri şekli hatası bulunup düzeltildi**: ilk yazılan sürüm `fazlar[i].k`'yı
+obje sanıyordu, gerçekte (`kmTaFazlarTopla`) **dizi**; not alanı da `kn` değil **`kNot`** — bu düzeltilmeden
+panel hiçbir maddeyi eşleştiremiyordu, gerçek testte yakalanıp giderildi.
+
+**Frontend**: `kmTeknikAnalizSporcuSec` artık bu yeni ucu da (ayrı try/catch, ana liste isteğini
+etkilemeden) çağırıp `_kmTaHataDeseni`'ye dolduruyor. `kmTaHataDeseniHesapla(yay)` — AYNI yay tipindeki
+(klasik/makaralı karışmasın) ≥2 kaydı birleştirip her checklist maddesinin hata oranını hesaplıyor, en
+sık 3 maddeyi (+ tekrarsız, en fazla 2 örnek hata nedeni) döndürüyor. Panel (`.km-ta-hatadesen`,
+Saha Karnesi'nin AYNI koyu paleti + kırmızımsı-kahve vurgu) Teknik Analiz ana ekranının sağ sütununda,
+Saha Notu kartının HEMEN ÜSTÜNDE — koç yeni bir değerlendirmeye başlamadan önce sporcunun geçmişteki
+tekrarlayan zayıflığını görüyor. <2 kayıt varsa panel HİÇ görünmüyor (gürültü olmasın); ≥2 kayıt ama hiç
+tekrarlayan hata yoksa "👍 Tekrarlayan bir hata görünmüyor" pozitif mesajı çıkıyor.
+
+**Gerçek testte doğrulanan** (Playwright, gerçek `Locator.click()`, masaüstü + 390px mobil): 3 sahte
+karne (hepsinde AYNI madde "Ayak duruşu her atışta aynı" hatalı, notu "ağırlık öne kayıyor") → panel
+doğru maddeyi, "3/3 kez" oranını ve notu gösterdi; hiç karnesi olmayan sporcuda panel 0 (hiç render
+edilmedi); sadece "iyi" (hiç hatalı yok) karneleri olan bir sporcuda pozitif mesaj çıktı; mobilde panel
+DOM'da mevcut, sayfa düzeni bozulmadı. 16 tema Oyunlar regresyonu 0 hata, 0 JS hatası.
+
+**Deploy durumu (54)**: Kullanıcı onayladı (2026-09-25), commit + push + deploy edildi.

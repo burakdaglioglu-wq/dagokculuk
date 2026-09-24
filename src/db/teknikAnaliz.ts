@@ -25,6 +25,25 @@ export async function listTeknikAnaliz(env: Env, grup: string, ad: string, limit
   return rows.results;
 }
 
+// Hata Deseni paneli (2026-09-25, "sporcunun hataları/gelişimi" isteği) — son N kaydın fazlar_json'ını
+// OKUMASI gerekiyor (checklist Doğru/Hatalı durumları orada), ama fotoğraf HİÇ istenmiyor — bu yüzden
+// getTeknikAnaliz'i (tek kayıt) N kez çağırmak yerine TEK bir sorguyla fazlar_json'ları çekip
+// worker'da (bkz. routes/teknikAnaliz.ts) foto alanı ayıklanarak client'a asla gönderilmiyor. Photos
+// olmadan fazlar_json küçük (checkbox durumları + kısa not metinleri) — listTeknikAnaliz'in "günlük D1
+// okuma limitini zorlamasın" kısıtı burada da geçerli, limit sabit ve düşük (varsayılan 10) tutuluyor.
+export interface TeknikAnalizFazlarSatiri {
+  yay: string;
+  tarih: string;
+  skor: number | null;
+  fazlarJson: string;
+}
+export async function listTeknikAnalizFazlar(env: Env, grup: string, ad: string, limit = 10): Promise<TeknikAnalizFazlarSatiri[]> {
+  const rows = await env.DB.prepare(
+    `SELECT yay, tarih, skor, fazlar_json AS fazlarJson FROM teknik_analiz WHERE grup = ? AND ad = ? ORDER BY lastModified DESC LIMIT ?`
+  ).bind(grup, ad, Math.max(1, Math.min(20, limit))).all<TeknikAnalizFazlarSatiri>();
+  return rows.results;
+}
+
 export async function getTeknikAnaliz(env: Env, id: string): Promise<TeknikAnalizFull | null> {
   const row = await env.DB.prepare(
     `SELECT id, grup, ad, yay, tarih, skor, fazlar_json AS fazlarJson, olusturan, lastModified FROM teknik_analiz WHERE id = ?`

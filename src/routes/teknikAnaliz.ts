@@ -17,6 +17,34 @@ export function registerTeknikAnalizRoutes(router: Router): void {
     return json({ list });
   });
 
+  // Hata Deseni paneli (2026-09-25) — son N kaydın checklist durumlarını (fotoğrafsız) döner. Foto
+  // alanı BİLİNÇLİ OLARAK burada, worker'da ayıklanıyor — hiçbir zaman client'a gönderilmiyor, bkz.
+  // db/teknikAnaliz.ts'teki listTeknikAnalizFazlar yorumu.
+  router.get("/api/teknik-analiz/hata-deseni", async (request, env) => {
+    const url = new URL(request.url);
+    const grup = url.searchParams.get("grup");
+    const ad = url.searchParams.get("ad");
+    if (!grup || !ad) return badRequest("grup and ad are required");
+    const limitParam = url.searchParams.get("limit");
+    const limit = limitParam ? Math.max(1, Math.min(20, Number(limitParam) || 10)) : 10;
+    const rows = await db.listTeknikAnalizFazlar(env, grup, ad, limit);
+    const records = rows.map((r) => {
+      let fazlar: unknown = [];
+      try {
+        const parsed = JSON.parse(r.fazlarJson);
+        // GERÇEK VERİ ŞEKLİ (kmTaFazlarTopla, app.js) — k VE not alanı (kNot) DİZİ, obje DEĞİL;
+        // alan adı "kn" değil "kNot". Yanlış varsayımla ilk yazılan sürüm hiçbir maddeyi eşleştiremiyordu.
+        fazlar = Array.isArray(parsed)
+          ? parsed.map((f: any) => ({ k: f && Array.isArray(f.k) ? f.k : [], kn: f && Array.isArray(f.kNot) ? f.kNot : [] }))
+          : [];
+      } catch {
+        fazlar = [];
+      }
+      return { yay: r.yay, tarih: r.tarih, skor: r.skor, fazlar };
+    });
+    return json({ records });
+  });
+
   router.get("/api/teknik-analiz/:id", async (_request, env, params) => {
     const row = await db.getTeknikAnaliz(env, params.id);
     if (!row) return notFound("not found");

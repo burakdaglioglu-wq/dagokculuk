@@ -10431,6 +10431,20 @@ ${(function(){
 .km-ta-arast{margin-top:7px;padding:7px 9px;background:rgba(111,146,87,.12);border-left:3px solid #6f9257;font-size:11px;line-height:1.45;color:#2a3b20}
 .km-ta-kaynak{margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;line-height:1.5;color:#8a8064}
 .km-ta-ozet{background:linear-gradient(180deg,#171f14,#10160f);border:1px solid #33402c;border-radius:6px;padding:14px}
+/* 🔍 Hata Deseni (2026-09-25, "sporcunun hataları/gelişimi" isteği) — Saha Karnesi'nin AYNI koyu palet
+   ailesinden, ama kırmızımsı-kahve bir vurgu (.km-ta-uyari'nin AYNI #b5502e tonu) — "buraya dikkat"
+   hissi versin diye ozet/notkart'tan görsel olarak ayrılıyor. */
+.km-ta-hatadesen{background:linear-gradient(180deg,#1f1512,#160e0c);border:1px solid #4a2a1f;border-radius:6px;padding:14px;margin-bottom:12px}
+.km-ta-hatadesen h3{margin:0 0 3px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#e3b567;font-family:'IBM Plex Mono',monospace}
+.km-ta-hatadesen-alt{font-size:10px;color:#a9924e;margin-bottom:10px}
+.km-ta-hatadesen-satir{padding:8px 0;border-top:1px solid #3a2620}
+.km-ta-hatadesen-satir:first-of-type{border-top:none;padding-top:0}
+.km-ta-hatadesen-baslik{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.km-ta-hatadesen-etiket{font-weight:700;font-size:11.5px;color:#eef0e6}
+.km-ta-hatadesen-oran{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c9974c;white-space:nowrap;flex-shrink:0}
+.km-ta-hatadesen-faz{font-size:9.5px;color:#8a7a6a;margin-top:1px}
+.km-ta-hatadesen-neden{font-size:10px;color:#c9a98a;margin-top:3px;font-style:italic}
+.km-ta-hatadesen-iyi{font-size:11px;color:#6f9257;text-align:center;padding:4px 0}
 .km-ta-ozet h3{font-size:11.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:#a9b39c;margin:0 0 9px}
 .km-ta-ilercubuk{display:flex;gap:4px;margin-bottom:9px}
 .km-ta-ilercubuk i{flex:1;height:5px;border-radius:2px;background:#33402c;font-style:normal}
@@ -10491,6 +10505,7 @@ ${(function(){
         let _kmTaDurum = {}; // key: yay+i -> {puan, k:{}, not, foto}
         let _kmTaGecmis = []; // son analizler listesi (fotosuz)
         let _kmTaAnaliziSayisi = 0;
+        let _kmTaHataDeseni = []; // 🔍 Hata Deseni paneli — son N kaydın checklist'leri (fotosuz), bkz. kmTaHataDeseniHesapla
 
         function kmTaD(i) { let k = _kmTaYay + i; return _kmTaDurum[k] || (_kmTaDurum[k] = { puan:0, k:{}, kn:{}, not:'', foto:null }); }
         // "Formaları tersine yapmak" (2026-09-24, kullanıcı: "bırakış hatalı veya doğru gibi ikili
@@ -10546,7 +10561,7 @@ ${(function(){
         }
         async function kmTeknikAnalizSporcuSec(g, ad) {
             _kmTaSporcu = { g:g, ad:ad };
-            _kmTaYay = 'klasik'; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; _kmTaDurum = {}; _kmTaGecmis = []; _kmTaAnaliziSayisi = 0;
+            _kmTaYay = 'klasik'; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; _kmTaDurum = {}; _kmTaGecmis = []; _kmTaAnaliziSayisi = 0; _kmTaHataDeseni = [];
             kmTeknikAnalizAnaCiz();
             try {
                 let r = await fetch('/api/teknik-analiz?grup=' + encodeURIComponent(g) + '&ad=' + encodeURIComponent(ad));
@@ -10555,6 +10570,49 @@ ${(function(){
                 _kmTaAnaliziSayisi = _kmTaGecmis.length;
                 kmTeknikAnalizAnaCiz();
             } catch(e) {}
+            // 🔍 Hata Deseni (2026-09-25) — AYRI, fotoğrafsız bir uç nokta (bkz. sunucu tarafı yorumu):
+            // geçmiş karnelerin checklist durumlarını (k/kn) çekip hangi maddenin en sık "Hatalı"
+            // işaretlendiğini gösterir. Ana liste isteğiyle PARALEL değil, art arda — biri başarısız
+            // olursa diğerini etkilemesin diye ayrı try/catch.
+            try {
+                let r2 = await fetch('/api/teknik-analiz/hata-deseni?grup=' + encodeURIComponent(g) + '&ad=' + encodeURIComponent(ad) + '&limit=10');
+                let d2 = await r2.json().catch(function(){ return {}; });
+                _kmTaHataDeseni = (d2 && d2.records) || [];
+                kmTeknikAnalizAnaCiz();
+            } catch(e) {}
+        }
+        // Geçmiş N karneden (AYNI yay tipi, _kmTaHataDeseni — fotosuz) hangi checklist maddesinin en sık
+        // "Hatalı" işaretlendiğini çıkarır. En az 2 kayıt (aynı yay) şartı var — tek karneden "desen"
+        // çıkarmak yanıltıcı olurdu. Her madde için örnek hata nedenleri (kn metinleri, tekrarsız, en
+        // fazla 2 tane) de toplanıyor — koç SADECE "en çok Bırakış hatalı" değil, NEDEN olduğunu da görsün.
+        function kmTaHataDeseniHesapla(yay) {
+            let kayitlar = _kmTaHataDeseni.filter(function(k) { return k.yay === yay && Array.isArray(k.fazlar) && k.fazlar.length; });
+            if(kayitlar.length < 2) return null;
+            let list = KM_TA_FAZLAR[yay];
+            let maddeler = []; // { fazIndex, fazAd, j, etiket, hatali, degerlendirilen, nedenler:Set }
+            list.forEach(function(fz, fi) {
+                fz.k.forEach(function(etiket, j) {
+                    maddeler.push({ fazIndex: fi, fazAd: fz.ad, j: j, etiket: etiket, hatali: 0, degerlendirilen: 0, nedenler: [] });
+                });
+            });
+            kayitlar.forEach(function(kayit) {
+                kayit.fazlar.forEach(function(fz, fi) {
+                    if(!fz || !Array.isArray(fz.k)) return;
+                    fz.k.forEach(function(hamDeger, jIdx) {
+                        let durum = kmTaKV(hamDeger); if(durum === null) return;
+                        let m = maddeler.find(function(x) { return x.fazIndex === fi && x.j === jIdx; }); if(!m) return;
+                        m.degerlendirilen++;
+                        if(durum === 'hatali') {
+                            m.hatali++;
+                            let neden = fz.kn && fz.kn[jIdx] && String(fz.kn[jIdx]).trim();
+                            if(neden && m.nedenler.indexOf(neden) === -1 && m.nedenler.length < 2) m.nedenler.push(neden);
+                        }
+                    });
+                });
+            });
+            let anlamli = maddeler.filter(function(m) { return m.degerlendirilen >= 2 && m.hatali > 0; });
+            anlamli.sort(function(a, b) { return (b.hatali / b.degerlendirilen) - (a.hatali / a.degerlendirilen) || b.hatali - a.hatali; });
+            return { kayitSayisi: kayitlar.length, maddeler: anlamli.slice(0, 3) };
         }
         function kmTeknikAnalizGeriDon() { _kmTaSporcu = null; kmTeknikAnalizSporcuSeciciCiz(); }
 
@@ -10601,6 +10659,19 @@ ${(function(){
                 return `<i class="${s2.puan?'dolu':''}"></i>`;
             }).join('');
             let genelSkor = adet ? Math.round(top/adet) : null;
+            let hataDeseni = kmTaHataDeseniHesapla(_kmTaYay);
+            let hataDesenHTML = '';
+            if(hataDeseni) {
+                if(!hataDeseni.maddeler.length) {
+                    hataDesenHTML = `<div class="km-ta-hatadesen"><h3>🔍 Tekrarlayan Hatalar</h3><div class="km-ta-hatadesen-alt">Son ${hataDeseni.kayitSayisi} karneye göre</div><div class="km-ta-hatadesen-iyi">👍 Tekrarlayan bir hata görünmüyor.</div></div>`;
+                } else {
+                    hataDesenHTML = `<div class="km-ta-hatadesen"><h3>🔍 Tekrarlayan Hatalar</h3><div class="km-ta-hatadesen-alt">Son ${hataDeseni.kayitSayisi} karneye göre</div>`
+                        + hataDeseni.maddeler.map(function(m) {
+                            let nedenHTML = m.nedenler.length ? `<div class="km-ta-hatadesen-neden">"${esc(m.nedenler.join('" · "'))}"</div>` : '';
+                            return `<div class="km-ta-hatadesen-satir"><div class="km-ta-hatadesen-baslik"><span class="km-ta-hatadesen-etiket">${esc(m.etiket)}</span><span class="km-ta-hatadesen-oran">${m.hatali}/${m.degerlendirilen} kez</span></div><div class="km-ta-hatadesen-faz">${esc(m.fazAd)}</div>${nedenHTML}</div>`;
+                        }).join('') + '</div>';
+                }
+            }
 
             ic.innerHTML = `<div class="km-ta-root">
                 <div class="km-ta-ust">
@@ -10645,6 +10716,7 @@ ${(function(){
                         </div>
                     </div>
                     <div>
+                        ${hataDesenHTML}
                         <div class="km-ta-notkart">
                             <h3>🧭 ${_kmTaYay==='klasik'?'Klasik':'Makaralı'} Yayda Saha Notu</h3>
                             <div class="km-ta-sek">${rehSekHTML}</div>
