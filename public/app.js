@@ -11938,7 +11938,13 @@ ${(function(){
    düzeltmesinin (yukarıda) kaçındığı GPU'ya binmeyen repaint durumu, sadece burada transform bile
    yetmiyor çünkü filtre canlı. Ekibin kendi KM_SIS_GUN_PALETLERI kararıyla (aşağıda, aynı gün) AYNI
    ilke: animasyon YOK = performans riski YOK. Bulutlar artık İLK ÇİZİMDE bir kere render edilip
-   duruyor — "yavaş kayan sis" hissi gitti ama dondurma da gitti; sahne zaten tek seferlik kuruluyor. */
+   duruyor — "yavaş kayan sis" hissi gitti ama dondurma da gitti; sahne zaten tek seferlik kuruluyor.
+   EK (aynı gün, yağmur da kaldırıldıktan SONRA hâlâ "kasarak ilerliyor" bildirildi): asıl kalan maliyet
+   kmOyunAnimateSisHaritasi'nin yürüyüş sırasında HER rAF karesinde kmOyunSisMaskeGuncelle çağırması —
+   o da #km-sis-mask'ı değiştirip bu filtreli bulutları her seferinde yeniden kompoze ettiriyordu.
+   Maske güncellemesi artık ~60ms'de bir'e (fonksiyonun kendi içinde throttle) düşürüldü, filtrenin
+   numOctaves'i 3'ten 2'ye indirildi, bulut dikdörtgenleri de artık animasyon olmadığı için gereksiz
+   ±140/520px taşmadan kırpıldı (aşağıdaki <rect>'ler, sadece maskenin gerçek alanı + küçük kenar payı). */
 .km-sis-bulut{ }
 .km-sis-fener{ animation:kmSisFener 2.6s ease-in-out infinite; }
 @keyframes kmSisFener{ 0%,100%{ opacity:.4; } 50%{ opacity:.85; } }
@@ -14954,7 +14960,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <linearGradient id="km-sis-lav" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ff3d1f"/></linearGradient>
                     <radialGradient id="km-sis-fener-isik"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".55"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
                     <radialGradient id="km-sis-vinyet" cx="50%" cy="50%" r="70%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></radialGradient>
-                    <filter id="km-sis-bulut-f" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.007 0.012" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.86  0 0 0 0 0.9  0 0 0 0 0.96  0 0 0 -0.9 1.25"/><feGaussianBlur stdDeviation="2"/></filter>
+                    <filter id="km-sis-bulut-f" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.007 0.012" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0.86  0 0 0 0 0.9  0 0 0 0 0.96  0 0 0 -0.9 1.25"/><feGaussianBlur stdDeviation="2"/></filter>
                     <filter id="km-sis-yumusak" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
                     <filter id="km-sis-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                     <mask id="km-sis-mask" maskUnits="userSpaceOnUse" x="0" y="-40" width="1200" height="600">
@@ -14994,8 +15000,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <g id="km-oyun-sis-gezginler"></g>
                   <g class="km-sis-katman" mask="url(#km-sis-mask)">
                     <rect y="-40" width="1200" height="600" fill="#0a0f1a" opacity=".5"/>
-                    <g class="km-sis-bulut"><rect x="-140" y="-60" width="1480" height="640" filter="url(#km-sis-bulut-f)" fill="#dfe6f0" opacity=".8"/></g>
-                    <g class="km-sis-bulut ters"><rect x="-140" y="-60" width="1480" height="640" filter="url(#km-sis-bulut-f)" fill="#c9d3e0" opacity=".5"/></g>
+                    <g class="km-sis-bulut"><rect x="-20" y="-60" width="1240" height="640" filter="url(#km-sis-bulut-f)" fill="#dfe6f0" opacity=".8"/></g>
+                    <g class="km-sis-bulut ters"><rect x="-20" y="-60" width="1240" height="640" filter="url(#km-sis-bulut-f)" fill="#c9d3e0" opacity=".5"/></g>
                   </g>
                   <rect y="-40" width="1200" height="600" fill="url(#km-sis-vinyet)" pointer-events="none"/>
                   <g transform="translate(1140,500)" opacity=".85"><circle r="24" fill="#06080f" stroke="#ffd23f" stroke-width="1.5"/><path d="M0 -18 L5 0 L0 18 L-5 0 Z" fill="#ffd23f"/><path d="M0 -18 L5 0 L-5 0 Z" fill="#ff3d1f"/><text y="-28" text-anchor="middle" fill="#fff" font-size="10" font-weight="900">K</text></g>
@@ -17477,12 +17483,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunAnimateSisHaritasi(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, jj = kmOyunJitter(i, n), el = s.sisharitaEl; if(!el) { done(); return; }
             let sure = 1250, basla = performance.now();
+            // PERFORMANS DÜZELTMESİ (2026-09-24, kullanıcı: "hala kasarak gidiyor ilerliyor" — yağmur/
+            // bulut düzeltmelerinden SONRA bulunan asıl kaynak): kmOyunSisMaskeGuncelle her rAF karesinde
+            // (saniyede ~60 kez) çağrılıyordu. Güncellediği fener çemberleri #km-sis-mask'ı değiştiriyor,
+            // o mask ise feTurbulence filtreli koca bulut katmanlarını maskeliyor (yukarıda, .km-sis-bulut)
+            // — mask geometrisi her değiştiğinde tarayıcı o filtreli grubu YENİDEN rasterize etmek zorunda
+            // kalıyor, tam da bulutları statikleştirerek kaçınmaya çalıştığımız maliyetin ta kendisi, ama
+            // bu kez CSS animasyonundan değil kmOyunAnimateSisHaritasi'nin JS döngüsünden geliyordu. Karakter
+            // konumu (el.setAttribute transform) YİNE HER KAREDE güncelleniyor (yürüyüş akıcı kalsın, o ucuz
+            // — filtre/maske işine hiç girmiyor); sis açılma maskesi ise ~60ms'de bir (saniyede ~16 kez,
+            // gözle akıcı, filtre yeniden hesaplama sayısını ~4'te 1'e indiriyor) güncelleniyor.
+            let sonMaskeMs = 0;
             function frame(now) {
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
                 let pt = kmOyunSisNokta(eskiFrac + (yeniFrac - eskiFrac) * eased);
                 let hop = Math.abs(Math.sin(t * Math.PI * 7)) * 8 * (1 - t * 0.5);
                 el.setAttribute('transform', `translate(${(pt.x + jj[0]).toFixed(1)},${(pt.y + jj[1] - hop).toFixed(1)})`);
-                kmOyunSisMaskeGuncelle({ s: s, frac: eskiFrac + (yeniFrac - eskiFrac) * eased });
+                if(t >= 1 || now - sonMaskeMs > 60) { sonMaskeMs = now; kmOyunSisMaskeGuncelle({ s: s, frac: eskiFrac + (yeniFrac - eskiFrac) * eased }); }
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
                     let varis = kmOyunSisNokta(yeniFrac);
