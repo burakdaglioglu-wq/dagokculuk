@@ -5006,3 +5006,52 @@ seçimi ticker'a yansıdı ve kalıcı; bellek temizlenip yeniden yükleme + tem
 regresyonu 0 hata; 0 JS hatası.
 
 **Deploy durumu (51)**: Kullanıcının ön onayıyla ("deploy et sabah bakarım") commit + push + deploy edildi.
+
+## 52. GENEL KONTROL — kritik "İşle skoru işlemiyor" bug'ı düzeltildi + Yükseliş kartı aç/kapa+sürükle (2026-09-25)
+
+Kullanıcı: "skorları girince işle deyince skor işlenmiyor" + "yükseliş'teki istatistik kartı ekranın
+neredeyse hepsini kaplıyor, aç kapa yapmak gerekebilir ya da sürükleyebiliriz, ikisini de yap" + "genel
+olarak kontrol etmeni istiyorum".
+
+**a) KÖK NEDEN BULUNDU — gerçek, kritik bug**: `kmOyunIlerlet()` (Oyunlar'da HER "İlerlet/İşle" tıklaması)
+ve `kmYarismaSeriKaydet()` (Yarışma'da HER "Seti Kaydet") günlük seri limitine (varsayılan 12) takılınca
+HÂLÂ native `confirm()` kullanıyordu. Bu SINIF bug zaten §2026-08'de bir kez bulunup DÜZELTİLMİŞTİ
+(normal Skor Gir ekranı → `#seri-tamamlandi-modal`, oradaki yorum: "tablet Karışık Sınıf'ta çocuklar
+arasında elden ele geçtiği için native pencere kafa karıştırıp yanlış dokunmalara yol açıyordu") ama
+Oyunlar ve Yarışma'daki İKİ KARDEŞ kod yolu o düzeltmeden UNUTULMUŞTU. Sonuç: koç bir sporcunun günlük
+12. serisinden sonra (ki bu, aynı sporcuyla uzun bir Oyunlar/Yarışma oturumunda GERÇEKTEN sık karşılaşılan
+bir durum) "İşle"ye bastığında native bir pencere açılıyordu (ya da tablette hiç görünmeyip/yanlış
+anlaşılıp) — koç "sessizce hiçbir şey olmadı" hissediyordu, oysa aslında onay bekleniyordu.
+
+**Düzeltme**: Her iki fonksiyon da `native confirm()` yerine uygulamanın kendi `onayIste()` modalına
+taşındı (aynı görsel dil, İptal/Evet butonları). Fonksiyonlar senkron akıştan `devamEt()` adlı iç
+fonksiyona ayrıldı — hem normal yolda hemen, hem onay modalının ASENKRON geri çağrısından çağrılabiliyor.
+İptal edilirse girilen oklar SİLİNMİYOR (koç isterse tekrar dener) — eskisi gibi sessizce kaybolmuyor.
+
+**Gerçek testte doğrulanan** (Playwright, masaüstü + 390px mobil, gerçek buton tıklamaları): limit
+doldurulup "İşle"/"Seti Kaydet"e basılınca native `dialog` olayı HİÇ TETİKLENMEDİ (Playwright'ın
+`page.on('dialog')` dinleyicisi boş kaldı); `#onay-modal` doğru mesajla açıldı; "Devam Et"e basınca 13.
+seri kaydedildi ve girişler temizlendi; "İptal"e basınca seri sayısı değişmedi VE girilen oklar (5,5,5)
+OLDUĞU GİBİ kaldı. 16 tema Oyunlar regresyonu 0 hata.
+
+**Not — genel taramada bulunan, kapsam dışı bırakılan benzer noktalar**: `kmYarismaSonGirisiGeriAl` ve
+birkaç "sıfırla/vazgeç" onayı hâlâ native `confirm()` kullanıyor — bunlar daha az sık tetiklenen (silme/
+geri-alma) aksiyonlar, bu turda İŞLE/KAYDET akışına odaklanıldı. İstenirse ayrı bir round'da hepsi
+`onayIste()`'ye taşınabilir.
+
+**b) 📈 Yükseliş istatistik kartı — aç/kapa + serbest sürükleme**: Kart artık ▾/▸ ile katlanabiliyor
+(kapalıyken sadece başlık şeridi kalıyor, ekranın çoğunu kaplama sorunu çözüldü) VE ⠿ tutamacından
+sahnenin herhangi bir yerine sürüklenebiliyor (dock'un free-drag'iyle BİREBİR aynı desen/bug dersi:
+sürükleme sırasında `transition:none`, konum sahne oranına göre `dag_km_ykskart_sx/sy` + açık/kapalı
+`dag_km_ykskart_acik` olarak GLOBAL/kalıcı saklanıyor — güne özel değil, D1'e yazılmıyor). Varsayılan:
+açık, sağ üstte (mevcut konum).
+
+**Gerçek testte doğrulanan**: varsayılan açık; ▾'ye basınca kapanıyor, sekmeden çıkıp geri girince hâlâ
+kapalı (kalıcı); tekrar açılıyor; ⠿'dan sürükleyince konum bırakılan piksele tam eşleşiyor (sahne oranı
+doğru), sahne sınırları dışına taşmıyor, tema gidip gelince korunuyor; 390px mobilde de aynı sonuçlar.
+**Bilinen kozmetik sınırlama**: kart bilinçli olarak dock'un ÜSTÜNE sürüklenirse, dock'un kendi yarı
+saydam üst kenarı (`rgba(...,0.55)`) ile kartın metni görsel olarak karışabiliyor — bu, dock'un TÜM
+17 temada paylaşılan "cam panel" tasarımının bir sonucu, bu turda dokunulmadı (nadir, kullanıcı bilerek
+oraya sürüklerse olur).
+
+**Deploy durumu (52)**: Kullanıcı onayıyla ("bunları yaptıktan sonra yayına geç") commit + push + deploy edildi.

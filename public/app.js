@@ -12036,8 +12036,20 @@ ${(function(){
 .km-yks-son-etiket text{ fill:#06080f; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; }
 .km-yks-son-etiket.km-yks-flas{ animation:kmYksFlas .9s ease-out; }
 @keyframes kmYksFlas{ 0%{ filter:brightness(2.2); } 100%{ filter:brightness(1); } }
-.km-yks-kart{ position:absolute; top:50px; right:8px; width:min(36%, 290px); z-index:1; background:rgba(6,8,15,.84); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Rajdhani',var(--font-body); font-variant-numeric:tabular-nums; pointer-events:none; }
-.km-yks-baslik{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+/* İstatistik kartı — kullanıcı: "ekranın neredeyse hepsini kaplıyor, aç kapa yapabiliriz ya da
+   sürükleyebiliriz, ikisini de yapabilirsin" (2026-09-25). Artık hem katlanır (▾/▸, gövde max-height
+   ile) HEM serbest sürüklenebilir (⠿ tutamaç, dock'un free-drag'iyle AYNI desen: sahne oranına göre
+   saklanan konum, transition sürükleme sırasında kapatılıyor — bkz. kmOyunYksKartSurukleKur). Artık
+   pointer-events aktif olmalı (tutamaç/buton tıklanabilsin) — eskiden tamamı 'none' idi. */
+.km-yks-kart{ position:absolute; top:50px; right:8px; width:min(36%, 290px); z-index:1; background:rgba(6,8,15,.9); border:1px solid var(--line); border-radius:10px; padding:8px 12px 10px; font-family:'Rajdhani',var(--font-body); font-variant-numeric:tabular-nums; transition:left .25s ease, top .25s ease, right .25s ease; }
+.km-yks-kart-ust-satir{ display:flex; align-items:center; gap:6px; }
+.km-yks-kart-tutamac{ flex-shrink:0; width:20px; min-height:28px; display:flex; align-items:center; justify-content:center; color:var(--ink-faint); font-size:14px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; border-radius:6px; }
+.km-yks-kart-tutamac:hover{ color:var(--ink); background:rgba(255,255,255,.06); } .km-yks-kart-tutamac:active{ cursor:grabbing; }
+.km-yks-kart-toggle{ flex-shrink:0; width:26px; height:26px; border-radius:6px; background:rgba(255,255,255,.05); border:1px solid var(--line); color:var(--ink-dim); font-size:11px; cursor:pointer; }
+.km-yks-kart-toggle:hover{ border-color:var(--a3); color:var(--ink); }
+.km-yks-kart-govde{ max-height:400px; opacity:1; overflow:hidden; transition:max-height .28s ease, opacity .2s ease, margin-top .28s ease; margin-top:8px; }
+.km-yks-kart.kapali .km-yks-kart-govde{ max-height:0; opacity:0; margin-top:0; }
+.km-yks-baslik{ display:flex; align-items:center; gap:8px; }
 .km-yks-baslik-ad{ font-weight:700; font-size:14px; color:var(--ink); line-height:1.1; }
 .km-yks-baslik-alt{ font-size:10px; letter-spacing:.08em; color:var(--ink-faint); }
 .km-yks-kart-ust{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid var(--line); }
@@ -14918,7 +14930,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <g id="km-yks-grafik"></g>
             </svg>
             <div class="km-yks-ticker" id="km-yks-ticker"></div>
-            <div class="km-yks-kart"><div class="km-yks-baslik" id="km-yks-baslik"></div><div id="km-yks-kart"></div></div>
+            <div class="km-yks-kart" id="km-yks-kart-panel">
+                <div class="km-yks-kart-ust-satir">
+                    <span class="km-yks-kart-tutamac" id="km-yks-kart-tutamac" title="Sürükleyerek taşı">⠿</span>
+                    <div class="km-yks-baslik" id="km-yks-baslik" style="flex:1; min-width:0;"></div>
+                    <button class="km-yks-kart-toggle" id="km-yks-kart-toggle" onclick="kmYksKartAcKapat()" title="İstatistik kartını aç/kapat">▾</button>
+                </div>
+                <div class="km-yks-kart-govde" id="km-yks-kart"></div>
+            </div>
             <div class="km-yks-piyasa" id="km-yks-piyasa"></div>
         </div>`;
         }
@@ -18498,7 +18517,90 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmYksFmt(v, d) { return (v === null || v === undefined || isNaN(v)) ? '—' : Number(v).toFixed(d === undefined ? 1 : d); }
         function kmYksPct(v) { if(v === null || v === undefined || isNaN(v)) return '—'; return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
-        function kmOyunSahneKurYukselis() { kmYksDurumEmin(); kmOyunYukselisCiz(); }
+        // İstatistik kartı — aç/kapa + serbest sürükleme (2026-09-25). Dock'un free-drag'iyle AYNI ilke
+        // (kmOyunDokSurukleKur/kmOyunDokSerbestUygula) — global (localStorage, konum bazlı, D1'e yazılmaz),
+        // sahne oranına göre saklanan konum. Varsayılan AÇIK ve sağ üstteki CSS konumunda (serbest DEĞİL).
+        let _kmYksKartAcik = true, _kmYksKartSX = null, _kmYksKartSY = null, _kmYksKartYuklenenKonum = null;
+        function kmYksKartAnahtari(ad) { return kmOyunBayrakAnahtari('ykskart' + ad); }
+        function kmYksKartAyarYukle() {
+            if(_kmYksKartYuklenenKonum === _kmAktifKonum) return;
+            _kmYksKartYuklenenKonum = _kmAktifKonum;
+            try { _kmYksKartAcik = localStorage.getItem(kmYksKartAnahtari('acik')) !== '0'; } catch(e) { _kmYksKartAcik = true; }
+            try {
+                let x = parseFloat(localStorage.getItem(kmYksKartAnahtari('sx'))), y = parseFloat(localStorage.getItem(kmYksKartAnahtari('sy')));
+                _kmYksKartSX = (x >= 0 && x <= 1) ? x : null; _kmYksKartSY = (y >= 0 && y <= 1) ? y : null;
+            } catch(e) { _kmYksKartSX = null; _kmYksKartSY = null; }
+        }
+        function kmYksKartAyarKaydet() {
+            try {
+                localStorage.setItem(kmYksKartAnahtari('acik'), _kmYksKartAcik ? '1' : '0');
+                if(_kmYksKartSX !== null) localStorage.setItem(kmYksKartAnahtari('sx'), String(_kmYksKartSX));
+                if(_kmYksKartSY !== null) localStorage.setItem(kmYksKartAnahtari('sy'), String(_kmYksKartSY));
+            } catch(e) {}
+        }
+        function kmYksKartAcKapat() {
+            kmYksKartAyarYukle();
+            _kmYksKartAcik = !_kmYksKartAcik;
+            kmYksKartAyarKaydet();
+            kmYksKartGorunumUygula();
+        }
+        function kmYksKartGorunumUygula() {
+            let el = document.getElementById('km-yks-kart-panel'); if(!el) return;
+            el.classList.toggle('kapali', !_kmYksKartAcik);
+            let btn = document.getElementById('km-yks-kart-toggle'); if(btn) btn.textContent = _kmYksKartAcik ? '▾' : '▸';
+            if(_kmYksKartSX !== null) kmYksKartSerbestUygula(el);
+        }
+        function kmYksKartSerbestUygula(el) {
+            let sahne = document.getElementById('km-oyun-sahne'); if(!sahne) return;
+            let uygula = function() {
+                if(!sahne.clientWidth || !sahne.clientHeight) return;
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth), maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                el.style.left = Math.min(Math.max(0, (_kmYksKartSX || 0) * sahne.clientWidth), maxLeft) + 'px';
+                el.style.top = Math.min(Math.max(0, (_kmYksKartSY || 0) * sahne.clientHeight), maxTop) + 'px';
+                el.style.right = 'auto';
+            };
+            if(el.offsetWidth) uygula(); else requestAnimationFrame(uygula);
+        }
+        function kmOyunYksKartSurukleKur() {
+            let el = document.getElementById('km-yks-kart-panel'), tutamac = document.getElementById('km-yks-kart-tutamac'), sahne = document.getElementById('km-oyun-sahne');
+            if(!el || !tutamac || !sahne) return;
+            kmYksKartAyarYukle();
+            kmYksKartGorunumUygula();
+            let basX = 0, basY = 0, elBasLeft = 0, elBasTop = 0, aktifPointerId = null, suruklendi = false;
+            tutamac.addEventListener('pointerdown', function(e) {
+                aktifPointerId = e.pointerId; suruklendi = false;
+                basX = e.clientX; basY = e.clientY; elBasLeft = el.offsetLeft; elBasTop = el.offsetTop;
+                try { tutamac.setPointerCapture(e.pointerId); } catch(err) {}
+            });
+            tutamac.addEventListener('pointermove', function(e) {
+                if(aktifPointerId === null || e.pointerId !== aktifPointerId) return;
+                let dx = e.clientX - basX, dy = e.clientY - basY;
+                if(Math.hypot(dx, dy) > 4) suruklendi = true;
+                if(!suruklendi) return;
+                el.style.transition = 'none'; // bkz. dock sürüklemesindeki AYNI transition/offsetLeft bug'ı
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth), maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                el.style.left = Math.min(Math.max(0, elBasLeft + dx), maxLeft) + 'px';
+                el.style.top = Math.min(Math.max(0, elBasTop + dy), maxTop) + 'px';
+                el.style.right = 'auto';
+            });
+            let birak = function(e) {
+                if(aktifPointerId === null || (e && e.pointerId !== undefined && e.pointerId !== aktifPointerId)) return;
+                aktifPointerId = null;
+                el.style.transition = '';
+                if(!suruklendi) return;
+                suruklendi = false;
+                _kmYksKartSX = sahne.clientWidth ? (el.offsetLeft / sahne.clientWidth) : 0;
+                _kmYksKartSY = sahne.clientHeight ? (el.offsetTop / sahne.clientHeight) : 0;
+                kmYksKartAyarKaydet();
+            };
+            tutamac.addEventListener('pointerup', birak);
+            tutamac.addEventListener('pointercancel', birak);
+        }
+        window.addEventListener('resize', function() {
+            if(_kmYksKartSX === null) return;
+            let el = document.getElementById('km-yks-kart-panel'); if(el) kmYksKartSerbestUygula(el);
+        });
+        function kmOyunSahneKurYukselis() { kmYksDurumEmin(); kmYksKartAyarYukle(); kmOyunYukselisCiz(); }
         // Ana çizim: ticker (tüm sporcular) + aktif sporcunun mum grafiği + istatistik kartı + piyasa özeti.
         function kmOyunYukselisCiz(yeniMumMu) {
             kmYksDurumEmin();
@@ -18708,19 +18810,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // yazar, normal Skor ekranındaki ısı haritası/grup analizleri bu okları da görür.
             let kaydedilecek = _kmOyunSeriGirisleri.map(function(v, idx) { let k = _kmOyunSeriKonumlari[idx]; return k ? { puan: v, x: k.x, y: k.y, tip: '10ring' } : { puan: v }; });
             let sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
-            // Seri limiti doluysa artık burada TIKANIP kalınmıyor (2026-09-06, "bazen sporcuların
-            // serileri bitiyor, skor giremiyorum, bu programı bilmeyen biri için sorun verici") — var
-            // olan "Seriyi Uzat" (`devamModu`) mekanizması, tam ihtiyaç anında tek dokunuşla sunuluyor;
-            // `_skorKaydetCekirdek` reddedince zaten GERÇEK `grupData` referansını döndürüyor, o yüzden
-            // sporcuyu yeniden aramaya gerek yok — uzatılınca AYNI oklar kaybolmadan tekrar deneniyor.
-            if(!sonuc.ok && sonuc.sebep === 'limit-doldu') {
-                if(confirm(s.ad + ' için günlük seri limiti (' + sonuc.limit + ') doldu.\n\nBu sporcu için seriyi uzatıp bu skoru kaydetmek ister misin?')) {
-                    sonuc.grupData.devamModu = true; sonuc.grupData.lastModified = Date.now();
-                    try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
-                    try { if(typeof bulutaGonderKontrol === 'function') bulutaGonderKontrol(); } catch(e) {}
-                    sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
-                }
-            }
+            // Geri kalan tüm kayıt/animasyon akışı — hem normal yolda senkron, hem limit uzatma onayı
+            // sonrası onayIste()'nin ASENKRON geri çağrısından çağrılabiliyor diye ayrı bir fonksiyona
+            // alındı. `sonuc`/`s`/`i`/`kaydedilecek` closure'dan okunuyor (aşağıda `sonuc` yeniden
+            // atanabiliyor, `devamEt` her çağrıldığında GÜNCEL değeri görür).
+            function devamEt() {
             if(!sonuc.ok) {
                 if(sonuc.sebep === 'limit-doldu') showToast(s.ad + ' için günlük seri limiti doldu.', 'error');
                 else showToast('Sporcu bulunamadı — kayıt yapılamadı.', 'error');
@@ -19074,6 +19168,25 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             } else {
                 baslatAnimasyon();
             }
+            } // devamEt sonu
+            // GERÇEK BUG (2026-09-25, kullanıcı: "skorları girince işle deyince skor işlenmiyor") — burada
+            // hâlâ native confirm() kullanılıyordu. #seri-tamamlandi-modal'ın AYNI sınıfı zaten fark
+            // edilmişti (bkz. oradaki yorum: "tablet Karışık Sınıf'ta çocuklar arasında elden ele geçtiği
+            // için native pencere kafa karıştırıp yanlış dokunmalara yol açıyordu") ama BURASI unutulmuştu
+            // — koç günlük seri limitine takılınca native pencere görünmeyebiliyor/yanlış anlaşılıyor,
+            // "İşle"ye bassa da skor sessizce kaydedilmeden kalıyordu. Uygulamanın kendi onayIste()
+            // modalına taşındı (İptal edilirse slotlar OLDUĞU GİBİ kalır, koç isterse tekrar dener).
+            if(!sonuc.ok && sonuc.sebep === 'limit-doldu') {
+                onayIste(esc(s.ad) + ' için günlük seri limiti (' + sonuc.limit + ') doldu.<br><br>Bu sporcu için seriyi uzatıp bu skoru kaydetmek ister misin?', function() {
+                    sonuc.grupData.devamModu = true; sonuc.grupData.lastModified = Date.now();
+                    try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
+                    try { if(typeof bulutaGonderKontrol === 'function') bulutaGonderKontrol(); } catch(e) {}
+                    sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
+                    devamEt();
+                }, 'Devam Et');
+                return;
+            }
+            devamEt();
         }
         function kmOyunGeriAlBtnGuncelle() {
             let btn = document.getElementById('km-oyun-geri-al-btn'); if(!btn) return;
@@ -20427,6 +20540,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSayacYeniSeri();
             kmOyunDokSurukleKur();
             if(_kmOyunDokKonum === 'serbest') kmOyunDokGorunumUygula();
+            kmOyunYksKartSurukleKur();
         }
 
         // ===== KARIŞIK SINIF — ⚡ REAKSİYON (2026-09-02, "reaksiyon oyunlarını buraya da ekleyelim,
@@ -23187,14 +23301,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let g = _kmYarismaAktifSporcuKey.slice(0, ayirIdx), ad = _kmYarismaAktifSporcuKey.slice(ayirIdx + 1);
             let kaydedilecek = _kmYarismaSeriGirisleri.map(function(v) { return { puan: v }; });
             let sonuc = _skorKaydetCekirdek(g, ad, kaydedilecek);
-            if(!sonuc.ok && sonuc.sebep === 'limit-doldu') {
-                if(confirm(ad + ' için günlük seri limiti (' + sonuc.limit + ') doldu.\n\nSeriyi uzatıp bu skoru kaydetmek ister misin?')) {
-                    sonuc.grupData.devamModu = true; sonuc.grupData.lastModified = Date.now();
-                    try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
-                    try { if(typeof bulutaGonderKontrol === 'function') bulutaGonderKontrol(); } catch(e) {}
-                    sonuc = _skorKaydetCekirdek(g, ad, kaydedilecek);
-                }
-            }
+            // Geri kalan akış ayrı bir fonksiyona alındı — hem senkron hem limit-uzatma onayının
+            // ASENKRON geri çağrısından çağrılabiliyor (bkz. kmOyunIlerlet'teki AYNI 2026-09-25 düzeltmesi).
+            function devamEt() {
             if(!sonuc.ok) { showToast('Sporcu bulunamadı — kayıt yapılamadı.', 'error'); return; }
             try { klasmanDoldur(); } catch(e) {}
             try { otomatikYoklamaIsaretle(ad); } catch(e) {}
@@ -23210,6 +23319,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmYarismaSeriGirisleri = [];
             kmYarismaMacTamamlanmaKontrolEt();
             kmYarismaCiz();
+            }
+            // GERÇEK BUG (2026-09-25) — kmOyunIlerlet'teki AYNI native confirm() sorunu burada da vardı.
+            // Uygulamanın kendi onayIste() modalına taşındı.
+            if(!sonuc.ok && sonuc.sebep === 'limit-doldu') {
+                onayIste(esc(ad) + ' için günlük seri limiti (' + sonuc.limit + ') doldu.<br><br>Seriyi uzatıp bu skoru kaydetmek ister misin?', function() {
+                    sonuc.grupData.devamModu = true; sonuc.grupData.lastModified = Date.now();
+                    try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
+                    try { if(typeof bulutaGonderKontrol === 'function') bulutaGonderKontrol(); } catch(e) {}
+                    sonuc = _skorKaydetCekirdek(g, ad, kaydedilecek);
+                    devamEt();
+                }, 'Devam Et');
+                return;
+            }
+            devamEt();
         }
         // "↩️ Geri Al" — Oyunlar'ın kmOyunSonGirisiGeriAl'ıyla AYNI silme deseni (seriIptalEkle +
         // sporcuPuanlariYenidenHesapla), Yarışma'da frac/futbol gibi ek durum olmadığı için basitleştirildi.
