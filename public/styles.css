@@ -106,30 +106,42 @@
             --alt-bar-h: 0px;
         }
 
+        /* ============ AÇIK TEMA — "BUZLU CAM" (2026-09-24) ============
+           Karışık Sınıf'ta onaylanan yön ("buzlu cam güzelmiş bütün uygulamayı o tarz yapalım") artık
+           bu temanın kendisi. Varsayılan tema da AŞAĞIDA (toggleTheme çağrısının yanındaki not) buna
+           çevrildi, yani açıkça "koyu" seçmemiş kullanıcı bunu görür. --accent-orange BİLİNÇLİ mora
+           çekildi (marka rengi bu kapsamda değişiyor, Karışık Sınıf'la aynı dil). --bg-main BİLEREK
+           TEK RENK kaldı (Karışık Sınıf'taki aynı hatadan kaçınıldı — bg-main onlarca küçük öğede
+           (.profil-avatar, .vitrin-rozet, .va-input vb.) düz dolgu olarak "background: var(--bg-main)"
+           ile kullanılıyor; oraya gradyan koyulsa her küçük öğe kendi içinde minik/tuhaf bir mesh
+           çizerdi). Mesh SADECE body'nin kendi background'unda, ayrı bir kural olarak — .full-screen-mode
+           ve #giris-ekrani zaten kendi mesh'lerini taşıyor, dokunulmadı. */
         body.light-theme {
-            --bg-main: #eef1f6; --bg-panel: #ffffff; --text-main: #111827;
-            --text-muted: #4b5563; --border-color: #d3dae6;
+            --bg-main: #F3F1F9;
+            --bg-panel: rgba(255, 255, 255, 0.66); --text-main: #262447;
+            --text-muted: #5F5C82; --border-color: rgba(38, 36, 71, 0.12);
             --aurora-cyan: #0090A0; --aurora-magenta: #C4179E; --aurora-violet: #6D28D9; --aurora-gold: #B8860B;
+            --accent-orange: #5B4FCF; --accent-grey: #6b7280;
+            --font-sans: 'Plus Jakarta Sans', 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
 
-            --surface-2: rgba(0, 0, 0, 0.04);
-            /* Açık temada aynı 0.45 alfa opak beyaz zeminde koyu tema muadilinden çok daha düşük
-               kontrast veriyordu (2.92:1) — 0.65'e çıkarıldı (5.52:1). Bkz. DEVIR.md §2j. */
-            --text-tertiary: rgba(17, 24, 39, 0.65);
-            --accent-soft: rgba(242, 107, 29, 0.12);
+            --surface-2: rgba(38, 36, 71, 0.05);
+            --text-tertiary: rgba(38, 36, 71, 0.65);
+            --accent-soft: rgba(91, 79, 207, 0.14);
 
             /* KRİTİK: --surface-1/--text-primary vb. ":root"ta var(--bg-panel) gibi başka bir tokena
                ALIAS. Bir alias'ın değeri, TANIMLANDIĞI yerde (yani :root'ta, koyu değerlerle) bir kere
                hesaplanıp öyle miras kalıyor — body.light-theme SADECE --bg-panel'i değiştirmek bunu
                geriye dönük GÜNCELLEMİYOR. Değeri tema arası farklılaşan her alias'ın burada da AYRI AYRI
                yeniden tanımlanması gerekiyor (bu component-preview ekran görüntüsünde yakalandı — kart/
-               tablo/ayar satırları açık temada hâlâ koyu arkaplan gösteriyordu). --accent/--status-*/
-               --score-ring-*/--tapu-* buraya GEREKMİYOR çünkü kaynakları (--accent-orange, --neon-*,
-               --ring-*) zaten iki temada da aynı değer — sadece zemin/metin/kenarlık tema ile değişiyor. */
+               tablo/ayar satırları açık temada hâlâ koyu arkaplan gösteriyordu). --status-*/--score-ring-*/
+               --tapu-* buraya GEREKMİYOR çünkü kaynakları (--neon-*/--ring-*) zaten iki temada da aynı
+               değer — sadece zemin/metin/kenarlık/vurgu tema ile değişiyor. */
             --surface-0: var(--bg-main);
             --surface-1: var(--bg-panel);
             --surface-border: var(--border-color);
             --text-primary: var(--text-main);
             --text-secondary: var(--text-muted);
+            --text-on-accent-dark: #FFFFFF;
         }
 
         /* ============ BASKI (PDF/YAZDIRMA) TOKEN KATMANI ============
@@ -172,6 +184,13 @@
         .card {
             background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
             padding: var(--space-4);
+        }
+        /* Buzlu Cam: açık temada .card mesh zemine karşı gerçek cam gibi bulanıklaşıyor (Karışık
+           Sınıf'taki #karisik-platform .card ile AYNI tarif) — .modal-overlay .card ÖZEL kuralı (yukarıda)
+           bundan sonra gelip koyu perde bağlamında daha opak beyaza çekerek burayı ezip geçiyor. */
+        body.light-theme .card {
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            border-color: rgba(255, 255, 255, 0.85);
         }
 
         .chip {
@@ -536,6 +555,16 @@
             width: 100% !important; height: 100vh !important;
             background: rgba(0,0,0,0.85); z-index: 20000 !important;
             align-items: center; justify-content: center; padding: 15px; box-sizing: border-box;
+        }
+        /* Buzlu Cam: .card/.glass-panel'in normal (%66) yarı saydamlığı koyu .modal-overlay perdesinin
+           (rgba(0,0,0,.85)) üstünde çamurlu bir griye karışıyordu (arkada blur edecek açık bir mesh
+           yoktu, sadece neredeyse siyah bir perde vardı) — modal içindeki kartlar burada daha opak beyaza
+           çekiliyor, blur perdedeki hafif dokuyu/kenarları yine de yumuşatıyor. */
+        body.light-theme .modal-overlay { background: rgba(38, 36, 71, 0.45); }
+        body.light-theme .modal-overlay .card,
+        body.light-theme .modal-overlay .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
         }
         /* Aynı "vh" (iOS Safari araç çubuğuyla yanlış hesaplanıyor) düzeltmesi — bkz. .yon-shell notu —
            burada TÜM modallar için: yönetici paneli dahil hiçbiri gerçekte görünen alandan taşıp
@@ -1101,13 +1130,31 @@
                 var(--bg-main);
             background-attachment: fixed;
         }
+        /* Buzlu Cam mesh — SADECE body'nin kendi background'u (--bg-main token'ı DEĞİL, bkz. yukarıdaki
+           body.light-theme bloğundaki not), .full-screen-mode/#giris-ekrani kendi mesh'lerini koruyor. */
+        body.light-theme {
+            background:
+                radial-gradient(620px 460px at 6% 4%, rgba(255,205,180,0.45), rgba(255,205,180,0) 70%),
+                radial-gradient(680px 520px at 97% 12%, rgba(196,186,255,0.45), rgba(196,186,255,0) 70%),
+                radial-gradient(760px 460px at 46% 106%, rgba(178,232,214,0.4), rgba(178,232,214,0) 70%),
+                var(--bg-main);
+            background-attachment: fixed;
+        }
         .glass-panel {
             background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.008)), var(--bg-panel);
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 34px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.055);
             border-radius: 16px;
         }
-        body.light-theme .glass-panel { background: #ffffff; box-shadow: 0 8px 28px rgba(15,23,42,0.10); }
+        /* Açık temada .glass-panel eskiden DÜZ OPAK beyazdı (blur(10px) hâlâ aktifti ama arkası zaten
+           opak olduğu için görünmüyordu) — Buzlu Cam'ın asıl bileşeni burası: yarı saydam beyaz +
+           gerçek bulanıklaştırma, mesh zemin arkadan sızıyor. */
+        body.light-theme .glass-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 18px 44px -26px rgba(60, 50, 110, 0.32);
+        }
         button { transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease; }
         button:active { transform: scale(0.965); }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
