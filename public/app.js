@@ -10085,7 +10085,7 @@ ${(function(){
             // arkada çalışmaya devam etmesin diye temizlenir.
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10111,6 +10111,7 @@ ${(function(){
             else if(s==='ritim') kmRitimCiz();
             else if(s==='teknikanaliz') kmTeknikAnalizCiz();
             else if(s==='kasifkarti') kmKasifKartiCiz();
+            else if(s==='fitness') kmFitnessCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10193,6 +10194,7 @@ ${(function(){
             { id:'ritim', ad:'Ritim & Tıkır', grup:'mavi', icon:'<path d="M3 12h3l2-6 4 12 2-6h7"/>' },
             { id:'teknikanaliz', ad:'Teknik Analiz', grup:'sari', icon:'<path d="M9 3h6l1 3h3v14H5V6h3l1-3z"/><path d="M12 10v6"/><path d="M9 13h6"/>' },
             { id:'kasifkarti', ad:'Kaşif Kartı', grup:'mavi', icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c0-2 1.5-3 4-3s4 1 4 3"/>' },
+            { id:'fitness', ad:'Fitness', grup:'kirmizi', icon:'<path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/>' },
         ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
         function kmAracDurumSatiri(id) {
@@ -10212,7 +10214,7 @@ ${(function(){
                 klasman: 'Genel sıralama', canli: 'Canlı skor akışı', yarisma: 'Turnuva ve eşleşmeler',
                 veli: 'Veliye bugünün özeti', disiplin: 'Sınıf disiplin puanı', pozitif: 'Pozitif davranış puanı',
                 oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi', teknikanaliz: 'Duruş, çekiş, bırakış puanla',
-                kasifkarti: 'Gün sonu hatıra kartı'
+                kasifkarti: 'Gün sonu hatıra kartı', fitness: 'Okçuya özel kuvvet/esneklik'
             };
             return SABIT[id] || '';
         }
@@ -11620,6 +11622,110 @@ ${(function(){
             });
         }
 
+        // ===== KARIŞIK SINIF — 💪 FİTNESS (2026-09-25, "evde/salonda/direnç bandıyla/dambılla yapabileceğimiz
+        // egzersizler" isteği) — statik bir referans kütüphanesi (Teknik Analiz'in KM_TA_REHBER'iyle AYNI
+        // kategori: yeni bir veri modeli/D1 tablosu YOK, sadece içerik). Rastgele "genel fitness" değil,
+        // BİLİNÇLİ olarak okçuluğa özgü seçildi: çekiş/arka omuz (rhomboid, arka deltoid, dış rotasyon) ve
+        // gövde sabitliği (core) — okçuların gerçek antrenman literatüründe en çok vurgulanan iki alan.
+        const KM_FITNESS_KATEGORILER = [
+            { id: 'evde', ad: 'Evde', ikon: '🏠', renk: '#22c55e', aciklama: 'Ekipman gerektirmez, vücut ağırlığıyla yapılır — her gün, her yerde.' },
+            { id: 'salon', ad: 'Salonda', ikon: '🏋️', renk: '#3b82f6', aciklama: 'Kablo istasyonu/makine gerektirir — daha kontrollü, ağırlığı artırılabilir.' },
+            { id: 'band', ad: 'Direnç Bandı', ikon: '🎗️', renk: '#f59e0b', aciklama: 'Ucuz, çantaya sığar — okçuların en sık kullandığı ekipman, gerçek çekişe en yakın his.' },
+            { id: 'dambil', ad: 'Dambıl', ikon: '🔩', renk: '#a855f7', aciklama: 'Hafif dambıllarla (1-4 kg) omuz/sırt kuvveti — küçük sporcular için çok hafif başlanmalı.' },
+        ];
+        const KM_FITNESS_EGZERSIZLER = {
+            evde: [
+                { ikon: '🧘', ad: 'Plank (Core Sabitleme)', set: '3 × 20-30 sn tutuş', aciklama: 'Dirsekler ve ayak uçları üzerinde, vücut düz bir çizgi halinde tutulur, kalça ne yukarı kalkar ne düşer.', neden: 'Atış anında gövdenin sabit kalmasını sağlayan karın/sırt kaslarını birlikte çalıştırır — sallanan bir gövde nişanı bozar.' },
+                { ikon: '🦸', ad: 'Süperman (Sırt Ekstansiyonu)', set: '3 × 12 tekrar', aciklama: 'Yüzüstü yatarak kollar ve bacaklar aynı anda yerden kaldırılır, 2 saniye tutulup indirilir.', neden: 'Sırt kaslarını güçlendirir — çekiş boyunca gövdeyi dik ve dengede tutmaya yardımcı olur.' },
+                { ikon: '👼', ad: 'Duvar Meleği', set: '3 × 10 tekrar', aciklama: 'Sırt duvara yaslı, kollar W şeklinden Y şekline kaydırılarak yukarı-aşağı hareket ettirilir.', neden: 'Omuz ve kürek kemiği hareketliliğini açar, kambur duruşu düzeltir.' },
+                { ikon: '↔️', ad: 'Yan Plank', set: '2 × 20 sn (her yan)', aciklama: 'Bir dirsek üzerinde yana dönük plank pozisyonu, vücut yana düz bir çizgi oluşturur.', neden: 'Yanal gövde kuvveti — duruş sırasında sağa/sola sallanmayı azaltır.' },
+                { ikon: '🤏', ad: 'Kürek Kemiği Sıkıştırma', set: '3 × 15 tekrar (5 sn tutuş)', aciklama: 'Otururken kollar yanda, kürek kemikleri birbirine yaklaştırılıp 5 saniye tutulur, sonra gevşetilir.', neden: 'Hiç ekipman gerektirmeyen, en basit "çekiş kası" (rhomboid/trapez) çalıştırma yöntemi.' },
+            ],
+            salon: [
+                { ikon: '🎯', ad: 'Yüz Çekişi (Face Pull)', set: '3 × 15 tekrar', aciklama: 'Kablo istasyonunda ip tutamaçla, halat yüze doğru çekilir, dirsekler yukarıda ve dışa açık tutulur.', neden: 'Okçular için EN önemli egzersizlerden biri — arka omuz ve dış rotasyon kaslarını, tam olarak çekiş hareketindeki gibi çalıştırır.' },
+                { ikon: '⬇️', ad: 'Geniş Tutuş Kürek Çekme', set: '3 × 12 tekrar', aciklama: 'Lat pulldown makinesinde, geniş tutuşla bar göğüs üstüne doğru çekilir.', neden: 'Sırt genişliğini ve genel çekiş gücünü artırır.' },
+                { ikon: '🚣', ad: 'Oturarak Kürek Çekme', set: '3 × 12 tekrar', aciklama: 'Kablo istasyonunda oturarak, tutamaç karına doğru çekilir, kürek kemikleri sıkıştırılır.', neden: 'Orta sırt kaslarını hedefler — çekişi bitirme ve çapaya oturma gücünü destekler.' },
+                { ikon: '🔄', ad: 'Kablo Dış Rotasyon', set: '3 × 15 tekrar (her kol)', aciklama: 'Dirsek gövdeye yapışık ve 90 derece bükülü, önkol kabloya karşı dışa doğru döndürülür.', neden: 'Omuzun derin (rotator manşet) kaslarını güçlendirir — sakatlanmayı önlemede kritik.' },
+                { ikon: '🏋️', ad: 'Ağırlıklı Plank', set: '3 × 30 sn tutuş', aciklama: 'Sırt üzerine hafif bir disk konarak normal plank pozisyonu alınır.', neden: 'Core dayanıklılığını bir üst seviyeye taşır — uzun antrenman/yarışma günlerinde form bozulmasını geciktirir.' },
+            ],
+            band: [
+                { ikon: '🎯', ad: 'Band ile Yüz Çekişi', set: '3 × 15 tekrar', aciklama: 'Band göz hizasında bir noktaya bağlanır, iki elle tutulup yüze doğru çekilir, dirsekler yukarıda açılır.', neden: 'Salon versiyonunun her yerde yapılabilen hali — okçular için klasik, vazgeçilmez bir egzersiz.' },
+                { ikon: '📏', ad: 'Band Açma (Pull-Apart)', set: '3 × 15 tekrar', aciklama: 'Band iki elle göğüs önünde, kollar düz, tutulup yanlara doğru açılır ve yavaşça geri getirilir.', neden: 'Omuz arkası ve duruş için tek bir egzersiz önerilecek olsa muhtemelen bu olurdu — çok basit, çok etkili.' },
+                { ikon: '🔄', ad: 'Band ile Dış Rotasyon', set: '3 × 15 tekrar (her kol)', aciklama: 'Dirsek gövdeye yapışık, band sabit bir noktaya bağlı, önkol dışa doğru çekilir.', neden: 'Omuz sağlığını korur, salon versiyonunun ekipmansız hali.' },
+                { ikon: '🏹', ad: 'Band ile Çekiş Simülasyonu', set: '3 × 10 tekrar (her kol)', aciklama: 'Band, gerçek bir yay tutar gibi öne uzatılan kolla tutulur, diğer elle gerçek çekiş hareketi gibi çapaya kadar çekilir ve yavaşça bırakılır.', neden: 'Doğrudan atış hareketine en yakın kuvvet egzersizi — kas hafızasını da destekler.' },
+                { ikon: '🚣', ad: 'Band ile Kürek Çekme', set: '3 × 15 tekrar', aciklama: 'Band ayağın altına veya sabit bir noktaya bağlanır, oturarak ya da ayakta kürek çekme hareketi yapılır.', neden: 'Sırt kuvveti kazandırır, hiçbir salon ekipmanı gerektirmez — evde/açık havada yapılabilir.' },
+            ],
+            dambil: [
+                { ikon: '🦅', ad: 'Ters Uçan Kuş (Reverse Fly)', set: '3 × 12 tekrar', aciklama: 'Belden hafifçe öne eğilip, hafif dambıllarla kollar yana doğru kaldırılır, kürek kemikleri sıkıştırılır.', neden: 'Arka omuz (posterior deltoid) — çekiş kolunun en çok kullandığı kaslardan biri, en direkt hedefleyen egzersiz.' },
+                { ikon: '➡️', ad: 'Tek Kol Dambıl Kürek', set: '3 × 12 tekrar (her kol)', aciklama: 'Bir el ve diz sabit bir yüzeye dayalı, diğer elde dambılla kürek çekme hareketi yapılır.', neden: 'Sırt kuvveti kazandırır; okçuluk zaten asimetrik bir spor olduğu için tek taraflı çalışmak mantıklı.' },
+                { ikon: '⬆️', ad: 'Omuz Önden Kaldırış', set: '3 × 12 tekrar', aciklama: 'Hafif dambıllar, kollar düz halde öne doğru omuz hizasına kadar kaldırılır.', neden: 'Yayı tutan kolun omuz kuvvetini ve dayanıklılığını artırır.' },
+                { ikon: '🅨', ad: 'Y Kaldırış', set: '3 × 10 tekrar', aciklama: 'Hafifçe öne eğilip, çok hafif dambıllarla kollar Y şeklinde yukarı doğru kaldırılır.', neden: 'Üst sırt ve omuz stabilitesini, duruş bozukluğuna karşı özellikle destekler.' },
+                { ikon: '🚶', ad: 'Dambıl Taşıma (Farmer\'s Walk)', set: '2 × 30 adım', aciklama: 'İki elde birer dambılla, dik duruşla düz bir hat boyunca yürünür.', neden: 'Kavrama gücünü ve genel duruş dayanıklılığını geliştirir — uzun antrenmanlarda "yorgun ok" hatalarını azaltır.' },
+            ],
+        };
+        let _kmFitnessKategori = 'evde';
+        // Kendi küçük lazy-load stili (KM_OYUN_CSS/KM_TA_CSS'in AYNI "ilk açılışta bir kez enjekte et"
+        // deseni, bkz. DEVIR §-lazy-load dersi) — Teknik Analiz'in CSS'ine bağlanmadı, kavramsal olarak
+        // ilgisiz bir araç, kendi bağımsız stilini taşımalı.
+        const KM_FIT_CSS = `
+.km-fit-sekmeler{display:flex;gap:6px;flex-wrap:wrap}
+.km-fit-sek{font-family:inherit;font-weight:700;font-size:11.5px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border-color);background:var(--bg-panel);color:var(--text-secondary);cursor:pointer;min-height:40px}
+.km-fit-sek.aktif{border-color:var(--c);color:var(--c);background:color-mix(in srgb, var(--c) 14%, transparent)}
+.km-fit-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.km-fit-kart{background:var(--bg-panel);border:1.5px solid var(--border-color);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;min-height:44px;transition:border-color .15s}
+.km-fit-kart:hover{border-color:var(--c)}
+.km-fit-kart-ikon{font-size:26px;margin-bottom:6px}
+.km-fit-kart-ad{font-weight:800;font-size:12px;margin-bottom:3px;line-height:1.3}
+.km-fit-kart-set{font-size:10px;color:var(--text-muted)}
+`;
+        let _kmFitCssYuklendi = false;
+        function kmFitnessKaynaklarYukle() {
+            if(_kmFitCssYuklendi) return; _kmFitCssYuklendi = true;
+            let st = document.createElement('style'); st.id = 'km-fit-style'; st.textContent = KM_FIT_CSS;
+            document.head.appendChild(st);
+        }
+        function kmFitnessCiz() {
+            kmFitnessKaynaklarYukle();
+            let ic = document.getElementById('km-icerik'); if(!ic) return;
+            let sekHTML = KM_FITNESS_KATEGORILER.map(function(k) {
+                return `<button class="km-fit-sek${_kmFitnessKategori===k.id?' aktif':''}" style="--c:${k.renk}" onclick="kmFitnessKategoriSec('${k.id}')">${k.ikon} ${esc(k.ad)}</button>`;
+            }).join('');
+            let aktifKat = KM_FITNESS_KATEGORILER.find(function(k) { return k.id === _kmFitnessKategori; });
+            let liste = KM_FITNESS_EGZERSIZLER[_kmFitnessKategori] || [];
+            let kartHTML = liste.map(function(e, i) {
+                return `<div class="km-fit-kart" style="--c:${aktifKat.renk}" onclick="kmFitnessDetayAc('${_kmFitnessKategori}',${i})">
+                    <div class="km-fit-kart-ikon">${e.ikon}</div>
+                    <div class="km-fit-kart-ad">${esc(e.ad)}</div>
+                    <div class="km-fit-kart-set">${esc(e.set)}</div>
+                </div>`;
+            }).join('');
+            ic.innerHTML = `<div class="km-fit-root">
+                <div style="font-weight:800; font-size:15px; margin-bottom:4px;">💪 Fitness — Okçuya Özel Egzersizler</div>
+                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:12px;">Okçuluk sırt/omuz dayanıklılığı ve gövde sabitliği ister — aşağıdaki egzersizler bunun için seçildi, genel bir fitness listesi değil.</div>
+                <div class="km-fit-sekmeler">${sekHTML}</div>
+                <div style="font-size:10.5px; color:var(--text-muted); margin:8px 0 12px;">${esc(aktifKat.aciklama)}</div>
+                <div class="km-fit-izgara">${kartHTML}</div>
+            </div>`;
+        }
+        function kmFitnessKategoriSec(id) { _kmFitnessKategori = id; kmFitnessCiz(); }
+        function kmFitnessDetayAc(katId, idx) {
+            let e = (KM_FITNESS_EGZERSIZLER[katId] || [])[idx]; if(!e) return;
+            let kat = KM_FITNESS_KATEGORILER.find(function(k) { return k.id === katId; });
+            let eski = document.getElementById('km-fit-detay-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'km-fit-detay-modal'; m.className = 'modal-overlay'; m.style.display = 'flex';
+            m.innerHTML = `<div class="modal-content glass-panel" style="max-width:420px; width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
+                    <div style="font-size:15px; font-weight:900;">${e.ikon} ${esc(e.ad)}</div>
+                    <button onclick="document.getElementById('km-fit-detay-modal').remove()" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-muted); width:30px; height:30px; border-radius:9px; cursor:pointer; font-size:14px; flex-shrink:0;">✕</button>
+                </div>
+                <div style="font-size:11px; font-weight:700; color:${kat.renk}; margin-bottom:10px;">${kat.ikon} ${esc(kat.ad)} · ${esc(e.set)}</div>
+                <div style="font-size:12.5px; line-height:1.6; color:var(--text-main); margin-bottom:10px;">${esc(e.aciklama)}</div>
+                <div style="font-size:11px; line-height:1.5; color:var(--text-secondary); background:rgba(0,0,0,0.15); border-left:3px solid ${kat.renk}; padding:8px 10px; border-radius:6px;"><b>Neden önemli:</b> ${esc(e.neden)}</div>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) m.remove(); });
+            document.body.appendChild(m);
+        }
         // ===== KARIŞIK SINIF — 🎖️ POZİTİF PUSULA (2026-08-20, Disiplin Pusulası'nın olumlu eşi) =====
         // Kullanıcı: "sadece düzeltme değil, görülmek de motive eder" — Disiplin Pusulası ile BİREBİR
         // AYNI mimari (yeni D1 tablosu/route YOK, sp.takdirGecmisi turnuvaDB İÇİNDE, cezaGecmisi'yle
