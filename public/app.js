@@ -6437,7 +6437,7 @@
         }
 
         window.onload = function() {
-            if(localStorage.getItem('dag_sk_theme') !== 'dark') document.body.classList.add('light-theme');
+            if(localStorage.getItem('dag_sk_theme') === 'light') document.body.classList.add('light-theme');
             let kayitliVeri = localStorage.getItem('okculuk_premium_data');
             if(kayitliVeri) { try { turnuvaDB = JSON.parse(kayitliVeri); } catch(e) {} }
             let tVeri = localStorage.getItem('okculuk_takimlar_data');

@@ -13,11 +13,14 @@
 
         /* TEMA DEĞİŞKENLERİ */
         :root {
-            --bg-main: #0a0a0c; --bg-panel: rgba(28, 28, 32, 0.86); --text-main: #f5f5f6;
-            /* Marka turuncusu güncellendi: #ff6a1a hem app.js'te ayrıca yanlış yazılmış (#ff6200) bir
-               varyantı vardı, ikisi burada TEK yeni tona (#F26B1D) birleşti. İSİM AYNI KALDI —
-               app.js'teki var(--accent-orange) çağrıları kırılmadan yeni rengi otomatik alır. */
-            --text-muted: #9a9aa3; --accent-orange: #F26B1D; --accent-grey: #6b7280;
+            /* Buzlu Cam — KOYU sürüm (2026-09-24, kullanıcı: "bu tasarım olmadı çok açık, bunun dark
+               versiyonunuda yayınla" — açık Buzlu Cam varsayılan olarak çok parlak bulundu; varsayılan
+               tema geri koyuya alındı (bkz. app.js window.onload) AMA bu sefer koyu tema da AYNI cam
+               dilini konuşuyor — eski turuncu/aurora kimliği değil, mor vurgu + mesh zemin + gerçek
+               backdrop-filter camlı kartlar, sadece parlaklığı düşük. --bg-panel BİLEREK %86 değil
+               ~%68 (Karışık Sınıf/açık temayla aynı cam derinliği); modal/skor gibi üstüne biniyor. */
+            --bg-main: #15121F; --bg-panel: rgba(32, 28, 48, 0.68); --text-main: #F1EEF7;
+            --text-muted: #ACA3C4; --accent-orange: #8B7FFF; --accent-grey: #6b7280;
             /* --accent-sand: origin/main'in Ritim & Tıkır özelliği (kmRitimCiz, merge-origin dalı)
                bu tokeni kullanıyor ama hiçbir yerde tanımlamıyordu (kendi tarihinde eklenip sonra
                kendi paletini sadeleştirirken silinmiş, kalan referanslar --text-main'i miras
@@ -44,7 +47,7 @@
                Yukarıdaki eski değişkenler SİLİNMEDİ — hâlâ canlı kullanımda.
                Bu katman onların üstüne, tutarlı bir isimlendirmeyle eklendi.
                app.js'teki çıplak hex kodları faz faz bu tokenlara taşınacak. */
-            --font-sans: 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
+            --font-sans: 'Plus Jakarta Sans', 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
 
             /* Yüzeyler — zeminden en öne doğru */
             --surface-0: var(--bg-main);
@@ -69,8 +72,8 @@
 
             /* Marka aksanı */
             --accent: var(--accent-orange);
-            --accent-strong: #ff9152;
-            --accent-soft: rgba(242, 107, 29, 0.15);
+            --accent-strong: #A79AFF;
+            --accent-soft: rgba(139, 127, 255, 0.18);
 
             /* Durum renkleri — kendi değerleri YOK, mevcut isimlere ALIAS. Böylece "eski isim/yeni
                isim" iki sistemi yan yana durmuyor: --neon-green vb. değişince bunlar otomatik izler. */
@@ -191,6 +194,11 @@
         body.light-theme .card {
             backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
             border-color: rgba(255, 255, 255, 0.85);
+        }
+        /* Buzlu Cam KOYU: açık temanın aynısı — mesh zemine karşı camlaşan .card, sadece koyu kenarlık. */
+        body:not(.light-theme) .card {
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            border-color: rgba(255, 255, 255, 0.10);
         }
 
         .chip {
@@ -564,6 +572,14 @@
         body.light-theme .modal-overlay .card,
         body.light-theme .modal-overlay .glass-panel {
             background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
+        }
+        /* Buzlu Cam KOYU: aynı mantık — perde mor-koyu tona çekildi (düz siyah değil), modal içindeki
+           kartlar arkadaki koyu perdeye karışıp kaybolmasın diye biraz daha opak. */
+        body:not(.light-theme) .modal-overlay { background: rgba(10, 8, 18, 0.78); }
+        body:not(.light-theme) .modal-overlay .card,
+        body:not(.light-theme) .modal-overlay .glass-panel {
+            background: rgba(38, 33, 56, 0.88);
             backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
         }
         /* Aynı "vh" (iOS Safari araç çubuğuyla yanlış hesaplanıyor) düzeltmesi — bkz. .yon-shell notu —
@@ -1122,11 +1138,14 @@
         /* ============================================================
            TEMA 2.0 — Fable dokunuşu: derinlik, ışık ve akıcılık
            ============================================================ */
+        /* Buzlu Cam KOYU mesh — açık temayla AYNI üç renk/konum (şeftali/lavanta/nane), sadece koyu
+           zeminde yumuşak parıltı olarak okunsun diye çok daha düşük alfa. Eski "Aurora"
+           turkuaz/mor/pembe mesh'in yerini aldı (marka artık mor, o üçlü başka anlamda kalmıyordu). */
         body:not(.light-theme) {
             background:
-                radial-gradient(1000px 480px at 88% -8%, rgba(0, 240, 255, 0.10), transparent 58%),
-                radial-gradient(900px 480px at -10% 108%, rgba(155, 59, 255, 0.12), transparent 55%),
-                radial-gradient(700px 380px at 50% 45%, rgba(255, 47, 208, 0.05), transparent 65%),
+                radial-gradient(620px 460px at 6% 4%, rgba(255,205,180,0.14), transparent 70%),
+                radial-gradient(680px 520px at 97% 12%, rgba(196,186,255,0.16), transparent 70%),
+                radial-gradient(760px 460px at 46% 106%, rgba(178,232,214,0.12), transparent 70%),
                 var(--bg-main);
             background-attachment: fixed;
         }
@@ -1140,10 +1159,14 @@
                 var(--bg-main);
             background-attachment: fixed;
         }
+        /* Buzlu Cam KOYU: eskiden düz koyu dolgu + blur(10px) (bkz. yukarıdaki ilk .glass-panel kuralı,
+           satır ~408 — sadece blur'u hâlâ sağlıyor, gerisi burada eziliyor) — artık gerçek yarı saydam
+           mor-koyu cam, arkadaki mesh'i bulanıklaştırıyor. Açık temanın aynısı, sadece koyu. */
         .glass-panel {
-            background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.008)), var(--bg-panel);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 34px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.055);
+            background: rgba(32, 28, 48, 0.62);
+            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 18px 44px -26px rgba(0, 0, 0, 0.55);
             border-radius: 16px;
         }
         /* Açık temada .glass-panel eskiden DÜZ OPAK beyazdı (blur(10px) hâlâ aktifti ama arkası zaten
