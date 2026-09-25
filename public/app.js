@@ -12383,7 +12383,7 @@ ${(function(){
 
 /* Sağ panelin genişliği vw'a göre ölçekleniyor (2026-09-06) — masaüstünde sabit 200px, ama dar (mobil)
    ekranlarda otomatik daralıyor (min() sayesinde) — telefon için ayrı bir breakpoint kuralı YAZMADAN. */
-.km-oyun-scene{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); aspect-ratio:2.3/1; min-height:380px; max-height:74vh; background:#000; flex-shrink:0; --km-rail-w:min(200px, 27vw); --km-rail-w-kucuk:min(70px, 20vw); }
+.km-oyun-scene{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); aspect-ratio:2.3/1; min-height:380px; max-height:74vh; background:#000; flex-shrink:0; --km-rail-genislik:clamp(250px, 25vw, 330px); --km-rail-w:var(--km-rail-genislik); }
 /* Tam Ekran (2026-09-01, "Tam Ekran çalışmıyor" hatası) — TÜM oyun kutusu (skor girme paneli DAHİL)
    ekrana yayılıyor, sadece sahne değil. Eskiden sadece sahne fullscreen olunca skor girme dok'u
    (chip/pad/İlerlet) DOM'da kardeş eleman olduğu için ekranda hiç görünmüyordu — koç TV'ye
@@ -12393,7 +12393,7 @@ ${(function(){
    yüksekliği içeriğine göre kalır ve .km-oyun-scene'in flex:1'inin büyüyeceği boş alan hiç oluşmaz
    (2026-09-09, ilk denemede govde'yi flex yapmak TEK BAŞINA yetmedi — gerçek testte yakalandı). */
 #km-oyun-wrap:fullscreen #km-oyun-govde{ flex:1; min-height:0; }
-#km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; max-height:none; min-height:0; --km-rail-w:min(260px, 18vw); --km-rail-w-kucuk:min(70px, 8vw); }
+#km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; max-height:none; min-height:0; --km-rail-genislik:clamp(300px, 24vw, 460px); }
 /* Sahne/panel çakışması (2026-09-09) — .km-oyun-panel eskiden inset:0 ile TAM sahne kutusunu
    kaplıyordu, sağdaki .km-oyun-rightpanel bunun ÜSTÜNE yarı saydam bir katman olarak biniyordu
    (bilerek — skor dok'u için hâlâ geçerli bir desen). Ama sağ panelin kendisi (sıralama/sporcu
@@ -12403,7 +12403,6 @@ ${(function(){
    panel artık gerçekten AYRI bir sütun. Kamera zaten viewBox tabanlı (çözünürlükten bağımsız),
    otomatik olarak bu yeni dar alana göre ölçekleniyor, ayrı bir hesap GEREKMEDİ. */
 .km-oyun-panel{ position:absolute; top:0; left:0; bottom:0; right:var(--km-rail-w, 200px); display:none; flex-direction:column; padding:10px 14px; overflow:hidden; }
-.km-oyun-scene:has(.km-oyun-rightpanel-kucuk) .km-oyun-panel{ right:var(--km-rail-w-kucuk, 56px); }
 #km-oyun-wrap[data-tema="zirve"] #km-oyun-panel-zirve,
 #km-oyun-wrap[data-tema="yildiz"] #km-oyun-panel-yildiz,
 #km-oyun-wrap[data-tema="hazine"] #km-oyun-panel-hazine,
@@ -12793,9 +12792,6 @@ ${(function(){
 .km-oyun-hedef-ok{ pointer-events:none; }
 .km-oyun-hedefgiris-ipucu{ font-size:9px; color:var(--ink-faint); font-weight:700; letter-spacing:.04em; text-align:center; }
 #km-oyun-wrap:fullscreen .km-oyun-hedefgiris svg{ width:min(40vw, 320px); }
-/* Hedef modunda dock'un mobil max-height sınırı (190-210px) hedef yüzünü kaydırma alanına gömüyordu
-   (gerçek 390px testinde dokunuşlar hiç kaydolmadı) — id seçicisi medya kurallarını yener. */
-#km-oyun-wrap .km-oyun-dok.km-oyun-dok-hedef{ max-height:min(88%, 460px); }
 @media (max-width:600px){ .km-oyun-hedefgiris svg{ width:min(56vw, 200px); } }
 
 /* Sağ panel (2026-09-06) — Liderlik + Sporcu Seç artık TEK dikey panelde, sahnenin SAĞINDA (eskiden
@@ -12803,34 +12799,119 @@ ${(function(){
    ise alttaki dok'un çoğunu kaplıyordu — "sıralama sporcuları gizliyor" + "ekranı kaplıyor" şikayetleri).
    Şeffaflık backdrop-filter YERİNE düz alfa-karışımlı bir arkaplanla sağlanıyor — canlı blur, altında
    sürekli hareket eden karakter animasyonuyla birleşince gerçek bir performans/takılma sorunu yaratıyordu. */
-.km-oyun-rightpanel{ position:absolute; top:0; right:0; bottom:0; width:var(--km-rail-w, 200px); z-index:6;
-    background:linear-gradient(90deg, transparent, rgba(4,6,14,0.62) 30%, rgba(4,6,14,0.88));
-    border-left:1px solid var(--line); padding:34px 8px 8px; overflow-y:auto; scrollbar-width:thin;
-    transition:width .18s ease; display:flex; flex-direction:column; }
-.km-oyun-rail-boyut-btn{ position:absolute; top:6px; left:6px; z-index:2; width:22px; height:22px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid var(--line); color:var(--ink-dim); font-size:11px; line-height:1; cursor:pointer; }
-.km-oyun-rail-boyut-btn:hover{ border-color:var(--a1); color:var(--ink); }
-.km-oyun-rail-mercekler{ position:absolute; top:6px; right:6px; display:flex; gap:4px; z-index:2; }
-.km-oyun-rail-ayrac{ height:1px; background:var(--line); margin:10px 0 8px; flex-shrink:0; }
-.km-oyun-lider-baslik{ font-family:var(--font-display); font-weight:700; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 5px; }
-.km-oyun-lider-satir{ display:flex; align-items:center; gap:6px; padding:2px 0; }
-.km-oyun-lider-rank{ width:14px; font-size:10px; text-align:center; flex-shrink:0; }
-.km-oyun-lider-nokta{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.km-oyun-lider-ad{ flex:1; min-width:0; font-size:10.5px; font-weight:700; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.km-oyun-lider-skor{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--ink); font-variant-numeric:tabular-nums; }
+/* B · "Sırada Odaklı" sağ panel (2026-09-25, kullanıcı 3 taslak arasından seçti: "yana kapatabileyim
+   açabileyim"). Üstte büyük SIRADA kartı (TV'den okunur isim/puan/ilerleme + yazılı Alkışla/Karakter/
+   Seviye), altında podyum + iki sütun liste, en altta sabit yönetim satırı (sıfırlamalar ⋯ menüsünde,
+   yanlışlıkla basılmasın). Panel kapanınca TAMAMEN sağa kayar (eski "dar ikon şeridi" yok) — sahnenin
+   içeriği --km-rail-w üzerinden otomatik genişler; açma/kapama sekmesi panelin sol kenarında durur.
+   --km-rail-genislik = panelin kendi görsel genişliği, --km-rail-w = sahnenin sağdan ayırdığı pay
+   (kapalıyken ve telefonda 0 — telefonda panel sahnenin ÜSTÜNE açılır). --rs = yazı ölçeği (Tam Ekran'da büyür). */
+.km-oyun-scene:has(> .km-oyun-rightpanel-kucuk){ --km-rail-w:0px; }
+.km-oyun-rightpanel{ position:absolute; top:0; right:0; bottom:0; width:var(--km-rail-genislik, 300px); z-index:6; --rs:1;
+    background:linear-gradient(90deg, rgba(6,9,20,0.80), rgba(6,9,20,0.93) 18%);
+    border-left:1px solid var(--line); display:flex; flex-direction:column;
+    transition:transform .22s ease, visibility 0s linear 0s; }
+.km-oyun-rightpanel-kucuk{ transform:translateX(100%); visibility:hidden; transition:transform .22s ease, visibility 0s linear .22s; }
+.km-oyun-rail-govde{ flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; padding:calc(10px * var(--rs)); display:flex; flex-direction:column; gap:calc(10px * var(--rs)); }
+.km-oyun-rail-govde > *{ flex-shrink:0; }
+/* Aç/kapa sekmesi — panelin DIŞINDA (panel overflow'u kesmesin diye kardeş eleman), panel açıkken onun
+   sol kenarına, kapalıyken sahnenin sağ kenarına yapışık. */
+.km-oyun-rail-sekme{ position:absolute; top:50%; right:var(--km-rail-genislik, 300px); transform:translateY(-50%); z-index:9; width:26px; min-height:72px; padding:8px 0; border-radius:10px 0 0 10px; border:1px solid var(--line); border-right:none; background:rgba(6,9,20,0.9); color:var(--ink-dim); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:800; transition:right .22s ease, color .15s; }
+.km-oyun-rail-sekme:hover{ color:var(--ink); border-color:var(--a1); }
+.km-oyun-rail-sekme-yazi{ writing-mode:vertical-rl; transform:rotate(180deg); font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+.km-oyun-scene:has(> .km-oyun-rightpanel-kucuk) .km-oyun-rail-sekme{ right:0; color:var(--a1); }
+/* Panel açıkken sahne içindeki küçük "Sırada" rozeti gereksiz (aynı bilgi paneldeki büyük kartta) —
+   panel kapanınca geri geliyor ki koç kimin sırada olduğunu yine görsün. */
+.km-oyun-scene:not(:has(> .km-oyun-rightpanel-kucuk)) > .km-oyun-sirada{ display:none; }
+@media (prefers-reduced-motion: reduce){ .km-oyun-rightpanel, .km-oyun-rail-sekme{ transition:none; } }
+
+/* SIRADA kartı */
+.km-sk-kart{ border-radius:calc(16px * var(--rs)); padding:calc(12px * var(--rs)); display:flex; flex-direction:column; gap:calc(10px * var(--rs));
+    background:linear-gradient(160deg, color-mix(in srgb, var(--sk-renk, var(--a1)) 20%, transparent), transparent 62%), rgba(14,19,36,0.92);
+    border:1.5px solid color-mix(in srgb, var(--sk-renk, var(--a1)) 60%, transparent); }
+.km-sk-ust{ display:flex; align-items:center; gap:calc(12px * var(--rs)); min-width:0; }
+.km-sk-av{ width:calc(56px * var(--rs)); height:calc(56px * var(--rs)); border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:calc(20px * var(--rs)); color:#04081c; background:var(--sk-renk, var(--a1));
+    box-shadow:0 0 0 3px rgba(14,19,36,1), 0 0 0 6px var(--sk-renk, var(--a1)); }
+.km-sk-metin{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.km-sk-lbl{ font-size:calc(10px * var(--rs)); font-weight:800; letter-spacing:.16em; color:var(--sk-renk, var(--a1)); text-transform:uppercase; }
+.km-sk-ad{ font-family:var(--font-display); font-weight:800; font-size:calc(30px * var(--rs)); line-height:1.02; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-alt{ font-size:calc(11.5px * var(--rs)); font-weight:600; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-istat{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:calc(6px * var(--rs)); }
+.km-sk-istat > div{ border-radius:10px; padding:calc(6px * var(--rs)) calc(8px * var(--rs)); background:rgba(0,0,0,0.28); min-width:0; }
+.km-sk-istat-lbl{ font-size:calc(9px * var(--rs)); font-weight:800; letter-spacing:.1em; color:var(--ink-faint); text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-istat-deger{ font-family:var(--font-display); font-weight:800; font-size:calc(21px * var(--rs)); line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-istat-deger small{ font-size:.62em; color:var(--ink-faint); font-weight:700; }
+.km-sk-adimlar{ display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:4px; }
+.km-sk-adimlar span{ height:calc(7px * var(--rs)); border-radius:4px; background:rgba(255,255,255,0.12); }
+.km-sk-adimlar span.dolu{ background:var(--sk-renk, var(--a1)); }
+.km-sk-dugmeler{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:calc(6px * var(--rs)); }
+.km-sk-dugmeler button{ min-height:calc(44px * var(--rs)); border-radius:11px; border:1px solid var(--line); background:rgba(255,255,255,0.06); color:var(--ink); font-family:var(--font-body); font-weight:800; font-size:calc(12px * var(--rs)); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; padding:0 4px; white-space:nowrap; min-width:0; }
+.km-sk-dugmeler button:hover{ border-color:var(--sk-renk, var(--a1)); }
+.km-sk-dugmeler .km-sk-alkis{ background:var(--sk-renk, var(--a1)); color:#0b0f1c; border-color:transparent; }
+.km-sk-dugmeler .km-sk-alkis b{ font-variant-numeric:tabular-nums; }
+.km-sk-alkis-pop{ animation:kmOyunAlkisPop .5s ease; }
+/* SONRA satırı + "Değiştir" ile açılan tüm sınıf ızgarası (sıralama görünümü takım/lig olsa bile
+   her sporcu buradan seçilebilsin diye — eski chip listesinin yerini tutan tek seçim noktası). */
+.km-sk-sonra{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.km-sk-sonra-lbl{ font-size:calc(9.5px * var(--rs)); font-weight:800; letter-spacing:.14em; color:var(--ink-faint); }
+.km-sk-sonra-kisi{ display:flex; align-items:center; gap:5px; padding:3px 9px 3px 3px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid transparent; color:var(--ink); font-weight:800; font-size:calc(12px * var(--rs)); cursor:pointer; min-height:32px; max-width:100%; }
+.km-sk-sonra-kisi:hover{ border-color:var(--line); }
+.km-sk-mini-av{ width:calc(24px * var(--rs)); height:calc(24px * var(--rs)); border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:calc(9px * var(--rs)); color:#04081c; }
+.km-sk-ok{ color:var(--ink-faint); font-size:11px; }
+.km-sk-degistir{ margin-left:auto; min-height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--ink-dim); font-weight:800; font-size:calc(11px * var(--rs)); cursor:pointer; }
+.km-sk-degistir.aktif, .km-sk-degistir:hover{ color:var(--ink); border-color:var(--a1); }
+.km-sk-izgara{ display:grid; grid-template-columns:repeat(auto-fill, minmax(calc(64px * var(--rs)), 1fr)); gap:6px; }
+.km-sk-izgara button{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; border-radius:10px; border:1.5px solid transparent; background:rgba(255,255,255,0.04); color:var(--ink-dim); font-weight:800; font-size:calc(10.5px * var(--rs)); cursor:pointer; min-width:0; }
+.km-sk-izgara button span:last-child{ max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-izgara button.aktif{ border-color:var(--a1); color:var(--ink); }
+.km-sk-izgara .km-sk-mini-av{ width:calc(34px * var(--rs)); height:calc(34px * var(--rs)); font-size:calc(12px * var(--rs)); }
+
+/* Sıralama bölümü: başlık + Puan/Adil/Yükselen/Lig sekmeleri (eski üç küçük ikon merceğinin yerine,
+   yazılı ve dörtlü — "Puan" = mercek yok). */
+.km-oyun-rail-siralama-ust{ display:flex; flex-direction:column; gap:6px; }
+.km-oyun-rail-sekmeler{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:3px; padding:3px; border-radius:10px; background:rgba(255,255,255,0.05); }
+.km-oyun-rail-sekmeler button{ min-height:30px; border:none; border-radius:7px; background:transparent; color:var(--ink-faint); font-weight:800; font-size:calc(10.5px * var(--rs)); cursor:pointer; padding:0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-oyun-rail-sekmeler button.aktif{ background:color-mix(in srgb, var(--a1) 26%, transparent); color:var(--ink); }
+.km-oyun-lider-baslik{ font-family:var(--font-display); font-weight:700; font-size:calc(9.5px * var(--rs)); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 5px; }
+.km-oyun-lider-satir{ display:flex; align-items:center; gap:7px; padding:3px 4px; border-radius:8px; }
+.km-oyun-lider-satir.secilebilir{ cursor:pointer; }
+.km-oyun-lider-satir.secilebilir:hover{ background:rgba(255,255,255,0.05); }
+.km-oyun-lider-satir.aktif{ background:color-mix(in srgb, var(--a1) 16%, transparent); }
+.km-oyun-lider-rank{ width:calc(16px * var(--rs)); font-size:calc(11px * var(--rs)); font-weight:800; color:var(--ink-faint); text-align:center; flex-shrink:0; }
+.km-oyun-lider-nokta{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.km-oyun-lider-ad{ flex:1; min-width:0; font-size:calc(12.5px * var(--rs)); font-weight:800; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-oyun-lider-skor{ font-family:var(--font-display); font-weight:800; font-size:calc(13px * var(--rs)); color:var(--ink); font-variant-numeric:tabular-nums; }
+.km-oyun-lider-liste{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:2px 8px; }
+/* Podyum — ilk üç (ortada 1., solda 2., sağda 3.; basamak yüksekliği sırayı da anlatıyor). */
+.km-sk-podyum{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; align-items:end; margin-bottom:6px; }
+.km-sk-pod{ display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; min-width:0; border-radius:10px; padding-top:4px; }
+.km-sk-pod.aktif .km-sk-pod-av{ box-shadow:0 0 0 2px rgba(6,9,20,1), 0 0 0 4px var(--a1); }
+.km-sk-pod-av{ width:calc(36px * var(--rs)); height:calc(36px * var(--rs)); border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:calc(13px * var(--rs)); color:#04081c; }
+.km-sk-pod-ad{ font-weight:800; font-size:calc(12px * var(--rs)); color:var(--ink); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-sk-pod-basamak{ width:100%; border-radius:9px 9px 0 0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.km-sk-pod-basamak b{ font-family:var(--font-display); font-weight:800; font-size:calc(19px * var(--rs)); color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.05; }
+.km-sk-pod-basamak span{ font-size:calc(10px * var(--rs)); font-weight:800; }
+.km-sk-pod-1 .km-sk-pod-basamak{ height:calc(54px * var(--rs)); background:linear-gradient(180deg, rgba(255,210,63,0.34), rgba(255,210,63,0.05)); }
+.km-sk-pod-1 .km-sk-pod-basamak span{ color:#ffd23f; }
+.km-sk-pod-2 .km-sk-pod-basamak{ height:calc(42px * var(--rs)); background:linear-gradient(180deg, rgba(207,216,230,0.28), rgba(207,216,230,0.05)); }
+.km-sk-pod-2 .km-sk-pod-basamak span{ color:#cfd8e6; }
+.km-sk-pod-3 .km-sk-pod-basamak{ height:calc(32px * var(--rs)); background:linear-gradient(180deg, rgba(224,163,106,0.30), rgba(224,163,106,0.05)); }
+.km-sk-pod-3 .km-sk-pod-basamak span{ color:#e0a36a; }
+/* Alt yönetim satırı — panel kaydırılsa da hep görünür (gövdenin DIŞINDA). */
+.km-oyun-rail-alt{ position:relative; flex-shrink:0; display:flex; gap:6px; padding:calc(8px * var(--rs)) calc(10px * var(--rs)); border-top:1px solid var(--line); }
+.km-oyun-rail-alt > button{ min-height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--ink-dim); font-weight:800; font-size:calc(11.5px * var(--rs)); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:0 10px; }
+.km-oyun-rail-alt > button:hover{ color:var(--ink); border-color:var(--a1); }
+.km-oyun-rail-alt #km-oyun-geri-al-btn{ flex:1; }
+.km-oyun-rail-diger{ margin-left:auto; width:44px; padding:0 !important; font-size:16px !important; }
+.km-oyun-rail-menu{ position:absolute; right:10px; bottom:calc(100% + 4px); z-index:3; min-width:210px; display:flex; flex-direction:column; gap:4px; padding:6px; border-radius:12px; background:rgba(10,13,26,0.98); border:1px solid var(--line); box-shadow:0 12px 30px rgba(0,0,0,0.5); }
+.km-oyun-rail-menu button{ min-height:40px; text-align:left; border:none; border-radius:8px; background:transparent; color:var(--ink); font-weight:700; font-size:12px; padding:0 10px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+.km-oyun-rail-menu button:hover{ background:rgba(255,255,255,0.07); }
+.km-oyun-rail-menu .km-oyun-rail-menu-tehlike{ color:#ff8a8a; }
+#km-oyun-wrap:fullscreen .km-oyun-rightpanel{ --rs:1.3; }
 /* 8a — Fark rozeti: Yarış Sıralaması satırının hemen altında, o takımın lidere göre puan farkı. */
 .km-oyun-fark-satir{ padding:0 0 4px 22px; min-height:1px; }
 .km-oyun-fark-rozet{ font-size:9.5px; font-weight:700; color:var(--ink-faint); }
 .km-oyun-fark-rozet.km-oyun-fark-onde{ color:#3ddc84; }
-/* Küçük mod — avatar/rozet dışındaki metinler gizlenir, panel dar bir ikon şeridine iner. Alkış/
-   seviye ikonları da (44px tabana çıktıktan sonra) bu listeye eklendi — üçü aynı anda 44px'te yan
-   yana sığmaz, "dar mod" felsefesiyle tutarlı şekilde sadece avatar (asıl seçim hedefi) kalıyor. */
-.km-oyun-rightpanel-kucuk{ width:var(--km-rail-w-kucuk, 56px); }
-.km-oyun-rightpanel-kucuk .km-oyun-lider-ad, .km-oyun-rightpanel-kucuk .km-oyun-lider-skor,
-.km-oyun-rightpanel-kucuk .km-oyun-lider-baslik, .km-oyun-rightpanel-kucuk .km-oyun-dok-lbl span:first-child,
-.km-oyun-rightpanel-kucuk .km-oyun-chip-nm, .km-oyun-rightpanel-kucuk .km-oyun-chip-cp,
-.km-oyun-rightpanel-kucuk .km-oyun-chip-alkis, .km-oyun-rightpanel-kucuk .km-oyun-chip-sev,
-.km-oyun-rightpanel-kucuk .km-oyun-rail-mercekler{ display:none; }
-.km-oyun-rightpanel-kucuk .km-oyun-chip{ justify-content:center; padding:5px; }
 
 .km-oyun-banner{ position:absolute; left:50%; top:14%; transform:translate(-50%,-50%) scale(.7); z-index:10; opacity:0; pointer-events:none; text-align:center; }
 .km-oyun-banner b{ display:block; font-family:var(--font-display); font-weight:800; font-size:clamp(16px,3vw,30px); color:var(--a3); text-shadow:0 0 30px color-mix(in srgb, var(--a3) 60%, transparent); }
@@ -12868,15 +12949,25 @@ ${(function(){
    birine yaslanabilen kompakt bir kutu: varsayılan "orta" (left+right+margin:auto ile ortalanmış),
    "sol"/"sağ" kendi köşesine yaslanıyor (bkz. .km-oyun-dok-konum-*). Sağdaki panelin payını
    (--km-rail-w) hâlâ hesaba katıyor — üstüne binmiyor (Task 2'nin aynı kuralı). */
-.km-oyun-dok{ position:absolute; bottom:12px; left:0; right:var(--km-rail-w, 0); z-index:5;
-    width:fit-content; max-width:min(94%, 480px); margin:0 auto; max-height:min(88%, 460px); overflow-y:auto;
+.km-oyun-dok{ position:absolute; bottom:12px; left:0; right:var(--km-rail-w, 0); z-index:7;
+    width:fit-content; max-width:480px; margin:0 auto;
     background:linear-gradient(180deg, rgba(4,6,14,0.55), rgba(4,6,14,0.94));
     border:1px solid var(--line); border-radius:13px;
     padding:10px 12px; display:flex; flex-direction:column; gap:8px;
-    transition:right .18s ease, left .25s ease, width .25s ease, max-width .25s ease; }
+    transition:right .18s ease, left .25s ease, width .25s ease, max-width .25s ease, transform .18s ease; }
+/* Serbest boyut (2026-09-25, "o kutucuğu kendi ayarımda istediğim kadar küçültüp büyütebileyim") —
+   kutu artık kaydırma alanı DEĞİL: kmOyunDokOlcekUygula tüm kutuyu transform:scale ile ölçekler.
+   Etkin ölçek = min(koçun seçtiği ölçek, sahneye sığan ölçek) — böylece İlerlet düğmesi hiçbir
+   ekranda kutunun altında kaybolmaz (tablet/iPad'de gerçek testte kayboluyordu, "tıklamayla girişte
+   sorun var" şikayetinin asıl kaynağı). transform-origin konuma göre JS'ten verilir. */
+.km-oyun-dok-boyutla{ flex-shrink:0; width:40px; min-height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--ink-dim); font-size:18px; font-weight:800; cursor:nesw-resize; touch-action:none; user-select:none; -webkit-user-select:none; border:1px dashed var(--line); background:rgba(255,255,255,0.04); }
+.km-oyun-dok-boyutla:hover, .km-oyun-dok-boyutla.aktif{ color:var(--ink); border-color:var(--line); background:rgba(255,255,255,0.05); }
+.km-oyun-dok-olcek{ display:flex; align-items:center; gap:6px; }
+.km-oyun-dok-olcek input[type=range]{ width:110px; accent-color:var(--a1); }
+.km-oyun-dok-olcek-yuzde{ min-width:40px; text-align:right; font-weight:800; font-size:11px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.km-oyun-dok-olcek-not{ font-size:9.5px; color:var(--ink-faint); font-weight:700; }
 .km-oyun-dok-konum-sol{ left:12px; right:auto; margin:0; }
 .km-oyun-dok-konum-sag{ left:auto; right:calc(var(--km-rail-w, 0) + 12px); margin:0; }
-.km-oyun-dok-boyut-kucuk{ max-width:min(94%, 340px); }
 /* flex-column + max-height + overflow-y:auto, çocuklara flex-shrink:0 verilmeden bırakılırsa,
    taşan içerik KAYDIRILMAK yerine SIKIŞTIRILIYOR (chips satırı görünmez şekilde ~6px'e çöktü,
    gerçek DOM ölçümüyle bulundu) — flexbox'ın "min-height:auto" varsayılanı. */
@@ -12895,7 +12986,7 @@ ${(function(){
 /* İçerik (slot/pad/İlerlet) — açık/kapalı geçişi max-height+opacity ile, "ani sıçrama" YOK. Sabit bir
    üst sınıra (400px, gerçekte hiçbir içerik bu kadar uzun değil) tween edilip 0'a kapanıyor — klasik
    CSS accordion tekniği, gerçek 'auto' yükseklik animasyonu güvenilir çalışmıyor. */
-.km-oyun-dok-icerik{ display:flex; flex-direction:column; gap:8px; max-height:400px; opacity:1; overflow:hidden; transition:max-height .32s ease, opacity .22s ease, margin-top .32s ease; margin-top:2px; }
+.km-oyun-dok-icerik{ display:flex; flex-direction:column; gap:8px; max-height:900px; opacity:1; overflow:hidden; transition:max-height .32s ease, opacity .22s ease, margin-top .32s ease; margin-top:2px; }
 .km-oyun-dok-kapali .km-oyun-dok-icerik{ max-height:0; opacity:0; margin-top:0; pointer-events:none; }
 @media (prefers-reduced-motion: reduce){ .km-oyun-dok, .km-oyun-dok-icerik{ transition:none; } }
 .km-oyun-dok-ayar-menu{ display:flex; flex-direction:column; gap:8px; background:rgba(8,10,20,0.96); border:1px solid var(--line); border-radius:10px; padding:10px; }
@@ -12916,31 +13007,7 @@ ${(function(){
 .km-oyun-ok-toggle{ display:flex; gap:4px; }
 .km-oyun-ok-toggle button{ font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:normal; text-transform:none; color:var(--ink-faint); background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:12px; padding:4px 9px; cursor:pointer; }
 .km-oyun-ok-toggle button.aktif{ border-color:var(--a1); color:var(--ink); background:color-mix(in srgb, var(--a1) 14%, transparent); }
-/* Sporcu Seç artık sağ panelde DİKEY bir liste (2026-09-06) — eskiden yatay/sarmalı satırdı, dok'un
-   çoğunu kaplıyordu ("ekranı kaplıyor" şikayeti). */
-.km-oyun-chips{ display:flex; flex-direction:column; gap:6px; }
-.km-oyun-chip{ display:flex; align-items:center; gap:7px; background:rgba(255,255,255,0.03); border:1.5px solid var(--line); border-radius:11px; padding:5px 10px 5px 5px; cursor:pointer; flex-shrink:0; }
-.km-oyun-chip-sev{ font-size:14px; cursor:pointer; flex-shrink:0; padding:2px; border-radius:6px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; }
-.km-oyun-chip-sev:hover{ background:rgba(255,255,255,0.08); }
-.km-oyun-chip-alkis{ font-size:13px; cursor:pointer; flex-shrink:0; padding:2px 4px; border-radius:6px; display:flex; align-items:center; gap:2px; min-width:44px; min-height:44px; justify-content:center; }
-.km-oyun-chip-alkis:hover{ background:rgba(255,209,102,0.14); }
-.km-oyun-chip-alkis b{ font-size:10.5px; color:var(--ink-dim); font-weight:700; }
-.km-oyun-chip-alkis-pop{ animation:kmOyunAlkisPop .5s ease; }
 @keyframes kmOyunAlkisPop{ 0%{ transform:scale(1); } 30%{ transform:scale(1.06); box-shadow:0 0 0 3px rgba(255,209,102,0.35); } 100%{ transform:scale(1); box-shadow:none; } }
-.km-oyun-chip-seri{ font-size:10.5px; color:#ffb347; font-weight:800; }
-.km-oyun-chip-takim{ font-size:13px; flex-shrink:0; }
-.km-oyun-chip-takim-yok{ opacity:.4; }
-.km-oyun-chip.aktif{ border-color:var(--a1); background:color-mix(in srgb, var(--a1) 9%, transparent); }
-/* min-width/min-height 44px — çocuk kullanıcılar için dokunma hedefi tabanı (WCAG 2.5.5). width/
-   height (26px) SADECE geniş modda referans; min-* her zaman kazanıyor, gerçek boyut hep >=44px. */
-.km-oyun-chip-av{ width:26px; height:26px; min-width:44px; min-height:44px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:13px; color:#04081c; flex-shrink:0; }
-/* Sağ panel dar olduğu için (2026-09-06) uzun isimlerin çip'i kendi genişliğinin ÖTESİNE itip rail'den
-   taşırma riski vardı — kapsayıcı div'e sınıf YOKTU, flex item olarak min-width:auto varsayılanı
-   metni asla kırpmıyordu. flex:1 + min-width:0 olmadan text-overflow hiç çalışmaz. */
-.km-oyun-chip-info{ flex:1; min-width:0; }
-.km-oyun-chip-nm{ font-weight:800; font-size:11.5px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.km-oyun-chip-cp{ font-size:9px; color:var(--ink-dim); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.km-oyun-chip-cp b{ color:var(--ink); font-family:var(--font-display); font-weight:700; }
 .km-oyun-dok-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .km-oyun-pad{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; flex:0 1 480px; min-width:260px; max-width:480px; }
 .km-oyun-padbtn{ font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--ink); background:var(--panel-hi); border:1.5px solid var(--line); border-radius:11px; padding:10px 4px; min-height:44px; cursor:pointer; transition:transform .1s, box-shadow .1s; box-shadow:0 3px 8px rgba(0,0,0,0.22); position:relative; }
@@ -12949,9 +13016,6 @@ ${(function(){
    sadece GERÇEK Tam Ekran'da (koltuktan/TV'den uzakta izlenen 🖥️ Tam Ekran modu) o büyük punto
    geri geliyor — iki farklı kullanım (masaüstünde yakından / TV'den uzaktan) artık kendi doğru
    boyutunu alıyor, biri diğerini bozmuyor. */
-#km-oyun-wrap:fullscreen .km-oyun-chip-av{ width:34px; height:34px; font-size:13px; }
-#km-oyun-wrap:fullscreen .km-oyun-chip-nm{ font-size:15px; }
-#km-oyun-wrap:fullscreen .km-oyun-chip-cp{ font-size:11px; }
 #km-oyun-wrap:fullscreen .km-oyun-pad{ flex:0 1 620px; max-width:620px; }
 #km-oyun-wrap:fullscreen .km-oyun-padbtn{ font-size:19px; padding:14px 4px; min-height:54px; }
 /* Skor girme paneli — esnek/animasyonlu (2026-09-09). Eski "büyüt/küçült" (TV-punto) tek düğmesinin
@@ -12960,9 +13024,6 @@ ${(function(){
    kendi büyütmesi zaten değişmeden duruyor (#km-oyun-wrap:fullscreen .km-oyun-padbtn, yukarıda). Yeni
    "Küçük" boyut ise TUŞLARI DARALTIYOR (pad genişliği/iç boşluk) ama min-height'i 44px'in ALTINA
    HİÇ düşürmüyor — WCAG 2.5.5 tabanı, kullanıcının açık isteği. */
-.km-oyun-dok-boyut-kucuk .km-oyun-pad{ max-width:300px; min-width:220px; gap:4px; }
-.km-oyun-dok-boyut-kucuk .km-oyun-padbtn{ font-size:11px; padding:6px 2px; min-height:44px; border-radius:9px; }
-.km-oyun-dok-boyut-kucuk .km-oyun-ilerlet-btn{ font-size:12px; padding:12px 14px; }
 .km-oyun-padbtn:hover{ border-color:var(--a1); transform:translateY(-1px); box-shadow:0 5px 12px rgba(0,0,0,0.3); }
 .km-oyun-padbtn:active{ transform:translateY(0) scale(.95); box-shadow:0 2px 4px rgba(0,0,0,0.2); }
 /* Gerçek WA hedef halkası renkleri (2026-09-01, "skor renklerini hızlı [ayırt edilsin]") — koç
@@ -13731,8 +13792,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
        olabilir/olmalı — dikey telefon ekranının BÜYÜK kısmı zaten boştu. "Sporcu Seç" artık sağ
        panelde (vw'a göre otomatik daralıyor) olduğundan dok'ta sadece pad/İlerlet kaldı — çok kısa. */
     .km-oyun-scene{ min-height:460px; max-height:74vh; aspect-ratio:auto; }
-    .km-oyun-dok{ max-height:min(34%, 210px); }
-    .km-oyun-rightpanel{ padding:30px 6px 6px; }
+    /* Telefonda/dikey tablette panel sahneye YER AYIRMAZ (--km-rail-w 0) — açılınca sahnenin üstüne
+       biner, koç işi bitince yan sekmeden kapatır. */
+    .km-oyun-scene{ --km-rail-genislik:min(300px, 84vw); --km-rail-w:0px; }
     .km-oyun-sirada{ padding:5px 10px 5px 5px; gap:6px; }
     .km-oyun-sirada-av{ width:26px; height:26px; }
     .km-oyun-sirada-ad{ font-size:12px; }
@@ -13757,20 +13819,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
     .km-oyun-mode-btn{ font-size:10px; padding:6px 10px; }
     .km-oyun-pad{ gap:5px; }
     .km-oyun-padbtn{ font-size:13px; border-radius:9px; }
-    /* Dar telefon ekranında sağ panel + pad YAN YANA sığmıyor (gerçek testte bulundu — pad çok
-       daralıp İlerlet butonu görünmez oldu) — bu yüzden panel ekran genişliğinden BAĞIMSIZ olarak
-       HER ZAMAN dar/ikon modunda kalıyor (küçült/büyüt düğmesi burada gizleniyor), pad'e tüm
-       genişlik kalıyor. Masaüstünde/tablette sorun yok, sadece EN dar telefonlarda zorlanıyor. */
-    .km-oyun-scene{ min-height:520px; max-height:76vh; --km-rail-w:min(64px, 18vw); }
-    .km-oyun-dok{ padding:10px 9px 8px; max-height:min(30%, 190px); }
-    .km-oyun-rightpanel{ padding:6px 4px; }
-    .km-oyun-rail-boyut-btn{ display:none; }
-    .km-oyun-rightpanel .km-oyun-lider-ad, .km-oyun-rightpanel .km-oyun-lider-skor,
-    .km-oyun-rightpanel .km-oyun-lider-baslik, .km-oyun-rail-mercekler,
-    .km-oyun-rightpanel .km-oyun-chip-nm, .km-oyun-rightpanel .km-oyun-chip-cp,
-    .km-oyun-rightpanel .km-oyun-chip-alkis, .km-oyun-rightpanel .km-oyun-chip-sev,
-    .km-oyun-rightpanel .km-oyun-dok-lbl span:first-child{ display:none; }
-    .km-oyun-rightpanel .km-oyun-chip{ justify-content:center; padding:5px; }
+    .km-oyun-scene{ min-height:520px; max-height:76vh; }
+    .km-oyun-dok{ padding:10px 9px 8px; }
 }
 /* Takımları Düzenle penceresi (2026-09-06, Çoklu Takım/Yarış) — .modal-overlay TABANI app.js'in genel
    modal deseni (z-index #km-oyun-takim-editor-modal için styles.css'te id-seçici+!important verildi,
@@ -13860,6 +13910,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // viewport'a göre px sakladığı desenden BİLEREK farklı). _kmOyunDokKonum 'serbest' olunca bu
         // oran uygulanır; sol/orta/sağ preset'lerinden birine dönülünce inline stil temizlenir.
         let _kmOyunDokSerbestX = null, _kmOyunDokSerbestY = null;
+        // Skor kutusunun koç tarafından seçilen ölçeği (0.5–2). Gerçek ekranda uygulanan ölçek bundan
+        // küçük olabilir (sahneye sığdırma) — bkz. kmOyunDokOlcekUygula.
+        const KM_OYUN_DOK_OLCEK_MIN = 0.5, KM_OYUN_DOK_OLCEK_MAX = 2;
+        let _kmOyunDokOlcek = 1, _kmOyunDokEtkinOlcek = 1, _kmOyunDokRO = null;
         // İlerlemeye Göre Sıralama (2026-09-04, Menzil Sahnesi'nin kalan fikri) — "bu turda kim en çok
         // yükseldi" için, o oturumun BAŞLANGICINDAKİ toplamSkor'u saklıyoruz (sayfa yenilenene/konum
         // değişene kadar bellekte kalıcı — kalıcı depoya YAZILMIYOR, "bugünkü ders" anlamına gelsin diye).
@@ -13883,6 +13937,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunLigKaydet();
         }
         const KM_SEVIYE_IKON = { mini: '🐣', orta: '🎯', buyuk: '🏆' };
+        const KM_SEVIYE_AD = { mini: 'Mini', orta: 'Orta', buyuk: 'Büyük' };
         const KM_SEVIYE_CARPAN = { mini: 1.3, orta: 1.0, buyuk: 0.8 };
         const KM_SEVIYE_SIRA = ['mini', 'orta', 'buyuk'];
         // Zorluk Kilidi (2026-09-04, Menzil Sahnesi'nin "kullanımdan çıkan yeni fikirler" turu) — Adil
@@ -14620,11 +14675,47 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // olarak büyüt küçük seçenek koy") — Liderlik + Sporcu Seç artık TEK bir dikey panelde, sağda;
         // küçük moda geçince avatar/rozet dışındaki tüm metinler (isim, puan, kontrol noktası) gizlenip
         // panel dar bir ikon şeridine iniyor — koç kalabalık bir sınıfta haritaya daha çok yer açabiliyor.
+        // 2026-09-25 (B · Sırada Odaklı): "küçük" artık dar ikon şeridi değil, panel TAMAMEN sağa kapanıyor
+        // ("yana kapatabileyim açabileyim"). Aynı 'railkucuk' bayrağı — eski kayıtlı tercih "kapalı" okunur.
         function kmOyunRailBoyutDegistir() {
             _kmOyunRailKucukMu = !_kmOyunRailKucukMu;
             kmOyunBayrakKaydet('railkucuk', _kmOyunRailKucukMu);
             let el = document.getElementById('km-oyun-rightpanel'); if(el) el.classList.toggle('km-oyun-rightpanel-kucuk', _kmOyunRailKucukMu);
-            let btn = document.querySelector('.km-oyun-rail-boyut-btn'); if(btn) btn.textContent = _kmOyunRailKucukMu ? '◀' : '▶';
+            let btn = document.getElementById('km-oyun-rail-sekme');
+            if(btn) {
+                btn.querySelector('.km-oyun-rail-sekme-ok').textContent = _kmOyunRailKucukMu ? '◀' : '▶';
+                btn.title = _kmOyunRailKucukMu ? 'Paneli aç' : 'Paneli kapat';
+                btn.setAttribute('aria-expanded', _kmOyunRailKucukMu ? 'false' : 'true');
+            }
+            kmOyunRailMenuAcKapat(true);
+            // Sahne genişliği değişti — skor kutusu yeni alana göre yeniden sığdırılsın.
+            setTimeout(kmOyunDokOlcekUygula, 240);
+        }
+        function kmOyunRailMenuAcKapat(zorlaKapat) {
+            let menu = document.getElementById('km-oyun-rail-menu'); if(!menu) return;
+            menu.style.display = (zorlaKapat || menu.style.display !== 'none') ? 'none' : 'flex';
+        }
+        // Sıralama sekmeleri (Puan/Adil/Yükselen/Lig) — mevcut üç mercek anahtarını AYNEN kullanır, "Puan"
+        // hepsini kapatır. Zaten açık olan merceğe tekrar basmak onu kapatmasın diye önce kontrol.
+        function kmOyunSiralamaModuSec(mod) {
+            if(mod === 'puan') { kmOyunLiderMercekKapat(null); kmOyunLiderCiz(); return; }
+            if(mod === 'adil' && !_kmOyunAdilMi) kmOyunAdilDegistir();
+            else if(mod === 'yukselen' && !_kmOyunYukselenMi) kmOyunYukselenDegistir();
+            else if(mod === 'lig' && !_kmOyunLigMi) kmOyunLigDegistir();
+        }
+        function kmOyunSiralamaSekmeGuncelle() {
+            let durum = { puan: !_kmOyunAdilMi && !_kmOyunYukselenMi && !_kmOyunLigMi, adil: _kmOyunAdilMi, yukselen: _kmOyunYukselenMi, lig: _kmOyunLigMi };
+            Object.keys(durum).forEach(function(k) {
+                let b = document.querySelector('.km-oyun-lider-' + k + '-btn');
+                if(b) { b.classList.toggle('aktif', durum[k]); b.setAttribute('aria-selected', durum[k] ? 'true' : 'false'); }
+            });
+            // Takım yarışı / Pist yarışı kendi özel tablosunu çiziyor — orada mercek sekmeleri etkisiz, gizle.
+            let ust = document.querySelector('.km-oyun-rail-siralama-ust');
+            if(ust) ust.style.display = kmOyunOzelYarisTablosuMu() ? 'none' : '';
+        }
+        function kmOyunOzelYarisTablosuMu() {
+            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') return true;
+            return _kmOyunAktifTema === 'pist' && !_kmOyunTakimModu;
         }
         // Skor girme paneli — esnek/animasyonlu (2026-09-09). Üç görsel ayar + "otomatik davranış"
         // anahtarı, dördü de string/bool localStorage'da (D1'e YAZILMIYOR, kullanıcının talimatı) —
@@ -14635,6 +14726,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { _kmOyunDokAcikMi = localStorage.getItem(kmOyunDokAyarAnahtari('acik')) !== '0'; } catch(e) { _kmOyunDokAcikMi = true; } // varsayılan AÇIK
             try { let k = localStorage.getItem(kmOyunDokAyarAnahtari('konum')); _kmOyunDokKonum = (k === 'sol' || k === 'sag' || k === 'serbest') ? k : 'orta'; } catch(e) { _kmOyunDokKonum = 'orta'; }
             try { _kmOyunDokBoyut = localStorage.getItem(kmOyunDokAyarAnahtari('boyut')) === 'kucuk' ? 'kucuk' : 'normal'; } catch(e) { _kmOyunDokBoyut = 'normal'; }
+            // Eski iki kademeli "Küçük/Normal" tercihi, kayıtlı ölçek yoksa ölçeğe çevrilir (Küçük = %80).
+            try {
+                let o = parseFloat(localStorage.getItem(kmOyunDokAyarAnahtari('olcek')));
+                _kmOyunDokOlcek = (o >= KM_OYUN_DOK_OLCEK_MIN && o <= KM_OYUN_DOK_OLCEK_MAX) ? o : (_kmOyunDokBoyut === 'kucuk' ? 0.8 : 1);
+            } catch(e) { _kmOyunDokOlcek = 1; }
             try { _kmOyunDokOtomatikMi = localStorage.getItem(kmOyunDokAyarAnahtari('otomatik')) !== '0'; } catch(e) { _kmOyunDokOtomatikMi = true; } // varsayılan AÇIK
             try {
                 let x = parseFloat(localStorage.getItem(kmOyunDokAyarAnahtari('sx')));
@@ -14648,6 +14744,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 localStorage.setItem(kmOyunDokAyarAnahtari('acik'), _kmOyunDokAcikMi ? '1' : '0');
                 localStorage.setItem(kmOyunDokAyarAnahtari('konum'), _kmOyunDokKonum);
                 localStorage.setItem(kmOyunDokAyarAnahtari('boyut'), _kmOyunDokBoyut);
+                localStorage.setItem(kmOyunDokAyarAnahtari('olcek'), String(_kmOyunDokOlcek));
                 localStorage.setItem(kmOyunDokAyarAnahtari('otomatik'), _kmOyunDokOtomatikMi ? '1' : '0');
                 if(_kmOyunDokSerbestX !== null) localStorage.setItem(kmOyunDokAyarAnahtari('sx'), String(_kmOyunDokSerbestX));
                 if(_kmOyunDokSerbestY !== null) localStorage.setItem(kmOyunDokAyarAnahtari('sy'), String(_kmOyunDokSerbestY));
@@ -14667,7 +14764,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(_kmOyunDokKonum === 'sol') el.classList.add('km-oyun-dok-konum-sol');
                 else if(_kmOyunDokKonum === 'sag') el.classList.add('km-oyun-dok-konum-sag');
             }
-            el.classList.toggle('km-oyun-dok-boyut-kucuk', _kmOyunDokBoyut === 'kucuk');
+            kmOyunDokOlcekUygula();
             let ozetOk = document.getElementById('km-oyun-dok-ozet-ok'); if(ozetOk) ozetOk.textContent = _kmOyunDokAcikMi ? '▾' : '▴';
             kmOyunDokAyarMenusuGuncelle();
         }
@@ -14681,8 +14778,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(!sahne.clientWidth || !sahne.clientHeight) return;
                 let left = (_kmOyunDokSerbestX || 0) * sahne.clientWidth;
                 let top = (_kmOyunDokSerbestY || 0) * sahne.clientHeight;
-                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth);
-                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth * _kmOyunDokEtkinOlcek);
+                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight * _kmOyunDokEtkinOlcek);
                 el.style.left = Math.min(Math.max(0, left), maxLeft) + 'px';
                 el.style.top = Math.min(Math.max(0, top), maxTop) + 'px';
                 el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.margin = '0';
@@ -14722,8 +14819,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // önemli ölçüde SAPIYORDU). Sürükleme SIRASINDA transition tamamen kapatılıyor — anlık,
                 // 1:1 takip; bırakınca preset tıklamaları için tekrar açılıyor (aşağıda, birak()'ta).
                 el.style.transition = 'none';
-                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth);
-                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight);
+                // Ölçekli kutu (2026-09-25): preset konumlarda ölçek merkezi alt-orta/alt-köşe — ilk gerçek
+                // harekette kutunun EKRANDA göründüğü yeri başlangıç alıp merkezi sol-üste çeviriyoruz,
+                // yoksa sürükleme başlar başlamaz kutu zıplardı.
+                if(el.style.transformOrigin !== '0px 0px' && el.style.transformOrigin !== '0 0') {
+                    let r = el.getBoundingClientRect(), sr = sahne.getBoundingClientRect();
+                    elBasLeft = r.left - sr.left - sahne.clientLeft - dx;
+                    elBasTop = r.top - sr.top - sahne.clientTop - dy;
+                    el.style.transformOrigin = '0 0';
+                }
+                let maxLeft = Math.max(0, sahne.clientWidth - el.offsetWidth * _kmOyunDokEtkinOlcek);
+                let maxTop = Math.max(0, sahne.clientHeight - el.offsetHeight * _kmOyunDokEtkinOlcek);
                 el.style.left = Math.min(Math.max(0, elBasLeft + dx), maxLeft) + 'px';
                 el.style.top = Math.min(Math.max(0, elBasTop + dy), maxTop) + 'px';
                 el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.margin = '0';
@@ -14747,10 +14853,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Pencere/ekran boyutu değişince (döndürme, Tam Ekran aç/kapa) serbest konumu güncel sahne
         // ölçüsüne göre yeniden kelepçele — bir kere eklenir, "canavar" temasındaki kanat gibi tema
         // değişse de kaybolmaz (window'a bağlı, DOM'a değil).
-        window.addEventListener('resize', function() {
-            if(_kmOyunDokKonum !== 'serbest') return;
-            let el = document.getElementById('km-oyun-dok'); if(el) kmOyunDokSerbestUygula(el);
-        });
+        window.addEventListener('resize', function() { kmOyunDokOlcekUygula(); });
         // Koçun elle "Skor Gir" özet satırına dokunması — otomatik davranıştan BAĞIMSIZ, her zaman çalışır
         // (koç otomatik kapansa bile istediği an tekrar açabilmeli/kapatabilmeli).
         function kmOyunDokAcikKapatDegistir() {
@@ -14768,10 +14871,76 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunDokAyarKaydet();
             kmOyunDokGorunumUygula();
         }
+        // Eski iki kademeli API (Küçük/Normal) — geriye uyumluluk için ölçeğe çevrilir.
         function kmOyunDokBoyutDegistir(boyut) {
-            _kmOyunDokBoyut = boyut;
-            kmOyunDokAyarKaydet();
-            kmOyunDokGorunumUygula();
+            _kmOyunDokBoyut = boyut === 'kucuk' ? 'kucuk' : 'normal';
+            kmOyunDokOlcekAyarla(boyut === 'kucuk' ? 0.8 : 1);
+        }
+        function kmOyunDokOlcekAyarla(olcek, kaydetme) {
+            olcek = Math.round(Math.min(KM_OYUN_DOK_OLCEK_MAX, Math.max(KM_OYUN_DOK_OLCEK_MIN, Number(olcek) || 1)) * 100) / 100;
+            _kmOyunDokOlcek = olcek;
+            if(!kaydetme) kmOyunDokAyarKaydet();
+            kmOyunDokOlcekUygula();
+            kmOyunDokAyarMenusuGuncelle();
+        }
+        // Kutunun ölçeğini uygular: etkin = min(koçun ölçeği, sahneye dikey/yatay sığan ölçek). Kutunun
+        // offsetWidth/Height'i transform'dan ETKİLENMEZ (doğal boyut), bu yüzden hesap döngüye girmez.
+        function kmOyunDokOlcekUygula() {
+            let el = document.getElementById('km-oyun-dok'), sahne = document.getElementById('km-oyun-sahne');
+            if(!el || !sahne || !el.offsetWidth || !sahne.clientHeight) return;
+            let rail = document.getElementById('km-oyun-rightpanel');
+            let railW = (rail && !rail.classList.contains('km-oyun-rightpanel-kucuk') && window.innerWidth > 860) ? rail.offsetWidth : 0;
+            let fitH = (sahne.clientHeight - 20) / el.offsetHeight;
+            let fitW = (sahne.clientWidth - railW - 16) / el.offsetWidth;
+            let etkin = Math.max(0.35, Math.min(_kmOyunDokOlcek, fitH, fitW));
+            _kmOyunDokEtkinOlcek = Math.round(etkin * 1000) / 1000;
+            let orijin = _kmOyunDokKonum === 'serbest' ? '0 0' : (_kmOyunDokKonum === 'sol' ? '0 100%' : (_kmOyunDokKonum === 'sag' ? '100% 100%' : '50% 100%'));
+            el.style.transformOrigin = orijin;
+            el.style.transform = _kmOyunDokEtkinOlcek === 1 ? '' : 'scale(' + _kmOyunDokEtkinOlcek + ')';
+            el.dataset.olcek = String(_kmOyunDokEtkinOlcek);
+            if(_kmOyunDokKonum === 'serbest') kmOyunDokSerbestUygula(el);
+            let yuzde = document.getElementById('km-oyun-dok-olcek-yuzde'); if(yuzde) yuzde.textContent = Math.round(_kmOyunDokOlcek * 100) + '%';
+            let not = document.getElementById('km-oyun-dok-olcek-not');
+            if(not) not.textContent = _kmOyunDokEtkinOlcek < _kmOyunDokOlcek - 0.01 ? 'Ekrana sığsın diye şu an %' + Math.round(_kmOyunDokEtkinOlcek * 100) : '';
+        }
+        // Köşe tutamacı (⤡) — sürükleyerek serbest büyüt/küçült: sağa/yukarı = büyür, sola/aşağı = küçülür.
+        // Dok'un taşıma tutamacıyla AYNI pointer-capture deseni; bırakınca ölçek kaydedilir.
+        function kmOyunDokBoyutlaKur() {
+            let el = document.getElementById('km-oyun-dok');
+            let tut = document.getElementById('km-oyun-dok-boyutla');
+            if(!el || !tut) return;
+            let x0 = 0, y0 = 0, bas = 1, pid = null;
+            tut.addEventListener('pointerdown', function(e) {
+                pid = e.pointerId; x0 = e.clientX; y0 = e.clientY; bas = _kmOyunDokEtkinOlcek;
+                tut.classList.add('aktif');
+                try { tut.setPointerCapture(e.pointerId); } catch(err) {}
+                e.preventDefault();
+            });
+            tut.addEventListener('pointermove', function(e) {
+                if(pid === null || e.pointerId !== pid) return;
+                let d = (e.clientX - x0) - (e.clientY - y0);
+                el.style.transition = 'none';
+                kmOyunDokOlcekAyarla(bas + d / 260, true);
+            });
+            let birak = function(e) {
+                if(pid === null || (e && e.pointerId !== undefined && e.pointerId !== pid)) return;
+                pid = null; tut.classList.remove('aktif'); el.style.transition = '';
+                kmOyunDokAyarKaydet();
+            };
+            tut.addEventListener('pointerup', birak);
+            tut.addEventListener('pointercancel', birak);
+            // Kutu ya da sahne boyutu değişince (panel açılıp kapanınca, 123↔🎯, Tam Ekran, döndürme)
+            // ölçek yeniden sığdırılır. Transform boyutu değiştirmediği için gözlemci kendini tetiklemez.
+            if(_kmOyunDokRO) { try { _kmOyunDokRO.disconnect(); } catch(err) {} }
+            if(window.ResizeObserver) {
+                let bekliyor = false;
+                _kmOyunDokRO = new ResizeObserver(function() {
+                    if(bekliyor) return; bekliyor = true;
+                    requestAnimationFrame(function() { bekliyor = false; kmOyunDokOlcekUygula(); });
+                });
+                _kmOyunDokRO.observe(el);
+                let sahne = document.getElementById('km-oyun-sahne'); if(sahne) _kmOyunDokRO.observe(sahne);
+            }
         }
         function kmOyunDokOtomatikDegistir() {
             _kmOyunDokOtomatikMi = !_kmOyunDokOtomatikMi;
@@ -14781,7 +14950,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunDokAyarMenusuGuncelle() {
             let menu = document.getElementById('km-oyun-dok-ayar-menu'); if(!menu) return;
             menu.querySelectorAll('[data-km-konum]').forEach(function(b) { b.classList.toggle('aktif', b.dataset.kmKonum === _kmOyunDokKonum); });
-            menu.querySelectorAll('[data-km-boyut]').forEach(function(b) { b.classList.toggle('aktif', b.dataset.kmBoyut === _kmOyunDokBoyut); });
+            let aralik = document.getElementById('km-oyun-dok-olcek-aralik'); if(aralik && document.activeElement !== aralik) aralik.value = String(Math.round(_kmOyunDokOlcek * 100));
+            let yuzde = document.getElementById('km-oyun-dok-olcek-yuzde'); if(yuzde) yuzde.textContent = Math.round(_kmOyunDokOlcek * 100) + '%';
             let otoBtn = menu.querySelector('.km-oyun-dok-oto-btn'); if(otoBtn) otoBtn.classList.toggle('aktif', _kmOyunDokOtomatikMi);
         }
         // Kamera koreografisiyle eşzamanlı otomatik davranış (2026-09-09) — "İlerlet'e basıldıktan sonra
@@ -15753,27 +15923,31 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-oyun-burst" id="km-oyun-burst"></div>
                     <div class="km-oyun-banner" id="km-oyun-banner"><b id="km-oyun-banner-t"></b><span id="km-oyun-banner-s"></span></div>
                     <div class="km-oyun-suspense" id="km-oyun-suspense"><div class="km-oyun-suspense-ikon">🥁</div><div class="km-oyun-suspense-yazi">AÇIKLANIYOR...</div></div>
-                    <div class="km-oyun-rightpanel${_kmOyunRailKucukMu ? ' km-oyun-rightpanel-kucuk' : ''}" id="km-oyun-rightpanel">
-                        <button class="km-oyun-rail-boyut-btn" onclick="kmOyunRailBoyutDegistir()" title="Paneli büyüt/küçült">${_kmOyunRailKucukMu ? '◀' : '▶'}</button>
-                        <div class="km-oyun-rail-mercekler">
-                            <button class="km-oyun-lider-boyut-btn km-oyun-lider-lig-btn${_kmOyunLigMi ? ' aktif' : ''}" onclick="kmOyunLigDegistir()" title="Haftalık Kademe Ligi (seviyene göre eşleşen haftalık yarış)">🏅</button>
-                            <button class="km-oyun-lider-boyut-btn km-oyun-lider-yukselen-btn${_kmOyunYukselenMi ? ' aktif' : ''}" onclick="kmOyunYukselenDegistir()" title="En Çok Yükselen (bu oturumdaki ilerleme)">📈</button>
-                            <button class="km-oyun-lider-boyut-btn km-oyun-lider-adil-btn${_kmOyunAdilMi ? ' aktif' : ''}" onclick="kmOyunAdilDegistir()" title="Adil Sıralama (yaşa/seviyeye göre ağırlıklı)">⚖️</button>
+                    <div class="km-oyun-rightpanel${_kmOyunRailKucukMu ? ' km-oyun-rightpanel-kucuk' : ''}" id="km-oyun-rightpanel" aria-label="Sıradaki sporcu ve sıralama">
+                        <div class="km-oyun-rail-govde">
+                            <div id="km-oyun-chips"></div>
+                            <div class="km-oyun-rail-siralama-ust">
+                                <div class="km-oyun-rail-sekmeler" role="tablist" aria-label="Sıralama türü">
+                                    <button class="km-oyun-lider-puan-btn" onclick="kmOyunSiralamaModuSec('puan')" title="Gerçek toplam puana göre">Puan</button>
+                                    <button class="km-oyun-lider-adil-btn" onclick="kmOyunSiralamaModuSec('adil')" title="Adil Sıralama (yaşa/seviyeye göre ağırlıklı)">Adil</button>
+                                    <button class="km-oyun-lider-yukselen-btn" onclick="kmOyunSiralamaModuSec('yukselen')" title="En Çok Yükselen (bu oturumdaki ilerleme)">Yükselen</button>
+                                    <button class="km-oyun-lider-lig-btn" onclick="kmOyunSiralamaModuSec('lig')" title="Haftalık Kademe Ligi (seviyene göre eşleşen haftalık yarış)">Lig</button>
+                                </div>
+                            </div>
+                            <div id="km-oyun-lider-ic"></div>
                         </div>
-                        <div id="km-oyun-lider-ic"></div>
-                        <div class="km-oyun-rail-ayrac"></div>
-                        <div class="km-oyun-dok-lbl" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                            <span>Sporcu Seç</span>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <button class="km-oyun-geri-al-btn" id="km-oyun-sifirla-btn" onclick="kmOyunSporcuSifirla()" title="Seçili sporcunun oyun ilerlemesini sıfırla" style="${_kmOyunTakimModu ? 'display:none;' : ''}">🔄</button>
-                                <button class="km-oyun-geri-al-btn" id="km-oyun-takim-sifirla-btn" onclick="kmOyunTakimSifirla()" title="Takımın paylaşılan ilerlemesini sıfırla" style="${_kmOyunTakimModu ? '' : 'display:none;'}">↻</button>
-                                <button class="km-oyun-geri-al-btn" id="km-oyun-hepsi-sifirla-btn" onclick="kmOyunHepsiSifirla()" title="Tüm sınıfın oyun ilerlemesini sıfırla (yeniden başlat)">🔄🏫</button>
-                                <button class="km-oyun-geri-al-btn" id="km-oyun-geri-al-btn" onclick="kmOyunSonGirisiGeriAl()" style="display:none;" title="Son Girişi Geri Al">↩️</button>
+                        <div class="km-oyun-rail-alt">
+                            <button id="km-oyun-geri-al-btn" onclick="kmOyunSonGirisiGeriAl()" style="display:none;" title="Son girilen seriyi geri al">↩️ Son girişi geri al</button>
+                            <button class="km-oyun-rail-diger" onclick="kmOyunRailMenuAcKapat()" aria-label="Diğer: sıfırlama seçenekleri" title="Sıfırlama seçenekleri">⋯</button>
+                            <div class="km-oyun-rail-menu" id="km-oyun-rail-menu" style="display:none;">
+                                <button id="km-oyun-sifirla-btn" onclick="kmOyunRailMenuAcKapat(true); kmOyunSporcuSifirla()" style="${_kmOyunTakimModu ? 'display:none;' : ''}">🔄 Sıradaki sporcuyu sıfırla</button>
+                                <button id="km-oyun-takim-sifirla-btn" onclick="kmOyunRailMenuAcKapat(true); kmOyunTakimSifirla()" style="${_kmOyunTakimModu ? '' : 'display:none;'}">↻ Takımın ilerlemesini sıfırla</button>
+                                <button class="km-oyun-rail-menu-tehlike" id="km-oyun-hepsi-sifirla-btn" onclick="kmOyunRailMenuAcKapat(true); kmOyunHepsiSifirla()">🏫 Tüm sınıfı sıfırla</button>
                             </div>
                         </div>
-                        <div class="km-oyun-chips" id="km-oyun-chips"></div>
                     </div>
-                    <div class="km-oyun-dok km-oyun-dok-konum-${_kmOyunDokKonum === 'sol' ? 'sol' : (_kmOyunDokKonum === 'sag' ? 'sag' : '')} km-oyun-dok-boyut-${_kmOyunDokBoyut === 'kucuk' ? 'kucuk' : ''}${_kmOyunDokAcikMi ? '' : ' km-oyun-dok-kapali'}" id="km-oyun-dok">
+                    <button class="km-oyun-rail-sekme" id="km-oyun-rail-sekme" onclick="kmOyunRailBoyutDegistir()" title="${_kmOyunRailKucukMu ? 'Paneli aç' : 'Paneli kapat'}" aria-expanded="${_kmOyunRailKucukMu ? 'false' : 'true'}"><span class="km-oyun-rail-sekme-ok">${_kmOyunRailKucukMu ? '◀' : '▶'}</span><span class="km-oyun-rail-sekme-yazi">Sıralama</span></button>
+                    <div class="km-oyun-dok km-oyun-dok-konum-${_kmOyunDokKonum === 'sol' ? 'sol' : (_kmOyunDokKonum === 'sag' ? 'sag' : '')}${_kmOyunDokAcikMi ? '' : ' km-oyun-dok-kapali'}" id="km-oyun-dok">
                         <div class="km-oyun-dok-ust">
                             <span class="km-oyun-dok-tutamac" id="km-oyun-dok-tutamac" title="Sürükleyerek istediğin yere taşı">⠿</span>
                             <button class="km-oyun-dok-ozet-btn" id="km-oyun-dok-ozet-btn" onclick="kmOyunDokAcikKapatDegistir()">
@@ -15781,6 +15955,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                                 <span class="km-oyun-dok-ozet-sayi" id="km-oyun-dok-ozet-sayi">${_kmOyunSeriGirisleri.length}/${_kmOyunOkSayisi}</span>
                                 <span class="km-oyun-dok-ozet-ok" id="km-oyun-dok-ozet-ok">${_kmOyunDokAcikMi ? '▾' : '▴'}</span>
                             </button>
+                            <span class="km-oyun-dok-boyutla" id="km-oyun-dok-boyutla" title="Sürükle: büyüt (sağa/yukarı) · küçült (sola/aşağı)" aria-label="Skor kutusunu boyutlandır">⤢</span>
                             <button class="km-oyun-dok-ayar-btn" onclick="kmOyunDokAyarMenusuAcKapat()" title="Panel ayarları (konum, boyut, otomatik davranış)">⚙️</button>
                         </div>
                         <div class="km-oyun-dok-ayar-menu" id="km-oyun-dok-ayar-menu" style="display:none;">
@@ -15794,11 +15969,15 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                             </div>
                             <div class="km-oyun-dok-ayar-satir">
                                 <span class="km-oyun-dok-ayar-lbl">Boyut</span>
-                                <div class="km-oyun-dok-ayar-grup">
-                                    <button data-km-boyut="kucuk" onclick="kmOyunDokBoyutDegistir('kucuk')" class="${_kmOyunDokBoyut === 'kucuk' ? 'aktif' : ''}">Küçük</button>
-                                    <button data-km-boyut="normal" onclick="kmOyunDokBoyutDegistir('normal')" class="${_kmOyunDokBoyut === 'normal' ? 'aktif' : ''}">Normal</button>
+                                <div class="km-oyun-dok-ayar-grup km-oyun-dok-olcek">
+                                    <button onclick="kmOyunDokOlcekAyarla(_kmOyunDokOlcek - 0.1)" aria-label="Küçült">−</button>
+                                    <input type="range" id="km-oyun-dok-olcek-aralik" min="${KM_OYUN_DOK_OLCEK_MIN * 100}" max="${KM_OYUN_DOK_OLCEK_MAX * 100}" step="5" value="${Math.round(_kmOyunDokOlcek * 100)}" oninput="kmOyunDokOlcekAyarla(this.value / 100)" aria-label="Skor kutusu boyutu">
+                                    <button onclick="kmOyunDokOlcekAyarla(_kmOyunDokOlcek + 0.1)" aria-label="Büyüt">+</button>
+                                    <span class="km-oyun-dok-olcek-yuzde" id="km-oyun-dok-olcek-yuzde">${Math.round(_kmOyunDokOlcek * 100)}%</span>
+                                    <button onclick="kmOyunDokOlcekAyarla(1)" title="Varsayılan boyut">↺</button>
                                 </div>
                             </div>
+                            <div class="km-oyun-dok-olcek-not" id="km-oyun-dok-olcek-not"></div>
                             <div class="km-oyun-dok-ayar-satir">
                                 <span class="km-oyun-dok-ayar-lbl">Otomatik küçül/aç</span>
                                 <button class="km-oyun-dok-oto-btn${_kmOyunDokOtomatikMi ? ' aktif' : ''}" onclick="kmOyunDokOtomatikDegistir()">${_kmOyunDokOtomatikMi ? 'Açık' : 'Kapalı'}</button>
@@ -15891,33 +16070,86 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
 
         function kmOyunChipleriCiz() {
+            // B · Sırada Odaklı (2026-09-25) — eski her-sporcuya-bir-chip listesi yerine TEK büyük "SIRADA"
+            // kartı (TV'den okunur) + "SONRA" satırı + isteğe bağlı tüm sınıf ızgarası. Fonksiyon adı/çağrı
+            // noktaları aynen korundu (aktif index değişen her yer zaten bunu çağırıyor).
             let row = document.getElementById('km-oyun-chips'); if(!row) return;
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
-            row.innerHTML = _kmOyunRosterCache.map(function(s, i) {
-                // Takım Futbolu'nda "N/8" değil, gerçek katkı sayısı gösterilir — bu temada seri sayısının
-                // 8'de bitmesi diye bir kural yok (maç, paylaşılan hedef gole ulaşınca biter).
-                let durum = _kmOyunAktifTema === 'futboltakim' ? `${s.futbolTakimGol || 0} ${th.birim}` : (s.frac >= 1 ? th.bitis : `${Math.floor(s.frac * KM_OYUN_CP_SAYISI)}/${KM_OYUN_CP_SAYISI} ${th.birim}`);
-                // Ortak Canavar — frac yok; bugünkü toplam hasarı göster.
-                if(_kmOyunAktifTema === 'canavar') { kmCanavarDurumEmin(); let hh = _kmCanavar.hasarlar[s.g + '|' + s.ad]; durum = `${hh ? hh.hasar : 0} ${th.birim}`; }
-                if(_kmOyunAktifTema === 'yukselis') { let st = kmYksIstatistik(s.g + '|' + s.ad); durum = `${st.endeks.toFixed(1)} ${th.birim}`; }
-                let d = kmOyunDurumAl(s.g, s.ad);
-                let sev = d.seviye || 'orta';
-                let seri = d.bitisSerisi || 0;
-                let takimRozeti = '';
-                if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
-                    let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
-                    takimRozeti = ti !== -1 ? `<span class="km-oyun-chip-takim" title="${esc(_kmOyunTakimlar[ti].ad)}">${_kmOyunTakimlar[ti].emoji}</span>` : `<span class="km-oyun-chip-takim km-oyun-chip-takim-yok" title="Henüz bir takıma atanmadı">❔</span>`;
-                }
-                return `<div class="km-oyun-chip${i === _kmOyunAktifIndex ? ' aktif' : ''}" onclick="kmOyunSporcuSec(${i})">
-                    <div class="km-oyun-chip-av" style="background:${kmOyunRenk(_kmOyunAktifTema, i)};">${kmOyunAvatarHTML(s)}</div>
-                    <div class="km-oyun-chip-info"><div class="km-oyun-chip-nm">${s.ad}${seri > 1 ? ` <span class="km-oyun-chip-seri" title="${seri} ders üst üste bir sahne bitirdi">🔥${seri}</span>` : ''}</div><div class="km-oyun-chip-cp">${durum} · <b>${s.toplamSkor}p</b></div></div>
-                    ${takimRozeti}
-                    <span class="km-oyun-chip-alkis" onclick="event.stopPropagation(); kmOyunAlkisla(${i})" title="Alkışla">👏${d.alkis ? `<b>${d.alkis}</b>` : ''}</span>
-                    <span class="km-oyun-chip-karakter" onclick="event.stopPropagation(); kmOyunKarakterSecAc(${i})" title="Karakter seç">🎭</span>
-                    <span class="km-oyun-chip-sev" onclick="event.stopPropagation(); kmOyunSeviyeDegistir(${i})" title="Adil Sıralama seviyesi — değiştirmek için dokun">${KM_SEVIYE_IKON[sev]}</span>
-                </div>`;
-            }).join('');
+            let n = _kmOyunRosterCache.length;
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+            if(!s) { row.innerHTML = ''; kmOyunSiradaGuncelle(); return; }
+            let i = _kmOyunAktifIndex;
+            let d = kmOyunDurumAl(s.g, s.ad);
+            let sev = d.seviye || 'orta';
+            let seri = d.bitisSerisi || 0;
+            let renk = kmOyunRenk(_kmOyunAktifTema, i);
+            // İlerleme kutusu — tema türüne göre (Takım Futbolu gol, Canavar hasar, Yükseliş endeks, diğerleri N/8).
+            let ilerlemeLbl = th.birim || 'İlerleme', ilerlemeDeger, adimlarMi = false;
+            if(_kmOyunAktifTema === 'futboltakim') ilerlemeDeger = String(s.futbolTakimGol || 0);
+            else if(_kmOyunAktifTema === 'canavar') { kmCanavarDurumEmin(); let hh = _kmCanavar.hasarlar[s.g + '|' + s.ad]; ilerlemeDeger = String(hh ? hh.hasar : 0); }
+            else if(_kmOyunAktifTema === 'yukselis') { let st = kmYksIstatistik(s.g + '|' + s.ad); ilerlemeDeger = st.endeks.toFixed(1); }
+            else if(!th.bitis) { ilerlemeLbl = 'Alkış'; ilerlemeDeger = String(d.alkis || 0); }
+            else { adimlarMi = true; ilerlemeDeger = s.frac >= 1 ? esc(th.bitis) : `${Math.floor(s.frac * KM_OYUN_CP_SAYISI)}<small>/${KM_OYUN_CP_SAYISI}</small>`; }
+            let skorSirasi = _kmOyunRosterCache.filter(function(o) { return o.toplamSkor > s.toplamSkor; }).length + 1;
+            let altParcalar = [];
+            if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
+                let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
+                altParcalar.push(ti !== -1 ? `${_kmOyunTakimlar[ti].emoji} ${esc(_kmOyunTakimlar[ti].ad)}` : '❔ Takımsız');
+            }
+            if(seri > 1) altParcalar.push(`🔥 ${seri} derstir sahneyi bitiriyor`);
+            altParcalar.push(`${KM_SEVIYE_IKON[sev]} ${KM_SEVIYE_AD[sev] || sev}`);
+            let adimlar = '';
+            if(adimlarMi) {
+                let dolu = Math.min(KM_OYUN_CP_SAYISI, Math.floor(s.frac * KM_OYUN_CP_SAYISI + 1e-6));
+                for(let k = 0; k < KM_OYUN_CP_SAYISI; k++) adimlar += `<span${k < dolu ? ' class="dolu"' : ''}></span>`;
+                adimlar = `<div class="km-sk-adimlar" aria-hidden="true">${adimlar}</div>`;
+            }
+            let sonra = '';
+            if(n > 1) {
+                let adet = Math.min(2, n - 1), liste = [];
+                for(let k = 1; k <= adet; k++) liste.push((i + k) % n);
+                sonra = liste.map(function(j) {
+                    let o = _kmOyunRosterCache[j];
+                    return `<button class="km-sk-sonra-kisi" onclick="kmOyunSporcuSec(${j})" title="${esc(o.ad)} — şimdi seç"><span class="km-sk-mini-av" style="background:${kmOyunRenk(_kmOyunAktifTema, j)};">${kmOyunAvatarHTML(o)}</span>${esc(o.ad.split(' ')[0])}</button>`;
+                }).join('<span class="km-sk-ok">›</span>');
+            }
+            let izgara = '';
+            if(_kmOyunSporcuIzgaraAcik) {
+                izgara = '<div class="km-sk-izgara">' + _kmOyunRosterCache.map(function(o, j) {
+                    return `<button class="${j === i ? 'aktif' : ''}" onclick="kmOyunSporcuSec(${j})" title="${esc(o.ad)}"><span class="km-sk-mini-av" style="background:${kmOyunRenk(_kmOyunAktifTema, j)};">${kmOyunAvatarHTML(o)}</span><span>${esc(o.ad.split(' ')[0])}</span></button>`;
+                }).join('') + '</div>';
+            }
+            row.innerHTML = `<div class="km-sk-kart" style="--sk-renk:${renk};">
+                    <div class="km-sk-ust">
+                        <span class="km-sk-av">${kmOyunAvatarHTML(s)}</span>
+                        <div class="km-sk-metin">
+                            <span class="km-sk-lbl">Sırada · ${i + 1}/${n}</span>
+                            <span class="km-sk-ad" title="${esc(s.ad)}">${esc(s.ad.split(' ')[0])}</span>
+                            <span class="km-sk-alt">${altParcalar.join(' · ')}</span>
+                        </div>
+                    </div>
+                    <div class="km-sk-istat">
+                        <div><div class="km-sk-istat-lbl">Puan</div><div class="km-sk-istat-deger">${s.toplamSkor}</div></div>
+                        <div><div class="km-sk-istat-lbl">${esc(ilerlemeLbl)}</div><div class="km-sk-istat-deger">${ilerlemeDeger}</div></div>
+                        <div><div class="km-sk-istat-lbl">Sıra</div><div class="km-sk-istat-deger">${skorSirasi}<small>/${n}</small></div></div>
+                    </div>
+                    ${adimlar}
+                    <div class="km-sk-dugmeler">
+                        <button class="km-sk-alkis" onclick="kmOyunAlkisla(${i})" title="Alkışla">👏 Alkışla${d.alkis ? ` · <b>${d.alkis}</b>` : ''}</button>
+                        <button onclick="kmOyunKarakterSecAc(${i})" title="Karakter seç">🎭 Karakter</button>
+                        <button onclick="kmOyunSeviyeDegistir(${i})" title="Adil Sıralama seviyesi — değiştirmek için dokun">${KM_SEVIYE_IKON[sev]} Seviye</button>
+                    </div>
+                </div>
+                <div class="km-sk-sonra">${n > 1 ? `<span class="km-sk-sonra-lbl">SONRA</span>${sonra}` : ''}<button class="km-sk-degistir${_kmOyunSporcuIzgaraAcik ? ' aktif' : ''}" onclick="kmOyunSporcuIzgaraAcKapat()" aria-expanded="${_kmOyunSporcuIzgaraAcik ? 'true' : 'false'}">${_kmOyunSporcuIzgaraAcik ? 'Kapat' : 'Değiştir'}</button></div>
+                ${izgara}`;
             kmOyunSiradaGuncelle();
+        }
+        // "Değiştir" — tüm sınıfı avatar ızgarası olarak açar; sıralama hangi görünümde olursa olsun
+        // (takım yarışı, lig…) her sporcu buradan tek dokunuşla seçilebilir. Seçimden sonra açık kalır.
+        let _kmOyunSporcuIzgaraAcik = false;
+        function kmOyunSporcuIzgaraAcKapat() {
+            _kmOyunSporcuIzgaraAcik = !_kmOyunSporcuIzgaraAcik;
+            kmOyunChipleriCiz();
         }
         function kmOyunSporcuSec(i) {
             _kmOyunAktifIndex = i;
@@ -15927,6 +16159,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunKameraDurum = 'yakin';
             kmOyunDokOtomatikAc();
             kmOyunChipleriCiz();
+            kmOyunLiderCiz();
             kmOyunKabukGuncelle();
             if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
             if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisCiz();
@@ -15943,8 +16176,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunDurumKaydet();
             try { sesCal(1100, 0.06); setTimeout(function() { try { sesCal(1400, 0.09); } catch(e) {} }, 60); } catch(e) {}
             kmOyunChipleriCiz();
-            let chips = document.querySelectorAll('.km-oyun-chip'); let el = chips[i];
-            if(el) { el.classList.add('km-oyun-chip-alkis-pop'); setTimeout(function() { el.classList.remove('km-oyun-chip-alkis-pop'); }, 500); }
+            let el = document.querySelector('#km-oyun-chips .km-sk-kart');
+            if(el) { el.classList.add('km-sk-alkis-pop'); setTimeout(function() { el.classList.remove('km-sk-alkis-pop'); }, 500); }
         }
 
         // ---- SAYAÇ (Shot Clock) — 2026-09-18, kullanıcı talimatı: "sporcular gerçek yarışma gibi
@@ -16321,9 +16554,15 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let svg = document.getElementById('km-oyun-hedef-svg'); if(!svg) return;
             // Normal Skor ekranındaki hedefTiklandi ile AYNI koordinat dönüşümü (zoom/ölçekten bağımsız) ve
             // AYNI halka kuralı (hedefeMesafePuan — çizgiye değen üst puanı alır, dış = M).
+            // 2026-09-25: kutu artık transform:scale ile ölçekleniyor — getBoundingClientRect ölçeği zaten
+            // içerir; ek olarak preserveAspectRatio "meet" payı hesaba katılıyor (kutu kare değilse hedef
+            // ortalanır, eski doğrusal hesap o durumda kenarlara doğru kayıyordu).
             let rect = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
-            let sx = vb.x + ((ev.clientX - rect.left) / rect.width) * vb.width;
-            let sy = vb.y + ((ev.clientY - rect.top) / rect.height) * vb.height;
+            if(!rect.width || !rect.height) return;
+            let k = Math.min(rect.width / vb.width, rect.height / vb.height);
+            let ox = rect.left + (rect.width - vb.width * k) / 2, oy = rect.top + (rect.height - vb.height * k) / 2;
+            let sx = vb.x + (ev.clientX - ox) / k;
+            let sy = vb.y + (ev.clientY - oy) / k;
             let res = hedefeMesafePuan(Math.hypot(sx, sy), false, '10ring');
             _kmOyunSeriGirisleri.push(res.puan);
             _kmOyunSeriKonumlari[_kmOyunSeriGirisleri.length - 1] = { x: Math.round(sx * 10) / 10, y: Math.round(sy * 10) / 10 };
@@ -16393,6 +16632,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunLiderCiz() {
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
             kmOyunCpRailCiz();
+            kmOyunSiralamaSekmeGuncelle();
             if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') { kmOyunTakimYarisCiz(el); return; }
             // Pist — Çoklu Takım'ın (kmOyunTakimYarisCiz) AYNI dallanma önceliğinde: bireysel modda
             // GERÇEK toplamSkor yerine frac'a (yarış ilerlemesine) göre sıralı, yüzdeli bir liste
@@ -16439,13 +16679,31 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let liste = _kmOyunRosterCache.map(function(o) { return { ad: o.ad, st: kmYksIstatistik(o.g + '|' + o.ad) }; }).sort(function(a, b) { return b.st.endeks - a.st.endeks; });
                 kehanetOzel = '<div class="km-kehanet-en-iyi-kahin">📈 En Yüksek Endeks: <b>' + esc(liste[0].ad.split(' ')[0]) + '</b> — ' + liste[0].st.endeks.toFixed(1) + (liste[0].st.tutarlilik !== null ? ' · tutarlılık %' + liste[0].st.tutarlilik : '') + '</div>';
             }
-            el.innerHTML = kehanetOzel + '<div class="km-oyun-lider-baslik">' + baslik + '</div>' + sirali.map(function(o, rank) {
-                let puanGoster = _kmOyunYukselenMi ? (o.puan > 0 ? '+' + o.puan : o.puan) : o.puan;
-                return `<div class="km-oyun-lider-satir"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
+            // B · Sırada Odaklı (2026-09-25): ilk üç podyumda (2.-1.-3. dizilişi), kalanlar iki sütun. Her
+            // satır/podyum dokununca o sporcuyu seçer (eski ayrı "Sporcu Seç" listesinin görevi).
+            let puanYaz = function(o) { return _kmOyunYukselenMi ? (o.puan > 0 ? '+' + o.puan : o.puan) : o.puan; };
+            let adYaz = function(o) { return esc(o.s.ad.split(' ')[0]) + (_kmOyunAdilMi ? ' ' + KM_SEVIYE_IKON[o.sev] : ''); };
+            let podyum = '';
+            if(sirali.length >= 2) {
+                let dizilis = sirali.length >= 3 ? [1, 0, 2] : [1, 0];
+                podyum = `<div class="km-sk-podyum"${sirali.length === 2 ? ' style="grid-template-columns:repeat(2,minmax(0,1fr));"' : ''}>` + dizilis.map(function(r) {
+                    let o = sirali[r];
+                    return `<div class="km-sk-pod km-sk-pod-${r + 1}${o.i === _kmOyunAktifIndex ? ' aktif' : ''}" onclick="kmOyunSporcuSec(${o.i})" title="${esc(o.s.ad)} — seçmek için dokun">
+                        <span class="km-sk-pod-av" style="background:${kmOyunRenk(_kmOyunAktifTema, o.i)};">${kmOyunAvatarHTML(o.s)}</span>
+                        <span class="km-sk-pod-ad">${adYaz(o)}</span>
+                        <div class="km-sk-pod-basamak"><b>${puanYaz(o)}</b><span>${r + 1}.</span></div>
+                    </div>`;
+                }).join('') + '</div>';
+            }
+            let kalan = sirali.length >= 2 ? sirali.slice(Math.min(3, sirali.length)) : sirali;
+            let liste = kalan.length ? '<div class="km-oyun-lider-liste">' + kalan.map(function(o) {
+                let rank = sirali.indexOf(o);
+                return `<div class="km-oyun-lider-satir secilebilir${o.i === _kmOyunAktifIndex ? ' aktif' : ''}" onclick="kmOyunSporcuSec(${o.i})"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
                     <span class="km-oyun-lider-nokta" style="background:${kmOyunRenk(_kmOyunAktifTema, o.i)};"></span>
-                    <span class="km-oyun-lider-ad">${o.s.ad.split(' ')[0]}${_kmOyunAdilMi ? ' ' + KM_SEVIYE_IKON[o.sev] : ''}</span>
-                    <span class="km-oyun-lider-skor">${puanGoster}</span></div>`;
-            }).join('');
+                    <span class="km-oyun-lider-ad">${adYaz(o)}</span>
+                    <span class="km-oyun-lider-skor">${puanYaz(o)}</span></div>`;
+            }).join('') + '</div>' : '';
+            el.innerHTML = kehanetOzel + '<div class="km-oyun-lider-baslik">' + baslik + '</div>' + podyum + liste;
         }
         // Haftalık Kademe Ligi'nin çizimi — TEK bir sıralama yerine, koçun atadığı seviyeye (mini/orta/
         // büyük) göre 3 ayrı POD, her podun içinde bu HAFTAKİ puana göre sıralı + kendi madalyaları.
@@ -16466,7 +16724,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }).sort(function(a, b) { return b.puan - a.puan; });
                 html += `<div class="km-oyun-lig-pod-baslik">${podEtiket[sev]}</div>`;
                 html += sirali.map(function(o, rank) {
-                    return `<div class="km-oyun-lider-satir"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
+                    return `<div class="km-oyun-lider-satir secilebilir${o.i === _kmOyunAktifIndex ? ' aktif' : ''}" onclick="kmOyunSporcuSec(${o.i})"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
                         <span class="km-oyun-lider-nokta" style="background:${kmOyunRenk(_kmOyunAktifTema, o.i)};"></span>
                         <span class="km-oyun-lider-ad">${o.s.ad.split(' ')[0]}</span>
                         <span class="km-oyun-lider-skor">${o.puan}</span></div>`;
@@ -16518,7 +16776,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let gapYuzde = Math.round(((lider.frac - o.frac) / toplamTur) * 100);
                     fark = gapYuzde > 0 ? `<span class="km-oyun-fark-rozet">${gapYuzde}% geride</span>` : '<span class="km-oyun-fark-rozet">berabere</span>';
                 }
-                return `<div class="km-oyun-lider-satir"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
+                return `<div class="km-oyun-lider-satir secilebilir${o.i === _kmOyunAktifIndex ? ' aktif' : ''}" onclick="kmOyunSporcuSec(${o.i})"><span class="km-oyun-lider-rank">${madalya[rank] || (rank + 1)}</span>
                     <span class="km-oyun-lider-nokta" style="background:${kmOyunRenk('pist', o.i)};"></span>
                     <span class="km-oyun-lider-ad">${o.s.ad.split(' ')[0]}</span>
                     <span class="km-oyun-lider-skor">${yuzde}%</span></div>
@@ -21462,7 +21720,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunSesliMod = kmOyunBayrakYukle('sesli');
             _kmOyunDramatikMod = kmOyunBayrakYukle('dramatik');
             _kmOyunAdilMi = kmOyunBayrakYukle('adil');
-            _kmOyunRailKucukMu = kmOyunBayrakYukle('railkucuk');
+            // Telefonda panel sahnenin ÜSTÜNE açıldığı için, kayıtlı bir tercih yoksa KAPALI başlar.
+            try { let kayit = localStorage.getItem(kmOyunBayrakAnahtari('railkucuk')); _kmOyunRailKucukMu = kayit === null ? window.innerWidth <= 860 : kayit === '1'; } catch(e) { _kmOyunRailKucukMu = window.innerWidth <= 860; }
             kmOyunDokAyarYukle();
             _kmOyunCokluMu = kmOyunBayrakYukle('coklu');
             if(_kmOyunCokluMu) kmOyunCokluDurumEmin();
@@ -21485,6 +21744,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunTamEkranEtiketGuncelle();
             kmOyunSayacYeniSeri();
             kmOyunDokSurukleKur();
+            kmOyunDokBoyutlaKur();
             if(_kmOyunDokKonum === 'serbest') kmOyunDokGorunumUygula();
             kmOyunYksKartSurukleKur();
         }
