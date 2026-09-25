@@ -13416,7 +13416,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-ninja-cp .km-ninja-cp-hale{ fill:var(--_c); opacity:0; transition:opacity .6s ease; }
 .km-ninja-cp.hit .km-ninja-cp-hale{ opacity:.28; }
 .km-ninja-cp-num{ font-family:var(--font-display); font-weight:400; font-size:9px; fill:#3f6155; pointer-events:none; }
-.km-ninja-tapinak-fener{ fill:#ffb347; }
+.km-ninja-tapinak-fener{ fill:var(--km-tapinak-renk, #ffb347); transition:fill .8s ease; }
+.km-ninja-tapinak-isik{ fill:var(--km-tapinak-renk, #ffb347); opacity:.16; transition:fill .8s ease; }
 .km-ninja-tapinak-hale{ fill:#ffb347; opacity:.22; }
 .km-ninja-yaprak{ fill:#1b4a3d; transform-box:fill-box; transform-origin:center; animation:kmNinjaYaprak 12s linear infinite; }
 .km-ninja-yaprak.y2{ fill:#2f7a64; }
@@ -13430,6 +13431,71 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-ninja-token.flying .km-sil-poz{ transform:rotate(9deg); }
 .km-ninja-token .km-tag-bg{ fill:rgba(3,5,4,.88); stroke:var(--_c); stroke-width:1.4; }
 .km-ninja-token .km-tag-text{ font-family:var(--font-body); font-weight:700; fill:var(--ink); font-size:9px; }
+/* Canlı ninjalar (2026-09-25) — bacaklar ayrı parça: koşarken kalçadan (bbox üst-orta) salınır; uçurum
+   üstünde bir kerelik takla (gövde merkezi etrafında); kapıya/tapınağa varınca kılıç çekme pozu. */
+.km-ninja-token .km-sil-bacak{ transform-box:fill-box; transform-origin:50% 0%; }
+.km-ninja-token.kosuyor .km-sil-bacak.b1{ animation:kmSilBacak .24s ease-in-out infinite alternate; }
+.km-ninja-token.kosuyor .km-sil-bacak.b2{ animation:kmSilBacak .24s ease-in-out infinite alternate-reverse; }
+@keyframes kmSilBacak{ from{ transform:rotate(-32deg); } to{ transform:rotate(30deg); } }
+.km-ninja-token.kosuyor .km-sil-poz{ transform:rotate(13deg); }
+.km-ninja-token.havada .km-sil-poz{ transform-origin:50% 55%; animation:kmSilTakla .55s cubic-bezier(.3,.6,.4,1) 1; }
+@keyframes kmSilTakla{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+.km-ninja-token .km-sil-kilic-cek{ opacity:0; transition:opacity .12s ease; }
+.km-ninja-token .km-sil-kilic-ust{ stroke:#e8eef2; stroke-width:2.2; stroke-linecap:round; }
+.km-ninja-token .km-sil-parilti{ fill:#fff; opacity:0; }
+.km-ninja-token.kilic .km-sil-kilic-cek{ opacity:1; }
+.km-ninja-token.kilic .km-sil-kilic, .km-ninja-token.kilic .km-sil-kol{ opacity:0; }
+.km-ninja-token.kilic .km-sil-parilti{ animation:kmSilParilti .9s ease-out 2; }
+@keyframes kmSilParilti{ 0%,100%{ opacity:0; } 40%{ opacity:1; } }
+/* Gölge-klon (altın seri) ve efektler */
+.km-ninja-klon{ pointer-events:none; animation:kmNinjaKlon .5s ease-out forwards; }
+.km-ninja-klon .km-sil-govde, .km-ninja-klon .km-sil-atki{ fill:var(--_c); }
+.km-ninja-klon .km-sil-kilic{ stroke:var(--_c); }
+.km-ninja-klon .km-sil-goz{ opacity:0; }
+@keyframes kmNinjaKlon{ from{ opacity:.5; } to{ opacity:0; } }
+.km-ninja-suriken, .km-ninja-savrulan{ pointer-events:none; }
+.km-ninja-savrulan{ fill:#2f7a64; transform-box:fill-box; transform-origin:center; }
+.km-ninja-savrulan.y2{ fill:#8fd1b4; }
+/* Günün saati katmanları — opaklık JS'ten, geçiş burada. Ateşböcekleri sadece gece modunda animasyonlu. */
+.km-ninja-saat{ transition:opacity 2.4s ease; pointer-events:none; }
+#km-ninja-yildizlar circle{ fill:#eef3ff; }
+.km-ninja-ates{ fill:#f3ff8a; opacity:0; }
+.km-ninja-gece-modu .km-ninja-ates{ animation:kmNinjaAtes 4s ease-in-out infinite alternate; }
+@keyframes kmNinjaAtes{ 0%{ opacity:.1; transform:translate(0,0); } 45%{ opacity:.95; } 100%{ opacity:.2; transform:translate(14px,-18px); } }
+.km-ninja-gece-modu .km-ninja-cp.hit .km-ninja-cp-hale{ opacity:.5; }
+.km-ninja-gece-modu .km-ninja-tapinak-isik{ opacity:.34; }
+/* Gong */
+.km-ninja-gong{ transform-box:fill-box; transform-origin:50% 0%; }
+.caliyor > .km-ninja-gong{ animation:kmNinjaGong 2s cubic-bezier(.3,.6,.3,1) 1; }
+@keyframes kmNinjaGong{ 0%{ transform:rotate(0); } 12%{ transform:rotate(-16deg); } 30%{ transform:rotate(11deg); } 50%{ transform:rotate(-6deg); } 70%{ transform:rotate(3deg); } 100%{ transform:rotate(0); } }
+.km-ninja-gong-dalga{ fill:none; stroke:#ffd27a; stroke-width:2; opacity:0; transform-box:fill-box; transform-origin:center; }
+.caliyor > .km-ninja-gong-dalga{ animation:kmNinjaGongDalga 1.4s ease-out 1; }
+.caliyor > .km-ninja-gong-dalga.d2{ animation-delay:.35s; }
+@keyframes kmNinjaGongDalga{ from{ opacity:.9; transform:scale(1); } to{ opacity:0; transform:scale(4.2); } }
+/* Tapınak tabelası */
+.km-ninja-tabela-baslik{ font-family:var(--font-display); font-size:10.5px; fill:#f1d58a; letter-spacing:.06em; }
+.km-ninja-tabela-ad{ font-family:var(--font-body); font-weight:800; font-size:14px; }
+/* Sensei */
+.km-ninja-sensei-goz{ fill:#ffd23f; opacity:.3; }
+.km-ninja-sensei.sinav .km-ninja-sensei-goz{ opacity:1; animation:kmSenseiGoz 1.2s ease-in-out infinite; }
+@keyframes kmSenseiGoz{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+.km-ninja-sensei-lbl{ font-family:var(--font-display); font-size:7.5px; fill:#9fb9ae; letter-spacing:.12em; }
+.km-ninja-sensei.sinav .km-ninja-sensei-lbl{ fill:#ffd23f; }
+.km-ninja-sensei-poz{ transform-box:fill-box; transform-origin:50% 100%; }
+.km-ninja-sensei.onay .km-ninja-sensei-poz{ animation:kmSenseiEgil 1.4s ease-in-out 1; }
+.km-ninja-sensei.red .km-ninja-sensei-poz{ animation:kmSenseiRed .6s ease-in-out 2; }
+@keyframes kmSenseiEgil{ 0%,100%{ transform:rotate(0); } 35%,65%{ transform:rotate(-24deg); } }
+@keyframes kmSenseiRed{ 0%,100%{ transform:translateX(0); } 30%{ transform:translateX(-3px) rotate(-4deg); } 70%{ transform:translateX(3px) rotate(4deg); } }
+.km-ninja-sinav{ position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:6; display:none; align-items:center; gap:10px; max-width:92%; padding:8px 16px 8px 10px; border-radius:14px; background:rgba(8,6,2,0.88); border:1.5px solid #ffd23f; box-shadow:0 0 24px rgba(255,210,63,0.35); color:#fff6d6; pointer-events:none; }
+.km-ninja-sinav.goster{ display:flex; animation:kmNinjaSinavNabiz 1.6s ease-in-out infinite; }
+.km-ninja-sinav-ikon{ font-size:26px; }
+.km-ninja-sinav b{ display:block; font-family:var(--font-display); font-weight:400; font-size:14px; letter-spacing:.08em; color:#ffd23f; }
+.km-ninja-sinav small{ display:block; font-size:12px; font-weight:700; }
+.km-ninja-sinav small b{ display:inline; font-size:12px; letter-spacing:0; }
+@keyframes kmNinjaSinavNabiz{ 0%,100%{ box-shadow:0 0 18px rgba(255,210,63,0.25); } 50%{ box-shadow:0 0 34px rgba(255,210,63,0.6); } }
+#km-oyun-wrap:fullscreen .km-ninja-sinav b{ font-size:19px; }
+#km-oyun-wrap:fullscreen .km-ninja-sinav small{ font-size:15px; }
+@media (prefers-reduced-motion: reduce){ .km-ninja-token.kosuyor .km-sil-bacak, .km-ninja-token.havada .km-sil-poz, .km-ninja-gece-modu .km-ninja-ates, .caliyor > .km-ninja-gong, .km-ninja-sinav.goster, .km-ninja-sensei.sinav .km-ninja-sensei-goz{ animation:none; } }
 
 /* Mini Monopoly */
 #km-oyun-panel-monopoly{ background:radial-gradient(120% 100% at 50% 45%,#16341f 0%,#0d1b12 60%,#081208 100%); }
@@ -15654,12 +15720,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <linearGradient id="kmNinjaSis1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440"><stop offset="0" stop-color="#c4efe0" stop-opacity="0"/><stop offset=".62" stop-color="#c4efe0" stop-opacity=".32"/><stop offset="1" stop-color="#c4efe0" stop-opacity=".1"/></linearGradient>
                     <linearGradient id="kmNinjaSis2" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440"><stop offset="0" stop-color="#a3e3cb" stop-opacity="0"/><stop offset=".72" stop-color="#a3e3cb" stop-opacity=".2"/><stop offset="1" stop-color="#a3e3cb" stop-opacity="0"/></linearGradient>
                     <radialGradient id="kmNinjaFenerHale"><stop offset="0" stop-color="#ffb347" stop-opacity=".6"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+                    <linearGradient id="kmNinjaGunbatimiGok" gradientUnits="userSpaceOnUse" x1="0" y1="-60" x2="0" y2="360"><stop offset="0" stop-color="#3b2a5e"/><stop offset=".5" stop-color="#d9573a"/><stop offset="1" stop-color="#ffb347"/></linearGradient>
+                    <linearGradient id="kmNinjaGeceGok" gradientUnits="userSpaceOnUse" x1="0" y1="-60" x2="0" y2="400"><stop offset="0" stop-color="#050818"/><stop offset=".6" stop-color="#101d42"/><stop offset="1" stop-color="#1b3150"/></linearGradient>
+                    <radialGradient id="kmNinjaGunesGrad"><stop offset="0" stop-color="#fff1c2"/><stop offset=".38" stop-color="#ffc56b"/><stop offset="1" stop-color="#ff7a3d" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmNinjaAyHale"><stop offset="0" stop-color="#f4f1dc" stop-opacity=".42"/><stop offset="1" stop-color="#f4f1dc" stop-opacity="0"/></radialGradient>
                   </defs>
                   <!-- meet ile panel oranı viewBox'tan farklıysa SVG kendi kutusunda viewBox DIŞINI da çizer
                        (üst/alt ya da sol/sağ bant). Gökyüzü/bambu/zemin bilerek viewBox'ın çok dışına taşıyor ki
                        her ekran oranında bantlar kesintisiz sahne olsun, düz renk şerit kalmasın. -->
                   <rect x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaGok)"/>
                   <rect class="km-ninja-gok-isik" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaIsik)"/>
+                  <rect id="km-ninja-gunbatimi" class="km-ninja-saat" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaGunbatimiGok)" opacity="0"/>
+                  <circle id="km-ninja-gunes" class="km-ninja-saat" cx="330" cy="262" r="100" fill="url(#kmNinjaGunesGrad)" opacity="0"/>
+                  <rect id="km-ninja-gece" class="km-ninja-saat" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaGeceGok)" opacity="0"/>
+                  <g id="km-ninja-yildizlar" class="km-ninja-saat" opacity="0"></g>
+                  <g id="km-ninja-ay" class="km-ninja-saat" opacity="0"><circle cx="880" cy="74" r="86" fill="url(#kmNinjaAyHale)"/><circle cx="880" cy="74" r="27" fill="#f4f1dc"/><circle cx="889" cy="68" r="6" fill="#dcd6b4" opacity=".6"/><circle cx="872" cy="83" r="4" fill="#dcd6b4" opacity=".5"/></g>
                   <path fill="#6cb9a3" opacity=".55" d="M-400 310 L0 300 L60 272 L130 290 L210 242 L280 262 L350 214 L420 250 L500 226 L560 192 L640 236 L720 206 L800 242 L880 202 L950 226 L1030 188 L1110 216 L1200 196 L1600 214 L1600 440 L-400 440 Z"/>
                   <g fill="#5aa690" opacity=".85" transform="translate(560,192)"><rect x="-1.5" y="-40" width="3" height="10"/><path d="M-13,-26 L0,-32 L13,-26 L10,-24 L-10,-24 Z"/><rect x="-7" y="-24" width="14" height="6"/><path d="M-17,-16 L0,-23 L17,-16 L13,-14 L-13,-14 Z"/><rect x="-9" y="-14" width="18" height="14"/></g>
                   <path id="km-ninja-bambu-uzak" fill="#4f9f88" opacity=".62"/>
@@ -15667,6 +15742,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <path id="km-ninja-bambu-orta" fill="#2d725f" opacity=".86"/>
                   <rect class="km-ninja-sis" x="-400" y="-400" width="2000" height="840" fill="url(#kmNinjaSis2)"/>
                   <path id="km-ninja-bambu-yakin" fill="#1b4f42" opacity=".92"/>
+                  <rect id="km-ninja-ton-gunbatimi" class="km-ninja-saat" x="-400" y="-400" width="2000" height="840" fill="#ff5a24" opacity="0"/>
+                  <rect id="km-ninja-ton-gece" class="km-ninja-saat" x="-400" y="-400" width="2000" height="840" fill="#050818" opacity="0"/>
+                  <g id="km-ninja-atesbocekleri" class="km-ninja-saat" opacity="0"></g>
                   <g id="km-ninja-yapraklar"></g>
                   <rect x="-400" y="440" width="2000" height="600" fill="#030504"/>
                   <g class="km-ninja-sil" transform="translate(58,390)">
@@ -15680,7 +15758,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <ellipse cx="612" cy="311" rx="12" ry="5"/><ellipse cx="612" cy="302" rx="9" ry="4.5"/><ellipse cx="612" cy="294.5" rx="6" ry="3.5"/>
                     <g transform="translate(1004,205)"><rect x="-12" y="-3" width="24" height="3"/><rect x="-3.5" y="-22" width="7" height="19"/><rect x="-10" y="-25" width="20" height="4"/><rect x="-8" y="-38" width="16" height="13"/><path d="M-15,-38 L0,-48 L15,-38 Z"/><rect x="-2" y="-53" width="4" height="6"/></g>
                   </g>
-                  <rect x="998" y="171" width="12" height="7" fill="#ffb347" opacity=".85"/>
+                  <rect class="km-ninja-tapinak-fener" x="998" y="171" width="12" height="7" opacity=".85"/>
                   <g transform="translate(1152,205)">
                     <circle cx="0" cy="-30" r="46" fill="url(#kmNinjaFenerHale)"/>
                     <g class="km-ninja-sil">
@@ -15692,11 +15770,33 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                       <rect x="-1.5" y="-90" width="3" height="16"/>
                     </g>
                     <rect class="km-ninja-tapinak-fener" x="-7" y="-25" width="14" height="15" rx="2"/>
+                    <circle class="km-ninja-tapinak-isik" cx="0" cy="-18" r="30"/>
                   </g>
+                  <g id="km-ninja-sancaklar" transform="translate(1152,205)"></g>
+                  <g transform="translate(1036,205)">
+                    <g class="km-ninja-sil"><rect x="-17" y="-60" width="3.5" height="60"/><rect x="13.5" y="-60" width="3.5" height="60"/><rect x="-21" y="-63" width="42" height="4" rx="1"/></g>
+                    <circle class="km-ninja-gong-dalga" cx="0" cy="-36" r="13"/><circle class="km-ninja-gong-dalga d2" cx="0" cy="-36" r="13"/>
+                    <g id="km-ninja-gong" class="km-ninja-gong"><line x1="0" y1="-59" x2="0" y2="-49" stroke="#030504" stroke-width="1.6"/><circle cx="0" cy="-36" r="13" fill="#a86f1f" stroke="#2e1d06" stroke-width="2"/><circle cx="0" cy="-36" r="5.5" fill="#d9a441"/></g>
+                  </g>
+                  <g id="km-ninja-sensei" class="km-ninja-sensei" transform="translate(1098,205)">
+                    <g class="km-ninja-sensei-poz km-ninja-sil">
+                      <line x1="-15" y1="0" x2="-18" y2="-64" stroke="#030504" stroke-width="3.2" stroke-linecap="round"/>
+                      <path d="M-13,0 L13,0 L9.5,-29 Q8,-40 0,-42 Q-8,-40 -10,-29 Z"/>
+                      <path d="M-8,-35 L-17,-43 L-15,-46 L-5,-39 Z"/>
+                      <circle cx="0" cy="-48" r="6.8"/>
+                      <path d="M-5,-45 Q-4,-33 -1,-28 Q2,-35 3,-44 Z"/>
+                      <path d="M-16,-51 Q0,-64 16,-51 Q0,-55.5 -16,-51 Z"/>
+                    </g>
+                    <rect class="km-ninja-sensei-goz" x="-5" y="-50.2" width="3.6" height="1.4" rx=".7"/>
+                    <text class="km-ninja-sensei-lbl" x="0" y="15" text-anchor="middle">SENSEİ</text>
+                  </g>
+                  <g id="km-ninja-tabela" transform="translate(1016,14)"></g>
                   <path id="km-oyun-ninja-path" class="km-ninja-path" d="M 110 390 L 190 390 Q 205 360 222 365 L 315 365 Q 330 332 348 340 L 455 340 Q 505 280 555 315 L 675 315 Q 690 280 708 285 L 785 285 Q 800 250 818 255 L 885 255 Q 930 185 975 205 L 1110 205"/>
                   <g id="km-oyun-shurikenler"></g>
                   <g id="km-oyun-ninjalar"></g>
+                  <g id="km-ninja-efekt"></g>
                 </svg>
+                <div class="km-ninja-sinav" id="km-ninja-sinav"></div>
             </div>`;
             // Mini Monopoly — kapalı dörtgen tahta turu (diğer temalardan farklı: açık bir güzergah değil,
             // kapalı bir döngü; bazı kareler ufak ceza/bonus taşıyor — "orada ufak cezalar olabilir" isteği).
@@ -16055,7 +16155,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-oyun-coklu-toggle-row" id="km-oyun-coklu-toggle-row" style="${_kmOyunTakimModu ? '' : 'display:none;'}">
                         <div class="km-oyun-coklu-toggle km-oyun-takim-toggle">
                             <button class="${!_kmOyunCokluMu ? 'aktif' : ''}" data-coklu="0" onclick="kmOyunCokluDegistir(false)">🏫 Sınıf</button>
-                            <button class="${_kmOyunCokluMu ? 'aktif' : ''}" data-coklu="1" onclick="kmOyunCokluDegistir(true)">🏁 Yarış</button>
+                            <button class="${_kmOyunCokluMu ? 'aktif' : ''}" data-coklu="1" onclick="kmOyunCokluDegistir(true)">${_kmOyunAktifTema === 'ninja' ? '🏯 Klan' : '🏁 Yarış'}</button>
                         </div>
                         <button class="km-oyun-geri-al-btn" id="km-oyun-takim-duzenle-btn" onclick="kmOyunTakimEditorAc()" style="${_kmOyunCokluMu ? '' : 'display:none;'}">⚙️ Takımları Düzenle</button>
                     </div>
@@ -16399,6 +16499,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div class="km-sk-sonra">${n > 1 ? `<span class="km-sk-sonra-lbl">SONRA</span>${sonra}` : ''}<button class="km-sk-degistir${_kmOyunSporcuIzgaraAcik ? ' aktif' : ''}" onclick="kmOyunSporcuIzgaraAcKapat()" aria-expanded="${_kmOyunSporcuIzgaraAcik ? 'true' : 'false'}">${_kmOyunSporcuIzgaraAcik ? 'Kapat' : 'Değiştir'}</button></div>
                 ${izgara}`;
             kmOyunSiradaGuncelle();
+            if(_kmOyunAktifTema === 'ninja' && !_kmOyunKilit) kmNinjaSenseiCagriGuncelle();
         }
         // "Değiştir" — tüm sınıfı avatar ızgarası olarak açar; sıralama hangi görünümde olursa olsun
         // (takım yarışı, lig…) her sporcu buradan tek dokunuşla seçilebilir. Seçimden sonra açık kalır.
@@ -16421,6 +16522,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisCiz();
             else if(_kmOyunAktifTema === 'pist') kmOyunResyncPist();
             else if(_kmOyunAktifTema === 'kehanet') kmOyunKehanetAlevGuncelle();
+            else if(_kmOyunAktifTema === 'ninja') kmNinjaSenseiCagriGuncelle();
         }
         // Alkış Butonu (2026-09-04, Heyecan Motoru araştırması — Strava Kudos: ücretsiz, bir dokunuşluk
         // sosyal tanınma). Sırası gelmeyen sporcular ya da koç, iyi bir seri sonrası chip'e dokunup
@@ -17001,7 +17103,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 return { t: t, idx: idx, frac: frac, cp: Math.floor(frac * KM_OYUN_CP_SAYISI + 1e-6), puan: puan };
             }).sort(function(a, b) { return b.frac - a.frac; });
             let lider = sirali[0];
-            let html = '<div class="km-oyun-lider-baslik">🏁 Yarış Sıralaması</div>';
+            let html = '<div class="km-oyun-lider-baslik">' + (_kmOyunAktifTema === 'ninja' ? '🏯 Klan Sıralaması' : '🏁 Yarış Sıralaması') + '</div>';
             html += sirali.map(function(o, rank) {
                 let fark = '';
                 if(sirali.length > 1) {
@@ -18244,9 +18346,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunNinjaKarakterSVG(s, renk, uid) {
             let takimRozetiHTML = '';
+            // Klan modu (2026-09-25): takım emojisi yerine sırtta klan sancağı (sashimono) — klan rengi + arması.
             if(_kmOyunCokluMu && _kmOyunTakimlar.length >= 2) {
                 let ti = kmOyunSporcuTakimIndex(s.g, s.ad);
-                if(ti !== -1) takimRozetiHTML = `<text x="0" y="-56" font-size="14" text-anchor="middle" opacity="0.85">${_kmOyunTakimlar[ti].emoji}</text>`;
+                if(ti !== -1) { let t = _kmOyunTakimlar[ti]; takimRozetiHTML = `<g class="km-sil-sancak"><line x1="-8" y1="-30" x2="-8" y2="-84" stroke="#030504" stroke-width="2.2"/><rect x="-8" y="-84" width="21" height="29" rx="1.5" fill="${t.renk}" stroke="#030504" stroke-width="1.4"/><text x="2.5" y="-64" font-size="13" text-anchor="middle">${t.emoji}</text></g>`; }
             }
             let kilitSeviye = kmOyunKilitSeviyesi(kmOyunDurumAl(s.g, s.ad)), cerceveHTML = '';
             if(kilitSeviye === 1) cerceveHTML = '<ellipse cx="0" cy="-25" rx="21" ry="29" fill="none" stroke="#cd8a4a" stroke-width="2" opacity="0.65" stroke-dasharray="3 2.4"/>';
@@ -18254,9 +18357,186 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return `<g class="km-char-bob">${cerceveHTML}<g class="km-sil-poz">
                 <path class="km-sil-atki" d="M-2,-33 C-10,-36 -19,-31 -30,-36 C-23,-28 -12,-28 -2,-30 Z M-2,-31 C-9,-29 -16,-24 -25,-25 C-17,-20 -9,-24 -2,-28 Z"/>
                 <line class="km-sil-kilic" x1="-11" y1="-18" x2="9" y2="-47"/>
-                <path class="km-sil-govde" d="M-15,-38 L0,-50 L15,-38 Q0,-35.5 -15,-38 Z M-4.5,-36 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 Z M-5,-31 C-8,-24 -7,-17 -4,-13 L6,-14 C9,-20 9,-26 7,-31 Z M5,-28 L14,-21 L12,-18.5 L3.5,-24 Z M-4,-28 L-11,-21 L-9,-19 L-2.5,-24.5 Z M2,-15 L10,-8 L8,-1 L13,0 L13,-1.6 L10.6,-2 L12.6,-8.6 L6,-16.5 Z M-4,-15 L-9,-6 L-14,-1 L-11,0 L-6,-4.5 L1,-13 Z"/>
+                <path class="km-sil-govde km-sil-bacak b1" d="M2,-15 L10,-8 L8,-1 L13,0 L13,-1.6 L10.6,-2 L12.6,-8.6 L6,-16.5 Z"/>
+                <path class="km-sil-govde km-sil-bacak b2" d="M-4,-15 L-9,-6 L-14,-1 L-11,0 L-6,-4.5 L1,-13 Z"/>
+                <path class="km-sil-govde" d="M-15,-38 L0,-50 L15,-38 Q0,-35.5 -15,-38 Z M-4.5,-36 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 Z M-5,-31 C-8,-24 -7,-17 -4,-13 L6,-14 C9,-20 9,-26 7,-31 Z M-4,-28 L-11,-21 L-9,-19 L-2.5,-24.5 Z"/>
+                <path class="km-sil-govde km-sil-kol" d="M5,-28 L14,-21 L12,-18.5 L3.5,-24 Z"/>
+                <g class="km-sil-kilic-cek"><path class="km-sil-govde" d="M4,-29 L15,-39 L17.5,-36.5 L6.5,-26 Z"/><line class="km-sil-kilic-ust" x1="14" y1="-39" x2="38" y2="-64"/><circle class="km-sil-parilti" cx="38" cy="-64" r="2.4"/></g>
                 <rect class="km-sil-goz" x="2.4" y="-37.3" width="4" height="1.4" rx=".7"/>
             </g>${takimRozetiHTML}</g>`;
+        }
+        // ===== NİNJA: canlı karakterler, günün saati, atış efektleri, tapınak finali, Sensei, klanlar (2026-09-25) =====
+        // Kullanıcı: "ninja oyunu bu haftanın favori oyunu olacak ama bu hali çok basit". Hepsi SADECE görsel/
+        // eğlence katmanı; gerçek skora dokunan tek şey yok. Performans: canlı filtre yok, efektler kısa ömürlü
+        // ve sadece transform/opacity; ateşböcekleri yalnız gece görünürken animasyonlu.
+        const KM_NINJA_SENSEI_ORAN = 0.7, KM_NINJA_KAPI_FRAC = 0.965;
+        let _kmOyunSonSeriOklar = [], _kmNinjaSaatEvre = null, _kmNinjaSusleOnbellek = null;
+        function kmNinjaSahneSusle() {
+            if(!_kmNinjaSusleOnbellek) {
+                let r = kmOyunNinjaTohum(97), yildiz = '', ates = '';
+                for(let k = 0; k < 70; k++) { let x = -380 + r() * 1960, y = -380 + r() * 560, rr = 0.6 + r() * 1.3; yildiz += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${rr.toFixed(1)}" opacity="${(0.4 + r() * 0.6).toFixed(2)}"/>`; }
+                for(let k = 0; k < 18; k++) { let x = 40 + r() * 1120, y = 140 + r() * 210, d = (3 + r() * 4).toFixed(1), g = (-r() * 6).toFixed(1); ates += `<circle class="km-ninja-ates" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(1.6 + r() * 1.2).toFixed(1)}" style="animation-duration:${d}s; animation-delay:${g}s;"/>`; }
+                _kmNinjaSusleOnbellek = { yildiz: yildiz, ates: ates };
+            }
+            let yg = document.getElementById('km-ninja-yildizlar'); if(yg) yg.innerHTML = _kmNinjaSusleOnbellek.yildiz;
+            let ag = document.getElementById('km-ninja-atesbocekleri'); if(ag) ag.innerHTML = _kmNinjaSusleOnbellek.ates;
+            _kmNinjaSaatEvre = null;
+        }
+        // Günün saati — sınıfın ORTALAMA ilerlemesine göre: sabah (yeşil sis) → gün batımı → gece (ay, yıldız,
+        // ateşböceği). Katman opaklıkları CSS transition ile yavaşça değişir. Evre ilerleyince kısa bir duyuru.
+        function kmNinjaSaatGuncelle(duyur) {
+            let roster = _kmOyunRosterCache; if(!roster.length) return;
+            let ort = roster.reduce(function(a, o) { return a + Math.min(1, o.frac || 0); }, 0) / roster.length;
+            let kel = function(v) { return Math.max(0, Math.min(1, v)); };
+            let S = kel((ort - 0.22) / 0.25), N = kel((ort - 0.55) / 0.25);
+            let ayar = { 'km-ninja-gunbatimi': S * (1 - N * 0.7), 'km-ninja-gunes': S * (1 - N), 'km-ninja-gece': N * 0.94, 'km-ninja-yildizlar': N, 'km-ninja-ay': N, 'km-ninja-ton-gunbatimi': 0.2 * S * (1 - N), 'km-ninja-ton-gece': 0.5 * N, 'km-ninja-atesbocekleri': N };
+            Object.keys(ayar).forEach(function(id) { let e = document.getElementById(id); if(e) e.setAttribute('opacity', ayar[id].toFixed(3)); });
+            let panel = document.getElementById('km-oyun-panel-ninja'); if(panel) panel.classList.toggle('km-ninja-gece-modu', N > 0.3);
+            let evre = N >= 0.5 ? 2 : (S >= 0.5 ? 1 : 0);
+            if(duyur && _kmNinjaSaatEvre !== null && evre > _kmNinjaSaatEvre) {
+                setTimeout(function() {
+                    try { kmOyunBanner(evre === 2 ? '🌙 GECE ÇÖKTÜ' : '🌅 GÜN BATIYOR', evre === 2 ? 'Ninjalar karanlıkta — tapınak yakın!' : 'Sınıf yolun ortasını geçti', 'cp'); } catch(e) {}
+                }, 2400);
+            }
+            _kmNinjaSaatEvre = evre;
+        }
+        function kmNinjaSvgPct(x, y) { return kmOyunSvgPct('km-oyun-svg-ninja', x, y); }
+        function kmNinjaSurikenAt(bas, hedef, renk) {
+            let kat = document.getElementById('km-ninja-efekt'); if(!kat) return;
+            let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'km-ninja-suriken');
+            g.innerHTML = '<path d="M0,-8 L2.2,-2.2 L8,0 L2.2,2.2 L0,8 L-2.2,2.2 L-8,0 L-2.2,-2.2 Z" fill="#d7dde2" stroke="#1a1f24" stroke-width=".8"/><circle r="1.6" fill="#1a1f24"/>';
+            kat.appendChild(g);
+            let sure = 430, t0 = performance.now(), yay = Math.min(60, Math.abs(hedef.x - bas.x) * 0.18);
+            try { sesCal(2400, 0.05); } catch(e) {}
+            (function adim(now) {
+                let t = Math.min(1, (now - t0) / sure);
+                let x = bas.x + (hedef.x - bas.x) * t, y = bas.y + (hedef.y - bas.y) * t - Math.sin(t * Math.PI) * yay;
+                g.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(t * 1080).toFixed(0)})`);
+                if(t < 1) requestAnimationFrame(adim);
+                else {
+                    g.remove();
+                    let p = kmNinjaSvgPct(hedef.x, hedef.y);
+                    kmOyunBurst(document.getElementById('km-oyun-burst'), p.xPct, p.yPct, renk, 10, false);
+                    try { sesCal(3200, 0.04); } catch(e) {}
+                }
+            })(t0);
+        }
+        // Altın seri: koşarken arkada kısa ömürlü gölge-klonlar (ninjanın kopyası, etiketsiz, renkli, soluyor).
+        function kmNinjaKlonBirak(el) {
+            let kat = document.getElementById('km-ninja-efekt'); if(!kat || !el) return;
+            let k = el.cloneNode(true);
+            k.removeAttribute('id');
+            k.setAttribute('class', 'km-ninja-token km-ninja-klon');
+            k.querySelectorAll('.km-tag-bg').forEach(function(bg) { if(bg.parentNode) bg.parentNode.remove(); });
+            k.querySelectorAll('.km-sil-sancak').forEach(function(x) { x.remove(); });
+            kat.appendChild(k);
+            setTimeout(function() { k.remove(); }, 520);
+        }
+        function kmNinjaYaprakSavur(nokta) {
+            let kat = document.getElementById('km-ninja-efekt'); if(!kat) return;
+            for(let k = 0; k < 12; k++) {
+                // Konum dış <g>'nin attribute'unda, animasyon içteki path'te — CSS transform animasyonu SVG
+                // transform attribute'unu EZDİĞİ için ikisi aynı elemanda olamaz (yaprak köşeye ışınlanırdı).
+                let kap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                kap.setAttribute('transform', `translate(${(nokta.x - 20 + Math.random() * 40).toFixed(1)},${(nokta.y - 40 + Math.random() * 30).toFixed(1)})`);
+                let p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                p.setAttribute('d', 'M0,0 Q6,-2.6 13,0 Q6,2.6 0,0 Z');
+                p.setAttribute('class', 'km-ninja-savrulan' + (k % 2 ? ' y2' : ''));
+                kap.appendChild(p); kat.appendChild(kap);
+                let dx = 60 + Math.random() * 160, dy = -50 + Math.random() * 110, don = 200 + Math.random() * 500;
+                if(p.animate) p.animate([{ transform: 'translate(0,0) rotate(0deg)', opacity: 1 }, { transform: `translate(${dx}px,${dy}px) rotate(${don}deg)`, opacity: 0 }], { duration: 1100 + Math.random() * 600, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = function() { kap.remove(); };
+                else setTimeout(function() { kap.remove(); }, 1200);
+            }
+        }
+        // ---- Tapınak: günlük tabela (bitirenler), fener rengi, klan sancakları ----
+        function kmNinjaTapinakAnahtar() { return 'dag_km_ninja_tapinak_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmNinjaTapinakDurum() {
+            let d = null, bugun = bugunISO();
+            try { d = JSON.parse(localStorage.getItem(kmNinjaTapinakAnahtar()) || 'null'); } catch(e) {}
+            if(!d || d.tarih !== bugun) d = { tarih: bugun, bitirenler: [], sancaklar: [], fener: null };
+            return d;
+        }
+        function kmNinjaTapinakKaydet(d) { try { localStorage.setItem(kmNinjaTapinakAnahtar(), JSON.stringify(d)); } catch(e) {} }
+        function kmNinjaTapinakSifirla() { try { localStorage.removeItem(kmNinjaTapinakAnahtar()); } catch(e) {} }
+        function kmNinjaTapinakCiz() {
+            let d = kmNinjaTapinakDurum();
+            let panel = document.getElementById('km-oyun-panel-ninja');
+            if(panel) { if(d.fener) panel.style.setProperty('--km-tapinak-renk', d.fener); else panel.style.removeProperty('--km-tapinak-renk'); }
+            let tb = document.getElementById('km-ninja-tabela');
+            if(tb) {
+                let liste = d.bitirenler.slice(0, 5);
+                if(!liste.length) tb.innerHTML = '';
+                else {
+                    let h = 36 + liste.length * 19;
+                    tb.innerHTML = `<line x1="-50" y1="-30" x2="-50" y2="2" stroke="#2a1a0e" stroke-width="1.8"/><line x1="50" y1="-30" x2="50" y2="2" stroke="#2a1a0e" stroke-width="1.8"/>
+                        <rect x="-74" y="0" width="148" height="${h}" rx="5" fill="#23150a" stroke="#b8862b" stroke-width="2"/>
+                        <text class="km-ninja-tabela-baslik" x="0" y="20" text-anchor="middle">🏯 TAPINAĞA GİRENLER</text>
+                        ${liste.map(function(b, bi) { return `<text class="km-ninja-tabela-ad" x="-62" y="${41 + bi * 19}" fill="${b.renk}">${bi + 1}. ${esc(b.ad)}</text>`; }).join('')}`;
+                }
+            }
+            let sg = document.getElementById('km-ninja-sancaklar');
+            if(sg) {
+                let yer = [[-38, -128], [38, -128], [-54, -108], [54, -108]];
+                sg.innerHTML = d.sancaklar.slice(0, 4).map(function(t, ti) {
+                    let p = yer[ti];
+                    return `<g class="km-ninja-dikili-sancak"><line x1="${p[0]}" y1="-50" x2="${p[0]}" y2="${p[1]}" stroke="#030504" stroke-width="2.4"/><rect x="${p[0]}" y="${p[1]}" width="22" height="30" rx="1.5" fill="${t.renk}" stroke="#030504" stroke-width="1.4"/><text x="${p[0] + 11}" y="${p[1] + 20}" font-size="14" text-anchor="middle">${t.emoji}</text></g>`;
+                }).join('');
+            }
+        }
+        function kmNinjaGongCal() {
+            let g = document.getElementById('km-ninja-gong'); if(!g) return;
+            let kap = g.parentNode;
+            kap.classList.remove('caliyor'); void kap.getBoundingClientRect(); kap.classList.add('caliyor');
+            setTimeout(function() { kap.classList.remove('caliyor'); }, 2200);
+            try { sesCal(98, 2.2); sesCal(147, 1.6); setTimeout(function() { try { sesCal(196, 1.2); } catch(e) {} }, 60); } catch(e) {}
+        }
+        function kmNinjaTapinakFinal(s, i) {
+            let d = kmNinjaTapinakDurum(), renk = kmOyunRenk('ninja', i);
+            let klan = (_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2) ? kmOyunSporcuTakimIndex(s.g, s.ad) : -1;
+            let t = klan !== -1 ? _kmOyunTakimlar[klan] : null;
+            let ad = t ? (t.emoji + ' ' + t.ad) : kmOyunIlkAd(s.ad);
+            if(t) { renk = t.renk; if(!d.sancaklar.some(function(x) { return x.ad === t.ad; })) d.sancaklar.push({ ad: t.ad, emoji: t.emoji, renk: t.renk }); }
+            if(!d.bitirenler.some(function(b) { return b.ad === ad; })) d.bitirenler.push({ ad: ad, renk: renk });
+            d.fener = renk;
+            kmNinjaTapinakKaydet(d);
+            kmNinjaGongCal();
+            kmNinjaTapinakCiz();
+            let p = kmNinjaSvgPct(1152, 170);
+            kmOyunBurst(document.getElementById('km-oyun-burst'), p.xPct, p.yPct, renk, 30, true);
+            setTimeout(function() { try { kmOyunBanner('🔔 ' + (t ? t.ad.toLocaleUpperCase('tr-TR') + ' KLANI' : kmOyunIlkAd(s.ad).toLocaleUpperCase('tr-TR')) + ' TAPINAKTA!', t ? 'Klan sancağı tapınağa dikildi' : 'Adı tapınak tabelasına yazıldı', 'bitis'); } catch(e) {} }, 1900);
+        }
+        // ---- Sensei ----
+        function kmNinjaSenseiCagriGizle() {
+            let c = document.getElementById('km-ninja-sinav'); if(c) c.classList.remove('goster');
+            let se = document.getElementById('km-ninja-sensei'); if(se) se.classList.remove('sinav');
+        }
+        // Sıradaki sporcu (ya da klanı) tek seride tapınağa ulaşabilecek kadar yakınsa: "Sensei'nin Sınavı" çağrısı.
+        function kmNinjaSenseiCagriGuncelle() {
+            let c = document.getElementById('km-ninja-sinav'), se = document.getElementById('km-ninja-sensei');
+            if(!c || !se || _kmOyunAktifTema !== 'ninja') return;
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex];
+            let cokluAktif = _kmOyunTakimModu && _kmOyunCokluMu && s && kmOyunSporcuTakimIndex(s.g, s.ad) !== -1;
+            let menzil = 0.15 * (cokluAktif ? KM_OYUN_COKLU_ARTIS_CARPANI : 1);
+            let yakin = !!s && s.frac < 1 && s.frac + menzil >= 1;
+            c.classList.toggle('goster', yakin); se.classList.toggle('sinav', yakin);
+            if(yakin) {
+                let kim = cokluAktif ? (function() { let t = _kmOyunTakimlar[kmOyunSporcuTakimIndex(s.g, s.ad)]; return t.emoji + ' ' + esc(t.ad) + ' klanı (' + esc(kmOyunIlkAd(s.ad)) + ')'; })() : esc(kmOyunIlkAd(s.ad));
+                c.innerHTML = `<span class="km-ninja-sinav-ikon">🥋</span><span><b>SENSEİ'NİN SINAVI</b><small>${kim} tapınak kapısında — girmek için bu seri <b>%${Math.round(KM_NINJA_SENSEI_ORAN * 100)}+</b> olmalı</small></span>`;
+            }
+        }
+        function kmNinjaSenseiDuyur(sonuc, s) {
+            let se = document.getElementById('km-ninja-sensei');
+            setTimeout(function() {
+                if(se) { se.classList.remove('onay', 'red'); void se.getBoundingClientRect(); se.classList.add(sonuc); setTimeout(function() { se.classList.remove(sonuc); }, 1800); }
+                if(sonuc === 'red') {
+                    try { kmOyunBanner('🥋 SENSEİ: HENÜZ DEĞİL!', kmOyunIlkAd(s.ad) + ' kapıda bekliyor — %' + Math.round(KM_NINJA_SENSEI_ORAN * 100) + '+ seriyle tekrar dene', 'cp'); } catch(e) {}
+                    try { sesCal(180, 0.35); } catch(e) {}
+                } else {
+                    try { kmOyunBanner('🥋 SENSEİ ONAYLADI!', kmOyunIlkAd(s.ad) + ' sınavı geçti', 'cp'); } catch(e) {}
+                    try { sesCal(880, 0.12); } catch(e) {}
+                }
+            }, 1250);
         }
         function kmOyunNinjaPath() { return document.getElementById('km-oyun-ninja-path'); }
         let _kmOyunNinjaTotalLen = 0;
@@ -18283,7 +18563,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             return { x: pt.x, y: pt.y };
         }
-        function kmOyunNinjaSporcuKonum(frac, i, n) { return kmOyunNinjaDurusKonum(frac * _kmOyunNinjaTotalLen + kmOyunNinjaAralik(i, n)); }
+        // Bitirenler (frac>=1) Sensei'nin ARKASINDA, tapınak önündeki düzlükte durur — kapıda bekleyenlerle karışmasın.
+        function kmOyunNinjaSporcuKonum(frac, i, n) {
+            if(frac >= 1) return { x: Math.min(1188, 1140 + kmOyunNinjaAralik(i, n) * 0.9), y: 205 };
+            return kmOyunNinjaDurusKonum(frac * _kmOyunNinjaTotalLen + kmOyunNinjaAralik(i, n));
+        }
         function kmOyunNinjaCpSVG(ci) {
             let isik, sil;
             if(ci % 2 === 0) {
@@ -18318,6 +18602,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     return `<g class="km-ninja-cp" id="km-oyun-shuriken-${ci}" transform="translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})">${kmOyunNinjaCpSVG(ci)}</g>`;
                 }).join('');
             }
+            kmNinjaSahneSusle();
             let cg = document.getElementById('km-oyun-ninjalar'); if(!cg) return;
             cg.innerHTML = '';
             let roster = _kmOyunRosterCache;
@@ -18354,10 +18639,25 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let el = document.getElementById('km-oyun-shuriken-' + cp);
                 if(el) { el.classList.toggle('hit', !!best); if(best) el.style.setProperty('--_c', kmOyunRenk('ninja', best.i)); }
             }
+            kmNinjaTapinakCiz();
+            kmNinjaSaatGuncelle(false);
+            kmNinjaSenseiCagriGuncelle();
         }
         function kmOyunAnimateNinja(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, el = s.ninjaEl; if(!el) { done(); return; }
-            el.classList.add('flying');
+            el.classList.add('flying', 'kosuyor');
+            kmNinjaSenseiCagriGizle();
+            let oklar = _kmOyunSonSeriOklar || [], renk = kmOyunRenk('ninja', i);
+            let altin = toplam >= _kmOyunOkSayisi * 10 * 0.9, havada = false, sonKlon = 0;
+            // X başına bir şuriken — ninjanın elinden sıradaki kapıya (yoksa gonga) fırlar.
+            let xSay = oklar.filter(function(v) { return v === 'X'; }).length;
+            if(xSay) {
+                let baslangic = kmOyunNinjaSporcuKonum(eskiFrac, i, n);
+                let hedefFrac = KM_OYUN_CP_FRAC.find(function(f) { return f > eskiFrac + 1e-6 && f < 1; });
+                let hedef = hedefFrac ? kmOyunNinjaDurusKonum(hedefFrac * _kmOyunNinjaTotalLen) : { x: 1036, y: 205 };
+                for(let k = 0; k < Math.min(xSay, 6); k++) setTimeout(function() { kmNinjaSurikenAt({ x: baslangic.x + 8, y: baslangic.y - 30 }, { x: hedef.x, y: hedef.y - (hedefFrac ? 40 : 36) }, renk); }, k * 170);
+            }
+            if(altin) kmNinjaYaprakSavur(kmOyunNinjaSporcuKonum(eskiFrac, i, n));
             let L = _kmOyunNinjaTotalLen, aralik = kmOyunNinjaAralik(i, n);
             let bas = kmOyunNinjaSporcuKonum(eskiFrac, i, n), son = kmOyunNinjaSporcuKonum(yeniFrac, i, n);
             let lenBas = eskiFrac * L + aralik, lenSon = yeniFrac * L + aralik;
@@ -18371,9 +18671,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let x = pt.x + (bas.x - pt.x) * kb + (son.x - pt.x) * ks, y = pt.y + (bas.y - pt.y) * kb + (son.y - pt.y) * ks;
                 let hop = Math.abs(Math.sin(t * Math.PI * 7)) * 4 * (1 - t);
                 el.setAttribute('transform', `translate(${x.toFixed(1)},${(y - hop).toFixed(1)})`);
+                // Uçurum üstü: zemin yoksa (ya da ayak zeminin epey üstündeyse) bir kerelik takla.
+                let zy = kmOyunNinjaZeminY(x), ucuyor = zy === null || y < zy - 6;
+                if(ucuyor && !havada && t > 0.03 && t < 0.97) { havada = true; el.classList.remove('havada'); void el.getBoundingClientRect(); el.classList.add('havada'); setTimeout(function() { el.classList.remove('havada'); }, 560); }
+                else if(!ucuyor) havada = false;
+                if(altin && now - sonKlon > 75 && t < 0.92) { sonKlon = now; kmNinjaKlonBirak(el); }
                 if(t < 1) { requestAnimationFrame(frame); }
                 else {
-                    el.classList.remove('flying');
+                    el.classList.remove('flying', 'kosuyor');
+                    if(yeniCp > eskiCp || yeniFrac >= 1) { el.classList.add('kilic'); setTimeout(function() { el.classList.remove('kilic'); }, 1500); try { sesCal(1760, 0.08); } catch(e) {} }
+                    if(eskiFrac < 1 && yeniFrac >= 1) setTimeout(function() { kmNinjaTapinakFinal(s, i); }, 350);
+                    kmNinjaSaatGuncelle(true);
                     let varis = son, jj = [0, 0];
                     let scr = kmOyunSvgPct('km-oyun-svg-ninja', varis.x + jj[0], varis.y + jj[1]);
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('ninja', i), 14, false);
@@ -20180,6 +20488,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.classList.toggle('aktif', b.dataset.tema === tid); });
             let th = KM_OYUN_TEMALAR[tid];
             let bslk = document.getElementById('km-oyun-baslik'); if(bslk) bslk.textContent = th.ikon + ' ' + th.ad;
+            let klanBtn = document.querySelector('[data-coklu="1"]'); if(klanBtn) klanBtn.textContent = tid === 'ninja' ? '🏯 Klan' : '🏁 Yarış';
             let notEl = document.getElementById('km-oyun-not'); if(notEl) notEl.innerHTML = `<b>Bu bir eğlence katmanı.</b> ${th.aciklama}`;
             let btn = document.getElementById('km-oyun-ilerlet-btn'); if(btn) btn.textContent = th.btn;
             // Futbol (Bireysel/Takım) — "her seri 3 ok" sabit kural; 6-ok geçişi bu iki temada anlamsız
@@ -20312,6 +20621,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
             if(_kmOyunAktifTema === 'zirve') artis = kmOyunZirveArtisHesapla(kaydedilecek, toplam, maxPuan, eskiFrac, kmOyunDurumAl(s.g, s.ad));
+            _kmOyunSonSeriOklar = kaydedilecek.map(function(k) { return String(k.puan); });
+            // Sensei'nin Sınavı (2026-09-25) — Ninja'da tapınağa girecek seri %70+ olmalı; değilse ninja kapıda
+            // (KM_NINJA_KAPI_FRAC) bekler, sonraki seride yeniden dener. Asla geri gitmez, gerçek skora dokunmaz.
+            let senseiSonuc = null;
+            if(_kmOyunAktifTema === 'ninja' && eskiFrac < 1 && eskiFrac + artis >= 1) {
+                if(toplam / maxPuan < KM_NINJA_SENSEI_ORAN) { artis = Math.max(0, KM_NINJA_KAPI_FRAC - eskiFrac); senseiSonuc = 'red'; }
+                else senseiSonuc = 'onay';
+            }
             // Ara olaylar (2026-09-25) — Dağ/Hendek'in kestirme/tehlike/bonus bölgeleri (bkz. kmAraOlayUygula).
             let araOlaylar = [];
             if((_kmOyunAktifTema === 'dag' || _kmOyunAktifTema === 'yildiz') && artis > 0) {
@@ -20333,6 +20650,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(araOlaylar.indexOf('bonus') !== -1) s.toplamSkor += KM_ARA_OLAY_BONUS;
             let d0 = kmOyunDurumAl(s.g, s.ad); d0.toplamSkor = s.toplamSkor;
             if(araOlaylar.length) kmAraOlayDuyur(_kmOyunAktifTema, s, araOlaylar, yeniCp > eskiCp);
+            if(senseiSonuc) kmNinjaSenseiDuyur(senseiSonuc, s);
             // Pist "Yarış uzunluğu" — sadece BİREYSEL modda kişi başı set sayacı (takım modunda paylaşılan
             // frac zaten farklı bir mekanizma, Stage 2 kapsamına alınmadı). GERÇEK skora dokunmuyor.
             // pistOkSayaci/pistEnIyiSeriBuYaris (Stage 5) — "kaç ok attı"/"en iyi seri kimin" sonuç
@@ -20678,6 +20996,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunSisKesifKaydet();
                 }
                 if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
+                if(_kmOyunAktifTema === 'ninja') kmNinjaTapinakSifirla();
                 // Resync DEĞİL — kaşif rozetleri "bulundu" görünümünden "?" görünümüne dönüyor, bu bir
                 // GÖRÜNÜM değişikliği (bkz. proje hafızası: Resync sadece konum/transform günceller).
                 kmOyunSahneKurAktif();
