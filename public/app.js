@@ -12818,6 +12818,10 @@ ${(function(){
    sol kenarına, kapalıyken sahnenin sağ kenarına yapışık. */
 .km-oyun-rail-sekme{ position:absolute; top:50%; right:var(--km-rail-genislik, 300px); transform:translateY(-50%); z-index:9; width:26px; min-height:72px; padding:8px 0; border-radius:10px 0 0 10px; border:1px solid var(--line); border-right:none; background:rgba(6,9,20,0.9); color:var(--ink-dim); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:800; transition:right .22s ease, color .15s; }
 .km-oyun-rail-sekme:hover{ color:var(--ink); border-color:var(--a1); }
+/* GERÇEK BUG (2026-09-25, "aç kapa düğmesinde sorun var"): styles.css'teki genel button:active kuralı
+   transform'u scale ile EZİYORDU, basılı anda translateY(-50%) kalkıp düğme aşağı kayıyordu ve bırakma
+   arkadaki sahneye düştüğü için tıklama hiç oluşmuyordu. Ortalamayı koruyan kendi active kuralı. */
+.km-oyun-rail-sekme:active{ transform:translateY(-50%) scale(.96); }
 .km-oyun-rail-sekme-yazi{ writing-mode:vertical-rl; transform:rotate(180deg); font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
 .km-oyun-scene:has(> .km-oyun-rightpanel-kucuk) .km-oyun-rail-sekme{ right:0; color:var(--a1); }
 /* Panel açıkken sahne içindeki küçük "Sırada" rozeti gereksiz (aynı bilgi paneldeki büyük kartta) —
@@ -13795,6 +13799,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
     /* Telefonda/dikey tablette panel sahneye YER AYIRMAZ (--km-rail-w 0) — açılınca sahnenin üstüne
        biner, koç işi bitince yan sekmeden kapatır. */
     .km-oyun-scene{ --km-rail-genislik:min(300px, 84vw); --km-rail-w:0px; }
+    /* Panel burada bir çekmece: açıkken üst göstergenin ve skor kutusunun da ÜSTÜNDE (karışmasın), kapatınca
+       her şey eskisi gibi erişilebilir. */
+    .km-oyun-rightpanel{ z-index:11; background:rgb(8,11,22); box-shadow:-12px 0 30px rgba(0,0,0,0.5); }
+    .km-oyun-rail-sekme{ z-index:12; }
     .km-oyun-sirada{ padding:5px 10px 5px 5px; gap:6px; }
     .km-oyun-sirada-av{ width:26px; height:26px; }
     .km-oyun-sirada-ad{ font-size:12px; }
