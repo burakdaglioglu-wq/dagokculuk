@@ -13737,7 +13737,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 @media (min-width:620px){ .km-arena-izgara{ grid-template-columns:1fr 1fr; } }
 .km-arena-mac-kart{ background:var(--panel-hi); border:1.5px solid var(--line); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
 .km-arena-mac-kart.aktif-kart{ border-color:var(--a1); box-shadow:0 0 0 2px var(--a1); }
-.km-arena-mac-kart.bitti{ opacity:.68; cursor:default; }
+.km-arena-mac-kart.bitti{ opacity:.94; cursor:default; }
 .km-arena-mac-baslik{ display:flex; align-items:center; justify-content:space-between; font-family:var(--font-display); font-weight:700; font-size:11.5px; color:var(--ink-dim); }
 .km-arena-durum-rozet{ font-size:9px; font-weight:800; letter-spacing:.06em; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--ink-faint); }
 .km-arena-durum-rozet.etkin{ background:var(--a1); color:#1a0505; }
@@ -13777,6 +13777,60 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
    OTOMATİK kapatıyor, ayrı bir kontrol gerekmedi. */
 @keyframes kmArenaSarsinti{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
 .km-arena-okcu-a.sarsiliyor, .km-arena-okcu-b.sarsiliyor{ animation:kmArenaSarsinti .3s ease-in-out; }
+/* ===== Düello Arena 2.0 (2026-09-26) ===== */
+.km-arena-okcu-a, .km-arena-okcu-b{ transform-box:fill-box; transform-origin:50% 100%; }
+.km-arena-okcu-a.atiyor, .km-arena-okcu-b.atiyor{ animation:kmArenaAtis .26s ease-out; }
+@keyframes kmArenaAtis{ 0%{ transform:translateX(0); } 35%{ transform:translateX(-4px) rotate(-3deg); } 100%{ transform:translateX(0); } }
+.km-arena-kalkan-balon{ fill:rgba(140,210,255,.16); stroke:#9fe3ff; stroke-width:1.6; opacity:0; transition:opacity .4s ease; }
+.kalkanli .km-arena-kalkan-balon{ opacity:1; animation:kmArenaBalon 1.4s ease-in-out infinite; }
+@keyframes kmArenaBalon{ 0%,100%{ stroke-opacity:1; } 50%{ stroke-opacity:.35; } }
+.km-arena-kupa, .km-arena-ter{ font-size:14px; opacity:0; pointer-events:none; }
+.km-arena-ter{ font-size:10px; }
+.yarali .km-arena-ter{ opacity:1; animation:kmArenaTer 1s ease-in-out infinite; }
+@keyframes kmArenaTer{ 0%,100%{ opacity:1; } 50%{ opacity:.3; } }
+.yarali image{ animation:kmArenaYarali 1.1s ease-in-out infinite; }
+@keyframes kmArenaYarali{ 0%,100%{ filter:none; } 50%{ filter:drop-shadow(0 0 3px #ff3b3b) saturate(1.3); } }
+.kazandi .km-arena-kupa{ opacity:1; }
+.km-arena-okcu-a.kazandi, .km-arena-okcu-b.kazandi{ animation:kmArenaZafer .9s ease-in-out 3; }
+@keyframes kmArenaZafer{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(-9px); } }
+.km-arena-okcu-a.yenildi, .km-arena-okcu-b.yenildi{ transform:rotate(-78deg) translate(-6px, 4px); opacity:.55; transition:transform .9s cubic-bezier(.5,0,.7,.6), opacity .9s ease; }
+.km-arena-mesale{ animation:kmArenaMesale .5s ease-in-out infinite alternate; }
+@keyframes kmArenaMesale{ from{ opacity:.7; } to{ opacity:1; } }
+.km-arena-fener{ filter:drop-shadow(0 0 4px #ffb347); }
+.km-arena-kar{ animation:kmArenaKar 3.4s linear infinite; }
+@keyframes kmArenaKar{ from{ transform:translateY(0); } to{ transform:translateY(80px); } }
+.km-arena-zayif-cip{ font-family:var(--font-body); font-size:10px; font-weight:800; letter-spacing:.02em; padding:2px 8px; border-radius:999px; border:1.5px solid var(--zr); color:var(--ink); background:color-mix(in srgb, var(--zr) 18%, transparent); margin-left:auto; margin-right:6px; }
+.km-arena-mini{ display:inline-block; margin:0 3px; font-size:10px; font-weight:800; }
+.km-arena-mini-kombo{ color:#ffb347; } .km-arena-mini-kalkan{ filter:drop-shadow(0 0 3px #9fe3ff); }
+.km-arena-can-bar{ position:relative; }
+.km-arena-can-hayalet{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:#fff; opacity:.45; transition:width .6s ease .35s; }
+.km-arena-can-ic{ position:relative; }
+.km-arena-can-bar.dusuk{ animation:kmArenaDusuk .9s ease-in-out infinite; }
+@keyframes kmArenaDusuk{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,59,59,0); } 50%{ box-shadow:0 0 8px 2px rgba(255,59,59,.7); } }
+.km-arena-kazanan-istat{ display:block; font-family:var(--font-body); font-weight:700; font-size:10.5px; color:var(--ink-dim); margin-top:2px; }
+.km-arena-ko{ position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) rotate(-12deg); font-family:var(--font-display); font-weight:900; font-size:clamp(20px, 3.2vw, 34px); color:#ff3b3b; letter-spacing:.06em; text-shadow:0 0 12px rgba(255,59,59,.6), 0 3px 0 #5a0d0d; border:3px solid #ff3b3b; border-radius:10px; padding:2px 12px; background:rgba(20,4,4,.55); pointer-events:none; }
+.km-arena-ko.yeni{ animation:kmArenaKo .6s cubic-bezier(.2,.8,.3,1.3); }
+@keyframes kmArenaKo{ from{ transform:translate(-50%,-50%) rotate(-12deg) scale(3); opacity:0; } to{ transform:translate(-50%,-50%) rotate(-12deg) scale(1); opacity:1; } }
+.km-arena-kart-yazi{ position:absolute; pointer-events:none; white-space:nowrap; font-family:var(--font-display); font-weight:800; font-size:13px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.8); z-index:4; }
+.km-arena-kart-yazi.kombo{ color:#ffb347; } .km-arena-kart-yazi.kalkan{ color:#9fe3ff; } .km-arena-kart-yazi.kalkan-kirik{ color:#ffffff; font-size:14px; }
+.km-arena-kart-yazi.kritik{ color:#ffd23f; font-size:18px; text-shadow:0 0 10px #ff8a3d, 0 2px 0 #7c2d12; }
+.km-arena-hasar-sayi.kritik{ color:#ffd23f; font-size:19px; text-shadow:0 0 8px #ff8a3d, 0 1px 3px rgba(0,0,0,.7); }
+.km-arena-hasar-sayi.zayif{ color:#ff9f43; }
+.km-arena-ucan-ok.kritik{ width:28px; height:5px; background:linear-gradient(90deg, rgba(255,210,63,0), #ffd23f 40%, #fff6c8); filter:drop-shadow(0 0 5px #ffd23f); }
+.km-arena-ucan-ok.seker{ background:#9fe3ff; }
+.km-arena-tur-baslik{ grid-column:1 / -1; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:8px 12px; border-radius:12px; background:linear-gradient(90deg, rgba(255,210,63,.16), transparent); border:1px solid rgba(255,210,63,.35); }
+.km-arena-tur-baslik b{ font-family:var(--font-display); font-size:15px; color:#ffd23f; letter-spacing:.06em; }
+.km-arena-tur-baslik span{ font-size:11px; font-weight:700; color:var(--ink-dim); }
+.km-arena-sonraki-tur-btn{ width:100%; margin-bottom:8px; }
+.km-arena-yeniden-btn{ width:100%; justify-content:center; }
+.km-arena-sampiyon{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 0 4px; }
+.km-arena-sampiyon-av{ width:84px; height:84px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:28px; color:#04081c; box-shadow:0 0 0 4px #1a1206, 0 0 0 7px #ffd23f, 0 0 34px rgba(255,210,63,.6); animation:kmArenaSampiyon 1.8s ease-in-out infinite; }
+@keyframes kmArenaSampiyon{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+.km-arena-sampiyon-ad{ font-family:var(--font-display); font-weight:900; font-size:26px; color:#fff; }
+.km-arena-sampiyon-alt{ font-size:11px; font-weight:800; letter-spacing:.2em; color:#ffd23f; }
+.km-arena-sampiyon-ikinci{ font-size:12px; font-weight:700; color:var(--ink-dim); margin-top:4px; }
+.km-arena-tur-sonu.sampiyon .km-arena-tur-sonu-ic{ border-color:#ffd23f; box-shadow:0 0 50px rgba(255,210,63,.45); }
+@media (prefers-reduced-motion: reduce){ .km-arena-okcu-a, .km-arena-okcu-b, .kalkanli .km-arena-kalkan-balon, .yarali image, .yarali .km-arena-ter, .km-arena-can-bar.dusuk, .km-arena-ko.yeni, .km-arena-mesale, .km-arena-kar, .km-arena-sampiyon-av{ animation:none !important; } }
 /* Stage 4 — BİTTİ kartındaki kazanan satırı + tur sonu ekranı. Pist'in .km-pist-sonuc (Faz 9 §14d)
    İLE AYNI kalıp: sahnenin İÇİNDE, mutlak konumlu kart, .ciddi class'ı SADECE giriş animasyonunu
    durduruyor (içerik her zaman gösteriliyor). */
@@ -16017,7 +16071,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-arena-tur-sonu-bayrak">🏆</div>
                     <div class="km-arena-tur-sonu-baslik">Tur Sonu</div>
                     <div class="km-arena-tur-sonu-liste" id="km-oyun-arena-tur-sonu-liste"></div>
-                    <button class="km-oyun-ilerlet-btn" onclick="kmOyunArenaYenidenEslestir()">🔄 Yeniden Eşleştir</button>
+                    <button class="km-oyun-ilerlet-btn km-arena-sonraki-tur-btn" id="km-arena-sonraki-tur-btn" onclick="kmArenaSonrakiTur()">🏆 Kazananlarla Sonraki Tur</button>
+                    <button class="km-oyun-geri-al-btn km-arena-yeniden-btn" onclick="kmOyunArenaYenidenEslestir()">🔄 Yeniden Eşleştir</button>
                   </div>
                 </div>
                 <div class="km-arena-tur-sonu" id="km-oyun-arena-degistir">
@@ -22121,7 +22176,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunArenaCiz() {
             let govde = document.getElementById('km-oyun-panel-arena-govde'); if(!govde) return;
             kmOyunArenaDokGozlemciKur();
+            // 2.0: her yeniden çizimde okçu <image>'ları baştan kurulunca bir an BOŞ görünüyordu (görsel
+            // yeniden çözülüyor — gerçek testte karakterler hiç görünmüyordu). Aynı maçın saha SVG'si
+            // (anahtar: maç sırası + taraflar + nesil) yeni karta TAŞINIYOR, sadece kart iskeleti yenileniyor.
+            let eskiSahalar = {};
+            govde.querySelectorAll('.km-arena-saha-wrap[data-anahtar]').forEach(function(w) { let sv = w.querySelector('svg.km-arena-saha-svg'); if(sv) eskiSahalar[w.dataset.anahtar] = sv; });
             govde.innerHTML = (_kmOyunArenaGorunum === 'oyun') ? kmOyunArenaOyunHTML() : kmOyunArenaEslestirmeHTML();
+            govde.querySelectorAll('.km-arena-saha-wrap[data-anahtar]').forEach(function(w) {
+                let eski = eskiSahalar[w.dataset.anahtar], yeni = w.querySelector('svg.km-arena-saha-svg');
+                if(eski && yeni) w.replaceChild(eski, yeni);
+            });
+            _kmOyunArenaMaclar.forEach(function(m, i) { kmArenaSahaDurumUygula(i); });
         }
         // DÜZELTME (2026-09-11, canlı ortamda "oklar uçmuyor" bulgusunun 2. nedeni): kmOyunArenaCiz()
         // TÜM ızgarayı innerHTML ile yeniden kuruyor — bir maçın oku HÂLÂ uçarken (setTimeout/WAAPI
@@ -22216,13 +22281,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Can (HP) mekaniği (frac YOK). KM_OYUN_ARENA_CAN_BASLANGIC şimdilik yuvarlak bir sayı —
         // Stage 3'ün hasar eğrisi ve Stage 4'ün "3-4 set sürsün" kalibrasyonu bu sabiti ayarlayacak,
         // ŞİMDİLİK sadece can barlarının dolu göründüğü bir başlangıç durumu.
-        const KM_OYUN_ARENA_CAN_BASLANGIC = 100;
+        // 2.0 (2026-09-26): zayıf nokta ×2 ve kombo çarpanı hasarı ~%30-40 artırdığı için can 100 → 130
+        // (maçlar yine 3-5 seride bitsin — eski "3-4 set" kalibrasyonunun korunması).
+        const KM_OYUN_ARENA_CAN_BASLANGIC = 130;
+        let _kmArenaNesil = 0;
+        function kmArenaMacAlanSifirla(m) {
+            m.aCan = KM_OYUN_ARENA_CAN_BASLANGIC; m.bCan = KM_OYUN_ARENA_CAN_BASLANGIC; m.siradaki = 'a'; m.kazanan = null;
+            m.aOk = 0; m.bOk = 0; m.aEnIyiSeri = 0; m.bEnIyiSeri = 0;
+            m.aKombo = 0; m.bKombo = 0; m.aKalkan = 'yok'; m.bKalkan = 'yok'; m.aX = 0; m.bX = 0; m.seriSayisi = 0; m.koZaman = 0;
+            m.nesil = ++_kmArenaNesil;
+            return m;
+        }
         let _kmOyunArenaMaclar = []; // [{aIndex,bIndex,aCan,bCan,siradaki:'a'|'b',durum:'etkin'|'bekliyor'|'bitti',kazanan:null,aOk,bOk,aEnIyiSeri,bEnIyiSeri}]
         let _kmOyunArenaAktifMac = 0;
         function kmOyunArenaTuruBaslat() {
             if(!_kmOyunArenaEslesmeler.length) return;
+            if(!_kmArenaTurnuva.katilimci || _kmArenaTurnuva.tur === 1) _kmArenaTurnuva.katilimci = _kmOyunArenaEslesmeler.length * 2 + (_kmArenaTurnuva.bay || []).length;
             _kmOyunArenaMaclar = _kmOyunArenaEslesmeler.map(function(e) {
-                return { aIndex: e.a, bIndex: e.b, aCan: KM_OYUN_ARENA_CAN_BASLANGIC, bCan: KM_OYUN_ARENA_CAN_BASLANGIC, siradaki: 'a', durum: 'bekliyor', kazanan: null, aOk: 0, bOk: 0, aEnIyiSeri: 0, bEnIyiSeri: 0 };
+                return kmArenaMacAlanSifirla({ aIndex: e.a, bIndex: e.b, durum: 'bekliyor' });
             });
             _kmOyunArenaAktifMac = 0;
             if(_kmOyunArenaMaclar.length) _kmOyunArenaMaclar[0].durum = 'etkin';
@@ -22279,7 +22355,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(!confirm(isim + ' henüz bitmedi — yeniden başlatılırsa şu anki can/ok durumu kaybolur.\n\nYeni bir oyunla baştan başlansın mı?')) return;
             }
             kmOyunArenaBotZamanlayiciTemizle(idx);
-            _kmOyunArenaMaclar[idx] = { aIndex: mac.aIndex, bIndex: mac.bIndex, aCan: KM_OYUN_ARENA_CAN_BASLANGIC, bCan: KM_OYUN_ARENA_CAN_BASLANGIC, siradaki: 'a', durum: 'bekliyor', kazanan: null, aOk: 0, bOk: 0, aEnIyiSeri: 0, bEnIyiSeri: 0 };
+            _kmOyunArenaMaclar[idx] = kmArenaMacAlanSifirla({ aIndex: mac.aIndex, bIndex: mac.bIndex, durum: 'bekliyor' });
             kmOyunArenaMacSec(idx);
         }
         // Faz 15 (2026-09-14) — bot'lu maçlarda sıra otomatik döndüğü için bu manuel geçiş anlamsız
@@ -22295,7 +22371,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunArenaOyunHTML() {
             if(!_kmOyunArenaMaclar.length) return '<div class="km-arena-yer-tutucu">Eşleşme yok.</div>';
-            return '<div class="km-arena-izgara">' + _kmOyunArenaMaclar.map(function(mac, idx) { return kmOyunArenaMacKartHTML(mac, idx); }).join('') + '</div>';
+            let bayNot = (_kmArenaTurnuva.bay || []).length ? ' · 🎟️ Bay geçen: ' + _kmArenaTurnuva.bay.map(function(v) { let t = kmOyunArenaTarafBilgi(v); return t ? esc(kmOyunIlkAd(t.ad)) : '?'; }).join(', ') : '';
+            let baslik = `<div class="km-arena-tur-baslik"><b>⚔️ ${kmArenaTurAdi(_kmArenaTurnuva.katilimci || _kmOyunArenaMaclar.length * 2)}</b><span>${_kmArenaTurnuva.tur > 1 ? 'Turnuva · ' + _kmArenaTurnuva.tur + '. tur' : 'Kazananlar bir sonraki tura geçer'}${bayNot}</span></div>`;
+            return '<div class="km-arena-izgara">' + baslik + _kmOyunArenaMaclar.map(function(mac, idx) { return kmOyunArenaMacKartHTML(mac, idx); }).join('') + '</div>';
         }
         // Gerçek okçu karakterleri (2026-09-11, gece görevi iş 3) — 6 hazır saydam WebP, elle çizilmiş
         // SVG figürlerin (gövde/yay/sadak/kafa) yerine. Görseller zaten sağa bakıp ok çekiyor (kaynak
@@ -22371,6 +22449,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <g class="${rolSinifi}">
                     <ellipse class="km-arena-golge" cx="0" cy="38" rx="14" ry="4"/>
                     <image href="/okcu-karakterler/${karakter}.webp" x="${(-en / 2).toFixed(1)}" y="${(38 - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy}" preserveAspectRatio="xMidYMax meet"/>
+                    <ellipse class="km-arena-kalkan-balon" cx="0" cy="8" rx="30" ry="36"/>
+                    <text class="km-arena-kupa" x="0" y="-32" text-anchor="middle">🏆</text>
+                    <text class="km-arena-ter" x="-14" y="-18" text-anchor="middle">💢</text>
                 </g>
             </g>`;
         }
@@ -22384,7 +22465,20 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let bittiMi = mac.durum === 'bitti';
             let siradakiTaraf = mac.siradaki === 'a' ? a : b;
             let siradakiAd = kmOyunIlkAd(siradakiTaraf.ad);
-            let kazananAd = bittiMi ? (mac.kazanan === 'a' ? a : b).ad.split(' ')[0] : '';
+            let kazananAd = bittiMi ? kmOyunIlkAd((mac.kazanan === 'a' ? a : b).ad) : '';
+            kmArenaEksikAlan(mac);
+            let zayif = kmArenaZayifRenk(mac, idx);
+            let rozet = function(taraf) {
+                let k = taraf === 'a' ? mac.aKombo : mac.bKombo, kl = taraf === 'a' ? mac.aKalkan : mac.bKalkan, out = '';
+                if(k >= 2) out += `<span class="km-arena-mini km-arena-mini-kombo" title="Seri ateşi: arka arkaya %70+ seriler">🔥×${kmArenaKomboCarpan(k).toFixed(1)}</span>`;
+                if(kl === 'aktif') out += '<span class="km-arena-mini km-arena-mini-kalkan" title="Son Direniş kalkanı: bir sonraki %70 altı seri seker">🛡️</span>';
+                return out;
+            };
+            let dusukA = mac.aCan > 0 && mac.aCan <= KM_OYUN_ARENA_CAN_BASLANGIC * 0.3, dusukB = mac.bCan > 0 && mac.bCan <= KM_OYUN_ARENA_CAN_BASLANGIC * 0.3;
+            let kazanan = bittiMi ? (mac.kazanan === 'a' ? 'a' : 'b') : null;
+            let kazananOk = kazanan === 'a' ? mac.aOk : mac.bOk, kazananEnIyi = kazanan === 'a' ? mac.aEnIyiSeri : mac.bEnIyiSeri, kazananCan = kazanan === 'a' ? mac.aCan : mac.bCan;
+            let koYeni = mac.koZaman && (Date.now() - mac.koZaman < 1600);
+            let anahtar = idx + '|' + mac.aIndex + '|' + mac.bIndex + '|' + mac.nesil;
             // Faz 15 (2026-09-14, bot rakip) — bot'un sırası otomatik döndüğü için "diğer okçuya geç"
             // yerine bir "bekleme" göstergesi var, tıklanabilir değil.
             // DÜZELTME (2026-09-18) — eskiden bittiMi iken bu satır TAMAMEN boştu, yani maç bitince
@@ -22396,26 +22490,29 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return `<div class="km-arena-mac-kart ${mac.durum}${mac.durum === 'etkin' ? ' aktif-kart' : ''}" onclick="kmOyunArenaMacSec(${idx})">
                 <div class="km-arena-mac-baslik">
                     <span>${idx + 1}. Eşleşme</span>
+                    ${bittiMi ? '' : `<span class="km-arena-zayif-cip" style="--zr:${zayif.renk}" title="Bu turun zayıf noktası — bu renge düşen oklar iki kat hasar">🎯 ${zayif.ad} ×2</span>`}
                     <span class="km-arena-durum-rozet ${mac.durum}">${durumEtiket}</span>
                 </div>
-                ${bittiMi ? `<div class="km-arena-kazanan-satir">🏆 ${esc(kazananAd)} kazandı! <span style="font-weight:400; opacity:.8;">(taraflara skor girmeye devam edebilirsin)</span></div>` : ''}
+                ${bittiMi ? `<div class="km-arena-kazanan-satir">🏆 ${esc(kazananAd)} kazandı! <span class="km-arena-kazanan-istat">🎯 ${kazananOk} ok · ⭐ en iyi seri ${kazananEnIyi} · ❤️ kalan %${Math.round(Math.max(0, kazananCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100)}</span></div>` : ''}
                 <div class="km-arena-can-satir">
                     <div class="km-arena-can-taraf">
                         <span class="km-arena-can-av" style="background:${renkA};">${kmOyunAvatarHTML(a)}</span>
-                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${esc(kmOyunIlkAd(a.ad))}</span><div class="km-arena-can-bar"><div class="km-arena-can-ic" style="width:${yuzdeA}%; background:${renkA};"></div></div><span class="km-arena-can-yuzde">${yuzdeA}%</span></div>
+                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${esc(kmOyunIlkAd(a.ad))}${rozet('a')}</span><div class="km-arena-can-bar${dusukA ? ' dusuk' : ''}"><div class="km-arena-can-hayalet" style="width:${yuzdeA}%;"></div><div class="km-arena-can-ic" style="width:${yuzdeA}%; background:${renkA};"></div></div><span class="km-arena-can-yuzde">${yuzdeA}%</span></div>
                     </div>
                     <div class="km-arena-vs">VS</div>
                     <div class="km-arena-can-taraf saga">
-                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${esc(kmOyunIlkAd(b.ad))}</span><div class="km-arena-can-bar"><div class="km-arena-can-ic" style="width:${yuzdeB}%; background:${renkB};"></div></div><span class="km-arena-can-yuzde">${yuzdeB}%</span></div>
+                        <div class="km-arena-can-bilgi"><span class="km-arena-can-ad">${rozet('b')}${esc(kmOyunIlkAd(b.ad))}</span><div class="km-arena-can-bar${dusukB ? ' dusuk' : ''}"><div class="km-arena-can-hayalet" style="width:${yuzdeB}%;"></div><div class="km-arena-can-ic" style="width:${yuzdeB}%; background:${renkB};"></div></div><span class="km-arena-can-yuzde">${yuzdeB}%</span></div>
                         <span class="km-arena-can-av" style="background:${renkB};">${kmOyunAvatarHTML(b)}</span>
                     </div>
                 </div>
-                <div class="km-arena-saha-wrap" id="km-arena-saha-${idx}">
+                <div class="km-arena-saha-wrap" id="km-arena-saha-${idx}" data-anahtar="${anahtar}">
                     <svg class="km-arena-saha-svg" viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet">
+                        ${kmArenaSahneSVG(idx)}
                         <ellipse class="km-arena-zemin" cx="110" cy="96" rx="95" ry="8"/>
                         ${kmOyunArenaOkcuSVG(a, 45, idx + 'a', true, 'km-arena-okcu-a')}
                         ${kmOyunArenaOkcuSVG(b, 175, idx + 'b', false, 'km-arena-okcu-b')}
                     </svg>
+                    ${bittiMi ? `<div class="km-arena-ko${koYeni ? ' yeni' : ''}">K.O.!</div>` : ''}
                 </div>
                 ${siraSatiri}
                 <button class="km-oyun-geri-al-btn km-arena-sira-btn" onclick="event.stopPropagation(); kmOyunArenaDegistirAc(${idx})">🔀 Eşleşme Değiştir</button>
@@ -22458,24 +22555,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let atanToplam = kaydedilecek.reduce(function(a, k) { return a + kmOyunDegerSayi(k.puan); }, 0);
             if(atanA) { mac.aOk += kaydedilecek.length; if(atanToplam > mac.aEnIyiSeri) mac.aEnIyiSeri = atanToplam; }
             else { mac.bOk += kaydedilecek.length; if(atanToplam > mac.bEnIyiSeri) mac.bEnIyiSeri = atanToplam; }
+            // 2.0 — zayıf nokta / kombo / Son Direniş kalkanı TEK ortak planla (bot da aynı planı kullanır).
+            let plan = kmArenaSeriPlani(mac, macIdx, atanA, kaydedilecek.map(function(k) { return String(k.puan); }), _kmOyunOkSayisi);
+            kmArenaPlanDuyur(macIdx, plan, atanA, kapali);
             function birOkIsle(idx) {
                 if(idx >= kaydedilecek.length) { bitir(); return; }
-                let deger = kaydedilecek[idx].puan;
+                let deger = String(kaydedilecek[idx].puan);
                 let tier = KM_OYUN_ARENA_UCUS_TIER[deger] || 'normal';
-                let hasar = KM_OYUN_ARENA_HASAR[tier] || 0;
+                let hasar = plan.hasarlar[idx] || 0;
                 function isabetUygula() {
                     if(hasar > 0) {
                         if(hedefA) mac.aCan = Math.max(0, mac.aCan - hasar); else mac.bCan = Math.max(0, mac.bCan - hasar);
                         kmOyunArenaCanBarGuncelle(macIdx, mac);
-                        if(!kapali) kmOyunArenaHasarGoster(macIdx, hasar, hedefA);
+                        kmOyunArenaHasarGoster(macIdx, hasar, hedefA, deger === 'X', plan.zayifOk[idx]);
                     }
-                    setTimeout(function() { birOkIsle(idx + 1); }, kapali ? 40 : 160);
+                    setTimeout(function() { birOkIsle(idx + 1); }, azaltilmisHareket ? 40 : 160);
                 }
                 if(azaltilmisHareket) { isabetUygula(); return; }
-                kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, isabetUygula);
+                kmArenaAtisPozu(macIdx, atanA);
+                kmOyunArenaOkUcurGorsel(macIdx, atanA, plan.kalkanSekti ? 'seker' : tier, isabetUygula, deger === 'X');
             }
             function bitir() {
-                if(mukemmelMi) {
+                if(mukemmelMi && !plan.kalkanSekti) {
                     if(hedefA) mac.aCan = Math.max(0, mac.aCan - KM_OYUN_ARENA_MUKEMMEL_BONUS); else mac.bCan = Math.max(0, mac.bCan - KM_OYUN_ARENA_MUKEMMEL_BONUS);
                     kmOyunArenaCanBarGuncelle(macIdx, mac);
                     if(!kapali) { kmOyunBanner('🎯 MÜKEMMEL SERİ!', s.ad + ' — ek hasar!', 'harika'); try { sesCal(1000, 0.2); } catch(e) {} }
@@ -22484,9 +22585,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // maç HÂLÂ sürüyorsa oluyor (bitmiş bir maçta "diğer okçuya geç" anlamsız).
                 let hedefCanSonrasi = hedefA ? mac.aCan : mac.bCan;
                 let yeniBitti = hedefCanSonrasi <= 0 && mac.durum !== 'bitti';
+                if(!yeniBitti) kmArenaKalkanKontrol(mac, macIdx, hedefA);
                 if(yeniBitti) {
                     mac.durum = 'bitti';
                     mac.kazanan = atanA ? 'a' : 'b';
+                    kmArenaKoUygula(mac, macIdx, kapali);
                     if(!kapali) {
                         let kazananAd = _kmOyunRosterCache[atanA ? mac.aIndex : mac.bIndex].ad;
                         try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
@@ -22510,6 +22613,161 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunArenaTumMaclarBittiMi() {
             return _kmOyunArenaMaclar.length > 0 && _kmOyunArenaMaclar.every(function(m) { return m.durum === 'bitti'; });
         }
+        // ===== DÜELLO ARENA 2.0 (2026-09-26) =====
+        // Ortak Canavar 2.0 ile aynı aile: ZAYIF NOKTA (maçın o turunun renginde oklar ×2), SERİ ATEŞİ
+        // kombosu (aynı okçunun arka arkaya %70+ serileri ×1.1…×1.5), SON DİRENİŞ kalkanı (canı ilk kez
+        // %30'un altına inen okçu bir kez kalkan kazanır: rakibin %70 altı serisi seker, %70+ kırar),
+        // tema sahneleri, atış pozu, kritik ok, K.O. anı, turnuva (Kazananlarla Sonraki Tur → Final →
+        // Şampiyon). Hasar HÂLÂ sadece girilen (ya da botun ürettiği) oklardan — rastgele hasar yok.
+        const KM_ARENA_KOMBO_ORAN = 0.7, KM_ARENA_KALKAN_ORAN = 0.7, KM_ARENA_KALKAN_ESIK = 0.3;
+        let _kmArenaTurnuva = { tur: 1, bay: [], katilimci: 0, finalKaybeden: null };
+        // Eksik 2.0 alanlarını tamamlar — can/ok gibi mevcut ilerlemeye DOKUNMAZ.
+        function kmArenaEksikAlan(m) {
+            ['aKombo', 'bKombo', 'aX', 'bX', 'seriSayisi', 'koZaman'].forEach(function(k) { if(typeof m[k] !== 'number') m[k] = 0; });
+            if(!m.aKalkan) m.aKalkan = 'yok'; if(!m.bKalkan) m.bKalkan = 'yok';
+            if(typeof m.nesil !== 'number') m.nesil = ++_kmArenaNesil;
+        }
+        function kmArenaKomboCarpan(k) { return k >= 2 ? Math.min(1.5, 1 + 0.1 * (k - 1)) : 1; }
+        function kmArenaZayifRenk(mac, idx) {
+            let r = (typeof KM_CANAVAR_ZAYIF_RENKLER !== 'undefined') ? KM_CANAVAR_ZAYIF_RENKLER : [{ id: 'kirmizi', ad: 'Kırmızı', renk: '#ff4d3a' }];
+            return r[(idx * 3 + Math.floor((mac.seriSayisi || 0) / 2)) % r.length];
+        }
+        function kmArenaSeriPlani(mac, macIdx, atanA, oklar, okSayisiMax) {
+            kmArenaEksikAlan(mac);
+            let toplam = oklar.reduce(function(a, v) { return a + kmOyunDegerSayi(v); }, 0);
+            let oran = okSayisiMax ? toplam / (okSayisiMax * 10) : 0;
+            let k = atanA ? mac.aKombo : mac.bKombo;
+            k = (oran >= KM_ARENA_KOMBO_ORAN && toplam > 0) ? k + 1 : 0;
+            if(atanA) mac.aKombo = k; else mac.bKombo = k;
+            let carpan = kmArenaKomboCarpan(k);
+            let zayif = kmArenaZayifRenk(mac, macIdx);
+            let hedefKalkan = atanA ? mac.bKalkan : mac.aKalkan;
+            let kalkanSekti = hedefKalkan === 'aktif' && oran < KM_ARENA_KALKAN_ORAN;
+            let kalkanKirildi = hedefKalkan === 'aktif' && !kalkanSekti;
+            if(kalkanKirildi) { if(atanA) mac.bKalkan = 'kullanildi'; else mac.aKalkan = 'kullanildi'; }
+            let zayifOk = oklar.map(function(v) { return KM_OYUN_PAD_RENK[v] === zayif.id; });
+            let hasarlar = oklar.map(function(v, i) {
+                if(kalkanSekti) return 0;
+                let t = KM_OYUN_ARENA_UCUS_TIER[v] || 'normal';
+                return Math.round((KM_OYUN_ARENA_HASAR[t] || 0) * (zayifOk[i] ? 2 : 1) * carpan);
+            });
+            let xSay = oklar.filter(function(v) { return v === 'X'; }).length;
+            if(atanA) mac.aX = (mac.aX || 0) + xSay; else mac.bX = (mac.bX || 0) + xSay;
+            mac.seriSayisi = (mac.seriSayisi || 0) + 1;
+            return { hasarlar: hasarlar, zayifOk: zayifOk, zayif: zayif, kombo: k, carpan: carpan, kalkanSekti: kalkanSekti, kalkanKirildi: kalkanKirildi };
+        }
+        function kmArenaKartYazi(macIdx, metin, xPct, yPct, sinif) {
+            let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) return;
+            let el = document.createElement('div');
+            el.className = 'km-arena-kart-yazi ' + (sinif || '');
+            el.style.left = xPct + '%'; el.style.top = yPct + '%';
+            el.textContent = metin;
+            wrap.appendChild(el);
+            el.animate([{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,-70%) scale(1.1)', opacity: 1, offset: .25 }, { transform: 'translate(-50%,-150%) scale(1)', opacity: 0 }], { duration: 1300, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = function() { el.remove(); };
+        }
+        function kmArenaPlanDuyur(macIdx, plan, atanA, kapali) {
+            let x = atanA ? 22 : 78, hx = atanA ? 78 : 22;
+            if(plan.kombo >= 2) setTimeout(function() { kmArenaKartYazi(macIdx, '🔥 SERİ ATEŞİ ×' + plan.carpan.toFixed(1), x, 8, 'kombo'); }, 100);
+            if(plan.kalkanSekti) setTimeout(function() { kmArenaKartYazi(macIdx, '🛡️ SEKTİ!', hx, 20, 'kalkan'); }, 500);
+            if(plan.kalkanKirildi) setTimeout(function() { kmArenaKartYazi(macIdx, '🛡️ KALKAN KIRILDI!', hx, 20, 'kalkan-kirik'); if(!kapali) { try { sesCal(1500, 0.08); } catch(e) {} } }, 500);
+        }
+        function kmArenaAtisPozu(macIdx, atanA) {
+            let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) return;
+            let g = wrap.querySelector(atanA ? '.km-arena-okcu-a' : '.km-arena-okcu-b'); if(!g) return;
+            g.classList.remove('atiyor'); void g.getBoundingClientRect(); g.classList.add('atiyor');
+            setTimeout(function() { g.classList.remove('atiyor'); }, 260);
+        }
+        // Son Direniş: canı İLK kez %30'un altına inen (ölmemiş) okçu tek seferlik kalkan kazanır.
+        function kmArenaKalkanKontrol(mac, macIdx, hedefA) {
+            let can = hedefA ? mac.aCan : mac.bCan, kl = hedefA ? mac.aKalkan : mac.bKalkan;
+            if(can > 0 && can <= KM_OYUN_ARENA_CAN_BASLANGIC * KM_ARENA_KALKAN_ESIK && kl === 'yok') {
+                if(hedefA) mac.aKalkan = 'aktif'; else mac.bKalkan = 'aktif';
+                setTimeout(function() { kmArenaKartYazi(macIdx, '🛡️ SON DİRENİŞ!', hedefA ? 22 : 78, 10, 'kalkan'); kmArenaSahaDurumUygula(macIdx); }, 250);
+            }
+        }
+        function kmArenaKoUygula(mac, macIdx, kapali) {
+            mac.koZaman = Date.now();
+            let wrap = document.getElementById('km-arena-saha-' + macIdx);
+            if(wrap) {
+                let r = wrap.getBoundingClientRect(), sahne = document.getElementById('km-oyun-sahne'), sr = sahne ? sahne.getBoundingClientRect() : null;
+                if(sr && r.width) { let x = ((mac.kazanan === 'a' ? r.left + r.width * 0.2 : r.left + r.width * 0.8) - sr.left) / sr.width * 100, y = (r.top + r.height * 0.4 - sr.top) / sr.height * 100; kmOyunBurst(document.getElementById('km-oyun-burst'), x, y, '#ffd23f', 22, true); }
+            }
+            if(!kapali) { try { sesCal(160, 0.3); setTimeout(function() { try { sesCal(880, 0.12); sesCal(1320, 0.18); } catch(e) {} }, 220); } catch(e) {} }
+        }
+        // Kalıcı sahadaki okçulara durum sınıfları (yaralı / kalkanlı / kazandı / yenildi).
+        function kmArenaSahaDurumUygula(macIdx) {
+            let mac = _kmOyunArenaMaclar[macIdx]; let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!mac || !wrap) return;
+            [['a', '.km-arena-okcu-a'], ['b', '.km-arena-okcu-b']].forEach(function(p) {
+                let g = wrap.querySelector(p[1]); if(!g) return;
+                let can = p[0] === 'a' ? mac.aCan : mac.bCan, kl = p[0] === 'a' ? mac.aKalkan : mac.bKalkan;
+                let bitti = mac.durum === 'bitti';
+                g.classList.toggle('yarali', !bitti && can > 0 && can <= KM_OYUN_ARENA_CAN_BASLANGIC * KM_ARENA_KALKAN_ESIK);
+                g.classList.toggle('kalkanli', !bitti && kl === 'aktif');
+                g.classList.toggle('kazandi', bitti && mac.kazanan === p[0]);
+                g.classList.toggle('yenildi', bitti && mac.kazanan !== p[0]);
+            });
+        }
+        // Tema sahneleri — maç sırasına göre değişir (kolezyum, orman, kale, kar, gece).
+        function kmArenaSahneSVG(idx) {
+            let tema = ['kolezyum', 'orman', 'kale', 'kar', 'gece'][idx % 5];
+            if(tema === 'kolezyum') return '<rect x="0" y="0" width="220" height="110" rx="10" fill="#e8b875"/><rect x="0" y="0" width="220" height="62" rx="10" fill="#7fb4dd"/><path d="M0 62 Q110 30 220 62 L220 70 L0 70 Z" fill="#c98f52"/>' + [20, 50, 80, 140, 170, 200].map(function(x) { return '<rect x="' + (x - 4) + '" y="38" width="8" height="26" fill="#f1dcb4"/><rect x="' + (x - 6) + '" y="35" width="12" height="4" fill="#e6c894"/>'; }).join('') + '<path d="M60 22 l0 16 M160 22 l0 16" stroke="#6b3d1a" stroke-width="1.2"/><path d="M60 22 l14 4 l-14 4 Z" fill="#d9483b"/><path d="M160 22 l14 4 l-14 4 Z" fill="#3b82f6"/><rect x="0" y="70" width="220" height="40" fill="#e3b06b"/>';
+            if(tema === 'orman') return '<rect x="0" y="0" width="220" height="110" rx="10" fill="#f6b26b"/><circle cx="110" cy="58" r="20" fill="#ffe0a3" opacity=".8"/>' + [8, 34, 62, 150, 180, 206].map(function(x, k) { let h = 44 + (k % 3) * 8; return '<path d="M' + x + ' 72 L' + (x - 13) + ' 72 L' + x + ' ' + (72 - h) + ' L' + (x + 13) + ' 72 Z" fill="#2f5d3a"/>'; }).join('') + '<rect x="0" y="70" width="220" height="40" fill="#4f7d3e"/><rect x="0" y="70" width="220" height="3" fill="#6fa34f"/>';
+            if(tema === 'kale') return '<rect x="0" y="0" width="220" height="110" rx="10" fill="#5c6a8a"/><rect x="0" y="30" width="220" height="42" fill="#7a7f8c"/>' + Array.from({ length: 11 }, function(_, k) { return '<rect x="' + (k * 20 + 2) + '" y="22" width="12" height="9" fill="#7a7f8c"/>'; }).join('') + '<rect x="14" y="40" width="3" height="12" fill="#3a2a18"/><circle cx="15.5" cy="38" r="3.4" fill="#ffb347" class="km-arena-mesale"/><rect x="203" y="40" width="3" height="12" fill="#3a2a18"/><circle cx="204.5" cy="38" r="3.4" fill="#ffb347" class="km-arena-mesale"/><rect x="0" y="70" width="220" height="40" fill="#6b5a45"/>';
+            if(tema === 'kar') return '<rect x="0" y="0" width="220" height="110" rx="10" fill="#a9cde6"/><path d="M0 70 L40 34 L70 56 L110 24 L150 58 L180 38 L220 64 L220 72 L0 72 Z" fill="#e8f4fb"/><path d="M110 24 L118 34 L102 34 Z M40 34 L46 42 L34 42 Z" fill="#fff"/><rect x="0" y="70" width="220" height="40" fill="#f2f8fc"/>' + [18, 52, 96, 128, 170, 200].map(function(x, k) { return '<circle class="km-arena-kar" cx="' + x + '" cy="' + (6 + k * 5) + '" r="1.4" fill="#fff" style="animation-delay:-' + (k * 0.7).toFixed(1) + 's"/>'; }).join('');
+            return '<rect x="0" y="0" width="220" height="110" rx="10" fill="#1a1a3a"/><circle cx="176" cy="22" r="10" fill="#f4f1dc"/>' + [20, 60, 96, 130, 150].map(function(x, k) { return '<circle cx="' + x + '" cy="' + (10 + (k * 7) % 20) + '" r=".9" fill="#fff"/>'; }).join('') + '<path d="M0 72 L0 50 Q30 40 60 52 Q100 36 140 50 Q180 42 220 52 L220 72 Z" fill="#26264d"/><line x1="70" y1="52" x2="70" y2="36" stroke="#111" stroke-width="1"/><rect x="66" y="36" width="8" height="10" rx="2" fill="#ff7a59" class="km-arena-fener"/><line x1="150" y1="52" x2="150" y2="36" stroke="#111" stroke-width="1"/><rect x="146" y="36" width="8" height="10" rx="2" fill="#ffb347" class="km-arena-fener"/><rect x="0" y="70" width="220" height="40" fill="#2c2c4a"/>';
+        }
+        // ---- Turnuva ----
+        function kmArenaTurAdi(n) {
+            if(n <= 2) return 'FİNAL';
+            if(n <= 4) return 'YARI FİNAL';
+            if(n <= 8) return 'ÇEYREK FİNAL';
+            return _kmArenaTurnuva.tur + '. TUR';
+        }
+        function kmArenaIlerleyenler() {
+            let out = _kmOyunArenaMaclar.filter(function(m) { return m.durum === 'bitti' && m.kazanan; }).map(function(m) { return m.kazanan === 'a' ? m.aIndex : m.bIndex; });
+            return out.concat(_kmArenaTurnuva.bay || []);
+        }
+        function kmArenaSonrakiTur() {
+            let ilerleyen = kmArenaIlerleyenler();
+            if(ilerleyen.length < 2) return;
+            // Final kaybedeni (şampiyon ekranında 2. olarak) için: tek maçlık tur final sayılır.
+            for(let i = ilerleyen.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = ilerleyen[i]; ilerleyen[i] = ilerleyen[j]; ilerleyen[j] = t; }
+            let bay = ilerleyen.length % 2 ? [ilerleyen.pop()] : [];
+            let eslesmeler = []; while(ilerleyen.length >= 2) { let a = ilerleyen.pop(), b = ilerleyen.pop(); eslesmeler.push({ a: a, b: b }); }
+            kmOyunArenaTurSonucKapat();
+            Object.keys(_kmOyunArenaBotZamanlayici).forEach(function(k) { clearTimeout(_kmOyunArenaBotZamanlayici[k]); });
+            _kmOyunArenaBotZamanlayici = {};
+            _kmArenaTurnuva.tur++;
+            _kmArenaTurnuva.bay = bay;
+            _kmArenaTurnuva.katilimci = eslesmeler.length * 2 + bay.length;
+            _kmOyunArenaEslesmeler = eslesmeler;
+            kmOyunArenaTuruBaslat();
+            let ad = kmArenaTurAdi(_kmArenaTurnuva.katilimci);
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            if(!kapali) { try { kmOyunBanner('⚔️ ' + ad + ' BAŞLIYOR!', eslesmeler.length + ' düello' + (bay.length ? ' · 1 bay geçen' : ''), 'bitis'); } catch(e) {} }
+        }
+        function kmArenaSampiyonGoster(deger) {
+            let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(!modal) return;
+            let t = kmOyunArenaTarafBilgi(deger); if(!t) return;
+            let final = _kmOyunArenaMaclar.find(function(m) { return m.durum === 'bitti' && (m.aIndex === deger || m.bIndex === deger); });
+            let ikinci = final ? kmOyunArenaTarafBilgi(final.aIndex === deger ? final.bIndex : final.aIndex) : null;
+            let liste = document.getElementById('km-oyun-arena-tur-sonu-liste');
+            let renk = kmOyunArenaTarafRenk(deger);
+            if(liste) liste.innerHTML = `<div class="km-arena-sampiyon">
+                    <div class="km-arena-sampiyon-av" style="--_c:${renk}; background:${renk};">${kmOyunAvatarHTML(t)}</div>
+                    <div class="km-arena-sampiyon-ad">${esc(kmOyunIlkAd(t.ad))}</div>
+                    <div class="km-arena-sampiyon-alt">ARENA ŞAMPİYONU</div>
+                    ${ikinci ? `<div class="km-arena-sampiyon-ikinci">🥈 Finalist: ${esc(kmOyunIlkAd(ikinci.ad))}</div>` : ''}
+                </div>`;
+            let bslk = modal.querySelector('.km-arena-tur-sonu-baslik'); if(bslk) bslk.textContent = '🏆 ŞAMPİYON';
+            let btn = document.getElementById('km-arena-sonraki-tur-btn'); if(btn) btn.style.display = 'none';
+            modal.classList.add('sampiyon');
+            modal.classList.remove('goster'); void modal.offsetWidth; modal.classList.add('goster');
+            let burst = document.getElementById('km-oyun-burst');
+            [0, 250, 500, 800].forEach(function(d, k) { setTimeout(function() { kmOyunBurst(burst, 30 + k * 13, 35 + (k % 2) * 15, ['#ffd23f', renk, '#ffffff', '#ff9f43'][k], 30, true); }, d); });
+            let kapali = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
+            if(!kapali) { try { [523, 659, 784, 1047].forEach(function(f, k) { setTimeout(function() { try { sesCal(f, 0.25); } catch(e) {} }, k * 140); }); } catch(e) {} }
+        }
         // ---- DÜELLO ARENA — Stage 4: Tur sonu + yeniden eşleştirme ----
         // Pist'in bitiş sonuç ekranıyla (.km-pist-sonuc, Faz 9 §14d) AYNI kalıp: sahnenin İÇİNDE,
         // mutlak konumlu, .goster class'ıyla açılıp kapanan kart. TEK farkı: burada BİRDEN FAZLA
@@ -22517,6 +22775,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // kazananları karşılaştırıp eleme yapabilir ya da tamamen yeni eşleşmeler kurabilir.
         function kmOyunArenaTurSonucGoster() {
             let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(!modal) return;
+            // Turnuva: bu turdan çıkan (kazanan + bay geçen) tek kişi kaldıysa ŞAMPİYON ekranı.
+            let ilerleyen = kmArenaIlerleyenler();
+            if(ilerleyen.length === 1 && _kmArenaTurnuva.tur >= 1 && _kmOyunArenaMaclar.length >= 1) { kmArenaSampiyonGoster(ilerleyen[0]); return; }
+            let btn = document.getElementById('km-arena-sonraki-tur-btn');
+            if(btn) { let ad = kmArenaTurAdi(ilerleyen.length); btn.textContent = '🏆 Kazananlarla ' + ad; btn.style.display = ilerleyen.length >= 2 ? '' : 'none'; }
+            let bslk = modal.querySelector('.km-arena-tur-sonu-baslik'); if(bslk) bslk.textContent = kmArenaTurAdi(_kmArenaTurnuva.katilimci || (_kmOyunArenaMaclar.length * 2)) + ' Bitti';
             let ciddi = (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
             let liste = document.getElementById('km-oyun-arena-tur-sonu-liste');
             if(liste) {
@@ -22541,13 +22805,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
         }
         function kmOyunArenaTurSonucKapat() {
-            let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(modal) modal.classList.remove('goster');
+            let modal = document.getElementById('km-oyun-arena-tur-sonu'); if(modal) { modal.classList.remove('goster'); modal.classList.remove('sampiyon'); }
         }
         // "Yeniden eşleştir" — koç kazananları karşılaştırıp eleme yapabilsin ya da tamamen yeni
         // eşleşmeler kurabilsin diye eşleştirme ekranına DÜZ (boş) döner — otomatik bir eşleştirme
         // ÜRETMİYOR, kullanıcı talimatı "koç ... kurabilsin" (koç kendi kuruyor).
         function kmOyunArenaYenidenEslestir() {
             kmOyunArenaTurSonucKapat();
+            _kmArenaTurnuva = { tur: 1, bay: [], katilimci: 0, finalKaybeden: null };
             Object.keys(_kmOyunArenaBotZamanlayici).forEach(function(k) { clearTimeout(_kmOyunArenaBotZamanlayici[k]); });
             _kmOyunArenaBotZamanlayici = {};
             _kmOyunArenaMaclar = [];
@@ -22565,27 +22830,40 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let yuzdeA = Math.round(Math.max(0, mac.aCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
             let yuzdeB = Math.round(Math.max(0, mac.bCan) / KM_OYUN_ARENA_CAN_BASLANGIC * 100);
             let taraflar = kart.querySelectorAll('.km-arena-can-taraf');
-            if(taraflar[0]) { let ic = taraflar[0].querySelector('.km-arena-can-ic'); if(ic) ic.style.width = yuzdeA + '%'; let yz = taraflar[0].querySelector('.km-arena-can-yuzde'); if(yz) yz.textContent = yuzdeA + '%'; }
-            if(taraflar[1]) { let ic = taraflar[1].querySelector('.km-arena-can-ic'); if(ic) ic.style.width = yuzdeB + '%'; let yz = taraflar[1].querySelector('.km-arena-can-yuzde'); if(yz) yz.textContent = yuzdeB + '%'; }
+            [[taraflar[0], yuzdeA], [taraflar[1], yuzdeB]].forEach(function(p) {
+                if(!p[0]) return;
+                let ic = p[0].querySelector('.km-arena-can-ic'); if(ic) ic.style.width = p[1] + '%';
+                let hy = p[0].querySelector('.km-arena-can-hayalet'); if(hy) hy.style.width = p[1] + '%';
+                let yz = p[0].querySelector('.km-arena-can-yuzde'); if(yz) yz.textContent = p[1] + '%';
+                let bar = p[0].querySelector('.km-arena-can-bar'); if(bar) bar.classList.toggle('dusuk', p[1] > 0 && p[1] <= 30);
+            });
+            kmArenaSahaDurumUygula(macIdx);
         }
         // Uçan ok — düz HTML div (kmOyunBurst ile AYNI, kanıtlanmış desen), SVG'nin KENDİSİ değil
         // (SVG transform'unu WAAPI ile animasyonlamanın bu kod tabanında hiç denenmemiş/emin olunmayan
         // davranışına girmemek için). Uçuş stili kullanıcının verdiği 4 kademeye birebir uyuyor.
-        function kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, cb) {
+        function kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, cb, kritikMi) {
             let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) { cb(); return; }
             let baslaYuzde = atanA ? 20.5 : 79.5, bitisYuzde = atanA ? 79.5 : 20.5, dx = bitisYuzde - baslaYuzde;
             let ok = document.createElement('div');
-            ok.className = 'km-arena-ucan-ok ' + tier;
+            ok.className = 'km-arena-ucan-ok ' + tier + (kritikMi ? ' kritik' : '');
             // Yön: sabit inline transform (WAAPI SADECE left/top'u animasyonluyor, bu satıra dokunmuyor).
             ok.style.transform = 'translate(-50%,-50%) rotate(' + (atanA ? 0 : 180) + 'deg)';
             ok.style.left = baslaYuzde + '%'; ok.style.top = '50%';
             wrap.appendChild(ok);
-            let sureler = { hizli: 320, normal: 480, zayif: 680, iskalama: 460 };
+            let sureler = { hizli: 320, normal: 480, zayif: 680, iskalama: 460, seker: 560 };
             let anahtarlar;
             if(tier === 'iskalama') {
                 anahtarlar = [
                     { left: baslaYuzde + '%', top: '50%', opacity: 1 },
                     { left: (baslaYuzde + dx * 0.4) + '%', top: '76%', opacity: 0 }
+                ];
+            } else if(tier === 'seker') {
+                // Son Direniş kalkanına çarpıp sekiyor: hedefin önünde durur, geri düşer.
+                anahtarlar = [
+                    { left: baslaYuzde + '%', top: '50%', opacity: 1 },
+                    { left: (baslaYuzde + dx * 0.78) + '%', top: '48%', opacity: 1, offset: .7 },
+                    { left: (baslaYuzde + dx * 0.62) + '%', top: '82%', opacity: 0 }
                 ];
             } else if(tier === 'zayif') {
                 anahtarlar = [
@@ -22601,13 +22879,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Hasar sayısı havalanır + hedef sarsılır. Sarsıntı CSS keyframe (WAAPI DEĞİL) — paylaşılan
         // genel reduced-motion kuralı otomatik kapatıyor. Bu fonksiyonun kendisi zaten sadece
         // !kapali (ciddi/azaltılmış hareket KAPALIYKEN) çağrılıyor.
-        function kmOyunArenaHasarGoster(macIdx, hasar, hedefA) {
+        function kmOyunArenaHasarGoster(macIdx, hasar, hedefA, kritikMi, zayifMi) {
             let wrap = document.getElementById('km-arena-saha-' + macIdx); if(!wrap) return;
             let yuzde = hedefA ? 20.5 : 79.5;
             let el = document.createElement('div');
-            el.className = 'km-arena-hasar-sayi';
-            el.style.left = yuzde + '%'; el.style.top = '30%';
-            el.textContent = '-' + hasar;
+            el.className = 'km-arena-hasar-sayi' + (kritikMi ? ' kritik' : '') + (zayifMi ? ' zayif' : '');
+            el.style.left = (yuzde + (Math.random() * 8 - 4)) + '%'; el.style.top = '30%';
+            el.textContent = '-' + hasar + (zayifMi ? ' ×2' : '');
+            if(kritikMi) kmArenaKartYazi(macIdx, 'KRİTİK!', hedefA ? 22 : 78, 12, 'kritik');
             wrap.appendChild(el);
             el.animate([
                 { transform: 'translate(-50%,-50%)', opacity: 1 },
@@ -22683,28 +22962,35 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let azaltilmisHareket = kmOyunKameraAzaltilmisHareketMi();
             let kapali = azaltilmisHareket || (typeof ciddiModAcik !== 'undefined' && ciddiModAcik);
             _kmOyunArenaMesgulSayisi++;
+            // Botun okları ÖNCEDEN üretilir ki zayıf nokta/kombo/kalkan planı insanla AYNI kurallarla kurulsun.
+            let botOklar = []; for(let k = 0; k < okSayisi; k++) { let p = _kmHayaliOkUret(ort); botOklar.push(p === 0 ? 'M' : String(p)); }
+            let plan = kmArenaSeriPlani(mac, macIdx, atanA, botOklar, okSayisi);
+            kmArenaPlanDuyur(macIdx, plan, atanA, kapali);
             function birOkIsle(i) {
                 if(i >= okSayisi) { bitir(); return; }
-                let puanTam = _kmHayaliOkUret(ort);
-                let tier = KM_OYUN_ARENA_UCUS_TIER[puanTam === 0 ? 'M' : String(puanTam)] || 'normal';
-                let hasar = KM_OYUN_ARENA_HASAR[tier] || 0;
+                let deger = botOklar[i];
+                let tier = KM_OYUN_ARENA_UCUS_TIER[deger] || 'normal';
+                let hasar = plan.hasarlar[i] || 0;
                 if(atanA) mac.aOk++; else mac.bOk++;
                 function isabetUygula() {
                     if(hasar > 0) {
                         if(hedefA) mac.aCan = Math.max(0, mac.aCan - hasar); else mac.bCan = Math.max(0, mac.bCan - hasar);
                         kmOyunArenaCanBarGuncelle(macIdx, mac);
-                        if(!kapali) kmOyunArenaHasarGoster(macIdx, hasar, hedefA);
+                        kmOyunArenaHasarGoster(macIdx, hasar, hedefA, deger === 'X', plan.zayifOk[i]);
                     }
-                    setTimeout(function() { birOkIsle(i + 1); }, kapali ? 40 : 160);
+                    setTimeout(function() { birOkIsle(i + 1); }, azaltilmisHareket ? 40 : 160);
                 }
                 if(azaltilmisHareket) { isabetUygula(); return; }
-                kmOyunArenaOkUcurGorsel(macIdx, atanA, tier, isabetUygula);
+                kmArenaAtisPozu(macIdx, atanA);
+                kmOyunArenaOkUcurGorsel(macIdx, atanA, plan.kalkanSekti ? 'seker' : tier, isabetUygula, deger === 'X');
             }
             function bitir() {
                 let hedefCanSonrasi = hedefA ? mac.aCan : mac.bCan;
                 let yeniBitti = hedefCanSonrasi <= 0 && mac.durum !== 'bitti';
+                if(!yeniBitti) kmArenaKalkanKontrol(mac, macIdx, hedefA);
                 if(yeniBitti) {
                     mac.durum = 'bitti'; mac.kazanan = atanA ? 'a' : 'b';
+                    kmArenaKoUygula(mac, macIdx, kapali);
                     if(!kapali) {
                         let kazananBilgi = kmOyunArenaTarafBilgi(atanA ? mac.aIndex : mac.bIndex);
                         try { sesCal(750, 0.14); setTimeout(function() { try { sesCal(950, 0.14); } catch(e) {} }, 130); } catch(e) {}
@@ -22802,14 +23088,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     if(m2.aIndex === yeniDeger || m2.bIndex === yeniDeger) {
                         kmOyunArenaBotZamanlayiciTemizle(i);
                         if(m2.aIndex === yeniDeger) m2.aIndex = eskiDeger; else m2.bIndex = eskiDeger;
-                        m2.aCan = KM_OYUN_ARENA_CAN_BASLANGIC; m2.bCan = KM_OYUN_ARENA_CAN_BASLANGIC; m2.siradaki = 'a'; m2.kazanan = null; m2.aOk = 0; m2.bOk = 0; m2.aEnIyiSeri = 0; m2.bEnIyiSeri = 0;
+                        kmArenaMacAlanSifirla(m2);
                         if(m2.durum === 'bitti') m2.durum = (i === _kmOyunArenaAktifMac) ? 'etkin' : 'bekliyor';
                         break;
                     }
                 }
             }
             if(taraf === 'a') mac.aIndex = yeniDeger; else mac.bIndex = yeniDeger;
-            mac.aCan = KM_OYUN_ARENA_CAN_BASLANGIC; mac.bCan = KM_OYUN_ARENA_CAN_BASLANGIC; mac.siradaki = 'a'; mac.kazanan = null; mac.aOk = 0; mac.bOk = 0; mac.aEnIyiSeri = 0; mac.bEnIyiSeri = 0;
+            kmArenaMacAlanSifirla(mac);
             if(mac.durum === 'bitti') mac.durum = (macIdx === _kmOyunArenaAktifMac) ? 'etkin' : 'bekliyor';
             kmOyunArenaDegistirKapat();
             if(macIdx === _kmOyunArenaAktifMac) kmOyunArenaAktifIndexGuncelle();
