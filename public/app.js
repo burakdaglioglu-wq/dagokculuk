@@ -10085,7 +10085,7 @@ ${(function(){
             // arkada çalışmaya devam etmesin diye temizlenir.
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10113,6 +10113,7 @@ ${(function(){
             else if(s==='kasifkarti') kmKasifKartiCiz();
             else if(s==='fitness') kmFitnessCiz();
             else if(s==='kelime') kmKelimeCiz();
+            else if(s==='dersakisi') kmDersAkisiCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10200,7 +10201,9 @@ ${(function(){
             { id:'ritim', ad:'Ritim & Tıkır', grup:'mavi', icon:'<path d="M3 12h3l2-6 4 12 2-6h7"/>' },
             { id:'teknikanaliz', ad:'Teknik Analiz', grup:'sari', icon:'<path d="M9 3h6l1 3h3v14H5V6h3l1-3z"/><path d="M12 10v6"/><path d="M9 13h6"/>' },
             { id:'kasifkarti', ad:'Kaşif Kartı', grup:'mavi', icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c0-2 1.5-3 4-3s4 1 4 3"/>' },
-            { id:'fitness', ad:'Fitness', grup:'kirmizi', icon:'<path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/>' },        ];
+            { id:'fitness', ad:'Fitness', grup:'kirmizi', icon:'<path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/>' },
+            { id:'dersakisi', ad:'Ders Akışı', grup:'yesil', icon:'<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="M18 14.6V16l1 .8"/>' },
+        ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
         function kmAracDurumSatiri(id) {
             if(id === 'yoklama') {
@@ -10210,6 +10213,11 @@ ${(function(){
                 _kmListe.forEach(function(k){ let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null; if(kayit) { if(kayit.geldi === false) gelmeyen++; else gelen++; } });
                 let isaretsiz = _kmListe.length - gelen - gelmeyen;
                 return gelen + ' geldi' + (gelmeyen ? ' · ' + gelmeyen + ' gelmedi' : '') + (isaretsiz ? ' · ' + isaretsiz + ' işaretsiz' : ' · tamam ✓');
+            }
+            if(id === 'dersakisi') {
+                let d = kmDaDurum(); if(!d.basladi) return 'Isınma · teknik · oyun · soğuma';
+                let a = KM_DA_ASAMALAR[d.aktif]; if(!a) return 'Ders tamamlandı ✓';
+                return a.ikon + ' ' + a.ad + ' · ' + Math.max(0, Math.ceil(kmDaKalanMs(d) / 60000)) + ' dk kaldı';
             }
             if(id === 'lider') {
                 let enIyi = null;
@@ -11654,6 +11662,251 @@ ${(function(){
             });
         }
 
+        // ===== KARIŞIK SINIF — 📋 DERS AKIŞI (2026-09-26, kullanıcı: "ders işleyişi hakkında bölüm olsun,
+        // ısınma soğuma ve oyun teknik falan genel olarak ekle"). Dersi 7 aşamada yürüten bir akış: her aşamanın
+        // yaşa göre içeriği, kontrol listesi ve geri sayan süresi var; var olan araçlara (Yoklama, Skor Gir,
+        // Oyunlar, Teknik Analiz, Veli Bildirimi, Fitness) KISAYOLLA bağlanır — içerikleri kopyalamaz.
+        // Durum gün + konum başına localStorage'da (D1'e yazılmaz — ders yönetimi aracı, kayıt değil).
+        const KM_DA_ASAMALAR = [
+            { id: 'acilis',  ad: 'Açılış',       ikon: '🔔', sure: { 45: 3, 60: 4, 90: 5 } },
+            { id: 'isinma',  ad: 'Isınma',       ikon: '🔥', sure: { 45: 7, 60: 10, 90: 12 } },
+            { id: 'teknik',  ad: 'Teknik Odak',  ikon: '🎯', sure: { 45: 7, 60: 10, 90: 15 } },
+            { id: 'atis',    ad: 'Atış Bloğu',   ikon: '🏹', sure: { 45: 15, 60: 20, 90: 30 } },
+            { id: 'oyun',    ad: 'Oyun',         ikon: '🎮', sure: { 45: 7, 60: 8, 90: 15 } },
+            { id: 'soguma',  ad: 'Soğuma',       ikon: '🧊', sure: { 45: 3, 60: 5, 90: 8 } },
+            { id: 'kapanis', ad: 'Kapanış',      ikon: '📝', sure: { 45: 3, 60: 3, 90: 5 } }
+        ];
+        const KM_DA_YAS = [
+            { id: 'minik', ad: 'Minikler', alt: '6-8 yaş' }, { id: 'kucuk', ad: 'Küçükler', alt: '9-11 yaş' },
+            { id: 'yildiz', ad: 'Yıldızlar', alt: '12-14 yaş' }, { id: 'buyuk', ad: 'Büyükler', alt: '15+ yaş' }
+        ];
+        const KM_DA_GUVENLIK = [
+            'Atış çizgisini sadece "başla" komutuyla geçeriz; ok sadece hedefe doğru takılır.',
+            'Yay OKSUZ asla bırakılmaz (boş bırakış yayı ve kişiyi yaralar).',
+            'Düdük / "DUR" komutunda herkes yayı indirir, oku çıkarır.',
+            'Ok toplamaya herkes birlikte gider; hedef arkasında kimse yokken atılır.',
+            'Hedeften ok çekerken yan tarafta durulur, arkada kimse beklemez.'
+        ];
+        const KM_DA_ISINMA = {
+            genel: [
+                { ikon: '🏃', ad: 'Yerinde hafif koşu', doz: '1 dk', not: 'Nabız yükselsin, vücut ısınsın.' },
+                { ikon: '🙆', ad: 'Boyun çevirme', doz: '5 × her yön', not: 'Yavaş, zorlamadan; kulak omuza.' },
+                { ikon: '🔄', ad: 'Kol çevirme', doz: '10 öne + 10 arkaya', not: 'Küçükten büyüğe daireler.' },
+                { ikon: '🤷', ad: 'Omuz silkme ve geriye çevirme', doz: '10 tekrar', not: 'Kürek kemikleri geriye-aşağı.' },
+                { ikon: '🫷', ad: 'Göğüs açma', doz: '10 tekrar', not: 'Kollar yanda, geriye doğru esneterek.' },
+                { ikon: '✋', ad: 'Bilek ve parmak ısınması', doz: '20 sn', not: 'Bilek çevir, parmakları aç-kapa.' },
+                { ikon: '↩️', ad: 'Gövde döndürme', doz: '10 tekrar', not: 'Kalça sabit, üst gövde sağa-sola.' },
+                { ikon: '📏', ad: 'Band açma (pull-apart)', doz: '15 tekrar', not: 'Kollar düz, band göğüs önünde yanlara.' },
+                { ikon: '🏹', ad: 'Band ile çekiş simülasyonu', doz: '10 × her kol', not: 'Gerçek çekiş gibi çapaya kadar, 2 sn tut.' },
+                { ikon: '🎯', ad: 'Kontrollü ısınma çekişleri', doz: '5 tekrar', not: 'Ok takılı, hedefe dönük; çek-tut-YAVAŞÇA indir (bırakmadan).' }
+            ],
+            minik: [
+                { ikon: '🐻', ad: 'Ayı yürüyüşü', doz: '2 × 10 adım', not: 'Eller ve ayaklar yerde, kalça yukarıda.' },
+                { ikon: '🦀', ad: 'Yengeç yürüyüşü', doz: '2 × 10 adım', not: 'Sırt yere dönük, yana doğru.' },
+                { ikon: '🦅', ad: 'Kartal kanatları', doz: '10 çırpma', not: 'Kollar yanda yavaşça aşağı-yukarı (omuz ısınması).' },
+                { ikon: '🗿', ad: 'Heykel oyunu', doz: '3 tur', not: 'Müzik/düdük durunca tek ayakta heykel ol — denge.' },
+                { ikon: '🔄', ad: 'Pervane kollar', doz: '10 öne + 10 arkaya', not: 'Küçük daireler, sonra büyük.' },
+                { ikon: '🏹', ad: 'Hayali yay çekişi', doz: '8 tekrar', not: 'Yaysız: "duruş-çek-çapa-tut-bırak" sesli sayarak.' }
+            ]
+        };
+        const KM_DA_TEKNIK = [
+            { id: 'durus', ad: 'Duruş', ipucu: ['Ayaklar omuz genişliğinde, her atışta aynı yer', 'Ağırlık iki ayağa eşit', 'Gövde dik, kalça öne-arkaya kaymaz'], drill: ['Yerde işaretli ayak izine 10 kez duruş kur', 'Göz kapalı duruş (5 sn) — açınca kontrol et'] },
+            { id: 'kabza', ad: 'Kabza', ipucu: ['El gevşek, parmaklar serbest', 'Basınç başparmak dibinde (yaşam çizgisi)', 'Bilek düz, sıkmak yok'], drill: ['Yakın mesafe boş hedef: 6 ok sadece kabzaya odaklan', 'Partner kabzaya bakıp "gevşek/sıkı" söyler'] },
+            { id: 'cekis', ad: 'Çekiş', ipucu: ['Kolla değil sırtla çek', 'Dirsek ok hizasında ya da biraz yukarıda', 'Omuzlar aşağıda, kalkmıyor'], drill: ['Band ile 10 çekiş, kürek kemiğini hisset', '3-5 m boş hedefe 6 ok: sadece çekiş'] },
+            { id: 'capa', ad: 'Çapa', ipucu: ['Her atışta aynı nokta (çene altı / ağız kenarı)', 'Kiriş burun ve çeneye değer', 'Çapada tam dur, sonra nişan'], drill: ['Çapada 5 sn tut × 5 tekrar', 'Ayna ya da partnerle çapa kontrolü'] },
+            { id: 'nisan', ad: 'Nişan', ipucu: ['Nişangah hedefe "otursun", kovalama', 'Nefes al-yarım ver-tut', 'Nişan 4-8 sn içinde; uzarsa indir, yeniden'], drill: ['Nefes-nişan ritmi 5 tekrar (bırakmadan)', 'Sayaçla: 8 sn içinde bırakamazsan indir'] },
+            { id: 'birakis', ad: 'Bırakış', ipucu: ['Parmakları gevşet, itme-çekme yok', 'El kendiliğinden geriye kayar', 'Sırt çekişe devam ederken bırak'], drill: ['Band ile bırakış hissi 10 tekrar', 'Yakın boş hedef, sadece bırakışa odaklı 6 ok'] },
+            { id: 'takip', ad: 'Takip', ipucu: ['Yay kolu hedefte kalır', 'Bırakan el omza/boyna süzülür', 'Ok hedefe girene kadar 2 sn heykel'], drill: ['Her atıştan sonra 2 sn heykel — partner sayar', '"Ok hedefte mi?" demeden kıpırdama oyunu'] }
+        ];
+        const KM_DA_ATIS = {
+            minik: { mesafe: '5-8 m', ok: 3, not: 'Büyük hedef yüzü; her seriden sonra kutlama, sayı değil keyif.' },
+            kucuk: { mesafe: '10-15 m', ok: 3, not: 'Seri arası kısa teknik hatırlatma; toplam puan yazılır.' },
+            yildiz: { mesafe: '18-30 m', ok: 6, not: 'Hedef kağıdı analizi: grup nerede toplanıyor?' },
+            buyuk: { mesafe: '30-70 m', ok: 6, not: 'Yarışma ritmi: sayaçla atış, seri ortalaması takip.' }
+        };
+        const KM_DA_OYUN = { minik: ['balon', 'hazine', 'canavar'], kucuk: ['canavar', 'ninja', 'sisharita'], yildiz: ['arena', 'ninja', 'kelime'], buyuk: ['yukselis', 'arena', 'pist'] };
+        const KM_DA_SOGUMA = [
+            { ikon: '🤝', ad: 'Omuz çapraz germe', doz: '20 sn × her kol', not: 'Kol göğüs önünden karşıya, diğer el dirseği çeker.' },
+            { ikon: '💪', ad: 'Triseps germe', doz: '20 sn × her kol', not: 'El sırta, diğer el dirseği aşağı bastırır.' },
+            { ikon: '🫁', ad: 'Göğüs açma (eller arkada)', doz: '20 sn', not: 'Parmaklar arkada kenetli, göğüs öne.' },
+            { ikon: '✋', ad: 'Ön kol / bilek germe', doz: '15 sn × her el', not: 'Kol önde, parmaklar geriye nazikçe.' },
+            { ikon: '🙆', ad: 'Boyun yan germe', doz: '15 sn × her yan', not: 'Kulak omza, omuz aşağıda.' },
+            { ikon: '🌬️', ad: 'Nefes: 4 al - 4 tut - 6 ver', doz: '5 tur', not: 'Sakinleşme ve odak; göz kapalı olabilir.' }
+        ];
+        // ---- Durum (gün + konum) ----
+        function kmDaAnahtar() { return 'dag_km_dersakisi_' + (_kmAktifKonum || 'varsayilan'); }
+        var _kmDa = null, _kmDaTimer = null;
+        function kmDaVarsayilanYas() {
+            let say = { minikler: 0, kucukler: 0, yildizlar: 0, buyukler: 0 };
+            (_kmListe || []).forEach(function(k) { if(say[k.g] !== undefined) say[k.g]++; });
+            let en = Object.keys(say).sort(function(a, b) { return say[b] - say[a]; })[0];
+            return { minikler: 'minik', kucukler: 'kucuk', yildizlar: 'yildiz', buyukler: 'buyuk' }[en] || 'kucuk';
+        }
+        function kmDaDurum() {
+            if(_kmDa && _kmDa.tarih === bugunISO() && _kmDa.konum === (_kmAktifKonum || 'varsayilan')) return _kmDa;
+            let d = null; try { d = JSON.parse(localStorage.getItem(kmDaAnahtar()) || 'null'); } catch(e) {}
+            if(!d || d.tarih !== bugunISO()) {
+                let gun = new Date().getDay();
+                d = { tarih: bugunISO(), sure: 60, yas: kmDaVarsayilanYas(), basladi: false, aktif: 0, bitenler: [], isaret: {}, teknik: KM_DA_TEKNIK[gun % KM_DA_TEKNIK.length].id, not: '', kalanMs: null, calisiyor: false, sonTik: null };
+            }
+            d.konum = _kmAktifKonum || 'varsayilan';
+            _kmDa = d; return d;
+        }
+        function kmDaKaydet() { try { localStorage.setItem(kmDaAnahtar(), JSON.stringify(_kmDa)); } catch(e) {} }
+        function kmDaAsamaSure(d, i) { return (KM_DA_ASAMALAR[i].sure[d.sure] || 5) * 60000; }
+        function kmDaKalanMs(d) {
+            if(d.kalanMs === null) return kmDaAsamaSure(d, d.aktif);
+            if(d.calisiyor && d.sonTik) return d.kalanMs - (Date.now() - d.sonTik);
+            return d.kalanMs;
+        }
+        function kmDaAyar(alan, deger) {
+            let d = kmDaDurum(); d[alan] = deger;
+            if(alan === 'sure' && !d.calisiyor) d.kalanMs = null;
+            kmDaKaydet(); kmDersAkisiCiz();
+        }
+        function kmDaBasla() {
+            let d = kmDaDurum(); d.basladi = true; d.aktif = 0; d.bitenler = []; d.kalanMs = kmDaAsamaSure(d, 0); d.calisiyor = true; d.sonTik = Date.now();
+            kmDaKaydet(); kmDaZamanlayici(); kmDersAkisiCiz();
+        }
+        function kmDaDuraklat() {
+            let d = kmDaDurum();
+            if(d.calisiyor) { d.kalanMs = kmDaKalanMs(d); d.calisiyor = false; d.sonTik = null; }
+            else { if(d.kalanMs === null) d.kalanMs = kmDaAsamaSure(d, d.aktif); d.calisiyor = true; d.sonTik = Date.now(); }
+            kmDaKaydet(); kmDaZamanlayici(); kmDersAkisiCiz();
+        }
+        function kmDaDakikaEkle(dk) { let d = kmDaDurum(); d.kalanMs = Math.max(0, kmDaKalanMs(d) + dk * 60000); if(d.calisiyor) d.sonTik = Date.now(); kmDaKaydet(); kmDaZamanGuncelle(); }
+        function kmDaAsamaGec(i) {
+            let d = kmDaDurum();
+            if(typeof i !== 'number') { if(d.bitenler.indexOf(d.aktif) === -1) d.bitenler.push(d.aktif); i = d.aktif + 1; }
+            d.basladi = true;
+            d.aktif = Math.min(i, KM_DA_ASAMALAR.length);
+            d.kalanMs = d.aktif < KM_DA_ASAMALAR.length ? kmDaAsamaSure(d, d.aktif) : 0;
+            d.calisiyor = d.aktif < KM_DA_ASAMALAR.length; d.sonTik = d.calisiyor ? Date.now() : null;
+            d.uyarildi = false;
+            kmDaKaydet(); kmDaZamanlayici(); kmDersAkisiCiz();
+            if(d.aktif >= KM_DA_ASAMALAR.length) { try { showToast('📋 Ders akışı tamamlandı — iyi iş! 🎉', 'success'); } catch(e) {} }
+        }
+        function kmDaIsaret(asama, j) {
+            let d = kmDaDurum(); let k = asama + ':' + j;
+            d.isaret[k] = !d.isaret[k]; kmDaKaydet(); kmDersAkisiCiz();
+        }
+        function kmDaZamanlayici() {
+            if(_kmDaTimer) { clearInterval(_kmDaTimer); _kmDaTimer = null; }
+            let d = kmDaDurum(); if(!d.calisiyor) return;
+            _kmDaTimer = setInterval(kmDaZamanGuncelle, 1000);
+        }
+        function kmDaSureYaz(ms) { let neg = ms < 0; ms = Math.abs(ms); let dk = Math.floor(ms / 60000), sn = Math.floor((ms % 60000) / 1000); return (neg ? '+' : '') + dk + ':' + String(sn).padStart(2, '0'); }
+        function kmDaZamanGuncelle() {
+            let d = kmDaDurum(); let kalan = kmDaKalanMs(d);
+            let el = document.getElementById('km-da-sayac'); if(el) { el.textContent = kmDaSureYaz(kalan); el.classList.toggle('asti', kalan < 0); }
+            let bar = document.getElementById('km-da-asama-bar'); if(bar) { let top = kmDaAsamaSure(d, d.aktif) || 1; bar.style.width = Math.max(0, Math.min(100, (1 - kalan / top) * 100)).toFixed(1) + '%'; }
+            if(kalan <= 0 && d.calisiyor && !d.uyarildi) {
+                d.uyarildi = true; kmDaKaydet();
+                let a = KM_DA_ASAMALAR[d.aktif]; if(a) { try { showToast('⏰ ' + a.ikon + ' ' + a.ad + ' süresi doldu — sıradaki aşamaya geçebilirsin', 'warning'); } catch(e) {} try { sesCal(880, 0.2); setTimeout(function() { try { sesCal(1175, 0.25); } catch(e) {} }, 220); } catch(e) {} }
+            }
+            // Izgara kartindaki 'N dk kaldi' satiri — her saniye degil, 15 sn'de bir (izgara gorunurken).
+            let izg = document.getElementById('km-arac-izgara');
+            if(izg && izg.style.display !== 'none' && Math.floor(Date.now() / 1000) % 15 === 0) { try { kmAracIzgaraCiz(); } catch(e) {} }
+        }
+        function kmDaOyunAc(tid) {
+            kmAracSec('oyunlar');
+            setTimeout(function() { try { if(tid === 'kelime') kmOyunKelimeAc(); else kmOyunKartSec(tid); } catch(e) {} }, 300);
+        }
+        // ---- Aşama içerikleri ----
+        function kmDaListeHTML(asama, liste) {
+            let d = kmDaDurum();
+            return '<div class="km-da-liste">' + liste.map(function(x, j) {
+                let ok = !!d.isaret[asama + ':' + j];
+                return '<button class="km-da-madde' + (ok ? ' tamam' : '') + '" onclick="kmDaIsaret(\'' + asama + '\',' + j + ')" aria-pressed="' + ok + '"><span class="km-da-kutu">' + (ok ? '✓' : '') + '</span><span class="km-da-ikon">' + x.ikon + '</span><span class="km-da-metin"><b>' + esc(x.ad) + '</b>' + (x.doz ? ' <em>' + esc(x.doz) + '</em>' : '') + (x.not ? '<small>' + esc(x.not) + '</small>' : '') + '</span></button>';
+            }).join('') + '</div>';
+        }
+        function kmDaIcerik(id) {
+            let d = kmDaDurum(), yas = d.yas;
+            if(id === 'acilis') {
+                let t = KM_DA_TEKNIK.find(function(x) { return x.id === d.teknik; }) || KM_DA_TEKNIK[0];
+                return kmDaListeHTML('acilis', [
+                    { ikon: '✅', ad: 'Yoklamayı al', not: 'Kim geldi, kim gelmedi — genel yoklamaya da yazılır.' },
+                    { ikon: '🦺', ad: 'Güvenlik kurallarını hatırlat', not: 'Aşağıdaki 5 kural — her ders, kısa ve net.' },
+                    { ikon: '🎯', ad: 'Günün hedefini söyle: ' + t.ad, not: t.ipucu[0] }
+                ]) + '<div class="km-da-kisayol"><button onclick="kmAracSec(\'yoklama\')">✅ Yoklamayı aç</button></div>'
+                   + '<div class="km-da-kutu-bilgi"><b>🦺 Güvenlik kuralları</b><ol>' + KM_DA_GUVENLIK.map(function(g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ol></div>';
+            }
+            if(id === 'isinma') {
+                let liste = yas === 'minik' ? KM_DA_ISINMA.minik : KM_DA_ISINMA.genel;
+                return '<div class="km-da-alt">' + (yas === 'minik' ? 'Miniklere oyunlaştırılmış ısınma — sıkılmadan, hareket ederek.' : 'Okçuluğa özel dinamik ısınma: omuz, sırt, bilek ve çekiş kasları.') + '</div>'
+                    + kmDaListeHTML('isinma', liste)
+                    + '<div class="km-da-kisayol"><button onclick="kmAracSec(\'reaksiyon\')">⚡ Reaksiyon oyunuyla ısın</button><button onclick="kmAracSec(\'fitness\')">💪 Fitness egzersizleri</button></div>';
+            }
+            if(id === 'teknik') {
+                let t = KM_DA_TEKNIK.find(function(x) { return x.id === d.teknik; }) || KM_DA_TEKNIK[0];
+                return '<div class="km-da-secim">' + KM_DA_TEKNIK.map(function(x) { return '<button class="' + (x.id === t.id ? 'aktif' : '') + '" onclick="kmDaAyar(\'teknik\',\'' + x.id + '\')">' + esc(x.ad) + '</button>'; }).join('') + '</div>'
+                    + '<div class="km-da-teknik"><div><b>🗣️ Söylenecek 3 ipucu</b><ul>' + t.ipucu.map(function(p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>'
+                    + '<div><b>🧪 Drill</b></div>' + kmDaListeHTML('teknik-' + t.id, t.drill.map(function(x) { return { ikon: '🎯', ad: x }; })) + '</div>'
+                    + '<div class="km-da-kisayol"><button onclick="kmAracSec(\'teknikanaliz\')">📸 Teknik Analiz ile değerlendir</button></div>';
+            }
+            if(id === 'atis') {
+                let a = KM_DA_ATIS[yas] || KM_DA_ATIS.kucuk;
+                let seri = Math.max(3, Math.round((KM_DA_ASAMALAR[3].sure[d.sure] || 20) / (a.ok === 6 ? 4 : 2.5)));
+                return '<div class="km-da-atis"><div><small>Mesafe</small><b>' + a.mesafe + '</b></div><div><small>Plan</small><b>' + seri + ' seri × ' + a.ok + ' ok</b></div><div><small>Odak</small><b>' + esc((KM_DA_TEKNIK.find(function(x) { return x.id === d.teknik; }) || KM_DA_TEKNIK[0]).ad) + '</b></div></div>'
+                    + '<div class="km-da-alt">' + esc(a.not) + '</div>'
+                    + kmDaListeHTML('atis', [
+                        { ikon: '🦺', ad: 'Atış öncesi: herkes çizgide, hedef arkası boş' },
+                        { ikon: '🔁', ad: 'Her 2 seride bir hedef/teknik geri bildirim' },
+                        { ikon: '🏹', ad: 'Ok toplama: birlikte, "DUR" komutundan sonra' }
+                    ])
+                    + '<div class="km-da-kisayol"><button class="birincil" onclick="kmAracSec(\'skor\')">🎯 Skor Gir</button><button onclick="kmAracSec(\'yarisma\')">🏁 Yarışma modu</button></div>';
+            }
+            if(id === 'oyun') {
+                let oneriler = (KM_DA_OYUN[yas] || KM_DA_OYUN.kucuk);
+                return '<div class="km-da-alt">Yaşa göre önerilen oyunlar — sporcular yine gerçek ok atar, skorlar kayda geçer.</div>'
+                    + '<div class="km-da-oyunlar">' + oneriler.map(function(tid) {
+                        let th = tid === 'kelime' ? { ikon: '🔤', ad: 'Kelime Hedefi' } : (KM_OYUN_TEMALAR[tid] || { ikon: '🎮', ad: tid });
+                        return '<button onclick="kmDaOyunAc(\'' + tid + '\')"><span>' + th.ikon + '</span><b>' + esc(th.ad) + '</b><small>Aç →</small></button>';
+                    }).join('') + '</div>'
+                    + '<div class="km-da-kisayol"><button onclick="kmAracSec(\'oyunlar\')">🎮 Tüm oyunlar</button></div>';
+            }
+            if(id === 'soguma') {
+                return '<div class="km-da-alt">Statik esneme — her pozisyonda zorlamadan, nefes vererek tut.</div>' + kmDaListeHTML('soguma', KM_DA_SOGUMA);
+            }
+            return kmDaListeHTML('kapanis', [
+                { ikon: '⭐', ad: 'Günün yıldızını söyle', not: 'Çaba, tutum ya da gelişme — sadece en yüksek puan değil.' },
+                { ikon: '💬', ad: '"Bugün neyi iyi yaptık, neye çalışacağız?"', not: 'Her sporcudan tek cümle.' },
+                { ikon: '🧰', ad: 'Ok ve ekipman sayımı / toplama', not: 'Eksik ok var mı, yaylar gevşetildi mi?' },
+                { ikon: '📨', ad: 'Veliye ders özeti gönder' }
+            ]) + '<div class="km-da-kisayol"><button onclick="kmAracSec(\'pozitif\')">🌟 Pozitif Pusula</button><button onclick="kmAracSec(\'veli\')">📨 Veli Bildirimi</button></div>'
+               + '<label class="km-da-not"><b>📝 Ders notu</b><textarea rows="3" placeholder="Bugün ne işlendi, kim neye ihtiyaç duyuyor..." oninput="kmDaDurum().not=this.value; kmDaKaydet();">' + esc(kmDaDurum().not || '') + '</textarea></label>';
+        }
+        function kmDersAkisiCiz() {
+            let ic = document.getElementById('km-icerik'); if(!ic) return;
+            let d = kmDaDurum();
+            let toplamDk = KM_DA_ASAMALAR.reduce(function(a, x) { return a + (x.sure[d.sure] || 0); }, 0);
+            let seritler = KM_DA_ASAMALAR.map(function(a, i) {
+                let st = !d.basladi ? '' : (d.bitenler.indexOf(i) !== -1 || i < d.aktif ? 'bitti' : (i === d.aktif ? 'aktif' : ''));
+                return '<button class="km-da-serit ' + st + '" style="flex:' + (a.sure[d.sure] || 1) + '" onclick="kmDaAsamaGec(' + i + ')" title="' + esc(a.ad) + ' — ' + a.sure[d.sure] + ' dk">' + a.ikon + '<small>' + a.sure[d.sure] + '</small></button>';
+            }).join('');
+            let html = '<div class="km-da">'
+                + '<div class="km-da-ust"><div><div class="km-da-baslik">📋 Ders Akışı</div><div class="km-da-alt">' + toplamDk + ' dakikalık ders · ' + (_kmListe || []).length + ' sporcu · ' + esc((KM_DA_YAS.find(function(y) { return y.id === d.yas; }) || {}).ad || '') + '</div></div>'
+                + (d.basladi ? '' : '<button class="km-da-basla" onclick="kmDaBasla()">▶ Dersi Başlat</button>') + '</div>'
+                + '<div class="km-da-ayar"><span>Süre</span><div class="km-da-secim">' + [45, 60, 90].map(function(v) { return '<button class="' + (d.sure === v ? 'aktif' : '') + '" onclick="kmDaAyar(\'sure\',' + v + ')">' + v + ' dk</button>'; }).join('') + '</div>'
+                + '<span>Yaş</span><div class="km-da-secim">' + KM_DA_YAS.map(function(y) { return '<button class="' + (d.yas === y.id ? 'aktif' : '') + '" title="' + y.alt + '" onclick="kmDaAyar(\'yas\',\'' + y.id + '\')">' + y.ad + '</button>'; }).join('') + '</div></div>'
+                + '<div class="km-da-seritler">' + seritler + '</div>';
+            html += KM_DA_ASAMALAR.map(function(a, i) {
+                let aktif = d.basladi ? i === d.aktif : i === 0;
+                let bitti = d.basladi && (d.bitenler.indexOf(i) !== -1 || i < d.aktif);
+                let acik = aktif || (d.acikAsama === i);
+                return '<section class="km-da-asama' + (aktif ? ' aktif' : '') + (bitti ? ' bitti' : '') + '">'
+                    + '<button class="km-da-asama-baslik" onclick="kmDaDurum().acikAsama=(kmDaDurum().acikAsama===' + i + '?null:' + i + '); kmDersAkisiCiz();"><span class="km-da-asama-ikon">' + (bitti ? '✓' : a.ikon) + '</span><b>' + a.ad + '</b><small>' + a.sure[d.sure] + ' dk</small>'
+                    + (aktif && d.basladi ? '<span class="km-da-sayac" id="km-da-sayac">' + kmDaSureYaz(kmDaKalanMs(d)) + '</span>' : '<span class="km-da-ok">' + (acik ? '▾' : '▸') + '</span>') + '</button>'
+                    + (aktif && d.basladi ? '<div class="km-da-zaman"><div class="km-da-bar"><i id="km-da-asama-bar"></i></div><button onclick="kmDaDuraklat()">' + (d.calisiyor ? '⏸ Duraklat' : '▶ Devam') + '</button><button onclick="kmDaDakikaEkle(1)">+1 dk</button><button class="birincil" onclick="kmDaAsamaGec()">' + (i === KM_DA_ASAMALAR.length - 1 ? '🏁 Dersi Bitir' : 'Sonraki: ' + KM_DA_ASAMALAR[i + 1].ikon + ' ' + KM_DA_ASAMALAR[i + 1].ad + ' →') + '</button></div>' : '')
+                    + (acik ? '<div class="km-da-govde">' + kmDaIcerik(a.id) + '</div>' : '')
+                    + '</section>';
+            }).join('');
+            if(d.basladi && d.aktif >= KM_DA_ASAMALAR.length) html += '<div class="km-da-bitti">🎉 Ders akışı tamamlandı. <button onclick="kmDaBasla()">↺ Yeniden başlat</button></div>';
+            html += '</div>';
+            ic.innerHTML = html;
+            kmDaZamanGuncelle();
+            if(d.calisiyor && !_kmDaTimer) kmDaZamanlayici();
+        }
         // ===== KARIŞIK SINIF — 💪 FİTNESS (2026-09-25, "evde/salonda/direnç bandıyla/dambılla yapabileceğimiz
         // egzersizler" isteği) — statik bir referans kütüphanesi (Teknik Analiz'in KM_TA_REHBER'iyle AYNI
         // kategori: yeni bir veri modeli/D1 tablosu YOK, sadece içerik). Rastgele "genel fitness" değil,
