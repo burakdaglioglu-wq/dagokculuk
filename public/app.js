@@ -13904,6 +13904,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 @keyframes kmNinjaAgirNokta{ 50%{ opacity:0; } }
 #km-oyun-wrap:fullscreen .km-ninja-agir span{ font-size:21px; }
 .km-hrk-kutu{ width:min(620px, 100%); }
+.km-ninja-cukur-ip{ stroke:#2a1a0e; stroke-width:1.6; }
+.km-ninja-cukur-tahta{ fill:#23150a; stroke:#b8862b; stroke-width:2; transition:stroke .3s ease; }
+.km-ninja-cukur-yazi{ font-family:var(--font-display); font-size:14px; fill:#f1d58a; letter-spacing:.04em; }
+.km-ninja-cukur-ad{ font-family:var(--font-body); font-weight:800; font-size:8.5px; fill:#c9b58a; letter-spacing:.06em; }
+.km-ninja-cukur.tehlike .km-ninja-cukur-tahta{ stroke:#ff4d4d; animation:kmNinjaCukurNabiz 1s ease-in-out infinite; }
+.km-ninja-cukur.tehlike .km-ninja-cukur-yazi{ fill:#ff9b9b; }
+@keyframes kmNinjaCukurNabiz{ 0%,100%{ stroke-width:2; } 50%{ stroke-width:4.5; } }
+@media (prefers-reduced-motion: reduce){ .km-ninja-cukur.tehlike .km-ninja-cukur-tahta{ animation:none; } }
 .km-hrk-alt{ font-size:12px; color:var(--ink-dim, #aab); margin:0 0 12px; line-height:1.45; }
 .km-hrk-liste{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
 .km-hrk-kart{ position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px 10px; border-radius:13px; border:1.5px solid var(--line, rgba(255,255,255,.14)); background:rgba(255,255,255,0.05); color:var(--ink, #fff); font-family:var(--font-body); cursor:pointer; min-height:112px; }
@@ -16317,6 +16325,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   </g>
                   <g id="km-ninja-tabela" transform="translate(1016,14)"></g>
                   <path id="km-oyun-ninja-path" class="km-ninja-path" d="M 110 390 L 190 390 Q 205 360 222 365 L 315 365 Q 330 332 348 340 L 455 340 Q 505 280 555 315 L 675 315 Q 690 280 708 285 L 785 285 Q 800 250 818 255 L 885 255 Q 930 185 975 205 L 1110 205"/>
+                  <g id="km-ninja-cukurlar"></g>
                   <g id="km-oyun-shurikenler"></g>
                   <g id="km-oyun-ninjalar"></g>
                   <g id="km-ninja-efekt"></g>
@@ -19066,7 +19075,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let cokluAktif = _kmOyunTakimModu && _kmOyunCokluMu && s && kmOyunSporcuTakimIndex(s.g, s.ad) !== -1;
             let menzil = 0.15 * (cokluAktif ? KM_OYUN_COKLU_ARTIS_CARPANI : 1);
             let yakin = !!s && s.frac < 1 && s.frac + menzil >= 1;
-            c.classList.toggle('goster', yakin); se.classList.toggle('sinav', yakin);
+            // Çukur sınavı: sıradaki (ya da klanı) bir sonraki çukura tek seride ulaşabiliyorsa.
+            let L = _kmOyunNinjaTotalLen, cukurI = -1;
+            if(s && !yakin && L) kmNinjaCukurlar().forEach(function(ck, ci) { if(cukurI === -1 && s.frac * L <= ck.aLen + 0.5 && (s.frac + menzil) * L > ck.aLen) cukurI = ci; });
+            kmNinjaCukurlar().forEach(function(ck, ci) { let g = document.getElementById('km-ninja-cukur-' + ci); if(g) g.classList.toggle('tehlike', ci === cukurI); });
+            se.classList.toggle('sinav', yakin);
+            c.classList.toggle('goster', yakin || cukurI !== -1);
+            if(!yakin && cukurI !== -1) {
+                let ck = kmNinjaCukurlar()[cukurI], esik = kmNinjaCukurEsik(ck, kmOyunDurumAl(s.g, s.ad).seviye);
+                let kim = cokluAktif ? (function() { let t = _kmOyunTakimlar[kmOyunSporcuTakimIndex(s.g, s.ad)]; return t.emoji + ' ' + esc(t.ad) + ' klanı (' + esc(kmOyunIlkAd(s.ad)) + ')'; })() : esc(kmOyunIlkAd(s.ad));
+                c.innerHTML = `<span class="km-ninja-sinav-ikon">🕳️</span><span><b>${ck.ad.toLocaleUpperCase('tr-TR')}</b><small>${kim} çukura yaklaşıyor — atlamak için bu seri <b>%${Math.round(esik * 100)}+</b> olmalı</small></span>`;
+            }
             if(yakin) {
                 let kim = cokluAktif ? (function() { let t = _kmOyunTakimlar[kmOyunSporcuTakimIndex(s.g, s.ad)]; return t.emoji + ' ' + esc(t.ad) + ' klanı (' + esc(kmOyunIlkAd(s.ad)) + ')'; })() : esc(kmOyunIlkAd(s.ad));
                 c.innerHTML = `<span class="km-ninja-sinav-ikon">🥋</span><span><b>SENSEİ'NİN SINAVI</b><small>${kim} tapınak kapısında — girmek için bu seri <b>%${Math.round(KM_NINJA_SENSEI_ORAN * 100)}+</b> olmalı</small></span>`;
@@ -19231,23 +19250,131 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunKameraHedefeGit(svg, Math.max(d.x, Math.min(d.x + d.w - w, x - w / 2)), Math.max(d.y, Math.min(d.y + d.h - h, y - 40 - h / 2)), w, h);
             } else if(!acik && onceAcik) { try { kmOyunKameraGuncelle(); } catch(e) {} }
         }
+        // ---- Çukurlar (2026-09-26) — "çukuru geçebilecek mi" gerilimi çocukların en sevdiği an oldu. Yoldaki iki
+        // gerçek boşluk (platformlar arası) birer sınav: seri sınırı tutmazsa ninja kenarda sendeleyip bekler, sınırın
+        // hemen üstündeyse karşı kenara ellerle tutunup tırmanır ("kıl payı"). Sınır sporcunun seviyesine göre kayar.
+        const KM_NINJA_CUKUR_AYAR = [{ ad: 'Bambu Çukuru', esik: 0.5 }, { ad: 'Derin Uçurum', esik: 0.7 }];
+        const KM_NINJA_CUKUR_SEVIYE = { mini: -0.1, orta: 0, buyuk: 0.05 };
+        const KM_NINJA_KIL_PAYI = 0.1, KM_NINJA_KIL_SURE = 1500;
+        let _kmNinjaCukurOnbellek = null, _kmNinjaCukurSon = null;
+        // Her boşluk için: aLen = kalkış (boşluktan önce zeminde son nokta), bLen = iniş (sonra zemindeki ilk nokta).
+        function kmNinjaCukurlar() {
+            if(_kmNinjaCukurOnbellek) return _kmNinjaCukurOnbellek;
+            let p = kmOyunNinjaPath(), L = _kmOyunNinjaTotalLen;
+            if(!p || !L) return [];
+            let bosluklar = [];
+            for(let k = 0; k < KM_NINJA_PLATFORMLAR.length - 1; k++) {
+                let a = KM_NINJA_PLATFORMLAR[k], b = KM_NINJA_PLATFORMLAR[k + 1];
+                if(b[0] > a[1]) bosluklar.push({ x0: a[1], y0: a[2], x1: b[0], y1: b[2] });
+            }
+            let ornek = [];
+            for(let l = 0; l <= L; l += 2) { let q = p.getPointAtLength(l), zy = kmOyunNinjaZeminY(q.x); ornek.push({ l: l, x: q.x, zemin: zy !== null && Math.abs(q.y - zy) < 1.5 }); }
+            _kmNinjaCukurOnbellek = bosluklar.slice(0, KM_NINJA_CUKUR_AYAR.length).map(function(b, bi) {
+                let aLen = 0, bLen = L;
+                ornek.forEach(function(o) { if(o.zemin && o.x < b.x0 && o.l > aLen) aLen = o.l; });
+                for(let k = ornek.length - 1; k >= 0; k--) if(ornek[k].zemin && ornek[k].x > b.x1 && ornek[k].l < bLen) bLen = ornek[k].l;
+                return Object.assign({ ad: KM_NINJA_CUKUR_AYAR[bi].ad, esik: KM_NINJA_CUKUR_AYAR[bi].esik, aLen: aLen, bLen: bLen }, b);
+            });
+            return _kmNinjaCukurOnbellek;
+        }
+        function kmNinjaCukurEsik(c, seviye) { return Math.max(0.2, Math.min(0.95, c.esik + (KM_NINJA_CUKUR_SEVIYE[seviye || 'orta'] || 0))); }
+        // Görsel frac artışını çukur kuralına göre düzeltir. Geçerse iniş noktasının ötesine taşır (boşlukta kalmasın).
+        function kmNinjaCukurKontrol(eskiFrac, artis, oran, seviye) {
+            let L = _kmOyunNinjaTotalLen, cs = kmNinjaCukurlar();
+            if(!L || !cs.length) return { artis: artis, sonuc: null };
+            for(let ci = 0; ci < cs.length; ci++) {
+                let c = cs[ci];
+                if(eskiFrac * L <= c.aLen + 0.5 && (eskiFrac + artis) * L > c.aLen + 0.5) {
+                    let esik = kmNinjaCukurEsik(c, seviye);
+                    if(oran < esik) return { artis: Math.max(0, c.aLen / L - eskiFrac), sonuc: { tip: 'gecemedi', c: ci, esik: esik } };
+                    return { artis: Math.max(artis, (c.bLen + 6) / L - eskiFrac), sonuc: { tip: oran < esik + KM_NINJA_KIL_PAYI ? 'kilpayi' : 'gecti', c: ci, esik: esik } };
+                }
+            }
+            return { artis: artis, sonuc: null };
+        }
+        // Boşluğun üstünde iplerle asılı tabela: "⚠ %50" + çukurun adı. Sıradaki sporcu yaklaşınca kırmızı nabız.
+        function kmNinjaCukurTabelaCiz() {
+            let g = document.getElementById('km-ninja-cukurlar'); if(!g) return;
+            g.innerHTML = kmNinjaCukurlar().map(function(c, ci) {
+                let cx = (c.x0 + c.x1) / 2, ust = Math.min(c.y0, c.y1) - 118;
+                return `<g class="km-ninja-cukur" id="km-ninja-cukur-${ci}" transform="translate(${cx.toFixed(0)},${ust.toFixed(0)})">
+                    <line class="km-ninja-cukur-ip" x1="-20" y1="-400" x2="-20" y2="2"/><line class="km-ninja-cukur-ip" x1="20" y1="-400" x2="20" y2="2"/>
+                    <rect class="km-ninja-cukur-tahta" x="-34" y="0" width="68" height="34" rx="4"/>
+                    <text class="km-ninja-cukur-yazi" x="0" y="17" text-anchor="middle">⚠ %${Math.round(c.esik * 100)}</text>
+                    <text class="km-ninja-cukur-ad" x="0" y="28" text-anchor="middle">${c.ad.toLocaleUpperCase('tr-TR')}</text></g>`;
+            }).join('');
+        }
+        // Kıl payı: ninja karşı kenarın dibinde asılı — kollar yukarıda, sallanır, sonra tırmanıp çıkar.
+        function kmNinjaKilPayiAsil(el, x, y) {
+            let wrap = el.querySelector('.km-sil-hareket'); if(!wrap || !wrap.animate) return;
+            el.classList.add('zafer');
+            let kareler = [[0, 0, -6, 0, 48], [.1, 0, 40, 0, 48], [.26, 0, 40, 10, 48], [.4, 0, 40, -8, 48], [.52, 0, 40, 5, 48], [.64, 0, 40, 0, 48], [.8, 6, 16, -14, 48], [.92, 12, -4, 0, 48], [1, 13, 0, 0, 48]];
+            let anim = wrap.animate(kareler.map(kmNinjaHareketKare), { duration: KM_NINJA_KIL_SURE });
+            el._hrkAnim = anim;
+            kmNinjaYaziUcur(x, y - 58, '😅 KIL PAYI!', '#ffd23f');
+            try { sesCal(520, 0.08); setTimeout(function() { try { sesCal(440, 0.08); } catch(e) {} }, 240); setTimeout(function() { try { sesCal(880, 0.12); } catch(e) {} }, KM_NINJA_KIL_SURE * 0.8); } catch(e) {}
+            setTimeout(function() { el.classList.remove('zafer'); }, KM_NINJA_KIL_SURE * 0.72);
+            anim.onfinish = anim.oncancel = function() { if(el._hrkAnim === anim) el._hrkAnim = null; el.classList.remove('zafer'); };
+        }
+        // Geçemedi: kenara kadar gelir, öne sendeler (kollar çırpınır), dengesini bulup bir adım geri çekilir.
+        function kmNinjaSendele(el, o, bitti) {
+            let son = function() { if(bitti) { let b = bitti; bitti = null; b(); } };
+            let wrap = el.querySelector('.km-sil-hareket');
+            kmNinjaYaziUcur(o.x + 10, o.y - 64, '😱 AZ KALDI!', '#ff9b9b');
+            setTimeout(function() { kmNinjaYaziUcur(o.x + 10, o.y - 90, 'Sonraki seride %' + Math.round(o.cukur.esik * 100) + '+', '#fff'); }, 900);
+            try { sesCal(660, 0.08); setTimeout(function() { try { sesCal(330, 0.1); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(220, 0.16); } catch(e) {} }, 380); } catch(e) {}
+            if(!wrap || !wrap.animate || kmOyunKameraAzaltilmisHareketMi()) { setTimeout(son, 900); return; }
+            let kareler = [[0, 0, 0, 0, 0], [.14, 12, 0, 26, 0], [.28, 12, 0, 12, 0], [.42, 12, 0, 30, 0], [.56, 12, 0, 14, 0], [.7, 10, 0, 4, 0], [.86, -6, 0, -4, 0], [1, 0, 0, 0, 0]];
+            let sure = 1700, anim = wrap.animate(kareler.map(kmNinjaHareketKare), { duration: sure });
+            el._hrkAnim = anim;
+            let k = 0, cirp = setInterval(function() { el.classList.remove('zafer', 'yumruk'); el.classList.add(k++ % 2 ? 'yumruk' : 'zafer'); }, 110);
+            let temizle = function() { clearInterval(cirp); el.classList.remove('zafer', 'yumruk'); if(el._hrkAnim === anim) el._hrkAnim = null; };
+            setTimeout(function() { clearInterval(cirp); el.classList.remove('zafer', 'yumruk'); }, sure * 0.7);
+            anim.onfinish = function() { temizle(); son(); };
+            anim.oncancel = function() { temizle(); son(); };
+        }
+        // Kuşaktan bağımsız, herkeste olan küçük hareketler — her seri başka bir şey yapsın diye havuza girer.
+        const KM_NINJA_TEMEL_HAREKETLER = [
+            { id: 'sicra', ad: 'Sıçrayış', ikon: '💨', sure: 800, k: [[0, 0, 0, 0, 25], [.18, 0, 3, 0, 25, 1, .8], [.5, 0, -30, 0, 25], [.85, 0, 2, 0, 25, 1, .85], [1, 0, 0, 0, 25]] },
+            { id: 'donus', ad: 'Fırıldak', ikon: '🌀', sure: 900, k: [[0, 0, 0, 0, 25], [.2, 0, -14, 0, 25, -1, 1], [.4, 0, -20, 0, 25, 1, 1], [.6, 0, -14, 0, 25, -1, 1], [.85, 0, 0, 0, 25, 1, 1], [1, 0, 0, 0, 25]] }
+        ];
+        // Tek bir büyük hareket seçer (her seride hepsi değil): açık imza hareketleri + temel hareketler, seçili imza
+        // hareketi daha sık; altın seride duvar koşusu da havuzda. Aynı sporcu art arda aynı hareketi yapmaz.
+        function kmNinjaRastgeleHareket(s, altin) {
+            let imza = kmNinjaImzaHareket(s.g, s.ad), havuz = [];
+            kmNinjaAcikHareketler(s.g, s.ad).forEach(function(h) { for(let k = 0; k < (h.id === imza.id ? 3 : 1); k++) havuz.push(h); });
+            KM_NINJA_TEMEL_HAREKETLER.forEach(function(h) { havuz.push(h); });
+            if(altin) { havuz.push('duvar'); havuz.push('duvar'); }
+            let aday = havuz.filter(function(h) { return (h === 'duvar' ? 'duvar' : h.id) !== s._ninjaSonHrk; });
+            if(!aday.length) aday = havuz;
+            let h = aday[Math.floor(Math.random() * aday.length)];
+            s._ninjaSonHrk = h === 'duvar' ? 'duvar' : h.id;
+            return h;
+        }
         function kmNinjaVarisSahnesi(el, s, o) {
             if(!el) return;
             let no = el._varisNo = (el._varisNo || 0) + 1;
             let gecerli = function() { return el._varisNo === no && el.isConnected && _kmOyunAktifTema === 'ninja'; };
             let oran = o.toplam / Math.max(1, _kmOyunOkSayisi * 10);
-            let imza = kmNinjaImzaHareket(s.g, s.ad);
-            let adimlar = [];
-            if(o.altin) adimlar.push(function(sonraki) { kmNinjaYaziUcur(o.x, o.y - 70, '🎋 DUVAR KOŞUSU!', o.renk); kmNinjaDuvarKosusu(el, o.x, o.y, o.xVar ? 2 : 1, 1, sonraki); });
-            if(oran >= KM_NINJA_IMZA_ORAN) adimlar.push(function(sonraki) { kmNinjaYaziUcur(o.x, o.y - 70, imza.ikon + ' ' + imza.ad.toLocaleUpperCase('tr-TR'), '#fff'); kmNinjaHareketCalistir(el, imza, 1, sonraki); });
-            if(o.poz) adimlar.push(function(sonraki) { kmNinjaPozGoster(el, o.poz, sonraki); });
-            // X'li seride ağır çekim tekrar: bu seride takla olduysa takla (1-3 tur), yoksa imza hareketi.
-            if(o.xVar && !kmOyunKameraAzaltilmisHareketMi()) adimlar.push(function(sonraki) {
-                let h = o.taklaOldu ? { sure: 500 + o.taklaN * 300, k: kmNinjaTaklaKareleri(o.taklaN) } : imza;
-                kmNinjaAgirCekimGoster(true, o.x, o.y);
-                try { sesCal(140, 0.4); } catch(e) {}
-                kmNinjaHareketCalistir(el, h, 2.6, function() { setTimeout(function() { kmNinjaAgirCekimGoster(false); sonraki(); }, 250); });
-            });
+            let adimlar = [], secilen = null;
+            if(o.cukur && o.cukur.tip === 'gecemedi') {
+                adimlar.push(function(sonraki) { kmNinjaSendele(el, o, sonraki); });
+            } else {
+                if(o.cukur && o.cukur.tip === 'gecti') kmNinjaYaziUcur(o.x, o.y - 96, '✔ ' + kmNinjaCukurlar()[o.cukur.c].ad.toLocaleUpperCase('tr-TR') + ' GEÇİLDİ', '#8fffb0');
+                if(oran >= KM_NINJA_IMZA_ORAN) {
+                    secilen = kmNinjaRastgeleHareket(s, o.altin);
+                    if(secilen === 'duvar') adimlar.push(function(sonraki) { kmNinjaYaziUcur(o.x, o.y - 70, '🎋 DUVAR KOŞUSU!', o.renk); kmNinjaDuvarKosusu(el, o.x, o.y, o.xVar ? 2 : 1, 1, sonraki); });
+                    else adimlar.push(function(sonraki) { kmNinjaYaziUcur(o.x, o.y - 70, secilen.ikon + ' ' + secilen.ad.toLocaleUpperCase('tr-TR'), '#fff'); kmNinjaHareketCalistir(el, secilen, 1, sonraki); });
+                }
+                if(o.poz) adimlar.push(function(sonraki) { kmNinjaPozGoster(el, o.poz, sonraki); });
+                // X'li seride ağır çekim tekrar: takla olduysa takla (1-3 tur), yoksa az önceki hareket.
+                let tekrar = o.taklaOldu ? { sure: 500 + o.taklaN * 300, k: kmNinjaTaklaKareleri(o.taklaN) } : (secilen && secilen !== 'duvar' ? secilen : null);
+                if(o.xVar && tekrar && !kmOyunKameraAzaltilmisHareketMi()) adimlar.push(function(sonraki) {
+                    kmNinjaAgirCekimGoster(true, o.x, o.y);
+                    try { sesCal(140, 0.4); } catch(e) {}
+                    kmNinjaHareketCalistir(el, tekrar, 2.6, function() { setTimeout(function() { kmNinjaAgirCekimGoster(false); sonraki(); }, 250); });
+                });
+            }
             let k = 0;
             (function devam() {
                 if(!gecerli() || k >= adimlar.length) { if(el._varisNo === no) kmNinjaAgirCekimGoster(false); return; }
@@ -19369,7 +19496,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Bitirenler (frac>=1) Sensei'nin ARKASINDA, tapınak önündeki düzlükte durur — kapıda bekleyenlerle karışmasın.
         function kmOyunNinjaSporcuKonum(frac, i, n) {
             if(frac >= 1) return { x: Math.min(1188, 1140 + kmOyunNinjaAralik(i, n) * 0.9), y: 205 };
-            return kmOyunNinjaDurusKonum(frac * _kmOyunNinjaTotalLen + kmOyunNinjaAralik(i, n));
+            return kmOyunNinjaDurusKonum(kmOyunNinjaSporcuLen(frac, i, n));
+        }
+        // Aralık (aynı yerdeki sporcuları ayırma payı) bir ninjayı çukurun öbür yakasına itmesin:
+        // çukuru geçmemiş olan kenarda (hafif geriye yayılarak) kalır, geçmiş olan karşı yakada durur.
+        function kmOyunNinjaSporcuLen(frac, i, n) {
+            let L = _kmOyunNinjaTotalLen, ham = frac * L, len = ham + kmOyunNinjaAralik(i, n);
+            kmNinjaCukurlar().forEach(function(c) {
+                // Kenarda bekleyen (sınavı geçemeyen) ninja aralık ne olursa olsun kenarın dibinde durur.
+                if(ham >= c.aLen - 1.5 && ham <= c.aLen + 0.5) len = c.aLen - 1 - Math.abs(len - ham) * 0.3;
+                else if(ham <= c.aLen + 0.5) { if(len > c.aLen - 1) len = c.aLen - 1 - Math.abs(len - c.aLen) * 0.35; }
+                else if(ham < c.bLen + 80 && len < c.bLen + 1) len = c.bLen + 2 + Math.abs(c.bLen - len) * 0.35;
+            });
+            return len;
         }
         function kmOyunNinjaCpSVG(ci) {
             let isik, sil;
@@ -19406,6 +19545,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }).join('');
             }
             kmNinjaSahneSusle();
+            _kmNinjaCukurOnbellek = null;
+            kmNinjaCukurTabelaCiz();
             let cg = document.getElementById('km-oyun-ninjalar'); if(!cg) return;
             cg.innerHTML = '';
             let roster = _kmOyunRosterCache;
@@ -19466,9 +19607,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(altin) kmNinjaYaprakSavur(kmOyunNinjaSporcuKonum(eskiFrac, i, n));
             let L = _kmOyunNinjaTotalLen, aralik = kmOyunNinjaAralik(i, n);
             let bas = kmOyunNinjaSporcuKonum(eskiFrac, i, n), son = kmOyunNinjaSporcuKonum(yeniFrac, i, n);
-            let lenBas = eskiFrac * L + aralik, lenSon = yeniFrac * L + aralik;
+            let lenBas = kmOyunNinjaSporcuLen(eskiFrac, i, n), lenSon = yeniFrac >= 1 ? yeniFrac * L + aralik : kmOyunNinjaSporcuLen(yeniFrac, i, n);
             let sure = 1150, basla = performance.now();
+            // Çukur (2026-09-26): kıl payı geçişte ninja karşı kenara ellerle tutunur, sallanır, tırmanır.
+            let cukur = _kmNinjaCukurSon, kil = cukur && cukur.tip === 'kilpayi' ? kmNinjaCukurlar()[cukur.c] : null;
+            let kilDurum = kil && !kmOyunKameraAzaltilmisHareketMi() ? 0 : 3, kilT0 = 0;
             function frame(now) {
+                if(kilDurum === 1) {
+                    if(now - kilT0 < KM_NINJA_KIL_SURE) { requestAnimationFrame(frame); return; }
+                    kilDurum = 2; basla += KM_NINJA_KIL_SURE; el.classList.add('kosuyor');
+                }
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
                 let pt = kmOyunNinjaUzunlukNokta(lenBas + (lenSon - lenBas) * eased);
                 // Başta/sonda duruş noktasına (sıçrama yayında havada kalmamak için geri yürütülmüş olabilir)
@@ -19476,6 +19624,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let kb = Math.max(0, 1 - t * 5), ks = Math.max(0, t * 5 - 4);
                 let x = pt.x + (bas.x - pt.x) * kb + (son.x - pt.x) * ks, y = pt.y + (bas.y - pt.y) * kb + (son.y - pt.y) * ks;
                 let hop = Math.abs(Math.sin(t * Math.PI * 7)) * 4 * (1 - t);
+                if(kilDurum === 0 && x >= kil.x1 - 16) {
+                    kilDurum = 1; kilT0 = now;
+                    el.setAttribute('transform', `translate(${(kil.x1 - 13).toFixed(1)},${kil.y1.toFixed(1)})`);
+                    el.classList.remove('kosuyor', 'havada', 't2', 't3');
+                    kmNinjaKilPayiAsil(el, kil.x1 - 13, kil.y1);
+                    requestAnimationFrame(frame); return;
+                }
                 el.setAttribute('transform', `translate(${x.toFixed(1)},${(y - hop).toFixed(1)})`);
                 // Uçurum üstü: zemin yoksa (ya da ayak zeminin epey üstündeyse) bir kerelik takla.
                 let zy = kmOyunNinjaZeminY(x), ucuyor = zy === null || y < zy - 6;
@@ -19492,7 +19647,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else {
                     el.classList.remove('flying', 'kosuyor');
                     // Varış sahnesi: (altın) duvar koşusu → imza hareketi → kapı pozu → (X varsa) ağır çekim tekrar.
-                    kmNinjaVarisSahnesi(el, s, { toplam: toplam, altin: altin, xVar: xVar, taklaN: taklaN, taklaOldu: taklaOldu, x: son.x, y: son.y, renk: renk,
+                    kmNinjaVarisSahnesi(el, s, { toplam: toplam, altin: altin, xVar: xVar, taklaN: taklaN, taklaOldu: taklaOldu, x: son.x, y: son.y, renk: renk, cukur: cukur,
                         poz: yeniFrac >= 1 ? 'kilic' : (yeniCp > eskiCp ? KM_NINJA_KAPI_POZLARI[(yeniCp - 1) % KM_NINJA_KAPI_POZLARI.length] : null) });
                     if(eskiFrac < 1 && yeniFrac >= 1) setTimeout(function() { kmNinjaTapinakFinal(s, i); }, 350);
                     kmNinjaSaatGuncelle(true);
@@ -22012,6 +22167,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(toplam / maxPuan < KM_NINJA_SENSEI_ORAN) { artis = Math.max(0, KM_NINJA_KAPI_FRAC - eskiFrac); senseiSonuc = 'red'; }
                 else senseiSonuc = 'onay';
             }
+            // Çukurlar (2026-09-26) — Ninja'da çukuru geçecek seri, çukurun sınırını (seviyeye göre) tutmalı; tutmazsa
+            // ninja kenarda bekler. Asla geri gitmez, gerçek skora dokunmaz (Sensei kapısıyla aynı desen).
+            let ninjaCukur = null;
+            if(_kmOyunAktifTema === 'ninja' && artis > 0 && !senseiSonuc) {
+                let ck = kmNinjaCukurKontrol(eskiFrac, artis, toplam / maxPuan, kmOyunDurumAl(s.g, s.ad).seviye);
+                artis = ck.artis; ninjaCukur = ck.sonuc;
+            }
+            _kmNinjaCukurSon = ninjaCukur;
             // Ara olaylar (2026-09-25) — Dağ/Hendek'in kestirme/tehlike/bonus bölgeleri (bkz. kmAraOlayUygula).
             let araOlaylar = [];
             if((_kmOyunAktifTema === 'dag' || _kmOyunAktifTema === 'yildiz' || _kmOyunAktifTema === 'sisharita') && artis > 0) {
