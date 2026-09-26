@@ -13563,7 +13563,7 @@ ${(function(){
 .km-oyun-ilerlet-btn:disabled{ opacity:.35; cursor:default; box-shadow:none; }
 
 /* Zirve Yolu */
-#km-oyun-panel-zirve{ background:linear-gradient(180deg,#070b16 0%,#0a1020 45%,#0c1626 100%); }
+#km-oyun-panel-zirve{ background:#8fc2ee; }
 .km-oa-blob{ position:absolute; border-radius:50%; filter:blur(46px); opacity:.4; pointer-events:none; mix-blend-mode:screen; }
 .km-oa-blob.b1{ width:46%; height:34%; left:2%; top:-6%; background:radial-gradient(circle,var(--a1),transparent 70%); }
 .km-oa-blob.b2{ width:40%; height:30%; right:0%; top:-8%; background:radial-gradient(circle,var(--a4),transparent 70%); }
@@ -13912,6 +13912,89 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-ninja-cukur.tehlike .km-ninja-cukur-yazi{ fill:#ff9b9b; }
 @keyframes kmNinjaCukurNabiz{ 0%,100%{ stroke-width:2; } 50%{ stroke-width:4.5; } }
 @media (prefers-reduced-motion: reduce){ .km-ninja-cukur.tehlike .km-ninja-cukur-tahta{ animation:none; } }
+#km-oyun-panel-zirve .km-zirve-geo{ fill:none; stroke:none; }
+.km-zirve-saat{ transition:opacity 2.4s ease; pointer-events:none; }
+#km-zirve-gunes{ transition:cx 2.4s ease, cy 2.4s ease; pointer-events:none; }
+.km-zirve-catlak{ fill:none; stroke:#2e2a27; stroke-width:1.2; opacity:.35; stroke-linecap:round; }
+.km-zirve-oluk{ fill:none; stroke:#2e2a27; stroke-width:2; opacity:.18; stroke-linecap:round; }
+.km-zirve-cam{ fill:#1f4a33; }
+.km-zirve-tas{ fill:#57524d; }
+.km-zirve-tas.karli{ fill:#9aa3ad; }
+.km-zirve-yigin{ fill:#f7fbff; }
+.km-zirve-buz{ fill:#bfe8ff; stroke:#7cc7f0; stroke-width:.8; }
+.km-zirve-yol-golge{ fill:none; stroke:#2a211b; stroke-width:17; stroke-linecap:round; stroke-linejoin:round; opacity:.5; }
+.km-zirve-yol{ fill:none; stroke:url(#kmZirveYolGrad); stroke-width:13; stroke-linecap:round; stroke-linejoin:round; }
+.km-zirve-yol-cizgi{ fill:none; stroke:#5a4632; stroke-width:1.2; stroke-dasharray:2 7; opacity:.45; }
+.km-zirve-halat{ fill:none; stroke:#c99a55; stroke-width:1.4; }
+.km-zirve-direk{ stroke:#4a3420; stroke-width:2; stroke-linecap:round; }
+.km-zirve-bulutlar{ fill:#ffffff; pointer-events:none; }
+.km-zirve-bulut-kay{ animation:kmZirveBulut 60s ease-in-out infinite alternate; }
+.km-zirve-bulut-kay.yavas{ animation-duration:90s; }
+@keyframes kmZirveBulut{ from{ transform:translateX(-40px); } to{ transform:translateX(40px); } }
+.km-zirve-kaya-duvar{ fill:#5e5750; stroke:#2e2a27; stroke-width:1.2; }
+.km-zirve-kaya-golge{ fill:#3e3934; }
+.km-zirve-ip-sabit{ stroke:#e0b36a; stroke-width:1.4; }
+.km-zirve-yarik{ fill:#0b2a44; }
+.km-zirve-yarik-buz{ fill:#cdeeff; }
+.km-zirve-merdiven line{ stroke:#8a5a2b; stroke-width:1.6; }
+.km-zirve-cig-kar{ fill:#f6fbff; stroke:#cfe3f3; stroke-width:1; }
+.km-zirve-cig-top circle{ fill:#ffffff; stroke:#cfe3f3; stroke-width:.8; }
+.km-zirve-engel-tahta{ fill:#23150a; stroke:#b8862b; stroke-width:2; }
+.km-zirve-engel-yazi{ font-family:var(--font-display); font-size:13px; fill:#f1d58a; }
+.km-zirve-engel-ad{ font-family:var(--font-body); font-weight:800; font-size:7.5px; fill:#c9b58a; letter-spacing:.05em; }
+.km-zirve-engel.tehlike .km-zirve-engel-tahta{ stroke:#ff4d4d; animation:kmNinjaCukurNabiz 1s ease-in-out infinite; }
+.km-zirve-engel.tehlike .km-zirve-engel-yazi{ fill:#ff9b9b; }
+.km-zirve-kamp-tahta{ fill:#3a2616; stroke:#c9a052; stroke-width:1; }
+.km-zirve-kamp-yazi{ font-family:var(--font-body); font-weight:800; font-size:8px; fill:#f3e2bd; }
+.km-zirve-kamp-sahip{ font-family:var(--font-body); font-weight:800; font-size:8px; fill:#fff; stroke:#1a120a; stroke-width:2.5px; paint-order:stroke; }
+.km-zirve-ates{ fill:#ff8a2a; transform-box:fill-box; transform-origin:50% 100%; animation:kmZirveAtes .5s ease-in-out infinite alternate; }
+.km-zirve-ates.ic{ fill:#ffe27a; animation-duration:.35s; }
+@keyframes kmZirveAtes{ from{ transform:scaleY(.8) skewX(-4deg); } to{ transform:scaleY(1.12) skewX(4deg); } }
+.km-zirve-kamp.yeni .km-zirve-kamp-ic{ transform-box:fill-box; transform-origin:50% 100%; animation:kmZirveKampKur .6s cubic-bezier(.2,.9,.3,1.3) 1; }
+@keyframes kmZirveKampKur{ from{ transform:scale(0); } to{ transform:scale(1); } }
+.km-zirve-tabela-yazi{ font-family:var(--font-body); font-weight:800; font-size:8.5px; }
+.km-zirve-zirve-yazi{ font-family:var(--font-display); font-size:11px; fill:#1d2b3a; }
+.km-zirve-defter-baslik{ font-family:var(--font-display); font-size:10.5px; fill:#f1d58a; letter-spacing:.05em; }
+.km-zirve-defter-ad{ font-family:var(--font-body); font-weight:800; font-size:12px; }
+.km-zirve-uc-yazi{ font-family:var(--font-display); font-size:16px; letter-spacing:.04em; stroke:#0b1220; stroke-width:4px; paint-order:stroke; stroke-linejoin:round; pointer-events:none; }
+.km-zirve-tirmanici .km-zirve-hrk, .km-zirve-tirmanici .km-zirve-sway{ transform-box:view-box; transform-origin:0px 0px; }
+.km-zirve-tirmanici.yuruyor .km-zirve-sway{ animation:kmZirveYuru .34s ease-in-out infinite alternate; }
+@keyframes kmZirveYuru{ from{ transform:rotate(-6deg); } to{ transform:rotate(6deg); } }
+.km-zirve-tirmanici.ipte .km-zirve-sway{ animation:kmZirveTirman .28s ease-in-out infinite alternate; }
+@keyframes kmZirveTirman{ from{ transform:translate(-2px,0px) rotate(-3deg); } to{ transform:translate(2px,-5px) rotate(3deg); } }
+.km-zirve-tirmanici.kayiyor .km-zirve-sway{ animation:kmZirveKay .2s ease-in-out infinite alternate; }
+@keyframes kmZirveKay{ from{ transform:rotate(-14deg); } to{ transform:rotate(10deg); } }
+.km-zirve-tirmanici.savrul:not(.yuruyor) .km-zirve-sway{ animation:kmZirveSavrul 1.3s ease-in-out infinite; }
+@keyframes kmZirveSavrul{ 0%,100%{ transform:rotate(0deg); } 40%{ transform:rotate(-9deg) translateX(-3px); } 60%{ transform:rotate(-6deg) translateX(-2px); } }
+.km-zirve-ip{ display:none; }
+.km-zirve-ip line{ stroke:#e0b36a; stroke-width:2; }
+.km-zirve-ip circle{ fill:#8a8f96; }
+.km-zirve-tirmanici.ipte .km-zirve-ip{ display:inline; }
+.km-zirve-elbayrak{ display:none; }
+.km-zirve-tirmanici.bayrak .km-zirve-elbayrak{ display:inline; }
+.km-zirve-elbayrak .bz{ transform-box:fill-box; transform-origin:0% 50%; animation:kmZirveBayrak .5s ease-in-out infinite alternate; }
+@keyframes kmZirveBayrak{ from{ transform:skewY(-8deg) scaleX(.9); } to{ transform:skewY(8deg) scaleX(1.05); } }
+.km-zirve-ekip text{ font-size:12px; }
+.km-zirve-kartal path, .km-zirve-kartal circle{ fill:#2a2320; }
+.km-zirve-kartal .kanat{ transform-box:fill-box; transform-origin:100% 100%; animation:kmZirveKanat .45s ease-in-out infinite alternate; }
+.km-zirve-kartal .kanat.sag{ transform-origin:0% 100%; }
+@keyframes kmZirveKanat{ from{ transform:scaleY(1); } to{ transform:scaleY(-.4); } }
+.km-zirve-ruzgar{ position:absolute; inset:0; pointer-events:none; z-index:4; overflow:hidden; display:none; }
+.km-zirve-firtina-modu .km-zirve-ruzgar{ display:block; }
+.km-zirve-ruzgar i{ position:absolute; left:0; height:3px; width:190px; border-radius:2px; background:linear-gradient(90deg, transparent, rgba(60,92,135,.6) 40%, rgba(255,255,255,.9) 60%, transparent); animation:kmZirveRuzgar 1.5s linear infinite; }
+.km-zirve-ruzgar i:nth-child(1){ top:12%; animation-delay:-.2s; }
+.km-zirve-ruzgar i:nth-child(2){ top:27%; animation-delay:-.9s; animation-duration:1.2s; }
+.km-zirve-ruzgar i:nth-child(3){ top:41%; animation-delay:-.5s; animation-duration:1.8s; }
+.km-zirve-ruzgar i:nth-child(4){ top:56%; animation-delay:-1.3s; }
+.km-zirve-ruzgar i:nth-child(5){ top:69%; animation-delay:-.1s; animation-duration:1.35s; }
+.km-zirve-ruzgar i:nth-child(6){ top:83%; animation-delay:-.7s; animation-duration:1.65s; }
+@keyframes kmZirveRuzgar{ from{ transform:translateX(110vw); } to{ transform:translateX(-180px); } }
+.km-zirve-panorama{ position:absolute; inset:0; pointer-events:none; z-index:4; opacity:0; background:radial-gradient(ellipse at 50% 16%, rgba(255,214,140,.6), rgba(255,160,90,.2) 45%, transparent 75%); }
+.km-zirve-panorama.goster{ animation:kmZirvePanorama 4.2s ease-in-out 1; }
+@keyframes kmZirvePanorama{ 0%{ opacity:0; } 20%, 70%{ opacity:1; } 100%{ opacity:0; } }
+#km-zirve-cagri{ top:64px; }
+.km-zirve-kar{ box-shadow:0 0 0 1px rgba(60,90,130,.5); }
+@media (prefers-reduced-motion: reduce){ .km-zirve-bulut-kay, .km-zirve-ates, .km-zirve-kamp.yeni .km-zirve-kamp-ic, .km-zirve-tirmanici .km-zirve-sway, .km-zirve-elbayrak .bz, .km-zirve-kartal .kanat, .km-zirve-ruzgar i, .km-zirve-panorama.goster, .km-zirve-engel.tehlike .km-zirve-engel-tahta{ animation:none !important; } }
 .km-hrk-alt{ font-size:12px; color:var(--ink-dim, #aab); margin:0 0 12px; line-height:1.45; }
 .km-hrk-liste{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
 .km-hrk-kart{ position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px 10px; border-radius:13px; border:1.5px solid var(--line, rgba(255,255,255,.14)); background:rgba(255,255,255,0.05); color:var(--ink, #fff); font-family:var(--font-body); cursor:pointer; min-height:112px; }
@@ -16099,47 +16182,56 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         function kmOyunPanelHTML(tid) {
             if(tid === 'zirve') return `<div class="km-oyun-panel" id="km-oyun-panel-zirve">
-                <div class="km-oa-blob b1"></div><div class="km-oa-blob b2"></div><div class="km-oa-blob b3"></div>
+                <!-- Zirve 2.0 (2026-09-26): tek büyük dağın yüzüne oyulmuş patika. Gökyüzü/menzil/bulut katmanları
+                     viewBox'ın çok dışına taşar — her ekran oranında ve kamera nereye giderse gitsin boş şerit kalmaz. -->
                 <svg id="km-oyun-svg-zirve" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
-                    <linearGradient id="kmTrailGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#f0d9a8"/><stop offset="100%" stop-color="#ffe9b8"/></linearGradient>
-                    <linearGradient id="kmZirveGokyuzu" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#0a0e1c"/><stop offset="100%" stop-color="#5b7ba8"/></linearGradient>
-                    <linearGradient id="kmMtnUzakGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3a4a6b"/><stop offset="100%" stop-color="#dce8f5"/></linearGradient>
-                    <linearGradient id="kmMtnOrtaGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#28331f"/><stop offset="100%" stop-color="#eef3fa"/></linearGradient>
-                    <linearGradient id="kmMtnYakinGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#1a1f18"/><stop offset="100%" stop-color="#ffffff"/></linearGradient>
+                    <linearGradient id="kmZirveGok" gradientUnits="userSpaceOnUse" x1="0" y1="-500" x2="0" y2="500"><stop offset="0" stop-color="#2f6fc4"/><stop offset=".55" stop-color="#7fb8ea"/><stop offset="1" stop-color="#d6ecfa"/></linearGradient>
+                    <linearGradient id="kmZirveSafak" gradientUnits="userSpaceOnUse" x1="0" y1="-500" x2="0" y2="500"><stop offset="0" stop-color="#5a4b8f"/><stop offset=".55" stop-color="#f08a6b"/><stop offset="1" stop-color="#ffd7a3"/></linearGradient>
+                    <linearGradient id="kmZirveAksam" gradientUnits="userSpaceOnUse" x1="0" y1="-500" x2="0" y2="500"><stop offset="0" stop-color="#2b2159"/><stop offset=".5" stop-color="#c2477a"/><stop offset="1" stop-color="#ff9a4d"/></linearGradient>
+                    <radialGradient id="kmZirveGunesGrad"><stop offset="0" stop-color="#fffbe6"/><stop offset=".3" stop-color="#ffe29a"/><stop offset="1" stop-color="#ffb35c" stop-opacity="0"/></radialGradient>
+                    <linearGradient id="kmZirveKaya" gradientUnits="userSpaceOnUse" x1="0" y1="440" x2="0" y2="0"><stop offset="0" stop-color="#3d3a37"/><stop offset=".45" stop-color="#6f6a66"/><stop offset=".75" stop-color="#8c8f96"/><stop offset="1" stop-color="#a9b3bf"/></linearGradient>
+                    <linearGradient id="kmZirveKar" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="230"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e6f1fb"/><stop offset="1" stop-color="#c6dcf0"/></linearGradient>
+                    <linearGradient id="kmZirveYolGrad" gradientUnits="userSpaceOnUse" x1="0" y1="440" x2="0" y2="30"><stop offset="0" stop-color="#b08a5c"/><stop offset=".3" stop-color="#a39381"/><stop offset=".58" stop-color="#c9d2dc"/><stop offset=".72" stop-color="#eef4fa"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+                    <linearGradient id="kmZirveOrman" gradientUnits="userSpaceOnUse" x1="0" y1="340" x2="0" y2="560"><stop offset="0" stop-color="#2d5a3f"/><stop offset="1" stop-color="#132a1d"/></linearGradient>
                   </defs>
-                  <rect id="km-oyun-zirve-gokyuzu" x="0" y="0" width="1200" height="440" fill="url(#kmZirveGokyuzu)"/>
-                  <g id="km-oyun-stars"></g>
-                  <!-- Faz 14, 2. adım (2026-09-12) — "dağ arka planı", 3 derinlik katmanı. Her katman
-                       kmOyunZirveParallaxUygula() tarafından kameranın DÜŞEY konumuna göre AYRI hızda
-                       kaydırılıyor (uzak yavaş/geride kalır, yakın hızlı) — bkz. KM_OYUN_ZIRVE_PARALLAX_KATMANLARI.
-                       Eski 3 prosedürel silüet (kmMtn1/2/3) ATILMADI, sadece daha uzun (tüm patika
-                       boyunu kapsayacak) yeniden ölçeklendi + rengi koyu kaya/orman → beyaz kar-buz
-                       geçişine çevrildi ("aşağıda ağaç sınırı/koyu kaya, yukarıda kar/buz" — kullanıcı
-                       talimatı) ve gerçek zirve-dag-mavi.webp kopyalarıyla (uzaktakiler küçük/soluk/
-                       bulanık, yakındakiler büyük/net — AYNI kullanıcı talimatı) birlikte gruplandı. -->
-                  <g id="km-oyun-zirve-dag-uzak">
-                    <polygon fill="url(#kmMtnUzakGrad)" opacity="0.9" points="0,229 100,60 200,208 320,81 420,218 540,92 650,229 760,81 880,218 1000,102 1120,218 1200,123 1200,440 0,440"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="225" y="81.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="425" y="41.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="875" y="101.8" width="150" height="88.2" opacity="0.4" style="filter:blur(1.5px);"/>
-                  </g>
-                  <g id="km-oyun-zirve-dag-orta">
-                    <polygon fill="url(#kmMtnOrtaGrad)" opacity="0.92" points="0,313 120,144 230,292 350,144 460,303 580,166 690,313 800,155 920,303 1040,166 1150,303 1200,208 1200,440 0,440"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="20" y="147" width="260" height="153" opacity="0.65" style="filter:blur(0.5px);"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="870" y="117" width="260" height="153" opacity="0.65" style="filter:blur(0.5px);"/>
-                  </g>
-                  <g id="km-oyun-zirve-dag-yakin">
-                    <polygon fill="url(#kmMtnYakinGrad)" points="0,398 140,208 260,377 380,218 520,398 650,229 780,387 900,218 1040,387 1150,250 1200,356 1200,440 0,440"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="-130" y="194.7" width="400" height="235.2" opacity="0.95"/>
-                    <image href="/zirve-karakterler/zirve-dag-mavi.webp" x="950" y="174.7" width="400" height="235.2" opacity="0.95"/>
-                  </g>
-                  <path id="km-oyun-trail" class="km-trail-glow" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
-                  <path class="km-trail" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
+                  <rect x="-900" y="-1100" width="3000" height="2800" fill="url(#kmZirveGok)"/>
+                  <rect id="km-zirve-safak" class="km-zirve-saat" x="-900" y="-1100" width="3000" height="2800" fill="url(#kmZirveSafak)" opacity="0"/>
+                  <rect id="km-zirve-aksam" class="km-zirve-saat" x="-900" y="-1100" width="3000" height="2800" fill="url(#kmZirveAksam)" opacity="0"/>
+                  <g id="km-oyun-stars" class="km-zirve-saat" opacity="0"></g>
+                  <circle id="km-zirve-gunes" cx="200" cy="180" r="90" fill="url(#kmZirveGunesGrad)"/>
+                  <g id="km-oyun-zirve-dag-uzak"><path fill="#9db8d4" d="M-900 440 L-900 250 L-760 190 L-640 230 L-520 150 L-400 215 L-300 170 L-180 225 L-60 160 L80 230 L200 175 L330 235 L450 165 L600 225 L740 160 L880 230 L1000 170 L1120 225 L1260 150 L1380 215 L1500 175 L1640 230 L1780 180 L2100 240 L2100 440 Z"/><path fill="#f4f8fc" opacity=".75" d="M-520 150 L-490 172 L-545 168 Z M-60 160 L-30 183 L-88 180 Z M450 165 L478 186 L424 184 Z M740 160 L770 182 L712 180 Z M1260 150 L1290 173 L1232 170 Z"/></g>
+                  <g id="km-oyun-zirve-dag-orta"><path fill="#7596b5" d="M-900 440 L-900 300 L-780 260 L-650 300 L-540 235 L-420 290 L-300 250 L-190 300 L-80 270 L40 320 L1160 320 L1270 265 L1380 300 L1500 240 L1620 295 L1760 255 L2100 300 L2100 440 Z"/></g>
+                  <g id="km-zirve-bulut-arka" class="km-zirve-bulutlar"></g>
+                  <g id="km-oyun-zirve-dag-yakin"><path fill="#4f6f62" d="M-900 440 L-900 360 L-700 330 L-520 360 L-340 320 L-160 350 L-40 380 L1240 380 L1380 340 L1560 365 L1760 325 L2100 355 L2100 440 Z"/></g>
+                  <path id="km-zirve-dag" fill="url(#kmZirveKaya)" d="M -300 440 L -120 380 L 30 330 L 70 250 L 80 175 L 95 110 L 180 70 L 300 60 L 400 40 L 500 30 L 560 14 L 600 2 L 640 14 L 720 34 L 820 48 L 930 70 L 1040 100 L 1110 150 L 1125 230 L 1160 300 L 1320 380 L 1500 440 Z"/>
+                  <g id="km-zirve-dag-doku"></g>
+                  <path id="km-zirve-kar" fill="url(#kmZirveKar)" d="M 80 175 L 95 110 L 180 70 L 300 60 L 400 40 L 500 30 L 560 14 L 600 2 L 640 14 L 720 34 L 820 48 L 930 70 L 1040 100 L 1110 150 L 1118 190 L 1060 205 L 1000 180 L 930 210 L 860 185 L 780 215 L 700 190 L 620 220 L 540 195 L 460 222 L 380 192 L 300 214 L 220 188 L 150 210 L 85 190 Z"/>
+                  <path fill="url(#kmZirveOrman)" d="M -900 560 L -900 420 L -300 440 L -120 400 L 40 420 L 200 405 L 360 425 L 520 410 L 700 428 L 880 408 L 1040 424 L 1200 400 L 1320 412 L 2100 420 L 2100 560 Z"/>
+                  <g id="km-zirve-suslar"></g>
+                  <path id="km-zirve-yol-golge" class="km-zirve-yol-golge" transform="translate(0,4)"/>
+                  <path id="km-zirve-yol" class="km-zirve-yol"/>
+                  <path id="km-zirve-yol-cizgi" class="km-zirve-yol-cizgi"/>
+                  <g id="km-zirve-korkuluk"></g>
+                  <g id="km-zirve-engeller"></g>
                   <g id="km-oyun-zirve-tabelalar"></g>
-                  <g id="km-oyun-flags"></g><g id="km-oyun-zirve-firtina-tabela"></g><g id="km-oyun-climbers"></g>
-                  <g id="km-oyun-summit" class="km-summit-icon" opacity="0.55" transform="translate(600,45)"><image href="/zirve-karakterler/zirve-zirve-bayrak.webp" x="-41.5" y="-120" width="83.0" height="120" preserveAspectRatio="xMidYMax meet"/><text x="0" y="17" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">🏔️ Zirve</text></g>
+                  <g id="km-zirve-kamplar"></g>
+                  <g id="km-oyun-flags"></g><g id="km-oyun-zirve-firtina-tabela"></g>
+                  <path id="km-oyun-trail" class="km-zirve-geo" d="M 150 415 Q 500 430 675.0 412.5 Q 850 395 955.0 397.5 Q 1060 400 1070.0 372.5 Q 1080 345 915.0 357.5 Q 750 370 575.0 345.0 Q 400 320 280.0 332.5 Q 160 345 135.0 312.5 Q 110 280 280.0 265.0 Q 450 250 625.0 270.0 Q 800 290 920.0 270.0 Q 1040 250 1065.0 222.5 Q 1090 195 905.0 185.0 Q 720 175 550.0 160.0 Q 380 145 275.0 160.0 Q 170 175 145.0 147.5 Q 120 120 270.0 107.5 Q 420 95 535.0 77.5 Q 650 60 625.0 52.5 Q 600 45 600 45"/>
+                  <g id="km-oyun-summit" transform="translate(600,45)">
+                    <g id="km-zirve-zirve-bayraklar"></g>
+                    <line x1="0" y1="0" x2="0" y2="-52" stroke="#3a2a1a" stroke-width="2.6"/>
+                    <path class="km-zirve-ana-bayrak" d="M0,-52 L30,-44 L0,-35 Z" fill="#e53939"/>
+                    <text class="km-zirve-zirve-yazi" x="0" y="16" text-anchor="middle">🏔️ ZİRVE · 3.000 m</text>
+                  </g>
+                  <g id="km-zirve-defter" transform="translate(880,4)"></g>
+                  <g id="km-oyun-climbers"></g>
+                  <g id="km-zirve-bulut-on" class="km-zirve-bulutlar"></g>
+                  <g id="km-zirve-efekt"></g>
                 </svg>
+                <div class="km-zirve-ruzgar" id="km-zirve-ruzgar"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="km-zirve-panorama" id="km-zirve-panorama"></div>
+                <div class="km-ninja-sinav km-zirve-cagri" id="km-zirve-cagri"></div>
             </div>`;
             // Hendek Akını — katman sırası ÖNEMLİ: nebula/yıldız → istasyon yüzeyi → hendek duvar/zemin
             // → greebling → kenar ışıkları → sektör kapıları → reaktör ağzı → avcılar (en üstte, uzaktan
@@ -17054,6 +17146,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ${izgara}`;
             kmOyunSiradaGuncelle();
             if(_kmOyunAktifTema === 'ninja' && !_kmOyunKilit) kmNinjaSenseiCagriGuncelle();
+            if(_kmOyunAktifTema === 'zirve' && !_kmOyunKilit) kmZirveCagriGuncelle();
         }
         // "Değiştir" — tüm sınıfı avatar ızgarası olarak açar; sıralama hangi görünümde olursa olsun
         // (takım yarışı, lig…) her sporcu buradan tek dokunuşla seçilebilir. Seçimden sonra açık kalır.
@@ -17825,11 +17918,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema !== 'zirve') { kar.style.display = 'none'; return; }
             let s = _kmOyunRosterCache[_kmOyunAktifIndex];
             let firtinadaMi = !!(s && s.frac >= KM_OYUN_ZIRVE_FIRTINA_FRAC && s.frac < 1);
+            let zp = document.getElementById('km-oyun-panel-zirve'); if(zp) zp.classList.toggle('km-zirve-firtina-modu', firtinadaMi);
+            _kmOyunRosterCache.forEach(function(o) { if(o.zirveEl) o.zirveEl.classList.toggle('savrul', o.frac >= KM_OYUN_ZIRVE_FIRTINA_FRAC && o.frac < 1); });
             if(!firtinadaMi) { kar.style.display = 'none'; return; }
             kar.style.display = '';
             if(kar.dataset.kmKarCiddi === (ciddiModAcik ? '1' : '0') && kar.childElementCount > 0) return; // zaten doğru durumda
             kar.dataset.kmKarCiddi = ciddiModAcik ? '1' : '0';
-            let sayi = ciddiModAcik ? 7 : 14;
+            let sayi = ciddiModAcik ? 16 : 26;
             let html = '';
             for(let i = 0; i < sayi; i++) {
                 let x = Math.random() * 100, delay = (Math.random() * 3).toFixed(2), dur = (2.6 + Math.random() * 2).toFixed(2), sz = (2 + Math.random() * 2.5).toFixed(1), dx = (Math.random() * 40 - 20).toFixed(0);
@@ -18034,116 +18129,393 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmOyunZirveYolGozlemci.observe(panel);
             } catch(e) {}
         }
-        function kmOyunZirveNokta(frac) { let p = kmOyunZirvePath(); return p ? p.getPointAtLength(_kmOyunZirveTotalLen * frac) : { x: 0, y: 0 }; }
-        // Faz 14 (2026-09-12) — serpantin patika artık dik/neredeyse dikey bacaklar içeriyor. Eski
-        // kmOyunJitter (diğer 5 nokta-temasında AYNEN kalıyor, dokunulmadı) sabit bir x/y ofseti
-        // KÜRESEL eksenlere göre uyguluyordu — yol yatayken bu, karakterleri aynı hizada YANA doğru
-        // ayırıyordu (doğru), ama yol dikeyken AYNI ofset artık YOLUN YÖNÜNE değil rastgele bir açıya
-        // düşüyor, ayrıştırma işe yaramıyor (gerçek testte doğrulandı, aşağıya bkz). kmOyunPistTeget'in
-        // AYNI merkezi-fark tekniği — TEK fark: Pist kapalı devre olduğu için modulo sarıyor, Zirve
-        // tek yönlü (frac 0..1) bir patika olduğu için uçlarda KELEPÇELİ örnekleniyor.
-        function kmOyunZirveTeget(frac) {
-            let p = kmOyunZirvePath(); if(!p) return { x: 1, y: 0 };
-            let total = _kmOyunZirveTotalLen || (p ? p.getTotalLength() : 1);
-            let eps = Math.max(1, total * 0.004);
-            let len = total * Math.max(0, Math.min(1, frac));
-            let p1 = p.getPointAtLength(Math.max(0, len - eps)), p2 = p.getPointAtLength(Math.min(total, len + eps));
-            let dx = p2.x - p1.x, dy = p2.y - p1.y, mag = Math.sqrt(dx * dx + dy * dy) || 1;
-            return { x: dx / mag, y: dy / mag };
-        }
-        // kmOyunJitter'ın AYNI iki bileşeni (sırayla-yayılma + küçük sabit ayırma) — TEK fark, artık
-        // küresel x/y yerine YOLUN O NOKTADAKİ teğet/normal eksenine göre uygulanıyor: yol yatayken
-        // sonuç eskisiyle GÖRSEL OLARAK AYNI (teğet≈x ekseni, normal≈y ekseni), yol dikeyken de
-        // (teğet≈y ekseni) karakterler hâlâ birbirinden GERÇEKTEN ayrılıyor (artık dikey yönde
-        // sıralı yayılıp, yatay yönde küçük sabit ayrımla).
-        function kmOyunZirveJitter(frac, i, n) {
-            if(n <= 1) return [0, 0];
-            let spread = Math.min(50 * (n - 1), 320);
-            let step = spread / (n - 1);
-            let boyuna = -spread / 2 + i * step, enine = (i % 2 === 0) ? -14 : 16;
-            let teg = kmOyunZirveTeget(frac), normal = { x: -teg.y, y: teg.x };
-            return [teg.x * boyuna + normal.x * enine, teg.y * boyuna + normal.y * enine];
-        }
-        // Nokta + teğet-yönlü ayrım + dikey sınır kelepçesi TEK seferde — Pist'in kmOyunPistKonum'uyla
-        // AYNI "üç fonksiyonu her yerde ayrı ayrı çağırma" dersi (bkz. DEVIR.md §13e). Sınır kelepçesi
-        // GEREKLİ: eski patika neredeyse hep yatay olduğu için büyük (±160 birime kadar) "sırayla
-        // yayılma" payı hep x'e (kanvasın GENİŞ ekseni, zaten kmOyunKarakterSinirKisitla tarafından
-        // kelepçeleniyor) düşüyordu; şimdi dik bacaklarda AYNI pay y'ye (kanvasın DAR ekseni, x-kelepçesi
-        // BUNU korumuyor) düşebiliyor — zirve tepesine (y=45) veya patikanın en altına (y=415) yakın bir
-        // sporcu büyük bir ofsetle kanvas dışına (y<0 veya y>440) taşabilirdi. Yatay kelepçe zaten var
-        // olan paylaşılan mekanizma (kmOyunKarakterSinirKisitla, SADECE Zirve dahil 7 temanın hepsinde
-        // çalışıyor) — burada eklenen SADECE Zirve'ye özel dikey kelepçe, paylaşılan fonksiyona dokunmadan.
+        function kmOyunZirveNokta(frac) { let p = kmOyunZirvePath(); return p ? p.getPointAtLength(_kmOyunZirveTotalLen * Math.max(0, Math.min(1, frac))) : { x: 0, y: 0 }; }
+        // ===== ZİRVE 2.0 (2026-09-26) =====
+        // Kullanıcı: "zirve yolu çok geride kaldı, hem yolu basit hem görselleri". Ninja'yı sevdiren üç şey buraya
+        // taşındı: tutarlı sahne (tek dağ, oyulmuş patika, bölgeler), canlı karakter (yürüme/ip/kayma/kutlama) ve
+        // "geçebilecek mi" gerilimi (3 engel). Artı günün saati, bulut katmanı, fırtına rüzgârı, kamplar, zirve finali.
+        // Konumlar artık yol UZUNLUĞU üzerinden: aynı yerdeki sporcular yol boyunca (kıvrımları izleyerek) aralanır,
+        // engelin önünde bekleyenler aralık yüzünden engelin öbür yakasına kaymaz. Gerçek skora dokunan bir şey yok.
         var KM_OYUN_ZIRVE_Y_PAY = 24;
+        const KM_ZIRVE_ENGELLER = [
+            { id: 'kaya', ad: 'Kaya Duvarı', ikon: '🧗', frac: 0.31, esik: 0.5 },
+            { id: 'yarik', ad: 'Buzul Yarığı', ikon: '🧊', frac: 0.56, esik: 0.6 },
+            { id: 'cig', ad: 'Çığ Bölgesi', ikon: '🌨️', frac: 0.83, esik: 0.7 }
+        ];
+        const KM_ZIRVE_ENGEL_PAY = 0.006, KM_ZIRVE_KIL_SURE = 1500, KM_ZIRVE_BULUT_FRAC = 0.5;
+        let _kmZirveEngelSon = null, _kmZirveSonOran = 0, _kmZirveSaatEvre = null;
+        function kmZirveTohum(seed) { return kmOyunNinjaTohum(seed); }
+        function kmZirveSvgPct(x, y) { return kmOyunSvgPct('km-oyun-svg-zirve', x, y); }
+        function kmZirveUzunlukNokta(len) {
+            let p = kmOyunZirvePath(); if(!p) return { x: 0, y: 0 };
+            let L = _kmOyunZirveTotalLen;
+            if(len < 0) { let b = p.getPointAtLength(0), c = p.getPointAtLength(Math.min(L, 12)), dx = b.x - c.x, dy = b.y - c.y, m = Math.sqrt(dx * dx + dy * dy) || 1; return { x: b.x + dx / m * -len, y: b.y + dy / m * -len }; }
+            if(len > L) return p.getPointAtLength(L);
+            return p.getPointAtLength(len);
+        }
+        function kmZirveTegetLen(len) {
+            let L = _kmOyunZirveTotalLen || 1, e = 6;
+            let a = kmZirveUzunlukNokta(Math.max(-40, Math.min(L, len - e))), b = kmZirveUzunlukNokta(Math.max(-40, Math.min(L, len + e)));
+            let dx = b.x - a.x, dy = b.y - a.y, m = Math.sqrt(dx * dx + dy * dy) || 1;
+            return { x: dx / m, y: dy / m };
+        }
+        function kmZirveEngelLen(e) { let L = _kmOyunZirveTotalLen; return { a: (e.frac - KM_ZIRVE_ENGEL_PAY) * L, b: (e.frac + KM_ZIRVE_ENGEL_PAY) * L }; }
+        function kmOyunZirveAralik(i, n) { if(n <= 1) return 0; let spread = Math.min(34 * (n - 1), 220); return -spread / 2 + i * (spread / (n - 1)); }
+        function kmOyunZirveLen(frac, i, n) {
+            let L = _kmOyunZirveTotalLen, ham = frac * L, off = kmOyunZirveAralik(i, n), len = ham + off;
+            KM_ZIRVE_ENGELLER.forEach(function(e) {
+                let el = kmZirveEngelLen(e);
+                if(ham >= el.a - 1.5 && ham <= el.a + 0.5) len = el.a - 2 - Math.abs(off) * 0.3;
+                else if(ham <= el.a + 0.5) { if(len > el.a - 2) len = el.a - 2 - Math.abs(len - el.a) * 0.3; }
+                else if(ham < el.b + 120 && len < el.b + 2) len = el.b + 3 + Math.abs(el.b - len) * 0.3;
+            });
+            return Math.min(L - 6, len);
+        }
+        function kmOyunZirveLenNokta(len, i, n) {
+            let pt = kmZirveUzunlukNokta(len), teg = kmZirveTegetLen(len), enine = (i % 2 === 0) ? -5 : 5;
+            return { x: pt.x - teg.y * enine, y: Math.max(KM_OYUN_ZIRVE_Y_PAY, Math.min(440 - KM_OYUN_ZIRVE_Y_PAY, pt.y + teg.x * enine)) };
+        }
+        // Zirvedekiler (frac>=1) zirve düzlüğünde yan yana.
         function kmOyunZirveKonum(frac, i, n) {
-            let pt = kmOyunZirveNokta(frac), jj = kmOyunZirveJitter(frac, i, n);
-            return { x: pt.x + jj[0], y: Math.max(KM_OYUN_ZIRVE_Y_PAY, Math.min(440 - KM_OYUN_ZIRVE_Y_PAY, pt.y + jj[1])) };
+            if(frac >= 1) return { x: 600 + (i - (n - 1) / 2) * Math.min(24, 180 / Math.max(1, n)), y: 45 };
+            return kmOyunZirveLenNokta(kmOyunZirveLen(frac, i, n), i, n);
+        }
+        function kmOyunZirveTeget(frac) { return kmZirveTegetLen(Math.max(0, Math.min(1, frac)) * (_kmOyunZirveTotalLen || 1)); }
+        // ---- Günlük durum: kamplar (ilk ulaşan), bulut anı, zirve defteri ----
+        function kmZirveGunlukAnahtar() { return 'dag_km_zirve_gunluk_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmZirveGunluk() {
+            let d = null, bugun = bugunISO();
+            try { d = JSON.parse(localStorage.getItem(kmZirveGunlukAnahtar()) || 'null'); } catch(e) {}
+            if(!d || d.tarih !== bugun) d = { tarih: bugun, kamplar: {}, zirve: [], bulut: false };
+            return d;
+        }
+        function kmZirveGunlukKaydet(d) { try { localStorage.setItem(kmZirveGunlukAnahtar(), JSON.stringify(d)); } catch(e) {} }
+        function kmZirveGunlukSifirla() { try { localStorage.removeItem(kmZirveGunlukAnahtar()); } catch(e) {} }
+        // ---- Sahne çizimi (hepsi yoldan türetilir; dar ekranda yol sıkışınca yeniden kurulur) ----
+        function kmZirveYolOrnekleri(adim) {
+            let p = kmOyunZirvePath(), L = _kmOyunZirveTotalLen, out = [];
+            for(let l = 0; l <= L; l += adim) { let q = p.getPointAtLength(l); out.push({ l: l, x: q.x, y: q.y }); }
+            return out;
+        }
+        function kmZirveSahneCiz() {
+            let p = kmOyunZirvePath(); if(!p) return;
+            let d = p.getAttribute('d');
+            ['km-zirve-yol-golge', 'km-zirve-yol', 'km-zirve-yol-cizgi'].forEach(function(id) { let e = document.getElementById(id); if(e) e.setAttribute('d', d); });
+            let ornek = kmZirveYolOrnekleri(10), r = kmZirveTohum(311), f = function(v) { return v.toFixed(1); };
+            let yolaYakin = function(x, y, pay) { for(let k = 0; k < ornek.length; k++) { let dx = ornek[k].x - x, dy = ornek[k].y - y; if(dx * dx + dy * dy < pay * pay) return true; } return false; };
+            // Dağ dokusu: kaya katmanları (yatay çatlaklar) + dikey oluklar, tohumlu.
+            let doku = '';
+            for(let k = 0; k < 46; k++) {
+                let x = 60 + r() * 1080, y = 60 + r() * 360, w = 24 + r() * 70;
+                if(y < 200 && r() < 0.6) continue;
+                doku += `<path d="M${f(x)} ${f(y)} q${f(w / 2)} ${f(-3 + r() * 6)} ${f(w)} ${f(-2 + r() * 4)}" class="km-zirve-catlak"/>`;
+            }
+            for(let k = 0; k < 18; k++) { let x = 120 + r() * 960, y = 120 + r() * 240; doku += `<path d="M${f(x)} ${f(y)} l${f(-6 + r() * 12)} ${f(30 + r() * 50)}" class="km-zirve-oluk"/>`; }
+            let dd = document.getElementById('km-zirve-dag-doku'); if(dd) dd.innerHTML = doku;
+            // Bölge süsleri: y>330 çam ormanı, 230-330 kaya/tek tük çam, 130-230 kar yığını + buz kristali, üstü kar kaya.
+            let sus = '', r2 = kmZirveTohum(97), sayac = 0;
+            for(let k = 0; k < ornek.length && sayac < 90; k += 2) {
+                let o = ornek[k], sonra = ornek[Math.min(ornek.length - 1, k + 1)], dx = sonra.x - o.x, dy = sonra.y - o.y, m = Math.sqrt(dx * dx + dy * dy) || 1;
+                let nx = -dy / m, ny = dx / m, yon = r2() < 0.5 ? 1 : -1, uz = 16 + r2() * 20;
+                let x = o.x + nx * uz * yon, y = o.y + ny * uz * yon;
+                if(yolaYakin(x, y, 13) || r2() < 0.35) continue;
+                sayac++;
+                if(y > 330) { let h = 16 + r2() * 16; sus += `<path class="km-zirve-cam" d="M${f(x)} ${f(y - h)} L${f(x - h * 0.34)} ${f(y - h * 0.45)} L${f(x - h * 0.2)} ${f(y - h * 0.45)} L${f(x - h * 0.42)} ${f(y)} L${f(x + h * 0.42)} ${f(y)} L${f(x + h * 0.2)} ${f(y - h * 0.45)} L${f(x + h * 0.34)} ${f(y - h * 0.45)} Z"/>`; }
+                else if(y > 230) { if(r2() < 0.3) { let h = 12 + r2() * 8; sus += `<path class="km-zirve-cam" d="M${f(x)} ${f(y - h)} L${f(x - h * 0.4)} ${f(y)} L${f(x + h * 0.4)} ${f(y)} Z"/>`; } else sus += `<ellipse class="km-zirve-tas" cx="${f(x)}" cy="${f(y - 3)}" rx="${f(5 + r2() * 6)}" ry="${f(3 + r2() * 3)}"/>`; }
+                else if(y > 130) { if(r2() < 0.5) sus += `<ellipse class="km-zirve-yigin" cx="${f(x)}" cy="${f(y - 2)}" rx="${f(7 + r2() * 8)}" ry="${f(2.5 + r2() * 2.5)}"/>`; else sus += `<path class="km-zirve-buz" d="M${f(x)} ${f(y - 11)} L${f(x + 4)} ${f(y - 4)} L${f(x)} ${f(y)} L${f(x - 4)} ${f(y - 4)} Z"/>`; }
+                else sus += `<ellipse class="km-zirve-tas karli" cx="${f(x)}" cy="${f(y - 2)}" rx="${f(4 + r2() * 5)}" ry="${f(2.5 + r2() * 2)}"/>`;
+            }
+            let sg = document.getElementById('km-zirve-suslar'); if(sg) sg.innerHTML = sus;
+            // İp korkuluk: yolun aşağı (uçurum) tarafında direkler + sarkan halat. Dönemeçlerde (dik) yok.
+            let kork = '', dir = [];
+            let korkulukBitir = function() {
+                if(dir.length >= 2) {
+                    let yol = `M${f(dir[0].x)} ${f(dir[0].y - 8)}`;
+                    for(let k = 1; k < dir.length; k++) { let a = dir[k - 1], b = dir[k]; yol += ` Q${f((a.x + b.x) / 2)} ${f((a.y + b.y) / 2 - 4)} ${f(b.x)} ${f(b.y - 8)}`; }
+                    kork += `<path class="km-zirve-halat" d="${yol}"/>` + dir.map(function(q) { return `<line class="km-zirve-direk" x1="${f(q.x)}" y1="${f(q.y)}" x2="${f(q.x)}" y2="${f(q.y - 10)}"/>`; }).join('');
+                }
+                dir = [];
+            };
+            let L = _kmOyunZirveTotalLen;
+            for(let l = 20; l < L - 30; l += 36) {
+                let teg = kmZirveTegetLen(l);
+                if(Math.abs(teg.y) > 0.5) { korkulukBitir(); continue; }
+                let q = p.getPointAtLength(l), ny = teg.x, nx = -teg.y;
+                if(ny < 0) { nx = -nx; ny = -ny; }
+                let x = q.x + nx * 9, y = q.y + ny * 9;
+                if(KM_ZIRVE_ENGELLER.some(function(e) { return Math.abs(l - e.frac * L) < 34; })) { korkulukBitir(); continue; }
+                dir.push({ x: x, y: y });
+            }
+            korkulukBitir();
+            let kg = document.getElementById('km-zirve-korkuluk'); if(kg) kg.innerHTML = kork;
+            // Yıldızlar (akşam) gökyüzünün üst kısmında.
+            let yg = document.getElementById('km-oyun-stars');
+            if(yg) { let r3 = kmZirveTohum(5), h = ''; for(let k = 0; k < 70; k++) h += `<circle cx="${(-500 + r3() * 2200).toFixed(0)}" cy="${(-600 + r3() * 640).toFixed(0)}" r="${(0.6 + r3() * 1.2).toFixed(1)}" fill="#fff" opacity="${(0.4 + r3() * 0.6).toFixed(2)}"/>`; yg.innerHTML = h; }
+            // Bulutlar: arka (dağın yanlarında, kıyıda) + ön (yarı saydam, yavaş kayan). Bulut katmanı ~ yolun ortası.
+            let bulut = function(x, y, s, o) { return `<g transform="translate(${f(x)},${f(y)}) scale(${s.toFixed(2)})" opacity="${o}"><ellipse cx="0" cy="0" rx="46" ry="14"/><ellipse cx="-22" cy="-7" rx="22" ry="13"/><ellipse cx="14" cy="-11" rx="26" ry="16"/><ellipse cx="36" cy="-3" rx="18" ry="10"/></g>`; };
+            let by = kmOyunZirveNokta(KM_ZIRVE_BULUT_FRAC).y + 8, r4 = kmZirveTohum(21), ba = '', bo = '';
+            for(let k = 0; k < 9; k++) { let x = k < 5 ? -420 + r4() * 470 : 1150 + r4() * 470; ba += bulut(x, by + (-18 + r4() * 36), 0.9 + r4() * 0.9, (0.75 + r4() * 0.2).toFixed(2)); }
+            for(let k = 0; k < 5; k++) { let x = [-120, 40, 1110, 1260, 1380][k]; bo += bulut(x, by + 18 + r4() * 20, 0.8 + r4() * 0.6, (0.55 + r4() * 0.2).toFixed(2)); }
+            let bag = document.getElementById('km-zirve-bulut-arka'); if(bag) bag.innerHTML = `<g class="km-zirve-bulut-kay">${ba}</g>`;
+            let bog = document.getElementById('km-zirve-bulut-on'); if(bog) bog.innerHTML = `<g class="km-zirve-bulut-kay yavas">${bo}</g>`;
+            kmZirveEngelCiz();
+            kmZirveKampIsaretCiz();
+            let ftg = document.getElementById('km-oyun-zirve-firtina-tabela');
+            if(ftg) { let q = kmOyunZirveNokta(KM_OYUN_ZIRVE_FIRTINA_FRAC), t = kmOyunZirveTeget(KM_OYUN_ZIRVE_FIRTINA_FRAC), ux = t.y, uy = -t.x; if(uy > 0) { ux = -ux; uy = -uy; } ftg.innerHTML = `<g transform="translate(${f(q.x + ux * 22)},${f(q.y + uy * 22)})"><line x1="0" y1="0" x2="0" y2="-30" stroke="#3a2a1a" stroke-width="2"/><rect x="-30" y="-44" width="60" height="18" rx="3" fill="#23150a" stroke="#6fb7ff" stroke-width="1.6"/><text class="km-zirve-tabela-yazi" x="0" y="-31.5" text-anchor="middle" fill="#bfe3ff">🌨️ FIRTINA</text></g>`; }
+        }
+        // Engel görselleri: yolun o noktasında, yolun yönüne döndürülmüş. Yanında "⚠ %50" tabelası.
+        function kmZirveEngelCiz() {
+            let g = document.getElementById('km-zirve-engeller'); if(!g) return;
+            let f = function(v) { return v.toFixed(1); };
+            g.innerHTML = KM_ZIRVE_ENGELLER.map(function(e, ei) {
+                let q = kmOyunZirveNokta(e.frac), t = kmOyunZirveTeget(e.frac), aci = Math.atan2(t.y, t.x) * 180 / Math.PI;
+                if(aci > 90) aci -= 180; if(aci < -90) aci += 180;
+                let ux = t.y, uy = -t.x; if(uy > 0) { ux = -ux; uy = -uy; }
+                let govde = '';
+                if(e.id === 'kaya') govde = `<path class="km-zirve-kaya-duvar" d="M-16,6 L-14,-8 L-8,-26 L2,-30 L10,-22 L16,-6 L16,6 Z"/><path class="km-zirve-kaya-golge" d="M2,-30 L10,-22 L16,-6 L16,6 L6,6 L4,-12 Z"/><line class="km-zirve-ip-sabit" x1="2" y1="-30" x2="-10" y2="4"/><circle cx="2" cy="-30" r="2" fill="#c9c9c9"/>`;
+                else if(e.id === 'yarik') govde = `<path class="km-zirve-yarik" d="M-12,-5 L-7,-2 L-10,2 L-5,6 L5,6 L9,2 L6,-2 L11,-5 Z"/><path class="km-zirve-yarik-buz" d="M-12,-5 L-7,-2 L-10,2 L-5,6 L-8,6 L-13,2 L-10,-2 L-15,-5 Z M11,-5 L6,-2 L9,2 L5,6 L8,6 L12,2 L9,-2 L14,-5 Z"/><g class="km-zirve-merdiven"><line x1="-16" y1="-3" x2="16" y2="-3"/><line x1="-16" y1="2" x2="16" y2="2"/><line x1="-11" y1="-3" x2="-11" y2="2"/><line x1="-5" y1="-3" x2="-5" y2="2"/><line x1="1" y1="-3" x2="1" y2="2"/><line x1="7" y1="-3" x2="7" y2="2"/><line x1="13" y1="-3" x2="13" y2="2"/></g>`;
+                else govde = `<path class="km-zirve-cig-kar" d="M-26,-4 Q-18,-30 -4,-40 Q10,-30 26,-4 Z"/><g class="km-zirve-cig-top"><circle cx="-8" cy="-26" r="4"/><circle cx="4" cy="-32" r="3"/><circle cx="10" cy="-20" r="3.5"/></g>`;
+                return `<g class="km-zirve-engel" id="km-zirve-engel-${ei}">
+                    <g transform="translate(${f(q.x)},${f(q.y)}) rotate(${aci.toFixed(1)}) scale(1.6)">${govde}</g>
+                    <g class="km-zirve-engel-tabela" transform="translate(${f(q.x + ux * 52)},${f(q.y + uy * 52)})"><line x1="0" y1="4" x2="0" y2="26" stroke="#3a2a1a" stroke-width="2"/><rect class="km-zirve-engel-tahta" x="-34" y="-26" width="68" height="31" rx="4"/><text class="km-zirve-engel-yazi" x="0" y="-11" text-anchor="middle">⚠ %${Math.round(e.esik * 100)}</text><text class="km-zirve-engel-ad" x="0" y="0" text-anchor="middle">${e.ad.toLocaleUpperCase('tr-TR')}</text></g>
+                </g>`;
+            }).join('');
+        }
+        // Kamp işaretleri (her durakta bayrak direği + ad tahtası) — bayrak bezi .km-flag-ring (en öndekinin rengi).
+        function kmZirveKampNokta(ci, uzak) {
+            let fr = KM_OYUN_CP_FRAC[ci], q = kmOyunZirveNokta(fr), t = kmOyunZirveTeget(fr), ux = t.y, uy = -t.x;
+            if(uy > 0) { ux = -ux; uy = -uy; }
+            return { x: q.x + ux * uzak + t.x * 8, y: q.y + uy * uzak, tx: t.x };
+        }
+        function kmZirveKampIsaretCiz() {
+            let fg = document.getElementById('km-oyun-flags'); if(!fg) return;
+            fg.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(fr, ci) {
+                let k = kmZirveKampNokta(ci, 16), ad = KM_OYUN_ZIRVE_KAMP_ISIMLERI[ci] || ('Durak ' + (ci + 1));
+                let gen = Math.max(52, ad.length * 5.6 + 12);
+                return `<g data-cp="${ci}" transform="translate(${k.x.toFixed(1)},${k.y.toFixed(1)})"><line x1="0" y1="0" x2="0" y2="-36" stroke="#3a2a1a" stroke-width="2"/><path class="km-flag-ring" d="M0,-36 L20,-31 L0,-25 Z" fill="#6b7280" stroke="#3a2a1a" stroke-width=".8"/><rect x="${(-gen / 2).toFixed(1)}" y="2" width="${gen.toFixed(1)}" height="14" rx="3" class="km-zirve-kamp-tahta"/><text class="km-zirve-kamp-yazi" x="0" y="12" text-anchor="middle">${esc(ad)}</text></g>`;
+            }).join('');
+            kmZirveKamplarCiz();
+        }
+        // Günün kampları: durağa ilk ulaşan çadır kurar + ateş yakar (çadır onun renginde).
+        function kmZirveKamplarCiz(yeniCi) {
+            let g = document.getElementById('km-zirve-kamplar'); if(!g) return;
+            let d = kmZirveGunluk();
+            g.innerHTML = Object.keys(d.kamplar).map(function(ci) {
+                let c = d.kamplar[ci], k = kmZirveKampNokta(+ci, 34), yon = k.tx >= 0 ? -1 : 1;
+                return `<g class="km-zirve-kamp${+ci === yeniCi ? ' yeni' : ''}" transform="translate(${k.x.toFixed(1)},${k.y.toFixed(1)})"><g class="km-zirve-kamp-ic">
+                    <path d="M-14,0 L0,-20 L14,0 Z" fill="${c.renk}" stroke="#2a1d10" stroke-width="1.2"/><path d="M-4,0 L0,-9 L4,0 Z" fill="#2a1d10"/>
+                    <g transform="translate(${22 * yon},0)"><line x1="-6" y1="0" x2="6" y2="-3" stroke="#5a3a1c" stroke-width="2"/><line x1="-6" y1="-3" x2="6" y2="0" stroke="#5a3a1c" stroke-width="2"/><path class="km-zirve-ates" d="M0,-2 Q-6,-8 -1,-16 Q0,-10 3,-12 Q6,-6 0,-2 Z"/><path class="km-zirve-ates ic" d="M0,-2 Q-3,-6 0,-11 Q2,-6 0,-2 Z"/></g>
+                    <text class="km-zirve-kamp-sahip" x="0" y="-24" text-anchor="middle">${esc(c.ad)}</text></g></g>`;
+            }).join('');
+        }
+        function kmZirveDefterCiz() {
+            let d = kmZirveGunluk();
+            let tb = document.getElementById('km-zirve-defter');
+            if(tb) {
+                let liste = d.zirve.slice(0, 5);
+                tb.innerHTML = liste.length ? `<line x1="-40" y1="-30" x2="-40" y2="4" stroke="#2a1a0e" stroke-width="1.8"/><line x1="40" y1="-30" x2="40" y2="4" stroke="#2a1a0e" stroke-width="1.8"/>
+                    <rect x="-66" y="0" width="132" height="${34 + liste.length * 17}" rx="5" fill="#23150a" stroke="#d9b36a" stroke-width="2"/>
+                    <text class="km-zirve-defter-baslik" x="0" y="19" text-anchor="middle">📖 ZİRVE DEFTERİ</text>
+                    ${liste.map(function(b, bi) { return `<text class="km-zirve-defter-ad" x="-56" y="${38 + bi * 17}" fill="${b.renk}">${bi + 1}. ${esc(b.ad)}</text>`; }).join('')}` : '';
+            }
+            let bg = document.getElementById('km-zirve-zirve-bayraklar');
+            if(bg) {
+                let yer = [[-26, 2], [26, 2], [-46, 8], [46, 8], [-12, -4], [12, -4]];
+                bg.innerHTML = d.zirve.slice(0, 6).map(function(b, bi) { let p = yer[bi]; return `<g transform="translate(${p[0]},${p[1]})"><line x1="0" y1="0" x2="0" y2="-26" stroke="#3a2a1a" stroke-width="1.8"/><path class="km-zirve-dikili" d="M0,-26 L16,-22 L0,-17 Z" fill="${b.renk}"/></g>`; }).join('');
+            }
+        }
+        // ---- Günün saati: sınıfın ortalama ilerlemesiyle şafak → gündüz → akşam; güneş gökte yay çizer ----
+        function kmZirveSaatGuncelle(duyur) {
+            let roster = _kmOyunRosterCache; if(!roster.length) return;
+            let ort = roster.reduce(function(a, o) { return a + Math.min(1, o.frac || 0); }, 0) / roster.length;
+            let kel = function(v) { return Math.max(0, Math.min(1, v)); };
+            let safak = kel(1 - ort / 0.22), aksam = kel((ort - 0.6) / 0.3), gece = kel((ort - 0.85) / 0.15);
+            let set = function(id, v) { let e = document.getElementById(id); if(e) e.setAttribute('opacity', v.toFixed(3)); };
+            set('km-zirve-safak', safak * 0.85); set('km-zirve-aksam', aksam * 0.8); set('km-oyun-stars', gece * 0.9);
+            let gun = document.getElementById('km-zirve-gunes');
+            if(gun) { let a = Math.PI * (0.08 + ort * 0.84); gun.setAttribute('cx', (600 - Math.cos(a) * 760).toFixed(0)); gun.setAttribute('cy', (260 - Math.sin(a) * 520).toFixed(0)); }
+            let evre = ort >= 0.6 ? 2 : (ort >= 0.22 ? 1 : 0);
+            if(duyur && _kmZirveSaatEvre !== null && evre > _kmZirveSaatEvre) setTimeout(function() { try { kmOyunBanner(evre === 2 ? '🌇 AKŞAM ÇÖKÜYOR' : '☀️ GÜN DOĞDU', evre === 2 ? 'Işık azalmadan zirveye!' : 'Sınıf yola koyuldu', 'cp'); } catch(e) {} }, 2600);
+            _kmZirveSaatEvre = evre;
+        }
+        // ---- Engel kuralı (Ninja çukurlarıyla aynı desen) ----
+        function kmZirveEngelEsik(e, seviye) { return Math.max(0.2, Math.min(0.95, e.esik + (KM_NINJA_CUKUR_SEVIYE[seviye || 'orta'] || 0))); }
+        function kmZirveEngelKontrol(eskiFrac, artis, oran, seviye) {
+            for(let ei = 0; ei < KM_ZIRVE_ENGELLER.length; ei++) {
+                let e = KM_ZIRVE_ENGELLER[ei], a = e.frac - KM_ZIRVE_ENGEL_PAY, b = e.frac + KM_ZIRVE_ENGEL_PAY;
+                if(eskiFrac <= a + 1e-6 && eskiFrac + artis > a + 1e-6) {
+                    let esik = kmZirveEngelEsik(e, seviye);
+                    if(oran < esik) return { artis: Math.max(0, a - eskiFrac), sonuc: { tip: 'gecemedi', e: ei, esik: esik } };
+                    return { artis: Math.max(artis, b + 0.003 - eskiFrac), sonuc: { tip: oran < esik + KM_NINJA_KIL_PAYI ? 'kilpayi' : 'gecti', e: ei, esik: esik } };
+                }
+            }
+            return { artis: artis, sonuc: null };
+        }
+        function kmZirveCagriGuncelle() {
+            let c = document.getElementById('km-zirve-cagri'); if(!c) return;
+            let s = _kmOyunRosterCache[_kmOyunAktifIndex], hedef = -1;
+            if(s && _kmOyunAktifTema === 'zirve' && s.frac < 1) {
+                let cokluAktif = _kmOyunTakimModu && _kmOyunCokluMu && kmOyunSporcuTakimIndex(s.g, s.ad) !== -1;
+                let menzil = 0.15 * (cokluAktif ? KM_OYUN_COKLU_ARTIS_CARPANI : 1);
+                KM_ZIRVE_ENGELLER.forEach(function(e, ei) { let a = e.frac - KM_ZIRVE_ENGEL_PAY; if(hedef === -1 && s.frac <= a + 1e-6 && s.frac + menzil > a) hedef = ei; });
+            }
+            KM_ZIRVE_ENGELLER.forEach(function(e, ei) { let g = document.getElementById('km-zirve-engel-' + ei); if(g) g.classList.toggle('tehlike', ei === hedef); });
+            c.classList.toggle('goster', hedef !== -1);
+            if(hedef !== -1) {
+                let e = KM_ZIRVE_ENGELLER[hedef], esik = kmZirveEngelEsik(e, kmOyunDurumAl(s.g, s.ad).seviye);
+                c.innerHTML = `<span class="km-ninja-sinav-ikon">${e.ikon}</span><span><b>${e.ad.toLocaleUpperCase('tr-TR')}</b><small>${esc(kmOyunIlkAd(s.ad))} engele yaklaşıyor — geçmek için bu seri <b>%${Math.round(esik * 100)}+</b> olmalı</small></span>`;
+            }
+        }
+        // ---- Karakter hareketleri (WAAPI, .km-zirve-hrk sarmalayıcısı; konum dış g'nin attribute'unda) ----
+        function kmZirveHareket(el, kareler, sure, bitti) {
+            let son = function() { if(bitti) { let b = bitti; bitti = null; b(); } };
+            let w = el && el.querySelector('.km-zirve-hrk');
+            if(!w || !w.animate || kmOyunKameraAzaltilmisHareketMi() || !el.isConnected) { son(); return null; }
+            if(el._hrkAnim) { try { el._hrkAnim.cancel(); } catch(e) {} }
+            let anim = w.animate(kareler.map(kmNinjaHareketKare), { duration: sure });
+            el._hrkAnim = anim;
+            anim.onfinish = anim.oncancel = function() { if(el._hrkAnim === anim) el._hrkAnim = null; son(); };
+            return anim;
+        }
+        function kmZirveYaziUcur(x, y, metin, renk) {
+            let kat = document.getElementById('km-zirve-efekt'); if(!kat) return;
+            let kap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            kap.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+            let t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            t.setAttribute('class', 'km-zirve-uc-yazi'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('fill', renk || '#fff');
+            t.textContent = metin; kap.appendChild(t); kat.appendChild(kap);
+            if(t.animate && !kmOyunKameraAzaltilmisHareketMi()) t.animate([{ transform: 'translate(0px,6px) scale(.6)', opacity: 0 }, { transform: 'translate(0px,-4px) scale(1.1)', opacity: 1, offset: .18 }, { transform: 'translate(0px,-10px) scale(1)', opacity: 1, offset: .72 }, { transform: 'translate(0px,-28px) scale(1)', opacity: 0 }], { duration: 1700, easing: 'ease-out' }).onfinish = function() { kap.remove(); };
+            else setTimeout(function() { kap.remove(); }, 1700);
+        }
+        function kmZirveVarisIptal(el) {
+            if(!el) return;
+            el._varisNo = (el._varisNo || 0) + 1;
+            if(el._hrkAnim) { try { el._hrkAnim.cancel(); } catch(e) {} el._hrkAnim = null; }
+            el.classList.remove('bayrak', 'ipte', 'kayiyor');
+        }
+        function kmZirveEkipmanGoster(s) {
+            if(!s || !s.zirveEl) return;
+            let ek = kmOyunDurumAl(s.g, s.ad).zirveEkipman || {};
+            s.zirveEl.querySelectorAll('.km-zirve-ekip text').forEach(function(t) { t.style.display = ek[t.getAttribute('data-e')] ? '' : 'none'; });
+            let gorunen = s.zirveEl.querySelectorAll('.km-zirve-ekip text:not([style*="none"])');
+            gorunen.forEach(function(t, k) { t.setAttribute('x', ((k - (gorunen.length - 1) / 2) * 13).toFixed(1)); });
+        }
+        // Varıştan sonra sıralı küçük sahne: engel tepkisi / kayma / kamp / bulut / zirve.
+        function kmZirveVarisSahnesi(el, s, i, o) {
+            let no = el._varisNo = (el._varisNo || 0) + 1;
+            let gecerli = function() { return el._varisNo === no && el.isConnected && _kmOyunAktifTema === 'zirve'; };
+            let sgn = o.tegX >= 0 ? 1 : -1, adimlar = [], renk = kmOyunRenk('zirve', i), ad = kmOyunIlkAd(s.ad);
+            let e = o.engel ? KM_ZIRVE_ENGELLER[o.engel.e] : null;
+            if(o.engel && o.engel.tip === 'gecemedi') adimlar.push(function(sonraki) {
+                kmZirveYaziUcur(o.x, o.y - 76, '😱 AZ KALDI!', '#ff9b9b');
+                setTimeout(function() { kmZirveYaziUcur(o.x, o.y - 102, 'Sonraki seride %' + Math.round(o.engel.esik * 100) + '+', '#fff'); }, 900);
+                let ek = kmOyunNokta2Pct(o.x + sgn * 16, o.y - 20);
+                kmOyunBurst(document.getElementById('km-oyun-burst'), ek.xPct, ek.yPct, e.id === 'kaya' ? '#8a8178' : '#e8f4ff', 12, false);
+                try { sesCal(660, 0.08); setTimeout(function() { try { sesCal(330, 0.1); } catch(er) {} }, 180); setTimeout(function() { try { sesCal(220, 0.16); } catch(er) {} }, 380); } catch(er) {}
+                kmZirveHareket(el, [[0, 0, 0, 0, 0], [.14, 10 * sgn, 0, 24 * sgn, 0], [.28, 10 * sgn, 0, 10 * sgn, 0], [.42, 10 * sgn, 0, 28 * sgn, 0], [.56, 10 * sgn, 0, 12 * sgn, 0], [.72, 6 * sgn, 0, 2 * sgn, 0], [.86, -6 * sgn, 0, -4 * sgn, 0], [1, 0, 0, 0, 0]], 1700, sonraki);
+            });
+            else if(o.engel) kmZirveYaziUcur(o.x, o.y - 100, '✔ ' + e.ad.toLocaleUpperCase('tr-TR') + ' AŞILDI', '#8fffb0');
+            // Buzda kayma: fırtınada geri kaydıysa ya da buz/kar bölgesinde (y<230) zayıf seride.
+            if(o.geri || (o.y < 230 && o.oran < 0.5 && !(o.engel && o.engel.tip === 'gecemedi'))) adimlar.push(function(sonraki) {
+                kmZirveYaziUcur(o.x, o.y - 76, '🧊 KAYDI!', '#bfe8ff');
+                try { sesCal(900, 0.05); setTimeout(function() { try { sesCal(500, 0.08); } catch(er) {} }, 120); } catch(er) {}
+                kmZirveHareket(el, [[0, 0, 0, 0, 0], [.18, -12 * sgn, 1, -20 * sgn, 0], [.36, -18 * sgn, 2, -6 * sgn, 0], [.54, -10 * sgn, 0, 10 * sgn, 0], [.74, -3 * sgn, 0, -4 * sgn, 0], [1, 0, 0, 0, 0]], 1300, sonraki);
+            });
+            let kampCi = (o.yeniCp > o.eskiCp && o.yeniFrac < 1) ? Math.min(o.yeniCp, KM_OYUN_CP_SAYISI - 1) - 1 : -1;
+            if(kampCi >= 0) adimlar.push(function(sonraki) {
+                let d = kmZirveGunluk();
+                if(!d.kamplar[kampCi]) {
+                    d.kamplar[kampCi] = { ad: ad, renk: renk }; kmZirveGunlukKaydet(d); kmZirveKamplarCiz(kampCi);
+                    let k = kmZirveKampNokta(kampCi, 34);
+                    kmZirveYaziUcur(k.x, k.y - 40, '⛺ ' + ad + ' kampı kurdu!', '#ffd27a');
+                    try { sesCal(520, 0.08); setTimeout(function() { try { sesCal(780, 0.1); } catch(er) {} }, 140); } catch(er) {}
+                }
+                el.classList.add('bayrak'); setTimeout(function() { el.classList.remove('bayrak'); }, 1700);
+                kmZirveHareket(el, [[0, 0, 0, 0, 0], [.15, 0, 3, 0, 0, 1, .85], [.3, 0, -26, 0, 0], [.45, 0, 2, 0, 0, 1, .88], [.6, 0, -18, 0, 0], [.76, 0, 0, 0, 0], [1, 0, 0, 0, 0]], 1300, sonraki);
+            });
+            if(o.eskiFrac < KM_ZIRVE_BULUT_FRAC && o.yeniFrac >= KM_ZIRVE_BULUT_FRAC) adimlar.push(function(sonraki) {
+                let d = kmZirveGunluk();
+                kmZirveYaziUcur(o.x, o.y - 80, '☁️ BULUTLARIN ÜSTÜNDE!', '#fff');
+                if(!d.bulut) { d.bulut = true; kmZirveGunlukKaydet(d); try { kmOyunBanner('☁️ BULUTLARIN ÜSTÜNE ÇIKTINIZ!', ad + ' bulut denizini aştı — aşağıda artık bulutlar var', 'harika'); } catch(er) {} }
+                setTimeout(sonraki, 700);
+            });
+            if(o.eskiFrac < 1 && o.yeniFrac >= 1) adimlar.push(function(sonraki) { kmZirveZirveFinal(el, s, i); setTimeout(sonraki, 400); });
+            let k = 0;
+            (function devam() {
+                if(!gecerli() || k >= adimlar.length) return;
+                let f = adimlar[k++];
+                setTimeout(function() { if(gecerli()) f(devam); }, k === 1 ? 120 : 160);
+            })();
+        }
+        function kmOyunNokta2Pct(x, y) { return kmZirveSvgPct(x, y); }
+        // Kıl payı: engelin öbür yakasında ipe tutunup sallanır, sonra tırmanır.
+        function kmZirveKilPayiAsil(el, x, y) {
+            el.classList.add('ipte');
+            kmZirveYaziUcur(x, y - 70, '😅 KIL PAYI!', '#ffd23f');
+            try { sesCal(520, 0.08); setTimeout(function() { try { sesCal(440, 0.08); } catch(e) {} }, 240); setTimeout(function() { try { sesCal(880, 0.12); } catch(e) {} }, KM_ZIRVE_KIL_SURE * 0.8); } catch(e) {}
+            kmZirveHareket(el, [[0, 0, -4, 0, 60], [.1, 0, 36, 0, 60], [.26, 0, 36, 12, 60], [.4, 0, 36, -10, 60], [.52, 0, 36, 6, 60], [.64, 0, 36, 0, 60], [.8, 0, 14, -8, 60], [.92, 0, -4, 0, 60], [1, 0, 0, 0, 60]], KM_ZIRVE_KIL_SURE, function() { el.classList.remove('ipte'); });
+        }
+        // Zirve finali: bayrak dikilir, deftere yazılır, gün doğumu panoraması + kartal, kamera zirveye.
+        function kmZirveZirveFinal(el, s, i) {
+            let d = kmZirveGunluk(), renk = kmOyunRenk('zirve', i);
+            let klan = (_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2) ? kmOyunSporcuTakimIndex(s.g, s.ad) : -1;
+            let t = klan !== -1 ? _kmOyunTakimlar[klan] : null, ad = t ? (t.emoji + ' ' + t.ad) : kmOyunIlkAd(s.ad);
+            if(t) renk = t.renk;
+            let ilk = !d.zirve.length;
+            if(!d.zirve.some(function(b) { return b.ad === ad; })) d.zirve.push({ ad: ad, renk: renk });
+            kmZirveGunlukKaydet(d); kmZirveDefterCiz();
+            el.classList.add('bayrak'); setTimeout(function() { el.classList.remove('bayrak'); }, 2600);
+            kmZirveHareket(el, [[0, 0, 0, 0, 0], [.14, 0, 4, 0, 0, 1, .8], [.34, 0, -36, 0, 0], [.52, 0, 2, 0, 0, 1, .85], [.66, 0, -14, 0, 0], [.8, 0, 0, 0, 0], [1, 0, 0, 0, 0]], 1500);
+            let p = kmZirveSvgPct(600, 30);
+            kmOyunBurst(document.getElementById('km-oyun-burst'), p.xPct, p.yPct, renk, 30, true);
+            try { sesCal(523, 0.12); setTimeout(function() { try { sesCal(659, 0.12); } catch(e) {} }, 150); setTimeout(function() { try { sesCal(784, 0.14); } catch(e) {} }, 300); setTimeout(function() { try { sesCal(1047, 0.3); } catch(e) {} }, 470); } catch(e) {}
+            if(kmOyunKameraAzaltilmisHareketMi()) { try { kmOyunBanner('🏔️ ' + ad.toLocaleUpperCase('tr-TR') + ' ZİRVEDE!', 'Adı Zirve Defteri\'ne yazıldı', 'bitis'); } catch(e) {} return; }
+            let pan = document.getElementById('km-zirve-panorama');
+            if(pan) { pan.classList.remove('goster'); void pan.offsetWidth; pan.classList.add('goster'); setTimeout(function() { pan.classList.remove('goster'); }, 4200); }
+            let svg = document.getElementById('km-oyun-svg-zirve');
+            if(svg && !kmOyunKameraKilitliMi()) { kmOyunKameraHedefeGit(svg, 330, -90, 540, 270); setTimeout(function() { try { kmOyunKameraGuncelle(); } catch(e) {} }, 4300); }
+            kmZirveKartal();
+            setTimeout(function() { try { kmOyunBanner('🏔️ ' + ad.toLocaleUpperCase('tr-TR') + ' ZİRVEDE!', (ilk ? 'Günün ilk zirvesi — ' : '') + 'bayrak dikildi, adı Zirve Defteri\'ne yazıldı', 'bitis'); } catch(e) {} }, 900);
+        }
+        function kmZirveKartal() {
+            let kat = document.getElementById('km-zirve-efekt'); if(!kat) return;
+            let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('transform', 'translate(-60,-40)');
+            g.innerHTML = `<g class="km-zirve-kartal"><path class="kanat" d="M0,0 C-10,-9 -24,-12 -38,-4 C-24,-5 -13,1 -4,4 Z"/><path class="kanat sag" d="M0,0 C10,-9 24,-12 38,-4 C24,-5 13,1 4,4 Z"/><path d="M-4,4 L0,-2 L4,4 L2,10 L-2,10 Z"/><circle cx="0" cy="-3" r="2.6"/></g>`;
+            kat.appendChild(g);
+            let t0 = performance.now(), sure = 4200;
+            (function adim(now) {
+                let t = Math.min(1, (now - t0) / sure), x = 180 + t * 900, y = -30 + Math.sin(t * Math.PI) * -40 + Math.sin(t * Math.PI * 3) * 8;
+                g.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(1.1)`);
+                if(t < 1 && g.isConnected) requestAnimationFrame(adim); else g.remove();
+            })(t0);
         }
         function kmOyunSahneKurZirve() {
             kmOyunZirveYolSenkron();
             kmOyunZirveGozlemciKur();
             let p = kmOyunZirvePath(); if(!p) return;
             _kmOyunZirveTotalLen = p.getTotalLength();
-            // Yol üstü rastgele tabelalar (2026-09-18, kullanıcı talimatı) — tabela.png'den kesilen 7
-            // dağ temalı tabela, sadece dekoratif (mekanik yok, oyun durumuna dokunmuyor). Kamp
-            // tabelalarının AYNI "path'ten dinamik konum" desenini kullanıyor, ama yol üzerinde DEĞİL,
-            // yolun yanına (dx ofset) yerleştiriliyor ki tırmanıcı/kamp tabelalarını örtmesin.
-            let tbg = document.getElementById('km-oyun-zirve-tabelalar');
-            if(tbg) {
-                let html = '';
-                for(let i = 0; i < 4; i++) {
-                    let frac = 0.1 + Math.random() * 0.8;
-                    let pt = kmOyunZirveNokta(frac);
-                    let no = 1 + Math.floor(Math.random() * KM_OYUN_ZIRVE_TABELA_SAYISI);
-                    let boy = 46 + Math.random() * 14, en = boy * KM_OYUN_ZIRVE_TABELA_ORAN[no - 1];
-                    let dx = (Math.random() < 0.5 ? -1 : 1) * (36 + Math.random() * 26);
-                    html += `<image href="/hayvankarakter/parcalar/tabela-${no}.png" x="${(pt.x + dx - en / 2).toFixed(1)}" y="${(pt.y - boy).toFixed(1)}" width="${en.toFixed(1)}" height="${boy.toFixed(1)}" opacity="0.92"/>`;
-                }
-                tbg.innerHTML = html;
-            }
-            let sg = document.getElementById('km-oyun-stars');
-            if(sg) {
-                // 2. adım (2026-09-12): gökyüzü artık yükseklikle açılıyor (üstte aydınlık, altta
-                // koyu) — yıldızlar eski üst-190-birim yerine ALT/koyu bölgeye (y 250-440) taşındı,
-                // yoksa aydınlık zirve gökyüzünde yıldız görünmesi tuhaf kaçardı.
-                let html = '';
-                for(let i = 0; i < 60; i++) { let x = Math.random() * 1200, y = 250 + Math.random() * 190, r = Math.random() * 1.3 + 0.3; html += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff" opacity="${(0.15 + Math.random() * 0.5).toFixed(2)}"/>`; }
-                sg.innerHTML = html;
-            }
-            let fg = document.getElementById('km-oyun-flags');
-            if(fg) {
-                fg.innerHTML = '';
-                KM_OYUN_CP_FRAC.slice(0, -1).forEach(function(f, i) {
-                    let pt = kmOyunZirveNokta(f);
-                    let grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                    grp.setAttribute('data-cp', i);
-                    let ad = KM_OYUN_ZIRVE_KAMP_ISIMLERI[i] || ('Durak ' + (i + 1));
-                    grp.innerHTML = `<image href="/zirve-karakterler/zirve-ahsap-tabela.webp" x="${(pt.x - 38).toFixed(1)}" y="${(pt.y - 58.3).toFixed(1)}" width="76" height="58.3"/>
-                        <circle class="km-flag-ring" cx="${pt.x.toFixed(1)}" cy="${(pt.y - 63).toFixed(1)}" r="5" fill="#20242e" stroke="#3a4358" stroke-width="1.5"/>
-                        <text class="km-flag-num" x="${pt.x.toFixed(1)}" y="${(pt.y - 30).toFixed(1)}" font-size="8.5" font-weight="700" fill="#3a2410" text-anchor="middle">${esc(ad)}</text>`;
-                    fg.appendChild(grp);
-                });
-            }
-            // Faz 14, 4. adım — fırtına bölgesinin girişindeki uyarı tabelası, kullanıcı talimatı
-            // ("zirve-kar-tabelasi.webp fırtına bölgesinin girişinde dursun"). Kamp tabelalarıyla AYNI
-            // "path'ten dinamik konum" deseni — sıkıştırılmış/dar patikada da doğru yerde kalır.
-            let ftg = document.getElementById('km-oyun-zirve-firtina-tabela');
-            if(ftg) {
-                let pt = kmOyunZirveNokta(KM_OYUN_ZIRVE_FIRTINA_FRAC);
-                ftg.innerHTML = `<image href="/zirve-karakterler/zirve-kar-tabelasi.webp" x="${(pt.x - 30).toFixed(1)}" y="${(pt.y - 84.9).toFixed(1)}" width="60" height="84.9"/>`;
-            }
+            let tbg = document.getElementById('km-oyun-zirve-tabelalar'); if(tbg) tbg.innerHTML = '';
+            kmZirveSahneCiz();
+            kmZirveDefterCiz();
             let cg = document.getElementById('km-oyun-climbers'); if(!cg) return;
             cg.innerHTML = '';
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
                 let konum = kmOyunZirveKonum(s.frac, i, roster.length);
                 let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                el.setAttribute('class', 'km-climber');
+                el.setAttribute('class', 'km-climber km-zirve-tirmanici');
                 el.setAttribute('transform', `translate(${konum.x},${konum.y})`);
                 let renk = kmOyunRenk('zirve', i);
                 let ilkAd = kmOyunIlkAd(s.ad);
                 let genislik = Math.max(40, ilkAd.length * 7.5 + 16);
-                el.innerHTML = `<g class="km-climber-inner">
+                let ekip = KM_OYUN_ZIRVE_EKIPMAN_SIRA.map(function(k) { return `<text data-e="${k}" x="0" y="-64" text-anchor="middle" style="display:none">${KM_OYUN_ZIRVE_EKIPMAN_BILGI[k].ikon}</text>`; }).join('');
+                el.innerHTML = `<g class="km-climber-inner"><g class="km-zirve-hrk"><g class="km-zirve-sway">
+                    <g class="km-zirve-ip"><line x1="0" y1="-50" x2="3" y2="-128" /><circle cx="3" cy="-128" r="3"/></g>
                     ${kmOyunZirveKarakterSVG(s)}
+                    <g class="km-zirve-elbayrak"><line x1="14" y1="-26" x2="18" y2="-80" stroke="#3a2a1a" stroke-width="2"/><path class="bz" d="M18,-80 L40,-73 L18,-65 Z" fill="${renk}"/></g>
+                    <g class="km-zirve-ekip">${ekip}</g>
+                    </g></g>
                     <g transform="translate(0,20)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g>
                 </g>`;
                 cg.appendChild(el);
@@ -18155,58 +18527,76 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let grp = document.querySelector(`#km-oyun-flags g[data-cp="${cpIndex}"]`); if(!grp) return;
             let ring = grp.querySelector('.km-flag-ring'); if(!ring) return;
             ring.setAttribute('fill', renk);
-            ring.setAttribute('stroke', renk);
-            ring.style.filter = `drop-shadow(0 0 6px ${renk})`;
         }
         function kmOyunResyncZirve() {
             let roster = _kmOyunRosterCache;
             roster.forEach(function(s, i) {
                 let konum = kmOyunZirveKonum(s.frac, i, roster.length);
                 if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${konum.x},${konum.y})`);
+                kmZirveEkipmanGoster(s);
             });
             for(let cp = 0; cp < KM_OYUN_CP_SAYISI - 1; cp++) {
                 let best = null;
                 roster.forEach(function(s, i) { if(s.frac >= KM_OYUN_CP_FRAC[cp] - 1e-9 && (!best || s.frac > best.frac)) best = { frac: s.frac, i: i }; });
-                if(best) kmOyunZirveBayrakGuncelle(cp, kmOyunRenk('zirve', best.i));
+                kmOyunZirveBayrakGuncelle(cp, best ? kmOyunRenk('zirve', best.i) : '#6b7280');
             }
-            let sf = document.getElementById('km-oyun-summit');
-            if(sf) sf.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.55';
+            kmZirveKamplarCiz();
             kmOyunZirveHudGuncelle();
             kmOyunZirveFirtinaGuncelle();
+            kmZirveSaatGuncelle(false);
+            kmZirveCagriGuncelle();
         }
         function kmOyunAnimateZirve(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
-            let n = _kmOyunRosterCache.length, sure = 1250, basla = performance.now();
+            let n = _kmOyunRosterCache.length, el = s.zirveEl; if(!el) { done(); return; }
+            kmZirveVarisIptal(el);
+            let c = document.getElementById('km-zirve-cagri'); if(c) c.classList.remove('goster');
+            let engel = _kmZirveEngelSon, oran = _kmZirveSonOran;
+            let kilE = engel && engel.tip === 'kilpayi' ? KM_ZIRVE_ENGELLER[engel.e] : null;
+            let kilLen = kilE ? kmZirveEngelLen(kilE).b : 0, kilDurum = kilE && !kmOyunKameraAzaltilmisHareketMi() ? 0 : 3, kilT0 = 0;
+            let bitisMi = yeniFrac >= 1;
+            let lenBas = kmOyunZirveLen(eskiFrac, i, n), lenSon = bitisMi ? _kmOyunZirveTotalLen : kmOyunZirveLen(yeniFrac, i, n);
+            let bas = kmOyunZirveKonum(eskiFrac, i, n), son = kmOyunZirveKonum(yeniFrac, i, n);
+            let sure = Math.max(900, Math.min(1700, 700 + Math.abs(lenSon - lenBas) * 1.6)), basla = performance.now();
+            el.classList.add('yuruyor');
+            if(yeniFrac < eskiFrac) el.classList.add('kayiyor');
             function frame(now) {
-                let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
-                let fracAn = eskiFrac + (yeniFrac - eskiFrac) * eased;
-                let konum = kmOyunZirveKonum(fracAn, i, n), hop = Math.abs(Math.sin(t * Math.PI * 7)) * 10 * (1 - t * 0.5);
-                if(s.zirveEl) s.zirveEl.setAttribute('transform', `translate(${konum.x},${konum.y - hop})`);
-                if(t < 1) { requestAnimationFrame(frame); }
-                else {
-                    let varis = kmOyunZirveKonum(yeniFrac, i, n);
-                    let scr = kmOyunSvgPct('km-oyun-svg-zirve', varis.x, varis.y);
-                    kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('zirve', i), 14, false);
-                    if(yeniCp > eskiCp) {
-                        for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) kmOyunZirveBayrakGuncelle(cp, kmOyunRenk('zirve', i));
-                        if(yeniFrac >= 1) {
-                            kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffcc33', 26, true);
-                            let sf = document.getElementById('km-oyun-summit'); if(sf) { sf.style.opacity = '1'; sf.style.filter = 'drop-shadow(0 0 14px var(--a3))'; }
-                        }
-                    }
-                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('zirve', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('zirve', Math.min(1, n - 1)), 16, true); }, 80);
-                    // done() (== bitirOrtak) senkron olarak s.frac'ı yeniFrac'a yazıyor — HUD/fırtına
-                    // güncellemesi bu satırdan SONRA çağrılmalı, yoksa (bireysel modda kmOyunResyncZirve
-                    // HİÇ çağrılmadığı için — sadece bu tek sporcunun elementi doğrudan taşınıyor) HUD bir
-                    // önceki seriden kalma ESKİ frac'ı göstermeye devam ederdi (gerçek testte yakalandı:
-                    // fırtınada geri kayan bir seri sonrası HUD hâlâ eski/daha yüksek metreyi gösteriyordu).
-                    done();
-                    kmOyunZirveHudGuncelle();
-                    kmOyunZirveFirtinaGuncelle();
+                if(kilDurum === 1) {
+                    if(now - kilT0 < KM_ZIRVE_KIL_SURE) { requestAnimationFrame(frame); return; }
+                    kilDurum = 2; basla += KM_ZIRVE_KIL_SURE; el.classList.add('yuruyor');
                 }
+                let t = Math.min(1, (now - basla) / sure), eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                let len = lenBas + (lenSon - lenBas) * eased;
+                let pt = kmOyunZirveLenNokta(len, i, n);
+                // Sonda zirve düzlüğüne yumuşak geçiş.
+                if(bitisMi) { let ks = Math.max(0, t * 5 - 4); pt = { x: pt.x + (son.x - pt.x) * ks, y: pt.y + (son.y - pt.y) * ks }; }
+                if(kilDurum === 0 && len >= kilLen - 3) {
+                    kilDurum = 1; kilT0 = now;
+                    el.setAttribute('transform', `translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
+                    el.classList.remove('yuruyor');
+                    kmZirveKilPayiAsil(el, pt.x, pt.y);
+                    requestAnimationFrame(frame); return;
+                }
+                let teg = kmZirveTegetLen(len), dik = Math.abs(teg.y) > 0.5;
+                el.classList.toggle('ipte', dik && kilDurum !== 1);
+                let hop = dik ? 0 : Math.abs(Math.sin(t * Math.PI * 8)) * 5 * (1 - t * 0.6);
+                el.setAttribute('transform', `translate(${pt.x.toFixed(1)},${(pt.y - hop).toFixed(1)})`);
+                if(t < 1) { requestAnimationFrame(frame); return; }
+                el.classList.remove('yuruyor', 'ipte', 'kayiyor');
+                let varis = son;
+                let scr = kmZirveSvgPct(varis.x, varis.y);
+                kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('zirve', i), 12, false);
+                if(yeniCp > eskiCp) for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) kmOyunZirveBayrakGuncelle(cp, kmOyunRenk('zirve', i));
+                if(toplam >= _kmOyunOkSayisi * 10 * 0.9) setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 30, kmOyunRenk('zirve', 0), 16, true); kmOyunBurst(document.getElementById('km-oyun-burst'), 50, 70, kmOyunRenk('zirve', Math.min(1, n - 1)), 16, true); }, 80);
+                // done() (== bitirOrtak) s.frac'ı yeniFrac'a yazar — HUD/fırtına/saat ondan SONRA.
+                done();
+                kmZirveEkipmanGoster(s);
+                kmOyunZirveHudGuncelle();
+                kmOyunZirveFirtinaGuncelle();
+                kmZirveSaatGuncelle(true);
+                kmZirveVarisSahnesi(el, s, i, { x: varis.x, y: varis.y, tegX: kmZirveTegetLen(lenSon).x, engel: engel, oran: oran, geri: yeniFrac < eskiFrac, eskiCp: eskiCp, yeniCp: yeniCp, eskiFrac: eskiFrac, yeniFrac: yeniFrac });
             }
             requestAnimationFrame(frame);
         }
-
         // ---- HENDEK AKINI ----
         // Tek-nokta perspektif: derinlik t -> ölçek s(t)=1/(1+K*t). frac (0..1) -> t = frac*TMAX.
         // frac=0 kameranın dibinde (büyük, alt), frac=1 reaktör ağzında (küçük, kaçış noktasında).
@@ -22167,6 +22557,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(toplam / maxPuan < KM_NINJA_SENSEI_ORAN) { artis = Math.max(0, KM_NINJA_KAPI_FRAC - eskiFrac); senseiSonuc = 'red'; }
                 else senseiSonuc = 'onay';
             }
+            // Zirve engelleri (2026-09-26) — kaya duvarı / buzul yarığı / çığ: çukurlarla aynı kural.
+            let zirveEngel = null;
+            if(_kmOyunAktifTema === 'zirve' && artis > 0) {
+                let ze = kmZirveEngelKontrol(eskiFrac, artis, toplam / maxPuan, kmOyunDurumAl(s.g, s.ad).seviye);
+                artis = ze.artis; zirveEngel = ze.sonuc;
+            }
+            _kmZirveEngelSon = zirveEngel; _kmZirveSonOran = toplam / maxPuan;
             // Çukurlar (2026-09-26) — Ninja'da çukuru geçecek seri, çukurun sınırını (seviyeye göre) tutmalı; tutmazsa
             // ninja kenarda bekler. Asla geri gitmez, gerçek skora dokunmaz (Sensei kapısıyla aynı desen).
             let ninjaCukur = null;
@@ -22545,6 +22942,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }
                 if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
                 if(_kmOyunAktifTema === 'ninja') kmNinjaTapinakSifirla();
+                if(_kmOyunAktifTema === 'zirve') kmZirveGunlukSifirla();
                 // Resync DEĞİL — kaşif rozetleri "bulundu" görünümünden "?" görünümüne dönüyor, bu bir
                 // GÖRÜNÜM değişikliği (bkz. proje hafızası: Resync sadece konum/transform günceller).
                 kmOyunSahneKurAktif();
