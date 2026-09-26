@@ -1,6 +1,6 @@
 /* MILO FITT KIDS — bagimsiz, kucuk istemci. Okculugun app.js/sync.js'ine hic bagli degil;
    duz fetch() + periyodik yenileme (basit senkron karari). PIN dogrulanana kadar HICBIR
-   /api/milo/* veri cagrisi yapilmaz (sadece PIN dogrulama anında credentials hash'i cekilir). */
+   /api/milo/* veri cagrisi yapilmaz; giris /api/milo/giris uzerinden sunucu oturumuyla yapilir. */
 
 // ===== TEMA (okculukla ayni localStorage anahtari — tercih paylasilir) =====
 if (localStorage.getItem('dag_sk_theme') === 'light') document.body.classList.add('light-theme');
@@ -18,112 +18,264 @@ function showToast(message, type = 'success') {
 function miloEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function bugunISO() { return new Date().toISOString().slice(0, 10); }
 
-// ===== PIN — okculuktakiyle ayni SHA-256/kilit deseni, tamamen ayri localStorage anahtarlari =====
-let miloSifreBuffer = '';
-async function miloSifreOzet(metin) {
-    try {
-        let buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metin));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (e) {
-        let h = 5381; for (let i = 0; i < metin.length; i++) h = ((h << 5) + h + metin.charCodeAt(i)) >>> 0;
-        return 'f_' + h.toString(16);
+// ===== GİRİŞ (2026-09-27) — okçulukla aynı sunucu sistemi, ayrı veritabanı (/api/milo/giris/*) =====
+// Eskiden PIN özeti herkese açık bir GET ile geliyor, yazma yetkisi de o özetin kendisiydi. Artık kişiye özel
+// hesaplar (ad + 6+ haneli PIN), sunucu oturumu ("Bu cihazı hatırla" 30 gün), sunucu tarafı deneme kilidi,
+// parmak izi / Face ID ve yönetici için Güvenlik ekranı (kullanıcılar, cihazlar, işlem günlüğü).
+const MILO_GIRIS = '/api/milo/giris';
+try { localStorage.removeItem('milo_sifre_kilit'); localStorage.removeItem('milo_sifre_deneme'); } catch (e) {}
+let miloOturumToken = null, miloOturum = null, miloGirisDurum = null, miloGirisMod = 'giris', miloGirisSecili = null;
+let miloSifreBuffer = '', miloKurulumToken = null, miloGirisMesgul = false, miloYetkiSon = 0;
+try { miloOturumToken = localStorage.getItem('milo_oturum') || sessionStorage.getItem('milo_oturum') || null; } catch (e) {}
+async function miloGirisApi(yol, govde, metod) {
+    let o = { method: metod || (govde === undefined ? 'GET' : 'POST'), headers: { 'content-type': 'application/json' } };
+    if (govde !== undefined) o.body = JSON.stringify(govde);
+    if (miloOturumToken) o.headers['X-Dagsk-Oturum'] = miloOturumToken;
+    let res = await fetch(MILO_GIRIS + yol, o), data = {};
+    try { data = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, data };
+}
+function miloGirisHata(r) {
+    if (r.status === 429) { let s = r.data.kalanSn || 60; return '🔒 Çok fazla yanlış deneme — ' + (s >= 90 ? Math.ceil(s / 60) + ' dk' : s + ' sn') + ' bekle.'; }
+    if (r.data && r.data.error === 'yanlis-pin') return '❌ PIN hatalı.';
+    if (r.status === 400 && r.data && r.data.error) return r.data.error;
+    return 'İşlem yapılamadı (' + r.status + ').';
+}
+function miloOturumKaydet(d, hatirla) {
+    miloOturumToken = d.token; miloOturum = { id: d.id, ad: d.ad, rol: d.rol }; miloYetkiSon = Date.now();
+    try { localStorage.removeItem('milo_oturum'); sessionStorage.removeItem('milo_oturum'); (hatirla ? localStorage : sessionStorage).setItem('milo_oturum', d.token); } catch (e) {}
+}
+function miloOturumTemizle() {
+    miloOturumToken = null; miloOturum = null;
+    try { localStorage.removeItem('milo_oturum'); sessionStorage.removeItem('milo_oturum'); } catch (e) {}
+}
+// "Antrenör / Yönetici" kartı: hatırlanan oturum varsa PIN sormadan uygulamaya girer.
+async function miloAntrenorGirisAc() {
+    document.getElementById('milo-platform-secim').style.display = 'none';
+    if (miloOturumToken && !miloOturum) {
+        let r = await miloGirisApi('/ben').catch(() => ({ ok: false, status: 0, data: {} }));
+        if (r.ok) miloOturum = r.data; else if (r.status === 401) miloOturumTemizle();
     }
-}
-function miloSifreDisplayGuncelle() {
-    let el = document.getElementById('milo-sifre-display'); if (!el) return; let dots = '';
-    for (let i = 0; i < 4; i++) dots += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; margin:0 6px; background:${i < miloSifreBuffer.length ? 'var(--neon-pink)' : 'transparent'}; border:2px solid var(--neon-pink);"></span>`;
-    el.innerHTML = dots;
-}
-function miloSifreKilitSaniye() {
-    let k = parseInt(localStorage.getItem('milo_sifre_kilit')) || 0;
-    return k > Date.now() ? Math.ceil((k - Date.now()) / 1000) : 0;
-}
-function miloSifreYanlisDeneme() {
-    let n = (parseInt(localStorage.getItem('milo_sifre_deneme')) || 0) + 1;
-    if (n >= 5) {
-        localStorage.setItem('milo_sifre_kilit', String(Date.now() + 60000));
-        localStorage.setItem('milo_sifre_deneme', '0');
-        showToast('🔒 5 yanlış deneme — 60 saniye kilitlendi', 'error');
-    } else {
-        localStorage.setItem('milo_sifre_deneme', String(n));
-        showToast(`Hatalı PIN! (${5 - n} hak kaldı)`, 'error');
-    }
-}
-function miloSifreSil() { miloSifreBuffer = miloSifreBuffer.slice(0, -1); miloSifreDisplayGuncelle(); }
-function miloSifreTemizle() { miloSifreBuffer = ''; miloSifreDisplayGuncelle(); }
-
-function miloSifreRakam(n) {
-    if (miloSifreBuffer.length >= 4) return;
-    miloSifreBuffer += n; miloSifreDisplayGuncelle();
-    if (miloSifreBuffer.length === 4) setTimeout(miloGirisDene, 150);
-}
-
-async function miloGirisDene() {
-    let kilit = miloSifreKilitSaniye();
-    if (kilit > 0) { showToast(`🔒 Kilitli — ${kilit} sn bekle`, 'error'); miloSifreTemizle(); return; }
-    let girilenOzet = await miloSifreOzet(miloSifreBuffer);
-    miloSifreTemizle();
-    let dogru = false;
-    try {
-        // PIN dogrulamasi icin TEK istisna: sadece hash degeri cekilir, hicbir uye/aidat/yoklama verisi yok.
-        let res = await fetch('/api/milo/credentials');
-        let data = await res.json();
-        dogru = !!data.credentials && girilenOzet === data.credentials.yonetici_hash;
-    } catch (e) { showToast('Sunucuya ulaşılamadı, tekrar deneyin.', 'error'); return; }
-
-    if (dogru) {
-        localStorage.setItem('milo_sifre_deneme', '0');
-        miloYetkiHash = girilenOzet;
-        document.getElementById('milo-giris').style.display = 'none';
-        document.getElementById('milo-app').style.display = 'flex';
-        miloOturumAcik = true;
-        miloSekme('uyeler');
-        miloPollingBaslat();
-    } else {
-        miloSifreYanlisDeneme();
-    }
-}
-
-function miloCikisYap() {
-    miloOturumAcik = false;
-    miloYetkiHash = null;
-    if (miloPollingId) clearInterval(miloPollingId);
-    document.getElementById('milo-app').style.display = 'none';
+    if (miloOturum) { miloUygulamayaGir(); return; }
+    let d = await miloGirisApi('/durum').catch(() => null);
+    miloGirisDurum = d && d.ok ? d.data : { kurulumGerekli: false, kullanicilar: [], passkeyVar: false };
+    miloGirisMod = miloGirisDurum.kurulumGerekli ? 'kurulum' : 'giris';
+    let son = null; try { son = parseInt(localStorage.getItem('milo_son_kullanici')); } catch (e) {}
+    let l = miloGirisDurum.kullanicilar || [];
+    miloGirisSecili = l.find(k => k.id === son) || (l.length === 1 ? l[0] : null);
     document.getElementById('milo-giris').style.display = 'flex';
+    miloGirisCiz();
 }
-
-function miloAyarlarAc() { document.getElementById('milo-ayarlar-modal').style.display = 'flex'; }
-async function miloSifreDegistir() {
-    let mevcut = (document.getElementById('milo-sfd-mevcut') || {}).value || '';
-    let yeni = (document.getElementById('milo-sfd-yeni') || {}).value || '';
-    if (!/^\d{4}$/.test(yeni)) return showToast('Yeni PIN 4 haneli rakam olmalı.', 'error');
-    let mevcutOzet = await miloSifreOzet(mevcut);
-    let res = await fetch('/api/milo/credentials'); let data = await res.json();
-    if (!data.credentials || mevcutOzet !== data.credentials.yonetici_hash) return showToast('Mevcut PIN hatalı!', 'error');
-    let yeniOzet = await miloSifreOzet(yeni);
-    await fetch('/api/milo/credentials', {
-        method: 'PUT', headers: { 'content-type': 'application/json', 'X-Dagsk-Auth': mevcutOzet },
-        body: JSON.stringify({ yoneticiHash: yeniOzet, egitmenHash: yeniOzet, degisim: Date.now() }),
-    });
-    miloYetkiHash = yeniOzet;
-    document.getElementById('milo-sfd-mevcut').value = ''; document.getElementById('milo-sfd-yeni').value = '';
-    document.getElementById('milo-ayarlar-modal').style.display = 'none';
-    showToast('🔑 PIN değişti.', 'success');
+function miloGirisGeri() {
+    miloSifreBuffer = ''; miloKurulumToken = null;
+    document.getElementById('milo-giris').style.display = 'none';
+    document.getElementById('milo-platform-secim').style.display = 'flex';
+}
+function miloGirisCiz() {
+    let kap = document.getElementById('milo-giris-alan'); if (!kap) return;
+    let pk = !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+    if (miloGirisMod === 'kurulum-form') {
+        kap.innerHTML = `<div class="milo-gs-not">✅ PIN doğru. Şimdi <b>kendi hesabını</b> oluştur — bundan sonra bu adla ve yeni PIN'le gireceksin.</div>
+            <input id="mgs-ad" class="milo-input" placeholder="Adın" maxlength="40">
+            <input id="mgs-yeni1" class="milo-input" type="password" placeholder="Yeni PIN (6+ hane) ya da şifre" maxlength="64" autocomplete="new-password">
+            <input id="mgs-yeni2" class="milo-input" type="password" placeholder="Yeni PIN tekrar" maxlength="64" autocomplete="new-password">
+            <label class="milo-gs-hatirla"><input type="checkbox" id="mgs-hatirla" checked> Bu cihazı hatırla (30 gün)</label>
+            <button class="milo-btn-full" onclick="miloKurulumTamamla()">Hesabımı oluştur</button>
+            <button class="milo-gs-ikincil" onclick="miloGirisGeri()">İptal</button>`;
+        return;
+    }
+    let ust = miloGirisMod === 'kurulum' ? `<div class="milo-gs-not">🔐 Giriş sistemi yenilendi. <b>Mevcut Milo PIN'ini</b> gir, ardından kendi hesabını oluştur. Eski PIN o anda kapanır.</div>` : '';
+    let l = (miloGirisDurum && miloGirisDurum.kullanicilar) || [];
+    let kisiler = miloGirisMod === 'giris' ? (l.length ? `<div class="milo-gs-kisiler">${l.map(k => `<button class="milo-gs-kisi${miloGirisSecili && miloGirisSecili.id === k.id ? ' secili' : ''}" onclick="miloGirisKisiSec(${k.id})">${miloEsc(k.ad)}</button>`).join('')}</div>` : `<div class="milo-gs-not">Hesap bulunamadı.</div>`) : '';
+    let hatirlaVars = true; try { hatirlaVars = localStorage.getItem('milo_hatirla_tercih') !== '0'; } catch (e) {}
+    let n = Math.max(miloGirisMod === 'kurulum' ? 4 : 6, miloSifreBuffer.length), dots = '';
+    for (let i = 0; i < n; i++) dots += `<span class="${i < miloSifreBuffer.length ? 'dolu' : ''}"></span>`;
+    kap.innerHTML = `${ust}${kisiler}<div id="milo-sifre-display" class="milo-gs-noktalar">${dots}</div>
+        <div class="milo-gs-tuslar">${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => `<button class="milo-pin-btn" onclick="miloSifreRakam('${d}')">${d}</button>`).join('')}
+        <button class="milo-pin-btn" style="font-size:18px;" onclick="miloSifreSil()">⌫</button><button class="milo-pin-btn" onclick="miloSifreRakam('0')">0</button><button class="milo-pin-btn milo-gs-tamam" onclick="miloGirisDene()">✓</button></div>
+        ${miloGirisMod === 'giris' ? `<label class="milo-gs-hatirla"><input type="checkbox" id="mgs-hatirla" ${hatirlaVars ? 'checked' : ''} onchange="try{localStorage.setItem('milo_hatirla_tercih', this.checked ? '1' : '0')}catch(e){}"> Bu cihazı hatırla (30 gün PIN sorma)</label>` : ''}
+        ${miloGirisMod === 'giris' && pk && miloGirisDurum && miloGirisDurum.passkeyVar ? `<button class="milo-gs-passkey" onclick="miloPasskeyGiris()">👆 Parmak izi / Face ID ile gir</button>` : ''}
+        <button class="milo-gs-ikincil" onclick="miloGirisGeri()">İptal</button>`;
+}
+function miloGirisKisiSec(id) { miloGirisSecili = ((miloGirisDurum && miloGirisDurum.kullanicilar) || []).find(k => k.id === id) || null; miloSifreBuffer = ''; miloGirisCiz(); }
+function miloSifreDisplayGuncelle() { miloGirisCiz(); }
+function miloSifreSil() { miloSifreBuffer = miloSifreBuffer.slice(0, -1); miloGirisCiz(); }
+function miloSifreTemizle() { miloSifreBuffer = ''; miloGirisCiz(); }
+function miloSifreRakam(n) {
+    if (miloGirisMesgul || miloSifreBuffer.length >= 12) return;
+    miloSifreBuffer += n; miloGirisCiz();
+    if (miloGirisMod === 'kurulum' && miloSifreBuffer.length === 4) setTimeout(miloGirisDene, 150);
+}
+document.addEventListener('keydown', function (e) {
+    let g = document.getElementById('milo-giris');
+    if (!g || g.style.display === 'none' || miloGirisMod === 'kurulum-form') return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (/^\d$/.test(e.key)) { miloSifreRakam(e.key); e.preventDefault(); }
+    else if (e.key === 'Backspace') { miloSifreSil(); e.preventDefault(); }
+    else if (e.key === 'Enter') { miloGirisDene(); e.preventDefault(); }
+});
+async function miloGirisDene() {
+    if (miloGirisMesgul || !miloSifreBuffer) return;
+    let pin = miloSifreBuffer, hatirlaEl = document.getElementById('mgs-hatirla'), hatirla = hatirlaEl ? hatirlaEl.checked : false;
+    miloGirisMesgul = true;
+    try {
+        if (miloGirisMod === 'kurulum') {
+            let r = await miloGirisApi('/kurulum', { pin });
+            miloSifreBuffer = '';
+            if (r.ok && r.data.kurulumToken) { miloKurulumToken = r.data.kurulumToken; miloGirisMod = 'kurulum-form'; miloGirisCiz(); return; }
+            if (r.status === 409) { miloAntrenorGirisAc(); return; }
+            showToast(miloGirisHata(r), 'error'); miloGirisCiz(); return;
+        }
+        if (!miloGirisSecili) { showToast('Önce kim olduğunu seç.', 'error'); return; }
+        let r = await miloGirisApi('/giris', { kullaniciId: miloGirisSecili.id, pin, hatirla });
+        miloSifreBuffer = '';
+        if (!r.ok) { showToast(miloGirisHata(r), 'error'); miloGirisCiz(); return; }
+        try { localStorage.setItem('milo_son_kullanici', String(miloGirisSecili.id)); } catch (e) {}
+        miloOturumKaydet(r.data, hatirla);
+        miloUygulamayaGir();
+    } catch (e) { showToast('Sunucuya ulaşılamadı, tekrar deneyin.', 'error'); }
+    finally { miloGirisMesgul = false; }
+}
+async function miloKurulumTamamla() {
+    let ad = (document.getElementById('mgs-ad').value || '').trim(), p1 = document.getElementById('mgs-yeni1').value || '', p2 = document.getElementById('mgs-yeni2').value || '';
+    let hatirla = document.getElementById('mgs-hatirla').checked;
+    if (ad.length < 2) return showToast('Adını yaz.', 'error');
+    if (p1 !== p2) return showToast('İki PIN aynı değil.', 'error');
+    let r = await miloGirisApi('/kurulum-tamamla', { kurulumToken: miloKurulumToken, ad, pin: p1, hatirla });
+    if (!r.ok) return showToast(miloGirisHata(r), 'error');
+    miloOturumKaydet(r.data, hatirla);
+    showToast('🔐 Hesabın oluşturuldu. Gizem\'i 🔐 Güvenlik\'ten ekleyebilirsin.', 'success');
+    miloUygulamayaGir();
+}
+function miloUygulamayaGir() {
+    miloSifreBuffer = '';
+    document.getElementById('milo-giris').style.display = 'none';
+    document.getElementById('milo-platform-secim').style.display = 'none';
+    document.getElementById('milo-app').style.display = 'flex';
+    let b = document.getElementById('milo-guvenlik-btn'); if (b) b.textContent = miloOturum && miloOturum.rol === 'yonetici' ? '🔐 Güvenlik' : '👤 Hesabım';
+    miloOturumAcik = true;
+    miloSekme('uyeler');
+    miloPollingBaslat();
+}
+async function miloCikisYap() {
+    try { await miloGirisApi('/cikis', {}); } catch (e) {}
+    miloOturumTemizle();
+    miloOturumAcik = false;
+    if (miloPollingId) clearInterval(miloPollingId);
+    let m = document.getElementById('milo-ayarlar-modal'); if (m) m.style.display = 'none';
+    document.getElementById('milo-app').style.display = 'none';
+    document.getElementById('milo-platform-secim').style.display = 'flex';
+}
+// ---- Passkey ----
+function miloB64uBuf(s) { let b = s.replace(/-/g, '+').replace(/_/g, '/'); b += '==='.slice((b.length + 3) % 4); let bin = atob(b), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+function miloBufB64u(buf) { let u = new Uint8Array(buf), s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+async function miloPasskeyGiris() {
+    try {
+        let b = await miloGirisApi('/passkey/baslat', {});
+        if (!b.ok) return showToast(miloGirisHata(b), 'error');
+        let cred = await navigator.credentials.get({ publicKey: { challenge: miloB64uBuf(b.data.challenge), rpId: b.data.rpId, userVerification: 'preferred', timeout: 60000 } });
+        if (!cred) return;
+        let hatirla = (document.getElementById('mgs-hatirla') || { checked: true }).checked;
+        let r = await miloGirisApi('/passkey/bitir', { id: cred.id, clientDataJSON: miloBufB64u(cred.response.clientDataJSON), authenticatorData: miloBufB64u(cred.response.authenticatorData), signature: miloBufB64u(cred.response.signature), hatirla });
+        if (!r.ok) return showToast('❌ Parmak izi / Face ID doğrulanamadı.', 'error');
+        miloOturumKaydet(r.data, hatirla);
+        miloUygulamayaGir();
+    } catch (e) { if (!e || e.name !== 'NotAllowedError') showToast('Parmak izi / Face ID kullanılamadı.', 'error'); }
+}
+async function miloPasskeyEkle() {
+    if (!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext)) return showToast('Bu cihaz parmak izi / Face ID girişini desteklemiyor.', 'error');
+    let b = await miloGirisApi('/passkey/kayit-baslat', {});
+    if (b.status === 403 && b.data.error === 'yetki-tazele') { miloPinTazele(miloPasskeyEkle); return; }
+    if (!b.ok) return showToast(miloGirisHata(b), 'error');
+    try {
+        let cred = await navigator.credentials.create({ publicKey: {
+            challenge: miloB64uBuf(b.data.challenge), rp: { id: b.data.rpId, name: 'MILO FITT KIDS' },
+            user: { id: miloB64uBuf(b.data.kullaniciId), name: b.data.ad, displayName: b.data.ad },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+            authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'preferred' },
+            excludeCredentials: (b.data.mevcut || []).map(id => ({ type: 'public-key', id: miloB64uBuf(id) })), attestation: 'none', timeout: 60000
+        } });
+        if (!cred) return;
+        let pk = cred.response.getPublicKey ? cred.response.getPublicKey() : null, alg = cred.response.getPublicKeyAlgorithm ? cred.response.getPublicKeyAlgorithm() : null;
+        if (!pk || alg === null) return showToast('Bu tarayıcı eski — güncelle.', 'error');
+        let r = await miloGirisApi('/passkey/kayit-bitir', { id: cred.id, clientDataJSON: miloBufB64u(cred.response.clientDataJSON), publicKey: miloBufB64u(pk), alg });
+        if (!r.ok) return showToast(miloGirisHata(r), 'error');
+        showToast('👆 Bu cihaz eklendi.', 'success');
+        miloGuvenlikYukle();
+    } catch (e) { if (e && e.name === 'InvalidStateError') showToast('Bu cihaz zaten ekli.', 'warning'); else if (!e || e.name !== 'NotAllowedError') showToast('Eklenemedi.', 'error'); }
+}
+// Taze PIN gereken işlemden önce (15 dk kuralı) PIN iste.
+async function miloPinTazele(sonra) {
+    let pin = prompt('Güvenlik için PIN\'ini tekrar gir:');
+    if (!pin) return;
+    let r = await miloGirisApi('/dogrula', { pin });
+    if (!r.ok) return showToast(miloGirisHata(r), 'error');
+    miloYetkiSon = Date.now();
+    if (sonra) sonra();
+}
+// ---- Güvenlik / Hesabım modalı ----
+function miloAyarlarAc() { document.getElementById('milo-ayarlar-modal').style.display = 'flex'; miloGuvenlikYukle(); }
+async function miloGuvenlikYukle() {
+    let kap = document.getElementById('milo-guvenlik-icerik'); if (!kap) return;
+    let hesabim = `<div class="milo-gs-blok"><b>👤 ${miloEsc(miloOturum ? miloOturum.ad : '')}</b>
+        <button class="milo-gs-ikincil" onclick="miloPasskeyEkle()">👆 Bu cihaza parmak izi / Face ID ekle</button>
+        <input id="mgs-mevcut" class="milo-input" type="password" placeholder="Mevcut PIN" maxlength="64">
+        <input id="mgs-y1" class="milo-input" type="password" placeholder="Yeni PIN (6+ hane)" maxlength="64" autocomplete="new-password">
+        <input id="mgs-y2" class="milo-input" type="password" placeholder="Yeni PIN tekrar" maxlength="64" autocomplete="new-password">
+        <button class="milo-btn-full" onclick="miloPinDegistir()">PIN'imi değiştir</button></div>`;
+    if (!miloOturum || miloOturum.rol !== 'yonetici') { kap.innerHTML = hesabim; return; }
+    kap.innerHTML = hesabim + '<div class="milo-gs-not">Yükleniyor…</div>';
+    let r = await miloGirisApi('/yonetim');
+    if (r.status === 403 && r.data.error === 'yetki-tazele') { kap.innerHTML = hesabim + `<button class="milo-btn-full" onclick="miloPinTazele(miloGuvenlikYukle)">🔑 Kullanıcı/cihaz yönetimi için PIN'i gir</button>`; return; }
+    if (!r.ok) { kap.innerHTML = hesabim + `<div class="milo-gs-not">Yüklenemedi (${r.status}).</div>`; return; }
+    let v = r.data, z = t => t ? new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+    kap.innerHTML = hesabim + `
+        <div class="milo-gs-blok"><b>👥 Kullanıcılar</b>${v.kullanicilar.map(k => `<div class="milo-gs-satir${k.aktif ? '' : ' pasif'}"><span>${miloEsc(k.ad)} <small>${k.rol === 'yonetici' ? 'yönetici' : 'antrenör'}${k.aktif ? '' : ' · erişim kapalı'} · son giriş ${z(k.son_giris)}</small></span>
+            <span>${k.aktif ? `<button onclick="miloKullaniciPin(${k.id}, '${miloJsEsc(k.ad)}')">PIN sıfırla</button>` : ''}${k.id !== v.ben ? `<button onclick="miloKullaniciErisim(${k.id}, ${k.aktif ? 'false' : 'true'}, '${miloJsEsc(k.ad)}')">${k.aktif ? 'Erişimi kapat' : 'Aç'}</button>` : ''}</span></div>`).join('')}
+            <input id="mgs-yeni-ad" class="milo-input" placeholder="Ad (örn. Gizem)" maxlength="40">
+            <select id="mgs-yeni-rol" class="milo-input"><option value="egitmen">Antrenör</option><option value="yonetici">Yönetici</option></select>
+            <input id="mgs-yeni-pin" class="milo-input" type="password" placeholder="PIN (6+ hane)" maxlength="64" autocomplete="new-password">
+            <button class="milo-btn-full" onclick="miloKullaniciEkle()">+ Kullanıcı ekle</button></div>
+        <div class="milo-gs-blok"><b>📱 Giriş yapılmış cihazlar</b>${v.cihazlar.map(c => `<div class="milo-gs-satir"><span>${miloEsc(c.ad || '?')} · ${miloEsc(c.cihaz || '')}<small>${c.benim ? 'bu cihaz · ' : ''}son kullanım ${z(c.son_kullanim)}</small></span><span><button onclick="miloCihazCikar('${c.id}', ${c.benim})">Çıkar</button></span></div>`).join('') || '<small>Yok</small>'}</div>
+        <div class="milo-gs-blok"><b>👆 Parmak izi kayıtları</b>${v.passkeyler.map(p => `<div class="milo-gs-satir"><span>${miloEsc(p.ad || '?')} · ${miloEsc(p.cihaz || '')}</span><span><button onclick="miloPasskeySil('${miloJsEsc(p.id)}')">Sil</button></span></div>`).join('') || '<small>Yok</small>'}</div>
+        <div class="milo-gs-blok"><b>📜 İşlem günlüğü</b>${v.gunluk.slice(0, 20).map(g => `<div class="milo-gs-gunluk"><small>${z(g.zaman)}</small> <b>${miloEsc(g.ad || '—')}</b> ${miloEsc(g.olay)} <small>${miloEsc(g.detay || '')}</small></div>`).join('') || '<small>Kayıt yok</small>'}</div>`;
+}
+async function miloYonetimIstek(yol, govde, metod, basari) {
+    let r = await miloGirisApi(yol, govde, metod);
+    if (r.status === 403 && r.data.error === 'yetki-tazele') { miloPinTazele(() => miloYonetimIstek(yol, govde, metod, basari)); return; }
+    if (!r.ok) return showToast(miloGirisHata(r), 'error');
+    if (basari) showToast(basari, 'success');
+    miloGuvenlikYukle();
+}
+function miloKullaniciEkle() {
+    let ad = document.getElementById('mgs-yeni-ad').value, rol = document.getElementById('mgs-yeni-rol').value, pin = document.getElementById('mgs-yeni-pin').value;
+    miloYonetimIstek('/yonetim/kullanici', { ad, rol, pin }, 'POST', '✅ ' + ad.trim() + ' eklendi.');
+}
+function miloKullaniciPin(id, ad) { let pin = prompt(ad + ' için yeni PIN (6+ hane):'); if (pin) miloYonetimIstek('/yonetim/kullanici/' + id, { pin }, 'PUT', 'PIN sıfırlandı.'); }
+function miloKullaniciErisim(id, ac, ad) { if (!ac && !confirm(ad + ' için erişim kapatılsın mı?')) return; miloYonetimIstek('/yonetim/kullanici/' + id, { aktif: ac }, 'PUT', ac ? 'Erişim açıldı.' : 'Erişim kapatıldı.'); }
+function miloCihazCikar(id, benim) { if (benim) { miloCikisYap(); return; } if (confirm('Bu cihazın oturumu kapatılsın mı?')) miloYonetimIstek('/yonetim/cihaz/' + encodeURIComponent(id), undefined, 'DELETE', 'Cihaz çıkarıldı.'); }
+function miloPasskeySil(id) { if (confirm('Kayıt silinsin mi?')) miloYonetimIstek('/yonetim/passkey/' + encodeURIComponent(id), undefined, 'DELETE', 'Silindi.'); }
+async function miloPinDegistir() {
+    let m = document.getElementById('mgs-mevcut').value, y1 = document.getElementById('mgs-y1').value, y2 = document.getElementById('mgs-y2').value;
+    if (y1 !== y2) return showToast('Yeni PIN\'ler aynı değil.', 'error');
+    let r = await miloGirisApi('/pin-degistir', { mevcutPin: m, yeniPin: y1 });
+    if (!r.ok) return showToast(miloGirisHata(r), 'error');
+    showToast('🔑 PIN değişti — diğer cihazlardaki oturumların kapatıldı.', 'success');
+    miloGuvenlikYukle();
 }
 
 // ===== VERİ KATMANI — düz fetch(), merge/senkron motoru yok =====
-// Sunucu artık yazma isteklerinde bir yetki başlığı istiyor (bkz. src/index.ts) — eskiden PIN
-// sadece ekranda bir kilitti. miloGirisDene() başarılı girişte miloYetkiHash'i dolduruyor,
-// miloCikisYap() temizliyor; burada TEK yerden ekleniyor, her çağrı noktasını değiştirmeye gerek yok.
-let miloYetkiHash = null;
+// Tüm istekler oturum anahtarıyla gider; bir yazma 401 alırsa (süre doldu / cihaz uzaktan çıkarıldı) giriş ekranına dönülür.
 async function miloApi(path, opts) {
-    let secenekler = opts ? { headers: { 'content-type': 'application/json' }, ...opts } : undefined;
-    let metod = ((secenekler && secenekler.method) || 'GET').toUpperCase();
-    if(metod !== 'GET' && miloYetkiHash) {
-        secenekler = secenekler || {};
-        secenekler.headers = Object.assign({}, secenekler.headers, { 'X-Dagsk-Auth': miloYetkiHash });
-    }
+    let secenekler = opts ? { headers: { 'content-type': 'application/json' }, ...opts } : { headers: {} };
+    secenekler.headers = Object.assign({}, secenekler.headers, miloOturumToken ? { 'X-Dagsk-Oturum': miloOturumToken } : {});
     let res = await fetch('/api/milo' + path, secenekler);
+    if (res.status === 401 && ((secenekler.method || 'GET').toUpperCase() !== 'GET')) {
+        showToast('🔒 Oturumun sona ermiş — yeniden giriş yap.', 'error');
+        miloOturumTemizle(); miloOturumAcik = false;
+        document.getElementById('milo-app').style.display = 'none';
+        miloAntrenorGirisAc();
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
 }

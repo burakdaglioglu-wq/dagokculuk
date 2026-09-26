@@ -84,7 +84,30 @@
         .milo-toggle.aktif-ogrendi { background: var(--milo-teal); color: #fff; }
         .milo-stat-card { text-align: center; padding: 16px; border-radius: 18px; color: #fff; }
         .milo-stat-card b { font-size: 30px; display: block; font-weight: 900; }
-    </style>
+            /* Giriş sistemi (2026-09-27) */
+        .milo-gs-alan { width:100%; max-width:320px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .milo-gs-not { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; background:var(--milo-card-raised); border:1px solid var(--milo-line); font-size:12.5px; line-height:1.45; color:var(--milo-ink); }
+        .milo-gs-kisiler { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+        .milo-gs-kisi { min-height:44px; padding:0 16px; border-radius:999px; border:2px solid var(--milo-line); background:var(--milo-card-raised); color:var(--milo-ink); font-weight:800; font-size:14px; cursor:pointer; }
+        .milo-gs-kisi.secili { border-color:var(--milo-teal); }
+        .milo-gs-noktalar { display:flex; gap:10px; min-height:16px; }
+        .milo-gs-noktalar span { width:14px; height:14px; border-radius:50%; border:2px solid var(--milo-teal); }
+        .milo-gs-noktalar span.dolu { background:var(--milo-teal); }
+        .milo-gs-tuslar { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; }
+        .milo-gs-tuslar .milo-pin-btn { padding:14px 0; }
+        .milo-gs-tamam { background:var(--milo-teal) !important; color:#fff !important; }
+        .milo-gs-hatirla { display:flex; align-items:center; gap:8px; align-self:flex-start; font-size:13px; color:var(--milo-ink); }
+        .milo-gs-hatirla input { width:19px; height:19px; accent-color:var(--milo-teal); -webkit-appearance:checkbox !important; appearance:auto !important; flex-shrink:0; }
+        .milo-gs-passkey { width:100%; min-height:46px; border-radius:14px; border:2px solid var(--milo-grape); background:transparent; color:var(--milo-ink); font-weight:800; cursor:pointer; }
+        .milo-gs-ikincil { min-height:38px; padding:0 14px; border-radius:10px; border:1px solid var(--milo-line); background:transparent; color:var(--milo-ink-dim); font-weight:700; cursor:pointer; }
+        .milo-gs-blok { display:flex; flex-direction:column; gap:8px; padding:12px; margin-bottom:10px; border-radius:12px; background:var(--milo-card); border:1px solid var(--milo-line); }
+        .milo-gs-satir { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; }
+        .milo-gs-satir.pasif { opacity:.55; }
+        .milo-gs-satir small { display:block; color:var(--milo-ink-dim); font-size:11px; }
+        .milo-gs-satir button { min-height:32px; padding:0 10px; margin-left:4px; border-radius:8px; border:1px solid var(--milo-line); background:transparent; color:var(--milo-ink); font-size:12px; font-weight:700; cursor:pointer; }
+        .milo-gs-gunluk { font-size:12px; color:var(--milo-ink); }
+        .milo-gs-gunluk small { color:var(--milo-ink-dim); }
+</style>
 </head>
 <body>
     <div id="toast">Bildirim</div>
@@ -95,7 +118,7 @@
         <img class="milo-logo-img" src="/milo-logo.png" alt="MILO FITT KIDS">
         <div class="milo-ribbon"></div>
         <div style="color:var(--milo-ink-dim); font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Giriş Türünü Seç</div>
-        <button class="milo-secim-btn" onclick="document.getElementById('milo-platform-secim').style.display='none'; document.getElementById('milo-giris').style.display='flex';">🧑‍🏫 Antrenör / Yönetici <span>PIN ile giriş — üye, aidat, yoklama yönetimi</span></button>
+        <button class="milo-secim-btn" onclick="miloAntrenorGirisAc()">🧑‍🏫 Antrenör / Yönetici <span>PIN ile giriş — üye, aidat, yoklama yönetimi</span></button>
         <button class="milo-secim-btn" onclick="document.getElementById('milo-platform-secim').style.display='none'; document.getElementById('milo-sporcu-giris').style.display='flex'; miloSporcuHatirlaOku();">🤸 Sporcu Girişi <span>İsim + doğum yılı ile — kendi gelişimini gör</span></button>
     </div>
 
@@ -119,26 +142,12 @@
     </div>
 
     <!-- PIN EKRANI — sayfa açılır açılmaz bu görünür, hiçbir /api/milo/* veri çağrısı burada YAPILMAZ -->
-    <div id="milo-giris" style="position:fixed; inset:0; z-index:10000; background:var(--milo-bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; padding:20px;">
+    <div id="milo-giris" style="position:fixed; inset:0; z-index:10000; background:var(--milo-bg); display:none; overflow-y:auto; flex-direction:column; align-items:center; justify-content:center; gap:15px; padding:20px;">
         <a href="/app.html" style="position:absolute; top:20px; left:20px; background:var(--milo-card-raised); color:var(--milo-ink); border:1px solid var(--milo-line); padding:8px 15px; border-radius:10px; font-weight:bold; font-size:12px; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,0.4);">← DAĞ Okçuluk</a>
         <img class="milo-logo-img" src="/milo-logo.png" alt="MILO FITT KIDS">
         <div class="milo-ribbon"></div>
-        <div style="color:var(--milo-ink-dim); font-size:12px; margin-bottom:4px;">🔒 Yönetici PIN'ini girin</div>
-        <div id="milo-sifre-display" style="margin:4px 0;"></div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:300px;">
-            <button class="milo-pin-btn" onclick="miloSifreRakam('1')">1</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('2')">2</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('3')">3</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('4')">4</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('5')">5</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('6')">6</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('7')">7</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('8')">8</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('9')">9</button>
-            <button class="milo-pin-btn" style="font-size:14px; color:var(--milo-ink-dim);" onclick="miloSifreTemizle()">İptal</button>
-            <button class="milo-pin-btn" onclick="miloSifreRakam('0')">0</button>
-            <button class="milo-pin-btn" style="font-size:18px;" onclick="miloSifreSil()">⌫</button>
-        </div>
+        <div style="color:var(--milo-ink-dim); font-size:12px; margin-bottom:4px;">🔒 Antrenör / Yönetici girişi</div>
+        <div id="milo-giris-alan" class="milo-gs-alan"></div>
     </div>
 
     <!-- ANA UYGULAMA — PIN doğrulanana kadar display:none, hiçbir modül fetch'i tetiklenmez -->
@@ -147,7 +156,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="milo-accent" style="font-weight:900; font-size:15px;">🤸 MILO FITT KIDS</div>
                 <div style="display:flex; gap:6px;">
-                    <button onclick="miloAyarlarAc()" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">⚙️ Şifre</button>
+                    <button id="milo-guvenlik-btn" onclick="miloAyarlarAc()" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">🔐 Güvenlik</button>
                     <button onclick="miloCikisYap()" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">🚪 Çıkış</button>
                 </div>
             </div>
@@ -166,14 +175,12 @@
 
     <!-- ŞİFRE YÖNETİMİ MODAL -->
     <div id="milo-ayarlar-modal" style="display:none; position:fixed; inset:0; z-index:20000; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; padding:15px;">
-        <div class="modal-content" style="max-width:360px; background:var(--milo-card-raised); color:var(--milo-ink);">
-            <h3 class="milo-accent" style="margin-top:0;">🔑 Şifre Yönetimi</h3>
-            <div style="font-size:12px; color:var(--milo-ink-dim); margin-bottom:10px;">Mevcut PIN'i doğrulayıp yeni 4 haneli PIN belirleyin. Bu PIN'i sadece siz ve Gizem bilmeli.</div>
-            <input type="password" inputmode="numeric" maxlength="4" id="milo-sfd-mevcut" placeholder="Mevcut PIN" class="milo-input">
-            <input type="password" inputmode="numeric" maxlength="4" id="milo-sfd-yeni" placeholder="Yeni PIN (4 hane)" class="milo-input">
-            <div style="display:flex; gap:8px;">
-                <button onclick="miloSifreDegistir()" class="milo-btn-full">Değiştir</button>
-                <button onclick="document.getElementById('milo-ayarlar-modal').style.display='none'" style="flex:1; background:var(--milo-card); border:none; color:var(--milo-ink); border-radius:10px; font-weight:bold;">Kapat</button>
+        <div class="modal-content" style="max-width:420px; max-height:90vh; overflow-y:auto; background:var(--milo-card-raised); color:var(--milo-ink);">
+            <h3 class="milo-accent" style="margin-top:0;">🔐 Güvenlik</h3>
+            <div id="milo-guvenlik-icerik"></div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button onclick="document.getElementById('milo-ayarlar-modal').style.display='none'" style="flex:1; min-height:40px; background:var(--milo-card); border:none; color:var(--milo-ink); border-radius:10px; font-weight:bold;">Kapat</button>
+                <button onclick="miloCikisYap()" style="flex:1; min-height:40px; background:var(--milo-card); border:1px solid var(--milo-coral); color:var(--milo-coral); border-radius:10px; font-weight:bold;">🚪 Çıkış (cihazı unut)</button>
             </div>
         </div>
     </div>

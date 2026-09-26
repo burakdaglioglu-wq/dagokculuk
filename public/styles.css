@@ -2223,3 +2223,67 @@
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
             animation: targetImpactPop 0.25s ease-out;
         }
+
+        /* Giriş sistemi (2026-09-27): kişi seçimi + PIN + hatırla + passkey, Hesabım, Güvenlik paneli */
+        .gs-panel { width:100%; max-width:340px; flex-direction:column; align-items:center; gap:12px; }
+        .gs-oturum { align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:12px; color:var(--text-muted); margin:-4px 0 6px; }
+        .gs-oturum button { min-height:32px; padding:0 12px; border-radius:9px; border:1px solid var(--border-color); background:transparent; color:var(--text-main); font-weight:700; font-size:12px; cursor:pointer; }
+        .gs-not { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-panel); font-size:12.5px; line-height:1.45; color:var(--text-main); text-align:left; }
+        .gs-not small { color:var(--text-muted); }
+        .gs-etiket { align-self:flex-start; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+        .gs-kisiler { display:flex; flex-wrap:wrap; gap:8px; width:100%; justify-content:center; }
+        .gs-kisi { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px 0 6px; border-radius:999px; border:1.5px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:800; font-size:14px; cursor:pointer; }
+        .gs-kisi small { font-weight:700; font-size:10px; color:var(--text-muted); }
+        .gs-kisi.secili { border-color:var(--accent-orange); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent-orange) 35%, transparent); }
+        .gs-kisi:focus-visible, .gs-passkey:focus-visible, .gs-ana-btn:focus-visible, .gs-ikincil:focus-visible { outline:2px solid var(--accent-orange); outline-offset:2px; }
+        .gs-av { width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:var(--accent-orange); color:#fff; font-weight:900; font-size:14px; }
+        .gs-noktalar { display:flex; gap:10px; justify-content:center; min-height:18px; margin:2px 0; }
+        .gs-noktalar span { width:15px; height:15px; border-radius:50%; border:2px solid var(--accent-orange); }
+        .gs-noktalar span.dolu { background:var(--accent-orange); }
+        .gs-tuslar { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; width:100%; }
+        .gs-tus-kucuk { font-size:18px !important; }
+        .gs-tus-tamam { background:var(--neon-green, #22c55e) !important; border-color:var(--neon-green, #22c55e) !important; color:#fff !important; }
+        .gs-hatirla { display:flex; align-items:center; gap:8px; align-self:flex-start; font-size:13px; color:var(--text-main); cursor:pointer; }
+        .gs-hatirla input { width:19px; height:19px; accent-color:var(--accent-orange); }
+        .gs-passkey { width:100%; min-height:46px; border-radius:12px; border:1.5px solid var(--accent-orange); background:color-mix(in srgb, var(--accent-orange) 14%, transparent); color:var(--text-main); font-weight:800; font-size:14px; cursor:pointer; }
+        .gs-ana-btn { width:100%; min-height:44px; border:none; border-radius:11px; background:var(--accent-orange); color:#fff; font-weight:800; font-size:14px; cursor:pointer; }
+        .gs-ikincil { min-height:38px; padding:0 14px; border-radius:10px; border:1px solid var(--border-color); background:transparent; color:var(--text-muted); font-weight:700; font-size:12.5px; cursor:pointer; }
+        .gs-alt { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; width:100%; }
+        .gs-giris { width:100%; box-sizing:border-box; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:rgba(0,0,0,0.2); color:var(--text-main); font-size:15px; text-align:center; }
+        body.light-theme .gs-giris { background:#fff; }
+        .gs-ipucu { font-size:11.5px; color:var(--text-muted); }
+        .gs-salla { animation:gsSalla .4s ease 1; }
+        @keyframes gsSalla { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-8px); } 40% { transform:translateX(7px); } 60% { transform:translateX(-5px); } 80% { transform:translateX(3px); } }
+        .gs-modal { position:fixed; inset:0; z-index:30000; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:16px; }
+        .gs-modal-kutu { width:min(380px, 100%); max-height:90vh; overflow:auto; display:flex; flex-direction:column; gap:10px; padding:16px; border-radius:16px; background:var(--bg-main); border:1px solid var(--border-color); box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+        .gs-modal-baslik { display:flex; align-items:center; justify-content:space-between; font-size:16px; color:var(--text-main); }
+        .gs-modal-baslik button { min-width:36px; min-height:36px; border-radius:9px; border:1px solid var(--border-color); background:transparent; color:var(--text-main); cursor:pointer; }
+        .gs-satir-btn { width:100%; min-height:44px; border-radius:11px; border:1.5px solid var(--accent-orange); background:transparent; color:var(--text-main); font-weight:800; cursor:pointer; }
+        .gv-panel { display:flex; flex-direction:column; gap:12px; }
+        .gv-blok { display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-panel); }
+        .gv-baslik { font-weight:800; font-size:14px; color:var(--text-main); display:flex; flex-direction:column; gap:2px; }
+        .gv-baslik small { font-weight:500; font-size:11.5px; color:var(--text-muted); }
+        .gv-dugmeler { display:flex; flex-wrap:wrap; gap:8px; }
+        .gv-dugmeler button, .gv-islem button, .gv-ekle > button:not(.gs-ana-btn) { min-height:36px; padding:0 12px; border-radius:9px; border:1px solid var(--border-color); background:transparent; color:var(--text-main); font-weight:700; font-size:12.5px; cursor:pointer; }
+        .gv-islem button.tehlike { border-color:var(--neon-red, #ef4444); color:var(--neon-red, #ef4444); }
+        .gv-satir { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(127,127,127,0.07); flex-wrap:wrap; }
+        .gv-satir.pasif { opacity:.6; }
+        .gv-ana { display:flex; flex-direction:column; gap:2px; font-size:13px; color:var(--text-main); min-width:0; }
+        .gv-ana small { font-size:11px; color:var(--text-muted); }
+        .gv-islem { display:flex; gap:6px; flex-wrap:wrap; }
+        .gv-chip { display:inline-block; padding:1px 8px; border-radius:999px; font-size:10.5px; font-weight:800; border:1px solid var(--border-color); color:var(--text-muted); }
+        .gv-chip.yon { border-color:var(--gold, #eab308); color:var(--gold, #eab308); }
+        .gv-chip.ben { border-color:var(--accent-orange); color:var(--accent-orange); }
+        .gv-chip.kapali { border-color:var(--neon-red, #ef4444); color:var(--neon-red, #ef4444); }
+        .gv-ekle { display:flex; gap:8px; flex-wrap:wrap; }
+        .gv-ekle input, .gv-ekle select { flex:1 1 130px; min-height:38px; padding:0 10px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-main); font-size:13px; }
+        .gv-ekle .gs-ana-btn { width:auto; padding:0 16px; min-height:38px; }
+        .gv-gunluk { display:grid; grid-template-columns:90px minmax(70px, 120px) minmax(90px, 150px) 1fr; gap:8px; font-size:12px; color:var(--text-main); padding:4px 2px; border-bottom:1px dashed var(--border-color); }
+        .gv-gunluk span:first-child, .gv-gunluk small { color:var(--text-muted); }
+        @media (max-width: 600px) { .gv-gunluk { grid-template-columns:1fr 1fr; } }
+        @media (prefers-reduced-motion: reduce) { .gs-salla { animation:none; } }
+
+        .gv-ust { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+        .gs-tuslar .pin-btn { padding:14px 0; }
+        @media (max-height: 900px) { #giris-ekrani.gs-giris-acik .kurumsal-logo { display:none; } #giris-ekrani.gs-giris-acik h2 { margin-bottom:6px; } }
+        .gs-hatirla input[type="checkbox"] { -webkit-appearance:checkbox !important; appearance:auto !important; flex-shrink:0; }

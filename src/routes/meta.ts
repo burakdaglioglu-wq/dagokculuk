@@ -41,24 +41,8 @@ export function registerMetaRoutes(router: Router): void {
     return json({ applied: true });
   });
 
-  router.get("/api/credentials", async (_request, env) => {
-    const row = await env.DB.prepare("SELECT yonetici_hash, egitmen_hash, aidat_hash, degisim FROM credentials WHERE id = 1").first<CredentialsRow>();
-    return json({ credentials: row });
-  });
-
-  router.put("/api/credentials", async (request, env) => {
-    const body = await readJson<{ yoneticiHash: string; egitmenHash: string; aidatHash?: string | null; degisim: number }>(request);
-    if (!body.yoneticiHash || !body.egitmenHash) return badRequest("yoneticiHash and egitmenHash are required");
-
-    const current = await env.DB.prepare("SELECT degisim FROM credentials WHERE id = 1").first<{ degisim: number }>();
-    if (current && body.degisim <= current.degisim) return json({ applied: false }, { status: 409 });
-
-    await env.DB.prepare("UPDATE credentials SET yonetici_hash = ?, egitmen_hash = ?, aidat_hash = ?, degisim = ? WHERE id = 1")
-      .bind(body.yoneticiHash, body.egitmenHash, body.aidatHash ?? null, body.degisim)
-      .run();
-    await broadcastMasterChanged(env, null);
-    return json({ applied: true });
-  });
+  // Eski /api/credentials (GET/PUT) kaldırıldı (2026-09-27): PIN özetlerini herkese dağıtıyordu. Giriş artık
+  // /api/giris/* üzerinden (bkz. routes/giris.ts).
 
   router.get("/api/custom-classes", async (_request, env) => {
     const { results } = await env.DB.prepare("SELECT ad FROM custom_classes").all<{ ad: string }>();

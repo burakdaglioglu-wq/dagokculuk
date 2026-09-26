@@ -141,7 +141,7 @@
 
   /* ===== Master blob reassembly (GET side) ===== */
   async function reassembleMasterPayload() {
-    const [athletesRes, seriesRes, metaRes, duesRes, attAutoRes, personnelRes, personnelAttRes, classesRes, credsRes, deletedRes] = await Promise.all([
+    const [athletesRes, seriesRes, metaRes, duesRes, attAutoRes, personnelRes, personnelAttRes, classesRes, deletedRes] = await Promise.all([
       get("/api/athletes"),
       get("/api/series"),
       get("/api/meta"),
@@ -150,7 +150,6 @@
       get("/api/personnel"),
       get("/api/attendance/personnel"),
       get("/api/custom-classes"),
-      get("/api/credentials"),
       get("/api/athletes/deleted"),
     ]);
 
@@ -210,14 +209,6 @@
       resetZamani: metaRes.resetZamani,
       minSurum: metaRes.minSurum,
       geriYukleme: metaRes.sonGeriYukleme,
-      sifreler: credsRes.credentials
-        ? {
-            yonetici: credsRes.credentials.yonetici_hash,
-            egitmen: credsRes.credentials.egitmen_hash,
-            aidat: credsRes.credentials.aidat_hash || undefined,
-            degisim: credsRes.credentials.degisim,
-          }
-        : undefined,
     };
   }
 
@@ -320,16 +311,7 @@
       jobs.push(post("/api/custom-classes", { ad, deviceId }));
     });
 
-    if (p.sifreler && p.sifreler.yonetici) {
-      jobs.push(
-        put("/api/credentials", {
-          yoneticiHash: p.sifreler.yonetici,
-          egitmenHash: p.sifreler.egitmen,
-          aidatHash: p.sifreler.aidat || null,
-          degisim: p.sifreler.degisim || 0,
-        })
-      );
-    }
+    // PIN özetleri artık senkronla taşınmıyor (2026-09-27, giriş sistemi sunucuya taşındı).
 
     if (typeof p.minSurum === "number") {
       jobs.push(put("/api/meta/min-surum", { minSurum: p.minSurum }));

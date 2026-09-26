@@ -1,6 +1,8 @@
 import type { Env } from "./env";
 import { Router } from "./router";
-import { isAuthorized } from "./auth";
+import { yetkiliOturum } from "./auth";
+import { gunluk } from "./lib/giris";
+import { registerGirisRoutes, GIRIS_ACIK_YOLLAR } from "./routes/giris";
 import { unauthorized } from "./lib/json";
 import { registerAthleteRoutes } from "./routes/athletes";
 import { registerSeriesRoutes } from "./routes/series";
@@ -76,6 +78,8 @@ registerMiloGruplarRoutes(router);
 registerTanitimRoutes(router);
 registerIhtiyacRoutes(router);
 registerTeknikAnalizRoutes(router);
+registerGirisRoutes(router, "/api/giris", (env) => env.DB);
+registerGirisRoutes(router, "/api/milo/giris", (env) => env.DB_MILO);
 
 // Sunucu tarafında hiçbir yazma isteği (POST/PUT/PATCH/DELETE) doğrulanmıyordu — PIN sadece
 // ekranda bir kilitti, API'nin kendisi açıktı (URL'i bilen biri PIN'i hiç bilmeden veri
@@ -110,10 +114,20 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   "/api/ders-icerikleri/:id/degerlendir",
   "/api/milo/ders-icerikleri/:id/kullanim",
   "/api/milo/ders-icerikleri/:id/degerlendir",
+  // Giriş uç noktaları kendi oturum/yetki kontrollerini içeride yapıyor (bkz. routes/giris.ts).
+  ...GIRIS_ACIK_YOLLAR.map((p) => "/api/giris/" + p),
+  ...GIRIS_ACIK_YOLLAR.map((p) => "/api/milo/giris/" + p),
 ]);
 
+// "Kim ne yaptı" günlüğü: her yazma değil (senkron yüzlerce istek atıyor), yalnızca silmeler ve hassas
+// bölümler (aidat, gider, personel, yedekten geri yükleme) kişi adıyla kaydedilir.
+function gunlugeYazilsinMi(method: string, path: string): boolean {
+  if (method === "DELETE") return !path.startsWith("/api/lock") && !path.startsWith("/api/push/");
+  return path.startsWith("/api/dues") || path.startsWith("/api/milo/dues") || path.startsWith("/api/gider") || path.startsWith("/api/personnel") || path.startsWith("/api/milo/personnel") || path.endsWith("/restore");
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // Serve /app and /app/ as /app.html so the page (and its favicon) loads correctly
@@ -136,7 +150,11 @@ export default {
       try {
         if (request.method !== "GET" && !PUBLIC_YAZMA_YOLLARI.has(match.path)) {
           const milo = url.pathname.startsWith("/api/milo/");
-          if (!(await isAuthorized(request, env, milo))) return unauthorized();
+          const oturum = await yetkiliOturum(request, env, milo);
+          if (!oturum) return unauthorized("oturum-yok");
+          if (gunlugeYazilsinMi(request.method, match.path)) {
+            ctx.waitUntil(gunluk(milo ? env.DB_MILO : env.DB, { kullaniciId: oturum.kullaniciId, ad: oturum.ad }, "islem", request.method + " " + url.pathname).catch(() => {}));
+          }
         }
         return await match.handler(request, env, match.params);
       } catch (err) {

@@ -2,7 +2,7 @@ import type { Env } from "../env";
 import type { Router } from "../router";
 import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json";
 import { broadcast } from "../lib/broadcast";
-import { isAuthorized } from "../auth";
+import { yetkiliOturum } from "../auth";
 import * as athletesDb from "../db/athletes";
 import { mergeAthlete } from "../db/athletesMerge";
 
@@ -75,7 +75,7 @@ export function registerAthleteRoutes(router: Router): void {
     if (invalid.length > 0) return badRequest(`invalid field(s): ${invalid.join(", ")}`);
 
     const sadeceOzServis = Object.keys(body.fields).every((f) => OZ_SERVIS_ALANLARI.has(f));
-    if (!sadeceOzServis && !(await isAuthorized(request, env, false))) return unauthorized();
+    if (!sadeceOzServis && !(await yetkiliOturum(request, env, false))) return unauthorized();
 
     const result = await athletesDb.updateAthlete(
       env,

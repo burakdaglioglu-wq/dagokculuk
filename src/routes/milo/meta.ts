@@ -12,23 +12,8 @@ interface MiloCredentialsRow {
  * ayni sekil, ama tamamen ayri DB_MILO'da. Bu credentials satiri okculuk route'larindan
  * fiziksel olarak erisilemez (farkli D1 binding). */
 export function registerMiloMetaRoutes(router: Router): void {
-  router.get("/api/milo/credentials", async (_request, env) => {
-    const row = await env.DB_MILO.prepare("SELECT yonetici_hash, egitmen_hash, aidat_hash, degisim FROM credentials WHERE id = 1").first<MiloCredentialsRow>();
-    return json({ credentials: row });
-  });
-
-  router.put("/api/milo/credentials", async (request, env) => {
-    const body = await readJson<{ yoneticiHash: string; egitmenHash: string; aidatHash?: string | null; degisim: number }>(request);
-    if (!body.yoneticiHash || !body.egitmenHash) return badRequest("yoneticiHash and egitmenHash are required");
-
-    const current = await env.DB_MILO.prepare("SELECT degisim FROM credentials WHERE id = 1").first<{ degisim: number }>();
-    if (current && body.degisim <= current.degisim) return json({ applied: false }, { status: 409 });
-
-    await env.DB_MILO.prepare("UPDATE credentials SET yonetici_hash = ?, egitmen_hash = ?, aidat_hash = ?, degisim = ? WHERE id = 1")
-      .bind(body.yoneticiHash, body.egitmenHash, body.aidatHash ?? null, body.degisim)
-      .run();
-    return json({ applied: true });
-  });
+  // Eski /api/milo/credentials (GET/PUT) kaldırıldı (2026-09-27): PIN özetlerini herkese dağıtıyordu. Giriş artık
+  // /api/milo/giris/* üzerinden (bkz. routes/giris.ts).
 
   router.get("/api/milo/custom-classes", async (_request, env) => {
     const { results } = await env.DB_MILO.prepare("SELECT ad FROM custom_classes").all<{ ad: string }>();

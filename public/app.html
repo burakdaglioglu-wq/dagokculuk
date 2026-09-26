@@ -48,8 +48,9 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v130</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v131</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
+        <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
             <button class="giris-secim-btn" onclick="platformSec('sporcu')">🎯 SPORCU KARTI PLATFORMU <span>Skor girişi · hedef puanlama · liderlik · yarışmalar</span></button>
             <button class="giris-secim-btn" onclick="platformSec('egitmen')">🎓 EĞİTMEN PLATFORMU <span>Yoklama · antrenman · karne · sınıf/grup · personel</span></button>
@@ -74,24 +75,8 @@
             </div>
             <button onclick="platformGeri()" style="width:100%; max-width:350px; padding:10px; font-size:12px; font-weight:600; background:transparent; color:var(--text-muted); border:1px solid var(--border-color); border-radius:10px; cursor:pointer;">← Platform Seçimine Dön</button>
         </div>
-        <div id="giris-sifre" style="width:100%; max-width:300px; display:none; flex-direction:column; align-items:center; gap:14px;">
-            <div style="color:var(--text-muted); font-size:12px;">🔒 Eğitmen şifresini girin</div>
-            <div id="sifre-display" style="margin:4px 0;"></div>
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%;">
-                <button class="pin-btn" onclick="sifreRakam('1')">1</button>
-                <button class="pin-btn" onclick="sifreRakam('2')">2</button>
-                <button class="pin-btn" onclick="sifreRakam('3')">3</button>
-                <button class="pin-btn" onclick="sifreRakam('4')">4</button>
-                <button class="pin-btn" onclick="sifreRakam('5')">5</button>
-                <button class="pin-btn" onclick="sifreRakam('6')">6</button>
-                <button class="pin-btn" onclick="sifreRakam('7')">7</button>
-                <button class="pin-btn" onclick="sifreRakam('8')">8</button>
-                <button class="pin-btn" onclick="sifreRakam('9')">9</button>
-                <button class="pin-btn" style="font-size:14px; color:var(--text-muted);" onclick="sifreGeri()">İptal</button>
-                <button class="pin-btn" onclick="sifreRakam('0')">0</button>
-                <button class="pin-btn" style="font-size:18px;" onclick="sifreSil()">⌫</button>
-            </div>
-        </div>
+        <!-- Eğitmen/Yönetici girişi — içerik app.js'teki girisPaneliCiz() tarafından çizilir (kişi seçimi, PIN, hatırla, passkey). -->
+        <div id="giris-sifre" class="gs-panel" style="display:none;"></div>
         <div id="giris-sporcu" style="width:100%; max-width:320px; display:none; flex-direction:column; align-items:center; gap:12px;">
             <div style="color:var(--text-muted); font-size:12px; text-align:center;">Adını ve kişisel kodunu gir<br>(kod verilmediyse <b>doğum yılın</b>)</div>
             <button id="hizli-giris-btn" onclick="hatirlaGiris()" style="display:none; width:100%; padding:13px; background:var(--neon-green); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:15px; cursor:pointer;">⚡ Hızlı Giriş</button>

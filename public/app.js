@@ -3549,22 +3549,21 @@
             return `<div class="glass-panel" style="padding:24px; border-radius:12px; text-align:center;">
                 <div style="font-size:32px; margin-bottom:10px;">🔒</div>
                 <div style="font-weight:800; font-size:15px; margin-bottom:6px;">Aidat — Ek Güvenlik</div>
-                <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Bu bölüme özel 4 haneli şifreyi girin.</div>
-                <input type="password" id="aidat-kilit-pin" inputmode="numeric" maxlength="4" placeholder="••••" style="width:120px; text-align:center; font-size:22px; letter-spacing:8px; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px;" onkeydown="if(event.key==='Enter') aidatKilitDogrula();">
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Aidat PIN'ini girin (ayrı bir aidat PIN'i ayarlanmadıysa kendi PIN'in).</div>
+                <input type="password" id="aidat-kilit-pin" maxlength="64" placeholder="••••••" autocomplete="off" style="width:120px; text-align:center; font-size:22px; letter-spacing:8px; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px;" onkeydown="if(event.key==='Enter') aidatKilitDogrula();">
                 <br>
                 <button onclick="aidatKilitDogrula()" style="background:var(--gold); color:#1b1b1b; border:none; padding:10px 24px; border-radius:10px; font-weight:800; cursor:pointer;">Kilidi Aç</button>
             </div>`;
         }
         async function aidatKilitDogrula() {
             let girilen = (document.getElementById('aidat-kilit-pin').value || '').trim();
-            if(!/^\d{4}$/.test(girilen)) return showToast('4 haneli PIN girin.', 'error');
-            let ozet = await sifreOzet(girilen);
-            if(ozet === sifreDB.aidat) {
+            if(!girilen) return showToast('PIN girin.', 'error');
+            let r = await girisApi('/aidat-dogrula', { pin: girilen }).catch(function() { return { ok: false, status: 0, data: {} }; });
+            if(r.ok) {
                 _aidatKilitAcikMi = true;
-                _dagskYetkiHash = ozet;
                 egitmenRenderAidat();
             } else {
-                showToast('❌ Hatalı PIN.', 'error');
+                showToast(r.status === 401 && r.data.error === 'oturum-yok' ? 'Oturumun sona ermiş — yeniden giriş yap.' : girisHataMesaji(r), 'error');
                 let el = document.getElementById('aidat-kilit-pin'); if(el) { el.value = ''; el.focus(); }
             }
         }
@@ -5345,8 +5344,8 @@
         // ===== SÜRÜM KİLİDİ =====
         // Eski sürümde açık kalmış bir cihazın (eski hatalı koduyla) buluta yazıp
         // düzeltilen hataları geri getirmesini engeller.
-        const SURUM_KODU = 105;               // bu derlemenin sürümü
-        const MIN_SURUM_GEREKSINIMI = 105;    // kümenin en az bu sürümde olması gerekir (kritik senkron düzeltmeleri)
+        const SURUM_KODU = 106;               // bu derlemenin sürümü
+        const MIN_SURUM_GEREKSINIMI = 106;    // kümenin en az bu sürümde olması gerekir (kritik senkron düzeltmeleri)
         let kumeMinSurum = parseInt(localStorage.getItem('dag_kume_min_surum')) || 0;
         function kumeMinSurumUygula(v) { if(v && v > kumeMinSurum) { kumeMinSurum = v; try { localStorage.setItem('dag_kume_min_surum', String(v)); } catch(e) {} } }
         function eskiSurumMu() { return SURUM_KODU < kumeMinSurum; }
@@ -5704,7 +5703,7 @@
             } catch(e) {}
         }
         function bulutDurum(txt, renk) { let el = document.getElementById('bulut-durum'); if(el) { el.innerText = txt; el.style.color = renk || 'var(--text-muted)'; } }
-        function bulutVeriJSON() { return JSON.stringify({ turnuvaDB, takimlarDB, antrenmanlarDB, ozelSiniflar, personelDB, personelYoklamaDB, elemeEslesmeleri, takimElemeEslesmeleri, aktifTur, aktifTakimTur, atisLog, rekorlarDB, otomatikYoklamaDB, aidatDB, kmYarismaGecmisi: _kmYarismaGecmisi, silinenler: silinenlerDB.map(s => ({ ad: s.ad, grup: s.grup, tarih: s.tarih, tasindi: s.tasindi || false })), iptalSeriler: iptalSerilerDB.slice(-800), resetZamani, minSurum: Math.max(kumeMinSurum, MIN_SURUM_GEREKSINIMI), geriYukleme: sonGeriYukleme, sifreler: sifreDB }); }
+        function bulutVeriJSON() { return JSON.stringify({ turnuvaDB, takimlarDB, antrenmanlarDB, ozelSiniflar, personelDB, personelYoklamaDB, elemeEslesmeleri, takimElemeEslesmeleri, aktifTur, aktifTakimTur, atisLog, rekorlarDB, otomatikYoklamaDB, aidatDB, kmYarismaGecmisi: _kmYarismaGecmisi, silinenler: silinenlerDB.map(s => ({ ad: s.ad, grup: s.grup, tarih: s.tarih, tasindi: s.tasindi || false })), iptalSeriler: iptalSerilerDB.slice(-800), resetZamani, minSurum: Math.max(kumeMinSurum, MIN_SURUM_GEREKSINIMI), geriYukleme: sonGeriYukleme }); }
         // Grup bazlı JSON — sadece aktif grubun turnuvaDB'sini gönderir
 
         function bulutVeriyiUygula(p) {
@@ -5712,7 +5711,6 @@
             // SÜRÜM KİLİDİ: küme daha yeni sürüm istiyorsa bu cihaz artık göndermesin
             if(p.minSurum) { kumeMinSurumUygula(p.minSurum); if(eskiSurumMu()) surumKilitBanner(); }
             // Şifre değişiklikleri tüm cihazlara yayılır (daha yeni değişim kazanır)
-            if(p.sifreler && p.sifreler.yonetici && (p.sifreler.degisim || 0) > (sifreDB.degisim || 0)) { sifreDB = { ...sifreDB, ...p.sifreler, aidat: p.sifreler.aidat || sifreDB.aidat }; sifrelerKaydet(); }
             // GERİ YÜKLEME: yönetici bir yedeğe döndüyse merge DEĞİL, tam uygulama yap
             if(p.geriYukleme && p.geriYukleme > sonGeriYukleme) {
                 sonGeriYuklemeKaydet(p.geriYukleme);
@@ -6520,17 +6518,8 @@
         }
         function egitmenCikis() { location.reload(); }
         function kapatGirisEkrani() { document.getElementById('giris-ekrani').style.display = 'none'; }
-        let sifreBuffer = '';
-        let sifreMod = 'egitmen';
         function platformSec(p) {
-            if(p === 'egitmen' || p === 'yonetici') {
-                sifreMod = p;
-                sifreBuffer = ''; sifreDisplayGuncelle();
-                document.getElementById('giris-platform').style.display = 'none';
-                document.getElementById('giris-sifre').style.display = 'flex';
-                document.getElementById('giris-baslik').innerText = (p === 'yonetici') ? 'YÖNETİCİ ŞİFRESİ' : 'EĞİTMEN ŞİFRESİ';
-                return;
-            }
+            if(p === 'egitmen' || p === 'yonetici') { girisPlatformAc(p); return; }
             aktifPlatform = 'sporcu';
             document.getElementById('giris-platform').style.display = 'none';
             document.getElementById('giris-sporcu').style.display = 'flex';
@@ -6629,127 +6618,475 @@
             document.body.classList.remove('sporcu-uye-modu');
             location.reload();
         }
-        function sifreDisplayGuncelle() {
-            let el = document.getElementById('sifre-display'); if(!el) return; let dots = '';
-            for(let i = 0; i < 4; i++) { dots += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; margin:0 6px; background:${i < sifreBuffer.length ? 'var(--accent-orange)' : 'transparent'}; border:2px solid var(--accent-orange);"></span>`; }
-            el.innerHTML = dots;
-        }
-        // ===== PROFESYONEL ŞİFRE SİSTEMİ =====
-        // Şifreler artık kodda DÜZ METİN durmaz — SHA-256 özet olarak saklanır,
-        // yönetici panelinden değiştirilebilir ve tüm cihazlara buluttan yayılır.
-        // NOT: 'aidat' alanı henüz kimse tarafından ayarlanmadıysa yönetici özeti ile aynı başlıyor (bugünkü
-        // koruma seviyesiyle eşit bir başlangıç) — Şifre Yönetimi'nden "💳 Aidat ek şifresini değiştir" ile
-        // yönetici PIN'inden bağımsız kendi şifresine geçirilebilir.
-        let sifreDB = { yonetici: '7f59051d004a7ac406880e4122e7cd0dd7995ef0ae9be2c9f7ddc6683b7f0357', egitmen: 'd88e4a72af6b2d5e7c737813df9e499a7acb92c308b62dc0ae7f429b154b4da4', aidat: '7f59051d004a7ac406880e4122e7cd0dd7995ef0ae9be2c9f7ddc6683b7f0357', degisim: 0 };
-        try { let s = JSON.parse(localStorage.getItem('dag_sifreler') || 'null'); if(s && s.yonetici && s.egitmen) sifreDB = { ...sifreDB, ...s }; } catch(e) {}
-        function sifrelerKaydet() { try { localStorage.setItem('dag_sifreler', JSON.stringify(sifreDB)); } catch(e) {} }
-        // Sunucu artık yazma isteklerinde (POST/PUT/PATCH/DELETE) bir yetki başlığı istiyor (bkz.
-        // src/index.ts) — eskiden PIN sadece ekranda bir kilitti, API'nin kendisi açıktı.
-        // ÖNEMLİ: sifreDB.yonetici/egitmen HER cihazda (PIN hiç girilmese de) zaten yükleniyor —
-        // o yüzden bunu doğrudan kullanmak sahte bir güvenlik olurdu (biri PIN'i hiç bilmeden de
-        // devtools'tan sifreDB.yonetici'yi okuyabilir). Bunun yerine SADECE bu oturumda gerçekten
-        // doğru bir PIN girilmişse dolan _dagskYetkiHash kullanılıyor (bkz. sifreRakam/aidatKilitDogrula).
-        let _dagskYetkiHash = null;
+        // ===== GİRİŞ SİSTEMİ (2026-09-27) =====
+        // Eskiden PIN'in SHA-256 özeti hem bu dosyada açıkça duruyor hem sunucudan herkese dağıtılıyor, yazma
+        // yetkisi de o özetin KENDİSİYDİ (özeti bilen PIN'siz yazabiliyordu). Artık:
+        //  - Kişiye özel hesaplar (ad + 6+ haneli PIN ya da şifre), PIN'ler yalnızca sunucuda (PBKDF2).
+        //  - Doğru PIN'e karşılık sunucu bir oturum anahtarı verir; bu cihazda saklanır ("Bu cihazı hatırla"
+        //    işaretliyse 30 gün, değilse tarayıcı kapanana kadar). Tüm /api/ istekleri bu anahtarla gider.
+        //  - Yanlış denemeler sunucuda sayılır; parmak izi / Face ID (passkey) ile de girilebilir.
+        //  - Yönetici paneli 10 dk hareketsizlikte kilitlenir; yönetim işlemleri taze PIN doğrulaması ister.
+        const GIRIS_API = '/api/giris';
+        try { localStorage.removeItem('dag_sifreler'); localStorage.removeItem('dag_sifre_kilit'); localStorage.removeItem('dag_sifre_deneme'); } catch(e) {}
+        let _oturumToken = null, _oturum = null, _girisDurum = null, _girisMod = 'giris', _girisHedef = 'egitmen';
+        let _girisSecili = null, _girisBuffer = '', _girisKurulumToken = null, _girisMesgul = false, _girisSifreModu = false;
+        try { _oturumToken = localStorage.getItem('dag_oturum') || sessionStorage.getItem('dag_oturum') || null; } catch(e) {}
+        let _oturumDustuUyarildi = false;
+        // Yönetici yetkisi zamana bağlı: son PIN doğrulamasından (ya da panelde son hareketten) 10 dk sonra düşer.
+        let _yonYetkiSon = 0;
         (function() {
             let orijinalFetch = window.fetch;
             window.fetch = function(url, opts) {
                 let yol = typeof url === 'string' ? url : (url && url.url) || '';
                 let metod = ((opts && opts.method) || 'GET').toUpperCase();
-                if(yol.indexOf('/api/') === 0 && metod !== 'GET' && _dagskYetkiHash) {
+                if(yol.indexOf('/api/') === 0 && _oturumToken) {
                     opts = Object.assign({}, opts);
-                    opts.headers = Object.assign({}, opts.headers, { 'X-Dagsk-Auth': _dagskYetkiHash });
+                    opts.headers = Object.assign({}, opts.headers, { 'X-Dagsk-Oturum': _oturumToken });
                 }
-                return orijinalFetch(url, opts);
+                let p = orijinalFetch(url, opts);
+                if(yol.indexOf('/api/') === 0 && metod !== 'GET' && yol.indexOf(GIRIS_API) !== 0) {
+                    p.then(function(res) { if(res.status === 401) oturumDustu(); }).catch(function() {});
+                }
+                return p;
             };
         })();
-        async function sifreOzet(metin) {
+        // Oturum varken bir yazma 401 aldıysa (süre doldu / cihaz uzaktan çıkarıldı) bir kez uyar ve oturumu sil.
+        // Giriş yapılmamışken arka plan senkronunun 401 alması beklenen bir durum — sessiz geçilir.
+        function oturumDustu() {
+            if(!_oturumToken) return;
+            if(!_oturumDustuUyarildi) { _oturumDustuUyarildi = true; showToast('🔒 Oturumun sona ermiş — kaydetmek için yeniden giriş yap.', 'error'); }
+            oturumTemizle();
+        }
+        function oturumTemizle() {
+            _oturumToken = null; _oturum = null;
+            try { localStorage.removeItem('dag_oturum'); sessionStorage.removeItem('dag_oturum'); } catch(e) {}
+            girisOturumSatiriGuncelle();
+        }
+        function oturumKaydet(d, hatirla) {
+            _oturumToken = d.token; _oturumDustuUyarildi = false;
+            _oturum = { id: d.id, ad: d.ad, rol: d.rol, hatirla: !!hatirla, eskiPin: !!d.eskiPin };
+            _yonYetkiSon = Date.now();
             try {
-                let buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(metin));
-                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch(e) {
-                // crypto.subtle yoksa (http ortamı) basit yedek özet — yine de düz metinden iyidir
-                let h = 5381; for(let i = 0; i < metin.length; i++) h = ((h << 5) + h + metin.charCodeAt(i)) >>> 0;
-                return 'f_' + h.toString(16);
-            }
+                localStorage.removeItem('dag_oturum'); sessionStorage.removeItem('dag_oturum');
+                (hatirla ? localStorage : sessionStorage).setItem('dag_oturum', d.token);
+            } catch(e) {}
+            girisOturumSatiriGuncelle();
         }
-        // Kaba kuvvet koruması: 5 yanlış deneme → 60 sn kilit
-        function sifreKilitSaniye() {
-            let k = parseInt(localStorage.getItem('dag_sifre_kilit')) || 0;
-            return k > Date.now() ? Math.ceil((k - Date.now()) / 1000) : 0;
+        async function girisApi(yol, govde, metod) {
+            let res = await fetch(GIRIS_API + yol, govde === undefined && !metod ? {} : { method: metod || 'POST', headers: { 'content-type': 'application/json' }, body: govde === undefined ? undefined : JSON.stringify(govde) });
+            let data = {}; try { data = await res.json(); } catch(e) {}
+            return { ok: res.ok, status: res.status, data: data };
         }
-        function sifreYanlisDeneme() {
-            let n = (parseInt(localStorage.getItem('dag_sifre_deneme')) || 0) + 1;
-            if(n >= 5) {
-                localStorage.setItem('dag_sifre_kilit', String(Date.now() + 60000));
-                localStorage.setItem('dag_sifre_deneme', '0');
-                showToast('🔒 5 yanlış deneme — 60 saniye kilitlendi', 'error');
-            } else {
-                localStorage.setItem('dag_sifre_deneme', String(n));
-                showToast(`Hatalı şifre! (${5 - n} hak kaldı)`, 'error');
-            }
+        function girisHataMesaji(r) {
+            if(r.status === 429) { let s = r.data.kalanSn || 60; return '🔒 Çok fazla yanlış deneme — ' + (s >= 90 ? Math.ceil(s / 60) + ' dk' : s + ' sn') + ' bekle.'; }
+            if(r.data && r.data.error === 'yanlis-pin') return '❌ PIN hatalı.';
+            if(r.data && typeof r.data.error === 'string' && r.status === 400) return r.data.error;
+            if(r.status === 0) return 'Sunucuya ulaşılamadı.';
+            return 'Giriş yapılamadı (' + r.status + ').';
         }
-        async function sifreDogrula(girilen, mod) {
-            let ozet = await sifreOzet(girilen);
-            return ozet === (mod === 'yonetici' ? sifreDB.yonetici : sifreDB.egitmen);
-        }
-        async function sifreDegistir() {
-            let mevcut = (document.getElementById('sfd-mevcut') || {}).value || '';
-            let yeniS = (document.getElementById('sfd-yeni') || {}).value || '';
-            let hedef = (document.getElementById('sfd-hedef') || {}).value || 'egitmen';
-            if(!/^\d{4}$/.test(yeniS)) return showToast('Yeni şifre 4 haneli rakam olmalı.', 'error');
-            if(!(await sifreDogrula(mevcut, 'yonetici'))) return showToast('Mevcut YÖNETİCİ şifresi hatalı!', 'error');
-            let yeniSifreDB = { ...sifreDB, [hedef]: await sifreOzet(yeniS), degisim: Date.now() };
-            // ÖNEMLİ SIRALAMA: sunucu artık yazma isteklerinde geçerli bir PIN özeti istiyor — bu isteğin
-            // KENDİSİ de bir yazma. _dagskYetkiHash şu an hâlâ ESKİ (sunucuda hâlâ geçerli) hash'i
-            // tutuyor, bu yüzden PUT önce onunla kimlik kanıtlayıp GERÇEKTEN başarılı olduktan sonra
-            // yerel sifreDB/_dagskYetkiHash güncelleniyor — aksi halde (yeni hash'i erken yazarsak)
-            // sunucu henüz eskisini beklerken PUT kendi kendini kilitlerdi.
+        async function oturumYukle() {
+            if(!_oturumToken) { girisOturumSatiriGuncelle(); return null; }
             try {
-                let res = await fetch('/api/credentials', {
-                    method: 'PUT', headers: {'content-type':'application/json'},
-                    body: JSON.stringify({ yoneticiHash: yeniSifreDB.yonetici, egitmenHash: yeniSifreDB.egitmen, aidatHash: yeniSifreDB.aidat || null, degisim: yeniSifreDB.degisim }),
-                });
-                if(!res.ok) throw 0;
-                let data = await res.json().catch(() => ({}));
-                if(!data.applied) throw 0;
-            } catch(e) { showToast('Şifre değiştirilemedi (bağlantı hatası) — tekrar dene.', 'error'); return; }
-            sifreDB = yeniSifreDB;
-            sifrelerKaydet();
-            _dagskYetkiHash = sifreDB[hedef];
-            try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); bekleyenGonderim = true; } catch(e) {}
-            document.getElementById('sfd-mevcut').value = ''; document.getElementById('sfd-yeni').value = '';
-            showToast(`🔑 ${hedef === 'yonetici' ? 'Yönetici' : 'Eğitmen'} şifresi değişti — tüm cihazlara yayılıyor`, 'success');
+                let r = await girisApi('/ben');
+                if(r.ok) { _oturum = r.data; } else if(r.status === 401) { oturumTemizle(); }
+            } catch(e) {}
+            girisOturumSatiriGuncelle();
+            return _oturum;
+        }
+        async function girisDurumYukle() {
+            try { let r = await girisApi('/durum'); if(r.ok) _girisDurum = r.data; } catch(e) {}
+            return _girisDurum;
+        }
+        // Giriş ekranındaki "👤 Burak olarak giriş yapıldı · Hesabım" satırı.
+        function girisOturumSatiriGuncelle() {
+            let el = document.getElementById('giris-oturum-bilgi'); if(!el) return;
+            if(!_oturum) { el.style.display = 'none'; el.innerHTML = ''; return; }
+            el.style.display = 'flex';
+            el.innerHTML = `<span>👤 <b>${esc(_oturum.ad)}</b> ${_oturum.rol === 'yonetici' ? '· yönetici' : '· eğitmen'}${_oturum.hatirla ? ' · bu cihaz hatırlanıyor' : ''}</span><button onclick="hesabimAc()">Hesabım</button><button onclick="girisCikisYap()">Çıkış</button>`;
+        }
+        async function girisCikisYap() {
+            try { await girisApi('/cikis', {}); } catch(e) {}
+            oturumTemizle();
+            showToast('Çıkış yapıldı — bu cihaz artık hatırlanmıyor.', 'success');
+            try { let hm = document.getElementById('hesabim-modal'); if(hm) hm.remove(); } catch(e) {}
+            try { let ym = document.getElementById('yonetici-modal'); if(ym && ym.style.display !== 'none') yoneticiPaneliKapat(); } catch(e) {}
+            platformGeri();
+            document.getElementById('giris-ekrani').style.display = 'flex';
+        }
+        function yoneticiYetkiVarMi() { return !!(_oturum && _oturum.rol === 'yonetici' && Date.now() - _yonYetkiSon < 10 * 60 * 1000); }
+        // Platform kartına dokununca: hatırlanan oturum varsa PIN sormadan geçer.
+        async function girisPlatformAc(hedef) {
+            _girisHedef = hedef;
+            if(_oturumToken && !_oturum) await oturumYukle();
+            if(hedef === 'egitmen' && _oturum) { girisBasarili('egitmen'); return; }
+            if(hedef === 'yonetici' && _oturum && _oturum.rol === 'yonetici') {
+                if(yoneticiYetkiVarMi()) { girisBasarili('yonetici'); return; }
+                girisPaneliGoster('dogrula'); return;
+            }
+            await girisDurumYukle();
+            girisPaneliGoster(_girisDurum && _girisDurum.kurulumGerekli ? 'kurulum' : 'giris');
+        }
+        // Yönetici paneline giden her yol buradan geçer (ana menü dahil — eskiden PIN'siz açılıyordu).
+        function yoneticiGirisIste() {
+            document.getElementById('giris-ekrani').style.display = 'flex';
+            ['giris-platform', 'giris-lig', 'giris-sporcu'].forEach(function(id) { let e = document.getElementById(id); if(e) e.style.display = 'none'; });
+            girisPlatformAc('yonetici');
+        }
+        function girisPaneliGoster(mod) {
+            _girisMod = mod; _girisBuffer = ''; _girisSifreModu = false;
+            if(mod === 'dogrula' && _oturum) _girisSecili = { id: _oturum.id, ad: _oturum.ad, rol: _oturum.rol };
+            else if(mod === 'giris') {
+                let liste = girisKisiListesi();
+                if(!_girisSecili || !liste.some(function(k) { return k.id === _girisSecili.id; })) {
+                    let son = null; try { son = parseInt(localStorage.getItem('dag_son_kullanici_' + _girisHedef)); } catch(e) {}
+                    _girisSecili = liste.find(function(k) { return k.id === son; }) || (liste.length === 1 ? liste[0] : null);
+                }
+            }
+            document.getElementById('giris-platform').style.display = 'none';
+            document.getElementById('giris-sifre').style.display = 'flex';
+            document.getElementById('giris-ekrani').classList.add('gs-giris-acik');
+            document.getElementById('giris-baslik').innerText = mod === 'kurulum' ? 'İLK KURULUM' : (_girisHedef === 'yonetici' ? 'YÖNETİCİ GİRİŞİ' : 'EĞİTMEN GİRİŞİ');
+            girisPaneliCiz();
+        }
+        function girisKisiListesi() {
+            let l = (_girisDurum && _girisDurum.kullanicilar) || [];
+            return _girisHedef === 'yonetici' ? l.filter(function(k) { return k.rol === 'yonetici'; }) : l;
+        }
+        function girisPaneliCiz() {
+            let kap = document.getElementById('giris-sifre'); if(!kap) return;
+            let pkDestek = !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+            let ust = '';
+            if(_girisMod === 'kurulum') ust = `<div class="gs-not">🔐 Giriş sistemi yenilendi. <b>Mevcut yönetici PIN'ini</b> gir, ardından kendi hesabını oluştur. Eski PIN'ler o anda tamamen kapanır.<br><small>Eğitmen PIN'i de şimdilik çalışır (12 saatlik geçici giriş).</small></div>`;
+            else if(_girisMod === 'kurulum-form') {
+                kap.innerHTML = `<div class="gs-not">✅ Yönetici PIN'i doğru. Şimdi <b>kendi hesabını</b> oluştur — bundan sonra bu adla ve yeni PIN'le gireceksin.</div>
+                    <input id="gs-ad" class="gs-giris" placeholder="Adın (örn. Burak)" maxlength="40" autocomplete="name">
+                    <input id="gs-yeni1" class="gs-giris" type="password" placeholder="Yeni PIN (6+ hane) ya da şifre" maxlength="64" autocomplete="new-password">
+                    <input id="gs-yeni2" class="gs-giris" type="password" placeholder="Yeni PIN'i tekrar yaz" maxlength="64" autocomplete="new-password">
+                    <label class="gs-hatirla"><input type="checkbox" id="gs-hatirla" checked> Bu cihazı hatırla (30 gün PIN sorma)</label>
+                    <button class="gs-ana-btn" onclick="girisKurulumTamamla()">Hesabımı oluştur</button>
+                    <button class="gs-ikincil" onclick="sifreGeri()">İptal</button>`;
+                setTimeout(function() { let e = document.getElementById('gs-ad'); if(e) e.focus(); }, 50);
+                return;
+            } else if(_girisMod === 'dogrula') ust = `<div class="gs-not">🛡️ Yönetici paneli için PIN'ini tekrar gir (güvenlik gereği).</div>`;
+            let kisiler = '';
+            if(_girisMod === 'giris') {
+                let liste = girisKisiListesi();
+                if(!liste.length) kisiler = `<div class="gs-not">${_girisHedef === 'yonetici' ? 'Aktif yönetici hesabı bulunamadı.' : 'Henüz hesap yok — yöneticinin eklemesi gerekiyor.'}</div>`;
+                else kisiler = `<div class="gs-etiket">Kim giriyor?</div><div class="gs-kisiler">${liste.map(function(k) { return `<button class="gs-kisi${_girisSecili && _girisSecili.id === k.id ? ' secili' : ''}" onclick="girisKisiSec(${k.id})" aria-pressed="${_girisSecili && _girisSecili.id === k.id}"><span class="gs-av">${esc(k.ad.charAt(0).toLocaleUpperCase('tr-TR'))}</span>${esc(k.ad)}${k.rol === 'yonetici' ? '<small>yönetici</small>' : ''}</button>`; }).join('')}</div>`;
+            } else if(_girisMod === 'dogrula' && _girisSecili) kisiler = `<div class="gs-kisiler"><span class="gs-kisi secili"><span class="gs-av">${esc(_girisSecili.ad.charAt(0).toLocaleUpperCase('tr-TR'))}</span>${esc(_girisSecili.ad)}</span></div>`;
+            let giris = _girisSifreModu
+                ? `<input id="gs-sifre-alan" class="gs-giris" type="password" placeholder="Şifre" maxlength="64" autocomplete="current-password" onkeydown="if(event.key==='Enter') girisGonder();"><button class="gs-ana-btn" onclick="girisGonder()">Giriş</button>`
+                : `<div id="sifre-display" class="gs-noktalar" aria-live="polite"></div>
+                   <div class="gs-tuslar">${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(function(n) { return `<button class="pin-btn" onclick="sifreRakam('${n}')">${n}</button>`; }).join('')}
+                   <button class="pin-btn gs-tus-kucuk" onclick="sifreSil()" aria-label="Sil">⌫</button><button class="pin-btn" onclick="sifreRakam('0')">0</button><button class="pin-btn gs-tus-tamam" onclick="girisGonder()" aria-label="Giriş">✓</button></div>`;
+            let hatirlaVar = _girisMod === 'giris' || _girisMod === 'kurulum';
+            let hatirlaVars = true; try { hatirlaVars = localStorage.getItem('dag_hatirla_tercih') !== '0'; } catch(e) {}
+            kap.innerHTML = `${ust}${kisiler}${giris}
+                ${hatirlaVar && _girisMod !== 'kurulum' ? `<label class="gs-hatirla"><input type="checkbox" id="gs-hatirla" ${hatirlaVars ? 'checked' : ''} onchange="try{localStorage.setItem('dag_hatirla_tercih', this.checked ? '1' : '0')}catch(e){}"> Bu cihazı hatırla (30 gün PIN sorma)</label>` : ''}
+                ${_girisMod === 'giris' && pkDestek && _girisDurum && _girisDurum.passkeyVar ? `<button class="gs-passkey" onclick="girisPasskey()">👆 Parmak izi / Face ID ile gir</button>` : ''}
+                <div class="gs-alt">${_girisMod !== 'kurulum' ? `<button class="gs-ikincil" onclick="girisSifreModuDegistir()">${_girisSifreModu ? '🔢 PIN tuşları' : '🔤 Harfli şifre'}</button>` : ''}<button class="gs-ikincil" onclick="sifreGeri()">İptal</button></div>`;
+            sifreDisplayGuncelle();
+            if(_girisSifreModu) setTimeout(function() { let e = document.getElementById('gs-sifre-alan'); if(e) e.focus(); }, 50);
+        }
+        function girisKisiSec(id) {
+            _girisSecili = girisKisiListesi().find(function(k) { return k.id === id; }) || null;
+            _girisBuffer = '';
+            girisPaneliCiz();
+        }
+        function girisSifreModuDegistir() { _girisSifreModu = !_girisSifreModu; _girisBuffer = ''; girisPaneliCiz(); }
+        function sifreDisplayGuncelle() {
+            let el = document.getElementById('sifre-display'); if(!el) return;
+            let n = Math.max(_girisMod === 'kurulum' ? 4 : 6, _girisBuffer.length), dots = '';
+            for(let i = 0; i < n; i++) dots += `<span class="${i < _girisBuffer.length ? 'dolu' : ''}"></span>`;
+            el.innerHTML = dots;
         }
         function sifreRakam(n) {
-            if(sifreBuffer.length >= 4) return;
-            sifreBuffer += n; sifreDisplayGuncelle();
-            if(sifreBuffer.length === 4) {
-                setTimeout(async () => {
-                    let kilit = sifreKilitSaniye();
-                    if(kilit > 0) { showToast(`🔒 Kilitli — ${kilit} sn bekle`, 'error'); sifreBuffer = ''; sifreDisplayGuncelle(); return; }
-                    let girilenOzet = await sifreOzet(sifreBuffer);
-                    let dogru = girilenOzet === (sifreMod === 'yonetici' ? sifreDB.yonetici : sifreDB.egitmen);
-                    if(sifreMod === 'yonetici') {
-                        if(dogru) { localStorage.setItem('dag_sifre_deneme', '0'); _dagskYetkiHash = girilenOzet; document.getElementById('giris-sifre').style.display = 'none'; sifreBuffer = ''; sifreDisplayGuncelle(); yoneticiPaneliAc(); }
-                        else { sifreYanlisDeneme(); sifreBuffer = ''; sifreDisplayGuncelle(); }
-                        return;
-                    }
-                    if(dogru) {
-                        localStorage.setItem('dag_sifre_deneme', '0');
-                        _dagskYetkiHash = girilenOzet;
-                        aktifPlatform = 'egitmen'; loggedInSporcu = null;
-                        document.body.classList.remove('sporcu-uye-modu');
-                        document.getElementById('giris-sifre').style.display = 'none';
-                        document.getElementById('giris-lig').style.display = 'flex';
-                        document.getElementById('giris-baslik').innerText = 'EĞİTMEN — Lig Seçin';
-                        try { kmDevamBanneriGuncelle(); } catch(e) {}
-                        sifreBuffer = ''; sifreDisplayGuncelle();
-                    } else { sifreYanlisDeneme(); sifreBuffer = ''; sifreDisplayGuncelle(); }
-                }, 180);
-            }
+            if(_girisMesgul || _girisBuffer.length >= 12) return;
+            _girisBuffer += n; sifreDisplayGuncelle();
+            // Eski 4 haneli PIN'le kurulumda 4. hanede otomatik gönder (alışkanlık); yeni PIN'lerde ✓ ile.
+            if(_girisMod === 'kurulum' && _girisBuffer.length === 4) setTimeout(girisGonder, 150);
         }
-        function sifreSil() { sifreBuffer = sifreBuffer.slice(0, -1); sifreDisplayGuncelle(); }
-        function sifreGeri() { sifreBuffer = ''; document.getElementById('giris-sifre').style.display = 'none'; document.getElementById('giris-platform').style.display = 'flex'; document.getElementById('giris-baslik').innerText = 'Platform Seçin'; }
+        function sifreSil() { _girisBuffer = _girisBuffer.slice(0, -1); sifreDisplayGuncelle(); }
+        function sifreGeri() {
+            _girisBuffer = ''; _girisKurulumToken = null;
+            document.getElementById('giris-ekrani').classList.remove('gs-giris-acik');
+            document.getElementById('giris-sifre').style.display = 'none';
+            document.getElementById('giris-platform').style.display = 'flex';
+            document.getElementById('giris-baslik').innerText = 'Platform Seçin';
+        }
+        document.addEventListener('keydown', function(e) {
+            let kap = document.getElementById('giris-sifre');
+            if(!kap || kap.style.display === 'none' || _girisSifreModu || _girisMod === 'kurulum-form') return;
+            if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+            if(/^\d$/.test(e.key)) { sifreRakam(e.key); e.preventDefault(); }
+            else if(e.key === 'Backspace') { sifreSil(); e.preventDefault(); }
+            else if(e.key === 'Enter') { girisGonder(); e.preventDefault(); }
+        });
+        function girisHatali(mesaj) {
+            showToast(mesaj, 'error');
+            _girisBuffer = ''; sifreDisplayGuncelle();
+            let el = document.getElementById('sifre-display') || document.getElementById('gs-sifre-alan');
+            if(el) { el.classList.remove('gs-salla'); void el.offsetWidth; el.classList.add('gs-salla'); }
+            let alan = document.getElementById('gs-sifre-alan'); if(alan) { alan.value = ''; alan.focus(); }
+        }
+        async function girisGonder() {
+            if(_girisMesgul) return;
+            let pin = _girisSifreModu ? ((document.getElementById('gs-sifre-alan') || {}).value || '') : _girisBuffer;
+            if(!pin) return;
+            let hatirlaEl = document.getElementById('gs-hatirla'), hatirla = hatirlaEl ? hatirlaEl.checked : false;
+            _girisMesgul = true;
+            try {
+                if(_girisMod === 'kurulum') {
+                    let r = await girisApi('/kurulum', { pin: pin });
+                    if(r.ok && r.data.kurulumToken) { _girisKurulumToken = r.data.kurulumToken; _girisMod = 'kurulum-form'; girisPaneliCiz(); return; }
+                    if(r.ok && r.data.token) { oturumKaydet(r.data, false); showToast('Geçici eğitmen girişi — yöneticinin yeni sisteme geçmesi gerekiyor.', 'warning'); girisBasarili('egitmen'); return; }
+                    if(r.status === 409) { await girisDurumYukle(); girisPaneliGoster('giris'); return; }
+                    girisHatali(girisHataMesaji(r)); return;
+                }
+                if(_girisMod === 'dogrula') {
+                    let r = await girisApi('/dogrula', { pin: pin });
+                    if(r.ok) { _yonYetkiSon = Date.now(); _girisBuffer = ''; let bekleyen = _girisDogrulaSonra; _girisDogrulaSonra = null; if(bekleyen) { document.getElementById('giris-ekrani').style.display = 'none'; sifreGeri(); bekleyen(); } else girisBasarili('yonetici'); return; }
+                    if(r.status === 401 && r.data.error === 'oturum-yok') { oturumTemizle(); await girisDurumYukle(); girisPaneliGoster('giris'); showToast('Oturum sona ermiş — yeniden giriş yap.', 'error'); return; }
+                    girisHatali(girisHataMesaji(r)); return;
+                }
+                if(!_girisSecili) { showToast('Önce kim olduğunu seç.', 'error'); return; }
+                let r = await girisApi('/giris', { kullaniciId: _girisSecili.id, pin: pin, hatirla: hatirla });
+                if(!r.ok) { girisHatali(girisHataMesaji(r)); return; }
+                try { localStorage.setItem('dag_son_kullanici_' + _girisHedef, String(_girisSecili.id)); } catch(e) {}
+                oturumKaydet(r.data, hatirla);
+                if(_girisHedef === 'yonetici' && r.data.rol !== 'yonetici') { showToast('Bu hesap yönetici değil — eğitmen olarak giriş yapıldı.', 'warning'); girisBasarili('egitmen'); return; }
+                girisBasarili(_girisHedef);
+            } catch(e) { girisHatali('Sunucuya ulaşılamadı — bağlantıyı kontrol et.'); }
+            finally { _girisMesgul = false; }
+        }
+        let _girisDogrulaSonra = null;
+        async function girisKurulumTamamla() {
+            let ad = ((document.getElementById('gs-ad') || {}).value || '').trim();
+            let p1 = (document.getElementById('gs-yeni1') || {}).value || '', p2 = (document.getElementById('gs-yeni2') || {}).value || '';
+            let hatirla = !!(document.getElementById('gs-hatirla') || {}).checked;
+            if(ad.length < 2) return showToast('Adını yaz.', 'error');
+            if(p1 !== p2) return showToast('İki PIN aynı değil.', 'error');
+            let r = await girisApi('/kurulum-tamamla', { kurulumToken: _girisKurulumToken, ad: ad, pin: p1, hatirla: hatirla });
+            if(!r.ok) { showToast(r.status === 401 ? 'Süre doldu — yönetici PIN\'ini yeniden gir.' : girisHataMesaji(r), 'error'); if(r.status === 401) girisPaneliGoster('kurulum'); return; }
+            _girisKurulumToken = null;
+            oturumKaydet(r.data, hatirla);
+            await girisDurumYukle();
+            showToast('🔐 Hesabın oluşturuldu, eski PIN\'ler kapatıldı. Diğer eğitmenleri Yönetici → Güvenlik\'ten ekleyebilirsin.', 'success');
+            girisBasarili('yonetici');
+        }
+        function girisBasarili(hedef) {
+            _girisBuffer = '';
+            document.getElementById('giris-ekrani').classList.remove('gs-giris-acik');
+            document.getElementById('giris-sifre').style.display = 'none';
+            if(hedef === 'yonetici') {
+                document.getElementById('giris-platform').style.display = 'flex';
+                document.getElementById('giris-baslik').innerText = 'Platform Seçin';
+                document.getElementById('giris-ekrani').style.display = 'none';
+                _yoneticiPaneliAcIc();
+                return;
+            }
+            aktifPlatform = 'egitmen'; loggedInSporcu = null;
+            document.body.classList.remove('sporcu-uye-modu');
+            document.getElementById('giris-lig').style.display = 'flex';
+            document.getElementById('giris-baslik').innerText = 'EĞİTMEN — Lig Seçin';
+            try { kmDevamBanneriGuncelle(); } catch(e) {}
+        }
+        // ---- Passkey (parmak izi / Face ID) ----
+        function _b64uBuf(s) { let b = s.replace(/-/g, '+').replace(/_/g, '/'); b += '==='.slice((b.length + 3) % 4); let bin = atob(b), u = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+        function _bufB64u(buf) { let u = new Uint8Array(buf), s = ''; for(let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+        async function girisPasskey() {
+            if(_girisMesgul) return;
+            _girisMesgul = true;
+            try {
+                let b = await girisApi('/passkey/baslat', {});
+                if(!b.ok) { showToast(girisHataMesaji(b), 'error'); return; }
+                let cred = await navigator.credentials.get({ publicKey: { challenge: _b64uBuf(b.data.challenge), rpId: b.data.rpId, userVerification: 'preferred', timeout: 60000 } });
+                if(!cred) return;
+                let hatirlaEl = document.getElementById('gs-hatirla'), hatirla = hatirlaEl ? hatirlaEl.checked : true;
+                let r = await girisApi('/passkey/bitir', { id: cred.id, clientDataJSON: _bufB64u(cred.response.clientDataJSON), authenticatorData: _bufB64u(cred.response.authenticatorData), signature: _bufB64u(cred.response.signature), hatirla: hatirla });
+                if(!r.ok) { showToast(r.status === 429 ? girisHataMesaji(r) : '❌ Parmak izi / Face ID doğrulanamadı.', 'error'); return; }
+                oturumKaydet(r.data, hatirla);
+                if(_girisHedef === 'yonetici' && r.data.rol !== 'yonetici') { showToast('Bu hesap yönetici değil — eğitmen olarak giriş yapıldı.', 'warning'); girisBasarili('egitmen'); return; }
+                girisBasarili(_girisHedef);
+            } catch(e) { if(e && e.name !== 'NotAllowedError') showToast('Parmak izi / Face ID kullanılamadı.', 'error'); }
+            finally { _girisMesgul = false; }
+        }
+        // Oturum açıkken bu cihaza passkey ekler. Taze PIN doğrulaması yoksa önce PIN ister.
+        async function passkeyEkle() {
+            if(!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext)) return showToast('Bu cihaz/tarayıcı parmak izi / Face ID girişini desteklemiyor.', 'error');
+            let b = await girisApi('/passkey/kayit-baslat', {});
+            if(b.status === 403 && b.data.error === 'yetki-tazele') { pinDogrulaSonra(passkeyEkle); return; }
+            if(!b.ok) return showToast(girisHataMesaji(b), 'error');
+            try {
+                let cred = await navigator.credentials.create({ publicKey: {
+                    challenge: _b64uBuf(b.data.challenge), rp: { id: b.data.rpId, name: 'DAĞ S.K.' },
+                    user: { id: _b64uBuf(b.data.kullaniciId), name: b.data.ad, displayName: b.data.ad },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+                    authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'preferred' },
+                    excludeCredentials: (b.data.mevcut || []).map(function(id) { return { type: 'public-key', id: _b64uBuf(id) }; }),
+                    attestation: 'none', timeout: 60000
+                } });
+                if(!cred) return;
+                let pk = cred.response.getPublicKey ? cred.response.getPublicKey() : null;
+                let alg = cred.response.getPublicKeyAlgorithm ? cred.response.getPublicKeyAlgorithm() : null;
+                if(!pk || alg === null) return showToast('Bu tarayıcı eski — parmak izi kaydı için güncelle.', 'error');
+                let r = await girisApi('/passkey/kayit-bitir', { id: cred.id, clientDataJSON: _bufB64u(cred.response.clientDataJSON), publicKey: _bufB64u(pk), alg: alg });
+                if(!r.ok) return showToast(girisHataMesaji(r), 'error');
+                showToast('👆 Bu cihaz eklendi — bir dahaki girişte parmak izi / Face ID kullanabilirsin.', 'success');
+                if(_girisDurum) _girisDurum.passkeyVar = true;
+                try { if(document.getElementById('guvenlik-panel')) guvenlikYukle(); } catch(e) {}
+            } catch(e) { if(e && e.name === 'InvalidStateError') showToast('Bu cihaz zaten ekli.', 'warning'); else if(!e || e.name !== 'NotAllowedError') showToast('Parmak izi / Face ID eklenemedi.', 'error'); }
+        }
+        // Taze PIN gereken bir işlemden önce PIN sor (giriş ekranını "doğrula" modunda açar), sonra devam et.
+        function pinDogrulaSonra(fn) {
+            if(!_oturum || _oturum.id <= 0) { showToast('Bu işlem için kişisel hesapla giriş yapmalısın.', 'error'); return; }
+            _girisDogrulaSonra = fn;
+            _girisHedef = 'yonetici';
+            document.getElementById('giris-ekrani').style.display = 'flex';
+            ['giris-platform', 'giris-lig', 'giris-sporcu'].forEach(function(id) { let e = document.getElementById(id); if(e) e.style.display = 'none'; });
+            girisPaneliGoster('dogrula');
+            document.getElementById('giris-baslik').innerText = 'PIN DOĞRULAMA';
+        }
+        // ---- Hesabım (herkes: PIN değiştir, parmak izi ekle, çıkış) ----
+        function hesabimAc() {
+            if(!_oturum) return;
+            let eski = document.getElementById('hesabim-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'hesabim-modal'; m.className = 'gs-modal';
+            let kisisel = _oturum.id > 0;
+            m.innerHTML = `<div class="gs-modal-kutu" role="dialog" aria-label="Hesabım">
+                <div class="gs-modal-baslik"><b>👤 ${esc(_oturum.ad)}</b><button onclick="document.getElementById('hesabim-modal').remove()" aria-label="Kapat">✕</button></div>
+                ${kisisel ? `<button class="gs-satir-btn" onclick="passkeyEkle()">👆 Bu cihaza parmak izi / Face ID ekle</button>
+                <div class="gs-etiket">PIN'imi değiştir</div>
+                <input id="hs-mevcut" class="gs-giris" type="password" placeholder="Mevcut PIN" maxlength="64" autocomplete="current-password">
+                <input id="hs-yeni1" class="gs-giris" type="password" placeholder="Yeni PIN (6+ hane) ya da şifre (8+)" maxlength="64" autocomplete="new-password">
+                <input id="hs-yeni2" class="gs-giris" type="password" placeholder="Yeni PIN tekrar" maxlength="64" autocomplete="new-password">
+                <button class="gs-ana-btn" onclick="pinimiDegistir()">PIN'i değiştir</button>
+                <small class="gs-ipucu">PIN değişince diğer cihazlardaki oturumların kapanır.</small>` : `<div class="gs-not">Geçici (eski PIN) girişi. Yönetici yeni sisteme geçince kişisel hesabınla gireceksin.</div>`}
+                <button class="gs-ikincil" onclick="girisCikisYap()">🚪 Çıkış yap (bu cihaz unutulur)</button>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) m.remove(); });
+            document.body.appendChild(m);
+        }
+        async function pinimiDegistir() {
+            let mevcut = (document.getElementById('hs-mevcut') || {}).value || '', y1 = (document.getElementById('hs-yeni1') || {}).value || '', y2 = (document.getElementById('hs-yeni2') || {}).value || '';
+            if(y1 !== y2) return showToast('Yeni PIN\'ler aynı değil.', 'error');
+            let r = await girisApi('/pin-degistir', { mevcutPin: mevcut, yeniPin: y1 });
+            if(!r.ok) return showToast(girisHataMesaji(r), 'error');
+            showToast('🔑 PIN değişti — diğer cihazlardaki oturumların kapatıldı.', 'success');
+            let hm = document.getElementById('hesabim-modal'); if(hm) hm.remove();
+        }
+        // ---- Yönetici paneli: hareketsizlik kilidi (10 dk) ----
+        let _yonSonHareket = Date.now();
+        ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function(t) { document.addEventListener(t, function() { _yonSonHareket = Date.now(); }, { passive: true, capture: true }); });
+        setInterval(function() {
+            let m = document.getElementById('yonetici-modal');
+            if(!m || m.style.display === 'none') return;
+            if(Date.now() - _yonSonHareket < 10 * 60 * 1000) { _yonYetkiSon = Math.max(_yonYetkiSon, _yonSonHareket); return; }
+            {
+                _yonYetkiSon = 0;
+                yoneticiPaneliKapat();
+                showToast('🔒 10 dakika işlem yapılmadı — yönetici paneli kilitlendi.', 'warning');
+            }
+        }, 30000);
+        window.addEventListener('load', function() { oturumYukle(); });
+        // ---- Yönetici → 🔐 Güvenlik: kullanıcılar, cihazlar, parmak izleri, aidat PIN'i, işlem günlüğü ----
+        let _guvenlikVeri = null, _guvenlikGunlukTumu = false;
+        function guvenlikZaman(t) {
+            if(!t) return '—';
+            let fark = Date.now() - t, dk = Math.round(fark / 60000);
+            if(dk < 1) return 'az önce';
+            if(dk < 60) return dk + ' dk önce';
+            if(dk < 24 * 60) return Math.round(dk / 60) + ' sa önce';
+            let d = new Date(t);
+            return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        }
+        async function guvenlikYukle() {
+            let kap = document.getElementById('guvenlik-panel'); if(!kap) return;
+            if(!_oturum || _oturum.id <= 0) { kap.innerHTML = `<div class="gs-not">Güvenlik ayarları için kişisel yönetici hesabıyla giriş yapmalısın.</div>`; return; }
+            kap.innerHTML = '<div class="gs-ipucu">Yükleniyor…</div>';
+            let r = await girisApi('/yonetim');
+            if(r.status === 403 && r.data.error === 'yetki-tazele') { kap.innerHTML = `<div class="gs-not">Güvenlik ayarları için PIN'ini tekrar girmen gerekiyor.</div><button class="gs-ana-btn" onclick="pinDogrulaSonra(function(){ yoneticiPaneliAc(); setTimeout(function(){ yoneticiSekme('guvenlik'); }, 50); })">🔑 PIN'i gir</button>`; return; }
+            if(!r.ok) { kap.innerHTML = `<div class="gs-not">Yüklenemedi (${r.status}).</div>`; return; }
+            _guvenlikVeri = r.data;
+            guvenlikCiz();
+        }
+        function guvenlikCiz() {
+            let kap = document.getElementById('guvenlik-panel'), v = _guvenlikVeri; if(!kap || !v) return;
+            let rolChip = function(rol) { return `<span class="gv-chip ${rol === 'yonetici' ? 'yon' : ''}">${rol === 'yonetici' ? 'yönetici' : 'eğitmen'}</span>`; };
+            let kullanicilar = v.kullanicilar.map(function(k) {
+                return `<div class="gv-satir${k.aktif ? '' : ' pasif'}">
+                    <div class="gv-ana"><div class="gv-ust"><b>${esc(k.ad)}</b> ${rolChip(k.rol)}${k.id === v.ben ? ' <span class="gv-chip ben">sen</span>' : ''}${k.aktif ? '' : ' <span class="gv-chip kapali">erişim kapalı</span>'}</div><small>Son giriş: ${guvenlikZaman(k.son_giris)}</small></div>
+                    <div class="gv-islem">
+                        ${k.aktif ? `<button onclick="guvenlikPinSifirla(${k.id}, '${esc(k.ad).replace(/'/g, "\\'")}')">PIN sıfırla</button>` : ''}
+                        ${k.id !== v.ben ? `<button class="${k.aktif ? 'tehlike' : ''}" onclick="guvenlikErisim(${k.id}, ${k.aktif ? 'false' : 'true'}, '${esc(k.ad).replace(/'/g, "\\'")}')">${k.aktif ? 'Erişimi kapat' : 'Erişimi aç'}</button>` : ''}
+                    </div></div>`;
+            }).join('');
+            let cihazlar = v.cihazlar.length ? v.cihazlar.map(function(c) {
+                return `<div class="gv-satir"><div class="gv-ana"><div class="gv-ust"><b>${esc(c.ad || 'Geçici giriş')}</b><span>· ${esc(c.cihaz || 'Cihaz')}</span>${c.benim ? ' <span class="gv-chip ben">bu cihaz</span>' : ''}${c.hatirla ? ' <span class="gv-chip">hatırlanıyor</span>' : ''}</div><small>Son kullanım: ${guvenlikZaman(c.son_kullanim)} · açılış: ${guvenlikZaman(c.olusturma)}</small></div>
+                    <div class="gv-islem"><button class="tehlike" onclick="guvenlikCihazCikar('${c.id}', ${c.benim ? 'true' : 'false'})">Çıkar</button></div></div>`;
+            }).join('') : '<div class="gs-ipucu">Açık oturum yok.</div>';
+            let passkeyler = v.passkeyler.length ? v.passkeyler.map(function(p) {
+                return `<div class="gv-satir"><div class="gv-ana"><div class="gv-ust"><b>${esc(p.ad || '?')}</b><span>· ${esc(p.cihaz || 'Cihaz')}</span></div><small>Eklendi: ${guvenlikZaman(p.olusturma)} · son kullanım: ${guvenlikZaman(p.son_kullanim)}</small></div>
+                    <div class="gv-islem"><button class="tehlike" onclick="guvenlikPasskeySil('${esc(p.id)}')">Sil</button></div></div>`;
+            }).join('') : '<div class="gs-ipucu">Kayıtlı parmak izi / Face ID yok.</div>';
+            let olayAd = { giris: 'Giriş', cikis: 'Çıkış', kurulum: 'Kurulum', 'giris-kilitlendi': '⚠️ Giriş kilitlendi', 'pin-degisti': 'PIN değişti', 'kullanici-ekle': 'Kullanıcı eklendi', 'kullanici-guncelle': 'Kullanıcı güncellendi', 'cihaz-cikar': 'Cihaz çıkarıldı', 'passkey-ekle': 'Parmak izi eklendi', 'passkey-sil': 'Parmak izi silindi', 'aidat-pin': 'Aidat PIN\'i', islem: 'İşlem' };
+            let gunluk = (_guvenlikGunlukTumu ? v.gunluk : v.gunluk.slice(0, 15)).map(function(g) {
+                return `<div class="gv-gunluk"><span>${guvenlikZaman(g.zaman)}</span><b>${esc(g.ad || '—')}</b><span>${esc(olayAd[g.olay] || g.olay)}</span><small>${esc(g.detay || '')}</small></div>`;
+            }).join('') || '<div class="gs-ipucu">Kayıt yok.</div>';
+            kap.innerHTML = `
+                <div class="gv-blok"><div class="gv-baslik">👤 Hesabım</div>
+                    <div class="gv-dugmeler"><button onclick="passkeyEkle()">👆 Bu cihaza parmak izi / Face ID ekle</button><button onclick="hesabimAc()">🔑 PIN'imi değiştir</button><button onclick="girisCikisYap()">🚪 Çıkış yap</button></div></div>
+                <div class="gv-blok"><div class="gv-baslik">👥 Kullanıcılar <small>Her eğitmen kendi adı ve PIN'iyle girer; ayrılanın erişimi tek dokunuşla kapanır.</small></div>
+                    ${kullanicilar}
+                    <div class="gv-ekle">
+                        <input id="gv-yeni-ad" placeholder="Ad (örn. Ayşe Hoca)" maxlength="40">
+                        <select id="gv-yeni-rol"><option value="egitmen">Eğitmen</option><option value="yonetici">Yönetici</option></select>
+                        <input id="gv-yeni-pin" type="password" placeholder="PIN (6+ hane)" maxlength="64" autocomplete="new-password">
+                        <button class="gs-ana-btn" onclick="guvenlikKullaniciEkle()">+ Ekle</button>
+                    </div></div>
+                <div class="gv-blok"><div class="gv-baslik">📱 Giriş yapılmış cihazlar <small>Kaybolan bir tableti buradan çıkar — o cihaz hemen PIN sormaya başlar.</small></div>${cihazlar}</div>
+                <div class="gv-blok"><div class="gv-baslik">👆 Parmak izi / Face ID kayıtları</div>${passkeyler}</div>
+                <div class="gv-blok"><div class="gv-baslik">💳 Aidat ek PIN'i <small>${v.aidatPinAyarli ? 'Ayrı bir aidat PIN\'i ayarlı.' : 'Ayarlı değil — aidat kilidi giren kişinin kendi PIN\'ini ister.'}</small></div>
+                    <div class="gv-ekle"><input id="gv-aidat-pin" type="password" placeholder="Yeni aidat PIN'i (6+ hane)" maxlength="64" autocomplete="new-password"><button class="gs-ana-btn" onclick="guvenlikAidatPin(false)">Ayarla</button>${v.aidatPinAyarli ? '<button onclick="guvenlikAidatPin(true)">Kaldır</button>' : ''}</div></div>
+                <div class="gv-blok"><div class="gv-baslik">📜 İşlem günlüğü <small>Girişler, güvenlik değişiklikleri, silmeler ve aidat/gider/personel işlemleri kimin yaptığıyla kaydedilir.</small></div>
+                    ${gunluk}
+                    ${v.gunluk.length > 15 ? `<button class="gs-ikincil" onclick="_guvenlikGunlukTumu = !_guvenlikGunlukTumu; guvenlikCiz();">${_guvenlikGunlukTumu ? 'Daha az göster' : 'Tümünü göster (' + v.gunluk.length + ')'}</button>` : ''}</div>`;
+        }
+        async function guvenlikIstek(yol, govde, metod, basari) {
+            let r = await girisApi(yol, govde, metod);
+            if(r.status === 403 && r.data.error === 'yetki-tazele') { pinDogrulaSonra(function() { yoneticiPaneliAc(); setTimeout(function() { yoneticiSekme('guvenlik'); }, 50); }); return false; }
+            if(!r.ok) { showToast(girisHataMesaji(r), 'error'); return false; }
+            if(basari) showToast(basari, 'success');
+            await guvenlikYukle();
+            return true;
+        }
+        function guvenlikKullaniciEkle() {
+            let ad = (document.getElementById('gv-yeni-ad') || {}).value || '', rol = (document.getElementById('gv-yeni-rol') || {}).value || 'egitmen', pin = (document.getElementById('gv-yeni-pin') || {}).value || '';
+            guvenlikIstek('/yonetim/kullanici', { ad: ad, rol: rol, pin: pin }, 'POST', '✅ ' + ad.trim() + ' eklendi — PIN\'ini kendisine ilet.');
+        }
+        function guvenlikPinSifirla(id, ad) {
+            let pin = prompt(ad + ' için yeni PIN (6+ hane) ya da şifre (8+):');
+            if(!pin) return;
+            guvenlikIstek('/yonetim/kullanici/' + id, { pin: pin }, 'PUT', '🔑 ' + ad + ' için PIN sıfırlandı — açık oturumları kapatıldı.');
+        }
+        function guvenlikErisim(id, ac, ad) {
+            if(!ac && !confirm(ad + ' için erişim kapatılsın mı?\n\nTüm cihazlardaki oturumları ve parmak izi kayıtları hemen silinir.')) return;
+            guvenlikIstek('/yonetim/kullanici/' + id, { aktif: ac }, 'PUT', ac ? '✅ ' + ad + ' için erişim açıldı.' : '⛔ ' + ad + ' için erişim kapatıldı.');
+        }
+        async function guvenlikCihazCikar(id, benim) {
+            if(benim) { if(!confirm('Bu cihazdan çıkış yapılsın mı?')) return; girisCikisYap(); return; }
+            if(!confirm('Bu cihazın oturumu kapatılsın mı? O cihaz bir sonraki işlemde PIN soracak.')) return;
+            guvenlikIstek('/yonetim/cihaz/' + encodeURIComponent(id), undefined, 'DELETE', '📱 Cihaz çıkarıldı.');
+        }
+        function guvenlikPasskeySil(id) {
+            if(!confirm('Bu parmak izi / Face ID kaydı silinsin mi?')) return;
+            guvenlikIstek('/yonetim/passkey/' + encodeURIComponent(id), undefined, 'DELETE', 'Kayıt silindi.');
+        }
+        function guvenlikAidatPin(kaldir) {
+            let pin = kaldir ? null : ((document.getElementById('gv-aidat-pin') || {}).value || '');
+            guvenlikIstek('/yonetim/aidat-pin', { pin: pin }, 'PUT', kaldir ? 'Aidat PIN\'i kaldırıldı.' : '💳 Aidat PIN\'i ayarlandı.');
+        }
         function sezonBitir() {
             let sezonAdi = prompt('Bu sezona bir isim ver (örn: "2025 Bahar Sezonu"):','');
             if(sezonAdi === null) return;
@@ -6904,7 +7241,14 @@
             (atisLog || []).forEach(a => { if(a.tarih === bugun && a.t) { try { let h = new Date(a.t).getHours(); if(!isNaN(h)) saatler[h]++; } catch(e) {} } });
             return saatler;
         }
+        // Yönetici paneline giden HER yol (ana menü, kısayollar) buradan geçer: taze yönetici yetkisi yoksa PIN sorar.
+        // (Eskiden ana menüdeki "Yönetici" düğmesi paneli PIN'siz açıyordu.)
         function yoneticiPaneliAc() {
+            if(!yoneticiYetkiVarMi()) { yoneticiGirisIste(); return; }
+            _yoneticiPaneliAcIc();
+        }
+        function _yoneticiPaneliAcIc() {
+            _yonSonHareket = Date.now();
             // DÜZELTME ("Çıkış farklı yere atıyor"): yönetici şifresiyle doğrudan girişte ana uygulamanın
             // sekme sistemi HİÇ çalışmaz — panel direkt açılır. Arkada hâlâ HTML'in ham varsayılanı
             // (Sayaç/Timer) aktif dururdu; Çıkış'a basınca kullanıcı hiç görmediği/seçmediği o ekranla
@@ -6967,7 +7311,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
             ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
@@ -7071,6 +7415,7 @@
             if(k === 'yoklama') { _yonYokGrupFiltre = aktifGrup; yoneticiYoklamaCiz(); return; }
             if(k === 'program') { renderHedefId = 'yonetici-liste'; yoneticiProgramCiz(); return; }
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
+            if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
             if(k === 'ciftkayit') { yoneticiCiftKayitCiz(); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
@@ -8212,20 +8557,9 @@ ${(function(){
                 <button onclick="atisLogOnarBaslat()" style="width:100%; background:var(--neon-blue); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:900; font-size:13px; cursor:pointer;">🔧 Günlüğü Tara ve Onar</button>
             </div>
             <div style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:12px; padding:14px; margin-top:12px;">
-                <div style="font-weight:800; color:var(--gold); margin-bottom:4px;">🔑 Şifre Yönetimi</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Şifreler artık kodda görünmez (şifreli özet olarak saklanır), buradan değiştirilir ve tüm cihazlara otomatik yayılır. 5 yanlış deneme girişi 60 sn kilitler.</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-                    <input id="sfd-mevcut" type="password" inputmode="numeric" maxlength="4" placeholder="Mevcut YÖNETİCİ şifresi" style="padding:9px; background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; color:var(--text-main); font-size:13px;">
-                    <input id="sfd-yeni" type="password" inputmode="numeric" maxlength="4" placeholder="Yeni şifre (4 hane)" style="padding:9px; background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; color:var(--text-main); font-size:13px;">
-                </div>
-                <div style="display:flex; gap:8px;">
-                    <select id="sfd-hedef" style="flex:1; padding:9px; background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; color:var(--text-main); font-size:13px;">
-                        <option value="egitmen">🎓 Eğitmen şifresini değiştir</option>
-                        <option value="yonetici">🛡️ Yönetici şifresini değiştir</option>
-                        <option value="aidat">💳 Aidat ek şifresini değiştir</option>
-                    </select>
-                    <button onclick="sifreDegistir()" style="background:var(--gold); color:#000; border:none; padding:9px 16px; border-radius:8px; font-weight:900; font-size:13px; cursor:pointer;">Değiştir</button>
-                </div>
+                <div style="font-weight:800; color:var(--gold); margin-bottom:4px;">🔐 Giriş ve Şifreler</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Kişisel hesaplar, PIN'ler, giriş yapılmış cihazlar ve parmak izi kayıtları artık <b>Güvenlik</b> bölümünde.</div>
+                <button onclick="yoneticiSekme('guvenlik')" style="background:var(--gold); color:#000; border:none; padding:9px 16px; border-radius:8px; font-weight:900; font-size:13px; cursor:pointer;">🔐 Güvenlik'e git</button>
             </div>
             <div style="background:var(--bg-panel); border:1px solid var(--neon-blue); border-radius:12px; padding:14px; margin-top:12px;">
                 <div style="font-weight:800; color:var(--neon-blue); margin-bottom:4px;">☁️ Günlük Bulut Yedekleri</div>
