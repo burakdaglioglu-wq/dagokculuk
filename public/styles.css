@@ -211,6 +211,25 @@
         .chip-success { background: rgba(34,197,94,0.16); background: color-mix(in srgb, var(--status-success) 16%, transparent); color: var(--status-success); }
         .chip-warning { background: rgba(251,191,36,0.18); background: color-mix(in srgb, var(--status-warning) 18%, transparent); color: var(--status-warning); }
         .chip-danger { background: rgba(239,68,68,0.16); background: color-mix(in srgb, var(--status-danger) 16%, transparent); color: var(--status-danger); }
+        /* Karışık Sınıf Yoklama (2026-09-26 düzeltmesi) — satır başına açık Geldi/Gelmedi düğmeleri */
+        .km-yok-sayac { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:12px; font-weight:700; color: var(--text-secondary); }
+        .km-yok-sayac b { font-size:20px; font-weight:900; }
+        .km-yok-sayac .g b { color: var(--status-success); }
+        .km-yok-sayac .x b { color: var(--status-danger); }
+        .km-yok-sayac .y b { color: var(--status-warning); }
+        .km-yok-hepsi { background: var(--status-success); color:#fff; border:none; padding:11px 16px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; min-height:44px; }
+        .km-yok-tamam { font-size:12px; font-weight:800; color: var(--status-success); }
+        .km-yok-pdf { width:100%; background:transparent; color: var(--text-secondary); border:1px solid var(--border-color); padding:8px; border-radius:9px; font-weight:700; font-size:11px; cursor:pointer; margin-bottom:12px; }
+        .km-yok-satir { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background: var(--surface-1); border:1px solid var(--border-color); border-left:4px solid var(--status-warning); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
+        .km-yok-satir.geldi { border-left-color: var(--status-success); }
+        .km-yok-satir.gelmedi { border-left-color: var(--status-danger); }
+        .km-yok-ad { flex:1; min-width:140px; font-size:13px; font-weight:800; color: var(--text-primary); }
+        .km-yok-ad span { font-size:10px; font-weight:600; color: var(--text-secondary); }
+        .km-yok-secim { display:flex; gap:6px; flex-shrink:0; }
+        .km-yok-secim button { min-height:40px; min-width:92px; padding:0 12px; border-radius:9px; border:1.5px solid var(--border-color); background:transparent; color: var(--text-secondary); font-weight:800; font-size:12px; cursor:pointer; }
+        .km-yok-secim button.geldi.aktif { background: color-mix(in srgb, var(--status-success) 20%, transparent); border-color: var(--status-success); color: var(--status-success); }
+        .km-yok-secim button.gelmedi.aktif { background: color-mix(in srgb, var(--status-danger) 20%, transparent); border-color: var(--status-danger); color: var(--status-danger); }
+        .km-yok-secim button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
         /* FAZ 7 — Karışık Sınıf araç ızgarası. Sadece yerleşim (grid sütun sayısı) — renk/görsel
            token içermiyor, .card zaten Faz 2'den geliyor. Telefonda 2, tablet/masaüstünde 4 sütun. */
