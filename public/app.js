@@ -10397,6 +10397,7 @@ ${(function(){
         function kmGeri() {
             // Ders bitmedi — platfomu kapat, ana ekrana dön (ders devam ediyor)
             try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
+            try { kmVaGeriKoy(); } catch(e) {}
             document.getElementById('karisik-platform').style.display = 'none';
         }
 
@@ -10418,8 +10419,10 @@ ${(function(){
             // Reaksiyon oyunundan başka bir sekmeye geçilirken zamanlayıcılar (interval/timeout)
             // arkada çalışmaya devam etmesin diye temizlenir.
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
+            // Video & Duruş aracı asıl kamera ekranını buraya taşıyor — başka araca geçerken yerine geri koy.
+            if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10451,6 +10454,9 @@ ${(function(){
             else if(s==='resmitur') kmResmiTurCiz();
             else if(s==='okanaliz') kmOkAnaliziCiz();
             else if(s==='baski') kmBaskiCiz();
+            else if(s==='dersler') kmDerslerCiz();
+            else if(s==='malzeme') kmMalzemeCiz();
+            else if(s==='durus') kmDurusCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10468,6 +10474,7 @@ ${(function(){
         function kmIzgaraGeriDon() {
             if(_kmAktifSekme === 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             if(_kmAktifSekme === 'ritim') { try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {} }
+            if(_kmAktifSekme === 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             _kmAktifSekme = null;
             document.getElementById('km-icerik-geri-bar').style.display = 'none';
             document.getElementById('km-icerik').style.display = 'none';
@@ -10543,6 +10550,10 @@ ${(function(){
             // Performans araçları (2026-09-27) — kod: public/dagsk-performans.js
             { id:'resmitur', ad:'Resmi Tur', grup:'sari', icon:'<circle cx="12" cy="9" r="5"/><path d="M8.5 13 7 21l5-3 5 3-1.5-8"/>' },
             { id:'okanaliz', ad:'Ok Analizi', grup:'mavi', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M20 4 13.5 10.5M16 4h4v4"/>' },
+            // Rehber araçları (2026-09-28) — kod: public/dagsk-km-rehber.js
+            { id:'dersler', ad:'Ders Kütüphanesi', grup:'yesil', icon:'<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>' },
+            { id:'malzeme', ad:'Malzemeler', grup:'sari', icon:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>' },
+            { id:'durus', ad:'Video & Duruş', grup:'mavi', icon:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>' },
             { id:'baski', ad:'Baskı Görevleri', grup:'kirmizi', icon:'<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.5 4.6V17h7v-3.4C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20h5"/>' },
         ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
@@ -10571,7 +10582,8 @@ ${(function(){
                 veli: 'Veliye bugünün özeti', disiplin: 'Sınıf disiplin puanı', pozitif: 'Pozitif davranış puanı',
                 oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi', teknikanaliz: 'Duruş, çekiş, bırakış puanla',
                 kasifkarti: 'Gün sonu hatıra kartı', fitness: 'Okçuya özel kuvvet/esneklik', kelime: 'Okçuluk bulmacası',
-                okanaliz: 'Kaçan oku ve grup kaymasını bul', baski: 'Son ok 9+, 3 seri 27+, düello'
+                okanaliz: 'Kaçan oku ve grup kaymasını bul', baski: 'Son ok 9+, 3 seri 27+, düello',
+                dersler: 'Resimli dersler, adım adım', malzeme: 'Ne işe yarar, evde nasıl yapılır', durus: 'Kamerayla duruşu kontrol et'
             };
             if(id === 'resmitur') {
                 try { let d = kmRtYukle(); if(d.asama === 'siralama') return 'Sıralama turu · seri ' + (d.seri + 1) + '/' + kmRtFormat().seri; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; if(d.asama === 'bitti') return 'Karneler hazır'; } catch(e) {}
@@ -16046,11 +16058,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunDokKonum = konum;
             kmOyunDokAyarKaydet();
             kmOyunDokGorunumUygula();
-        }
-        // Eski iki kademeli API (Küçük/Normal) — geriye uyumluluk için ölçeğe çevrilir.
-        function kmOyunDokBoyutDegistir(boyut) {
-            _kmOyunDokBoyut = boyut === 'kucuk' ? 'kucuk' : 'normal';
-            kmOyunDokOlcekAyarla(boyut === 'kucuk' ? 0.8 : 1);
         }
         function kmOyunDokOlcekAyarla(olcek, kaydetme) {
             olcek = Math.round(Math.min(KM_OYUN_DOK_OLCEK_MAX, Math.max(KM_OYUN_DOK_OLCEK_MIN, Number(olcek) || 1)) * 100) / 100;
@@ -28317,6 +28324,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         window.addEventListener('load', altBarYukseklikSenkron);
         document.addEventListener('DOMContentLoaded', altBarYukseklikSenkron);
         function sekmeAc(sekmeAd) {
+            if(sekmeAd === 'video') { try { kmVaGeriKoy(); } catch(e) {} }
             document.querySelectorAll('.sekme-btn').forEach(b => b.classList.remove('aktif')); 
             document.querySelectorAll('.sekme-icerik').forEach(c => c.classList.remove('aktif')); 
             document.getElementById('tab-' + sekmeAd).classList.add('aktif'); 
@@ -29781,11 +29789,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // dagsporkulubu.com/* + workers.dev/* adreslerine kilitli, bu sayfa aynı domain altında.
         let _yorumSlaytZamanlayici = null;
         let _yorumSlaytOnbellek = null;
+        // Google Haritalar kütüphanesi (yaklaşık 200 KB) artık her açılışta değil, yalnızca bu slayt ilk
+        // gösterildiğinde yükleniyor — eğitmen/yönetici/Karışık Sınıf ekranları onu hiç indirmiyor.
+        let _googleHaritaYukleniyor = false;
+        function googleHaritaYukle() {
+            if(_googleHaritaYukleniyor || (typeof google !== 'undefined' && google.maps)) return;
+            _googleHaritaYukleniyor = true;
+            let s = document.createElement('script');
+            s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr';
+            s.async = true; s.defer = true;
+            s.onerror = function() { _googleHaritaYukleniyor = false; };
+            document.head.appendChild(s);
+        }
         function googleYorumSlaytiBaslat(kutuId, deneme) {
             deneme = deneme || 0;
             let kutu = document.getElementById(kutuId); if(!kutu) return;
             if(_yorumSlaytOnbellek) { _yorumSlaytRenderBaslat(kutuId, _yorumSlaytOnbellek); return; }
             if(typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                googleHaritaYukle();
                 if(deneme < 20) return setTimeout(() => googleYorumSlaytiBaslat(kutuId, deneme + 1), 300);
                 return;
             }

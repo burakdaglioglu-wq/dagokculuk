@@ -17,9 +17,6 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4.1675466862/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
 </head>
 <body>
 
@@ -48,7 +45,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v132</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v134</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -901,11 +898,11 @@
                         <button id="ai-src-vid-btn" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setSourceMode('video')">📂 Kayıtlı Video</button>
                     </div>
                     <div class="ai-pill-group">
-                        <button id="ai-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">🏹 Sağlak</button>
-                        <button id="ai-hand-left" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🏹 Solak</button>
+                        <button id="ai-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setHandedness('right')">✋ Sağ elle</button>
+                        <button id="ai-hand-left" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setHandedness('left')">🤚 Sol elle</button>
                     </div>
                     <div class="ai-pill-group">
-                        <button id="ai-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setBowType('auto')">🤖 Oto Yay</button>
+                        <button id="ai-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_AI_POSE.setBowType('auto')">🔎 Yay: otomatik</button>
                         <button id="ai-bow-recurve" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('recurve')">🏹 Klasik</button>
                         <button id="ai-bow-compound" class="ai-pill-btn" onclick="DAGSK_AI_POSE.setBowType('compound')">⚙️ Makaralı</button>
                     </div>
@@ -977,7 +974,7 @@
                     <button id="ai-tool-line" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('line')" title="Düz Çizgi">📏 Çizgi</button>
                     <button id="ai-tool-circle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('circle')" title="Daire / Yuvarlak Çiz">⭕ Daire</button>
                     <button id="ai-tool-angle" class="ai-tool-btn" onclick="DAGSK_AI_POSE.setDrawTool('angle')" title="3 Noktadan Açı Ölç">📐 Açı</button>
-                    <button id="ai-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Çizimi Durdur">🖐️ Gezin (Dokun-Oynat)</button>
+                    <button id="ai-tool-none" class="ai-tool-btn aktif" onclick="DAGSK_AI_POSE.setDrawTool(null)" title="Çizimi Durdur">🖐️ Çizimi kapat</button>
 
                     <div style="display:flex; gap:6px; align-items:center; margin-left:4px; margin-right:4px;">
                         <span class="ai-color-dot aktif" style="background:#fbbf24;" onclick="DAGSK_AI_POSE.setDrawColor('#fbbf24', this)" title="Sarı"></span>
@@ -1032,22 +1029,22 @@
                     <div class="ai-hud-card">
                         <div class="ai-hud-label">Yay Kolu</div>
                         <div id="ai-val-bowarm" class="ai-hud-val">--°</div>
-                        <div class="ai-hud-sub">İdeal: 175° - 180°</div>
+                        <div class="ai-hud-sub">Dümdüz olmalı (175–180°)</div>
                     </div>
                     <div class="ai-hud-card">
                         <div class="ai-hud-label">Çekiş Dirseği</div>
                         <div id="ai-val-drawelbow" class="ai-hud-val">--°</div>
-                        <div class="ai-hud-sub">Ok Ekseni Hizası</div>
+                        <div class="ai-hud-sub">Okla aynı hizada olmalı</div>
                     </div>
                     <div class="ai-hud-card">
-                        <div class="ai-hud-label">Çapa (Anchor)</div>
+                        <div class="ai-hud-label">Çapa (çene)</div>
                         <div id="ai-val-anchor" class="ai-hud-val" style="font-size:16px;">--</div>
-                        <div id="ai-sub-anchor" class="ai-hud-sub">Çene / Yüz Teması</div>
+                        <div id="ai-sub-anchor" class="ai-hud-sub">İp çeneye değiyor mu?</div>
                     </div>
                     <div class="ai-hud-card">
                         <div class="ai-hud-label">Omuz Eğimi</div>
                         <div id="ai-val-shoulder" class="ai-hud-val">--°</div>
-                        <div class="ai-hud-sub">Düz T-Hattı (&lt;6°)</div>
+                        <div class="ai-hud-sub">İki omuz düz (6°'den az)</div>
                     </div>
                 </div>
 
@@ -1101,11 +1098,11 @@
                     <button id="cmp-ai-angles-btn" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.toggleAIAngles()">🤖 AI Açılar: AÇIK</button>
                 </div>
                 <div class="ai-pill-group">
-                    <button id="cmp-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setHandedness('right')">🏹 Sağlak</button>
-                    <button id="cmp-hand-left" class="ai-pill-btn" onclick="DAGSK_COMPARE.setHandedness('left')">🏹 Solak</button>
+                    <button id="cmp-hand-right" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setHandedness('right')">✋ Sağ elle</button>
+                    <button id="cmp-hand-left" class="ai-pill-btn" onclick="DAGSK_COMPARE.setHandedness('left')">🤚 Sol elle</button>
                 </div>
                 <div class="ai-pill-group">
-                    <button id="cmp-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setBowType('auto')">🤖 Oto Yay</button>
+                    <button id="cmp-bow-auto" class="ai-pill-btn aktif" onclick="DAGSK_COMPARE.setBowType('auto')">🔎 Yay: otomatik</button>
                     <button id="cmp-bow-recurve" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('recurve')">🏹 Klasik</button>
                     <button id="cmp-bow-compound" class="ai-pill-btn" onclick="DAGSK_COMPARE.setBowType('compound')">⚙️ Makaralı</button>
                 </div>
@@ -1831,5 +1828,6 @@
     <script src="sync.js"></script>
     <script src="app.js"></script>
     <script src="dagsk-performans.js"></script>
+    <script src="dagsk-km-rehber.js"></script>
 </body>
 </html>
