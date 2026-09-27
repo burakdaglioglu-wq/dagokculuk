@@ -10419,7 +10419,7 @@ ${(function(){
             // arkada çalışmaya devam etmesin diye temizlenir.
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10448,6 +10448,9 @@ ${(function(){
             else if(s==='fitness') kmFitnessCiz();
             else if(s==='kelime') kmKelimeCiz();
             else if(s==='dersakisi') kmDersAkisiCiz();
+            else if(s==='resmitur') kmResmiTurCiz();
+            else if(s==='okanaliz') kmOkAnaliziCiz();
+            else if(s==='baski') kmBaskiCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10537,6 +10540,10 @@ ${(function(){
             { id:'kasifkarti', ad:'Kaşif Kartı', grup:'mavi', icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c0-2 1.5-3 4-3s4 1 4 3"/>' },
             { id:'fitness', ad:'Fitness', grup:'kirmizi', icon:'<path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/>' },
             { id:'dersakisi', ad:'Ders Akışı', grup:'yesil', icon:'<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="M18 14.6V16l1 .8"/>' },
+            // Performans araçları (2026-09-27) — kod: public/dagsk-performans.js
+            { id:'resmitur', ad:'Resmi Tur', grup:'sari', icon:'<circle cx="12" cy="9" r="5"/><path d="M8.5 13 7 21l5-3 5 3-1.5-8"/>' },
+            { id:'okanaliz', ad:'Ok Analizi', grup:'mavi', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M20 4 13.5 10.5M16 4h4v4"/>' },
+            { id:'baski', ad:'Baskı Görevleri', grup:'kirmizi', icon:'<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.5 4.6V17h7v-3.4C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20h5"/>' },
         ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
         function kmAracDurumSatiri(id) {
@@ -10563,8 +10570,13 @@ ${(function(){
                 klasman: 'Genel sıralama', canli: 'Canlı skor akışı', yarisma: 'Turnuva ve eşleşmeler',
                 veli: 'Veliye bugünün özeti', disiplin: 'Sınıf disiplin puanı', pozitif: 'Pozitif davranış puanı',
                 oyunlar: 'Mini oyunlar', reaksiyon: 'Refleks testi', ritim: 'Sesli atış ritmi', teknikanaliz: 'Duruş, çekiş, bırakış puanla',
-                kasifkarti: 'Gün sonu hatıra kartı', fitness: 'Okçuya özel kuvvet/esneklik', kelime: 'Okçuluk bulmacası'
+                kasifkarti: 'Gün sonu hatıra kartı', fitness: 'Okçuya özel kuvvet/esneklik', kelime: 'Okçuluk bulmacası',
+                okanaliz: 'Kaçan oku ve grup kaymasını bul', baski: 'Son ok 9+, 3 seri 27+, düello'
             };
+            if(id === 'resmitur') {
+                try { let d = kmRtYukle(); if(d.asama === 'siralama') return 'Sıralama turu · seri ' + (d.seri + 1) + '/' + kmRtFormat().seri; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; if(d.asama === 'bitti') return 'Karneler hazır'; } catch(e) {}
+                return '72 ok · set sistemi · karne';
+            }
             return SABIT[id] || '';
         }
         function kmAracIzgaraCiz() {
@@ -29315,7 +29327,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Isı Haritası 2.0 — Ekipman Kıyaslama: her ok, o anda sporcuya atanmış ekipman etiketiyle
                 // damgalanır (geçmiş oklar dokunulmadan kalır — etiket değişince SADECE bundan sonraki
                 // atışlar yeni etikete sahip olur, gerçek "eski yayım / yeni yayım" ayrımı böyle oluşur).
-                if(!grupData.detayliOklar) grupData.detayliOklar = []; grupData.detayliOklar.push(Object.assign({}, ok, { puan: efPuan, ekipman: grupData.ekipmanEtiketi || null, okNo: aktifOkNumarasi || null }));
+                if(!grupData.detayliOklar) grupData.detayliOklar = []; grupData.detayliOklar.push(Object.assign({}, ok, { puan: efPuan, ekipman: grupData.ekipmanEtiketi || null, okNo: ok.okNo != null ? ok.okNo : (aktifOkNumarasi || null) }));
             });
 
             // OK SIRALAMA SİSTEMİ (BÜYÜKTEN KÜÇÜĞE WA STANDARDI)
