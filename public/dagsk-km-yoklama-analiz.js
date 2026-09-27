@@ -10,7 +10,7 @@
 const KM_YA_GUN = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const KM_YA_GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 const KM_YA_GRUP_AD = { buyukler: 'Büyükler', yildizlar: 'Yıldızlar', kucukler: 'Küçükler', minikler: 'Minikler' };
-let _kmYa = { hafta: 0, gun: null, filtre: 'hepsi', ara: '', secili: null, slotlar: null, yukleniyor: false };
+let _kmYa = { hafta: 0, gun: null, gorunum: 'ders', filtre: 'hepsi', ara: '', secili: null, slotlar: null, yukleniyor: false };
 let _kmYaTimer = null;
 
 function kmYaCss() {
@@ -73,10 +73,49 @@ function kmYaCss() {
 .ya-av { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; color:#fff; }
 .ya-sporcu b { font-size:13.5px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ya-sporcu small { font-size:11.5px; color:var(--text-secondary); }
-.ya-noktalar { display:flex; gap:3px; }
-.ya-noktalar i { width:9px; height:9px; border-radius:50%; background:var(--surface-1); border:1px solid var(--border-color); }
-.ya-noktalar i.g { background:var(--status-success); border-color:var(--status-success); }
-.ya-noktalar i.y { background:var(--status-danger); border-color:var(--status-danger); opacity:.75; }
+.ya-simdi-satir { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:15px; color:var(--text-primary); }
+.ya-simdi-satir b { font-size:17px; font-weight:900; }
+.ya-sekmeler { display:flex; gap:6px; padding:4px; border-radius:14px; background:var(--surface-2); }
+.ya-sekmeler button { flex:1; min-height:42px; border:none; border-radius:10px; background:none; color:var(--text-secondary); font-weight:800; font-size:13.5px; cursor:pointer; }
+.ya-sekmeler button.aktif { background:var(--surface-1); color:var(--text-primary); box-shadow:0 0 0 1.5px var(--accent); }
+.ya-gunler { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; }
+.ya-gunler button { display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 2px; border-radius:12px; border:1.5px solid var(--border-color); background:var(--surface-1); color:var(--text-primary); cursor:pointer; }
+.ya-gunler button b { font-size:13px; font-weight:900; }
+.ya-gunler button small { font-size:16px; font-weight:900; font-variant-numeric:tabular-nums; }
+.ya-gunler button em { font-style:normal; font-size:10.5px; font-weight:700; color:var(--text-secondary); }
+.ya-gunler button.bugun { border-color:color-mix(in srgb, var(--accent) 60%, transparent); }
+.ya-gunler button.aktif { background:var(--accent); border-color:var(--accent); color:var(--text-on-accent-dark, #0b0f1c); }
+.ya-gunler button.aktif em { color:inherit; opacity:.8; }
+.ya-dkart { border:1px solid var(--border-color); border-radius:16px; background:var(--surface-1); padding:12px; display:flex; flex-direction:column; gap:10px; }
+.ya-dkart.simdi { border:1.5px solid var(--status-success); background:color-mix(in srgb, var(--status-success) 7%, var(--surface-1)); }
+.ya-dkart.iptal { opacity:.7; }
+.ya-dbas { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.ya-dsaat { font-size:20px; font-weight:900; color:var(--text-primary); font-variant-numeric:tabular-nums; line-height:1.1; text-align:center; padding:6px 10px; border-radius:12px; background:var(--surface-2); }
+.ya-dsaat small { display:block; font-size:11px; font-weight:700; color:var(--text-secondary); }
+.ya-dad { font-size:17px; font-weight:900; color:var(--text-primary); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ya-sayac { font-size:13px; font-weight:700; color:var(--text-secondary); white-space:nowrap; }
+.ya-sayac b { font-size:20px; font-weight:900; color:var(--status-success); font-variant-numeric:tabular-nums; }
+.ya-kisiler { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:6px; }
+.ya-kisi { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center; padding:7px 10px; border-radius:12px; background:var(--surface-2); border:none; text-align:left; cursor:pointer; color:var(--text-primary); width:100%; }
+.ya-kisi:hover, .ya-trow:hover { outline:1.5px solid var(--accent); }
+.ya-kisi b { font-size:14px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ya-kisi small { font-size:11px; color:var(--text-secondary); }
+.ya-durum { display:inline-flex; align-items:center; padding:4px 9px; border-radius:999px; font-size:12px; font-weight:800; white-space:nowrap; }
+.ya-durum.g { color:var(--status-success); background:color-mix(in srgb, var(--status-success) 15%, transparent); }
+.ya-durum.y { color:var(--status-danger); background:color-mix(in srgb, var(--status-danger) 13%, transparent); }
+.ya-durum.b { color:var(--text-secondary); background:var(--surface-1); }
+.ya-thead, .ya-trow { display:grid; grid-template-columns:minmax(150px,1.2fr) minmax(0,2fr) 100px 110px; gap:10px; align-items:center; }
+.ya-thead { padding:0 10px; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-secondary); }
+.ya-trow { padding:8px 10px; border-radius:12px; background:var(--surface-2); border:none; text-align:left; cursor:pointer; color:var(--text-primary); width:100%; }
+.ya-tad { display:flex; align-items:center; gap:10px; min-width:0; }
+.ya-tad b { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ya-tders { display:flex; gap:4px; flex-wrap:wrap; min-width:0; }
+.ya-dcip { padding:3px 8px; border-radius:8px; font-size:12px; font-weight:700; background:var(--surface-1); border:1px solid var(--border-color); }
+.ya-tson { font-size:12.5px; font-weight:700; }
+.ya-tson small { display:none; color:var(--text-secondary); font-weight:600; }
+.ya-tgrup { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:14px; font-weight:900; color:var(--text-primary); }
+.ya-tgrup i { width:10px; height:10px; border-radius:50%; }
+.ya-tgrup small { font-weight:600; color:var(--text-secondary); font-size:12px; }
 .ya-takvim { display:grid; grid-template-columns:auto repeat(7, minmax(0,1fr)); gap:4px; font-size:11px; color:var(--text-secondary); align-items:center; }
 .ya-takvim span { text-align:center; font-weight:800; }
 .ya-takvim i { aspect-ratio:1; border-radius:6px; background:var(--surface-2); display:block; max-width:34px; width:100%; justify-self:center; }
@@ -91,7 +130,9 @@ function kmYaCss() {
 .ya-trend small { font-size:10px; font-weight:700; color:var(--text-secondary); }
 .ya-btn { min-height:40px; padding:0 14px; border-radius:11px; border:1.5px solid var(--border-color); background:var(--surface-1); color:var(--text-primary); font-weight:800; font-size:13px; cursor:pointer; }
 .ya-btn.birincil { background:var(--status-success); border-color:var(--status-success); color:#fff; }
-@media (max-width: 640px) { .ya-grafik { gap:4px; } .ya-ders { grid-template-columns:auto minmax(0,1fr); } .ya-ders .oran { grid-column:1 / -1; text-align:left; } .ya-hafta span { min-width:120px; font-size:12.5px; } }
+@media (max-width: 640px) { .ya-grafik { gap:4px; } .ya-ders { grid-template-columns:auto minmax(0,1fr); } .ya-ders .oran { grid-column:1 / -1; text-align:left; } .ya-hafta span { min-width:120px; font-size:12.5px; }
+    .ya-thead { display:none; } .ya-trow { grid-template-columns:minmax(0,1fr) auto; } .ya-tders { grid-column:1 / -1; order:3; } .ya-tson { grid-column:1 / -1; order:4; } .ya-tson small { display:inline; }
+    .ya-gunler { gap:3px; } .ya-gunler button em { font-size:9.5px; } .ya-sekmeler button { font-size:12px; } .ya-kisiler { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion: reduce) { .ya-canli::before { animation:none; } }
 `;
     document.head.appendChild(st);
@@ -134,105 +175,100 @@ function kmYaRenk(g) { return { buyukler: '#2563eb', yildizlar: '#f59e0b', kucuk
 function kmYaIlkHarf(ad) { return String(ad || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR'); }
 
 // ---------------------------------------------------------------- çizim
+// 2026-09-28 sadeleştirme — kullanıcı: "karışık olmuş, kimin kim olduğu, hangi derste olduğu anlaşılır olsun".
+// Üç sekme: 📅 Dersler (varsayılan: seçili günün her dersi + o derse kayıtlı sporcuların isim listesi ve geldi/gelmedi),
+// 👥 Sporcular (grup grup tablo: kim, hangi derste, bu hafta kaç gün, son geliş), 📊 Sayılar (özet + grafikler).
 function kmYoklamaAnalizCiz() {
     kmYaCss();
     let ic = document.getElementById('km-icerik'); if (!ic) return;
     clearInterval(_kmYaTimer); _kmYaTimer = null;
-    if (_kmYa.slotlar === null) { ic.innerHTML = '<div class="ya"><div class="ya-baslik">📊 Yoklama Analizi</div><div class="ya-alt">Ders programı yükleniyor…</div></div>'; kmYaSlotYukle(kmYoklamaAnalizCiz); return; }
+    if (_kmYa.slotlar === null) { ic.innerHTML = '<div class="ya"><div class="ya-baslik">📊 Yoklama</div><div class="ya-alt">Ders programı yükleniyor…</div></div>'; kmYaSlotYukle(kmYoklamaAnalizCiz); return; }
     if (_kmYa.secili) { ic.innerHTML = kmYaSporcuDetayHTML(); return; }
     let gunler = kmYaHaftaGunleri(_kmYa.hafta), bugun = kmYaIso(new Date());
     let isoler = gunler.map(kmYaIso), sporcular = kmYaSporcular();
-    let gecmisIsoler = isoler.filter(i => i <= bugun);
-    // her sporcunun bu haftaki gelişleri
-    let haftalik = sporcular.map(k => { let gel = isoler.filter(i => kmYaDurum(k, i) === 'g'); return Object.assign({ gel, yok: isoler.filter(i => kmYaDurum(k, i) === 'y') }, k); });
-    let gelenler = haftalik.filter(x => x.gel.length), gunSayilari = isoler.map(i => sporcular.filter(k => kmYaDurum(k, i) === 'g').length);
-    let toplamGiris = gunSayilari.reduce((a, b) => a + b, 0), aktifGunSayi = gunSayilari.filter((n, i) => n > 0 && isoler[i] <= bugun).length;
-    let grupSay = {}; sporcular.forEach(k => { grupSay[k.g] = (grupSay[k.g] || 0) + 1; });
-    let bas = gunler[0], son = gunler[6];
+    if (_kmYa.gun === null) { let i = isoler.indexOf(bugun); _kmYa.gun = i >= 0 ? i : 0; }
+    let gor = _kmYa.gorunum || 'ders';
     let haftaYazi = _kmYa.hafta === 0 ? 'Bu hafta' : (_kmYa.hafta === -1 ? 'Geçen hafta' : Math.abs(_kmYa.hafta) + ' hafta önce');
-    let simdi = _kmYa.hafta === 0 ? kmYaSimdiHTML(sporcular) : '';
-    let secGun = _kmYa.gun !== null ? isoler[_kmYa.gun] : null;
-    let grafik = gunler.map((d, i) => {
-        let iso = isoler[i], n = gunSayilari[i], max = Math.max(1, ...gunSayilari);
-        return `<button class="ya-gun${iso === bugun ? ' bugun' : ''}${iso > bugun ? ' gelecek' : ''}${_kmYa.gun === i ? ' secili' : ''}" onclick="kmYaGunSec(${i})" aria-label="${KM_YA_GUN[d.getDay()]}: ${n} kişi"><div class="sut" style="height:${iso > bugun ? 4 : Math.max(4, n / max * 100)}%">${iso <= bugun ? `<em>${n}</em>` : ''}</div><small>${KM_YA_GUN_KISA[d.getDay()]}</small></button>`;
-    }).join('');
-    let gunDetay = '';
-    if (secGun) {
-        let o = sporcular.map(k => ({ k, r: otomatikYoklamaDB[secGun] && otomatikYoklamaDB[secGun][k.ad], d: kmYaDurum(k, secGun) })).filter(x => x.d === 'g').sort((a, b) => String(a.r && a.r.saat || '').localeCompare(String(b.r && b.r.saat || '')));
-        gunDetay = `<div class="ya-etiket">${KM_YA_GUN[gunler[_kmYa.gun].getDay()]} ${kmYaTarihYazi(gunler[_kmYa.gun])} — ${o.length} kişi geldi</div><div class="ya-cipler">${o.map(x => `<span class="ya-cip geldi">${esc(x.k.ad)}${x.r && x.r.saat ? ` <small>${esc(x.r.saat)}</small>` : ''}</span>`).join('') || '<span class="ya-alt">Kayıt yok.</span>'}</div>`;
-    }
+    let sekme = (id, ad) => `<button class="${gor === id ? 'aktif' : ''}" onclick="kmYaGorunum('${id}')">${ad}</button>`;
+    let govde = gor === 'sporcu' ? kmYaSporcuTabloHTML(sporcular, isoler) : gor === 'sayilar' ? kmYaSayilarHTML(sporcular, gunler, isoler, bugun) : kmYaGunDersleriHTML(sporcular, gunler, isoler, bugun);
     ic.innerHTML = `<div class="ya">
-        <div class="ya-ust"><div><div class="ya-baslik">📊 Yoklama Analizi</div><div class="ya-alt">Kim geldi, hangi ders ne kadar dolu, şu an hangi ders işleniyor.</div></div>
-            <div class="ya-hafta"><button onclick="kmYaHafta(-1)" aria-label="Önceki hafta" ${_kmYa.hafta <= -12 ? 'disabled' : ''}>‹</button><span>${haftaYazi}<br><small style="font-weight:600; color:var(--text-secondary)">${kmYaTarihYazi(bas)} – ${kmYaTarihYazi(son)}</small></span><button onclick="kmYaHafta(1)" aria-label="Sonraki hafta" ${_kmYa.hafta >= 0 ? 'disabled' : ''}>›</button></div></div>
-        ${simdi}
-        <div class="ya-sayilar">
-            <div class="ya-sayi"><small>Kulüpte aktif sporcu</small><b>${sporcular.length}</b><span>${Object.keys(grupSay).map(g => (KM_YA_GRUP_AD[g] || g) + ' ' + grupSay[g]).join(' · ')}</span></div>
-            <div class="ya-sayi"><small>${haftaYazi} gelen</small><b>${gelenler.length}</b><span>aktiflerin %${sporcular.length ? Math.round(gelenler.length / sporcular.length * 100) : 0}'i</span></div>
-            <div class="ya-sayi"><small>Toplam giriş</small><b>${toplamGiris}</b><span>${aktifGunSayi ? 'antrenman günü başına ' + Math.round(toplamGiris / aktifGunSayi) : 'henüz giriş yok'}</span></div>
-            <div class="ya-sayi"><small>Hiç gelmeyen</small><b>${sporcular.length - gelenler.length}</b><span>${gecmisIsoler.length < 7 && _kmYa.hafta === 0 ? 'hafta henüz bitmedi' : 'bu hafta'}</span></div>
-        </div>
-        <div class="ya-kart"><div class="ya-etiket">Günlere göre gelen kişi sayısı — bir güne dokun, kimler geldiğini gör</div><div class="ya-grafik">${grafik}</div>${gunDetay}</div>
-        ${kmYaDerslerHTML(isoler, bugun)}
-        ${kmYaSporcuListeHTML(haftalik, isoler)}
-        ${kmYaTrendHTML(sporcular)}
+        <div class="ya-ust"><div><div class="ya-baslik">📊 Yoklama</div><div class="ya-alt">Hangi derste kim var, kim geldi, kim gelmedi.</div></div>
+            <div class="ya-hafta"><button onclick="kmYaHafta(-1)" aria-label="Önceki hafta" ${_kmYa.hafta <= -12 ? 'disabled' : ''}>‹</button><span>${haftaYazi}<br><small style="font-weight:600; color:var(--text-secondary)">${kmYaTarihYazi(gunler[0])} – ${kmYaTarihYazi(gunler[6])}</small></span><button onclick="kmYaHafta(1)" aria-label="Sonraki hafta" ${_kmYa.hafta >= 0 ? 'disabled' : ''}>›</button></div></div>
+        ${_kmYa.hafta === 0 ? kmYaSimdiHTML(sporcular) : ''}
+        <div class="ya-sekmeler" role="tablist">${sekme('ders', '📅 Dersler')}${sekme('sporcu', '👥 Sporcular')}${sekme('sayilar', '📊 Sayılar')}</div>
+        ${govde}
     </div>`;
     if (_kmYa.hafta === 0) _kmYaTimer = setInterval(() => { let el = document.getElementById('ya-simdi'); if (!el) { clearInterval(_kmYaTimer); _kmYaTimer = null; return; } el.outerHTML = kmYaSimdiHTML(kmYaSporcular()); }, 30000);
 }
-// "Şu an" kartı: işlenen ders (günü + saati tutan, iptal edilmemiş), kayıtlılar içinden bugün gelen/gelmeyen; yoksa sıradaki ders.
+// Üstte tek satırlık "şu an" şeridi — ayrıntılı isim listesi Dersler sekmesinde.
 function kmYaSimdiHTML(sporcular) {
     let now = new Date(), bugun = kmYaIso(now), dk = now.getHours() * 60 + now.getMinutes(), g = now.getDay();
     let slotlar = (_kmYa.slotlar || []);
     let aktif = slotlar.filter(s => kmYaSlotGunler(s).includes(g) && !kmYaIptalMi(s, bugun) && dk >= kmYaDk(s.baslangicSaat) && dk < kmYaDk(s.bitisSaat));
     if (aktif.length) {
         return `<div class="ya-simdi" id="ya-simdi">${aktif.map(s => {
-            let kayitli = kmYaSlotSporcu(s), bas = kmYaDk(s.baslangicSaat), bit = kmYaDk(s.bitisSaat), kalan = bit - dk, oran = Math.min(100, (dk - bas) / Math.max(1, bit - bas) * 100);
-            let geldi = kayitli.filter(k => kmYaDurum(k, bugun) === 'g'), gelmedi = kayitli.filter(k => kmYaDurum(k, bugun) === 'y'), bekleyen = kayitli.filter(k => !kmYaDurum(k, bugun));
-            let kayitsizGelen = sporcular.filter(k => kmYaDurum(k, bugun) === 'g' && !kayitli.some(x => x.g === k.g && x.ad === k.ad));
-            return `<div style="display:flex; flex-direction:column; gap:8px">
-                <span class="ya-canli">ŞU AN İŞLENİYOR</span>
-                <div class="ya-simdi-ad">${esc(kmYaSlotAd(s))} · ${s.baslangicSaat}–${s.bitisSaat}</div>
-                <div class="ya-bar" aria-hidden="true"><i style="width:${oran}%"></i></div>
-                <div class="ya-alt">Bitmesine <b>${kalan} dk</b> · kayıtlı ${kayitli.length}${s.kapasite ? '/' + s.kapasite + ' kapasite' : ''} kişi · <b style="color:var(--status-success)">${geldi.length} geldi</b>${gelmedi.length ? ` · ${gelmedi.length} gelmedi` : ''}${bekleyen.length ? ` · ${bekleyen.length} işaretlenmedi` : ''}</div>
-                ${s.dersPlani ? `<div class="ya-alt">📝 Bugünün planı: <b style="color:var(--text-primary)">${esc(s.dersPlani)}</b></div>` : ''}
-                ${kayitli.length ? `<div class="ya-cipler">${geldi.map(k => `<span class="ya-cip geldi">✓ ${esc(k.ad)}</span>`).join('')}${gelmedi.map(k => `<span class="ya-cip gelmedi">✗ ${esc(k.ad)}</span>`).join('')}${bekleyen.map(k => `<span class="ya-cip bos">${esc(k.ad)}</span>`).join('')}</div>` : '<div class="ya-alt">Bu derse kayıtlı sporcu yok — ders programından sporcu eklenebilir.</div>'}
-                ${kayitsizGelen.length ? `<div class="ya-alt">Bugün gelip bu derse kayıtlı olmayanlar: ${kayitsizGelen.map(k => esc(k.ad)).join(', ')}</div>` : ''}
-                <div><button class="ya-btn birincil" onclick="kmAracSec('yoklama')">✅ Yoklamayı al</button></div></div>`;
-        }).join('<hr style="border:none; border-top:1px dashed var(--border-color); margin:4px 0">')}</div>`;
+            let kayitli = kmYaSlotSporcu(s), geldi = kayitli.filter(k => kmYaDurum(k, bugun) === 'g').length;
+            return `<div class="ya-simdi-satir"><span class="ya-canli">ŞU AN</span><b>${esc(kmYaSlotAd(s))}</b><span>${s.baslangicSaat}–${s.bitisSaat}</span><span class="ya-alt">${geldi}/${kayitli.length} geldi · ${kmYaDk(s.bitisSaat) - dk} dk kaldı</span></div>`;
+        }).join('')}<div style="display:flex; gap:8px; flex-wrap:wrap"><button class="ya-btn birincil" onclick="kmAracSec('yoklama')">✅ Yoklamayı al</button><button class="ya-btn" onclick="kmYaBugun()">Kimler var? →</button></div></div>`;
     }
-    // sıradaki ders (7 gün içinde)
     let sonraki = null;
     for (let i = 0; i < 8 && !sonraki; i++) {
         let d = new Date(now); d.setDate(now.getDate() + i); let iso = kmYaIso(d), gd = d.getDay();
         slotlar.filter(s => kmYaSlotGunler(s).includes(gd) && !kmYaIptalMi(s, iso) && (i > 0 || kmYaDk(s.baslangicSaat) > dk)).sort((a, b) => kmYaDk(a.baslangicSaat) - kmYaDk(b.baslangicSaat)).slice(0, 1).forEach(s => { sonraki = { s, i, d }; });
     }
     let bugunGelen = sporcular.filter(k => kmYaDurum(k, bugun) === 'g').length;
-    return `<div class="ya-simdi bos" id="ya-simdi"><div class="ya-etiket">Şu an</div>
-        <div class="ya-simdi-ad" style="font-size:18px">Şu an ders yok${bugunGelen ? ` · bugün ${bugunGelen} kişi geldi` : ''}</div>
-        ${sonraki ? `<div class="ya-alt">Sıradaki ders: <b style="color:var(--text-primary)">${esc(kmYaSlotAd(sonraki.s))}</b> — ${sonraki.i === 0 ? 'bugün' : sonraki.i === 1 ? 'yarın' : KM_YA_GUN[sonraki.d.getDay()]} ${sonraki.s.baslangicSaat}${sonraki.i === 0 ? ` (${Math.floor((kmYaDk(sonraki.s.baslangicSaat) - dk) / 60)} sa ${(kmYaDk(sonraki.s.baslangicSaat) - dk) % 60} dk sonra)` : ''} · ${kmYaSlotSporcu(sonraki.s).length} kayıtlı sporcu</div>` : `<div class="ya-alt">Ders programında yaklaşan ders bulunamadı.</div>`}</div>`;
+    return `<div class="ya-simdi bos" id="ya-simdi"><div class="ya-simdi-satir"><b>Şu an ders yok</b>${bugunGelen ? `<span class="ya-alt">bugün ${bugunGelen} kişi geldi</span>` : ''}</div>
+        ${sonraki ? `<div class="ya-alt">Sıradaki: <b style="color:var(--text-primary)">${esc(kmYaSlotAd(sonraki.s))}</b> — ${sonraki.i === 0 ? 'bugün' : sonraki.i === 1 ? 'yarın' : KM_YA_GUN[sonraki.d.getDay()]} ${sonraki.s.baslangicSaat} · ${kmYaSlotSporcu(sonraki.s).length} kayıtlı sporcu</div>` : ''}</div>`;
 }
-function kmYaDerslerHTML(isoler, bugun) {
-    let slotlar = (_kmYa.slotlar || []).slice();
-    if (!slotlar.length) return `<div class="ya-kart"><div class="ya-etiket">Ders bazında</div><div class="ya-alt">Ders programında ders yok.</div></div>`;
-    let dk = new Date().getHours() * 60 + new Date().getMinutes();
-    // Haftanın her günü için o günkü dersler (bir ders birden fazla güne ait olabilir → her gün ayrı satır)
-    let satirlar = [];
-    isoler.forEach(iso => {
-        let d = new Date(iso + 'T12:00:00'), gd = d.getDay();
-        slotlar.filter(s => kmYaSlotGunler(s).includes(gd)).forEach(s => satirlar.push({ s, iso, d }));
-    });
-    satirlar.sort((a, b) => a.iso.localeCompare(b.iso) || kmYaDk(a.s.baslangicSaat) - kmYaDk(b.s.baslangicSaat));
-    let html = satirlar.map(x => {
-        let kayitli = kmYaSlotSporcu(x.s), iptal = kmYaIptalMi(x.s, x.iso), gelecek = x.iso > bugun || (x.iso === bugun && kmYaDk(x.s.baslangicSaat) > dk);
-        let simdi = x.iso === bugun && dk >= kmYaDk(x.s.baslangicSaat) && dk < kmYaDk(x.s.bitisSaat);
-        let geldi = kayitli.filter(k => kmYaDurum(k, x.iso) === 'g').length;
-        let oran = iptal ? '<span style="color:var(--status-danger)">İptal</span>' : gelecek ? `<small>kayıtlı</small>${kayitli.length}${x.s.kapasite ? '<small>/ ' + x.s.kapasite + ' kapasite</small>' : ''}` : kayitli.length ? `${geldi}/${kayitli.length}<small>geldi · %${Math.round(geldi / kayitli.length * 100)}</small>` : '<small>kayıtlı sporcu yok</small>';
-        return `<div class="ya-ders${simdi ? ' simdi' : ''}${!gelecek && !simdi ? ' gecti' : ''}"><div class="saat">${x.s.baslangicSaat}<small>${KM_YA_GUN_KISA[x.d.getDay()]} ${x.d.getDate()}</small></div>
-            <div><b>${esc(kmYaSlotAd(x.s))}</b>${simdi ? ' <span class="ya-canli" style="font-size:10px">ŞİMDİ</span>' : ''}<div class="ya-alt">${x.s.baslangicSaat}–${x.s.bitisSaat}${x.s.dersPlani ? ' · 📝 ' + esc(x.s.dersPlani) : ''}${kayitli.length && !gelecek && !iptal ? '' : ''}</div>
-            ${kayitli.length && !gelecek && !iptal ? `<div class="ya-bar" style="margin-top:6px"><i style="width:${Math.round(geldi / kayitli.length * 100)}%"></i></div>` : ''}</div>
-            <div class="oran">${oran}</div></div>`;
+// Bir sporcu satırı: yuvarlak baş harf + ad + grup + sağda durum etiketi.
+function kmYaKisiHTML(k, durum, saat) {
+    let etiket = durum === 'g' ? `<span class="ya-durum g">✓ Geldi${saat ? ' · ' + esc(saat) : ''}</span>`
+        : durum === 'y' ? '<span class="ya-durum y">✗ Gelmedi</span>'
+        : durum === 'bekle' ? '<span class="ya-durum b">Bekleniyor</span>'
+        : durum === 'isaretsiz' ? '<span class="ya-durum b">İşaretlenmedi</span>' : '';
+    return `<button class="ya-kisi" onclick="kmYaSporcuAc('${encodeURIComponent(k.g + '|' + k.ad)}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span>
+        <span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}</small></span>${etiket}</button>`;
+}
+function kmYaGunDersleriHTML(sporcular, gunler, isoler, bugun) {
+    let slotlar = _kmYa.slotlar || [], dk = new Date().getHours() * 60 + new Date().getMinutes();
+    let gunCip = gunler.map((d, i) => {
+        let n = slotlar.filter(s => kmYaSlotGunler(s).includes(d.getDay())).length;
+        return `<button class="${_kmYa.gun === i ? 'aktif' : ''}${isoler[i] === bugun ? ' bugun' : ''}" onclick="kmYaGunSec(${i})"><b>${KM_YA_GUN_KISA[d.getDay()]}</b><small>${d.getDate()}</small><em>${n ? n + ' ders' : '—'}</em></button>`;
     }).join('');
-    return `<div class="ya-kart"><div class="ya-etiket">Ders bazında — bu haftanın dersleri ve katılım</div>${html || '<div class="ya-alt">Bu hafta ders yok.</div>'}
-        <div class="ya-alt">Katılım, o derse ders programında kayıtlı sporculara göre hesaplanır.</div></div>`;
+    let d = gunler[_kmYa.gun], iso = isoler[_kmYa.gun], gd = d.getDay();
+    let dersler = slotlar.filter(s => kmYaSlotGunler(s).includes(gd)).sort((a, b) => kmYaDk(a.baslangicSaat) - kmYaDk(b.baslangicSaat));
+    let kayitliler = [];
+    let kartlar = dersler.map(s => {
+        let kayitli = kmYaSlotSporcu(s); kayitliler.push(...kayitli);
+        let bas = kmYaDk(s.baslangicSaat), bit = kmYaDk(s.bitisSaat);
+        let gelecek = iso > bugun || (iso === bugun && dk < bas), simdi = iso === bugun && dk >= bas && dk < bit;
+        let iptal = (s.istisnalar || []).find(x => x.tarih === iso);
+        let kayit = otomatikYoklamaDB && otomatikYoklamaDB[iso] || {};
+        let satirlar = kayitli.map(k => {
+            let st = kmYaDurum(k, iso);
+            return { k, st: st || (gelecek ? '' : simdi ? 'bekle' : 'isaretsiz'), saat: st === 'g' && kayit[k.ad] ? kayit[k.ad].saat : '' };
+        });
+        let sira = { g: 0, bekle: 1, isaretsiz: 2, y: 3, '': 4 };
+        satirlar.sort((a, b) => sira[a.st] - sira[b.st] || a.k.ad.localeCompare(b.k.ad, 'tr'));
+        let gel = satirlar.filter(x => x.st === 'g').length, yok = satirlar.filter(x => x.st === 'y').length;
+        let ozet = iptal ? `<span class="ya-durum y">İptal${iptal.sebep ? ' · ' + esc(iptal.sebep) : ''}</span>`
+            : gelecek ? `<span class="ya-alt">${kayitli.length} kayıtlı${s.kapasite ? ' / ' + s.kapasite + ' kapasite' : ''}</span>`
+            : `<span class="ya-sayac"><b>${gel}</b>/${kayitli.length} geldi${yok ? ` · ${yok} gelmedi` : ''}</span>`;
+        return `<div class="ya-dkart${simdi ? ' simdi' : ''}${iptal ? ' iptal' : ''}">
+            <div class="ya-dbas"><div class="ya-dsaat">${s.baslangicSaat}<small>${s.bitisSaat}</small></div>
+                <div style="min-width:0; flex:1"><div class="ya-dad">${esc(kmYaSlotAd(s))}${simdi ? ' <span class="ya-canli">ŞU AN</span>' : ''}</div>${s.dersPlani ? `<div class="ya-alt">📝 ${esc(s.dersPlani)}</div>` : ''}</div>${ozet}</div>
+            ${kayitli.length ? `<div class="ya-kisiler">${satirlar.map(x => kmYaKisiHTML(x.k, iptal ? '' : x.st, x.saat)).join('')}</div>` : '<div class="ya-alt">Bu derse kayıtlı sporcu yok — Ders Programı\'ndan sporcu eklenebilir.</div>'}
+        </div>`;
+    }).join('');
+    // O gün gelip o günün hiçbir dersine kayıtlı olmayanlar
+    let kayitsiz = sporcular.filter(k => kmYaDurum(k, iso) === 'g' && !kayitliler.some(x => x.g === k.g && x.ad === k.ad));
+    let kayit = otomatikYoklamaDB && otomatikYoklamaDB[iso] || {};
+    let kayitsizKart = kayitsiz.length ? `<div class="ya-dkart"><div class="ya-dbas"><div style="flex:1"><div class="ya-dad">${dersler.length ? 'Derse kayıtlı olmadan gelenler' : 'Bu gün gelenler'}</div><div class="ya-alt">${dersler.length ? 'Bugünkü derslerin listesinde yoklar ama yoklamada geldi görünüyorlar.' : 'Ders programında bu güne ders yok.'}</div></div><span class="ya-sayac"><b>${kayitsiz.length}</b> kişi</span></div>
+        <div class="ya-kisiler">${kayitsiz.map(k => kmYaKisiHTML(k, 'g', kayit[k.ad] && kayit[k.ad].saat)).join('')}</div></div>` : '';
+    return `<div class="ya-gunler" role="tablist" aria-label="Gün seç">${gunCip}</div>
+        <div class="ya-etiket">${KM_YA_GUN[gd]} ${kmYaTarihYazi(d)}${iso === bugun ? ' · bugün' : ''}</div>
+        ${kartlar}${kayitsizKart}
+        ${!dersler.length && !kayitsiz.length ? '<div class="ya-kart"><div class="ya-alt">Bu gün ders yok ve kimse gelmemiş.</div></div>' : ''}`;
 }
 function kmYaSporcuDersleri(k) { return (_kmYa.slotlar || []).filter(s => (s.katilimcilar || []).some(x => x.grup === k.g && x.ad === k.ad)); }
 function kmYaSonGelis(k) {
@@ -240,31 +276,49 @@ function kmYaSonGelis(k) {
     for (let t of tarihler) if (kmYaDurum(k, t) === 'g') return t;
     return null;
 }
-function kmYaSporcuListeHTML(haftalik, isoler) {
+function kmYaDersEtiket(s) { return `${kmYaSlotGunler(s).map(x => KM_YA_GUN_KISA[x]).join('·')} ${s.baslangicSaat} · ${kmYaSlotAd(s)}`; }
+function kmYaSporcuTabloHTML(sporcular, isoler) {
     let ara = _kmYa.ara ? _kmYa.ara.toLocaleLowerCase('tr-TR') : '';
-    let ikiHaftaOnce = kmYaIso(kmYaHaftaBasi(_kmYa.hafta - 1));
-    let liste = haftalik.map(x => Object.assign({ son: kmYaSonGelis(x) }, x)).filter(x => {
+    let ikiHaftaOnce = kmYaIso(kmYaHaftaBasi(_kmYa.hafta - 1)), bugun = kmYaIso(new Date());
+    let liste = sporcular.map(k => Object.assign({ gel: isoler.filter(i => kmYaDurum(k, i) === 'g').length, son: kmYaSonGelis(k), dersler: kmYaSporcuDersleri(k) }, k)).filter(x => {
         if (ara && !x.ad.toLocaleLowerCase('tr-TR').includes(ara)) return false;
-        if (_kmYa.filtre === 'geldi') return x.gel.length > 0;
-        if (_kmYa.filtre === 'gelmedi') return x.gel.length === 0;
+        if (_kmYa.filtre === 'geldi') return x.gel > 0;
+        if (_kmYa.filtre === 'gelmedi') return x.gel === 0;
         if (_kmYa.filtre === 'uzun') return !x.son || x.son < ikiHaftaOnce;
+        if (_kmYa.filtre === 'derssiz') return !x.dersler.length;
         return true;
-    }).sort((a, b) => b.gel.length - a.gel.length || String(b.son || '').localeCompare(String(a.son || '')) || a.ad.localeCompare(b.ad, 'tr'));
+    });
     let f = (id, ad) => `<button class="${_kmYa.filtre === id ? 'aktif' : ''}" onclick="kmYaFiltre('${id}')">${ad}</button>`;
-    let bugun = kmYaIso(new Date());
+    let sira = Object.keys(KM_YA_GRUP_AD), gruplar = [...new Set(liste.map(x => x.g))].sort((a, b) => (sira.indexOf(a) + 1 || 99) - (sira.indexOf(b) + 1 || 99));
     let satir = x => {
-        let dersler = kmYaSporcuDersleri(x);
-        let nokta = isoler.map(i => `<i class="${kmYaDurum(x, i) || ''}" title="${i}"></i>`).join('');
-        let sonYazi = x.son ? (x.son === bugun ? 'bugün' : kmYaTarihYazi(new Date(x.son + 'T12:00:00'))) : 'kayıt yok';
-        return `<button class="ya-sporcu" onclick="kmYaSporcuAc('${encodeURIComponent(x.g + '|' + x.ad)}')"><span class="ya-av" style="background:${kmYaRenk(x.g)}">${esc(kmYaIlkHarf(x.ad))}</span>
-            <span style="min-width:0"><b>${esc(x.ad)}</b><small>${KM_YA_GRUP_AD[x.g] || x.g} · son geliş: ${sonYazi}${dersler.length ? ' · ' + dersler.map(s => KM_YA_GUN_KISA[kmYaSlotGunler(s)[0]] + ' ' + s.baslangicSaat).join(', ') : ' · derse kayıtlı değil'}</small></span>
-            <span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px"><span class="ya-noktalar" aria-label="Haftalık devam">${nokta}</span><small style="font-weight:800; color:var(--text-primary)">${x.gel.length} gün</small></span></button>`;
+        let son = x.son ? (x.son === bugun ? 'bugün' : kmYaTarihYazi(new Date(x.son + 'T12:00:00'))) : '—';
+        return `<button class="ya-trow" onclick="kmYaSporcuAc('${encodeURIComponent(x.g + '|' + x.ad)}')">
+            <span class="ya-tad"><span class="ya-av" style="background:${kmYaRenk(x.g)}">${esc(kmYaIlkHarf(x.ad))}</span><b>${esc(x.ad)}</b></span>
+            <span class="ya-tders">${x.dersler.length ? x.dersler.map(s => `<span class="ya-dcip">${esc(kmYaDersEtiket(s))}</span>`).join('') : '<span class="ya-alt">derse kayıtlı değil</span>'}</span>
+            <span class="ya-thafta">${x.gel ? `<span class="ya-durum g">✓ ${x.gel} gün</span>` : '<span class="ya-durum y">✗ gelmedi</span>'}</span>
+            <span class="ya-tson"><small>son geliş</small> ${son}</span></button>`;
     };
-    return `<div class="ya-kart"><div class="ya-etiket">Sporcular</div>
-        <div class="ya-filtre">${f('hepsi', 'Hepsi')}${f('geldi', '✓ Bu hafta geldi')}${f('gelmedi', '✗ Bu hafta gelmedi')}${f('uzun', '⏳ 2+ haftadır yok')}</div>
+    return `<div class="ya-kart">
         <input class="ya-ara" type="search" placeholder="🔍 Sporcu ara" value="${esc(_kmYa.ara)}" oninput="kmYaAra(this.value)">
-        <div class="ya-alt">${liste.length} sporcu · noktalar: haftanın 7 günü (yeşil geldi, kırmızı gelmedi olarak işaretli)</div>
-        <div class="ya-liste">${liste.slice(0, 200).map(satir).join('') || '<div class="ya-alt">Bu filtrede sporcu yok.</div>'}</div></div>`;
+        <div class="ya-filtre">${f('hepsi', 'Hepsi')}${f('geldi', '✓ Bu hafta geldi')}${f('gelmedi', '✗ Bu hafta gelmedi')}${f('uzun', '⏳ 2+ haftadır yok')}${f('derssiz', 'Derse kayıtsız')}</div>
+        <div class="ya-thead" aria-hidden="true"><span>Sporcu</span><span>Hangi derste</span><span>Bu hafta</span><span>Son geliş</span></div>
+        ${gruplar.map(g => { let ic = liste.filter(x => x.g === g).sort((a, b) => a.ad.localeCompare(b.ad, 'tr')); return `<div class="ya-tgrup"><i style="background:${kmYaRenk(g)}"></i>${KM_YA_GRUP_AD[g] || esc(g)} <small>${ic.length} kişi · bu hafta ${ic.filter(x => x.gel).length} geldi</small></div>${ic.map(satir).join('')}`; }).join('') || '<div class="ya-alt">Bu filtrede sporcu yok.</div>'}
+    </div>`;
+}
+function kmYaSayilarHTML(sporcular, gunler, isoler, bugun) {
+    let gunSayilari = isoler.map(i => sporcular.filter(k => kmYaDurum(k, i) === 'g').length);
+    let gelen = sporcular.filter(k => isoler.some(i => kmYaDurum(k, i) === 'g')).length;
+    let toplam = gunSayilari.reduce((a, b) => a + b, 0), max = Math.max(1, ...gunSayilari);
+    let grupSay = {}; sporcular.forEach(k => { grupSay[k.g] = (grupSay[k.g] || 0) + 1; });
+    let grafik = gunler.map((d, i) => { let iso = isoler[i], n = gunSayilari[i]; return `<button class="ya-gun${iso === bugun ? ' bugun' : ''}${iso > bugun ? ' gelecek' : ''}" onclick="kmYaGunSec(${i})" aria-label="${KM_YA_GUN[d.getDay()]}: ${n} kişi"><div class="sut" style="height:${iso > bugun ? 4 : Math.max(4, n / max * 100)}%">${iso <= bugun ? `<em>${n}</em>` : ''}</div><small>${KM_YA_GUN_KISA[d.getDay()]}</small></button>`; }).join('');
+    return `<div class="ya-sayilar">
+            <div class="ya-sayi"><small>Kulüpte aktif sporcu</small><b>${sporcular.length}</b><span>${Object.keys(grupSay).map(g => (KM_YA_GRUP_AD[g] || g) + ' ' + grupSay[g]).join(' · ')}</span></div>
+            <div class="ya-sayi"><small>Bu hafta gelen</small><b>${gelen}</b><span>aktiflerin %${sporcular.length ? Math.round(gelen / sporcular.length * 100) : 0}'i</span></div>
+            <div class="ya-sayi"><small>Bu hafta hiç gelmeyen</small><b>${sporcular.length - gelen}</b><span>${_kmYa.hafta === 0 ? 'hafta henüz bitmedi' : ''}</span></div>
+            <div class="ya-sayi"><small>Toplam giriş</small><b>${toplam}</b><span>tüm günler toplamı</span></div>
+        </div>
+        <div class="ya-kart"><div class="ya-etiket">Günlere göre gelen kişi — güne dokun, o günün derslerini aç</div><div class="ya-grafik">${grafik}</div></div>
+        ${kmYaTrendHTML(sporcular)}`;
 }
 function kmYaTrendHTML(sporcular) {
     let haftalar = [];
@@ -311,7 +365,9 @@ function kmYaSporcuDetayHTML() {
     </div>`;
 }
 function kmYaHafta(f) { _kmYa.hafta = Math.min(0, Math.max(-12, _kmYa.hafta + f)); _kmYa.gun = null; kmYoklamaAnalizCiz(); }
-function kmYaGunSec(i) { _kmYa.gun = _kmYa.gun === i ? null : i; kmYoklamaAnalizCiz(); }
+function kmYaGunSec(i) { _kmYa.gun = i; _kmYa.gorunum = 'ders'; kmYoklamaAnalizCiz(); }
+function kmYaGorunum(g) { _kmYa.gorunum = g; kmYoklamaAnalizCiz(); }
+function kmYaBugun() { _kmYa.hafta = 0; _kmYa.gun = null; _kmYa.gorunum = 'ders'; kmYoklamaAnalizCiz(); }
 function kmYaFiltre(f) { _kmYa.filtre = f; kmYoklamaAnalizCiz(); }
 function kmYaAra(v) {
     _kmYa.ara = v; kmYoklamaAnalizCiz();
