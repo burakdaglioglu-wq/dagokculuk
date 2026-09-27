@@ -10422,7 +10422,7 @@ ${(function(){
             // Video & Duruş aracı asıl kamera ekranını buraya taşıyor — başka araca geçerken yerine geri koy.
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus'].forEach(function(k){
+            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10457,6 +10457,7 @@ ${(function(){
             else if(s==='dersler') kmDerslerCiz();
             else if(s==='malzeme') kmMalzemeCiz();
             else if(s==='durus') kmDurusCiz();
+            else if(s==='yoklamaanaliz') kmYoklamaAnalizCiz();
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
@@ -10532,6 +10533,8 @@ ${(function(){
         // Tıklanınca AYNEN mevcut kmSekme(s) çağrılıyor — dispatch'e dokunulmadı.
         const KM_ARAC_LISTESI = [
             { id:'yoklama', ad:'Yoklama', grup:'yesil', icon:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 9l2 2 4-4"/>' },
+            // Yoklama Analizi (2026-09-28) — kod: public/dagsk-km-yoklama-analiz.js
+            { id:'yoklamaanaliz', ad:'Yoklama Analizi', grup:'yesil', icon:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
             { id:'skor', ad:'Skor Gir', grup:'birincil', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>' },
             { id:'lider', ad:'Liderlik', grup:'sari', icon:'<path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/>' },
             { id:'klasman', ad:'Klasman', grup:'sari', icon:'<path d="M5 19V13"/><path d="M12 19V8"/><path d="M19 19v-5"/>' },
@@ -10565,6 +10568,10 @@ ${(function(){
                 _kmListe.forEach(function(k){ let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null; if(kayit) { if(kayit.geldi === false) gelmeyen++; else gelen++; } });
                 let isaretsiz = _kmListe.length - gelen - gelmeyen;
                 return gelen + ' geldi' + (gelmeyen ? ' · ' + gelmeyen + ' gelmedi' : '') + (isaretsiz ? ' · ' + isaretsiz + ' işaretsiz' : ' · tamam ✓');
+            }
+            if(id === 'yoklamaanaliz') {
+                try { let sayi = 0, bugun = bugunISO(); Object.keys(otomatikYoklamaDB[bugun] || {}).forEach(function(ad){ if(otomatikYoklamaDB[bugun][ad].geldi !== false) sayi++; }); return 'Bugün ' + sayi + ' kişi · şu an hangi ders?'; } catch(e) {}
+                return 'Kim geldi, hangi ders ne kadar dolu';
             }
             if(id === 'dersakisi') {
                 let d = kmDaDurum(); if(!d.basladi) return 'Isınma · teknik · oyun · soğuma';
