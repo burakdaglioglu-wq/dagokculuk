@@ -60,6 +60,12 @@
   .bos-mesaj{ text-align:center; padding:26px 10px; color:var(--muted); }
   .alt-bilgi{ text-align:center; font-size:11px; color:var(--muted); }
   .hata{ text-align:center; padding:40px 16px; }
+  /* Milo (kulup=milo): sıcak siyah + turkuaz/mercan */
+  html[data-kulup="milo"]{ --orange:#FF6B5E; --green:#1FADA0; --gold:#FFC542; }
+  @media (prefers-color-scheme: dark){ html[data-kulup="milo"]{ --bg:#0B0A08; --panel:#171410; --panel2:#211D17; --border:#2D2820; --ink:#F5F3EC; --muted:#9C948A; } }
+  .beceri{ display:flex; flex-direction:column; gap:6px; }
+  .beceri div{ display:flex; justify-content:space-between; gap:8px; background:var(--panel2); border-radius:10px; padding:8px 10px; font-size:13px; }
+  .beceri em{ font-style:normal; font-weight:800; font-size:12px; }
 </style>
 </head>
 <body>
@@ -67,7 +73,9 @@
 <script>
 (function () {
   const GUN = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-  const q = new URLSearchParams(location.search), kod = q.get('kod');
+  const q = new URLSearchParams(location.search), kod = q.get('kod'), milo = q.get('kulup') === 'milo';
+  if (milo) { document.documentElement.dataset.kulup = 'milo'; document.title = 'Aylık Rapor — MILO FITT KIDS'; }
+  const KULUP = milo ? 'MILO FITT KIDS' : 'DAĞ Spor Kulübü', API = milo ? '/api/milo/veli-rapor/' : '/api/veli-rapor/';
   const bugun = new Date(); const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const bugunIso = iso(bugun), buAy = bugunIso.slice(0, 7);
   let ay = /^\d{4}-\d{2}$/.test(q.get('ay') || '') ? q.get('ay') : buAy;
@@ -79,7 +87,7 @@
 
   function yukle() {
     if (!kod) { sar.innerHTML = '<div class="kart hata">Bu link eksik görünüyor. Lütfen kulüpten gelen linki tekrar açın.</div>'; return; }
-    fetch('/api/veli-rapor/' + encodeURIComponent(kod) + '?ay=' + ay).then(r => { if (r.status === 404) throw 'kod'; if (!r.ok) throw 'ag'; return r.json(); })
+    fetch(API + encodeURIComponent(kod) + '?ay=' + ay).then(r => { if (r.status === 404) throw 'kod'; if (!r.ok) throw 'ag'; return r.json(); })
       .then(ciz).catch(e => { sar.innerHTML = '<div class="kart hata">' + (e === 'kod' ? 'Bu link artık geçerli değil. Lütfen kulüpten yeni link isteyin.' : 'Rapor yüklenemedi — internet bağlantınızı kontrol edip sayfayı yenileyin.') + '</div>'; });
   }
   function ciz(d) {
@@ -104,14 +112,15 @@
     let bosluk = (bas.getDay() + 6) % 7;
     let ileriYok = ay >= buAy;
     sar.innerHTML = `
-      <div class="ust"><div class="logo"><img src="/favicon.png" alt="">DAĞ Spor Kulübü</div><span class="alt">Aylık rapor</span></div>
-      <div class="kart"><h1>${esc(d.ad.split(' ').map(ilkHarfBuyuk).join(' '))}</h1><div class="alt">${esc(grupAd(d.grup))} · okçuluk</div></div>
+      <div class="ust"><div class="logo">${milo ? '' : '<img src="/favicon.png" alt="">'}${KULUP}</div><span class="alt">Aylık rapor</span></div>
+      <div class="kart"><h1>${esc(d.ad.split(' ').map(ilkHarfBuyuk).join(' '))}</h1><div class="alt">${esc(grupAd(d.grup))}${milo ? '' : ' · okçuluk'}</div></div>
       <div class="ay"><button onclick="__ay(-1)" aria-label="Önceki ay">‹</button><b>${esc(ayAdi)}</b><button onclick="__ay(1)" aria-label="Sonraki ay" ${ileriYok ? 'disabled' : ''}>›</button></div>
       <div class="sayilar">
         <div class="sayi"><small>Antrenmana geldi</small><b>${gelinen}</b><span>gün</span></div>
         <div class="sayi"><small>Ders günlerine katılım</small><b>${dersGunu.length ? '%' + Math.round(katildi / dersGunu.length * 100) : '—'}</b><span>${dersGunu.length ? katildi + ' / ' + dersGunu.length + ' ders günü' : 'bu ay ders günü yok'}</span></div>
-        <div class="sayi"><small>Atılan seri</small><b>${seriSay}</b><span>${okTop} ok</span></div>
-        <div class="sayi"><small>Seri ortalaması</small><b>${seriSay ? ort.toFixed(1).replace('.', ',') : '—'}</b><span>${seriSay ? 'en iyi seri ' + enIyi : 'henüz seri yok'}</span></div>
+        ${milo ? `<div class="sayi"><small>Öğrendiği beceri</small><b>${(d.beceri || []).filter(b => b.durum === 'ogrendi').length}</b><span>toplam</span></div>
+        <div class="sayi"><small>Gelişen beceri</small><b>${(d.beceri || []).filter(b => b.durum === 'gelisiyor').length}</b><span>üzerinde çalışılıyor</span></div>` : `<div class="sayi"><small>Atılan seri</small><b>${seriSay}</b><span>${okTop} ok</span></div>
+        <div class="sayi"><small>Seri ortalaması</small><b>${seriSay ? ort.toFixed(1).replace('.', ',') : '—'}</b><span>${seriSay ? 'en iyi seri ' + enIyi : 'henüz seri yok'}</span></div>`}
       </div>
       <div class="kart"><div class="etiket">Devam takvimi</div>
         <div class="takvim">${['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(g => `<span class="b">${g}</span>`).join('')}${'<span class="gun bos"></span>'.repeat(bosluk)}${gunler.map(g => {
@@ -119,10 +128,11 @@
           return `<span class="gun ${c}${g.t === bugunIso ? ' bugun' : ''}" title="${g.dt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}">${g.dt.getDate()}${geldi[g.t] && geldi[g.t] !== true ? `<small>${esc(geldi[g.t])}</small>` : ''}</span>`; }).join('')}</div>
         <div class="lej"><span><i style="background:var(--green)"></i>geldi</span><span><i style="background:var(--gecmedi); box-shadow:inset 0 0 0 1.5px var(--red)"></i>gelmedi</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--muted)"></i>ders günü</span><span><i style="background:var(--gunbos); opacity:.6"></i>iptal / ders yok</span></div></div>
       ${hk.length ? `<div class="kart"><div class="etiket">Haftalık seri ortalaması</div><div class="grafik">${hk.map(k => { let v = hafta[k].reduce((a, b) => a + b, 0) / hafta[k].length; return `<div><div class="sut" style="height:${Math.max(4, v / hmax * 100)}%"><em>${v.toFixed(0)}</em></div><small>${new Date(k + 'T12:00:00').getDate()} ${new Date(k + 'T12:00:00').toLocaleDateString('tr-TR', { month: 'short' })}</small></div>`; }).join('')}</div></div>` : ''}
+      ${milo && (d.beceri || []).some(b => b.durum !== 'henuz_degil') ? `<div class="kart"><div class="etiket">Beceri gelişimi</div><div class="beceri">${d.beceri.filter(b => b.durum !== 'henuz_degil').slice(0, 12).map(b => `<div><span>${esc(b.baslik)}</span><em style="color:${b.durum === 'ogrendi' ? 'var(--green)' : 'var(--gold)'}">${b.durum === 'ogrendi' ? '✓ Öğrendi' : '↗ Gelişiyor'}</em></div>`).join('')}</div></div>` : ''}
       ${d.dersler.length ? `<div class="kart"><div class="etiket">Kayıtlı olduğu dersler</div><div class="dersler">${d.dersler.map(s => `<div class="ders"><span class="saat">${esc(s.baslangicSaat)}</span><span><b>${s.gunler.map(g => GUN[g]).join(', ')}</b> · ${esc(s.baslangicSaat)}–${esc(s.bitisSaat)}${s.iptaller.length ? `<br><span class="alt">Bu ay ${s.iptaller.length} ders iptal edildi</span>` : ''}</span></div>`).join('')}</div></div>` : ''}
-      <div class="alt-bilgi">Bu sayfa yalnızca bu linke sahip kişiler içindir · DAĞ Spor Kulübü</div>`;
+      <div class="alt-bilgi">Bu sayfa yalnızca bu linke sahip kişiler içindir · ${KULUP}</div>`;
   }
-  window.__ay = f => { let yeni = ayKaydir(ay, f); if (yeni > buAy) return; ay = yeni; history.replaceState(null, '', '?kod=' + encodeURIComponent(kod) + '&ay=' + ay); sar.innerHTML = '<div class="kart bos-mesaj">Yükleniyor…</div>'; yukle(); };
+  window.__ay = f => { let yeni = ayKaydir(ay, f); if (yeni > buAy) return; ay = yeni; history.replaceState(null, '', '?' + (milo ? 'kulup=milo&' : '') + 'kod=' + encodeURIComponent(kod) + '&ay=' + ay); sar.innerHTML = '<div class="kart bos-mesaj">Yükleniyor…</div>'; yukle(); };
   yukle();
 })();
 </script>

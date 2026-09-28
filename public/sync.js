@@ -217,6 +217,17 @@
   }
 
   /* ===== Master blob fan-out (SET side) ===== */
+  // KVKK (2026-09-28): sunucu, girişsiz okumalarda kişisel alanları (veli adı/telefonu, doğum tarihi, notlar…)
+  // HİÇ göndermiyor (anahtar yok). Bu cihazda o alan HİÇ yoksa (undefined) sunucuya null YAZILMAZ — yoksa
+  // girişsiz açılmış bir cihaz, sonradan giriş yapıldığında gerçek telefonları boşlukla ezerdi. Bilerek
+  // silinen alan '' ya da null olarak cihazda durduğu için yine gönderilir.
+  const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek"];
+  function kisiselAlanlar(sp) {
+    const out = {};
+    KISISEL_ALANLAR.forEach((k) => { if (sp[k] !== undefined) out[k] = sp[k] ?? null; });
+    return out;
+  }
+
   // DÜZELTME (2026-09-10, DEVIR.md §9): eskiden HER job kendi .catch(() => {})'ine sahipti, bu yüzden
   // Promise.all(jobs) yazmalar %100 başarısız olsa BİLE HİÇ reddetmiyordu — bulutaGonderKontrol()'ün
   // .then() (BAŞARI) dalı sessizce çalışıp sonBulutJSON'ı güncelliyordu, sanki her şey gönderilmiş gibi.
@@ -261,13 +272,7 @@
                   kartGecmisi_json: JSON.stringify(sp.kartGecmisi || []),
                   gecmisSezonlar_json: JSON.stringify(sp.gecmisSezonlar || []),
                   detayliOklar_json: JSON.stringify(sp.detayliOklar || []),
-                  acilKisi: sp.acilKisi ?? null,
-                  acilTelefon: sp.acilTelefon ?? null,
-                  antrenmanNotu: sp.antrenmanNotu ?? null,
-                  genelNot: sp.genelNot ?? null,
-                  dogumTarihi: sp.dogumTarihi ?? null,
-                  katilmaTarihi: sp.katilmaTarihi ?? null,
-                  aileMeslek: sp.aileMeslek ?? null,
+                  ...kisiselAlanlar(sp),
                   biyomotorTestleri_json: JSON.stringify(sp.biyomotorTestleri || []),
                   ekipmanBilgisi_json: JSON.stringify(sp.ekipmanBilgisi || { nisangah: [], bakim: [], notlar: [] }),
                 },

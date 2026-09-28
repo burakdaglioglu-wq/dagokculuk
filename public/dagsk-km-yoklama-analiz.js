@@ -129,6 +129,13 @@ function kmYaCss() {
 .ya-gunhucre.bos { visibility:hidden; }
 .ya-gunhucre.iptal .ders { color:var(--status-danger); }
 @media (max-width: 640px) { .ya-gunhucre { min-height:54px; padding:4px 5px; } .ya-gunhucre > b { font-size:12px; } .ya-gunhucre .kisi { font-size:11px; } .ya-gunhucre .ders { display:none; } .ya-mod button { min-width:48px; padding:0 8px; } }
+.ya-isi { border-collapse:separate; border-spacing:4px; width:100%; min-width:420px; font-variant-numeric:tabular-nums; }
+.ya-isi th { font-size:11px; font-weight:800; color:var(--text-secondary); padding:2px 4px; text-align:center; }
+.ya-isi tbody th { text-align:right; white-space:nowrap; }
+.ya-isi td { border-radius:8px; padding:5px 4px; text-align:center; color:var(--text-primary); min-width:44px; }
+.ya-isi td b { display:block; font-size:13px; font-weight:900; }
+.ya-isi td small { display:block; font-size:9.5px; color:var(--text-secondary); font-weight:700; }
+.ya-isi td.bos { background:transparent; }
 .ya-dkart.duzenle { border:1.5px solid var(--accent); opacity:1; }
 .ya-ekle { display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:12px; background:color-mix(in srgb, var(--accent) 8%, var(--surface-1)); border:1px dashed color-mix(in srgb, var(--accent) 50%, transparent); }
 .ya-ekle .ya-ara { max-width:none; }
@@ -399,6 +406,7 @@ function kmYaSayilarHTML(tumKisiler, gunler, isoler, bugun) {
             <div class="ya-sayi"><small>Toplam giriş</small><b>${toplam}</b><span>tüm günler toplamı</span></div>
         </div>
         <div class="ya-kart"><div class="ya-etiket">Günlere göre gelen kişi — güne dokun, o günün derslerini aç</div><div class="ya-grafik${ayMod ? ' ay' : ''}">${grafik}</div></div>
+        ${kmYaDolulukHTML()}
         ${kmYaAidatDevamHTML(tumKisiler, isoler)}
         ${kmYaEgitmenHaftaHTML(gunler, isoler)}
         ${ayMod ? kmYaAyTrendHTML(sporcular) : kmYaTrendHTML(sporcular)}`;
@@ -1380,4 +1388,46 @@ function kmYaVeliRaporOnizle(key) { let k = kmYaAnahtar(key), link = _kmYaRaporL
 function kmYaVeliRaporKopyala(key) {
     let k = kmYaAnahtar(key), link = _kmYaRaporLink[k.g + '|' + k.ad]; if (!link) return;
     (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => showToast('Link kopyalandı 📋', 'success')).catch(() => showToast('Kopyalanamadı — linki kutudan seçip kopyala.', 'warning'));
+}
+
+// ---------------------------------------------------------------- 📈 ders doluluk analizi (2026-09-29)
+// Kullanıcı: "hangi ders sürekli dolu, hangisi yarı boş; hangi gün ve saatte talep fazla — yeni ders açma ya da
+// birleştirme kararı". Son 8 hafta (seçili dönemden bağımsız, bugüne kadar): her ders için kayıtlı/kapasite,
+// yapılan derslerde ortalama gelen, bekleme listesi; buna göre sade bir öneri. Altta gün × saat yoğunluğu.
+function kmYaDoluluk() {
+    let bugun = kmYaIso(new Date()), gunler = [];
+    for (let i = 0; i < 56; i++) { let d = new Date(); d.setDate(d.getDate() - i); gunler.push(d); }
+    return (_kmYa.slotlar || []).map(s => {
+        let kayitli = kmYaSlotSporcu(s), gs = kmYaSlotGunler(s), yapilan = 0, gel = 0;
+        gunler.forEach(d => { let iso = kmYaIso(d); if (!gs.includes(d.getDay()) || kmYaIptalMi(s, iso) || iso > bugun) return; yapilan++; gel += kayitli.filter(k => kmYaDurum(k, iso) === 'g').length; });
+        let ort = yapilan ? gel / yapilan : 0, kap = Number(s.kapasite) || 0, bekleyen = typeof kmYaBekleyenler === 'function' ? kmYaBekleyenler(s.id).length : 0;
+        let doluluk = kap ? kayitli.length / kap : null, katilim = yapilan && kayitli.length ? gel / (yapilan * kayitli.length) : null;
+        let oneri, seviye;
+        if (kap && kayitli.length >= kap && bekleyen) { oneri = `Dolu ve ${bekleyen} kişi bekliyor — aynı saate yeni bir ders açmayı düşün`; seviye = 'y'; }
+        else if (kap && kayitli.length >= kap) { oneri = 'Kontenjan dolu'; seviye = 'y'; }
+        else if (kap && kayitli.length / kap >= 0.8) { oneri = 'Dolmak üzere'; seviye = 't'; }
+        else if (yapilan >= 3 && kap && ort < kap * 0.4) { oneri = 'Derse gelen az — benzer saatteki bir dersle birleştirilebilir'; seviye = 'b'; }
+        else if (yapilan >= 3 && katilim !== null && katilim < 0.5) { oneri = 'Kayıtlı çok ama gelen az — devamsızlık var'; seviye = 't'; }
+        else { oneri = kap ? 'Yer var' : 'Kapasite girilmemiş'; seviye = 'g'; }
+        return { s, kayitli: kayitli.length, kap, doluluk, yapilan, ort, katilim, bekleyen, oneri, seviye };
+    }).sort((a, b) => (b.doluluk ?? -1) - (a.doluluk ?? -1) || b.ort - a.ort);
+}
+function kmYaDolulukHTML() {
+    let liste = kmYaDoluluk(); if (!liste.length) return '';
+    let renk = { y: 'var(--status-danger)', t: 'var(--status-warning, #d97706)', b: 'var(--status-info, #0ea5e9)', g: 'var(--status-success)' };
+    // gün × saat yoğunluğu: satır = ders başlangıç saati, sütun = gün, hücre = o saatteki derslerde ortalama gelen
+    let saatler = [...new Set(liste.map(o => o.s.baslangicSaat))].sort((a, b) => kmYaDk(a) - kmYaDk(b)), gunSira = [1, 2, 3, 4, 5, 6, 0];
+    let hucre = {}; liste.forEach(o => kmYaSlotGunler(o.s).forEach(g => { let k = o.s.baslangicSaat + '|' + g; (hucre[k] = hucre[k] || { ort: 0, kayitli: 0, n: 0 }); hucre[k].ort += o.ort; hucre[k].kayitli += o.kayitli; hucre[k].n++; }));
+    let hmax = Math.max(1, ...Object.values(hucre).map(h => h.ort));
+    let isi = `<div style="overflow-x:auto"><table class="ya-isi"><thead><tr><th></th>${gunSira.map(g => `<th>${KM_YA_GUN_KISA[g]}</th>`).join('')}</tr></thead><tbody>${saatler.map(sa => `<tr><th>${sa}</th>${gunSira.map(g => { let h = hucre[sa + '|' + g]; return h ? `<td style="background:color-mix(in srgb, var(--accent) ${Math.round(12 + 70 * h.ort / hmax)}%, var(--surface-2))" title="${h.n} ders · ${h.kayitli} kayıtlı · derste ort. ${h.ort.toFixed(1)} kişi"><b>${h.ort.toFixed(1).replace('.', ',')}</b><small>${h.kayitli} kayıtlı</small></td>` : '<td class="bos"></td>'; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+    return `<div class="ya-kart"><div class="ya-etiket">📈 Ders doluluğu — son 8 hafta</div>
+        ${(() => { let satir = o => { let dz = o.doluluk === null ? null : Math.round(o.doluluk * 100);
+            return `<div class="ya-ders"><div class="saat">${o.s.baslangicSaat}<small>${kmYaSlotGunler(o.s).map(x => KM_YA_GUN_KISA[x]).join(', ')}</small></div>
+            <div><b>${esc(kmYaSlotAd(o.s))}</b><div class="ya-alt">${o.kayitli} kayıtlı${o.kap ? ' / ' + o.kap + ' kapasite' : ''}${o.yapilan ? ` · derste ort. ${o.ort.toFixed(1).replace('.', ',')} kişi` : ' · son 8 haftada ders yapılmadı'}${o.bekleyen ? ` · ⏳ ${o.bekleyen} bekliyor` : ''}</div>
+                ${dz !== null ? `<div class="ya-bar" style="margin-top:6px"><i style="width:${Math.min(100, dz)}%; background:${renk[o.seviye]}"></i></div>` : ''}
+                <div class="ya-alt" style="margin-top:4px; color:${renk[o.seviye]}; font-weight:800">${esc(o.oneri)}</div></div>
+            <div class="oran">${dz !== null ? '%' + dz + '<small>dolu</small>' : '<small>—</small>'}</div></div>`; };
+            return liste.slice(0, 6).map(satir).join('') + (liste.length > 6 ? `<details class="ya-alt"><summary style="cursor:pointer; font-weight:800; padding:6px 0">Tüm dersler (${liste.length - 6} tane daha)</summary><div style="display:flex; flex-direction:column; gap:8px; margin-top:6px">${liste.slice(6).map(satir).join('')}</div></details>` : ''); })()}
+        <div class="ya-etiket" style="margin-top:6px">Gün × saat — derste ortalama gelen kişi</div>${isi}
+        <div class="ya-alt">Doluluk = kayıtlı / kapasite. Renk yoğunlaştıkça o saat daha kalabalık; yeni ders açacaksan önce oralara bak. Kapasiteyi Ders Programı'ndan girebilirsin.</div></div>`;
 }

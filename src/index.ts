@@ -36,6 +36,7 @@ import { registerMiloMemberSkillsRoutes } from "./routes/milo/memberSkills";
 import { registerMiloGunlukNotRoutes } from "./routes/milo/gunlukNot";
 import { registerMiloSporcuGirisiRoutes } from "./routes/milo/sporcuGirisi";
 import { registerMiloGruplarRoutes } from "./routes/milo/gruplar";
+import { registerMiloAraclarRoutes } from "./routes/milo/araclar";
 import { registerTanitimRoutes } from "./routes/tanitim";
 import { registerIhtiyacRoutes } from "./routes/ihtiyac";
 import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
@@ -77,6 +78,7 @@ registerMiloMemberSkillsRoutes(router);
 registerMiloGunlukNotRoutes(router);
 registerMiloSporcuGirisiRoutes(router);
 registerMiloGruplarRoutes(router);
+registerMiloAraclarRoutes(router);
 registerTanitimRoutes(router);
 registerIhtiyacRoutes(router);
 registerTeknikAnalizRoutes(router);
@@ -137,6 +139,13 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/milo/dues",
   "/api/milo/personnel",
   "/api/milo/attendance/personnel",
+  // KVKK (2026-09-28): Milo üye kartları veli telefonu, doğum tarihi, kilo, sağlık notu içeriyor — yalnızca
+  // antrenör girişinden sonra okunuyor (PIN'siz sporcu girişi kendi /sporcu-girisi ucunu kullanır).
+  "/api/milo/members",
+  "/api/milo/members/:grup/:ad",
+  "/api/milo/member-skills",
+  "/api/milo/gunluk-not/:tarih",
+  "/api/milo/meta/:key",
 ]);
 
 // "Kim ne yaptı" günlüğü: her yazma değil (senkron yüzlerce istek atıyor), yalnızca silmeler ve hassas

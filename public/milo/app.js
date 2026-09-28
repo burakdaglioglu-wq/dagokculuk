@@ -343,7 +343,7 @@ function miloYasHesapla(dogumTarihi) {
 function miloSekme(k) {
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach((b, i) => {
-        let keys = ['uyeler', 'aidat', 'yoklama', 'personel', 'program', 'ders', 'beceri'];
+        let keys = ['uyeler', 'aidat', 'yoklama', 'analiz', 'personel', 'program', 'ders', 'beceri'];
         b.classList.toggle('aktif', keys[i] === k);
     });
     miloSekmeYenile();
@@ -361,7 +361,8 @@ async function miloSekmeYenile() {
             let att = (await miloApi('/attendance/auto?tarih=' + encodeURIComponent(miloYoklamaTarih))).attendance;
             miloGunlukNot = (await miloApi('/gunluk-not/' + encodeURIComponent(miloYoklamaTarih))).notMetin || '';
             miloYoklamaCiz(att);
-        } else if (miloAktifSekme === 'personel') { miloPersonel = (await miloApi('/personnel')).personnel; miloPersonelCiz(); }
+        } else if (miloAktifSekme === 'analiz') { MA.ekran = null; MA.yuklendi = false; await maAnalizAc(); }
+        else if (miloAktifSekme === 'personel') { miloPersonel = (await miloApi('/personnel')).personnel; miloPersonelCiz(); }
         else if (miloAktifSekme === 'program') {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
             miloProgram = (await miloApi('/antrenman-programi')).slots;
@@ -487,13 +488,17 @@ async function miloUyeKaydet(eskiGrup, eskiAd) {
         let fields = { grup, sinif: null, cinsiyet, dogumTarihi, katilmaTarihi, aileMeslek, acilKisi, acilTelefon, antrenmanNotu, genelNot, boy, kilo, saglikNotu };
         let pasifEl = document.getElementById('milo-uf-pasif'); if (pasifEl) fields.pasif = pasifEl.checked ? 1 : 0;
         let muafEl = document.getElementById('milo-uf-muaf'); if (muafEl) fields.aidatMuaf = muafEl.checked ? 1 : 0;
-        if (grup !== eskiGrup) {
-            // basit senkron: grup degisimi upsert+delete olarak uygulanir (offline kuyruk yok, tek adimda)
-            await miloApi('/members', { method: 'POST', body: JSON.stringify({ grup, ad, cinsiyet, dogumTarihi, katilmaTarihi, aileMeslek, acilKisi, acilTelefon, antrenmanNotu, genelNot, boy, kilo, saglikNotu }) });
-            await miloApi(`/members/${encodeURIComponent(eskiGrup)}/${encodeURIComponent(eskiAd)}`, { method: 'DELETE' });
-        } else {
-            await miloApi(`/members/${encodeURIComponent(eskiGrup)}/${encodeURIComponent(eskiAd)}`, { method: 'PATCH', body: JSON.stringify(fields) });
+        if (grup !== eskiGrup || ad !== eskiAd) {
+            // 2026-09-29: veri kaybısız isim/grup değişimi — sunucuda /rename aidat, yoklama, beceri ve ders kayıtlarını
+            // yeni isme/gruba taşır. Eski yol (yeni üye aç + eskisini sil) bunları eski isimde kopuk bırakıyordu; sadece
+            // isim değişikliği ise hiç kaydedilmiyordu.
+            if (miloUyeler.some(u => u.grup === grup && u.ad === ad)) return showToast(`${ad} zaten ${grup} grubunda kayıtlı — Çift Kayıt'tan birleştir.`, 'warning');
+            let r = await fetch(`/api/milo/members/${encodeURIComponent(eskiGrup)}/${encodeURIComponent(eskiAd)}/rename`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-Dagsk-Oturum': miloOturumToken || '' }, body: JSON.stringify({ yeniAd: ad, yeniGrup: grup }) });
+            if (!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch (e) {} return showToast('Kaydedilemedi: ' + (t === 'target-exists' ? 'bu isim o grupta zaten var' : t || ('HTTP ' + r.status)) + ' — hiçbir şey değişmedi.', 'error'); }
+            try { if (typeof maTurTasi === 'function') maTurTasi(eskiGrup, eskiAd, grup, ad); } catch (e) {}
         }
+        delete fields.grup;
+        await miloApi(`/members/${encodeURIComponent(grup)}/${encodeURIComponent(ad)}`, { method: 'PATCH', body: JSON.stringify(fields) });
     } else {
         if (miloUyeler.some(u => u.grup === grup && u.ad === ad)) return showToast(`${ad} zaten ${grup} grubunda kayıtlı.`, 'warning');
         await miloApi('/members', { method: 'POST', body: JSON.stringify({ grup, ad, cinsiyet, dogumTarihi, katilmaTarihi, aileMeslek, acilKisi, acilTelefon, antrenmanNotu, genelNot, boy, kilo, saglikNotu }) });

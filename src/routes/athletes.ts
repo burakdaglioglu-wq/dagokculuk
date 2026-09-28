@@ -13,11 +13,27 @@ import { mergeAthlete, renameAthlete, tasimaKopuklari, tasimaOnar } from "../db/
 // genel kapıdan İSTİSNA tutulup burada ALAN bazında karar veriliyor.
 const OZ_SERVIS_ALANLARI = new Set<string>(["hazirOlma_json"]);
 
+// KVKK (2026-09-28): sporcu listesi PIN'siz ekranlar (skor girişi, Karışık Sınıf) için girişsiz okunabilmeli —
+// ama çocukların kişisel verileri (veli adı/telefonu, doğum tarihi, notlar, sağlık belgesi tarihleri, hazır olma
+// anketindeki sağlık/sakatlık bilgisi) yalnızca giriş yapmış yönetici/eğitmene gider. Alanlar null değil,
+// HİÇ gönderilmez: istemci (turnuvaDBMerge + sync.js kisiselAlanlar) "yok" ile "silindi"yi ayırt eder ve
+// girişsiz bir cihaz gerçek veriyi boşlukla ezemez. Sporcu giriş kodu (kod) PIN'siz sporcu girişi için kalır.
+const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek", "saglikRaporuBitis", "lisansBitis"] as const;
+function kisiselGizle(a: athletesDb.AthleteDTO): athletesDb.AthleteDTO {
+  const k = { ...a } as Record<string, unknown>;
+  KISISEL_ALANLAR.forEach((f) => { delete k[f]; });
+  const h = k.hazirOlma as { tarih?: string } | null | undefined;
+  // sporcunun kendi "bugün anketi doldurdum" kontrolü için yalnızca tarih kalır
+  k.hazirOlma = h && h.tarih ? { tarih: h.tarih, _gizli: true } : null;
+  return k as athletesDb.AthleteDTO;
+}
+
 export function registerAthleteRoutes(router: Router): void {
   router.get("/api/athletes", async (request, env) => {
     const grup = new URL(request.url).searchParams.get("grup") ?? undefined;
     const athletes = await athletesDb.listAthletes(env, grup);
-    return json({ athletes });
+    const oturum = await yetkiliOturum(request, env, false);
+    return json({ athletes: oturum ? athletes : athletes.map(kisiselGizle) });
   });
 
   router.get("/api/athletes/deleted", async (_request, env) => {
@@ -25,9 +41,10 @@ export function registerAthleteRoutes(router: Router): void {
     return json({ deleted });
   });
 
-  router.get("/api/athletes/:grup/:ad", async (_request, env, params) => {
+  router.get("/api/athletes/:grup/:ad", async (request, env, params) => {
     const athlete = await athletesDb.getAthlete(env, params.grup, params.ad);
-    return athlete ? json({ athlete }) : notFound("athlete not found");
+    if (!athlete) return notFound("athlete not found");
+    return json({ athlete: (await yetkiliOturum(request, env, false)) ? athlete : kisiselGizle(athlete) });
   });
 
   router.post("/api/athletes", async (request, env) => {
@@ -56,7 +73,7 @@ export function registerAthleteRoutes(router: Router): void {
     await broadcast(env, {
       type: "athlete-updated",
       deviceId: null,
-      payload: { grup: body.grup, ad: body.ad, fields: result.athlete ?? {}, lastModified: body.lastModified ?? Date.now() },
+      payload: { grup: body.grup, ad: body.ad, fields: result.athlete ? kisiselGizle(result.athlete) : {}, lastModified: body.lastModified ?? Date.now() },
     });
     return json({ applied: true, athlete: result.athlete });
   });
@@ -74,6 +91,10 @@ export function registerAthleteRoutes(router: Router): void {
     );
     if (invalid.length > 0) return badRequest(`invalid field(s): ${invalid.join(", ")}`);
 
+    // KVKK geçiş koruması: kişisel alanlara gelen null yok sayılır (girişsiz açılmış eski bir istemci "bende yok"u
+    // null olarak gönderip gerçek veriyi silmesin). Bilerek boşaltma '' ile gelir ve uygulanır.
+    for (const f of KISISEL_ALANLAR) if ((body.fields as Record<string, unknown>)[f] === null) delete (body.fields as Record<string, unknown>)[f];
+    if (Object.keys(body.fields).length === 0) return json({ applied: true });
     const sadeceOzServis = Object.keys(body.fields).every((f) => OZ_SERVIS_ALANLARI.has(f));
     if (!sadeceOzServis && !(await yetkiliOturum(request, env, false))) return unauthorized();
 
