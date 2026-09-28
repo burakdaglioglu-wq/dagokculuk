@@ -9676,7 +9676,10 @@ ${(function(){
             });
         }
         let _onayCb = null;
-        function onayIste(mesaj, cb, btnYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) b.innerText = btnYazi || 'Evet'; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'flex'; }
+        // DÜZELTME (2026-09-28, "birleştir onayında sadece İptal çıkıyor"): kendi düğmeleri olan akışlar (Kategori
+        // Taşı, aynı-isim uyarısı, misafir grup seçimi) Evet'i display:none yapıyordu ve hiçbir yer geri açmıyordu —
+        // sonraki TÜM onaylarda Evet kayboluyordu. Artık her açılışta: geri çağrı varsa görünür, yoksa gizli.
+        function onayIste(mesaj, cb, btnYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) { b.innerText = btnYazi || 'Evet'; b.style.display = typeof cb === 'function' ? '' : 'none'; } let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'flex'; }
         function onayKapat() { _onayCb = null; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'none'; }
         function onayOnayla() { let cb = _onayCb; onayKapat(); if(typeof cb === 'function') { try { cb(); } catch(e) {} } }
         // İşlem yükleniyor bindirmesi — uzun sürebilecek senkron işler (ör. kmDersiBitir'in tüm kulüp
