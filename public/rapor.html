@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aylık Rapor — DAĞ S.K.</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.png">
+<style>
+  /* Veliye aylık rapor (2026-09-28) — /api/veli-rapor/:kod. Canlı İzleme (izle.html) ile aynı kod ve görsel dil. */
+  :root{
+    --bg:#f6f4f1; --panel:#ffffff; --panel2:#f1eee9; --border:rgba(20,16,10,0.10);
+    --ink:#1b1712; --muted:#6f685e; --orange:#e2560d; --cyan:#0891b2; --green:#16a34a; --red:#dc2626; --gold:#b7791f;
+    --gunbos:#ece8e1; --gecmedi:#fde8e8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0a0b10; --panel:rgba(255,255,255,0.045); --panel2:rgba(255,255,255,0.07); --border:rgba(255,255,255,0.11);
+      --ink:#f2f4f8; --muted:#8d96a8; --orange:#ff6a1a; --cyan:#00e5ff; --green:#22c55e; --red:#f87171; --gold:#f5c04a;
+      --gunbos:rgba(255,255,255,0.05); --gecmedi:rgba(248,113,113,0.12); }
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:-apple-system,'Segoe UI',system-ui,sans-serif; padding:20px 16px 40px; }
+  .sar{ max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .ust{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .logo{ display:flex; align-items:center; gap:8px; font-weight:900; letter-spacing:.02em; }
+  .logo img{ height:26px; }
+  .kart{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:16px; }
+  h1{ font-size:22px; margin:0; line-height:1.2; }
+  .alt{ color:var(--muted); font-size:13px; }
+  .ay{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ay button{ min-width:44px; min-height:44px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--ink); font-size:18px; font-weight:900; cursor:pointer; }
+  .ay button:disabled{ opacity:.35; cursor:default; }
+  .ay b{ font-size:16px; text-transform:capitalize; }
+  .sayilar{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+  .sayi{ background:var(--panel2); border-radius:14px; padding:12px; }
+  .sayi small{ display:block; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .sayi b{ display:block; font-size:28px; font-weight:900; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .sayi span{ font-size:12px; color:var(--muted); }
+  .etiket{ font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .takvim{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:5px; }
+  .takvim .b{ text-align:center; font-size:11px; font-weight:800; color:var(--muted); }
+  .gun{ aspect-ratio:1; border-radius:10px; background:var(--gunbos); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:13px; font-weight:800; position:relative; }
+  .gun small{ font-size:9px; font-weight:700; opacity:.8; }
+  .gun.geldi{ background:var(--green); color:#fff; }
+  .gun.gelmedi{ background:var(--gecmedi); color:var(--red); box-shadow:inset 0 0 0 1.5px var(--red); }
+  .gun.dersgunu{ box-shadow:inset 0 0 0 1.5px var(--muted); }
+  .gun.iptal{ text-decoration:line-through; opacity:.5; }
+  .gun.bugun{ outline:2px solid var(--orange); outline-offset:1px; }
+  .gun.bos{ visibility:hidden; }
+  .lej{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; color:var(--muted); }
+  .lej i{ display:inline-block; width:12px; height:12px; border-radius:4px; vertical-align:-2px; margin-right:4px; }
+  .dersler{ display:flex; flex-direction:column; gap:8px; }
+  .ders{ display:flex; align-items:center; gap:12px; background:var(--panel2); border-radius:12px; padding:10px 12px; }
+  .ders .saat{ font-weight:900; font-variant-numeric:tabular-nums; min-width:58px; }
+  .grafik{ display:flex; align-items:flex-end; gap:6px; height:120px; padding-top:18px; }
+  .grafik div{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; }
+  .grafik .sut{ width:100%; max-width:34px; background:var(--orange); border-radius:6px 6px 2px 2px; position:relative; min-height:3px; }
+  .grafik .sut em{ position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-style:normal; font-size:11px; font-weight:900; color:var(--ink); }
+  .grafik small{ font-size:10px; color:var(--muted); font-weight:700; }
+  .bos-mesaj{ text-align:center; padding:26px 10px; color:var(--muted); }
+  .alt-bilgi{ text-align:center; font-size:11px; color:var(--muted); }
+  .hata{ text-align:center; padding:40px 16px; }
+</style>
+</head>
+<body>
+<div class="sar" id="sar"><div class="kart bos-mesaj">Rapor yükleniyor…</div></div>
+<script>
+(function () {
+  const GUN = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const q = new URLSearchParams(location.search), kod = q.get('kod');
+  const bugun = new Date(); const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const bugunIso = iso(bugun), buAy = bugunIso.slice(0, 7);
+  let ay = /^\d{4}-\d{2}$/.test(q.get('ay') || '') ? q.get('ay') : buAy;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const sar = document.getElementById('sar');
+  const ayKaydir = (a, f) => { let [y, m] = a.split('-').map(Number); let d = new Date(y, m - 1 + f, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+  const ilkHarfBuyuk = s => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1).toLocaleLowerCase('tr-TR');
+  const grupAd = g => ({ buyukler: 'Büyükler', yildizlar: 'Yıldızlar', kucukler: 'Küçükler', minikler: 'Minikler' })[g] || g;
+
+  function yukle() {
+    if (!kod) { sar.innerHTML = '<div class="kart hata">Bu link eksik görünüyor. Lütfen kulüpten gelen linki tekrar açın.</div>'; return; }
+    fetch('/api/veli-rapor/' + encodeURIComponent(kod) + '?ay=' + ay).then(r => { if (r.status === 404) throw 'kod'; if (!r.ok) throw 'ag'; return r.json(); })
+      .then(ciz).catch(e => { sar.innerHTML = '<div class="kart hata">' + (e === 'kod' ? 'Bu link artık geçerli değil. Lütfen kulüpten yeni link isteyin.' : 'Rapor yüklenemedi — internet bağlantınızı kontrol edip sayfayı yenileyin.') + '</div>'; });
+  }
+  function ciz(d) {
+    let [y, m] = ay.split('-').map(Number), gunSay = new Date(y, m, 0).getDate(), bas = new Date(y, m - 1, 1);
+    let ayAdi = bas.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    let geldi = {}, gelmedi = {};
+    d.yoklama.forEach(r => { if (r.geldi) geldi[r.tarih] = r.saat || true; else gelmedi[r.tarih] = true; });
+    let iptal = {}; d.dersler.forEach(s => s.iptaller.forEach(t => { iptal[t] = (iptal[t] || 0) + 1; }));
+    let gunler = [];
+    for (let i = 1; i <= gunSay; i++) {
+      let dt = new Date(y, m - 1, i), t = iso(dt), gd = dt.getDay();
+      let dersVar = d.dersler.filter(s => s.gunler.includes(gd) && !s.iptaller.includes(t)).length;
+      gunler.push({ t, dt, dersVar, iptalOldu: d.dersler.some(s => s.gunler.includes(gd)) && !dersVar && iptal[t] });
+    }
+    let dersGunu = gunler.filter(g => g.dersVar && g.t <= bugunIso), katildi = dersGunu.filter(g => geldi[g.t]).length;
+    let gelinen = Object.keys(geldi).length;
+    let seri = d.seriler, seriSay = seri.length, ort = seriSay ? seri.reduce((a, s) => a + (s.puan || 0), 0) / seriSay : 0, enIyi = seriSay ? Math.max(...seri.map(s => s.puan || 0)) : 0, okTop = seri.reduce((a, s) => a + (s.okSay || 0), 0);
+    // haftalık ortalama seri puanı (grafik)
+    let hafta = {};
+    seri.forEach(s => { let dt = new Date(s.tarih + 'T12:00:00'), pzt = new Date(dt); pzt.setDate(dt.getDate() - (dt.getDay() + 6) % 7); let k = iso(pzt); (hafta[k] = hafta[k] || []).push(s.puan || 0); });
+    let hk = Object.keys(hafta).sort(), hmax = Math.max(1, ...hk.map(k => hafta[k].reduce((a, b) => a + b, 0) / hafta[k].length));
+    let bosluk = (bas.getDay() + 6) % 7;
+    let ileriYok = ay >= buAy;
+    sar.innerHTML = `
+      <div class="ust"><div class="logo"><img src="/favicon.png" alt="">DAĞ Spor Kulübü</div><span class="alt">Aylık rapor</span></div>
+      <div class="kart"><h1>${esc(d.ad.split(' ').map(ilkHarfBuyuk).join(' '))}</h1><div class="alt">${esc(grupAd(d.grup))} · okçuluk</div></div>
+      <div class="ay"><button onclick="__ay(-1)" aria-label="Önceki ay">‹</button><b>${esc(ayAdi)}</b><button onclick="__ay(1)" aria-label="Sonraki ay" ${ileriYok ? 'disabled' : ''}>›</button></div>
+      <div class="sayilar">
+        <div class="sayi"><small>Antrenmana geldi</small><b>${gelinen}</b><span>gün</span></div>
+        <div class="sayi"><small>Ders günlerine katılım</small><b>${dersGunu.length ? '%' + Math.round(katildi / dersGunu.length * 100) : '—'}</b><span>${dersGunu.length ? katildi + ' / ' + dersGunu.length + ' ders günü' : 'bu ay ders günü yok'}</span></div>
+        <div class="sayi"><small>Atılan seri</small><b>${seriSay}</b><span>${okTop} ok</span></div>
+        <div class="sayi"><small>Seri ortalaması</small><b>${seriSay ? ort.toFixed(1).replace('.', ',') : '—'}</b><span>${seriSay ? 'en iyi seri ' + enIyi : 'henüz seri yok'}</span></div>
+      </div>
+      <div class="kart"><div class="etiket">Devam takvimi</div>
+        <div class="takvim">${['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(g => `<span class="b">${g}</span>`).join('')}${'<span class="gun bos"></span>'.repeat(bosluk)}${gunler.map(g => {
+          let c = geldi[g.t] ? 'geldi' : gelmedi[g.t] ? 'gelmedi' : g.iptalOldu ? 'iptal' : (g.dersVar && g.t <= bugunIso ? 'dersgunu' : '');
+          return `<span class="gun ${c}${g.t === bugunIso ? ' bugun' : ''}" title="${g.dt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}">${g.dt.getDate()}${geldi[g.t] && geldi[g.t] !== true ? `<small>${esc(geldi[g.t])}</small>` : ''}</span>`; }).join('')}</div>
+        <div class="lej"><span><i style="background:var(--green)"></i>geldi</span><span><i style="background:var(--gecmedi); box-shadow:inset 0 0 0 1.5px var(--red)"></i>gelmedi</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--muted)"></i>ders günü</span><span><i style="background:var(--gunbos); opacity:.6"></i>iptal / ders yok</span></div></div>
+      ${hk.length ? `<div class="kart"><div class="etiket">Haftalık seri ortalaması</div><div class="grafik">${hk.map(k => { let v = hafta[k].reduce((a, b) => a + b, 0) / hafta[k].length; return `<div><div class="sut" style="height:${Math.max(4, v / hmax * 100)}%"><em>${v.toFixed(0)}</em></div><small>${new Date(k + 'T12:00:00').getDate()} ${new Date(k + 'T12:00:00').toLocaleDateString('tr-TR', { month: 'short' })}</small></div>`; }).join('')}</div></div>` : ''}
+      ${d.dersler.length ? `<div class="kart"><div class="etiket">Kayıtlı olduğu dersler</div><div class="dersler">${d.dersler.map(s => `<div class="ders"><span class="saat">${esc(s.baslangicSaat)}</span><span><b>${s.gunler.map(g => GUN[g]).join(', ')}</b> · ${esc(s.baslangicSaat)}–${esc(s.bitisSaat)}${s.iptaller.length ? `<br><span class="alt">Bu ay ${s.iptaller.length} ders iptal edildi</span>` : ''}</span></div>`).join('')}</div></div>` : ''}
+      <div class="alt-bilgi">Bu sayfa yalnızca bu linke sahip kişiler içindir · DAĞ Spor Kulübü</div>`;
+  }
+  window.__ay = f => { let yeni = ayKaydir(ay, f); if (yeni > buAy) return; ay = yeni; history.replaceState(null, '', '?kod=' + encodeURIComponent(kod) + '&ay=' + ay); sar.innerHTML = '<div class="kart bos-mesaj">Yükleniyor…</div>'; yukle(); };
+  yukle();
+})();
+</script>
+</body>
+</html>

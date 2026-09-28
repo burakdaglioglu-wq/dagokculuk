@@ -2220,6 +2220,8 @@
                     <button onclick="personelPDF()" style="background:var(--accent-orange); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:bold; font-size:12px;">📄 Bordro PDF İndir</button>
                 </div>
             </details>`;
+            // 2026-09-28: ders başı ücret + ders bazlı bordro (dagsk-kisi-yonetimi.js egBordro*)
+            try { if(typeof egBordroHTML === 'function') html += egBordroHTML(ay); } catch(e) {}
 
             alan.innerHTML = html;
         }
@@ -10502,13 +10504,33 @@ ${(function(){
             else if(s==='fitness') kmFitnessCiz();
             else if(s==='kelime') kmKelimeCiz();
             else if(s==='dersakisi') kmDersAkisiCiz();
-            else if(s==='resmitur') kmResmiTurCiz();
-            else if(s==='okanaliz') kmOkAnaliziCiz();
-            else if(s==='baski') kmBaskiCiz();
-            else if(s==='dersler') kmDerslerCiz();
-            else if(s==='malzeme') kmMalzemeCiz();
-            else if(s==='durus') kmDurusCiz();
-            else if(s==='yoklamaanaliz') kmYoklamaAnalizCiz();
+            else if(s==='resmitur') kmEkCalistir('dagsk-performans.js', 'kmResmiTurCiz');
+            else if(s==='okanaliz') kmEkCalistir('dagsk-performans.js', 'kmOkAnaliziCiz');
+            else if(s==='baski') kmEkCalistir('dagsk-performans.js', 'kmBaskiCiz');
+            else if(s==='dersler') kmEkCalistir('dagsk-km-rehber.js', 'kmDerslerCiz');
+            else if(s==='malzeme') kmEkCalistir('dagsk-km-rehber.js', 'kmMalzemeCiz');
+            else if(s==='durus') kmEkCalistir('dagsk-km-rehber.js', 'kmDurusCiz');
+            else if(s==='yoklamaanaliz') kmEkCalistir('dagsk-km-yoklama-analiz.js', 'kmYoklamaAnalizCiz');
+        }
+        // Hafifletme (2026-09-28): yalnızca bu Karışık Sınıf araçlarında kullanılan ek dosyalar (performans,
+        // rehber, yoklama ~250 KB) açılışta değil, araç İLK açıldığında yüklenir. Service worker önbelleğinde
+        // (CORE_URLS) kaldıkları için çevrimdışı da açılırlar. Diğer yerlerdeki çağrıları zaten try içinde.
+        let _dagskEk = {};
+        function dagskEkYukle(dosya) {
+            if(_dagskEk[dosya]) return _dagskEk[dosya];
+            _dagskEk[dosya] = new Promise(function(ok, hata) {
+                let sc = document.createElement('script'); sc.src = dosya;
+                sc.onload = ok; sc.onerror = function() { delete _dagskEk[dosya]; hata(); };
+                document.body.appendChild(sc);
+            });
+            return _dagskEk[dosya];
+        }
+        function kmEkCalistir(dosya, fnAd) {
+            if(typeof window[fnAd] === 'function') { window[fnAd](); return; }
+            let ic = document.getElementById('km-icerik'); if(ic) ic.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-muted);">Yükleniyor…</div>';
+            let hedef = _kmAktifSekme;
+            dagskEkYukle(dosya).then(function() { if(_kmAktifSekme === hedef && typeof window[fnAd] === 'function') window[fnAd](); })
+                .catch(function() { if(ic) ic.innerHTML = '<div style="padding:30px; text-align:center; color:var(--neon-red);">Araç yüklenemedi — bağlantını kontrol edip tekrar dene.</div>'; });
         }
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).

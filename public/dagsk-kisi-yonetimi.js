@@ -50,11 +50,11 @@ function kyAnahtar(g, ad) { return g + '|' + ad; }
 // Kişisel notlar (misafir telefonu, not) AYRI ve oturumlu meta kaydında ("kisi_notlari" — sunucu okuma+yazma için
 // giriş ister). Kişi türü kaydı PIN'siz Karışık Sınıf'ta da okunduğu için telefon/not ORAYA yazılmaz.
 let _kisiNot = kyDepoOku('kisi_notlari');
-const KY_NOT_ALANLARI = ['tel', 'not'];
+const KY_NOT_ALANLARI = ['tel', 'not', 'takip'];
 function kyOturumVar() { try { return typeof _oturumToken !== 'undefined' && !!_oturumToken; } catch (e) { return false; } }
 function kisiBilgi(g, ad) {
     let k = kyAnahtar(g, ad), a = _kisiTur[k], b = _kisiNot[k];
-    return a || b ? Object.assign({}, a || {}, b ? { tel: b.tel, not: b.not } : {}) : null;
+    return a || b ? Object.assign({}, a || {}, b ? { tel: b.tel, not: b.not, takip: b.takip } : {}) : null;
 }
 function kisiTuru(g, ad) { let b = _kisiTur[kyAnahtar(g, ad)]; return b && KY_TUR[b.tur] ? b.tur : 'sporcu'; }
 function kyNotSenkron(yaz) {
@@ -483,24 +483,69 @@ function kyEgitmenHTML(liste) {
                 <div class="ky-eylem"><button class="ky-btn" onclick="kyTurDegistir('${kk}','sporcu')">🎯 Öğrenci yap</button></div></div>`; }).join('') || '<div class="ky-bos">Henüz eğitmen olarak işaretlenmiş kayıt yok.<br>Üstteki <b>🔎 Tür ata</b> sekmesinden kendi kaydınızı bulup <b>👔 Eğitmen</b> yapın.</div>'}</div></div>`;
 }
 function kyMisafirHTML(liste) {
+    let takipHTML = kyMisafirTakipHTML(liste);
     liste = liste.map(x => Object.assign({ o: kyOzet(x.g, x.ad), b: kisiBilgi(x.g, x.ad) || {} }, x)).sort((a, b) => String(b.o.son || b.b.eklenme || '').localeCompare(String(a.o.son || a.b.eklenme || '')));
     let form = _ky.misafirForm ? `<div class="ky-kart"><div class="ky-etiket">Yeni misafir kaydı</div>
         <div class="ky-form" id="ky-mis-form"><input name="ad" placeholder="Ad Soyad" autocomplete="off"><select name="grup">${['buyukler', 'yildizlar', 'kucukler', 'minikler'].map(g => `<option value="${g}">${esc(kyGrupAd(g))}</option>`).join('')}</select>
             <input name="tel" placeholder="Telefon (isteğe bağlı)" inputmode="tel"><textarea name="not" placeholder="Kim? Nereden geldi, kimin yakını, hangi gün deneme dersi… (isteğe bağlı)"></textarea></div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;"><button class="ky-btn yesil" onclick="kyMisafirEkle()">✅ Misafiri kaydet</button><button class="ky-btn" onclick="kyMisafirEkle(true)">✅ Kaydet ve bugün geldi işaretle</button><button class="ky-btn" onclick="_ky.misafirForm=false; kyKisilerCiz()">Vazgeç</button></div></div>`
         : `<div><button class="ky-btn birincil" onclick="_ky.misafirForm=true; kyKisilerCiz(); setTimeout(()=>{let i=document.querySelector('#ky-mis-form [name=ad]'); if(i) i.focus();},30)">➕ Yeni misafir kaydı</button></div>`;
-    return `${form}<div class="ky-kart"><div class="ky-alt">Günlük / deneme dersine gelenler. Geldiği günler yoklamadan otomatik görünür. Sürekli gelmeye başlayınca <b>⭐ Aktif sporcu yap</b> — tüm geçmişiyle öğrenci olur.</div>
+    return `${form}${takipHTML}<div class="ky-kart"><div class="ky-alt">Günlük / deneme dersine gelenler. Geldiği günler yoklamadan otomatik görünür. Sürekli gelmeye başlayınca <b>⭐ Aktif sporcu yap</b> — tüm geçmişiyle öğrenci olur.</div>
         <div class="ky-liste">${liste.map(x => {
             let kk = kyKaydirKey(x.g, x.ad), key = kyAnahtar(x.g, x.ad), duz = _ky.duzenle === 'mis:' + key;
             return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad">${esc(x.ad)}</div>
                 <div class="ky-bilgi"><span class="ky-cip" style="color:${kyGrupRenk(x.g)}">${esc(kyGrupAd(x.g))}</span>${x.b.eklenme ? `<span>kayıt: <b>${kyTarih(x.b.eklenme)}</b></span>` : ''}<span><b>${x.o.yoklama}</b> kez geldi</span><span>son: <b>${kyTarih(x.o.son)}</b></span>${x.b.tel ? `<span>📞 <b>${esc(x.b.tel)}</b></span>` : ''}</div>
                 ${x.b.not ? `<div class="ky-alt" style="margin-top:4px">📝 ${esc(x.b.not)}</div>` : ''}
                 ${x.o.gunler.length ? `<div class="ky-gunler" style="margin-top:6px">${x.o.gunler.slice(-8).reverse().map(t => `<span>${kyTarih(t)}</span>`).join('')}</div>` : ''}</div>
-                <div class="ky-eylem"><button class="ky-btn" onclick="kyMisafirBilgiAc('${kk}')">📝 Bilgi</button><button class="ky-btn yesil" onclick="kyMisafirAktifYap('${kk}')">⭐ Aktif sporcu yap</button></div>
+                <div class="ky-eylem">${kyTakipCipHTML(x.b.takip)}<button class="ky-btn" onclick="kyMisafirBilgiAc('${kk}')">📝 Bilgi</button><button class="ky-btn yesil" onclick="kyMisafirAktifYap('${kk}')">⭐ Aktif sporcu yap</button></div>
                 ${duz ? `<div class="ky-duz ky-form" style="display:grid"><input id="ky-mis-tel" placeholder="Telefon" value="${esc(x.b.tel || '')}" style="text-transform:none"><textarea id="ky-mis-not" placeholder="Kim? Nereden geldi?">${esc(x.b.not || '')}</textarea>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; grid-column:1/-1"><button class="ky-btn yesil" onclick="kyMisafirBilgiKaydet('${kk}')">💾 Kaydet</button><button class="ky-btn" onclick="kyDuzenleAc('${kk}'); _ky.kisiSekme='misafir'">✏️ Adını düzelt</button><button class="ky-btn tehlike" onclick="kyMisafirSil('${kk}')">🗑️ Kaydı sil</button></div></div>` : ''}
                 ${_ky.duzenle === key ? kyAdDuzenleSatiri(kk, x.ad) : ''}</div>`;
         }).join('') || '<div class="ky-bos">Misafir kaydı yok. Günlük gelen biri için yukarıdan <b>➕ Yeni misafir kaydı</b> aç, ya da mevcut bir kaydı <b>🔎 Tür ata</b> sekmesinden misafir yap.</div>'}</div></div>`;
+}
+// ---- 📈 Misafirden üyeye takip (2026-09-28): deneme dersine gelenlerin kaçı üye oldu, kimi henüz aramadın.
+// Takip durumu oturumlu not kaydında (takip: {durum:'arandi'|'ilgilenmiyor'|'uye', tarih}); yoksa "aranmadı".
+const KY_TAKIP = { arandi: { ad: 'Arandı', renk: '#38bdf8' }, ilgilenmiyor: { ad: 'İlgilenmiyor', renk: '#94a3b8' }, uye: { ad: 'Üye oldu', renk: '#16a34a' } };
+function kyGunFark(iso) { return iso ? Math.round((new Date(bugunISO() + 'T12:00:00') - new Date(iso + 'T12:00:00')) / 86400000) : null; }
+function kyTakipCipHTML(t) {
+    let d = t && KY_TAKIP[t.durum];
+    return d ? `<span class="ky-cip" style="color:${d.renk}; border-color:${d.renk}66">${d.ad}${t.tarih ? ' · ' + kyTarih(t.tarih) : ''}</span>` : '<span class="ky-cip" style="color:var(--status-warning,#d97706)">Aranmadı</span>';
+}
+function kyMisafirTakipHTML(misafirler) {
+    let sinir = new Date(); sinir.setDate(sinir.getDate() - 90); let s90 = sinir.getFullYear() + '-' + String(sinir.getMonth() + 1).padStart(2, '0') + '-' + String(sinir.getDate()).padStart(2, '0');
+    // son 90 günde gelen tüm misafirler: hâlâ misafir olanlar + misafirken üye olanlar (kişi türünde aktifOldu)
+    let donusen = kyTumKisiler().filter(x => { let b = kisiBilgi(x.g, x.ad); return b && b.aktifOldu && b.aktifOldu >= s90 && kisiTuru(x.g, x.ad) === 'sporcu'; });
+    let toplam = misafirler.filter(x => { let b = kisiBilgi(x.g, x.ad) || {}, o = kyOzet(x.g, x.ad); return (b.eklenme || o.son || '') >= s90; }).length + donusen.length;
+    let aranacak = misafirler.map(x => Object.assign({ b: kisiBilgi(x.g, x.ad) || {}, o: kyOzet(x.g, x.ad) }, x))
+        .filter(x => !(x.b.takip && KY_TAKIP[x.b.takip.durum]) && (x.o.son || x.b.eklenme))
+        .map(x => Object.assign({ gun: kyGunFark(x.o.son || x.b.eklenme) }, x)).filter(x => x.gun >= 1).sort((a, b) => b.gun - a.gun);
+    let oran = toplam ? Math.round(donusen.length / toplam * 100) : null;
+    return `<div class="ky-kart"><div class="ky-etiket">📈 Misafirden üyeye — son 90 gün</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+            <div class="ky-oneri" style="border-style:solid"><span class="ky-alt">Gelen misafir</span><b style="font-size:24px">${toplam}</b></div>
+            <div class="ky-oneri" style="border-style:solid"><span class="ky-alt">Üye oldu</span><b style="font-size:24px; color:var(--status-success,#16a34a)">${donusen.length}</b></div>
+            <div class="ky-oneri" style="border-style:solid"><span class="ky-alt">Dönüşüm</span><b style="font-size:24px">${oran === null ? '—' : '%' + oran}</b></div>
+            <div class="ky-oneri" style="border-style:solid"><span class="ky-alt">Aranacak</span><b style="font-size:24px; color:${aranacak.length ? 'var(--status-warning,#d97706)' : 'inherit'}">${aranacak.length}</b></div>
+        </div>
+        ${aranacak.length ? `<div class="ky-etiket" style="margin-top:4px">📞 Aranmayı bekleyenler</div><div class="ky-liste">${aranacak.map(x => { let kk = kyKaydirKey(x.g, x.ad);
+            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad">${esc(x.ad)}</div><div class="ky-bilgi"><span>${x.o.yoklama ? `<b>${x.o.yoklama}</b> kez geldi · son geliş <b>${x.gun} gün önce</b>` : `kayıt <b>${x.gun} gün önce</b>`}</span>${x.b.tel ? `<span>📞 <b>${esc(x.b.tel)}</b></span>` : '<span>telefon yok</span>'}</div></div>
+                <div class="ky-eylem"><button class="ky-btn yesil" onclick="kyMisafirWhatsApp('${kk}')">💬 WhatsApp</button><button class="ky-btn" onclick="kyTakip('${kk}','arandi')">✓ Arandı</button><button class="ky-btn" onclick="kyTakip('${kk}','ilgilenmiyor')">İlgilenmiyor</button></div></div>`; }).join('')}</div>` : '<div class="ky-alt">✅ Aranmayı bekleyen misafir yok.</div>'}
+        ${donusen.length ? `<div class="ky-alt">⭐ Üye olanlar: ${donusen.map(x => `<b>${esc(x.ad)}</b> (${kyTarih(kisiBilgi(x.g, x.ad).aktifOldu)})`).join(', ')}</div>` : ''}</div>`;
+}
+function kyTakip(kk, durum) {
+    let k = kyKeyCoz(kk);
+    kisiTurAyarla(k.g, k.ad, { takip: { durum, tarih: bugunISO() } });
+    showToast(`${k.ad} → ${KY_TAKIP[durum].ad}`, 'success'); kyKisilerCiz();
+}
+function kyMisafirWhatsApp(kk) {
+    let k = kyKeyCoz(kk), b = kisiBilgi(k.g, k.ad) || {};
+    let ilk = k.ad.split(' ')[0], ilkB = ilk.charAt(0) + ilk.slice(1).toLocaleLowerCase('tr-TR');
+    let msg = `Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkB} okçuluk dersimize katıldığı için çok teşekkür ederiz! 🏹 Nasıl buldu, devam etmek ister mi?\n\nDers günlerimizi, saatlerimizi ve kayıt bilgilerini paylaşmaktan memnuniyet duyarız — buradan yazmanız yeterli.\n\nDAĞ Spor Kulübü`;
+    let numara = typeof telefonWaFormat === 'function' ? telefonWaFormat(b.tel) : '';
+    window.open((numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank');
+    // mesaj açıldıysa "arandı" say (yanlışsa kartta tek dokunuşla değiştirilebilir)
+    kisiTurAyarla(k.g, k.ad, { takip: { durum: 'arandi', tarih: bugunISO(), kanal: 'whatsapp' } });
+    kyKisilerCiz();
 }
 function kyAdDuzenleSatiri(kk, ad) {
     return `<div class="ky-duz"><input id="ky-duz-ad" value="${esc(ad)}" aria-label="Yeni isim" onkeydown="if(event.key==='Enter') kyDuzenleKaydet('${kk}'); if(event.key==='Escape') kyDuzenleAc(null);">
@@ -569,7 +614,7 @@ function kyMisafirAktifYap(kk) {
 }
 function kyMisafirAktifYapGrup(kk, yeniGrup) {
     let k = kyKeyCoz(kk);
-    let bitir = (g, ad) => { kisiTurAyarla(g, ad, { tur: 'sporcu', aktifOldu: bugunISO() }); showToast(`⭐ ${ad} artık aktif sporcu (${kyGrupAd(g)}).`, 'success'); try { sporcuListesiniYenile(); siralamaListesiDoldur(); } catch (e) {} kyKisilerCiz(); };
+    let bitir = (g, ad) => { kisiTurAyarla(g, ad, { tur: 'sporcu', aktifOldu: bugunISO(), takip: { durum: 'uye', tarih: bugunISO() } }); showToast(`⭐ ${ad} artık aktif sporcu (${kyGrupAd(g)}).`, 'success'); try { sporcuListesiniYenile(); siralamaListesiDoldur(); } catch (e) {} kyKisilerCiz(); };
     if (yeniGrup === k.g) return bitir(k.g, k.ad);
     if (turnuvaDB[yeniGrup] && turnuvaDB[yeniGrup][k.ad]) return showToast(`${k.ad} zaten ${kyGrupAd(yeniGrup)} grubunda var — Çift Kayıt'tan birleştir.`, 'warning');
     // Grup değişimi de veri kaybı olmayan yoldan (sunucuda /rename = birleştirme: seriler/yoklama/aidat taşınır)
@@ -620,3 +665,91 @@ function egEgitmenHizliEkle(sonra) {
 
 // açılışta sunucudan tazele
 setTimeout(() => { kisiTurCek(); egDersCek(); }, 2500);
+
+// ---------------------------------------------------------------- 📚 ders başı eğitmen ücreti + bordro (2026-09-28)
+// Yönetici › Personel sekmesinin altına eklenir (egitmenRenderPersonel → egBordroHTML). Ders sayısı = Yoklama'da
+// "derse giren eğitmen" olarak işaretlenen dersler (egitmen_ders_yoklama); gün sayısı = mevcut personel girişi.
+// Ders başı ücret maaş bilgisi → oturumlu meta "personel_ders_ucret" ({pid: {ucret, t}}).
+let _egUcret = kyDepoOku('personel_ders_ucret'), _egUcretCekildi = false;
+function egUcretCek(sonra) {
+    if (!kyOturumVar()) return;
+    kyDepoSenkron('personel_ders_ucret', () => _egUcret).then(t => { let y = kyDepoBirlestir(t, _egUcret), d = JSON.stringify(y) !== JSON.stringify(_egUcret); _egUcret = y; if (d && sonra) sonra(); }).catch(() => {});
+}
+function egDersUcretAyarla(pid, deger) {
+    let v = String(deger || '').replace(',', '.').trim();
+    _egUcret[pid] = { ucret: v === '' ? '' : Math.max(0, Number(v) || 0), t: Date.now() };
+    kyDepoYazYerel('personel_ders_ucret', _egUcret);
+    if (kyOturumVar()) kyDepoSenkron('personel_ders_ucret', () => _egUcret, true).then(t => { _egUcret = kyDepoBirlestir(t, _egUcret); });
+    try { egitmenRenderPersonel(); } catch (e) {}
+}
+function egAyDersleri(pid, ay) {
+    let slotlar = (typeof _programSlotlar !== 'undefined' && _programSlotlar && _programSlotlar.length) ? _programSlotlar : ((typeof _kmYa !== 'undefined' && _kmYa.slotlar) || []);
+    return Object.values(_egDers).filter(x => x.d === 1 && x.pid === pid && (x.iso || '').slice(0, 7) === ay)
+        .map(x => ({ iso: x.iso, s: slotlar.find(s => s.id === x.slot) || null }))
+        .sort((a, b) => a.iso.localeCompare(b.iso) || String(a.s && a.s.baslangicSaat).localeCompare(String(b.s && b.s.baslangicSaat)));
+}
+function egBordroSatirlari(ay) {
+    return egEgitmenler().map(p => {
+        let dersler = egAyDersleri(p.id, ay), gun = typeof personelStats === 'function' ? personelStats(p.id, ay).ay : 0;
+        let dUcret = _egUcret[p.id] && _egUcret[p.id].ucret !== '' ? Number(_egUcret[p.id].ucret) || 0 : 0, gUcret = Number(p.ucret) || 0;
+        return { p, dersler, gun, dUcret, gUcret, gunTop: gun * gUcret, dersTop: dersler.length * dUcret, top: gun * gUcret + dersler.length * dUcret };
+    });
+}
+function egPara(n, tl) { return (Math.round(n * 100) / 100).toLocaleString('tr-TR') + (tl ? ' TL' : '₺'); }
+function egBordroHTML(ay) {
+    if (!_egUcretCekildi) { _egUcretCekildi = true; let yen = () => { try { if (yoneticiSekmeAktif === 'personel') egitmenRenderPersonel(); } catch (e) {} }; egUcretCek(yen); egDersCek(yen); }
+    let satir = egBordroSatirlari(ay), genel = satir.reduce((a, x) => a + x.top, 0);
+    let ayAd = new Date(ay + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    return `<details open style="margin-top:6px; margin-bottom:8px;">
+        <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:14px; padding:12px 14px; font-weight:800; font-size:13px;">📚 Ders bazlı ücret — ${esc(ayAd)} <span style="float:right; color:var(--text-muted);">▾</span></summary>
+        <div class="adm-card" style="border-radius:0 0 14px 14px; margin-top:-2px; margin-bottom:0;">
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px; line-height:1.5;">Ders sayısı, <b>Karışık Sınıf › Yoklama</b>'da derse giren eğitmen olarak işaretlenen derslerden gelir. Günlük ücret ve ders başı ücret birlikte kullanılabilir; kullanmadığını boş bırak.</div>
+            ${satir.map(x => `<div style="display:grid; grid-template-columns:minmax(0,1.3fr) auto auto; gap:8px 12px; align-items:center; padding:10px 0; border-top:1px solid var(--border-color);">
+                <div style="min-width:0"><div style="font-weight:800;">${esc(x.p.ad)}</div><div style="font-size:11px; color:var(--text-muted);">${x.dersler.length} ders · ${x.gun} gün${x.gUcret ? ' · günlük ' + egPara(x.gUcret) : ''}</div></div>
+                <label style="display:flex; flex-direction:column; gap:2px; font-size:10px; color:var(--text-muted);">Ders başı ₺<input type="number" min="0" step="10" inputmode="decimal" value="${_egUcret[x.p.id] ? esc(String(_egUcret[x.p.id].ucret)) : ''}" onchange="egDersUcretAyarla('${String(x.p.id).replace(/['"\\]/g, '')}', this.value)" class="adm-input" style="width:100px; padding:8px;"></label>
+                <div style="text-align:right;"><div style="font-weight:900; font-size:15px; color:var(--neon-green);">${egPara(x.top)}</div><div style="font-size:10px; color:var(--text-muted);">${x.gunTop ? egPara(x.gunTop) + ' gün' : ''}${x.gunTop && x.dersTop ? ' + ' : ''}${x.dersTop ? egPara(x.dersTop) + ' ders' : ''}</div></div>
+            </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted);">Önce yukarıdan eğitmen ekle.</div>'}
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--border-color);">
+                <b>Genel toplam: <span style="color:var(--neon-green);">${egPara(genel)}</span></b>
+                <button onclick="egBordroPdf('${ay}')" class="adm-btn" style="background:var(--accent-orange); color:#fff; border:none;">📄 Ders bazlı bordro PDF</button>
+            </div></div></details>`;
+}
+function egBordroPdf(ay) {
+    if (typeof _yeniPdfAl !== 'function') return showToast('PDF altyapısı yüklenemedi.', 'error');
+    const T = s => _trTranslit(String(s == null ? '' : s));
+    let satir = egBordroSatirlari(ay), ayAd = new Date(ay + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    _yeniPdfAl('portrait').then(pdf => {
+        const W = 210, H = 297, M = 14, UW = W - M * 2;
+        const font = (st, b, c) => { pdf.setFont('helvetica', st); pdf.setFontSize(b); c = c || [15, 23, 42]; pdf.setTextColor(c[0], c[1], c[2]); };
+        const yaz = (t, x, yy, o) => pdf.text(T(t), x, yy, o || {});
+        let y = _kurumsalBaslikCiz(pdf, M, UW, 8, 'EGITMEN BORDROSU', 'Ders bazli - ' + ayAd);
+        const yeni = () => { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 16; };
+        const bas = () => {
+            pdf.setFillColor(241, 245, 249); pdf.rect(M, y, UW, 7, 'F'); font('bold', 7.5, [71, 85, 105]);
+            yaz('EGITMEN', M + 2, y + 4.8); yaz('GUN', M + 64, y + 4.8); yaz('GUNLUK', M + 80, y + 4.8); yaz('DERS', M + 106, y + 4.8); yaz('DERS BASI', M + 122, y + 4.8); yaz('TOPLAM', M + UW - 2, y + 4.8, { align: 'right' });
+            y += 9;
+        };
+        bas();
+        satir.forEach((x, n) => {
+            if (y > H - 30) { yeni(); bas(); }
+            if (n % 2) { pdf.setFillColor(250, 251, 253); pdf.rect(M, y - 1.5, UW, 7.5, 'F'); }
+            font('bold', 9); yaz(x.p.ad, M + 2, y + 3.5);
+            font('normal', 9); yaz(String(x.gun), M + 64, y + 3.5); yaz(x.gUcret ? egPara(x.gUcret, 1) : '-', M + 80, y + 3.5); yaz(String(x.dersler.length), M + 106, y + 3.5); yaz(x.dUcret ? egPara(x.dUcret, 1) : '-', M + 122, y + 3.5);
+            font('bold', 9.5, [22, 163, 74]); yaz(egPara(x.top, 1), M + UW - 2, y + 3.5, { align: 'right' });
+            y += 7.5;
+        });
+        pdf.setDrawColor(203, 213, 225); pdf.line(M, y, M + UW, y); y += 6;
+        font('bold', 11); yaz('Genel toplam', M + 2, y); font('bold', 11, [22, 163, 74]); yaz(egPara(satir.reduce((a, x) => a + x.top, 0), 1), M + UW - 2, y, { align: 'right' }); y += 10;
+        satir.filter(x => x.dersler.length).forEach(x => {
+            if (y > H - 30) yeni();
+            font('bold', 9.5); yaz(x.p.ad + ' - girdigi dersler (' + x.dersler.length + ')', M, y); y += 5;
+            font('normal', 8, [71, 85, 105]);
+            let metin = x.dersler.map(d => new Date(d.iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + (d.s ? ' ' + d.s.baslangicSaat + ' ' + (d.s.grup || '') : '')).join(', ');
+            pdf.splitTextToSize(T(metin), UW - 4).forEach(l => { if (y > H - 18) yeni(); pdf.text(l, M + 2, y); y += 4; });
+            y += 3;
+        });
+        _kurumsalAltBilgiCiz(pdf, W, H);
+        pdf.save('Egitmen_Bordrosu_Ders_' + ay + '.pdf');
+        showToast('Bordro PDF indirildi! 📄', 'success');
+    }).catch(() => showToast('PDF oluşturulamadı.', 'error'));
+}
