@@ -10,7 +10,7 @@
 const KM_YA_GUN = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const KM_YA_GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 const KM_YA_GRUP_AD = { buyukler: 'Büyükler', yildizlar: 'Yıldızlar', kucukler: 'Küçükler', minikler: 'Minikler' };
-let _kmYa = { hafta: 0, gun: null, gorunum: 'ders', filtre: 'hepsi', ara: '', secili: null, slotlar: null, yukleniyor: false };
+let _kmYa = { hafta: 0, gun: null, gorunum: 'ders', filtre: 'hepsi', ara: '', secili: null, slotlar: null, yukleniyor: false, duzenle: null, ekleAra: '', misafirAra: '' };
 let _kmYaTimer = null;
 
 function kmYaCss() {
@@ -89,6 +89,22 @@ function kmYaCss() {
 .ya-dkart { border:1px solid var(--border-color); border-radius:16px; background:var(--surface-1); padding:12px; display:flex; flex-direction:column; gap:10px; }
 .ya-dkart.simdi { border:1.5px solid var(--status-success); background:color-mix(in srgb, var(--status-success) 7%, var(--surface-1)); }
 .ya-dkart.iptal { opacity:.7; }
+.ya-kisi.ya-yk { cursor:default; padding:6px 6px 6px 10px; }
+.ya-kisi.ya-yk.geldi { box-shadow:inset 3px 0 0 var(--status-success); }
+.ya-kisi.ya-yk.gelmedi { box-shadow:inset 3px 0 0 var(--status-danger); }
+.ya-kisi-ad { grid-column:1 / 3; display:flex; align-items:center; gap:10px; min-width:0; padding:0; background:none; border:none; color:inherit; font:inherit; cursor:pointer; text-align:left; }
+.ya-yk-sec { display:flex; gap:4px; }
+.ya-kisiler:has(.ya-yk) { grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); }
+.ya-av { flex-shrink:0; }
+.ya-yk-sec button { min-height:38px; padding:0 10px; border-radius:10px; border:1.5px solid var(--border-color); background:var(--surface-1); color:var(--text-secondary); font-weight:800; font-size:12.5px; cursor:pointer; white-space:nowrap; }
+.ya-yk-sec button.g.aktif { background:var(--status-success); border-color:var(--status-success); color:#fff; }
+.ya-yk-sec button.y.aktif { background:var(--status-danger); border-color:var(--status-danger); color:#fff; }
+.ya-dkart.duzenle { border:1.5px solid var(--accent); opacity:1; }
+.ya-ekle { display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:12px; background:color-mix(in srgb, var(--accent) 8%, var(--surface-1)); border:1px dashed color-mix(in srgb, var(--accent) 50%, transparent); }
+.ya-ekle .ya-ara { max-width:none; }
+.ya-cikar { min-height:32px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--status-danger) 50%, transparent); background:color-mix(in srgb, var(--status-danger) 12%, transparent); color:var(--status-danger); font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; }
+.ya-dders-ekle { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.ya-dders-ekle select { min-height:40px; padding:0 10px; border-radius:11px; border:1px solid var(--border-color); background:var(--surface-1); color:var(--text-primary); font-size:13.5px; max-width:100%; }
 .ya-dbas { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .ya-dsaat { font-size:20px; font-weight:900; color:var(--text-primary); font-variant-numeric:tabular-nums; line-height:1.1; text-align:center; padding:6px 10px; border-radius:12px; background:var(--surface-2); }
 .ya-dsaat small { display:block; font-size:11px; font-weight:700; color:var(--text-secondary); }
@@ -132,7 +148,7 @@ function kmYaCss() {
 .ya-btn.birincil { background:var(--status-success); border-color:var(--status-success); color:#fff; }
 @media (max-width: 640px) { .ya-grafik { gap:4px; } .ya-ders { grid-template-columns:auto minmax(0,1fr); } .ya-ders .oran { grid-column:1 / -1; text-align:left; } .ya-hafta span { min-width:120px; font-size:12.5px; }
     .ya-thead { display:none; } .ya-trow { grid-template-columns:minmax(0,1fr) auto; } .ya-tders { grid-column:1 / -1; order:3; } .ya-tson { grid-column:1 / -1; order:4; } .ya-tson small { display:inline; }
-    .ya-gunler { gap:3px; } .ya-gunler button em { font-size:9.5px; } .ya-sekmeler button { font-size:12px; } .ya-kisiler { grid-template-columns:1fr; } }
+    .ya-gunler { gap:3px; } .ya-gunler button em { font-size:9.5px; } .ya-sekmeler button { font-size:12px; } .ya-kisiler, .ya-kisiler:has(.ya-yk) { grid-template-columns:1fr; } .ya-yk-sec button { padding:0 8px; font-size:12px; } }
 @media (prefers-reduced-motion: reduce) { .ya-canli::before { animation:none; } }
 `;
     document.head.appendChild(st);
@@ -209,7 +225,7 @@ function kmYaSimdiHTML(sporcular) {
         return `<div class="ya-simdi" id="ya-simdi">${aktif.map(s => {
             let kayitli = kmYaSlotSporcu(s), geldi = kayitli.filter(k => kmYaDurum(k, bugun) === 'g').length;
             return `<div class="ya-simdi-satir"><span class="ya-canli">ŞU AN</span><b>${esc(kmYaSlotAd(s))}</b><span>${s.baslangicSaat}–${s.bitisSaat}</span><span class="ya-alt">${geldi}/${kayitli.length} geldi · ${kmYaDk(s.bitisSaat) - dk} dk kaldı</span></div>`;
-        }).join('')}<div style="display:flex; gap:8px; flex-wrap:wrap"><button class="ya-btn birincil" onclick="kmAracSec('yoklama')">✅ Yoklamayı al</button><button class="ya-btn" onclick="kmYaBugun()">Kimler var? →</button></div></div>`;
+        }).join('')}<div style="display:flex; gap:8px; flex-wrap:wrap"><button class="ya-btn birincil" onclick="kmYaBugun(true)">✅ Yoklamayı al</button></div></div>`;
     }
     let sonraki = null;
     for (let i = 0; i < 8 && !sonraki; i++) {
@@ -221,12 +237,22 @@ function kmYaSimdiHTML(sporcular) {
         ${sonraki ? `<div class="ya-alt">Sıradaki: <b style="color:var(--text-primary)">${esc(kmYaSlotAd(sonraki.s))}</b> — ${sonraki.i === 0 ? 'bugün' : sonraki.i === 1 ? 'yarın' : KM_YA_GUN[sonraki.d.getDay()]} ${sonraki.s.baslangicSaat} · ${kmYaSlotSporcu(sonraki.s).length} kayıtlı sporcu</div>` : ''}</div>`;
 }
 // Bir sporcu satırı: yuvarlak baş harf + ad + grup + sağda durum etiketi.
-function kmYaKisiHTML(k, durum, saat) {
+// cikarSlot verilirse (düzenleme modu) satır profil açmaz, sağda kalıcı "Çıkar" düğmesi çıkar.
+function kmYaKisiHTML(k, durum, saat, cikarSlot, yIso) {
     let etiket = durum === 'g' ? `<span class="ya-durum g">✓ Geldi${saat ? ' · ' + esc(saat) : ''}</span>`
         : durum === 'y' ? '<span class="ya-durum y">✗ Gelmedi</span>'
         : durum === 'bekle' ? '<span class="ya-durum b">Bekleniyor</span>'
         : durum === 'isaretsiz' ? '<span class="ya-durum b">İşaretlenmedi</span>' : '';
-    return `<button class="ya-kisi" onclick="kmYaSporcuAc('${encodeURIComponent(k.g + '|' + k.ad)}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span>
+    if (cikarSlot != null) return `<div class="ya-kisi"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span>
+        <span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}</small></span><button class="ya-cikar" onclick="kmYaCikar(${cikarSlot}, '${kmYaKey(k.g, k.ad)}')">✕ Çıkar</button></div>`;
+    // yIso verilirse: satırda açık "✅ Geldi / ❌ Gelmedi" düğmeleri (etkin olana tekrar dokunmak işareti kaldırır).
+    if (yIso) {
+        let key = kmYaKey(k.g, k.ad), c = y => `kmYaYoklama('${yIso}', '${key}', '${durum === y ? 'sil' : y}')`;
+        return `<div class="ya-kisi ya-yk ${durum === 'g' ? 'geldi' : durum === 'y' ? 'gelmedi' : ''}"><button class="ya-kisi-ad" onclick="kmYaSporcuAc('${key}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span>
+            <span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}${durum === 'g' && saat ? ' · ' + esc(saat) : ''}</small></span></button>
+            <span class="ya-yk-sec" role="group" aria-label="${esc(k.ad)} yoklama"><button class="g${durum === 'g' ? ' aktif' : ''}" aria-pressed="${durum === 'g'}" onclick="${c('g')}">✅ Geldi</button><button class="y${durum === 'y' ? ' aktif' : ''}" aria-pressed="${durum === 'y'}" onclick="${c('y')}">❌ Gelmedi</button></span></div>`;
+    }
+    return `<button class="ya-kisi" onclick="kmYaSporcuAc('${kmYaKey(k.g, k.ad)}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span>
         <span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}</small></span>${etiket}</button>`;
 }
 function kmYaGunDersleriHTML(sporcular, gunler, isoler, bugun) {
@@ -252,22 +278,27 @@ function kmYaGunDersleriHTML(sporcular, gunler, isoler, bugun) {
         satirlar.sort((a, b) => sira[a.st] - sira[b.st] || a.k.ad.localeCompare(b.k.ad, 'tr'));
         let gel = satirlar.filter(x => x.st === 'g').length, yok = satirlar.filter(x => x.st === 'y').length;
         let ozet = iptal ? `<span class="ya-durum y">İptal${iptal.sebep ? ' · ' + esc(iptal.sebep) : ''}</span>`
-            : gelecek ? `<span class="ya-alt">${kayitli.length} kayıtlı${s.kapasite ? ' / ' + s.kapasite + ' kapasite' : ''}</span>`
+            : !kayitli.length ? '' : iso > bugun ? `<span class="ya-alt">${kayitli.length} kayıtlı${s.kapasite ? ' / ' + s.kapasite + ' kapasite' : ''}</span>`
             : `<span class="ya-sayac"><b>${gel}</b>/${kayitli.length} geldi${yok ? ` · ${yok} gelmedi` : ''}</span>`;
-        return `<div class="ya-dkart${simdi ? ' simdi' : ''}${iptal ? ' iptal' : ''}">
+        let duz = _kmYa.duzenle === s.id, yAl = !iptal && iso <= bugun && !duz;
+        let isaretsiz = satirlar.filter(x => x.st !== 'g' && x.st !== 'y').length;
+        let kalan = yAl && kayitli.length ? (isaretsiz ? `<button class="ya-btn birincil" onclick="kmYaKalanlarGeldi(${s.id}, '${iso}')">✅ ${isaretsiz === kayitli.length ? 'Hepsi' : 'Kalanlar (' + isaretsiz + ')'} geldi</button>` : '<span class="ya-durum g">✔ Yoklama tamam</span>') : '';
+        return `<div class="ya-dkart${simdi ? ' simdi' : ''}${iptal ? ' iptal' : ''}${duz ? ' duzenle' : ''}">
             <div class="ya-dbas"><div class="ya-dsaat">${s.baslangicSaat}<small>${s.bitisSaat}</small></div>
-                <div style="min-width:0; flex:1"><div class="ya-dad">${esc(kmYaSlotAd(s))}${simdi ? ' <span class="ya-canli">ŞU AN</span>' : ''}</div>${s.dersPlani ? `<div class="ya-alt">📝 ${esc(s.dersPlani)}</div>` : ''}</div>${ozet}</div>
-            ${kayitli.length ? `<div class="ya-kisiler">${satirlar.map(x => kmYaKisiHTML(x.k, iptal ? '' : x.st, x.saat)).join('')}</div>` : '<div class="ya-alt">Bu derse kayıtlı sporcu yok — Ders Programı\'ndan sporcu eklenebilir.</div>'}
+                <div style="min-width:0; flex:1"><div class="ya-dad">${esc(kmYaSlotAd(s))}${simdi ? ' <span class="ya-canli">ŞU AN</span>' : ''}</div>${s.dersPlani ? `<div class="ya-alt">📝 ${esc(s.dersPlani)}</div>` : ''}</div>${ozet}${kalan}
+                <button class="ya-btn${duz ? ' birincil' : ''}" onclick="kmYaDuzenle(${s.id})">${duz ? '✓ Bitti' : '✏️ Sporcu ekle / çıkar'}</button></div>
+            ${duz ? kmYaEklePanelHTML(s, iso) : ''}
+            ${kayitli.length ? `<div class="ya-kisiler">${satirlar.map(x => kmYaKisiHTML(x.k, iptal ? '' : x.st, x.saat, duz ? s.id : null, yAl ? iso : null)).join('')}</div>` : `<div class="ya-alt">Bu derse kayıtlı sporcu yok${duz ? '' : ' — "✏️ Sporcu ekle / çıkar" ile ekleyebilirsin'}.</div>`}
         </div>`;
     }).join('');
     // O gün gelip o günün hiçbir dersine kayıtlı olmayanlar
     let kayitsiz = sporcular.filter(k => kmYaDurum(k, iso) === 'g' && !kayitliler.some(x => x.g === k.g && x.ad === k.ad));
     let kayit = otomatikYoklamaDB && otomatikYoklamaDB[iso] || {};
     let kayitsizKart = kayitsiz.length ? `<div class="ya-dkart"><div class="ya-dbas"><div style="flex:1"><div class="ya-dad">${dersler.length ? 'Derse kayıtlı olmadan gelenler' : 'Bu gün gelenler'}</div><div class="ya-alt">${dersler.length ? 'Bugünkü derslerin listesinde yoklar ama yoklamada geldi görünüyorlar.' : 'Ders programında bu güne ders yok.'}</div></div><span class="ya-sayac"><b>${kayitsiz.length}</b> kişi</span></div>
-        <div class="ya-kisiler">${kayitsiz.map(k => kmYaKisiHTML(k, 'g', kayit[k.ad] && kayit[k.ad].saat)).join('')}</div></div>` : '';
+        <div class="ya-kisiler">${kayitsiz.map(k => kmYaKisiHTML(k, 'g', kayit[k.ad] && kayit[k.ad].saat, null, iso <= bugun ? iso : null)).join('')}</div></div>` : '';
     return `<div class="ya-gunler" role="tablist" aria-label="Gün seç">${gunCip}</div>
         <div class="ya-etiket">${KM_YA_GUN[gd]} ${kmYaTarihYazi(d)}${iso === bugun ? ' · bugün' : ''}</div>
-        ${kartlar}${kayitsizKart}
+        ${kartlar}${kayitsizKart}${iso <= bugun ? kmYaMisafirHTML(iso) : ''}
         ${!dersler.length && !kayitsiz.length ? '<div class="ya-kart"><div class="ya-alt">Bu gün ders yok ve kimse gelmemiş.</div></div>' : ''}`;
 }
 function kmYaSporcuDersleri(k) { return (_kmYa.slotlar || []).filter(s => (s.katilimcilar || []).some(x => x.grup === k.g && x.ad === k.ad)); }
@@ -292,7 +323,7 @@ function kmYaSporcuTabloHTML(sporcular, isoler) {
     let sira = Object.keys(KM_YA_GRUP_AD), gruplar = [...new Set(liste.map(x => x.g))].sort((a, b) => (sira.indexOf(a) + 1 || 99) - (sira.indexOf(b) + 1 || 99));
     let satir = x => {
         let son = x.son ? (x.son === bugun ? 'bugün' : kmYaTarihYazi(new Date(x.son + 'T12:00:00'))) : '—';
-        return `<button class="ya-trow" onclick="kmYaSporcuAc('${encodeURIComponent(x.g + '|' + x.ad)}')">
+        return `<button class="ya-trow" onclick="kmYaSporcuAc('${kmYaKey(x.g, x.ad)}')">
             <span class="ya-tad"><span class="ya-av" style="background:${kmYaRenk(x.g)}">${esc(kmYaIlkHarf(x.ad))}</span><b>${esc(x.ad)}</b></span>
             <span class="ya-tders">${x.dersler.length ? x.dersler.map(s => `<span class="ya-dcip">${esc(kmYaDersEtiket(s))}</span>`).join('') : '<span class="ya-alt">derse kayıtlı değil</span>'}</span>
             <span class="ya-thafta">${x.gel ? `<span class="ya-durum g">✓ ${x.gel} gün</span>` : '<span class="ya-durum y">✗ gelmedi</span>'}</span>
@@ -358,19 +389,135 @@ function kmYaSporcuDetayHTML() {
             <div class="ya-sayi"><small>Son geliş</small><b style="font-size:20px">${tum[0] ? (tum[0] === bugun ? 'Bugün' : kmYaTarihYazi(new Date(tum[0] + 'T12:00:00'))) : '—'}</b><span>${tum[0] ? Math.round((new Date(bugun) - new Date(tum[0])) / 86400000) + ' gün önce' : 'kayıt yok'}</span></div>
             <div class="ya-sayi"><small>Ders günlerine katılım (4 hafta)</small><b>${dersGunleri ? '%' + Math.round(katildi / dersGunleri * 100) : '—'}</b><span>${dersGunleri ? katildi + ' / ' + dersGunleri + ' ders günü' : 'derse kayıtlı değil'}</span></div>
         </div>
-        <div class="ya-kart"><div class="ya-etiket">Kayıtlı olduğu dersler</div>${dersler.length ? dersler.map(s => `<div class="ya-ders"><div class="saat">${s.baslangicSaat}<small>${kmYaSlotGunler(s).map(x => KM_YA_GUN_KISA[x]).join(', ')}</small></div><div><b>${esc(kmYaSlotAd(s))}</b><div class="ya-alt">${s.baslangicSaat}–${s.bitisSaat} · ${kmYaSlotSporcu(s).length} kişilik ders${s.kapasite ? ' (kapasite ' + s.kapasite + ')' : ''}</div></div><div></div></div>`).join('') : '<div class="ya-alt">Ders programında hiçbir derse kayıtlı değil.</div>'}</div>
+        <div class="ya-kart"><div class="ya-etiket">Kayıtlı olduğu dersler</div>${dersler.length ? dersler.map(s => `<div class="ya-ders"><div class="saat">${s.baslangicSaat}<small>${kmYaSlotGunler(s).map(x => KM_YA_GUN_KISA[x]).join(', ')}</small></div><div><b>${esc(kmYaSlotAd(s))}</b><div class="ya-alt">${s.baslangicSaat}–${s.bitisSaat} · ${kmYaSlotSporcu(s).length} kişilik ders${s.kapasite ? ' (kapasite ' + s.kapasite + ')' : ''}</div></div><button class="ya-cikar" onclick="kmYaCikar(${s.id}, '${kmYaKey(g, k.ad)}')">✕ Çıkar</button></div>`).join('') : '<div class="ya-alt">Ders programında hiçbir derse kayıtlı değil.</div>'}
+            ${(() => { let diger = (_kmYa.slotlar || []).filter(s => !dersler.includes(s)).sort((a, b) => kmYaSlotGunler(a)[0] - kmYaSlotGunler(b)[0] || kmYaDk(a.baslangicSaat) - kmYaDk(b.baslangicSaat)); return diger.length ? `<div class="ya-dders-ekle"><select id="ya-dders-sec" aria-label="Eklenecek ders"><option value="">Bir ders seç…</option>${diger.map(s => `<option value="${s.id}">${esc(kmYaDersYazi(s))}</option>`).join('')}</select><button class="ya-btn birincil" onclick="let v = +document.getElementById('ya-dders-sec').value; if (v) kmYaEkle(v, '${kmYaKey(g, k.ad)}')">➕ Derse ekle</button></div>` : ''; })()}</div>
         <div class="ya-kart"><div class="ya-etiket">Son 8 hafta devam takvimi</div><div class="ya-takvim">${takvim}</div>
             <div class="ya-alt">🟩 geldi · 🟥 gelmedi olarak işaretlendi · çerçeveli kare = ders günüydü ama kayıt yok</div></div>
         <div class="ya-kart"><div class="ya-etiket">Son gelişleri</div><div class="ya-cipler">${tum.slice(0, 10).map(t => { let rr = otomatikYoklamaDB[t][k.ad]; return `<span class="ya-cip geldi">${kmYaTarihYazi(new Date(t + 'T12:00:00'))}${rr && rr.saat ? ' <small>' + esc(rr.saat) + '</small>' : ''}</span>`; }).join('') || '<span class="ya-alt">Kayıt yok.</span>'}</div></div>
     </div>`;
 }
 function kmYaHafta(f) { _kmYa.hafta = Math.min(0, Math.max(-12, _kmYa.hafta + f)); _kmYa.gun = null; kmYoklamaAnalizCiz(); }
-function kmYaGunSec(i) { _kmYa.gun = i; _kmYa.gorunum = 'ders'; kmYoklamaAnalizCiz(); }
+function kmYaGunSec(i) { _kmYa.gun = i; _kmYa.duzenle = null; _kmYa.gorunum = 'ders'; kmYoklamaAnalizCiz(); }
 function kmYaGorunum(g) { _kmYa.gorunum = g; kmYoklamaAnalizCiz(); }
-function kmYaBugun() { _kmYa.hafta = 0; _kmYa.gun = null; _kmYa.gorunum = 'ders'; kmYoklamaAnalizCiz(); }
+function kmYaBugun(kaydir) { _kmYa.hafta = 0; _kmYa.gun = null; _kmYa.gorunum = 'ders'; _kmYa.duzenle = null; kmYoklamaAnalizCiz(); if (kaydir) { let el = document.querySelector('#km-icerik .ya-dkart.simdi'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }
 function kmYaFiltre(f) { _kmYa.filtre = f; kmYoklamaAnalizCiz(); }
 function kmYaAra(v) {
     _kmYa.ara = v; kmYoklamaAnalizCiz();
     let el = document.querySelector('#km-icerik .ya-ara'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
 }
 function kmYaSporcuAc(key) { _kmYa.secili = key; kmYoklamaAnalizCiz(); let ic = document.getElementById('km-icerik'); if (ic) ic.scrollIntoView({ block: 'start' }); }
+
+// ---------------------------------------------------------------- kalıcı ders kaydı: sporcu ekle / çıkar (2026-09-28)
+// Ders Programı'nın kullandığı AYNI uç noktalar (/api/antrenman-programi/:id/katilimci) ve aynı uyarılar
+// (kapasite dolu, aynı saatte başka derse kayıtlı). Kayıt kalıcıdır; geçmiş yoklama kayıtlarına dokunmaz.
+function kmYaSlotBul(id) { return (_kmYa.slotlar || []).find(s => s.id === id); }
+function kmYaKey(g, ad) { return encodeURIComponent(g + '|' + ad).replace(/'/g, '%27'); }
+function kmYaAnahtar(key) { let [g, ...r] = decodeURIComponent(key).split('|'); return { g, ad: r.join('|') }; }
+function kmYaEklePanelHTML(s, iso) {
+    return `<div class="ya-ekle"><input class="ya-ara" id="ya-ekle-ara" type="search" placeholder="➕ Eklenecek sporcunun adını yaz" value="${esc(_kmYa.ekleAra || '')}" oninput="kmYaEkleAra(this.value)" autocomplete="off">
+        <div id="ya-ekle-sonuc" data-slot="${s.id}" data-iso="${iso}">${kmYaEkleSonucHTML(s, iso)}</div></div>`;
+}
+function kmYaEkleSonucHTML(s, iso) {
+    let kayitli = s.katilimcilar || [], ara = (_kmYa.ekleAra || '').trim().toLocaleLowerCase('tr-TR');
+    let adaylar = kmYaSporcular().filter(k => !kayitli.some(x => x.grup === k.g && x.ad === k.ad));
+    let baslik;
+    if (ara) { adaylar = adaylar.filter(k => k.ad.toLocaleLowerCase('tr-TR').includes(ara)); baslik = adaylar.length ? '' : 'Bu isimde, bu derse kayıtlı olmayan aktif sporcu yok.'; }
+    else { adaylar = adaylar.filter(k => kmYaDurum(k, iso) === 'g'); baslik = adaylar.length ? 'Öneri: o gün gelip bu derse kayıtlı olmayanlar' : 'Yazmaya başla — ad ile ara.'; }
+    adaylar.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+    return `${baslik ? `<div class="ya-alt">${baslik}</div>` : ''}<div class="ya-kisiler">${adaylar.slice(0, 12).map(k => `<button class="ya-kisi" onclick="kmYaEkle(${s.id}, '${kmYaKey(k.g, k.ad)}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span><span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}</small></span><span class="ya-durum g">+ Ekle</span></button>`).join('')}</div>${adaylar.length > 12 ? `<div class="ya-alt">+${adaylar.length - 12} kişi daha — aramayı daralt.</div>` : ''}`;
+}
+function kmYaEkleAra(v) {
+    _kmYa.ekleAra = v;
+    let el = document.getElementById('ya-ekle-sonuc'); if (!el) return;
+    let s = kmYaSlotBul(+el.dataset.slot); if (s) el.innerHTML = kmYaEkleSonucHTML(s, el.dataset.iso);
+}
+function kmYaDuzenle(id) { _kmYa.duzenle = _kmYa.duzenle === id ? null : id; _kmYa.ekleAra = ''; kmYoklamaAnalizCiz(); }
+function kmYaDersYazi(s) { return `${kmYaSlotAd(s)} (${kmYaSlotGunler(s).map(x => KM_YA_GUN_KISA[x]).join('·')} ${s.baslangicSaat})`; }
+function kmYaEkle(slotId, key) {
+    let s = kmYaSlotBul(slotId), k = kmYaAnahtar(key); if (!s) return;
+    let n = (s.katilimcilar || []).length;
+    if (s.kapasite && n >= s.kapasite && !confirm(`Bu ders dolu (${n}/${s.kapasite}). Yine de ${k.ad} eklensin mi?`)) return;
+    try {
+        let cak = typeof _dersCakismaBul === 'function' ? _dersCakismaBul(k.g, k.ad, s) : [];
+        if (cak.length && !confirm(`⚠️ ${k.ad} aynı saatte başka bir derse kayıtlı: ${cak.map(kmYaDersYazi).join(', ')}.\n\nYine de eklensin mi?`)) return;
+    } catch (e) {}
+    fetch('/api/antrenman-programi/' + s.id + '/katilimci', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup: k.g, ad: k.ad, deviceId: typeof _cihazId !== 'undefined' ? _cihazId : null }) })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => {
+            if (!d.applied) return showToast('Eklenemedi.', 'error');
+            if (!s.katilimcilar) s.katilimcilar = [];
+            if (!s.katilimcilar.some(x => x.grup === k.g && x.ad === k.ad)) s.katilimcilar.push({ grup: k.g, ad: k.ad });
+            showToast(`✓ ${k.ad} → ${kmYaDersYazi(s)} dersine eklendi`, 'success');
+            _kmYa.ekleAra = ''; kmYaYenidenCiz(true);
+        }).catch(st => showToast(st === 401 || st === 403 ? 'Bu işlem için yetkin yok.' : 'Bağlantı hatası — eklenemedi.', 'error'));
+}
+function kmYaCikar(slotId, key) {
+    let s = kmYaSlotBul(slotId), k = kmYaAnahtar(key); if (!s) return;
+    if (!confirm(`${k.ad}, ${kmYaDersYazi(s)} dersinden çıkarılsın mı?\n\nGeçmiş yoklama kayıtları silinmez.`)) return;
+    fetch('/api/antrenman-programi/' + s.id + '/katilimci?grup=' + encodeURIComponent(k.g) + '&ad=' + encodeURIComponent(k.ad) + '&deviceId=' + encodeURIComponent(typeof _cihazId !== 'undefined' ? _cihazId : ''), { method: 'DELETE' })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => {
+            if (!d.applied) return showToast('Çıkarılamadı.', 'error');
+            s.katilimcilar = (s.katilimcilar || []).filter(x => !(x.grup === k.g && x.ad === k.ad));
+            showToast(`${k.ad} dersten çıkarıldı`, 'success');
+            kmYaYenidenCiz();
+        }).catch(st => showToast(st === 401 || st === 403 ? 'Bu işlem için yetkin yok.' : 'Bağlantı hatası — çıkarılamadı.', 'error'));
+}
+// Yeniden çiz; ekleme aramasındaysa odağı ve kaydırma konumunu koru.
+function kmYaYenidenCiz(odakZorla) {
+    let odak = odakZorla || (document.activeElement && document.activeElement.id === 'ya-ekle-ara'), y = window.scrollY;
+    kmYoklamaAnalizCiz();
+    window.scrollTo(0, y);
+    if (odak) { let el = document.getElementById('ya-ekle-ara'); if (el) { el.focus({ preventScroll: true }); el.setSelectionRange(el.value.length, el.value.length); } }
+}
+
+// ---------------------------------------------------------------- yoklama burada alınır (2026-09-28)
+// KM "✅ Yoklama" sekmesi (kmYoklamaAyarla) ile AYNI kayıt biçimi ve aynı senkron: otomatikYoklamaDB[iso][ad] =
+// {saat, grup, elle:true, geldi}. Fark: seçili GÜNE yazar (geçmiş bir dersin yoklaması da sonradan girilebilir).
+function kmYaYoklamaYaz(iso, k, yeni, saat) {
+    if (iso > kmYaIso(new Date())) return showToast('İleri bir tarihin yoklaması alınamaz.', 'error');
+    if (!otomatikYoklamaDB[iso]) otomatikYoklamaDB[iso] = {};
+    let m = otomatikYoklamaDB[iso][k.ad];
+    if (yeni === 'sil') { if (m && (!m.grup || m.grup === k.g)) delete otomatikYoklamaDB[iso][k.ad]; return; }
+    // saat: bugün için şimdiki saat; geçmiş gün için varsa eski saat korunur
+    otomatikYoklamaDB[iso][k.ad] = { saat: saat || (m && m.saat) || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), grup: k.g, elle: true, geldi: yeni === 'g' };
+}
+function kmYaYoklamaBitir() {
+    otomatikYoklamaKaydet();
+    bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch (e) {}
+    try { kmSinifKartiCiz(); } catch (e) {}
+    try { yoneticiDevamsizlikWidgetCiz(); } catch (e) {}
+    kmYaYenidenCiz();
+}
+function kmYaYoklama(iso, key, yeni) {
+    let k = kmYaAnahtar(key), bugunMu = iso === kmYaIso(new Date());
+    kmYaYoklamaYaz(iso, k, yeni, bugunMu ? new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '');
+    kmYaYoklamaBitir();
+}
+// Kayıtlı ama henüz işaretlenmemiş herkes "geldi" — elle "gelmedi" işaretliler değişmez.
+function kmYaKalanlarGeldi(slotId, iso) {
+    let s = kmYaSlotBul(slotId); if (!s) return;
+    let bugunMu = iso === kmYaIso(new Date()), n = 0;
+    kmYaSlotSporcu(s).forEach(k => { if (!kmYaDurum(k, iso)) { kmYaYoklamaYaz(iso, k, 'g', bugunMu ? '' : (s.baslangicSaat || '')); n++; } });
+    showToast(n ? `${n} sporcu geldi işaretlendi ✅` : 'Herkes zaten işaretli.', 'success');
+    kmYaYoklamaBitir();
+}
+// Derse kayıtlı olmayan biri geldiyse: adını yaz → o gün için "geldi" (ders kaydına dokunmaz).
+function kmYaMisafirHTML(iso) {
+    return `<div class="ya-dkart"><div class="ya-dad" style="font-size:15px">➕ Listede olmayan biri mi geldi?</div>
+        <input class="ya-ara" id="ya-misafir-ara" type="search" style="max-width:none" placeholder="Adını yaz — derse kaydetmeden sadece bugün için geldi işaretlenir" value="${esc(_kmYa.misafirAra || '')}" oninput="kmYaMisafirAra(this.value)" autocomplete="off">
+        <div id="ya-misafir-sonuc" data-iso="${iso}">${kmYaMisafirSonucHTML(iso)}</div></div>`;
+}
+function kmYaMisafirSonucHTML(iso) {
+    let ara = (_kmYa.misafirAra || '').trim().toLocaleLowerCase('tr-TR');
+    if (!ara) return '';
+    let adaylar = kmYaSporcular().filter(k => k.ad.toLocaleLowerCase('tr-TR').includes(ara) && kmYaDurum(k, iso) !== 'g').sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+    if (!adaylar.length) return '<div class="ya-alt">Eşleşen (henüz gelmemiş) aktif sporcu yok.</div>';
+    return `<div class="ya-kisiler">${adaylar.slice(0, 12).map(k => `<button class="ya-kisi" onclick="kmYaMisafirGeldi('${iso}', '${kmYaKey(k.g, k.ad)}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span><span style="min-width:0"><b>${esc(k.ad)}</b><small>${KM_YA_GRUP_AD[k.g] || esc(k.g)}</small></span><span class="ya-durum g">✅ Geldi</span></button>`).join('')}</div>`;
+}
+function kmYaMisafirAra(v) { _kmYa.misafirAra = v; let el = document.getElementById('ya-misafir-sonuc'); if (el) el.innerHTML = kmYaMisafirSonucHTML(el.dataset.iso); }
+function kmYaMisafirGeldi(iso, key) {
+    let k = kmYaAnahtar(key);
+    kmYaYoklamaYaz(iso, k, 'g');
+    _kmYa.misafirAra = '';
+    showToast(`${k.ad} geldi işaretlendi ✅`, 'success');
+    kmYaYoklamaBitir();
+}
