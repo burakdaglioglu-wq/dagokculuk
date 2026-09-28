@@ -2,6 +2,11 @@ import type { Router } from "../router";
 import { json, badRequest, readJson } from "../lib/json";
 import { broadcastMasterChanged } from "../lib/broadcast";
 import * as metaDb from "../db/meta";
+import { yetkiliOturum } from "../auth";
+import { unauthorized } from "../lib/json";
+
+// Genel meta geçişi PIN'siz (Karışık Sınıf) — ama kişisel bilgi taşıyan anahtarlar oturum ister (okuma + yazma).
+const OTURUMLU_META = new Set<string>(["kisi_notlari"]);
 
 interface CredentialsRow {
   yonetici_hash: string;
@@ -30,11 +35,13 @@ export function registerMetaRoutes(router: Router): void {
 
   // Generic key/value passthrough — used by sync.js to mirror the lower-confidence
   // blob-shaped collections (takimlarDB, antrenmanlarDB, atisLog, ...) losslessly.
-  router.get("/api/meta/:key", async (_request, env, params) => {
+  router.get("/api/meta/:key", async (request, env, params) => {
+    if (OTURUMLU_META.has(params.key) && !(await yetkiliOturum(request, env, false))) return unauthorized();
     return json({ value: await metaDb.getMeta(env, params.key) });
   });
 
   router.put("/api/meta/:key", async (request, env, params) => {
+    if (OTURUMLU_META.has(params.key) && !(await yetkiliOturum(request, env, false))) return unauthorized();
     const body = await readJson<{ value: string }>(request);
     if (typeof body.value !== "string") return badRequest("value is required");
     await metaDb.setMeta(env, params.key, body.value);

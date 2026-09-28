@@ -47,23 +47,70 @@ function kyDepoSenkron(anahtar, yerelAl, yazmaGerek, buda) {
 let _kisiTur = kyDepoOku('kisi_turleri');
 const KY_TUR = { sporcu: { ad: 'Öğrenci', ikon: '🎯', renk: '#94a3b8' }, egitmen: { ad: 'Eğitmen', ikon: '👔', renk: '#38bdf8' }, misafir: { ad: 'Misafir', ikon: '🎟️', renk: '#f472b6' } };
 function kyAnahtar(g, ad) { return g + '|' + ad; }
-function kisiBilgi(g, ad) { return _kisiTur[kyAnahtar(g, ad)] || null; }
-function kisiTuru(g, ad) { let b = kisiBilgi(g, ad); return b && KY_TUR[b.tur] ? b.tur : 'sporcu'; }
-function kisiTurCek(sonra) { kyDepoSenkron('kisi_turleri', () => _kisiTur).then(t => { let yeni = kyDepoBirlestir(t, _kisiTur), degisti = JSON.stringify(yeni) !== JSON.stringify(_kisiTur); _kisiTur = yeni; if (degisti && sonra) sonra(); }).catch(() => {}); }
-function kisiTurAyarla(g, ad, alanlar) {
-    let k = kyAnahtar(g, ad);
-    _kisiTur[k] = Object.assign({}, _kisiTur[k] || { tur: 'sporcu' }, alanlar, { t: Date.now() });
-    kyDepoYazYerel('kisi_turleri', _kisiTur);
-    kyDepoSenkron('kisi_turleri', () => _kisiTur, true).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); });
+// Kişisel notlar (misafir telefonu, not) AYRI ve oturumlu meta kaydında ("kisi_notlari" — sunucu okuma+yazma için
+// giriş ister). Kişi türü kaydı PIN'siz Karışık Sınıf'ta da okunduğu için telefon/not ORAYA yazılmaz.
+let _kisiNot = kyDepoOku('kisi_notlari');
+const KY_NOT_ALANLARI = ['tel', 'not'];
+function kyOturumVar() { try { return typeof _oturumToken !== 'undefined' && !!_oturumToken; } catch (e) { return false; } }
+function kisiBilgi(g, ad) {
+    let k = kyAnahtar(g, ad), a = _kisiTur[k], b = _kisiNot[k];
+    return a || b ? Object.assign({}, a || {}, b ? { tel: b.tel, not: b.not } : {}) : null;
 }
-// Birleştirme / isim düzeltme sonrası türü yeni anahtara taşı (hedefin kendi türü varsa o kalır).
+function kisiTuru(g, ad) { let b = _kisiTur[kyAnahtar(g, ad)]; return b && KY_TUR[b.tur] ? b.tur : 'sporcu'; }
+function kyNotSenkron(yaz) {
+    if (!kyOturumVar()) return Promise.resolve(_kisiNot);
+    return kyDepoSenkron('kisi_notlari', () => _kisiNot, yaz).then(t => { _kisiNot = kyDepoBirlestir(t, _kisiNot); return _kisiNot; }).catch(() => _kisiNot);
+}
+function kisiTurCek(sonra) {
+    let once = JSON.stringify([_kisiTur, _kisiNot]);
+    kyDepoSenkron('kisi_turleri', () => _kisiTur).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); return kyNotTasi(); }).then(() => kyNotSenkron(false))
+        .then(() => { if (sonra && JSON.stringify([_kisiTur, _kisiNot]) !== once) sonra(); }).catch(() => {});
+}
+// Geçiş: kişi türü kaydında telefon/not kalmışsa (ilk sürüm) oturumlu not kaydına taşı ve türden sil.
+function kyNotTasi() {
+    if (!kyOturumVar()) return Promise.resolve();
+    let simdi = Date.now(), tasindi = false;
+    Object.keys(_kisiTur).forEach(k => {
+        let e = _kisiTur[k]; if (!e || !KY_NOT_ALANLARI.some(f => e[f] !== undefined)) return;
+        if (KY_NOT_ALANLARI.some(f => e[f])) _kisiNot[k] = Object.assign({}, _kisiNot[k] || {}, { tel: e.tel || '', not: e.not || '', t: simdi });
+        let y = Object.assign({}, e); KY_NOT_ALANLARI.forEach(f => delete y[f]); y.t = simdi; _kisiTur[k] = y; tasindi = true;
+    });
+    if (!tasindi) return Promise.resolve();
+    kyDepoYazYerel('kisi_turleri', _kisiTur); kyDepoYazYerel('kisi_notlari', _kisiNot);
+    return kyNotSenkron(true).then(() => kyDepoSenkron('kisi_turleri', () => _kisiTur, true)).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); });
+}
+function kisiTurAyarla(g, ad, alanlar) {
+    let k = kyAnahtar(g, ad), simdi = Date.now(), tur = {}, not = {};
+    Object.keys(alanlar || {}).forEach(f => { (KY_NOT_ALANLARI.includes(f) ? not : tur)[f] = alanlar[f]; });
+    if (Object.keys(not).length) {
+        _kisiNot[k] = Object.assign({}, _kisiNot[k] || {}, not, { t: simdi });
+        kyDepoYazYerel('kisi_notlari', _kisiNot); kyNotSenkron(true);
+    }
+    if (Object.keys(tur).length || !_kisiTur[k]) {
+        _kisiTur[k] = Object.assign({}, _kisiTur[k] || { tur: 'sporcu' }, tur, { t: simdi });
+        kyDepoYazYerel('kisi_turleri', _kisiTur);
+        kyDepoSenkron('kisi_turleri', () => _kisiTur, true).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); });
+    }
+}
+// Birleştirme / isim düzeltme sonrası türü ve notları yeni anahtara taşı (hedefin kendi türü varsa o kalır).
 function kisiTurTasi(eG, eAd, yG, yAd) {
-    let e = _kisiTur[kyAnahtar(eG, eAd)]; if (!e || (eG === yG && eAd === yAd)) return;
-    let h = _kisiTur[kyAnahtar(yG, yAd)], simdi = Date.now();
-    if (!h || h.tur === 'sporcu') _kisiTur[kyAnahtar(yG, yAd)] = Object.assign({}, e, { t: simdi });
-    _kisiTur[kyAnahtar(eG, eAd)] = { tur: 'sporcu', t: simdi };
-    kyDepoYazYerel('kisi_turleri', _kisiTur);
-    kyDepoSenkron('kisi_turleri', () => _kisiTur, true).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); });
+    if (eG === yG && eAd === yAd) return;
+    let ek = kyAnahtar(eG, eAd), yk = kyAnahtar(yG, yAd), simdi = Date.now();
+    let e = _kisiTur[ek];
+    if (e) {
+        let h = _kisiTur[yk];
+        if (!h || h.tur === 'sporcu') _kisiTur[yk] = Object.assign({}, e, { t: simdi });
+        _kisiTur[ek] = { tur: 'sporcu', t: simdi };
+        kyDepoYazYerel('kisi_turleri', _kisiTur);
+        kyDepoSenkron('kisi_turleri', () => _kisiTur, true).then(t => { _kisiTur = kyDepoBirlestir(t, _kisiTur); });
+    }
+    let n = _kisiNot[ek];
+    if (n && (n.tel || n.not)) {
+        let h = _kisiNot[yk] || {};
+        _kisiNot[yk] = { tel: h.tel || n.tel || '', not: [h.not, n.not].filter(Boolean).join(' · '), t: simdi };
+        _kisiNot[ek] = { tel: '', not: '', t: simdi };
+        kyDepoYazYerel('kisi_notlari', _kisiNot); kyNotSenkron(true);
+    }
 }
 function kyRozetHTML(g, ad) {
     let t = kisiTuru(g, ad); if (t === 'sporcu') return '';
@@ -212,7 +259,7 @@ function kyYenidenCiz() {
 }
 
 // ---------------------------------------------------------------- 2) Çift Kayıt v2
-let _ky = { ara: '', secili: [], hedef: null, duzenle: null, kisiSekme: 'egitmen', kisiAra: '', misafirForm: false, calisiyor: false };
+let _ky = { kopuk: null, notCekildi: false, ara: '', secili: [], hedef: null, duzenle: null, kisiSekme: 'egitmen', kisiAra: '', misafirForm: false, calisiyor: false };
 function kyFarkliOku() { try { return new Set(JSON.parse(localStorage.getItem('dag_cift_farkli') || '[]')); } catch (e) { return new Set(); } }
 function kyCiftAnahtar(a, b) { return [a, b].sort().join('~'); }
 // Otomatik öneriler: aynı isim (harf/boşluk/Türkçe karakter farkı, ad-soyad yer değişimi) + 1-2 harf farkı.
@@ -294,11 +341,41 @@ function kyCiftKayitCiz() {
     window._kyOneriCache = oneriler;
     alan.innerHTML = `<div class="ky">
         <div><div class="ky-baslik">🧹 Çift Kayıt</div><div class="ky-alt">İsim yaz; o isimde ve ona benzeyen (bir-iki harf farklı, ı/i, ş/s gibi) tüm kayıtları görürsün. Yanlış yazılmış ismi <b>Adını düzelt</b> ile düzelt ya da aynı kişiye ait kayıtları seçip <b>tek kayıtta birleştir</b>. Seriler, yoklama, aidat ve ders kayıtları taşınır — veri kaybolmaz.</div></div>
+        ${kyKopukHTML()}
         <input class="ky-ara" id="ky-ara" type="search" placeholder="🔍 İsim yaz — ör. sare" value="${esc(_ky.ara)}" oninput="kyAra(this.value)" autocomplete="off">
         ${sonuc}
         ${kyPanelHTML()}
         ${oneriHTML}
     </div>`;
+}
+// ---- eski Kategori Taşı onarımı: sunucuda eski (grup, ad) anahtarında kalmış seri/ders/yoklama/aidat
+function kyKopukHTML() {
+    if (_ky.kopuk === null) {
+        _ky.kopuk = 'yukleniyor';
+        fetch('/api/athlete-moves/kopuk').then(r => r.ok ? r.json() : { kopuk: [] }).then(d => { _ky.kopuk = d.kopuk || []; }).catch(() => { _ky.kopuk = []; })
+            .then(() => { if (typeof yoneticiSekmeAktif !== 'undefined' && yoneticiSekmeAktif === 'ciftkayit') kyCiftKayitCiz(); });
+        return '';
+    }
+    if (!Array.isArray(_ky.kopuk) || !_ky.kopuk.length) return '';
+    let top = _ky.kopuk.reduce((a, k) => ({ seri: a.seri + k.seri, ders: a.ders + k.ders, yoklama: a.yoklama + k.yoklama, aidat: a.aidat + k.aidat, atis: a.atis + k.atis }), { seri: 0, ders: 0, yoklama: 0, aidat: 0, atis: 0 });
+    let parcalar = k => [k.seri && k.seri + ' seri', k.yoklama && k.yoklama + ' yoklama', k.aidat && k.aidat + ' aidat ayı', k.ders && k.ders + ' ders kaydı', k.atis && k.atis + ' atış kaydı'].filter(Boolean).join(', ');
+    return `<div class="ky-kart" style="border-color:var(--status-warning,#d97706); background:color-mix(in srgb, var(--status-warning,#d97706) 8%, var(--surface-1,#111));">
+        <div style="font-weight:900; font-size:15px;">🛠️ Eski kategori taşımalarında kopuk kalmış veri var</div>
+        <div class="ky-alt">Eskiden "Kategori Taşı" ve isim değiştirme sadece sporcunun kendisini taşıyordu; aşağıdaki ${_ky.kopuk.length} sporcunun <b>${parcalar(top)}</b> sunucuda eski grupta/isimde kaldı ve sayfa yenilenince görünmüyor. <b>Onar</b> hepsini doğru kayda bağlar — hiçbir şey silinmez.</div>
+        <div class="ky-liste">${_ky.kopuk.map(k => `<div class="ky-bilgi" style="margin:0"><b>${esc(k.hedefAd)}</b><span>${esc(kyGrupAd(k.eskiGrup))}${k.eskiAd !== k.hedefAd ? ' (eski adı: ' + esc(k.eskiAd) + ')' : ''} → ${esc(kyGrupAd(k.hedefGrup))}</span><span>${parcalar(k)}</span></div>`).join('')}</div>
+        <div><button class="ky-btn yesil" ${_ky.calisiyor ? 'disabled' : ''} onclick="kyKopukOnar()">${_ky.calisiyor ? 'Onarılıyor…' : '🛠️ Onar — verileri doğru kayda bağla'}</button></div></div>`;
+}
+function kyKopukOnar() {
+    if (_ky.calisiyor) return;
+    _ky.calisiyor = true; kyCiftKayitCiz();
+    fetch('/api/athlete-moves/onar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ deviceId: typeof _cihazId !== 'undefined' ? _cihazId : null }) })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => {
+            let liste = d.onarilan || [], n = liste.reduce((a, k) => a + k.seri, 0);
+            showToast(`🛠️ ${liste.length} sporcunun verisi onarıldı (${n} seri geri bağlandı).`, 'success');
+            _ky.kopuk = null;
+            try { bulutManuelYenile(); } catch (e) {}
+        }).catch(st => showToast(st === 401 ? 'Bu işlem için giriş yapmalısın.' : 'Onarım yapılamadı — bağlantıyı kontrol edip tekrar dene. Hiçbir şey değişmedi.', 'error'))
+        .then(() => { _ky.calisiyor = false; kyCiftKayitCiz(); });
 }
 function kyPanelHTML() {
     if (_ky.secili.length < 2) return _ky.secili.length === 1 ? `<div class="ky-panel"><div class="ky-alt">1 kayıt seçildi — birleştirmek için aynı kişiye ait en az bir kayıt daha seç.</div><div><button class="ky-btn" onclick="kySecimTemizle()">Seçimi temizle</button></div></div>` : '';
@@ -385,6 +462,7 @@ function kyDuzenleKaydet(kk) {
 // ---------------------------------------------------------------- 3) Eğitmen & Misafir
 function kyKisilerCiz() {
     kyCss();
+    if (!_ky.notCekildi) { _ky.notCekildi = true; kisiTurCek(() => { if (typeof yoneticiSekmeAktif !== "undefined" && yoneticiSekmeAktif === "kisiler") kyKisilerCiz(); }); }
     let alan = document.getElementById('yonetici-liste'); if (!alan) return;
     let tum = kyTumKisiler();
     let egit = tum.filter(x => kisiTuru(x.g, x.ad) === 'egitmen'), mis = tum.filter(x => kisiTuru(x.g, x.ad) === 'misafir');

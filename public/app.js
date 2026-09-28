@@ -9183,22 +9183,15 @@ ${(function(){
             let sp = turnuvaDB[eskiGrup] && turnuvaDB[eskiGrup][ad]; if(!sp) return;
             if(!turnuvaDB[yeniGrup]) turnuvaDB[yeniGrup] = {};
             if(turnuvaDB[yeniGrup][ad]) { showToast(`${ad} zaten ${LIG_ETIKET[yeniGrup]} grubunda!`,'warning'); return; }
-            // Sunucudaki satırı YERİNDE taşımayı BEKLE (tombstone+redirect ile) — yoksa aşağıdaki
-            // snapshot gönderimi yeni grupta ayrı bir satır oluşturur ve eski grupta hayalet kopya kalır.
-            sporcuSunucudaTasi(eskiGrup, ad, yeniGrup, ad).finally(() => {
-                let tasZaman = Date.now();
-                turnuvaDB[yeniGrup][ad] = {...sp, lastModified: tasZaman + 2};
-                delete turnuvaDB[eskiGrup][ad];
-                // Yeni gruptaki eski tombstone'u temizle + eski grup için "taşındı" tombstone'u koy
-                // (yoksa diğer cihazlar merge sonrası sporcuyu ESKİ grupta da yaşatmaya devam ediyordu)
-                silinenlerDB = silinenlerDB.filter(s => !(s.grup === yeniGrup && s.ad === ad));
-                if(!silindiMi(eskiGrup, ad)) silinenlerDB.push({ ad: ad, grup: eskiGrup, tarih: tasZaman, tasindi: true });
-                silinenlerKaydet();
-                yoneticiKaydet();
-                showToast(`✅ ${ad} → ${LIG_ETIKET[yeniGrup]} taşındı`, 'success');
+            // 2026-09-28: veri kaybı olmayan yol (_sporcuYenidenAdlandir → sunucuda /rename = birleştirme): seriler,
+            // atış günlüğü, ders kayıtları, yoklama yeni gruba taşınır. Eski yol (sporcuSunucudaTasi/moveAthlete)
+            // sadece sporcu satırını taşıyordu — seriler eski grupta kalıp yeniden yüklemede kayboluyordu.
+            // İnternet yoksa hiçbir şey değişmez, hata mesajı gösterilir.
+            _sporcuYenidenAdlandir(eskiGrup, ad, ad, yeniGrup).then(() => {
+                showToast(`✅ ${ad} → ${LIG_ETIKET[yeniGrup]} taşındı (tüm geçmişiyle)`, 'success');
                 yoneticiPaneliCiz();
                 try { siralamaListesiDoldur(); } catch(e) {}
-            });
+            }).catch(e => showToast('Kategori taşınamadı: ' + (e && e.message ? e.message : 'bağlantı hatası') + ' — hiçbir şey değişmedi.', 'error'));
         }
         // Düzenleme kilidi — başka cihaz veri giremesin
         let _duzenlemeKilidi = null; // { g, ad, zaman }

@@ -119,6 +119,24 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   ...GIRIS_ACIK_YOLLAR.map((p) => "/api/milo/giris/" + p),
 ]);
 
+// GÜVENLİK (2026-09-28): router yalnızca yazmaları kilitliyordu — aşağıdaki OKUMALAR da oturumsuz açıktı
+// (aidat tutarları/notları, personel ücretleri ve giriş günleri, giderler, yedek listesi, öneri/şikayet
+// kayıtları, ziyaretçi özeti). Hepsi yalnızca yönetici/eğitmen ekranlarından, oturum başlığıyla okunuyor.
+// sync.js bu okumalardan 401 alırsa ilgili alanı ATLAR (yerel veri silinmez), senkronun geri kalanı sürer.
+const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
+  "/api/dues",
+  "/api/personnel",
+  "/api/attendance/personnel",
+  "/api/gider",
+  "/api/backups",
+  "/api/ihtiyac",
+  "/api/tanitim/ziyaret-ozet",
+  "/api/athlete-moves/kopuk",
+  "/api/milo/dues",
+  "/api/milo/personnel",
+  "/api/milo/attendance/personnel",
+]);
+
 // "Kim ne yaptı" günlüğü: her yazma değil (senkron yüzlerce istek atıyor), yalnızca silmeler ve hassas
 // bölümler (aidat, gider, personel, yedekten geri yükleme) kişi adıyla kaydedilir.
 function gunlugeYazilsinMi(method: string, path: string): boolean {
@@ -148,6 +166,9 @@ export default {
     const match = router.match(request.method, url.pathname);
     if (match) {
       try {
+        if (request.method === "GET" && OTURUMLU_OKUMA_YOLLARI.has(match.path)) {
+          if (!(await yetkiliOturum(request, env, url.pathname.startsWith("/api/milo/")))) return unauthorized("oturum-yok");
+        }
         if (request.method !== "GET" && !PUBLIC_YAZMA_YOLLARI.has(match.path)) {
           const milo = url.pathname.startsWith("/api/milo/");
           const oturum = await yetkiliOturum(request, env, milo);

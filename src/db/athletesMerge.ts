@@ -144,3 +144,62 @@ export async function renameAthlete(
   if (src.izleKodu) await env.DB.prepare("UPDATE athletes SET izleKodu = ? WHERE grup = ? AND ad = ?").bind(src.izleKodu, yeniGrup, yeniAd).run();
   return { applied: true, moved: r.moved };
 }
+
+// Kategori Taşı onarımı (2026-09-28) — eski taşıma yolu (moveAthlete) SADECE athletes satırını taşıyordu;
+// seriler, atış günlüğü, ders kayıtları eski (grup, ad) anahtarında; isim de değiştiyse yoklama/aidat eski
+// isimde kaldı → yeniden yüklemede sporcuya bağlanmıyordu. Her taşıma için zincirin SON hedefi bulunur ve
+// kopuk satırlar ona taşınır (çakışanda hedefinki kalır). İsme bağlı tablolar (yoklama, aidat) yalnızca isim
+// değiştiyse VE eski isim şu an başka hiçbir sporcuda kullanılmıyorsa taşınır.
+export interface KopukTasima { eskiGrup: string; eskiAd: string; hedefGrup: string; hedefAd: string; seri: number; atis: number; ders: number; yoklama: number; aidat: number; }
+export async function tasimaKopuklari(env: Env): Promise<KopukTasima[]> {
+  const { results } = await env.DB.prepare("SELECT eski_grup, eski_ad FROM athlete_moves").all<{ eski_grup: string; eski_ad: string }>();
+  const say = async (sql: string, ...args: unknown[]) => (await env.DB.prepare(sql).bind(...args).first<{ n: number }>())?.n ?? 0;
+  const out: KopukTasima[] = [];
+  for (const m of results) {
+    const hedef = await resolveAthleteRedirect(env, { grup: m.eski_grup, ad: m.eski_ad });
+    if (hedef.grup === m.eski_grup && hedef.ad === m.eski_ad) continue;
+    if (!(await say("SELECT COUNT(*) AS n FROM athletes WHERE grup = ? AND ad = ?", hedef.grup, hedef.ad))) continue;
+    const adDegisti = hedef.ad !== m.eski_ad;
+    const eskiAdKullanimda = adDegisti ? await say("SELECT COUNT(*) AS n FROM athletes WHERE ad = ?", m.eski_ad) : 1;
+    const k: KopukTasima = {
+      eskiGrup: m.eski_grup, eskiAd: m.eski_ad, hedefGrup: hedef.grup, hedefAd: hedef.ad,
+      seri: await say("SELECT COUNT(*) AS n FROM series WHERE grup = ? AND ad = ?", m.eski_grup, m.eski_ad),
+      atis: await say("SELECT COUNT(*) AS n FROM shot_log WHERE grup = ? AND ad = ?", m.eski_grup, m.eski_ad),
+      ders: await say("SELECT COUNT(*) AS n FROM antrenman_programi_katilimci WHERE grup = ? AND ad = ?", m.eski_grup, m.eski_ad),
+      yoklama: eskiAdKullanimda ? 0 : (await say("SELECT COUNT(*) AS n FROM attendance_auto WHERE ad = ?", m.eski_ad)) + (await say("SELECT COUNT(*) AS n FROM attendance_auto_archive WHERE ad = ?", m.eski_ad)),
+      aidat: eskiAdKullanimda ? 0 : await say("SELECT COUNT(*) AS n FROM dues WHERE ad = ?", m.eski_ad),
+    };
+    if (k.seri || k.atis || k.ders || k.yoklama || k.aidat) out.push(k);
+  }
+  return out;
+}
+export async function tasimaOnar(env: Env): Promise<KopukTasima[]> {
+  const liste = await tasimaKopuklari(env);
+  const zaman = Date.now();
+  for (const k of liste) {
+    const e = [k.eskiGrup, k.eskiAd], h = [k.hedefGrup, k.hedefAd];
+    const adimlar = [
+      env.DB.prepare("UPDATE series SET grup = ?, ad = ? WHERE grup = ? AND ad = ?").bind(...h, ...e),
+      env.DB.prepare("UPDATE shot_log SET grup = ?, ad = ? WHERE grup = ? AND ad = ?").bind(...h, ...e),
+      env.DB.prepare("INSERT OR IGNORE INTO antrenman_programi_katilimci (slotId, grup, ad, eklenme) SELECT slotId, ?, ?, eklenme FROM antrenman_programi_katilimci WHERE grup = ? AND ad = ?").bind(...h, ...e),
+      env.DB.prepare("DELETE FROM antrenman_programi_katilimci WHERE grup = ? AND ad = ?").bind(...e),
+    ];
+    if (k.yoklama) {
+      adimlar.push(
+        env.DB.prepare("INSERT OR IGNORE INTO attendance_auto (tarih, ad, grup, saat, elle, geldi) SELECT tarih, ?, ?, saat, elle, geldi FROM attendance_auto WHERE ad = ?").bind(k.hedefAd, k.hedefGrup, k.eskiAd),
+        env.DB.prepare("DELETE FROM attendance_auto WHERE ad = ?").bind(k.eskiAd),
+        env.DB.prepare("INSERT OR IGNORE INTO attendance_auto_archive (tarih, ad, grup, saat, elle, geldi) SELECT tarih, ?, ?, saat, elle, geldi FROM attendance_auto_archive WHERE ad = ?").bind(k.hedefAd, k.hedefGrup, k.eskiAd),
+        env.DB.prepare("DELETE FROM attendance_auto_archive WHERE ad = ?").bind(k.eskiAd),
+      );
+    }
+    if (k.aidat) {
+      adimlar.push(
+        env.DB.prepare("INSERT OR IGNORE INTO dues (ad, ay, odendi, tutar, tarih) SELECT ?, ay, odendi, tutar, tarih FROM dues WHERE ad = ?").bind(k.hedefAd, k.eskiAd),
+        env.DB.prepare("DELETE FROM dues WHERE ad = ?").bind(k.eskiAd),
+      );
+    }
+    adimlar.push(env.DB.prepare("UPDATE athletes SET lastModified = ? WHERE grup = ? AND ad = ?").bind(zaman, ...h));
+    await env.DB.batch(adimlar);
+  }
+  return liste;
+}

@@ -4,7 +4,7 @@ import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json"
 import { broadcast } from "../lib/broadcast";
 import { yetkiliOturum } from "../auth";
 import * as athletesDb from "../db/athletes";
-import { mergeAthlete, renameAthlete } from "../db/athletesMerge";
+import { mergeAthlete, renameAthlete, tasimaKopuklari, tasimaOnar } from "../db/athletesMerge";
 
 // "/api/athletes/:grup/:ad" hem sporcunun kendi öz-servis girişleri (ör. günlük Hazır Olma anketi)
 // HEM DE yönetici-only alan düzenlemeleri (sağlık raporu/lisans bitiş tarihi gibi hassas belgeler)
@@ -139,6 +139,15 @@ export function registerAthleteRoutes(router: Router): void {
       payload: { grup: body.toGrup, ad: body.toAd, fields: { merged: true }, lastModified: zaman },
     });
     return json(result);
+  });
+
+  // Kategori Taşı onarımı (2026-09-28): GET oturum ister (index.ts OTURUMLU_OKUMA_YOLLARI), POST varsayılan olarak ister.
+  router.get("/api/athlete-moves/kopuk", async (_request, env) => json({ kopuk: await tasimaKopuklari(env) }));
+  router.post("/api/athlete-moves/onar", async (request, env) => {
+    const body = await readJson<{ deviceId?: string }>(request).catch(() => ({} as { deviceId?: string }));
+    const onarilan = await tasimaOnar(env);
+    if (onarilan.length) await broadcast(env, { type: "master-changed", deviceId: body.deviceId ?? null, payload: {} });
+    return json({ onarilan });
   });
 
   // İsim Düzelt (2026-09-28) — veri kaybı olmadan yeniden adlandırma (bkz. renameAthlete). Admin-only.

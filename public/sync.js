@@ -33,6 +33,8 @@
     return res.json();
   }
   const get = (path) => api(path, { method: "GET" });
+  // Oturum isteyen okumalar: 401 → null (girişsiz cihazda senkronu durdurmasın).
+  const getYetkili = (path) => get(path).catch((e) => { if (e && e.status === 401) return null; throw e; });
   const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body || {}) });
   const put = (path, body) => api(path, { method: "PUT", body: JSON.stringify(body || {}) });
   const patch = (path, body) => api(path, { method: "PATCH", body: JSON.stringify(body || {}) });
@@ -145,10 +147,10 @@
       get("/api/athletes"),
       get("/api/series"),
       get("/api/meta"),
-      get("/api/dues"),
+      getYetkili("/api/dues"),
       get("/api/attendance/auto"),
-      get("/api/personnel"),
-      get("/api/attendance/personnel"),
+      getYetkili("/api/personnel"),
+      getYetkili("/api/attendance/personnel"),
       get("/api/custom-classes"),
       get("/api/athletes/deleted"),
     ]);
@@ -166,8 +168,10 @@
       if (sp) sp.seriler.push({ seriId: s.seriId, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, okAraliklari: s.okAraliklari || null });
     });
 
-    const aidatDB = {};
-    duesRes.dues.forEach((d) => {
+    // Aidat/personel okumaları oturum ister (2026-09-28): 401 → null → alan hiç gönderilmez (undefined),
+    // bulutVeriyiUygula da "if(p.X)" ile atlar — girişsiz cihazda yerel veri silinmez, senkronun geri kalanı sürer.
+    const aidatDB = duesRes ? {} : undefined;
+    if (duesRes) duesRes.dues.forEach((d) => {
       (aidatDB[d.ad] = aidatDB[d.ad] || {})[d.ay] = { odendi: d.odendi, tutar: d.tutar, tarih: d.tarih, notMetin: d.notMetin, odemeTarihi: d.odemeTarihi };
     });
 
@@ -182,9 +186,9 @@
       if (raw && raw.value) extra = { ...extra, ...JSON.parse(raw.value) };
     } catch (e) {}
 
-    const personelYoklamaDB = [];
+    const personelYoklamaDB = personnelAttRes ? [] : undefined;
     const pyokMap = {};
-    personnelAttRes.attendance.forEach((r) => {
+    if (personnelAttRes) personnelAttRes.attendance.forEach((r) => {
       if (!pyokMap[r.tarih]) { pyokMap[r.tarih] = { id: "pyok_" + r.tarih, tarih: r.tarih, gelenler: [], gelmediler: [] }; personelYoklamaDB.push(pyokMap[r.tarih]); }
       (r.geldi !== 0 ? pyokMap[r.tarih].gelenler : pyokMap[r.tarih].gelmediler).push(r.personel_id);
     });
@@ -194,7 +198,7 @@
       takimlarDB: extra.takimlarDB,
       antrenmanlarDB: extra.antrenmanlarDB,
       ozelSiniflar: classesRes.classes,
-      personelDB: personnelRes.personnel,
+      personelDB: personnelRes ? personnelRes.personnel : undefined,
       personelYoklamaDB,
       elemeEslesmeleri: extra.elemeEslesmeleri,
       takimElemeEslesmeleri: extra.takimElemeEslesmeleri,
