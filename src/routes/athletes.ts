@@ -4,7 +4,7 @@ import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json"
 import { broadcast } from "../lib/broadcast";
 import { yetkiliOturum } from "../auth";
 import * as athletesDb from "../db/athletes";
-import { mergeAthlete } from "../db/athletesMerge";
+import { mergeAthlete, renameAthlete } from "../db/athletesMerge";
 
 // "/api/athletes/:grup/:ad" hem sporcunun kendi öz-servis girişleri (ör. günlük Hazır Olma anketi)
 // HEM DE yönetici-only alan düzenlemeleri (sağlık raporu/lisans bitiş tarihi gibi hassas belgeler)
@@ -141,7 +141,26 @@ export function registerAthleteRoutes(router: Router): void {
     return json(result);
   });
 
+  // İsim Düzelt (2026-09-28) — veri kaybı olmadan yeniden adlandırma (bkz. renameAthlete). Admin-only.
+  router.post("/api/athletes/:grup/:ad/rename", async (request, env, params) => {
+    const body = await readJson<{ yeniAd: string; yeniGrup?: string; deviceId?: string }>(request);
+    const yeniAd = (body.yeniAd || "").trim();
+    if (!yeniAd) return badRequest("yeniAd is required");
+    const zaman = Date.now();
+    const result = await renameAthlete(env, params.grup, params.ad, yeniAd, zaman, body.yeniGrup);
+    if (!result.applied) return badRequest(result.reason || "rename-failed");
+    await broadcast(env, {
+      type: "athlete-updated",
+      deviceId: body.deviceId ?? null,
+      payload: { grup: params.grup, ad: params.ad, fields: { deleted: true, mergedInto: { grup: body.yeniGrup || params.grup, ad: yeniAd } }, lastModified: zaman },
+    });
+    return json(result);
+  });
+
   router.delete("/api/athletes/:grup/:ad", async (request, env, params) => {
+    // GÜVENLİK (2026-09-28): bu yol PATCH'in öz-servis alanları için PUBLIC_YAZMA_YOLLARI'nda — aynı eşleşme
+    // DELETE'i de oturumsuz bırakıyordu (URL'i bilen herkes sporcu silebiliyordu). Silme her zaman oturum ister.
+    if (!(await yetkiliOturum(request, env, false))) return unauthorized();
     const url = new URL(request.url);
     const deviceId = url.searchParams.get("deviceId");
     const result = await athletesDb.deleteAthlete(env, params.grup, params.ad, Date.now());

@@ -7311,7 +7311,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['kisiler','🪪','Eğitmen & Misafir'],['guvenlik','🔐','Güvenlik']]],
             ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
@@ -7396,7 +7396,7 @@
             yoneticiSekmeAktif = k; _yonDigerAcik = false; yoneticiNavCiz();
             let arama = document.getElementById('yonetici-arama');
             let ligBar = document.getElementById('yon-lig-bar');
-            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge') ? 'none' : 'grid';
+            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler') ? 'none' : 'grid';
             yoneticiLigButonGuncelle();
             if(k === 'kullanicilar') { renderHedefId = 'yonetici-liste'; if(arama) arama.style.display = 'block'; yoneticiPaneliCiz(); return; }
             if(arama) arama.style.display = 'none';
@@ -7417,7 +7417,8 @@
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
-            if(k === 'ciftkayit') { yoneticiCiftKayitCiz(); return; }
+            if(k === 'ciftkayit') { if(typeof kyCiftKayitCiz === 'function') kyCiftKayitCiz(); else yoneticiCiftKayitCiz(); return; }
+            if(k === 'kisiler') { if(typeof kyKisilerCiz === 'function') kyKisilerCiz(); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
             if(k === 'ihtiyac') { renderHedefId = 'yonetici-liste'; yoneticiIhtiyacCiz(); return; }
             if(k === 'belge') { renderHedefId = 'yonetici-liste'; yoneticiBelgeCiz(); return; }
@@ -9064,7 +9065,7 @@ ${(function(){
                     let yayKisa = sp.yay === 'Makaralı' ? '⚙️ Mak.' : (sp.yay === 'Klasik' ? '🏹 Klsk.' : null);
                     html += `<details id="duz-${g}-${ad.replace(/[^a-z0-9]/gi,'_')}" style="margin-bottom:6px;" ontoggle="if(this.open){_kilitKoy('${g}','${adEsc}'); setTimeout(()=>this.scrollIntoView({behavior:'smooth',block:'start'}),80);}else{_kilitKaldir();}">
                         <summary style="cursor:pointer;background:var(--bg-panel);border:1px solid ${kilitli?'var(--accent-orange)':(don?'var(--neon-red)':'var(--border-color)')};border-radius:10px;padding:10px 12px;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <span style="flex:1; min-width:100px; font-weight:800;font-size:13px;">${don?'🚫 ':spEmoji(sp)}${ad}</span>
+                            <span style="flex:1; min-width:100px; font-weight:800;font-size:13px;">${don?'🚫 ':spEmoji(sp)}${ad}${typeof kyRozetHTML === 'function' ? kyRozetHTML(g, ad) : ''}</span>
                             ${yasEtiket ? `<span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">${yasEtiket}</span>` : ''}
                             ${yayKisa ? `<span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">${yayKisa}</span>` : ''}
                             ${kilitli?'<span style="font-size:10px;color:var(--accent-orange);font-weight:700;">🔒 Düzenleniyor</span>':''}
@@ -9102,6 +9103,7 @@ ${(function(){
                                 <button onclick="yoneticiKategoriTasi('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:rgba(139,92,246,0.1);color:#a78bfa;border-color:#8b5cf6;">📂 Kategori Taşı</button>
                                 <button onclick="yoneticiSil('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:rgba(239,68,68,0.1);color:var(--neon-red);border-color:var(--neon-red);">🗑️ Sil</button>
                             </div>
+                            ${typeof kyTurSeciciHTML === 'function' ? kyTurSeciciHTML(g, ad) : ''}
                             <button onclick="canliIzlemeLinkiGoster('${g}','${adEsc}')" style="width:100%;background:rgba(0,229,255,0.1);color:var(--aurora-cyan);border:1px solid var(--aurora-cyan);padding:8px;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer;margin-bottom:8px;">🔗 Canlı İzleme Linki</button>
                             <input type="file" accept="image/*" id="foto-input-${g}-${adEsc.replace(/[^a-zA-Z0-9]/g,'')}" style="display:none;" onchange="sporcuFotoYukle('${g}','${adEsc}',event)">
                             <button onclick="document.getElementById('foto-input-${g}-${adEsc.replace(/[^a-zA-Z0-9]/g,'')}').click()" style="width:100%;background:rgba(245,192,74,0.1);color:var(--aurora-gold,#f5c04a);border:1px solid var(--aurora-gold,#f5c04a);padding:8px;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer;margin-bottom:8px;">📷 Fotoğraf Yükle/Değiştir</button>
@@ -9477,16 +9479,13 @@ ${(function(){
                 try { sporcuListesiniYenile(); } catch(e) {}
             };
             if(yeniAd !== ad) {
-                if(turnuvaDB[g][yeniAd]) return showToast('Bu isim zaten var!','error');
-                // Sunucudaki satırı YERİNDE yeniden adlandırmayı BEKLE (tombstone+redirect ile) — yoksa
-                // aşağıdaki snapshot gönderimi yeni ismi ayrı bir satır olarak oluşturur ve eski isim
-                // sunucuda hayalet kopya olarak kalıp birkaç saniye içinde tüm cihazlara geri yayılır.
-                sporcuSunucudaTasi(g, ad, g, yeniAd).finally(() => {
-                    turnuvaDB[g][yeniAd] = {...sp, lastModified: Date.now()};
-                    delete turnuvaDB[g][ad];
+                if(turnuvaDB[g][yeniAd]) return showToast('Bu isim zaten var — iki kaydı Çift Kayıt bölümünden birleştir.','error');
+                // 2026-09-28: sunucuda veri kaybı olmayan yeniden adlandırma (_sporcuYenidenAdlandir — seriler,
+                // aidat, yoklama, ders kayıtları yeni isme taşınır). Başarısızsa HİÇBİR şey değişmez.
+                _sporcuYenidenAdlandir(g, ad, yeniAd).then(() => {
                     ad = yeniAd; sp = turnuvaDB[g][ad];
                     bitir();
-                });
+                }).catch(e => showToast('İsim değiştirilemedi: ' + (e && e.message ? e.message : 'bağlantı hatası') + ' — hiçbir şey değişmedi.', 'error'));
                 return;
             }
             bitir();
@@ -9779,31 +9778,7 @@ ${(function(){
             onayIste(`<b>${esc(kaynakAd)}</b> kaydı <b>${esc(hedefAd)}</b> ile birleştirilsin mi?<br><span style="font-size:12px; color:var(--text-muted);">${kSeri} seri, aidat ve yoklama kayıtları ${esc(hedefAd)}'a taşınır; ${esc(kaynakAd)} silinir. Geri alınamaz.</span>`, async () => {
                 let btnKilit = document.getElementById('yonetici-liste'); if(btnKilit) btnKilit.style.opacity = '.5';
                 try {
-                    let r = await fetch('/api/athletes/' + encodeURIComponent(kaynakG) + '/' + encodeURIComponent(kaynakAd) + '/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toGrup: hedefG, toAd: hedefAd, deviceId: _cihazId }) });
-                    if(!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch(e) {} throw new Error(t || ('HTTP ' + r.status)); }
-                    let sonuc = await r.json();
-                    // Yerel veri — sunucudaki AYNI birleştirme: seriler/detaylı oklar birleşir, boş alanlar dolar
-                    let ids = new Set((hedef.seriler || []).map(x => x.seriId).filter(Boolean));
-                    (kaynak.seriler || []).forEach(x => { if(!x.seriId || !ids.has(x.seriId)) (hedef.seriler = hedef.seriler || []).push(x); });
-                    hedef.seriler.sort((a, b) => (a.t || 0) - (b.t || 0));
-                    hedef.detayliOklar = (hedef.detayliOklar || []).concat(kaynak.detayliOklar || []);
-                    ['kod','dogumYili','sinif','yay','cinsiyet','fotoUrl','dogumTarihi','katilmaTarihi','acilKisi','acilTelefon','aileMeslek','genelNot','antrenmanNotu','saglikRaporuBitis','lisansBitis'].forEach(f => { if((hedef[f] === undefined || hedef[f] === null || hedef[f] === '') && kaynak[f]) hedef[f] = kaynak[f]; });
-                    hedef.coin = (hedef.coin || 0) + (kaynak.coin || 0);
-                    hedef.sonSkorZamani = Math.max(hedef.sonSkorZamani || 0, kaynak.sonSkorZamani || 0) || null;
-                    try { sporcuPuanlariYenidenHesapla(hedef); } catch(e) {}
-                    hedef.lastModified = Date.now();
-                    delete turnuvaDB[kaynakG][kaynakAd];
-                    if(!silindiMi(kaynakG, kaynakAd)) silinenlerDB.push({ ad: kaynakAd, grup: kaynakG, tarih: Date.now(), tasindi: true, kod: kaynak.kod || kaynak.dogumYili || '' });
-                    silinenlerKaydet();
-                    if(aidatDB[kaynakAd]) {
-                        aidatDB[hedefAd] = aidatDB[hedefAd] || {};
-                        Object.keys(aidatDB[kaynakAd]).forEach(ay => { let k = aidatDB[kaynakAd][ay], h = aidatDB[hedefAd][ay]; if(!h || (!h.odendi && k && k.odendi)) aidatDB[hedefAd][ay] = k; });
-                        delete aidatDB[kaynakAd]; aidatKaydet();
-                    }
-                    Object.keys(otomatikYoklamaDB || {}).forEach(t => { let gun = otomatikYoklamaDB[t]; if(gun && gun[kaynakAd]) { if(!gun[hedefAd]) gun[hedefAd] = Object.assign({}, gun[kaynakAd], { grup: hedefG }); delete gun[kaynakAd]; } });
-                    otomatikYoklamaKaydet();
-                    yoneticiKaydet();
-                    try { egitmenRenderSiniflar(); } catch(e) {} try { siralamaListesiDoldur(); } catch(e) {} try { sporcuListesiniYenile(); } catch(e) {}
+                    let sonuc = await _ciftKayitBirlestirCekirdek(kaynakG, kaynakAd, hedefG, hedefAd);
                     let m = sonuc.moved || {};
                     showToast('🧹 ' + kaynakAd + ' → ' + hedefAd + ' birleştirildi (' + (m.seri || 0) + ' seri, ' + (m.aidat || 0) + ' aidat, ' + (m.yoklama || 0) + ' yoklama).', 'success');
                 } catch(e) {
@@ -9812,6 +9787,70 @@ ${(function(){
                 if(btnKilit) btnKilit.style.opacity = '';
                 yoneticiCiftKayitCiz();
             }, '🧹 Evet, Birleştir');
+        }
+        // Onaysız çekirdek (2026-09-28) — yeni Çift Kayıt ekranı (dagsk-kisi-yonetimi.js) birden fazla kaydı
+        // tek onayla sırayla birleştirirken bunu çağırır. Sunucu başarısızsa fırlatır, yerel veriye dokunmaz.
+        async function _ciftKayitBirlestirCekirdek(kaynakG, kaynakAd, hedefG, hedefAd) {
+            let kaynak = turnuvaDB[kaynakG] && turnuvaDB[kaynakG][kaynakAd], hedef = turnuvaDB[hedefG] && turnuvaDB[hedefG][hedefAd];
+            if(!kaynak || !hedef) throw new Error('kayıt bulunamadı');
+            let r = await fetch('/api/athletes/' + encodeURIComponent(kaynakG) + '/' + encodeURIComponent(kaynakAd) + '/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toGrup: hedefG, toAd: hedefAd, deviceId: _cihazId }) });
+            if(!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch(e) {} throw new Error(t || ('HTTP ' + r.status)); }
+            let sonuc = await r.json();
+            // Yerel veri — sunucudaki AYNI birleştirme: seriler/detaylı oklar birleşir, boş alanlar dolar
+            let ids = new Set((hedef.seriler || []).map(x => x.seriId).filter(Boolean));
+            (kaynak.seriler || []).forEach(x => { if(!x.seriId || !ids.has(x.seriId)) (hedef.seriler = hedef.seriler || []).push(x); });
+            hedef.seriler.sort((a, b) => (a.t || 0) - (b.t || 0));
+            hedef.detayliOklar = (hedef.detayliOklar || []).concat(kaynak.detayliOklar || []);
+            hedef.kartGecmisi = (hedef.kartGecmisi || []).concat(kaynak.kartGecmisi || []);
+            ['kod','dogumYili','sinif','yay','cinsiyet','fotoUrl','dogumTarihi','katilmaTarihi','acilKisi','acilTelefon','aileMeslek','genelNot','antrenmanNotu','saglikRaporuBitis','lisansBitis'].forEach(f => { if((hedef[f] === undefined || hedef[f] === null || hedef[f] === '') && kaynak[f]) hedef[f] = kaynak[f]; });
+            hedef.coin = (hedef.coin || 0) + (kaynak.coin || 0);
+            hedef.sonSkorZamani = Math.max(hedef.sonSkorZamani || 0, kaynak.sonSkorZamani || 0) || null;
+            try { sporcuPuanlariYenidenHesapla(hedef); } catch(e) {}
+            hedef.lastModified = Date.now();
+            delete turnuvaDB[kaynakG][kaynakAd];
+            if(!silindiMi(kaynakG, kaynakAd)) silinenlerDB.push({ ad: kaynakAd, grup: kaynakG, tarih: Date.now(), tasindi: true, kod: kaynak.kod || kaynak.dogumYili || '' });
+            silinenlerKaydet();
+            _sporcuYerelAnahtarTasi(kaynakG, kaynakAd, hedefG, hedefAd);
+            yoneticiKaydet();
+            try { egitmenRenderSiniflar(); } catch(e) {} try { siralamaListesiDoldur(); } catch(e) {} try { sporcuListesiniYenile(); } catch(e) {}
+            return sonuc;
+        }
+        // Birleştirme/isim düzeltme sonrası ad-anahtarlı yerel kayıtları (aidat, yoklama, ders kayıtları,
+        // kişi türü) yeni anahtara taşır — sunucudaki aynı taşımanın yerel aynası.
+        function _sporcuYerelAnahtarTasi(kaynakG, kaynakAd, hedefG, hedefAd) {
+            if(aidatDB[kaynakAd] && kaynakAd !== hedefAd) {
+                aidatDB[hedefAd] = aidatDB[hedefAd] || {};
+                Object.keys(aidatDB[kaynakAd]).forEach(ay => { let k = aidatDB[kaynakAd][ay], h = aidatDB[hedefAd][ay]; if(!h || (!h.odendi && k && k.odendi)) aidatDB[hedefAd][ay] = k; });
+                delete aidatDB[kaynakAd]; aidatKaydet();
+            }
+            Object.keys(otomatikYoklamaDB || {}).forEach(t => { let gun = otomatikYoklamaDB[t]; if(gun && gun[kaynakAd] && (!gun[kaynakAd].grup || gun[kaynakAd].grup === kaynakG)) { if(!gun[hedefAd]) gun[hedefAd] = Object.assign({}, gun[kaynakAd], { grup: hedefG }); if(kaynakAd !== hedefAd || kaynakG !== hedefG) delete gun[kaynakAd]; } });
+            otomatikYoklamaKaydet();
+            try { (_programSlotlar || []).forEach(s => { (s.katilimcilar || []).forEach(k => { if(k.grup === kaynakG && k.ad === kaynakAd) { k.grup = hedefG; k.ad = hedefAd; } }); s.katilimcilar = (s.katilimcilar || []).filter((k, i, a) => a.findIndex(x => x.grup === k.grup && x.ad === k.ad) === i); }); } catch(e) {}
+            try { if(typeof kisiTurTasi === 'function') kisiTurTasi(kaynakG, kaynakAd, hedefG, hedefAd); } catch(e) {}
+        }
+        // İsim Düzelt (2026-09-28) — sunucuda POST /rename (yeni isimle boş kayıt + birleştirme: seriler,
+        // aidat, yoklama, atış günlüğü, ders kayıtları eksiksiz taşınır), sonra yerel ayna. Eski yol
+        // (sporcuSunucudaTasi) sadece sporcu satırını yeniden adlandırıyordu, geçmiş eski isimde kalıyordu.
+        async function _sporcuYenidenAdlandir(g, ad, yeniAd, yeniGrup) {
+            let sp = turnuvaDB[g] && turnuvaDB[g][ad];
+            let yg = yeniGrup || g;
+            if(!sp) throw new Error('kayıt bulunamadı');
+            if(yg === g && yeniAd === ad) return { applied: false };
+            if(turnuvaDB[yg] && turnuvaDB[yg][yeniAd]) throw new Error('bu isim o grupta zaten var — birleştirmeyi kullan');
+            let r = await fetch('/api/athletes/' + encodeURIComponent(g) + '/' + encodeURIComponent(ad) + '/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ yeniAd: yeniAd, yeniGrup: yg, deviceId: _cihazId }) });
+            if(!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch(e) {} throw new Error(t === 'target-exists' ? 'bu isim zaten var' : t === 'source-missing' ? 'kayıt henüz sunucuya ulaşmadı, birkaç saniye sonra tekrar dene' : (t || ('HTTP ' + r.status))); }
+            let sonuc = await r.json();
+            if(!turnuvaDB[yg]) turnuvaDB[yg] = {};
+            turnuvaDB[yg][yeniAd] = Object.assign({}, sp, { lastModified: Date.now() });
+            delete turnuvaDB[g][ad];
+            silinenlerDB = silinenlerDB.filter(s => !(s.grup === yg && s.ad === yeniAd));
+            if(!silindiMi(g, ad)) silinenlerDB.push({ ad: ad, grup: g, tarih: Date.now(), tasindi: true, kod: sp.kod || sp.dogumYili || '' });
+            silinenlerKaydet();
+            _sporcuYerelAnahtarTasi(g, ad, yg, yeniAd);
+            try { _kmListe.forEach(k => { if(k.g === g && k.ad === ad) { k.g = yg; k.ad = yeniAd; } }); } catch(e) {}
+            yoneticiKaydet();
+            try { siralamaListesiDoldur(); } catch(e) {} try { sporcuListesiniYenile(); } catch(e) {}
+            return sonuc;
         }
         function yoneticiSilinenlerCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
@@ -10317,12 +10356,28 @@ ${(function(){
             let el = document.getElementById('km-liste'); if(!el) return;
             let q = (document.getElementById('km-ara')||{value:''}).value.trim().toLocaleLowerCase('tr');
             let html = '';
+            // 2026-09-28: eğitmenler (sporcu kaydıyla atış yapanlar) ve misafirler ayrı bölümlerde, en altta
+            // (kişi türü: dagsk-kisi-yonetimi.js → kisiTuru). Öğrenci listesi sadece öğrencileri gösterir.
+            let turBul = function(g, ad) { try { return typeof kisiTuru === 'function' ? kisiTuru(g, ad) : 'sporcu'; } catch(e) { return 'sporcu'; } };
+            let bolumler = [];
             ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) {
                 let db = turnuvaDB[g] || {};
                 let adlar = Object.keys(db).filter(function(ad){ return !db[ad].pasif && !db[ad].donduruldu && (!q || ad.toLocaleLowerCase('tr').includes(q)); }).sort();
-                if(!adlar.length) return;
-                html += '<div style="font-weight:900;font-size:11px;color:var(--accent-orange);margin:10px 0 5px;letter-spacing:1px;">'+LIG_ETIKET[g]+'</div>';
-                adlar.forEach(function(ad) {
+                bolumler.push({ baslik: LIG_ETIKET[g], liste: adlar.filter(function(ad){ return turBul(g, ad) === 'sporcu'; }).map(function(ad){ return { g: g, ad: ad }; }) });
+            });
+            let ekBolum = function(tur, baslik) {
+                let liste = [];
+                ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) { let db = turnuvaDB[g] || {}; Object.keys(db).forEach(function(ad) { if(!db[ad].pasif && !db[ad].donduruldu && turBul(g, ad) === tur && (!q || ad.toLocaleLowerCase('tr').includes(q))) liste.push({ g: g, ad: ad }); }); });
+                liste.sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+                bolumler.push({ baslik: baslik, liste: liste, renk: tur === 'egitmen' ? '#38bdf8' : '#f472b6' });
+            };
+            ekBolum('egitmen', '👔 EĞİTMENLER');
+            ekBolum('misafir', '🎟️ MİSAFİRLER');
+            bolumler.forEach(function(b) {
+                if(!b.liste.length) return;
+                html += '<div style="font-weight:900;font-size:11px;color:'+(b.renk||'var(--accent-orange)')+';margin:10px 0 5px;letter-spacing:1px;">'+b.baslik+'</div>';
+                b.liste.forEach(function(it) {
+                    let g = it.g, ad = it.ad, db = turnuvaDB[g];
                     let key = g+'_'+ad;
                     let secili = !!_kmSecimler[key];
                     let avatarIc = db[ad].fotoUrl ? '<img src="'+db[ad].fotoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : (db[ad].emoji || '🎯');

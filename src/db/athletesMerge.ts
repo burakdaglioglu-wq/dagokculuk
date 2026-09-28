@@ -101,3 +101,46 @@ export async function mergeAthlete(
   ]);
   return { applied: true, moved };
 }
+
+// "İsim Düzelt" (2026-09-28) — kullanıcı: "bir harfle yanlış yazmış olabilirim, düzeltebilmeli, veri kaybı
+// olmadan". Eski yol (moveAthlete ile satırı yeniden adlandırmak) SADECE athletes satırını değiştiriyordu:
+// seriler/aidat/yoklama/atış günlüğü/ders kaydı eski isimde kalıyor, yeniden yüklemede yeni isme bağlanmıyordu.
+// Burada yeni isimle BOŞ bir hedef satır açılır (toplam/sayaç/JSON listeleri sıfır, geri kalan alanlar
+// kaynaktan kopya) ve mergeAthlete ile TÜM çocuk satırlar ona taşınır — birleştirmeyle birebir aynı, test
+// edilmiş yol. Yeni ismin eski bir silinme işareti/yönlendirmesi varsa önce temizlenir (yoksa gizlenir ya da
+// başka bir kayda yönlenirdi).
+export async function renameAthlete(
+  env: Env,
+  grup: string,
+  ad: string,
+  yeniAd: string,
+  zaman: number,
+  yeniGrupIstek?: string
+): Promise<{ applied: boolean; reason?: string; moved?: Record<string, number> }> {
+  const source = await resolveAthleteRedirect(env, { grup, ad });
+  const yeniGrup = yeniGrupIstek || source.grup;
+  if (!["buyukler", "yildizlar", "kucukler", "minikler"].includes(yeniGrup)) return { applied: false, reason: "invalid-group" };
+  if (source.ad === yeniAd && source.grup === yeniGrup) return { applied: false, reason: "same-name" };
+  const varMi = await env.DB.prepare("SELECT 1 AS n FROM athletes WHERE grup = ? AND ad = ?").bind(yeniGrup, yeniAd).first();
+  if (varMi) return { applied: false, reason: "target-exists" };
+  const src = await env.DB.prepare("SELECT * FROM athletes WHERE grup = ? AND ad = ?").bind(source.grup, source.ad).first<Record<string, unknown>>();
+  if (!src) return { applied: false, reason: "source-missing" };
+
+  const satir: Record<string, unknown> = {
+    ...src, grup: yeniGrup, ad: yeniAd, toplamSkor: 0, xAdet: 0, coin: 0, izleKodu: null, lastModified: zaman,
+    kartGecmisi_json: "[]", gecmisSezonlar_json: "[]", detayliOklar_json: "[]", biyomotorTestleri_json: "[]",
+  };
+  const kolonlar = Object.keys(satir);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM deleted_athletes WHERE grup = ? AND ad = ?").bind(yeniGrup, yeniAd),
+    env.DB.prepare("DELETE FROM athlete_moves WHERE eski_grup = ? AND eski_ad = ?").bind(yeniGrup, yeniAd),
+    env.DB.prepare(`INSERT INTO athletes (${kolonlar.join(", ")}) VALUES (${kolonlar.map(() => "?").join(", ")})`).bind(...kolonlar.map((k) => satir[k] ?? null)),
+  ]);
+  const r = await mergeAthlete(env, source.grup, source.ad, yeniGrup, yeniAd, zaman);
+  if (!r.applied) {
+    await env.DB.prepare("DELETE FROM athletes WHERE grup = ? AND ad = ?").bind(yeniGrup, yeniAd).run();
+    return r;
+  }
+  if (src.izleKodu) await env.DB.prepare("UPDATE athletes SET izleKodu = ? WHERE grup = ? AND ad = ?").bind(src.izleKodu, yeniGrup, yeniAd).run();
+  return { applied: true, moved: r.moved };
+}
