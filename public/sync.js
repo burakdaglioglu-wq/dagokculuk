@@ -235,10 +235,21 @@
   // tanesinin başarısız olduğu sayılıyor, (3) en az biri başarısızsa fonksiyon GERÇEKTEN reddediyor —
   // bu, app.js'teki 8 çağrı noktasının ZATEN yazılmış olan .catch() işleyicilerini (hepsi
   // bekleyenGonderim=true yapıyor) ilk kez gerçekten çalıştırır, tek tek değiştirmeye gerek kalmadan.
+  // DONMA DÜZELTMESİ (2026-09-29): eskiden her senkronda (ör. tek bir skor girilince) TÜM sporcular
+  // (her biri 3 istek) + geçmişteki TÜM yoklama hücreleri yeniden gönderiliyordu — yüzlerce/binlerce
+  // istek, tablette ~1 sn donma. Artık her kaydın son BAŞARIYLA gönderilen hali (bu sayfa oturumunda)
+  // hatırlanıyor; değişmeyen kayıt tekrar gönderilmiyor. Başarısız gönderim hatırlanmaz → sonraki
+  // denemede yine gider. Sayfa yenilenince harita boşalır → ilk senkron eskisi gibi her şeyi gönderir.
+  const _gonderilenImza = new Map();
   async function fanOutMasterPayload(json) {
     const p = JSON.parse(json);
     const deviceId = myDeviceId();
     const jobs = [];
+    const gonder = (anahtar, kaynak, is) => {
+      const imza = JSON.stringify(kaynak);
+      if (_gonderilenImza.get(anahtar) === imza) return;
+      jobs.push(is().then((r) => { _gonderilenImza.set(anahtar, imza); return r; }));
+    };
 
     ["buyukler", "yildizlar", "kucukler", "minikler"].forEach((g) => {
       const group = (p.turnuvaDB && p.turnuvaDB[g]) || {};
@@ -249,7 +260,7 @@
         ["oyun", "magaza", "ozelRozetler", "gorev", "monopoly"].forEach((f) => {
           if (sp[f] !== undefined) gamification[f] = sp[f];
         });
-        jobs.push(
+        gonder("sp|" + g + "|" + ad, sp, () =>
           post("/api/athletes", {
             grup: g,
             ad,
@@ -303,43 +314,40 @@
     Object.keys(p.otomatikYoklamaDB || {}).forEach((tarih) => {
       Object.keys(p.otomatikYoklamaDB[tarih]).forEach((ad) => {
         const cell = p.otomatikYoklamaDB[tarih][ad];
-        jobs.push(post("/api/attendance/auto", { tarih, ad, grup: cell.grup ?? null, saat: cell.saat, elle: !!cell.elle, geldi: cell.geldi !== false, deviceId }));
+        gonder("yok|" + tarih + "|" + ad, cell, () => post("/api/attendance/auto", { tarih, ad, grup: cell.grup ?? null, saat: cell.saat, elle: !!cell.elle, geldi: cell.geldi !== false, deviceId }));
       });
     });
 
     (p.personelDB || []).forEach((person) => {
-      jobs.push(post("/api/personnel", { ...person, deviceId }));
+      gonder("psn|" + person.id, person, () => post("/api/personnel", { ...person, deviceId }));
     });
 
     (p.personelYoklamaDB || []).forEach((kayit) => {
-      (kayit.gelenler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: true, deviceId })));
-      (kayit.gelmediler || []).forEach((id) => jobs.push(post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: false, deviceId })));
+      (kayit.gelenler || []).forEach((id) => gonder("pyok|" + kayit.tarih + "|" + id, true, () => post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: true, deviceId })));
+      (kayit.gelmediler || []).forEach((id) => gonder("pyok|" + kayit.tarih + "|" + id, false, () => post("/api/attendance/personnel", { tarih: kayit.tarih, personelId: id, elle: true, geldi: false, deviceId })));
     });
 
     (p.ozelSiniflar || []).forEach((ad) => {
-      jobs.push(post("/api/custom-classes", { ad, deviceId }));
+      gonder("sinif|" + ad, 1, () => post("/api/custom-classes", { ad, deviceId }));
     });
 
     // PIN özetleri artık senkronla taşınmıyor (2026-09-27, giriş sistemi sunucuya taşındı).
 
     if (typeof p.minSurum === "number") {
-      jobs.push(put("/api/meta/min-surum", { minSurum: p.minSurum }));
+      gonder("minSurum", p.minSurum, () => put("/api/meta/min-surum", { minSurum: p.minSurum }));
     }
 
-    jobs.push(
-      put("/api/meta/" + EXTRA_BLOB_META_KEY, {
-        value: JSON.stringify({
-          takimlarDB: p.takimlarDB || [],
-          antrenmanlarDB: p.antrenmanlarDB || [],
-          elemeEslesmeleri: p.elemeEslesmeleri || [],
-          takimElemeEslesmeleri: p.takimElemeEslesmeleri || [],
-          atisLog: p.atisLog || [],
-          rekorlarDB: p.rekorlarDB || {},
-          aktifTur: p.aktifTur || 1,
-          aktifTakimTur: p.aktifTakimTur || 1,
-        }),
-      })
-    );
+    const ekstra = {
+      takimlarDB: p.takimlarDB || [],
+      antrenmanlarDB: p.antrenmanlarDB || [],
+      elemeEslesmeleri: p.elemeEslesmeleri || [],
+      takimElemeEslesmeleri: p.takimElemeEslesmeleri || [],
+      atisLog: p.atisLog || [],
+      rekorlarDB: p.rekorlarDB || {},
+      aktifTur: p.aktifTur || 1,
+      aktifTakimTur: p.aktifTakimTur || 1,
+    };
+    gonder("ekstra", ekstra, () => put("/api/meta/" + EXTRA_BLOB_META_KEY, { value: JSON.stringify(ekstra) }));
 
     const sonuclar = await Promise.allSettled(jobs);
     const basarisizlar = sonuclar.filter((r) => r.status === "rejected");

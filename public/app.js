@@ -2213,13 +2213,11 @@
                 </div>`;
             });
 
-            html += `<details style="margin-top:6px; margin-bottom:8px;">
-                <summary style="cursor:pointer; list-style:none; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:14px; padding:12px 14px; font-weight:800; font-size:13px;">📄 Bordro PDF <span style="float:right; color:var(--text-muted);">▾</span></summary>
-                <div class="adm-card" style="border-radius:0 0 14px 14px; margin-top:-2px; margin-bottom:0; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
-                    <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:150px;"><span style="font-size:10px; color:var(--text-muted);">Ay Seç</span><input type="month" value="${ay}" onchange="personelAylikAy=this.value; egitmenRenderPersonel();" class="adm-input"></div>
-                    <button onclick="personelPDF()" style="background:var(--accent-orange); color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:bold; font-size:12px;">📄 Bordro PDF İndir</button>
-                </div>
-            </details>`;
+            // Ay seçimi: kartlardaki "bu ay" sayıları ve aşağıdaki ders bazlı bordro bu aya göre.
+            // (Eski html2pdf "Bordro PDF İndir" düğmesi 2026-09-29'da kaldırıldı — bordro PDF'i egBordroHTML'de.)
+            html += `<div class="adm-card" style="margin-top:6px; margin-bottom:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span style="font-size:12px; font-weight:800;">📆 Ay</span><input type="month" value="${ay}" onchange="personelAylikAy=this.value; egitmenRenderPersonel();" class="adm-input" style="flex:1; min-width:150px;">
+            </div>`;
             // 2026-09-28: ders başı ücret + ders bazlı bordro (dagsk-kisi-yonetimi.js egBordro*)
             try { if(typeof egBordroHTML === 'function') html += egBordroHTML(ay); } catch(e) {}
 
@@ -2272,21 +2270,6 @@
             let gunler = kayitlar.map(r => r.tarih).sort();
             let haftaKayit = personelYoklamaDB.filter(r => (r.gelenler||[]).includes(id) && buHaftaMi(r.tarih)).length;
             return { ay: kayitlar.length, hafta: haftaKayit, gunler };
-        }
-        function personelPDF() {
-            let ay = personelAylikAy;
-            let rows = personelDB.map(p => {
-                let s = personelStats(p.id, ay); let ucret = p.ucret ? (s.ay * Number(p.ucret)) : 0;
-                return `<tr><td style="padding:6px; border:1px solid #ddd;">${p.ad}</td><td style="padding:6px; border:1px solid #ddd; text-align:center;">${s.ay}</td><td style="padding:6px; border:1px solid #ddd; text-align:center;">${p.ucret||'-'}</td><td style="padding:6px; border:1px solid #ddd; text-align:center; font-weight:bold;">${p.ucret?ucret+'₺':'-'}</td></tr>`;
-            }).join('');
-            let toplam = personelDB.reduce((t,p) => t + (p.ucret ? personelStats(p.id,ay).ay * Number(p.ucret) : 0), 0);
-            let html = `<div style="font-family:sans-serif; color:#111;">
-                <div style="text-align:center; margin-bottom:12px;"><div style="font-size:22px; font-weight:900; color:#ff6200; border:2px solid #ff6200; display:inline-block; padding:4px 12px; border-radius:8px;">DAĞ S.K</div><h2 style="margin:8px 0 0 0;">Eğitmen Bordrosu — ${ay}</h2></div>
-                <table style="width:100%; border-collapse:collapse; font-size:12px;"><thead><tr style="background:#e5e7eb;"><th style="padding:6px; border:1px solid #ddd; text-align:left;">Eğitmen</th><th style="padding:6px; border:1px solid #ddd;">Gelen Gün</th><th style="padding:6px; border:1px solid #ddd;">Günlük ₺</th><th style="padding:6px; border:1px solid #ddd;">Toplam ₺</th></tr></thead><tbody>${rows}</tbody>
-                <tfoot><tr style="background:#f3f4f6; font-weight:bold;"><td colspan="3" style="padding:6px; border:1px solid #ddd; text-align:right;">GENEL TOPLAM</td><td style="padding:6px; border:1px solid #ddd; text-align:center;">${toplam}₺</td></tr></tfoot></table>
-                <div style="margin-top:12px; font-size:10px; color:#888; text-align:right;">${new Date().toLocaleString('tr-TR')}</div>
-            </div>`;
-            pdfYazdir(html, `Bordro_${ay}.pdf`);
         }
 
         /* --- HIZLI YOKLAMA (check usulü + canlı cinsiyet sayımı) --- */
@@ -4514,13 +4497,6 @@
         /* --- AYLIK YOKLAMA TAKİBİ --- */
         
 
-        /* Ortak PDF yardımcısı */
-        function pdfYazdir(html, dosyaAdi) {
-            let temp = document.createElement('div'); temp.style.cssText = 'padding:20px; background:#fff; width:760px;'; temp.innerHTML = html; document.body.appendChild(temp);
-            showToast('PDF hazırlanıyor...', 'warning');
-            let opt = { margin:[10,10,10,10], filename: dosyaAdi, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} };
-            html2pdf().set(opt).from(temp).save().then(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('İndirildi! 📄', 'success'); }).catch(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('PDF hatası.', 'error'); });
-        }
 
         /* YOKLAMA VERİSİ İNDİR (yükleyince sporcular otomatik gelir, aylık takip birikir) */
         
@@ -5950,26 +5926,16 @@
             [..._seriBekleyen].forEach(s => seriBulutaYaz(s));
         }
 
-        // Yerel kuyruk: yönetici isim değiştirme / grup taşıma sunucu çağrısı internet yokken başarısız olursa
-        // (WRITE-AHEAD: sunucudaki eski satır yerinde yeniden adlandırılana kadar kalıcı hayalet kopya riski var,
-        // bu yüzden başarılı olana kadar tekrar tekrar denenir.)
-        let _tasimaBekleyen = JSON.parse(localStorage.getItem('dag_tasima_kuyruk') || '[]');
-        function _tasimaBekleyenKaydet() { try { localStorage.setItem('dag_tasima_kuyruk', JSON.stringify(_tasimaBekleyen)); } catch(e) {} }
-        function sporcuSunucudaTasi(eskiGrup, eskiAd, yeniGrup, yeniAd) {
-            if(!_tasimaBekleyen.some(t => t.eskiGrup === eskiGrup && t.eskiAd === eskiAd)) {
-                _tasimaBekleyen.push({ eskiGrup, eskiAd, yeniGrup, yeniAd });
-                _tasimaBekleyenKaydet();
-            }
-            if(!bulutHazir || !window.dagskSync) return Promise.resolve();
-            // Çağıran taraf (yeniden adlandırma/taşıma), sunucu bu satırı yerinde taşıyıncaya kadar
-            // yeni isimle bir POST/snapshot göndermemeli — yoksa PRIMARY KEY çakışması + kalıcı hayalet kopya olur.
-            return window.dagskSync.sporcuTasi(eskiGrup, eskiAd, yeniGrup, yeniAd)
-                .then(() => { _tasimaBekleyen = _tasimaBekleyen.filter(t => !(t.eskiGrup === eskiGrup && t.eskiAd === eskiAd)); _tasimaBekleyenKaydet(); })
-                .catch(() => {});
-        }
-        function tasimalariGonder() {
-            if(!bulutHazir || !window.dagskSync || _tasimaBekleyen.length === 0) return;
-            [..._tasimaBekleyen].forEach(t => sporcuSunucudaTasi(t.eskiGrup, t.eskiAd, t.yeniGrup, t.yeniAd));
+        // Eski taşıma kuyruğu (2026-09-29'da kaldırıldı): isim/grup değişimi artık anında POST /rename ile
+        // veri kaybısız yapılıyor. Güncellemeden önce çevrimdışıyken kuyruğa düşmüş bir taşıma kaldıysa bir
+        // kez gönderilir, sonra anahtar silinir; kopuk kalan geçmişi Çift Kayıt'taki 🛠️ Onar toplar.
+        let _eskiTasimaKuyrugu = (function() { try { return JSON.parse(localStorage.getItem('dag_tasima_kuyruk') || '[]'); } catch(e) { return []; } })();
+        function eskiTasimalariBosalt() {
+            if(!_eskiTasimaKuyrugu.length || !window.dagskSync) return;
+            [..._eskiTasimaKuyrugu].forEach(t => window.dagskSync.sporcuTasi(t.eskiGrup, t.eskiAd, t.yeniGrup, t.yeniAd).then(() => {
+                _eskiTasimaKuyrugu = _eskiTasimaKuyrugu.filter(x => x !== t);
+                try { if(_eskiTasimaKuyrugu.length) localStorage.setItem('dag_tasima_kuyruk', JSON.stringify(_eskiTasimaKuyrugu)); else localStorage.removeItem('dag_tasima_kuyruk'); } catch(e) {}
+            }).catch(() => {}));
         }
 
         // Aynı desen: yönetici bir sporcuyu sildiğinde sunucudan da gerçekten silinsin — yoksa
@@ -6348,7 +6314,7 @@
             } catch(e) {}
             if(!bulutHazir || !bulutIlkPullYapildi) return;
             seriBekleyenleriGonder();
-            tasimalariGonder();
+            eskiTasimalariBosalt();
             silmelerGonder();
             personelSilmeleriGonder();
             aidatBekleyenleriGonder();
@@ -6356,7 +6322,7 @@
             kmListeBekleyenleriGonder();
             // Bekleyen bir isim/grup taşıma varsa snapshot'ı ertele — sunucudaki satır yerinde
             // taşınmadan yeni isim/grupla bir snapshot gitmesi PRIMARY KEY çakışması + hayalet kopya yaratır.
-            if(_tasimaBekleyen.length > 0) return;
+            if(_eskiTasimaKuyrugu.length > 0) return;
             // Master yedek (10sn'de bir tam snapshot)
             let json = bulutVeriJSON();
             if(json === sonBulutJSON && !bekleyenGonderim) return;
@@ -7428,7 +7394,7 @@
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
-            if(k === 'ciftkayit') { if(typeof kyCiftKayitCiz === 'function') kyCiftKayitCiz(); else yoneticiCiftKayitCiz(); return; }
+            if(k === 'ciftkayit') { kyCiftKayitCiz(); return; }
             if(k === 'kisiler') { if(typeof kyKisilerCiz === 'function') kyKisilerCiz(); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
             if(k === 'ihtiyac') { renderHedefId = 'yonetici-liste'; yoneticiIhtiyacCiz(); return; }
@@ -9034,7 +9000,6 @@ ${(function(){
                 <div style="margin-top:8px;">
                     <button onclick="kayipSkorTara()" style="width:100%; margin-bottom:8px; background:linear-gradient(135deg,#dc2626,#ef4444); color:#fff; border:none; padding:12px; border-radius:12px; font-weight:900; font-size:13px; cursor:pointer;">🚑 KAYIP SKOR TARAMA — buluta ulaşmış ama puantaja işlenmemiş serileri bul</button>
                     <button onclick="ciftKartTemizle()" style="width:100%; margin-bottom:8px; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; border:none; padding:12px; border-radius:12px; font-weight:900; font-size:13px; cursor:pointer;">🧹 ÇİFT KART TEMİZLE — tekrarlanan arşiv kartlarını bul & klasmanı düzelt</button>
-                    <button onclick="mukerrerSporcuTara()" style="width:100%; margin-bottom:8px; background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; padding:12px; border-radius:12px; font-weight:900; font-size:13px; cursor:pointer;">⚠️ MÜKERRER & KATEGORİ TARAMA — aynı isimli sporcuları ve yaşına göre yanlış gruptakileri bul</button>
                     <div style="font-size:11px;color:var(--text-muted);">
                         Bilgi, kategori ve skor düzeltmeleri artık tek karttan yapılır. Tüm değişiklikler buluta anında yansır.
                         <br>Bir kartı açtığında o sporcu birkaç saniye veri giremez.
@@ -9351,77 +9316,6 @@ ${(function(){
             alert('🧹 Temizlendi ve tüm cihazlara yayıldı:\n\n' + bulunan.join('\n') + '\n\nKlasman puanları yeniden hesaplandı.');
         }
 
-        // ===== MÜKERRER SPORCU + KATEGORİ TUTARSIZLIĞI TARAMA =====
-        // Sadece TESPİT eder ve gösterir — otomatik birleştirme/taşıma yapmaz, karar yöneticiye ait
-        // (mevcut Kategori Taşı / Sil butonları üzerinden manuel düzeltilir).
-        let _mukerrerBulunan = [];
-        let _yanlisGrupBulunan = [];
-        function mukerrerSporcuTara() {
-            let TUM_GRUPLAR = ['buyukler','yildizlar','kucukler','minikler'];
-            let adGoreGrup = {};
-            TUM_GRUPLAR.forEach(g => {
-                Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                    let norm = ad.trim().toLocaleUpperCase('tr');
-                    (adGoreGrup[norm] = adGoreGrup[norm] || []).push({ g, ad, sp: turnuvaDB[g][ad] });
-                });
-            });
-            _mukerrerBulunan = Object.values(adGoreGrup).filter(kayitlar => kayitlar.length > 1);
-
-            _yanlisGrupBulunan = [];
-            TUM_GRUPLAR.forEach(g => {
-                Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                    let sp = turnuvaDB[g][ad];
-                    let dogruGrup = dogumYilindenGrup(sp.dogumYili);
-                    if(dogruGrup && dogruGrup !== g) _yanlisGrupBulunan.push({ g, ad, sp, dogruGrup });
-                });
-            });
-
-            mukerrerSporcuCiz();
-        }
-        function mukerrerSporcuCiz() {
-            let alan = document.getElementById('yonetici-liste'); if(!alan) return;
-            let html = `<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-                <button onclick="yoneticiSekme('kullanicilar')" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); padding:8px 12px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">← Geri</button>
-                <div style="font-weight:900; font-size:14px;">⚠️ Mükerrer & Kategori Taraması</div>
-            </div>`;
-
-            if(!_mukerrerBulunan.length && !_yanlisGrupBulunan.length) {
-                alan.innerHTML = html + '<div style="background:rgba(16,185,129,0.08); border:1px solid var(--neon-green); border-radius:12px; padding:16px; text-align:center; font-weight:800; color:var(--neon-green);">✅ Mükerrer isim ya da yaşına göre yanlış grupta sporcu bulunamadı.</div>';
-                return;
-            }
-
-            let satir = (item) => {
-                let sp = item.sp;
-                let adEsc = item.ad.replace(/'/g,"\\'");
-                return `<div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 10px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <div style="font-size:12px;"><b>${item.ad}</b> <span style="color:var(--text-muted);">— ${LIG_ETIKET[item.g]} · doğum:${sp.dogumYili||'-'} · ${(sp.kartGecmisi||[]).length} kart · ${sp.coin||0} coin</span></div>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="yoneticiKategoriTasi('${item.g}','${adEsc}')" style="background:rgba(139,92,246,0.1);color:#a78bfa;border:1px solid #8b5cf6;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">📂 Kategori Taşı</button>
-                        <button onclick="yoneticiSil('${item.g}','${adEsc}')" style="background:rgba(239,68,68,0.1);color:var(--neon-red);border:1px solid var(--neon-red);padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🗑️ Sil</button>
-                    </div>
-                </div>`;
-            };
-
-            if(_mukerrerBulunan.length) {
-                html += `<div style="font-weight:800; font-size:12px; color:var(--accent-orange); margin:10px 0 6px;">🧑‍🤝‍🧑 Aynı İsimle Birden Fazla Kayıt (${_mukerrerBulunan.length})</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Her grup gerçekten aynı sporcu mu kontrol et — öyleyse birini "Kategori Taşı" ile doğru gruba taşı (aynı isim varsa uyarır), diğerini sil. Skor geçmişini elle karşılaştırıp veri kaybetmeden karar ver.</div>`;
-                _mukerrerBulunan.forEach(kayitlar => { html += kayitlar.map(satir).join('') + '<div style="height:8px;"></div>'; });
-            }
-
-            if(_yanlisGrupBulunan.length) {
-                html += `<div style="font-weight:800; font-size:12px; color:var(--gold); margin:14px 0 6px;">📅 Doğum Yılına Göre Yanlış Grupta (${_yanlisGrupBulunan.length})</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Bu sporcular kayıtlı doğum yıllarına göre farklı bir grupta olmalı (kasıtlı olabilir — ör. yetenekli küçük sporcu üst grupta antrenman yapıyor olabilir, kontrol edip gerekirse taşı).</div>`;
-                _yanlisGrupBulunan.forEach(item => {
-                    let adEsc = item.ad.replace(/'/g,"\\'");
-                    html += `<div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 10px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                        <div style="font-size:12px;"><b>${item.ad}</b> <span style="color:var(--text-muted);">— şu an ${LIG_ETIKET[item.g]}, doğum:${item.sp.dogumYili} → olması gereken: ${LIG_ETIKET[item.dogruGrup]}</span></div>
-                        <button onclick="yoneticiKategoriTasi('${item.g}','${adEsc}')" style="background:rgba(139,92,246,0.1);color:#a78bfa;border:1px solid #8b5cf6;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">📂 Kategori Taşı</button>
-                    </div>`;
-                });
-            }
-            alan.innerHTML = html;
-        }
-
         function yoneticiTumAktifSilOnay(g, ad) {
             let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return;
             let sayi = (sp.seriler||[]).length;
@@ -9728,73 +9622,7 @@ ${(function(){
                 try { siralamaListesiDoldur(); } catch(e) {}
             }, '🗑️ Evet, Sil');
         }
-        // ---- ÇİFT KAYIT BUL & BİRLEŞTİR (2026-09-20, kullanıcı: "bazı sporcular 2'şerli şekilde kulübe
-        // kayıtlı") — aynı kişinin büyük/küçük harf, fazla boşluk ya da noktalama farkıyla iki kez kayıtlı
-        // olduğu çiftleri (aynı grupta VEYA farklı gruplarda) listeler. Birleştirme SUNUCUDA tek bir batch
-        // (POST /api/athletes/:grup/:ad/merge — seriler/aidat/yoklama/atış günlüğü/ders katılımı hedefe
-        // taşınır, kaynak silinir, moveAthlete ile AYNI tombstone+yönlendirme yazılır), ardından yerel
-        // turnuvaDB/aidatDB/otomatikYoklamaDB aynı şekilde güncellenir. Her çift tek tek onaylanır.
-        function _ciftKayitNormalize(ad) {
-            return String(ad || '').toLocaleLowerCase('tr-TR').normalize('NFC').replace(/[.\-_'’]/g, ' ').replace(/\s+/g, ' ').trim();
-        }
-        function yoneticiCiftKayitBul() {
-            let m = {};
-            Object.keys(turnuvaDB).forEach(g => {
-                Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                    let sp = turnuvaDB[g][ad]; if(!sp || typeof sp !== 'object') return;
-                    let k = _ciftKayitNormalize(ad);
-                    (m[k] = m[k] || []).push({ g: g, ad: ad, sp: sp });
-                });
-            });
-            return Object.values(m).filter(v => v.length > 1).map(v => v.sort((a, b) => ((b.sp.seriler || []).length - (a.sp.seriler || []).length)));
-        }
-        function yoneticiCiftKayitCiz() {
-            let alan = document.getElementById('yonetici-liste'); if(!alan) return;
-            let gruplar = yoneticiCiftKayitBul();
-            let grupAdi = g => ({buyukler:'🔵 Büyükler', yildizlar:'⭐ Yıldızlar', kucukler:'🟢 Küçükler', minikler:'🌱 Minikler'})[g] || g;
-            let bas = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
-                <div style="font-weight:800; color:var(--gold);">🧹 Çift Kayıt (${gruplar.length} şüpheli çift)</div>
-                <button onclick="yoneticiCiftKayitCiz()" style="font-size:11px; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); cursor:pointer;">↻ Yeniden Tara</button>
-            </div>
-            <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">Aynı ismin büyük/küçük harf, boşluk ya da noktalama farkıyla iki kez kayıtlı olduğu kişiler. <b>Kalacak</b> kaydı seç; diğerinin serileri, aidatı, yoklaması ve atış günlüğü ona taşınır, sonra silinir. Her birleştirme ayrı onay ister ve geri alınamaz.</div>`;
-            if(!gruplar.length) { alan.innerHTML = bas + '<div style="text-align:center; color:var(--text-muted); padding:30px 12px;">✅ Şüpheli çift kayıt bulunamadı.</div>'; return; }
-            let html = bas;
-            gruplar.forEach((v, gi) => {
-                html += `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:10px;">
-                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Çift #${gi + 1} · "${esc(_ciftKayitNormalize(v[0].ad))}"</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">`;
-                v.forEach((x, xi) => {
-                    let seri = (x.sp.seriler || []).length;
-                    let son = x.sp.sonSkorZamani ? new Date(x.sp.sonSkorZamani).toLocaleDateString('tr-TR') : '—';
-                    let digerleri = v.filter((_, j) => j !== xi);
-                    let onclick = digerleri.map(d => `yoneticiCiftKayitBirlestir('${d.g}','${d.ad.replace(/'/g, "\\'")}','${x.g}','${x.ad.replace(/'/g, "\\'")}')`).join(';');
-                    html += `<div style="border:1.5px solid ${xi === 0 ? 'var(--neon-green)' : 'var(--border-color)'}; border-radius:10px; padding:10px;">
-                        <div style="font-weight:800; font-size:13px; word-break:break-word;">${esc(x.ad)}</div>
-                        <div style="font-size:10.5px; color:var(--text-muted); margin:3px 0 8px;">${grupAdi(x.g)} · ${seri} seri · ${x.sp.toplamSkor || 0}p · son skor ${son}${x.sp.kod || x.sp.dogumYili ? ' · ' + esc(String(x.sp.kod || x.sp.dogumYili)) : ''}${x.sp.pasif ? ' · <span style="color:var(--neon-red);">pasif</span>' : ''}</div>
-                        <button onclick="${onclick}" style="width:100%; font-size:11.5px; font-weight:800; padding:8px; border-radius:8px; border:none; background:${xi === 0 ? 'var(--neon-green)' : 'var(--bg-main)'}; color:${xi === 0 ? '#06210f' : 'var(--text-main)'}; cursor:pointer;">${xi === 0 ? '✔ Bu kalsın (önerilen)' : 'Bu kalsın'}</button>
-                    </div>`;
-                });
-                html += '</div></div>';
-            });
-            alan.innerHTML = html;
-        }
-        function yoneticiCiftKayitBirlestir(kaynakG, kaynakAd, hedefG, hedefAd) {
-            let kaynak = turnuvaDB[kaynakG] && turnuvaDB[kaynakG][kaynakAd], hedef = turnuvaDB[hedefG] && turnuvaDB[hedefG][hedefAd];
-            if(!kaynak || !hedef) { showToast('Kayıt bulunamadı.', 'error'); return; }
-            let kSeri = (kaynak.seriler || []).length;
-            onayIste(`<b>${esc(kaynakAd)}</b> kaydı <b>${esc(hedefAd)}</b> ile birleştirilsin mi?<br><span style="font-size:12px; color:var(--text-muted);">${kSeri} seri, aidat ve yoklama kayıtları ${esc(hedefAd)}'a taşınır; ${esc(kaynakAd)} silinir. Geri alınamaz.</span>`, async () => {
-                let btnKilit = document.getElementById('yonetici-liste'); if(btnKilit) btnKilit.style.opacity = '.5';
-                try {
-                    let sonuc = await _ciftKayitBirlestirCekirdek(kaynakG, kaynakAd, hedefG, hedefAd);
-                    let m = sonuc.moved || {};
-                    showToast('🧹 ' + kaynakAd + ' → ' + hedefAd + ' birleştirildi (' + (m.seri || 0) + ' seri, ' + (m.aidat || 0) + ' aidat, ' + (m.yoklama || 0) + ' yoklama).', 'success');
-                } catch(e) {
-                    showToast('Birleştirme başarısız: ' + (e && e.message ? e.message : 'bağlantı hatası') + ' — hiçbir şey değişmedi.', 'error');
-                }
-                if(btnKilit) btnKilit.style.opacity = '';
-                yoneticiCiftKayitCiz();
-            }, '🧹 Evet, Birleştir');
-        }
+        // Çift kayıt birleştirme çekirdeği — ekran: dagsk-kisi-yonetimi.js kyCiftKayitCiz (eski ekran 2026-09-29 kaldırıldı).
         // Onaysız çekirdek (2026-09-28) — yeni Çift Kayıt ekranı (dagsk-kisi-yonetimi.js) birden fazla kaydı
         // tek onayla sırayla birleştirirken bunu çağırır. Sunucu başarısızsa fırlatır, yerel veriye dokunmaz.
         async function _ciftKayitBirlestirCekirdek(kaynakG, kaynakAd, hedefG, hedefAd) {
@@ -10072,7 +9900,11 @@ ${(function(){
             });
             document.querySelectorAll('.sadece-sporcu').forEach(el => { el.style.display = sporcuModu ? '' : 'none'; });
             if(aktifPlatform === 'egitmen') {
-                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','dersicerik','video','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
+                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
+                // 2026-09-29: Ders İçerikleri / Teknik Çalışma / Video (+ Kamera Hedef Hakemi kısayolu) eğitmende
+                // Karışık Sınıf araçlarının içinde (Ders Kütüphanesi, Malzemeler, Video & Duruş) — menüde ikinci kez yok.
+                // Sporcu tarafında (Gecikmeli Ayna, salt-okunur içerik) aynen duruyor.
+                ['dersicerik','video','teknik','hedef-hakemi-daha'].forEach(id => g('tab-'+id, false));
                 if(_egitmenOturumBasladi) {
                     // "Lig Değiştir" ile buraya tekrar düşüldü — eğitmen zaten bir sekmedeyse (örn. Canlı
                     // Takip) oradan koparma, sadece o sekmenin verisini yeni lige göre tazele.
@@ -10094,13 +9926,14 @@ ${(function(){
                 // kendi API anahtarını girmeyi gerektirdiği için opsiyonel/zararsız kalıyor).
                 g('tab-video', true);
                 g('tab-duello', true);
+                g('tab-teknik', true); g('tab-hedef-hakemi-daha', true);
                 g('tab-dersicerik', true); // salt-okunur: ekleme/düzenleme/kullanım raporu sadece-egitmen ile gizli
                 // Gizlenenler
                 g('tab-timer', false);
                 g('tab-takimlar', false);
                 try { sekmeAc('ana'); } catch(e) {}
             } else {
-                ['ana','timer','skor','canlitakip','liderlik','klasman','egitmen','takimlar','dersicerik','video','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
+                ['ana','timer','skor','canlitakip','liderlik','klasman','egitmen','takimlar','dersicerik','video','teknik','hedef-hakemi-daha','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
                 try { sekmeAc('skor'); } catch(e) {}
             }
             // FAZ 3 — alt bar/Daha kısayol butonları kendi gerçek tab-* karşılıklarının o anki
@@ -10110,6 +9943,10 @@ ${(function(){
                  ['daha-canlitakip-kisayol','tab-canlitakip'], ['daha-liderlik-kisayol','tab-liderlik']].forEach(([aid, tid]) => {
                     let a = document.getElementById(aid), t = document.getElementById(tid);
                     if(a && t) a.style.display = (t.style.display === 'none') ? 'none' : '';
+                });
+                // Tüm düğmeleri gizlenmiş Daha grubunun başlığı da gizlensin (ör. eğitmende "Antrenman").
+                document.querySelectorAll('#daha-panel .daha-grup:not(.daha-grup-mobil)').forEach(grp => {
+                    grp.style.display = [...grp.querySelectorAll('.sekme-btn')].some(b => b.style.display !== 'none') ? '' : 'none';
                 });
             } catch(e) {}
         }
@@ -10484,15 +10321,14 @@ ${(function(){
             // Video & Duruş aracı asıl kamera ekranını buraya taşıyor — başka araca geçerken yerine geri koy.
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['yoklama','skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
             if(s !== 'ritim') {
                 try { if(window.DAGSK_CADENCE) DAGSK_CADENCE.stopCadence(); } catch(e) {}
             }
-            if(s==='yoklama') kmYoklamaCiz();
-            else if(s==='skor') kmSkorCiz();
+            if(s==='skor') kmSkorCiz();
             else if(s==='lider') kmLiderCiz();
             else if(s==='klasman') kmKlasmanCiz();
             else if(s==='canli') kmCanliCiz();
@@ -10614,9 +10450,8 @@ ${(function(){
         // da (henüz güvenle tek satıra indiremediğim araçlar için) sabit, açıklayıcı bir alt yazı.
         // Tıklanınca AYNEN mevcut kmSekme(s) çağrılıyor — dispatch'e dokunulmadı.
         const KM_ARAC_LISTESI = [
-            { id:'yoklama', ad:'Yoklama', grup:'yesil', icon:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 9l2 2 4-4"/>' },
             // Yoklama Analizi (2026-09-28) — kod: public/dagsk-km-yoklama-analiz.js
-            { id:'yoklamaanaliz', ad:'Yoklama Analizi', grup:'yesil', icon:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
+            { id:'yoklamaanaliz', ad:'Yoklama', grup:'yesil', icon:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
             { id:'skor', ad:'Skor Gir', grup:'birincil', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>' },
             { id:'lider', ad:'Liderlik', grup:'sari', icon:'<path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/>' },
             { id:'klasman', ad:'Klasman', grup:'sari', icon:'<path d="M5 19V13"/><path d="M12 19V8"/><path d="M19 19v-5"/>' },
@@ -10643,14 +10478,6 @@ ${(function(){
         ];
         const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
         function kmAracDurumSatiri(id) {
-            if(id === 'yoklama') {
-                let tarih = bugunISO();
-                let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
-                let gelen = 0, gelmeyen = 0;
-                _kmListe.forEach(function(k){ let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null; if(kayit) { if(kayit.geldi === false) gelmeyen++; else gelen++; } });
-                let isaretsiz = _kmListe.length - gelen - gelmeyen;
-                return gelen + ' geldi' + (gelmeyen ? ' · ' + gelmeyen + ' gelmedi' : '') + (isaretsiz ? ' · ' + isaretsiz + ' işaretsiz' : ' · tamam ✓');
-            }
             if(id === 'yoklamaanaliz') {
                 try { let sayi = 0, bugun = bugunISO(); Object.keys(otomatikYoklamaDB[bugun] || {}).forEach(function(ad){ if(otomatikYoklamaDB[bugun][ad].geldi !== false) sayi++; }); return 'Bugün ' + sayi + ' kişi · şu an hangi ders?'; } catch(e) {}
                 return 'Kim geldi, hangi ders ne kadar dolu';
@@ -11510,111 +11337,8 @@ ${(function(){
             }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }
 
-        // ✅ Yoklama (2026-08-21, "yoklama alma ile ilgili bölüm eklemek ve yönetmek istiyorum") —
-        // Karışık Sınıf'ın kendi yoklama-alma yeri. YENİ bir sistem İCAT EDİLMEDİ: Ders Programı'nın
-        // roster-yoklama'sıyla (dersRosterYoklamaToggle/Hepsi) AYNI var olan otomatikYoklamaDB'ye
-        // yazıyor — bu yüzden burada işaretlenen bir sporcu genel Yoklama ekranında da anında görünür,
-        // ayrı bir kayıt/backend gerekmedi. Şimdiye kadar Karışık Sınıf'ta yoklama SADECE dolaylıydı
-        // (skor girilince otomatik "geldi" sayılırdı) — derse gelip henüz atış yapmamış biri hiçbir
-        // yerde görünmüyordu, bu sekme o boşluğu kapatıyor.
-        let _kmYokAramaFiltre = '';
-        function kmYoklamaCiz() {
-            let ic = document.getElementById('km-icerik'); if(!ic) return;
-            let tarih = bugunISO();
-            let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
-            let liste = _kmListe.slice().sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
-            // 2026-09-26 düzeltmesi ("karışık sınıf içindeki yoklamayı düzelt"): tek küçük ⬜ ikonuna dokunup
-            // 3 durumu (işaretsiz→geldi→gelmedi→işaretsiz) KÖRLEMESİNE döndürmek yerine her satırda AÇIK
-            // "✅ Geldi / ❌ Gelmedi" düğmeleri — etkin olana tekrar dokunmak işareti kaldırır. Aynı veri
-            // (otomatikYoklamaDB), genel Yoklama ekranıyla senkron aynen korunuyor.
-            let sayac = { geldi: 0, gelmedi: 0, yok: 0 };
-            let durumlar = liste.map(function(k) {
-                let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null;
-                let d = !kayit ? 'yok' : (kayit.geldi === false ? 'gelmedi' : 'geldi');
-                sayac[d]++; return d;
-            });
-            let hepsiEtiket = sayac.yok === liste.length ? '✅ Hepsi Geldi' : '✅ Kalanlar Geldi';
-            let html = '<div class="glass-panel km-yok-panel" style="padding:14px; border-radius:14px;">'
-                + '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px;">'
-                + '<div class="km-yok-sayac"><span class="g"><b>'+sayac.geldi+'</b> geldi</span><span class="x"><b>'+sayac.gelmedi+'</b> gelmedi</span><span class="y"><b>'+sayac.yok+'</b> işaretsiz</span><span class="t">/ '+liste.length+'</span></div>'
-                + (sayac.yok ? '<button class="km-yok-hepsi" onclick="kmYoklamaHepsi()" title="İşaretlenmemiş herkesi geldi yap (gelmedi işaretliler değişmez)">'+hepsiEtiket+'</button>' : '<span class="km-yok-tamam">✔ Yoklama tamam</span>')
-                + '</div>'
-                + '<button onclick="kmYoklamaPdfIndir()" class="km-yok-pdf">📄 Bugünkü Yoklamayı PDF İndir</button>';
-            html += liste.length ? liste.map(function(k, i) {
-                let durum = durumlar[i];
-                let adEsc = k.ad.replace(/'/g,"\\'");
-                let cagri = function(yeni) { return "kmYoklamaAyarla('" + k.g + "','" + adEsc + "','" + yeni + "')"; };
-                return '<div class="km-yok-satir ' + durum + '">'
-                    + '<div class="km-yok-ad">' + esc(k.ad) + ' <span>(' + esc(PROGRAM_GRUP_AD[k.g] || k.g) + ')</span></div>'
-                    + '<div class="km-yok-secim" role="group" aria-label="' + esc(k.ad) + ' yoklama">'
-                    + '<button class="geldi' + (durum === 'geldi' ? ' aktif' : '') + '" aria-pressed="' + (durum === 'geldi') + '" onclick="' + cagri(durum === 'geldi' ? 'sil' : 'geldi') + '">✅ Geldi</button>'
-                    + '<button class="gelmedi' + (durum === 'gelmedi' ? ' aktif' : '') + '" aria-pressed="' + (durum === 'gelmedi') + '" onclick="' + cagri(durum === 'gelmedi' ? 'sil' : 'gelmedi') + '">❌ Gelmedi</button>'
-                    + '</div></div>';
-            }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:16px;">Oturumda henüz kimse yok.</div>';
-            // Listede olmayan sporcu ara+ekle (2026-08-21, "bazen oraya eklemediğim sporcularda geliyor,
-            // bütün sporcuları tarayabileceğim bir şey getir") — kmSporcuEkle()'nin AÇTIĞI ayrı modala
-            // gitmeye gerek kalmadan, tam bu ekranda arayıp tek dokunuşla HEM oturuma ekleyip HEM
-            // "geldi" işaretleyebilsin diye. dersRosterCiz'in "+ Sporcu Ekle" arama desenİYLE AYNI.
-            html += '<div style="border-top:1px dashed var(--border-color); margin-top:14px; padding-top:12px;">'
-                + '<div style="font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Listede Olmayan Sporcu Ara + Ekle</div>'
-                + '<input type="text" id="km-yok-ara" value="'+_kmYokAramaFiltre.replace(/"/g,'&quot;')+'" placeholder="🔍 İsimle ara..." oninput="_kmYokAramaFiltre=this.value; kmYoklamaAdayListesiCiz();" style="width:100%; box-sizing:border-box; padding:9px; margin-bottom:8px; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; font-size:13px;">'
-                + '<div id="km-yok-aday-liste"></div>'
-                + '</div>';
-            ic.innerHTML = html;
-            kmYoklamaAdayListesiCiz();
-        }
-        function kmYoklamaAdayListesiCiz() {
-            let alan = document.getElementById('km-yok-aday-liste'); if(!alan) return;
-            let q = (_kmYokAramaFiltre || '').trim().toLocaleLowerCase('tr');
-            if(!q) { alan.innerHTML = '<div style="font-size:11px; color:var(--text-muted); text-align:center; padding:6px; opacity:.7;">↑ Oturumda olmayan bir sporcuyu eklemek için yukarıya isim yaz</div>'; return; }
-            let mevcutSet = new Set(_kmListe.map(function(k){ return k.g+'|'+k.ad; }));
-            let adaylar = [];
-            ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) {
-                Object.keys(turnuvaDB[g]||{}).forEach(function(ad) {
-                    if(turnuvaDB[g][ad].pasif || turnuvaDB[g][ad].donduruldu) return;
-                    if(mevcutSet.has(g+'|'+ad)) return;
-                    if(!ad.toLocaleLowerCase('tr').includes(q)) return;
-                    adaylar.push({g:g, ad:ad});
-                });
-            });
-            adaylar.sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
-            alan.innerHTML = adaylar.length ? adaylar.slice(0,30).map(function(a) {
-                let adEsc = a.ad.replace(/'/g,"\\'");
-                return '<div style="display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); margin-bottom:5px;">'
-                    + '<div style="flex:1; min-width:0; font-size:12px; font-weight:700;">'+a.ad+' <span style="font-size:9.5px; color:var(--text-muted); font-weight:600;">('+(PROGRAM_GRUP_AD[a.g]||a.g)+')</span></div>'
-                    + '<button onclick="kmYoklamaSporcuEkleVeIsaretle(\''+a.g+'\',\''+adEsc+'\')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:6px 11px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800; flex-shrink:0;">+ Ekle & Geldi</button>'
-                    + '</div>';
-            }).join('') : '<div style="font-size:11px; color:var(--text-muted); text-align:center; padding:6px;">Eşleşen sporcu yok.</div>';
-        }
-        function kmYoklamaSporcuEkleVeIsaretle(g, ad) {
-            if(!_kmListe.some(function(k){ return k.g===g && k.ad===ad; })) {
-                _kmListe.push({g:g, ad:ad});
-                _kmSecimler[g+'_'+ad] = {g:g, ad:ad};
-                _kmListeKaydet();
-            }
-            let tarih = bugunISO();
-            if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {};
-            let saat = new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
-            otomatikYoklamaDB[tarih][ad] = { saat:saat, grup:g, elle:true, geldi:true };
-            otomatikYoklamaKaydet();
-            bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
-            _kmYokAramaFiltre = '';
-            showToast(ad+' oturuma eklendi ve geldi işaretlendi ✅', 'success');
-            kmYoklamaCiz();
-            try { yoneticiDevamsizlikWidgetCiz(); } catch(e) {}
-        }
-        function kmYoklamaAyarla(grup, ad, yeni) {
-            let tarih = bugunISO();
-            if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {};
-            let saat = new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
-            if(yeni === 'sil') { let m = otomatikYoklamaDB[tarih][ad]; if(m && m.grup === grup) delete otomatikYoklamaDB[tarih][ad]; }
-            else otomatikYoklamaDB[tarih][ad] = { saat:saat, grup:grup, elle:true, geldi: yeni === 'geldi' };
-            otomatikYoklamaKaydet();
-            bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
-            kmYoklamaCiz();
-            try { kmSinifKartiCiz(); kmAracIzgaraCiz(); } catch(e) {}
-            try { yoneticiDevamsizlikWidgetCiz(); } catch(e) {}
-        }
+        // Sınıf kartındaki sporcu çipine dokununca bugünkü yoklamayı döndürür: işaretsiz → geldi → gelmedi → işaretsiz.
+        // (Eski ayrı "✅ Yoklama" aracı 2026-09-29'da kaldırıldı; yoklama artık 📊 Yoklama aracında.)
         function kmYoklamaToggle(grup, ad) {
             let tarih = bugunISO();
             if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {};
@@ -11625,79 +11349,8 @@ ${(function(){
             else delete otomatikYoklamaDB[tarih][ad];
             otomatikYoklamaKaydet();
             bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
-            kmYoklamaCiz();
-            try { yoneticiDevamsizlikWidgetCiz(); } catch(e) {}
-        }
-        function kmYoklamaHepsi() {
-            if(!_kmListe.length) return;
-            let tarih = bugunISO();
-            if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {};
-            let saat = new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
-            // Sadece İŞARETSİZLER "geldi" olur — elle "gelmedi" işaretlenmiş biri ezilmez.
-            let sayi = 0;
-            _kmListe.forEach(function(k) {
-                let m = otomatikYoklamaDB[tarih][k.ad];
-                if(m && m.grup === k.g) return;
-                otomatikYoklamaDB[tarih][k.ad] = { saat:saat, grup:k.g, elle:true, geldi:true }; sayi++;
-            });
-            otomatikYoklamaKaydet();
-            bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
-            showToast(sayi ? (sayi + ' sporcu geldi işaretlendi ✅') : 'Herkes zaten işaretli.', 'success');
-            kmYoklamaCiz();
             try { kmSinifKartiCiz(); kmAracIzgaraCiz(); } catch(e) {}
             try { yoneticiDevamsizlikWidgetCiz(); } catch(e) {}
-        }
-        // 📄 Bugünkü Karışık Sınıf oturumunun tek-sayfalık yoklama formu (2026-08-21, kullanıcı: "böyle
-        // liste yapmanı istiyorum bunun çıktısını da alabileyim") — native jsPDF ile çiziliyor (bu app'te
-        // html2canvas'ın GERÇEKTEN boş PDF ürettiği kanıtlanmıştı, bkz. [[dagsk-ders-programi-haftalik-
-        // izgara-2026-08]]), _yeniPdfAl/_kurumsalBaslikCiz/_kurumsalAltBilgiCiz/_trTranslit AYNEN reuse
-        // edildi. Emoji ikon YERİNE renkli METİN etiketi kullanılıyor — jsPDF'in standart Helvetica fontu
-        // emoji glyph'lerini render edemiyor (aynı proje dersi, bkz. Aylık Bülten PDF notu).
-        function kmYoklamaPdfIndir() {
-            if(!_kmListe.length) return showToast('Oturumda kimse yok.', 'warning');
-            showToast('PDF hazırlanıyor...', 'warning');
-            let tarih = bugunISO();
-            let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
-            let liste = _kmListe.slice().sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
-            _yeniPdfAl().then(function(pdf) {
-                let pageW = 210, pageH = 297, marginX = 16, usableW = pageW - marginX*2;
-                let y = _kurumsalBaslikCiz(pdf, marginX, usableW, 14, 'KARIŞIK SINIF');
-                pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(15,23,42);
-                pdf.text(_trTranslit('Gunluk Yoklama'), marginX, y);
-                pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(100,116,139);
-                pdf.text(_trTranslit(formatTarih(tarih)) + ' - ' + liste.length + ' sporcu', marginX+usableW, y, {align:'right'});
-                y += 10;
-                pdf.setFillColor(241,245,249); pdf.rect(marginX, y, usableW, 8, 'F');
-                pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.setTextColor(71,85,105);
-                pdf.text('ISIM', marginX+4, y+5.5);
-                pdf.text('GRUP', marginX+usableW*0.55, y+5.5);
-                pdf.text('DURUM', marginX+usableW-4, y+5.5, {align:'right'});
-                y += 9;
-                let gelenSayi=0, gelmeyenSayi=0, isaretsizSayi=0;
-                liste.forEach(function(k, i) {
-                    if(y+9 > 281) { pdf.addPage(); pdf.setFillColor(255,255,255); pdf.rect(0,0,pageW,pageH,'F'); y=16; }
-                    let kayit = yoklamaBugun[k.ad] && yoklamaBugun[k.ad].grup === k.g ? yoklamaBugun[k.ad] : null;
-                    let durum = !kayit ? 'yok' : (kayit.geldi === false ? 'gelmedi' : 'geldi');
-                    if(durum==='geldi') gelenSayi++; else if(durum==='gelmedi') gelmeyenSayi++; else isaretsizSayi++;
-                    if(i%2===1) { pdf.setFillColor(248,250,252); pdf.rect(marginX, y, usableW, 8, 'F'); }
-                    pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(15,23,42);
-                    pdf.text(_trTranslit(k.ad), marginX+4, y+5.6);
-                    pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(100,116,139);
-                    pdf.text(_trTranslit(PROGRAM_GRUP_AD[k.g]||k.g), marginX+usableW*0.55, y+5.6);
-                    let durumMetin = durum==='geldi' ? 'GELDI' : durum==='gelmedi' ? 'GELMEDI' : 'ISARETLENMEDI';
-                    let renk = durum==='geldi' ? [22,163,74] : durum==='gelmedi' ? [220,38,38] : [180,140,20];
-                    pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.setTextColor(renk[0],renk[1],renk[2]);
-                    pdf.text(durumMetin, marginX+usableW-4, y+5.6, {align:'right'});
-                    y += 8;
-                });
-                y += 6;
-                pdf.setDrawColor(226,232,240); pdf.setLineWidth(0.2); pdf.line(marginX, y-3, marginX+usableW, y-3);
-                pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(15,23,42);
-                pdf.text(_trTranslit('Ozet: ' + gelenSayi + ' geldi, ' + gelmeyenSayi + ' gelmedi, ' + isaretsizSayi + ' isaretlenmedi'), marginX, y+3);
-                _kurumsalAltBilgiCiz(pdf, pageW, pageH);
-                pdf.save('Karisik_Sinif_Yoklama_' + tarih + '.pdf');
-                showToast('PDF indirildi! 📄', 'success');
-            }).catch(function() { showToast('PDF oluşturulamadı.', 'error'); });
         }
 
         // 🎙️ KARIŞIK SINIF — SESLİ ATIŞ RİTMİ & TIKIR KOÇU
@@ -15211,26 +14864,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // kurmak gerekiyor — yoksa koç şimdi Zirve'deyken takım kursa, sonra Pist'e geçince Pist HÂLÂ
         // takım öncesi bireysel renklerle görünür (2026-09-09, gerçek testte yakalandı). kmOyunlarCiz'in
         // ilk kurulumdaki AYNI 11 çağrısı burada tekrar kullanılıyor.
+        // DONMA DÜZELTMESİ (2026-09-29): eskiden 17 temanın sahnesinin HEPSİ burada kuruluyordu (Oyunlar her
+        // açılışta ve her takım/karakter değişiminde; tablette ~1,3 sn donma). Artık sadece ekrandaki tema
+        // kuruluyor, diğerleri 'kurulmamış' işaretleniyor ve kmOyunTemaSec o temaya ilk geçişte kuruyor —
+        // sonuç aynı (bayat renk/rozet kalmıyor), iş sadece gerçekten açılan temaya harcanıyor.
+        let _kmOyunKurulmamis = new Set();
         function kmOyunSahneKurHepsi() {
-            kmOyunSahneKurZirve();
-            kmOyunSahneKurYildiz();
-            kmOyunSahneKurHazine();
-            kmOyunSahneKurPist();
-            kmOyunSahneKurNinja();
-            kmOyunSahneKurMonopoly();
-            kmOyunSahneKurDag();
-            kmOyunSahneKurBalon();
-            kmOyunSahneKurHedef();
-            kmOyunSahneKurFutbol();
-            kmOyunSahneKurFutbolTakim();
-            kmOyunArenaCiz();
-            kmOyunSahneKurSisHaritasi();
-            kmOyunSahneKurKehanet();
-            kmOyunSahneKurGizliKelime();
-            kmOyunSahneKurKule();
-            kmOyunSahneKurCanavar();
-            kmOyunSahneKurYukselis();
-            kmOyunKabukGuncelle();
+            kmOyunSahneKurAktif();
+            _kmOyunKurulmamis = new Set(Object.keys(KM_OYUN_TEMALAR).filter(function(t) { return t !== _kmOyunAktifTema; }));
         }
         // "Bireysel / Takım" anahtarı — futbol hariç 8 temanın hepsinde geçerli (futbolün zaten kendi
         // ayrı Bireysel/Takım kartları var). Modlar arasında geçiş HİÇBİR veriyi silmez: bireysele dönünce
@@ -18007,7 +17648,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmOyunZirveYolGozlemci.observe(panel);
             } catch(e) {}
         }
-        function kmOyunZirveNokta(frac) { let p = kmOyunZirvePath(); return p ? p.getPointAtLength(_kmOyunZirveTotalLen * Math.max(0, Math.min(1, frac))) : { x: 0, y: 0 }; }
+        function kmOyunZirveNokta(frac) { let p = kmOyunZirvePath(); return p ? kmZirveLutNokta(p, _kmOyunZirveTotalLen * Math.max(0, Math.min(1, frac))) : { x: 0, y: 0 }; }
+        // DONMA DÜZELTMESİ (2026-09-29): Zirve sahnesi her kurulumda ~930 kez getPointAtLength çağırıyordu
+        // (tablette ~850 ms donma; Oyunlar her açılışta, takım/karakter değişiminde yeniden kuruluyor).
+        // Yol, d değiştiğinde (dar/geniş ekran) BİR kez 8 birim aralıkla örneklenir; tüm sorgular bu
+        // tablodan doğrusal ara değerle okunur (eğri yarıçapına göre sapma < 0,5 birim — gözle fark edilmez).
+        let _kmZirveLut = null;
+        function kmZirveLut(p) {
+            let d = p.getAttribute('d');
+            if(_kmZirveLut && _kmZirveLut.d === d) return _kmZirveLut;
+            let L = p.getTotalLength(), adim = 8, n = Math.floor(L / adim) + 1, xs = new Float64Array(n + 1), ys = new Float64Array(n + 1);
+            for(let i = 0; i < n; i++) { let q = p.getPointAtLength(i * adim); xs[i] = q.x; ys[i] = q.y; }
+            let son = p.getPointAtLength(L); xs[n] = son.x; ys[n] = son.y;
+            return (_kmZirveLut = { d: d, L: L, adim: adim, n: n, xs: xs, ys: ys });
+        }
+        function kmZirveLutNokta(p, len) {
+            let T = kmZirveLut(p);
+            if(!(len > 0)) return { x: T.xs[0], y: T.ys[0] };
+            if(len >= T.L) return { x: T.xs[T.n], y: T.ys[T.n] };
+            let i = Math.min(T.n - 1, Math.floor(len / T.adim)), a = i * T.adim, b = i + 1 < T.n ? a + T.adim : T.L;
+            let t = b > a ? (len - a) / (b - a) : 0;
+            return { x: T.xs[i] + (T.xs[i + 1] - T.xs[i]) * t, y: T.ys[i] + (T.ys[i + 1] - T.ys[i]) * t };
+        }
         // ===== ZİRVE 2.0 (2026-09-26) =====
         // Kullanıcı: "zirve yolu çok geride kaldı, hem yolu basit hem görselleri". Ninja'yı sevdiren üç şey buraya
         // taşındı: tutarlı sahne (tek dağ, oyulmuş patika, bölgeler), canlı karakter (yürüme/ip/kayma/kutlama) ve
@@ -18027,9 +17689,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmZirveUzunlukNokta(len) {
             let p = kmOyunZirvePath(); if(!p) return { x: 0, y: 0 };
             let L = _kmOyunZirveTotalLen;
-            if(len < 0) { let b = p.getPointAtLength(0), c = p.getPointAtLength(Math.min(L, 12)), dx = b.x - c.x, dy = b.y - c.y, m = Math.sqrt(dx * dx + dy * dy) || 1; return { x: b.x + dx / m * -len, y: b.y + dy / m * -len }; }
-            if(len > L) return p.getPointAtLength(L);
-            return p.getPointAtLength(len);
+            if(len < 0) { let b = kmZirveLutNokta(p, 0), c = kmZirveLutNokta(p, Math.min(L, 12)), dx = b.x - c.x, dy = b.y - c.y, m = Math.sqrt(dx * dx + dy * dy) || 1; return { x: b.x + dx / m * -len, y: b.y + dy / m * -len }; }
+            return kmZirveLutNokta(p, Math.min(len, L));
         }
         function kmZirveTegetLen(len) {
             let L = _kmOyunZirveTotalLen || 1, e = 6;
@@ -18072,7 +17733,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // ---- Sahne çizimi (hepsi yoldan türetilir; dar ekranda yol sıkışınca yeniden kurulur) ----
         function kmZirveYolOrnekleri(adim) {
             let p = kmOyunZirvePath(), L = _kmOyunZirveTotalLen, out = [];
-            for(let l = 0; l <= L; l += adim) { let q = p.getPointAtLength(l); out.push({ l: l, x: q.x, y: q.y }); }
+            for(let l = 0; l <= L; l += adim) { let q = kmZirveLutNokta(p, l); out.push({ l: l, x: q.x, y: q.y }); }
             return out;
         }
         function kmZirveSahneCiz() {
@@ -18118,7 +17779,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             for(let l = 20; l < L - 30; l += 36) {
                 let teg = kmZirveTegetLen(l);
                 if(Math.abs(teg.y) > 0.5) { korkulukBitir(); continue; }
-                let q = p.getPointAtLength(l), ny = teg.x, nx = -teg.y;
+                let q = kmZirveLutNokta(p, l), ny = teg.x, nx = -teg.y;
                 if(ny < 0) { nx = -nx; ny = -ny; }
                 let x = q.x + nx * 9, y = q.y + ny * 9;
                 if(KM_ZIRVE_ENGELLER.some(function(e) { return Math.abs(l - e.frac * L) < 34; })) { korkulukBitir(); continue; }
@@ -19524,7 +19185,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         const KM_NINJA_CUKUR_AYAR = [{ ad: 'Bambu Çukuru', esik: 0.5 }, { ad: 'Derin Uçurum', esik: 0.7 }];
         const KM_NINJA_CUKUR_SEVIYE = { mini: -0.1, orta: 0, buyuk: 0.05 };
         const KM_NINJA_KIL_PAYI = 0.1, KM_NINJA_KIL_SURE = 1500;
-        let _kmNinjaCukurOnbellek = null, _kmNinjaCukurSon = null;
+        let _kmNinjaCukurOnbellek = null, _kmNinjaCukurSon = null, _kmNinjaCukurAnahtar = '';
         // Her boşluk için: aLen = kalkış (boşluktan önce zeminde son nokta), bLen = iniş (sonra zemindeki ilk nokta).
         function kmNinjaCukurlar() {
             if(_kmNinjaCukurOnbellek) return _kmNinjaCukurOnbellek;
@@ -19813,7 +19474,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }).join('');
             }
             kmNinjaSahneSusle();
-            _kmNinjaCukurOnbellek = null;
+            // Çukur hesabı (~1000 getPointAtLength) sadece yol değişince yenilenir — eskiden her kurulumda
+            // sıfırlanıyordu (tablette ~230 ms donma, 2026-09-29).
+            { let np = kmOyunNinjaPath(), k = np ? np.getAttribute('d') + '|' + _kmOyunNinjaTotalLen : ''; if(k !== _kmNinjaCukurAnahtar) { _kmNinjaCukurOnbellek = null; _kmNinjaCukurAnahtar = k; } }
             kmNinjaCukurTabelaCiz();
             let cg = document.getElementById('km-oyun-ninjalar'); if(!cg) return;
             cg.innerHTML = '';
@@ -22321,6 +21984,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let zirveHud = document.getElementById('km-oyun-zirve-hud'); if(zirveHud) zirveHud.style.display = 'none';
                 let zirveKar = document.getElementById('km-oyun-zirve-kar'); if(zirveKar) zirveKar.style.display = 'none';
             }
+            if(_kmOyunKurulmamis.delete(tid)) kmOyunSahneKurAktif();
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();

@@ -538,7 +538,7 @@ function kmYaYenidenCiz(odakZorla) {
 }
 
 // ---------------------------------------------------------------- yoklama burada alınır (2026-09-28)
-// KM "✅ Yoklama" sekmesi (kmYoklamaAyarla) ile AYNI kayıt biçimi ve aynı senkron: otomatikYoklamaDB[iso][ad] =
+// Eski KM "✅ Yoklama" sekmesiyle (2026-09-29 kaldırıldı) AYNI kayıt biçimi ve aynı senkron: otomatikYoklamaDB[iso][ad] =
 // {saat, grup, elle:true, geldi}. Fark: seçili GÜNE yazar (geçmiş bir dersin yoklaması da sonradan girilebilir).
 function kmYaYoklamaYaz(iso, k, yeni, saat) {
     if (iso > kmYaIso(new Date())) return showToast('İleri bir tarihin yoklaması alınamaz.', 'error');

@@ -289,7 +289,6 @@ let miloPersonel = [];
 let miloProgram = [];
 let miloDersler = [];
 let miloAidatYil = new Date().getFullYear();
-let miloYoklamaTarih = bugunISO();
 let miloUyeAramaFiltre = '';
 let miloUyeFormAcikMi = false;
 let miloAidatVarsayilanTutar = parseInt(localStorage.getItem('milo_aidat_tutar') || '0') || 0;
@@ -305,10 +304,6 @@ let miloMemberSkills = [];
 let miloAttendanceTum = [];
 let miloBeceriAramaFiltre = '';
 let miloBeceriAcikAd = null;
-let miloGunlukNot = '';
-let miloYoklamaKayitlariSon = [];
-let miloDevamsizlikAcik = false;
-let miloDevamsizlikEsikGun = 14;
 let miloDersKategoriFiltre = null;
 let miloDersSeciliIdler = new Set();
 let miloDersGrupNotu = '';
@@ -343,7 +338,7 @@ function miloYasHesapla(dogumTarihi) {
 function miloSekme(k) {
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach((b, i) => {
-        let keys = ['uyeler', 'aidat', 'yoklama', 'analiz', 'personel', 'program', 'ders', 'beceri'];
+        let keys = ['uyeler', 'aidat', 'analiz', 'personel', 'program', 'ders', 'beceri'];
         b.classList.toggle('aktif', keys[i] === k);
     });
     miloSekmeYenile();
@@ -356,11 +351,6 @@ async function miloSekmeYenile() {
         else if (miloAktifSekme === 'aidat') {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
             miloDuesTum = (await miloApi('/dues')).dues; miloAidatCiz();
-        } else if (miloAktifSekme === 'yoklama') {
-            if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
-            let att = (await miloApi('/attendance/auto?tarih=' + encodeURIComponent(miloYoklamaTarih))).attendance;
-            miloGunlukNot = (await miloApi('/gunluk-not/' + encodeURIComponent(miloYoklamaTarih))).notMetin || '';
-            miloYoklamaCiz(att);
         } else if (miloAktifSekme === 'analiz') { MA.ekran = null; MA.yuklendi = false; await maAnalizAc(); }
         else if (miloAktifSekme === 'personel') { miloPersonel = (await miloApi('/personnel')).personnel; miloPersonelCiz(); }
         else if (miloAktifSekme === 'program') {
@@ -1009,93 +999,8 @@ function miloAidatDetayliAnalizPDF() {
     w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 500);
 }
 
-// ===== YOKLAMA =====
-function miloYoklamaCiz(kayitlar) {
-    miloYoklamaKayitlariSon = kayitlar;
-    let alan = document.getElementById('milo-icerik');
-    let aktifler = miloUyeler.filter(u => !u.pasif);
-    alan.innerHTML = `
-        <input type="date" class="milo-input" value="${miloYoklamaTarih}" max="${bugunISO()}" onchange="miloYoklamaTarih=this.value; miloSekmeYenile();">
-        <textarea class="milo-input" id="milo-gunluk-not" placeholder="📝 Bugün ne işlendi? (opsiyonel not)" onblur="miloGunlukNotKaydet()" style="min-height:50px;">${miloEsc(miloGunlukNot)}</textarea>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${miloYoklamaTarih} — dokunarak geldi/gelmedi işaretleyin</div>
-        ${aktifler.map(u => {
-            let k = kayitlar.find(r => r.ad === u.ad);
-            let geldi = k ? !!k.geldi : false;
-            return `<div class="milo-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div><b>${miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span></div>
-                <button onclick="miloYoklamaIsaretle('${miloEsc(u.ad)}','${miloEsc(u.grup)}',${!geldi})" style="border:none; border-radius:8px; padding:8px 14px; font-weight:800; font-size:12px; color:#fff; background:${geldi ? 'var(--neon-green)' : 'var(--accent-grey)'};">${geldi ? '✅ Geldi' : '⬜ Gelmedi'}</button>
-            </div>`;
-        }).join('') || '<div style="color:var(--text-muted); font-size:13px;">Aktif üye yok.</div>'}
-        <button onclick="miloDevamsizlikToggle()" style="width:100%; margin-top:12px; background:rgba(239,68,68,0.12); color:var(--neon-red); border:1px solid var(--neon-red); padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">${miloDevamsizlikAcik ? '✕ Devamsızlık Radarını Kapat' : '⚠️ Devamsızlık Radarı'}</button>
-        <div id="milo-devamsizlik-alani" style="margin-top:12px;">${miloDevamsizlikAcik ? miloDevamsizlikRaporuHTML() : ''}</div>
-    `;
-}
-async function miloYoklamaIsaretle(ad, grup, geldi) {
-    await miloApi('/attendance/auto', {
-        method: 'POST',
-        body: JSON.stringify({ tarih: miloYoklamaTarih, ad, grup, saat: new Date().toTimeString().slice(0, 5), elle: true, geldi }),
-    });
-    let att = (await miloApi('/attendance/auto?tarih=' + encodeURIComponent(miloYoklamaTarih))).attendance;
-    miloYoklamaCiz(att);
-}
-
-async function miloGunlukNotKaydet() {
-    let metin = document.getElementById('milo-gunluk-not').value || null;
-    await miloApi('/gunluk-not/' + encodeURIComponent(miloYoklamaTarih), { method: 'PUT', body: JSON.stringify({ notMetin: metin }) });
-    miloGunlukNot = metin || '';
-    showToast('✅ Not kaydedildi.', 'success');
-}
-
-// ===== YOKLAMA — DEVAMSIZLIK RADARI =====
-function miloDevamsizlikListesi(esikGun) {
-    let simdi = new Date();
-    let liste = [];
-    miloUyeler.filter(u => !u.pasif).forEach(u => {
-        let tarihler = miloAttendanceTum.filter(a => a.ad === u.ad && a.geldi).map(a => a.tarih).sort();
-        let sonTarih = tarihler.length ? tarihler[tarihler.length - 1] : null;
-        let gun = sonTarih ? Math.floor((simdi - new Date(sonTarih + 'T00:00:00')) / 86400000) : null;
-        if (gun === null || gun >= esikGun) liste.push({ ad: u.ad, grup: u.grup, gun, telefon: u.acilTelefon || null });
-    });
-    return liste.sort((a, b) => (b.gun ?? 9999) - (a.gun ?? 9999));
-}
-
-function miloDevamsizlikWhatsApp(ad, telefon) {
-    let ilkAd = ad.split(' ')[0];
-    let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
-    let msg = `Merhaba 🌟 MILO FITT KIDS'ten yazıyoruz.\n\n${ilkAdB}'ı bir süredir antrenmanlarımızda göremedik, sizi özledik! Uygun olduğunuzda bize haber verirseniz seviniriz 🩷\n\nHer zaman buradayız.\nMILO FITT KIDS`;
-    let numara = miloTelefonWaFormat(telefon);
-    let url = numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=';
-    window.open(url + encodeURIComponent(msg), '_blank');
-}
-
-async function miloDevamsizlikToggle() {
-    miloDevamsizlikAcik = !miloDevamsizlikAcik;
-    if (miloDevamsizlikAcik && !miloAttendanceTum.length) miloAttendanceTum = (await miloApi('/attendance/auto')).attendance;
-    miloYoklamaCiz(miloYoklamaKayitlariSon);
-}
-
-function miloDevamsizlikRaporuHTML() {
-    let liste = miloDevamsizlikListesi(miloDevamsizlikEsikGun);
-    let html = `<div class="milo-card">
-        <div style="padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid var(--border-color);">
-            <div style="font-weight:900; color:var(--neon-red); font-size:14px;">⚠️ Devamsızlık Radarı</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${liste.length} üye ${miloDevamsizlikEsikGun}+ gündür gelmiyor</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-            <span style="font-size:12px; color:var(--text-muted); white-space:nowrap;">Eşik:</span>
-            <input type="number" min="1" max="180" value="${miloDevamsizlikEsikGun}" onchange="miloDevamsizlikEsikGun=isNaN(parseInt(this.value))?1:parseInt(this.value); miloYoklamaCiz(miloYoklamaKayitlariSon);" class="milo-input" style="width:70px; margin-bottom:0; padding:8px 10px;">
-            <span style="font-size:12px; color:var(--text-muted);">gündür gelmeyenler</span>
-        </div>`;
-    if (!liste.length) {
-        return html + `<div style="background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:10px; font-size:12px; font-weight:700; color:var(--neon-green); text-align:center;">✅ Temiz — bu eşikte devamsız üye yok.</div></div>`;
-    }
-    html += liste.map(x => `<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color);">
-        <div style="font-size:18px; flex-shrink:0;">🔴</div>
-        <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${miloEsc(x.ad)} <span style="color:var(--text-muted); font-weight:400; font-size:11px;">· ${miloEsc(x.grup)}</span></div><div style="font-size:10px; color:var(--text-muted);">${x.gun === null ? 'Hiç kayıt yok' : x.gun + ' gündür gelmiyor'}${x.telefon ? ' · 📞 ' + miloEsc(x.telefon) : ''}</div></div>
-        <button onclick="miloDevamsizlikWhatsApp('${miloJsEsc(x.ad)}','${miloJsEsc(x.telefon || '')}')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); border-radius:8px; padding:7px 10px; font-size:11px; font-weight:800; flex-shrink:0;">💬 Veliye Yaz</button>
-    </div>`).join('') + '</div>';
-    return html;
-}
+// ===== YOKLAMA — milo-araclar.js (maAnalizAc, sekme anahtarı 'analiz'). Eski tarih-listesi ekranı, günlük not
+// ve Devamsızlık Radarı 2026-09-29'da oraya taşındı (günün notu Dersler'de, "⏳ 2+ haftadır yok" filtresi + veli mesajı).
 
 // ===== PERSONEL =====
 function miloPersonelCiz() {

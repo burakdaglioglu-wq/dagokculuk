@@ -6,7 +6,7 @@
    ================================================================================================ */
 const MA_GUN = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const MA_GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-let MA = { alt: 'ders', mod: 'hafta', hafta: 0, ay: 0, gun: null, filtre: 'hepsi', ara: '', ekran: null, uyeler: [], att: {}, slotlar: [], personel: [], tur: {}, egDers: {}, yuklendi: false, rapor: {}, ciftAra: '', secili: [], hedef: null, duzenle: null, misForm: false, mesajAcik: false };
+let MA = { alt: 'ders', mod: 'hafta', hafta: 0, ay: 0, gun: null, filtre: 'hepsi', ara: '', ekran: null, uyeler: [], att: {}, slotlar: [], personel: [], tur: {}, egDers: {}, yuklendi: false, rapor: {}, ciftAra: '', secili: [], hedef: null, duzenle: null, misForm: false, mesajAcik: false, not: {} };
 
 // ---------------------------------------------------------------- yardımcılar
 function maIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -136,7 +136,7 @@ function maCiz() {
     let D = maDonem(), seg = (v, id, ad) => `<button class="${v === id ? 'aktif' : ''}" onclick="${ad}">`;
     let govde = MA.alt === 'sporcu' ? maSporcuHTML(D) : MA.alt === 'sayilar' ? maSayilarHTML(D) : D.ay ? maAyTakvimHTML(D) : maDerslerHTML();
     alan.innerHTML = `<div class="ma">
-        <div class="ma-ust"><div><div class="ma-baslik">📊 Yoklama Analizi</div><div class="ma-alt">Hangi derste kim var, kim geldi, kim gelmedi.</div></div>
+        <div class="ma-ust"><div><div class="ma-baslik">📋 Yoklama</div><div class="ma-alt">Hangi derste kim var, kim geldi, kim gelmedi.</div></div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap"><div class="ma-seg">${seg(MA.mod, 'hafta', "MA.mod='hafta'; maCiz()")}Hafta</button>${seg(MA.mod, 'ay', "MA.mod='ay'; maCiz()")}Ay</button></div>
             <div class="ma-nav"><button onclick="maKaydir(-1)" aria-label="Önceki">‹</button><span>${D.yazi}<small>${D.alt}</small></span><button onclick="maKaydir(1)" aria-label="Sonraki" ${(D.ay ? MA.ay : MA.hafta) >= 0 ? 'disabled' : ''}>›</button></div></div></div>
         <div class="ma-seg">${seg(MA.alt, 'ders', "MA.alt='ders'; maCiz()")}📅 Dersler</button>${seg(MA.alt, 'sporcu', "MA.alt='sporcu'; maCiz()")}👥 Sporcular</button>${seg(MA.alt, 'sayilar', "MA.alt='sayilar'; maCiz()")}📊 Sayılar</button></div>
@@ -172,7 +172,7 @@ function maDerslerHTML() {
     let mesaj = gelmeyen.length ? `<div><button class="ma-btn" onclick="MA.mesajAcik=!MA.mesajAcik; maCiz()">💬 Gelmeyenlere veli mesajı (${gelmeyen.length}) ${MA.mesajAcik ? '▴' : '▾'}</button></div>
         ${MA.mesajAcik ? `<div class="ma-kart"><div class="ma-alt">WhatsApp'a dokununca veliye hazır mesaj açılır (telefon üye kartından).</div><div class="ma-kisiler">${gelmeyen.map(x => `<div class="ma-kisi"><span class="ma-av">${miloEsc(maIlk(x.u.ad))}</span><span style="min-width:0"><b>${miloEsc(x.u.ad)}</b><small>${miloEsc(x.s.baslangicSaat)} · ${x.u.acilTelefon ? '📞 ' + miloEsc(x.u.acilTelefon) : 'telefon yok'}</small></span><button class="ma-btn ana" onclick="maVeliMesaj('${maKey(x.u.grup, x.u.ad)}', '${iso}', ${x.s.id})">💬 WhatsApp</button></div>`).join('')}</div></div>` : ''}` : '';
     return `<div class="ma-gunler">${cip}</div><div class="ma-alt" style="font-weight:800; letter-spacing:.05em; text-transform:uppercase">${MA_GUN[gd]} ${maTarih(iso)}${iso === bugun ? ' · bugün' : ''}</div>
-        ${mesaj}${kartlar || '<div class="ma-kart"><div class="ma-alt">Bu gün ders yok.</div></div>'}
+        ${iso <= bugun ? maNotHTML(iso) : ''}${mesaj}${kartlar || '<div class="ma-kart"><div class="ma-alt">Bu gün ders yok.</div></div>'}
         ${kayitsiz.length ? `<div class="ma-kart"><div class="ma-dad">Derse kayıtlı olmadan gelenler (${kayitsiz.length})</div><div class="ma-kisiler">${kayitsiz.map(u => maKisiHTML(u, iso, true)).join('')}</div></div>` : ''}`;
 }
 function maKisiHTML(u, iso, alinir) {
@@ -231,11 +231,36 @@ function maSporcuHTML(D) {
     let f = (id, ad) => `<button class="ma-btn${MA.filtre === id ? ' ana' : ''}" onclick="MA.filtre='${id}'; maCiz()">${ad}</button>`;
     let gruplar = [...new Set(liste.map(x => x.u.grup))].sort((a, b) => a.localeCompare(b, 'tr'));
     return `<div class="ma-kart"><input class="ma-ara" id="ma-ara" type="search" placeholder="🔍 Üye ara" value="${miloEsc(MA.ara)}" oninput="MA.ara=this.value; maCiz(); let e=document.getElementById('ma-ara'); e.focus(); e.setSelectionRange(e.value.length, e.value.length)">
+        ${MA.filtre === 'uzun' ? maOzledikHTML(liste) : ''}
         <div style="display:flex; gap:6px; flex-wrap:wrap">${f('hepsi', 'Hepsi')}${f('geldi', '✓ ' + D.yazi + ' geldi')}${f('gelmedi', '✗ ' + D.yazi + ' gelmedi')}${f('uzun', '⏳ 2+ haftadır yok')}</div>
         ${gruplar.map(g => { let ic = liste.filter(x => x.u.grup === g).sort((a, b) => a.u.ad.localeCompare(b.u.ad, 'tr')); return `<div class="ma-dad" style="font-size:14px; margin-top:4px">${miloEsc(g)} <span class="ma-alt">${ic.length} kişi · ${ic.filter(x => x.gel).length} geldi</span></div><div class="ma-tablo">${ic.map(x => { let k = maKey(x.u.grup, x.u.ad);
             return `<button class="ma-satir" onclick="maRaporAc('${k}')"><b>${miloEsc(x.u.ad)}${maTur(x.u) === 'misafir' ? ' 🎟️' : ''}</b><span class="ders">${x.dersler.length ? x.dersler.map(s => `<span class="ma-cip">${maSlotGunler(s).map(g => MA_GUN_KISA[g]).join('·')} ${s.baslangicSaat}</span>`).join('') : '<span class="ma-alt">derse kayıtlı değil</span>'}</span><span class="ma-durum ${x.gel ? 'g' : 'y'}">${x.gel ? '✓ ' + x.gel + ' gün' : '✗ gelmedi'}${x.dg ? `<br><small class="ma-alt">${x.kt} / ${x.dg} derse</small>` : ''}</span><span class="son ma-alt">son: ${maTarih(x.son)}</span></button>${MA.rapor[k] ? maRaporPanelHTML(k) : ''}`; }).join('')}</div>`; }).join('') || '<div class="ma-alt">Bu filtrede üye yok.</div>'}
         <div class="ma-alt">Bir üyeye dokun → veliye aylık rapor linki.</div></div>`;
 }
+// ---- Günün notu (eski Yoklama sekmesinden taşındı, 2026-09-29) — /gunluk-not/:tarih, gün başına tek not
+function maNotHTML(iso) {
+    if (MA.not[iso] === undefined) { MA.not[iso] = null; miloApi('/gunluk-not/' + encodeURIComponent(iso)).then(r => { MA.not[iso] = (r && r.notMetin) || ''; if (MA.alt === 'ders' && !MA.ekran) maCiz(); }).catch(() => { delete MA.not[iso]; }); }
+    if (MA.not[iso] === null) return '';
+    return `<textarea class="ma-ara" id="ma-not" rows="2" placeholder="📝 Bu gün ne işlendi? (isteğe bağlı not)" onblur="maNotKaydet('${iso}', this.value)" style="min-height:48px; resize:vertical">${miloEsc(MA.not[iso])}</textarea>`;
+}
+async function maNotKaydet(iso, metin) {
+    if ((MA.not[iso] || '') === metin) return;
+    try { await miloApi('/gunluk-not/' + encodeURIComponent(iso), { method: 'PUT', body: JSON.stringify({ notMetin: metin || null }) }); MA.not[iso] = metin; showToast('✅ Not kaydedildi.', 'success'); }
+    catch (e) { showToast('Not kaydedilemedi — bağlantıyı kontrol et.', 'error'); }
+}
+// ---- 2+ haftadır gelmeyenler → veliye "sizi özledik" mesajı (eski Devamsızlık Radarı, 2026-09-29)
+function maOzledikHTML(liste) {
+    if (!liste.length) return '';
+    let bugun = new Date(maBugun() + 'T12:00:00');
+    return `<div class="ma-kart" style="background:var(--milo-card-raised)"><div class="ma-alt"><b style="color:var(--milo-ink)">💬 Bir süredir gelmeyenler (${liste.length})</b> · WhatsApp'a dokununca veliye hazır "sizi özledik" mesajı açılır.</div><div class="ma-kisiler">${liste.map(x => { let gun = x.son ? Math.round((bugun - new Date(x.son + 'T12:00:00')) / 86400000) : null;
+        return `<div class="ma-kisi"><span class="ma-av">${miloEsc(maIlk(x.u.ad))}</span><span style="min-width:0"><b>${miloEsc(x.u.ad)}</b><small>${gun === null ? 'hiç gelmedi' : gun + ' gündür yok'} · ${x.u.acilTelefon ? '📞 ' + miloEsc(x.u.acilTelefon) : 'telefon yok'}</small></span><button class="ma-btn ana" onclick="maOzledik('${maKey(x.u.grup, x.u.ad)}')">💬 WhatsApp</button></div>`; }).join('')}</div></div>`;
+}
+function maOzledik(key) { let k = maCoz(key), u = maUye(k.g, k.ad) || {}; maWa(u.acilTelefon, `Merhaba 🌟 MILO FITT KIDS'ten yazıyoruz.
+
+${maIlkAd(k.ad)}'ı bir süredir antrenmanlarımızda göremedik, sizi özledik! Uygun olduğunuzda bize haber verirseniz seviniriz 🩷
+
+Her zaman buradayız.
+MILO FITT KIDS`); }
 // ---- Sayılar: özet, günlük grafik, doluluk, eğitmen
 function maSayilarHTML(D) {
     let bugun = maBugun(), akt = maAktifler(), gs = D.isoler.map(i => akt.filter(u => maDurum(u, i) === 'g').length), max = Math.max(1, ...gs);
