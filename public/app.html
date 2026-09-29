@@ -8,10 +8,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DAĞ S.K.">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DA%C4%9E%20S.K.%20Master%20OS&quot;,&quot;short_name&quot;:&quot;DA%C4%9E%20S.K.&quot;,&quot;start_url&quot;:&quot;/app.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f172a&quot;,&quot;theme_color&quot;:&quot;%230f172a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;/favicon.png&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DA%C4%9E%20S.K.%20Master%20OS&quot;,&quot;short_name&quot;:&quot;DA%C4%9E%20S.K.&quot;,&quot;start_url&quot;:&quot;/app.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230f172a&quot;,&quot;theme_color&quot;:&quot;%230f172a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;/ikon-192.png&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;},{&quot;src&quot;:&quot;/ikon-512.png&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
     <link rel="icon" href="/favicon.png">
     <link rel="icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <title>DAĞ S.K. Master OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;600;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
@@ -45,7 +45,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v148</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v149</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -102,6 +102,7 @@
                 <button onclick="document.getElementById('karisik-modal').style.display='none'" class="adm-btn adm-btn-sm">✕</button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.</div>
+            <div id="km-sablonlar"></div>
             <input id="km-ara" type="text" placeholder="🔍 Sporcu ara..." oninput="kmModalDoldur()" class="adm-input" style="margin-bottom:8px;">
             <div id="km-liste" style="overflow-y:auto;flex:1;min-height:150px;"></div>
             <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
@@ -131,6 +132,8 @@
                     <button onclick="kmMenuAcKapat();kmKonumDegistir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(0,240,255,0.12);color:var(--aurora-cyan);border-color:var(--aurora-cyan);">🔁 Konum Değiştir</button>
                     <button onclick="kmMenuAcKapat();kmSonucKartiPaylas()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(155,59,255,0.12);color:#c4a3ff;border-color:#9B3BFF;">📸 Sonuç Kartını Paylaş</button>
                     <button onclick="kmMenuAcKapat();kmOturumArsiviAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(180,140,255,0.12);color:#b48cff;border-color:#b48cff;">📚 Oturum Arşivi</button>
+                    <button onclick="kmMenuAcKapat();kmDersOzetiAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;">🏅 Ders Sonu Özeti</button>
+                    <button onclick="kmMenuAcKapat();kmSablonKaydetAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;">📋 Şablon Olarak Kaydet</button>
                     <button onclick="kmMenuAcKapat();kmDersiBitir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;background:rgba(239,68,68,0.12);color:var(--neon-red);border-color:var(--neon-red);">🏁 Dersi Bitir</button>
                 </div>
             </div>
@@ -1828,5 +1831,7 @@
     <script src="sync.js"></script>
     <script src="app.js"></script>
     <script src="dagsk-kisi-yonetimi.js"></script>
+    <script src="dagsk-km-ortak.js"></script>
+    <script src="dagsk-km-sablon-ozet.js"></script>
 </body>
 </html>

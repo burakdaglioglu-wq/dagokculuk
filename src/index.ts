@@ -40,6 +40,7 @@ import { registerMiloAraclarRoutes } from "./routes/milo/araclar";
 import { registerTanitimRoutes } from "./routes/tanitim";
 import { registerIhtiyacRoutes } from "./routes/ihtiyac";
 import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
+import { registerKmOrtakRoutes } from "./routes/kmOrtak";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
@@ -82,6 +83,7 @@ registerMiloAraclarRoutes(router);
 registerTanitimRoutes(router);
 registerIhtiyacRoutes(router);
 registerTeknikAnalizRoutes(router);
+registerKmOrtakRoutes(router);
 registerGirisRoutes(router, "/api/giris", (env) => env.DB);
 registerGirisRoutes(router, "/api/milo/giris", (env) => env.DB_MILO);
 
@@ -103,6 +105,8 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   // PIN'siz kalmalı — gerçek hassas veri (aidat, personel maaşı, sağlık belgesi) hep kendi özel
   // rotalarında ve onlar admin-only.
   "/api/meta/:key",
+  // Karışık Sınıf ortak ders durumu (oyun/takım/araç) — aynı gerekçe: Karışık Sınıf PIN'siz açılabiliyor.
+  "/api/km-ortak/:konum",
   "/api/athletes/:grup/:ad",
   "/api/athletes/:grup/:ad/gamification",
   "/api/duello/davet",

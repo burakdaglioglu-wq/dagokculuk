@@ -49,7 +49,7 @@
   }
 
   /* ===== WebSocket hub — single connection, topic-based fan-out ===== */
-  const listeners = { series: [], seriesUpdated: [], seriesCancelled: [], lock: [], season: [], resetSignal: [], masterChanged: [], canliAtis: [], duello: [], wsAcildi: [], duyuru: [] };
+  const listeners = { series: [], seriesUpdated: [], seriesCancelled: [], lock: [], season: [], resetSignal: [], masterChanged: [], canliAtis: [], duello: [], wsAcildi: [], duyuru: [], kmOrtak: [] };
   let helloState = null;
   let ws = null;
   let wsBackoff = 1000;
@@ -70,6 +70,7 @@
       const yenidenBaglanmaMi = !ilkWsBaglanti;
       ilkWsBaglanti = false;
       listeners.wsAcildi.forEach((cb) => { try { cb(yenidenBaglanmaMi); } catch (e) {} });
+      degisimTelafiZamanla(2500);
     };
     ws.onclose = () => {
       const capped = Math.min(wsBackoff, 120000);
@@ -127,12 +128,46 @@
         listeners.seriesCancelled.forEach((cb) => cb(msg));
       } else if (msg.type === "duyuru") {
         listeners.duyuru.forEach((cb) => cb(msg));
+      } else if (msg.type === "km-ortak") {
+        // Karışık Sınıf ortak ders: başka bir cihaz bu konumun durumunu değiştirdi (bkz. dagsk-km-ortak.js).
+        if (msg.deviceId && msg.deviceId === myDeviceId()) return;
+        listeners.kmOrtak.forEach((cb) => cb(msg.payload));
       }
     };
   }
   wsConnect();
 
   let masterChangedTimer = null;
+
+  // ÇEVRİMDIŞI TAM TELAFİ (2026-09-29): bağlantı yokken başka cihazlarda yapılan seri DÜZELTME ve İPTALLERİ
+  // canlı mesaj olarak kaçırılıyordu; turnuvaDBMerge sadece ekleme yaptığı için bir sonraki tam çekme de
+  // bunları geri getirmiyordu (iptal edilen skor bu cihazda sayılmaya devam ediyordu). Artık her bağlanışta,
+  // internet geri gelince ve uygulama öne gelince sunucuya "şu zamandan beri ne değişti" diye sorulur;
+  // cevap, canlı mesajların AYNI işleyicilerinden geçirilir (ikisi de tekrar çağrılmaya dayanıklı).
+  const TELAFI_ANAHTAR = "dag_seri_degisim_son";
+  let telafiZaman = null, telafiCalisiyor = false, telafiSon = 0;
+  function degisimTelafiZamanla(ms) { clearTimeout(telafiZaman); telafiZaman = setTimeout(degisimTelafi, ms); }
+  async function degisimTelafi() {
+    if (telafiCalisiyor || Date.now() - telafiSon < 15000) return;
+    // app.js işleyicileri henüz bağlanmadıysa biraz sonra tekrar dene.
+    if (!listeners.seriesCancelled.length || !listeners.seriesUpdated.length) return degisimTelafiZamanla(3000);
+    telafiCalisiyor = true;
+    try {
+      let since = Number(localStorage.getItem(TELAFI_ANAHTAR) || 0);
+      // İlk kez: son 60 gün (daha eskisi o zamanlar zaten canlı mesajla ya da tam çekmeyle gelmişti).
+      if (!since) since = Date.now() - 60 * 24 * 3600 * 1000;
+      const r = await get("/api/series/degisenler?since=" + Math.max(0, since - 60000));
+      const liste = (r && r.degisenler) || [];
+      const iptaller = liste.filter((x) => x.iptal).map((x) => x.seriId);
+      if (iptaller.length) listeners.seriesCancelled.forEach((cb) => { try { cb({ type: "series-cancelled", payload: { seriIds: iptaller } }); } catch (e) {} });
+      liste.filter((x) => !x.iptal).forEach((x) => listeners.seriesUpdated.forEach((cb) => { try { cb({ type: "series-updated", payload: { seriId: x.seriId, oklar: x.oklar, puan: x.puan } }); } catch (e) {} }));
+      if (r && r.simdi) localStorage.setItem(TELAFI_ANAHTAR, String(r.simdi));
+      telafiSon = Date.now();
+    } catch (e) { /* çevrimdışı: bir sonraki bağlanışta tekrar denenir */ }
+    finally { telafiCalisiyor = false; }
+  }
+  window.addEventListener("online", () => degisimTelafiZamanla(1500));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) degisimTelafiZamanla(1500); });
   function scheduleMasterChanged() {
     if (masterChangedTimer) return;
     masterChangedTimer = setTimeout(() => {
@@ -631,5 +666,6 @@
     seriesUpdatedDinle,
     seriesCancelledDinle,
     duyuruDinle,
+    kmOrtakDinle: (cb) => listeners.kmOrtak.push(cb),
   };
 })();

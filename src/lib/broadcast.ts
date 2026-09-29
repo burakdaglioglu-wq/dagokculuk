@@ -35,7 +35,8 @@ export type BroadcastEvent =
       };
     }
   | { type: "duello-iptal"; deviceId: string | null; payload: { duelId: string; kimAd: string; kimGrup: string } }
-  | { type: "duyuru"; deviceId: string | null; payload: { baslik: string; mesaj: string; hedefGrup: string | null } };
+  | { type: "duyuru"; deviceId: string | null; payload: { baslik: string; mesaj: string; hedefGrup: string | null } }
+  | { type: "km-ortak"; deviceId: string | null; payload: { konum: string; s: number } };
 
 let counter = 0;
 

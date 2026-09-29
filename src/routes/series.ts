@@ -16,6 +16,13 @@ export function registerSeriesRoutes(router: Router): void {
     return json({ series });
   });
 
+  // Çevrimdışı telafi (2026-09-29): uzun süre bağlantısız kalan cihaz "ben yokken hangi seriler düzeltildi/
+  // iptal edildi" diye sorar — canlı series-updated/series-cancelled mesajlarını kaçırmış olabilir.
+  router.get("/api/series/degisenler", async (request, env) => {
+    const since = Number(new URL(request.url).searchParams.get("since") || 0) || 0;
+    return json({ simdi: Date.now(), degisenler: await seriesDb.listChangedSeries(env, since) });
+  });
+
   router.post("/api/series", async (request, env) => {
     const body = await readJson<{
       seriId: string;

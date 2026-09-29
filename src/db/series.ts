@@ -118,8 +118,8 @@ export async function createSeries(env: Env, input: CreateSeriesInput): Promise<
 }
 
 export async function updateSeries(env: Env, seriId: string, oklar: string[], puan: number): Promise<{ applied: boolean }> {
-  const result = await env.DB.prepare("UPDATE series SET oklar_json = ?, puan = ? WHERE seriId = ?")
-    .bind(JSON.stringify(oklar), puan, seriId)
+  const result = await env.DB.prepare("UPDATE series SET oklar_json = ?, puan = ?, degisti = ? WHERE seriId = ?")
+    .bind(JSON.stringify(oklar), puan, Date.now(), seriId)
     .run();
   return { applied: (result.meta.changes ?? 0) > 0 };
 }
@@ -127,8 +127,16 @@ export async function updateSeries(env: Env, seriId: string, oklar: string[], pu
 export async function cancelSeries(env: Env, seriIds: string[]): Promise<{ cancelled: number }> {
   if (seriIds.length === 0) return { cancelled: 0 };
   const placeholders = seriIds.map(() => "?").join(",");
-  const result = await env.DB.prepare(`UPDATE series SET iptal = 1 WHERE seriId IN (${placeholders})`)
-    .bind(...seriIds)
+  const result = await env.DB.prepare(`UPDATE series SET iptal = 1, degisti = ? WHERE seriId IN (${placeholders})`)
+    .bind(Date.now(), ...seriIds)
     .run();
   return { cancelled: result.meta.changes ?? 0 };
+}
+
+/** Çevrimdışı telafi: since'ten sonra düzeltilen/iptal edilen seriler (bkz. migrations/0040). */
+export async function listChangedSeries(env: Env, since: number): Promise<{ seriId: string; oklar: string[]; puan: number; iptal: boolean; degisti: number }[]> {
+  const { results } = await env.DB.prepare("SELECT seriId, oklar_json, puan, iptal, degisti FROM series WHERE degisti > ? ORDER BY degisti ASC LIMIT 5000")
+    .bind(since)
+    .all<{ seriId: string; oklar_json: string; puan: number; iptal: number; degisti: number }>();
+  return results.map((r) => ({ seriId: r.seriId, oklar: JSON.parse(r.oklar_json || "[]"), puan: r.puan, iptal: !!r.iptal, degisti: r.degisti }));
 }
