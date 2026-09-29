@@ -12373,8 +12373,8 @@ ${(function(){
 .km-kesif-isaret.bulundu .km-kesif-soru{ opacity:0; }
 .km-kesif-ring{ fill:none; stroke:#ffd23f; stroke-width:2; opacity:0; transition:opacity .5s ease; }
 .km-kesif-isaret.bulundu .km-kesif-ring{ opacity:.9; filter:drop-shadow(0 0 6px #ffd23f); }
-.km-kesif-ad{ font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.06em; fill:#fff8e6; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .2s; text-transform:uppercase; }
-.km-kesif-isim{ font-family:var(--font-body); font-weight:700; font-size:10px; fill:#ffd23f; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .35s; }
+.km-kesif-ad{ font-family:var(--font-display); font-weight:800; font-size:9.5px; letter-spacing:.06em; fill:#fff8e6; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .2s; text-transform:uppercase; }
+.km-kesif-isim{ font-family:var(--font-body); font-weight:700; font-size:8.5px; fill:#ffd23f; paint-order:stroke; stroke:#1a1208; stroke-width:3px; opacity:0; transition:opacity .4s ease .35s; }
 .km-kesif-isaret.bulundu .km-kesif-ad, .km-kesif-isaret.bulundu .km-kesif-isim{ opacity:1; }
 .km-kesif-isaret.bulundu.km-kesif-hazine .km-kesif-sembol{ animation:kmSisHazineParla 1.8s ease-in-out infinite; }
 @keyframes kmSisHazineParla{ 0%,100%{ filter:drop-shadow(0 0 4px #ffd23f); } 50%{ filter:drop-shadow(0 0 14px #ffe98a); } }
@@ -12384,7 +12384,7 @@ ${(function(){
 .km-sis-tapinak.acik{ opacity:1; }
 .km-sis-tapinak-isin{ animation:kmSisIsin 2.6s ease-in-out infinite; }
 @keyframes kmSisIsin{ 0%,100%{ opacity:.12; } 50%{ opacity:.3; } }
-.km-sis-parca{ position:absolute; right:10px; bottom:10px; z-index:7; display:flex; flex-direction:column; gap:4px; align-items:flex-start; padding:8px 10px; border-radius:12px; background:rgba(4,6,14,0.8); border:1.5px solid rgba(255,210,63,.45); color:#fff6d6; }
+.km-sis-parca{ position:absolute; right:10px; top:10px; z-index:7; display:flex; flex-direction:column; gap:4px; align-items:flex-start; padding:8px 10px; border-radius:12px; background:rgba(4,6,14,0.8); border:1.5px solid rgba(255,210,63,.45); color:#fff6d6; }
 .km-sis-parca-baslik{ font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
 .km-sis-parca-baslik b{ color:#ffd23f; }
 .km-sis-parca-alt{ font-size:10px; font-weight:700; color:#e8d8a8; }
@@ -12937,7 +12937,7 @@ ${(function(){
 @media (max-width: 600px){ .km-kusak-satir{ grid-template-columns:auto 1fr auto; } .km-kusak-bar{ display:none; } .km-kusak-merdiven{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
 /* Ara olay işaretleri (Dağ/Hendek) */
 .km-olay{ pointer-events:none; }
-.km-olay-yazi{ font-family:var(--font-body); font-weight:800; font-size:10px; letter-spacing:.06em; fill:#fff; paint-order:stroke; stroke:rgba(0,0,0,0.65); stroke-width:3px; }
+.km-olay-yazi{ font-family:var(--font-body); font-weight:800; font-size:8.5px; letter-spacing:.06em; fill:#fff; paint-order:stroke; stroke:rgba(0,0,0,0.65); stroke-width:3px; }
 .km-olay-lazer{ animation:kmOlayLazer 1.1s ease-in-out infinite; }
 @keyframes kmOlayLazer{ 0%,100%{ opacity:.9; } 50%{ opacity:.35; } }
 @media (prefers-reduced-motion: reduce){ .km-olay-lazer{ animation:none; } }
@@ -14713,9 +14713,27 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let kutuOran = kmOyunZirveKutuOrani(svg);
                 if(kutuOran !== null && kutuOran < 1.4) w = Math.max(150, h * kutuOran);
             }
-            let x = Math.max(d.x, Math.min(d.x + W - w, pt.x - w / 2));
-            let y = Math.max(d.y, Math.min(d.y + H - h, pt.y - h / 2));
+            let odak = kmOyunKameraOdak();
+            let x = Math.max(d.x, Math.min(d.x + W - w, pt.x - w * odak.fx));
+            let y = Math.max(d.y, Math.min(d.y + H - h, pt.y - h * odak.fy));
             kmOyunKameraHedefeGit(svg, x, y, w, h);
+        }
+        // Takip kamerasının odak noktası (sahne oranı, 0..1). Skor paneli açıkken sahnenin panelin kapatmadığı
+        // en geniş parçası (üstü / solu / sağı) bulunur, sporcu oranın ortasına yerleşir — eskiden hep tam ortaya
+        // geliyordu ve alt-ortadaki panel tam da o sporcuyu örtüyordu (2026-09-29, Kayıp Ada'da belirgindi).
+        function kmOyunKameraOdak() {
+            let orta = { fx: 0.5, fy: 0.5 };
+            let sahne = document.getElementById('km-oyun-sahne'), dok = document.getElementById('km-oyun-dok');
+            if(!sahne || !dok || dok.classList.contains('km-oyun-dok-kapali')) return orta;
+            let s = sahne.getBoundingClientRect(), d = dok.getBoundingClientRect();
+            if(!s.width || !s.height || !d.width || d.bottom <= s.top || d.top >= s.bottom) return orta;
+            let bolgeler = [
+                { x0: s.left, x1: s.right, y0: s.top, y1: Math.max(s.top, d.top) },
+                { x0: s.left, x1: Math.max(s.left, d.left), y0: s.top, y1: s.bottom },
+                { x0: Math.min(s.right, d.right), x1: s.right, y0: s.top, y1: s.bottom }
+            ].map(function(b) { b.alan = Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0); return b; }).sort(function(a, b) { return b.alan - a.alan; });
+            let b = bolgeler[0]; if(!b.alan) return orta;
+            return { fx: Math.max(0.15, Math.min(0.85, ((b.x0 + b.x1) / 2 - s.left) / s.width)), fy: Math.max(0.2, Math.min(0.8, ((b.y0 + b.y1) / 2 - s.top) / s.height)) };
         }
         // Karakter dünya-sınırı kısıtlaması (2026-09-09, gerçek testte bulundu) — kmOyunJitter() bir
         // karakteri kendi noktasından ±160 dünya-birimine kadar kaydırabiliyor (çok sporcu aynı yerde
@@ -15155,10 +15173,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // ok girilirken canavarı tamamen örtüyordu. Bu temada varsayılan panel SOL tarafa geçer (takım/hasar
         // tablosunun üstü — sıradaki sporcu zaten sağ kartta). Koç Canavar'dayken açıkça "Alt Orta"yı seçerse
         // (cihaza özel 'dokcnvorta' bayrağı) ya da Sağ/serbest konum kullanıyorsa ona dokunulmaz.
+        // Kayıp Ada (2026-09-29): kamera sıradaki sporcuyu ortalıyor, ortadaki panel onu örtüyordu → varsayılan SAĞ.
+        const KM_OYUN_DOK_VARSAYILAN = { canavar: 'sol', sisharita: 'sag' };
+        function kmOyunDokOrtaBayrak() { return kmOyunDokAyarAnahtari(_kmOyunAktifTema === 'canavar' ? 'cnvorta' : _kmOyunAktifTema + 'orta'); }
         function kmOyunDokEtkinKonum() {
-            if(_kmOyunAktifTema === 'canavar' && _kmOyunDokKonum === 'orta') {
-                try { if(localStorage.getItem(kmOyunDokAyarAnahtari('cnvorta')) === '1') return 'orta'; } catch(e) {}
-                return 'sol';
+            let v = KM_OYUN_DOK_VARSAYILAN[_kmOyunAktifTema];
+            if(v && _kmOyunDokKonum === 'orta') {
+                try { if(localStorage.getItem(kmOyunDokOrtaBayrak()) === '1') return 'orta'; } catch(e) {}
+                return v;
             }
             return _kmOyunDokKonum;
         }
@@ -15292,7 +15314,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunDokKonumDegistir(konum) {
             // Canavar'dayken "Alt Orta" açıkça seçilirse bu cihazda artık sola kaydırma yapılmaz.
-            if(_kmOyunAktifTema === 'canavar') { try { localStorage.setItem(kmOyunDokAyarAnahtari('cnvorta'), konum === 'orta' ? '1' : '0'); } catch(e) {} }
+            if(KM_OYUN_DOK_VARSAYILAN[_kmOyunAktifTema]) { try { localStorage.setItem(kmOyunDokOrtaBayrak(), konum === 'orta' ? '1' : '0'); } catch(e) {} }
             _kmOyunDokKonum = konum;
             kmOyunDokAyarKaydet();
             kmOyunDokGorunumUygula();
@@ -19940,8 +19962,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <circle class="km-kesif-ring" cx="${x}" cy="${y}" r="26"/>
                         <g class="km-kesif-soru" transform="translate(${x},${y})"><circle r="14" fill="#1a1208" opacity=".55"/><text y="6" text-anchor="middle" fill="${tur.id === 'hazine-sandigi' ? '#ffd23f' : '#fff'}" font-size="16" font-weight="900">${tur.id === 'hazine-sandigi' ? '✕' : '?'}</text></g>
                         <use class="km-kesif-sembol" href="#km-sis-sym-${tur.id}" x="${(pt.x - 22).toFixed(1)}" y="${(pt.y - 22).toFixed(1)}" width="44" height="44"/>
-                        <text class="km-kesif-ad" x="${x}" y="${(pt.y - 64).toFixed(1)}" text-anchor="middle">${esc(tur.ad)}</text>
-                        <text class="km-kesif-isim" x="${x}" y="${(pt.y - 50).toFixed(1)}" text-anchor="middle">${bulanAd ? '🏅 ' + esc(kmOyunIlkAd(bulanAd)) + ' buldu' : ''}</text>
+                        <text class="km-kesif-ad" x="${x}" y="${(pt.y - 44).toFixed(1)}" text-anchor="middle">${esc(tur.ad)}</text>
+                        <text class="km-kesif-isim" x="${x}" y="${(pt.y - 33).toFixed(1)}" text-anchor="middle">${bulanAd ? '🏅 ' + esc(kmOyunIlkAd(bulanAd)) + ' buldu' : ''}</text>
                         <g class="km-kesif-bayrak" transform="translate(${(pt.x + 20).toFixed(1)},${(pt.y - 4).toFixed(1)})" style="${bulanAd ? '' : 'display:none;'}"><line x1="0" y1="0" x2="0" y2="-30" stroke="#3a2a14" stroke-width="2"/><path class="bz" d="M0 -30 L18 -24 L0 -18 Z" fill="${_kmSisKesifler[cp].renk || '#ffd23f'}" stroke="#1a1208" stroke-width="1"/></g>
                     </g>`;
                 }).join('');
@@ -20136,7 +20158,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         var _kmSisGorevAcik = null;
         function kmSisGorevCiz() {
             let el = document.getElementById('km-sis-gorev'); if(!el) return;
-            if(_kmSisGorevAcik === null) _kmSisGorevAcik = window.innerWidth > 600;
+            if(_kmSisGorevAcik === null) _kmSisGorevAcik = false; // 2026-09-29: açıkken tablette adanın sol yarısını kaplıyordu
             let gorevler = kmSisGunGorevleri(), tamam = gorevler.filter(function(g) { return _kmSisGorevDurum[g.id]; }).length;
             el.classList.toggle('kapali', !_kmSisGorevAcik);
             el.innerHTML = '<button class="km-sis-gorev-baslik" onclick="_kmSisGorevAcik=!_kmSisGorevAcik; kmSisGorevCiz();">📜 Pusula Görevleri <b>' + tamam + '/3</b> <span>' + (_kmSisGorevAcik ? '▾' : '▸') + '</span></button>'
