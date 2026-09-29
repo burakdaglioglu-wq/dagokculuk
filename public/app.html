@@ -45,7 +45,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v154</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v155</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -102,6 +102,7 @@
                 <button onclick="document.getElementById('karisik-modal').style.display='none'" class="adm-btn adm-btn-sm">✕</button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.</div>
+            <div id="km-program-dersler"></div>
             <div id="km-sablonlar"></div>
             <input id="km-ara" type="text" placeholder="🔍 Sporcu ara..." oninput="kmModalDoldur()" class="adm-input" style="margin-bottom:8px;">
             <div id="km-liste" style="overflow-y:auto;flex:1;min-height:150px;"></div>
@@ -1827,6 +1828,7 @@
     <script src="sync.js"></script>
     <script src="app.js"></script>
     <script src="dagsk-kisi-yonetimi.js"></script>
+    <script src="dagsk-yapilacaklar.js"></script>
     <script src="dagsk-km-ortak.js"></script>
     <script src="dagsk-km-sablon-ozet.js"></script>
 </body>

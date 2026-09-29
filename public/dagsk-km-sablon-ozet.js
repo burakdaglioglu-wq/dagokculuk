@@ -230,3 +230,170 @@ function kmOzetKopyala() {
     if (!_kmOzetSon) return; let t = kmOzetGrupMetni(_kmOzetSon);
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { showToast('Özet kopyalandı 📋', 'success'); }).catch(function () { prompt('Kopyala:', t); });
 }
+
+// ============================================================================================
+// 📅 DERS PROGRAMINDAN TEK DOKUNUŞLA DERS (2026-09-29, "sporcuları tek tek seçmek de şablon da gerekmesin")
+// Yeni ders ekranının en üstünde bugünün dersleri (şu an süren ya da 30 dk içinde başlayan "şimdi" diye
+// vurgulu). Dokununca o dersin kayıtlı sporcuları (Ders Programı katılımcıları; pasifler hariç) seçilir ve
+// ders başlar. Hangi dersten başladığı konuma kaydedilir (dag_km_dersslot_<konum> — ortak ders senkronuyla
+// tüm cihazlara gider) → ders kapanışında "programda olup gelmeyenler" bilinir.
+// ============================================================================================
+let _kmProgramOnbellek = { t: 0, slotlar: [] }, _kmProgramdanBasliyor = false;
+function kmProgramSlotlariGetir() {
+    if (Date.now() - _kmProgramOnbellek.t < 120000) return Promise.resolve(_kmProgramOnbellek.slotlar);
+    return fetch('/api/antrenman-programi').then(function (r) { return r.json(); }).then(function (d) {
+        _kmProgramOnbellek = { t: Date.now(), slotlar: d.slots || [] };
+        try { _programSlotlar = _kmProgramOnbellek.slotlar; } catch (e) {}
+        return _kmProgramOnbellek.slotlar;
+    }).catch(function () { return _kmProgramOnbellek.slotlar; });
+}
+function kmDkSaat(s) { let p = String(s || '0:0').split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+function kmBugunDersleri(slotlar) {
+    let d = new Date(), gd = d.getDay(), iso = bugunISO(), dk = d.getHours() * 60 + d.getMinutes();
+    return slotlar.filter(function (s) { return (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number).indexOf(gd) >= 0 && !(s.istisnalar || []).some(function (i) { return i.tarih === iso; }); })
+        .map(function (s) { let bas = kmDkSaat(s.baslangicSaat), bit = kmDkSaat(s.bitisSaat); return { s: s, bas: bas, bit: bit, simdi: dk >= bas - 30 && dk < bit }; })
+        .filter(function (x) { return x.bit > dk - 15; }).sort(function (a, b) { return a.bas - b.bas; });
+}
+function kmDersSporculari(s) { return (s.katilimcilar || []).filter(function (k) { let sp = turnuvaDB[k.grup] && turnuvaDB[k.grup][k.ad]; return sp && !sp.pasif && !sp.donduruldu; }).map(function (k) { return { g: k.grup, ad: k.ad }; }); }
+function kmDersSlotAnahtar() { return 'dag_km_dersslot_' + (_kmAktifKonum || 'varsayilan'); }
+function kmDersSlot() { try { let v = JSON.parse(localStorage.getItem(kmDersSlotAnahtar()) || 'null'); return v && v.tarih === bugunISO() ? v : null; } catch (e) { return null; } }
+function kmProgramDersleriCiz() {
+    let el = document.getElementById('km-program-dersler'); if (!el) return;
+    kmProgramSlotlariGetir().then(function (sl) {
+        let liste = kmBugunDersleri(sl).slice(0, 3);
+        if (!liste.length) { el.innerHTML = ''; return; }
+        el.innerHTML = '<div class="kms-baslik">📅 Bugünün dersleri — dokun, kayıtlı sporcularla başlasın</div><div class="kmp-liste">' + liste.map(function (x) {
+            let n = kmDersSporculari(x.s).length;
+            return '<button class="kmp-ders' + (x.simdi ? ' simdi' : '') + '" onclick="kmProgramDersBaslat(' + JSON.stringify(x.s.id).replace(/"/g, '&quot;') + ')"' + (n ? '' : ' disabled') + '><span class="kmp-saat">' + kmSablonEsc(x.s.baslangicSaat) + '<small>' + kmSablonEsc(x.s.bitisSaat) + '</small></span><span class="kmp-ad"><b>' + kmSablonEsc(x.s.grup || 'Ders') + '</b><small>' + (n ? n + ' kayıtlı sporcu' : 'kayıtlı sporcu yok') + (x.simdi ? ' · şimdi' : '') + '</small></span><span class="kmp-git">▶ Başlat</span></button>';
+        }).join('') + '</div>';
+    });
+}
+async function kmProgramDersBaslat(id) {
+    let s = (_kmProgramOnbellek.slotlar || []).find(function (x) { return x.id === id; }); if (!s) return;
+    let sp = kmDersSporculari(s); if (!sp.length) return showToast("Bu derse kayıtlı sporcu yok — Ders Programı'ndan ekleyebilirsin.", 'warning');
+    _kmSecimler = {}; sp.forEach(function (k) { _kmSecimler[k.g + '_' + k.ad] = k; });
+    try { localStorage.setItem(kmDersSlotAnahtar(), JSON.stringify({ id: s.id, grup: s.grup, bas: s.baslangicSaat, bit: s.bitisSaat, tarih: bugunISO(), katilimcilar: sp })); } catch (e) {}
+    _kmProgramdanBasliyor = true;
+    try { await kmBaslat(); } finally { _kmProgramdanBasliyor = false; }
+}
+(function () {
+    function kanca() {
+        if (typeof kmModalDoldur !== 'function' || typeof kmBaslat !== 'function') return setTimeout(kanca, 300);
+        let eskiDoldur = kmModalDoldur, eskiBaslat = kmBaslat;
+        kmModalDoldur = function () { let r = eskiDoldur.apply(this, arguments); kmProgramDersleriCiz(); return r; };
+        // Elle (programdan değil) başlatılan derste eski ders bağlantısı kalmasın.
+        kmBaslat = function () { if (!_kmProgramdanBasliyor) { try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {} } return eskiBaslat.apply(this, arguments); };
+    }
+    kanca();
+    let st = document.createElement('style');
+    st.textContent = '.kmp-liste{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}'
+        + '.kmp-ders{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--border-color);border-radius:12px;background:var(--surface-1,var(--bg-panel));color:var(--text-primary,var(--text-main));padding:9px 12px;cursor:pointer;font:inherit;min-height:52px}'
+        + '.kmp-ders.simdi{border-color:var(--accent-orange);background:color-mix(in srgb,var(--accent-orange) 12%,transparent)}'
+        + '.kmp-ders:disabled{opacity:.5;cursor:default}.kmp-ders:focus-visible{outline:2px solid var(--accent-orange);outline-offset:2px}'
+        + '.kmp-saat{display:flex;flex-direction:column;font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;min-width:48px}.kmp-saat small{font-size:10px;font-weight:600;color:var(--text-muted)}'
+        + '.kmp-ad{flex:1;min-width:0;display:flex;flex-direction:column}.kmp-ad b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kmp-ad small{font-size:10.5px;color:var(--text-muted)}'
+        + '.kmp-git{font-weight:900;font-size:12px;color:var(--accent-orange);white-space:nowrap}'
+        + '.kmk-bolum{border:1px solid var(--border-color);border-radius:12px;padding:10px 12px;background:var(--surface-1,var(--bg-panel));display:flex;flex-direction:column;gap:6px}'
+        + '.kmk-bolum h4{margin:0;font-size:13px;font-weight:900;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.kmk-bolum h4 small{font-weight:600;color:var(--text-muted);font-size:11px}'
+        + '.kmk-sat{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--border-color)}'
+        + '.kmk-ad{flex:1;min-width:120px;font-weight:800;font-size:12.5px}.kmk-ad small{display:block;font-weight:600;font-size:10.5px;color:var(--text-muted)}'
+        + '.kmk-sec{display:flex;gap:4px}.kmk-sec button{border:1.5px solid var(--border-color);background:transparent;color:var(--text-secondary,var(--text-muted));border-radius:8px;padding:5px 10px;font-weight:800;font-size:11.5px;cursor:pointer;min-height:36px}'
+        + '.kmk-sec button.g.aktif{border-color:var(--status-success,#4FB07A);color:var(--status-success,#4FB07A);background:color-mix(in srgb,var(--status-success,#4FB07A) 16%,transparent)}'
+        + '.kmk-sec button.y.aktif{border-color:var(--status-danger,#ef4444);color:var(--status-danger,#ef4444);background:color-mix(in srgb,var(--status-danger,#ef4444) 16%,transparent)}'
+        + '.kmk-sat.gonderildi{opacity:.55}.kmk-not{font-size:11px;color:var(--text-muted)}';
+    document.head.appendChild(st);
+})();
+
+// ============================================================================================
+// 🏁 DERS KAPANIŞI (2026-09-29, "gelmeyenler işaretli gelsin, velilerine mesaj ve özet aynı ekranda")
+// "Dersi Bitir" artık tek ekran açar: (1) yoklama — skor giren/işaretli olan "geldi", programdan başlatılan
+// derste kayıtlı olup derse hiç eklenmeyen "gelmedi" hazır; koç düzeltip kaydeder → otomatikYoklamaDB (her
+// yerdeki yoklamayla aynı kayıt); (2) gelmeyenlerin velilerine hazır mesaj; (3) skor girenlerin veli raporları;
+// (4) sınıf özeti (veli grubu). Özet ve durum, skorlar sıfırlanmadan ÖNCE alınır (kmKapanisHazirla).
+// ============================================================================================
+let _kmKapanis = null;
+function kmKapanisHazirla() {
+    let bugun = bugunISO(), gun = otomatikYoklamaDB[bugun] || {}, slot = kmDersSlot(), D = null;
+    try { D = kmOzetVeri(); } catch (e) {}
+    let isaret = function (g, ad) { let r = gun[ad]; return r && (!r.grup || r.grup === g) ? (r.geldi === false ? 'gelmedi' : 'geldi') : null; };
+    let kisiler = {};
+    _kmListe.forEach(function (k) {
+        let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad], atti = !!(sp && (sp.seriler || []).length), i = isaret(k.g, k.ad);
+        kisiler[k.g + '|' + k.ad] = { g: k.g, ad: k.ad, durum: i || 'geldi', atti: atti };
+    });
+    if (slot) (slot.katilimcilar || []).forEach(function (k) {
+        let key = k.g + '|' + k.ad; if (kisiler[key]) return;
+        kisiler[key] = { g: k.g, ad: k.ad, durum: isaret(k.g, k.ad) || 'gelmedi', atti: false, disarida: true };
+    });
+    let liste = Object.keys(kisiler).map(function (k) { return kisiler[k]; }).sort(function (a, b) { return (a.durum === 'gelmedi') - (b.durum === 'gelmedi') || a.ad.localeCompare(b.ad, 'tr'); });
+    return { tarih: bugun, slot: slot, D: D, kisiler: liste, onaylandi: false, gonderilen: {} };
+}
+function kmKapanisAc(K, arsivlenenler) {
+    _kmKapanis = K; K.arsiv = arsivlenenler || [];
+    try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {}
+    kmKapanisCiz();
+}
+function kmKapanisTel(g, ad) { let sp = turnuvaDB[g] && turnuvaDB[g][ad]; return sp && sp.acilTelefon; }
+function kmKapanisCiz() {
+    let K = _kmKapanis; if (!K) return;
+    let m = document.getElementById('kmk-modal');
+    if (!m) { m = document.createElement('div'); m.id = 'kmk-modal'; m.className = 'kmoz-bg'; document.body.appendChild(m); }
+    let gelen = K.kisiler.filter(function (x) { return x.durum === 'geldi'; }).length, gelmeyen = K.kisiler.filter(function (x) { return x.durum === 'gelmedi'; });
+    let baslik = K.slot ? kmSablonEsc(K.slot.bas + ' ' + (K.slot.grup || 'Ders')) : 'Karışık Sınıf';
+    let yoklama = '<div class="kmk-bolum"><h4>✅ Yoklama <small>' + gelen + ' geldi · ' + gelmeyen.length + ' gelmedi' + (K.onaylandi ? ' · kaydedildi ✓' : '') + '</small></h4>'
+        + (K.slot ? '' : '<div class="kmk-not">Ders Programı\'ndan başlatılan derslerde, kayıtlı olup gelmeyenler de burada hazır çıkar.</div>')
+        + K.kisiler.map(function (x, i) {
+            return '<div class="kmk-sat"><div class="kmk-ad">' + kmSablonEsc(x.ad) + '<small>' + (x.atti ? 'skor girdi' : x.disarida ? 'programda kayıtlı, derse gelmedi' : 'derste') + '</small></div>'
+                + '<div class="kmk-sec"><button class="g' + (x.durum === 'geldi' ? ' aktif' : '') + '" onclick="kmKapanisDurum(' + i + ',\'geldi\')">✅ Geldi</button><button class="y' + (x.durum === 'gelmedi' ? ' aktif' : '') + '" onclick="kmKapanisDurum(' + i + ',\'gelmedi\')">❌ Gelmedi</button></div></div>';
+        }).join('')
+        + '<button class="kmoz-btn ana" onclick="kmKapanisYoklamaKaydet()">' + (K.onaylandi ? '✓ Kaydedildi — tekrar kaydet' : '💾 Yoklamayı kaydet') + '</button></div>';
+    let veliGelmeyen = gelmeyen.length ? '<div class="kmk-bolum"><h4>💬 Gelmeyenlerin velileri <small>' + gelmeyen.length + ' kişi</small></h4>' + gelmeyen.map(function (x) {
+        let i = K.kisiler.indexOf(x), tel = kmKapanisTel(x.g, x.ad), k = 'y' + i;
+        return '<div class="kmk-sat' + (K.gonderilen[k] ? ' gonderildi' : '') + '"><div class="kmk-ad">' + kmSablonEsc(x.ad) + '<small>' + (tel ? '📞 ' + kmSablonEsc(tel) : 'telefon kayıtlı değil') + '</small></div><button class="kmoz-wa" onclick="kmKapanisGelmeyenMesaj(' + i + ')">' + (K.gonderilen[k] ? '✓ Gönderildi' : '💬 WhatsApp') + '</button></div>';
+    }).join('') + '</div>' : '';
+    let raporlar = K.arsiv.length ? '<div class="kmk-bolum"><h4>📋 Veli raporları <small>bugün skor giren ' + K.arsiv.length + ' sporcu</small></h4>' + K.arsiv.map(function (x, i) {
+        let tel = kmKapanisTel(x.g, x.ad), k = 'r' + i;
+        return '<div class="kmk-sat' + (K.gonderilen[k] ? ' gonderildi' : '') + '"><div class="kmk-ad">' + kmSablonEsc(x.ad) + '<small>' + (tel ? '📞 ' + kmSablonEsc(tel) : 'telefon kayıtlı değil') + '</small></div><button class="kmoz-btn" onclick="kmKapanisRaporKopyala(' + i + ')" aria-label="Kopyala">📋</button><button class="kmoz-wa" onclick="kmKapanisRaporGonder(' + i + ')">' + (K.gonderilen[k] ? '✓ Gönderildi' : '💬 WhatsApp') + '</button></div>';
+    }).join('') + '</div>' : '';
+    let ozetVar = K.D && (K.D.atanlar.length || K.D.satirlar.some(function (s) { return s.deger > 0; }));
+    let ozet = ozetVar ? '<div class="kmk-bolum"><h4>🏅 Sınıf özeti <small>veli grubuna tek mesaj</small></h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="kmoz-btn ana" onclick="kmOzetWa(null, kmOzetGrupMetni(_kmKapanis.D))">💬 Veli grubuna gönder</button><button class="kmoz-btn" onclick="kmKapanisOzetKopyala()">📋 Metni kopyala</button></div></div>' : '';
+    m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Kapanışı"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏁 Ders Kapanışı</h3><p>' + baslik + ' · ' + formatTarih(K.tarih) + ' · ' + K.kisiler.length + ' kişi</p></div><button class="kmoz-btn" onclick="kmKapanisKapat()" aria-label="Kapat">✕</button></div>'
+        + '<div class="kmoz-govde">' + yoklama + veliGelmeyen + raporlar + ozet + '</div></div>';
+}
+function kmKapanisDurum(i, durum) { let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return; x.durum = durum; _kmKapanis.onaylandi = false; kmKapanisCiz(); }
+function kmKapanisYoklamaKaydet() {
+    let K = _kmKapanis; if (!K) return;
+    let t = K.tarih, saat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), n = 0;
+    if (!otomatikYoklamaDB[t]) otomatikYoklamaDB[t] = {};
+    K.kisiler.forEach(function (x) {
+        let r = otomatikYoklamaDB[t][x.ad], mevcut = r && (!r.grup || r.grup === x.g) ? (r.geldi === false ? 'gelmedi' : 'geldi') : null;
+        if (mevcut === x.durum) return;
+        otomatikYoklamaDB[t][x.ad] = { saat: (r && r.saat) || saat, grup: x.g, elle: true, geldi: x.durum === 'geldi' }; n++;
+    });
+    try { otomatikYoklamaKaydet(); } catch (e) {}
+    try { bekleyenGonderim = true; bulutaGonderKontrol(); } catch (e) {}
+    try { yoneticiDevamsizlikWidgetCiz(); } catch (e) {}
+    K.onaylandi = true; showToast('✅ Yoklama kaydedildi' + (n ? ' (' + n + ' değişiklik)' : ''), 'success'); kmKapanisCiz();
+}
+function kmKapanisGelmeyenMesaj(i) {
+    let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return;
+    let ders = _kmKapanis.slot ? ' ' + _kmKapanis.slot.bas + ' dersimizde' : ' bugünkü dersimizde';
+    kmOzetWa(kmKapanisTel(x.g, x.ad), "Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n" + kmOzetIlkAd(x.ad) + "'i" + ders + ' göremedik, umarız her şey yolundadır 🧡 Bir sonraki antrenmanda görüşmek dileğiyle!\n\nDAĞ Spor Kulübü');
+    _kmKapanis.gonderilen['y' + i] = true; kmKapanisCiz();
+}
+function kmKapanisRaporMetni(i) {
+    let K = _kmKapanis, x = K && K.arsiv[i]; if (!x) return '';
+    let s = K.D && K.D.satirlar.find(function (r) { return r.g === x.g && r.ad === x.ad; });
+    if (s) return kmOzetVeliMetni(s, K.D);
+    try { return _dersSonuOzetMetni(x.g, x.ad); } catch (e) { return ''; }
+}
+function kmKapanisRaporGonder(i) { let x = _kmKapanis && _kmKapanis.arsiv[i]; if (!x) return; kmOzetWa(kmKapanisTel(x.g, x.ad), kmKapanisRaporMetni(i)); _kmKapanis.gonderilen['r' + i] = true; kmKapanisCiz(); }
+function kmKapanisKopyala(t, mesaj) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { showToast(mesaj, 'success'); }).catch(function () { prompt('Kopyala:', t); }); }
+function kmKapanisRaporKopyala(i) { kmKapanisKopyala(kmKapanisRaporMetni(i), 'Rapor kopyalandı 📋'); }
+function kmKapanisOzetKopyala() { kmKapanisKopyala(kmOzetGrupMetni(_kmKapanis.D), 'Özet kopyalandı 📋'); }
+function kmKapanisKapat() {
+    let K = _kmKapanis;
+    let bitir = function () { let m = document.getElementById('kmk-modal'); if (m) m.remove(); _kmKapanis = null; };
+    if (K && !K.onaylandi && K.kisiler.length) return onayIste('Yoklama henüz kaydedilmedi. Kaydetmeden kapatılsın mı?<br><span style="font-size:12px;color:var(--text-muted)">Skor giren sporcular zaten "geldi" sayıldı; sadece gelmeyenler işaretlenmemiş kalır.</span>', bitir, 'Kaydetmeden kapat');
+    bitir();
+}

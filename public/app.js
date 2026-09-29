@@ -25094,8 +25094,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             });
             return enIyi;
         }
+        // Tabletlerde tarayıcının kendi confirm() penceresi elden ele geçen cihazda karışıklık çıkarıyordu → uygulamanın
+        // onay penceresi. Bitince yoklama + veli mesajları + özet tek ekranda (dagsk-km-sablon-ozet.js kmKapanis*).
         function kmDersiBitir() {
-            if(!confirm('Karışık dersi bitirmek istiyor musun?\n\nTüm sporcuların skorları arşivlenir ve sıfırlanır.')) return;
+            onayIste('<b>Dersi bitirmek istiyor musun?</b><br><span style="font-size:12px;color:var(--text-muted)">Skorlar arşivlenir ve sıfırlanır; ardından yoklama, veli mesajları ve özet tek ekranda açılır.</span>', kmDersiBitirOnayli, '🏁 Evet, dersi bitir');
+        }
+        function kmDersiBitirOnayli() {
             // Bindirmeyi hemen göster, AMA ağır (senkron JSON.stringify) işi bir setTimeout'a ertele —
             // aksi halde tarayıcı bindirmeyi boyamadan hemen ana thread'i bloke eder, hiç görünmez.
             islemYukleniyorGoster('Ders bitiriliyor...');
@@ -25103,6 +25107,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmOncekiSira = {}; // ders bitince eski sıralama anlamsız kalır
                 let bugun = bugunISO();
                 let arsivlenenler = [];
+                // Ders kapanışı ekranının verisi — skorlar sıfırlanmadan ÖNCE (özet, kim skor girdi, yoklama).
+                let kapanis = null; try { if(typeof kmKapanisHazirla === 'function') kapanis = kmKapanisHazirla(); } catch(e) { console.warn('kapanış', e); }
                 // 🌟 Günün Yıldızı + 📚 Oturum Arşivi özeti — reset ÖNCESİ canlı veriden hesaplanmalı
                 // (birazdan sp.seriler/toplamSkor temizlenecek).
                 let gununYildizi = _kmGununYildiziBul(bugun);
@@ -25149,7 +25155,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     }
                     try { document.getElementById('karisik-platform').style.display='none'; } catch(e) {}
                     showToast('✅ Ders bitti! Tüm skorlar kaydedildi.','success');
-                    try { dersSonuRaporGoster(arsivlenenler); } catch(e) {}
+                    try { if(kapanis && typeof kmKapanisAc === 'function') kmKapanisAc(kapanis, arsivlenenler); else dersSonuRaporGoster(arsivlenenler); } catch(e) {}
                     // 📚 Oturum Arşivi kaydı — reset ÖNCESİ toplanan özet burada saklanıyor.
                     try {
                         _kmOturumGecmisi.unshift({
