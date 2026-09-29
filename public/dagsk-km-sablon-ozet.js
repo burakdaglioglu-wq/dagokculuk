@@ -100,7 +100,7 @@ function kmSablonKaydetAc() {
         + '.kmoz-ust{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border-color)}.kmoz-ust h3{margin:0;font-size:16px;font-weight:900}.kmoz-ust p{margin:3px 0 0;font-size:11.5px;color:var(--text-muted)}'
         + '.kmoz-govde{overflow-y:auto;padding:10px 16px 14px;display:flex;flex-direction:column;gap:8px}'
         + '.kmoz-vurgu{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}'
-        + '.kmoz-v{border:1px solid var(--border-color);border-radius:12px;padding:9px 11px;background:var(--surface-1,var(--bg-panel))}.kmoz-v small{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}.kmoz-v b{font-size:14px}'
+        + '.kmoz-v{border:1px solid var(--border-color);border-radius:12px;padding:9px 11px;background:var(--surface-1,var(--bg-panel))}.kmoz-v small{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}.kmoz-v{min-width:0}.kmoz-v b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
         + '.kmoz-sat{display:grid;grid-template-columns:26px 1fr auto;gap:4px 10px;align-items:center;border:1px solid var(--border-color);border-radius:12px;padding:9px 11px;background:var(--surface-1,var(--bg-panel))}'
         + '.kmoz-sira{font-size:15px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}.kmoz-ad{font-weight:800;font-size:13.5px;min-width:0}.kmoz-ad small{display:block;font-weight:600;font-size:10.5px;color:var(--text-muted)}'
         + '.kmoz-bar{grid-column:2/4;height:6px;border-radius:4px;background:var(--border-color);overflow:hidden}.kmoz-bar i{display:block;height:100%;background:var(--accent-orange);border-radius:4px}'
@@ -114,9 +114,21 @@ function kmSablonKaydetAc() {
 
 // ---------------------------------------------------------------- 🏅 DERS SONU ÖZETİ
 function kmOzetIlkAd(ad) { let i = String(ad || '').trim().split(/\s+/)[0] || ''; return i.charAt(0) + i.slice(1).toLocaleLowerCase('tr-TR'); }
+// Ortak Canavar'ın BUGÜNKÜ kaydı (bu konum) — varsa sporcu başına hasar/kritik/son vuruş ve yenilen canavarlar.
+// Doğrudan yerel kayıttan okunur (kmCanavarDurumEmin yeni kayıt oluşturup yazabileceği için çağrılmaz).
+function kmOzetCanavar() {
+    try {
+        let v = JSON.parse(localStorage.getItem(kmCanavarAnahtari()) || 'null');
+        if (!v || v.tarih !== bugunISO() || !(v.toplamHasar > 0)) return null;
+        let h = v.hasarlar || {}, liste = Object.keys(h).map(function (k) { return Object.assign({ k: k }, h[k]); });
+        let mvp = liste.slice().sort(function (a, b) { return b.hasar - a.hasar; })[0] || null;
+        return { hasarlar: h, mvp: mvp && mvp.hasar > 0 ? mvp.k : null, yenilenler: v.yenilenler || [], toplamHasar: v.toplamHasar || 0 };
+    } catch (e) { return null; }
+}
 function kmOzetVeri() {
     try { kmOyunDurumEmin(); kmOyunRosterYenile(); kmOyunBaslangicSkorEmin(); } catch (e) {}
     let tema = typeof _kmOyunAktifTema !== 'undefined' ? _kmOyunAktifTema : null, th = (tema && KM_OYUN_TEMALAR[tema]) || null;
+    let CNV = kmOzetCanavar();
     let satirlar = _kmListe.map(function (k) {
         let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; if (!sp) return null;
         let seriler = sp.seriler || [], puanlar = seriler.map(function (s) { return s.puan || 0; });
@@ -129,20 +141,31 @@ function kmOzetVeri() {
         let bas = (_kmOyunBaslangicSkor || {})[k.g + '|' + k.ad] || 0;
         return { g: k.g, ad: k.ad, sp: sp, seri: puanlar.length, toplam: toplam, enIyi: enIyi, x: x, oncekiEnIyi: oncekiEnIyi,
             rekor: puanlar.length > 0 && eski.length > 0 && enIyi > oncekiEnIyi, gelisim: puanlar.length && eski.length ? bugunOrt - sezonOrt : null,
-            ilerleme: Math.max(0, Math.min(1, d.frac || 0)), oyunPuan: Math.max(0, (d.toplamSkor || 0) - bas) };
+            ilerleme: Math.max(0, Math.min(1, d.frac || 0)), oyunPuan: Math.max(0, (d.toplamSkor || 0) - bas),
+            canavar: (CNV && CNV.hasarlar[k.g + '|' + k.ad]) || null, canavarMvp: !!(CNV && CNV.mvp === k.g + '|' + k.ad) };
     }).filter(Boolean);
-    satirlar.sort(function (a, b) { return b.ilerleme - a.ilerleme || b.toplam - a.toplam || b.x - a.x; });
+    // Sıralama ölçüsü: yollu oyunlarda ilerleme, Ortak Canavar'da verilen hasar, yol olmayan oyunlarda (Kule, Kehanet…) puan.
+    let olcu = tema === 'canavar' && CNV ? 'hasar' : (satirlar.some(function (s) { return s.ilerleme > 0; }) ? 'ilerleme' : 'puan');
+    let deger = function (s) { return olcu === 'hasar' ? (s.canavar ? s.canavar.hasar : 0) : olcu === 'ilerleme' ? s.ilerleme : s.toplam; };
+    satirlar.forEach(function (s) { s.deger = deger(s); });
+    satirlar.sort(function (a, b) { return b.deger - a.deger || b.toplam - a.toplam || b.x - a.x; });
     satirlar.forEach(function (s, i) { s.sira = i + 1; });
     let atanlar = satirlar.filter(function (s) { return s.seri > 0; });
     let enCokGelisen = atanlar.filter(function (s) { return s.gelisim !== null && s.gelisim > 0; }).sort(function (a, b) { return b.gelisim - a.gelisim; })[0] || null;
     let enYuksek = atanlar.slice().sort(function (a, b) { return b.toplam - a.toplam; })[0] || null;
-    return { tema: th, satirlar: satirlar, atanlar: atanlar, rekorlar: atanlar.filter(function (s) { return s.rekor; }), enCokGelisen: enCokGelisen, enYuksek: enYuksek, tarih: formatTarih(bugunISO()) };
+    return { tema: th, olcu: olcu, canavar: CNV, satirlar: satirlar, atanlar: atanlar, rekorlar: atanlar.filter(function (s) { return s.rekor; }), enCokGelisen: enCokGelisen, enYuksek: enYuksek, tarih: formatTarih(bugunISO()) };
 }
+function kmOzetOlcuYazi(s, D) { return D.olcu === 'ilerleme' ? '%' + Math.round(s.ilerleme * 100) + ' ilerledi' : D.olcu === 'hasar' ? (s.canavar ? s.canavar.hasar : 0) + ' hasar' : s.toplam + ' puan'; }
 function kmOzetVeliMetni(s, D) {
     let satir = ['🏹 *DAĞ SPOR KULÜBÜ*', '📋 _' + kmOzetIlkAd(s.ad) + '\'in bugünkü dersi_ — ' + D.tarih, ''];
-    if (D.tema) satir.push('🎮 Oyun: *' + D.tema.ad + '* — %' + Math.round(s.ilerleme * 100) + ' ilerledi (' + s.sira + '. sırada)');
+    if (D.tema) satir.push('🎮 Oyun: *' + D.tema.ad + '*' + (D.olcu === 'ilerleme' ? ' — %' + Math.round(s.ilerleme * 100) + ' ilerledi' : '') + ' (' + s.sira + '. sırada)');
     if (s.seri) satir.push('🎯 ' + s.seri + ' seri · *' + s.toplam + ' puan* · en iyi seri ' + s.enIyi + (s.x ? ' · ' + s.x + ' X' : ''));
     if (s.rekor) satir.push('🏆 *Kişisel rekor kırdı!* (önceki en iyi serisi ' + s.oncekiEnIyi + ')');
+    if (s.canavar && s.canavar.hasar > 0) {
+        satir.push('🐉 Ortak Canavar\'a *' + s.canavar.hasar + ' hasar* verdi' + (s.canavar.kritik ? ' (' + s.canavar.kritik + ' kritik vuruş)' : ''));
+        if (s.canavar.sonVurus) satir.push('🗡️ ' + (s.canavar.sonVurus > 1 ? s.canavar.sonVurus + ' canavarı' : 'Bir canavarı') + ' son vuruşuyla o yendi!');
+        if (s.canavarMvp) satir.push('👑 Bugün canavara en çok hasar veren sporcu oldu!');
+    }
     if (D.enCokGelisen && D.enCokGelisen.ad === s.ad) satir.push('⭐ Bugün sınıfın en çok gelişen sporcusu oldu!');
     satir.push('', kmOzetIlkAd(s.ad) + ' bugün de emek verdi — desteğiniz için teşekkür ederiz! 🧡');
     return satir.join('\n');
@@ -151,10 +174,17 @@ function kmOzetGrupMetni(D) {
     let satir = ['🏹 *DAĞ SPOR KULÜBÜ* — Ders Özeti, ' + D.tarih, ''];
     if (D.tema) satir.push('🎮 Bugünün oyunu: *' + D.tema.ad + '*');
     satir.push('👥 ' + D.satirlar.length + ' sporcu · ' + D.atanlar.reduce(function (a, s) { return a + s.seri; }, 0) + ' seri atıldı', '');
-    let ilk3 = D.satirlar.slice(0, 3).filter(function (s) { return s.ilerleme > 0 || s.toplam > 0; });
-    if (ilk3.length) { satir.push('🏁 *Oyunda en önde:*'); ilk3.forEach(function (s, i) { satir.push(['🥇', '🥈', '🥉'][i] + ' ' + kmOzetIlkAd(s.ad) + (D.tema ? ' — %' + Math.round(s.ilerleme * 100) : ' — ' + s.toplam + ' puan')); }); satir.push(''); }
+    let ilk3 = D.satirlar.slice(0, 3).filter(function (s) { return s.deger > 0; });
+    if (ilk3.length) { satir.push(D.olcu === 'hasar' ? '🐉 *Canavara en çok hasar:*' : D.olcu === 'ilerleme' ? '🏁 *Oyunda en önde:*' : '🏁 *Günün en yüksekleri:*'); ilk3.forEach(function (s, i) { satir.push(['🥇', '🥈', '🥉'][i] + ' ' + kmOzetIlkAd(s.ad) + ' — ' + kmOzetOlcuYazi(s, D)); }); satir.push(''); }
     if (D.rekorlar.length) satir.push('🏆 *Kişisel rekor kıranlar:* ' + D.rekorlar.map(function (s) { return kmOzetIlkAd(s.ad) + ' (' + s.enIyi + ')'; }).join(', '));
     if (D.enCokGelisen) satir.push('⭐ *En çok gelişen:* ' + kmOzetIlkAd(D.enCokGelisen.ad));
+    if (D.canavar) {
+        let y = D.canavar.yenilenler, mvp = D.satirlar.find(function (s) { return s.canavarMvp; });
+        satir.push('', '🐉 *Ortak Canavar:* sınıf toplam ' + D.canavar.toplamHasar + ' hasar verdi' + (y.length ? ', ' + y.length + ' canavar yendi (' + y.map(function (c) { return c.ad; }).join(', ') + ')' : ''));
+        if (mvp && D.olcu !== 'hasar') satir.push('👑 En çok hasar: ' + kmOzetIlkAd(mvp.ad) + ' (' + mvp.canavar.hasar + ')');
+        let sv = D.satirlar.filter(function (s) { return s.canavar && s.canavar.sonVurus; });
+        if (sv.length) satir.push('🗡️ Son vuruşlar: ' + sv.map(function (s) { return kmOzetIlkAd(s.ad) + (s.canavar.sonVurus > 1 ? ' ×' + s.canavar.sonVurus : ''); }).join(', '));
+    }
     satir.push('', 'Hepsine emekleri için teşekkürler! 🧡');
     return satir.join('\n');
 }
@@ -165,9 +195,10 @@ function kmDersOzetiAc() {
     if (!D.atanlar.length && !D.satirlar.some(function (s) { return s.ilerleme > 0; })) return showToast('Henüz skor girilmedi — özet ders ilerledikçe dolar.', 'warning');
     let eski = document.getElementById('kmoz-modal'); if (eski) eski.remove();
     let vurgu = [];
-    if (D.satirlar[0] && (D.satirlar[0].ilerleme > 0 || D.satirlar[0].toplam > 0)) vurgu.push(['🥇 ' + (D.tema ? 'Oyunda önde' : 'En yüksek'), kmSablonEsc(D.satirlar[0].ad)]);
+    if (D.satirlar[0] && D.satirlar[0].deger > 0) vurgu.push(['🥇 ' + (D.olcu === 'hasar' ? 'En çok hasar' : D.olcu === 'ilerleme' ? 'Oyunda önde' : 'En yüksek'), kmSablonEsc(D.satirlar[0].ad)]);
     if (D.rekorlar.length) vurgu.push(['🏆 Kişisel rekor', D.rekorlar.map(function (s) { return kmSablonEsc(kmOzetIlkAd(s.ad)); }).join(', ')]);
     if (D.enCokGelisen) vurgu.push(['⭐ En çok gelişen', kmSablonEsc(D.enCokGelisen.ad)]);
+    if (D.canavar) { let mvp = D.satirlar.find(function (s) { return s.canavarMvp; }); vurgu.push(['🐉 Canavar', D.canavar.yenilenler.length + ' yenildi' + (mvp ? ' · 👑 ' + kmSablonEsc(kmOzetIlkAd(mvp.ad)) : '')]); }
     vurgu.push(['🎯 Atılan seri', String(D.atanlar.reduce(function (a, s) { return a + s.seri; }, 0))]);
     let m = document.createElement('div'); m.id = 'kmoz-modal'; m.className = 'kmoz-bg';
     m.onclick = function (e) { if (e.target === m) m.remove(); };
@@ -177,10 +208,13 @@ function kmDersOzetiAc() {
             let rozet = [];
             if (s.rekor) rozet.push('<span class="rekor">🏆 Rekor ' + s.enIyi + ' (önce ' + s.oncekiEnIyi + ')</span>');
             if (D.enCokGelisen === s) rozet.push('<span class="yildiz">⭐ En çok gelişen</span>');
+            if (s.canavarMvp) rozet.push('<span class="rekor">👑 Canavar MVP</span>');
+            if (s.canavar && s.canavar.sonVurus) rozet.push('<span class="rekor">🗡️ Son vuruş' + (s.canavar.sonVurus > 1 ? ' ×' + s.canavar.sonVurus : '') + '</span>');
+            if (s.canavar && s.canavar.hasar > 0) rozet.push('<span>🐉 ' + s.canavar.hasar + ' hasar' + (s.canavar.kritik ? ' · ⚡' + s.canavar.kritik : '') + '</span>');
             if (s.seri) rozet.push('<span>' + s.seri + ' seri · ' + s.toplam + ' puan · en iyi ' + s.enIyi + (s.x ? ' · ' + s.x + ' X' : '') + '</span>'); else rozet.push('<span>Bugün seri yok</span>');
-            return '<div class="kmoz-sat"><div class="kmoz-sira">' + (s.sira <= 3 && (s.ilerleme > 0 || s.toplam > 0) ? ['🥇', '🥈', '🥉'][s.sira - 1] : s.sira) + '</div><div class="kmoz-ad">' + kmSablonEsc(s.ad) + '<small>' + (D.tema ? '%' + Math.round(s.ilerleme * 100) + ' ilerledi' : '') + '</small></div>'
+            return '<div class="kmoz-sat"><div class="kmoz-sira">' + (s.sira <= 3 && s.deger > 0 ? ['🥇', '🥈', '🥉'][s.sira - 1] : s.sira) + '</div><div class="kmoz-ad">' + kmSablonEsc(s.ad) + '<small>' + kmOzetOlcuYazi(s, D) + '</small></div>'
                 + '<button class="kmoz-wa" onclick="kmOzetVeliyeGonder(' + i + ')">💬 Veliye</button>'
-                + (D.tema ? '<div class="kmoz-bar"><i style="width:' + Math.round(s.ilerleme * 100) + '%"></i></div>' : '') + '<div class="kmoz-rozet">' + rozet.join('') + '</div></div>';
+                + (D.olcu === 'ilerleme' ? '<div class="kmoz-bar"><i style="width:' + Math.round(s.ilerleme * 100) + '%"></i></div>' : '') + '<div class="kmoz-rozet">' + rozet.join('') + '</div></div>';
         }).join('') + '</div>'
         + '<div class="kmoz-alt"><button class="kmoz-btn ana" onclick="kmOzetGrubaGonder()">💬 Veli grubuna gönder</button><button class="kmoz-btn" onclick="kmOzetKopyala()">📋 Metni kopyala</button><button class="kmoz-btn" onclick="kmSonucKartiPaylas()">📸 Sonuç kartı</button></div></div>';
     document.body.appendChild(m);
