@@ -20,8 +20,7 @@ const HD_SUTUNLAR = [
     { id: 'acilTelefon', ad: 'Veli telefonu', tip: 'tel', gen: 140, eksik: true },
     // Aidat detayındaki "Aile iş/meslek" ile AYNI alan (aileMeslek) — sunucuda kişisel bilgi (KVKK) olarak korunuyor.
     { id: 'aileMeslek', ad: 'Veli iş / meslek', tip: 'metin', gen: 200, yer: 'ör. Avukat · Yıldız Hukuk' },
-    { id: 'saglikRaporuBitis', ad: 'Sağlık raporu', tip: 'tarih', gen: 138, eksik: true },
-    { id: 'lisansBitis', ad: 'Lisans', tip: 'tarih', gen: 138 },
+    // Sağlık raporu / Lisans sütunları kullanıcı isteğiyle çıkarıldı (2026-09-30) — veriler duruyor, Belgeler ekranında.
     { id: 'aidatMuaf', ad: 'Aidat muaf', tip: 'onay', gen: 70 },
     { id: 'pasif', ad: 'Pasif', tip: 'onay', gen: 60 },
     { id: 'genelNot', ad: 'Not', tip: 'metin', gen: 200 }
@@ -77,7 +76,7 @@ function hdCiz() {
     let bas = HD_SUTUNLAR.map(function (s) { let n = s.eksik ? eksikSay(s) : 0; return '<th style="min-width:' + s.gen + 'px"' + (s.id === 'ad' ? ' class="hd-sabit"' : '') + '>' + s.ad + (n ? ' <small class="hd-eksik-say">' + n + ' eksik</small>' : '') + '</th>'; }).join('');
     alan.innerHTML = '<div class="hd' + (_hd.tam ? ' tam' : '') + '">'
         + '<div class="hd-ust"><div><div class="hd-baslik">📝 Hızlı Düzenle</div><div class="hd-alt">Değiştir, sonra 💾 Kaydet (Ctrl+S) · Enter/↓ alt satır · Excel\'den bir sütunu yapıştırabilirsin</div></div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hd-btn ana" onclick="_hd.yeniAcik=!_hd.yeniAcik; hdCiz()">➕ Yeni sporcu</button><button class="hd-btn" onclick="_hd.tam=!_hd.tam; hdCiz()">' + (_hd.tam ? '✕ Küçült' : '⛶ Tam ekran') + '</button></div></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="hd-btn ana" onclick="_hd.yeniAcik=!_hd.yeniAcik; hdCiz()">➕ Yeni sporcu</button><button class="hd-btn" onclick="hdPdfIndir()" title="Şu an listede görünen sporcuların PDF\'i">📄 PDF</button><button class="hd-btn" onclick="_hd.tam=!_hd.tam; hdCiz()">' + (_hd.tam ? '✕ Küçült' : '⛶ Tam ekran') + '</button></div></div>'
         + '<div class="hd-kaydet-cubuk" id="hd-kaydet-cubuk">' + hdCubukIc() + '</div>'
         + (_hd.yeniAcik ? '<div class="hd-yeni"><input id="hd-yeni-ad" placeholder="Ad Soyad" autocomplete="off"><select id="hd-yeni-grup">' + HD_GRUPLAR.map(function (g) { return '<option value="' + g[0] + '"' + ((_hd.grup === g[0] || (_hd.grup === 'hepsi' && g[0] === (typeof aktifGrup !== 'undefined' ? aktifGrup : 'buyukler'))) ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select><input id="hd-yeni-dogum" type="date" aria-label="Doğum tarihi"><select id="hd-yeni-cins"><option value="K">Kız</option><option value="E">Erkek</option></select><input id="hd-yeni-tel" type="tel" inputmode="tel" placeholder="Veli telefonu"><button class="hd-btn ana" onclick="hdYeniEkle()">Ekle</button></div>' : '')
         + '<div class="hd-arac"><input class="hd-ara" type="search" id="hd-ara" placeholder="🔍 İsim ara" value="' + esc(_hd.ara) + '" oninput="_hd.ara=this.value; _hd.sayfa=1; hdCiz(); let e=document.getElementById(\'hd-ara\'); e.focus(); e.setSelectionRange(e.value.length,e.value.length)">'
@@ -171,6 +170,111 @@ function hdCikisSor(devam) {
     m.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); m.remove(); } });
     document.body.appendChild(m);
     m.querySelector('[data-x="kaydet"]').focus();
+}
+// 📄 PDF (2026-09-30) — ekrandaki süzgeçle (grup/arama/eksik/pasif) listelenen TÜM sporcular (sayfalama değil),
+// yatay A4, native jsPDF (html2pdf bu projede boş sayfa üretiyor). "Tümü"de grup grup bölümlenir.
+function hdPdfIndir() {
+    let satirlar = hdSatirlar();
+    if (!satirlar.length) return hdDurum('PDF için listede sporcu yok.', true);
+    showToast('PDF hazırlanıyor...', 'warning');
+    let T = _trTranslit, grupAd = function (g) { let x = HD_GRUPLAR.find(function (y) { return y[0] === g; }); return x ? x[1] : g; };
+    let d = function (x, id) { let v = hdDeger(x, { id: id }); return v === undefined || v === null ? '' : String(v).trim(); };
+    let tarihTR = function (iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; };
+    let yas = function (x) {
+        let iso = d(x, 'dogumTarihi'), bugun = new Date();
+        if (/^\d{4}-\d{2}-\d{2}/.test(iso)) { let y = +iso.slice(0, 4), a = +iso.slice(5, 7), g = +iso.slice(8, 10); let n = bugun.getFullYear() - y; if (bugun.getMonth() + 1 < a || (bugun.getMonth() + 1 === a && bugun.getDate() < g)) n--; return n; }
+        let dy = parseInt(x.sp.dogumYili, 10); return dy > 1900 ? bugun.getFullYear() - dy : null;
+    };
+    let tel = function (t) { let s = String(t || '').replace(/\D/g, ''); if (s.length === 10 && s[0] === '5') s = '0' + s; return s.length === 11 ? s.slice(0, 4) + ' ' + s.slice(4, 7) + ' ' + s.slice(7, 9) + ' ' + s.slice(9) : String(t || ''); };
+    // Sütunlar (mm) — yatay A4 kullanılabilir genişlik 269
+    let S = [
+        { b: '#', w: 9 }, { b: 'AD SOYAD', w: 52 }, { b: 'DOGUM / YAS', w: 27 }, { b: 'CINS.', w: 12 }, { b: 'YAY', w: 18 },
+        { b: 'VELI ADI', w: 38 }, { b: 'VELI TELEFONU', w: 29 }, { b: 'VELI IS / MESLEK', w: 44 }, { b: 'NOT', w: 40 }
+    ];
+    _yeniPdfAl('landscape').then(function (pdf) {
+        let W = 297, H = 210, mx = 14, uw = W - mx * 2, y, sayfa = 1;
+        let beyazSayfa = function () { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); sayfa++; y = 14; };
+        let sigdir = function (metin, w, boy) { pdf.setFontSize(boy); let s = T(metin); if (pdf.getTextWidth(s) <= w - 2.5) return s; while (s.length > 1 && pdf.getTextWidth(s + '...') > w - 2.5) s = s.slice(0, -1); return s + '...'; };
+        let filtre = [_hd.grup === 'hepsi' ? 'Tum gruplar' : grupAd(_hd.grup)];
+        if (_hd.ara.trim()) filtre.push('Arama: "' + _hd.ara.trim() + '"'); if (_hd.eksik) filtre.push('Sadece eksik bilgisi olanlar'); if (_hd.pasifler) filtre.push('Pasifler dahil');
+        y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU LISTESI', 'Sporcu Bilgileri  |  ' + filtre.join('  |  '));
+        // Özet şeridi
+        let kiz = satirlar.filter(function (x) { return d(x, 'cinsiyet') === 'K'; }).length, erk = satirlar.filter(function (x) { return d(x, 'cinsiyet') === 'E'; }).length;
+        let telYok = satirlar.filter(function (x) { return !d(x, 'acilTelefon'); }).length, dogYok = satirlar.filter(function (x) { return !d(x, 'dogumTarihi'); }).length;
+        let ozet = [[String(satirlar.length), 'sporcu'], [String(kiz), 'kiz'], [String(erk), 'erkek'], [String(telYok), 'veli telefonu eksik'], [String(dogYok), 'dogum tarihi eksik']];
+        let ox = mx;
+        ozet.forEach(function (o, i) {
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); let w1 = pdf.getTextWidth(o[0]);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); let w2 = pdf.getTextWidth(T(o[1]));
+            let kw = w1 + w2 + 9, uyari = i >= 3 && o[0] !== '0';
+            pdf.setFillColor(uyari ? 255 : 241, uyari ? 247 : 245, uyari ? 237 : 249); pdf.setDrawColor(uyari ? 251 : 226, uyari ? 191 : 232, uyari ? 36 : 240); pdf.setLineWidth(0.25);
+            pdf.roundedRect(ox, y, kw, 8, 2, 2, 'FD');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(uyari ? 180 : 9, uyari ? 83 : 22, uyari ? 9 : 43); pdf.text(o[0], ox + 3.5, y + 5.7);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(T(o[1]), ox + 3.5 + w1 + 2, y + 5.5);
+            ox += kw + 3;
+        });
+        y += 13;
+        let basliklar = function () {
+            pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 7.5, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(203, 213, 225);
+            let x = mx; S.forEach(function (s) { pdf.text(s.b, x + 2, y + 5); x += s.w; });
+            y += 7.5;
+        };
+        let bolum = function (g, n) {
+            pdf.setFillColor(251, 191, 36); pdf.rect(mx, y + 1, 1.6, 6, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(9, 22, 43); pdf.text(T(grupAd(g)), mx + 4, y + 5.6);
+            let gw = pdf.getTextWidth(T(grupAd(g)));
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(n + ' sporcu', mx + 6 + gw, y + 5.6);
+            y += 9;
+        };
+        let bolumlu = _hd.grup === 'hepsi';
+        let gruplar = bolumlu ? HD_GRUPLAR.map(function (g) { return g[0]; }).filter(function (g) { return satirlar.some(function (x) { return x.g === g; }); }) : [null];
+        let sira = 0;
+        gruplar.forEach(function (g, gi) {
+            let liste = g ? satirlar.filter(function (x) { return x.g === g; }) : satirlar;
+            if (y + 26 > H - 16) beyazSayfa();
+            if (g) bolum(g, liste.length);
+            basliklar();
+            liste.forEach(function (x, i) {
+                if (y + 7 > H - 16) { beyazSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(0, 138, 152); pdf.text(T(grupAd(g) + ' (devami)'), mx, y + 4); y += 6; } basliklar(); }
+                sira++;
+                let pasif = !!hdDeger(x, { id: 'pasif' }), muaf = !!hdDeger(x, { id: 'aidatMuaf' });
+                if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, 7, 'F'); }
+                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15); pdf.line(mx, y + 7, mx + uw, y + 7);
+                let hx = mx, hucre = function (s, metin, opt) {
+                    opt = opt || {};
+                    if (!metin) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(opt.eksik ? 217 : 203, opt.eksik ? 119 : 213, opt.eksik ? 6 : 225); pdf.text(opt.eksik ? 'eksik' : '-', hx + 2, y + 4.8); }
+                    else { pdf.setFont('helvetica', opt.kalin ? 'bold' : 'normal'); let boy = opt.boy || 8.5; pdf.setTextColor(opt.renk ? opt.renk[0] : 30, opt.renk ? opt.renk[1] : 41, opt.renk ? opt.renk[2] : 59); pdf.text(sigdir(metin, s.w - (opt.sagBosluk || 0), boy), hx + 2, y + 4.8); }
+                    hx += s.w;
+                };
+                hucre(S[0], String(sira), { boy: 7.5, renk: [148, 163, 184] });
+                // İsim + pasif/muaf rozetleri
+                let rozetler = []; if (pasif) rozetler.push('PASIF'); if (muaf) rozetler.push('MUAF');
+                pdf.setFontSize(6); let rozW = rozetler.reduce(function (a, r) { return a + pdf.getTextWidth(r) + 4.5; }, 0);
+                let adX = hx; hucre(S[1], x.ad, { kalin: true, boy: 8.5, renk: pasif ? [148, 163, 184] : [9, 22, 43], sagBosluk: rozW });
+                if (rozetler.length) {
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); let rx = adX + 2 + Math.min(pdf.getTextWidth(sigdir(x.ad, S[1].w - rozW, 8.5)), S[1].w - rozW) + 1.5;
+                    pdf.setFontSize(6);
+                    rozetler.forEach(function (r) { let rw = pdf.getTextWidth(r) + 3; pdf.setFillColor(r === 'PASIF' ? 226 : 220, r === 'PASIF' ? 232 : 252, r === 'PASIF' ? 240 : 231); pdf.roundedRect(rx, y + 1.9, rw, 3.6, 1, 1, 'F'); pdf.setTextColor(r === 'PASIF' ? 100 : 22, r === 'PASIF' ? 116 : 101, r === 'PASIF' ? 139 : 52); pdf.text(r, rx + 1.5, y + 4.6); rx += rw + 1.5; });
+                }
+                let dt = tarihTR(d(x, 'dogumTarihi')), ys = yas(x);
+                hucre(S[2], dt ? dt + (ys !== null ? '  (' + ys + ')' : '') : (ys !== null ? x.sp.dogumYili + '  (' + ys + ')' : ''), { eksik: true, boy: 8 });
+                hucre(S[3], d(x, 'cinsiyet') === 'K' ? 'Kiz' : d(x, 'cinsiyet') === 'E' ? 'Erkek' : '', { eksik: true, boy: 8 });
+                hucre(S[4], d(x, 'yay'), { boy: 8 });
+                hucre(S[5], d(x, 'acilKisi'), { eksik: true });
+                hucre(S[6], tel(d(x, 'acilTelefon')), { eksik: true });
+                hucre(S[7], d(x, 'aileMeslek'), { boy: 8 });
+                hucre(S[8], d(x, 'genelNot'), { boy: 7.5, renk: [71, 85, 105] });
+                y += 7;
+            });
+            y += 5;
+        });
+        _kurumsalAltBilgiCiz(pdf, W, H);
+        let tarih = (typeof bugunISO === 'function' ? bugunISO() : '').replace(/-/g, '');
+        pdf.save('Sporcu_Listesi_' + T(_hd.grup === 'hepsi' ? 'Tum' : grupAd(_hd.grup)) + '_' + tarih + '.pdf');
+        showToast('PDF indirildi! 📄', 'success');
+        if (hdDegisiklikSay()) hdDurum('Not: PDF kaydedilmemiş değişiklikleri de içeriyor — kalıcı olması için 💾 Kaydet.');
+    }).catch(function (e) { showToast('PDF oluşturulamadı.', 'error'); console.error(e); });
 }
 function hdAcikMi() { return yoneticiSekmeAktif === 'hizliduzenle' && !!document.querySelector('#yonetici-liste .hd'); }
 (function () {
