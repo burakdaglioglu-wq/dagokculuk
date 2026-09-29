@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v157';
+const CACHE = 'dag-sk-v158';
 const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png', '/dagsk-ai-pose.js', '/dagsk-teknik-calisma.js', '/dagsk-video-compare.js', '/dagsk-cadence-coach.js', '/dagsk-target-cv.js', '/dagsk-performans.js', '/dagsk-km-rehber.js', '/dagsk-kisi-yonetimi.js', '/dagsk-km-yoklama-analiz.js', '/dagsk-km-kelime.js', '/dagsk-km-reaksiyon.js', '/dagsk-km-ortak.js', '/dagsk-km-sablon-ozet.js', '/dagsk-yapilacaklar.js', '/dagsk-hizli-duzenle.js', '/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

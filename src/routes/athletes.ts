@@ -56,6 +56,7 @@ export function registerAthleteRoutes(router: Router): void {
       sinif?: string | null;
       yay?: string | null;
       lastModified?: number;
+      deviceId?: string;
     }>(request);
     if (!body.grup || !body.ad) return badRequest("grup and ad are required");
 
@@ -70,9 +71,14 @@ export function registerAthleteRoutes(router: Router): void {
     });
     if (!result.applied) return json({ applied: false, reason: result.reason }, { status: 409 });
 
+    // KASMA KÖK NEDENİ (2026-09-30): senkron her sporcu için bu uca "oluştur/güncelle" atıyor; eskiden HİÇBİR
+    // şey değişmese de herkese athlete-updated yayılıyordu → her cihaz tüm kulübü yeniden çekip kendisi de
+    // gönderiyordu (eski sürümlü iki cihaz arasında saniyede ~2 yayınlık sonsuz döngü ölçüldü). Artık yalnızca
+    // satır gerçekten eklendi/değiştiyse yayınlanır; gönderen cihaz kendi yankısını deviceId ile yok sayar.
+    if (!result.degisti) return json({ applied: true, athlete: result.athlete });
     await broadcast(env, {
       type: "athlete-updated",
-      deviceId: null,
+      deviceId: body.deviceId ?? null,
       payload: { grup: body.grup, ad: body.ad, fields: result.athlete ? kisiselGizle(result.athlete) : {}, lastModified: body.lastModified ?? Date.now() },
     });
     return json({ applied: true, athlete: result.athlete });

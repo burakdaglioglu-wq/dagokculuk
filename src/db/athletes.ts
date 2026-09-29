@@ -152,7 +152,7 @@ interface UpsertInput {
 export async function createAthlete(
   env: Env,
   input: UpsertInput
-): Promise<{ applied: boolean; reason?: string; athlete?: AthleteDTO }> {
+): Promise<{ applied: boolean; reason?: string; athlete?: AthleteDTO; degisti?: boolean }> {
   const target = await resolveAthleteRedirect(env, { grup: input.grup, ad: input.ad });
 
   const tombstone = await env.DB.prepare("SELECT tarih, tasindi FROM deleted_athletes WHERE grup = ? AND ad = ?")
@@ -166,13 +166,15 @@ export async function createAthlete(
     await env.DB.prepare("DELETE FROM deleted_athletes WHERE grup = ? AND ad = ?").bind(target.grup, target.ad).run();
   }
 
-  await env.DB.prepare(
+  const yaz = await env.DB.prepare(
     `INSERT INTO athletes (grup, ad, kod, dogumYili, sinif, yay, cinsiyet, lastModified)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(grup, ad) DO UPDATE SET
        kod = excluded.kod, dogumYili = excluded.dogumYili, sinif = excluded.sinif,
        yay = excluded.yay, cinsiyet = excluded.cinsiyet, lastModified = excluded.lastModified
-     WHERE excluded.lastModified > athletes.lastModified`
+     WHERE excluded.lastModified > athletes.lastModified
+       AND (athletes.kod IS NOT excluded.kod OR athletes.dogumYili IS NOT excluded.dogumYili OR athletes.sinif IS NOT excluded.sinif
+            OR athletes.yay IS NOT excluded.yay OR athletes.cinsiyet IS NOT excluded.cinsiyet)`
   )
     .bind(
       target.grup,
@@ -187,7 +189,8 @@ export async function createAthlete(
     .run();
 
   const athlete = await getAthlete(env, target.grup, target.ad);
-  return { applied: true, athlete: athlete ?? undefined };
+  // degisti: satır gerçekten eklendi/güncellendi mi (ON CONFLICT ... WHERE false → changes 0).
+  return { applied: true, athlete: athlete ?? undefined, degisti: (yaz.meta?.changes ?? 1) > 0 };
 }
 
 /** Conditional last-writer-wins update of the core fields — replaces turnuvaDBMerge's per-athlete LWW. */

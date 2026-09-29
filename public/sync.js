@@ -351,7 +351,7 @@
         };
         const oyunGovde = { gamification, coin: sp.coin || 0, coinT: sp.coinT || 0 };
         gonder("sp|" + g + "|" + ad, [ilkGovde, alanlar, oyunGovde, sp.lastModified ?? null], () =>
-          post("/api/athletes", { ...ilkGovde, lastModified })
+          post("/api/athletes", { ...ilkGovde, lastModified, deviceId })
             .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, { fields: alanlar, lastModified: lastModified + 1, deviceId }))
             .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/gamification`, { ...oyunGovde, deviceId }))
         );
