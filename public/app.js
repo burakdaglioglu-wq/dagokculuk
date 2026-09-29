@@ -7292,7 +7292,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['kisiler','🪪','Eğitmen & Misafir'],['guvenlik','🔐','Güvenlik']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['kisiler','🪪','Eğitmen & Misafir'],['guvenlik','🔐','Güvenlik']]],
             ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
@@ -7399,6 +7399,8 @@
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
             if(k === 'ciftkayit') { kyCiftKayitCiz(); return; }
+            // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).
+            if(k === 'hizliduzenle') { let la = document.getElementById('yonetici-liste'); if(la && typeof hdCiz !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-hizli-duzenle.js').then(function() { if(yoneticiSekmeAktif === 'hizliduzenle') hdCiz(); }).catch(function() { showToast('Hızlı Düzenle yüklenemedi.', 'error'); }); return; }
             if(k === 'kisiler') { if(typeof kyKisilerCiz === 'function') kyKisilerCiz(); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
             if(k === 'ihtiyac') { renderHedefId = 'yonetici-liste'; yoneticiIhtiyacCiz(); return; }
