@@ -18,6 +18,8 @@ const HD_SUTUNLAR = [
     { id: 'yay', ad: 'Yay', tip: 'secim', secenek: [['', '—'], ['Klasik', 'Klasik'], ['Makaralı', 'Makaralı']], gen: 100 },
     { id: 'acilKisi', ad: 'Veli adı', tip: 'metin', gen: 150, eksik: true },
     { id: 'acilTelefon', ad: 'Veli telefonu', tip: 'tel', gen: 140, eksik: true },
+    // Aidat detayındaki "Aile iş/meslek" ile AYNI alan (aileMeslek) — sunucuda kişisel bilgi (KVKK) olarak korunuyor.
+    { id: 'aileMeslek', ad: 'Veli iş / meslek', tip: 'metin', gen: 200, yer: 'ör. Avukat · Yıldız Hukuk' },
     { id: 'saglikRaporuBitis', ad: 'Sağlık raporu', tip: 'tarih', gen: 138, eksik: true },
     { id: 'lisansBitis', ad: 'Lisans', tip: 'tarih', gen: 138 },
     { id: 'aidatMuaf', ad: 'Aidat muaf', tip: 'onay', gen: 70 },
@@ -56,7 +58,7 @@ function hdHucre(x, s, satir) {
         return '<td class="hd-td' + eksik + '"><select ' + ort + ' onchange="hdKaydet(this)" aria-label="' + s.ad + '">' + sec.map(function (o) { return '<option value="' + o[0] + '"' + (String(v) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></td>';
     }
     let tur = s.tip === 'tarih' ? 'date' : s.tip === 'tel' ? 'tel' : 'text';
-    return '<td class="hd-td' + eksik + (s.id === 'ad' ? ' hd-sabit' : '') + '"><input type="' + tur + '" ' + ort + ' value="' + esc(String(v)) + '" onchange="hdKaydet(this)" onpaste="hdYapistir(event)" aria-label="' + s.ad + '"' + (s.tip === 'tel' ? ' inputmode="tel" placeholder="05xx…"' : '') + '></td>';
+    return '<td class="hd-td' + eksik + (s.id === 'ad' ? ' hd-sabit' : '') + '"><input type="' + tur + '" ' + ort + ' value="' + esc(String(v)) + '" onchange="hdKaydet(this)" onpaste="hdYapistir(event)" aria-label="' + s.ad + '"' + (s.tip === 'tel' ? ' inputmode="tel" placeholder="05xx…"' : s.yer ? ' placeholder="' + esc(s.yer) + '"' : '') + '></td>';
 }
 function hdCiz() {
     let alan = document.getElementById('yonetici-liste'); if (!alan) return;

@@ -5684,14 +5684,26 @@
         }
         function jsonSporcuSayisi(j) { try { return sporcuSayisi(JSON.parse(j || '{}').turnuvaDB || {}); } catch(e) { return 0; } }
         // Otomatik güvenlik yedeği: en son DOLU veriyi sakla (kaza ile silinirse kurtarma için)
+        // KASMA DÜZELTMESİ (2026-09-30): her veri çekişinde ve her başarılı senkronda kulübün TÜM verisi (~2 MB)
+        // localStorage'a yeniden yazılıyordu — localStorage yazımı eşzamanlı, tarayıcıyı o sürece kilitliyor ve
+        // depo 5 MB sınırına dayanıyordu. Artık en fazla 10 dakikada bir; depo doluysa yedek silinir ki asıl veri
+        // (okculuk_premium_data) yazılabilsin. Sunucuda ayrıca günlük yedek var (gunlukYedekKontrol).
+        let _guvenlikYedegiSon = 0;
         function guvenlikYedegiAl() {
+            if(Date.now() - _guvenlikYedegiSon < 10 * 60 * 1000) return;
             try {
                 if(sporcuSayisi(turnuvaDB) > 0) {
+                    _guvenlikYedegiSon = Date.now();
                     let j = bulutVeriJSON();
+                    // Yedeğin kendisi hariç depo zaten kalabalıksa (ana veri + imzalar + ders verileri) yedeği yazma:
+                    // 5 MB sınırında asıl veri kaydedilemez hale geliyordu. Sunucuda günlük yedek ayrıca duruyor.
+                    let dolu = 0;
+                    for(let i = 0; i < localStorage.length; i++) { let k = localStorage.key(i); if(k !== 'okculuk_yedek_son') dolu += k.length + (localStorage.getItem(k) || '').length; }
+                    if(dolu + j.length > 4200000) { localStorage.removeItem('okculuk_yedek_son'); return; }
                     localStorage.setItem('okculuk_yedek_son', j);
                     localStorage.setItem('okculuk_yedek_son_zaman', new Date().toLocaleString('tr-TR'));
                 }
-            } catch(e) {}
+            } catch(e) { try { localStorage.removeItem('okculuk_yedek_son'); } catch(e2) {} }
         }
         function bulutDurum(txt, renk) { let el = document.getElementById('bulut-durum'); if(el) { el.innerText = txt; el.style.color = renk || 'var(--text-muted)'; } }
         function bulutVeriJSON() { return JSON.stringify({ turnuvaDB, takimlarDB, antrenmanlarDB, ozelSiniflar, personelDB, personelYoklamaDB, elemeEslesmeleri, takimElemeEslesmeleri, aktifTur, aktifTakimTur, atisLog, rekorlarDB, otomatikYoklamaDB, aidatDB, kmYarismaGecmisi: _kmYarismaGecmisi, silinenler: silinenlerDB.map(s => ({ ad: s.ad, grup: s.grup, tarih: s.tarih, tasindi: s.tasindi || false })), iptalSeriler: iptalSerilerDB.slice(-800), resetZamani, minSurum: Math.max(kumeMinSurum, MIN_SURUM_GEREKSINIMI), geriYukleme: sonGeriYukleme }); }

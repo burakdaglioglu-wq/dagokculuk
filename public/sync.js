@@ -107,6 +107,9 @@
         listeners.resetSignal.forEach((cb) => cb(msg));
         scheduleMasterChanged();
       } else if (msg.type === "athlete-updated" || msg.type === "master-changed" || msg.type === "daily-backup-restored") {
+        // KASMA DÜZELTMESİ (2026-09-30): cihazın KENDİ yazdığı değişikliğin yankısı için tüm kulübü baştan
+        // çekmeye gerek yok (veri zaten bu cihazda) — eskiden her kendi yazmasından sonra 2 MB çekip işliyordu.
+        if (msg.type !== "daily-backup-restored" && msg.deviceId && msg.deviceId === myDeviceId()) return;
         scheduleMasterChanged();
       } else if (msg.type === "canli-atis") {
         listeners.canliAtis.forEach((cb) => cb(msg));
@@ -168,12 +171,19 @@
   }
   window.addEventListener("online", () => degisimTelafiZamanla(1500));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) degisimTelafiZamanla(1500); });
+  // KASMA DÜZELTMESİ (2026-09-30): başka bir cihaz toplu yazınca (ör. güncelleme sonrası ilk senkron) yüzlerce
+  // "athlete-updated" gelir; eskiden yarım saniyede bir TÜM kulüp verisi (~2 MB) yeniden çekilip işleniyor ve
+  // her seferinde 2 MB yedek yazılıyordu → tarayıcı kilitleniyordu. Artık çekmeler arasında en az 5 sn var;
+  // arada gelen bildirimler tek bir (son) çekmede birleşir.
+  let sonMasterCekme = 0;
   function scheduleMasterChanged() {
     if (masterChangedTimer) return;
+    const bekle = Math.max(500, 5000 - (Date.now() - sonMasterCekme));
     masterChangedTimer = setTimeout(() => {
       masterChangedTimer = null;
+      sonMasterCekme = Date.now();
       listeners.masterChanged.forEach((cb) => cb());
-    }, 500);
+    }, bekle);
   }
 
   /* ===== Master blob reassembly (GET side) ===== */
@@ -293,7 +303,12 @@
   let imzaKayitZaman = null;
   function imzaKaydet() {
     clearTimeout(imzaKayitZaman);
-    imzaKayitZaman = setTimeout(() => { try { localStorage.setItem(IMZA_ANAHTAR, JSON.stringify(Object.fromEntries(_gonderilenImza))); } catch (e) {} }, 1500);
+    // Depo doluysa (5 MB sınırı) imzalar kaydedilemez ve HER açılışta tüm kulüp yeniden gönderilir (binlerce
+    // yazma + diğer cihazlarda yenileme fırtınası). O durumda 2 MB'lık yerel acil yedeği silip yer açıyoruz.
+    imzaKayitZaman = setTimeout(() => {
+      const yaz = () => localStorage.setItem(IMZA_ANAHTAR, JSON.stringify(Object.fromEntries(_gonderilenImza)));
+      try { yaz(); } catch (e) { try { localStorage.removeItem("okculuk_yedek_son"); yaz(); } catch (e2) {} }
+    }, 1500);
   }
   async function fanOutMasterPayload(json) {
     const p = JSON.parse(json);
