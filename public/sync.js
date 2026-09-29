@@ -266,7 +266,7 @@
   // HİÇ göndermiyor (anahtar yok). Bu cihazda o alan HİÇ yoksa (undefined) sunucuya null YAZILMAZ — yoksa
   // girişsiz açılmış bir cihaz, sonradan giriş yapıldığında gerçek telefonları boşlukla ezerdi. Bilerek
   // silinen alan '' ya da null olarak cihazda durduğu için yine gönderilir.
-  const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek"];
+  const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek", "veli2Kisi", "veli2Telefon"];
   function kisiselAlanlar(sp) {
     const out = {};
     KISISEL_ALANLAR.forEach((k) => { if (sp[k] !== undefined) out[k] = sp[k] ?? null; });

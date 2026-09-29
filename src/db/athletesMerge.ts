@@ -76,7 +76,7 @@ export async function mergeAthlete(
     env.DB.prepare(
       `UPDATE athletes SET kod = ?, dogumYili = ?, sinif = ?, yay = ?, cinsiyet = ?, toplamSkor = ?, xAdet = ?, sonSkorZamani = ?, coin = ?,
          kartGecmisi_json = ?, gecmisSezonlar_json = ?, detayliOklar_json = ?, biyomotorTestleri_json = ?,
-         acilKisi = ?, acilTelefon = ?, antrenmanNotu = ?, genelNot = ?, dogumTarihi = ?, katilmaTarihi = ?, aileMeslek = ?,
+         acilKisi = ?, acilTelefon = ?, antrenmanNotu = ?, genelNot = ?, dogumTarihi = ?, katilmaTarihi = ?, aileMeslek = ?, veli2Kisi = ?, veli2Telefon = ?,
          saglikRaporuBitis = ?, lisansBitis = ?, fotoUrl = ?, lastModified = ?
        WHERE grup = ? AND ad = ?`
     ).bind(
@@ -84,7 +84,7 @@ export async function mergeAthlete(
       toplamSkor, xAdet, sonSkorZamani, coin,
       JSON.stringify(kartGecmisi), JSON.stringify(gecmisSezonlar), JSON.stringify(detayliOklar), JSON.stringify(biyomotor),
       sec(dstRow.acilKisi, srcRow.acilKisi), sec(dstRow.acilTelefon, srcRow.acilTelefon), sec(dstRow.antrenmanNotu, srcRow.antrenmanNotu), sec(dstRow.genelNot, srcRow.genelNot),
-      sec(dstRow.dogumTarihi, srcRow.dogumTarihi), sec(dstRow.katilmaTarihi, srcRow.katilmaTarihi), sec(dstRow.aileMeslek, srcRow.aileMeslek),
+      sec(dstRow.dogumTarihi, srcRow.dogumTarihi), sec(dstRow.katilmaTarihi, srcRow.katilmaTarihi), sec(dstRow.aileMeslek, srcRow.aileMeslek), sec(dstRow.veli2Kisi, srcRow.veli2Kisi), sec(dstRow.veli2Telefon, srcRow.veli2Telefon),
       sec(dstRow.saglikRaporuBitis, srcRow.saglikRaporuBitis), sec(dstRow.lisansBitis, srcRow.lisansBitis), sec(dstRow.fotoUrl, srcRow.fotoUrl), zaman,
       target.grup, target.ad
     ),

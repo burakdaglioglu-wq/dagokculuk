@@ -18,6 +18,9 @@ const HD_SUTUNLAR = [
     { id: 'yay', ad: 'Yay', tip: 'secim', secenek: [['', '—'], ['Klasik', 'Klasik'], ['Makaralı', 'Makaralı']], gen: 100 },
     { id: 'acilKisi', ad: 'Veli adı', tip: 'metin', gen: 150, eksik: true },
     { id: 'acilTelefon', ad: 'Veli telefonu', tip: 'tel', gen: 140, eksik: true },
+    // İkinci veli (isteğe bağlı — "bazen ailede iki kişinin numarasını giriyorum"), eksik sayılmaz.
+    { id: 'veli2Kisi', ad: '2. veli adı', tip: 'metin', gen: 150 },
+    { id: 'veli2Telefon', ad: '2. veli telefonu', tip: 'tel', gen: 140 },
     // Aidat detayındaki "Aile iş/meslek" ile AYNI alan (aileMeslek) — sunucuda kişisel bilgi (KVKK) olarak korunuyor.
     { id: 'aileMeslek', ad: 'Veli iş / meslek', tip: 'metin', gen: 200, yer: 'ör. Avukat · Yıldız Hukuk' },
     // Sağlık raporu / Lisans sütunları kullanıcı isteğiyle çıkarıldı (2026-09-30) — veriler duruyor, Belgeler ekranında.
@@ -189,7 +192,7 @@ function hdPdfIndir() {
     // Sütunlar (mm) — yatay A4 kullanılabilir genişlik 269
     let S = [
         { b: '#', w: 9 }, { b: 'AD SOYAD', w: 52 }, { b: 'DOGUM / YAS', w: 27 }, { b: 'CINS.', w: 12 }, { b: 'YAY', w: 18 },
-        { b: 'VELI ADI', w: 38 }, { b: 'VELI TELEFONU', w: 29 }, { b: 'VELI IS / MESLEK', w: 44 }, { b: 'NOT', w: 40 }
+        { b: 'VELI ADI', w: 38 }, { b: 'TELEFON', w: 29 }, { b: 'VELI IS / MESLEK', w: 44 }, { b: 'NOT', w: 40 }
     ];
     _yeniPdfAl('landscape').then(function (pdf) {
         let W = 297, H = 210, mx = 14, uw = W - mx * 2, y, sayfa = 1;
@@ -236,11 +239,13 @@ function hdPdfIndir() {
             if (g) bolum(g, liste.length);
             basliklar();
             liste.forEach(function (x, i) {
-                if (y + 7 > H - 16) { beyazSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(0, 138, 152); pdf.text(T(grupAd(g) + ' (devami)'), mx, y + 4); y += 6; } basliklar(); }
+                // 2. veli varsa satır iki katlı: veli adı/telefonu alt alta
+                let v2k = d(x, 'veli2Kisi'), v2t = d(x, 'veli2Telefon'), rh = (v2k || v2t) ? 11.5 : 7;
+                if (y + rh > H - 16) { beyazSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(0, 138, 152); pdf.text(T(grupAd(g) + ' (devami)'), mx, y + 4); y += 6; } basliklar(); }
                 sira++;
                 let pasif = !!hdDeger(x, { id: 'pasif' }), muaf = !!hdDeger(x, { id: 'aidatMuaf' });
-                if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, 7, 'F'); }
-                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15); pdf.line(mx, y + 7, mx + uw, y + 7);
+                if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, rh, 'F'); }
+                pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15); pdf.line(mx, y + rh, mx + uw, y + rh);
                 let hx = mx, hucre = function (s, metin, opt) {
                     opt = opt || {};
                     if (!metin) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(opt.eksik ? 217 : 203, opt.eksik ? 119 : 213, opt.eksik ? 6 : 225); pdf.text(opt.eksik ? 'eksik' : '-', hx + 2, y + 4.8); }
@@ -263,9 +268,15 @@ function hdPdfIndir() {
                 hucre(S[4], d(x, 'yay'), { boy: 8 });
                 hucre(S[5], d(x, 'acilKisi'), { eksik: true });
                 hucre(S[6], tel(d(x, 'acilTelefon')), { eksik: true });
+                if (rh > 7) {
+                    let x5 = mx + S.slice(0, 5).reduce(function (a, c) { return a + c.w; }, 0);
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(71, 85, 105);
+                    if (v2k) pdf.text(sigdir(v2k, S[5].w, 8), x5 + 2, y + 9.3);
+                    if (v2t) { pdf.setFontSize(8); pdf.text(sigdir(tel(v2t), S[6].w, 8), x5 + S[5].w + 2, y + 9.3); }
+                }
                 hucre(S[7], d(x, 'aileMeslek'), { boy: 8 });
                 hucre(S[8], d(x, 'genelNot'), { boy: 7.5, renk: [71, 85, 105] });
-                y += 7;
+                y += rh;
             });
             y += 5;
         });

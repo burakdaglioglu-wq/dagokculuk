@@ -5548,7 +5548,7 @@
                     // KVKK (2026-09-28): girişsiz okumada sunucu kişisel alanları HİÇ göndermez (anahtar yok).
                     // Daha yeni taraf "gizlenmiş" kopyaysa bu alanlar diğer taraftan korunur — bilerek boşaltılmış
                     // alan (''/null) anahtar olarak var olduğu için yine kazanır.
-                    ['acilKisi','acilTelefon','antrenmanNotu','genelNot','dogumTarihi','katilmaTarihi','aileMeslek','saglikRaporuBitis','lisansBitis'].forEach(function(f) {
+                    ['acilKisi','acilTelefon','antrenmanNotu','genelNot','dogumTarihi','katilmaTarihi','aileMeslek','veli2Kisi','veli2Telefon','saglikRaporuBitis','lisansBitis'].forEach(function(f) {
                         if(taban[f] === undefined && diger[f] !== undefined) taban[f] = JSON.parse(JSON.stringify(diger[f]));
                     });
                     if(taban.hazirOlma && taban.hazirOlma._gizli && diger.hazirOlma && !diger.hazirOlma._gizli && diger.hazirOlma.tarih === taban.hazirOlma.tarih) taban.hazirOlma = JSON.parse(JSON.stringify(diger.hazirOlma));
@@ -9655,7 +9655,7 @@ ${(function(){
             hedef.seriler.sort((a, b) => (a.t || 0) - (b.t || 0));
             hedef.detayliOklar = (hedef.detayliOklar || []).concat(kaynak.detayliOklar || []);
             hedef.kartGecmisi = (hedef.kartGecmisi || []).concat(kaynak.kartGecmisi || []);
-            ['kod','dogumYili','sinif','yay','cinsiyet','fotoUrl','dogumTarihi','katilmaTarihi','acilKisi','acilTelefon','aileMeslek','genelNot','antrenmanNotu','saglikRaporuBitis','lisansBitis'].forEach(f => { if((hedef[f] === undefined || hedef[f] === null || hedef[f] === '') && kaynak[f]) hedef[f] = kaynak[f]; });
+            ['kod','dogumYili','sinif','yay','cinsiyet','fotoUrl','dogumTarihi','katilmaTarihi','acilKisi','acilTelefon','aileMeslek','veli2Kisi','veli2Telefon','genelNot','antrenmanNotu','saglikRaporuBitis','lisansBitis'].forEach(f => { if((hedef[f] === undefined || hedef[f] === null || hedef[f] === '') && kaynak[f]) hedef[f] = kaynak[f]; });
             hedef.coin = (hedef.coin || 0) + (kaynak.coin || 0);
             hedef.sonSkorZamani = Math.max(hedef.sonSkorZamani || 0, kaynak.sonSkorZamani || 0) || null;
             try { sporcuPuanlariYenidenHesapla(hedef); } catch(e) {}

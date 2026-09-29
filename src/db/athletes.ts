@@ -30,6 +30,8 @@ export interface AthleteRow {
   dogumTarihi: string | null;
   katilmaTarihi: string | null;
   aileMeslek: string | null;
+  veli2Kisi: string | null;
+  veli2Telefon: string | null;
   aidatMuaf: number;
   saglikRaporuBitis: string | null;
   lisansBitis: string | null;
@@ -65,6 +67,8 @@ export interface AthleteDTO {
   dogumTarihi: string | null;
   katilmaTarihi: string | null;
   aileMeslek: string | null;
+  veli2Kisi: string | null;
+  veli2Telefon: string | null;
   aidatMuaf: boolean;
   saglikRaporuBitis: string | null;
   lisansBitis: string | null;
@@ -105,6 +109,8 @@ function toDTO(row: AthleteRow): AthleteDTO {
     dogumTarihi: row.dogumTarihi,
     katilmaTarihi: row.katilmaTarihi,
     aileMeslek: row.aileMeslek,
+    veli2Kisi: row.veli2Kisi ?? null,
+    veli2Telefon: row.veli2Telefon ?? null,
     aidatMuaf: !!row.aidatMuaf,
     saglikRaporuBitis: row.saglikRaporuBitis,
     lisansBitis: row.lisansBitis,
@@ -217,6 +223,8 @@ export const ATHLETE_UPDATABLE_FIELDS = [
   "dogumTarihi",
   "katilmaTarihi",
   "aileMeslek",
+  "veli2Kisi",
+  "veli2Telefon",
   "aidatMuaf",
   "saglikRaporuBitis",
   "lisansBitis",

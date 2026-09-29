@@ -18,7 +18,7 @@ const OZ_SERVIS_ALANLARI = new Set<string>(["hazirOlma_json"]);
 // anketindeki sağlık/sakatlık bilgisi) yalnızca giriş yapmış yönetici/eğitmene gider. Alanlar null değil,
 // HİÇ gönderilmez: istemci (turnuvaDBMerge + sync.js kisiselAlanlar) "yok" ile "silindi"yi ayırt eder ve
 // girişsiz bir cihaz gerçek veriyi boşlukla ezemez. Sporcu giriş kodu (kod) PIN'siz sporcu girişi için kalır.
-const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek", "saglikRaporuBitis", "lisansBitis"] as const;
+const KISISEL_ALANLAR = ["acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "dogumTarihi", "katilmaTarihi", "aileMeslek", "veli2Kisi", "veli2Telefon", "saglikRaporuBitis", "lisansBitis"] as const;
 function kisiselGizle(a: athletesDb.AthleteDTO): athletesDb.AthleteDTO {
   const k = { ...a } as Record<string, unknown>;
   KISISEL_ALANLAR.forEach((f) => { delete k[f]; });
