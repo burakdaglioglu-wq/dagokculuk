@@ -12617,6 +12617,22 @@ ${(function(){
 .km-oyun-panel-canavar[data-arena="buz"] .km-cnv-katki, .km-oyun-panel-canavar[data-arena="buz"] .km-cnv-ganimet{ background:rgba(10,24,40,.9); }
 .km-oyun-panel-canavar[data-arena="kurt"]{ background:linear-gradient(180deg,#05050f 50%,#100c22 50%); }
 .km-oyun-panel-canavar[data-arena="volkan"]{ background:linear-gradient(180deg,#120403 50%,#1c0806 50%); }
+.km-oyun-panel-canavar[data-arena="kraken"]{ background:linear-gradient(180deg,#021520 50%,#0b3a44 50%); }
+.km-oyun-panel-canavar[data-arena="orman"]{ background:linear-gradient(180deg,#06120b 50%,#10261a 50%); }
+.km-oyun-panel-canavar[data-arena="anka"]{ background:linear-gradient(180deg,#05071a 50%,#151a33 50%); }
+.km-oyun-panel-canavar[data-arena="akrep"]{ background:linear-gradient(180deg,#170c22 50%,#4a2a18 50%); }
+.km-oyun-panel-canavar[data-arena="mantar"]{ background:linear-gradient(180deg,#0f0820 50%,#1d1233 50%); }
+.km-cnv-dokunac, .km-cnv-spor, .km-cnv-ar-kabarcik, .km-cnv-ar-yosun{ transform-box:fill-box; }
+.km-cnv-dokunac{ transform-origin:50% 100%; animation:kmCnvDokunac 3.2s ease-in-out infinite; } .km-cnv-dokunac.d2{ animation-delay:-1.6s; }
+@keyframes kmCnvDokunac{ 0%,100%{ transform:rotate(-4deg); } 50%{ transform:rotate(5deg); } }
+.km-cnv-spor{ transform-origin:center; animation:kmCnvSpor 3.6s ease-in-out infinite; } .km-cnv-spor.s2{ animation-delay:-1.2s; } .km-cnv-spor.s3{ animation-delay:-2.4s; }
+@keyframes kmCnvSpor{ 0%{ transform:translate(0,10px) scale(.6); opacity:0; } 30%{ opacity:.9; } 100%{ transform:translate(8px,-46px) scale(1.2); opacity:0; } }
+.km-cnv-ar-kabarcik{ animation:kmCnvArKabarcik 6s linear infinite; }
+@keyframes kmCnvArKabarcik{ 0%{ transform:translateY(0); opacity:0; } 15%{ opacity:.7; } 100%{ transform:translateY(-300px); opacity:0; } }
+.km-cnv-ar-yosun{ transform-origin:50% 100%; animation:kmCnvDokunac 4.4s ease-in-out infinite; }
+.km-cnv-ar-simsek{ opacity:0; animation:kmCnvArSimsek 7s linear infinite; } .km-cnv-ar-simsek.s2{ animation-delay:-3.4s; }
+@keyframes kmCnvArSimsek{ 0%,86%,100%{ opacity:0; } 87%{ opacity:.95; } 88%{ opacity:.1; } 89%{ opacity:.8; } 91%{ opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .km-cnv-dokunac, .km-cnv-spor, .km-cnv-ar-kabarcik, .km-cnv-ar-yosun, .km-cnv-ar-simsek{ animation:none; } }
 .km-cnv-ar-bulut, .km-cnv-ar-toz, .km-cnv-ar-kar, .km-cnv-ar-duman, .km-cnv-ar-kor{ transform-box:fill-box; transform-origin:center; pointer-events:none; }
 .km-cnv-ar-bulut{ animation:kmCnvArBulut 24s linear infinite alternate; }
 @keyframes kmCnvArBulut{ from{ transform:translateX(-60px); } to{ transform:translateX(60px); } }
@@ -16243,6 +16259,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <linearGradient id="km-cnv-grad-kurt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b4fa0"/><stop offset=".6" stop-color="#3a2560"/><stop offset="1" stop-color="#1a1030"/></linearGradient>
                     <linearGradient id="km-cnv-grad-volkan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b3428"/><stop offset=".6" stop-color="#3d1a14"/><stop offset="1" stop-color="#1c0a08"/></linearGradient>
                     <linearGradient id="km-cnv-grad-kral" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe89a"/><stop offset=".5" stop-color="#e6a82a"/><stop offset="1" stop-color="#8a5a00"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-kraken" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9fbf"/><stop offset=".55" stop-color="#d6336c"/><stop offset="1" stop-color="#5c1038"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-orman" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d6b45"/><stop offset=".6" stop-color="#5c4128"/><stop offset="1" stop-color="#2e2014"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-anka" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9bcff"/><stop offset=".55" stop-color="#4f6bff"/><stop offset="1" stop-color="#1c2470"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-akrep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c886"/><stop offset=".6" stop-color="#c47f2c"/><stop offset="1" stop-color="#5e3510"/></linearGradient>
+                    <linearGradient id="km-cnv-grad-mantar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7b89"/><stop offset=".6" stop-color="#d62c45"/><stop offset="1" stop-color="#7a0f24"/></linearGradient>
+                    <linearGradient id="km-cnv-hacim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".36" stop-color="#fff" stop-opacity="0"/><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
+                    <pattern id="km-cnv-desen-pul" width="22" height="16" patternUnits="userSpaceOnUse"><path d="M0 16 Q11 3 22 16 M-11 8 Q0 -5 11 8 M11 8 Q22 -5 33 8" fill="none" stroke="#000" stroke-opacity=".32" stroke-width="2"/><path d="M3 14 Q11 6 19 14" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="1.5"/></pattern>
+                    <pattern id="km-cnv-desen-tas" width="44" height="40" patternUnits="userSpaceOnUse"><path d="M4 10 l9 -5 l7 7 M24 32 l8 -7 l9 3 M30 8 l4 8 M6 30 l6 -4" stroke="#000" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="14" cy="24" r="2.2" fill="#fff" fill-opacity=".14"/><circle cx="36" cy="18" r="1.6" fill="#000" fill-opacity=".25"/></pattern>
+                    <pattern id="km-cnv-desen-kabuk" width="26" height="64" patternUnits="userSpaceOnUse"><path d="M6 0 C 2 20, 10 36, 5 64 M19 0 C 23 18, 14 42, 19 64" stroke="#000" stroke-opacity=".34" stroke-width="3" fill="none"/><path d="M12 10 C 10 24, 14 30, 12 44" stroke="#fff" stroke-opacity=".1" stroke-width="2" fill="none"/></pattern>
+                    <pattern id="km-cnv-desen-tuy" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M2 16 l5 -12 M10 18 l5 -12" stroke="#000" stroke-opacity=".3" stroke-width="2" stroke-linecap="round"/><path d="M6 17 l4 -9" stroke="#fff" stroke-opacity=".12" stroke-width="1.5" stroke-linecap="round"/></pattern>
+                    <pattern id="km-cnv-desen-buz" width="52" height="52" patternUnits="userSpaceOnUse"><path d="M0 52 L26 0 M26 52 L52 8 M0 20 L20 0" stroke="#fff" stroke-opacity=".32" stroke-width="1.6"/><path d="M40 40 l4 -8 l4 8 Z" fill="#fff" fill-opacity=".25"/></pattern>
                     <linearGradient id="km-cnv-grad-alev" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff3d1f"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#ffe680"/></linearGradient>
                     <radialGradient id="km-cnv-grad-aura"><stop offset="0" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:.55;"/><stop offset=".7" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:.12;"/><stop offset="1" style="stop-color:var(--cnv-renk2,#a78bfa); stop-opacity:0;"/></radialGradient>
                     <radialGradient id="km-cnv-grad-zemin" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="#3a2352"/><stop offset="1" stop-color="#120a1c"/></radialGradient>
@@ -20886,6 +20913,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { id: 'buz',    ad: 'Buz Devi',     ikon: '🧊', renk: '#bfe9ff', renk2: '#5fb8ff', koyu: '#2b5c80' },
             { id: 'kurt',   ad: 'Gölge Kurdu',  ikon: '🐺', renk: '#6b4fa0', renk2: '#ff4fa3', koyu: '#1a1030' },
             { id: 'volkan', ad: 'Volkan Kralı', ikon: '🌋', renk: '#5a2a22', renk2: '#ffd23f', koyu: '#2a100c' },
+            // 2026-09-29 — 5 yeni canavar. Havuz artık 10 tür: her haftanın seferi bu havuzdan 5 canavar + final Ejder Kral.
+            { id: 'kraken', ad: 'Derin Kraken', ikon: '🐙', renk: '#e0527a', renk2: '#5ef2d0', koyu: '#3b0d2a' },
+            { id: 'orman',  ad: 'Kadim Ağaç',   ikon: '🌳', renk: '#6b8f3a', renk2: '#c6ff5e', koyu: '#2a2412' },
+            { id: 'anka',   ad: 'Fırtına Kuşu', ikon: '🦅', renk: '#4f6bff', renk2: '#fff176', koyu: '#141b4d' },
+            { id: 'akrep',  ad: 'Çöl Akrebi',   ikon: '🦂', renk: '#c98b3a', renk2: '#9cff57', koyu: '#3d2410' },
+            { id: 'mantar', ad: 'Mantar Kral',  ikon: '🍄', renk: '#e8455a', renk2: '#ffe066', koyu: '#4a1420' },
             // 2026-09-26 — Haftalık Seferin 6. ve SON canavarı (ejder gövdesi + altın zırh + taç).
             { id: 'kral',   ad: 'Ejder Kral',   ikon: '👑', renk: '#ffd23f', renk2: '#ff4d3a', koyu: '#5a3a00' }
         ];
@@ -20897,9 +20930,26 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmCanavarRekorAnahtari() { return 'dag_km_canavar_rekor_' + (_kmAktifKonum || 'varsayilan'); }
         function kmCanavarKaydet() { try { localStorage.setItem(kmCanavarAnahtari(), JSON.stringify(_kmCanavar)); } catch(e) {} }
         function kmCanavarRekorKaydet() { try { localStorage.setItem(kmCanavarRekorAnahtari(), JSON.stringify(_kmCanavarRekor)); } catch(e) {} }
-        function kmCanavarTip(no) { return KM_CANAVAR_TIPLERI[(no - 1) % KM_CANAVAR_TIPLERI.length]; }
+        // Sefer dizilişi (2026-09-29): eskiden her hafta aynı 6 canavar aynı sırayla gelirdi. Artık her seferin
+        // 5 canavarı 10'luk havuzdan HAFTA + sefer no'ya göre seçilir (aynı hafta her cihazda aynı diziliş,
+        // haftadan haftaya farklı), 6.sı hep Ejder Kral. Sahnedeki canavar her zaman KENDİ kayıtlı türüyle
+        // gösterilir (c.tip) — güncelleme anında yarım kalan sefer bozulmaz.
+        const KM_CANAVAR_SEFER_UZUNLUK = 6;
+        function kmCanavarTipById(id) { return KM_CANAVAR_TIPLERI.find(function(x) { return x.id === id; }) || KM_CANAVAR_TIPLERI[0]; }
+        function kmCanavarSeferDizi(seferNo) {
+            let hafta = (_kmCanavar && _kmCanavar.hafta) || kmCanavarHafta(), anahtar = hafta + '|' + seferNo, tohum = 7;
+            for(let i = 0; i < anahtar.length; i++) tohum = (Math.imul(tohum, 31) + anahtar.charCodeAt(i)) >>> 0;
+            let r = kmOyunNinjaTohum(tohum), havuz = KM_CANAVAR_TIPLERI.filter(function(x) { return x.id !== 'kral'; }).map(function(x) { return x.id; });
+            for(let i = havuz.length - 1; i > 0; i--) { let j = Math.floor(r() * (i + 1)), tmp = havuz[i]; havuz[i] = havuz[j]; havuz[j] = tmp; }
+            return havuz.slice(0, KM_CANAVAR_SEFER_UZUNLUK - 1).concat('kral');
+        }
+        function kmCanavarTip(no) {
+            if(_kmCanavar && _kmCanavar.aktif && _kmCanavar.aktif.no === no && _kmCanavar.aktif.tip) return kmCanavarTipById(_kmCanavar.aktif.tip);
+            let sn = Math.floor((no - 1) / KM_CANAVAR_SEFER_UZUNLUK) + 1;
+            return kmCanavarTipById(kmCanavarSeferDizi(sn)[(no - 1) % KM_CANAVAR_SEFER_UZUNLUK]);
+        }
         function kmCanavarAd(no) {
-            let t = kmCanavarTip(no), tur = Math.floor((no - 1) / KM_CANAVAR_TIPLERI.length);
+            let t = kmCanavarTip(no), tur = Math.floor((no - 1) / KM_CANAVAR_SEFER_UZUNLUK);
             return t.ad + (tur > 0 ? ' ' + (['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][Math.min(tur - 1, 8)]) : '');
         }
         // Can: sınıf büyüklüğüne ve ok sayısına göre — her canavar sınıfın HER üyesinden yaklaşık 2 seri
@@ -20955,7 +21005,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmCanavarKaydet(); return;
                 }
             } catch(e) {}
-            _kmCanavar = { tarih: bugunISO(), hafta: hafta, aktif: kmCanavarYeni(1), hasarlar: {}, yenilenler: [], toplamHasar: 0, seriSayisi: 0, kombo: 0, seferTamam: 0 };
+            _kmCanavar = { tarih: bugunISO(), hafta: hafta, aktif: null, hasarlar: {}, yenilenler: [], toplamHasar: 0, seriSayisi: 0, kombo: 0, seferTamam: 0 };
+            _kmCanavar.aktif = kmCanavarYeni(1);
             kmCanavarKaydet();
         }
         // Canavar özellikleri — her tipin beceriye dayalı kendi kuralı (deterministik).
@@ -20965,7 +21016,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             buz:    { ad: 'Buz Zırhı',      ikon: '🧊', acik: 'Beyaz halka (1-2) oklar hiç hasar vermez' },
             kurt:   { ad: 'Gölge Hızı',     ikon: '💨', acik: 'X oklar iki kat hasar verir' },
             volkan: { ad: 'Lav Kalkanı',    ikon: '🌋', acik: 'Kalkan 3 kez açılır (%75, %50, %25)' },
-            kral:   { ad: 'Kraliyet Zırhı', ikon: '👑', acik: 'Tüm hasar ×0.8 ama kritik seri ×2 (×1.5 yerine)' }
+            kral:   { ad: 'Kraliyet Zırhı', ikon: '👑', acik: 'Tüm hasar ×0.8 ama kritik seri ×2 (×1.5 yerine)' },
+            kraken: { ad: 'Dokunaç Sarması', ikon: '🐙', acik: 'Mavi (6-5) oklar %50 fazla hasar verir' },
+            orman:  { ad: 'Kök Zırhı',       ikon: '🌳', acik: 'Siyah (4-3) oklar hasar vermez' },
+            anka:   { ad: 'Fırtına Hızı',    ikon: '⚡', acik: 'Kırmızı (8-7) oklar %50 fazla hasar verir' },
+            akrep:  { ad: 'Kum Kabuğu',      ikon: '🦂', acik: 'Beyaz (2-1) oklar hasar vermez, 10\'lar %50 fazla' },
+            mantar: { ad: 'Spor Bulutu',     ikon: '🍄', acik: 'İsabet eden her ok en az 3 hasar verir' }
         };
         function kmCanavarOkDeger(tip, v) {
             let d = kmOyunDegerSayi(v);
@@ -20973,6 +21029,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(tip === 'golem' && d >= 1 && d <= 4) return d * 0.5;
             if(tip === 'buz' && (v === '1' || v === '2')) return 0;
             if(tip === 'kurt' && v === 'X') return d * 2;
+            if(tip === 'kraken' && (v === '6' || v === '5')) return d * 1.5;
+            if(tip === 'orman' && (v === '4' || v === '3')) return 0;
+            if(tip === 'anka' && (v === '8' || v === '7')) return d * 1.5;
+            if(tip === 'akrep' && (v === '2' || v === '1')) return 0;
+            if(tip === 'akrep' && v === '10') return d * 1.5;
+            if(tip === 'mantar' && d > 0 && d < 3) return 3;
             return d;
         }
         function kmCanavarRekorEmin() {
@@ -20994,8 +21056,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Mekanik göstergeleri (zayıf nokta, kombo, kalkan) ciddi modda da HER ZAMAN görünür (§15g); ciddi
         // mod sadece ses/banner/toast'u susturur. Gerçek skora DOKUNMAZ — hepsi _kmCanavar içinde, geri al
         // anlık görüntüsü (_kmOyunSonGiris.canavar) yeni alanları da kapsar.
-        const KM_CANAVAR_KAFA = { ejder: [-105, -255], golem: [0, -245], buz: [0, -222], kurt: [-215, -138], volkan: [0, -258], kral: [-105, -255] };
-        const KM_CANAVAR_GOVDE = { ejder: [0, -110], golem: [0, -135], buz: [0, -140], kurt: [-60, -100], volkan: [0, -150], kral: [0, -110] };
+        const KM_CANAVAR_KAFA = { ejder: [-105, -255], golem: [0, -245], buz: [0, -222], kurt: [-215, -138], volkan: [0, -258], kral: [-105, -255], kraken: [0, -250], orman: [0, -200], anka: [-40, -262], akrep: [-110, -118], mantar: [0, -150] };
+        const KM_CANAVAR_GOVDE = { ejder: [0, -110], golem: [0, -135], buz: [0, -140], kurt: [-60, -100], volkan: [0, -150], kral: [0, -110], kraken: [0, -292], orman: [0, -110], anka: [0, -140], akrep: [0, -100], mantar: [0, -80] };
         const KM_CANAVAR_ZAYIF_RENKLER = [
             { id: 'kirmizi', ad: 'Kırmızı', ikon: '🔴', renk: '#ff4d3a', okl: '8-7' },
             { id: 'mavi', ad: 'Mavi', ikon: '🔵', renk: '#3b9bff', okl: '6-5' },
@@ -21050,6 +21112,44 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 for(let k = 0; k < 9; k++) html += agac(f(-60 + r() * 1320), 370, 140 + r() * 90, '#0c0a1c');
                 html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#100c22"/>`;
                 html += '<rect x="-400" y="300" width="2000" height="80" fill="#8b7cc8" opacity=".08"/>';
+            } else if(tip === 'kraken') {
+                // Deniz dibi — ışık huzmeleri, yosun, yükselen kabarcıklar.
+                html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
+                [[180, 160], [520, 120], [860, 200], [1100, 140]].forEach(function(p) { html += `<path d="M${p[0] - 30} -40 L${p[0] + 30} -40 L${p[0] + p[1]} ${zeminY} L${p[0] + p[1] - 140} ${zeminY} Z" fill="#bff6ff" opacity=".05"/>`; });
+                for(let k = 0; k < 12; k++) { let x = f(r() * 1200), h = 60 + r() * 110; html += `<path class="km-cnv-ar-yosun" d="M${x} ${zeminY} C ${x - 16} ${zeminY - h * 0.35}, ${+x + 16} ${zeminY - h * 0.65}, ${x} ${zeminY - h}" stroke="${r() < .5 ? '#1f7a5c' : '#2b9973'}" stroke-width="${(5 + r() * 5).toFixed(0)}" fill="none" stroke-linecap="round" style="animation-delay:${(-r() * 4).toFixed(1)}s"/>`; }
+                for(let k = 0; k < 18; k++) html += `<circle class="km-cnv-ar-kabarcik" cx="${f(r() * 1200)}" cy="${f(250 + r() * 110)}" r="${(2 + r() * 4).toFixed(1)}" fill="none" stroke="#bff6ff" stroke-width="1.5" opacity=".6" style="animation-duration:${(4 + r() * 4).toFixed(1)}s; animation-delay:${(-r() * 8).toFixed(1)}s"/>`;
+                html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#0b3a44"/><path d="M-400 ${zeminY + 12} Q 0 ${zeminY + 2} 400 ${zeminY + 14} T 1200 ${zeminY + 10} T 1600 ${zeminY + 12}" stroke="#2f8a8f" stroke-width="3" fill="none" opacity=".6"/>`;
+            } else if(tip === 'orman') {
+                // Gece ormanı — katman katman ağaçlar, ateş böcekleri.
+                html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
+                html += '<circle cx="260" cy="70" r="34" fill="#e8f7d0" opacity=".85"/><circle cx="260" cy="70" r="70" fill="#e8f7d0" opacity=".07"/>';
+                let agac = function(x, y, rr, renk) { return `<rect x="${x - rr * 0.12}" y="${y - rr * 1.1}" width="${rr * 0.24}" height="${rr * 1.1}" fill="${renk}"/><circle cx="${x}" cy="${y - rr * 1.2}" r="${rr * 0.6}" fill="${renk}"/><circle cx="${x - rr * 0.4}" cy="${y - rr * 0.95}" r="${rr * 0.45}" fill="${renk}"/><circle cx="${x + rr * 0.42}" cy="${y - rr * 0.98}" r="${rr * 0.46}" fill="${renk}"/>`; };
+                for(let k = 0; k < 12; k++) html += agac(f(-40 + r() * 1280), 340, 90 + r() * 50, '#15321f');
+                for(let k = 0; k < 8; k++) html += agac(f(-60 + r() * 1320), 372, 120 + r() * 60, '#0a1c11');
+                for(let k = 0; k < 16; k++) html += `<circle class="km-cnv-ar-kor" cx="${f(r() * 1200)}" cy="${f(200 + r() * 150)}" r="${(1.4 + r() * 1.6).toFixed(1)}" fill="#d8ff7a" style="animation-duration:${(4 + r() * 3).toFixed(1)}s; animation-delay:${(-r() * 6).toFixed(1)}s"/>`;
+                html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#10261a"/><path d="M-400 ${zeminY} L1600 ${zeminY}" stroke="#3f7a2c" stroke-width="3" opacity=".6"/>`;
+            } else if(tip === 'anka') {
+                // Fırtına — koyu bulutlar, çakan şimşekler, kayalık zirve.
+                html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
+                html += '<path class="km-cnv-ar-simsek" d="M300 -20 L270 70 L300 70 L262 170 L330 50 L298 50 L330 -20 Z" fill="#fff9c4"/><path class="km-cnv-ar-simsek s2" d="M1060 -10 L1036 60 L1060 60 L1028 140 L1086 40 L1060 40 L1086 -10 Z" fill="#fff9c4"/>';
+                for(let k = 0; k < 8; k++) html += `<ellipse class="km-cnv-ar-bulut" cx="${f(-100 + r() * 1400)}" cy="${f(10 + r() * 90)}" rx="${f(140 + r() * 160)}" ry="${f(26 + r() * 22)}" fill="#11173a" opacity="${(0.7 + r() * 0.25).toFixed(2)}" style="animation-delay:${(-r() * 20).toFixed(1)}s"/>`;
+                html += '<path d="M-400 320 L 40 250 L 160 300 L 300 220 L 440 300 L 700 260 L 900 300 L 1120 230 L 1600 300 L 1600 440 L -400 440 Z" fill="#1a2046" opacity=".8"/>';
+                html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#151a33"/><path d="M-400 ${zeminY} L1600 ${zeminY}" stroke="#4f6bff" stroke-width="2" opacity=".4"/>`;
+            } else if(tip === 'akrep') {
+                // Gece çölü — dev ay, kum tepeleri, kaktüs gölgeleri, uçuşan kum.
+                html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
+                html += '<circle cx="380" cy="120" r="86" fill="#ffe2b8" opacity=".12"/><circle cx="380" cy="120" r="54" fill="#ffe2b8" opacity=".92"/><circle cx="360" cy="108" r="9" fill="#e8c392" opacity=".6"/><circle cx="398" cy="134" r="6" fill="#e8c392" opacity=".6"/>';
+                html += '<path d="M-400 300 Q 0 220 300 290 T 900 270 T 1600 300 L 1600 440 L -400 440 Z" fill="#5a3322"/><path d="M-400 340 Q 200 280 600 340 T 1600 330 L 1600 440 L -400 440 Z" fill="#6e3f28"/>';
+                [[120, 300], [1110, 290]].forEach(function(p) { html += `<path d="M${p[0]} ${p[1]} v-70 M${p[0]} ${p[1] - 40} h-18 v-20 M${p[0]} ${p[1] - 52} h16 v-18" stroke="#2b1a12" stroke-width="12" stroke-linecap="round" fill="none"/>`; });
+                for(let k = 0; k < 12; k++) html += `<circle class="km-cnv-ar-toz" cx="${f(r() * 1200)}" cy="${f(260 + r() * 110)}" r="${(1.5 + r() * 2.5).toFixed(1)}" fill="#e9c58f" opacity=".45" style="animation-delay:${(-r() * 6).toFixed(1)}s"/>`;
+                html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#4a2a18"/><path d="M-400 ${zeminY} L1600 ${zeminY}" stroke="#b07a45" stroke-width="2" opacity=".5"/>`;
+            } else if(tip === 'mantar') {
+                // Parlayan mantar mağarası — ışıldayan küçük mantarlar, uçuşan sporlar.
+                html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
+                html += '<path d="M-400 -300 L1600 -300 L1600 60 Q 1200 140 900 70 T 300 90 T -400 60 Z" fill="#0a0616" opacity=".85"/>';
+                for(let k = 0; k < 14; k++) { let x = f(r() * 1200), y = f(330 + r() * 40), h = 14 + r() * 26, renk = ['#7df9ff', '#ff9ad5', '#c6ff5e'][k % 3]; html += `<rect x="${x - 2}" y="${y - h}" width="4" height="${h.toFixed(0)}" fill="#e9d6b4" opacity=".8"/><path d="M${x - h * 0.45} ${y - h} C ${x - h * 0.45} ${y - h * 1.5}, ${+x + h * 0.45} ${y - h * 1.5}, ${+x + h * 0.45} ${y - h} Z" fill="${renk}" opacity=".85"/><circle cx="${x}" cy="${y - h * 1.15}" r="${(h * 0.9).toFixed(0)}" fill="${renk}" opacity=".08"/>`; }
+                for(let k = 0; k < 18; k++) html += `<circle class="km-cnv-ar-kor" cx="${f(r() * 1200)}" cy="${f(180 + r() * 180)}" r="${(1.2 + r() * 1.8).toFixed(1)}" fill="${r() < .5 ? '#ff9ad5' : '#7df9ff'}" style="animation-duration:${(4 + r() * 4).toFixed(1)}s; animation-delay:${(-r() * 7).toFixed(1)}s"/>`;
+                html += `<rect x="-400" y="${zeminY}" width="2000" height="400" fill="#1d1233"/><path d="M-400 ${zeminY} L1600 ${zeminY}" stroke="#8b5cf6" stroke-width="2" opacity=".45"/>`;
             } else if(tip === 'kral') {
                 // Taht salonu — mor gece, altın sütunlar, kırmızı halı, sancaklar.
                 html += '<rect x="-400" y="-300" width="2000" height="740" fill="url(#km-cnv-ar-gok)"/>';
@@ -21066,7 +21166,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             return html;
         }
-        const KM_CANAVAR_ARENA_GOK = { kral: ['#12061f', '#3d1450'], ejder: ['#0d1a33', '#39598c'], golem: ['#3a1d10', '#c2733a'], buz: ['#16324a', '#86b8d6'], kurt: ['#05050f', '#241a4a'], volkan: ['#120403', '#6a1d0c'] };
+        const KM_CANAVAR_ARENA_GOK = { kral: ['#12061f', '#3d1450'], ejder: ['#0d1a33', '#39598c'], golem: ['#3a1d10', '#c2733a'], buz: ['#16324a', '#86b8d6'], kurt: ['#05050f', '#241a4a'], volkan: ['#120403', '#6a1d0c'], kraken: ['#021520', '#0b4f63'], orman: ['#06120b', '#1f4a2a'], anka: ['#05071a', '#2b3470'], akrep: ['#170c22', '#6b3a3a'], mantar: ['#0f0820', '#3b1f5c'] };
         function kmCanavarArenaCiz(tip) {
             let kap = document.getElementById('km-cnv-arena'); if(!kap) return;
             if(kap.dataset.tip === tip) return;
@@ -21133,13 +21233,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(!kapali) { try { sesCal(72, 0.7); sesCal(55, 0.9); } catch(e) {} }
             let kafa = KM_CANAVAR_KAFA[c.tip] || [0, -240];
             kmCanavarYaziUcur('KÜKREDİ!', KM_CANAVAR_X + kafa[0], KM_CANAVAR_ZEMIN_Y + kafa[1] - 30, 'kukreme');
-            let tur = { ejder: 'ates', volkan: 'lav', golem: 'kaya', buz: 'buz', kurt: 'golge', kral: 'ates' }[c.tip] || 'ates';
+            let tur = { ejder: 'ates', volkan: 'lav', golem: 'kaya', buz: 'buz', kurt: 'golge', kral: 'ates', kraken: 'murekkep', orman: 'yaprak', anka: 'simsek', akrep: 'zehir', mantar: 'spor' }[c.tip] || 'ates';
             let sekil = {
                 ates: '<circle r="13" fill="#ff7a1f"/><circle r="8" fill="#ffd23f"/><circle r="4" fill="#fff6c8"/>',
                 lav: '<path d="M-12 -4 L-4 -13 L9 -10 L13 3 L3 12 L-10 9 Z" fill="#3a1208"/><path d="M-6 -3 L2 -7 L7 1 L0 6 Z" fill="#ff6a1f"/>',
                 kaya: '<path d="M-13 -5 L-5 -14 L10 -11 L15 4 L4 13 L-11 10 Z" fill="#8a7152" stroke="#4a3b2a" stroke-width="2"/>',
                 buz: '<path d="M-16 0 L0 -7 L18 0 L0 7 Z" fill="#dff4ff" stroke="#5fb8ff" stroke-width="2"/>',
-                golge: '<path d="M-14 -8 Q0 -2 14 -10 Q4 0 14 10 Q0 2 -14 8 Q-6 0 -14 -8 Z" fill="#b388ff" opacity=".9"/>'
+                golge: '<path d="M-14 -8 Q0 -2 14 -10 Q4 0 14 10 Q0 2 -14 8 Q-6 0 -14 -8 Z" fill="#b388ff" opacity=".9"/>',
+                murekkep: '<circle r="13" fill="#2a0a2a"/><circle cx="-5" cy="-4" r="4" fill="#5ef2d0" opacity=".7"/>',
+                yaprak: '<path d="M-14 6 C -10 -12, 8 -14, 14 -6 C 8 10, -6 12, -14 6 Z" fill="#7dbb4a" stroke="#1d3a14" stroke-width="2"/><path d="M-12 5 L 12 -5" stroke="#1d3a14" stroke-width="1.5"/>',
+                simsek: '<path d="M-6 -14 L 8 -14 L 0 -2 L 10 -2 L -8 16 L -2 2 L -10 2 Z" fill="#fff176" stroke="#4f6bff" stroke-width="2"/>',
+                zehir: '<path d="M0 -14 C 8 -2, 10 4, 10 7 A 10 10 0 0 1 -10 7 C -10 4, -8 -2, 0 -14 Z" fill="#9cff57" stroke="#2f5a14" stroke-width="2"/>',
+                spor: '<circle r="10" fill="#ffe066" opacity=".9"/><circle cx="-7" cy="-6" r="5" fill="#ff9ad5" opacity=".9"/><circle cx="7" cy="5" r="4" fill="#ff9ad5" opacity=".9"/>'
             }[tur];
             let kat = document.getElementById('km-cnv-mermiler'), roster = _kmOyunRosterCache; if(!kat || !roster.length) return;
             let x0 = KM_CANAVAR_X + kafa[0] - 20, y0 = KM_CANAVAR_ZEMIN_Y + kafa[1] + 10;
@@ -21155,7 +21260,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     a.onfinish = function() {
                         m.remove();
                         let scr = kmOyunSvgPct('km-oyun-svg-canavar', x1, y1);
-                        kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, { ates: '#ff9a1f', lav: '#ff6a1f', kaya: '#c9b48d', buz: '#bfe9ff', golge: '#b388ff' }[tur], 12, false);
+                        kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, { ates: '#ff9a1f', lav: '#ff6a1f', kaya: '#c9b48d', buz: '#bfe9ff', golge: '#b388ff', murekkep: '#5ef2d0', yaprak: '#9fe06a', simsek: '#fff176', zehir: '#9cff57', spor: '#ff9ad5' }[tur], 12, false);
                         let s = roster[hi]; let ic = s && s.canavarEl && s.canavarEl.querySelector('.km-cnv-okcu-ic');
                         if(ic) { ic.classList.remove('km-cnv-okcu-sarsil'); void ic.getBoundingClientRect(); ic.classList.add('km-cnv-okcu-sarsil'); setTimeout(function() { ic.classList.remove('km-cnv-okcu-sarsil'); }, 600); }
                     };
@@ -21238,75 +21343,232 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmCanavarOzetTimer = setTimeout(kmCanavarOzetKapat, 12000);
         }
         // ---- Canavar çizimleri: yerel koordinat, x=0 gövde merkezi, y=0 ZEMİN (gövde yukarı, negatif y).
+        // Görsel 2.0 (2026-09-29, "canavarları görüntü bakımından geliştirelim"): her ana şekil üç katman —
+        // (1) tür rengi, (2) doku deseni (pul/taş/kabuk/tüy/buz), (3) hacim ışığı (üstten ışık, alttan gölge;
+        // #km-cnv-hacim). Gözler iris + dikey göz bebeği + parıltı + kaş; ağız/diş/pençe; zemin gölgesi.
+        // Animasyon sınıfları AYNEN korunur (km-cnv-goz kırpma, km-cnv-gozbebek öfkede kızarır, km-cnv-kanat,
+        // km-cnv-catlak/alev/lav parıltı, km-cnv-kar, km-cnv-nefes-duman, km-cnv-golge-tutam). Filtre sadece
+        // birkaç parlayan parçada — Oyunlar'da ağır filtre donma yapıyor (bkz. performans notları).
         function kmOyunCanavarSVG(tipId) {
             if(tipId === 'kral') {
-                let tac = '<g class="km-cnv-tac" transform="translate(-105,-292)"><path d="M-30 0 L-26 -28 L-12 -10 L0 -36 L12 -10 L26 -28 L30 0 Z" fill="#ffd23f" stroke="#8a5a00" stroke-width="2.5"/><rect x="-31" y="-2" width="62" height="8" rx="2" fill="#e6b422" stroke="#8a5a00" stroke-width="2"/><circle cx="0" cy="-36" r="4" fill="#ff4d3a"/><circle cx="-26" cy="-28" r="3" fill="#3b9bff"/><circle cx="26" cy="-28" r="3" fill="#3b9bff"/><circle cx="0" cy="2" r="3" fill="#ff4d3a"/></g>';
-                return kmOyunCanavarSVG('ejder').replace(/url\(#km-cnv-grad-ejder\)/g, 'url(#km-cnv-grad-kral)') + tac;
+                let tac = '<g class="km-cnv-tac" transform="translate(-105,-300)"><path d="M-34 0 L-30 -32 L-14 -12 L0 -42 L14 -12 L30 -32 L34 0 Z" fill="#ffd23f" stroke="#8a5a00" stroke-width="2.5"/><path d="M-34 0 L-30 -32 L-14 -12 L0 -42 L14 -12 L30 -32 L34 0 Z" fill="url(#km-cnv-hacim)"/><rect x="-36" y="-3" width="72" height="10" rx="3" fill="#e6b422" stroke="#8a5a00" stroke-width="2"/><circle cx="0" cy="-42" r="5" fill="#ff4d3a" stroke="#8a5a00" stroke-width="1.5"/><circle cx="-30" cy="-32" r="3.5" fill="#3b9bff"/><circle cx="30" cy="-32" r="3.5" fill="#3b9bff"/><circle cx="-18" cy="2" r="3.5" fill="#3b9bff"/><circle cx="0" cy="2" r="4" fill="#ff4d3a"/><circle cx="18" cy="2" r="3.5" fill="#3b9bff"/><path d="M-26 -6 L-22 -26" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/></g>';
+                let pelerin = '<path d="M-60 -170 C -130 -150, -170 -60, -150 0 L 150 0 C 170 -60, 130 -150, 60 -170 Z" fill="#8b1a2b" opacity=".85" stroke="#3a0810" stroke-width="3"/><path d="M-60 -170 C -130 -150, -170 -60, -150 0 L 150 0 C 170 -60, 130 -150, 60 -170 Z" fill="url(#km-cnv-hacim)"/><path d="M-150 0 L 150 0" stroke="#ffd23f" stroke-width="6"/>';
+                return pelerin + kmOyunCanavarSVG('ejder').replace(/url\(#km-cnv-grad-ejder\)/g, 'url(#km-cnv-grad-kral)') + tac;
             }
             let t = KM_CANAVAR_TIPLERI.find(function(x) { return x.id === tipId; }) || KM_CANAVAR_TIPLERI[0];
-            let g = 'url(#km-cnv-grad-' + t.id + ')';
-            let goz = function(cx, cy, rx, ry) { return `<ellipse class="km-cnv-goz" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff"/><circle class="km-cnv-gozbebek" cx="${cx}" cy="${cy}" r="${Math.min(rx, ry) * 0.55}" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>`; };
-            if(t.id === 'ejder') return `
-                <path class="km-cnv-kanat km-cnv-kanat-sol" d="M-40 -150 C -150 -260, -260 -230, -300 -160 C -240 -170, -200 -150, -170 -120 C -220 -125, -250 -105, -270 -80 C -210 -95, -160 -90, -120 -70 Z" fill="${g}" opacity=".78" stroke="${t.koyu}" stroke-width="3"/>
-                <path class="km-cnv-kanat km-cnv-kanat-sag" d="M40 -150 C 150 -260, 260 -230, 300 -160 C 240 -170, 200 -150, 170 -120 C 220 -125, 250 -105, 270 -80 C 210 -95, 160 -90, 120 -70 Z" fill="${g}" opacity=".78" stroke="${t.koyu}" stroke-width="3"/>
-                <path d="M60 -60 C 150 -40, 220 -10, 260 -40 C 300 -70, 280 -110, 240 -100 C 280 -80, 270 -60, 240 -70" fill="none" stroke="${g}" stroke-width="22" stroke-linecap="round"/>
-                <ellipse cx="0" cy="-105" rx="95" ry="72" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <ellipse cx="0" cy="-90" rx="55" ry="45" fill="${t.koyu}" opacity=".35"/>
-                <path d="M-70 -160 l14 -28 l14 28 M-40 -172 l14 -30 l14 30 M-8 -176 l14 -32 l14 32 M26 -170 l14 -28 l14 28 M58 -158 l12 -24 l12 24" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="2"/>
+            let g = 'url(#km-cnv-grad-' + t.id + ')', H = 'url(#km-cnv-hacim)', K = t.koyu;
+            // Bir şekli üç katmanla çiz: renk + (isteğe bağlı) doku + hacim ışığı. s = etiket + geometri ('ellipse cx=".." ...').
+            let kat = function(s, dolgu, desen, desenOp, cizgi) {
+                return `<${s} fill="${dolgu}"${cizgi === false ? '' : ` stroke="${K}" stroke-width="${cizgi || 3}"`}/>`
+                    + (desen ? `<${s} fill="url(#km-cnv-desen-${desen})" opacity="${desenOp || .55}"/>` : '')
+                    + `<${s} fill="${H}"/>`;
+            };
+            // Göz: koyu çerçeve + sklera + iris (km-cnv-gozbebek — öfkede kızarır) + dikey göz bebeği + parıltı + kaş.
+            // Bütün grup km-cnv-goz → kırpma animasyonu gözün tamamına uygulanır. bak: -1 sola (partiye) bakar.
+            let goz = function(cx, cy, r, kas, parla) {
+                let ix = cx - r * 0.2, ry = r * 0.86;
+                return `<g class="km-cnv-goz"><ellipse cx="${cx}" cy="${cy}" rx="${r + 3}" ry="${ry + 3}" fill="${K}"/><ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${ry}" fill="#fff8e6"/>`
+                    + `<circle class="km-cnv-gozbebek" cx="${ix}" cy="${cy}" r="${(r * 0.64).toFixed(1)}" fill="${t.renk2}"${parla ? ' filter="url(#km-cnv-glow)"' : ''}/>`
+                    + `<ellipse cx="${ix}" cy="${cy}" rx="${(r * 0.17).toFixed(1)}" ry="${(r * 0.5).toFixed(1)}" fill="#0b0710"/>`
+                    + `<circle cx="${(cx - r * 0.38).toFixed(1)}" cy="${(cy - r * 0.34).toFixed(1)}" r="${(r * 0.2).toFixed(1)}" fill="#fff"/></g>`
+                    + (kas ? `<path d="M${cx - r * 1.35} ${cy - r * (kas > 0 ? 1.35 : 0.75)} L${cx + r * 1.3} ${cy - r * (kas > 0 ? 0.7 : 1.3)}" stroke="${K}" stroke-width="${(r * 0.5).toFixed(1)}" stroke-linecap="round"/>` : '');
+            };
+            let disler = function(x0, y0, adet, w, h, yon) { let s = ''; for(let i = 0; i < adet; i++) { let x = x0 + i * w; s += `M${x} ${y0} l${w / 2} ${h * (yon || 1)} l${w / 2} ${-h * (yon || 1)} Z `; } return `<path d="${s}" fill="#fff6e0" stroke="${K}" stroke-width="1.2"/>`; };
+            let pence = function(x, y, yon) { yon = yon || 1; return `<path d="M${x - 14} ${y} l-6 8 l7 -2 Z M${x - 2} ${y + 1} l-3 10 l7 -5 Z M${x + 10} ${y} l2 9 l4 -8 Z" fill="#f4ecd8" stroke="${K}" stroke-width="1.2"/>`; };
+            let zeminGolge = function(rx) { return `<ellipse cx="0" cy="3" rx="${rx}" ry="${Math.round(rx * 0.1)}" fill="#000" opacity=".38"/>`; };
+
+            if(t.id === 'ejder') return zeminGolge(200) + `
+                <g class="km-cnv-kanat km-cnv-kanat-sol">
+                    <path d="M-40 -150 C -150 -260, -260 -230, -300 -160 C -240 -170, -200 -150, -170 -120 C -220 -125, -250 -105, -270 -80 C -210 -95, -160 -90, -120 -70 Z" fill="${g}" opacity=".9" stroke="${K}" stroke-width="3"/>
+                    <path d="M-60 -140 C -140 -210, -220 -205, -262 -168 C -215 -160, -185 -140, -165 -118 C -205 -112, -228 -98, -240 -84 C -190 -92, -150 -88, -118 -76 Z" fill="${t.renk2}" opacity=".22"/>
+                    <path d="M-45 -148 L -296 -160 M-48 -140 L -170 -120 M-52 -130 L -268 -82" stroke="${K}" stroke-width="3.5" stroke-linecap="round" opacity=".75"/>
+                    <path d="M-40 -150 C -150 -260, -260 -230, -300 -160 C -240 -170, -200 -150, -170 -120 C -220 -125, -250 -105, -270 -80 C -210 -95, -160 -90, -120 -70 Z" fill="${H}"/>
+                </g>
+                <g class="km-cnv-kanat km-cnv-kanat-sag">
+                    <path d="M40 -150 C 150 -260, 260 -230, 300 -160 C 240 -170, 200 -150, 170 -120 C 220 -125, 250 -105, 270 -80 C 210 -95, 160 -90, 120 -70 Z" fill="${g}" opacity=".9" stroke="${K}" stroke-width="3"/>
+                    <path d="M60 -140 C 140 -210, 220 -205, 262 -168 C 215 -160, 185 -140, 165 -118 C 205 -112, 228 -98, 240 -84 C 190 -92, 150 -88, 118 -76 Z" fill="${t.renk2}" opacity=".22"/>
+                    <path d="M45 -148 L 296 -160 M48 -140 L 170 -120 M52 -130 L 268 -82" stroke="${K}" stroke-width="3.5" stroke-linecap="round" opacity=".75"/>
+                    <path d="M40 -150 C 150 -260, 260 -230, 300 -160 C 240 -170, 200 -150, 170 -120 C 220 -125, 250 -105, 270 -80 C 210 -95, 160 -90, 120 -70 Z" fill="${H}"/>
+                </g>
+                <path d="M60 -60 C 150 -40, 220 -10, 260 -40 C 300 -70, 280 -110, 240 -100 C 280 -80, 270 -60, 240 -70" fill="none" stroke="${K}" stroke-width="27" stroke-linecap="round"/>
+                <path d="M60 -60 C 150 -40, 220 -10, 260 -40 C 300 -70, 280 -110, 240 -100 C 280 -80, 270 -60, 240 -70" fill="none" stroke="${g}" stroke-width="21" stroke-linecap="round"/>
+                <path d="M60 -60 C 150 -40, 220 -10, 260 -40 C 300 -70, 280 -110, 240 -100 C 280 -80, 270 -60, 240 -70" fill="none" stroke="url(#km-cnv-desen-pul)" stroke-width="21" stroke-linecap="round" opacity=".6"/>
+                <path d="M150 -58 l8 -20 l8 18 M200 -44 l8 -20 l6 18 M255 -80 l14 -12 l2 18" fill="${t.renk2}" stroke="${K}" stroke-width="2"/>
+                <path d="M-62 -40 l-12 42 l36 0 l-6 -42 M50 -40 l12 42 l-34 0 l4 -42" fill="${g}" stroke="${K}" stroke-width="3"/>
+                ${pence(-56, 2)}${pence(42, 2)}
+                ${kat('ellipse cx="0" cy="-105" rx="95" ry="72"', g, 'pul', .55, 3)}
+                <path d="M-44 -48 C -30 -110, 34 -112, 48 -48 C 30 -36, -26 -36, -44 -48 Z" fill="#fde9c8" opacity=".85" stroke="${K}" stroke-width="2"/>
+                <path d="M-40 -60 Q 4 -52 44 -60 M-36 -76 Q 4 -68 40 -76 M-28 -92 Q 4 -86 32 -92" fill="none" stroke="${K}" stroke-width="2" opacity=".45"/>
+                <path d="M-70 -160 l14 -28 l14 28 M-40 -172 l14 -30 l14 30 M-8 -176 l14 -32 l14 32 M26 -170 l14 -28 l14 28 M58 -158 l12 -24 l12 24" fill="${t.renk2}" stroke="${K}" stroke-width="2"/>
+                <path d="M-40 -150 C -70 -200, -90 -230, -95 -250" fill="none" stroke="${K}" stroke-width="40" stroke-linecap="round"/>
                 <path d="M-40 -150 C -70 -200, -90 -230, -95 -250" fill="none" stroke="${g}" stroke-width="34" stroke-linecap="round"/>
-                <ellipse cx="-105" cy="-255" rx="52" ry="36" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <path d="M-150 -250 L -175 -238 L -150 -226 Z" fill="${t.koyu}"/>
-                <path d="M-125 -288 l-8 -30 l22 18 Z M-95 -290 l4 -32 l16 26 Z" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="2"/>
-                <circle class="km-cnv-nefes-duman" cx="-160" cy="-240" r="6" fill="#fff" opacity=".5"/>
-                <circle class="km-cnv-nefes-duman d2" cx="-172" cy="-256" r="4" fill="#fff" opacity=".35"/>
-                ${goz(-118, -262, 11, 9)}
-                <path d="M-45 -40 l-10 40 l30 0 l-6 -40 M45 -40 l10 40 l-30 0 l6 -40" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>`;
-            if(t.id === 'golem') return `
-                <rect x="-150" y="-140" width="70" height="140" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <rect x="80" y="-140" width="70" height="140" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <circle cx="-115" cy="-12" r="34" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <circle cx="115" cy="-12" r="34" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <rect x="-70" y="-70" width="60" height="70" rx="14" fill="${t.koyu}"/><rect x="10" y="-70" width="60" height="70" rx="14" fill="${t.koyu}"/>
-                <rect x="-105" y="-215" width="210" height="165" rx="34" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
-                <path class="km-cnv-catlak" d="M-60 -190 l18 30 l-10 22 l22 28 M40 -200 l-14 34 l16 20 l-8 30 M-20 -120 l24 18 l-6 26" fill="none" stroke="${t.renk2}" stroke-width="4" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
-                <ellipse cx="-70" cy="-205" rx="26" ry="9" fill="#5f8a4a" opacity=".8"/><ellipse cx="60" cy="-70" rx="18" ry="7" fill="#5f8a4a" opacity=".7"/>
-                <rect x="-70" y="-290" width="140" height="90" rx="26" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
-                <rect x="-76" y="-262" width="152" height="18" rx="6" fill="${t.koyu}"/>
-                <rect class="km-cnv-goz" x="-48" y="-250" width="30" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
-                <rect class="km-cnv-goz" x="18" y="-250" width="30" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
-                <path d="M-30 -218 h60" stroke="${t.koyu}" stroke-width="5" stroke-linecap="round"/>`;
-            if(t.id === 'buz') return `
-                <polygon points="-40,0 -210,-30 -150,-150 -90,-120" fill="${g}" opacity=".85" stroke="${t.koyu}" stroke-width="3"/>
-                <polygon points="40,0 210,-30 150,-150 90,-120" fill="${g}" opacity=".85" stroke="${t.koyu}" stroke-width="3"/>
-                <polygon points="-120,0 -40,-250 40,-250 120,0" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
-                <polygon points="-60,-40 -20,-200 10,-200 30,-40" fill="#fff" opacity=".28"/>
-                <polygon points="-40,-250 -70,-330 -20,-300 0,-360 20,-300 70,-330 40,-250" fill="${t.renk2}" stroke="${t.koyu}" stroke-width="3" filter="url(#km-cnv-glow)"/>
-                <polygon points="-50,-250 -60,-190 60,-190 50,-250" fill="${t.koyu}" opacity=".55"/>
-                ${goz(-24, -222, 12, 10)}${goz(24, -222, 12, 10)}
+                <path d="M-40 -150 C -70 -200, -90 -230, -95 -250" fill="none" stroke="url(#km-cnv-desen-pul)" stroke-width="34" stroke-linecap="round" opacity=".6"/>
+                <path d="M-56 -170 C -72 -200, -84 -222, -88 -238" fill="none" stroke="#fde9c8" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+                ${kat('path d="M-60 -262 C -60 -300, -150 -300, -160 -262 C -178 -258, -186 -244, -176 -232 C -150 -222, -80 -212, -60 -236 Z"', g, 'pul', .5, 3)}
+                <path d="M-176 -232 C -150 -224, -110 -222, -84 -230 L -90 -218 C -120 -210, -160 -212, -172 -222 Z" fill="${K}"/>
+                ${disler(-168, -232, 5, 12, 9)}
+                <circle cx="-172" cy="-252" r="3" fill="${K}"/>
+                <path d="M-112 -290 C -122 -318, -140 -332, -156 -334 C -140 -322, -132 -306, -128 -290 Z M-86 -286 C -86 -318, -74 -336, -58 -342 C -70 -326, -72 -306, -72 -288 Z" fill="${t.renk2}" stroke="${K}" stroke-width="2"/>
+                <circle class="km-cnv-nefes-duman" cx="-186" cy="-246" r="6" fill="#fff" opacity=".5"/>
+                <circle class="km-cnv-nefes-duman d2" cx="-196" cy="-262" r="4" fill="#fff" opacity=".35"/>
+                ${goz(-118, -264, 12, 1, true)}`;
+
+            if(t.id === 'golem') return zeminGolge(185) + `
+                ${kat('rect x="-158" y="-150" width="78" height="150" rx="28"', g, 'tas', .6, 3)}
+                ${kat('rect x="80" y="-150" width="78" height="150" rx="28"', g, 'tas', .6, 3)}
+                ${kat('circle cx="-119" cy="-14" r="38"', g, 'tas', .6, 3)}
+                ${kat('circle cx="119" cy="-14" r="38"', g, 'tas', .6, 3)}
+                <path d="M-140 -26 h40 M-138 -12 h38 M100 -26 h40 M100 -12 h38" stroke="${K}" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+                ${kat('rect x="-72" y="-74" width="62" height="74" rx="14"', K, 'tas', .5, false)}${kat('rect x="10" y="-74" width="62" height="74" rx="14"', K, 'tas', .5, false)}
+                ${kat('path d="M-112 -60 L -120 -190 L -70 -226 L 70 -226 L 120 -190 L 112 -60 Z"', g, 'tas', .65, 4)}
+                <path d="M-120 -190 L -70 -226 L 70 -226 L 120 -190 L 60 -196 L -60 -196 Z" fill="#fff" opacity=".12"/>
+                <path class="km-cnv-catlak" d="M-60 -196 l18 30 l-10 22 l22 28 M40 -206 l-14 34 l16 20 l-8 30 M-20 -126 l24 18 l-6 26" fill="none" stroke="${t.renk2}" stroke-width="4" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
+                <circle class="km-cnv-lav" cx="0" cy="-150" r="15" fill="${t.renk2}" opacity=".85" filter="url(#km-cnv-glow)"/><circle cx="0" cy="-150" r="7" fill="#fff4c2"/>
+                <path d="M-150 -150 L -132 -196 L -110 -168 Z M142 -150 L 128 -200 L 108 -166 Z" fill="${t.renk2}" opacity=".9" stroke="${K}" stroke-width="2"/>
+                <ellipse cx="-78" cy="-214" rx="30" ry="9" fill="#5f8a4a" opacity=".85"/><ellipse cx="66" cy="-72" rx="20" ry="7" fill="#5f8a4a" opacity=".75"/><ellipse cx="-126" cy="-150" rx="16" ry="6" fill="#5f8a4a" opacity=".8"/>
+                ${kat('path d="M-66 -212 L -74 -286 L -40 -304 L 40 -304 L 74 -286 L 66 -212 Z"', g, 'tas', .6, 4)}
+                <rect x="-80" y="-270" width="160" height="20" rx="6" fill="${K}"/>
+                <rect class="km-cnv-goz" x="-50" y="-262" width="32" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                <rect class="km-cnv-goz" x="18" y="-262" width="32" height="14" rx="3" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                <path d="M-36 -228 L -24 -236 L -10 -226 L 4 -236 L 18 -226 L 34 -234" fill="none" stroke="${K}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+            if(t.id === 'buz') return zeminGolge(175) + `
+                ${kat('polygon points="-40,0 -218,-34 -156,-156 -90,-124"', g, 'buz', .7, 3)}
+                ${kat('polygon points="40,0 218,-34 156,-156 90,-124"', g, 'buz', .7, 3)}
+                <path d="M-218 -34 l-22 20 l14 -2 l-4 18 l16 -24 Z M218 -34 l22 20 l-14 -2 l4 18 l-16 -24 Z" fill="#eaf8ff" stroke="${K}" stroke-width="2"/>
+                ${kat('polygon points="-124,0 -44,-252 44,-252 124,0"', g, 'buz', .7, 4)}
+                <polygon points="-124,0 -44,-252 -10,-252 -40,0" fill="#fff" opacity=".22"/><polygon points="124,0 44,-252 30,-252 70,0" fill="${K}" opacity=".25"/>
+                <polygon points="-60,-40 -20,-200 10,-200 30,-40" fill="#fff" opacity=".2"/>
+                <path d="M-80 -60 L -40 -110 L 0 -70 L 40 -120 L 80 -60" fill="none" stroke="#fff" stroke-width="3" opacity=".45"/>
+                ${kat('polygon points="-44,-252 -76,-338 -22,-306 0,-372 22,-306 76,-338 44,-252"', t.renk2, false, 0, 3)}
+                <polygon points="-44,-252 -76,-338 -22,-306 0,-372 22,-306 76,-338 44,-252" fill="none" stroke="#fff" stroke-width="2" opacity=".5" filter="url(#km-cnv-glow)"/>
+                <polygon points="-54,-252 -62,-186 62,-186 54,-252" fill="${K}" opacity=".55"/>
+                ${goz(-26, -224, 12, 1, true)}${goz(26, -224, 12, -1, true)}
+                <path d="M-24 -196 L -14 -188 L -4 -196 L 6 -188 L 16 -196 L 24 -190" fill="none" stroke="#eaf8ff" stroke-width="3" stroke-linejoin="round"/>
+                <circle class="km-cnv-nefes-duman" cx="-36" cy="-190" r="6" fill="#eaf8ff" opacity=".55"/><circle class="km-cnv-nefes-duman d2" cx="-44" cy="-200" r="4" fill="#eaf8ff" opacity=".4"/>
                 <circle class="km-cnv-kar" cx="-160" cy="-200" r="4" fill="#fff" opacity=".7"/><circle class="km-cnv-kar k2" cx="170" cy="-240" r="3" fill="#fff" opacity=".6"/><circle class="km-cnv-kar k3" cx="-200" cy="-90" r="3" fill="#fff" opacity=".6"/><circle class="km-cnv-kar k2" cx="200" cy="-120" r="4" fill="#fff" opacity=".6"/>`;
-            if(t.id === 'kurt') return `
+
+            if(t.id === 'kurt') return zeminGolge(205) + `
                 <ellipse class="km-cnv-golge-tutam" cx="-150" cy="-30" rx="60" ry="20" fill="${t.renk}" opacity=".25"/>
                 <ellipse class="km-cnv-golge-tutam t2" cx="150" cy="-50" rx="50" ry="16" fill="${t.renk}" opacity=".22"/>
-                <path d="M150 -100 C 230 -150, 260 -230, 225 -265 C 238 -215, 205 -165, 165 -130" fill="${g}" stroke="${t.renk}" stroke-width="3"/>
+                ${kat('path d="M150 -100 C 230 -150, 262 -232, 225 -272 C 244 -214, 214 -168, 172 -128 Z"', g, 'tuy', .7, 3)}
+                <path d="M-118 -40 L -140 0 M-64 -36 L -60 0 M62 -36 L 66 0 M118 -40 L 142 0" fill="none" stroke="${K}" stroke-width="30" stroke-linecap="round"/>
                 <path d="M-118 -40 L -140 0 M-64 -36 L -60 0 M62 -36 L 66 0 M118 -40 L 142 0" fill="none" stroke="${g}" stroke-width="24" stroke-linecap="round"/>
-                <path d="M-152 4 h30 M-74 4 h30 M52 4 h30 M128 4 h30" stroke="${t.koyu}" stroke-width="8" stroke-linecap="round"/>
-                <path d="M-160 -50 C -185 -120, -90 -152, 20 -148 C 125 -144, 185 -112, 172 -52 C 160 -22, -140 -18, -160 -50 Z" fill="${g}" stroke="${t.renk}" stroke-width="3" filter="url(#km-cnv-golge)"/>
-                <path d="M-120 -142 l8 -34 l16 30 M-82 -150 l6 -36 l18 32 M-42 -152 l4 -34 l18 30 M-2 -150 l4 -30 l16 26" fill="${t.koyu}" stroke="${t.renk}" stroke-width="2"/>
-                <path d="M-150 -120 C -200 -172, -275 -152, -292 -120 C -288 -92, -256 -80, -206 -86 L -160 -98 Z" fill="${g}" stroke="${t.renk}" stroke-width="3"/>
-                <path d="M-268 -92 l-4 14 l10 -6 Z M-250 -88 l-2 14 l10 -7 Z" fill="#fff"/>
-                <path d="M-215 -170 l-10 -52 l36 36 Z M-176 -176 l12 -50 l16 44 Z" fill="${g}" stroke="${t.renk}" stroke-width="2"/>
-                <circle cx="-284" cy="-126" r="5" fill="${t.koyu}"/>
-                ${goz(-232, -136, 12, 7)}${goz(-198, -140, 11, 7)}`;
-            return `
+                ${pence(-140, 4)}${pence(-60, 4)}${pence(66, 4)}${pence(142, 4)}
+                ${kat('path d="M-160 -50 C -185 -120, -90 -152, 20 -148 C 125 -144, 185 -112, 172 -52 C 160 -22, -140 -18, -160 -50 Z"', g, 'tuy', .75, 3)}
+                <path d="M-120 -142 l8 -34 l16 30 M-82 -150 l6 -36 l18 32 M-42 -152 l4 -34 l18 30 M-2 -150 l4 -30 l16 26 M36 -148 l4 -24 l14 22" fill="${K}" stroke="${t.renk}" stroke-width="2"/>
+                ${kat('path d="M-100 -150 C -150 -190, -180 -120, -150 -60 C -130 -70, -110 -110, -100 -150 Z"', K, 'tuy', .6, false)}
+                ${kat('path d="M-150 -120 C -200 -176, -278 -156, -296 -122 C -300 -100, -284 -86, -250 -84 L -206 -84 L -160 -98 Z"', g, 'tuy', .6, 3)}
+                <path d="M-296 -122 C -290 -112, -276 -106, -262 -106 L -250 -92 C -270 -92, -292 -100, -300 -110 Z" fill="${K}"/>
+                <path d="M-282 -106 l-3 14 l9 -8 Z M-266 -104 l-2 13 l8 -8 Z M-250 -100 l-1 10 l7 -6 Z" fill="#fff6e0"/>
+                <path d="M-222 -176 l-12 -56 l40 38 Z M-180 -182 l14 -54 l18 48 Z" fill="${g}" stroke="${t.renk}" stroke-width="2"/>
+                <path d="M-218 -186 l-6 -28 l20 20 Z M-176 -190 l8 -28 l9 24 Z" fill="${t.renk2}" opacity=".5"/>
+                <circle cx="-292" cy="-126" r="6" fill="${K}"/>
+                ${goz(-236, -140, 12, 1, true)}${goz(-200, -144, 11, 1, true)}`;
+
+            if(t.id === 'kraken') return zeminGolge(215) + `
+                <ellipse cx="0" cy="0" rx="230" ry="18" fill="none" stroke="${t.renk2}" stroke-width="2" opacity=".35"/><ellipse cx="0" cy="0" rx="180" ry="12" fill="none" stroke="${t.renk2}" stroke-width="1.5" opacity=".25"/>
+                <g class="km-cnv-dokunac"><path d="M-70 -120 C -150 -170, -230 -150, -240 -240 C -242 -290, -200 -300, -196 -270 C -194 -250, -214 -250, -214 -262" fill="none" stroke="${K}" stroke-width="30" stroke-linecap="round"/><path d="M-70 -120 C -150 -170, -230 -150, -240 -240 C -242 -290, -200 -300, -196 -270 C -194 -250, -214 -250, -214 -262" fill="none" stroke="${g}" stroke-width="24" stroke-linecap="round"/></g>
+                <g class="km-cnv-dokunac d2"><path d="M70 -120 C 150 -170, 230 -150, 240 -240 C 242 -290, 200 -300, 196 -270 C 194 -250, 214 -250, 214 -262" fill="none" stroke="${K}" stroke-width="30" stroke-linecap="round"/><path d="M70 -120 C 150 -170, 230 -150, 240 -240 C 242 -290, 200 -300, 196 -270 C 194 -250, 214 -250, 214 -262" fill="none" stroke="${g}" stroke-width="24" stroke-linecap="round"/></g>
+                <path d="M-40 -60 C -120 -20, -200 -10, -250 -30 C -280 -44, -270 -70, -246 -60 M40 -60 C 120 -20, 200 -10, 250 -30 C 280 -44, 270 -70, 246 -60 M-10 -60 C -40 -10, -90 0, -130 2 M10 -60 C 40 -10, 90 0, 130 2" fill="none" stroke="${K}" stroke-width="30" stroke-linecap="round"/>
+                <path d="M-40 -60 C -120 -20, -200 -10, -250 -30 C -280 -44, -270 -70, -246 -60 M40 -60 C 120 -20, 200 -10, 250 -30 C 280 -44, 270 -70, 246 -60 M-10 -60 C -40 -10, -90 0, -130 2 M10 -60 C 40 -10, 90 0, 130 2" fill="none" stroke="${g}" stroke-width="24" stroke-linecap="round"/>
+                <g fill="#ffd1dc" stroke="${K}" stroke-width="1.2"><circle cx="-150" cy="-22" r="5"/><circle cx="-190" cy="-18" r="4.5"/><circle cx="-226" cy="-26" r="4"/><circle cx="150" cy="-22" r="5"/><circle cx="190" cy="-18" r="4.5"/><circle cx="226" cy="-26" r="4"/><circle cx="-80" cy="-4" r="4"/><circle cx="80" cy="-4" r="4"/><circle cx="-232" cy="-200" r="4.5"/><circle cx="232" cy="-200" r="4.5"/><circle cx="-190" cy="-160" r="4.5"/><circle cx="190" cy="-160" r="4.5"/></g>
+                <path d="M-100 -130 C -122 -250, -64 -352, 0 -358 C 64 -352, 122 -250, 100 -130 C 78 -84, -78 -84, -100 -130 Z" fill="${g}" stroke="${K}" stroke-width="4"/>
+                <g opacity=".55" fill="${t.renk2}"><circle cx="-54" cy="-290" r="9"/><circle cx="46" cy="-306" r="7"/><circle cx="12" cy="-330" r="5"/><circle cx="-76" cy="-236" r="6"/><circle cx="72" cy="-250" r="8"/></g>
+                <path d="M-100 -130 C -122 -250, -64 -352, 0 -358 C 64 -352, 122 -250, 100 -130 C 78 -84, -78 -84, -100 -130 Z" fill="${H}"/>
+                <path d="M-40 -320 C -20 -340, 20 -340, 36 -326" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+                ${goz(-42, -188, 22, 1, true)}${goz(42, -188, 22, -1, true)}
+                <path d="M-18 -140 L 0 -118 L 18 -140 Z" fill="${K}" stroke="#ffd1dc" stroke-width="2"/>`;
+
+            if(t.id === 'orman') return zeminGolge(190) + `
+                <path d="M-40 -10 C -90 -20, -140 -6, -180 6 M-20 -8 C -40 4, -80 8, -100 8 M40 -10 C 90 -22, 150 -8, 190 6 M20 -6 C 50 6, 90 8, 118 8" fill="none" stroke="${K}" stroke-width="18" stroke-linecap="round"/>
+                <path d="M-40 -10 C -90 -20, -140 -6, -180 6 M40 -10 C 90 -22, 150 -8, 190 6" fill="none" stroke="${g}" stroke-width="12" stroke-linecap="round"/>
+                <path d="M-70 -180 C -130 -200, -170 -250, -200 -300 M-160 -265 l-34 -8 M-186 -290 l-10 -26 M70 -190 C 130 -210, 170 -250, 196 -310 M160 -262 l34 -10 M186 -296 l12 -24" fill="none" stroke="${K}" stroke-width="22" stroke-linecap="round"/>
+                <path d="M-70 -180 C -130 -200, -170 -250, -200 -300 M70 -190 C 130 -210, 170 -250, 196 -310" fill="none" stroke="${g}" stroke-width="15" stroke-linecap="round"/>
+                ${kat('path d="M-92 0 C -84 -80, -84 -170, -64 -250 C -40 -268, 40 -268, 64 -250 C 84 -170, 84 -80, 92 0 Z"', g, 'kabuk', .8, 4)}
+                <ellipse cx="-50" cy="-100" rx="18" ry="8" fill="#7dbb4a" opacity=".8"/><ellipse cx="44" cy="-40" rx="22" ry="9" fill="#7dbb4a" opacity=".75"/>
+                <g fill="#3f7a2c" stroke="#1d3a14" stroke-width="3"><circle cx="-200" cy="-310" r="40"/><circle cx="196" cy="-318" r="42"/><circle cx="-110" cy="-300" r="62"/><circle cx="110" cy="-306" r="62"/><circle cx="0" cy="-330" r="72"/></g>
+                <g fill="#5f9e3c"><circle cx="-120" cy="-318" r="34"/><circle cx="10" cy="-352" r="40"/><circle cx="118" cy="-322" r="32"/><circle cx="-206" cy="-322" r="20"/><circle cx="200" cy="-332" r="22"/></g>
+                <g fill="${H}"><circle cx="-110" cy="-300" r="62"/><circle cx="110" cy="-306" r="62"/><circle cx="0" cy="-330" r="72"/></g>
+                <g class="km-cnv-lav" fill="${t.renk2}" filter="url(#km-cnv-glow)"><circle cx="-150" cy="-330" r="4"/><circle cx="60" cy="-362" r="3.5"/><circle cx="150" cy="-290" r="4"/></g>
+                <ellipse cx="-30" cy="-196" rx="22" ry="17" fill="#1a1208"/><ellipse cx="30" cy="-196" rx="22" ry="17" fill="#1a1208"/>
+                <g class="km-cnv-goz"><circle class="km-cnv-gozbebek" cx="-32" cy="-196" r="9" fill="${t.renk2}" filter="url(#km-cnv-glow)"/><circle class="km-cnv-gozbebek" cx="28" cy="-196" r="9" fill="${t.renk2}" filter="url(#km-cnv-glow)"/></g>
+                <path d="M-54 -222 L -8 -212 M54 -222 L 8 -212" stroke="${K}" stroke-width="7" stroke-linecap="round"/>
+                <path d="M-40 -150 C -26 -128, 26 -128, 40 -150 L 30 -140 L 18 -150 L 6 -138 L -6 -150 L -18 -138 L -30 -150 Z" fill="#1a1208"/>
+                <g><rect x="-150" y="-22" width="6" height="18" fill="#f4e4c8"/><path d="M-160 -22 C -160 -38, -134 -38, -134 -22 Z" fill="${t.renk2}" opacity=".9"/><rect x="132" y="-18" width="5" height="14" fill="#f4e4c8"/><path d="M124 -18 C 124 -30, 146 -30, 146 -18 Z" fill="#ff9ad5"/></g>`;
+
+            if(t.id === 'anka') return zeminGolge(170) + `
+                ${kat('path d="M-150 4 C -150 -40, -90 -60, 0 -60 C 90 -60, 150 -40, 150 4 Z"', '#3a3f5c', 'tas', .6, 3)}
+                <g class="km-cnv-kanat km-cnv-kanat-sol">
+                    ${kat('path d="M-40 -170 C -120 -300, -230 -330, -300 -300 C -270 -290, -262 -270, -270 -250 C -240 -260, -226 -240, -238 -220 C -206 -232, -192 -210, -200 -190 C -168 -200, -150 -180, -150 -160 C -110 -170, -80 -150, -60 -130 Z"', g, 'tuy', .6, 3)}
+                    <path d="M-60 -160 C -130 -250, -210 -290, -286 -296 M-80 -150 C -140 -220, -190 -240, -236 -226 M-96 -140 C -140 -180, -170 -196, -196 -196" fill="none" stroke="${t.renk2}" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+                </g>
+                <g class="km-cnv-kanat km-cnv-kanat-sag">
+                    ${kat('path d="M40 -170 C 120 -300, 230 -330, 300 -300 C 270 -290, 262 -270, 270 -250 C 240 -260, 226 -240, 238 -220 C 206 -232, 192 -210, 200 -190 C 168 -200, 150 -180, 150 -160 C 110 -170, 80 -150, 60 -130 Z"', g, 'tuy', .6, 3)}
+                    <path d="M60 -160 C 130 -250, 210 -290, 286 -296 M80 -150 C 140 -220, 190 -240, 236 -226 M96 -140 C 140 -180, 170 -196, 196 -196" fill="none" stroke="${t.renk2}" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+                </g>
+                ${kat('path d="M30 -80 C 80 -60, 140 -30, 170 -10 C 130 -20, 110 -10, 96 0 C 80 -20, 50 -40, 20 -60 Z"', g, 'tuy', .6, 3)}
+                ${kat('path d="M-60 -70 C -80 -150, -60 -220, 0 -236 C 60 -220, 80 -150, 60 -70 C 30 -50, -30 -50, -60 -70 Z"', g, 'tuy', .7, 3)}
+                <path d="M-34 -80 C -46 -140, -30 -190, 0 -200 C 30 -190, 46 -140, 34 -80 C 14 -70, -14 -70, -34 -80 Z" fill="#dfe6ff" opacity=".5"/>
+                <path d="M-30 -60 l-10 50 M-10 -58 l-6 52 M10 -58 l6 52 M30 -60 l10 50" stroke="#ffcf5a" stroke-width="7" stroke-linecap="round"/>
+                <path d="M-48 -6 l-6 10 M-24 -4 l-4 12 M24 -4 l4 12 M48 -6 l6 10" stroke="#fff3c4" stroke-width="4" stroke-linecap="round"/>
+                ${kat('ellipse cx="-40" cy="-262" rx="48" ry="42"', g, 'tuy', .5, 3)}
+                <path d="M-84 -262 L -130 -250 L -88 -236 Z" fill="#ffcf5a" stroke="${K}" stroke-width="2.5"/><path d="M-84 -250 L -120 -248 L -88 -240 Z" fill="#e0901f"/>
+                <path class="km-cnv-alev" d="M-60 -300 l-8 -34 l18 16 l2 -40 l16 28 l10 -34 l6 36 l18 -18 l-8 34 Z" fill="${t.renk2}" stroke="${K}" stroke-width="2" filter="url(#km-cnv-glow)"/>
+                ${goz(-56, -270, 11, 1, true)}
+                <path class="km-cnv-lav" d="M-160 -120 l10 -14 l-6 0 l10 -16 M180 -150 l-10 14 l6 0 l-10 16 M-230 -60 l8 -12 l-5 0 l8 -12" fill="none" stroke="${t.renk2}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#km-cnv-glow)"/>`;
+
+            if(t.id === 'akrep') return zeminGolge(215) + `
+                <path d="M-40 -60 L -110 -90 L -150 -10 M-10 -60 L -70 -96 L -96 -4 M40 -60 L 110 -90 L 150 -10 M70 -60 L 150 -80 L 196 -8" fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M-40 -60 L -110 -90 L -150 -10 M-10 -60 L -70 -96 L -96 -4 M40 -60 L 110 -90 L 150 -10 M70 -60 L 150 -80 L 196 -8" fill="none" stroke="${g}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <g fill="${g}" stroke="${K}" stroke-width="3">
+                    <ellipse cx="120" cy="-110" rx="36" ry="30"/><ellipse cx="150" cy="-164" rx="32" ry="28"/><ellipse cx="160" cy="-222" rx="28" ry="25"/><ellipse cx="146" cy="-274" rx="25" ry="22"/><ellipse cx="116" cy="-314" rx="22" ry="19"/>
+                </g>
+                <g fill="${H}"><ellipse cx="120" cy="-110" rx="36" ry="30"/><ellipse cx="150" cy="-164" rx="32" ry="28"/><ellipse cx="160" cy="-222" rx="28" ry="25"/><ellipse cx="146" cy="-274" rx="25" ry="22"/><ellipse cx="116" cy="-314" rx="22" ry="19"/></g>
+                <path d="M104 -326 C 84 -344, 58 -344, 44 -324 C 60 -328, 76 -322, 86 -304 Z" fill="${g}" stroke="${K}" stroke-width="3"/>
+                <path class="km-cnv-alev" d="M52 -318 C 30 -316, 14 -300, 12 -280 C 26 -292, 40 -298, 56 -300 Z" fill="${t.renk2}" stroke="${K}" stroke-width="2" filter="url(#km-cnv-glow)"/>
+                <circle class="km-cnv-lav" cx="12" cy="-276" r="4" fill="${t.renk2}"/>
+                ${kat('path d="M-150 -86 C -150 -140, -70 -158, 30 -150 C 110 -144, 150 -120, 146 -80 C 140 -46, -140 -44, -150 -86 Z"', g, 'tas', .5, 3)}
+                <path d="M-40 -150 C -46 -120, -46 -80, -40 -54 M10 -150 C 6 -120, 6 -80, 10 -52 M60 -144 C 58 -116, 58 -80, 62 -54" fill="none" stroke="${K}" stroke-width="3" opacity=".6"/>
+                <path d="M-130 -110 C -170 -130, -210 -130, -236 -112" fill="none" stroke="${K}" stroke-width="22" stroke-linecap="round"/><path d="M-130 -110 C -170 -130, -210 -130, -236 -112" fill="none" stroke="${g}" stroke-width="16" stroke-linecap="round"/>
+                ${kat('path d="M-230 -130 C -270 -150, -310 -140, -318 -112 C -300 -120, -284 -118, -276 -110 C -290 -100, -300 -84, -300 -70 C -278 -82, -256 -90, -236 -92 Z"', g, false, 0, 3)}
+                <path d="M-118 -60 C -160 -60, -190 -40, -206 -18" fill="none" stroke="${K}" stroke-width="18" stroke-linecap="round"/><path d="M-118 -60 C -160 -60, -190 -40, -206 -18" fill="none" stroke="${g}" stroke-width="12" stroke-linecap="round"/>
+                ${kat('path d="M-200 -30 C -236 -40, -262 -26, -266 -2 C -250 -12, -236 -10, -228 -4 C -238 4, -242 12, -240 20 C -226 10, -212 4, -200 2 Z"', g, false, 0, 3)}
+                ${goz(-122, -122, 11, 1, true)}${goz(-94, -128, 10, 1, true)}
+                <circle cx="-138" cy="-104" r="4" fill="${t.renk2}"/><circle cx="-80" cy="-110" r="3.5" fill="${t.renk2}"/>
+                <path d="M-140 -86 L -128 -78 L -116 -86 L -104 -78" fill="none" stroke="${K}" stroke-width="3" stroke-linejoin="round"/>`;
+
+            if(t.id === 'mantar') return zeminGolge(165) + `
+                <circle class="km-cnv-spor" cx="-150" cy="-180" r="5" fill="${t.renk2}" opacity=".8"/><circle class="km-cnv-spor s2" cx="160" cy="-150" r="4" fill="#ff9ad5" opacity=".8"/><circle class="km-cnv-spor s3" cx="-120" cy="-90" r="4" fill="${t.renk2}" opacity=".7"/><circle class="km-cnv-spor s2" cx="130" cy="-260" r="5" fill="#ff9ad5" opacity=".7"/>
+                ${kat('ellipse cx="-44" cy="-8" rx="36" ry="14"', '#e9d6b4', false, 0, 3)}${kat('ellipse cx="44" cy="-8" rx="36" ry="14"', '#e9d6b4', false, 0, 3)}
+                <path d="M-80 -120 C -120 -110, -140 -80, -130 -56 M80 -120 C 120 -110, 140 -80, 130 -56" fill="none" stroke="${K}" stroke-width="22" stroke-linecap="round"/><path d="M-80 -120 C -120 -110, -140 -80, -130 -56 M80 -120 C 120 -110, 140 -80, 130 -56" fill="none" stroke="#e9d6b4" stroke-width="16" stroke-linecap="round"/>
+                ${kat('path d="M-86 -10 C -104 -80, -96 -170, -70 -210 L 70 -210 C 96 -170, 104 -80, 86 -10 C 50 4, -50 4, -86 -10 Z"', '#f2e2c4', 'kabuk', .25, 4)}
+                ${goz(-32, -150, 17, 1, false)}${goz(32, -150, 17, -1, false)}
+                <path d="M-44 -104 C -20 -80, 20 -80, 44 -104 C 24 -96, -24 -96, -44 -104 Z" fill="#4a1420"/>
+                ${disler(-38, -102, 6, 12.6, 8)}
+                <circle cx="-62" cy="-118" r="9" fill="#ff8fa3" opacity=".45"/><circle cx="62" cy="-118" r="9" fill="#ff8fa3" opacity=".45"/>
+                <path d="M-140 -214 C -160 -214, -170 -196, -150 -190 L 150 -190 C 170 -196, 160 -214, 140 -214 Z" fill="#f4d9c0" stroke="${K}" stroke-width="3"/>
+                <path d="M-120 -200 v8 M-90 -200 v9 M-60 -200 v9 M-30 -200 v9 M0 -200 v9 M30 -200 v9 M60 -200 v9 M90 -200 v9 M120 -200 v8" stroke="${K}" stroke-width="2" opacity=".5"/>
+                <path d="M-170 -206 C -172 -300, -90 -358, 0 -360 C 90 -358, 172 -300, 170 -206 C 110 -222, -110 -222, -170 -206 Z" fill="${g}" stroke="${K}" stroke-width="4"/>
+                <g fill="#fff4ea" stroke="${K}" stroke-width="2" opacity=".95"><ellipse cx="-96" cy="-280" rx="24" ry="17"/><ellipse cx="0" cy="-322" rx="28" ry="18"/><ellipse cx="92" cy="-276" rx="22" ry="16"/><ellipse cx="-140" cy="-230" rx="13" ry="9"/><ellipse cx="44" cy="-246" rx="16" ry="11"/><ellipse cx="-42" cy="-244" rx="12" ry="8"/><ellipse cx="136" cy="-228" rx="12" ry="8"/></g>
+                <path d="M-170 -206 C -172 -300, -90 -358, 0 -360 C 90 -358, 172 -300, 170 -206 C 110 -222, -110 -222, -170 -206 Z" fill="${H}"/>
+                <g class="km-cnv-tac" transform="translate(40,-362) rotate(14)"><path d="M-20 0 L-18 -18 L-8 -8 L0 -24 L8 -8 L18 -18 L20 0 Z" fill="#ffd23f" stroke="#8a5a00" stroke-width="2"/><circle cx="0" cy="-24" r="3" fill="#ff4d3a"/></g>`;
+
+            // volkan
+            return zeminGolge(190) + `
                 <ellipse class="km-cnv-golge-tutam" cx="0" cy="-8" rx="150" ry="16" fill="${t.renk2}" opacity=".18"/>
-                <path d="M-120 0 L -140 -160 L -90 -240 L 90 -240 L 140 -160 L 120 0 Z" fill="${g}" stroke="${t.koyu}" stroke-width="4"/>
-                <path class="km-cnv-catlak" d="M-80 -200 l20 40 l-12 30 l26 40 l-10 50 M60 -210 l-16 44 l18 30 l-12 48 l14 40 M-10 -150 l14 28 l-8 30" fill="none" stroke="${t.renk2}" stroke-width="5" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
-                <path d="M-150 -170 C -200 -190, -220 -130, -190 -100 L -160 -120 Z M150 -170 C 200 -190, 220 -130, 190 -100 L 160 -120 Z" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <path d="M-70 -240 C -60 -300, 60 -300, 70 -240 Z" fill="${g}" stroke="${t.koyu}" stroke-width="3"/>
-                <path class="km-cnv-alev" d="M-70 -270 l-20 -60 l34 30 l6 -70 l18 46 l16 -56 l12 62 l30 -34 l-16 62 l34 -18 l-44 48 Z" fill="url(#km-cnv-grad-alev)" filter="url(#km-cnv-glow)"/>
-                <circle class="km-cnv-lav" cx="-40" cy="-60" r="7" fill="${t.renk2}" filter="url(#km-cnv-glow)"/><circle class="km-cnv-lav l2" cx="30" cy="-100" r="5" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
-                ${goz(-28, -258, 12, 8)}${goz(28, -258, 12, 8)}
-                <path d="M-24 -232 h48" stroke="${t.renk2}" stroke-width="4" stroke-linecap="round" filter="url(#km-cnv-glow)"/>`;
+                ${kat('path d="M-126 0 L -146 -160 L -94 -244 L 94 -244 L 146 -160 L 126 0 Z"', g, 'tas', .6, 4)}
+                <path d="M-146 -160 L -94 -244 L 94 -244 L 146 -160 L 60 -170 L -60 -170 Z" fill="#fff" opacity=".07"/>
+                <path class="km-cnv-catlak" d="M-80 -200 l20 40 l-12 30 l26 40 l-10 50 M60 -210 l-16 44 l18 30 l-12 48 l14 40 M-10 -150 l14 28 l-8 30" fill="none" stroke="${t.renk2}" stroke-width="6" stroke-linecap="round" filter="url(#km-cnv-glow)"/>
+                <path d="M-80 -200 l20 40 l-12 30 l26 40 l-10 50 M60 -210 l-16 44 l18 30 l-12 48 l14 40" fill="none" stroke="#fff3c0" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+                ${kat('path d="M-156 -176 C -210 -196, -232 -132, -196 -100 L -166 -122 Z"', g, 'tas', .6, 3)}${kat('path d="M156 -176 C 210 -196, 232 -132, 196 -100 L 166 -122 Z"', g, 'tas', .6, 3)}
+                <path d="M-206 -100 C -214 -80, -206 -66, -196 -70 M206 -100 C 214 -80, 206 -66, 196 -70" fill="none" stroke="${t.renk2}" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+                ${kat('path d="M-74 -244 C -64 -306, 64 -306, 74 -244 Z"', g, 'tas', .6, 3)}
+                <path class="km-cnv-alev" d="M-70 -276 l-20 -60 l34 30 l6 -70 l18 46 l16 -56 l12 62 l30 -34 l-16 62 l34 -18 l-44 48 Z" fill="url(#km-cnv-grad-alev)" filter="url(#km-cnv-glow)"/>
+                <circle class="km-cnv-lav" cx="-40" cy="-60" r="8" fill="${t.renk2}" filter="url(#km-cnv-glow)"/><circle class="km-cnv-lav l2" cx="30" cy="-100" r="6" fill="${t.renk2}" filter="url(#km-cnv-glow)"/>
+                <path class="km-cnv-lav" d="M-116 -60 C -118 -40, -110 -20, -116 0" stroke="${t.renk2}" stroke-width="6" stroke-linecap="round" fill="none"/>
+                ${goz(-30, -262, 13, 1, true)}${goz(30, -262, 13, -1, true)}
+                <path d="M-30 -232 C -16 -222, 16 -222, 30 -232 L 22 -224 L 12 -232 L 0 -222 L -12 -232 L -22 -224 Z" fill="${t.renk2}" stroke="${K}" stroke-width="2" filter="url(#km-cnv-glow)"/>`;
         }
         // Parti (sınıfın hayvan karakterleri) — soldan canavara bakan sıralar; 6'şarlı sıralar, arka
         // sıralar hafif yukarıda ve kaydırılmış. Konum SADECE attribute transform ile (Resync deseni).
@@ -21377,8 +21639,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let gan = document.getElementById('km-cnv-ganimet');
             if(gan) {
                 let y = _kmCanavar.yenilenler;
-                let adim = (c.no - 1) % KM_CANAVAR_TIPLERI.length, seferNo = Math.floor((c.no - 1) / KM_CANAVAR_TIPLERI.length) + 1;
-                let harita = KM_CANAVAR_TIPLERI.map(function(tt, ti) {
+                let adim = (c.no - 1) % KM_CANAVAR_SEFER_UZUNLUK, seferNo = Math.floor((c.no - 1) / KM_CANAVAR_SEFER_UZUNLUK) + 1;
+                let dizi = kmCanavarSeferDizi(seferNo).map(kmCanavarTipById); dizi[adim] = kmCanavarTip(c.no);
+                let harita = dizi.map(function(tt, ti) {
                     let st = ti < adim ? 'yenildi' : (ti === adim ? 'aktif' : 'kilitli');
                     return `<span class="km-cnv-sefer-dugum ${st}${tt.id === 'kral' ? ' final' : ''}" title="${esc(tt.ad)} — ${st === 'yenildi' ? 'yenildi' : st === 'aktif' ? 'şu an savaşılıyor' : 'sırada'}">${st === 'yenildi' ? '✓' : tt.ikon}</span>`;
                 }).join('<i class="km-cnv-sefer-yol"></i>');
