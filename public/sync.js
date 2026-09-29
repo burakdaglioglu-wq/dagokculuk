@@ -274,16 +274,38 @@
   // (her biri 3 istek) + geçmişteki TÜM yoklama hücreleri yeniden gönderiliyordu — yüzlerce/binlerce
   // istek, tablette ~1 sn donma. Artık her kaydın son BAŞARIYLA gönderilen hali (bu sayfa oturumunda)
   // hatırlanıyor; değişmeyen kayıt tekrar gönderilmiyor. Başarısız gönderim hatırlanmaz → sonraki
-  // denemede yine gider. Sayfa yenilenince harita boşalır → ilk senkron eskisi gibi her şeyi gönderir.
+  // denemede yine gider.
+  // AÇILIŞ HIZI (2026-09-29): harita artık cihazda da saklanıyor (içeriğin kendisi değil, iki ayrı 32-bit
+  // özet + uzunluk — çakışma olasılığı pratikte sıfır). Sayfa açılınca geri yüklenir → ilk senkron da sadece
+  // son oturumdan beri DEĞİŞENLERİ gönderir (eskiden açılışta tüm kulüp baştan gönderiliyordu).
+  const IMZA_ANAHTAR = "dag_senk_imza_v1";
+  function ozet(str) {
+    let a = 0x811c9dc5, b = 0x9e3779b1;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      a = Math.imul(a ^ c, 0x01000193) >>> 0;
+      b = Math.imul(b ^ c, 0x5bd1e995) >>> 0; b = (b ^ (b >>> 13)) >>> 0;
+    }
+    return str.length.toString(36) + "." + a.toString(36) + "." + b.toString(36);
+  }
   const _gonderilenImza = new Map();
+  try { Object.entries(JSON.parse(localStorage.getItem(IMZA_ANAHTAR) || "{}")).forEach(([k, v]) => _gonderilenImza.set(k, v)); } catch (e) {}
+  let imzaKayitZaman = null;
+  function imzaKaydet() {
+    clearTimeout(imzaKayitZaman);
+    imzaKayitZaman = setTimeout(() => { try { localStorage.setItem(IMZA_ANAHTAR, JSON.stringify(Object.fromEntries(_gonderilenImza))); } catch (e) {} }, 1500);
+  }
   async function fanOutMasterPayload(json) {
     const p = JSON.parse(json);
     const deviceId = myDeviceId();
     const jobs = [];
+    // Alan SIRASINDAN bağımsız: sunucudan birleştirilen kayıtların anahtar sırası değişebiliyor — aynı içerik
+    // farklı JSON üretip her açılışta "değişmiş" sayılmasın.
+    const sirali = (v) => (v && typeof v === "object" ? (Array.isArray(v) ? "[" + v.map(sirali).join(",") + "]" : "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + sirali(v[k])).join(",") + "}") : JSON.stringify(v === undefined ? null : v));
     const gonder = (anahtar, kaynak, is) => {
-      const imza = JSON.stringify(kaynak);
+      const imza = ozet(sirali(kaynak));
       if (_gonderilenImza.get(anahtar) === imza) return;
-      jobs.push(is().then((r) => { _gonderilenImza.set(anahtar, imza); return r; }));
+      jobs.push(is().then((r) => { _gonderilenImza.set(anahtar, imza); imzaKaydet(); return r; }));
     };
 
     ["buyukler", "yildizlar", "kucukler", "minikler"].forEach((g) => {
@@ -295,45 +317,28 @@
         ["oyun", "magaza", "ozelRozetler", "gorev", "monopoly"].forEach((f) => {
           if (sp[f] !== undefined) gamification[f] = sp[f];
         });
-        gonder("sp|" + g + "|" + ad, sp, () =>
-          post("/api/athletes", {
-            grup: g,
-            ad,
-            kod: sp.kod ?? null,
-            dogumYili: sp.dogumYili ?? null,
-            sinif: sp.sinif ?? null,
-            yay: sp.yay ?? null,
-            cinsiyet: sp.cinsiyet ?? null,
-            lastModified,
-          })
-            .then(() =>
-              patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, {
-                fields: {
-                  pasif: sp.pasif ? 1 : 0,
-                  donduruldu: sp.donduruldu ? 1 : 0,
-                  aidatMuaf: sp.aidatMuaf ? 1 : 0,
-                  toplamSkor: sp.toplamSkor || 0,
-                  xAdet: sp.xAdet || 0,
-                  sonSkorZamani: sp.sonSkorZamani ?? null,
-                  kartGecmisi_json: JSON.stringify(sp.kartGecmisi || []),
-                  gecmisSezonlar_json: JSON.stringify(sp.gecmisSezonlar || []),
-                  detayliOklar_json: JSON.stringify(sp.detayliOklar || []),
-                  ...kisiselAlanlar(sp),
-                  biyomotorTestleri_json: JSON.stringify(sp.biyomotorTestleri || []),
-                  ekipmanBilgisi_json: JSON.stringify(sp.ekipmanBilgisi || { nisangah: [], bakim: [], notlar: [] }),
-                },
-                lastModified: lastModified + 1,
-                deviceId,
-              })
-            )
-            .then(() =>
-              patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/gamification`, {
-                gamification,
-                coin: sp.coin || 0,
-                coinT: sp.coinT || 0,
-                deviceId,
-              })
-            )
+        // Parmak izi SADECE sunucuya gerçekten giden alanlardan (tüm sp değil — gönderilmeyen alanlar, ör.
+        // cezaGecmisi, sonradan eklenince her açılışta "değişti" sanılıyordu). lastModified yoksa ham hali (null).
+        const ilkGovde = { grup: g, ad, kod: sp.kod ?? null, dogumYili: sp.dogumYili ?? null, sinif: sp.sinif ?? null, yay: sp.yay ?? null, cinsiyet: sp.cinsiyet ?? null };
+        const alanlar = {
+          pasif: sp.pasif ? 1 : 0,
+          donduruldu: sp.donduruldu ? 1 : 0,
+          aidatMuaf: sp.aidatMuaf ? 1 : 0,
+          toplamSkor: sp.toplamSkor || 0,
+          xAdet: sp.xAdet || 0,
+          sonSkorZamani: sp.sonSkorZamani ?? null,
+          kartGecmisi_json: JSON.stringify(sp.kartGecmisi || []),
+          gecmisSezonlar_json: JSON.stringify(sp.gecmisSezonlar || []),
+          detayliOklar_json: JSON.stringify(sp.detayliOklar || []),
+          ...kisiselAlanlar(sp),
+          biyomotorTestleri_json: JSON.stringify(sp.biyomotorTestleri || []),
+          ekipmanBilgisi_json: JSON.stringify(sp.ekipmanBilgisi || { nisangah: [], bakim: [], notlar: [] }),
+        };
+        const oyunGovde = { gamification, coin: sp.coin || 0, coinT: sp.coinT || 0 };
+        gonder("sp|" + g + "|" + ad, [ilkGovde, alanlar, oyunGovde, sp.lastModified ?? null], () =>
+          post("/api/athletes", { ...ilkGovde, lastModified })
+            .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, { fields: alanlar, lastModified: lastModified + 1, deviceId }))
+            .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/gamification`, { ...oyunGovde, deviceId }))
         );
       });
     });

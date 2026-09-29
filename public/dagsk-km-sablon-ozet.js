@@ -164,6 +164,7 @@ function kmOzetVeliMetni(s, D) {
     if (s.canavar && s.canavar.hasar > 0) {
         satir.push('🐉 Ortak Canavar\'a *' + s.canavar.hasar + ' hasar* verdi' + (s.canavar.kritik ? ' (' + s.canavar.kritik + ' kritik vuruş)' : ''));
         if (s.canavar.sonVurus) satir.push('🗡️ ' + (s.canavar.sonVurus > 1 ? s.canavar.sonVurus + ' canavarı' : 'Bir canavarı') + ' son vuruşuyla o yendi!');
+        if (s.canavar.gorev) satir.push('📜 ' + s.canavar.gorev + ' canavar görevini tamamladı!');
         if (s.canavarMvp) satir.push('👑 Bugün canavara en çok hasar veren sporcu oldu!');
     }
     if (D.enCokGelisen && D.enCokGelisen.ad === s.ad) satir.push('⭐ Bugün sınıfın en çok gelişen sporcusu oldu!');
@@ -210,7 +211,7 @@ function kmDersOzetiAc() {
             if (D.enCokGelisen === s) rozet.push('<span class="yildiz">⭐ En çok gelişen</span>');
             if (s.canavarMvp) rozet.push('<span class="rekor">👑 Canavar MVP</span>');
             if (s.canavar && s.canavar.sonVurus) rozet.push('<span class="rekor">🗡️ Son vuruş' + (s.canavar.sonVurus > 1 ? ' ×' + s.canavar.sonVurus : '') + '</span>');
-            if (s.canavar && s.canavar.hasar > 0) rozet.push('<span>🐉 ' + s.canavar.hasar + ' hasar' + (s.canavar.kritik ? ' · ⚡' + s.canavar.kritik : '') + '</span>');
+            if (s.canavar && s.canavar.hasar > 0) rozet.push('<span>🐉 ' + s.canavar.hasar + ' hasar' + (s.canavar.kritik ? ' · ⚡' + s.canavar.kritik : '') + (s.canavar.gorev ? ' · 📜' + s.canavar.gorev : '') + '</span>');
             if (s.seri) rozet.push('<span>' + s.seri + ' seri · ' + s.toplam + ' puan · en iyi ' + s.enIyi + (s.x ? ' · ' + s.x + ' X' : '') + '</span>'); else rozet.push('<span>Bugün seri yok</span>');
             return '<div class="kmoz-sat"><div class="kmoz-sira">' + (s.sira <= 3 && s.deger > 0 ? ['🥇', '🥈', '🥉'][s.sira - 1] : s.sira) + '</div><div class="kmoz-ad">' + kmSablonEsc(s.ad) + '<small>' + kmOzetOlcuYazi(s, D) + '</small></div>'
                 + '<button class="kmoz-wa" onclick="kmOzetVeliyeGonder(' + i + ')">💬 Veliye</button>'

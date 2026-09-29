@@ -339,6 +339,8 @@ function kmMzAnahtar() { return 'dag_km_malzeme_' + (typeof _kmAktifKonum !== 'u
 function kmMzDurum() { try { return JSON.parse(localStorage.getItem(kmMzAnahtar()) || '{}') || {}; } catch (e) { return {}; } }
 function kmMzIstasyonlar(m) { let d = (window.DAGSK_TEKNIK && DAGSK_TEKNIK.data) || []; return d.filter(s => (s.malzeme || []).some(x => m.anahtar.test(x))); }
 function kmMalzemeCiz() {
+    // İstasyon listesi Teknik Çalışma modülünden (artık gerektiğinde yükleniyor) — yüklenince yeniden çiz.
+    if (!window.DAGSK_TEKNIK && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-teknik-calisma.js').then(function () { if (_kmAktifSekme === 'malzeme') kmMalzemeCiz(); }).catch(function () {});
     kmRhCssYukle();
     let ic = document.getElementById('km-icerik'); if (!ic) return;
     if (_kmMz.istasyon !== null) { ic.innerHTML = kmMzIstasyonHTML(); return; }
