@@ -34,7 +34,28 @@ function yzEnc(s) { return encodeURIComponent(s).replace(/'/g, '%27'); }
 function yzSKey(id, k) { return 's_' + id + '_' + k; }
 function yzSkor(o, k) { return (o.durum && o[yzSKey(o.durum.id, k)]) || []; }
 function yzFormat(d) { return YZ_FORMAT[(d && d.ayar && d.ayar.format) || 'tam'] || YZ_FORMAT.tam; }
-function yzSure(d) { return yzFormat(d).ok >= 6 ? 240 : 120; }
+// Seri süresi (sn) — kullanıcı seçer (90/120/150/180/240 ya da özel); seçilmemişse WA varsayılanı: 6 ok 240, 3 ok 120.
+const YZ_SURELER = [90, 120, 150, 180, 240];
+function yzVarsayilanSure(format) { return (YZ_FORMAT[format] || YZ_FORMAT.tam).ok >= 6 ? 240 : 120; }
+function yzSure(d) { let s = d && d.ayar && parseInt(d.ayar.sure, 10); return s >= 10 ? s : yzFormat(d).ok >= 6 ? 240 : 120; }
+function yzSureEtiket(sn) { return sn + ' sn' + (sn >= 60 ? ' (' + yzSaat(sn) + ')' : ''); }
+// Süre seçici: hazır kalıplar + özel. hedef: 'kurulum' (taslak) ya da 'tur' (süren tur, ortak kayda yazar)
+function yzSureSeciciHTML(secili, hedef) {
+    let ozel = YZ_SURELER.indexOf(secili) === -1, id = 'yz-sure-ozel-' + hedef;
+    return '<div class="yz-cipler">' + YZ_SURELER.map(function (sn) { return '<button class="yz-cip' + (sn === secili ? ' aktif' : '') + '" onclick="yzSureSec(\'' + hedef + '\',' + sn + ')">' + sn + ' sn</button>'; }).join('')
+        + '<span class="yz-sure-ozel' + (ozel ? ' aktif' : '') + '"><input id="' + id + '" type="number" inputmode="numeric" min="10" max="900" step="5" placeholder="Özel" value="' + (ozel ? secili : '') + '" aria-label="Özel süre (saniye)" onkeydown="if(event.key===\'Enter\'){yzSureSec(\'' + hedef + '\', this.value)}"><span>sn</span><button class="yz-cip" onclick="yzSureSec(\'' + hedef + '\', document.getElementById(\'' + id + '\').value)">Uygula</button></span></div>';
+}
+function yzSureSec(hedef, sn) {
+    sn = parseInt(sn, 10); if (!(sn >= 10 && sn <= 900)) return showToast('Süre 10–900 sn arası olmalı.', 'error');
+    if (hedef === 'kurulum') { yzKurulumTaslak().sure = sn; yzCiz(); return; }
+    yzGuncelle(function (o) { if (o.durum) { o.durum.ayar.sure = sn; if (o.sayac && o.sayac.seri === o.durum.seri) o.sayac.sure = sn; } });
+    let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none';
+    yzCiz(); if (_yz.tv) yzTvCiz(); showToast('⏱ Seri süresi: ' + yzSureEtiket(sn), 'success');
+}
+function yzSureMenu() {
+    let d = yzOku().durum; if (!d) return;
+    onayIste('<div style="text-align:left"><b>⏱ Seri süresi</b><div class="yz-alt" style="margin:4px 0 10px">Şu an: ' + yzSureEtiket(yzSure(d)) + ' + 10 sn hatta geçiş. Seçtiğin süre bundan sonraki serilerde (ve çalışan sayaçta) kullanılır.</div>' + yzSureSeciciHTML(yzSure(d), 'tur') + '</div>', null);
+}
 function yzTop(oklar) { return (oklar || []).reduce(function (a, p) { return a + (YZ_DEGER[p] || 0); }, 0); }
 function yzKAd(k) { return k.slice(k.indexOf('|') + 1); }
 function yzKisaAd(ad) { let p = String(ad).trim().split(/\s+/); return p.length > 1 ? p.slice(0, -1).join(' ') + ' ' + p[p.length - 1].charAt(0) + '.' : ad; }
@@ -138,7 +159,7 @@ function yzKurulumHTML() {
         + '<div><div class="yz-etiket">Format</div><div class="yz-cipler">' + Object.keys(YZ_FORMAT).map(function (k) { return cip(YZ_FORMAT[k].ad, t.format === k, 'yzKurAyar(\'format\',\'' + k + '\')'); }).join('') + '</div></div>'
         + '<div><div class="yz-etiket">Hedef başına sporcu</div><div class="yz-cipler">' + [1, 2, 3, 4].map(function (n) { return cip(String(n), t.hedefBasi === n, 'yzKurAyar(\'hedefBasi\',' + n + ')'); }).join('') + '</div><div class="yz-alt">' + (t.katilimci.length ? hedefSay + ' hedef kullanılacak (1A, 1B, … sırayla atanır)' : '') + '</div></div>'
         + '</div>'
-        + '<div class="yz-kart"><div class="yz-ozet-satir"><span>⏱ Seri süresi <b>' + yzSaat(f.ok >= 6 ? 240 : 120) + '</b> + 10 sn hatta geçiş</span><span>🎯 ' + f.seri + ' seri × ' + f.ok + ' ok</span>' + (f.yari ? '<span>☕ ' + f.yari + '. seriden sonra ara</span>' : '') + '</div>'
+        + '<div class="yz-kart"><div class="yz-etiket">⏱ Seri süresi <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· + 10 sn hatta geçiş</span></div>' + yzSureSeciciHTML(t.sure || yzVarsayilanSure(t.format), 'kurulum') + '<div class="yz-ozet-satir"><span>⏱ <b>' + yzSureEtiket(t.sure || yzVarsayilanSure(t.format)) + '</b> / seri</span><span>🎯 ' + f.seri + ' seri × ' + f.ok + ' ok</span>' + (f.yari ? '<span>☕ ' + f.yari + '. seriden sonra ara</span>' : '') + '</div>'
         + '<label class="yz-onay"><input type="checkbox"' + (t.kayit ? ' checked' : '') + ' onchange="yzKurAyar(\'kayit\', this.checked)"> Okları sporcuların gerçek skoruna / karnesine işle</label>'
         + '<button class="yz-btn ana buyuk" ' + (t.katilimci.length ? '' : 'disabled') + ' onclick="yzBaslat()">🏁 Turu başlat</button></div>'
         + '</div>';
@@ -152,7 +173,7 @@ function yzBaslat() {
     let id = 'yp' + Date.now().toString(36);
     yzGuncelle(function (o) {
         Object.keys(o).forEach(function (a) { if (a.indexOf('s_') === 0) delete o[a]; }); // önceki turların skorları
-        o.durum = { asama: 'tur', id: id, ayar: { mesafe: t.mesafe, format: t.format, kayit: !!t.kayit, hedefBasi: t.hedefBasi }, katilimci: t.katilimci.slice(), hedefler: yzHedefAta(t.katilimci, t.hedefBasi), seri: 0, basla: Date.now() };
+        o.durum = { asama: 'tur', id: id, ayar: { mesafe: t.mesafe, format: t.format, kayit: !!t.kayit, hedefBasi: t.hedefBasi, sure: t.sure || yzVarsayilanSure(t.format) }, katilimci: t.katilimci.slice(), hedefler: yzHedefAta(t.katilimci, t.hedefBasi), seri: 0, basla: Date.now() };
         o.sayac = null;
     });
     // 12+ seri tek turda — günlük seri limiti koçu her seride "uzatayım mı?" diye durdurmasın.
@@ -189,7 +210,7 @@ function yzTurHTML(o) {
         + '<div class="yz-tur-bas">'
         + '<div class="yz-tur-bilgi"><div class="yz-ust-etiket">SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-seri-no">SERİ <b>' + (seri + 1) + '</b><span>/' + f.seri + '</span></div>'
         + (f.yari ? '<div class="yz-yari">' + (seri < f.yari ? '1. yarı' : '2. yarı') + '</div>' : '') + '</div>'
-        + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '</div></div>'
+        + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '<button class="yz-btn" onclick="yzSureMenu()" title="Seri süresini değiştir">⏱ ' + yzSure(d) + ' sn</button></div></div>'
         + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
         + '</div>'
         + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
@@ -504,6 +525,7 @@ function yzCssYukle() {
         '.yz-kart{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}',
         '.yz-etiket{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.yz-etiket b{color:var(--text-main)}.yz-etiket-btn{margin-left:auto;text-transform:none;letter-spacing:0}',
         '.yz-cipler{display:flex;flex-wrap:wrap;gap:6px}.yz-cip{border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:999px;padding:0 13px;min-height:38px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.yz-cip.aktif{background:var(--accent-orange);border-color:var(--accent-orange);color:#1a0d05}',
+        '.yz-sure-ozel{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-color);border-radius:999px;padding:3px 4px 3px 12px}.yz-sure-ozel.aktif{border-color:var(--accent-orange)}.yz-sure-ozel input{width:64px;background:transparent;border:none;color:var(--text-main);font:inherit;font-size:14px;font-weight:800;appearance:auto!important;-webkit-appearance:auto!important}.yz-sure-ozel span{font-size:12px;color:var(--text-muted)}.yz-sure-ozel .yz-cip{min-height:32px}',
         '.yz-kur-izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}',
         '.yz-ozet-satir{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--text-muted)}.yz-ozet-satir b{color:var(--text-main)}',
         '.yz-onay{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);cursor:pointer}.yz-onay input{width:20px;height:20px;appearance:auto!important;-webkit-appearance:checkbox!important;accent-color:var(--accent-orange)}.yz-onay.kucuk{font-size:12px}',
