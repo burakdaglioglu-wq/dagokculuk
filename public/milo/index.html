@@ -208,14 +208,13 @@
                 </div>
             </div>
             <div id="milo-tab-bar" style="margin-top:10px;">
-                <button onclick="miloSekme('uyeler')">👤 Üyeler</button>
-                <button onclick="miloSekme('hizli')">📝 Hızlı Düzenle</button>
-                <button onclick="miloSekme('aidat')">💰 Aidat</button>
-                <button onclick="miloSekme('analiz')">📋 Yoklama</button>
-                <button onclick="miloSekme('personel')">🧑‍🏫 Personel</button>
-                <button onclick="miloSekme('program')">📅 Program</button>
-                <button onclick="miloSekme('ders')">📚 Dersler</button>
-                <button onclick="miloSekme('beceri')">🎯 Beceri</button>
+                <!-- 2026-10-01: sade sekmeler — sık kullanılan 5 + "Diğer" menüsü (milo-genel-bakis.js). Vurgu data-sekme'ye göre. -->
+                <button data-sekme="genel" onclick="miloSekme('genel')">🏠 Genel Bakış</button>
+                <button data-sekme="uyeler" onclick="miloSekme('uyeler')">👤 Üyeler</button>
+                <button data-sekme="aidat" onclick="miloSekme('aidat')">💰 Aidat</button>
+                <button data-sekme="analiz" onclick="miloSekme('analiz')">📋 Yoklama</button>
+                <button data-sekme="program" onclick="miloSekme('program')">📅 Program</button>
+                <button data-sekme="diger" id="milo-diger-btn" onclick="miloDigerMenu(event)">⋯ Diğer</button>
             </div>
         </div>
         <div id="milo-icerik" style="flex:1; overflow-y:auto; padding:15px; box-sizing:border-box; background:var(--milo-bg);"></div>
@@ -285,8 +284,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
     <script src="milo-araclar.js?v=3"></script>
     <script src="milo-hizli-duzenle.js?v=2"></script>
+    <script src="milo-genel-bakis.js?v=1"></script>
 </body>
 </html>

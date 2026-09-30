@@ -154,7 +154,7 @@ function miloUygulamayaGir() {
     document.getElementById('milo-app').style.display = 'flex';
     let b = document.getElementById('milo-guvenlik-btn'); if (b) b.textContent = miloOturum && miloOturum.rol === 'yonetici' ? '🔐 Güvenlik' : '👤 Hesabım';
     miloOturumAcik = true;
-    miloSekme('uyeler');
+    miloSekme('genel');
     miloPollingBaslat();
 }
 async function miloCikisYap() {
@@ -282,7 +282,7 @@ async function miloApi(path, opts) {
 
 let miloOturumAcik = false;
 let miloPollingId = null;
-let miloAktifSekme = 'uyeler';
+let miloAktifSekme = 'genel';
 let miloUyeler = [];
 let miloDuesTum = [];
 let miloPersonel = [];
@@ -335,19 +335,25 @@ function miloYasHesapla(dogumTarihi) {
     return yas;
 }
 
+// 2026-10-01: vurgu data-sekme etiketine göre (eskiden buton SIRASINA göreydi — sekme eklemek/taşımak kaydırıyordu).
+// "Diğer" menüsündeki sekmeler (Hızlı Düzenle/Personel/Dersler/Beceri) açıkken "Diğer" düğmesi onların adını alır.
+const MILO_DIGER_SEKMELER = { hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler', beceri: '🎯 Beceri' };
 function miloSekme(k) {
     miloAktifSekme = k;
-    [...document.querySelectorAll('#milo-tab-bar button')].forEach((b, i) => {
-        let keys = ['uyeler', 'hizli', 'aidat', 'analiz', 'personel', 'program', 'ders', 'beceri'];
-        b.classList.toggle('aktif', keys[i] === k);
+    [...document.querySelectorAll('#milo-tab-bar button')].forEach(b => {
+        let digerMi = b.dataset.sekme === 'diger';
+        b.classList.toggle('aktif', b.dataset.sekme === k || (digerMi && !!MILO_DIGER_SEKMELER[k]));
+        if (digerMi) b.textContent = MILO_DIGER_SEKMELER[k] ? MILO_DIGER_SEKMELER[k] + ' ▾' : '⋯ Diğer';
     });
+    try { if (typeof miloDigerMenuKapat === 'function') miloDigerMenuKapat(); } catch (e) {}
     miloSekmeYenile();
 }
 
 async function miloSekmeYenile() {
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
     try {
-        if (miloAktifSekme === 'uyeler') { miloUyeler = (await miloApi('/members')).members; miloUyelerCiz(); }
+        if (miloAktifSekme === 'genel') { await mgbYukleVeCiz(); } // 🏠 milo-genel-bakis.js
+        else if (miloAktifSekme === 'uyeler') { miloUyeler = (await miloApi('/members')).members; miloUyelerCiz(); }
         else if (miloAktifSekme === 'hizli') { miloUyeler = (await miloApi('/members')).members; mhdCiz(); } // 📝 milo-hizli-duzenle.js
         else if (miloAktifSekme === 'aidat') {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
