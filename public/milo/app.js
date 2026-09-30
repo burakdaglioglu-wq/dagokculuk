@@ -401,7 +401,7 @@ function miloUyelerCiz() {
                     </div>
                     <div style="display:flex; gap:6px;">
                         <button onclick="miloProfilAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📋 Profil</button>
-                        <button onclick="miloSporcuProgramAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(31,173,160,0.12); border:1px solid var(--milo-teal); color:var(--milo-teal); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📅 Program</button>
+                        <button onclick="miloSporcuProgramAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(139,127,255,0.12); border:1px solid var(--milo-teal); color:var(--milo-teal); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📅 Program</button>
                         <button onclick="miloUyeFormAc('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">✏️ Düzenle</button>
                         <button onclick="miloUyeSil('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--neon-red); border:none; color:#fff; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🗑️</button>
                     </div>
@@ -1056,7 +1056,7 @@ function _miloGunSeciciIcerikHTML(idOnEki) {
     let secili = _miloGunSeciciState[idOnEki] || new Set();
     return MILO_GUN_KISA_TR.map(function(g, i) {
         let on = secili.has(i);
-        return '<button type="button" onclick="_miloGunSeciciToggle(\'' + idOnEki + '\',' + i + ')" style="flex:1; min-width:0; padding:8px 2px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; border:1.3px solid ' + (on ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (on ? 'rgba(31,173,160,0.14)' : 'var(--milo-card-raised)') + '; color:' + (on ? 'var(--milo-teal)' : 'var(--milo-ink-dim)') + ';">' + g + '</button>';
+        return '<button type="button" onclick="_miloGunSeciciToggle(\'' + idOnEki + '\',' + i + ')" style="flex:1; min-width:0; padding:8px 2px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; border:1.3px solid ' + (on ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (on ? 'rgba(139,127,255,0.14)' : 'var(--milo-card-raised)') + '; color:' + (on ? 'var(--milo-teal)' : 'var(--milo-ink-dim)') + ';">' + g + '</button>';
     }).join('');
 }
 function _miloGunSeciciToggle(idOnEki, gun) {
@@ -1186,7 +1186,7 @@ function miloProgramIzgaraCiz() {
             let cokluGunMu = (s.gunler || [s.gun]).length > 1;
             let katilimciSayisi = (s.katilimcilar || []).length;
             let doluMu = s.kapasite && katilimciSayisi >= s.kapasite;
-            html += '<button type="button" onclick="miloDersRosterAc(' + s.id + ')" style="font-family:inherit; margin:0; box-sizing:border-box; display:block; width:100%; cursor:pointer; touch-action:manipulation; border-radius:9px; padding:7px 8px 6px; border:1.3px solid ' + (yaklasanIptalMi ? 'var(--neon-red)' : 'var(--milo-teal)') + '; background:' + (yaklasanIptalMi ? 'rgba(239,68,68,0.1)' : 'rgba(31,173,160,0.1)') + '; text-align:left; position:relative;' + (yaklasanIptalMi ? 'opacity:.7;' : '') + '">'
+            html += '<button type="button" onclick="miloDersRosterAc(' + s.id + ')" style="font-family:inherit; margin:0; box-sizing:border-box; display:block; width:100%; cursor:pointer; touch-action:manipulation; border-radius:9px; padding:7px 8px 6px; border:1.3px solid ' + (yaklasanIptalMi ? 'var(--neon-red)' : 'var(--milo-teal)') + '; background:' + (yaklasanIptalMi ? 'rgba(239,68,68,0.1)' : 'rgba(139,127,255,0.1)') + '; text-align:left; position:relative;' + (yaklasanIptalMi ? 'opacity:.7;' : '') + '">'
                 + (yaklasanIptalMi ? '<div style="position:absolute; top:5px; right:6px; font-size:8px; font-weight:900; color:var(--neon-red);">⚠️ İPTAL</div>' : '')
                 + '<div style="font-size:10.5px; font-weight:800; color:var(--milo-ink);">' + s.baslangicSaat + '–' + s.bitisSaat + (cokluGunMu ? ' <span title="Haftada ' + (s.gunler || []).length + ' kez" style="font-size:8px; font-weight:800; color:var(--milo-grape);">🔗' + (s.gunler || []).length + 'x</span>' : '') + '</div>'
                 + '<div style="font-size:9px; font-weight:700; color:var(--milo-teal);">' + miloEsc(s.grup) + (s.dersPlani ? ' 📋' : '') + '</div>'
@@ -1238,7 +1238,7 @@ function miloDersRosterCiz() {
     let planAlani = document.getElementById('milo-drm-plan-alani');
     if (planAlani) {
         planAlani.innerHTML = s.dersPlani
-            ? '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:rgba(31,173,160,0.08); border:1px dashed var(--milo-teal); border-radius:10px; padding:9px 11px;">'
+            ? '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:rgba(139,127,255,0.08); border:1px dashed var(--milo-teal); border-radius:10px; padding:9px 11px;">'
                 + '<div style="font-size:11.5px; color:var(--milo-ink); line-height:1.4;">📋 <b>Ders Planı:</b> ' + miloEsc(s.dersPlani) + '</div>'
                 + '<button onclick="miloDersPlaniDuzenle()" style="background:transparent; border:none; color:var(--milo-teal); cursor:pointer; font-size:12px; flex-shrink:0;">✏️</button>'
                 + '</div>'
@@ -1253,15 +1253,15 @@ function miloDersRosterCiz() {
             let gunEtiket = MILO_GUN_ADI[giris.gun];
             let mevcutIstisna = (s.istisnalar || []).find(function(i) { return i.tarih === giris.tarih; });
             if (mevcutIstisna) {
-                return '<div style="background:rgba(255,107,94,0.08); border:1.3px dashed var(--milo-coral); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
+                return '<div style="background:rgba(236,72,153,0.08); border:1.3px dashed var(--milo-coral); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
                     + '<div style="font-size:11.5px; font-weight:800; color:var(--milo-coral);">❌ ' + gunEtiket + ' ' + giris.tarih + ' iptal edildi</div>'
                     + (mevcutIstisna.sebep ? '<div style="font-size:10.5px; color:var(--milo-ink-dim); margin-top:2px;">' + miloEsc(mevcutIstisna.sebep) + '</div>' : '')
-                    + '<button onclick="miloDersIstisnaSil(' + giris.gun + ')" style="margin-top:7px; width:100%; background:rgba(31,173,160,0.1); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:6px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer;">✅ İptali Geri Al</button>'
+                    + '<button onclick="miloDersIstisnaSil(' + giris.gun + ')" style="margin-top:7px; width:100%; background:rgba(139,127,255,0.1); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:6px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer;">✅ İptali Geri Al</button>'
                     + '</div>';
             }
             return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--milo-card-raised); border:1px solid var(--milo-line); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
                 + '<div style="font-size:11px; color:var(--milo-ink-dim);">📅 ' + gunEtiket + ' yaklaşan: <b style="color:var(--milo-ink);">' + giris.tarih + '</b></div>'
-                + '<button onclick="miloDersIstisnaEkle(' + giris.gun + ')" style="background:rgba(255,107,94,0.08); color:var(--milo-coral); border:1px solid rgba(255,107,94,0.3); padding:6px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">🚫 Bu Tarihi İptal Et</button>'
+                + '<button onclick="miloDersIstisnaEkle(' + giris.gun + ')" style="background:rgba(236,72,153,0.08); color:var(--milo-coral); border:1px solid rgba(236,72,153,0.3); padding:6px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">🚫 Bu Tarihi İptal Et</button>'
                 + '</div>';
         }).join('');
     }
@@ -1273,7 +1273,7 @@ function miloDersRosterCiz() {
         let oranHTML = oran === null ? '' : '<span title="Son 6 oluşumda devam oranı" style="display:inline-flex; align-items:center; gap:3px; margin-left:6px; font-size:9px; font-weight:700; color:' + oranRenk + ';"><span style="width:6px; height:6px; border-radius:50%; background:' + oranRenk + '; display:inline-block;"></span>%' + oran + '</span>';
         return '<div style="display:flex; align-items:center; gap:7px; padding:8px 9px; border-radius:10px; background:var(--milo-card-raised); border:1px solid var(--milo-line); margin-bottom:5px;">'
             + '<div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:800;">' + miloEsc(k.ad) + oranHTML + '</div></div>'
-            + '<button onclick="miloDersRosterKatilimciSil(\'' + miloJsEsc(k.grup) + '\',\'' + miloJsEsc(k.ad) + '\')" style="background:rgba(255,107,94,0.1); color:var(--milo-coral); border:1px solid rgba(255,107,94,0.3); width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;">✕</button>'
+            + '<button onclick="miloDersRosterKatilimciSil(\'' + miloJsEsc(k.grup) + '\',\'' + miloJsEsc(k.ad) + '\')" style="background:rgba(236,72,153,0.1); color:var(--milo-coral); border:1px solid rgba(236,72,153,0.3); width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;">✕</button>'
             + '</div>';
     }).join('') : '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:8px;">Henüz kimse yok.</div>';
 
@@ -1284,7 +1284,7 @@ function miloDersRosterCiz() {
     document.getElementById('milo-drm-aday-liste').innerHTML = adaylar.length ? adaylar.slice(0, 30).map(function(a) {
         return '<div style="display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:10px; background:var(--milo-card-raised); border:1px solid var(--milo-line); margin-bottom:5px;">'
             + '<div style="flex:1; min-width:0; font-size:12px; font-weight:700;">' + miloEsc(a.ad) + ' <span style="font-size:9.5px; color:var(--milo-ink-dim); font-weight:600;">(' + miloEsc(a.grup) + ')</span></div>'
-            + '<button onclick="miloDersRosterKatilimciEkle(\'' + miloJsEsc(a.grup) + '\',\'' + miloJsEsc(a.ad) + '\')" style="background:rgba(31,173,160,0.12); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:5px 11px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800;">+ Ekle</button>'
+            + '<button onclick="miloDersRosterKatilimciEkle(\'' + miloJsEsc(a.grup) + '\',\'' + miloJsEsc(a.ad) + '\')" style="background:rgba(139,127,255,0.12); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:5px 11px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800;">+ Ekle</button>'
             + '</div>';
     }).join('') : '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:8px;">Eşleşen üye yok.</div>';
 }
@@ -1404,7 +1404,7 @@ function miloSporcuProgramCiz() {
         html += '<div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:var(--milo-ink-dim); margin:10px 0 5px;">' + MILO_GUN_KISA_TR[gun] + '</div>';
         gunSlotlari.forEach(function(s) {
             let isSecili = !!secili[s.id];
-            html += '<div onclick="miloSporcuProgramToggle(' + s.id + ')" style="cursor:pointer; display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; border:1.3px solid ' + (isSecili ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (isSecili ? 'rgba(31,173,160,0.1)' : 'var(--milo-card-raised)') + '; margin-bottom:5px;">'
+            html += '<div onclick="miloSporcuProgramToggle(' + s.id + ')" style="cursor:pointer; display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; border:1.3px solid ' + (isSecili ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (isSecili ? 'rgba(139,127,255,0.1)' : 'var(--milo-card-raised)') + '; margin-bottom:5px;">'
                 + '<div style="width:18px; height:18px; border-radius:5px; border:1.5px solid ' + (isSecili ? 'var(--milo-teal)' : 'var(--milo-line)') + '; background:' + (isSecili ? 'var(--milo-teal)' : 'transparent') + '; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff;">' + (isSecili ? '✓' : '') + '</div>'
                 + '<div style="flex:1;"><b style="font-size:12px;">' + s.baslangicSaat + '–' + s.bitisSaat + '</b> <span style="font-size:10px; color:var(--milo-ink-dim);">' + miloEsc(s.grup) + '</span></div>'
                 + '</div>';
@@ -1809,7 +1809,7 @@ function miloDersAtamaFormHTML(d) {
     let filtre = miloDersAtamaAramaFiltre.trim().toLocaleLowerCase('tr');
     let aktifler = miloUyeler.filter(u => !u.pasif && (!filtre || u.ad.toLocaleLowerCase('tr').includes(filtre)));
     let atanmislar = new Set(miloMemberSkills.filter(s => s.dersId === d.id).map(s => s.ad));
-    return `<div style="background:rgba(31,173,160,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-top:8px;">
+    return `<div style="background:rgba(139,127,255,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-top:8px;">
         <div style="font-weight:800; font-size:12px; margin-bottom:6px;">Sporcu seç ve ata:</div>
         <input class="milo-input" placeholder="🔍 Sporcu ara..." value="${miloEsc(miloDersAtamaAramaFiltre)}" oninput="miloDersAtamaAramaFiltre=this.value; miloDerslerCiz();">
         <div style="max-height:180px; overflow-y:auto; margin-bottom:8px;">
@@ -2069,7 +2069,7 @@ function miloGrupAtamaAcikToggle() {
 function miloGrupAtamaFormHTML(g) {
     let filtre = miloGrupAtamaAramaFiltre.trim().toLocaleLowerCase('tr');
     let adaylar = miloUyeler.filter(u => !u.pasif && u.grup !== g.ad && (!filtre || u.ad.toLocaleLowerCase('tr').includes(filtre)));
-    return `<div style="background:rgba(31,173,160,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-top:8px;">
+    return `<div style="background:rgba(139,127,255,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-top:8px;">
         <input class="milo-input" placeholder="🔍 Sporcu ara..." value="${miloEsc(miloGrupAtamaAramaFiltre)}" oninput="miloGrupAtamaAramaFiltre=this.value; miloGrupDetayCiz();">
         <div style="max-height:180px; overflow-y:auto; margin-bottom:8px;">
             ${adaylar.map(u => `<label style="display:flex; align-items:center; gap:8px; padding:5px 0; font-size:12px;">
@@ -2145,7 +2145,7 @@ function miloSiradakiHedefler(ad) {
     return { mesaj: `${MILO_SONRAKI_SEVIYE[seviye]} seviyeye geçmek için ${gerekenSayi} beceri daha tamamlaman gerekiyor.`, dersler };
 }
 function miloSiradakiHedeflerHTML(hedef) {
-    return `<div style="background:rgba(31,173,160,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-bottom:10px;">
+    return `<div style="background:rgba(139,127,255,0.08); border:1px solid var(--milo-teal); border-radius:14px; padding:12px; margin-bottom:10px;">
         <div style="font-weight:800; font-size:12px; color:var(--milo-teal); margin-bottom:6px;">🎯 Sıradaki Hedefler</div>
         <div style="font-size:12px; margin-bottom:${hedef.dersler.length ? '6px' : '0'};">${miloEsc(hedef.mesaj)}</div>
         ${hedef.dersler.length ? hedef.dersler.map(d => `<div style="font-size:12px; padding:3px 0;">🔸 ${miloEsc(d.baslik)}</div>`).join('') : ''}
