@@ -77,7 +77,8 @@ function yzSiralama(o, seriSinir) {
             if (f.yari && i < f.yari) y1 += t; else y2 += t;
         }
         let girilen = seriT.filter(function (v) { return v != null; }).length, hp = parseInt(((o[yzHpKey(d.id)] || {})[k]), 10) || null;
-        return { k: k, ad: yzKAd(k), hedef: (d.hedefler || {})[k] || '', seriT: seriT, toplam: toplam, on: on, x: x, ok: ok, y1: y1, y2: y2, girilen: girilen, hedefPuan: hp, tempo: girilen >= 2 && girilen < f.seri ? Math.round(toplam / girilen * f.seri) : (girilen === f.seri ? toplam : null) };
+        let gi = k.indexOf('|'), spx = turnuvaDB[k.slice(0, gi)] && turnuvaDB[k.slice(0, gi)][k.slice(gi + 1)], bk = yzBeklenenOrt(o, k);
+        return { yay: (spx && spx.yay) || 'Klasik', ortOk: bk ? bk.ort : null, ortKaynak: bk ? bk.kaynak : null, gelisim: bk && ok ? Math.round(toplam - bk.ort * ok) : null, k: k, ad: yzKAd(k), hedef: (d.hedefler || {})[k] || '', seriT: seriT, toplam: toplam, on: on, x: x, ok: ok, y1: y1, y2: y2, girilen: girilen, hedefPuan: hp, tempo: girilen >= 2 && girilen < f.seri ? Math.round(toplam / girilen * f.seri) : (girilen === f.seri ? toplam : null) };
     });
     liste.sort(function (a, b) { return b.toplam - a.toplam || b.on - a.on || b.x - a.x || a.ad.localeCompare(b.ad, 'tr'); });
     liste.forEach(function (r, i) { let p = liste[i - 1]; r.sira = p && p.toplam === r.toplam && p.on === r.on && p.x === r.x ? p.sira : i + 1; });
@@ -162,6 +163,7 @@ function yzKurulumHTML() {
         + '<div class="yz-kart yz-kur-izgara">'
         + '<div><div class="yz-etiket">Mesafe</div><div class="yz-cipler">' + ['18m', '30m', '50m', '60m', '70m'].map(function (m) { return cip(m, t.mesafe === m, 'yzKurAyar(\'mesafe\',\'' + m + '\')'); }).join('') + '</div></div>'
         + '<div><div class="yz-etiket">Format</div><div class="yz-cipler">' + Object.keys(YZ_FORMAT).map(function (k) { return cip(YZ_FORMAT[k].ad, t.format === k, 'yzKurAyar(\'format\',\'' + k + '\')'); }).join('') + '</div></div>'
+        + '<div><div class="yz-etiket">Hedef kağıdı</div><div class="yz-cipler">' + Object.keys(YZ_YUZ).map(function (y) { return cip(YZ_YUZ[y].ad, (t.yuz || '6') === y, 'yzKurAyar(\'yuz\',\'' + y + '\')'); }).join('') + '</div><div class="yz-alt">Hedefe dokunarak girişte puan ve grup analizi buna göre hesaplanır.</div></div>'
         + '<div><div class="yz-etiket">Hedef başına sporcu</div><div class="yz-cipler">' + [1, 2, 3, 4].map(function (n) { return cip(String(n), t.hedefBasi === n, 'yzKurAyar(\'hedefBasi\',' + n + ')'); }).join('') + '</div><div class="yz-alt">' + (t.katilimci.length ? hedefSay + ' hedef kullanılacak (1A, 1B, … sırayla atanır)' : '') + '</div></div>'
         + '</div>'
         + '<div class="yz-kart"><div class="yz-etiket">⏱ Seri süresi <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· + 10 sn hatta geçiş</span></div>' + yzSureSeciciHTML(t.sure || yzVarsayilanSure(t.format), 'kurulum') + '<div class="yz-ozet-satir"><span>⏱ <b>' + yzSureEtiket(t.sure || yzVarsayilanSure(t.format)) + '</b> / seri</span><span>🎯 ' + f.seri + ' seri × ' + f.ok + ' ok</span>' + (f.yari ? '<span>☕ ' + f.yari + '. seriden sonra ara</span>' : '') + '</div>'
@@ -179,7 +181,7 @@ function yzBaslat() {
     let id = 'yp' + Date.now().toString(36);
     yzGuncelle(function (o) {
         yzTurTemizle(o); // önceki turların skorları
-        o.durum = { asama: 'tur', id: id, ayar: { mesafe: t.mesafe, format: t.format, kayit: !!t.kayit, hedefBasi: t.hedefBasi, sure: t.sure || yzVarsayilanSure(t.format) }, katilimci: t.katilimci.slice(), hedefler: yzHedefAta(t.katilimci, t.hedefBasi), seri: 0, basla: Date.now() };
+        o.durum = { asama: 'tur', id: id, ayar: { mesafe: t.mesafe, format: t.format, kayit: !!t.kayit, hedefBasi: t.hedefBasi, sure: t.sure || yzVarsayilanSure(t.format), yuz: t.yuz || '6' }, katilimci: t.katilimci.slice(), hedefler: yzHedefAta(t.katilimci, t.hedefBasi), seri: 0, basla: Date.now() };
         o.sayac = null;
     });
     // 12+ seri tek turda — günlük seri limiti koçu her seride "uzatayım mı?" diye durdurmasın.
@@ -223,29 +225,30 @@ function yzTurHTML(o) {
         + '<div class="yz-ilerleme"><div class="yz-bar"><i style="width:' + Math.round(girilen / Math.max(1, d.katilimci.length) * 100) + '%"></i></div><span><b>' + girilen + '/' + d.katilimci.length + '</b> sporcu bu seriyi girdi</span>' + ilerlemeBtn + '</div>'
         + (Object.keys(o[yzHpKey(d.id)] || {}).length ? '' : '<div class="yz-ipucu">🎯 Sporculara kişisel hedef puan ver → TV\'de <b>tempo</b> (bu gidişle bitiş) hedefe göre yeşil/kırmızı görünür. <button class="yz-link" onclick="yzHedeflerAc()">Hedefleri gir →</button></div>')
         + '<div class="yz-hedefler">' + hedefHTML + '</div>'
-        + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Canlı sıralama <span class="yz-alt">· hücreye dokun → o seriyi düzelt</span></div><div class="yz-tablo-kap">' + yzTabloHTML(o, sira, { kompakt: true, duzenle: true }) + '</div></div>'
+        + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Canlı sıralama <span class="yz-alt">· hücreye dokun → o seriyi düzelt</span>' + yzGorunumKontrolHTML(o) + '</div><div class="yz-tablo-kap">' + yzGorunumHTML(o, sira, { kompakt: true, duzenle: true }) + '</div></div>'
         + '</div>';
 }
 // Tablo — tur ekranı, TV ve sonuç ekranı ortak.
 function yzTabloHTML(o, sira, sec) {
     sec = sec || {};
     let d = o.durum, f = yzFormat(d), aktif = d.asama === 'bitti' ? -1 : Math.min(d.seri, f.seri - 1);
-    let onceki = {}; if (sec.hareket && aktif > 0) yzSiralama(o, aktif).forEach(function (r) { onceki[r.k] = r.sira; });
+    let onceki = {}; if (sec.onceki) onceki = sec.onceki; else if (sec.hareket && aktif > 0) yzSiralama(o, aktif).forEach(function (r) { onceki[r.k] = r.sira; });
+    let enIyi = sec.gelisim ? Math.max.apply(null, sira.slice(3).map(function (r) { return r.gelisim == null ? -1e9 : r.gelisim; }).concat([-1e9])) : null;
     let bas = '<th class="sira">#</th>' + (sec.hareket ? '<th class="hr"></th>' : '') + '<th class="hdf">HEDEF</th><th class="ad">SPORCU</th>';
     for (let i = 0; i < f.seri; i++) { bas += '<th class="s' + (i === aktif ? ' aktif' : '') + '">' + (i + 1) + '</th>'; if (f.yari && i === f.yari - 1) bas += '<th class="yari">1.Y</th>'; }
     if (f.yari) bas += '<th class="yari">2.Y</th>';
-    bas += '<th class="top">TOPLAM</th><th class="tmp">' + (aktif >= 0 ? 'TEMPO' : 'HEDEF') + '</th><th class="on">10+X</th><th class="x">X</th>';
-    let govde = sira.map(function (r) {
-        let hr = '';
+    bas += '<th class="top">TOPLAM</th>' + (sec.gelisim ? '<th class="gel">GELİŞİM</th>' : '') + '<th class="tmp">' + (aktif >= 0 ? 'TEMPO' : 'HEDEF') + '</th><th class="on">10+X</th><th class="x">X</th>';
+    let govde = sira.map(function (r, idx) {
+        let hr = '', ayrac = sec.gelisim && idx === 3 ? '<tr class="yz-ayrac"><td colspan="40">📈 EN ÇOK GELİŞENLER · kendi ortalamasına göre (ilk 3 gerçek puana göre)</td></tr>' : '';
         if (sec.hareket) { let p = onceki[r.k]; hr = '<td class="hr">' + (p && p > r.sira ? '<span class="yuk">▲' + (p - r.sira) + '</span>' : p && p < r.sira ? '<span class="dus">▼' + (r.sira - p) + '</span>' : '') + '</td>'; }
-        let tr = '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')" title="Bu serinin skorunu gir"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + '</td>';
+        let tr = ayrac + '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')" title="Bu serinin skorunu gir"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + '</td>';
         for (let i = 0; i < f.seri; i++) {
             let v = r.seriT[i], cls = 's' + (i === aktif ? ' aktif' : '') + (v == null ? ' bos' : '');
             tr += sec.duzenle && (v != null || i <= aktif) ? '<td class="' + cls + ' tik" onclick="event.stopPropagation(); yzGirisAc(\'' + yzEnc(r.k) + '\',' + i + ')">' + (v == null ? '·' : v) + '</td>' : '<td class="' + cls + '">' + (v == null ? '·' : v) + '</td>';
             if (f.yari && i === f.yari - 1) tr += '<td class="yari">' + (r.y1 || '·') + '</td>';
         }
         if (f.yari) tr += '<td class="yari">' + (r.y2 || '·') + '</td>';
-        return tr + '<td class="top">' + r.toplam + '</td>' + yzTempoHucre(r, aktif < 0) + '<td class="on">' + r.on + '</td><td class="x">' + r.x + '</td></tr>';
+        return tr + '<td class="top">' + r.toplam + '</td>' + (sec.gelisim ? yzGelisimHucre(r, idx >= 3 && r.gelisim != null && r.gelisim === enIyi && enIyi > 0) : '') + yzTempoHucre(r, aktif < 0) + '<td class="on">' + r.on + '</td><td class="x">' + r.x + '</td></tr>';
     }).join('');
     return '<table class="yz-tablo' + (sec.kompakt ? ' kompakt' : '') + '"><thead><tr>' + bas + '</tr></thead><tbody>' + govde + '</tbody></table>';
 }
@@ -297,7 +300,8 @@ function yzYeniTur() { yzGuncelle(function (o) { yzTurTemizle(o); o.durum = null
 function yzGirisAc(kEnc, seri) {
     let k = decodeURIComponent(kEnc), o = yzOku(), d = o.durum; if (!d) return;
     let mevcut = yzSkor(o, k)[seri];
-    _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], duzeltme: !!mevcut };
+    let mk = ((o[yzPKey(d.id, k)] || [])[seri]) || null;
+    _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], konumlar: mevcut ? (mk && mk.length === mevcut.length ? mk.slice() : mevcut.map(function () { return null; })) : [], duzeltme: !!mevcut };
     yzGirisCiz();
 }
 function yzGirisCiz() {
@@ -321,9 +325,10 @@ function yzGirisCiz() {
     let dolu = g.oklar.length >= okSay;
     kap.innerHTML = '<div class="yz-giris" role="dialog" aria-modal="true" aria-label="Skor girişi">'
         + '<div class="yz-giris-bas"><div><span class="yz-sp-hedef">' + esc(g.tip ? (g.taraf === 'a' ? 'A' : 'B') : ((d.hedefler || {})[g.k] || '')) + '</span> <b>' + esc(yzKAd(g.k)) + '</b><div class="yz-alt">' + altSatir + '</div></div><button class="yz-btn" onclick="yzGirisKapat()" aria-label="Kapat">✕</button></div>'
+        + '<div class="yz-giris-mod"><button class="' + (yzGirisHedefMi() ? 'aktif' : '') + '" onclick="yzGirisModSec(\'hedef\')">🎯 Hedefe dokun</button><button class="' + (yzGirisHedefMi() ? '' : 'aktif') + '" onclick="yzGirisModSec(\'tus\')">🔢 Tuşlar</button></div>'
         + '<div class="yz-oklar">' + slotlar + '</div>'
         + '<div class="yz-giris-top">' + topSatir + '</div>'
-        + '<div class="yz-tuslar">' + tus + '</div>'
+        + (yzGirisHedefMi() ? yzHedefGirisHTML(g, d, okSay) : '<div class="yz-tuslar">' + tus + '</div>')
         + '<div class="yz-giris-alt"><button class="yz-btn" onclick="yzOkSil()"' + (g.oklar.length ? '' : ' disabled') + '>⌫ Geri al</button>'
         + '<label class="yz-onay kucuk"><input type="checkbox"' + (_yz.siradaki ? ' checked' : '') + ' onchange="_yz.siradaki=this.checked; try{localStorage.setItem(\'dag_yz_siradaki\', this.checked?\'1\':\'0\')}catch(e){}"> Kaydedince sıradakine geç</label>'
         + '<button class="yz-btn ana buyuk" onclick="yzGirisKaydet()"' + (dolu ? '' : ' disabled') + '>💾 Kaydet</button></div>'
@@ -339,8 +344,8 @@ function yzGirisTus(e) {
     else if (t === 'Escape') { e.preventDefault(); e.stopPropagation(); yzGirisKapat(); }
 }
 function yzGirisOkSay(g, d) { return g.tip === 'shoot' ? 1 : g.tip === 'set' ? 3 : yzFormat(d).ok; }
-function yzOkEkle(p) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.oklar.push(p); yzGirisCiz(); }
-function yzOkSil() { let g = _yz.giris; if (!g || !g.oklar.length) return; g.oklar.pop(); yzGirisCiz(); }
+function yzOkEkle(p, konum) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(p); g.konumlar.push(konum || null); yzGirisCiz(); }
+function yzOkSil() { let g = _yz.giris; if (!g || !g.oklar.length) return; g.oklar.pop(); if (g.konumlar && g.konumlar.length > g.oklar.length) g.konumlar.length = g.oklar.length; yzGirisCiz(); }
 function yzGirisKapat() { _yz.giris = null; yzGirisCiz(); }
 function yzGirisKaydet() {
     let g = _yz.giris; if (!g) return;
@@ -348,9 +353,14 @@ function yzGirisKaydet() {
     if (!d || d.id !== g.id) { yzGirisKapat(); return showToast('Tur değişmiş — giriş kaydedilmedi.', 'error'); }
     if (g.tip === 'set' || g.tip === 'shoot') return yzMacGirisKaydet(g, d);
     let f = yzFormat(d); if (g.oklar.length < f.ok) return;
-    let sirali = g.oklar.slice().sort(function (a, b) { return YZ_SIRA[b] - YZ_SIRA[a]; });
+    // Oklar büyükten küçüğe (WA) — hedefte işaretlenen konumlar okla BİRLİKTE sıralanır ki eşleşme bozulmasın
+    let ciftler = g.oklar.map(function (p, i) { return { p: p, k: (g.konumlar || [])[i] || null }; }).sort(function (a, b) { return YZ_SIRA[b.p] - YZ_SIRA[a.p]; });
+    let sirali = ciftler.map(function (c) { return c.p; }), konumlar = ciftler.map(function (c) { return c.k; }), konumVar = konumlar.some(function (c) { return c; });
     let onceVardi = false;
-    yzGuncelle(function (x) { let a = yzSKey(g.id, g.k), arr = (x[a] || []).slice(); onceVardi = !!arr[g.seri]; while (arr.length < g.seri) arr.push(null); arr[g.seri] = sirali; x[a] = arr; });
+    yzGuncelle(function (x) {
+        let a = yzSKey(g.id, g.k), arr = (x[a] || []).slice(); onceVardi = !!arr[g.seri]; while (arr.length < g.seri) arr.push(null); arr[g.seri] = sirali; x[a] = arr;
+        let pk = yzPKey(g.id, g.k), parr = (x[pk] || []).slice(); if (konumVar || parr[g.seri]) { while (parr.length < g.seri) parr.push(null); parr[g.seri] = konumVar ? konumlar : null; x[pk] = parr; }
+    });
     if (d.ayar.kayit && !onceVardi) yzGercekKaydet(g.k, g.oklar, d.ayar.mesafe);
     else if (onceVardi) showToast('Tablo düzeltildi (karnedeki kayıt değişmez).', 'warning');
     let k = g.k, seri = g.seri; _yz.giris = null; yzGirisCiz();
@@ -449,9 +459,10 @@ function yzSonucHTML(o) {
     return '<div class="yz">'
         + '<div class="yz-sayfa-bas"><div><div class="yz-ust-etiket">SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-baslik">🏁 Sonuçlar</div></div>'
         + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
-        + yzPodyumHTML(o)
+        + (elemeVar ? yzPodyumHTML(o) : yzGruplar(o, sira).map(function (gr) { return yzPodyumGrupHTML(gr); }).join(''))
         + elemeKart
-        + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Sıralama turu</div><div class="yz-tablo-kap">' + yzTabloHTML(o, sira, { duzenle: true }) + '</div></div>'
+        + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Sıralama turu' + yzGorunumKontrolHTML(o) + '</div><div class="yz-tablo-kap">' + yzGorunumHTML(o, sira, { duzenle: true }) + '</div></div>'
+        + yzTeknikKartHTML(o, sira)
         + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">🎯 Ok dağılımı <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· her değerden kaç ok · koyu hücre = çok</span></div><div class="yz-tablo-kap">' + yzDagilimTabloHTML(o, sira) + '</div></div>'
         + '</div>';
 }
@@ -496,16 +507,16 @@ function yzTvCiz() {
     sira.forEach(function (r) { let imza = r.seriT.join(','), eski = _yz.tvSon[r.k]; if (eski && eski.imza !== imza) eski.zaman = simdi; if (!eski) _yz.tvSon[r.k] = { imza: imza, zaman: 0 }; else eski.imza = imza; if (_yz.tvSon[r.k].zaman && simdi - _yz.tvSon[r.k].zaman < 4000) yeni[r.k] = 1; });
     let bek = yzBekleyenler(o, seri).length;
     // Satır yüksekliği: tüm sporcular ekrana sığsın
-    let n = Math.max(sira.length, 4), yuk = Math.max(28, Math.min(84, Math.floor((window.innerHeight * (bitti ? 0.6 : 0.74)) / (n + 1))));
+    let gorN = yzGruplar(o, sira).length, n = Math.max(sira.length + (gorN - 1) * 1.6 + (yzGorunum().mod === 'gelisim' ? gorN * 0.8 : 0), 4), yuk = Math.max(28, Math.min(84, Math.floor((window.innerHeight * (bitti ? 0.6 : 0.74)) / (n + 1))));
     el.style.setProperty('--yz-satir', yuk + 'px');
     el.innerHTML = '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button>'
         + '<div class="yz-tv-bas">'
         + '<div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">' + (bitti ? 'SIRALAMA TURU · SONUÇLAR' : 'SIRALAMA TURU') + '</div><div class="yz-tv-alt">' + esc(d.ayar.mesafe) + ' · ' + f.ad + ' · ' + new Date(d.basla).toLocaleDateString('tr-TR') + '</div></div>'
         + '<div class="yz-tv-seri">' + (bitti ? '<span class="yz-tv-seri-et">TUR</span><b style="font-size:3.8vw;margin-top:.6vh">BİTTİ</b>' : '<span class="yz-tv-seri-et">SERİ</span><b>' + (seri + 1) + '</b><span class="yz-tv-seri-top">/ ' + f.seri + '</span>') + (!bitti ? '<div class="yz-tv-bek">' + (bek ? bek + ' skor bekleniyor' : '✓ seri tamam') + '</div>' : '') + '</div>'
-        + (bitti ? '' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
+        + (bitti ? '<div class="yz-tv-saat">' + yzGorunumKontrolHTML(o, true) + '</div>' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
-        + '<div class="yz-tv-tablo">' + yzTabloHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>';
+        + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>';
     yzTimerBaslat();
 }
 
@@ -563,7 +574,8 @@ function yzPdf() {
 // ================================================================================================
 const YZ_DEGERLER = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'];
 function yzHpKey(id) { return 'hp_' + id; }
-function yzTurTemizle(o) { Object.keys(o).forEach(function (a) { if (/^(s|m|hp)_/.test(a)) delete o[a]; }); delete o.eleme; }
+function yzTurTemizle(o) { Object.keys(o).forEach(function (a) { if (/^(s|m|hp|p)_/.test(a)) delete o[a]; }); delete o.eleme; }
+function yzPKey(id, k) { return 'p_' + id + '_' + k; }
 function yzTarihTR(iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
 
 // ---------------------------------------------------------------- 🎯 kişisel hedef + tempo
@@ -876,6 +888,14 @@ function yzElemeHTML(o) {
 // 📺 TV — eleme
 function yzTvPodyumHTML(o) {
     let p = yzPodyumListe(o); if (!p.liste.length) return '';
+    // Eleme yoksa yay filtresine uy: "Ayrı" → Klasik ve Makaralı için ayrı podyum şeridi
+    if (!p.eleme) {
+        let gruplar = yzGruplar(o, yzSiralama(o));
+        if (gruplar.length > 1 || gruplar[0].ad) return gruplar.map(function (gr) {
+            let ilk3 = gr.liste.filter(function (r) { return r.toplam > 0; }).slice(0, 3);
+            return '<div class="yz-tv-podyum"><div class="yz-tv-pod"><span class="a" style="color:#fbbf24">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + esc(gr.ad || '') + '</span></div>' + ilk3.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + esc(r.ad) + '</span><span class="p">' + r.toplam + '</span></div>'; }).join('') + '</div>';
+        }).join('');
+    }
     return '<div class="yz-tv-podyum">' + p.liste.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + esc(r.ad) + '</span><span class="p">' + (p.eleme ? esc(r.altMetin) : r.toplam) + '</span></div>'; }).join('') + '</div>';
 }
 function yzTvElemeHTML(o) {
@@ -906,7 +926,8 @@ function yzRaporVeri(o, k) {
     if (!en || en.v === kotu.v) { en = null; kotu = null; } // tüm seriler eşitse en iyi/en zayıf yok
     let onc = yzOncekiler(k, d.ayar.format, d.ayar.mesafe, d.id), son = onc[onc.length - 1] || null, rekor = onc.length ? Math.max.apply(null, onc.map(function (x) { return x.toplam; })) : null;
     let el = o.eleme && o.eleme.id === d.id ? yzElemeHesapla(o) : null;
-    return { r: r, f: f, d: d, kisi: sira.length, dag: yzDagilim(o, k), en: en, kotu: kotu, ort: r.ok ? r.toplam / r.ok : 0, seriOrt: dolu.length ? r.toplam / dolu.length : 0, onc: onc, son: son, rekor: rekor, pb: rekor != null && r.toplam > rekor && r.girilen === f.seri, eleme: el ? yzElemeSonucu(el, k) : null };
+    let yorgun = yzYorgunluk(o, r), ov = yzOneriVeri(o, r, yorgun);
+    return { nokta: ov.nokta, grp: ov.gr, oneri: ov.on, yorgun: yorgun, r: r, f: f, d: d, kisi: sira.length, dag: yzDagilim(o, k), en: en, kotu: kotu, ort: r.ok ? r.toplam / r.ok : 0, seriOrt: dolu.length ? r.toplam / dolu.length : 0, onc: onc, son: son, rekor: rekor, pb: rekor != null && r.toplam > rekor && r.girilen === f.seri, eleme: el ? yzElemeSonucu(el, k) : null };
 }
 function yzRaporMetin(o, k) {
     let v = yzRaporVeri(o, k); if (!v) return '';
@@ -923,6 +944,9 @@ function yzRaporMetin(o, k) {
     if (v.son) s.push('📊 Önceki tur (' + yzTarihTR(v.son.tarih) + '): ' + v.son.toplam + ' → bugün ' + r.toplam + ' (' + (r.toplam - v.son.toplam >= 0 ? '+' : '') + (r.toplam - v.son.toplam) + ')');
     if (v.pb) s.push('🔥 KİŞİSEL REKOR! (önceki en iyi ' + v.rekor + ')');
     if (v.eleme) s.push('⚔️ Eleme: ' + v.eleme);
+    if (r.gelisim != null) s.push('📈 Kendi ortalamasına göre: ' + (r.gelisim >= 0 ? '+' : '') + r.gelisim + ' puan');
+    if (v.oneri) s.push('🎯 ' + v.oneri.kisa + ' → ' + v.oneri.oneri);
+    if (v.yorgun && v.yorgun.durum !== 'az') s.push('📉 Tur içi: ' + v.yorgun.baslik + (v.yorgun.ozet ? ' — ' + v.yorgun.ozet : ''));
     s.push('');
     s.push('Ok dağılımı: ' + YZ_DEGERLER.filter(function (p) { return v.dag[p]; }).map(function (p) { return p + '×' + v.dag[p]; }).join('  '));
     return s.join('\n');
@@ -959,9 +983,12 @@ function yzRaporDetayHTML(o, k) {
         + '<div class="yz-rapor-kutular">' + kutu('SIRA', r.sira + '.', v.kisi + ' sporcu') + kutu('TOPLAM', r.toplam, r.ok + ' ok') + kutu('OK ORT.', v.ort.toFixed(2), '') + kutu('10+X', r.on, 'X: ' + r.x)
         + (r.hedefPuan ? kutu('HEDEF', r.hedefPuan, r.toplam >= r.hedefPuan ? '✓ +' + (r.toplam - r.hedefPuan) : '−' + (r.hedefPuan - r.toplam), r.toplam >= r.hedefPuan ? 'ust' : 'alt') : '')
         + (v.son ? kutu('ÖNCEKİ TUR', v.son.toplam, (r.toplam - v.son.toplam >= 0 ? '+' : '') + (r.toplam - v.son.toplam), r.toplam >= v.son.toplam ? 'ust' : 'alt') : '')
-        + (v.eleme ? kutu('ELEME', '⚔️', esc(v.eleme)) : '') + '</div>'
+        + (v.eleme ? kutu('ELEME', '⚔️', esc(v.eleme)) : '')
+        + (r.gelisim != null ? kutu('GELİŞİM', (r.gelisim >= 0 ? '+' : '') + r.gelisim, 'kendi ort.', r.gelisim >= 0 ? 'ust' : 'alt') : '') + '</div>'
         + '<div class="yz-etiket">Seri seri</div>' + grafik
         + (f.yari ? '<div class="yz-alt">1. yarı <b>' + r.y1 + '</b> · 2. yarı <b>' + r.y2 + '</b> (' + (r.y2 - r.y1 >= 0 ? '+' : '') + (r.y2 - r.y1) + ')' + (v.en ? ' · en iyi ' + (v.en.i + 1) + '. seri (' + v.en.v + ') · en zayıf ' + (v.kotu.i + 1) + '. seri (' + v.kotu.v + ')' : '') + '</div>' : '')
+        + '<div class="yz-etiket">📉 Tur içi dayanıklılık</div><div class="yz-yorgun ' + v.yorgun.durum + '"><b>' + esc(v.yorgun.baslik) + '</b>' + (v.yorgun.ozet ? ' · ' + esc(v.yorgun.ozet) : '') + '<div class="yz-alt">' + esc(v.yorgun.detay) + '</div></div>'
+        + '<div class="yz-etiket">🎯 Grup analizi</div>' + (v.grp ? '<div class="yz-rapor-grup">' + yzGrupSVG(v.nokta, v.grp, yzYuz(v.d), 160) + '<div><b>' + esc(v.oneri.kisa) + '</b> · grup çapı ~' + v.oneri.cap + ' cm (' + v.oneri.sik + ')<div class="yz-tek-oneri" style="margin-top:6px">🎯 ' + esc(v.oneri.oneri) + '</div>' + (v.oneri.not ? '<div class="yz-alt">ℹ️ ' + esc(v.oneri.not) + '</div>' : '') + (v.oneri.uyari ? '<div class="yz-alt">' + esc(v.oneri.uyari) + '</div>' : '') + '</div></div>' : '<div class="yz-alt">Oklar tuşla girildi — grup analizi için girişte <b>🎯 Hedefe dokun</b> modunu kullan.</div>')
         + '<div class="yz-etiket">Ok dağılımı</div>' + dag
         + '<div class="yz-etiket">Gelişim (aynı format, ' + esc(v.d.ayar.mesafe) + ')</div>' + gecmis
         + '<div class="yz-mac-btnler"><button class="yz-btn" onclick="yzRaporKopyala(\'' + yzEnc(k) + '\')">📋 Metni kopyala</button><button class="yz-btn yesil" onclick="yzRaporWhatsapp(\'' + yzEnc(k) + '\')">💬 Veliye WhatsApp</button></div>'
@@ -998,6 +1025,7 @@ function yzRaporPdf() {
             let kutular = [['SIRA', r.sira + '.', v.kisi + ' sporcu'], ['TOPLAM', String(r.toplam), r.ok + ' ok'], ['OK ORT.', v.ort.toFixed(2), ''], ['10+X', String(r.on), 'X: ' + r.x]];
             if (r.hedefPuan) kutular.push(['HEDEF', String(r.hedefPuan), r.toplam >= r.hedefPuan ? 'ulasildi +' + (r.toplam - r.hedefPuan) : (r.hedefPuan - r.toplam) + ' eksik']);
             if (v.son) kutular.push(['ONCEKI TUR', String(v.son.toplam), (r.toplam - v.son.toplam >= 0 ? '+' : '') + (r.toplam - v.son.toplam)]);
+            if (r.gelisim != null) kutular.push(['GELISIM', (r.gelisim >= 0 ? '+' : '') + r.gelisim, 'kendi ort.']);
             let kw = (uw - (kutular.length - 1) * 3) / kutular.length;
             kutular.forEach(function (k, i) {
                 let x = mx + i * (kw + 3); pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, kw, 19, 2, 2, 'F');
@@ -1037,6 +1065,8 @@ function yzRaporPdf() {
             else pdf.text(T('Onceki tur yok - bir sonraki turda kiyas burada gorunecek.'), mx, y);
             y += 7;
             if (v.eleme) { pdf.text(T('Eleme: ' + v.eleme), mx, y); y += 7; }
+            if (v.yorgun && v.yorgun.durum !== 'az') { pdf.setFont('helvetica', 'bold'); pdf.text(T('Tur ici: ' + v.yorgun.baslik + (v.yorgun.ozet ? ' - ' + v.yorgun.ozet : '')), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(pdf.splitTextToSize(T(v.yorgun.detay), uw), mx, y); y += 8; }
+            if (v.oneri) { pdf.setFont('helvetica', 'bold'); pdf.text(T('Grup: ' + v.oneri.kisa + ' (cap ~' + v.oneri.cap + ' cm, ' + v.oneri.sik + ')'), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(T('Nisangah: ' + v.oneri.oneri), mx, y); y += 7; }
             pdf.setDrawColor(203, 213, 225); pdf.setLineWidth(0.3);
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Antrenor notu'), mx, y + 4);
             for (let i = 0; i < 3; i++) pdf.line(mx, y + 12 + i * 8, mx + uw, y + 12 + i * 8);
@@ -1098,6 +1128,226 @@ function yzEkCssYukle() {
     document.head.appendChild(st);
 }
 
+// ================================================================================================
+// EK 2 (2026-09-30, kullanıcı): 📈 gelişim sıralaması (ilk 3 gerçek puana göre, Klasik/Makaralı ayrı, gerçek
+// sıralama filtresi) · 🎯 hedefe dokunarak giriş (6 halka) + grup merkezi → nişangah önerisi · 📉 yorulma analizi.
+// ================================================================================================
+// Hedef kağıtları — R: hedef yüzünün (en dış sayılan halka) yarıçapı, cm
+const YZ_YUZ = {
+    '6': { ad: '6 halka (80 cm)', halka: 6, R: 24 },
+    '10': { ad: '10 halka (122 cm)', halka: 10, R: 61 },
+    '10k': { ad: '10 halka (80 cm)', halka: 10, R: 40 }
+};
+function yzYuz(d) { return YZ_YUZ[(d && d.ayar && d.ayar.yuz) || '6'] || YZ_YUZ['6']; }
+// Konum (merkez 0,0 · yüz yarıçapı 1) → puan. X: 10'un iç yarısı. Yüz dışı M.
+function yzKonumPuan(x, y, yuz) {
+    // Çizgiye değen ok yüksek puanı alır (WA): ok kalınlığı kadar pay (~halka genişliğinin %8'i) içeri doğru sayılır.
+    let r = Math.hypot(x, y), n = yuz.halka, pay = 0.08 / n;
+    if (r - pay > 1) return 'M';
+    if (r - pay <= 1 / (2 * n)) return 'X';
+    return String(11 - Math.max(1, Math.ceil((r - pay) * n)));
+}
+function yzHalkaRenk(deger) { return deger >= 9 ? ['#fde047', '#a16207'] : deger >= 7 ? ['#ef4444', '#7f1d1d'] : deger >= 5 ? ['#0ea5e9', '#075985'] : deger >= 3 ? ['#1f2937', '#9ca3af'] : ['#f8fafc', '#94a3b8']; }
+function yzHedefYuzSVG(yuz) {
+    let n = yuz.halka, s = '';
+    for (let i = n; i >= 1; i--) { let deger = 11 - i, c = yzHalkaRenk(deger); s += '<circle r="' + (i / n) + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="0.006"/>'; }
+    s += '<circle r="' + (1 / (2 * n)) + '" fill="none" stroke="#a16207" stroke-width="0.005"/>';
+    s += '<line x1="-0.03" x2="0.03" y1="0" y2="0" stroke="#7c2d12" stroke-width="0.006"/><line y1="-0.03" y2="0.03" x1="0" x2="0" stroke="#7c2d12" stroke-width="0.006"/>';
+    return s;
+}
+// ---- 🎯 hedefe dokunarak giriş (bu cihazın tercihi)
+function yzGirisHedefMi() { try { return localStorage.getItem('dag_yz_girismod') === 'hedef'; } catch (e) { return false; } }
+function yzGirisModSec(m) { try { localStorage.setItem('dag_yz_girismod', m); } catch (e) {} yzGirisCiz(); }
+function yzHedefGirisHTML(g, d, okSay) {
+    let yuz = yzYuz(d), noktalar = '';
+    (g.konumlar || []).forEach(function (k, i) {
+        if (!k) return;
+        noktalar += '<g><circle cx="' + k.x + '" cy="' + k.y + '" r="0.045" fill="#10b981" stroke="#fff" stroke-width="0.012"/><text x="' + k.x + '" y="' + (k.y + 0.016) + '" text-anchor="middle" font-size="0.05" font-weight="900" fill="#fff">' + (i + 1) + '</text></g>';
+    });
+    let dolu = g.oklar.length >= okSay;
+    return '<div class="yz-hedef-giris"><svg id="yz-hedef-svg" viewBox="-1.1 -1.1 2.2 2.2" class="yz-hedef-svg' + (dolu ? ' dolu' : '') + '" onclick="yzHedefTik(event)" role="img" aria-label="Hedef — okun yerine dokun">'
+        + '<rect x="-1.1" y="-1.1" width="2.2" height="2.2" fill="#e5e7eb" opacity=".12"/>' + yzHedefYuzSVG(yuz) + noktalar + '</svg>'
+        + '<div class="yz-hedef-yan"><button class="yz-tus yz-r-kacan" onclick="yzOkEkle(\'M\')"' + (dolu ? ' disabled' : '') + '>M</button><div class="yz-alt">Okun hedefteki yerine dokun · ıska için M · ' + esc(yuz.ad) + '</div></div></div>';
+}
+function yzHedefTik(e) {
+    let svg = document.getElementById('yz-hedef-svg'), g = _yz.giris, d = yzOku().durum; if (!svg || !g || !d) return;
+    if (g.oklar.length >= yzGirisOkSay(g, d)) return;
+    let pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    let p = pt.matrixTransform(svg.getScreenCTM().inverse()), x = Math.round(p.x * 1000) / 1000, y = Math.round(p.y * 1000) / 1000;
+    yzOkEkle(yzKonumPuan(x, y, yzYuz(d)), { x: x, y: y });
+}
+// ---- grup analizi + nişangah önerisi
+function yzKonumlar(o, k, bas, son) {
+    let d = o.durum, arr = o[yzPKey(d.id, k)] || [], r = [];
+    arr.forEach(function (seri, i) { if (!seri || (bas != null && i < bas) || (son != null && i >= son)) return; seri.forEach(function (p) { if (p && Math.hypot(p.x, p.y) <= 1.1) r.push({ x: p.x, y: p.y, seri: i }); }); });
+    return r;
+}
+function yzGrup(noktalar) {
+    if (!noktalar || noktalar.length < 3) return null;
+    let n = noktalar.length, mx = 0, my = 0; noktalar.forEach(function (p) { mx += p.x; my += p.y; }); mx /= n; my /= n;
+    let yay = 0; noktalar.forEach(function (p) { yay += Math.hypot(p.x - mx, p.y - my); }); yay /= n;
+    return { n: n, mx: mx, my: my, yay: yay };
+}
+// Nişangah oku takip eder: grup sağdaysa nişangah sağa, aşağıdaysa aşağı.
+function yzGrupOneri(gr, yuz) {
+    if (!gr) return null;
+    let cx = gr.mx * yuz.R, cy = gr.my * yuz.R, kay = Math.hypot(cx, cy), cap = gr.yay * 2 * yuz.R;
+    let sik = gr.yay < 0.22 ? 'sıkı' : gr.yay < 0.4 ? 'orta' : 'dağınık';
+    let yon = [], ayar = [];
+    if (Math.abs(cx) >= 2) { yon.push(Math.round(Math.abs(cx)) + ' cm ' + (cx > 0 ? 'sağda' : 'solda')); ayar.push(cx > 0 ? 'sağa' : 'sola'); }
+    if (Math.abs(cy) >= 2) { yon.push(Math.round(Math.abs(cy)) + ' cm ' + (cy > 0 ? 'aşağıda' : 'yukarıda')); ayar.push(cy > 0 ? 'aşağı' : 'yukarı'); }
+    let merkezde = kay < 2.5 || !ayar.length;
+    return {
+        merkezde: merkezde, cap: Math.round(cap), sik: sik, n: gr.n,
+        kisa: merkezde ? 'Grup merkezde ✓' : 'Grup ' + yon.join(', '),
+        oneri: merkezde ? 'Nişangahı değiştirme' + (sik === 'dağınık' ? ' — önce grubu toplamaya çalış (tutarlı nişan/bırakış)' : '') + '.'
+            : 'Nişangahı ' + ayar.join(' ve ') + ' al' + (sik === 'dağınık' ? ' (grup dağınık — önce tutarlılık, ayarı küçük adımlarla yap)' : '') + '.',
+        uyari: gr.n < 12 ? 'Az ok (' + gr.n + ') — ayar kararı için en az 12 ok önerilir.' : ''
+    };
+}
+// Nişangah önerisi: yorulma (kalıcı düşüş) varsa SADECE yorulmadan önceki oklardan — yorgunlukla aşağı düşen
+// oklar nişangah hatası sanılıp "nişangahı aşağı al" denmesin. Çizim yine tüm okları gösterir.
+function yzOneriVeri(o, r, yg) {
+    let yuz = yzYuz(o.durum), nokta = yzKonumlar(o, r.k), gr = yzGrup(nokta), on = yzGrupOneri(gr, yuz);
+    if (yg && yg.durum === 'dayaniklilik' && yg.kirilma != null) {
+        let erken = yzGrup(yzKonumlar(o, r.k, 0, yg.kirilma));
+        if (erken && erken.n >= 6) { on = yzGrupOneri(erken, yuz); on.not = 'Yorulma öncesi ' + erken.n + ' oka göre (sonraki oklar yorgunlukla kaydı — nişangah değil kuvvet sorunu).'; }
+    }
+    return { nokta: nokta, gr: gr, on: on };
+}
+function yzGrupSVG(noktalar, gr, yuz, boyut) {
+    let dots = noktalar.map(function (p) { return '<circle cx="' + p.x + '" cy="' + p.y + '" r="0.035" fill="#111827" stroke="#fff" stroke-width="0.01" opacity=".85"/>'; }).join('');
+    let merkez = gr ? '<g stroke="#10b981" stroke-width="0.022"><line x1="' + (gr.mx - 0.09) + '" x2="' + (gr.mx + 0.09) + '" y1="' + gr.my + '" y2="' + gr.my + '"/><line x1="' + gr.mx + '" x2="' + gr.mx + '" y1="' + (gr.my - 0.09) + '" y2="' + (gr.my + 0.09) + '"/></g><circle cx="' + gr.mx + '" cy="' + gr.my + '" r="' + gr.yay + '" fill="none" stroke="#10b981" stroke-width="0.012" stroke-dasharray="0.03 0.02"/>' : '';
+    return '<svg viewBox="-1.1 -1.1 2.2 2.2" width="' + (boyut || 120) + '" height="' + (boyut || 120) + '" role="img" aria-label="Ok dağılımı ve grup merkezi">' + yzHedefYuzSVG(yuz) + dots + merkez + '</svg>';
+}
+// ---- 📉 yorulma analizi (tur içi dayanıklılık / konsantrasyon)
+function yzOrt(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : 0; }
+function yzYorgunluk(o, r) {
+    let d = o.durum, f = yzFormat(d), t = r.seriT.map(function (v, i) { return { v: v, i: i }; }).filter(function (x) { return x.v != null; });
+    if (t.length < 6) return { durum: 'az', baslik: 'Az veri', detay: 'Yorulma analizi için en az 6 seri gerekli.' };
+    let deg = t.map(function (x) { return x.v; }), esik = f.ok * 0.4, en = null;
+    for (let b = 3; b <= t.length - 2; b++) { let on = yzOrt(deg.slice(0, b)), son = yzOrt(deg.slice(b)); if (!en || on - son > en.fark) en = { b: b, on: on, son: son, fark: on - son }; }
+    let ort = yzOrt(deg), sd = Math.sqrt(yzOrt(deg.map(function (v) { return (v - ort) * (v - ort); }))), mx = Math.max.apply(null, deg), mn = Math.min.apply(null, deg);
+    if (en && en.fark >= esik) {
+        let sonra = deg.slice(en.b).sort(function (a, b) { return a - b; }), kirpik = sonra.length > 2 ? yzOrt(sonra.slice(1)) : yzOrt(sonra);
+        let duzenli = en.on - kirpik >= esik * 0.75, seriNo = t[en.b].i + 1;
+        let erken = yzGrup(yzKonumlar(o, r.k, 0, t[en.b].i)), gec = yzGrup(yzKonumlar(o, r.k, t[en.b].i, null));
+        let asagi = !!(erken && gec && gec.my - erken.my > 0.08), dagildi = !!(erken && gec && gec.yay - erken.yay > 0.08);
+        let ozet = seriNo + '. seriden sonra ortalama −' + en.fark.toFixed(1) + ' (seri başı ' + en.on.toFixed(1) + ' → ' + en.son.toFixed(1) + ')';
+        if (duzenli || asagi) return { durum: 'dayaniklilik', baslik: 'Kuvvet / dayanıklılık', ozet: ozet, kirilma: t[en.b].i,
+            detay: 'Düşüş tur ilerledikçe kalıcı' + (asagi ? ' ve oklar aşağı kayıyor (yorulunca çekiş kısalır)' : '') + (dagildi ? ', grup da genişliyor' : '') + '. Yay kuvveti ve uzun tur (72 ok) dayanıklılığı çalışılmalı.' };
+        return { durum: 'konsantrasyon', baslik: 'Konsantrasyon', ozet: ozet, detay: 'Düşüş bir-iki kötü seriden geliyor, sonra toparlanıyor. Seri arası rutin, nefes ve odak çalışılmalı.' };
+    }
+    if (sd >= f.ok * 0.9) return { durum: 'konsantrasyon', baslik: 'Dalgalı', ozet: 'En iyi ' + mx + ', en zayıf ' + mn + ' — seriler arası fark büyük', detay: 'Kalıcı bir düşüş yok ama seriler çok dalgalı. Her okta aynı rutin (nişan süresi, bırakış) çalışılmalı.' };
+    return { durum: 'istikrarli', baslik: 'İstikrarlı ✓', ozet: 'Seriler ' + mn + '–' + mx + ' arasında', detay: 'Tur boyunca belirgin bir düşüş yok.' };
+}
+// ---- 📈 gelişim: kendi ortalamasına göre beklenen puan
+function yzBeklenenOrt(o, k) {
+    let d = o.durum; if (!d) return null;
+    let anahtar = d.id + ':' + yzArsivOku().length;
+    if (!_yz.ortCache || _yz.ortCache.a !== anahtar) _yz.ortCache = { a: anahtar, m: {} };
+    if (Object.prototype.hasOwnProperty.call(_yz.ortCache.m, k)) return _yz.ortCache.m[k];
+    let sonuc = null, top = 0, ok = 0;
+    yzArsivOku().filter(function (r) { return r.id !== d.id && r.mesafe === d.ayar.mesafe; }).slice(-5).forEach(function (r) {
+        let s = (r.sporcular || []).find(function (x) { return x.k === k; }); if (s && s.ok) { top += s.toplam; ok += s.ok; }
+    });
+    if (ok >= 18) sonuc = { ort: top / ok, kaynak: 'son turlar (' + d.ayar.mesafe + ')' };
+    else {
+        let gi = k.indexOf('|'), sp = turnuvaDB[k.slice(0, gi)] && turnuvaDB[k.slice(0, gi)][k.slice(gi + 1)];
+        top = 0; ok = 0;
+        ((sp && sp.seriler) || []).filter(function (s) { return (s.t || 0) < d.basla && Array.isArray(s.oklar) && s.oklar.length; }).slice(-30).forEach(function (s) { top += (s.puan || 0); ok += s.oklar.length; });
+        if (ok >= 18) sonuc = { ort: top / ok, kaynak: 'karne' };
+    }
+    _yz.ortCache.m[k] = sonuc;
+    return sonuc;
+}
+function yzGelisimHucre(r, enIyi) {
+    if (r.gelisim == null) return '<td class="gel bos" title="Geçmiş veri yok">yeni</td>';
+    return '<td class="gel ' + (r.gelisim >= 0 ? 'ust' : 'alt') + '" title="Beklenen: ' + (r.ortOk ? (r.ortOk * r.ok).toFixed(0) : '') + ' (' + esc(r.ortKaynak || '') + ')">' + (enIyi ? '🔥 ' : '') + (r.gelisim >= 0 ? '+' : '') + r.gelisim + '</td>';
+}
+// ---- görünüm (bu cihaz): 📊 gerçek / 📈 gelişim · yay: tümü / Klasik / Makaralı / ayrı
+function yzGorunum() {
+    if (!_yz.gorunum) { try { _yz.gorunum = JSON.parse(localStorage.getItem('dag_yz_gorunum') || 'null'); } catch (e) {} }
+    if (!_yz.gorunum) _yz.gorunum = { mod: 'gercek', yay: 'tumu' };
+    return _yz.gorunum;
+}
+function yzGorunumAyarla(a, v) { let g = yzGorunum(); g[a] = v; try { localStorage.setItem('dag_yz_gorunum', JSON.stringify(g)); } catch (e) {} yzCiz(); }
+function yzGrupSirala(liste) {
+    liste = liste.map(function (r) { return Object.assign({}, r); });
+    liste.sort(function (a, b) { return b.toplam - a.toplam || b.on - a.on || b.x - a.x || a.ad.localeCompare(b.ad, 'tr'); });
+    liste.forEach(function (r, i) { let p = liste[i - 1]; r.sira = p && p.toplam === r.toplam && p.on === r.on && p.x === r.x ? p.sira : i + 1; });
+    return liste;
+}
+function yzGruplar(o, sira) {
+    let g = yzGorunum(), var_ = function (y) { return sira.some(function (r) { return r.yay === y; }); };
+    if (g.yay === 'Klasik' || g.yay === 'Makaralı') return [{ ad: g.yay, liste: yzGrupSirala(sira.filter(function (r) { return r.yay === g.yay; })) }];
+    if (g.yay === 'ayri' && var_('Klasik') && var_('Makaralı')) return ['Klasik', 'Makaralı'].map(function (y) { return { ad: y, liste: yzGrupSirala(sira.filter(function (r) { return r.yay === y; })) }; });
+    return [{ ad: null, liste: sira }];
+}
+// Gelişim görünümü: ilk 3 GERÇEK puana göre sabit, kalanlar kendi ortalamasına göre gelişime göre.
+function yzGelisimSirala(liste) {
+    let ilk = liste.filter(function (r) { return r.toplam > 0; }).slice(0, 3), kalan = liste.filter(function (r) { return ilk.indexOf(r) === -1; });
+    kalan.sort(function (a, b) { return (b.gelisim == null ? -1e9 : b.gelisim) - (a.gelisim == null ? -1e9 : a.gelisim) || b.toplam - a.toplam; });
+    return ilk.concat(kalan);
+}
+function yzGorunumHTML(o, sira, sec) {
+    let g = yzGorunum(), d = o.durum, f = yzFormat(d), aktif = d.asama === 'bitti' ? -1 : Math.min(d.seri, f.seri - 1);
+    let gruplar = yzGruplar(o, sira);
+    return gruplar.map(function (gr) {
+        let liste = g.mod === 'gelisim' ? yzGelisimSirala(gr.liste) : gr.liste, onceki = null;
+        if (sec.hareket && g.mod !== 'gelisim' && aktif > 0) { let on = yzSiralama(o, aktif); if (gr.ad) on = yzGrupSirala(on.filter(function (r) { return r.yay === gr.ad; })); onceki = {}; on.forEach(function (r) { onceki[r.k] = r.sira; }); }
+        let bas = gr.ad ? '<div class="yz-grup-bas">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + gr.ad + ' <small>' + liste.length + ' sporcu</small></div>' : '';
+        return bas + yzTabloHTML(o, liste, Object.assign({}, sec, { onceki: onceki, hareket: sec.hareket && g.mod !== 'gelisim', gelisim: g.mod === 'gelisim' }));
+    }).join('');
+}
+function yzGorunumKontrolHTML(o, tv) {
+    let g = yzGorunum(), d = o.durum, yaylar = {};
+    (d.katilimci || []).forEach(function (k) { let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)]; yaylar[(sp && sp.yay) || 'Klasik'] = 1; });
+    let ikiYay = yaylar.Klasik && yaylar['Makaralı'];
+    let c = function (yazi, a, v, baslik) { return '<button class="' + (tv ? 'yz-tv-k' : 'yz-cip') + (g[a] === v ? (tv ? ' ana' : ' aktif') : '') + '" onclick="event.stopPropagation(); yzGorunumAyarla(\'' + a + '\',\'' + v + '\')"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
+    return '<span class="' + (tv ? 'yz-tv-kontrol yz-tv-gorunum' : 'yz-gorunum') + '">' + c('📊 Gerçek', 'mod', 'gercek', 'Gerçek puan sıralaması') + c('📈 Gelişim', 'mod', 'gelisim', 'İlk 3 gerçek puana göre, kalanlar kendi ortalamasına göre gelişime göre')
+        + (ikiYay ? c('Tümü', 'yay', 'tumu') + c('🏹 Klasik', 'yay', 'Klasik') + c('⚙️ Makaralı', 'yay', 'Makaralı') + c('Ayrı', 'yay', 'ayri', 'Klasik ve makaralı ayrı tablolarda, ayrı sıralama') : '') + '</span>';
+}
+function yzPodyumGrupHTML(gr) {
+    let ilk3 = gr.liste.filter(function (r) { return r.toplam > 0; }).slice(0, 3); if (!ilk3.length) return '';
+    return (gr.ad ? '<div class="yz-grup-bas" style="text-align:center">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + gr.ad + '</div>' : '')
+        + '<div class="yz-podyum">' + [1, 0, 2].map(function (i) { let r = ilk3[i]; if (!r) return '<div class="yz-pod bos"></div>'; return '<div class="yz-pod p' + r.sira + '"><div class="yz-pod-madalya">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</div><div class="yz-pod-ad">' + esc(r.ad) + '</div><div class="yz-pod-puan">' + r.toplam + '</div><div class="yz-alt">' + r.on + ' × 10+X · ' + (r.ok ? (r.toplam / r.ok).toFixed(2) : '0') + ' ort.</div><div class="yz-pod-blok"></div></div>'; }).join('') + '</div>';
+}
+// ---- 🔬 sonuç ekranı: teknik analiz kartı (grup + nişangah + tur içi)
+function yzTeknikKartHTML(o, sira) {
+    let d = o.durum, yuz = yzYuz(d);
+    let satir = sira.map(function (r) {
+        let yg = yzYorgunluk(o, r), ov = yzOneriVeri(o, r, yg), nokta = ov.nokta, gr = ov.gr, on = ov.on;
+        return '<div class="yz-tek-sat"><div class="yz-tek-ad"><b>' + esc(yzKisaAd(r.ad)) + '</b><small>' + r.sira + '. · ' + r.toplam + '</small></div>'
+            + '<div class="yz-tek-hedef">' + (gr ? yzGrupSVG(nokta, gr, yuz, 92) : '<span class="yz-alt">Konum yok<br>(tuşla girildi)</span>') + '</div>'
+            + '<div class="yz-tek-metin">' + (on ? '<div><b>' + esc(on.kisa) + '</b> · çap ~' + on.cap + ' cm (' + on.sik + ')</div><div class="yz-tek-oneri">🎯 ' + esc(on.oneri) + '</div>' + (on.not ? '<div class="yz-alt">ℹ️ ' + esc(on.not) + '</div>' : '') + (on.uyari ? '<div class="yz-alt">' + esc(on.uyari) + '</div>' : '') : '')
+            + '<div class="yz-yorgun ' + yg.durum + '"><b>📉 ' + esc(yg.baslik) + '</b>' + (yg.ozet ? ' · ' + esc(yg.ozet) : '') + '<div class="yz-alt">' + esc(yg.detay) + '</div></div></div></div>';
+    }).join('');
+    return '<div class="yz-kart"><div class="yz-etiket">🔬 Teknik analiz <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· grup merkezi (yeşil artı) ve nişangah önerisi hedefe dokunarak girilen oklardan · tur içi düşüş analizi</span></div><div class="yz-tek">' + satir + '</div></div>';
+}
+function yzEk2CssYukle() {
+    if (document.getElementById('yz-ek2-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-ek2-css';
+    st.textContent = [
+        '.yz-giris-mod{display:flex;gap:6px}.yz-giris-mod button{flex:1;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:10px;min-height:38px;font:inherit;font-weight:800;font-size:13px;cursor:pointer}.yz-giris-mod button.aktif{background:var(--accent-orange);border-color:var(--accent-orange);color:#1a0d05}',
+        '.yz-hedef-giris{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}.yz-hedef-svg{width:min(100%,44vh,420px);height:auto;touch-action:manipulation;cursor:crosshair;border-radius:50%}.yz-hedef-svg.dolu{opacity:.6;cursor:default}',
+        '.yz-hedef-yan{display:flex;flex-direction:column;gap:8px;align-items:center;max-width:120px;text-align:center}.yz-hedef-yan .yz-tus{width:90px}',
+        '.yz-tablo .gel{font-weight:900}.yz-tablo .gel.ust{color:#22c55e}.yz-tablo .gel.alt{color:#ef4444}.yz-tablo .gel.bos{color:var(--text-muted);font-weight:600;font-size:.85em}',
+        '.yz-tablo tr.yz-ayrac td{text-align:left;font-size:10.5px;font-weight:900;letter-spacing:.08em;color:#22c55e;padding:8px 8px 4px;border-bottom:1px dashed var(--border-color)}',
+        '.yz-tv .yz-tablo tr.yz-ayrac td{height:auto;font-size:calc(var(--yz-satir) * .24);padding:.6vh 1vw;color:#4ade80;background:#0b1829}.yz-tv .yz-tablo .gel{font-size:1.1em}.yz-tv .yz-tablo th.gel{color:#4ade80}',
+        '.yz-grup-bas{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:10px 4px 4px}.yz-grup-bas small{font-weight:600;letter-spacing:0;text-transform:none}',
+        '.yz-tv .yz-grup-bas{font-size:1.2vw;color:#fbbf24;padding:.8vh 1vw .4vh}',
+        '.yz-gorunum{display:inline-flex;gap:4px;flex-wrap:wrap;margin-left:auto;text-transform:none;letter-spacing:0}.yz-gorunum .yz-cip{min-height:32px;padding:0 10px;font-size:12px}',
+        '.yz-tv-gorunum{margin-top:.2vh}.yz-tv-gorunum .yz-tv-k{font-size:max(11px,.75vw);padding:.5vh .7vw}',
+        '.yz-tek{display:flex;flex-direction:column;gap:8px}.yz-tek-sat{display:grid;grid-template-columns:130px 100px 1fr;gap:12px;align-items:center;padding:8px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-main)}',
+        '.yz-tek-ad{display:flex;flex-direction:column}.yz-tek-ad small{color:var(--text-muted)}.yz-tek-hedef{display:flex;justify-content:center;font-size:11px;text-align:center}.yz-tek-metin{display:flex;flex-direction:column;gap:4px;font-size:13px}.yz-tek-oneri{font-weight:800;color:#0891b2}',
+        '.yz-yorgun{padding:6px 10px;border-radius:10px;font-size:12.5px}.yz-yorgun.dayaniklilik{background:color-mix(in srgb,#ef4444 12%,transparent)}.yz-yorgun.konsantrasyon{background:color-mix(in srgb,#f59e0b 14%,transparent)}.yz-yorgun.istikrarli{background:color-mix(in srgb,#22c55e 12%,transparent)}.yz-yorgun.az{background:var(--bg-panel)}',
+        '.yz-rapor-grup{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px}',
+        '@media (max-width:640px){.yz-tek-sat{grid-template-columns:1fr 100px}.yz-tek-metin{grid-column:1/-1}}'
+    ].join('\n');
+    document.head.appendChild(st);
+}
+
 // ---------------------------------------------------------------- 📺 TV'den yönetim (2026-09-30, kullanıcı: "TV ekranında skor
 // giremiyorum, saniyeyi buradan da yönetebileyim"). TV artık yazabilir: her yazma yzGuncelle ile TAZE okuyup yazıyor ve
 // skorlar sporcu/maç başına ayrı anahtarda — tabletle aynı anda kullanılsa da birbirini ezmez.
@@ -1112,7 +1362,7 @@ function yzTvKontrolHTML(o, el) {
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri).length, son = seri >= f.seri - 1;
     return '<div class="yz-tv-kontrol">' + sayac + sure
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
-        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana') + '</div>';
+        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana') + '</div>' + yzGorunumKontrolHTML(o, true);
 }
 function yzTvSatir(kEnc) { let o = yzOku(), d = o.durum; if (!d || d.asama !== 'tur') return; yzGirisAc(kEnc, Math.min(d.seri, yzFormat(d).seri - 1)); }
 function yzTvSiradaki() {
@@ -1128,7 +1378,7 @@ function yzTvMacGir(macId, taraf) {
 
 // ---------------------------------------------------------------- stil
 function yzCssYukle() {
-    yzEkCssYukle();
+    yzEkCssYukle(); yzEk2CssYukle();
     if (document.getElementById('yz-css')) return;
     let st = document.createElement('style'); st.id = 'yz-css';
     st.textContent = [
