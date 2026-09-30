@@ -11,7 +11,7 @@ import { json, badRequest, notFound, readJson } from "../../lib/json";
  *  - POST /api/milo/members/:grup/:ad/izle-kodu (girişli) + GET /api/milo/veli-rapor/:kod?ay= (herkese açık, yalnızca
  *    o üyenin o ayki devamı, beceri durumu ve kayıtlı olduğu ders saatleri — telefon, not, sağlık bilgisi YOK). */
 
-const UYE_ALANLARI = ["sinif", "cinsiyet", "dogumTarihi", "katilmaTarihi", "aileMeslek", "acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "boy", "kilo", "saglikNotu"];
+const UYE_ALANLARI = ["sinif", "cinsiyet", "dogumTarihi", "katilmaTarihi", "aileMeslek", "acilKisi", "acilTelefon", "veli2Kisi", "veli2Telefon", "antrenmanNotu", "genelNot", "boy", "kilo", "saglikNotu"];
 
 async function uyeVar(env: Env, grup: string, ad: string) {
   return env.DB_MILO.prepare("SELECT * FROM members WHERE grup = ? AND ad = ?").bind(grup, ad).first<Record<string, unknown>>();

@@ -11,6 +11,8 @@ export interface MiloMemberRow {
   aileMeslek: string | null;
   acilKisi: string | null;
   acilTelefon: string | null;
+  veli2Kisi: string | null;
+  veli2Telefon: string | null;
   antrenmanNotu: string | null;
   genelNot: string | null;
   aidatMuaf: number;
@@ -71,7 +73,7 @@ export function registerMiloMemberRoutes(router: Router): void {
 
   const MILO_MEMBER_UPDATABLE_FIELDS = [
     "sinif", "cinsiyet", "dogumTarihi", "katilmaTarihi", "aileMeslek",
-    "acilKisi", "acilTelefon", "antrenmanNotu", "genelNot", "aidatMuaf",
+    "acilKisi", "acilTelefon", "veli2Kisi", "veli2Telefon", "antrenmanNotu", "genelNot", "aidatMuaf",
     "pasif", "boy", "kilo", "saglikNotu",
   ] as const;
 

@@ -323,7 +323,7 @@ function miloJsEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\')
 
 function miloPollingBaslat() {
     if (miloPollingId) clearInterval(miloPollingId);
-    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi) miloSekmeYenile(); }, 15000);
+    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli') miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
 }
 
 function miloYasHesapla(dogumTarihi) {
@@ -338,7 +338,7 @@ function miloYasHesapla(dogumTarihi) {
 function miloSekme(k) {
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach((b, i) => {
-        let keys = ['uyeler', 'aidat', 'analiz', 'personel', 'program', 'ders', 'beceri'];
+        let keys = ['uyeler', 'hizli', 'aidat', 'analiz', 'personel', 'program', 'ders', 'beceri'];
         b.classList.toggle('aktif', keys[i] === k);
     });
     miloSekmeYenile();
@@ -348,6 +348,7 @@ async function miloSekmeYenile() {
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
     try {
         if (miloAktifSekme === 'uyeler') { miloUyeler = (await miloApi('/members')).members; miloUyelerCiz(); }
+        else if (miloAktifSekme === 'hizli') { miloUyeler = (await miloApi('/members')).members; mhdCiz(); } // 📝 milo-hizli-duzenle.js
         else if (miloAktifSekme === 'aidat') {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
             miloDuesTum = (await miloApi('/dues')).dues; miloAidatCiz();
