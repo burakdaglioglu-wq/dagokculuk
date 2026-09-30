@@ -10084,8 +10084,61 @@ ${(function(){
             // "Kontur" görsel yönü: kart yapısı sabit (ikon/metin/rozet), sadece .aktif-ders sınıfı
             // ve içindeki .chip görünürlüğü değişiyor — innerHTML'i baştan yazmıyoruz.
             btn.classList.toggle('aktif-ders', aktif);
+            let chip = btn.querySelector('.chip');
+            if(aktif) { delete btn.dataset.katil; if(chip) chip.innerHTML = '<span class="nokta"></span>DEVAM EDEN DERS — DOKUN VE SÜRDÜR'; return; }
+            // ORTAK OTURUM (2026-09-30, kullanıcı: "PC'den karışık sınıf oturumu oluşturdum, hem tabletten hem PC'den
+            // yönetmek istiyorum"): bu cihazda ders yoksa sunucudaki aktif derslere bak — başka cihazda açılan ders
+            // burada "dokun, katıl" olarak görünsün. (Katılınca her şey dagsk-km-ortak.js ile ortak yürür.)
+            let ciz = function() {
+                let akt = _kmSunucuAktif || [];
+                btn.classList.toggle('aktif-ders', akt.length > 0);
+                if(!akt.length) { delete btn.dataset.katil; return; }
+                btn.dataset.katil = akt.length === 1 ? akt[0].konum.id : 'sec';
+                if(chip) chip.innerHTML = '<span class="nokta"></span>' + (akt.length === 1
+                    ? '📍 ' + esc(akt[0].konum.ad).toLocaleUpperCase('tr-TR') + ' — ' + akt[0].sayi + ' SPORCU · DOKUN, KATIL'
+                    : akt.length + ' KONUMDA DEVAM EDEN DERS — DOKUN, SEÇ');
+            };
+            ciz();
+            if(Date.now() - _kmSunucuKontrolZaman > 4000) kmSunucuAktifDersler().then(ciz).catch(function() {});
+        }
+        // Tüm konumlardaki aktif dersler (sunucudan) — [{ konum:{id,ad}, sayi }]
+        let _kmSunucuAktif = null, _kmSunucuKontrolZaman = 0;
+        function kmSunucuAktifDersler() {
+            _kmSunucuKontrolZaman = Date.now();
+            return _kmKonumlariGetir().then(function(konumlar) {
+                _kmKonumlar = konumlar;
+                return Promise.all(konumlar.map(function(k) {
+                    return fetch('/api/meta/karisik_sinif_liste_' + k.id).then(function(r) { return r.json(); }).then(function(d) {
+                        let l = null; try { l = d && d.value ? JSON.parse(d.value) : null; } catch(e) {}
+                        return { konum: k, sayi: Array.isArray(l) ? l.length : 0 };
+                    }).catch(function() { return { konum: k, sayi: 0 }; });
+                }));
+            }).then(function(ds) { _kmSunucuAktif = ds.filter(function(d) { return d.sayi > 0; }); return _kmSunucuAktif; });
+        }
+        // Başka cihazın açtığı derse katıl: önce sunucudaki listeyi al, sonra o konuma bağlan (boş "yeni ders" ekranı hiç görünmez).
+        function kmSunucuDersineKatil(konumId) {
+            fetch('/api/meta/karisik_sinif_liste_' + konumId).then(function(r) { return r.json(); }).then(function(d) {
+                let l = null; try { l = d && d.value ? JSON.parse(d.value) : null; } catch(e) {}
+                if(Array.isArray(l) && l.length) { try { localStorage.setItem('dag_km_liste_' + konumId, JSON.stringify(l)); } catch(e) {} }
+            }).catch(function() {}).then(function() {
+                kmKonumaBaglan(konumId);
+                let k = (_kmKonumlar || []).find(function(x) { return x.id === konumId; });
+                showToast('🔗 ' + (k ? k.ad : 'Ders') + ' oturumuna katıldın — bu cihaz da yönetebilir', 'success');
+            });
+        }
+        function kmKonumAdi() {
+            let k = (_kmKonumlar || []).find(function(x) { return x.id === _kmAktifKonum; });
+            if(k) { try { localStorage.setItem('dag_km_konum_ad', k.ad); } catch(e) {} return k.ad; }
+            if(!_kmAktifKonum || _kmAktifKonum === 'varsayilan') return 'Ana Salon';
+            // Ad bilinmiyorsa (bu cihaz konum listesini hiç çekmedi) bir kez çek — sonraki çizimde görünür.
+            if(!_kmKonumlar && !kmKonumAdi.cekiliyor) { kmKonumAdi.cekiliyor = true; _kmKonumlariGetir().then(function(l) { _kmKonumlar = l; let ad = kmKonumAdi(), s = document.getElementById('km-ders-sayac'); if(ad && s && s.textContent.indexOf('📍') !== 0) s.textContent = '📍 ' + ad + ' · ' + s.textContent; }); }
+            try { return localStorage.getItem('dag_km_konum_ad') || ''; } catch(e) { return ''; }
         }
         function kmAc() {
+            // Bu cihazda ders yok ama başka cihazda açılmış ders var → ona katıl (birden çoksa seçtir).
+            let btn = document.getElementById('km-giris-btn'), katil = btn && btn.dataset.katil, yerelAktif = false;
+            if(_kmAktifKonum) { try { let s = JSON.parse(localStorage.getItem(kmLocalAnahtari()) || '[]'); yerelAktif = Array.isArray(s) && s.length > 0; } catch(e) {} }
+            if(!yerelAktif && katil) { if(katil === 'sec') kmKonumSeciciAc(); else kmSunucuDersineKatil(katil); return; }
             // Cihaz zaten bir konuma bağlıysa direkt oraya gir; değilse önce konum seç.
             if(_kmAktifKonum) { kmKonumaGir(); return; }
             kmKonumSeciciAc();
@@ -10110,7 +10163,22 @@ ${(function(){
                     _kmSecimler = {};
                     liste.forEach(function(s){ _kmSecimler[s.g+'_'+s.ad] = s; });
                     try { localStorage.setItem(kmLocalAnahtari(), JSON.stringify(_kmListe)); } catch(e) {}
+                    // Bu cihazda liste yoktu → önce "yeni ders" seçim penceresi açılmıştı; sunucudaki ders gelince kapat
+                    // (yoksa başka cihazın dersine katılan tabletin ekranını kaplıyordu).
+                    let sm = document.getElementById('karisik-modal'); if(sm) sm.style.display = 'none';
                     kmPlatformGoster();
+                } else if((!liste || !liste.length) && !_kmListe.length) {
+                    // Bu konum boş ama başka bir cihaz BAŞKA konumda ders açmış olabilir — boş "yeni ders" ekranı
+                    // yerine oturum seçiciyi göster ki tablet PC'nin dersine katılabilsin.
+                    kmSunucuAktifDersler().then(function(akt) {
+                        let diger = akt.filter(function(d) { return d.konum.id !== _kmAktifKonum; });
+                        let m = document.getElementById('karisik-modal');
+                        if(diger.length && m && m.style.display === 'flex' && !_kmListe.length) {
+                            m.style.display = 'none';
+                            showToast('Başka bir cihazda devam eden ders var — katılmak için seç', 'warning');
+                            kmKonumSeciciAc();
+                        }
+                    }).catch(function() {});
                 }
             }).catch(() => {});
         }
@@ -24920,7 +24988,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             html += '</div>';
             el.innerHTML = liste.length ? html : html + '<div style="text-align:center;color:var(--text-muted);padding:30px;">'+(q?'Aramayla eşleşen sporcu yok.':'Liste boş — üstten ➕ Sporcu Ekle')+'</div>';
             let sayac = document.getElementById('km-ders-sayac');
-            if(sayac) sayac.textContent = _kmListe.length+' sporcu · '+liste.filter(function(x){return x.sLen>minSeri;}).length+'/'+liste.length+' bu turu girdi';
+            if(sayac) sayac.textContent = (kmKonumAdi() ? '📍 ' + kmKonumAdi() + ' · ' : '') + _kmListe.length+' sporcu · '+liste.filter(function(x){return x.sLen>minSeri;}).length+'/'+liste.length+' bu turu girdi';
         }
 
         // Ortak "puan cipi" satırı — bireysel seri dökümü (kmLiderCiz) ve takım tur dökümü
