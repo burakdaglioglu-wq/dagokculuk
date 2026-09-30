@@ -6880,7 +6880,11 @@
             }
             aktifPlatform = 'egitmen'; loggedInSporcu = null;
             document.body.classList.remove('sporcu-uye-modu');
+            // TABLET DÜZELTMESİ (2026-09-30): hatırlanan cihazda platform düğmeleri açık kalıyor, Lig listesi onların
+            // ALTINA (ekran dışına) açılıyordu — platform seçimini gizle ve listeyi görünür yere kaydır.
+            document.getElementById('giris-platform').style.display = 'none';
             document.getElementById('giris-lig').style.display = 'flex';
+            try { let ge = document.getElementById('giris-ekrani'); ge.scrollTop = 0; setTimeout(function() { let l = document.getElementById('giris-lig'); if(l && l.getBoundingClientRect().bottom > innerHeight) l.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60); } catch(e) {}
             document.getElementById('giris-baslik').innerText = 'EĞİTMEN — Lig Seçin';
             try { kmDevamBanneriGuncelle(); } catch(e) {}
         }
@@ -10355,7 +10359,8 @@ ${(function(){
             // .km-bilgi sınıfları, koç DOĞRUDAN Yarışma'ya girdiğinde stilsiz kalıyordu. Faz 17c'deki
             // ".km-oyun-dok-ozet-btn tarayıcı varsayılanına düşüyor, sebebi bulunamadı" bulgusunun asıl
             // sebebi de buydu (testler hep önce Oyunlar'ı açtığı için maskelenmişti). Yükleyici idempotent.
-            else if(s==='yarisma') { kmOyunKaynaklarYukle(); kmYarismaCiz(); }
+            // 2026-09-30: Yarışma artık tür seçimiyle açılır (🏹 Sıralama Turu + 📺 TV · ⚔️ Takım & Düello) — dagsk-km-yarisma-pro.js
+            else if(s==='yarisma') { kmOyunKaynaklarYukle(); kmEkCalistir('dagsk-km-yarisma-pro.js', 'kmYarismaGiris'); }
             else if(s==='veli') kmVeliBildirimCiz();
             else if(s==='disiplin') kmDisiplinCiz();
             else if(s==='pozitif') kmPozitifCiz();
