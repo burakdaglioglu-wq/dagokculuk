@@ -38,7 +38,7 @@ function yzFormat(d) { return YZ_FORMAT[(d && d.ayar && d.ayar.format) || 'tam']
 const YZ_SURELER = [90, 120, 150, 180, 240];
 function yzVarsayilanSure(format) { return (YZ_FORMAT[format] || YZ_FORMAT.tam).ok >= 6 ? 240 : 120; }
 function yzSure(d) { if (d && d.asama === 'eleme') { let e = parseInt(d.ayar.setSure, 10); return e >= 10 ? e : 120; } let s = d && d.ayar && parseInt(d.ayar.sure, 10); return s >= 10 ? s : yzFormat(d).ok >= 6 ? 240 : 120; }
-function yzSureEtiket(sn) { return sn + ' sn' + (sn >= 60 ? ' (' + yzSaat(sn) + ')' : ''); }
+function yzSureEtiket(sn) { return sn + ' sn'; }
 // Süre seçici: hazır kalıplar + özel. hedef: 'kurulum' (taslak) ya da 'tur' (süren tur, ortak kayda yazar)
 function yzSureSeciciHTML(secili, hedef) {
     let ozel = YZ_SURELER.indexOf(secili) === -1, id = 'yz-sure-ozel-' + hedef;
@@ -60,7 +60,8 @@ function yzTop(oklar) { return (oklar || []).reduce(function (a, p) { return a +
 function yzKAd(k) { return k.slice(k.indexOf('|') + 1); }
 function yzKisaAd(ad) { let p = String(ad).trim().split(/\s+/); return p.length > 1 ? p.slice(0, -1).join(' ') + ' ' + p[p.length - 1].charAt(0) + '.' : ad; }
 function yzRoster() { return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter(function (k) { return turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; }); }
-function yzSaat(sn) { sn = Math.max(0, Math.ceil(sn)); return Math.floor(sn / 60) + ':' + String(sn % 60).padStart(2, '0'); }
+// Sayaç SANİYE olarak gösterilir (kullanıcı: '1:20 değil, 90'dan geri saysın').
+function yzSaat(sn) { return String(Math.max(0, Math.ceil(sn))); }
 function yzOkRenk(p) { return 'yz-r-' + (p === 'X' || p === '10' || p === '9' ? 'sari' : p === '8' || p === '7' ? 'kirmizi' : p === '6' || p === '5' ? 'mavi' : p === '4' || p === '3' ? 'siyah' : p === '2' || p === '1' ? 'beyaz' : 'kacan'); }
 
 // Sıralama: toplam → 10+X → X (WA). Eşitlikte aynı sıra no. "onceki": şu anki seri hariç sıra (yükseliş oku için).
@@ -383,12 +384,12 @@ function yzSayacDurdur() { yzGuncelle(function (o) { o.sayac = null; }); yzCiz()
 function yzSayacDurum(o) {
     let s = o.sayac, d = o.durum;
     if (!d || d.asama === 'bitti') return { faz: 'bitti-tur', metin: 'SONUÇLAR', alt: '' };
-    if (d.asama === 'eleme' && s && s.faz === 'shoot') { let g2 = (Date.now() - s.basla) / 1000, k2 = s.sure - g2; return k2 <= 0 ? { faz: 'bitti', metin: '0:00', alt: 'SÜRE BİTTİ' } : { faz: k2 <= 10 ? 'son' : 'atis', metin: yzSaat(k2), alt: 'SHOOT-OFF' }; }
+    if (d.asama === 'eleme' && s && s.faz === 'shoot') { let g2 = (Date.now() - s.basla) / 1000, k2 = s.sure - g2; return k2 <= 0 ? { faz: 'bitti', metin: '0', alt: 'SÜRE BİTTİ' } : { faz: k2 <= 10 ? 'son' : 'atis', metin: yzSaat(k2), alt: 'SHOOT-OFF' }; }
     if (!s || s.seri !== d.seri) return { faz: 'hazir', metin: yzSaat(yzSure(d)), alt: 'HAZIR' };
     let gecen = (Date.now() - s.basla) / 1000;
     if (gecen < s.hazir) return { faz: 'hazirlik', metin: yzSaat(s.hazir - gecen), alt: 'HATTA GEÇ' };
     let kalan = s.sure - (gecen - s.hazir);
-    if (kalan <= 0) return { faz: 'bitti', metin: '0:00', alt: 'SÜRE BİTTİ' };
+    if (kalan <= 0) return { faz: 'bitti', metin: '0', alt: 'SÜRE BİTTİ' };
     return { faz: kalan <= 30 ? 'son' : 'atis', metin: yzSaat(kalan), alt: kalan <= 30 ? 'SON 30 SN' : 'ATIŞ' };
 }
 function yzSayacHTML(o, id) { let s = yzSayacDurum(o); return '<div id="' + id + '" class="yz-sayac ' + s.faz + '"><span class="yz-sayac-alt">' + s.alt + '</span><span class="yz-sayac-sure">' + s.metin + '</span></div>'; }
