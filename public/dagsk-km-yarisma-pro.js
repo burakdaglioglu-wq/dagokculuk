@@ -208,7 +208,7 @@ function yzTurHTML(o) {
             return '<button class="yz-sp' + (e ? ' tamam' : '') + '" onclick="yzGirisAc(\'' + yzEnc(k) + '\',' + seri + ')">'
                 + '<span class="yz-sp-hedef">' + esc((d.hedefler || {})[k] || '') + '</span><span class="yz-sp-ad">' + esc(yzKisaAd(yzKAd(k))) + '</span>'
                 + '<span class="yz-sp-seri">' + (e ? yzTop(e) : 'GİR') + '</span>'
-                + '<span class="yz-sp-top">Σ ' + r.toplam + ' · ' + r.sira + '.</span></button>';
+                + '<span class="yz-sp-top">Σ ' + r.toplam + ' · ' + r.sira + '.' + (r.hedefPuan ? ' · 🎯 ' + (r.hedefPuan - r.toplam > 0 ? (r.hedefPuan - r.toplam) + ' kaldı' : '✓') : '') + '</span></button>';
         }).join('') + '</div></div>';
     }).join('');
     let ilerlemeBtn = tamam
@@ -365,6 +365,7 @@ function yzGirisKaydet() {
     else if (onceVardi) showToast('Tablo düzeltildi (karnedeki kayıt değişmez).', 'warning');
     let k = g.k, seri = g.seri; _yz.giris = null; yzGirisCiz();
     let yeni = yzOku(); yzCiz(); if (_yz.tv) yzTvCiz();
+    try { let r2 = yzSiralama(yeni).find(function (x) { return x.k === k; }), hd = yzHedefDurum(yeni, r2); if (hd && !onceVardi) showToast(hd.i + ' ' + hd.metin, hd.d === 'ulasti' || hd.d === 'rahat' || hd.d === 'yakin' ? 'success' : 'warning'); } catch (e) {}
     // Sıradaki: aynı seride, hedef sırasına göre bu sporcudan sonra gelen ilk girilmemiş sporcu
     if (_yz.siradaki && !onceVardi && yeni.durum && seri === Math.min(yeni.durum.seri, f.seri - 1)) {
         let sira = yzHedefSirasi(yeni), i = sira.indexOf(k), aday = sira.slice(i + 1).concat(sira.slice(0, i)).find(function (x) { return !yzSkor(yeni, x)[seri]; });
@@ -516,7 +517,9 @@ function yzTvCiz() {
         + (bitti ? '<div class="yz-tv-saat">' + yzGorunumKontrolHTML(o, true) + '</div>' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
-        + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>';
+        + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
+        + yzTvDuyuruHTML(o, sira, yeni);
+    clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
 }
 
@@ -579,27 +582,82 @@ function yzPKey(id, k) { return 'p_' + id + '_' + k; }
 function yzTarihTR(iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
 
 // ---------------------------------------------------------------- 🎯 kişisel hedef + tempo
+// ---- 🎯 hedef istatistiği (2026-09-30, kullanıcı: "ortalamaya göre alternatif sun, zor/kolay tahmini olsun, hedefe
+// yaklaştıysa ya da ne kadar kaldıysa bildirsin"). Beklenen tur toplamı = kendi ok ortalaması × ok sayısı; belirsizlik =
+// karnedeki serilerin seriden seriye sapması × √seri. Tutma ihtimali normal dağılımla (yaklaşık) hesaplanır.
+function yzNormalCdf(z) { let t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2), p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; }
+function yzHedefIstat(o, k) {
+    let d = o.durum, f = yzFormat(d), bk = yzBeklenenOrt(o, k); if (!bk) return null;
+    let gi = k.indexOf('|'), sp = turnuvaDB[k.slice(0, gi)] && turnuvaDB[k.slice(0, gi)][k.slice(gi + 1)];
+    let seriler = ((sp && sp.seriler) || []).filter(function (x) { return (x.t || 0) < d.basla && Array.isArray(x.oklar) && x.oklar.length >= 3; }).slice(-30).map(function (x) { return (x.puan || 0) / x.oklar.length * f.ok; });
+    let sdSeri = 0; if (seriler.length >= 5) { let m = yzOrt(seriler); sdSeri = Math.sqrt(yzOrt(seriler.map(function (v) { return (v - m) * (v - m); }))); }
+    sdSeri = Math.max(sdSeri, f.ok * 0.6); // az/tekdüze veride aşırı iyimser tahmin olmasın (6 ok → en az ~3.6 puan)
+    let onc = yzOncekiler(k, d.ayar.format, d.ayar.mesafe, d.id);
+    return { ort: bk.ort, kaynak: bk.kaynak, mean: bk.ort * f.seri * f.ok, sd: sdSeri * Math.sqrt(f.seri), sdSeri: sdSeri, rekor: onc.length ? Math.max.apply(null, onc.map(function (x) { return x.toplam; })) : null };
+}
+function yzHedefIhtimal(ist, hedef) { return 1 - yzNormalCdf((hedef - 0.5 - ist.mean) / ist.sd); }
+function yzZorluk(p) { return p >= 0.7 ? { ad: 'Kolay', cls: 'kolay', i: '🟢' } : p >= 0.35 ? { ad: 'Gerçekçi', cls: 'orta', i: '🟡' } : p >= 0.12 ? { ad: 'İddialı', cls: 'zor', i: '🟠' } : { ad: 'Çok zor', cls: 'cokzor', i: '🔴' }; }
+function yzHedefOneriler(ist, maks) {
+    let r = function (v) { return Math.max(1, Math.min(maks, Math.round(v))); };
+    let l = [{ ad: 'Kolay', i: '🟢', v: r(ist.mean - 0.85 * ist.sd) }, { ad: 'Gerçekçi', i: '🟡', v: r(ist.mean + 0.1 * ist.sd) }, { ad: 'İddialı', i: '🟠', v: r(ist.mean + 0.8 * ist.sd) }];
+    if (ist.rekor && ist.rekor + 1 > l[1].v && ist.rekor + 1 !== l[2].v) l.push({ ad: 'Rekor', i: '🏆', v: r(ist.rekor + 1) });
+    return l;
+}
+// Tur içinde hedef durumu — kalan puan, kalan seri, bugünkü form (geçmiş ortalamayla hafif harmanlanmış)
+function yzHedefDurum(o, r) {
+    if (!r || !r.hedefPuan) return null;
+    let d = o.durum, f = yzFormat(d), kalan = r.hedefPuan - r.toplam, kalanSeri = f.seri - r.girilen, ad = yzKisaAd(r.ad);
+    if (kalan <= 0) return { d: 'ulasti', i: '🎯', metin: ad + ' hedefine ulaştı! (' + r.toplam + '/' + r.hedefPuan + ')', p: 1 };
+    if (kalanSeri <= 0) return { d: 'kacti', i: '·', metin: ad + ': hedefe ' + kalan + ' puan kala bitti', p: 0 };
+    let ist = yzHedefIstat(o, r.k), ortSeri = r.girilen ? r.toplam / r.girilen : (ist ? ist.ort * f.ok : f.ok * 7);
+    if (ist && r.girilen) ortSeri = (ortSeri * r.girilen + ist.ort * f.ok * 2) / (r.girilen + 2);
+    let sdSeri = ist ? ist.sdSeri : f.ok * 0.6, gerekli = kalan / kalanSeri;
+    let p = 1 - yzNormalCdf((kalan - 0.5 - ortSeri * kalanSeri) / (sdSeri * Math.sqrt(kalanSeri)));
+    let g = Math.ceil(gerekli), o2 = Math.round(ortSeri);
+    if (gerekli > f.ok * 10) return { d: 'imkansiz', i: '·', metin: ad + ': hedef bu turda yetişmez — her seriyi en iyi haline getir', p: 0 };
+    if (kalan <= ortSeri) return { d: 'yakin', i: '🔥', metin: ad + ': hedefe sadece ' + kalan + ' puan! ' + (kalanSeri === 1 ? 'Son seri.' : kalanSeri + ' seri var.'), p: p };
+    if (p >= 0.75) return { d: 'rahat', i: '✅', metin: ad + ': hedefe ' + kalan + ' kaldı · seri başı ' + g + ' yeter (ort. ' + o2 + ')', p: p };
+    if (p >= 0.4) return { d: 'yolunda', i: '🟡', metin: ad + ': hedefe ' + kalan + ' kaldı · seri başı ' + g + ' lazım (ort. ' + o2 + ')', p: p };
+    if (p >= 0.12) return { d: 'zorlasiyor', i: '⚠️', metin: ad + ': zorlaşıyor · seri başı ' + g + ' lazım (ort. ' + o2 + ')', p: p };
+    return { d: 'cokzor', i: '🔴', metin: ad + ': hedef zor · seri başı ' + g + ' lazım (ort. ' + o2 + ')', p: p };
+}
 function yzTempoHucre(r, bitti) {
     if (bitti) {
         if (!r.hedefPuan) return '<td class="tmp bos">·</td>';
         let f = r.toplam - r.hedefPuan;
         return '<td class="tmp ' + (f >= 0 ? 'ust' : 'alt') + '" title="Hedef ' + r.hedefPuan + '">' + (f >= 0 ? '✓ +' + f : '−' + (-f)) + '<small>/' + r.hedefPuan + '</small></td>';
     }
-    if (r.tempo == null) return '<td class="tmp bos">' + (r.hedefPuan ? '<small>/' + r.hedefPuan + '</small>' : '·') + '</td>';
-    return '<td class="tmp' + (r.hedefPuan ? (r.tempo >= r.hedefPuan ? ' ust' : ' alt') : '') + '" title="Bu tempoyla tahmini bitiş">' + r.tempo + (r.hedefPuan ? '<small>/' + r.hedefPuan + '</small>' : '') + '</td>';
+    if (!r.hedefPuan) return r.tempo == null ? '<td class="tmp bos">·</td>' : '<td class="tmp" title="Bu tempoyla tahmini bitiş">' + r.tempo + '</td>';
+    let hd = yzHedefDurum(yzOku(), r), cls = !hd ? '' : hd.p >= 0.4 ? ' ust' : hd.p >= 0.12 ? ' orta' : ' alt';
+    return '<td class="tmp' + cls + '" title="' + esc(hd ? hd.metin : '') + '">' + (hd && hd.d !== 'yolunda' && hd.d !== 'kacti' && hd.d !== 'imkansiz' ? '<span class="tmp-i">' + hd.i + '</span>' : '') + (r.tempo == null ? '·' : r.tempo) + '<small>/' + r.hedefPuan + '</small></td>';
 }
 function yzHedeflerAc() {
     let o = yzOku(), d = o.durum; if (!d) return;
     let hp = o[yzHpKey(d.id)] || {}, f = yzFormat(d), maks = f.seri * f.ok * 10;
+    _yz.hpIst = [];
     let satirlar = d.katilimci.map(function (k, i) {
-        let onc = yzOncekiler(k, d.ayar.format, d.ayar.mesafe, d.id), en = onc.length ? Math.max.apply(null, onc.map(function (x) { return x.toplam; })) : null, son = onc.length ? onc[onc.length - 1].toplam : null;
-        return '<label class="yz-hp-sat"><span>' + esc(yzKAd(k)) + '<small>' + (son != null ? 'son tur ' + son + ' · en iyi ' + en : 'geçmiş tur yok') + '</small></span>'
-            + '<input type="number" inputmode="numeric" min="1" max="' + maks + '" id="yz-hp-' + i + '" data-en="' + (en || '') + '" value="' + (hp[k] || '') + '" placeholder="' + (en || '—') + '"></label>';
+        let ist = yzHedefIstat(o, k); _yz.hpIst[i] = ist;
+        let bilgi = ist ? 'ort. ' + ist.ort.toFixed(2) + '/ok → beklenen ~' + Math.round(ist.mean) + ' (±' + Math.round(ist.sd) + ') · ' + esc(ist.kaynak) + (ist.rekor ? ' · rekor ' + ist.rekor : '') : 'geçmiş veri yok — tahmin yapılamıyor';
+        let cipler = ist ? yzHedefOneriler(ist, maks).map(function (x) { return '<button type="button" class="yz-hp-cip" onclick="yzHedefSec(' + i + ',' + x.v + ')">' + x.i + ' ' + x.ad + ' <b>' + x.v + '</b></button>'; }).join('') : '';
+        return '<div class="yz-hp-sat"><div class="yz-hp-ust"><span class="yz-hp-ad">' + esc(yzKAd(k)) + '<small>' + bilgi + '</small></span>'
+            + '<span class="yz-hp-giris"><input type="number" inputmode="numeric" min="1" max="' + maks + '" id="yz-hp-' + i + '" data-en="' + (ist && ist.rekor ? ist.rekor : '') + '" data-ger="' + (ist ? yzHedefOneriler(ist, maks)[1].v : '') + '" value="' + (hp[k] || '') + '" placeholder="—" oninput="yzHedefZorlukGuncelle(' + i + ')"><span class="yz-hp-z" id="yz-hp-z-' + i + '"></span></span></div>'
+            + (cipler ? '<div class="yz-hp-cipler">' + cipler + '</div>' : '') + '</div>';
     }).join('');
-    onayIste('<div style="text-align:left"><b>🎯 Kişisel hedef puanları</b><div class="yz-alt" style="margin:4px 0 10px">Tur toplamı için hedef (' + f.seri * f.ok + ' ok, en fazla ' + maks + '). TV\'deki <b>TEMPO</b> sütunu (bu gidişle tahmini bitiş) hedefin üstündeyse yeşil, altındaysa kırmızı olur.</div>'
-        + '<div class="yz-hp">' + satirlar + '</div><div style="margin-top:10px"><button class="yz-btn" onclick="yzHedefEnIyi()">Boşları kişisel rekorla doldur</button></div></div>', yzHedeflerKaydet, '💾 Hedefleri kaydet');
+    onayIste('<div style="text-align:left"><b>🎯 Kişisel hedef puanları</b><div class="yz-alt" style="margin:4px 0 10px">Tur toplamı için hedef (' + f.seri * f.ok + ' ok, en fazla ' + maks + '). Öneriler ve tutma ihtimali çocuğun kendi geçmişinden hesaplanır. Tur boyunca hedefe ne kadar kaldığı bildirilir.</div>'
+        + '<div class="yz-hp">' + satirlar + '</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="yz-btn" onclick="yzHedefToplu(\'ger\')">🟡 Boşlara gerçekçi hedef</button><button class="yz-btn" onclick="yzHedefToplu(\'en\')">🏆 Boşlara kişisel rekor</button></div></div>', yzHedeflerKaydet, '💾 Hedefleri kaydet');
+    d.katilimci.forEach(function (k, i) { yzHedefZorlukGuncelle(i); });
 }
-function yzHedefEnIyi() { document.querySelectorAll('.yz-hp input').forEach(function (i) { if (i.dataset.en && !i.value) i.value = i.dataset.en; }); }
+function yzHedefSec(i, v) { let el = document.getElementById('yz-hp-' + i); if (el) { el.value = v; yzHedefZorlukGuncelle(i); } }
+function yzHedefToplu(tur) { document.querySelectorAll('.yz-hp input').forEach(function (el) { let v = tur === 'en' ? el.dataset.en : el.dataset.ger; if (v && !el.value) { el.value = v; let i = parseInt(el.id.replace('yz-hp-', ''), 10); yzHedefZorlukGuncelle(i); } }); }
+function yzHedefZorlukGuncelle(i) {
+    let el = document.getElementById('yz-hp-' + i), z = document.getElementById('yz-hp-z-' + i), ist = (_yz.hpIst || [])[i];
+    if (!el || !z) return;
+    let v = parseInt(el.value, 10);
+    if (!v) { z.textContent = ''; z.className = 'yz-hp-z'; return; }
+    if (!ist) { z.textContent = 'tahmin yok'; z.className = 'yz-hp-z'; return; }
+    let p = yzHedefIhtimal(ist, v), zr = yzZorluk(p);
+    z.textContent = zr.i + ' ' + zr.ad + ' · %' + Math.round(p * 100); z.className = 'yz-hp-z ' + zr.cls;
+}
 function yzHedeflerKaydet() {
     let d = yzOku().durum; if (!d) return;
     let f = yzFormat(d), maks = f.seri * f.ok * 10, yeni = {};
@@ -1342,6 +1400,14 @@ function yzEk2CssYukle() {
         '.yz-tek{display:flex;flex-direction:column;gap:8px}.yz-tek-sat{display:grid;grid-template-columns:130px 100px 1fr;gap:12px;align-items:center;padding:8px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-main)}',
         '.yz-tek-ad{display:flex;flex-direction:column}.yz-tek-ad small{color:var(--text-muted)}.yz-tek-hedef{display:flex;justify-content:center;font-size:11px;text-align:center}.yz-tek-metin{display:flex;flex-direction:column;gap:4px;font-size:13px}.yz-tek-oneri{font-weight:800;color:#0891b2}',
         '.yz-yorgun{padding:6px 10px;border-radius:10px;font-size:12.5px}.yz-yorgun.dayaniklilik{background:color-mix(in srgb,#ef4444 12%,transparent)}.yz-yorgun.konsantrasyon{background:color-mix(in srgb,#f59e0b 14%,transparent)}.yz-yorgun.istikrarli{background:color-mix(in srgb,#22c55e 12%,transparent)}.yz-yorgun.az{background:var(--bg-panel)}',
+        '.yz-hp-sat{flex-direction:column;align-items:stretch!important;gap:6px}.yz-hp-ust{display:flex;justify-content:space-between;align-items:center;gap:10px}.yz-hp-ad{display:flex;flex-direction:column;font-weight:800;font-size:13px}.yz-hp-ad small{font-weight:600;color:var(--text-muted);font-size:11px}',
+        '.yz-hp-giris{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.yz-hp-z{font-size:11px;font-weight:800;min-height:14px}.yz-hp-z.kolay{color:#22c55e}.yz-hp-z.orta{color:#eab308}.yz-hp-z.zor{color:#f97316}.yz-hp-z.cokzor{color:#ef4444}',
+        '.yz-hp-cipler{display:flex;gap:6px;flex-wrap:wrap}.yz-hp-cip{border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);border-radius:999px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}.yz-hp-cip b{font-variant-numeric:tabular-nums}',
+        '.yz-tablo .tmp.orta{color:#f59e0b}.yz-tablo .tmp-i{margin-right:3px}',
+        '.yz-tv-duyuru{position:absolute;left:50%;bottom:2.4vh;transform:translateX(-50%);display:flex;flex-direction:column;gap:.8vh;z-index:3;transition:opacity .6s}.yz-tv-duyuru.gizle{opacity:0;pointer-events:none}',
+        '.yz-tv-dy{display:flex;align-items:center;gap:1vw;padding:1.2vh 2vw;border-radius:1vw;background:#0d1a2e;border:2px solid #1d3354;font-size:1.9vw;font-weight:900;box-shadow:0 10px 40px rgba(0,0,0,.6);animation:yzDuyuru .5s ease-out}.yz-tv-dy span{font-size:2.3vw}',
+        '.yz-tv-dy.ulasti{background:linear-gradient(90deg,#854d0e,#ca8a04);border-color:#fde047;color:#fff}.yz-tv-dy.yakin{border-color:#f97316}.yz-tv-dy.rahat{border-color:#22c55e}.yz-tv-dy.zorlasiyor,.yz-tv-dy.cokzor{border-color:#ef4444}',
+        '@keyframes yzDuyuru{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}',
         '.yz-rapor-grup{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px}',
         '@media (max-width:640px){.yz-tek-sat{grid-template-columns:1fr 100px}.yz-tek-metin{grid-column:1/-1}}'
     ].join('\n');
@@ -1351,6 +1417,14 @@ function yzEk2CssYukle() {
 // ---------------------------------------------------------------- 📺 TV'den yönetim (2026-09-30, kullanıcı: "TV ekranında skor
 // giremiyorum, saniyeyi buradan da yönetebileyim"). TV artık yazabilir: her yazma yzGuncelle ile TAZE okuyup yazıyor ve
 // skorlar sporcu/maç başına ayrı anahtarda — tabletle aynı anda kullanılsa da birbirini ezmez.
+function yzTvDuyuruHTML(o, sira, yeni) {
+    let msj = sira.filter(function (r) { return yeni[r.k] && r.hedefPuan; }).map(function (r) { return yzHedefDurum(o, r); })
+        // TV herkesin önünde: sadece olumlu/nötr mesajlar (moral) — "zor/yetişmez" sadece koçun cihazında (toast) görünür
+        .filter(function (h) { return h && ['ulasti', 'yakin', 'rahat', 'yolunda'].indexOf(h.d) !== -1; });
+    if (!msj.length) return '';
+    msj.sort(function (a, b) { return (b.d === 'ulasti') - (a.d === 'ulasti'); });
+    return '<div class="yz-tv-duyuru">' + msj.slice(0, 3).map(function (h) { return '<div class="yz-tv-dy ' + h.d + '"><span>' + h.i + '</span>' + esc(h.metin) + '</div>'; }).join('') + '</div>';
+}
 function yzTvKontrolHTML(o, el) {
     let d = o.durum, dugme = function (yazi, fn, cls, baslik) { return '<button class="yz-tv-k' + (cls ? ' ' + cls : '') + '" onclick="' + fn + '"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
     let sayac = o.sayac ? dugme('⏹ Sıfırla', 'yzSayacDurdur()') : dugme('▶ Başlat', 'yzSayacBaslat()', 'yesil', 'Süreyi başlat (10 sn hatta geçiş + atış)');
