@@ -593,10 +593,12 @@ function miloAidatKartHTML(u) {
     }
     let yas = miloYasHesapla(u.dogumTarihi);
     let acikMi = miloAidatAcikAd === ad;
+    let secRec = miloAidatDuesKayit(ad, miloAidatAy), hatirlatVar = !u.aidatMuaf && !(secRec && secRec.odendi);
     return `<details class="milo-card" style="${u.aidatMuaf ? 'opacity:0.85; border-color:#8b5cf6;' : ''}" ${acikMi ? 'open' : ''}>
         <summary style="cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="font-weight:700; font-size:13px;">${miloEsc(ad)} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(grup)}</span>${yas !== null ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${yas} yaş)</span>` : ''}</span>
-            <span onclick="event.preventDefault(); event.stopPropagation(); miloAidatMuafToggle('${miloJsEsc(grup)}','${miloJsEsc(ad)}', ${u.aidatMuaf ? 'false' : 'true'});" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:${u.aidatMuaf ? '#8b5cf622' : 'var(--bg-panel)'}; border:1px solid ${u.aidatMuaf ? '#8b5cf6' : 'var(--border-color)'}; color:${u.aidatMuaf ? '#a78bfa' : 'var(--text-muted)'};">🎗️ ${u.aidatMuaf ? 'Muaf' : 'Muaf İşaretle'}</span>
+            <span style="display:flex; gap:6px; align-items:center;">${hatirlatVar ? `<span onclick="event.preventDefault(); event.stopPropagation(); miloAidatHatirlat('${miloJsEsc(grup)}','${miloJsEsc(ad)}');" title="${miloEsc(miloAyTamAd(miloAidatAy))} aidatı için veliye WhatsApp hatırlatması" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:rgba(16,185,129,0.12); border:1px solid var(--neon-green); color:var(--neon-green);">💬 Hatırlat</span>` : ''}
+            <span onclick="event.preventDefault(); event.stopPropagation(); miloAidatMuafToggle('${miloJsEsc(grup)}','${miloJsEsc(ad)}', ${u.aidatMuaf ? 'false' : 'true'});" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:${u.aidatMuaf ? '#8b5cf622' : 'var(--bg-panel)'}; border:1px solid ${u.aidatMuaf ? '#8b5cf6' : 'var(--border-color)'}; color:${u.aidatMuaf ? '#a78bfa' : 'var(--text-muted)'};">🎗️ ${u.aidatMuaf ? 'Muaf' : 'Muaf İşaretle'}</span></span>
         </summary>
         <div style="margin-top:10px;">
             <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px;">${aylikChipler.join('')}</div>
@@ -844,7 +846,7 @@ function miloAidatBorcListesi(esikAy) {
             borcAy++;
             d.setMonth(d.getMonth() - 1);
         }
-        if (borcAy >= esikAy) liste.push({ ad: u.ad, grup: u.grup, borcAy, telefon: u.acilTelefon || null });
+        if (borcAy >= esikAy) liste.push({ ad: u.ad, grup: u.grup, borcAy, telefon: u.acilTelefon || u.veli2Telefon || null });
     });
     return liste.sort((a, b) => b.borcAy - a.borcAy);
 }
@@ -857,13 +859,36 @@ function miloTelefonWaFormat(telefon) {
     return '90' + rakam;
 }
 
-function miloAidatBorcWhatsApp(ad, telefon) {
-    let ilkAd = ad.split(' ')[0];
-    let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
-    let msg = `Merhaba 🌟 MILO FITT KIDS'ten yazıyoruz.\n\n${ilkAdB} için bu ayki aidat ödemesini henüz göremedik. Uygun olduğunuzda tamamlarsanız çok seviniriz 🩷 Ödemeyi yaptıysanız bize bildirmeniz yeterli.\n\nBir sorunuz olursa her zaman buradayız.\nMILO FITT KIDS`;
+// Veliye aidat hatırlatması (WhatsApp). 2026-10-01: wa.me yerine api.whatsapp.com/send — wa.me yönlendirmesi
+// emojileri bozup "�" gösteriyordu (kullanıcı ekran görüntüsü). 🩷 (yeni emoji, eski cihazlarda kutu) yerine 💜.
+const MILO_AY_TAM = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+function miloAyTamAd(ayStr) { let m = /^(\d{4})-(\d{2})/.exec(ayStr || ''); return m ? MILO_AY_TAM[parseInt(m[2], 10) - 1] + ' ' + m[1] : ''; }
+function miloIlkAdBuyuk(ad) { let ilk = String(ad || '').trim().split(/\s+/)[0] || ''; return ilk.charAt(0).toLocaleUpperCase('tr') + ilk.slice(1).toLocaleLowerCase('tr'); }
+function miloAidatMesaj(ad, ayMetni, tutar, borcAy) {
+    let kim = miloIlkAdBuyuk(ad);
+    let ne = borcAy && borcAy > 1 ? `son ${borcAy} ayın aidat ödemesini` : (ayMetni ? `${ayMetni} aidat ödemesini` : 'bu ayki aidat ödemesini');
+    return `Merhaba 🌟 MILO FITT KIDS'ten yazıyoruz.\n\n${kim} için ${ne}${tutar && !(borcAy > 1) ? ` (${tutar} ₺)` : ''} henüz göremedik. Uygun olduğunuzda tamamlarsanız çok seviniriz 💜 Ödemeyi yaptıysanız bize bildirmeniz yeterli.\n\nBir sorunuz olursa her zaman buradayız.\nMILO FITT KIDS`;
+}
+function miloWhatsAppAc(telefon, msg) {
     let numara = miloTelefonWaFormat(telefon);
-    let url = numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=';
+    let url = numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=';
+    if (!numara) showToast('Veli telefonu kayıtlı değil — WhatsApp\'ta kişiyi sen seç.', 'warning');
     window.open(url + encodeURIComponent(msg), '_blank');
+}
+function miloAidatBorcWhatsApp(ad, telefon, borcAy) {
+    miloWhatsAppAc(telefon, miloAidatMesaj(ad, '', null, borcAy));
+}
+// Aidat kartındaki "💬 Hatırlat": seçili ayın adı + tutarı; iki veli numarası varsa hangisine gideceği sorulur.
+function miloAidatHatirlat(grup, ad) {
+    let u = miloUyeler.find(x => x.grup === grup && x.ad === ad); if (!u) return;
+    let msg = miloAidatMesaj(ad, miloAyTamAd(miloAidatAy), miloAidatVarsayilanTutar || null, null);
+    let t1 = u.acilTelefon, t2 = u.veli2Telefon;
+    if (t1 && t2 && typeof mhdSor === 'function') {
+        return mhdSor('Mesaj hangi veliye gitsin?', ad + ' — ' + miloAyTamAd(miloAidatAy) + ' aidat hatırlatması',
+            [['kal', 'Vazgeç'], ['v2', (u.veli2Kisi || '2. veli') + ' · ' + t2], ['v1', (u.acilKisi || 'Veli') + ' · ' + t1, 'ana']],
+            function (a) { if (a === 'v1') miloWhatsAppAc(t1, msg); else if (a === 'v2') miloWhatsAppAc(t2, msg); });
+    }
+    miloWhatsAppAc(t1 || t2, msg);
 }
 
 function miloAidatBorcRaporuToggle() { miloAidatBorcRaporuAcik = !miloAidatBorcRaporuAcik; miloAidatCiz(); }
@@ -888,7 +913,7 @@ function miloAidatBorcRaporuCiz() {
     html += liste.map(x => `<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-color);">
         <div style="font-size:18px; flex-shrink:0;">🔴</div>
         <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${miloEsc(x.ad)} <span style="color:var(--text-muted); font-weight:400; font-size:11px;">· ${miloEsc(x.grup)}</span></div><div style="font-size:10px; color:var(--text-muted);">${x.borcAy} aydır ödenmemiş${x.telefon ? ' · 📞 ' + miloEsc(x.telefon) : ''}</div></div>
-        <button onclick="miloAidatBorcWhatsApp('${miloJsEsc(x.ad)}','${miloJsEsc(x.telefon || '')}')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); border-radius:8px; padding:7px 10px; font-size:11px; font-weight:800; flex-shrink:0;">💬 Veliye Yaz</button>
+        <button onclick="miloAidatBorcWhatsApp('${miloJsEsc(x.ad)}','${miloJsEsc(x.telefon || '')}',${x.borcAy})" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); border-radius:8px; padding:7px 10px; font-size:11px; font-weight:800; flex-shrink:0;">💬 Veliye Yaz</button>
     </div>`).join('') + '</div>';
     alan.innerHTML = html;
 }

@@ -542,7 +542,7 @@ function kyMisafirWhatsApp(kk) {
     let ilk = k.ad.split(' ')[0], ilkB = ilk.charAt(0) + ilk.slice(1).toLocaleLowerCase('tr-TR');
     let msg = `Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkB} okçuluk dersimize katıldığı için çok teşekkür ederiz! 🏹 Nasıl buldu, devam etmek ister mi?\n\nDers günlerimizi, saatlerimizi ve kayıt bilgilerini paylaşmaktan memnuniyet duyarız — buradan yazmanız yeterli.\n\nDAĞ Spor Kulübü`;
     let numara = typeof telefonWaFormat === 'function' ? telefonWaFormat(b.tel) : '';
-    window.open((numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank');
+    window.open((numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank');
     // mesaj açıldıysa "arandı" say (yanlışsa kartta tek dokunuşla değiştirilebilir)
     kisiTurAyarla(k.g, k.ad, { takip: { durum: 'arandi', tarih: bugunISO(), kanal: 'whatsapp' } });
     kyKisilerCiz();

@@ -1914,7 +1914,7 @@
                     } else {
                         let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url; a.download = `Karne_${ad}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1500);
                         showToast('PDF indirildi. WhatsApp açılıyor — dosyayı ekleyin.', 'warning');
-                        window.open(`https://wa.me/?text=${encodeURIComponent(mesaj + ' (PDF ektedir)')}`, '_blank');
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mesaj + ' (PDF ektedir)')}`, '_blank');
                     }
                 }).catch(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('Paylaşım hatası.', 'error'); });
             } else {
@@ -4427,7 +4427,7 @@
             let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
             let msg = `Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkAdB} için bu ayki aidat ödemesini henüz göremedik. Uygun olduğunuzda tamamlarsanız çok seviniriz 🧡 Ödemeyi yaptıysanız bize bildirmeniz yeterli.\n\nBir sorunuz olursa her zaman buradayız.\nDAĞ Spor Kulübü`;
             let numara = telefonWaFormat(telefon);
-            let url = numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=';
+            let url = numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=';
             window.open(url + encodeURIComponent(msg), '_blank');
         }
 
@@ -7459,7 +7459,7 @@
             let ilkAd = ad.split(' ')[0];
             let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
             let msg = `Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkAdB}'i son antrenmanlarda göremedik ve çok özledik! 🏹 Antrenmanlarımız her zamanki programında devam ediyor — kendisini yeniden aramızda görmekten büyük mutluluk duyarız.\n\nBir engel ya da sorunuz varsa her zaman buradayız. 🧡\nDAĞ Spor Kulübü`;
-            window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
         }
 
         // ===== 🎂 DOĞUM GÜNÜ & ÖZEL GÜN HATIRLATICISI (2026-08-20) =====
@@ -7488,7 +7488,7 @@
             let ilkAd = ad.split(' ')[0];
             let ilkAdB = ilkAd.charAt(0) + ilkAd.slice(1).toLocaleLowerCase('tr');
             let msg = `🎉 İyi ki doğdun ${ilkAdB}! 🎂\n\nDAĞ Spor Kulübü ailesi olarak bugünü seninle kutlamak, yeni yaşının sağlık, mutluluk ve nice başarılarla dolu olmasını dilemek istedik. 🏹\n\nSeninle çalışmaktan gurur duyuyoruz — nice senelere! 🧡\nDAĞ Spor Kulübü`;
-            window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
         }
         function yoneticiDogumGunuWidgetCiz() {
             let el = document.getElementById('yon-dogumgunu-widget'); if(!el) return;
@@ -25107,7 +25107,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 } else {
                     let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url; a.download = dosyaAdi; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1500);
                     showToast('PDF indirildi. WhatsApp açılıyor — dosyayı ekleyin.', 'warning');
-                    window.open(`https://wa.me/?text=${encodeURIComponent(mesaj + ' (PDF ektedir)')}`, '_blank');
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mesaj + ' (PDF ektedir)')}`, '_blank');
                 }
             }).catch(() => { if(temp.parentNode) document.body.removeChild(temp); showToast('Sonuç kartı oluşturulamadı.', 'error'); });
         }

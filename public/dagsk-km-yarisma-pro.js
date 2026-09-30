@@ -1062,7 +1062,7 @@ function yzRaporWhatsapp(kEnc) {
     let k = decodeURIComponent(kEnc), i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)];
     let tel = String((sp && (sp.acilTelefon || sp.veli2Telefon)) || '').replace(/\D/g, '');
     if (tel.length === 10 && tel[0] === '5') tel = '90' + tel; else if (tel.length === 11 && tel[0] === '0') tel = '9' + tel;
-    let url = 'https://wa.me/' + (tel.length >= 11 ? tel : '') + '?text=' + encodeURIComponent(yzRaporMetin(yzOku(), k));
+    let url = 'https://api.whatsapp.com/send?' + (tel.length >= 11 ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(yzRaporMetin(yzOku(), k));
     if (tel.length < 11) showToast('Veli telefonu kayıtlı değil — WhatsApp\'ta kişiyi sen seç.', 'warning');
     window.open(url, '_blank');
 }

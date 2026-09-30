@@ -222,7 +222,7 @@ function kmDersOzetiAc() {
 }
 function kmOzetWa(tel, metin) {
     let n = ''; try { n = tel ? telefonWaFormat(tel) : ''; } catch (e) {}
-    window.open((n ? 'https://wa.me/' + n + '?text=' : 'https://wa.me/?text=') + encodeURIComponent(metin), '_blank');
+    window.open((n ? 'https://api.whatsapp.com/send?phone=' + n + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(metin), '_blank');
 }
 function kmOzetVeliyeGonder(i) { let D = _kmOzetSon, s = D && D.satirlar[i]; if (!s) return; kmOzetWa(s.sp.acilTelefon, kmOzetVeliMetni(s, D)); }
 function kmOzetGrubaGonder() { if (_kmOzetSon) kmOzetWa(null, kmOzetGrupMetni(_kmOzetSon)); }

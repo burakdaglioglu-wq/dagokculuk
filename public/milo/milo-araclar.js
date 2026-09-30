@@ -19,7 +19,7 @@ function maKey(g, ad) { return encodeURIComponent(g + '|' + ad).replace(/'/g, '%
 function maCoz(k) { let [g, ...r] = decodeURIComponent(k).split('|'); return { g, ad: r.join('|') }; }
 function maIlk(ad) { return String(ad || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR'); }
 function maTel(t) { let r = String(t || '').replace(/\D/g, ''); if (!r) return ''; if (r.startsWith('90')) return r; if (r.startsWith('0')) return '90' + r.slice(1); return '90' + r; }
-function maWa(tel, msg) { let n = maTel(tel); window.open((n ? `https://wa.me/${n}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank'); }
+function maWa(tel, msg) { let n = maTel(tel); window.open((n ? `https://api.whatsapp.com/send?phone=${n}&text=` : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank'); }
 function maIlkAd(ad) { let i = String(ad).split(' ')[0]; return i.charAt(0) + i.slice(1).toLocaleLowerCase('tr-TR'); }
 function maSlotGunler(s) { return (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number); }
 function maIptal(s, iso) { return (s.istisnalar || []).some(i => i.tarih === iso); }

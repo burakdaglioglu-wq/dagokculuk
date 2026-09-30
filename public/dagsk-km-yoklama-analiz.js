@@ -1270,7 +1270,7 @@ function kmYaVeliMesaj(iso, key, slotId) {
     let veli = sp.acilKisi ? ' ' + String(sp.acilKisi).trim() : '';
     let msg = `Merhaba${veli} 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkB} ${gunYazi}${s ? ' ' + s.baslangicSaat : ''} okçuluk dersimize katılamadı. Her şeyin yolunda olduğunu umuyoruz 🧡\n\nBir engel ya da sorunuz varsa bize buradan yazabilirsiniz. Bir sonraki derste görüşmek dileğiyle!\nDAĞ Spor Kulübü`;
     let numara = typeof telefonWaFormat === 'function' ? telefonWaFormat(sp.acilTelefon) : '';
-    window.open((numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank');
+    window.open((numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank');
     let kayit = kmYaMesajKayit(); kayit[iso + '|' + k.g + '|' + k.ad] = Date.now();
     // 120 günden eski işaretleri at
     let sinir = new Date(); sinir.setDate(sinir.getDate() - 120); let s120 = kmYaIso(sinir);
@@ -1315,7 +1315,7 @@ function kmYaVeliDavet(key) {
     let ilk = k.ad.split(' ')[0], ilkB = ilk.charAt(0) + ilk.slice(1).toLocaleLowerCase('tr-TR');
     let msg = `Merhaba${sp.acilKisi ? ' ' + String(sp.acilKisi).trim() : ''} 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkB}'i son antrenmanlarda göremedik ve çok özledik! 🏹 Antrenmanlarımız her zamanki programında devam ediyor — kendisini yeniden aramızda görmekten büyük mutluluk duyarız.\n\nBir engel ya da sorunuz varsa her zaman buradayız. 🧡\nDAĞ Spor Kulübü`;
     let numara = typeof telefonWaFormat === 'function' ? telefonWaFormat(sp.acilTelefon) : '';
-    window.open((numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank');
+    window.open((numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank');
 }
 
 // ---------------------------------------------------------------- ⏳ dolu derse bekleme listesi (2026-09-28)
@@ -1382,7 +1382,7 @@ function kmYaVeliRaporGonder(key) {
     let ayAd = new Date(kmYaRaporAy() + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long' });
     let msg = `Merhaba${sp.acilKisi ? ' ' + String(sp.acilKisi).trim() : ''} 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n${ilkB}'in ${ayAd} ayı okçuluk raporu hazır 🏹 Devam takvimini, ders günlerine katılımını ve seri ortalamalarını buradan görebilirsiniz:\n${link}\n\nSorularınız için her zaman buradayız 🧡\nDAĞ Spor Kulübü`;
     let numara = typeof telefonWaFormat === 'function' ? telefonWaFormat(sp.acilTelefon) : '';
-    window.open((numara ? `https://wa.me/${numara}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg), '_blank');
+    window.open((numara ? `https://api.whatsapp.com/send?phone=${numara}&text=` : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank');
 }
 function kmYaVeliRaporOnizle(key) { let k = kmYaAnahtar(key), link = _kmYaRaporLink[k.g + '|' + k.ad]; if (link) window.open(link, '_blank'); }
 function kmYaVeliRaporKopyala(key) {

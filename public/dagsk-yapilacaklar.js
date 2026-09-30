@@ -121,7 +121,7 @@ function ypIsaretle(x, tamamMi) {
 function ypGonder(k) {
     let x = ypBul(k); if (!x) return;
     let n = (typeof telefonWaFormat === 'function') ? telefonWaFormat(x.tel) : '';
-    window.open((n ? 'https://wa.me/' + n + '?text=' : 'https://wa.me/?text=') + encodeURIComponent(x.mesaj), '_blank');
+    window.open((n ? 'https://api.whatsapp.com/send?phone=' + n + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(x.mesaj), '_blank');
     ypIsaretle(x, true); ypCiz();
 }
 function ypTamam(k) { let x = ypBul(k); if (!x) return; ypIsaretle(x, true); ypCiz(); }
