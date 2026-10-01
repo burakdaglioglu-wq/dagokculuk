@@ -1074,7 +1074,27 @@ async function miloPersonelSil(id) {
 const MILO_GUN_ADI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const MILO_GUN_KISA_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 function _miloBsIsoTarih(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-function _miloTrTranslit(s) { return String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').replace(/Ğ/g, 'G').replace(/ğ/g, 'g').replace(/Ş/g, 'S').replace(/ş/g, 's'); }
+// 2026-10-01: Türkçe yazı tipi (Roboto, /fonts/) gömülüyse harfler olduğu gibi; değilse eski güvenli yol.
+let _miloPdfFont = null, _miloPdfFontSoz = null, _miloPdfTurkce = false;
+function _miloTrTranslitEski(s) { return String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').replace(/Ğ/g, 'G').replace(/ğ/g, 'g').replace(/Ş/g, 'S').replace(/ş/g, 's'); }
+function _miloTrTranslit(s) { return _miloPdfTurkce ? String(s || '') : _miloTrTranslitEski(s); }
+function _miloPdfFontYukle() {
+    if (_miloPdfFont) return Promise.resolve(_miloPdfFont);
+    if (_miloPdfFontSoz) return _miloPdfFontSoz;
+    let al = function (u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(function (b) { let a = new Uint8Array(b), t = ''; for (let i = 0; i < a.length; i += 0x8000) t += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(t); }); };
+    _miloPdfFontSoz = Promise.all([al('/fonts/Roboto_400Regular.ttf'), al('/fonts/Roboto_700Bold.ttf')]).then(function (r) { _miloPdfFont = { normal: r[0], bold: r[1] }; return _miloPdfFont; }).catch(function () { _miloPdfFontSoz = null; return null; });
+    return _miloPdfFontSoz;
+}
+function _miloPdfTurkceYaziTipi(pdf) {
+    if (!_miloPdfFont || !pdf) return false;
+    try {
+        pdf.addFileToVFS('Roboto-Regular.ttf', _miloPdfFont.normal); pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+        pdf.addFileToVFS('Roboto-Bold.ttf', _miloPdfFont.bold); pdf.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+        let orj = pdf.setFont.bind(pdf);
+        pdf.setFont = function (ad, stil) { return orj('Roboto', String(stil || 'normal').indexOf('bold') !== -1 ? 'bold' : 'normal'); };
+        pdf.setFont('helvetica', 'normal'); return true;
+    } catch (e) { return false; }
+}
 // "Haftada iki kez" desteği (2026-08-20, DAĞ'daki AYNI ders programı özelliğinin Milo'ya taşınması) —
 // bir ders artık birden fazla güne bağlı olabiliyor (bkz. antrenman_programi_gun, migrations_milo/0007).
 // Tek bir <select> yerine çoklu-seçilebilir "chip" satırı.
@@ -1480,10 +1500,11 @@ function _miloYeniPdfAl(orientation) {
     orientation = orientation || 'portrait';
     let trivial = document.createElement('div'); trivial.style.cssText = 'position:fixed;left:-9999px;top:0;width:10px;height:10px;'; trivial.innerHTML = 'x';
     document.body.appendChild(trivial);
-    return html2pdf().set({ jsPDF: { unit: 'mm', format: 'a4', orientation: orientation } }).from(trivial).toPdf().get('pdf').then(function(pdf) {
+    return _miloPdfFontYukle().then(function () { return html2pdf().set({ jsPDF: { unit: 'mm', format: 'a4', orientation: orientation } }).from(trivial).toPdf().get('pdf'); }).then(function(pdf) {
         if (trivial.parentNode) document.body.removeChild(trivial);
         let pageW = orientation === 'landscape' ? 297 : 210, pageH = orientation === 'landscape' ? 210 : 297;
         pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F');
+        _miloPdfTurkce = _miloPdfTurkceYaziTipi(pdf);
         return pdf;
     });
 }
@@ -1497,7 +1518,7 @@ function _miloKurumsalBaslikCiz(pdf, marginX, usableW, y, rozetMetni, altBaslik)
     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(255, 197, 66);
     pdf.text(_miloTrTranslit(rozetMetni), marginX + usableW - 7, y + 10, { align: 'right' });
     pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(220, 245, 240);
-    pdf.text(_miloTrTranslit('Hazirlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
+    pdf.text(_miloTrTranslit('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
     return y + 30;
 }
 function _miloKurumsalAltBilgiCiz(pdf, pageW, pageH) {

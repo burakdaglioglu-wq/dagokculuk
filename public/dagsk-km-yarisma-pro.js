@@ -110,7 +110,7 @@ kmYarismaCiz = function () {
 function yzTakimCiz() {
     if (_yz.mod !== 'takim') yzModAyarla('takim');
     if (_ypEskiYarismaCiz) _ypEskiYarismaCiz();
-    yzUstBarEkle('⚔️ Takım & Düello');
+    yzUstBarEkle('⚔️ Takım & Düello', YZ_TK_TV_BTN);
 }
 function yzTurlereDon() { yzModAyarla('secim'); kmYarismaGiris(); }
 
@@ -534,7 +534,7 @@ function yzPdf() {
         let yariSut = f.yari ? 2 : 0, kalan = uw - sabit.concat(son).reduce(function (a, c) { return a + c.w; }, 0), sw = kalan / (f.seri + yariSut);
         let kolonlar = sabit.slice(); for (let i = 0; i < f.seri; i++) { kolonlar.push({ b: String(i + 1), w: sw, s: i }); if (f.yari && i === f.yari - 1) kolonlar.push({ b: '1.Y', w: sw, y: 1 }); }
         if (f.yari) kolonlar.push({ b: '2.Y', w: sw, y: 2 }); kolonlar = kolonlar.concat(son);
-        y = _kurumsalBaslikCiz(pdf, mx, uw, 10, 'SIRALAMA TURU', 'Sonuc listesi  |  ' + d.ayar.mesafe + '  |  ' + f.ad + '  |  ' + new Date(d.basla).toLocaleDateString('tr-TR') + (d.asama === 'bitti' ? '' : '  |  ARA SONUC (seri ' + (Math.min(d.seri, f.seri - 1) + 1) + ')'));
+        y = _kurumsalBaslikCiz(pdf, mx, uw, 10, 'SIRALAMA TURU', 'Sonuç listesi  |  ' + d.ayar.mesafe + '  |  ' + f.ad + '  |  ' + new Date(d.basla).toLocaleDateString('tr-TR') + (d.asama === 'bitti' ? '' : '  |  ARA SONUÇ (seri ' + (Math.min(d.seri, f.seri - 1) + 1) + ')'));
         let basliklar = function () {
             pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 7.5, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(203, 213, 225);
             let x = mx; kolonlar.forEach(function (c) { pdf.text(c.b, c.s != null || c.y || c.b === 'TOPLAM' || c.b === '10+X' || c.b === 'X' ? x + c.w / 2 : x + 2, y + 5, c.s != null || c.y || c.b === 'TOPLAM' || c.b === '10+X' || c.b === 'X' ? { align: 'center' } : undefined); x += c.w; });
@@ -1075,14 +1075,14 @@ function yzRaporPdf() {
         let W = 210, mx = 16, uw = W - mx * 2;
         sira.forEach(function (sr, si) {
             if (si > 0) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, 210, 297, 'F'); }
-            let v = yzRaporVeri(o, sr.k), r = v.r, f = v.f, y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU RAPORU', 'Siralama turu  |  ' + d.ayar.mesafe + '  |  ' + f.ad + '  |  ' + new Date(d.basla).toLocaleDateString('tr-TR'));
+            let v = yzRaporVeri(o, sr.k), r = v.r, f = v.f, y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU RAPORU', 'Sıralama turu  |  ' + d.ayar.mesafe + '  |  ' + f.ad + '  |  ' + new Date(d.basla).toLocaleDateString('tr-TR'));
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(18); pdf.setTextColor(9, 22, 43); pdf.text(T(r.ad), mx, y + 4);
-            if (v.pb) { pdf.setFontSize(9); pdf.setTextColor(194, 65, 12); pdf.text(T('KISISEL REKOR'), W - mx, y + 4, { align: 'right' }); }
+            if (v.pb) { pdf.setFontSize(9); pdf.setTextColor(194, 65, 12); pdf.text(T('KİŞİSEL REKOR'), W - mx, y + 4, { align: 'right' }); }
             y += 10;
             let kutular = [['SIRA', r.sira + '.', v.kisi + ' sporcu'], ['TOPLAM', String(r.toplam), r.ok + ' ok'], ['OK ORT.', v.ort.toFixed(2), ''], ['10+X', String(r.on), 'X: ' + r.x]];
-            if (r.hedefPuan) kutular.push(['HEDEF', String(r.hedefPuan), r.toplam >= r.hedefPuan ? 'ulasildi +' + (r.toplam - r.hedefPuan) : (r.hedefPuan - r.toplam) + ' eksik']);
-            if (v.son) kutular.push(['ONCEKI TUR', String(v.son.toplam), (r.toplam - v.son.toplam >= 0 ? '+' : '') + (r.toplam - v.son.toplam)]);
-            if (r.gelisim != null) kutular.push(['GELISIM', (r.gelisim >= 0 ? '+' : '') + r.gelisim, 'kendi ort.']);
+            if (r.hedefPuan) kutular.push(['HEDEF', String(r.hedefPuan), r.toplam >= r.hedefPuan ? 'ulaşıldı +' + (r.toplam - r.hedefPuan) : (r.hedefPuan - r.toplam) + ' eksik']);
+            if (v.son) kutular.push(['ÖNCEKİ TUR', String(v.son.toplam), (r.toplam - v.son.toplam >= 0 ? '+' : '') + (r.toplam - v.son.toplam)]);
+            if (r.gelisim != null) kutular.push(['GELİŞİM', (r.gelisim >= 0 ? '+' : '') + r.gelisim, 'kendi ort.']);
             let kw = (uw - (kutular.length - 1) * 3) / kutular.length;
             kutular.forEach(function (k, i) {
                 let x = mx + i * (kw + 3); pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, kw, 19, 2, 2, 'F');
@@ -1103,9 +1103,9 @@ function yzRaporPdf() {
                 pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(30, 41, 59); pdf.text(String(x), mx + i * bw + bw / 2, y + gh - h - 1.5, { align: 'center' });
             });
             y += gh + 10;
-            if (f.yari) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(51, 65, 85); pdf.text(T('1. yari ' + r.y1 + '   |   2. yari ' + r.y2 + ' (' + (r.y2 - r.y1 >= 0 ? '+' : '') + (r.y2 - r.y1) + ')' + (v.en ? '   |   en iyi seri ' + (v.en.i + 1) + '. (' + v.en.v + ')   |   en zayif ' + (v.kotu.i + 1) + '. (' + v.kotu.v + ')' : '')), mx, y); y += 8; }
+            if (f.yari) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(51, 65, 85); pdf.text(T('1. yarı ' + r.y1 + '   |   2. yarı ' + r.y2 + ' (' + (r.y2 - r.y1 >= 0 ? '+' : '') + (r.y2 - r.y1) + ')' + (v.en ? '   |   en iyi seri ' + (v.en.i + 1) + '. (' + v.en.v + ')   |   en zayıf ' + (v.kotu.i + 1) + '. (' + v.kotu.v + ')' : '')), mx, y); y += 8; }
             // ok dağılımı
-            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Ok dagilimi'), mx, y); y += 3;
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Ok dağılımı'), mx, y); y += 3;
             let dm = Math.max.apply(null, YZ_DEGERLER.map(function (p) { return v.dag[p]; })) || 1;
             YZ_DEGERLER.forEach(function (p) {
                 let c = renk[p]; pdf.setFillColor(c[0], c[1], c[2]); pdf.circle(mx + 3, y + 3.2, 2.6, 'F');
@@ -1116,16 +1116,16 @@ function yzRaporPdf() {
             });
             y += 4;
             // gelişim
-            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Gelisim (ayni format ve mesafe)'), mx, y); y += 5;
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Gelişim (aynı format ve mesafe)'), mx, y); y += 5;
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(51, 65, 85);
-            if (v.onc.length) { pdf.text(T(v.onc.slice(-5).map(function (x) { return yzTarihTR(x.tarih) + ': ' + x.toplam; }).join('   >   ') + '   >   bugun: ' + r.toplam), mx, y); }
-            else pdf.text(T('Onceki tur yok - bir sonraki turda kiyas burada gorunecek.'), mx, y);
+            if (v.onc.length) { pdf.text(T(v.onc.slice(-5).map(function (x) { return yzTarihTR(x.tarih) + ': ' + x.toplam; }).join('   >   ') + '   >   bugün: ' + r.toplam), mx, y); }
+            else pdf.text(T('Önceki tur yok — bir sonraki turda kıyas burada görünecek.'), mx, y);
             y += 7;
             if (v.eleme) { pdf.text(T('Eleme: ' + v.eleme), mx, y); y += 7; }
-            if (v.yorgun && v.yorgun.durum !== 'az') { pdf.setFont('helvetica', 'bold'); pdf.text(T('Tur ici: ' + v.yorgun.baslik + (v.yorgun.ozet ? ' - ' + v.yorgun.ozet : '')), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(pdf.splitTextToSize(T(v.yorgun.detay), uw), mx, y); y += 8; }
-            if (v.oneri) { pdf.setFont('helvetica', 'bold'); pdf.text(T('Grup: ' + v.oneri.kisa + ' (cap ~' + v.oneri.cap + ' cm, ' + v.oneri.sik + ')'), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(T('Nisangah: ' + v.oneri.oneri), mx, y); y += 7; }
+            if (v.yorgun && v.yorgun.durum !== 'az') { pdf.setFont('helvetica', 'bold'); pdf.text(T('Tur içi: ' + v.yorgun.baslik + (v.yorgun.ozet ? ' - ' + v.yorgun.ozet : '')), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(pdf.splitTextToSize(T(v.yorgun.detay), uw), mx, y); y += 8; }
+            if (v.oneri) { pdf.setFont('helvetica', 'bold'); pdf.text(T('Grup: ' + v.oneri.kisa + ' (çap ~' + v.oneri.cap + ' cm, ' + v.oneri.sik + ')'), mx, y); pdf.setFont('helvetica', 'normal'); y += 5; pdf.text(T('Nişangah: ' + v.oneri.oneri), mx, y); y += 7; }
             pdf.setDrawColor(203, 213, 225); pdf.setLineWidth(0.3);
-            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Antrenor notu'), mx, y + 4);
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(9, 22, 43); pdf.text(T('Antrenör notu'), mx, y + 4);
             for (let i = 0; i < 3; i++) pdf.line(mx, y + 12 + i * 8, mx + uw, y + 12 + i * 8);
         });
         _kurumsalAltBilgiCiz(pdf, 210, 297);
@@ -1490,7 +1490,9 @@ function yzSporcuGuc(s) {
     ((sp && sp.seriler) || []).slice(-20).forEach(function (x) { if (Array.isArray(x.oklar)) { top += x.puan || 0; ok += x.oklar.length; } });
     return ok ? top / ok : 0;
 }
-function yzKatilanlar() { return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter(function (s) { return !_yzK.haric[s.g + '|' + s.ad]; }); }
+// Silinmiş / başka gruba taşınmış (turnuvaDB'de olmayan) sporcu derste kalmış olabilir — maça alınmaz, yoksa skoru
+// "Sporcu bulunamadı" diye reddedilir ve eşleşme kilitlenir.
+function yzKatilanlar() { return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter(function (s) { return !_yzK.haric[s.g + '|' + s.ad] && turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]; }); }
 function yzTurCikar() {
     if (_yzK.tur) return;
     _yzK.tur = _kmRakipTipi === 'hayali' ? 'hayali' : (_kmYarismaFormat > 1 ? 'takim' : 'duello');
@@ -1619,7 +1621,7 @@ function yzSkCssYukle() {
 
 ['kmYarismaSkorbordCiz', 'kmYarismaBracketAgacCiz', 'kmYarismaBracketEslestirmeCiz', 'kmYarismaSiralamaCiz'].forEach(function (ad) {
     let eski = window[ad]; if (typeof eski !== 'function') return;
-    window[ad] = function () { let r = eski.apply(this, arguments); if (_yz.mod === 'takim') yzUstBarEkle('⚔️ Takım & Düello'); return r; };
+    window[ad] = function () { let r = eski.apply(this, arguments); if (_yz.mod === 'takim') yzUstBarEkle('⚔️ Takım & Düello', YZ_TK_TV_BTN); if (document.getElementById('yz-tk-tv')) { _yzTk.imza = ''; yzTkCiz(); } return r; };
 });
 
 // ---------------------------------------------------------------- stil
@@ -1715,6 +1717,246 @@ function yzCssYukle() {
         '@keyframes yzYeni{0%{background:rgba(34,197,94,.45)}100%{background:transparent}}',
         '.yz-tv-bos{margin:auto;text-align:center;display:flex;flex-direction:column;gap:1.4vh;font-size:3vw;font-weight:900}.yz-tv-bos small{font-size:1.4vw;color:#8aa2c0;font-weight:600}',
         '@media (prefers-reduced-motion:reduce){.yz-tv .yz-tablo tr.yeni td{animation:none;background:rgba(34,197,94,.25)}}'
+    ].join('\n');
+    document.head.appendChild(st);
+}
+
+// ---------------------------------------------------------------- 📺 TV — Takım & Düello (2026-10-02)
+// Kullanıcı: "Sıralama Turu'ndaki gibi PC'den televizyona eleme ağacı ve canlı maç (set puanları, kimin attığı,
+// kazanan)". Motor app.js'te (_kmTakimlar / _kmYarismaBracketMaclar / kmYarismaMacSonucDegerlendir) — burada
+// SADECE okunur; değerler ortak ders senkronuyla (kurulum paketi) ve seri yayınıyla (turnuvaDB) canlı gelir, ekran
+// 1.2 sn'de bir yeniden hesaplanıp yalnızca değişince çizilir. TV'den skor girişi motorun kendi kayıt yolundan
+// (kmYarismaSeriKaydet) geçer — eleme ilerlemesi / kazanan seçimi aynen çalışır.
+const YZ_TK_TV_BTN = '<button class="yz-btn tv" onclick="yzTkTvAc()">📺 TV ekranı</button>';
+let _yzTk = { poll: null, imza: '', sayim: {}, son: null, kilit: null, giris: null };
+function yzTkTvAc() {
+    yzCssYukle(); yzTkCssYukle();
+    document.body.classList.add('yz-tv-acik');
+    let el = document.getElementById('yz-tk-tv');
+    if (!el) {
+        el = document.createElement('div'); el.id = 'yz-tk-tv'; el.className = 'yz-tv yz-tk'; document.body.appendChild(el);
+        // Tam ekran SAYFAYA verilir (TV kutusuna değil) — yoksa skor girişi penceresi üstüne çıkamaz (bkz. yzTvAc).
+        try { let kok = document.documentElement; if (kok.requestFullscreen && !document.fullscreenElement) kok.requestFullscreen().catch(function () {}); } catch (e) {}
+        try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { _yzTk.kilit = l; }).catch(function () {}); } catch (e) {}
+        document.addEventListener('keydown', yzTkTus, true);
+    }
+    _yzTk.imza = ''; _yzTk.sayim = {}; _yzTk.son = null;
+    yzTkCiz();
+    clearInterval(_yzTk.poll); _yzTk.poll = setInterval(yzTkCiz, 1200);
+}
+function yzTkTvKapat() {
+    clearInterval(_yzTk.poll); _yzTk.poll = null; yzTkGirisKapat();
+    let el = document.getElementById('yz-tk-tv'); if (el) el.remove();
+    if (!_yz.tv) document.body.classList.remove('yz-tv-acik');
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    try { if (_yzTk.kilit) { _yzTk.kilit.release(); _yzTk.kilit = null; } } catch (e) {}
+    document.removeEventListener('keydown', yzTkTus, true);
+}
+function yzTkTus(e) {
+    if (e.key !== 'Escape' || !document.getElementById('yz-tk-tv')) return;
+    e.preventDefault(); if (_yzTk.giris) yzTkGirisKapat(); else yzTkTvKapat();
+}
+// Bir tarafın her sporcusunun BU maçtaki serileri. snap: maç başlangıç anlık görüntüsü ({'g|ad': {seriSayisi}}).
+// bracketMi: görüntüde olmayan sporcunun maçta serisi yok sayılır (motordaki _kmYarismaBracketMacTurBazliPuanlar ile aynı).
+function yzTkUyeler(t, snap, bracketMi) {
+    return (t.uyeler || []).map(function (u) {
+        let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad], tum = (sp && sp.seriler) || [];
+        let baz = snap && snap[u.g + '|' + u.ad];
+        let n = baz && typeof baz === 'object' ? (baz.seriSayisi || 0) : (bracketMi ? tum.length : 0);
+        return { k: u.g + '|' + u.ad, ad: u.ad, seriler: tum.slice(n).map(function (s) { return s.puan || 0; }) };
+    });
+}
+function yzTkVeri() {
+    let v = { mod: 'bos', taraflar: [], deg: null, mac: null, sampiyon: null, maclar: _kmYarismaBracketMaclar || [] };
+    if (_kmRakipTipi === 'hayali') { v.mod = 'hayali'; return v; }
+    if (_kmYarismaBracketGorunum === 'agac' && v.maclar.length) {
+        v.mod = 'agac';
+        let sonTur = v.maclar.filter(function (m) { return m.tur === _kmYarismaBracketToplamTur; });
+        if (sonTur.length === 1 && sonTur[0].durum === 'bitti') v.sampiyon = _kmTakimlar[sonTur[0].kazananIdx] || null;
+        let m = v.maclar.filter(function (x) { return x.durum === 'devam' && !x.isBye; }).sort(function (a, b) { return a.tur - b.tur; })[0];
+        if (m && _kmTakimlar[m.aIdx] && _kmTakimlar[m.bIdx]) {
+            v.mac = m;
+            v.taraflar = [['a', m.aIdx], ['b', m.bIdx]].map(function (x) { let t = _kmTakimlar[x[1]]; return { t: t, idx: x[1], turlar: _kmYarismaBracketMacTurBazliPuanlar(m, x[0]), uyeler: yzTkUyeler(t, m.baslangicPuan, true) }; });
+        }
+    } else if (_kmYarismaAktif) {
+        v.mod = 'mac';
+        v.taraflar = _kmYarismaAktifTakimlar().map(function (t) { return { t: t, idx: _kmTakimlar.indexOf(t), turlar: _kmYarismaTurBazliPuanlar(t), uyeler: yzTkUyeler(t, _kmYarismaBaslangicPuan, false) }; });
+    } else if (_kmYarismaBracketGorunum === 'eslestirme' || _kmYarismaBracketGorunum === 'siralama') v.mod = 'hazirlik';
+    if (v.taraflar.length === 2) { try { v.deg = kmYarismaMacSonucDegerlendir(v.taraflar); } catch (e) {} }
+    else if (v.taraflar.length > 2) v.setSonuc = _kmYarismaSetPuanlariHesapla(v.taraflar.map(function (x) { return x.turlar; }));
+    return v;
+}
+function yzTkOkSayisi(k, d) {
+    if (d && d.durum === 'shootoff') return 1;
+    let n = typeof _kmYarismaOkSayisi !== 'undefined' ? _kmYarismaOkSayisi : 0;
+    return n === 3 || n === 6 ? n : ((k && k.okSayisi) || 3);
+}
+function yzTkKuralYazi(k) {
+    if (!k) return '';
+    if (k.hedefTip === 'toplam') return 'toplam ' + k.hedefPuan + ' puana ilk ulaşan kazanır';
+    if (k.hedefTip === 'tur') return k.hedefTur + ' tur antrenman maçı';
+    return 'set sistemi · ' + k.okSayisi + ' ok/set · ' + k.hedefSetPuani + ' set puanı alan kazanır';
+}
+function yzTkCiz() {
+    let el = document.getElementById('yz-tk-tv'); if (!el) return;
+    let v = yzTkVeri(), simdi = Date.now();
+    // "Kim attı": bir sporcunun maçtaki seri sayısı arttıysa son atan odur — birkaç saniye vurgulanır.
+    v.taraflar.forEach(function (x) {
+        x.uyeler.forEach(function (u) {
+            let n = u.seriler.length, e = _yzTk.sayim[u.k];
+            if (e != null && n > e) _yzTk.son = { k: u.k, ad: u.ad, puan: u.seriler[n - 1], renk: x.t.renk, z: simdi };
+            _yzTk.sayim[u.k] = n;
+        });
+    });
+    let son = _yzTk.son && simdi - _yzTk.son.z < 6000 ? _yzTk.son : null;
+    let html = yzTkHTML(v, son);
+    if (html === _yzTk.imza) return;
+    _yzTk.imza = html; el.innerHTML = html;
+}
+function yzTkSonAtanHTML(son) {
+    return son ? '<span>🎯 <b style="color:' + son.renk + '">' + esc(son.ad) + '</b> attı: <b>' + son.puan + '</b></span>' : '<span class="yz-alt">Sporcuya dokun → skor gir</span>';
+}
+function yzTkHTML(v, son) {
+    let kapat = '<button class="yz-tv-kapat" onclick="yzTkTvKapat()">✕ Kapat</button>';
+    let bos = function (b, a) { return kapat + '<div class="yz-tv-bos"><div class="yz-tv-logo">DAĞ S.K.</div><div>' + b + '</div><small>' + a + '</small></div>'; };
+    if (v.mod === 'hayali') return bos('Hayali rakip maçı', 'TV ekranı gerçek takım ve düello maçları içindir.');
+    if (v.mod === 'hazirlik') return bos('Eşleşmeler hazırlanıyor', 'Turnuva başlayınca eleme ağacı ve canlı maç burada görünür.');
+    if (v.mod === 'bos') {
+        let g = (typeof _kmYarismaGecmisi !== 'undefined' && _kmYarismaGecmisi[0] && _kmYarismaGecmisi[0].tarih === bugunISO()) ? _kmYarismaGecmisi[0] : null;
+        return bos('Maç henüz başlamadı', g && g.kazananAd ? 'Son maç: ' + esc(g.kazananAd) + (g.kazananAd !== 'Berabere' ? ' kazandı' : '') : 'Tablette Yarışma → Takım & Düello → başlat');
+    }
+    let k = v.deg ? v.deg.kural : (v.taraflar.length ? kmYarismaMacKuralSecimi(v.taraflar.slice(0, 2)) : null);
+    let turAd = v.mac ? _kmYarismaTurAdi(v.mac.tur, _kmYarismaBracketToplamTur) : '';
+    let duelloMu = v.taraflar.length > 0 && v.taraflar.every(function (x) { return (x.t.uyeler || []).length === 1; });
+    let bas = kapat + '<div class="yz-tv-bas"><div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">' + (duelloMu ? 'DÜELLO' : 'TAKIM MAÇI') + (v.mod === 'agac' ? ' · ELEME' : '') + '</div><div class="yz-tv-alt">' + yzTkKuralYazi(k) + '</div></div>'
+        + '<div class="yz-tv-seri"><span class="yz-tv-seri-et">' + (v.sampiyon ? 'TURNUVA' : 'CANLI') + '</span><b style="font-size:2.6vw">' + (v.sampiyon ? 'BİTTİ' : esc(turAd || 'MAÇ')) + '</b></div></div>';
+    let govde = '';
+    if (v.sampiyon) govde += '<div class="yz-tk-sampiyon" style="--tr:' + v.sampiyon.renk + '"><span>🏆</span><div><small>ŞAMPİYON</small><b>' + kmYarismaIkonSvg(_kmTakimIkonAl(v.sampiyon, _kmTakimlar.indexOf(v.sampiyon)), 20) + '</span> ' + esc(v.sampiyon.ad) + '</b></div></div>';
+    if (v.taraflar.length === 2) govde += yzTkCanliHTML(v, k, son);
+    else if (v.taraflar.length > 2) govde += yzTkCokluHTML(v, son);
+    if (v.mod === 'agac') { let enCok = 0; v.maclar.forEach(function (m) { enCok = Math.max(enCok, v.maclar.filter(function (x) { return x.tur === m.tur; }).length); }); govde += '<div class="yz-tk-agac' + (enCok > 4 ? ' sik' : '') + '">' + yzTkAgacHTML(v) + '</div>'; }
+    return bas + '<div class="yz-tk-govde' + (v.mod === 'agac' && v.taraflar.length === 2 ? ' iki' : '') + '">' + govde + '</div>';
+}
+function yzTkUyeHTML(u, son, okSay) {
+    let top = u.seriler.reduce(function (a, b) { return a + b; }, 0);
+    let seri = u.seriler.slice(-6).map(function (p, i, d) { return i === d.length - 1 ? '<b>' + p + '</b>' : String(p); }).join(' · ');
+    return '<button class="yz-tk-uye' + (son && son.k === u.k ? ' yeni' : '') + '" onclick="yzTkGirisAc(\'' + yzEnc(u.k) + '\',' + okSay + ')" title="Skor gir"><span class="ad">' + esc(yzKisaAd(u.ad)) + '</span><span class="sr">' + (seri || '—') + '</span><span class="top">' + top + '</span></button>';
+}
+function yzTkCanliHTML(v, k, son) {
+    let d = v.deg, setMod = !k || k.hedefTip === 'set', a = v.taraflar[0], b = v.taraflar[1];
+    let toplam = function (x) { return x.turlar.reduce(function (p, q) { return p + q; }, 0); };
+    let buyuk = setMod && d ? d.setSonuc.setPuanlari : [toplam(a), toplam(b)];
+    let kaz = d && d.durum === 'bitti' ? d.kazananIdx : null, okSay = yzTkOkSayisi(k, d);
+    let taraf = function (x, i) {
+        return '<div class="yz-tk-taraf' + (kaz === i ? ' kaz' : kaz != null ? ' kay' : '') + '" style="--tr:' + x.t.renk + '">'
+            + '<div class="yz-tk-kim"><span class="ik">' + kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 20) + '</span><span class="ad">' + esc(x.t.ad) + '</span></div>'
+            + '<div class="yz-tk-puan">' + buyuk[i] + '</div>'
+            + '<div class="yz-tk-uyeler">' + x.uyeler.map(function (u) { return yzTkUyeHTML(u, son, okSay); }).join('') + '</div></div>';
+    };
+    let maxTur = Math.max(a.turlar.length, b.turlar.length), sutun = Math.max(maxTur, setMod && k ? Math.min(k.maxSet, 5) : 0, 1), setler = '';
+    for (let i = 0; i < sutun; i++) {
+        let pa = a.turlar[i], pb = b.turlar[i], ek = k && setMod && i >= k.maxSet;
+        let c = pa != null && pb != null ? (pa > pb ? 'a' : pb > pa ? 'b' : 'e') : '';
+        setler += '<div class="yz-tk-set ' + c + '"><small>' + (ek ? 'EK ATIŞ' : (i + 1) + (setMod ? '. SET' : '. TUR')) + '</small><span style="--tr:' + a.t.renk + '">' + (pa != null ? pa : '·') + '</span><span style="--tr:' + b.t.renk + '">' + (pb != null ? pb : '·') + '</span></div>';
+    }
+    let durum = kaz != null ? '<b style="color:' + v.taraflar[kaz].t.renk + '">🏆 ' + esc(v.taraflar[kaz].t.ad) + ' KAZANDI</b>'
+        : d && d.durum === 'shootoff' ? '<b class="yz-tk-ek">🎯 EK ATIŞ — tek ok, yüksek puan kazanır</b>'
+        : yzTkSonAtanHTML(son);
+    return '<div class="yz-tk-canli">' + taraf(a, 0) + '<div class="yz-tk-vs">' + (setMod ? 'SET<br>PUANI' : 'TOPLAM') + '</div>' + taraf(b, 1) + '</div>'
+        + '<div class="yz-tk-setler">' + setler + '</div><div class="yz-tk-durum">' + durum + '</div>';
+}
+function yzTkCokluHTML(v, son) {
+    let sp = v.setSonuc ? v.setSonuc.setPuanlari : [];
+    let okSay = yzTkOkSayisi(kmYarismaMacKuralSecimi(v.taraflar), null);
+    return '<div class="yz-tk-coklu">' + v.taraflar.map(function (x, i) {
+        let top = x.turlar.reduce(function (p, q) { return p + q; }, 0);
+        return '<div class="yz-tk-taraf" style="--tr:' + x.t.renk + '"><div class="yz-tk-kim"><span class="ik">' + kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 20) + '</span><span class="ad">' + esc(x.t.ad) + '</span></div>'
+            + '<div class="yz-tk-puan">' + top + '<small>' + (sp[i] || 0) + ' set puanı</small></div><div class="yz-tk-uyeler">' + x.uyeler.map(function (u) { return yzTkUyeHTML(u, son, okSay); }).join('') + '</div></div>';
+    }).join('') + '</div><div class="yz-tk-durum">' + yzTkSonAtanHTML(son) + '</div>';
+}
+function yzTkAgacHTML(v) {
+    let turSay = Math.max(_kmYarismaBracketToplamTur || 1, v.maclar.length ? Math.max.apply(null, v.maclar.map(function (m) { return m.tur; })) : 1), kol = '';
+    let ad = function (idx) { let t = _kmTakimlar[idx]; return t ? '<span class="ik">' + kmYarismaIkonSvg(_kmTakimIkonAl(t, idx), 20) + '</span>' + esc(t.ad) : '<span class="yz-alt">—</span>'; };
+    for (let tur = 1; tur <= turSay; tur++) {
+        let ms = v.maclar.filter(function (m) { return m.tur === tur; });
+        kol += '<div class="yz-tk-kol"><div class="yz-br-tur">' + esc(_kmYarismaTurAdi(tur, _kmYarismaBracketToplamTur)) + '</div>'
+            + (ms.length ? ms.map(function (m) {
+                let canli = v.mac && v.mac.id === m.id;
+                let s = function (idx) { let t = _kmTakimlar[idx]; return '<div class="yz-tk-bs' + (m.durum === 'bitti' && m.kazananIdx === idx ? ' kaz' : m.durum === 'bitti' ? ' kay' : '') + '" style="--tr:' + (t ? t.renk : '#334155') + '">' + ad(idx) + '</div>'; };
+                return '<div class="yz-tk-bm' + (canli ? ' canli' : '') + '">' + (canli ? '<span class="yz-tk-canli-et">CANLI</span>' : '') + s(m.aIdx) + (m.isBye ? '<div class="yz-tk-bs kay" style="--tr:#334155"><span class="yz-alt">bay geçti</span></div>' : s(m.bIdx)) + '</div>';
+            }).join('') : new Array(Math.max(1, Math.ceil(v.maclar.filter(function (m) { return m.tur === 1; }).length / Math.pow(2, tur - 1)))).fill('<div class="yz-tk-bm"><div class="yz-tk-bs kay" style="--tr:#334155">—</div><div class="yz-tk-bs kay" style="--tr:#334155">—</div></div>').join(''))
+            + '</div>';
+    }
+    return kol;
+}
+// ---- TV'den skor girişi: sporcuya dokun → okları gir → kaydet. Kayıt motorun kendi yolundan (kmYarismaSeriKaydet).
+function yzTkGirisAc(kEnc, okSay) {
+    _yzTk.giris = { k: decodeURIComponent(kEnc), okSay: [1, 3, 6].indexOf(okSay) >= 0 ? okSay : 3, oklar: [] };
+    yzTkGirisCiz();
+}
+function yzTkGirisKapat() { _yzTk.giris = null; let g = document.getElementById('yz-tk-giris'); if (g) g.remove(); }
+function yzTkGirisCiz() {
+    let g = _yzTk.giris; if (!g) { yzTkGirisKapat(); return; }
+    let el = document.getElementById('yz-tk-giris');
+    if (!el) { el = document.createElement('div'); el.id = 'yz-tk-giris'; el.className = 'yz-tk-giris'; el.onclick = function (e) { if (e.target === el) yzTkGirisKapat(); }; document.body.appendChild(el); }
+    let top = g.oklar.reduce(function (a, p) { return a + (YZ_DEGER[p] || 0); }, 0), tamam = g.oklar.length >= g.okSay;
+    let kutu = ''; for (let i = 0; i < g.okSay; i++) { let p = g.oklar[i]; kutu += '<span class="yz-tk-ok ' + (p ? yzOkRenk(p) : '') + '">' + (p || '') + '</span>'; }
+    el.innerHTML = '<div class="yz-tk-giris-ic" role="dialog" aria-label="Skor gir"><div class="yz-tk-giris-bas"><b>' + esc(yzKAd(g.k)) + '</b><span>' + g.oklar.length + '/' + g.okSay + ' ok · ' + top + '</span></div>'
+        + '<div class="yz-tk-oksec">' + [1, 3, 6].map(function (n) { return '<button class="yz-tv-k' + (g.okSay === n ? ' ana' : '') + '" onclick="yzTkOkSayiSec(' + n + ')">' + n + ' ok' + (n === 1 ? ' (ek atış)' : '') + '</button>'; }).join('') + '</div>'
+        + '<div class="yz-tk-oklar">' + kutu + '</div>'
+        + '<div class="yz-tk-pad">' + YZ_DEGERLER.map(function (p) { return '<button class="' + yzOkRenk(p) + '" onclick="yzTkOk(\'' + p + '\')"' + (tamam ? ' disabled' : '') + '>' + p + '</button>'; }).join('') + '</div>'
+        + '<div class="yz-tk-giris-alt"><button class="yz-tv-k" onclick="yzTkGirisKapat()">Vazgeç</button><button class="yz-tv-k" onclick="yzTkOkSil()"' + (g.oklar.length ? '' : ' disabled') + '>⌫ Sil</button><button class="yz-tv-k yesil" onclick="yzTkGirisKaydet()"' + (tamam ? '' : ' disabled') + '>✓ Kaydet · ' + top + '</button></div></div>';
+}
+function yzTkOkSayiSec(n) { let g = _yzTk.giris; if (!g) return; g.okSay = n; g.oklar = g.oklar.slice(0, n); yzTkGirisCiz(); }
+function yzTkOk(p) { let g = _yzTk.giris; if (!g || g.oklar.length >= g.okSay) return; g.oklar.push(p); yzTkGirisCiz(); }
+function yzTkOkSil() { let g = _yzTk.giris; if (!g) return; g.oklar.pop(); yzTkGirisCiz(); }
+function yzTkGirisKaydet() {
+    let g = _yzTk.giris; if (!g || g.oklar.length < g.okSay) return;
+    _kmYarismaAktifSporcuKey = g.k; _kmYarismaOkSayisi = g.okSay; _kmYarismaSeriGirisleri = g.oklar.slice();
+    yzTkGirisKapat();
+    kmYarismaSeriKaydet();
+    _yzTk.imza = ''; setTimeout(yzTkCiz, 50);
+}
+function yzTkCssYukle() {
+    if (document.getElementById('yz-tk-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-tk-css';
+    st.textContent = [
+        '.yz-tk-govde{flex:1;min-height:0;display:flex;flex-direction:column;gap:1.6vh}',
+        '.yz-tk-canli{display:grid;grid-template-columns:1fr auto 1fr;gap:1.6vw;align-items:stretch}',
+        '.yz-tk-taraf{background:#0d1a2e;border:2px solid var(--tr);border-radius:1.4vw;padding:1.6vh 1.6vw;display:flex;flex-direction:column;gap:1vh;min-width:0}',
+        '.yz-tk-taraf.kaz{background:color-mix(in srgb,var(--tr) 22%,#0d1a2e)}.yz-tk-taraf.kay{opacity:.55}',
+        '.yz-tk-kim{display:flex;align-items:center;gap:.8vw;font-size:2.4vw;font-weight:900;min-width:0}.yz-tk-kim .ad{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tr)}',
+        '.yz-tk-puan{font-size:8vw;font-weight:900;line-height:.95;color:#fff;display:flex;align-items:baseline;gap:1vw}.yz-tk-puan small{font-size:1.4vw;color:#8aa2c0;font-weight:800}',
+        '.yz-tk-uyeler{display:flex;flex-direction:column;gap:.6vh}',
+        '.yz-tk-uye{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:1vw;align-items:center;background:#08121f;border:1px solid #1d3354;border-radius:.8vw;padding:.8vh 1vw;color:#e8eef7;font:inherit;font-size:max(13px,1.5vw);font-weight:800;text-align:left;cursor:pointer}',
+        '.yz-tk-uye:hover,.yz-tk-uye:focus-visible{border-color:#fbbf24;outline:none}.yz-tk-uye .ad{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yz-tk-uye .sr{color:#8aa2c0;font-size:max(12px,1.25vw)}.yz-tk-uye .sr b{color:#fff}.yz-tk-uye .top{color:#fbbf24;min-width:3vw;text-align:right}',
+        '.yz-tk-uye.yeni{border-color:#22c55e;background:rgba(34,197,94,.16);animation:yzTkYeni 1.2s ease-out}',
+        '@keyframes yzTkYeni{0%{transform:scale(1.04)}100%{transform:none}}',
+        '.yz-tk-vs{align-self:center;text-align:center;font-size:1.1vw;font-weight:900;letter-spacing:.2em;color:#7d93b2}',
+        '.yz-tk-setler{display:flex;gap:.8vw;justify-content:center;flex-wrap:wrap}',
+        '.yz-tk-set{display:flex;flex-direction:column;align-items:center;gap:.2vh;min-width:6vw;background:#08121f;border:1px solid #16263e;border-radius:.8vw;padding:.6vh .6vw;font-size:2vw;font-weight:900;color:#8aa2c0}',
+        '.yz-tk-set small{font-size:max(10px,.85vw);letter-spacing:.12em;color:#7d93b2}.yz-tk-set.a span:nth-of-type(1),.yz-tk-set.b span:nth-of-type(2){color:var(--tr)}.yz-tk-set.e span{color:#e8eef7}',
+        '.yz-tk-durum{text-align:center;font-size:2vw;font-weight:800;min-height:3vh}.yz-tk-ek{color:#f97316}',
+        '.yz-tk-coklu{display:grid;grid-template-columns:repeat(auto-fit,minmax(20vw,1fr));gap:1.4vw}.yz-tk-coklu .yz-tk-puan{font-size:6vw}',
+        '.yz-tk-sampiyon{display:flex;align-items:center;justify-content:center;gap:1.4vw;padding:1.6vh 2vw;border-radius:1.4vw;border:2px solid var(--tr);background:linear-gradient(90deg,color-mix(in srgb,var(--tr) 30%,#0d1a2e),#0d1a2e)}',
+        '.yz-tk-sampiyon>span{font-size:5vw}.yz-tk-sampiyon small{display:block;font-size:1.2vw;letter-spacing:.3em;color:#fbbf24;font-weight:900}.yz-tk-sampiyon b{font-size:3.6vw;color:#fff}',
+        '.yz-tk-agac{flex:1;min-height:0;display:flex;gap:1.2vw;background:#08121f;border:1px solid #16263e;border-radius:1.2vw;padding:1.4vh 1vw;overflow:hidden}',
+        '.yz-tk-govde.iki .yz-tk-agac{flex:1 1 0}.yz-tk-govde.iki .yz-tk-puan{font-size:6.4vw}.yz-tk-govde.iki .yz-tk-bs{font-size:max(11px,1vw);padding:.35vh .7vw}.yz-tk-govde.iki .yz-tk-kol{gap:.5vh}',
+        '.yz-tk-agac.sik .yz-tk-bs{font-size:max(10px,.8vw);padding:.2vh .6vw}.yz-tk-agac.sik .yz-tk-kol{gap:.3vh}',
+        '.yz-tk .ik{display:inline-flex;align-items:center;flex-shrink:0}.yz-tk .ik svg{width:1em;height:1em}',
+        '.yz-tk-kol{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-around;gap:1vh}.yz-tk-kol .yz-br-tur{text-align:center;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#7d93b2;font-size:.9vw}',
+        '.yz-tk-bm{flex-shrink:0;position:relative;background:#0b1829;border:1px solid #1d3354;border-radius:.8vw;overflow:hidden}.yz-tk-bm.canli{border-color:#22c55e;box-shadow:0 0 0 .25vw rgba(34,197,94,.25)}',
+        '.yz-tk-bs{display:flex;align-items:center;gap:.6vw;padding:.6vh .8vw;font-size:max(12px,1.2vw);font-weight:800;border-left:.35vw solid var(--tr);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.yz-tk-bs+.yz-tk-bs{border-top:1px solid #1d3354}',
+        '.yz-tk-bs.kaz{color:#22c55e}.yz-tk-bs.kay{color:#64748b}',
+        '.yz-tk-canli-et{position:absolute;top:.3vh;right:.4vw;font-size:max(9px,.75vw);font-weight:900;letter-spacing:.15em;color:#22c55e}',
+        '.yz-tk-giris{position:fixed;inset:0;z-index:32000;background:rgba(2,6,14,.72);display:flex;align-items:center;justify-content:center;padding:16px}',
+        '.yz-tk-giris-ic{background:#0d1a2e;border:1px solid #29425f;border-radius:18px;padding:18px;width:min(560px,100%);display:flex;flex-direction:column;gap:14px;color:#e8eef7}',
+        '.yz-tk-giris-bas{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:20px}.yz-tk-giris-bas span{color:#fbbf24;font-weight:800;font-size:15px}',
+        '.yz-tk-oksec{display:flex;gap:6px;justify-content:center}.yz-tk-oksec .yz-tv-k{font-size:13px;padding:6px 12px}',
+        '.yz-tk-oklar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.yz-tk-ok{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px}.yz-tk-ok:not([class*="yz-r-"]){background:#08121f;border:2px dashed #29425f}',
+        '.yz-tk-pad{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.yz-tk-pad button{border:0;border-radius:12px;min-height:56px;font:inherit;font-size:20px;font-weight:900;cursor:pointer}.yz-tk-pad button:disabled{opacity:.35;cursor:default}',
+        '.yz-tk-giris-alt{display:flex;gap:8px;justify-content:flex-end}.yz-tk-giris-alt .yz-tv-k{font-size:15px;padding:10px 16px}.yz-tk-giris-alt .yz-tv-k:disabled{opacity:.4;cursor:default}',
+        '@media (prefers-reduced-motion:reduce){.yz-tk-uye.yeni{animation:none}}'
     ].join('\n');
     document.head.appendChild(st);
 }

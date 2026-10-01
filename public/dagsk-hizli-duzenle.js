@@ -191,20 +191,20 @@ function hdPdfIndir() {
     let tel = function (t) { let s = String(t || '').replace(/\D/g, ''); if (s.length === 10 && s[0] === '5') s = '0' + s; return s.length === 11 ? s.slice(0, 4) + ' ' + s.slice(4, 7) + ' ' + s.slice(7, 9) + ' ' + s.slice(9) : String(t || ''); };
     // Sütunlar (mm) — yatay A4 kullanılabilir genişlik 269
     let S = [
-        { b: '#', w: 9 }, { b: 'AD SOYAD', w: 52 }, { b: 'DOGUM / YAS', w: 27 }, { b: 'CINS.', w: 12 }, { b: 'YAY', w: 18 },
-        { b: 'VELI ADI', w: 38 }, { b: 'TELEFON', w: 29 }, { b: 'VELI IS / MESLEK', w: 44 }, { b: 'NOT', w: 40 }
+        { b: '#', w: 9 }, { b: 'AD SOYAD', w: 52 }, { b: 'DOĞUM / YAŞ', w: 27 }, { b: 'CİNS.', w: 12 }, { b: 'YAY', w: 18 },
+        { b: 'VELİ ADI', w: 38 }, { b: 'TELEFON', w: 29 }, { b: 'VELİ İŞ / MESLEK', w: 44 }, { b: 'NOT', w: 40 }
     ];
     _yeniPdfAl('landscape').then(function (pdf) {
         let W = 297, H = 210, mx = 14, uw = W - mx * 2, y, sayfa = 1;
         let beyazSayfa = function () { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); sayfa++; y = 14; };
         let sigdir = function (metin, w, boy) { pdf.setFontSize(boy); let s = T(metin); if (pdf.getTextWidth(s) <= w - 2.5) return s; while (s.length > 1 && pdf.getTextWidth(s + '...') > w - 2.5) s = s.slice(0, -1); return s + '...'; };
-        let filtre = [_hd.grup === 'hepsi' ? 'Tum gruplar' : grupAd(_hd.grup)];
+        let filtre = [_hd.grup === 'hepsi' ? 'Tüm gruplar' : grupAd(_hd.grup)];
         if (_hd.ara.trim()) filtre.push('Arama: "' + _hd.ara.trim() + '"'); if (_hd.eksik) filtre.push('Sadece eksik bilgisi olanlar'); if (_hd.pasifler) filtre.push('Pasifler dahil');
-        y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU LISTESI', 'Sporcu Bilgileri  |  ' + filtre.join('  |  '));
+        y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU LİSTESİ', 'Sporcu Bilgileri  |  ' + filtre.join('  |  '));
         // Özet şeridi
         let kiz = satirlar.filter(function (x) { return d(x, 'cinsiyet') === 'K'; }).length, erk = satirlar.filter(function (x) { return d(x, 'cinsiyet') === 'E'; }).length;
         let telYok = satirlar.filter(function (x) { return !d(x, 'acilTelefon'); }).length, dogYok = satirlar.filter(function (x) { return !d(x, 'dogumTarihi'); }).length;
-        let ozet = [[String(satirlar.length), 'sporcu'], [String(kiz), 'kiz'], [String(erk), 'erkek'], [String(telYok), 'veli telefonu eksik'], [String(dogYok), 'dogum tarihi eksik']];
+        let ozet = [[String(satirlar.length), 'sporcu'], [String(kiz), 'kız'], [String(erk), 'erkek'], [String(telYok), 'veli telefonu eksik'], [String(dogYok), 'doğum tarihi eksik']];
         let ox = mx;
         ozet.forEach(function (o, i) {
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); let w1 = pdf.getTextWidth(o[0]);
@@ -220,7 +220,7 @@ function hdPdfIndir() {
         let basliklar = function () {
             pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 7.5, 'F');
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(203, 213, 225);
-            let x = mx; S.forEach(function (s) { pdf.text(s.b, x + 2, y + 5); x += s.w; });
+            let x = mx; S.forEach(function (s) { pdf.text(T(s.b), x + 2, y + 5); x += s.w; });
             y += 7.5;
         };
         let bolum = function (g, n) {
@@ -241,7 +241,7 @@ function hdPdfIndir() {
             liste.forEach(function (x, i) {
                 // 2. veli varsa satır iki katlı: veli adı/telefonu alt alta
                 let v2k = d(x, 'veli2Kisi'), v2t = d(x, 'veli2Telefon'), rh = (v2k || v2t) ? 11.5 : 7;
-                if (y + rh > H - 16) { beyazSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(0, 138, 152); pdf.text(T(grupAd(g) + ' (devami)'), mx, y + 4); y += 6; } basliklar(); }
+                if (y + rh > H - 16) { beyazSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(0, 138, 152); pdf.text(T(grupAd(g) + ' (devamı)'), mx, y + 4); y += 6; } basliklar(); }
                 sira++;
                 let pasif = !!hdDeger(x, { id: 'pasif' }), muaf = !!hdDeger(x, { id: 'aidatMuaf' });
                 if (i % 2 === 1) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, rh, 'F'); }
@@ -254,17 +254,17 @@ function hdPdfIndir() {
                 };
                 hucre(S[0], String(sira), { boy: 7.5, renk: [148, 163, 184] });
                 // İsim + pasif/muaf rozetleri
-                let rozetler = []; if (pasif) rozetler.push('PASIF'); if (muaf) rozetler.push('MUAF');
+                let rozetler = []; if (pasif) rozetler.push('PASİF'); if (muaf) rozetler.push('MUAF');
                 pdf.setFontSize(6); let rozW = rozetler.reduce(function (a, r) { return a + pdf.getTextWidth(r) + 4.5; }, 0);
                 let adX = hx; hucre(S[1], x.ad, { kalin: true, boy: 8.5, renk: pasif ? [148, 163, 184] : [9, 22, 43], sagBosluk: rozW });
                 if (rozetler.length) {
                     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); let rx = adX + 2 + Math.min(pdf.getTextWidth(sigdir(x.ad, S[1].w - rozW, 8.5)), S[1].w - rozW) + 1.5;
                     pdf.setFontSize(6);
-                    rozetler.forEach(function (r) { let rw = pdf.getTextWidth(r) + 3; pdf.setFillColor(r === 'PASIF' ? 226 : 220, r === 'PASIF' ? 232 : 252, r === 'PASIF' ? 240 : 231); pdf.roundedRect(rx, y + 1.9, rw, 3.6, 1, 1, 'F'); pdf.setTextColor(r === 'PASIF' ? 100 : 22, r === 'PASIF' ? 116 : 101, r === 'PASIF' ? 139 : 52); pdf.text(r, rx + 1.5, y + 4.6); rx += rw + 1.5; });
+                    rozetler.forEach(function (r) { let rw = pdf.getTextWidth(r) + 3; pdf.setFillColor(r === 'PASİF' ? 226 : 220, r === 'PASİF' ? 232 : 252, r === 'PASİF' ? 240 : 231); pdf.roundedRect(rx, y + 1.9, rw, 3.6, 1, 1, 'F'); pdf.setTextColor(r === 'PASİF' ? 100 : 22, r === 'PASİF' ? 116 : 101, r === 'PASİF' ? 139 : 52); pdf.text(r, rx + 1.5, y + 4.6); rx += rw + 1.5; });
                 }
                 let dt = tarihTR(d(x, 'dogumTarihi')), ys = yas(x);
                 hucre(S[2], dt ? dt + (ys !== null ? '  (' + ys + ')' : '') : (ys !== null ? x.sp.dogumYili + '  (' + ys + ')' : ''), { eksik: true, boy: 8 });
-                hucre(S[3], d(x, 'cinsiyet') === 'K' ? 'Kiz' : d(x, 'cinsiyet') === 'E' ? 'Erkek' : '', { eksik: true, boy: 8 });
+                hucre(S[3], d(x, 'cinsiyet') === 'K' ? 'Kız' : d(x, 'cinsiyet') === 'E' ? 'Erkek' : '', { eksik: true, boy: 8 });
                 hucre(S[4], d(x, 'yay'), { boy: 8 });
                 hucre(S[5], d(x, 'acilKisi'), { eksik: true });
                 hucre(S[6], tel(d(x, 'acilTelefon')), { eksik: true });

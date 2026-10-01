@@ -38,7 +38,7 @@ export function registerMetaRoutes(router: Router): void {
   // blob-shaped collections (takimlarDB, antrenmanlarDB, atisLog, ...) losslessly.
   router.get("/api/meta/:key", async (request, env, params) => {
     if (OTURUMLU_META.has(params.key) && !(await yetkiliOturum(request, env, false))) return unauthorized();
-    return json({ value: await metaDb.getMeta(env, params.key) });
+    return json(await metaDb.getMetaSatir(env, params.key));
   });
 
   router.put("/api/meta/:key", async (request, env, params) => {

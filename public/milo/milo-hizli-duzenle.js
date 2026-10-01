@@ -212,20 +212,20 @@ function mhdPdfIndir() {
     let tarihTR = function (iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; };
     let tel = function (t) { let s = String(t || '').replace(/\D/g, ''); if (s.length === 10 && s[0] === '5') s = '0' + s; return s.length === 11 ? s.slice(0, 4) + ' ' + s.slice(4, 7) + ' ' + s.slice(7, 9) + ' ' + s.slice(9) : String(t || ''); };
     let S = [
-        { b: '#', w: 9 }, { b: 'AD SOYAD', w: 50 }, { b: 'DOGUM / YAS', w: 27 }, { b: 'CINS.', w: 12 }, { b: 'BOY / KILO', w: 27 },
-        { b: 'VELI ADI', w: 36 }, { b: 'TELEFON', w: 28 }, { b: 'VELI IS / MESLEK', w: 38 }, { b: 'SAGLIK / NOT', w: 42 }
+        { b: '#', w: 9 }, { b: 'AD SOYAD', w: 50 }, { b: 'DOĞUM / YAŞ', w: 27 }, { b: 'CİNS.', w: 12 }, { b: 'BOY / KİLO', w: 27 },
+        { b: 'VELİ ADI', w: 36 }, { b: 'TELEFON', w: 28 }, { b: 'VELİ İŞ / MESLEK', w: 38 }, { b: 'SAĞLIK / NOT', w: 42 }
     ];
     _miloYeniPdfAl('landscape').then(function (pdf) {
         let W = 297, H = 210, mx = 14, uw = W - mx * 2, y;
         let yeniSayfa = function () { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 14; };
         let sigdir = function (metin, w, boy) { pdf.setFontSize(boy); let s = T(metin); if (pdf.getTextWidth(s) <= w - 2.5) return s; while (s.length > 1 && pdf.getTextWidth(s + '...') > w - 2.5) s = s.slice(0, -1); return s + '...'; };
-        let filtre = [_mhd.grup === 'hepsi' ? 'Tum gruplar' : _mhd.grup];
+        let filtre = [_mhd.grup === 'hepsi' ? 'Tüm gruplar' : _mhd.grup];
         if (_mhd.ara.trim()) filtre.push('Arama: "' + _mhd.ara.trim() + '"'); if (_mhd.eksik) filtre.push('Sadece eksik bilgisi olanlar'); if (_mhd.pasifler) filtre.push('Pasifler dahil');
-        y = _miloKurumsalBaslikCiz(pdf, mx, uw, 12, 'UYE LISTESI', 'Uye Bilgileri  |  ' + filtre.join('  |  '));
+        y = _miloKurumsalBaslikCiz(pdf, mx, uw, 12, 'ÜYE LİSTESİ', 'Üye Bilgileri  |  ' + filtre.join('  |  '));
         let kiz = satirlar.filter(function (u) { return d(u, 'cinsiyet') === 'K'; }).length, erk = satirlar.filter(function (u) { return d(u, 'cinsiyet') === 'E'; }).length;
         let telYok = satirlar.filter(function (u) { return !d(u, 'acilTelefon'); }).length, dogYok = satirlar.filter(function (u) { return !d(u, 'dogumTarihi'); }).length;
         let ox = mx;
-        [[String(satirlar.length), 'uye'], [String(kiz), 'kiz'], [String(erk), 'erkek'], [String(telYok), 'veli telefonu eksik'], [String(dogYok), 'dogum tarihi eksik']].forEach(function (o, i) {
+        [[String(satirlar.length), 'üye'], [String(kiz), 'kız'], [String(erk), 'erkek'], [String(telYok), 'veli telefonu eksik'], [String(dogYok), 'doğum tarihi eksik']].forEach(function (o, i) {
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); let w1 = pdf.getTextWidth(o[0]);
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); let w2 = pdf.getTextWidth(T(o[1]));
             let kw = w1 + w2 + 9, uyari = i >= 3 && o[0] !== '0';
@@ -239,14 +239,14 @@ function mhdPdfIndir() {
         let basliklar = function () {
             pdf.setFillColor(20, 110, 100); pdf.rect(mx, y, uw, 7.5, 'F');
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(230, 250, 246);
-            let x = mx; S.forEach(function (s) { pdf.text(s.b, x + 2, y + 5); x += s.w; });
+            let x = mx; S.forEach(function (s) { pdf.text(T(s.b), x + 2, y + 5); x += s.w; });
             y += 7.5;
         };
         let bolum = function (g, n) {
             pdf.setFillColor(255, 197, 66); pdf.rect(mx, y + 1, 1.6, 6, 'F');
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(20, 40, 38); pdf.text(T(g), mx + 4, y + 5.6);
             let gw = pdf.getTextWidth(T(g));
-            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(n + ' uye', mx + 6 + gw, y + 5.6);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(n + ' üye', mx + 6 + gw, y + 5.6);
             y += 9;
         };
         let gruplar = _mhd.grup === 'hepsi' ? mhdGruplar().filter(function (g) { return satirlar.some(function (u) { return u.grup === g; }); }) : [null];
@@ -259,7 +259,7 @@ function mhdPdfIndir() {
             liste.forEach(function (u, i) {
                 let v2k = d(u, 'veli2Kisi'), v2t = d(u, 'veli2Telefon'), saglik = d(u, 'saglikNotu'), not = d(u, 'genelNot');
                 let rh = (v2k || v2t || (saglik && not)) ? 11.5 : 7;
-                if (y + rh > H - 16) { yeniSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(20, 130, 120); pdf.text(T(g + ' (devami)'), mx, y + 4); y += 6; } basliklar(); }
+                if (y + rh > H - 16) { yeniSayfa(); if (g) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(20, 130, 120); pdf.text(T(g + ' (devamı)'), mx, y + 4); y += 6; } basliklar(); }
                 sira++;
                 let pasif = !!mhdDeger(u, { id: 'pasif', tip: 'onay' }), muaf = !!mhdDeger(u, { id: 'aidatMuaf', tip: 'onay' });
                 if (i % 2 === 1) { pdf.setFillColor(247, 250, 249); pdf.rect(mx, y, uw, rh, 'F'); }
@@ -272,17 +272,17 @@ function mhdPdfIndir() {
                 };
                 let alt = function (sutun, metin, renk) { let x = mx + S.slice(0, sutun).reduce(function (a, c) { return a + c.w; }, 0); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(renk[0], renk[1], renk[2]); pdf.text(sigdir(metin, S[sutun].w, 7.5), x + 2, y + 9.3); };
                 hucre(S[0], String(sira), { boy: 7.5, renk: [148, 163, 184] });
-                let rozetler = []; if (pasif) rozetler.push('PASIF'); if (muaf) rozetler.push('MUAF');
+                let rozetler = []; if (pasif) rozetler.push('PASİF'); if (muaf) rozetler.push('MUAF');
                 pdf.setFontSize(6); let rozW = rozetler.reduce(function (a, r) { return a + pdf.getTextWidth(r) + 4.5; }, 0);
                 let adX = hx; hucre(S[1], u.ad, { kalin: true, boy: 8.5, renk: pasif ? [148, 163, 184] : [20, 40, 38], sagBosluk: rozW });
                 if (rozetler.length) {
                     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); let rx = adX + 2 + Math.min(pdf.getTextWidth(sigdir(u.ad, S[1].w - rozW, 8.5)), S[1].w - rozW) + 1.5;
                     pdf.setFontSize(6);
-                    rozetler.forEach(function (r) { let rw = pdf.getTextWidth(r) + 3; pdf.setFillColor(r === 'PASIF' ? 226 : 220, r === 'PASIF' ? 232 : 252, r === 'PASIF' ? 240 : 231); pdf.roundedRect(rx, y + 1.9, rw, 3.6, 1, 1, 'F'); pdf.setTextColor(r === 'PASIF' ? 100 : 22, r === 'PASIF' ? 116 : 101, r === 'PASIF' ? 139 : 52); pdf.text(r, rx + 1.5, y + 4.6); rx += rw + 1.5; });
+                    rozetler.forEach(function (r) { let rw = pdf.getTextWidth(r) + 3; pdf.setFillColor(r === 'PASİF' ? 226 : 220, r === 'PASİF' ? 232 : 252, r === 'PASİF' ? 240 : 231); pdf.roundedRect(rx, y + 1.9, rw, 3.6, 1, 1, 'F'); pdf.setTextColor(r === 'PASİF' ? 100 : 22, r === 'PASİF' ? 116 : 101, r === 'PASİF' ? 139 : 52); pdf.text(r, rx + 1.5, y + 4.6); rx += rw + 1.5; });
                 }
                 let dt = tarihTR(d(u, 'dogumTarihi')), ys = typeof miloYasHesapla === 'function' ? miloYasHesapla(d(u, 'dogumTarihi')) : null;
                 hucre(S[2], dt ? dt + (ys !== null ? '  (' + ys + ')' : '') : '', { eksik: true, boy: 8 });
-                hucre(S[3], d(u, 'cinsiyet') === 'K' ? 'Kiz' : d(u, 'cinsiyet') === 'E' ? 'Erkek' : '', { eksik: true, boy: 8 });
+                hucre(S[3], d(u, 'cinsiyet') === 'K' ? 'Kız' : d(u, 'cinsiyet') === 'E' ? 'Erkek' : '', { eksik: true, boy: 8 });
                 let boy = d(u, 'boy'), kilo = d(u, 'kilo');
                 hucre(S[4], boy || kilo ? (boy ? boy + ' cm' : '-') + ' / ' + (kilo ? kilo + ' kg' : '-') : '', { boy: 7.5 });
                 hucre(S[5], d(u, 'acilKisi'), { eksik: true });

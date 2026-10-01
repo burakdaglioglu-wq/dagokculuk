@@ -1,0 +1,3 @@
+Roboto (Regular 400, Bold 700) — Google Fonts, Apache License 2.0
+https://fonts.google.com/specimen/Roboto/license
+PDF çıktılarına Türkçe harfler (Ş, Ğ, İ, ı) için gömülür — bkz. public/app.js _pdfFontYukle, public/milo/app.js _miloPdfFontYukle.

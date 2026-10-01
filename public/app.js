@@ -2906,8 +2906,33 @@
         // İ/ı/Ğ/ğ/Ş/ş YOK (glyph kayboluyor/bozuk çıkıyor, bkz. _trTranslit). Türkçe okur için
         // "KANOGLU" gibi bir çıktı mükemmel değil ama TAM OKUNAKLI — sessizce boş sayfa vermekten
         // kesinlikle daha iyi.
+        // 2026-10-01: PDF'e Türkçe destekli yazı tipi (Roboto, public/fonts/) gömülüyor — yüklendiyse harfler
+        // OLDUĞU GİBİ basılır ("AYŞE"), yüklenemezse eski güvenli yol (I/i/G/g/S/s) devam eder.
+        let _pdfFontB64 = null, _pdfFontSoz = null, _pdfTurkceHazir = false;
         function _trTranslit(s) {
+            if(_pdfTurkceHazir) return String(s || '');
             return String(s || '').replace(/İ/g, 'I').replace(/ı/g, 'i').replace(/Ğ/g, 'G').replace(/ğ/g, 'g').replace(/Ş/g, 'S').replace(/ş/g, 's');
+        }
+        function _pdfFontYukle() {
+            if(_pdfFontB64) return Promise.resolve(_pdfFontB64);
+            if(_pdfFontSoz) return _pdfFontSoz;
+            let al = function(u) { return fetch(u).then(function(r) { if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(function(b) { let a = new Uint8Array(b), s = ''; for(let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); }); };
+            _pdfFontSoz = Promise.all([al('/fonts/Roboto_400Regular.ttf'), al('/fonts/Roboto_700Bold.ttf')])
+                .then(function(r) { _pdfFontB64 = { normal: r[0], bold: r[1] }; return _pdfFontB64; })
+                .catch(function() { _pdfFontSoz = null; return null; });
+            return _pdfFontSoz;
+        }
+        // jsPDF belgesine Roboto'yu ekler ve setFont'u ona yönlendirir (PDF kodları 'helvetica' demeye devam edebilir).
+        function _pdfTurkceYaziTipi(pdf) {
+            if(!_pdfFontB64 || !pdf || pdf._turkce) return !!(pdf && pdf._turkce);
+            try {
+                pdf.addFileToVFS('Roboto-Regular.ttf', _pdfFontB64.normal); pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+                pdf.addFileToVFS('Roboto-Bold.ttf', _pdfFontB64.bold); pdf.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+                let orj = pdf.setFont.bind(pdf);
+                pdf.setFont = function(ad, stil) { return orj('Roboto', String(stil || 'normal').indexOf('bold') !== -1 ? 'bold' : 'normal'); };
+                pdf.setFont('helvetica', 'normal'); pdf._turkce = true;
+                return true;
+            } catch(e) { console.warn('PDF yazı tipi eklenemedi', e); return false; }
         }
         // html2pdf().from(...).toPdf().get('pdf') üzerinden gerçek bir jsPDF nesnesi elde etmenin
         // (bu bundle jsPDF constructor'ını global olarak dışa açmıyor) tek yolu — trivial bir elemente
@@ -2917,10 +2942,11 @@
             orientation = orientation || 'portrait';
             let trivial = document.createElement('div'); trivial.style.cssText = 'position:fixed;left:-9999px;top:0;width:10px;height:10px;'; trivial.innerHTML = 'x';
             document.body.appendChild(trivial);
-            return html2pdf().set({ jsPDF: { unit: 'mm', format: 'a4', orientation: orientation } }).from(trivial).toPdf().get('pdf').then(function(pdf) {
+            return _pdfFontYukle().then(function() { return html2pdf().set({ jsPDF: { unit: 'mm', format: 'a4', orientation: orientation } }).from(trivial).toPdf().get('pdf'); }).then(function(pdf) {
                 if (trivial.parentNode) document.body.removeChild(trivial);
                 let pageW = orientation === 'landscape' ? 297 : 210, pageH = orientation === 'landscape' ? 210 : 297;
                 pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F');
+                _pdfTurkceHazir = _pdfTurkceYaziTipi(pdf);
                 return pdf;
             });
         }
@@ -2974,13 +3000,13 @@
             pdf.setFillColor(9, 22, 43); pdf.roundedRect(marginX, y, usableW, 24, 3, 3, 'F');
             pdf.setFillColor(251, 191, 36); pdf.rect(marginX, y + 24 - 1.4, usableW, 1.4, 'F'); // alt gold çizgi
             pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
-            pdf.text(_trTranslit('DAG SPOR KULUBU'), marginX + 7, y + 10);
+            pdf.text(_trTranslit('DAĞ SPOR KULÜBÜ'), marginX + 7, y + 10);
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(148, 197, 255);
             pdf.text(_trTranslit(altBaslik || 'Antrenman Yoklama Formu'), marginX + 7, y + 16.5);
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(251, 191, 36);
             pdf.text(_trTranslit(rozetMetni), marginX + usableW - 7, y + 10, { align: 'right' });
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(148, 197, 255);
-            pdf.text(_trTranslit('Hazirlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
+            pdf.text(_trTranslit('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
             return y + 30;
         }
         function _kurumsalAltBilgiCiz(pdf, pageW, pageH) {
@@ -2989,7 +3015,7 @@
                 pdf.setPage(i);
                 pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.line(14, pageH - 12, pageW - 14, pageH - 12);
                 pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(148, 163, 184);
-                pdf.text(_trTranslit('DAG S.K. Master OS'), 14, pageH - 7);
+                pdf.text(_trTranslit('DAĞ S.K. Master OS'), 14, pageH - 7);
                 pdf.text(String(i) + ' / ' + sayfaSayisi, pageW / 2, pageH - 7, { align: 'center' });
                 pdf.text(new Date().toLocaleString('tr-TR'), pageW - 14, pageH - 7, { align: 'right' });
             }
@@ -3063,7 +3089,7 @@
                 let pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
                 pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.line(14, ph - 12, pw - 14, ph - 12);
                 pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(148, 163, 184);
-                pdf.text(_trTranslit('DAG S.K. Master OS'), 14, ph - 7);
+                pdf.text(_trTranslit('DAĞ S.K. Master OS'), 14, ph - 7);
                 pdf.text(String(i) + ' / ' + sayfaSayisi, pw / 2, ph - 7, { align: 'center' });
                 pdf.text(new Date().toLocaleString('tr-TR'), pw - 14, ph - 7, { align: 'right' });
             }
@@ -6505,9 +6531,10 @@
             let gs = document.getElementById('giris-sporcu'); if(gs) gs.style.display = 'none';
             let ss = document.getElementById('giris-sifre'); if(ss) ss.style.display = 'none';
             document.getElementById('giris-lig').style.display = 'flex';
-            document.getElementById('giris-baslik').innerText = 'EĞİTMEN — Lig Seçin';
+            document.getElementById('giris-baslik').innerText = 'EĞİTMEN PANELİ';
             try { kronometreSifirla(); } catch(e) {}
             try { kmDevamBanneriGuncelle(); } catch(e) {}
+            try { egitmenOzetCiz(); } catch(e) {}
         }
         function egitmenCikis() { location.reload(); }
         function kapatGirisEkrani() { document.getElementById('giris-ekrani').style.display = 'none'; }
@@ -6885,8 +6912,9 @@
             document.getElementById('giris-platform').style.display = 'none';
             document.getElementById('giris-lig').style.display = 'flex';
             try { let ge = document.getElementById('giris-ekrani'); ge.scrollTop = 0; setTimeout(function() { let l = document.getElementById('giris-lig'); if(l && l.getBoundingClientRect().bottom > innerHeight) l.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60); } catch(e) {}
-            document.getElementById('giris-baslik').innerText = 'EĞİTMEN — Lig Seçin';
+            document.getElementById('giris-baslik').innerText = 'EĞİTMEN PANELİ';
             try { kmDevamBanneriGuncelle(); } catch(e) {}
+            try { egitmenOzetCiz(); } catch(e) {}
         }
         // ---- Passkey (parmak izi / Face ID) ----
         function _b64uBuf(s) { let b = s.replace(/-/g, '+').replace(/_/g, '/'); b += '==='.slice((b.length + 3) % 4); let bin = atob(b), u = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
@@ -7631,6 +7659,74 @@
         function yoneticiKarisikSinifaGit() {
             yoneticiPaneliKapat();
             try { kmAc(); } catch(e) {}
+        }
+
+        // ===== 🎓 EĞİTMEN ÖZET PANELİ (2026-10-02, kullanıcı: "eğitmen ana menüsünü özet paneline çevir — bugünkü dersler,
+        // açık Karışık Sınıf'a tek dokunuş, son skorlar, devamsızlık uyarıları; yönetici panelinin eğitmen versiyonu").
+        // Giriş sonrası #giris-lig ekranının üstü (#egt-ozet-ust) ve Karışık Sınıf kartının altı (#egt-ozet-alt).
+        // Salt okunur — veri: otomatikYoklamaDB, turnuvaDB (sonSkorZamani), devamsizlikListesi, Ders Programı
+        // (dagsk-km-sablon-ozet.js kmProgramSlotlariGetir/kmBugunDersleri — Karışık Sınıf'ın "bugünün dersleri" ile aynı).
+        let _egtDevamsiz = [], _egtDersler = [];
+        function egitmenOzetCiz() {
+            let ust = document.getElementById('egt-ozet-ust'), alt = document.getElementById('egt-ozet-alt');
+            if(!ust || !alt) return;
+            let simdi = Date.now(), saat = new Date().getHours();
+            let selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+            let ad = _oturum && _oturum.ad ? String(_oturum.ad).split(' ')[0] : '';
+            let tarih = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+            let gelen = Object.keys(otomatikYoklamaDB[bugunISO()] || {}).length;
+            // Son 24 saatte skor girenler (Karışık Sınıf + lig ekranı aynı sp.sonSkorZamani'nı yazar)
+            let skorlar = [];
+            ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) {
+                Object.keys(turnuvaDB[g] || {}).forEach(function(a) {
+                    let sp = turnuvaDB[g][a], t = sp && sp.sonSkorZamani;
+                    if(t && simdi - t < 86400000 && (sp.seriler || []).length) skorlar.push({ g: g, ad: a, t: t, puan: sp.toplamSkor || 0, seri: sp.seriler.length });
+                });
+            });
+            skorlar.sort(function(a, b) { return b.t - a.t; });
+            // Devamsızlık: hiç kaydı olmayanlar (gun=null) listeyi boğmasın — eşiği YENİ geçenler en üstte (en kolay geri kazanılan).
+            _egtDevamsiz = devamsizlikListesi(14).filter(function(x) { return x.gun !== null; }).sort(function(a, b) { return a.gun - b.gun; });
+            let kutu = function(deger, et, renk, id) { return '<div class="egt-kutu" style="--r:' + renk + '"><b' + (id ? ' id="' + id + '"' : '') + '>' + deger + '</b><span>' + et + '</span></div>'; };
+            ust.innerHTML = '<div><div class="egt-selam">' + selam + (ad ? ', ' + esc(ad) : '') + ' 👋</div><div class="egt-tarih">' + tarih + '</div></div>'
+                + '<div class="egt-kutular">'
+                + kutu('…', 'Bugünkü ders', 'var(--accent-orange)', 'egt-ders-sayi')
+                + kutu(gelen, 'Bugün gelen sporcu', 'var(--neon-green)')
+                + kutu(skorlar.length, 'Son 24 saatte skor giren', 'var(--neon-blue)')
+                + '</div>';
+            let zamanYazi = function(t) { let dk = Math.round((simdi - t) / 60000); return dk < 1 ? 'az önce' : dk < 60 ? dk + ' dk önce' : Math.floor(dk / 60) + ' sa önce'; };
+            let skorHTML = '<div class="egt-kart"><div class="egt-kart-bas">🎯 Son skorlar' + (skorlar.length > 5 ? '<small>+' + (skorlar.length - 5) + ' sporcu daha</small>' : '') + '</div>'
+                + (skorlar.length ? skorlar.slice(0, 5).map(function(x) {
+                    return '<div class="egt-satir"><span class="egt-satir-orta"><b>' + esc(x.ad) + '</b><small>' + (LIG_ETIKET[x.g] || x.g) + ' · ' + x.seri + ' seri · ' + zamanYazi(x.t) + '</small></span><span class="egt-puan">' + x.puan + '</span></div>';
+                }).join('') : '<div class="egt-bos">Son 24 saatte skor girilmedi.</div>') + '</div>';
+            let devHTML = '<div class="egt-kart"><div class="egt-kart-bas">⚠️ 14+ gündür gelmeyen' + (_egtDevamsiz.length ? '<small>' + _egtDevamsiz.length + ' sporcu</small>' : '') + '</div>'
+                + (_egtDevamsiz.length ? _egtDevamsiz.slice(0, 4).map(function(x, i) {
+                    return '<div class="egt-satir"><span class="egt-satir-orta"><b>' + esc(x.ad) + '</b><small>' + (LIG_ETIKET[x.g] || x.g) + ' · ' + x.gun + ' gündür yok' + (x.yaklasikMi ? ' (yaklaşık)' : '') + '</small></span><button class="egt-btn yesil" onclick="egitmenDevamsizWa(' + i + ')" aria-label="Veliye WhatsApp mesajı">💬 Mesaj</button></div>';
+                }).join('') : '<div class="egt-bos">✓ Uzun süredir gelmeyen sporcu yok.</div>') + '</div>';
+            alt.innerHTML = '<div id="egt-dersler"></div>' + skorHTML + devHTML;
+            // Bugünün dersleri (ağdan, Karışık Sınıf'la ortak 2 dk önbellek)
+            if(typeof kmProgramSlotlariGetir !== 'function') { let s = document.getElementById('egt-ders-sayi'); if(s) s.textContent = '–'; return; }
+            kmProgramSlotlariGetir().then(function(sl) {
+                _egtDersler = kmBugunDersleri(sl || []);
+                let sayi = document.getElementById('egt-ders-sayi'); if(sayi) sayi.textContent = _egtDersler.length;
+                let el = document.getElementById('egt-dersler'); if(!el) return;
+                if(!_egtDersler.length) { el.innerHTML = ''; return; }
+                el.innerHTML = '<div class="egt-kart"><div class="egt-kart-bas">📅 Bugünün dersleri<small>dokun, kayıtlı sporcularla başlasın</small></div>' + _egtDersler.slice(0, 4).map(function(x, i) {
+                    let n = kmDersSporculari(x.s).length;
+                    return '<div class="egt-satir"><span class="egt-satir-sol">' + esc(x.s.baslangicSaat) + '<small>' + esc(x.s.bitisSaat) + '</small></span><span class="egt-satir-orta"><b>' + esc(x.s.grup || 'Ders') + '</b><small>' + (n ? n + ' kayıtlı sporcu' : 'kayıtlı sporcu yok') + (x.simdi ? ' · <span class="egt-simdi">ŞİMDİ</span>' : '') + '</small></span>'
+                        + (n ? '<button class="egt-btn' + (x.simdi ? ' dolu' : '') + '" onclick="egitmenDersBaslat(' + i + ')">▶ Başlat</button>' : '') + '</div>';
+                }).join('') + '</div>';
+            }).catch(function() {});
+        }
+        function egitmenDevamsizWa(i) { let x = _egtDevamsiz[i]; if(x) devamsizlikWhatsApp(x.ad, x.gun); }
+        // Bugünün dersine tek dokunuş: devam eden ders varsa (bu cihazda ya da başka cihazda) önce ona gidilir — üzerine
+        // yazılmaz; yoksa Karışık Sınıf'ın "programdan ders" akışıyla (kmProgramDersBaslat) doğrudan başlar.
+        function egitmenDersBaslat(i) {
+            let x = _egtDersler[i]; if(!x) return;
+            if(!_kmAktifKonum) { showToast('Önce dersin yapılacağı konumu seç, sonra "Bugünün dersleri"nden başlat', 'info'); kmKonumSeciciAc(); return; }
+            let buradaDers = _kmYerelListeVar(_kmAktifKonum) || (_kmSunucuAktif || []).some(function(d) { return d.konum.id === _kmAktifKonum; });
+            if(buradaDers) { showToast('Bu konumda devam eden bir ders var — önce onu açıyorum', 'info'); kmKonumaGir(); return; }
+            try { _kmYarismaKurulumYukle(); } catch(e) {}
+            kmProgramDersBaslat(x.s.id); // kmBaslat sunucuyu bir kez daha kontrol eder — gerçek bir dersin üzerine sormadan yazmaz
         }
 
         // ===== AİLE ATIŞ RAPORU =====
@@ -10040,7 +10136,10 @@
             let btn = document.getElementById('km-giris-btn'); if(!btn) return;
             let aktif = false;
             if(_kmAktifKonum) {
+                if(_kmYerelEskiMi(_kmAktifKonum)) _kmYerelDersiKapat(_kmAktifKonum);
                 try { let saved = JSON.parse(localStorage.getItem(kmLocalAnahtari()) || '[]'); aktif = Array.isArray(saved) && saved.length > 0; } catch(e) {}
+                // Bu cihazdaki ders başka cihazda bitirilmiş / sunucuda eskimiş olabilir — arada bir sunucuya sor.
+                if(aktif && Date.now() - _kmSunucuKontrolZaman > 60000) kmSunucuAktifDersler().then(function() { if(!_kmYerelListeVar(_kmAktifKonum)) kmDevamBanneriGuncelle(); }).catch(function() {});
             }
             // "Kontur" görsel yönü: kart yapısı sabit (ikon/metin/rozet), sadece .aktif-ders sınıfı
             // ve içindeki .chip görünürlüğü değişiyor — innerHTML'i baştan yazmıyoruz.
@@ -10070,17 +10169,56 @@
                 _kmKonumlar = konumlar;
                 return Promise.all(konumlar.map(function(k) {
                     return fetch('/api/meta/karisik_sinif_liste_' + k.id).then(function(r) { return r.json(); }).then(function(d) {
-                        let l = null; try { l = d && d.value ? JSON.parse(d.value) : null; } catch(e) {}
-                        return { konum: k, sayi: Array.isArray(l) ? l.length : 0 };
+                        return { konum: k, sayi: _kmSunucuListeDegerlendir(k.id, d).length };
                     }).catch(function() { return { konum: k, sayi: 0 }; });
                 }));
             }).then(function(ds) { _kmSunucuAktif = ds.filter(function(d) { return d.sayi > 0; }); return _kmSunucuAktif; });
         }
+        // ⏰ UNUTULAN AÇIK DERSLER (2026-10-02, kullanıcı: "Dersi Bitir denmeyen eski dersler 'devam eden ders' diye
+        // görünmeye devam ediyor — 12 saatten eskileri otomatik kapat"). Ders listesi en son 12 saatten önce yazıldıysa
+        // ders unutulmuş sayılır: sunucudaki ve bu cihazdaki liste boşaltılır. Skorlar SİLİNMEZ (sporcu kayıtlarında
+        // kalır) — yalnızca "devam eden ders" görünümü kapanır. Sunucu yaşı meta.updated_at'ten (GET → guncelleme),
+        // cihaz yaşı _kmListeKaydet'in yazdığı 'dag_km_liste_<konum>_t' anahtarından.
+        const KM_DERS_ESKIME_MS = 12 * 60 * 60 * 1000;
+        function _kmYerelZamanAnahtari(konumId) { return 'dag_km_liste_' + konumId + '_t'; }
+        function _kmYerelZamanYaz(konumId, t) { try { localStorage.setItem(_kmYerelZamanAnahtari(konumId), String(t || Date.now())); } catch(e) {} }
+        function _kmYerelZaman(konumId) { try { return Number(localStorage.getItem(_kmYerelZamanAnahtari(konumId)) || 0); } catch(e) { return 0; } }
+        function _kmYerelEskiMi(konumId) { let t = _kmYerelZaman(konumId); return t > 0 && Date.now() - t > KM_DERS_ESKIME_MS; }
+        function _kmYerelListeVar(konumId) { try { let y = JSON.parse(localStorage.getItem('dag_km_liste_' + konumId) || '[]'); return Array.isArray(y) && y.length > 0; } catch(e) { return false; } }
+        // Bu cihazın henüz sunucuya ulaşmamış (kuyrukta) bir liste yazımı varsa yerel kopya sunucudan YENİDİR — dokunma.
+        function _kmBekleyenYazimVar(konumId) { return !!(_kmListeBekleyen && _kmListeBekleyen.anahtar === 'karisik_sinif_liste_' + konumId && _kmListeBekleyen.deger !== '[]'); }
+        function _kmYerelDersiKapat(konumId) {
+            let vardi = _kmYerelListeVar(konumId);
+            try { localStorage.removeItem('dag_km_liste_' + konumId); localStorage.removeItem(_kmYerelZamanAnahtari(konumId)); } catch(e) {}
+            if((_kmAktifKonum || 'varsayilan') === konumId && _kmListe.length) {
+                _kmListe = []; _kmSecimler = {};
+                try { kmYarismaSifirla(); } catch(e) {}
+                let pl = document.getElementById('karisik-platform');
+                if(pl && getComputedStyle(pl).display !== 'none') { pl.style.display = 'none'; kmAcYerel(); }
+            }
+            if(vardi) showToast('⏰ Bitirilmemiş eski ders otomatik kapatıldı (skorlar duruyor)', 'info');
+        }
+        // Sunucu satırı ({value, guncelleme}) → konumun GERÇEK listesi. 12 saatten eskiyse dersi kapatır ve [] döner;
+        // sunucuda kapanmış bir dersin bu cihazda kalmış eski kopyasını da temizler.
+        function _kmSunucuListeDegerlendir(konumId, d) {
+            let l = null; try { l = d && d.value ? JSON.parse(d.value) : null; } catch(e) {}
+            if(!Array.isArray(l)) return [];
+            if(l.length && d.guncelleme && Date.now() - d.guncelleme > KM_DERS_ESKIME_MS && !_kmBekleyenYazimVar(konumId)) {
+                fetch('/api/meta/karisik_sinif_liste_' + konumId, { method: 'PUT', headers: {'content-type':'application/json'}, body: JSON.stringify({ value: '[]' }) }).catch(function() {});
+                if(_kmYerelListeVar(konumId) && !(_kmYerelZaman(konumId) > d.guncelleme && !_kmYerelEskiMi(konumId))) _kmYerelDersiKapat(konumId);
+                return [];
+            }
+            if(!l.length && d.guncelleme && _kmYerelListeVar(konumId) && !_kmBekleyenYazimVar(konumId)) {
+                let yt = _kmYerelZaman(konumId);
+                if(!yt || d.guncelleme > yt) _kmYerelDersiKapat(konumId);
+            }
+            return l;
+        }
         // Başka cihazın açtığı derse katıl: önce sunucudaki listeyi al, sonra o konuma bağlan (boş "yeni ders" ekranı hiç görünmez).
         function kmSunucuDersineKatil(konumId) {
             fetch('/api/meta/karisik_sinif_liste_' + konumId).then(function(r) { return r.json(); }).then(function(d) {
-                let l = null; try { l = d && d.value ? JSON.parse(d.value) : null; } catch(e) {}
-                if(Array.isArray(l) && l.length) { try { localStorage.setItem('dag_km_liste_' + konumId, JSON.stringify(l)); } catch(e) {} }
+                let l = _kmSunucuListeDegerlendir(konumId, d);
+                if(l.length) { try { localStorage.setItem('dag_km_liste_' + konumId, JSON.stringify(l)); } catch(e) {} _kmYerelZamanYaz(konumId, d.guncelleme); }
             }).catch(function() {}).then(function() {
                 kmKonumaBaglan(konumId);
                 let k = (_kmKonumlar || []).find(function(x) { return x.id === konumId; });
@@ -10117,9 +10255,9 @@
             // localStorage'ında yaşıyordu (hiç senkronize olmuyordu), bu yüzden başka bir cihazda/
             // oturumda açılınca ya da tarayıcı verisi temizlenince "kayboluyordu".
             fetch('/api/meta/' + kmMetaAnahtari()).then(r => r.json()).then(data => {
-                let liste = null;
-                try { liste = (data && data.value) ? JSON.parse(data.value) : null; } catch(e) {}
+                let liste = _kmSunucuListeDegerlendir(_kmAktifKonum || 'varsayilan', data);
                 if(liste && liste.length > 0 && JSON.stringify(liste) !== JSON.stringify(_kmListe)) {
+                    _kmYerelZamanYaz(_kmAktifKonum || 'varsayilan', data.guncelleme);
                     _kmListe = liste;
                     _kmSecimler = {};
                     liste.forEach(function(s){ _kmSecimler[s.g+'_'+s.ad] = s; });
@@ -10144,6 +10282,7 @@
             }).catch(() => {});
         }
         function kmAcYerel() {
+            if(_kmYerelEskiMi(_kmAktifKonum || 'varsayilan')) _kmYerelDersiKapat(_kmAktifKonum || 'varsayilan');
             // Kayıtlı ders var mı? (sunucuya ulaşılamadığında/boş olduğunda düşülen yol)
             try {
                 let saved = localStorage.getItem(kmLocalAnahtari());
@@ -10168,6 +10307,7 @@
         // yerden uygulanır.
         function _kmListeKaydet() {
             try { localStorage.setItem(kmLocalAnahtari(), JSON.stringify(_kmListe)); } catch(e) {}
+            _kmYerelZamanYaz(_kmAktifKonum || 'varsayilan');
             try { kmDevamBanneriGuncelle(); } catch(e) {}
             kmListeSunucuyaYaz(kmMetaAnahtari(), JSON.stringify(_kmListe));
         }
@@ -10196,9 +10336,8 @@
             // yazma riskini artırmasın diye bir kez daha denenir — gerçekten boşsa zaten iki
             // denemede de boş çıkar, gerçek bir bağlantı sorunu ise ikinci deneme çoğu zaman kurtarır.
             let _konumDurumGetir = (k) => fetch('/api/meta/karisik_sinif_liste_' + k.id).then(r => r.json()).then(data => {
-                let liste = null;
-                try { liste = data && data.value ? JSON.parse(data.value) : null; } catch(e) {}
-                return { konum: k, aktif: !!(liste && liste.length), sayi: liste ? liste.length : 0 };
+                let liste = _kmSunucuListeDegerlendir(k.id, data);
+                return { konum: k, aktif: liste.length > 0, sayi: liste.length };
             });
             _kmKonumlariGetir().then(konumlar => {
                 _kmKonumlar = konumlar;
@@ -10306,7 +10445,7 @@
             try {
                 let res = await fetch('/api/meta/' + kmMetaAnahtari());
                 let data = await res.json();
-                let sunucudaki = data && data.value ? JSON.parse(data.value) : null;
+                let sunucudaki = _kmSunucuListeDegerlendir(_kmAktifKonum || 'varsayilan', data); // 12 saatten eski unutulmuş ders sayılmaz
                 if(sunucudaki && sunucudaki.length && JSON.stringify(sunucudaki) !== JSON.stringify(secilen)) {
                     let devamMi = confirm(`⚠️ Bu konumda zaten ${sunucudaki.length} sporculu bir ders kayıtlı!\n\nÜzerine yazarsan o ders (ve kaydettiği ilerleme) kaybolur.\n\nYine de üzerine yazılsın mı?\n\n(İptal edip "🔁 Konum Değiştir" ile o dersi bulup devam edebilirsin.)`);
                     if(!devamMi) { islemYukleniyorGizle(); return; }
