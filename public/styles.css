@@ -2274,3 +2274,49 @@
         .gs-tuslar .pin-btn { padding:14px 0; }
         @media (max-height: 900px) { #giris-ekrani.gs-giris-acik .kurumsal-logo { display:none; } #giris-ekrani.gs-giris-acik h2 { margin-bottom:6px; } }
         .gs-hatirla input[type="checkbox"] { -webkit-appearance:checkbox !important; appearance:auto !important; flex-shrink:0; }
+
+        /* ===== Yönetici Genel Bakış — SADE PANEL (2026-10-01). Milo Genel Bakış ile aynı düzen: 4 büyük özet kutusu,
+           tek satır hızlı işlemler, iki sütun (Bugün yapılacaklar + Dikkat). Renkler tema tokenlarından. ===== */
+        .yon2 { display: flex; flex-direction: column; gap: 14px; }
+        .yon2-bas.adm-hero { background: none !important; border: none !important; box-shadow: none !important; padding: 2px 2px 0 !important; min-height: 0; }
+        .yon2-selam { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+        .yon2-tarih { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+        .yon2-kutular { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 900px) { .yon2-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .yon2-kutu { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 16px; min-height: 132px; border-radius: 22px; border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3); }
+        .yon2-kutu::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(180px 120px at 100% 0%, color-mix(in srgb, var(--r) 26%, transparent), transparent 70%); }
+        .yon2-kutu:hover { border-color: color-mix(in srgb, var(--r) 60%, transparent); }
+        .yon2-kutu-ikon { font-size: 20px; }
+        .yon2-kutu-deger { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--r); font-variant-numeric: tabular-nums; }
+        .yon2-kutu-et { font-size: 13px; font-weight: 800; }
+        .yon2-kutu-alt { font-size: 11.5px; color: var(--text-muted); }
+        .yon2-spark { display: block; width: 100%; margin-top: 6px; opacity: .9; }
+        .yon2-spark svg { width: 100%; height: 28px; }
+        .yon2-cipler { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); }
+        .yon2-hizlilar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+        .yon2-hizlilar::-webkit-scrollbar { display: none; }
+        .yon2-hizli { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-main); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .yon2-hizli:hover { border-color: var(--accent-orange); }
+        .yon2-izgara { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+        @media (max-width: 900px) { .yon2-izgara { grid-template-columns: 1fr; } }
+        .yon2-izgara .yp-kart, .yon2-kart { margin: 0 !important; border-radius: 22px !important; }
+        .yon2-kart { display: flex; flex-direction: column; gap: 8px; }
+        .yon2-kart-bas { font-size: 15px; font-weight: 800; }
+        .yon2-tamam { font-size: 13px; color: var(--neon-green); padding: 6px 0; }
+        .yon2-bolum { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border-color); }
+        .yon2-bolum:first-of-type { border-top: none; padding-top: 0; }
+        .yon2-bolum-bas { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+        .yon2-bolum-bas b { font-size: 15px; }
+        .yon2-nokta { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .yon2-satir { display: flex; align-items: center; gap: 10px; padding: 6px 0 6px 4px; }
+        .yon2-satir-i { font-size: 16px; }
+        .yon2-satir-m { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .yon2-satir-m b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .yon2-satir-m small { font-size: 11.5px; color: var(--text-muted); }
+        .yon2-mini { flex-shrink: 0; min-width: 40px; min-height: 34px; border-radius: 10px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); font: inherit; font-weight: 700; cursor: pointer; }
+        .yon2-mini.yesil { border-color: color-mix(in srgb, var(--neon-green) 60%, transparent); color: var(--neon-green); background: color-mix(in srgb, var(--neon-green) 10%, transparent); }
+        /* Yapılacaklar kartı dar sütunda: düğmeler isimle aynı satırda kalsın (alt satıra düşmesin) */
+        .yon2-izgara .yp-sat { flex-wrap: nowrap; }
+        .yon2-izgara .yp-ad { min-width: 0; overflow: hidden; }
+        .yon2-izgara .yp-ad b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .yon2-izgara .yp-btn { flex-shrink: 0; padding: 0 10px; }

@@ -7591,73 +7591,34 @@
             }).join('') + `</div>`;
             let saatlik = _bugunSaatlikSeriSayilari();
             let aktifSaatler = saatlik.slice(6, 23); // 06:00-23:00 arası — boş gece saatleri grafiği düzleştirmesin
-            alan.innerHTML = `
-                <div class="adm-card adm-hero" style="background:linear-gradient(135deg, rgba(255,98,0,0.14), rgba(59,130,246,0.08));">
-                    <div class="adm-hero-icon">🏹</div>
-                    <div style="flex:1; min-width:0;">
-                        <div class="adm-hero-title">DAĞ S.K. Yönetim Paneli</div>
-                        <div class="adm-hero-sub">📅 ${tarihYazi}</div>
-                    </div>
-                </div>
-                <div class="yon-quick-actions">
-                    <button onclick="yoneticiKarisikSinifaGit()" class="yon-quick-btn" style="background:rgba(255,98,0,0.1); border-color:var(--accent-orange); color:var(--accent-orange);"><span class="yon-qb-icon">🎯</span>Karışık Sınıf</button>
-                    <button onclick="yoneticiSekme('kullanicilar')" class="yon-quick-btn" style="background:rgba(59,130,246,0.1); border-color:var(--neon-blue); color:var(--neon-blue);"><span class="yon-qb-icon">⚡</span>Hızlı Skor Gir</button>
-                    <button onclick="yoneticiCanliyaGit()" class="yon-quick-btn" style="background:rgba(16,185,129,0.1); border-color:var(--neon-green); color:var(--neon-green);"><span class="yon-qb-icon">📡</span>Canlı Takip</button>
-                    <button onclick="yoneticiSekme('yoklama')" class="yon-quick-btn" style="background:rgba(239,68,68,0.1); border-color:var(--neon-red); color:var(--neon-red);"><span class="yon-qb-icon">✅</span>Yoklama Al</button>
-                    <button onclick="yoneticiSekme('program')" class="yon-quick-btn" style="background:rgba(255,210,63,0.1); border-color:var(--gold); color:var(--gold);"><span class="yon-qb-icon">📅</span>Ders Programı</button>
-                </div>
-                <div class="yon-stat-carousel">
-                    ${kutu('✅', bugunGelen, 'BUGÜN GELEN SPORCU', 'var(--neon-green)')}
-                    ${kutu('🎯', bugunToplamSeri, 'BUGÜN ATILAN SERİ', 'var(--accent-orange)')}
-                    ${kutu('👥', toplamSporcu, 'KAYITLI SPORCU', 'var(--neon-blue)')}
-                    ${kutu('👔', bugunPersonel, 'BUGÜN GELEN PERSONEL', 'var(--gold)')}
-                    ${kutu('🌐', '<span id="yon-ziyaretci-sayisi">…</span>', 'BU AY SİTE ZİYARETÇİSİ', 'var(--neon-pink)')}
-                </div>
-                ${bugunToplamSeri > 0 ? `<div class="adm-card" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                    <div><div style="font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:.4px;">BUGÜNKÜ ATIŞ YOĞUNLUĞU</div><div style="font-size:9px; color:var(--text-muted); margin-top:1px;">06:00 – 23:00 arası, saatlik seri sayısı</div></div>
-                    <div class="yon-spark-wrap">${yoneticiSparklineSVG(aktifSaatler, 'var(--accent-orange)')}</div>
-                </div>` : ''}
-                <div class="adm-section-header"><span class="adm-section-title">KATEGORİLER</span></div>
-                ${grupSatir}
-                <div class="yon-main-devamsizlik">
-${(function(){
-                    let dev = devamsizlikListesi(14);
-                    if(!dev.length) return '<div class="adm-card" style="background:rgba(16,185,129,0.07); border-color:rgba(16,185,129,0.35); font-size:12px; font-weight:700; color:var(--neon-green); text-align:center;">✅ Devamsızlık radarı temiz — 2+ haftadır gelmeyen sporcu yok!</div>';
-                    let ilk = dev.slice(0, 8);
-                    return `<div class="adm-section-header" style="flex-wrap:wrap;"><span class="adm-section-title" style="color:var(--neon-red); font-size:13px;">⚠️ DEVAMSIZLIK RADARI</span><span class="adm-section-sub">${dev.length} sporcu 2+ haftadır yok</span></div>` + ilk.map(x => {
-                        let adEsc = x.ad.replace(/'/g, "\\'");
-                        return `<div class="yon-alert-card">
-                            <div style="font-size:18px; flex-shrink:0;">🔴</div>
-                            <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · ${x.gun === null ? 'hiç kayıt yok' : (x.yaklasikMi ? '~' : '') + x.gun + ' gündür gelmiyor' + (x.yaklasikMi ? ' (yaklaşık)' : '')}</div></div>
-                            <button onclick="devamsizlikWhatsApp('${adEsc}', ${x.gun === null ? 0 : x.gun})" class="adm-btn adm-btn-sm" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green); flex-shrink:0;">💬 Veliye Yaz</button>
-                        </div>`;
-                    }).join('') + (dev.length > 8 ? `<button onclick="yoneticiSekme('yoklama'); yoneticiYoklamaTip='devamsizlik'; yoneticiYoklamaCiz();" style="width:100%; margin:2px 0 10px; background:rgba(239,68,68,0.1); color:var(--neon-red); border:1px solid var(--neon-red); border-radius:8px; padding:8px; font-size:11px; font-weight:bold; cursor:pointer;">+ ${dev.length - 8} sporcu daha — Tümünü Gör →</button>` : '');
-                })()}
-                </div>
-${(function(){
-                    let erk = erkenUyariListesi();
-                    if(!erk.length) return '';
-                    return `<div class="adm-section-header" style="flex-wrap:wrap;"><span class="adm-section-title" style="color:var(--gold); font-size:13px;">🟡 ERKEN UYARI</span><span class="adm-section-sub">${erk.length} sporcunun katılım sıklığı düşüyor</span></div>` + erk.slice(0, 6).map(x => {
-                        let adEsc = x.ad.replace(/'/g, "\\'");
-                        return `<div class="yon-alert-card">
-                            <div style="font-size:18px; flex-shrink:0;">🟡</div>
-                            <div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:13px;">${x.ad}</div><div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · katılım sıklığı azalıyor</div></div>
-                            <button onclick="devamsizlikWhatsApp('${adEsc}', 0)" class="adm-btn adm-btn-sm" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green); flex-shrink:0;">💬 Veliye Yaz</button>
-                        </div>`;
-                    }).join('');
-                })()}
-${(function(){
-                    let dus = yoneticiDusukHazirOlmaListesi();
-                    if(!dus.length) return '';
-                    return `<div class="adm-section-header" style="flex-wrap:wrap;"><span class="adm-section-title" style="color:var(--gold); font-size:13px;">🧠 DÜŞÜK HAZIR OLMA</span><span class="adm-section-sub">${dus.length} sporcu bugün düşük bildirdi</span></div>` + dus.map(x => `<div class="yon-alert-card">
-                            <div style="font-size:18px; flex-shrink:0;">${x.sakatlik ? '🤕' : '🧠'}</div>
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-weight:800; font-size:13px;">${x.ad}</div>
-                                <div style="font-size:10px; color:var(--text-muted);">${LIG_ETIKET[x.g] || x.g} · hazır olma skoru: ${x.skor.toFixed(1)}/10</div>
-                                ${x.sakatlik ? `<div style="font-size:10px; color:var(--neon-red); font-weight:800; margin-top:2px;">🤕 Sakatlık bildirdi${x.sakatlikNotu ? ': ' + x.sakatlikNotu.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''}</div>` : ''}
-                            </div>
-                        </div>`).join('');
-                })()}`;
+            // 2026-10-01 SADE PANEL (kullanıcı: "görseli daha iyi ve basit hale getir, dashboard şeklinde olabilir").
+            // Milo Genel Bakış ile aynı düzen: selam + tarih → 4 büyük özet kutusu (dokununca ilgili ekran) → tek satır
+            // hızlı işlemler → iki sütun: Bugün yapılacaklar (dagsk-yapilacaklar.js #yon-yp-yuva'ya yerleşir) + Dikkat.
+            // Kaldırılan tekrarlar: Kategoriler listesi (artık "Kayıtlı sporcu" kutusunda), ana Devamsızlık Radarı
+            // (yapılacaklar kartı + sağ sütun zaten gösteriyor), büyük hızlı işlem kartları.
+            let saat = new Date().getHours(), selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+            let kisaTarih = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+            let ozetKutu = (ikon, deger, et, alt, renk, onclick, ek) => '<button class="yon2-kutu" style="--r:' + renk + '" onclick="' + onclick + '"><span class="yon2-kutu-ikon">' + ikon + '</span><span class="yon2-kutu-deger">' + deger + '</span><span class="yon2-kutu-et">' + et + '</span><span class="yon2-kutu-alt">' + alt + '</span>' + (ek || '') + '</button>';
+            let grupCip = '<span class="yon2-cipler">' + ['buyukler','yildizlar','kucukler','minikler'].map(g => '<span title="' + GRUP_AD[g] + '">' + GRUP_EMOJI[g] + ' ' + Object.keys(turnuvaDB[g] || {}).length + '</span>').join('') + '</span>';
+            let erkL = erkenUyariListesi(), dusL = yoneticiDusukHazirOlmaListesi();
+            let dikkatSatir = (ikon, ad, alt, dugme) => '<div class="yon2-satir"><span class="yon2-satir-i">' + ikon + '</span><span class="yon2-satir-m"><b>' + esc(ad) + '</b><small>' + alt + '</small></span>' + (dugme || '') + '</div>';
+            let dikkatHTML = (!erkL.length && !dusL.length) ? '<div class="yon2-tamam">✓ Her şey yolunda — katılımı düşen ya da hazır olma skoru düşük sporcu yok.</div>'
+                : (erkL.length ? '<div class="yon2-bolum"><div class="yon2-bolum-bas"><span class="yon2-nokta" style="background:var(--gold)"></span>Katılımı düşüyor <b>' + erkL.length + '</b></div>' + erkL.slice(0, 4).map(x => dikkatSatir('🟡', x.ad, (LIG_ETIKET[x.g] || x.g) + ' · son 2 haftada daha az geliyor', '<button class="yon2-mini yesil" onclick="devamsizlikWhatsApp(\'' + x.ad.replace(/'/g, "\\'") + '\', 0)">💬</button>')).join('') + '</div>' : '')
+                + (dusL.length ? '<div class="yon2-bolum"><div class="yon2-bolum-bas"><span class="yon2-nokta" style="background:var(--neon-red)"></span>Düşük hazır olma <b>' + dusL.length + '</b></div>' + dusL.slice(0, 4).map(x => dikkatSatir(x.sakatlik ? '🤕' : '🧠', x.ad, (LIG_ETIKET[x.g] || x.g) + ' · skor ' + x.skor.toFixed(1) + '/10' + (x.sakatlik ? ' · sakatlık bildirdi' : ''))).join('') + '</div>' : '');
+            let hizli = (ikon, yazi, fn) => '<button class="yon2-hizli" onclick="' + fn + '"><span>' + ikon + '</span>' + yazi + '</button>';
+            alan.innerHTML = '<div class="yon2">'
+                + '<div class="adm-hero yon2-bas"><div><div class="yon2-selam">' + selam + ' 👋</div><div class="yon2-tarih">' + kisaTarih + ' · 🌐 bu ay <span id="yon-ziyaretci-sayisi">…</span> site ziyareti</div></div></div>'
+                + '<div class="yon2-kutular">'
+                + ozetKutu('✅', bugunGelen, 'Bugün gelen sporcu', bugunGelen ? 'yoklamaya göre' : 'henüz yoklama yok', 'var(--neon-green)', "yoneticiSekme('yoklama')")
+                + ozetKutu('🎯', bugunToplamSeri, 'Atılan seri', aktifSeriSporcu + ' sporcu atış yaptı', 'var(--accent-orange)', 'yoneticiCanliyaGit()', bugunToplamSeri > 0 ? '<span class="yon2-spark">' + yoneticiSparklineSVG(aktifSaatler, 'var(--accent-orange)') + '</span>' : '')
+                + ozetKutu('👥', toplamSporcu, 'Kayıtlı sporcu', 'kategorilere göre', 'var(--neon-blue)', "yoneticiSekme('kullanicilar')", grupCip)
+                + ozetKutu('👔', bugunPersonel, 'Bugün gelen personel', 'personel yoklaması', 'var(--gold)', "yoneticiSekme('personel')")
+                + '</div>'
+                + '<div class="yon2-hizlilar">' + hizli('🎯', 'Karışık Sınıf', 'yoneticiKarisikSinifaGit()') + hizli('⚡', 'Hızlı Skor', "yoneticiSekme('kullanicilar')") + hizli('📡', 'Canlı Takip', 'yoneticiCanliyaGit()') + hizli('✅', 'Yoklama', "yoneticiSekme('yoklama')") + hizli('📅', 'Ders Programı', "yoneticiSekme('program')") + hizli('📝', 'Hızlı Düzenle', "yoneticiSekme('hizliduzenle')") + '</div>'
+                + '<div class="yon2-izgara">'
+                + '<div id="yon-yp-yuva"></div>'
+                + '<div class="adm-card yon2-kart"><div class="yon2-kart-bas">⚠️ Dikkat</div>' + dikkatHTML + '</div>'
+                + '</div></div>';
             try {
                 fetch('/api/tanitim/ziyaret-ozet').then(r => r.json()).then(d => {
                     let el = document.getElementById('yon-ziyaretci-sayisi');

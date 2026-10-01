@@ -140,7 +140,12 @@ function ypGeriAl(k) {
             let r = eski.apply(this, arguments);
             try {
                 let alan = document.getElementById('yonetici-liste'), hero = alan && alan.querySelector('.adm-hero');
-                if (hero && !document.getElementById('yp-kart')) { hero.insertAdjacentHTML('afterend', '<div class="adm-card yp-kart" id="yp-kart"></div>'); ypCiz(); }
+                // 2026-10-01 sade panel: kart, iki sütunlu ızgaradaki yuvasına (#yon-yp-yuva) yerleşir; yuva yoksa eski yer (hero altı).
+                let yuva = document.getElementById('yon-yp-yuva');
+                if (!document.getElementById('yp-kart')) {
+                    if (yuva) { yuva.innerHTML = '<div class="adm-card yp-kart" id="yp-kart"></div>'; ypCiz(); }
+                    else if (hero) { hero.insertAdjacentHTML('afterend', '<div class="adm-card yp-kart" id="yp-kart"></div>'); ypCiz(); }
+                }
             } catch (e) { console.warn('yapılacaklar', e); }
             return r;
         };
