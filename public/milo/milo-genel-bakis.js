@@ -71,7 +71,7 @@ function mgbCiz() {
         return '<button class="mgb-kutu" style="--r:' + renk + '" onclick="miloSekme(\'' + sekme + '\')"><span class="mgb-kutu-ikon">' + ikon + '</span><span class="mgb-kutu-deger">' + deger + '</span><span class="mgb-kutu-et">' + et + '</span><span class="mgb-kutu-alt">' + alt + '</span>' + (ekHTML || '') + '</button>';
     };
     let kutular = '<div class="mgb-kutular">'
-        + kutu('👥', v.aktif.length, 'Aktif üye', v.yeniUye ? '+' + v.yeniUye + ' bu ay katıldı' : 'bu ay yeni kayıt yok', 'uyeler', '#8B7FFF')
+        + kutu('👥', v.aktif.length, 'Aktif üye', v.yeniUye ? '+' + v.yeniUye + ' bu ay katıldı' : 'bu ay yeni kayıt yok', 'uyeler', 'var(--milo-teal)')
         + kutu('💰', v.toplanan.toLocaleString('tr-TR') + ' ₺', ayAd + ' aidatı', v.odeyen.length + '/' + v.odemeli.length + ' ödedi', 'aidat', '#22c55e', '<span class="mgb-bar"><i style="width:' + oran + '%"></i></span>')
         + kutu('📅', v.dersler.filter(function (x) { return !x.iptal; }).length, 'Bugünkü ders', v.bugunKisi + ' sporcu bekleniyor', 'program', '#00C2D6')
         + kutu('📈', devam == null ? '—' : '%' + devam, 'Devam (7 gün)', v.geldi + ' geldi · ' + v.gelmedi + ' gelmedi', 'analiz', devam == null || devam >= 75 ? '#FBBF24' : '#f97316')
@@ -119,6 +119,38 @@ function mgbKutla(grup, ad, yas) {
     mgbVeliyeGonder(u, '🎂 İyi ki doğdun ' + miloIlkAdBuyuk(ad) + '! 🎉\n\n' + yas + ' yaşın kutlu olsun! MILO FITT KIDS ailesi olarak nice mutlu, sağlıklı ve bol hareketli yıllar dileriz 💜\n\nMILO FITT KIDS');
 }
 function mgbEksikTamamla() { try { _mhd.eksik = true; _mhd.sayfa = 1; } catch (e) {} miloSekme('hizli'); }
+
+// ---- 🎨 Tema seçici (cihazda hatırlanır; temalar index.html'de html.milo-tema-* sınıfları)
+const MILO_TEMALAR = [
+    { id: 'turuncu', ad: '🟠 Turuncu Gece', renk: ['#FF7A1A', '#140C07'], bar: '#140C07' },
+    { id: 'mor', ad: '💜 Mor Gece', renk: ['#8B7FFF', '#15121F'], bar: '#15121F' },
+    { id: 'okyanus', ad: '🌊 Okyanus', renk: ['#14B8A6', '#06141A'], bar: '#06141A' },
+    { id: 'gul', ad: '🌸 Gül', renk: ['#EC4899', '#160A11'], bar: '#160A11' },
+    { id: 'mavi', ad: '🔵 Gece Mavisi', renk: ['#3B82F6', '#080D18'], bar: '#080D18' }
+];
+function miloTemaAktif() { let c = [...document.documentElement.classList].find(function (x) { return x.indexOf('milo-tema-') === 0; }); return c ? c.slice(10) : 'turuncu'; }
+function miloTemaSec(id) {
+    let t = MILO_TEMALAR.find(function (x) { return x.id === id; }); if (!t) return;
+    [...document.documentElement.classList].forEach(function (c) { if (c.indexOf('milo-tema-') === 0) document.documentElement.classList.remove(c); });
+    document.documentElement.classList.add('milo-tema-' + id);
+    try { localStorage.setItem('milo_tema', id); } catch (e) {}
+    let m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t.bar);
+    miloTemaMenuKapat(); showToast('🎨 ' + t.ad.replace(/^\S+\s/, '') + ' teması', 'success');
+}
+function miloTemaMenu(e) {
+    if (e) e.stopPropagation();
+    if (document.getElementById('milo-tema-menu')) return miloTemaMenuKapat();
+    let btn = document.getElementById('milo-tema-btn'), r = btn.getBoundingClientRect(), aktif = miloTemaAktif();
+    let m = document.createElement('div'); m.id = 'milo-tema-menu'; m.className = 'milo-tema-menu';
+    m.style.top = (r.bottom + 6) + 'px'; m.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+    m.innerHTML = '<div class="baslik">Tema</div>' + MILO_TEMALAR.map(function (t) {
+        return '<button class="' + (t.id === aktif ? 'aktif' : '') + '" onclick="miloTemaSec(\'' + t.id + '\')"><span class="ornek" style="background:radial-gradient(circle at 30% 30%,' + t.renk[0] + ',' + t.renk[1] + ' 75%)"></span>' + t.ad.replace(/^\S+\s/, '') + (t.id === aktif ? '<span class="tik">✓</span>' : '') + '</button>';
+    }).join('');
+    document.body.appendChild(m);
+    setTimeout(function () { document.addEventListener('click', miloTemaMenuKapat, { once: true }); }, 0);
+}
+function miloTemaMenuKapat() { let m = document.getElementById('milo-tema-menu'); if (m) m.remove(); }
+(function () { let t = MILO_TEMALAR.find(function (x) { return x.id === miloTemaAktif(); }), m = document.querySelector('meta[name="theme-color"]'); if (t && m) m.setAttribute('content', t.bar); })();
 
 // ---- "Diğer ▾" menüsü
 function miloDigerMenu(e) {

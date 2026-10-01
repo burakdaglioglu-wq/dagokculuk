@@ -138,23 +138,68 @@
         }
         .milo-card { border-radius: 22px; box-shadow: 0 18px 44px -26px rgba(0, 0, 0, 0.6); }
         .milo-secim-btn { border-radius: 22px; }
-        .milo-secim-btn:hover { border-color: rgba(139, 127, 255, 0.7) !important; }
+        .milo-secim-btn:hover { border-color: color-mix(in srgb, var(--milo-teal) 70%, transparent) !important; }
         #milo-tab-bar { border-radius: 16px; padding: 5px; }
-        #milo-tab-bar button.aktif { background: var(--milo-teal); color: #fff; box-shadow: 0 8px 20px -8px rgba(139, 127, 255, 0.8); }
+        #milo-tab-bar button.aktif { background: var(--milo-teal); color: #fff; box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--milo-teal) 80%, transparent); }
         .milo-input { background: rgba(255, 255, 255, 0.05) !important; border-radius: 14px !important; }
         .milo-input:focus { outline: none; border-color: var(--milo-teal) !important; }
-        .milo-btn-full, .milo-gs-tamam { box-shadow: 0 12px 28px -14px rgba(139, 127, 255, 0.9); }
+        .milo-btn-full, .milo-gs-tamam { box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--milo-teal) 90%, transparent); }
         .milo-pin-btn { background: rgba(255, 255, 255, 0.06) !important; border: 1px solid rgba(255, 255, 255, 0.10) !important; }
         .milo-pin-btn:active { background: var(--milo-teal) !important; }
         .milo-gs-kisi { background: rgba(255, 255, 255, 0.06); }
-        .milo-ribbon { background: linear-gradient(90deg, #8B7FFF, #FF2FD0, #00F0FF); }
+        .milo-ribbon { background: linear-gradient(90deg, var(--milo-teal), var(--milo-grape), var(--milo-sun)); }
         .modal-content { background: var(--milo-opak) !important; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 22px !important; }
         .mhd-tablo th, .mhd-td, .mhd-sabit, .mhd-kaydet-cubuk { background: var(--milo-opak) !important; }
         .mhd-sor-kutu { background: var(--milo-opak) !important; }
         select option { background: var(--milo-opak); color: var(--milo-ink); }
         /* styles.css tüm kutuları appearance:none yapıyor — Milo formlarındaki işaret kutuları (pasif, aidat muaf) görünmüyordu */
-        input[type=checkbox], input[type=radio] { -webkit-appearance: auto !important; appearance: auto !important; accent-color: #8B7FFF; width: 18px; height: 18px; vertical-align: middle; }
+        /* ============================================================
+           TEMALAR (2026-10-01, kullanıcı: "arka tarafı turuncu olsun, dark olsun, seçenek sun").
+           <html> sınıfı temayı seçer (cihazda hatırlanır, milo_tema). Varsayılan: Turuncu Gece.
+           Yalnızca token DEĞERLERİ değişir; tüm ekranlar aynı token isimlerini kullanıyor.
+           ============================================================ */
+        html.milo-tema-turuncu {
+            --milo-bg: #140C07; --milo-card: rgba(56, 32, 16, 0.6); --milo-ink: #FBF3EC; --milo-ink-dim: #C9AE98;
+            --milo-teal: #FF7A1A; --milo-coral: #FF7A1A; --milo-sun: #FBBF24; --milo-grape: #FF3D7F; --milo-opak: #26170D;
+            --milo-mesh: radial-gradient(640px 480px at 6% 4%, rgba(255,140,60,0.24), transparent 70%),
+                radial-gradient(700px 520px at 97% 14%, rgba(255,92,30,0.16), transparent 70%),
+                radial-gradient(780px 480px at 46% 106%, rgba(255,186,96,0.13), transparent 70%);
+        }
+        html.milo-tema-mor { /* :root değerleri (DAĞ ile aynı) */ }
+        html.milo-tema-okyanus {
+            --milo-bg: #06141A; --milo-card: rgba(14, 42, 50, 0.6); --milo-ink: #EAF8F8; --milo-ink-dim: #94BBC0;
+            --milo-teal: #14B8A6; --milo-coral: #14B8A6; --milo-sun: #FBBF24; --milo-grape: #38BDF8; --milo-opak: #0D232A;
+            --milo-mesh: radial-gradient(640px 480px at 6% 4%, rgba(20,184,166,0.2), transparent 70%),
+                radial-gradient(700px 520px at 97% 14%, rgba(56,189,248,0.16), transparent 70%),
+                radial-gradient(780px 480px at 46% 106%, rgba(45,212,191,0.1), transparent 70%);
+        }
+        html.milo-tema-gul {
+            --milo-bg: #160A11; --milo-card: rgba(56, 18, 40, 0.6); --milo-ink: #FCEFF6; --milo-ink-dim: #CBA3BA;
+            --milo-teal: #EC4899; --milo-coral: #EC4899; --milo-sun: #FBBF24; --milo-grape: #A855F7; --milo-opak: #27101E;
+            --milo-mesh: radial-gradient(640px 480px at 6% 4%, rgba(236,72,153,0.2), transparent 70%),
+                radial-gradient(700px 520px at 97% 14%, rgba(168,85,247,0.16), transparent 70%),
+                radial-gradient(780px 480px at 46% 106%, rgba(251,113,133,0.1), transparent 70%);
+        }
+        html.milo-tema-mavi {
+            --milo-bg: #080D18; --milo-card: rgba(20, 30, 56, 0.6); --milo-ink: #EEF2FB; --milo-ink-dim: #9FB0CE;
+            --milo-teal: #3B82F6; --milo-coral: #3B82F6; --milo-sun: #FBBF24; --milo-grape: #22D3EE; --milo-opak: #121B30;
+            --milo-mesh: radial-gradient(640px 480px at 6% 4%, rgba(59,130,246,0.2), transparent 70%),
+                radial-gradient(700px 520px at 97% 14%, rgba(34,211,238,0.14), transparent 70%),
+                radial-gradient(780px 480px at 46% 106%, rgba(99,102,241,0.12), transparent 70%);
+        }
+        .milo-tema-menu { position: fixed; z-index: 9100; display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 16px; border: 1px solid rgba(255,255,255,.12); background: var(--milo-opak); box-shadow: 0 18px 44px rgba(0,0,0,.55); min-width: 210px; }
+        .milo-tema-menu .baslik { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--milo-ink-dim); padding: 4px 8px 6px; }
+        .milo-tema-menu button { display: flex; align-items: center; gap: 10px; border: none; background: transparent; color: var(--milo-ink); font: inherit; font-size: 13px; font-weight: 700; padding: 9px 10px; border-radius: 10px; cursor: pointer; text-align: left; }
+        .milo-tema-menu button:hover { background: rgba(255,255,255,.06); }
+        .milo-tema-menu button.aktif { background: color-mix(in srgb, var(--milo-teal) 18%, transparent); }
+        .milo-tema-menu .ornek { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,.25); }
+        .milo-tema-menu .tik { margin-left: auto; color: var(--milo-teal); }
+        input[type=checkbox], input[type=radio] { -webkit-appearance: auto !important; appearance: auto !important; accent-color: var(--milo-teal); width: 18px; height: 18px; vertical-align: middle; }
 </style>
+    <script>
+        // Tema, sayfa çizilmeden ÖNCE uygulanır (mor yanıp sonra değişmesin). Varsayılan: Turuncu Gece.
+        (function () { var t = "turuncu"; try { t = localStorage.getItem("milo_tema") || "turuncu"; } catch (e) {} document.documentElement.classList.add("milo-tema-" + t); })();
+    </script>
 </head>
 <body>
     <div id="toast">Bildirim</div>
@@ -203,6 +248,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="milo-accent" style="font-weight:900; font-size:15px;">🤸 MILO FITT KIDS</div>
                 <div style="display:flex; gap:6px;">
+                    <button id="milo-tema-btn" onclick="miloTemaMenu(event)" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">🎨 Tema</button>
                     <button id="milo-guvenlik-btn" onclick="miloAyarlarAc()" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">🔐 Güvenlik</button>
                     <button onclick="miloCikisYap()" style="background:var(--milo-card); color:var(--milo-ink); border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:bold;">🚪 Çıkış</button>
                 </div>
@@ -284,9 +330,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
     <script src="milo-araclar.js?v=3"></script>
     <script src="milo-hizli-duzenle.js?v=2"></script>
-    <script src="milo-genel-bakis.js?v=1"></script>
+    <script src="milo-genel-bakis.js?v=3"></script>
 </body>
 </html>
