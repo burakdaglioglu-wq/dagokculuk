@@ -2415,6 +2415,7 @@
             alan.innerHTML = `<div class="glass-panel" style="padding:14px; border-radius:14px; border:1px solid rgba(0,240,255,0.18); box-shadow:0 0 22px rgba(0,240,255,0.06);">
                 <div style="font-weight:900; font-size:16px; margin-bottom:4px; background:linear-gradient(120deg,var(--aurora-cyan),var(--aurora-magenta)); -webkit-background-clip:text; background-clip:text; color:transparent;">📅 Antrenman Programı — Haftalık</div>
                 <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:12px;">Bir derse dokun → sporcu listesini düzenle.</div>
+                <div id="program-oneri-ic"></div>
                 <div id="program-izgara-ic" style="margin-bottom:10px;">Yükleniyor...</div>
                 <button onclick="programTamPdfIndir()" style="width:100%; background:rgba(0,240,255,0.06); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:8px;">📄 Haftalık Programı PDF Olarak İndir</button>
                 <input type="month" id="program-aylik-ay-sec" value="${bugunISO().slice(0,7)}" style="width:100%; box-sizing:border-box; padding:9px; margin-bottom:6px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--aurora-gold); border-radius:9px; font-weight:700; font-size:11.5px;">
@@ -2451,7 +2452,92 @@
                 programIzgaraCiz();
             }).catch(() => { let ic = document.getElementById('program-izgara-ic'); if(ic) ic.innerHTML = '<div style="color:var(--neon-red); font-size:12px;">Yüklenemedi.</div>'; });
         }
+        // ===== 📅 DERSE EKLENSİN Mİ? (2026-10-02, kullanıcı: "yoklamada hep aynı saate gelen fakat ders programında o saatte
+        // olmayanlar için 'o derse eklensin mi?' sorusunu sor, hızlıca değişiklik yapabileyim"). Son 8 haftanın yoklaması
+        // (otomatikYoklamaDB, saat + gün) ders programındaki slotlarla eşleştirilir: o gün ve saatte (başlangıçtan 30 dk önce –
+        // bitişten 15 dk sonra) en az 3 farklı günde gelmiş ama o derse kayıtlı olmayan sporcu önerilir. O saatte kayıtlı
+        // olduğu başka bir derse geldiyse sayılmaz; iki ders çakışıyorsa saate en yakın başlayan seçilir. "Sorma" kararı
+        // meta ders_oneri_red'de (slotId|grup|ad).
+        const DERS_ONERI_HAFTA = 8, DERS_ONERI_ESIK = 3;
+        let _dersOneriler = [];
+        function _dkSaat(s) { let p = String(s || '').split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+        function dersEklemeOnerileri(slotlar) {
+            slotlar = slotlar || _programSlotlar || [];
+            if(!slotlar.length) return [];
+            let red = {}; try { red = typeof kyDepoOku === 'function' ? kyDepoOku('ders_oneri_red') : {}; } catch(e) {}
+            let sinir = bsIsoTarih(new Date(Date.now() - DERS_ONERI_HAFTA * 7 * 864e5)), say = {};
+            Object.keys(otomatikYoklamaDB || {}).forEach(tarih => {
+                if(tarih < sinir) return;
+                let gun = new Date(tarih + 'T12:00').getDay(), kayitlar = otomatikYoklamaDB[tarih] || {};
+                Object.keys(kayitlar).forEach(ad => {
+                    let r = kayitlar[ad]; if(!r || r.geldi === false || !r.saat) return;
+                    let g = r.grup && turnuvaDB[r.grup] && turnuvaDB[r.grup][ad] ? r.grup : ['buyukler', 'yildizlar', 'kucukler', 'minikler'].find(x => turnuvaDB[x] && turnuvaDB[x][ad]);
+                    if(!g) return;
+                    let sp = turnuvaDB[g][ad]; if(sp.pasif || sp.donduruldu) return;
+                    let dk = _dkSaat(r.saat);
+                    let uyan = slotlar.filter(s => (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number).includes(gun)
+                        && !(s.istisnalar || []).some(i => i.tarih === tarih)
+                        && dk >= _dkSaat(s.baslangicSaat) - 30 && dk <= _dkSaat(s.bitisSaat) + 15);
+                    if(!uyan.length || uyan.some(s => (s.katilimcilar || []).some(k => k.grup === g && k.ad === ad))) return;
+                    let s = uyan.sort((a, b) => Math.abs(_dkSaat(a.baslangicSaat) - dk) - Math.abs(_dkSaat(b.baslangicSaat) - dk))[0];
+                    let key = s.id + '|' + g + '|' + ad;
+                    (say[key] = say[key] || { slot: s, g: g, ad: ad, gunler: new Set() }).gunler.add(tarih);
+                });
+            });
+            return Object.keys(say).map(k => say[k]).filter(e => { let r = red[e.slot.id + '|' + e.g + '|' + e.ad]; return e.gunler.size >= DERS_ONERI_ESIK && !(r && !r.sil); })
+                .map(e => Object.assign(e, { n: e.gunler.size, son: [...e.gunler].sort().pop() }))
+                .sort((a, b) => b.n - a.n || a.ad.localeCompare(b.ad, 'tr'));
+        }
+        function _dersOneriSlotYazi(s) { return _gunlerEtiketKisa(s.gunler && s.gunler.length ? s.gunler : [s.gun]) + ' ' + s.baslangicSaat + '–' + s.bitisSaat + (s.grup ? ' · ' + s.grup : ''); }
+        function dersOneriCiz() {
+            let el = document.getElementById('program-oneri-ic'); if(!el) return;
+            _dersOneriler = dersEklemeOnerileri(_programSlotlar);
+            if(!_dersOneriler.length) { el.innerHTML = ''; return; }
+            el.innerHTML = `<div style="border:1.5px solid var(--aurora-gold); border-radius:14px; padding:12px 14px; margin-bottom:12px; background:color-mix(in srgb, var(--aurora-gold) 8%, transparent);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;"><b style="font-size:14px;">🔔 Derse eklensin mi? <span style="font-weight:700; color:var(--text-muted); font-size:12px;">${_dersOneriler.length} öneri</span></b>
+                    ${_dersOneriler.length > 1 ? `<button onclick="dersOneriHepsi()" style="min-height:38px; padding:0 14px; border-radius:10px; border:1px solid var(--neon-green); background:transparent; color:var(--neon-green); font-weight:800; font-size:12px; cursor:pointer;">✅ Hepsini ekle</button>` : ''}</div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;">Son ${DERS_ONERI_HAFTA} haftanın yoklamasına göre bu sporcular hep aynı gün ve saatte geliyor ama o derse kayıtlı değil.</div>
+                ${_dersOneriler.map((o, i) => {
+                    let dolu = o.slot.kapasite && (o.slot.katilimcilar || []).length >= o.slot.kapasite;
+                    return `<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--border-color); flex-wrap:wrap;">
+                        <span style="flex:1; min-width:180px;"><b style="font-size:13.5px;">${esc(o.ad)}</b><span style="display:block; font-size:12px; color:var(--text-muted);">son ${DERS_ONERI_HAFTA} haftada <b style="color:var(--text-main);">${o.n} kez</b> <b style="color:var(--text-main);">${esc(_dersOneriSlotYazi(o.slot))}</b> dersine geldi${dolu ? ' · <span style="color:var(--neon-red);">ders dolu</span>' : ''}</span></span>
+                        <button onclick="dersOneriEkle(${i})" style="min-height:40px; padding:0 14px; border-radius:10px; border:0; background:var(--neon-green); color:#fff; font-weight:800; font-size:12.5px; cursor:pointer;">✅ Ekle</button>
+                        <button onclick="dersOneriReddet(${i})" style="min-height:40px; padding:0 12px; border-radius:10px; border:1px solid var(--border-color); background:transparent; color:var(--text-main); font-weight:700; font-size:12.5px; cursor:pointer;" aria-label="${esc(o.ad)} için bir daha sorma">Sorma</button></div>`;
+                }).join('')}</div>`;
+        }
+        function _dersOneriEkleCekirdek(o) {
+            return fetch('/api/antrenman-programi/' + o.slot.id + '/katilimci', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup: o.g, ad: o.ad, deviceId: _cihazId }) })
+                .then(r => r.json()).then(d => {
+                    if(!d.applied) throw new Error('eklenemedi');
+                    let s = _programSlotlar.find(x => x.id === o.slot.id) || o.slot;
+                    if(!s.katilimcilar) s.katilimcilar = [];
+                    if(!s.katilimcilar.some(k => k.grup === o.g && k.ad === o.ad)) s.katilimcilar.push({ grup: o.g, ad: o.ad });
+                });
+        }
+        function _dersOneriYenile() { try { programIzgaraCiz(); } catch(e) {} try { dersOneriCiz(); } catch(e) {} try { if(yoneticiSekmeAktif === 'panel') yoneticiOzetCiz(); } catch(e) {} }
+        function dersOneriEkle(i) {
+            let o = _dersOneriler[i]; if(!o) return;
+            let devam = () => _dersOneriEkleCekirdek(o).then(() => { showToast('✅ ' + o.ad + ' → ' + _dersOneriSlotYazi(o.slot) + ' dersine eklendi', 'success'); _dersOneriYenile(); }).catch(() => showToast('Eklenemedi — bağlantıyı kontrol edip tekrar dene.', 'error'));
+            let dolu = o.slot.kapasite && (o.slot.katilimcilar || []).length >= o.slot.kapasite;
+            if(dolu) onayIste('Bu ders dolu (' + (o.slot.katilimcilar || []).length + '/' + o.slot.kapasite + '). Yine de <b>' + esc(o.ad) + '</b> eklensin mi?', devam, 'Yine de ekle');
+            else devam();
+        }
+        function dersOneriHepsi() {
+            let l = _dersOneriler.slice(); if(!l.length) return;
+            onayIste('<b>' + l.length + ' sporcu</b> hep geldikleri derslere eklensin mi?<br><span style="font-size:12px;color:var(--text-muted)">' + l.map(o => esc(o.ad.split(' ')[0]) + ' → ' + esc(o.slot.baslangicSaat)).join(', ') + '</span>', () => {
+                let ok = 0;
+                l.reduce((p, o) => p.then(() => _dersOneriEkleCekirdek(o).then(() => { ok++; }).catch(() => {})), Promise.resolve())
+                    .then(() => { showToast('✅ ' + ok + '/' + l.length + ' sporcu derslerine eklendi', ok === l.length ? 'success' : 'warning'); _dersOneriYenile(); });
+            }, '✅ Hepsini ekle');
+        }
+        function dersOneriReddet(i) {
+            let o = _dersOneriler[i]; if(!o || typeof kyDepoOku !== 'function') return;
+            let d = kyDepoOku('ders_oneri_red'); d[o.slot.id + '|' + o.g + '|' + o.ad] = { t: Date.now() };
+            kyDepoYazYerel('ders_oneri_red', d); kyDepoSenkron('ders_oneri_red', () => kyDepoOku('ders_oneri_red'), true).catch(() => {});
+            showToast(o.ad + ' için bu ders bir daha sorulmayacak', 'info'); _dersOneriYenile();
+        }
         function programIzgaraCiz() {
+            try { dersOneriCiz(); } catch(e) {}
             let ic = document.getElementById('program-izgara-ic'); if(!ic) return;
             let bugunGun = new Date().getDay();
             let html = '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:6px; align-items:start;">';
@@ -7689,13 +7775,17 @@
                 + '</div>'
                 + '<div class="yon3-izgara">'
                 + '<div class="yon3-sutun"><section class="yon3-kart" aria-label="Bugünün dersleri"><h3 class="yon3-kart-bas">Bugünün dersleri <small>Ders Programı\'ndan</small></h3><div id="yon3-dersler"><div class="yon3-bos">Yükleniyor…</div></div></section><div id="yon-yp-yuva"></div></div>'
-                + '<section class="yon3-kart" aria-label="Dikkat isteyenler"><h3 class="yon3-kart-bas">Dikkat isteyenler</h3>' + dikkat + '</section>'
+                + '<section class="yon3-kart" aria-label="Dikkat isteyenler"><h3 class="yon3-kart-bas">Dikkat isteyenler</h3><div id="yon3-ders-oneri"></div>' + dikkat + '</section>'
                 + '</div></div>';
             try { yoneticiSidebarCiz(); } catch(e) {}
             // Bugünün dersleri — Karışık Sınıf'ın "programdan ders" yardımcıları (dagsk-km-sablon-ozet.js, 2 dk önbellek)
             if(typeof kmProgramSlotlariGetir === 'function') {
                 kmProgramSlotlariGetir().then(sl => {
                     _yonDersler = kmBugunDersleri(sl || []);
+                    try {
+                        let on = dersEklemeOnerileri(sl || []), yer = document.getElementById('yon3-ders-oneri');
+                        if(yer) yer.innerHTML = on.length ? '<div class="yon3-dikkat"><span class="yon3-nokta" style="background:var(--aurora-gold)"></span><span class="yon3-dikkat-m"><b>' + on.length + ' sporcu derse eklensin mi?</b><small>' + on.slice(0, 3).map(o => esc(o.ad.split(' ')[0]) + ' → ' + esc(o.slot.baslangicSaat)).join(' · ') + ' — hep aynı saatte geliyor, kayıtlı değil</small></span><button class="yon3-link" onclick="yoneticiSekme(\'program\')">Gör</button></div>' : '';
+                    } catch(e) {}
                     let el = document.getElementById('yon3-dersler'), oz = document.getElementById('yon3-ders-ozet');
                     if(oz) oz.textContent = _yonDersler.length ? 'bugün ' + _yonDersler.length + ' ders daha var, ilki ' + _yonDersler[0].s.baslangicSaat : 'bugün başka ders yok';
                     if(!el) return;
