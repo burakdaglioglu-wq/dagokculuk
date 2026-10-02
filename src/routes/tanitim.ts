@@ -20,10 +20,17 @@ export function registerTanitimRoutes(router: Router): void {
     return json({ ay: ayPrefix, toplam });
   });
 
-  router.get("/api/tanitim/nabiz", async (_request, env) => {
+  router.get("/api/tanitim/nabiz", async (request, env) => {
+    // Herkese açık sayfa her açılışta tüm series tablosunu taramasın: yanıt 5 dk kenar önbelleğinde tutulur.
+    const onbellek = (caches as unknown as { default: Cache }).default;
+    const anahtar = new Request(new URL("/api/tanitim/nabiz", request.url).toString());
+    const hazir = await onbellek.match(anahtar);
+    if (hazir) return hazir;
     // son 30 gün (Türkiye günü) — ay başında da anlamlı rakam görünsün
     const baslangic = new Date(Date.now() + 3 * 60 * 60 * 1000 - 29 * 86400000).toISOString().slice(0, 10);
     const nabiz = await kulupNabziGetir(env, baslangic);
-    return json({ baslangic, ...nabiz });
+    const yanit = json({ baslangic, ...nabiz }, { headers: { "cache-control": "public, max-age=300" } });
+    await onbellek.put(anahtar, yanit.clone());
+    return yanit;
   });
 }

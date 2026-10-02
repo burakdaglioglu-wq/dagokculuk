@@ -6,9 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DAĞ Spor Kulübü — Okçuluk</title>
 <meta name="description" content="DAĞ Spor Kulübü'nde okçuluk: minik yaşlardan yarışma seviyesine, disiplinle ve kişiye özel takiple ilerleyen bir okçuluk topluluğu. Pendik, İstanbul.">
-<meta property="og:title" content="DAĞ Spor Kulübü — Okçuluk">
-<meta property="og:description" content="Her okun bir hikayesi var. Seninkini birlikte yazalım. Pendik'te lisanslı okçuluk eğitimi.">
-<meta property="og:image" content="https://dagsk.burakdaglioglu.workers.dev/tanitim-logo.png">
+<meta property="og:title" content="DAĞ Okçuluk — Her şey bulanık, hedef net.">
+<meta property="og:description" content="Ekran yok, acele yok. Sadece tek bir hedef var. Pendik'te okçuluk; ilk ders ücretsiz.">
+<meta property="og:image" content="https://dagsporkulubu.com/hero/paylas.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Bulanık bir fotoğrafta vizör içinde net görünen genç okçu: Her şey bulanık, hedef net.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dagsporkulubu.com/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -661,6 +667,30 @@
   .hizli-gecis-bar a{ font-family:'Archivo',sans-serif; border-radius:6px; }
   .sabit-mobil-cta a{ font-family:'Archivo',sans-serif; letter-spacing:.01em; }
   footer .footer-col-baslik{ font-family:'Roboto Mono',ui-monospace,monospace; font-weight:500; }
+
+  /* Toplam ok sayacı */
+  .toplam-ok{ display:flex; flex-direction:column; gap:10px; padding-bottom:clamp(40px,6vw,72px); margin-bottom:clamp(40px,6vw,72px); border-bottom:1px solid var(--line); }
+  .toplam-ok[hidden]{ display:none; }
+  .toplam-ok-on, .toplam-ok-son{ font:500 clamp(13px,1.2vw,15px)/1.5 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); max-width:60ch; }
+  .toplam-ok-on{ letter-spacing:.14em; text-transform:uppercase; }
+  .toplam-ok-sayi{ font:900 clamp(64px,13vw,190px)/.86 'Archivo',sans-serif; letter-spacing:-.04em; color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  /* Kayan ok: sayfa aşağı indikçe sol kenarda ilerler, kapanış bandında vizöre saplanır (yalnız geniş ekran) */
+  .kayan-ok{ position:fixed; left:clamp(10px,1.6vw,26px); top:90px; bottom:40px; width:14px; z-index:30; pointer-events:none; opacity:0; transition:opacity .4s ease; }
+  .kayan-ok.gorunur{ opacity:1; }
+  .kayan-ok-iz{ position:absolute; left:6px; top:0; width:2px; height:calc(var(--p,0) * 100%); background:linear-gradient(180deg, transparent, rgba(255,106,26,.55)); }
+  .kayan-ok-svg{ position:absolute; left:-5px; width:24px; height:80px; top:calc(var(--p,0) * 100% - 80px); fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; }
+  .kayan-ok-svg .uc{ fill:var(--accent); stroke:none; }
+  .kayan-ok-svg .tuy{ stroke:var(--accent); }
+  @media (max-width:899px){ .kayan-ok{ display:none; } }
+  .cta-ok{ position:absolute; left:-150px; top:50%; width:150px; height:30px; margin-top:-15px; fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; opacity:0; z-index:3; overflow:visible; }
+  .cta-ok .uc{ fill:var(--accent); stroke:none; }
+  .cta-ok .tuy{ stroke:var(--accent); }
+  .cta-vizor.isabet .cta-ok{ animation:okSaplan .5s cubic-bezier(.3,.9,.3,1) forwards; }
+  .cta-vizor.isabet .vz-k{ animation:vzOdak .55s .42s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes okSaplan{ 0%{ opacity:1; transform:translateX(-60vw); } 85%{ opacity:1; transform:translateX(158px); } 100%{ opacity:1; transform:translateX(148px); } }
+  @media (max-width:899px){ .cta-ok{ display:none; } }
+  @media (prefers-reduced-motion: reduce){ .kayan-ok{ display:none; } .cta-vizor.isabet .cta-ok{ animation:none; opacity:1; transform:translateX(148px); } }
 </style>
 </head>
 <body>
@@ -873,6 +903,11 @@
 
 <section class="s2 nabiz-bant" id="nabiz-bolum" aria-labelledby="nabiz-baslik">
   <div class="wrap">
+    <div class="toplam-ok" id="toplam-ok" hidden>
+      <span class="toplam-ok-on" id="toplam-ok-on">Uygulamaya geçtiğimizden bu yana</span>
+      <b class="toplam-ok-sayi" id="toplam-ok-sayi">0</b>
+      <span class="toplam-ok-son">ok kayda geçti. Her biri bir sporcunun gelişim grafiğinde bir nokta.</span>
+    </div>
     <div class="nabiz-ust">
       <h2 class="nabiz-baslik" id="nabiz-baslik">Kulübün son 30 günü</h2>
       <span class="nabiz-canli"><i></i>Uygulamadan canlı</span>
@@ -1043,7 +1078,8 @@
     <img class="cta-arka" src="/hero/salon-bulanik.jpg" alt="" loading="lazy">
   </picture>
   <div class="wrap cta-ic">
-    <div class="cta-vizor reveal">
+    <div class="cta-vizor reveal" id="ctaVizor">
+      <svg class="cta-ok" viewBox="0 0 120 24" aria-hidden="true"><path d="M0 12h104" /><path class="uc" d="M104 5l14 7-14 7z"/><path class="tuy" d="M0 12l-10-8M0 12l-10 8M8 12l-10-8M8 12l-10 8" transform="translate(12 0)"/></svg>
       <span class="vz-k vz-k1"></span><span class="vz-k vz-k2"></span><span class="vz-k vz-k3"></span><span class="vz-k vz-k4"></span>
       <h2 class="cta-baslik" id="cta-baslik">Hedefin net mi?</h2>
       <p class="cta-metin">İlk ders ücretsiz. Yay, ok ve hedef bizden; sen sadece gel.</p>
@@ -1088,6 +1124,11 @@
     </div>
   </div>
 </section>
+
+<div class="kayan-ok" id="kayanOk" aria-hidden="true">
+  <span class="kayan-ok-iz"></span>
+  <svg class="kayan-ok-svg" viewBox="0 0 24 120"><path d="M12 0v104"/><path class="uc" d="M5 104l7 14 7-14z"/><path class="tuy" d="M12 10L4 0M12 10l8-10M12 20L4 10M12 20l8-10"/></svg>
+</div>
 
 <div id="lightbox">
   <button class="lightbox-kapat" onclick="galeriKapat()">✕</button>
@@ -1338,8 +1379,17 @@
       var bolum = document.getElementById('nabiz-bolum'), izgara = document.getElementById('nabiz-izgara'); if(!bolum || !izgara || !d) return;
       var kutular = [].slice.call(izgara.querySelectorAll('.nabiz-kutu')), gorunen = [];
       kutular.forEach(function(k){ var n = +d[k.dataset.alan] || 0; if(!n){ k.remove(); return; } k._hedef = n; gorunen.push(k); });
+      // toplam ok: uygulamaya geçilen aydan beri
+      var toplamKutu = document.getElementById('toplam-ok');
+      if(toplamKutu && d.toplamOk > 0){
+        var AY = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+        if(d.ilkTarih){ var p = String(d.ilkTarih).split('-'); document.getElementById('toplam-ok-on').textContent = 'İlk kayıt: ' + AY[+p[1] - 1] + ' ' + p[0]; }
+        toplamKutu.hidden = false;
+        var tk = { _hedef: d.toplamOk, querySelector: function(){ return document.getElementById('toplam-ok-sayi'); } };
+        gorunen.push(tk);
+      }
       if(!gorunen.length){ bolum.style.display = 'none'; return; }
-      izgara.style.setProperty('--n', gorunen.length);
+      izgara.style.setProperty('--n', gorunen.filter(function(k){ return k.nodeType; }).length);
       var yaz = function(k, n){ k.querySelector('.nabiz-deger').textContent = Math.round(n).toLocaleString('tr-TR'); };
       var say = function(){
         if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ gorunen.forEach(function(k){ yaz(k, k._hedef); }); return; }
@@ -1350,9 +1400,31 @@
       gorunen.forEach(function(k){ yaz(k, 0); });
       if('IntersectionObserver' in window){
         var io = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ io.disconnect(); say(); } }, { threshold: 0.35 });
-        io.observe(izgara);
+        io.observe(toplamKutu && !toplamKutu.hidden ? toplamKutu : izgara);
       } else say();
     }).catch(function(err){ console.warn('Nabiz fetch:', err); var b = document.getElementById('nabiz-bolum'); if(b) b.style.display = 'none'; });
+
+  // Kayan ok — kaydırma ilerlemesine göre sol kenarda iner; kapanış bandının vizörü ekranın ortasına gelince
+  // kenardaki ok kaybolur ve vizöre saplanır (bir kez). Yalnız geniş ekranda ve hareket azaltılmamışsa.
+  (function(){
+    var ok = document.getElementById('kayanOk'), viz = document.getElementById('ctaVizor'), hero = document.getElementById('okculuk');
+    if(!ok || !viz || !hero) return;
+    var genis = window.matchMedia('(min-width:900px)'), az = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var isabet = false, bekliyor = false;
+    function guncelle(){
+      bekliyor = false;
+      if(!genis.matches || az) return;
+      var vr = viz.getBoundingClientRect(), hedefY = window.scrollY + vr.top + vr.height / 2 - innerHeight * 0.62;
+      var bas = hero.offsetHeight * 0.6, p = Math.max(0, Math.min(1, (window.scrollY - bas) / Math.max(1, hedefY - bas)));
+      ok.style.setProperty('--p', p.toFixed(4));
+      if(p >= 1 && !isabet){ isabet = true; viz.classList.add('isabet'); }
+      ok.classList.toggle('gorunur', window.scrollY > bas && !isabet);
+    }
+    window.addEventListener('scroll', function(){ if(!bekliyor){ bekliyor = true; requestAnimationFrame(guncelle); } }, { passive: true });
+    window.addEventListener('resize', guncelle);
+    if(az) viz.classList.add('isabet');
+    guncelle();
+  })();
 
   // Fotoğraf vizörü — masaüstünde üstüne gelince (CSS :hover), her cihazda ekranın orta bandına girince netleşir.
   (function(){
