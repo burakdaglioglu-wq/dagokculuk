@@ -1,7 +1,7 @@
 import type { Env } from "../env";
 
 export type BroadcastEvent =
-  | { type: "series-added"; deviceId: string | null; payload: { seriId: string; grup: string; ad: string; oklar: string[]; puan: number; tarih: string; t: number } }
+  | { type: "series-added"; deviceId: string | null; payload: { seriId: string; grup: string; ad: string; oklar: string[]; puan: number; tarih: string; t: number; mesafe?: number | null } }
   | { type: "series-updated"; deviceId: string | null; payload: { seriId: string; oklar: string[]; puan: number } }
   | { type: "series-cancelled"; deviceId: string | null; payload: { seriIds: string[] } }
   | { type: "athlete-updated"; deviceId: string | null; payload: { grup: string; ad: string; fields: Record<string, unknown>; lastModified: number } }

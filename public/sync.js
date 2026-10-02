@@ -210,7 +210,7 @@
     });
     seriesRes.series.forEach((s) => {
       const sp = turnuvaDB[s.grup] && turnuvaDB[s.grup][s.ad];
-      if (sp) sp.seriler.push({ seriId: s.seriId, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, okAraliklari: s.okAraliklari || null });
+      if (sp) sp.seriler.push({ seriId: s.seriId, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, okAraliklari: s.okAraliklari || null, mesafe: s.mesafe || null });
     });
 
     // Aidat/personel okumaları oturum ister (2026-09-28): 401 → null → alan hiç gönderilmez (undefined),
@@ -521,6 +521,7 @@
           cihazId: data.cihazId ?? myDeviceId(),
           t: data.t || Date.now(),
           okAraliklari: data.okAraliklari || null,
+          mesafe: data.mesafe || null,
         });
       },
       delete: () => del("/api/series/" + encodeURIComponent(seriId) + "?deviceId=" + encodeURIComponent(myDeviceId() || "")),
@@ -533,7 +534,7 @@
       get: () =>
         get("/api/series?includeIptal=1").then((r) => ({
           // 2026-10-02: data() artık id ve iptal taşıyor — eskiden id yoktu, "Buluttan yenile" her sporcuya numarasız kopya seri ekliyordu.
-          forEach: (fn) => r.series.forEach((s) => fn({ id: s.seriId, data: () => ({ id: s.seriId, iptal: !!s.iptal, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t }) })),
+          forEach: (fn) => r.series.forEach((s) => fn({ id: s.seriId, data: () => ({ id: s.seriId, iptal: !!s.iptal, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t, mesafe: s.mesafe || null }) })),
         })),
       onSnapshot: (onNext) => {
         const bugun = new Date().toISOString().slice(0, 10);
@@ -543,7 +544,7 @@
               docChanges: () =>
                 r.series.map((s) => ({
                   type: "added",
-                  doc: { id: s.seriId, data: () => ({ id: s.seriId, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t }) },
+                  doc: { id: s.seriId, data: () => ({ id: s.seriId, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t, mesafe: s.mesafe || null }) },
                 })),
             });
           })
@@ -552,7 +553,7 @@
           const s = msg.payload;
           onNext({
             docChanges: () => [
-              { type: "added", doc: { id: s.seriId, data: () => ({ id: s.seriId, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: msg.deviceId, t: s.t }) } },
+              { type: "added", doc: { id: s.seriId, data: () => ({ id: s.seriId, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: msg.deviceId, t: s.t, mesafe: s.mesafe || null }) } },
             ],
           });
         });

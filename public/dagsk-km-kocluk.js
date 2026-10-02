@@ -260,6 +260,7 @@ function kcOdakHTML() {
             govde = `<div class="kc-odak-kart">${h ? kcDonguHTML((KC_EK[h.id] || {}).adim, false, true) : ''}
                 <div class="kc-odak-ad">${kcEsc(o.hataAd)}${gun != null ? ` · <span>${gun === 0 ? 'bugün seçildi' : gun + ' gündür çalışılıyor'}</span>` : ''}</div>
                 <div class="kc-soz buyuk">“${kcEsc(o.cumle)}”</div>
+                ${(() => { let kn = typeof kyDepoOku === 'function' ? kyDepoOku('koc_notu') : {}, p = key + '|', sk = Object.keys(kn).filter(x => x.startsWith(p) && !kn[x].sil).sort().pop(); if (!sk) return ''; let n = kn[sk]; return `<div class="kc-mini">📝 Son not (${kcEsc(sk.slice(p.length))}): ${kcEsc([].concat(n.cipler || []).join(', '))}${n.not ? ' — ' + kcEsc(n.not) : ''}</div>`; })()}
                 <div class="kc-odak-alt">${oklar.length ? `<div class="kc-mini-hedef">${kcMiniHedef(oklar, { kucuk: true, etiket: k.ad + ' son okları' })}<small>son ${oklar.length} ok</small></div>` : ''}${kanit}</div>
                 <div class="kc-butonlar"><button class="kc-btn" onclick="kcGoster('${kk}')">📺 Çocuğa göster</button><button class="kc-btn" onclick="kcOdakBitir('${kk}')">✅ Düzeltti</button><button class="kc-btn" onclick="_kc.secim=${secimAcik ? 'null' : `decodeURIComponent('${kk}')`}; kmKoclukCiz()">Değiştir</button></div></div>`;
         } else govde = `<div class="kc-odak-bos"><span>Bu hafta için odak seçilmedi.</span><button class="kc-btn birincil" onclick="_kc.secim=${secimAcik ? 'null' : `decodeURIComponent('${kk}')`}; kmKoclukCiz()">🎯 Odak seç</button></div>`;
@@ -315,11 +316,12 @@ function kcBinYaz(e) { return e >= 1000000 ? '1 MİLYON' : e >= 1000 ? (e / 1000
 function kcYolT(n) { return Math.max(0, Math.min(1, Math.log10(Math.max(1, n)) / 6)); } // 1 → 0, 1.000.000 → 1
 function kcYolNokta(t) { return { x: 40 + t * (KC_YOL_W - 80), y: 128 - 62 * Math.sin(t * Math.PI * 2.2 + 0.4) * (0.55 + 0.45 * t) }; }
 function kcYolPath(t1) { let p = [], n = 120; for (let i = 0; i <= n; i++) { let q = kcYolNokta(i / n * t1); p.push((i ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1)); } return p.join(''); }
-function kcHaftalar(sp, adet) {
+function kcHaftalar(sp, adet, g, ad) {
     let bugun = new Date(), gun = (bugun.getDay() + 6) % 7, pzt = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate() - gun), out = [];
     for (let i = adet - 1; i >= 0; i--) { let b = new Date(pzt); b.setDate(b.getDate() - i * 7); let s = new Date(b); s.setDate(s.getDate() + 7); out.push({ bas: bsIsoTarih(b), son: bsIsoTarih(s), n: 0 }); }
     let ekle = x => { let t = x.tarih || ''; let w = out.find(w => t >= w.bas && t < w.son); if (w) w.n += (x.oklar || []).length; };
     (sp.seriler || []).forEach(ekle); (sp.kartGecmisi || []).forEach(k => (k.seriler || []).forEach(ekle));
+    if (g && ad && typeof skorsuzOk === 'function') { let gun = skorsuzOk(g, ad).gun; Object.keys(gun).forEach(t => { let w = out.find(w => t >= w.bas && t < w.son); if (w) w.n += gun[t]; }); }
     return out;
 }
 function kcCubuk(haftalar, s) {
@@ -339,7 +341,7 @@ function kcMadalya(e, kazandi) {
 function kmMilyonOkCiz() {
     kcCss();
     let el = document.getElementById('km-icerik'); if (!el) return;
-    let L = kcRoster().map(k => { let sp = turnuvaDB[k.g][k.ad]; return { k, sp, n: milyonOkSay(sp), h: milyonOkHafta(sp), w: kcHaftalar(sp, 8) }; }).sort((a, b) => b.n - a.n);
+    let L = kcRoster().map(k => { let sp = turnuvaDB[k.g][k.ad]; return { k, sp, n: milyonOkSay(sp, k.g, k.ad), h: milyonOkHafta(sp, k.g, k.ad), w: kcHaftalar(sp, 8, k.g, k.ad) }; }).sort((a, b) => b.n - a.n);
     let topN = L.reduce((a, x) => a + x.n, 0), topH = L.reduce((a, x) => a + x.h, 0);
     let sinifHafta = (L[0] ? L[0].w : kcHaftalar({}, 8)).map((w, i) => ({ bas: w.bas, n: L.reduce((a, x) => a + x.w[i].n, 0) }));
     let maxT = L.length ? kcYolT(L[0].n) : 0, dar = window.innerWidth < 700;
@@ -370,7 +372,7 @@ function kmMilyonOkCiz() {
                 <small>sonraki durak ${milyonOkSayiYaz(d.son)} · ${milyonOkSayiYaz(Math.max(0, d.son - x.n))} kaldı · bu hafta ${milyonOkSayiYaz(x.h)}</small>
                 <span class="kc-madalyalar">${KC_MADALYA.filter(e => e <= Math.max(10000, x.n * 4)).map(e => kcMadalya(e, x.n >= e)).join('')}</span></span>
             <span class="kc-mo-sag"><span class="kc-mo-n">${milyonOkSayiYaz(x.n)}</span>${kcCubuk(x.w, { w: 96, h: 26 })}</span></div>`; }).join('') || '<div class="kc-bos">Derste sporcu yok.</div>'}</div>
-        <div class="kc-mini">Yalnızca uygulamaya girilen oklar sayılır — ısınma ve boş hedef okları kayda girmez.</div></div>`;
+        <div class="kc-mini">Skorlu oklar ve Antrenman Yükü'nde eklenen skorsuz oklar (ısınma, boş hedef) sayılır.</div></div>`;
 }
 
 function kcCss() {

@@ -34,6 +34,7 @@ export function registerSeriesRoutes(router: Router): void {
       cihazId?: string | null;
       t?: number;
       okAraliklari?: number[] | null;
+      mesafe?: number | null;
     }>(request);
     if (!body.seriId || !body.grup || !body.ad || !Array.isArray(body.oklar)) {
       return badRequest("seriId, grup, ad, oklar are required");
@@ -50,13 +51,14 @@ export function registerSeriesRoutes(router: Router): void {
       cihazId: body.cihazId ?? null,
       t,
       okAraliklari: body.okAraliklari ?? null,
+      mesafe: body.mesafe ?? null,
     });
 
     if (result.applied) {
       await broadcast(env, {
         type: "series-added",
         deviceId: body.cihazId ?? null,
-        payload: { seriId: body.seriId, grup: result.athlete.grup, ad: result.athlete.ad, oklar: body.oklar, puan: body.puan ?? 0, tarih: body.tarih, t },
+        payload: { seriId: body.seriId, grup: result.athlete.grup, ad: result.athlete.ad, oklar: body.oklar, puan: body.puan ?? 0, tarih: body.tarih, t, mesafe: body.mesafe ?? null },
       });
     }
     return json({ applied: result.applied });

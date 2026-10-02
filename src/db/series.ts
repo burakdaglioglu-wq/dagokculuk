@@ -13,6 +13,8 @@ export interface SeriesDTO {
   iptal: boolean;
   // Ardışık ok tıklamaları arası süre (ms) — "Atış Ritmi" tutarlılık trendi için. Eski serilerde yok (null).
   okAraliklari: number[] | null;
+  // Atış mesafesi (metre) — 2026-10-02'den önceki serilerde null.
+  mesafe: number | null;
 }
 
 interface SeriesRow {
@@ -26,6 +28,7 @@ interface SeriesRow {
   t: number;
   iptal: number;
   okAraliklari_json: string | null;
+  mesafe: number | null;
 }
 
 function toDTO(row: SeriesRow): SeriesDTO {
@@ -40,6 +43,7 @@ function toDTO(row: SeriesRow): SeriesDTO {
     t: row.t,
     iptal: !!row.iptal,
     okAraliklari: row.okAraliklari_json ? JSON.parse(row.okAraliklari_json) : null,
+    mesafe: row.mesafe ?? null,
   };
 }
 
@@ -90,6 +94,7 @@ export interface CreateSeriesInput {
   cihazId: string | null;
   t: number;
   okAraliklari?: number[] | null;
+  mesafe?: number | null;
 }
 
 /** INSERT OR IGNORE on seriId — this is the natural replacement for the old client-side seriId union. */
@@ -97,8 +102,8 @@ export async function createSeries(env: Env, input: CreateSeriesInput): Promise<
   const target = await resolveAthleteRedirect(env, { grup: input.grup, ad: input.ad });
 
   const result = await env.DB.prepare(
-    `INSERT OR IGNORE INTO series (seriId, grup, ad, oklar_json, puan, tarih, cihazId, t, iptal, received_at, okAraliklari_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
+    `INSERT OR IGNORE INTO series (seriId, grup, ad, oklar_json, puan, tarih, cihazId, t, iptal, received_at, okAraliklari_json, mesafe)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
   )
     .bind(
       input.seriId,
@@ -110,7 +115,8 @@ export async function createSeries(env: Env, input: CreateSeriesInput): Promise<
       input.cihazId,
       input.t,
       Date.now(),
-      input.okAraliklari && input.okAraliklari.length ? JSON.stringify(input.okAraliklari) : null
+      input.okAraliklari && input.okAraliklari.length ? JSON.stringify(input.okAraliklari) : null,
+      typeof input.mesafe === "number" && input.mesafe > 0 && input.mesafe <= 100 ? Math.round(input.mesafe) : null
     )
     .run();
 

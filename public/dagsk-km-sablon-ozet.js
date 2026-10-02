@@ -293,6 +293,9 @@ async function kmProgramDersBaslat(id) {
         + '.kmp-saat{display:flex;flex-direction:column;font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;min-width:48px}.kmp-saat small{font-size:10px;font-weight:600;color:var(--text-muted)}'
         + '.kmp-ad{flex:1;min-width:0;display:flex;flex-direction:column}.kmp-ad b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kmp-ad small{font-size:10.5px;color:var(--text-muted)}'
         + '.kmp-git{font-weight:900;font-size:12px;color:var(--accent-orange);white-space:nowrap}'
+        + '.kmk-not-ac{border:0;background:transparent;color:var(--accent-orange);font:inherit;font-weight:800;cursor:pointer}.kmk-not-sat{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--border-color)}.kmk-not-cipler{display:flex;flex-wrap:wrap;gap:5px}'
+        + '.kmk-not-cipler button{min-height:34px;padding:0 10px;border-radius:99px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary,var(--text-main));font:inherit;font-size:12px;font-weight:700;cursor:pointer}.kmk-not-cipler button.aktif{background:var(--accent-orange);border-color:var(--accent-orange);color:#fff}'
+        + '.kmk-not-yazi{min-height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:inherit;font-size:13px}'
         + '.kmk-bolum{border:1px solid var(--border-color);border-radius:12px;padding:10px 12px;background:var(--surface-1,var(--bg-panel));display:flex;flex-direction:column;gap:6px}'
         + '.kmk-bolum h4{margin:0;font-size:13px;font-weight:900;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.kmk-bolum h4 small{font-weight:600;color:var(--text-muted);font-size:11px}'
         + '.kmk-sat{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--border-color)}'
@@ -328,6 +331,25 @@ function kmKapanisHazirla() {
     let liste = Object.keys(kisiler).map(function (k) { return kisiler[k]; }).sort(function (a, b) { return (a.durum === 'gelmedi') - (b.durum === 'gelmedi') || a.ad.localeCompare(b.ad, 'tr'); });
     return { tarih: bugun, slot: slot, D: D, kisiler: liste, onaylandi: false, gonderilen: {} };
 }
+// 📝 KOÇ NOTU (2026-10-02, araştırma: Archery GB "uyumlu koçluk" — sporcunun gelişimi eğitmenler arasında aktarılsın).
+// Ders kapanışında gelen her sporcuya hızlı çip + kısa not. Meta koc_notu {g|ad|tarih: {cipler, not, kim}}; karnede ve
+// Teknik Koçluk kartında son not görünür.
+const KOC_NOT_CIPLER = ['👍 Odaklıydı', '🎯 Gruplama iyi', '🦾 Takip iyi', '📏 Ankraj sabit', '⭐ Çok gelişti', '😴 Yorgundu', '🌀 Dağınıktı', '⚠️ Ankraj kaydı', '🤕 Ağrı / sakatlık'];
+function kocNotuOku(g, ad, tarih) { let o = kyDepoOku('koc_notu')[g + '|' + ad + '|' + tarih]; return o && !o.sil ? o : null; }
+function kocNotuYaz(g, ad, tarih, degis) {
+    let d = kyDepoOku('koc_notu'), k = g + '|' + ad + '|' + tarih, e = d[k] && !d[k].sil ? d[k] : { cipler: [], not: '' };
+    let yeni = Object.assign({}, e, degis, { t: Date.now(), kim: (typeof _oturum !== 'undefined' && _oturum && _oturum.ad) || e.kim || '' });
+    d[k] = (yeni.cipler || []).length || (yeni.not || '').trim() ? yeni : { t: Date.now(), sil: true };
+    let sinir = bsIsoTarih(new Date(Date.now() - 400 * 864e5)); Object.keys(d).forEach(x => { if (x.split('|').pop() < sinir) delete d[x]; });
+    kyDepoYazYerel('koc_notu', d); kyDepoSenkron('koc_notu', () => kyDepoOku('koc_notu'), true).catch(() => {});
+}
+function kmKapanisNotCip(i, c) {
+    let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return;
+    let o = kocNotuOku(x.g, x.ad, _kmKapanis.tarih) || { cipler: [] }, l = (o.cipler || []).slice();
+    l = l.includes(c) ? l.filter(y => y !== c) : l.concat(c);
+    kocNotuYaz(x.g, x.ad, _kmKapanis.tarih, { cipler: l }); kmKapanisCiz();
+}
+function kmKapanisNotYazi(i, v) { let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return; kocNotuYaz(x.g, x.ad, _kmKapanis.tarih, { not: String(v || '').slice(0, 300) }); }
 function kmKapanisAc(K, arsivlenenler) {
     _kmKapanis = K; K.arsiv = arsivlenenler || [];
     try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {}
@@ -355,10 +377,17 @@ function kmKapanisCiz() {
         let tel = kmKapanisTel(x.g, x.ad), k = 'r' + i;
         return '<div class="kmk-sat' + (K.gonderilen[k] ? ' gonderildi' : '') + '"><div class="kmk-ad">' + kmSablonEsc(x.ad) + '<small>' + (tel ? '📞 ' + kmSablonEsc(tel) : 'telefon kayıtlı değil') + '</small></div><button class="kmoz-btn" onclick="kmKapanisRaporKopyala(' + i + ')" aria-label="Kopyala">📋</button><button class="kmoz-wa" onclick="kmKapanisRaporGonder(' + i + ')">' + (K.gonderilen[k] ? '✓ Gönderildi' : '💬 WhatsApp') + '</button></div>';
     }).join('') + '</div>' : '';
+    let gelenler = K.kisiler.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.durum === 'geldi'; });
+    let kocNot = gelenler.length && typeof kyDepoOku === 'function' ? '<div class="kmk-bolum"><h4>📝 Koç notu <small>isteğe bağlı · karneye ve Teknik Koçluk\'a gider · ' + (K.notAcik ? '' : '<button class="kmk-not-ac" onclick="_kmKapanis.notAcik=true; kmKapanisCiz()">yaz ▾</button>') + '</small></h4>'
+        + (K.notAcik ? gelenler.map(function (o) {
+            let n = kocNotuOku(o.x.g, o.x.ad, K.tarih) || { cipler: [], not: '' };
+            return '<div class="kmk-not-sat"><div class="kmk-ad">' + kmSablonEsc(o.x.ad) + '</div><div class="kmk-not-cipler">' + KOC_NOT_CIPLER.map(function (c) { let a = (n.cipler || []).includes(c); return '<button class="' + (a ? 'aktif' : '') + '" aria-pressed="' + a + '" onclick="kmKapanisNotCip(' + o.i + ',' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">' + kmSablonEsc(c) + '</button>'; }).join('') + '</div>'
+                + '<input class="kmk-not-yazi" type="text" maxlength="300" placeholder="Kısa not (isteğe bağlı)" value="' + kmSablonEsc(n.not || '') + '" onchange="kmKapanisNotYazi(' + o.i + ', this.value)" aria-label="' + kmSablonEsc(o.x.ad) + ' koç notu"></div>';
+        }).join('') : '') + '</div>' : '';
     let ozetVar = K.D && (K.D.atanlar.length || K.D.satirlar.some(function (s) { return s.deger > 0; }));
     let ozet = ozetVar ? '<div class="kmk-bolum"><h4>🏅 Sınıf özeti <small>veli grubuna tek mesaj</small></h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="kmoz-btn ana" onclick="kmOzetWa(null, kmOzetGrupMetni(_kmKapanis.D))">💬 Veli grubuna gönder</button><button class="kmoz-btn" onclick="kmKapanisOzetKopyala()">📋 Metni kopyala</button></div></div>' : '';
     m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Kapanışı"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏁 Ders Kapanışı</h3><p>' + baslik + ' · ' + formatTarih(K.tarih) + ' · ' + K.kisiler.length + ' kişi</p></div><button class="kmoz-btn" onclick="kmKapanisKapat()" aria-label="Kapat">✕</button></div>'
-        + '<div class="kmoz-govde">' + yoklama + veliGelmeyen + raporlar + ozet + '</div></div>';
+        + '<div class="kmoz-govde">' + yoklama + kocNot + veliGelmeyen + raporlar + ozet + '</div></div>';
 }
 function kmKapanisDurum(i, durum) { let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return; x.durum = durum; _kmKapanis.onaylandi = false; kmKapanisCiz(); }
 function kmKapanisYoklamaKaydet() {
