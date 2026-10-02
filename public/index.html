@@ -99,7 +99,10 @@
      Kutu masaüstünde imleci, mobilde parmağı izler; boşta kendi gezinir ve arada yüze kilitlenir. */
   .vz-hero{ position:relative; overflow:hidden; isolation:isolate; background:#141210;
     height:calc(100svh - 62px); min-height:600px; max-height:980px; touch-action:pan-y; }
-  .vz-resim{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 22%; display:block; max-width:none; }
+  .vz-resim{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 22%; display:block; max-width:none; transition:opacity 1.1s ease; }
+  .vz-resim.vz-s2{ object-position:50% 52%; }
+  .vz-resim.vz-gizli{ opacity:0; }
+  .vz-bulanik.vz-s2{ filter:saturate(.75) brightness(.6); }
   .vz-bulanik{ z-index:1; filter:saturate(.8) brightness(.78); }
   .vz-karart{ position:absolute; inset:0; z-index:2; pointer-events:none;
     background:linear-gradient(180deg, rgba(14,12,10,.55) 0%, rgba(14,12,10,0) 22%, rgba(14,12,10,0) 52%, rgba(14,12,10,.72) 100%),
@@ -148,6 +151,7 @@
   @media (max-width:860px){
     .vz-hero{ height:calc(100svh - 62px); min-height:600px; }
     .vz-resim{ object-position:78% 16%; }
+    .vz-resim.vz-s2{ object-position:50% 45%; }
     .vz-karart{ background:linear-gradient(180deg, rgba(14,12,10,.5) 0%, rgba(14,12,10,0) 20%, rgba(14,12,10,0) 38%, rgba(14,12,10,.86) 78%, rgba(14,12,10,.92) 100%); }
     .vz-metin{ left:16px; right:16px; max-width:none; bottom:118px; }
     .vz-slogan{ margin-bottom:18px; }
@@ -485,15 +489,21 @@
 <section class="vz-hero" id="okculuk" aria-label="DAĞ Okçuluk — Her şey bulanık, hedef net">
   <picture>
     <source srcset="/hero/bulanik.webp" type="image/webp">
-    <img class="vz-resim vz-bulanik" src="/hero/bulanik.jpg" alt="" fetchpriority="high">
+    <img class="vz-resim vz-bulanik vz-s1" data-sahne="0" src="/hero/bulanik.jpg" alt="" fetchpriority="high">
+  </picture>
+  <picture>
+    <source srcset="/hero/salon-bulanik.webp" type="image/webp">
+    <img class="vz-resim vz-bulanik vz-s2 vz-gizli" data-sahne="1" src="/hero/salon-bulanik.jpg" alt="">
   </picture>
   <div class="vz-karart"></div>
   <div class="vz-pencere" id="vzPencere">
     <picture>
-      <source media="(max-width:900px)" srcset="/hero/net-900.webp" type="image/webp">
-      <source srcset="/hero/net-1600.webp" type="image/webp">
-      <source media="(max-width:900px)" srcset="/hero/net-900.jpg">
-      <img class="vz-resim" id="vzNetResim" src="/hero/net-1600.jpg" alt="DAĞ Okçuluk salonunda yayını gerip hedefe nişan alan genç okçu">
+      <source srcset="/hero/net-900.webp 900w, /hero/net-1600.webp 1600w, /hero/net-1800.webp 1800w" sizes="100vw" type="image/webp">
+      <img class="vz-resim vz-net vz-s1" data-sahne="0" srcset="/hero/net-900.jpg 900w, /hero/net-1600.jpg 1600w" sizes="100vw" src="/hero/net-1600.jpg" alt="DAĞ Okçuluk salonunda yayını gerip hedefe nişan alan genç okçu">
+    </picture>
+    <picture>
+      <source srcset="/hero/salon-900.webp 900w, /hero/salon-1600.webp 1600w, /hero/salon-2400.webp 2400w" sizes="100vw" type="image/webp">
+      <img class="vz-resim vz-net vz-s2 vz-gizli" data-sahne="1" srcset="/hero/salon-900.jpg 900w, /hero/salon-1600.jpg 1600w" sizes="100vw" src="/hero/salon-1600.jpg" alt="DAĞ Okçuluk atış salonunda hedeflere nişan alan iki sporcu" decoding="async">
     </picture>
   </div>
   <div class="vz-vizor" id="vzVizor" aria-hidden="true">
@@ -957,36 +967,47 @@
   yildizOlustur('yildizCim', 'ico-star', '#7fe0d3');
 
   // Vizör hero — bulanık fotoğrafın üstünde net bir pencere. İmleç/parmak varsa onu izler; 2,5 sn dokunulmazsa kendi
-  // gezinir, birkaç durakta bir okçunun yüzüne kilitlenir ("HEDEF NET"). Yalnız transform kullanır, görünmezken durur.
+  // gezinir, birkaç durakta bir sahnedeki hedefe kilitlenir ("HEDEF NET"). İki sahne var (okçu yakın plan, salon):
+  // bir sahnenin kilit hedefleri bitince diğerine yumuşak geçer. Yalnız transform kullanır, görünmezken durur.
   (function(){
-    var hero = document.getElementById('okculuk'), pen = document.getElementById('vzPencere'), resim = document.getElementById('vzNetResim');
+    var hero = document.getElementById('okculuk'), pen = document.getElementById('vzPencere');
     var viz = document.getElementById('vzVizor'), cer = document.getElementById('vzCerceve'), etiket = document.getElementById('vzEtiket');
-    if(!hero || !pen || !resim || !viz) return;
-    var YUZ = { x: 0.70, y: 0.268 }, ORAN = 1800 / 2295; // kırpılmış fotoğrafta yüzün yeri (oransal) ve en/boy
+    if(!hero || !pen || !viz) return;
+    // hedefler fotoğraf içinde oransal (x, y); oran = en / boy
+    var SAHNELER = [
+      { oran: 1800 / 2295, hedefler: [{ x: 0.70, y: 0.268 }] },
+      { oran: 3024 / 4032, hedefler: [{ x: 0.50, y: 0.425 }, { x: 0.925, y: 0.47 }] }
+    ];
+    var netler = pen.querySelectorAll('.vz-net'), bulaniklar = hero.querySelectorAll('.vz-bulanik');
     var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var W = 0, H = 0, w = 0, h = 0, ox = 0, oy = 0, yuz = { x: 0, y: 0 };
-    var x = 0, y = 0, hedef = { x: 0, y: 0 }, mod = 'gez', sonKullanici = 0, durak = 0, bekleBitis = 0, sayac = 0, kilitli = false;
+    var W = 0, H = 0, w = 0, h = 0, altSinir = 0, aktif = 0, hedefNo = 0, noktalar = [[], []];
+    var x = 0, y = 0, hedef = { x: 0, y: 0 }, mod = 'gez', sonKullanici = 0, durak = '', bekle = 0, sayac = 0, kilitli = false, kilitNokta = null;
     var calisiyor = false, son = 0, yazi = '';
     function olc(){
       W = hero.clientWidth; H = hero.clientHeight;
       w = Math.round(Math.min(Math.max(W * (W < 700 ? 0.5 : W < 1100 ? 0.34 : 0.26), 160), 400)); h = Math.round(w * 0.34);
-      var cs = getComputedStyle(resim).objectPosition.split(' '), px = parseFloat(cs[0]) / 100, py = parseFloat(cs[1]) / 100;
-      var rw, rh; if(W / H > ORAN){ rw = W; rh = W / ORAN; } else { rh = H; rw = H * ORAN; }
-      var kx = (rw - W) * px, ky = (rh - H) * py;
-      yuz = { x: YUZ.x * rw - kx, y: YUZ.y * rh - ky };
+      SAHNELER.forEach(function(s, i){
+        var cs = getComputedStyle(netler[i]).objectPosition.split(' '), px = parseFloat(cs[0]) / 100, py = parseFloat(cs[1]) / 100;
+        var rw, rh; if(W / H > s.oran){ rw = W; rh = W / s.oran; } else { rh = H; rw = H * s.oran; }
+        var kx = (rw - W) * px, ky = (rh - H) * py;
+        noktalar[i] = s.hedefler.map(function(t){ return { x: t.x * rw - kx, y: t.y * rh - ky }; });
+        netler[i].style.width = W + 'px'; netler[i].style.height = H + 'px';
+      });
       pen.style.width = w + 'px'; pen.style.height = h + 'px';
-      resim.style.width = W + 'px'; resim.style.height = H + 'px';
       var dx = Math.round(w * 0.12), dy = Math.round(h * 0.26);
       viz.style.width = (w + dx * 2) + 'px'; viz.style.height = (h + dy * 2) + 'px';
       viz.style.setProperty('--kol', Math.round(w * 0.11) + 'px');
       cer.style.left = dx + 'px'; cer.style.top = dy + 'px'; cer.style.width = w + 'px'; cer.style.height = h + 'px';
       viz._dx = dx; viz._dy = dy;
+      // telefonda başlık fotoğrafın alt yarısında: vizör ve etiketi başlığın üstüne inmesin
+      var metin = hero.querySelector('.vz-metin');
+      altSinir = W < 700 && metin ? metin.offsetTop - h / 2 - dy - 30 : H;
     }
-    function sinirla(p){ var mx = w / 2 + (viz._dx || 0) + 6, my = h / 2 + (viz._dy || 0) + 6; return { x: Math.min(Math.max(p.x, mx), W - mx), y: Math.min(Math.max(p.y, my), H - my - 22) }; }
+    function sinirla(p){ var mx = w / 2 + (viz._dx || 0) + 6, my = h / 2 + (viz._dy || 0) + 6; return { x: Math.min(Math.max(p.x, mx), W - mx), y: Math.min(Math.max(p.y, my), H - my - 22, altSinir) }; }
     function ciz(){
       var l = Math.round(x - w / 2), t = Math.round(y - h / 2);
       pen.style.transform = 'translate(' + l + 'px,' + t + 'px)';
-      resim.style.transform = 'translate(' + (-l) + 'px,' + (-t) + 'px)';
+      for(var i = 0; i < netler.length; i++) netler[i].style.transform = 'translate(' + (-l) + 'px,' + (-t) + 'px)';
       viz.style.transform = 'translate(' + (l - viz._dx) + 'px,' + (t - viz._dy) + 'px)';
     }
     function etiketYaz(s){ if(s !== yazi){ yazi = s; etiket.textContent = s; } }
@@ -994,30 +1015,44 @@
       if(ac === kilitli) return; kilitli = ac;
       hero.classList.remove('kilit'); if(ac){ void hero.offsetWidth; hero.classList.add('kilit'); }
     }
-    function yeniDurak(simdi){
+    function sahneSec(i){
+      aktif = i; hedefNo = 0;
+      [netler, bulaniklar].forEach(function(l){ for(var k = 0; k < l.length; k++) l[k].classList.toggle('vz-gizli', +l[k].dataset.sahne !== i); });
+    }
+    function yakinHedef(){
+      var n = noktalar[aktif], r = Math.max(w * 0.22, 30);
+      for(var i = 0; i < n.length; i++) if(Math.hypot(n[i].x - x, n[i].y - y) < r) return n[i];
+      return null;
+    }
+    function yeniDurak(){
       sayac++;
-      if(sayac % 3 === 0){ hedef = sinirla(yuz); bekleBitis = 3400; durak = 'yuz'; }
-      else { hedef = sinirla({ x: W * (0.15 + Math.random() * 0.75), y: H * (0.12 + Math.random() * 0.7) }); bekleBitis = 700; durak = 'rastgele'; }
+      if(sayac % 3 === 0){ kilitNokta = noktalar[aktif][hedefNo]; hedef = sinirla(kilitNokta); bekle = 3200; durak = 'kilit'; }
+      else { hedef = sinirla({ x: W * (0.15 + Math.random() * 0.75), y: H * (0.12 + Math.random() * 0.7) }); bekle = 700; durak = 'rastgele'; }
       hedef._varis = 0;
+    }
+    function durakBitti(){
+      if(durak === 'kilit'){
+        hedefNo++;
+        if(hedefNo >= SAHNELER[aktif].hedefler.length) sahneSec((aktif + 1) % SAHNELER.length);
+      }
+      kilit(false); yeniDurak();
     }
     function kare(simdi){
       if(!calisiyor) return;
       var dt = Math.min(0.05, (simdi - (son || simdi)) / 1000); son = simdi;
-      if(mod === 'kullanici' && simdi - sonKullanici > 2500){ mod = 'gez'; sayac = 2; yeniDurak(simdi); }
-      var hiz = mod === 'kullanici' ? 12 : 2.4;
-      var k = 1 - Math.exp(-hiz * dt);
+      if(mod === 'kullanici' && simdi - sonKullanici > 2500){ mod = 'gez'; sayac = 2; hedefNo = 0; yeniDurak(); }
+      var k = 1 - Math.exp(-(mod === 'kullanici' ? 12 : 2.4) * dt);
       x += (hedef.x - x) * k; y += (hedef.y - y) * k;
       var mesafe = Math.hypot(hedef.x - x, hedef.y - y);
       if(mod === 'gez'){
         if(mesafe < 3){
           if(!hedef._varis) hedef._varis = simdi;
-          if(durak === 'yuz'){ kilit(true); etiketYaz('HEDEF NET'); }
-          if(simdi - hedef._varis > bekleBitis){ kilit(false); yeniDurak(simdi); }
+          if(durak === 'kilit'){ kilit(true); etiketYaz('HEDEF NET'); }
+          if(simdi - hedef._varis > bekle) durakBitti();
         } else if(!kilitli) etiketYaz('ODAK ARANIYOR');
-        else if(mesafe > 20){ kilit(false); }
+        else if(mesafe > 20) kilit(false);
       } else {
-        var yuzde = Math.hypot(yuz.x - x, yuz.y - y) < Math.max(w * 0.22, 30);
-        kilit(yuzde); etiketYaz(yuzde ? 'HEDEF NET' : 'ODAK SENDE');
+        var yk = !!yakinHedef(); kilit(yk); etiketYaz(yk ? 'HEDEF NET' : 'ODAK SENDE');
       }
       ciz();
       requestAnimationFrame(kare);
@@ -1025,7 +1060,7 @@
     function kullanici(cx, cy){
       var r = hero.getBoundingClientRect();
       hedef = sinirla({ x: cx - r.left, y: cy - r.top }); mod = 'kullanici'; sonKullanici = performance.now();
-      if(azHareket){ x = hedef.x; y = hedef.y; ciz(); kilit(Math.hypot(yuz.x - x, yuz.y - y) < w * 0.22); etiketYaz(kilitli ? 'HEDEF NET' : 'ODAK SENDE'); }
+      if(azHareket){ x = hedef.x; y = hedef.y; ciz(); var yk = !!yakinHedef(); kilit(yk); etiketYaz(yk ? 'HEDEF NET' : 'ODAK SENDE'); }
     }
     hero.addEventListener('pointermove', function(e){ if(e.pointerType !== 'touch') kullanici(e.clientX, e.clientY); });
     hero.addEventListener('touchstart', function(e){ var t = e.touches[0]; if(t) kullanici(t.clientX, t.clientY); }, { passive: true });
@@ -1033,9 +1068,13 @@
     function basla(){ if(calisiyor || azHareket) return; calisiyor = true; son = 0; requestAnimationFrame(kare); }
     function dur(){ calisiyor = false; }
     olc();
-    if(azHareket){ hedef = sinirla(yuz); x = hedef.x; y = hedef.y; ciz(); kilit(true); etiketYaz('HEDEF NET'); }
-    else { var bas = sinirla({ x: W * 0.32, y: H * 0.62 }); x = bas.x; y = bas.y; ciz(); sayac = 2; yeniDurak(0); }
-    window.addEventListener('resize', function(){ olc(); hedef = sinirla(mod === 'gez' && durak === 'yuz' ? yuz : hedef); var p = sinirla({ x: x, y: y }); x = p.x; y = p.y; ciz(); });
+    if(azHareket){ hedef = sinirla(noktalar[0][0]); x = hedef.x; y = hedef.y; ciz(); kilit(true); etiketYaz('HEDEF NET'); }
+    else { var bas = sinirla({ x: W * 0.32, y: H * 0.62 }); x = bas.x; y = bas.y; ciz(); sayac = 2; yeniDurak(); }
+    window.addEventListener('resize', function(){
+      olc();
+      if(mod === 'gez' && durak === 'kilit') hedef = sinirla(noktalar[aktif][Math.min(hedefNo, noktalar[aktif].length - 1)]); else hedef = sinirla(hedef);
+      var p = sinirla({ x: x, y: y }); x = p.x; y = p.y; ciz();
+    });
     if('IntersectionObserver' in window) new IntersectionObserver(function(es){ es[0].isIntersecting && !document.hidden ? basla() : dur(); }).observe(hero);
     else basla();
     document.addEventListener('visibilitychange', function(){ if(document.hidden) dur(); else if(hero.getBoundingClientRect().bottom > 0) basla(); });
