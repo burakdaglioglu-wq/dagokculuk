@@ -22,19 +22,20 @@ export interface KulupNabzi {
   gunSayisi: number;
 }
 
-/** Tanıtım sitesindeki "Canlı Kulüp Nabzı" widget'ı için — gerçek shot_log/series/attendance_auto
- * tablolarından bu ayın gerçek sayılarını çeker, hiçbir uydurma/örnek değer yok. */
-export async function kulupNabziGetir(env: Env, ayPrefix: string): Promise<KulupNabzi> {
-  const like = ayPrefix + "%";
-  const [ok, seri, devam] = await Promise.all([
-    env.DB.prepare("SELECT COUNT(*) AS n FROM shot_log WHERE tarih LIKE ?").bind(like).first<{ n: number }>(),
-    env.DB.prepare("SELECT COUNT(*) AS n FROM series WHERE tarih LIKE ? AND iptal = 0").bind(like).first<{ n: number }>(),
-    env.DB.prepare("SELECT COUNT(DISTINCT ad) AS sporcu, COUNT(DISTINCT tarih) AS gun FROM attendance_auto WHERE tarih LIKE ?")
-      .bind(like)
+/** Tanıtım sitesindeki "Canlı Kulüp Nabzı" widget'ı için — gerçek series/attendance_auto tablolarından son 30 günün
+ * gerçek sayılarını çeker, hiçbir uydurma/örnek değer yok. Ok sayısı serilerin ok dizisinden sayılır (shot_log hiç
+ * doldurulmadığı için eskiden hep 0 çıkıyordu). Ay başında rakamlar sönük kalmasın diye takvim ayı değil kayan 30 gün. */
+export async function kulupNabziGetir(env: Env, baslangic: string): Promise<KulupNabzi> {
+  const [seri, devam] = await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(json_array_length(oklar_json)), 0) AS ok FROM series WHERE tarih >= ? AND iptal = 0")
+      .bind(baslangic)
+      .first<{ n: number; ok: number }>(),
+    env.DB.prepare("SELECT COUNT(DISTINCT ad) AS sporcu, COUNT(DISTINCT tarih) AS gun FROM attendance_auto WHERE tarih >= ?")
+      .bind(baslangic)
       .first<{ sporcu: number; gun: number }>(),
   ]);
   return {
-    okSayisi: ok?.n ?? 0,
+    okSayisi: seri?.ok ?? 0,
     seriSayisi: seri?.n ?? 0,
     sporcuSayisi: devam?.sporcu ?? 0,
     gunSayisi: devam?.gun ?? 0,

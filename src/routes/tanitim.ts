@@ -21,8 +21,9 @@ export function registerTanitimRoutes(router: Router): void {
   });
 
   router.get("/api/tanitim/nabiz", async (_request, env) => {
-    const ayPrefix = turkiyeGunu().slice(0, 7); // YYYY-MM
-    const nabiz = await kulupNabziGetir(env, ayPrefix);
-    return json({ ay: ayPrefix, ...nabiz });
+    // son 30 gün (Türkiye günü) — ay başında da anlamlı rakam görünsün
+    const baslangic = new Date(Date.now() + 3 * 60 * 60 * 1000 - 29 * 86400000).toISOString().slice(0, 10);
+    const nabiz = await kulupNabziGetir(env, baslangic);
+    return json({ baslangic, ...nabiz });
   });
 }
