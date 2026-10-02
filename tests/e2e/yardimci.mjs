@@ -39,7 +39,7 @@ export function esit(gercek, beklenen, mesaj) { if (gercek !== beklenen) throw n
 export function benzersiz(onEk) { return onEk + Array.from({ length: 5 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(''); }
 
 let _tarayici = null;
-export async function tarayici() { return _tarayici || (_tarayici = await chromium.launch()); }
+export async function tarayici() { return _tarayici || (_tarayici = await chromium.launch({ args: (process.env.E2E_CHROMIUM_ARGS || '').split('|').filter(Boolean) })); }
 export async function tarayiciKapat() { if (_tarayici) await _tarayici.close(); _tarayici = null; }
 
 // Sayfa: oturum anahtarı önceden yazılı (girisli=true), window.open yakalanır (__acilan), sayfa hataları toplanır.

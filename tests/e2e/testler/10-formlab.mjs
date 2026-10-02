@@ -9,7 +9,7 @@ export default async function ({ log }) {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'formlab', 'kmFormLabCiz');
     await p.waitForSelector('.fl .fl-basla');
-    dogrula(await p.locator('.fl-butonlar input[type=file]').count() === 2, 'çekim/seçim düğmeleri yok');
+    dogrula(await p.locator('.fl-butonlar button', { hasText: 'Uygulamada çek' }).count() === 1 && await p.locator('.fl-butonlar input[type=file]').count() === 1, 'çekim/seçim düğmeleri yok');
     dogrula(await yataydaTasmaYok(p), 'Form Lab yatayda taşıyor');
 
     const r = await p.evaluate(() => {
