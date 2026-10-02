@@ -2428,3 +2428,97 @@
         .yon3 .yp-btn { flex-shrink: 0; padding: 0 10px; }
         @media (max-width: 699px) { .yon3-selam { font-size: 21px; } .yon3-ara { flex: 1 1 100%; } .yon3-km { flex: 1 1 100%; } }
         @media (min-width: 700px) { .yon-sidebar > div:first-child > .adm-btn { display: none; } }
+
+        /* ===== GİRİŞ — VİZÖR DİLİ (2026-10-02) — tanıtım sitesinin afiş dili: bulanık fotoğraf zemin, net vizör penceresi,
+           Archivo başlık + Roboto Mono etiket. Fotoğraf dünyası bilinçli olarak tek (koyu) tema; açık temada da aynı
+           görünür. Eğitmen paneli (#giris-lig) açılınca fotoğraf zemin ve vizör kalkar, panel eski haliyle okunur. ===== */
+        #kulup-secim-ekrani {
+            --gv-ink: #efebe5; --gv-soft: #b3aca2; --gv-line: rgba(255,255,255,0.16);
+            background: linear-gradient(180deg, rgba(14,12,10,0.55), rgba(14,12,10,0.25) 40%, rgba(14,12,10,0.8)), url('/hero/bulanik.jpg') center 30% / cover, #141210 !important;
+            justify-content: center !important; gap: clamp(18px, 3vh, 30px) !important; padding: 24px 16px !important; overflow-y: auto;
+            font-family: 'Archivo', sans-serif;
+        }
+        .gv-ust { position: absolute; top: 18px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+            font: 500 11px/1 'Roboto Mono', ui-monospace, monospace; letter-spacing: .16em; color: var(--gv-soft); }
+        .gv-marka { display: inline-flex; align-items: center; gap: 10px; }
+        .gv-marka img { width: 34px; height: auto; }
+        .gv-baslik { margin: 48px 0 0; font: 900 clamp(40px, 8vw, 84px)/.95 'Archivo', sans-serif; text-transform: uppercase; color: #fff;
+            text-align: center; letter-spacing: -.01em; text-shadow: 0 4px 30px rgba(0,0,0,0.4); }
+        .gv-kulupler { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(920px, 100%); }
+        @media (max-width: 700px) { .gv-kulupler { grid-template-columns: 1fr; } }
+        .gv-kulup { position: relative; display: flex; align-items: flex-end; min-height: clamp(220px, 42vh, 420px); padding: 0; border: 1px solid var(--gv-line);
+            border-radius: 6px; overflow: hidden; background: #1c1916; color: #fff; cursor: pointer; text-align: left; isolation: isolate; }
+        @media (max-width: 700px) { .gv-kulup { min-height: clamp(170px, 30vh, 260px); } }
+        .gv-kulup > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;
+            filter: blur(3px) saturate(.65) brightness(.72); transform: scale(1.05); transition: filter .5s ease, transform .7s ease; }
+        .gv-kulup::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(14,12,10,0) 35%, rgba(14,12,10,.88)); }
+        .gv-kulup::after, #giris-ekrani .giris-secim-btn::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transform: scale(1.05);
+            transition: opacity .3s ease, transform .4s cubic-bezier(.2,.8,.2,1); --c: #fff; --k: 22px; --i: 10px;
+            background:
+                linear-gradient(var(--c),var(--c)) left var(--i) top var(--i) / var(--k) 2px no-repeat,
+                linear-gradient(var(--c),var(--c)) left var(--i) top var(--i) / 2px var(--k) no-repeat,
+                linear-gradient(var(--c),var(--c)) right var(--i) top var(--i) / var(--k) 2px no-repeat,
+                linear-gradient(var(--c),var(--c)) right var(--i) top var(--i) / 2px var(--k) no-repeat,
+                linear-gradient(var(--c),var(--c)) left var(--i) bottom var(--i) / var(--k) 2px no-repeat,
+                linear-gradient(var(--c),var(--c)) left var(--i) bottom var(--i) / 2px var(--k) no-repeat,
+                linear-gradient(var(--c),var(--c)) right var(--i) bottom var(--i) / var(--k) 2px no-repeat,
+                linear-gradient(var(--c),var(--c)) right var(--i) bottom var(--i) / 2px var(--k) no-repeat; }
+        .gv-kulup:hover > img, .gv-kulup:focus-visible > img { filter: none; transform: scale(1); }
+        .gv-kulup:hover::after, .gv-kulup:focus-visible::after { opacity: 1; transform: none; }
+        .gv-kulup-ic { display: flex; flex-direction: column; gap: 6px; padding: 22px; }
+        .gv-tur { font: 500 11px/1 'Roboto Mono', ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; color: #ff6a1a; }
+        .gv-milo .gv-tur { color: #3fd6c6; }
+        .gv-ad { font: 900 clamp(24px, 3vw, 36px)/1 'Archivo', sans-serif; text-transform: uppercase; }
+        .gv-alt { font-size: 13.5px; color: rgba(255,255,255,.78); }
+        .gv-ok { position: absolute; right: 20px; bottom: 24px; width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; transition: transform .25s ease; }
+        .gv-kulup:hover .gv-ok { transform: translateX(4px); }
+        .gv-kulup:focus-visible { outline: 2px solid #ff6a1a; outline-offset: 3px; }
+
+        /* Platform / sporcu / PIN ekranı — eğitmen paneli açık değilken */
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) {
+            --text-main: #efebe5; --text-muted: #b3aca2; --border-color: rgba(255,255,255,0.16); --bg-panel: rgba(22,20,18,0.72);
+            background: linear-gradient(180deg, rgba(14,12,10,0.6), rgba(14,12,10,0.35) 35%, rgba(14,12,10,0.85)), url('/hero/bulanik.jpg') center 30% / cover, #141210;
+            color: var(--text-main); font-family: 'Archivo', sans-serif;
+        }
+        #giris-ekrani:has(#giris-lig[style*="display: flex"]) .gv-vizor { display: none; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .kurumsal-logo-img { width: 64px; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 6px 16px rgba(0,0,0,.4)); }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .kurumsal-logo::after { display: none; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .kurumsal-logo { padding: 0; margin: 0; height: 70px; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) > div[style*="font-size:10px"] { font: 400 10px/1.4 'Roboto Mono', ui-monospace, monospace; color: rgba(255,255,255,.45) !important; text-align: center; order: 99; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) h2#giris-baslik { font: 900 clamp(30px, 6vw, 52px)/.95 'Archivo', sans-serif; letter-spacing: -.01em;
+            text-transform: uppercase; color: #fff; margin: 4px 0 6px; text-shadow: 0 4px 24px rgba(0,0,0,.4); }
+        .gv-vizor { --w: min(300px, 74vw); position: relative; width: calc(var(--w) * 1.24); height: calc(var(--w) * .32 * 1.5); display: grid; place-items: center; margin: 6px 0 2px; }
+        .gv-pencere { position: relative; width: var(--w); height: calc(var(--w) * .32); overflow: hidden; border: 1.5px solid rgba(255,255,255,.75); border-radius: 2px; box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+        .gv-pencere img { position: absolute; max-width: none; width: calc(var(--w) / .30); left: calc(var(--w) * -1.833); top: calc(var(--w) * -.979); }
+        .gv-vizor i { position: absolute; width: calc(var(--w) * .11); height: calc(var(--w) * .11); border: 0 solid #fff; animation: gvKilit 3.6s ease-in-out infinite; }
+        .gv-vizor i:nth-of-type(1) { left: 0; top: 0; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 6px; }
+        .gv-vizor i:nth-of-type(2) { right: 0; top: 0; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 6px; }
+        .gv-vizor i:nth-of-type(3) { left: 0; bottom: 0; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 6px; }
+        .gv-vizor i:nth-of-type(4) { right: 0; bottom: 0; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 6px; }
+        @keyframes gvKilit { 0%, 70%, 100% { transform: scale(1); opacity: 1; } 78% { transform: scale(1.18); opacity: .5; } 88% { transform: scale(.94); opacity: 1; } }
+        .gv-etiket { position: absolute; left: 0; bottom: -22px; font: 500 10.5px/1 'Roboto Mono', ui-monospace, monospace; letter-spacing: .16em; color: #fff; }
+        .gv-etiket::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff6a1a; box-shadow: 0 0 10px #ff6a1a; margin-right: 8px; }
+        @media (prefers-reduced-motion: reduce) { .gv-vizor i { animation: none; } }
+        #giris-ekrani .gv-vizor + h2 { margin-top: 20px; }
+
+        /* Platform kartları: vizör köşeli cam kart + çizgi ikon */
+        #giris-ekrani .giris-secim-btn, body.light-theme #giris-ekrani .giris-secim-btn {
+            max-width: 380px; display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; align-items: center; padding: 16px 44px 16px 16px;
+            background: rgba(22,20,18,0.62); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+            color: #fff; font: 800 17px/1.15 'Archivo', sans-serif; letter-spacing: .01em; text-transform: uppercase; }
+        #giris-ekrani .giris-secim-btn span { grid-column: 2; font: 400 11px/1.45 'Roboto Mono', ui-monospace, monospace; color: rgba(255,255,255,.66); text-transform: none; margin-top: 4px; letter-spacing: 0; }
+        #giris-ekrani .giris-secim-btn .gv-ikon { grid-row: span 2; width: 34px; height: 34px; fill: none; stroke: #ff6a1a; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+        #giris-ekrani .giris-secim-btn::before { --k: 16px; --i: 6px; }
+        #giris-ekrani .giris-secim-btn:hover, #giris-ekrani .giris-secim-btn:focus-visible { border-color: rgba(255,255,255,.4); color: #fff; box-shadow: 0 14px 34px rgba(0,0,0,.45); }
+        #giris-ekrani .giris-secim-btn:hover::before, #giris-ekrani .giris-secim-btn:focus-visible::before { opacity: 1; transform: none; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) #btn-tema-degistir { background: rgba(22,20,18,.6); color: #efebe5; border-color: rgba(255,255,255,.2); font-family: 'Roboto Mono', monospace; font-weight: 500; letter-spacing: .08em; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) #giris-sporcu input[type="text"] { background: rgba(14,12,10,.55) !important; color: #fff !important; border-color: rgba(255,255,255,.22) !important; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .gs-kisi, #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .gs-not { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .gs-giris { background: rgba(14,12,10,.55); color: #fff; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) { --accent-orange: #ff6a1a; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .kurumsal-logo { display: none; }
+        #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) h2#giris-baslik { margin-top: 30px; }
+        .gv-vizor { --w: min(300px, 58vw); }
+        #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(240px, 50vw); }
+        @media (max-width: 600px) { #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(200px, 46vw); margin-top: 44px; } }

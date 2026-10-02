@@ -69,7 +69,7 @@ export async function karisikSinifArac(p, aracId, fnAd) {
     const sec = (await api('/api/athletes')).d.athletes.filter((a) => !a.pasif && !silinen.has(a.grup + '|' + a.ad)).slice(0, 8).map((a) => ({ g: a.grup, ad: a.ad }));
     await api('/api/meta/karisik_sinif_liste_varsayilan', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(sec) }) });
   }
-  await p.locator('text=EĞİTMEN PLATFORMU').click(); await p.waitForTimeout(600);
+  await p.locator("button[onclick=\"platformSec('egitmen')\"]").click(); await p.waitForTimeout(600);
   await p.locator('#km-giris-btn').click();
   await p.locator('button:has-text("Derse Devam Et")').first().waitFor({ timeout: 40000 }).catch(() => {});
   const k = p.locator('div', { hasText: 'Ana Salon' }).filter({ hasText: 'sporcu seçili' }).last();
