@@ -83,6 +83,7 @@ function flBaslangicHTML() {
         </div>
         <div class="fl-butonlar">
             <button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Uygulamada çek</button>
+            <button class="fl-btn" onclick="flCanliAc('ayna')">Canlı açılar</button>
             <label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Videodan seç</label>
         </div>
         <p class="fl-hazirlik" id="fl-hazirlik">${flHazirlikMetin()}</p>
@@ -280,6 +281,7 @@ function flOynatarakAnaliz(v, sure) {
 function flTs(ms) { let ts = Math.max(Math.round(ms), (_fl.sonTs || 0) + 1); _fl.sonTs = ts; return ts; }
 function flCanliHTML() {
     let c = _fl.canli || {};
+    if (c.mod === 'ayna') return flAynaHTML(c);
     return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas>
             <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
@@ -293,15 +295,107 @@ function flCanliHTML() {
         <p class="fl-sessiz">Önce sporcu kadraja tam girsin ("Kadraj tamam" yazısı), sonra kırmızı düğmeye bas. 5-10 atış çekip durdur; sonuç hemen çıkar.</p>
     </div>`;
 }
-async function flCanliAc() {
+// ---------------------------------------------------------------- CANLI AÇILAR (ayna) + elle açı ölçer
+// Kullanıcı (2026-10-03): "ortamda internet yok ama sporcuya en azından açıları göstermek istiyorum, analiz yapmasan da".
+// Kayıt/analiz yok. Yapay zekâ telefondaysa iskelet + yay kolu / çekiş dirseği / omuz eğimi canlı yazılır. "Dondur" ile
+// görüntü durur; "Açı" (3 nokta) ve "Eğim" (2 nokta, yataya göre) ile ekrana dokunarak ELLE ölçülür — bu kısım hiçbir
+// şey indirmeden, yapay zekâ olmadan da çalışır. Noktalar sürüklenebilir.
+function flAynaHTML(c) {
+    let o = _fl.olcu || {};
+    return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}">
+        <div class="fl-canli-sahne"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
+        </div>
+        <div class="fl-ayna-araclar">
+            <button class="fl-btn ${o.arac === 'aci' ? 'secili' : ''}" data-arac="aci" onclick="flOlcuArac('aci')">Açı ölç</button>
+            <button class="fl-btn ${o.arac === 'egim' ? 'secili' : ''}" data-arac="egim" onclick="flOlcuArac('egim')">Eğim</button>
+            <button class="fl-btn" onclick="flOlcuTemizle()">Temizle</button>
+        </div>
+        <div class="fl-canli-kontrol">
+            <button class="fl-btn" onclick="flCanliVazgec()">Kapat</button>
+            <button class="fl-dondur-btn ${c.donuk ? 'donuk' : ''}" onclick="flDondur()">${c.donuk ? 'Devam' : 'Dondur'}</button>
+            <button class="fl-btn" onclick="flKameraCevir()">Kamerayı çevir</button>
+        </div>
+        <p class="fl-sessiz">Dondurup sporcuya göster. Açı ölç: omuz, dirsek, bilek gibi 3 noktaya sırayla dokun. Eğim: 2 noktaya dokun (yataya göre). Noktaları sürükleyerek düzelt.</p>
+    </div>`;
+}
+function flDondur() {
+    let c = _fl.canli, v = document.getElementById('fl-canli-video'); if (!c || !v) return;
+    c.donuk = !c.donuk;
+    if (c.donuk) v.pause(); else { v.play().catch(() => {}); flOlcuTemizle(true); if (_fl.olcu) { _fl.olcu.arac = null; flOlcuArac(null); } }
+    let b = document.querySelector('.fl-dondur-btn'); if (b) { b.textContent = c.donuk ? 'Devam' : 'Dondur'; b.classList.toggle('donuk', c.donuk); }
+    let ro = document.getElementById('fl-canli-sure'); if (ro) ro.textContent = c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR';
+}
+function flOlcuArac(tip) {
+    _fl.olcu = _fl.olcu || { ogeler: [], taslak: [] };
+    _fl.olcu.arac = tip && _fl.olcu.arac !== tip ? tip : null; _fl.olcu.taslak = [];
+    if (_fl.olcu.arac && _fl.canli && !_fl.canli.donuk) flDondur(); // hareketli görüntüde ölçülmez
+    document.querySelectorAll('.fl-ayna-araclar .fl-btn[data-arac]').forEach(b => b.classList.toggle('secili', b.dataset.arac === _fl.olcu.arac));
+    let cv = document.getElementById('fl-olcu-katman'); if (cv) cv.classList.toggle('aktif', !!_fl.olcu.arac);
+    flCanliIpucu(_fl.olcu.arac ? (_fl.olcu.arac === 'aci' ? '3 noktaya sırayla dokun (ör. omuz → dirsek → bilek)' : '2 noktaya dokun (ör. iki omuz)') : '');
+    flOlcuCiz();
+}
+function flOlcuTemizle(sessiz) { if (_fl.olcu) { _fl.olcu.ogeler = []; _fl.olcu.taslak = []; } flOlcuCiz(); if (!sessiz) flCanliIpucu(_fl.olcu && _fl.olcu.arac ? (_fl.olcu.arac === 'aci' ? '3 noktaya sırayla dokun' : '2 noktaya dokun') : ''); }
+function flOlcuBagla() {
+    let cv = document.getElementById('fl-olcu-katman'); if (!cv || cv._bagli) return; cv._bagli = true;
+    let surukle = null;
+    const nokta = e => { let r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    cv.addEventListener('pointerdown', e => {
+        let o = _fl.olcu; if (!o || !o.arac) return; e.preventDefault();
+        let q = nokta(e), en = null;
+        o.ogeler.forEach((g, gi) => g.n.forEach((n, ni) => { if (Math.hypot(n[0] - q[0], n[1] - q[1]) < 22) en = [gi, ni]; }));
+        if (en) { surukle = en; try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
+        o.taslak.push(q);
+        let gerek = o.arac === 'aci' ? 3 : 2;
+        if (o.taslak.length >= gerek) { o.ogeler.push({ tip: o.arac, n: o.taslak.slice(0, gerek) }); o.taslak = []; }
+        flOlcuCiz();
+    });
+    cv.addEventListener('pointermove', e => { if (!surukle) return; _fl.olcu.ogeler[surukle[0]].n[surukle[1]] = nokta(e); flOlcuCiz(); });
+    const birak = () => { surukle = null; };
+    cv.addEventListener('pointerup', birak); cv.addEventListener('pointercancel', birak);
+}
+function flOlcuCiz() {
+    let cv = document.getElementById('fl-olcu-katman'), v = document.getElementById('fl-canli-video'); if (!cv || !v) return;
+    flOlcuBagla();
+    let r = v.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (cv.width !== Math.round(r.width * dpr) || cv.height !== Math.round(r.height * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px'; }
+    let x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, r.width, r.height);
+    let o = _fl.olcu; if (!o) return;
+    let etiket = (q, yazi) => { x.font = '700 16px "Roboto Mono", monospace'; let w = x.measureText(yazi).width + 14; x.fillStyle = '#ff6a1a'; x.fillRect(q[0] + 12, q[1] - 26, w, 24); x.fillStyle = '#fff'; x.fillText(yazi, q[0] + 19, q[1] - 8); };
+    let nokta = q => { x.fillStyle = '#fff'; x.beginPath(); x.arc(q[0], q[1], 7, 0, 7); x.fill(); x.strokeStyle = '#ff6a1a'; x.lineWidth = 3; x.stroke(); };
+    o.ogeler.forEach(g => {
+        x.strokeStyle = '#ff6a1a'; x.lineWidth = 3; x.beginPath(); x.moveTo(g.n[0][0], g.n[0][1]); g.n.slice(1).forEach(q => x.lineTo(q[0], q[1])); x.stroke();
+        if (g.tip === 'aci') {
+            let a = flAci(g.n[0], g.n[1], g.n[2]);
+            let b1 = Math.atan2(g.n[0][1] - g.n[1][1], g.n[0][0] - g.n[1][0]), b2 = Math.atan2(g.n[2][1] - g.n[1][1], g.n[2][0] - g.n[1][0]), fark = ((b2 - b1 + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+            x.beginPath(); x.arc(g.n[1][0], g.n[1][1], 26, b1, b1 + fark, fark < 0); x.stroke();
+            etiket(g.n[1], Math.round(a || 0) + '°');
+        } else {
+            let dx = g.n[1][0] - g.n[0][0], dy = g.n[1][1] - g.n[0][1], e = Math.abs(Math.atan2(-dy, Math.abs(dx)) * 180 / Math.PI);
+            x.setLineDash([6, 6]); x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(g.n[0][0], g.n[0][1]); x.lineTo(g.n[0][0] + (dx >= 0 ? 1 : -1) * Math.hypot(dx, dy), g.n[0][1]); x.stroke(); x.setLineDash([]);
+            etiket([(g.n[0][0] + g.n[1][0]) / 2, (g.n[0][1] + g.n[1][1]) / 2], String(Math.round(e * 10) / 10).replace('.', ',') + '° eğim');
+        }
+        g.n.forEach(nokta);
+    });
+    o.taslak.forEach(nokta);
+    if (o.taslak.length > 1) { x.strokeStyle = 'rgba(255,106,26,.7)'; x.lineWidth = 2; x.beginPath(); x.moveTo(o.taslak[0][0], o.taslak[0][1]); o.taslak.slice(1).forEach(q => x.lineTo(q[0], q[1])); x.stroke(); }
+}
+async function flCanliAc(mod) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { _fl.durum = 'hata'; _fl.mesaj = 'Bu tarayıcı uygulama içinden kamera açmayı desteklemiyor. "Videodan seç" ile telefonun kamerasında çektiğin videoyu kullan.'; return kmFormLabCiz(); }
     _fl.sonuc = null; _fl.kayitAnahtar = null;
-    _fl.durum = 'canli'; _fl.canli = { kayit: false, kareler: [], bas: 0, yon: _fl.canliYon || 'environment', ipucu: 'Kamera açılıyor…', atisSay: 0, yakinBas: null };
+    _fl.durum = 'canli'; _fl.canli = { mod: mod === 'ayna' ? 'ayna' : 'kayit', kayit: false, kareler: [], bas: 0, yon: _fl.canliYon || 'environment', ipucu: 'Kamera açılıyor…', atisSay: 0, yakinBas: null };
+    _fl.olcu = { ogeler: [], taslak: [], arac: null };
     _fl.tamEkran = true; kmFormLabCiz();
     flTamIste(document.querySelector('.fl-canli')); // dokunuşun içinde (tarayıcı tam ekranı yalnız kullanıcı hareketiyle açar)
     try {
         await flKameraBaslat();
         flCanliIpucu('Yapay zekâ hazırlanıyor… (ilk seferde ~13 MB iner)');
+        if (_fl.canli.mod === 'ayna') { // açılar modu yapay zekâsız da açılır: elle ölçer her zaman çalışır
+            try { await flModelYukle(); flCanliIpucu(''); flCanliDongu(); }
+            catch (e) { _fl.canli.aiYok = true; flCanliIpucu('Yapay zekâ bu telefonda yok — Dondur, sonra "Açı ölç" ile elle ölç'); }
+            return;
+        }
         await flModelYukle();
         flCanliIpucu('');
         flCanliDongu();
@@ -428,7 +522,7 @@ function flCanliDongu() {
         _fl.canliRaf = requestAnimationFrame(adim);
         let v = document.getElementById('fl-canli-video'), cv = document.getElementById('fl-canli-katman');
         if (!v) { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; return; } // Karışık Sınıf kapandı → kamera kapansın
-        if (!cv || v.readyState < 2 || !v.videoWidth || !_fl.pose) return;
+        if (!cv || v.readyState < 2 || !v.videoWidth || !_fl.pose || _fl.canli.donuk) return;
         let simdi = performance.now(); if (simdi - son < 85) return; son = simdi;
         let c = _fl.canli, W = v.videoWidth, H = v.videoHeight, ts = flTs(simdi), kare = { t: (simdi - c.bas) / 1000, p: null, h: null };
         let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0];
@@ -474,6 +568,17 @@ function flCanliCiz(v, cv, kare, W, H) {
     let mes = i => Math.hypot(p[i][0] * W - ag[0], p[i][1] * H - ag[1]) / Spx;
     let sagMi = mes(20) <= mes(19), ci = sagMi ? 20 : 19, yay = sagMi ? [11, 13, 15] : [12, 14, 16];
     let yayAci = flAci(...yay.map(i => [p[i][0] * W, p[i][1] * H])), yakin = mes(ci) < 0.75 && yayAci > 145;
+    // açılar: eklem yanına + sol üstte pano (kayıt ve açılar modunda; açılar modunda büyük)
+    let cek = sagMi ? [12, 14, 16] : [11, 13, 15], cekAci = flAci(...cek.map(i => [p[i][0] * W, p[i][1] * H]));
+    let yO = [p[yay[0]][0] * W, p[yay[0]][1] * H], cO = [p[cek[0]][0] * W, p[cek[0]][1] * H], egim = Math.atan2(cO[1] - yO[1], Math.abs(cO[0] - yO[0]) || 1) * 180 / Math.PI;
+    let jet = (q, yazi) => { x.font = '700 13px "Roboto Mono", monospace'; let w = x.measureText(yazi).width + 10; x.fillStyle = 'rgba(10,10,10,.72)'; x.fillRect(q[0] + 8, q[1] - 20, w, 18); x.fillStyle = '#9ec5ff'; x.fillText(yazi, q[0] + 13, q[1] - 7); };
+    if (yayAci != null) jet(P(yay[1]), Math.round(yayAci) + '°');
+    if (cekAci != null) jet(P(cek[1]), Math.round(cekAci) + '°');
+    let pano = [['YAY KOLU', yayAci != null ? Math.round(yayAci) + '°' : '—'], ['ÇEKİŞ DİRSEĞİ', cekAci != null ? Math.round(cekAci) + '°' : '—'], ['OMUZ EĞİMİ', Math.abs(Math.round(egim)) + '°' + (Math.abs(egim) >= 3 ? (egim > 0 ? ' yay omzu ↑' : ' çekiş omzu ↑') : '')]];
+    let buyuk = c.mod === 'ayna', px0 = 10, py0 = 48, sat = buyuk ? 34 : 24;
+    x.fillStyle = 'rgba(10,10,10,.72)'; x.fillRect(px0, py0, buyuk ? 300 : 236, pano.length * sat + 10);
+    pano.forEach(([ad, d], i) => { let y = py0 + 8 + i * sat; x.font = '500 10px "Roboto Mono", monospace'; x.fillStyle = 'rgba(255,255,255,.65)'; x.fillText(ad, px0 + 10, y + 12); x.font = (buyuk ? '700 21px' : '700 15px') + ' "Roboto Mono", monospace'; x.fillStyle = '#fff'; x.fillText(d, px0 + 112, y + (buyuk ? 22 : 14)); });
+    if (buyuk) { if (!(_fl.olcu && _fl.olcu.arac)) flCanliIpucu(ipucu.replace(' — kayda basabilirsin', '')); return; }
     let Cp = P(ci), bo = 30, renk = yakin ? '#ff9a3c' : 'rgba(255,255,255,.85)';
     x.strokeStyle = renk; x.lineWidth = 2.5;
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => { let cx = Cp[0] + sx * bo / 2, cy = Cp[1] + sy * bo / 2; x.beginPath(); x.moveTo(cx, cy - sy * 11); x.lineTo(cx, cy); x.lineTo(cx - sx * 11, cy); x.stroke(); });
@@ -943,6 +1048,13 @@ function flCss() {
 .fl-canli.fl-tam .fl-btn{ color:#fff; border-color:rgba(255,255,255,.3); }
 .fl-sahne.fl-tam{ position:fixed; inset:0; z-index:40000; border-radius:0; background:#000; }
 .fl-sahne.fl-tam video{ max-height:none; width:100%; height:100%; object-fit:contain; }
+.fl-canli-sahne #fl-olcu-katman{ position:absolute; left:0; top:0; pointer-events:none; touch-action:none; }
+.fl-canli-sahne #fl-olcu-katman.aktif{ pointer-events:auto; cursor:crosshair; }
+.fl-ayna-araclar{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.fl-ayna-araclar .fl-btn.secili{ border-color:var(--fl-or); background:rgba(255,106,26,.25); }
+.fl-canli.fl-tam .fl-ayna-araclar .fl-btn{ color:#fff; }
+.fl-dondur-btn{ min-width:120px; min-height:56px; border-radius:28px; border:3px solid #fff; background:rgba(255,255,255,.12); color:#fff; font:800 16px/1 'Archivo',sans-serif; cursor:pointer; }
+.fl-dondur-btn.donuk{ background:#ff6a1a; border-color:#ff6a1a; }
 .fl-kayit-btn{ width:76px; height:76px; border-radius:50%; border:4px solid #fff; background:transparent; display:grid; place-items:center; cursor:pointer; padding:0; }
 .fl-kayit-btn i{ width:56px; height:56px; border-radius:50%; background:#e5383b; transition:all .2s ease; }
 .fl-kayit-btn.kayitta i{ width:28px; height:28px; border-radius:6px; }
