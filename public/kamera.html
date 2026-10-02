@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>DAĞ Form Lab · Telefon kamerası</title>
+<link rel="icon" href="/favicon.png">
+<style>
+  /* Form Lab "Telefondan yayın al" — telefon tarafı (2026-10-03). Bilgisayardaki Form Lab'ın QR kodu bu sayfayı açar;
+     kamera görüntüsü WebRTC ile doğrudan bilgisayara akar. Giriş gerekmez; oda kodu + gizli anahtar adresin # kısmında. */
+  :root{ --or:#ff6a1a; --ink:#efebe5; --soft:#a59e94; }
+  *{ box-sizing:border-box; margin:0; }
+  html, body{ height:100%; background:#000; color:var(--ink); font-family:-apple-system, 'Segoe UI', Roboto, sans-serif; }
+  body{ display:flex; flex-direction:column; padding:max(10px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom)); gap:10px; }
+  .sahne{ position:relative; flex:1; min-height:0; border-radius:10px; overflow:hidden; background:#111; }
+  video{ width:100%; height:100%; object-fit:contain; display:block; background:#000; }
+  .ust{ position:absolute; left:10px; right:10px; top:10px; display:flex; justify-content:space-between; gap:8px; }
+  .rozet{ font:700 12px/1 ui-monospace, Menlo, monospace; letter-spacing:.08em; background:rgba(10,10,10,.75); color:#fff; padding:8px 10px; border-radius:6px; }
+  .rozet.bagli{ background:#198754; } .rozet.hata{ background:#c0392b; }
+  .durum{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:max-content; max-width:92%; text-align:center; font:600 14px/1.35 ui-monospace, Menlo, monospace; background:rgba(10,10,10,.78); padding:10px 14px; border-radius:8px; }
+  .kontrol{ display:flex; gap:10px; }
+  button{ flex:1; min-height:52px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:transparent; color:#fff; font:700 15px/1 -apple-system, 'Segoe UI', sans-serif; }
+  button.ana{ background:var(--or); border-color:var(--or); }
+  .not{ font:400 12px/1.45 ui-monospace, Menlo, monospace; color:var(--soft); text-align:center; }
+</style>
+</head>
+<body>
+  <div class="sahne">
+    <video id="v" playsinline muted autoplay></video>
+    <div class="ust"><span class="rozet" id="rozet">HAZIRLANIYOR</span><span class="rozet">DAĞ · FORM LAB</span></div>
+    <div class="durum" id="durum">Kamera açılıyor…</div>
+  </div>
+  <div class="kontrol">
+    <button id="cevir">Kamerayı çevir</button>
+    <button id="yeniden" class="ana">Yeniden bağlan</button>
+  </div>
+  <p class="not">Telefonu sehpaya koy, ekranı kapatma. Görüntü doğrudan bilgisayara gider; hiçbir yere kaydedilmez.</p>
+<script>
+(function () {
+  var p = new URLSearchParams(location.hash.slice(1)), KOD = p.get('k'), GIZLI = p.get('g');
+  var v = document.getElementById('v'), durumEl = document.getElementById('durum'), rozet = document.getElementById('rozet');
+  var yon = 'environment', akis = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null;
+  var ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
+  function durum(m, tip) { durumEl.textContent = m; rozet.className = 'rozet' + (tip ? ' ' + tip : ''); rozet.textContent = tip === 'bagli' ? '● BİLGİSAYARA BAĞLI' : tip === 'hata' ? 'BAĞLANTI YOK' : 'BAĞLANIYOR'; }
+  function api(yol, opt) { return fetch('/api/yayin/' + KOD + yol + (yol.indexOf('?') < 0 ? '?' : '&') + 'g=' + encodeURIComponent(GIZLI), opt).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
+  function bekle(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function kamera() {
+    var yeni = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: yon, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } });
+    if (akis) akis.getTracks().forEach(function (t) { t.stop(); });
+    akis = yeni; v.srcObject = akis; v.play().catch(function () {});
+    if (pc) { var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (s) await s.replaceTrack(akis.getVideoTracks()[0]); }
+  }
+  async function ekranAcikKalsin() { try { if ('wakeLock' in navigator) kilit = await navigator.wakeLock.request('screen'); } catch (e) {} }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') ekranAcikKalsin(); });
+  async function baglan() {
+    clearTimeout(sorgu);
+    if (pc) { try { pc.close(); } catch (e) {} }
+    durum('Bilgisayara bağlanılıyor…');
+    pc = new RTCPeerConnection({ iceServers: ICE });
+    akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
+    kanal = pc.createDataChannel('komut');
+    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); } catch (er) {} };
+    pc.onconnectionstatechange = function () {
+      if (pc.connectionState === 'connected') durum('Görüntü bilgisayarda. Telefonu sabit tut.', 'bagli');
+      else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') { durum('Bağlantı koptu — yeniden deneniyor…', 'hata'); setTimeout(function () { if (pc && pc.connectionState !== 'connected') baglan(); }, 2500); }
+    };
+    await pc.setLocalDescription(await pc.createOffer());
+    await new Promise(function (r) { if (pc.iceGatheringState === 'complete') return r(); var z = setTimeout(r, 3000); pc.addEventListener('icegatheringstatechange', function () { if (pc.iceGatheringState === 'complete') { clearTimeout(z); r(); } }); });
+    var y = await api('/teklif', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sdp: pc.localDescription.sdp }) });
+    surum = y.surum;
+    durum('Bilgisayarın cevabı bekleniyor… (Form Lab açık olmalı)');
+    var bu = pc;
+    for (var i = 0; i < 180 && bu === pc; i++) {
+      await bekle(1000);
+      var d = await api('').catch(function () { return null; });
+      if (d && d.cevap && d.cevapSurum === surum) { await pc.setRemoteDescription({ type: 'answer', sdp: d.cevap }); return; }
+    }
+    if (bu === pc) durum('Bilgisayar cevap vermedi. Form Lab\'da QR kodu açık mı? "Yeniden bağlan"a bas.', 'hata');
+  }
+  async function cevir() { yon = yon === 'environment' ? 'user' : 'environment'; try { await kamera(); } catch (e) { durum('Kamera değiştirilemedi'); } }
+  document.getElementById('cevir').onclick = cevir;
+  document.getElementById('yeniden').onclick = function () { baglan().catch(hataGoster); };
+  function hataGoster(e) { durum(e && e.name === 'NotAllowedError' ? 'Kamera izni verilmedi. Ayarlar › Safari › Kamera › İzin Ver, sonra sayfayı yenile.' : 'Bağlanılamadı: ' + (e && e.message || e), 'hata'); }
+  if (!KOD || !GIZLI) { durum('Bağlantı bilgisi eksik. Bilgisayardaki QR kodu yeniden okut.', 'hata'); return; }
+  if (!window.RTCPeerConnection || !navigator.mediaDevices) { durum('Bu tarayıcı canlı yayını desteklemiyor. Safari ya da Chrome ile aç.', 'hata'); return; }
+  kamera().then(function () { ekranAcikKalsin(); return baglan(); }).catch(hataGoster);
+})();
+</script>
+</body>
+</html>

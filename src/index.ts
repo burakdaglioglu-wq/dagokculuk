@@ -41,6 +41,7 @@ import { registerTanitimRoutes } from "./routes/tanitim";
 import { registerIhtiyacRoutes } from "./routes/ihtiyac";
 import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
 import { registerKmOrtakRoutes } from "./routes/kmOrtak";
+import { registerYayinRoutes } from "./routes/yayin";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
@@ -84,6 +85,7 @@ registerTanitimRoutes(router);
 registerIhtiyacRoutes(router);
 registerTeknikAnalizRoutes(router);
 registerKmOrtakRoutes(router);
+registerYayinRoutes(router);
 registerGirisRoutes(router, "/api/giris", (env) => env.DB);
 registerGirisRoutes(router, "/api/milo/giris", (env) => env.DB_MILO);
 
@@ -118,6 +120,10 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   "/api/tanitim/ziyaret",
   "/api/ihtiyac",
   "/api/milo/sporcu-girisi",
+  // Form Lab telefondan yayın: telefon sayfası (kamera.html) oturumsuz; her istek oda kodu + gizli anahtar ister.
+  "/api/yayin",
+  "/api/yayin/:kod/teklif",
+  "/api/yayin/:kod/cevap",
   "/api/ders-icerikleri/:id/kullanim",
   "/api/ders-icerikleri/:id/degerlendir",
   "/api/milo/ders-icerikleri/:id/kullanim",

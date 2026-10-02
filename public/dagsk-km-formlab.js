@@ -71,7 +71,7 @@ function flSporcuKayitlari(key) {
     return Object.keys(d).filter(k => k.indexOf(key + '|') === 0 && d[k] && !d[k].sil).map(k => d[k]).sort((a, b) => (b.t || 0) - (a.t || 0));
 }
 function flBaslangicHTML() {
-    return `<div class="fl-kutu fl-basla">
+    return `<div id="fl-tel-yer">${flTelHTML()}</div><div class="fl-kutu fl-basla">
         <div class="fl-cekim">
             <svg viewBox="0 0 220 120" aria-hidden="true" class="fl-cekim-cizim"><rect x="8" y="34" width="34" height="56" rx="5"/><circle cx="25" cy="62" r="9"/><path d="M42 62h56" stroke-dasharray="4 5"/><circle cx="150" cy="30" r="10"/><path d="M150 40v40M150 80l-12 32M150 80l12 32M150 52l-40 0M150 52l26 10"/><path d="M110 30q-8 22 0 44" /><text x="25" y="108">sehpa</text><text x="150" y="16">sporcu</text></svg>
             <ul class="fl-ipucu">
@@ -84,6 +84,7 @@ function flBaslangicHTML() {
         <div class="fl-butonlar">
             <button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Uygulamada çek</button>
             <button class="fl-btn" onclick="flCanliAc('ayna')">Canlı açılar</button>
+            <button class="fl-btn" onclick="flTelefonAc()" ${_fl.tel ? 'disabled' : ''}>Telefondan yayın al</button>
             <label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Videodan seç</label>
         </div>
         <p class="fl-hazirlik" id="fl-hazirlik">${flHazirlikMetin()}</p>
@@ -284,9 +285,10 @@ function flCanliHTML() {
     if (c.mod === 'ayna') return flAynaHTML(c);
     return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
+        <div class="fl-kamera-satir">${flKameraSecHTML()}</div>
         <div class="fl-canli-kontrol">
             <button class="fl-btn" onclick="flCanliVazgec()">Vazgeç</button>
             <button class="fl-kayit-btn ${c.kayit ? 'kayitta' : ''}" id="fl-kayit-btn" onclick="flKayitDugme()" aria-label="${c.kayit ? 'Kaydı bitir ve analiz et' : 'Kaydı başlat'}"><i></i></button>
@@ -304,7 +306,7 @@ function flAynaHTML(c) {
     let o = _fl.olcu || {};
     return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
         <div class="fl-ayna-araclar">
@@ -312,6 +314,7 @@ function flAynaHTML(c) {
             <button class="fl-btn ${o.arac === 'egim' ? 'secili' : ''}" data-arac="egim" onclick="flOlcuArac('egim')">Eğim</button>
             <button class="fl-btn" onclick="flOlcuTemizle()">Temizle</button>
         </div>
+        <div class="fl-kamera-satir">${flKameraSecHTML()}</div>
         <div class="fl-canli-kontrol">
             <button class="fl-btn" onclick="flCanliVazgec()">Kapat</button>
             <button class="fl-dondur-btn ${c.donuk ? 'donuk' : ''}" onclick="flDondur()">${c.donuk ? 'Devam' : 'Dondur'}</button>
@@ -382,7 +385,7 @@ function flOlcuCiz() {
     if (o.taslak.length > 1) { x.strokeStyle = 'rgba(255,106,26,.7)'; x.lineWidth = 2; x.beginPath(); x.moveTo(o.taslak[0][0], o.taslak[0][1]); o.taslak.slice(1).forEach(q => x.lineTo(q[0], q[1])); x.stroke(); }
 }
 async function flCanliAc(mod) {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { _fl.durum = 'hata'; _fl.mesaj = 'Bu tarayıcı uygulama içinden kamera açmayı desteklemiyor. "Videodan seç" ile telefonun kamerasında çektiğin videoyu kullan.'; return kmFormLabCiz(); }
+    if (!flTelBagliMi() && (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)) { _fl.durum = 'hata'; _fl.mesaj = 'Bu tarayıcı uygulama içinden kamera açmayı desteklemiyor. "Videodan seç" ile telefonun kamerasında çektiğin videoyu kullan.'; return kmFormLabCiz(); }
     _fl.sonuc = null; _fl.kayitAnahtar = null;
     _fl.durum = 'canli'; _fl.canli = { mod: mod === 'ayna' ? 'ayna' : 'kayit', kayit: false, kareler: [], bas: 0, yon: _fl.canliYon || 'environment', ipucu: 'Kamera açılıyor…', atisSay: 0, yakinBas: null };
     _fl.olcu = { ogeler: [], taslak: [], arac: null };
@@ -408,10 +411,125 @@ async function flCanliAc(mod) {
         if (_kmAktifSekme === 'formlab') kmFormLabCiz();
     }
 }
+// ---------------------------------------------------------------- TELEFONDAN YAYIN + KAMERA SEÇ
+// Kullanıcı (2026-10-03): "PC'den ana ekrana yansıtıyorum, çocukları telefonla çekiyorum; telefondaki görüntüyü canlı
+// buraya nasıl aktarırım". (1) "Telefondan yayın al": bilgisayar oda açar, QR → telefonda /kamera.html; WebRTC ile
+// görüntü doğrudan bu cihaza akar (sunucu yalnız eşleştirir: /api/yayin). Bağlıyken "Uygulamada çek" ve "Canlı
+// açılar" telefonun görüntüsünü kullanır; "Kamerayı çevir" telefona komut gönderir. (2) "Kamera seç": Iriun / Camo /
+// Windows Phone Link gibi uygulamalarla web kamerası olmuş telefon dahil, bilgisayardaki tüm kameralar.
+const FL_ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
+function flTelBagliMi() { let t = _fl.tel; return !!(t && t.durum === 'bagli' && t.akis && t.akis.getVideoTracks().some(x => x.readyState === 'live')); }
+async function flTelefonAc() {
+    if (!window.RTCPeerConnection) { showToast('Bu tarayıcı canlı yayını desteklemiyor', 'error'); return; }
+    flTelefonKes(true);
+    _fl.tel = { durum: 'hazirlaniyor', surum: 0 }; flTelYaz();
+    try {
+        let r = await fetch('/api/yayin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        let d = await r.json(); Object.assign(_fl.tel, { kod: d.kod, gizli: d.gizli, durum: 'bekliyor' });
+        _fl.tel.link = location.origin + '/kamera.html#k=' + d.kod + '&g=' + d.gizli;
+        flTelYaz(); flTelSorgu();
+    } catch (e) { _fl.tel = { durum: 'hata', mesaj: navigator.onLine === false ? 'Telefondan yayın için internet gerekir (iki cihazın birbirini bulması için). İnternetsizken telefonu Iriun/Camo ile web kamerası yapıp "Kamera seç"ten seçebilirsin.' : 'Yayın odası açılamadı — tekrar dene.' }; flTelYaz(); }
+}
+function flTelefonKes(sessiz) {
+    let t = _fl.tel; if (!t) return;
+    t.bitti = true; clearTimeout(t.sorgu);
+    try { if (t.pc) t.pc.close(); } catch (e) {}
+    if (_fl.akisTel) { _fl.akis = null; _fl.akisTel = false; }
+    _fl.tel = null;
+    if (!sessiz) { flTelYaz(); if (_fl.durum === 'canli' && _fl.canli && !_fl.canli.kayit) flKameraBaslat().catch(() => {}); }
+}
+async function flTelSorgu() {
+    let t = _fl.tel; if (!t || t.bitti || !t.kod) return;
+    try {
+        let r = await fetch('/api/yayin/' + t.kod + '?g=' + t.gizli, { cache: 'no-store' });
+        if (r.status === 404) { if (_fl.tel === t) { _fl.tel = { durum: 'hata', mesaj: 'Yayın odasının süresi doldu (2 saat). Yeniden "Telefondan yayın al"a bas.' }; flTelYaz(); } return; }
+        let d = r.ok ? await r.json() : null;
+        if (d && d.teklif && d.teklifSurum > (t.surum || 0) && _fl.tel === t) await flTelCevapla(t, d.teklif, d.teklifSurum);
+    } catch (e) {}
+    if (_fl.tel === t && !t.bitti) t.sorgu = setTimeout(flTelSorgu, t.durum === 'bagli' ? 4000 : 1000);
+}
+async function flTelCevapla(t, sdp, surum) {
+    t.surum = surum;
+    try { if (t.pc) t.pc.close(); } catch (e) {}
+    let pc = t.pc = new RTCPeerConnection({ iceServers: FL_ICE });
+    pc.ontrack = e => { if (pc === t.pc) t.akis = (e.streams && e.streams[0]) || new MediaStream([e.track]); };
+    pc.ondatachannel = e => { if (pc === t.pc) t.kanal = e.channel; };
+    pc.onconnectionstatechange = () => {
+        if (pc !== t.pc || _fl.tel !== t) return;
+        let s = pc.connectionState, once = t.durum;
+        t.durum = s === 'connected' ? 'bagli' : (s === 'failed' || s === 'disconnected' || s === 'closed') ? 'koptu' : 'baglaniyor';
+        if (t.durum !== once) {
+            flTelYaz();
+            if (t.durum === 'bagli') { showToast('Telefon bağlandı — görüntü artık telefondan geliyor', 'success'); if (_fl.durum === 'canli' && _fl.canli && !_fl.canli.kayit) flKameraBaslat().catch(() => {}); }
+        }
+    };
+    await pc.setRemoteDescription({ type: 'offer', sdp });
+    await pc.setLocalDescription(await pc.createAnswer());
+    await new Promise(r => { if (pc.iceGatheringState === 'complete') return r(); let z = setTimeout(r, 3000); pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(z); r(); } }); });
+    await fetch('/api/yayin/' + t.kod + '/cevap?g=' + t.gizli, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sdp: pc.localDescription.sdp, surum }) });
+    if (t.durum !== 'bagli') { t.durum = 'baglaniyor'; flTelYaz(); }
+}
+function flTelHTML() {
+    let t = _fl.tel; if (!t) return '';
+    if (t.durum === 'hata') return `<div class="fl-kutu fl-tel"><div class="fl-tel-bilgi"><b>Telefondan yayın</b><p>${flEsc(t.mesaj)}</p></div><button class="fl-btn" onclick="_fl.tel=null; flTelYaz()">Tamam</button></div>`;
+    if (t.durum === 'bagli') return `<div class="fl-tel-serit"><i></i><span><b>Telefon bağlı</b> · çekim ve canlı açılar telefonun kamerasını kullanır</span><button class="fl-btn fl-btn-kucuk" onclick="flTelefonKes()">Bağlantıyı kes</button></div>`;
+    let qr = t.link ? 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(t.link) : '';
+    let durumYazi = { hazirlaniyor: 'Yayın odası açılıyor…', bekliyor: 'Telefonun bağlanması bekleniyor…', baglaniyor: 'Telefon bulundu, görüntü bağlanıyor…', koptu: 'Bağlantı koptu — telefonda "Yeniden bağlan"a bas' }[t.durum] || '';
+    return `<div class="fl-kutu fl-tel">
+        <div class="fl-tel-ic">
+            ${qr ? `<img src="${qr}" alt="Telefonla okutulacak QR kod" width="180" height="180">` : '<span class="fl-tel-qr-bos"></span>'}
+            <div class="fl-tel-bilgi">
+                <b>Telefonla okut</b>
+                <ol><li>iPhone kamerasını QR'a tut, çıkan bağlantıya dokun.</li><li>Kameraya izin ver; telefonu sehpaya koy.</li><li>Görüntü buraya gelince "Uygulamada çek" ya da "Canlı açılar"ı aç.</li></ol>
+                ${t.kod ? `<p class="fl-sessiz">Kod: <b>${flEsc(t.kod)}</b> · iki cihaz aynı Wi-Fi'de olursa en akıcı çalışır.</p>` : ''}
+                <p class="fl-tel-durum"><i></i>${flEsc(durumYazi)}</p>
+            </div>
+        </div>
+        <button class="fl-btn" onclick="flTelefonKes()">Vazgeç</button>
+    </div>`;
+}
+function flTelYaz() {
+    if (_fl.durum === 'bos' && typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme === 'formlab' && document.querySelector('.fl-basla')) { kmFormLabCiz(); return; }
+    let yer = document.getElementById('fl-tel-yer');
+    if (yer) yer.innerHTML = flTelHTML();
+    let ro = document.getElementById('fl-canli-tel'); if (ro) ro.style.display = flTelBagliMi() && _fl.akisTel ? '' : 'none';
+}
+// ---- kamera seç
+function flKameraSecHTML() { return `<select id="fl-kamera-sec" class="fl-kamera-sec" onchange="flKameraDegis(this.value)" aria-label="Kamera seç" style="display:none"></select>`; }
+async function flKameraListesi() {
+    let sel = document.getElementById('fl-kamera-sec'); if (!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    let l = []; try { l = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); } catch (e) {}
+    let secenek = [];
+    if (flTelBagliMi()) secenek.push(['tel', 'Telefon (QR ile bağlı)']);
+    secenek.push(flTelBagliMi() ? ['yerel', 'Bu cihazın kamerası'] : ['oto', 'Varsayılan kamera']);
+    l.forEach((d, i) => secenek.push([d.deviceId, d.label || ('Kamera ' + (i + 1))]));
+    let secili = _fl.kamera || (flTelBagliMi() ? 'tel' : 'oto');
+    if (_fl.akisTel) secili = 'tel';
+    sel.innerHTML = secenek.map(([v, a]) => `<option value="${flEsc(v)}" ${v === secili ? 'selected' : ''}>${flEsc(a)}</option>`).join('');
+    sel.style.display = secenek.length > 2 || flTelBagliMi() ? '' : 'none';
+    sel.disabled = !!(_fl.canli && _fl.canli.kayit);
+}
+function flKameraDegis(v) {
+    if (_fl.canli && _fl.canli.kayit) return;
+    _fl.kamera = v; try { localStorage.setItem('dagsk_formlab_kamera', v); } catch (e) {}
+    flKameraBaslat().catch(() => showToast('Bu kamera açılamadı', 'error'));
+}
+function flAkisBirak() { if (_fl.akis && !_fl.akisTel) _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; _fl.akisTel = false; }
 async function flKameraBaslat() {
-    if (_fl.akis) _fl.akis.getTracks().forEach(t => t.stop());
-    _fl.akis = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: _fl.canli.yon, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } });
-    flCanliBagla();
+    if (_fl.kamera == null) { try { _fl.kamera = localStorage.getItem('dagsk_formlab_kamera') || 'oto'; } catch (e) { _fl.kamera = 'oto'; } }
+    let sec = _fl.kamera;
+    // telefon bağlıysa (ve başka kamera seçilmediyse) görüntü telefondan
+    if ((sec === 'tel' || sec === 'oto') && flTelBagliMi()) {
+        if (_fl.akis !== _fl.tel.akis) { flAkisBirak(); _fl.akis = _fl.tel.akis; _fl.akisTel = true; }
+        flCanliBagla(); flKameraListesi(); flTelYaz(); return;
+    }
+    flAkisBirak();
+    let ozel = sec && sec !== 'oto' && sec !== 'tel' && sec !== 'yerel';
+    let video = ozel ? { deviceId: { exact: sec }, width: { ideal: 1280 }, height: { ideal: 720 } } : { facingMode: (_fl.canli && _fl.canli.yon) || 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } };
+    try { _fl.akis = await navigator.mediaDevices.getUserMedia({ audio: false, video }); }
+    catch (e) { if (ozel) { _fl.kamera = 'oto'; return flKameraBaslat(); } throw e; } // seçilen kamera artık yoksa varsayılana dön
+    flCanliBagla(); flKameraListesi(); flTelYaz();
 }
 function flCanliBagla() {
     let v = document.getElementById('fl-canli-video'); if (!v || !_fl.akis) return;
@@ -419,6 +537,7 @@ function flCanliBagla() {
 }
 async function flKameraCevir() {
     if (!_fl.canli || _fl.canli.kayit) return;
+    if (_fl.akisTel) { let k = _fl.tel && _fl.tel.kanal; if (k && k.readyState === 'open') { k.send(JSON.stringify({ cevir: 1 })); showToast('Telefonun kamerası çevriliyor', 'info'); } else showToast('Telefona ulaşılamadı', 'error'); return; }
     _fl.canli.yon = _fl.canliYon = _fl.canli.yon === 'environment' ? 'user' : 'environment';
     try { await flKameraBaslat(); } catch (e) { showToast('Kamera değiştirilemedi', 'error'); }
 }
@@ -458,7 +577,7 @@ function flCanliKapat() {
     flTamCik();
     cancelAnimationFrame(_fl.canliRaf);
     try { if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') _fl.kaydedici.stop(); } catch (e) {}
-    if (_fl.akis) { _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; }
+    flAkisBirak();
 }
 function flCanliVazgec() { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; kmFormLabCiz(); }
 function flKayitDugme() {
@@ -493,7 +612,7 @@ async function flCanliBitir() {
         await bitti;
         if (c.parcalar.length) blob = new Blob(c.parcalar, { type: c.tip || 'video/webm' });
     }
-    if (_fl.akis) { _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; }
+    flAkisBirak();
     flTamCik(); _fl.tamEkran = false;
     if (T < 3) { _fl.durum = 'hata'; _fl.mesaj = 'Çekim çok kısa — en az birkaç atış çek.'; _fl.canli = null; return kmFormLabCiz(); }
     _fl.durum = 'analiz'; _fl.ilerleme = 1; _fl.mesaj = 'Atışlar ayrılıyor…'; kmFormLabCiz();
@@ -1055,6 +1174,21 @@ function flCss() {
 .fl-canli.fl-tam .fl-ayna-araclar .fl-btn{ color:#fff; }
 .fl-dondur-btn{ min-width:120px; min-height:56px; border-radius:28px; border:3px solid #fff; background:rgba(255,255,255,.12); color:#fff; font:800 16px/1 'Archivo',sans-serif; cursor:pointer; }
 .fl-dondur-btn.donuk{ background:#ff6a1a; border-color:#ff6a1a; }
+.fl-kamera-satir{ display:flex; justify-content:center; }
+.fl-kamera-sec{ width:auto; max-width:min(420px, 100%); min-height:40px; padding:0 12px; border-radius:8px; border:1px solid rgba(236,230,220,.25); background:#1b1917; color:#efebe5; font:600 13px/1 'Archivo',sans-serif; }
+.fl-rozet-tel{ background:#198754; }
+.fl-tel{ flex-direction:row; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; }
+.fl-tel-ic{ display:flex; gap:16px; align-items:flex-start; flex:1; min-width:260px; }
+.fl-tel-ic img, .fl-tel-qr-bos{ width:180px; height:180px; border-radius:8px; background:#fff; flex-shrink:0; }
+@media (max-width:560px){ .fl-tel-ic{ flex-direction:column; } }
+.fl-tel-bilgi b{ font-size:16px; }
+.fl-tel-bilgi ol{ margin:8px 0; padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13.5px; line-height:1.45; }
+.fl-tel-bilgi p{ margin:6px 0 0; }
+.fl-tel-durum{ display:flex; align-items:center; gap:8px; font:600 13px/1.3 'Roboto Mono',monospace; }
+.fl-tel-durum i{ width:9px; height:9px; border-radius:50%; background:#ffb703; animation:flNabiz 1.2s ease-in-out infinite; flex-shrink:0; }
+.fl-tel-serit{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 12px; border-radius:10px; border:1px solid rgba(61,220,132,.45); background:rgba(25,135,84,.16); font-size:13.5px; }
+.fl-tel-serit i{ width:9px; height:9px; border-radius:50%; background:#3ddc84; }
+.fl-tel-serit span{ flex:1; min-width:180px; }
 .fl-kayit-btn{ width:76px; height:76px; border-radius:50%; border:4px solid #fff; background:transparent; display:grid; place-items:center; cursor:pointer; padding:0; }
 .fl-kayit-btn i{ width:56px; height:56px; border-radius:50%; background:#e5383b; transition:all .2s ease; }
 .fl-kayit-btn.kayitta i{ width:28px; height:28px; border-radius:6px; }
