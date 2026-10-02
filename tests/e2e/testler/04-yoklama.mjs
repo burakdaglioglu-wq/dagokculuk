@@ -11,9 +11,11 @@ export default async function ({ log }) {
       dogrula(await p.locator('.ya-sekmeler').count(), 'yoklama sekmeleri yok');
       // bellek içi (sunucuya yazılmayan) örnek: bir dersin kayıtlısını dün "gelmedi" yap
       const secilen = await p.evaluate(() => {
-        let d = new Date(); d.setDate(d.getDate() - 1); let iso = kmYaIso(d), gd = d.getDay();
-        let s = _kmYa.slotlar.find((x) => kmYaSlotGunler(x).includes(gd)) || _kmYa.slotlar[0];
+        // dünden geriye, ders programında dersi olan ilk gün (ör. dün Cuma ve Cuma dersi yoksa Perşembe)
+        let d = new Date(), s = null;
+        for (let k = 1; k <= 7 && !s; k++) { d = new Date(); d.setDate(d.getDate() - k); s = _kmYa.slotlar.find((x) => kmYaSlotGunler(x).includes(d.getDay())); }
         if (!s) return null;
+        let iso = kmYaIso(d);
         let k = kmYaSporcular()[0]; s.katilimcilar = [{ grup: k.g, ad: k.ad }];
         if (otomatikYoklamaDB[iso]) delete otomatikYoklamaDB[iso][k.ad];
         kmYaTarihAc(kmYaIso(d)); return k.ad;

@@ -10693,8 +10693,9 @@
             if(_kmAktifSekme === 'reaksiyon' && s !== 'reaksiyon') { try { kmRfxTemizle(); } catch(e) {} }
             // Video & Duruş aracı asıl kamera ekranını buraya taşıyor — başka araca geçerken yerine geri koy.
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
+            if(_kmAktifSekme === 'formlab' && s !== 'formlab') { try { cancelAnimationFrame(_fl.oynatRaf); if(_fl.durum === 'analiz') _fl.iptal = true; } catch(e) {} }
             _kmAktifSekme = s;
-            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10739,6 +10740,7 @@
             else if(s==='performans') kmEkCalistir('dagsk-km-gelisim.js', 'kmPerformansCiz');
             else if(s==='evodev') kmEkCalistir('dagsk-km-gelisim.js', 'kmEvOdevCiz');
             else if(s==='makarali') kmEkCalistir('dagsk-km-gelisim.js', 'kmMakaraliCiz');
+            else if(s==='formlab') kmEkCalistir('dagsk-km-formlab.js', 'kmFormLabCiz');
         }
         // Hafifletme (2026-09-28): yalnızca bu Karışık Sınıf araçlarında kullanılan ek dosyalar (performans,
         // rehber, yoklama ~250 KB) açılışta değil, araç İLK açıldığında yüklenir. Service worker önbelleğinde
@@ -10866,6 +10868,8 @@
             { id:'makarali', ad:'Makaralı Yol', grup:'mavi', icon:'<circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/><path d="M7 10v4a3 3 0 0 0 3 3h4M10 7h4a3 3 0 0 1 3 3v4"/>' },
             // Teknik Koçluk + Milyon Ok (2026-10-02) — kod: public/dagsk-km-kocluk.js
             { id:'kocluk', ad:'Teknik Koçluk', grup:'yesil', icon:'<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/>' },
+            // Form Lab (2026-10-03) — videodan çapa/kol analizi — kod: public/dagsk-km-formlab.js
+            { id:'formlab', ad:'Form Lab', grup:'mavi', icon:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/><circle cx="12" cy="12" r="1.6"/>' },
             { id:'milyonok', ad:'Milyon Ok', grup:'sari', icon:'<path d="M4 20 18 6"/><path d="M14 6h4v4"/><path d="M4 20l2-5M4 20l5-2"/>' },
             { id:'okanaliz', ad:'Ok Analizi', grup:'mavi', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M20 4 13.5 10.5M16 4h4v4"/>' },
             // Rehber araçları (2026-09-28) — kod: public/dagsk-km-rehber.js
@@ -28701,6 +28705,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div></div>`;
         }
         // 📝 Son koç notu (ders kapanışında yazılır — dagsk-km-sablon-ozet.js kocNotuYaz)
+        // Form Lab (2026-10-03) — sporcunun son video analizi özeti (meta form_lab, dagsk-km-formlab.js yazar)
+        function formLabKarneHTML(g, ad) {
+            try {
+                if(typeof kyDepoOku !== 'function') return '';
+                let d = kyDepoOku('form_lab'), on = g + '|' + ad + '|';
+                let l = Object.keys(d).filter(k => k.indexOf(on) === 0 && d[k] && !d[k].sil).map(k => d[k]).sort((a, b) => (b.t || 0) - (a.t || 0));
+                if(!l.length) return '';
+                let s = l[0], onceki = l[1], fark = onceki ? s.puan - onceki.puan : null;
+                return `<div style="border-radius:12px; padding:10px 12px; margin-bottom:10px; border:1px solid var(--border-color);">
+                    <div style="font-size:10.5px; font-weight:800; letter-spacing:.06em; color:var(--text-muted);">FORM LAB · ${esc(s.tarih.split('-').reverse().join('.'))} · ${s.n} atış</div>
+                    <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:baseline; margin-top:4px;">
+                        <b style="font-size:22px;">${s.puan}<span style="font-size:12px; color:var(--text-muted);">/100 tutarlılık</span></b>
+                        ${fark != null ? '<span style="font-size:12px; font-weight:800; color:' + (fark >= 0 ? 'var(--neon-green)' : 'var(--neon-red)') + ';">' + (fark >= 0 ? '▲ ' : '▼ ') + Math.abs(fark) + ' önceki analize göre</span>' : ''}
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">${s.capaFarkMm != null ? 'çapa farkı ≈' + s.capaFarkMm + ' mm · ' : ''}kayma ≈${s.kaymaMm} mm · bekleme ${String(s.tutmaSn).replace('.', ',')} sn${s.yayKol != null ? ' · yay kolu ' + s.yayKol + '°' : ''}</div>
+                    ${(s.bulgular || []).length ? '<div style="font-size:12.5px; margin-top:4px;">Çalışılacak: ' + s.bulgular.map(esc).join(' · ') + '</div>' : ''}</div>`;
+            } catch(e) { return ''; }
+        }
         function kocNotuKarneHTML(g, ad) {
             try {
                 let d = kyDepoOku('koc_notu'), p = g + '|' + ad + '|', son = Object.keys(d).filter(k => k.startsWith(p) && !d[k].sil).sort().pop(); if(!son) return '';
@@ -29031,7 +29053,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let ep = (sp.egitmenPuan !== undefined && sp.egitmenPuan !== '' && sp.egitmenPuan !== null) ? `<span style="color:var(--neon-blue); font-weight:bold;"> • Vurduğu Puan: ${sp.egitmenPuan}</span>` : '';
                     ustBilgi += `<div style="background:rgba(59,130,246,0.1); border:1px solid var(--neon-blue); border-radius:8px; padding:10px; margin-bottom:10px;"><div style="font-size:12px; font-weight:bold; color:var(--neon-blue); margin-bottom:4px;">🎓 Eğitmen Notu${ep}</div><div style="font-size:13px; color:var(--text-main); white-space:pre-wrap;">${(sp.egitmenNotu||'-')}</div></div>`;
                 }
-                try { ustBilgi = milyonOkKartHTML(sp, aktifGrup, ad) + (typeof teknikOdakKarneHTML === 'function' ? teknikOdakKarneHTML(aktifGrup, ad) : '') + kocNotuKarneHTML(aktifGrup, ad) + ustBilgi; } catch(e) {}
+                try { ustBilgi = milyonOkKartHTML(sp, aktifGrup, ad) + (typeof teknikOdakKarneHTML === 'function' ? teknikOdakKarneHTML(aktifGrup, ad) : '') + formLabKarneHTML(aktifGrup, ad) + kocNotuKarneHTML(aktifGrup, ad) + ustBilgi; } catch(e) {}
                 gsAlani.innerHTML = ustBilgi;
                 try { ekipmanKiyaslaGuncelle(); } catch(e) {}
                 if(seriler.length > 0) {
