@@ -28317,7 +28317,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // 15 saniye ekranda kalır — incelemeye vakit var; ✕ ile erken kapatılabilir
             setTimeout(() => { let k = document.getElementById('tavsan-sonuc'); if(k) k.remove(); }, 15000);
         }
+        // 🗣️ Skor girerken çocuğun bu haftaki teknik odağı (Teknik Koçluk aracında seçilir) başlığın hemen altında —
+        // kullanıcı: "Karışık Sınıf içerisinde olsun". Hangi eğitmen skor girerse girsin aynı cümleyi görür.
+        function teknikOdakBandiGuncelle(g, ad) {
+            let baslik = document.getElementById('giris-paneli-baslik'); if(!baslik || !baslik.parentElement) return;
+            let bant = document.getElementById('skor-teknik-odak');
+            if(!bant) { bant = document.createElement('div'); bant.id = 'skor-teknik-odak'; baslik.parentElement.insertAdjacentElement('afterend', bant); }
+            let o = null; try { o = typeof kyDepoOku === 'function' ? kyDepoOku('teknik_odak')[g + '|' + ad] : null; } catch(e) {}
+            if(!o || o.sil || !o.hata) { bant.style.display = 'none'; bant.innerHTML = ''; return; }
+            bant.style.cssText = 'display:block; margin:0 0 10px; padding:9px 12px; border-radius:10px; background:color-mix(in srgb, var(--accent-orange) 12%, transparent); border:1px solid color-mix(in srgb, var(--accent-orange) 35%, transparent);';
+            bant.innerHTML = '<div style="font-size:10px; font-weight:800; letter-spacing:.06em; color:var(--text-muted);">🗣️ BU HAFTANIN ODAĞI · ' + esc(o.hataAd || '') + '</div><div style="font-size:15px; font-weight:800; line-height:1.3; margin-top:2px;">“' + esc(o.cumle || '') + '”</div>';
+        }
         function skorEkraniniAc(ad) {
+            try { teknikOdakBandiGuncelle(aktifGrup, ad); } catch(e) {}
             // ROUTING DÜZELTMESİ: bu fonksiyon "Karışık Sınıf"tan (🎯 SKOR GİR kartı) ve "Kaldığı Yerden
             // Devam Et"ten (yönetici paneli) Skor sekmesi o an ekranda AKTİF DEĞİLKEN çağrılıyordu — skor
             // ızgarası içeride doğru kuruluyordu ama #icerik-skor'da .aktif sınıfı olmadığı için gizli
