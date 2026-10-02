@@ -193,6 +193,14 @@ export function registerAthleteRoutes(router: Router): void {
     return json(result);
   });
 
+  // Silinenlerden geri al (2026-10-02) — tek yol; oturum ister (varsayılan yazma kuralı), işlem günlüğüne yazılır.
+  router.post("/api/athletes/:grup/:ad/restore", async (request, env, params) => {
+    const body = await readJson<{ deviceId?: string }>(request).catch(() => ({} as { deviceId?: string }));
+    const result = await athletesDb.restoreAthlete(env, params.grup, params.ad, Date.now());
+    if (result.restored) await broadcast(env, { type: "master-changed", deviceId: body.deviceId ?? null, payload: {} });
+    return json(result);
+  });
+
   router.delete("/api/athletes/:grup/:ad", async (request, env, params) => {
     // GÜVENLİK (2026-09-28): bu yol PATCH'in öz-servis alanları için PUBLIC_YAZMA_YOLLARI'nda — aynı eşleşme
     // DELETE'i de oturumsuz bırakıyordu (URL'i bilen herkes sporcu silebiliyordu). Silme her zaman oturum ister.

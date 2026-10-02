@@ -310,6 +310,22 @@
       try { yaz(); } catch (e) { try { localStorage.removeItem("okculuk_yedek_son"); yaz(); } catch (e2) {} }
     }, 1500);
   }
+  // Yolda olan gönderimler (anahtar → {imza, soz}) ve basit eşzamanlılık sınırı (bkz. fanOutMasterPayload).
+  const _yoldakiImza = new Map();
+  const SENK_ESZAMANLI = 6;
+  let _senkCalisan = 0;
+  const _senkSira = [];
+  function sirayaAl(is) {
+    return new Promise((coz, red) => { _senkSira.push({ is, coz, red }); senkSiraIlerlet(); });
+  }
+  function senkSiraIlerlet() {
+    while (_senkCalisan < SENK_ESZAMANLI && _senkSira.length) {
+      const { is, coz, red } = _senkSira.shift();
+      _senkCalisan++;
+      let s; try { s = Promise.resolve(is()); } catch (e) { s = Promise.reject(e); }
+      s.then(coz, red).finally(() => { _senkCalisan--; senkSiraIlerlet(); });
+    }
+  }
   async function fanOutMasterPayload(json) {
     const p = JSON.parse(json);
     const deviceId = myDeviceId();
@@ -317,10 +333,23 @@
     // Alan SIRASINDAN bağımsız: sunucudan birleştirilen kayıtların anahtar sırası değişebiliyor — aynı içerik
     // farklı JSON üretip her açılışta "değişmiş" sayılmasın.
     const sirali = (v) => (v && typeof v === "object" ? (Array.isArray(v) ? "[" + v.map(sirali).join(",") + "]" : "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + sirali(v[k])).join(",") + "}") : JSON.stringify(v === undefined ? null : v));
+    // KAR TOPU DÜZELTMESİ (2026-10-02, "yönetici sayfası çok donuyor"): imza ancak sunucu YANIT verince
+    // yazılıyordu. Çok kayıt gönderilirken (yeni cihaz / temizlenmiş tarayıcı / imza deposu dolu → yüzlerce
+    // sporcu) 10 sn'lik tur bitmeden bir sonraki tur başlıyor ve YOLDAKİ kayıtları tekrar kuyruğa ekliyordu —
+    // ölçümde 30 sn'de 4.519 istek, 10 sn'de bir ~200-400 ms donma. Artık yolda olan aynı içerik tekrar
+    // gönderilmez (aynı söz beklenir) ve aynı anda en fazla SENK_ESZAMANLI iş sunucuya gider.
     const gonder = (anahtar, kaynak, is) => {
       const imza = ozet(sirali(kaynak));
       if (_gonderilenImza.get(anahtar) === imza) return;
-      jobs.push(is().then((r) => { _gonderilenImza.set(anahtar, imza); imzaKaydet(); return r; }));
+      const yolda = _yoldakiImza.get(anahtar);
+      if (yolda && yolda.imza === imza) { jobs.push(yolda.soz); return; }
+      // Sunucu "silinmiş" deyip reddettiyse (409) imza YAZILMAZ: bu cihazda geri alma/yeniden ekleme olduysa bir
+      // sonraki turda tekrar gider; gerçekten silinmişse sporcu bir sonraki çekmede bu cihazdan da düşer.
+      const soz = sirayaAl(is).then(
+        (r) => { if (!(r && r.__reddedildi)) { _gonderilenImza.set(anahtar, imza); imzaKaydet(); } return r; },
+      ).finally(() => { const y = _yoldakiImza.get(anahtar); if (y && y.soz === soz) _yoldakiImza.delete(anahtar); });
+      _yoldakiImza.set(anahtar, { imza, soz });
+      jobs.push(soz);
     };
 
     ["buyukler", "yildizlar", "kucukler", "minikler"].forEach((g) => {
@@ -352,8 +381,8 @@
         const oyunGovde = { gamification, coin: sp.coin || 0, coinT: sp.coinT || 0 };
         gonder("sp|" + g + "|" + ad, [ilkGovde, alanlar, oyunGovde, sp.lastModified ?? null], () =>
           post("/api/athletes", { ...ilkGovde, lastModified, deviceId })
-            .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, { fields: alanlar, lastModified: lastModified + 1, deviceId }))
-            .then(() => patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/gamification`, { ...oyunGovde, deviceId }))
+            .then((r) => (r && r.applied === false && r.reason === "deleted") ? { __reddedildi: true } : patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, { fields: alanlar, lastModified: lastModified + 1, deviceId }))
+            .then((r) => (r && r.__reddedildi) ? r : patch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/gamification`, { ...oyunGovde, deviceId }))
         );
       });
     });
@@ -503,7 +532,8 @@
       doc: (seriId) => seriDocRef(seriId),
       get: () =>
         get("/api/series?includeIptal=1").then((r) => ({
-          forEach: (fn) => r.series.forEach((s) => fn({ id: s.seriId, data: () => ({ g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t }) })),
+          // 2026-10-02: data() artık id ve iptal taşıyor — eskiden id yoktu, "Buluttan yenile" her sporcuya numarasız kopya seri ekliyordu.
+          forEach: (fn) => r.series.forEach((s) => fn({ id: s.seriId, data: () => ({ id: s.seriId, iptal: !!s.iptal, g: s.grup, ad: s.ad, oklar: s.oklar, puan: s.puan, tarih: s.tarih, cihazId: s.cihazId, t: s.t }) })),
         })),
       onSnapshot: (onNext) => {
         const bugun = new Date().toISOString().slice(0, 10);

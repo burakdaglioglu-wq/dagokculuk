@@ -165,11 +165,11 @@ export async function createAthlete(
     .bind(target.grup, target.ad)
     .first<{ tarih: number; tasindi: number }>();
 
-  if (tombstone && !tombstone.tasindi && input.lastModified <= tombstone.tarih) {
+  // KESİN SİLME (2026-10-02, kullanıcı: "bazı sporcuları sildiğimde geri tekrar sisteme düşüyor"): eskiden
+  // silinmeden SONRA güncellenmiş bir kopya (hâlâ eski veriyi tutan başka bir cihazdan) silme işaretini kaldırıp
+  // sporcuyu diriltiyordu. Artık silinmiş sporcu yalnızca açık "geri al" ile döner (restoreAthlete).
+  if (tombstone && !tombstone.tasindi) {
     return { applied: false, reason: "deleted" };
-  }
-  if (tombstone && !tombstone.tasindi && input.lastModified > tombstone.tarih) {
-    await env.DB.prepare("DELETE FROM deleted_athletes WHERE grup = ? AND ad = ?").bind(target.grup, target.ad).run();
   }
 
   const yaz = await env.DB.prepare(
@@ -316,6 +316,22 @@ export async function getOrCreateIzleKodu(env: Env, grup: string, ad: string): P
 export async function resolveIzleKodu(env: Env, kod: string): Promise<{ grup: string; ad: string } | null> {
   const row = await env.DB.prepare("SELECT grup, ad FROM athletes WHERE izleKodu = ?").bind(kod).first<{ grup: string; ad: string }>();
   return row ?? null;
+}
+
+/** Silinenlerden geri al: silme işaretini kaldırır ve silme sırasında iptal edilen serileri geri açar (veri
+ *  kaybolmaz — seri iptali yumuşaktır, iptal=1). Silmeden 10 dk önce ve sonrasında iptal edilenler silmeye aittir. */
+export async function restoreAthlete(env: Env, grup: string, ad: string, zaman: number): Promise<{ applied: boolean; restored: boolean; seri: number; seriIds: string[] }> {
+  const t = await env.DB.prepare("SELECT tarih FROM deleted_athletes WHERE grup = ? AND ad = ? AND tasindi = 0").bind(grup, ad).first<{ tarih: number }>();
+  if (!t) return { applied: true, restored: false, seri: 0, seriIds: [] };
+  const esik = t.tarih - 10 * 60 * 1000;
+  // Açılacak seriler (cihazlar bu kimlikleri kendi iptal listelerinden çıkarır)
+  const { results: acilacak } = await env.DB.prepare("SELECT seriId FROM series WHERE grup = ? AND ad = ? AND iptal = 1 AND degisti >= ?").bind(grup, ad, esik).all<{ seriId: string }>();
+  const sonuc = await env.DB.batch([
+    env.DB.prepare("UPDATE series SET iptal = 0, degisti = ? WHERE grup = ? AND ad = ? AND iptal = 1 AND degisti >= ?").bind(zaman, grup, ad, esik),
+    env.DB.prepare("DELETE FROM deleted_athletes WHERE grup = ? AND ad = ? AND tasindi = 0").bind(grup, ad),
+    env.DB.prepare("UPDATE athletes SET lastModified = ? WHERE grup = ? AND ad = ?").bind(zaman, grup, ad),
+  ]);
+  return { applied: true, restored: true, seri: sonuc[0].meta?.changes ?? 0, seriIds: acilacak.map((r) => r.seriId) };
 }
 
 export async function deleteAthlete(env: Env, grup: string, ad: string, zaman: number): Promise<{ applied: boolean }> {

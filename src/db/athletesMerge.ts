@@ -20,7 +20,9 @@ export async function mergeAthlete(
   if (source.grup === target.grup && source.ad === target.ad) return { applied: false, reason: "same-athlete" };
   const srcRow = await env.DB.prepare("SELECT * FROM athletes WHERE grup = ? AND ad = ?").bind(source.grup, source.ad).first<AthleteRow>();
   const dstRow = await env.DB.prepare("SELECT * FROM athletes WHERE grup = ? AND ad = ?").bind(target.grup, target.ad).first<AthleteRow>();
-  if (!srcRow) return { applied: false, reason: "source-missing" };
+  // Sahipsiz isim (2026-10-02): sporcu kaydı yok ama o isimle yoklama/aidat/seri var (ör. "DENIZ TUNA YILMAZ"
+  // düz I ile yazılmış yoklama) — kayıtları hedefe taşımak için boş bir kaynak satırıyla devam edilir.
+  const kaynakSatir = srcRow || ({} as AthleteRow);
   if (!dstRow) return { applied: false, reason: "target-missing" };
 
   const say = async (sql: string, ...args: unknown[]) => {
@@ -41,16 +43,16 @@ export async function mergeAthlete(
     const seen = new Set<string>();
     return a.filter((x) => { const k = JSON.stringify(x); if (seen.has(k)) return false; seen.add(k); return true; });
   };
-  const detayliOklar = dedupe(arr(dstRow.detayliOklar_json).concat(arr(srcRow.detayliOklar_json)));
-  const kartGecmisi = dedupe(arr(dstRow.kartGecmisi_json).concat(arr(srcRow.kartGecmisi_json)));
-  const gecmisSezonlar = dedupe(arr(dstRow.gecmisSezonlar_json).concat(arr(srcRow.gecmisSezonlar_json)));
-  const biyomotor = dedupe(arr(dstRow.biyomotorTestleri_json).concat(arr(srcRow.biyomotorTestleri_json)));
+  const detayliOklar = dedupe(arr(dstRow.detayliOklar_json).concat(arr(kaynakSatir.detayliOklar_json)));
+  const kartGecmisi = dedupe(arr(dstRow.kartGecmisi_json).concat(arr(kaynakSatir.kartGecmisi_json)));
+  const gecmisSezonlar = dedupe(arr(dstRow.gecmisSezonlar_json).concat(arr(kaynakSatir.gecmisSezonlar_json)));
+  const biyomotor = dedupe(arr(dstRow.biyomotorTestleri_json).concat(arr(kaynakSatir.biyomotorTestleri_json)));
   const dolu = (v: unknown) => v !== null && v !== undefined && v !== "" && v !== 0;
-  const sec = <T,>(d: T, s: T): T => (dolu(d) ? d : s);
-  const coin = (dstRow.coin || 0) + (srcRow.coin || 0);
-  const xAdet = (dstRow.xAdet || 0) + (srcRow.xAdet || 0);
-  const toplamSkor = (dstRow.toplamSkor || 0) + (srcRow.toplamSkor || 0);
-  const sonSkorZamani = Math.max(dstRow.sonSkorZamani || 0, srcRow.sonSkorZamani || 0) || null;
+  const sec = <T,>(d: T, s: T): T => (dolu(d) || s === undefined ? d : s); // sahipsiz kaynakta alan yok (undefined) → hedefinki
+  const coin = (dstRow.coin || 0) + (kaynakSatir.coin || 0);
+  const xAdet = (dstRow.xAdet || 0) + (kaynakSatir.xAdet || 0);
+  const toplamSkor = (dstRow.toplamSkor || 0) + (kaynakSatir.toplamSkor || 0);
+  const sonSkorZamani = Math.max(dstRow.sonSkorZamani || 0, kaynakSatir.sonSkorZamani || 0) || null;
 
   await env.DB.batch([
     // çocuk satırlar: PK çakışmayanlar taşınır, çakışanlarda hedefinki kalır
@@ -80,12 +82,12 @@ export async function mergeAthlete(
          saglikRaporuBitis = ?, lisansBitis = ?, fotoUrl = ?, lastModified = ?
        WHERE grup = ? AND ad = ?`
     ).bind(
-      sec(dstRow.kod, srcRow.kod), sec(dstRow.dogumYili, srcRow.dogumYili), sec(dstRow.sinif, srcRow.sinif), sec(dstRow.yay, srcRow.yay), sec(dstRow.cinsiyet, srcRow.cinsiyet),
+      sec(dstRow.kod, kaynakSatir.kod), sec(dstRow.dogumYili, kaynakSatir.dogumYili), sec(dstRow.sinif, kaynakSatir.sinif), sec(dstRow.yay, kaynakSatir.yay), sec(dstRow.cinsiyet, kaynakSatir.cinsiyet),
       toplamSkor, xAdet, sonSkorZamani, coin,
       JSON.stringify(kartGecmisi), JSON.stringify(gecmisSezonlar), JSON.stringify(detayliOklar), JSON.stringify(biyomotor),
-      sec(dstRow.acilKisi, srcRow.acilKisi), sec(dstRow.acilTelefon, srcRow.acilTelefon), sec(dstRow.antrenmanNotu, srcRow.antrenmanNotu), sec(dstRow.genelNot, srcRow.genelNot),
-      sec(dstRow.dogumTarihi, srcRow.dogumTarihi), sec(dstRow.katilmaTarihi, srcRow.katilmaTarihi), sec(dstRow.aileMeslek, srcRow.aileMeslek), sec(dstRow.veli2Kisi, srcRow.veli2Kisi), sec(dstRow.veli2Telefon, srcRow.veli2Telefon),
-      sec(dstRow.saglikRaporuBitis, srcRow.saglikRaporuBitis), sec(dstRow.lisansBitis, srcRow.lisansBitis), sec(dstRow.fotoUrl, srcRow.fotoUrl), zaman,
+      sec(dstRow.acilKisi, kaynakSatir.acilKisi), sec(dstRow.acilTelefon, kaynakSatir.acilTelefon), sec(dstRow.antrenmanNotu, kaynakSatir.antrenmanNotu), sec(dstRow.genelNot, kaynakSatir.genelNot),
+      sec(dstRow.dogumTarihi, kaynakSatir.dogumTarihi), sec(dstRow.katilmaTarihi, kaynakSatir.katilmaTarihi), sec(dstRow.aileMeslek, kaynakSatir.aileMeslek), sec(dstRow.veli2Kisi, kaynakSatir.veli2Kisi), sec(dstRow.veli2Telefon, kaynakSatir.veli2Telefon),
+      sec(dstRow.saglikRaporuBitis, kaynakSatir.saglikRaporuBitis), sec(dstRow.lisansBitis, kaynakSatir.lisansBitis), sec(dstRow.fotoUrl, kaynakSatir.fotoUrl), zaman,
       target.grup, target.ad
     ),
     // kaynak: sil + tombstone (tasindi=1, Silinenler listesinde görünmez) + yönlendirme

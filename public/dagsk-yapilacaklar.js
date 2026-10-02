@@ -25,12 +25,10 @@ function ypAktifler() {
 function ypIlkAd(ad) { let i = String(ad || '').trim().split(/\s+/)[0] || ''; return i.charAt(0) + i.slice(1).toLocaleLowerCase('tr-TR'); }
 function ypTarih(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : ''; }
 
-// Tüm işler — { id, tur, g, ad, baslik, alt, tel, mesaj }
-function ypListe() {
-    let bugun = new Date(), iso = ypIso(bugun), ay = iso.slice(0, 7), yil = iso.slice(0, 4), hafta = (typeof bsHaftaAnahtar === 'function') ? bsHaftaAnahtar(iso) : iso;
-    let aktifler = ypAktifler(), is = [];
-    // 💰 Aidat — geçen ayı ödemeyen her zaman; bu ayı ödemeyen ayın 10'undan sonra. aidatDB boşsa (giriş yok / henüz
-    // yüklenmedi) bölüm hiç gösterilmez — yoksa herkes borçlu görünürdü.
+// 💰 Aidatı gecikenler — yapılacaklar listesi, yönetici sayı şeridi ve Genel Bakış AYNI kuralı kullanır (2026-10-02).
+function ypAidatListe(bugun, ay, aktifler) {
+    bugun = bugun || new Date(); ay = ay || ypIso(bugun).slice(0, 7); aktifler = aktifler || ypAktifler();
+    let is = [];
     if (typeof aidatDB !== 'undefined' && Object.keys(aidatDB || {}).length) {
         aktifler.forEach(function (x) {
             if (x.sp.aidatMuaf || !ypSporcuMu(x.g, x.ad)) return;
@@ -42,6 +40,15 @@ function ypListe() {
                 mesaj: "Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n" + ypIlkAd(x.ad) + " için bu ayki aidat ödemesini henüz göremedik. Uygun olduğunuzda tamamlarsanız çok seviniriz 🧡 Ödemeyi yaptıysanız bize bildirmeniz yeterli.\n\nDAĞ Spor Kulübü" });
         });
     }
+    return is;
+}
+// Tüm işler — { id, tur, g, ad, baslik, alt, tel, mesaj }
+function ypListe() {
+    let bugun = new Date(), iso = ypIso(bugun), ay = iso.slice(0, 7), yil = iso.slice(0, 4), hafta = (typeof bsHaftaAnahtar === 'function') ? bsHaftaAnahtar(iso) : iso;
+    let aktifler = ypAktifler(), is = [];
+    // 💰 Aidat — geçen ayı ödemeyen her zaman; bu ayı ödemeyen ayın 10'undan sonra. aidatDB boşsa (giriş yok / henüz
+    // yüklenmedi) bölüm hiç gösterilmez — yoksa herkes borçlu görünürdü.
+    is = is.concat(ypAidatListe(bugun, ay, aktifler));
     // 📉 2+ haftadır gelmeyenler (daha önce en az bir kez gelmiş olanlar — hiç kaydı olmayan yeni sporcu gürültü yapmasın)
     try {
         devamsizlikListesi(14).forEach(function (x) {

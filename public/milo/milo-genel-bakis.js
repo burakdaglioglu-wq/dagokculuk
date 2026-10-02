@@ -197,3 +197,100 @@ function miloDigerMenuKapat() { let m = document.getElementById('milo-diger-menu
     ].join('\n');
     document.head.appendChild(st);
 })();
+
+// ================================================================================================
+// 🧭 KOMUTA MERKEZİ (2026-10-02, kullanıcı DAĞ yönetici paneli için A tasarımını seçti ve "Milo'ya da yap"):
+// ≥700px'te solda sabit gruplu menü (tüm sekmeler, "Diğer"dekiler dahil), her sekmenin üstünde dokunulabilir
+// sayı şeridi (aidatı geciken · bugün gelen · bugünkü ders · 2+ haftadır gelmeyen). Dar ekranda üst sekme çubuğu
+// kalır. Sayılar mgbVeri()'den — Genel Bakış kutularıyla aynı kaynak.
+// ================================================================================================
+const MILO_YAN_GRUPLAR = [
+    ['YÖNETİM', [['genel', '🏠', 'Genel Bakış'], ['uyeler', '👤', 'Üyeler'], ['hizli', '📝', 'Hızlı Düzenle']]],
+    ['ANTRENMAN', [['analiz', '📋', 'Yoklama'], ['program', '📅', 'Program'], ['ders', '📚', 'Dersler'], ['beceri', '🎯', 'Beceri']]],
+    ['KULÜP İŞLERİ', [['aidat', '💰', 'Aidat'], ['personel', '🧑‍🏫', 'Personel']]]
+];
+function miloSayilar() {
+    let v = mgbVeri(), bugun = v.bugun, gelen = 0;
+    (miloAttendanceTum || []).forEach(function (a) { if (a.tarih === bugun && a.geldi) gelen++; });
+    return { v: v, geciken: v.geciken.length, gelen: gelen, ders: v.dersler.filter(function (x) { return !x.iptal; }).length, gelmeyen: v.gelmeyen.length, aktif: v.aktif.length };
+}
+function miloYanCiz(s) {
+    let nav = document.getElementById('milo-yan'); if (!nav) return;
+    s = s || (miloUyeler.length ? miloSayilar() : null);
+    let rozet = function (k) {
+        if (!s) return '';
+        if (k === 'uyeler') return '<span class="milo-yan-rozet">' + s.aktif + '</span>';
+        if (k === 'aidat' && s.geciken) return '<span class="milo-yan-rozet kirmizi">' + s.geciken + '</span>';
+        if (k === 'analiz' && s.gelen) return '<span class="milo-yan-rozet">' + s.gelen + '</span>';
+        return '';
+    };
+    nav.innerHTML = MILO_YAN_GRUPLAR.map(function (gr) {
+        return '<div class="milo-yan-grup">' + gr[0] + '</div>' + gr[1].map(function (x) {
+            let aktif = miloAktifSekme === x[0];
+            return '<button class="milo-yan-btn' + (aktif ? ' aktif' : '') + '"' + (aktif ? ' aria-current="page"' : '') + ' onclick="miloSekme(\'' + x[0] + '\')"><span class="milo-yan-ikon" aria-hidden="true">' + x[1] + '</span>' + x[2] + rozet(x[0]) + '</button>';
+        }).join('');
+    }).join('');
+}
+function miloSeritCiz(s) {
+    let el = document.getElementById('milo-serit'); if (!el) return;
+    if (miloAktifSekme === 'genel' || !miloUyeler.length) { el.innerHTML = ''; return; } // Genel Bakış'ta büyük kutular var
+    s = s || miloSayilar();
+    let b = function (r, deger, et, sekme) { return '<button class="milo-serit-btn" style="--r:' + r + '" onclick="miloSekme(\'' + sekme + '\')"><b>' + deger + '</b>' + et + '</button>'; };
+    el.innerHTML = b('#ef4444', s.geciken, 'aidatı geciken', 'aidat') + b('#22c55e', s.gelen, 'bugün geldi', 'analiz') + b('var(--milo-teal)', s.ders, 'bugünkü ders', 'program') + b('#f97316', s.gelmeyen, '2+ haftadır gelmeyen', 'analiz');
+}
+function miloKomutaYenile() { let s = miloUyeler.length ? miloSayilar() : null; miloYanCiz(s); miloSeritCiz(s); }
+// Genel Bakış araması → Üyeler sekmesi, filtre dolu
+function miloAramaGit(q) { try { miloUyeAramaFiltre = q || ''; } catch (e) {} miloSekme('uyeler'); }
+(function () {
+    // Sekme değişince menü vurgusu + şerit (miloSekme app.js'te; global olduğu için sarmalanabilir)
+    let eskiSekme = miloSekme;
+    miloSekme = function (k) { let r = eskiSekme.apply(this, arguments); try { miloKomutaYenile(); } catch (e) {} return r; };
+    let eskiYukle = mgbYukleVeCiz;
+    mgbYukleVeCiz = async function () { let r = await eskiYukle.apply(this, arguments); try { miloKomutaYenile(); } catch (e) {} return r; };
+    // Genel Bakış başlığına arama kutusu (Komuta Merkezi başlığı)
+    let eskiCiz = mgbCiz;
+    mgbCiz = function () {
+        let odak = document.activeElement; if (odak && odak.id === 'mgb-ara' && document.getElementById('milo-icerik').contains(odak)) return; // yazarken yenileme silmesin
+        let r = eskiCiz.apply(this, arguments);
+        let bas = document.querySelector('#milo-icerik .mgb-bas');
+        if (bas && !document.getElementById('mgb-ara')) {
+            let yenile = bas.querySelector('.mgb-yenile');
+            let kap = document.createElement('div'); kap.className = 'mgb-bas-sag';
+            kap.innerHTML = '<label class="mgb-ara"><span aria-hidden="true">🔍</span><input id="mgb-ara" type="search" placeholder="Üye ara…" aria-label="Üye ara" onkeydown="if(event.key===\'Enter\') miloAramaGit(this.value)"></label>'
+                + '<button class="mgb-yoklama-btn" onclick="miloSekme(\'analiz\')">📋 Yoklama</button>';
+            if (yenile) kap.appendChild(yenile);
+            bas.appendChild(kap);
+        }
+        try { miloYanCiz(); } catch (e) {}
+        return r;
+    };
+    let st = document.createElement('style');
+    st.textContent = [
+        '.milo-govde{flex:1;min-height:0;display:flex}',
+        '.milo-ana{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}',
+        '.milo-yan{display:none}',
+        '.milo-serit{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 15px 0;flex-shrink:0}.milo-serit::-webkit-scrollbar{display:none}.milo-serit:empty{display:none}',
+        '.milo-serit-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--milo-line);background:var(--milo-card-raised,var(--milo-card));color:var(--milo-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}',
+        '.milo-serit-btn b{font-size:16px;font-weight:900;color:var(--r);font-variant-numeric:tabular-nums}.milo-serit-btn:hover{border-color:var(--r)}.milo-serit-btn:focus-visible{outline:2px solid var(--milo-teal);outline-offset:2px}',
+        '@media (min-width:700px){',
+        '  #milo-tab-bar{display:none!important}',
+        '  .milo-yan{display:flex;flex-direction:column;gap:2px;width:228px;flex-shrink:0;overflow-y:auto;padding:14px 10px;border-right:1px solid var(--milo-line);background:var(--milo-card-raised,var(--milo-card))}',
+        '  .milo-yan-grup{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--milo-ink-dim);padding:12px 10px 6px}.milo-yan-grup:first-child{padding-top:2px}',
+        '  .milo-yan-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--milo-ink);font:inherit;font-size:13px;font-weight:600;text-align:left;cursor:pointer}',
+        '  .milo-yan-btn:hover:not(.aktif){background:rgba(255,255,255,.05)}.milo-yan-btn.aktif{background:color-mix(in srgb,var(--milo-teal) 22%,transparent);font-weight:800}',
+        '  .milo-yan-btn:focus-visible{outline:2px solid var(--milo-teal);outline-offset:1px}.milo-yan-ikon{font-size:15px;width:20px;text-align:center}',
+        '  .milo-yan-rozet{margin-left:auto;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;color:var(--milo-ink-dim);font-variant-numeric:tabular-nums}.milo-yan-rozet.kirmizi{background:rgba(239,68,68,.18);color:#fca5a5}',
+        '  #milo-icerik{padding:16px 22px!important}.milo-serit{padding:14px 22px 0}',
+        '}',
+        // Komuta Merkezi: düz yüzeyler (bulanık cam yok) + başlıkta arama
+        '.mgb-kutu,.mgb-kart{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--milo-card-raised,var(--milo-card))!important;border-radius:16px!important}',
+        '.mgb-kutu::before{display:none}',
+        '.mgb-bas{flex-wrap:wrap;gap:12px}.mgb-bas>div:first-child{flex:1 1 220px}.mgb-selam{font-size:26px!important;font-weight:900!important}',
+        '.mgb-bas-sag{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+        '.mgb-ara{display:flex;align-items:center;gap:8px;width:260px;max-width:100%;height:44px;box-sizing:border-box;padding:0 12px;border-radius:12px;border:1px solid var(--milo-line);background:var(--milo-card-raised,var(--milo-card));color:var(--milo-ink-dim)}',
+        '.mgb-ara input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--milo-ink);font:inherit;font-size:13.5px}.mgb-ara:focus-within{border-color:var(--milo-teal)}',
+        '.mgb-yoklama-btn{height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--milo-teal);color:#fff;font:inherit;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap}',
+        '@media (max-width:699px){.mgb-bas-sag{width:100%}.mgb-ara{flex:1;width:auto}}'
+    ].join('\n');
+    document.head.appendChild(st);
+})();

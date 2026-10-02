@@ -1040,11 +1040,15 @@
             display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px;
             background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.35); margin-bottom: 6px;
         }
-        @media (min-width: 900px) {
+        /* 2026-10-02 KOMUTA MERKEZİ (kullanıcı A seçeneğini seçti, "tablette de açsın"): kırılma 900 → 700px
+           (dikey tablet de sol menülü düzen), sağ "Canlı Akış" sütunu kaldırıldı (içeriği Genel Bakış'ın "Dikkat"
+           kartında), kabuk neredeyse tam ekran. */
+        @media (min-width: 700px) {
             #yonetici-modal .modal-content.yon-shell {
-                max-width: 1100px; height: 88vh; max-height: 88vh;
-                display: grid; grid-template-columns: 210px 1fr 260px; grid-template-rows: 1fr;
+                max-width: 1440px; width: 96vw; height: 92vh; max-height: 92vh;
+                display: grid; grid-template-columns: 236px minmax(0, 1fr); grid-template-rows: 1fr;
             }
+            .yon-activity { display: none !important; }
             .yon-sidebar {
                 display: flex; flex-direction: column; grid-column: 1; border-right: 1px solid var(--border-color);
                 padding: 14px 10px; overflow-y: auto; gap: 14px;
@@ -1058,7 +1062,7 @@
             .yon-sidebar-btn .yon-sb-icon { font-size: 15px; flex-shrink: 0; }
             .yon-sidebar-btn.aktif { background: linear-gradient(135deg, var(--neon-red), #b91c1c); color: #fff; }
             .yon-sidebar-btn:hover:not(.aktif) { background: rgba(255,255,255,0.05); }
-            .yon-main { grid-column: 2; padding: 0 18px 18px; border-right: 1px solid var(--border-color); }
+            .yon-main { grid-column: 2; padding: 0 22px 18px; }
             .yon-topbar { padding: 16px 18px 10px; }
             .yon-activity {
                 display: flex; flex-direction: column; grid-column: 3; padding: 14px; overflow-y: auto; gap: 14px;
@@ -2350,3 +2354,77 @@
         .yon2-izgara .yp-ad { min-width: 0; overflow: hidden; }
         .yon2-izgara .yp-ad b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .yon2-izgara .yp-btn { flex-shrink: 0; padding: 0 10px; }
+
+        /* ===== KOMUTA MERKEZİ v3 (2026-10-02) — yönetici paneli: kullanıcı A tasarımını seçti; B'den "aidatı gecikenler,
+           bugün gelenler, atılan seri ekranda görünsün ve dokununca oraya gideyim" şeridi eklendi. Düz yüzeyler (bulanık
+           cam yok), renkler tema değişkenlerinden — açık ve koyu temada aynı çalışır. ===== */
+        #yonetici-modal .modal-content.yon-shell { background: var(--bg-main); backdrop-filter: none; -webkit-backdrop-filter: none; }
+        .yon-sidebar { background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)); }
+        .yon-sb-logo { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+        .yon-sb-logo-harf { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-orange); color: var(--bg-main); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; flex-shrink: 0; }
+        .yon-sb-logo b { display: block; font-size: 14px; font-weight: 900; letter-spacing: .02em; }
+        .yon-sb-logo small { display: block; font-size: 11px; color: var(--text-muted); }
+        .yon-sidebar .yon-sidebar-btn { min-height: 40px; color: color-mix(in srgb, var(--text-main) 85%, transparent); font-weight: 600; }
+        .yon-sidebar .yon-sidebar-btn.aktif { background: color-mix(in srgb, var(--accent-orange) 22%, transparent); color: var(--text-main); font-weight: 800; }
+        .yon-sidebar .yon-sidebar-btn:hover:not(.aktif) { background: color-mix(in srgb, var(--text-main) 6%, transparent); }
+        .yon-sidebar .yon-sidebar-btn:focus-visible { outline: 2px solid var(--accent-orange); outline-offset: 1px; }
+        .yon-sb-rozet { margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 99px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .yon-sb-rozet.kirmizi { background: color-mix(in srgb, var(--neon-red) 18%, transparent); color: color-mix(in srgb, var(--neon-red) 75%, var(--text-main)); }
+        /* Sayı şeridi — her sekmenin üstünde (Genel Bakış'ta gizli: orada büyük kutular var) */
+        .yon-serit { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+        .yon-serit::-webkit-scrollbar { display: none; }
+        .yon-serit:empty { display: none; }
+        .yon-serit-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border-color); background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)); color: var(--text-main); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .yon-serit-btn b { font-size: 16px; font-weight: 900; color: var(--r); font-variant-numeric: tabular-nums; }
+        .yon-serit-btn:hover { border-color: var(--r); }
+        .yon-serit-btn:focus-visible { outline: 2px solid var(--accent-orange); outline-offset: 2px; }
+        /* Genel Bakış (A) */
+        .yon3 { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+        .yon3-bas { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .yon3-bas-m { flex: 1 1 260px; min-width: 0; }
+        .yon3-selam { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.01em; text-wrap: balance; }
+        .yon3-alt { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+        .yon3-ara { display: flex; align-items: center; gap: 8px; flex: 0 1 280px; min-width: 200px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: 1px solid var(--border-color); background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)); color: var(--text-muted); }
+        .yon3-ara input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text-main); font: inherit; font-size: 13.5px; }
+        .yon3-ara:focus-within { border-color: var(--accent-orange); }
+        .yon3-km { height: 44px; padding: 0 18px; border-radius: 12px; border: 0; background: var(--accent-orange); color: var(--bg-main); font: inherit; font-size: 13px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+        .yon3-km:focus-visible { outline: 2px solid var(--text-main); outline-offset: 2px; }
+        .yon3-kutular { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 1000px) { .yon3-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .yon3-kutu { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 15px 17px; border-radius: 16px; border: 1px solid var(--border-color); background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)); color: var(--text-main); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+        .yon3-kutu:hover { border-color: var(--r); }
+        .yon3-kutu:focus-visible { outline: 2px solid var(--accent-orange); outline-offset: 2px; }
+        .yon3-kutu-et { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+        .yon3-kutu-deger { font-size: 32px; font-weight: 900; line-height: 1.1; color: var(--r); font-variant-numeric: tabular-nums; }
+        .yon3-kutu-alt { font-size: 11.5px; color: var(--text-muted); }
+        .yon3-izgara { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+        @media (max-width: 1000px) { .yon3-izgara { grid-template-columns: 1fr; } }
+        .yon3-sutun { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .yon3-kart { border-radius: 16px; border: 1px solid var(--border-color); background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .yon3-kart-bas { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: .02em; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+        .yon3-kart-bas small { font-size: 11.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0; }
+        .yon3-ders { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .yon3-ders.simdi { border-color: var(--accent-orange); background: color-mix(in srgb, var(--accent-orange) 14%, transparent); }
+        .yon3-ders-saat { width: 54px; flex-shrink: 0; font-size: 16px; font-weight: 900; font-variant-numeric: tabular-nums; }
+        .yon3-ders-saat small { display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted); }
+        .yon3-ders-m { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .yon3-ders-m b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .yon3-ders-m small { font-size: 12px; color: var(--text-muted); }
+        .yon3-ders-btn { min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--accent-orange); background: transparent; color: var(--accent-orange); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+        .yon3-ders.simdi .yon3-ders-btn { background: var(--accent-orange); color: var(--bg-main); }
+        .yon3-bos { font-size: 12.5px; color: var(--text-muted); padding: 4px 0; }
+        .yon3-dikkat { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border-color); }
+        .yon3-dikkat:first-of-type { border-top: 0; }
+        .yon3-nokta { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .yon3-dikkat-m { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .yon3-dikkat-m b { font-size: 13px; }
+        .yon3-dikkat-m small { font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .yon3-link { flex-shrink: 0; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .yon3-link:hover { border-color: var(--accent-orange); }
+        .yon3 .yp-kart { margin: 0 !important; border-radius: 16px !important; background: color-mix(in srgb, var(--text-main) 4%, var(--bg-main)) !important; backdrop-filter: none !important; }
+        .yon3 .yp-sat { flex-wrap: nowrap; }
+        .yon3 .yp-ad { min-width: 0; overflow: hidden; }
+        .yon3 .yp-ad b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .yon3 .yp-btn { flex-shrink: 0; padding: 0 10px; }
+        @media (max-width: 699px) { .yon3-selam { font-size: 21px; } .yon3-ara { flex: 1 1 100%; } .yon3-km { flex: 1 1 100%; } }
+        @media (min-width: 700px) { .yon-sidebar > div:first-child > .adm-btn { display: none; } }

@@ -297,8 +297,22 @@ function kyOneriler() {
     }
     let kume = {};
     kisiler.forEach((x, i) => { let r = bul(i); (kume[r] = kume[r] || []).push(x); });
-    return Object.keys(kume).filter(r => kume[r].length > 1).map(r => ({ tip: tur[r] || 'benzer', liste: kume[r] }))
-        .sort((a, b) => (a.tip === 'ayni' ? 0 : 1) - (b.tip === 'ayni' ? 0 : 1) || a.liste[0].ad.localeCompare(b.liste[0].ad, 'tr'));
+    let sonuc = Object.keys(kume).filter(r => kume[r].length > 1).map(r => ({ tip: tur[r] || 'benzer', liste: kume[r] }));
+    let kisaAday = {};
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        if (i === j || bul(i) === bul(j)) continue;
+        let a = kisiler[i], b = kisiler[j], at = a.k.split(' '), bt = b.k.split(' ');
+        if (at.length >= bt.length || at[0] !== bt[0] || !at.every(t => bt.includes(t))) continue; // a, b'nin kısaltması mı
+        if (farkli.has(kyCiftAnahtar(kyAnahtar(a.g, a.ad), kyAnahtar(b.g, b.ad)))) continue;
+        (kisaAday[i] = kisaAday[i] || []).push(j);
+    }
+    Object.keys(kisaAday).forEach(i => {
+        let l = kisaAday[i], a = kisiler[i];
+        // Tek kelimelik isim ("Deniz") birden çok uzun isme uyuyorsa hangisi olduğu belirsiz — yine de her birini ayrı çift göster
+        l.forEach(j => sonuc.push({ tip: 'kisa', liste: [a, kisiler[j]] }));
+    });
+    const sira = { ayni: 0, benzer: 1, kisa: 2 };
+    return sonuc.sort((a, b) => sira[a.tip] - sira[b.tip] || a.liste[0].ad.localeCompare(b.liste[0].ad, 'tr'));
 }
 function kyKisiSatir(x, q, secilebilir) {
     let key = kyAnahtar(x.g, x.ad), kk = kyKaydirKey(x.g, x.ad), o = kyOzet(x.g, x.ad), sec = _ky.secili.includes(key), sp = x.sp || o.sp;
@@ -335,7 +349,7 @@ function kyCiftKayitCiz() {
     let oneriler = kyOneriler();
     let oneriHTML = `<div class="ky-kart"><div class="ky-etiket">Şüpheli kayıtlar — ${oneriler.length ? oneriler.length + ' grup' : 'bulunamadı'}</div>
         ${oneriler.length ? '' : '<div class="ky-bos">✅ Aynı ya da çok benzer isimle birden fazla kayıt görünmüyor.</div>'}
-        ${oneriler.slice(0, 30).map((o, i) => `<div class="ky-oneri"><div class="ky-oneri-bas"><span class="ky-cip" style="color:${o.tip === 'ayni' ? 'var(--status-danger,#dc2626)' : 'var(--status-warning,#d97706)'}">${o.tip === 'ayni' ? 'Aynı isim' : 'Benzer isim — yazım farkı olabilir'}</span>
+        ${oneriler.slice(0, 30).map((o, i) => `<div class="ky-oneri"><div class="ky-oneri-bas"><span class="ky-cip" style="color:${o.tip === 'ayni' ? 'var(--status-danger,#dc2626)' : 'var(--status-warning,#d97706)'}">${o.tip === 'ayni' ? 'Aynı isim' : o.tip === 'kisa' ? 'Kısaltma olabilir — ikinci ad eksik ya da fazla' : 'Benzer isim — yazım farkı olabilir'}</span>
             <span style="display:flex; gap:6px;"><button class="ky-btn birincil" onclick="kyOneriSec(${i})">🧹 Birleştirmeye al</button><button class="ky-btn" onclick="kyOneriFarkli(${i})">Farklı kişiler</button></span></div>
             <div class="ky-liste">${o.liste.map(x => kyKisiSatir(x, '', false)).join('')}</div></div>`).join('')}</div>`;
     window._kyOneriCache = oneriler;
@@ -345,8 +359,55 @@ function kyCiftKayitCiz() {
         <input class="ky-ara" id="ky-ara" type="search" placeholder="🔍 İsim yaz — ör. sare" value="${esc(_ky.ara)}" oninput="kyAra(this.value)" autocomplete="off">
         ${sonuc}
         ${kyPanelHTML()}
+        ${kyKayitsizHTML()}
         ${oneriHTML}
     </div>`;
+}
+function kyKayitsizlar() {
+    let var_ = new Set(); ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => var_.add(ad)));
+    let silinmis = new Set((typeof silinenlerDB !== 'undefined' ? silinenlerDB : []).map(x => x.ad));
+    let m = {};
+    Object.keys(otomatikYoklamaDB || {}).forEach(t => Object.keys(otomatikYoklamaDB[t] || {}).forEach(ad => {
+        if (var_.has(ad) || silinmis.has(ad)) return;
+        let x = m[ad] = m[ad] || { ad, grup: null, yoklama: 0, aidat: 0 }; x.yoklama++; if (!x.grup) x.grup = (otomatikYoklamaDB[t][ad] || {}).grup || null;
+    }));
+    Object.keys((typeof aidatDB !== 'undefined' && aidatDB) || {}).forEach(ad => {
+        if (var_.has(ad) || silinmis.has(ad)) return;
+        let x = m[ad] = m[ad] || { ad, grup: null, yoklama: 0, aidat: 0 }; x.aidat += Object.keys(aidatDB[ad] || {}).length;
+    });
+    let tum = kyTumKisiler();
+    return Object.values(m).filter(x => x.yoklama + x.aidat > 0).map(x => {
+        let k = kyKatla(x.ad), ilk = k.split(' ')[0];
+        let adaylar = tum.map(y => { let p = kyAramaPuan(k, y.k); if (p === null && y.k.split(' ')[0] === ilk) p = 50; return { y, p }; })
+            .filter(z => z.p !== null).sort((a, b) => a.p - b.p).slice(0, 6).map(z => z.y);
+        return Object.assign(x, { adaylar });
+    }).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+}
+function kyKayitsizHTML() {
+    let l = kyKayitsizlar(); window._kyKayitsizCache = l;
+    if (!l.length) return '';
+    return `<div class="ky-kart"><div class="ky-etiket">Sporcu kaydı olmayan isimler — ${l.length}</div>
+        <div class="ky-alt">Bu isimlerle yoklama ya da aidat girilmiş ama bu isimde bir sporcu yok (çoğunlukla farklı yazım: I/İ, eksik ikinci ad). Doğru sporcuyu seç → <b>Bağla</b>: o isimdeki tüm kayıtlar seçtiğin sporcuya taşınır.</div>
+        <div class="ky-liste">${l.map((x, i) => `<div class="ky-bilgi" style="margin:0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><span style="flex:1; min-width:150px"><b>${esc(x.ad)}</b> <span class="ky-alt">· ${[x.yoklama && x.yoklama + ' yoklama', x.aidat && x.aidat + ' aidat ayı'].filter(Boolean).join(', ')}</span></span>
+            <select id="ky-kayitsiz-${i}" class="ky-ara" style="width:auto; min-width:220px; max-width:100%; padding:8px 10px; font-size:13px; font-weight:600;" aria-label="${esc(x.ad)} hangi sporcu">${x.adaylar.length ? '' : '<option value="">— sporcu seç —</option>'}${x.adaylar.map(y => `<option value="${esc(kyAnahtar(y.g, y.ad))}">${esc(y.ad)} (${esc(kyGrupAd(y.g))})</option>`).join('')}<optgroup label="Diğer sporcular">${kyTumKisiler().filter(y => !x.adaylar.includes(y)).sort((p, q) => p.ad.localeCompare(q.ad, 'tr')).map(y => `<option value="${esc(kyAnahtar(y.g, y.ad))}">${esc(y.ad)} (${esc(kyGrupAd(y.g))})</option>`).join('')}</optgroup></select>
+            <button class="ky-btn birincil" ${!_ky.calisiyor ? '' : 'disabled'} onclick="kyKayitsizBagla(${i})">🔗 Bağla</button></div>`).join('')}</div></div>`;
+}
+function kyKayitsizBagla(i) {
+    let x = (window._kyKayitsizCache || [])[i], sel = document.getElementById('ky-kayitsiz-' + i); if (!x || !sel || _ky.calisiyor) return;
+    if (!sel.value) return showToast('Önce bu kayıtların ait olduğu sporcuyu seç.', 'warning');
+    let [hg, ...hr] = sel.value.split('|'), ha = hr.join('|'), kg = x.grup || hg;
+    onayIste(`<b>${esc(x.ad)}</b> adıyla girilmiş ${[x.yoklama && x.yoklama + ' yoklama', x.aidat && x.aidat + ' aidat ayı'].filter(Boolean).join(', ')} → <b>${esc(ha)}</b> sporcusuna taşınsın mı?`, async () => {
+        _ky.calisiyor = true; kyCiftKayitCiz();
+        try {
+            let r = await fetch('/api/athletes/' + encodeURIComponent(kg) + '/' + encodeURIComponent(x.ad) + '/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toGrup: hg, toAd: ha, deviceId: typeof _cihazId !== 'undefined' ? _cihazId : null }) });
+            if (!r.ok) { let t = ''; try { t = (await r.json()).error || ''; } catch (e) {} throw new Error(t || ('HTTP ' + r.status)); }
+            try { _sporcuYerelAnahtarTasi(kg, x.ad, hg, ha); } catch (e) {}
+            try { yoneticiKaydet(); } catch (e) {}
+            showToast(`🔗 "${x.ad}" kayıtları ${ha} sporcusuna bağlandı.`, 'success');
+            try { bulutManuelYenile(); } catch (e) {}
+        } catch (e) { showToast('Bağlanamadı (' + (e && e.message ? e.message : 'bağlantı') + ') — hiçbir şey değişmedi.', 'error'); }
+        _ky.calisiyor = false; kyCiftKayitCiz();
+    }, '🔗 Evet, bağla');
 }
 // ---- eski Kategori Taşı onarımı: sunucuda eski (grup, ad) anahtarında kalmış seri/ders/yoklama/aidat
 function kyKopukHTML() {
@@ -582,6 +643,7 @@ function kyMisafirEkle(geldi) {
 function kyMisafirOlustur(g, ad, ek, geldiIso) {
     if (!turnuvaDB[g]) turnuvaDB[g] = {};
     if (turnuvaDB[g][ad]) return false;
+    if (silinenlerDB.some(s => !s.tasindi && s.grup === g && s.ad === ad) && typeof _sporcuSunucudaGeriAl === 'function') _sporcuSunucudaGeriAl(g, ad).then(() => { try { bulutaGonderKontrol(); } catch (e) {} }).catch(() => {});
     silinenlerDB = silinenlerDB.filter(s => !(s.grup === g && s.ad === ad)); silinenlerKaydet();
     turnuvaDB[g][ad] = { toplamSkor: 0, xAdet: 0, seriler: [], detayliOklar: [], lastModified: Date.now() };
     yoneticiKaydet();

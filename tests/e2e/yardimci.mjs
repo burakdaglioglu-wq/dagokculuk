@@ -62,6 +62,13 @@ export async function uygulamaAc(p) {
 }
 // Karışık Sınıf'a gir, bir aracı aç (kmAracSec). Geç yüklenen araçlar için dosyanın yüklenmesini bekler.
 export async function karisikSinifArac(p, aracId, fnAd) {
+  // "Ana Salon"da açık ders yoksa (12 saatten eski dersler otomatik kapanır — 2026-10-02) yerel test sporcularıyla aç.
+  let liste = []; try { liste = JSON.parse((await api('/api/meta/karisik_sinif_liste_varsayilan')).d.value || '[]'); } catch (e) {}
+  if (!liste.length) {
+    const silinen = new Set((await api('/api/athletes/deleted')).d.deleted.map((x) => x.grup + '|' + x.ad));
+    const sec = (await api('/api/athletes')).d.athletes.filter((a) => !a.pasif && !silinen.has(a.grup + '|' + a.ad)).slice(0, 8).map((a) => ({ g: a.grup, ad: a.ad }));
+    await api('/api/meta/karisik_sinif_liste_varsayilan', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(sec) }) });
+  }
   await p.locator('text=EĞİTMEN PLATFORMU').click(); await p.waitForTimeout(600);
   await p.locator('#km-giris-btn').click();
   await p.locator('button:has-text("Derse Devam Et")').first().waitFor({ timeout: 40000 }).catch(() => {});

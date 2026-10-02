@@ -2037,7 +2037,7 @@
         }
         function ozelGrupSil(g) { if(!confirm(`"${g}" grubu silinsin mi? (Sporcular silinmez, grupları boşalır)`)) return; ozelSiniflar = ozelSiniflar.filter(x => x !== g); Object.keys(turnuvaDB[aktifGrup]||{}).forEach(ad => { if(turnuvaDB[aktifGrup][ad].sinif === g) turnuvaDB[aktifGrup][ad].sinif = ''; }); ozelSiniflariKaydet(); localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast('Grup silindi.', 'warning'); egitmenRenderSiniflar(); }
         function sporcuPasifYap(ad, durum) { let sp = turnuvaDB[aktifGrup][ad]; if(!sp) return; sp.pasif = durum; localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast(durum ? `${ad} pasife alındı.` : `${ad} tekrar aktif.`, durum ? 'warning' : 'success'); egitmenRenderSiniflar(); siralamaListesiDoldur(); }
-        function sporcuSil(ad) { if(!confirm(`${ad} KALICI olarak silinsin mi?\n(Skorları ve kayıtları da gider. "Pasife Al" verileri korur.)`)) return; let sp = turnuvaDB[aktifGrup][ad]; let snap = sp ? JSON.parse(JSON.stringify(sp)) : null; if(!silindiMi(aktifGrup, ad)) silinenlerDB.push({ ad: ad, grup: aktifGrup, tarih: Date.now(), kod: sp ? (sp.kod || sp.dogumYili || '') : '', veri: snap }); silinenlerKaydet(); try { seriIptalEkle(((sp && sp.seriler) || []).map(s => s.seriId).filter(Boolean)); } catch(e) {} delete turnuvaDB[aktifGrup][ad]; yoneticiKaydet(); showToast(`${ad} silindi.`, 'warning'); egitmenRenderSiniflar(); siralamaListesiDoldur(); sporcuListesiniYenile(); }
+        function sporcuSil(ad) { if(typeof yoneticiSil === 'function') { yoneticiSil(aktifGrup, ad); return; } if(!confirm(`${ad} KALICI olarak silinsin mi?\n(Skorları ve kayıtları da gider. "Pasife Al" verileri korur.)`)) return; let sp = turnuvaDB[aktifGrup][ad]; let snap = sp ? JSON.parse(JSON.stringify(sp)) : null; if(!silindiMi(aktifGrup, ad)) silinenlerDB.push({ ad: ad, grup: aktifGrup, tarih: Date.now(), kod: sp ? (sp.kod || sp.dogumYili || '') : '', veri: snap }); silinenlerKaydet(); try { seriIptalEkle(((sp && sp.seriler) || []).map(s => s.seriId).filter(Boolean)); } catch(e) {} delete turnuvaDB[aktifGrup][ad]; yoneticiKaydet(); showToast(`${ad} silindi.`, 'warning'); egitmenRenderSiniflar(); siralamaListesiDoldur(); sporcuListesiniYenile(); }
 
         /* ============ PERSONEL (ÇALIŞAN EĞİTMEN) TAKİBİ ============ */
 
@@ -4401,6 +4401,7 @@
             _aidatSporcuEkleBekleyenEkstra = null;
             if(!turnuvaDB[hedefGrup]) turnuvaDB[hedefGrup] = {};
             if(turnuvaDB[hedefGrup][ad]) { showToast(`${ad} zaten ${LIG_ETIKET[hedefGrup]} grubunda kayıtlı!`, 'warning'); return; }
+            let _silinmisti = silinenlerDB.some(x => !x.tasindi && x.grup === hedefGrup && x.ad === ad); if(_silinmisti) _sporcuSunucudaGeriAl(hedefGrup, ad).then(() => { try { bulutaGonderKontrol(); } catch(e) {} }).catch(() => {});
             silinenlerDB = silinenlerDB.filter(s => !(s.grup === hedefGrup && s.ad === ad));
             silinenlerKaydet();
             turnuvaDB[hedefGrup][ad] = {
@@ -5500,17 +5501,14 @@
         function silinmeEngelliyor(g, ad, sp) {
             let kayit = silinenlerDB.find(s => s.grup === g && s.ad === ad);
             if(!kayit) return false;
+            // KESİN SİLME (2026-10-02, kullanıcı: "bazı sporcuları sildiğimde geri tekrar sisteme düşüyor"): eskiden
+            // silinmeden sonra güncellenmiş bir kopya (eski veriyi tutan başka bir cihazdan gelen yoklama/puan) silme
+            // işaretini kaldırıp sporcuyu diriltiyordu. Artık silinen sporcu yalnızca "♻️ Geri al" ile döner
+            // (sunucuda /restore; başka cihazdaki geri alma bulutVeriyiUygula'da algılanır).
+            if(!kayit.tasindi) return true;
+            // TAŞIMA kayıtları: eski gruptaki kopya daha yeniyse yaşar ama işaret kalır (çift kategori temizliğinin referansı).
             let spZaman = (sp && sp.lastModified) || 0;
-            if(spZaman > (kayit.tarih || 0)) {
-                // Sporcu, silinme kaydından sonra tekrar eklenmiş → yaşat.
-                // TAŞIMA kayıtları (tasindi) SİLİNMEZ — çift kategori temizliğinin referansıdır;
-                // yoksa eski gruptaki kopyaya skor girildiğinde çocuk iki kategoride birden görünüyordu.
-                if(!kayit.tasindi) {
-                    silinenlerDB = silinenlerDB.filter(s => !(s.grup === g && s.ad === ad));
-                    silinenlerKaydet();
-                }
-                return false;
-            }
+            if(spZaman > (kayit.tarih || 0)) return false;
             return true;
         }
         // Arşivdeki seri ID'lerinin kümesi
@@ -5539,6 +5537,10 @@
             _kartGecmisiDedupe(sp); // çift arşiv kartları klasmanı şişirmesin
             let ars = _arsivIdSeti(sp);
             sp.seriler = (sp.seriler || []).filter(sr => !(sr.seriId && (seriIptalMi(sr.seriId) || ars[sr.seriId])));
+            // Numarasız kopya temizliği (2026-10-02): eski "Buluttan yenile" hatası her sporcuya, numaralı bir serinin
+            // numarasız kopyasını ekliyordu. Aynı gün + aynı oklarla numaralı ikizi olan numarasız seri düşer (birebir).
+            let _ikiz = {}; sp.seriler.forEach(sr => { if(sr.seriId) { let k = (sr.tarih || '') + '|' + JSON.stringify(sr.oklar || []); _ikiz[k] = (_ikiz[k] || 0) + 1; } });
+            sp.seriler = sp.seriler.filter(sr => { if(sr.seriId) return true; let k = (sr.tarih || '') + '|' + JSON.stringify(sr.oklar || []); if(_ikiz[k]) { _ikiz[k]--; return false; } return true; });
             let vMap = {'X':10,'10':10,'9':9,'8':8,'7':7,'6':6,'5':5,'4':4,'3':3,'2':2,'1':1,'M':0};
             let toplam = 0, xSay = 0;
             sp.seriler.forEach(s => { let p2 = 0; (s.oklar || []).forEach(o => { let v = vMap[o] !== undefined ? vMap[o] : 0; p2 += v; toplam += v; if(o === 'X') xSay++; }); s.puan = p2; });
@@ -5758,6 +5760,23 @@
                 showToast('☁️ Yedekten geri yükleme uygulandı', 'warning');
                 try { tumEkranlariYenile(); } catch(e) {}
                 return;
+            }
+            if(p.silinenler && Array.isArray(p.silinenler) && p.turnuvaDB) {
+                try {
+                    let sunucuIsaret = new Set(p.silinenler.map(x => x.grup + '|' + x.ad)), acilan = [];
+                    let kalan = silinenlerDB.filter(x => {
+                        if(x.tasindi || sunucuIsaret.has(x.grup + '|' + x.ad)) return true;
+                        if(_silBekleyen.some(b => b.grup === x.grup && b.ad === x.ad)) return true; // silme henüz sunucuya ulaşmadı
+                        let sv = p.turnuvaDB[x.grup] && p.turnuvaDB[x.grup][x.ad];
+                        if(sv && (sv.lastModified || 0) > (x.tarih || 0)) { acilan.push(sv); return false; }
+                        return true;
+                    });
+                    if(kalan.length !== silinenlerDB.length) {
+                        silinenlerDB = kalan; silinenlerKaydet();
+                        let ids = new Set(); acilan.forEach(sv => (sv.seriler || []).forEach(sr => { if(sr.seriId) ids.add(sr.seriId); }));
+                        if(ids.size) { iptalSerilerDB = iptalSerilerDB.filter(id => !ids.has(id)); iptalSerilerKaydet(); }
+                    }
+                } catch(e) { console.warn('geri alma eşitleme', e); }
             }
             if(p.silinenler && Array.isArray(p.silinenler)) { p.silinenler.forEach(s => { if(s && s.ad && s.grup && !silindiMi(s.grup, s.ad)) silinenlerDB.push({ ad: s.ad, grup: s.grup, tarih: s.tarih || Date.now(), tasindi: s.tasindi || false }); }); silinenlerKaydet(); }
             if(p.resetZamani) resetZamaniAyarla(p.resetZamani);
@@ -6352,6 +6371,7 @@
                 if(ym && getComputedStyle(ym).display !== 'none') {
                     sistemDurumGuncelle(); yoneticiCanliAkisCiz(); yoneticiDevamsizlikWidgetCiz(); yoneticiDogumGunuWidgetCiz();
                     if(yoneticiSekmeAktif === 'panel') yoneticiOzetCiz();
+                    else { _yonSayilarSon = yoneticiSayilar(); yoneticiSeritCiz(_yonSayilarSon); yoneticiSidebarCiz(); }
                 }
             } catch(e) {}
             if(!bulutHazir || !bulutIlkPullYapildi) return;
@@ -6433,12 +6453,14 @@
                 let degisti = false;
                 snap.forEach(d => {
                     let s = d.data(); if(!s || !s.g || !s.ad || !s.oklar) return;
+                    if(!s.id) s.id = d.id;
+                    if(!s.id || s.iptal || seriIptalMi(s.id)) return; // iptal edilmiş seri geri eklenmesin
                     if(silindiMi(s.g, s.ad)) return;
                     if(!turnuvaDB[s.g]) turnuvaDB[s.g] = {};
                     if(!turnuvaDB[s.g][s.ad]) return;
                     let sp = turnuvaDB[s.g][s.ad];
                     if(!sp.seriler) sp.seriler = [];
-                    if(!sp.seriler.some(sr => sr.seriId === s.id)) {
+                    if(!sp.seriler.some(sr => sr.seriId === s.id) && !(sp.kartGecmisi || []).some(k => (k.seriler || []).some(sr => sr.seriId === s.id))) {
                         sp.seriler.push({ seriId: s.id, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t });
                         sp.toplamSkor = sp.seriler.reduce((a,sr)=>a+(sr.puan||0),0);
                         sp.xAdet = sp.seriler.reduce((a,sr)=>a+((sr.oklar||[]).filter(o=>o==='X').length),0);
@@ -7390,7 +7412,11 @@
             YONETICI_BOLUMLER.forEach(([baslik, sekler]) => {
                 html += `<div class="yon-sidebar-group-title">${baslik}</div>`;
                 sekler.forEach(([k, ikon, l]) => {
-                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"><span class="yon-sb-icon">${ikon}</span>${l}</button>`;
+                    let s = _yonSayilarSon, rozet = '';
+                    if(s && k === 'kullanicilar') rozet = `<span class="yon-sb-rozet">${s.aktif}</span>`;
+                    if(s && k === 'aidat' && s.aidat) rozet = `<span class="yon-sb-rozet kirmizi">${s.aidat}</span>`;
+                    if(s && k === 'yoklama' && s.gelen) rozet = `<span class="yon-sb-rozet">${s.gelen}</span>`;
+                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${ikon}</span>${l}${rozet}</button>`;
                 });
             });
             nav.innerHTML = html;
@@ -7400,8 +7426,10 @@
             if(etiket) { let bilgi = yoneticiAktifSekmeBilgi(); etiket.innerHTML = `<span style="font-size:17px;">${bilgi.ikon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${bilgi.l}</span>`; }
             _yonDigerAcik = false;
             let sheet = document.getElementById('yon-diger-sheet'); if(sheet) sheet.classList.remove('acik');
+            try { _yonSayilarSon = yoneticiSayilar(); } catch(e) {}
             yoneticiAltNavCiz();
             yoneticiSidebarCiz();
+            try { yoneticiSeritCiz(_yonSayilarSon); } catch(e) {}
         }
         function yoneticiLigSec(g) { aktifGrup = g; yoneticiLigButonGuncelle(); yoneticiSekme(yoneticiSekmeAktif); }
         // DÜZELTME: eskiden sadece Büyükler/Küçükler butonu vardı — Yıldızlar/Minikler bu çubukla
@@ -7588,71 +7616,114 @@
             });
             return liste.sort((a, b) => (a.sonOrt / a.oncekiOrt) - (b.sonOrt / b.oncekiOrt));
         }
+        // ===== KOMUTA MERKEZİ v3 (2026-10-02) — kullanıcı A tasarımını seçti ("bu güzel, tablette de açsın") ve B'den:
+        // "aidatı gecikenleri, bugün gelenleri, kaç seri atıldığını ekranda göreyim ve onlara erişebileyim".
+        // Sayılar TEK yerden (yoneticiSayilar) — Genel Bakış kutuları, her sekmenin üstündeki şerit ve sol menü rozetleri
+        // aynı değeri gösterir. Aidat kuralı yapılacaklar listesiyle ortak (ypAidatListe, dagsk-yapilacaklar.js).
+        function yoneticiSayilar() {
+            let bugun = bugunISO(), gun = otomatikYoklamaDB[bugun] || {};
+            let gelen = Object.keys(gun).filter(ad => gun[ad] && gun[ad].geldi !== false).length;
+            // Seri sayısı sporcu kayıtlarından (her seride tarih var) — atisLog her kayıt yolundan beslenmiyor.
+            // "Dersi Bitir" seriyi kartGecmisi'ne taşıyıp sıfırladığı için bugünkü arşiv de sayılır (çift sayım olmaz).
+            let seri = 0, atanlar = new Set();
+            ['buyukler','yildizlar','kucukler','minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => {
+                let sp = turnuvaDB[g][ad], n = 0; if(!sp) return;
+                (sp.seriler || []).forEach(x => { if(x && x.tarih === bugun) n++; });
+                (sp.kartGecmisi || []).forEach(k => { if(k && k.tarih === bugun) n += (k.seriler || []).length; });
+                if(n) { seri += n; atanlar.add(g + '|' + ad); }
+            }));
+            // aidatDB henüz yüklenmediyse (aidat kilidi açılmadı / ilk senkron sürüyor) "0" yanıltıcı olur → null ("–")
+            let aidat = null;
+            try { if(typeof ypAidatListe === 'function' && Object.keys(aidatDB || {}).length) aidat = ypAidatListe().length; } catch(e) {}
+            let gunKaydi = (personelYoklamaDB || []).find(r => r.tarih === bugun);
+            let personel = ((gunKaydi && gunKaydi.gelenler) || []).length;
+            let aktif = 0;
+            ['buyukler','yildizlar','kucukler','minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(sp && !sp.pasif && !sp.donduruldu) aktif++; }));
+            return { gelen, seri, atan: atanlar.size, aidat, personel, personelToplam: (personelDB || []).length, aktif };
+        }
+        let _yonSayilarSon = null;
+        function yoneticiSeritCiz(s) {
+            let el = document.getElementById('yon-serit'); if(!el) return;
+            if(yoneticiSekmeAktif === 'panel') { el.innerHTML = ''; return; } // Genel Bakış'ta büyük kutular zaten var
+            s = s || _yonSayilarSon || yoneticiSayilar();
+            let b = (r, deger, et, sekme, ac) => `<button class="yon-serit-btn${yoneticiSekmeAktif === sekme ? ' aktif' : ''}" style="--r:${r}" onclick="yoneticiSekme('${sekme}')" aria-label="${ac}"><b>${deger}</b>${et}</button>`;
+            el.innerHTML = b('var(--neon-red)', s.aidat == null ? '–' : s.aidat, 'aidatı geciken', 'aidat', 'Aidatı gecikenler: ' + (s.aidat == null ? 'bilinmiyor' : s.aidat))
+                + b('var(--neon-green)', s.gelen, 'bugün geldi', 'yoklama', 'Bugün gelen sporcu: ' + s.gelen)
+                + b('var(--accent-orange)', s.seri, 'seri atıldı', 'bugunskor', 'Bugün atılan seri: ' + s.seri)
+                + b('var(--neon-blue)', s.personel, 'personel geldi', 'personel', 'Bugün gelen personel: ' + s.personel);
+        }
+        let _yonDersler = [];
         function yoneticiOzetCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
-            let bugun = bugunISO();
-            let gun = otomatikYoklamaDB[bugun] || {};
-            let bugunGelen = Object.keys(gun).length;
-            let toplamSporcu = sporcuSayisi(turnuvaDB);
-            let aktifSeriSporcu = 0, bugunToplamSeri = 0;
-            ['buyukler','yildizlar','kucukler','minikler'].forEach(g => {
-                Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                    let sl = (turnuvaDB[g][ad].seriler || []).length;
-                    if(sl > 0) { aktifSeriSporcu++; bugunToplamSeri += sl; }
-                });
-            });
-            let gunKaydi = personelYoklamaDB.find(r => r.tarih === bugun);
-            let bugunPersonel = ((gunKaydi && gunKaydi.gelenler) || []).length;
-            let tarihYazi = new Date().toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-            // KPI döşemesi — .adm-stat: simge artık renkli bir rozet içinde, sayı tek büyük görsel odak.
-            let kutu = (ikon, deger, etiket, renk) => `<div class="adm-stat"><div class="adm-stat-icon" style="background:${renk}22; color:${renk};">${ikon}</div><div class="adm-stat-value" style="color:${renk};">${deger}</div><div class="adm-stat-label">${etiket}</div></div>`;
-            let GRUP_EMOJI = {buyukler:'🔵', yildizlar:'⭐', kucukler:'🟢', minikler:'🌱'};
-            let GRUP_AD = {buyukler:'Büyükler', yildizlar:'Yıldızlar', kucukler:'Küçükler', minikler:'Minikler'};
-            let grupSatir = `<div class="adm-list">` + ['buyukler','yildizlar','kucukler','minikler'].map(g => {
-                let n = Object.keys(turnuvaDB[g] || {}).length;
-                let renk = GRUP_RENK[g];
-                return `<div class="adm-list-row">
-                    <div class="adm-avatar adm-avatar-sm" style="background:${renk};">${GRUP_EMOJI[g]}</div>
-                    <div style="flex:1; min-width:0; font-weight:700; font-size:12.5px;">${GRUP_AD[g]}</div>
-                    <div class="adm-badge" style="background:${renk}22; color:${renk};">${n} sporcu</div>
-                </div>`;
-            }).join('') + `</div>`;
-            let saatlik = _bugunSaatlikSeriSayilari();
-            let aktifSaatler = saatlik.slice(6, 23); // 06:00-23:00 arası — boş gece saatleri grafiği düzleştirmesin
-            // 2026-10-01 SADE PANEL (kullanıcı: "görseli daha iyi ve basit hale getir, dashboard şeklinde olabilir").
-            // Milo Genel Bakış ile aynı düzen: selam + tarih → 4 büyük özet kutusu (dokununca ilgili ekran) → tek satır
-            // hızlı işlemler → iki sütun: Bugün yapılacaklar (dagsk-yapilacaklar.js #yon-yp-yuva'ya yerleşir) + Dikkat.
-            // Kaldırılan tekrarlar: Kategoriler listesi (artık "Kayıtlı sporcu" kutusunda), ana Devamsızlık Radarı
-            // (yapılacaklar kartı + sağ sütun zaten gösteriyor), büyük hızlı işlem kartları.
+            // 10 sn'lik yenileme, kullanıcı aramaya yazarken yazdığını silmesin
+            let odak = document.activeElement; if(odak && odak.id === 'yon3-ara-girdi' && alan.contains(odak)) return;
+            let s = yoneticiSayilar(); _yonSayilarSon = s;
             let saat = new Date().getHours(), selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+            let ad = (typeof _oturum !== 'undefined' && _oturum && _oturum.ad) ? String(_oturum.ad).split(' ')[0] : '';
             let kisaTarih = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
-            let ozetKutu = (ikon, deger, et, alt, renk, onclick, ek) => '<button class="yon2-kutu" style="--r:' + renk + '" onclick="' + onclick + '"><span class="yon2-kutu-ikon">' + ikon + '</span><span class="yon2-kutu-deger">' + deger + '</span><span class="yon2-kutu-et">' + et + '</span><span class="yon2-kutu-alt">' + alt + '</span>' + (ek || '') + '</button>';
-            let grupCip = '<span class="yon2-cipler">' + ['buyukler','yildizlar','kucukler','minikler'].map(g => '<span title="' + GRUP_AD[g] + '">' + GRUP_EMOJI[g] + ' ' + Object.keys(turnuvaDB[g] || {}).length + '</span>').join('') + '</span>';
-            let erkL = erkenUyariListesi(), dusL = yoneticiDusukHazirOlmaListesi();
-            let dikkatSatir = (ikon, ad, alt, dugme) => '<div class="yon2-satir"><span class="yon2-satir-i">' + ikon + '</span><span class="yon2-satir-m"><b>' + esc(ad) + '</b><small>' + alt + '</small></span>' + (dugme || '') + '</div>';
-            let dikkatHTML = (!erkL.length && !dusL.length) ? '<div class="yon2-tamam">✓ Her şey yolunda — katılımı düşen ya da hazır olma skoru düşük sporcu yok.</div>'
-                : (erkL.length ? '<div class="yon2-bolum"><div class="yon2-bolum-bas"><span class="yon2-nokta" style="background:var(--gold)"></span>Katılımı düşüyor <b>' + erkL.length + '</b></div>' + erkL.slice(0, 4).map(x => dikkatSatir('🟡', x.ad, (LIG_ETIKET[x.g] || x.g) + ' · son 2 haftada daha az geliyor', '<button class="yon2-mini yesil" onclick="devamsizlikWhatsApp(\'' + x.ad.replace(/'/g, "\\'") + '\', 0)">💬</button>')).join('') + '</div>' : '')
-                + (dusL.length ? '<div class="yon2-bolum"><div class="yon2-bolum-bas"><span class="yon2-nokta" style="background:var(--neon-red)"></span>Düşük hazır olma <b>' + dusL.length + '</b></div>' + dusL.slice(0, 4).map(x => dikkatSatir(x.sakatlik ? '🤕' : '🧠', x.ad, (LIG_ETIKET[x.g] || x.g) + ' · skor ' + x.skor.toFixed(1) + '/10' + (x.sakatlik ? ' · sakatlık bildirdi' : ''))).join('') + '</div>' : '');
-            let hizli = (ikon, yazi, fn) => '<button class="yon2-hizli" onclick="' + fn + '"><span>' + ikon + '</span>' + yazi + '</button>';
-            alan.innerHTML = '<div class="yon2">'
-                + '<div class="adm-hero yon2-bas"><div><div class="yon2-selam">' + selam + ' 👋</div><div class="yon2-tarih">' + kisaTarih + ' · 🌐 bu ay <span id="yon-ziyaretci-sayisi">…</span> site ziyareti</div></div></div>'
-                + '<div class="yon2-kutular">'
-                + ozetKutu('✅', bugunGelen, 'Bugün gelen sporcu', bugunGelen ? 'yoklamaya göre' : 'henüz yoklama yok', 'var(--neon-green)', "yoneticiSekme('yoklama')")
-                + ozetKutu('🎯', bugunToplamSeri, 'Atılan seri', aktifSeriSporcu + ' sporcu atış yaptı', 'var(--accent-orange)', 'yoneticiCanliyaGit()', bugunToplamSeri > 0 ? '<span class="yon2-spark">' + yoneticiSparklineSVG(aktifSaatler, 'var(--accent-orange)') + '</span>' : '')
-                + ozetKutu('👥', toplamSporcu, 'Kayıtlı sporcu', 'kategorilere göre', 'var(--neon-blue)', "yoneticiSekme('kullanicilar')", grupCip)
-                + ozetKutu('👔', bugunPersonel, 'Bugün gelen personel', 'personel yoklaması', 'var(--gold)', "yoneticiSekme('personel')")
+            let kutu = (r, deger, et, alt, sekme) => `<button class="yon3-kutu" style="--r:${r}" onclick="${sekme}"><span class="yon3-kutu-et">${et}</span><span class="yon3-kutu-deger">${deger}</span><span class="yon3-kutu-alt">${alt}</span></button>`;
+            // Dikkat: aidat (özet), katılımı düşenler, düşük hazır olma, bu hafta doğum günü
+            let erkL = [], dusL = [], dogum = [];
+            try { erkL = erkenUyariListesi(); } catch(e) {}
+            try { dusL = yoneticiDusukHazirOlmaListesi(); } catch(e) {}
+            try { dogum = _dogumGunuListesi(7); } catch(e) {}
+            let satir = (renk, baslik, alt, dugme) => `<div class="yon3-dikkat"><span class="yon3-nokta" style="background:${renk}"></span><span class="yon3-dikkat-m"><b>${baslik}</b><small>${alt}</small></span>${dugme || ''}</div>`;
+            let dikkat = '';
+            if(s.aidat) dikkat += satir('var(--neon-red)', s.aidat + ' sporcunun aidatı gecikti', 'yapılacaklar listesinden veliye hatırlat', `<button class="yon3-link" onclick="yoneticiSekme('aidat')">Aidat</button>`);
+            erkL.slice(0, 3).forEach((x, i) => { dikkat += satir('var(--gold)', esc(x.ad), (LIG_ETIKET[x.g] || x.g) + ' · son 2 haftada daha az geliyor', `<button class="yon3-link" onclick="yoneticiDikkatWa(${i})" aria-label="Veliye WhatsApp">💬</button>`); });
+            if(erkL.length > 3) dikkat += satir('var(--gold)', '+' + (erkL.length - 3) + ' sporcunun katılımı düşüyor', 'yoklama sekmesinde', `<button class="yon3-link" onclick="yoneticiSekme('yoklama')">Gör</button>`);
+            dusL.slice(0, 3).forEach(x => { dikkat += satir('var(--neon-red)', esc(x.ad), (LIG_ETIKET[x.g] || x.g) + ' · hazır olma ' + x.skor.toFixed(1) + '/10' + (x.sakatlik ? ' · sakatlık bildirdi' : '')); });
+            if(dogum.length) dikkat += satir('var(--neon-blue)', dogum.length + ' doğum günü bu hafta', dogum.slice(0, 3).map(x => esc(x.ad.split(' ')[0]) + (x.gunSonra === 0 ? ' (bugün)' : '')).join(' · '));
+            if(!dikkat) dikkat = '<div class="yon3-bos">✓ Her şey yolunda — geciken aidat, katılımı düşen ya da hazır olma skoru düşük sporcu yok.</div>';
+            _yonDikkatErk = erkL;
+            alan.innerHTML = '<div class="yon3">'
+                + '<div class="yon3-bas"><div class="yon3-bas-m"><h2 class="yon3-selam">' + selam + (ad ? ', ' + esc(ad) : '') + '</h2><div class="yon3-alt">' + kisaTarih + ' · <span id="yon3-ders-ozet">bugünün dersleri yükleniyor…</span> · 🌐 bu ay <span id="yon-ziyaretci-sayisi">…</span> site ziyareti</div></div>'
+                + '<label class="yon3-ara"><span aria-hidden="true">🔍</span><input id="yon3-ara-girdi" type="search" placeholder="Sporcu ara…" aria-label="Sporcu ara" onkeydown="if(event.key===\'Enter\') yoneticiAramaGit(this.value)"></label>'
+                + '<button class="yon3-km" onclick="yoneticiKarisikSinifaGit()">🎯 Karışık Sınıf</button></div>'
+                + '<div class="yon3-kutular">'
+                + kutu('var(--neon-green)', s.gelen, 'Bugün gelen sporcu', s.gelen ? 'yoklamaya göre' : 'henüz yoklama yok', "yoneticiSekme('yoklama')")
+                + kutu('var(--accent-orange)', s.seri, 'Bugün atılan seri', s.atan + ' sporcu atış yaptı', "yoneticiSekme('bugunskor')")
+                + kutu('var(--neon-red)', s.aidat == null ? '–' : s.aidat, 'Aidatı geciken', s.aidat == null ? 'aidat bilgisi henüz yüklenmedi' : s.aidat ? 'dokun → Aidat' : 'geciken yok', "yoneticiSekme('aidat')")
+                + kutu('var(--neon-blue)', s.personel, 'Bugün gelen personel', s.personelToplam ? s.personelToplam + ' kişiden' : 'personel yoklaması', "yoneticiSekme('personel')")
                 + '</div>'
-                + '<div class="yon2-hizlilar">' + hizli('🎯', 'Karışık Sınıf', 'yoneticiKarisikSinifaGit()') + hizli('⚡', 'Hızlı Skor', "yoneticiSekme('kullanicilar')") + hizli('📡', 'Canlı Takip', 'yoneticiCanliyaGit()') + hizli('✅', 'Yoklama', "yoneticiSekme('yoklama')") + hizli('📅', 'Ders Programı', "yoneticiSekme('program')") + hizli('📝', 'Hızlı Düzenle', "yoneticiSekme('hizliduzenle')") + '</div>'
-                + '<div class="yon2-izgara">'
-                + '<div id="yon-yp-yuva"></div>'
-                + '<div class="adm-card yon2-kart"><div class="yon2-kart-bas">⚠️ Dikkat</div>' + dikkatHTML + '</div>'
+                + '<div class="yon3-izgara">'
+                + '<div class="yon3-sutun"><section class="yon3-kart" aria-label="Bugünün dersleri"><h3 class="yon3-kart-bas">Bugünün dersleri <small>Ders Programı\'ndan</small></h3><div id="yon3-dersler"><div class="yon3-bos">Yükleniyor…</div></div></section><div id="yon-yp-yuva"></div></div>'
+                + '<section class="yon3-kart" aria-label="Dikkat isteyenler"><h3 class="yon3-kart-bas">Dikkat isteyenler</h3>' + dikkat + '</section>'
                 + '</div></div>';
+            try { yoneticiSidebarCiz(); } catch(e) {}
+            // Bugünün dersleri — Karışık Sınıf'ın "programdan ders" yardımcıları (dagsk-km-sablon-ozet.js, 2 dk önbellek)
+            if(typeof kmProgramSlotlariGetir === 'function') {
+                kmProgramSlotlariGetir().then(sl => {
+                    _yonDersler = kmBugunDersleri(sl || []);
+                    let el = document.getElementById('yon3-dersler'), oz = document.getElementById('yon3-ders-ozet');
+                    if(oz) oz.textContent = _yonDersler.length ? 'bugün ' + _yonDersler.length + ' ders daha var, ilki ' + _yonDersler[0].s.baslangicSaat : 'bugün başka ders yok';
+                    if(!el) return;
+                    if(!_yonDersler.length) { el.innerHTML = '<div class="yon3-bos">Bugün için kalan ders yok.</div>'; return; }
+                    el.innerHTML = _yonDersler.slice(0, 6).map((x, i) => {
+                        let n = kmDersSporculari(x.s).length;
+                        return `<div class="yon3-ders${x.simdi ? ' simdi' : ''}"><span class="yon3-ders-saat">${esc(x.s.baslangicSaat)}<small>${esc(x.s.bitisSaat)}</small></span><span class="yon3-ders-m"><b>${esc(x.s.grup || 'Ders')}</b><small>${n ? n + ' kayıtlı sporcu' : 'kayıtlı sporcu yok'}${x.simdi ? ' · şimdi' : ''}</small></span>${n ? `<button class="yon3-ders-btn" onclick="yoneticiDersBaslat(${i})">▶ Dersi başlat</button>` : ''}</div>`;
+                    }).join('');
+                }).catch(() => {});
+            }
             try {
                 fetch('/api/tanitim/ziyaret-ozet').then(r => r.json()).then(d => {
                     let el = document.getElementById('yon-ziyaretci-sayisi');
                     if(el) el.textContent = d.toplam || 0;
                 }).catch(() => {});
             } catch(e) {}
+        }
+        let _yonDikkatErk = [];
+        function yoneticiDikkatWa(i) { let x = _yonDikkatErk[i]; if(x) devamsizlikWhatsApp(x.ad, 0); }
+        // Genel Bakış araması → Sporcular & Skor sekmesi, arama kutusu dolu (Enter)
+        function yoneticiAramaGit(q) {
+            yoneticiSekme('kullanicilar');
+            let a = document.getElementById('yonetici-arama'); if(a) { a.value = q || ''; yoneticiPaneliCiz(); a.focus(); }
+        }
+        // Bugünün dersine tek dokunuş (yönetici): paneli kapat, eğitmen panelindeki ile aynı akış.
+        function yoneticiDersBaslat(i) {
+            let x = _yonDersler[i]; if(!x) return;
+            yoneticiPaneliKapat();
+            _dersSlotBaslat(x);
         }
         // Hızlı İşlemler köprüsü: paneli kapatıp ana uygulamanın Karışık Sınıf akışını açar
         // (mevcut kayıtlı ders varsa kaldığı yerden, yoksa yeni seçim ekranından — kmAc() zaten bunu yapıyor).
@@ -7720,8 +7791,9 @@
         function egitmenDevamsizWa(i) { let x = _egtDevamsiz[i]; if(x) devamsizlikWhatsApp(x.ad, x.gun); }
         // Bugünün dersine tek dokunuş: devam eden ders varsa (bu cihazda ya da başka cihazda) önce ona gidilir — üzerine
         // yazılmaz; yoksa Karışık Sınıf'ın "programdan ders" akışıyla (kmProgramDersBaslat) doğrudan başlar.
-        function egitmenDersBaslat(i) {
-            let x = _egtDersler[i]; if(!x) return;
+        function egitmenDersBaslat(i) { let x = _egtDersler[i]; if(x) _dersSlotBaslat(x); }
+        // Ortak: eğitmen paneli ve yönetici Genel Bakış'tan "▶ Dersi başlat" (x = kmBugunDersleri öğesi).
+        function _dersSlotBaslat(x) {
             if(!_kmAktifKonum) { showToast('Önce dersin yapılacağı konumu seç, sonra "Bugünün dersleri"nden başlat', 'info'); kmKonumSeciciAc(); return; }
             let buradaDers = _kmYerelListeVar(_kmAktifKonum) || (_kmSunucuAktif || []).some(function(d) { return d.konum.id === _kmAktifKonum; });
             if(buradaDers) { showToast('Bu konumda devam eden bir ders var — önce onu açıyorum', 'info'); kmKonumaGir(); return; }
@@ -9603,6 +9675,7 @@
             if(!turnuvaDB[hedefGrup]) turnuvaDB[hedefGrup] = {};
             if(turnuvaDB[hedefGrup][ad]) return showToast(`${ad} zaten ${LIG_ETIKET[hedefGrup]} grubunda kayıtlı!`,'warning');
             // Eski silinme kaydı varsa temizle — yoksa sporcu birkaç saniye sonra buluttan geri siliniyordu
+            let _silinmisti = silinenlerDB.some(x => !x.tasindi && x.grup === hedefGrup && x.ad === ad); if(_silinmisti) _sporcuSunucudaGeriAl(hedefGrup, ad).then(() => { try { bulutaGonderKontrol(); } catch(e) {} }).catch(() => {});
             silinenlerDB = silinenlerDB.filter(s => !(s.grup === hedefGrup && s.ad === ad));
             silinenlerKaydet();
             turnuvaDB[hedefGrup][ad] = { toplamSkor:0, xAdet:0, dogumYili:yil, cinsiyet:_yonCinsiyet, yay:_yonYay, seriler:[], detayliOklar:[], lastModified:Date.now() };
@@ -9697,8 +9770,11 @@
                 try { if(typeof otomatikYoklamaDB !== 'undefined') Object.keys(otomatikYoklamaDB).forEach(t => { if(otomatikYoklamaDB[t] && otomatikYoklamaDB[t][ad] && otomatikYoklamaDB[t][ad].grup === g) delete otomatikYoklamaDB[t][ad]; }); otomatikYoklamaKaydet(); } catch(e) {}
                 try { if(typeof aidatDB !== 'undefined' && aidatDB[g]) delete aidatDB[g][ad]; } catch(e) {}
                 try { yoneticiKaydet(); } catch(e) {}
-                showToast(`🗑️ ${ad} silindi (Silinenler'e taşındı).`, 'warning'); yoneticiPaneliCiz();
+                showToast(`🗑️ ${ad} silindi (Silinenler'e taşındı).`, 'warning');
+                try { let ym = document.getElementById('yonetici-modal'); if(ym && getComputedStyle(ym).display !== 'none') yoneticiPaneliCiz(); } catch(e) {}
                 try { siralamaListesiDoldur(); } catch(e) {}
+                try { egitmenRenderSiniflar(); } catch(e) {}
+                try { sporcuListesiniYenile(); } catch(e) {}
             }, '🗑️ Evet, Sil');
         }
         // Çift kayıt birleştirme çekirdeği — ekran: dagsk-kisi-yonetimi.js kyCiftKayitCiz (eski ekran 2026-09-29 kaldırıldı).
@@ -9787,13 +9863,29 @@
             });
             alan.innerHTML = html;
         }
+        // ♻️ Silinenlerden geri al (2026-10-02, kullanıcı: "yanlışlıkla sildiğimi silinenlerden düzgün geri çekmem
+        // gerekiyor"). Eskiden yalnızca bu cihazdaki kopya geri konuyordu: silmede iptal edilen seriler sunucuda iptal
+        // kalıyor, başka cihazlar sporcuyu silinmiş görmeye devam ediyordu. Artık sunucu silme işaretini kaldırır ve
+        // serileri geri açar; ardından tüm veri (yoklama, aidat dahil) sunucudan yeniden çekilir.
+        function _sporcuSunucudaGeriAl(g, ad) {
+            return fetch('/api/athletes/' + encodeURIComponent(g) + '/' + encodeURIComponent(ad) + '/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceId: _cihazId }) })
+                .then(r => { if(!r.ok) throw new Error(r.status === 401 ? 'giriş gerekli' : 'HTTP ' + r.status); return r.json(); });
+        }
         function yoneticiGeriAl(g, ad) {
             let idx = silinenlerDB.findIndex(s => s.grup === g && s.ad === ad); if(idx < 0) return;
             let s = silinenlerDB[idx];
-            if(s.veri) { if(!turnuvaDB[g]) turnuvaDB[g] = {}; turnuvaDB[g][ad] = s.veri; turnuvaDB[g][ad].lastModified = Date.now(); }
-            silinenlerDB.splice(idx, 1); silinenlerKaydet();
-            try { yoneticiKaydet(); } catch(e) {}
-            showToast(`♻️ ${ad} geri alındı.`, 'success'); yoneticiSilinenlerCiz();
+            showToast(`♻️ ${ad} geri alınıyor…`, 'info');
+            _sporcuSunucudaGeriAl(g, ad).then(d => {
+                _silBekleyen = _silBekleyen.filter(x => !(x.grup === g && x.ad === ad)); _silBekleyenKaydet();
+                let ids = new Set((d.seriIds || []).concat(((s.veri && s.veri.seriler) || []).map(x => x.seriId)).filter(Boolean));
+                if(ids.size) { iptalSerilerDB = iptalSerilerDB.filter(id => !ids.has(id)); iptalSerilerKaydet(); }
+                if(s.veri && !(turnuvaDB[g] && turnuvaDB[g][ad])) { if(!turnuvaDB[g]) turnuvaDB[g] = {}; turnuvaDB[g][ad] = s.veri; turnuvaDB[g][ad].lastModified = Date.now(); }
+                silinenlerDB = silinenlerDB.filter(x => !(x.grup === g && x.ad === ad)); silinenlerKaydet();
+                try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {}
+                showToast(`♻️ ${ad} geri alındı${d.seri ? ' — ' + d.seri + ' seri de geri geldi' : ''}.`, 'success');
+                try { yoneticiSilinenlerCiz(); } catch(e) {}
+                try { bulutManuelYenile(); } catch(e) {}
+            }).catch(e => showToast('Geri alınamadı (' + (e && e.message ? e.message : 'bağlantı') + ') — hiçbir şey değişmedi, tekrar dene.', 'error'));
         }
         function yoneticiKaliciSil(g, ad) {
             onayIste(`❌ <b>${ad}</b> listeden kalıcı kaldırılsın mı?<br><span style="font-size:12px; color:var(--text-muted);">Artık geri alınamaz.</span>`, () => {
@@ -10511,7 +10603,7 @@
             // Video & Duruş aracı asıl kamera ekranını buraya taşıyor — başka araca geçerken yerine geri koy.
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             _kmAktifSekme = s;
-            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -10547,6 +10639,8 @@
             else if(s==='malzeme') kmEkCalistir('dagsk-km-rehber.js', 'kmMalzemeCiz');
             else if(s==='durus') kmEkCalistir('dagsk-km-rehber.js', 'kmDurusCiz');
             else if(s==='yoklamaanaliz') kmEkCalistir('dagsk-km-yoklama-analiz.js', 'kmYoklamaAnalizCiz');
+            else if(s==='kocluk') kmEkCalistir('dagsk-km-kocluk.js', 'kmKoclukCiz');
+            else if(s==='milyonok') kmEkCalistir('dagsk-km-kocluk.js', 'kmMilyonOkCiz');
         }
         // Hafifletme (2026-09-28): yalnızca bu Karışık Sınıf araçlarında kullanılan ek dosyalar (performans,
         // rehber, yoklama ~250 KB) açılışta değil, araç İLK açıldığında yüklenir. Service worker önbelleğinde
@@ -10664,6 +10758,9 @@
             { id:'dersakisi', ad:'Ders Akışı', grup:'yesil', icon:'<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="M18 14.6V16l1 .8"/>' },
             // Performans araçları (2026-09-27) — kod: public/dagsk-performans.js
             { id:'resmitur', ad:'Resmi Tur', grup:'sari', icon:'<circle cx="12" cy="9" r="5"/><path d="M8.5 13 7 21l5-3 5 3-1.5-8"/>' },
+            // Teknik Koçluk + Milyon Ok (2026-10-02) — kod: public/dagsk-km-kocluk.js
+            { id:'kocluk', ad:'Teknik Koçluk', grup:'yesil', icon:'<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/>' },
+            { id:'milyonok', ad:'Milyon Ok', grup:'sari', icon:'<path d="M4 20 18 6"/><path d="M14 6h4v4"/><path d="M4 20l2-5M4 20l5-2"/>' },
             { id:'okanaliz', ad:'Ok Analizi', grup:'mavi', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M20 4 13.5 10.5M16 4h4v4"/>' },
             // Rehber araçları (2026-09-28) — kod: public/dagsk-km-rehber.js
             { id:'dersler', ad:'Ders Kütüphanesi', grup:'yesil', icon:'<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>' },
@@ -28386,7 +28483,64 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // (dolayısıyla Klasman/karneye) yazılıyordu ama atisLog'a hiç girmiyordu — "Bugün Ok Atanlar"da o
         // sporcu hiç görünmüyordu; üstelik rekor/rozet/XP de sessizce atlanıyordu. Artık iki çağıran da
         // (skorKaydet ve arka plan kurtarma) AYNI bu fonksiyonu çağırıyor, aralarında fark kalmadı.
+        // ===== 🏹 MİLYON OK YOLCULUĞU (2026-10-02) =====
+        // Kullanıcı araştırmadan sonra seçti: Kore'de bir olimpiyat şampiyonu sahneye çıkana kadar ~1.000.000 ok atıyor;
+        // bizde ortanca sporcu haftada ~8 kayıtlı ok atıyor. Hacmi çocuğa/veliye GÖRÜNÜR yapmak için kariyer ok sayacı +
+        // kilometre taşları. Sayım: güncel seriler + geçmiş skor kartları + kapanmış sezonların ok sayısı (sezon kapanışı
+        // kartGecmisi'ni sıfırladığı için çift sayım yok). Yalnızca KAYDEDİLEN oklar sayılır.
+        const MILYON_OK_ESIKLER = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+        function milyonOkSay(sp) {
+            if(!sp) return 0; let n = 0;
+            (sp.seriler || []).forEach(s => { n += (s.oklar || []).length; });
+            (sp.kartGecmisi || []).forEach(k => (k.seriler || []).forEach(s => { n += (s.oklar || []).length; }));
+            (sp.gecmisSezonlar || []).forEach(z => { n += (z.okSayisi || 0); });
+            return n;
+        }
+        function milyonOkHafta(sp) {
+            if(!sp) return 0; let sinir = bsIsoTarih(new Date(Date.now() - 6 * 864e5)), n = 0;
+            let say = s => { if((s.tarih || '') >= sinir) n += (s.oklar || []).length; };
+            (sp.seriler || []).forEach(say); (sp.kartGecmisi || []).forEach(k => (k.seriler || []).forEach(say));
+            return n;
+        }
+        function milyonOkDurak(n) {
+            let once = 0, son = MILYON_OK_ESIKLER[MILYON_OK_ESIKLER.length - 1];
+            for(let e of MILYON_OK_ESIKLER) { if(e <= n) once = e; else { son = e; break; } }
+            return { once, son, yuzde: n >= son ? 100 : Math.max(0, Math.min(100, Math.round((n - once) / (son - once) * 100))) };
+        }
+        function milyonOkSayiYaz(n) { return Number(n || 0).toLocaleString('tr-TR'); }
+        function milyonOkKartHTML(sp) {
+            let n = milyonOkSay(sp), d = milyonOkDurak(n), hafta = milyonOkHafta(sp);
+            let milyonda = n / 1e6 * 100, bas = milyonda >= 1 ? 0 : milyonda >= 0.1 ? 1 : 2, oran = milyonda > 0 && milyonda < 0.01 ? "0,01'den az" : milyonda.toLocaleString('tr-TR', { minimumFractionDigits: bas, maximumFractionDigits: bas });
+            let rozet = MILYON_OK_ESIKLER.filter(e => e >= 1000 && e <= n).map(e => `<span style="font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:99px; background:color-mix(in srgb, var(--gold) 18%, transparent); color:var(--gold);">🏅 ${e >= 1000000 ? '1 MİLYON' : milyonOkSayiYaz(e)}</span>`).join('');
+            return `<div style="border:1px solid color-mix(in srgb, var(--gold) 45%, var(--border-color)); border-radius:12px; padding:12px; margin-bottom:10px; background:color-mix(in srgb, var(--gold) 6%, transparent);">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;"><b style="font-size:13px;">🏹 Milyon Ok Yolculuğu</b><span style="font-size:11px; color:var(--text-muted);">bu hafta ${milyonOkSayiYaz(hafta)} ok</span></div>
+                <div style="font-size:26px; font-weight:900; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">${milyonOkSayiYaz(n)} <span style="font-size:12px; font-weight:700; color:var(--text-muted);">ok</span></div>
+                <div style="height:8px; border-radius:99px; background:rgba(148,163,184,0.18); overflow:hidden; margin:6px 0 4px;" role="progressbar" aria-valuenow="${d.yuzde}" aria-valuemin="0" aria-valuemax="100" aria-label="Sonraki durağa ilerleme"><div style="height:100%; width:${d.yuzde}%; background:var(--gold);"></div></div>
+                <div style="font-size:11.5px; color:var(--text-muted);">${n >= 1000000 ? '🎉 Milyon tamam!' : `Sonraki durak <b style="color:var(--text-main);">${milyonOkSayiYaz(d.son)}</b> — ${milyonOkSayiYaz(d.son - n)} ok kaldı`} · Kore'de bir olimpiyat şampiyonu ~1 milyon ok attı; sen yolun <b style="color:var(--text-main);">%${oran}</b> kadarındasın.</div>
+                ${rozet ? `<div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;">${rozet}</div>` : ''}
+            </div>`;
+        }
+        // Seri kaydından sonra: bir durak geçildiyse kutla (ciddi yarışma modunda kutlamalar zaten susturuluyor)
+        // 🗣️ Teknik odak (Teknik Koçluk aracında seçilir): bütün eğitmenler bu çocuğa aynı cümleyi söylesin.
+        function teknikOdakKarneHTML(g, ad) {
+            try {
+                if(typeof kyDepoOku !== 'function') return '';
+                let o = kyDepoOku('teknik_odak')[g + '|' + ad]; if(!o || o.sil || !o.hata) return '';
+                return `<div style="border-radius:12px; padding:10px 12px; margin-bottom:10px; background:color-mix(in srgb, var(--accent-orange) 10%, transparent);">
+                    <div style="font-size:10.5px; font-weight:800; letter-spacing:.06em; color:var(--text-muted);">🗣️ BU HAFTANIN TEKNİK ODAĞI · ${esc(o.hataAd || '')}</div>
+                    <div style="font-size:15px; font-weight:800; margin-top:3px;">“${esc(o.cumle || '')}”</div></div>`;
+            } catch(e) { return ''; }
+        }
+        function milyonOkDurakKontrol(ad, grup, okSayisi) {
+            try {
+                let sp = turnuvaDB[grup] && turnuvaDB[grup][ad]; if(!sp || !okSayisi) return;
+                let n = milyonOkSay(sp), onceki = n - okSayisi;
+                let gecilen = MILYON_OK_ESIKLER.filter(e => e > onceki && e <= n).pop();
+                if(gecilen) kutlamaKuyrukEkle({ emoji: '🏹', banner: '🏹 MİLYON OK YOLCULUĞU', ad: ad, aciklama: milyonOkSayiYaz(gecilen) + '. okunu attı! Sonraki durak: ' + milyonOkSayiYaz(milyonOkDurak(n).son), deger: '🎯' });
+            } catch(e) {}
+        }
         function _seriSonrasiOdulVeLog(ad, grup, seriDoc, seriPuan, okDegerleri) {
+            milyonOkDurakKontrol(ad, grup, (okDegerleri || []).length);
             try {
                 let seriSari = okDegerleri.filter(o => o === 'X' || o === '10' || o === '9').length;
                 let seriX = okDegerleri.filter(o => o === 'X').length;
@@ -28687,6 +28841,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     let ep = (sp.egitmenPuan !== undefined && sp.egitmenPuan !== '' && sp.egitmenPuan !== null) ? `<span style="color:var(--neon-blue); font-weight:bold;"> • Vurduğu Puan: ${sp.egitmenPuan}</span>` : '';
                     ustBilgi += `<div style="background:rgba(59,130,246,0.1); border:1px solid var(--neon-blue); border-radius:8px; padding:10px; margin-bottom:10px;"><div style="font-size:12px; font-weight:bold; color:var(--neon-blue); margin-bottom:4px;">🎓 Eğitmen Notu${ep}</div><div style="font-size:13px; color:var(--text-main); white-space:pre-wrap;">${(sp.egitmenNotu||'-')}</div></div>`;
                 }
+                try { ustBilgi = milyonOkKartHTML(sp) + (typeof teknikOdakKarneHTML === 'function' ? teknikOdakKarneHTML(aktifGrup, ad) : '') + ustBilgi; } catch(e) {}
                 gsAlani.innerHTML = ustBilgi;
                 try { ekipmanKiyaslaGuncelle(); } catch(e) {}
                 if(seriler.length > 0) {

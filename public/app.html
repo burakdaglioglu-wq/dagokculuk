@@ -45,7 +45,7 @@
         <button id="btn-tema-degistir" onclick="toggleTheme()">☀️/🌙 Tema</button>
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v173</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v174</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -1720,7 +1720,7 @@
             <!-- SOL SIDEBAR — sadece masaüstünde görünür -->
             <div class="yon-sidebar" id="yon-sidebar">
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:0 6px 8px; gap:6px;">
-                    <div style="font-weight:900; font-size:14px;">🏹 DAĞ S.K.</div>
+                    <div class="yon-sb-logo"><span class="yon-sb-logo-harf" aria-hidden="true">D</span><span><b>DAĞ S.K.</b><small>Yönetici</small></span></div>
                     <button onclick="anaMenuAc()" class="adm-btn adm-btn-sm" title="Ana Menü" style="min-width:30px; padding:0 8px; font-size:11px; font-weight:800;">🏠</button>
                     <button onclick="yoneticiPaneliKapat()" class="adm-btn adm-btn-sm" style="min-width:30px; padding:0;">✕</button>
                 </div>
@@ -1738,6 +1738,8 @@
                         <button onclick="anaMenuAc()" class="adm-btn" title="Ana Menü" style="min-height:36px; padding:0 10px; font-size:12px; font-weight:800; border-radius:11px; flex-shrink:0; white-space:nowrap;">🏠 Ana Menü</button>
                         <button onclick="yoneticiPaneliKapat()" class="adm-btn" style="min-height:36px; width:36px; padding:0; font-size:14px; border-radius:11px; flex-shrink:0;">✕</button>
                     </div>
+                    <!-- Sayı şeridi (2026-10-02): aidatı geciken / bugün gelen / atılan seri — dokununca ilgili sekme. -->
+                    <div id="yon-serit" class="yon-serit" role="navigation" aria-label="Bugünün sayıları"></div>
                     <div id="yon-lig-bar" style="display:none; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; flex-shrink:0;">
                         <button id="yon-lig-buyukler" onclick="yoneticiLigSec('buyukler')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">🔵 Büyükler</button>
                         <button id="yon-lig-yildizlar" onclick="yoneticiLigSec('yildizlar')" style="border:1px solid var(--border-color); padding:9px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; background:transparent; color:var(--text-main);">⭐ Yıldızlar</button>
