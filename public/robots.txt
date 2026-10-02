@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /app.html
+Disallow: /milo/
+Disallow: /izle.html
+
+Sitemap: https://dagsporkulubu.com/sitemap.xml

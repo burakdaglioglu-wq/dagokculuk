@@ -4,8 +4,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DAĞ Spor Kulübü — Okçuluk</title>
-<meta name="description" content="DAĞ Spor Kulübü'nde okçuluk: minik yaşlardan yarışma seviyesine, disiplinle ve kişiye özel takiple ilerleyen bir okçuluk topluluğu. Pendik, İstanbul.">
+<title>DAĞ Okçuluk · Pendik okçuluk kulübü · Ücretsiz deneme dersi</title>
+<meta name="description" content="Pendik'te okçuluk kulübü: 5 yaştan yetişkine okçuluk dersleri, haftalık ders saatleri ve ücretsiz deneme dersi. Ekipman kulüpten. DAĞ Spor Kulübü, Pendik / İstanbul.">
+<link rel="canonical" href="https://dagsporkulubu.com/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta property="og:title" content="DAĞ Okçuluk — Her şey bulanık, hedef net.">
 <meta property="og:description" content="Ekran yok, acele yok. Sadece tek bir hedef var. Pendik'te okçuluk; ilk ders ücretsiz.">
 <meta property="og:image" content="https://dagsporkulubu.com/hero/paylas.jpg">
@@ -23,7 +26,9 @@
   "@context": "https://schema.org",
   "@type": "SportsActivityLocation",
   "name": "Dağ Okçuluk - Pendik Dağ Spor KULÜBÜ",
-  "image": "https://dagsk.burakdaglioglu.workers.dev/tanitim-logo.png",
+  "image": "https://dagsporkulubu.com/hero/paylas.jpg",
+  "logo": "https://dagsporkulubu.com/tanitim-logo.png",
+  "sport": "Okçuluk",
   "telephone": "+905469107893",
   "address": {
     "@type": "PostalAddress",
@@ -42,7 +47,6 @@
   }
 }
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr" async defer></script>
 <style>
   :root{
     --bg:#121110; --bg-alt:#191715; --panel:rgba(236,230,220,0.04); --ink:#efebe5; --ink-soft:#a59e94;
@@ -691,6 +695,45 @@
   @keyframes okSaplan{ 0%{ opacity:1; transform:translateX(-60vw); } 85%{ opacity:1; transform:translateX(158px); } 100%{ opacity:1; transform:translateX(148px); } }
   @media (max-width:899px){ .cta-ok{ display:none; } }
   @media (prefers-reduced-motion: reduce){ .kayan-ok{ display:none; } .cta-vizor.isabet .cta-ok{ animation:none; opacity:1; transform:translateX(148px); } }
+
+  section[id]{ scroll-margin-top:120px; }
+  #deneme-form{ scroll-margin-top:130px; }
+  /* Ders saatleri + deneme formu */
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .saat-grid{ display:grid; grid-template-columns:1.25fr .75fr; gap:clamp(28px,5vw,72px); align-items:start; }
+  @media (max-width:900px){ .saat-grid{ grid-template-columns:1fr; } }
+  .saat-tablo{ margin-top:28px; border-top:1px solid var(--line); }
+  .saat-yukleniyor{ font:400 13px/1.5 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); padding:20px 0; }
+  .saat-gun{ display:grid; grid-template-columns:120px 1fr; gap:14px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); }
+  @media (max-width:520px){ .saat-gun{ grid-template-columns:1fr; gap:8px; } }
+  .saat-gun-ad{ font-family:'Archivo',sans-serif; font-weight:800; font-size:16px; text-transform:uppercase; }
+  .saat-gun.bos .saat-gun-ad{ color:var(--ink-soft); }
+  .saat-cipler{ display:flex; flex-wrap:wrap; gap:8px; }
+  .saat-yok{ font:400 12.5px/1 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); }
+  .saat-cip{ min-height:40px; padding:0 14px; border-radius:6px; border:1px solid var(--line); background:rgba(236,230,220,.03); color:var(--ink);
+    font:700 15px/1 'Roboto Mono',ui-monospace,monospace; cursor:pointer; transition:border-color .2s ease, background .2s ease; }
+  .saat-cip small{ font-weight:400; font-size:12px; color:var(--ink-soft); margin-left:2px; }
+  .saat-cip:hover{ border-color:rgba(255,106,26,.6); }
+  .saat-cip[aria-pressed="true"]{ border-color:var(--accent); background:rgba(255,106,26,.14); }
+  .saat-cip[aria-pressed="true"] small{ color:var(--ink); }
+  .deneme-form{ position:relative; --kol:28px; padding:30px 26px; background:rgba(236,230,220,.035); border:1px solid var(--line); border-radius:6px; display:flex; flex-direction:column; gap:16px; }
+  @media (min-width:901px){ .deneme-form{ position:sticky; top:84px; } }
+  .deneme-form .vz-k{ border-color:var(--accent); }
+  .deneme-baslik{ font:900 clamp(24px,2.4vw,30px)/1 'Archivo',sans-serif; text-transform:uppercase; margin:0; }
+  .deneme-not{ font:400 12px/1.5 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); margin:-6px 0 4px; }
+  .df-alan{ display:flex; flex-direction:column; gap:8px; border:0; padding:0; margin:0; min-width:0; }
+  .df-alan[hidden]{ display:none; }
+  .df-alan legend, .df-etiket{ font:500 11px/1 'Roboto Mono',ui-monospace,monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); padding:0; margin-bottom:8px; }
+  .df-etiket small{ text-transform:none; letter-spacing:0; }
+  .df-alan input[type="number"], .df-alan input[type="text"], .df-alan select{ min-height:46px; padding:0 14px; border-radius:6px; border:1px solid var(--line); background:#0f0e0d; color:var(--ink); font:500 15px/1 'Archivo',sans-serif; width:100%; }
+  .df-alan input:focus, .df-alan select:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:transparent; }
+  .df-secim{ display:flex; flex-wrap:wrap; gap:8px; }
+  .df-secim label{ position:relative; }
+  .df-secim input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
+  .df-secim span{ display:inline-flex; align-items:center; min-height:42px; padding:0 14px; border-radius:6px; border:1px solid var(--line); font-weight:700; font-size:14px; cursor:pointer; }
+  .df-secim input:checked + span{ border-color:var(--accent); background:rgba(255,106,26,.14); }
+  .df-secim input:focus-visible + span{ outline:2px solid var(--accent); outline-offset:2px; }
+  .df-gonder{ width:100%; text-align:center; margin-top:4px; }
 </style>
 </head>
 <body>
@@ -726,11 +769,12 @@
 
 <header class="nav">
   <div class="nav-row">
-    <div class="nav-logo"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
+    <div class="nav-logo"><img src="/logo-k.webp" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
     <nav class="nav-links">
       <a href="#okculuk">Okçuluk</a>
       <a href="#cimnastik">Cimnastik</a>
       <a href="#programlar">Programlar</a>
+      <a href="#saatler">Ders saatleri</a>
       <a href="#fotograflar">Fotoğraflar</a>
       <a href="#sss">SSS</a>
       <a href="#yorumlar">Yorumlar</a>
@@ -762,8 +806,8 @@
       <img class="vz-resim vz-net vz-s1" data-sahne="0" srcset="/hero/net-900.jpg 900w, /hero/net-1600.jpg 1600w" sizes="100vw" src="/hero/net-1600.jpg" alt="DAĞ Okçuluk salonunda yayını gerip hedefe nişan alan genç okçu">
     </picture>
     <picture>
-      <source srcset="/hero/salon-900.webp 900w, /hero/salon-1600.webp 1600w, /hero/salon-2400.webp 2400w" sizes="100vw" type="image/webp">
-      <img class="vz-resim vz-net vz-s2 vz-gizli" data-sahne="1" srcset="/hero/salon-900.jpg 900w, /hero/salon-1600.jpg 1600w" sizes="100vw" src="/hero/salon-1600.jpg" alt="DAĞ Okçuluk atış salonunda hedeflere nişan alan iki sporcu" decoding="async">
+      <source data-srcset="/hero/salon-900.webp 900w, /hero/salon-1600.webp 1600w, /hero/salon-2400.webp 2400w" sizes="100vw" type="image/webp">
+      <img class="vz-resim vz-net vz-s2 vz-gizli" data-sahne="1" data-srcset="/hero/salon-900.jpg 900w, /hero/salon-1600.jpg 1600w" sizes="100vw" data-src="/hero/salon-1600.jpg" alt="DAĞ Okçuluk atış salonunda hedeflere nişan alan iki sporcu" decoding="async">
     </picture>
   </div>
   <div class="vz-vizor" id="vzVizor" aria-hidden="true">
@@ -775,12 +819,12 @@
   </div>
 
   <div class="vz-ust">
-    <div class="vz-marka"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"><span>DAĞ OKÇULUK</span></div>
+    <div class="vz-marka"><img src="/logo-k.webp" alt="DAĞ Okçuluk logosu"><span>DAĞ OKÇULUK</span></div>
     <div class="vz-yer">PENDİK ·<br>İSTANBUL</div>
   </div>
 
   <div class="vz-metin">
-    <h1 class="vz-baslik"><span class="vz-soft">Her şey<br>bulanık</span><span class="vz-keskin">Hedef net.</span></h1>
+    <h1 class="vz-baslik"><span class="vz-soft">Her şey<br>bulanık</span><span class="vz-keskin">Hedef net.</span><span class="sr-only"> DAĞ Okçuluk, Pendik okçuluk kulübü</span></h1>
     <p class="vz-slogan">Ekran yok, acele yok.<br>Sadece tek bir hedef var.</p>
     <div class="vz-cta">
       <a href="https://api.whatsapp.com/send?phone=905469107893&amp;text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." class="btn-birincil" target="_blank" rel="noopener">Ücretsiz deneme dersi</a>
@@ -812,7 +856,7 @@
         </span>
       </a>
       <a href="#cimnastik" class="brans-kart brans-cim foto-vizor reveal">
-        <img src="/galeri/milo-5.jpg" alt="MILO FITT KIDS — topla esneme çalışan çocuk" loading="lazy">
+        <img src="/galeri/k/milo-5.webp" alt="MILO FITT KIDS — topla esneme çalışan çocuk" loading="lazy">
         <span class="brans-ic">
           <span class="brans-tur">Cimnastik</span>
           <span class="brans-ad">Milo Fitt Kids</span>
@@ -843,11 +887,11 @@
       <p class="s2-ipucu"><span class="imlec">Üstüne gel, netleşsin</span><span class="dokun">Kaydır, netleşsin</span></p>
     </div>
     <div class="foto-izgara">
-      <button class="foto-kare foto-vizor foto-buyuk reveal" onclick="galeriAc('okculuk',0)" aria-label="Fotoğrafı büyüt: açık alanda nişan alan sporcu"><img src="/galeri/okculuk-3.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',1)" aria-label="Fotoğrafı büyüt: salonda yayını geren sporcu"><img src="/galeri/okculuk-4.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',2)" aria-label="Fotoğrafı büyüt: makaralı yay yakın plan"><img src="/galeri/okculuk-1.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',3)" aria-label="Fotoğrafı büyüt: atış alanında iki sporcu"><img src="/galeri/okculuk-2.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',4)" aria-label="Fotoğrafı büyüt: salonda okçuluk ekipmanı"><img src="/galeri/okculuk-5.jpg" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor foto-buyuk reveal" onclick="galeriAc('okculuk',0)" aria-label="Fotoğrafı büyüt: açık alanda nişan alan sporcu"><img src="/galeri/k/okculuk-3.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',1)" aria-label="Fotoğrafı büyüt: salonda yayını geren sporcu"><img src="/galeri/k/okculuk-4.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',2)" aria-label="Fotoğrafı büyüt: makaralı yay yakın plan"><img src="/galeri/k/okculuk-1.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',3)" aria-label="Fotoğrafı büyüt: atış alanında iki sporcu"><img src="/galeri/k/okculuk-2.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('okculuk',4)" aria-label="Fotoğrafı büyüt: salonda okçuluk ekipmanı"><img src="/galeri/k/okculuk-5.webp" alt="" loading="lazy"></button>
     </div>
   </div>
 </section>
@@ -924,7 +968,7 @@
 
 <section class="s2 s2-alt vizyon2" aria-labelledby="vizyon-baslik">
   <div class="wrap vizyon2-grid">
-    <img src="tanitim-logo.png" alt="DAĞ Okçuluk rozeti" class="vizyon2-logo" loading="lazy">
+    <img src="/logo-k.webp" alt="DAĞ Okçuluk rozeti" class="vizyon2-logo" loading="lazy">
     <div>
       <div class="s2-etiket">Vizyonumuz</div>
       <h2 class="vizyon2-alinti" id="vizyon-baslik">“İyi bir okçu, dürüst olandır.”</h2>
@@ -950,12 +994,51 @@
   </div>
 </section>
 
+<section class="s2 s2-alt" id="saatler" aria-labelledby="saat-baslik">
+  <div class="wrap saat-grid">
+    <div>
+      <div class="s2-etiket">Ders saatleri</div>
+      <h2 class="s2-h2" id="saat-baslik">Hangi gün, saat kaçta?</h2>
+      <p class="s2-giris">Okçuluk derslerinin haftalık saatleri. Sana uyan saate dokun, deneme dersi formuna eklensin; gruba biz yerleştiririz.</p>
+      <div class="saat-tablo" id="saat-tablo" aria-live="polite">
+        <p class="saat-yukleniyor">Ders saatleri yükleniyor…</p>
+      </div>
+    </div>
+    <form class="deneme-form reveal" id="deneme-form" novalidate>
+      <span class="vz-k vz-k1" aria-hidden="true"></span><span class="vz-k vz-k2" aria-hidden="true"></span><span class="vz-k vz-k3" aria-hidden="true"></span><span class="vz-k vz-k4" aria-hidden="true"></span>
+      <h3 class="deneme-baslik">Ücretsiz deneme dersi</h3>
+      <p class="deneme-not">Formu doldur, mesaj WhatsApp'ta hazır açılsın. Hiçbir bilgi sitede saklanmaz.</p>
+      <fieldset class="df-alan">
+        <legend>Kimin için?</legend>
+        <div class="df-secim">
+          <label><input type="radio" name="kim" value="cocuk" checked><span>Çocuğum</span></label>
+          <label><input type="radio" name="kim" value="ben"><span>Kendim</span></label>
+        </div>
+      </fieldset>
+      <label class="df-alan"><span class="df-etiket">Yaş</span><input type="number" name="yas" min="4" max="90" inputmode="numeric" placeholder="ör. 9"></label>
+      <fieldset class="df-alan">
+        <legend>Branş</legend>
+        <div class="df-secim">
+          <label><input type="radio" name="brans" value="Okçuluk" checked><span>Okçuluk</span></label>
+          <label><input type="radio" name="brans" value="Cimnastik (Milo Fitt Kids)"><span>Cimnastik</span></label>
+          <label><input type="radio" name="brans" value="Performans Fitness"><span>Performans</span></label>
+        </div>
+      </fieldset>
+      <label class="df-alan" id="df-saat-alan"><span class="df-etiket">Uygun zaman</span>
+        <select name="saat" id="df-saat"><option value="">Fark etmez, siz önerin</option></select>
+      </label>
+      <label class="df-alan"><span class="df-etiket">Ad <small>(isteğe bağlı)</small></span><input type="text" name="ad" autocomplete="given-name" maxlength="40" placeholder="Adın"></label>
+      <button type="submit" class="btn-birincil df-gonder">WhatsApp'ta mesajı hazırla</button>
+    </form>
+  </div>
+</section>
+
 <section class="cimnastik-bolum" id="cimnastik">
   <div class="arka-yazi cim-arka-yazi">MILO FITT KIDS · MILO FITT KIDS</div>
   <div class="yildiz-katman" id="yildizCim"></div>
   <div class="wrap cimnastik-grid">
     <div>
-      <img src="/milo-logo.png" alt="MILO FITT KIDS logosu" style="display:block; height:64px; width:auto; margin-bottom:18px; filter:drop-shadow(0 6px 16px rgba(31,173,160,0.25));">
+      <img src="/milo-logo-k.webp" alt="MILO FITT KIDS logosu" style="display:block; height:64px; width:auto; margin-bottom:18px; filter:drop-shadow(0 6px 16px rgba(31,173,160,0.25));">
       <div class="s2-etiket cim-etiket">Milo Fitt Kids · Cimnastik</div>
       <h2 class="s2-h2">Her hareket, <span style="color:#3fd6c6;">bir sanat.</span></h2>
       <p class="s2-giris" style="margin-bottom:28px;">Denge, esneklik ve özgüveni oyunla birleştiren, minik yaşlardan başlayan bir cimnastik topluluğu. Aynı çatı altında, ayrı bir dünya.</p>
@@ -973,18 +1056,18 @@
   </div>
   <div class="wrap" style="position:relative; z-index:5; margin-top:44px;">
     <div class="foto-izgara foto-izgara-cim">
-      <button class="foto-kare foto-vizor foto-buyuk reveal" onclick="galeriAc('milo',0)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/milo-4.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',1)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/milo-5.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',2)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/milo-6.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',3)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/milo-7.jpg" alt="" loading="lazy"></button>
-      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',4)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/milo-8.jpg" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor foto-buyuk reveal" onclick="galeriAc('milo',0)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/k/milo-4.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',1)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/k/milo-5.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',2)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/k/milo-6.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',3)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/k/milo-7.webp" alt="" loading="lazy"></button>
+      <button class="foto-kare foto-vizor reveal" onclick="galeriAc('milo',4)" aria-label="Fotoğrafı büyüt: Milo Fitt Kids"><img src="/galeri/k/milo-8.webp" alt="" loading="lazy"></button>
     </div>
     <div class="afis-serit">
       <span class="s2-etiket cim-etiket">Milo afişleri</span>
       <div class="afis-liste">
-        <button class="afis-kare" onclick="galeriAc('milo',5)" aria-label="Afişi büyüt"><img src="/galeri/milo-1.jpg" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
-        <button class="afis-kare" onclick="galeriAc('milo',6)" aria-label="Afişi büyüt"><img src="/galeri/milo-2.jpg" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
-        <button class="afis-kare" onclick="galeriAc('milo',7)" aria-label="Afişi büyüt"><img src="/galeri/milo-3.jpg" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
+        <button class="afis-kare" onclick="galeriAc('milo',5)" aria-label="Afişi büyüt"><img src="/galeri/k/milo-1.webp" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
+        <button class="afis-kare" onclick="galeriAc('milo',6)" aria-label="Afişi büyüt"><img src="/galeri/k/milo-2.webp" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
+        <button class="afis-kare" onclick="galeriAc('milo',7)" aria-label="Afişi büyüt"><img src="/galeri/k/milo-3.webp" alt="Milo Fitt Kids oyun temelli spor grubu afişi" loading="lazy"></button>
       </div>
     </div>
   </div>
@@ -1149,7 +1232,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="footer-logo"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
+        <div class="footer-logo"><img src="/logo-k.webp" alt="DAĞ Okçuluk logosu"> DAĞ S.K.</div>
         <p class="footer-tagline">Okçuluk · Gelişim · Disiplin. Minik yaşlardan yarışma seviyesine, birlikte ilerliyoruz.</p>
       </div>
       <div class="footer-col">
@@ -1157,6 +1240,7 @@
         <a href="#okculuk">Okçuluk</a>
         <a href="#cimnastik">Cimnastik</a>
         <a href="#programlar">Programlar</a>
+      <a href="#saatler">Ders saatleri</a>
         <a href="#fotograflar">Fotoğraflar</a>
         <a href="#sss">SSS</a>
         <a href="#yorumlar">Yorumlar</a>
@@ -1426,6 +1510,75 @@
     guncelle();
   })();
 
+  // Ders saatleri + deneme dersi formu — saatler /api/tanitim/ders-saatleri'nden (grup adı/doluluk yok). Saat çipine
+  // dokununca formdaki "Uygun zaman" seçilir. Form hiçbir şeyi sunucuya göndermez; WhatsApp'ta hazır mesaj açar.
+  (function(){
+    var GUN = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'], SIRA = [1,2,3,4,5,6,0];
+    var tablo = document.getElementById('saat-tablo'), form = document.getElementById('deneme-form'), sec = document.getElementById('df-saat');
+    if(!tablo || !form) return;
+    function saatSec(deger){
+      sec.value = deger;
+      [].forEach.call(tablo.querySelectorAll('.saat-cip'), function(b){ b.setAttribute('aria-pressed', b.dataset.deger === deger ? 'true' : 'false'); });
+      var okc = form.querySelector('input[name="brans"][value="Okçuluk"]'); if(okc){ okc.checked = true; bransDegisti(); }
+    }
+    function bransDegisti(){
+      var b = (form.querySelector('input[name="brans"]:checked') || {}).value;
+      document.getElementById('df-saat-alan').hidden = b !== 'Okçuluk';
+    }
+    form.addEventListener('change', function(e){ if(e.target.name === 'brans') bransDegisti(); if(e.target.name === 'saat') saatSec(e.target.value); });
+    fetch('/api/tanitim/ders-saatleri').then(function(r){ return r.json(); }).then(function(d){
+      var saatler = (d && d.saatler) || [];
+      if(!saatler.length){ tablo.innerHTML = '<p class="saat-yukleniyor">Güncel ders saatleri için bize yaz.</p>'; return; }
+      var grup = {}; saatler.forEach(function(s){ (grup[s.gun] = grup[s.gun] || []).push(s); });
+      tablo.innerHTML = SIRA.map(function(g){
+        var l = grup[g] || [];
+        return '<div class="saat-gun' + (l.length ? '' : ' bos') + '"><span class="saat-gun-ad">' + GUN[g] + '</span><span class="saat-cipler">' +
+          (l.length ? l.map(function(s){ var dg = GUN[g] + ' ' + s.bas + '–' + s.bit;
+            return '<button type="button" class="saat-cip" data-deger="' + dg + '" aria-pressed="false">' + s.bas + '<small>–' + s.bit + '</small></button>'; }).join('') : '<span class="saat-yok">Ders yok</span>') +
+          '</span></div>';
+      }).join('');
+      sec.innerHTML = '<option value="">Fark etmez, siz önerin</option>' + SIRA.filter(function(g){ return grup[g]; }).map(function(g){
+        return '<optgroup label="' + GUN[g] + '">' + grup[g].map(function(s){ var dg = GUN[g] + ' ' + s.bas + '–' + s.bit; return '<option value="' + dg + '">' + dg + '</option>'; }).join('') + '</optgroup>';
+      }).join('');
+      tablo.addEventListener('click', function(e){
+        var b = e.target.closest('.saat-cip'); if(!b) return;
+        saatSec(b.dataset.deger);
+        if(window.innerWidth < 900) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }).catch(function(){ tablo.innerHTML = '<p class="saat-yukleniyor">Ders saatleri şu an yüklenemedi; WhatsApp’tan sorabilirsin.</p>'; });
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var v = function(n){ var el = form.querySelector('[name="' + n + '"]:checked') || form.elements[n]; return el ? String(el.value || '').trim() : ''; };
+      var kim = v('kim') === 'ben' ? 'Kendim için' : 'Çocuğum için', yas = v('yas'), brans = v('brans'), saat = brans === 'Okçuluk' ? v('saat') : '', ad = v('ad');
+      var satir = ['Merhaba, ücretsiz deneme dersi almak istiyorum.', '', '- ' + kim + (yas ? ' (' + yas + ' yaş)' : ''), '- Branş: ' + brans, '- Uygun zaman: ' + (saat || 'Fark etmez')];
+      if(ad) satir.push('- Ad: ' + ad);
+      window.open('https://api.whatsapp.com/send?phone=905469107893&text=' + encodeURIComponent(satir.join('\n')), '_blank', 'noopener');
+    });
+    bransDegisti();
+  })();
+
+  // Google Haritalar JS'i (~1,3 MB) yalnız yorumlar bölümüne yaklaşınca yüklenir; ilk açılışı ağırlaştırmasın.
+  (function(){
+    var yer = document.getElementById('yorumlar'), yuklendi = false;
+    function yukle(){
+      if(yuklendi) return; yuklendi = true;
+      var s = document.createElement('script');
+      s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAUzElN8RRyY8F8lZQm-l-3l-OrhOsQbLc&libraries=places&language=tr';
+      s.async = true; s.onload = function(){ yorumlariYukle(0); }; document.head.appendChild(s);
+    }
+    if(!yer || !('IntersectionObserver' in window)) return yukle();
+    var io = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ io.disconnect(); yukle(); } }, { rootMargin: '900px 0px' });
+    io.observe(yer);
+  })();
+
+  // Salon sahnesinin net görseli ilk açılışta indirilmesin: sayfa yüklendikten sonra yerleşir (sahne ~10 sn sonra açılır).
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      document.querySelectorAll('.vz-hero [data-srcset]').forEach(function(el){ el.srcset = el.dataset.srcset; el.removeAttribute('data-srcset'); });
+      document.querySelectorAll('.vz-hero img[data-src]').forEach(function(el){ el.src = el.dataset.src; el.removeAttribute('data-src'); });
+    }, 1200);
+  });
+
   // Fotoğraf vizörü — masaüstünde üstüne gelince (CSS :hover), her cihazda ekranın orta bandına girince netleşir.
   (function(){
     if(!('IntersectionObserver' in window)) return;
@@ -1505,7 +1658,6 @@
       });
     });
   }
-  yorumlariYukle(0);
 </script>
 
 </body>

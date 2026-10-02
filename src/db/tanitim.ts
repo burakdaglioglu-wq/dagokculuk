@@ -48,3 +48,15 @@ export async function kulupNabziGetir(env: Env, baslangic: string): Promise<Kulu
     ilkTarih: toplam?.ilk ?? null,
   };
 }
+
+export interface DersSaati { gun: number; bas: string; bit: string }
+
+/** Tanıtım sitesindeki haftalık ders saatleri — kullanıcı kararı (2026-10-02): tüm dersler, grup adı ve doluluk
+ * OLMADAN, yalnız gün + saat. Aynı gün aynı saatteki farklı grupların dersleri tek satıra iner. */
+export async function dersSaatleriGetir(env: Env): Promise<DersSaati[]> {
+  const { results } = await env.DB.prepare(
+    "SELECT DISTINCT g.gun AS gun, p.baslangicSaat AS bas, p.bitisSaat AS bit FROM antrenman_programi p JOIN antrenman_programi_gun g ON g.slotId = p.id"
+  ).all<DersSaati>();
+  const sira = (g: number) => (g + 6) % 7; // Pazartesi başta
+  return (results || []).sort((a, b) => sira(a.gun) - sira(b.gun) || a.bas.localeCompare(b.bas));
+}
