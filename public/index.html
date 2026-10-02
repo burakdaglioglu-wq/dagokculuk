@@ -11,7 +11,7 @@
 <meta property="og:image" content="https://dagsk.burakdaglioglu.workers.dev/tanitim-logo.png">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=Archivo:wght@900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -94,6 +94,77 @@
   }
   .hero-logo-wrap{ display:flex; justify-content:center; }
   .hero-logo-wrap img{ width:100%; max-width:340px; filter:drop-shadow(0 20px 50px rgba(255,106,26,0.25)); }
+
+  /* VİZÖR HERO (2026-10-02) — afiş "Her şey bulanık, hedef net.": bütün fotoğraf bulanık, yalnız vizör kutusunun içi net.
+     Kutu masaüstünde imleci, mobilde parmağı izler; boşta kendi gezinir ve arada yüze kilitlenir. */
+  .vz-hero{ position:relative; overflow:hidden; isolation:isolate; background:#141210;
+    height:calc(100svh - 62px); min-height:600px; max-height:980px; touch-action:pan-y; }
+  .vz-resim{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 22%; display:block; max-width:none; }
+  .vz-bulanik{ z-index:1; filter:saturate(.8) brightness(.78); }
+  .vz-karart{ position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(180deg, rgba(14,12,10,.55) 0%, rgba(14,12,10,0) 22%, rgba(14,12,10,0) 52%, rgba(14,12,10,.72) 100%),
+               linear-gradient(90deg, rgba(14,12,10,.45) 0%, rgba(14,12,10,0) 55%); }
+  .vz-pencere{ position:absolute; left:0; top:0; z-index:3; overflow:hidden; border-radius:2px; will-change:transform; pointer-events:none; }
+  .vz-pencere .vz-resim{ inset:auto; left:0; top:0; will-change:transform; }
+  .vz-vizor{ position:absolute; left:0; top:0; z-index:4; pointer-events:none; will-change:transform; }
+  .vz-vizor-ic{ position:absolute; inset:0; }
+  .vz-hero.kilit .vz-vizor-ic{ animation:vzOdak .55s cubic-bezier(.2,.8,.2,1); }
+  @keyframes vzOdak{ 0%{ transform:scale(1.12); opacity:.55; } 55%{ transform:scale(.97); opacity:1; } 100%{ transform:scale(1); } }
+  .vz-k{ position:absolute; width:var(--kol); height:var(--kol); border:0 solid #fff; filter:drop-shadow(0 0 6px rgba(0,0,0,.35)); }
+  .vz-k1{ left:0; top:0; border-top-width:3px; border-left-width:3px; border-top-left-radius:6px; }
+  .vz-k2{ right:0; top:0; border-top-width:3px; border-right-width:3px; border-top-right-radius:6px; }
+  .vz-k3{ left:0; bottom:0; border-bottom-width:3px; border-left-width:3px; border-bottom-left-radius:6px; }
+  .vz-k4{ right:0; bottom:0; border-bottom-width:3px; border-right-width:3px; border-bottom-right-radius:6px; }
+  .vz-cerceve{ position:absolute; border:1.5px solid rgba(255,255,255,.72); border-radius:2px; }
+  .vz-etiket{ position:absolute; left:0; top:calc(100% + 10px); white-space:nowrap; font:500 11px/1 'Roboto Mono',ui-monospace,monospace;
+    letter-spacing:.14em; color:rgba(255,255,255,.82); text-shadow:0 1px 6px rgba(0,0,0,.6); }
+  .vz-etiket::before{ content:''; display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:8px; vertical-align:0;
+    background:rgba(255,255,255,.5); }
+  .vz-hero.kilit .vz-etiket{ color:#fff; }
+  .vz-hero.kilit .vz-etiket::before{ background:var(--accent); box-shadow:0 0 10px var(--accent); }
+
+  .vz-ust, .vz-alt-serit{ position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:16px;
+    padding:0 clamp(16px,4vw,56px); font-family:'Roboto Mono',ui-monospace,monospace; color:rgba(255,255,255,.78); }
+  .vz-ust{ top:clamp(18px,4vh,40px); align-items:flex-start; }
+  .vz-marka{ display:flex; align-items:center; gap:14px; font-size:clamp(14px,1.6vw,22px); letter-spacing:.08em; color:rgba(255,255,255,.62); }
+  .vz-marka img{ width:clamp(48px,5vw,72px); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
+  .vz-yer{ font-size:clamp(12px,1.25vw,17px); letter-spacing:.1em; text-align:left; line-height:1.3; }
+  .vz-metin{ position:absolute; z-index:5; left:clamp(16px,4vw,56px); bottom:clamp(86px,13vh,130px); max-width:min(780px,60%); }
+  .vz-baslik{ font-family:'Archivo','Poppins',sans-serif; font-weight:900; font-size:clamp(40px,6.2vw,96px); line-height:.94;
+    letter-spacing:-.005em; color:#ebe8e3; text-transform:uppercase; margin:0 0 18px; text-shadow:0 4px 30px rgba(0,0,0,.35); }
+  .vz-baslik .vz-soft{ display:block; color:rgba(235,232,227,.78); filter:blur(1.2px); transition:filter .6s ease, color .6s ease; }
+  .vz-baslik .vz-keskin{ display:block; color:#fff; }
+  .vz-hero:hover .vz-baslik .vz-soft{ filter:blur(.6px); }
+  .vz-slogan{ font:400 clamp(14px,1.45vw,19px)/1.55 'Roboto Mono',ui-monospace,monospace; color:rgba(255,255,255,.86); margin:0 0 26px; letter-spacing:.01em; }
+  .vz-cta{ display:flex; gap:12px; flex-wrap:wrap; }
+  .vz-cta .btn-ikincil{ background:rgba(20,18,16,.35); border-color:rgba(255,255,255,.35); backdrop-filter:blur(6px); }
+  .vz-alt-serit{ bottom:clamp(18px,4vh,36px); align-items:flex-end; padding-right:calc(clamp(16px,4vw,56px) + 72px); font-size:clamp(13px,1.3vw,18px); }
+  .vz-alt-serit a:hover{ color:#fff; }
+  .vz-tel{ letter-spacing:.06em; }
+  .vz-tel b{ font-weight:700; color:#fff; }
+  .vz-ipucu{ align-self:center; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+  .vz-ipucu .dokun{ display:none; }
+  @media (hover:none){ .vz-ipucu .imlec{ display:none; } .vz-ipucu .dokun{ display:inline; } }
+  @media (max-width:860px){
+    .vz-hero{ height:calc(100svh - 62px); min-height:600px; }
+    .vz-resim{ object-position:78% 16%; }
+    .vz-karart{ background:linear-gradient(180deg, rgba(14,12,10,.5) 0%, rgba(14,12,10,0) 20%, rgba(14,12,10,0) 38%, rgba(14,12,10,.86) 78%, rgba(14,12,10,.92) 100%); }
+    .vz-metin{ left:16px; right:16px; max-width:none; bottom:118px; }
+    .vz-slogan{ margin-bottom:18px; }
+    .vz-cta a{ flex:1 1 auto; text-align:center; padding:14px 18px; }
+    .vz-alt-serit{ flex-wrap:wrap; row-gap:4px; padding-right:16px; }
+    .vz-ipucu{ display:none; }
+  }
+  @media (max-width:760px){
+    /* altta sabit 'Deneme dersi' çubuğu (52px) ve yüzen WhatsApp var: hero onların üstünde bitsin, CTA'yı onlar taşısın */
+    .vz-hero{ height:calc(100svh - 62px - 52px); min-height:540px; }
+    .vz-cta{ display:none; }
+    .vz-metin{ bottom:74px; }
+    .vz-baslik{ font-size:clamp(38px,11.5vw,56px); margin-bottom:12px; }
+    .vz-slogan{ margin-bottom:0; font-size:14px; }
+    .vz-alt-serit{ flex-direction:column; align-items:flex-start; bottom:16px; padding-right:84px; font-size:12.5px; }
+  }
+  @media (max-width:420px){ .vz-marka{ font-size:13px; } .vz-alt-serit{ font-size:12px; } }
 
   /* BOLUM */
   .bolum{ padding:76px 0; border-top:1px solid var(--line); }
@@ -411,6 +482,49 @@
   <a href="https://wa.me/905469107893?text=Merhaba%2C%20Performans%20Fitness%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener">⏱️ Performans</a>
 </div>
 
+<section class="vz-hero" id="okculuk" aria-label="DAĞ Okçuluk — Her şey bulanık, hedef net">
+  <picture>
+    <source srcset="/hero/bulanik.webp" type="image/webp">
+    <img class="vz-resim vz-bulanik" src="/hero/bulanik.jpg" alt="" fetchpriority="high">
+  </picture>
+  <div class="vz-karart"></div>
+  <div class="vz-pencere" id="vzPencere">
+    <picture>
+      <source media="(max-width:900px)" srcset="/hero/net-900.webp" type="image/webp">
+      <source srcset="/hero/net-1600.webp" type="image/webp">
+      <source media="(max-width:900px)" srcset="/hero/net-900.jpg">
+      <img class="vz-resim" id="vzNetResim" src="/hero/net-1600.jpg" alt="DAĞ Okçuluk salonunda yayını gerip hedefe nişan alan genç okçu">
+    </picture>
+  </div>
+  <div class="vz-vizor" id="vzVizor" aria-hidden="true">
+    <div class="vz-vizor-ic">
+      <span class="vz-k vz-k1"></span><span class="vz-k vz-k2"></span><span class="vz-k vz-k3"></span><span class="vz-k vz-k4"></span>
+      <span class="vz-cerceve" id="vzCerceve"></span>
+    </div>
+    <span class="vz-etiket" id="vzEtiket">ODAK ARANIYOR</span>
+  </div>
+
+  <div class="vz-ust">
+    <div class="vz-marka"><img src="tanitim-logo.png" alt="DAĞ Okçuluk logosu"><span>DAĞ OKÇULUK</span></div>
+    <div class="vz-yer">PENDİK ·<br>İSTANBUL</div>
+  </div>
+
+  <div class="vz-metin">
+    <h1 class="vz-baslik"><span class="vz-soft">Her şey<br>bulanık</span><span class="vz-keskin">Hedef net.</span></h1>
+    <p class="vz-slogan">Ekran yok, acele yok.<br>Sadece tek bir hedef var.</p>
+    <div class="vz-cta">
+      <a href="https://api.whatsapp.com/send?phone=905469107893&amp;text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." class="btn-birincil" target="_blank" rel="noopener">Ücretsiz deneme dersi</a>
+      <a href="#programlar" class="btn-ikincil">Programları gör</a>
+    </div>
+  </div>
+
+  <div class="vz-alt-serit">
+    <a href="https://www.instagram.com/dagokculuk/" target="_blank" rel="noopener">@dagokculuk</a>
+    <span class="vz-ipucu" aria-hidden="true"><span class="imlec">İmleci gezdir · neyin net olduğunu sen seç</span><span class="dokun">Parmağını gezdir · neyin net olduğunu sen seç</span></span>
+    <a class="vz-tel" href="tel:+905469107893">Deneme dersi: <b>0546 910 78 93</b></a>
+  </div>
+</section>
+
 <section class="bolum" style="padding:52px 0;">
   <div class="wrap">
     <div class="bolum-baslik-grup" style="text-align:center; margin:0 auto 32px;">
@@ -453,28 +567,6 @@
   </div>
 </section>
 
-<section class="hero-yildiz" id="okculuk">
-  <div class="arka-yazi">DAĞ SPOR KULÜBÜ · DAĞ SPOR KULÜBÜ</div>
-  <div class="yildiz-katman" id="yildizHero"></div>
-  <div class="wrap hero-yildiz-grid">
-    <div>
-      <div class="eyebrow">🏹 DAĞ Spor Kulübü · Okçuluk Branşı · Pendik</div>
-      <h1 class="hero-poster">ODAKLAN.<br><span class="accent">NİŞAN AL.</span></h1>
-      <p>Minik yaşlardan yarışma seviyesine kadar, disiplinle ve kişiye özel takiple ilerleyen bir okçuluk topluluğu. Attığın her ok kayıt altında, her gelişim adımı görünür.</p>
-      <div class="hero-cta-row">
-        <a href="https://wa.me/905469107893?text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." class="btn-birincil" target="_blank" rel="noopener">🎯 Ücretsiz Deneme Dersi</a>
-        <a href="#programlar" class="btn-ikincil">Programları Gör</a>
-      </div>
-    </div>
-    <div class="hedef-sahne">
-      <div class="sonar-halka oynuyor"></div>
-      <div class="sonar-halka oynuyor" style="animation-delay:1.2s;"></div>
-      <svg viewBox="0 0 400 400"><use href="#hedef-gorsel"/></svg>
-      <svg class="ok-yaklasan gidiyor" viewBox="0 0 512 512" fill="#ffd166"><use href="#ico-arrow"/></svg>
-      <div class="carpma-flash oynuyor"></div>
-    </div>
-  </div>
-</section>
 
 <section class="bolum bolum-alt" id="fotograflar">
   <div class="wrap">
@@ -862,8 +954,92 @@
       kutu.appendChild(el);
     }
   }
-  yildizOlustur('yildizHero', 'ico-arrow', '#f5f5f6');
   yildizOlustur('yildizCim', 'ico-star', '#7fe0d3');
+
+  // Vizör hero — bulanık fotoğrafın üstünde net bir pencere. İmleç/parmak varsa onu izler; 2,5 sn dokunulmazsa kendi
+  // gezinir, birkaç durakta bir okçunun yüzüne kilitlenir ("HEDEF NET"). Yalnız transform kullanır, görünmezken durur.
+  (function(){
+    var hero = document.getElementById('okculuk'), pen = document.getElementById('vzPencere'), resim = document.getElementById('vzNetResim');
+    var viz = document.getElementById('vzVizor'), cer = document.getElementById('vzCerceve'), etiket = document.getElementById('vzEtiket');
+    if(!hero || !pen || !resim || !viz) return;
+    var YUZ = { x: 0.70, y: 0.268 }, ORAN = 1800 / 2295; // kırpılmış fotoğrafta yüzün yeri (oransal) ve en/boy
+    var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var W = 0, H = 0, w = 0, h = 0, ox = 0, oy = 0, yuz = { x: 0, y: 0 };
+    var x = 0, y = 0, hedef = { x: 0, y: 0 }, mod = 'gez', sonKullanici = 0, durak = 0, bekleBitis = 0, sayac = 0, kilitli = false;
+    var calisiyor = false, son = 0, yazi = '';
+    function olc(){
+      W = hero.clientWidth; H = hero.clientHeight;
+      w = Math.round(Math.min(Math.max(W * (W < 700 ? 0.5 : W < 1100 ? 0.34 : 0.26), 160), 400)); h = Math.round(w * 0.34);
+      var cs = getComputedStyle(resim).objectPosition.split(' '), px = parseFloat(cs[0]) / 100, py = parseFloat(cs[1]) / 100;
+      var rw, rh; if(W / H > ORAN){ rw = W; rh = W / ORAN; } else { rh = H; rw = H * ORAN; }
+      var kx = (rw - W) * px, ky = (rh - H) * py;
+      yuz = { x: YUZ.x * rw - kx, y: YUZ.y * rh - ky };
+      pen.style.width = w + 'px'; pen.style.height = h + 'px';
+      resim.style.width = W + 'px'; resim.style.height = H + 'px';
+      var dx = Math.round(w * 0.12), dy = Math.round(h * 0.26);
+      viz.style.width = (w + dx * 2) + 'px'; viz.style.height = (h + dy * 2) + 'px';
+      viz.style.setProperty('--kol', Math.round(w * 0.11) + 'px');
+      cer.style.left = dx + 'px'; cer.style.top = dy + 'px'; cer.style.width = w + 'px'; cer.style.height = h + 'px';
+      viz._dx = dx; viz._dy = dy;
+    }
+    function sinirla(p){ var mx = w / 2 + (viz._dx || 0) + 6, my = h / 2 + (viz._dy || 0) + 6; return { x: Math.min(Math.max(p.x, mx), W - mx), y: Math.min(Math.max(p.y, my), H - my - 22) }; }
+    function ciz(){
+      var l = Math.round(x - w / 2), t = Math.round(y - h / 2);
+      pen.style.transform = 'translate(' + l + 'px,' + t + 'px)';
+      resim.style.transform = 'translate(' + (-l) + 'px,' + (-t) + 'px)';
+      viz.style.transform = 'translate(' + (l - viz._dx) + 'px,' + (t - viz._dy) + 'px)';
+    }
+    function etiketYaz(s){ if(s !== yazi){ yazi = s; etiket.textContent = s; } }
+    function kilit(ac){
+      if(ac === kilitli) return; kilitli = ac;
+      hero.classList.remove('kilit'); if(ac){ void hero.offsetWidth; hero.classList.add('kilit'); }
+    }
+    function yeniDurak(simdi){
+      sayac++;
+      if(sayac % 3 === 0){ hedef = sinirla(yuz); bekleBitis = 3400; durak = 'yuz'; }
+      else { hedef = sinirla({ x: W * (0.15 + Math.random() * 0.75), y: H * (0.12 + Math.random() * 0.7) }); bekleBitis = 700; durak = 'rastgele'; }
+      hedef._varis = 0;
+    }
+    function kare(simdi){
+      if(!calisiyor) return;
+      var dt = Math.min(0.05, (simdi - (son || simdi)) / 1000); son = simdi;
+      if(mod === 'kullanici' && simdi - sonKullanici > 2500){ mod = 'gez'; sayac = 2; yeniDurak(simdi); }
+      var hiz = mod === 'kullanici' ? 12 : 2.4;
+      var k = 1 - Math.exp(-hiz * dt);
+      x += (hedef.x - x) * k; y += (hedef.y - y) * k;
+      var mesafe = Math.hypot(hedef.x - x, hedef.y - y);
+      if(mod === 'gez'){
+        if(mesafe < 3){
+          if(!hedef._varis) hedef._varis = simdi;
+          if(durak === 'yuz'){ kilit(true); etiketYaz('HEDEF NET'); }
+          if(simdi - hedef._varis > bekleBitis){ kilit(false); yeniDurak(simdi); }
+        } else if(!kilitli) etiketYaz('ODAK ARANIYOR');
+        else if(mesafe > 20){ kilit(false); }
+      } else {
+        var yuzde = Math.hypot(yuz.x - x, yuz.y - y) < Math.max(w * 0.22, 30);
+        kilit(yuzde); etiketYaz(yuzde ? 'HEDEF NET' : 'ODAK SENDE');
+      }
+      ciz();
+      requestAnimationFrame(kare);
+    }
+    function kullanici(cx, cy){
+      var r = hero.getBoundingClientRect();
+      hedef = sinirla({ x: cx - r.left, y: cy - r.top }); mod = 'kullanici'; sonKullanici = performance.now();
+      if(azHareket){ x = hedef.x; y = hedef.y; ciz(); kilit(Math.hypot(yuz.x - x, yuz.y - y) < w * 0.22); etiketYaz(kilitli ? 'HEDEF NET' : 'ODAK SENDE'); }
+    }
+    hero.addEventListener('pointermove', function(e){ if(e.pointerType !== 'touch') kullanici(e.clientX, e.clientY); });
+    hero.addEventListener('touchstart', function(e){ var t = e.touches[0]; if(t) kullanici(t.clientX, t.clientY); }, { passive: true });
+    hero.addEventListener('touchmove', function(e){ var t = e.touches[0]; if(t) kullanici(t.clientX, t.clientY); }, { passive: true });
+    function basla(){ if(calisiyor || azHareket) return; calisiyor = true; son = 0; requestAnimationFrame(kare); }
+    function dur(){ calisiyor = false; }
+    olc();
+    if(azHareket){ hedef = sinirla(yuz); x = hedef.x; y = hedef.y; ciz(); kilit(true); etiketYaz('HEDEF NET'); }
+    else { var bas = sinirla({ x: W * 0.32, y: H * 0.62 }); x = bas.x; y = bas.y; ciz(); sayac = 2; yeniDurak(0); }
+    window.addEventListener('resize', function(){ olc(); hedef = sinirla(mod === 'gez' && durak === 'yuz' ? yuz : hedef); var p = sinirla({ x: x, y: y }); x = p.x; y = p.y; ciz(); });
+    if('IntersectionObserver' in window) new IntersectionObserver(function(es){ es[0].isIntersecting && !document.hidden ? basla() : dur(); }).observe(hero);
+    else basla();
+    document.addEventListener('visibilitychange', function(){ if(document.hidden) dur(); else if(hero.getBoundingClientRect().bottom > 0) basla(); });
+  })();
 
   // Ziyaret sayacı — yönetici panelinde aylık toplam olarak görünür, siteye hiçbir şey yazdırmaz.
   fetch('/api/tanitim/ziyaret', { method: 'POST' }).catch(function(){});
