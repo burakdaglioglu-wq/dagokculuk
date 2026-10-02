@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v187';
+const CACHE = 'dag-sk-v188';
 // Form Lab yapay zekâ dosyaları (MediaPipe wasm + modeller, ~20 MB): sürümlü kabuk önbelleğinden AYRI ve kalıcı —
 // her deploy'da silinmez, önce önbellekten sunulur (bir kez iner, sonra internetsiz de açılır). Adresler sürüm
 // numarası taşıdığı için içerik değişmez; yeni sürüm = yeni adres.
@@ -6,8 +6,16 @@ const ML_CACHE = 'dagsk-ml-1';
 const mlMi = (u) => (u.hostname === 'cdn.jsdelivr.net' && u.pathname.startsWith('/npm/@mediapipe/tasks-vision@')) || (u.hostname === 'storage.googleapis.com' && u.pathname.startsWith('/mediapipe-models/'));
 const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png', '/dagsk-ai-pose.js', '/dagsk-teknik-calisma.js', '/dagsk-video-compare.js', '/dagsk-cadence-coach.js', '/dagsk-target-cv.js', '/dagsk-performans.js', '/dagsk-km-rehber.js', '/dagsk-kisi-yonetimi.js', '/dagsk-km-yoklama-analiz.js', '/dagsk-km-kelime.js', '/dagsk-km-reaksiyon.js', '/dagsk-km-ortak.js', '/dagsk-km-sablon-ozet.js', '/dagsk-yapilacaklar.js', '/dagsk-hizli-duzenle.js', '/dagsk-km-yarisma-pro.js', '/dagsk-km-kocluk.js', '/dagsk-km-gelisim.js', '/dagsk-km-formlab.js', '/apple-touch-icon.png'];
 
+// İNTERNETSİZ AÇILIŞ DÜZELTMESİ (2026-10-03): sunucu /app.html → /app (307) yönlendiriyor. Önbelleğe yönlendirilmiş
+// (redirected) bir yanıt yazılınca tarayıcı sayfa açılışında onu reddediyor (ERR_FAILED) → uygulama internetsiz hiç
+// açılmıyordu. Yönlendirilmiş yanıtlar 'temiz' bir kopya olarak, hem istenen hem varılan adrese yazılır.
+const temiz = (res) => res.redirected ? res.blob().then((b) => new Response(b, { status: res.status, statusText: res.statusText, headers: res.headers })) : Promise.resolve(res);
+const yaz = (c, istek, res) => {
+    const hedef = res.redirected && res.url ? res.url : null;
+    return temiz(res).then((t) => Promise.all([c.put(istek, t.clone()), hedef ? c.put(hedef, t.clone()) : null]));
+};
 self.addEventListener('install', (e) => {
-    e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE_URLS)));
+    e.waitUntil(caches.open(CACHE).then((c) => Promise.all(CORE_URLS.map((u) => fetch(u, { cache: 'reload' }).then((res) => (res.ok ? yaz(c, u, res) : null)).catch(() => null)))));
     self.skipWaiting();
 });
 
@@ -35,11 +43,11 @@ self.addEventListener('fetch', (e) => {
             .then((res) => {
                 if (res && res.status === 200 && res.type !== 'opaque') {
                     const clone = res.clone();
-                    caches.open(CACHE).then((c) => c.put(e.request, clone));
+                    caches.open(CACHE).then((c) => yaz(c, e.request, clone));
                 }
                 return res;
             })
-            .catch(() => caches.match(e.request).then((r) => r || caches.match('/app.html')))
+            .catch(() => caches.match(e.request).then((r) => r || (e.request.mode === 'navigate' && url.pathname.startsWith('/app') ? caches.match('/app.html').then((a) => a || caches.match('/app')) : r) || caches.match('/app.html')))
     );
 });
 

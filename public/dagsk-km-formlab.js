@@ -103,7 +103,23 @@ function flIlerlemeHTML() {
 function flGpuYazilimsalMi() {
     try { let gl = document.createElement('canvas').getContext('webgl'), e = gl && gl.getExtension('WEBGL_debug_renderer_info'); return !gl || /swiftshader|llvmpipe|software/i.test(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : ''); } catch (e) { return true; }
 }
-function flHazirlikMetin() { return _fl.pose && _fl.hand ? '<i class="hazir"></i>Yapay zekâ hazır' : _fl.onYukHata ? '<i class="hata"></i>Yapay zekâ indirilemedi — çekime basınca yeniden denenecek' : '<i></i>Yapay zekâ hazırlanıyor…'; }
+function flHazirlikMetin() {
+    if (_fl.pose && _fl.hand) return '<i class="hazir"></i>Yapay zekâ hazır' + (_fl.cevrimdisi ? ' · internetsiz de çalışır' : '');
+    if (_fl.onYukHata) return '<i class="hata"></i>' + (navigator.onLine === false ? flCevrimdisiMesaj() : 'Yapay zekâ indirilemedi — çekime basınca yeniden denenecek');
+    return '<i></i>Yapay zekâ hazırlanıyor…';
+}
+function flCevrimdisiMesaj() { return 'İnternet yok ve yapay zekâ bu telefona henüz inmemiş. Bir kez internetliyken Form Lab’ı aç; sonra internetsiz de çalışır.'; }
+// İnternetsiz kullanım (2026-10-03): modeller yüklendikten sonra kullanılan tüm dosyalar (kütüphane, wasm, iki model)
+// kalıcı 'dagsk-ml-1' deposuna AÇIKÇA yazılır — service worker o sayfayı henüz yönetmiyorken (ilk açılış) inmiş
+// olsalar bile. sw.js bu depodan önce-önbellek sunar; sürüm güncellemesinde silinmez.
+async function flCevrimdisiHazirla() {
+    try {
+        if (!window.caches || !_fl.fileset) return;
+        let c = await caches.open('dagsk-ml-1'), l = [FL_TV + '/vision_bundle.mjs', _fl.fileset.wasmLoaderPath, _fl.fileset.wasmBinaryPath, FL_MODEL_POSE, FL_MODEL_EL].filter(Boolean), hepsi = true;
+        for (let u of l) { if (await c.match(u)) continue; try { let r = await fetch(u, { mode: 'cors' }); if (r.ok) await c.put(u, r); else hepsi = false; } catch (e) { hepsi = false; } }
+        _fl.cevrimdisi = hepsi; flHazirlikYaz();
+    } catch (e) {}
+}
 function flHazirlikYaz() { let el = document.getElementById('fl-hazirlik'); if (el) el.innerHTML = flHazirlikMetin(); if (_fl.pose) _fl.onYukHata = false; }
 async function flModelYukle(delegate) {
     if (!delegate) { let k = null; try { k = localStorage.getItem('dagsk_formlab_delegate'); } catch (e) {} delegate = window.FL_DELEGATE || k || (flGpuYazilimsalMi() ? 'CPU' : 'GPU'); }
@@ -122,6 +138,7 @@ async function flModelYukle(delegate) {
         _fl.pose = await yap(v.PoseLandmarker, FL_MODEL_POSE, { numPoses: 1, minPoseDetectionConfidence: 0.4, minPosePresenceConfidence: 0.4, minTrackingConfidence: 0.4 });
         _fl.hand = await yap(v.HandLandmarker, FL_MODEL_EL, { numHands: 2, minHandDetectionConfidence: 0.35, minHandPresenceConfidence: 0.35, minTrackingConfidence: 0.35 });
         _fl.delegate = kullanilan;
+        setTimeout(flCevrimdisiHazirla, 500);
     })().catch(e => { _fl.yukleniyor = null; throw e; });
     return _fl.yukleniyor;
 }
@@ -204,7 +221,7 @@ async function flDosyaSecildi(inp) {
     } catch (e) {
         _fl.durum = 'hata';
         _fl.mesaj = (e && e.message) ? e.message : 'Bilinmeyen bir hata oluştu.';
-        if (/fetch|import|network|Failed/i.test(_fl.mesaj)) _fl.mesaj = 'Yapay zekâ modelleri indirilemedi — internet bağlantısını kontrol edip tekrar dene.';
+        if (/fetch|import|network|Failed/i.test(_fl.mesaj)) _fl.mesaj = (navigator.onLine === false ? flCevrimdisiMesaj() : 'Yapay zekâ modelleri indirilemedi — internet bağlantısını kontrol edip tekrar dene.');
     }
     if (_fl.gizliVideo) { try { _fl.gizliVideo.remove(); } catch (e) {} _fl.gizliVideo = null; }
     if (_kmAktifSekme === 'formlab') kmFormLabCiz();
@@ -293,7 +310,7 @@ async function flCanliAc() {
         _fl.durum = 'hata';
         let m = String((e && e.message) || e || '');
         _fl.mesaj = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'Kamera izni verilmedi. Tarayıcının site ayarlarından bu siteye kamera izni ver ve tekrar dene.'
-            : /fetch|import|network|Failed/i.test(m) ? 'Yapay zekâ modelleri indirilemedi — internet bağlantısını kontrol edip tekrar dene.' : 'Kamera açılamadı: ' + m;
+            : /fetch|import|network|Failed/i.test(m) ? (navigator.onLine === false ? flCevrimdisiMesaj() : 'Yapay zekâ modelleri indirilemedi — internet bağlantısını kontrol edip tekrar dene.') : 'Kamera açılamadı: ' + m;
         if (_kmAktifSekme === 'formlab') kmFormLabCiz();
     }
 }

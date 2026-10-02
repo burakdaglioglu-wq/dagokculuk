@@ -35,13 +35,28 @@ function kyDepoSenkron(anahtar, yerelAl, yazmaGerek, buda) {
         if (buda) tum = buda(tum);
         kyDepoYazYerel(anahtar, tum);
         let fark = JSON.stringify(tum) !== JSON.stringify(uzak);
-        if (d !== null && (fark || yazmaGerek)) return fetch('/api/meta/' + anahtar, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(tum) }) }).catch(() => {}).then(() => tum);
+        if (d === null) { if (yazmaGerek || kyBekleyenler().includes(anahtar)) kyBekleyenEkle(anahtar); return tum; } // internet yok → sonra gönder
+        if (fark || yazmaGerek) return fetch('/api/meta/' + anahtar, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(tum) }) })
+            .then(r => { if (r && r.ok) kyBekleyenSil(anahtar); else kyBekleyenEkle(anahtar); }, () => kyBekleyenEkle(anahtar)).then(() => tum);
+        kyBekleyenSil(anahtar);
         return tum;
     });
     let p = (_kySenkronZincir[anahtar] || Promise.resolve()).then(adim, adim);
     _kySenkronZincir[anahtar] = p.catch(() => {});
     return p;
 }
+// İnternetsiz yazılan meta kayıtları (2026-10-03, kullanıcı: "internet olmazsa nasıl çalışacak"): gönderilemeyen
+// anahtarlar kalıcı bir listede tutulur; internet gelince ve uygulama açılınca sırayla gönderilir. Yerel veri zaten
+// localStorage'da — kayıp yok, yalnız sunucuya geç gider.
+function kyBekleyenler() { try { return JSON.parse(localStorage.getItem('dag_meta_bekleyen') || '[]'); } catch (e) { return []; } }
+function kyBekleyenEkle(a) { let l = kyBekleyenler(); if (!l.includes(a)) { l.push(a); try { localStorage.setItem('dag_meta_bekleyen', JSON.stringify(l)); } catch (e) {} } }
+function kyBekleyenSil(a) { let l = kyBekleyenler(), y = l.filter(x => x !== a); if (y.length !== l.length) try { localStorage.setItem('dag_meta_bekleyen', JSON.stringify(y)); } catch (e) {} }
+function kyBekleyenGonder() {
+    if (navigator.onLine === false) return;
+    kyBekleyenler().forEach(a => kyDepoSenkron(a, () => kyDepoOku(a), true).catch(() => {}));
+}
+window.addEventListener('online', () => setTimeout(kyBekleyenGonder, 1500));
+setTimeout(kyBekleyenGonder, 5000);
 
 // ---------------------------------------------------------------- 1) kişi türü
 let _kisiTur = kyDepoOku('kisi_turleri');
