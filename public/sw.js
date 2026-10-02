@@ -1,4 +1,9 @@
-const CACHE = 'dag-sk-v186';
+const CACHE = 'dag-sk-v187';
+// Form Lab yapay zekâ dosyaları (MediaPipe wasm + modeller, ~20 MB): sürümlü kabuk önbelleğinden AYRI ve kalıcı —
+// her deploy'da silinmez, önce önbellekten sunulur (bir kez iner, sonra internetsiz de açılır). Adresler sürüm
+// numarası taşıdığı için içerik değişmez; yeni sürüm = yeni adres.
+const ML_CACHE = 'dagsk-ml-1';
+const mlMi = (u) => (u.hostname === 'cdn.jsdelivr.net' && u.pathname.startsWith('/npm/@mediapipe/tasks-vision@')) || (u.hostname === 'storage.googleapis.com' && u.pathname.startsWith('/mediapipe-models/'));
 const CORE_URLS = ['/', '/app.html', '/app.js', '/sync.js', '/styles.css', '/favicon.png', '/dagsk-ai-pose.js', '/dagsk-teknik-calisma.js', '/dagsk-video-compare.js', '/dagsk-cadence-coach.js', '/dagsk-target-cv.js', '/dagsk-performans.js', '/dagsk-km-rehber.js', '/dagsk-kisi-yonetimi.js', '/dagsk-km-yoklama-analiz.js', '/dagsk-km-kelime.js', '/dagsk-km-reaksiyon.js', '/dagsk-km-ortak.js', '/dagsk-km-sablon-ozet.js', '/dagsk-yapilacaklar.js', '/dagsk-hizli-duzenle.js', '/dagsk-km-yarisma-pro.js', '/dagsk-km-kocluk.js', '/dagsk-km-gelisim.js', '/dagsk-km-formlab.js', '/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -7,7 +12,7 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-    e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))));
+    e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k !== ML_CACHE).map((k) => caches.delete(k)))));
     self.clients.claim();
 });
 
@@ -18,6 +23,13 @@ self.addEventListener('fetch', (e) => {
     const url = new URL(e.request.url);
     if (e.request.method !== 'GET') return;
     if (url.pathname.startsWith('/api/') || url.pathname === '/ws') return;
+    if (mlMi(url)) {
+        e.respondWith(caches.open(ML_CACHE).then((c) => c.match(e.request.url).then((r) => r || fetch(e.request).then((res) => {
+            if (res && res.status === 200 && res.type !== 'opaque') c.put(e.request.url, res.clone());
+            return res;
+        }))));
+        return;
+    }
     e.respondWith(
         fetch(e.request)
             .then((res) => {

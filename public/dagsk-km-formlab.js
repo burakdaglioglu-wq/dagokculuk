@@ -34,6 +34,8 @@ function kmFormLabCiz() {
     flCss();
     let el = document.getElementById('km-icerik'); if (!el) return;
     if (!_fl.senk && typeof kyDepoSenkron === 'function') { _fl.senk = true; kyDepoSenkron('form_lab', () => flKayitlar(), false).then(() => { if (_kmAktifSekme === 'formlab' && _fl.durum !== 'analiz' && _fl.durum !== 'canli') kmFormLabCiz(); }).catch(() => {}); }
+    // ön yükleme: araç açılınca modeller arka planda hazırlansın; "Uygulamada çek" beklemeden açılır
+    if (!_fl.pose && !_fl.yukleniyor && !_fl.onYukHata) setTimeout(() => { if (_kmAktifSekme === 'formlab' && !_fl.pose && !_fl.yukleniyor) flModelYukle().then(flHazirlikYaz, () => { _fl.onYukHata = true; flHazirlikYaz(); }); flHazirlikYaz(); }, 300);
     let L = flRoster();
     if (_fl.secili && !L.some(k => k.g + '|' + k.ad === _fl.secili)) _fl.secili = null;
     let sporcular = L.length ? L.map(k => {
@@ -83,7 +85,8 @@ function flBaslangicHTML() {
             <button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Uygulamada çek</button>
             <label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Videodan seç</label>
         </div>
-        <p class="fl-sessiz">Video telefonda işlenir, hiçbir yere yüklenmez. İlk kullanımda yapay zekâ modelleri (~13 MB) bir kez indirilir.</p>
+        <p class="fl-hazirlik" id="fl-hazirlik">${flHazirlikMetin()}</p>
+        <p class="fl-sessiz">Video telefonda işlenir, hiçbir yere yüklenmez. Yapay zekâ modelleri (~13 MB) ilk seferde bir kez iner, sonra telefonda saklanır.</p>
     </div>`;
 }
 function flIlerlemeHTML() {
@@ -100,6 +103,8 @@ function flIlerlemeHTML() {
 function flGpuYazilimsalMi() {
     try { let gl = document.createElement('canvas').getContext('webgl'), e = gl && gl.getExtension('WEBGL_debug_renderer_info'); return !gl || /swiftshader|llvmpipe|software/i.test(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : ''); } catch (e) { return true; }
 }
+function flHazirlikMetin() { return _fl.pose && _fl.hand ? '<i class="hazir"></i>Yapay zekâ hazır' : _fl.onYukHata ? '<i class="hata"></i>Yapay zekâ indirilemedi — çekime basınca yeniden denenecek' : '<i></i>Yapay zekâ hazırlanıyor…'; }
+function flHazirlikYaz() { let el = document.getElementById('fl-hazirlik'); if (el) el.innerHTML = flHazirlikMetin(); if (_fl.pose) _fl.onYukHata = false; }
 async function flModelYukle(delegate) {
     if (!delegate) { let k = null; try { k = localStorage.getItem('dagsk_formlab_delegate'); } catch (e) {} delegate = window.FL_DELEGATE || k || (flGpuYazilimsalMi() ? 'CPU' : 'GPU'); }
     if (_fl.pose && _fl.hand && _fl.delegate === delegate) return;
@@ -161,6 +166,7 @@ async function flDosyaSecildi(inp) {
         let sure = Math.min(v.duration || 0, FL_MAKS_SN), N = Math.floor(sure * FL_FPS), kareler = [];
         if (N < FL_FPS * 2) throw new Error('Video çok kısa — en az birkaç atışlık (20 sn ve üzeri) bir video seç.');
         let takilan = 0; _fl.tsBaz = (_fl.sonTs || 0) + 1;
+        if ('requestVideoFrameCallback' in v && !window.FL_SEEK) { kareler = await flOynatarakAnaliz(v, sure); N = 0; }
         for (let i = 0; i < N; i++) {
             if (_fl.iptal) throw new Error('Analiz durduruldu.');
             let t = i / FL_FPS, z0 = performance.now();
@@ -175,8 +181,8 @@ async function flDosyaSecildi(inp) {
             let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0], z2 = performance.now(), z3 = z2;
             if (lm) {
                 kare.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
-                if (flElYuzdeMi(kare.p, v.videoWidth, v.videoHeight)) {
-                    let h = _fl.hand.detectForVideo(v, ts);
+                if (flElGerekli(kare.p, v.videoWidth, v.videoHeight)) {
+                    kare.hD = 1; let h = _fl.hand.detectForVideo(v, ts);
                     if (h && h.landmarks && h.landmarks.length) kare.h = h.landmarks.map(l => l.map(q => [q.x, q.y]));
                     z3 = performance.now();
                 }
@@ -203,6 +209,52 @@ async function flDosyaSecildi(inp) {
     if (_fl.gizliVideo) { try { _fl.gizliVideo.remove(); } catch (e) {} _fl.gizliVideo = null; }
     if (_kmAktifSekme === 'formlab') kmFormLabCiz();
 }
+// Hız: kare kare atlamak (seek) analizin en pahalı kısmıydı (~70 ms/kare). Video görünmez şekilde OYNATILIR, kareler
+// geldikçe (requestVideoFrameCallback) işlenir; oynatma hızı cihazın yetişebildiği kadar ayarlanır (0,5x-3x) — hedef
+// video zamanında en fazla ~0,12 sn arayla örnek. Sonra canlı çekimdeki gibi FL_FPS ızgarasına yeniden örneklenir.
+function flOynatarakAnaliz(v, sure) {
+    return new Promise((tamam, hata) => {
+        let ham = [], sonT = -1, islemMs = 60, say = 0, bitti = false;
+        const bitir = () => {
+            if (bitti) return; bitti = true; v.pause();
+            if (_fl.iptal) return hata(new Error('Analiz durduruldu.'));
+            let N = Math.floor(sure * FL_FPS), kareler = [], j = 0;
+            for (let i = 0; i < N; i++) {
+                let t = i / FL_FPS;
+                while (j + 1 < ham.length && Math.abs(ham[j + 1].t - t) <= Math.abs(ham[j].t - t)) j++;
+                let h = ham[j];
+                kareler.push(h && Math.abs(h.t - t) < 0.2 ? { t, p: h.p, h: h.h, hD: h.hD } : { t, p: null, h: null });
+            }
+            tamam(kareler);
+        };
+        const kare = (simdi, md) => {
+            if (bitti) return;
+            if (_fl.iptal || md.mediaTime >= sure - 0.02) return bitir();
+            v.requestVideoFrameCallback(kare);
+            let t = md.mediaTime; if (t - sonT < 1 / FL_FPS - 0.01) return; sonT = t;
+            let z0 = performance.now(), ts = flTs(_fl.tsBaz + t * 1000), k = { t, p: null, h: null };
+            let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0];
+            if (lm) {
+                k.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
+                if (flElGerekli(k.p, v.videoWidth, v.videoHeight)) {
+                    k.hD = 1; let h = _fl.hand.detectForVideo(v, ts);
+                    if (h && h.landmarks && h.landmarks.length) k.h = h.landmarks.map(l => l.map(q => [q.x, q.y]));
+                }
+            }
+            ham.push(k);
+            islemMs = islemMs * 0.85 + (performance.now() - z0) * 0.15;
+            if (++say % 8 === 0) {
+                v.playbackRate = Math.max(0.5, Math.min(3, 0.12 / (islemMs / 1000 + 0.012)));
+                flIlerleme(Math.min(1, t / sure), 'Video inceleniyor… ' + Math.round(t) + ' / ' + Math.round(sure) + ' sn');
+            }
+        };
+        v.addEventListener('ended', bitir, { once: true });
+        v.requestVideoFrameCallback(kare);
+        v.currentTime = 0; v.playbackRate = 1;
+        v.play().catch(e => { if (!bitti) { bitti = true; hata(new Error('Video oynatılamadı: ' + (e && e.message || e))); } });
+    });
+}
+
 // ---------------------------------------------------------------- uygulamada çekim (canlı analiz)
 // Kullanıcı (2026-10-03): "uygulama üzerinden de video çekebilelim". Kamera akışı uygulamanın içinde açılır; her kare
 // ÇEKİM SIRASINDA analiz edilir (sonradan kare atlama yok → iPhone'daki zaman aşımı/HEVC sorunları yok), aynı anda
@@ -211,9 +263,9 @@ async function flDosyaSecildi(inp) {
 function flTs(ms) { let ts = Math.max(Math.round(ms), (_fl.sonTs || 0) + 1); _fl.sonTs = ts; return ts; }
 function flCanliHTML() {
     let c = _fl.canli || {};
-    return `<div class="fl-canli">
+    return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
         <div class="fl-canli-kontrol">
@@ -228,7 +280,8 @@ async function flCanliAc() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { _fl.durum = 'hata'; _fl.mesaj = 'Bu tarayıcı uygulama içinden kamera açmayı desteklemiyor. "Videodan seç" ile telefonun kamerasında çektiğin videoyu kullan.'; return kmFormLabCiz(); }
     _fl.sonuc = null; _fl.kayitAnahtar = null;
     _fl.durum = 'canli'; _fl.canli = { kayit: false, kareler: [], bas: 0, yon: _fl.canliYon || 'environment', ipucu: 'Kamera açılıyor…', atisSay: 0, yakinBas: null };
-    kmFormLabCiz();
+    _fl.tamEkran = true; kmFormLabCiz();
+    flTamIste(document.querySelector('.fl-canli')); // dokunuşun içinde (tarayıcı tam ekranı yalnız kullanıcı hareketiyle açar)
     try {
         await flKameraBaslat();
         flCanliIpucu('Yapay zekâ hazırlanıyor… (ilk seferde ~13 MB iner)');
@@ -259,7 +312,39 @@ async function flKameraCevir() {
     try { await flKameraBaslat(); } catch (e) { showToast('Kamera değiştirilemedi', 'error'); }
 }
 function flCanliIpucu(m) { if (_fl.canli) _fl.canli.ipucu = m; let el = document.getElementById('fl-canli-ipucu'); if (el) { el.textContent = m; el.classList.toggle('tamam', /^Kadraj tamam/.test(m)); } }
+// Tam ekran (2026-10-03, kullanıcı: "tam ekran modunu da aç"). Destekleyen tarayıcıda gerçek tam ekran (Fullscreen API);
+// iPhone Safari bir öğeyi tam ekrana alamadığı için orada sayfayı kaplayan sabit katman (.fl-tam) kullanılır.
+function flTamIste(el) {
+    if (!el || document.fullscreenElement || document.webkitFullscreenElement) return;
+    try { let p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null; if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+function flTamCik() {
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen(); } catch (e) {}
+}
+function flTamEkranDegis() {
+    let el = document.querySelector('.fl-canli'); if (!el) return;
+    _fl.tamEkran = !_fl.tamEkran; el.classList.toggle('fl-tam', _fl.tamEkran);
+    let b = el.querySelector('.fl-tam-btn'); if (b) b.textContent = _fl.tamEkran ? 'Küçült' : 'Tam ekran';
+    if (_fl.tamEkran) flTamIste(el); else flTamCik();
+}
+function flSahneTam() {
+    let el = document.querySelector('.fl-sahne'); if (!el) return;
+    let ac = !el.classList.contains('fl-tam'); el.classList.toggle('fl-tam', ac);
+    let b = el.querySelector('.fl-sahne-tam'); if (b) b.textContent = ac ? 'Küçült' : 'Tam ekran';
+    if (ac) flTamIste(el); else flTamCik();
+}
+// geri tuşu / ESC ile gerçek tam ekrandan çıkılınca sayfa katmanı da kapansın (kullanıcı katmanda sıkışmasın)
+if (!window._flTamDinleyici) {
+    window._flTamDinleyici = true;
+    const degisti = () => {
+        if (document.fullscreenElement || document.webkitFullscreenElement) return;
+        _fl.tamEkran = false;
+        document.querySelectorAll('.fl-canli.fl-tam, .fl-sahne.fl-tam').forEach(el => { el.classList.remove('fl-tam'); let b = el.querySelector('.fl-tam-btn, .fl-sahne-tam'); if (b) b.textContent = 'Tam ekran'; });
+    };
+    document.addEventListener('fullscreenchange', degisti); document.addEventListener('webkitfullscreenchange', degisti);
+}
 function flCanliKapat() {
+    flTamCik();
     cancelAnimationFrame(_fl.canliRaf);
     try { if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') _fl.kaydedici.stop(); } catch (e) {}
     if (_fl.akis) { _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; }
@@ -298,6 +383,7 @@ async function flCanliBitir() {
         if (c.parcalar.length) blob = new Blob(c.parcalar, { type: c.tip || 'video/webm' });
     }
     if (_fl.akis) { _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; }
+    flTamCik(); _fl.tamEkran = false;
     if (T < 3) { _fl.durum = 'hata'; _fl.mesaj = 'Çekim çok kısa — en az birkaç atış çek.'; _fl.canli = null; return kmFormLabCiz(); }
     _fl.durum = 'analiz'; _fl.ilerleme = 1; _fl.mesaj = 'Atışlar ayrılıyor…'; kmFormLabCiz();
     await new Promise(r => setTimeout(r, 30));
@@ -309,7 +395,7 @@ async function flCanliBitir() {
         let t = i / FL_FPS;
         while (j + 1 < ham.length && Math.abs(ham[j + 1].t - t) <= Math.abs(ham[j].t - t)) j++;
         let h = ham[j];
-        kareler.push(h && Math.abs(h.t - t) < 0.2 ? { t, p: h.p, h: h.h, snap: h.snap } : { t, p: null, h: null });
+        kareler.push(h && Math.abs(h.t - t) < 0.2 ? { t, p: h.p, h: h.h, hD: h.hD, snap: h.snap } : { t, p: null, h: null });
     }
     let sonuc = flHesapla(kareler, c.W, c.H);
     sonuc.W = c.W; sonuc.H = c.H; sonuc.sure = T; sonuc.kareler = kareler; sonuc.canli = true;
@@ -332,8 +418,7 @@ function flCanliDongu() {
         if (lm) {
             kare.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
             if (flElYuzdeMi(kare.p, W, H)) {
-                let h = _fl.hand.detectForVideo(v, ts);
-                if (h && h.landmarks && h.landmarks.length) kare.h = h.landmarks.map(l => l.map(q => [q.x, q.y]));
+                if (flElGerekli(kare.p, W, H)) { kare.hD = 1; let h = _fl.hand.detectForVideo(v, ts); if (h && h.landmarks && h.landmarks.length) kare.h = h.landmarks.map(l => l.map(q => [q.x, q.y])); }
                 if (c.kayit) { // atış küçük resmi için ağız çevresinden küçük bir kare
                     let S = Math.hypot((kare.p[11][0] - kare.p[12][0]) * W, (kare.p[11][1] - kare.p[12][1]) * H), k = S * 1.25;
                     let mx = (kare.p[9][0] + kare.p[10][0]) / 2 * W, my = (kare.p[9][1] + kare.p[10][1]) / 2 * H, x0 = mx - k / 2, y0 = my - k / 2;
@@ -401,6 +486,15 @@ async function flKucukResimlerCanli(s) {
     }
 }
 
+// Hız (2026-10-03, kullanıcı: "hızlandıramaz mıyız"): el modeli işin ~%40'ı. Yalnız bir işaret parmağı ağza 1 omuz
+// genişliğinden yakınken (çapa evresi) ve orada da İKİ KAREDE BİR çalışır; arada kalan kareler flHesapla'da son el
+// konumuyla doldurulur. Çapa sabit durduğu için ölçüm neredeyse değişmez.
+function flElGerekli(p, W, H) {
+    let px = i => [p[i][0] * W, p[i][1] * H], d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    let S = d(px(FL_P.omuzSol), px(FL_P.omuzSag)) || 1, ag = [(px(FL_P.agizSol)[0] + px(FL_P.agizSag)[0]) / 2, (px(FL_P.agizSol)[1] + px(FL_P.agizSag)[1]) / 2];
+    if (Math.min(d(px(FL_P.isaretSol), ag), d(px(FL_P.isaretSag), ag), d(px(FL_P.bilekSol), ag), d(px(FL_P.bilekSag), ag)) > 1.0 * S) return false;
+    _fl.elSira = !_fl.elSira; return _fl.elSira;
+}
 // el modeli yalnız iki bilekten biri yüze yakınken çalışır (hız)
 function flElYuzdeMi(p, W, H) {
     let px = i => [p[i][0] * W, p[i][1] * H], d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -455,7 +549,7 @@ function flHesapla(kareler, W, H) {
         let cD = px(p, C.cDirsek), oranX = (cD[0] - yO[0]) / ((cO[0] - yO[0]) || 1), hatY = yO[1] + (cO[1] - yO[1]) * oranX;
         let dirsekYuk = (cD[1] - hatY) / S; // + : dirsek omuz çizgisinin altında
         let gor = Math.min(p[C.yBilek][2], p[C.yDirsek][2], p[C.cDirsek][2]);
-        return { S, agiz, capa, capaEl, capaPoz, vek, mes: Math.hypot(vek[0], vek[1]), yayKol, cekDirsek, egim, dirsekYuk, elVar, gor, yBilekY: px(p, C.yBilek)[1] };
+        return { S, agiz, capa, capaEl, capaPoz, elDenendi: !!k.hD, vek, mes: Math.hypot(vek[0], vek[1]), yayKol, cekDirsek, egim, dirsekYuk, elVar, gor, yBilekY: px(p, C.yBilek)[1] };
     });
     // Sabit kamerada sporcunun boyu değişmez: omuz genişliği video ortancasından çok farklı kareler (yakın çekim,
     // sahne değişimi, kadraja başka biri girmesi) ölçüm dışı.
@@ -479,8 +573,8 @@ function flHesapla(kareler, W, H) {
         a.no = n + 1;
         // Atış içinde tek çapa kaynağı: el modeli karelerin yarısından çoğunda bulduysa el (boşluklar son el
         // konumuyla doldurulur), yoksa vücut modelinin işaret parmağı. Kaynak karışınca nokta zıplar, kilit kırılır.
-        let elSay = 0; for (let i = a.bas; i <= a.son; i++) if (olc[i] && olc[i].capaEl) elSay++;
-        let kaynakEl = elSay / (a.son - a.bas + 1) >= 0.5, sonEl = null, ham = [];
+        let elSay = 0, denenen = 0; for (let i = a.bas; i <= a.son; i++) { if (olc[i] && olc[i].capaEl) elSay++; if (olc[i] && olc[i].elDenendi) denenen++; }
+        let kaynakEl = elSay >= 3 && elSay / Math.max(1, denenen) >= 0.5, sonEl = null, ham = [];
         for (let i = a.bas; i <= a.son; i++) {
             let o = olc[i]; if (!o) { ham.push(null); continue; }
             let c = kaynakEl ? (o.capaEl || sonEl || o.capaPoz) : o.capaPoz; if (o.capaEl) sonEl = o.capaEl;
@@ -519,7 +613,7 @@ function flHesapla(kareler, W, H) {
         // bırakış sonrası 0,5 sn: yay bileği ne kadar indi (omuz birimi, + aşağı)
         let once = olc[a.son], sonra = olc[Math.min(olc.length - 1, a.son + Math.round(FL_FPS * 0.5))];
         a.dusus = once && sonra ? (sonra.yBilekY - once.yBilekY) / once.S : null;
-        a.elVar = olc.slice(a.bas, a.son + 1).filter(o => o && o.elVar).length / Math.max(1, a.son - a.bas + 1);
+        a.elVar = elSay / Math.max(1, denenen);
         a.ortaKare = Math.round((kb + ks) / 2);
     });
     // 5) özet + bulgular
@@ -599,7 +693,7 @@ function flSonucHTML() {
         : '<div class="fl-bulgu iyi"><div><b>Belirgin bir sorun görünmüyor</b><p>Çapa yeri, bekleme ve kol açıları atıştan atışa tutarlı.</p></div></div>';
     let kayitli = !!_fl.kayitAnahtar;
     return `<div class="fl-sonuc">
-        ${_fl.url ? `<div class="fl-sahne"><video id="fl-video" src="${_fl.url}" playsinline muted controls preload="auto"></video><canvas id="fl-katman"></canvas></div>` : '<p class="fl-sessiz">Bu tarayıcı çekimi kaydedemedi; analiz yapıldı ama video oynatılamıyor.</p>'}
+        ${_fl.url ? `<div class="fl-sahne"><video id="fl-video" src="${_fl.url}" playsinline muted controls preload="auto"></video><canvas id="fl-katman"></canvas><button class="fl-rozet fl-sahne-tam" onclick="flSahneTam()">Tam ekran</button></div>` : '<p class="fl-sessiz">Bu tarayıcı çekimi kaydedemedi; analiz yapıldı ama video oynatılamıyor.</p>'}
         <div class="fl-grafik-kutu"><div class="fl-grafik-ust"><span>ÇEKİŞ ELİ ↔ ÇENE · ${oz.n} ATIŞ</span><span class="fl-lejant"><i class="k"></i>çapa kilitli <i class="b"></i>bırakış</span></div>${flGrafikSVG(s)}</div>
         <div class="fl-kpiler">
             ${kpi(puan + '<span>/100</span>', 'tutarlılık', 'çapa, bekleme ve kol açısına göre')}
@@ -770,6 +864,9 @@ function flCss() {
 .fl-btn:disabled{ opacity:.6; cursor:default; }
 .fl-btn-kucuk{ min-height:36px; font-size:12.5px; padding:0 12px; flex-shrink:0; }
 .fl-sessiz{ font:400 11.5px/1.5 'Roboto Mono',monospace; color:var(--fl-soft); margin:0; }
+.fl-hazirlik{ margin:0; font:500 12px/1.4 'Roboto Mono',monospace; color:var(--fl-ink); display:flex; align-items:center; gap:8px; }
+.fl-hazirlik i{ width:8px; height:8px; border-radius:50%; background:#ffb703; animation:flNabiz 1.2s ease-in-out infinite; } .fl-hazirlik i.hazir{ background:#3ddc84; animation:none; } .fl-hazirlik i.hata{ background:#ff4d4d; animation:none; }
+@keyframes flNabiz{ 50%{ opacity:.35; } }
 .fl-ilerleme-ust{ display:flex; justify-content:space-between; font:500 13px/1.3 'Roboto Mono',monospace; }
 .fl-cubuk{ height:6px; border-radius:3px; background:rgba(236,230,220,.1); overflow:hidden; } .fl-cubuk i{ display:block; height:100%; background:var(--fl-or); transition:width .2s ease; }
 .fl-ilerleme .fl-btn{ align-self:flex-start; }
@@ -819,6 +916,16 @@ function flCss() {
 .fl-canli-ipucu.tamam{ background:rgba(25,135,84,.85); }
 .fl-canli-kontrol{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
 .fl-canli-kontrol .fl-btn:first-child{ justify-self:start; } .fl-canli-kontrol .fl-btn:last-child{ justify-self:end; }
+.fl-ust-sag{ display:flex; gap:8px; align-items:center; }
+.fl-tam-btn, .fl-sahne-tam{ border:0; cursor:pointer; }
+.fl-sahne-tam{ position:absolute; right:10px; top:10px; z-index:3; }
+.fl-canli.fl-tam{ position:fixed; inset:0; z-index:40000; background:#000; margin:0; padding:max(8px, env(safe-area-inset-top)) 8px max(10px, env(safe-area-inset-bottom)); gap:10px; }
+.fl-canli.fl-tam .fl-canli-sahne{ flex:1; min-height:0; border-radius:8px; }
+.fl-canli.fl-tam .fl-canli-sahne video{ max-height:none; width:100%; height:100%; object-fit:contain; }
+.fl-canli.fl-tam > .fl-sessiz{ display:none; }
+.fl-canli.fl-tam .fl-btn{ color:#fff; border-color:rgba(255,255,255,.3); }
+.fl-sahne.fl-tam{ position:fixed; inset:0; z-index:40000; border-radius:0; background:#000; }
+.fl-sahne.fl-tam video{ max-height:none; width:100%; height:100%; object-fit:contain; }
 .fl-kayit-btn{ width:76px; height:76px; border-radius:50%; border:4px solid #fff; background:transparent; display:grid; place-items:center; cursor:pointer; padding:0; }
 .fl-kayit-btn i{ width:56px; height:56px; border-radius:50%; background:#e5383b; transition:all .2s ease; }
 .fl-kayit-btn.kayitta i{ width:28px; height:28px; border-radius:6px; }
