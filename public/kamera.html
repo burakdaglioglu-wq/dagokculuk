@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#000000">
-<title>DAĞ Form Lab · Telefon kamerası</title>
+<title>DAĞ Kamera</title>
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,40 +13,118 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="DAĞ Kamera">
 <style>
-  /* Form Lab "Telefondan yayın al" — telefon tarafı (2026-10-03). Bilgisayardaki Form Lab'ın QR kodu bu sayfayı açar;
-     kamera görüntüsü WebRTC ile doğrudan bilgisayara akar. Giriş gerekmez; oda kodu + gizli anahtar adresin # kısmında. */
-  :root{ --or:#ff6a1a; --ink:#efebe5; --soft:#a59e94; }
-  *{ box-sizing:border-box; margin:0; }
-  html, body{ height:100%; background:#000; color:var(--ink); font-family:-apple-system, 'Segoe UI', Roboto, sans-serif; }
-  body{ display:flex; flex-direction:column; padding:max(10px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom)); gap:10px; }
-  .sahne{ position:relative; flex:1; min-height:0; border-radius:10px; overflow:hidden; background:#111; }
-  video{ width:100%; height:100%; object-fit:contain; display:block; background:#000; }
-  .ust{ position:absolute; left:10px; right:10px; top:10px; display:flex; justify-content:space-between; gap:8px; }
-  .rozet{ font:700 12px/1 ui-monospace, Menlo, monospace; letter-spacing:.08em; background:rgba(10,10,10,.75); color:#fff; padding:8px 10px; border-radius:6px; }
-  .rozet.bagli{ background:#198754; } .rozet.hata{ background:#c0392b; }
-  .durum{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:max-content; max-width:92%; text-align:center; font:600 14px/1.35 ui-monospace, Menlo, monospace; background:rgba(10,10,10,.78); padding:10px 14px; border-radius:8px; }
-  .yatay{ position:absolute; left:50%; top:56px; transform:translateX(-50%); width:max-content; max-width:92%; text-align:center; font:600 13px/1.35 -apple-system, sans-serif; background:rgba(255,106,26,.92); color:#fff; padding:8px 12px; border-radius:8px; }
-  .kontrol{ display:flex; gap:10px; }
-  button{ flex:1; min-height:52px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:transparent; color:#fff; font:700 15px/1 -apple-system, 'Segoe UI', sans-serif; }
-  button.ana{ background:var(--or); border-color:var(--or); }
-  .not{ font:400 12px/1.45 ui-monospace, Menlo, monospace; color:var(--soft); text-align:center; }
-  .ekle{ font:500 13px/1.45 -apple-system, sans-serif; color:#fff; background:rgba(255,183,3,.14); border:1px solid rgba(255,183,3,.45); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start; }
-  .ekle button{ flex:0 0 auto; min-height:32px; padding:0 10px; font-size:13px; }
+  /* Form Lab "Telefondan yayın al" — telefon tarafı. Bilgisayardaki Form Lab'ın QR kodu bu sayfayı açar; kamera
+     görüntüsü WebRTC ile doğrudan bilgisayara akar. Giriş gerekmez; oda kodu + gizli anahtar adresin # kısmında.
+     2026-10-04 (kullanıcı: "telefonla çekerken ekran güzel değil"): kamera uygulaması düzeni — görüntü tam ekran,
+     üstte ince durum satırı (CANLI + süre + kalite), kenarda yuvarlak düğmeler (yatayda sağda, dikeyde altta),
+     bağlanırken / hatada alttan kart, kadraj ızgarası, ekranı karartma (yayın sürer), destekleyen telefonda yakınlaştırma. */
+  :root{ --or:#ff6a1a; --yesil:#22c55e; --sari:#f5b301; --kirmizi:#ef4444; --ink:#f4f1ec; --soft:rgba(244,241,236,.68); --cam:rgba(12,12,14,.62); }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body{ height:100%; overflow:hidden; background:#000; color:var(--ink); font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  button{ font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+  #v{ position:fixed; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+  .ust{ position:fixed; z-index:3; left:0; right:0; top:0; display:flex; align-items:center; gap:8px; padding:max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 12px max(14px, env(safe-area-inset-left)); background:linear-gradient(rgba(0,0,0,.55), transparent); pointer-events:none; }
+  .hap{ display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 14px 0 12px; border-radius:999px; background:var(--cam); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); font-weight:800; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+  .hap i{ width:10px; height:10px; border-radius:50%; background:var(--sari); }
+  .hap.bagli{ background:rgba(22,101,52,.82); } .hap.bagli i{ background:var(--yesil); box-shadow:0 0 0 0 rgba(34,197,94,.7); animation:nabiz 1.6s infinite; }
+  .hap.hata i{ background:var(--kirmizi); } .hap.hata{ background:rgba(127,29,29,.8); }
+  .hap .sure{ font-variant-numeric:tabular-nums; font-weight:600; opacity:.85; letter-spacing:0; }
+  @keyframes nabiz{ 70%{ box-shadow:0 0 0 8px rgba(34,197,94,0); } 100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); } }
+  .kalite{ white-space:nowrap; height:26px; padding:0 10px; border-radius:999px; background:var(--cam); font:600 12px/26px ui-monospace, Menlo, monospace; color:var(--soft); }
+  .kalite:empty{ display:none; }
+  .marka{ white-space:nowrap; margin-left:auto; font-weight:800; font-size:12px; letter-spacing:.14em; color:var(--soft); }
+  .marka b{ color:var(--or); }
+  @media (max-width:430px){ .marka{ display:none; } }
+  /* düğme rayı: dikeyde altta, yatayda sağda */
+  .ray{ position:fixed; z-index:3; display:flex; gap:14px; align-items:center; justify-content:center; left:0; right:0; bottom:0; padding:16px max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); background:linear-gradient(transparent, rgba(0,0,0,.6)); }
+  @media (orientation:landscape){ .ray{ left:auto; top:0; bottom:0; right:0; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) 26px; background:linear-gradient(90deg, transparent, rgba(0,0,0,.55)); } }
+  .dug{ display:flex; flex-direction:column; align-items:center; gap:5px; min-width:58px; font-size:11px; font-weight:700; color:var(--soft); }
+  .dug span{ width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:var(--cam); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.14); color:#fff; }
+  .dug.aktif span{ background:var(--or); border-color:var(--or); color:#111; }
+  .dug svg{ width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .dug[hidden]{ display:none; }
+  /* kadraj ızgarası */
+  .izgara{ position:fixed; inset:0; z-index:1; pointer-events:none; display:grid; place-items:center; }
+  .izgara[hidden]{ display:none; }
+  .izgara::before{ content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent calc(33.33% - .5px), rgba(255,255,255,.28) 33.33%, transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255,255,255,.28) 66.66%, transparent calc(66.66% + .5px)), linear-gradient(transparent calc(33.33% - .5px), rgba(255,255,255,.28) 33.33%, transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255,255,255,.28) 66.66%, transparent calc(66.66% + .5px)); }
+  .izgara div{ position:relative; width:min(46vh, 40vw); height:84vh; border:2px dashed rgba(255,214,102,.75); border-radius:18px; }
+  .izgara div b{ position:absolute; left:50%; top:-28px; transform:translateX(-50%); white-space:nowrap; font-size:12px; font-weight:700; color:#ffd666; background:var(--cam); padding:3px 9px; border-radius:6px; }
+  /* bağlanırken / hata kartı */
+  .kart{ position:fixed; z-index:4; left:50%; bottom:max(108px, calc(env(safe-area-inset-bottom) + 100px)); transform:translateX(-50%); width:min(440px, calc(100% - 28px)); padding:18px; border-radius:20px; background:rgba(16,16,18,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,.12); display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 50px -20px rgba(0,0,0,.8); }
+  @media (orientation:landscape){ .kart{ left:max(16px, env(safe-area-inset-left)); transform:none; bottom:16px; width:min(400px, 55vw); } }
+  .kart[hidden]{ display:none; }
+  .kart-bas{ display:flex; align-items:center; gap:12px; }
+  .kart-bas b{ font-size:17px; line-height:1.25; }
+  .donen{ width:26px; height:26px; flex-shrink:0; border-radius:50%; border:3px solid rgba(255,255,255,.18); border-top-color:var(--or); animation:don 0.9s linear infinite; }
+  .kart.hata .donen{ animation:none; border-color:var(--kirmizi); display:grid; place-items:center; }
+  .kart.hata .donen::after{ content:'!'; font-weight:900; font-size:15px; color:var(--kirmizi); }
+  @keyframes don{ to{ transform:rotate(360deg); } }
+  .kart p{ font-size:14px; line-height:1.45; color:var(--soft); }
+  .adimlar{ list-style:none; display:flex; flex-direction:column; gap:7px; font-size:14px; }
+  .adimlar li{ display:flex; align-items:center; gap:10px; color:var(--soft); }
+  .adimlar li::before{ content:''; width:18px; height:18px; flex-shrink:0; border-radius:50%; border:2px solid rgba(255,255,255,.25); }
+  .adimlar li.simdi{ color:var(--ink); font-weight:700; } .adimlar li.simdi::before{ border-color:var(--or); border-top-color:transparent; animation:don 1s linear infinite; }
+  .adimlar li.tamam{ color:var(--ink); } .adimlar li.tamam::before{ border:0; background:var(--yesil) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23052e16' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .ana{ min-height:50px; border-radius:14px; background:var(--or); color:#111; font-weight:800; font-size:16px; }
+  .ana[hidden]{ display:none; }
+  .kart small{ font-size:12px; color:rgba(244,241,236,.5); line-height:1.4; }
+  .kart small b{ font-family:ui-monospace, Menlo, monospace; color:var(--soft); letter-spacing:.08em; }
+  /* kısa bildirim */
+  .bildirim{ position:fixed; z-index:4; left:50%; bottom:max(120px, calc(env(safe-area-inset-bottom) + 112px)); transform:translateX(-50%) translateY(-8px); opacity:0; transition:opacity .25s, transform .25s; padding:10px 16px; border-radius:12px; background:rgba(16,16,18,.88); font-size:14px; font-weight:600; white-space:nowrap; pointer-events:none; }
+  @media (orientation:landscape){ .bildirim{ bottom:max(18px, env(safe-area-inset-bottom)); } }
+  .bildirim.goster{ opacity:1; transform:translateX(-50%) translateY(0); }
+  /* dik tutulunca: yan çevir */
+  .yatay{ position:fixed; z-index:5; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; text-align:center; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+  .yatay[hidden]{ display:none; }
+  .yatay svg{ width:84px; height:84px; fill:none; stroke:#fff; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; animation:yan 2.2s ease-in-out infinite; }
+  @keyframes yan{ 0%, 25%{ transform:rotate(0); } 55%, 85%{ transform:rotate(-90deg); } 100%{ transform:rotate(0); } }
+  .yatay b{ font-size:21px; } .yatay p{ font-size:14.5px; line-height:1.5; color:var(--soft); max-width:300px; }
+  .yatay button{ margin-top:6px; min-height:44px; padding:0 18px; border-radius:12px; border:1px solid rgba(255,255,255,.28); font-weight:700; font-size:14px; }
+  /* ana ekrana ekle */
+  .ekle{ position:fixed; z-index:4; left:50%; top:max(64px, calc(env(safe-area-inset-top) + 56px)); transform:translateX(-50%); width:min(420px, calc(100% - 28px)); display:flex; gap:12px; align-items:center; padding:12px 14px; border-radius:16px; background:rgba(16,16,18,.92); border:1px solid rgba(245,179,1,.4); font-size:13.5px; line-height:1.4; }
+  .ekle[hidden]{ display:none; }
+  .ekle button{ flex-shrink:0; min-height:36px; padding:0 12px; border-radius:10px; background:rgba(255,255,255,.12); font-weight:700; font-size:13px; }
+  /* karartma: yayın sürer, ekran kararır (pil + dikkat dağıtmasın) */
+  .karart{ position:fixed; z-index:6; inset:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:rgba(244,241,236,.4); font-size:14px; text-align:center; }
+  .karart[hidden]{ display:none; }
+  .karart b{ font-size:15px; color:rgba(34,197,94,.75); letter-spacing:.1em; }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
-  <div class="sahne">
-    <video id="v" playsinline muted autoplay></video>
-    <div class="ust"><span class="rozet" id="rozet">HAZIRLANIYOR</span><span class="rozet">DAĞ · FORM LAB</span></div>
-    <div class="durum" id="durum">Kamera açılıyor…</div>
-    <div class="yatay" id="yatay" style="display:none">Telefonu <b>yatay</b> tut — büyük ekranı daha iyi doldurur, sporcu daha büyük görünür.</div>
+  <video id="v" playsinline muted autoplay></video>
+  <div class="izgara" id="izgara" hidden><div><b>Sporcu baştan ayağa bu alanda</b></div></div>
+  <header class="ust">
+    <span class="hap" id="hap"><i></i><b id="hap-yazi">Hazırlanıyor</b><span class="sure" id="sure"></span></span>
+    <span class="kalite" id="kalite"></span>
+    <span class="marka"><b>DAĞ</b> · FORM LAB</span>
+  </header>
+  <nav class="ray" aria-label="Kamera düğmeleri">
+    <button class="dug" id="cevir" aria-label="Kamerayı çevir"><span><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><path d="M9.5 13.5a2.8 2.8 0 0 0 5 1.2M14.5 12.5a2.8 2.8 0 0 0-5-1.2"/><path d="M14.6 15.5v-1.6H13M9.4 10.5v1.6H11"/></svg></span>Çevir</button>
+    <button class="dug" id="izgaraBtn" aria-pressed="false" aria-label="Kadraj ızgarası"><span><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></span>Kadraj</button>
+    <button class="dug" id="zoom" hidden aria-label="Yakınlaştır"><span id="zoomYazi" style="font-weight:800; font-size:15px;">1x</span>Yakınlaş</button>
+    <button class="dug" id="karartBtn" aria-label="Ekranı karart"><span><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>Karart</button>
+  </nav>
+  <section class="kart" id="kart" aria-live="polite">
+    <div class="kart-bas"><span class="donen"></span><b id="kart-baslik">Kamera açılıyor…</b></div>
+    <ol class="adimlar" id="adimlar">
+      <li id="a1" class="simdi">Kamera açılıyor</li>
+      <li id="a2">Bilgisayar aranıyor</li>
+      <li id="a3">Görüntü bilgisayarda</li>
+    </ol>
+    <p id="kart-metin" hidden></p>
+    <button class="ana" id="yeniden" hidden>Yeniden bağlan</button>
+    <small id="kart-alt">Görüntü doğrudan bilgisayara gider, hiçbir yere kaydedilmez.</small>
+  </section>
+  <div class="bildirim" id="bildirim"></div>
+  <div class="yatay" id="yatay" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>
+    <b>Telefonu yan çevir</b>
+    <p>Yatayda büyük ekran dolar, sporcu daha büyük ve net görünür. Telefonu sehpaya yatay koy.</p>
+    <button id="dikDevam">Dik devam et</button>
   </div>
-  <div class="kontrol">
-    <button id="cevir">Kamerayı çevir</button>
-    <button id="yeniden" class="ana">Yeniden bağlan</button>
-  </div>
-  <div class="ekle" id="ekle" style="display:none"><span><b>Bir kez kur, hep kullan:</b> Paylaş › <b>Ana Ekrana Ekle</b>. Sonraki derslerde QR okutmadan bu simgeye dokun — bilgisayardaki Form Lab telefonu kendiliğinden tanır.</span><button id="ekle-kapat">Tamam</button></div>
-  <p class="not">Telefonu sehpaya koy, ekranı kapatma. Görüntü doğrudan bilgisayara gider; hiçbir yere kaydedilmez.</p>
+  <div class="ekle" id="ekle" hidden><span><b>Bir kez kur:</b> Paylaş › <b>Ana Ekrana Ekle</b>. Sonraki derslerde QR okutmadan bu simgeye dokun.</span><button id="ekle-kapat">Tamam</button></div>
+  <div class="karart" id="karart" hidden><b id="karart-durum">● CANLI</b><span>Yayın sürüyor · açmak için dokun</span></div>
 <script>
 (function () {
   // Kayıtlı telefon (2026-10-03): QR ile gelen oda telefonda saklanır; ana ekrandan (adres # olmadan) açılınca o oda kullanılır.
@@ -55,13 +133,34 @@
     if (KOD && GIZLI) localStorage.setItem('dagsk_kamera_oda', JSON.stringify({ k: KOD, g: GIZLI }));
     else { var ko = JSON.parse(localStorage.getItem('dagsk_kamera_oda') || 'null'); if (ko) { KOD = ko.k; GIZLI = ko.g; } }
   } catch (e) {}
+  var $ = function (id) { return document.getElementById(id); };
   var bagimsiz = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-  try { if (!bagimsiz && /iPhone|iPad|iPod/.test(navigator.userAgent) && localStorage.getItem('dagsk_kamera_ekle') !== '1') document.getElementById('ekle').style.display = ''; } catch (e) {}
-  document.getElementById('ekle-kapat').onclick = function () { document.getElementById('ekle').style.display = 'none'; try { localStorage.setItem('dagsk_kamera_ekle', '1'); } catch (e) {} };
-  var v = document.getElementById('v'), durumEl = document.getElementById('durum'), rozet = document.getElementById('rozet');
-  var yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null;
+  try { if (!bagimsiz && /iPhone|iPad|iPod/.test(navigator.userAgent) && localStorage.getItem('dagsk_kamera_ekle') !== '1') $('ekle').hidden = false; } catch (e) {}
+  $('ekle-kapat').onclick = function () { $('ekle').hidden = true; try { localStorage.setItem('dagsk_kamera_ekle', '1'); } catch (e) {} };
+  var v = $('v');
+  var yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null, canliBas = 0, sureZaman = null, bildirimZaman = null, zoomAdim = 0;
   var ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
-  function durum(m, tip) { durumEl.textContent = m; rozet.className = 'rozet' + (tip ? ' ' + tip : ''); rozet.textContent = tip === 'bagli' ? '● BİLGİSAYARA BAĞLI' : tip === 'hata' ? 'BAĞLANTI YOK' : 'BAĞLANIYOR'; }
+  if (KOD) $('kart-alt').innerHTML = 'Bağlantı kodu <b>' + KOD + '</b> · görüntü doğrudan bilgisayara gider, kaydedilmez.';
+  // durum: adim 1 kamera, 2 bilgisayar aranıyor, 3 bağlı; tip 'bagli' | 'hata' | ''
+  function durum(m, tip, adim) {
+    var hap = $('hap'); hap.className = 'hap' + (tip ? ' ' + tip : '');
+    $('hap-yazi').textContent = tip === 'bagli' ? 'Canlı' : tip === 'hata' ? 'Bağlantı yok' : 'Bağlanıyor';
+    var kart = $('kart');
+    if (tip === 'bagli') {
+      kart.hidden = true; bildir('Görüntü bilgisayarda · telefonu sabit tut');
+      if (!canliBas) { canliBas = Date.now(); clearInterval(sureZaman); sureZaman = setInterval(sureYaz, 1000); sureYaz(); }
+      return;
+    }
+    canliBas = 0; clearInterval(sureZaman); $('sure').textContent = '';
+    kart.hidden = false; kart.classList.toggle('hata', tip === 'hata');
+    $('kart-baslik').textContent = m;
+    $('adimlar').hidden = tip === 'hata';
+    $('kart-metin').hidden = tip !== 'hata'; if (tip === 'hata') $('kart-metin').textContent = 'Wi-Fi bilgisayarla aynı mı? Olmuyorsa telefonun internet paylaşımını (hotspot) açıp bilgisayarı ona bağla.';
+    $('yeniden').hidden = tip !== 'hata';
+    if (adim) ['a1', 'a2', 'a3'].forEach(function (id, i) { $(id).className = i + 1 < adim ? 'tamam' : i + 1 === adim ? 'simdi' : ''; });
+  }
+  function sureYaz() { var s = Math.floor((Date.now() - canliBas) / 1000), t = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); $('sure').textContent = t; $('karart-durum').textContent = '● CANLI · ' + t; }
+  function bildir(m) { var b = $('bildirim'); b.textContent = m; b.classList.add('goster'); clearTimeout(bildirimZaman); bildirimZaman = setTimeout(function () { b.classList.remove('goster'); }, 3200); }
   function api(yol, opt) { return fetch('/api/yayin/' + KOD + yol + (yol.indexOf('?') < 0 ? '?' : '&') + 'g=' + encodeURIComponent(GIZLI), opt).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
   function bekle(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   async function kamera() {
@@ -72,39 +171,53 @@
     if (akis) akis.getVideoTracks().forEach(function (t) { t.stop(); });
     akis = new MediaStream(yeni.getVideoTracks().concat(sesIz ? [sesIz] : [])); v.srcObject = akis; v.play().catch(function () {});
     if (pc) { var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (s) await s.replaceTrack(akis.getVideoTracks()[0]); }
-    yatayIpucu();
+    kaliteYaz(); zoomHazirla(); yatayIpucu();
   }
+  function kaliteYaz() {
+    try { var t = akis.getVideoTracks()[0], st = t.getSettings(), y = Math.min(st.width || 0, st.height || 0); $('kalite').textContent = y ? (y >= 1080 ? '1080p' : y >= 720 ? '720p' : y + 'p') + (st.frameRate ? ' · ' + Math.round(st.frameRate) + ' fps' : '') : ''; } catch (e) {}
+  }
+  // telefonun kendi yakınlaştırması (Android Chrome'da var; iPhone Safari desteklemiyorsa düğme görünmez)
+  function zoomHazirla() {
+    try { var t = akis.getVideoTracks()[0], c = t.getCapabilities && t.getCapabilities(); $('zoom').hidden = !(c && c.zoom && c.zoom.max > c.zoom.min); zoomAdim = 0; $('zoomYazi').textContent = '1x'; } catch (e) { $('zoom').hidden = true; }
+  }
+  $('zoom').onclick = function () {
+    try {
+      var t = akis.getVideoTracks()[0], c = t.getCapabilities().zoom, l = [c.min, Math.min(c.max, c.min * 2), Math.min(c.max, c.min * 3)].filter(function (x, i, a) { return a.indexOf(x) === i; });
+      zoomAdim = (zoomAdim + 1) % l.length; t.applyConstraints({ advanced: [{ zoom: l[zoomAdim] }] });
+      var x = Math.round(l[zoomAdim] / c.min * 10) / 10; $('zoomYazi').textContent = String(x).replace('.', ',') + 'x'; $('zoom').classList.toggle('aktif', zoomAdim > 0);
+    } catch (e) {}
+  };
   async function ekranAcikKalsin() { try { if ('wakeLock' in navigator) kilit = await navigator.wakeLock.request('screen'); } catch (e) {} }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') ekranAcikKalsin(); });
   async function baglan() {
     clearTimeout(sorgu);
     if (pc) { try { pc.close(); } catch (e) {} }
-    durum('Bilgisayara bağlanılıyor…');
+    durum('Bilgisayar aranıyor…', '', 2);
     pc = new RTCPeerConnection({ iceServers: ICE });
     akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
     kanal = pc.createDataChannel('komut');
     kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); } catch (er) {} };
     pc.onconnectionstatechange = function () {
-      if (pc.connectionState === 'connected') durum('Görüntü bilgisayarda. Telefonu sabit tut.', 'bagli');
-      else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') { durum('Bağlantı koptu — yeniden deneniyor…', 'hata'); setTimeout(function () { if (pc && pc.connectionState !== 'connected') baglan(); }, 2500); }
+      if (pc.connectionState === 'connected') durum('Görüntü bilgisayarda', 'bagli', 3);
+      else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') { durum('Bağlantı koptu, yeniden deneniyor…', '', 2); setTimeout(function () { if (pc && pc.connectionState !== 'connected') baglan().catch(hataGoster); }, 2500); }
     };
     await pc.setLocalDescription(await pc.createOffer());
     await new Promise(function (r) { if (pc.iceGatheringState === 'complete') return r(); var z = setTimeout(r, 3000); pc.addEventListener('icegatheringstatechange', function () { if (pc.iceGatheringState === 'complete') { clearTimeout(z); r(); } }); });
     var y;
     try { y = await api('/teklif', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sdp: pc.localDescription.sdp }) }); }
     catch (e) {
-      if (/http 404/.test(e && e.message)) { try { localStorage.removeItem('dagsk_kamera_oda'); } catch (er) {} durum('Bu bağlantının süresi dolmuş. Bilgisayardaki Form Lab’da "Telefondan yayın al"a basıp QR kodu yeniden okut.', 'hata'); return; }
+      if (/http 404/.test(e && e.message)) { try { localStorage.removeItem('dagsk_kamera_oda'); } catch (er) {} durum('Bu bağlantının süresi dolmuş', 'hata'); $('kart-metin').textContent = 'Bilgisayardaki Form Lab’da "Telefondan yayın al"a basıp QR kodu yeniden okut.'; $('yeniden').hidden = true; return; }
       throw e;
     }
     surum = y.surum;
-    durum('Bilgisayarın cevabı bekleniyor… (Form Lab açık olmalı)');
+    durum('Bilgisayarın cevabı bekleniyor…', '', 2);
     var bu = pc;
     for (var i = 0; i < 45 && bu === pc; i++) {
       await bekle(1000);
       var d = await api('').catch(function () { return null; });
       if (d && d.cevap && d.cevapSurum === surum) { await pc.setRemoteDescription({ type: 'answer', sdp: d.cevap }); kaliteAyarla(); return; }
     }
-    if (bu === pc) { durum('Bilgisayar bekleniyor… Form Lab’ı aç (Karışık Sınıf › Form Lab); açılınca kendiliğinden bağlanır.'); sorgu = setTimeout(function () { if (bu === pc) baglan().catch(hataGoster); }, 500); return; }
+    if (bu === pc) { durum('Bilgisayardaki Form Lab’ı aç; açılınca kendiliğinden bağlanır', '', 2); sorgu = setTimeout(function () { if (bu === pc) baglan().catch(hataGoster); }, 500); return; }
   }
   // Kalite (2026-10-03, kullanıcı: "kamera kalitesi çok düşük"): WebRTC düşük bit hızıyla başlayıp çözünürlüğü düşürüyordu.
   // Çözünürlüğü koru, 8 Mbps'e kadar izin ver (aynı Wi-Fi'de rahat), görüntü 'detay' öncelikli.
@@ -117,17 +230,25 @@
       await s.setParameters(p);
     } catch (e) {}
   }
-  function yatayIpucu() {
-    var el = document.getElementById('yatay'); if (!el) return;
-    el.style.display = v.videoHeight > v.videoWidth ? '' : 'none';
+  // dik tutulunca yan çevir uyarısı (bir kez "dik devam et" denirse bu oturumda bir daha çıkmaz)
+  var dikTamam = false;
+  function yatayIpucu() { $('yatay').hidden = dikTamam || window.innerWidth >= window.innerHeight; }
+  window.addEventListener('resize', yatayIpucu); window.addEventListener('orientationchange', function () { setTimeout(yatayIpucu, 300); });
+  $('dikDevam').onclick = function () { dikTamam = true; yatayIpucu(); };
+  async function cevir() { yon = yon === 'environment' ? 'user' : 'environment'; try { await kamera(); bildir(yon === 'user' ? 'Ön kamera' : 'Arka kamera'); } catch (e) { bildir('Kamera değiştirilemedi'); } }
+  $('cevir').onclick = cevir;
+  $('izgaraBtn').onclick = function () { var g = $('izgara'); g.hidden = !g.hidden; this.classList.toggle('aktif', !g.hidden); this.setAttribute('aria-pressed', String(!g.hidden)); };
+  $('karartBtn').onclick = function () { $('karart').hidden = false; };
+  $('karart').onclick = function () { $('karart').hidden = true; };
+  $('yeniden').onclick = function () { baglan().catch(hataGoster); };
+  function hataGoster(e) {
+    if (e && e.name === 'NotAllowedError') { durum('Kamera izni verilmedi', 'hata'); $('kart-metin').textContent = 'Ayarlar › Safari › Kamera › İzin Ver, sonra sayfayı yenile.'; return; }
+    durum('Bağlanılamadı', 'hata');
   }
-  v.addEventListener('resize', yatayIpucu); v.addEventListener('loadedmetadata', yatayIpucu);
-  async function cevir() { yon = yon === 'environment' ? 'user' : 'environment'; try { await kamera(); } catch (e) { durum('Kamera değiştirilemedi'); } }
-  document.getElementById('cevir').onclick = cevir;
-  document.getElementById('yeniden').onclick = function () { baglan().catch(hataGoster); };
-  function hataGoster(e) { durum(e && e.name === 'NotAllowedError' ? 'Kamera izni verilmedi. Ayarlar › Safari › Kamera › İzin Ver, sonra sayfayı yenile.' : 'Bağlanılamadı: ' + (e && e.message || e), 'hata'); }
-  if (!KOD || !GIZLI) { durum('Bağlantı bilgisi eksik. Bilgisayardaki QR kodu yeniden okut.', 'hata'); return; }
-  if (!window.RTCPeerConnection || !navigator.mediaDevices) { durum('Bu tarayıcı canlı yayını desteklemiyor. Safari ya da Chrome ile aç.', 'hata'); return; }
+  yatayIpucu();
+  if (!KOD || !GIZLI) { durum('Bağlantı bilgisi eksik', 'hata'); $('kart-metin').textContent = 'Bilgisayardaki Form Lab’da "Telefondan yayın al"a bas ve QR kodu bu telefonla okut.'; $('yeniden').hidden = true; return; }
+  if (!window.RTCPeerConnection || !navigator.mediaDevices) { durum('Bu tarayıcı canlı yayını desteklemiyor', 'hata'); $('kart-metin').textContent = 'Safari ya da Chrome ile aç.'; $('yeniden').hidden = true; return; }
+  durum('Kamera açılıyor…', '', 1);
   kamera().then(function () { ekranAcikKalsin(); return baglan(); }).catch(hataGoster);
 })();
 </script>
