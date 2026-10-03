@@ -10924,16 +10924,16 @@
         ];
         const KM_ARAC_ANA = {
             skor: { baslik:'Skor Gir', aciklama:'Oku at, puanı gir', renk:'var(--accent)' },
-            formlab: { baslik:'Form Lab', aciklama:'Kamerayla çapa ve kol analizi', renk:'#0d9488' },
+            formlab: { baslik:'Form Lab', aciklama:'Kamerayla çene altı, kol ve parmak bırakışı', renk:'#0d9488' },
         };
         const KM_ARAC_ACIKLAMA = {
             yuk: 'Haftalık ok sayısı ve yük', seviye: 'Mesafe/puan seviye sınavı', lig: 'Kulüp içi haftalık lig',
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
             makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
-            formlab: 'Kamerayla çapa ve kol analizi',
+            formlab: 'Kamerayla çene altı, kol ve parmak bırakışı',
         };
         const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
-            formlab: 'video kamera çapa analiz form yapay zeka', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
+            formlab: 'video kamera çapa çene altı bırakış analiz form yapay zeka çizim', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
             durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence',
             kocluk: 'hata ipucu teknik', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
         };
@@ -28784,7 +28784,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <b style="font-size:22px;">${s.puan}<span style="font-size:12px; color:var(--text-muted);">/100 tutarlılık</span></b>
                         ${fark != null ? '<span style="font-size:12px; font-weight:800; color:' + (fark >= 0 ? 'var(--neon-green)' : 'var(--neon-red)') + ';">' + (fark >= 0 ? '▲ ' : '▼ ') + Math.abs(fark) + ' önceki analize göre</span>' : ''}
                     </div>
-                    <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">${s.capaFarkMm != null ? 'çapa farkı ≈' + s.capaFarkMm + ' mm · ' : ''}kayma ≈${s.kaymaMm} mm · bekleme ${String(s.tutmaSn).replace('.', ',')} sn${s.yayKol != null ? ' · yay kolu ' + s.yayKol + '°' : ''}</div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">${s.capaFarkMm != null ? 'çene altı farkı ≈' + s.capaFarkMm + ' mm · ' : ''}kayma ≈${s.kaymaMm} mm · bekleme ${String(s.tutmaSn).replace('.', ',')} sn${s.yayKol != null ? ' · yay kolu ' + s.yayKol + '°' : ''}</div>
                     ${(s.bulgular || []).length ? '<div style="font-size:12.5px; margin-top:4px;">Çalışılacak: ' + s.bulgular.map(esc).join(' · ') + '</div>' : ''}</div>`;
             } catch(e) { return ''; }
         }
