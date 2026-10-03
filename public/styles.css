@@ -281,6 +281,41 @@
         .km-arac-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
         @media (min-width: 600px) { .km-arac-izgara { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
         .km-arac-izgara .km-skor-gir-kart { grid-column: span 2; }
+        /* 2026-10-04 — Karışık Sınıf ana ekranı: iki büyük ana kart + arama + adlandırılmış gruplar (bkz. kmAracIzgaraCiz).
+           #km-oyun-secici de .km-arac-izgara sınıfını kullandığı için yerleşim id ile ezilir. */
+        #km-arac-izgara.km-arac-izgara { display: flex; flex-direction: column; gap: 16px; }
+        .km-arac-ana { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 600px) { .km-arac-ana { grid-template-columns: 1fr 1fr; } }
+        .km-arac-buyuk { display: flex; align-items: center; gap: 14px; min-height: 92px; padding: 16px 18px; border: 0; border-radius: 22px; text-align: left; font: inherit; color: #fff; cursor: pointer;
+            background: linear-gradient(135deg, var(--km-ana), color-mix(in srgb, var(--km-ana) 62%, #000)); box-shadow: 0 16px 36px -20px color-mix(in srgb, var(--km-ana) 80%, transparent); }
+        .km-arac-buyuk:focus-visible, .km-arac:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, #fff); outline-offset: 2px; }
+        .km-arac-buyuk-ikon { width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.18); }
+        .km-arac-buyuk-yazi { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+        .km-arac-buyuk-yazi b { font-size: 20px; font-weight: 900; letter-spacing: -.01em; }
+        .km-arac-buyuk-yazi span { font-size: 13px; opacity: .9; }
+        .km-arac-buyuk-yazi small { font-size: 11.5px; opacity: .72; }
+        .km-arac-buyuk-ok { font-size: 30px; line-height: 1; opacity: .7; }
+        .km-arac-ara { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: var(--text-secondary);
+            border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent); background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+        .km-arac-ara input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 15px; }
+        .km-arac-ara:focus-within { border-color: var(--accent); }
+        #karisik-platform #km-arac-ara, #karisik-platform #km-arac-ara:focus { border: 0; outline: 0; box-shadow: none; background: transparent; padding: 0; }
+        #km-arac-govde { display: flex; flex-direction: column; gap: 18px; }
+        .km-arac-grup { display: flex; flex-direction: column; gap: 8px; }
+        .km-arac-grup[hidden], .km-arac[hidden], .km-arac-yok[hidden] { display: none; }
+        .km-arac-grup-bas { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
+        .km-arac-grup-bas b { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-primary); }
+        .km-arac-grup-bas span { font-size: 11.5px; color: var(--text-secondary); }
+        .km-arac-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 8px; }
+        @media (min-width: 900px) { .km-arac-liste { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); } }
+        .km-arac { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 9px 11px; border-radius: 14px; text-align: left; font: inherit; color: var(--text-primary); cursor: pointer;
+            border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent); background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+        .km-arac:hover { border-color: color-mix(in srgb, var(--text-primary) 22%, transparent); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+        .km-arac-ikon { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .km-arac-yazi { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .km-arac-yazi b { font-size: 13px; font-weight: 800; }
+        .km-arac-yazi small { font-size: 10.5px; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .km-arac-yok { margin: 0; padding: 18px; text-align: center; color: var(--text-secondary); font-size: 13px; }
 
         /* ============ KARIŞIK SINIF — "BUZLU CAM" KİMLİĞİ (2026-09-24) ============
            Üç mockup denendi (Artifact canvas, gerçek app CSS'i değil — sıfırdan çizilmiş .dc.html

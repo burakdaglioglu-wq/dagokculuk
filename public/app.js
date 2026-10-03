@@ -10773,6 +10773,7 @@
             document.getElementById('km-arac-izgara').style.display = 'none';
             document.getElementById('km-icerik-geri-bar').style.display = 'flex';
             document.getElementById('km-icerik').style.display = 'block';
+            kmAracKullanildi(id);
             kmSekme(id);
         }
         // FAZ 7 — Izgaraya geri dönüş. kmGeri() DEĞİL (o tüm platformu kapatır). Reaksiyon/Ritim'den
@@ -10844,7 +10845,7 @@
             { id:'skor', ad:'Skor Gir', grup:'birincil', icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>' },
             { id:'lider', ad:'Liderlik', grup:'sari', icon:'<path d="M7 4h10v3.5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4.5v1a4 4 0 0 0 4 4"/><path d="M17 5h2.5v1a4 4 0 0 1-4 4"/><path d="M10 15.5V18H8v2h8v-2h-2v-2.5"/>' },
             { id:'klasman', ad:'Klasman', grup:'sari', icon:'<path d="M5 19V13"/><path d="M12 19V8"/><path d="M19 19v-5"/>' },
-            { id:'canli', ad:'Herkes', grup:'mavi', icon:'<circle cx="12" cy="18" r="1.4"/><path d="M8.8 15.2a4.6 4.6 0 0 1 6.4 0"/><path d="M5.8 12.2a8.8 8.8 0 0 1 12.4 0"/>' },
+            { id:'canli', ad:'Canlı Skorlar', grup:'mavi', icon:'<circle cx="12" cy="18" r="1.4"/><path d="M8.8 15.2a4.6 4.6 0 0 1 6.4 0"/><path d="M5.8 12.2a8.8 8.8 0 0 1 12.4 0"/>' },
             { id:'yarisma', ad:'Yarışma', grup:'mavi', icon:'<path d="M6 21V4"/><path d="M6 4h12l-3 4 3 4H6"/>' },
             { id:'veli', ad:'Veli Bildirimi', grup:'mavi', icon:'<path d="M4 12 20 4l-6 16-3-7-7-3z"/>' },
             { id:'disiplin', ad:'Disiplin Pusulası', grup:'kirmizi', icon:'<circle cx="12" cy="12" r="8.5"/><path d="M15 9l-2 6-6 2 2-6 6-2z"/>' },
@@ -10907,25 +10908,89 @@
                 try { let d = kmRtYukle(); if(d.asama === 'siralama') return 'Sıralama turu · seri ' + (d.seri + 1) + '/' + kmRtFormat().seri; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; if(d.asama === 'bitti') return 'Karneler hazır'; } catch(e) {}
                 return '72 ok · set sistemi · karne';
             }
-            return SABIT[id] || '';
+            return SABIT[id] || KM_ARAC_ACIKLAMA[id] || '';
+        }
+        // 2026-10-04 (kullanıcı: "form lab diğer sekmeler arasında kayboluyor, skor gir gibi büyüt; karışık sınıf ekranı
+        // karışık, benden başka kimse bulamaz"): 33 araç tek düz ızgaradaydı. Şimdi: iki büyük ana kart (Skor Gir +
+        // Form Lab), "Hızlı erişim" (son kullanılan 4 araç, ilk seferde sık kullanılanlar), arama kutusu ve konusuna göre
+        // adlandırılmış gruplar. Arama kutusu bir kez kurulur — ızgara 15/60 sn'de bir yeniden çizilirken sadece
+        // #km-arac-govde yenilenir, yazılan metin ve odak kaybolmaz.
+        const KM_ARAC_GRUPLAR = [
+            { ad:'Ders', alt:'Yoklama, akış, içerik', idler:['yoklamaanaliz','dersakisi','dersler','malzeme','evodev','veli'] },
+            { ad:'Skor & sıralama', alt:'Puanlar, maçlar, ligler', idler:['lider','klasman','canli','yarisma','resmitur','lig','milyonok'] },
+            { ad:'Teknik & video', alt:'Duruşu gör, düzelt', idler:['kocluk','teknikanaliz','durus','okanaliz','ritim'] },
+            { ad:'Gelişim & kondisyon', alt:'Yük, test, kuvvet', idler:['yuk','seviye','kuvvet','fitness','performans','baski','makarali'] },
+            { ad:'Oyun & motivasyon', alt:'Eğlence ve davranış', idler:['oyunlar','reaksiyon','kasifkarti','pozitif','disiplin'] },
+        ];
+        const KM_ARAC_ANA = {
+            skor: { baslik:'Skor Gir', aciklama:'Oku at, puanı gir', renk:'var(--accent)' },
+            formlab: { baslik:'Form Lab', aciklama:'Kamerayla çapa ve kol analizi', renk:'#0d9488' },
+        };
+        const KM_ARAC_ACIKLAMA = {
+            yuk: 'Haftalık ok sayısı ve yük', seviye: 'Mesafe/puan seviye sınavı', lig: 'Kulüp içi haftalık lig',
+            kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
+            makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
+            formlab: 'Kamerayla çapa ve kol analizi',
+        };
+        const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
+            formlab: 'video kamera çapa analiz form yapay zeka', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
+            durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence',
+            kocluk: 'hata ipucu teknik', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
+        };
+        function kmAracSvg(icon, b) { return '<svg viewBox="0 0 24 24" width="' + b + '" height="' + b + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon + '</svg>'; }
+        function kmAracBul(id) { return KM_ARAC_LISTESI.find(function(a){ return a.id === id; }); }
+        function kmAracSonKullanilan() {
+            let l = []; try { l = JSON.parse(localStorage.getItem('dagsk_km_son_araclar') || '[]'); } catch(e) {}
+            l = l.filter(function(id){ return kmAracBul(id) && !KM_ARAC_ANA[id]; });
+            ['yoklamaanaliz','dersakisi','lider','oyunlar','veli','canli'].forEach(function(id){ if(l.length < 4 && l.indexOf(id) < 0) l.push(id); });
+            return l.slice(0, 4);
+        }
+        function kmAracKullanildi(id) {
+            try { let l = JSON.parse(localStorage.getItem('dagsk_km_son_araclar') || '[]').filter(function(x){ return x !== id; }); l.unshift(id); localStorage.setItem('dagsk_km_son_araclar', JSON.stringify(l.slice(0, 8))); } catch(e) {}
+        }
+        function kmAracKutu(a) {
+            let renk = KM_ARAC_GRUP_RENK[a.grup] || 'var(--status-info)', durum = kmAracDurumSatiri(a.id);
+            let aranan = (a.ad + ' ' + durum + ' ' + (KM_ARAC_ANAHTAR[a.id] || '')).toLocaleLowerCase('tr');
+            return '<button type="button" class="km-arac" data-ara="' + esc(aranan) + '" onclick="kmAracSec(\'' + a.id + '\')">'
+                + '<span class="km-arac-ikon" style="color:' + renk + '; background:color-mix(in srgb, ' + renk + ' 16%, transparent);">' + kmAracSvg(a.icon, 18) + '</span>'
+                + '<span class="km-arac-yazi"><b>' + esc(a.ad) + '</b>' + (durum ? '<small>' + esc(durum) + '</small>' : '') + '</span></button>';
         }
         function kmAracIzgaraCiz() {
             let izgara = document.getElementById('km-arac-izgara'); if(!izgara) return;
-            izgara.innerHTML = KM_ARAC_LISTESI.map(function(a) {
-                let durum = kmAracDurumSatiri(a.id);
-                if(a.grup === 'birincil') {
-                    return '<div class="card km-skor-gir-kart" onclick="kmAracSec(\'' + a.id + '\')" style="cursor:pointer; background:var(--accent); border-color:var(--accent); display:flex; align-items:center; gap:12px; min-height:44px;">'
-                        + '<div style="width:36px; height:36px; border-radius:10px; background:rgba(0,0,0,0.15); color:var(--text-on-accent-dark); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></div>'
-                        + '<div style="min-width:0;"><div style="font-weight:900; font-size:14px; color:var(--text-on-accent-dark);">' + a.ad + '</div><div style="font-size:10.5px; color:var(--text-on-accent-dark); opacity:.75;">' + durum + '</div></div>'
-                        + '</div>';
-                }
-                let renk = KM_ARAC_GRUP_RENK[a.grup];
-                return '<div class="card" onclick="kmAracSec(\'' + a.id + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:8px; min-height:44px;">'
-                    + '<div style="width:34px; height:34px; border-radius:10px; background:color-mix(in srgb, ' + renk + ' 16%, transparent); color:' + renk + '; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></div>'
-                    + '<div style="font-weight:800; font-size:12.5px;">' + a.ad + '</div>'
-                    + '<div style="font-size:10px; color:var(--text-secondary);">' + durum + '</div>'
-                    + '</div>';
+            if(!document.getElementById('km-arac-govde')) {
+                izgara.innerHTML = '<div id="km-arac-ana" class="km-arac-ana"></div>'
+                    + '<label class="km-arac-ara"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>'
+                    + '<input id="km-arac-ara" type="search" placeholder="Araç ara: yoklama, video, oyun, lig…" autocomplete="off" oninput="kmAracFiltre()" aria-label="Araç ara"></label>'
+                    + '<div id="km-arac-govde"></div>';
+            }
+            // iki ana kart
+            document.getElementById('km-arac-ana').innerHTML = ['skor','formlab'].map(function(id) {
+                let a = kmAracBul(id), m = KM_ARAC_ANA[id]; if(!a) return '';
+                let durum = id === 'skor' ? kmAracDurumSatiri('skor') : (function(){ try { return Object.keys(kyDepoOku('form_lab') || {}).length ? 'Son analizler karnede' : m.aciklama; } catch(e) { return m.aciklama; } })();
+                return '<button type="button" class="km-arac-buyuk" style="--km-ana:' + m.renk + ';" onclick="kmAracSec(\'' + id + '\')">'
+                    + '<span class="km-arac-buyuk-ikon">' + kmAracSvg(a.icon, 26) + '</span>'
+                    + '<span class="km-arac-buyuk-yazi"><b>' + m.baslik + '</b><span>' + m.aciklama + '</span>' + (durum !== m.aciklama ? '<small>' + esc(durum) + '</small>' : '') + '</span>'
+                    + '<span class="km-arac-buyuk-ok" aria-hidden="true">›</span></button>';
             }).join('');
+            let hizli = kmAracSonKullanilan();
+            document.getElementById('km-arac-govde').innerHTML = ''
+                + '<section class="km-arac-grup" data-grup="hizli"><div class="km-arac-grup-bas"><b>Hızlı erişim</b><span>son kullandıkların</span></div><div class="km-arac-liste">' + hizli.map(function(id){ return kmAracKutu(kmAracBul(id)); }).join('') + '</div></section>'
+                + KM_ARAC_GRUPLAR.map(function(g) {
+                    let araclar = g.idler.map(kmAracBul).filter(Boolean);
+                    return '<section class="km-arac-grup"><div class="km-arac-grup-bas"><b>' + g.ad + '</b><span>' + g.alt + '</span></div><div class="km-arac-liste">' + araclar.map(kmAracKutu).join('') + '</div></section>';
+                }).join('')
+                + '<p class="km-arac-yok" id="km-arac-yok" hidden>Bu adla bir araç yok. Başka bir kelime dene.</p>';
+            kmAracFiltre();
+        }
+        function kmAracFiltre() {
+            let inp = document.getElementById('km-arac-ara'), q = inp ? inp.value.trim().toLocaleLowerCase('tr') : '', toplam = 0;
+            document.querySelectorAll('#km-arac-govde .km-arac-grup').forEach(function(sec) {
+                if(sec.dataset.grup === 'hizli') { sec.hidden = !!q; return; } // ararken hızlı erişim tekrar olmasın
+                let gorunen = 0;
+                sec.querySelectorAll('.km-arac').forEach(function(b){ let ok = !q || b.dataset.ara.indexOf(q) >= 0; b.hidden = !ok; if(ok) gorunen++; });
+                sec.hidden = !gorunen; toplam += gorunen;
+            });
+            let yok = document.getElementById('km-arac-yok'); if(yok) yok.hidden = !q || toplam > 0;
         }
 
         // ==================================================================================
