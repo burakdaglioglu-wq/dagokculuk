@@ -20,6 +20,7 @@
   .rozet{ font:700 12px/1 ui-monospace, Menlo, monospace; letter-spacing:.08em; background:rgba(10,10,10,.75); color:#fff; padding:8px 10px; border-radius:6px; }
   .rozet.bagli{ background:#198754; } .rozet.hata{ background:#c0392b; }
   .durum{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:max-content; max-width:92%; text-align:center; font:600 14px/1.35 ui-monospace, Menlo, monospace; background:rgba(10,10,10,.78); padding:10px 14px; border-radius:8px; }
+  .yatay{ position:absolute; left:50%; top:56px; transform:translateX(-50%); width:max-content; max-width:92%; text-align:center; font:600 13px/1.35 -apple-system, sans-serif; background:rgba(255,106,26,.92); color:#fff; padding:8px 12px; border-radius:8px; }
   .kontrol{ display:flex; gap:10px; }
   button{ flex:1; min-height:52px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:transparent; color:#fff; font:700 15px/1 -apple-system, 'Segoe UI', sans-serif; }
   button.ana{ background:var(--or); border-color:var(--or); }
@@ -31,6 +32,7 @@
     <video id="v" playsinline muted autoplay></video>
     <div class="ust"><span class="rozet" id="rozet">HAZIRLANIYOR</span><span class="rozet">DAĞ · FORM LAB</span></div>
     <div class="durum" id="durum">Kamera açılıyor…</div>
+    <div class="yatay" id="yatay" style="display:none">Telefonu <b>yatay</b> tut — büyük ekranı daha iyi doldurur, sporcu daha büyük görünür.</div>
   </div>
   <div class="kontrol">
     <button id="cevir">Kamerayı çevir</button>
@@ -47,10 +49,12 @@
   function api(yol, opt) { return fetch('/api/yayin/' + KOD + yol + (yol.indexOf('?') < 0 ? '?' : '&') + 'g=' + encodeURIComponent(GIZLI), opt).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
   function bekle(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   async function kamera() {
-    var yeni = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: yon, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } });
+    var yeni = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: yon, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } } });
+    yeni.getVideoTracks().forEach(function (t) { try { t.contentHint = 'detail'; } catch (e) {} });
     if (akis) akis.getTracks().forEach(function (t) { t.stop(); });
     akis = yeni; v.srcObject = akis; v.play().catch(function () {});
     if (pc) { var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (s) await s.replaceTrack(akis.getVideoTracks()[0]); }
+    yatayIpucu();
   }
   async function ekranAcikKalsin() { try { if ('wakeLock' in navigator) kilit = await navigator.wakeLock.request('screen'); } catch (e) {} }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') ekranAcikKalsin(); });
@@ -75,10 +79,26 @@
     for (var i = 0; i < 180 && bu === pc; i++) {
       await bekle(1000);
       var d = await api('').catch(function () { return null; });
-      if (d && d.cevap && d.cevapSurum === surum) { await pc.setRemoteDescription({ type: 'answer', sdp: d.cevap }); return; }
+      if (d && d.cevap && d.cevapSurum === surum) { await pc.setRemoteDescription({ type: 'answer', sdp: d.cevap }); kaliteAyarla(); return; }
     }
     if (bu === pc) durum('Bilgisayar cevap vermedi. Form Lab\'da QR kodu açık mı? "Yeniden bağlan"a bas.', 'hata');
   }
+  // Kalite (2026-10-03, kullanıcı: "kamera kalitesi çok düşük"): WebRTC düşük bit hızıyla başlayıp çözünürlüğü düşürüyordu.
+  // Çözünürlüğü koru, 8 Mbps'e kadar izin ver (aynı Wi-Fi'de rahat), görüntü 'detay' öncelikli.
+  async function kaliteAyarla() {
+    try {
+      var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (!s) return;
+      var p = s.getParameters(); if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+      p.encodings[0].maxBitrate = 8000000; p.encodings[0].maxFramerate = 30; p.encodings[0].scaleResolutionDownBy = 1;
+      p.degradationPreference = 'maintain-resolution';
+      await s.setParameters(p);
+    } catch (e) {}
+  }
+  function yatayIpucu() {
+    var el = document.getElementById('yatay'); if (!el) return;
+    el.style.display = v.videoHeight > v.videoWidth ? '' : 'none';
+  }
+  v.addEventListener('resize', yatayIpucu); v.addEventListener('loadedmetadata', yatayIpucu);
   async function cevir() { yon = yon === 'environment' ? 'user' : 'environment'; try { await kamera(); } catch (e) { durum('Kamera değiştirilemedi'); } }
   document.getElementById('cevir').onclick = cevir;
   document.getElementById('yeniden').onclick = function () { baglan().catch(hataGoster); };
