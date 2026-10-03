@@ -7,6 +7,11 @@
 <meta name="theme-color" content="#000000">
 <title>DAĞ Form Lab · Telefon kamerası</title>
 <link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="DAĞ Kamera">
 <style>
   /* Form Lab "Telefondan yayın al" — telefon tarafı (2026-10-03). Bilgisayardaki Form Lab'ın QR kodu bu sayfayı açar;
      kamera görüntüsü WebRTC ile doğrudan bilgisayara akar. Giriş gerekmez; oda kodu + gizli anahtar adresin # kısmında. */
@@ -25,6 +30,8 @@
   button{ flex:1; min-height:52px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:transparent; color:#fff; font:700 15px/1 -apple-system, 'Segoe UI', sans-serif; }
   button.ana{ background:var(--or); border-color:var(--or); }
   .not{ font:400 12px/1.45 ui-monospace, Menlo, monospace; color:var(--soft); text-align:center; }
+  .ekle{ font:500 13px/1.45 -apple-system, sans-serif; color:#fff; background:rgba(255,183,3,.14); border:1px solid rgba(255,183,3,.45); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start; }
+  .ekle button{ flex:0 0 auto; min-height:32px; padding:0 10px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -38,10 +45,19 @@
     <button id="cevir">Kamerayı çevir</button>
     <button id="yeniden" class="ana">Yeniden bağlan</button>
   </div>
+  <div class="ekle" id="ekle" style="display:none"><span><b>Bir kez kur, hep kullan:</b> Paylaş › <b>Ana Ekrana Ekle</b>. Sonraki derslerde QR okutmadan bu simgeye dokun — bilgisayardaki Form Lab telefonu kendiliğinden tanır.</span><button id="ekle-kapat">Tamam</button></div>
   <p class="not">Telefonu sehpaya koy, ekranı kapatma. Görüntü doğrudan bilgisayara gider; hiçbir yere kaydedilmez.</p>
 <script>
 (function () {
+  // Kayıtlı telefon (2026-10-03): QR ile gelen oda telefonda saklanır; ana ekrandan (adres # olmadan) açılınca o oda kullanılır.
   var p = new URLSearchParams(location.hash.slice(1)), KOD = p.get('k'), GIZLI = p.get('g');
+  try {
+    if (KOD && GIZLI) localStorage.setItem('dagsk_kamera_oda', JSON.stringify({ k: KOD, g: GIZLI }));
+    else { var ko = JSON.parse(localStorage.getItem('dagsk_kamera_oda') || 'null'); if (ko) { KOD = ko.k; GIZLI = ko.g; } }
+  } catch (e) {}
+  var bagimsiz = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  try { if (!bagimsiz && /iPhone|iPad|iPod/.test(navigator.userAgent) && localStorage.getItem('dagsk_kamera_ekle') !== '1') document.getElementById('ekle').style.display = ''; } catch (e) {}
+  document.getElementById('ekle-kapat').onclick = function () { document.getElementById('ekle').style.display = 'none'; try { localStorage.setItem('dagsk_kamera_ekle', '1'); } catch (e) {} };
   var v = document.getElementById('v'), durumEl = document.getElementById('durum'), rozet = document.getElementById('rozet');
   var yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null;
   var ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
@@ -74,16 +90,21 @@
     };
     await pc.setLocalDescription(await pc.createOffer());
     await new Promise(function (r) { if (pc.iceGatheringState === 'complete') return r(); var z = setTimeout(r, 3000); pc.addEventListener('icegatheringstatechange', function () { if (pc.iceGatheringState === 'complete') { clearTimeout(z); r(); } }); });
-    var y = await api('/teklif', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sdp: pc.localDescription.sdp }) });
+    var y;
+    try { y = await api('/teklif', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sdp: pc.localDescription.sdp }) }); }
+    catch (e) {
+      if (/http 404/.test(e && e.message)) { try { localStorage.removeItem('dagsk_kamera_oda'); } catch (er) {} durum('Bu bağlantının süresi dolmuş. Bilgisayardaki Form Lab’da "Telefondan yayın al"a basıp QR kodu yeniden okut.', 'hata'); return; }
+      throw e;
+    }
     surum = y.surum;
     durum('Bilgisayarın cevabı bekleniyor… (Form Lab açık olmalı)');
     var bu = pc;
-    for (var i = 0; i < 180 && bu === pc; i++) {
+    for (var i = 0; i < 45 && bu === pc; i++) {
       await bekle(1000);
       var d = await api('').catch(function () { return null; });
       if (d && d.cevap && d.cevapSurum === surum) { await pc.setRemoteDescription({ type: 'answer', sdp: d.cevap }); kaliteAyarla(); return; }
     }
-    if (bu === pc) durum('Bilgisayar cevap vermedi. Form Lab\'da QR kodu açık mı? "Yeniden bağlan"a bas.', 'hata');
+    if (bu === pc) { durum('Bilgisayar bekleniyor… Form Lab’ı aç (Karışık Sınıf › Form Lab); açılınca kendiliğinden bağlanır.'); sorgu = setTimeout(function () { if (bu === pc) baglan().catch(hataGoster); }, 500); return; }
   }
   // Kalite (2026-10-03, kullanıcı: "kamera kalitesi çok düşük"): WebRTC düşük bit hızıyla başlayıp çözünürlüğü düşürüyordu.
   // Çözünürlüğü koru, 8 Mbps'e kadar izin ver (aynı Wi-Fi'de rahat), görüntü 'detay' öncelikli.

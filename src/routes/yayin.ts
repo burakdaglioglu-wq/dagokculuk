@@ -6,7 +6,9 @@ import { json, badRequest, notFound, readJson } from "../lib/json";
  * Akış: bilgisayar oda açar → QR'daki kamera.html teklifini (SDP) yazar → bilgisayar cevabını yazar →
  * görüntü iki cihaz arasında doğrudan akar. Telefon tarafı oturumsuzdur; her istek oda kodu + gizli anahtar ister.
  * Telefon yeniden bağlanırsa teklif_surum artar, bilgisayar yeni teklife yeniden cevap verir. */
-const OMUR_MS = 2 * 60 * 60 * 1000, SDP_SINIR = 30000;
+// Oda son bağlantıdan (teklif/cevap yazımı) itibaren 30 gün geçerli: telefon bir kez QR okutur, sonraki derslerde
+// aynı odaya kendiliğinden bağlanır ("kayıtlı telefon", 2026-10-03).
+const OMUR_MS = 30 * 24 * 60 * 60 * 1000, SDP_SINIR = 30000;
 
 function rastgele(n: number, harfler: string): string {
   const b = new Uint8Array(n); crypto.getRandomValues(b);
@@ -17,14 +19,14 @@ interface Oda { kod: string; gizli: string; teklif: string | null; teklif_surum:
 async function odaAl(env: { DB: D1Database }, kod: string, gizli: string | null): Promise<Oda | null> {
   if (!gizli || !/^[A-Z0-9]{6}$/.test(kod)) return null;
   const o = await env.DB.prepare("SELECT * FROM yayin_oda WHERE kod = ?").bind(kod).first<Oda>();
-  if (!o || o.gizli !== gizli || Date.now() - o.olusturma > OMUR_MS) return null;
+  if (!o || o.gizli !== gizli || Date.now() - o.guncelleme > OMUR_MS) return null;
   return o;
 }
 
 export function registerYayinRoutes(router: Router): void {
   // oda aç — oturumsuz da açılabilir (Karışık Sınıf girişsiz de açılıyor); oda rastgele kod + 32 haneli gizli anahtarla korunur
   router.post("/api/yayin", async (_request, env) => {
-    await env.DB.prepare("DELETE FROM yayin_oda WHERE olusturma < ?").bind(Date.now() - OMUR_MS).run();
+    await env.DB.prepare("DELETE FROM yayin_oda WHERE guncelleme < ?").bind(Date.now() - OMUR_MS).run();
     const kod = rastgele(6, "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"), gizli = rastgele(32, "abcdefghijklmnopqrstuvwxyz0123456789"), t = Date.now();
     await env.DB.prepare("INSERT INTO yayin_oda (kod, gizli, olusturma, guncelleme) VALUES (?, ?, ?, ?)").bind(kod, gizli, t, t).run();
     return json({ kod, gizli });
@@ -32,7 +34,7 @@ export function registerYayinRoutes(router: Router): void {
   router.get("/api/yayin/:kod", async (request, env, params) => {
     const o = await odaAl(env, params.kod, new URL(request.url).searchParams.get("g"));
     if (!o) return notFound("oda yok");
-    return json({ teklif: o.teklif, teklifSurum: o.teklif_surum, cevap: o.cevap, cevapSurum: o.cevap_surum }, { headers: { "cache-control": "no-store" } });
+    return json({ teklif: o.teklif, teklifSurum: o.teklif_surum, cevap: o.cevap, cevapSurum: o.cevap_surum, zaman: o.guncelleme }, { headers: { "cache-control": "no-store" } });
   });
   // telefon (oturumsuz, gizli anahtarla): teklif yaz
   router.put("/api/yayin/:kod/teklif", async (request, env, params) => {

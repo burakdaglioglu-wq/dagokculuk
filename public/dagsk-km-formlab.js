@@ -38,6 +38,7 @@ function kmFormLabCiz() {
     if (!_fl.senk && typeof kyDepoSenkron === 'function') { _fl.senk = true; kyDepoSenkron('form_lab', () => flKayitlar(), false).then(() => { if (_kmAktifSekme === 'formlab' && _fl.durum !== 'analiz' && _fl.durum !== 'canli') kmFormLabCiz(); }).catch(() => {}); }
     // ön yükleme: araç açılınca modeller arka planda hazırlansın; "Uygulamada çek" beklemeden açılır
     if (!_fl.pose && !_fl.yukleniyor && !_fl.onYukHata) setTimeout(() => { if (_kmAktifSekme === 'formlab' && !_fl.pose && !_fl.yukleniyor) flModelYukle().then(flHazirlikYaz, () => { _fl.onYukHata = true; flHazirlikYaz(); }); flHazirlikYaz(); }, 300);
+    flKayitliTelefonBekle();
     let L = flRoster();
     if (_fl.secili && !L.some(k => k.g + '|' + k.ad === _fl.secili)) _fl.secili = null;
     let sporcular = L.length ? L.map(k => {
@@ -60,7 +61,7 @@ function kmFormLabCiz() {
         ${flOmuzHTML()}
         ${govde}</div>`;
     if (_fl.durum === 'sonuc' && _fl.sonuc) { flOynaticiKur(); flCubukCiz(); }
-    if (_fl.durum === 'canli') flCanliBagla();
+    if (_fl.durum === 'canli') { flCanliBagla(); if (_fl.tv) flTvAdYaz(); }
 }
 function flSporcuSec(k) { k = decodeURIComponent(k); _fl.secili = _fl.secili === k ? null : k; _fl.kayitAnahtar = null; if (_fl.durum !== 'analiz') kmFormLabCiz(); }
 function flSonKayitOzet() {
@@ -87,7 +88,8 @@ function flBaslangicHTML() {
         <div class="fl-butonlar">
             <button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Uygulamada çek</button>
             <button class="fl-btn" onclick="flCanliAc('ayna')">Canlı açılar</button>
-            <button class="fl-btn" onclick="flTelefonAc()" ${_fl.tel ? 'disabled' : ''}>Telefondan yayın al</button>
+            <button class="fl-btn" onclick="flTelefonAc()" ${_fl.tel && !_fl.tel.pasif ? 'disabled' : ''}>Telefondan yayın al</button>
+            ${flRoster().length >= 2 ? '<button class="fl-btn" onclick="flSiraBaslat()">Ders sırası</button>' : ''}
             <label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Videodan seç</label>
         </div>
         <p class="fl-hazirlik" id="fl-hazirlik">${flHazirlikMetin()}</p>
@@ -286,9 +288,10 @@ function flTs(ms) { let ts = Math.max(Math.round(ms), (_fl.sonTs || 0) + 1); _fl
 function flCanliHTML() {
     let c = _fl.canli || {};
     if (c.mod === 'ayna') return flAynaHTML(c);
-    return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
+    return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}${_fl.tv ? ' fl-tv' : ''}">
         <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            ${flSiraCanliHTML()}
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -308,9 +311,9 @@ function flCanliHTML() {
 // şey indirmeden, yapay zekâ olmadan da çalışır. Noktalar sürüklenebilir.
 function flAynaHTML(c) {
     let o = _fl.olcu || {};
-    return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}">
+    return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}${_fl.tv ? ' fl-tv' : ''}">
         <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -424,17 +427,24 @@ async function flCanliAc(mod) {
 // Windows Phone Link gibi uygulamalarla web kamerası olmuş telefon dahil, bilgisayardaki tüm kameralar.
 const FL_ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
 function flTelBagliMi() { let t = _fl.tel; return !!(t && t.durum === 'bagli' && t.akis && t.akis.getVideoTracks().some(x => x.readyState === 'live')); }
-async function flTelefonAc() {
-    if (!window.RTCPeerConnection) { showToast('Bu tarayıcı canlı yayını desteklemiyor', 'error'); return; }
+async function flTelefonAc(pasif) {
+    if (!window.RTCPeerConnection) { if (!pasif) showToast('Bu tarayıcı canlı yayını desteklemiyor', 'error'); return; }
     flTelefonKes(true);
-    _fl.tel = { durum: 'hazirlaniyor', surum: 0 }; flTelYaz();
+    _fl.tel = { durum: 'hazirlaniyor', surum: 0, pasif: !!pasif, ilk: true }; flTelYaz();
     try {
-        let r = await fetch('/api/yayin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
-        if (!r.ok) throw new Error('http ' + r.status);
-        let d = await r.json(); Object.assign(_fl.tel, { kod: d.kod, gizli: d.gizli, durum: 'bekliyor' });
+        // kayıtlı oda hâlâ geçerliyse onu kullan (telefon aynı bağlantıyla kendiliğinden bağlanır)
+        let d = null, ko = flKayitliOda();
+        if (ko) { let r0 = await fetch('/api/yayin/' + ko.kod + '?g=' + ko.gizli, { cache: 'no-store' }).catch(() => null); if (r0 && r0.ok) { d = ko; _fl.tel.kayitli = true; } else if (r0 && r0.status === 404) { try { localStorage.removeItem('dagsk_formlab_oda'); } catch (e) {} } }
+        if (!d) {
+            if (pasif) { _fl.tel = null; flTelYaz(); return; }
+            let r = await fetch('/api/yayin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+            if (!r.ok) throw new Error('http ' + r.status);
+            d = await r.json(); try { localStorage.setItem('dagsk_formlab_oda', JSON.stringify({ kod: d.kod, gizli: d.gizli })); } catch (e) {}
+        }
+        Object.assign(_fl.tel, { kod: d.kod, gizli: d.gizli, durum: 'bekliyor' });
         _fl.tel.link = location.origin + '/kamera#k=' + d.kod + '&g=' + d.gizli;
         flTelYaz(); flTelSorgu();
-    } catch (e) { _fl.tel = { durum: 'hata', mesaj: navigator.onLine === false ? 'Telefondan yayın için internet gerekir (iki cihazın birbirini bulması için). İnternetsizken telefonu Iriun/Camo ile web kamerası yapıp "Kamera seç"ten seçebilirsin.' : 'Yayın odası açılamadı — tekrar dene.' }; flTelYaz(); }
+    } catch (e) { if (pasif) { _fl.tel = null; flTelYaz(); return; } _fl.tel = { durum: 'hata', mesaj: navigator.onLine === false ? 'Telefondan yayın için internet gerekir (iki cihazın birbirini bulması için). İnternetsizken telefonu Iriun/Camo ile web kamerası yapıp "Kamera seç"ten seçebilirsin.' : 'Yayın odası açılamadı — tekrar dene.' }; flTelYaz(); }
 }
 function flTelefonKes(sessiz) {
     let t = _fl.tel; if (!t) return;
@@ -448,8 +458,10 @@ async function flTelSorgu() {
     let t = _fl.tel; if (!t || t.bitti || !t.kod) return;
     try {
         let r = await fetch('/api/yayin/' + t.kod + '?g=' + t.gizli, { cache: 'no-store' });
-        if (r.status === 404) { if (_fl.tel === t) { _fl.tel = { durum: 'hata', mesaj: 'Yayın odasının süresi doldu (2 saat). Yeniden "Telefondan yayın al"a bas.' }; flTelYaz(); } return; }
+        if (r.status === 404) { if (_fl.tel === t) { try { localStorage.removeItem('dagsk_formlab_oda'); } catch (e) {} _fl.tel = t.pasif ? null : { durum: 'hata', mesaj: 'Yayın odasının süresi doldu. Yeniden "Telefondan yayın al"a basıp QR\'ı okut.' }; flTelYaz(); } return; }
         let d = r.ok ? await r.json() : null;
+        // ilk sorguda eski oturumdan kalan teklifi yok say (telefon şu an açık değil); son 60 sn içindeki teklif tazedir
+        if (t.ilk && d) { t.ilk = false; if (d.teklif && (d.cevapSurum === d.teklifSurum || !d.zaman || Date.now() - d.zaman > 60000)) t.surum = d.teklifSurum; }
         if (d && d.teklif && d.teklifSurum > (t.surum || 0) && _fl.tel === t) await flTelCevapla(t, d.teklif, d.teklifSurum);
     } catch (e) {}
     if (_fl.tel === t && !t.bitti) t.sorgu = setTimeout(flTelSorgu, t.durum === 'bagli' ? 4000 : 1000);
@@ -479,6 +491,7 @@ function flTelHTML() {
     let t = _fl.tel; if (!t) return '';
     if (t.durum === 'hata') return `<div class="fl-kutu fl-tel"><div class="fl-tel-bilgi"><b>Telefondan yayın</b><p>${flEsc(t.mesaj)}</p></div><button class="fl-btn" onclick="_fl.tel=null; flTelYaz()">Tamam</button></div>`;
     if (t.durum === 'bagli') return `<div class="fl-tel-serit"><i></i><span><b>Telefon bağlı</b> · çekim ve canlı açılar telefonun kamerasını kullanır</span><button class="fl-btn fl-btn-kucuk" onclick="flTelefonKes()">Bağlantıyı kes</button></div>`;
+    if (t.pasif && t.durum === 'bekliyor') return `<div class="fl-tel-serit bekliyor"><i></i><span><b>Kayıtlı telefon bekleniyor</b> · telefonda DAĞ Form Lab kamera sayfasını aç (kod ${flEsc(t.kod || '')})</span><button class="fl-btn fl-btn-kucuk" onclick="_fl.tel.pasif=false; flTelYaz()">QR göster</button><button class="fl-btn fl-btn-kucuk" onclick="flKayitliOdaUnut()">Unut</button></div>`;
     let qr = t.link ? 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(t.link) : '';
     let durumYazi = { hazirlaniyor: 'Yayın odası açılıyor…', bekliyor: 'Telefonun bağlanması bekleniyor…', baglaniyor: 'Telefon bulundu, görüntü bağlanıyor…', koptu: 'Bağlantı koptu — telefonda "Yeniden bağlan"a bas' }[t.durum] || '';
     return `<div class="fl-kutu fl-tel">
@@ -546,7 +559,7 @@ async function flKameraCevir() {
     _fl.canli.yon = _fl.canliYon = _fl.canli.yon === 'environment' ? 'user' : 'environment';
     try { await flKameraBaslat(); } catch (e) { showToast('Kamera değiştirilemedi', 'error'); }
 }
-function flCanliIpucu(m) { if (_fl.canli) _fl.canli.ipucu = m; let el = document.getElementById('fl-canli-ipucu'); if (el) { el.textContent = m; el.classList.toggle('tamam', /^Kadraj tamam/.test(m)); } }
+function flCanliIpucu(m) { if (_fl.canli && _fl.canli.ipucu !== m) flKadrajKonus(m || ''); if (_fl.canli) _fl.canli.ipucu = m; let el = document.getElementById('fl-canli-ipucu'); if (el) { el.textContent = m; el.classList.toggle('tamam', /^Kadraj tamam/.test(m)); } }
 // Tam ekran (2026-10-03, kullanıcı: "tam ekran modunu da aç"). Destekleyen tarayıcıda gerçek tam ekran (Fullscreen API);
 // iPhone Safari bir öğeyi tam ekrana alamadığı için orada sayfayı kaplayan sabit katman (.fl-tam) kullanılır.
 function flTamIste(el) {
@@ -604,7 +617,7 @@ function flKayitBaslat() {
             r.start(1000); _fl.kaydedici = r; c.tip = r.mimeType || tip || 'video/webm';
         } catch (e) { _fl.kaydedici = null; }
     }
-    c.bas = performance.now(); c.kayit = true;
+    c.bas = performance.now(); c.kayit = true; flKonus('Kayıt başladı', 'kayit');
     let b = document.getElementById('fl-kayit-btn'); if (b) { b.classList.add('kayitta'); b.setAttribute('aria-label', 'Kaydı bitir ve analiz et'); }
     let ro = document.getElementById('fl-canli-sure'); if (ro) ro.classList.add('kayit');
 }
@@ -639,8 +652,11 @@ async function flCanliBitir() {
     // kiriş sesi bırakış anına yakınsa atış "sesle doğrulandı"
     (c.sesler || []).forEach(t => { let a = sonuc.atislar.find(z => t >= z.son / FL_FPS - 0.6 && t <= z.son / FL_FPS + 0.4); if (a) a.sesli = true; });
     if (sonuc.atislar.length) await flKucukResimlerCanli(sonuc);
-    _fl.sonuc = sonuc; _fl.canli = null; _fl.durum = 'sonuc';
-    if (_kmAktifSekme === 'formlab') kmFormLabCiz();
+    _fl.sonuc = sonuc; _fl.canli = null; _fl.durum = 'sonuc'; _fl.kayitAnahtar = null;
+    if (_fl.sira && _fl.secili && sonuc.atislar.length) { flKaydet(); _fl.sira.kaydedilen++; }
+    else if (_kmAktifSekme === 'formlab') kmFormLabCiz();
+    if (sonuc.atislar.length) { let dg = flDegerlendir(sonuc.ozet, _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar'); flKonus('Analiz hazır. ' + (dg.baslik || ''), 'analiz'); }
+    else flKonus('Atış bulunamadı', 'analiz');
 }
 function flCanliDongu() {
     cancelAnimationFrame(_fl.canliRaf);
@@ -942,6 +958,7 @@ function flSonucHTML() {
         : '<div class="fl-bulgu iyi"><div><b>Belirgin bir sorun görünmüyor</b><p>Çapa yeri, bekleme ve kol açıları atıştan atışa tutarlı.</p></div></div>';
     let kayitli = !!_fl.kayitAnahtar;
     return `<div class="fl-sonuc">
+        ${flSiraSonucHTML()}
         ${_fl.url ? `<div class="fl-sahne"><video id="fl-video" src="${_fl.url}" playsinline muted controls controlslist="nofullscreen noremoteplayback" disablepictureinpicture preload="auto"></video><canvas id="fl-katman"></canvas><span class="fl-sahne-dugmeler"><button class="fl-rozet fl-sahne-cubuk" onclick="flCubukGorunum()">${_fl.cubukGorunum ? 'Video' : 'Çubuk'}</button><button class="fl-rozet fl-sahne-tam" onclick="flSahneTam()">Tam ekran</button></span></div>` : '<p class="fl-sessiz">Bu tarayıcı çekimi kaydedemedi; analiz yapıldı ama video oynatılamıyor.</p>'}
         <div class="fl-grafik-kutu"><div class="fl-grafik-ust"><span>ÇEKİŞ ELİ ↔ ÇENE · ${oz.n} ATIŞ</span><span class="fl-lejant"><i class="k"></i>çapa kilitli <i class="b"></i>bırakış</span></div>${flGrafikSVG(s)}</div>
         ${oz.n ? flOzetHTML(s, g) : '<div class="fl-kutu"><b>Bütün atışlar analizden çıkarıldı</b><p class="fl-sessiz">Aşağıdaki kartlardan "Geri ekle" ile atışları geri alabilirsin.</p></div>'}
@@ -1328,14 +1345,14 @@ function flBirakisTakip(c, yakin, t) {
         clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => {
             let cc = _fl.canli; if (!cc) return;
             if (cc.yakinBas != null) { cc.sesTetik = false; return; }
-            if (cc.kayit) { cc.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + cc.atisSay; }
+            if (cc.kayit) { cc.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + cc.atisSay; flKonus('Atış ' + cc.atisSay + '. Çapada ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çapada ' + flTr(capa, 1) + ' saniye', 'atis');
             if (flTekrarAcikMi() && !cc.donuk) flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an);
         }, Math.max(0, an + FL_TEKRAR.sonra - performance.now()));
     }
     if (!yakin && c.yakinBas != null) {
         let capa = t - c.yakinBas, sesli = c.sesTetik; c.yakinBas = null; c.sesTetik = false;
         if (capa >= 0.6 && !sesli) {
-            if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; }
+            if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; flKonus('Atış ' + c.atisSay + '. Çapada ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çapada ' + flTr(capa, 1) + ' saniye', 'atis');
             if (flTekrarAcikMi() && !c.donuk) { let an = performance.now(); clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an), FL_TEKRAR.sonra - 100); }
         }
     }
@@ -1492,6 +1509,99 @@ async function flYerelSesAc() {
     try { _fl.sesYerel = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); flSesBaslat(_fl.sesYerel); } catch (e) {}
 }
 function flYerelSesKapat() { if (_fl.sesYerel) { _fl.sesYerel.getTracks().forEach(t => t.stop()); _fl.sesYerel = null; } }
+
+// ---------------------------------------------------------------- SAHA PAKETİ (2026-10-03)
+// Ders sırası (sporcular sırayla çekilir, sonuç kendiliğinden karneye), kayıtlı telefon (oda 30 gün; Form Lab açıkken
+// bilgisayar kayıtlı telefonu kendiliğinden bekler), TV modu (büyük ekran: düğmeler gizli, dev pano + sporcu adı),
+// sesli rehber (Türkçe konuşma: kadraj, atış, analiz sonucu). Seyrek kullanılan seçenekler "Ayarlar" menüsünde.
+// ---- ayarlar menüsü
+function flAyarHTML() {
+    return `<button class="fl-rozet fl-ayar-btn" onclick="flAyarAc(event)" aria-expanded="false">Ayarlar</button>
+        <div class="fl-ayar-panel" id="fl-ayar-panel" hidden>
+            <button class="fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button>
+            <button class="fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button>
+            <button class="fl-konus-btn" onclick="flKonusDegis()">Sesli rehber: ${flKonusAcikMi() ? 'açık' : 'kapalı'}</button>
+            <button class="fl-tv-btn" onclick="flTvDegis()">TV modu</button>
+        </div>`;
+}
+function flAyarAc(e) {
+    e.stopPropagation();
+    let p = document.getElementById('fl-ayar-panel'); if (!p) return;
+    p.hidden = !p.hidden; e.currentTarget.setAttribute('aria-expanded', String(!p.hidden));
+    if (!p.hidden) setTimeout(() => document.addEventListener('click', function kapat(ev) { if (!ev.target.closest('#fl-ayar-panel')) { p.hidden = true; document.removeEventListener('click', kapat); } }), 0);
+}
+// ---- TV modu
+function flTvDegis() {
+    let el = document.querySelector('.fl-canli'); if (!el) return;
+    _fl.tv = !el.classList.contains('fl-tv'); el.classList.toggle('fl-tv', _fl.tv);
+    let p = document.getElementById('fl-ayar-panel'); if (p) p.hidden = true;
+    if (_fl.tv && !_fl.tamEkran) flTamEkranDegis();
+    flTvAdYaz();
+}
+function flTvAdYaz() {
+    let sahne = document.querySelector('.fl-canli-sahne'); if (!sahne) return;
+    let el = document.getElementById('fl-tv-ad');
+    if (!el) { el = document.createElement('div'); el.id = 'fl-tv-ad'; el.className = 'fl-tv-ad'; sahne.appendChild(el); }
+    let ad = _fl.secili ? _fl.secili.split('|').slice(1).join(' ') : '';
+    el.innerHTML = (ad ? '<b>' + flEsc(ad) + '</b>' : '') + '<button onclick="event.stopPropagation(); flTvDegis()">TV\'den çık</button>';
+}
+// ---- sesli rehber (tarayıcının Türkçe sesi; internet gerekmez)
+function flKonusAcikMi() { if (_fl.konus == null) { try { _fl.konus = localStorage.getItem('dagsk_formlab_konus') === '1'; } catch (e) { _fl.konus = false; } } return _fl.konus; }
+function flKonusDegis() {
+    _fl.konus = !flKonusAcikMi(); try { localStorage.setItem('dagsk_formlab_konus', _fl.konus ? '1' : '0'); } catch (e) {}
+    document.querySelectorAll('.fl-konus-btn').forEach(b => b.textContent = 'Sesli rehber: ' + (_fl.konus ? 'açık' : 'kapalı'));
+    if (_fl.konus) flKonus('Sesli rehber açık', 'ac', true);
+}
+function flKonus(metin, anahtar, zorla) {
+    if ((!flKonusAcikMi() && !zorla) || !window.speechSynthesis) return;
+    let simdi = Date.now(), son = (_fl.konusSon = _fl.konusSon || {});
+    if (anahtar && son[anahtar] && simdi - son[anahtar] < 4000) return;
+    if (anahtar) son[anahtar] = simdi;
+    try {
+        let u = new SpeechSynthesisUtterance(metin); u.lang = 'tr-TR'; u.rate = 1.05;
+        let ses = speechSynthesis.getVoices().find(v => /^tr/i.test(v.lang)); if (ses) u.voice = ses;
+        speechSynthesis.speak(u);
+    } catch (e) {}
+}
+function flKadrajKonus(m) {
+    let tur = /^Kadraj tamam/.test(m) ? 'tamam' : /^Kadraja sığmıyor/.test(m) ? 'uzak' : /^Çok uzak/.test(m) ? 'yakin' : null;
+    if (!tur || tur === _fl.sonKadraj) return; _fl.sonKadraj = tur;
+    flKonus({ tamam: 'Kadraj tamam', uzak: 'Biraz uzaklaş', yakin: 'Biraz yaklaş' }[tur], 'kadraj');
+}
+// ---- ders sırası
+function flSiraBaslat() {
+    let l = flRoster(); if (l.length < 2) { showToast('Ders sırası için derste en az 2 sporcu olmalı', 'info'); return; }
+    _fl.sira = { liste: l.map(k => k.g + '|' + k.ad), i: 0, kaydedilen: 0 };
+    _fl.secili = _fl.sira.liste[0];
+    flCanliAc();
+}
+function flSiraAd(i) { let k = _fl.sira && _fl.sira.liste[i]; return k ? k.split('|').slice(1).join(' ') : ''; }
+function flSiraSonraki() {
+    let s = _fl.sira; if (!s) return;
+    s.i++;
+    if (s.i >= s.liste.length) { showToast('Ders sırası bitti — ' + s.kaydedilen + ' sporcunun analizi karneye kaydedildi', 'success'); flKonus('Ders sırası bitti', 'sira'); _fl.sira = null; kmFormLabCiz(); return; }
+    _fl.secili = s.liste[s.i];
+    flCanliAc();
+}
+function flSiraAtla() { if (!_fl.sira) return; flCanliKapat(); _fl.canli = null; flSiraSonraki(); }
+function flSiraBitir() { _fl.sira = null; kmFormLabCiz(); }
+function flSiraCanliHTML() {
+    let s = _fl.sira; if (!s) return '';
+    return `<div class="fl-sira-rozet"><small>SIRADA ${s.i + 1}/${s.liste.length}</small><b>${flEsc(flSiraAd(s.i))}</b><button onclick="event.stopPropagation(); flSiraAtla()">Atla</button></div>`;
+}
+function flSiraSonucHTML() {
+    let s = _fl.sira; if (!s) return '';
+    let sonraki = flSiraAd(s.i + 1);
+    return `<div class="fl-sira-serit"><span><small>DERS SIRASI ${s.i + 1}/${s.liste.length}</small><b>${flEsc(flSiraAd(s.i))}</b>${_fl.kayitAnahtar ? ' <em>karneye kaydedildi</em>' : ''}</span>
+        <span class="fl-sira-butonlar"><button class="fl-btn" onclick="flCanliAc()">Tekrar çek</button><button class="fl-btn fl-btn-ana" onclick="flSiraSonraki()">${sonraki ? 'Sıradaki: ' + flEsc(sonraki.split(' ')[0]) : 'Sırayı bitir'}</button><button class="fl-btn" onclick="flSiraBitir()">Sıradan çık</button></span></div>`;
+}
+// ---- kayıtlı telefon
+function flKayitliOda() { try { return JSON.parse(localStorage.getItem('dagsk_formlab_oda') || 'null'); } catch (e) { return null; } }
+function flKayitliOdaUnut() { try { localStorage.removeItem('dagsk_formlab_oda'); } catch (e) {} flTelefonKes(); showToast('Kayıtlı telefon unutuldu', 'info'); }
+function flKayitliTelefonBekle() {
+    if (_fl.tel || _fl.telDenendi || !flKayitliOda() || !window.RTCPeerConnection) return;
+    _fl.telDenendi = true; flTelefonAc(true);
+}
 
 // ---------------------------------------------------------------- kaydet / paylaş / odak
 function flKaydet() {
@@ -1671,7 +1781,31 @@ function flCss() {
 .fl-cubuk-grafik .ort{ stroke:rgba(236,230,220,.55); stroke-dasharray:4 4; }
 .fl-zoom{ position:relative; transform-origin:0 0; will-change:transform; }
 .fl-canli.fl-tam .fl-zoom{ height:100%; }
-.fl-yak-btn, .fl-tekrar-btn, .fl-son-btn{ border:0; cursor:pointer; }
+.fl-yak-btn, .fl-tekrar-btn, .fl-son-btn, .fl-ayar-btn{ border:0; cursor:pointer; }
+.fl-ust-sag{ position:relative; }
+.fl-ayar-panel{ position:absolute; right:0; top:calc(100% + 6px); z-index:6; display:flex; flex-direction:column; gap:4px; background:rgba(14,13,12,.96); border:1px solid rgba(255,255,255,.18); border-radius:10px; padding:6px; min-width:200px; }
+.fl-ayar-panel[hidden]{ display:none; }
+.fl-ayar-panel button{ min-height:40px; padding:0 12px; text-align:left; border:0; border-radius:6px; background:transparent; color:#fff; font:600 13.5px/1 'Archivo',sans-serif; cursor:pointer; }
+.fl-ayar-panel button:hover{ background:rgba(255,255,255,.08); }
+.fl-sira-rozet{ position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:3; display:flex; align-items:center; gap:10px; background:rgba(255,106,26,.95); color:#fff; padding:6px 8px 6px 14px; border-radius:10px; }
+.fl-sira-rozet small{ font:600 10.5px/1 'Roboto Mono',monospace; letter-spacing:.1em; opacity:.85; }
+.fl-sira-rozet b{ font:900 18px/1 'Archivo',sans-serif; text-transform:uppercase; }
+.fl-sira-rozet button{ min-height:30px; padding:0 10px; border-radius:6px; border:1px solid rgba(255,255,255,.6); background:transparent; color:#fff; font:700 12px 'Archivo',sans-serif; cursor:pointer; }
+.fl-sira-serit{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; border-radius:10px; background:rgba(255,106,26,.12); border:1px solid rgba(255,106,26,.5); }
+.fl-sira-serit small{ display:block; font:600 11px/1.2 'Roboto Mono',monospace; letter-spacing:.1em; color:var(--fl-soft); }
+.fl-sira-serit b{ font:900 20px/1.1 'Archivo',sans-serif; } .fl-sira-serit em{ font-style:normal; color:#3ddc84; font-weight:700; font-size:13px; }
+.fl-sira-butonlar{ display:flex; gap:8px; flex-wrap:wrap; }
+.fl-tel-serit.bekliyor{ border-color:rgba(255,183,3,.5); background:rgba(255,183,3,.1); } .fl-tel-serit.bekliyor i{ background:#ffb703; animation:flNabiz 1.2s ease-in-out infinite; }
+/* TV modu: büyük ekran — kontroller gizli, dev pano, sporcu adı */
+.fl-tv .fl-ayna-araclar, .fl-tv .fl-kamera-satir, .fl-tv > .fl-sessiz, .fl-tv .fl-canli-kontrol > .fl-btn, .fl-tv .fl-canli-kontrol > .fl-dondur-btn, .fl-tv .fl-ust-sag, .fl-tv .fl-canli-ipucu, .fl-tv .fl-yon-ipucu, .fl-tv .fl-sira-rozet{ display:none !important; }
+.fl-tv .fl-canli-kontrol{ position:absolute; left:50%; bottom:max(14px, env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:4; display:flex; }
+.fl-tv .fl-kayit-btn{ width:60px; height:60px; opacity:.8; } .fl-tv .fl-kayit-btn i{ width:44px; height:44px; } .fl-tv .fl-kayit-btn.kayitta i{ width:22px; height:22px; }
+.fl-tv .fl-pano{ top:auto; bottom:24px; left:24px; min-width:420px; padding:16px 22px; gap:10px; }
+.fl-tv .fl-pano small{ font-size:15px; } .fl-tv .fl-pano b{ font-size:44px; } .fl-tv .fl-pano div{ grid-template-columns:220px 1fr; }
+.fl-tv-ad{ display:none; }
+.fl-tv .fl-tv-ad{ display:flex; position:absolute; left:130px; right:24px; top:14px; z-index:4; justify-content:space-between; align-items:flex-start; gap:12px; pointer-events:none; }
+.fl-tv-ad b{ font:900 clamp(28px,4vw,56px)/1 'Archivo',sans-serif; text-transform:uppercase; color:#fff; text-shadow:0 3px 20px rgba(0,0,0,.6); }
+.fl-tv-ad button{ pointer-events:auto; min-height:36px; padding:0 12px; border-radius:8px; border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.5); color:rgba(255,255,255,.8); font:600 13px 'Archivo',sans-serif; cursor:pointer; margin-left:auto; }
 .fl-rozet-ses{ background:#4dabf7; color:#0b1d2e; }
 .fl-omuz{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; }
 .fl-omuz input{ width:90px; min-height:38px; padding:0 10px; border-radius:6px; border:1px solid var(--fl-line); background:#0f0e0d; color:var(--fl-ink); font:600 15px/1 'Roboto Mono',monospace; }
