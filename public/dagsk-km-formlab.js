@@ -285,7 +285,7 @@ function flCanliHTML() {
     if (c.mod === 'ayna') return flAynaHTML(c);
     return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -307,7 +307,7 @@ function flAynaHTML(c) {
     let o = _fl.olcu || {};
     return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}">
         <div class="fl-canli-sahne"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -576,7 +576,7 @@ if (!window._flTamDinleyici) {
     document.addEventListener('fullscreenchange', degisti); document.addEventListener('webkitfullscreenchange', degisti);
 }
 function flCanliKapat() {
-    flTamCik();
+    flTamCik(); _fl.halka = null; _fl.tekrarOynuyor = false; clearTimeout(_fl.tekrarZaman);
     cancelAnimationFrame(_fl.canliRaf);
     try { if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') _fl.kaydedici.stop(); } catch (e) {}
     flAkisBirak();
@@ -645,6 +645,7 @@ function flCanliDongu() {
         if (!v) { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; return; } // Karışık Sınıf kapandı → kamera kapansın
         flZoomUygula();
         if (!cv || v.readyState < 2 || !v.videoWidth || !_fl.pose || _fl.canli.donuk) return;
+        if (flTekrarAcikMi() || _fl.halka) flTekrarKaydet(v);
         let simdi = performance.now(); if (simdi - son < 85) return; son = simdi;
         let c = _fl.canli, W = v.videoWidth, H = v.videoHeight, ts = flTs(simdi), kare = { t: (simdi - c.bas) / 1000, p: null, h: null };
         let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0];
@@ -665,6 +666,7 @@ function flCanliDongu() {
             let s = Math.floor(kare.t), ro = document.getElementById('fl-canli-sure');
             if (ro) ro.textContent = '● ' + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
         }
+        _fl.sonKare = { p: kare.p, t: performance.now() };
         flCanliCiz(v, cv, kare, W, H);
         flZoomHedefle(kare, W, H, v); flYonIpucu(W, H);
     };
@@ -693,6 +695,7 @@ function flCanliCiz(v, cv, kare, W, H) {
     let mes = i => Math.hypot(p[i][0] * W - ag[0], p[i][1] * H - ag[1]) / Spx;
     let sagMi = mes(20) <= mes(19), ci = sagMi ? 20 : 19, yay = sagMi ? [11, 13, 15] : [12, 14, 16];
     let yayAci = flAci(...yay.map(i => [p[i][0] * W, p[i][1] * H])), yakin = mes(ci) < 0.75 && yayAci > 145;
+    flBirakisTakip(c, yakin, kare.t);
     // açılar: eklem yanına + sol üstte pano (kayıt ve açılar modunda; açılar modunda büyük)
     let cek = sagMi ? [12, 14, 16] : [11, 13, 15], cekAci = flAci(...cek.map(i => [p[i][0] * W, p[i][1] * H]));
     let yO = [p[yay[0]][0] * W, p[yay[0]][1] * H], cO = [p[cek[0]][0] * W, p[cek[0]][1] * H], egim = Math.atan2(cO[1] - yO[1], Math.abs(cO[0] - yO[0]) || 1) * 180 / Math.PI;
@@ -708,8 +711,6 @@ function flCanliCiz(v, cv, kare, W, H) {
     x.strokeStyle = renk; x.lineWidth = 2.5;
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => { let cx = Cp[0] + sx * bo / 2, cy = Cp[1] + sy * bo / 2; x.beginPath(); x.moveTo(cx, cy - sy * 11); x.lineTo(cx, cy); x.lineTo(cx - sx * 11, cy); x.stroke(); });
     if (c.kayit) {
-        if (yakin && c.yakinBas == null) c.yakinBas = kare.t;
-        if (!yakin && c.yakinBas != null) { if (kare.t - c.yakinBas >= 0.6) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; } c.yakinBas = null; }
         if (yakin && c.yakinBas != null) ipucu = 'ÇAPADA · ' + flTr(kare.t - c.yakinBas, 1) + ' sn';
     }
     flCanliIpucu(ipucu);
@@ -1290,6 +1291,90 @@ function flPanoYaz(satirlar, buyuk) {
 }
 function flYonIpucu(W, H) { let el = document.getElementById('fl-yon-ipucu'); if (el) el.style.display = H > W * 1.1 ? '' : 'none'; }
 
+// ---------------------------------------------------------------- OTOMATİK AĞIR ÇEKİM TEKRAR
+// Kullanıcı (2026-10-03) "bence sıradaki" listesinden seçti: her bırakıştan sonra son atış büyük ekranda ağır çekimde
+// kendiliğinden oynar. Canlı görüntünün son ~4 sn'si küçük tuvallerden oluşan bir halkada tutulur (her ~66 ms bir kare,
+// o anki iskeletle birlikte). Bırakış algılanınca (çekiş eli çeneden ayrılır, ≥0,6 sn çapada kalmışsa) 0,6 sn beklenir,
+// bırakıştan 2,0 sn önce → 0,7 sn sonrası 0,35x hızla sahnenin üstünde oynatılır. "Son 3 sn" elle tekrar.
+const FL_TEKRAR = { fps: 15, sn: 4.2, once: 2000, sonra: 700, hiz: 0.35, genislik: 960 };
+function flTekrarAcikMi() { if (_fl.tekrarAcik == null) { try { _fl.tekrarAcik = localStorage.getItem('dagsk_formlab_tekrar') !== '0'; } catch (e) { _fl.tekrarAcik = true; } } return _fl.tekrarAcik; }
+function flTekrarDegis() {
+    _fl.tekrarAcik = !flTekrarAcikMi();
+    try { localStorage.setItem('dagsk_formlab_tekrar', _fl.tekrarAcik ? '1' : '0'); } catch (e) {}
+    document.querySelectorAll('.fl-tekrar-btn').forEach(b => b.textContent = 'Oto tekrar: ' + (_fl.tekrarAcik ? 'açık' : 'kapalı'));
+}
+// halka: sabit sayıda tuval (telefonda da hafıza sabit kalsın)
+function flTekrarKaydet(v) {
+    let h = _fl.halka, simdi = performance.now();
+    if (!h || h.W !== v.videoWidth || h.H !== v.videoHeight) {
+        let oran = Math.min(1, FL_TEKRAR.genislik / Math.max(v.videoWidth, v.videoHeight)), n = Math.round(FL_TEKRAR.fps * FL_TEKRAR.sn);
+        h = _fl.halka = { W: v.videoWidth, H: v.videoHeight, w: Math.round(v.videoWidth * oran), h: Math.round(v.videoHeight * oran), kareler: [], i: 0, son: 0, n };
+    }
+    if (simdi - h.son < 1000 / FL_TEKRAR.fps) return; h.son = simdi;
+    let k = h.kareler[h.i];
+    if (!k) { let c = document.createElement('canvas'); c.width = h.w; c.height = h.h; k = h.kareler[h.i] = { c, x: c.getContext('2d') }; }
+    try { k.x.drawImage(v, 0, 0, h.w, h.h); } catch (e) { return; }
+    k.t = simdi; k.p = _fl.sonKare && simdi - _fl.sonKare.t < 250 ? _fl.sonKare.p : null;
+    h.i = (h.i + 1) % h.n;
+}
+// bırakış takibi (kayıt ya da açılar modu fark etmez)
+function flBirakisTakip(c, yakin, t) {
+    if (yakin && c.yakinBas == null) c.yakinBas = t;
+    if (!yakin && c.yakinBas != null) {
+        let capa = t - c.yakinBas; c.yakinBas = null;
+        if (capa >= 0.6) {
+            if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; }
+            if (flTekrarAcikMi() && !c.donuk) { let an = performance.now(); clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an), FL_TEKRAR.sonra - 100); }
+        }
+    }
+}
+function flTekrarSon() { let an = performance.now(); flTekrarOynat(an - 3000, an, null, null); }
+function flTekrarOynat(bas, son, capaSn, birakis) {
+    let h = _fl.halka, sahne = document.querySelector('.fl-canli-sahne'); if (!h || !sahne || _fl.tekrarOynuyor) return;
+    let l = h.kareler.filter(k => k && k.t >= bas && k.t <= son).sort((a, b) => a.t - b.t);
+    if (l.length < 5) { if (birakis == null) showToast('Tekrar için yeterli görüntü yok', 'info'); return; }
+    _fl.tekrarOynuyor = true;
+    // tuvaller oynatma sırasında üzerine yazılmasın: kopya al
+    let kopya = l.map(k => { let c = document.createElement('canvas'); c.width = h.w; c.height = h.h; c.getContext('2d').drawImage(k.c, 0, 0); return { c, t: k.t, p: k.p }; });
+    let kat = document.createElement('div'); kat.className = 'fl-tekrar'; kat.innerHTML = '<canvas></canvas><div class="fl-tekrar-ust"><span class="fl-rozet fl-tekrar-rozet">AĞIR ÇEKİM TEKRAR · 0,35x</span>' + (capaSn != null ? '<span class="fl-rozet">ÇAPADA ' + flTr(capaSn, 1) + ' SN</span>' : '') + '</div><button class="fl-tekrar-kapat" aria-label="Tekrarı kapat">Canlıya dön</button>';
+    sahne.appendChild(kat);
+    let cv = kat.querySelector('canvas'), x = cv.getContext('2d'), kapandi = false;
+    const kapat = () => { if (kapandi) return; kapandi = true; kat.classList.add('gidiyor'); setTimeout(() => kat.remove(), 300); _fl.tekrarOynuyor = false; };
+    kat.addEventListener('click', kapat);
+    let t0 = performance.now(), ilk = kopya[0].t, sonT = kopya[kopya.length - 1].t;
+    const ciz = () => {
+        if (kapandi) return;
+        let r = sahne.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px'; }
+        x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = '#000'; x.fillRect(0, 0, r.width, r.height);
+        let tOrj = ilk + (performance.now() - t0) * FL_TEKRAR.hiz, k = kopya[0];
+        for (let i = 0; i < kopya.length && kopya[i].t <= tOrj; i++) k = kopya[i];
+        let olc = Math.min(r.width / h.w, r.height / h.h), ox = (r.width - h.w * olc) / 2, oy = (r.height - h.h * olc) / 2;
+        x.drawImage(k.c, ox, oy, h.w * olc, h.h * olc);
+        if (k.p) flTekrarIskelet(x, k.p, ox, oy, h.w * olc, h.h * olc);
+        // zaman çubuğu + bırakış işareti
+        let y = r.height - 8, ilerleme = Math.min(1, (tOrj - ilk) / Math.max(1, sonT - ilk));
+        x.fillStyle = 'rgba(255,255,255,.25)'; x.fillRect(16, y, r.width - 32, 4); x.fillStyle = '#ff6a1a'; x.fillRect(16, y, (r.width - 32) * ilerleme, 4);
+        if (birakis != null) {
+            let bx = 16 + (r.width - 32) * Math.min(1, (birakis - ilk) / Math.max(1, sonT - ilk)); x.fillStyle = '#fff'; x.fillRect(bx - 1, y - 6, 2, 16);
+            if (Math.abs(tOrj - birakis) < 220) { x.font = '900 34px "Archivo", sans-serif'; x.fillStyle = '#fff'; x.textAlign = 'center'; x.fillText('BIRAKIŞ', r.width / 2, r.height * 0.18); x.textAlign = 'start'; }
+        }
+        if (tOrj > sonT + 500) { kapat(); return; }
+        requestAnimationFrame(ciz);
+    };
+    requestAnimationFrame(ciz);
+}
+function flTekrarIskelet(x, p, ox, oy, w, h) {
+    let P = i => [ox + p[i][0] * w, oy + p[i][1] * h];
+    x.lineWidth = 3; x.strokeStyle = 'rgba(90,160,255,.95)';
+    [[11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]].forEach(([a, b]) => { if (p[a][2] < 0.3 || p[b][2] < 0.3) return; let A = P(a), B = P(b); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); });
+    x.strokeStyle = '#ffd166'; let A = P(11), B = P(12); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke();
+    // yay kolu: işaret parmağı çeneden uzak olan taraf
+    let ag = [(p[9][0] + p[10][0]) / 2, (p[9][1] + p[10][1]) / 2], d = i => Math.hypot(p[i][0] - ag[0], p[i][1] - ag[1]);
+    let yay = d(20) <= d(19) ? [11, 13, 15] : [12, 14, 16], a = flAci(...yay.map(P));
+    if (a != null) { let q = P(yay[1]), yazi = 'YAY KOLU ' + Math.round(a) + '°'; x.font = '700 15px "Roboto Mono", monospace'; let tw = x.measureText(yazi).width + 12; x.fillStyle = 'rgba(10,10,10,.75)'; x.fillRect(q[0] + 10, q[1] - 24, tw, 22); x.fillStyle = FL_DURUM_RENK[flYayDurum(a)]; x.fillText(yazi, q[0] + 16, q[1] - 8); }
+}
+
 // ---------------------------------------------------------------- kaydet / paylaş / odak
 function flKaydet() {
     if (!_fl.secili || !_fl.sonuc) return;
@@ -1468,7 +1553,15 @@ function flCss() {
 .fl-cubuk-grafik .ort{ stroke:rgba(236,230,220,.55); stroke-dasharray:4 4; }
 .fl-zoom{ position:relative; transform-origin:0 0; will-change:transform; }
 .fl-canli.fl-tam .fl-zoom{ height:100%; }
-.fl-yak-btn{ border:0; cursor:pointer; }
+.fl-yak-btn, .fl-tekrar-btn, .fl-son-btn{ border:0; cursor:pointer; }
+.fl-ust-sag{ flex-wrap:wrap; justify-content:flex-end; }
+.fl-tekrar{ position:absolute; inset:0; z-index:5; background:#000; animation:flTekrarGel .25s ease; cursor:pointer; }
+.fl-tekrar.gidiyor{ opacity:0; transition:opacity .3s ease; }
+@keyframes flTekrarGel{ from{ opacity:0; } to{ opacity:1; } }
+.fl-tekrar canvas{ position:absolute; inset:0; }
+.fl-tekrar-ust{ position:absolute; left:10px; top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+.fl-tekrar-rozet{ background:#ff6a1a; color:#fff; }
+.fl-tekrar-kapat{ position:absolute; right:12px; bottom:22px; min-height:42px; padding:0 14px; border-radius:8px; border:1px solid rgba(255,255,255,.35); background:rgba(10,10,10,.6); color:#fff; font:700 14px/1 'Archivo',sans-serif; cursor:pointer; }
 .fl-pano{ position:absolute; left:10px; top:46px; z-index:2; background:rgba(10,10,10,.74); border-radius:8px; padding:8px 12px; display:flex; flex-direction:column; gap:4px; pointer-events:none; min-width:200px; }
 .fl-pano div{ display:grid; grid-template-columns:104px 1fr; align-items:baseline; gap:8px; }
 .fl-pano small{ font:500 10px/1.2 'Roboto Mono',monospace; letter-spacing:.06em; color:rgba(255,255,255,.65); }
