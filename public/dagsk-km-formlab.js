@@ -38,7 +38,7 @@ function kmFormLabCiz() {
     if (!_fl.senk && typeof kyDepoSenkron === 'function') { _fl.senk = true; kyDepoSenkron('form_lab', () => flKayitlar(), false).then(() => { if (_kmAktifSekme === 'formlab' && _fl.durum !== 'analiz' && _fl.durum !== 'canli') kmFormLabCiz(); }).catch(() => {}); }
     // ön yükleme: araç açılınca modeller arka planda hazırlansın; "Uygulamada çek" beklemeden açılır
     if (!_fl.pose && !_fl.yukleniyor && !_fl.onYukHata) setTimeout(() => { if (_kmAktifSekme === 'formlab' && !_fl.pose && !_fl.yukleniyor) flModelYukle().then(flHazirlikYaz, () => { _fl.onYukHata = true; flHazirlikYaz(); }); flHazirlikYaz(); }, 300);
-    flKayitliTelefonBekle();
+    flKayitliTelefonBekle(); if (typeof indexedDB !== 'undefined') flKlasorYukle();
     let L = flRoster();
     if (_fl.secili && !L.some(k => k.g + '|' + k.ad === _fl.secili)) _fl.secili = null;
     let sporcular = L.length ? L.map(k => {
@@ -51,7 +51,7 @@ function kmFormLabCiz() {
     else if (_fl.durum === 'analiz') govde = flIlerlemeHTML();
     else if (_fl.durum === 'hata') govde = `<div class="fl-kutu fl-hata"><b>Analiz yapılamadı</b><p>${flEsc(_fl.mesaj)}</p><button class="fl-btn" onclick="_fl.durum='bos'; kmFormLabCiz()">Tamam</button></div>`;
     else if (_fl.durum === 'sonuc' && _fl.sonuc) govde = flSonucHTML();
-    else govde = flBaslangicHTML() + flGelisimHTML();
+    else govde = flBaslangicHTML() + flGelisimHTML() + (_fl.secili ? '<div class="fl-baslik2 fl-baslik-satir"><span>Video arşivi</span><span class="fl-baslik-ek">önceki atışları yan yana izle</span></div>' + flKarsHTML() : '');
     el.innerHTML = `<div class="fl">
         <div class="fl-ust"><div><div class="fl-etiket">KARIŞIK SINIF · FORM LAB</div><div class="fl-baslik">Çene altı sabit mi?</div>
             <div class="fl-alt">Videodan her atışın çene altı noktası, bekleme süresi, kayması ve kol açıları. Atıştan atışa ne değişiyor, kare kare.</div></div>
@@ -63,6 +63,7 @@ function kmFormLabCiz() {
         ${govde}</div>`;
     if (_fl.durum === 'sonuc' && _fl.sonuc) { flOynaticiKur(); flCubukCiz(); }
     if (_fl.durum === 'canli') { flCanliBagla(); if (_fl.tv) flTvAdYaz(); }
+    if (document.getElementById('fl-kars')) flKarsHazirla(); else cancelAnimationFrame(_fl.karsRaf);
 }
 function flSporcuSec(k) { k = decodeURIComponent(k); _fl.secili = _fl.secili === k ? null : k; _fl.kayitAnahtar = null; if (_fl.durum !== 'analiz') kmFormLabCiz(); }
 function flSonKayitOzet() {
@@ -1889,6 +1890,8 @@ function flSekme(id) {
     let el = document.getElementById('fl-sekme-icerik'); if (!el) return;
     el.innerHTML = flSekmeHTML(id);
     if (id === 'detay') { flCubukCiz(); flGrafikBagla(); }
+    if (id === 'gelisim') flKarsHazirla();
+    else cancelAnimationFrame(_fl.karsRaf);
 }
 function flSekmeHTML(id) {
     let s = _fl.sonuc, oz = s.ozet, g = _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar', mm = x => flMm(x, g);
@@ -1909,7 +1912,8 @@ function flSekmeHTML(id) {
     if (id === 'detay') return `<div class="fl-grafik-kutu"><div class="fl-grafik-ust"><span>ÇEKİŞ ELİ ↔ ÇENE · ${oz.n} ATIŞ</span><span class="fl-lejant"><i class="k"></i>çene altında sabit <i class="b"></i>bırakış</span></div>${flGrafikSVG(s)}<p class="fl-sessiz">Grafiğe dokun: video o ana gider.</p></div>
         <div id="fl-cubuk-yer">${flCubukHTML(s)}</div>
         ${oz.n ? flSablonHTML(s, g) : ''}`;
-    if (id === 'gelisim') return flGelisimHTML() || `<div class="fl-bos-kutu"><b>Gelişim için en az iki kayıt gerekli</b><p>Bu analizi karneye kaydet; bir sonraki çekimden sonra puanın ve ölçülerin nasıl değiştiği burada çizilir.</p></div>`;
+    if (id === 'gelisim') return `<div class="fl-baslik2 fl-baslik-satir"><span>Önceki atışla karşılaştır</span><span class="fl-baslik-ek">videolar bu bilgisayarda saklanır</span></div>${flKarsHTML()}`
+        + (flGelisimHTML() || `<div class="fl-bos-kutu"><b>Gelişim grafiği için en az iki kayıt gerekli</b><p>Bu analizi karneye kaydet; bir sonraki çekimden sonra puanın ve ölçülerin nasıl değiştiği burada çizilir.</p></div>`);
     // özet
     let deg = flDegerlendir(oz, g), dur = id2 => { let x = deg.satirlar.find(z => z.id === id2); return x ? x.d : ''; };
     let kpi = (b, e, a, d) => `<div class="fl-kpi${d ? ' fl-kpi-' + d : ''}"><b>${b}</b><span>${e}</span>${a ? `<small>${a}</small>` : ''}</div>`;
@@ -2133,6 +2137,249 @@ function flBirakisCiz(x, s, a, i, P) {
     x.restore();
 }
 
+// ---------------------------------------------------------------- VİDEO ARŞİVİ + KARŞILAŞTIRMA (2026-10-04)
+// Kullanıcı: "videoları saklayabiliriz" → "bence PC'ye indirelim, öncekiyle karşılaştırsın". Klipler buluta gitmez:
+// "Karneye kaydet"te en iyi ve en kötü atışın ~4-5 sn'lik ham klibi + iskelet verisi bilgisayarda seçilen klasöre
+// (File System Access; her sporcuya bir alt klasör, Gezgin'den görünür) yazılır. Klasör seçilmemişse ya da tarayıcı
+// desteklemiyorsa (iPhone) aynı cihazda IndexedDB'ye. Gelişim sekmesinde iki atış bırakış anına göre hizalanıp yan
+// yana oynar; altta iki iskelet üst üste.
+function flIdb() {
+    return _fl.idbP || (_fl.idbP = new Promise((ok, hata) => {
+        let r = indexedDB.open('dagsk-formlab', 1);
+        r.onupgradeneeded = () => { let d = r.result; let m = d.createObjectStore('klipMeta', { keyPath: 'id' }); m.createIndex('sp', 'sp'); d.createObjectStore('klipVeri'); d.createObjectStore('ayar'); };
+        r.onsuccess = () => ok(r.result); r.onerror = () => hata(r.error);
+    }));
+}
+function flIdbIstek(depo, mod, fn) { return flIdb().then(d => new Promise((ok, hata) => { let tx = d.transaction(depo, mod), r = fn(tx.objectStore(depo)); tx.oncomplete = () => ok(r && r.result); tx.onerror = () => hata(tx.error); tx.onabort = () => hata(tx.error); })); }
+// arşiv klasörü (FileSystemDirectoryHandle IndexedDB'de saklanır; izin her oturumda bir dokunuşla yenilenir)
+function flKlasorDestek() { return typeof window.showDirectoryPicker === 'function'; }
+async function flKlasorYukle() {
+    if (_fl.klasorYuklendi) return _fl.arsivKlasor; _fl.klasorYuklendi = true;
+    try { _fl.arsivKlasor = await flIdbIstek('ayar', 'readonly', st => st.get('klasor')) || null; } catch (e) { _fl.arsivKlasor = null; }
+    return _fl.arsivKlasor;
+}
+async function flKlasorIzin(iste) {
+    let k = _fl.arsivKlasor; if (!k) return false;
+    try { let d = await k.queryPermission({ mode: 'readwrite' }); if (d === 'granted') return true; if (iste) return (await k.requestPermission({ mode: 'readwrite' })) === 'granted'; } catch (e) {}
+    return false;
+}
+async function flKlasorSec() {
+    try {
+        let k = await window.showDirectoryPicker({ id: 'dagsk-formlab', mode: 'readwrite', startIn: 'documents' });
+        _fl.arsivKlasor = k; await flIdbIstek('ayar', 'readwrite', st => st.put(k, 'klasor'));
+        showToast('Arşiv klasörü: ' + k.name + ' — klipler artık buraya kaydedilir', 'success');
+    } catch (e) { if (e && e.name !== 'AbortError') showToast('Klasör seçilemedi', 'error'); }
+    flKarsYenile();
+}
+async function flKlasorBaglan() { if (await flKlasorIzin(true)) { showToast('Arşiv klasörüne bağlanıldı', 'success'); } flKarsYenile(); }
+function flKlasorAdi(sp) { let [g, ...r] = sp.split('|'); return (r.join(' ') + ' (' + g + ')').replace(/[\\/:*?"<>|]/g, '-').trim(); }
+// kaydet / listele / oku / sil — iki arka uç (klasör, IndexedDB) aynı arayüzle
+async function flArsivYaz(meta, video, poz) {
+    if (_fl.arsivKlasor && await flKlasorIzin(false)) {
+        let d = await _fl.arsivKlasor.getDirectoryHandle(flKlasorAdi(meta.sp), { create: true });
+        let yaz = async (ad, veri) => { let f = await d.getFileHandle(ad, { create: true }), w = await f.createWritable(); await w.write(veri); await w.close(); };
+        await yaz(meta.id + '.' + meta.uzanti, video);
+        await yaz(meta.id + '.json', new Blob([JSON.stringify({ meta, poz })], { type: 'application/json' }));
+        return 'klasor';
+    }
+    await flIdbIstek('klipVeri', 'readwrite', st => st.put({ video, poz }, meta.id));
+    await flIdbIstek('klipMeta', 'readwrite', st => st.put(Object.assign({}, meta, { depo: 'idb' })));
+    return 'idb';
+}
+async function flArsivListe(sp) {
+    let l = [];
+    try { (await flIdbIstek('klipMeta', 'readonly', st => st.index('sp').getAll(IDBKeyRange.only(sp))) || []).forEach(m => l.push(Object.assign({}, m, { depo: 'idb' }))); } catch (e) {}
+    if (_fl.arsivKlasor && await flKlasorIzin(false)) {
+        try {
+            let d = await _fl.arsivKlasor.getDirectoryHandle(flKlasorAdi(sp), { create: false });
+            for await (let [ad, h] of d.entries()) {
+                if (h.kind !== 'file' || !/\.json$/.test(ad)) continue;
+                try { let j = JSON.parse(await (await h.getFile()).text()); if (j && j.meta && !l.some(x => x.id === j.meta.id)) l.push(Object.assign({}, j.meta, { depo: 'klasor', _poz: j.poz })); } catch (e) {}
+            }
+        } catch (e) {}
+    }
+    return l.sort((a, b) => b.t - a.t);
+}
+async function flArsivOku(m) {
+    if (m.depo === 'klasor') {
+        let d = await _fl.arsivKlasor.getDirectoryHandle(flKlasorAdi(m.sp));
+        let video = await (await d.getFileHandle(m.id + '.' + m.uzanti)).getFile();
+        let poz = m._poz || JSON.parse(await (await (await d.getFileHandle(m.id + '.json')).getFile()).text()).poz;
+        return { video, poz };
+    }
+    return await flIdbIstek('klipVeri', 'readonly', st => st.get(m.id));
+}
+async function flArsivSil(m) {
+    if (m.depo === 'klasor') { let d = await _fl.arsivKlasor.getDirectoryHandle(flKlasorAdi(m.sp)); for (let ad of [m.id + '.' + m.uzanti, m.id + '.json']) { try { await d.removeEntry(ad); } catch (e) {} } }
+    else { await flIdbIstek('klipVeri', 'readwrite', st => st.delete(m.id)); await flIdbIstek('klipMeta', 'readwrite', st => st.delete(m.id)); }
+}
+// ---- klip çıkarma: atışın 0,8 sn öncesinden bırakıştan 1,4 sn sonrasına; ham görüntü (çizimsiz), en çok 960 px
+function flAtisPuani(s, a) { let g = _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar', mm = x => flMm(x, g), [hd] = flAtisHukmu(a, s.atislar.length > 1, mm); return ({ iyi: 0, orta: 100, calis: 200 }[hd]) + mm(a.kayma || 0) + (s.atislar.length > 1 ? mm(a.capaUzak || 0) : 0) + (a.birakisYon && a.birakisYon !== 'geri' ? 20 : 0); }
+function flKlipSecimi(s) {
+    let l = s.atislar.filter(a => !a.haric); if (!l.length) return [];
+    let sirali = l.slice().sort((a, b) => flAtisPuani(s, a) - flAtisPuani(s, b)), iyi = sirali[0], kotu = sirali[sirali.length - 1];
+    return iyi === kotu ? [[iyi, 'iyi']] : [[iyi, 'iyi'], [kotu, 'kotu']];
+}
+async function flKlipCikar(s, a, v) {
+    let t0 = Math.max(0, a.bas / FL_FPS - 0.8), t1 = Math.min(s.sure || v.duration, a.son / FL_FPS + 1.4);
+    let olcek = Math.min(1, 960 / Math.max(s.W, s.H)), CW = Math.round(s.W * olcek / 2) * 2, CH = Math.round(s.H * olcek / 2) * 2;
+    let cs = document.createElement('canvas'); cs.width = CW; cs.height = CH; let x = cs.getContext('2d');
+    let tip = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    let rec = new MediaRecorder(cs.captureStream(30), tip ? { mimeType: tip, videoBitsPerSecond: 2500000 } : undefined), parca = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) parca.push(e.data); };
+    let durdu = new Promise(ok => { rec.onstop = ok; });
+    await flKareyeGit(v, t0); x.drawImage(v, 0, 0, CW, CH);
+    v.playbackRate = 1; await v.play();
+    let tBas = v.currentTime; rec.start(250);
+    await new Promise(ok => { let z = setTimeout(ok, (t1 - t0) * 1000 + 4000); const d = () => { x.drawImage(v, 0, 0, CW, CH); if (v.currentTime >= t1 || v.ended) { clearTimeout(z); return ok(); } requestAnimationFrame(d); }; requestAnimationFrame(d); });
+    v.pause(); rec.stop(); await durdu;
+    let video = new Blob(parca, { type: rec.mimeType || tip || 'video/webm' });
+    let poz = []; for (let k = 0; k <= Math.round((t1 - tBas) * FL_FPS); k++) { let kr = s.kareler[Math.round((tBas + k / FL_FPS) * FL_FPS)]; poz.push(kr && kr.p ? kr.p.map(q => [Math.round(q[0] * 1e4) / 1e4, Math.round(q[1] * 1e4) / 1e4, Math.round((q[2] || 0) * 100) / 100]) : null); }
+    return { video, poz, tBas, sure: t1 - tBas };
+}
+async function flKlipleriArsivle() {
+    let s = _fl.sonuc; if (!s || !_fl.url || !_fl.secili || !window.MediaRecorder || _fl.arsivleniyor) return;
+    let izinIstegi = _fl.arsivKlasor ? flKlasorIzin(true) : null; // dokunuşun içinde izin iste (await'ten önce)
+    _fl.arsivleniyor = true;
+    let g = _fl.secili.split('|')[0], mm = x => flMm(x, g), sp = _fl.secili, v = null, say = 0, depo = '';
+    try {
+        if (izinIstegi) await izinIstegi;
+        v = await flVideoHazirla(_fl.url);
+        let simdi = new Date(), damga = bsIsoTarih(simdi) + '_' + simdi.toTimeString().slice(0, 8).replace(/:/g, '-');
+        for (let [a, tur] of flKlipSecimi(s)) {
+            let k = await flKlipCikar(s, a, v); if (!k.video.size) continue;
+            let [hd, hy] = flAtisHukmu(a, s.atislar.length > 1, mm);
+            let meta = { id: damga + '_' + tur + '_a' + a.no, sp, ad: sp.split('|').slice(1).join(' '), g, t: Date.now(), tarih: bsIsoTarih(simdi), no: a.no, tur, hukum: hy, durum: hd,
+                tutma: a.kilitBas != null ? Math.round(a.tutma * 10) / 10 : null, kaymaMm: mm(a.kayma || 0), yayKol: a.yayKol != null ? Math.round(a.yayKol) : null, takip: a.takip != null ? Math.round(a.takip * 10) / 10 : null,
+                birakisYon: a.birakisYon || null, birakisT: a.son / FL_FPS - k.tBas, sure: k.sure, W: s.W, H: s.H, fps: FL_FPS, taraf: s.ozet.taraf, gorus: s.ozet.gorus || 'on', uzanti: flUzanti(k.video.type) };
+            depo = await flArsivYaz(meta, k.video, k.poz); say++;
+        }
+        if (say) showToast(say + ' klip ' + (depo === 'klasor' ? '"' + (_fl.arsivKlasor.name || 'arşiv') + '" klasörüne' : 'bu cihazın arşivine') + ' kaydedildi', 'success');
+    } catch (e) { showToast('Klipler arşive kaydedilemedi: ' + ((e && e.message) || e), 'error'); }
+    if (v) { try { v.remove(); } catch (e) {} }
+    _fl.arsivleniyor = false; flKarsYenile();
+}
+// ---- karşılaştırma ekranı
+function flKarsKaynakSimdi(s, a) { // bu analizin atışı (tam video, ana zaman çizgisi)
+    let g = _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar', mm = x => flMm(x, g), [hd, hy] = flAtisHukmu(a, s.atislar.length > 1, mm);
+    return { id: 'simdi-' + a.no, etiket: 'Bugün · atış ' + a.no, url: _fl.url, birakis: a.son / FL_FPS, poz: i => { let k = s.kareler[i]; return k && k.p; }, W: s.W, H: s.H,
+        olcu: { hukum: hy, durum: hd, tutma: a.kilitBas != null ? a.tutma : null, kaymaMm: mm(a.kayma || 0), yayKol: a.yayKol, takip: a.takip, birakisYon: a.birakisYon } };
+}
+function flKarsKaynakArsiv(m, veri) {
+    return { id: m.id, meta: m, etiket: m.tarih.split('-').reverse().join('.') + ' · ' + (m.tur === 'iyi' ? 'en iyi atış' : 'en zayıf atış'), url: URL.createObjectURL(veri.video), birakis: m.birakisT, poz: i => veri.poz[i] || null, W: m.W, H: m.H,
+        olcu: { hukum: m.hukum, durum: m.durum, tutma: m.tutma, kaymaMm: m.kaymaMm, yayKol: m.yayKol, takip: m.takip, birakisYon: m.birakisYon } };
+}
+function flKarsYenile() { let el = document.getElementById('fl-kars'); if (el) flKarsHazirla(); }
+function flKarsHTML() { return `<div class="fl-kars" id="fl-kars"><p class="fl-sessiz">Video arşivi yükleniyor…</p></div>`; }
+async function flKarsHazirla() {
+    let el = document.getElementById('fl-kars'); if (!el || !_fl.secili) { if (el) el.innerHTML = '<p class="fl-sessiz">Karşılaştırma için sporcu seç.</p>'; return; }
+    await flKlasorYukle();
+    let izin = _fl.arsivKlasor ? await flKlasorIzin(false) : false, sp = _fl.secili;
+    let liste = await flArsivListe(sp); if (!document.body.contains(el) || _fl.secili !== sp) return;
+    _fl.karsListe = liste;
+    let s = _fl.durum === 'sonuc' && _fl.sonuc && _fl.url ? _fl.sonuc : null, simdiler = s ? flKlipSecimi(s).map(([a]) => a) : [];
+    let durum = _fl.arsivKlasor ? (izin ? `Klipler <b>${flEsc(_fl.arsivKlasor.name)}</b> klasörüne kaydediliyor (bu bilgisayarda).` : `Arşiv klasörü <b>${flEsc(_fl.arsivKlasor.name)}</b> — bu oturumda izin gerekli.`) : (flKlasorDestek() ? 'Klipler şimdilik bu tarayıcıda saklanıyor. Bilgisayarda dosya olarak görmek için bir klasör seç.' : 'Klipler bu cihazda saklanıyor.');
+    let ust = `<div class="fl-kars-ust"><span>${durum}</span><span class="fl-kars-ust-btn">${_fl.arsivKlasor && !izin ? '<button class="fl-btn fl-btn-kucuk fl-btn-ana" onclick="flKlasorBaglan()">Arşive bağlan</button>' : ''}${flKlasorDestek() ? `<button class="fl-btn fl-btn-kucuk" onclick="flKlasorSec()">${_fl.arsivKlasor ? 'Klasörü değiştir' : 'Arşiv klasörü seç'}</button>` : ''}${s && _fl.secili ? `<button class="fl-btn fl-btn-kucuk" onclick="flKlipleriArsivle()" ${_fl.arsivleniyor ? 'disabled' : ''}>${_fl.arsivleniyor ? 'Kaydediliyor…' : 'Bu analizin kliplerini kaydet'}</button>` : ''}</span></div>`;
+    let secenekSol = simdiler.map(a => `<option value="simdi-${a.no}">Bugün · atış ${a.no}</option>`).join('') + liste.map(m => `<option value="${flEsc(m.id)}">${flEsc(m.tarih.split('-').reverse().join('.'))} · ${m.tur === 'iyi' ? 'en iyi' : 'en zayıf'} · atış ${m.no}</option>`).join('');
+    let secenekSag = liste.map(m => `<option value="${flEsc(m.id)}">${flEsc(m.tarih.split('-').reverse().join('.'))} · ${m.tur === 'iyi' ? 'en iyi' : 'en zayıf'} · atış ${m.no}</option>`).join('');
+    if ((simdiler.length ? 1 : 0) + liste.length < 2 || !liste.length) {
+        el.innerHTML = ust + `<div class="fl-bos-kutu"><b>Karşılaştıracak önceki klip yok</b><p>"Karneye kaydet"e bastığında bu analizin en iyi ve en zayıf atışı arşive kaydedilir. Bir sonraki çekimde burada eski ve yeni atış yan yana, bırakış anına göre hizalı oynar.</p></div>`;
+        return;
+    }
+    let solId = _fl.karsSol && (secenekSol.indexOf('"' + _fl.karsSol + '"') >= 0) ? _fl.karsSol : (simdiler.length ? 'simdi-' + simdiler[0].no : liste[0].id);
+    let sagAday = liste.filter(m => m.id !== solId), bugun = bsIsoTarih(new Date());
+    let sagId = _fl.karsSag && sagAday.some(m => m.id === _fl.karsSag) ? _fl.karsSag : ((sagAday.find(m => m.tarih !== bugun && m.tur === 'iyi') || sagAday.find(m => m.tarih !== bugun) || sagAday[0] || {}).id);
+    el.innerHTML = ust + `<div class="fl-kars-izgara">
+            ${['sol', 'sag'].map(y => `<div class="fl-kars-panel fl-kars-${y}"><label class="fl-kars-sec"><small>${y === 'sol' ? 'ŞİMDİ' : 'ÖNCE'}</small><select onchange="_fl.kars${y === 'sol' ? 'Sol' : 'Sag'}=this.value; flKarsKur()">${(y === 'sol' ? secenekSol : secenekSag).replace('value="' + flEsc(y === 'sol' ? solId : sagId) + '"', 'value="' + flEsc(y === 'sol' ? solId : sagId) + '" selected')}</select></label>
+                <div class="fl-kars-ekran"><video id="fl-kars-v-${y}" muted playsinline preload="auto"></video><canvas id="fl-kars-c-${y}"></canvas></div>
+                <div class="fl-kars-olcu" id="fl-kars-o-${y}"></div></div>`).join('')}
+        </div>
+        <div class="fl-kars-alt">
+            <div class="fl-kars-ust-uste"><canvas id="fl-kars-ust" width="520" height="520"></canvas><span class="fl-kars-lej"><i class="sol"></i>şimdi <i class="sag"></i>önce · omuzlara hizalı</span></div>
+            <div class="fl-kars-kontrol">
+                <div class="fl-kars-dugmeler"><button class="fl-k-oynat" id="fl-kars-oynat" onclick="flKarsOynat()">▶</button><button class="fl-k-btn" id="fl-kars-hiz" onclick="flKarsHiz()">0,5x</button><button class="fl-k-btn" onclick="flKarsGit(0)">Bırakış anı</button><button class="fl-k-btn" onclick="flKarsGit(-1.5)">Başa</button></div>
+                <input type="range" id="fl-kars-zaman" min="-2" max="1.2" step="0.02" value="-1.5" oninput="flKarsGit(+this.value)" aria-label="Bırakışa göre zaman">
+                <div class="fl-kars-zaman-yazi"><span>bırakıştan önce</span><b id="fl-kars-u">-1,5 sn</b><span>sonra</span></div>
+                <p class="fl-sessiz">İki atış <b>bırakış anına göre</b> hizalanır; kaydırınca ikisi birlikte ilerler. Üstteki çizimde iki iskelet omuzlarından üst üste konur: çizgiler ayrışıyorsa duruş değişmiş demektir.</p>
+                <button class="fl-link" onclick="flKarsSil()">Sağdaki klibi arşivden sil</button>
+            </div>
+        </div>`;
+    _fl.karsSol = solId; _fl.karsSag = sagId; flKarsKur();
+}
+async function flKarsKur() {
+    let s = _fl.durum === 'sonuc' ? _fl.sonuc : null, kaynak = async id => {
+        if (/^simdi-/.test(id) && s) { let a = s.atislar[+id.slice(6) - 1]; return a ? flKarsKaynakSimdi(s, a) : null; }
+        let m = (_fl.karsListe || []).find(x => x.id === id); if (!m) return null;
+        let veri = await flArsivOku(m); return veri ? flKarsKaynakArsiv(m, veri) : null;
+    };
+    (_fl.kars || []).forEach(k => { if (k && k.url && k.url !== _fl.url) try { URL.revokeObjectURL(k.url); } catch (e) {} });
+    let [sol, sag] = await Promise.all([kaynak(_fl.karsSol), kaynak(_fl.karsSag)]).catch(() => [null, null]);
+    _fl.kars = [sol, sag]; _fl.karsU = _fl.karsU != null ? _fl.karsU : -1.5; _fl.karsHiz = _fl.karsHiz || 0.5;
+    [['sol', sol], ['sag', sag]].forEach(([y, k]) => {
+        let v = document.getElementById('fl-kars-v-' + y), o = document.getElementById('fl-kars-o-' + y); if (!v) return;
+        if (!k) { o.innerHTML = '<span class="fl-sessiz">Klip açılamadı (dosya silinmiş ya da klasör izni yok).</span>'; return; }
+        v.src = k.url; v.addEventListener('loadedmetadata', () => { v.currentTime = Math.max(0, k.birakis + _fl.karsU); }, { once: true });
+        let ol = k.olcu, by = ol.birakisYon && FL_BIRAKIS[ol.birakisYon];
+        o.innerHTML = `<b style="color:${FL_DURUM_RENK[ol.durum] || 'inherit'}">${flEsc(ol.hukum || '')}</b><span>çene altında <b>${ol.tutma != null ? flTr(ol.tutma, 1) + ' sn' : '—'}</b></span><span>kayma <b>≈${ol.kaymaMm} mm</b></span>${ol.yayKol != null ? `<span>yay kolu <b>${Math.round(ol.yayKol)}°</b></span>` : ''}${ol.takip != null ? `<span>takip <b>${flTr(ol.takip, 1)} sn</b></span>` : ''}${by ? `<span>bırakış <b style="color:${by.iyi ? '#3ddc84' : '#ff8b6b'}">${by.iyi ? 'geriye ✓' : by.ad}</b></span>` : ''}`;
+    });
+    cancelAnimationFrame(_fl.karsRaf); _fl.karsOynuyor = false; flKarsDugme();
+    let son = performance.now();
+    const dongu = () => {
+        if (!document.getElementById('fl-kars-ust')) { _fl.karsOynuyor = false; return; }
+        let simdi = performance.now(), dt = (simdi - son) / 1000; son = simdi;
+        if (_fl.karsOynuyor) { _fl.karsU += dt * _fl.karsHiz; if (_fl.karsU > 1.2) _fl.karsU = -2; flKarsZamanYaz(true); }
+        flKarsCiz();
+        _fl.karsRaf = requestAnimationFrame(dongu);
+    };
+    _fl.karsRaf = requestAnimationFrame(dongu);
+}
+function flKarsZamanYaz(oynuyor) {
+    let r = document.getElementById('fl-kars-zaman'), u = document.getElementById('fl-kars-u');
+    if (r && document.activeElement !== r) r.value = _fl.karsU;
+    if (u) u.textContent = (_fl.karsU > 0 ? '+' : '') + flTr(_fl.karsU, 1) + ' sn';
+    (_fl.kars || []).forEach((k, n) => {
+        let v = document.getElementById('fl-kars-v-' + (n ? 'sag' : 'sol')); if (!k || !v || !v.duration) return;
+        let hedef = Math.max(0, Math.min(v.duration - 0.02, k.birakis + _fl.karsU));
+        if (oynuyor) { if (v.paused) { v.playbackRate = _fl.karsHiz; v.play().catch(() => {}); } if (Math.abs(v.currentTime - hedef) > 0.12) v.currentTime = hedef; if (v.playbackRate !== _fl.karsHiz) v.playbackRate = _fl.karsHiz; }
+        else { if (!v.paused) v.pause(); v.currentTime = hedef; }
+    });
+}
+function flKarsGit(u) { _fl.karsOynuyor = false; _fl.karsU = Math.max(-2, Math.min(1.2, u)); flKarsDugme(); flKarsZamanYaz(false); }
+function flKarsOynat() { _fl.karsOynuyor = !_fl.karsOynuyor; if (!_fl.karsOynuyor) flKarsZamanYaz(false); flKarsDugme(); }
+function flKarsDugme() { let b = document.getElementById('fl-kars-oynat'); if (b) b.textContent = _fl.karsOynuyor ? '❚❚' : '▶'; }
+function flKarsHiz() { let l = [0.5, 0.25, 1]; _fl.karsHiz = l[(l.indexOf(_fl.karsHiz) + 1) % l.length]; let b = document.getElementById('fl-kars-hiz'); if (b) b.textContent = String(_fl.karsHiz).replace('.', ',') + 'x'; }
+async function flKarsSil() {
+    let m = (_fl.karsListe || []).find(x => x.id === _fl.karsSag); if (!m) return;
+    onayIste('Bu klip arşivden silinsin mi?<br><b>' + flEsc(m.tarih.split('-').reverse().join('.')) + ' · atış ' + m.no + '</b>', async () => { await flArsivSil(m); _fl.karsSag = null; showToast('Klip silindi', 'success'); flKarsHazirla(); }, 'Sil');
+}
+const FL_KARS_PARCA = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]];
+function flKarsCiz() {
+    let renk = ['#ff6a1a', '#4dabf7'];
+    (_fl.kars || []).forEach((k, n) => {
+        let y = n ? 'sag' : 'sol', v = document.getElementById('fl-kars-v-' + y), c = document.getElementById('fl-kars-c-' + y); if (!k || !v || !c) return;
+        let W = v.clientWidth, H = v.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.style.width = W + 'px'; c.style.height = H + 'px'; }
+        let x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+        let p = k.poz(Math.round(v.currentTime * FL_FPS)); if (!p) return;
+        let olc = Math.min(W / k.W, H / k.H), ox = (W - k.W * olc) / 2, oy = (H - k.H * olc) / 2, P = i => [ox + p[i][0] * k.W * olc, oy + p[i][1] * k.H * olc];
+        x.strokeStyle = renk[n]; x.lineWidth = 3; x.lineCap = 'round';
+        FL_KARS_PARCA.forEach(([a, b]) => { let A = P(a), B = P(b); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); });
+        if (Math.abs(_fl.karsU) < 0.06) { x.font = '700 13px "Roboto Mono", monospace'; x.fillStyle = 'rgba(10,10,10,.8)'; x.fillRect(8, 8, 92, 22); x.fillStyle = '#fff'; x.fillText('BIRAKIŞ', 18, 24); }
+    });
+    let cv = document.getElementById('fl-kars-ust'); if (!cv) return;
+    let x = cv.getContext('2d'), N = cv.width; x.fillStyle = '#0d0c0b'; x.fillRect(0, 0, N, N);
+    x.strokeStyle = 'rgba(236,230,220,.07)'; x.lineWidth = 1; for (let k = 0; k <= N; k += N / 10) { x.beginPath(); x.moveTo(k, 0); x.lineTo(k, N); x.moveTo(0, k); x.lineTo(N, k); x.stroke(); }
+    (_fl.kars || []).forEach((k, n) => {
+        let v = document.getElementById('fl-kars-v-' + (n ? 'sag' : 'sol')); if (!k || !v) return;
+        let q = k.poz(Math.round(v.currentTime * FL_FPS)); if (!q) return;
+        let p = q.map(r => [r[0] * k.W, r[1] * k.H]), mx = (p[11][0] + p[12][0]) / 2, my = (p[11][1] + p[12][1]) / 2, S = Math.hypot(p[11][0] - p[12][0], p[11][1] - p[12][1]) || 1, b = N * 0.2 / S;
+        let P = i => [N / 2 + (p[i][0] - mx) * b, N * 0.42 + (p[i][1] - my) * b];
+        x.strokeStyle = renk[n]; x.lineWidth = 4; x.lineCap = 'round'; x.globalAlpha = 0.9;
+        FL_KARS_PARCA.concat([[16, 20], [15, 19]]).forEach(([a, c]) => { let A = P(a), B = P(c); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); });
+        let bur = P(0); x.beginPath(); x.arc(bur[0], bur[1], S * b * 0.22, 0, 7); x.stroke(); x.globalAlpha = 1;
+    });
+}
+
 // ---------------------------------------------------------------- kaydet / paylaş / odak
 function flKaydet() {
     if (!_fl.secili || !_fl.sonuc) return;
@@ -2145,6 +2392,7 @@ function flKaydet() {
     let d = flKayitlar(); d[anahtar] = kayit; kyDepoYazYerel('form_lab', d);
     kyDepoSenkron('form_lab', () => flKayitlar(), true).catch(() => {});
     _fl.kayitAnahtar = anahtar; showToast('Form Lab sonucu ' + ad.split(' ')[0] + ' karnesine kaydedildi', 'success'); kmFormLabCiz();
+    if (_fl.url) flKlipleriArsivle();
 }
 function flPaylas() {
     let s = _fl.sonuc; if (!s) return;
@@ -2523,6 +2771,37 @@ function flCss() {
 .fl-koc-odak{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; color:var(--fl-soft); }
 .fl-koc-genel{ padding:14px 16px; border-radius:14px; border:1px dashed var(--fl-line); }
 .fl-koc-genel ul{ margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13.5px; line-height:1.5; color:var(--fl-soft); }
+/* VİDEO ARŞİVİ + KARŞILAŞTIRMA (2026-10-04) */
+.fl-kars{ display:flex; flex-direction:column; gap:12px; }
+.fl-kars-ust{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; border-radius:12px; background:var(--fl-panel); border:1px solid var(--fl-line); font-size:13.5px; color:var(--fl-soft); }
+.fl-kars-ust b{ color:var(--fl-ink); } .fl-kars-ust-btn{ display:flex; gap:8px; flex-wrap:wrap; }
+.fl-kars-izgara{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:700px){ .fl-kars-izgara{ grid-template-columns:1fr; } }
+.fl-kars-panel{ display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:14px; background:var(--fl-panel); border:1px solid var(--fl-line); border-top:4px solid #ff6a1a; }
+.fl-kars-sag{ border-top-color:#4dabf7; }
+.fl-kars-sec{ display:flex; align-items:center; gap:8px; }
+.fl-kars-sec small{ font:700 11px 'Roboto Mono',monospace; letter-spacing:.12em; color:var(--fl-soft); }
+.fl-kars-sec select{ flex:1; min-width:0; min-height:38px; padding:0 8px; border-radius:8px; border:1px solid var(--fl-line); background:var(--fl-bg); color:var(--fl-ink); font:600 13px 'Archivo',sans-serif; }
+.fl-kars-ekran{ position:relative; background:#000; border-radius:10px; overflow:hidden; }
+.fl-kars-ekran video{ display:block; width:100%; aspect-ratio:16 / 10; object-fit:contain; background:#000; }
+.fl-kars-ekran canvas{ position:absolute; left:0; top:0; pointer-events:none; }
+.fl-kars-olcu{ display:flex; flex-wrap:wrap; gap:4px 12px; font:500 12px/1.5 'Roboto Mono',monospace; color:var(--fl-soft); }
+.fl-kars-olcu b{ color:var(--fl-ink); }
+.fl-kars-alt{ display:grid; grid-template-columns:minmax(0, 340px) 1fr; gap:14px; align-items:start; }
+@media (max-width:700px){ .fl-kars-alt{ grid-template-columns:1fr; } }
+.fl-kars-ust-uste{ display:flex; flex-direction:column; gap:6px; }
+.fl-kars-ust-uste canvas{ width:100%; aspect-ratio:1; border-radius:12px; border:1px solid var(--fl-line); }
+.fl-kars-lej{ display:flex; gap:6px; align-items:center; font:12px 'Roboto Mono',monospace; color:var(--fl-soft); }
+.fl-kars-lej i{ width:12px; height:4px; border-radius:2px; display:inline-block; } .fl-kars-lej i.sol{ background:#ff6a1a; } .fl-kars-lej i.sag{ background:#4dabf7; }
+.fl-kars-kontrol{ display:flex; flex-direction:column; gap:10px; }
+.fl-kars-dugmeler{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.fl-kars-kontrol input[type=range]{ width:100%; height:28px; margin:0; -webkit-appearance:none; appearance:none; background:transparent; }
+.fl-kars-kontrol input[type=range]::-webkit-slider-runnable-track{ height:6px; border-radius:3px; background:rgba(236,230,220,.2); }
+.fl-kars-kontrol input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--fl-or); margin-top:-6px; border:2px solid #111; }
+.fl-kars-kontrol input[type=range]::-moz-range-track{ height:6px; border-radius:3px; background:rgba(236,230,220,.2); }
+.fl-kars-kontrol input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--fl-or); border:2px solid #111; }
+.fl-kars-zaman-yazi{ display:flex; justify-content:space-between; align-items:baseline; font:12px 'Roboto Mono',monospace; color:var(--fl-soft); }
+.fl-kars-zaman-yazi b{ font:700 18px 'Roboto Mono',monospace; color:var(--fl-ink); }
 `;
     document.head.appendChild(st);
 }
