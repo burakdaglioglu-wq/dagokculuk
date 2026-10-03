@@ -17,6 +17,8 @@
 var _fl = { secili: null, el: 'oto', durum: 'bos', mesaj: '', ilerleme: 0, sonuc: null, url: null, dosyaAd: '', yukleniyor: null, pose: null, hand: null, oynatRaf: 0, senk: false, kayitAnahtar: null };
 const FL_TV = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const FL_MODEL_POSE = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const FL_MODEL_POSE_FULL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
+function flPoseModel() { let mobil = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent); _fl.poseModelAd = mobil ? 'lite' : 'full'; _fl.poseModelUrl = mobil ? FL_MODEL_POSE : FL_MODEL_POSE_FULL; return _fl.poseModelUrl; }
 const FL_MODEL_EL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const FL_FPS = 10, FL_MAKS_SN = 150;
 // mm tahmini için ortalama omuz genişliği (akromiyon arası, cm) — yalnız gösterim; tüm eşikler omuz birimiyle
@@ -55,6 +57,7 @@ function kmFormLabCiz() {
             <div class="fl-ust-sag">${flSonKayitOzet()}</div></div>
         <div class="fl-satir"><span class="fl-satir-ad">Sporcu</span><div class="fl-cipler">${sporcular}</div></div>
         <div class="fl-satir"><span class="fl-satir-ad">Çekiş eli</span><div class="fl-cipler">${elSec}</div></div>
+        ${flOmuzHTML()}
         ${govde}</div>`;
     if (_fl.durum === 'sonuc' && _fl.sonuc) { flOynaticiKur(); flCubukCiz(); }
     if (_fl.durum === 'canli') flCanliBagla();
@@ -117,7 +120,7 @@ function flCevrimdisiMesaj() { return 'İnternet yok ve yapay zekâ bu telefona 
 async function flCevrimdisiHazirla() {
     try {
         if (!window.caches || !_fl.fileset) return;
-        let c = await caches.open('dagsk-ml-1'), l = [FL_TV + '/vision_bundle.mjs', _fl.fileset.wasmLoaderPath, _fl.fileset.wasmBinaryPath, FL_MODEL_POSE, FL_MODEL_EL].filter(Boolean), hepsi = true;
+        let c = await caches.open('dagsk-ml-1'), l = [FL_TV + '/vision_bundle.mjs', _fl.fileset.wasmLoaderPath, _fl.fileset.wasmBinaryPath, _fl.poseModelUrl || FL_MODEL_POSE, FL_MODEL_EL].filter(Boolean), hepsi = true;
         for (let u of l) { if (await c.match(u)) continue; try { let r = await fetch(u, { mode: 'cors' }); if (r.ok) await c.put(u, r); else hepsi = false; } catch (e) { hepsi = false; } }
         _fl.cevrimdisi = hepsi; flHazirlikYaz();
     } catch (e) {}
@@ -137,7 +140,7 @@ async function flModelYukle(delegate) {
             try { return await Sinif.createFromOptions(fs, Object.assign({ baseOptions: { modelAssetPath: model, delegate: kullanilan }, runningMode: 'VIDEO' }, ek)); }
             catch (e) { if (kullanilan === 'CPU') throw e; kullanilan = 'CPU'; return await Sinif.createFromOptions(fs, Object.assign({ baseOptions: { modelAssetPath: model, delegate: 'CPU' }, runningMode: 'VIDEO' }, ek)); }
         };
-        _fl.pose = await yap(v.PoseLandmarker, FL_MODEL_POSE, { numPoses: 1, minPoseDetectionConfidence: 0.4, minPosePresenceConfidence: 0.4, minTrackingConfidence: 0.4 });
+        _fl.pose = await yap(v.PoseLandmarker, flPoseModel(), { numPoses: 3, minPoseDetectionConfidence: 0.4, minPosePresenceConfidence: 0.4, minTrackingConfidence: 0.4 });
         _fl.hand = await yap(v.HandLandmarker, FL_MODEL_EL, { numHands: 2, minHandDetectionConfidence: 0.35, minHandPresenceConfidence: 0.35, minTrackingConfidence: 0.35 });
         _fl.delegate = kullanilan;
         setTimeout(flCevrimdisiHazirla, 500);
@@ -175,7 +178,7 @@ function flIlerleme(oran, mesaj) {
 async function flDosyaSecildi(inp) {
     let f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
     if (_fl.url) { try { URL.revokeObjectURL(_fl.url); } catch (e) {} }
-    _fl.olcum = null; _fl.hamBlob = f; _fl.disa = null; _fl.url = URL.createObjectURL(f); _fl.dosyaAd = f.name || 'video'; _fl.sonuc = null; _fl.kayitAnahtar = null; _fl.iptal = false;
+    _fl.olcum = null; _fl.takip = null; _fl.kisiKilit = false; _fl.hamBlob = f; _fl.disa = null; _fl.url = URL.createObjectURL(f); _fl.dosyaAd = f.name || 'video'; _fl.sonuc = null; _fl.kayitAnahtar = null; _fl.iptal = false;
     _fl.durum = 'analiz'; _fl.ilerleme = 0; _fl.mesaj = 'Yapay zekâ modelleri hazırlanıyor…'; kmFormLabCiz();
     try {
         let v; try { v = await flVideoHazirla(_fl.url); } catch (e) { throw new Error('Video açılamadı. Uygulamada çek seçeneğini kullan; ya da iPhone\'da Ayarlar › Kamera › Biçimler › "En Uyumlu" seçip tekrar çek.'); }
@@ -197,7 +200,7 @@ async function flDosyaSecildi(inp) {
             takilan = 0;
             let z1 = performance.now();
             let ts = flTs(_fl.tsBaz + t * 1000), kare = { t, p: null, h: null };
-            let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0], z2 = performance.now(), z3 = z2;
+            let r = _fl.pose.detectForVideo(v, ts), lm = flKisiSec(r && r.landmarks, v.videoWidth, v.videoHeight), z2 = performance.now(), z3 = z2;
             if (lm) {
                 kare.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
                 if (flElGerekli(kare.p, v.videoWidth, v.videoHeight)) {
@@ -252,7 +255,7 @@ function flOynatarakAnaliz(v, sure) {
             v.requestVideoFrameCallback(kare);
             let t = md.mediaTime; if (t - sonT < 1 / FL_FPS - 0.01) return; sonT = t;
             let z0 = performance.now(), ts = flTs(_fl.tsBaz + t * 1000), k = { t, p: null, h: null };
-            let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0];
+            let r = _fl.pose.detectForVideo(v, ts), lm = flKisiSec(r && r.landmarks, v.videoWidth, v.videoHeight);
             if (lm) {
                 k.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
                 if (flElGerekli(k.p, v.videoWidth, v.videoHeight)) {
@@ -284,8 +287,8 @@ function flCanliHTML() {
     let c = _fl.canli || {};
     if (c.mod === 'ayna') return flAynaHTML(c);
     return `<div class="fl-canli${_fl.tamEkran ? ' fl-tam' : ''}">
-        <div class="fl-canli-sahne"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+        <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -306,8 +309,8 @@ function flCanliHTML() {
 function flAynaHTML(c) {
     let o = _fl.olcu || {};
     return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}">
-        <div class="fl-canli-sahne"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas></div>
-            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
+        <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas></div>
+            <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-tekrar-btn" onclick="flTekrarDegis()">Oto tekrar: ${flTekrarAcikMi() ? 'açık' : 'kapalı'}</button><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button><button class="fl-rozet fl-yak-btn" onclick="flYakinlasDegis()">${_fl.yakinlas === false ? 'Yakınlaş' : 'Tüm kadraj'}</button><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
         </div>
@@ -390,7 +393,7 @@ async function flCanliAc(mod) {
     if (!flTelBagliMi() && (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)) { _fl.durum = 'hata'; _fl.mesaj = 'Bu tarayıcı uygulama içinden kamera açmayı desteklemiyor. "Videodan seç" ile telefonun kamerasında çektiğin videoyu kullan.'; return kmFormLabCiz(); }
     _fl.sonuc = null; _fl.kayitAnahtar = null;
     _fl.durum = 'canli'; _fl.canli = { mod: mod === 'ayna' ? 'ayna' : 'kayit', kayit: false, kareler: [], bas: 0, yon: _fl.canliYon || 'environment', ipucu: 'Kamera açılıyor…', atisSay: 0, yakinBas: null };
-    _fl.olcu = { ogeler: [], taslak: [], arac: null };
+    _fl.olcu = { ogeler: [], taslak: [], arac: null }; _fl.takip = null; _fl.kisiKilit = false;
     _fl.tamEkran = true; kmFormLabCiz();
     flTamIste(document.querySelector('.fl-canli')); // dokunuşun içinde (tarayıcı tam ekranı yalnız kullanıcı hareketiyle açar)
     try {
@@ -524,14 +527,14 @@ async function flKameraBaslat() {
     // telefon bağlıysa (ve başka kamera seçilmediyse) görüntü telefondan
     if ((sec === 'tel' || sec === 'oto') && flTelBagliMi()) {
         if (_fl.akis !== _fl.tel.akis) { flAkisBirak(); _fl.akis = _fl.tel.akis; _fl.akisTel = true; }
-        flCanliBagla(); flKameraListesi(); flTelYaz(); return;
+        flCanliBagla(); flKameraListesi(); flTelYaz(); flYerelSesKapat(); flSesBaslat(_fl.tel.akis); return;
     }
     flAkisBirak();
     let ozel = sec && sec !== 'oto' && sec !== 'tel' && sec !== 'yerel';
     let video = ozel ? { deviceId: { exact: sec }, width: { ideal: 1920 }, height: { ideal: 1080 } } : { facingMode: (_fl.canli && _fl.canli.yon) || 'environment', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } };
     try { _fl.akis = await navigator.mediaDevices.getUserMedia({ audio: false, video }); }
     catch (e) { if (ozel) { _fl.kamera = 'oto'; return flKameraBaslat(); } throw e; } // seçilen kamera artık yoksa varsayılana dön
-    flCanliBagla(); flKameraListesi(); flTelYaz();
+    flCanliBagla(); flKameraListesi(); flTelYaz(); flYerelSesAc();
 }
 function flCanliBagla() {
     let v = document.getElementById('fl-canli-video'); if (!v || !_fl.akis) return;
@@ -576,7 +579,7 @@ if (!window._flTamDinleyici) {
     document.addEventListener('fullscreenchange', degisti); document.addEventListener('webkitfullscreenchange', degisti);
 }
 function flCanliKapat() {
-    flTamCik(); _fl.halka = null; _fl.tekrarOynuyor = false; clearTimeout(_fl.tekrarZaman);
+    flTamCik(); flSesDurdur(); flYerelSesKapat(); _fl.halka = null; _fl.tekrarOynuyor = false; clearTimeout(_fl.tekrarZaman);
     cancelAnimationFrame(_fl.canliRaf);
     try { if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') _fl.kaydedici.stop(); } catch (e) {}
     flAkisBirak();
@@ -588,13 +591,15 @@ function flKayitDugme() {
 }
 function flKayitBaslat() {
     let c = _fl.canli, v = document.getElementById('fl-canli-video'); if (!v || !v.videoWidth) return;
-    c.kareler = []; c.atisSay = 0; c.yakinBas = null; c.parcalar = []; c.W = v.videoWidth; c.H = v.videoHeight;
+    c.kareler = []; c.atisSay = 0; c.yakinBas = null; c.parcalar = []; c.sesler = []; c.W = v.videoWidth; c.H = v.videoHeight;
+    let sesIzi = _fl.ses && _fl.ses.iz && _fl.ses.iz.readyState === 'live' ? [_fl.ses.iz] : [];
+    let kayitAkisi = new MediaStream([..._fl.akis.getVideoTracks(), ...sesIzi]);
     let tipler = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
     let tip = window.MediaRecorder ? (tipler.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '') : null;
     _fl.kaydedici = null;
     if (tip !== null) {
         try {
-            let r = new MediaRecorder(_fl.akis, tip ? { mimeType: tip, videoBitsPerSecond: 8000000 } : undefined);
+            let r = new MediaRecorder(kayitAkisi, tip ? { mimeType: tip, videoBitsPerSecond: 8000000 } : undefined);
             r.ondataavailable = e => { if (e.data && e.data.size) c.parcalar.push(e.data); };
             r.start(1000); _fl.kaydedici = r; c.tip = r.mimeType || tip || 'video/webm';
         } catch (e) { _fl.kaydedici = null; }
@@ -631,6 +636,8 @@ async function flCanliBitir() {
     }
     let sonuc = flHesapla(kareler, c.W, c.H);
     sonuc.W = c.W; sonuc.H = c.H; sonuc.sure = T; sonuc.kareler = kareler; sonuc.canli = true;
+    // kiriş sesi bırakış anına yakınsa atış "sesle doğrulandı"
+    (c.sesler || []).forEach(t => { let a = sonuc.atislar.find(z => t >= z.son / FL_FPS - 0.6 && t <= z.son / FL_FPS + 0.4); if (a) a.sesli = true; });
     if (sonuc.atislar.length) await flKucukResimlerCanli(sonuc);
     _fl.sonuc = sonuc; _fl.canli = null; _fl.durum = 'sonuc';
     if (_kmAktifSekme === 'formlab') kmFormLabCiz();
@@ -648,7 +655,7 @@ function flCanliDongu() {
         if (flTekrarAcikMi() || _fl.halka) flTekrarKaydet(v);
         let simdi = performance.now(); if (simdi - son < 85) return; son = simdi;
         let c = _fl.canli, W = v.videoWidth, H = v.videoHeight, ts = flTs(simdi), kare = { t: (simdi - c.bas) / 1000, p: null, h: null };
-        let r = _fl.pose.detectForVideo(v, ts), lm = r && r.landmarks && r.landmarks[0];
+        let r = _fl.pose.detectForVideo(v, ts), lm = flKisiSec(r && r.landmarks, v.videoWidth, v.videoHeight);
         if (lm) {
             kare.p = lm.map(q => [q.x, q.y, q.visibility == null ? 1 : q.visibility]);
             if (flElYuzdeMi(kare.p, W, H)) {
@@ -690,6 +697,10 @@ function flCanliCiz(v, cv, kare, W, H) {
     let icerde = i => p[i][0] > 0.02 && p[i][0] < 0.98 && p[i][1] > 0.02 && p[i][1] < 0.98 && p[i][2] > 0.5;
     let S = Math.hypot((p[11][0] - p[12][0]) * W, (p[11][1] - p[12][1]) * H) / Math.min(W, H);
     let ipucu = ![0, 11, 12, 15, 16].every(icerde) ? 'Kadraja sığmıyor — biraz uzaklaş' : S < 0.09 ? 'Çok uzak — biraz yaklaş' : 'Kadraj tamam' + (c.kayit ? '' : ' — kayda basabilirsin');
+    if (_fl.kisiSayisi > 1) {
+        if (!_fl.kisiKilit && !c.kayit) ipucu = 'Kadrajda ' + _fl.kisiSayisi + ' kişi — takip edilecek sporcuya dokun';
+        let bz = P(0); x.font = '700 12px "Roboto Mono", monospace'; x.fillStyle = '#ff6a1a'; x.fillRect(bz[0] - 34, bz[1] - 46, 68, 20); x.fillStyle = '#fff'; x.fillText('SEÇİLİ', bz[0] - 25, bz[1] - 31);
+    }
     // canlı atış sayacı: çekiş eli çeneye yakın + yay kolu açık ≥0,6 sn sonra uzaklaşırsa +1
     let ag = [(p[9][0] + p[10][0]) / 2 * W, (p[9][1] + p[10][1]) / 2 * H], Spx = S * Math.min(W, H) || 1;
     let mes = i => Math.hypot(p[i][0] * W - ag[0], p[i][1] * H - ag[1]) / Spx;
@@ -864,23 +875,12 @@ function flHesapla(kareler, W, H) {
         a.elVar = elSay / Math.max(1, denenen);
         a.ortaKare = Math.round((kb + ks) / 2);
     });
-    // 5) özet + bulgular
-    let ozet = {
-        n: atislar.length, taraf,
-        tutmaOrt: flOrt(atislar.map(a => a.tutma)), tutmaSap: flSapma(atislar.map(a => a.tutma)),
-        kaymaOrt: flOrt(atislar.map(a => a.kayma)),
-        yayKolOrt: flOrt(atislar.map(a => a.yayKol)), yayKolSap: flSapma(atislar.map(a => a.yayKol)),
-        egimOrt: flOrt(atislar.map(a => a.egim)), dirsekYukOrt: flOrt(atislar.map(a => a.dirsekYuk)),
-        dusen: atislar.filter(a => a.dusus != null && a.dusus > 0.18).length,
-        kilitsiz: atislar.filter(a => a.kilitBas == null).length,
-    };
-    let mx = flOrt(atislar.map(a => a.merkez[0])), my = flOrt(atislar.map(a => a.merkez[1]));
-    ozet.capaFark = atislar.length > 1 ? Math.sqrt(flOrt(atislar.map(a => (a.merkez[0] - mx) ** 2 + (a.merkez[1] - my) ** 2))) : 0;
-    atislar.forEach(a => { a.capaUzak = Math.hypot(a.merkez[0] - mx, a.merkez[1] - my); });
+    // 5) özet (Atış değil ile çıkarılanlar hariç — flOzetHesapla)
+    let ozet = flOzetHesapla(atislar, taraf);
     return { atislar, ozet, olc, omuzCm };
 }
 // omuz birimi → mm (tahmini, grubun ortalama omuz genişliğiyle)
-function flMm(birim, g) { return Math.round(birim * (FL_OMUZ_CM[g] || 34) * 10); }
+function flMm(birim, g) { return Math.round(birim * flOmuzCm(g) * 10); }
 function flPuan(oz) {
     if (!oz.n) return 0;
     let p = 100;
@@ -926,17 +926,17 @@ async function flKucukResimler(v, s) {
 // ---------------------------------------------------------------- sonuç ekranı
 function flSonucHTML() {
     let s = _fl.sonuc, oz = s.ozet, g = _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar', mm = x => flMm(x, g);
-    if (!oz.n) return `<div class="fl-kutu fl-hata"><b>Videoda atış bulunamadı</b>
+    if (!s.atislar.length) return `<div class="fl-kutu fl-hata"><b>Videoda atış bulunamadı</b>
         <p>Çekiş eli çeneye gelen ve yay kolu açık olan bir an yakalanamadı. Sporcu önden, yüzü ve iki eli görünecek şekilde çekilmeli; kamera sabit olmalı.</p>
         <div class="fl-butonlar"><button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Yeniden çek</button><label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Başka video seç</label></div></div>`;
     let puan = flPuan(oz), bul = flBulgular(oz, g);
     let deg = flDegerlendir(oz, g), dur = id => { let x = deg.satirlar.find(z => z.id === id); return x ? x.d : ''; };
     let kpi = (b, e, a, d) => `<div class="fl-kpi${d ? ' fl-kpi-' + d : ''}"><b>${b}</b><span>${e}</span>${a ? `<small>${a}</small>` : ''}</div>`;
-    let kartlar = s.atislar.map(a => { let [hd, hy] = flAtisHukmu(a, s.atislar.length > 1, mm); return `<button class="fl-atis fl-atis-${hd}" onclick="flAtisaGit(${a.no})">
+    let kartlar = s.atislar.map(a => { let [hd, hy] = flAtisHukmu(a, s.atislar.length > 1, mm); return `<div class="fl-atis fl-atis-${hd}${a.haric ? ' haric' : ''}"><button class="fl-atis-git" onclick="flAtisaGit(${a.no})">
         ${a.resim ? `<img src="${a.resim}" alt="Atış ${a.no} çapa anı">` : '<span class="fl-atis-resimsiz"></span>'}
         <span class="fl-atis-no">${String(a.no).padStart(2, '0')}</span><span class="fl-atis-hukum" style="background:${FL_DURUM_RENK[hd]}">${hy}</span>
-        <span class="fl-atis-bilgi"><b>${a.kilitBas == null ? 'kilitlenmedi' : flTr(a.tutma, 1) + ' sn'}</b><small>kayma ≈${mm(a.kayma)} mm · yay kolu ${a.yayKol != null ? Math.round(a.yayKol) + '°' : '—'}</small>${a.dusus != null && a.dusus > 0.18 ? '<em>yay kolu düştü</em>' : ''}${s.atislar.length > 1 && mm(a.capaUzak) >= 10 ? '<em>çapa farklı yerde</em>' : ''}</span>
-    </button>`; }).join('');
+        <span class="fl-atis-bilgi"><b>${a.kilitBas == null ? 'kilitlenmedi' : flTr(a.tutma, 1) + ' sn'}</b><small>kayma ≈${mm(a.kayma)} mm · yay kolu ${a.yayKol != null ? Math.round(a.yayKol) + '°' : '—'}</small>${a.dusus != null && a.dusus > 0.18 ? '<em>yay kolu düştü</em>' : ''}${s.atislar.length > 1 && mm(a.capaUzak) >= 10 ? '<em>çapa farklı yerde</em>' : ''}${a.sesli ? '<em class="sesli">bırakış sesle doğrulandı</em>' : ''}</span>
+    </button><div class="fl-atis-aksiyon"><button onclick="flAtisHaric(${a.no})">${a.haric ? 'Geri ekle' : 'Atış değil'}</button><button onclick="flAtisBildir(${a.no})">Ölçüm hatalı</button></div></div>`; }).join('');
     let bulHTML = bul.length ? bul.map(b => `<div class="fl-bulgu ${b.ciddi ? 'ciddi' : ''}"><div><b>${flEsc(b.baslik)}</b><span class="fl-deger">${flEsc(b.deger)}</span><p>${flEsc(b.not)}</p></div>
         ${_fl.secili ? `<button class="fl-btn fl-btn-kucuk" onclick="flOdakYap('${b.hata}')">Teknik odak yap</button>` : ''}</div>`).join('')
         : '<div class="fl-bulgu iyi"><div><b>Belirgin bir sorun görünmüyor</b><p>Çapa yeri, bekleme ve kol açıları atıştan atışa tutarlı.</p></div></div>';
@@ -944,7 +944,7 @@ function flSonucHTML() {
     return `<div class="fl-sonuc">
         ${_fl.url ? `<div class="fl-sahne"><video id="fl-video" src="${_fl.url}" playsinline muted controls controlslist="nofullscreen noremoteplayback" disablepictureinpicture preload="auto"></video><canvas id="fl-katman"></canvas><span class="fl-sahne-dugmeler"><button class="fl-rozet fl-sahne-cubuk" onclick="flCubukGorunum()">${_fl.cubukGorunum ? 'Video' : 'Çubuk'}</button><button class="fl-rozet fl-sahne-tam" onclick="flSahneTam()">Tam ekran</button></span></div>` : '<p class="fl-sessiz">Bu tarayıcı çekimi kaydedemedi; analiz yapıldı ama video oynatılamıyor.</p>'}
         <div class="fl-grafik-kutu"><div class="fl-grafik-ust"><span>ÇEKİŞ ELİ ↔ ÇENE · ${oz.n} ATIŞ</span><span class="fl-lejant"><i class="k"></i>çapa kilitli <i class="b"></i>bırakış</span></div>${flGrafikSVG(s)}</div>
-        ${flOzetHTML(s, g)}
+        ${oz.n ? flOzetHTML(s, g) : '<div class="fl-kutu"><b>Bütün atışlar analizden çıkarıldı</b><p class="fl-sessiz">Aşağıdaki kartlardan "Geri ekle" ile atışları geri alabilirsin.</p></div>'}
         <div class="fl-kpiler">
             ${kpi(puan + '<span>/100</span>', 'tutarlılık', 'çapa, bekleme ve kol açısına göre')}
             ${kpi(oz.n, 'atış bulundu', oz.kilitsiz ? oz.kilitsiz + ' tanesi kilitlenmedi' : 'hepsinde çapa kilitlendi')}
@@ -953,7 +953,7 @@ function flSonucHTML() {
             ${kpi(flTr(oz.tutmaOrt || 0, 1) + '<span> sn</span>', 'çapada bekleme', '±' + flTr(oz.tutmaSap || 0, 1) + ' sn · hedef 1-4 sn', dur('ritim'))}
             ${kpi(oz.yayKolOrt != null ? Math.round(oz.yayKolOrt) + '°' : '—', 'yay kolu (bırakış)', '±' + flTr(oz.yayKolSap || 0, 0) + '° · hedef 165°+', dur('yay'))}
         </div>
-        <div class="fl-baslik2">Her atış, çapa anında</div>
+        <div class="fl-baslik2 fl-baslik-satir"><span>Her atış, çapa anında</span><span class="fl-baslik-ek">${oz.haric ? oz.haric + ' atış analizden çıkarıldı · ' : ''}<button class="fl-link" onclick="flKacanBildir()">Atış kaçırıldı mı?</button></span></div>
         <div class="fl-atislar">${kartlar}</div>
         <div id="fl-cubuk-yer">${flCubukHTML(s)}</div>
         <div class="fl-baslik2">Olası bulgular</div>
@@ -1319,10 +1319,22 @@ function flTekrarKaydet(v) {
 }
 // bırakış takibi (kayıt ya da açılar modu fark etmez)
 function flBirakisTakip(c, yakin, t) {
-    if (yakin && c.yakinBas == null) c.yakinBas = t;
+    let simdi = performance.now();
+    if (yakin && c.yakinBas == null) { c.yakinBas = t; c.yakinBasPerf = simdi; c.sesTetik = false; }
+    // kiriş sesi: sporcu ≥0,6 sn çapadayken duyulan "tık" = bırakış (görüntüden önce ve daha kesin)
+    if (c.yakinBas != null && !c.sesTetik && _fl.sonSes && _fl.sonSes > c.yakinBasPerf + 600 && simdi - _fl.sonSes < 500) {
+        c.sesTetik = true; let capa = (_fl.sonSes - c.yakinBasPerf) / 1000, an = _fl.sonSes;
+        // doğrulama: 0,7 sn içinde el çeneden ayrılmadıysa ses başka bir sporcunun kirişiydi → yok say
+        clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => {
+            let cc = _fl.canli; if (!cc) return;
+            if (cc.yakinBas != null) { cc.sesTetik = false; return; }
+            if (cc.kayit) { cc.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + cc.atisSay; }
+            if (flTekrarAcikMi() && !cc.donuk) flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an);
+        }, Math.max(0, an + FL_TEKRAR.sonra - performance.now()));
+    }
     if (!yakin && c.yakinBas != null) {
-        let capa = t - c.yakinBas; c.yakinBas = null;
-        if (capa >= 0.6) {
+        let capa = t - c.yakinBas, sesli = c.sesTetik; c.yakinBas = null; c.sesTetik = false;
+        if (capa >= 0.6 && !sesli) {
             if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; }
             if (flTekrarAcikMi() && !c.donuk) { let an = performance.now(); clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an), FL_TEKRAR.sonra - 100); }
         }
@@ -1374,6 +1386,112 @@ function flTekrarIskelet(x, p, ox, oy, w, h) {
     let yay = d(20) <= d(19) ? [11, 13, 15] : [12, 14, 16], a = flAci(...yay.map(P));
     if (a != null) { let q = P(yay[1]), yazi = 'YAY KOLU ' + Math.round(a) + '°'; x.font = '700 15px "Roboto Mono", monospace'; let tw = x.measureText(yazi).width + 12; x.fillStyle = 'rgba(10,10,10,.75)'; x.fillRect(q[0] + 10, q[1] - 24, tw, 22); x.fillStyle = FL_DURUM_RENK[flYayDurum(a)]; x.fillText(yazi, q[0] + 16, q[1] - 8); }
 }
+
+// ---------------------------------------------------------------- DOĞRULUK PAKETİ (2026-10-03, "burayı mükemmel hale getirmemiz lazım")
+// (1) "Atış değil" ile yanlış atış analizden çıkar (özet yeniden hesaplanır) + "Ölçüm hatalı" / "Atış kaçırıldı" bildirimleri
+//     meta form_lab_geri'ye yazılır (eşik ayarı için gerçek örnekler). (2) Kişi seçimi: model 3 kişiye kadar görür; en büyük
+//     (kameraya en yakın) kişiyle başlar ve kareden kareye onu izler; canlıda sporcuya dokunarak kilitlenir. (3) Gerçek mm:
+//     sporcunun omuz genişliği meta sporcu_olcu'ya bir kez girilir; bilgisayarda hassas (full) vücut modeli. (4) Ses: kirişin
+//     "tık" sesi, sporcu çapadayken duyulursa bırakış anı odur (görüntüden daha kesin); kayıtta sesli doğrulama işaretlenir.
+function flOzetHesapla(tum, taraf) {
+    let atislar = tum.filter(a => !a.haric);
+    let ozet = {
+        n: atislar.length, taraf, haric: tum.length - atislar.length,
+        tutmaOrt: flOrt(atislar.map(a => a.tutma)), tutmaSap: flSapma(atislar.map(a => a.tutma)),
+        kaymaOrt: flOrt(atislar.map(a => a.kayma)),
+        yayKolOrt: flOrt(atislar.map(a => a.yayKol)), yayKolSap: flSapma(atislar.map(a => a.yayKol)),
+        egimOrt: flOrt(atislar.map(a => a.egim)), dirsekYukOrt: flOrt(atislar.map(a => a.dirsekYuk)),
+        dusen: atislar.filter(a => a.dusus != null && a.dusus > 0.18).length,
+        kilitsiz: atislar.filter(a => a.kilitBas == null).length,
+    };
+    let mx = flOrt(atislar.map(a => a.merkez[0])), my = flOrt(atislar.map(a => a.merkez[1]));
+    ozet.capaFark = atislar.length > 1 ? Math.sqrt(flOrt(atislar.map(a => (a.merkez[0] - mx) ** 2 + (a.merkez[1] - my) ** 2))) : 0;
+    tum.forEach(a => { a.capaUzak = mx == null ? 0 : Math.hypot(a.merkez[0] - mx, a.merkez[1] - my); });
+    return ozet;
+}
+// ---- geri bildirim
+function flGeriYaz(tip, a) {
+    try {
+        let s = _fl.sonuc, d = kyDepoOku('form_lab_geri'), id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        d[id] = { t: Date.now(), tarih: bsIsoTarih(new Date()), tip, sp: _fl.secili || '', kaynak: s && s.canli ? 'canli' : 'dosya', W: s && s.W, H: s && s.H, sure: s && Math.round(s.sure), n: s && s.atislar.length, delegate: _fl.delegate || '', model: _fl.poseModelAd || '',
+            atis: a ? { no: a.no, bas: a.bas, son: a.son, kilit: a.kilitBas != null ? [a.kilitBas, a.kilitSon] : null, tutma: a.tutma, kayma: Math.round(a.kayma * 1000) / 1000, yayKol: a.yayKol && Math.round(a.yayKol), cekDirsek: a.cekDirsek && Math.round(a.cekDirsek), dusus: a.dusus != null ? Math.round(a.dusus * 100) / 100 : null, el: Math.round((a.elVar || 0) * 100) / 100, sesli: !!a.sesli } : null };
+        kyDepoYazYerel('form_lab_geri', d);
+        kyDepoSenkron('form_lab_geri', () => kyDepoOku('form_lab_geri'), true).catch(() => {});
+    } catch (e) {}
+}
+function flAtisHaric(no) {
+    let s = _fl.sonuc, a = s && s.atislar[no - 1]; if (!a) return;
+    a.haric = !a.haric; if (a.haric) flGeriYaz('atis-degil', a);
+    s.ozet = flOzetHesapla(s.atislar, s.ozet.taraf); _fl.kayitAnahtar = null; _fl.disa = null;
+    showToast(a.haric ? 'Atış ' + no + ' analizden çıkarıldı — sonuçlar yeniden hesaplandı' : 'Atış ' + no + ' geri eklendi', 'info');
+    kmFormLabCiz();
+}
+function flAtisBildir(no) { let a = _fl.sonuc && _fl.sonuc.atislar[no - 1]; if (!a) return; flGeriYaz('olcum-hatali', a); showToast('Teşekkürler — bu atış ayar için kaydedildi', 'success'); }
+function flKacanBildir() { flGeriYaz('kacirilan', null); showToast('Kaçırılan atış kaydedildi — algılama ayarında kullanılacak', 'success'); }
+// ---- kişi seçimi / takip
+function flKisiSec(lms, W, H) {
+    if (!lms || !lms.length) return null;
+    _fl.kisiSayisi = lms.length;
+    if (lms.length === 1) { let l = lms[0]; _fl.takip = [(l[11].x + l[12].x) / 2, (l[11].y + l[12].y) / 2]; return l; }
+    let merkez = l => [(l[11].x + l[12].x) / 2, (l[11].y + l[12].y) / 2], boy = l => Math.hypot((l[11].x - l[12].x) * W, (l[11].y - l[12].y) * H);
+    let sec = null;
+    if (_fl.takip) { let en = 1e9; lms.forEach(l => { let m = merkez(l), d = Math.hypot(m[0] - _fl.takip[0], m[1] - _fl.takip[1]); if (d < en) { en = d; sec = l; } }); }
+    else lms.forEach(l => { if (!sec || boy(l) > boy(sec)) sec = l; });
+    _fl.takip = merkez(sec);
+    return sec;
+}
+function flKisiTiklandi(e) {
+    if (!_fl.canli || (_fl.olcu && _fl.olcu.arac) || e.target.closest('button, .fl-tekrar')) return;
+    let z = document.getElementById('fl-zoom'), v = document.getElementById('fl-canli-video'); if (!z || !v || !v.videoWidth) return;
+    let r = z.getBoundingClientRect(), k = (r.width && z.offsetWidth) ? r.width / z.offsetWidth : 1;
+    let lx = (e.clientX - r.left) / k, ly = (e.clientY - r.top) / k, Wl = v.clientWidth, Hl = v.clientHeight;
+    let olc = Math.min(Wl / v.videoWidth, Hl / v.videoHeight), ox = (Wl - v.videoWidth * olc) / 2, oy = (Hl - v.videoHeight * olc) / 2;
+    let nx = (lx - ox) / (v.videoWidth * olc), ny = (ly - oy) / (v.videoHeight * olc);
+    if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+    _fl.takip = [nx, ny]; _fl.kisiKilit = true;
+    flCanliIpucu('Sporcu seçildi — artık onu takip ediyorum'); showToast('Takip edilecek sporcu seçildi', 'success');
+}
+// ---- sporcunun gerçek omuz genişliği
+function flOlculer() { try { return kyDepoOku('sporcu_olcu'); } catch (e) { return {}; } }
+function flOmuzCm(g) { let o = _fl.secili && flOlculer()[_fl.secili]; return (o && !o.sil && o.omuzCm) || FL_OMUZ_CM[g] || 34; }
+function flOmuzKaydet(deger) {
+    if (!_fl.secili) return;
+    let v = parseFloat(String(deger).replace(',', '.')), d = flOlculer();
+    d[_fl.secili] = v >= 18 && v <= 65 ? { t: Date.now(), omuzCm: Math.round(v * 2) / 2 } : { t: Date.now(), sil: true };
+    kyDepoYazYerel('sporcu_olcu', d); kyDepoSenkron('sporcu_olcu', () => flOlculer(), true).catch(() => {});
+    showToast(v >= 18 && v <= 65 ? 'Omuz genişliği kaydedildi: ' + d[_fl.secili].omuzCm + ' cm — mm ölçüleri artık gerçek' : 'Ölçü silindi — yaş grubu ortalaması kullanılacak', 'success');
+    if (_fl.durum === 'sonuc') setTimeout(kmFormLabCiz, 0); // değişiklik odak kaybında gelir; yeniden çizimi o olaydan sonraya bırak
+}
+function flOmuzHTML() {
+    if (!_fl.secili) return '';
+    let g = _fl.secili.split('|')[0], o = flOlculer()[_fl.secili], var_ = o && !o.sil && o.omuzCm;
+    return `<div class="fl-satir"><span class="fl-satir-ad">Omuz</span><div class="fl-omuz"><input type="number" inputmode="decimal" min="18" max="65" step="0.5" value="${var_ || ''}" placeholder="${FL_OMUZ_CM[g] || 34}" onchange="flOmuzKaydet(this.value)" aria-label="Omuz genişliği (cm)"><span>cm</span><small>${var_ ? 'mm ölçüleri bu sporcuya göre' : 'iki omuz başı arası, mezurayla. Girilmezse yaş grubu ortalaması (tahmini mm)'}</small></div></div>`;
+}
+// ---- kiriş sesi
+function flSesBaslat(akis) {
+    try {
+        let iz = akis && akis.getAudioTracks && akis.getAudioTracks()[0]; if (!iz) return;
+        if (_fl.ses && _fl.ses.iz === iz) return;
+        flSesDurdur();
+        let ctx = new (window.AudioContext || window.webkitAudioContext)(); ctx.resume && ctx.resume();
+        let kaynak = ctx.createMediaStreamSource(new MediaStream([iz])), filtre = ctx.createBiquadFilter(); filtre.type = 'highpass'; filtre.frequency.value = 1200;
+        let an = ctx.createAnalyser(); an.fftSize = 1024; kaynak.connect(filtre); filtre.connect(an);
+        let veri = new Float32Array(an.fftSize), taban = 0.004, son = 0;
+        _fl.ses = { ctx, iz, an, zaman: setInterval(() => {
+            an.getFloatTimeDomainData(veri); let t = 0; for (let i = 0; i < veri.length; i++) t += veri[i] * veri[i];
+            let rms = Math.sqrt(t / veri.length), simdi = performance.now();
+            if (rms > Math.max(0.03, taban * 6) && simdi - son > 450) { son = simdi; _fl.sonSes = simdi; if (_fl.canli && _fl.canli.kayit) (_fl.canli.sesler = _fl.canli.sesler || []).push((simdi - _fl.canli.bas) / 1000); }
+            taban = taban * 0.97 + Math.min(rms, 0.2) * 0.03;
+        }, 20) };
+        let ro = document.getElementById('fl-ses-rozet'); if (ro) ro.style.display = '';
+    } catch (e) {}
+}
+function flSesDurdur() { let s = _fl.ses; if (!s) return; clearInterval(s.zaman); try { s.ctx.close(); } catch (e) {} _fl.ses = null; }
+async function flYerelSesAc() {
+    if (_fl.akisTel || _fl.sesYerel) return;
+    try { _fl.sesYerel = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); flSesBaslat(_fl.sesYerel); } catch (e) {}
+}
+function flYerelSesKapat() { if (_fl.sesYerel) { _fl.sesYerel.getTracks().forEach(t => t.stop()); _fl.sesYerel = null; } }
 
 // ---------------------------------------------------------------- kaydet / paylaş / odak
 function flKaydet() {
@@ -1554,6 +1672,21 @@ function flCss() {
 .fl-zoom{ position:relative; transform-origin:0 0; will-change:transform; }
 .fl-canli.fl-tam .fl-zoom{ height:100%; }
 .fl-yak-btn, .fl-tekrar-btn, .fl-son-btn{ border:0; cursor:pointer; }
+.fl-rozet-ses{ background:#4dabf7; color:#0b1d2e; }
+.fl-omuz{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; }
+.fl-omuz input{ width:90px; min-height:38px; padding:0 10px; border-radius:6px; border:1px solid var(--fl-line); background:#0f0e0d; color:var(--fl-ink); font:600 15px/1 'Roboto Mono',monospace; }
+.fl-omuz span{ font:600 13px 'Roboto Mono',monospace; color:var(--fl-soft); }
+.fl-omuz small{ font:400 11.5px/1.4 'Roboto Mono',monospace; color:var(--fl-soft); flex-basis:100%; }
+.fl-atis-git{ display:flex; flex-direction:column; padding:0; border:0; background:none; color:inherit; text-align:left; cursor:pointer; position:relative; width:100%; font:inherit; }
+.fl-atis-aksiyon{ display:flex; border-top:1px solid var(--fl-line); }
+.fl-atis-aksiyon button{ flex:1; min-height:34px; border:0; background:none; color:var(--fl-soft); font:600 11.5px/1 'Archivo',sans-serif; cursor:pointer; }
+.fl-atis-aksiyon button + button{ border-left:1px solid var(--fl-line); }
+.fl-atis-aksiyon button:hover{ color:var(--fl-ink); }
+.fl-atis.haric{ opacity:.45; } .fl-atis.haric .fl-atis-hukum{ display:none; }
+.fl-atis-bilgi em.sesli{ color:#4dabf7; }
+.fl-baslik-satir{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.fl-baslik-ek{ font:400 12px/1.3 'Roboto Mono',monospace; color:var(--fl-soft); text-transform:none; }
+.fl-link{ border:0; background:none; color:var(--fl-or); font:600 12px 'Roboto Mono',monospace; cursor:pointer; padding:0; text-decoration:underline; }
 .fl-ust-sag{ flex-wrap:wrap; justify-content:flex-end; }
 .fl-tekrar{ position:absolute; inset:0; z-index:5; background:#000; animation:flTekrarGel .25s ease; cursor:pointer; }
 .fl-tekrar.gidiyor{ opacity:0; transition:opacity .3s ease; }
