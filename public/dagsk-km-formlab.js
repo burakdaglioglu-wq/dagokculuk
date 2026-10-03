@@ -427,7 +427,7 @@ async function flTelefonAc() {
         let r = await fetch('/api/yayin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
         if (!r.ok) throw new Error('http ' + r.status);
         let d = await r.json(); Object.assign(_fl.tel, { kod: d.kod, gizli: d.gizli, durum: 'bekliyor' });
-        _fl.tel.link = location.origin + '/kamera.html#k=' + d.kod + '&g=' + d.gizli;
+        _fl.tel.link = location.origin + '/kamera#k=' + d.kod + '&g=' + d.gizli;
         flTelYaz(); flTelSorgu();
     } catch (e) { _fl.tel = { durum: 'hata', mesaj: navigator.onLine === false ? 'Telefondan yayın için internet gerekir (iki cihazın birbirini bulması için). İnternetsizken telefonu Iriun/Camo ile web kamerası yapıp "Kamera seç"ten seçebilirsin.' : 'Yayın odası açılamadı — tekrar dene.' }; flTelYaz(); }
 }
