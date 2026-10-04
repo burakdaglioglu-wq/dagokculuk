@@ -14125,32 +14125,40 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 #km-oyun-stars circle{ animation:kmTwinkle 3.2s ease-in-out infinite; }
 @keyframes kmTwinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.85; } }
 
-/* Hendek Akını (2026-09-19) — eski "Yıldız Seferi"nin yerine. Derinlik eksenli perspektif koridor. */
-#km-oyun-panel-yildiz{ background:linear-gradient(180deg,#03050c 0%,#080e1c 62%,#0a1020 100%); }
-.km-star{ position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:.5; animation:kmTwinkle 3.2s ease-in-out infinite; pointer-events:none; }
-/* kmCorePulse Hazine'nin .km-treasure-glow'u tarafından da kullanılıyor — burada KALMALI.
-   (.km-star-core/.km-star-dot kuralları, eski merkez yıldız elemanlarıyla birlikte kaldırıldı.) */
+/* Roket Fırlatma (2026-10-05) — Hendek Akını'nın yerine. Rampadan Mars'a eğimli fırlatma rotası. */
+#km-oyun-panel-yildiz{ background:#0b1430; }
+/* kmCorePulse Hazine'nin .km-treasure-glow'u tarafından da kullanılıyor — burada KALMALI. */
 @keyframes kmCorePulse{ 0%,100%{ opacity:.82; } 50%{ opacity:1; } }
-/* Sektör kapısı (kontrol noktası) — geçilince mavi yanar. Eski .km-ring'in rolünü devraldı. */
-.km-hendek-kapi{ transition:opacity .5s ease; }
-.km-hendek-kapi .km-hk-govde{ fill:#1d2640; stroke:#43587a; stroke-width:1.1; transition:stroke .5s ease; }
-.km-hendek-kapi .km-hk-lamba{ fill:#43587a; transition:fill .5s ease; }
-.km-hendek-kapi.hit .km-hk-govde{ stroke:var(--_c); }
-.km-hendek-kapi.hit .km-hk-lamba{ fill:var(--_c); filter:drop-shadow(0 0 6px var(--_c)); }
-/* Reaktör ağzı (hedef) */
-#km-oyun-reaktor{ transition:opacity .6s ease; }
-#km-oyun-reaktor .km-rk-halka{ fill:none; stroke:#8fe8ff; animation:kmReaktorNabiz 2.6s ease-in-out infinite; }
-@keyframes kmReaktorNabiz{ 0%,100%{ opacity:.45; } 50%{ opacity:.95; } }
-/* Avcı (sporcu gemisi) — arkadan görünüm: X dizilimli 4 kanat + 4 motor közü */
-.km-avci{ transition:filter .2s ease; }
-.km-avci .km-avci-govde{ fill:#111a2c; stroke:var(--_c); stroke-width:1.5; stroke-opacity:.8; }
-.km-avci .km-avci-koz{ fill:var(--_c); }
-.km-avci .km-tag-bg{ fill:rgba(5,9,18,0.86); stroke:var(--_c); stroke-width:1.2; }
-.km-avci .km-tag-text{ font-family:var(--font-display); font-weight:700; fill:#e8f2ff; font-size:10.5px; }
-.km-avci.flying{ animation:kmAvciKoz .3s ease-in-out infinite; }
-@keyframes kmAvciKoz{ 0%,100%{ filter:drop-shadow(0 0 5px var(--_c)); } 50%{ filter:drop-shadow(0 0 14px var(--_c)); } }
-/* Hiperuzay çizgileri — yüksek seride kaçış noktasından dışarı fırlar */
-.km-hiper-cizgi{ stroke:#cfe9ff; stroke-linecap:round; opacity:0; }
+.km-roket-yildiz{ fill:#fff; }
+.km-roket-yildiz.t{ animation:kmTwinkle 3.2s ease-in-out infinite; }
+.km-roket-katman{ fill:none; stroke:#bae6fd; stroke-width:1.2; stroke-dasharray:2 7; opacity:.32; }
+.km-roket-iz{ fill:none; stroke:#e2e8f0; stroke-width:2; stroke-dasharray:1 9; stroke-linecap:round; opacity:.35; }
+.km-roket-bulut-g{ animation:kmRoketBulut 16s ease-in-out infinite alternate; }
+@keyframes kmRoketBulut{ to{ transform:translateX(22px); } }
+.km-roket-kapi .km-rk-halka{ fill:rgba(15,23,42,.55); stroke:#94a3b8; stroke-width:1.6; stroke-dasharray:3 3; transition:stroke .5s ease, fill .5s ease; }
+.km-roket-kapi.hit .km-rk-halka{ stroke:var(--_c); stroke-dasharray:none; fill:var(--_c); fill-opacity:.35; filter:drop-shadow(0 0 6px var(--_c)); }
+.km-roket-kapi .km-rk-yazi{ font-family:var(--font-display); font-size:11px; font-weight:800; fill:#f1f5f9; paint-order:stroke; stroke:rgba(2,6,23,.85); stroke-width:3px; letter-spacing:.02em; }
+.km-roket-kapi .km-rk-alt{ font-family:var(--font-display); font-size:9px; font-weight:700; fill:#93c5fd; paint-order:stroke; stroke:rgba(2,6,23,.85); stroke-width:3px; }
+.km-roket-kapi.hit .km-rk-alt{ fill:var(--_c); }
+.km-roket .km-roket-govde{ fill:#f1f5f9; stroke:#0f172a; stroke-width:1; }
+.km-roket .km-roket-renk{ fill:var(--_c); stroke:#0f172a; stroke-width:.8; }
+.km-roket .km-roket-cam{ fill:#38bdf8; stroke:#0f172a; stroke-width:1.2; }
+.km-roket .km-roket-parla{ fill:#fff; opacity:.75; }
+.km-roket-alev{ transform-box:fill-box; transform-origin:50% 0%; transform:scaleY(.5); opacity:.8; animation:kmRoketAlev .16s ease-in-out infinite alternate; }
+.km-roket.flying .km-roket-alev{ animation-name:kmRoketAlevBuyuk; opacity:1; }
+@keyframes kmRoketAlev{ from{ transform:scaleY(.42); } to{ transform:scaleY(.62); } }
+@keyframes kmRoketAlevBuyuk{ from{ transform:scale(1.15,1.4); } to{ transform:scale(1,2.1); } }
+.km-roket.flying{ filter:drop-shadow(0 0 7px var(--_c)); }
+.km-roket .km-tag-bg{ fill:rgba(5,9,18,0.86); stroke:var(--_c); stroke-width:1.2; }
+.km-roket .km-tag-text{ font-family:var(--font-display); font-weight:700; fill:#e8f2ff; font-size:10.5px; }
+.km-roket-duman{ fill:#e2e8f0; transform-box:fill-box; transform-origin:center; animation:kmRoketDuman 1.5s ease-out forwards; pointer-events:none; }
+@keyframes kmRoketDuman{ from{ opacity:.7; transform:scale(.4); } to{ opacity:0; transform:scale(2.6); } }
+.km-roket-mars-bayrak{ opacity:0; transition:opacity .6s ease; }
+.km-roket-mars.var .km-roket-mars-bayrak{ opacity:1; }
+.km-roket-mars-hale{ animation:kmCorePulse 3s ease-in-out infinite; }
+#km-oyun-panel-yildiz.km-roket-sarsinti svg{ animation:kmRoketSars .5s linear; }
+@keyframes kmRoketSars{ 0%,100%{ transform:none; } 20%{ transform:translate(3px,-2px); } 40%{ transform:translate(-3px,2px); } 60%{ transform:translate(2px,1px); } 80%{ transform:translate(-2px,-1px); } }
+@media (prefers-reduced-motion:reduce){ .km-roket-bulut-g,.km-roket-alev,.km-roket-yildiz.t,#km-oyun-panel-yildiz.km-roket-sarsinti svg{ animation:none; } }
 
 /* Hazine Adası */
 #km-oyun-panel-hazine{ background:#a9895a; }
@@ -15105,29 +15113,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         const KM_OYUN_CP_SAYISI = 8;
         const KM_OYUN_CP_FRAC = Array.from({ length: KM_OYUN_CP_SAYISI }, function(_, i) { return (i + 1) / KM_OYUN_CP_SAYISI; });
-        // ---- HENDEK AKINI (2026-09-19) — eski "Yıldız Seferi"nin (iç içe elips yörünge + prosedürel
-        // astronot) YERİNE geçti. Diğer 16 temanın HEPSİ 2B bir çizgi üzerinde ilerliyordu; bu tema
-        // DERİNLİK ekseninde ilerliyor (tek-nokta perspektif koridor, ekranın içine doğru) — bu yüzden
-        // "bir kıvrımlı yol daha" hissi vermiyor. frac/kontrol-noktası iskeleti AYNEN korundu, o yüzden
-        // Bireysel/Takım/Yarış/PB/lig/rozet/sayaç hiç dokunulmadan çalışıyor.
-        // Kamera düzlemi (t=0) kasten çerçevenin DIŞINA taşıyor (l=-190, r=1390) — hendeğin İÇİNDE
-        // olduğumuz hissi bundan geliyor, kenarları görünen bir kutu değil.
-        // VPY ve avcı yüksekliği (KM_HENDEK_AVCI_Y) skor dock'una göre seçildi: dock sahnenin ALT-ORTASINI
-        // (yaklaşık y>195) kaplıyor, oysa tek-nokta perspektifte bütün hareket kaçış noktasında toplanıyor.
-        // İlk denemede VPY=200 idi ve avcıların TAMAMI dock'un arkasında kalıyordu — gerçek testte yakalandı.
-        const KM_HENDEK_VPX = 600, KM_HENDEK_VPY = 142;                  // kaçış noktası = reaktör ağzı
-        const KM_HENDEK_NEAR = { l: -190, r: 1390, f: 600, t: 34 };      // t=0 düzleminde hendek kesiti
-        const KM_HENDEK_AVCI_Y = 0.74;                                   // avcı, hendek kesitinin tabandan bu oranı kadar yukarısında uçar
-        const KM_HENDEK_K = 2.15;                                        // perspektif eğrilik
-        const KM_HENDEK_TMAX = 2.0;                                      // frac=1 -> bu derinlik (reaktör ağzı)
-        const KM_HENDEK_DILIM = 34;                                      // duvar/zemin panel dilimi sayısı
-        const KM_HENDEK_TSON = 4.2;                                      // geometri bu derinliğe kadar çizilir (VP'ye pratik olarak yapışsın diye yüksek)
+        // ---- ROKET FIRLATMA (2026-10-05, kullanıcı: Hendek Akını'nı "değiştir") — id 'yildiz' ve
+        // kmOyun*Yildiz fonksiyon adları KASTEN korundu (takım temsilcisi, vurgu, ara olay, Resync/SahneKur
+        // bağlantıları aynı kalsın). Rota: sol alttaki rampadan yerçekimi dönüşüyle yükselen, üstten sağa
+        // kıvrılıp Mars'a inen eğri — skor kutusu sahnenin ALT-ORTASINI kapladığı için rota onun üstünden ve
+        // iki yanından geçer (dikey bir yükseliş ortadaki roketleri kutunun arkasında bırakırdı).
+        // Konum = yol UZUNLUĞU oranı (Catmull-Rom örneklenmiş tablo; getPointAtLength yok — donma kaynağıydı).
+        const KM_ROKET_NOKTALAR = [[112,378],[116,330],[127,282],[150,232],[190,184],[248,140],[328,105],[428,80],[545,66],[665,62],[780,68],[880,84],[965,108],[1030,134],[1074,156]];
+        const KM_ROKET_KATMANLAR = [['Bulutlar', '2 km'], ['Ses Hızı', '12 km'], ['Stratosfer', '30 km'], ['Uzay Sınırı', '100 km'], ['Uzay İstasyonu', '400 km'], ['Ay', '384 bin km'], ['Asteroitler', 'milyonlarca km']];
+        const KM_ROKET_MARS = { x: 1128, y: 206, r: 56 };
 
         const KM_OYUN_TEMALAR = {
             zirve: { ad: 'Zirve Yolu', ikon: '🏔️', renkler: ['#00e5ff', '#ff2e9a', '#ffcc33', '#8b6bf6', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o sporcuyu zirveye doğru ilerletir.', btn: '🚀 İlerlet', finish: 'ZİRVEYE ULAŞTI!', cp: 'KONTROL NOKTASI!', birim: 'kontrol noktası', bitis: 'Zirvede! 🏔️',
                 surprizler: [{ikon:'🦅',metin:'Bir kartal gördü!'},{ikon:'🐐',metin:'Yaban keçisi selam verdi!'},{ikon:'🌤️',metin:'Hava açtı!'},{ikon:'⛰️',metin:'Yeni bir manzara keşfetti!'},{ikon:'🧭',metin:'Doğru rotayı buldu!'}] },
-            yildiz: { ad: 'Hendek Akını', ikon: '🚀', renkler: ['#2dd4f4', '#ff4fa3', '#ffd166', '#7c5cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o avcıyı hendekte reaktör ağzına doğru bir sektör ilerletir.', btn: '🚀 İlerlet', finish: 'TAM İSABET!', cp: 'SEKTÖR GEÇİLDİ!', birim: 'sektör', bitis: 'Reaktörü vurdu! 💥',
-                surprizler: [{ikon:'☄️',metin:'Göktaşı yağmurunu sıyırdı!'},{ikon:'🛰️',metin:'Devriye uydusunu atlattı!'},{ikon:'⚡',metin:'Kalkanı tam zamanında açtı!'},{ikon:'🌌',metin:'Hiperuzay izini yakaladı!'},{ikon:'🎯',metin:'Hedef kilidi tuttu!'}] },
+            yildiz: { ad: 'Roket Fırlatma', ikon: '🚀', renkler: ['#2dd4f4', '#ff4fa3', '#ffd166', '#7c5cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o roketi Dünya\'dan Mars\'a doğru bir katman yükseltir: bulutlar, ses hızı, stratosfer, uzay, Ay, asteroitler… ve Mars!', btn: '🚀 Ateşle', finish: 'MARS\'A İNDİ!', cp: 'YENİ KATMAN!', birim: 'katman', bitis: 'Mars\'ta! 🔴',
+                surprizler: [{ikon:'🌍',metin:'Dünya\'ya el salladı!'},{ikon:'🛰️',metin:'Bir uyduyu selamladı!'},{ikon:'👨‍🚀',metin:'Astronotlar telsizden alkışladı!'},{ikon:'🌠',metin:'Kayan yıldız gördü!'},{ikon:'⛽',metin:'Yakıtı tam ayarladı!'}] },
             hazine: { ad: 'Hazine Adası', ikon: '🏝️', renkler: ['#5eead4', '#ff6b6b', '#f4c542', '#7c8cff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o tekneyi hazine adasına doğru ilerletir.', btn: '⛵ İlerlet', finish: 'HAZİNEYİ BULDU!', cp: 'ŞAMANDIRAYA ULAŞTI!', birim: 'şamandıra', bitis: 'Adaya vardı! 🏝️',
                 surprizler: [{ikon:'🪙',metin:'Küçük bir altın buldu!'},{ikon:'🐬',metin:'Yunuslar eşlik etti!'},{ikon:'🦜',metin:'Konuşan papağanla tanıştı!'},{ikon:'🗺️',metin:'Haritada gizli bir iz buldu!'},{ikon:'🐚',metin:'Nadir bir deniz kabuğu buldu!'}] },
             pist: { ad: 'Pist Yarışı', ikon: '🏎️', renkler: ['#ff3b3b', '#3fa9ff', '#ffd23f', '#3ddc84', '#ff9142'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o karta bayrağa doğru gaz verdirir.', btn: '🏁 İlerlet', finish: 'YARIŞI BİTİRDİ!', cp: 'TUR TAMAMLANDI!', birim: 'tur bayrağı', bitis: 'Bayrağı gördü! 🏁',
@@ -16637,36 +16637,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div class="km-zirve-panorama" id="km-zirve-panorama"></div>
                 <div class="km-ninja-sinav km-zirve-cagri" id="km-zirve-cagri"></div>
             </div>`;
-            // Hendek Akını — katman sırası ÖNEMLİ: nebula/yıldız → istasyon yüzeyi → hendek duvar/zemin
-            // → greebling → kenar ışıkları → sektör kapıları → reaktör ağzı → avcılar (en üstte, uzaktan
-            // yakına sıralı çizilir, bkz. kmOyunResyncYildiz'deki derinlik sıralaması).
+            // Roket Fırlatma — katman sırası: gökyüzü → yıldızlar → atmosfer halkaları → dekor (bulut, uçak,
+            // istasyon, Ay, asteroit, Mars) → yer + rampa → rota izi → katman işaretleri → duman → roketler.
             if(tid === 'yildiz') return `<div class="km-oyun-panel" id="km-oyun-panel-yildiz">
-                <div id="km-oyun-stars-yildiz"></div>
                 <svg id="km-oyun-svg-yildiz" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
-                    <radialGradient id="kmReaktorGrad" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stop-color="#ffffff"/><stop offset="26%" stop-color="#a9f6ff"/>
-                      <stop offset="60%" stop-color="#2ba6d6" stop-opacity="0.72"/><stop offset="100%" stop-color="#0b6f96" stop-opacity="0"/>
-                    </radialGradient>
-                    <radialGradient id="kmNebula1" cx="20%" cy="14%" r="42%">
-                      <stop offset="0%" stop-color="#4b2f7d" stop-opacity="0.5"/><stop offset="100%" stop-color="#4b2f7d" stop-opacity="0"/>
-                    </radialGradient>
-                    <radialGradient id="kmNebula2" cx="84%" cy="10%" r="34%">
-                      <stop offset="0%" stop-color="#7d2f55" stop-opacity="0.38"/><stop offset="100%" stop-color="#7d2f55" stop-opacity="0"/>
-                    </radialGradient>
-                    <filter id="kmReaktorBloom" x="-70%" y="-70%" width="240%" height="240%">
-                      <feGaussianBlur stdDeviation="8"/><feComponentTransfer><feFuncA type="linear" slope="1.5"/></feComponentTransfer>
-                    </filter>
+                    <linearGradient id="kmRoketGok" gradientUnits="userSpaceOnUse" x1="0" y1="440" x2="990" y2="0">
+                      <stop offset="0%" stop-color="#8fd3ff"/><stop offset="22%" stop-color="#4a86e8"/><stop offset="45%" stop-color="#22357f"/>
+                      <stop offset="70%" stop-color="#0c1238"/><stop offset="100%" stop-color="#03040d"/>
+                    </linearGradient>
+                    <radialGradient id="kmRoketMarsGrad" cx="38%" cy="34%" r="70%"><stop offset="0%" stop-color="#fdba74"/><stop offset="45%" stop-color="#ea580c"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient>
+                    <radialGradient id="kmRoketMarsHale" cx="50%" cy="50%" r="50%"><stop offset="70%" stop-color="#fb923c" stop-opacity="0.35"/><stop offset="100%" stop-color="#fb923c" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmRoketAyGrad" cx="36%" cy="34%" r="72%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#8b97a8"/></radialGradient>
+                    <linearGradient id="kmRoketYer" gradientUnits="userSpaceOnUse" x1="0" y1="376" x2="0" y2="520"><stop offset="0%" stop-color="#3f7f4a"/><stop offset="100%" stop-color="#12301c"/></linearGradient>
                   </defs>
-                  <rect x="0" y="0" width="1200" height="440" fill="url(#kmNebula1)"/>
-                  <rect x="0" y="0" width="1200" height="440" fill="url(#kmNebula2)"/>
-                  <g id="km-oyun-hendek-yuzey"></g>
-                  <g id="km-oyun-hendek-duvar"></g>
-                  <g id="km-oyun-hendek-greeble"></g>
-                  <g id="km-oyun-hendek-isik"></g>
-                  <g id="km-oyun-hendek-kapilar"></g>
-                  <g id="km-oyun-reaktor"></g>
-                  <g id="km-oyun-hiper"></g>
+                  <rect x="-700" y="-500" width="2600" height="1440" fill="url(#kmRoketGok)"/>
+                  <g id="km-roket-yildizlar"></g>
+                  <g id="km-roket-katman"></g>
+                  <g id="km-roket-dekor"></g>
+                  <g id="km-roket-yer"></g>
+                  <g id="km-roket-iz"></g>
+                  <g id="km-roket-kapilar"></g>
+                  <g id="km-roket-duman"></g>
                   <g id="km-oyun-rockets"></g>
                 </svg>
             </div>`;
@@ -19034,241 +19026,211 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             requestAnimationFrame(frame);
         }
-        // ---- HENDEK AKINI ----
-        // Tek-nokta perspektif: derinlik t -> ölçek s(t)=1/(1+K*t). frac (0..1) -> t = frac*TMAX.
-        // frac=0 kameranın dibinde (büyük, alt), frac=1 reaktör ağzında (küçük, kaçış noktasında).
-        function kmOyunHendekOlcek(t) { return 1 / (1 + KM_HENDEK_K * t); }
-        function kmOyunHendekDilim(t) {
-            let sc = kmOyunHendekOlcek(t);
-            return {
-                l: KM_HENDEK_VPX + (KM_HENDEK_NEAR.l - KM_HENDEK_VPX) * sc,
-                r: KM_HENDEK_VPX + (KM_HENDEK_NEAR.r - KM_HENDEK_VPX) * sc,
-                f: KM_HENDEK_VPY + (KM_HENDEK_NEAR.f - KM_HENDEK_VPY) * sc,
-                t: KM_HENDEK_VPY + (KM_HENDEK_NEAR.t - KM_HENDEK_VPY) * sc,
-                sc: sc
-            };
+        // ---- ROKET FIRLATMA ----
+        var _kmRoketTablo = null;
+        function kmOyunRoketTablo() {
+            if(_kmRoketTablo) return _kmRoketTablo;
+            let P = KM_ROKET_NOKTALAR, pts = [], cum = [0];
+            for(let k = 0; k < P.length - 1; k++) {
+                let p0 = P[Math.max(0, k - 1)], p1 = P[k], p2 = P[k + 1], p3 = P[Math.min(P.length - 1, k + 2)];
+                for(let j = 0; j < 20; j++) {
+                    let t = j / 20, t2 = t * t, t3 = t2 * t;
+                    let x = 0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+                    let y = 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3);
+                    pts.push([x, y]);
+                }
+            }
+            pts.push(P[P.length - 1].slice());
+            for(let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+            _kmRoketTablo = { pts: pts, cum: cum, L: cum[cum.length - 1] };
+            return _kmRoketTablo;
         }
-        // Sporcular hendek genişliğine yayılıyor (şerit) — hepsi ortada üst üste binmesin diye.
-        function kmOyunHendekSerit(i, n) { return n <= 1 ? 0 : (-0.62 + (i / (n - 1)) * 1.24); }
-        // DİKKAT: fonksiyon adı kasten "kmOyunYildizPoz" kaldı — kamera haritası
-        // (KM_OYUN_KAMERA_NOKTA_TEMALAR.yildiz) ve animasyon bu imzayı çağırıyor, imza değişmedi.
-        // V-FORMASYONU (2026-09-19, gerçek testte yakalandı): oturum başında herkes frac=0'da olunca
-        // 8 avcı aynı derinlikte düz bir sıra oluşturup etiketleri üst üste bindiriyordu. Şerit merkezden
-        // uzaklaştıkça küçük bir derinlik ofseti (kanatlar hafif GERİDE = kameraya daha yakın) ekleniyor —
-        // gerçek filo düzeni gibi. Ofset (en fazla ~0.07 t) tek bir serinin ilerlemesinden (~0.29 t) çok
-        // daha küçük, bu yüzden kim önde/kim arkada okunurluğunu BOZMUYOR; frac'a dokunmuyor, salt görsel.
-        // POZİTİF ofset (merkez ileri), negatif değil: t 0'da kelepçelendiği için negatif ofset tam da
-        // düzeltmek istediğimiz frac=0 durumunda etkisiz kalırdı.
-        function kmOyunHendekFormasyonOfset(i, n) { return (0.62 - Math.abs(kmOyunHendekSerit(i, n))) * 0.115; }
+        // frac (0..1, yol uzunluğu oranı) → nokta + yön (derece, +x ekseninden)
+        function kmOyunRoketNokta(frac) {
+            let T = kmOyunRoketTablo(), hedef = Math.max(0, Math.min(1, frac)) * T.L, lo = 0, hi = T.cum.length - 1;
+            while(hi - lo > 1) { let m = (lo + hi) >> 1; if(T.cum[m] <= hedef) lo = m; else hi = m; }
+            let a = T.pts[lo], b = T.pts[hi], seg = (T.cum[hi] - T.cum[lo]) || 1, u = (hedef - T.cum[lo]) / seg;
+            return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, aci: Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI };
+        }
+        // Şerit: roketler rotaya DİK yan yana (rampada yatay sıra, yükselişte kanat düzeni).
+        // DİKKAT: ad "kmOyunYildizPoz" kasten kaldı (eski bağlantılar bu imzayı çağırıyor).
         function kmOyunYildizPoz(i, n, frac) {
-            let t = Math.max(0, Math.min(1, frac) * KM_HENDEK_TMAX + kmOyunHendekFormasyonOfset(i, n));
-            let a = kmOyunHendekDilim(t);
-            let orta = (a.l + a.r) / 2;
-            return {
-                x: orta + kmOyunHendekSerit(i, n) * (a.r - a.l) * 0.30,
-                y: a.f - (a.f - a.t) * KM_HENDEK_AVCI_Y,
-                olcek: Math.max(0.13, a.sc * 1.42),
-                heading: 0
-            };
+            let p = kmOyunRoketNokta(frac), r = p.aci * Math.PI / 180, nx = -Math.sin(r), ny = Math.cos(r);
+            let ara = n <= 1 ? 0 : Math.min(26, 176 / (n - 1)), o = (i - (n - 1) / 2) * ara;
+            return { x: p.x + nx * o, y: p.y + ny * o, aci: p.aci, olcek: 1, heading: p.aci };
         }
-        // Derinlikle arka plana doğru solma (atmosferik perspektif) — derinlik hissinin ana kaynağı.
-        function kmOyunHendekSolgun(t, c) {
-            let f = Math.min(1, t * 0.95), m = function(a, b) { return Math.round(a + (b - a) * f); };
-            return 'rgb(' + m(c[0], 16) + ',' + m(c[1], 23) + ',' + m(c[2], 40) + ')';
+        function kmOyunRoketKatmanNokta(ci) { return kmOyunRoketNokta(KM_OYUN_CP_FRAC[ci]); }
+        // Sabit tohumlu rastgele — sahne her kuruluşta aynı görünsün (yıldızlar/asteroitler zıplamasın)
+        function kmOyunRoketRnd(tohum) { let h = tohum >>> 0; return function() { h = (h + 0x6D2B79F5) >>> 0; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+        function kmOyunRoketBulut(x, y, k) {
+            return `<g class="km-roket-bulut-g" style="animation-delay:-${(x % 9).toFixed(1)}s"><g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${k})">
+                <ellipse cx="0" cy="0" rx="34" ry="13" fill="#ffffff" opacity="0.92"/><circle cx="-12" cy="-8" r="13" fill="#ffffff" opacity="0.95"/>
+                <circle cx="8" cy="-12" r="16" fill="#ffffff"/><circle cx="24" cy="-4" r="10" fill="#f1f5f9"/><ellipse cx="0" cy="6" rx="30" ry="6" fill="#cbd5e1" opacity="0.6"/></g></g>`;
         }
         function kmOyunSahneKurYildiz() {
-            // Yıldızlar SADECE üst bölgede (hendeğin üstündeki açık uzay) — aşağıda duvarlar var.
-            let sg = document.getElementById('km-oyun-stars-yildiz');
-            if(sg) {
-                let html = '';
-                for(let i = 0; i < 70; i++) {
-                    let x = Math.random() * 100, y = Math.random() * 42, r = Math.random() * 1.5 + 0.5;
-                    html += `<div class="km-star" style="left:${x.toFixed(1)}%; top:${y.toFixed(1)}%; width:${r.toFixed(1)}px; height:${r.toFixed(1)}px; animation-delay:${(Math.random() * 3).toFixed(2)}s;"></div>`;
+            let rnd = kmOyunRoketRnd(20261005);
+            // yıldızlar — sol altta (atmosfer) görünmez, sağ üste (uzay) doğru yoğunlaşır
+            let yg = document.getElementById('km-roket-yildizlar');
+            if(yg) {
+                let h = '';
+                for(let i = 0; i < 190; i++) {
+                    let x = -200 + rnd() * 1600, y = -220 + rnd() * 660, op = Math.min(1, Math.max(0, (x / 1200) * 1.05 + (1 - y / 440) * 0.55 - 0.5));
+                    if(op < 0.05) continue;
+                    h += `<circle class="km-roket-yildiz${i % 4 === 0 ? ' t' : ''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.5 + rnd() * 1.3).toFixed(2)}" opacity="${op.toFixed(2)}" style="animation-delay:${(rnd() * 3).toFixed(2)}s"/>`;
                 }
-                sg.innerHTML = html;
+                yg.innerHTML = h;
             }
-            let a0 = kmOyunHendekDilim(0);
-            // İstasyon yüzeyi — hendeğin dışında kalan zırh, ufka kaçar.
-            let yz = document.getElementById('km-oyun-hendek-yuzey');
-            if(yz) {
-                let h = `<polygon points="0,${a0.t} ${a0.l.toFixed(1)},${a0.t} ${KM_HENDEK_VPX},${KM_HENDEK_VPY} 0,${KM_HENDEK_VPY}" fill="#121a2b"/>
-                    <polygon points="1200,${a0.t} ${a0.r.toFixed(1)},${a0.t} ${KM_HENDEK_VPX},${KM_HENDEK_VPY} 1200,${KM_HENDEK_VPY}" fill="#0f1726"/>`;
-                for(let i = 1; i <= 7; i++) {
-                    let p = i / 8;
-                    h += `<line x1="${(a0.l * (1 - p)).toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#1d2941" stroke-width="1" opacity="0.55"/>`;
-                    h += `<line x1="${(a0.r + (1200 - a0.r) * p).toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#1b2540" stroke-width="1" opacity="0.5"/>`;
+            // atmosfer halkaları — Dünya merkezli (sol alt, ekran dışı) yaylar; ilk 4 katmanın sınırı
+            let E = { x: -150, y: 760 }, kt = document.getElementById('km-roket-katman');
+            if(kt) kt.innerHTML = [0, 1, 2, 3].map(function(ci) { let p = kmOyunRoketKatmanNokta(ci); return `<circle class="km-roket-katman" cx="${E.x}" cy="${E.y}" r="${Math.hypot(p.x - E.x, p.y - E.y).toFixed(1)}"/>`; }).join('');
+            // dekor
+            let dk = document.getElementById('km-roket-dekor');
+            if(dk) {
+                let p0 = kmOyunRoketKatmanNokta(0), p1 = kmOyunRoketKatmanNokta(1), p2 = kmOyunRoketKatmanNokta(2), p4 = kmOyunRoketKatmanNokta(4), p5 = kmOyunRoketKatmanNokta(5), p6 = kmOyunRoketKatmanNokta(6), M = KM_ROKET_MARS;
+                let h = kmOyunRoketBulut(p0.x - 96, p0.y + 22, 1.1) + kmOyunRoketBulut(p0.x + 112, p0.y - 8, 0.95) + kmOyunRoketBulut(p0.x + 30, p0.y + 72, 0.8) + kmOyunRoketBulut(330, 300, 0.7) + kmOyunRoketBulut(250, 245, 0.55);
+                h += `<text x="${(p1.x + 96).toFixed(1)}" y="${(p1.y + 40).toFixed(1)}" font-size="22" transform="rotate(-8 ${(p1.x + 96).toFixed(1)} ${(p1.y + 40).toFixed(1)})">✈️</text>`;
+                h += `<g transform="translate(${(p2.x + 40).toFixed(1)},${(p2.y + 66).toFixed(1)})"><line x1="0" y1="0" x2="0" y2="20" stroke="#e2e8f0" stroke-width="1"/><circle cx="0" cy="-8" r="10" fill="#f8fafc" opacity="0.9"/><rect x="-3" y="19" width="6" height="5" fill="#f59e0b"/></g>`;
+                // uzay istasyonu (çizim)
+                h += `<g transform="translate(${(p4.x + 20).toFixed(1)},${(p4.y + 58).toFixed(1)}) rotate(-12)"><rect x="-26" y="-3" width="52" height="6" fill="#cbd5e1"/>
+                    ${[-24, -14, 14, 24].map(function(dx) { return `<rect x="${dx - 4}" y="-20" width="8" height="15" fill="#1e3a8a" stroke="#93c5fd" stroke-width=".7"/><rect x="${dx - 4}" y="5" width="8" height="15" fill="#1e3a8a" stroke="#93c5fd" stroke-width=".7"/>`; }).join('')}
+                    <rect x="-7" y="-6" width="14" height="12" rx="3" fill="#f1f5f9"/><circle cx="0" cy="0" r="2" fill="#38bdf8"/></g>`;
+                // Ay
+                let ax = p5.x + 26, ay = p5.y + 70;
+                h += `<g><circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="34" fill="#e2e8f0" opacity="0.12"/><circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="28" fill="url(#kmRoketAyGrad)"/>
+                    <circle cx="${(ax - 9).toFixed(1)}" cy="${(ay - 6).toFixed(1)}" r="5" fill="#94a3b8" opacity="0.6"/><circle cx="${(ax + 8).toFixed(1)}" cy="${(ay + 7).toFixed(1)}" r="7" fill="#94a3b8" opacity="0.5"/><circle cx="${(ax + 10).toFixed(1)}" cy="${(ay - 11).toFixed(1)}" r="3" fill="#94a3b8" opacity="0.6"/></g>`;
+                // asteroitler
+                for(let k = 0; k < 9; k++) {
+                    let cx = p6.x - 70 + rnd() * 150, cy = p6.y + 22 + rnd() * 70, r = 4 + rnd() * 8, pts = [];
+                    for(let q = 0; q < 7; q++) { let a = q / 7 * Math.PI * 2, rr = r * (0.7 + rnd() * 0.5); pts.push((cx + Math.cos(a) * rr).toFixed(1) + ',' + (cy + Math.sin(a) * rr).toFixed(1)); }
+                    h += `<polygon points="${pts.join(' ')}" fill="#78716c" stroke="#a8a29e" stroke-width=".8"/>`;
                 }
-                // Hendeği uzaydan ayıran keskin üst kenar
-                h += `<line x1="${a0.l.toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#8fb6d9" stroke-width="2" opacity="0.75"/>
-                    <line x1="${a0.r.toFixed(1)}" y1="${a0.t}" x2="${KM_HENDEK_VPX}" y2="${KM_HENDEK_VPY}" stroke="#6f94b8" stroke-width="2" opacity="0.7"/>`;
-                yz.innerHTML = h;
+                // Mars (bitiş) — ilk varan rengiyle bayrak
+                h += `<g class="km-roket-mars" id="km-roket-mars"><circle class="km-roket-mars-hale" cx="${M.x}" cy="${M.y}" r="${M.r + 26}" fill="url(#kmRoketMarsHale)"/>
+                    <circle cx="${M.x}" cy="${M.y}" r="${M.r}" fill="url(#kmRoketMarsGrad)"/>
+                    <ellipse cx="${M.x - 6}" cy="${M.y - M.r + 7}" rx="16" ry="5" fill="#fff7ed" opacity="0.85"/>
+                    <circle cx="${M.x + 14}" cy="${M.y + 12}" r="8" fill="#9a3412" opacity="0.45"/><circle cx="${M.x - 20}" cy="${M.y + 20}" r="5" fill="#9a3412" opacity="0.45"/><circle cx="${M.x + 22}" cy="${M.y - 18}" r="4" fill="#9a3412" opacity="0.45"/>
+                    <path d="M${M.x - 30} ${M.y + 2} q 20 -6 40 2 t 30 0" stroke="#7c2d12" stroke-width="3" fill="none" opacity="0.35"/>
+                    <g class="km-roket-mars-bayrak" transform="translate(${M.x - 34},${M.y - M.r + 16})"><line x1="0" y1="0" x2="0" y2="-26" stroke="#e2e8f0" stroke-width="2"/><path id="km-roket-bayrak-bez" d="M0,-26 L18,-21 L0,-15 Z" fill="#ffd166"/></g>
+                    <text x="${M.x - 24}" y="${M.y + M.r + 18}" text-anchor="middle" font-size="13" font-weight="900" fill="#fed7aa" style="font-family:var(--font-display); paint-order:stroke; stroke:rgba(2,6,23,.85); stroke-width:3px">MARS</text>
+                    <text x="${M.x - 24}" y="${M.y + M.r + 31}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fdba74" style="font-family:var(--font-display); paint-order:stroke; stroke:rgba(2,6,23,.85); stroke-width:3px">225 milyon km</text></g>`;
+                dk.innerHTML = h;
             }
-            // Duvar + zemin panelleri, greebling (ILM'in yüzey detayı — jenerik sci-fi'dan ayıran şey), kenar ışıkları
-            let duvarH = '', greebleH = '', isikH = '';
-            for(let i = 0; i < KM_HENDEK_DILIM; i++) {
-                let ta = Math.pow(i / KM_HENDEK_DILIM, 0.72) * KM_HENDEK_TSON;
-                let tb = Math.pow((i + 1) / KM_HENDEK_DILIM, 0.72) * KM_HENDEK_TSON;
-                let a = kmOyunHendekDilim(ta), b = kmOyunHendekDilim(tb), tm = (ta + tb) / 2, alt = i % 2 === 0;
-                duvarH += `<polygon points="${a.l.toFixed(1)},${a.t.toFixed(1)} ${b.l.toFixed(1)},${b.t.toFixed(1)} ${b.l.toFixed(1)},${b.f.toFixed(1)} ${a.l.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [42,52,72] : [33,42,60])}"/>`;
-                duvarH += `<polygon points="${a.r.toFixed(1)},${a.t.toFixed(1)} ${b.r.toFixed(1)},${b.t.toFixed(1)} ${b.r.toFixed(1)},${b.f.toFixed(1)} ${a.r.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [26,34,50] : [21,28,42])}"/>`;
-                duvarH += `<polygon points="${a.l.toFixed(1)},${a.f.toFixed(1)} ${b.l.toFixed(1)},${b.f.toFixed(1)} ${b.r.toFixed(1)},${b.f.toFixed(1)} ${a.r.toFixed(1)},${a.f.toFixed(1)}" fill="${kmOyunHendekSolgun(tm, alt ? [24,31,46] : [19,25,38])}"/>`;
-                if(a.sc > 0.055) {
-                    let yukA = a.f - a.t, yukB = b.f - b.t, op = Math.max(0, 0.55 - tm * 0.5).toFixed(2);
-                    for(let g = 0; g < 5; g++) {
-                        let p = 0.12 + g * 0.19, ya = a.t + yukA * p, yb = b.t + yukB * p;
-                        let ha = Math.max(0.6, yukA * 0.035), hb = Math.max(0.4, yukB * 0.035);
-                        greebleH += `<polygon points="${a.l.toFixed(1)},${ya.toFixed(1)} ${b.l.toFixed(1)},${yb.toFixed(1)} ${b.l.toFixed(1)},${(yb+hb).toFixed(1)} ${a.l.toFixed(1)},${(ya+ha).toFixed(1)}" fill="#6e88ad" opacity="${op}"/>`;
-                        greebleH += `<polygon points="${a.r.toFixed(1)},${ya.toFixed(1)} ${b.r.toFixed(1)},${yb.toFixed(1)} ${b.r.toFixed(1)},${(yb+hb).toFixed(1)} ${a.r.toFixed(1)},${(ya+ha).toFixed(1)}" fill="#4a5f82" opacity="${op}"/>`;
-                    }
-                    if(i % 2 === 0) {
-                        let sw = (0.9 * a.sc + 0.3).toFixed(2);
-                        greebleH += `<line x1="${a.l.toFixed(1)}" y1="${a.t.toFixed(1)}" x2="${a.l.toFixed(1)}" y2="${a.f.toFixed(1)}" stroke="#7b95bd" stroke-width="${sw}" opacity="${op}"/>`;
-                        greebleH += `<line x1="${a.r.toFixed(1)}" y1="${a.t.toFixed(1)}" x2="${a.r.toFixed(1)}" y2="${a.f.toFixed(1)}" stroke="#556b92" stroke-width="${sw}" opacity="${op}"/>`;
-                    }
-                }
-                if(i % 2 === 0 && a.sc > 0.05) {
-                    let op = Math.max(0, 0.95 - tm * 1.0).toFixed(2), rr = Math.max(0.7, 3.2 * a.sc).toFixed(1);
-                    isikH += `<circle cx="${a.l.toFixed(1)}" cy="${a.f.toFixed(1)}" r="${rr}" fill="#ffb347" opacity="${op}"/>`;
-                    isikH += `<circle cx="${a.r.toFixed(1)}" cy="${a.f.toFixed(1)}" r="${rr}" fill="#ffb347" opacity="${op}"/>`;
-                }
+            // yer + rampa
+            let yr = document.getElementById('km-roket-yer');
+            if(yr) {
+                let kule = '';
+                for(let yy = 300; yy < 384; yy += 12) kule += `<line x1="50" y1="${yy}" x2="64" y2="${yy + 12}" stroke="#94a3b8" stroke-width="1"/><line x1="64" y1="${yy}" x2="50" y2="${yy + 12}" stroke="#94a3b8" stroke-width="1"/>`;
+                yr.innerHTML = `<circle cx="116" cy="3376" r="3006" fill="#7dd3fc" opacity="0.18"/><circle cx="116" cy="3376" r="2988" fill="url(#kmRoketYer)"/>
+                    <rect x="48" y="296" width="18" height="90" fill="none" stroke="#cbd5e1" stroke-width="2"/>${kule}
+                    <rect x="44" y="290" width="26" height="6" fill="#ef4444"/><line x1="66" y1="318" x2="98" y2="318" stroke="#cbd5e1" stroke-width="2"/>
+                    <rect x="16" y="382" width="200" height="8" rx="2" fill="#475569"/><rect x="16" y="388" width="200" height="4" fill="#334155"/>
+                    <rect x="236" y="386" width="34" height="18" fill="#e2e8f0"/><rect x="242" y="374" width="10" height="12" fill="#cbd5e1"/><rect x="276" y="394" width="22" height="12" fill="#cbd5e1"/>
+                    <line x1="312" y1="410" x2="312" y2="380" stroke="#e2e8f0" stroke-width="1.5"/><path d="M312,380 L330,385 L312,390 Z" fill="#e11d48"/>`;
             }
-            let dv = document.getElementById('km-oyun-hendek-duvar'); if(dv) dv.innerHTML = duvarH;
-            let gr = document.getElementById('km-oyun-hendek-greeble'); if(gr) gr.innerHTML = greebleH;
-            let ik = document.getElementById('km-oyun-hendek-isik'); if(ik) ik.innerHTML = isikH;
-            // Sektör kapıları = kontrol noktaları (KM_OYUN_CP_FRAC ile birebir aynı fraclar)
-            let kp = document.getElementById('km-oyun-hendek-kapilar');
+            // rota izi
+            let iz = document.getElementById('km-roket-iz');
+            if(iz) { let T = kmOyunRoketTablo(); iz.innerHTML = `<polyline class="km-roket-iz" points="${T.pts.map(function(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ')}"/>`; }
+            // katman işaretleri (kontrol noktaları)
+            let kp = document.getElementById('km-roket-kapilar');
             if(kp) {
-                kp.innerHTML = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f, ci) {
-                    let a = kmOyunHendekDilim(f * KM_HENDEK_TMAX);
-                    // Çapraz çubuk YOK, pilonlar KISA (0.13): ilk iki denemede (0.46 sonra 0.26 + tam
-                    // genişlik çubuk) yakındaki kapılar hendeği boydan boya kesen dev sarı kale
-                    // direklerine dönüşüp sahneyi eziyordu (gerçek testte iki kez görüldü). Şimdi sadece
-                    // iki duvara yaslı kısa pilon + tepesinde lamba — geçilince lamba yanıyor.
-                    let kuleH = (a.f - a.t) * 0.13, gen = Math.max(1.4, 9 * a.sc);
-                    let op = Math.max(0.3, 0.9 - f * KM_HENDEK_TMAX * 0.2).toFixed(2);
-                    let sw = Math.max(0.5, 1.0 * a.sc).toFixed(2), lr = Math.max(1.0, 3.8 * a.sc).toFixed(1);
-                    let ust = (a.f - kuleH).toFixed(1);
-                    return `<g class="km-hendek-kapi" id="km-oyun-kapi-${ci}" opacity="${op}">
-                        <rect class="km-hk-govde" x="${(a.l - gen / 2).toFixed(1)}" y="${ust}" width="${gen.toFixed(1)}" height="${kuleH.toFixed(1)}" stroke-width="${sw}"/>
-                        <rect class="km-hk-govde" x="${(a.r - gen / 2).toFixed(1)}" y="${ust}" width="${gen.toFixed(1)}" height="${kuleH.toFixed(1)}" stroke-width="${sw}"/>
-                        <circle class="km-hk-lamba" cx="${a.l.toFixed(1)}" cy="${ust}" r="${lr}"/>
-                        <circle class="km-hk-lamba" cx="${a.r.toFixed(1)}" cy="${ust}" r="${lr}"/>
-                    </g>`;
+                kp.innerHTML = KM_ROKET_KATMANLAR.map(function(km, ci) {
+                    let p = kmOyunRoketKatmanNokta(ci), sol = ci < 2, tx = sol ? p.x - 16 : p.x, ty = sol ? p.y + 4 : p.y - 26, anc = sol ? 'end' : 'middle';
+                    return `<g class="km-roket-kapi" id="km-oyun-kapi-${ci}"><circle class="km-rk-halka" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="8"/>
+                        <text class="km-rk-yazi" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anc}">${esc(km[0])}</text>
+                        <text class="km-rk-alt" x="${tx.toFixed(1)}" y="${(ty + 12).toFixed(1)}" text-anchor="${anc}">${esc(km[1])}</text></g>`;
                 }).join('');
                 kmAraOlayIsaretKoy('yildiz', kp);
             }
-            // Reaktör ağzı (hedef) — kaçış noktasında
-            let rk = document.getElementById('km-oyun-reaktor');
-            if(rk) {
-                rk.innerHTML = `<circle cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="66" fill="url(#kmReaktorGrad)" filter="url(#kmReaktorBloom)"/>
-                    <circle cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="13" fill="#ffffff" opacity="0.95"/>
-                    <circle class="km-rk-halka" cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="24" stroke-width="2.2"/>
-                    <circle class="km-rk-halka" cx="${KM_HENDEK_VPX}" cy="${KM_HENDEK_VPY}" r="37" stroke-width="1.4" style="animation-delay:.8s"/>`;
-            }
-            // Avcılar
+            // roketler
             let rg = document.getElementById('km-oyun-rockets'); if(!rg) return;
             let roster = _kmOyunRosterCache;
             rg.innerHTML = roster.map(function(s, i) {
                 let c = kmOyunRenk('yildiz', i), ad = kmOyunIlkAd(s.ad);
-                return `<g class="km-avci" id="km-oyun-rkt-${i}" style="--_c:${c};">${kmOyunHendekAvciSVG(ad, c, i)}</g>`;
+                return `<g class="km-roket" id="km-oyun-rkt-${i}" style="--_c:${c};">${kmOyunRoketSVG(ad, i)}</g>`;
             }).join('');
             roster.forEach(function(s, i) { s.yildizEl = document.getElementById('km-oyun-rkt-' + i); });
             kmOyunResyncYildiz();
         }
-        // Avcı çizimi SABİT taban boyutta (g=44); derinlik ölçeği transform'daki scale() ile veriliyor —
-        // böylece tek bir çizim her derinlikte yeniden üretilmeden kullanılabiliyor.
-        function kmOyunHendekAvciSVG(ad, c, i) {
-            let g = 44;
-            // Etiket komşu şeritlerde sırayla ALT/ÜST — yan yana iki avcının etiketi çakışmasın.
-            let etiketY = (i % 2 === 0) ? g * 0.90 : -g * 0.78;
-            let kanat = function(sx, sy) {
-                return `<path class="km-avci-govde" d="M 0 0 L ${(sx * g).toFixed(1)} ${(sy * g * 0.46).toFixed(1)} L ${(sx * g * 0.90).toFixed(1)} ${(sy * g * 0.22).toFixed(1)} L 0 ${(-sy * g * 0.05).toFixed(1)} Z"/>`;
-            };
-            let koz = function(sx, sy) {
-                return `<ellipse class="km-avci-koz" cx="${(sx * g * 0.52).toFixed(1)}" cy="${(sy * g * 0.30).toFixed(1)}" rx="${(g * 0.10).toFixed(1)}" ry="${(g * 0.072).toFixed(1)}"/>`;
-            };
-            return `${koz(-1,-1)}${koz(1,-1)}${koz(-1,1)}${koz(1,1)}
-                ${kanat(-1,-1)}${kanat(1,-1)}${kanat(-1,1)}${kanat(1,1)}
-                <rect class="km-avci-govde" x="${(-g * 0.13).toFixed(1)}" y="${(-g * 0.17).toFixed(1)}" width="${(g * 0.26).toFixed(1)}" height="${(g * 0.34).toFixed(1)}" rx="${(g * 0.08).toFixed(1)}"/>
-                <ellipse class="km-avci-koz" cx="0" cy="${(-g * 0.03).toFixed(1)}" rx="${(g * 0.085).toFixed(1)}" ry="${(g * 0.065).toFixed(1)}" opacity="0.55"/>
-                <g class="km-avci-etiket" transform="translate(0,${etiketY.toFixed(1)})">
+        // Roket burnu YUKARI (-y) çizilir; yön dönüşü iç gruba (rotate), etiket dönmesin diye dışarıda.
+        function kmOyunRoketSVG(ad, i) {
+            let etY = (i % 2 === 0) ? 36 : -38;
+            return `<g class="km-roket-g" transform="rotate(0) scale(1.25)">
+                    <g class="km-roket-alev"><path d="M-5.5,16 Q0,36 5.5,16 Z" fill="#fb923c"/><path d="M-3,16 Q0,28 3,16 Z" fill="#fde047"/></g>
+                    <path class="km-roket-renk" d="M-6,5 L-13,17 L-6,14 Z"/><path class="km-roket-renk" d="M6,5 L13,17 L6,14 Z"/>
+                    <path class="km-roket-govde" d="M0,-22 C7,-14 8,-4 7,8 L6,16 L-6,16 L-7,8 C-8,-4 -7,-14 0,-22 Z"/>
+                    <path class="km-roket-renk" d="M0,-22 C4.6,-17 6,-12.5 6.6,-9 L-6.6,-9 C-6,-12.5 -4.6,-17 0,-22 Z"/>
+                    <rect class="km-roket-renk" x="-7" y="9" width="14" height="2.6"/>
+                    <circle class="km-roket-cam" cx="0" cy="-2" r="3.8"/><circle class="km-roket-parla" cx="-1.2" cy="-3.2" r="1.1"/>
+                    <path class="km-roket-renk" d="M-1.2,6 L1.2,6 L1.2,16 L-1.2,16 Z" opacity=".55"/>
+                </g>
+                <g class="km-avci-etiket" transform="translate(0,${etY})">
                     <rect class="km-tag-bg" x="${(-ad.length * 3.3 - 8).toFixed(1)}" y="-9.5" width="${(ad.length * 6.6 + 16).toFixed(1)}" height="18" rx="9"/>
                     <text class="km-tag-text" x="0" y="4" text-anchor="middle">${esc(ad)}</text>
                 </g>`;
         }
+        function kmOyunRoketYerlestir(el, p) {
+            el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
+            let g = el.querySelector('.km-roket-g'); if(g) g.setAttribute('transform', `rotate(${(p.aci + 90).toFixed(1)}) scale(1.25)`);
+        }
         function kmOyunResyncYildiz() {
             let roster = _kmOyunRosterCache, n = roster.length;
-            roster.forEach(function(s, i) {
-                if(!s.yildizEl) return;
-                let p = kmOyunYildizPoz(i, n, s.frac);
-                s.yildizEl.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${p.olcek.toFixed(3)})`);
-                // Uzaktaki avcıda etiket okunmuyor, kalabalık yapıyor — belli bir ölçeğin altında gizle.
-                let et = s.yildizEl.querySelector('.km-avci-etiket');
-                if(et) et.setAttribute('opacity', p.olcek > 0.5 ? '1' : '0');
-            });
-            // Derinlik sıralaması: UZAK olan ÖNCE çizilmeli ki yakındaki onun üstünü örtsün.
-            // frac büyük = uzak, o yüzden azalan frac sırasıyla DOM'a yeniden ekleniyor.
+            roster.forEach(function(s, i) { if(s.yildizEl) kmOyunRoketYerlestir(s.yildizEl, kmOyunYildizPoz(i, n, s.frac)); });
+            // önde olan en üstte çizilsin
             let rg = document.getElementById('km-oyun-rockets');
-            if(rg) {
-                roster.slice().sort(function(a, b) { return b.frac - a.frac; }).forEach(function(s) {
-                    if(s.yildizEl) rg.appendChild(s.yildizEl);
-                });
-            }
+            if(rg) roster.slice().sort(function(a, b) { return a.frac - b.frac; }).forEach(function(s) { if(s.yildizEl) rg.appendChild(s.yildizEl); });
             for(let ci = 0; ci < KM_OYUN_CP_SAYISI - 1; ci++) {
                 let best = null;
                 roster.forEach(function(s, i) { if(s.frac >= KM_OYUN_CP_FRAC[ci] - 1e-9 && (!best || s.frac > best.frac)) best = { frac: s.frac, i: i }; });
                 let kapi = document.getElementById('km-oyun-kapi-' + ci);
                 if(kapi) { kapi.classList.toggle('hit', !!best); if(best) kapi.style.setProperty('--_c', kmOyunRenk('yildiz', best.i)); }
             }
-            let rk = document.getElementById('km-oyun-reaktor');
-            if(rk) rk.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.62';
+            let ilk = -1; roster.forEach(function(s, i) { if(s.frac >= 1 && ilk < 0) ilk = i; });
+            let mars = document.getElementById('km-roket-mars'); if(mars) mars.classList.toggle('var', ilk >= 0);
+            let bez = document.getElementById('km-roket-bayrak-bez'); if(bez && ilk >= 0) bez.setAttribute('fill', kmOyunRenk('yildiz', ilk));
         }
-        // Hiperuzay çizgileri — kaçış noktasından dışarı fırlayan ışık izleri (yüksek seride).
-        function kmOyunHendekHiperuzay() {
-            let hg = document.getElementById('km-oyun-hiper'); if(!hg) return;
-            let html = '';
-            for(let i = 0; i < 26; i++) {
-                let aci = Math.random() * Math.PI * 2, r0 = 26 + Math.random() * 40, uz = 90 + Math.random() * 230;
-                let x1 = KM_HENDEK_VPX + Math.cos(aci) * r0, y1 = KM_HENDEK_VPY + Math.sin(aci) * r0 * 0.6;
-                let x2 = KM_HENDEK_VPX + Math.cos(aci) * (r0 + uz), y2 = KM_HENDEK_VPY + Math.sin(aci) * (r0 + uz) * 0.6;
-                html += `<line class="km-hiper-cizgi" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke-width="${(1 + Math.random() * 1.8).toFixed(1)}"/>`;
-            }
-            hg.innerHTML = html;
-            hg.querySelectorAll('.km-hiper-cizgi').forEach(function(ln, idx) {
-                ln.animate([{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 0.9, offset: 0.3 }, { opacity: 0, transform: 'scale(1.35)' }],
-                    { duration: 620 + Math.random() * 280, delay: idx * 9, easing: 'cubic-bezier(.2,.7,.3,1)' });
-            });
-            setTimeout(function() { if(hg) hg.innerHTML = ''; }, 1100);
+        function kmOyunRoketDuman(x, y, r) {
+            let g = document.getElementById('km-roket-duman'); if(!g || g.childNodes.length > 70) return;
+            let c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            c.setAttribute('class', 'km-roket-duman'); c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1)); c.setAttribute('r', (r || 4 + Math.random() * 3).toFixed(1));
+            g.appendChild(c); setTimeout(function() { c.remove(); }, 1600);
         }
         function kmOyunAnimateYildiz(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, el = s.yildizEl; if(!el) { done(); return; }
             el.classList.add('flying');
-            let sure = 1250, basla = performance.now();
+            // rampadan ilk kalkış: sahne sarsılır, rampada büyük duman bulutu
+            if(eskiFrac <= 0.001 && yeniFrac > eskiFrac) {
+                let pn = document.getElementById('km-oyun-panel-yildiz');
+                if(pn) { pn.classList.remove('km-roket-sarsinti'); void pn.offsetWidth; pn.classList.add('km-roket-sarsinti'); setTimeout(function() { pn.classList.remove('km-roket-sarsinti'); }, 600); }
+                let p0 = kmOyunYildizPoz(i, n, 0);
+                for(let k = 0; k < 9; k++) kmOyunRoketDuman(p0.x - 24 + Math.random() * 48, p0.y + 16 + Math.random() * 8, 6 + Math.random() * 6);
+            }
+            let sure = 1450, basla = performance.now(), sonDuman = 0;
             function frame(now) {
-                let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
+                let t = Math.min(1, (now - basla) / sure), eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
                 let p = kmOyunYildizPoz(i, n, eskiFrac + (yeniFrac - eskiFrac) * eased);
-                el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) scale(${p.olcek.toFixed(3)})`);
-                if(t < 1) { requestAnimationFrame(frame); }
-                else {
-                    el.classList.remove('flying');
-                    let varis = kmOyunYildizPoz(i, n, yeniFrac);
-                    let scr = kmOyunSvgPct('km-oyun-svg-yildiz', varis.x, varis.y);
-                    kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('yildiz', i), 14, false);
-                    if(yeniCp > eskiCp) {
-                        for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) {
-                            let k = document.getElementById('km-oyun-kapi-' + cp);
-                            if(k) { k.classList.add('hit'); k.style.setProperty('--_c', kmOyunRenk('yildiz', i)); }
-                        }
-                        if(yeniFrac >= 1) {
-                            kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 26, true);
-                            let rk = document.getElementById('km-oyun-reaktor'); if(rk) rk.style.opacity = '1';
-                        }
-                    }
-                    // Yüksek seri -> hiperuzay çizgileri (o ikonik efekt, mevcut eşikle aynı)
-                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) { kmOyunHendekHiperuzay(); }
-                    kmOyunResyncYildiz();
-                    done();
+                kmOyunRoketYerlestir(el, p);
+                if(now - sonDuman > 55 && t < 0.95) {
+                    sonDuman = now; let r = p.aci * Math.PI / 180;
+                    kmOyunRoketDuman(p.x - Math.cos(r) * 26, p.y - Math.sin(r) * 26);
                 }
+                if(t < 1) { requestAnimationFrame(frame); return; }
+                el.classList.remove('flying');
+                let varis = kmOyunYildizPoz(i, n, yeniFrac), scr = kmOyunSvgPct('km-oyun-svg-yildiz', varis.x, varis.y);
+                kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('yildiz', i), 14, false);
+                if(yeniCp > eskiCp) {
+                    for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) {
+                        let k = document.getElementById('km-oyun-kapi-' + cp);
+                        if(k) { k.classList.add('hit'); k.style.setProperty('--_c', kmOyunRenk('yildiz', i)); }
+                    }
+                    if(yeniFrac >= 1) {
+                        let ms = kmOyunSvgPct('km-oyun-svg-yildiz', KM_ROKET_MARS.x, KM_ROKET_MARS.y);
+                        kmOyunBurst(document.getElementById('km-oyun-burst'), ms.xPct, ms.yPct, '#fb923c', 30, true);
+                    }
+                }
+                // çok iyi seri → altın kıvılcım
+                if(toplam >= _kmOyunOkSayisi * 10 * 0.9) kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 22, true);
+                kmOyunResyncYildiz();
+                done();
             }
             requestAnimationFrame(frame);
         }
@@ -24008,7 +23970,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // atışın kalitesine bağlı (Heyecan Motoru'nun "loot-box yok" ilkesi). Gerçek skora DOKUNMAZ.
         const KM_ARA_OLAY_TEMALAR = {
             dag: { kestirme: { ad: 'Kestirme Patika', ikon: '🧗' }, tehlike: { ad: 'Çığ Bölgesi', ikon: '❄️', vurus: 'ÇIĞ!' }, bonus: { ad: 'Bonus Kamp', ikon: '⭐' } },
-            yildiz: { kestirme: { ad: 'Hiper Koridor', ikon: '⚡' }, tehlike: { ad: 'Lazer Bariyeri', ikon: '🚧', vurus: 'LAZER BARİYERİ!' }, bonus: { ad: 'Enerji Çekirdeği', ikon: '⭐' } },
+            yildiz: { kestirme: { ad: 'Yerçekimi Sapanı', ikon: '🌀' }, tehlike: { ad: 'Meteor Yağmuru', ikon: '☄️', vurus: 'METEOR YAĞMURU!' }, bonus: { ad: 'Yakıt İstasyonu', ikon: '⛽' } },
             sisharita: { kestirme: { ad: 'Gizli Tünel', ikon: '🕳️' }, tehlike: { ad: 'Bataklık', ikon: '🐊', vurus: 'BATAKLIK!' }, bonus: { ad: 'Şişede Mesaj', ikon: '🍾' } }
         };
         var _kmAraOlaySon = [];
@@ -24112,30 +24074,27 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <text class="km-olay-yazi" x="${p.x.toFixed(1)}" y="${(p.y - 38).toFixed(1)}" text-anchor="middle">ŞİŞEDE MESAJ +${KM_ARA_OLAY_BONUS}</text></g>`;
                 }
             } else if(tema === 'yildiz') {
-                if(typeof kmOyunHendekDilim !== 'function') return '';
-                let dilim = function(f) { return kmOyunHendekDilim(Math.min(1, f) * KM_HENDEK_TMAX); };
-                let K = y.kestirme, T = y.tehlike;
-                if(K) {
-                    let a = dilim(K.bas), b = dilim(K.son);
-                    let ya = a.f - (a.f - a.t) * 0.04, yb = b.f - (b.f - b.t) * 0.04;
-                    let ia = (a.r - a.l) * 0.18, ib = (b.r - b.l) * 0.18, ca = (a.l + a.r) / 2, cb = (b.l + b.r) / 2;
-                    html += `<g class="km-olay km-olay-kestirme"><polygon points="${(ca - ia).toFixed(1)},${ya.toFixed(1)} ${(ca + ia).toFixed(1)},${ya.toFixed(1)} ${(cb + ib).toFixed(1)},${yb.toFixed(1)} ${(cb - ib).toFixed(1)},${yb.toFixed(1)}" fill="rgba(45,212,244,0.22)" stroke="#2dd4f4" stroke-width="${Math.max(0.6, 1.6 * a.sc).toFixed(2)}"/>
-                        <text x="${ca.toFixed(1)}" y="${(ya - 6 * a.sc).toFixed(1)}" font-size="${Math.max(10, 22 * a.sc).toFixed(1)}" text-anchor="middle">${t.kestirme.ikon}</text>
-                        ${a.sc >= 0.4 ? `<text class="km-olay-yazi" x="${ca.toFixed(1)}" y="${(ya - 30 * a.sc).toFixed(1)}" font-size="${Math.max(6, 13 * a.sc).toFixed(1)}" text-anchor="middle">HİPER KORİDOR · %80+</text>` : ''}</g>`;
-                }
+                if(typeof kmOyunRoketNokta !== 'function') return '';
+                let N = kmOyunRoketNokta, K = y.kestirme, T = y.tehlike;
+                let yol = function(a, b, kay) { let pts = []; for(let k = 0; k <= 12; k++) { let p = N(a + (b - a) * k / 12), r = p.aci * Math.PI / 180; pts.push((p.x - Math.sin(r) * kay).toFixed(1) + ',' + (p.y + Math.cos(r) * kay).toFixed(1)); } return pts.join(' '); };
                 if(T) {
-                    [T.bas, T.son].forEach(function(f, fi) {
-                        let a = dilim(f), yy = a.f - (a.f - a.t) * 0.10;
-                        html += `<g class="km-olay km-olay-tehlike"><line x1="${a.l.toFixed(1)}" y1="${yy.toFixed(1)}" x2="${a.r.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="#ff3b5c" stroke-width="${Math.max(0.8, 3 * a.sc).toFixed(2)}" opacity="0.85" class="km-olay-lazer"/>
-                            ${fi === 0 ? `<text x="${((a.l + a.r) / 2).toFixed(1)}" y="${(yy - 8 * a.sc).toFixed(1)}" font-size="${Math.max(10, 20 * a.sc).toFixed(1)}" text-anchor="middle">${t.tehlike.ikon}</text>
-                            ${a.sc >= 0.4 ? `<text class="km-olay-yazi" x="${((a.l + a.r) / 2).toFixed(1)}" y="${(yy - 30 * a.sc).toFixed(1)}" font-size="${Math.max(6, 13 * a.sc).toFixed(1)}" text-anchor="middle">LAZER · %50 altı yavaşlar</text>` : ''}` : ''}</g>`;
-                    });
+                    let o = N((T.bas + T.son) / 2);
+                    html += `<g class="km-olay km-olay-tehlike"><polyline points="${yol(T.bas, T.son, 0)}" fill="none" stroke="#fb7185" stroke-width="14" stroke-linecap="round" opacity="0.25"/>
+                        <polyline points="${yol(T.bas, T.son, 0)}" fill="none" stroke="#fda4af" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
+                        <text x="${o.x.toFixed(1)}" y="${(o.y + 30).toFixed(1)}" font-size="18" text-anchor="middle">${t.tehlike.ikon}</text>
+                        <text class="km-olay-yazi" x="${o.x.toFixed(1)}" y="${(o.y + 48).toFixed(1)}" text-anchor="middle">METEOR · %50 altı yavaşlar</text></g>`;
+                }
+                if(K) {
+                    let o = N((K.bas + K.son) / 2);
+                    html += `<g class="km-olay km-olay-kestirme"><polyline points="${yol(K.bas, K.son, -22)}" fill="none" stroke="#67e8f9" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/>
+                        <text x="${o.x.toFixed(1)}" y="${(o.y - 28).toFixed(1)}" font-size="17" text-anchor="middle">${t.kestirme.ikon}</text>
+                        <text class="km-olay-yazi" x="${o.x.toFixed(1)}" y="${(o.y - 46).toFixed(1)}" text-anchor="middle">SAPAN · %80+</text></g>`;
                 }
                 if(typeof y.bonus === 'number') {
-                    let a = dilim(y.bonus), cx = (a.l + a.r) / 2, cy = a.f - (a.f - a.t) * 0.22;
-                    html += `<g class="km-olay km-olay-bonus"><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(3, 16 * a.sc).toFixed(1)}" fill="rgba(255,209,102,0.25)" stroke="#ffd166" stroke-width="${Math.max(0.6, 2 * a.sc).toFixed(2)}"/>
-                        <text x="${cx.toFixed(1)}" y="${(cy + 6 * a.sc).toFixed(1)}" font-size="${Math.max(10, 17 * a.sc).toFixed(1)}" text-anchor="middle">${t.bonus.ikon}</text>
-                        ${a.sc >= 0.4 ? `<text class="km-olay-yazi" x="${cx.toFixed(1)}" y="${(cy - 22 * a.sc).toFixed(1)}" font-size="${Math.max(6, 13 * a.sc).toFixed(1)}" text-anchor="middle">BONUS +${KM_ARA_OLAY_BONUS}</text>` : ''}</g>`;
+                    let p = N(y.bonus);
+                    html += `<g class="km-olay km-olay-bonus"><circle cx="${p.x.toFixed(1)}" cy="${(p.y + 26).toFixed(1)}" r="13" fill="rgba(255,209,102,0.22)" stroke="#ffd166" stroke-width="2"/>
+                        <text x="${p.x.toFixed(1)}" y="${(p.y + 32).toFixed(1)}" font-size="15" text-anchor="middle">${t.bonus.ikon}</text>
+                        <text class="km-olay-yazi" x="${p.x.toFixed(1)}" y="${(p.y + 54).toFixed(1)}" text-anchor="middle">YAKIT +${KM_ARA_OLAY_BONUS}</text></g>`;
                 }
             }
             return html;
