@@ -1511,7 +1511,7 @@ function kmYaVeliRapor(key) {
 function kmYaVeliRaporPanelHTML(g, ad) {
     let link = _kmYaRaporLink[g + '|' + ad]; if (!link) return '';
     let sp = (turnuvaDB[g] || {})[ad] || {}, ayAd = new Date(kmYaRaporAy() + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }), kk = kmYaKey(g, ad);
-    return `<div class="ya-ekle"><div class="ya-alt"><b style="color:var(--text-primary)">📤 ${esc(ayAd)} raporu hazır</b> — veli bu linkten çocuğunun devam takvimini, ders günlerine katılımını ve seri ortalamalarını görür. Telefon, aidat, not gibi bilgiler bu sayfada yoktur.</div>
+    return `<div class="ya-ekle"><div class="ya-alt"><b style="color:var(--text-primary)">📤 ${esc(ayAd)} raporu hazır</b> — veli bu linkten çocuğunun devam takvimini, son 6 ayını, seri ortalamalarını ve Form Lab karnesini görür. Aidat yalnız "ödendi / bekleniyor" olarak görünür; tutar, telefon, not yoktur.</div>
         <input class="ya-ara" style="max-width:none; font-size:12.5px" readonly value="${esc(link)}" onclick="this.select()">
         <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="ya-btn birincil" onclick="kmYaVeliRaporGonder('${kk}')">💬 WhatsApp ile gönder${sp.acilTelefon ? '' : ' (numara seç)'}</button><button class="ya-btn" onclick="kmYaVeliRaporKopyala('${kk}')">📋 Linki kopyala</button><button class="ya-btn" onclick="kmYaVeliRaporOnizle('${kk}')">👁️ Önizle</button></div></div>`;
 }

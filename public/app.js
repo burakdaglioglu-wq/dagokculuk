@@ -3916,18 +3916,35 @@
                 ${toplam ? '' : '<div style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">Ödeyip gelmeyen, gelip ödemeyen ya da paketi biten sporcu yok.</div>'}
             </details>`;
         }
-        function aidatVeliOzetMetin(x, ay) {
+        // Veli rapor sayfası linki (2026-10-05): sporcunun izle-kodu ile rapor.html — devam takvimi, son 6 ay, aidat durumu, Form Lab.
+        // Kod sunucudan alınır (bir kez), sonra önbellekte; alınamazsa mesaj linksiz gider.
+        let _aidatRaporLink = {};
+        function aidatRaporLinkAl(x, ay) {
+            let k = x.g + '|' + x.ad;
+            if(_aidatRaporLink[k]) return Promise.resolve(_aidatRaporLink[k] + '&ay=' + ay);
+            return fetch('/api/athletes/' + encodeURIComponent(x.g) + '/' + encodeURIComponent(x.ad) + '/izle-kodu', { method: 'POST' })
+                .then(r => r.ok ? r.json() : null).then(d => { if(!d || !d.kod) return ''; _aidatRaporLink[k] = location.origin + '/rapor.html?kod=' + d.kod; return _aidatRaporLink[k] + '&ay=' + ay; }).catch(() => '');
+        }
+        function aidatVeliOzetMetin(x, ay, link) {
             let gunler = aidatDevamHaritasi(x.g, x.ad)[ay] || [], rec = aidatDB[x.ad] && aidatDB[x.ad][ay];
             let aidat = x.sp.aidatMuaf ? '' : '\n💳 Aidat: ' + (rec && rec.odendi ? (aidatPaketMi(rec) ? rec.notMetin.split(' · ')[0] + ' kapsamında, teşekkürler ✓' : 'ödendi, teşekkürler ✓') : 'ödeme bekleniyor');
-            return 'Merhaba 🌟 DAĞ Spor Kulübü ' + aidatAyAdUzun(ay) + ' özeti:\n\n🏹 ' + aidatIlkAd(x.ad) + ' bu ay ' + (gunler.length ? gunler.length + ' gün antrenmana geldi (' + gunler.map(i => parseInt(i.slice(8), 10)).join(', ') + ' ' + aidatAyAdUzun(ay) + ').' : 'antrenmana gelemedi.') + aidat + '\n\nGörüşmek üzere 🧡';
+            return 'Merhaba 🌟 DAĞ Spor Kulübü ' + aidatAyAdUzun(ay) + ' özeti:\n\n🏹 ' + aidatIlkAd(x.ad) + ' bu ay ' + (gunler.length ? gunler.length + ' gün antrenmana geldi (' + gunler.map(i => parseInt(i.slice(8), 10)).join(', ') + ' ' + aidatAyAdUzun(ay) + ').' : 'antrenmana gelemedi.') + aidat + (link ? '\n\n📊 Devam takvimi, son 6 ay ve gelişim: ' + link : '') + '\n\nGörüşmek üzere 🧡';
         }
         function aidatVeliOzetGonder(i) {
             let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
-            aidatWaAc(x.sp.acilTelefon || '', aidatVeliOzetMetin(x, aidatAy), 'ozet|' + aidatAy + '|' + x.ad);
+            let ay = aidatAy, isaret = 'ozet|' + ay + '|' + x.ad;
+            if(_aidatRaporLink[x.g + '|' + x.ad]) { aidatWaAc(x.sp.acilTelefon || '', aidatVeliOzetMetin(x, ay, _aidatRaporLink[x.g + '|' + x.ad] + '&ay=' + ay), isaret); return; }
+            // pencere tıklama anında açılır (sonradan açılan pencereyi telefon tarayıcıları engelliyor), link gelince yönlendirilir
+            let w = window.open('', '_blank');
+            aidatRaporLinkAl(x, ay).then(link => {
+                let numara = telefonWaFormat(x.sp.acilTelefon || ''), url = (numara ? 'https://api.whatsapp.com/send?phone=' + numara + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(aidatVeliOzetMetin(x, ay, link));
+                if(w) w.location.href = url; else window.open(url, '_blank');
+                aidatGonderildiIsaretle(isaret); setTimeout(egitmenRenderAidat, 300);
+            });
         }
         function aidatVeliOzetKopyala(i) {
             let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
-            try { navigator.clipboard.writeText(aidatVeliOzetMetin(x, aidatAy)).then(() => showToast('Mesaj kopyalandı', 'success')); } catch(e) {}
+            aidatRaporLinkAl(x, aidatAy).then(link => { try { navigator.clipboard.writeText(aidatVeliOzetMetin(x, aidatAy, link)).then(() => showToast('Mesaj kopyalandı', 'success')); } catch(e) {} });
         }
         let _aidatVeliOzetListe = [];
         function aidatVeliOzetHTML() {
