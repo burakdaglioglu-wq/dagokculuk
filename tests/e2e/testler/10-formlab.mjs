@@ -9,7 +9,7 @@ export default async function ({ log }) {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'formlab', 'kmFormLabCiz');
     await p.waitForSelector('.fl .fl-basla');
-    dogrula(await p.locator('.fl-butonlar button', { hasText: 'Uygulamada çek' }).count() === 1 && await p.locator('.fl-butonlar input[type=file]').count() === 1, 'çekim/seçim düğmeleri yok');
+    dogrula(await p.locator('.fl-cek-buyuk').count() === 1 && await p.locator('.fl-butonlar input[type=file]').count() === 1, 'çekim/seçim düğmeleri yok');
     dogrula(await yataydaTasmaYok(p), 'Form Lab yatayda taşıyor');
 
     const r = await p.evaluate(() => {
@@ -30,7 +30,9 @@ export default async function ({ log }) {
           } else if (t >= 1 && t < 1.5) { const k = (t - 1) / 0.5; p[20] = [0.40 + 0.10 * k, 0.68 - 0.30 * k, 1]; p[16] = [0.40, 0.65 - 0.25 * k, 1]; }
           else if (sonra) { p[20] = [0.33, 0.40, 1]; p[16] = [0.34, 0.41, 1]; }
           else { p[20] = [0.40, 0.68, 1]; p[16] = [0.40, 0.65, 1]; }
-          kareler.push({ t: atis * 6 + t, p, h: null });
+          // çene altındayken el modeli eli bulmuş olsun (2026-10-04: çene altı ölçüleri yalnız elin görüldüğü atışlardan)
+          const el = t >= 1.5 && t < 3.5;
+          kareler.push({ t: atis * 6 + t, p, h: el ? [Array.from({ length: 21 }, (_, n) => n === 0 ? [p[16][0], p[16][1]] : [p[20][0], p[20][1]])] : null, hD: el ? 1 : 0 });
         }
       }
       _fl.el = 'oto';
