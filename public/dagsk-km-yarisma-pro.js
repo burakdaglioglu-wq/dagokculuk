@@ -480,7 +480,8 @@ function yzTvAc() {
         document.addEventListener('keydown', yzTvTus, true);
         window.addEventListener('resize', yzTvCiz);
     }
-    _yz.tvHam = null; _yz.tvSon = {};
+    _yz.tvHam = null; _yz.tvSon = {}; _yz.tvSayfa = 0; yzTv2Css();
+    clearInterval(_yz.tvSayfaZ); _yz.tvSayfaZ = setInterval(function () { if ((_yz.tvSayfaSay || 1) > 1) { _yz.tvSayfa = ((_yz.tvSayfa || 0) + 1) % _yz.tvSayfaSay; yzTvSigdir(document.getElementById('yz-tv')); } }, 9000);
     yzTvCiz();
     clearInterval(_yz.tvPoll);
     // Ortak ders senkronu yerel kaydı güncelleyince (WS ile ~1 sn) burada fark edilir; ekran sadece değişince çizilir.
@@ -488,11 +489,66 @@ function yzTvAc() {
     yzTimerBaslat();
 }
 function yzTvKapat() {
-    _yz.tv = false; document.body.classList.remove('yz-tv-acik'); clearInterval(_yz.tvPoll); _yz.tvPoll = null;
+    _yz.tv = false; document.body.classList.remove('yz-tv-acik'); clearInterval(_yz.tvPoll); _yz.tvPoll = null; clearInterval(_yz.tvSayfaZ);
     let el = document.getElementById('yz-tv'); if (el) el.remove();
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
     try { if (_yz.kilit) { _yz.kilit.release(); _yz.kilit = null; } } catch (e) {}
     document.removeEventListener('keydown', yzTvTus, true); window.removeEventListener('resize', yzTvCiz);
+}
+// 2026-10-04 (kullanıcı: "tam ekranda bazı veriler ekrana sığmıyor, görünüm biraz at yarışı gibi"): satır yüksekliği
+// tahminle (pencere yüksekliğinin %74'ü) hesaplanıyordu, başlığın gerçek boyunu bilmiyordu → 1280×720 projeksiyonda 16
+// sporcunun son 2'si görünmüyordu. Artık çizimden sonra tablonun gerçek alanı ölçülür; satırlar okunaklı boyda (≥30 px)
+// sığmıyorsa tablo sayfalanır ve sayfalar 9 sn'de bir döner ("Sayfa 1/2"). Renkler sakinleştirildi (yzTv2Css).
+function yzTvSigdir(el) {
+    if (!el) return; let kutu = el.querySelector('.yz-tv-tablo'); if (!kutu) return;
+    let satirlar = [].slice.call(kutu.querySelectorAll('tbody tr:not(.yz-ayrac)')); if (!satirlar.length) return;
+    satirlar.forEach(function (tr) { tr.style.display = ''; });
+    let eski = kutu.querySelector('.yz-tv-sayfa'); if (eski) eski.remove();
+    let olc = function () { let e = 0; kutu.querySelectorAll('thead, .yz-grup-bas, tr.yz-ayrac').forEach(function (x) { e += x.offsetHeight; }); return e; };
+    let H = kutu.clientHeight - 6, n = satirlar.length, MIN = 30;
+    let yuk = Math.floor((H - olc()) / n); el.style.setProperty('--yz-satir', Math.max(MIN, Math.min(84, yuk)) + 'px');
+    yuk = Math.floor((H - olc()) / n); // başlık satırı yazı boyuyla değişir → bir kez daha ölç
+    if (yuk >= MIN) {
+        el.style.setProperty('--yz-satir', Math.min(84, yuk) + 'px'); _yz.tvSayfaSay = 1;
+        for (let i = 0; i < 4 && kutu.scrollHeight > kutu.clientHeight + 1; i++) { yuk -= Math.ceil((kutu.scrollHeight - kutu.clientHeight) / n) || 1; el.style.setProperty('--yz-satir', Math.max(MIN, yuk) + 'px'); }
+        if (kutu.scrollHeight <= kutu.clientHeight + 1) return;
+    }
+    // sayfala: okunaklı boyda (34 px) kaç satır sığıyorsa
+    el.style.setProperty('--yz-satir', '34px');
+    let sayfaBoy = Math.max(1, Math.floor((H - olc() - 26) / 34)), sayfaSay = Math.ceil(n / sayfaBoy);
+    _yz.tvSayfaSay = sayfaSay; _yz.tvSayfa = (_yz.tvSayfa || 0) % sayfaSay;
+    satirlar.forEach(function (tr, i) { tr.style.display = Math.floor(i / sayfaBoy) === _yz.tvSayfa ? '' : 'none'; });
+    let et = document.createElement('div'); et.className = 'yz-tv-sayfa';
+    et.textContent = 'Sayfa ' + (_yz.tvSayfa + 1) + ' / ' + sayfaSay + ' · ' + (_yz.tvSayfa * sayfaBoy + 1) + '–' + Math.min(n, (_yz.tvSayfa + 1) * sayfaBoy) + '. sıra · ' + n + ' sporcu';
+    kutu.appendChild(et);
+}
+function yzTv2Css() {
+    if (document.getElementById('yz-tv2-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-tv2-css';
+    st.textContent = [
+        '#yz-tv{padding:1.8vh 1.8vw;gap:1.4vh}',
+        '#yz-tv .yz-tv-bas{grid-template-columns:1fr auto auto;gap:1.4vw;align-items:center}',
+        '#yz-tv .yz-tv-kimlik{border-left-width:.4vw;padding-left:1.1vw;gap:.3vh}',
+        '#yz-tv .yz-tv-logo{font-size:max(11px,1vw)}#yz-tv .yz-tv-ad{font-size:2.5vw}#yz-tv .yz-tv-alt{font-size:max(11px,1vw)}',
+        '#yz-tv .yz-tv-gorunum{justify-content:flex-start;max-width:none;margin-top:.8vh}',
+        '#yz-tv .yz-tv-seri{padding:.8vh 1.8vw;border-radius:1vw}#yz-tv .yz-tv-seri b{font-size:4.2vw}#yz-tv .yz-tv-seri-top{font-size:1.3vw}#yz-tv .yz-tv-seri-et{font-size:max(10px,.9vw)}',
+        '#yz-tv .yz-sayac{min-width:13vw;padding:.8vh 1.6vw;border-radius:1vw}#yz-tv .yz-sayac-sure{font-size:4.4vw}#yz-tv .yz-sayac-alt{font-size:max(10px,.95vw)}',
+        '#yz-tv .yz-tv-saat{gap:.8vh}#yz-tv .yz-tv-kontrol{max-width:none;flex-wrap:nowrap;justify-content:flex-end;gap:.4vw}',
+        '#yz-tv .yz-tv-k{font-size:max(11px,.78vw);padding:.6vh .75vw;border-radius:.6vw}',
+        'body .yz-tv .yz-tv-kapat{top:auto;left:auto;bottom:3px;right:6px;padding:3px 9px;font-size:11px;opacity:.35}',
+        '#yz-tv .yz-tv-tablo{position:relative}',
+        '#yz-tv .yz-tablo tr.p1 td.sira,#yz-tv .yz-tablo tr.p2 td.sira,#yz-tv .yz-tablo tr.p3 td.sira{background:transparent;font-weight:900}',
+        '#yz-tv .yz-tablo tr.p1 td.sira{color:#fbbf24;box-shadow:inset .3vw 0 #fbbf24}#yz-tv .yz-tablo tr.p2 td.sira{color:#cbd5e1;box-shadow:inset .3vw 0 #cbd5e1}#yz-tv .yz-tablo tr.p3 td.sira{color:#f0a36b;box-shadow:inset .3vw 0 #e07a3a}',
+        '#yz-tv .yz-tablo td.hr{font-size:.6em;opacity:.8}',
+        '#yz-tv .yz-tablo .yari{color:#8aa2c0;font-weight:700}#yz-tv .yz-tablo th.yari{color:#6f86a6}',
+        '#yz-tv .yz-tablo td.s.bos{color:#1b2b42}#yz-tv .yz-tablo .s.aktif{background:rgba(245,158,11,.09)}',
+        '#yz-tv .yz-tablo .top{background:#0e1f36}#yz-tv .yz-tablo th.top{color:#e8eef7}',
+        '#yz-tv .yz-tablo .tmp,#yz-tv .yz-tablo .on,#yz-tv .yz-tablo .x{font-size:.82em;color:#6f86a6}',
+        '#yz-tv .yz-tablo .hdf{font-size:.78em;color:#56708f}',
+        '#yz-tv .yz-tablo tbody tr:nth-child(even){background:rgba(255,255,255,.02)}',
+        '#yz-tv .yz-tv-sayfa{position:absolute;right:1vw;bottom:.7vh;font-size:max(11px,.85vw);font-weight:800;color:#c9d6e8;background:#0f2440;border:1px solid #1d3354;padding:.4vh .8vw;border-radius:.6vw}'
+    ].join('');
+    document.head.appendChild(st);
 }
 function yzTvTus(e) { if (e.key === 'Escape' && _yz.tv && !_yz.giris) { e.preventDefault(); yzTvKapat(); } }
 function yzTvCiz() {
@@ -511,13 +567,14 @@ function yzTvCiz() {
     el.style.setProperty('--yz-satir', yuk + 'px');
     el.innerHTML = '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button>'
         + '<div class="yz-tv-bas">'
-        + '<div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">' + (bitti ? 'SIRALAMA TURU · SONUÇLAR' : 'SIRALAMA TURU') + '</div><div class="yz-tv-alt">' + esc(d.ayar.mesafe) + ' · ' + f.ad + ' · ' + new Date(d.basla).toLocaleDateString('tr-TR') + '</div></div>'
+        + '<div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">' + (bitti ? 'SIRALAMA TURU · SONUÇLAR' : 'SIRALAMA TURU') + '</div><div class="yz-tv-alt">' + esc(d.ayar.mesafe) + ' · ' + f.ad + ' · ' + new Date(d.basla).toLocaleDateString('tr-TR') + '</div>' + yzGorunumKontrolHTML(o, true) + '</div>'
         + '<div class="yz-tv-seri">' + (bitti ? '<span class="yz-tv-seri-et">TUR</span><b style="font-size:3.8vw;margin-top:.6vh">BİTTİ</b>' : '<span class="yz-tv-seri-et">SERİ</span><b>' + (seri + 1) + '</b><span class="yz-tv-seri-top">/ ' + f.seri + '</span>') + (!bitti ? '<div class="yz-tv-bek">' + (bek ? bek + ' skor bekleniyor' : '✓ seri tamam') + '</div>' : '') + '</div>'
-        + (bitti ? '<div class="yz-tv-saat">' + yzGorunumKontrolHTML(o, true) + '</div>' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
+        + (bitti ? '' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
         + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
         + yzTvDuyuruHTML(o, sira, yeni);
+    yzTvSigdir(el);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
 }
@@ -1435,7 +1492,7 @@ function yzTvKontrolHTML(o, el) {
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri).length, son = seri >= f.seri - 1;
     return '<div class="yz-tv-kontrol">' + sayac + sure
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
-        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana') + '</div>' + yzGorunumKontrolHTML(o, true);
+        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana') + '</div>';
 }
 function yzTvSatir(kEnc) { let o = yzOku(), d = o.durum; if (!d || d.asama !== 'tur') return; yzGirisAc(kEnc, Math.min(d.seri, yzFormat(d).seri - 1)); }
 function yzTvSiradaki() {
@@ -1730,7 +1787,7 @@ function yzCssYukle() {
 const YZ_TK_TV_BTN = '<button class="yz-btn tv" onclick="yzTkTvAc()">📺 TV ekranı</button>';
 let _yzTk = { poll: null, imza: '', sayim: {}, son: null, kilit: null, giris: null };
 function yzTkTvAc() {
-    yzCssYukle(); yzTkCssYukle();
+    yzCssYukle(); yzTkCssYukle(); yzTv2Css();
     document.body.classList.add('yz-tv-acik');
     let el = document.getElementById('yz-tk-tv');
     if (!el) {
