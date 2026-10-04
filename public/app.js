@@ -9821,7 +9821,7 @@
         // DÜZELTME (2026-09-28, "birleştir onayında sadece İptal çıkıyor"): kendi düğmeleri olan akışlar (Kategori
         // Taşı, aynı-isim uyarısı, misafir grup seçimi) Evet'i display:none yapıyordu ve hiçbir yer geri açmıyordu —
         // sonraki TÜM onaylarda Evet kayboluyordu. Artık her açılışta: geri çağrı varsa görünür, yoksa gizli.
-        function onayIste(mesaj, cb, btnYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) { b.innerText = btnYazi || 'Evet'; b.style.display = typeof cb === 'function' ? '' : 'none'; } let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'flex'; }
+        function onayIste(mesaj, cb, btnYazi, hayirYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) { b.innerText = btnYazi || 'Evet'; b.style.display = typeof cb === 'function' ? '' : 'none'; } let hb = document.querySelector('#onay-modal button[onclick="onayKapat()"]'); if(hb) hb.innerText = hayirYazi || 'İptal'; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'flex'; }
         function onayKapat() { _onayCb = null; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'none'; }
         function onayOnayla() { let cb = _onayCb; onayKapat(); if(typeof cb === 'function') { try { cb(); } catch(e) {} } }
         // İşlem yükleniyor bindirmesi — uzun sürebilecek senkron işler (ör. kmDersiBitir'in tüm kulüp
@@ -10603,6 +10603,7 @@
                         + '<div style="width:18px;height:18px;border-radius:4px;background:'+(secili?'var(--accent-orange)':'transparent')+';border:2px solid '+(secili?'var(--accent-orange)':'var(--border-color)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#fff;">'+(secili?'✓':'')+'</div>'
                         + '<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;overflow:hidden;">'+avatarIc+'</div>'
                         + '<div style="flex:1;"><div style="font-weight:800;font-size:13px;">'+ad+'</div><div style="font-size:10px;color:var(--text-muted);">'+LIG_ETIKET[g]+' · '+(db[ad].yay||'')+'</div></div>'
+                        + (typeof kmProgramPinHTML === 'function' ? kmProgramPinHTML(g, ad) : '') // 📌 ders programına kalıcı ekle/çıkar (dagsk-km-sablon-ozet.js)
                         + '</div>';
                 });
             });

@@ -259,6 +259,8 @@ function kmDersSlotAnahtar() { return 'dag_km_dersslot_' + (_kmAktifKonum || 'va
 function kmDersSlot() { try { let v = JSON.parse(localStorage.getItem(kmDersSlotAnahtar()) || 'null'); return v && v.tarih === bugunISO() ? v : null; } catch (e) { return null; } }
 function kmProgramDersleriCiz() {
     let el = document.getElementById('km-program-dersler'); if (!el) return;
+    // ders sürerken (programdan başlatılmış): bugünün ders listesi yerine bu dersin bilgisi + 📌 açıklaması
+    if (kmProgramOrtaDersMi()) { let sl = kmDersSlot(); el.innerHTML = '<div class="kmp-ortaders">📌 <b>' + kmSablonEsc(kmProgramDersAd(sl)) + '</b> dersi sürüyor. Sporcuları seçip onaylarsan bugünkü derse eklenir/çıkarılır; satırdaki <b>📌 Programda / ＋ Programa</b> düğmesi kişiyi <b>ders programına kalıcı</b> olarak ekler ya da çıkarır.</div>'; return; }
     kmProgramSlotlariGetir().then(function (sl) {
         let liste = kmBugunDersleri(sl).slice(0, 3);
         if (!liste.length) { el.innerHTML = ''; return; }
@@ -282,7 +284,15 @@ async function kmProgramDersBaslat(id) {
         let eskiDoldur = kmModalDoldur, eskiBaslat = kmBaslat;
         kmModalDoldur = function () { let r = eskiDoldur.apply(this, arguments); kmProgramDersleriCiz(); return r; };
         // Elle (programdan değil) başlatılan derste eski ders bağlantısı kalmasın.
-        kmBaslat = function () { if (!_kmProgramdanBasliyor) { try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {} } return eskiBaslat.apply(this, arguments); };
+        // 2026-10-04: ders SÜRERKEN "Sporcu ekle" penceresinden onaylanınca ders bağlantısı korunur ve program farkı sorulur
+        // (eskiden silinirdi → kapanış ekranı ve programa ekleme sorusu dersi bilmiyordu).
+        kmBaslat = function () {
+            let slot = kmDersSlot(), onceki = (typeof _kmListe !== 'undefined' ? _kmListe : []).slice(), ortaDers = !!(slot && onceki.length && !_kmProgramdanBasliyor);
+            if (!_kmProgramdanBasliyor && !ortaDers) { try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {} }
+            let r = eskiBaslat.apply(this, arguments);
+            if (ortaDers) Promise.resolve(r).then(function () { try { kmProgramFarkSor(slot, onceki); } catch (e) {} });
+            return r;
+        };
     }
     kanca();
     let st = document.createElement('style');
@@ -426,3 +436,80 @@ function kmKapanisKapat() {
     if (K && !K.onaylandi && K.kisiler.length) return onayIste('Yoklama henüz kaydedilmedi. Kaydetmeden kapatılsın mı?<br><span style="font-size:12px;color:var(--text-muted)">Skor giren sporcular zaten "geldi" sayıldı; sadece gelmeyenler işaretlenmemiş kalır.</span>', bitir, 'Kaydetmeden kapat');
     bitir();
 }
+
+// ---------------------------------------------------------------- DERS PROGRAMINA KALICI EKLE / ÇIKAR (2026-10-04)
+// Kullanıcı: "Karışık Sınıf'ı Pazar 11 dersinden başlatıp derste olmayan birini eklediğimde, bu kişiyi kalıcı olarak ders
+// programına yazayım mı diye sor; ekle-kaldır ekranında da kalıcı olarak programa ekleyip çıkarabileyim". Programdan
+// başlatılmış ders sürerken: (1) "Sporcu ekle" penceresinde her satırda 📌 düğmesi (programda / programa ekle) — dokununca
+// ders programı hemen güncellenir; (2) pencere onaylanınca programda olmayan yeni eklenenler (ve çıkarılıp programda kalanlar)
+// için "programa da kaydedeyim mi?" sorulur. Ders sürerken pencere onaylanınca ders bağlantısı artık silinmez.
+const KM_PROGRAM_GUN = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+let _kmPinProgram = null, _kmPinYukleniyor = false;
+function kmProgramDersAd(slot) { return KM_PROGRAM_GUN[new Date().getDay()] + ' ' + (slot.bas || '') + ' · ' + (slot.grup || 'Ders'); }
+function kmProgramSlotTaze(id) { _kmProgramOnbellek.t = 0; return kmProgramSlotlariGetir().then(function (sl) { return (sl || []).find(function (x) { return x.id === id; }) || null; }); }
+function kmProgramOrtaDersMi() { return !!(kmDersSlot() && typeof _kmListe !== 'undefined' && _kmListe.length); }
+function kmProgramPinYukle() {
+    let slot = kmDersSlot(); if (!slot || _kmPinYukleniyor) return; _kmPinYukleniyor = true;
+    kmProgramSlotTaze(slot.id).then(function (s) {
+        let set = {}; ((s && s.katilimcilar) || (slot.katilimcilar || []).map(function (k) { return { grup: k.g, ad: k.ad }; })).forEach(function (k) { set[k.grup + '|' + k.ad] = 1; });
+        _kmPinProgram = { id: slot.id, set: set };
+    }).catch(function () { _kmPinProgram = { id: slot.id, set: {} }; }).then(function () {
+        _kmPinYukleniyor = false;
+        let m = document.getElementById('karisik-modal'); if (m && m.style.display === 'flex') kmModalDoldur();
+    });
+}
+function kmProgramPinHTML(g, ad) {
+    if (!kmProgramOrtaDersMi()) return '';
+    let slot = kmDersSlot(), p = _kmPinProgram && _kmPinProgram.id === slot.id ? _kmPinProgram.set : null;
+    if (!p) { kmProgramPinYukle(); return ''; }
+    let var_ = !!p[g + '|' + ad];
+    return '<button type="button" class="kmp-pin' + (var_ ? ' var' : '') + '" onclick="event.stopPropagation(); kmProgramPinDegis(\'' + encodeURIComponent(g) + '\',\'' + encodeURIComponent(ad).replace(/'/g, '%27') + '\')" title="' + (var_ ? 'Ders programında kayıtlı — dokun: programdan çıkar' : 'Ders programında yok — dokun: kalıcı olarak programa ekle') + '">' + (var_ ? '📌 Programda' : '＋ Programa') + '</button>';
+}
+function kmProgramPinDegis(gE, adE) {
+    let g = decodeURIComponent(gE), ad = decodeURIComponent(adE), slot = kmDersSlot(); if (!slot || !_kmPinProgram) return;
+    if (_kmPinProgram.set[g + '|' + ad]) onayIste('<b>' + kmSablonEsc(ad) + '</b>, <b>' + kmSablonEsc(kmProgramDersAd(slot)) + '</b> dersinin programından kalıcı olarak çıkarılsın mı?<br><span style="font-size:12px;color:var(--text-muted)">Bugünkü dersteki yeri ve geçmiş yoklamaları değişmez.</span>', function () { kmProgramKatilimci(slot, g, ad, false); }, 'Programdan çıkar');
+    else kmProgramKatilimci(slot, g, ad, true);
+}
+function kmProgramKatilimci(slot, g, ad, ekle) {
+    let url = '/api/antrenman-programi/' + slot.id + '/katilimci', cihaz = typeof _cihazId !== 'undefined' ? _cihazId : null;
+    let istek = ekle ? fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup: g, ad: ad, deviceId: cihaz }) })
+        : fetch(url + '?grup=' + encodeURIComponent(g) + '&ad=' + encodeURIComponent(ad) + '&deviceId=' + encodeURIComponent(cihaz || ''), { method: 'DELETE' });
+    return istek.then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (d) {
+        if (!d.applied) throw 0;
+        if (_kmPinProgram && _kmPinProgram.id === slot.id) { if (ekle) _kmPinProgram.set[g + '|' + ad] = 1; else delete _kmPinProgram.set[g + '|' + ad]; }
+        // ders kapanışındaki "programda olup gelmeyen" listesi de güncel olsun
+        try { let v = kmDersSlot(); if (v && v.id === slot.id) { v.katilimcilar = (v.katilimcilar || []).filter(function (k) { return !(k.g === g && k.ad === ad); }); if (ekle) v.katilimcilar.push({ g: g, ad: ad }); localStorage.setItem(kmDersSlotAnahtar(), JSON.stringify(v)); } } catch (e) {}
+        _kmProgramOnbellek.t = 0;
+        showToast((ekle ? '📌 ' + ad + ' ders programına eklendi: ' : ad + ' ders programından çıkarıldı: ') + kmProgramDersAd(slot), 'success');
+        let m = document.getElementById('karisik-modal'); if (m && m.style.display === 'flex') kmModalDoldur();
+        return true;
+    }).catch(function (st) { showToast(st === 401 || st === 403 ? 'Ders programını değiştirmek için yetkin yok.' : ad + ': ders programı güncellenemedi (bağlantı?)', 'error'); return false; });
+}
+// pencere onaylanınca: programda olmayan yeni eklenenler + çıkarılıp programda kalanlar için sor
+function kmProgramFarkSor(slot, onceki) {
+    let key = function (k) { return k.g + '|' + k.ad; }, oncekiSet = {}, simdiSet = {};
+    onceki.forEach(function (k) { oncekiSet[key(k)] = 1; }); (_kmListe || []).forEach(function (k) { simdiSet[key(k)] = 1; });
+    let yeni = (_kmListe || []).filter(function (k) { return !oncekiSet[key(k)]; }), cikan = onceki.filter(function (k) { return !simdiSet[key(k)]; });
+    if (!yeni.length && !cikan.length) return;
+    kmProgramSlotTaze(slot.id).then(function (s) {
+        let prog = {}; ((s && s.katilimcilar) || (slot.katilimcilar || []).map(function (k) { return { grup: k.g, ad: k.ad }; })).forEach(function (k) { prog[k.grup + '|' + k.ad] = 1; });
+        let ekle = yeni.filter(function (k) { return !prog[key(k)]; }), cikar = cikan.filter(function (k) { return prog[key(k)]; });
+        if (!ekle.length && !cikar.length) return;
+        let kutu = function (id, k, isaretli) { return '<label style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="' + id + '"' + (isaretli ? ' checked' : '') + ' style="appearance:auto!important;-webkit-appearance:checkbox!important;width:20px;height:20px;flex-shrink:0"><span><b>' + kmSablonEsc(k.ad) + '</b> <small style="color:var(--text-muted)">' + kmSablonEsc((typeof LIG_ETIKET !== 'undefined' && LIG_ETIKET[k.g]) || k.g) + '</small></span></label>'; };
+        let html = '<div style="text-align:left"><b>📌 ' + kmSablonEsc(kmProgramDersAd(slot)) + ' · ders programı</b>'
+            + (ekle.length ? '<div style="margin-top:10px;font-size:13px;color:var(--text-muted)">Bu derste <b>kayıtlı olmayan</b> eklediğin sporcular. <b>Kalıcı olarak ders programına</b> da yazayım mı?</div>' + ekle.map(function (k, i) { return kutu('kmpf-e-' + i, k, true); }).join('') : '')
+            + (cikar.length ? '<div style="margin-top:10px;font-size:13px;color:var(--text-muted)">Bugün çıkardığın ama programda kayıtlı olanlar. <b>Programdan da</b> çıkarayım mı?</div>' + cikar.map(function (k, i) { return kutu('kmpf-c-' + i, k, false); }).join('') : '')
+            + '<div style="margin-top:10px;font-size:12px;color:var(--text-muted)">İşaretsiz olanlar sadece bugünkü derste değişir.</div></div>';
+        onayIste(html, function () {
+            let ise = []; ekle.forEach(function (k, i) { let c = document.getElementById('kmpf-e-' + i); if (c && c.checked) ise.push([k, true]); }); cikar.forEach(function (k, i) { let c = document.getElementById('kmpf-c-' + i); if (c && c.checked) ise.push([k, false]); });
+            ise.reduce(function (p, x) { return p.then(function () { return kmProgramKatilimci(slot, x[0].g, x[0].ad, x[1]); }); }, Promise.resolve());
+        }, 'Programa kaydet', 'Sadece bugün');
+    });
+}
+(function () {
+    let st = document.createElement('style');
+    st.textContent = '.kmp-pin{flex-shrink:0;min-height:32px;padding:0 10px;border-radius:99px;border:1px dashed var(--border-color);background:transparent;color:var(--text-muted);font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}'
+        + '.kmp-pin.var{border-style:solid;border-color:var(--accent-orange);color:var(--accent-orange);background:color-mix(in srgb,var(--accent-orange) 10%,transparent)}'
+        + '.kmp-ortaders{border:1px solid var(--accent-orange);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;line-height:1.45;background:color-mix(in srgb,var(--accent-orange) 8%,transparent)}';
+    document.head.appendChild(st);
+})();
