@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v210';
+const CACHE = 'dag-sk-v211';
 // Form Lab yapay zekâ dosyaları (MediaPipe wasm + modeller, ~20 MB): sürümlü kabuk önbelleğinden AYRI ve kalıcı —
 // her deploy'da silinmez, önce önbellekten sunulur (bir kez iner, sonra internetsiz de açılır). Adresler sürüm
 // numarası taşıdığı için içerik değişmez; yeni sürüm = yeni adres.
