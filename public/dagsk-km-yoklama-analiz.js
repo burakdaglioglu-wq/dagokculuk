@@ -283,6 +283,9 @@ function kmYoklamaAnalizCiz() {
         <div class="ya-sekmeler" role="tablist">${sekme('ders', '📅 Dersler')}${sekme('sporcu', '👥 Sporcular')}${sekme('sayilar', '📊 Sayılar')}${sekme('gecmis', '🕓 Geçmiş')}</div>
         ${govde}
     </div>`;
+    // açık/kapalı durumu satır içi ontoggle ile DEĞİL burada bağlanır: PDF aracı sayfanın kopyasını _kmYa olmayan bir
+    // ortamda çiziyor, satır içi olay orada "_kmYa is not defined" fırlatıyordu (2026-10-05).
+    ic.querySelectorAll('.ya-ozet').forEach(d => d.addEventListener('toggle', () => { _kmYa.ozetKapali = !d.open; }));
     if (simdiGoster) _kmYaTimer = setInterval(() => { let el = document.getElementById('ya-simdi'); if (!el) { clearInterval(_kmYaTimer); _kmYaTimer = null; return; } el.outerHTML = kmYaSimdiHTML(kmYaSporcular()); }, 30000);
 }
 // Üstte tek satırlık "şu an" şeridi — ayrıntılı isim listesi Dersler sekmesinde.
@@ -1025,7 +1028,7 @@ function kmYaGunOzetHTML(iso, d, dersler) {
     let grupHTML = Object.keys(v.gruplar).sort(kmYaGrupSira).map(a => `<div class="ya-oz-grup"><div class="ya-oz-grup-bas"><i style="background:${a === '__egitmen' ? '#38bdf8' : a === '__misafir' ? '#f472b6' : kmYaRenk(a)}"></i><b>${KM_YA_TUR_GRUP[a] || KM_YA_GRUP_AD[a] || esc(a)}</b><span>${v.gruplar[a].length} kişi</span></div>
         <div class="ya-cipler">${v.gruplar[a].sort((x, y) => x.k.ad.localeCompare(y.k.ad, 'tr')).map(x => `<button class="ya-cip geldi" onclick="kmYaSporcuAc('${kmYaKey(x.k.g, x.k.ad)}')">${esc(x.k.ad)}${x.st === 's' ? ' <small title="Yoklamada yok, o gün skoru var">🎯</small>' : ''}</button>`).join('')}</div></div>`).join('');
     let dersHTML = v.dersOzet.length ? `<div class="ya-oz-dersler">${v.dersOzet.map(x => `<div class="ya-oz-ders"><span>${x.s.baslangicSaat}</span><b>${esc(kmYaSlotAd(x.s))}</b><em>${x.geldi}/${x.kayitli} geldi</em></div>`).join('')}${v.kayitsiz.length ? `<div class="ya-oz-ders"><span>—</span><b>Derse kayıtsız gelen</b><em>${v.kayitsiz.length} kişi</em></div>` : ''}</div>` : '';
-    return `<details class="ya-kart ya-ozet" ${_kmYa.ozetKapali ? '' : 'open'} ontoggle="_kmYa.ozetKapali = !this.open">
+    return `<details class="ya-kart ya-ozet" ${_kmYa.ozetKapali ? '' : 'open'}>
         <summary><span class="ya-etiket">📋 Gün sonu özeti</span><span class="ya-oz-sayi"><b>${v.ogrenci}</b> sporcu geldi${v.gelen.length > v.ogrenci ? ' · ' + (v.gelen.length - v.ogrenci) + ' eğitmen/misafir' : ''}${v.gelmedi.length ? ' · ' + v.gelmedi.length + ' gelmedi' : ''}</span></summary>
         ${dersHTML}${grupHTML}
         ${skorla ? `<div class="ya-alt">🎯 ${skorla} kişi yoklamaya işlenmemiş ama o gün skoru var; geldi sayıldı.</div>` : ''}
