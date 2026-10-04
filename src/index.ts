@@ -118,6 +118,7 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   "/api/push/subscribe",
   "/api/push/unsubscribe",
   "/api/tanitim/ziyaret",
+  "/api/tanitim/talep",
   "/api/ihtiyac",
   "/api/milo/sporcu-girisi",
   // Form Lab telefondan yayın: telefon sayfası (kamera.html) oturumsuz; her istek oda kodu + gizli anahtar ister.

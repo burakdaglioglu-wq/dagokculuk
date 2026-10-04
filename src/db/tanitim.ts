@@ -8,6 +8,20 @@ export async function ziyaretKaydet(env: Env, gun: string): Promise<void> {
     .run();
 }
 
+/** Sitede deneme dersi talebi (form gönderimi / "deneme dersi" WhatsApp düğmesi) — yalnız SAYI, kişi bilgisi yok.
+ * Ayrı tablo açmamak için ziyaret tablosunda "talep:YYYY-MM-DD" anahtarıyla tutulur (ay özetinin LIKE 'YYYY-MM%'
+ * sorgusuna karışmaz). */
+export async function talepKaydet(env: Env, gun: string): Promise<void> {
+  await ziyaretKaydet(env, "talep:" + gun);
+}
+
+export async function aralikToplam(env: Env, ilkGun: string, talep: boolean): Promise<number> {
+  const row = await env.DB.prepare("SELECT SUM(sayac) AS toplam FROM tanitim_ziyaret WHERE gun >= ? AND gun < ?")
+    .bind(talep ? "talep:" + ilkGun : ilkGun, talep ? "talep;" : "9999")
+    .first<{ toplam: number | null }>();
+  return row?.toplam ?? 0;
+}
+
 export async function ayOzetiGetir(env: Env, ayPrefix: string): Promise<number> {
   const row = await env.DB.prepare("SELECT SUM(sayac) AS toplam FROM tanitim_ziyaret WHERE gun LIKE ?")
     .bind(ayPrefix + "%")

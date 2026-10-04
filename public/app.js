@@ -7762,7 +7762,7 @@
         const YONETICI_BOLUMLER = [
             ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['kisiler','🪪','Eğitmen & Misafir'],['guvenlik','🔐','Güvenlik']]],
             ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
-            ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
+            ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
         // DÜZELTME: eskiden 9 sekme butonu HER ZAMAN ekranda açık duruyordu — telefonda modalın
         // yarısına yakınını kaplayıp asıl içeriğe çok az yer bırakıyordu. Artık hamburger menü:
@@ -7818,10 +7818,23 @@
                     if(s && k === 'kullanicilar') rozet = `<span class="yon-sb-rozet">${s.aktif}</span>`;
                     if(s && k === 'aidat' && s.aidat) rozet = `<span class="yon-sb-rozet kirmizi">${s.aidat}</span>`;
                     if(s && k === 'yoklama' && s.gelen) rozet = `<span class="yon-sb-rozet">${s.gelen}</span>`;
+                    if(k === 'deneme') { let n = denemeDikkatSayisi(); if(n) rozet = `<span class="yon-sb-rozet kirmizi">${n}</span>`; }
                     html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${ikon}</span>${l}${rozet}</button>`;
                 });
             });
             nav.innerHTML = html;
+        }
+        // Deneme Dersleri rozeti: dönüş/hatırlatma bekleyen aday sayısı (yerel kopyadan; ekran açılınca sunucuyla eşitlenir).
+        // Kural dagsk-deneme.js ddDikkat ile aynı tutulmalı (o dosya geç yüklendiği için burada kısa kopyası var).
+        function denemeDikkatSayisi() {
+            try {
+                if(typeof ddDikkat === 'function') return ddListe().filter(x => x.durum !== 'kayit' && x.durum !== 'vazgecti' && ddDikkat(x)).length;
+                let d = kyDepoOku('deneme_adaylari'), bugun = bsIsoTarih(new Date()), simdi = Date.now(), n = 0;
+                Object.keys(d).forEach(k => { let x = d[k]; if(!x || x.sil) return;
+                    let g = x.gecmis || [], son = g.length ? g[g.length - 1].z : (x.olusturma || x.t || 0);
+                    if(x.durum === 'yeni' || (x.durum === 'planlandi' && (!x.denemeTarihi || x.denemeTarihi <= bsIsoTarih(new Date(simdi + 86400000)))) || ((x.durum === 'arandi' || x.durum === 'geldi') && simdi - son > 3 * 86400000)) n++; });
+                return n;
+            } catch(e) { return 0; }
         }
         function yoneticiNavCiz() {
             let etiket = document.getElementById('yon-aktif-sekme-etiket');
@@ -7851,7 +7864,7 @@
             yoneticiSekmeAktif = k; _yonDigerAcik = false; yoneticiNavCiz();
             let arama = document.getElementById('yonetici-arama');
             let ligBar = document.getElementById('yon-lig-bar');
-            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
+            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
             yoneticiLigButonGuncelle();
             if(k === 'kullanicilar') { renderHedefId = 'yonetici-liste'; if(arama) arama.style.display = 'block'; yoneticiPaneliCiz(); return; }
             if(arama) arama.style.display = 'none';
@@ -7876,6 +7889,8 @@
             // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).
             if(k === 'hizliduzenle') { let la = document.getElementById('yonetici-liste'); if(la && typeof hdCiz !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-hizli-duzenle.js').then(function() { if(yoneticiSekmeAktif === 'hizliduzenle') hdCiz(); }).catch(function() { showToast('Hızlı Düzenle yüklenemedi.', 'error'); }); return; }
             if(k === 'kisiler') { if(typeof kyKisilerCiz === 'function') kyKisilerCiz(); return; }
+            // 🌱 Deneme Dersleri (2026-10-05) — siteden/WhatsApp'tan gelen adaylar → deneme → kayıt (dagsk-deneme.js)
+            if(k === 'deneme') { let la = document.getElementById('yonetici-liste'); if(la && typeof ddCiz !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-deneme.js').then(function() { if(yoneticiSekmeAktif === 'deneme') ddCiz(); }).catch(function() { showToast('Deneme Dersleri yüklenemedi.', 'error'); }); return; }
             if(k === 'duyuru') { renderHedefId = 'yonetici-liste'; yoneticiDuyuruCiz(); return; }
             if(k === 'ihtiyac') { renderHedefId = 'yonetici-liste'; yoneticiIhtiyacCiz(); return; }
             if(k === 'belge') { renderHedefId = 'yonetici-liste'; yoneticiBelgeCiz(); return; }

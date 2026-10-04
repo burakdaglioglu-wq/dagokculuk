@@ -1,6 +1,6 @@
 import type { Router } from "../router";
 import { json } from "../lib/json";
-import { ziyaretKaydet, ayOzetiGetir, kulupNabziGetir, dersSaatleriGetir } from "../db/tanitim";
+import { ziyaretKaydet, talepKaydet, aralikToplam, ayOzetiGetir, kulupNabziGetir, dersSaatleriGetir } from "../db/tanitim";
 
 /** Türkiye (UTC+3, DST yok) yerel gününü YYYY-MM-DD olarak döner — toISOString() ham UTC kullanır
  * ve gece yarısına yakın ziyaretleri yanlış güne/aya yazdırır. */
@@ -14,10 +14,18 @@ export function registerTanitimRoutes(router: Router): void {
     return json({ ok: true });
   });
 
+  router.post("/api/tanitim/talep", async (_request, env) => {
+    await talepKaydet(env, turkiyeGunu());
+    return json({ ok: true });
+  });
+
   router.get("/api/tanitim/ziyaret-ozet", async (_request, env) => {
     const ayPrefix = turkiyeGunu().slice(0, 7); // YYYY-MM
     const toplam = await ayOzetiGetir(env, ayPrefix);
-    return json({ ay: ayPrefix, toplam });
+    // Deneme Dersleri hunisi (2026-10-05): son 90 günün ziyaret ve site talebi sayısı
+    const ilk90 = new Date(Date.now() + 3 * 60 * 60 * 1000 - 89 * 86400000).toISOString().slice(0, 10);
+    const [ziyaret90, talep90, talepAy] = await Promise.all([aralikToplam(env, ilk90, false), aralikToplam(env, ilk90, true), aralikToplam(env, ayPrefix + "-01", true)]);
+    return json({ ay: ayPrefix, toplam, talep: talepAy, son90: { ziyaret: ziyaret90, talep: talep90 } });
   });
 
   router.get("/api/tanitim/nabiz", async (request, env) => {

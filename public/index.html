@@ -1454,6 +1454,18 @@
 
   // Ziyaret sayacı — yönetici panelinde aylık toplam olarak görünür, siteye hiçbir şey yazdırmaz.
   fetch('/api/tanitim/ziyaret', { method: 'POST' }).catch(function(){});
+  // Deneme dersi talebi sayacı (form gönderimi ya da "deneme dersi" WhatsApp düğmesi) — yalnız sayı, kişi bilgisi
+  // gönderilmez; uygulamadaki Deneme Dersleri hunisinde "sitede talep" olarak görünür. Aynı sekmede bir kez sayılır.
+  var _talepSayildi = false;
+  function talepSay(){
+    if(_talepSayildi) return; _talepSayildi = true;
+    try { if(navigator.sendBeacon && navigator.sendBeacon('/api/tanitim/talep')) return; } catch(e) {}
+    fetch('/api/tanitim/talep', { method: 'POST', keepalive: true }).catch(function(){});
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href*="api.whatsapp.com"]');
+    if(a && /deneme/i.test(decodeURIComponent(a.getAttribute('href') || ''))) talepSay();
+  });
 
   // Canlı Kulüp Nabzı — gerçek D1 verisinden son 30 günün sayıları. Sıfır olan kutu hiç gösterilmez; rakamlar
   // bant ekrana girince sayarak yükselir.
@@ -1552,6 +1564,7 @@
       var kim = v('kim') === 'ben' ? 'Kendim için' : 'Çocuğum için', yas = v('yas'), brans = v('brans'), saat = brans === 'Okçuluk' ? v('saat') : '', ad = v('ad');
       var satir = ['Merhaba, ücretsiz deneme dersi almak istiyorum.', '', '- ' + kim + (yas ? ' (' + yas + ' yaş)' : ''), '- Branş: ' + brans, '- Uygun zaman: ' + (saat || 'Fark etmez')];
       if(ad) satir.push('- Ad: ' + ad);
+      talepSay();
       window.open('https://api.whatsapp.com/send?phone=905469107893&text=' + encodeURIComponent(satir.join('\n')), '_blank', 'noopener');
     });
     bransDegisti();
