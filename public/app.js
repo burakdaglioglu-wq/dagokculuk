@@ -345,7 +345,7 @@
         // OTOMATİK YOKLAMA
         let otomatikYoklamaDB = {}; // { 'YYYY-MM-DD': { 'AD': { saat:'HH:MM', grup:'buyukler' } } }
         function otomatikYoklamaKaydet() { try { localStorage.setItem('okculuk_otomatik_yoklama', JSON.stringify(otomatikYoklamaDB)); } catch(e) {} }
-        function otomatikYoklamaIsaretle(ad) {
+        function otomatikYoklamaIsaretle(ad, grup) {
             // DÜZELTME: Eskiden sadece Salon Modu açıkken çalışıyordu.
             // Artık skor girilen HER sporcu o gün otomatik "geldi" sayılır.
             if(!ad) return;
@@ -353,7 +353,8 @@
             if(!otomatikYoklamaDB[bugun]) otomatikYoklamaDB[bugun] = {};
             if(!otomatikYoklamaDB[bugun][ad]) {
                 let saat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-                otomatikYoklamaDB[bugun][ad] = { saat: saat, grup: aktifGrup };
+                // 2026-10-04: sporcunun KENDİ grubu (Karışık Sınıf'ta ana ekranda seçili grup başka olabiliyordu)
+                otomatikYoklamaDB[bugun][ad] = { saat: saat, grup: grup || aktifGrup };
                 otomatikYoklamaKaydet();
                 try { if(typeof bulutaGonderKontrol === 'function') bulutaGonderKontrol(); } catch(e) {}
             }
@@ -23046,7 +23047,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 return;
             }
             try { klasmanDoldur(); } catch(e) {}
-            try { otomatikYoklamaIsaretle(s.ad); } catch(e) {}
+            try { otomatikYoklamaIsaretle(s.ad, s.g); } catch(e) {}
             try { kmKusakPuanEkle(s.g, s.ad, sonuc.seriPuan); } catch(e) {}
 
             _kmOyunKilit = true;
@@ -27154,7 +27155,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             function devamEt() {
             if(!sonuc.ok) { showToast('Sporcu bulunamadı — kayıt yapılamadı.', 'error'); return; }
             try { klasmanDoldur(); } catch(e) {}
-            try { otomatikYoklamaIsaretle(ad); } catch(e) {}
+            try { otomatikYoklamaIsaretle(ad, g); } catch(e) {}
             // Faz 17b (2026-09-18) — "skor yanlış girilmişse düzeltilmeli" (kullanıcı spesifikasyonu):
             // Oyunlar'ın _kmOyunSonGiris deseniyle AYNI ilke, basitleştirilmiş (Yarışma'da frac/futbol
             // yok) — sadece GERÇEK seriyi turnuvaDB'den geri siliyor.
@@ -28098,7 +28099,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         let sonuc = _skorKaydetCekirdek(beklenen.grup, beklenen.sporcu, beklenen.oklar);
                         if(sonuc.ok) {
                             try { klasmanDoldur(); } catch(e) {}
-                            try { otomatikYoklamaIsaretle(beklenen.sporcu); } catch(e) {}
+                            try { otomatikYoklamaIsaretle(beklenen.sporcu, beklenen.grup); } catch(e) {}
                             _seriSonrasiOdulVeLog(beklenen.sporcu, beklenen.grup, sonuc.seriDoc, sonuc.seriPuan, sonuc.okDegerleri);
                             showToast(`✅ ${beklenen.sporcu} — az önceki seri arka planda kaydedildi (+${sonuc.seriPuan})`, 'success');
                         } else if(sonuc.sebep === 'limit-doldu') {
@@ -28922,7 +28923,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Karışık platforma geri dön
             try { kmSkorSonrasiGeriDon(); } catch(e) {}
 
-            try { otomatikYoklamaIsaretle(secilenSporcu); } catch(e) {}
+            try { otomatikYoklamaIsaretle(secilenSporcu, gercekGrup); } catch(e) {}
 
             _seriSonrasiOdulVeLog(secilenSporcu, aktifGrup, seriDoc, seriPuan, okDegerleri);
 

@@ -384,7 +384,7 @@ function yzGercekKaydet(k, oklar, mesafe, kaynak) {
     }
     if (!sonuc.ok) return showToast(ad + ': karneye işlenemedi (' + (sonuc.sebep || '?') + ') — tablo kaydedildi.', 'warning');
     try { klasmanDoldur(); } catch (e) {}
-    try { otomatikYoklamaIsaretle(ad); } catch (e) {}
+    try { otomatikYoklamaIsaretle(ad, g); } catch (e) {}
 }
 
 // ---- süre sayacı (WA: 10 sn hatta geçiş → atış → son 30 sn sarı → bitti)

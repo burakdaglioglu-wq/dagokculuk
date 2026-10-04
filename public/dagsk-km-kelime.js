@@ -312,7 +312,7 @@ function kmKelimeGercekKaydet(ad, oklar) {
     catch(e) { return { ok: false, mesaj: 'Skor kayda yazılamadı: ' + e.message }; }
     if(!sonuc || !sonuc.ok) return { ok: false, mesaj: sonuc && sonuc.sebep === 'limit-doldu' ? kmOyunIlkAd(ad) + ' için günlük seri limiti dolu — oyun devam ediyor ama skor kayda yazılmadı.' : ad + ' kaydı bulunamadı — skor kayda yazılmadı.' };
     try { klasmanDoldur(); } catch(e) {}
-    try { otomatikYoklamaIsaretle(kisi.ad); } catch(e) {}
+    try { otomatikYoklamaIsaretle(kisi.ad, kisi.g); } catch(e) {}
     try { kmKusakPuanEkle(kisi.g, kisi.ad, sonuc.seriPuan); } catch(e) {}
     return { ok: true };
 }

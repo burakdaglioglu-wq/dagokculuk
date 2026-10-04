@@ -252,7 +252,7 @@ function kmPfSeriKaydet(k, oklar, ek, bitti) {
     let devam = () => {
         if (!sonuc.ok) { showToast(k.ad + ': kayıt yapılamadı (' + (sonuc.sebep || '?') + ').', 'error'); if (bitti) bitti(false); return; }
         try { klasmanDoldur(); } catch (e) {}
-        try { otomatikYoklamaIsaretle(k.ad); } catch (e) {}
+        try { otomatikYoklamaIsaretle(k.ad, k.g); } catch (e) {}
         if (bitti) bitti(true);
     };
     if (!sonuc.ok && sonuc.sebep === 'limit-doldu') {
