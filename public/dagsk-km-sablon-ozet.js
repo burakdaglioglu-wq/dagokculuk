@@ -291,6 +291,7 @@ async function kmProgramDersBaslat(id) {
             if (!_kmProgramdanBasliyor && !ortaDers) { try { localStorage.removeItem(kmDersSlotAnahtar()); } catch (e) {} }
             let r = eskiBaslat.apply(this, arguments);
             if (ortaDers) Promise.resolve(r).then(function () { try { kmProgramFarkSor(slot, onceki); } catch (e) {} });
+            else if (!_kmProgramdanBasliyor && !onceki.length) Promise.resolve(r).then(function () { setTimeout(function () { try { kmProgramDersiTani(); } catch (e) {} }, 400); });
             return r;
         };
     }
@@ -513,3 +514,23 @@ function kmProgramFarkSor(slot, onceki) {
         + '.kmp-ortaders{border:1px solid var(--accent-orange);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;line-height:1.45;background:color-mix(in srgb,var(--accent-orange) 8%,transparent)}';
     document.head.appendChild(st);
 })();
+
+// ---- elle başlatılan dersi programdaki derse bağla (2026-10-04): şu an programda ders varsa "hangi ders?" diye sorar;
+// seçilirse ders bağlantısı kurulur (kapanışta "programda olup gelmeyenler" + 📌 düğmeleri çalışır) ve programda olmayanlar
+// için kalıcı ekleme sorusu gelir.
+function kmProgramDersiTani() {
+    if (kmDersSlot() || typeof _kmListe === 'undefined' || !_kmListe.length) return;
+    kmProgramSlotlariGetir().then(function (sl) {
+        let aday = kmBugunDersleri(sl || []).filter(function (x) { return x.simdi; });
+        if (!aday.length || kmDersSlot()) return;
+        let html = '<div style="text-align:left"><b>📅 Bu ders programdaki hangi ders?</b><div style="font-size:13px;color:var(--text-muted);margin:6px 0 8px">Seçersen ders kapanışında "programda olup gelmeyenler" çıkar ve bu derste olup programda kayıtlı olmayanları kalıcı olarak eklemeyi sorarım.</div>'
+            + aday.map(function (x, i) { return '<label style="display:flex;gap:10px;align-items:center;padding:8px 0;font-size:14px;cursor:pointer"><input type="radio" name="kmpt" value="' + i + '"' + (i === 0 ? ' checked' : '') + ' style="appearance:auto!important;-webkit-appearance:radio!important;width:20px;height:20px;flex-shrink:0"><span><b>' + kmSablonEsc(x.s.baslangicSaat + '–' + x.s.bitisSaat) + '</b> ' + kmSablonEsc(x.s.grup || 'Ders') + ' <small style="color:var(--text-muted)">· ' + kmDersSporculari(x.s).length + ' kayıtlı</small></span></label>'; }).join('') + '</div>';
+        onayIste(html, function () {
+            let sec = document.querySelector('input[name="kmpt"]:checked'), x = aday[sec ? +sec.value : 0]; if (!x) return;
+            let slot = { id: x.s.id, grup: x.s.grup, bas: x.s.baslangicSaat, bit: x.s.bitisSaat, tarih: bugunISO(), katilimcilar: kmDersSporculari(x.s) };
+            try { localStorage.setItem(kmDersSlotAnahtar(), JSON.stringify(slot)); } catch (e) {}
+            showToast('📌 Ders bağlandı: ' + kmProgramDersAd(slot), 'success');
+            setTimeout(function () { try { kmProgramFarkSor(slot, []); } catch (e) {} }, 350);
+        }, 'Bu ders', 'Hiçbiri');
+    });
+}

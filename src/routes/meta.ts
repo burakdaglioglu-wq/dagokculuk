@@ -7,7 +7,8 @@ import { unauthorized } from "../lib/json";
 
 // Genel meta geçişi PIN'siz (Karışık Sınıf) — ama kişisel bilgi taşıyan anahtarlar oturum ister (okuma + yazma).
 // yapilacak_tamam: "Bugün yapılacaklar" işaretleri — kimin aidatı gecikmiş bilgisini taşır.
-const OTURUMLU_META = new Set<string>(["kisi_notlari", "personel_ders_ucret", "yapilacak_tamam"]);
+// program_gecmis: ders programı ekleme/çıkarma geçmişi (sunucu yazar, antrenmanProgrami.ts) — kimin hangi derste olduğu.
+const OTURUMLU_META = new Set<string>(["kisi_notlari", "personel_ders_ucret", "yapilacak_tamam", "program_gecmis"]);
 
 interface CredentialsRow {
   yonetici_hash: string;

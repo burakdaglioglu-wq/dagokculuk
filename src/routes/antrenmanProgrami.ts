@@ -2,6 +2,33 @@ import type { Router } from "../router";
 import { json, badRequest, readJson } from "../lib/json";
 import { broadcastMasterChanged } from "../lib/broadcast";
 import { listByGrupWithKatilimcilar, createSlot, updateSlot, deleteSlot, addKatilimci, removeKatilimci, addIstisna, removeIstisna } from "../db/antrenmanProgrami";
+import * as metaDb from "../db/meta";
+import { yetkiliOturum } from "../auth";
+import type { Env } from "../env";
+
+// Ders programı değişiklik geçmişi (2026-10-04, kullanıcı: "kimi ne zaman hangi derse ekledim görmek istiyorum").
+// Her katılımcı ekleme/çıkarma meta 'program_gecmis' kaydına yazılır ({id: {t, islem, slotId, ders, grup, ad, kim}}) —
+// hangi ekrandan yapılırsa yapılsın (Ders Programı, Yoklama, Karışık Sınıf 📌). Yazılamazsa asıl işlem ETKİLENMEZ.
+// Kişisel bilgi taşıdığı için okuması oturum ister (meta.ts OTURUMLU_META). En çok 800 kayıt / 365 gün tutulur.
+const GUN_KISA = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+async function programGecmisYaz(request: Request, env: Env, islem: "ekle" | "cikar", slotId: number, grup: string, ad: string): Promise<void> {
+  try {
+    const ot = await yetkiliOturum(request, env, false);
+    const slot = await env.DB.prepare("SELECT grup, gun, baslangicSaat FROM antrenman_programi WHERE id = ?").bind(slotId).first<{ grup: string; gun: number; baslangicSaat: string }>();
+    const gunler = await env.DB.prepare("SELECT gun FROM antrenman_programi_gun WHERE slotId = ? ORDER BY gun").bind(slotId).all<{ gun: number }>().then((r) => r.results.map((x) => x.gun)).catch(() => [] as number[]);
+    const gunYazi = (gunler.length ? gunler : slot ? [slot.gun] : []).map((g) => GUN_KISA[g] ?? "").join("·");
+    let o: Record<string, unknown> = {};
+    try { const v = await metaDb.getMeta(env, "program_gecmis"); o = v ? JSON.parse(v) : {}; } catch { o = {}; }
+    const t = Date.now();
+    o[t.toString(36) + Math.random().toString(36).slice(2, 6)] = { t, islem, slotId, ders: slot ? `${slot.grup} (${gunYazi} ${slot.baslangicSaat})` : "Ders #" + slotId, grup, ad, kim: ot?.ad ?? null };
+    const sinir = t - 365 * 86400000;
+    const tut = Object.entries(o).filter(([, x]) => ((x as { t?: number }).t ?? 0) >= sinir).sort((a, b) => ((b[1] as { t: number }).t) - ((a[1] as { t: number }).t)).slice(0, 800);
+    await metaDb.setMeta(env, "program_gecmis", JSON.stringify(Object.fromEntries(tut)));
+  } catch { /* geçmiş yazılamadıysa asıl işlem yine de başarılı */ }
+}
+async function katilimciVarMi(env: Env, slotId: number, grup: string, ad: string): Promise<boolean> {
+  return !!(await env.DB.prepare("SELECT 1 FROM antrenman_programi_katilimci WHERE slotId = ? AND grup = ? AND ad = ?").bind(slotId, grup, ad).first());
+}
 
 /** Haftalık antrenman programı (tekrarlanan ders saatleri) — grup bazlı, isteğe bağlı hatırlatma
  * bildirimi (bkz. src/lib/reminders.ts + scheduled() cron handler'ı) taşıyabilir. Her slot artık kendi
@@ -20,7 +47,9 @@ export function registerAntrenmanProgramiRoutes(router: Router): void {
     if (!id) return badRequest("invalid id");
     const body = await readJson<{ grup: string; ad: string; deviceId?: string }>(request);
     if (!body.grup || !body.ad) return badRequest("grup, ad are required");
+    const vardi = await katilimciVarMi(env, id, body.grup, body.ad);
     await addKatilimci(env, id, body.grup, body.ad);
+    if (!vardi) await programGecmisYaz(request, env, "ekle", id, body.grup, body.ad);
     await broadcastMasterChanged(env, body.deviceId ?? null);
     return json({ applied: true });
   });
@@ -32,7 +61,9 @@ export function registerAntrenmanProgramiRoutes(router: Router): void {
     const grup = url.searchParams.get("grup");
     const ad = url.searchParams.get("ad");
     if (!grup || !ad) return badRequest("grup, ad are required");
+    const vardi = await katilimciVarMi(env, id, grup, ad);
     await removeKatilimci(env, id, grup, ad);
+    if (vardi) await programGecmisYaz(request, env, "cikar", id, grup, ad);
     await broadcastMasterChanged(env, url.searchParams.get("deviceId"));
     return json({ applied: true });
   });
