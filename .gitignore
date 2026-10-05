@@ -6,3 +6,7 @@ yedek/
 
 # Yerel/telifli ham gorseller - ASLA commit/deploy edilmez (bkz. DEVIR.md 38)
 _yerel-gorseller/
+
+# Reklam malzemesi (uretilmis gorsel/video) - commit edilmez
+_reklam/
+tests/e2e/_reklam-*.mjs
