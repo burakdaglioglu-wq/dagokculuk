@@ -11,6 +11,8 @@ export default async function ({ log }) {
     const h = await p.evaluate(async () => {
       let sl = await kmProgramSlotlariGetir(), gd = new Date().getDay();
       let s = sl.find(x => (x.gunler && x.gunler.length ? x.gunler : [x.gun]).map(Number).includes(gd) && kmDersSporculari(x).length);
+      // bugün dersi olmayan günlerde (yerel test verisi) herhangi bir günün dersiyle dene — akış günden bağımsız
+      if (!s) s = sl.find(x => kmDersSporculari(x).length);
       if (!s) return null;
       let prog = kmDersSporculari(s), disarida = Object.keys(turnuvaDB).flatMap(g => Object.keys(turnuvaDB[g] || {}).filter(ad => !turnuvaDB[g][ad].pasif).map(ad => ({ g, ad }))).find(k => !prog.some(x => x.g === k.g && x.ad === k.ad));
       return { id: s.id, ad: s.grup, bas: s.baslangicSaat, prog: prog.map(k => k.ad), ham: (s.katilimcilar || []).length, disarida };
