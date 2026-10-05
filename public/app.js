@@ -14158,7 +14158,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-roket-mars-hale{ animation:kmCorePulse 3s ease-in-out infinite; }
 #km-oyun-panel-yildiz.km-roket-sarsinti svg{ animation:kmRoketSars .5s linear; }
 @keyframes kmRoketSars{ 0%,100%{ transform:none; } 20%{ transform:translate(3px,-2px); } 40%{ transform:translate(-3px,2px); } 60%{ transform:translate(2px,1px); } 80%{ transform:translate(-2px,-1px); } }
-@media (prefers-reduced-motion:reduce){ .km-roket-bulut-g,.km-roket-alev,.km-roket-yildiz.t,#km-oyun-panel-yildiz.km-roket-sarsinti svg{ animation:none; } }
+.km-roket-izcizgi{ fill:none; stroke:var(--_c); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; opacity:.42; }
+.km-roket-izcizgi.parla{ stroke-width:7; opacity:.12; }
+.km-roket.lider .km-roket-hale{ opacity:1; }
+.km-roket-hale{ fill:var(--_c); opacity:0; transition:opacity .4s ease; animation:kmCorePulse 2.2s ease-in-out infinite; }
+.km-roket.titre .km-roket-g-ic{ animation:kmRoketTitre .06s linear infinite; }
+@keyframes kmRoketTitre{ 0%{ transform:translate(.7px,0); } 50%{ transform:translate(-.7px,.4px); } 100%{ transform:translate(.4px,-.4px); } }
+.km-roket-geri{ font-family:var(--font-display); font-weight:900; fill:#fff; paint-order:stroke; stroke:rgba(2,6,23,.85); stroke-width:6px; text-anchor:middle; animation:kmRoketGeri .38s ease-out forwards; transform-box:fill-box; transform-origin:center; }
+@keyframes kmRoketGeri{ from{ opacity:0; transform:scale(1.8); } 30%{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(.85); } }
+.km-roket-kayan{ stroke:#fff; stroke-width:1.6; stroke-linecap:round; opacity:0; animation:kmRoketKayan 9s linear infinite; }
+@keyframes kmRoketKayan{ 0%,88%{ opacity:0; transform:translate(0,0); } 90%{ opacity:.9; } 100%{ opacity:0; transform:translate(-160px,70px); } }
+@media (prefers-reduced-motion:reduce){ .km-roket-bulut-g,.km-roket-alev,.km-roket-yildiz.t,#km-oyun-panel-yildiz.km-roket-sarsinti svg,.km-roket-kayan,.km-roket.titre .km-roket-g-ic,.km-roket-hale{ animation:none; } }
 
 /* Hazine Adası */
 #km-oyun-panel-hazine{ background:#a9895a; }
@@ -16649,6 +16659,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <radialGradient id="kmRoketMarsGrad" cx="38%" cy="34%" r="70%"><stop offset="0%" stop-color="#fdba74"/><stop offset="45%" stop-color="#ea580c"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient>
                     <radialGradient id="kmRoketMarsHale" cx="50%" cy="50%" r="50%"><stop offset="70%" stop-color="#fb923c" stop-opacity="0.35"/><stop offset="100%" stop-color="#fb923c" stop-opacity="0"/></radialGradient>
                     <radialGradient id="kmRoketAyGrad" cx="36%" cy="34%" r="72%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#8b97a8"/></radialGradient>
+                    <linearGradient id="kmRoketMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="35%" stop-color="#ffffff"/><stop offset="70%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+                    <radialGradient id="kmRoketAlevGrad" cx="50%" cy="15%" r="85%"><stop offset="0%" stop-color="#fff7cc"/><stop offset="35%" stop-color="#fde047"/><stop offset="70%" stop-color="#f97316"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmRoketSafak" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fdba74" stop-opacity="0.75"/><stop offset="45%" stop-color="#f472b6" stop-opacity="0.25"/><stop offset="100%" stop-color="#f472b6" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmRoketBulutsu1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#a855f7" stop-opacity="0.32"/><stop offset="100%" stop-color="#a855f7" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmRoketBulutsu2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0.22"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+                    <radialGradient id="kmRoketGalaksi" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef3c7" stop-opacity="0.9"/><stop offset="30%" stop-color="#c4b5fd" stop-opacity="0.45"/><stop offset="100%" stop-color="#6366f1" stop-opacity="0"/></radialGradient>
                     <linearGradient id="kmRoketYer" gradientUnits="userSpaceOnUse" x1="0" y1="376" x2="0" y2="520"><stop offset="0%" stop-color="#3f7f4a"/><stop offset="100%" stop-color="#12301c"/></linearGradient>
                   </defs>
                   <rect x="-700" y="-500" width="2600" height="1440" fill="url(#kmRoketGok)"/>
@@ -16658,6 +16674,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                   <g id="km-roket-yer"></g>
                   <g id="km-roket-iz"></g>
                   <g id="km-roket-kapilar"></g>
+                  <g id="km-roket-izler"></g>
                   <g id="km-roket-duman"></g>
                   <g id="km-oyun-rockets"></g>
                 </svg>
@@ -19087,7 +19104,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let dk = document.getElementById('km-roket-dekor');
             if(dk) {
                 let p0 = kmOyunRoketKatmanNokta(0), p1 = kmOyunRoketKatmanNokta(1), p2 = kmOyunRoketKatmanNokta(2), p4 = kmOyunRoketKatmanNokta(4), p5 = kmOyunRoketKatmanNokta(5), p6 = kmOyunRoketKatmanNokta(6), M = KM_ROKET_MARS;
-                let h = kmOyunRoketBulut(p0.x - 96, p0.y + 22, 1.1) + kmOyunRoketBulut(p0.x + 112, p0.y - 8, 0.95) + kmOyunRoketBulut(p0.x + 30, p0.y + 72, 0.8) + kmOyunRoketBulut(330, 300, 0.7) + kmOyunRoketBulut(250, 245, 0.55);
+                let h = `<ellipse cx="760" cy="40" rx="260" ry="90" fill="url(#kmRoketBulutsu1)"/><ellipse cx="1020" cy="330" rx="220" ry="110" fill="url(#kmRoketBulutsu2)"/><ellipse cx="560" cy="-40" rx="200" ry="70" fill="url(#kmRoketBulutsu2)"/>
+                    <g transform="translate(985,40) rotate(-24)"><ellipse rx="46" ry="12" fill="url(#kmRoketGalaksi)"/><ellipse rx="7" ry="4" fill="#fff7ed" opacity="0.9"/></g>
+                    <g transform="translate(930,370)"><circle r="15" fill="#d6b98c"/><path d="M-15,-3 Q0,3 15,-3" stroke="#b08d5a" stroke-width="3" fill="none" opacity="0.6"/><ellipse rx="27" ry="6" fill="none" stroke="#f5e1b8" stroke-width="2.4" opacity="0.85" transform="rotate(-14)"/></g>
+                    <line class="km-roket-kayan" x1="1060" y1="20" x2="1090" y2="7" style="animation-delay:1s"/><line class="km-roket-kayan" x1="760" y1="-10" x2="790" y2="-23" style="animation-delay:4.5s"/><line class="km-roket-kayan" x1="1180" y1="120" x2="1210" y2="107" style="animation-delay:7s"/>`;
+                h += kmOyunRoketBulut(p0.x - 96, p0.y + 22, 1.1) + kmOyunRoketBulut(p0.x + 112, p0.y - 8, 0.95) + kmOyunRoketBulut(p0.x + 30, p0.y + 72, 0.8) + kmOyunRoketBulut(330, 300, 0.7) + kmOyunRoketBulut(250, 245, 0.55);
                 h += `<text x="${(p1.x + 96).toFixed(1)}" y="${(p1.y + 40).toFixed(1)}" font-size="22" transform="rotate(-8 ${(p1.x + 96).toFixed(1)} ${(p1.y + 40).toFixed(1)})">✈️</text>`;
                 h += `<g transform="translate(${(p2.x + 40).toFixed(1)},${(p2.y + 66).toFixed(1)})"><line x1="0" y1="0" x2="0" y2="20" stroke="#e2e8f0" stroke-width="1"/><circle cx="0" cy="-8" r="10" fill="#f8fafc" opacity="0.9"/><rect x="-3" y="19" width="6" height="5" fill="#f59e0b"/></g>`;
                 // uzay istasyonu (çizim)
@@ -19120,7 +19141,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(yr) {
                 let kule = '';
                 for(let yy = 300; yy < 384; yy += 12) kule += `<line x1="50" y1="${yy}" x2="64" y2="${yy + 12}" stroke="#94a3b8" stroke-width="1"/><line x1="64" y1="${yy}" x2="50" y2="${yy + 12}" stroke="#94a3b8" stroke-width="1"/>`;
-                yr.innerHTML = `<circle cx="116" cy="3376" r="3006" fill="#7dd3fc" opacity="0.18"/><circle cx="116" cy="3376" r="2988" fill="url(#kmRoketYer)"/>
+                yr.innerHTML = `<ellipse cx="40" cy="392" rx="420" ry="120" fill="url(#kmRoketSafak)"/><circle cx="116" cy="3376" r="3006" fill="#7dd3fc" opacity="0.18"/><circle cx="116" cy="3376" r="2988" fill="url(#kmRoketYer)"/>
                     <rect x="48" y="296" width="18" height="90" fill="none" stroke="#cbd5e1" stroke-width="2"/>${kule}
                     <rect x="44" y="290" width="26" height="6" fill="#ef4444"/><line x1="66" y1="318" x2="98" y2="318" stroke="#cbd5e1" stroke-width="2"/>
                     <rect x="16" y="382" width="200" height="8" rx="2" fill="#475569"/><rect x="16" y="388" width="200" height="4" fill="#334155"/>
@@ -19141,7 +19162,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 }).join('');
                 kmAraOlayIsaretKoy('yildiz', kp);
             }
-            // roketler
+            // roketler (eski renkli izler temizlenir — roster değişmiş olabilir)
+            let izg = document.getElementById('km-roket-izler'); if(izg) izg.innerHTML = '';
             let rg = document.getElementById('km-oyun-rockets'); if(!rg) return;
             let roster = _kmOyunRosterCache;
             rg.innerHTML = roster.map(function(s, i) {
@@ -19153,16 +19175,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // Roket burnu YUKARI (-y) çizilir; yön dönüşü iç gruba (rotate), etiket dönmesin diye dışarıda.
         function kmOyunRoketSVG(ad, i) {
-            let etY = (i % 2 === 0) ? 36 : -38;
-            return `<g class="km-roket-g" transform="rotate(0) scale(1.25)">
-                    <g class="km-roket-alev"><path d="M-5.5,16 Q0,36 5.5,16 Z" fill="#fb923c"/><path d="M-3,16 Q0,28 3,16 Z" fill="#fde047"/></g>
-                    <path class="km-roket-renk" d="M-6,5 L-13,17 L-6,14 Z"/><path class="km-roket-renk" d="M6,5 L13,17 L6,14 Z"/>
-                    <path class="km-roket-govde" d="M0,-22 C7,-14 8,-4 7,8 L6,16 L-6,16 L-7,8 C-8,-4 -7,-14 0,-22 Z"/>
-                    <path class="km-roket-renk" d="M0,-22 C4.6,-17 6,-12.5 6.6,-9 L-6.6,-9 C-6,-12.5 -4.6,-17 0,-22 Z"/>
-                    <rect class="km-roket-renk" x="-7" y="9" width="14" height="2.6"/>
-                    <circle class="km-roket-cam" cx="0" cy="-2" r="3.8"/><circle class="km-roket-parla" cx="-1.2" cy="-3.2" r="1.1"/>
-                    <path class="km-roket-renk" d="M-1.2,6 L1.2,6 L1.2,16 L-1.2,16 Z" opacity=".55"/>
-                </g>
+            let etY = (i % 2 === 0) ? 40 : -42;
+            return `<g class="km-roket-g" transform="rotate(0) scale(1.4)"><g class="km-roket-g-ic">
+                    <circle class="km-roket-hale" cx="0" cy="0" r="24" opacity="0" style="fill-opacity:.18"/>
+                    <g class="km-roket-alev"><ellipse cx="0" cy="23" rx="8" ry="11" fill="#f97316" opacity="0.35"/><path d="M-5.8,16 Q0,38 5.8,16 Z" fill="url(#kmRoketAlevGrad)"/><path d="M-2.6,16 Q0,27 2.6,16 Z" fill="#fffbeb"/></g>
+                    <path class="km-roket-renk" d="M-6,4 C-10,8 -13,13 -14,19 L-6,15 Z"/><path class="km-roket-renk" d="M6,4 C10,8 13,13 14,19 L6,15 Z"/>
+                    <path d="M0,-23 C7.5,-15 8.4,-4 7.2,8 L6,16 L-6,16 L-7.2,8 C-8.4,-4 -7.5,-15 0,-23 Z" fill="url(#kmRoketMetal)" stroke="#0f172a" stroke-width="1"/>
+                    <path class="km-roket-renk" d="M0,-23 C4.8,-18 6.2,-13 6.8,-9.5 L-6.8,-9.5 C-6.2,-13 -4.8,-18 0,-23 Z"/>
+                    <rect class="km-roket-renk" x="-7.2" y="8.6" width="14.4" height="2.8"/>
+                    <rect x="-5" y="15.6" width="10" height="2.6" rx="1" fill="#334155"/>
+                    <circle cx="0" cy="-2" r="4.4" fill="#0f172a"/><circle class="km-roket-cam" cx="0" cy="-2" r="3.5"/><circle class="km-roket-parla" cx="-1.3" cy="-3.3" r="1.2"/>
+                    <path class="km-roket-renk" d="M-1.1,5 L1.1,5 L1.1,16 L-1.1,16 Z" opacity=".6"/>
+                </g></g>
                 <g class="km-avci-etiket" transform="translate(0,${etY})">
                     <rect class="km-tag-bg" x="${(-ad.length * 3.3 - 8).toFixed(1)}" y="-9.5" width="${(ad.length * 6.6 + 16).toFixed(1)}" height="18" rx="9"/>
                     <text class="km-tag-text" x="0" y="4" text-anchor="middle">${esc(ad)}</text>
@@ -19170,11 +19194,35 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunRoketYerlestir(el, p) {
             el.setAttribute('transform', `translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
-            let g = el.querySelector('.km-roket-g'); if(g) g.setAttribute('transform', `rotate(${(p.aci + 90).toFixed(1)}) scale(1.25)`);
+            let g = el.querySelector('.km-roket-g'); if(g) g.setAttribute('transform', `rotate(${(p.aci + 90).toFixed(1)}) scale(1.4)`);
+        }
+        // Renkli iz: rampadan roketin bulunduğu yere kadar kendi şeridinde (kim nereden geldi görünür)
+        function kmOyunRoketIzNoktalar(i, n, frac) {
+            if(frac <= 0.002) return '';
+            let adim = Math.max(6, Math.ceil(frac * 60)), pts = [];
+            for(let k = 0; k <= adim; k++) { let p = kmOyunYildizPoz(i, n, frac * k / adim); pts.push(p.x.toFixed(1) + ',' + p.y.toFixed(1)); }
+            return pts.join(' ');
+        }
+        function kmOyunRoketIzCiz(s, i, n, frac) {
+            let g = document.getElementById('km-roket-izler'); if(!g) return;
+            let id = 'km-roket-iz-' + i, el = document.getElementById(id);
+            if(!el) {
+                el = document.createElementNS('http://www.w3.org/2000/svg', 'g'); el.id = id; el.style.setProperty('--_c', kmOyunRenk('yildiz', i));
+                el.innerHTML = '<polyline class="km-roket-izcizgi parla"/><polyline class="km-roket-izcizgi"/>'; g.appendChild(el);
+            }
+            let pts = kmOyunRoketIzNoktalar(i, n, frac);
+            el.querySelectorAll('polyline').forEach(function(pl) { pl.setAttribute('points', pts); });
         }
         function kmOyunResyncYildiz() {
-            let roster = _kmOyunRosterCache, n = roster.length;
-            roster.forEach(function(s, i) { if(s.yildizEl) kmOyunRoketYerlestir(s.yildizEl, kmOyunYildizPoz(i, n, s.frac)); });
+            let roster = _kmOyunRosterCache, n = roster.length, maks = 0;
+            roster.forEach(function(s) { if(s.frac > maks) maks = s.frac; });
+            let izG = document.getElementById('km-roket-izler'); if(izG && izG.childNodes.length > n) izG.innerHTML = '';
+            roster.forEach(function(s, i) {
+                if(!s.yildizEl) return;
+                kmOyunRoketYerlestir(s.yildizEl, kmOyunYildizPoz(i, n, s.frac));
+                kmOyunRoketIzCiz(s, i, n, s.frac);
+                s.yildizEl.classList.toggle('lider', maks > 0 && s.frac >= maks - 1e-9);
+            });
             // önde olan en üstte çizilsin
             let rg = document.getElementById('km-oyun-rockets');
             if(rg) roster.slice().sort(function(a, b) { return a.frac - b.frac; }).forEach(function(s) { if(s.yildizEl) rg.appendChild(s.yildizEl); });
@@ -19189,50 +19237,72 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let bez = document.getElementById('km-roket-bayrak-bez'); if(bez && ilk >= 0) bez.setAttribute('fill', kmOyunRenk('yildiz', ilk));
         }
         function kmOyunRoketDuman(x, y, r) {
-            let g = document.getElementById('km-roket-duman'); if(!g || g.childNodes.length > 70) return;
+            let g = document.getElementById('km-roket-duman'); if(!g || g.childNodes.length > 80) return;
             let c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             c.setAttribute('class', 'km-roket-duman'); c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1)); c.setAttribute('r', (r || 4 + Math.random() * 3).toFixed(1));
             g.appendChild(c); setTimeout(function() { c.remove(); }, 1600);
         }
+        function kmOyunRoketGeriSayYazi(x, y, metin, boy) {
+            let g = document.getElementById('km-roket-duman'); if(!g) return;
+            let t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            t.setAttribute('class', 'km-roket-geri'); t.setAttribute('x', x.toFixed(1)); t.setAttribute('y', y.toFixed(1)); t.setAttribute('font-size', String(boy || 54));
+            t.textContent = metin; g.appendChild(t); setTimeout(function() { t.remove(); }, 450);
+        }
+        // Akış (2026-10-05, kullanıcı: "gitmeden önce bug'a giriyor, akışı daha havalı olsun"):
+        // 1) ATEŞLEME — rampadan ilk kalkışta 3·2·1 geri sayım + titreşim + duman; sonraki serilerde kısa ateşleme.
+        // 2) UÇUŞ — yavaş başlayıp hızlanan, varışta yumuşayan hareket; renkli iz canlı uzar, duman bırakır.
+        // 3) VARIŞ — ÖNCE done() (bitirOrtak s.frac'ı yeni değere yazar), SONRA Resync. Eskiden Resync done()'dan
+        //    önce çağrılıyordu: s.frac henüz eski olduğu için roket bir an ESKİ yerine zıplıyordu (bildirilen hata).
         function kmOyunAnimateYildiz(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, el = s.yildizEl; if(!el) { done(); return; }
-            el.classList.add('flying');
-            // rampadan ilk kalkış: sahne sarsılır, rampada büyük duman bulutu
-            if(eskiFrac <= 0.001 && yeniFrac > eskiFrac) {
-                let pn = document.getElementById('km-oyun-panel-yildiz');
-                if(pn) { pn.classList.remove('km-roket-sarsinti'); void pn.offsetWidth; pn.classList.add('km-roket-sarsinti'); setTimeout(function() { pn.classList.remove('km-roket-sarsinti'); }, 600); }
-                let p0 = kmOyunYildizPoz(i, n, 0);
-                for(let k = 0; k < 9; k++) kmOyunRoketDuman(p0.x - 24 + Math.random() * 48, p0.y + 16 + Math.random() * 8, 6 + Math.random() * 6);
+            let rampadan = eskiFrac <= 0.001 && yeniFrac > eskiFrac, p0 = kmOyunYildizPoz(i, n, eskiFrac);
+            let azHareket = typeof window.matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+            el.classList.add('flying', 'titre');
+            let ateslemeSure = azHareket ? 0 : (rampadan ? 1150 : 420), basla0 = performance.now(), sonDuman = 0;
+            if(rampadan && !azHareket) {
+                ['3', '2', '1'].forEach(function(m, k) { setTimeout(function() { kmOyunRoketGeriSayYazi(p0.x, p0.y - 70, m, 54); try { sesCal(520, 0.06); } catch(e) {} }, k * 330); });
             }
-            let sure = 1450, basla = performance.now(), sonDuman = 0;
-            function frame(now) {
-                let t = Math.min(1, (now - basla) / sure), eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                let p = kmOyunYildizPoz(i, n, eskiFrac + (yeniFrac - eskiFrac) * eased);
-                kmOyunRoketYerlestir(el, p);
-                if(now - sonDuman > 55 && t < 0.95) {
-                    sonDuman = now; let r = p.aci * Math.PI / 180;
-                    kmOyunRoketDuman(p.x - Math.cos(r) * 26, p.y - Math.sin(r) * 26);
+            function atesleme(now) {
+                if(now - sonDuman > 70) { sonDuman = now; kmOyunRoketDuman(p0.x - 14 + Math.random() * 28, p0.y + 22 + Math.random() * 6, 5 + Math.random() * 5); }
+                if(now - basla0 < ateslemeSure) { requestAnimationFrame(atesleme); return; }
+                el.classList.remove('titre');
+                if(rampadan) {
+                    let pn = document.getElementById('km-oyun-panel-yildiz');
+                    if(pn && !azHareket) { pn.classList.remove('km-roket-sarsinti'); void pn.offsetWidth; pn.classList.add('km-roket-sarsinti'); setTimeout(function() { pn.classList.remove('km-roket-sarsinti'); }, 600); }
+                    for(let k = 0; k < 10; k++) kmOyunRoketDuman(p0.x - 30 + Math.random() * 60, p0.y + 18 + Math.random() * 10, 7 + Math.random() * 7);
+                    try { sesCal(880, 0.12); } catch(e) {}
                 }
-                if(t < 1) { requestAnimationFrame(frame); return; }
-                el.classList.remove('flying');
-                let varis = kmOyunYildizPoz(i, n, yeniFrac), scr = kmOyunSvgPct('km-oyun-svg-yildiz', varis.x, varis.y);
-                kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('yildiz', i), 14, false);
-                if(yeniCp > eskiCp) {
-                    for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) {
-                        let k = document.getElementById('km-oyun-kapi-' + cp);
-                        if(k) { k.classList.add('hit'); k.style.setProperty('--_c', kmOyunRenk('yildiz', i)); }
-                    }
-                    if(yeniFrac >= 1) {
-                        let ms = kmOyunSvgPct('km-oyun-svg-yildiz', KM_ROKET_MARS.x, KM_ROKET_MARS.y);
-                        kmOyunBurst(document.getElementById('km-oyun-burst'), ms.xPct, ms.yPct, '#fb923c', 30, true);
-                    }
-                }
-                // çok iyi seri → altın kıvılcım
-                if(toplam >= _kmOyunOkSayisi * 10 * 0.9) kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 22, true);
-                kmOyunResyncYildiz();
-                done();
+                ucus(performance.now());
             }
-            requestAnimationFrame(frame);
+            function ucus(basla) {
+                let sure = azHareket ? 600 : 1500;
+                function frame(now) {
+                    let t = Math.min(1, (now - basla) / sure), eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                    let f = eskiFrac + (yeniFrac - eskiFrac) * eased, p = kmOyunYildizPoz(i, n, f);
+                    kmOyunRoketYerlestir(el, p);
+                    kmOyunRoketIzCiz(s, i, n, f);
+                    if(now - sonDuman > 50 && t < 0.95) { sonDuman = now; let r = p.aci * Math.PI / 180; kmOyunRoketDuman(p.x - Math.cos(r) * 30, p.y - Math.sin(r) * 30); }
+                    if(t < 1) { requestAnimationFrame(frame); return; }
+                    el.classList.remove('flying');
+                    let varis = kmOyunYildizPoz(i, n, yeniFrac), scr = kmOyunSvgPct('km-oyun-svg-yildiz', varis.x, varis.y);
+                    kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kmOyunRenk('yildiz', i), 14, false);
+                    if(yeniCp > eskiCp) {
+                        for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) {
+                            let k = document.getElementById('km-oyun-kapi-' + cp);
+                            if(k) { k.classList.add('hit'); k.style.setProperty('--_c', kmOyunRenk('yildiz', i)); }
+                        }
+                        if(yeniFrac >= 1) {
+                            let ms = kmOyunSvgPct('km-oyun-svg-yildiz', KM_ROKET_MARS.x, KM_ROKET_MARS.y);
+                            kmOyunBurst(document.getElementById('km-oyun-burst'), ms.xPct, ms.yPct, '#fb923c', 30, true);
+                        }
+                    }
+                    if(toplam >= _kmOyunOkSayisi * 10 * 0.9) kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd166', 22, true);
+                    done();
+                    kmOyunResyncYildiz();
+                }
+                requestAnimationFrame(frame);
+            }
+            if(ateslemeSure > 0) requestAnimationFrame(atesleme); else ucus(performance.now());
         }
         // ---- HAZINE ADASI ----
         // Faz 15 (2026-09-13) — gerçek korsan karakterleri, Arena/Zirve'deki AYNI kadın/erkek/nötr
