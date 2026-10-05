@@ -41,6 +41,27 @@ export default async function ({ log }) {
     await p.waitForTimeout(300);
     const toplam = await p.evaluate(() => yzSiralama(yzOku()).map((r) => r.toplam));
     dogrula(toplam.length === 3 && toplam.every((t) => t === 53), 'seri toplamları yanlış: ' + toplam);
+    // tur sürerken sporcu ekle / çıkar (ders listesinde olmayan biri de eklenebilmeli)
+    await p.locator('.yz-btn', { hasText: '👥 Sporcular' }).click();
+    await p.waitForSelector('#yz-secici');
+    const disaridan = await p.evaluate(() => { let kat = yzOku().durum.katilimci; return yzTumSporcular().find((x) => kat.indexOf(x.k) === -1 && !yzRoster().some((r) => r.g + '|' + r.ad === x.k)); });
+    dogrula(disaridan, 'listede olmayan aday sporcu bulunamadı');
+    await p.locator('#yz-sec-ara').fill(disaridan.ad.slice(0, 5));
+    await p.locator('.yz-sec-aday', { hasText: disaridan.ad }).first().click();
+    dogrula(await p.evaluate((k) => yzOku().durum.katilimci.includes(k), disaridan.k), 'sporcu tura eklenmedi');
+    const cikan = await p.evaluate(() => yzOku().durum.katilimci[0]);
+    await p.locator('.yz-sec-sat', { hasText: cikan.split('|')[1] }).locator('button', { hasText: 'Çıkar' }).click();
+    await p.waitForTimeout(200);
+    await p.locator('#onay-evet-btn').click();
+    await p.waitForTimeout(300);
+    dogrula(!(await p.evaluate((k) => yzOku().durum.katilimci.includes(k), cikan)), 'sporcu turdan çıkarılmadı');
+    dogrula(await p.evaluate((k) => !!yzOku()['s_' + yzOku().durum.id + '_' + k], cikan), 'çıkarılanın serileri silinmemeli');
+    await p.locator('#yz-secici .yz-btn', { hasText: 'Kapat' }).click();
+    esit(await p.evaluate(() => yzSiralama(yzOku()).length), 3, 'sıralama ekle/çıkar sonrası 3 kişi olmalı');
+    // ikinci seri → yarış grafiği görünür
+    await p.evaluate(() => { yzGuncelle((o) => { o.durum.seri = 1; }); yzOku().durum.katilimci.forEach((k) => { yzGirisAc(yzEnc(k), 1); ['10', '9', '9', '8', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); }); yzCiz(); });
+    dogrula(await p.locator('.yz-grafik-kart .yz-gr-cizgi').count() >= 3, 'yarış grafiği çizilmedi');
+    if (process.env.E2E_EKRAN) await p.locator('.yz-grafik-kart').screenshot({ path: process.env.E2E_EKRAN + '-grafik.png' });
     // TV: 16 sütun ekrana sığmalı
     await p.evaluate(() => yzTvAc()); await p.waitForTimeout(800);
     const tv = await p.evaluate(() => { let e = document.querySelector('#yz-tv .yz-tv-tablo'); return e ? { sw: e.scrollWidth, cw: e.clientWidth } : null; });
