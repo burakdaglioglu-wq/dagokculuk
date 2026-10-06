@@ -140,6 +140,7 @@ function ddKartHTML(x) {
         <div class="dd-kart-alt">${x.saat ? '🕒 ' + esc(x.saat) + ' · ' : ''}${x.tel ? esc(x.tel) + ' · ' : ''}${esc((DD_KAYNAK.find(k => k[0] === x.kaynak) || ['', ''])[1])} · ${new Date(x.olusturma || x.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</div>
         ${x.durum === 'planlandi' ? `<label class="dd-tarih">Deneme günü <input type="date" value="${esc(x.denemeTarihi || '')}" onchange="ddKaydet('${id}', { denemeTarihi: this.value }); ddCiz()">${x.denemeTarihi ? `<span>${ddTarihYaz(x.denemeTarihi)}</span>` : ''}</label>` : ''}
         ${x.not ? `<div class="dd-kart-not">${esc(x.not)}</div>` : ''}
+        ${x.durum === 'geldi' && x.sporcu ? `<div class="dd-kart-not">🎯 ${x.gelisTarihi ? new Date(x.gelisTarihi + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' · ' : ''}Karışık Sınıf'ta derse girdi${x.dusunuyor ? ' · 🤔 kayıt için düşünüyor' : ''}</div>` : ''}
         ${x.durum === 'kayit' && x.sporcu ? `<div class="dd-kart-not">✓ ${esc(x.sporcu.ad)} · ${esc(typeof grupAd === 'function' ? grupAd(x.sporcu.g) : x.sporcu.g)} grubuna eklendi</div>` : ''}
         ${dk ? `<div class="dd-uyari">${esc(dk)}</div>` : ''}
         ${_dd.kayitAc === x.id ? ddSporcuEkleHTML(x) : ''}

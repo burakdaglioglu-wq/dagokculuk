@@ -83,4 +83,33 @@ export default async function ({ log }) {
     }
   }
   await api(`/api/athletes/kucukler/${encodeURIComponent(AD)}`, { method: 'DELETE' });
+
+  // 3) Karışık Sınıf: bugün deneme dersi olan aday → '+ Derse ekle' (misafir) → kapanışta 'Kayıt oldu' → öğrenci
+  const AD2 = benzersiz('DNMK ');
+  {
+    const { ctx, p, hatalar } = await sayfaAc({ genislik: 1280, yukseklik: 900 });
+    let id2 = null;
+    try {
+      await uygulamaAc(p);
+      id2 = await p.evaluate((ad) => { let id = 'dtest' + Date.now().toString(36); kmDenemeYaz(id, { ad, tel: '05550001122', yas: 13, saat: 'Sal 17:00', kaynak: 'site', olusturma: Date.now(), durum: 'planlandi', denemeTarihi: bugunISO() }); return id; }, AD2);
+      await p.evaluate(() => kmSporcuEkle()); await p.waitForTimeout(1200);
+      await p.waitForSelector('#km-deneme-bugun .kmd-ekle', { timeout: 10000 });
+      await p.locator('#km-deneme-bugun .kmd-sat', { hasText: AD2 }).locator('.kmd-ekle').click(); await p.waitForTimeout(500);
+      const sp = await p.evaluate((ad) => ({ var: !!(turnuvaDB.yildizlar && turnuvaDB.yildizlar[ad]), tur: kisiTuru('yildizlar', ad), secili: !!_kmSecimler['yildizlar_' + ad] }), AD2);
+      dogrula(sp.var && sp.tur === 'misafir' && sp.secili, 'aday misafir olarak derse eklenmedi: ' + JSON.stringify(sp));
+      dogrula(await p.locator('#km-deneme-bugun .kmd-tamam').count(), 'Derste işareti yok');
+      esit(await p.evaluate((i) => kmDenemeKayitlar()[i].durum, id2), 'geldi', 'aday denemeye geldi olmalı');
+      await p.evaluate((ad) => { _kmListe = [{ g: 'yildizlar', ad }]; kmKapanisAc(kmKapanisHazirla(), []); }, AD2);
+      await p.waitForSelector('.kmd-kapanis');
+      await p.locator('.kmd-kapanis button', { hasText: 'Kayıt oldu' }).click(); await p.waitForTimeout(400);
+      esit(await p.evaluate((ad) => kisiTuru('yildizlar', ad), AD2), 'sporcu', 'kayıt olan öğrenciye dönmedi');
+      esit(await p.evaluate((i) => kmDenemeKayitlar()[i].durum, id2), 'kayit', 'aday kayıt oldu olmalı');
+      esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
+      log('deneme → Karışık Sınıf misafir → kapanışta kayıt oldu → öğrenci ✓');
+    } finally {
+      await p.evaluate((i) => { try { kmKapanisKapat(); } catch (e) {} if (i) kmDenemeYaz(i, { sil: true }); }, id2).catch(() => {});
+      await p.waitForTimeout(1000); await ctx.close();
+    }
+    await api(`/api/athletes/yildizlar/${encodeURIComponent(AD2)}`, { method: 'DELETE' });
+  }
 }

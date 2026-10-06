@@ -282,7 +282,7 @@ async function kmProgramDersBaslat(id) {
     function kanca() {
         if (typeof kmModalDoldur !== 'function' || typeof kmBaslat !== 'function') return setTimeout(kanca, 300);
         let eskiDoldur = kmModalDoldur, eskiBaslat = kmBaslat;
-        kmModalDoldur = function () { let r = eskiDoldur.apply(this, arguments); kmProgramDersleriCiz(); return r; };
+        kmModalDoldur = function () { let r = eskiDoldur.apply(this, arguments); kmProgramDersleriCiz(); try { kmDenemeBugunCiz(); } catch (e) {} return r; };
         // Elle (programdan değil) başlatılan derste eski ders bağlantısı kalmasın.
         // 2026-10-04: ders SÜRERKEN "Sporcu ekle" penceresinden onaylanınca ders bağlantısı korunur ve program farkı sorulur
         // (eskiden silinirdi → kapanış ekranı ve programa ekleme sorusu dersi bilmiyordu).
@@ -398,7 +398,7 @@ function kmKapanisCiz() {
     let ozetVar = K.D && (K.D.atanlar.length || K.D.satirlar.some(function (s) { return s.deger > 0; }));
     let ozet = ozetVar ? '<div class="kmk-bolum"><h4>🏅 Sınıf özeti <small>veli grubuna tek mesaj</small></h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="kmoz-btn ana" onclick="kmOzetWa(null, kmOzetGrupMetni(_kmKapanis.D))">💬 Veli grubuna gönder</button><button class="kmoz-btn" onclick="kmKapanisOzetKopyala()">📋 Metni kopyala</button></div></div>' : '';
     m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Kapanışı"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏁 Ders Kapanışı</h3><p>' + baslik + ' · ' + formatTarih(K.tarih) + ' · ' + K.kisiler.length + ' kişi</p></div><button class="kmoz-btn" onclick="kmKapanisKapat()" aria-label="Kapat">✕</button></div>'
-        + '<div class="kmoz-govde">' + yoklama + kocNot + veliGelmeyen + raporlar + ozet + '</div></div>';
+        + '<div class="kmoz-govde">' + kmKapanisDenemeHTML(K) + yoklama + kocNot + veliGelmeyen + raporlar + ozet + '</div></div>';
 }
 function kmKapanisDurum(i, durum) { let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return; x.durum = durum; _kmKapanis.onaylandi = false; kmKapanisCiz(); }
 function kmKapanisYoklamaKaydet() {
@@ -534,3 +534,97 @@ function kmProgramDersiTani() {
         }, 'Bu ders', 'Hiçbiri');
     });
 }
+
+// ================================================================================================
+// 🌱 Deneme dersi ↔ Karışık Sınıf (2026-10-07, kullanıcı: "denemeye gelen çocuk o gün Karışık Sınıf'a misafir
+// olarak düşsün, ders bitince kayıt oldu mu diye sorsun"). Veri: meta deneme_adaylari (dagsk-deneme.js ile ortak).
+// 1) Sporcu seçim penceresinde "Bugün deneme dersi" şeridi: deneme günü bugün olan (ya da bugün eklenmiş) adaylar.
+//    "+ Derse ekle" → aday yaşına göre grupta MİSAFİR kaydı açılır (zaten kayıtlıysa o kullanılır), seçime eklenir,
+//    aday "Denemeye geldi" olur. 2) Ders Kapanışı'nda bu adaylar için: Kayıt oldu / Düşünüyor / Vazgeçti.
+//    "Kayıt oldu" misafiri öğrenciye çevirir (kisi türü, aktifOldu) ve adayı kapatır.
+// ================================================================================================
+function kmDenemeKayitlar() { try { return kyDepoOku('deneme_adaylari') || {}; } catch (e) { return {}; } }
+function kmDenemeYaz(id, degisim) {
+    let d = kmDenemeKayitlar(), eski = d[id] || {}, yeni = Object.assign({}, eski, degisim, { t: Date.now() });
+    if (degisim.durum && degisim.durum !== eski.durum) yeni.gecmis = (eski.gecmis || []).concat([{ d: degisim.durum, z: Date.now(), kim: (typeof _oturum !== 'undefined' && _oturum && _oturum.ad) || '' }]).slice(-20);
+    d[id] = yeni; kyDepoYazYerel('deneme_adaylari', d);
+    kyDepoSenkron('deneme_adaylari', function () { return kmDenemeKayitlar(); }, true).catch(function () {});
+}
+function kmDenemeGrup(yas) { return yas >= 15 ? 'buyukler' : yas >= 12 ? 'yildizlar' : yas >= 9 ? 'kucukler' : yas ? 'minikler' : (typeof aktifGrup !== 'undefined' ? aktifGrup : 'kucukler'); }
+function kmDenemeBugunListe() {
+    let d = kmDenemeKayitlar(), bugun = bugunISO();
+    return Object.keys(d).map(function (k) { return Object.assign({ id: k }, d[k]); }).filter(function (x) {
+        if (!x || x.sil || x.durum === 'kayit' || x.durum === 'vazgecti') return false;
+        return x.denemeTarihi === bugun || x.gelisTarihi === bugun;
+    });
+}
+var _kmDenemeSenk = 0;
+function kmDenemeBugunCiz() {
+    let el = document.getElementById('km-deneme-bugun'); if (!el) return;
+    if (typeof kyDepoSenkron === 'function' && Date.now() - _kmDenemeSenk > 60000) {
+        _kmDenemeSenk = Date.now();
+        kyDepoSenkron('deneme_adaylari', function () { return kmDenemeKayitlar(); }, false).then(function () { kmDenemeBugunCiz(); }).catch(function () {});
+    }
+    let l = kmDenemeBugunListe();
+    if (!l.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="kmd-serit"><div class="kms-baslik">🌱 Bugün deneme dersi</div>' + l.map(function (x) {
+        let sp = x.sporcu, derste = sp && typeof _kmSecimler !== 'undefined' && _kmSecimler[sp.g + '_' + sp.ad];
+        return '<div class="kmd-sat"><span class="kmd-ad"><b>' + kmSablonEsc(x.ad || 'İsimsiz aday') + '</b><small>' + [x.yas ? x.yas + ' yaş' : '', x.saat || '', x.tel || ''].filter(Boolean).map(kmSablonEsc).join(' · ') + '</small></span>'
+            + (derste ? '<span class="kmd-tamam">✓ Derste</span>' : '<button class="kmd-ekle" onclick="kmDenemeEkle(' + JSON.stringify(x.id).replace(/"/g, '&quot;') + ')">＋ Derse ekle</button>') + '</div>';
+    }).join('') + '<div class="kmd-not">Misafir olarak eklenir; ders kapanışında "kayıt oldu mu?" diye sorulur.</div></div>';
+}
+function kmDenemeEkle(id) {
+    let x = kmDenemeKayitlar()[id]; if (!x) return;
+    let ad = String(x.ad || '').replace(/\s+/g, ' ').trim().toLocaleUpperCase('tr-TR');
+    if (!ad) return showToast('Adayın adı yok — Deneme Dersleri ekranından ekle.', 'error');
+    let g = x.sporcu && x.sporcu.g || kmDenemeGrup(x.yas);
+    // aynı ad başka grupta kayıtlıysa onu kullan
+    if (!(turnuvaDB[g] && turnuvaDB[g][ad])) ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(function (gg) { if (turnuvaDB[gg] && turnuvaDB[gg][ad]) g = gg; });
+    let yeniMisafir = false;
+    if (!(turnuvaDB[g] && turnuvaDB[g][ad])) {
+        if (typeof kyMisafirOlustur !== 'function') return showToast('Misafir kaydı açılamadı.', 'error');
+        kyMisafirOlustur(g, ad, { tel: x.tel || '', not: 'Deneme dersi' + (x.saat ? ' · ' + x.saat : '') }, null);
+        let sp = turnuvaDB[g][ad]; if (sp && x.tel && !sp.acilTelefon) { sp.acilTelefon = x.tel; sp.lastModified = Date.now(); }
+        yeniMisafir = true;
+    }
+    kmDenemeYaz(id, { durum: 'geldi', gelisTarihi: bugunISO(), sporcu: { g: g, ad: ad, misafir: yeniMisafir || (x.sporcu && x.sporcu.misafir) || false } });
+    if (typeof _kmSecimler !== 'undefined') _kmSecimler[g + '_' + ad] = { g: g, ad: ad };
+    try { kmModalDoldur(); } catch (e) {}
+    showToast('🌱 ' + ad + (yeniMisafir ? ' misafir olarak açıldı ve' : '') + ' seçime eklendi — onaylayınca derse girer.', 'success');
+}
+function kmKapanisDenemeHTML(K) {
+    let d = kmDenemeKayitlar(), bugun = K.tarih;
+    let l = Object.keys(d).map(function (k) { return Object.assign({ id: k }, d[k]); }).filter(function (x) {
+        return x && !x.sil && x.sporcu && (x.gelisTarihi === bugun) && K.kisiler.some(function (p) { return p.g === x.sporcu.g && p.ad === x.sporcu.ad; });
+    });
+    if (!l.length) return '';
+    let etiket = { geldi: '', dusunuyor: '🤔 düşünüyor', kayit: '⭐ kayıt oldu', vazgecti: 'vazgeçti' };
+    return '<div class="kmk-bolum kmd-kapanis"><h4>🌱 Deneme dersi <small>' + l.length + ' aday · kayıt oldu mu?</small></h4>' + l.map(function (x) {
+        let idJ = JSON.stringify(x.id).replace(/"/g, '&quot;');
+        return '<div class="kmk-sat"><div class="kmk-ad">' + kmSablonEsc(x.sporcu.ad) + '<small>' + (x.durum === 'geldi' && x.dusunuyor ? etiket.dusunuyor : (etiket[x.durum] || 'denemeye geldi')) + (x.tel ? ' · 📞 ' + kmSablonEsc(x.tel) : '') + '</small></div>'
+            + '<div class="kmk-sec kmd-sec"><button class="g' + (x.durum === 'kayit' ? ' aktif' : '') + '" onclick="kmDenemeSonuc(' + idJ + ',\'kayit\')">⭐ Kayıt oldu</button>'
+            + '<button class="' + (x.durum === 'geldi' && x.dusunuyor ? 'aktif' : '') + '" onclick="kmDenemeSonuc(' + idJ + ',\'dusunuyor\')">🤔 Düşünüyor</button>'
+            + '<button class="y' + (x.durum === 'vazgecti' ? ' aktif' : '') + '" onclick="kmDenemeSonuc(' + idJ + ',\'vazgecti\')">Vazgeçti</button></div></div>';
+    }).join('') + '<div class="kmk-not">"Düşünüyor" denemeye geldi olarak kalır; Deneme Dersleri ekranında 3 gün sonra "sonucu sor" hatırlatması çıkar.</div></div>';
+}
+function kmDenemeSonuc(id, sonuc) {
+    let x = kmDenemeKayitlar()[id]; if (!x || !x.sporcu) return;
+    if (sonuc === 'dusunuyor') kmDenemeYaz(id, { durum: 'geldi', dusunuyor: true });
+    else kmDenemeYaz(id, { durum: sonuc });
+    if (sonuc === 'kayit' && typeof kisiTurAyarla === 'function' && typeof kisiTuru === 'function' && kisiTuru(x.sporcu.g, x.sporcu.ad) === 'misafir') {
+        kisiTurAyarla(x.sporcu.g, x.sporcu.ad, { tur: 'sporcu', aktifOldu: bugunISO(), takip: { durum: 'uye', tarih: bugunISO() } });
+        let sp = turnuvaDB[x.sporcu.g] && turnuvaDB[x.sporcu.g][x.sporcu.ad];
+        if (sp && !sp.katilmaTarihi) { sp.katilmaTarihi = bugunISO(); sp.lastModified = Date.now(); try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); bekleyenGonderim = true; } catch (e) {} }
+    }
+    showToast(sonuc === 'kayit' ? '⭐ ' + x.sporcu.ad + ' kayıt oldu — artık öğrenci' : sonuc === 'vazgecti' ? x.sporcu.ad + ' vazgeçti olarak işaretlendi' : x.sporcu.ad + ' düşünüyor', sonuc === 'vazgecti' ? 'warning' : 'success');
+    kmKapanisCiz();
+}
+(function () {
+    let st = document.createElement('style'); st.id = 'kmd-css';
+    st.textContent = '.kmd-serit{border:1px solid rgba(34,197,94,.45);background:rgba(34,197,94,.07);border-radius:12px;padding:8px 10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}'
+        + '.kmd-sat{display:flex;align-items:center;justify-content:space-between;gap:8px}.kmd-ad{display:flex;flex-direction:column;min-width:0}.kmd-ad b{font-size:13.5px}.kmd-ad small{font-size:11px;color:var(--text-muted)}'
+        + '.kmd-ekle{border:1px solid #22c55e;background:#16a34a;color:#fff;border-radius:10px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;min-height:36px;white-space:nowrap}'
+        + '.kmd-tamam{font-size:12px;font-weight:800;color:#22c55e;white-space:nowrap}.kmd-not{font-size:10.5px;color:var(--text-muted)}'
+        + '.kmd-sec{flex-wrap:wrap}.kmd-sec button{white-space:nowrap}';
+    document.head.appendChild(st);
+})();
