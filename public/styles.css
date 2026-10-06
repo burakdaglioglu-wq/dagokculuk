@@ -2512,7 +2512,7 @@
         /* Platform / sporcu / PIN ekranı — eğitmen paneli açık değilken */
         #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) {
             --text-main: #efebe5; --text-muted: #b3aca2; --border-color: rgba(255,255,255,0.16); --bg-panel: rgba(22,20,18,0.72);
-            background: linear-gradient(180deg, rgba(14,12,10,0.6), rgba(14,12,10,0.35) 35%, rgba(14,12,10,0.85)), url('/hero/bulanik.jpg') center 30% / cover, #141210;
+            background: linear-gradient(180deg, rgba(14,12,10,0.6), rgba(14,12,10,0.35) 35%, rgba(14,12,10,0.85)), url('/kulup/salon2-bulanik.jpg') center 44% / cover, #141210;
             color: var(--text-main); font-family: 'Archivo', sans-serif;
         }
         #giris-ekrani:has(#giris-lig[style*="display: flex"]) .gv-vizor { display: none; }
@@ -2557,3 +2557,9 @@
         .gv-vizor { --w: min(300px, 58vw); }
         #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(240px, 50vw); }
         @media (max-width: 600px) { #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(200px, 46vw); margin-top: 44px; } }
+
+/* Kulüp seçim ekranı: forma, başlığın arkasında dekor (2026-10-06, kullanıcı: giriş sayfasında forma + salon fotoğrafı) */
+#kulup-secim-ekrani { overflow: hidden; }
+#kulup-secim-ekrani > *:not(.gv-forma) { position: relative; z-index: 1; }
+.gv-forma { position: absolute; z-index: 0; top: 50%; left: 50%; width: min(1100px, 120vw); transform: translate(-50%, -54%); opacity: .13; filter: blur(1px) saturate(1.1); pointer-events: none; user-select: none; }
+@media (max-width: 700px) { .gv-forma { width: 180vw; opacity: .1; transform: translate(-50%, -62%); } }

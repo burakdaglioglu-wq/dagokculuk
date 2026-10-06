@@ -97,7 +97,7 @@ export default async function ({ log }) {
     if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-kursu.png' });
     await p.evaluate(() => yzTorenIleri()); await p.waitForTimeout(500);
     dogrula(await p.locator('#yz-toren.final').count(), 'final ekranı gelmedi');
-    esit(await p.locator('#yz-toren .yz-tor-cip').count(), 4, 'tüm katılımcılar finalde olmalı');
+    esit(await p.locator('#yz-toren .yz-tor-cip').count(), await p.evaluate(() => yzOku().durum.katilimci.length), 'tüm katılımcılar finalde olmalı');
     if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-final.png' });
     await p.locator('#yz-toren button', { hasText: 'Töreni kapat' }).click();
     dogrula(!(await p.locator('#yz-toren').count()) && !(await p.evaluate(() => yzOku().toren)), 'tören kapanmadı');

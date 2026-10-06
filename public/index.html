@@ -113,6 +113,8 @@
   .vz-resim.vz-s2{ object-position:50% 52%; }
   .vz-resim.vz-gizli{ opacity:0; }
   .vz-bulanik.vz-s2{ filter:saturate(.75) brightness(.6); }
+  .vz-resim.vz-s3{ object-position:50% 46%; }
+  .vz-bulanik.vz-s3{ filter:saturate(.8) brightness(.6); }
   .vz-bulanik{ z-index:1; filter:saturate(.8) brightness(.78); }
   .vz-karart{ position:absolute; inset:0; z-index:2; pointer-events:none;
     background:linear-gradient(180deg, rgba(14,12,10,.55) 0%, rgba(14,12,10,0) 22%, rgba(14,12,10,0) 52%, rgba(14,12,10,.72) 100%),
@@ -448,6 +450,19 @@
   body{ font-family:'Archivo','Poppins',-apple-system,sans-serif; }
   .s2{ padding:clamp(64px,9vw,112px) 0; border-top:1px solid var(--line); }
   .s2-alt{ background:var(--bg-alt); }
+  /* Kulübümüz (2026-10-06): salon fotoğrafı + kulüp forması */
+  .kl-izgara{ display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:22px; margin-top:30px; align-items:stretch; }
+  .kl-kart{ position:relative; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--panel); display:flex; flex-direction:column; }
+  .kl-kart figcaption{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:6px; }
+  .kl-kart h3{ font-family:'Archivo',sans-serif; font-weight:900; text-transform:uppercase; font-size:20px; margin:0; }
+  .kl-kart p{ margin:0; font-size:14.5px; line-height:1.6; color:var(--ink-soft); }
+  .kl-salon img{ width:100%; aspect-ratio:4/5; height:auto; object-fit:cover; object-position:50% 45%; display:block; }
+  .kl-forma{ background:radial-gradient(120% 90% at 50% 18%, rgba(255,106,26,.16), transparent 60%), var(--panel); }
+  .kl-forma .kl-forma-gorsel{ flex:1; display:flex; align-items:center; justify-content:center; padding:26px 18px 8px; }
+  .kl-forma img{ width:100%; max-width:640px; height:auto; display:block; filter:drop-shadow(0 26px 30px rgba(0,0,0,.45)); }
+  .kl-etiketler{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .kl-etiketler span{ font:500 11px/1 'Roboto Mono',ui-monospace,monospace; letter-spacing:.1em; text-transform:uppercase; padding:6px 9px; border:1px solid var(--line); border-radius:4px; color:var(--ink-soft); }
+  @media (max-width:900px){ .kl-izgara{ grid-template-columns:1fr; } .kl-salon img{ aspect-ratio:4/3; } }
   /* Oyunlarla okçuluk (2026-10-05) */
   .oy-adimlar{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:28px 0 34px; }
   .oy-adim{ display:flex; gap:14px; align-items:flex-start; padding:18px; border:1px solid var(--line); border-radius:6px; background:var(--panel); }
@@ -817,6 +832,10 @@
     <source srcset="/hero/salon-bulanik.webp" type="image/webp">
     <img class="vz-resim vz-bulanik vz-s2 vz-gizli" data-sahne="1" src="/hero/salon-bulanik.jpg" alt="">
   </picture>
+  <picture>
+    <source data-srcset="/kulup/salon2-bulanik.webp" type="image/webp">
+    <img class="vz-resim vz-bulanik vz-s3 vz-gizli" data-sahne="2" data-src="/kulup/salon2-bulanik.jpg" alt="">
+  </picture>
   <div class="vz-karart"></div>
   <div class="vz-pencere" id="vzPencere">
     <picture>
@@ -826,6 +845,10 @@
     <picture>
       <source data-srcset="/hero/salon-900.webp 900w, /hero/salon-1600.webp 1600w, /hero/salon-2400.webp 2400w" sizes="100vw" type="image/webp">
       <img class="vz-resim vz-net vz-s2 vz-gizli" data-sahne="1" data-srcset="/hero/salon-900.jpg 900w, /hero/salon-1600.jpg 1600w" sizes="100vw" data-src="/hero/salon-1600.jpg" alt="DAĞ Okçuluk atış salonunda hedeflere nişan alan iki sporcu" decoding="async">
+    </picture>
+    <picture>
+      <source data-srcset="/kulup/salon2-900.webp 900w, /kulup/salon2-1600.webp 1600w, /kulup/salon2-2400.webp 2400w" sizes="100vw" type="image/webp">
+      <img class="vz-resim vz-net vz-s3 vz-gizli" data-sahne="2" data-srcset="/kulup/salon2-900.jpg 900w, /kulup/salon2-1600.jpg 1600w" sizes="100vw" data-src="/kulup/salon2-1600.jpg" alt="DAĞ Okçuluk salonunda kulüp formalı manken, makaralı yay ve hedefler" decoding="async">
     </picture>
   </div>
   <div class="vz-vizor" id="vzVizor" aria-hidden="true">
@@ -960,6 +983,25 @@
       </div>
       <figcaption>Uygulamadan temsilî ekran. Gerçek veriler veliye özel bağlantıyla açılır.</figcaption>
     </figure>
+  </div>
+</section>
+
+<section class="s2" id="kulubumuz" aria-labelledby="kulup-baslik">
+  <div class="wrap">
+    <div class="s2-etiket">Kulübümüz</div>
+    <h2 class="s2-h2" id="kulup-baslik">Salonumuz ve formamız</h2>
+    <p class="s2-giris">Pendik'teki kapalı atış salonumuzda hedefler, ekipman ve antrenman alanı hazır bekliyor. Sporcularımız yarışmalara kulübün kendi formasıyla çıkıyor.</p>
+    <div class="kl-izgara">
+      <figure class="kl-kart kl-salon reveal">
+        <img src="/kulup/salon2-900.webp" srcset="/kulup/salon2-900.webp 900w, /kulup/salon2-1600.webp 1600w" sizes="(max-width:900px) 100vw, 480px" width="900" height="1200" alt="DAĞ Okçuluk salonu: kulüp formalı manken, sadak ve makaralı yay; arkada atış hedefleri" loading="lazy" decoding="async">
+        <figcaption><h3>Atış salonu</h3><p>Kapalı salonda her yaşa uygun mesafe ve hedefler. Ekipman kulüpten — ilk derse sadece rahat kıyafetle gelinir.</p></figcaption>
+      </figure>
+      <figure class="kl-kart kl-forma reveal">
+        <div class="kl-forma-gorsel"><img src="/kulup/forma-1400.webp" srcset="/kulup/forma-800.webp 800w, /kulup/forma-1400.webp 1400w" sizes="(max-width:900px) 100vw, 640px" width="1400" height="882" alt="DAĞ Okçuluk kulüp forması: siyah zemin üzerine turuncu ve gri dağ deseni, önden ve arkadan" loading="lazy" decoding="async"></div>
+        <figcaption><h3>Kulüp forması</h3><p>Siyah zemin, turuncu ve gri dağ deseni; göğüste kulüp arması, sırtta DAĞ zirvesi. Yarışmada da antrenmanda da aynı takım.</p>
+          <div class="kl-etiketler"><span>Kulüp arması</span><span>Yarışma ve antrenman</span></div></figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
@@ -1388,11 +1430,13 @@
     // hedefler fotoğraf içinde oransal (x, y); oran = en / boy
     var SAHNELER = [
       { oran: 1800 / 2295, hedefler: [{ x: 0.70, y: 0.268 }] },
-      { oran: 3024 / 4032, hedefler: [{ x: 0.50, y: 0.425 }, { x: 0.925, y: 0.47 }] }
+      { oran: 3024 / 4032, hedefler: [{ x: 0.50, y: 0.425 }, { x: 0.925, y: 0.47 }] },
+      // 3. sahne (2026-10-06): kulüp forması giydirilmiş manken + makaralı yay + duvardaki hedef
+      { oran: 3024 / 4032, hedefler: [{ x: 0.30, y: 0.41 }, { x: 0.66, y: 0.40 }, { x: 0.845, y: 0.475 }] }
     ];
     var netler = pen.querySelectorAll('.vz-net'), bulaniklar = hero.querySelectorAll('.vz-bulanik');
     var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var W = 0, H = 0, w = 0, h = 0, altSinir = 0, aktif = 0, hedefNo = 0, noktalar = [[], []];
+    var W = 0, H = 0, w = 0, h = 0, altSinir = 0, aktif = 0, hedefNo = 0, noktalar = [[], [], []];
     var x = 0, y = 0, hedef = { x: 0, y: 0 }, mod = 'gez', sonKullanici = 0, durak = '', bekle = 0, sayac = 0, kilitli = false, kilitNokta = null;
     var calisiyor = false, son = 0, yazi = '';
     function olc(){
