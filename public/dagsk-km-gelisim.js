@@ -208,7 +208,10 @@ function glCss() {
         '.gl-pad{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.gl-pad button{min-height:54px;border-radius:12px;border:0;font:inherit;font-size:19px;font-weight:900;cursor:pointer}.gl-pad button:disabled{opacity:.35}',
         '.o-X,.o-10,.o-9{background:#f6c929;color:#1a1a1a;border-style:solid!important}.o-8,.o-7{background:#e0393e;color:#fff;border-style:solid!important}.o-6,.o-5{background:#2f8fd8;color:#fff;border-style:solid!important}.o-4,.o-3{background:#2b2b2b;color:#fff;border-style:solid!important}.o-2,.o-1{background:#f2f2f2;color:#111;border-style:solid!important}.o-M{background:#475569;color:#fff;border-style:solid!important}',
         '.gl-butonlar{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}',
-        '@media (max-width:520px){.gl-ekle{margin-left:0;width:100%}.gl-ekle .gl-btn{flex:1}.gl-pad{grid-template-columns:repeat(4,1fr)}}'
+        '@media (max-width:520px){.gl-ekle{margin-left:0;width:100%}.gl-ekle .gl-btn{flex:1}.gl-pad{grid-template-columns:repeat(4,1fr)}}',
+        '.gl-donem{gap:10px}.gl-donem-bar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--text-main) 10%,transparent);overflow:hidden}.gl-donem-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}',
+        '.gl-donem-alt{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px}.gl-donem-alt span{color:var(--text-muted)}.gl-donem.bitti{border-color:#fbbf24}',
+        '.gl-donem label{display:inline-flex;align-items:center;gap:5px}.gl-donem input[type=checkbox]{-webkit-appearance:checkbox!important;appearance:auto!important;width:16px;height:16px;accent-color:#f59e0b}.gl-donem input[type=date]{min-height:34px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);padding:0 6px}'
     ].concat(GL_CSS_ADIM2, GL_CSS_ADIM34).join('\n');
     document.head.appendChild(st);
 }
@@ -225,8 +228,36 @@ const GL_GUN_AD = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cu
 function glLigDepo() { return kyDepoOku('kulup_lig'); }
 function glLigAyar() {
     let a = glLigDepo().ayar, y = new Date().getFullYear(), m = new Date().getMonth();
-    let sezon = (m >= 8 ? y : y - 1) + '-09-01';
-    return Object.assign({ haftalar: [1, 3], gun: 6, sezonBas: sezon }, a && !a.sil ? a : {});
+    let d = glDonemVarsayilan(y, m);
+    let o = Object.assign({ haftalar: [1, 3], gun: 6, sezonBas: d.bas, sezonBit: d.bit, devamPuani: true }, a && !a.sil ? a : {});
+    if (!o.sezonBit || o.sezonBit < o.sezonBas) o.sezonBit = glDonemVarsayilan(+o.sezonBas.slice(0, 4), +o.sezonBas.slice(5, 7) - 1).bit;
+    return o;
+}
+// Dönem ligi (2026-10-07, kullanıcı: "dönem boyunca puanlar toplansın, dönem sonunda kupa töreni"):
+// Güz = 1 Eylül – 31 Ocak, Bahar = 1 Şubat – 30 Haziran, Yaz = 1 Temmuz – 31 Ağustos (ayardan değiştirilebilir).
+function glDonemVarsayilan(y, m) {
+    if (m >= 8) return { ad: 'Güz', bas: y + '-09-01', bit: (y + 1) + '-01-31' };
+    if (m === 0) return { ad: 'Güz', bas: (y - 1) + '-09-01', bit: y + '-01-31' };
+    if (m <= 5) return { ad: 'Bahar', bas: y + '-02-01', bit: y + '-06-30' };
+    return { ad: 'Yaz', bas: y + '-07-01', bit: y + '-08-31' };
+}
+function glDonemAd(a) { let m = +a.sezonBas.slice(5, 7); return (m === 9 ? 'Güz' : m === 2 ? 'Bahar' : m === 7 ? 'Yaz' : 'Dönem') + ' ' + a.sezonBas.slice(0, 4) + (a.sezonBit.slice(0, 4) !== a.sezonBas.slice(0, 4) ? '–' + a.sezonBit.slice(2, 4) : ''); }
+function glDonemSec(tur) {
+    let a = glLigAyar(), y = new Date().getFullYear(), m = new Date().getMonth(), d;
+    if (tur === 'simdi') d = glDonemVarsayilan(y, m);
+    else if (tur === 'guz') d = glDonemVarsayilan(m >= 8 || m === 0 ? (m === 0 ? y - 1 : y) : y - 1, 8);
+    else if (tur === 'bahar') d = glDonemVarsayilan(m >= 1 && m <= 7 ? y : y + (m >= 8 ? 1 : 0), 1);
+    if (d) { a.sezonBas = d.bas; a.sezonBit = d.bit; glLigYaz('ayar', a); }
+    kmLigCiz();
+}
+// Devam puanı: dönem içinde antrenmana gelinen her gün +1 (yoklama "geldi" ya da o gün seri girilmiş). Lig günü
+// gelmeyen ama düzenli antrenmana gelen çocuk da tabloda görünsün diye.
+const GL_DEVAM_PUAN = 1;
+function glDevamGunleri(g, ad, bas, bit) {
+    let gunler = new Set(), sp = turnuvaDB[g] && turnuvaDB[g][ad];
+    Object.keys(otomatikYoklamaDB || {}).forEach(t => { if (t < bas || t > bit) return; let r = otomatikYoklamaDB[t][ad]; if (r && r.geldi !== false && (!r.grup || r.grup === g)) gunler.add(t); });
+    ((sp && sp.seriler) || []).forEach(x => { let t = x && (x.tarih || '').slice(0, 10); if (t && t >= bas && t <= bit) gunler.add(t); });
+    return gunler.size;
 }
 function glLigYaz(anahtar, deger) { let d = glLigDepo(); d[anahtar] = Object.assign({ t: Date.now() }, deger); kyDepoYazYerel('kulup_lig', d); glSenk('kulup_lig'); }
 function glLigAyarYaz(alan, v) { let a = glLigAyar(); a[alan] = v; glLigYaz('ayar', a); kmLigCiz(); }
@@ -240,9 +271,9 @@ function glLigGunleri(basIso, sonIso) {
     return [...out].sort();
 }
 function glLigTurlari() {
-    let a = glLigAyar(), d = glLigDepo(), bugun = glBugun(), gunler = new Set(glLigGunleri(a.sezonBas, bugun));
+    let a = glLigAyar(), d = glLigDepo(), bugun = glBugun(), gunler = new Set(glLigGunleri(a.sezonBas, bugun < a.sezonBit ? bugun : a.sezonBit));
     let arsiv = []; try { arsiv = JSON.parse(localStorage.getItem('dag_yz_arsiv') || '[]') || []; } catch (e) {}
-    return arsiv.filter(r => r && r.tarih >= a.sezonBas && Array.isArray(r.sporcular) && r.sporcular.length).map(r => {
+    return arsiv.filter(r => r && r.tarih >= a.sezonBas && r.tarih <= a.sezonBit && Array.isArray(r.sporcular) && r.sporcular.length).map(r => {
         let el = d['tur|' + r.id], otomatik = gunler.has(r.tarih), say = el && !el.sil ? !!el.say : otomatik;
         return Object.assign({}, r, { say, otomatik });
     }).sort((x, y) => (x.t || 0) - (y.t || 0));
@@ -260,12 +291,54 @@ function glLigTablo() {
             e.puan += (GL_LIG_PUAN[sira - 1] || 0) + GL_LIG_KATILIM; e.katilim++; e.enIyi = Math.min(e.enIyi, sira); e.son.push({ ti, sira });
         }));
     });
+    let a = glLigAyar();
+    if (a.devamPuani !== false) {
+        let bit = glBugun() < a.sezonBit ? glBugun() : a.sezonBit;
+        GL_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => {
+            let sp = turnuvaDB[g][ad]; if (!sp || sp.pasif) return;
+            try { if (typeof kisiTuru === 'function' && kisiTuru(g, ad) !== 'sporcu') return; } catch (e) {}
+            let n = glDevamGunleri(g, ad, a.sezonBas, bit); if (!n) return;
+            let k = glKategori(g, ad), tk = (tablo[k] = tablo[k] || {}), e = tk[g + '|' + ad] = tk[g + '|' + ad] || { g, ad, puan: 0, katilim: 0, enIyi: 99, son: [] };
+            e.devam = n; e.puan += n * GL_DEVAM_PUAN;
+        }));
+    }
     return { tablo, turSay: turlar.length };
 }
 function glLigTurSay(id, say) { glLigYaz('tur|' + id, { say }); kmLigCiz(); }
 function glLigGunDegis(iso, alan) { let d = glLigDepo(), e = d['gun|' + iso]; glLigYaz('gun|' + iso, alan === 'iptal' ? { iptal: !(e && e.iptal) } : { ek: true }); kmLigCiz(); }
 function glLigGunEkle() { let el = document.getElementById('gl-lig-ek'); if (el && el.value) glLigGunDegis(el.value, 'ek'); }
 function glLigBaslat() { try { kmAracSec('yarisma'); } catch (e) {} showToast('🏆 Lig günü — Yarışma › Sıralama Turu ile başlat; sonuç lige otomatik sayılır', 'info'); }
+function glDonemKartHTML(a, tablo) {
+    let bugun = glBugun(), kalan = Math.round((new Date(a.sezonBit + 'T12:00') - new Date(bugun + 'T12:00')) / 864e5), bitti = kalan < 0;
+    let topGun = Math.max(1, Math.round((new Date(a.sezonBit + 'T12:00') - new Date(a.sezonBas + 'T12:00')) / 864e5)), gecen = Math.min(topGun, Math.max(0, topGun - Math.max(0, kalan)));
+    let tarih = t => new Date(t + 'T12:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    let kisi = Object.keys(tablo).reduce((n, k) => n + Object.keys(tablo[k]).length, 0);
+    return `<div class="gl-kart gl-donem${bitti ? ' bitti' : ''}">
+        <div class="gl-kart-ust"><span class="gl-etiket">🗓 Dönem · ${glEsc(glDonemAd(a))}</span><span class="gl-mini">${tarih(a.sezonBas)} – ${tarih(a.sezonBit)}</span></div>
+        <div class="gl-donem-bar"><i style="width:${(gecen / topGun * 100).toFixed(1)}%"></i></div>
+        <div class="gl-donem-alt"><b>${bitti ? 'Dönem bitti — kupa zamanı! 🏆' : kalan === 0 ? 'Dönemin son günü' : 'Dönem sonuna ' + kalan + ' gün'}</b><span>${kisi} sporcu puan topladı</span></div>
+        <div class="gl-butonlar" style="justify-content:flex-start">
+            <button class="gl-btn birincil" onclick="glDonemToreni()" ${kisi ? '' : 'disabled'}>🏆 Dönem kupa töreni</button>
+            <button class="gl-btn kucuk" onclick="glDonemSec('simdi')">Bu dönem</button><button class="gl-btn kucuk" onclick="glDonemSec('guz')">Güz</button><button class="gl-btn kucuk" onclick="glDonemSec('bahar')">Bahar</button>
+            <label class="gl-mini">Başlangıç <input type="date" value="${a.sezonBas}" onchange="glLigAyarYaz('sezonBas', this.value)"></label>
+            <label class="gl-mini">Bitiş <input type="date" value="${a.sezonBit}" onchange="glLigAyarYaz('sezonBit', this.value)"></label>
+            <label class="gl-mini"><input type="checkbox" ${a.devamPuani !== false ? 'checked' : ''} onchange="glLigAyarYaz('devamPuani', this.checked)"> Antrenman günü +1</label>
+        </div></div>`;
+}
+// 🏆 Dönem kupa töreni — Sıralama Turu'nun madalya töreni görselleri/sesleri (dagsk-km-yarisma-pro.js), her kategori bir sahne.
+function glDonemToreni() {
+    let a = glLigAyar(), { tablo } = glLigTablo();
+    let kat = Object.keys(tablo).sort((x, y) => GL_GRUPLAR.indexOf(x.split('|')[0]) - GL_GRUPLAR.indexOf(y.split('|')[0]) || x.localeCompare(y));
+    let sahne = kat.map(k => {
+        let l = Object.values(tablo[k]).filter(s => s.puan > 0).sort((x, y) => y.puan - x.puan || x.enIyi - y.enIyi).slice(0, 3);
+        return { ad: glKategoriAd(k), liste: l.map((s, i) => ({ k: s.g + '|' + s.ad, ad: s.ad, sira: i + 1, puan: s.puan, alt: (s.katilim ? s.katilim + ' lig turu' : '') + (s.devam ? (s.katilim ? ' · ' : '') + s.devam + ' gün antrenman' : '') })) };
+    }).filter(x => x.liste.length);
+    if (!sahne.length) return showToast('Törende gösterilecek puan yok.', 'warning');
+    let katilimci = [];
+    kat.forEach(k => Object.values(tablo[k]).sort((x, y) => y.puan - x.puan).forEach(s => katilimci.push(s.g + '|' + s.ad)));
+    dagskEkYukle('dagsk-km-yarisma-pro.js').then(() => yzOzelToren({ ust: 'DAĞ S.K. · ' + glDonemAd(a) + ' DÖNEMİ', baslik: 'DÖNEM KUPASI', sahne, katilimci, puanEtiket: 'puan' }))
+        .catch(() => showToast('Tören açılamadı — bağlantını kontrol et.', 'error'));
+}
 function kmLigCiz() {
     glCss();
     let el = document.getElementById('km-icerik'); if (!el) return;
@@ -295,9 +368,10 @@ function kmLigCiz() {
             <select onchange="glLigAyarYaz('gun', Number(this.value))" aria-label="Haftanın günü">${[1, 2, 3, 4, 5, 6, 0].map(g => `<option value="${g}"${a.gun === g ? ' selected' : ''}>${GL_GUN_AD[g]}</option>`).join('')}</select>
             <input id="gl-lig-ek" type="date" aria-label="Ek lig günü"><button class="gl-btn kucuk" onclick="glLigGunEkle()">+ Gün ekle</button></span></div>
             <div class="gl-lig-takvim">${takvim || '<div class="gl-mini">Takvim boş.</div>'}</div></div>
-        <div class="gl-kart"><div class="gl-kart-ust"><span class="gl-etiket">Sezon tablosu · ${glEsc(new Date(a.sezonBas + 'T12:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }))}'den beri</span><span class="gl-mini">Puan: 25-18-15-12-10-8-6-4-2-1 · katılım +2</span></div>
+        ${glDonemKartHTML(a, tablo)}
+        <div class="gl-kart"><div class="gl-kart-ust"><span class="gl-etiket">Dönem tablosu · ${glEsc(glDonemAd(a))}</span><span class="gl-mini">Lig turu: 25-18-15-12-10-8-6-4-2-1 · katılım +2${a.devamPuani !== false ? ' · antrenman günü +1' : ''}</span></div>
             ${kategoriler.length ? `<div class="gl-cipler">${kategoriler.map(k => `<button class="${_gl.ligKat === k ? 'aktif' : ''}" onclick="_gl.ligKat='${k}'; kmLigCiz()">${glEsc(glKategoriAd(k))}</button>`).join('')}</div>
-            <div class="gl-lig-tablo">${satirlar.map((s, i) => `<div class="gl-lig-satir"><span class="gl-lig-sira ${i < 3 ? 's' + (i + 1) : ''}">${i + 1}</span>${glAvatar(s.g, s.ad)}<span class="gl-sp-ad"><b>${glEsc(s.ad)}</b><small>${s.katilim} tur · en iyi ${s.enIyi}.</small></span><span class="gl-lig-son">${s.son.slice(-6).map(x => `<i class="${madalya(x.sira)}" title="${x.sira}.">${x.sira}</i>`).join('')}</span><b class="gl-lig-puan">${s.puan}</b></div>`).join('')}</div>`
+            <div class="gl-lig-tablo">${satirlar.map((s, i) => `<div class="gl-lig-satir"><span class="gl-lig-sira ${i < 3 ? 's' + (i + 1) : ''}">${i + 1}</span>${glAvatar(s.g, s.ad)}<span class="gl-sp-ad"><b>${glEsc(s.ad)}</b><small>${s.katilim ? s.katilim + ' tur · en iyi ' + s.enIyi + '.' : 'lig turu yok'}${s.devam ? ' · ' + s.devam + ' gün antrenman' : ''}</small></span><span class="gl-lig-son">${s.son.slice(-6).map(x => `<i class="${madalya(x.sira)}" title="${x.sira}.">${x.sira}</i>`).join('')}</span><b class="gl-lig-puan">${s.puan}</b></div>`).join('')}</div>`
             : '<div class="gl-bos">Henüz lige sayılan tur yok. İlk lig gününde Sıralama Turu atın.</div>'}</div>
         <div class="gl-kart"><div class="gl-etiket">Sezondaki Sıralama Turları — lige sayılsın mı?</div>${turlar.length ? turlar.slice().reverse().slice(0, 12).map(t => `<label class="gl-lig-tur"><input type="checkbox" ${t.say ? 'checked' : ''} onchange="glLigTurSay('${t.id}', this.checked)"><span><b>${glEsc(glTarihYaz(t.tarih))}</b><small>${t.sporcular.length} sporcu · ${glEsc(t.mesafe || '')} ${t.otomatik ? '· lig günü' : ''}</small></span></label>`).join('') : '<div class="gl-mini">Bu sezon Sıralama Turu atılmamış.</div>'}</div>
     </div>`;

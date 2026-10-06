@@ -2143,8 +2143,23 @@ function yzTorenKontrol(o) {
     yzTorenCss();
     _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik();
 }
+// Özel tören (2026-10-07, Dönem Ligi kupa töreni): ortak tur durumuna YAZMAZ, bu cihazda oynar. Aynı zaman çizelgesi/
+// görseller/sesler; başlık ve sahneler dışarıdan gelir. veri: {ust, baslik, sahne:[{ad, liste:[{k,ad,sira,puan,alt}]}], katilimci:[k]}
+function yzOzelToren(v) {
+    yzTorenKapatYerel(); yzSesHazirla();
+    _yz.toren = { basla: Date.now() + 800, sahne: v.sahne, adim: '', ozel: true, katilimci: v.katilimci || [] };
+    let el = document.createElement('div'); el.id = 'yz-toren'; el.className = 'yz-toren';
+    el.innerHTML = '<div class="yz-tor-isik a"></div><div class="yz-tor-isik b"></div><div class="yz-tor-konfeti"></div>'
+        + '<div class="yz-tor-bas"><div class="yz-tor-ust">' + esc(v.ust || '') + '</div><div class="yz-tor-baslik">' + esc(v.baslik || 'MADALYA TÖRENİ') + '</div><div class="yz-tor-grup"></div></div>'
+        + '<div class="yz-tor-kursu"></div><div class="yz-tor-final"></div>'
+        + '<div class="yz-tor-btn"><button onclick="yzTorenIleri()">⏭ İleri</button><button onclick="yzTorenBitir()">✕ Töreni kapat</button></div>';
+    document.body.appendChild(el);
+    yzTorenCss();
+    try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {}); } catch (e) {}
+    _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik();
+}
 function yzTorenKapatYerel() { clearInterval(_yz.torenZ); _yz.torenZ = null; _yz.toren = null; let e = document.getElementById('yz-toren'); if (e) e.remove(); }
-function yzTorenBitir() { yzGuncelle(function (x) { x.toren = null; }); yzTorenKapatYerel(); }
+function yzTorenBitir() { if (_yz.toren && _yz.toren.ozel) { yzTorenKapatYerel(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} return; } yzGuncelle(function (x) { x.toren = null; }); yzTorenKapatYerel(); }
 // İleri: başlangıcı sonraki olaya kaydır (ortak durumda — tüm ekranlar birlikte atlar)
 function yzTorenIleri() {
     let T = _yz.toren; if (!T) return;
@@ -2153,6 +2168,7 @@ function yzTorenIleri() {
     olay.push(YZ_TOR.giris + T.sahne.length * YZ_TOR.grup);
     let sonraki = olay.filter(function (x) { return x > gecen + 0.3; })[0]; if (sonraki == null) return;
     let yeni = T.basla - (sonraki - gecen) * 1000 + 300;
+    if (T.ozel) { T.basla = yeni; T.adim = '__'; let el = document.getElementById('yz-toren'); if (el) { let k = el.querySelector('.yz-tor-kursu'); if (k) k.dataset.gi = ''; } yzTorenTik(); return; }
     yzGuncelle(function (x) { if (x.toren) x.toren.basla = yeni; });
     yzTorenKapatYerel(); yzTorenKontrol(yzOku());
 }

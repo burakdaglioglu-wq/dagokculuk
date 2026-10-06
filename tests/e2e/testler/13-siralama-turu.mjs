@@ -103,6 +103,21 @@ export default async function ({ log }) {
     dogrula(!(await p.locator('#yz-toren').count()) && !(await p.evaluate(() => yzOku().toren)), 'tören kapanmadı');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('9-12 yaş kategori + madalya töreni (🥉→🥈→🥇→final) ✓');
+    // Kulüp Ligi → dönem kartı + dönem kupa töreni (yerel, ortak duruma yazmaz)
+    await p.evaluate(() => { try { yzTvKapat(); } catch (e) {} kmAracSec('lig'); });
+    await p.waitForFunction(() => typeof kmLigCiz === 'function' && document.querySelector('.gl-donem'), null, { timeout: 30000 });
+    dogrula((await p.locator('.gl-donem').textContent()).includes('Dönem'), 'dönem kartı yok');
+    if (await p.locator('.gl-donem button', { hasText: 'Dönem kupa töreni' }).isEnabled()) {
+      await p.locator('.gl-donem button', { hasText: 'Dönem kupa töreni' }).click();
+      await p.waitForSelector('#yz-toren', { timeout: 15000 });
+      for (let i = 0; i < 3; i++) { await p.evaluate(() => yzTorenIleri()); await p.waitForTimeout(400); }
+      dogrula(await p.locator('#yz-toren .yz-tor-k.acik').count() >= 1, 'dönem töreninde kürsü açılmadı');
+      dogrula(!(await p.evaluate(() => yzOku().toren && yzOku().toren.ozel)), 'özel tören ortak duruma yazılmamalı');
+      await p.locator('#yz-toren button', { hasText: 'Töreni kapat' }).click();
+      dogrula(!(await p.locator('#yz-toren').count()), 'dönem töreni kapanmadı');
+    }
+    esit(hatalar.length, 0, 'sayfa hatası (lig): ' + hatalar.join(' | '));
+    log('dönem ligi kartı + kupa töreni ✓');
   } finally {
     if (yedek) await p.evaluate((y) => { if (y.yz) localStorage.setItem(yzAnahtar(), y.yz); else localStorage.removeItem(yzAnahtar()); _kmListe = JSON.parse(y.liste); }, yedek).catch(() => {});
     await ctx.close();
