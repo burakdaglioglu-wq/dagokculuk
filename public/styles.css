@@ -2563,3 +2563,18 @@
 #kulup-secim-ekrani > *:not(.gv-forma) { position: relative; z-index: 1; }
 .gv-forma { position: absolute; z-index: 0; top: 50%; left: 50%; width: min(1100px, 120vw); transform: translate(-50%, -54%); opacity: .13; filter: blur(1px) saturate(1.1); pointer-events: none; user-select: none; }
 @media (max-width: 700px) { .gv-forma { width: 180vw; opacity: .1; transform: translate(-50%, -62%); } }
+
+/* Oyunlar · telefon dik (2026-10-07): skor kutusu sahnenin altında ayrı şerit — oyun alanını kapatmaz.
+   Sahne yüksekliği = oyun alanı + kutu; kutu kapanınca (özet satırı) oyun alanı büyür. --km-dok-h JS'ten
+   (kmOyunDokYukseklikIzle). Kutunun sürükleme/ölçek ayarları telefonda devre dışı (tam genişlik). */
+@media (max-width: 700px) and (orientation: portrait) {
+    #km-oyun-sahne.km-oyun-scene { aspect-ratio: auto !important; min-height: 0 !important; max-height: none !important;
+        height: calc(clamp(300px, 96vw, 460px) + 300px) !important; }
+    #km-oyun-sahne .km-oyun-panel { bottom: var(--km-dok-h, 300px) !important; }
+    #km-oyun-sahne #km-oyun-dok { position: absolute !important; left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important;
+        width: auto !important; max-width: none !important; margin: 0 !important; transform: none !important;
+        border-radius: 0 0 13px 13px; border-left: 0; border-right: 0; border-bottom: 0; box-shadow: 0 -6px 20px rgba(0,0,0,.35);
+        background: linear-gradient(180deg, rgba(8,10,20,.98), rgba(4,6,14,1)); }
+    #km-oyun-sahne #km-oyun-dok .km-oyun-dok-boyutla, #km-oyun-sahne #km-oyun-dok-tutamac { display: none !important; }
+    #km-oyun-sahne #km-oyun-rightpanel { bottom: var(--km-dok-h, 300px) !important; }
+}

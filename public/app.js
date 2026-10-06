@@ -16128,7 +16128,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // Kutunun ölçeğini uygular: etkin = min(koçun ölçeği, sahneye dikey/yatay sığan ölçek). Kutunun
         // offsetWidth/Height'i transform'dan ETKİLENMEZ (doğal boyut), bu yüzden hesap döngüye girmez.
+        // Telefon dik (2026-10-07, kullanıcı: "telefonda sahne küçük, skor kutusu altını kapatıyor"): skor kutusu
+        // sahnenin ÜSTÜNE binmez, altında tam genişlik şerit olur (CSS: styles.css "Oyunlar · telefon dik").
+        // Oyun alanı = sahne − kutu yüksekliği; kutu açılıp kapandıkça --km-dok-h güncellenir (ResizeObserver).
+        function kmOyunTelefonDikMi() { return window.matchMedia && matchMedia('(max-width: 700px) and (orientation: portrait)').matches; }
+        var _kmOyunDokGozlem = null;
+        function kmOyunDokYukseklikIzle() {
+            let el = document.getElementById('km-oyun-dok'), sahne = document.getElementById('km-oyun-sahne');
+            if(!el || !sahne) return;
+            let yaz = function() { sahne.style.setProperty('--km-dok-h', (kmOyunTelefonDikMi() ? el.offsetHeight : 0) + 'px'); };
+            yaz();
+            if(typeof ResizeObserver === 'function' && (!_kmOyunDokGozlem || _kmOyunDokGozlem.el !== el)) {
+                if(_kmOyunDokGozlem) _kmOyunDokGozlem.ro.disconnect();
+                let ro = new ResizeObserver(yaz); ro.observe(el); _kmOyunDokGozlem = { el: el, ro: ro };
+            }
+        }
         function kmOyunDokOlcekUygula() {
+            kmOyunDokYukseklikIzle();
+            if(kmOyunTelefonDikMi()) { let e0 = document.getElementById('km-oyun-dok'); if(e0) { e0.style.transform = ''; e0.dataset.olcek = '1'; } _kmOyunDokEtkinOlcek = 1; return; }
             let el = document.getElementById('km-oyun-dok'), sahne = document.getElementById('km-oyun-sahne');
             if(!el || !sahne || !el.offsetWidth || !sahne.clientHeight) return;
             let rail = document.getElementById('km-oyun-rightpanel');
