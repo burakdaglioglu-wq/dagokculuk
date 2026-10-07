@@ -99,7 +99,6 @@ function mgbCiz() {
         + '<div class="mgb-kart"><div class="mgb-kart-bas">📅 Bugün <button class="mgb-link" onclick="miloSekme(\'program\')">Program →</button></div>' + bugunHTML + '</div>'
         + dikkat
         + '<div class="mgb-kart"><div class="mgb-kart-bas">🎂 Doğum günleri <small>7 gün</small></div>' + dgHTML + '</div>'
-        + '<div class="mgb-kart"><div class="mgb-kart-bas">🌟 Son öğrenilen beceriler <button class="mgb-link" onclick="miloSekme(\'beceri\')">Beceri →</button></div>' + becHTML + '</div>'
         + '</div></div>';
 }
 // ---- eylemler (mesajlar api.whatsapp.com/send ile — wa.me emojileri bozuyordu)
@@ -206,7 +205,7 @@ function miloDigerMenuKapat() { let m = document.getElementById('milo-diger-menu
 // ================================================================================================
 const MILO_YAN_GRUPLAR = [
     ['YÖNETİM', [['genel', '🏠', 'Genel Bakış'], ['uyeler', '👤', 'Üyeler'], ['hizli', '📝', 'Hızlı Düzenle']]],
-    ['ANTRENMAN', [['analiz', '📋', 'Yoklama'], ['program', '📅', 'Program'], ['ders', '📚', 'Dersler'], ['beceri', '🎯', 'Beceri']]],
+    ['ANTRENMAN', [['analiz', '📋', 'Yoklama'], ['program', '📅', 'Program'], ['ders', '📚', 'Dersler']]],
     ['KULÜP İŞLERİ', [['aidat', '💰', 'Aidat'], ['personel', '🧑‍🏫', 'Personel']]]
 ];
 function miloSayilar() {

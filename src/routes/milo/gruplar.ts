@@ -42,6 +42,38 @@ export function registerMiloGruplarRoutes(router: Router): void {
     return json({ applied: true });
   });
 
+  router.put("/api/milo/yas-kategorileri/:id", async (request, env, params) => {
+    const id = Number(params.id);
+    if (!id) return badRequest("invalid id");
+    const body = await readJson<{ ad: string }>(request);
+    if (!body.ad || !body.ad.trim()) return badRequest("ad is required");
+    await env.DB_MILO.prepare("UPDATE yas_kategorileri SET ad = ? WHERE id = ?").bind(body.ad.trim(), id).run();
+    return json({ applied: true });
+  });
+
+  /** Grup adını HER YERDE değiştir (2026-10-08): katalog yalnız isimle bağlı olduğu için eski PUT /gruplar/:id
+   *  sadece katalogdaki adı değiştiriyor, sporcular/dersler eski adda kalıyordu. Burada üyeler, yoklama, ders
+   *  (antrenman_programi.grup = ders adı) ve ders katılımcıları tek batch'te taşınır. Aynı isimli bir sporcu iki
+   *  grupta da varsa (PK grup+ad) hiçbir şey yapılmaz, çakışan isimler döner. */
+  router.post("/api/milo/grup-yeniden-adlandir", async (request, env) => {
+    const body = await readJson<{ eski: string; yeni: string }>(request);
+    const eski = (body.eski || "").trim(), yeni = (body.yeni || "").trim();
+    if (!eski || !yeni) return badRequest("eski and yeni are required");
+    if (eski === yeni) return badRequest("same-name");
+    const { results: cak } = await env.DB_MILO.prepare("SELECT a.ad FROM members a JOIN members b ON a.ad = b.ad WHERE a.grup = ? AND b.grup = ?").bind(eski, yeni).all<{ ad: string }>();
+    if (cak.length) return json({ error: "cakisma", adlar: cak.map((x) => x.ad) }, { status: 409 });
+    const db = env.DB_MILO, t = Date.now();
+    const r = await db.batch([
+      db.prepare("UPDATE members SET grup = ?, lastModified = ? WHERE grup = ?").bind(yeni, t, eski),
+      db.prepare("UPDATE OR IGNORE antrenman_programi_katilimci SET grup = ? WHERE grup = ?").bind(yeni, eski),
+      db.prepare("DELETE FROM antrenman_programi_katilimci WHERE grup = ?").bind(eski),
+      db.prepare("UPDATE OR IGNORE attendance_auto SET grup = ? WHERE grup = ?").bind(yeni, eski),
+      db.prepare("UPDATE antrenman_programi SET grup = ? WHERE grup = ?").bind(yeni, eski),
+      db.prepare("UPDATE gruplar SET ad = ? WHERE ad = ?").bind(yeni, eski),
+    ]);
+    return json({ applied: true, uye: r[0].meta.changes, ders: r[4].meta.changes });
+  });
+
   router.get("/api/milo/gruplar", async (request, env) => {
     const yasKategorisiId = new URL(request.url).searchParams.get("yasKategorisiId");
     const stmt = yasKategorisiId

@@ -16,7 +16,8 @@ function showToast(message, type = 'success') {
     toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000);
 }
 function miloEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function bugunISO() { return new Date().toISOString().slice(0, 10); }
+// 2026-10-08 DÜZELTME: toISOString UTC verir — Türkiye'de 00:00–03:00 arası 'bugün' DÜNÜN tarihi oluyordu (yoklama, katılma tarihi).
+function bugunISO() { let d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 // ===== GİRİŞ (2026-09-27) — okçulukla aynı sunucu sistemi, ayrı veritabanı (/api/milo/giris/*) =====
 // Eskiden PIN özeti herkese açık bir GET ile geliyor, yazma yetkisi de o özetin kendisiydi. Artık kişiye özel
@@ -323,7 +324,7 @@ function miloJsEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\')
 
 function miloPollingBaslat() {
     if (miloPollingId) clearInterval(miloPollingId);
-    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli' && !(miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor())) miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
+    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli' && !(miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor()) && !(typeof mspMesgul === 'function' && mspMesgul())) miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
 }
 
 // Görüntü için yaş (2026-10-07): 2 yaşından küçükte ay ("14 ay"), 6 yaşa kadar yaş + ay ("3 yaş 4 ay"), sonra yaş.
@@ -347,7 +348,8 @@ function miloYasHesapla(dogumTarihi) {
 
 // 2026-10-01: vurgu data-sekme etiketine göre (eskiden buton SIRASINA göreydi — sekme eklemek/taşımak kaydırıyordu).
 // "Diğer" menüsündeki sekmeler (Hızlı Düzenle/Personel/Dersler/Beceri) açıkken "Diğer" düğmesi onların adını alır.
-const MILO_DIGER_SEKMELER = { hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler', beceri: '🎯 Beceri' };
+// 2026-10-08: Beceri takibi kullanıcı isteğiyle kaldırıldı (veriler silinmedi, yalnız arayüzden çıktı).
+const MILO_DIGER_SEKMELER = { hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler' };
 function miloSekme(k) {
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach(b => {
@@ -384,7 +386,8 @@ async function miloSekmeYenile() {
             miloGruplar = (await miloApi('/gruplar')).gruplar;
             miloDerslerCiz();
         }
-        else if (miloAktifSekme === 'beceri') {
+        else if (miloAktifSekme === 'beceri') { miloSekme('genel'); return; }
+        else if (false) {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
             if (!miloDersler.length) miloDersler = (await miloApi('/ders-icerikleri')).dersler;
             miloMemberSkills = (await miloApi('/member-skills')).skills;
@@ -398,7 +401,7 @@ async function miloSekmeYenile() {
 function miloUyelerCiz() {
     let alan = document.getElementById('milo-icerik');
     let filtre = miloUyeAramaFiltre.trim().toLocaleLowerCase('tr');
-    let liste = miloUyeler.filter(u => !filtre || u.ad.toLocaleLowerCase('tr').includes(filtre));
+    let liste = miloUyeler.filter(u => !filtre || u.ad.toLocaleLowerCase('tr').includes(filtre) || (u.acilKisi || '').toLocaleLowerCase('tr').includes(filtre));
     let gruplar = [...new Set(miloUyeler.map(u => u.grup))].sort();
     alan.innerHTML = `
         <input class="milo-input" placeholder="🔍 Üye ara..." value="${miloEsc(miloUyeAramaFiltre)}" oninput="miloUyeAramaFiltre=this.value; miloUyelerCiz();">
@@ -410,7 +413,7 @@ function miloUyelerCiz() {
             return `<div class="milo-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <div>
-                        <b>${miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span>
+                        <b>${typeof miloAdVeliHTML === 'function' ? miloAdVeliHTML(u) : miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span>
                         ${yas !== null ? `<span style="color:var(--text-muted); font-size:12px;"> · 🎂 ${miloYasMetin(u.dogumTarihi)}</span>` : ''}
                         ${u.pasif ? ' <span style="color:var(--neon-red); font-size:11px; font-weight:bold;">DONDURULDU</span>' : ''}
                         ${u.aidatMuaf ? ' <span style="color:#8b5cf6; font-size:11px; font-weight:bold;">🎗️ MUAF</span>' : ''}
@@ -418,8 +421,8 @@ function miloUyelerCiz() {
                     <div style="display:flex; gap:6px;">
                         <button onclick="miloProfilAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📋 Profil</button>
                         <button onclick="miloSporcuProgramAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:color-mix(in srgb, var(--milo-teal) 12%, transparent); border:1px solid var(--milo-teal); color:var(--milo-teal); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📅 Program</button>
-                        <button onclick="miloUyeFormAc('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">✏️ Düzenle</button>
-                        <button onclick="miloUyeSil('${miloEsc(u.grup)}','${miloEsc(u.ad)}')" style="background:var(--neon-red); border:none; color:#fff; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🗑️</button>
+                        <button onclick="miloUyeFormAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">✏️ Düzenle</button>
+                        <button onclick="miloUyeSil('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:var(--neon-red); border:none; color:#fff; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🗑️</button>
                     </div>
                 </div>
             </div>`;
@@ -550,7 +553,6 @@ function miloProfilCiz(u, skills) {
         <div style="text-align:center; margin-bottom:14px;">
             <div style="font-size:20px; font-weight:900;">${miloEsc(u.ad)}</div>
             <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${miloEsc(u.grup)}${yas !== null ? ' · ' + miloYasMetin(u.dogumTarihi) : ''}</div>
-            <div style="margin-top:8px; display:inline-block; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; background:rgba(236,72,153,0.12); border:1px solid var(--neon-pink); color:var(--neon-pink);">${seviye}</div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
             <div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:10px; text-align:center;"><div style="font-size:16px; font-weight:800;">${u.boy != null ? u.boy : '-'}</div><div style="font-size:9px; color:var(--text-muted);">Boy (cm)</div></div>
@@ -560,11 +562,6 @@ function miloProfilCiz(u, skills) {
         <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">📅 Katıldığı tarih: ${miloEsc(u.katilmaTarihi ? u.katilmaTarihi.split('-').reverse().join('.') : '-')}</div>
         ${u.saglikNotu ? `<div style="background:rgba(239,68,68,0.1); border:1px solid var(--neon-red); border-radius:10px; padding:10px; margin-bottom:10px;"><b style="color:var(--neon-red); font-size:12px;">🏥 Sağlık / Özel Durum:</b><div style="font-size:12px; margin-top:4px;">${miloEsc(u.saglikNotu)}</div></div>` : ''}
         <div style="font-size:12px; margin-bottom:10px;"><b>İletişim:</b> ${miloEsc(u.acilKisi || '-')} ${u.acilTelefon ? '· 📞 ' + miloEsc(u.acilTelefon) : ''}${u.aileMeslek ? ' · ' + miloEsc(u.aileMeslek) : ''}</div>
-        ${rozetler.length ? `<div style="margin-bottom:10px;"><b style="font-size:12px;">🏅 Rozetler:</b><div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">${rozetler.map(r => `<span style="background:rgba(234,179,8,0.12); border:1px solid var(--gold); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:700;">${r}</span>`).join('')}</div></div>` : ''}
-        <div style="font-weight:800; color:var(--neon-green); font-size:12px; margin-bottom:6px;">✅ Öğrendiği Beceriler (${ogrenilen.length})</div>
-        ${ogrenilen.length ? ogrenilen.map(s => `<div style="font-size:12px; padding:4px 0; border-bottom:1px solid var(--border-color);">${miloEsc(s.baslik)} <span style="color:var(--text-muted); font-size:10px;">— ${tarihFormat(s.guncelleme)}</span></div>`).join('') : '<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Henüz yok.</div>'}
-        <div style="font-weight:800; color:var(--gold); font-size:12px; margin:10px 0 6px;">🌱 Gelişmekte Olan Beceriler (${gelisen.length})</div>
-        ${gelisen.length ? gelisen.map(s => `<div style="font-size:12px; padding:4px 0; border-bottom:1px solid var(--border-color);">${miloEsc(s.baslik)}</div>`).join('') : '<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Yok.</div>'}
         ${u.genelNot ? `<div style="margin-top:10px;"><b style="font-size:12px;">📝 Genel Not:</b><div style="font-size:12px; margin-top:4px;">${miloEsc(u.genelNot)}</div></div>` : ''}
     `;
 }
@@ -1852,12 +1849,10 @@ function miloDersKartHTML(d) {
         <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
             <button onclick="miloDersIsledim('${miloEsc(d.id)}')" style="flex:1; min-width:100px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:7px; font-size:11px; font-weight:bold;">✅ Bugün İşledim</button>
             <button onclick="miloDersYazdir('${miloEsc(d.id)}')" style="flex:1; min-width:100px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:7px; font-size:11px; font-weight:bold;">🖨️ Yazdır/PDF</button>
-            <button onclick="miloDersAtamaAc('${miloEsc(d.id)}')" style="flex:1; min-width:100px; background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:7px; font-size:11px; font-weight:bold;">🎯 Sporculara Ata</button>
         </div>
         <div style="display:flex; gap:5px; margin-top:8px;">
             ${[1, 2, 3, 4, 5].map(p => `<button onclick="miloDersDegerlendir('${miloEsc(d.id)}',${p})" style="flex:1; background:var(--milo-card-raised); border:none; color:var(--milo-sun); border-radius:10px; padding:7px; font-size:12px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.4);">⭐${p}</button>`).join('')}
         </div>
-        ${miloDersAtamaAcikId === d.id ? miloDersAtamaFormHTML(d) : ''}
     </div>`;
 }
 
@@ -2311,10 +2306,7 @@ function miloVeliOzetiKopyala(grup, ad) {
     let devamSayisi = miloDevamSayisiHesapla(u);
     let seviye = miloSeviyeHesapla(ogrenilen.length);
     let metin = `🤸 MILO FITT KIDS — ${ad} Gelişim Özeti\n\n` +
-        `Seviye: ${seviye}\n` +
         `Toplam katılım: ${devamSayisi} gün\n` +
-        (ogrenilen.length ? `\n✅ Öğrendiği beceriler:\n${ogrenilen.map(b => '- ' + b).join('\n')}\n` : '') +
-        (gelisen.length ? `\n🌱 Gelişmekte olduğu beceriler:\n${gelisen.map(b => '- ' + b).join('\n')}\n` : '') +
         (u.genelNot ? `\n📝 Not: ${u.genelNot}\n` : '');
     miloPanoyaKopyala(metin);
 }
@@ -2380,23 +2372,6 @@ function miloSporcuProfilCiz(s) {
             <div style="font-size:13px;">${miloEsc(s.grupBilgisi.yasKategorisi)} · ${miloEsc(s.grupBilgisi.grup)}</div>
             ${s.grupBilgisi.program.length ? `<div style="font-size:13px; color:var(--text-muted); margin-top:4px;">${s.grupBilgisi.program.map(p => `${MILO_GUN_ADI[p.gun]} ${p.baslangicSaat}-${p.bitisSaat}`).join(' · ')}</div>` : ''}
         </div>` : ''}
-        ${s.rozetler && s.rozetler.length ? `<div class="milo-card">
-            <div style="font-weight:800; margin-bottom:8px;">🏅 Rozetlerin</div>
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">${s.rozetler.map(r => `<span style="background:rgba(236,72,153,0.12); border:1px solid var(--neon-pink); border-radius:20px; padding:6px 12px; font-size:12px; font-weight:700;">${miloEsc(r)}</span>`).join('')}</div>
-        </div>` : ''}
-        ${s.siradakiHedefler ? `<div class="milo-card">
-            <div style="font-weight:800; color:var(--neon-blue); margin-bottom:8px;">🎯 Sıradaki Hedeflerin</div>
-            <div style="font-size:13px; margin-bottom:${s.siradakiHedefler.dersler.length ? '8px' : '0'};">${miloEsc(s.siradakiHedefler.mesaj)}</div>
-            ${s.siradakiHedefler.dersler.map(d => `<div style="padding:4px 0; font-size:13px;">🔸 ${miloEsc(d.baslik)}</div>`).join('')}
-        </div>` : ''}
-        <div class="milo-card">
-            <div style="font-weight:800; color:var(--neon-green); margin-bottom:8px;">✅ Öğrendiğin Beceriler</div>
-            ${s.ogrenilenBeceriler && s.ogrenilenBeceriler.length ? s.ogrenilenBeceriler.map(b => `<div style="padding:6px 0; font-size:14px;">🌟 ${miloEsc(b)}</div>`).join('') : '<div style="font-size:12px; color:var(--text-muted);">Henüz yok — çalışmaya devam! 💪</div>'}
-        </div>
-        <div class="milo-card">
-            <div style="font-weight:800; color:var(--gold); margin-bottom:8px;">🌱 Gelişmekte Olduğun Beceriler</div>
-            ${s.gelisenBeceriler && s.gelisenBeceriler.length ? s.gelisenBeceriler.map(b => `<div style="padding:6px 0; font-size:14px;">🔸 ${miloEsc(b)}</div>`).join('') : '<div style="font-size:12px; color:var(--text-muted);">Yok.</div>'}
-        </div>
         ${s.antrenorNotu ? `<div class="milo-card">
             <div style="font-weight:800; color:var(--neon-blue); margin-bottom:8px;">📝 Antrenörünün Notu</div>
             <div style="font-size:13px;">${miloEsc(s.antrenorNotu)}</div>

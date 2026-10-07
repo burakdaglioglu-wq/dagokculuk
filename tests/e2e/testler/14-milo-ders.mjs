@@ -20,6 +20,10 @@ export default async function ({ log }) {
         esit(await p.evaluate(() => miloYasMetin(new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10))), '13 ay', 'aylık yaş metni');
         if (w === 390) { dogrula(await yataydaTasmaYok(p), 'Milo ders sihirbazı telefonda taşıyor'); esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | ')); continue; }
         await p.locator('.mds-yas', { hasText: '12–24 ay' }).click();
+        // serbest atama: kimse kendiliğinden seçilmez; 'Yaşı uyanlar' filtresi + 'Görünenleri seç'
+        esit(await p.evaluate(() => Object.keys(_mds.secili).length), 0, 'kendiliğinden seçim olmamalı');
+        await p.evaluate((g) => mspAra('mds', g), G); await p.waitForTimeout(150);
+        await p.locator('#msp-mds .msp-arac button', { hasText: 'Görünenleri seç' }).click();
         // uygun: 14 ve 20 aylık (11 ay ve 30 ay dışarıda)
         const sec = await p.evaluate((g) => Object.keys(_mds.secili).filter((k) => k.startsWith(g + '|')).map((k) => k.split('|')[1]).sort(), G);
         esit(JSON.stringify(sec), JSON.stringify(['14 AY ' + G, '20 AY ' + G].sort()), 'bebek dersine uygun çocuklar');
@@ -38,7 +42,7 @@ export default async function ({ log }) {
         const meta = JSON.parse((await miloApi('/meta/ders_yas')).d.value || '{}');
         esit(meta[slotId] && meta[slotId].minAy + '-' + meta[slotId].maxAy, '12-24', 'yaş aralığı kaydı');
         await p.waitForTimeout(500);
-        dogrula(await p.locator('#milo-program-izgara .mds-rozet', { hasText: '12–24 ay' }).count(), 'ızgarada yaş rozeti yok');
+        dogrula(await p.locator('#milo-program-izgara .mpg-blok', { hasText: '12–24 ay' }).count(), 'takvimde yaş rozeti yok');
         // ders penceresi: 11 aylık listede değil, 20 aylık zaten derste; yaşı uyan öneri bölümü
         await p.evaluate((id) => miloDersRosterAc(id), slotId); await p.waitForTimeout(400);
         dogrula(await p.locator('#mds-drm-yas button.aktif', { hasText: '12–24 ay' }).count(), 'ders penceresinde yaş aralığı seçili değil');
