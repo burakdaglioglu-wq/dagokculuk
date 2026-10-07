@@ -6,7 +6,7 @@ const ayOnce = (n) => { let d = new Date(); d.setDate(15); d.setMonth(d.getMonth
 
 export default async function ({ log }) {
   const G = benzersiz('E2E Bebek '), uye = [['11 AY ' + G, 11], ['14 AY ' + G, 14], ['20 AY ' + G, 20], ['30 AY ' + G, 30], ['60 AY ' + G, 60]];
-  let slotId = null;
+  let slotId = null, elleId = null;
   try {
     for (const [ad, ay] of uye) await miloApi('/members', { method: 'POST', body: JSON.stringify({ grup: G, ad, dogumTarihi: ayOnce(ay) }) });
     const tok = await miloOturumAl();
@@ -19,11 +19,20 @@ export default async function ({ log }) {
         await p.evaluate(() => miloSekme('program')); await p.waitForSelector('#mds-kap .mds-yas', { timeout: 20000 });
         esit(await p.evaluate(() => miloYasMetin(new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10))), '13 ay', 'aylık yaş metni');
         if (w === 390) { dogrula(await yataydaTasmaYok(p), 'Milo ders sihirbazı telefonda taşıyor'); esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | ')); continue; }
+        // ✍️ MANUEL (varsayılan): yaş/öğrenci olmadan elle ders; hiçbir şey kendiliğinden seçilmez
+        esit(await p.evaluate(() => _mds.mod), 'manuel', 'varsayılan mod manuel');
+        await p.locator('#mds-m-ad').fill('Elle ' + G);
+        await p.locator('.mds-zaman-m input[type=time]').first().fill('17:00'); await p.locator('.mds-zaman-m input[type=time]').first().dispatchEvent('change');
+        await p.locator('.mds-zaman-m .mds-cipler button', { hasText: '40 dk' }).click();
         await p.locator('.mds-yas', { hasText: '12–24 ay' }).click();
-        // serbest atama: kimse kendiliğinden seçilmez; 'Yaşı uyanlar' filtresi + 'Görünenleri seç'
-        esit(await p.evaluate(() => Object.keys(_mds.secili).length), 0, 'kendiliğinden seçim olmamalı');
-        await p.evaluate((g) => mspAra('mds', g), G); await p.waitForTimeout(150);
-        await p.locator('#msp-mds .msp-arac button', { hasText: 'Görünenleri seç' }).click();
+        esit(await p.evaluate(() => Object.keys(_mds.secili).length), 0, 'manuelde kendiliğinden seçim olmamalı');
+        await p.locator('.mds-olustur').click();
+        await p.waitForFunction((g) => (miloProgram || []).some((s) => s.grup === 'Elle ' + g), G, { timeout: 15000 });
+        const m = await p.evaluate((g) => { let s = miloProgram.find((x) => x.grup === 'Elle ' + g); return { id: s.id, n: (s.katilimcilar || []).length, b: s.baslangicSaat + '-' + s.bitisSaat }; }, G);
+        elleId = m.id; esit(m.n, 0, 'manuel derste öğrenci olmamalı'); esit(m.b, '17:00-17:40', 'manuel saat');
+        // ✨ OTOMATİK
+        await p.evaluate(() => { _mds.bas = '10:00'; mdsModSec('otomatik'); }); await p.waitForTimeout(200);
+        await p.locator('.mds-yas', { hasText: '12–24 ay' }).click();
         // uygun: 14 ve 20 aylık (11 ay ve 30 ay dışarıda)
         const sec = await p.evaluate((g) => Object.keys(_mds.secili).filter((k) => k.startsWith(g + '|')).map((k) => k.split('|')[1]).sort(), G);
         esit(JSON.stringify(sec), JSON.stringify(['14 AY ' + G, '20 AY ' + G].sort()), 'bebek dersine uygun çocuklar');
@@ -52,6 +61,7 @@ export default async function ({ log }) {
     log('Milo: aylık yaş, Bebek 12–24 ay → doğru çocuklar seçildi, 10:00–10:30 · kapasite 6, yaş rozeti, yenileme formu korur ✓');
   } finally {
     if (slotId) await miloApi('/antrenman-programi/' + slotId, { method: 'DELETE' });
+    if (elleId) await miloApi('/antrenman-programi/' + elleId, { method: 'DELETE' });
     for (const [ad] of uye) await miloApi(`/members/${encodeURIComponent(G)}/${encodeURIComponent(ad)}`, { method: 'DELETE' });
   }
 }

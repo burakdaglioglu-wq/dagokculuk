@@ -17,7 +17,13 @@ const MDS_PRESET = [
 const MDS_SURELER = [30, 40, 45, 50, 60, 90], MDS_KAPASITE = [4, 6, 8, 10, 12, 15, 0];
 // 2026-10-08: hazır kutular düzenlenebilir (ad, emoji, yaş aralığı, süre, kapasite) → Milo meta 'ders_yas_presetler'.
 function mdsPresetler() { return _mds.presetler && _mds.presetler.length ? _mds.presetler : MDS_PRESET; }
-let _mds = { presetler: null, presetDuzen: null, preset: null, min: null, max: null, ad: '', adElle: false, bas: '10:00', sure: 45, kap: 10, secili: {}, ozelBirim: 'ay', yasMeta: null };
+let _mds = { presetler: null, presetDuzen: null, preset: null, min: null, max: null, ad: '', adElle: false, bas: '10:00', sure: 45, kap: 10, secili: {}, ozelBirim: 'ay', yasMeta: null, mod: 'manuel', bit: '', atamaAcik: false };
+// 2026-10-08 (kullanıcı: "otomatik kısım kaldırılsın, dersleri manuel yapmak istiyorum, öğrencileri sonra atarım; hem otomatik
+// hem manuel seçenek olsun"): ✍️ Manuel = ad/gün/saat/kapasite elle, yaş aralığı isteğe bağlı, öğrenci ataması isteğe bağlı,
+// hiçbir şey kendiliğinden doldurulmaz/seçilmez. ✨ Otomatik = yaş kutusu süre, kapasite, ad ve yaşı uyan çocukları önerir.
+try { let m = localStorage.getItem('milo_ders_mod'); if (m === 'otomatik' || m === 'manuel') _mds.mod = m; } catch (e) {}
+function mdsModSec(m) { _mds = Object.assign(_mds, { mod: m, preset: null, min: null, max: null, ad: '', adElle: false, secili: {}, bit: '', atamaAcik: false }); try { localStorage.setItem('milo_ders_mod', m); } catch (e) {} mdsCiz(); }
+function mdsModHTML() { return `<div class="mds-mod" role="tablist"><button type="button" role="tab" class="${_mds.mod === 'manuel' ? 'aktif' : ''}" onclick="mdsModSec('manuel')"><b>✍️ Manuel</b><small>Dersi ben kurarım, öğrencileri sonra atarım</small></button><button type="button" role="tab" class="${_mds.mod === 'otomatik' ? 'aktif' : ''}" onclick="mdsModSec('otomatik')"><b>✨ Otomatik</b><small>Yaşa göre süre, kapasite ve çocuklar önerilsin</small></button></div>`; }
 
 // ---- yaş (ay) yardımcıları
 function mdsAy(dogum) {
@@ -54,13 +60,19 @@ function mdsSlotYas(id) { let m = _mds.yasMeta || {}, x = m[id]; return x && !x.
 // SİLİNİYORDU. Ders oluşturulurken, bir alana yazılırken ya da ders penceresi açıkken yenileme atlanır.
 function mdsDuzenleniyor() {
     let ic = document.getElementById('milo-icerik'), a = document.activeElement, m = document.getElementById('milo-ders-roster-modal');
-    if (_mds.min != null || _mds.presetDuzen) return true;
+    if (_mds.min != null || _mds.presetDuzen || (_mds.mod === 'manuel' && (_mds.ad || _mds.atamaAcik))) return true;
     if (m && m.style.display === 'flex') return true;
     if (ic && a && ic.contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) return true;
     let eski = document.getElementById('milo-prf-grup'); return !!(eski && (eski.value || (document.getElementById('milo-prf-bas') || {}).value));
 }
 // ---- form
 function mdsPresetSec(id) {
+    if (_mds.mod === 'manuel') { // manuel: yalnız yaş aralığı (isteğe bağlı) — ad, süre, kapasite, öğrenciler değişmez
+        let p = mdsPresetler().find(x => x.id === id);
+        if (_mds.preset === id) { _mds.preset = null; _mds.min = _mds.max = null; }
+        else { _mds.preset = id; if (p) { _mds.min = p.min; _mds.max = p.max; } else if (_mds.min == null) { _mds.min = 12; _mds.max = 36; } }
+        return mdsCiz();
+    }
     let p = mdsPresetler().find(x => x.id === id);
     _mds.preset = id;
     if (p) { _mds.min = p.min; _mds.max = p.max; _mds.sure = p.sure; _mds.kap = p.kap; }
@@ -73,20 +85,27 @@ function mdsOzelAyarla() {
     let mn = parseFloat((document.getElementById('mds-ozel-min') || {}).value), mx = parseFloat((document.getElementById('mds-ozel-max') || {}).value);
     if (!(mn >= 0) || !(mx > mn)) return;
     _mds.min = Math.round(mn * b); _mds.max = Math.round(mx * b);
-    if (!_mds.adElle) _mds.ad = 'Özel grup (' + mdsAralikEtiket(_mds.min, _mds.max) + ')';
+    if (!_mds.adElle && _mds.mod !== 'manuel') _mds.ad = 'Özel grup (' + mdsAralikEtiket(_mds.min, _mds.max) + ')';
     mdsSeciliHazirla(); mdsCiz(true);
 }
-function mdsBitis() { let [h, m] = (_mds.bas || '10:00').split(':').map(Number), t = h * 60 + m + _mds.sure; return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
+function mdsBitis() { if (_mds.mod === 'manuel' && _mds.bit) return _mds.bit;
+    return mdsBitisHesap(); }
+function mdsBitisHesap() { let [h, m] = (_mds.bas || '10:00').split(':').map(Number), t = h * 60 + m + _mds.sure; return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
 function mdsTaslakSlot() { return { id: -1, gunler: _miloGunSeciciOku('mds-gun'), baslangicSaat: _mds.bas, bitisSaat: mdsBitis() }; }
 function mdsCakisma(u) { try { return _miloDersCakismaBul(u.grup, u.ad, mdsTaslakSlot()); } catch (e) { return []; } }
 // 2026-10-08 (kullanıcı: "atamaları serbest bırak, kullanıcı ayarlasın"): artık kimse kendiliğinden SEÇİLMEZ; yaşı uyanlar
 // seçicide işaretli/filtreli görünür, "Görünenleri seç" tek dokunuş. Yaş/saat değişince yapılan seçimler korunur.
-function mdsSeciliHazirla() { }
+function mdsSeciliHazirla() {
+    if (_mds.mod !== 'otomatik' || _mds.min == null) return;
+    _mds.secili = {};
+    mdsAktifUyeler().filter(u => mdsUygunMu(u, _mds.min, _mds.max)).forEach(u => { if (!mdsCakisma(u).length) _mds.secili[u.grup + '|' + u.ad] = true; });
+}
 function mdsUyeSec(k) { if (_mds.secili[k]) delete _mds.secili[k]; else _mds.secili[k] = true; mdsCiz(); }
 function mdsHepsi(sec) { if (sec) mdsAktifUyeler().filter(u => mdsUygunMu(u, _mds.min, _mds.max)).forEach(u => { _mds.secili[u.grup + '|' + u.ad] = true; }); else _mds.secili = {}; mdsCiz(); }
 function mdsYasYazi(u) { let a = mdsAy(u.dogumTarihi); return a == null ? '' : a < 24 ? a + ' ay' : Math.floor(a / 12) + ' yaş' + (a < 72 && a % 12 ? ' ' + (a % 12) + ' ay' : ''); }
 
 function mdsHTML() {
+    if (_mds.mod === 'manuel') return mdsManuelHTML();
     let uyeler = mdsAktifUyeler(), say = p => uyeler.filter(u => mdsUygunMu(u, p.min, p.max)).length;
     let kutular = mdsPresetler().map(p => `<button type="button" class="mds-yas${_mds.preset === p.id ? ' aktif' : ''}" onclick="mdsPresetSec('${miloJsEsc(p.id)}')">
         <span class="mds-yas-ikon">${p.ikon}</span><b>${miloEsc(mdsAralikEtiket(p.min, p.max))}</b><small>${miloEsc(p.ad)} · ${miloEsc(p.not)}</small><i>${say(p)} çocuk</i></button>`).join('')
@@ -105,6 +124,7 @@ function mdsHTML() {
     let gunler = _miloGunSeciciOku('mds-gun'), gunYazi = gunler.length ? _miloGunlerEtiketUzun(gunler) : '—';
     return `<div class="milo-card mds">
         <div class="mds-ust"><div><div class="mds-baslik">✨ Yeni ders oluştur</div><div class="mds-alt">Önce kimin için olduğunu seç; süre, kapasite ve uygun çocuklar kendiliğinden gelir.</div></div></div>
+        ${mdsModHTML()}
         ${adim(1, 'Kimin için? <button type="button" class="mds-pduz-ac" onclick="mdsPresetDuzenAc()">✏️ Hazır grupları düzenle</button>', _mds.presetDuzen ? mdsPresetDuzenHTML() : `<div class="mds-yaslar">${kutular}</div>${ozel}`)}
         ${adim(2, 'Ne zaman?', `<div class="mds-etiket">Gün(ler)</div><div id="mds-gun-kap">${_miloGunSeciciHTML('mds-gun', _miloGunSeciciOku('mds-gun').length ? _miloGunSeciciOku('mds-gun') : [new Date().getDay()])}</div>
             <div class="mds-zaman"><label><span class="mds-etiket">Başlangıç</span><input type="time" class="milo-input" value="${_mds.bas}" onchange="_mds.bas=this.value||'10:00'; mdsSeciliHazirla(); mdsCiz()"></label>
@@ -171,10 +191,53 @@ async function mdsPresetKaydet() {
     _mds.presetler = l; _mds.presetDuzen = null; mdsCiz(); try { miloProgramIzgaraCiz(); } catch (e) {}
     showToast('✅ Hazır gruplar kaydedildi', 'success');
 }
+// ---- ✍️ Manuel ders formu (aynı kutu görünümü; hiçbir şey kendiliğinden doldurulmaz)
+function mdsDk(t) { let [h, m] = String(t || '0:0').split(':').map(Number); return h * 60 + (m || 0); }
+function mdsSaat(dk) { dk = ((dk % 1440) + 1440) % 1440; return String(Math.floor(dk / 60)).padStart(2, '0') + ':' + String(dk % 60).padStart(2, '0'); }
+function mdsManuelBas(v) { let sure = mdsDk(mdsBitis()) - mdsDk(_mds.bas); _mds.bas = v || '10:00'; if (_mds.bit) _mds.bit = mdsSaat(mdsDk(_mds.bas) + (sure > 0 ? sure : _mds.sure)); mdsCiz(); }
+function mdsManuelSure(d) { _mds.sure = d; _mds.bit = mdsSaat(mdsDk(_mds.bas) + d); mdsCiz(); }
+function mdsManuelHTML() {
+    let uyeler = mdsAktifUyeler(), say = p => uyeler.filter(u => mdsUygunMu(u, p.min, p.max)).length;
+    let bit = mdsBitis(), sure = mdsDk(bit) - mdsDk(_mds.bas), seciliSay = Object.keys(_mds.secili).length;
+    let kutular = mdsPresetler().map(p => `<button type="button" class="mds-yas${_mds.preset === p.id ? ' aktif' : ''}" onclick="mdsPresetSec('${miloJsEsc(p.id)}')" aria-pressed="${_mds.preset === p.id}">
+        <span class="mds-yas-ikon">${p.ikon}</span><b>${miloEsc(mdsAralikEtiket(p.min, p.max))}</b><small>${miloEsc(p.ad)}${p.not ? ' · ' + miloEsc(p.not) : ''}</small><i>${say(p)} çocuk</i></button>`).join('')
+        + `<button type="button" class="mds-yas${_mds.preset === 'ozel' ? ' aktif' : ''}" onclick="mdsPresetSec('ozel')"><span class="mds-yas-ikon">✏️</span><b>Özel aralık</b><small>Ay ya da yaş olarak</small><i>kendin belirle</i></button>`;
+    let ozel = _mds.preset === 'ozel' ? `<div class="mds-ozel"><input id="mds-ozel-min" type="number" min="0" step="1" value="${_mds.ozelBirim === 'yas' ? +(_mds.min / 12).toFixed(1) : _mds.min}" oninput="mdsOzelAyarla()"><span>–</span><input id="mds-ozel-max" type="number" min="1" step="1" value="${_mds.ozelBirim === 'yas' ? +(_mds.max / 12).toFixed(1) : _mds.max}" oninput="mdsOzelAyarla()">
+        <select onchange="_mds.ozelBirim=this.value; mdsCiz()"><option value="ay"${_mds.ozelBirim === 'ay' ? ' selected' : ''}>ay</option><option value="yas"${_mds.ozelBirim === 'yas' ? ' selected' : ''}>yaş</option></select></div>` : '';
+    let adim = (n, baslik, ic) => `<div class="mds-adim"><div class="mds-adim-bas"><span class="mds-no">${n}</span><b>${baslik}</b></div>${ic}</div>`;
+    let gunler = _miloGunSeciciOku('mds-gun'), gunYazi = gunler.length ? _miloGunlerEtiketUzun(gunler) : '—';
+    let gruplar = [...new Set((miloProgram || []).map(s => s.grup).concat(uyeler.map(u => u.grup)))];
+    let atama = _mds.atamaAcik
+        ? (typeof mspKur === 'function' ? mspKur('mds', { adaylar: mdsAktifUyeler, secili: () => _mds.secili, yas: _mds.min != null ? { min: _mds.min, max: _mds.max } : null, uyari: u => { let c = mdsCakisma(u); return c.length ? 'aynı saatte ' + c.map(x => x.grup).join(', ') : ''; }, degisti: mdsSecimDegisti, bos: 'Henüz aktif üye yok.' }) : '')
+          + `<button type="button" class="mds-sonra" onclick="_mds.atamaAcik=false; _mds.secili={}; mdsCiz()">Vazgeç, öğrencileri sonra atarım</button>`
+        : `<div class="mds-atama-sec"><div class="mds-bos">Öğrencileri şimdi seçmen gerekmiyor — ders oluşunca takvimde derse dokunup ekleyebilirsin.</div><button type="button" onclick="_mds.atamaAcik=true; mdsCiz()">👥 Şimdi öğrenci seç</button></div>`;
+    let hazir = _mds.ad.trim() && gunler.length && sure > 0;
+    return `<div class="milo-card mds">
+        <div class="mds-ust"><div><div class="mds-baslik">✨ Yeni ders oluştur</div><div class="mds-alt">Dersi kendin kur; yaş aralığı ve öğrenciler isteğe bağlı.</div></div></div>
+        ${mdsModHTML()}
+        ${adim(1, 'Ders adı ve kapasite', `<input class="milo-input" id="mds-m-ad" list="mds-grup-list" value="${miloEsc(_mds.ad)}" oninput="_mds.ad=this.value; _mds.adElle=true; mdsManuelDurum()" placeholder="Ders / grup adı (ör. Minikler Salı)" autocomplete="off">
+            <datalist id="mds-grup-list">${gruplar.map(g => `<option value="${miloEsc(g)}">`).join('')}</datalist>
+            <div class="mds-etiket">Kapasite</div><div class="mds-cipler">${MDS_KAPASITE.map(k => `<button type="button" class="${_mds.kap === k ? 'aktif' : ''}" onclick="_mds.kap=${k}; mdsCiz()">${k || 'Sınırsız'}</button>`).join('')}</div>`)}
+        ${adim(2, 'Ne zaman?', `<div class="mds-etiket">Gün(ler)</div><div id="mds-gun-kap">${_miloGunSeciciHTML('mds-gun', gunler.length ? gunler : [new Date().getDay()])}</div>
+            <div class="mds-zaman mds-zaman-m"><label><span class="mds-etiket">Başlangıç</span><input type="time" class="milo-input" value="${_mds.bas}" onchange="mdsManuelBas(this.value)"></label>
+            <label><span class="mds-etiket">Bitiş</span><input type="time" class="milo-input" value="${bit}" onchange="_mds.bit=this.value; mdsCiz()"></label>
+            <div><span class="mds-etiket">Süre ${sure > 0 ? '· ' + sure + ' dk' : '<b class="mds-kirmizi">bitiş başlangıçtan önce</b>'}</span><div class="mds-cipler">${MDS_SURELER.map(d => `<button type="button" class="${sure === d ? 'aktif' : ''}" onclick="mdsManuelSure(${d})">${d} dk</button>`).join('')}</div></div></div>`)}
+        ${adim(3, 'Yaş aralığı <small>isteğe bağlı · seçilirse takvimde renkli rozet olur</small> <button type="button" class="mds-pduz-ac" onclick="mdsPresetDuzenAc()">✏️ Hazır grupları düzenle</button>', _mds.presetDuzen ? mdsPresetDuzenHTML() : `<div class="mds-yaslar">${kutular}</div>${ozel}`)}
+        ${adim(4, 'Öğrenciler <small id="mds-sec-say">' + seciliSay + ' seçili · isteğe bağlı</small>', atama)}
+        <div class="mds-onizleme" id="mds-onizleme">${mdsOnizlemeHTML(gunYazi, seciliSay)}</div>
+        <button class="milo-btn-full mds-olustur" ${hazir ? '' : 'disabled'} onclick="mdsOlustur()">${hazir ? '✅ Dersi oluştur' + (seciliSay ? ' · ' + seciliSay + ' çocuk' : '') : 'Ders adı, gün ve saat gir'}</button>
+    </div>`;
+}
+function mdsManuelDurum() {
+    mdsOnizlemeGuncelle();
+    let b = document.querySelector('.mds-olustur'); if (!b) return;
+    let ok = _mds.ad.trim() && _miloGunSeciciOku('mds-gun').length && mdsDk(mdsBitis()) > mdsDk(_mds.bas), n = Object.keys(_mds.secili).length;
+    b.disabled = !ok; b.textContent = ok ? '✅ Dersi oluştur' + (n ? ' · ' + n + ' çocuk' : '') : 'Ders adı, gün ve saat gir';
+}
 function mdsOnizlemeHTML(gunYazi, seciliSay) {
     let dolu = _mds.kap && seciliSay > _mds.kap;
-    return `<div class="mds-kart-on"><div class="mds-kart-saat">${_mds.bas}–${mdsBitis()}</div><div class="mds-kart-ad">${miloEsc(_mds.ad || 'Ders')}</div><div class="mds-kart-rozet">${miloEsc(mdsAralikEtiket(_mds.min, _mds.max))}</div><div class="mds-kart-kisi${dolu ? ' dolu' : ''}">👥 ${seciliSay}${_mds.kap ? '/' + _mds.kap : ''}</div></div>
-        <div class="mds-ozet"><b>${miloEsc(gunYazi)}</b> · ${_mds.bas}–${mdsBitis()} (${_mds.sure} dk)<br>${miloEsc(_mds.ad || '')} · ${miloEsc(mdsAralikEtiket(_mds.min, _mds.max))}${dolu ? '<br><span class="mds-kirmizi">Seçilen çocuk sayısı kapasiteyi aşıyor.</span>' : ''}</div>`;
+    return `<div class="mds-kart-on"><div class="mds-kart-saat">${_mds.bas}–${mdsBitis()}</div><div class="mds-kart-ad">${miloEsc(_mds.ad || 'Ders')}</div>${_mds.min != null ? '<div class="mds-kart-rozet">' + miloEsc(mdsAralikEtiket(_mds.min, _mds.max)) + '</div>' : ''}<div class="mds-kart-kisi${dolu ? ' dolu' : ''}">👥 ${seciliSay}${_mds.kap ? '/' + _mds.kap : ''}</div></div>
+        <div class="mds-ozet"><b>${miloEsc(gunYazi)}</b> · ${_mds.bas}–${mdsBitis()} (${_mds.sure} dk)<br>${[_mds.ad || 'Ders adı yazılmadı', _mds.min != null ? mdsAralikEtiket(_mds.min, _mds.max) : ''].filter(Boolean).map(miloEsc).join(' · ')}${dolu ? '<br><span class="mds-kirmizi">Seçilen çocuk sayısı kapasiteyi aşıyor.</span>' : ''}</div>`;
 }
 function mdsOnizlemeGuncelle() { let e = document.getElementById('mds-onizleme'); if (e) e.innerHTML = mdsOnizlemeHTML(_miloGunlerEtiketUzun(_miloGunSeciciOku('mds-gun')) || '—', Object.keys(_mds.secili).length); }
 function mdsCiz(odakOzel) {
@@ -192,12 +255,12 @@ async function mdsOlustur() {
         let r = await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup: ad, gunler, baslangicSaat: _mds.bas, bitisSaat: mdsBitis(), kapasite: _mds.kap || null }) });
         let id = r && r.id;
         if (id) {
-            await mdsYasMetaYaz(id, _mds.min, _mds.max);
+            if (_mds.min != null) await mdsYasMetaYaz(id, _mds.min, _mds.max);
             for (let k of Object.keys(_mds.secili)) { let i = k.indexOf('|'); await miloApi('/antrenman-programi/' + id + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: k.slice(0, i), ad: k.slice(i + 1) }) }); }
         }
         miloProgram = (await miloApi('/antrenman-programi')).slots;
         let say = Object.keys(_mds.secili).length;
-        _mds = Object.assign(_mds, { preset: null, min: null, max: null, ad: '', adElle: false, secili: {} });
+        _mds = Object.assign(_mds, { preset: null, min: null, max: null, ad: '', adElle: false, secili: {}, bit: '', atamaAcik: false });
         miloProgramCiz();
         showToast('✅ Ders oluşturuldu' + (say ? ' · ' + say + ' çocuk eklendi' : ''), 'success');
     } catch (e) { showToast('Ders oluşturulamadı — bağlantını kontrol et.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '✅ Dersi oluştur'; } }
@@ -213,8 +276,6 @@ async function mdsOlustur() {
         let form = kartlar[1]; if (form && form.querySelector('#milo-prf-grup')) {
             let kap = document.createElement('div'); kap.id = 'mds-kap'; form.replaceWith(kap);
             mdsCiz();
-            // eski tek satırlık form, hızlı ekleme isteyenler için katlanmış
-            let det = document.createElement('details'); det.className = 'milo-card mds-eski'; det.innerHTML = '<summary>Hızlı ekle (eski form)</summary>'; det.appendChild(form); kap.after(det);
         }
         Promise.all([mdsYasMetaYukle(), _mds.presetler ? null : mdsPresetYukle()]).then(() => { try { miloProgramIzgaraCiz(); } catch (e) {} if (document.getElementById('mds-kap') && !_mds.min) mdsCiz(); });
     };
@@ -254,7 +315,7 @@ async function mdsOlustur() {
 if (typeof _miloGunSeciciState !== 'undefined' && !_miloGunSeciciState['mds-gun']) _miloGunSeciciState['mds-gun'] = new Set([new Date().getDay()]);
 if (typeof _miloGunSeciciToggle === 'function') {
     let eskiToggle = _miloGunSeciciToggle;
-    _miloGunSeciciToggle = function (idOnEki) { eskiToggle.apply(this, arguments); if (idOnEki === 'mds-gun') mdsOnizlemeGuncelle(); };
+    _miloGunSeciciToggle = function (idOnEki) { eskiToggle.apply(this, arguments); if (idOnEki === 'mds-gun') { if (_mds.mod === 'manuel') mdsManuelDurum(); else mdsOnizlemeGuncelle(); } };
 }
 async function mdsSlotYasAyarla(id, min, max) {
     try { await mdsYasMetaYaz(id, min, max); } catch (e) { return showToast('Kaydedilemedi.', 'error'); }
@@ -317,5 +378,20 @@ async function mdsSlotYasAyarla(id, min, max) {
 .mds-pd-btn{display:flex;gap:4px;margin-left:auto}.mds-pd-btn button{width:32px;height:32px;border-radius:8px;border:1px solid var(--milo-line);background:var(--milo-card);color:var(--milo-ink);cursor:pointer;font-weight:900}.mds-pd-btn .sil{color:var(--milo-coral)}
 .mds-pd-alt{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.mds-pd-alt span{flex:1}
 .mds-pd-alt button{min-height:38px;padding:0 13px;border-radius:10px;border:1px solid var(--milo-line);background:var(--milo-card-raised);color:var(--milo-ink);font:inherit;font-size:12px;font-weight:800;cursor:pointer}.mds-pd-alt .kaydet{background:var(--milo-teal);border-color:var(--milo-teal);color:var(--milo-bg)}`;
+    document.head.appendChild(st);
+})();
+(function () {
+    let st = document.createElement('style'); st.id = 'mds-mod-css';
+    st.textContent = `
+.mds-mod{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mds-mod button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:1.5px solid var(--milo-line);background:var(--milo-card-raised);color:var(--milo-ink);font:inherit;cursor:pointer}
+.mds-mod button b{font-size:13.5px;font-weight:900}.mds-mod button small{font-size:10.5px;color:var(--milo-ink-dim);line-height:1.3}
+.mds-mod button.aktif{border-color:var(--milo-teal);background:color-mix(in srgb,var(--milo-teal) 14%,var(--milo-card-raised))}.mds-mod button.aktif b{color:var(--milo-teal)}
+.mds-zaman-m{grid-template-columns:130px 130px 1fr}
+@media (max-width:560px){.mds-zaman-m{grid-template-columns:1fr 1fr}.mds-zaman-m>div{grid-column:1/-1}}
+.mds-atama-sec{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}.mds-atama-sec .mds-bos{flex:1 1 220px}
+.mds-atama-sec button,.mds-sonra{min-height:42px;padding:0 14px;border-radius:12px;border:1.3px solid var(--milo-teal);background:color-mix(in srgb,var(--milo-teal) 12%,transparent);color:var(--milo-teal);font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.mds-sonra{border-color:var(--milo-line);background:none;color:var(--milo-ink-dim);margin-top:6px;align-self:flex-start}
+.mds-olustur:disabled{opacity:.5;cursor:not-allowed}`;
     document.head.appendChild(st);
 })();
