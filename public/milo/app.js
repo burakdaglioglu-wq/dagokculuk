@@ -323,9 +323,19 @@ function miloJsEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\')
 
 function miloPollingBaslat() {
     if (miloPollingId) clearInterval(miloPollingId);
-    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli') miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
+    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli' && !(miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor())) miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
 }
 
+// Görüntü için yaş (2026-10-07): 2 yaşından küçükte ay ("14 ay"), 6 yaşa kadar yaş + ay ("3 yaş 4 ay"), sonra yaş.
+// miloYasHesapla (tam yıl, istatistikler bunu kullanır) DEĞİŞMEDİ.
+function miloYasMetin(dogumTarihi) {
+    if (!dogumTarihi) return null;
+    let d = new Date(dogumTarihi + 'T00:00:00'); if (isNaN(d.getTime())) return null;
+    let s = new Date(), ay = (s.getFullYear() - d.getFullYear()) * 12 + (s.getMonth() - d.getMonth()); if (s.getDate() < d.getDate()) ay--;
+    if (ay < 0) return null;
+    if (ay < 24) return ay + ' ay';
+    return Math.floor(ay / 12) + ' yaş' + (ay < 72 && ay % 12 ? ' ' + (ay % 12) + ' ay' : '');
+}
 function miloYasHesapla(dogumTarihi) {
     if (!dogumTarihi) return null;
     let d = new Date(dogumTarihi + 'T00:00:00'); if (isNaN(d.getTime())) return null;
@@ -401,7 +411,7 @@ function miloUyelerCiz() {
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <div>
                         <b>${miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span>
-                        ${yas !== null ? `<span style="color:var(--text-muted); font-size:12px;"> · 🎂 ${yas} yaş</span>` : ''}
+                        ${yas !== null ? `<span style="color:var(--text-muted); font-size:12px;"> · 🎂 ${miloYasMetin(u.dogumTarihi)}</span>` : ''}
                         ${u.pasif ? ' <span style="color:var(--neon-red); font-size:11px; font-weight:bold;">DONDURULDU</span>' : ''}
                         ${u.aidatMuaf ? ' <span style="color:#8b5cf6; font-size:11px; font-weight:bold;">🎗️ MUAF</span>' : ''}
                     </div>
@@ -539,7 +549,7 @@ function miloProfilCiz(u, skills) {
     alan.innerHTML = `
         <div style="text-align:center; margin-bottom:14px;">
             <div style="font-size:20px; font-weight:900;">${miloEsc(u.ad)}</div>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${miloEsc(u.grup)}${yas !== null ? ' · ' + yas + ' yaş' : ''}</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${miloEsc(u.grup)}${yas !== null ? ' · ' + miloYasMetin(u.dogumTarihi) : ''}</div>
             <div style="margin-top:8px; display:inline-block; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; background:rgba(236,72,153,0.12); border:1px solid var(--neon-pink); color:var(--neon-pink);">${seviye}</div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
@@ -602,7 +612,7 @@ function miloAidatKartHTML(u) {
     let secRec = miloAidatDuesKayit(ad, miloAidatAy), hatirlatVar = !u.aidatMuaf && !(secRec && secRec.odendi);
     return `<details class="milo-card" style="${u.aidatMuaf ? 'opacity:0.85; border-color:#8b5cf6;' : ''}" ${acikMi ? 'open' : ''}>
         <summary style="cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-weight:700; font-size:13px;">${miloEsc(ad)} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(grup)}</span>${yas !== null ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${yas} yaş)</span>` : ''}</span>
+            <span style="font-weight:700; font-size:13px;">${miloEsc(ad)} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(grup)}</span>${yas !== null ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${miloYasMetin(u.dogumTarihi)})</span>` : ''}</span>
             <span style="display:flex; gap:6px; align-items:center;">${hatirlatVar ? `<span onclick="event.preventDefault(); event.stopPropagation(); miloAidatHatirlat('${miloJsEsc(grup)}','${miloJsEsc(ad)}');" title="${miloEsc(miloAyTamAd(miloAidatAy))} aidatı için veliye WhatsApp hatırlatması" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:rgba(16,185,129,0.12); border:1px solid var(--neon-green); color:var(--neon-green);">💬 Hatırlat</span>` : ''}
             <span onclick="event.preventDefault(); event.stopPropagation(); miloAidatMuafToggle('${miloJsEsc(grup)}','${miloJsEsc(ad)}', ${u.aidatMuaf ? 'false' : 'true'});" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:${u.aidatMuaf ? '#8b5cf622' : 'var(--bg-panel)'}; border:1px solid ${u.aidatMuaf ? '#8b5cf6' : 'var(--border-color)'}; color:${u.aidatMuaf ? '#a78bfa' : 'var(--text-muted)'};">🎗️ ${u.aidatMuaf ? 'Muaf' : 'Muaf İşaretle'}</span></span>
         </summary>
