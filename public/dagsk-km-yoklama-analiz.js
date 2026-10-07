@@ -367,8 +367,7 @@ function kmYaGunDersleriHTML(sporcular, gunler, isoler, bugun) {
     // O gün gelip o günün hiçbir dersine kayıtlı olmayanlar
     let kayitsiz = sporcular.filter(k => kmYaGeldiMiBool(k, iso) && !kayitliler.some(x => x.g === k.g && x.ad === k.ad));
     let kayit = otomatikYoklamaDB && otomatikYoklamaDB[iso] || {};
-    let kayitsizKart = kayitsiz.length ? `<div class="ya-dkart"><div class="ya-dbas"><div style="flex:1"><div class="ya-dad">${dersler.length ? 'Derse kayıtlı olmadan gelenler' : 'Bu gün gelenler'}</div><div class="ya-alt">${dersler.length ? 'Bugünkü derslerin listesinde yoklar ama yoklamada geldi görünüyorlar.' : 'Ders programında bu güne ders yok.'}</div></div><span class="ya-sayac"><b>${kayitsiz.length}</b> kişi</span></div>
-        <div class="ya-kisiler">${kayitsiz.map(k => kmYaKisiHTML(k, 'g', kayit[k.ad] && kayit[k.ad].saat, null, iso <= bugun ? iso : null)).join('')}</div></div>` : '';
+    let kayitsizKart = kayitsiz.length ? kmYaKayitsizKartHTML(kayitsiz, dersler, kayit, iso, bugun) : '';
     return `<div class="ya-gunler" role="tablist" aria-label="Gün seç">${gunCip}</div>
         <div class="ya-etiket">${KM_YA_GUN[gd]} ${kmYaTarihYazi(d)}${iso === bugun ? ' · bugün' : ''}</div>
         ${iso <= bugun ? kmYaGunOzetHTML(iso, d, dersler) : ''}
@@ -528,6 +527,70 @@ function kmYaEkleAra(v) {
 }
 function kmYaDuzenle(id) { _kmYa.duzenle = _kmYa.duzenle === id ? null : id; _kmYa.ekleAra = ''; kmYoklamaAnalizCiz(); }
 function kmYaDersYazi(s) { return `${kmYaSlotAd(s)} (${kmYaSlotGunler(s).map(x => KM_YA_GUN_KISA[x]).join('·')} ${s.baslangicSaat})`; }
+// ================================================================================================
+// Derse kayıtlı olmadan gelenler (2026-10-08, kullanıcı: "girdikleri saat dilimlerine eklensin mi diye düzenleme yapabileyim;
+// misafir sporcu, eğitmen atışı gibi seçenekler de olsun, ona göre işaretleyeyim").
+// Her kişi için: (1) kim — Öğrenci / 🎟️ Misafir / 👔 Eğitmen atışı (kişi türü, dagsk-kisi-yonetimi.js kisiTurAyarla);
+// (2) öğrenciyse giriş saatine göre o günün dersi önerilir → "＋ 17:00 X dersine ekle" (ders programına KALICI ekler),
+// başka ders seçilebilir; (3) geldi/gelmedi düğmeleri aynen. Başlıkta: öğrencileri tek seferde saatlerine göre ekle.
+// ================================================================================================
+function kmYaSaatDersi(saat, dersler) {
+    if (!dersler.length) return null;
+    if (!saat) return dersler.length === 1 ? dersler[0] : null;
+    let t = kmYaDk(saat);
+    let icinde = dersler.filter(s => t >= kmYaDk(s.baslangicSaat) - 30 && t <= kmYaDk(s.bitisSaat));
+    if (icinde.length) return icinde.sort((a, b) => Math.abs(kmYaDk(a.baslangicSaat) - t) - Math.abs(kmYaDk(b.baslangicSaat) - t))[0];
+    let en = dersler.slice().sort((a, b) => Math.abs(kmYaDk(a.baslangicSaat) - t) - Math.abs(kmYaDk(b.baslangicSaat) - t))[0];
+    return Math.abs(kmYaDk(en.baslangicSaat) - t) <= 90 ? en : null;
+}
+function kmYaKayitsizKartHTML(kayitsiz, dersler, kayit, iso, bugun) {
+    let yIso = iso <= bugun ? iso : null;
+    let oneriler = kayitsiz.filter(k => kmYaTur(k) === 'sporcu').map(k => ({ k, s: kmYaSaatDersi(kayit[k.ad] && kayit[k.ad].saat, dersler) })).filter(x => x.s);
+    let toplu = dersler.length && oneriler.length > 1 ? `<button class="ya-btn birincil" onclick="kmYaKayitsizTopluEkle('${iso}')">＋ ${oneriler.length} öğrenciyi saatine göre ekle</button>` : '';
+    return `<div class="ya-dkart ya-kayitsiz"><div class="ya-dbas"><div style="flex:1"><div class="ya-dad">${dersler.length ? 'Derse kayıtlı olmadan gelenler' : 'Bu gün gelenler'}</div><div class="ya-alt">${dersler.length ? 'Kim olduklarını işaretle; öğrenciyi girdiği saatteki derse kalıcı ekleyebilirsin.' : 'Ders programında bu güne ders yok.'}</div></div><span class="ya-sayac"><b>${kayitsiz.length}</b> kişi</span>${toplu}</div>
+        <div class="ya-ks-liste">${kayitsiz.map(k => kmYaKayitsizSatirHTML(k, dersler, kayit[k.ad] && kayit[k.ad].saat, yIso)).join('')}</div></div>`;
+}
+function kmYaKayitsizSatirHTML(k, dersler, saat, yIso) {
+    let key = kmYaKey(k.g, k.ad), tur = kmYaTur(k), oneri = kmYaSaatDersi(saat, dersler);
+    let turBtn = (t, yazi) => `<button class="${tur === t ? 'aktif ' + t : ''}" aria-pressed="${tur === t}" onclick="kmYaKayitsizTur('${key}', '${t}')">${yazi}</button>`;
+    let ders = '';
+    if (tur === 'sporcu' && dersler.length) {
+        let sec = `<select class="ya-ks-sec" aria-label="Başka derse ekle" onchange="if(this.value) kmYaEkle(+this.value, '${key}')"><option value="">${oneri ? 'Başka ders…' : 'Derse ekle…'}</option>${dersler.filter(s => !oneri || s.id !== oneri.id).map(s => `<option value="${s.id}">${esc(s.baslangicSaat + ' · ' + kmYaSlotAd(s))}</option>`).join('')}</select>`;
+        ders = `<div class="ya-ks-ders">${oneri ? `<button class="ya-btn birincil" onclick="kmYaEkle(${oneri.id}, '${key}')">＋ ${esc(oneri.baslangicSaat)} ${esc(kmYaSlotAd(oneri))} dersine ekle</button>` : '<span class="ya-alt">Giriş saatine uyan ders yok</span>'}${sec}</div>`;
+    } else if (tur === 'misafir') ders = '<div class="ya-alt">🎟️ Misafir — derse eklenmez, öğrenci sayılarına katılmaz. Eğitmen & Misafir ekranında takip edilir.</div>';
+    else if (tur === 'egitmen') ders = '<div class="ya-alt">👔 Eğitmen atışı — öğrenci yoklamasına ve sayılara katılmaz.</div>';
+    let yk = yIso ? (() => { let d = kmYaDurum(k, yIso), c = y => `kmYaYoklama('${yIso}', '${key}', '${d === y ? 'sil' : y}')`;
+        return `<span class="ya-yk-sec" role="group" aria-label="${esc(k.ad)} yoklama"><button class="g${d === 'g' ? ' aktif' : ''}" onclick="${c('g')}">✅ Geldi</button><button class="y${d === 'y' ? ' aktif' : ''}" onclick="${c('y')}">❌ Gelmedi</button></span>`; })() : '';
+    return `<div class="ya-ks">
+        <div class="ya-ks-ust"><button class="ya-kisi-ad" onclick="kmYaSporcuAc('${key}')"><span class="ya-av" style="background:${kmYaRenk(k.g)}">${esc(kmYaIlkHarf(k.ad))}</span><span style="min-width:0"><b>${esc(k.ad)}</b><small>${kmYaGrupEtiket(k)}${saat ? ' · 🕒 ' + esc(saat) : ''}</small></span></button>${yk}</div>
+        <div class="ya-ks-tur" role="group" aria-label="${esc(k.ad)} kim?">${turBtn('sporcu', '🎯 Öğrenci')}${turBtn('misafir', '🎟️ Misafir')}${turBtn('egitmen', '👔 Eğitmen atışı')}</div>
+        ${ders}</div>`;
+}
+function kmYaKayitsizTur(key, tur) {
+    let k = kmYaAnahtar(key), eski = kmYaTur(k);
+    if (eski === tur) return;
+    if (typeof kisiTurAyarla !== 'function') return showToast('Kişi türü değiştirilemedi.', 'error');
+    let ek = { tur };
+    if (tur === 'misafir' && typeof kisiBilgi === 'function' && !(kisiBilgi(k.g, k.ad) || {}).eklenme) ek.eklenme = kmYaIso(new Date());
+    if (tur === 'sporcu' && eski === 'misafir') ek.aktifOldu = kmYaIso(new Date());
+    kisiTurAyarla(k.g, k.ad, ek);
+    showToast(k.ad + ' → ' + (tur === 'misafir' ? '🎟️ misafir' : tur === 'egitmen' ? '👔 eğitmen' : '🎯 öğrenci'), 'success');
+    kmYaYenidenCiz();
+}
+function kmYaKayitsizTopluEkle(iso) {
+    let d = new Date(iso + 'T12:00'), gd = d.getDay(), kayit = (otomatikYoklamaDB && otomatikYoklamaDB[iso]) || {};
+    let dersler = (_kmYa.slotlar || []).filter(s => kmYaSlotGunler(s).includes(gd) && !(s.istisnalar || []).some(x => x.tarih === iso));
+    let kayitli = [].concat(...dersler.map(kmYaSlotSporcu));
+    let liste = kmYaSporcular().filter(k => kmYaGeldiMiBool(k, iso) && kmYaTur(k) === 'sporcu' && !kayitli.some(x => x.g === k.g && x.ad === k.ad))
+        .map(k => ({ k, s: kmYaSaatDersi(kayit[k.ad] && kayit[k.ad].saat, dersler) })).filter(x => x.s);
+    if (!liste.length) return showToast('Saatine uyan ders bulunamadı.', 'warning');
+    let ozet = liste.map(x => '• ' + x.k.ad + ' → ' + x.s.baslangicSaat + ' ' + kmYaSlotAd(x.s)).join('\n');
+    if (!confirm('Bu öğrenciler ders programına KALICI eklensin mi?\n\n' + ozet)) return;
+    let say = 0;
+    Promise.all(liste.map(x => fetch('/api/antrenman-programi/' + x.s.id + '/katilimci', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup: x.k.g, ad: x.k.ad, deviceId: typeof _cihazId !== 'undefined' ? _cihazId : null }) })
+        .then(r => r.ok ? r.json() : null).then(d => { if (d && d.applied) { say++; if (!x.s.katilimcilar) x.s.katilimcilar = []; if (!x.s.katilimcilar.some(y => y.grup === x.k.g && y.ad === x.k.ad)) x.s.katilimcilar.push({ grup: x.k.g, ad: x.k.ad }); } }).catch(() => {})))
+        .then(() => { showToast('✓ ' + say + ' öğrenci derslerine eklendi', say ? 'success' : 'error'); kmYaYenidenCiz(true); });
+}
 function kmYaEkle(slotId, key) {
     let s = kmYaSlotBul(slotId), k = kmYaAnahtar(key); if (!s) return;
     let n = (s.katilimcilar || []).length;
@@ -1570,3 +1633,17 @@ function kmYaDolulukHTML() {
         <div class="ya-etiket" style="margin-top:6px">Gün × saat — derste ortalama gelen kişi</div>${isi}
         <div class="ya-alt">Doluluk = kayıtlı / kapasite. Renk yoğunlaştıkça o saat daha kalabalık; yeni ders açacaksan önce oralara bak. Kapasiteyi Ders Programı'ndan girebilirsin.</div></div>`;
 }
+
+(function () {
+    let st = document.createElement('style'); st.id = 'ya-ks-css';
+    st.textContent = '.ya-ks-liste{display:flex;flex-direction:column;gap:8px}'
+        + '.ya-ks{display:flex;flex-direction:column;gap:7px;padding:10px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-main)}'
+        + '.ya-ks .ya-kisi-ad{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer}.ya-ks .ya-kisi-ad>span:last-child{display:flex;flex-direction:column;min-width:0}.ya-ks .ya-kisi-ad small{color:var(--text-muted);font-size:11.5px}'
+        + '.ya-ks-ust{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.ya-ks-ust .ya-kisi-ad{flex:1;min-width:180px}'
+        + '.ya-ks-tur{display:flex;flex-wrap:wrap;gap:6px}.ya-ks-tur button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:12px;font-weight:800;cursor:pointer}'
+        + '.ya-ks-tur button.aktif.sporcu{border-color:var(--status-success,#16a34a);background:color-mix(in srgb,var(--status-success,#16a34a) 14%,transparent)}'
+        + '.ya-ks-tur button.aktif.misafir{border-color:#f472b6;background:color-mix(in srgb,#f472b6 16%,transparent)}'
+        + '.ya-ks-tur button.aktif.egitmen{border-color:#38bdf8;background:color-mix(in srgb,#38bdf8 16%,transparent)}'
+        + '.ya-ks-ders{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ya-ks-sec{min-height:34px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-panel);color:var(--text-main);font:inherit;font-size:12px;padding:0 8px;max-width:100%}';
+    document.head.appendChild(st);
+})();
