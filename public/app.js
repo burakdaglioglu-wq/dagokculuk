@@ -2038,7 +2038,8 @@
             sporcuListesiniYenile(); egitmenRenderSiniflar();
         }
         function ozelGrupSil(g) { if(!confirm(`"${g}" grubu silinsin mi? (Sporcular silinmez, grupları boşalır)`)) return; ozelSiniflar = ozelSiniflar.filter(x => x !== g); Object.keys(turnuvaDB[aktifGrup]||{}).forEach(ad => { if(turnuvaDB[aktifGrup][ad].sinif === g) turnuvaDB[aktifGrup][ad].sinif = ''; }); ozelSiniflariKaydet(); localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast('Grup silindi.', 'warning'); egitmenRenderSiniflar(); }
-        function sporcuPasifYap(ad, durum) { let sp = turnuvaDB[aktifGrup][ad]; if(!sp) return; sp.pasif = durum; localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast(durum ? `${ad} pasife alındı.` : `${ad} tekrar aktif.`, durum ? 'warning' : 'success'); egitmenRenderSiniflar(); siralamaListesiDoldur(); }
+        // 2026-10-08: tek dokunuşla (Sil'in hemen yanında) onaysız pasife alıyordu → sporcu ders ekleme aramasından sessizce kayboluyordu.
+        function sporcuPasifYap(ad, durum) { let sp = turnuvaDB[aktifGrup][ad]; if(!sp) return; if(durum && !confirm(ad + ' pasife alınsın mı? (Bıraktı)\n\nPasif sporcular derslere eklenemez ve listelerde görünmez. İstediğin zaman "▶ Aktif Et" ile geri alabilirsin.')) return; sp.pasif = durum; sp.lastModified = Date.now(); bekleyenGonderim = true; localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast(durum ? `${ad} pasife alındı.` : `${ad} tekrar aktif.`, durum ? 'warning' : 'success'); egitmenRenderSiniflar(); siralamaListesiDoldur(); }
         function sporcuSil(ad) { if(typeof yoneticiSil === 'function') { yoneticiSil(aktifGrup, ad); return; } if(!confirm(`${ad} KALICI olarak silinsin mi?\n(Skorları ve kayıtları da gider. "Pasife Al" verileri korur.)`)) return; let sp = turnuvaDB[aktifGrup][ad]; let snap = sp ? JSON.parse(JSON.stringify(sp)) : null; if(!silindiMi(aktifGrup, ad)) silinenlerDB.push({ ad: ad, grup: aktifGrup, tarih: Date.now(), kod: sp ? (sp.kod || sp.dogumYili || '') : '', veri: snap }); silinenlerKaydet(); try { seriIptalEkle(((sp && sp.seriler) || []).map(s => s.seriId).filter(Boolean)); } catch(e) {} delete turnuvaDB[aktifGrup][ad]; yoneticiKaydet(); showToast(`${ad} silindi.`, 'warning'); egitmenRenderSiniflar(); siralamaListesiDoldur(); sporcuListesiniYenile(); }
 
         /* ============ PERSONEL (ÇALIŞAN EĞİTMEN) TAKİBİ ============ */
@@ -2727,15 +2728,23 @@
                 return;
             }
             let mevcutSet = new Set(roster.map(function(k){ return k.grup+'|'+k.ad; }));
-            let adaylar = [];
+            let adaylar = [], pasifAdaylar = [];
             ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) {
                 Object.keys(turnuvaDB[g]||{}).forEach(function(ad) {
-                    if(turnuvaDB[g][ad].pasif) return;
                     if(mevcutSet.has(g+'|'+ad)) return;
                     if(!ad.toLocaleLowerCase('tr').includes(q)) return;
+                    // 2026-10-08: pasif sporcu eskiden SESSİZCE gizleniyordu ("Uğurkan/Beyza ders eklede çıkmıyor") — artık ayrı gösterilir
+                    if(turnuvaDB[g][ad].pasif) { pasifAdaylar.push({g:g, ad:ad}); return; }
                     adaylar.push({g:g, ad:ad});
                 });
             });
+            pasifAdaylar.sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
+            let pasifHTML = pasifAdaylar.slice(0,10).map(function(a) {
+                return '<div style="display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:10px; border:1px dashed var(--border-color); margin-bottom:5px; opacity:.85;">'
+                    + '<div style="flex:1; min-width:0; font-size:12px; font-weight:700;">'+esc(a.ad)+' <span style="font-size:9.5px; color:var(--neon-red); font-weight:800;">⏸ pasif</span> <span style="font-size:9.5px; color:var(--text-muted); font-weight:600;">('+(PROGRAM_GRUP_AD[a.g]||a.g)+')</span></div>'
+                    + '<button data-g="'+esc(a.g).replace(/"/g,'&quot;')+'" data-ad="'+esc(a.ad).replace(/"/g,'&quot;')+'" onclick="dersRosterAktifEtVeEkle(this.dataset.g, this.dataset.ad)" style="background:transparent; color:var(--neon-green); border:1px solid var(--neon-green); padding:5px 10px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800; flex-shrink:0;">▶ Aktif et ve ekle</button>'
+                    + '</div>';
+            }).join('');
             adaylar.sort(function(a,b){ return a.ad.localeCompare(b.ad,'tr'); });
             document.getElementById('drm-aday-liste').innerHTML = adaylar.length ? adaylar.slice(0,30).map(function(a) {
                 let adEsc = a.ad.replace(/'/g,"\\'");
@@ -2743,7 +2752,15 @@
                     + '<div style="flex:1; min-width:0; font-size:12px; font-weight:700;">'+a.ad+' <span style="font-size:9.5px; color:var(--text-muted); font-weight:600;">('+(PROGRAM_GRUP_AD[a.g]||a.g)+')</span></div>'
                     + '<button onclick="dersRosterKatilimciEkle(\''+a.g+'\',\''+adEsc+'\')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:5px 11px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800; flex-shrink:0;">+ Ekle</button>'
                     + '</div>';
-            }).join('') : '<div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:8px;">Eşleşen sporcu yok.</div>';
+            }).join('') + pasifHTML : (pasifHTML || '<div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:8px;">Eşleşen sporcu yok.</div>');
+        }
+        function dersRosterAktifEtVeEkle(grup, ad) {
+            let sp = turnuvaDB[grup] && turnuvaDB[grup][ad]; if(!sp) return;
+            if(!confirm(ad + ' pasif (bıraktı olarak işaretli). Tekrar aktif edilip bu derse eklensin mi?')) return;
+            sp.pasif = false; sp.lastModified = Date.now(); bekleyenGonderim = true;
+            localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
+            showToast('▶ ' + ad + ' tekrar aktif', 'success');
+            dersRosterKatilimciEkle(grup, ad);
         }
         // İki slot AYNI gün ve saatleri kesişiyorsa true — çakışma uyarısı VE (gelecekte) başka
         // özellikler bu tek yardımcıyı paylaşsın diye çıkarıldı.
@@ -10936,11 +10953,36 @@
                         + '</div>';
                 });
             });
+            // 2026-10-08: pasif / dondurulmuş sporcular SESSİZCE gizleniyordu ("Uğurkan, Beyza derse eklenmiyor") — isim
+            // aranınca ayrı bölümde görünür, tek dokunuşla tekrar aktif edilip seçilir.
+            if(q) {
+                let gizli = [];
+                ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) { let db = turnuvaDB[g] || {}; Object.keys(db).forEach(function(ad) { if((db[ad].pasif || db[ad].donduruldu) && ad.toLocaleLowerCase('tr').includes(q)) gizli.push({ g: g, ad: ad, d: db[ad].donduruldu && !db[ad].pasif }); }); });
+                gizli.sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+                if(gizli.length) {
+                    html += '<div style="font-weight:900;font-size:11px;color:var(--neon-red);margin:12px 0 5px;letter-spacing:1px;">⏸ PASİF / DONDURULMUŞ</div>';
+                    gizli.slice(0, 15).forEach(function(it) {
+                        let at = function(v) { return esc(v).replace(/"/g, '&quot;'); };
+                        html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:4px;border-radius:9px;border:1.5px dashed var(--border-color);opacity:.9;">'
+                            + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;">' + esc(it.ad) + '</div><div style="font-size:10px;color:var(--text-muted);">' + LIG_ETIKET[it.g] + ' · ' + (it.d ? 'dondurulmuş' : 'pasif (bıraktı)') + '</div></div>'
+                            + '<button data-g="' + at(it.g) + '" data-ad="' + at(it.ad) + '" onclick="event.stopPropagation(); kmPasifAktifEt(this.dataset.g, this.dataset.ad)" style="min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--neon-green);background:transparent;color:var(--neon-green);font-weight:800;font-size:12px;cursor:pointer;flex-shrink:0;">▶ Aktif et ve seç</button></div>';
+                    });
+                }
+            }
             el.innerHTML = html || '<div style="color:var(--text-muted);text-align:center;padding:20px;">Sporcu bulunamadı</div>';
             let s = document.getElementById('km-sayac');
             if(s) s.textContent = Object.keys(_kmSecimler).length + ' sporcu seçildi';
         }
 
+        function kmPasifAktifEt(g, ad) {
+            let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return;
+            if(!confirm(ad + ' ' + (sp.pasif ? 'pasif (bıraktı)' : 'dondurulmuş') + ' olarak işaretli. Tekrar aktif edilsin mi?')) return;
+            sp.pasif = false; sp.donduruldu = false; sp.lastModified = Date.now(); bekleyenGonderim = true;
+            localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
+            _kmSecimler[g + '_' + ad] = { g: g, ad: ad };
+            showToast('▶ ' + ad + ' tekrar aktif ve seçildi', 'success');
+            kmModalDoldur();
+        }
         function kmToggle(g, ad) {
             let key = g+'_'+ad;
             if(_kmSecimler[key]) delete _kmSecimler[key];
