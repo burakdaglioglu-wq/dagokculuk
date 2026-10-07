@@ -36,7 +36,8 @@ export default async function ({ log }) {
         const yuk = await blok.first().evaluate((e) => e.getBoundingClientRect().height);
         dogrula(yuk > 84 && yuk < 96, '60 dk blok yüksekliği orantılı değil: ' + yuk);
         // ders penceresi: çoklu seçici ile AYŞE ekle
-        await blok.first().click(); await p.waitForSelector('#msp-ders');
+        await blok.first().click(); await p.waitForSelector('.mdp-hd');
+        await p.locator('.mdp-ekle').click(); await p.waitForSelector('#msp-ders');
         await p.evaluate((g) => mspAra('ders', g), G); await p.waitForTimeout(150);
         await p.locator('#msp-ders .msp-uye', { hasText: 'AYŞE ' + G }).click();
         await p.locator('#msp-ders-btn').click();

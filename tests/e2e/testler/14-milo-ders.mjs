@@ -54,7 +54,11 @@ export default async function ({ log }) {
         dogrula(await p.locator('#milo-program-izgara .mpg-blok', { hasText: '12–24 ay' }).count(), 'takvimde yaş rozeti yok');
         // ders penceresi: 11 aylık listede değil, 20 aylık zaten derste; yaşı uyan öneri bölümü
         await p.evaluate((id) => miloDersRosterAc(id), slotId); await p.waitForTimeout(400);
-        dogrula(await p.locator('#mds-drm-yas button.aktif', { hasText: '12–24 ay' }).count(), 'ders penceresinde yaş aralığı seçili değil');
+        dogrula(await p.locator('.mdp-pill', { hasText: '12–24 ay' }).count(), 'ders penceresinde yaş aralığı yok');
+        // sade ders penceresi: saat satırı → 45 dk çipi anında kaydeder
+        await p.locator('.mdp-row', { hasText: 'Saat' }).click(); await p.locator('.mdp-cipler button', { hasText: '45 dk' }).click();
+        await p.waitForFunction((id) => miloProgram.find((s) => s.id === id).bitisSaat === '10:45', slotId, { timeout: 8000 });
+        esit(await p.evaluate(() => document.documentElement.classList.contains('milo-tema-sade')), true, 'varsayılan tema Sade');
         esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
       } finally { await ctx.close(); }
     }

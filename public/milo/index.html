@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#15121F">
+    <meta name="theme-color" content="#0C0B0A">
     <title>MILO FITT KIDS</title>
     <link rel="icon" type="image/png" href="/milo/ikon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/milo/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MILO FITT KIDS">
     <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;MILO FITT KIDS&quot;,&quot;short_name&quot;:&quot;MILO&quot;,&quot;start_url&quot;:&quot;/milo/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230b0a08&quot;,&quot;theme_color&quot;:&quot;%230b0a08&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;/milo/ikon-192.png&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;},{&quot;src&quot;:&quot;/milo/ikon-512.png&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
     <style>
         /* ============================================================
@@ -194,11 +194,50 @@
         .milo-tema-menu button.aktif { background: color-mix(in srgb, var(--milo-teal) 18%, transparent); }
         .milo-tema-menu .ornek { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,.25); }
         .milo-tema-menu .tik { margin-left: auto; color: var(--milo-teal); }
+        /* ============================================================
+           SADE (2026-10-08, kullanıcı: "modern olsun, basit olsun, güzel olsun — bu temayı Milo'da hepsine uygula", sadece koyu).
+           Düz zemin (renk lekesi yok), cam/bulanıklık yok, opak kartlar + ince çizgi, tek turuncu vurgu, Manrope.
+           Seçimler (sekme, gün) açık renkle tersine döner; ana düğmeler turuncu. Varsayılan tema; diğerleri Tema menüsünde.
+           ============================================================ */
+        html.milo-tema-sade {
+            --milo-bg: #0C0B0A; --milo-card: #171513; --milo-card-raised: #1F1C19; --milo-card-solid: #171513; --milo-opak: #171513;
+            --milo-ink: #F5F2EE; --milo-ink-dim: #9C948C; --milo-line: #2A2622;
+            --milo-teal: #FF7A2B; --milo-coral: #FF7A2B; --milo-sun: #F5A524; --milo-grape: #A78BFA;
+            --milo-kirmizi: #FF6369; --milo-ok: #3DD68C; --milo-mesh: none;
+            /* eski ekranlardaki paylaşılan neon renkleri sade palete bağla (pembe/mavi → turuncu/nötr) */
+            --neon-pink: #FF7A2B !important; --neon-blue: #C9C2BA !important; --neon-red: #FF6369 !important;
+            --neon-green: #3DD68C !important; --gold: #F5A524 !important;
+        }
+        /* Üyeler listesi: renkli çerçeveli düğmeler yerine sade gri düğmeler, sil = kırmızı yazı */
+        html.milo-tema-sade #milo-icerik .milo-card button[onclick^="miloProfilAc"],
+        html.milo-tema-sade #milo-icerik .milo-card button[onclick^="miloSporcuProgramAc"],
+        html.milo-tema-sade #milo-icerik .milo-card button[onclick^="miloUyeFormAc("] {
+            background: var(--milo-card-raised) !important; border: 1px solid transparent !important; color: var(--milo-ink) !important; border-radius: 10px !important; padding: 7px 12px !important; font-weight: 700 !important; }
+        html.milo-tema-sade #milo-icerik .milo-card button[onclick^="miloUyeSil"] {
+            background: transparent !important; border: 1px solid var(--milo-line) !important; color: var(--milo-kirmizi) !important; border-radius: 10px !important; padding: 7px 10px !important; }
+        html.milo-tema-sade, html.milo-tema-sade body { font-family: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }
+        html.milo-tema-sade .milo-card, html.milo-tema-sade .milo-secim-btn, html.milo-tema-sade #milo-tab-bar, html.milo-tema-sade .milo-gs-blok {
+            background: var(--milo-card) !important; border: 1px solid var(--milo-line) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: none !important;
+        }
+        html.milo-tema-sade .milo-card { border-radius: 20px; padding: 16px 18px; }
+        html.milo-tema-sade #milo-tab-bar { border-radius: 16px; padding: 4px; }
+        html.milo-tema-sade #milo-tab-bar button { color: var(--milo-ink-dim); font-weight: 700; border-radius: 12px; }
+        html.milo-tema-sade #milo-tab-bar button.aktif { background: var(--milo-ink) !important; color: var(--milo-bg) !important; box-shadow: none !important; }
+        html.milo-tema-sade .milo-btn-full, html.milo-tema-sade .milo-gs-tamam { background: var(--milo-teal) !important; color: #fff !important; box-shadow: none !important; border-radius: 14px; font-weight: 800; }
+        html.milo-tema-sade .milo-input { background: var(--milo-card-raised) !important; border: 1px solid transparent !important; border-radius: 12px !important; }
+        html.milo-tema-sade .milo-input:focus { border-color: var(--milo-teal) !important; }
+        html.milo-tema-sade .milo-pin-btn { background: var(--milo-card-raised) !important; border: 1px solid var(--milo-line) !important; box-shadow: none !important; }
+        html.milo-tema-sade .modal-content { background: var(--milo-card) !important; border: 1px solid var(--milo-line) !important; box-shadow: 0 30px 60px -30px rgba(0,0,0,.7); }
+        html.milo-tema-sade .milo-logo-img { filter: none; }
+        html.milo-tema-sade .milo-ribbon { background: var(--milo-teal); opacity: .9; height: 3px; }
+        html.milo-tema-sade #toast { font-family: 'Manrope', sans-serif; border-radius: 14px; }
+        html.milo-tema-sade ::selection { background: color-mix(in srgb, var(--milo-teal) 40%, transparent); }
         input[type=checkbox], input[type=radio] { -webkit-appearance: auto !important; appearance: auto !important; accent-color: var(--milo-teal); width: 18px; height: 18px; vertical-align: middle; }
 </style>
     <script>
         // Tema, sayfa çizilmeden ÖNCE uygulanır (mor yanıp sonra değişmesin). Varsayılan: Turuncu Gece.
-        (function () { var t = "turuncu"; try { t = localStorage.getItem("milo_tema") || "turuncu"; } catch (e) {} document.documentElement.classList.add("milo-tema-" + t); })();
+        // 2026-10-08: varsayılan "Sade" — her cihaz BİR KEZ Sade'ye geçer (milo_tema_v=2), sonra Tema menüsünden değiştirilebilir.
+        (function () { var t = "sade"; try { if (localStorage.getItem("milo_tema_v") !== "2") { localStorage.setItem("milo_tema", "sade"); localStorage.setItem("milo_tema_v", "2"); } t = localStorage.getItem("milo_tema") || "sade"; } catch (e) {} document.documentElement.classList.add("milo-tema-" + t); })();
     </script>
 </head>
 <body>
@@ -341,9 +380,10 @@
     <script src="app.js?v=8"></script>
     <script src="milo-araclar.js?v=3"></script>
     <script src="milo-hizli-duzenle.js?v=3"></script>
-    <script src="milo-genel-bakis.js?v=5"></script>
+    <script src="milo-genel-bakis.js?v=6"></script>
     <script src="milo-ders-sihirbaz.js?v=3"></script>
     <script src="milo-uye-form.js?v=1"></script>
     <script src="milo-duzen.js?v=1"></script>
+    <script src="milo-ders-pencere.js?v=1"></script>
 </body>
 </html>

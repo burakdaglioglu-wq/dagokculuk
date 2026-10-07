@@ -121,13 +121,14 @@ function mgbEksikTamamla() { try { _mhd.eksik = true; _mhd.sayfa = 1; } catch (e
 
 // ---- 🎨 Tema seçici (cihazda hatırlanır; temalar index.html'de html.milo-tema-* sınıfları)
 const MILO_TEMALAR = [
+    { id: 'sade', ad: '⚫ Sade', renk: ['#FF7A2B', '#0C0B0A'], bar: '#0C0B0A' },
     { id: 'turuncu', ad: '🟠 Turuncu Gece', renk: ['#FF7A1A', '#140C07'], bar: '#140C07' },
     { id: 'mor', ad: '💜 Mor Gece', renk: ['#8B7FFF', '#15121F'], bar: '#15121F' },
     { id: 'okyanus', ad: '🌊 Okyanus', renk: ['#14B8A6', '#06141A'], bar: '#06141A' },
     { id: 'gul', ad: '🌸 Gül', renk: ['#EC4899', '#160A11'], bar: '#160A11' },
     { id: 'mavi', ad: '🔵 Gece Mavisi', renk: ['#3B82F6', '#080D18'], bar: '#080D18' }
 ];
-function miloTemaAktif() { let c = [...document.documentElement.classList].find(function (x) { return x.indexOf('milo-tema-') === 0; }); return c ? c.slice(10) : 'turuncu'; }
+function miloTemaAktif() { let c = [...document.documentElement.classList].find(function (x) { return x.indexOf('milo-tema-') === 0; }); return c ? c.slice(10) : 'sade'; }
 function miloTemaSec(id) {
     let t = MILO_TEMALAR.find(function (x) { return x.id === id; }); if (!t) return;
     [...document.documentElement.classList].forEach(function (c) { if (c.indexOf('milo-tema-') === 0) document.documentElement.classList.remove(c); });
