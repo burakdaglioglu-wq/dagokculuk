@@ -782,13 +782,15 @@ function flCanliDongu() {
         let v = document.getElementById('fl-canli-video'), cv = document.getElementById('fl-canli-katman');
         if (!v) { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; return; } // Karışık Sınıf kapandı → kamera kapansın
         flZoomUygula();
+        if (!cv || v.readyState < 2 || !v.videoWidth || _fl.canli.donuk) return;
+        // ağır çekim tekrar halkası her turda (analizden bağımsız) — yoksa telefon modunda yalnız paket gelince saklanıp donuk oynuyordu
+        if (flTekrarAcikMi() || _fl.halka) flTekrarKaydet(v);
         // telefon analiz yapıyorsa iki kaynak KARIŞTIRILMAZ: yeni paket gelene kadar bu tur atlanır (bilgisayar kendi tahminini eklemez)
         let telMod = flTelAnalizTelefondaMi(), tp = telMod ? flTelIskeletSec() : null;
         if (telMod && (!tp || tp === _fl.sonTp)) return;
-        _fl.sonTp = tp;
-        if (!cv || v.readyState < 2 || !v.videoWidth || (!_fl.pose && !tp) || _fl.canli.donuk) return;
-        if (flTekrarAcikMi() || _fl.halka) flTekrarKaydet(v);
+        if (!_fl.pose && !tp) return;
         let simdi = performance.now(); if (simdi - son < 85) return; son = simdi;
+        _fl.sonTp = tp;
         let c = _fl.canli, W = v.videoWidth, H = v.videoHeight, ts = flTs(simdi), kare = { t: (simdi - c.bas) / 1000, p: null, h: null };
         let lm = null;
         if (tp) { // telefonda, tam kaliteli kareden çıkarılmış noktalar
@@ -1464,7 +1466,11 @@ function flYonIpucu(W, H) { let el = document.getElementById('fl-yon-ipucu'); if
 // kendiliğinden oynar. Canlı görüntünün son ~4 sn'si küçük tuvallerden oluşan bir halkada tutulur (her ~66 ms bir kare,
 // o anki iskeletle birlikte). Bırakış algılanınca (çekiş eli çeneden ayrılır, ≥0,6 sn çene altında kalmışsa) 0,6 sn beklenir,
 // bırakıştan 2,0 sn önce → 0,7 sn sonrası 0,35x hızla sahnenin üstünde oynatılır. "Son 3 sn" elle tekrar.
-const FL_TEKRAR = { fps: 15, sn: 4.2, once: 2000, sonra: 700, hiz: 0.35, genislik: 960 };
+// Akıcılık (2026-10-09, kullanıcı: "donarak tekrar oynatılıyordu"): 15 kare/sn × 0,35 hız = ekranda ~5 kare/sn idi.
+// Bilgisayarda 30, telefonda 20 kare/sn saklanır (hafıza: ~150 / ~55 MB), oynatmada iki kare arası yumuşak geçiş yapılır.
+const FL_TEKRAR = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent)
+    ? { fps: 20, sn: 4.2, once: 2000, sonra: 700, hiz: 0.4, genislik: 540 }
+    : { fps: 30, sn: 4.2, once: 2000, sonra: 700, hiz: 0.4, genislik: 720 };
 function flTekrarAcikMi() { if (_fl.tekrarAcik == null) { try { _fl.tekrarAcik = localStorage.getItem('dagsk_formlab_tekrar') !== '0'; } catch (e) { _fl.tekrarAcik = true; } } return _fl.tekrarAcik; }
 function flTekrarDegis() {
     _fl.tekrarAcik = !flTekrarAcikMi();
@@ -1478,7 +1484,8 @@ function flTekrarKaydet(v) {
         let oran = Math.min(1, FL_TEKRAR.genislik / Math.max(v.videoWidth, v.videoHeight)), n = Math.round(FL_TEKRAR.fps * FL_TEKRAR.sn);
         h = _fl.halka = { W: v.videoWidth, H: v.videoHeight, w: Math.round(v.videoWidth * oran), h: Math.round(v.videoHeight * oran), kareler: [], i: 0, son: 0, n };
     }
-    if (simdi - h.son < 1000 / FL_TEKRAR.fps) return; h.son = simdi;
+    if (_fl.tekrarOynuyor) return; // oynatılan kareler üzerine yazılmasın (eskiden hepsi kopyalanıyordu → başta donma)
+    if (simdi - h.son < 1000 / FL_TEKRAR.fps - 4) return; h.son = simdi;
     let k = h.kareler[h.i];
     if (!k) { let c = document.createElement('canvas'); c.width = h.w; c.height = h.h; k = h.kareler[h.i] = { c, x: c.getContext('2d') }; }
     try { k.x.drawImage(v, 0, 0, h.w, h.h); } catch (e) { return; }
@@ -1514,9 +1521,8 @@ function flTekrarOynat(bas, son, capaSn, birakis) {
     let l = h.kareler.filter(k => k && k.t >= bas && k.t <= son).sort((a, b) => a.t - b.t);
     if (l.length < 5) { if (birakis == null) showToast('Tekrar için yeterli görüntü yok', 'info'); return; }
     _fl.tekrarOynuyor = true;
-    // tuvaller oynatma sırasında üzerine yazılmasın: kopya al
-    let kopya = l.map(k => { let c = document.createElement('canvas'); c.width = h.w; c.height = h.h; c.getContext('2d').drawImage(k.c, 0, 0); return { c, t: k.t, p: k.p }; });
-    let kat = document.createElement('div'); kat.className = 'fl-tekrar'; kat.innerHTML = '<canvas></canvas><div class="fl-tekrar-ust"><span class="fl-rozet fl-tekrar-rozet">AĞIR ÇEKİM TEKRAR · 0,35x</span>' + (capaSn != null ? '<span class="fl-rozet">ÇENE ALTINDA ' + flTr(capaSn, 1) + ' SN</span>' : '') + '</div><button class="fl-tekrar-kapat" aria-label="Tekrarı kapat">Canlıya dön</button>';
+    let kopya = l; // halkaya oynatma bitene kadar yazılmaz (flTekrarKaydet) → kopyalamaya gerek yok
+    let kat = document.createElement('div'); kat.className = 'fl-tekrar'; kat.innerHTML = '<canvas></canvas><div class="fl-tekrar-ust"><span class="fl-rozet fl-tekrar-rozet">AĞIR ÇEKİM TEKRAR · 0,4x</span>' + (capaSn != null ? '<span class="fl-rozet">ÇENE ALTINDA ' + flTr(capaSn, 1) + ' SN</span>' : '') + '</div><button class="fl-tekrar-kapat" aria-label="Tekrarı kapat">Canlıya dön</button>';
     sahne.appendChild(kat);
     let cv = kat.querySelector('canvas'), x = cv.getContext('2d'), kapandi = false;
     const kapat = () => { if (kapandi) return; kapandi = true; kat.classList.add('gidiyor'); setTimeout(() => kat.remove(), 300); _fl.tekrarOynuyor = false; };
@@ -1527,10 +1533,12 @@ function flTekrarOynat(bas, son, capaSn, birakis) {
         let r = sahne.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
         if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px'; }
         x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = '#000'; x.fillRect(0, 0, r.width, r.height);
-        let tOrj = ilk + (performance.now() - t0) * FL_TEKRAR.hiz, k = kopya[0];
-        for (let i = 0; i < kopya.length && kopya[i].t <= tOrj; i++) k = kopya[i];
+        let tOrj = ilk + (performance.now() - t0) * FL_TEKRAR.hiz, ki = 0;
+        for (let i = 0; i < kopya.length && kopya[i].t <= tOrj; i++) ki = i;
+        let k = kopya[ki], k2 = kopya[ki + 1];
         let olc = Math.min(r.width / h.w, r.height / h.h), ox = (r.width - h.w * olc) / 2, oy = (r.height - h.h * olc) / 2;
         x.drawImage(k.c, ox, oy, h.w * olc, h.h * olc);
+        if (k2 && k2.t > k.t) { let a = Math.max(0, Math.min(1, (tOrj - k.t) / (k2.t - k.t))); if (a > 0.05) { x.globalAlpha = a; x.drawImage(k2.c, ox, oy, h.w * olc, h.h * olc); x.globalAlpha = 1; } }
         if (k.p) flTekrarIskelet(x, k.p, ox, oy, h.w * olc, h.h * olc);
         // zaman çubuğu + bırakış işareti
         let y = r.height - 8, ilerleme = Math.min(1, (tOrj - ilk) / Math.max(1, sonT - ilk));

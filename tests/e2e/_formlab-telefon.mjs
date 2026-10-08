@@ -30,6 +30,20 @@ try {
   const r1 = await p.evaluate(() => ({ rozet: (document.getElementById('fl-canli-tel') || {}).textContent, kuyruk: _fl.tel.iskQ.length, gecikme: Math.round(_fl.tel.gecikme || 0), kalite: _fl.tel.kalite, telKare: _fl.canli && _fl.canli.telKare, pcKare: _fl.canli && _fl.canli.pcKare }));
   console.log('canlı:', JSON.stringify(r1));
   if (!/TELEFONDA/.test(r1.rozet || '')) throw new Error('rozet "ANALİZ TELEFONDA" değil: ' + r1.rozet);
+  // ağır çekim tekrar akıcı mı: son 2 sn'de halkada kaç kare var (eskiden telefon modunda ~3-10), oynatma başlarken donuyor mu
+  await p.evaluate(() => { localStorage.setItem('dagsk_formlab_tekrar', '0'); _fl.tekrarAcik = false; document.querySelectorAll('.fl-tekrar').forEach((e) => e.click()); }); // otomatik tekrar araya girmesin
+  await p.waitForFunction(() => !_fl.tekrarOynuyor, null, { timeout: 15000 }); await p.waitForTimeout(2500);
+  const tk = await p.evaluate(async () => {
+    const tani = { acik: flTekrarAcikMi(), halka: !!_fl.halka, oynuyor: _fl.tekrarOynuyor, n: _fl.halka && _fl.halka.n, dolu: _fl.halka && _fl.halka.kareler.filter(Boolean).length };
+    const h = _fl.halka, simdi = performance.now(), say = h ? h.kareler.filter((k) => k && simdi - k.t < 2000).length : 0;
+    let t0 = performance.now(); flTekrarSon(); const basla = performance.now() - t0;
+    let kareler = 0, en = 0, onceki = performance.now();
+    await new Promise((ok) => { const f = () => { let n = performance.now(); en = Math.max(en, n - onceki); onceki = n; kareler++; if (n - t0 < 2000) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); });
+    document.querySelectorAll('.fl-tekrar').forEach((e) => e.click());
+    return { tani, halka2sn: say, baslamaMs: Math.round(basla), ekranKare: kareler, enUzunAraMs: Math.round(en) };
+  });
+  console.log('tekrar:', JSON.stringify(tk));
+  if (tk.halka2sn < 40) throw new Error('tekrar halkasında az kare: ' + tk.halka2sn);
   // telefonun gönderimi kesilince bilgisayar kendi analizine dönmeli
   await tp.evaluate(() => { KA.gonderYedek = KA.gonder; KA.gonder = null; });
   await p.waitForFunction(() => !flTelAnalizTelefondaMi(), null, { timeout: 20000 });
