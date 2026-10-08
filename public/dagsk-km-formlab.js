@@ -478,7 +478,8 @@ async function flTelCevapla(t, sdp, surum) {
         if (pc !== t.pc) return;
         let k = e.channel;
         if (k.label === 'iskelet') { t.iskelet = k; t.iskQ = []; k.onmessage = m => flTelIskeletAl(t, m.data); }
-        else { t.kanal = k; if (_fl.takip && _fl.kisiKilit) k.onopen = () => { try { k.send(JSON.stringify({ takip: _fl.takip })); } catch (er) {} }; }
+        else if (k.label === 'dosya') { t.dosya = k; k.binaryType = 'arraybuffer'; k.onmessage = m => flTelDosyaAl(t, m.data); }
+        else { t.kanal = k; k.onmessage = m => flTelKomutAl(t, m.data); if (_fl.takip && _fl.kisiKilit) k.onopen = () => { try { k.send(JSON.stringify({ takip: _fl.takip })); } catch (er) {} }; }
     };
     pc.onconnectionstatechange = () => {
         if (pc !== t.pc || _fl.tel !== t) return;
@@ -503,17 +504,19 @@ async function flTelCevapla(t, sdp, surum) {
 // Telefondan paket gelmiyorsa (eski sayfa / model iniyor / hata) bilgisayar eskisi gibi kendisi analiz eder.
 function flTelIskeletAl(t, veri) {
     let d; try { d = JSON.parse(veri); } catch (e) { return; }
-    let simdi = performance.now(); t.iskQ = t.iskQ || []; t.iskQ.push({ al: simdi, d }); t.iskSon = simdi;
-    while (t.iskQ.length > 40 || (t.iskQ.length && simdi - t.iskQ[0].al > 3000)) t.iskQ.shift();
+    let simdi = performance.now(); t.iskQ = t.iskQ || [];
+    if (t.iskSon) { let a = simdi - t.iskSon; t.iskAralik = t.iskAralik ? t.iskAralik * 0.8 + a * 0.2 : a; } // telefonun gönderim aralığı (yavaş telefonda uzun)
+    t.iskQ.push({ al: simdi, d }); t.iskSon = simdi;
+    while (t.iskQ.length > 40 || (t.iskQ.length && simdi - t.iskQ[0].al > Math.max(3000, 4 * (t.iskAralik || 0)))) t.iskQ.shift();
 }
 function flTelIskeletSec() {
     let t = _fl.tel; if (!_fl.akisTel || !t || !t.iskQ || !t.iskQ.length || window.FL_TEL_ANALIZ_KAPALI) return null;
-    let simdi = performance.now(); if (simdi - t.iskSon > 700) return null;
+    let simdi = performance.now(), ar = t.iskAralik || 100; if (simdi - t.iskSon > Math.max(700, 2.2 * ar)) return null;
     let hedef = simdi - (t.gecikme || 150), en = null;
     t.iskQ.forEach(x => { if (!en || Math.abs(x.al - hedef) < Math.abs(en.al - hedef)) en = x; });
-    return en && Math.abs(en.al - hedef) < 600 ? en.d : null;
+    return en && Math.abs(en.al - hedef) < Math.max(600, ar) ? en.d : null;
 }
-function flTelAnalizTelefondaMi() { let t = _fl.tel; return !!(_fl.akisTel && t && t.iskSon && performance.now() - t.iskSon < 1500); }
+function flTelAnalizTelefondaMi() { let t = _fl.tel; return !!(_fl.akisTel && t && t.iskSon && performance.now() - t.iskSon < Math.max(1500, 3 * (t.iskAralik || 0))); }
 function flTelIstatistikBaslat(t) {
     clearInterval(t.istZaman);
     t.istZaman = setInterval(async () => {
@@ -552,6 +555,45 @@ function flTelKaliteSeritHTML() {
     if (k && k.zayif) return '<b class="kotu">Yayın zayıf</b> · ' + k.yazi + ' · telefondaki kamera sayfasını yenile ki analiz telefonda yapılsın';
     return k ? 'Yayın ' + k.yazi : '';
 }
+// ---- Tam kaliteli kayıt (2026-10-08): kayıt başlayınca telefon kendi kamerasından kaydeder; bitince dosyayı 'dosya'
+// kanalından gönderir. Analiz beklemeden bilgisayarın yayın kopyasıyla açılır; telefonun videosu gelince oynatıcı/indirme
+// onu kullanır (aynı en-boy oranı → iskelet çizimi aynen oturur). Gelmezse yayın kopyası kalır.
+function flTelKanal() { let t = _fl.tel; return _fl.akisTel && t && t.kanal && t.kanal.readyState === 'open' ? t.kanal : null; }
+function flTelKomutAl(t, veri) {
+    let m; try { m = JSON.parse(veri); } catch (e) { return; }
+    if (m.kayitBasladi && t.kayitGonder && t.kayitGonder[m.kayitBasladi]) t.kayitGecikme = (performance.now() - t.kayitGonder[m.kayitBasladi]) / 2;
+    if (m.kayitYok) { let s = _fl.sonuc; if (s && s.telKayitId === m.kayitYok) { s.hq = 'yok'; flHqYaz(); } }
+}
+function flTelKayitKomut(tur, id) { let k = flTelKanal(); if (!k) return false; let t = _fl.tel; if (tur === 'bas') (t.kayitGonder = t.kayitGonder || {})[id] = performance.now(); try { k.send(JSON.stringify({ kayit: tur, id })); return true; } catch (e) { return false; } }
+function flTelDosyaAl(t, veri) {
+    if (typeof veri === 'string') {
+        let m; try { m = JSON.parse(veri); } catch (e) { return; }
+        if (m.boyut) { t.alinan = { id: m.id, boyut: m.boyut, tip: m.tip || 'video/mp4', parca: [], al: 0 }; flHqYaz(); return; }
+        if (m.bitti && t.alinan && t.alinan.id === m.id) { let a = t.alinan; t.alinan = null; flTelHqGeldi(a.id, new Blob(a.parca, { type: a.tip })); }
+        return;
+    }
+    let a = t.alinan; if (!a) return;
+    a.parca.push(veri); a.al += veri.byteLength;
+    let y = Math.floor(a.al / a.boyut * 20); if (y !== a.sonY) { a.sonY = y; flHqYaz(); }
+}
+function flTelHqGeldi(id, blob) {
+    let s = _fl.sonuc;
+    if (!s || s.telKayitId !== id) { if (_fl.tel) _fl.tel.hqBekleyen = { id, blob }; return; }
+    if (!blob.size) { s.hq = 'yok'; return flHqYaz(); }
+    try { if (_fl.url) URL.revokeObjectURL(_fl.url); } catch (e) {}
+    _fl.url = URL.createObjectURL(blob); _fl.hamBlob = blob; _fl.disa = null; s.hq = 'geldi';
+    showToast('📱 Telefonun tam kaliteli videosu geldi — oynatıcı artık onu gösteriyor', 'success');
+    if (_fl.durum === 'sonuc' && typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme === 'formlab') kmFormLabCiz(); else flHqYaz();
+}
+function flHqNotHTML(s) {
+    if (!s || !s.telKayitId) return '';
+    let a = _fl.tel && _fl.tel.alinan;
+    if (s.hq === 'geldi') return '<div class="fl-hq-not iyi" id="fl-hq-not">📱 Video: telefonun <b>tam kaliteli</b> kaydı</div>';
+    if (s.hq === 'yok') return '<div class="fl-hq-not" id="fl-hq-not">Telefon kaydı alınamadı — video bilgisayarın yayın kopyası</div>';
+    let yuzde = a && a.id === s.telKayitId ? Math.round(a.al / a.boyut * 100) : 0;
+    return '<div class="fl-hq-not" id="fl-hq-not">📱 Telefonun tam kaliteli videosu aktarılıyor' + (yuzde ? ' · %' + yuzde : '…') + ' <small>(analiz hazır; bitince video kendiliğinden yenilenir)</small></div>';
+}
+function flHqYaz() { let el = document.getElementById('fl-hq-not'); if (el && _fl.sonuc) el.outerHTML = flHqNotHTML(_fl.sonuc); }
 function flTelHTML() {
     let t = _fl.tel; if (!t) return '';
     if (t.durum === 'hata') return `<div class="fl-kutu fl-tel"><div class="fl-tel-bilgi"><b>Telefondan yayın</b><p>${flEsc(t.mesaj)}</p></div><button class="fl-btn" onclick="_fl.tel=null; flTelYaz()">Tamam</button></div>`;
@@ -657,6 +699,7 @@ if (!window._flTamDinleyici) {
     document.addEventListener('fullscreenchange', degisti); document.addEventListener('webkitfullscreenchange', degisti);
 }
 function flCanliKapat() {
+    if (_fl.canli && _fl.canli.kayit && _fl.canli.telKayitId) flTelKayitKomut('iptal', _fl.canli.telKayitId);
     flTamCik(); flSesDurdur(); flYerelSesKapat(); _fl.halka = null; _fl.tekrarOynuyor = false; clearTimeout(_fl.tekrarZaman);
     cancelAnimationFrame(_fl.canliRaf);
     try { if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') _fl.kaydedici.stop(); } catch (e) {}
@@ -683,12 +726,14 @@ function flKayitBaslat() {
         } catch (e) { _fl.kaydedici = null; }
     }
     c.bas = performance.now(); c.kayit = true; flKonus('Kayıt başladı', 'kayit');
+    c.telKayitId = null; if (_fl.akisTel) { let id = Date.now().toString(36); if (flTelKayitKomut('bas', id)) c.telKayitId = id; }
     let b = document.getElementById('fl-kayit-btn'); if (b) { b.classList.add('kayitta'); b.setAttribute('aria-label', 'Kaydı bitir ve analiz et'); }
     let ro = document.getElementById('fl-canli-sure'); if (ro) ro.classList.add('kayit');
 }
 async function flCanliBitir() {
     let c = _fl.canli; if (!c || !c.kayit) return;
     c.kayit = false; cancelAnimationFrame(_fl.canliRaf);
+    if (c.telKayitId) flTelKayitKomut('bitir', c.telKayitId);
     let T = (performance.now() - c.bas) / 1000;
     let blob = null;
     if (_fl.kaydedici && _fl.kaydedici.state !== 'inactive') {
@@ -717,10 +762,12 @@ async function flCanliBitir() {
     // ölçüm kaynağı / görüntü kalitesi — sonuç ekranında not olarak gösterilir
     let topK = (c.telKare || 0) + (c.pcKare || 0); sonuc.telOran = topK ? (c.telKare || 0) / topK : 0;
     sonuc.akisBoy = c.akisBoylar && c.akisBoylar.length ? Math.min(...c.akisBoylar) : Math.min(c.W, c.H); sonuc.telefondan = !!_fl.akisTel;
+    if (c.telKayitId && T >= 3) { sonuc.telKayitId = c.telKayitId; sonuc.hq = 'bekliyor'; }
     // kiriş sesi bırakış anına yakınsa atış "sesle doğrulandı"
     (c.sesler || []).forEach(t => { let a = sonuc.atislar.find(z => t >= z.son / FL_FPS - 0.6 && t <= z.son / FL_FPS + 0.4); if (a) a.sesli = true; });
     if (sonuc.atislar.length) await flKucukResimlerCanli(sonuc);
     _fl.sonuc = sonuc; _fl.canli = null; _fl.durum = 'sonuc'; _fl.kayitAnahtar = null;
+    let hb = _fl.tel && _fl.tel.hqBekleyen; if (hb && hb.id === sonuc.telKayitId) { _fl.tel.hqBekleyen = null; setTimeout(() => flTelHqGeldi(hb.id, hb.blob), 0); }
     if (_fl.sira && _fl.secili && sonuc.atislar.length) { flKaydet(); _fl.sira.kaydedilen++; }
     else if (_kmAktifSekme === 'formlab') kmFormLabCiz();
     if (sonuc.atislar.length) { let dg = flDegerlendir(sonuc.ozet, _fl.secili ? _fl.secili.split('|')[0] : 'yildizlar'); flKonus('Analiz hazır. ' + (dg.baslik || ''), 'analiz'); }
@@ -927,12 +974,44 @@ function flHesapla(kareler, W, H) {
     for (let i = 1; i < yakin.length - 1; i++) { // tek karelik boşlukları doldur
         if (!yakin[i] && yakin[i - 1]) { let j = i; while (j < yakin.length && !yakin[j] && j - i < 3) j++; if (j < yakin.length && yakin[j]) for (let k = i; k < j; k++) yakin[k] = true; }
     }
-    let atislar = [];
+    let parcalar = [];
     for (let i = 0; i < yakin.length; i++) {
         if (!yakin[i]) continue;
         let j = i; while (j + 1 < yakin.length && yakin[j + 1]) j++;
-        if ((j - i + 1) / FL_FPS >= 0.6) atislar.push({ bas: i, son: j });
-        i = j;
+        parcalar.push({ bas: i, son: j }); i = j;
+    }
+    // yerleşme + çekiş tek atış: aralarında ≤0,8 sn boşluk olan ve boşlukta el ağızdan uzaklaşmayan (yeni ok takılmayan)
+    // parçalar birleşir — gerçek videoda yay kaldırılırken el kısa süre yüze yaklaşıyor, birkaç bulanık kareden sonra asıl
+    // çekiş geliyordu; iki ayrı atış sayılıp asıl atışı da yeniden-çekiş kuralına takıyordu.
+    let birlesik = [];
+    parcalar.forEach(pc => {
+        let once = birlesik[birlesik.length - 1];
+        if (once && !arka && pc.bas - once.son <= 1.2 * FL_FPS) {
+            let uzak = false; for (let i = once.son + 1; i < pc.bas; i++) if (olc[i] && olc[i].mes > 1.2) uzak = true;
+            // ilk parçanın sonunda bırakış var mı: el ağızdan hızla uzaklaştı mı (gerçek videoda 0,49 → 0,93)
+            let sonM = [], sonra = [];
+            for (let i = once.son; i >= once.bas && sonM.length < 3; i--) if (olc[i]) sonM.push(olc[i].mes);
+            for (let i = once.son + 1; i <= Math.min(once.son + 4, pc.bas - 1); i++) if (olc[i]) sonra.push(olc[i].mes);
+            let birakis = sonM.length && sonra.length && Math.max(...sonra) - Math.min(...sonM) > 0.25 && Math.max(...sonra) > 0.65;
+            if (!uzak && !birakis) { once.son = pc.son; return; }
+        }
+        birlesik.push({ bas: pc.bas, son: pc.son });
+    });
+    let atislar = birlesik.filter(a => (a.son - a.bas + 1) / FL_FPS >= 0.6);
+    // Kalibrasyon (2026-10-08, kulüpte çekilmiş gerçek videolar): çene altında el ağza 0,16–0,5 omuz; bırakıştan sonraki
+    // takipte el kulak/boyun hizasında kalıp 0,7–0,95'e iniyor ve yay kolu hâlâ açık → takip hareketi İKİNCİ ATIŞ sanılıyordu.
+    // (1) gerçek çene altı: aralıkta el en az bir karede 0,6 omuzdan yakın olmalı; (2) yeniden çekiş: önceki atıştan sonra el
+    // ağızdan 1,2 omuzdan fazla uzaklaşmadıysa (yeni ok takılmadı) bu aralık atış değil, takip/yeniden yerleşme.
+    if (!arka) {
+        atislar = atislar.filter(a => { let m = 9; for (let i = a.bas; i <= a.son; i++) if (olc[i] && olc[i].mes < m) m = olc[i].mes; return m < 0.6; });
+        atislar = atislar.filter((a, n, l) => {
+            if (!n) return true;
+            let once = l.slice(0, n).reverse().find(x => !x.takipEle); if (!once) return true;
+            let enUzak = 0, gecerli = 0;
+            for (let i = once.son + 1; i < a.bas; i++) if (olc[i]) { gecerli++; if (olc[i].mes > enUzak) enUzak = olc[i].mes; }
+            if (gecerli >= 3 && enUzak < 1.2) { a.takipEle = true; return false; }
+            return true;
+        });
     }
     // 4) her atış: çene altı kilidi, kayma, bırakış ölçüleri
     let omuzCm = 34;
@@ -1504,11 +1583,12 @@ function flOzetHesapla(tum, taraf, gorus) {
     return ozet;
 }
 // ---- geri bildirim
-function flGeriYaz(tip, a) {
+function flGeriYaz(tip, a, ek) {
     try {
         let s = _fl.sonuc, d = kyDepoOku('form_lab_geri'), id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         d[id] = { t: Date.now(), tarih: bsIsoTarih(new Date()), tip, sp: _fl.secili || '', kaynak: s && s.canli ? 'canli' : 'dosya', W: s && s.W, H: s && s.H, sure: s && Math.round(s.sure), n: s && s.atislar.length, delegate: _fl.delegate || '', model: _fl.poseModelAd || '',
             atis: a ? { no: a.no, bas: a.bas, son: a.son, kilit: a.kilitBas != null ? [a.kilitBas, a.kilitSon] : null, tutma: a.tutma, kayma: Math.round(a.kayma * 1000) / 1000, yayKol: a.yayKol && Math.round(a.yayKol), cekDirsek: a.cekDirsek && Math.round(a.cekDirsek), dusus: a.dusus != null ? Math.round(a.dusus * 100) / 100 : null, el: Math.round((a.elVar || 0) * 100) / 100, sesli: !!a.sesli } : null };
+        if (ek) Object.assign(d[id], ek);
         kyDepoYazYerel('form_lab_geri', d);
         kyDepoSenkron('form_lab_geri', () => kyDepoOku('form_lab_geri'), true).catch(() => {});
     } catch (e) {}
@@ -1521,6 +1601,25 @@ function flAtisHaric(no) {
     kmFormLabCiz();
 }
 function flAtisBildir(no) { let a = _fl.sonuc && _fl.sonuc.atislar[no - 1]; if (!a) return; flGeriYaz('olcum-hatali', a); showToast('Teşekkürler — bu atış ayar için kaydedildi', 'success'); }
+// Tek dokunuş geri bildirim (2026-10-08): canlıda 13 analizde hiç geri bildirim yoktu (seçenekler menü içindeydi).
+// Sonuçta küçük kart: gerçek atış sayısı + ölçümler uyuşuyor mu → meta form_lab_geri (eşik ayarının gerçek verisi).
+function flGeriKartHTML(s) {
+    if (!s || !s.atislar) return '';
+    let g = s.geri || {}, n = s.atislar.filter(a => !a.haric).length;
+    if (g.sayi != null && g.oy) return '<div class="fl-geri-kart tamam">Teşekkürler — bu analiz algılamayı iyileştirmek için kaydedildi.</div>';
+    return '<div class="fl-geri-kart">'
+        + (g.sayi == null ? '<div class="fl-geri-s"><b>Bulduğum: ' + n + ' atış.</b> Gerçekte kaç atış attı?</div><div class="fl-geri-c">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(k => '<button class="' + (k === n ? 'bulunan' : '') + '" onclick="flGeriSayi(' + k + ')">' + (k === 9 ? '9+' : k) + '</button>').join('') + '</div>'
+            : '<div class="fl-geri-s">Ölçümler videoyla uyuşuyor mu?</div><div class="fl-geri-c"><button onclick="flGeriOy(1)">👍 Uyuşuyor</button><button onclick="flGeriOy(0)">👎 Uyuşmuyor</button></div>')
+        + '</div>';
+}
+function flGeriSayi(k) {
+    let s = _fl.sonuc; if (!s) return; s.geri = s.geri || {}; s.geri.sayi = k;
+    let n = s.atislar.filter(a => !a.haric).length;
+    flGeriYaz(k === n ? 'sayim-dogru' : 'sayim-yanlis', null, { gercek: k, bulunan: n, atislar: s.atislar.map(a => [a.bas, a.son, a.haric ? 1 : 0]) });
+    flGeriKartYaz();
+}
+function flGeriOy(iyi) { let s = _fl.sonuc; if (!s) return; s.geri = s.geri || {}; s.geri.oy = iyi ? 'iyi' : 'kotu'; flGeriYaz(iyi ? 'olcum-iyi' : 'olcum-kotu', null); flGeriKartYaz(); if (!iyi) showToast('Hangi atış yanlışsa "Atışlar" sekmesinde "Ölçüm hatalı"ya bas — o atış ayrıca kaydedilir', 'info'); }
+function flGeriKartYaz() { document.querySelectorAll('.fl-geri-kart').forEach(el => { el.outerHTML = flGeriKartHTML(_fl.sonuc); }); }
 function flKacanBildir() { flGeriYaz('kacirilan', null); showToast('Kaçırılan atış kaydedildi — algılama ayarında kullanılacak', 'success'); }
 // ---- kişi seçimi / takip
 function flKisiSec(lms, W, H) {
@@ -1954,7 +2053,7 @@ function flSonucHTML() {
     if (!s.atislar.length) return `<div class="fl-kutu fl-hata"><b>Videoda atış bulunamadı</b>
         <p>Çekiş elinin çene altına geldiği ve yay kolunun açık olduğu bir an yakalanamadı. Sporcu önden, yüzü ve iki eli görünecek şekilde çekilmeli; kamera sabit olmalı.</p>
         <div class="fl-butonlar"><button class="fl-btn fl-btn-ana" onclick="flCanliAc()">Yeniden çek</button><label class="fl-btn"><input type="file" accept="video/*" onchange="flDosyaSecildi(this)" hidden>Başka video seç</label></div></div>`;
-    if (!flDetayliMi()) return `<div class="fl-sonuc">${flSiraSonucHTML()}${_fl.url ? flSahneHTML(s, g) : ''}${flKaynakNotHTML(s)}${flBasitHTML(s, g)}</div>`;
+    if (!flDetayliMi()) return `<div class="fl-sonuc">${flSiraSonucHTML()}${_fl.url ? flSahneHTML(s, g) : ''}${flKaynakNotHTML(s)}${flHqNotHTML(s)}${flGeriKartHTML(s)}${flBasitHTML(s, g)}</div>`;
     let sek = _fl.sonucSekme || 'ozet', sorunSay = oz.n ? flSorunlar(flDegerlendir(oz, g).satirlar).length : 0;
     let sekmeler = [['ozet', 'Özet'], ['atislar', 'Atışlar <small>' + s.atislar.length + '</small>'], ['egitmen', 'Eğitmen için' + (sorunSay ? ' <small class="uyari">' + sorunSay + '</small>' : '')], ['detay', 'Detaylı analiz'], ['gelisim', 'Gelişim']];
     return `<div class="fl-sonuc">
@@ -1963,6 +2062,8 @@ function flSonucHTML() {
         ${_fl.url ? flSahneHTML(s, g) : '<p class="fl-sessiz">Bu tarayıcı çekimi kaydedemedi; analiz yapıldı ama video oynatılamıyor.</p>'}
         ${flHeroHTML(s, g)}
         ${flKaynakNotHTML(s)}
+        ${flHqNotHTML(s)}
+        ${flGeriKartHTML(s)}
         <nav class="fl-sekmeler" role="tablist">${sekmeler.map(([id, ad]) => `<button role="tab" aria-selected="${sek === id}" class="${sek === id ? 'aktif' : ''}" onclick="flSekme('${id}')">${ad}</button>`).join('')}</nav>
         <div id="fl-sekme-icerik" class="fl-sekme-icerik">${flSekmeHTML(sek)}</div>
     </div>`;
@@ -2625,6 +2726,13 @@ function flCss() {
 .fl-tel-kalite{ display:block; margin-top:3px; font-size:12px; color:var(--fl-soft); }
 .fl-tel-kalite b.iyi{ color:#22c55e; } .fl-tel-kalite b.kotu{ color:#f59e0b; }
 .fl-rozet-tel.uyari{ background:rgba(245,158,11,.9) !important; color:#111 !important; }
+.fl-hq-not{ margin:8px 0; padding:9px 14px; border-radius:12px; font-size:13px; border:1px solid var(--fl-line); color:var(--fl-soft); }
+.fl-hq-not.iyi{ border-color:rgba(34,197,94,.45); color:var(--fl-ink); } .fl-hq-not small{ opacity:.75; }
+.fl-geri-kart{ margin:10px 0; padding:12px 14px; border-radius:12px; border:1px dashed var(--fl-line); display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; font-size:13.5px; }
+.fl-geri-kart.tamam{ border-style:solid; color:var(--fl-soft); font-size:13px; }
+.fl-geri-c{ display:flex; flex-wrap:wrap; gap:6px; }
+.fl-geri-c button{ min-width:40px; min-height:38px; padding:0 12px; border-radius:10px; border:1px solid var(--fl-line); background:transparent; color:var(--fl-ink); font:inherit; font-weight:800; cursor:pointer; }
+.fl-geri-c button.bulunan{ border-color:var(--fl-or); color:var(--fl-or); }
 .fl-kaynak-not{ margin:10px 0; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.45; border:1px solid var(--fl-line); background:var(--fl-panel); }
 .fl-kaynak-not.iyi{ border-color:rgba(34,197,94,.45); } .fl-kaynak-not.iyi b{ color:#22c55e; }
 .fl-kaynak-not.kotu{ border-color:rgba(245,158,11,.55); } .fl-kaynak-not.kotu b{ color:#f59e0b; }

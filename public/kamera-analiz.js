@@ -27,7 +27,8 @@ function elGerekli(p, W, H) {
     let px = i => [p[i][0] * W, p[i][1] * H], d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
     let S = d(px(P.omuzSol), px(P.omuzSag)) || 1, ag = [(px(P.agizSol)[0] + px(P.agizSag)[0]) / 2, (px(P.agizSol)[1] + px(P.agizSag)[1]) / 2];
     if (Math.min(d(px(P.isaretSol), ag), d(px(P.isaretSag), ag), d(px(P.bilekSol), ag), d(px(P.bilekSag), ag)) > 1.0 * S) return false;
-    KA.elSira = !KA.elSira; return KA.elSira;
+    // hız ayarı: yavaş telefonda el modeli iki yerine üç karede bir
+    KA.elSay = (KA.elSay || 0) + 1; return KA.elSay % (KA.ms > 140 ? 3 : 2) === 0;
 }
 function elBul(v, p, W, H, t) {
     let px = i => [p[i][0] * W, p[i][1] * H], d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -65,7 +66,10 @@ KA.baslat = async function (v) {
     const kare = () => {
         if (!calisiyor) return;
         if ('requestVideoFrameCallback' in v) v.requestVideoFrameCallback(kare); else requestAnimationFrame(kare);
-        let simdi = performance.now(); if (simdi - son < 90 || v.readyState < 2 || !v.videoWidth || document.hidden) return; son = simdi;
+        // Hız ayarı (2026-10-08): aralık telefonun kare işleme süresine göre 90–350 ms; çok yavaşsa (≥450 ms, 15 kare üst üste)
+        // telefon analizi bırakır, bilgisayar kendi analizine döner (paket gelmeyince 1,5 sn içinde devralır).
+        let aralik = Math.max(90, Math.min(350, (KA.ms || 0) * 1.25));
+        let simdi = performance.now(); if (simdi - son < aralik || v.readyState < 2 || !v.videoWidth || document.hidden) return; son = simdi;
         let W = v.videoWidth, H = v.videoHeight, t = ts(simdi), z0 = performance.now(), paket = { t: Date.now(), W, H, p: null, h: null, hD: 0, n: 0 };
         try {
             let r = pose.detectForVideo(v, t), lm = kisiSec(r && r.landmarks, W, H);
@@ -76,6 +80,8 @@ KA.baslat = async function (v) {
             }
         } catch (e) { return; }
         KA.ms = KA.ms ? KA.ms * 0.9 + (performance.now() - z0) * 0.1 : performance.now() - z0; KA.sayac++;
+        KA.yavasSay = KA.ms >= 450 ? (KA.yavasSay || 0) + 1 : 0;
+        if (KA.yavasSay >= 15 && !window.KA_YAVAS_SERBEST) { calisiyor = false; KA.durum = 'yavas'; KA.bildir && KA.bildir(); return; }
         if (KA.gonder) KA.gonder(paket);
     };
     if ('requestVideoFrameCallback' in v) v.requestVideoFrameCallback(kare); else requestAnimationFrame(kare);

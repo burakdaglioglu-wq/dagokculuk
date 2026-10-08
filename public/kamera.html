@@ -140,7 +140,7 @@
   try { if (!bagimsiz && /iPhone|iPad|iPod/.test(navigator.userAgent) && localStorage.getItem('dagsk_kamera_ekle') !== '1') $('ekle').hidden = false; } catch (e) {}
   $('ekle-kapat').onclick = function () { $('ekle').hidden = true; try { localStorage.setItem('dagsk_kamera_ekle', '1'); } catch (e) {} };
   var v = $('v');
-  var iskelet = null, yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null, canliBas = 0, sureZaman = null, bildirimZaman = null, zoomAdim = 0;
+  var iskelet = null, dosyaKanal = null, kayitci = null, kayitParca = [], kayitId = null, yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null, canliBas = 0, sureZaman = null, bildirimZaman = null, zoomAdim = 0;
   var ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
   if (KOD) $('kart-alt').innerHTML = 'Bağlantı kodu <b>' + KOD + '</b> · görüntü doğrudan bilgisayara gider, kaydedilmez.';
   // durum: adim 1 kamera, 2 bilgisayar aranıyor, 3 bağlı; tip 'bagli' | 'hata' | ''
@@ -179,7 +179,7 @@
   // gider (kamera-analiz.js). İnternet zayıflayıp yayın bulanıklaşsa da analiz bozulmaz. Model ilk açılışta iner, sonra saklanır.
   function aiYaz() {
     var d = window.KA && KA.durum, el = $('ai');
-    el.textContent = d === 'calisiyor' ? 'Analiz telefonda ✓' : d === 'yukleniyor' ? 'Yapay zekâ iniyor…' : d === 'hata' ? 'Analiz bilgisayarda' : '';
+    el.textContent = d === 'calisiyor' ? 'Analiz telefonda ✓' : d === 'yukleniyor' ? 'Yapay zekâ iniyor…' : d === 'hata' ? 'Analiz bilgisayarda' : d === 'yavas' ? 'Telefon yavaş · analiz bilgisayarda' : '';
     el.style.color = d === 'calisiyor' ? '#86efac' : '';
   }
   function analizBaslat() {
@@ -212,7 +212,8 @@
     pc = new RTCPeerConnection({ iceServers: ICE });
     akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
     kanal = pc.createDataChannel('komut');
-    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; } catch (er) {} };
+    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; if (m.kayit === 'bas') kayitBasla(m.id); if (m.kayit === 'bitir') kayitBitir(m.id); if (m.kayit === 'iptal') kayitIptal(); } catch (er) {} };
+    dosyaKanal = pc.createDataChannel('dosya'); dosyaKanal.binaryType = 'arraybuffer'; dosyaKanal.bufferedAmountLowThreshold = 1024 * 1024;
     iskelet = pc.createDataChannel('iskelet', { ordered: false, maxRetransmits: 0 });
     pc.onconnectionstatechange = function () {
       if (pc.connectionState === 'connected') durum('Görüntü bilgisayarda', 'bagli', 3);
@@ -246,6 +247,38 @@
       p.degradationPreference = 'maintain-resolution';
       await s.setParameters(p);
     } catch (e) {}
+  }
+  // Tam kaliteli kayıt (2026-10-08): bilgisayar 'kayıt başladı' deyince telefon KENDİ kamerasından kaydeder, kayıt bitince
+  // dosyayı 'dosya' veri kanalından parça parça (64 KB) bilgisayara aktarır; bilgisayar zayıf yayın kopyası yerine bunu oynatır.
+  function komutYanit(m) { try { if (kanal && kanal.readyState === 'open') kanal.send(JSON.stringify(m)); } catch (e) {} }
+  function kayitBasla(id) {
+    if (kayitci) kayitIptal();
+    if (!window.MediaRecorder) return komutYanit({ kayitYok: id });
+    var tipler = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'], tip = tipler.find(function (t) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t); }) || '';
+    try { kayitci = new MediaRecorder(akis, tip ? { mimeType: tip, videoBitsPerSecond: 6000000 } : undefined); } catch (e) { kayitci = null; return komutYanit({ kayitYok: id }); }
+    kayitParca = []; kayitId = id;
+    kayitci.ondataavailable = function (e) { if (e.data && e.data.size) kayitParca.push(e.data); };
+    kayitci.start(1000); komutYanit({ kayitBasladi: id }); bildir('● Telefonda tam kaliteli kayıt');
+  }
+  function kayitIptal() { try { if (kayitci && kayitci.state !== 'inactive') kayitci.stop(); } catch (e) {} kayitci = null; kayitParca = []; kayitId = null; }
+  async function kayitBitir(id) {
+    if (!kayitci || kayitId !== id) return komutYanit({ kayitYok: id });
+    var k = kayitci;
+    await new Promise(function (r) { k.onstop = r; try { k.stop(); } catch (e) { r(); } setTimeout(r, 4000); });
+    var blob = new Blob(kayitParca, { type: k.mimeType || 'video/mp4' }); kayitci = null; kayitParca = []; kayitId = null;
+    try { await dosyaGonder(id, blob); } catch (e) { bildir('Video aktarılamadı'); }
+  }
+  async function dosyaGonder(id, blob) {
+    if (!dosyaKanal || dosyaKanal.readyState !== 'open' || !blob.size) return komutYanit({ kayitYok: id });
+    dosyaKanal.send(JSON.stringify({ id: id, boyut: blob.size, tip: blob.type }));
+    var buf = await blob.arrayBuffer(), P = 64 * 1024, son = -1;
+    for (var o = 0; o < buf.byteLength; o += P) {
+      if (dosyaKanal.bufferedAmount > 4 * 1024 * 1024) await new Promise(function (r) { dosyaKanal.onbufferedamountlow = function () { dosyaKanal.onbufferedamountlow = null; r(); }; });
+      if (dosyaKanal.readyState !== 'open') return;
+      dosyaKanal.send(buf.slice(o, o + P));
+      var y = Math.floor(o / buf.byteLength * 10); if (y !== son) { son = y; bildir('Video bilgisayara aktarılıyor %' + y * 10); }
+    }
+    dosyaKanal.send(JSON.stringify({ id: id, bitti: true })); bildir('Video bilgisayara aktarıldı ✓');
   }
   // dik tutulunca yan çevir uyarısı (bir kez "dik devam et" denirse bu oturumda bir daha çıkmaz)
   var dikTamam = false;
