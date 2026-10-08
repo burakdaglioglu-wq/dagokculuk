@@ -1581,7 +1581,8 @@ function flTekrarIskelet(x, p, ox, oy, w, h) {
     // yay kolu: işaret parmağı çeneden uzak olan taraf
     let ag = [(p[9][0] + p[10][0]) / 2, (p[9][1] + p[10][1]) / 2], d = i => Math.hypot(p[i][0] - ag[0], p[i][1] - ag[1]);
     let yay = d(20) <= d(19) ? [11, 13, 15] : [12, 14, 16], a = flAci(...yay.map(P));
-    if (a != null) { let q = P(yay[1]), yazi = 'YAY KOLU ' + Math.round(a) + '°'; x.font = '700 15px "Roboto Mono", monospace'; let tw = x.measureText(yazi).width + 12; x.fillStyle = 'rgba(10,10,10,.75)'; x.fillRect(q[0] + 10, q[1] - 24, tw, 22); x.fillStyle = FL_DURUM_RENK[flYayDurum(a)]; x.fillText(yazi, q[0] + 16, q[1] - 8); }
+    if (a != null) { let q = P(yay[1]), yazi = 'YAY KOLU ' + Math.round(a) + '°'; x.font = FL_T.yaziKanvas(24); let tw = x.measureText(yazi).width + 22; flEgikKutu(x, q[0] + 10, q[1] - 34, tw, 30, 'rgba(15,10,6,.88)', FL_T.sari); x.fillStyle = FL_DURUM_RENK[flYayDurum(a)]; x.fillText(yazi, q[0] + 20, q[1] - 11); }
+    [11, 12, 13, 14, 15, 16].forEach(n => { let Q = P(n); x.fillStyle = FL_T.krem; x.beginPath(); x.arc(Q[0], Q[1], 6, 0, 7); x.fill(); x.strokeStyle = FL_T.turuncu; x.lineWidth = 3; x.stroke(); });
 }
 
 // ---------------------------------------------------------------- DOĞRULUK PAKETİ (2026-10-03, "burayı mükemmel hale getirmemiz lazım")
