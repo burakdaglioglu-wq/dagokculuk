@@ -51,7 +51,7 @@ export default async function ({ log }) {
         const meta = JSON.parse((await miloApi('/meta/ders_yas')).d.value || '{}');
         esit(meta[slotId] && meta[slotId].minAy + '-' + meta[slotId].maxAy, '12-24', 'yaş aralığı kaydı');
         await p.waitForTimeout(500);
-        dogrula(await p.locator('#milo-program-izgara .mpg-blok', { hasText: '12–24 ay' }).count(), 'takvimde yaş rozeti yok');
+        dogrula(await p.locator('#milo-program-izgara .pno-kart', { hasText: '12–24 ay' }).count(), 'panoda yaş etiketi yok');
         // ders penceresi: 11 aylık listede değil, 20 aylık zaten derste; yaşı uyan öneri bölümü
         await p.evaluate((id) => miloDersRosterAc(id), slotId); await p.waitForTimeout(400);
         dogrula(await p.locator('.mdp-pill', { hasText: '12–24 ay' }).count(), 'ders penceresinde yaş aralığı yok');

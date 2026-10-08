@@ -21,9 +21,9 @@ export default async function ({ log }) {
         await p.goto(B + '/milo/'); await p.waitForFunction(() => typeof miloUygulamayaGir === 'function' && typeof mspKur === 'function' && typeof mufKaydet === 'function', null, { timeout: 30000 });
         await p.evaluate(() => miloUygulamayaGir()); await p.waitForTimeout(800);
         // program: takvim (masaüstü) / ajanda (telefon)
-        await p.evaluate(() => miloSekme('program')); await p.waitForSelector('#milo-program-izgara .mpg-ust', { timeout: 20000 });
+        await p.evaluate(() => miloSekme('program')); await p.waitForSelector('#milo-program-izgara .pno', { timeout: 20000 });
         if (w === 390) {
-          dogrula(await p.locator('.mpg-ajanda .mpg-ag-ders', { hasText: G }).count(), 'telefonda ajandada ders yok');
+          dogrula(await p.locator('#milo-program-izgara .pno-kart', { hasText: G }).count(), 'telefonda panoda ders yok');
           dogrula(await yataydaTasmaYok(p), 'Milo program telefonda taşıyor');
           await p.evaluate(() => miloSekme('uyeler')); await p.waitForTimeout(400);
           await p.evaluate(() => miloUyeFormAc()); await p.waitForSelector('#muf-ad');
@@ -31,10 +31,10 @@ export default async function ({ log }) {
           esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
           continue;
         }
-        const blok = p.locator('#milo-program-izgara .mpg-blok', { hasText: G });
+        const blok = p.locator('#milo-program-izgara .pno-kart', { hasText: G });
         dogrula(await blok.count(), 'takvimde ders bloğu yok');
-        const yuk = await blok.first().evaluate((e) => e.getBoundingClientRect().height);
-        dogrula(yuk > 84 && yuk < 96, '60 dk blok yüksekliği orantılı değil: ' + yuk);
+
+
         // ders penceresi: çoklu seçici ile AYŞE ekle
         await blok.first().click(); await p.waitForSelector('.mdp-hd');
         await p.locator('.mdp-ekle').click(); await p.waitForSelector('#msp-ders');
