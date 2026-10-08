@@ -287,6 +287,14 @@ function flOynatarakAnaliz(v, sure) {
 // MediaRecorder ile oynatma için kayıt alınır. Çekerken iskelet, kadraj uyarısı ve canlı atış sayacı görünür.
 // MediaPipe zaman damgaları her örnek için artan olmalı: dosya analizi de canlı da _fl.sonTs'i sürdürür.
 function flTs(ms) { let ts = Math.max(Math.round(ms), (_fl.sonTs || 0) + 1); _fl.sonTs = ts; return ts; }
+// yayın alt bandı: sporcu adı + grup + atış sayısı (sol alt)
+function flAltBantHTML(c) {
+    if (!_fl.secili) return '';
+    let [g, ...ad] = _fl.secili.split('|'), grup = { minikler: 'MİNİKLER', kucukler: 'KÜÇÜKLER', yildizlar: 'YILDIZLAR', buyukler: 'BÜYÜKLER' }[g] || '';
+    let adK = ad.join(' ').split(/\s+/), kisa = adK.length > 1 ? adK[0] + ' ' + adK[adK.length - 1][0] + '.' : adK[0];
+    return '<div class="fl-altbant"><div class="ad"><small>FORM LAB' + (grup ? ' · ' + grup : '') + '</small>' + flEsc(kisa) + '</div><div class="no" id="fl-altbant-no">' + (c && c.kayit ? 'ATIŞ ' + (c.atisSay || 0) : c && c.mod === 'ayna' ? 'CANLI' : 'HAZIR') + '</div></div>';
+}
+function flAltBantNo(m) { let el = document.getElementById('fl-altbant-no'); if (el) el.textContent = m; }
 function flCanliHTML() {
     let c = _fl.canli || {};
     if (c.mod === 'ayna') return flAynaHTML(c);
@@ -296,6 +304,7 @@ function flCanliHTML() {
             <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
+            ${flAltBantHTML(c)}
             <div class="fl-hazir" id="fl-hazir" hidden></div>
         </div>
         <div class="fl-kamera-satir">${flKameraSecHTML()}</div>
@@ -319,6 +328,7 @@ function flAynaHTML(c) {
             <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
             <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
+            ${flAltBantHTML(c)}
         </div>
         <div class="fl-ayna-araclar">
             <button class="fl-btn ${o.arac === 'aci' ? 'secili' : ''}" data-arac="aci" onclick="flOlcuArac('aci')">Açı ölç</button>
@@ -728,7 +738,7 @@ function flKayitBaslat() {
     c.bas = performance.now(); c.kayit = true; flKonus('Kayıt başladı', 'kayit');
     c.telKayitId = null; if (_fl.akisTel) { let id = Date.now().toString(36); if (flTelKayitKomut('bas', id)) c.telKayitId = id; }
     let b = document.getElementById('fl-kayit-btn'); if (b) { b.classList.add('kayitta'); b.setAttribute('aria-label', 'Kaydı bitir ve analiz et'); }
-    let ro = document.getElementById('fl-canli-sure'); if (ro) ro.classList.add('kayit');
+    let ro = document.getElementById('fl-canli-sure'); if (ro) ro.classList.add('kayit'); flAltBantNo('ATIŞ 0');
 }
 async function flCanliBitir() {
     let c = _fl.canli; if (!c || !c.kayit) return;
@@ -835,9 +845,10 @@ function flCanliCiz(v, cv, kare, W, H) {
     let c = _fl.canli;
     if (!kare.p) { flCanliIpucu('Sporcu görünmüyor — kadraja al'); return; }
     let p = kare.p, P = i => [ox + p[i][0] * W * olc, oy + p[i][1] * H * olc];
-    x.lineWidth = 2.5; x.strokeStyle = 'rgba(90,160,255,.9)';
+    x.lineWidth = 4.5; x.lineCap = 'round'; x.strokeStyle = FL_T.iskelet;
     [[11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]].forEach(([a, b]) => { let A = P(a), B = P(b); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); });
-    x.strokeStyle = '#ffd166'; x.lineWidth = 3; let A = P(11), B = P(12); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke();
+    x.strokeStyle = FL_T.omuz; x.lineWidth = 4; let A = P(11), B = P(12); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke();
+    [11, 12, 13, 14, 15, 16].forEach(n => { let Q = P(n); x.fillStyle = FL_T.krem; x.beginPath(); x.arc(Q[0], Q[1], 5.5, 0, 7); x.fill(); x.strokeStyle = FL_T.turuncu; x.lineWidth = 2.5; x.stroke(); });
     // kadraj
     let icerde = i => p[i][0] > 0.02 && p[i][0] < 0.98 && p[i][1] > 0.02 && p[i][1] < 0.98 && p[i][2] > 0.5;
     let S = Math.hypot((p[11][0] - p[12][0]) * W, (p[11][1] - p[12][1]) * H) / Math.min(W, H);
@@ -856,7 +867,7 @@ function flCanliCiz(v, cv, kare, W, H) {
     // açılar: eklem yanına + sol üstte pano (kayıt ve açılar modunda; açılar modunda büyük)
     let cek = sagMi ? [12, 14, 16] : [11, 13, 15], cekAci = flAci(...cek.map(i => [p[i][0] * W, p[i][1] * H]));
     let yO = [p[yay[0]][0] * W, p[yay[0]][1] * H], cO = [p[cek[0]][0] * W, p[cek[0]][1] * H], egim = Math.atan2(cO[1] - yO[1], Math.abs(cO[0] - yO[0]) || 1) * 180 / Math.PI;
-    let jet = (q, yazi) => { x.font = '700 13px "Roboto Mono", monospace'; let w = x.measureText(yazi).width + 10; x.fillStyle = 'rgba(10,10,10,.72)'; x.fillRect(q[0] + 8, q[1] - 20, w, 18); x.fillStyle = '#9ec5ff'; x.fillText(yazi, q[0] + 13, q[1] - 7); };
+    let jet = (q, yazi) => { x.font = FL_T.yaziKanvas(20); let w = x.measureText(yazi).width + 16; flEgikKutu(x, q[0] + 8, q[1] - 26, w, 24, 'rgba(15,10,6,.86)', FL_T.sari); x.fillStyle = FL_T.krem; x.fillText(yazi, q[0] + 16, q[1] - 7); };
     if (yayAci != null) jet(P(yay[1]), Math.round(yayAci) + '°');
     if (cekAci != null) jet(P(cek[1]), Math.round(cekAci) + '°');
     let pano = [['YAY KOLU', yayAci != null ? Math.round(yayAci) + '°' : '—'], ['ÇEKİŞ DİRSEĞİ', cekAci != null ? Math.round(cekAci) + '°' : '—'], ['OMUZ EĞİMİ', Math.abs(Math.round(egim)) + '°' + (Math.abs(egim) >= 3 ? (egim > 0 ? ' yay omzu ↑' : ' çekiş omzu ↑') : '')]];
@@ -1184,7 +1195,7 @@ function flKatmanCizX(x, gen, yuk, olc, ox, oy, i) {
     let s = _fl.sonuc; if (!s) return;
     let P = q => [ox + q[0] * olc, oy + q[1] * olc];
     let o = s.olc[i], k = s.kareler[i];
-    let mono = '600 11px "Roboto Mono", ui-monospace, monospace';
+    let mono = FL_T.yaziKanvas(15); // yayın teması
     // sol cetvel
     x.strokeStyle = 'rgba(255,255,255,.35)'; x.fillStyle = 'rgba(255,255,255,.45)'; x.font = '10px "Roboto Mono", monospace'; x.lineWidth = 1;
     for (let yy = 20, n = 0; yy < yuk - 10; yy += 12, n++) { x.beginPath(); x.moveTo(6, yy); x.lineTo(n % 5 ? 12 : 18, yy); x.stroke(); }
@@ -1195,13 +1206,13 @@ function flKatmanCizX(x, gen, yuk, olc, ox, oy, i) {
     let p = k.p.map(q => [q[0] * s.W, q[1] * s.H]);
     // iskelet
     let cizgi = (a, b, renk, kal) => { x.strokeStyle = renk; x.lineWidth = kal; x.beginPath(); let A = P(p[a]), B = P(p[b]); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); };
-    [[11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]].forEach(z => cizgi(z[0], z[1], 'rgba(90,160,255,.85)', 2.5));
-    cizgi(11, 12, '#ffd166', 3);
-    [11, 12, 13, 14, 15, 16].forEach(n => { let A = P(p[n]); x.fillStyle = '#ff4d4d'; x.beginPath(); x.arc(A[0], A[1], 4, 0, 7); x.fill(); });
+    x.lineCap = 'round'; [[11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]].forEach(z => cizgi(z[0], z[1], FL_T.iskelet, 4));
+    cizgi(11, 12, FL_T.omuz, 3.5);
+    [11, 12, 13, 14, 15, 16].forEach(n => { let A = P(p[n]); x.fillStyle = FL_T.krem; x.beginPath(); x.arc(A[0], A[1], 5, 0, 7); x.fill(); x.strokeStyle = FL_T.turuncu; x.lineWidth = 2.5; x.stroke(); });
     let taraf = s.ozet.taraf, yD = taraf === 'sag' ? 13 : 14, cD = taraf === 'sag' ? 14 : 13;
     let etiket = (q, metin, renk) => { let A = P(q); x.font = mono; let w = x.measureText(metin).width + 10; x.fillStyle = 'rgba(10,10,10,.72)'; x.fillRect(A[0] + 8, A[1] - 18, w, 16); x.fillStyle = renk; x.fillText(metin, A[0] + 13, A[1] - 6); };
     if (o.yayKol != null) etiket(p[yD], 'YAY KOLU ' + Math.round(o.yayKol) + '°', FL_DURUM_RENK[flYayDurum(o.yayKol)]);
-    if (o.cekDirsek != null) etiket(p[cD], 'ÇEKİŞ ' + Math.round(o.cekDirsek) + '°', '#9ec5ff');
+    if (o.cekDirsek != null) etiket(p[cD], 'ÇEKİŞ ' + Math.round(o.cekDirsek) + '°', FL_T.krem);
     if (atis && atis.birakisYon && i > atis.son && i <= atis.son + Math.round(FL_FPS * 0.8)) flBirakisCiz(x, s, atis, i, P);
     // çene altı vizörü
     let A = [ox + o.capa[0] * olc, oy + o.capa[1] * olc], kilit = atis && atis.kilitBas != null && i >= atis.kilitBas && i <= atis.kilitSon;
@@ -1363,6 +1374,16 @@ function flCubukGorunum() {
 // Kullanıcı (2026-10-03): "kamera kalitesi düşük, telefondan çekince ekranda küçük, tam ekranda analizler kayboluyor,
 // analizin daha iyi anlaşılır olması gerekiyor". Her ölçü yeşil / sarı / kırmızı + sade bir cümleyle anlatılır
 // (eşikler yaklaşık, tek kameradan), canlı görüntüde sporcuyu takip eden yakınlaştırma.
+// Yayın teması (2026-10-09, kullanıcı 3 öneriden "C · Yayın (TV)"yu seçti, renkler: "canlı turuncu – krem – sarı").
+// Spor yayını grafikleri: kalın yatık yazı (Barlow Condensed), eğik paneller, alt bant, sarı iskelet. Canvas çizimleri de bu palette.
+const FL_T = { turuncu: '#FF5A0A', sari: '#FFC81E', krem: '#FFF3E0', iskelet: '#FFC81E', omuz: '#FFF3E0', zemin: '#0F0A06',
+    yaziKanvas: px => 'italic 800 ' + px + 'px "Barlow Condensed", "Archivo", sans-serif' };
+// eğik (paralelkenar) kutu + sol vurgu şeridi
+function flEgikKutu(x, X, Y, w, h, zemin, serit) {
+    let e = h * 0.28; x.save(); x.fillStyle = zemin; x.beginPath(); x.moveTo(X + e, Y); x.lineTo(X + w, Y); x.lineTo(X + w - e, Y + h); x.lineTo(X, Y + h); x.closePath(); x.fill();
+    if (serit) { x.fillStyle = serit; x.beginPath(); x.moveTo(X + e, Y); x.lineTo(X + e + 5, Y); x.lineTo(X + 5, Y + h); x.lineTo(X, Y + h); x.closePath(); x.fill(); }
+    x.restore();
+}
 const FL_DURUM_RENK = { iyi: '#3ddc84', orta: '#ffb703', calis: '#ff6b5e', belirsiz: '#8a8f98' };
 const FL_DURUM_AD = { iyi: 'İyi', orta: 'Dikkat', calis: 'Çalış', belirsiz: 'Ölçülemedi' };
 function flYayDurum(a) { return a == null ? null : a >= 165 ? 'iyi' : a >= 155 ? 'orta' : 'calis'; }
@@ -1503,14 +1524,14 @@ function flBirakisTakip(c, yakin, t) {
         clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => {
             let cc = _fl.canli; if (!cc) return;
             if (cc.yakinBas != null) { cc.sesTetik = false; return; }
-            if (cc.kayit) { cc.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + cc.atisSay; flKonus('Atış ' + cc.atisSay + '. Çene altında ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çene altında ' + flTr(capa, 1) + ' saniye', 'atis');
+            if (cc.kayit) { cc.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + cc.atisSay; flAltBantNo('ATIŞ ' + cc.atisSay); flKonus('Atış ' + cc.atisSay + '. Çene altında ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çene altında ' + flTr(capa, 1) + ' saniye', 'atis');
             if (flTekrarAcikMi() && !cc.donuk) flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an);
         }, Math.max(0, an + FL_TEKRAR.sonra - performance.now()));
     }
     if (!yakin && c.yakinBas != null) {
         let capa = t - c.yakinBas, sesli = c.sesTetik; c.yakinBas = null; c.sesTetik = false;
         if (capa >= 0.6 && !sesli) {
-            if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; flKonus('Atış ' + c.atisSay + '. Çene altında ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çene altında ' + flTr(capa, 1) + ' saniye', 'atis');
+            if (c.kayit) { c.atisSay++; let el = document.getElementById('fl-canli-atis'); if (el) el.textContent = 'ATIŞ ' + c.atisSay; flAltBantNo('ATIŞ ' + c.atisSay); flKonus('Atış ' + c.atisSay + '. Çene altında ' + flTr(capa, 1) + ' saniye', 'atis'); } else flKonus('Çene altında ' + flTr(capa, 1) + ' saniye', 'atis');
             if (flTekrarAcikMi() && !c.donuk) { let an = performance.now(); clearTimeout(_fl.tekrarZaman); _fl.tekrarZaman = setTimeout(() => flTekrarOynat(an - FL_TEKRAR.once, an + FL_TEKRAR.sonra, capa, an), FL_TEKRAR.sonra - 100); }
         }
     }
@@ -1542,10 +1563,10 @@ function flTekrarOynat(bas, son, capaSn, birakis) {
         if (k.p) flTekrarIskelet(x, k.p, ox, oy, h.w * olc, h.h * olc);
         // zaman çubuğu + bırakış işareti
         let y = r.height - 8, ilerleme = Math.min(1, (tOrj - ilk) / Math.max(1, sonT - ilk));
-        x.fillStyle = 'rgba(255,255,255,.25)'; x.fillRect(16, y, r.width - 32, 4); x.fillStyle = '#ff6a1a'; x.fillRect(16, y, (r.width - 32) * ilerleme, 4);
+        x.fillStyle = 'rgba(255,243,224,.25)'; x.fillRect(16, y, r.width - 32, 5); x.fillStyle = FL_T.sari; x.fillRect(16, y, (r.width - 32) * ilerleme, 5);
         if (birakis != null) {
             let bx = 16 + (r.width - 32) * Math.min(1, (birakis - ilk) / Math.max(1, sonT - ilk)); x.fillStyle = '#fff'; x.fillRect(bx - 1, y - 6, 2, 16);
-            if (Math.abs(tOrj - birakis) < 220) { x.font = '900 34px "Archivo", sans-serif'; x.fillStyle = '#fff'; x.textAlign = 'center'; x.fillText('BIRAKIŞ', r.width / 2, r.height * 0.18); x.textAlign = 'start'; }
+            if (Math.abs(tOrj - birakis) < 220) { x.font = FL_T.yaziKanvas(64); x.textAlign = 'center'; let tw = x.measureText('BIRAKIŞ').width + 60; flEgikKutu(x, r.width / 2 - tw / 2, r.height * 0.18 - 56, tw, 74, FL_T.turuncu, FL_T.sari); x.fillStyle = FL_T.krem; x.fillText('BIRAKIŞ', r.width / 2, r.height * 0.18); x.textAlign = 'start'; }
         }
         if (tOrj > sonT + 500) { kapat(); return; }
         requestAnimationFrame(ciz);
@@ -1554,9 +1575,9 @@ function flTekrarOynat(bas, son, capaSn, birakis) {
 }
 function flTekrarIskelet(x, p, ox, oy, w, h) {
     let P = i => [ox + p[i][0] * w, oy + p[i][1] * h];
-    x.lineWidth = 3; x.strokeStyle = 'rgba(90,160,255,.95)';
+    x.lineWidth = 5; x.lineCap = 'round'; x.strokeStyle = FL_T.iskelet;
     [[11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]].forEach(([a, b]) => { if (p[a][2] < 0.3 || p[b][2] < 0.3) return; let A = P(a), B = P(b); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke(); });
-    x.strokeStyle = '#ffd166'; let A = P(11), B = P(12); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke();
+    x.strokeStyle = FL_T.omuz; let A = P(11), B = P(12); x.beginPath(); x.moveTo(A[0], A[1]); x.lineTo(B[0], B[1]); x.stroke();
     // yay kolu: işaret parmağı çeneden uzak olan taraf
     let ag = [(p[9][0] + p[10][0]) / 2, (p[9][1] + p[10][1]) / 2], d = i => Math.hypot(p[i][0] - ag[0], p[i][1] - ag[1]);
     let yay = d(20) <= d(19) ? [11, 13, 15] : [12, 14, 16], a = flAci(...yay.map(P));
@@ -2712,10 +2733,83 @@ function flOdakYap(hataId) {
     }).catch(() => showToast('Teknik Koçluk yüklenemedi — bağlantını kontrol et.', 'error'));
 }
 
+// ---- YAYIN TEMASI (2026-10-09): spor yayını grafikleri, canlı turuncu + krem + sarı. Eski stilin ÜSTÜNE biner (fl-css-yayin).
+const FL_YAYIN_CSS = `
+.fl{ --fl-bg:#0F0A06; --fl-panel:#1A120B; --fl-panel2:#22170E; --fl-ink:#FFF3E0; --fl-soft:#D2BC9C; --fl-line:rgba(255,236,210,.14); --fl-or:#FF5A0A; --fl-sari:#FFC81E; --fl-krem:#FFF3E0;
+  --fl-yazi:'Barlow Condensed','Archivo',sans-serif; --fl-egik:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  background:radial-gradient(900px 380px at 100% -10%, rgba(255,90,10,.16), transparent 70%), var(--fl-bg); border-radius:6px; }
+.fl-baslik, .fl-baslik2, .fl-hero-yazi > b, .fl-tv-ad b{ font-family:var(--fl-yazi); font-style:italic; font-weight:800; letter-spacing:.005em; }
+.fl-baslik{ font-size:clamp(34px,5vw,54px); color:var(--fl-krem); }
+.fl-baslik2{ font-size:24px; color:var(--fl-krem); display:inline-block; padding:2px 16px 2px 12px; background:linear-gradient(90deg, rgba(255,90,10,.22), transparent); border-left:5px solid var(--fl-or); }
+.fl-etiket, .fl-satir-ad, .fl-mini small, .fl-pano small, .fl-hero-yazi small{ font-family:var(--fl-yazi); font-weight:700; letter-spacing:.16em; font-size:12.5px; color:var(--fl-sari); }
+/* düğmeler: eğik */
+.fl-btn{ border-radius:0; clip-path:var(--fl-egik); border:0; background:var(--fl-panel2); color:var(--fl-krem); font:italic 800 17px/1 var(--fl-yazi); letter-spacing:.04em; text-transform:uppercase; padding:0 22px; }
+.fl-btn:hover{ background:#2C1E12; }
+.fl-btn-ana{ background:var(--fl-or); color:var(--fl-krem); }
+.fl-btn-ana:hover{ background:#FF6D24; }
+.fl-cip{ border-radius:0; clip-path:var(--fl-egik); border:0; background:var(--fl-panel2); font:italic 700 15px var(--fl-yazi); letter-spacing:.04em; text-transform:uppercase; padding:0 16px; color:var(--fl-soft); }
+.fl-cip.aktif{ background:var(--fl-sari); color:#1A0E04; }
+.fl-kutu, .fl-grafik-kutu, .fl-ozet, .fl-skor-kutu, .fl-sablon, .fl-gel-grafik{ border-radius:0; background:var(--fl-panel); border:0; border-top:3px solid var(--fl-or); }
+/* canlı ekran */
+.fl-canli-sahne{ border-radius:0; }
+.fl-rozet{ border-radius:0; clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%); font:italic 800 15px/1 var(--fl-yazi); letter-spacing:.1em; padding:7px 14px; background:rgba(15,10,6,.86); color:var(--fl-krem); }
+.fl-rozet.kayit{ background:#E11D2A; }
+.fl-tekrar-rozet{ background:var(--fl-or) !important; color:var(--fl-krem) !important; }
+.fl-canli-ipucu{ border-radius:0; clip-path:var(--fl-egik); font:italic 700 17px/1.2 var(--fl-yazi); letter-spacing:.04em; text-transform:uppercase; background:rgba(15,10,6,.86); padding:9px 22px; bottom:auto; top:58px; }
+.fl-canli-ipucu.tamam{ background:var(--fl-sari); color:#1A0E04; }
+.fl-pano{ left:auto; right:12px; top:auto; bottom:14px; background:transparent; padding:0; gap:6px; min-width:0; }
+.fl-pano div{ display:flex; align-items:center; gap:14px; background:rgba(15,10,6,.88); border-left:5px solid var(--fl-sari); padding:3px 14px 3px 12px; grid-template-columns:none; }
+.fl-pano small{ letter-spacing:.1em; color:var(--fl-krem); font-size:13px; }
+.fl-pano b{ font:italic 800 24px/1.1 var(--fl-yazi); margin-left:auto; min-width:52px; text-align:right; }
+.fl-pano.buyuk b{ font-size:34px; } .fl-pano.buyuk small{ font-size:16px; }
+.fl-altbant{ position:absolute; left:0; bottom:16px; z-index:3; display:flex; align-items:stretch; pointer-events:none; filter:drop-shadow(0 8px 18px rgba(0,0,0,.5)); }
+.fl-altbant .ad{ background:var(--fl-or); color:var(--fl-krem); padding:6px 26px 7px 16px; clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%); font:italic 800 clamp(22px,3vw,34px)/1 var(--fl-yazi); text-transform:uppercase; }
+.fl-altbant .ad small{ display:block; font:700 12px/1.3 var(--fl-yazi); letter-spacing:.18em; font-style:normal; color:#FFE2C2; }
+.fl-altbant .no{ background:var(--fl-sari); color:#1A0E04; margin-left:-8px; padding:6px 22px 6px 24px; clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%); font:italic 800 clamp(22px,3vw,34px)/1 var(--fl-yazi); display:flex; align-items:center; text-transform:uppercase; }
+.fl-tv .fl-altbant{ display:none; }
+.fl-kayit-btn{ border-color:var(--fl-krem); }
+.fl-tv-ad b{ color:var(--fl-krem); }
+/* sonuç */
+.fl-hero{ border-radius:0; border:0; padding:0; gap:0; background:var(--fl-panel); grid-template-columns:auto 1fr auto; overflow:hidden; }
+.fl-hero .fl-halka{ background:var(--fl-or); padding:18px 26px 18px 20px; clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%); align-self:stretch; display:grid; place-items:center; }
+.fl-halka svg{ display:none; }
+.fl-halka b{ font:italic 800 64px/1 var(--fl-yazi); color:var(--fl-krem); }
+.fl-halka small{ color:#FFE2C2; font:700 13px var(--fl-yazi); letter-spacing:.1em; }
+.fl-hero-yazi{ padding:16px 18px; }
+.fl-hero-yazi > b{ font-size:clamp(26px,3vw,36px); text-transform:uppercase; color:var(--fl-krem); }
+.fl-hero-cip{ border-radius:0; clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%); font:italic 700 14px var(--fl-yazi); letter-spacing:.06em; text-transform:uppercase; }
+.fl-hero-aksiyon{ padding-right:16px; }
+.fl-sekmeler{ border-radius:0; background:transparent; gap:4px; border-bottom:3px solid var(--fl-or); padding:0; }
+.fl-sekmeler button{ border-radius:0; clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); font:italic 800 18px var(--fl-yazi); letter-spacing:.05em; text-transform:uppercase; background:var(--fl-panel2); color:var(--fl-soft); }
+.fl-sekmeler button.aktif{ background:var(--fl-or); color:var(--fl-krem); }
+.fl-kpiler{ border-radius:0; border:0; gap:3px; background:transparent; }
+.fl-kpi{ background:var(--fl-panel); border-left:0; border-bottom:4px solid var(--fl-or); }
+.fl-kpi b{ font:italic 800 clamp(30px,4vw,44px)/1 var(--fl-yazi); color:var(--fl-krem); }
+.fl-kpi-iyi{ border-bottom-color:#22C55E; } .fl-kpi-orta{ border-bottom-color:var(--fl-sari); } .fl-kpi-calis{ border-bottom-color:#E11D2A; }
+.fl-kpi-iyi b, .fl-kpi-orta b, .fl-kpi-calis b{ color:var(--fl-krem) !important; }
+.fl-atis{ border-radius:0; border:0; border-bottom:4px solid #22C55E; background:var(--fl-panel); }
+.fl-atis.kilitsiz{ border-bottom-color:var(--fl-sari); } .fl-atis.haric{ border-bottom-color:#555; }
+.fl-atis-no{ border-radius:0; clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%); background:var(--fl-sari); color:#1A0E04; font:italic 800 15px var(--fl-yazi); }
+.fl-atis-bilgi b{ font:italic 800 22px var(--fl-yazi); }
+.fl-ozet-bas b{ font-family:var(--fl-yazi); font-style:italic; font-weight:800; }
+.fl-ozet-satir{ border-radius:0; }
+.fl-koc{ border-radius:0; border-top:3px solid var(--fl-sari); }
+.fl-tel-serit, .fl-kaynak-not, .fl-hq-not, .fl-geri-kart{ border-radius:0; }
+.fl-geri-c button{ border-radius:0; clip-path:var(--fl-egik); border:0; background:var(--fl-panel2); font:italic 800 18px var(--fl-yazi); }
+.fl-geri-c button.bulunan{ background:var(--fl-sari); color:#1A0E04; }
+.fl-kontrol{ border-radius:0; }
+.fl-k-btn{ border-radius:0; clip-path:var(--fl-egik); font:italic 700 15px var(--fl-yazi); letter-spacing:.04em; text-transform:uppercase; }
+.fl-k-btn.aktif{ background:var(--fl-sari) !important; color:#1A0E04 !important; }
+.fl-kontrol input[type=range]{ accent-color:var(--fl-or); }
+.fl-sahne{ border-radius:0; }
+@media (max-width:620px){ .fl-hero{ grid-template-columns:auto 1fr; } .fl-hero-aksiyon{ grid-column:1/-1; padding:0 12px 12px; } .fl-halka b{ font-size:48px; } }
+`;
+
 // ---------------------------------------------------------------- stil (bilinçli koyu "laboratuvar" paneli; açık temada da koyu)
 function flCss() {
     if (document.getElementById('fl-css')) return;
-    if (!document.querySelector('link[href*="Roboto+Mono"]')) { let l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap'; document.head.appendChild(l); }
+    if (!document.querySelector('link[href*="Roboto+Mono"]')) { let l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&display=swap'; document.head.appendChild(l); }
+    let ty = document.createElement('style'); ty.id = 'fl-css-yayin'; ty.textContent = FL_YAYIN_CSS;
     let st = document.createElement('style'); st.id = 'fl-css';
     st.textContent = `
 .fl{ --fl-bg:#121110; --fl-panel:#1b1917; --fl-ink:#efebe5; --fl-soft:#a59e94; --fl-line:rgba(236,230,220,.12); --fl-or:#ff6a1a;
@@ -3142,5 +3236,5 @@ function flCss() {
 .fl-hazir small{ flex-basis:100%; font-size:12px; color:#fff; background:rgba(10,10,10,.7); padding:5px 9px; border-radius:6px; width:max-content; max-width:100%; }
 .fl-tv .fl-hazir{ display:none !important; }
 `;
-    document.head.appendChild(st);
+    document.head.appendChild(st); document.head.appendChild(ty); // yayın teması ana stilden SONRA (aynı özgüllükte üstün gelir)
 }
