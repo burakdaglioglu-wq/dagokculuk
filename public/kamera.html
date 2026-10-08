@@ -97,6 +97,7 @@
   <header class="ust">
     <span class="hap" id="hap"><i></i><b id="hap-yazi">Hazırlanıyor</b><span class="sure" id="sure"></span></span>
     <span class="kalite" id="kalite"></span>
+    <span class="kalite" id="ai" title="İskelet analizi"></span>
     <span class="marka"><b>DAĞ</b> · FORM LAB</span>
   </header>
   <nav class="ray" aria-label="Kamera düğmeleri">
@@ -125,6 +126,7 @@
   </div>
   <div class="ekle" id="ekle" hidden><span><b>Bir kez kur:</b> Paylaş › <b>Ana Ekrana Ekle</b>. Sonraki derslerde QR okutmadan bu simgeye dokun.</span><button id="ekle-kapat">Tamam</button></div>
   <div class="karart" id="karart" hidden><b id="karart-durum">● CANLI</b><span>Yayın sürüyor · açmak için dokun</span></div>
+<script type="module" src="/kamera-analiz.js"></script>
 <script>
 (function () {
   // Kayıtlı telefon (2026-10-03): QR ile gelen oda telefonda saklanır; ana ekrandan (adres # olmadan) açılınca o oda kullanılır.
@@ -138,7 +140,7 @@
   try { if (!bagimsiz && /iPhone|iPad|iPod/.test(navigator.userAgent) && localStorage.getItem('dagsk_kamera_ekle') !== '1') $('ekle').hidden = false; } catch (e) {}
   $('ekle-kapat').onclick = function () { $('ekle').hidden = true; try { localStorage.setItem('dagsk_kamera_ekle', '1'); } catch (e) {} };
   var v = $('v');
-  var yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null, canliBas = 0, sureZaman = null, bildirimZaman = null, zoomAdim = 0;
+  var iskelet = null, yon = 'environment', akis = null, sesIz = null, pc = null, kanal = null, surum = 0, sorgu = null, kilit = null, canliBas = 0, sureZaman = null, bildirimZaman = null, zoomAdim = 0;
   var ICE = [{ urls: 'stun:stun.cloudflare.com:3478' }, { urls: 'stun:stun.l.google.com:19302' }];
   if (KOD) $('kart-alt').innerHTML = 'Bağlantı kodu <b>' + KOD + '</b> · görüntü doğrudan bilgisayara gider, kaydedilmez.';
   // durum: adim 1 kamera, 2 bilgisayar aranıyor, 3 bağlı; tip 'bagli' | 'hata' | ''
@@ -171,8 +173,22 @@
     if (akis) akis.getVideoTracks().forEach(function (t) { t.stop(); });
     akis = new MediaStream(yeni.getVideoTracks().concat(sesIz ? [sesIz] : [])); v.srcObject = akis; v.play().catch(function () {});
     if (pc) { var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (s) await s.replaceTrack(akis.getVideoTracks()[0]); }
-    kaliteYaz(); zoomHazirla(); yatayIpucu();
+    kaliteYaz(); zoomHazirla(); yatayIpucu(); analizBaslat();
   }
+  // Telefonda analiz (2026-10-08): iskelet bu telefonun TAM KALİTELİ görüntüsünden çıkarılır, bilgisayara yalnız noktalar
+  // gider (kamera-analiz.js). İnternet zayıflayıp yayın bulanıklaşsa da analiz bozulmaz. Model ilk açılışta iner, sonra saklanır.
+  function aiYaz() {
+    var d = window.KA && KA.durum, el = $('ai');
+    el.textContent = d === 'calisiyor' ? 'Analiz telefonda ✓' : d === 'yukleniyor' ? 'Yapay zekâ iniyor…' : d === 'hata' ? 'Analiz bilgisayarda' : '';
+    el.style.color = d === 'calisiyor' ? '#86efac' : '';
+  }
+  function analizBaslat() {
+    if (!window.KA) return setTimeout(analizBaslat, 300);
+    KA.bildir = aiYaz; aiYaz();
+    KA.gonder = function (paket) { if (iskelet && iskelet.readyState === 'open' && iskelet.bufferedAmount < 64000) { try { iskelet.send(JSON.stringify(paket)); } catch (e) {} } };
+    KA.baslat(v);
+  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {}); // modeller önbellekte kalsın (internetsiz/zayıf internette tekrar inmesin)
   function kaliteYaz() {
     try { var t = akis.getVideoTracks()[0], st = t.getSettings(), y = Math.min(st.width || 0, st.height || 0); $('kalite').textContent = y ? (y >= 1080 ? '1080p' : y >= 720 ? '720p' : y + 'p') + (st.frameRate ? ' · ' + Math.round(st.frameRate) + ' fps' : '') : ''; } catch (e) {}
   }
@@ -196,7 +212,8 @@
     pc = new RTCPeerConnection({ iceServers: ICE });
     akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
     kanal = pc.createDataChannel('komut');
-    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); } catch (er) {} };
+    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; } catch (er) {} };
+    iskelet = pc.createDataChannel('iskelet', { ordered: false, maxRetransmits: 0 });
     pc.onconnectionstatechange = function () {
       if (pc.connectionState === 'connected') durum('Görüntü bilgisayarda', 'bagli', 3);
       else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') { durum('Bağlantı koptu, yeniden deneniyor…', '', 2); setTimeout(function () { if (pc && pc.connectionState !== 'connected') baglan().catch(hataGoster); }, 2500); }
