@@ -19,17 +19,17 @@ export default async function ({ log }) {
         await karisikSinifArac(p, 'yoklamaanaliz', 'kmYoklamaAnalizCiz');
         await p.evaluate(() => new Promise((ok) => { _kmYa.yukleniyor = false; kmYaSlotYukle(() => { kmYaTarihAc(kmYaIso(new Date())); ok(); }); }));
         await p.waitForTimeout(1500);
-        const satir = p.locator('.ya-ks', { hasText: AD });
+        const satir = p.locator('.ya-ks').filter({ has: p.locator('.ya-kisi-ad b', { hasText: AD }) });
         dogrula(await satir.count(), 'kayıtsız gelen satırı yok');
         if (w === 390) { dogrula(await yataydaTasmaYok(p), 'telefonda taşıyor'); esit(hatalar.length, 0, 'hata: ' + hatalar.join(' | ')); continue; }
         dogrula((await satir.textContent()).includes('17:00'), 'giriş saatine göre ders önerilmedi');
         await satir.locator('.ya-ks-tur button', { hasText: 'Misafir' }).click(); await p.waitForTimeout(300);
         esit(await p.evaluate((ad) => kisiTuru('yildizlar', ad), AD), 'misafir', 'misafir işaretlenmedi');
-        await p.locator('.ya-ks', { hasText: AD }).locator('.ya-ks-tur button', { hasText: 'Eğitmen atışı' }).click(); await p.waitForTimeout(300);
+        await p.locator('.ya-ks').filter({ has: p.locator('.ya-kisi-ad b', { hasText: AD }) }).locator('.ya-ks-tur button', { hasText: 'Eğitmen atışı' }).click(); await p.waitForTimeout(300);
         esit(await p.evaluate((ad) => kisiTuru('yildizlar', ad), AD), 'egitmen', 'eğitmen işaretlenmedi');
-        await p.locator('.ya-ks', { hasText: AD }).locator('.ya-ks-tur button', { hasText: 'Öğrenci' }).click(); await p.waitForTimeout(300);
+        await p.locator('.ya-ks').filter({ has: p.locator('.ya-kisi-ad b', { hasText: AD }) }).locator('.ya-ks-tur button', { hasText: 'Öğrenci' }).click(); await p.waitForTimeout(300);
         if (process.env.E2E_EKRAN) await p.locator('.ya-kayitsiz').screenshot({ path: process.env.E2E_EKRAN + '-kayitsiz.png' });
-        await p.locator('.ya-ks', { hasText: AD }).locator('.ya-ks-ders .ya-btn', { hasText: 'dersine ekle' }).click(); await p.waitForTimeout(1500);
+        await p.locator('.ya-ks').filter({ has: p.locator('.ya-kisi-ad b', { hasText: AD }) }).locator('.ya-ks-ders .ya-btn', { hasText: 'dersine ekle' }).click(); await p.waitForTimeout(1500);
         const kat = (await api('/api/antrenman-programi')).d.slots.find((s) => s.id === slotId).katilimcilar.map((k) => k.ad);
         dogrula(kat.includes(AD), 'derse eklenmedi');
         esit(hatalar.length, 0, 'hata: ' + hatalar.join(' | '));

@@ -14140,13 +14140,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 /* Karakter seçimi (2026-09-20) */
 .km-oyun-chip-karakter{ font-size:13px; cursor:pointer; opacity:.7; padding:2px 3px; border-radius:6px; }
 .km-oyun-chip-karakter:hover{ opacity:1; background:rgba(255,255,255,0.08); }
-.km-oyun-karakter-modal{ position:absolute; inset:0; z-index:60; background:rgba(4,6,14,0.78); display:flex; align-items:center; justify-content:center; padding:16px; }
+/* position:fixed (2026-10-09) — 26 karakterle kutu uzadı; telefonda oyun alanı ekrandan uzun olduğu için
+   absolute pencere ekranın dışında ortalanıyordu. Artık her zaman görünen alanın ortasında. */
+.km-oyun-karakter-modal{ position:fixed; inset:0; z-index:9000; background:rgba(4,6,14,0.78); display:flex; align-items:center; justify-content:center; padding:16px; }
 #km-oyun-wrap:fullscreen .km-oyun-karakter-modal{ position:fixed; }
 .km-oyun-karakter-kutu{ width:min(680px, 100%); max-height:100%; overflow:auto; background:var(--panel, #10141c); border:1.5px solid var(--a1, #7dd3fc); border-radius:18px; padding:14px 16px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
 .km-oyun-karakter-baslik{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink, #fff); margin-bottom:12px; }
 .km-oyun-karakter-baslik button{ background:none; border:1px solid var(--line, #445); color:var(--ink, #fff); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:14px; }
 .km-oyun-karakter-izgara{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; }
-.km-oyun-karakter-sec{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px 8px; border-radius:14px; border:2px solid var(--line, #445); background:rgba(255,255,255,0.04); color:var(--ink, #fff); cursor:pointer; transition:transform .12s, border-color .12s; }
+.km-oyun-karakter-yeni{ position:absolute; top:5px; right:5px; font-style:normal; font-family:var(--font-body); font-weight:900; font-size:8.5px; letter-spacing:.06em; color:#111; background:#ffd23f; border-radius:6px; padding:1px 5px; }
+.km-oyun-karakter-sec{ position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px 8px; border-radius:14px; border:2px solid var(--line, #445); background:rgba(255,255,255,0.04); color:var(--ink, #fff); cursor:pointer; transition:transform .12s, border-color .12s; }
 .km-oyun-karakter-sec img{ width:64px; height:64px; object-fit:contain; }
 .km-oyun-karakter-sec span{ font-family:var(--font-body); font-weight:700; font-size:11px; text-align:center; }
 .km-oyun-karakter-sec:hover{ transform:translateY(-2px); border-color:var(--a1, #7dd3fc); }
@@ -18298,6 +18301,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         document.addEventListener('fullscreenchange', kmOyunTamEkranEtiketGuncelle);
         document.addEventListener('webkitfullscreenchange', kmOyunTamEkranEtiketGuncelle);
+        // GERÇEK BUG (2026-10-09, kullanıcı: "sporcunun seri hakkı dolunca ilerletmiyor, bugün tabletten hiçbir
+        // oyunu başlatamadım") — tam ekranda tarayıcı YALNIZ tam ekran öğesinin içini çizer. Günlük seri limiti
+        // dolan sporcuda İlerlet'in açtığı onayIste penceresi (ve toast/yükleniyor/hata katmanları) body'de
+        // kaldığı için GÖRÜNMÜYORDU — koç dokunuyor, hiçbir şey olmuyordu. Tam ekran açılınca bu katmanlar
+        // tam ekran öğesinin içine taşınır, çıkınca body'ye geri döner.
+        function tamEkranKatmanlariTasi() {
+            let fs = document.fullscreenElement || document.webkitFullscreenElement;
+            let hedef = fs || document.body;
+            ['toast', 'onay-modal', 'seri-tamamlandi-modal', 'islem-yukleniyor-overlay', 'buyuk-hata'].forEach(function(id) {
+                let el = document.getElementById(id);
+                if(el && el.parentNode !== hedef) hedef.appendChild(el);
+            });
+        }
+        document.addEventListener('fullscreenchange', tamEkranKatmanlariTasi);
+        document.addEventListener('webkitfullscreenchange', tamEkranKatmanlariTasi);
         function kmOyunSvgPct(svgId, x, y) {
             let svg = document.getElementById(svgId), scene = document.getElementById('km-oyun-sahne');
             if(!svg || !scene) return { xPct: 50, yPct: 50 };
@@ -18439,8 +18457,28 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { no: 9, ad: 'Penguen', src: '/hayvankarakter/parcalar/hayvan-9.png', oran: 382 / 471 },
             { no: 10, ad: 'İzci', src: '/zirve-karakterler/zirve-izci-erkek.webp', oran: 385 / 460 },
             { no: 11, ad: 'Tırmanıcı', src: '/zirve-karakterler/zirve-tirmanici-kiz.webp', oran: 258 / 420 },
-            { no: 12, ad: 'Buz Tırmanıcısı', src: '/zirve-karakterler/zirve-buz-tirmanici.webp', oran: 379 / 440 }
+            { no: 12, ad: 'Buz Tırmanıcısı', src: '/zirve-karakterler/zirve-buz-tirmanici.webp', oran: 379 / 440 },
+            // 2026-10-09 (kullanıcı: "karakter-yeni'deki karakterleri de seçeneklere ekle") — 14 yeni hayvan.
+            // Kaynak PNG'ler beyaz zeminliydi; kenardan bağlı beyaz şeffaf yapılıp kırpıldı → hayvankarakter/yeni/*.webp.
+            // Numaralar KALICI (sporcu seçimleri numarayla saklanıyor) — yeni karakter hep sona eklenir.
+            { no: 13, ad: 'Zebra', src: '/hayvankarakter/yeni/zebra.webp', oran: 312 / 323, yeni: 1 },
+            { no: 14, ad: 'Ahtapot', src: '/hayvankarakter/yeni/ahtapot.webp', oran: 435 / 416, yeni: 1 },
+            { no: 15, ad: 'Yılan', src: '/hayvankarakter/yeni/yilan.webp', oran: 370 / 460, yeni: 1 },
+            { no: 16, ad: 'Bukalemun', src: '/hayvankarakter/yeni/bukalemun.webp', oran: 460 / 366, yeni: 1 },
+            { no: 17, ad: 'Bal Arısı', src: '/hayvankarakter/yeni/bal-arisi.webp', oran: 422 / 456, yeni: 1 },
+            { no: 18, ad: 'Tilki', src: '/hayvankarakter/yeni/tilki.webp', oran: 460 / 436, yeni: 1 },
+            { no: 19, ad: 'Yunus', src: '/hayvankarakter/yeni/yunus.webp', oran: 460 / 406, yeni: 1 },
+            { no: 20, ad: 'Salyangoz', src: '/hayvankarakter/yeni/salyangoz.webp', oran: 401 / 460, yeni: 1 },
+            { no: 21, ad: 'Istakoz', src: '/hayvankarakter/yeni/istakoz.webp', oran: 406 / 460, yeni: 1 },
+            { no: 22, ad: 'Balon Balığı', src: '/hayvankarakter/yeni/balon-baligi.webp', oran: 460 / 367, yeni: 1 },
+            { no: 23, ad: 'Kedi', src: '/hayvankarakter/yeni/kedi.webp', oran: 276 / 460, yeni: 1 },
+            { no: 24, ad: 'Deniz Kaplumbağası', src: '/hayvankarakter/yeni/deniz-kaplumbagasi.webp', oran: 460 / 302, yeni: 1 },
+            { no: 25, ad: 'Timsah', src: '/hayvankarakter/yeni/timsah.webp', oran: 448 / 460, yeni: 1 },
+            { no: 26, ad: 'Yeşil Timsah', src: '/hayvankarakter/yeni/yesil-timsah.webp', oran: 324 / 460, yeni: 1 }
         ];
+        // Rastgele atama yalnız HAYVANLARDAN (1-9 ve 13-26) — İzci/Tırmanıcı figürleri sadece elle seçilir.
+        var KM_OYUN_RASTGELE_HAVUZ = KM_OYUN_KARAKTERLER.filter(function(k) { return k.no <= KM_OYUN_HAYVAN_SAYISI || k.no >= 13; }).map(function(k) { return k.no; });
+        function kmOyunRastgeleKarakter() { return KM_OYUN_RASTGELE_HAVUZ[Math.floor(Math.random() * KM_OYUN_RASTGELE_HAVUZ.length)]; }
         var KM_OYUN_HAYVAN_ORAN = KM_OYUN_KARAKTERLER.map(function(k) { return k.oran; });
         function kmOyunKarakterBilgi(no) { return KM_OYUN_KARAKTERLER[(no || 1) - 1] || KM_OYUN_KARAKTERLER[0]; }
         // tabela.png'den kesilen 7 dağ temalı tabela (yalnız Zirve Yolu'nda, dekoratif) — bkz. kmOyunSahneKurZirve.
@@ -18460,7 +18498,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let key = s.g + '|' + s.ad;
             let mevcut = _kmOyunHayvanKarakterMap[key];
             if(typeof mevcut === 'number' && mevcut >= 1 && mevcut <= KM_OYUN_KARAKTERLER.length) return mevcut;
-            let no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI); // rastgele atama yine 9 hayvandan
+            let no = kmOyunRastgeleKarakter();
             _kmOyunHayvanKarakterMap[key] = no;
             kmOyunHayvanKarakterKaydet();
             return no;
@@ -18502,7 +18540,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
             m.innerHTML = `<div class="km-oyun-karakter-kutu">
                 <div class="km-oyun-karakter-baslik"><span>🎭 ${esc(s.ad)} — karakter seç</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat">✕</button></div>
-                <div class="km-oyun-karakter-izgara">${KM_OYUN_KARAKTERLER.map(function(k) { return `<button class="km-oyun-karakter-sec${k.no === mevcut ? ' secili' : ''}" onclick="kmOyunKarakterSec(${i}, ${k.no})"><img src="${k.src}" alt=""><span>${esc(k.ad)}</span></button>`; }).join('')}</div>
+                <div class="km-oyun-karakter-izgara">${KM_OYUN_KARAKTERLER.map(function(k) { return `<button class="km-oyun-karakter-sec${k.no === mevcut ? ' secili' : ''}" onclick="kmOyunKarakterSec(${i}, ${k.no})">${k.yeni ? '<i class="km-oyun-karakter-yeni">YENİ</i>' : ''}<img src="${k.src}" alt="" loading="lazy"><span>${esc(k.ad)}</span></button>`; }).join('')}</div>
                 <div class="km-oyun-karakter-alt"><button onclick="kmOyunKarakterSec(${i}, 0)">🎲 Rastgele</button></div>
             </div>`;
             m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
@@ -18512,7 +18550,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunKarakterSec(i, no) {
             let s = _kmOyunRosterCache[i]; if(!s) return;
             kmOyunHayvanKarakterYukle();
-            if(!no) no = 1 + Math.floor(Math.random() * KM_OYUN_HAYVAN_SAYISI);
+            if(!no) no = kmOyunRastgeleKarakter();
             _kmOyunHayvanKarakterMap[s.g + '|' + s.ad] = no;
             kmOyunHayvanKarakterKaydet();
             kmOyunKarakterSecKapat();
