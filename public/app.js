@@ -11068,7 +11068,7 @@
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             if(_kmAktifSekme === 'formlab' && s !== 'formlab') { try { cancelAnimationFrame(_fl.oynatRaf); if(_fl.durum === 'analiz') _fl.iptal = true; if(_fl.durum === 'canli') { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; } } catch(e) {} }
             _kmAktifSekme = s;
-            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -11096,6 +11096,7 @@
             else if(s==='kasifkarti') kmKasifKartiCiz();
             else if(s==='fitness') kmFitnessCiz();
             else if(s==='kelime') kmEkCalistir('dagsk-km-kelime.js', 'kmKelimeCiz');
+            else if(s==='parti') kmEkCalistir('dagsk-km-parti.js', 'kmPartiCiz');
             else if(s==='dersakisi') kmDersAkisiCiz();
             else if(s==='resmitur') kmEkCalistir('dagsk-performans.js', 'kmResmiTurCiz');
             else if(s==='okanaliz') kmEkCalistir('dagsk-performans.js', 'kmOkAnaliziCiz');
@@ -17430,9 +17431,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + '<div style="font-size:22px; line-height:1;">🔤</div>'
                 + '<div style="font-weight:800; font-size:12.5px;">Kelime Hedefi</div>'
                 + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Okçuluk bulmacası — seri skoru harf kazandırır, takımlar kelimeleri tamamlar.</div>'
+                + '</div>'
+            // Ok Partisi (2026-10-10, kullanıcı: "Pummel Party içindeki oyunlar gibi") — tur tahtası + mini oyunlar,
+            // kendi ekranı (kmSekme('parti') → public/dagsk-km-parti.js). Tema dağıtım zincirlerine eklenmedi.
+                + '<div class="card" onclick="kmOyunPartiAc()" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;">'
+                + '<div style="font-size:22px; line-height:1;">🎉</div>'
+                + '<div style="font-weight:800; font-size:12.5px;">Ok Partisi</div>'
+                + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Parti tahtası — seri puanı kadar ilerle, anahtar topla, kupayı kap; her tur mini oyun.</div>'
                 + '</div>';
         }
         function kmOyunKelimeAc() { kmOyunSeciciKapat(); kmSekme('kelime'); }
+        function kmOyunPartiAc() { kmOyunSeciciKapat(); kmSekme('parti'); }
         function kmOyunSeciciAc() {
             let secici = document.getElementById('km-oyun-secici'); if(!secici) return;
             secici.innerHTML = kmOyunSeciciKartlari();
