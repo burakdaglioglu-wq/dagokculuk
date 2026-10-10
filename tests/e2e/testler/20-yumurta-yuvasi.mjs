@@ -16,7 +16,7 @@ export default async function ({ log }) {
     await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('#yv-kok'), null, { timeout: 30000 });
     // ilk kart → yumurta seçimi
     await p.locator('#yv-kart-0').click();
-    await p.locator('.yv-secim button').first().click();
+    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
     const ilk = await p.evaluate((k) => { const sp = turnuvaDB[k.g][k.ad]; return { sira: sp.oyun.yuva.sira.length, coinT: sp.coinT || 0, d: yuvaDurum(k.g, k.ad) }; }, sp0);
     esit(ilk.sira, 1, 'yumurta seçilmedi');
     dogrula(ilk.coinT > Date.now() - 60000, 'coinT ilerlemedi (sunucuya gitmez)');
@@ -36,10 +36,31 @@ export default async function ({ log }) {
     await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
     await p.locator('#yv-kart-0').click();
     dogrula(await p.locator('.yv-pencere', { hasText: 'büyüdü' }).isVisible(), '"büyüdü" penceresi çıkmadı');
-    await p.locator('.yv-secim button').first().click();
+    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
     const iki = await p.evaluate((k) => turnuvaDB[k.g][k.ad].oyun.yuva.sira.map((x) => x.no), sp0);
     dogrula(iki.length === 2 && iki[0] !== iki[1], 'ikinci yumurtada aynı hayvan: ' + iki);
     esit(await p.evaluate((k) => yuvaDurum(k.g, k.ad).ilerleme, sp0), 0, 'yeni yumurta sıfırdan başlamalı (artan ısı taşınmaz)');
+    // Pencereden skor girme (kullanıcı: "skor girme bölümü nerede") — 3 ok + Kaydet → gerçek seri, yumurta ısınır
+    await p.locator('.yv-katman').first().waitFor({ timeout: 5000 }).catch(() => {});
+    await p.evaluate(() => document.querySelectorAll('.yv-katman').forEach((x) => x.remove()));
+    await p.locator('#yv-kart-0').click();
+    const seriOnce = await p.evaluate((k) => (turnuvaDB[k.g][k.ad].seriler || []).length, sp0);
+    for (const v of ['10', '9', '9']) await p.locator('.yv-ped button[data-ok="' + v + '"]').click();
+    await p.locator('.yv-katman [data-kaydet]').click(); await p.waitForTimeout(600);
+    const pedSonra = await p.evaluate((k) => ({ seri: (turnuvaDB[k.g][k.ad].seriler || []).length, isi: yuvaDurum(k.g, k.ad).ilerleme }), sp0);
+    esit(pedSonra.seri, seriOnce + 1, 'pencereden girilen seri kaydedilmedi');
+    dogrula(pedSonra.isi >= 2, 'pencereden girilen seri yumurtayı ısıtmadı');
+    // Nadir yumurta: rekor seri → altın hak; seçilince parlak, ×1.5 ısınır
+    const nadir = await p.evaluate((k) => {
+      for (let i = 0; i < 20 && !yuvaDurum(k.g, k.ad).secimGerek; i++) _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: '10' }, { puan: '10' }]);
+      const sp = turnuvaDB[k.g][k.ad]; sp.seriler.forEach((x) => { if (x.oklar.join() === 'X,X,X') x.oklar = ['X', '10', '10']; });
+      _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: 'X' }, { puan: 'X' }]);
+      const d = yuvaDurum(k.g, k.ad); if (!d.secimGerek) return { hata: 'seçim beklenmiyordu' };
+      const hak = d.hak.altin; yuvaYumurtaSec(k.g, k.ad, 'altin');
+      const s2 = sp.oyun.yuva.sira; return { hak, renk: s2[s2.length - 1].renk, kalan: yuvaDurum(k.g, k.ad).hak.altin };
+    }, sp0);
+    dogrula(!nadir.hata && nadir.hak >= 1, 'rekor seri altın yumurta hakkı vermedi: ' + JSON.stringify(nadir));
+    dogrula(nadir.renk === 'altin' && nadir.kalan === nadir.hak - 1, 'altın yumurta seçilemedi / hak düşmedi: ' + JSON.stringify(nadir));
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(`yumurta → çatladı → albüm (${son.album.length}), ikinci yumurta farklı hayvan`);
   } finally { await ctx.close(); }
