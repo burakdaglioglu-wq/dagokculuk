@@ -15,7 +15,7 @@ export default async function ({ log }) {
     await p.locator('#km-oyun-secici .card', { hasText: 'Yumurta Yuvası' }).click();
     await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('#yv-kok'), null, { timeout: 30000 });
     // ilk kart → yumurta seçimi
-    await p.locator('#yv-kart-0').click();
+    await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
     await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
     const ilk = await p.evaluate((k) => { const sp = turnuvaDB[k.g][k.ad]; return { sira: sp.oyun.yuva.sira.length, coinT: sp.coinT || 0, d: yuvaDurum(k.g, k.ad) }; }, sp0);
     esit(ilk.sira, 1, 'yumurta seçilmedi');
@@ -34,7 +34,7 @@ export default async function ({ log }) {
     dogrula(son.secimGerek && son.album.length === 1, 'hayvan albüme girmedi: ' + JSON.stringify({ album: son.album.length, ilerleme: son.ilerleme }));
     // Ekran: kart seçim istiyor, detay/seçim penceresi "büyüdü" diyor; yeni yumurta seçilince farklı hayvan
     await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
-    await p.locator('#yv-kart-0').click();
+    await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
     dogrula(await p.locator('.yv-pencere', { hasText: 'büyüdü' }).isVisible(), '"büyüdü" penceresi çıkmadı');
     await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
     const iki = await p.evaluate((k) => turnuvaDB[k.g][k.ad].oyun.yuva.sira.map((x) => x.no), sp0);
@@ -43,7 +43,7 @@ export default async function ({ log }) {
     // Pencereden skor girme (kullanıcı: "skor girme bölümü nerede") — 3 ok + Kaydet → gerçek seri, yumurta ısınır
     await p.locator('.yv-katman').first().waitFor({ timeout: 5000 }).catch(() => {});
     await p.evaluate(() => document.querySelectorAll('.yv-katman').forEach((x) => x.remove()));
-    await p.locator('#yv-kart-0').click();
+    await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
     const seriOnce = await p.evaluate((k) => (turnuvaDB[k.g][k.ad].seriler || []).length, sp0);
     for (const v of ['10', '9', '9']) await p.locator('.yv-ped button[data-ok="' + v + '"]').click();
     await p.locator('.yv-katman [data-kaydet]').click(); await p.waitForTimeout(600);

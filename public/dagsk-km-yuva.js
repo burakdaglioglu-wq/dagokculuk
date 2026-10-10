@@ -12,7 +12,16 @@
    coinT ilerletilir, yoksa sunucu yazmayı reddeder). Hayvanlar KM_OYUN_KARAKTERLER'den (İzci/Tırmanıcı figürleri hariç).
    Kancalar: app.js _skorKaydetCekirdek → window.yuvaSeriSonrasi (çatladı/çıktı/büyüdü bildirimi).
    ================================================================================================ */
-const YUVA_ESIK = { catla: 10, yavru: 22, buyu: 40 };
+// Eşikler (2026-10-11 v237: 10/22/40 → çok uzun bulundu). 10+ yaş temel 8/18/30; küçükler daha çabuk:
+// 8-9 yaş ×0.8 (6/14/24), 7 ve altı ×0.6 (5/11/18). Yaş bilinmiyorsa grup: minikler ×0.6, küçükler ×0.8.
+const YUVA_ESIK_TEMEL = { catla: 8, yavru: 18, buyu: 30 };
+function yuvaYasCarpan(sp, g) {
+    let yas = null; try { if (typeof yasHesapla === 'function') yas = yasHesapla(sp); } catch (e) {}
+    if (yas !== null && yas > 2 && yas < 80) return yas <= 7 ? 0.6 : yas <= 9 ? 0.8 : 1;
+    return g === 'minikler' ? 0.6 : g === 'kucukler' ? 0.8 : 1;
+}
+function yuvaEsik(sp, g) { const c = yuvaYasCarpan(sp, g); return { catla: Math.round(YUVA_ESIK_TEMEL.catla * c), yavru: Math.round(YUVA_ESIK_TEMEL.yavru * c), buyu: Math.round(YUVA_ESIK_TEMEL.buyu * c), carpan: c }; }
+const YUVA_ESIK = YUVA_ESIK_TEMEL; // (eski adla erişen kalmasın diye)
 const YUVA_RENK = [
     { id: 'pembe', ana: '#FF8FB8', ben: '#FFD3E4' }, { id: 'mavi', ana: '#6EC6FF', ben: '#D2EEFF' }, { id: 'yesil', ana: '#7BD88F', ben: '#D7F5DD' },
     { id: 'mor', ana: '#B18CFF', ben: '#E6DAFF' }, { id: 'turuncu', ana: '#FFB067', ben: '#FFE3C7' }, { id: 'sari', ana: '#FFDA5C', ben: '#FFF3C2' },
@@ -58,6 +67,7 @@ function yuvaDurum(g, ad, haric) {
     // Her yumurta YALNIZ kendi penceresindeki serilerle ısınır: [seçildiği an, sonraki yumurtanın seçildiği an) — ilk
     // yumurta için pencere y.basla'dan (o günün başı) başlar. 40'ta durur, artan ısı sonraki yumurtaya TAŞINMAZ
     // (yoksa çok seri atmış çocuğun yeni yumurtası anında çatlıyordu — sürprizin tadı kaçıyordu).
+    const E = yuvaEsik(sp, g);
     const sira = y.sira || [], isilar = sira.map(() => 0), kazanc = { altin: 0, gokkusagi: 0 };
     let enIyiOrt = -1, oncekiSay = 0, zincir = 0;
     let toplam = 0, bugunIsi = 0, bugunKural = { seri: 0, hepsi: 0, gecti: 0 }; const bugun = typeof bugunISO === 'function' ? bugunISO() : '';
@@ -72,13 +82,13 @@ function yuvaDurum(g, ad, haric) {
         if (s.tarih === bugun) { bugunIsi += r.isi; bugunKural.seri++; if (r.hepsi) bugunKural.hepsi++; if (r.gecti) bugunKural.gecti++; }
         for (let e = sira.length - 1; e >= 0; e--) { const bas = e === 0 ? y.basla : sira[e].t; if (s._t >= bas) { isilar[e] += r.isi * ((YUVA_NADIR[sira[e].renk] || {}).carpan || 1); break; } }
     });
-    let tamam = 0; while (tamam < sira.length && isilar[tamam] >= YUVA_ESIK.buyu) tamam++;
+    let tamam = 0; while (tamam < sira.length && isilar[tamam] >= E.buyu) tamam++;
     const album = sira.slice(0, tamam);
-    const aktif = sira[tamam] || null, ilerleme = aktif ? Math.floor(Math.min(YUVA_ESIK.buyu, isilar[tamam])) : 0;
+    const aktif = sira[tamam] || null, ilerleme = aktif ? Math.floor(Math.min(E.buyu, isilar[tamam])) : 0;
     const kullanilan = (r) => sira.filter((x) => x.renk === r).length;
     const hak = { altin: Math.max(0, kazanc.altin - kullanilan('altin')), gokkusagi: Math.max(0, kazanc.gokkusagi - kullanilan('gokkusagi')) };
-    const evre = !aktif ? -1 : ilerleme >= YUVA_ESIK.yavru ? 2 : ilerleme >= YUVA_ESIK.catla ? 1 : 0;
-    return { toplam, album, aktif, ilerleme, evre, secimGerek: !aktif, tamam, bugunIsi, bugunKural, sira, adim: tamam * 4 + (evre + 1), hak, zincir };
+    const evre = !aktif ? -1 : ilerleme >= E.yavru ? 2 : ilerleme >= E.catla ? 1 : 0;
+    return { toplam, album, aktif, ilerleme, evre, secimGerek: !aktif, tamam, bugunIsi, bugunKural, sira, adim: tamam * 4 + (evre + 1), hak, zincir, esik: E };
 }
 function yuvaKaydet(sp) { try { if (typeof coinDamga === 'function') coinDamga(sp); else sp.lastModified = Date.now(); } catch (e) {} try { oyVeriKaydet(); } catch (e) {} }
 function yuvaBaslat(g, ad) {
@@ -178,6 +188,37 @@ const YUVA_CSS = `
 .yv-ped button{border:0;border-radius:12px;padding:12px 0;font:800 20px var(--yvf-b);box-shadow:inset 0 -4px 0 rgba(0,0,0,.2)}
 .yv-ped button:disabled{opacity:.4;cursor:not-allowed}
 .yv .yv-btn:disabled{opacity:.45;cursor:not-allowed}
+.yv-sahne{position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 45%,rgba(255,236,190,.97),rgba(255,176,103,.93) 60%,rgba(200,80,31,.92));display:flex;align-items:center;justify-content:center;cursor:pointer;animation:yvSahneGel .25s ease}
+.yv-sahne.kapan{animation:yvSahneGit .3s ease forwards}
+@keyframes yvSahneGel{from{opacity:0}}@keyframes yvSahneGit{to{opacity:0}}
+.yv-sahne-ic{position:relative;width:260px;height:300px;display:flex;align-items:center;justify-content:center}
+.yv-sahne-yazi{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:18px;white-space:nowrap;font:800 clamp(30px,7vw,54px)/1 'Baloo 2',system-ui,sans-serif;color:#fff;text-shadow:0 4px 0 #C8501F,0 10px 30px rgba(120,40,0,.35);opacity:0;animation:yvYaziGel .5s 1.15s cubic-bezier(.2,1.6,.4,1) forwards}
+.yv-sahne-isim{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:10px;white-space:nowrap;font:800 28px 'Baloo 2',system-ui,sans-serif;color:#7A3A10}
+@keyframes yvYaziGel{from{opacity:0;transform:translateX(-50%) scale(.4)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+.yv-kirik{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:yvTitre .12s linear 8}
+.yv-kirik.ust{clip-path:polygon(0 0,100% 0,100% 44%,88% 40%,76% 46%,64% 39%,52% 46%,40% 38%,30% 45%,18% 39%,0 44%)}
+.yv-kirik.alt{clip-path:polygon(0 44%,18% 39%,30% 45%,40% 38%,52% 46%,64% 39%,76% 46%,88% 40%,100% 44%,100% 100%,0 100%)}
+.yv-sahne.yv-s-yavru .yv-kirik.ust{animation:yvTitre .12s linear 8,yvUstUc .7s 1s cubic-bezier(.3,.6,.4,1) forwards}
+.yv-sahne.yv-s-yavru .yv-kirik.alt{animation:yvTitre .12s linear 8,yvAltDus .7s 1s ease-in forwards}
+.yv-sahne.yv-s-catla .yv-kirik{animation:yvTitre .12s linear 8,yvSallanBuyuk 1s 1s ease-in-out 2}
+@keyframes yvTitre{25%{transform:translateX(-4px) rotate(-3deg)}75%{transform:translateX(4px) rotate(3deg)}}
+@keyframes yvSallanBuyuk{25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
+@keyframes yvUstUc{to{transform:translate(-90px,-170px) rotate(-55deg);opacity:0}}
+@keyframes yvAltDus{to{transform:translate(40px,140px) rotate(25deg);opacity:0}}
+.yv-catlak-ciz{position:absolute;stroke-dasharray:1;stroke-dashoffset:1;animation:yvCiz .35s 1s ease forwards}
+.yv-catlak-ciz path{stroke-dasharray:1;stroke-dashoffset:1;animation:yvCiz .35s 1s ease forwards}
+@keyframes yvCiz{to{stroke-dashoffset:0}}
+.yv-firla{position:absolute;opacity:0;transform:scale(.2) translateY(60px);animation:yvFirla .7s 1.1s cubic-bezier(.2,1.7,.4,1) forwards}
+.yv-sahne.yv-s-buyu .yv-firla{animation-delay:.15s}
+.yv-firla img{width:220px;height:220px;object-fit:contain;filter:drop-shadow(0 10px 18px rgba(120,40,0,.35))}
+@keyframes yvFirla{to{opacity:1;transform:scale(1) translateY(0)}}
+.yv-isinlar{position:absolute;width:520px;height:520px;left:50%;top:50%;margin:-260px 0 0 -260px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.35) 0 10deg,transparent 10deg 22deg);opacity:0;animation:yvIsin .6s 1.05s ease forwards,yvDon 8s 1.05s linear infinite;pointer-events:none}
+.yv-sahne.yv-s-catla .yv-isinlar{display:none}
+@keyframes yvIsin{to{opacity:1}}@keyframes yvDon{to{transform:rotate(360deg)}}
+.yv-yildiz{position:absolute;left:50%;top:50%;font-style:normal;font-size:26px;opacity:0;animation:yvYildiz 1s 1.1s ease-out forwards}
+.yv-sahne.yv-s-catla .yv-yildiz{display:none}
+@keyframes yvYildiz{0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--a)) translateY(0)}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(var(--d) * -1))}}
+@media (prefers-reduced-motion:reduce){.yv-sahne *{animation-duration:.01s!important;animation-delay:0s!important}}
 .yv-bos{display:flex;align-items:center;justify-content:center;font-size:40px;border-radius:50% 50% 46% 46%;border:4px dashed #E8CFA8;color:#D2AE7C}
 .yv-kart.yeni{animation:yvPatla .9s ease}
 @keyframes yvPatla{20%{transform:scale(1.12) rotate(-3deg)}40%{transform:scale(.96) rotate(3deg)}60%{transform:scale(1.05)}}
@@ -217,13 +258,13 @@ function kmYuvaCiz() {
         const d = yuvaDurum(k.g, k.ad), anahtar = k.g + '|' + k.ad;
         if (!d.yok && gorulen[anahtar] !== undefined && d.adim > gorulen[anahtar]) yeniler.push(i);
         if (!d.yok) gorulen[anahtar] = d.adim;
-        const yuzde = d.aktif ? Math.round(d.ilerleme / YUVA_ESIK.buyu * 100) : 0;
+        const yuzde = d.aktif ? Math.round(d.ilerleme / (d.esik || YUVA_ESIK).buyu * 100) : 0;
         const evreYazi = d.yok || d.secimGerek ? '🥚 Yumurta seç!' : YUVA_EVRE_AD[d.evre];
         return `<button class="yv-kart" id="yv-kart-${i}" onclick="yuvaDetay(${i})">${!d.yok && yuvaHakCipHTML(d.hak) ? `<span class="yv-haklar">${yuvaHakCipHTML(d.hak)}</span>` : ''}${d.bugunIsi ? `<span class="yv-bugun">🔥 +${d.bugunIsi}</span>` : ''}
           ${d.yok ? `<div class="yv-bos" style="width:84px;height:100px">🥚</div>` : yuvaGorselHTML(d, 84)}
           <div class="yv-ad">${esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad)}</div><div class="yv-evre">${evreYazi}</div>
-          <div class="yv-cubuk"><i style="width:${yuzde}%"></i><span style="left:${YUVA_ESIK.catla / YUVA_ESIK.buyu * 100}%"></span><span style="left:${YUVA_ESIK.yavru / YUVA_ESIK.buyu * 100}%"></span></div>
-          <div class="yv-alt"><span>🔥 ${d.aktif ? d.ilerleme : 0}/${YUVA_ESIK.buyu}</span><span>🐾 ${d.album ? d.album.length : 0}</span></div></button>`;
+          <div class="yv-cubuk"><i style="width:${yuzde}%"></i><span style="left:${(d.esik || YUVA_ESIK).catla / (d.esik || YUVA_ESIK).buyu * 100}%"></span><span style="left:${(d.esik || YUVA_ESIK).yavru / (d.esik || YUVA_ESIK).buyu * 100}%"></span></div>
+          <div class="yv-alt"><span>🔥 ${d.aktif ? d.ilerleme : 0}/${(d.esik || YUVA_ESIK).buyu}</span><span>🐾 ${d.album ? d.album.length : 0}</span></div></button>`;
     }).join('');
     yuvaGorulenYaz(gorulen);
     ic.innerHTML = `<div class="yv" id="yv-kok">
@@ -245,6 +286,7 @@ function yuvaNasil() {
       <p style="font:800 19px var(--yvf-b);color:var(--yazi)">Ok attıkça yumurtan ısınır. Çatlar, içinden bir yavru çıkar, yavru büyüyünce albümüne girer!</p>
       <div class="yv-kurallar" style="justify-content:center"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div></div>
       <p style="font-weight:800;color:#8A5A00">✨ Nadir yumurtalar: ⭐ rekor seri atarsan <b>altın yumurta</b>, ortalamanı 3 kez üst üste geçersen 🌈 <b>gökkuşağı yumurtası</b> kazanırsın. Daha hızlı ısınır, içinden PARLAK hayvan çıkar!</p>
+      <p style="font-size:13px">Küçükler daha çabuk: 7 yaş ve altında yumurta en hızlı, 10 yaş ve üstünde biraz daha geç çatlar.</p>
       <p>Başkasıyla değil, kendinle yarışırsın. Dünkü halini geçersen yumurtan daha hızlı ısınır. Albümde toplanacak ${yuvaHayvanlar().length} hayvan var!</p>
       <div><button class="yv-btn birincil" data-kapat="1">Tamam!</button></div>`);
     k.querySelector('[data-kapat]').onclick = () => k.remove();
@@ -255,7 +297,7 @@ function yuvaDetay(i) {
     if (d.yok || d.secimGerek) return yuvaSecimAc(i);
     const sahip = new Set(d.album.map((a) => a.no)), parlak = new Set(d.album.filter((a) => yuvaNadirMi(a.renk)).map((a) => a.no));
     const album = yuvaHayvanlar().map((h) => `<div class="${parlak.has(h.no) ? 'parlak' : sahip.has(h.no) ? '' : 'kapali'}" title="${sahip.has(h.no) ? esc(h.ad) : '?'}"><img src="${h.src}" alt=""></div>`).join('');
-    const kalan = YUVA_ESIK[d.evre === 0 ? 'catla' : d.evre === 1 ? 'yavru' : 'buyu'] - d.ilerleme;
+    const kalan = d.esik[d.evre === 0 ? 'catla' : d.evre === 1 ? 'yavru' : 'buyu'] - d.ilerleme;
     const sonraki = d.evre === 0 ? 'çatlamasına' : d.evre === 1 ? 'yavru çıkmasına' : 'büyümesine';
     const p = yuvaPencere(`<h2>${ad}${d.evre === 2 ? ' · ' + esc(yuvaHayvan(d.aktif.no).ad) : ''}</h2>
       <div class="yv-buyuk" id="yv-detay-gorsel">${yuvaGorselHTML(d, 130)}</div>
@@ -268,6 +310,26 @@ function yuvaDetay(i) {
       <div><button class="yv-btn birincil" data-kapat="1">Kapat</button></div>`);
     p.querySelector('[data-kapat]').onclick = () => p.remove();
     yuvaPedBagla(p, k, i);
+}
+// ---- KIRILMA ANİMASYONU (kullanıcı: "animasyon ile kırılabilir"). tip: 'catla' | 'yavru' | 'buyu'.
+// Tam ekranda da görünsün diye fullscreenElement'e (yoksa body'ye) eklenir; dokununca ya da süre bitince kapanır.
+function yuvaKirilma(tip, renk, no, isim, bitince) {
+    const kok = document.fullscreenElement || document.body, h = yuvaHayvan(no), parlak = yuvaNadirMi(renk);
+    const yumurta = yuvaYumurtaSVG(renk, tip === 'catla' ? 0 : 1, 180);
+    const yazi = tip === 'catla' ? '🥚 ÇATLIYOR!' : tip === 'yavru' ? `🐣 ${parlak ? 'PARLAK ' : ''}${h.ad.toLocaleUpperCase('tr-TR')} ÇIKTI!` : `🎉 ${h.ad.toLocaleUpperCase('tr-TR')} BÜYÜDÜ!`;
+    const e = document.createElement('div'); e.className = 'yv-sahne yv-s-' + tip;
+    e.innerHTML = `<div class="yv-sahne-ic">
+        <div class="yv-isinlar"></div>
+        ${tip === 'buyu' ? '' : `<div class="yv-kirik ust">${yumurta}</div><div class="yv-kirik alt">${yumurta}</div>`}
+        ${tip === 'catla' ? '<svg class="yv-catlak-ciz" viewBox="0 0 92 110" width="180" height="216"><path d="M22 46 L31 40 L37 48 L45 41 L52 49 L60 42 L70 47" fill="none" stroke="#5A3A2A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/></svg>' : `<div class="yv-firla${parlak ? ' yv-parlak' : ''}"><img src="${h.src}" alt=""></div>`}
+        <div class="yv-sahne-yazi">${esc(yazi)}</div><div class="yv-sahne-isim">${esc(isim)}</div>
+        ${Array.from({ length: 14 }, (_, j) => `<i class="yv-yildiz" style="--a:${j * 360 / 14}deg;--d:${120 + (j % 3) * 50}px">${['⭐', '✨', '💛'][j % 3]}</i>`).join('')}
+      </div>`;
+    kok.appendChild(e);
+    [0, 140, 280].forEach((t, j) => setTimeout(() => yuvaSes(520 + j * 90, 0.06), t));
+    setTimeout(() => { yuvaSes(tip === 'catla' ? 330 : 990, 0.18); setTimeout(() => yuvaSes(tip === 'catla' ? 440 : 1318, 0.25), 140); }, 1100);
+    let kapandi = false; const kapat = () => { if (kapandi) return; kapandi = true; e.classList.add('kapan'); setTimeout(() => { e.remove(); if (bitince) bitince(); }, 300); };
+    e.addEventListener('click', kapat); setTimeout(kapat, tip === 'catla' ? 2600 : 3600);
 }
 // ---- Skor pedi: 3 ok gir → gerçek seri (_skorKaydetCekirdek; limit dolarsa onayIste ile uzatma) → yumurta ısınır.
 const YUVA_PED = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'];
@@ -287,14 +349,18 @@ function yuvaPedBagla(p, k, i) {
     kaydet.onclick = () => {
         if (oklar.length < 3) return;
         const once = yuvaDurum(k.g, k.ad), kayit = oklar.map((v) => ({ puan: v }));
+        window._yuvaPedKayitT = Date.now(); // kanca (yuvaSeriSonrasi) animasyonu ikinci kez oynatmasın
         let sonuc = _skorKaydetCekirdek(k.g, k.ad, kayit);
         const bitti = () => {
             if (!sonuc.ok) { showToast('Seri kaydedilemedi.', 'error'); return; }
             try { klasmanDoldur(); } catch (e) {}
             try { otomatikYoklamaIsaretle(k.ad, k.g); } catch (e) {}
-            const simdi = yuvaDurum(k.g, k.ad), kazanc = simdi.toplam - once.toplam;
+            const simdi = yuvaDurum(k.g, k.ad), kazanc = simdi.toplam - once.toplam, isim = typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad;
             p.remove();
-            setTimeout(() => { if (!simdi.secimGerek && simdi.adim === once.adim) yuvaDetay(i); yuvaUcan(`🔥 +${kazanc}`); }, 120);
+            if (simdi.adim !== once.adim && once.aktif) {
+                const tip = simdi.tamam > once.tamam ? 'buyu' : simdi.evre === 2 ? 'yavru' : 'catla';
+                setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim, () => yuvaDetay(i)), 150);
+            } else setTimeout(() => { yuvaDetay(i); yuvaUcan(`🔥 +${kazanc}`); }, 120);
         };
         if (!sonuc.ok && sonuc.sebep === 'limit-doldu') {
             onayIste(esc(k.ad) + ' için günlük seri limiti (' + sonuc.limit + ') doldu.<br><br>Seriyi uzatıp bu skoru kaydedeyim mi?', () => {
@@ -331,6 +397,10 @@ function yuvaSeriSonrasi(g, ad) {
     else if (simdi.evre === 2) m = `🐣 ${isim}'in yumurtasından ${yuvaHayvan(simdi.aktif.no).ad} çıktı!`;
     else if (simdi.evre === 1) m = `🥚 ${isim}'in yumurtası çatlıyor!`;
     if (m) { try { showToast(m, 'success'); } catch (e) {} yuvaSes(1046, 0.18); }
+    if (_kmAktifSekme === 'yuva' && !document.querySelector('.yv-katman,.yv-sahne') && once.aktif && !(Date.now() - (window._yuvaPedKayitT || 0) < 3000)) {
+        const tip = simdi.tamam > once.tamam ? 'buyu' : simdi.evre === 2 ? 'yavru' : 'catla';
+        setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim), 250);
+    }
     if (_kmAktifSekme === 'yuva') kmYuvaCiz();
 }
 window.yuvaSeriSonrasi = yuvaSeriSonrasi;
