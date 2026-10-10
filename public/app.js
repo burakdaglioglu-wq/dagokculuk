@@ -17262,6 +17262,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div style="display:flex; align-items:center; gap:8px; min-width:0;">
                         <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
                         <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Oyun süreleri ve seri sayıları">⚙️ Ayarlar</button>
                     </div>
                     <div class="km-oyun-topbar-sag">
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
@@ -17414,6 +17415,79 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             </div>`;
         }
 
+        // ⚙️ OYUN AYARLARI (2026-10-11, kullanıcı: "oyunların sürelerini/serilerini ayarlayabileyim; genel bu kalsın,
+        // alternatif olarak ayarlanmalı da seçenek ekle"). Standart = bugünkü değerler (varsayılan); Özel = koçun seçtikleri.
+        // Cihaz başına localStorage. Uygulanan yerler: kmOyunIlerlet (yol oyunlarında artış çarpanı, futbolda maç serisi),
+        // sayaç süresi (kmOyunSayacSureAyarla), Yumurta Yuvası eşik çarpanı (yuvaEsik), Ok Partisi varsayılan tur sayısı.
+        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, partiTur: 5 };
+        const KM_OYUN_AYAR_SECENEK = {
+            yolCarpan: [[2, 'Çok kısa', '≈5 seri'], [1.45, 'Kısa', '≈7 seri'], [1, 'Standart', '≈10 seri'], [0.7, 'Uzun', '≈14 seri'], [0.5, 'Çok uzun', '≈20 seri']],
+            futbolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri']],
+            sayacSn: [[60, '1 dk'], [90, '1,5 dk'], [120, '2 dk'], [180, '3 dk'], [300, '5 dk']],
+            yuvaCarpan: [[0.5, 'Çok hızlı'], [0.75, 'Hızlı'], [1, 'Standart'], [1.3, 'Yavaş']],
+            partiTur: [[3, '3 tur'], [5, '5 tur'], [7, '7 tur'], [10, '10 tur']],
+        };
+        function kmOyunAyarHam() { try { return JSON.parse(localStorage.getItem('dag_km_oyun_ayar') || 'null') || { mod: 'standart', ozel: {} }; } catch(e) { return { mod: 'standart', ozel: {} }; } }
+        function kmOyunAyar() { let h = kmOyunAyarHam(); return h.mod === 'ozel' ? Object.assign({}, KM_OYUN_AYAR_STANDART, h.ozel || {}) : Object.assign({}, KM_OYUN_AYAR_STANDART); }
+        window.kmOyunAyar = kmOyunAyar;
+        function kmOyunAyarKaydet(h) { try { localStorage.setItem('dag_km_oyun_ayar', JSON.stringify(h)); } catch(e) {} kmOyunAyarUygula(); }
+        // Metinleri ve sayacı güncel ayara getirir (futbolun "8 seri" yazıları, sayaç süresi).
+        function kmOyunAyarUygula() {
+            let a = kmOyunAyar();
+            ['futbol'].forEach(function(t) { let th = KM_OYUN_TEMALAR[t]; if(!th) return;
+                if(!th._aciklamaKok) th._aciklamaKok = th.aciklama;
+                th.aciklama = th._aciklamaKok.replace(/8 seri \(24 ok\)/, a.futbolSeri + ' seri (' + (a.futbolSeri * 3) + ' ok)');
+                th.finish = a.futbolSeri + ' SERİ TAMAMLANDI!'; });
+            try { if(typeof _kmOyunSayacCalisiyor === 'undefined' || !_kmOyunSayacCalisiyor) { kmOyunSayacAyarYukle(); if(_kmOyunSayacSuresi !== a.sayacSn) kmOyunSayacSureAyarla(a.sayacSn); } } catch(e) {}
+        }
+        function kmOyunAyarAc() {
+            let h = kmOyunAyarHam(), ozel = h.mod === 'ozel', a = kmOyunAyar();
+            let eski = document.getElementById('km-oyun-ayar-modal'); if(eski) eski.remove();
+            let satir = function(anahtar, ikon, baslik, alt) {
+                return '<div class="kmoa-satir' + (ozel ? '' : ' kapali') + '"><div class="kmoa-bas"><b>' + ikon + ' ' + baslik + '</b><small>' + alt + '</small></div><div class="kmoa-sec">'
+                    + KM_OYUN_AYAR_SECENEK[anahtar].map(function(o) { let aktif = a[anahtar] === o[0], std = KM_OYUN_AYAR_STANDART[anahtar] === o[0];
+                        return '<button class="' + (aktif ? 'aktif' : '') + '" ' + (ozel ? '' : 'disabled') + ' onclick="kmOyunAyarSec(\'' + anahtar + '\',' + o[0] + ')">' + o[1] + (o[2] ? '<small>' + o[2] + '</small>' : '') + (std ? '<i>standart</i>' : '') + '</button>'; }).join('') + '</div></div>';
+            };
+            let m = document.createElement('div'); m.id = 'km-oyun-ayar-modal'; m.className = 'kmoa-perde';
+            m.innerHTML = '<div class="kmoa-kutu"><div class="kmoa-ust"><h3>⚙️ Oyun Ayarları</h3><button onclick="kmOyunAyarKapat()" aria-label="Kapat">✕</button></div>'
+                + '<div class="kmoa-mod"><button class="' + (ozel ? '' : 'aktif') + '" onclick="kmOyunAyarMod(\'standart\')"><b>✅ Standart</b><small>Önerilen ayarlar</small></button>'
+                + '<button class="' + (ozel ? 'aktif' : '') + '" onclick="kmOyunAyarMod(\'ozel\')"><b>🛠️ Özel</b><small>Kendin ayarla</small></button></div>'
+                + (ozel ? '' : '<p class="kmoa-not">Şu an standart ayarlar kullanılıyor. Değiştirmek için <b>Özel</b>\'i seç.</p>')
+                + satir('yolCarpan', '🏔️', 'Yol oyunları ne kadar sürsün?', 'Zirve, Ninja, Roket, Hazine, Dağ, Pist, Balon, Kayıp Ada, Monopoly · %70 isabetle bitirmek için yaklaşık seri')
+                + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
+                + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
+                + satir('yuvaCarpan', '🥚', 'Yumurta Yuvası hızı', 'Yumurtalar ne kadar çabuk çatlasın (yaşa göre ayar da ayrıca uygulanır)')
+                + satir('partiTur', '🎉', 'Ok Partisi kaç tur?', 'Yeni partinin varsayılan tur sayısı')
+                + '<div class="kmoa-alt">' + (ozel ? '<button onclick="kmOyunAyarMod(\'standart\')">↺ Standarda dön</button>' : '') + '<button class="birincil" onclick="kmOyunAyarKapat()">Tamam</button></div></div>';
+            m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunAyarKapat(); });
+            (document.fullscreenElement || document.body).appendChild(m);
+        }
+        function kmOyunAyarKapat() { let m = document.getElementById('km-oyun-ayar-modal'); if(m) m.remove(); }
+        function kmOyunAyarMod(mod) { let h = kmOyunAyarHam(); h.mod = mod; if(mod === 'ozel' && !h.ozel) h.ozel = {}; kmOyunAyarKaydet(h); kmOyunAyarAc(); showToast(mod === 'ozel' ? '🛠️ Özel ayarlar açık' : '✅ Standart ayarlara dönüldü', 'success'); }
+        function kmOyunAyarSec(anahtar, deger) { let h = kmOyunAyarHam(); if(h.mod !== 'ozel') return; h.ozel = h.ozel || {}; h.ozel[anahtar] = deger; kmOyunAyarKaydet(h); kmOyunAyarAc(); }
+        (function() { let st = document.createElement('style'); st.id = 'kmoa-stil'; st.textContent = `
+.kmoa-perde{position:fixed;inset:0;z-index:99999;background:rgba(5,8,18,.72);display:flex;align-items:center;justify-content:center;padding:14px}
+.kmoa-kutu{width:min(720px,100%);max-height:100%;overflow:auto;background:var(--bg-card,#141a26);color:var(--text-main,#fff);border-radius:20px;padding:18px;display:grid;gap:12px;border:1px solid var(--border-color,#2a3346);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.kmoa-ust{display:flex;justify-content:space-between;align-items:center}.kmoa-ust h3{margin:0;font-size:20px}
+.kmoa-ust button{background:none;border:1px solid var(--border-color,#2a3346);color:inherit;border-radius:10px;width:36px;height:36px;cursor:pointer}
+.kmoa-mod{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kmoa-mod button{border:2px solid var(--border-color,#2a3346);background:transparent;color:inherit;border-radius:14px;padding:12px;cursor:pointer;text-align:left}
+.kmoa-mod button b{display:block;font-size:16px}.kmoa-mod button small{color:var(--text-muted,#9aa3b5);font-weight:700}
+.kmoa-mod button.aktif{border-color:var(--accent,#ff8a3d);background:color-mix(in srgb,var(--accent,#ff8a3d) 14%,transparent)}
+.kmoa-not{margin:0;font-size:13px;color:var(--text-muted,#9aa3b5)}
+.kmoa-satir{display:grid;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04)}
+.kmoa-satir.kapali{opacity:.55}
+.kmoa-bas b{display:block;font-size:14.5px}.kmoa-bas small{color:var(--text-muted,#9aa3b5);font-size:12px}
+.kmoa-sec{display:flex;flex-wrap:wrap;gap:6px}
+.kmoa-sec button{position:relative;border:1px solid var(--border-color,#2a3346);background:rgba(255,255,255,.05);color:inherit;border-radius:10px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:72px}
+.kmoa-sec button small{font-weight:700;font-size:11px;color:var(--text-muted,#9aa3b5)}
+.kmoa-sec button i{font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:.05em;color:var(--accent,#ff8a3d);text-transform:uppercase}
+.kmoa-sec button.aktif{border-color:var(--accent,#ff8a3d);background:color-mix(in srgb,var(--accent,#ff8a3d) 20%,transparent)}
+.kmoa-sec button:disabled{cursor:not-allowed}
+.kmoa-alt{display:flex;justify-content:flex-end;gap:8px}
+.kmoa-alt button{border:1px solid var(--border-color,#2a3346);background:transparent;color:inherit;border-radius:999px;padding:9px 18px;font-weight:800;cursor:pointer}
+.kmoa-alt button.birincil{background:var(--accent,#ff8a3d);border-color:transparent;color:#111}
+@media (max-width:560px){.kmoa-mod{grid-template-columns:1fr}.kmoa-sec button{min-width:0;flex:1}}`; document.head.appendChild(st); })();
         // FAZ 7 SONRASI — 11 oyunun kart ızgarası (eski yatay şeridin yerine). Sadece SEÇİM ekranı,
         // hiçbir hesaplama/yazma yok — mevcut kmOyunTemaSec(tid) AYNEN çağrılıyor.
         function kmOyunSeciciKartlari() {
@@ -23553,7 +23627,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Bireysel Futbol — puanla-orantılı ilerleme YERİNE, "8 seri = maç bitti" sabit adımı (2026-09-03,
             // "her seri 3 ok atışı anlamına geliyor, 8 seri = 24 ok gibi düşün"). Skor/gol ayrımı ayrı
             // hesaplanıyor (aşağıda), frac SADECE "kaç seri kaldı"yı temsil ediyor.
-            if(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') artis = 1 / 8;
+            if(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim') artis = 1 / (kmOyunAyar().futbolSeri || 8); // ⚙️ ayarlanabilir (varsayılan 8)
             // Faz 9, Stage 2+3 (2026-09-10) — Pist'in KENDİ "hız eğrisi": toplam/maxPuan ORANINA değil,
             // OKUN KENDİ DEĞERİNE göre (bkz. kmOyunPistSetArtis). Diğer 9 temanın yukarıdaki ORTAK
             // formülüne HİÇ dokunulmadı — bu satır SADECE _kmOyunAktifTema==='pist' iken devreye giriyor.
@@ -23583,6 +23657,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
             if(_kmOyunAktifTema === 'zirve') artis = kmOyunZirveArtisHesapla(kaydedilecek, toplam, maxPuan, eskiFrac, kmOyunDurumAl(s.g, s.ad));
+            // ⚙️ Oyun Ayarları — yol oyunlarının uzunluğu (Standart = 1). Kendi mekaniği olan temalara (futbol, arena,
+            // kehanet, gizli kelime, kule, canavar, yükseliş) dokunmaz. Ninja kapısı/çukurlar bu artışla aşağıda değerlendirilir.
+            if(artis > 0 && ['futbol', 'futboltakim', 'arena', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'yukselis'].indexOf(_kmOyunAktifTema) === -1) artis *= (kmOyunAyar().yolCarpan || 1);
             _kmOyunSonSeriOklar = kaydedilecek.map(function(k) { return String(k.puan); });
             // Sensei'nin Sınavı (2026-09-25) — Ninja'da tapınağa girecek seri %70+ olmalı; değilse ninja kapıda
             // (KM_NINJA_KAPI_FRAC) bekler, sonraki seride yeniden dener. Asla geri gitmez, gerçek skora dokunmaz.
@@ -25658,6 +25735,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunlarCiz() {
             let el = document.getElementById('km-icerik'); if(!el) return;
             kmOyunKaynaklarYukle();
+            kmOyunAyarUygula();
             kmOyunDurumEmin();
             kmOyunTakimModuYukle();
             _kmOyunSesliMod = kmOyunBayrakYukle('sesli');

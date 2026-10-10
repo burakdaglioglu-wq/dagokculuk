@@ -146,8 +146,10 @@ const KP_CSS = `
 `;
 
 // ---------------- giriş / kurulum ----------------
+let _kpAyarOkundu = false;
 function kmPartiCiz() {
     kpKaynakYukle(); kpYukle();
+    if (!_kpAyarOkundu && typeof kmOyunAyar === 'function') { _kpKurulum.tur = kmOyunAyar().partiTur || 5; _kpAyarOkundu = true; } /* ⚙️ varsayılan tur */
     const ic = kp$('km-icerik'); if (!ic) return;
     if (!_kp) { ic.innerHTML = kpKurulumHTML(); return; }
     kpOyunCiz();
@@ -167,7 +169,7 @@ function kpKurulumHTML() {
         <h2>🎉 Ok <i>Partisi</i></h2>
         <p style="margin:0;font-weight:700;color:#DCD3FF;max-width:62ch">Takımlar tur tahtasında yarışır. Zar yok: serinin puanı kadar ilerlersin. 🔑 anahtar topla, 3 anahtarla 🏆 sandığına git. Her tur sonunda mini oyun! En çok kupayı toplayan takım kazanır.</p>
         <div><div class="kp-kutu" style="padding:12px 14px"><h3>Kaç takım?</h3><div class="kp-secim">${sec('n', 2, '2 takım')}${sec('n', 3, '3 takım')}${sec('n', 4, '4 takım')}</div></div></div>
-        <div><div class="kp-kutu" style="padding:12px 14px"><h3>Kaç tur?</h3><div class="kp-secim">${sec('tur', 3, '3 tur · kısa')}${sec('tur', 5, '5 tur')}${sec('tur', 7, '7 tur · uzun')}</div></div></div>
+        <div><div class="kp-kutu" style="padding:12px 14px"><h3>Kaç tur?</h3><div class="kp-secim">${sec('tur', 3, '3 tur · kısa')}${sec('tur', 5, '5 tur')}${sec('tur', 7, '7 tur · uzun')}${sec('tur', 10, '10 tur')}</div></div></div>
         <div><div class="kp-kutu" style="padding:12px 14px"><h3>Skorlar</h3><div class="kp-secim">${sec('gercek', true, '✓ Gerçek skora yaz')}${sec('gercek', false, 'Sadece oyun')}</div></div></div>
         <div class="kp-onizleme">${takimlar.map((t) => `<div style="--r:${t.r}"><b><img src="${t.res}" alt="">${t.ad}</b><small>${t.uyeler.length ? t.uyeler.map((u) => esc(u.ad)).join(', ') : 'Sporcu yok'}</small></div>`).join('')}</div>
         <div class="kp-eylem" style="justify-content:flex-start"><button class="kp-btn ince" onclick="kpKaristir()">🔀 Takımları karıştır</button><button class="kp-btn birincil" onclick="kpBaslat()">▶ Partiyi başlat</button></div>

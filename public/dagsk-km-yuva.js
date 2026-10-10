@@ -20,7 +20,7 @@ function yuvaYasCarpan(sp, g) {
     if (yas !== null && yas > 2 && yas < 80) return yas <= 7 ? 0.6 : yas <= 9 ? 0.8 : 1;
     return g === 'minikler' ? 0.6 : g === 'kucukler' ? 0.8 : 1;
 }
-function yuvaEsik(sp, g) { const c = yuvaYasCarpan(sp, g); return { catla: Math.round(YUVA_ESIK_TEMEL.catla * c), yavru: Math.round(YUVA_ESIK_TEMEL.yavru * c), buyu: Math.round(YUVA_ESIK_TEMEL.buyu * c), carpan: c }; }
+function yuvaEsik(sp, g) { const c = yuvaYasCarpan(sp, g) * ((typeof kmOyunAyar === 'function' && kmOyunAyar().yuvaCarpan) || 1); /* ⚙️ Oyun Ayarları hız çarpanı */ return { catla: Math.round(YUVA_ESIK_TEMEL.catla * c), yavru: Math.round(YUVA_ESIK_TEMEL.yavru * c), buyu: Math.round(YUVA_ESIK_TEMEL.buyu * c), carpan: c }; }
 const YUVA_ESIK = YUVA_ESIK_TEMEL; // (eski adla erişen kalmasın diye)
 const YUVA_RENK = [
     { id: 'pembe', ana: '#FF8FB8', ben: '#FFD3E4' }, { id: 'mavi', ana: '#6EC6FF', ben: '#D2EEFF' }, { id: 'yesil', ana: '#7BD88F', ben: '#D7F5DD' },
