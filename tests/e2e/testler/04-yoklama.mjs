@@ -16,7 +16,9 @@ export default async function ({ log }) {
         for (let k = 1; k <= 7 && !s; k++) { d = new Date(); d.setDate(d.getDate() - k); s = _kmYa.slotlar.find((x) => kmYaSlotGunler(x).includes(d.getDay())); }
         if (!s) return null;
         let iso = kmYaIso(d);
-        let k = kmYaSporcular()[0]; s.katilimcilar = [{ grup: k.g, ad: k.ad }];
+        // o gün skor girilmemiş biri (skor girilen gün "geldi" sayılır — başka testlerin serileri işareti bozmasın)
+        let gunSerisi = (k) => { let sp = (turnuvaDB[k.g] || {})[k.ad] || {}; return [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map((x) => x.seriler || [])).some((x) => x && x.tarih === iso); };
+        let k = kmYaSporcular().find((x) => !gunSerisi(x)) || kmYaSporcular()[0]; s.katilimcilar = [{ grup: k.g, ad: k.ad }];
         if (otomatikYoklamaDB[iso]) delete otomatikYoklamaDB[iso][k.ad];
         kmYaTarihAc(kmYaIso(d)); return k.ad;
       });

@@ -11068,7 +11068,8 @@
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             if(_kmAktifSekme === 'formlab' && s !== 'formlab') { try { cancelAnimationFrame(_fl.oynatRaf); if(_fl.durum === 'analiz') _fl.iptal = true; if(_fl.durum === 'canli') { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; } } catch(e) {} }
             _kmAktifSekme = s;
-            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
+            if(typeof window.yuvaSeriSonrasi !== 'function' && typeof dagskEkYukle === 'function') { try { dagskEkYukle('dagsk-km-yuva.js').catch(function(){}); } catch(e) {} }
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','yuva','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -11097,6 +11098,7 @@
             else if(s==='fitness') kmFitnessCiz();
             else if(s==='kelime') kmEkCalistir('dagsk-km-kelime.js', 'kmKelimeCiz');
             else if(s==='parti') kmEkCalistir('dagsk-km-parti.js', 'kmPartiCiz');
+            else if(s==='yuva') kmEkCalistir('dagsk-km-yuva.js', 'kmYuvaCiz');
             else if(s==='dersakisi') kmDersAkisiCiz();
             else if(s==='resmitur') kmEkCalistir('dagsk-performans.js', 'kmResmiTurCiz');
             else if(s==='okanaliz') kmEkCalistir('dagsk-performans.js', 'kmOkAnaliziCiz');
@@ -17434,6 +17436,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + '</div>'
             // Ok Partisi (2026-10-10, kullanıcı: "Pummel Party içindeki oyunlar gibi") — tur tahtası + mini oyunlar,
             // kendi ekranı (kmSekme('parti') → public/dagsk-km-parti.js). Tema dağıtım zincirlerine eklenmedi.
+                + '<div class="card" onclick="kmOyunYuvaAc()" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;">'
+                + '<div style="font-size:22px; line-height:1;">🥚</div>'
+                + '<div style="font-weight:800; font-size:12.5px;">Yumurta Yuvası</div>'
+                + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kendi rekorunu geç, yumurtan çatlasın — hayvan albümü topla.</div>'
+                + '</div>'
                 + '<div class="card" onclick="kmOyunPartiAc()" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;">'
                 + '<div style="font-size:22px; line-height:1;">🎉</div>'
                 + '<div style="font-weight:800; font-size:12.5px;">Ok Partisi</div>'
@@ -17442,6 +17449,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunKelimeAc() { kmOyunSeciciKapat(); kmSekme('kelime'); }
         function kmOyunPartiAc() { kmOyunSeciciKapat(); kmSekme('parti'); }
+        function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
         function kmOyunSeciciAc() {
             let secici = document.getElementById('km-oyun-secici'); if(!secici) return;
             secici.innerHTML = kmOyunSeciciKartlari();
@@ -29362,6 +29370,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             bekleyenGonderim = true;
             localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
             seriBulutaYaz(seriDoc);
+            // 🥚 Yumurta Yuvası (2026-10-11): her gerçek seri yumurtayı ısıtır — evre değiştiyse kutla (dagsk-km-yuva.js).
+            try { if(typeof window.yuvaSeriSonrasi === 'function') setTimeout(function(){ try { window.yuvaSeriSonrasi(grup, sporcu); } catch(e) {} }, 0); } catch(e) {}
             return { ok: true, seriDoc, seriPuan, okDegerleri, grupData, limit };
         }
         function skorKaydet() {
