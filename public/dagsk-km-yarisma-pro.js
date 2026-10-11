@@ -883,11 +883,12 @@ function yzDevSayacGuncelle(o, s) {
 // ---- 🎨 Yarışma ekranı teması (2026-10-11, kullanıcı: "TV ekranından çıktığımızda tema cidden kötü, 3 tema sun").
 // Cihaz başına; uygulamanın renk değişkenleri .yz kökünde (ve hedef panelinde) temaya göre yeniden tanımlanır.
 const YZ_ANA_TEMALAR = [
+    { id: 'dag', ad: 'DAĞ Ateşi', acik: 'Kulübün renkleri: koyu kestane zemin, turuncu–kehribar vurgu.', renk: ['#160804', '#3a1206', '#FC5B01', '#FD8E01'] },
     { id: 'gece', ad: 'Gece Stadı', acik: 'Lacivert zemin, skorbord sarısı. Işıklı stadyum.', renk: ['#060d19', '#0e1c31', '#fbbf24', '#eaf1fb'] },
     { id: 'kagit', ad: 'Hedef Kâğıdı', acik: 'Açık krem kâğıt, kırmızı vurgu. TV\'nin açık görünümüyle aynı.', renk: ['#f6f1e7', '#fffdf8', '#d92c20', '#1d1a16'] },
     { id: 'neon', ad: 'Neon Arena', acik: 'Koyu cam paneller, camgöbeği–pembe ışık. Fütüristik.', renk: ['#0a0420', '#2a1258', '#22d3ee', '#f472b6'] }
 ];
-function yzAnaTema() { try { let t = localStorage.getItem('dag_yz_ana_tema'); return YZ_ANA_TEMALAR.some(function (x) { return x.id === t; }) ? t : 'gece'; } catch (e) { return 'gece'; } }
+function yzAnaTema() { try { let t = localStorage.getItem('dag_yz_ana_tema'); return YZ_ANA_TEMALAR.some(function (x) { return x.id === t; }) ? t : 'dag'; } catch (e) { return 'dag'; } }
 function yzAnaTemaAc() {
     yzV240CssYukle();
     let su = yzAnaTema();
@@ -905,6 +906,9 @@ function yzV240CssYukle() {
     let st = document.createElement('style'); st.id = 'yz-v240-css';
     st.textContent = [
         // temalar
+        '[data-yzt="dag"]{--bg-main:rgba(22,8,4,.7);--bg-panel:rgba(58,18,6,.66);--border-color:rgba(253,142,1,.18);--text-main:#FFF1E6;--text-muted:#D9AE93;--accent-orange:#FC5B01;--yzt-zemin:radial-gradient(800px 420px at 4% -10%,rgba(253,142,1,.22),transparent 60%),radial-gradient(900px 520px at 100% 0%,rgba(215,50,4,.26),transparent 62%),radial-gradient(900px 500px at 50% 120%,rgba(134,28,2,.45),transparent 60%),#160804;--yzt-ana-yazi:#1A0700;--yzt-golge:0 14px 36px rgba(20,4,0,.45)}',
+        '.yz[data-yzt="dag"] .yz-sp-seri{color:#FD8E01}.yz[data-yzt="dag"] .yz-sp-hedef{background:#FC5B01;color:#1A0700}.yz[data-yzt="dag"] .yz-btn.tv{background:#D73204;border-color:#D73204}.yz[data-yzt="dag"] .yz-bar i{background:linear-gradient(90deg,#D73204,#FD8E01)}.yz[data-yzt="dag"] .yz-sayac.hazir{background:rgba(134,28,2,.55);color:#FFF1E6}.yz[data-yzt="dag"] .yz-bilgi{background:rgba(253,142,1,.14);border-color:rgba(253,142,1,.45);color:#FFE2C2}',
+        '[data-yzt="dag"] .yz-hp-z.kolay{color:#4ade80}[data-yzt="dag"] .yz-hp-z.orta{color:#facc15}[data-yzt="dag"] .yz-hp-z.zor{color:#FD8E01}[data-yzt="dag"] .yz-hp-z.cokzor{color:#f87171}',
         '[data-yzt="gece"]{--bg-main:#0a1526;--bg-panel:#0e1c31;--border-color:#1d3352;--text-main:#eaf1fb;--text-muted:#8ea3bf;--accent-orange:#fbbf24;--yzt-zemin:radial-gradient(1100px 500px at 90% -20%,rgba(56,120,220,.22),transparent 60%),#060d19;--yzt-ana-yazi:#1a1203;--yzt-golge:0 10px 30px rgba(0,0,0,.35)}',
         '[data-yzt="kagit"]{--bg-main:#f3ecdf;--bg-panel:#fffdf8;--border-color:#e2d9c8;--text-main:#1d1a16;--text-muted:#6b6358;--accent-orange:#d92c20;--yzt-zemin:#f6f1e7;--yzt-ana-yazi:#fff;--yzt-golge:0 1px 0 rgba(29,26,22,.04),0 8px 24px rgba(29,26,22,.07)}',
         '[data-yzt="neon"]{--bg-main:rgba(10,4,30,.55);--bg-panel:rgba(34,14,70,.62);--border-color:rgba(34,211,238,.3);--text-main:#f6f3ff;--text-muted:#b3a6dc;--accent-orange:#22d3ee;--yzt-zemin:radial-gradient(700px 420px at 0% 0%,rgba(236,72,153,.42),transparent 62%),radial-gradient(800px 520px at 100% 10%,rgba(124,58,237,.45),transparent 62%),radial-gradient(900px 500px at 50% 120%,rgba(34,211,238,.25),transparent 60%),#0a0420;--yzt-ana-yazi:#04131a;--yzt-golge:0 0 0 1px rgba(236,72,153,.12),0 0 28px rgba(168,85,247,.22)}',

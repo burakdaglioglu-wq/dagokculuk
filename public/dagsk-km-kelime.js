@@ -146,7 +146,7 @@ const KM_KELIME_CSS = `
 .km-kh.boyut-tv .km-kh-baslik{font-size:22px}
 .km-kh.boyut-tv .km-kh-btn{min-height:52px;font-size:16px}
 .km-kh.boyut-tv .km-kh-panel-baslik{font-size:13px}
-#km-icerik:fullscreen{background:var(--bg-main,#15121F);padding:16px;overflow:auto}
+#km-icerik:fullscreen{background:var(--bg-main,#160804);padding:16px;overflow:auto}
 `;
 let _kmKelimeCssYuklendi = false;
 function kmKelimeKaynaklarYukle() {

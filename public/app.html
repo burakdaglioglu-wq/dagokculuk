@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v240</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v241</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -132,7 +132,7 @@
     <!-- KARIŞIK SINIF PLATFORM -->
     <div id="karisik-platform" style="display:none;position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;background:var(--bg-main);z-index:20000;flex-direction:column;overflow:hidden;">
         <div style="position:relative;display:flex;align-items:center;gap:8px;padding:12px;flex-shrink:0;
-            background:radial-gradient(circle at 12% 0%, rgba(0,240,255,0.16), transparent 55%), radial-gradient(circle at 100% 110%, rgba(255,47,208,0.16), transparent 55%), var(--bg-panel);
+            background:radial-gradient(circle at 12% 0%, rgba(253,142,1,0.16), transparent 55%), radial-gradient(circle at 100% 110%, rgba(215,50,4,0.16), transparent 55%), var(--bg-panel);
             border-bottom:1px solid var(--border-color);">
             <button onclick="kmGeri()" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px; flex-shrink:0;">←</button>
             <div style="flex:1; min-width:0;">
@@ -146,8 +146,8 @@
                 <button onclick="kmMenuAcKapat()" id="km-menu-btn" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px;">⋯</button>
                 <div id="km-menu-acilir" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);padding:6px;z-index:5;min-width:170px;">
                     <button onclick="kmMenuAcKapat();kmSporcuEkle()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(251,191,36,0.12);color:var(--gold);border-color:var(--gold);">➕ Sporcu Ekle</button>
-                    <button onclick="kmMenuAcKapat();kmKonumDegistir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(0,240,255,0.12);color:var(--aurora-cyan);border-color:var(--aurora-cyan);">🔁 Konum Değiştir</button>
-                    <button onclick="kmMenuAcKapat();kmSonucKartiPaylas()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(155,59,255,0.12);color:#c4a3ff;border-color:#9B3BFF;">📸 Sonuç Kartını Paylaş</button>
+                    <button onclick="kmMenuAcKapat();kmKonumDegistir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(253,142,1,0.12);color:var(--aurora-cyan);border-color:var(--aurora-cyan);">🔁 Konum Değiştir</button>
+                    <button onclick="kmMenuAcKapat();kmSonucKartiPaylas()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(252,91,1,0.12);color:#c4a3ff;border-color:#FC5B01;">📸 Sonuç Kartını Paylaş</button>
                     <button onclick="kmMenuAcKapat();kmOturumArsiviAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(180,140,255,0.12);color:#b48cff;border-color:#b48cff;">📚 Oturum Arşivi</button>
                     <button onclick="kmMenuAcKapat();kmDersOzetiAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;">🏅 Ders Sonu Özeti</button>
                     <button onclick="kmMenuAcKapat();kmSablonKaydetAc()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;">📋 Şablon Olarak Kaydet</button>
@@ -515,7 +515,7 @@
                 <span style="font-weight:bold;">📦 Haftalık yedek zamanı geldi.</span> Verilerini güvene almak için indir.
                 <button onclick="tumVeriyiYedekle()" style="margin-top:7px; width:100%; background:var(--gold); color:#000; border:none; padding:8px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">💾 Şimdi Yedekle</button>
             </div>
-            <div id="hazir-olma-banner" style="display:none; margin-bottom:12px; background:rgba(0,240,255,0.1); border:1px solid var(--aurora-cyan); border-radius:10px; padding:10px 12px; font-size:12px;">
+            <div id="hazir-olma-banner" style="display:none; margin-bottom:12px; background:rgba(253,142,1,0.1); border:1px solid var(--aurora-cyan); border-radius:10px; padding:10px 12px; font-size:12px;">
                 <span style="font-weight:bold;">🧠 Bugünkü hazır olma anketini doldurmadın.</span> 30 saniyeni al, antrenörünün seni daha iyi anlamasına yardım et.
                 <button onclick="hazirOlmaModalAc()" style="margin-top:7px; width:100%; background:var(--aurora-cyan); color:#000; border:none; padding:8px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">🧠 Anketi Doldur</button>
             </div>
@@ -568,7 +568,7 @@
                         <button type="button" onclick="havaDurumuSec('Kuvvetli')" class="hava-durumu-btn" data-hava="Kuvvetli">🌪️ Kuvvetli</button>
                     </div>
                     <input type="text" id="hava-durumu-not" placeholder="Not (opsiyonel — yön, sıcaklık vb.)" oninput="havaDurumuNotGuncelle(this.value)" style="width:100%; box-sizing:border-box; margin-top:8px; padding:8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-size:12px;">
-                    <button type="button" onclick="havaDurumuOtomatikCek()" style="width:100%; margin-top:8px; background:rgba(0,240,255,0.12); border:1px solid var(--aurora-cyan); color:var(--text-main); padding:8px; border-radius:6px; font-weight:bold; font-size:11px; cursor:pointer;">📡 Otomatik Çek</button>
+                    <button type="button" onclick="havaDurumuOtomatikCek()" style="width:100%; margin-top:8px; background:rgba(253,142,1,0.12); border:1px solid var(--aurora-cyan); color:var(--text-main); padding:8px; border-radius:6px; font-weight:bold; font-size:11px; cursor:pointer;">📡 Otomatik Çek</button>
                     <div style="display:flex; gap:6px; align-items:center; margin-top:8px;">
                         <span style="font-size:10px; color:var(--text-muted); white-space:nowrap;">📍 Kulüp şehri:</span>
                         <input type="text" id="kulup-sehir-input" placeholder="örn. İzmir" style="flex:1; padding:6px 8px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; font-size:11px;">
@@ -609,10 +609,10 @@
                 <button id="skor-kaydet-btn" class="btn btn-primary" onclick="skorKaydet()" disabled style="width:100%; font-size:var(--text-base);">Seriyi kaydet</button>
                 <div style="display:flex; gap:8px; margin-top:8px;">
                     <button onclick="seriUzat()" style="flex:1; background:linear-gradient(135deg, rgba(255,98,0,0.16), rgba(255,98,0,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--accent-orange); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">➕ Seri Uzat</button>
-                    <button onclick="oncekiSeriyiDuzelt()" style="flex:1; background:linear-gradient(135deg, rgba(0,240,255,0.18), rgba(0,240,255,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer; box-shadow:0 0 10px rgba(0,240,255,0.18);">✏️ Önceki Skoru Düzelt</button>
+                    <button onclick="oncekiSeriyiDuzelt()" style="flex:1; background:linear-gradient(135deg, rgba(253,142,1,0.18), rgba(253,142,1,0.04)); backdrop-filter:blur(4px); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:6px 8px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer; box-shadow:0 0 10px rgba(253,142,1,0.18);">✏️ Önceki Skoru Düzelt</button>
                 </div>
             </div>
-            <div id="isim-flash" style="display:none; opacity:0; transition:opacity .3s; position:fixed; top:90px; left:50%; transform:translateX(-50%); z-index:9500; background:linear-gradient(135deg, var(--aurora-cyan), var(--aurora-magenta)); color:#fff; padding:10px 24px; border-radius:24px; font-weight:800; font-size:16px; box-shadow:0 5px 20px rgba(0,0,0,0.4), 0 0 24px rgba(0,240,255,0.4); pointer-events:none;"></div>
+            <div id="isim-flash" style="display:none; opacity:0; transition:opacity .3s; position:fixed; top:90px; left:50%; transform:translateX(-50%); z-index:9500; background:linear-gradient(135deg, var(--aurora-cyan), var(--aurora-magenta)); color:#fff; padding:10px 24px; border-radius:24px; font-weight:800; font-size:16px; box-shadow:0 5px 20px rgba(0,0,0,0.4), 0 0 24px rgba(253,142,1,0.4); pointer-events:none;"></div>
             <div id="seri-tamam-banner" style="display:none; position:fixed; bottom:74px; left:50%; transform:translateX(-50%); z-index:8999; background:var(--accent-orange); color:#fff; padding:9px 22px; border-radius:22px; font-weight:800; font-size:14px; box-shadow:0 4px 16px rgba(255,98,0,0.55);">✅ SERİ TAMAMLANDI — Kaydet!</div>
 
             <div style="padding: 15px; padding-bottom: 90px; overflow-y: auto; flex: 1;">
@@ -949,7 +949,7 @@
                     
                     <!-- Sol Üst: Durum ve Yakınlaştırma (Zoom) Araçları -->
                     <div style="position:absolute; top:10px; left:10px; z-index:3; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                        <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#00f0ff; border:1px solid #00f0ff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
+                        <span id="ai-pose-status" style="background:rgba(15,23,42,0.85); color:#FD8E01; border:1px solid #FD8E01; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:800; backdrop-filter:blur(4px);">📷 Kamera Bekleniyor</span>
                         <div class="ai-zoom-bar">
                             <button class="ai-zoom-btn" onclick="DAGSK_AI_POSE.zoomStep(-0.25)" title="Uzaklaştır">🔍−</button>
                             <span id="ai-zoom-val" class="ai-zoom-badge">1.0x</span>
@@ -1581,7 +1581,7 @@
          dokununca o dersin GERÇEK katılımcı listesi açılır (grubun tamamı değil). Bir sporcu birden
          fazla, farklı derse kayıtlı olabilir — bkz. dersRosterCiz()'deki "🔁 Ayrıca" çapraz-ders etiketi. -->
     <div id="ders-roster-modal" class="modal-overlay">
-        <div class="modal-content glass-panel" style="max-width:420px; width:100%; border:1px solid rgba(0,240,255,0.22); box-shadow:0 0 30px rgba(0,240,255,0.08);">
+        <div class="modal-content glass-panel" style="max-width:420px; width:100%; border:1px solid rgba(253,142,1,0.22); box-shadow:0 0 30px rgba(253,142,1,0.08);">
             <!-- DÜZELTME (2. tur): 4 yönetim butonunu arama/listenin ÜSTÜNE aldık (basit, normal akış —
                  position:sticky + negatif margin denemesi ayrı bir tıklama hatasına yol açtığı için
                  TERK EDİLDİ, bkz. proje hafızası). Aşağıdaki asıl düzeltme: arama kutusu boşken
@@ -1597,7 +1597,7 @@
             <div style="display:flex; gap:5px; margin-bottom:12px;">
                 <button id="drm-zil-btn" onclick="dersRosterZilToggle()" class="yon-quick-btn" style="flex:1;"><span class="yon-qb-icon">🔔</span>Hatırlatma</button>
                 <button onclick="dersRosterDuzenleAcKapat()" class="yon-quick-btn" style="flex:1;"><span class="yon-qb-icon">✏️</span>Gün/Saat</button>
-                <button onclick="dersRosterPdfIndir()" class="yon-quick-btn" style="flex:1; background:rgba(0,240,255,0.08); border-color:var(--aurora-cyan); color:var(--aurora-cyan);"><span class="yon-qb-icon">📄</span>PDF</button>
+                <button onclick="dersRosterPdfIndir()" class="yon-quick-btn" style="flex:1; background:rgba(253,142,1,0.08); border-color:var(--aurora-cyan); color:var(--aurora-cyan);"><span class="yon-qb-icon">📄</span>PDF</button>
                 <button onclick="dersRosterSil()" class="yon-quick-btn" style="flex:1; background:rgba(239,68,68,0.1); border-color:var(--neon-red); color:var(--neon-red);"><span class="yon-qb-icon">🗑️</span>Sil</button>
             </div>
             <div id="drm-duzenle-alani" style="display:none; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:10px; margin-bottom:12px;"></div>
@@ -1722,7 +1722,7 @@
             <div id="sezon-ozeti-icerik"></div>
             <div style="display:flex; gap:10px; margin-top:14px;">
                 <button onclick="kapatModal('sezon-ozeti-modal')" style="flex:1; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">Kapat</button>
-                <button onclick="sezonOzetiIndir()" style="flex:1; background:linear-gradient(120deg, #00F0FF, #9B3BFF); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">📥 İndir</button>
+                <button onclick="sezonOzetiIndir()" style="flex:1; background:linear-gradient(120deg, #FD8E01, #FC5B01); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">📥 İndir</button>
             </div>
         </div>
     </div>

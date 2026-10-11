@@ -2339,7 +2339,7 @@
             let secili = _gunSeciciState[idOnEki] || new Set();
             return GUN_KISA_TR.map(function(g, i) {
                 let on = secili.has(i);
-                return '<button type="button" onclick="_gunSeciciToggle(\''+idOnEki+'\','+i+')" style="flex:1; min-width:0; padding:8px 2px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; border:1.3px solid '+(on?'var(--aurora-cyan)':'var(--border-color)')+'; background:'+(on?'rgba(0,240,255,0.14)':'var(--bg-main)')+'; color:'+(on?'var(--aurora-cyan)':'var(--text-muted)')+';">'+g+'</button>';
+                return '<button type="button" onclick="_gunSeciciToggle(\''+idOnEki+'\','+i+')" style="flex:1; min-width:0; padding:8px 2px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; border:1.3px solid '+(on?'var(--aurora-cyan)':'var(--border-color)')+'; background:'+(on?'rgba(253,142,1,0.14)':'var(--bg-main)')+'; color:'+(on?'var(--aurora-cyan)':'var(--text-muted)')+';">'+g+'</button>';
             }).join('');
         }
         function _gunSeciciToggle(idOnEki, gun) {
@@ -2414,15 +2414,15 @@
         let _drmDuzenleAcik = false;
         function yoneticiProgramCiz() {
             let alan = document.getElementById(renderHedefId); if(!alan) return;
-            alan.innerHTML = `<div class="glass-panel" style="padding:14px; border-radius:14px; border:1px solid rgba(0,240,255,0.18); box-shadow:0 0 22px rgba(0,240,255,0.06);">
+            alan.innerHTML = `<div class="glass-panel" style="padding:14px; border-radius:14px; border:1px solid rgba(253,142,1,0.18); box-shadow:0 0 22px rgba(253,142,1,0.06);">
                 <div style="font-weight:900; font-size:16px; margin-bottom:4px; background:linear-gradient(120deg,var(--aurora-cyan),var(--aurora-magenta)); -webkit-background-clip:text; background-clip:text; color:transparent;">📅 Antrenman Programı — Haftalık</div>
                 <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:12px;">Bir derse dokun → sporcu listesini düzenle.</div>
                 <div id="program-oneri-ic"></div>
                 <div id="program-izgara-ic" style="margin-bottom:10px;">Yükleniyor...</div>
-                <button onclick="programTamPdfIndir()" style="width:100%; background:rgba(0,240,255,0.06); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:8px;">📄 Haftalık Programı PDF Olarak İndir</button>
+                <button onclick="programTamPdfIndir()" style="width:100%; background:rgba(253,142,1,0.06); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:8px;">📄 Haftalık Programı PDF Olarak İndir</button>
                 <input type="month" id="program-aylik-ay-sec" value="${bugunISO().slice(0,7)}" style="width:100%; box-sizing:border-box; padding:9px; margin-bottom:6px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--aurora-gold); border-radius:9px; font-weight:700; font-size:11.5px;">
                 <button onclick="aylikYoklamaCizelgesiPdfIndir()" style="width:100%; background:rgba(255,206,84,0.08); color:var(--aurora-gold); border:1px solid var(--aurora-gold); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:6px;">🗓️ Boş Çizelge — Fiziksel İşaretleme İçin</button>
-                <button onclick="aylikDevamRaporuPdfIndir()" style="width:100%; background:rgba(0,240,255,0.06); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:14px;">📊 Genel Devam Raporu — Gerçek Kayıtlarla Dolu</button>
+                <button onclick="aylikDevamRaporuPdfIndir()" style="width:100%; background:rgba(253,142,1,0.06); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:9px; border-radius:9px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:14px;">📊 Genel Devam Raporu — Gerçek Kayıtlarla Dolu</button>
                 <div style="border-top:1px solid var(--border-color); padding-top:12px;">
                     <div style="font-weight:700; font-size:12px; color:var(--text-muted); margin-bottom:8px;">YENİ DERS EKLE</div>
                     <div style="font-size:9.5px; color:var(--text-muted); margin-bottom:4px;">Gün(ler) — birden fazla seçilebilir (haftada 2 kez ders için)</div>
@@ -2443,7 +2443,7 @@
                         <span>👥 Kapasite (isteğe bağlı)</span>
                         <input type="number" id="program-kapasite-input" min="1" max="99" placeholder="sınırsız" style="width:60px; padding:6px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px; margin-left:auto;">
                     </div>
-                    <button onclick="programSlotEkle()" style="width:100%; background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta)); color:#0d1016; border:none; padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 2px 14px rgba(0,240,255,0.25);">➕ Ders Ekle</button>
+                    <button onclick="programSlotEkle()" style="width:100%; background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-magenta)); color:#0d1016; border:none; padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 2px 14px rgba(253,142,1,0.25);">➕ Ders Ekle</button>
                 </div>
             </div>`;
             programListesiYenile();
@@ -2655,7 +2655,7 @@
             let planAlani = document.getElementById('drm-plan-alani');
             if(planAlani) {
                 planAlani.innerHTML = s.dersPlani
-                    ? '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:rgba(0,240,255,0.06); border:1px dashed var(--aurora-cyan); border-radius:10px; padding:9px 11px;">'
+                    ? '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:rgba(253,142,1,0.06); border:1px dashed var(--aurora-cyan); border-radius:10px; padding:9px 11px;">'
                         + '<div style="font-size:11.5px; color:var(--text-main); line-height:1.4;">📋 <b>Ders Planı:</b> '+s.dersPlani+'</div>'
                         + '<button onclick="dersPlaniDuzenle()" style="background:transparent; border:none; color:var(--aurora-cyan); cursor:pointer; font-size:12px; flex-shrink:0;">✏️</button>'
                         + '</div>'
@@ -2693,7 +2693,7 @@
             let yoklamaBugun = otomatikYoklamaDB[tarihBugun] || {};
             let yoklamaBaslikHTML = !roster.length ? '' : '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px;">'
                 + '<div style="font-size:10px; color:var(--text-muted);">Bugün için tıkla: ✅ geldi · ❌ gelmedi</div>'
-                + '<button onclick="dersRosterYoklamaHepsi()" style="background:rgba(0,240,255,0.08); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:5px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">✅ Hepsi Geldi</button>'
+                + '<button onclick="dersRosterYoklamaHepsi()" style="background:rgba(253,142,1,0.08); color:var(--aurora-cyan); border:1px solid var(--aurora-cyan); padding:5px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">✅ Hepsi Geldi</button>'
                 + '</div>';
             document.getElementById('drm-roster-liste').innerHTML = yoklamaBaslikHTML + (roster.length ? roster.map(function(k) {
                 let digerDersler = _programSlotlar.filter(function(x){ return x.id !== s.id && (x.katilimcilar||[]).some(function(kk){ return kk.grup===k.grup && kk.ad===k.ad; }); })
@@ -4056,7 +4056,7 @@
                     <div style="flex:1; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:10px; text-align:center;"><div style="font-size:17px; font-weight:800;" id="aidat-net-deger">—</div><div style="font-size:10px; color:var(--text-muted);">Net</div></div>
                 </div>
                 <details style="margin-bottom:12px;">
-                    <summary style="cursor:pointer; list-style:none; background:rgba(0,240,255,0.08); border:1px solid var(--aurora-cyan); border-radius:10px; padding:11px; font-weight:800; font-size:13px; color:var(--text-main);">📐 Bütçe Planlama</summary>
+                    <summary style="cursor:pointer; list-style:none; background:rgba(253,142,1,0.08); border:1px solid var(--aurora-cyan); border-radius:10px; padding:11px; font-weight:800; font-size:13px; color:var(--text-main);">📐 Bütçe Planlama</summary>
                     <div id="aidat-butce-alani" style="margin:10px 0;"><div style="font-size:11px; color:var(--text-muted);">Yükleniyor...</div></div>
                     <div style="font-size:11px; font-weight:800; color:var(--text-muted); margin:10px 0 6px;">Aylık Hedef Belirle</div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
@@ -5051,8 +5051,8 @@
         // geçirilmez, o renkler dekoratif değil gerçek anlam taşır (altın/kırmızı/mavi/siyah/beyaz halka).
         const GM_CHART_GRID = 'rgba(255,255,255,0.055)';
         const GM_CHART_TICK = '#8a93a8';
-        const GM_CHART_LINE_1 = '#00F0FF';
-        const GM_CHART_LINE_2 = '#FF2FD0';
+        const GM_CHART_LINE_1 = '#FD8E01';
+        const GM_CHART_LINE_2 = '#D73204';
         function gmChartGradient(ctx, renk) {
             try {
                 let g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 160);
@@ -5502,7 +5502,7 @@
             let grupDot = `<circle cx="${cl(avgX).toFixed(1)}" cy="${cl(avgY).toFixed(1)}" r="7" fill="var(--neon-green)" stroke="#fff" stroke-width="2"/>`;
             let bareDot = (st.x != null) ? `<circle cx="${cl(st.x).toFixed(1)}" cy="${cl(st.y).toFixed(1)}" r="9" fill="var(--aurora-magenta)" stroke="#fff" stroke-width="2"/>` : '';
             let tanisi = (st.x != null) ? _bosluklukTanisi(st.x - avgX, st.y - avgY, st.el) : 'Hedefe dokunarak boşluk okun düştüğü yeri işaretle.';
-            let elBtn = (val, etiket) => `<button onclick="bosluklukOkElDegisti('${ad}','${sfx}','${val}')" style="flex:1; padding:7px; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; border:1px solid ${st.el===val?'var(--aurora-cyan)':'var(--border-color)'}; background:${st.el===val?'rgba(0,240,255,0.12)':'transparent'}; color:var(--text-main);">${etiket}</button>`;
+            let elBtn = (val, etiket) => `<button onclick="bosluklukOkElDegisti('${ad}','${sfx}','${val}')" style="flex:1; padding:7px; border-radius:8px; font-size:11px; font-weight:bold; cursor:pointer; border:1px solid ${st.el===val?'var(--aurora-cyan)':'var(--border-color)'}; background:${st.el===val?'rgba(253,142,1,0.12)':'transparent'}; color:var(--text-main);">${etiket}</button>`;
             return `<div id="bosluk-kart${sfx}" class="glass-panel" style="padding:12px; margin-bottom:10px;">
                 <div style="font-weight:bold; color:var(--accent-orange); font-size:13px; margin-bottom:8px;">🩻 Boşluk Ok (Bare Shaft) Tuning Sihirbazı</div>
                 <div style="display:flex; gap:6px; margin-bottom:10px;">${elBtn('sag','Sağ Elini Kullanan')}${elBtn('sol','Sol Elini Kullanan')}</div>
@@ -5666,7 +5666,7 @@
         function aiAntrenmanOnerisiKartiHTML(ad) {
             return `<div class="glass-panel" style="padding:12px; margin-bottom:10px;">
                 <div style="font-weight:bold; color:var(--accent-orange); font-size:13px; margin-bottom:8px;">🧭 AI Antrenman Önerisi</div>
-                <button onclick="aiAntrenmanOnerisiGetir('${ad.replace(/'/g, "\\'")}')" style="width:100%; background:linear-gradient(120deg, rgba(0,240,255,0.15), rgba(255,47,208,0.15)); border:1px solid var(--aurora-cyan); color:var(--text-main); padding:9px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; margin-bottom:8px;">🤖 Öneri Al</button>
+                <button onclick="aiAntrenmanOnerisiGetir('${ad.replace(/'/g, "\\'")}')" style="width:100%; background:linear-gradient(120deg, rgba(253,142,1,0.15), rgba(215,50,4,0.15)); border:1px solid var(--aurora-cyan); color:var(--text-main); padding:9px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; margin-bottom:8px;">🤖 Öneri Al</button>
                 <div id="ai-antrenman-onerisi-sonuc"></div>
             </div>`;
         }
@@ -29817,7 +29817,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="flex:1; min-width:0;">
                     <div style="font-weight:900; font-size:17px;">${ad}${vitrinHtml}</div>
                     <div style="font-size:12px; color:var(--text-muted);">${sp.yay || ''} · ${sp.sinif || ''} · ${streak > 0 ? `🔥 ${streak} gün seri` : 'Seri yok'}</div>
-                    <div style="height:7px; background:var(--bg-main); border-radius:4px; overflow:hidden; margin-top:6px; border:1px solid var(--border-color);"><div style="height:100%; width:${((st.xp||0) % 50) / 50 * 100}%; background:linear-gradient(90deg,var(--aurora-cyan),var(--aurora-magenta)); box-shadow:0 0 10px rgba(0,240,255,0.55);"></div></div>
+                    <div style="height:7px; background:var(--bg-main); border-radius:4px; overflow:hidden; margin-top:6px; border:1px solid var(--border-color);"><div style="height:100%; width:${((st.xp||0) % 50) / 50 * 100}%; background:linear-gradient(90deg,var(--aurora-cyan),var(--aurora-magenta)); box-shadow:0 0 10px rgba(253,142,1,0.55);"></div></div>
                     <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Lv ${sv} · ${(st.xp||0) % 50}/50 XP</div>
                 </div>
                 <div style="text-align:right; flex-shrink:0;"><div style="font-size:20px; font-weight:900; color:var(--gold);">💎 ${sp.coin || 0}</div><div style="font-size:10px; color:var(--text-muted);">elmas</div></div>
@@ -30714,7 +30714,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let icerik = document.getElementById('sezon-ozeti-icerik'); if(!icerik) return;
             icerik.innerHTML = `<div id="sezon-ozeti-kart" style="background:linear-gradient(160deg, #1a0f2e, #0d0620); border-radius:16px; padding:24px; text-align:center;">
                 <div style="font-size:11px; color:#8A93A8; letter-spacing:0.05em; margin-bottom:4px;">${ad.toUpperCase()}'İN SEZONU</div>
-                <div style="font-size:44px; font-weight:900; background-image:linear-gradient(120deg,#00F0FF,#FF2FD0); -webkit-background-clip:text; background-clip:text; color:transparent;">${v.toplamOk}</div>
+                <div style="font-size:44px; font-weight:900; background-image:linear-gradient(120deg,#FD8E01,#D73204); -webkit-background-clip:text; background-clip:text; color:transparent;">${v.toplamOk}</div>
                 <div style="font-size:12px; color:#8A93A8; margin-bottom:18px;">toplam atılan ok</div>
                 <div style="display:flex; justify-content:space-around; flex-wrap:wrap; gap:12px;">
                     <div><div style="font-size:26px; font-weight:900; color:#fff;">${v.toplamGun}</div><div style="font-size:10px; color:#8A93A8;">antrenman günü</div></div>
@@ -30766,7 +30766,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <button onclick="aileRaporuPDF('${f.grup}','${ad.replace(/'/g, "\\'")}')" style="background:rgba(59,130,246,0.12); color:var(--neon-blue); border:1px solid var(--neon-blue); padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">📄 PDF İndir</button>
                     <button onclick="aileRaporuMetin('${f.grup}','${ad.replace(/'/g, "\\'")}')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">💬 WhatsApp Özeti</button>
                 </div>
-                <button onclick="sezonOzetiGoster('${ad.replace(/'/g, "\\'")}')" style="width:100%; background:linear-gradient(120deg, rgba(0,240,255,0.15), rgba(255,47,208,0.15)); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">📊 Sezon Özetini Gör</button>
+                <button onclick="sezonOzetiGoster('${ad.replace(/'/g, "\\'")}')" style="width:100%; background:linear-gradient(120deg, rgba(253,142,1,0.15), rgba(215,50,4,0.15)); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">📊 Sezon Özetini Gör</button>
             </div>
             ${hedefKartHTML(sp, ad, ekipmanDuzenlenebilir)}
             ${grafik || '<div class="glass-panel" style="padding:16px; text-align:center; color:var(--text-muted); margin-bottom:14px; font-size:13px;">📈 Grafik için en az 2 antrenman gerekli.</div>'}
@@ -30982,7 +30982,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="background:linear-gradient(135deg, rgba(0,240,255,0.14), rgba(0,0,0,0.15)); border:1px solid rgba(0,240,255,0.28); padding:5px 10px; border-radius:8px; font-weight:bold; box-shadow:0 0 10px rgba(0,240,255,0.15);"><span style="color:var(--accent-orange);">${sp.toplamSkor||0} P</span><span style="font-size:10px;"> [${sp.xAdet||0}X]</span></div>
+                        <div style="background:linear-gradient(135deg, rgba(253,142,1,0.14), rgba(0,0,0,0.15)); border:1px solid rgba(253,142,1,0.28); padding:5px 10px; border-radius:8px; font-weight:bold; box-shadow:0 0 10px rgba(253,142,1,0.15);"><span style="color:var(--accent-orange);">${sp.toplamSkor||0} P</span><span style="font-size:10px;"> [${sp.xAdet||0}X]</span></div>
                         ${karneBtn}
                     </div>
                 </div>`;
