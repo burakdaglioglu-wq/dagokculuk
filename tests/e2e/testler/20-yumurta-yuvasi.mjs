@@ -16,7 +16,7 @@ export default async function ({ log }) {
     await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('#yv-kok'), null, { timeout: 30000 });
     // ilk kart → yumurta seçimi
     await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
-    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
+    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="elmas"])').first().click();
     const ilk = await p.evaluate((k) => { const sp = turnuvaDB[k.g][k.ad]; return { sira: sp.oyun.yuva.sira.length, coinT: sp.coinT || 0, d: yuvaDurum(k.g, k.ad) }; }, sp0);
     esit(ilk.sira, 1, 'yumurta seçilmedi');
     dogrula(ilk.coinT > Date.now() - 60000, 'coinT ilerlemedi (sunucuya gitmez)');
@@ -36,7 +36,7 @@ export default async function ({ log }) {
     await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
     await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
     dogrula(await p.locator('.yv-pencere', { hasText: 'büyüdü' }).isVisible(), '"büyüdü" penceresi çıkmadı');
-    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="gokkusagi"])').first().click();
+    await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="elmas"])').first().click();
     const iki = await p.evaluate((k) => turnuvaDB[k.g][k.ad].oyun.yuva.sira.map((x) => x.no), sp0);
     dogrula(iki.length === 2 && iki[0] !== iki[1], 'ikinci yumurtada aynı hayvan: ' + iki);
     esit(await p.evaluate((k) => yuvaDurum(k.g, k.ad).ilerleme, sp0), 0, 'yeni yumurta sıfırdan başlamalı (artan ısı taşınmaz)');
