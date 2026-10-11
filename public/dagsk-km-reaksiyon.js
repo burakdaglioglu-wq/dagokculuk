@@ -19,20 +19,20 @@ let _kmRfxTimer = null, _kmRfxTimer2 = null, _kmRfxSpawnT = null, _kmRfxSpawnT2 
 let _kmRfxSkorlar = {}; // { 'g|ad': { pod:18, gonogo:15, tap:42 } } — konum-bazlı yerel rekor
 let _kmRfxYuklenenKonum = null;
 const KM_RFX_OYUNLAR = {
-    pod: { ad: 'Reaksiyon Pod', ikon: '🔴', renk: '#ef4444', aciklama: 'Çıkan hedefe hızlı dokun!' },
-    gonogo: { ad: 'Yeşile Bas', ikon: '🚦', renk: '#10b981', aciklama: 'YEŞİL\'de dokun, KIRMIZI\'da durma!' },
-    tap: { ad: 'Hızlı Dokunuş', ikon: '💥', renk: '#f59e0b', aciklama: '5 saniyede en çok kaç dokunuş?' },
-    odak: { ad: 'Odak Kilidi', ikon: '🔢', renk: '#a855f7', aciklama: 'Sayılara sırayla dokun, ızgara büyür!' },
-    hafiza: { ad: 'Hafıza', ikon: '🧠', renk: '#3b82f6', aciklama: 'Yanan sırayı izle, aynısını tekrarla.' },
-    takip: { ad: 'Hedef Takip', ikon: '👁️', renk: '#14b8a6', aciklama: 'Hareket eden noktayı akıcı takip et.' },
-    sayim: { ad: 'Skor Sayımı', ikon: '🔢', renk: '#eab308', aciklama: 'Okların toplamını bul, doğru şıkka dokun!' },
-    grup: { ad: 'Grup At', ikon: '🎯', renk: '#22c55e', aciklama: 'Aynı noktaya 6 kez dokun, grup küçük olsun.' },
-    nefes: { ad: 'Nefes Ritmi', ikon: '🫁', renk: '#38bdf8', aciklama: 'Daire tepe/dipteyken tam zamanında dokun.' },
-    sabir: { ad: 'Sabır', ikon: '⏳', renk: '#f59e0b', aciklama: 'Basılı tut, komut gelince sarıya bırak!' },
-    dusus: { ad: 'Mükemmel Düşüş', ikon: '🏹', renk: '#22c55e', aciklama: 'Yayı ger, bırak, sonra DOKUNMA!' },
-    kliker: { ad: 'Kliker Duvarı', ikon: '🖱️', renk: '#ef4444', aciklama: 'Barı doldur, TİK sesinde anında bırak!' },
-    kaos: { ad: 'Kaos Odak', ikon: '🌪️', renk: '#a855f7', aciklama: 'Sahte sinyale kanma, sadece YEŞİLe bırak!' },
-    yorgunluk: { ad: 'Son Okun Ağırlığı', ikon: '💪', renk: '#eab308', aciklama: '3 set — yorgunlukta bile sarıda kal!' }
+    pod: { ad: 'Reaksiyon Pod', ikon: '🔴', renk: '#D73204', aciklama: 'Çıkan hedefe hızlı dokun!' },
+    gonogo: { ad: 'Yeşile Bas', ikon: '🚦', renk: '#FD8E01', aciklama: 'YEŞİL\'de dokun, KIRMIZI\'da durma!' },
+    tap: { ad: 'Hızlı Dokunuş', ikon: '💥', renk: '#FC5B01', aciklama: '5 saniyede en çok kaç dokunuş?' },
+    odak: { ad: 'Odak Kilidi', ikon: '🔢', renk: '#D73204', aciklama: 'Sayılara sırayla dokun, ızgara büyür!' },
+    hafiza: { ad: 'Hafıza', ikon: '🧠', renk: '#FD8E01', aciklama: 'Yanan sırayı izle, aynısını tekrarla.' },
+    takip: { ad: 'Hedef Takip', ikon: '👁️', renk: '#FC5B01', aciklama: 'Hareket eden noktayı akıcı takip et.' },
+    sayim: { ad: 'Skor Sayımı', ikon: '🔢', renk: '#D73204', aciklama: 'Okların toplamını bul, doğru şıkka dokun!' },
+    grup: { ad: 'Grup At', ikon: '🎯', renk: '#FD8E01', aciklama: 'Aynı noktaya 6 kez dokun, grup küçük olsun.' },
+    nefes: { ad: 'Nefes Ritmi', ikon: '🫁', renk: '#FC5B01', aciklama: 'Daire tepe/dipteyken tam zamanında dokun.' },
+    sabir: { ad: 'Sabır', ikon: '⏳', renk: '#D73204', aciklama: 'Basılı tut, komut gelince sarıya bırak!' },
+    dusus: { ad: 'Mükemmel Düşüş', ikon: '🏹', renk: '#FD8E01', aciklama: 'Yayı ger, bırak, sonra DOKUNMA!' },
+    kliker: { ad: 'Kliker Duvarı', ikon: '🖱️', renk: '#FC5B01', aciklama: 'Barı doldur, TİK sesinde anında bırak!' },
+    kaos: { ad: 'Kaos Odak', ikon: '🌪️', renk: '#D73204', aciklama: 'Sahte sinyale kanma, sadece YEŞİLe bırak!' },
+    yorgunluk: { ad: 'Son Okun Ağırlığı', ikon: '💪', renk: '#FD8E01', aciklama: '3 set — yorgunlukta bile sarıda kal!' }
 };
 function kmRfxAnahtari() { return 'dag_km_rfx_' + (_kmAktifKonum || 'varsayilan'); }
 function kmRfxDurumEmin() {

@@ -1119,7 +1119,9 @@
 
         /* ===== VIDEO ANALİZ SEKMESİ ===== */
         .va-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-        .va-title { font-weight: 800; font-size: 16px; color: var(--neon-blue); display: flex; align-items: center; gap: 8px; }
+        .va-title { font-weight: 800; font-size: 16px; color: var(--va-vurgu, #FD8E01); display: flex; align-items: center; gap: 8px; }
+        /* Kulüp paleti (2026-10-11): başlık/ikincil vurgu koyuda kehribar, açıkta okunur kızıl. */
+        :root { --va-vurgu: #FD8E01; } body.light-theme { --va-vurgu: #D73204; }
         .va-sub { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
         .va-dropzone { border: 2px dashed var(--accent-orange); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all .2s; background: rgba(255,98,0,0.05); }
         .va-dropzone.dragover { background: rgba(255,98,0,0.18); border-color: var(--gold); }
@@ -1129,7 +1131,7 @@
         .va-btn-blue { background: var(--neon-blue); }
         .va-btn-red { background: var(--neon-red); }
         .va-btn-green { background: var(--neon-green); }
-        .va-btn-grey { background: var(--accent-grey); }
+        .va-btn-grey { background: #861C02; color: #FFF1E6; }
         .va-btn:disabled { opacity: .45; cursor: not-allowed; }
         .va-row { display: flex; gap: 10px; flex-wrap: wrap; }
         .va-video { width: 100%; max-height: 60vh; background: #000; border-radius: 12px; border: 1px solid var(--border-color); }

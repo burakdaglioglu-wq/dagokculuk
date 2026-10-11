@@ -11255,7 +11255,8 @@
             { id:'durus', ad:'Video & Duruş', grup:'mavi', icon:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>' },
             { id:'baski', ad:'Baskı Görevleri', grup:'kirmizi', icon:'<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.5 4.6V17h7v-3.4C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20h5"/>' },
         ];
-        const KM_ARAC_GRUP_RENK = { yesil:'var(--status-success)', sari:'var(--status-warning)', mavi:'var(--status-info)', kirmizi:'var(--status-danger)' };
+        // Kulüp paleti (2026-10-11): kategori ikonları da turuncu ailesinden — kehribar / turuncu / koyu turuncu / kızıl
+        const KM_ARAC_GRUP_RENK = { yesil:'#FD8E01', sari:'#FC5B01', mavi:'#F07A2A', kirmizi:'#D73204' };
         function kmAracDurumSatiri(id) {
             if(id === 'yoklamaanaliz') {
                 try { let sayi = 0, bugun = bugunISO(); Object.keys(otomatikYoklamaDB[bugun] || {}).forEach(function(ad){ if(otomatikYoklamaDB[bugun][ad].geldi !== false) sayi++; }); return 'Bugün ' + sayi + ' kişi · şu an hangi ders?'; } catch(e) {}
@@ -11300,7 +11301,7 @@
         ];
         const KM_ARAC_ANA = {
             skor: { baslik:'Skor Gir', aciklama:'Oku at, puanı gir', renk:'var(--accent)' },
-            formlab: { baslik:'Form Lab', aciklama:'Kamerayla çene altı, kol ve parmak bırakışı', renk:'#0d9488' },
+            formlab: { baslik:'Form Lab', aciklama:'Kamerayla çene altı, kol ve parmak bırakışı', renk:'#D73204' },
         };
         const KM_ARAC_ACIKLAMA = {
             yuk: 'Haftalık ok sayısı ve yük', seviye: 'Mesafe/puan seviye sınavı', lig: 'Kulüp içi haftalık lig',
@@ -11473,31 +11474,31 @@
         const KM_TA_CSS = `
 .km-ta-topo{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.45;overflow:hidden;border-radius:14px}
 .km-ta-topo svg{width:100%;height:100%}
-.km-ta-root{position:relative;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#eef0e6;
-  background:radial-gradient(ellipse 60% 40% at 15% 0%, rgba(111,146,87,.10), transparent), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(201,151,76,.08), transparent), #10160f;
+.km-ta-root{position:relative;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#FFF1E6;
+  background:radial-gradient(ellipse 60% 40% at 15% 0%, rgba(215,50,4,.10), transparent), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(252,91,1,.08), transparent), #160804;
   border-radius:14px;padding:16px}
-.km-ta-ust{position:relative;z-index:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:6px;background:linear-gradient(180deg,#171f14,#10160f);border:1px solid #33402c;margin-bottom:14px}
-.km-ta-rozet{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:#10160f;background:radial-gradient(circle at 35% 30%,#e3b567,#c9974c 60%,#96702f);border:2px solid #4a3a1f;flex-shrink:0}
+.km-ta-ust{position:relative;z-index:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:6px;background:linear-gradient(180deg,#2a0e05,#160804);border:1px solid #5a1f08;margin-bottom:14px}
+.km-ta-rozet{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:#160804;background:radial-gradient(circle at 35% 30%,#FD8E01,#FC5B01 60%,#96702f);border:2px solid #4a3a1f;flex-shrink:0}
 .km-ta-kim{flex:1;min-width:150px}
 .km-ta-kim b{font-family:'Fraunces',Georgia,serif;font-size:18px}
-.km-ta-kim div{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#a9b39c;margin-top:3px}
-.km-ta-kim div b{color:#e3b567;font-family:'IBM Plex Mono',monospace;font-size:10.5px}
-.km-ta-damga{display:inline-flex;border:1.5px solid #33402c;border-radius:5px;overflow:hidden}
-.km-ta-damga button{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#a9b39c;background:#171f14;border:0;padding:10px 13px;cursor:pointer;min-height:40px;border-right:1px solid #33402c}
+.km-ta-kim div{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#D9AE93;margin-top:3px}
+.km-ta-kim div b{color:#FD8E01;font-family:'IBM Plex Mono',monospace;font-size:10.5px}
+.km-ta-damga{display:inline-flex;border:1.5px solid #5a1f08;border-radius:5px;overflow:hidden}
+.km-ta-damga button{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#D9AE93;background:#2a0e05;border:0;padding:10px 13px;cursor:pointer;min-height:40px;border-right:1px solid #5a1f08}
 .km-ta-damga button:last-child{border-right:0}
-.km-ta-damga button.on{color:#10160f;background:linear-gradient(180deg,#e3b567,#c9974c)}
-.km-ta-geri{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a9b39c;background:#171f14;border:1px solid #33402c;border-radius:5px;padding:8px 12px;cursor:pointer}
+.km-ta-damga button.on{color:#160804;background:linear-gradient(180deg,#FD8E01,#FC5B01)}
+.km-ta-geri{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#D9AE93;background:#2a0e05;border:1px solid #5a1f08;border-radius:5px;padding:8px 12px;cursor:pointer}
 .km-ta-duz{position:relative;z-index:1;display:grid;grid-template-columns:56px minmax(0,1fr) 280px;gap:14px;align-items:start}
 @media(max-width:980px){.km-ta-duz{grid-template-columns:1fr}}
 .km-ta-rail{display:flex;flex-direction:row;gap:7px;overflow-x:auto;padding-bottom:4px}
 @media(min-width:981px){.km-ta-rail{flex-direction:column}}
-.km-ta-rail button{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:2px solid #33402c;background:#171f14;color:#66715c;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;position:relative}
-.km-ta-rail button.done{border-color:#6f9257;color:#6f9257;background:rgba(111,146,87,.12)}
-.km-ta-rail button.now{border-color:#e3b567;color:#10160f;background:radial-gradient(circle at 35% 30%,#e3b567,#c9974c);box-shadow:0 0 0 3px rgba(201,151,76,.18)}
-.km-ta-rail button .km-ta-nokta{position:absolute;right:-3px;top:-3px;width:13px;height:13px;border-radius:50%;font-size:7.5px;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;border:1.5px solid #10160f}
+.km-ta-rail button{width:42px;height:42px;flex-shrink:0;border-radius:50%;border:2px solid #5a1f08;background:#2a0e05;color:#9a6a52;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;position:relative}
+.km-ta-rail button.done{border-color:#D73204;color:#D73204;background:rgba(215,50,4,.12)}
+.km-ta-rail button.now{border-color:#FD8E01;color:#160804;background:radial-gradient(circle at 35% 30%,#FD8E01,#FC5B01);box-shadow:0 0 0 3px rgba(252,91,1,.18)}
+.km-ta-rail button .km-ta-nokta{position:absolute;right:-3px;top:-3px;width:13px;height:13px;border-radius:50%;font-size:7.5px;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:700;border:1.5px solid #160804}
 .km-ta-rail button[data-p="1"] .km-ta-nokta,.km-ta-rail button[data-p="2"] .km-ta-nokta{background:#a33b2c;color:#fff}
-.km-ta-rail button[data-p="3"] .km-ta-nokta{background:#c9974c;color:#241a06}
-.km-ta-rail button[data-p="4"] .km-ta-nokta,.km-ta-rail button[data-p="5"] .km-ta-nokta{background:#6f9257;color:#fff}
+.km-ta-rail button[data-p="3"] .km-ta-nokta{background:#FC5B01;color:#241a06}
+.km-ta-rail button[data-p="4"] .km-ta-nokta,.km-ta-rail button[data-p="5"] .km-ta-nokta{background:#D73204;color:#fff}
 .km-ta-kart{background:repeating-linear-gradient(0deg, transparent 0 27px, rgba(90,70,30,.05) 27px 28px), linear-gradient(165deg,#f1e9d4,#e7dcc0);color:#2a2118;border-radius:4px;padding:18px 18px 16px;position:relative;box-shadow:0 10px 26px rgba(0,0,0,.35);border:1px solid #b7a679}
 .km-ta-kart::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:1.5px;background:#b5502e;opacity:.35}
 .km-ta-kart-ust{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-left:10px}
@@ -11517,12 +11518,12 @@
 .km-ta-stud{width:32px;height:32px;border-radius:50%;border:2px solid #c9b98c;background:rgba(255,255,255,.4);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:#5b4c37}
 .km-ta-stud.se{color:#fff;border-color:transparent}
 .km-ta-stud.se[data-v="1"],.km-ta-stud.se[data-v="2"]{background:#a33b2c}
-.km-ta-stud.se[data-v="3"]{background:#c9974c;color:#241a06}
-.km-ta-stud.se[data-v="4"],.km-ta-stud.se[data-v="5"]{background:#6f9257}
+.km-ta-stud.se[data-v="3"]{background:#FC5B01;color:#241a06}
+.km-ta-stud.se[data-v="4"],.km-ta-stud.se[data-v="5"]{background:#D73204}
 .km-ta-lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#b5502e;margin:0 0 7px}
 .km-ta-check{display:flex;align-items:flex-start;gap:8px;padding:5px 3px;cursor:pointer}
 .km-ta-check input{appearance:none;width:17px;height:17px;border:1.8px solid #5b4c37;border-radius:2px;flex-shrink:0;margin-top:1px;cursor:pointer;position:relative;background:rgba(255,255,255,.5)}
-.km-ta-check input:checked{background:#6f9257;border-color:#6f9257}
+.km-ta-check input:checked{background:#D73204;border-color:#D73204}
 .km-ta-check input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
 .km-ta-check span{font-size:12.5px;color:#2a2118;line-height:1.4}
 .km-ta-check-satir{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:1px 0}
@@ -11534,7 +11535,7 @@
 .km-ta-check-not.hata::placeholder{color:#c76a56}
 .km-ta-ikili{display:flex;gap:3px;flex-shrink:0}
 .km-ta-ikili button{width:24px;height:24px;border-radius:6px;border:1.6px solid #c9b98c;background:rgba(255,255,255,.45);font-size:12px;font-weight:800;color:#8a8064;cursor:pointer;line-height:1;padding:0}
-.km-ta-ikili-dogru.aktif{background:#6f9257;border-color:#6f9257;color:#fff}
+.km-ta-ikili-dogru.aktif{background:#D73204;border-color:#D73204;color:#fff}
 .km-ta-ikili-hatali.aktif{background:#a33b2c;border-color:#a33b2c;color:#fff}
 .km-ta-check-lbl{font-size:12.5px;color:#2a2118;line-height:1.3}
 .km-ta-check-lbl.hatali{color:#a33b2c;font-weight:700}
@@ -11543,7 +11544,7 @@
 .km-ta-gunluk textarea:focus{outline:none;border-bottom-color:#b5502e}
 .km-ta-foto-alan{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
 .km-ta-foto{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:5px;width:98px;padding:7px 7px 8px;background:#fff;border:1px solid #d8cfa8;box-shadow:0 3px 8px rgba(0,0,0,.2);cursor:pointer;transform:rotate(-1.6deg)}
-.km-ta-foto .km-ta-kare{width:100%;aspect-ratio:1/1;background:#dfe3d6;display:grid;place-items:center;overflow:hidden;color:#66715c;font-size:18px}
+.km-ta-foto .km-ta-kare{width:100%;aspect-ratio:1/1;background:#f3dccb;display:grid;place-items:center;overflow:hidden;color:#9a6a52;font-size:18px}
 .km-ta-foto .km-ta-kare img{width:100%;height:100%;object-fit:cover}
 .km-ta-foto .km-ta-altyazi{font-family:'IBM Plex Mono',monospace;font-size:8px;color:#5b4c37;text-align:center}
 .km-ta-foto input{display:none}
@@ -11562,40 +11563,40 @@
 .km-ta-not-l li{font-size:11.5px;line-height:1.55;color:#5b4c37;margin-bottom:2px}
 .km-ta-not-l b{color:#2a2118}
 .km-ta-uyari{margin-top:7px;padding:7px 9px;background:rgba(181,80,46,.1);border-left:3px solid #b5502e;font-size:11px;line-height:1.45;color:#5b2515}
-.km-ta-arast{margin-top:7px;padding:7px 9px;background:rgba(111,146,87,.12);border-left:3px solid #6f9257;font-size:11px;line-height:1.45;color:#2a3b20}
+.km-ta-arast{margin-top:7px;padding:7px 9px;background:rgba(215,50,4,.12);border-left:3px solid #D73204;font-size:11px;line-height:1.45;color:#2a3b20}
 .km-ta-kaynak{margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;line-height:1.5;color:#8a8064}
-.km-ta-ozet{background:linear-gradient(180deg,#171f14,#10160f);border:1px solid #33402c;border-radius:6px;padding:14px}
+.km-ta-ozet{background:linear-gradient(180deg,#2a0e05,#160804);border:1px solid #5a1f08;border-radius:6px;padding:14px}
 /* 🔍 Hata Deseni (2026-09-25, "sporcunun hataları/gelişimi" isteği) — Saha Karnesi'nin AYNI koyu palet
    ailesinden, ama kırmızımsı-kahve bir vurgu (.km-ta-uyari'nin AYNI #b5502e tonu) — "buraya dikkat"
    hissi versin diye ozet/notkart'tan görsel olarak ayrılıyor. */
 .km-ta-hatadesen{background:linear-gradient(180deg,#1f1512,#160e0c);border:1px solid #4a2a1f;border-radius:6px;padding:14px;margin-bottom:12px}
-.km-ta-hatadesen h3{margin:0 0 3px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#e3b567;font-family:'IBM Plex Mono',monospace}
+.km-ta-hatadesen h3{margin:0 0 3px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#FD8E01;font-family:'IBM Plex Mono',monospace}
 .km-ta-hatadesen-alt{font-size:10px;color:#a9924e;margin-bottom:10px}
 .km-ta-hatadesen-satir{padding:8px 0;border-top:1px solid #3a2620}
 .km-ta-hatadesen-satir:first-of-type{border-top:none;padding-top:0}
 .km-ta-hatadesen-baslik{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.km-ta-hatadesen-etiket{font-weight:700;font-size:11.5px;color:#eef0e6}
-.km-ta-hatadesen-oran{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c9974c;white-space:nowrap;flex-shrink:0}
+.km-ta-hatadesen-etiket{font-weight:700;font-size:11.5px;color:#FFF1E6}
+.km-ta-hatadesen-oran{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#FC5B01;white-space:nowrap;flex-shrink:0}
 .km-ta-hatadesen-faz{font-size:9.5px;color:#8a7a6a;margin-top:1px}
 .km-ta-hatadesen-neden{font-size:10px;color:#c9a98a;margin-top:3px;font-style:italic}
-.km-ta-hatadesen-iyi{font-size:11px;color:#6f9257;text-align:center;padding:4px 0}
-.km-ta-ozet h3{font-size:11.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:#a9b39c;margin:0 0 9px}
+.km-ta-hatadesen-iyi{font-size:11px;color:#D73204;text-align:center;padding:4px 0}
+.km-ta-ozet h3{font-size:11.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:#D9AE93;margin:0 0 9px}
 .km-ta-ilercubuk{display:flex;gap:4px;margin-bottom:9px}
-.km-ta-ilercubuk i{flex:1;height:5px;border-radius:2px;background:#33402c;font-style:normal}
-.km-ta-ilercubuk i.dolu{background:linear-gradient(90deg,#c9974c,#6f9257)}
-.km-ta-ozetsatir{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a9b39c;margin-bottom:5px}
-.km-ta-ozetsatir b{color:#e3b567}
+.km-ta-ilercubuk i{flex:1;height:5px;border-radius:2px;background:#5a1f08;font-style:normal}
+.km-ta-ilercubuk i.dolu{background:linear-gradient(90deg,#FC5B01,#D73204)}
+.km-ta-ozetsatir{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D9AE93;margin-bottom:5px}
+.km-ta-ozetsatir b{color:#FD8E01}
 .km-ta-altbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
-.km-ta-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;border:1.5px solid #33402c;padding:11px 16px;cursor:pointer;min-height:42px;color:#eef0e6;background:#171f14}
-.km-ta-btn.ana{color:#10160f;background:linear-gradient(180deg,#e3b567,#c9974c);border-color:transparent}
+.km-ta-btn{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;border:1.5px solid #5a1f08;padding:11px 16px;cursor:pointer;min-height:42px;color:#FFF1E6;background:#2a0e05}
+.km-ta-btn.ana{color:#160804;background:linear-gradient(180deg,#FD8E01,#FC5B01);border-color:transparent}
 .km-ta-btn:disabled{opacity:.4;cursor:default}
 .km-ta-secim-liste{display:flex;flex-wrap:wrap;gap:8px}
-.km-ta-secim-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1.5px solid #33402c;background:#171f14;color:#eef0e6;cursor:pointer;font-size:12.5px;font-weight:700}
-.km-ta-secim-chip:hover{border-color:#c9974c}
-.km-ta-secim-av{width:26px;height:26px;border-radius:50%;background:#c9974c;color:#10160f;display:grid;place-items:center;font-size:10.5px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.km-ta-secim-chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1.5px solid #5a1f08;background:#2a0e05;color:#FFF1E6;cursor:pointer;font-size:12.5px;font-weight:700}
+.km-ta-secim-chip:hover{border-color:#FC5B01}
+.km-ta-secim-av{width:26px;height:26px;border-radius:50%;background:#FC5B01;color:#160804;display:grid;place-items:center;font-size:10.5px;font-weight:800;font-family:'IBM Plex Mono',monospace}
 .km-ta-gecmis{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.km-ta-gecmis-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#a9b39c;background:#171f14;border:1px solid #33402c;border-radius:5px;padding:6px 9px;cursor:pointer}
-.km-ta-gecmis-chip:hover{border-color:#c9974c;color:#eef0e6}
+.km-ta-gecmis-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#D9AE93;background:#2a0e05;border:1px solid #5a1f08;border-radius:5px;padding:6px 9px;cursor:pointer}
+.km-ta-gecmis-chip:hover{border-color:#FC5B01;color:#FFF1E6}
 /* z-index:99999 — #karisik-platform KENDİSİ z-index:20000 ile kendi yığılma bağlamını kuruyor
    (gerçek testte yakalandı: 200 onun ALTINDA kalıp modal CSS'çe "görünür" raporlanıyordu ama hiç
    boyanmıyordu) — km-yarisma-takim-duzenle-modal'daki AYNI 99999 deseni kullanıldı. */
@@ -11605,10 +11606,10 @@
 /* 🎴 Kaşif Kartı (2026-09-24) — aynı stil dosyasını (km-ta-style) paylaşıyor, kmKasifKartiCiz() de
    kmTeknikAnalizKaynaklarYukle()'yi çağırıyor (bkz. KM_OYUN_CSS lazy-load dersi — Teknik Analiz hiç
    açılmadan doğrudan bu araca girilirse stilsiz kalmasın diye). */
-.km-ta-btn-vurgu{color:#10160f;background:linear-gradient(180deg,#e3b567,#c9974c);border-color:transparent}
+.km-ta-btn-vurgu{color:#160804;background:linear-gradient(180deg,#FD8E01,#FC5B01);border-color:transparent}
 .km-kk-canvas-wrap{display:flex; justify-content:center; margin-bottom:12px;}
 .km-kk-canvas-wrap canvas{width:100%; max-width:280px; height:auto; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.35);}
-.km-kk-kol{border:1.5px solid #33402c; border-radius:8px; background:#11170e; padding:10px; margin:0 0 10px;}
+.km-kk-kol{border:1.5px solid #5a1f08; border-radius:8px; background:#11170e; padding:10px; margin:0 0 10px;}
 .km-kk-kol-baslik{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#b9c2a8; margin-bottom:8px;}
 .km-kk-kol-baslik b{color:#ffd23f;}
 .km-kk-kol-izgara{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:6px;}
@@ -11617,15 +11618,15 @@
 .km-kk-kol-hucre small{font-size:9.5px; color:#8f9a80; text-align:center; line-height:1.15;}
 .km-kk-kol-hucre.var{opacity:1; border:1px solid var(--kr); background:color-mix(in srgb, var(--kr) 14%, transparent);}
 .km-kk-kol-hucre.var span{filter:none;}
-.km-kk-kol-hucre.var small{color:#eef0e6;}
+.km-kk-kol-hucre.var small{color:#FFF1E6;}
 .km-kk-kol-hucre i{position:absolute; top:3px; right:5px; font-style:normal; font-size:10px; font-weight:800; color:#ffd23f;}
-.km-kk-foto-btn{display:block; text-align:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px; letter-spacing:.03em; text-transform:uppercase; border-radius:5px; border:1.5px solid #33402c; padding:11px 16px; cursor:pointer; min-height:42px; color:#eef0e6; background:#171f14; margin-bottom:10px;}
+.km-kk-foto-btn{display:block; text-align:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px; letter-spacing:.03em; text-transform:uppercase; border-radius:5px; border:1.5px solid #5a1f08; padding:11px 16px; cursor:pointer; min-height:42px; color:#FFF1E6; background:#2a0e05; margin-bottom:10px;}
 .km-kk-btn-row{display:flex; gap:8px; flex-wrap:wrap;}
 .km-kk-btn-row .km-ta-btn{flex:1; min-width:140px;}
 .km-kk-mini-izgara{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
 .km-kk-mini{position:relative; width:64px;}
-.km-kk-mini img{width:64px; height:90px; object-fit:cover; border-radius:8px; border:1.5px solid #33402c; display:block;}
-.km-kk-mini span{display:block; text-align:center; font-size:9.5px; color:#a9b39c; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.km-kk-mini img{width:64px; height:90px; object-fit:cover; border-radius:8px; border:1.5px solid #5a1f08; display:block;}
+.km-kk-mini span{display:block; text-align:center; font-size:9.5px; color:#D9AE93; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .km-kk-mini button{position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; border:none; background:#b53b2c; color:#fff; font-size:10px; line-height:18px; padding:0; cursor:pointer;}
 `;
         let _kmTaKaynakYuklendi = false;
@@ -11673,13 +11674,13 @@
                 let bas = k.ad.trim().split(/\s+/).map(function(p){ return p[0]||''; }).slice(0,2).join('').toUpperCase();
                 return `<button class="km-ta-secim-chip" onclick="kmTeknikAnalizSporcuSec('${k.g}','${k.ad.replace(/'/g,"\\'")}')"><span class="km-ta-secim-av">${esc(bas)}</span>${esc(k.ad)}</button>`;
             }).join('');
-            ic.innerHTML = `<div class="km-ta-root"><div class="km-ta-topo"><svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#6f9257" stroke-width="1"><ellipse cx="640" cy="40" rx="90" ry="60" opacity=".22"/><ellipse cx="640" cy="40" rx="150" ry="100" opacity=".14"/></g></svg></div>
+            ic.innerHTML = `<div class="km-ta-root"><div class="km-ta-topo"><svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#D73204" stroke-width="1"><ellipse cx="640" cy="40" rx="90" ry="60" opacity=".22"/><ellipse cx="640" cy="40" rx="150" ry="100" opacity=".14"/></g></svg></div>
                 <div style="position:relative; z-index:1;">
                     <div style="font-family:'Fraunces',Georgia,serif; font-size:19px; margin-bottom:4px;">🧭 Teknik Analiz — Saha Karnesi</div>
-                    <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--text-secondary,#a9b39c); margin-bottom:14px;">Değerlendirilecek sporcuyu seç.</div>
-                    ${liste.length ? `<div class="km-ta-secim-liste">${chips}</div>` : `<div style="font-size:12px; color:#a9b39c;">Oturumda henüz kimse yok — önce Karışık Sınıf listesine sporcu ekle.</div>`}
+                    <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px; color:var(--text-secondary,#D9AE93); margin-bottom:14px;">Değerlendirilecek sporcuyu seç.</div>
+                    ${liste.length ? `<div class="km-ta-secim-liste">${chips}</div>` : `<div style="font-size:12px; color:#D9AE93;">Oturumda henüz kimse yok — önce Karışık Sınıf listesine sporcu ekle.</div>`}
                     <div class="km-ta-lbl" style="margin-top:16px;">Son Kaydedilen Karneler</div>
-                    <div id="km-ta-son-karneler" style="font-size:11.5px; color:#66715c;">Yükleniyor…</div>
+                    <div id="km-ta-son-karneler" style="font-size:11.5px; color:#9a6a52;">Yükleniyor…</div>
                 </div>
             </div>`;
             kmTeknikAnalizSonKarneleriYukle(liste);
@@ -12291,14 +12292,14 @@
                 return `<div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:12px; padding:11px 13px; margin-bottom:8px;">
                     <div style="font-weight:800; font-size:13.5px;">${spEmoji(sp)}${item.ad} <span style="font-size:9.5px; font-weight:700; color:var(--text-muted); background:rgba(255,255,255,0.06); border-radius:20px; padding:2px 8px; margin-left:4px;">${LIG_ETIKET[item.g] || item.g}</span></div>
                     <div style="font-size:10.5px; color:var(--text-muted); margin:3px 0 9px;">${ist.seriSayisi} seri · ort ${ist.ort} · en iyi ${ist.enIyi} · ${ist.xSay} X</div>
-                    <button onclick="dersRaporuPDF('${item.g}','${adEsc}')" style="width:100%; margin-bottom:6px; background:rgba(251,191,36,0.14); color:#fbbf24; border:1px solid #fbbf24; padding:9px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">🎯 Bugünkü Ders PDF (Motivasyon Notu ile)</button>
+                    <button onclick="dersRaporuPDF('${item.g}','${adEsc}')" style="width:100%; margin-bottom:6px; background:var(--accent-soft); color:var(--accent-orange); border:1px solid var(--accent-orange); padding:9px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">🎯 Bugünkü Ders PDF (Motivasyon Notu ile)</button>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                        <button onclick="aileRaporuPDF('${item.g}','${adEsc}')" style="background:rgba(59,130,246,0.12); color:var(--neon-blue); border:1px solid var(--neon-blue); padding:9px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">📄 Sezon PDF</button>
+                        <button onclick="aileRaporuPDF('${item.g}','${adEsc}')" style="background:rgba(253,142,1,0.10); color:var(--va-vurgu,#FD8E01); border:1px solid var(--va-vurgu,#FD8E01); padding:9px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">📄 Sezon PDF</button>
                         <button onclick="aileRaporuMetin('${item.g}','${adEsc}')" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border:1px solid var(--neon-green); padding:9px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">💬 WhatsApp Özeti</button>
                     </div>
                 </div>`;
             }).join('');
-            el.innerHTML = `<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.3); border-radius:10px; padding:9px 12px;">Ders bitmeden de, istediğin an bir sporcunun raporunu indirip veliye gönderebilirsin. 🎯 Bugünkü Ders PDF sadece bu oturumun atışlarını (ok grupman haritası + aileye motivasyon notu dahil) içerir, 📄 Sezon PDF tüm sezonu kapsar, WhatsApp Özeti panoya kopyalanır.</div>${kartlar}`;
+            el.innerHTML = `<div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; background:var(--accent-soft); border:1px solid var(--border-color); border-radius:10px; padding:9px 12px;">Ders bitmeden de, istediğin an bir sporcunun raporunu indirip veliye gönderebilirsin. 🎯 Bugünkü Ders PDF sadece bu oturumun atışlarını (ok grupman haritası + aileye motivasyon notu dahil) içerir, 📄 Sezon PDF tüm sezonu kapsar, WhatsApp Özeti panoya kopyalanır.</div>${kartlar}`;
         }
 
         // ===== KARIŞIK SINIF — 🚦 DİSİPLİN PUSULASI (kullanıcının "ceza sistemi" isteği, isim eklendi) =====
