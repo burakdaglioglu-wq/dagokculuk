@@ -15302,13 +15302,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     return '<div class="km-hat-sat"><div class="km-hat-ad"><b>' + esc(s.ad) + '</b><small>' + (y !== null ? y + ' yaş · ' : '') + esc(LIG_ETIKET[s.g] || s.g) + '</small></div>'
                         + '<div class="km-hat-seg"><button class="' + (yar ? '' : 'on') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'oyun\')">🎮 Oyun</button><button class="' + (yar ? 'on y' : '') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'yarisma\')">🎯 Yarışma</button></div></div>';
                 }).join('') + '</div>'
-                + '<div class="km-hat-toplu"><button onclick="kmHatToplu(\'yas\')">12 yaş ve üstü → Yarışma</button><button onclick="kmHatToplu(\'hepsi\')">Hepsi Oyun</button></div>';
+                + '<div class="km-hat-toplu"><button onclick="kmHatToplu(\'yas\')">12 yaş ve üstü → Yarışma</button><button onclick="kmHatToplu(\'hepsi\')">Hepsi Oyun</button></div>'
+                + '<div class="km-hat-cihaz"><span><b>📱 Tek ekran karma görünüm</b><small>Oyunlar açıkken Yarışma hattı aynı ekranda, köşedeki panelde. Sadece bu cihazda.</small></span><div class="km-hat-seg"><button class="' + (kmKarmaEkranAcik() ? '' : 'on') + '" onclick="if(kmKarmaEkranAcik())kmKarmaEkranDegis()">Kapalı</button><button class="' + (kmKarmaEkranAcik() ? 'on y' : '') + '" onclick="if(!kmKarmaEkranAcik())kmKarmaEkranDegis()">Açık</button></div></div>';
         }
         function kmHatPanelAc() {
             kmHatCssYukle();
             onayIste('<div style="text-align:left"><b>🔀 Ders hatları</b><div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px; line-height:1.45;">Aynı derste farklı yaşlar: <b>Oyun</b> hattındakiler Oyunlar\'da ilerler, <b>Yarışma</b> hattındakiler Yarışma\'da hedeflerine göre takip edilir. Herkes gerçek ok atar, skorlar karnesine işlenir.</div><div id="km-hat-panel"></div></div>',
                 function() { try { if(_kmAktifSekme) kmSekme(_kmAktifSekme); else { kmSinifKartiCiz(); kmAracIzgaraCiz(); } } catch(e) {} }, '✓ Tamam', 'Kapat');
             kmHatPanelCiz();
+        }
+        // ---- TEK EKRAN KARMA GÖRÜNÜM (2026-10-12, kullanıcı: "tek ekran karma görünüm, isteğe göre olsun"). Cihaz ayarı
+        // (paylaşılmaz): açıksa Oyunlar ekranının üstünde katlanabilir "Yarışma hattı" paneli (dagsk-km-yarisma-pro.js
+        // yzKarmaDok*) — sıralama turunun anlık durumu, her sporcu için GİR (yarışma tuş takımı aynı ekranda açılır).
+        function kmKarmaEkranAcik() { try { return localStorage.getItem('dagsk_karma_ekran') === '1'; } catch(e) { return false; } }
+        function kmKarmaEkranDegis() { try { localStorage.setItem('dagsk_karma_ekran', kmKarmaEkranAcik() ? '0' : '1'); } catch(e) {} kmHatPanelCiz(); }
+        function kmKarmaDokBaslat() {
+            let eski = document.getElementById('yz-karma-dok');
+            if(!kmKarmaEkranAcik() || !kmKarmaMi()) { if(eski) eski.remove(); return; }
+            dagskEkYukle('dagsk-km-yarisma-pro.js').then(function() { if(_kmAktifSekme === 'oyunlar' && typeof yzKarmaDokKur === 'function') yzKarmaDokKur(); }).catch(function() {});
         }
         function kmHatCssYukle() {
             if(document.getElementById('km-hat-css')) return;
@@ -15320,6 +15331,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + '.km-hat-seg{display:flex;flex:none;border:1px solid var(--border-color);border-radius:999px;padding:2px;gap:2px}.km-hat-seg button{border:none;background:transparent;color:var(--text-muted);font:inherit;font-size:12px;font-weight:800;padding:7px 11px;border-radius:999px;cursor:pointer;min-height:34px}'
                 + '.km-hat-seg button.on{background:var(--accent-orange);color:var(--text-on-accent-dark,#1A0700)}.km-hat-seg button.on.y{background:var(--dag-kehribar,#FD8E01)}'
                 + '.km-hat-toplu{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.km-hat-toplu button{border:1px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:12px;font-weight:800;padding:8px 12px;border-radius:999px;cursor:pointer}'
+                + '.km-hat-cihaz{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:10px 12px;border-radius:12px;border:1px dashed var(--border-color)}.km-hat-cihaz span{display:flex;flex-direction:column;gap:2px;font-size:13px}.km-hat-cihaz small{font-size:11px;color:var(--text-muted);line-height:1.35}'
                 + '.km-hat-rozet{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:800;background:color-mix(in srgb,var(--dag-kehribar,#FD8E01) 22%,transparent);color:var(--dag-kehribar,#FD8E01)}';
             document.head.appendChild(st);
         }
@@ -25815,6 +25827,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunKilit = false;
             _kmOyunSonGiris = null;
             el.innerHTML = kmOyunHTML();
+            try { kmKarmaDokBaslat(); } catch(e) {}
             kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             kmOyunPadCiz();

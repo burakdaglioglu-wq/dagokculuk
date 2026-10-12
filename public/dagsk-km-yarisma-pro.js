@@ -147,6 +147,7 @@ function yzSecimCiz() {
 
 // ---------------------------------------------------------------- 2) sıralama turu
 function yzCiz() {
+    if (typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme && _kmAktifSekme !== 'yarisma') { if (_yz.tv) yzTvCiz(); yzKarmaDokCiz(); yzTimerBaslat(); return; }
     if (_yz.mod !== 'siralama') yzModAyarla('siralama');
     let ic = document.getElementById('km-icerik'), o = yzOku(), d = o.durum;
     if (ic) {
@@ -345,7 +346,7 @@ function yzGirisCiz() {
         altSatir = (g.seri + 1) + '. seri' + (g.duzeltme ? ' · <b style="color:var(--status-warning,#d97706)">düzeltme</b>' : '') + ' · ' + okSay + ' ok';
         topSatir = '<span>Seri <b>' + seriTop + '</b></span><span>Toplam <b>' + (digerToplam + seriTop) + '</b></span>';
     }
-    if (!kap) { kap = document.createElement('div'); kap.id = 'yz-giris'; kap.className = 'yz-giris-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yzGirisKapat(); }); document.body.appendChild(kap); document.addEventListener('keydown', yzGirisTus, true); }
+    if (!kap) { kap = document.createElement('div'); kap.id = 'yz-giris'; kap.className = 'yz-giris-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yzGirisKapat(); }); (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap); document.addEventListener('keydown', yzGirisTus, true); }
     let slotlar = ''; for (let i = 0; i < okSay; i++) { let p = g.oklar[i]; slotlar += '<span class="yz-ok ' + (p ? yzOkRenk(p) : 'bos') + '">' + (p || '') + '</span>'; }
     let tus = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].map(function (p) { return '<button class="yz-tus ' + yzOkRenk(p) + '" onclick="yzOkEkle(\'' + p + '\')"' + (g.oklar.length >= okSay ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
     let dolu = g.oklar.length >= okSay;
@@ -651,6 +652,63 @@ function yzTvOyunCss() {
         + '#yz-tv .yz-tvo-bil{display:flex;justify-content:space-between;align-items:baseline;font-size:max(10px,.8vw);opacity:.75}#yz-tv .yz-tvo-bil b{font-size:max(12px,1.1vw);opacity:1}'
         + '#yz-tv .yz-tvo-bar{display:block;height:.6vh;min-height:4px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}#yz-tv .yz-tvo-bar u{display:block;height:100%;background:#22c55e;border-radius:99px}'
         + '#yz-tv.kagit .yz-tvo{background:#fffdf8;border:2px solid #1d1a16}#yz-tv.kagit .yz-tvo-bas{color:#d92c20}#yz-tv.kagit .yz-tvo-k{background:#f3ecdf;color:#1d1a16}#yz-tv.kagit .yz-tvo-bar{background:#e3dccf}';
+    document.head.appendChild(st);
+}
+
+// ---- 🎯 Karma dok — Oyunlar ekranının köşesinde Yarışma hattı (app.js kmKarmaDokBaslat açar). Turun anlık durumu: seri, her
+// sporcunun toplamı, hedefe kalan, bu seriyi girdi mi; GİR → yarışma tuş takımı (yzGirisAc) aynı ekranda. Katlanabilir (cihazda hatırlanır).
+function yzKarmaDokKur() {
+    let wrap = document.getElementById('km-oyun-wrap'); if (!wrap) return;
+    yzCssYukle(); yzKarmaCss();
+    let el = document.getElementById('yz-karma-dok');
+    if (!el || el.parentNode !== wrap) { if (el) el.remove(); el = document.createElement('div'); el.id = 'yz-karma-dok'; wrap.appendChild(el); }
+    yzKarmaDokCiz(); yzTimerBaslat();
+    clearInterval(_yz.karmaZ);
+    _yz.karmaZ = setInterval(function () {
+        if (!document.getElementById('yz-karma-dok')) { clearInterval(_yz.karmaZ); _yz.karmaZ = null; return; }
+        if (yzKarmaImza() !== _yz.karmaHam) yzKarmaDokCiz();
+    }, 1500);
+}
+function yzKarmaImza() { return (localStorage.getItem(yzAnahtar()) || '') + '|' + (localStorage.getItem('dag_km_hat_' + (_kmAktifKonum || 'varsayilan')) || '') + '|' + (localStorage.getItem('dagsk_karma_dok_acik') || ''); }
+function yzKarmaDokAcKapat() { try { localStorage.setItem('dagsk_karma_dok_acik', localStorage.getItem('dagsk_karma_dok_acik') === '0' ? '1' : '0'); } catch (e) {} yzKarmaDokCiz(); }
+function yzKarmaDokCiz() {
+    let el = document.getElementById('yz-karma-dok'); if (!el) return;
+    _yz.karmaHam = yzKarmaImza();
+    let acik = localStorage.getItem('dagsk_karma_dok_acik') !== '0';
+    let o = yzOku(), d = o.durum, liste = typeof kmYarismaListe === 'function' ? kmYarismaListe() : [];
+    let tur = d && d.asama === 'tur', f = tur ? yzFormat(d) : null, seri = tur ? Math.min(d.seri, f.seri - 1) : 0, bek = tur ? yzBekleyenler(o, seri).length : 0;
+    let bas = '<button class="yzk-bas" onclick="yzKarmaDokAcKapat()"><span>🎯 YARIŞMA HATTI</span>' + (tur ? '<em>Seri ' + (seri + 1) + '/' + f.seri + (bek ? ' · ' + bek + ' bekliyor' : ' · ✓') + '</em>' : '<em>' + liste.length + ' sporcu</em>') + '<i>' + (acik ? '▾' : '▴') + '</i></button>';
+    if (!acik) { el.className = 'kapali'; el.innerHTML = bas; return; }
+    el.className = '';
+    let govde;
+    if (!tur) {
+        govde = '<div class="yzk-bos">' + (d && d.asama === 'bitti' ? 'Tur bitti — sonuçlar Yarışma\'da.' : d && d.asama === 'eleme' ? 'Eleme maçları sürüyor.' : 'Sıralama turu henüz başlamadı.') + '</div>'
+            + liste.map(function (s) { return '<div class="yzk-sat"><span class="yzk-ad">' + esc(yzKisaAd(s.ad)) + '</span></div>'; }).join('')
+            + '<button class="yzk-alt" onclick="kmAracSec(\'yarisma\')">Yarışma\'yı aç →</button>';
+    } else {
+        govde = yzSiralama(o).map(function (r) {
+            let girdi = r.seriT[seri] != null, hd = r.hedefPuan ? (r.hedefPuan - r.toplam > 0 ? '🎯 ' + (r.hedefPuan - r.toplam) + ' kaldı' : '🎯 ✓') : '';
+            return '<div class="yzk-sat' + (girdi ? ' tamam' : '') + '"><span class="yzk-sira">' + r.sira + '</span><span class="yzk-ad">' + esc(yzKisaAd(r.ad)) + '<small>Σ ' + r.toplam + (hd ? ' · ' + hd : '') + '</small></span>'
+                + '<button class="yzk-gir' + (girdi ? ' ok' : '') + '" onclick="yzGirisAc(\'' + yzEnc(r.k) + '\',' + seri + ')">' + (girdi ? r.seriT[seri] : 'GİR') + '</button></div>';
+        }).join('')
+            + (bek ? '' : '<button class="yzk-alt ana" onclick="yzSonrakiSeri()">' + (seri >= f.seri - 1 ? '🏁 Turu bitir' : '▶ ' + (seri + 2) + '. seriye geç') + '</button>');
+    }
+    el.innerHTML = bas + '<div class="yzk-govde">' + govde + '</div>';
+}
+function yzKarmaCss() {
+    if (document.getElementById('yz-karma-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-karma-css';
+    st.textContent = '#yz-karma-dok{position:absolute;left:14px;bottom:14px;z-index:70;width:min(300px,78vw);max-height:62%;display:flex;flex-direction:column;border-radius:16px;background:rgba(22,8,4,.93);border:1px solid rgba(253,142,1,.32);box-shadow:0 18px 50px rgba(0,0,0,.5);color:#FFF1E6;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow:hidden;font-family:inherit}'
+        + '#yz-karma-dok.kapali{width:auto;max-width:78vw}'
+        + '.yzk-bas{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:rgba(253,142,1,.12);color:#FFF1E6;font:inherit;cursor:pointer;text-align:left}'
+        + '.yzk-bas span{font-weight:900;font-size:11.5px;letter-spacing:.12em;color:#FD8E01}.yzk-bas em{font-style:normal;font-size:12px;font-weight:700;opacity:.85;flex:1}.yzk-bas i{font-style:normal;opacity:.7}'
+        + '.yzk-govde{overflow:auto;padding:6px;display:flex;flex-direction:column;gap:4px}'
+        + '.yzk-sat{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.04)}.yzk-sat.tamam{background:rgba(34,197,94,.1)}'
+        + '.yzk-sira{flex:none;width:22px;text-align:center;font-weight:900;font-size:13px;color:#FD8E01}'
+        + '.yzk-ad{flex:1;min-width:0;display:flex;flex-direction:column;font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.yzk-ad small{font-size:11px;font-weight:700;opacity:.7}'
+        + '.yzk-gir{flex:none;min-width:56px;min-height:38px;border-radius:10px;border:none;background:#FC5B01;color:#1A0700;font:inherit;font-weight:900;font-size:13px;cursor:pointer}.yzk-gir.ok{background:rgba(34,197,94,.22);color:#86efac}'
+        + '.yzk-bos{font-size:12px;opacity:.8;padding:6px 8px}'
+        + '.yzk-alt{margin-top:4px;min-height:40px;border-radius:10px;border:1px solid rgba(253,142,1,.4);background:transparent;color:#FFF1E6;font:inherit;font-weight:800;font-size:13px;cursor:pointer}.yzk-alt.ana{background:#FD8E01;color:#1A0700;border-color:#FD8E01}';
     document.head.appendChild(st);
 }
 
