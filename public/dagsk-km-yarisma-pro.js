@@ -251,6 +251,7 @@ function yzTurHTML(o) {
         + '<div class="yz-hedefler">' + hedefHTML + '</div>'
         + yzYarisGrafikKartHTML(o, sira, false)
         + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Canlı sıralama <span class="yz-alt">· hücreye dokun → o seriyi düzelt</span>' + yzGorunumKontrolHTML(o) + '</div><div class="yz-tablo-kap">' + yzGorunumHTML(o, sira, { kompakt: true, duzenle: true }) + '</div></div>'
+        + yzOyunHattiKartHTML()
         + '</div>';
 }
 // Tablo — tur ekranı, TV ve sonuç ekranı ortak.
@@ -434,10 +435,12 @@ function yzSayacHTML(o, id) { let s = yzSayacDurum(o); return '<div id="' + id +
 function yzTimerBaslat() {
     if (_yz.timer) return;
     _yz.timer = setInterval(function () {
-        let a = document.getElementById('yz-sayac'), b = document.getElementById('yz-tv-sayac');
-        if (!a && !b) { clearInterval(_yz.timer); _yz.timer = null; yzDevSayacGuncelle(null); return; }
+        let a = document.getElementById('yz-sayac'), b = document.getElementById('yz-tv-sayac'), c = document.getElementById('yz-oyun-sayac');
+        if (!a && !b && !c) { clearInterval(_yz.timer); _yz.timer = null; yzDevSayacGuncelle(null); return; }
         let o = yzOku(), s = yzSayacDurum(o);
-        [a, b].forEach(function (el) { if (!el) return; el.className = 'yz-sayac ' + s.faz; el.querySelector('.yz-sayac-alt').textContent = s.alt; el.querySelector('.yz-sayac-sure').textContent = s.metin; });
+        if (c) yzOyunSayacEtiket(o, s);
+        yzOyunHattiKartTazele();
+        [a, b, c].forEach(function (el) { if (!el) return; el.className = 'yz-sayac ' + s.faz; el.querySelector('.yz-sayac-alt').textContent = s.alt; el.querySelector('.yz-sayac-sure').textContent = s.metin; });
         yzSesKontrol(o, s); yzDevSayacGuncelle(o, s);
     }, 250);
 }
@@ -491,6 +494,7 @@ function yzSonucHTML(o) {
         + yzYarisGrafikKartHTML(o, sira, true)
         + elemeKart
         + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">Sıralama turu' + yzGorunumKontrolHTML(o) + '</div><div class="yz-tablo-kap">' + yzGorunumHTML(o, sira, { duzenle: true }) + '</div></div>'
+        + yzOyunHattiKartHTML()
         + yzTeknikKartHTML(o, sira)
         + '<div class="yz-kart yz-tablo-kart"><div class="yz-etiket">🎯 Ok dağılımı <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· her değerden kaç ok · koyu hücre = çok</span></div><div class="yz-tablo-kap">' + yzDagilimTabloHTML(o, sira) + '</div></div>'
         + '</div>';
@@ -514,7 +518,7 @@ function yzTvAc() {
     yzTvCiz();
     clearInterval(_yz.tvPoll);
     // Ortak ders senkronu yerel kaydı güncelleyince (WS ile ~1 sn) burada fark edilir; ekran sadece değişince çizilir.
-    _yz.tvPoll = setInterval(function () { let h = localStorage.getItem(yzAnahtar()); if (h !== _yz.tvHam) yzTvCiz(); }, 700);
+    _yz.tvPoll = setInterval(function () { let h = localStorage.getItem(yzAnahtar()), im = yzOyunImza(); if (h !== _yz.tvHam || im !== _yz.tvOyunImza) { _yz.tvOyunImza = im; yzTvCiz(); } }, 700);
     yzTimerBaslat();
 }
 function yzTvKapat(tamEkranKalsin) {
@@ -625,6 +629,56 @@ function yzTvCiz() {
     yzTimerBaslat();
 }
 
+// ---- 🎮 Oyun hattının skorları Yarışma'da (2026-10-13, kullanıcı: "Yarışma modu bizim için çok önemli; oyun oynayanın da skoru
+// Yarışma modunda görünsün, oradan bakalım ne atmış"). Oyun hattındaki her sporcunun BUGÜN attığı gerçek seriler (Oyunlar'dan
+// girilenler dahil, hepsi karnede): her seri bir halka (renk = ok başı ortalama), dokununca oklar. Toplam, ok ortalaması, son seri.
+// Sıralamaya KATILMAZ (format farklı: oyunda 3 ok, yarışmada 3/6) — ayrı kart. Yeni seri gelince kendini tazeler.
+function yzOyunHattiSatir(s) {
+    let sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad], bugun = bugunISO();
+    let ser = ((sp && sp.seriler) || []).filter(function (x) { return x && x.tarih === bugun && Array.isArray(x.oklar) && x.oklar.length; }).map(function (x) {
+        let oklar = x.oklar.map(function (v) { return String(v); }), puan = typeof x.puan === 'number' ? x.puan : yzTop(oklar);
+        return { puan: puan, ok: oklar.length, oklar: oklar };
+    });
+    let toplam = ser.reduce(function (a, x) { return a + x.puan; }, 0), ok = ser.reduce(function (a, x) { return a + x.ok; }, 0);
+    let on = ser.reduce(function (a, x) { return a + x.oklar.filter(function (v) { return v === 'X' || v === '10'; }).length; }, 0);
+    return { s: s, seriler: ser, toplam: toplam, ok: ok, ort: ok ? toplam / ok : 0, on: on, son: ser.length ? ser[ser.length - 1].puan : null };
+}
+function yzOyunImza() {
+    if (typeof kmKarmaMi !== 'function' || !kmKarmaMi()) return '';
+    return kmOyunListe().map(function (s) { let sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad], n = ((sp && sp.seriler) || []).length; return s.ad + ':' + n; }).join('|');
+}
+function yzOyunHattiKartHTML() {
+    if (typeof kmKarmaMi !== 'function' || !kmKarmaMi()) return '';
+    let liste = kmOyunListe(); if (!liste.length) return '';
+    yzOyunHattiCss(); _yz.kartOyunImza = yzOyunImza();
+    let satirlar = liste.map(yzOyunHattiSatir).sort(function (a, b) { return b.ort - a.ort || b.seriler.length - a.seriler.length; });
+    let govde = satirlar.map(function (r) {
+        let cip = r.seriler.length ? r.seriler.map(function (x, i) { return '<span class="yz-sv ' + yzSeriBant(x.puan, x.ok) + '" title="' + (i + 1) + '. seri: ' + esc(x.oklar.join(' · ')) + '" onclick="yzOyunSeriGoster(this)">' + x.puan + '</span>'; }).join('') : '<span class="yz-alt">henüz seri yok</span>';
+        return '<tr><td class="ad">' + esc(yzKisaAd(r.s.ad)) + '</td><td class="yzoh-cip">' + cip + '</td><td>' + r.seriler.length + '</td><td class="top">' + r.toplam + '</td><td>' + (r.ok ? r.ort.toFixed(2) : '·') + '</td><td>' + r.on + '</td></tr>';
+    }).join('');
+    return '<div class="yz-kart yz-tablo-kart" id="yz-oyun-hatti-kart"><div class="yz-etiket">🎮 Oyun hattı — bugünkü seriler <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· sıralamaya katılmaz · bir seriye dokun → oklar</span><span class="yz-etiket-btn"><button class="yz-link" onclick="kmKarmaOyunaGec()">🎮 Oyunlar\'a geç →</button></span></div>'
+        + '<div class="yz-tablo-kap"><table class="yz-tablo yzoh"><thead><tr><th class="ad">SPORCU</th><th class="ad">SERİLER</th><th>SERİ</th><th class="top">TOPLAM</th><th>OK ORT.</th><th>10+X</th></tr></thead><tbody>' + govde + '</tbody></table></div>'
+        + '<div class="yzoh-detay" id="yzoh-detay"></div></div>';
+}
+function yzOyunSeriGoster(el) {
+    let d = document.getElementById('yzoh-detay'); if (!d) return;
+    let t = el.getAttribute('title') || '', i = t.indexOf(':');
+    d.innerHTML = '<b>' + esc(el.closest('tr').querySelector('.ad').textContent) + ' · ' + esc(t.slice(0, i)) + '</b><span>' + t.slice(i + 1).trim().split(' · ').map(function (v) { return '<i class="yz-ok ' + yzOkRenk(v) + '">' + esc(v) + '</i>'; }).join('') + '</span>';
+}
+function yzOyunHattiKartTazele() {
+    let k = document.getElementById('yz-oyun-hatti-kart'); if (!k) return;
+    if (yzOyunImza() === _yz.kartOyunImza) return;
+    let yeni = yzOyunHattiKartHTML(); if (!yeni) { k.remove(); return; }
+    k.outerHTML = yeni;
+}
+function yzOyunHattiCss() {
+    if (document.getElementById('yz-oyunhatti-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-oyunhatti-css';
+    st.textContent = '.yzoh td{vertical-align:middle}.yzoh .yzoh-cip{text-align:left;white-space:normal}.yzoh .yzoh-cip .yz-sv{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin:2px 3px 2px 0;border-radius:50%;font-weight:900;font-size:12px;cursor:pointer;background:rgba(127,127,127,.18)}'
+        + '.yzoh .yz-sv.b10{background:#f5c518;color:#1d1a16}.yzoh .yz-sv.b9{background:#f7d955;color:#1d1a16}.yzoh .yz-sv.b8{background:#e2453c;color:#fff}.yzoh .yz-sv.b7{background:#ec7a73;color:#fff}.yzoh .yz-sv.b6{background:#3f8fd8;color:#fff}.yzoh .yz-sv.b5{background:#8bb9e6;color:#1d1a16}.yzoh .yz-sv.b0{background:#2b2a28;color:#fff}'
+        + '.yzoh-detay:empty{display:none}.yzoh-detay{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--bg-main);font-size:13px}.yzoh-detay span{display:flex;gap:6px}.yzoh-detay .yz-ok{width:36px;height:36px;font-size:14px;font-style:normal;margin:0}';
+    document.head.appendChild(st);
+}
 // ---- 🎮 TV'de Oyun hattı şeridi (karma ders, 2026-10-12): Yarışma tablosunun altında, Oyun hattındaki her sporcu için
 // ad · bugünkü seri sayısı · son seri · oyundaki ilerleme. Kimse Yarışma hattında değilse hiç çizilmez.
 function yzTvOyunSeridiHTML() {
@@ -636,7 +690,8 @@ function yzTvOyunSeridiHTML() {
         let sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad], ser = ((sp && sp.seriler) || []).filter(function (x) { return x && x.tarih === bugun; });
         let son = ser.length ? ser[ser.length - 1].puan : null, fr = 0;
         try { fr = Math.max(0, Math.min(1, kmOyunDurumAl(s.g, s.ad).frac || 0)); } catch (e) {}
-        return '<div class="yz-tvo-k"><div class="yz-tvo-ad">' + esc(yzKisaAd(s.ad)) + '</div><div class="yz-tvo-bil"><span>' + ser.length + ' seri</span>' + (son !== null ? '<b>' + son + '</b>' : '') + '</div><i class="yz-tvo-bar"><u style="width:' + Math.round(fr * 100) + '%"></u></i></div>';
+        let r = yzOyunHattiSatir(s), cip = r.seriler.slice(-4).map(function (x) { return '<span class="yz-sv ' + yzSeriBant(x.puan, x.ok) + '" title="' + esc(x.oklar.join(' · ')) + '">' + x.puan + '</span>'; }).join('');
+        return '<div class="yz-tvo-k"><div class="yz-tvo-ad">' + esc(yzKisaAd(s.ad)) + (r.ok ? '<em>ort. ' + r.ort.toFixed(1) + '</em>' : '') + '</div><div class="yz-tvo-bil"><span>' + ser.length + ' seri' + (r.toplam ? ' · Σ ' + r.toplam : '') + '</span>' + (son !== null && !cip ? '<b>' + son + '</b>' : '') + '</div>' + (cip ? '<div class="yz-tvo-cip">' + cip + '</div>' : '') + '<i class="yz-tvo-bar"><u style="width:' + Math.round(fr * 100) + '%"></u></i></div>';
     }).join('');
     yzTvOyunCss();
     return '<div class="yz-tvo" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç"><div class="yz-tvo-bas">🎮 OYUN HATTI' + (tema ? ' · ' + esc(tema.ikon + ' ' + tema.ad) : '') + '</div><div class="yz-tvo-liste">' + kart + '</div></div>';
@@ -645,6 +700,7 @@ function yzTvOyunCss() {
     if (document.getElementById('yz-tvo-css')) return;
     let st = document.createElement('style'); st.id = 'yz-tvo-css';
     st.textContent = '#yz-tv .yz-tv-k.oyun{background:#7c3aed;border-color:#7c3aed;color:#fff}#yz-tv.kagit .yz-tv-k.oyun{background:#7c3aed;border-color:#7c3aed;color:#fff}#yz-tv .yz-tvo{cursor:pointer}'
+        + '#yz-tv .yz-tvo-ad em{font-style:normal;font-weight:700;font-size:.72em;opacity:.7;margin-left:.5em}#yz-tv .yz-tvo-cip{display:flex;gap:.3vw}#yz-tv .yz-tvo-cip .yz-sv{min-width:0;width:2.2vw!important;height:2.2vw!important;box-shadow:none!important;border-radius:50%;font-size:max(11px,.85vw);font-weight:900;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12)}'
         + '#yz-tv .yz-tvo{flex:none;display:flex;align-items:center;gap:1.2vw;padding:.9vh 1.2vw;border-radius:.8vw;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}'
         + '#yz-tv .yz-tvo-bas{flex:none;font-weight:900;font-size:max(11px,.85vw);letter-spacing:.12em;color:#fbbf24;writing-mode:horizontal-tb;max-width:11vw;line-height:1.25}'
         + '#yz-tv .yz-tvo-liste{flex:1;display:flex;gap:.8vw;overflow:hidden}'
@@ -710,6 +766,36 @@ function yzKarmaCss() {
         + '.yzk-gir{flex:none;min-width:56px;min-height:38px;border-radius:10px;border:none;background:#FC5B01;color:#1A0700;font:inherit;font-weight:900;font-size:13px;cursor:pointer}.yzk-gir.ok{background:rgba(34,197,94,.22);color:#86efac}'
         + '.yzk-bos{font-size:12px;opacity:.8;padding:6px 8px}'
         + '.yzk-alt{margin-top:4px;min-height:40px;border-radius:10px;border:1px solid rgba(253,142,1,.4);background:transparent;color:#FFF1E6;font:inherit;font-weight:800;font-size:13px;cursor:pointer}.yzk-alt.ana{background:#FD8E01;color:#1A0700;border-color:#FD8E01}';
+    document.head.appendChild(st);
+}
+
+// ---- ⏱ Oyunlar'da Yarışma sayacı (karma ders, 2026-10-12: "hatlar arası sıra ve süre uyumu"). Yarışma süresi işlerken oyun
+// ekranının üst ortasında küçük sayaç (HATTA GEÇ / ATIŞ / SON 30 / SÜRE BİTTİ) — herkes aynı anda atar, aynı anda hedefe yürür.
+// Sayaç durumu ortak kayıttan (dag_km_yarismatur_<konum>) okunur; tabletten başlatılınca oyun cihazında da görünür, düdük çalar.
+function yzOyunSayacKur() {
+    let wrap = document.getElementById('km-oyun-wrap'); if (!wrap) return;
+    yzCssYukle(); yzOyunSayacCss();
+    let kap = document.getElementById('yz-oyun-sayac-kap');
+    if (!kap || kap.parentNode !== wrap) { if (kap) kap.remove(); kap = document.createElement('div'); kap.id = 'yz-oyun-sayac-kap'; kap.title = 'Yarışma hattının süresi — dokun: Yarışma TV'; kap.onclick = function () { if (typeof kmKarmaYarismayaGec === 'function') kmKarmaYarismayaGec(true); }; wrap.appendChild(kap); }
+    kap.innerHTML = '<span class="yzos-et"></span>' + yzSayacHTML(yzOku(), 'yz-oyun-sayac');
+    yzOyunSayacEtiket(yzOku(), yzSayacDurum(yzOku()));
+    yzTimerBaslat();
+}
+function yzOyunSayacEtiket(o, s) {
+    let kap = document.getElementById('yz-oyun-sayac-kap'); if (!kap) return;
+    let d = o.durum, gor = !!(o.sayac && d && (d.asama === 'tur' || d.asama === 'eleme') && ['hazirlik', 'atis', 'son', 'bitti'].indexOf(s.faz) !== -1);
+    kap.style.display = gor ? '' : 'none';
+    if (gor) { let w = document.getElementById('km-oyun-wrap'), sh = document.getElementById('km-oyun-sahne'); if (w && sh) { let rs = sh.getBoundingClientRect(), rw = w.getBoundingClientRect(); kap.style.top = Math.max(6, Math.round(rs.top - rw.top + 10)) + 'px'; kap.style.left = Math.max(6, Math.round(rs.left - rw.left + 10)) + 'px'; } } // sahnenin sol üst köşesi — üst çubuk ve oyunun orta HUD'u (irtifa, tur) açık kalır
+    let et = kap.querySelector('.yzos-et'); if (!et || !gor) return;
+    let f = d.asama === 'tur' ? yzFormat(d) : null;
+    et.textContent = '🎯 YARIŞMA' + (f ? ' · SERİ ' + (Math.min(d.seri, f.seri - 1) + 1) + '/' + f.seri : ' · ELEME');
+}
+function yzOyunSayacCss() {
+    if (document.getElementById('yz-oyun-sayac-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-oyun-sayac-css';
+    st.textContent = '#yz-oyun-sayac-kap{position:absolute;left:10px;top:10px;z-index:75;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 14px;border-radius:999px;background:rgba(22,8,4,.9);border:1px solid rgba(253,142,1,.35);box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}'
+        + '#yz-oyun-sayac-kap .yzos-et{font-weight:900;font-size:11px;letter-spacing:.12em;color:#FD8E01;white-space:nowrap}'
+        + '#yz-oyun-sayac-kap .yz-sayac{min-width:0;flex-direction:row;gap:8px;padding:4px 14px;border-radius:999px}#yz-oyun-sayac-kap .yz-sayac-alt{font-size:10.5px}#yz-oyun-sayac-kap .yz-sayac-sure{font-size:24px;line-height:1}';
     document.head.appendChild(st);
 }
 
@@ -959,7 +1045,7 @@ function yzDevSayacGuncelle(o, s) {
         if (el) el.remove();
         el = document.createElement('div'); el.id = 'yz-dev-sayac'; el.setAttribute('role', 'timer'); el.onclick = yzDevKucult;
         el.innerHTML = '<div class="yz-dev-ust"><span class="yz-dev-faz"></span><span class="yz-dev-seri"></span></div><div class="yz-dev-sure"></div><div class="yz-dev-bar"><i></i></div><div class="yz-dev-ipucu">Dokun → küçült</div>';
-        document.body.appendChild(el);
+        (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(el);
     }
     el.className = s.faz;
     el.querySelector('.yz-dev-faz').textContent = s.alt;

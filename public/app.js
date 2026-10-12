@@ -11174,7 +11174,7 @@
         // (etiket tıklamasında AYNEN o çağrılıyor, burada tekrarlanmıyor).
         function kmSinifKartiCiz() {
             let kart = document.getElementById('km-sinif-karti'); if(!kart) return;
-            kmHatCssYukle();
+            kmHatCssYukle(); kmHatHafizaUygula(); kmHatHafizaCek();
             let tarih = bugunISO();
             let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
             let konum = (_kmKonumlar || []).find(function(k){ return k.id === (_kmAktifKonum || 'varsayilan'); });
@@ -15286,11 +15286,60 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { if(typeof _yz !== 'undefined' && _yz) _yz.kurulum = null; } catch(e) {} // Yarışma kurulum taslağı yeni hatlarla kurulsun
             try { _kmOyunAktifIndex = 0; } catch(e) {}
         }
-        function kmHatAyarla(gEnc, adEnc, hat) { let h = kmHatlar(), k = decodeURIComponent(gEnc) + '|' + decodeURIComponent(adEnc); if(hat === 'yarisma') h[k] = 'yarisma'; else delete h[k]; kmHatKaydet(h); kmHatPanelCiz(); }
+        function kmHatAyarla(gEnc, adEnc, hat) { let h = kmHatlar(), k = decodeURIComponent(gEnc) + '|' + decodeURIComponent(adEnc); h[k] = hat === 'yarisma' ? 'yarisma' : 'oyun'; kmHatKaydet(h); kmHatHafizaKaydet([k], h); kmHatPanelCiz(); }
         function kmHatToplu(tur) {
             let h = {};
-            if(tur === 'yas') (_kmListe || []).forEach(function(s) { let y = kmSporcuYasi(s.g, s.ad); if(y !== null && y >= 12) h[s.g + '|' + s.ad] = 'yarisma'; });
-            kmHatKaydet(h); kmHatPanelCiz();
+            (_kmListe || []).forEach(function(s) { let y = kmSporcuYasi(s.g, s.ad); h[s.g + '|' + s.ad] = tur === 'yas' && y !== null && y >= 12 ? 'yarisma' : 'oyun'; });
+            kmHatKaydet(h); kmHatHafizaKaydet(Object.keys(h), h); kmHatPanelCiz();
+        }
+        // ---- HAT HAFIZASI (2026-10-12, kullanıcı seçimi). Kulüp çapında (konumdan bağımsız) meta 'km_hat_hafiza':
+        // { acik, at, h: { 'grup|ad': { hat, t } } }. Her hat değişikliği (açık/kapalı fark etmeksizin) kaydedilir; ayar AÇIKSA
+        // derse gelen sporcunun bu dersteki hattı henüz belirlenmemişse son hattı uygulanır. Elle seçilen ('oyun' dahil) ezilmez.
+        // Kapalıysa senin kuralın: her ders herkes Oyun başlar (ders bitince konumun hatları temizlenir — kmDersiBitir).
+        const KM_HAT_HAFIZA_META = 'km_hat_hafiza', KM_HAT_HAFIZA_YEREL = 'dagsk_hat_hafiza';
+        let _kmHatHafizaCekT = 0, _kmHatHafizaYazZ = null;
+        function kmHatHafiza() { try { let v = JSON.parse(localStorage.getItem(KM_HAT_HAFIZA_YEREL) || 'null'); if(v && v.h) return v; } catch(e) {} return { acik: false, at: 0, h: {} }; }
+        function kmHatHafizaBirlestir(a, b) {
+            let r = { acik: (b.at || 0) > (a.at || 0) ? !!b.acik : !!a.acik, at: Math.max(a.at || 0, b.at || 0), h: Object.assign({}, a.h || {}) };
+            Object.keys(b.h || {}).forEach(function(k) { if(!r.h[k] || (b.h[k].t || 0) > (r.h[k].t || 0)) r.h[k] = b.h[k]; });
+            return r;
+        }
+        function kmHatHafizaYerelYaz(v) { try { localStorage.setItem(KM_HAT_HAFIZA_YEREL, JSON.stringify(v)); } catch(e) {} }
+        function kmHatHafizaSunucuyaYaz() {
+            clearTimeout(_kmHatHafizaYazZ);
+            _kmHatHafizaYazZ = setTimeout(function() {
+                fetch('/api/meta/' + KM_HAT_HAFIZA_META).then(function(r) { return r.json(); }).catch(function() { return {}; }).then(function(data) {
+                    let uzak = { acik: false, at: 0, h: {} }; try { if(data && data.value) uzak = JSON.parse(data.value); } catch(e) {}
+                    let v = kmHatHafizaBirlestir(uzak, kmHatHafiza()); kmHatHafizaYerelYaz(v);
+                    return fetch('/api/meta/' + KM_HAT_HAFIZA_META, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(v) }) });
+                }).catch(function() {});
+            }, 1200);
+        }
+        function kmHatHafizaCek(sonra) {
+            if(Date.now() - _kmHatHafizaCekT < 30000) { if(sonra) sonra(); return; }
+            _kmHatHafizaCekT = Date.now();
+            fetch('/api/meta/' + KM_HAT_HAFIZA_META).then(function(r) { return r.json(); }).then(function(data) {
+                let uzak = { acik: false, at: 0, h: {} }; try { if(data && data.value) uzak = JSON.parse(data.value); } catch(e) {}
+                let yerel = kmHatHafiza(), v = kmHatHafizaBirlestir(yerel, uzak);
+                kmHatHafizaYerelYaz(v);
+                if(JSON.stringify(v) !== JSON.stringify(uzak)) kmHatHafizaSunucuyaYaz();
+                if(kmHatHafizaUygula()) { try { if(_kmAktifSekme) kmSekme(_kmAktifSekme); else kmSinifKartiCiz(); } catch(e) {} }
+                if(sonra) sonra();
+            }).catch(function() { if(sonra) sonra(); });
+        }
+        function kmHatHafizaKaydet(anahtarlar, h) {
+            let v = kmHatHafiza(), t = Date.now();
+            anahtarlar.forEach(function(k) { v.h[k] = { hat: h[k] === 'yarisma' ? 'yarisma' : 'oyun', t: t }; });
+            kmHatHafizaYerelYaz(v); kmHatHafizaSunucuyaYaz();
+        }
+        function kmHatHafizaDegis() { let v = kmHatHafiza(); v.acik = !v.acik; v.at = Date.now(); kmHatHafizaYerelYaz(v); kmHatHafizaSunucuyaYaz(); if(v.acik) kmHatHafizaUygula(); kmHatPanelCiz(); }
+        // Ders listesinde olup bu derste hattı belirlenmemiş sporculara hafızadaki son hat (yalnız Yarışma) uygulanır. Değişiklik olduysa true.
+        function kmHatHafizaUygula() {
+            let v = kmHatHafiza(); if(!v.acik || !(_kmListe || []).length) return false;
+            let h = kmHatlar(), degisti = false;
+            _kmListe.forEach(function(s) { let k = s.g + '|' + s.ad; if(h[k] === undefined && v.h[k] && v.h[k].hat === 'yarisma') { h[k] = 'yarisma'; degisti = true; } });
+            if(degisti) kmHatKaydet(h);
+            return degisti;
         }
         function kmHatPanelCiz() {
             let el = document.getElementById('km-hat-panel'); if(!el) return;
@@ -15303,10 +15352,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         + '<div class="km-hat-seg"><button class="' + (yar ? '' : 'on') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'oyun\')">🎮 Oyun</button><button class="' + (yar ? 'on y' : '') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'yarisma\')">🎯 Yarışma</button></div></div>';
                 }).join('') + '</div>'
                 + '<div class="km-hat-toplu"><button onclick="kmHatToplu(\'yas\')">12 yaş ve üstü → Yarışma</button><button onclick="kmHatToplu(\'hepsi\')">Hepsi Oyun</button></div>'
+                + '<div class="km-hat-cihaz"><span><b>🧠 Hat hafızası</b><small>Yarışma\'ya aldığın sporcu sonraki derslerde de Yarışma\'da başlar. Kapalıysa her ders herkes Oyun başlar. Tüm cihazlar.</small></span><div class="km-hat-seg"><button class="' + (kmHatHafiza().acik ? '' : 'on') + '" onclick="if(kmHatHafiza().acik)kmHatHafizaDegis()">Kapalı</button><button class="' + (kmHatHafiza().acik ? 'on y' : '') + '" onclick="if(!kmHatHafiza().acik)kmHatHafizaDegis()">Açık</button></div></div>'
                 + '<div class="km-hat-cihaz"><span><b>📱 Tek ekran karma görünüm</b><small>Oyunlar açıkken Yarışma hattı aynı ekranda, köşedeki panelde. Sadece bu cihazda.</small></span><div class="km-hat-seg"><button class="' + (kmKarmaEkranAcik() ? '' : 'on') + '" onclick="if(kmKarmaEkranAcik())kmKarmaEkranDegis()">Kapalı</button><button class="' + (kmKarmaEkranAcik() ? 'on y' : '') + '" onclick="if(!kmKarmaEkranAcik())kmKarmaEkranDegis()">Açık</button></div></div>';
         }
         function kmHatPanelAc() {
-            kmHatCssYukle();
+            kmHatCssYukle(); kmHatHafizaUygula(); kmHatHafizaCek(function() { kmHatPanelCiz(); });
             onayIste('<div style="text-align:left"><b>🔀 Ders hatları</b><div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px; line-height:1.45;">Aynı derste farklı yaşlar: <b>Oyun</b> hattındakiler Oyunlar\'da ilerler, <b>Yarışma</b> hattındakiler Yarışma\'da hedeflerine göre takip edilir. Herkes gerçek ok atar, skorlar karnesine işlenir.</div><div id="km-hat-panel"></div></div>',
                 function() { try { if(_kmAktifSekme) kmSekme(_kmAktifSekme); else { kmSinifKartiCiz(); kmAracIzgaraCiz(); } } catch(e) {} }, '✓ Tamam', 'Kapat');
             kmHatPanelCiz();
@@ -25849,6 +25899,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunYukselenMi = kmOyunBayrakYukle('yukselen');
             _kmOyunLigMi = kmOyunBayrakYukle('lig');
             if(!_kmListe.length) { el.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">Liste boş — üstten ➕ Sporcu Ekle</div>'; return; }
+            kmHatHafizaUygula();
             if(!kmOyunListe().length) { el.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; line-height:1.6;">Bu dersteki herkes <b>Yarışma</b> hattında.<br><button class="btn" style="margin-top:12px;" onclick="kmHatPanelAc()">🔀 Ders hatları</button></div>'; return; }
             kmOyunRosterYenile();
             kmOyunBaslangicSkorEmin();
@@ -25859,6 +25910,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunSonGiris = null;
             el.innerHTML = kmOyunHTML();
             try { kmKarmaDokBaslat(); } catch(e) {}
+            try { if(kmKarmaMi()) dagskEkYukle('dagsk-km-yarisma-pro.js').then(function() { if(_kmAktifSekme === 'oyunlar' && typeof yzOyunSayacKur === 'function') yzOyunSayacKur(); }).catch(function() {}); } catch(e) {}
             kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             kmOyunPadCiz();
@@ -26255,6 +26307,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
                 if(localKaydedildi) {
                     try { localStorage.removeItem(kmLocalAnahtari()); } catch(e) {}
+                    try { localStorage.removeItem(kmHatAnahtari()); } catch(e) {} // hatlar derse aittir (hafıza ayrı, kulüp çapında)
                     // Sunucudaki paylaşılan kopyayı da boşalt — yoksa bitmiş bir ders başka bir cihazda
                     // aynı konuma bağlanınca "hayalet" olarak geri gelebilir.
                     try { kmListeSunucuyaYaz(kmMetaAnahtari(), '[]'); } catch(e) {}

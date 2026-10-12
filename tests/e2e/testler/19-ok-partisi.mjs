@@ -15,7 +15,7 @@ export default async function ({ log }) {
     await p.locator('#kp-kok button', { hasText: 'Partiyi başlat' }).click();
     await p.locator('.kp-katman button', { hasText: 'Hadi başlayalım' }).click();
     // ilk takımın ilk sporcusu — gerçek seri sayısı
-    const atan = await p.evaluate(() => { const u = _kp.takimlar[0].uyeler[0]; const gd = turnuvaDB[u.g][u.ad]; gd.devamModu = true; return { ...u, once: (gd.seriler || []).length }; });
+    const atan = await p.evaluate(() => { _kp.takimlar.forEach((t) => t.uyeler.forEach((x) => { const y = turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]; if (y) y.devamModu = true; })); /* aynı gün testler tekrar çalışınca günlük seri limiti dolmasın (diğer takım da) */ const u = _kp.takimlar[0].uyeler[0]; const gd = turnuvaDB[u.g][u.ad]; gd.devamModu = true; return { ...u, once: (gd.seriler || []).length }; });
     const kapat = async () => { for (const s of ['[data-tamam]', '[data-al=""]']) { const b = p.locator('.kp-katman ' + s); if (await b.isVisible().catch(() => false)) await b.click(); } };
     const seriGir = async (oklar) => { for (const v of oklar) await p.locator(`#kp-ped button[data-v="${v}"]`).click(); await p.locator('#kp-ilerlet').click(); };
     // bir tur: her takım bir seri, araya çıkan olay/mağaza pencereleri kapatılır
