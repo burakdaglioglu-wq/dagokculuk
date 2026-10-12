@@ -15314,6 +15314,36 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // ---- TEK EKRAN KARMA GÖRÜNÜM (2026-10-12, kullanıcı: "tek ekran karma görünüm, isteğe göre olsun"). Cihaz ayarı
         // (paylaşılmaz): açıksa Oyunlar ekranının üstünde katlanabilir "Yarışma hattı" paneli (dagsk-km-yarisma-pro.js
         // yzKarmaDok*) — sıralama turunun anlık durumu, her sporcu için GİR (yarışma tuş takımı aynı ekranda açılır).
+        // ---- HAT GEÇİŞLERİ (2026-10-12, kullanıcı: "Yarışma hattından oyuna geçiş olmuyor; TV ekranında da çalışsın; oyunda tam
+        // ekrandan tam ekrana geçiş olsun"). Tam ekranı KAPATMADAN öğe değiştirilir: oyun tam ekranı #km-oyun-wrap, Yarışma TV'si
+        // <html> — tarayıcı iki yönde de doğrudan geçişe izin veriyor (önce kapatıp açmak kullanıcı dokunuşunu kaybettiriyordu).
+        function kmTamEkranaGec(el) {
+            if(!el) return;
+            try { if(document.fullscreenElement === el) return; let f = el.requestFullscreen || el.webkitRequestFullscreen; if(!f) return; let r = f.call(el); if(r && r.catch) r.catch(function() {}); } catch(e) {}
+        }
+        // Yarışma (ekran ya da TV) → Oyunlar. TV'den gelince tam ekran oyunda sürer.
+        function kmKarmaOyunaGec() {
+            let tam = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            try { if(typeof _yz !== 'undefined' && _yz.tv) yzTvKapat(true); } catch(e) {}
+            kmAracSec('oyunlar');
+            if(tam) kmTamEkranaGec(document.getElementById('km-oyun-wrap'));
+            else { try { if(document.fullscreenElement) document.exitFullscreen(); } catch(e) {} }
+        }
+        // Oyunlar → Yarışma. tv: Yarışma TV'si açılsın (oyun tam ekransa TV de tam ekran açılır).
+        function kmKarmaYarismayaGec(tv) {
+            let tam = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            let devam = function() {
+                kmAracSec('yarisma');
+                if(tv || tam) dagskEkYukle('dagsk-km-yarisma-pro.js').then(function() { try { if(typeof yzTvAc === 'function' && !(typeof _yz !== 'undefined' && _yz.tv)) yzTvAc(); } catch(e) {} }).catch(function() {});
+            };
+            // Tam ekran <html>'e geçişi BİTMEDEN oyun ekranı (o an tam ekran olan öğe) silinirse tarayıcı tam ekrandan tamamen çıkıyordu:
+            // önce geçiş istenir (dokunuş anında), ekran değişimi geçiş tamamlanınca yapılır.
+            if((tv || tam) && document.fullscreenElement !== document.documentElement && document.documentElement.requestFullscreen) {
+                let r = null; try { r = document.documentElement.requestFullscreen(); } catch(e) {}
+                if(r && r.then) { r.then(devam, devam); return; }
+            }
+            devam();
+        }
         function kmKarmaEkranAcik() { try { return localStorage.getItem('dagsk_karma_ekran') === '1'; } catch(e) { return false; } }
         function kmKarmaEkranDegis() { try { localStorage.setItem('dagsk_karma_ekran', kmKarmaEkranAcik() ? '0' : '1'); } catch(e) {} kmHatPanelCiz(); }
         function kmKarmaDokBaslat() {
@@ -17331,6 +17361,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
                         <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Oyun süreleri ve seri sayıları">⚙️ Ayarlar</button>
+                        ${kmKarmaMi() ? '<button class="km-oyun-tam-btn aktif" onclick="kmKarmaYarismayaGec(true)" title="Yarışma hattı — TV skor tablosu (tam ekrandaysan tam ekranda açılır)">📺 Yarışma TV</button>' : ''}
                         <button class="km-oyun-tam-btn${kmKarmaMi() ? ' aktif' : ''}" onclick="kmHatPanelAc()" title="Ders hatları — kim Oyun'da, kim Yarışma'da">🔀 ${kmKarmaMi() ? ((_kmListe.length - kmOyunListe().length) + ' Yarışma\'da') : 'Hatlar'}</button>
                     </div>
                     <div class="km-oyun-topbar-sag">
