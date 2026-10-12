@@ -75,7 +75,7 @@ function yzSureMenu() {
 function yzTop(oklar) { return (oklar || []).reduce(function (a, p) { return a + (YZ_DEGER[p] || 0); }, 0); }
 function yzKAd(k) { return k.slice(k.indexOf('|') + 1); }
 function yzKisaAd(ad) { let p = String(ad).trim().split(/\s+/); return p.length > 1 ? p.slice(0, -1).join(' ') + ' ' + p[p.length - 1].charAt(0) + '.' : ad; }
-function yzRoster() { return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter(function (k) { return turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; }); }
+function yzRoster() { return (typeof kmYarismaListe === 'function' ? kmYarismaListe() : (typeof _kmListe !== 'undefined' ? _kmListe : [])).filter(function (k) { return turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; }); }
 // Sayaç SANİYE olarak gösterilir (kullanıcı: '1:20 değil, 90'dan geri saysın').
 function yzSaat(sn) { return String(Math.max(0, Math.ceil(sn))); }
 function yzOkRenk(p) { return 'yz-r-' + (p === 'X' || p === '10' || p === '9' ? 'sari' : p === '8' || p === '7' ? 'kirmizi' : p === '6' || p === '5' ? 'mavi' : p === '4' || p === '3' ? 'siyah' : p === '2' || p === '1' ? 'beyaz' : 'kacan'); }
@@ -174,6 +174,7 @@ function yzKurulumHTML() {
     return '<div class="yz">'
         + '<div class="yz-sayfa-bas"><div><div class="yz-baslik">🏹 Sıralama Turu</div><div class="yz-alt">Gerçek yarışma provası. Her seri süreli; skorlar hedefe gidilince tabletten girilir, TV ekranında canlı sıralama görünür.</div></div></div>'
         + yzKategoriKartHTML(t, roster)
+        + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<div class="yz-bilgi" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>🔀 Karma ders: yalnız <b>Yarışma</b> hattındakiler burada; diğerleri Oyunlar\'da ilerliyor.</span><button class="yz-btn" onclick="kmHatPanelAc()">Hatları düzenle</button></div>' : '<div class="yz-ipucu">Aynı derste küçükler oyun oynasın mı? <button class="yz-link" onclick="kmHatPanelAc()">🔀 Ders hatları →</button></div>')
         + '<div class="yz-kart"><div class="yz-etiket">Sporcular <b>' + t.katilimci.length + '</b> <span class="yz-etiket-btn"><button class="yz-link" onclick="yzKurTumu(true)">Tümü</button> · <button class="yz-link" onclick="yzKurTumu(false)">Hiçbiri</button></span></div>'
         + (roster.length ? '<div class="yz-cipler">' + roster.map(function (k, i) { return cip(esc(k.ad), t.katilimci.indexOf(k.g + '|' + k.ad) !== -1, 'yzKurSporcu(' + i + ')'); }).join('')
             + t.katilimci.filter(function (k) { return !roster.some(function (r) { return r.g + '|' + r.ad === k; }); }).map(function (k) { return cip(esc(yzKAd(k)) + ' ✕', true, 'yzKurDisCikar(\'' + yzEnc(k) + '\')'); }).join('') + '</div>' : '<div class="yz-alt">Ders listesi boş — aşağıdan sporcu ara.</div>')
@@ -615,11 +616,42 @@ function yzTvCiz() {
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
         + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
+        + yzTvOyunSeridiHTML()
         + yzTvDuyuruHTML(o, sira, yeni);
     yzTvSigdir(el);
     yzTorenKontrol(o);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
+}
+
+// ---- 🎮 TV'de Oyun hattı şeridi (karma ders, 2026-10-12): Yarışma tablosunun altında, Oyun hattındaki her sporcu için
+// ad · bugünkü seri sayısı · son seri · oyundaki ilerleme. Kimse Yarışma hattında değilse hiç çizilmez.
+function yzTvOyunSeridiHTML() {
+    if (typeof kmKarmaMi !== 'function' || !kmKarmaMi()) return '';
+    let liste = kmOyunListe(); if (!liste.length) return '';
+    try { kmOyunDurumEmin(); } catch (e) {}
+    let bugun = bugunISO(), tema = (typeof KM_OYUN_TEMALAR !== 'undefined' && typeof _kmOyunAktifTema !== 'undefined' && KM_OYUN_TEMALAR[_kmOyunAktifTema]) || null;
+    let kart = liste.map(function (s) {
+        let sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad], ser = ((sp && sp.seriler) || []).filter(function (x) { return x && x.tarih === bugun; });
+        let son = ser.length ? ser[ser.length - 1].puan : null, fr = 0;
+        try { fr = Math.max(0, Math.min(1, kmOyunDurumAl(s.g, s.ad).frac || 0)); } catch (e) {}
+        return '<div class="yz-tvo-k"><div class="yz-tvo-ad">' + esc(yzKisaAd(s.ad)) + '</div><div class="yz-tvo-bil"><span>' + ser.length + ' seri</span>' + (son !== null ? '<b>' + son + '</b>' : '') + '</div><i class="yz-tvo-bar"><u style="width:' + Math.round(fr * 100) + '%"></u></i></div>';
+    }).join('');
+    yzTvOyunCss();
+    return '<div class="yz-tvo"><div class="yz-tvo-bas">🎮 OYUN HATTI' + (tema ? ' · ' + esc(tema.ikon + ' ' + tema.ad) : '') + '</div><div class="yz-tvo-liste">' + kart + '</div></div>';
+}
+function yzTvOyunCss() {
+    if (document.getElementById('yz-tvo-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-tvo-css';
+    st.textContent = '#yz-tv .yz-tvo{flex:none;display:flex;align-items:center;gap:1.2vw;padding:.9vh 1.2vw;border-radius:.8vw;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}'
+        + '#yz-tv .yz-tvo-bas{flex:none;font-weight:900;font-size:max(11px,.85vw);letter-spacing:.12em;color:#fbbf24;writing-mode:horizontal-tb;max-width:11vw;line-height:1.25}'
+        + '#yz-tv .yz-tvo-liste{flex:1;display:flex;gap:.8vw;overflow:hidden}'
+        + '#yz-tv .yz-tvo-k{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:.4vh;padding:.6vh .7vw;border-radius:.6vw;background:rgba(255,255,255,.05)}'
+        + '#yz-tv .yz-tvo-ad{font-weight:900;font-size:max(12px,1.05vw);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+        + '#yz-tv .yz-tvo-bil{display:flex;justify-content:space-between;align-items:baseline;font-size:max(10px,.8vw);opacity:.75}#yz-tv .yz-tvo-bil b{font-size:max(12px,1.1vw);opacity:1}'
+        + '#yz-tv .yz-tvo-bar{display:block;height:.6vh;min-height:4px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}#yz-tv .yz-tvo-bar u{display:block;height:100%;background:#22c55e;border-radius:99px}'
+        + '#yz-tv.kagit .yz-tvo{background:#fffdf8;border:2px solid #1d1a16}#yz-tv.kagit .yz-tvo-bas{color:#d92c20}#yz-tv.kagit .yz-tvo-k{background:#f3ecdf;color:#1d1a16}#yz-tv.kagit .yz-tvo-bar{background:#e3dccf}';
+    document.head.appendChild(st);
 }
 
 // ---------------------------------------------------------------- 📄 PDF (native jsPDF — html2pdf bu projede boş sayfa üretiyor)

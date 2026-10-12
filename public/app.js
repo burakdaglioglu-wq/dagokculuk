@@ -11174,6 +11174,7 @@
         // (etiket tıklamasında AYNEN o çağrılıyor, burada tekrarlanmıyor).
         function kmSinifKartiCiz() {
             let kart = document.getElementById('km-sinif-karti'); if(!kart) return;
+            kmHatCssYukle();
             let tarih = bugunISO();
             let yoklamaBugun = otomatikYoklamaDB[tarih] || {};
             let konum = (_kmKonumlar || []).find(function(k){ return k.id === (_kmAktifKonum || 'varsayilan'); });
@@ -11198,14 +11199,14 @@
                 let sonraki = geldi ? 'gelmedi' : (gelmedi ? 'işaretsiz' : 'geldi');
                 return '<div class="chip' + (geldi ? ' chip-success' : (gelmedi ? ' chip-danger' : '')) + '" onclick="kmYoklamaToggle(\'' + k.g + '\',\'' + adEsc + '\'); kmSinifKartiCiz(); try{kmAracIzgaraCiz();}catch(e){}" title="' + esc(k.ad) + ': ' + durumAd + ' — dokun: ' + sonraki + '" style="cursor:pointer; min-height:44px; padding:4px 12px 4px 4px; gap:7px;">'
                     + '<span style="width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:' + (geldi || gelmedi ? '12' : '10') + 'px; font-weight:800; background:' + (geldi ? 'var(--status-success)' : (gelmedi ? 'var(--status-danger)' : 'var(--surface-2)')) + '; color:' + (geldi || gelmedi ? '#fff' : 'var(--text-secondary)') + ';">' + (geldi ? '✓' : (gelmedi ? '✕' : bas)) + '</span>'
-                    + '<span style="color:' + (geldi ? 'var(--text-primary)' : 'var(--text-secondary)') + ';' + (gelmedi ? ' text-decoration:line-through; opacity:.8;' : '') + '">' + esc(k.ad) + '</span>'
+                    + '<span style="color:' + (geldi ? 'var(--text-primary)' : 'var(--text-secondary)') + ';' + (gelmedi ? ' text-decoration:line-through; opacity:.8;' : '') + '">' + esc(k.ad) + '</span>' + (kmHat(k.g, k.ad) === 'yarisma' ? '<span class="km-hat-rozet">🎯</span>' : '')
                     + '</div>';
             }).join('');
             kart.innerHTML = ''
                 + '<div style="font-size:10px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">'
                 + '<span>' + konumAd + '</span><span>·</span><span>' + gunSaat + '</span><span>·</span><span>' + gecenDk + ' dk</span><span>·</span><span>' + liste.length + ' sporcu</span>'
                 + '</div>'
-                + '<div style="font-weight:800; font-size:13px; margin-bottom:8px;">Bugün salonda</div>'
+                + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;"><span style="font-weight:800; font-size:13px;">Bugün salonda</span><button class="btn" style="padding:4px 10px; min-height:30px; font-size:11.5px;" onclick="kmHatPanelAc()" title="Kim Oyun\'da, kim Yarışma\'da">🔀 ' + (kmKarmaMi() ? (_kmListe.length - kmOyunListe().length) + ' Yarışma · ' + kmOyunListe().length + ' Oyun' : 'Ders hatları') + '</button></div>'
                 + '<div style="display:flex; flex-wrap:wrap; gap:6px;">'
                 + (liste.length ? etiketler : '<span style="font-size:11px; color:var(--text-muted);">Oturumda henüz kimse yok.</span>')
                 + '</div>';
@@ -15268,6 +15269,60 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
         }
         function kmOyunDurumKaydet() { try { localStorage.setItem(kmOyunAnahtari(), JSON.stringify(_kmOyunDurum)); } catch(e) {} }
+        // ---- KARMA DERS HATLARI (2026-10-12, kullanıcı: "aynı derste 15 yaşındaki sporcu Yarışma'dan hedefine göre takip
+        // edilsin, 9 yaşındaki Oyunlar'ı oynasın"). Her sporcunun bu dersteki hattı: 'oyun' (varsayılan) ya da 'yarisma'.
+        // Kayıt 'dag_km_hat_<konum>' → dagsk-km-ortak.js ile tüm cihazlara gider. Kimse Yarışma'da değilse her şey eskisi gibi:
+        // Oyunlar ve Yarışma herkesi görür. Biri Yarışma'ya alınınca Oyunlar'dan (Ok Partisi, Yumurta Yuvası, Kelime dahil)
+        // çıkar, Yarışma kurulumunda yalnız Yarışma hattı listelenir, TV'de küçükler alt şeritte görünür.
+        function kmHatAnahtari() { return 'dag_km_hat_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmHatlar() { try { return JSON.parse(localStorage.getItem(kmHatAnahtari()) || '{}') || {}; } catch(e) { return {}; } }
+        function kmHat(g, ad) { return kmHatlar()[g + '|' + ad] === 'yarisma' ? 'yarisma' : 'oyun'; }
+        function kmKarmaMi() { let h = kmHatlar(); return (_kmListe || []).some(function(s) { return h[s.g + '|' + s.ad] === 'yarisma'; }); }
+        function kmOyunListe() { let h = kmHatlar(); return (_kmListe || []).filter(function(s) { return h[s.g + '|' + s.ad] !== 'yarisma'; }); }
+        function kmYarismaListe() { let h = kmHatlar(), y = (_kmListe || []).filter(function(s) { return h[s.g + '|' + s.ad] === 'yarisma'; }); return y.length ? y : (_kmListe || []).slice(); }
+        function kmSporcuYasi(g, ad) { let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return null; let yil = sp.dogumTarihi ? parseInt(String(sp.dogumTarihi).slice(0, 4), 10) : parseInt(sp.dogumYili, 10); return yil > 1900 ? new Date().getFullYear() - yil : null; }
+        function kmHatKaydet(h) {
+            try { localStorage.setItem(kmHatAnahtari(), JSON.stringify(h)); } catch(e) {}
+            try { if(typeof _yz !== 'undefined' && _yz) _yz.kurulum = null; } catch(e) {} // Yarışma kurulum taslağı yeni hatlarla kurulsun
+            try { _kmOyunAktifIndex = 0; } catch(e) {}
+        }
+        function kmHatAyarla(gEnc, adEnc, hat) { let h = kmHatlar(), k = decodeURIComponent(gEnc) + '|' + decodeURIComponent(adEnc); if(hat === 'yarisma') h[k] = 'yarisma'; else delete h[k]; kmHatKaydet(h); kmHatPanelCiz(); }
+        function kmHatToplu(tur) {
+            let h = {};
+            if(tur === 'yas') (_kmListe || []).forEach(function(s) { let y = kmSporcuYasi(s.g, s.ad); if(y !== null && y >= 12) h[s.g + '|' + s.ad] = 'yarisma'; });
+            kmHatKaydet(h); kmHatPanelCiz();
+        }
+        function kmHatPanelCiz() {
+            let el = document.getElementById('km-hat-panel'); if(!el) return;
+            let h = kmHatlar(), liste = (_kmListe || []).slice().sort(function(a, b) { return (kmSporcuYasi(b.g, b.ad) || 0) - (kmSporcuYasi(a.g, a.ad) || 0); });
+            let ySay = liste.filter(function(s) { return h[s.g + '|' + s.ad] === 'yarisma'; }).length;
+            el.innerHTML = '<div class="km-hat-ozet"><span>🎮 <b>' + (liste.length - ySay) + '</b> Oyun</span><span>🎯 <b>' + ySay + '</b> Yarışma</span></div>'
+                + '<div class="km-hat-liste">' + liste.map(function(s) {
+                    let y = kmSporcuYasi(s.g, s.ad), yar = h[s.g + '|' + s.ad] === 'yarisma', ge = encodeURIComponent(s.g).replace(/'/g, '%27'), ae = encodeURIComponent(s.ad).replace(/'/g, '%27');
+                    return '<div class="km-hat-sat"><div class="km-hat-ad"><b>' + esc(s.ad) + '</b><small>' + (y !== null ? y + ' yaş · ' : '') + esc(LIG_ETIKET[s.g] || s.g) + '</small></div>'
+                        + '<div class="km-hat-seg"><button class="' + (yar ? '' : 'on') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'oyun\')">🎮 Oyun</button><button class="' + (yar ? 'on y' : '') + '" onclick="kmHatAyarla(\'' + ge + '\',\'' + ae + '\',\'yarisma\')">🎯 Yarışma</button></div></div>';
+                }).join('') + '</div>'
+                + '<div class="km-hat-toplu"><button onclick="kmHatToplu(\'yas\')">12 yaş ve üstü → Yarışma</button><button onclick="kmHatToplu(\'hepsi\')">Hepsi Oyun</button></div>';
+        }
+        function kmHatPanelAc() {
+            kmHatCssYukle();
+            onayIste('<div style="text-align:left"><b>🔀 Ders hatları</b><div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px; line-height:1.45;">Aynı derste farklı yaşlar: <b>Oyun</b> hattındakiler Oyunlar\'da ilerler, <b>Yarışma</b> hattındakiler Yarışma\'da hedeflerine göre takip edilir. Herkes gerçek ok atar, skorlar karnesine işlenir.</div><div id="km-hat-panel"></div></div>',
+                function() { try { if(_kmAktifSekme) kmSekme(_kmAktifSekme); else { kmSinifKartiCiz(); kmAracIzgaraCiz(); } } catch(e) {} }, '✓ Tamam', 'Kapat');
+            kmHatPanelCiz();
+        }
+        function kmHatCssYukle() {
+            if(document.getElementById('km-hat-css')) return;
+            let st = document.createElement('style'); st.id = 'km-hat-css';
+            st.textContent = '.km-hat-ozet{display:flex;gap:16px;font-size:13px;color:var(--text-muted);margin-bottom:10px}.km-hat-ozet b{color:var(--text-main);font-size:16px}'
+                + '.km-hat-liste{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto}'
+                + '.km-hat-sat{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-main)}'
+                + '.km-hat-ad{display:flex;flex-direction:column;min-width:0}.km-hat-ad b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.km-hat-ad small{font-size:11px;color:var(--text-muted)}'
+                + '.km-hat-seg{display:flex;flex:none;border:1px solid var(--border-color);border-radius:999px;padding:2px;gap:2px}.km-hat-seg button{border:none;background:transparent;color:var(--text-muted);font:inherit;font-size:12px;font-weight:800;padding:7px 11px;border-radius:999px;cursor:pointer;min-height:34px}'
+                + '.km-hat-seg button.on{background:var(--accent-orange);color:var(--text-on-accent-dark,#1A0700)}.km-hat-seg button.on.y{background:var(--dag-kehribar,#FD8E01)}'
+                + '.km-hat-toplu{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.km-hat-toplu button{border:1px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:12px;font-weight:800;padding:8px 12px;border-radius:999px;cursor:pointer}'
+                + '.km-hat-rozet{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:800;background:color-mix(in srgb,var(--dag-kehribar,#FD8E01) 22%,transparent);color:var(--dag-kehribar,#FD8E01)}';
+            document.head.appendChild(st);
+        }
         function kmOyunDurumAl(g, ad) {
             let k = g + '|' + ad;
             if(!_kmOyunDurum[k]) _kmOyunDurum[k] = { frac: 0, toplamSkor: 0 };
@@ -15279,7 +15334,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return (ad || '??').slice(0, 2).toUpperCase();
         }
         function kmOyunRosterYenile() {
-            _kmOyunRosterCache = _kmListe.map(function(item) {
+            _kmOyunRosterCache = kmOyunListe().map(function(item) {
                 let d = kmOyunDurumAl(item.g, item.ad);
                 let sp = turnuvaDB[item.g] && turnuvaDB[item.g][item.ad];
                 // cinsiyet — SADECE Zirve'nin gerçek karakter ataması (2026-09-12) okuyor, başka
@@ -17264,6 +17319,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
                         <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Oyun süreleri ve seri sayıları">⚙️ Ayarlar</button>
+                        <button class="km-oyun-tam-btn${kmKarmaMi() ? ' aktif' : ''}" onclick="kmHatPanelAc()" title="Ders hatları — kim Oyun'da, kim Yarışma'da">🔀 ${kmKarmaMi() ? ((_kmListe.length - kmOyunListe().length) + ' Yarışma\'da') : 'Hatlar'}</button>
                     </div>
                     <div class="km-oyun-topbar-sag">
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
@@ -25750,6 +25806,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunYukselenMi = kmOyunBayrakYukle('yukselen');
             _kmOyunLigMi = kmOyunBayrakYukle('lig');
             if(!_kmListe.length) { el.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px;">Liste boş — üstten ➕ Sporcu Ekle</div>'; return; }
+            if(!kmOyunListe().length) { el.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; line-height:1.6;">Bu dersteki herkes <b>Yarışma</b> hattında.<br><button class="btn" style="margin-top:12px;" onclick="kmHatPanelAc()">🔀 Ders hatları</button></div>'; return; }
             kmOyunRosterYenile();
             kmOyunBaslangicSkorEmin();
             kmOyunLigEmin();

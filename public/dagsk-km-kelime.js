@@ -222,7 +222,7 @@ function kmKelimeBulmacaUret() {
     return enIyi && enIyi.yer.length >= 5 ? enIyi : null;
 }
 function kmKelimeOyunculariKur(mod) {
-    let roster = (_kmListe || []).map(function(k) { return k.ad; });
+    let roster = (typeof kmOyunListe === 'function' ? kmOyunListe() : (_kmListe || [])).map(function(k) { return k.ad; });
     if(mod === 'b') return roster.map(function(ad, i) { return { ad: ad, renk: KM_KELIME_RENK[i % KM_KELIME_RENK.length], puan: 0, raf: [], uyeler: [] }; });
     let n = parseInt(mod.slice(1), 10) || 2;
     let takimlar = KM_KELIME_TAKIM.slice(0, n).map(function(t) { return { ad: t.ad + ' Takım', renk: t.renk, puan: 0, raf: [], uyeler: [] }; });

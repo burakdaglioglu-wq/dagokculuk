@@ -155,7 +155,7 @@ function kmPartiCiz() {
     kpOyunCiz();
 }
 function kpTakimlariKur(n) {
-    let roster = (_kmListe || []).map((k) => ({ g: k.g, ad: k.ad }));
+    let roster = (typeof kmOyunListe === 'function' ? kmOyunListe() : (_kmListe || [])).map((k) => ({ g: k.g, ad: k.ad }));
     if (_kpKarisik) roster = _kpKarisik.filter((x) => roster.some((y) => y.g === x.g && y.ad === x.ad)).concat(roster.filter((y) => !_kpKarisik.some((x) => x.g === y.g && x.ad === y.ad)));
     const t = KP_TAKIM.slice(0, n).map((x) => ({ ...x, uyeler: [] }));
     roster.forEach((s, i) => t[i % n].uyeler.push(s));
@@ -176,7 +176,7 @@ function kpKurulumHTML() {
     </div></div>`;
 }
 function kpKurSec(alan, d) { _kpKurulum[alan] = d; kmPartiCiz(); }
-function kpKaristir() { const r = (_kmListe || []).map((k) => ({ g: k.g, ad: k.ad })); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } _kpKarisik = r; kmPartiCiz(); }
+function kpKaristir() { const r = (typeof kmOyunListe === 'function' ? kmOyunListe() : (_kmListe || [])).map((k) => ({ g: k.g, ad: k.ad })); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } _kpKarisik = r; kmPartiCiz(); }
 function kpBaslat() {
     const takimlar = kpTakimlariKur(_kpKurulum.n).filter((t) => t.uyeler.length);
     if (takimlar.length < 2) { showToast('Ok Partisi için derste en az 2 sporcu olmalı.', 'warning'); return; }

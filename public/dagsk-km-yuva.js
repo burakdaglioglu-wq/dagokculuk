@@ -282,7 +282,7 @@ function yuvaGorulenYaz(m) { try { localStorage.setItem('dag_yuva_gorulen', JSON
 function kmYuvaCiz() {
     yuvaKaynakYukle();
     const ic = document.getElementById('km-icerik'); if (!ic) return;
-    const liste = (_kmListe || []).map((k, i) => ({ ...k, i })).filter((k) => yuvaSp(k.g, k.ad)); // i = _kmListe sırası (detay/seçim onu kullanır)
+    const liste = (_kmListe || []).map((k, i) => ({ ...k, i })).filter((k) => yuvaSp(k.g, k.ad) && (typeof kmHat !== 'function' || kmHat(k.g, k.ad) !== 'yarisma')); // i = _kmListe sırası (detay/seçim onu kullanır)
     const gorulen = yuvaGorulenAl(), yeniler = [];
     const kartlar = liste.map((k) => { const i = k.i;
         const d = yuvaDurum(k.g, k.ad), anahtar = k.g + '|' + k.ad;
