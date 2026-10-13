@@ -50,6 +50,15 @@ export default async function ({ log }) {
     const pedSonra = await p.evaluate((k) => ({ seri: (turnuvaDB[k.g][k.ad].seriler || []).length, isi: yuvaDurum(k.g, k.ad).ilerleme }), sp0);
     esit(pedSonra.seri, seriOnce + 1, 'pencereden girilen seri kaydedilmedi');
     dogrula(pedSonra.isi >= 2, 'pencereden girilen seri yumurtayı ısıtmadı');
+    // 2026-10-14 geliştirme: ilk büyüyen hayvan kendiliğinden dost olur ve sonraki serilerle beslenir; günde 3 görev;
+    // sınıf yuvası bugünkü ısıyı toplar; 📺 Sınıf ekranı dev yumurta + küçük kartlar çizer.
+    const gel = await p.evaluate((k) => { const d = yuvaDurum(k.g, k.ad), liste = _kmListe.filter((x) => turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]); const s = yuvaSinifDurum(liste, liste.map((x) => yuvaDurum(x.g, x.ad))); return { dost: d.dost, ilk: turnuvaDB[k.g][k.ad].oyun.yuva.sira[0].no, yem: d.yem[d.dost] || 0, gorev: d.gorevler.length, sinif: s.toplam, hedef: s.hedef }; }, sp0);
+    dogrula(gel.dost === gel.ilk && gel.yem >= 2, 'dost atanmadı / beslenmedi: ' + JSON.stringify(gel));
+    esit(gel.gorev, 3, 'günün görevleri 3 değil');
+    dogrula(gel.sinif > 0 && gel.hedef >= 12, 'sınıf yuvası ısınmadı: ' + JSON.stringify(gel));
+    await p.evaluate(() => { document.querySelectorAll('.yv-katman,.yv-sahne').forEach((x) => x.remove()); _yvTv = true; kmYuvaCiz(); });
+    dogrula(await p.locator('.yv-tv #yv-sinif').isVisible() && await p.locator('.yv-tv-kart').count() > 0, 'sınıf ekranı çizilmedi');
+    await p.evaluate(() => { _yvTv = false; kmYuvaCiz(); document.querySelectorAll('.yv-sahne').forEach((x) => x.remove()); });
     // Nadir yumurta: rekor seri → altın hak; seçilince parlak, ×1.5 ısınır
     const nadir = await p.evaluate((k) => {
       for (let i = 0; i < 20 && !yuvaDurum(k.g, k.ad).secimGerek; i++) _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: '10' }, { puan: '10' }]);
