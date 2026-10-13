@@ -8072,7 +8072,7 @@
             let gunKaydi = (personelYoklamaDB || []).find(r => r.tarih === bugun);
             let personel = ((gunKaydi && gunKaydi.gelenler) || []).length;
             let aktif = 0;
-            ['buyukler','yildizlar','kucukler','minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(sp && !sp.pasif && !sp.donduruldu) aktif++; }));
+            ['buyukler','yildizlar','kucukler','minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(sp && !sp.pasif && !sp.donduruldu && yonKisiTuru(g, ad) === 'sporcu') aktif++; }));
             return { gelen, seri, atan: atanlar.size, aidat, personel, personelToplam: (personelDB || []).length, aktif };
         }
         let _yonSayilarSon = null;
@@ -9550,6 +9550,39 @@
             });
             alan.innerHTML = html;
         }
+        function yonKisiTuru(g, ad) { try { return typeof kisiTuru === 'function' ? kisiTuru(g, ad) : 'sporcu'; } catch(e) { return 'sporcu'; } }
+        function yonKadroSay() {
+            let r = { ogrenci: 0, aktif: 0, pasif: 0, egitmen: 0, misafir: 0, toplam: 0, gruplar: {} };
+            ['buyukler','yildizlar','kucukler','minikler'].forEach(function(g) {
+                let gr = r.gruplar[g] = { ogrenci: 0, egitmen: 0, misafir: 0 };
+                Object.keys(turnuvaDB[g] || {}).forEach(function(ad) {
+                    let sp = turnuvaDB[g][ad]; if(!sp) return;
+                    let t = yonKisiTuru(g, ad); r.toplam++;
+                    if(t === 'egitmen') { r.egitmen++; gr.egitmen++; }
+                    else if(t === 'misafir') { r.misafir++; gr.misafir++; }
+                    else { r.ogrenci++; gr.ogrenci++; if(sp.pasif || sp.donduruldu) r.pasif++; else r.aktif++; }
+                });
+            });
+            return r;
+        }
+        function yonKadroGrupMetni(g, isimler) {
+            let o = 0, e = 0, m = 0;
+            isimler.forEach(function(ad) { let t = yonKisiTuru(g, ad); if(t === 'egitmen') e++; else if(t === 'misafir') m++; else o++; });
+            return o + ' öğrenci' + (e ? ' · ' + e + ' eğitmen' : '') + (m ? ' · ' + m + ' misafir' : '');
+        }
+        function yonKadroOzetHTML() {
+            let k = yonKadroSay();
+            let kutu = function(ikon, sayi, ad, alt, renk) { return '<div style="flex:1 1 120px; min-width:0; padding:10px 12px; border-radius:12px; background:var(--bg-main); border:1px solid var(--border-color);"><div style="font-size:11px; font-weight:800; color:' + renk + '; letter-spacing:.04em;">' + ikon + ' ' + ad + '</div><div style="font-size:26px; font-weight:900; line-height:1.1; font-variant-numeric:tabular-nums;">' + sayi + '</div>' + (alt ? '<div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">' + alt + '</div>' : '') + '</div>'; };
+            return '<div class="adm-card" style="margin-bottom:12px; padding:12px;">'
+                + '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:14px;">👥 Tam kadro</b><span style="font-size:12px; color:var(--text-muted);">toplam <b style="color:var(--text-main); font-size:15px;">' + k.toplam + '</b> kişi</span></div>'
+                + '<div style="display:flex; flex-wrap:wrap; gap:8px;">'
+                + kutu('🎯', k.ogrenci, 'ÖĞRENCİ', k.aktif + ' aktif' + (k.pasif ? ' · ' + k.pasif + ' pasif/dondurulmuş' : ''), 'var(--accent-orange)')
+                + kutu('👔', k.egitmen, 'EĞİTMEN', '', '#38bdf8')
+                + kutu('🎟️', k.misafir, 'MİSAFİR', '', '#f472b6')
+                + '</div>'
+                + '<div style="font-size:10.5px; color:var(--text-muted); margin-top:8px;">Kişi türünü değiştirmek için: Yönetici › Eğitmen & Misafir. Listede eğitmen ve misafirlerin adının yanında rozet var.</div>'
+                + '</div>';
+        }
         function yoneticiPaneliCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
             let q = (document.getElementById('yonetici-arama').value || '').trim().toLocaleLowerCase('tr');
@@ -9606,11 +9639,14 @@
             </div>`;
             let herhangiVar = false;
             let TUM_GRUPLAR = [['buyukler','🔵 Büyükler'],['yildizlar','⭐ Yıldızlar'],['kucukler','🟢 Küçükler'],['minikler','🌱 Minikler']];
+            // TAM KADRO (2026-10-14, kullanıcı: "sporcu listesinde toplam sporcuları, eğitmen ve misafirleri de ayır, tam kadroyu
+            // bileyim"). Tür: dagsk-kisi-yonetimi.js kisiTuru (öğrenci/eğitmen/misafir). Öğrenciler aktif/pasif-dondurulmuş ayrılır.
+            html += yonKadroOzetHTML();
             let gosterilecekGruplar = _yonGrupFiltre === '__hepsi' ? TUM_GRUPLAR : TUM_GRUPLAR.filter(([g]) => g === _yonGrupFiltre);
             gosterilecekGruplar.forEach(([g, baslik]) => {
                 let db = turnuvaDB[g] || {};
                 let isimler = Object.keys(db).filter(ad => !q || ad.toLocaleLowerCase('tr').indexOf(q) >= 0).sort();
-                html += `<div style="font-weight:900;color:var(--accent-orange);font-size:13px;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border-color);">${baslik} <span style="color:var(--text-muted);font-size:11px;font-weight:600;">${isimler.length} sporcu</span></div>`;
+                html += `<div style="font-weight:900;color:var(--accent-orange);font-size:13px;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border-color);">${baslik} <span style="color:var(--text-muted);font-size:11px;font-weight:600;">${yonKadroGrupMetni(g, isimler)}</span></div>`;
                 if(!isimler.length) { html += `<div style="font-size:12px;color:var(--text-muted);padding:4px 0 8px;">— Sporcu yok</div>`; return; }
                 herhangiVar = true;
                 isimler.forEach(ad => {
