@@ -7769,7 +7769,7 @@
         function anaMenuYoneticiAc() { anaMenuKapat(); try { yoneticiPaneliAc(); } catch(e) {} }
         function anaMenuLigDegistir() { anaMenuKapat(); try { ligDegistirAc(); } catch(e) {} }
         let yoneticiSekmeAktif = 'panel';
-        let yoneticiYoklamaTip = 'gunluk';
+        let yoneticiYoklamaTip = 'ozet';
         // DÜZELTME: eskiden 9 buton her zaman 3'lü sabit grid'lerde basılıyordu (ANTRENMAN grubunda
         // 2 öğe olduğu için boş hücre kalıyordu, uzun etiketler dar ekranda satır kırıyordu) — ve
         // #yonetici-altnav için CSS'te zaten yatay kaydırma kuralı VARDI ama JS bunun yerine dikey
@@ -7897,7 +7897,7 @@
             }
             if(k === 'rapor') { yoneticiRaporCiz(); return; }
             if(k === 'bugunskor') { renderHedefId = 'yonetici-liste'; yoneticiBugunSkorCiz(); return; }
-            if(k === 'yoklama') { _yonYokGrupFiltre = aktifGrup; yoneticiYoklamaCiz(); return; }
+            if(k === 'yoklama') { _yonYokGrupFiltre = yoneticiYoklamaTip === 'ozet' ? '__hepsi' : aktifGrup; yoneticiYoklamaCiz(); return; }
             if(k === 'program') { renderHedefId = 'yonetici-liste'; yoneticiProgramCiz(); return; }
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
@@ -9286,12 +9286,14 @@
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
             let akt = (tp) => yoneticiYoklamaTip === tp ? 'background:var(--accent-orange); color:#fff;' : 'background:var(--bg-panel); color:var(--text-main);';
             alan.innerHTML = `<div style="display:flex; gap:6px; margin-bottom:10px;">
+                <button onclick="yoneticiYoklamaTip='ozet'; _yonYokGrupFiltre='__hepsi'; yoneticiYoklamaCiz();" style="flex:1; ${akt('ozet')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📊 Özet</button>
                 <button onclick="yoneticiYoklamaTip='gunluk'; yoneticiYoklamaCiz();" style="flex:1; ${akt('gunluk')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📋 Yoklama</button>
                 <button onclick="yoneticiYoklamaTip='aylik'; yoneticiYoklamaCiz();" style="flex:1; ${akt('aylik')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📆 Aylık</button>
                 <button onclick="yoneticiYoklamaTip='devamsizlik'; yoneticiYoklamaCiz();" style="flex:1; ${akt('devamsizlik')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">⚠️ Devamsızlık</button>
             </div><div id="yonetici-yoklama-ic"></div>`;
             renderHedefId = 'yonetici-yoklama-ic';
-            if(yoneticiYoklamaTip === 'aylik') { yoneticiAylikKatilimCiz(); }
+            if(yoneticiYoklamaTip === 'ozet') { yoneticiYoklamaOzetCiz(); }
+            else if(yoneticiYoklamaTip === 'aylik') { yoneticiAylikKatilimCiz(); }
             else if(yoneticiYoklamaTip === 'devamsizlik') { yoneticiDevamsizlikSekmesiCiz(); }
             else { yoneticiYoklamaGunlukCiz(); }
         }
@@ -9426,6 +9428,116 @@
                 html += '</div>';
             });
             alan.innerHTML = html;
+        }
+        // ===== YOKLAMA ÖZETİ (2026-10-14, kullanıcı: "yoklama çok geride kaldı, düzelt ve geniş yap: bugün gelenler, bu hafta
+        // gelenler gibi"). Kaynak: otomatikYoklamaDB[tarih][ad] = {saat, grup, elle, geldi} (geldi !== false = geldi). Hafta
+        // Pazartesi başlar. Öğrenci sayıları kisiTuru ile; eğitmen/misafir listede rozetle, sayılara katılmaz. Seçili gün
+        // (_yonOzGun) hafta grafiğinden değiştirilir; "‹ ›" ile haftalar arası gezilir (_yonOzHafta = haftanın Pazartesi'si).
+        let _yonOzGun = null, _yonOzHafta = null;
+        function _yokGeldi(tarih) {
+            let gun = otomatikYoklamaDB[tarih] || {}, r = [];
+            Object.keys(gun).forEach(function(ad) { let k = gun[ad]; if(!k || k.geldi === false) return; let g = k.grup || ''; let sp = turnuvaDB[g] && turnuvaDB[g][ad]; r.push({ ad: ad, g: g, saat: k.saat || '', elle: !!k.elle, tur: sp ? yonKisiTuru(g, ad) : 'sporcu' }); });
+            return r;
+        }
+        function _yokPazartesi(d) { let x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); let gun = (x.getDay() + 6) % 7; x.setDate(x.getDate() - gun); return x; }
+        function _yokGunEkle(d, n) { let x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+        function yoneticiYoklamaOzetGun(iso) { _yonOzGun = iso; yoneticiYoklamaOzetCiz(); }
+        function yoneticiYoklamaOzetHafta(n) { let p = _yonOzHafta ? new Date(_yonOzHafta + 'T00:00:00') : _yokPazartesi(new Date()); p = _yokGunEkle(p, 7 * n); if(p > new Date()) return; _yonOzHafta = bugunISO(p); let son = _yokGunEkle(p, 6), bugun = new Date(); _yonOzGun = bugunISO(son > bugun ? bugun : son); yoneticiYoklamaOzetCiz(); }
+        function yoneticiYoklamaOzetCiz() {
+            let alan = document.getElementById('yonetici-yoklama-ic'); if(!alan) return;
+            let bugunD = new Date(), bugun = bugunISO(bugunD);
+            let pzt = _yonOzHafta ? new Date(_yonOzHafta + 'T00:00:00') : _yokPazartesi(bugunD);
+            let gunler = []; for(let i = 0; i < 7; i++) { let d = _yokGunEkle(pzt, i); gunler.push({ d: d, iso: bugunISO(d), gelecek: d > bugunD && bugunISO(d) !== bugun }); }
+            let buHaftaMi = bugunISO(pzt) === bugunISO(_yokPazartesi(bugunD));
+            let secili = _yonOzGun && gunler.some(function(x) { return x.iso === _yonOzGun; }) ? _yonOzGun : (buHaftaMi ? bugun : gunler[6].iso);
+            let grupF = _yokGosterilecekGruplar().map(function(x) { return x[0]; });
+            let filtre = function(l) { return l.filter(function(x) { return grupF.indexOf(x.g) !== -1; }); };
+            let ogr = function(l) { return l.filter(function(x) { return x.tur === 'sporcu'; }); };
+            // hafta verisi
+            let haftaKisi = {}, gunSay = [];
+            gunler.forEach(function(x) {
+                let l = filtre(_yokGeldi(x.iso)); gunSay.push(ogr(l).length);
+                l.forEach(function(k) { let key = k.g + '|' + k.ad; if(!haftaKisi[key]) haftaKisi[key] = { ad: k.ad, g: k.g, tur: k.tur, gunler: [], son: '' }; haftaKisi[key].gunler.push(x.iso); haftaKisi[key].son = x.iso; });
+            });
+            let haftaListe = Object.keys(haftaKisi).map(function(k) { return haftaKisi[k]; });
+            let haftaOgr = haftaListe.filter(function(x) { return x.tur === 'sporcu'; });
+            let haftaKatilim = gunSay.reduce(function(a, b) { return a + b; }, 0);
+            // geçen hafta
+            let gecenPzt = _yokGunEkle(pzt, -7), gecenKisi = {}, gecenAyniGun = 0;
+            for(let i = 0; i < 7; i++) { let iso = bugunISO(_yokGunEkle(gecenPzt, i)); let l = filtre(_yokGeldi(iso)); if(iso === bugunISO(_yokGunEkle(new Date(secili + 'T00:00:00'), -7))) gecenAyniGun = ogr(l).length; l.forEach(function(k) { if(k.tur === 'sporcu') gecenKisi[k.g + '|' + k.ad] = k; }); }
+            let kayip = Object.keys(gecenKisi).filter(function(k) { return !haftaKisi[k]; }).map(function(k) { return gecenKisi[k]; }).filter(function(k) { let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; return sp && !sp.pasif && !sp.donduruldu; });
+            // ay
+            let ayBas = new Date(new Date(secili + 'T00:00:00').getFullYear(), new Date(secili + 'T00:00:00').getMonth(), 1), ayKisi = {};
+            for(let d = new Date(ayBas); d.getMonth() === ayBas.getMonth() && d <= bugunD; d = _yokGunEkle(d, 1)) ogr(filtre(_yokGeldi(bugunISO(d)))).forEach(function(k) { ayKisi[k.g + '|' + k.ad] = 1; });
+            let seciliListe = filtre(_yokGeldi(secili)).sort(function(a, b) { return (a.saat || '99').localeCompare(b.saat || '99'); });
+            let seciliOgr = ogr(seciliListe).length, fark = seciliOgr - gecenAyniGun;
+            let aktifToplam = 0; grupF.forEach(function(g) { Object.keys(turnuvaDB[g] || {}).forEach(function(ad) { let sp = turnuvaDB[g][ad]; if(sp && !sp.pasif && !sp.donduruldu && yonKisiTuru(g, ad) === 'sporcu') aktifToplam++; }); });
+            let seciliD = new Date(secili + 'T00:00:00'), seciliAd = secili === bugun ? 'Bugün' : GUN_ADI_TR[seciliD.getDay()] + ' ' + seciliD.getDate() + '.' + (seciliD.getMonth() + 1);
+            let rozet = function(t) { return t === 'egitmen' ? '<span class="yoz-rz e">👔 eğitmen</span>' : t === 'misafir' ? '<span class="yoz-rz m">🎟️ misafir</span>' : ''; };
+            let kisaAd = function(ad) { return esc(ad); };
+            let kpi = function(etiket, sayi, alt, renk) { return '<div class="yoz-kpi"><small style="color:' + renk + '">' + etiket + '</small><b>' + sayi + '</b><span>' + alt + '</span></div>'; };
+            let maxGun = Math.max(1, Math.max.apply(null, gunSay));
+            let grafik = gunler.map(function(x, i) {
+                let n = gunSay[i], h = Math.round(n / maxGun * 62); // sayı + gün etiketlerine yer kalsın (taşmasın)
+                return '<button class="yoz-gun' + (x.iso === secili ? ' sec' : '') + (x.gelecek ? ' gel' : '') + '"' + (x.gelecek ? ' disabled' : ' onclick="yoneticiYoklamaOzetGun(\'' + x.iso + '\')"') + '><span class="yoz-n">' + (x.gelecek ? '' : n) + '</span><i style="height:' + (x.gelecek ? 0 : Math.max(4, h)) + '%"></i><span class="yoz-g">' + GUN_KISA_TR[x.d.getDay()] + '</span><span class="yoz-t">' + x.d.getDate() + '</span></button>';
+            }).join('');
+            let gunKart = seciliListe.length ? seciliListe.map(function(k) {
+                return '<div class="yoz-kisi"><span class="yoz-saat">' + esc(k.saat || '—') + '</span><span class="yoz-ad"><b>' + kisaAd(k.ad) + '</b>' + rozet(k.tur) + '</span><span class="yoz-grp" style="color:' + (GRUP_RENK[k.g] || 'var(--text-muted)') + '">' + esc(LIG_ETIKET[k.g] || k.g) + '</span>' + (k.elle ? '<span class="yoz-elle" title="Elle işaretlendi">✍︎</span>' : '<span class="yoz-elle" title="Skor girince otomatik">🎯</span>') + '</div>';
+            }).join('') : '<div class="yoz-bos">' + (secili === bugun ? 'Bugün henüz kimse işaretlenmedi.' : 'Bu gün kimse gelmemiş.') + '</div>';
+            haftaListe.sort(function(a, b) { return b.gunler.length - a.gunler.length || a.ad.localeCompare(b.ad, 'tr'); });
+            let haftaKart = haftaListe.length ? haftaListe.map(function(k) {
+                let noktalar = gunler.map(function(x) { return '<i class="' + (k.gunler.indexOf(x.iso) !== -1 ? 'v' : x.gelecek ? 'f' : '') + '" title="' + GUN_KISA_TR[x.d.getDay()] + '"></i>'; }).join('');
+                return '<div class="yoz-kisi"><span class="yoz-ad"><b>' + kisaAd(k.ad) + '</b>' + rozet(k.tur) + '</span><span class="yoz-nok">' + noktalar + '</span><span class="yoz-say">' + k.gunler.length + ' gün</span></div>';
+            }).join('') : '<div class="yoz-bos">Bu hafta henüz kimse gelmedi.</div>';
+            let kayipKart = kayip.length ? kayip.sort(function(a, b) { return a.ad.localeCompare(b.ad, 'tr'); }).map(function(k) {
+                return '<div class="yoz-kisi"><span class="yoz-ad"><b>' + kisaAd(k.ad) + '</b></span><span class="yoz-grp" style="color:' + (GRUP_RENK[k.g] || 'var(--text-muted)') + '">' + esc(LIG_ETIKET[k.g] || k.g) + '</span><button class="adm-btn adm-btn-sm" onclick="devamsizlikWhatsApp(\'' + k.ad.replace(/'/g, "\\'") + '\', 7)" style="background:rgba(16,185,129,0.12); color:var(--neon-green); border-color:var(--neon-green);">💬</button></div>';
+            }).join('') : '<div class="yoz-bos">Geçen hafta gelen herkes bu hafta da geldi. 👏</div>';
+            let grupSat = grupF.map(function(g) {
+                let gb = ogr(seciliListe).filter(function(x) { return x.g === g; }).length, hb = haftaOgr.filter(function(x) { return x.g === g; }).length;
+                return '<div class="yoz-gs"><span style="color:' + (GRUP_RENK[g] || 'inherit') + '">' + esc(LIG_ETIKET[g] || g) + '</span><b>' + gb + '</b><small>' + seciliAd.toLocaleLowerCase('tr') + '</small><b>' + hb + '</b><small>bu hafta</small></div>';
+            }).join('');
+            let haftaEt = buHaftaMi ? 'Bu hafta' : bugunISO(pzt).slice(8) + '.' + bugunISO(pzt).slice(5, 7) + ' haftası';
+            alan.innerHTML = yoneticiYoklamaOzetCss()
+                + '<div class="yoz">'
+                + '<div class="yoz-ust"><select onchange="_yonYokGrupFiltre=this.value; yoneticiYoklamaOzetCiz();" class="adm-select" style="max-width:260px;">' + yoneticiYoklamaGrupSecenekleri(_yonYokGrupFiltre) + '</select>'
+                + '<div class="yoz-hn"><button class="adm-btn adm-btn-sm" onclick="yoneticiYoklamaOzetHafta(-1)">‹</button><span>' + haftaEt + '</span><button class="adm-btn adm-btn-sm" onclick="yoneticiYoklamaOzetHafta(1)"' + (buHaftaMi ? ' disabled' : '') + '>›</button></div>'
+                + '<button class="adm-btn adm-btn-sm" onclick="_yonElTarih=\'' + secili + '\'; yoneticiYoklamaTip=\'gunluk\'; yoneticiYoklamaCiz();">✍︎ ' + seciliAd + ' yoklamasını düzenle</button></div>'
+                + '<div class="yoz-kpiler">'
+                + kpi(seciliAd.toLocaleUpperCase('tr') + ' GELEN', seciliOgr, (gecenAyniGun || fark ? (fark >= 0 ? '▲ ' + fark : '▼ ' + (-fark)) + ' · geçen hafta ' + gecenAyniGun : 'geçen hafta aynı gün 0'), 'var(--neon-green)')
+                + kpi(haftaEt.toLocaleUpperCase('tr') + ' GELEN', haftaOgr.length, 'farklı öğrenci · ' + aktifToplam + ' aktif öğrenciden %' + (aktifToplam ? Math.round(haftaOgr.length / aktifToplam * 100) : 0), 'var(--accent-orange)')
+                + kpi('HAFTALIK KATILIM', haftaKatilim, 'toplam giriş (aynı kişi farklı günler)', '#38bdf8')
+                + kpi(['OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'][ayBas.getMonth()] + ' GELEN', Object.keys(ayKisi).length, 'bu ay en az bir kez gelen', '#a78bfa')
+                + '</div>'
+                + '<div class="yoz-kart"><div class="yoz-bas">📅 ' + haftaEt + ' · gün gün <small>bir güne dokun → o günün listesi</small></div><div class="yoz-grafik">' + grafik + '</div></div>'
+                + '<div class="yoz-izgara">'
+                + '<div class="yoz-kart"><div class="yoz-bas">✅ ' + seciliAd + ' gelenler <small>' + seciliListe.length + ' kişi · saate göre</small></div><div class="yoz-liste">' + gunKart + '</div></div>'
+                + '<div class="yoz-kart"><div class="yoz-bas">🗓️ ' + haftaEt + ' gelenler <small>' + haftaListe.length + ' kişi · çok gelen üstte</small></div><div class="yoz-liste">' + haftaKart + '</div></div>'
+                + '<div class="yoz-kart"><div class="yoz-bas">⚠️ Geçen hafta geldi, bu hafta yok <small>' + kayip.length + ' öğrenci</small></div><div class="yoz-liste">' + kayipKart + '</div></div>'
+                + '<div class="yoz-kart"><div class="yoz-bas">👥 Gruplar</div><div class="yoz-liste">' + grupSat + '</div></div>'
+                + '</div></div>';
+        }
+        function yoneticiYoklamaOzetCss() {
+            if(document.getElementById('yoz-css')) return '';
+            let st = document.createElement('style'); st.id = 'yoz-css';
+            st.textContent = '.yoz{display:flex;flex-direction:column;gap:12px}'
+                + '.yoz-ust{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.yoz-ust .adm-select{flex:1 1 180px;margin:0}.yoz-hn{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px}.yoz-hn span{min-width:110px;text-align:center}'
+                + '.yoz-kpiler{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}'
+                + '.yoz-kpi{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--bg-panel);border:1px solid var(--border-color)}.yoz-kpi small{font-size:10.5px;font-weight:900;letter-spacing:.08em}.yoz-kpi b{font-size:32px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums}.yoz-kpi span{font-size:11px;color:var(--text-muted)}'
+                + '.yoz-kart{padding:12px 14px;border-radius:14px;background:var(--bg-panel);border:1px solid var(--border-color);min-width:0}.yoz-bas{font-weight:900;font-size:13.5px;margin-bottom:10px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.yoz-bas small{font-size:11px;font-weight:600;color:var(--text-muted)}'
+                + '.yoz-grafik{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:150px}'
+                + '.yoz-gun{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text-main);font:inherit;cursor:pointer;padding:6px 2px}.yoz-gun:hover{background:var(--bg-main)}.yoz-gun.sec{border-color:var(--accent-orange);background:var(--accent-soft)}.yoz-gun.gel{opacity:.35;cursor:default}'
+                + '.yoz-gun i{display:block;width:70%;max-width:46px;border-radius:8px 8px 3px 3px;background:var(--accent-orange);flex:0 0 auto}.yoz-gun.sec i{background:var(--dag-kehribar,#FD8E01)}.yoz-n{font-weight:900;font-size:14px;font-variant-numeric:tabular-nums}.yoz-g{font-size:11px;font-weight:800;color:var(--text-muted)}.yoz-t{font-size:10px;color:var(--text-muted)}'
+                + '.yoz-izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}'
+                + '.yoz-liste{display:flex;flex-direction:column;gap:4px;max-height:420px;overflow:auto}'
+                + '.yoz-kisi{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:10px;background:var(--bg-main)}.yoz-saat{flex:none;width:44px;font-weight:800;font-size:12px;font-variant-numeric:tabular-nums;color:var(--text-muted)}'
+                + '.yoz-ad{flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.yoz-ad b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.yoz-grp{flex:none;font-size:10.5px;font-weight:800}.yoz-elle{flex:none;font-size:12px;opacity:.6}'
+                + '.yoz-rz{font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px}.yoz-rz.e{background:rgba(56,189,248,.15);color:#38bdf8}.yoz-rz.m{background:rgba(244,114,182,.15);color:#f472b6}'
+                + '.yoz-nok{display:flex;gap:3px;flex:none}.yoz-nok i{width:9px;height:9px;border-radius:50%;background:rgba(127,127,127,.25)}.yoz-nok i.v{background:var(--neon-green)}.yoz-nok i.f{background:transparent;border:1px dashed rgba(127,127,127,.3)}.yoz-say{flex:none;width:44px;text-align:right;font-size:11.5px;font-weight:800}'
+                + '.yoz-bos{font-size:12px;color:var(--text-muted);padding:10px 4px}'
+                + '.yoz-gs{display:grid;grid-template-columns:1fr auto auto auto auto;align-items:baseline;gap:6px 8px;padding:7px 9px;border-radius:10px;background:var(--bg-main);font-size:12.5px;font-weight:800}.yoz-gs b{font-size:16px;font-variant-numeric:tabular-nums}.yoz-gs small{font-size:10.5px;font-weight:600;color:var(--text-muted)}'
+                + '@media (max-width:520px){.yoz-grafik{height:120px;gap:4px}.yoz-kpi b{font-size:26px}}';
+            document.head.appendChild(st);
+            return '';
         }
         let _yonDevamsizlikEsik = 14;
         function yoneticiDevamsizlikSekmesiCiz() {
