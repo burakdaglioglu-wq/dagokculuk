@@ -206,7 +206,7 @@ function miloDigerMenuKapat() { let m = document.getElementById('milo-diger-menu
 // ================================================================================================
 const MILO_YAN_GRUPLAR = [
     ['YÖNETİM', [['genel', '🏠', 'Genel Bakış'], ['uyeler', '👤', 'Üyeler'], ['hizli', '📝', 'Hızlı Düzenle']]],
-    ['ANTRENMAN', [['analiz', '📋', 'Yoklama'], ['program', '📅', 'Program'], ['ders', '📚', 'Dersler']]],
+    ['ANTRENMAN', [['analiz', '📋', 'Yoklama'], ['defter', '📒', 'Öğrenci Defteri'], ['gunluk', '📝', 'Ders Günlüğü'], ['program', '📅', 'Program'], ['ders', '📚', 'Dersler']]],
     ['KULÜP İŞLERİ', [['aidat', '💰', 'Aidat'], ['personel', '🧑‍🏫', 'Personel']]]
 ];
 function miloSayilar() {

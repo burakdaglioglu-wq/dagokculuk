@@ -349,7 +349,7 @@ function miloYasHesapla(dogumTarihi) {
 // 2026-10-01: vurgu data-sekme etiketine göre (eskiden buton SIRASINA göreydi — sekme eklemek/taşımak kaydırıyordu).
 // "Diğer" menüsündeki sekmeler (Hızlı Düzenle/Personel/Dersler/Beceri) açıkken "Diğer" düğmesi onların adını alır.
 // 2026-10-08: Beceri takibi kullanıcı isteğiyle kaldırıldı (veriler silinmedi, yalnız arayüzden çıktı).
-const MILO_DIGER_SEKMELER = { hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler' };
+const MILO_DIGER_SEKMELER = { gunluk: '📝 Ders Günlüğü', hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler' };
 function miloSekme(k) {
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach(b => {
@@ -386,6 +386,8 @@ async function miloSekmeYenile() {
             miloGruplar = (await miloApi('/gruplar')).gruplar;
             miloDerslerCiz();
         }
+        else if (miloAktifSekme === 'defter') { MD.yuklendi = false; await mdDefterAc(); } // 📒 milo-defter.js (2026-10-15)
+        else if (miloAktifSekme === 'gunluk') { MG.yuklendi = false; await mgAc(); } // 📝 milo-gunluk.js (2026-10-15)
         else if (miloAktifSekme === 'beceri') { miloSekme('genel'); return; }
         else if (false) {
             if (!miloUyeler.length) miloUyeler = (await miloApi('/members')).members;
@@ -539,6 +541,8 @@ async function miloProfilAc(grup, ad) {
 
 function miloProfilKapat() { document.getElementById('milo-profil-modal').style.display = 'none'; }
 
+// Profilden öğrenci defterine (yoklama takvimi, paketler, telafi, ödemeler)
+function miloDefterAc(grup, ad) { try { miloProfilKapat(); } catch (e) {} MD.secili = grup + '|' + ad; MD.ay = null; miloSekme('defter'); }
 function miloProfilCiz(u, skills) {
     let alan = document.getElementById('milo-profil-icerik');
     let yas = miloYasHesapla(u.dogumTarihi);
@@ -553,6 +557,7 @@ function miloProfilCiz(u, skills) {
         <div style="text-align:center; margin-bottom:14px;">
             <div style="font-size:20px; font-weight:900;">${miloEsc(u.ad)}</div>
             <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${miloEsc(u.grup)}${yas !== null ? ' · ' + miloYasMetin(u.dogumTarihi) : ''}</div>
+            <button onclick="miloDefterAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="margin-top:10px; min-height:42px; padding:0 16px; border-radius:12px; border:none; background:var(--milo-teal,#1fada0); color:#fff; font-weight:800; font-size:13px; cursor:pointer;">📒 Defteri aç — yoklama, paketler, telafi, ödemeler</button>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
             <div style="background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:10px; text-align:center;"><div style="font-size:16px; font-weight:800;">${u.boy != null ? u.boy : '-'}</div><div style="font-size:9px; color:var(--text-muted);">Boy (cm)</div></div>
