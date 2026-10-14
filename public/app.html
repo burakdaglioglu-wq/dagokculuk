@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v253</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v254</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -145,6 +145,7 @@
             <div style="position:relative; flex-shrink:0;">
                 <button onclick="kmMenuAcKapat()" id="km-menu-btn" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px;">⋯</button>
                 <div id="km-menu-acilir" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);padding:6px;z-index:5;min-width:170px;">
+                    <button onclick="kmMenuAcKapat();kmDersPaneli()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:linear-gradient(135deg,#FD8E01,#FC5B01);color:#1A0700;border-color:#FD8E01;font-weight:900;">🧭 Ders Paneli</button>
                     <button onclick="kmMenuAcKapat();kmSporcuEkle()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(251,191,36,0.12);color:var(--gold);border-color:var(--gold);">➕ Sporcu Ekle</button>
                     <button onclick="kmMenuAcKapat();kmKonumDegistir()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(253,142,1,0.12);color:var(--aurora-cyan);border-color:var(--aurora-cyan);">🔁 Konum Değiştir</button>
                     <button onclick="kmMenuAcKapat();kmSonucKartiPaylas()" class="adm-btn adm-btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:4px;background:rgba(252,91,1,0.12);color:#c4a3ff;border-color:#FC5B01;">📸 Sonuç Kartını Paylaş</button>

@@ -11433,7 +11433,7 @@
             if(_kmAktifSekme === 'formlab' && s !== 'formlab') { try { cancelAnimationFrame(_fl.oynatRaf); if(_fl.durum === 'analiz') _fl.iptal = true; if(_fl.durum === 'canli') { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; } } catch(e) {} }
             _kmAktifSekme = s;
             if(typeof window.yuvaSeriSonrasi !== 'function' && typeof dagskEkYukle === 'function') { try { dagskEkYukle('dagsk-km-yuva.js').catch(function(){}); } catch(e) {} }
-            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','yuva','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
+            ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','yuva','kurtarma','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
                 if(btn) btn.classList.toggle('aktif', k === s);
             });
@@ -11463,6 +11463,7 @@
             else if(s==='kelime') kmEkCalistir('dagsk-km-kelime.js', 'kmKelimeCiz');
             else if(s==='parti') kmEkCalistir('dagsk-km-parti.js', 'kmPartiCiz');
             else if(s==='yuva') kmEkCalistir('dagsk-km-yuva.js', 'kmYuvaCiz');
+            else if(s==='kurtarma') kmEkCalistir('dagsk-km-kurtarma.js', 'kmKurtarmaCiz'); // 🔓 Hayvan Kurtarma (2026-10-14)
             else if(s==='dersakisi') kmDersAkisiCiz();
             else if(s==='resmitur') kmEkCalistir('dagsk-performans.js', 'kmResmiTurCiz');
             else if(s==='okanaliz') kmEkCalistir('dagsk-performans.js', 'kmOkAnaliziCiz');
@@ -11536,6 +11537,17 @@
         // otomatikYoklamaDB (yoklama durumu) her çağrıda TAZE okunur, kendi kopyasını TUTMAZ. Yazma
         // yolu YOK — sadece var olan veriyi okuyup çiziyor, mutasyon kmYoklamaToggle()'a bırakılıyor
         // (etiket tıklamasında AYNEN o çağrılıyor, burada tekrarlanmıyor).
+        function kmDersPaneli() {
+            if(typeof kmDersPaneliAc === 'function') return kmDersPaneliAc();
+            dagskEkYukle('dagsk-km-ders-paneli.js').then(function() { kmDersPaneliAc(); }).catch(function() { showToast('Ders paneli yüklenemedi — internet?', 'error'); });
+        }
+        (function() {
+            let st = document.createElement('style');
+            st.textContent = '.km-dp-buton{width:100%;display:flex;align-items:center;gap:12px;margin:0 0 10px;padding:12px 14px;border-radius:16px;border:0;cursor:pointer;text-align:left;font:inherit;color:#1A0700;background:linear-gradient(135deg,#FD8E01,#FC5B01 60%,#D73204);box-shadow:0 8px 24px rgba(215,50,4,.35),inset 0 1px 0 rgba(255,255,255,.35)}'
+                + '.km-dp-buton:focus-visible{outline:3px solid #FFF1E6;outline-offset:2px}.km-dp-buton-ikon{font-size:28px;line-height:1}.km-dp-buton-yazi{flex:1;min-width:0;display:flex;flex-direction:column}.km-dp-buton-yazi b{font-size:17px;font-weight:900;letter-spacing:-.01em}'
+                + '.km-dp-buton-yazi small{font-size:11.5px;font-weight:700;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.km-dp-buton-say{display:flex;flex-direction:column;align-items:flex-end;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}.km-dp-buton-say small{font-size:10px;font-weight:800;opacity:.8}';
+            document.head.appendChild(st);
+        })();
         function kmSinifKartiCiz() {
             let kart = document.getElementById('km-sinif-karti'); if(!kart) return;
             kmHatCssYukle(); kmHatHafizaUygula(); kmHatHafizaCek();
@@ -11566,7 +11578,10 @@
                     + '<span style="color:' + (geldi ? 'var(--text-primary)' : 'var(--text-secondary)') + ';' + (gelmedi ? ' text-decoration:line-through; opacity:.8;' : '') + '">' + esc(k.ad) + '</span>' + (kmHat(k.g, k.ad) === 'yarisma' ? '<span class="km-hat-rozet">🎯</span>' : '')
                     + '</div>';
             }).join('');
+            // 🧭 Ders Paneli (2026-10-14, kullanıcı: "tek ekrandan ders yönetimi — önemli bir buton olsun") — dagsk-km-ders-paneli.js
+            let dpGeldi = liste.filter(function(k) { let y = yoklamaBugun[k.ad]; return y && y.grup === k.g && y.geldi !== false; }).length;
             kart.innerHTML = ''
+                + '<button class="km-dp-buton" onclick="kmDersPaneli()"><span class="km-dp-buton-ikon">🧭</span><span class="km-dp-buton-yazi"><b>Ders Paneli</b><small>Yoklama · sporcu ekle/çıkar · Oyun / Yarışma hatları · dersi bitir</small></span><span class="km-dp-buton-say">' + dpGeldi + '/' + liste.length + '<small>geldi</small></span></button>'
                 + '<div style="font-size:10px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">'
                 + '<span>' + konumAd + '</span><span>·</span><span>' + gunSaat + '</span><span>·</span><span>' + gecenDk + ' dk</span><span>·</span><span>' + liste.length + ' sporcu</span>'
                 + '</div>'
@@ -18045,6 +18060,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + '<div style="font-weight:800; font-size:12.5px;">Yumurta Yuvası</div>'
                 + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kendi rekorunu geç, yumurtan çatlasın — hayvan albümü topla.</div>'
                 + '</div>'
+                + '<div class="card" onclick="kmOyunKurtarmaAc()" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;">'
+                + '<div style="font-size:22px; line-height:1;">🔓</div>'
+                + '<div style="font-weight:800; font-size:12.5px;">Hayvan Kurtarma</div>'
+                + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Halkanın rengi kilidi açar — sınıfça birlikte kafesteki hayvanı kurtarın.</div>'
+                + '</div>'
                 + '<div class="card" onclick="kmOyunPartiAc()" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;">'
                 + '<div style="font-size:22px; line-height:1;">🎉</div>'
                 + '<div style="font-weight:800; font-size:12.5px;">Ok Partisi</div>'
@@ -18054,6 +18074,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunKelimeAc() { kmOyunSeciciKapat(); kmSekme('kelime'); }
         function kmOyunPartiAc() { kmOyunSeciciKapat(); kmSekme('parti'); }
         function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
+        function kmOyunKurtarmaAc() { kmOyunSeciciKapat(); kmSekme('kurtarma'); }
         function kmOyunSeciciAc() {
             let secici = document.getElementById('km-oyun-secici'); if(!secici) return;
             secici.innerHTML = kmOyunSeciciKartlari();

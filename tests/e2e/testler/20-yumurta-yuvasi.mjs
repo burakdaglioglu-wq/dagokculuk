@@ -77,7 +77,8 @@ export default async function ({ log }) {
     // Nadir yumurta: rekor seri → altın hak; seçilince parlak, ×1.5 ısınır
     const nadir = await p.evaluate((k) => {
       for (let i = 0; i < 20 && !yuvaDurum(k.g, k.ad).secimGerek; i++) _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: '10' }, { puan: '10' }]);
-      const sp = turnuvaDB[k.g][k.ad]; sp.seriler.forEach((x) => { if (x.oklar.join() === 'X,X,X') x.oklar = ['X', '10', '10']; });
+      const sp = turnuvaDB[k.g][k.ad]; const tam = (x) => x && Array.isArray(x.oklar) && x.oklar.every((v) => v === 'X' || String(v) === '10'); // önceki kusursuz seriler (eski koşulardan birikir) rekoru engellemesin
+      sp.seriler.forEach((x) => { if (tam(x)) x.oklar = ['X', '10', '9']; }); (sp.kartGecmisi || []).forEach((c) => (c.seriler || []).forEach((x) => { if (tam(x)) x.oklar = ['X', '10', '9']; }));
       _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: 'X' }, { puan: 'X' }]);
       const d = yuvaDurum(k.g, k.ad); if (!d.secimGerek) return { hata: 'seçim beklenmiyordu' };
       const hak = d.hak.altin; yuvaYumurtaSec(k.g, k.ad, 'altin');
