@@ -33,8 +33,9 @@ export default async function ({ log }) {
     const son = await p.evaluate((k) => { for (let i = 0; i < 30 && !yuvaDurum(k.g, k.ad).secimGerek; i++) _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: '10' }, { puan: '10' }]); return yuvaDurum(k.g, k.ad); }, sp0);
     dogrula(son.secimGerek && son.album.length === 1, 'hayvan albüme girmedi: ' + JSON.stringify({ album: son.album.length, ilerleme: son.ilerleme }));
     // Ekran: kart seçim istiyor, detay/seçim penceresi "büyüdü" diyor; yeni yumurta seçilince farklı hayvan
-    await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
-    await p.evaluate(() => document.querySelectorAll('.yv-sahne').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
+    // yumurta seçilince detay 0,7 sn sonra kendiliğinden açılır (seçim penceresi) — bekle, kapat, kartı elle aç
+    await p.waitForTimeout(1200); await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
+    await p.evaluate(() => document.querySelectorAll('.yv-sahne,.yv-katman').forEach((x) => x.remove())); await p.locator('#yv-kart-0').click();
     dogrula(await p.locator('.yv-pencere', { hasText: 'büyüdü' }).isVisible(), '"büyüdü" penceresi çıkmadı');
     await p.locator('.yv-secim button:not([data-renk="altin"]):not([data-renk="elmas"])').first().click();
     const iki = await p.evaluate((k) => turnuvaDB[k.g][k.ad].oyun.yuva.sira.map((x) => x.no), sp0);
@@ -59,6 +60,20 @@ export default async function ({ log }) {
     await p.evaluate(() => { document.querySelectorAll('.yv-katman,.yv-sahne').forEach((x) => x.remove()); _yvTv = true; kmYuvaCiz(); });
     dogrula(await p.locator('.yv-tv #yv-sinif').isVisible() && await p.locator('.yv-tv-kart').count() > 0, 'sınıf ekranı çizilmedi');
     await p.evaluate(() => { _yvTv = false; kmYuvaCiz(); document.querySelectorAll('.yv-sahne').forEach((x) => x.remove()); });
+    // 2026-10-14: koyu tema varsayılan; 👥 Sporcular ile çıkar/ekle (Yarışma hattındaki de eklenebilir → ikisini birden oynar)
+    dogrula(await p.locator('#yv-kok.yv.koyu').count(), 'koyu tema varsayılan değil');
+    const liste = await p.evaluate((k) => {
+      const say = () => document.querySelectorAll('.yv-izgara .yv-kart').length, once = say();
+      yuvaListeAyarla(k.g + '|' + k.ad, 'cik'); kmYuvaCiz(); const cik = say();
+      const h = kmHatlar(); h[k.g + '|' + k.ad] = 'yarisma'; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h));
+      yuvaListeAyarla(k.g + '|' + k.ad, 'ek'); kmYuvaCiz(); const ek = say();
+      delete h[k.g + '|' + k.ad]; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h)); localStorage.removeItem(yuvaListeAnahtar()); kmYuvaCiz();
+      return { once, cik, ek };
+    }, sp0);
+    dogrula(liste.cik === liste.once - 1 && liste.ek === liste.once, 'yumurtadan çıkar/ekle çalışmadı: ' + JSON.stringify(liste));
+    await p.locator('#yv-kok .yv-btn', { hasText: 'Sporcular' }).click();
+    dogrula(await p.locator('.yv-pencere .yv-sp-liste').isVisible(), 'Sporcular penceresi açılmadı');
+    await p.evaluate(() => document.querySelectorAll('.yv-katman,.yv-sahne').forEach((x) => x.remove()));
     // Nadir yumurta: rekor seri → altın hak; seçilince parlak, ×1.5 ısınır
     const nadir = await p.evaluate((k) => {
       for (let i = 0; i < 20 && !yuvaDurum(k.g, k.ad).secimGerek; i++) _skorKaydetCekirdek(k.g, k.ad, [{ puan: 'X' }, { puan: '10' }, { puan: '10' }]);

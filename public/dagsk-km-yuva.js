@@ -23,16 +23,16 @@ function yuvaYasCarpan(sp, g) {
 function yuvaEsik(sp, g) { const c = yuvaYasCarpan(sp, g) * ((typeof kmOyunAyar === 'function' && kmOyunAyar().yuvaCarpan) || 1); /* ⚙️ Oyun Ayarları hız çarpanı */ return { catla: Math.round(YUVA_ESIK_TEMEL.catla * c), yavru: Math.round(YUVA_ESIK_TEMEL.yavru * c), buyu: Math.round(YUVA_ESIK_TEMEL.buyu * c), carpan: c }; }
 const YUVA_ESIK = YUVA_ESIK_TEMEL; // (eski adla erişen kalmasın diye)
 const YUVA_RENK = [
-    { id: 'pembe', ana: '#FF8FB8', ben: '#FFD3E4' }, { id: 'mavi', ana: '#6EC6FF', ben: '#D2EEFF' }, { id: 'yesil', ana: '#7BD88F', ben: '#D7F5DD' },
-    { id: 'mor', ana: '#B18CFF', ben: '#E6DAFF' }, { id: 'turuncu', ana: '#FFB067', ben: '#FFE3C7' }, { id: 'sari', ana: '#FFDA5C', ben: '#FFF3C2' },
+    { id: 'pembe', ana: '#FF8FB8', ben: '#FFD3E4', koyu: '#D9487F' }, { id: 'mavi', ana: '#6EC6FF', ben: '#D2EEFF', koyu: '#2F8FD6' }, { id: 'yesil', ana: '#7BD88F', ben: '#D7F5DD', koyu: '#3FA35A' },
+    { id: 'mor', ana: '#B18CFF', ben: '#E6DAFF', koyu: '#7C4FE0' }, { id: 'turuncu', ana: '#FFB067', ben: '#FFE3C7', koyu: '#E07A1F' }, { id: 'sari', ana: '#FFDA5C', ben: '#FFF3C2', koyu: '#D9A400' },
 ];
 // NADİR YUMURTALAR (2026-10-11, kullanıcı "geliştir" → "Nadir yumurtalar" seçti). Haklar da serilerden HESAPLANIR:
 //   ⭐ Altın: yeni kişisel rekor seri (ok başına ortalaması önceki bütün serilerinden yüksek, en az 5 eski seri varken).
 //   💎 Elmas: kendi ortalamasını ÜST ÜSTE 3 seri geçmek. (v239'a kadar 'gokkusagi' idi — kullanıcı istemedi; eski kayıtlar elmas sayılır.)
 // Nadir yumurta daha hızlı ısınır (altın ×1.5, elmas ×2) ve içinden PARLAK hayvan çıkar (albümde altın çerçeve).
 const YUVA_NADIR = {
-    altin: { id: 'altin', ana: '#F4B731', ben: '#FFF1B8', ad: 'Altın yumurta', ikon: '⭐', carpan: 1.5, nasil: 'Yeni rekor seri at' },
-    elmas: { id: 'elmas', ana: '#7FD8F5', ben: '#FFFFFF', ad: 'Elmas yumurta', ikon: '💎', carpan: 2, nasil: 'Ortalamanı üst üste 3 kez geç' },
+    altin: { id: 'altin', ana: '#F4B731', ben: '#FFF1B8', koyu: '#B07A06', ad: 'Altın yumurta', ikon: '⭐', carpan: 1.5, nasil: 'Yeni rekor seri at' },
+    elmas: { id: 'elmas', ana: '#7FD8F5', ben: '#FFFFFF', koyu: '#2A9CC4', ad: 'Elmas yumurta', ikon: '💎', carpan: 2, nasil: 'Ortalamanı üst üste 3 kez geç' },
 };
 const yuvaNadirMi = (renk) => !!YUVA_NADIR[yuvaEskiRenk(renk)];
 const yuvaEskiRenk = (id) => id === 'gokkusagi' ? 'elmas' : id;
@@ -251,18 +251,46 @@ function yuvaKivilcim() {
 }
 
 // ---------------- görseller ----------------
-function yuvaYumurtaSVG(renkId, evre, boy) {
-    const r = yuvaRenkBul(renkId), id = 'yg' + Math.random().toString(36).slice(2, 7);
+// 2026-10-14 (kullanıcı: "yumurtalar güzel gözükmüyor, boş gibi; biraz daha düzgün yapalım"): yumurta artık hacimli
+// (ışık + kenar gölgesi + alt gölge), her rengin kendi deseni var (benek, zikzak, leke, yıldız, dalga, kuşak) ve bir
+// saman YUVANIN içinde duruyor. Kırılma animasyonu yuvasız çizer (yuvaYok) — çatlak koordinatları aynı (viewBox 92×110).
+const YUVA_DESEN = { pembe: 'benek', mavi: 'zikzak', yesil: 'leke', mor: 'yildiz', turuncu: 'dalga', sari: 'kusak', altin: 'elmasKesim', elmas: 'elmasKesim' };
+function yuvaDesenSVG(tip, r) {
+    const b = r.ben, k = r.koyu || r.ana;
+    if (tip === 'zikzak') return `<path d="M-4 60 L6 51 L16 60 L26 51 L36 60 L46 51 L56 60 L66 51 L76 60 L86 51 L96 60" fill="none" stroke="${b}" stroke-width="6" stroke-linejoin="round"/><path d="M-4 72 L6 63 L16 72 L26 63 L36 72 L46 63 L56 72 L66 63 L76 72 L86 63 L96 72" fill="none" stroke="${k}" stroke-opacity=".35" stroke-width="2.5" stroke-linejoin="round"/><circle cx="34" cy="30" r="4" fill="${b}"/><circle cx="58" cy="86" r="5" fill="${b}"/>`;
+    if (tip === 'leke') return `<path d="M20 44c6-6 16-4 17 4s-8 12-15 9-7-8-2-13z" fill="${k}" fill-opacity=".38"/><path d="M58 66c7-5 18 0 16 9s-12 10-17 5-4-10 1-14z" fill="${k}" fill-opacity=".38"/><path d="M50 22c4-3 10-1 10 4s-6 7-10 4-3-5 0-8z" fill="${k}" fill-opacity=".32"/><path d="M24 80c4-3 10-1 10 3s-5 7-9 5-4-5-1-8z" fill="${k}" fill-opacity=".32"/>`;
+    if (tip === 'yildiz') { const y = (x, yy, s) => `<path transform="translate(${x} ${yy}) scale(${s})" d="M0 -6 L1.8 -1.9 6 -1.9 2.6 0.8 3.8 5 0 2.5 -3.8 5 -2.6 0.8 -6 -1.9 -1.8 -1.9Z" fill="${b}"/>`; return y(28, 36, 1.2) + y(60, 30, .9) + y(46, 58, 1.4) + y(24, 74, .9) + y(66, 80, 1.1) + y(44, 92, .8); }
+    if (tip === 'dalga') return `<path d="M-4 42 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${b}" stroke-width="5" stroke-linecap="round"/><path d="M-4 66 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${b}" stroke-width="5" stroke-linecap="round"/><path d="M-4 88 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${b}" stroke-width="4" stroke-linecap="round" stroke-opacity=".8"/>`;
+    if (tip === 'kusak') return `<rect x="0" y="54" width="92" height="14" fill="${b}"/><rect x="0" y="54" width="92" height="2.5" fill="${k}" fill-opacity=".3"/><rect x="0" y="66" width="92" height="2.5" fill="${k}" fill-opacity=".3"/><circle cx="30" cy="34" r="4" fill="${b}"/><circle cx="56" cy="26" r="3" fill="${b}"/><circle cx="38" cy="86" r="4.5" fill="${b}"/><circle cx="64" cy="82" r="3" fill="${b}"/>`;
+    if (tip === 'elmasKesim') return `<path d="M46 4 L30 40 L46 70 L62 40 Z" fill="#fff" fill-opacity=".22"/><path d="M6 68 L30 40 L46 70 L28 104 Z" fill="#fff" fill-opacity=".12"/><path d="M86 68 L62 40 L46 70 L64 104 Z" fill="${k}" fill-opacity=".18"/><path d="M28 104 L46 70 L64 104 Z" fill="${k}" fill-opacity=".12"/>`;
+    // benek (varsayılan)
+    return `<circle cx="30" cy="60" r="7" fill="${b}"/><circle cx="60" cy="72" r="9" fill="${b}"/><circle cx="52" cy="28" r="5" fill="${b}"/><circle cx="24" cy="84" r="4" fill="${b}"/><circle cx="70" cy="46" r="4" fill="${b}"/><circle cx="42" cy="90" r="3" fill="${b}"/>`;
+}
+function yuvaYumurtaSVG(renkId, evre, boy, yuvaYok) {
     renkId = yuvaEskiRenk(renkId);
+    const r = yuvaRenkBul(renkId), id = 'yg' + Math.random().toString(36).slice(2, 7), nadir = yuvaNadirMi(renkId), k = r.koyu || r.ana;
+    const govde = 'M46 4 C70 4 86 44 86 68 C86 90 68 104 46 104 C24 104 6 90 6 68 C6 44 22 4 46 4 Z';
     const grad = renkId === 'elmas'
-        ? `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".3" stop-color="#BDEFFF"/><stop offset=".55" stop-color="#7FD8F5"/><stop offset=".8" stop-color="#D9F6FF"/><stop offset="1" stop-color="#5BC4EA"/></linearGradient>`
-        : `<radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".35" stop-color="${r.ana}"/><stop offset="1" stop-color="${renkId === 'altin' ? '#C98A0B' : r.ana}" stop-opacity=".92"/></radialGradient>`;
-    const yildiz = yuvaNadirMi(renkId) ? '<g class="yv-pirilti"><path d="M20 30 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#fff"/><path d="M70 22 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" fill="#fff"/><path d="M74 80 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" fill="#fff"/></g>' : '';
-    const catlak = evre >= 1 ? `<path d="M22 46 L31 40 L37 48 L45 41 L52 49 L60 42 L70 47" fill="none" stroke="#5A3A2A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>${evre >= 1 ? '<path d="M45 41 L47 33 M60 42 L63 35" stroke="#5A3A2A" stroke-width="2" stroke-linecap="round"/>' : ''}` : '';
-    return `<svg viewBox="0 0 92 110" width="${boy}" height="${boy * 1.2}" aria-hidden="true"${yuvaNadirMi(renkId) ? ' class="yv-nadir-svg"' : ''}><defs>${grad}</defs>
-      <ellipse cx="46" cy="104" rx="30" ry="5" fill="rgba(0,0,0,.18)"/>
-      <path d="M46 4 C70 4 86 44 86 68 C86 90 68 104 46 104 C24 104 6 90 6 68 C6 44 22 4 46 4 Z" fill="url(#${id})" stroke="rgba(0,0,0,.12)" stroke-width="2"/>
-      <circle cx="30" cy="62" r="7" fill="${r.ben}"/><circle cx="60" cy="74" r="9" fill="${r.ben}"/><circle cx="52" cy="28" r="5" fill="${r.ben}"/><circle cx="24" cy="86" r="4" fill="${r.ben}"/>${yildiz}${catlak}</svg>`;
+        ? `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".3" stop-color="#BDEFFF"/><stop offset=".55" stop-color="#7FD8F5"/><stop offset=".8" stop-color="#D9F6FF"/><stop offset="1" stop-color="#3FA9D0"/></linearGradient>`
+        : `<radialGradient id="${id}" cx="36%" cy="28%" r="82%"><stop offset="0" stop-color="${r.ben}"/><stop offset=".42" stop-color="${r.ana}"/><stop offset="1" stop-color="${k}"/></radialGradient>`;
+    const yildiz = nadir ? '<g class="yv-pirilti"><path d="M20 30 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#fff"/><path d="M70 22 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" fill="#fff"/><path d="M74 80 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" fill="#fff"/></g>' : '';
+    const catlak = evre >= 1 ? `<path d="M22 46 L31 40 L37 48 L45 41 L52 49 L60 42 L70 47" fill="none" stroke="#3A2416" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M45 41 L47 33 M60 42 L63 35 M31 40 L29 34" stroke="#3A2416" stroke-width="2" stroke-linecap="round"/>` : '';
+    // saman yuva: arka kenar yumurtanın arkasında, ön kenar önünde (yumurta yuvaya oturur)
+    const yuvaArka = yuvaYok ? '' : `<ellipse cx="46" cy="101" rx="42" ry="10" fill="#4A260F"/>`;
+    const yuvaOn = yuvaYok ? '' : `<path d="M3 99 C8 116 26 121 46 121 C66 121 84 116 89 99 C78 106 64 108 46 108 C28 108 14 106 3 99 Z" fill="#9A6332"/>
+      <path d="M8 104 C22 111 38 112 52 111 M14 110 C30 116 52 116 76 108 M10 101 C30 108 64 109 84 102 M24 116 C40 119 58 118 70 114" fill="none" stroke="#C48A4E" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 106 C24 109 34 110 44 109 M50 113 C62 112 72 110 82 105" fill="none" stroke="#6B3F1D" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M4 99 L-1 95 M88 99 L94 94 M20 108 L16 113 M74 110 L79 115" stroke="#B9824A" stroke-width="2" stroke-linecap="round"/>`;
+    const H = yuvaYok ? 110 : 123;
+    return `<svg viewBox="0 0 92 ${H}" width="${boy}" height="${boy * H / 92}" aria-hidden="true"${nadir ? ' class="yv-nadir-svg"' : ''} style="overflow:visible"><defs>${grad}<clipPath id="${id}c"><path d="${govde}"/></clipPath></defs>
+      ${yuvaYok ? '<ellipse cx="46" cy="106" rx="30" ry="5" fill="rgba(0,0,0,.22)"/>' : ''}${yuvaArka}
+      <path d="${govde}" fill="url(#${id})"/>
+      <g clip-path="url(#${id}c)">${yuvaDesenSVG(YUVA_DESEN[renkId] || 'benek', r)}
+        <ellipse cx="46" cy="104" rx="46" ry="22" fill="${k}" fill-opacity=".35"/>
+        <ellipse cx="88" cy="66" rx="14" ry="44" fill="${k}" fill-opacity=".25"/></g>
+      <path d="${govde}" fill="none" stroke="${k}" stroke-opacity=".55" stroke-width="2"/>
+      <ellipse cx="30" cy="32" rx="8" ry="15" transform="rotate(-24 30 32)" fill="#fff" fill-opacity=".55"/><circle cx="37" cy="17" r="3" fill="#fff" fill-opacity=".7"/>
+      ${yildiz}${catlak}${yuvaOn}</svg>`;
 }
 // Yavru: kabuğun alt yarısında, başı dışarıda. Büyük: tam boy, yıldızlı.
 function yuvaYavruHTML(g, renkId, no, boy, ikizNo) {
@@ -322,7 +350,7 @@ const YUVA_CSS = `
 .yv-haklar{position:absolute;top:8px;left:8px;display:flex;gap:4px}
 .yv-album .parlak{background:radial-gradient(circle,#FFF6CF,#fff);box-shadow:inset 0 0 0 3px #F4B731,0 0 12px rgba(244,183,49,.45)}
 .yv-album .parlak img{filter:drop-shadow(0 0 4px #FFD54A) saturate(1.25)}
-.yv-secim .yv-nadir-etk{display:block;font:900 12px var(--yvf-g);color:#8A5A00;margin-top:2px}
+.yv-secim .yv-nadir-etk{display:block;font:900 12px var(--yvf-g);color:var(--altin-yazi,#8A5A00);margin-top:2px}
 .yv-kural.nadir{background:linear-gradient(135deg,#FFF6D6,#FFF)}
 .yv-ped-kutu{background:#fff;border-radius:22px;padding:14px;display:grid;gap:10px;box-shadow:inset 0 0 0 2px rgba(255,122,69,.25)}
 .yv-ped-baslik{font:800 19px var(--yvf-b);color:var(--ates)}
@@ -437,6 +465,46 @@ const YUVA_CSS = `
 .yv:fullscreen.yv-tv{padding:24px}
 @media (max-width:800px){.yv-tv-ana{grid-template-columns:1fr}.yv-sinif{grid-template-columns:1fr;justify-items:center;text-align:center}.yv-katki,.yv-sinif-cikan{justify-content:center}}
 @media (max-width:600px){.yv{padding:12px}.yv-logo{font-size:26px}.yv-izgara{grid-template-columns:repeat(2,minmax(0,1fr))}.yv-kural{font-size:13px}}
+/* 🌙 KOYU (varsayılan, 2026-10-14 kullanıcı: "beyaz arka bazen iyi olmuyor"): kulüp paleti #FD8E01 #FC5B01 #D73204 #861C02 #430F02 */
+.yv.koyu{--zemin:#1A0904;--zemin2:#2A1208;--yazi:#FFF1E6;--soluk:#D6A88A;--vurgu:#FD8E01;--ates:#FC5B01;--kart:#2B1209;--kart2:#341710;--cizgi:rgba(253,142,1,.22);
+  background:radial-gradient(900px 520px at 50% -18%,rgba(215,50,4,.32),transparent 62%),radial-gradient(700px 420px at 100% 110%,rgba(134,28,2,.45),transparent 60%),#160703;color:var(--yazi)}
+.yv.koyu .yv-btn{background:var(--kart2);color:var(--yazi);box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 0 0 1.5px var(--cizgi)}
+.yv.koyu .yv-btn.birincil{background:linear-gradient(180deg,#FD8E01,#FC5B01);color:#1A0700;box-shadow:0 5px 0 #861C02}
+.yv.koyu .yv-kural,.yv.koyu .yv-satir div,.yv.koyu .yv-katki span,.yv.koyu .yv-gorevler,.yv.koyu .yv-dost,.yv.koyu .yv-album div,.yv.koyu .yv-dost-secim button,.yv.koyu .yv-ped-kutu{background:var(--kart);color:var(--yazi);box-shadow:inset 0 0 0 1.5px var(--cizgi)}
+.yv.koyu .yv-kural.nadir{background:linear-gradient(135deg,rgba(244,183,49,.18),var(--kart))}
+.yv.koyu .yv-kart,.yv.koyu .yv-tv-kart{background:linear-gradient(180deg,#331609,#230d05);color:var(--yazi);box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 0 0 1.5px var(--cizgi)}
+.yv.koyu .yv-kart.sicak,.yv.koyu .yv-tv-kart.sicak{box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 0 0 2px rgba(253,142,1,.6),0 0 26px rgba(252,91,1,.35)}
+.yv.koyu .yv-cubuk{background:rgba(255,241,230,.1)}.yv.koyu .yv-cubuk span{background:rgba(255,241,230,.25)}
+.yv.koyu .yv-sinif{background:linear-gradient(135deg,#3A170A,#230d05);box-shadow:0 6px 0 rgba(0,0,0,.35),inset 0 0 0 2px rgba(253,142,1,.35)}
+.yv.koyu .yv-pencere{background:linear-gradient(#2E1309,#1C0904);color:var(--yazi);box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 0 0 1.5px var(--cizgi)}
+.yv.koyu .yv-katman{background:rgba(10,3,1,.7)}
+.yv.koyu .yv-ipucu{background:rgba(253,142,1,.14);color:#FFD9B0}
+.yv.koyu .yv-gorev{background:rgba(255,241,230,.06)}.yv.koyu .yv-gorev.tamam{background:rgba(63,174,74,.18)}.yv.koyu .yv-gorev.tamam b{color:#9BE07F}
+.yv.koyu .yv-gorev-nokta i{background:rgba(255,241,230,.12);box-shadow:inset 0 0 0 2px rgba(255,241,230,.15)}
+.yv.koyu .yv-album .kapali img{filter:brightness(0) invert(1) opacity(.08)}
+.yv.koyu .yv-bos{border-color:rgba(253,142,1,.35);color:#D6A88A}
+.yv.koyu .yv-slotlar span{border-color:rgba(253,142,1,.35)}
+.yv.koyu .yv-kart .yv-evre{color:var(--soluk)}
+.yv.koyu .yv-hak{box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.yv.koyu p[style*="var(--soluk)"]{color:var(--soluk)}
+/* Yarışma bağlantısı (sayaç şeridi) */
+.yv-yz{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:0;border-radius:18px;padding:8px 10px 8px 14px;background:linear-gradient(90deg,rgba(215,50,4,.28),rgba(67,15,2,.5));color:#FFF1E6;box-shadow:inset 0 0 0 1.5px rgba(253,142,1,.45);font:inherit;text-align:left}
+.yv.acik .yv-yz{background:linear-gradient(90deg,#FFE3C7,#FFF6E6);color:var(--yazi);box-shadow:inset 0 0 0 1.5px rgba(255,122,69,.45)}
+.yv-yz-et{font:900 12px var(--yvf-g);letter-spacing:.1em;color:#FD8E01;white-space:nowrap}.yv-yz-bilgi{flex:1;min-width:120px;font-weight:800;font-size:13px}
+.yv-yz .yz-sayac{background:rgba(0,0,0,.32);color:#FFF1E6;min-width:0;flex-direction:row;gap:8px;padding:4px 14px;border-radius:999px}.yv-yz .yz-sayac-alt{font-size:10.5px}.yv-yz .yz-sayac-sure{font-size:22px;line-height:1}
+.yv-yz-btn{display:flex;gap:6px;flex-wrap:wrap}
+/* Sporcular penceresi */
+.yv-sp-liste{display:grid;gap:6px;text-align:left}
+.yv-sp-sat{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(255,241,230,.06);box-shadow:inset 0 0 0 1.5px var(--cizgi,rgba(74,46,28,.1))}
+.yv.acik .yv-sp-sat{background:#fff}
+.yv-sp-sat b{font:800 16px var(--yvf-b)}.yv-sp-sat small{display:block;font-weight:800;font-size:11.5px;color:var(--soluk)}
+.yv-sp-ara{width:100%;box-sizing:border-box;min-height:44px;border-radius:14px;border:1.5px solid var(--cizgi,rgba(74,46,28,.2));background:transparent;color:var(--yazi);padding:8px 12px;font:inherit;font-size:15px}
+.yv-sp-adaylar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.yv-sp-aday{border:0;border-radius:14px;padding:8px 12px;background:rgba(253,142,1,.12);color:var(--yazi);font:800 14px var(--yvf-g);box-shadow:inset 0 0 0 1.5px var(--cizgi,rgba(74,46,28,.12));display:grid;justify-items:start;min-height:44px}
+.yv.acik .yv-sp-aday{background:#fff}
+.yv-sp-aday small{font-size:10.5px;color:var(--soluk)}
+.yv-sp-bas{font:800 15px var(--yvf-b);text-align:left;margin-top:4px}
+.yv.koyu{--altin-yazi:#F4C04A}
 @media (prefers-reduced-motion:reduce){.yv *{animation:none!important;transition:none!important}}
 `;
 function yuvaKaynakYukle() {
@@ -451,8 +519,65 @@ function yuvaGorulenYaz(m) { try { localStorage.setItem('dag_yuva_gorulen', JSON
 // Ekran: kartlar (varsayılan) ya da 📺 Sınıf ekranı (_yvTv: dev yumurta + küçük kartlar, TV/projeksiyon için).
 // #yv-kok yerinde kalır, yalnız içi yenilenir → tam ekran yeniden çizimde kapanmaz. Ekran açıkken 4 sn'de bir başka
 // cihazdan gelen seri var mı bakılır (imza değiştiyse yeniden çiz; açık pencere/animasyon varken beklenir).
+// ---- 👥 Yumurta oyuncuları + 🏆 Yarışma bağlantısı (2026-10-14, kullanıcı: "yarışma moduyla birlikte çalışmıyor, geçiş yeri
+// yok; burada da sporcuları çıkarıp ekleyebileyim; bazen hem yarışma hem bu oyunu oynayabilsinler").
+// Liste = ders listesinden oyun hattındakiler (eskisi gibi) + elle eklenenler (Yarışma hattındakiler de olabilir: ikisini
+// birden oynar — yarışmada attığı seriler zaten yumurtasını ısıtır) − elle çıkarılanlar. Kayıt 'dag_km_yuvaliste_<konum>'
+// (km-ortak ile her cihaza gider): { 'grup|ad': 'ek' | 'cik' }.
+function yuvaListeAnahtar() { return 'dag_km_yuvaliste_' + (typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum ? _kmAktifKonum : 'varsayilan'); }
+function yuvaListeAyar() { try { return JSON.parse(localStorage.getItem(yuvaListeAnahtar()) || '{}') || {}; } catch (e) { return {}; } }
+function yuvaListeAyarla(k, v) { const a = yuvaListeAyar(); a[k] = v; try { localStorage.setItem(yuvaListeAnahtar(), JSON.stringify(a)); } catch (e) {} }
+function yuvaYarismadaMi(k) { return typeof kmHat === 'function' && kmHat(k.g, k.ad) === 'yarisma'; }
+function yuvaOyuncuMu(k) { const a = yuvaListeAyar()[k.g + '|' + k.ad]; if (a === 'ek') return true; if (a === 'cik') return false; return !yuvaYarismadaMi(k); }
+const yuvaKatla = (x) => String(x || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
+function yuvaSporcular() {
+    const kisa = (k) => esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad), kod = (k) => esc(encodeURIComponent(k.g + '|' + k.ad));
+    const grup = (g) => esc(typeof LIG_ETIKET !== 'undefined' && LIG_ETIKET[g] ? LIG_ETIKET[g] : g);
+    const ders = (_kmListe || []).filter((k) => yuvaSp(k.g, k.ad)), icinde = ders.filter(yuvaOyuncuMu), disinda = ders.filter((k) => !yuvaOyuncuMu(k));
+    const p = yuvaPencere(`<h2>👥 Yumurta oyuncuları</h2>
+      <p>Yarışmadaki sporcuyu da ekleyebilirsin — ikisini birden oynar; yarışmada attığı seriler yumurtasını da ısıtır.</p>
+      <div class="yv-sp-liste">${icinde.map((k) => `<div class="yv-sp-sat"><span><b>${kisa(k)}</b><small>${grup(k.g)}${yuvaYarismadaMi(k) ? ' · 🏆 yarışmada da' : ''}</small></span><button class="yv-btn" data-cik="${kod(k)}">Çıkar</button></div>`).join('') || '<p>Yumurtada kimse yok — aşağıdan ekle.</p>'}</div>
+      ${disinda.length ? `<div class="yv-sp-bas">Derste ama yumurtada değil</div><div class="yv-sp-adaylar">${disinda.map((k) => `<button class="yv-sp-aday" data-ek="${kod(k)}"><span>+ ${kisa(k)}</span><small>${yuvaYarismadaMi(k) ? '🏆 yarışmada — ikisinde de oynasın' : 'çıkarılmıştı'}</small></button>`).join('')}</div>` : ''}
+      <div class="yv-sp-bas">Derste olmayan sporcu ekle</div>
+      <input class="yv-sp-ara" id="yv-sp-ara" type="search" placeholder="İsim yaz… (tüm gruplar)" autocomplete="off">
+      <div class="yv-sp-adaylar" id="yv-sp-sonuc"></div>
+      <div><button class="yv-btn birincil" data-kapat="1">Tamam</button></div>`);
+    const yenile = () => { kmYuvaCiz(); setTimeout(yuvaSporcular, 30); };
+    p.querySelector('[data-kapat]').onclick = () => p.remove();
+    p.querySelectorAll('[data-cik]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.cik), 'cik'); yenile(); });
+    p.querySelectorAll('[data-ek]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.ek), 'ek'); yuvaSes(990); yenile(); });
+    const ara = p.querySelector('#yv-sp-ara'), sonuc = p.querySelector('#yv-sp-sonuc');
+    ara.oninput = () => {
+        const q = yuvaKatla(ara.value.trim()); if (q.length < 2) { sonuc.innerHTML = ''; return; }
+        const dersteki = new Set((_kmListe || []).map((k) => k.g + '|' + k.ad)), l = [];
+        ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!dersteki.has(g + '|' + ad) && yuvaKatla(ad).indexOf(q) !== -1) l.push({ g, ad, pasif: !!(turnuvaDB[g][ad].pasif || turnuvaDB[g][ad].donduruldu) }); }));
+        sonuc.innerHTML = l.slice(0, 24).map((k) => `<button class="yv-sp-aday" data-yeni="${kod(k)}"><span>+ ${esc(k.ad)}</span><small>${grup(k.g)} · derse de eklenir${k.pasif ? ' · pasif' : ''}</small></button>`).join('') || '<p>Bu isimde sporcu yok.</p>';
+        sonuc.querySelectorAll('[data-yeni]').forEach((b) => b.onclick = () => {
+            const k = decodeURIComponent(b.dataset.yeni), i = k.indexOf('|'), g = k.slice(0, i), ad = k.slice(i + 1);
+            if (!(_kmListe || []).some((s) => s.g === g && s.ad === ad)) { _kmListe.push({ g, ad }); try { _kmListeKaydet(); } catch (e) {} try { kmSinifKartiCiz(); } catch (e) {} }
+            yuvaListeAyarla(k, 'ek'); yuvaSes(990); showToast(ad + ' derse ve yumurtaya eklendi', 'success'); yenile();
+        });
+    };
+    setTimeout(() => { try { ara.focus(); } catch (e) {} }, 50);
+}
+// Yarışma turu sürüyorsa üstte şerit: seri, bekleyen skor, süre (Yarışma'nın sayacı burada da işler) + geçiş düğmeleri.
+function yuvaYarismaHTML() {
+    if (typeof yzOku !== 'function') return '';
+    let o; try { o = yzOku(); } catch (e) { return ''; }
+    const d = o.durum; if (!d || !d.asama || d.asama === 'kurulum' || d.asama === 'bitti') return '';
+    const f = d.asama === 'tur' ? yzFormat(d) : null, seri = f ? Math.min(d.seri, f.seri - 1) : 0, bek = f ? yzBekleyenler(o, seri).length : 0;
+    return `<div class="yv-yz"><span class="yv-yz-et">🎯 YARIŞMA SÜRÜYOR</span><span class="yv-yz-bilgi">${f ? 'Seri ' + (seri + 1) + '/' + f.seri + (bek ? ' · ' + bek + ' skor bekleniyor' : ' · seri tamam') : 'Eleme maçları'}</span>${o.sayac ? yzSayacHTML(o, 'yz-oyun-sayac') : ''}<span class="yv-yz-btn"><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma ekranı</button><button class="yv-btn birincil" onclick="yuvaYarismayaGec(true)">📺 Yarışma TV</button></span></div>`;
+}
+function yuvaYarismayaGec(tv) {
+    if (typeof kmKarmaYarismayaGec === 'function') return kmKarmaYarismayaGec(tv);
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    if (typeof kmAracSec === 'function') kmAracSec('yarisma'); else kmSekme('yarisma');
+}
+// Tema: 🌙 koyu (varsayılan, kulüp renkleri) / ☀️ açık — bu cihazın tercihi.
+function yuvaTema() { try { return localStorage.getItem('dagsk_yuva_tema') === 'acik' ? 'acik' : 'koyu'; } catch (e) { return 'koyu'; } }
+function yuvaTemaDegis() { try { localStorage.setItem('dagsk_yuva_tema', yuvaTema() === 'koyu' ? 'acik' : 'koyu'); } catch (e) {} kmYuvaCiz(); }
 let _yvTv = false, _yvPoll = null, _yvImza = '', _yvSonBugun = {};
-function yuvaImza() { return (_kmListe || []).map((k) => { const sp = yuvaSp(k.g, k.ad), y = yuvaKayit(sp); return sp ? (sp.seriler || []).length + ':' + (sp.kartGecmisi || []).length + ':' + (y ? (y.sira || []).length + '.' + (y.dost || []).length : '-') : '0'; }).join(',') + '|' + (typeof bugunISO === 'function' ? bugunISO() : ''); }
+function yuvaImza() { return (typeof yzAnahtar === 'function' ? (localStorage.getItem(yzAnahtar()) || '') : '') + '#' + (localStorage.getItem(yuvaListeAnahtar()) || '') + '#' + (_kmListe || []).map((k) => { const sp = yuvaSp(k.g, k.ad), y = yuvaKayit(sp); return sp ? (sp.seriler || []).length + ':' + (sp.kartGecmisi || []).length + ':' + (y ? (y.sira || []).length + '.' + (y.dost || []).length : '-') : '0'; }).join(',') + '|' + (typeof bugunISO === 'function' ? bugunISO() : ''); }
 function yuvaPollBaslat() {
     if (_yvPoll) return;
     _yvPoll = setInterval(() => {
@@ -483,7 +608,8 @@ function yuvaTvKartHTML(k, d) {
 function kmYuvaCiz() {
     yuvaKaynakYukle();
     const ic = document.getElementById('km-icerik'); if (!ic) return;
-    const liste = (_kmListe || []).map((k, i) => ({ ...k, i })).filter((k) => yuvaSp(k.g, k.ad) && (typeof kmHat !== 'function' || kmHat(k.g, k.ad) !== 'yarisma')); // i = _kmListe sırası (detay/seçim onu kullanır)
+    const liste = (_kmListe || []).map((k, i) => ({ ...k, i })).filter((k) => yuvaSp(k.g, k.ad) && yuvaOyuncuMu(k)); // i = _kmListe sırası (detay/seçim onu kullanır) · oyuncu: oyun hattı + elle eklenenler − çıkarılanlar
+    if (typeof yzOku !== 'function' && typeof dagskEkYukle === 'function' && !window._yvYzIstendi) { window._yvYzIstendi = 1; dagskEkYukle('dagsk-km-yarisma-pro.js').then(() => { if (document.getElementById('yv-kok')) kmYuvaCiz(); }).catch(() => {}); } // yarışma şeridi için
     const durumlar = liste.map((k) => yuvaDurum(k.g, k.ad)), sinif = yuvaSinifDurum(liste, durumlar);
     const gorulen = yuvaGorulenAl(), yeniler = [], artilar = [];
     liste.forEach((k, j) => {
@@ -497,10 +623,10 @@ function kmYuvaCiz() {
     yuvaGorulenYaz(gorulen);
     let kok = document.getElementById('yv-kok');
     if (!kok || !ic.contains(kok)) { ic.innerHTML = '<div class="yv" id="yv-kok"></div>'; kok = document.getElementById('yv-kok'); }
-    kok.className = 'yv' + (_yvTv ? ' yv-tv' : '');
+    kok.className = 'yv ' + yuvaTema() + (_yvTv ? ' yv-tv' : '');
     const ust = `<div class="yv-ust"><div class="yv-logo">🥚<div>Yumurta Yuvası<small>${_yvTv ? 'Sınıf ekranı · seriler geldikçe kendiliğinden yenilenir' : 'Kendi rekorunu geç, yumurtan çatlasın'}</small></div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>`;
-    if (!liste.length) kok.innerHTML = ust + '<p style="font-weight:800">Bu derste sporcu yok. Önce derse sporcu ekle.</p>';
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYarismaHTML();
+    if (!liste.length) kok.innerHTML = ust + '<p style="font-weight:800">Yumurtada oynayan sporcu yok. <button class="yv-btn birincil" onclick="yuvaSporcular()">👥 Sporcu ekle</button></p>';
     else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-ana">${yuvaSinifHTML(sinif, 210, true)}<div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div></div>`;
     else kok.innerHTML = ust + yuvaSinifHTML(sinif, 96) + `
       <div class="yv-kurallar"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div><div class="yv-kural">📋 Görev yap <b>+${YUVA_GOREV_ODUL}</b></div><div class="yv-kural nadir">⭐ Rekor seri → <b style="font-size:16px">Altın yumurta</b></div><div class="yv-kural nadir">💎 Ortalamanı 3 kez üst üste geç → <b style="font-size:16px">Elmas yumurta</b></div></div>
@@ -510,6 +636,7 @@ function kmYuvaCiz() {
     artilar.forEach(([i, n]) => { const el = document.getElementById('yv-kart-' + i); if (el) { const a = document.createElement('span'); a.className = 'yv-arti'; a.textContent = '+' + n + ' 🔥'; el.appendChild(a); } });
     if (yeniler.length) yuvaUcan(yeniler.length > 1 ? '🐣 Yumurtalar ısındı!' : '🐣 Yumurta ilerledi!');
     _yvImza = yuvaImza(); yuvaPollBaslat();
+    if (document.getElementById('yz-oyun-sayac') && typeof yzTimerBaslat === 'function') { try { yzTimerBaslat(); } catch (e) {} } // yarışma süresi şeritte işlesin
     if (liste.length) yuvaSinifKutla(sinif);
 }
 function yuvaTamEkran() { const el = document.getElementById('yv-kok'); if (!el) return; if (document.fullscreenElement) { document.exitFullscreen(); return; } const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } }
@@ -521,7 +648,7 @@ function yuvaNasil() {
       <div class="yv-buyuk">${yuvaYumurtaSVG('pembe', 0, 70)}${yuvaYumurtaSVG('mavi', 1, 70)}${yuvaYavruHTML('', 'yesil', 18, 70)}</div>
       <p style="font:800 19px var(--yvf-b);color:var(--yazi)">Ok attıkça yumurtan ısınır. Çatlar, içinden bir yavru çıkar, yavru büyüyünce albümüne girer!</p>
       <div class="yv-kurallar" style="justify-content:center"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div></div>
-      <p style="font-weight:800;color:#8A5A00">✨ Nadir yumurtalar: ⭐ rekor seri atarsan <b>altın yumurta</b>, ortalamanı 3 kez üst üste geçersen 💎 <b>elmas yumurta</b> kazanırsın. Daha hızlı ısınır, içinden PARLAK hayvan çıkar!</p>
+      <p style="font-weight:800;color:var(--altin-yazi,#8A5A00)">✨ Nadir yumurtalar: ⭐ rekor seri atarsan <b>altın yumurta</b>, ortalamanı 3 kez üst üste geçersen 💎 <b>elmas yumurta</b> kazanırsın. Daha hızlı ısınır, içinden PARLAK hayvan çıkar!</p>
       <p style="font-weight:800">📋 Her gün 3 <b>görev</b>: yaparsan +${YUVA_GOREV_ODUL} 🔥 · 🐾 Büyüyen hayvanını <b>dost</b> seç: her seri onu besler, Lv 5'e kadar çıkar, 🎀🧢🕶️👑 takar · 🏫 <b>Sınıf yuvası</b>: herkesin ateşi dev yumurtayı ısıtır!</p>
       <p style="font-weight:800">🎁 Sürprizler: bazen yumurtadan <b>ikiz</b> çıkar 👯, çatlayınca içinden <b>ipucu sesi</b> gelir 🔍, büyüyen hayvan sana <b>hediye</b> getirir 👑</p>
       <p style="font-size:13px">Küçükler daha çabuk: 7 yaş ve altında yumurta en hızlı, 10 yaş ve üstünde biraz daha geç çatlar.</p>
@@ -545,7 +672,7 @@ function yuvaDetay(i) {
       ${d.evre === 1 ? `<p class="yv-ipucu buyuk">${esc(yuvaIpucu(d.aktif.no))}<br><small>Hangi hayvan olabilir? Tahmin et!</small></p>` : ''}
       ${yuvaPedHTML()}
       ${yuvaGorevHTML(d)}
-      ${yuvaHakCipHTML(d.hak) ? `<p style="font:800 15px var(--yvf-g);color:#8A5A00">Kazandığın nadir yumurta: ${yuvaHakCipHTML(d.hak)} · bu yumurta büyüyünce seçebilirsin!</p>` : `<p style="font-size:13px">💎 Elmas yumurtaya ${3 - (d.zincir || 0)} seri kaldı (ortalamanı üst üste geç) · ⭐ Rekor seri atarsan altın yumurta!</p>`}
+      ${yuvaHakCipHTML(d.hak) ? `<p style="font:800 15px var(--yvf-g);color:var(--altin-yazi,#8A5A00)">Kazandığın nadir yumurta: ${yuvaHakCipHTML(d.hak)} · bu yumurta büyüyünce seçebilirsin!</p>` : `<p style="font-size:13px">💎 Elmas yumurtaya ${3 - (d.zincir || 0)} seri kaldı (ortalamanı üst üste geç) · ⭐ Rekor seri atarsan altın yumurta!</p>`}
       <div class="yv-satir"><div><b>${d.bugunKural.seri}</b>bugün seri</div><div><b>${d.bugunKural.hepsi}</b>hepsi hedefte</div><div><b>${d.bugunKural.gecti}</b>rekorunu geçti</div></div>
       ${yuvaDostHTML(d)}
       <p style="font:800 16px var(--yvf-b);color:var(--yazi)">🐾 Albüm · ${sahip.size}/${yuvaHayvanlar().length}${parlak.size ? ` · ✨ parlak ${parlak.size}` : ''}</p>
@@ -559,7 +686,7 @@ function yuvaDetay(i) {
 // Tam ekranda da görünsün diye fullscreenElement'e (yoksa body'ye) eklenir; dokununca ya da süre bitince kapanır.
 function yuvaKirilma(tip, renk, no, isim, bitince, ikizNo, hediye) {
     const kok = document.fullscreenElement || document.body, h = yuvaHayvan(no), parlak = yuvaNadirMi(renk), h2 = ikizNo ? yuvaHayvan(ikizNo) : null;
-    const yumurta = yuvaYumurtaSVG(renk, tip === 'catla' ? 0 : 1, 180);
+    const yumurta = yuvaYumurtaSVG(renk, tip === 'catla' ? 0 : 1, 180, true); // kırılırken yuvasız (yarımlar uçar)
     const adlar = h.ad.toLocaleUpperCase('tr-TR') + (h2 ? ' VE ' + h2.ad.toLocaleUpperCase('tr-TR') : '');
     const yazi = tip === 'catla' ? '🥚 ÇATLIYOR!' : tip === 'yavru' ? (h2 ? `👯 İKİZ! ${adlar} ÇIKTI!` : `🐣 ${parlak ? 'PARLAK ' : ''}${adlar} ÇIKTI!`) : `🎉 ${adlar} BÜYÜDÜ!`;
     const altYazi = tip === 'catla' ? yuvaIpucu(no) : tip === 'buyu' && hediye ? `🎁 Hediye getirdi: ${hediye}` : '';
@@ -628,7 +755,7 @@ function yuvaSecimAc(i) {
     const sonAlbum = d.album && d.album.length ? d.album[d.album.length - 1] : null, yeniGelen = sonAlbum ? yuvaHayvan(sonAlbum.no) : null, yeniParlak = sonAlbum && yuvaNadirMi(sonAlbum.renk), yeniIkiz = sonAlbum && sonAlbum.ikiz ? yuvaHayvan(sonAlbum.ikiz) : null;
     const nadirler = Object.keys(YUVA_NADIR).filter((k) => d.hak && d.hak[k] > 0);
     const p = yuvaPencere(`${yeniGelen ? `<div class="yv-buyuk"><span class="${yeniParlak ? 'yv-parlak' : ''}"><img src="${yeniGelen.src}" alt="" style="width:120px;height:120px;object-fit:contain"></span>${yeniIkiz ? `<span class="${yeniParlak ? 'yv-parlak' : ''}"><img src="${yeniIkiz.src}" alt="" style="width:110px;height:110px;object-fit:contain"></span>` : ''}${sonAlbum.hediye ? `<em class="yv-hediye buyuk">${sonAlbum.hediye}</em>` : ''}</div><h2>🎉 ${yeniParlak ? 'Parlak ' : ''}${esc(yeniGelen.ad)}${yeniIkiz ? ' ve ' + esc(yeniIkiz.ad) : ''} büyüdü!</h2><p>${sonAlbum.hediye ? `🎁 Sana bir hediye getirdi: <b style="font-size:22px">${sonAlbum.hediye}</b> · ` : ''}Albümüne girdi. Şimdi yeni bir yumurta seç.</p>` : `<h2>${ad}, yumurtanı seç!</h2><p>İçinden hangi hayvan çıkacak? Sürpriz! 🤫</p>`}
-      ${nadirler.length ? '<p style="font:800 16px var(--yvf-b);color:#8A5A00">✨ Nadir yumurta hakkın var! İçinden PARLAK hayvan çıkar.</p>' : ''}<div class="yv-secim">${nadirler.map((k) => `<button data-renk="${k}" aria-label="${YUVA_NADIR[k].ad}">${yuvaYumurtaSVG(k, 0, 100)}<span class="yv-nadir-etk">${YUVA_NADIR[k].ikon} ${YUVA_NADIR[k].ad}</span></button>`).join('')}${uc.map((r) => `<button data-renk="${r.id}" aria-label="${r.id} yumurta">${yuvaYumurtaSVG(r.id, 0, 90)}</button>`).join('')}</div>`);
+      ${nadirler.length ? '<p style="font:800 16px var(--yvf-b);color:var(--altin-yazi,#8A5A00)">✨ Nadir yumurta hakkın var! İçinden PARLAK hayvan çıkar.</p>' : ''}<div class="yv-secim">${nadirler.map((k) => `<button data-renk="${k}" aria-label="${YUVA_NADIR[k].ad}">${yuvaYumurtaSVG(k, 0, 100)}<span class="yv-nadir-etk">${YUVA_NADIR[k].ikon} ${YUVA_NADIR[k].ad}</span></button>`).join('')}${uc.map((r) => `<button data-renk="${r.id}" aria-label="${r.id} yumurta">${yuvaYumurtaSVG(r.id, 0, 90)}</button>`).join('')}</div>`);
     p.querySelectorAll('[data-renk]').forEach((b) => b.onclick = () => { yuvaYumurtaSec(k.g, k.ad, b.dataset.renk); yuvaSes(990); p.remove(); kmYuvaCiz(); yuvaUcan('🥚 Yumurta yuvada!'); setTimeout(() => yuvaDetay(i), 700); });
 }
 // Her gerçek seriden sonra (app.js _skorKaydetCekirdek): evre değiştiyse kutla.

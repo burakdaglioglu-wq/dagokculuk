@@ -247,7 +247,7 @@ function yzTurHTML(o) {
         + '<div class="yz-tur-bilgi"><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-seri-no">SERİ <b>' + (seri + 1) + '</b><span>/' + f.seri + '</span></div>'
         + (f.yari ? '<div class="yz-yari">' + (seri < f.yari ? '1. yarı' : '2. yarı') + '</div>' : '') + '</div>'
         + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '<button class="yz-btn" onclick="yzSureMenu()" title="Seri süresini değiştir">⏱ ' + yzSure(d) + ' sn</button>' + yzDevBtnHTML() + '</div></div>'
-        + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
+        + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + (yzYuvaVarMi() ? '<button class="yz-btn" onclick="yzYuvayaGec()" title="Yumurta Yuvası — tur sürer, süre orada da görünür">🥚 Yumurta</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
         + '</div>'
         + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
         + yzYenilerHTML(o, false)
@@ -2054,7 +2054,7 @@ function yzTvKontrolHTML(o, el) {
     let d = o.durum, dugme = function (yazi, fn, cls, baslik) { return '<button class="yz-tv-k' + (cls ? ' ' + cls : '') + '" onclick="' + fn + '"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
     let sayac = o.sayac ? dugme('⏹ Sıfırla', 'yzSayacDurdur()') : dugme('▶ Başlat', 'yzSayacBaslat()', 'yesil', 'Süreyi başlat (10 sn hatta geçiş + atış)');
     let sure = dugme('⏱ ' + yzSure(d) + ' sn', 'yzSureMenu()', '', 'Süreyi değiştir');
-    let oyunaGec = typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '';
+    let oyunaGec = (typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '') + (yzYuvaVarMi() ? dugme('🥚', 'yzYuvayaGec()', 'oyun', 'Yumurta Yuvası — tam ekran sürer') : '');
     if (d.asama === 'eleme') {
         let sh = el && el.maclar.some(function (m) { return m.shootGerek && !m.kazanan; });
         return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca ekranı kaplar, bitince küçülür') + (sh ? dugme('🎯 Shoot-off 40 sn', 'yzShootSayac()') : '') + '</div>';
@@ -2067,6 +2067,20 @@ function yzTvKontrolHTML(o, el) {
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
         + (seri > 0 ? dugme('◀', 'yzOncekiSeri()', '', 'Önceki seriye dön (skorlar silinmez)') : '')
         + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana', bek ? bek + ' sporcu girmedi — yine de geçebilirsin, sonradan tablodan girilir' : '') + dugme(yzTvTema() === 'kagit' ? '🌙' : '☀️', 'yzTvTemaDegis()', '', 'Görünüm: açık (Hedef Kâğıdı) / koyu') + dugme('⋯', 'yzMenu()', '', 'Tur menüsü: PDF, bitir, iptal') + '</div>';
+}
+// 🥚 Yarışma → Yumurta Yuvası (2026-10-14, kullanıcı: "yumurta oyunu yarışma moduyla birlikte çalışmıyor, geçiş yeri yok").
+// Düğme, derste yumurtası olan biri varsa ya da karma derste görünür. TV/tam ekrandan gelince yumurta ekranı tam ekran açılır.
+function yzYuvaVarMi() {
+    if (typeof kmKarmaMi === 'function' && kmKarmaMi()) return true;
+    return (typeof _kmListe !== 'undefined' ? _kmListe : []).some(function (k) { let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; return !!(sp && sp.oyun && sp.oyun.yuva); });
+}
+function yzYuvayaGec() {
+    let tam = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    try { if (_yz.tv) yzTvKapat(true); } catch (e) {}
+    kmSekme('yuva');
+    if (!tam) return;
+    let i = 0, bekle = function () { let el = document.getElementById('yv-kok'); if (el) { if (typeof kmTamEkranaGec === 'function') kmTamEkranaGec(el); } else if (i++ < 25) setTimeout(bekle, 120); };
+    bekle();
 }
 function yzTvSatir(kEnc) { let o = yzOku(), d = o.durum; if (!d || d.asama !== 'tur') return; yzGirisAc(kEnc, Math.min(d.seri, yzFormat(d).seri - 1)); }
 function yzTvSiradaki() {
