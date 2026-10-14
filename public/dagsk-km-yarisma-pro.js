@@ -165,6 +165,10 @@ function yzCiz() {
 function yzKurulumTaslak() {
     let roster = yzRoster();
     if (!_yz.kurulum) _yz.kurulum = { katilimci: roster.map(function (k) { return k.g + '|' + k.ad; }), mesafe: '70m', format: 'tam', hedefBasi: 3, kayit: true };
+    // 2026-10-14: taslak ilk açılışta kuruluyordu → derse SONRADAN eklenen sporcu listede seçilmemiş çıkıyordu. Görülen
+    // her ders sporcusu bir kez kendiliğinden seçilir; koç sonra kaldırırsa (bilinen'de olduğu için) geri eklenmez.
+    let t0 = _yz.kurulum; if (!t0.bilinen) { t0.bilinen = {}; t0.katilimci.forEach(function (k) { t0.bilinen[k] = 1; }); roster.forEach(function (r) { t0.bilinen[r.g + '|' + r.ad] = 1; }); }
+    roster.forEach(function (r) { let k = r.g + '|' + r.ad; if (!t0.bilinen[k]) { t0.bilinen[k] = 1; if (t0.katilimci.indexOf(k) === -1) t0.katilimci.push(k); } });
     _yz.kurulum.katilimci = _yz.kurulum.katilimci.filter(function (k) { return yzSporcuVar(k); });
     return _yz.kurulum;
 }
@@ -246,7 +250,8 @@ function yzTurHTML(o) {
         + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
         + '</div>'
         + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
-        + '<div class="yz-ilerleme"><div class="yz-bar"><i style="width:' + Math.round(girilen / Math.max(1, d.katilimci.length) * 100) + '%"></i></div><span><b>' + girilen + '/' + d.katilimci.length + '</b> sporcu bu seriyi girdi</span>' + ilerlemeBtn + '</div>'
+        + yzYenilerHTML(o, false)
+        + '<div class="yz-ilerleme"><div class="yz-bar"><i style="width:' + Math.round(girilen / Math.max(1, d.katilimci.length) * 100) + '%"></i></div><span><b>' + girilen + '/' + d.katilimci.length + '</b> sporcu bu seriyi girdi</span>' + (seri > 0 ? '<button class="yz-btn" onclick="yzOncekiSeri()" title="Önceki seriye dön (skorlar silinmez)">◀ ' + seri + '. seri</button>' : '') + ilerlemeBtn + '</div>'
         + (Object.keys(o[yzHpKey(d.id)] || {}).length ? '' : '<div class="yz-ipucu">🎯 Sporculara kişisel hedef puan ver → TV\'de <b>tempo</b> (bu gidişle bitiş) hedefe göre yeşil/kırmızı görünür. <button class="yz-link" onclick="yzHedeflerAc()">Hedefleri gir →</button></div>')
         + '<div class="yz-hedefler">' + hedefHTML + '</div>'
         + yzYarisGrafikKartHTML(o, sira, false)
@@ -279,14 +284,16 @@ function yzTabloHTML(o, sira, sec) {
     }).join('');
     return '<table class="yz-tablo' + (sec.kompakt ? ' kompakt' : '') + '"><thead><tr>' + bas + '</tr></thead><tbody>' + govde + '</tbody></table>';
 }
-function yzSonrakiSeri() {
+function yzSonrakiSeri(zorla) {
     let o = yzOku(), d = o.durum; if (!d) return;
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri);
     let git = function () {
         if (seri >= f.seri - 1) return yzBitir(true);
         yzGuncelle(function (x) { if (x.durum && x.durum.id === d.id && x.durum.seri === d.seri) { x.durum.seri = seri + 1; x.sayac = null; } });
+        if (bek.length && zorla === true) showToast(bek.length + ' sporcu ' + (seri + 1) + '. seride boş kaldı — tablodaki hücreye dokunup sonradan girebilirsin.', 'warning');
         yzCiz();
     };
+    if (bek.length && zorla === true && seri < f.seri - 1) return git();
     if (bek.length) return onayIste(bek.length + ' sporcu bu seriyi henüz girmedi (' + bek.slice(0, 4).map(function (k) { return esc(yzKisaAd(yzKAd(k))); }).join(', ') + (bek.length > 4 ? '…' : '') + ').<br><small>Sonradan tablodaki hücreye dokunarak girebilirsin.</small>', git, seri >= f.seri - 1 ? 'Yine de bitir' : 'Sonraki seriye geç');
     git();
 }
@@ -316,6 +323,61 @@ function yzSporcuEkle(kEnc) {
     yzGuncelle(function (o) { let d = o.durum; if (!d || d.katilimci.indexOf(k) !== -1) return; d.katilimci.push(k); let hb = d.ayar.hedefBasi || 3, n = d.katilimci.length - 1; d.hedefler[k] = (Math.floor(n / hb) + 1) + 'ABCD'.charAt(n % hb); });
     document.getElementById('onay-modal').style.display = 'none'; yzCiz(); if (_yz.tv) yzTvCiz(); showToast(yzKAd(k) + ' tura eklendi', 'success');
 }
+// ---- 🆕 Derse yeni gelenler (2026-10-14, kullanıcı: "yarışma devam ederken sporcu eklemeyi düzelt"). Tur sürerken derse
+// eklenen sporcu tura kendiliğinden girmez (seri sırası, hedef ataması bozulmasın) ama tur ekranında ve TV'de şerit çıkar:
+// "Tura ekle". Karma derste hattı henüz seçilmemiş (yeni gelen) sporcular da sayılır; eklenince Yarışma hattına alınır.
+// "Yok say" / turdan çıkarma → d.cikarilan (ortak kayıt) → bir daha sorulmaz.
+function yzDersYenileri(o) {
+    let d = o.durum; if (!d || d.asama !== 'tur') return [];
+    let h = typeof kmHatlar === 'function' ? kmHatlar() : {}, karma = typeof kmKarmaMi === 'function' && kmKarmaMi(), cik = d.cikarilan || [];
+    return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter(function (s) {
+        let k = s.g + '|' + s.ad; if (d.katilimci.indexOf(k) !== -1 || cik.indexOf(k) !== -1 || !yzSporcuVar(k)) return false;
+        return !karma || h[k] === 'yarisma' || !h[k];
+    }).map(function (s) { return s.g + '|' + s.ad; });
+}
+function yzYenilerHTML(o, tv) {
+    let y = yzDersYenileri(o); if (!y.length) return '';
+    let ad = function (k) { return esc(yzKisaAd(yzKAd(k))); };
+    if (tv) return '<div class="yz-tv-yeniler">🆕 Derse yeni geldi: <b>' + y.slice(0, 4).map(ad).join(', ') + (y.length > 4 ? ' +' + (y.length - 4) : '') + '</b><button class="yz-tv-k ana" onclick="yzYenileriEkle()">+ Tura ekle</button><button class="yz-tv-k" onclick="yzYenileriYoksay()">Yok say</button></div>';
+    return '<div class="yz-bilgi yz-yeniler"><span>🆕 Derse yeni geldi: ' + y.map(function (k) { return '<button class="yz-cip" onclick="yzYenileriEkle(\'' + yzEnc(k) + '\')" title="Tura ekle">+ ' + ad(k) + '</button>'; }).join(' ') + '</span>'
+        + '<span style="display:flex;gap:6px">' + (y.length > 1 ? '<button class="yz-btn ana" onclick="yzYenileriEkle()">Hepsini tura ekle</button>' : '') + '<button class="yz-btn" onclick="yzYenileriYoksay()">Yok say</button></span></div>';
+}
+function yzHattaAl(k) {
+    try { if (typeof kmKarmaMi === 'function' && kmKarmaMi() && typeof kmHatlar === 'function') { let h = kmHatlar(); if (h[k] !== 'yarisma') { h[k] = 'yarisma'; kmHatKaydet(h); if (typeof kmHatHafizaKaydet === 'function') kmHatHafizaKaydet([k], h); } } } catch (e) {}
+}
+function yzTuraEkleKayit(o, k) {
+    let d = o.durum; if (!d || d.katilimci.indexOf(k) !== -1) return;
+    d.katilimci.push(k); d.cikarilan = (d.cikarilan || []).filter(function (x) { return x !== k; });
+    d.hedefler = d.hedefler || {};
+    if (!d.hedefler[k]) { let hb = d.ayar.hedefBasi || 3, n = d.katilimci.length - 1; d.hedefler[k] = (Math.floor(n / hb) + 1) + 'ABCD'.charAt(n % hb); }
+}
+function yzYenileriEkle(kEnc) {
+    let liste = kEnc ? [decodeURIComponent(kEnc)] : yzDersYenileri(yzOku());
+    if (!liste.length) return;
+    let kayit = yzOku().durum && yzOku().durum.ayar.kayit;
+    yzGuncelle(function (o) { liste.forEach(function (k) { yzTuraEkleKayit(o, k); }); });
+    liste.forEach(function (k) { yzHattaAl(k); if (kayit) { let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)]; if (sp && !sp.devamModu) { sp.devamModu = true; sp.lastModified = Date.now(); } } });
+    showToast('➕ ' + (liste.length > 1 ? liste.length + ' sporcu' : yzKAd(liste[0])) + ' tura eklendi — kaçırdığı seriler boş, tablodan girebilirsin', 'success');
+    yzCiz(); if (_yz.tv) yzTvCiz();
+}
+function yzYenileriYoksay() { let liste = yzDersYenileri(yzOku()); yzGuncelle(function (o) { if (o.durum) o.durum.cikarilan = (o.durum.cikarilan || []).concat(liste); }); yzCiz(); if (_yz.tv) yzTvCiz(); }
+// Ders listesinde olmayan sporcu tura/kuruluma eklenince derse de eklenir (Skor Gir, yoklama, karne onu da görsün).
+function yzDerseEkle(k) {
+    if (typeof _kmListe === 'undefined') return false;
+    let i = k.indexOf('|'), g = k.slice(0, i), ad = k.slice(i + 1);
+    if (_kmListe.some(function (s) { return s.g === g && s.ad === ad; })) return false;
+    _kmListe.push({ g: g, ad: ad });
+    try { if (typeof _kmListeKaydet === 'function') _kmListeKaydet(); } catch (e) {}
+    try { if (typeof kmSinifKartiCiz === 'function') kmSinifKartiCiz(); } catch (e) {}
+    return true;
+}
+// Serileri geri al: yanlışlıkla geçilen seriye dönmek için (skorlar silinmez).
+function yzOncekiSeri() {
+    let d = yzOku().durum; if (!d || d.asama !== 'tur' || d.seri <= 0) return;
+    let f = yzFormat(d), simdi = Math.min(d.seri, f.seri - 1);
+    yzGuncelle(function (x) { if (x.durum && x.durum.id === d.id) { x.durum.seri = simdi - 1; x.sayac = null; } });
+    showToast('◀ ' + simdi + '. seriye dönüldü', 'success'); yzCiz();
+}
 function yzIptal() {
     onayIste('Tur iptal edilsin mi? Tablo silinir (karneye işlenmiş oklar karnede kalır).', function () {
         yzGuncelle(function (o) { yzTurTemizle(o); o.durum = null; o.sayac = null; });
@@ -332,10 +394,42 @@ function yzGirisAc(kEnc, seri) {
     _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], konumlar: mevcut ? (mk && mk.length === mevcut.length ? mk.slice() : mevcut.map(function () { return null; })) : [], duzeltme: !!mevcut };
     yzGirisCiz();
 }
+// ---- 2026-10-14 (kullanıcı: "TV'de bir sporcunun serisini girmedim ama diğer seriye geçmek istiyorum, yapamıyorum"). Kaydedince
+// pencere sıradaki sporcuya geçiyor ve TV'nin önünü kapatıyordu; içinden çıkış yolu yalnız ✕'ti. Artık pencerede:
+// bu serinin bekleyenleri (dokun → ona geç), ⏭ Atla (kaydetmeden sıradakine), ▶ Seriyi geç (bekleyenler boş kalır, onay sormaz),
+// ve seri tamamlanınca "✅ seri tamam" ekranı: ▶ sonraki seri / ▶ sonraki seri + süreyi başlat / 🏁 turu bitir.
+function yzGirisBekleyenler(o, g) { let d = o.durum; return yzHedefSirasi(o).filter(function (x) { return x !== g.k && !yzSkor(o, x)[g.seri]; }).filter(function () { return d; }); }
+function yzGirisAtla() {
+    let g = _yz.giris; if (!g || g.tip) return; let o = yzOku(), sira = yzHedefSirasi(o), i = sira.indexOf(g.k);
+    let aday = sira.slice(i + 1).concat(sira.slice(0, i)).find(function (x) { return !yzSkor(o, x)[g.seri]; });
+    if (aday) yzGirisAc(yzEnc(aday), g.seri); else { showToast('Bu seride başka bekleyen yok.', 'success'); }
+}
+function yzGirisSeriGec(sureBaslat) {
+    let g = _yz.giris; _yz.giris = null; yzGirisCiz();
+    let d = yzOku().durum; if (!d) return; let f = yzFormat(d);
+    if (Math.min(d.seri, f.seri - 1) >= f.seri - 1) return yzBitir();
+    yzSonrakiSeri(true);
+    if (sureBaslat) setTimeout(yzSayacBaslat, 50);
+    if (g && _yz.tv) yzTvCiz();
+}
+function yzGirisTamamHTML(g, o, d) {
+    let f = yzFormat(d), son = g.seri >= f.seri - 1, sonraki = g.seri + 2;
+    return '<div class="yz-giris yz-giris-tamam" role="dialog" aria-modal="true" aria-label="Seri tamam">'
+        + '<div class="yz-giris-bas"><div><b style="font-size:20px">✅ ' + (g.seri + 1) + '. seri tamam!</b><div class="yz-alt">' + d.katilimci.length + ' sporcunun hepsi girildi' + (f.yari && g.seri + 1 === f.yari ? ' · ☕ 1. yarı bitti, mola zamanı' : '') + '</div></div><button class="yz-btn" onclick="yzGirisKapat()" aria-label="Kapat">✕</button></div>'
+        + '<div class="yz-tamam-btnlar">'
+        + (son ? '<button class="yz-btn ana buyuk" onclick="yzGirisKapat(); yzBitir()">🏁 Turu bitir — sonuçlar</button>'
+            : '<button class="yz-btn ana buyuk" onclick="yzGirisSeriGec(true)">▶ ' + sonraki + '. seri + süreyi başlat</button><button class="yz-btn buyuk" onclick="yzGirisSeriGec(false)">▶ ' + sonraki + '. seriye geç (süre sonra)</button>')
+        + '<button class="yz-btn" onclick="yzGirisKapat()">Kapat — tabloya bak</button></div>'
+        + '<div class="yz-alt" style="text-align:center">Enter: ' + (son ? 'turu bitir' : 'sonraki seri + süre') + ' · Esc: kapat</div></div>';
+}
 function yzGirisCiz() {
     let g = _yz.giris, kap = document.getElementById('yz-giris');
     if (!g) { if (kap) kap.remove(); document.removeEventListener('keydown', yzGirisTus, true); return; }
     let o = yzOku(), d = o.durum; if (!d) { _yz.giris = null; return yzGirisCiz(); }
+    if (g.tamamEkrani) {
+        if (!kap) { kap = document.createElement('div'); kap.id = 'yz-giris'; kap.className = 'yz-giris-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yzGirisKapat(); }); (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap); document.addEventListener('keydown', yzGirisTus, true); }
+        kap.innerHTML = yzGirisTamamHTML(g, o, d); return;
+    }
     let okSay = yzGirisOkSay(g, d), altSatir, topSatir, seriTop = yzTop(g.oklar);
     if (g.tip === 'set' || g.tip === 'shoot') {
         let m = yzElemeHesapla(o).maclar.find(function (x) { return x.id === g.macId; }) || {};
@@ -360,11 +454,26 @@ function yzGirisCiz() {
         + '<div class="yz-giris-alt"><button class="yz-btn" onclick="yzOkSil()"' + (g.oklar.length ? '' : ' disabled') + '>⌫ Geri al</button>'
         + '<label class="yz-onay kucuk"><input type="checkbox"' + (_yz.siradaki ? ' checked' : '') + ' onchange="_yz.siradaki=this.checked; try{localStorage.setItem(\'dag_yz_siradaki\', this.checked?\'1\':\'0\')}catch(e){}"> Kaydedince sıradakine geç</label>'
         + '<button class="yz-btn ana buyuk" onclick="yzGirisKaydet()"' + (dolu ? '' : ' disabled') + '>💾 Kaydet</button></div>'
+        + (g.tip ? '' : yzGirisAkisHTML(o, g, d))
         + '<div class="yz-alt" style="text-align:center">Klavye: X · 0 = 10 · 1-9 · M · ⌫ · Enter</div>'
+        + '</div>';
+}
+function yzGirisAkisHTML(o, g, d) {
+    let f = yzFormat(d); if (g.seri !== Math.min(d.seri, f.seri - 1)) return ''; // eski seriyi düzeltiyorsa akış düğmeleri yok
+    let bek = yzGirisBekleyenler(o, g), girilen = d.katilimci.filter(function (x) { return yzSkor(o, x)[g.seri]; }).length, son = g.seri >= f.seri - 1;
+    return '<div class="yz-akis"><div class="yz-akis-bas"><span>Bu seri: <b>' + girilen + '/' + d.katilimci.length + '</b> girildi' + (bek.length ? ' · bekleyenler ↓' : '') + '</span>'
+        + '<span class="yz-akis-btn">' + (bek.length ? '<button class="yz-btn" onclick="yzGirisAtla()" title="Kaydetmeden sıradaki sporcuya geç">⏭ Atla</button>' : '')
+        + '<button class="yz-btn" onclick="yzGirisSeriGec(false)" title="Girilmeyenler boş kalır; sonradan tablodaki hücreye dokunup girebilirsin">' + (son ? '🏁 Turu bitir' : '▶ ' + (g.seri + 2) + '. seriye geç') + '</button></span></div>'
+        + (bek.length ? '<div class="yz-akis-cip">' + bek.map(function (k) { return '<button class="yz-cip" onclick="yzGirisAc(\'' + yzEnc(k) + '\',' + g.seri + ')">' + esc((d.hedefler || {})[k] || '') + ' · ' + esc(yzKisaAd(yzKAd(k))) + '</button>'; }).join('') + '</div>' : '')
         + '</div>';
 }
 function yzGirisTus(e) {
     if (!_yz.giris) return;
+    if (_yz.giris.tamamEkrani) {
+        if (e.key === 'Enter') { e.preventDefault(); let d = yzOku().durum; if (d && _yz.giris.seri >= yzFormat(d).seri - 1) { yzGirisKapat(); yzBitir(); } else yzGirisSeriGec(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); yzGirisKapat(); }
+        return;
+    }
     let t = e.key, m = { x: 'X', X: 'X', m: 'M', M: 'M', '0': '10' };
     if (m[t] || /^[1-9]$/.test(t)) { e.preventDefault(); yzOkEkle(m[t] || t); }
     else if (t === 'Backspace') { e.preventDefault(); yzOkSil(); }
@@ -398,7 +507,7 @@ function yzGirisKaydet() {
     if (_yz.siradaki && !onceVardi && yeni.durum && seri === Math.min(yeni.durum.seri, f.seri - 1)) {
         let sira = yzHedefSirasi(yeni), i = sira.indexOf(k), aday = sira.slice(i + 1).concat(sira.slice(0, i)).find(function (x) { return !yzSkor(yeni, x)[seri]; });
         if (aday) yzGirisAc(yzEnc(aday), seri);
-        else showToast('✅ ' + (seri + 1) + '. seri tamamlandı', 'success');
+        else { _yz.giris = { tamamEkrani: true, seri: seri, id: yeni.durum.id, oklar: [] }; yzGirisCiz(); } // ✅ seri tamam ekranı
     }
 }
 // Gerçek skor/karne kaydı — Yarışma/Oyunlar ile aynı çekirdek. Turda seri limiti sessizce uzatılır.
@@ -518,7 +627,7 @@ function yzTvAc() {
     yzTvCiz();
     clearInterval(_yz.tvPoll);
     // Ortak ders senkronu yerel kaydı güncelleyince (WS ile ~1 sn) burada fark edilir; ekran sadece değişince çizilir.
-    _yz.tvPoll = setInterval(function () { let h = localStorage.getItem(yzAnahtar()), im = yzOyunImza(); if (h !== _yz.tvHam || im !== _yz.tvOyunImza) { _yz.tvOyunImza = im; yzTvCiz(); } }, 700);
+    _yz.tvPoll = setInterval(function () { let h = localStorage.getItem(yzAnahtar()), im = yzOyunImza() + '|' + (typeof _kmListe !== 'undefined' ? _kmListe.length : 0); if (h !== _yz.tvHam || im !== _yz.tvOyunImza) { _yz.tvOyunImza = im; yzTvCiz(); } }, 700);
     yzTimerBaslat();
 }
 function yzTvKapat(tamEkranKalsin) {
@@ -580,8 +689,9 @@ function yzTv2Css() {
         '#yz-tv .yz-tv-gorunum{justify-content:flex-start;max-width:none;margin-top:.8vh}',
         '#yz-tv .yz-tv-seri{padding:.8vh 1.8vw;border-radius:1vw}#yz-tv .yz-tv-seri b{font-size:4.2vw}#yz-tv .yz-tv-seri-top{font-size:1.3vw}#yz-tv .yz-tv-seri-et{font-size:max(10px,.9vw)}',
         '#yz-tv .yz-sayac{min-width:13vw;padding:.8vh 1.6vw;border-radius:1vw}#yz-tv .yz-sayac-sure{font-size:4.4vw}#yz-tv .yz-sayac-alt{font-size:max(10px,.95vw)}',
-        '#yz-tv .yz-tv-saat{gap:.8vh}#yz-tv .yz-tv-kontrol{max-width:none;flex-wrap:nowrap;justify-content:flex-end;gap:.4vw}',
-        '#yz-tv .yz-tv-k{font-size:max(11px,.78vw);padding:.6vh .75vw;border-radius:.6vw}',
+        '#yz-tv .yz-tv-saat{gap:.8vh}#yz-tv .yz-tv-kontrol{max-width:48vw;flex-wrap:wrap;justify-content:flex-end;gap:.45vw}',
+        '#yz-tv .yz-tv-k{font-size:max(13px,.92vw);padding:max(7px,.9vh) max(9px,.85vw);border-radius:.6vw;min-height:36px}','#yz-tv .yz-tv-yeniler{display:flex;align-items:center;gap:.8vw;flex-wrap:wrap;padding:.8vh 1.2vw;border-radius:.8vw;background:rgba(253,142,1,.14);border:1px solid rgba(253,142,1,.5);color:#FFE2C2;font-weight:800;font-size:max(13px,1vw)}','#yz-tv.kagit .yz-tv-yeniler{background:#fff4d6;border-color:#efd27c;color:#5b4300}',
+        '.yz-yeniler{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}',
         'body .yz-tv .yz-tv-kapat{top:auto;left:auto;bottom:3px;right:6px;padding:3px 9px;font-size:11px;opacity:.35}',
         '#yz-tv .yz-tv-tablo{position:relative}',
         '#yz-tv .yz-tablo tr.p1 td.sira,#yz-tv .yz-tablo tr.p2 td.sira,#yz-tv .yz-tablo tr.p3 td.sira{background:transparent;font-weight:900}',
@@ -620,6 +730,7 @@ function yzTvCiz() {
         + (bitti ? '' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o) + '</div>')
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
+        + (bitti ? '' : yzYenilerHTML(o, true))
         + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
         + yzTvOyunSeridiHTML()
         + yzTvDuyuruHTML(o, sira, yeni);
@@ -1949,9 +2060,13 @@ function yzTvKontrolHTML(o, el) {
         return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca ekranı kaplar, bitince küçülür') + (sh ? dugme('🎯 Shoot-off 40 sn', 'yzShootSayac()') : '') + '</div>';
     }
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri).length, son = seri >= f.seri - 1;
+    // 2026-10-14 (kullanıcı: "TV ekranında her şeyi yapabileyim"): sporcu ekle/çıkar, önceki seriye dön ve tur menüsü
+    // TV'den de; düğmeler büyüdü ve sığmazsa alt satıra geçer (eskiden tek satırda sıkışıyordu).
     return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca ekranı kaplar, bitince küçülür') + dugme('🎯', 'yzHedeflerAc()', '', 'Kişisel hedef puanları')
+        + dugme('👥 ' + d.katilimci.length, 'yzSporcuSecici(\'tur\')', '', 'Sporcu ekle / çıkar')
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
-        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana') + dugme(yzTvTema() === 'kagit' ? '🌙' : '☀️', 'yzTvTemaDegis()', '', 'Görünüm: açık (Hedef Kâğıdı) / koyu') + '</div>';
+        + (seri > 0 ? dugme('◀', 'yzOncekiSeri()', '', 'Önceki seriye dön (skorlar silinmez)') : '')
+        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana', bek ? bek + ' sporcu girmedi — yine de geçebilirsin, sonradan tablodan girilir' : '') + dugme(yzTvTema() === 'kagit' ? '🌙' : '☀️', 'yzTvTemaDegis()', '', 'Görünüm: açık (Hedef Kâğıdı) / koyu') + dugme('⋯', 'yzMenu()', '', 'Tur menüsü: PDF, bitir, iptal') + '</div>';
 }
 function yzTvSatir(kEnc) { let o = yzOku(), d = o.durum; if (!d || d.asama !== 'tur') return; yzGirisAc(kEnc, Math.min(d.seri, yzFormat(d).seri - 1)); }
 function yzTvSiradaki() {
@@ -2197,6 +2312,10 @@ function yzCssYukle() {
         // giriş penceresi
         '.yz-giris-arka{position:fixed;inset:0;z-index:30800;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:10px}',
         '@media (min-width:700px){.yz-giris-arka{align-items:center}}',
+        '.yz-akis{display:grid;gap:8px;padding:10px 12px;border-radius:14px;border:1px dashed var(--border-color);background:rgba(253,142,1,.06)}',
+        '.yz-akis-bas{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px}.yz-akis-btn{display:flex;gap:6px;flex-wrap:wrap}',
+        '.yz-akis-cip{display:flex;flex-wrap:wrap;gap:6px}.yz-akis-cip .yz-cip{min-height:38px}',
+        '.yz-giris-tamam{text-align:left}.yz-tamam-btnlar{display:grid;gap:10px;margin:14px 0 8px}.yz-tamam-btnlar .yz-btn{min-height:52px;font-size:16px}',
         '.yz-giris{width:min(560px,100%);max-height:100%;overflow:auto;background:linear-gradient(var(--bg-panel),var(--bg-panel)),var(--bg-main,#14121c);color:var(--text-main);border:1px solid var(--border-color);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 60px rgba(0,0,0,.5)}',
         '.yz-giris-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.yz-giris-bas b{font-size:17px}',
         '.yz-oklar{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}',
@@ -2711,7 +2830,7 @@ function yzTorenCss() {
 function yzSporcuVar(k) { let i = k.indexOf('|'), g = k.slice(0, i), ad = k.slice(i + 1); return !!(turnuvaDB[g] && turnuvaDB[g][ad]); }
 function yzTumSporcular() {
     let l = [];
-    ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(function (g) { Object.keys(turnuvaDB[g] || {}).forEach(function (ad) { let sp = turnuvaDB[g][ad]; if (sp && !sp.pasif) l.push({ g: g, ad: ad, k: g + '|' + ad }); }); });
+    ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(function (g) { Object.keys(turnuvaDB[g] || {}).forEach(function (ad) { let sp = turnuvaDB[g][ad]; if (sp) l.push({ g: g, ad: ad, k: g + '|' + ad, pasif: !!(sp.pasif || sp.donduruldu) }); }); });
     return l;
 }
 function yzKatla(x) { return String(x || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u'); }
@@ -2728,11 +2847,11 @@ function yzSporcuSeciciCiz(odak) {
         return '<div class="yz-sec-sat"><span class="yz-sec-ad"><b>' + esc(yzKAd(k)) + '</b><small>' + esc(grupAdi(k.slice(0, k.indexOf('|')))) + (tur ? ' · hedef ' + esc((d.hedefler || {})[k] || '') + ' · ' + girilen + ' seri' : '') + '</small></span>'
             + '<button class="yz-btn tehlike" onclick="yzSecCikar(\'' + yzEnc(k) + '\')">Çıkar</button></div>';
     }).join('') || '<div class="yz-alt" style="padding:10px">Henüz sporcu yok.</div>';
-    let q = yzKatla(_yzSec.ara.trim()), roster = {};
+    let q = yzKatla(_yzSec.ara.trim()), roster = {}, dersteMi = function (k) { return (typeof _kmListe !== 'undefined' ? _kmListe : []).some(function (s) { return s.g + '|' + s.ad === k; }); };
     yzRoster().forEach(function (r) { roster[r.g + '|' + r.ad] = 1; });
-    let adaylar = yzTumSporcular().filter(function (x) { return kat.indexOf(x.k) === -1 && (!q || yzKatla(x.ad).indexOf(q) !== -1); })
+    let adaylar = yzTumSporcular().filter(function (x) { return kat.indexOf(x.k) === -1 && (q ? yzKatla(x.ad).indexOf(q) !== -1 : !x.pasif); }) // pasif/dondurulmuş yalnız aranınca
         .sort(function (a, b) { return (roster[b.k] || 0) - (roster[a.k] || 0) || a.ad.localeCompare(b.ad, 'tr'); }).slice(0, q ? 40 : 12);
-    let ekle = adaylar.map(function (x) { return '<button class="yz-sec-aday" onclick="yzSecEkle(\'' + yzEnc(x.k) + '\')"><span>+ ' + esc(x.ad) + '</span><small>' + esc(grupAdi(x.g)) + (roster[x.k] ? ' · derste' : '') + '</small></button>'; }).join('')
+    let ekle = adaylar.map(function (x) { return '<button class="yz-sec-aday" onclick="yzSecEkle(\'' + yzEnc(x.k) + '\')"><span>+ ' + esc(x.ad) + '</span><small>' + esc(grupAdi(x.g)) + (roster[x.k] ? ' · derste' : (dersteMi(x.k) ? ' · derste (oyun hattı)' : ' · derse de eklenir')) + (x.pasif ? ' · pasif' : '') + '</small></button>'; }).join('')
         || '<div class="yz-alt" style="padding:8px">' + (q ? 'Bu isimde sporcu bulunamadı.' : 'Eklenecek sporcu yok.') + '</div>';
     kap.innerHTML = '<div class="yz-giris yz-secici" role="dialog" aria-modal="true" aria-label="Sporcu ekle veya çıkar"><div class="yz-giris-bas"><div><b>👥 ' + (tur ? 'Turdaki sporcular' : 'Tura katılacaklar') + ' (' + kat.length + ')</b>'
         + (tur ? '<div class="yz-alt">Sonradan eklenen sporcunun kaçırdığı seriler boş kalır; tablodaki hücreye dokunup girebilirsin. Çıkarılanın serileri silinmez.</div>' : '') + '</div>'
@@ -2747,20 +2866,22 @@ function yzSporcuSeciciCiz(odak) {
 function yzSeciciKapat() { let k = document.getElementById('yz-secici'); if (k) k.remove(); yzCiz(); if (_yz.tv) yzTvCiz(); }
 function yzSecEkle(kEnc) {
     let k = decodeURIComponent(kEnc);
-    if (_yzSec.yer === 'kurulum') { let t = yzKurulumTaslak(); if (t.katilimci.indexOf(k) === -1) t.katilimci.push(k); }
-    else yzGuncelle(function (o) {
-        let d = o.durum; if (!d || d.katilimci.indexOf(k) !== -1) return;
-        d.katilimci.push(k);
-        if (!(d.hedefler || {})[k]) { let hb = d.ayar.hedefBasi || 3, n = d.katilimci.length - 1; d.hedefler[k] = (Math.floor(n / hb) + 1) + 'ABCD'.charAt(n % hb); }
-    });
-    _yzSec.ara = ''; showToast(yzKAd(k) + ' eklendi', 'success'); yzSporcuSeciciCiz(true);
+    // ders listesinde değilse derse de eklenir; karma derste Yarışma hattına alınır (Oyunlar'dan çıkar)
+    let derse = yzDerseEkle(k), eskiTaslak = _yz.kurulum; yzHattaAl(k); if (eskiTaslak) _yz.kurulum = eskiTaslak; // hat kaydı taslağı sıfırlar — koçun seçimleri kalsın
+    if (_yzSec.yer === 'kurulum') { let t = yzKurulumTaslak(); t.bilinen = t.bilinen || {}; t.bilinen[k] = 1; if (t.katilimci.indexOf(k) === -1) t.katilimci.push(k); }
+    else {
+        yzGuncelle(function (o) { yzTuraEkleKayit(o, k); });
+        let d = yzOku().durum, i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)];
+        if (d && d.ayar.kayit && sp && !sp.devamModu) { sp.devamModu = true; sp.lastModified = Date.now(); } // uzun turda seri limiti durdurmasın
+    }
+    _yzSec.ara = ''; showToast(yzKAd(k) + ' eklendi' + (derse ? ' (derse de)' : ''), 'success'); yzSporcuSeciciCiz(true);
     if (_yz.tv) yzTvCiz();
 }
 function yzSecCikar(kEnc) {
     let k = decodeURIComponent(kEnc);
     let yap = function () {
         if (_yzSec.yer === 'kurulum') { let t = yzKurulumTaslak(), j = t.katilimci.indexOf(k); if (j !== -1) t.katilimci.splice(j, 1); }
-        else yzGuncelle(function (o) { let d = o.durum; if (!d) return; let j = d.katilimci.indexOf(k); if (j !== -1) d.katilimci.splice(j, 1); });
+        else yzGuncelle(function (o) { let d = o.durum; if (!d) return; let j = d.katilimci.indexOf(k); if (j !== -1) d.katilimci.splice(j, 1); d.cikarilan = (d.cikarilan || []).concat([k]); });
         showToast(yzKAd(k) + ' çıkarıldı', 'warning'); yzSporcuSeciciCiz(false); if (_yz.tv) yzTvCiz();
     };
     let girilen = _yzSec.yer === 'tur' ? yzSkor(yzOku(), k).filter(Boolean).length : 0;

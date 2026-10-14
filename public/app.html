@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v250</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v251</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -114,9 +114,9 @@
         <div class="adm-card" style="background:var(--bg-main);max-width:480px;width:100%;max-height:88vh;display:flex;flex-direction:column;padding:16px;margin-bottom:0;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                 <span style="font-weight:900;font-size:15px;">🎯 Karışık Sınıf</span>
-                <button onclick="document.getElementById('karisik-modal').style.display='none'" class="adm-btn adm-btn-sm">✕</button>
+                <button onclick="kmModalKapat()" class="adm-btn adm-btn-sm">✕</button>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.</div>
+            <div id="km-modal-aciklama" style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.</div>
             <div id="km-program-dersler"></div>
             <div id="km-deneme-bugun"></div>
             <div id="km-sablonlar"></div>
@@ -124,7 +124,7 @@
             <div id="km-liste" style="overflow-y:auto;flex:1;min-height:150px;"></div>
             <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
                 <span id="km-sayac" style="font-size:11px;color:var(--text-muted);flex:1;">0 sporcu seçildi</span>
-                <button onclick="kmBaslat()" class="adm-btn" style="background:var(--accent-orange);color:#fff;border-color:var(--accent-orange);">▶ Dersi Başlat</button>
+                <button id="km-baslat-btn" onclick="kmBaslat()" class="adm-btn" style="background:var(--accent-orange);color:#fff;border-color:var(--accent-orange);">▶ Dersi Başlat</button>
             </div>
         </div>
     </div>

@@ -36,7 +36,7 @@ export default async function ({ log }) {
     esit(await p.locator('.yz-tablo thead th.yari').count(), 2, 'yarı sütunları');
     // 1. seriyi herkese gir
     await p.evaluate(() => {
-      let o = yzOku(); o.durum.katilimci.forEach((k) => { yzGirisAc(yzEnc(k), 0); ['X', '10', '9', '9', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); });
+      let o = yzOku(); o.durum.katilimci.forEach((k) => { yzGirisAc(yzEnc(k), 0); ['X', '10', '9', '9', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzGirisKapat(); });
     });
     await p.waitForTimeout(300);
     const toplam = await p.evaluate(() => yzSiralama(yzOku()).map((r) => r.toplam));
@@ -59,7 +59,7 @@ export default async function ({ log }) {
     await p.locator('#yz-secici .yz-btn', { hasText: 'Kapat' }).click();
     esit(await p.evaluate(() => yzSiralama(yzOku()).length), 3, 'sıralama ekle/çıkar sonrası 3 kişi olmalı');
     // ikinci seri → yarış grafiği görünür
-    await p.evaluate(() => { yzGuncelle((o) => { o.durum.seri = 1; }); yzOku().durum.katilimci.forEach((k) => { yzGirisAc(yzEnc(k), 1); ['10', '9', '9', '8', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); }); yzCiz(); });
+    await p.evaluate(() => { yzGuncelle((o) => { o.durum.seri = 1; }); yzOku().durum.katilimci.forEach((k) => { yzGirisAc(yzEnc(k), 1); ['10', '9', '9', '8', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzGirisKapat(); }); yzCiz(); });
     dogrula(await p.locator('.yz-grafik-kart .yz-gr-cizgi').count() >= 3, 'yarış grafiği çizilmedi');
     if (process.env.E2E_EKRAN) await p.locator('.yz-grafik-kart').screenshot({ path: process.env.E2E_EKRAN + '-grafik.png' });
     // TV: 16 sütun ekrana sığmalı
@@ -82,7 +82,7 @@ export default async function ({ log }) {
     await p.evaluate(() => {
       yzKurAyar('kayit', false); let x = yzKurulumTaslak(); x.katilimci = yzRoster().slice(0, 4).map((k) => k.g + '|' + k.ad); yzBaslat();
       let degerler = [['10', '9', '9'], ['9', '8', '8'], ['8', '7', '7'], ['7', '6', '6']];
-      for (let s = 0; s < 12; s++) { if (s) yzGuncelle((o) => { o.durum.seri = s; }); yzOku().durum.katilimci.forEach((k, i) => { yzGirisAc(yzEnc(k), s); degerler[i].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); }); }
+      for (let s = 0; s < 12; s++) { if (s) yzGuncelle((o) => { o.durum.seri = s; }); yzOku().durum.katilimci.forEach((k, i) => { yzGirisAc(yzEnc(k), s); degerler[i].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzGirisKapat(); }); }
       yzBitir(true);
     });
     dogrula((await p.locator('.yz-ust-etiket').first().textContent()).includes('9-12 YAŞ'), 'sonuç başlığında kategori yok');

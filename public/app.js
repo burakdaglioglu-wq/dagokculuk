@@ -11348,6 +11348,15 @@
         async function kmBaslat() {
             let secilen = Object.values(_kmSecimler);
             if(!secilen.length) return showToast('En az bir sporcu seç!','error');
+            if(_kmEkleModu) {
+                // Ders sürüyor: listeyi güncelle (üzerine yazma uyarısı yok), açık araca geri dön.
+                let onceki = _kmEkleModu.onceki, yeni = secilen.filter(function(s) { return onceki.indexOf(s.g + '|' + s.ad) === -1; });
+                let cikan = onceki.length - (secilen.length - yeni.length);
+                _kmListe = secilen; _kmListeKaydet();
+                kmEkleModuBitir();
+                showToast(yeni.length ? '➕ ' + yeni.length + ' sporcu derse eklendi' + (cikan > 0 ? ' · ' + cikan + ' çıkarıldı' : '') : (cikan > 0 ? cikan + ' sporcu dersten çıkarıldı' : 'Ders listesi aynı'), 'success');
+                return;
+            }
             islemYukleniyorGoster('Ders hazırlanıyor...');
             // GÜVENLİK KONTROLÜ: bu ekrana "boş" sanılan bir konumdan gelinmiş olabilir (ör. konum
             // seçicideki durum kontrolü ağ hatası yüzünden yanlışlıkla "boş" göstermiş olabilir) —
@@ -26606,12 +26615,37 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             el.innerHTML = html;
         }
 
+        // 2026-10-14 (kullanıcı: "ders başlatırken, özellikle Yarışma sekmesinden sporcu eklerken sorun yaşadım"). Ders
+        // sürerken ⋯ › Sporcu Ekle yeni ders penceresini açıyordu: "Dersi Başlat" sunucudaki listeyle farkı görünce
+        // "üzerine yazarsan ders kaybolur" uyarısı veriyor, sonra Skor Gir ızgarasına atıyordu; ✕ ise platformu gizli
+        // bırakıp boş ana ekrana düşürüyordu. Artık EKLEME MODU: düğme "✓ Derse ekle", uyarı yok, kapanınca (eklesen de
+        // vazgeçsen de) açık olan araca (ör. Yarışma) geri dönülür. Yarışma TV'si açıksa pencere onun üstünde açılır.
+        let _kmEkleModu = null;
         function kmSporcuEkle() {
-            // Mevcut seçimi koru, modal aç
+            _kmEkleModu = { sekme: _kmAktifSekme, icerikAcik: (document.getElementById('km-icerik') || {}).style ? document.getElementById('km-icerik').style.display !== 'none' : false, onceki: (_kmListe || []).map(function(s) { return s.g + '|' + s.ad; }) };
+            _kmSecimler = {}; (_kmListe || []).forEach(function(s) { _kmSecimler[s.g + '_' + s.ad] = { g: s.g, ad: s.ad }; });
             document.getElementById('karisik-platform').style.display = 'none';
             if(document.getElementById('km-ara')) document.getElementById('km-ara').value = '';
             kmModalDoldur();
-            document.getElementById('karisik-modal').style.display = 'flex';
+            let m = document.getElementById('karisik-modal'); m.style.zIndex = document.getElementById('yz-tv') ? '33500' : '25000'; // yalnız Yarışma TV'si açıkken onun üstüne (onay pencereleri 31000'de kalsın)
+            let b = document.getElementById('km-baslat-btn'); if(b) b.textContent = '✓ Derse ekle';
+            let a = document.getElementById('km-modal-aciklama'); if(a) a.textContent = 'Derse eklenecek sporcuları işaretle. Ders sürer; skorlar ve Yarışma turu korunur.';
+            m.style.display = 'flex';
+            if(document.fullscreenElement && document.fullscreenElement !== document.documentElement && !document.fullscreenElement.contains(m)) { try { document.exitFullscreen(); } catch(e) {} }
+        }
+        function kmEkleModuBitir() {
+            let mod = _kmEkleModu; _kmEkleModu = null;
+            let m = document.getElementById('karisik-modal'); m.style.display = 'none'; m.style.zIndex = '25000';
+            let b = document.getElementById('km-baslat-btn'); if(b) b.textContent = '▶ Dersi Başlat';
+            let a = document.getElementById('km-modal-aciklama'); if(a) a.textContent = 'Bu dersteki sporcuları seç — farklı gruplardan seçebilirsin.';
+            document.getElementById('karisik-platform').style.display = 'flex';
+            try { kmSinifKartiCiz(); } catch(e) {} try { kmAracIzgaraCiz(); } catch(e) {}
+            if(mod && mod.icerikAcik && mod.sekme) { try { kmAracSec(mod.sekme); } catch(e) { kmSekme(mod.sekme); } }
+            return mod;
+        }
+        function kmModalKapat() {
+            if(_kmEkleModu) { kmEkleModuBitir(); return; }
+            document.getElementById('karisik-modal').style.display = 'none';
         }
 
         // ===== 📚 OTURUM ARŞİVİ + 🌟 GÜNÜN YILDIZI (2026-08-20) =====
