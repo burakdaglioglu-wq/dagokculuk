@@ -1520,18 +1520,18 @@ function _miloYeniPdfAl(orientation) {
         return pdf;
     });
 }
+// "A · Sade" başlık (2026-10-15): dolu renkli bant yerine beyaz zemin, siyah başlık, ince çizgi (yoklama PDF'leri ortak).
 function _miloKurumsalBaslikCiz(pdf, marginX, usableW, y, rozetMetni, altBaslik) {
-    pdf.setFillColor(31, 173, 160); pdf.roundedRect(marginX, y, usableW, 24, 3, 3, 'F');
-    pdf.setFillColor(255, 197, 66); pdf.rect(marginX, y + 24 - 1.4, usableW, 1.4, 'F');
-    pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
-    pdf.text('MILO FITT KIDS', marginX + 7, y + 10);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(220, 245, 240);
-    pdf.text(_miloTrTranslit(altBaslik || 'Antrenman Yoklama Formu'), marginX + 7, y + 16.5);
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(255, 197, 66);
-    pdf.text(_miloTrTranslit(rozetMetni), marginX + usableW - 7, y + 10, { align: 'right' });
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(220, 245, 240);
-    pdf.text(_miloTrTranslit('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW - 7, y + 16.5, { align: 'right' });
-    return y + 30;
+    pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
+    pdf.text(_miloTrTranslit(altBaslik || 'Antrenman Yoklama Formu'), marginX, y + 9);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118);
+    pdf.text('MILO FITT KIDS', marginX, y + 15);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(15, 111, 103);
+    pdf.text(_miloTrTranslit(rozetMetni || ''), marginX + usableW, y + 9, { align: 'right' });
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(107, 121, 118);
+    pdf.text(_miloTrTranslit('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW, y + 15, { align: 'right' });
+    pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.5); pdf.line(marginX, y + 18.5, marginX + usableW, y + 18.5);
+    return y + 26;
 }
 function _miloKurumsalAltBilgiCiz(pdf, pageW, pageH) {
     let sayfaSayisi = pdf.internal.getNumberOfPages();
@@ -1700,10 +1700,10 @@ function miloProgramTamPdfIndir() {
             if (!slotlar.length) return;
             birseyVarMi = true;
             if (y + 30 > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
-            pdf.setFillColor(31, 173, 160); pdf.rect(marginX, y, usableW, 8, 'F');
-            pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
+            pdf.setDrawColor(19, 138, 128); pdf.setLineWidth(0.6); pdf.line(marginX, y + 8, marginX + usableW, y + 8); // Sade: dolu bant yerine ince çizgi
+            pdf.setTextColor(15, 111, 103); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
             pdf.text(_miloTrTranslit(MILO_GUN_ADI[gun].toUpperCase()), marginX + 3, y + 5.8);
-            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(255, 197, 66);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(107, 121, 118);
             pdf.text(_miloTrTranslit('Tarih: ......../......../.............'), marginX + usableW - 3, y + 5.8, { align: 'right' });
             y += 12;
             slotlar.forEach(function(s) {
@@ -1767,10 +1767,10 @@ function miloAylikYoklamaCizelgesiPdfIndir() {
                 let satirSayisiTahmini = roster.length + 2;
                 let ilkBlokYukseklik = 11 + 8 + Math.min(4, satirSayisiTahmini) * 7;
                 if (y + ilkBlokYukseklik > pageH - 16) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, pageW, pageH, 'F'); y = 16; }
-                pdf.setFillColor(31, 173, 160); pdf.rect(marginX, y, usableW, 8, 'F');
-                pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10);
+                pdf.setDrawColor(19, 138, 128); pdf.setLineWidth(0.6); pdf.line(marginX, y + 8, marginX + usableW, y + 8); // Sade
+                pdf.setTextColor(15, 111, 103); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10);
                 pdf.text(_miloTrTranslit(etiket) + ' (' + _miloTrTranslit(s.grup) + ')', marginX + 3, y + 5.6);
-                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(255, 197, 66);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(107, 121, 118);
                 pdf.text(roster.length + ' kayitli uye', marginX + usableW - 3, y + 5.6, { align: 'right' });
                 y += 11;
                 y = _miloAylikYoklamaTablosuCiz(pdf, roster, tumTarihler, marginX, usableW, y, etiket, vurguSet, istisnaSet, pageH);

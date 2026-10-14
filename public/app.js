@@ -3101,6 +3101,19 @@
         }
         // Kurumsal başlık bandı — her iki PDF'in de üst kısmını çizer. "Şirket sunumu gibi olsun"
         // isteği: gold vurgu çizgisi, kulüp adı + rapor türü rozeti + hazırlanma tarihi tek satırda.
+        // "A · Sade" başlık (2026-10-15, kullanıcı yoklama alanı için Sade'yi seçti): beyaz zemin, siyah başlık, ince çizgi.
+        function _sadeBaslikCiz(pdf, marginX, usableW, y, rozetMetni, altBaslik) {
+            pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16);
+            pdf.text(_trTranslit(altBaslik || 'Yoklama'), marginX, y + 9);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118);
+            pdf.text(_trTranslit('DAĞ Spor Kulübü · Okçuluk'), marginX, y + 15);
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(15, 111, 103);
+            pdf.text(_trTranslit(rozetMetni || ''), marginX + usableW, y + 9, { align: 'right' });
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(107, 121, 118);
+            pdf.text(_trTranslit('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), marginX + usableW, y + 15, { align: 'right' });
+            pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.5); pdf.line(marginX, y + 18.5, marginX + usableW, y + 18.5);
+            return y + 26;
+        }
         function _kurumsalBaslikCiz(pdf, marginX, usableW, y, rozetMetni, altBaslik) {
             pdf.setFillColor(9, 22, 43); pdf.roundedRect(marginX, y, usableW, 24, 3, 3, 'F');
             pdf.setFillColor(251, 191, 36); pdf.rect(marginX, y + 24 - 1.4, usableW, 1.4, 'F'); // alt gold çizgi
@@ -7876,9 +7889,27 @@
                 b.style.borderColor = aktifGrup === g ? GRUP_RENK[g] : 'var(--border-color)';
             });
         }
+        // "A · Sade" Yoklama (2026-10-15, kullanıcı: yoklama alanı Sade olsun — Milo ve DAĞ). Sekme açıkken #yonetici-liste'ye
+        // .sade-yok eklenir: kulüp renk değişkenleri yalnız bu alanda Sade renklerle yeniden tanımlanır (beyaz kâğıt, tek vurgu).
+        function sadeYoklamaCss() {
+            if(!document.getElementById('sade-font')) { let l = document.createElement('link'); l.id = 'sade-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap'; document.head.appendChild(l); }
+            if(document.getElementById('sade-yok-css')) return;
+            let st = document.createElement('style'); st.id = 'sade-yok-css';
+            st.textContent = [
+                '#yonetici-liste.sade-yok{--bg-main:#F6F8F7;--bg-panel:#FFFFFF;--surface-1:#FFFFFF;--surface-2:#F3F6F5;--text-main:#1B2422;--text-primary:#1B2422;--text-muted:#6B7976;--text-secondary:#6B7976;--border-color:#E4E9E7;',
+                '--accent-orange:#138A80;--accent-soft:#E3F4F1;--neon-green:#138A80;--neon-red:#B4372F;--neon-blue:#2563EB;--gold:#8A5A00;--dag-kehribar:#8A5A00;--text-on-accent-dark:#FFFFFF;--status-success:#138A80;--status-danger:#B4372F;',
+                'font-family:"Manrope",system-ui,sans-serif;background:#F4F7F6;color:#1B2422;border-radius:18px;padding:18px;color-scheme:light}',
+                '#yonetici-liste.sade-yok .adm-card{box-shadow:none;border:1px solid #E4E9E7;border-radius:16px}',
+                '#yonetici-liste.sade-yok .adm-btn{border-radius:10px;border-color:#D7DFDC;font-weight:700}',
+                '#yonetici-liste.sade-yok input,#yonetici-liste.sade-yok select,#yonetici-liste.sade-yok textarea{background:#FFFFFF;color:#1B2422;border-color:#E4E9E7}',
+                '@media (max-width:640px){#yonetici-liste.sade-yok{padding:10px}}'
+            ].join('\n');
+            document.head.appendChild(st);
+        }
         function yoneticiSekme(k) {
             if(k !== 'aidat') _aidatKilitAcikMi = false; // Aidat'tan çıkınca ek kilit yeniden devreye girsin
             yoneticiSekmeAktif = k; _yonDigerAcik = false; yoneticiNavCiz();
+            try { let la = document.getElementById('yonetici-liste'); if(la) { if(k === 'yoklama') sadeYoklamaCss(); la.classList.toggle('sade-yok', k === 'yoklama'); } } catch(e) {}
             let arama = document.getElementById('yonetici-arama');
             let ligBar = document.getElementById('yon-lig-bar');
             if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
@@ -9616,7 +9647,7 @@
             _yeniPdfAl('landscape').then(function(pdf) {
                 let W = 297, H = 210, mx = 12, uw = W - mx * 2, y;
                 let yeniSayfa = function() { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); return 14; };
-                y = _kurumsalBaslikCiz(pdf, mx, uw, 10, d.ad.toLocaleUpperCase('tr'), 'Yoklama Raporu · ' + (grupF.length > 1 ? 'Tüm gruplar' : grupF[0][1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '')));
+                y = _sadeBaslikCiz(pdf, mx, uw, 10, d.ad.toLocaleUpperCase('tr'), 'Yoklama Raporu · ' + (grupF.length > 1 ? 'Tüm gruplar' : grupF[0][1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '')));
                 // KPI kutuları
                 let kpi = [['DERS GÜNÜ', dersGunleri.length], ['TOPLAM KATILIM', toplamKat], ['GÜNLÜK ORT.', dersGunleri.length ? (toplamKat / dersGunleri.length).toFixed(1) : '0'], ['GELEN ÖĞRENCİ', gelenSay], ['AKTİF ÖĞRENCİ', aktifSay], ['HİÇ GELMEYEN', hicSay]];
                 let kw = (uw - 5 * 4) / 6;
@@ -9632,7 +9663,7 @@
                 let bw = (gw - 8) / Math.max(n, 1);
                 gunVeri.forEach(function(v, i) {
                     let h = v.gelen.length / maxV * (gh - 4), x = gx + 7 + i * bw, dt = new Date(v.iso + 'T00:00:00');
-                    if(h > 0) { pdf.setFillColor(252, 91, 1); pdf.rect(x + bw * 0.15, gy + gh - h, bw * 0.7, h, 'F'); if(bw > 5) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.5); pdf.setTextColor(9, 22, 43); pdf.text(String(v.gelen.length), x + bw / 2, gy + gh - h - 1, { align: 'center' }); } }
+                    if(h > 0) { pdf.setFillColor(19, 138, 128); pdf.rect(x + bw * 0.15, gy + gh - h, bw * 0.7, h, 'F'); if(bw > 5) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.5); pdf.setTextColor(9, 22, 43); pdf.text(String(v.gelen.length), x + bw / 2, gy + gh - h - 1, { align: 'center' }); } }
                     if(bw > 4 || i % Math.ceil(4 / bw) === 0) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5); pdf.setTextColor(100, 116, 139); pdf.text(String(dt.getDate()), x + bw / 2, gy + gh + 3.5, { align: 'center' }); if(bw > 6) pdf.text(T(GUN_KISA_TR[dt.getDay()]), x + bw / 2, gy + gh + 6.5, { align: 'center' }); }
                 });
                 // grup grafiği
@@ -9643,7 +9674,7 @@
                     let g = x[0], ak = sporcular.filter(function(s) { return s.g === g && !s.pasif; }).length, ge = sporcular.filter(function(s) { return s.g === g && s.geldi.length; }).length, oran = ak ? ge / ak : 0;
                     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(30, 41, 59); pdf.text(T(x[1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '')), rx, ry + 3);
                     pdf.setFillColor(241, 245, 249); pdf.roundedRect(rx + 24, ry, rw - 46, 4.5, 1, 1, 'F');
-                    if(oran > 0) { pdf.setFillColor(253, 142, 1); pdf.roundedRect(rx + 24, ry, Math.max(2, (rw - 46) * oran), 4.5, 1, 1, 'F'); }
+                    if(oran > 0) { pdf.setFillColor(19, 138, 128); pdf.roundedRect(rx + 24, ry, Math.max(2, (rw - 46) * oran), 4.5, 1, 1, 'F'); }
                     pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(30, 41, 59); pdf.text(ge + ' / ' + ak + '  %' + Math.round(oran * 100), rx + rw, ry + 3.3, { align: 'right' });
                     ry += 9;
                 });
@@ -9663,7 +9694,7 @@
                 let sabit = [{ b: '#', w: 6 }, { b: 'SPORCU', w: 40 }, { b: 'GRUP', w: 15 }, { b: 'BAŞLANGIÇ', w: 17 }, { b: 'GELDİ', w: 10 }, { b: 'GELMEDİ', w: 11 }, { b: 'DEVAM', w: 10 }, { b: 'SON GELİŞ', w: 17 }, { b: 'YOK (GÜN)', w: 14 }];
                 let sabitW = sabit.reduce(function(a, c) { return a + c.w; }, 0), cw = cizGun.length ? Math.min(8, (uw - sabitW) / cizGun.length) : 0;
                 let basliklar = function() {
-                    pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 9, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.8); pdf.setTextColor(226, 232, 240);
+                    pdf.setFillColor(243, 246, 245); pdf.rect(mx, y, uw, 9, 'F'); pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.3); pdf.line(mx, y + 9, mx + uw, y + 9); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.8); pdf.setTextColor(61, 74, 71);
                     let x = mx; sabit.forEach(function(c, i) { pdf.text(T(c.b), i < 3 ? x + 1.5 : x + c.w / 2, y + 5.6, i < 3 ? undefined : { align: 'center' }); x += c.w; });
                     cizGun.forEach(function(iso) { let dt = new Date(iso + 'T00:00:00'); pdf.setFontSize(5.2); pdf.text(String(dt.getDate()), x + cw / 2, y + 4, { align: 'center' }); pdf.setFontSize(4.2); pdf.text(T(GUN_KISA_TR[dt.getDay()]), x + cw / 2, y + 7.4, { align: 'center' }); x += cw; });
                     y += 9;
@@ -9687,8 +9718,8 @@
                     cizGun.forEach(function(iso) {
                         let k = (otomatikYoklamaDB[iso] || {})[r.ad], cx = x + cw / 2, cy = y + 3;
                         pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15); pdf.rect(x + 0.4, y + 0.6, cw - 0.8, 4.8);
-                        if(k && k.grup === r.g && k.geldi !== false) { pdf.setFillColor(34, 197, 94); pdf.rect(x + 0.8, y + 1, cw - 1.6, 4, 'F'); }
-                        else if(k && k.grup === r.g && k.geldi === false) { pdf.setDrawColor(220, 38, 38); pdf.setLineWidth(0.5); pdf.line(cx - 1.3, cy - 1.3, cx + 1.3, cy + 1.3); pdf.line(cx - 1.3, cy + 1.3, cx + 1.3, cy - 1.3); }
+                        if(k && k.grup === r.g && k.geldi !== false) { pdf.setFillColor(19, 138, 128); pdf.rect(x + 0.8, y + 1, cw - 1.6, 4, 'F'); }
+                        else if(k && k.grup === r.g && k.geldi === false) { pdf.setDrawColor(180, 55, 47); pdf.setLineWidth(0.5); pdf.line(cx - 1.3, cy - 1.3, cx + 1.3, cy + 1.3); pdf.line(cx - 1.3, cy + 1.3, cx + 1.3, cy - 1.3); }
                         x += cw;
                     });
                     pdf.setDrawColor(241, 245, 249); pdf.setLineWidth(0.15); pdf.line(mx, y + 6, mx + uw, y + 6);
@@ -9715,12 +9746,12 @@
                         let y;
                         let sayfaBas = function(devam) {
                             if(!ilk) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); } ilk = false;
-                            y = _kurumsalBaslikCiz(pdf, mx, uw, 10, x[1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '').toLocaleUpperCase('tr'), 'Yoklama Çizelgesi · ' + d.ad + (parca.length > 1 ? ' · bölüm ' + (pi + 1) + '/' + parca.length : '') + (devam ? ' · devam' : ''));
+                            y = _sadeBaslikCiz(pdf, mx, uw, 10, x[1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '').toLocaleUpperCase('tr'), 'Yoklama Çizelgesi · ' + d.ad + (parca.length > 1 ? ' · bölüm ' + (pi + 1) + '/' + parca.length : '') + (devam ? ' · devam' : ''));
                             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(71, 85, 105);
                             pdf.text(T('Antrenör: ______________________     Gelene ✓ / gelmeyene ✗ koyun. Listede olmayan sporcuyu alttaki boş satırlara yazın.').replace('✓', 'V').replace('✗', 'X'), mx, y);
                             y += 4;
                             let nW = 8, adW = 62, notW = 40, gw = (uw - nW - adW - notW) / tl.length;
-                            pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 11, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(226, 232, 240);
+                            pdf.setFillColor(243, 246, 245); pdf.rect(mx, y, uw, 11, 'F'); pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.3); pdf.line(mx, y + 11, mx + uw, y + 11); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(61, 74, 71);
                             pdf.setFontSize(7); pdf.text('#', mx + nW / 2, y + 7, { align: 'center' }); pdf.text(T('AD SOYAD'), mx + nW + 2, y + 7);
                             tl.forEach(function(iso, j) { let dt = new Date(iso + 'T00:00:00'), xx = mx + nW + adW + j * gw + gw / 2; pdf.setFontSize(7.5); pdf.text(dt.getDate() + '.' + (dt.getMonth() + 1), xx, y + 5, { align: 'center' }); pdf.setFontSize(5.8); pdf.text(T(GUN_KISA_TR[dt.getDay()]), xx, y + 9, { align: 'center' }); });
                             pdf.setFontSize(7); pdf.text(T('NOT'), mx + uw - notW / 2, y + 7, { align: 'center' });

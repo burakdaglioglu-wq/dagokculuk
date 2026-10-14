@@ -47,7 +47,36 @@ async function maYukle(zorla) {
 }
 
 // ---------------------------------------------------------------- stil
+// "A · Sade" (2026-10-15, kullanıcı: Yoklama sekmesi de Sade olsun): Milo değişkenleri yalnız .ma içinde Sade renklerle
+// yeniden tanımlanır → bütün yoklama ekranı (dersler, sporcular, sayılar, ay takvimi) beyaz kâğıt + tek vurgu olur.
+function maSadeCss() {
+    if (!document.getElementById('sade-font')) { let l = document.createElement('link'); l.id = 'sade-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap'; document.head.appendChild(l); }
+    if (document.getElementById('ma-sade-css')) return;
+    let st = document.createElement('style'); st.id = 'ma-sade-css';
+    st.textContent = [
+        '.ma{--milo-ink:#1B2422;--milo-ink-dim:#6B7976;--milo-card:#FFFFFF;--milo-card-raised:#F3F6F5;--milo-line:#E4E9E7;--milo-teal:#138A80;--milo-coral:#B4372F;--milo-sun:#E8A33D;--milo-grape:#6D4BB8;',
+        'font-family:"Manrope",system-ui,sans-serif;background:#F4F7F6;border-radius:18px;padding:20px;gap:16px;color-scheme:light}',
+        '.ma .ma-baslik{font-size:24px;font-weight:800;letter-spacing:-.02em}.ma .ma-alt{font-size:13px}',
+        '.ma .ma-kart{box-shadow:none;border:1px solid #E4E9E7;border-radius:16px;padding:16px}.ma .ma-kart.simdi{box-shadow:inset 3px 0 0 #138A80}',
+        '.ma .ma-seg{background:transparent;padding:0;gap:22px;border-bottom:1px solid #E4E9E7;border-radius:0}.ma .ma-seg button{flex:none;min-height:40px;padding:0 0 8px;border-radius:0;border-bottom:2px solid transparent;font-weight:700;font-size:14px}',
+        '.ma .ma-seg button.aktif{background:transparent;color:#1B2422;border-bottom-color:#138A80}',
+        '.ma .ma-nav button{background:#fff;border:1px solid #D7DFDC;border-radius:10px}',
+        '.ma .ma-gunler button{border:0;background:#fff;box-shadow:inset 0 0 0 1px #E4E9E7}.ma .ma-gunler button.aktif{background:#E3F4F1;color:#0F6F67;box-shadow:inset 0 0 0 1.5px #138A80}.ma .ma-gunler button.aktif em{color:#0F6F67}.ma .ma-gunler button.bugun{box-shadow:inset 0 0 0 1.5px #E8A33D}',
+        '.ma .ma-saat{background:#F3F6F5;font-weight:800}.ma .ma-dad{font-weight:800}',
+        '.ma .ma-kisi{background:#FAFBFB;border:1px solid #EEF2F0}.ma .ma-kisi.g{box-shadow:inset 3px 0 0 #138A80;background:#F2FAF8}.ma .ma-kisi.y{box-shadow:inset 3px 0 0 #B4372F;background:#FFF7F6}',
+        '.ma .ma-av{background:#E3F4F1;color:#0F6F67}',
+        '.ma .ma-sec button,.ma .ma-btn{border:1px solid #D7DFDC;border-radius:10px;font-weight:700}.ma .ma-sec button.g.aktif{background:#E3F4F1;border-color:#138A80;color:#0F6F67}.ma .ma-sec button.y.aktif{background:#FDEBEA;border-color:#B4372F;color:#B4372F}',
+        '.ma .ma-btn.ana{background:#138A80;border-color:#138A80;color:#fff}.ma .ma-eg{background:#FAFBFB;border:1px solid #EEF2F0}.ma .ma-eg button.on{background:#EEE8FB;border-color:#6D4BB8;color:#6D4BB8}',
+        '.ma .ma-satir{background:#fff;border-bottom:1px solid #EEF2F0;border-radius:0}.ma .ma-cip{background:#F3F6F5;border:0}',
+        '.ma .ma-sayi{background:#fff;border:1px solid #E4E9E7}.ma .ma-sayi b{font-weight:800;letter-spacing:-.02em}',
+        '.ma .ma-hucre{background:#fff;border:1px solid #EEF2F0}.ma .ma-hucre.bugun{box-shadow:0 0 0 1.5px #E8A33D}',
+        '.ma textarea,.ma input{background:#fff!important;color:#1B2422!important;border-color:#E4E9E7!important}',
+        '@media (max-width:640px){.ma{padding:12px}}'
+    ].join('\n');
+    document.head.appendChild(st);
+}
 function maCss() {
+    maSadeCss();
     if (document.getElementById('ma-css')) return;
     let st = document.createElement('style'); st.id = 'ma-css';
     st.textContent = `
