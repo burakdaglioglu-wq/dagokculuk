@@ -29,10 +29,10 @@ async function mdMetaYaz(k, yerel) {
     return m;
 }
 async function mdYukle() {
-    let r = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), mdMeta('yoklama_durum'), mdMeta('paket_odeme'), miloApi('/antrenman-programi'), miloApi('/dues').catch(function () { return { dues: [] }; })]);
+    let r = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), mdMeta('yoklama_durum'), mdMeta('paket_odeme'), miloApi('/antrenman-programi'), miloApi('/dues').catch(function () { return { dues: [] }; }), mdMeta('kagit_aktarim')]);
     MD.uyeler = r[0].members || []; MD.att = {};
     (r[1].attendance || []).forEach(function (a) { (MD.att[a.tarih] = MD.att[a.tarih] || {})[a.ad] = { geldi: a.geldi !== 0 && a.geldi !== false, grup: a.grup, saat: a.saat }; });
-    MD.durum = r[2] || {}; MD.odeme = r[3] || {}; MD.slotlar = (r[4] && r[4].slots) || []; MD.dues = (r[5] && r[5].dues) || [];
+    MD.durum = r[2] || {}; MD.odeme = r[3] || {}; MD.slotlar = (r[4] && r[4].slots) || []; MD.dues = (r[5] && r[5].dues) || []; MD.kagitBitti = !!(r[6] && r[6].bitti);
     try { miloUyeler = MD.uyeler; } catch (e) {}
     MD.yuklendi = true;
 }
@@ -125,7 +125,7 @@ function mdSatirAlt(u) { let o = mdOzet(u), p = o.son; return (p ? 'Paket ' + p.
 function mdListeHTML() {
     let q = (MD.ara || '').toLocaleLowerCase('tr'), l = MD.uyeler.filter(function (u) { return !u.pasif && (!q || u.ad.toLocaleLowerCase('tr').indexOf(q) !== -1); }).sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
     let aktarim = '';
-    try { if (!localStorage.getItem('milo_kagit_aktarim_2026_10')) aktarim = '<button class="md-btn ana genis" onclick="mdAktarimAc()">📋 Kâğıt çizelgeyi aktar (okundu, onay bekliyor)</button>'; } catch (e) {}
+    try { if (!MD.kagitBitti && !localStorage.getItem('milo_kagit_aktarim_2026_10')) aktarim = '<button class="md-btn ana genis" onclick="mdAktarimAc()">📋 Kâğıt çizelgeyi aktar (okundu, onay bekliyor)</button>'; } catch (e) {}
     return '<div class="md-liste"><div class="md-baslik">📒 Öğrenci Defteri</div>' + aktarim
         + '<input class="md-ara" placeholder="🔍 Öğrenci ara…" value="' + miloEsc(MD.ara) + '" oninput="MD.ara=this.value; mdListeYenile()">'
         + '<div class="md-satirlar" id="md-satirlar">' + mdSatirlarHTML(l) + '</div></div>';
@@ -299,6 +299,7 @@ async function mdAktarimKaydet() {
     if (Object.keys(telafi).length) { try { MD.durum = await mdMetaYaz('yoklama_durum', telafi); } catch (e) { hata++; } }
     if (hata) { showToast(hata + ' kayıt yazılamadı — tekrar dene (yazılanlar tekrar yazılır, sorun olmaz).', 'error'); if (btn) btn.textContent = '↻ Tekrar dene'; return; }
     try { localStorage.setItem('milo_kagit_aktarim_2026_10', String(Date.now())); } catch (e) {}
+    try { await miloApi('/meta/kagit_aktarim', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify({ bitti: Date.now() }) }) }); } catch (e) {} // her cihazda düğme kalksın
     showToast('✅ ' + isler.length + ' yoklama kaydı aktarıldı', 'success');
     MD.ekran = 'liste'; MD.yuklendi = false; await mdYukle(); mdCiz();
 }
