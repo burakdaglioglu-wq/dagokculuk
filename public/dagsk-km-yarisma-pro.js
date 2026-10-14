@@ -164,7 +164,7 @@ function yzCiz() {
 // ---- kurulum (bu cihazda taslak; "Başlat" ile ortak kayda yazılır)
 function yzKurulumTaslak() {
     let roster = yzRoster();
-    if (!_yz.kurulum) _yz.kurulum = { katilimci: roster.map(function (k) { return k.g + '|' + k.ad; }), mesafe: '70m', format: 'tam', hedefBasi: 3, kayit: true };
+    if (!_yz.kurulum) _yz.kurulum = { katilimci: roster.map(function (k) { return k.g + '|' + k.ad; }), mesafe: '18m', sure: 90, yuz: '6', format: 'tam', hedefBasi: 3, kayit: true }; // hazır kalıp: 18 m · 90 sn · 6 halka
     // 2026-10-14: taslak ilk açılışta kuruluyordu → derse SONRADAN eklenen sporcu listede seçilmemiş çıkıyordu. Görülen
     // her ders sporcusu bir kez kendiliğinden seçilir; koç sonra kaldırırsa (bilinen'de olduğu için) geri eklenmez.
     let t0 = _yz.kurulum; if (!t0.bilinen) { t0.bilinen = {}; t0.katilimci.forEach(function (k) { t0.bilinen[k] = 1; }); roster.forEach(function (r) { t0.bilinen[r.g + '|' + r.ad] = 1; }); }
@@ -1944,9 +1944,36 @@ function yzBeklenenOrt(o, k) {
     _yz.ortCache.m[k] = sonuc;
     return sonuc;
 }
+// ---- 📈 Gelişim (2026-10-14, kullanıcı: "sporcuların gelişim grafiğini daha anlamlı hale getir" → sporcu kartı + Gelişim
+// görünümü). Önceki turlar arşivden (aynı mesafe; seri seri karşılaştırma için aynı format). Ok başı ortalama kullanılır ki
+// 36/60/72 oklu turlar birbirine kıyaslanabilsin. Gelişim sütunu: +puan (kendi beklentisine göre) + ok başı fark + son
+// turların küçük çizgisi (bugünkü nokta vurgulu).
+function yzGecmisTurlar(k, d) {
+    if (!d) return [];
+    let anahtar = d.id + ':' + yzArsivOku().length;
+    if (!_yz.gecmisCache || _yz.gecmisCache.a !== anahtar) _yz.gecmisCache = { a: anahtar, m: {} };
+    if (_yz.gecmisCache.m[k]) return _yz.gecmisCache.m[k];
+    let l = yzArsivOku().filter(function (r) { return r.id !== d.id && r.mesafe === d.ayar.mesafe; }).map(function (r) {
+        let x = (r.sporcular || []).find(function (q) { return q.k === k; });
+        return x && x.ok ? { id: r.id, t: r.t, tarih: r.tarih, format: r.format, toplam: x.toplam, ok: x.ok, okOrt: x.toplam / x.ok, seriT: x.seriT || null, sira: x.sira, kisi: (r.sporcular || []).length } : null;
+    }).filter(Boolean).sort(function (a, b) { return a.t - b.t; }).slice(-6);
+    _yz.gecmisCache.m[k] = l; return l;
+}
+function yzMiniCizgi(degerler, w, h, renk) {
+    if (degerler.length < 2) return '';
+    let mn = Math.min.apply(null, degerler), mx = Math.max.apply(null, degerler), ar = Math.max(0.4, mx - mn);
+    let X = function (i) { return 2 + i / (degerler.length - 1) * (w - 4); }, Y = function (v) { return h - 2 - (v - mn) / ar * (h - 4); };
+    let p = degerler.map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' '), n = degerler.length - 1;
+    return '<svg class="yz-mini" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + p + '" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="' + X(n).toFixed(1) + '" cy="' + Y(degerler[n]).toFixed(1) + '" r="2.6" fill="' + renk + '"/></svg>';
+}
 function yzGelisimHucre(r, enIyi) {
-    if (r.gelisim == null) return '<td class="gel bos" title="Geçmiş veri yok">yeni</td>';
-    return '<td class="gel ' + (r.gelisim >= 0 ? 'ust' : 'alt') + '" title="Beklenen: ' + (r.ortOk ? (r.ortOk * r.ok).toFixed(0) : '') + ' (' + esc(r.ortKaynak || '') + ')">' + (enIyi ? '🔥 ' : '') + (r.gelisim >= 0 ? '+' : '') + r.gelisim + '</td>';
+    if (r.gelisim == null) return '<td class="gel bos" title="Geçmiş veri yok — ilk turundan sonra karşılaştırılır">yeni</td>';
+    let d = yzOku().durum, gecmis = yzGecmisTurlar(r.k, d), bugun = r.ok ? r.toplam / r.ok : null;
+    let seri = gecmis.map(function (g) { return g.okOrt; }); if (bugun != null) seri.push(bugun);
+    let fark = bugun != null && r.ortOk ? bugun - r.ortOk : null, renk = r.gelisim >= 0 ? '#16a34a' : '#dc2626';
+    let ipucu = 'Kendi beklentisi: ' + (r.ortOk ? (r.ortOk * r.ok).toFixed(0) + ' (ok başı ' + r.ortOk.toFixed(2) + ', ' + (r.ortKaynak || '') + ')' : '') + (gecmis.length ? ' · son turlar ok başı: ' + gecmis.map(function (g) { return g.okOrt.toFixed(1); }).join(' → ') + (bugun != null ? ' → bugün ' + bugun.toFixed(1) : '') : '');
+    return '<td class="gel ' + (r.gelisim >= 0 ? 'ust' : 'alt') + '" title="' + esc(ipucu) + '"><span class="yz-gel-ic">' + yzMiniCizgi(seri, 46, 16, renk)
+        + '<span class="yz-gel-say"><b>' + (enIyi ? '🔥 ' : '') + (r.gelisim >= 0 ? '+' : '') + r.gelisim + '</b>' + (fark != null ? '<small>' + (fark >= 0 ? '▲' : '▼') + Math.abs(fark).toFixed(1).replace('.', ',') + '/ok</small>' : '') + '</span></span></td>';
 }
 // ---- görünüm (bu cihaz): 📊 gerçek / 📈 gelişim · yay: tümü / Klasik / Makaralı / ayrı
 function yzGorunum() {
@@ -3091,6 +3118,8 @@ function yzHoverKart(k, x, y) {
     let el = _yzHov.el; if (!el) { el = _yzHov.el = document.createElement('div'); el.className = 'yz-hov'; document.body.appendChild(el); }
     let tv = !!document.getElementById('yz-tv'), kagit = tv && document.getElementById('yz-tv').classList.contains('kagit');
     el.classList.toggle('kagit', kagit || !tv && false);
+    let gecmis = yzGecmisTurlar(k, d), onceki = gecmis.filter(function (g) { return g.format === d.ayar.format && g.seriT; }).slice(-1)[0] || null, bek = r.ortOk ? r.ortOk * f.ok : null;
+    if (v.length) return yzHoverKart2(el, o, d, f, r, v, lider, gecmis, onceki, bek, x, y);
     let maks = f.ok * 10, W = 300, H = 110, sol = 4, sag = 4, ust = 14, alt = 16, gw = W - sol - sag, gh = H - ust - alt;
     let mn = v.length ? Math.min.apply(null, v.map(function (q) { return q.x; })) : 0, taban = Math.max(0, Math.floor((mn - 2) / 2) * 2);
     let X = function (i) { return sol + (f.seri === 1 ? gw / 2 : i / (f.seri - 1) * gw); }, Y = function (val) { return ust + gh - (val - taban) / Math.max(1, maks - taban) * gh; };
@@ -3106,6 +3135,34 @@ function yzHoverKart(k, x, y) {
         + '<div class="yz-hov-sayi"><span><b>' + r.toplam + '</b><small>toplam</small></span><span><b>' + (r.sira === 1 ? '—' : '−' + (lider - r.toplam)) + '</b><small>' + (r.sira === 1 ? 'lider' : 'lidere') + '</small></span><span><b>' + (r.ok ? (r.toplam / r.ok).toFixed(2) : '–') + '</b><small>ok ort.</small></span><span><b>' + r.on + '<i>/' + r.x + '</i></b><small>10+X / X</small></span></div>'
         + svg + (en ? '<div class="yz-hov-alt">En iyi seri: <b>' + (en.i + 1) + '.</b> (' + en.x + ')' + (r.hedefPuan ? ' · hedef ' + r.hedefPuan : '') + '</div>' : '<div class="yz-hov-alt">Henüz seri girilmedi.</div>');
     yzHoverKonum(x, y); el.classList.add('acik');
+}
+function yzHoverKart2(el, o, d, f, r, v, lider, gecmis, onceki, bek, mx, my) {
+    let W = 320, H = 132, sol = 6, sag = 6, ust = 16, alt = 16, gw = W - sol - sag, gh = H - ust - alt, n = f.seri, bw = Math.max(4, Math.min(18, gw / n * 0.62));
+    let degerler = v.map(function (q) { return q.x; }).concat(bek ? [bek] : []).concat(onceki ? onceki.seriT.filter(function (q) { return q != null; }) : []);
+    let mn = Math.min.apply(null, degerler), taban = Math.max(0, Math.floor((mn - f.ok) / 2) * 2), maks = Math.min(f.ok * 10, Math.max.apply(null, degerler) + 2);
+    let X = function (i) { return sol + (i + 0.5) / n * gw; }, Y = function (val) { return ust + gh - (val - taban) / Math.max(1, maks - taban) * gh; };
+    let ort = v.reduce(function (a, q) { return a + q.x; }, 0) / v.length, en = v.reduce(function (a, q) { return !a || q.x > a.x ? q : a; }, null);
+    let renk = r.sira === 1 ? '#c99a06' : r.sira === 2 ? '#7c8794' : r.sira === 3 ? '#b4581c' : '#d92c20';
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="yz-hov-svg">';
+    v.forEach(function (q) { let ustu = bek ? q.x >= bek : q.x >= ort; svg += '<rect x="' + (X(q.i) - bw / 2).toFixed(1) + '" y="' + Y(q.x).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, ust + gh - Y(q.x)).toFixed(1) + '" rx="2" fill="' + (ustu ? '#16a34a' : '#f97316') + '" opacity="' + (en && q.i === en.i ? 1 : .78) + '"/><text x="' + X(q.i).toFixed(1) + '" y="' + (Y(q.x) - 3).toFixed(1) + '" text-anchor="middle" class="yz-hov-deg">' + q.x + '</text>'; });
+    if (onceki) { let op = onceki.seriT.map(function (q, i) { return q == null || i >= n ? null : X(i).toFixed(1) + ',' + Y(q).toFixed(1); }).filter(Boolean).join(' '); if (op) svg += '<polyline points="' + op + '" fill="none" stroke="#64748b" stroke-width="1.6" stroke-dasharray="3 3"/>'; }
+    if (bek) svg += '<line x1="' + sol + '" x2="' + (W - sag) + '" y1="' + Y(bek).toFixed(1) + '" y2="' + Y(bek).toFixed(1) + '" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6 4"/><text x="' + (W - sag) + '" y="' + (Y(bek) - 3).toFixed(1) + '" text-anchor="end" class="yz-hov-et" style="fill:#2563eb">kendi ort. ' + bek.toFixed(1).replace('.', ',') + '</text>';
+    svg += Array.from({ length: n }, function (_, i) { return '<text x="' + X(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle" class="yz-hov-et">' + (i + 1) + '</text>'; }).join('') + '</svg>';
+    // özet cümleler
+    let cumle = [];
+    if (bek) { let ustu = v.filter(function (q) { return q.x >= bek; }).length; cumle.push((ustu * 2 >= v.length ? '🟢 ' : '🟠 ') + v.length + ' seriden <b>' + ustu + '</b>\'i kendi ortalamasının üstünde'); }
+    if (r.girilen < f.seri && r.girilen >= 2) { let tahmin = Math.round(r.toplam / r.girilen * f.seri), gecen = gecmis.filter(function (g) { return g.format === d.ayar.format; }).slice(-1)[0]; cumle.push('⏱ Bu gidişle bitiş ≈ <b>' + tahmin + '</b>' + (gecen ? ' · geçen tur ' + gecen.toplam + ' (' + (tahmin - gecen.toplam >= 0 ? '+' : '') + (tahmin - gecen.toplam) + ')' : '')); }
+    if (v.length >= 4) { let y1 = v.slice(0, Math.floor(v.length / 2)), y2 = v.slice(Math.floor(v.length / 2)), o1 = y1.reduce(function (a, q) { return a + q.x; }, 0) / y1.length, o2 = y2.reduce(function (a, q) { return a + q.x; }, 0) / y2.length, df = o2 - o1; let sd = Math.sqrt(v.reduce(function (a, q) { return a + (q.x - ort) * (q.x - ort); }, 0) / v.length), kot = v.reduce(function (a, q) { return !a || q.x < a.x ? q : a; }, null);
+        cumle.push(Math.abs(df) < f.ok * 0.4 ? (sd >= f.ok * 0.8 ? '🎢 Dalgalı: en iyi ' + en.x + ', en zayıf ' + kot.x + ' (' + (en.x - kot.x) + ' puan fark) — istikrar çalışılabilir' : '➖ Seriler istikrarlı (en iyi ' + en.x + ', en zayıf ' + kot.x + ')') : df > 0 ? '📈 Giderek açılıyor (+' + df.toFixed(1).replace('.', ',') + '/seri)' : '📉 Son serilerde düşüş (' + df.toFixed(1).replace('.', ',') + '/seri) — dinlenme / odak?'); }
+    if (gecmis.length) { let bugun = r.toplam / r.ok, l = gecmis.map(function (g) { return g.okOrt; }).concat([bugun]); cumle.push('🗓 Son ' + gecmis.length + ' tur (ok başı): ' + gecmis.map(function (g) { return g.okOrt.toFixed(1).replace('.', ','); }).join(' → ') + ' → <b>bugün ' + bugun.toFixed(1).replace('.', ',') + '</b> ' + yzMiniCizgi(l, 60, 16, bugun >= gecmis[gecmis.length - 1].okOrt ? '#16a34a' : '#dc2626')); }
+    else cumle.push('🆕 Bu mesafede ilk turu — sonraki turlarda karşılaştırılır');
+    let ef = r.ortOk ? r.toplam / r.ok - r.ortOk : null;
+    el.innerHTML = '<div class="yz-hov-ust"><span class="yz-hov-sira" style="background:' + renk + '">' + r.sira + '</span><b>' + esc(r.ad) + '</b><span class="yz-hov-hdf">' + esc(r.hedef || '') + '</span></div>'
+        + '<div class="yz-hov-sayi"><span><b>' + r.toplam + '</b><small>toplam</small></span><span><b>' + (r.sira === 1 ? '—' : '−' + (lider - r.toplam)) + '</b><small>' + (r.sira === 1 ? 'lider' : 'lidere') + '</small></span><span><b>' + (r.toplam / r.ok).toFixed(2) + '</b><small>ok ort.' + (ef != null ? ' <i style="color:' + (ef >= 0 ? '#16a34a' : '#dc2626') + ';font-style:normal">' + (ef >= 0 ? '+' : '') + ef.toFixed(2) + '</i>' : '') + '</small></span><span><b>' + r.on + '<i>/' + r.x + '</i></b><small>10+X / X</small></span></div>'
+        + svg
+        + '<div class="yz-hov-lej"><span><i style="background:#16a34a"></i>ort. üstü</span><span><i style="background:#f97316"></i>altı</span>' + (bek ? '<span><i class="cizgi" style="border-color:#2563eb"></i>kendi ort.</span>' : '') + (onceki ? '<span><i class="cizgi" style="border-color:#64748b"></i>geçen tur ' + esc(yzTarihTR(onceki.tarih)) + '</span>' : '') + '</div>'
+        + '<div class="yz-hov-cumle">' + cumle.map(function (c) { return '<div>' + c + '</div>'; }).join('') + '</div>';
+    yzHoverKonum(mx, my); el.classList.add('acik');
 }
 function yzHoverKonum(x, y) {
     let el = _yzHov.el; if (!el) return;
@@ -3127,7 +3184,10 @@ document.addEventListener('mousemove', function (e) { if (_yzHov.el && _yzHov.el
 document.addEventListener('mousedown', function () { yzHoverKapat(); }, true);
 (function () {
     let st = document.createElement('style'); st.id = 'yz-hov-css';
-    st.textContent = '.yz-hov{position:fixed;z-index:2147483600;width:clamp(330px,22vw,470px);pointer-events:none;opacity:0;transform:translateY(6px) scale(.98);transition:opacity .15s ease,transform .15s ease;background:#fffdf8;color:#1d1a16;border:2px solid #1d1a16;border-radius:14px;padding:12px 14px 10px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-family:inherit}'
+    st.textContent = '.yz-hov-lej{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;font-weight:700;color:#6b6358;margin-top:2px}.yz-hov-lej i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.yz-hov-lej i.cizgi{height:0;border-top:2px dashed;border-radius:0;width:14px;vertical-align:3px}'
+        + '.yz-hov-cumle{display:grid;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid #e9e2d4;font-size:12.5px;line-height:1.35}.yz-hov-cumle .yz-mini{width:60px;height:16px;vertical-align:-3px;color:#1d1a16}'
+        + '.yz-tablo td.gel .yz-gel-ic{display:inline-flex;align-items:center;gap:.35em;white-space:nowrap}.yz-tablo td.gel .yz-mini{width:2.6em;height:1em;flex:none}.yz-tablo td.gel .yz-gel-say{display:inline-flex;flex-direction:column;align-items:flex-end;line-height:1}.yz-tablo td.gel .yz-gel-say small{font-size:.58em;font-weight:700;opacity:.8}'
+        + '.yz-hov{position:fixed;z-index:2147483600;width:clamp(330px,22vw,470px);pointer-events:none;opacity:0;transform:translateY(6px) scale(.98);transition:opacity .15s ease,transform .15s ease;background:#fffdf8;color:#1d1a16;border:2px solid #1d1a16;border-radius:14px;padding:12px 14px 10px;box-shadow:0 18px 50px rgba(0,0,0,.35);font-family:inherit}'
         + '.yz-hov.acik{opacity:1;transform:none}'
         + '.yz-hov-ust{display:flex;align-items:center;gap:8px}.yz-hov-ust b{font-size:15px;font-weight:900;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
         + '.yz-hov-sira{min-width:26px;height:26px;border-radius:8px;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:14px}'
