@@ -56,6 +56,15 @@ export function registerAttendanceRoutes(router: Router): void {
     return json({ applied: true });
   });
 
+  // 2026-10-15 (📒 Öğrenci Defteri): bir günün yoklamasını tamamen kaldır ("boş"a döndür). Eskiden yerelde silinen kayıt
+  // sunucuda kalıyor, sonraki senkronda geri geliyordu. Silme günlüğe yazılır (DELETE).
+  router.delete("/api/attendance/auto", async (request, env) => {
+    const body = await readJson<{ tarih: string; ad: string }>(request);
+    if (!body.tarih || !body.ad) return badRequest("tarih and ad are required");
+    await env.DB.prepare("DELETE FROM attendance_auto WHERE tarih = ? AND ad = ?").bind(body.tarih, body.ad).run();
+    return json({ applied: true });
+  });
+
   router.get("/api/attendance/personnel", async (request, env) => {
     const tarih = new URL(request.url).searchParams.get("tarih");
     const stmt = tarih

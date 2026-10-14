@@ -7778,7 +7778,7 @@
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
             ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['kisiler','🪪','Eğitmen & Misafir'],['guvenlik','🔐','Güvenlik']]],
-            ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı']]],
+            ['ANTRENMAN', [['egitmen','🎓','Eğitmen Panosu'],['bugunskor','🎯','Bugün Skor Girenler'],['yoklama','✅','Yoklama'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['personel','👔','Personel'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
         ];
         // DÜZELTME: eskiden 9 sekme butonu HER ZAMAN ekranda açık duruyordu — telefonda modalın
@@ -7898,6 +7898,8 @@
             if(k === 'rapor') { yoneticiRaporCiz(); return; }
             if(k === 'bugunskor') { renderHedefId = 'yonetici-liste'; yoneticiBugunSkorCiz(); return; }
             if(k === 'yoklama') { _yonYokGrupFiltre = yoneticiYoklamaTip === 'ozet' ? '__hepsi' : aktifGrup; yoneticiYoklamaCiz(); return; }
+            // 📒 Öğrenci Defteri / 📝 Ders Günlüğü (2026-10-15, Milo ile aynı "Sade" görünüm) — dagsk-defter.js
+            if(k === 'defter' || k === 'gunluk') { if(ligBar) ligBar.style.display = 'none'; let la = document.getElementById('yonetici-liste'); if(la && typeof odAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-defter.js').then(function() { if(yoneticiSekmeAktif === 'defter') odAc(); else if(yoneticiSekmeAktif === 'gunluk') dgAc(); }).catch(function() { showToast('Defter yüklenemedi.', 'error'); }); return; }
             if(k === 'program') { renderHedefId = 'yonetici-liste'; yoneticiProgramCiz(); return; }
             if(k === 'yedek') { yoneticiYedekCiz(); return; }
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }

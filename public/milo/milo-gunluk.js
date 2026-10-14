@@ -152,55 +152,74 @@ function mgAyHTML() {
             + '<div class="mg-form-alt"><button class="mg-btn ana buyuk" onclick="mgAyPdf()">📄 ' + ad + ' özetini PDF indir</button></div>'
             : '<div class="mg-bos">' + ad + ' için ders kaydı yok.</div>');
 }
+// ---------------- aylık PDF — "A · Sade": beyaz sayfa, ince başlık çizgisi, petrol yeşili küçük başlıklar, düz satırlar
 function mgAyPdf() {
     let ay = mgAyStr(MG.ay), v = mgAyVeri(ay), ad = MG_AY[+ay.slice(5) - 1] + ' ' + ay.slice(0, 4);
     if (typeof _miloYeniPdfAl !== 'function') return showToast('PDF aracı yüklenemedi.', 'error');
     showToast('PDF hazırlanıyor…', 'success');
     _miloYeniPdfAl('portrait').then(function (pdf) {
-        let T = typeof _miloTrTranslit === 'function' ? _miloTrTranslit : function (s) { return s; }, mx = 14, uw = 182, y = _miloKurumsalBaslikCiz(pdf, mx, uw, 12, ad, 'Aylık Ders ve Beceri Özeti'), pageH = 297;
-        pdf.setTextColor(60, 60, 55); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
-        pdf.text(T(v.l.length + ' ders kaydı · beceri ve yaş grubuna göre yapılan çalışmalar'), mx, y); y += 6;
+        let T = typeof _miloTrTranslit === 'function' ? _miloTrTranslit : function (s) { return s; }, mx = 18, uw = 174, pageH = 297, y = 24;
+        let baslik = function (ilk) {
+            pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(ilk ? 18 : 12);
+            pdf.text(T(ad + ' · Ders Özeti'), mx, y);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(107, 121, 118);
+            pdf.text('MILO FITT KIDS', mx, y + 6);
+            pdf.text(T(v.l.length + ' ders kaydı · ' + v.sira.length + ' beceri'), mx + uw, y + 6, { align: 'right' });
+            pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.5); pdf.line(mx, y + 9, mx + uw, y + 9);
+            y += 18;
+        };
+        baslik(true);
         v.sira.forEach(function (b) {
             let x = b === 'diger' ? ['', '', 'Diğer'] : mgBeceri(b);
-            if (y > pageH - 40) { pdf.addPage(); y = 18; }
-            pdf.setFillColor(31, 173, 160); pdf.roundedRect(mx, y, uw, 8, 2, 2, 'F'); pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.text(T(x[2]), mx + 4, y + 5.6); y += 11;
+            if (y > pageH - 40) { pdf.addPage(); y = 22; baslik(false); }
+            pdf.setTextColor(15, 111, 103); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9.5);
+            pdf.text(T(x[2]).toLocaleUpperCase('tr-TR'), mx, y); y += 4.5;
             v.yaslar.filter(function (yy) { return v.t[b][yy]; }).forEach(function (yy) {
-                let h = v.t[b][yy], satir = pdf.splitTextToSize(T(h.is.length ? h.is.join(' · ') : '—'), uw - 44);
-                if (y + satir.length * 4.4 + 4 > pageH - 18) { pdf.addPage(); y = 18; }
-                pdf.setTextColor(31, 120, 110); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9.5); pdf.text(T(yy), mx + 2, y + 3.5);
-                pdf.setTextColor(140, 140, 130); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.text(T(h.gun.length + ' ders'), mx + 2, y + 7.5);
-                pdf.setTextColor(40, 40, 36); pdf.setFontSize(9); pdf.text(satir, mx + 40, y + 3.5);
-                y += Math.max(10, satir.length * 4.4 + 3);
-                pdf.setDrawColor(230, 230, 220); pdf.setLineWidth(0.2); pdf.line(mx, y - 1.5, mx + uw, y - 1.5);
+                let h = v.t[b][yy], satir = pdf.splitTextToSize(T(h.is.length ? h.is.join(' · ') : '—'), uw - 42);
+                let yuk = Math.max(11, satir.length * 4.6 + 4.5);
+                if (y + yuk > pageH - 20) { pdf.addPage(); y = 22; baslik(false); }
+                pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.text(T(yy), mx, y + 3.6);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(140, 150, 147); pdf.text(T(h.gun.length + ' ders'), mx, y + 7.2);
+                pdf.setTextColor(46, 57, 54); pdf.setFontSize(9); pdf.text(satir, mx + 40, y + 3.6);
+                y += yuk;
+                pdf.setDrawColor(228, 233, 231); pdf.setLineWidth(0.25); pdf.line(mx, y - 1.2, mx + uw, y - 1.2);
             });
-            y += 3;
+            y += 5;
         });
-        _miloKurumsalAltBilgiCiz(pdf, 210, pageH);
+        let n = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= n; i++) { pdf.setPage(i); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(154, 165, 162); pdf.text('Milo Fitt Kids', mx, pageH - 10); pdf.text(i + ' / ' + n, mx + uw, pageH - 10, { align: 'right' }); }
         pdf.save('Milo_Ders_Ozeti_' + ay + '.pdf');
     }).catch(function () { showToast('PDF oluşturulamadı.', 'error'); });
 }
+// ---------------- stil: "A · Sade" (kullanıcı seçimi 2026-10-15) — Defter ile aynı jetonlar
 function mgCss() {
+    if (!document.getElementById('sade-font')) { let l = document.createElement('link'); l.id = 'sade-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap'; document.head.appendChild(l); }
     if (document.getElementById('mg-css')) return;
     let st = document.createElement('style'); st.id = 'mg-css';
     st.textContent = [
-        '.mg{display:grid;gap:12px;max-width:960px}.mg-ust{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.mg-baslik{font-size:22px;font-weight:900;color:var(--milo-ink)}.mg-alt{font-size:12.5px;color:var(--milo-ink-dim);font-weight:600}',
-        '.mg-btn{min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--milo-line);background:var(--milo-card-raised);color:var(--milo-ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer}.mg-btn:disabled{opacity:.4;cursor:default}.mg-btn.ana{background:var(--milo-teal);border-color:var(--milo-teal);color:#fff}.mg-btn.buyuk{min-height:50px;padding:0 20px;font-size:15px}.mg-btn.kucuk{min-height:34px;padding:0 10px}.mg-btn.sil{color:var(--milo-kirmizi,#e5484d)}',
-        '.mg-sekmeler{display:flex;gap:6px;flex-wrap:wrap}.mg-sekmeler button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--milo-line);background:transparent;color:var(--milo-ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer}.mg-sekmeler button.aktif{background:var(--milo-ink);color:var(--milo-bg);border-color:var(--milo-ink)}',
-        '.mg-form{background:var(--milo-card);border:2px solid var(--milo-teal);border-radius:16px;padding:14px;display:grid;gap:10px}.mg-form-bas{display:flex;justify-content:space-between;align-items:center;gap:8px}.mg-form-bas b{font-size:16px}',
-        '.mg-satir{display:flex;flex-wrap:wrap;gap:10px}.mg-satir label,.mg-tam{display:grid;gap:4px;font-size:12px;font-weight:800;color:var(--milo-ink-dim)}.mg-satir label{flex:1;min-width:160px}.mg-tam small{font-weight:600}',
-        '.mg-form input,.mg-form select,.mg-form textarea,.mg-metin{min-height:42px;border-radius:10px;border:1px solid var(--milo-line);background:var(--milo-card-raised);color:var(--milo-ink);padding:8px 10px;font:inherit;font-size:14px;box-sizing:border-box;width:100%}',
-        '.mg-form textarea,.mg-metin{resize:vertical;line-height:1.5}.mg-etiket{font-size:12px;font-weight:800;color:var(--milo-ink-dim);margin-top:2px}',
-        '.mg-cipler{display:flex;flex-wrap:wrap;gap:6px}.mg-cip{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--milo-line);background:transparent;color:var(--milo-ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}.mg-cip.aktif{background:var(--milo-teal);border-color:var(--milo-teal);color:#fff}',
+        '.mg{--s-zemin:#F4F7F6;--s-kagit:#FFFFFF;--s-ink:#1B2422;--s-dim:#6B7976;--s-line:#E4E9E7;--s-vurgu:#138A80;--s-vurgu-a:#E3F4F1;--s-kirmizi:#B4372F;',
+        'font-family:"Manrope",system-ui,sans-serif;color:var(--s-ink);background:var(--s-zemin);border-radius:18px;padding:22px;color-scheme:light;display:grid;gap:16px;max-width:980px}',
+        '.mg-ust{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.mg-baslik{font-size:24px;font-weight:800;letter-spacing:-.02em}.mg-alt{font-size:13px;color:var(--s-dim);font-weight:500;margin-top:3px}',
+        '.mg-btn{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid #D7DFDC;background:var(--s-kagit);color:var(--s-ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}.mg-btn:hover:not(:disabled){border-color:var(--s-vurgu)}.mg-btn:disabled{opacity:.35;cursor:default}',
+        '.mg-btn.ana{background:var(--s-vurgu);border-color:var(--s-vurgu);color:#fff}.mg-btn.buyuk{min-height:50px;padding:0 20px;font-size:15px}.mg-btn.kucuk{min-height:34px;padding:0 10px;font-size:12.5px}.mg-btn.sil{color:var(--s-kirmizi)}',
+        '.mg-sekmeler{display:flex;gap:22px;border-bottom:1px solid var(--s-line);overflow-x:auto}.mg-sekmeler button{flex:none;min-height:40px;padding:0 0 8px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--s-dim);font:inherit;font-weight:700;font-size:14px;cursor:pointer}',
+        '.mg-sekmeler button.aktif{color:var(--s-ink);border-bottom-color:var(--s-vurgu)}',
+        '.mg-form{background:var(--s-kagit);border:1px solid var(--s-line);border-radius:16px;padding:20px;display:grid;gap:14px;box-shadow:0 12px 40px rgba(20,40,35,.06)}.mg-form-bas{display:flex;justify-content:space-between;align-items:center;gap:8px}.mg-form-bas b{font-size:17px;font-weight:800}',
+        '.mg-satir{display:flex;flex-wrap:wrap;gap:12px}.mg-satir label,.mg-tam{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--s-dim)}.mg-satir label{flex:1;min-width:160px}.mg-tam small{font-weight:500}',
+        '.mg-form input,.mg-form select,.mg-form textarea,.mg-metin{min-height:42px;border-radius:10px;border:1px solid var(--s-line);background:var(--s-kagit);color:var(--s-ink);padding:9px 12px;font:inherit;font-size:14px;box-sizing:border-box;width:100%}',
+        '.mg-form textarea,.mg-metin{resize:vertical;line-height:1.55}.mg-etiket{font-size:12px;font-weight:700;color:var(--s-dim)}',
+        '.mg-cipler{display:flex;flex-wrap:wrap;gap:6px}.mg-cip{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--s-line);background:var(--s-kagit);color:var(--s-ink);font:inherit;font-weight:600;font-size:13px;cursor:pointer}',
+        '.mg-cip.aktif{background:var(--s-vurgu-a);border-color:var(--s-vurgu);color:#0F6F67;font-weight:800}',
         '.mg-form-alt{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}',
-        '.mg-nav{display:flex;align-items:center;gap:10px}.mg-nav b{min-width:160px;text-align:center;font-size:15px}',
-        '.mg-gun{display:grid;gap:8px}.mg-gun-bas{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mg-gun-bas b{font-size:15px}.mg-gun-bas span{font-size:12px;color:var(--milo-ink-dim);font-weight:700;flex:1}',
-        '.mg-kart{background:var(--milo-card);border:1px solid var(--milo-line);border-radius:14px;padding:12px;display:grid;gap:8px}.mg-kart-bas{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.mg-kart-bas b{font-size:14.5px}.mg-kart-bas span{font-size:12px;color:var(--milo-ink-dim);font-weight:700;flex:1}',
-        '.mg-konu{font-size:15px;font-weight:800;color:var(--milo-ink)}.mg-kart ul{margin:0;padding-left:20px;display:grid;gap:3px;font-size:13.5px;color:var(--milo-ink)}',
-        '.mg-cipler.kucuk{gap:4px}.mg-et{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:var(--milo-card-raised);font-size:11.5px;font-weight:800;color:var(--milo-ink)}.mg-et.yas{background:color-mix(in srgb,var(--milo-teal) 18%,transparent);color:var(--milo-ink)}',
-        '.mg-ay-sat{display:grid;grid-template-columns:90px 60px 1fr;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--milo-line);font-size:13.5px}.mg-ay-sat small{color:var(--milo-ink-dim);font-weight:700}',
-        '.mg-bos{padding:16px;text-align:center;color:var(--milo-ink-dim);font-weight:700}.mg-bos.kucuk{padding:6px;text-align:left;font-size:12.5px}',
-        '.mg button:focus-visible,.mg input:focus-visible,.mg select:focus-visible,.mg textarea:focus-visible{outline:2px solid var(--milo-teal);outline-offset:2px}',
-        '@media (max-width:600px){.mg-ay-sat{grid-template-columns:1fr 1fr}.mg-ay-sat div{grid-column:1 / -1}}'
+        '.mg-nav{display:flex;align-items:center;gap:12px}.mg-nav b{min-width:170px;text-align:center;font-size:15px;font-weight:800}',
+        '.mg-gun{display:grid;gap:8px;padding-top:6px}.mg-gun-bas{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mg-gun-bas b{font-size:15px;font-weight:800}.mg-gun-bas span{font-size:12px;color:var(--s-dim);font-weight:600;flex:1}',
+        '.mg-kart{background:var(--s-kagit);border:1px solid var(--s-line);border-radius:14px;padding:14px 16px;display:grid;gap:8px}.mg-kart-bas{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.mg-kart-bas b{font-size:14.5px;font-weight:800}.mg-kart-bas span{font-size:12.5px;color:var(--s-dim);font-weight:600;flex:1}',
+        '.mg-konu{font-size:16px;font-weight:800;letter-spacing:-.01em}.mg-kart ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;color:#2E3936;line-height:1.5}',
+        '.mg-cipler.kucuk{gap:5px}.mg-et{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:#F3F6F5;font-size:11.5px;font-weight:700;color:#3D4A47}.mg-et.yas{background:var(--s-vurgu-a);color:#0F6F67}',
+        '.mg-ay-sat{display:grid;grid-template-columns:90px 64px 1fr;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--s-line);font-size:14px;line-height:1.5}.mg-ay-sat small{color:var(--s-dim);font-weight:600}',
+        '.mg-bos{padding:18px;text-align:center;color:var(--s-dim);font-weight:600}.mg-bos.kucuk{padding:4px 0;text-align:left;font-size:13px}',
+        '.mg button:focus-visible,.mg input:focus-visible,.mg select:focus-visible,.mg textarea:focus-visible{outline:2px solid var(--s-vurgu);outline-offset:2px}',
+        '@media (max-width:600px){.mg{padding:12px}.mg-ay-sat{grid-template-columns:1fr 1fr}.mg-ay-sat div{grid-column:1 / -1}}'
     ].join('\n');
     document.head.appendChild(st);
 }
