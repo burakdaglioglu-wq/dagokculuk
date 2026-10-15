@@ -154,7 +154,17 @@ export async function renameAthlete(
 // değiştiyse VE eski isim şu an başka hiçbir sporcuda kullanılmıyorsa taşınır.
 export interface KopukTasima { eskiGrup: string; eskiAd: string; hedefGrup: string; hedefAd: string; seri: number; atis: number; ders: number; yoklama: number; aidat: number; }
 export async function tasimaKopuklari(env: Env): Promise<KopukTasima[]> {
-  const { results } = await env.DB.prepare("SELECT eski_grup, eski_ad FROM athlete_moves").all<{ eski_grup: string; eski_ad: string }>();
+  // Yalnız eski adında hâlâ veri kalan taşımalar — eskiden HER taşıma için ~8 sorgu atılıyordu (yüzlerce taşımada
+  // saniyeler sürüp aynı anda gelen birleştirme isteğini düşürüyordu). Kalan veri yoksa aşağıdaki döngü zaten atlıyordu.
+  const { results } = await env.DB.prepare(
+    `SELECT DISTINCT m.eski_grup, m.eski_ad FROM athlete_moves m WHERE
+       EXISTS (SELECT 1 FROM series s WHERE s.grup = m.eski_grup AND s.ad = m.eski_ad)
+       OR EXISTS (SELECT 1 FROM shot_log l WHERE l.grup = m.eski_grup AND l.ad = m.eski_ad)
+       OR EXISTS (SELECT 1 FROM antrenman_programi_katilimci k WHERE k.grup = m.eski_grup AND k.ad = m.eski_ad)
+       OR EXISTS (SELECT 1 FROM attendance_auto a WHERE a.ad = m.eski_ad)
+       OR EXISTS (SELECT 1 FROM attendance_auto_archive r WHERE r.ad = m.eski_ad)
+       OR EXISTS (SELECT 1 FROM dues d WHERE d.ad = m.eski_ad)`
+  ).all<{ eski_grup: string; eski_ad: string }>();
   const say = async (sql: string, ...args: unknown[]) => (await env.DB.prepare(sql).bind(...args).first<{ n: number }>())?.n ?? 0;
   const out: KopukTasima[] = [];
   for (const m of results) {
