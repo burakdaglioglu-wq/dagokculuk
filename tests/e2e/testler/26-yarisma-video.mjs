@@ -58,18 +58,21 @@ export default async function ({ log }) {
     await p.locator('#yz-giris button:has-text("🎥 Video")').click();
     await p.waitForSelector('#kv .kv', { timeout: 15000 });
     dogrula((await p.locator('#kv .kv-baslik b').innerText()).includes(k.split('|')[1]), 'pencere sporcunun adıyla açılmadı');
-    // gecikmeli ayna: 3 sn seç, kareler birikip geriden çizilsin
+    // gecikmeli ayna (akıcı yol, MediaSource): 3 sn seç → video ~3 sn geriden OYNAR (2026-10-15: eski JPEG yolu tablette ~3 kare/sn)
     await p.locator('#kv button', { hasText: '3 sn' }).click();
-    await p.waitForFunction(() => _kv && _kv.kareler.length > 25, null, { timeout: 15000 });
-    await p.waitForFunction(() => /geriden/.test((document.getElementById('kv-rozet') || {}).textContent || ''), null, { timeout: 8000 });
-    const dolu = await p.waitForFunction(() => { let c = document.getElementById('kv-c'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, top = 0; for (let i = 0; i < d.length; i += 400) top += d[i] + d[i + 1] + d[i + 2]; return top > 0; }, null, { timeout: 8000 }).then(() => true, () => false);
-    dogrula(dolu, 'gecikmeli görüntü çizilmedi');
-    // ⏪ tekrar: kare kare ilerle
+    dogrula(await p.waitForFunction(() => _kv && !!_kv.mse, null, { timeout: 20000 }).then(() => true, () => false), 'akıcı ayna (MediaSource) devrede değil');
+    await p.waitForFunction(() => /geriden/.test((document.getElementById('kv-rozet') || {}).textContent || ''), null, { timeout: 15000 });
+    const oynuyor = await p.waitForFunction(() => { let v = document.getElementById('kv-dv'); if (!v || v.readyState < 2) return false; window.__t0 = window.__t0 || v.currentTime; return v.currentTime - window.__t0 > 1; }, null, { timeout: 10000 }).then(() => true, () => false);
+    dogrula(oynuyor, 'gecikmeli video oynamıyor');
+    const gecikme = await p.evaluate(() => { let v = _kv.mse.v, b = v.buffered; return b.end(b.length - 1) - v.currentTime; });
+    dogrula(gecikme > 2 && gecikme < 4.5, 'gecikme ~3 sn değil: ' + gecikme.toFixed(2));
+    // ⏪ tekrar: son 10 sn aynı videoda yavaş, kare kare ilerle
     await p.locator('#kv button:has-text("yavaş izle")').click(); await p.waitForTimeout(300);
-    await p.locator('#kv-oynat').click(); // durdur
-    const i0 = await p.evaluate(() => _kv.tekrar.i);
-    await p.locator('#kv button[aria-label="Bir kare ileri"]').click();
-    esit(await p.evaluate(() => _kv.tekrar.i), i0 + 1, 'kare ileri çalışmadı');
+    await p.locator('#kv-oynat').click(); await p.waitForTimeout(200); // durdur
+    const t0 = await p.evaluate(() => _kv.mse.v.currentTime);
+    await p.locator('#kv button[aria-label="Bir kare ileri"]').click(); await p.waitForTimeout(200);
+    const t1 = await p.evaluate(() => _kv.mse.v.currentTime);
+    dogrula(t1 > t0 && t1 - t0 < 0.1, 'kare ileri çalışmadı: ' + t0 + ' → ' + t1);
     // açı çizimi: üç dokunuş
     await p.locator('#kv button:has-text("Açı")').click();
     const kutu = await p.locator('#kv-ciz').boundingBox();

@@ -324,7 +324,54 @@ function miloJsEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\')
 
 function miloPollingBaslat() {
     if (miloPollingId) clearInterval(miloPollingId);
-    miloPollingId = setInterval(() => { if (miloOturumAcik && !miloUyeFormAcikMi && miloAktifSekme !== 'hizli' && !(miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor()) && !(typeof mspMesgul === 'function' && mspMesgul())) miloSekmeYenile(); /* Hızlı Düzenle: yazarken tablo yeniden çizilmesin */ }, 15000);
+    miloPollingId = setInterval(miloArkaPlanYenile, 15000);
+}
+// ARKA PLANDA YENİLEME (2026-10-16, kullanıcı: "Milo'da sayfa hep yenilendiği için bilgileri girerken bile sorun yaşıyoruz,
+// özellikle yoklama sekmesi — arka planda yapamaz mısın"). Eskiden 15 sn'de bir açık sekme BAŞTAN çiziliyordu: Yoklama'da
+// görünüm/gün sıfırlanıyor, Defter/Günlük "Yükleniyor…" yazıp açık ekranı kapatıyordu. Artık:
+//  1) Koç meşgulse (son 30 sn'de dokundu/yazdı/kaydırdı, bir kutuya odaklı, pencere açık) o tur atlanır.
+//  2) Veri SESSİZCE çekilir (ekrana dokunmadan); önceki çekimle aynıysa hiçbir şey çizilmez.
+//  3) Başka cihazdan bir şey değiştiyse yalnızca o zaman, açık görünüm ve kaydırma yeri korunarak yeniden çizilir.
+let _miloSonEtkilesim = 0, _miloImza = {}, _miloArkaCalisiyor = false;
+['pointerdown', 'keydown', 'input', 'wheel', 'touchstart'].forEach(function (t) { document.addEventListener(t, function () { _miloSonEtkilesim = Date.now(); }, { capture: true, passive: true }); });
+document.addEventListener('scroll', function () { _miloSonEtkilesim = Date.now(); }, { capture: true, passive: true });
+function miloMesgulMu() {
+    if (Date.now() - _miloSonEtkilesim < 30000) return true;
+    let a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if (miloUyeFormAcikMi) return true;
+    if (miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor()) return true;
+    if (typeof mspMesgul === 'function' && mspMesgul()) return true;
+    // açık pencere / alttan açılan sayfa (görünür bir sabit katman)
+    let acik = Array.prototype.some.call(document.querySelectorAll('.modal-overlay, .modal, [role="dialog"], .mdp-arka'), function (el) {
+        let s = getComputedStyle(el); return s.display !== 'none' && s.visibility !== 'hidden' && el.getClientRects().length > 0;
+    });
+    return acik;
+}
+function miloImzaAl(o) { let s; try { s = JSON.stringify(o); } catch (e) { return String(Math.random()); } let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return s.length + ':' + h; }
+async function miloArkaPlanYenile() {
+    if (!miloOturumAcik || document.hidden || _miloArkaCalisiyor || miloAktifSekme === 'hizli' || miloMesgulMu()) return;
+    let t = miloAktifSekme, alan = document.getElementById('milo-icerik'); if (!alan) return;
+    _miloArkaCalisiyor = true;
+    let veri = null, ciz = null;
+    try {
+        if (t === 'analiz' && typeof maYukle === 'function' && MA.yuklendi) { await maYukle(true); veri = [MA.uyeler, MA.slotlar, MA.personel, MA.tur, MA.egDers, MA.att]; ciz = function () { maCiz(); }; }
+        else if (t === 'defter' && typeof mdYukle === 'function' && MD.yuklendi) { await mdYukle(); veri = [MD.uyeler, MD.att, MD.durum, MD.odeme, MD.slotlar, MD.dues, MD.kagitBitti]; ciz = function () { mdCiz(true); }; }
+        else if (t === 'gunluk' && typeof mgYukle === 'function' && MG.yuklendi) { await mgYukle(); veri = [MG.kayit, MG.slotlar, MG.uyeler]; ciz = function () { mgCiz(); }; }
+        else if (t === 'genel') { await mgbYukleVeCiz(false, true); veri = [miloUyeler, miloDuesTum, miloProgram, miloAttendanceTum]; ciz = function () { mgbCiz(); }; }
+        else if (t === 'uyeler') { miloUyeler = (await miloApi('/members')).members; veri = [miloUyeler]; ciz = miloUyelerCiz; }
+        else if (t === 'aidat') { let r = await Promise.all([miloApi('/members'), miloApi('/dues')]); miloUyeler = r[0].members; miloDuesTum = r[1].dues; veri = [miloUyeler, miloDuesTum]; ciz = miloAidatCiz; }
+        else if (t === 'personel') { miloPersonel = (await miloApi('/personnel')).personnel; veri = [miloPersonel]; ciz = miloPersonelCiz; }
+        else if (t === 'program') { let r = await Promise.all([miloApi('/members'), miloApi('/antrenman-programi'), miloApi('/attendance/auto')]); miloUyeler = r[0].members; miloProgram = r[1].slots; miloAttendanceTum = r[2].attendance; veri = [miloUyeler, miloProgram, miloAttendanceTum]; ciz = miloProgramCiz; }
+        else if (t === 'ders') { let r = await Promise.all([miloApi('/ders-icerikleri'), miloApi('/members'), miloApi('/member-skills'), miloApi('/yas-kategorileri'), miloApi('/gruplar')]); miloDersler = r[0].dersler; miloUyeler = r[1].members; miloMemberSkills = r[2].skills; miloYasKategorileri = r[3].yasKategorileri; miloGruplar = r[4].gruplar; veri = [miloDersler, miloUyeler, miloMemberSkills, miloYasKategorileri, miloGruplar]; ciz = miloDerslerCiz; }
+    } catch (e) { veri = null; }
+    _miloArkaCalisiyor = false;
+    if (!veri || !ciz) return;
+    let im = miloImzaAl(veri), once = _miloImza[t]; _miloImza[t] = im;
+    if (once === undefined || once === im) return;           // ilk ölçüm ya da değişiklik yok → ekrana dokunma
+    if (miloAktifSekme !== t || miloMesgulMu()) { _miloImza[t] = once; return; } // bu arada koç bir şeye başladıysa sonraki tura bırak
+    let y = alan.scrollTop, wy = window.scrollY;
+    try { ciz(); } catch (e) {}
+    alan.scrollTop = y; if (window.scrollY !== wy) window.scrollTo(0, wy);
 }
 
 // Görüntü için yaş (2026-10-07): 2 yaşından küçükte ay ("14 ay"), 6 yaşa kadar yaş + ay ("3 yaş 4 ay"), sonra yaş.

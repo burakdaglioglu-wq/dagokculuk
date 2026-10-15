@@ -10,16 +10,16 @@ function mgbBugun() { return _miloBsIsoTarih(new Date()); }
 function mgbGunFark(isoA, isoB) { return Math.round((new Date(isoB + 'T00:00:00') - new Date(isoA + 'T00:00:00')) / 864e5); }
 
 let _mgbSon = 0;
-async function mgbYukleVeCiz(zorla) {
+async function mgbYukleVeCiz(zorla, cizme) { // cizme: arka plan yenilemesi yalnız veriyi çeker (milo/app.js miloArkaPlanYenile)
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
     // 15 sn'lik otomatik yenileme her seferinde 6 istek atmasın: sunucudan en fazla dakikada bir, arada eldeki veriyle çiz
-    if (!zorla && _mgbSon && Date.now() - _mgbSon < 60000 && miloUyeler.length) { mgbCiz(); return; }
+    if (!zorla && _mgbSon && Date.now() - _mgbSon < 60000 && miloUyeler.length) { if (!cizme) mgbCiz(); return; }
     _mgbSon = Date.now();
-    if (!alan.querySelector('.mgb')) alan.innerHTML = '<div class="mgb-yukleniyor">Yükleniyor…</div>';
+    if (!cizme && !alan.querySelector('.mgb')) alan.innerHTML = '<div class="mgb-yukleniyor">Yükleniyor…</div>';
     let al = function (yol, alanAd) { return miloApi(yol).then(function (d) { return d[alanAd] || []; }).catch(function () { return null; }); };
     let s = await Promise.all([al('/members', 'members'), al('/dues', 'dues'), al('/antrenman-programi', 'slots'), al('/attendance/auto', 'attendance'), al('/member-skills', 'skills'), al('/ders-icerikleri', 'dersler')]);
     if (s[0]) miloUyeler = s[0]; if (s[1]) miloDuesTum = s[1]; if (s[2]) miloProgram = s[2]; if (s[3]) miloAttendanceTum = s[3]; if (s[4]) miloMemberSkills = s[4]; if (s[5]) miloDersler = s[5];
-    if (miloAktifSekme === 'genel') mgbCiz();
+    if (miloAktifSekme === 'genel' && !cizme) mgbCiz();
 }
 
 function mgbVeri() {

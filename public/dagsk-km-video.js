@@ -14,7 +14,7 @@
    ================================================================================================ */
 var _kv = null;
 // 24 kare/sn ve 720p (2026-10-15, kullanıcı: "en az 720; donarak hareket etmesin") — 10 kare/sn ayna takılarak görünüyordu
-const KV_HZ = 24, KV_MAKS_G = 1280;
+const KV_HZ = 15, KV_MAKS_G = 960; // yalnız MediaSource olmayan cihazlardaki yedek yol için
 
 function kvEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function kvAd(k) { if (!k) return ''; let i = k.indexOf('|'); return i < 0 ? k : k.slice(i + 1); }
@@ -83,9 +83,9 @@ function kvCiz() {
     } else if (m === 'canli') {
         sahne = '<div class="kv-cerceve" id="kv-cerceve"><video id="kv-v" playsinline muted autoplay></video><canvas id="kv-ciz"></canvas>' + '<span class="kv-rozet kayit" id="kv-kayit-rozet"' + (_kv.kayit ? '' : ' hidden') + '>● KAYIT 0:00</span>' + '</div>';
     } else {
-        sahne = '<div class="kv-cerceve" id="kv-cerceve"><canvas id="kv-c"></canvas><canvas id="kv-ciz"></canvas>'
+        sahne = '<div class="kv-cerceve" id="kv-cerceve">' + (_kv.mse ? '<span id="kv-dv-yer"></span>' : '<canvas id="kv-c"></canvas>') + '<canvas id="kv-ciz"></canvas>'
             + (tekrar ? '<span class="kv-rozet">⏸ TEKRAR · son ' + Math.round(_kv.tekrar.sure) + ' sn</span>' : '<span class="kv-rozet" id="kv-rozet">⏱ ' + _kv.gecikme + ' sn geriden</span>')
-            + '<video id="kv-canli-kucuk" playsinline muted autoplay></video></div>';
+            + (_kv.akisTel ? '' : '<video id="kv-canli-kucuk" playsinline muted autoplay></video>') + '</div>'; // telefon kaynağında küçük canlı görüntü yok (telefonun ekranı gösteriyor, PC'ye ek yük)
     }
     kap.innerHTML = '<div class="kv" role="dialog" aria-modal="true" aria-label="Video analiz">'
         + '<div class="kv-ust"><div class="kv-baslik"><b>🎥 ' + (_kv.k ? kvEsc(kvAd(_kv.k)) : 'Video analiz') + '</b><span>' + (m === 'ayna' ? 'Atışını yap, dön ve kendini izle' : m === 'canli' ? 'Canlı görüntü · kaydet, sonra yavaş izle' : 'Yavaş çekim · kare kare') + '</span></div>'
@@ -148,6 +148,7 @@ function kvBagla() {
         let v = document.getElementById('kv-v'); v.srcObject = _kv.akis; v.onloadedmetadata = kvYerlesim; if (v.readyState >= 1) kvYerlesim();
     } else if (_kv.mod === 'ayna') {
         let kc = document.getElementById('kv-canli-kucuk'); if (kc && _kv.akis) kc.srcObject = _kv.akis;
+        let yer = document.getElementById('kv-dv-yer'); if (yer && _kv.mse) { yer.replaceWith(_kv.mse.v); if (!_kv.tekrar || _kv.tekrar.oynuyor) _kv.mse.v.play().catch(function () {}); }
         kvYerlesim();
         if (_kv.tekrar) kvTekrarCiz();
     }
@@ -166,13 +167,117 @@ function kvYerlesim() {
     let ciz = document.getElementById('kv-ciz'); if (ciz) { let r = window.devicePixelRatio || 1; ciz.width = Math.floor(w * o * r); ciz.height = Math.floor(h * o * r); kvCizimYenile(); }
 }
 
+
+// ---------------------------------------------------------------- ⏱ AKICI GECİKMELİ AYNA (MediaSource)
+// 2026-10-15, kullanıcı: "yarışmadaki video çok donuyor, kimse kullanmak istemiyor". Ölçüm: tablet gücünde (CPU 4× yavaş)
+// eski yöntem (her kareyi JPEG'e çevir → geri aç → çiz) saniyede yalnız ~3 kare çizebiliyordu. Yeni yöntem: kamera akışı
+// MediaRecorder ile 0,2 sn'lik video parçalarına kaydedilir, parçalar gizli olmayan bir <video>'nun MediaSource'una eklenir
+// ve video N sn geriden normal hızda OYNATILIR — çözme/çizme tarayıcının video hattında (çoğu cihazda donanımda) yapılır,
+// sayfanın işlemcisi neredeyse boş kalır. Sapma olursa oynatma hızı ±%6 ayarlanır, çok kayarsa atlanır. "Son 10 sn" tekrarı
+// aynı videoda geri sarıp yavaş oynatmaktır. MediaSource/webm desteklemeyen tarayıcıda (ör. eski iPhone) eski yol çalışır.
+function kvMseTip() {
+    try {
+        if (!window.MediaSource || typeof MediaRecorder === 'undefined' || window.KV_MSE_KAPALI) return null;
+        let l = ['vp8', 'vp9'];
+        for (let i = 0; i < l.length; i++) { let t = 'video/webm;codecs=' + l[i]; if (MediaRecorder.isTypeSupported(t) && MediaSource.isTypeSupported('video/webm; codecs="' + l[i] + '"')) return { kayit: t, kaynak: 'video/webm; codecs="' + l[i] + '"' }; }
+    } catch (e) {}
+    return null;
+}
+function kvMseBaslat() {
+    let tip = kvMseTip(); if (!tip || !_kv || !_kv.akis) return false;
+    let ms = new MediaSource(), v = document.createElement('video');
+    v.id = 'kv-dv'; v.className = 'kv-dv'; v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.disablePictureInPicture = true;
+    let M = { ms: ms, v: v, tip: tip, kuyruk: [], sb: null, rec: null, ekliyor: false, hazir: false, url: URL.createObjectURL(ms) };
+    v.src = M.url;
+    v.addEventListener('error', function () { kvMseVazgec(M); }); // oynatıcı hata verirse eski (kare kare) yola dön — ekran boş kalmasın
+    v.addEventListener('loadedmetadata', function () { if (_kv && _kv.mse === M && v.videoWidth) { _kv.gW = v.videoWidth; _kv.gH = v.videoHeight; kvYerlesim(); } });
+    ms.addEventListener('sourceopen', function () {
+        if (!_kv || _kv.mse !== M) return;
+        try { M.sb = ms.addSourceBuffer(tip.kaynak); M.sb.addEventListener('updateend', function () { M.ekliyor = false; kvMseBesle(M); }); }
+        catch (e) { return kvMseVazgec(M); }
+        kvMseBesle(M);
+    });
+    let rec;
+    // yalnız görüntü — telefon yayınında ses de var (bırakış sesi için); sesli parça kaynağın beklediği biçime uymuyor, oynatıcı duruyordu
+    let gor = new MediaStream(_kv.akis.getVideoTracks());
+    try { rec = new MediaRecorder(gor, { mimeType: tip.kayit, videoBitsPerSecond: 2500000 }); } catch (e) { return false; }
+    rec.ondataavailable = function (e) { if (e.data && e.data.size && _kv && _kv.mse === M) { M.kuyruk.push(e.data); kvMseBesle(M); } };
+    rec.onerror = function () { kvMseVazgec(M); };
+    rec.start(200);
+    M.rec = rec;
+    _kv.mse = M;
+    let s = _kv.akis.getVideoTracks()[0], ay = s && s.getSettings ? s.getSettings() : {};
+    _kv.gW = ay.width || 1280; _kv.gH = ay.height || 720;
+    clearInterval(_kv.mseZaman); _kv.mseZaman = setInterval(kvMseDongu, 250);
+    return true;
+}
+function kvMseBesle(M) {
+    if (!M || !M.sb || M.ekliyor || M.sb.updating || !M.kuyruk.length || M.ms.readyState !== 'open') return;
+    M.ekliyor = true;
+    let b = M.kuyruk.shift();
+    b.arrayBuffer().then(function (buf) {
+        if (!_kv || _kv.mse !== M) return;
+        try { M.sb.appendBuffer(buf); }
+        catch (e) { M.ekliyor = false; if (e && e.name === 'QuotaExceededError') { M.kuyruk.unshift(b); kvMseTemizle(M, true); } else kvMseVazgec(M); }
+    }, function () { M.ekliyor = false; });
+}
+// eski görüntüyü bırak (bellek sınırlı kalsın): oynatılan yerin 12 sn öncesi (tekrardayken tekrar başının 2 sn öncesi)
+function kvMseTemizle(M, zorla) {
+    let v = M.v, b = v.buffered; if (!b.length || M.ekliyor || M.sb.updating) return;
+    let bas = b.start(0), sinir = (_kv && _kv.tekrar && _kv.tekrar.mse ? _kv.tekrar.bas - 2 : v.currentTime - 12);
+    if (sinir - bas > (zorla ? 1 : 8)) { M.ekliyor = true; try { M.sb.remove(bas, sinir); } catch (e) { M.ekliyor = false; } }
+}
+function kvMseDongu() {
+    let M = _kv && _kv.mse; if (!M || _kv.mod !== 'ayna') return;
+    let v = M.v, b = v.buffered, rz = document.getElementById('kv-rozet');
+    kvMseTemizle(M, false);
+    if (!b.length) { if (rz) rz.textContent = '⏱ başlıyor…'; return; }
+    let son = b.end(b.length - 1), bas = b.start(0), T = _kv.tekrar;
+    if (T && T.mse) {
+        if (T.oynuyor && v.currentTime >= T.son - 0.06) v.currentTime = T.bas;
+        kvSurguGuncelle(); return;
+    }
+    let hedef = son - _kv.gecikme;
+    if (hedef < bas + 0.05) { if (rz) rz.textContent = '⏱ ' + Math.max(1, Math.ceil(bas + _kv.gecikme - son)) + ' sn sonra başlıyor…'; if (!v.paused) v.pause(); return; }
+    if (!M.hazir) { M.hazir = true; v.currentTime = hedef; }
+    let fark = (son - v.currentTime) - _kv.gecikme;
+    if (Math.abs(fark) > 1.2) { v.currentTime = hedef; v.playbackRate = 1; }
+    else v.playbackRate = fark > 0.25 ? 1.06 : fark < -0.25 ? 0.94 : 1;
+    if (v.paused) v.play().catch(function () {});
+    if (rz) rz.textContent = '⏱ ' + _kv.gecikme + ' sn geriden';
+}
+// MediaSource bu cihazda çalışmadıysa eski (kare kare) yola dön
+function kvMseVazgec(M) {
+    if (!_kv || _kv.mse !== M) return;
+    kvMseKapat();
+    window.KV_MSE_KAPALI = true;
+    if (_kv.mod === 'ayna' && _kv.akis) { kvAkisHazir('ayna'); }
+}
+function kvMseKapat() {
+    let M = _kv && _kv.mse; if (!M) return;
+    clearInterval(_kv.mseZaman); _kv.mseZaman = null; _kv.mse = null;
+    try { if (M.rec && M.rec.state !== 'inactive') M.rec.stop(); } catch (e) {}
+    try { M.v.pause(); M.v.removeAttribute('src'); M.v.load(); } catch (e) {}
+    try { URL.revokeObjectURL(M.url); } catch (e) {}
+    try { M.v.remove(); } catch (e) {}
+}
+function kvMseTekrar() {
+    let M = _kv.mse, v = M.v, b = v.buffered; if (!b.length) return false;
+    let son = b.end(b.length - 1), bas = Math.max(b.start(0), son - 10);
+    if (son - bas < 1) return false;
+    _kv.tekrar = { mse: true, bas: bas, son: son, sure: son - bas, oynuyor: true, gW: _kv.gW, gH: _kv.gH };
+    _kv.hiz = 0.5; v.pause(); v.currentTime = bas; v.playbackRate = 0.5;
+    kvCiz(); v.play().catch(function () {});
+    return true;
+}
+
 // ---------------------------------------------------------------- kamera + gecikmeli ayna
 async function kvKameraAc() {
     if (!_kv) return;
     let mod = _kv.mod;
     if (_kv.kaynak === 'tel') { let a = await kvTelAkis(mod); if (!a || !_kv || _kv.mod !== mod) return; _kv.akis = a; _kv.akisTel = true; return kvAkisHazir(mod); }
     try {
-        _kv.akis = await navigator.mediaDevices.getUserMedia({ video: { facingMode: _kv.yuz, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false });
+        _kv.akis = await navigator.mediaDevices.getUserMedia({ video: { facingMode: _kv.yuz, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: false }); // 720p: ayna için yeterli, işlemciye 1080'in yarısı yük
         _kv.akisTel = false;
     } catch (e) {
         let s = document.getElementById('kv-sahne');
@@ -186,7 +291,8 @@ async function kvKameraAc() {
 async function kvAkisHazir(mod) {
     if (!_kv || _kv.mod !== mod) return;
     if (mod === 'canli') { kvCiz(); return; }
-    // ayna: gizli video → küçük JPEG kareler → N sn geriden çiz
+    // ayna: önce akıcı yol (MediaSource); olmazsa eski yol: gizli video → küçük JPEG kareler → N sn geriden çiz
+    if (kvMseBaslat()) { kvCiz(); return; }
     let v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = _kv.akis;
     try { await v.play(); } catch (e) {}
     await new Promise(function (r) { if (v.readyState >= 1 && v.videoWidth) r(); else v.onloadedmetadata = function () { r(); }; });
@@ -232,19 +338,21 @@ function kvKareCiz(blob) {
         c2.getContext('2d').drawImage(bm, 0, 0, c2.width, c2.height); bm.close && bm.close();
     }).catch(function () { if (_kv) _kv.ciziliyor = false; });
 }
-function kvGecikme(g) { if (!_kv) return; _kv.gecikme = g; try { localStorage.setItem('kv_gecikme', String(g)); } catch (e) {} _kv.sonKare = null; kvAltCiz(); }
+function kvGecikme(g) { if (!_kv) return; _kv.gecikme = g; try { localStorage.setItem('kv_gecikme', String(g)); } catch (e) {} _kv.sonKare = null; if (_kv.mse) { let v = _kv.mse.v, b = v.buffered; if (b.length) v.currentTime = Math.max(b.start(0), b.end(b.length - 1) - g); } kvAltCiz(); }
 function kvAkisDurdur() { if (_kv && _kv.akis && _kv.akisTel) { _kv.akis = null; _kv.akisTel = false; return; } if (_kv && _kv.akis) { try { _kv.akis.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} _kv.akis = null; } }
 function kvKameraKapat() {
     if (!_kv) return;
     clearInterval(_kv.kayitSaat);
     if (_kv.kayit) { try { _kv.kayit.rec.onstop = null; _kv.kayit.rec.stop(); } catch (e) {} _kv.kayit = null; }
     clearInterval(_kv.yakTimer); _kv.yakTimer = null; cancelAnimationFrame(_kv.raf);
+    kvMseKapat();
     kvAkisDurdur(); _kv.gizli = null; _kv.kareler = []; _kv.sonKare = null;
 }
 function kvKameraCevir() { if (!_kv) return; if (_kv.akisTel) { try { _fl.tel.kanal.send(JSON.stringify({ cevir: true })); } catch (e) {} if (typeof showToast === 'function') showToast('Telefonda kamera çevrildi', 'info'); return; } _kv.yuz = _kv.yuz === 'environment' ? 'user' : 'environment'; let m = _kv.mod; kvKameraKapat(); kvCiz(); if (m === 'ayna' || m === 'canli') kvKameraAc(); }
 
 // ⏪ arabelleği dondur → kare kare / yavaş izle
 function kvTekrar() {
+    if (_kv && _kv.mse) { if (!kvMseTekrar() && typeof showToast === 'function') showToast('Henüz kayıtlı görüntü yok — birkaç saniye bekle.', 'info'); return; }
     if (!_kv || !_kv.kareler.length) { if (typeof showToast === 'function') showToast('Henüz kayıtlı görüntü yok — birkaç saniye bekle.', 'info'); return; }
     let bit = Date.now(), kareler = _kv.kareler.filter(function (x) { return x.t >= bit - 10000; });
     if (kareler.length < 3) kareler = _kv.kareler.slice();
@@ -252,10 +360,11 @@ function kvTekrar() {
     _kv.hiz = 0.5;
     kvCiz(); kvTekrarOynat();
 }
-function kvTekrarBitir() { if (!_kv) return; clearTimeout(_kv.zam); _kv.tekrar = null; _kv.hiz = 1; _kv.sonKare = null; kvCiz(); }
-function kvTekrarCiz() { let r = _kv && _kv.tekrar; if (!r) return; let k = r.kareler[r.i]; if (k) kvKareCiz(k.b); kvSurguGuncelle(); }
+function kvTekrarBitir() { if (!_kv) return; clearTimeout(_kv.zam); let mse = _kv.tekrar && _kv.tekrar.mse; _kv.tekrar = null; _kv.hiz = 1; _kv.sonKare = null; if (mse && _kv.mse) { let v = _kv.mse.v, b = v.buffered; v.playbackRate = 1; if (b.length) v.currentTime = Math.max(b.start(0), b.end(b.length - 1) - _kv.gecikme); } kvCiz(); }
+function kvTekrarCiz() { let r = _kv && _kv.tekrar; if (!r || r.mse) return; let k = r.kareler[r.i]; if (k) kvKareCiz(k.b); kvSurguGuncelle(); }
 function kvTekrarOynat() {
     let r = _kv && _kv.tekrar; if (!r) return;
+    if (r.mse) { let v = _kv.mse && _kv.mse.v; if (v) { v.playbackRate = _kv.hiz; if (r.oynuyor) v.play().catch(function () {}); else v.pause(); } return kvOynatYazi(); }
     clearTimeout(_kv.zam);
     if (!r.oynuyor) return kvOynatYazi();
     kvTekrarCiz();
@@ -333,6 +442,7 @@ function kvOynatYazi() {
 }
 function kvKare(yon) {
     if (!_kv) return;
+    if (_kv.tekrar && _kv.tekrar.mse) { let r = _kv.tekrar, v = _kv.mse.v; r.oynuyor = false; v.pause(); v.currentTime = Math.max(r.bas, Math.min(r.son - 0.02, v.currentTime + yon / 30)); kvSurguGuncelle(); return kvOynatYazi(); }
     if (_kv.tekrar) { let r = _kv.tekrar; r.oynuyor = false; clearTimeout(_kv.zam); r.i = Math.max(0, Math.min(r.kareler.length - 1, r.i + yon)); kvTekrarCiz(); return kvOynatYazi(); }
     let v = _kv.mod === 'video' && document.getElementById('kv-v'); if (!v) return;
     v.pause(); v.currentTime = Math.max(0, Math.min((v.duration || 0) - 0.01, v.currentTime + yon / 30));
@@ -346,11 +456,13 @@ function kvHiz(h) {
 function kvSurgu(val) {
     if (!_kv) return;
     let p = Number(val) / 1000;
+    if (_kv.tekrar && _kv.tekrar.mse) { let r = _kv.tekrar, v = _kv.mse.v; r.oynuyor = false; v.pause(); v.currentTime = r.bas + p * (r.son - r.bas); return kvOynatYazi(); }
     if (_kv.tekrar) { let r = _kv.tekrar; r.oynuyor = false; clearTimeout(_kv.zam); r.i = Math.round(p * (r.kareler.length - 1)); kvTekrarCiz(); return kvOynatYazi(); }
     let v = document.getElementById('kv-v'); if (v && v.duration) { v.pause(); v.currentTime = p * v.duration; }
 }
 function kvSurguGuncelle() {
     let s = document.getElementById('kv-surgu'); if (!s || !_kv || document.activeElement === s) return;
+    if (_kv.tekrar && _kv.tekrar.mse) { let r = _kv.tekrar, v = _kv.mse && _kv.mse.v; if (v) s.value = Math.round((v.currentTime - r.bas) / Math.max(0.1, r.son - r.bas) * 1000); return; }
     if (_kv.tekrar) { let r = _kv.tekrar; s.value = r.kareler.length > 1 ? Math.round(r.i / (r.kareler.length - 1) * 1000) : 0; return; }
     let v = document.getElementById('kv-v'); if (v && v.duration) { s.value = Math.round(v.currentTime / v.duration * 1000); let z = document.getElementById('kv-zaman'); if (z) z.textContent = kvSure(v.currentTime) + ' / ' + kvSure(v.duration); }
 }
@@ -479,7 +591,7 @@ async function kvTelAkis(mod) {
         kvCiz();
     }
     let t = _fl.tel;
-    let analizKapat = function () { try { if (t.kanal && t.kanal.readyState === 'open') { t.kanal.send(JSON.stringify({ analiz: 'kapat' })); return true; } } catch (e) {} return false; };
+    let analizKapat = function () { try { if (t.kanal && t.kanal.readyState === 'open') { t.kanal.send(JSON.stringify({ analiz: 'kapat', kalite: '720' })); return true; } } catch (e) {} return false; };
     if (!analizKapat()) { let n = 0, z = setInterval(function () { if (analizKapat() || ++n > 20) clearInterval(z); }, 500); }
     // alıcı tamponu biraz büyüsün: ağdaki küçük takılmalar donma olarak görünmesin (ayna zaten geriden gösteriyor)
     try { t.pc.getReceivers().forEach(function (r) { if (r.track && r.track.kind === 'video') { if ('jitterBufferTarget' in r) r.jitterBufferTarget = 150; else r.playoutDelayHint = 0.15; } }); } catch (e) {}

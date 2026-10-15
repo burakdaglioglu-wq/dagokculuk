@@ -215,7 +215,7 @@
     pc = new RTCPeerConnection({ iceServers: ICE });
     akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
     kanal = pc.createDataChannel('komut');
-    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; if (m.kayit === 'bas') kayitBasla(m.id); if (m.kayit === 'bitir') kayitBitir(m.id); if (m.kayit === 'iptal') kayitIptal(); if (m.analiz === 'kapat') { analizKapali = true; if (window.KA) { KA.durdur(); KA.durum = 'kapali'; } aiYaz(); } if (m.analiz === 'ac' && analizKapali) { analizKapali = false; analizBaslat(); } } catch (er) {} };
+    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; if (m.kayit === 'bas') kayitBasla(m.id); if (m.kayit === 'bitir') kayitBitir(m.id); if (m.kayit === 'iptal') kayitIptal(); if (m.analiz === 'kapat') { analizKapali = true; if (window.KA) { KA.durdur(); KA.durum = 'kapali'; } aiYaz(); } if (m.analiz === 'ac' && analizKapali) { analizKapali = false; analizBaslat(); } if (m.kalite) kaliteModu(m.kalite); } catch (er) {} };
     dosyaKanal = pc.createDataChannel('dosya'); dosyaKanal.binaryType = 'arraybuffer'; dosyaKanal.bufferedAmountLowThreshold = 1024 * 1024;
     iskelet = pc.createDataChannel('iskelet', { ordered: false, maxRetransmits: 0 });
     pc.onconnectionstatechange = function () {
@@ -255,7 +255,15 @@
   // Akıcılık (2026-10-15, kullanıcı: "görüntü en az 720, en çok 1080 olsun; donarak hareket etmesin"). Çözünürlük korunurken bağlantı
   // yetmezse WebRTC kare atlıyordu (donma). Her 2 sn gönderim ölçülür: 1080'de saniyede 22 karenin altına düşerse 720'ye iner (asla
   // altına değil); 720'de 10 sn boyunca 28+ kare ve bol bant varsa 1080'e geri çıkar.
-  var olcek = 1, akiciZaman = null, akiciIyi = 0, akiciKotu = 0;
+  var olcek = 1, akiciZaman = null, akiciIyi = 0, akiciKotu = 0, sabit720 = false;
+  // Video penceresi (2026-10-16, kullanıcı: "PC ve telefondan çekim için ağır"): '720' gelince telefon 720p gönderir (küçültmeyi
+  // telefonun kodlayıcısı yapar, PC 1080p açıp yeniden sıkıştırmak zorunda kalmaz); 1080'e çıkmaz. 'oto' (Form Lab) eski davranış.
+  function kaliteModu(k) {
+    var tr = akis && akis.getVideoTracks()[0], ay = tr ? tr.getSettings() : {}, kisa = Math.min(ay.width || 0, ay.height || 0) || 1080;
+    sabit720 = k === '720';
+    var yeni = sabit720 ? Math.max(1, kisa / 720) : 1;
+    if (yeni !== olcek) { olcek = yeni; akiciIyi = 0; akiciKotu = 0; kaliteAyarla(); }
+  }
   function akiciIzle() {
     clearInterval(akiciZaman); var akiciBas = Date.now();
     akiciZaman = setInterval(async function () {
@@ -267,7 +275,7 @@
         var fps = out.framesPerSecond || 0, tr = akis.getVideoTracks()[0], ayar = tr ? tr.getSettings() : {}, kisa = Math.min(ayar.width || 0, ayar.height || 0) || 1080;
         var enAz = Math.max(1, kisa / 720); // bu ölçek 720p verir; kamera zaten 720 ise 1
         if (olcek === 1 && enAz > 1 && fps > 0 && fps < 22) { akiciKotu++; akiciIyi = 0; if (akiciKotu >= 2) { olcek = enAz; akiciKotu = 0; await kaliteAyarla(); bildir('Görüntü akıcı kalsın diye 720p'); } }
-        else if (olcek > 1 && fps >= 28 && bant > 6000000) { akiciIyi++; if (akiciIyi >= 5) { olcek = 1; akiciIyi = 0; await kaliteAyarla(); bildir('Bağlantı iyi — 1080p'); } }
+        else if (!sabit720 && olcek > 1 && fps >= 28 && bant > 6000000) { akiciIyi++; if (akiciIyi >= 5) { olcek = 1; akiciIyi = 0; await kaliteAyarla(); bildir('Bağlantı iyi — 1080p'); } }
         else { akiciKotu = fps < 22 ? akiciKotu : 0; if (fps < 28) akiciIyi = 0; }
       } catch (e) {}
     }, 2000);
