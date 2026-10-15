@@ -73,7 +73,7 @@ function maSadeCss() {
         '.ma textarea,.ma input{background:#fff!important;color:#1B2422!important;border-color:#E4E9E7!important}',
         '@media (max-width:640px){.ma{padding:12px}}'
     ].join('\n');
-    document.head.appendChild(st);
+    document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }
 function maCss() {
     maSadeCss();

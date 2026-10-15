@@ -6908,9 +6908,11 @@
         }
 
         window.onload = function() {
-            // 2026-10-15: varsayılan tema Sade (açık). Her cihaz BİR KEZ Sade'ye geçer (dag_sade_v), sonra Tema düğmesiyle koyuya dönülebilir.
-            try { if(localStorage.getItem('dag_sade_v') !== '1') { localStorage.setItem('dag_sk_theme', 'light'); localStorage.setItem('dag_sade_v', '1'); } } catch(e) {}
-            if(localStorage.getItem('dag_sk_theme') !== 'dark') document.body.classList.add('light-theme');
+            // 2026-10-15 (2. karar, kullanıcı: 'sade tema değil de var olan koyu tema ana açılış olsun'): varsayılan KOYU.
+            // Her cihaz BİR KEZ koyuya döner (dag_sade_v=2); açık Sade, Tema düğmesiyle seçilebilir. Defter/Yoklama'nın Sade
+            // görünümü koyuda gece renkleriyle çizilir (sade-gece.js).
+            try { if(localStorage.getItem('dag_sade_v') !== '2') { localStorage.setItem('dag_sk_theme', 'dark'); localStorage.setItem('dag_sade_v', '2'); } } catch(e) {}
+            if(localStorage.getItem('dag_sk_theme') === 'light') document.body.classList.add('light-theme');
             let kayitliVeri = localStorage.getItem('okculuk_premium_data');
             if(kayitliVeri) { try { turnuvaDB = JSON.parse(kayitliVeri); } catch(e) {} }
             let tVeri = localStorage.getItem('okculuk_takimlar_data');
@@ -7906,7 +7908,7 @@
                 '#yonetici-liste.sade-yok input,#yonetici-liste.sade-yok select,#yonetici-liste.sade-yok textarea{background:#FFFFFF;color:#1B2422;border-color:#E4E9E7}',
                 '@media (max-width:640px){#yonetici-liste.sade-yok{padding:10px}}'
             ].join('\n');
-            document.head.appendChild(st);
+            document.head.appendChild(st); if(typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
         }
         function yoneticiSekme(k) {
             if(k !== 'aidat') _aidatKilitAcikMi = false; // Aidat'tan çıkınca ek kilit yeniden devreye girsin

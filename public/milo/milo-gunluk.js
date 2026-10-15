@@ -221,5 +221,5 @@ function mgCss() {
         '.mg button:focus-visible,.mg input:focus-visible,.mg select:focus-visible,.mg textarea:focus-visible{outline:2px solid var(--s-vurgu);outline-offset:2px}',
         '@media (max-width:600px){.mg{padding:12px}.mg-ay-sat{grid-template-columns:1fr 1fr}.mg-ay-sat div{grid-column:1 / -1}}'
     ].join('\n');
-    document.head.appendChild(st);
+    document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }

@@ -525,5 +525,5 @@ function mdCss() {
         '@media (max-width:860px){.md{grid-template-columns:1fr}.md-liste{position:static;max-height:none}.md-satirlar{max-height:320px;overflow:auto}.md-detay{padding:16px}.md-odemeler div{grid-template-columns:1fr 1fr}}',
         '@media (max-width:480px){.md,.md-aktarim{padding:10px;border-radius:14px}}'
     ].join('\n');
-    document.head.appendChild(st);
+    document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }

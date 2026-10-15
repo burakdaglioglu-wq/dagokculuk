@@ -58,7 +58,7 @@ export default async function ({ log }) {
         // sade ders penceresi: saat satırı → 45 dk çipi anında kaydeder
         await p.locator('.mdp-row', { hasText: 'Saat' }).click(); await p.locator('.mdp-cipler button', { hasText: '45 dk' }).click();
         await p.waitForFunction((id) => miloProgram.find((s) => s.id === id).bitisSaat === '10:45', slotId, { timeout: 8000 });
-        esit(await p.evaluate(() => document.documentElement.classList.contains('milo-tema-sade')), true, 'varsayılan tema Sade');
+        esit(await p.evaluate(() => document.documentElement.classList.contains('milo-tema-gece')), true, 'varsayılan tema Gece (koyu)');
         esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
       } finally { await ctx.close(); }
     }

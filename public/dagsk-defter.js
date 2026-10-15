@@ -355,6 +355,6 @@ function odCss() {
         '.od button:focus-visible,.od input:focus-visible,.od select:focus-visible,.od textarea:focus-visible{outline:2px solid var(--s-vurgu);outline-offset:2px}',
         '@media (max-width:860px){.od{grid-template-columns:1fr;padding:12px}.od-liste{position:static;max-height:none}.od-satirlar{max-height:320px;overflow:auto}.od-detay{padding:16px}.od-odemeler div{grid-template-columns:1fr 1fr}.od-odemeler small{grid-column:1 / -1}.od-ay-sat{grid-template-columns:1fr 1fr}.od-ay-sat div{grid-column:1 / -1}}'
     ].join('\n');
-    document.head.appendChild(st);
+    document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }
 window.odAc = odAc; window.dgAc = dgAc;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#F4F7F6">
+    <meta name="theme-color" content="#0C0B0A">
     <title>MILO FITT KIDS</title>
     <link rel="icon" type="image/png" href="/milo/ikon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/milo/apple-touch-icon.png">
@@ -270,7 +270,7 @@
     <script>
         // Tema, sayfa çizilmeden ÖNCE uygulanır (mor yanıp sonra değişmesin). Varsayılan: Turuncu Gece.
         // 2026-10-08: varsayılan "Sade" — her cihaz BİR KEZ Sade'ye geçer (milo_tema_v=2), sonra Tema menüsünden değiştirilebilir.
-        (function () { var t = "sade"; try { if (localStorage.getItem("milo_tema_v") !== "3") { localStorage.setItem("milo_tema", "sade"); localStorage.setItem("milo_tema_v", "3"); } t = localStorage.getItem("milo_tema") || "sade"; } catch (e) {} document.documentElement.classList.add("milo-tema-" + t); })();
+        (function () { var t = "gece"; try { if (localStorage.getItem("milo_tema_v") !== "4") { localStorage.setItem("milo_tema", "gece"); localStorage.setItem("milo_tema_v", "4"); } t = localStorage.getItem("milo_tema") || "gece"; } catch (e) {} document.documentElement.classList.add("milo-tema-" + t); })();
     </script>
 </head>
 <body>
@@ -411,16 +411,17 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="app.js?v=11"></script>
-    <script src="milo-araclar.js?v=5"></script>
+    <script src="/sade-gece.js?v=1"></script>
+    <script src="app.js?v=12"></script>
+    <script src="milo-araclar.js?v=6"></script>
     <script src="milo-hizli-duzenle.js?v=4"></script>
-    <script src="milo-genel-bakis.js?v=8"></script>
+    <script src="milo-genel-bakis.js?v=9"></script>
     <script src="milo-ders-sihirbaz.js?v=3"></script>
     <script src="milo-uye-form.js?v=1"></script>
     <script src="milo-duzen.js?v=1"></script>
     <script src="milo-ders-pencere.js?v=1"></script>
     <script src="milo-program-pano.js?v=1"></script>
-    <script src="milo-defter.js?v=5"></script>
-    <script src="milo-gunluk.js?v=2"></script>
+    <script src="milo-defter.js?v=6"></script>
+    <script src="milo-gunluk.js?v=3"></script>
 </body>
 </html>
