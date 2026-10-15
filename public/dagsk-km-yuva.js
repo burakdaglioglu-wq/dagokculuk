@@ -566,8 +566,12 @@ function yuvaYarismaHTML() {
     let o; try { o = yzOku(); } catch (e) { return ''; }
     const d = o.durum; if (!d || !d.asama || d.asama === 'kurulum' || d.asama === 'bitti') return '';
     const f = d.asama === 'tur' ? yzFormat(d) : null, seri = f ? Math.min(d.seri, f.seri - 1) : 0, bek = f ? yzBekleyenler(o, seri).length : 0;
-    return `<div class="yv-yz"><span class="yv-yz-et">🎯 YARIŞMA SÜRÜYOR</span><span class="yv-yz-bilgi">${f ? 'Seri ' + (seri + 1) + '/' + f.seri + (bek ? ' · ' + bek + ' skor bekleniyor' : ' · seri tamam') : 'Eleme maçları'}</span>${o.sayac ? yzSayacHTML(o, 'yz-oyun-sayac') : ''}<span class="yv-yz-btn"><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma ekranı</button><button class="yv-btn birincil" onclick="yuvaYarismayaGec(true)">📺 Yarışma TV</button></span></div>`;
+    return `<div class="yv-yz"><span class="yv-yz-et">🎯 YARIŞMA SÜRÜYOR</span><span class="yv-yz-bilgi">${f ? 'Seri ' + (seri + 1) + '/' + f.seri + (bek ? ' · ' + bek + ' skor bekleniyor' : ' · seri tamam') : 'Eleme maçları'}</span>${o.sayac ? yzSayacHTML(o, 'yz-oyun-sayac') : ''}<span class="yv-yz-btn">${o.sayac ? '<button class="yv-btn" onclick="yuvaSayac(false)">⏹ Sıfırla</button>' : '<button class="yv-btn birincil" onclick="yuvaSayac(true)">▶ Süreyi başlat</button>'}<button class="yv-btn" onclick="yuvaSure()" title="Seri süresini değiştir — hazır süreler ya da elle">⏱ ${yzSure(d)} sn</button><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma ekranı</button><button class="yv-btn birincil" onclick="yuvaYarismayaGec(true)">📺 Yarışma TV</button></span></div>`;
 }
+// Süre buradan da (2026-10-15, kullanıcı: "süreyi elle ayarlama — bunu yumurtaya da ekle"): Yarışma'nın sayacı ve süre
+// penceresi (hazır süreler + Elle ayarla −10/−5/+5/+10); değişince şerit yeniden çizilir.
+function yuvaSayac(bas) { if (bas) yzSayacBaslat(); else yzSayacDurdur(); kmYuvaCiz(); }
+function yuvaSure() { try { yzCssYukle(); } catch (e) {} yzSureMenu(); }
 function yuvaYarismayaGec(tv) {
     if (typeof kmKarmaYarismayaGec === 'function') return kmKarmaYarismayaGec(tv);
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}

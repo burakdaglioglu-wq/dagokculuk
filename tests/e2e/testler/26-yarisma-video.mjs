@@ -41,6 +41,11 @@ export default async function ({ log }) {
     await p.locator('#yz-giris .yz-oksay button', { hasText: '6 ok' }).click();
     esit(await p.evaluate((kk) => (yzOku().durum.okK || {})[kk] || 0, k), 0, '6 oka dönünce sporcu varsayılanı silinmedi');
     await p.evaluate(() => yzGirisKapat());
+    // süre elle: ⏱ menüsünde −10 → Uygula → 80 sn (2026-10-15)
+    await p.evaluate(() => yzSureMenu()); await p.waitForTimeout(300);
+    await p.locator('#onay-modal .yz-sure-elle button', { hasText: '−10' }).click();
+    await p.locator('#onay-modal .yz-sure-elle button', { hasText: 'Uygula' }).click(); await p.waitForTimeout(300);
+    esit(await p.evaluate(() => yzSure(yzOku().durum)), 80, 'elle süre');
     // skor girişi → 🎥 Video
     await p.evaluate((kk) => yzGirisAc(encodeURIComponent(kk), 0), k); await p.waitForTimeout(300);
     await p.locator('#yz-giris button:has-text("🎥 Video")').click();
@@ -77,8 +82,19 @@ export default async function ({ log }) {
     esit(await p.evaluate(() => _fl.secili), k, 'Form Lab sporcusu');
     dogrula(!(await p.locator('#kv').count()), 'video penceresi kapanmadı');
     await p.evaluate(() => { _fl.iptal = true; });
+    // Yumurta Yuvası'nda da süre: şeritte ⏱ → −5 → Uygula (80 → 75), ▶ başlat (2026-10-15)
+    await p.evaluate(() => kmAracSec('yuva'));
+    await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('.yv-yz'), null, { timeout: 20000 });
+    await p.locator('.yv-yz button', { hasText: 'sn' }).click(); await p.waitForTimeout(300);
+    await p.locator('#onay-modal .yz-sure-elle button', { hasText: '−5' }).click();
+    await p.locator('#onay-modal .yz-sure-elle button', { hasText: 'Uygula' }).click(); await p.waitForTimeout(300);
+    esit(await p.evaluate(() => yzSure(yzOku().durum)), 75, 'yumurtada elle süre');
+    dogrula((await p.locator('.yv-yz').innerText()).includes('75 sn'), 'yumurta şeridi yeni süreyi göstermiyor');
+    await p.locator('.yv-yz button', { hasText: 'Süreyi başlat' }).click(); await p.waitForTimeout(300);
+    dogrula(await p.evaluate(() => !!yzOku().sayac), 'yumurtadan süre başlamadı');
+    await p.evaluate(() => yzSayacDurdur());
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
+    log('elle süre 80 sn (yumurtada 75); 3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
   } finally {
     if (yedek) await p.evaluate((y) => {
       try { kvKapat(); } catch (e) {}

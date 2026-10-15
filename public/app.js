@@ -11140,7 +11140,9 @@
         function kmSunucuDersineKatil(konumId) {
             fetch('/api/meta/karisik_sinif_liste_' + konumId).then(function(r) { return r.json(); }).then(function(d) {
                 let l = _kmSunucuListeDegerlendir(konumId, d);
-                if(l.length) { try { localStorage.setItem('dag_km_liste_' + konumId, JSON.stringify(l)); } catch(e) {} _kmYerelZamanYaz(konumId, d.guncelleme); }
+                // Önce konuma bağlan, SONRA listeyi yaz — konum yokken yazılan liste ortak senkrona "yeni değişiklik" olarak
+                // gitmiyordu; eski "ders bitti" işareti birkaç saniye sonra bu dersi kapatıyordu (2026-10-15).
+                if(l.length) { _kmAktifKonum = konumId; try { localStorage.setItem('dag_km_liste_' + konumId, JSON.stringify(l)); } catch(e) {} _kmYerelZamanYaz(konumId, d.guncelleme); }
             }).catch(function() {}).then(function() {
                 kmKonumaBaglan(konumId);
                 let k = (_kmKonumlar || []).find(function(x) { return x.id === konumId; });

@@ -170,9 +170,23 @@
         if (ks.has(listeK)) {
             let l = []; try { l = JSON.parse(localStorage.getItem(listeK) || '[]') || []; } catch (e) {}
             if (!l.length) {
-                // Ders başka bir cihazda "Dersi Bitir" ile kapatıldı.
-                try { _kmListe = []; _kmSecimler = {}; document.getElementById('karisik-platform').style.display = 'none'; kmDevamBanneriGuncelle(); } catch (e) {}
-                try { showToast('Bu ders başka bir cihazda bitirildi.', 'warning'); } catch (e) {}
+                // Ders başka bir cihazda "Dersi Bitir" ile kapatıldı — AMA önce asıl ders listesine (meta karisik_sinif_liste_*)
+                // bak (2026-10-15, kullanıcı: "Ders bitir yapamıyorum, bazen geliyor bazen gidiyor"): bir ders bitince buradaki
+                // "silindi" işareti kalıyordu; sonra açılan YENİ ders birkaç saniye görünüp bu eski işaretle kapanıyordu.
+                // Liste işaretten yeniyse ders yaşıyor demektir: yerel listeyi geri yaz (yeni zamanla herkese gider), kapatma.
+                let kn = O.konum, isaretT = (O.son[listeK + AYRAC] || {}).t || 0;
+                let kapat = function () {
+                    if (!O || O.konum !== kn) return;
+                    try { _kmListe = []; _kmSecimler = {}; document.getElementById('karisik-platform').style.display = 'none'; kmDevamBanneriGuncelle(); } catch (e) {}
+                    try { showToast('Bu ders başka bir cihazda bitirildi.', 'warning'); } catch (e) {}
+                };
+                fetch('/api/meta/karisik_sinif_liste_' + encodeURIComponent(kn), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+                    let ml = []; try { ml = JSON.parse((d && d.value) || '[]') || []; } catch (e) {}
+                    let taze = d && d.guncelleme && d.guncelleme > isaretT && (typeof KM_DERS_ESKIME_MS === 'undefined' || Date.now() - d.guncelleme < KM_DERS_ESKIME_MS);
+                    if (!Array.isArray(ml) || !ml.length || !taze || !O || O.konum !== kn) return kapat();
+                    localStorage.setItem(listeK, JSON.stringify(ml));
+                    try { _kmListe = ml; _kmSecimler = {}; ml.forEach(function (s) { _kmSecimler[s.g + '_' + s.ad] = s; }); } catch (e) {}
+                }).catch(kapat);
                 return;
             }
             try { _kmListe = l; _kmSecimler = {}; l.forEach(function (s) { _kmSecimler[s.g + '_' + s.ad] = s; }); } catch (e) {}

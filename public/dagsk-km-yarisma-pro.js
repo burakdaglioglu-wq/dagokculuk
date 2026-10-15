@@ -56,17 +56,23 @@ function yzVarsayilanSure(format) { return yzFormatBul(format).ok >= 6 ? 240 : 1
 function yzSure(d) { if (d && d.asama === 'eleme') { let e = parseInt(d.ayar.setSure, 10); return e >= 10 ? e : 120; } let s = d && d.ayar && parseInt(d.ayar.sure, 10); return s >= 10 ? s : yzFormat(d).ok >= 6 ? 240 : 120; }
 function yzSureEtiket(sn) { return sn + ' sn'; }
 // Süre seçici: hazır kalıplar + özel. hedef: 'kurulum' (taslak) ya da 'tur' (süren tur, ortak kayda yazar)
+// Süre seçici: hazır süreler + elle ayar (2026-10-15, kullanıcı: "90 saniye otomatik kalması güzel ama el ile de ayarlayabileyim").
+// Eskiden küçük bir "Özel" kutusu vardı, gözden kaçıyordu ve tablette rakam yazmak zahmetliydi: artık kutuda şu anki süre yazılı,
+// −10/−5/+5/+10 ile değiştirilip Uygula'ya basılır (Enter da uygular). Hazır çipe dokunmak eskisi gibi hemen uygular.
 function yzSureSeciciHTML(secili, hedef) {
-    let ozel = YZ_SURELER.indexOf(secili) === -1, id = 'yz-sure-ozel-' + hedef;
-    return '<div class="yz-cipler">' + YZ_SURELER.map(function (sn) { return '<button class="yz-cip' + (sn === secili ? ' aktif' : '') + '" onclick="yzSureSec(\'' + hedef + '\',' + sn + ')">' + sn + ' sn</button>'; }).join('')
-        + '<span class="yz-sure-ozel' + (ozel ? ' aktif' : '') + '"><input id="' + id + '" type="number" inputmode="numeric" min="10" max="900" step="5" placeholder="Özel" value="' + (ozel ? secili : '') + '" aria-label="Özel süre (saniye)" onkeydown="if(event.key===\'Enter\'){yzSureSec(\'' + hedef + '\', this.value)}"><span>sn</span><button class="yz-cip" onclick="yzSureSec(\'' + hedef + '\', document.getElementById(\'' + id + '\').value)">Uygula</button></span></div>';
+    let id = 'yz-sure-ozel-' + hedef, adim = function (n) { return '<button type="button" class="yz-cip" onclick="yzSureAdim(\'' + id + '\',' + n + ')">' + (n > 0 ? '+' : '−') + Math.abs(n) + '</button>'; };
+    return '<div class="yz-cipler">' + YZ_SURELER.map(function (sn) { return '<button class="yz-cip' + (sn === secili ? ' aktif' : '') + '" onclick="yzSureSec(\'' + hedef + '\',' + sn + ')">' + sn + ' sn</button>'; }).join('') + '</div>'
+        + '<div class="yz-sure-elle"><span>Elle ayarla</span>' + adim(-10) + adim(-5)
+        + '<label><input id="' + id + '" type="number" inputmode="numeric" min="10" max="900" step="5" value="' + (secili || 90) + '" aria-label="Seri süresi (saniye)" onkeydown="if(event.key===\'Enter\'){yzSureSec(\'' + hedef + '\', this.value)}">sn</label>'
+        + adim(5) + adim(10) + '<button type="button" class="yz-cip uygula" onclick="yzSureSec(\'' + hedef + '\', document.getElementById(\'' + id + '\').value)">Uygula</button></div>';
 }
+function yzSureAdim(id, n) { let el = document.getElementById(id); if (!el) return; let v = (parseInt(el.value, 10) || 90) + n; el.value = Math.max(10, Math.min(900, v)); }
 function yzSureSec(hedef, sn) {
     sn = parseInt(sn, 10); if (!(sn >= 10 && sn <= 900)) return showToast('Süre 10–900 sn arası olmalı.', 'error');
     if (hedef === 'kurulum') { yzKurulumTaslak().sure = sn; yzCiz(); return; }
     yzGuncelle(function (o) { if (o.durum) { if (o.durum.asama === 'eleme') o.durum.ayar.setSure = sn; else o.durum.ayar.sure = sn; if (o.sayac && o.sayac.seri === o.durum.seri) o.sayac.sure = sn; } });
     let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none';
-    yzCiz(); if (_yz.tv) yzTvCiz(); showToast('⏱ Seri süresi: ' + yzSureEtiket(sn), 'success');
+    yzCiz(); if (_yz.tv) yzTvCiz(); if (typeof kmYuvaCiz === 'function' && typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme === 'yuva') kmYuvaCiz(); showToast('⏱ Seri süresi: ' + yzSureEtiket(sn), 'success');
 }
 function yzSureMenu() {
     let d = yzOku().durum; if (!d) return;
@@ -2337,6 +2343,7 @@ function yzCssYukle() {
         '.yz-kart{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}',
         '.yz-etiket{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.yz-etiket b{color:var(--text-main)}.yz-etiket-btn{margin-left:auto;text-transform:none;letter-spacing:0}',
         '.yz-cipler{display:flex;flex-wrap:wrap;gap:6px}.yz-cip{border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:999px;padding:0 13px;min-height:38px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.yz-cip.aktif{background:var(--accent-orange);border-color:var(--accent-orange);color:#1a0d05}',
+        '.yz-sure-elle{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border-color)}.yz-sure-elle>span{font-size:12.5px;font-weight:800;opacity:.8;margin-right:2px}.yz-sure-elle .yz-cip{min-width:46px}.yz-sure-elle label{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--accent-orange);border-radius:12px;padding:2px 10px}.yz-sure-elle input{width:62px;background:transparent;border:none;color:var(--text-main);font:inherit;font-size:20px;font-weight:900;text-align:center;-moz-appearance:textfield}.yz-sure-elle input::-webkit-inner-spin-button{display:none}.yz-sure-elle .uygula{background:var(--accent-orange);border-color:var(--accent-orange);color:#fff}',
         '.yz-sure-ozel{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-color);border-radius:999px;padding:3px 4px 3px 12px}.yz-sure-ozel.aktif{border-color:var(--accent-orange)}.yz-sure-ozel input{width:64px;background:transparent;border:none;color:var(--text-main);font:inherit;font-size:14px;font-weight:800;appearance:auto!important;-webkit-appearance:auto!important}.yz-sure-ozel span{font-size:12px;color:var(--text-muted)}.yz-sure-ozel .yz-cip{min-height:32px}',
         '.yz-kur-izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}',
         '.yz-ozet-satir{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--text-muted)}.yz-ozet-satir b{color:var(--text-main)}',
