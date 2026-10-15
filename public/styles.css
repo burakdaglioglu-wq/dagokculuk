@@ -125,16 +125,23 @@
            çizerdi). Mesh SADECE body'nin kendi background'unda, ayrı bir kural olarak — .full-screen-mode
            ve #giris-ekrani zaten kendi mesh'lerini taşıyor, dokunulmadı. */
         body.light-theme {
-            --bg-main: #FBF2EA;
-            --bg-panel: rgba(255, 255, 255, 0.66); --text-main: #2A1208;
-            --text-muted: #7A4A33; --border-color: rgba(67, 15, 2, 0.13);
-            --aurora-cyan: #D73204; --aurora-magenta: #861C02; --aurora-violet: #861C02; --aurora-gold: #B8860B;
-            --accent-orange: #D73204; --accent-grey: #6b7280;
-            --font-sans: 'Plus Jakarta Sans', 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
+            /* 2026-10-15 SADE (kullanıcı: "o sade ekranı tüm uygulamaya yap"): açık tema artık Sade (A) —
+               beyaz kâğıt, ince çizgi, tek petrol yeşili vurgu, Manrope. Varsayılan tema (app.js window.onload). */
+            --bg-main: #F4F7F6;
+            --bg-panel: #FFFFFF; --text-main: #1B2422;
+            --text-muted: #6B7976; --border-color: #E4E9E7;
+            --aurora-cyan: #138A80; --aurora-magenta: #0F6F67; --aurora-violet: #138A80; --aurora-gold: #8A5A00;
+            --accent-orange: #138A80; --accent-grey: #6B7976;
+            --neon-pink: #6D4BB8; --neon-red: #B4372F; --gold: #8A5A00; --neon-green: #1E8E5A; --neon-blue: #2F6FB8;
+            --va-vurgu: #138A80;
+            --font-sans: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
-            --surface-2: rgba(67, 15, 2, 0.05);
-            --text-tertiary: rgba(42, 18, 8, 0.65);
-            --accent-soft: rgba(215, 50, 4, 0.12);
+            --surface-2: #F3F6F5;
+            --text-tertiary: rgba(27, 36, 34, 0.62);
+            --accent-soft: #E3F4F1;
+            --accent-strong: #0F6F67;
+            --accent: var(--accent-orange);
+            --status-success: var(--neon-green); --status-warning: var(--gold); --status-danger: var(--neon-red); --status-info: var(--neon-blue);
 
             /* KRİTİK: --surface-1/--text-primary vb. ":root"ta var(--bg-panel) gibi başka bir tokena
                ALIAS. Bir alias'ın değeri, TANIMLANDIĞI yerde (yani :root'ta, koyu değerlerle) bir kere
@@ -339,32 +346,24 @@
            kalıyordu. Şimdi aynı ana uygulama koyu paletiyle (--bg-main:#15121F, --accent:#8B7FFF vb.,
            bkz. :root'taki "Buzlu Cam — KOYU sürüm" notu) body.light-theme/body:not(.light-theme) olarak
            ikiye ayrıldı — kullanıcı "🌙/☀️ Tema" ile hangisini seçerse Karışık Sınıf da onu takip ediyor. */
+        /* 2026-10-15 Sade: Karışık Sınıf da açık temada Sade — düz zemin, beyaz kartlar, tek petrol vurgu. */
         body.light-theme #karisik-platform {
-            --bg-main: #FBF2EA;
-            --border-color: rgba(67, 15, 2, 0.13);
+            --bg-main: #F4F7F6;
+            --border-color: #E4E9E7;
             --surface-0: var(--bg-main);
             --surface-border: var(--border-color);
-            --accent-orange: #D73204;
-            --accent: #D73204;
-            --accent-strong: #861C02;
-            --accent-soft: rgba(215, 50, 4, 0.14);
+            --accent-orange: #138A80;
+            --accent: #138A80;
+            --accent-strong: #0F6F67;
+            --accent-soft: #E3F4F1;
             --text-on-accent: #FFFFFF;
             --text-on-accent-dark: #FFFFFF;
-            --bg-panel: rgba(255, 255, 255, 0.62);
-            --text-main: #2A1208;
-            --text-muted: #7A4A33;
-            --font-sans: 'Plus Jakarta Sans', 'Archivo', 'Poppins', system-ui, -apple-system, sans-serif;
+            --bg-panel: #FFFFFF;
+            --text-main: #1B2422;
+            --text-muted: #6B7976;
+            --font-sans: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             color: var(--text-main);
-            /* İnline "background:var(--bg-main)" (app.html) --bg-main'i TEK renk bekliyor (başka
-               yerlerde border-color/--surface-0 olarak da kullanılıyor, gradyan orada geçersiz olurdu) —
-               o yüzden mesh zemin ayrı, !important'lı bir "background" kuralıyla veriliyor; author
-               stylesheet'te !important, aynı özellik için inline'ı da geçersiz kılar (CSS cascade kuralı). */
-            background:
-                radial-gradient(620px 460px at 6% 4%, rgba(253,142,1,0.30), rgba(253,142,1,0) 70%),
-                radial-gradient(680px 520px at 97% 14%, rgba(252,91,1,0.22), rgba(252,91,1,0) 70%),
-                radial-gradient(760px 460px at 46% 106%, rgba(215,50,4,0.16), rgba(215,50,4,0) 70%),
-                var(--bg-main) !important;
-            background-attachment: fixed, fixed, fixed, fixed;
+            background: var(--bg-main) !important;
         }
         body:not(.light-theme) #karisik-platform {
             --bg-main: #160804;
@@ -1121,7 +1120,7 @@
         .va-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
         .va-title { font-weight: 800; font-size: 16px; color: var(--va-vurgu, #FD8E01); display: flex; align-items: center; gap: 8px; }
         /* Kulüp paleti (2026-10-11): başlık/ikincil vurgu koyuda kehribar, açıkta okunur kızıl. */
-        :root { --va-vurgu: #FD8E01; } body.light-theme { --va-vurgu: #D73204; }
+        :root { --va-vurgu: #FD8E01; } body.light-theme { --va-vurgu: #138A80; }
         .va-sub { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
         .va-dropzone { border: 2px dashed var(--accent-orange); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; transition: all .2s; background: rgba(255,98,0,0.05); }
         .va-dropzone.dragover { background: rgba(255,98,0,0.18); border-color: var(--gold); }
@@ -1296,14 +1295,7 @@
         }
         /* Buzlu Cam mesh — SADECE body'nin kendi background'u (--bg-main token'ı DEĞİL, bkz. yukarıdaki
            body.light-theme bloğundaki not), .full-screen-mode/#giris-ekrani kendi mesh'lerini koruyor. */
-        body.light-theme {
-            background:
-                radial-gradient(620px 460px at 6% 4%, rgba(253,142,1,0.26), rgba(253,142,1,0) 70%),
-                radial-gradient(680px 520px at 97% 12%, rgba(252,91,1,0.18), rgba(252,91,1,0) 70%),
-                radial-gradient(760px 460px at 46% 106%, rgba(215,50,4,0.14), rgba(215,50,4,0) 70%),
-                var(--bg-main);
-            background-attachment: fixed;
-        }
+        body.light-theme { background: var(--bg-main); }
         /* Buzlu Cam KOYU: eskiden düz koyu dolgu + blur(10px) (bkz. yukarıdaki ilk .glass-panel kuralı,
            satır ~408 — sadece blur'u hâlâ sağlıyor, gerisi burada eziliyor) — artık gerçek yarı saydam
            mor-koyu cam, arkadaki mesh'i bulanıklaştırıyor. Açık temanın aynısı, sadece koyu. */
@@ -1318,10 +1310,10 @@
            opak olduğu için görünmüyordu) — Buzlu Cam'ın asıl bileşeni burası: yarı saydam beyaz +
            gerçek bulanıklaştırma, mesh zemin arkadan sızıyor. */
         body.light-theme .glass-panel {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3);
-            border: 1px solid rgba(255, 255, 255, 0.85);
-            box-shadow: 0 18px 44px -26px rgba(134, 28, 2, 0.28);
+            background: #FFFFFF;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(27, 36, 34, 0.04);
         }
         button { transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.18s ease; }
         button:active { transform: scale(0.965); }
@@ -2585,3 +2577,59 @@
     #km-oyun-sahne #km-oyun-dok .km-oyun-dok-boyutla, #km-oyun-sahne #km-oyun-dok-tutamac { display: none !important; }
     #km-oyun-sahne #km-oyun-rightpanel { bottom: var(--km-dok-h, 300px) !important; }
 }
+
+        /* ============================================================
+           SADE KATMANI (2026-10-15, kullanıcı: "bana gösterdiğin o sade ekranı yapmamışsın — tüm uygulama").
+           Açık tema (body.light-theme) = Sade (A): düz #F4F7F6 zemin, beyaz kâğıt kartlar, ince #E4E9E7 çizgi,
+           tek petrol yeşili vurgu (#138A80), Manrope. Cam/bulanıklık/mesh/parıltı yok. Koyu tema (Tema düğmesi) aynen duruyor.
+           Burada sadece koyu temaya göre sabit yazılmış renkler açığa çekiliyor; token değerleri yukarıda body.light-theme'de.
+           ============================================================ */
+        body.light-theme, body.light-theme button, body.light-theme input, body.light-theme select, body.light-theme textarea { font-family: var(--font-sans); }
+        body.light-theme { -webkit-font-smoothing: antialiased; color: var(--text-main); }
+        body.light-theme .card, body.light-theme .adm-card { background: #FFFFFF; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(27, 36, 34, 0.04); backdrop-filter: none; -webkit-backdrop-filter: none; }
+        body.light-theme .modal-content { background: #FFFFFF !important; border: 1px solid var(--border-color); box-shadow: 0 30px 60px -30px rgba(27, 36, 34, 0.35); }
+        body.light-theme .modal-overlay { background: rgba(27, 36, 34, 0.38); backdrop-filter: none; -webkit-backdrop-filter: none; }
+        body.light-theme .adm-input, body.light-theme input[type=text], body.light-theme input[type=number], body.light-theme input[type=date], body.light-theme input[type=month], body.light-theme input[type=search], body.light-theme input[type=tel], body.light-theme input[type=password], body.light-theme select, body.light-theme textarea {
+            background: #FFFFFF; color: var(--text-main); border-color: var(--border-color);
+        }
+        body.light-theme .adm-input:focus, body.light-theme input:focus, body.light-theme select:focus, body.light-theme textarea:focus { border-color: var(--accent-orange); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+        body.light-theme .adm-btn { background: var(--surface-2); color: var(--text-main); border-color: var(--border-color); box-shadow: none; }
+        body.light-theme .adm-btn:hover { border-color: #C9D3D0; }
+        body.light-theme .btn-primary { background: var(--accent-orange); color: #fff; border-color: var(--accent-orange); box-shadow: none; }
+        body.light-theme ::selection { background: var(--accent-soft); }
+        body.light-theme ::-webkit-scrollbar-thumb { background: #D5DDDA; }
+        body.light-theme #giris-ekrani { background: var(--bg-main); }
+        /* Sade — yönetici kabuğu: zemin #F4F7F6, kart/şerit/yan menü/üst çubuk beyaz kâğıt, seçili menü açık petrol */
+        body.light-theme .yon-sidebar { background: #FFFFFF; border-right: 1px solid var(--border-color); }
+        body.light-theme .yon-sidebar .yon-sidebar-btn.aktif { background: var(--accent-soft); color: var(--accent-strong); }
+        body.light-theme .yon-sidebar .yon-sidebar-btn:hover:not(.aktif) { background: var(--surface-2); }
+        body.light-theme .yon-sb-logo-harf, body.light-theme .yon3-km { color: #FFFFFF; }
+        body.light-theme .yon-sb-rozet.kirmizi { background: #FDEBEA; color: #B4372F; }
+        body.light-theme #yonetici-modal .modal-content.yon-shell { background: var(--bg-main) !important; }
+        body.light-theme .yon-topbar { background: #FFFFFF !important; border-bottom: 1px solid var(--border-color); }
+        body.light-theme .yon3-kutu, body.light-theme .yon3-kart, body.light-theme .yon3-ara, body.light-theme .yon-serit-btn,
+        body.light-theme .yon3 .yp-kart, body.light-theme .yon2-izgara .yp-kart { background: #FFFFFF !important; box-shadow: 0 1px 2px rgba(27, 36, 34, 0.04); }
+        body.light-theme .yon3-ders.simdi .yon3-ders-btn { color: #FFFFFF; }
+        body.light-theme .yon3-ders { background: #FFFFFF; }
+        /* Sade — program panosu: dersler beyaz kâğıt kart, bugün sütunu açık petrol */
+        body.light-theme .dpk-renk { --p-kart: #FFFFFF; --p-kart2: #FFFFFF; }
+        body.light-theme .pno-kart { border-color: var(--border-color); }
+        /* Sade — eski ekranlardaki satır içi degrade düğmeler tek renk petrol, parıltı gölgeleri yok; degrade başlık yazıları düz koyu */
+        body.light-theme #yonetici-liste button[style*="linear-gradient"] { background: var(--accent-orange) !important; color: #FFFFFF !important; border-color: var(--accent-orange) !important; box-shadow: none !important; }
+        body.light-theme #yonetici-liste [style*="background-clip:text"], body.light-theme #yonetici-liste [style*="background-clip: text"] { background: none !important; color: var(--text-main) !important; -webkit-text-fill-color: currentColor; }
+        body.light-theme #yonetici-liste [style*="box-shadow:0 0 22px"] { box-shadow: none !important; }
+        body.light-theme #yonetici-liste [style*="rgba(253,142,1"]:not(button), body.light-theme #yonetici-liste [style*="rgba(252,91,1"]:not(button) { border-color: var(--border-color) !important; }
+        body.light-theme .dagsk-yenile-fab { box-shadow: none !important; border-color: var(--border-color) !important; background: #FFFFFF !important; color: var(--accent-orange) !important; }
+        body.light-theme .yon-bottom-nav button.aktif { background: var(--accent-soft); color: var(--accent-strong); }
+        /* Sade — Karışık Sınıf ana ekranı */
+        body.light-theme #karisik-platform > div:first-child { background: #FFFFFF !important; }
+        body.light-theme #karisik-platform .card { background: #FFFFFF; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(27, 36, 34, 0.04); backdrop-filter: none; -webkit-backdrop-filter: none; }
+        body.light-theme #karisik-platform .km-dp-buton { background: var(--accent) !important; color: #FFFFFF !important; box-shadow: none !important; }
+        body.light-theme #karisik-platform .km-dp-buton * { color: #FFFFFF !important; }
+        body.light-theme .km-arac-buyuk { background: #FFFFFF; color: var(--text-main); border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(27, 36, 34, 0.04); }
+        body.light-theme .km-arac-buyuk:first-child { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+        body.light-theme .km-arac-buyuk:not(:first-child) .km-arac-buyuk-ikon { background: var(--accent-soft); color: var(--accent); }
+        body.light-theme .km-arac { background: #FFFFFF; border-color: var(--border-color); }
+        body.light-theme .km-arac:hover { background: #FFFFFF; border-color: #C9D3D0; }
+        body.light-theme .km-arac-ikon { color: var(--accent) !important; background: var(--accent-soft) !important; }
+        body.light-theme .km-arac-ara { background: #FFFFFF; border-color: var(--border-color); }

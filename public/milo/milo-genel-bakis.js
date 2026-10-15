@@ -121,7 +121,8 @@ function mgbEksikTamamla() { try { _mhd.eksik = true; _mhd.sayfa = 1; } catch (e
 
 // ---- 🎨 Tema seçici (cihazda hatırlanır; temalar index.html'de html.milo-tema-* sınıfları)
 const MILO_TEMALAR = [
-    { id: 'sade', ad: '⚫ Sade', renk: ['#FF7A2B', '#0C0B0A'], bar: '#0C0B0A' },
+    { id: 'sade', ad: '⚪ Sade', renk: ['#138A80', '#F4F7F6'], bar: '#F4F7F6' },
+    { id: 'gece', ad: '⚫ Sade Gece', renk: ['#FF7A2B', '#0C0B0A'], bar: '#0C0B0A' },
     { id: 'turuncu', ad: '🟠 Turuncu Gece', renk: ['#FF7A1A', '#140C07'], bar: '#140C07' },
     { id: 'mor', ad: '💜 Mor Gece', renk: ['#8B7FFF', '#15121F'], bar: '#15121F' },
     { id: 'okyanus', ad: '🌊 Okyanus', renk: ['#14B8A6', '#06141A'], bar: '#06141A' },

@@ -6908,7 +6908,9 @@
         }
 
         window.onload = function() {
-            if(localStorage.getItem('dag_sk_theme') === 'light') document.body.classList.add('light-theme');
+            // 2026-10-15: varsayılan tema Sade (açık). Her cihaz BİR KEZ Sade'ye geçer (dag_sade_v), sonra Tema düğmesiyle koyuya dönülebilir.
+            try { if(localStorage.getItem('dag_sade_v') !== '1') { localStorage.setItem('dag_sk_theme', 'light'); localStorage.setItem('dag_sade_v', '1'); } } catch(e) {}
+            if(localStorage.getItem('dag_sk_theme') !== 'dark') document.body.classList.add('light-theme');
             let kayitliVeri = localStorage.getItem('okculuk_premium_data');
             if(kayitliVeri) { try { turnuvaDB = JSON.parse(kayitliVeri); } catch(e) {} }
             let tVeri = localStorage.getItem('okculuk_takimlar_data');

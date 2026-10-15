@@ -443,7 +443,7 @@ function miloUyeFormAc(grup, ad) {
             <input class="milo-input" id="milo-uf-ad" placeholder="Ad Soyad" value="${miloEsc(u ? u.ad : '')}" ${u ? 'disabled' : ''}>
             <input class="milo-input" id="milo-uf-grup" list="milo-grup-list" placeholder="Grup / Seviye (örn: Başlangıç)" value="${miloEsc(u ? u.grup : '')}">
             <div style="display:flex; gap:6px; margin-bottom:8px;">
-                <button type="button" id="milo-uf-kiz" onclick="miloUfCinsiyet('K')" style="flex:1; padding:9px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; border:1px solid #ec4899; background:${(u ? u.cinsiyet : 'K') === 'K' ? 'rgba(236,72,153,0.15)' : 'var(--bg-panel)'}; color:#ec4899;">👧 Kız</button>
+                <button type="button" id="milo-uf-kiz" onclick="miloUfCinsiyet('K')" style="flex:1; padding:9px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; border:1px solid #ec4899; background:${(u ? u.cinsiyet : 'K') === 'K' ? 'color-mix(in srgb, var(--neon-pink) 15%, transparent)' : 'var(--bg-panel)'}; color:#ec4899;">👧 Kız</button>
                 <button type="button" id="milo-uf-erkek" onclick="miloUfCinsiyet('E')" style="flex:1; padding:9px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; border:1px solid var(--neon-blue); background:${(u ? u.cinsiyet : '') === 'E' ? 'rgba(59,130,246,0.15)' : 'var(--bg-panel)'}; color:var(--neon-blue);">👦 Erkek</button>
             </div>
             <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">🎂 Doğum Tarihi</div>
@@ -474,7 +474,7 @@ function miloUyeFormAc(grup, ad) {
 }
 function miloUfCinsiyet(c) {
     let kiz = document.getElementById('milo-uf-kiz'), erkek = document.getElementById('milo-uf-erkek');
-    if (kiz) { kiz.dataset.sec = c === 'K' ? '1' : ''; kiz.style.background = c === 'K' ? 'rgba(236,72,153,0.15)' : 'var(--bg-panel)'; }
+    if (kiz) { kiz.dataset.sec = c === 'K' ? '1' : ''; kiz.style.background = c === 'K' ? 'color-mix(in srgb, var(--neon-pink) 15%, transparent)' : 'var(--bg-panel)'; }
     if (erkek) { erkek.dataset.sec = c === 'E' ? '1' : ''; erkek.style.background = c === 'E' ? 'rgba(59,130,246,0.15)' : 'var(--bg-panel)'; }
     let form = document.getElementById('milo-uf-grup'); if (form) form.dataset.cinsiyet = c;
 }
@@ -633,7 +633,7 @@ async function miloAidatMuafToggle(grup, ad, checked) {
 
 function miloAidatAyDuzenleFormHTML(ad, ay) {
     let rec = miloAidatDuesKayit(ad, ay) || {};
-    return `<div style="background:rgba(236,72,153,0.08); border:1px solid var(--neon-pink); border-radius:10px; padding:10px; margin-top:6px;">
+    return `<div style="background:color-mix(in srgb, var(--neon-pink) 8%, transparent); border:1px solid var(--neon-pink); border-radius:10px; padding:10px; margin-top:6px;">
         <div style="font-weight:700; font-size:12px; margin-bottom:6px;">${miloEsc(ay)} düzenle</div>
         <div style="display:flex; gap:6px; margin-bottom:6px; align-items:center;">
             <input type="number" id="milo-aidat-tutar" value="${rec.tutar || ''}" placeholder="Tutar ₺" oninput="if(this.value && parseInt(this.value)>0) document.getElementById('milo-aidat-odendi').checked = true;" style="flex:1; padding:8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px;">
@@ -705,7 +705,7 @@ function miloAidatCiz() {
             <div style="flex:1; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:10px; text-align:center;"><div style="font-size:17px; font-weight:800; color:var(--accent-orange);">${odeyen}/${odemeBekleneler.length}</div><div style="font-size:10px; color:var(--text-muted);">Ödeyen</div></div>
             <div style="flex:1; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:10px; padding:10px; text-align:center;"><div style="font-size:17px; font-weight:800; color:var(--neon-blue);">${beklenen}₺</div><div style="font-size:10px; color:var(--text-muted);">Beklenen</div></div>
         </div>
-        <button onclick="miloAidatIstatistikToggle()" style="width:100%; margin-bottom:10px; background:rgba(236,72,153,0.12); color:var(--neon-pink); border:1px solid var(--neon-pink); padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">${miloAidatIstatistikAcik ? '✕ İstatistikleri Kapat' : '📊 Gelir İstatistikleri'}</button>
+        <button onclick="miloAidatIstatistikToggle()" style="width:100%; margin-bottom:10px; background:color-mix(in srgb, var(--neon-pink) 12%, transparent); color:var(--neon-pink); border:1px solid var(--neon-pink); padding:11px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer;">${miloAidatIstatistikAcik ? '✕ İstatistikleri Kapat' : '📊 Gelir İstatistikleri'}</button>
         <div id="milo-aidat-istatistik-alani"></div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
             <button onclick="miloAidatYil--; miloAidatCiz();" style="background:var(--bg-panel); border:1px solid var(--border-color); color:var(--text-main); width:32px; height:32px; border-radius:8px; cursor:pointer; font-weight:800;">‹</button>
@@ -1316,7 +1316,7 @@ function miloDersRosterCiz() {
             let gunEtiket = MILO_GUN_ADI[giris.gun];
             let mevcutIstisna = (s.istisnalar || []).find(function(i) { return i.tarih === giris.tarih; });
             if (mevcutIstisna) {
-                return '<div style="background:rgba(236,72,153,0.08); border:1.3px dashed var(--milo-coral); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
+                return '<div style="background:color-mix(in srgb, var(--neon-pink) 8%, transparent); border:1.3px dashed var(--milo-coral); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
                     + '<div style="font-size:11.5px; font-weight:800; color:var(--milo-coral);">❌ ' + gunEtiket + ' ' + giris.tarih + ' iptal edildi</div>'
                     + (mevcutIstisna.sebep ? '<div style="font-size:10.5px; color:var(--milo-ink-dim); margin-top:2px;">' + miloEsc(mevcutIstisna.sebep) + '</div>' : '')
                     + '<button onclick="miloDersIstisnaSil(' + giris.gun + ')" style="margin-top:7px; width:100%; background:color-mix(in srgb, var(--milo-teal) 10%, transparent); color:var(--milo-teal); border:1px solid var(--milo-teal); padding:6px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer;">✅ İptali Geri Al</button>'
@@ -1324,7 +1324,7 @@ function miloDersRosterCiz() {
             }
             return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--milo-card-raised); border:1px solid var(--milo-line); border-radius:10px; padding:9px 11px; margin-bottom:6px;">'
                 + '<div style="font-size:11px; color:var(--milo-ink-dim);">📅 ' + gunEtiket + ' yaklaşan: <b style="color:var(--milo-ink);">' + giris.tarih + '</b></div>'
-                + '<button onclick="miloDersIstisnaEkle(' + giris.gun + ')" style="background:rgba(236,72,153,0.08); color:var(--milo-coral); border:1px solid rgba(236,72,153,0.3); padding:6px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">🚫 Bu Tarihi İptal Et</button>'
+                + '<button onclick="miloDersIstisnaEkle(' + giris.gun + ')" style="background:color-mix(in srgb, var(--neon-pink) 8%, transparent); color:var(--milo-coral); border:1px solid color-mix(in srgb, var(--neon-pink) 30%, transparent); padding:6px 10px; border-radius:7px; font-size:10.5px; font-weight:800; cursor:pointer; flex-shrink:0;">🚫 Bu Tarihi İptal Et</button>'
                 + '</div>';
         }).join('');
     }
@@ -1336,7 +1336,7 @@ function miloDersRosterCiz() {
         let oranHTML = oran === null ? '' : '<span title="Son 6 oluşumda devam oranı" style="display:inline-flex; align-items:center; gap:3px; margin-left:6px; font-size:9px; font-weight:700; color:' + oranRenk + ';"><span style="width:6px; height:6px; border-radius:50%; background:' + oranRenk + '; display:inline-block;"></span>%' + oran + '</span>';
         return '<div style="display:flex; align-items:center; gap:7px; padding:8px 9px; border-radius:10px; background:var(--milo-card-raised); border:1px solid var(--milo-line); margin-bottom:5px;">'
             + '<div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:800;">' + miloEsc(k.ad) + oranHTML + '</div></div>'
-            + '<button onclick="miloDersRosterKatilimciSil(\'' + miloJsEsc(k.grup) + '\',\'' + miloJsEsc(k.ad) + '\')" style="background:rgba(236,72,153,0.1); color:var(--milo-coral); border:1px solid rgba(236,72,153,0.3); width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;">✕</button>'
+            + '<button onclick="miloDersRosterKatilimciSil(\'' + miloJsEsc(k.grup) + '\',\'' + miloJsEsc(k.ad) + '\')" style="background:color-mix(in srgb, var(--neon-pink) 10%, transparent); color:var(--milo-coral); border:1px solid color-mix(in srgb, var(--neon-pink) 30%, transparent); width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;">✕</button>'
             + '</div>';
     }).join('') : '<div style="font-size:11.5px; color:var(--milo-ink-dim); text-align:center; padding:8px;">Henüz kimse yok.</div>';
 
@@ -1787,8 +1787,8 @@ function miloAylikYoklamaCizelgesiPdfIndir() {
 // ===== DERS İÇERİKLERİ =====
 function miloDerslerAltAnahtarHTML() {
     return `<div style="display:flex; gap:6px; margin-bottom:10px;">
-        <button onclick="miloDerslerAltGorunum='icerik'; miloDerslerCiz();" style="flex:1; padding:9px; border-radius:8px; border:1px solid ${miloDerslerAltGorunum === 'icerik' ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDerslerAltGorunum === 'icerik' ? 'rgba(236,72,153,0.12)' : 'var(--bg-panel)'}; color:${miloDerslerAltGorunum === 'icerik' ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-weight:800; font-size:12px; cursor:pointer;">📚 Ders İçerikleri</button>
-        <button onclick="miloDerslerAltGorunum='grup'; miloSeciliYasId=null; miloSeciliGrupId=null; miloDerslerCiz();" style="flex:1; padding:9px; border-radius:8px; border:1px solid ${miloDerslerAltGorunum === 'grup' ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDerslerAltGorunum === 'grup' ? 'rgba(236,72,153,0.12)' : 'var(--bg-panel)'}; color:${miloDerslerAltGorunum === 'grup' ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-weight:800; font-size:12px; cursor:pointer;">🗂️ Yaş/Grup Yapısı</button>
+        <button onclick="miloDerslerAltGorunum='icerik'; miloDerslerCiz();" style="flex:1; padding:9px; border-radius:8px; border:1px solid ${miloDerslerAltGorunum === 'icerik' ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDerslerAltGorunum === 'icerik' ? 'color-mix(in srgb, var(--neon-pink) 12%, transparent)' : 'var(--bg-panel)'}; color:${miloDerslerAltGorunum === 'icerik' ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-weight:800; font-size:12px; cursor:pointer;">📚 Ders İçerikleri</button>
+        <button onclick="miloDerslerAltGorunum='grup'; miloSeciliYasId=null; miloSeciliGrupId=null; miloDerslerCiz();" style="flex:1; padding:9px; border-radius:8px; border:1px solid ${miloDerslerAltGorunum === 'grup' ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDerslerAltGorunum === 'grup' ? 'color-mix(in srgb, var(--neon-pink) 12%, transparent)' : 'var(--bg-panel)'}; color:${miloDerslerAltGorunum === 'grup' ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-weight:800; font-size:12px; cursor:pointer;">🗂️ Yaş/Grup Yapısı</button>
     </div>`;
 }
 
@@ -1817,8 +1817,8 @@ function miloDerslerCiz() {
             <button class="milo-btn-full" onclick="miloDersEkle()">➕ Ekle</button>
         </div>
         ${kategoriler.length ? `<div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:6px;">
-            <button onclick="miloDersKategoriFiltre=null; miloDerslerCiz();" style="flex:0 0 auto; padding:6px 12px; border-radius:20px; border:1px solid ${!miloDersKategoriFiltre ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${!miloDersKategoriFiltre ? 'rgba(236,72,153,0.12)' : 'var(--bg-panel)'}; color:${!miloDersKategoriFiltre ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">Tümü</button>
-            ${kategoriler.map(k => `<button onclick="miloDersKategoriFiltre='${miloJsEsc(k)}'; miloDerslerCiz();" style="flex:0 0 auto; padding:6px 12px; border-radius:20px; border:1px solid ${miloDersKategoriFiltre === k ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDersKategoriFiltre === k ? 'rgba(236,72,153,0.12)' : 'var(--bg-panel)'}; color:${miloDersKategoriFiltre === k ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">${miloEsc(k)}</button>`).join('')}
+            <button onclick="miloDersKategoriFiltre=null; miloDerslerCiz();" style="flex:0 0 auto; padding:6px 12px; border-radius:20px; border:1px solid ${!miloDersKategoriFiltre ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${!miloDersKategoriFiltre ? 'color-mix(in srgb, var(--neon-pink) 12%, transparent)' : 'var(--bg-panel)'}; color:${!miloDersKategoriFiltre ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">Tümü</button>
+            ${kategoriler.map(k => `<button onclick="miloDersKategoriFiltre='${miloJsEsc(k)}'; miloDerslerCiz();" style="flex:0 0 auto; padding:6px 12px; border-radius:20px; border:1px solid ${miloDersKategoriFiltre === k ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloDersKategoriFiltre === k ? 'color-mix(in srgb, var(--neon-pink) 12%, transparent)' : 'var(--bg-panel)'}; color:${miloDersKategoriFiltre === k ? 'var(--neon-pink)' : 'var(--text-muted)'}; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">${miloEsc(k)}</button>`).join('')}
         </div>` : ''}
         ${miloDersSeciliIdler.size ? `<div class="milo-card" style="border-color:var(--neon-blue);">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1844,7 +1844,7 @@ function miloDersKartHTML(d) {
             <input type="checkbox" class="milo-ders-sec-chk" ${miloDersSeciliIdler.has(d.id) ? 'checked' : ''} onchange="miloDersSecimToggle('${miloEsc(d.id)}', this.checked)" style="margin-top:3px; width:18px; height:18px; accent-color:var(--neon-blue); flex-shrink:0; cursor:pointer;">
             <div style="min-width:0; flex:1;">
                 <b>${miloEsc(d.baslik)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${seviyeEtiket}</span>
-                ${d.kategori ? `<div style="margin-top:4px;"><span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; background:rgba(236,72,153,0.12); border:1px solid var(--neon-pink); color:var(--neon-pink);">${miloEsc(d.kategori)}</span></div>` : ''}
+                ${d.kategori ? `<div style="margin-top:4px;"><span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; background:color-mix(in srgb, var(--neon-pink) 12%, transparent); border:1px solid var(--neon-pink); color:var(--neon-pink);">${miloEsc(d.kategori)}</span></div>` : ''}
                 ${d.aciklama ? `<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${miloEsc(d.aciklama)}</div>` : ''}
                 ${d.kazanim ? `<div style="font-size:12px; color:var(--neon-green); margin-top:4px;">🎯 Kazanım: ${miloEsc(d.kazanim)}</div>` : ''}
                 <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">📊 ${d.kullanimSayisi || 0} kez işlendi ${d.ortalamaPuan ? `· ⭐ ${Number(d.ortalamaPuan).toFixed(1)} (${d.degerlendirmeSayisi})` : ''}</div>
@@ -2237,7 +2237,7 @@ function miloBeceriKartHTML(u) {
     return `<details class="milo-card" data-ad="${miloEsc(u.ad)}" ${acikMi ? 'open' : ''} ontoggle="miloBeceriAcikAd = this.open ? this.dataset.ad : null;">
         <summary style="cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             <span style="font-weight:700; font-size:13px;">${miloEsc(u.ad)} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(u.grup)}</span></span>
-            <span style="font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; background:rgba(236,72,153,0.12); border:1px solid var(--neon-pink); color:var(--neon-pink);">${seviye}</span>
+            <span style="font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; background:color-mix(in srgb, var(--neon-pink) 12%, transparent); border:1px solid var(--neon-pink); color:var(--neon-pink);">${seviye}</span>
         </summary>
         <div style="margin-top:10px;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
