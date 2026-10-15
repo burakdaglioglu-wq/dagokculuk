@@ -15684,6 +15684,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 _kmOyunYuklenenKonum = _kmAktifKonum;
             }
         }
+        // Sona varınca baştan başlayan (yeni görev) yol temaları — Pist kendi turlarını sayar, frac'sız temalar (futbol/arena/…) hariç
+        const KM_OYUN_YOL_TEMALARI = ['zirve', 'yildiz', 'hazine', 'ninja', 'monopoly', 'dag', 'balon', 'hedef'];
         function kmOyunDurumKaydet() { try { localStorage.setItem(kmOyunAnahtari(), JSON.stringify(_kmOyunDurum)); } catch(e) {} }
         // ---- KARMA DERS HATLARI (2026-10-12, kullanıcı: "aynı derste 15 yaşındaki sporcu Yarışma'dan hedefine göre takip
         // edilsin, 9 yaşındaki Oyunlar'ı oynasın"). Her sporcunun bu dersteki hattı: 'oyun' (varsayılan) ya da 'yarisma'.
@@ -24228,6 +24230,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(takimAktifMi && !cokluAktifMi) kmTakimDurumEmin();
             if(cokluAktifMi) kmOyunCokluDurumEmin();
             let eskiFrac = cokluAktifMi ? (_kmOyunCokluDurum[cokluTakimIndex] || { frac: 0 }).frac : (takimAktifMi ? _kmTakimDurum.frac : s.frac);
+            // YENİ GÖREV (2026-10-15, kullanıcı: "Uzay belirli bir kısımdan sonra ilerlemiyor"). İlerleme cihazda günler boyu
+            // saklanıyor ve yol temaları aynı frac'ı paylaşıyor — bir kez sona varan sporcu (Mars/zirve, frac 1) orada kalıyor,
+            // sonraki seriler hiçbir şeyi oynatmıyordu. Sona varmış biri yeni seri girince yol baştan başlar, görev sayısı artar.
+            let eskiFracGercek = eskiFrac, yeniGorev = false;
+            if(eskiFrac >= 1 && KM_OYUN_YOL_TEMALARI.indexOf(_kmOyunAktifTema) !== -1) { eskiFrac = 0; yeniGorev = true; }
             // Puanla ORANTILI ilerleme — bir ıskalama serisi (0 puan) artık HİÇ ilerletmiyor (önceki
             // 0.05 taban payı gerçek kullanımda "ıskalayınca bile ilerliyor" olarak bildirildi, kaldırıldı).
             // Çoklu Takım'da (2026-09-06, "seviyeyi daha zor yapalım") birden fazla kişi AYNI takım frac'ına
@@ -24383,7 +24390,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunDurumKaydet();
 
             // "yanlışlıkla girilmiş skorları düzeltebilir miyiz" — bir adımlık geri al için son girişi sakla.
-            _kmOyunSonGiris = { grup: s.g, ad: s.ad, seriId: sonuc.seriDoc.id, seriPuan: toplam, eskiFrac: eskiFrac, takim: takimAktifMi, cokluTakim: cokluAktifMi ? cokluTakimIndex : -1,
+            _kmOyunSonGiris = { grup: s.g, ad: s.ad, seriId: sonuc.seriDoc.id, seriPuan: toplam, eskiFrac: eskiFracGercek, takim: takimAktifMi, cokluTakim: cokluAktifMi ? cokluTakimIndex : -1,
                 futbol: (_kmOyunAktifTema === 'futbol') ? { eskiSeri: futbolEskiSeri, eskiGol: futbolEskiGol, eskiStreak: futbolEskiStreak } : null,
                 futboltakim: futbolTakimOncesi,
                 // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
@@ -24394,6 +24401,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
             function bitirOrtak() {
                 s.frac = yeniFrac;
+                if(yeniGorev) {
+                    let gd = cokluAktifMi ? _kmOyunCokluDurum[cokluTakimIndex] : (takimAktifMi ? _kmTakimDurum : kmOyunDurumAl(s.g, s.ad));
+                    if(gd) gd.gorev = (gd.gorev || 1) + 1;
+                    let gorevNo = gd ? gd.gorev : 2, kim = cokluAktifMi ? _kmOyunTakimlar[cokluTakimIndex].ad : (takimAktifMi ? 'Sınıf' : kmOyunIlkAd(s.ad));
+                    setTimeout(function() { try { kmOyunBanner(_kmOyunAktifTema === 'yildiz' ? '🚀 YENİ GÖREV!' : '🔁 YENİ TUR!', kim + ' ' + gorevNo + '. kez yola çıktı', 'cp'); } catch(e) {} }, 900);
+                }
                 if(cokluAktifMi) { _kmOyunCokluDurum[cokluTakimIndex].frac = yeniFrac; kmOyunCokluDurumKaydet(); }
                 else if(takimAktifMi) { _kmTakimDurum.frac = yeniFrac; kmTakimDurumKaydet(); }
                 else if(_kmOyunAktifTema === 'sisharita') {

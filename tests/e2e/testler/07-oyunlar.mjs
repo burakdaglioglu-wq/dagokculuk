@@ -43,6 +43,19 @@ export default async function ({ log }) {
     await p.waitForFunction(() => typeof kmKelimeCiz === 'function', null, { timeout: 20000 });
     await p.waitForTimeout(600);
     dogrula((await p.locator('#km-icerik').innerText()).length > 50, 'Kelime Hedefi çizilmedi');
+    // Yeni görev (2026-10-15, kullanıcı: "Uzay belirli bir kısımdan sonra ilerlemiyor"): sona varmış (frac 1) sporcu yeni seri
+    // girince yol baştan başlar, görev sayısı artar — eskiden sonsuza kadar Mars'ta kalıyordu.
+    const gorev = await p.evaluate(async () => {
+      kmOyunTemaSec('yildiz'); if (typeof kmOyunModSec === 'function') kmOyunModSec(false);
+      let s = _kmOyunRosterCache[0]; if (!s) return { atla: true };
+      let d = kmOyunDurumAl(s.g, s.ad); d.frac = 1; d.gorev = 1; s.frac = 1; kmOyunDurumKaydet();
+      let sp = turnuvaDB[s.g][s.ad]; sp.devamModu = true;
+      kmOyunSporcuSec(0); _kmOyunSeriGirisleri = Array(_kmOyunOkSayisi).fill('8'); _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+      for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200));
+      let m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200)); }
+      return { frac: kmOyunDurumAl(s.g, s.ad).frac, gorev: kmOyunDurumAl(s.g, s.ad).gorev };
+    });
+    if (!gorev.atla) { dogrula(gorev.frac > 0 && gorev.frac < 1, 'Marstaki roket yeni göreve başlamadı: frac ' + gorev.frac); esit(gorev.gorev, 2, 'görev sayısı'); }
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(`${TEMALAR.length} tema × 2 mod açıldı`);
   } finally { await ctx.close(); }
