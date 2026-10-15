@@ -17838,6 +17838,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama — sonucu davul sesiyle, gerilimli açıklar">🎬<span class="km-oyun-btn-etiket"> Dramatik</span></button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir oyun öner">🎲<span class="km-oyun-btn-etiket"> Oyun Öner</span></button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunTorenBaslat()" title="Madalya töreni — bugün sona ilk varanlar (yolsuz oyunlarda en yüksek oyun puanı) podyuma çıkar">🏅<span class="km-oyun-btn-etiket"> Tören</span></button>
                         <button class="km-oyun-tam-btn" onclick="kmDersOzetiAc()" title="Ders Sonu Özeti — kim ne kadar ilerledi, kim rekor kırdı; velilere gönder">🏁<span class="km-oyun-btn-etiket"> Özet</span></button>
                         <button class="km-oyun-tam-btn${_kmOyunSayacAcik ? ' aktif' : ''}" id="km-oyun-sayac-btn" onclick="kmOyunSayacDegistir()" title="Sayaç (Shot Clock) — açıkken her yeni seride otomatik geri sayar, gerçek yarışma temposu verir">⏱️<span class="km-oyun-btn-etiket"> Sayaç</span></button>
                         <button class="km-oyun-tam-btn km-oyun-sayac-buyut-btn${_kmOyunSayacBuyukAcik ? ' aktif' : ''}" onclick="kmOyunSayacBuyukAcKapat()" style="${_kmOyunSayacAcik ? '' : 'display:none;'}" title="Sayacı büyüt — ekranın istediğin yerine sürükleyebilirsin, sporcular uzaktan da görebilir">🔍 Büyüt</button>
@@ -18804,6 +18805,47 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div class="km-oyun-cp-rail-bar"><div class="km-oyun-cp-rail-dolum" style="width:${(Math.min(1, frac) * 100).toFixed(2)}%; background:${t.renk};"></div>${tikler}</div>
                 </div>`;
             }).join('');
+        }
+        // ---- 🏅 OYUN MADALYA TÖRENİ (2026-10-15, kullanıcı: "oyunlarda bittiğinde madalya töreni düzenleyelim").
+        // Yol temalarında sona ilk varanın zamanı (d.varis) kaydedilir; bugün ilk 3 (kişi azsa hepsi) bitirince tören önerilir.
+        // Üst çubuktaki 🏅 Tören ile her an başlatılabilir. Sıralama: bugün bitirenler varış sırasıyla, sonra yolda en ileride
+        // olanlar (yolsuz oyunlarda oyun puanı). Görsel/ses Yarışma'nın töreni (yzOzelToren, dagsk-km-yarisma-pro.js).
+        var _kmOyunTorenTeklif = {};
+        function kmOyunTorenHedefYazi(t) { return t === 'yildiz' ? "Mars'a indi" : t === 'zirve' || t === 'dag' ? 'zirveye çıktı' : t === 'hazine' ? 'hazineyi buldu' : t === 'balon' ? 'bitişe uçtu' : 'bitirdi'; }
+        function kmOyunTorenSiralama() {
+            let bugun = bugunISO(), yol = KM_OYUN_YOL_TEMALARI.indexOf(_kmOyunAktifTema) !== -1 && !_kmOyunTakimModu;
+            return (_kmOyunRosterCache || []).map(function(s) {
+                let d = kmOyunDurumAl(s.g, s.ad), vb = !!(d.varis && bugunISO(new Date(d.varis)) === bugun);
+                return { s: s, varis: vb ? d.varis : 0, frac: s.frac || 0, puan: s.toplamSkor || 0 };
+            }).sort(function(a, b) {
+                if(yol) { if(!!a.varis !== !!b.varis) return a.varis ? -1 : 1; if(a.varis && b.varis) return a.varis - b.varis; if(b.frac !== a.frac) return b.frac - a.frac; }
+                return b.puan - a.puan;
+            });
+        }
+        function kmOyunTorenTeklifKontrol() {
+            if(_kmOyunTakimModu || KM_OYUN_YOL_TEMALARI.indexOf(_kmOyunAktifTema) === -1) return;
+            let n = (_kmOyunRosterCache || []).length; if(n < 2) return;
+            let sira = kmOyunTorenSiralama(), biten = sira.filter(function(x) { return x.varis; }).length, gerek = Math.min(3, n);
+            let anahtar = _kmOyunAktifTema + '|' + bugunISO();
+            if(biten < gerek || _kmOyunTorenTeklif[anahtar]) return;
+            _kmOyunTorenTeklif[anahtar] = true;
+            onayIste('🏁 <b>' + (gerek === 3 ? 'İlk 3 sporcu' : 'Herkes') + ' ' + kmOyunTorenHedefYazi(_kmOyunAktifTema) + '!</b><br><span style="font-size:13px;opacity:.8">Madalya töreni başlasın mı? Podyum, madalyalar, alkış ve konfeti.</span>', kmOyunTorenBaslat, '🏅 Töreni başlat', 'Sonra');
+        }
+        function kmOyunTorenBaslat() {
+            let sira = kmOyunTorenSiralama();
+            if(!sira.length || !sira.some(function(x) { return x.varis || x.frac > 0 || x.puan > 0; })) { showToast('Tören için önce birkaç seri girilmeli.', 'warning'); return; }
+            let t = _kmOyunAktifTema, tm = (KM_OYUN_TEMALAR[t] || {}), yol = KM_OYUN_YOL_TEMALARI.indexOf(t) !== -1 && !_kmOyunTakimModu;
+            let liste = sira.slice(0, 3).filter(function(x) { return x.varis || x.frac > 0 || x.puan > 0; }).map(function(x, i) {
+                return { k: x.s.g + '|' + x.s.ad, ad: x.s.ad, sira: i + 1, puan: !yol && x.puan > 0 ? x.puan : '', alt: yol ? (x.varis ? (i + 1) + '. olarak ' + kmOyunTorenHedefYazi(t) : '%' + Math.round(x.frac * 100) + ' yolda') : 'oyun puanı' };
+            });
+            let veri = { ust: 'DAĞ S.K. · ' + (tm.ikon ? tm.ikon + ' ' : '') + (tm.ad || 'Oyunlar') + ' · ' + new Date().toLocaleDateString('tr-TR'), baslik: 'MADALYA TÖRENİ', sahne: [{ ad: '', liste: liste }], katilimci: sira.map(function(x) { return x.s.g + '|' + x.s.ad; }) };
+            let ac = function() {
+                let bas = function() { try { yzOzelToren(veri); } catch(e) { showToast('Tören açılamadı.', 'error'); } };
+                // oyun tam ekrandaysa tören (body'de) görünmez — önce çık, tören kendi tam ekranını açar
+                if(document.fullscreenElement) document.exitFullscreen().then(bas, bas); else bas();
+            };
+            if(typeof yzOzelToren === 'function') ac();
+            else dagskEkYukle('dagsk-km-yarisma-pro.js').then(ac).catch(function() { showToast('Tören yüklenemedi.', 'error'); });
         }
         function kmOyunLiderCiz() {
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
@@ -24403,9 +24445,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
             function bitirOrtak() {
                 s.frac = yeniFrac;
+                // 🏅 varış sırası (tören için) — bireysel yol temasında sona ilk varış anı
+                if(!cokluAktifMi && !takimAktifMi && eskiFrac < 1 && yeniFrac >= 1 && KM_OYUN_YOL_TEMALARI.indexOf(_kmOyunAktifTema) !== -1) { kmOyunDurumAl(s.g, s.ad).varis = Date.now(); setTimeout(kmOyunTorenTeklifKontrol, 4200); }
                 if(yeniGorev) {
                     let gd = cokluAktifMi ? _kmOyunCokluDurum[cokluTakimIndex] : (takimAktifMi ? _kmTakimDurum : kmOyunDurumAl(s.g, s.ad));
-                    if(gd) gd.gorev = (gd.gorev || 1) + 1;
+                    if(gd) { gd.gorev = (gd.gorev || 1) + 1; gd.varis = null; }
                     let gorevNo = gd ? gd.gorev : 2, kim = cokluAktifMi ? _kmOyunTakimlar[cokluTakimIndex].ad : (takimAktifMi ? 'Sınıf' : kmOyunIlkAd(s.ad));
                     setTimeout(function() { try { kmOyunBanner(_kmOyunAktifTema === 'yildiz' ? '🚀 YENİ GÖREV!' : '🔁 YENİ TUR!', kim + ' ' + gorevNo + '. kez yola çıktı', 'cp'); } catch(e) {} }, 900);
                 }
