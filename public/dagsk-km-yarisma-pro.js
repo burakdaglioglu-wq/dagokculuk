@@ -1157,7 +1157,7 @@ function yzDevSayacDegis() {
     if (yzDevAyar() && o.sayac && _yz.devGizle === o.sayac.basla) { _yz.devGizle = null; yzDevSayacGuncelle(o); return; }
     let v = !yzDevAyar(); try { localStorage.setItem('dag_yz_dev_sayac', v ? '1' : '0'); } catch (e) {}
     _yz.devGizle = null;
-    showToast(v ? '⛶ Büyük sayaç açık — süre başlayınca ekranı kaplar, bitince küçülür' : 'Büyük sayaç kapalı', 'success');
+    showToast(v ? '⛶ Büyük sayaç açık — süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür' : 'Büyük sayaç kapalı', 'success');
     yzCiz(); yzDevSayacGuncelle(yzOku());
 }
 function yzDevKucult() { let o = yzOku(); _yz.devGizle = o.sayac ? o.sayac.basla : null; yzDevSayacGuncelle(o); }
@@ -1168,6 +1168,7 @@ function yzDevSayacGuncelle(o, s) {
     let goster = !!(sy && d && s && yzDevAyar() && _yz.devGizle !== sy.basla && (document.getElementById('yz-sayac') || document.getElementById('yz-tv-sayac')));
     if (goster && s.faz === 'bitti') goster = Date.now() - (sy.basla + (sy.faz === 'shoot' ? sy.sure : (sy.hazir || 0) + (sy.sure || 0)) * 1000) < 2600;
     else if (goster && ['hazirlik', 'atis', 'son'].indexOf(s.faz) === -1) goster = false;
+    document.documentElement.classList.toggle('yz-dev-acik', goster); // içerik şeridin altına itilir → hiçbir düğme örtülmez
     if (!goster) {
         if (el && !el.classList.contains('kucul')) { el.classList.add('kucul'); setTimeout(function () { let e2 = document.getElementById('yz-dev-sayac'); if (e2 && e2.classList.contains('kucul')) e2.remove(); }, 750); }
         return;
@@ -1296,14 +1297,19 @@ function yzV240CssYukle() {
         'body #yz-tv.yz-tv:not(.kagit) .yz-tv-kapat{background:#e8eef7;color:#0b1220;border-color:#e8eef7}',
         '#yz-tv .yz-tv-k.dev-acik{background:#fbbf24;border-color:#fbbf24;color:#1a1203}',
         // ⛶ büyük sayaç
-        '#yz-dev-sayac{position:fixed;inset:0;z-index:31900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4vh;color:#fff;background:#15803d;font-family:Archivo,Poppins,sans-serif;cursor:pointer;user-select:none;-webkit-user-select:none;transform-origin:calc(100% - 10vw) 8vh;transition:transform .7s cubic-bezier(.6,0,.3,1),opacity .7s,background .35s;animation:yzDevGir .55s cubic-bezier(.2,.8,.2,1)}',
+        // 2026-10-15 (kullanıcı: "Yarışma'da kapat düğmesi ve birkaç işlem çalışmıyor"): sayaç tüm ekranı kaplayıp altındaki düğmeleri
+        // örtüyordu (ilk dokunuş yalnız küçültüyordu). Artık üstte büyük bir şerit: rakamlar yine dev, tablo ve düğmeler altta kullanılır.
+        '#yz-dev-sayac{position:fixed;left:0;right:0;top:0;height:40vh;z-index:31900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4vh;box-shadow:0 10px 40px rgba(0,0,0,.45);border-radius:0 0 22px 22px;color:#fff;background:#15803d;font-family:Archivo,Poppins,sans-serif;cursor:pointer;user-select:none;-webkit-user-select:none;transform-origin:calc(100% - 10vw) 8vh;transition:transform .7s cubic-bezier(.6,0,.3,1),opacity .7s,background .35s;animation:yzDevGir .55s cubic-bezier(.2,.8,.2,1)}',
         '#yz-dev-sayac.hazirlik,#yz-dev-sayac.bitti{background:#c81e1e}#yz-dev-sayac.son{background:#facc15;color:#1a1a1a}',
         '#yz-dev-sayac.kucul{transform:scale(.08);opacity:0;pointer-events:none}',
         '@keyframes yzDevGir{from{transform:scale(.08);opacity:0}}',
-        '.yz-dev-ust{display:flex;gap:2.4vw;align-items:center;font-size:max(18px,2.8vw);font-weight:900;letter-spacing:.14em}.yz-dev-seri{opacity:.7}.yz-dev-seri:empty{display:none}',
-        '.yz-dev-sure{font-size:min(60vh,46vw);font-weight:900;line-height:.82;font-variant-numeric:tabular-nums;letter-spacing:-.03em}',
-        '#yz-dev-sayac.bitti .yz-dev-sure{font-size:min(30vh,22vw)}',
-        '.yz-dev-bar{width:min(80vw,1400px);height:2.2vh;min-height:10px;border-radius:99px;background:rgba(0,0,0,.22);overflow:hidden}.yz-dev-bar i{display:block;height:100%;background:currentColor;border-radius:99px;transition:width .25s linear}',
+        '.yz-dev-ust{display:flex;gap:2.4vw;align-items:center;font-size:max(16px,min(2.4vw,4vh));font-weight:900;letter-spacing:.14em}.yz-dev-seri{opacity:.7}.yz-dev-seri:empty{display:none}',
+        'body.yz-tv-acik #yz-dev-sayac,#yz-tv #yz-dev-sayac{height:50vh}',
+        'html.yz-dev-acik{--yz-dev-h:40vh}html.yz-dev-acik.yz-tv-kok{--yz-dev-h:50vh}',
+        'html.yz-dev-acik #km-icerik{padding-top:calc(var(--yz-dev-h) + 8px)!important;transition:padding-top .4s}html.yz-dev-acik #yz-tv.yz-tv{padding-top:calc(var(--yz-dev-h) + 1.2vh)!important}',
+        '.yz-dev-sure{font-size:min(28vh,30vw);font-weight:900;line-height:.82;font-variant-numeric:tabular-nums;letter-spacing:-.03em}',
+        'body.yz-tv-acik .yz-dev-sure,#yz-tv ~ #yz-dev-sayac .yz-dev-sure{font-size:min(40vh,34vw)}#yz-dev-sayac.bitti .yz-dev-sure{font-size:min(16vh,18vw)}',
+        '.yz-dev-bar{width:min(80vw,1400px);height:1.6vh;min-height:10px;border-radius:99px;background:rgba(0,0,0,.22);overflow:hidden}.yz-dev-bar i{display:block;height:100%;background:currentColor;border-radius:99px;transition:width .25s linear}',
         '.yz-dev-ipucu{font-size:max(12px,1.1vw);font-weight:800;opacity:.6;letter-spacing:.06em}',
         '#yz-dev-sayac.son .yz-dev-sure{animation:yzDevNabiz 1s ease-in-out infinite}@keyframes yzDevNabiz{50%{transform:scale(1.04)}}',
         '@media (prefers-reduced-motion:reduce){#yz-dev-sayac,#yz-dev-sayac .yz-dev-sure{transition:none;animation:none}}'
@@ -2105,12 +2111,12 @@ function yzTvKontrolHTML(o, el) {
     let oyunaGec = (typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '') + (yzYuvaVarMi() ? dugme('🥚', 'yzYuvayaGec()', 'oyun', 'Yumurta Yuvası — tam ekran sürer') : '');
     if (d.asama === 'eleme') {
         let sh = el && el.maclar.some(function (m) { return m.shootGerek && !m.kazanan; });
-        return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca ekranı kaplar, bitince küçülür') + (sh ? dugme('🎯 Shoot-off 40 sn', 'yzShootSayac()') : '') + '</div>';
+        return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür') + (sh ? dugme('🎯 Shoot-off 40 sn', 'yzShootSayac()') : '') + '</div>';
     }
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri).length, son = seri >= f.seri - 1;
     // 2026-10-14 (kullanıcı: "TV ekranında her şeyi yapabileyim"): sporcu ekle/çıkar, önceki seriye dön ve tur menüsü
     // TV'den de; düğmeler büyüdü ve sığmazsa alt satıra geçer (eskiden tek satırda sıkışıyordu).
-    return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca ekranı kaplar, bitince küçülür') + dugme('🎯', 'yzHedeflerAc()', '', 'Kişisel hedef puanları') + dugme('🎥', 'yzVideoAc()', '', 'Gecikmeli ayna / canlı / video')
+    return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür') + dugme('🎯', 'yzHedeflerAc()', '', 'Kişisel hedef puanları') + dugme('🎥', 'yzVideoAc()', '', 'Gecikmeli ayna / canlı / video')
         + dugme('👥 ' + d.katilimci.length, 'yzSporcuSecici(\'tur\')', '', 'Sporcu ekle / çıkar')
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
         + (seri > 0 ? dugme('◀', 'yzOncekiSeri()', '', 'Önceki seriye dön (skorlar silinmez)') : '')
@@ -2344,7 +2350,9 @@ function yzCssYukle() {
         '.yz-tur-ikon{font-size:34px}.yz-tur-ad{font-size:19px;font-weight:900}.yz-tur-acik{font-size:13px;color:var(--text-muted);line-height:1.5}.yz-tur-durum{margin-top:auto;font-size:12px;font-weight:800;color:#22c55e}.yz-tur-durum.sakin{color:var(--text-muted)}',
         '.yz-tur-rozet{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;background:var(--accent-orange);color:#1a0d05;border-radius:999px;padding:3px 9px}',
         '.yz-tur-bas{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:18px;padding:14px 16px}',
-        '@media (max-width:760px){.yz-tur-bas{grid-template-columns:1fr auto}.yz-tur-btn{grid-column:1/-1}}',
+        // 2026-10-15 (kullanıcı: "Yarışma'da kapat düğmesi ve birkaç işlem çalışmıyor"): telefonda bu çubuk ekrandan sağa taşıyordu —
+        // Büyük sayaç, Ayna/Video, Sporcular ve ⋯ (Turu bitir / iptal) ekran dışında kalıyordu. Dar ekranda tek sütun, düğmeler alt satıra iner.
+        '.yz-tur-bas>*{min-width:0}@media (max-width:760px){.yz-tur-bas{grid-template-columns:minmax(0,1fr)}.yz-tur-btn{grid-column:1/-1;justify-content:flex-start!important}.yz-sayac-kap,.yz-sayac-btn{flex-wrap:wrap}}',
         '.yz-seri-no{font-size:15px;font-weight:800;color:var(--text-muted)}.yz-seri-no b{font-size:40px;line-height:1;color:var(--text-main);font-variant-numeric:tabular-nums}.yz-seri-no span{font-size:18px}.yz-yari{font-size:12px;font-weight:700;color:var(--text-muted)}',
         '.yz-sayac-kap{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.yz-sayac-btn{display:flex;gap:6px}',
         '.yz-sayac{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:130px;padding:6px 14px;border-radius:14px;background:#1f2937;color:#e5e7eb;font-variant-numeric:tabular-nums;transition:background .3s}',
