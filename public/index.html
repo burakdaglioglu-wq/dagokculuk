@@ -29,6 +29,7 @@
   "image": "https://dagsporkulubu.com/hero/paylas.jpg",
   "logo": "https://dagsporkulubu.com/tanitim-logo.png",
   "sport": "Okçuluk",
+  "foundingDate": "2018",
   "telephone": "+905469107893",
   "address": {
     "@type": "PostalAddress",
@@ -144,6 +145,7 @@
   .vz-marka{ display:flex; align-items:center; gap:14px; font-size:clamp(14px,1.6vw,22px); letter-spacing:.08em; color:rgba(255,255,255,.62); }
   .vz-marka img{ width:clamp(48px,5vw,72px); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.45)); }
   .vz-yer{ font-size:clamp(12px,1.25vw,17px); letter-spacing:.1em; text-align:left; line-height:1.3; }
+  .vz-yil{ display:inline-block; margin-top:6px; color:var(--accent); font-weight:700; }
   .vz-metin{ position:absolute; z-index:5; left:clamp(16px,4vw,56px); bottom:clamp(86px,13vh,130px); max-width:min(780px,60%); }
   .vz-baslik{ font-family:'Archivo','Poppins',sans-serif; font-weight:900; font-size:clamp(40px,6.2vw,96px); line-height:.94;
     letter-spacing:-.005em; color:#ebe8e3; text-transform:uppercase; margin:0 0 18px; text-shadow:0 4px 30px rgba(0,0,0,.35); }
@@ -709,6 +711,7 @@
   .toplam-ok[hidden]{ display:none; }
   .toplam-ok-on, .toplam-ok-son{ font:500 clamp(13px,1.2vw,15px)/1.5 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); max-width:60ch; }
   .toplam-ok-on{ letter-spacing:.14em; text-transform:uppercase; }
+  .toplam-ok-not{ font:500 clamp(12px,1.05vw,14px)/1.55 'Roboto Mono',ui-monospace,monospace; color:var(--ink-soft); opacity:.75; max-width:60ch; padding-left:12px; border-left:2px solid var(--accent); }
   .toplam-ok-sayi{ font:900 clamp(64px,13vw,190px)/.86 'Archivo',sans-serif; letter-spacing:-.04em; color:var(--ink); font-variant-numeric:tabular-nums; }
 
   /* Kayan ok: sayfa aşağı indikçe sol kenarda ilerler, kapanış bandında vizöre saplanır (yalnız geniş ekran) */
@@ -861,7 +864,7 @@
 
   <div class="vz-ust">
     <div class="vz-marka"><img src="/logo-k.webp" alt="DAĞ Okçuluk logosu"><span>DAĞ OKÇULUK</span></div>
-    <div class="vz-yer">PENDİK ·<br>İSTANBUL</div>
+    <div class="vz-yer">PENDİK ·<br>İSTANBUL<br><span class="vz-yil">2018'DEN BERİ</span></div>
   </div>
 
   <div class="vz-metin">
@@ -1030,9 +1033,10 @@
 <section class="s2 nabiz-bant" id="nabiz-bolum" aria-labelledby="nabiz-baslik">
   <div class="wrap">
     <div class="toplam-ok" id="toplam-ok" hidden>
-      <span class="toplam-ok-on" id="toplam-ok-on">Uygulamaya geçtiğimizden bu yana</span>
+      <span class="toplam-ok-on" id="toplam-ok-on">Uygulamayı kullanmaya başladığımızdan bu yana</span>
       <b class="toplam-ok-sayi" id="toplam-ok-sayi">0</b>
-      <span class="toplam-ok-son">ok kayda geçti. Her biri bir sporcunun gelişim grafiğinde bir nokta.</span>
+      <span class="toplam-ok-son">ok kayda geçti — yalnızca uygulamayla kaydedilen atışlar. Her biri bir sporcunun gelişim grafiğinde bir nokta.</span>
+      <span class="toplam-ok-not">2018'den beri aktif olarak okçuluk eğitimi veriyoruz; uygulamadan önceki yılların atışları bu sayıya dahil değil.</span>
     </div>
     <div class="nabiz-ust">
       <h2 class="nabiz-baslik" id="nabiz-baslik">Kulübün son 30 günü</h2>
@@ -1054,7 +1058,7 @@
     <div>
       <div class="s2-etiket">Vizyonumuz</div>
       <h2 class="vizyon2-alinti" id="vizyon-baslik">“İyi bir okçu, dürüst olandır.”</h2>
-      <p class="s2-giris">DAĞ Spor Kulübü'nde okçuluğu sadece bir spor değil, karakter inşa eden bir yolculuk olarak görüyoruz. Her sporcumuzun kendi hızında, kendi hedefleriyle ilerlediği; disiplinin, sabrın ve dürüstlüğün teknikten önce geldiği bir ortam sunuyoruz. Amacımız sadece iyi okçular değil, iyi insanlar yetiştirmek.</p>
+      <p class="s2-giris">2018'den beri aktif olarak Pendik'te okçuluk eğitimi veriyoruz. DAĞ Spor Kulübü'nde okçuluğu sadece bir spor değil, karakter inşa eden bir yolculuk olarak görüyoruz. Her sporcumuzun kendi hızında, kendi hedefleriyle ilerlediği; disiplinin, sabrın ve dürüstlüğün teknikten önce geldiği bir ortam sunuyoruz. Amacımız sadece iyi okçular değil, iyi insanlar yetiştirmek.</p>
     </div>
   </div>
 </section>
@@ -1563,7 +1567,7 @@
       var toplamKutu = document.getElementById('toplam-ok');
       if(toplamKutu && d.toplamOk > 0){
         var AY = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-        if(d.ilkTarih){ var p = String(d.ilkTarih).split('-'); document.getElementById('toplam-ok-on').textContent = 'İlk kayıt: ' + AY[+p[1] - 1] + ' ' + p[0]; }
+        if(d.ilkTarih){ var p = String(d.ilkTarih).split('-'); document.getElementById('toplam-ok-on').textContent = 'Uygulamayı kullanmaya başladığımızdan bu yana · ilk kayıt ' + AY[+p[1] - 1] + ' ' + p[0]; }
         toplamKutu.hidden = false;
         var tk = { _hedef: d.toplamOk, querySelector: function(){ return document.getElementById('toplam-ok-sayi'); } };
         gorunen.push(tk);
