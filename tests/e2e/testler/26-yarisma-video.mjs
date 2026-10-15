@@ -27,6 +27,20 @@ export default async function ({ log }) {
     });
     await p.locator('button:has-text("Turu başlat")').click(); await p.waitForTimeout(400);
     dogrula(await p.locator('.yz-tur-btn button:has-text("Ayna / Video")').isVisible(), 'tur çubuğunda Ayna / Video yok');
+    // ok sayısı: bu sporcu bu seride 3 ok attı → 3 ok kaydedilir, tabloda "3 ok" rozeti; sonradan 6'ya çevrilebilir
+    await p.evaluate((kk) => yzGirisAc(encodeURIComponent(kk), 0), k); await p.waitForTimeout(300);
+    await p.locator('#yz-giris .yz-oksay button', { hasText: '3 ok' }).click();
+    for (const v of ['10', '9', '8']) await p.locator('#yz-giris .yz-tus', { hasText: new RegExp('^' + v + '$') }).first().click();
+    await p.locator('#yz-giris button:has-text("Kaydet")').click(); await p.waitForTimeout(300);
+    esit(await p.evaluate((kk) => yzSkor(yzOku(), kk)[0].length, k), 3, '3 oklu seri kaydı');
+    esit(await p.evaluate((kk) => yzOku().durum.okK[kk], k), 3, 'sporcunun ok sayısı');
+    dogrula(await p.locator('.yz-okk', { hasText: '3 ok' }).first().isVisible(), 'tabloda 3 ok rozeti yok');
+    await p.evaluate(() => yzGirisKapat());
+    await p.evaluate((kk) => yzGirisAc(encodeURIComponent(kk), 0), k); await p.waitForTimeout(200);
+    dogrula(await p.locator('#yz-giris .yz-oksay button.aktif', { hasText: '3 ok' }).isVisible(), 'düzeltmede 3 ok seçili açılmadı');
+    await p.locator('#yz-giris .yz-oksay button', { hasText: '6 ok' }).click();
+    esit(await p.evaluate((kk) => (yzOku().durum.okK || {})[kk] || 0, k), 0, '6 oka dönünce sporcu varsayılanı silinmedi');
+    await p.evaluate(() => yzGirisKapat());
     // skor girişi → 🎥 Video
     await p.evaluate((kk) => yzGirisAc(encodeURIComponent(kk), 0), k); await p.waitForTimeout(300);
     await p.locator('#yz-giris button:has-text("🎥 Video")').click();
@@ -64,7 +78,7 @@ export default async function ({ log }) {
     dogrula(!(await p.locator('#kv').count()), 'video penceresi kapanmadı');
     await p.evaluate(() => { _fl.iptal = true; });
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
+    log('3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
   } finally {
     if (yedek) await p.evaluate((y) => {
       try { kvKapat(); } catch (e) {}

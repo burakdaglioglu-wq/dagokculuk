@@ -39,6 +39,8 @@ function kmFormLabCiz() {
     // ön yükleme: araç açılınca modeller arka planda hazırlansın; "Uygulamada çek" beklemeden açılır
     if (!_fl.pose && !_fl.yukleniyor && !_fl.onYukHata) setTimeout(() => { if (_kmAktifSekme === 'formlab' && !_fl.pose && !_fl.yukleniyor) flModelYukle().then(flHazirlikYaz, () => { _fl.onYukHata = true; flHazirlikYaz(); }); flHazirlikYaz(); }, 300);
     flKayitliTelefonBekle(); if (typeof indexedDB !== 'undefined') flKlasorYukle();
+    // Yarışma › Video penceresi telefondaki iskelet analizini kapatmış olabilir — Form Lab'da yeniden aç
+    try { if (_fl.tel && _fl.tel.kanal && _fl.tel.kanal.readyState === 'open') _fl.tel.kanal.send(JSON.stringify({ analiz: 'ac' })); } catch (e) {}
     let L = flRoster();
     if (_fl.secili && !L.some(k => k.g + '|' + k.ad === _fl.secili)) _fl.secili = null;
     let sporcular = L.length ? L.map(k => {

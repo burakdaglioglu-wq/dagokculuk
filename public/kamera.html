@@ -178,11 +178,14 @@
   // Telefonda analiz (2026-10-08): iskelet bu telefonun TAM KALİTELİ görüntüsünden çıkarılır, bilgisayara yalnız noktalar
   // gider (kamera-analiz.js). İnternet zayıflayıp yayın bulanıklaşsa da analiz bozulmaz. Model ilk açılışta iner, sonra saklanır.
   function aiYaz() {
-    var d = window.KA && KA.durum, el = $('ai');
-    el.textContent = d === 'calisiyor' ? 'Analiz telefonda ✓' : d === 'yukleniyor' ? 'Yapay zekâ iniyor…' : d === 'hata' ? 'Analiz bilgisayarda' : d === 'yavas' ? 'Telefon yavaş · analiz bilgisayarda' : '';
+    var d = analizKapali ? 'kapali' : window.KA && KA.durum, el = $('ai');
+    el.textContent = d === 'kapali' ? 'Yalnız görüntü' : d === 'calisiyor' ? 'Analiz telefonda ✓' : d === 'yukleniyor' ? 'Yapay zekâ iniyor…' : d === 'hata' ? 'Analiz bilgisayarda' : d === 'yavas' ? 'Telefon yavaş · analiz bilgisayarda' : '';
     el.style.color = d === 'calisiyor' ? '#86efac' : '';
   }
+  // Yarışma › Video penceresi yalnız görüntü ister (2026-10-15): telefon iskelet analizi yapmasın, işlemci görüntüye kalsın → akıcı.
+  var analizKapali = false;
   function analizBaslat() {
+    if (analizKapali) return;
     if (!window.KA) return setTimeout(analizBaslat, 300);
     KA.bildir = aiYaz; aiYaz();
     KA.gonder = function (paket) { if (iskelet && iskelet.readyState === 'open' && iskelet.bufferedAmount < 64000) { try { iskelet.send(JSON.stringify(paket)); } catch (e) {} } };
@@ -212,7 +215,7 @@
     pc = new RTCPeerConnection({ iceServers: ICE });
     akis.getTracks().forEach(function (t) { pc.addTrack(t, akis); });
     kanal = pc.createDataChannel('komut');
-    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; if (m.kayit === 'bas') kayitBasla(m.id); if (m.kayit === 'bitir') kayitBitir(m.id); if (m.kayit === 'iptal') kayitIptal(); } catch (er) {} };
+    kanal.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.cevir) cevir(); if (m.takip && window.KA) KA.takip = m.takip; if (m.kayit === 'bas') kayitBasla(m.id); if (m.kayit === 'bitir') kayitBitir(m.id); if (m.kayit === 'iptal') kayitIptal(); if (m.analiz === 'kapat') { analizKapali = true; if (window.KA) { KA.durdur(); KA.durum = 'kapali'; } aiYaz(); } if (m.analiz === 'ac' && analizKapali) { analizKapali = false; analizBaslat(); } } catch (er) {} };
     dosyaKanal = pc.createDataChannel('dosya'); dosyaKanal.binaryType = 'arraybuffer'; dosyaKanal.bufferedAmountLowThreshold = 1024 * 1024;
     iskelet = pc.createDataChannel('iskelet', { ordered: false, maxRetransmits: 0 });
     pc.onconnectionstatechange = function () {
@@ -243,10 +246,31 @@
     try {
       var s = pc.getSenders().find(function (x) { return x.track && x.track.kind === 'video'; }); if (!s) return;
       var p = s.getParameters(); if (!p.encodings || !p.encodings.length) p.encodings = [{}];
-      p.encodings[0].maxBitrate = 8000000; p.encodings[0].maxFramerate = 30; p.encodings[0].scaleResolutionDownBy = 1;
+      p.encodings[0].maxBitrate = 8000000; p.encodings[0].maxFramerate = 30; p.encodings[0].scaleResolutionDownBy = olcek;
       p.degradationPreference = 'maintain-resolution';
       await s.setParameters(p);
     } catch (e) {}
+    akiciIzle();
+  }
+  // Akıcılık (2026-10-15, kullanıcı: "görüntü en az 720, en çok 1080 olsun; donarak hareket etmesin"). Çözünürlük korunurken bağlantı
+  // yetmezse WebRTC kare atlıyordu (donma). Her 2 sn gönderim ölçülür: 1080'de saniyede 22 karenin altına düşerse 720'ye iner (asla
+  // altına değil); 720'de 10 sn boyunca 28+ kare ve bol bant varsa 1080'e geri çıkar.
+  var olcek = 1, akiciZaman = null, akiciIyi = 0, akiciKotu = 0;
+  function akiciIzle() {
+    clearInterval(akiciZaman); var akiciBas = Date.now();
+    akiciZaman = setInterval(async function () {
+      if (!pc || pc.connectionState !== 'connected' || Date.now() - akiciBas < 6000) return; // bağlantı ilk saniyelerde ısınır
+      try {
+        var st = await pc.getStats(), out = null, bant = 0;
+        st.forEach(function (x) { if (x.type === 'outbound-rtp' && (x.kind === 'video' || x.mediaType === 'video')) out = x; if (x.type === 'candidate-pair' && x.nominated && x.availableOutgoingBitrate) bant = x.availableOutgoingBitrate; });
+        if (!out) return;
+        var fps = out.framesPerSecond || 0, tr = akis.getVideoTracks()[0], ayar = tr ? tr.getSettings() : {}, kisa = Math.min(ayar.width || 0, ayar.height || 0) || 1080;
+        var enAz = Math.max(1, kisa / 720); // bu ölçek 720p verir; kamera zaten 720 ise 1
+        if (olcek === 1 && enAz > 1 && fps > 0 && fps < 22) { akiciKotu++; akiciIyi = 0; if (akiciKotu >= 2) { olcek = enAz; akiciKotu = 0; await kaliteAyarla(); bildir('Görüntü akıcı kalsın diye 720p'); } }
+        else if (olcek > 1 && fps >= 28 && bant > 6000000) { akiciIyi++; if (akiciIyi >= 5) { olcek = 1; akiciIyi = 0; await kaliteAyarla(); bildir('Bağlantı iyi — 1080p'); } }
+        else { akiciKotu = fps < 22 ? akiciKotu : 0; if (fps < 28) akiciIyi = 0; }
+      } catch (e) {}
+    }, 2000);
   }
   // Tam kaliteli kayıt (2026-10-08): bilgisayar 'kayıt başladı' deyince telefon KENDİ kamerasından kaydeder, kayıt bitince
   // dosyayı 'dosya' veri kanalından parça parça (64 KB) bilgisayara aktarır; bilgisayar zayıf yayın kopyası yerine bunu oynatır.

@@ -272,7 +272,7 @@ function yzTabloHTML(o, sira, sec) {
     let govde = sira.map(function (r, idx) {
         let hr = '', ayrac = sec.gelisim && idx === 3 ? '<tr class="yz-ayrac"><td colspan="40">📈 EN ÇOK GELİŞENLER · kendi ortalamasına göre (ilk 3 gerçek puana göre)</td></tr>' : '';
         if (sec.hareket) { let p = onceki[r.k]; hr = '<td class="hr">' + (p && p > r.sira ? '<span class="yuk">▲' + (p - r.sira) + '</span>' : p && p < r.sira ? '<span class="dus">▼' + (r.sira - p) + '</span>' : '') + '</td>'; }
-        let tr = ayrac + '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '" data-k="' + esc(r.k) + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + '</td>';
+        let tr = ayrac + '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '" data-k="' + esc(r.k) + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + (d.okK && d.okK[r.k] ? ' <span class="yz-okk" title="Bu sporcu seri başına ' + d.okK[r.k] + ' ok atıyor">' + d.okK[r.k] + ' ok</span>' : '') + '</td>';
         for (let i = 0; i < f.seri; i++) {
             let v = r.seriT[i], cls = 's' + (i === aktif ? ' aktif' : '') + (v == null ? ' bos' : ''), ic = v == null ? '·' : '<span class="yz-sv ' + yzSeriBant(v, f.ok) + '">' + v + '</span>';
             tr += sec.duzenle && (v != null || i <= aktif) ? '<td class="' + cls + ' tik" onclick="event.stopPropagation(); yzGirisAc(\'' + yzEnc(r.k) + '\',' + i + ')">' + ic + '</td>' : '<td class="' + cls + '">' + ic + '</td>';
@@ -391,7 +391,7 @@ function yzGirisAc(kEnc, seri) {
     let k = decodeURIComponent(kEnc), o = yzOku(), d = o.durum; if (!d) return;
     let mevcut = yzSkor(o, k)[seri];
     let mk = ((o[yzPKey(d.id, k)] || [])[seri]) || null;
-    _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], konumlar: mevcut ? (mk && mk.length === mevcut.length ? mk.slice() : mevcut.map(function () { return null; })) : [], duzeltme: !!mevcut };
+    _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], okSay: mevcut ? mevcut.length : 0, konumlar: mevcut ? (mk && mk.length === mevcut.length ? mk.slice() : mevcut.map(function () { return null; })) : [], duzeltme: !!mevcut };
     yzGirisCiz();
 }
 // ---- 2026-10-14 (kullanıcı: "TV'de bir sporcunun serisini girmedim ama diğer seriye geçmek istiyorum, yapamıyorum"). Kaydedince
@@ -456,6 +456,7 @@ function yzGirisCiz() {
     kap.innerHTML = '<div class="yz-giris" role="dialog" aria-modal="true" aria-label="Skor girişi">'
         + '<div class="yz-giris-bas"><div><span class="yz-sp-hedef">' + esc(g.tip ? (g.taraf === 'a' ? 'A' : 'B') : ((d.hedefler || {})[g.k] || '')) + '</span> <b>' + esc(yzKAd(g.k)) + '</b><div class="yz-alt">' + altSatir + '</div></div><div style="display:flex;gap:6px">' + (g.k ? '<button class="yz-btn" onclick="yzVideoAc(\'' + encodeURIComponent(g.k) + '\')" title="Kendini görsün: gecikmeli ayna, canlı ya da video">🎥 Video</button>' : '') + '<button class="yz-btn" onclick="yzGirisKapat()" aria-label="Kapat">✕</button></div></div>'
         + '<div class="yz-giris-mod"><button class="' + (yzGirisHedefMi() ? 'aktif' : '') + '" onclick="yzGirisModSec(\'hedef\')">🎯 Hedefe dokun</button><button class="' + (yzGirisHedefMi() ? '' : 'aktif') + '" onclick="yzGirisModSec(\'tus\')">🔢 Tuşlar</button></div>'
+        + (!g.tip && yzFormat(d).ok === 6 ? '<div class="yz-giris-mod yz-oksay"><span>Bu seride kaç ok?</span>' + [3, 6].map(function (n) { return '<button class="' + (okSay === n ? 'aktif' : '') + '" onclick="yzOkSayiSec(' + n + ')">' + n + ' ok</button>'; }).join('') + '</div>' : '')
         + '<div class="yz-oklar">' + slotlar + '</div>'
         + '<div class="yz-giris-top">' + topSatir + '</div>'
         + (yzGirisHedefMi() ? yzHedefGirisHTML(g, d, okSay) : '<div class="yz-tuslar">' + tus + '</div>')
@@ -488,7 +489,18 @@ function yzGirisTus(e) {
     else if (t === 'Enter') { e.preventDefault(); yzGirisKaydet(); }
     else if (t === 'Escape') { e.preventDefault(); e.stopPropagation(); yzGirisKapat(); }
 }
-function yzGirisOkSay(g, d) { return g.tip === 'shoot' ? 1 : g.tip === 'set' ? 3 : yzFormat(d).ok; }
+function yzGirisOkSay(g, d) { return g.tip === 'shoot' ? 1 : g.tip === 'set' ? 3 : g.okSay || yzOkSayiK(d, g.k); }
+// Sporcu başına ok sayısı (2026-10-15, kullanıcı: "bu sporcu 3 mü atmış 6 ok mu, sonradan değiştirebileyim"). Tur 6 oklu olsa da
+// bir çocuk 3 ok atabilir: d.okK[k] o sporcunun varsayılanı; girişte 3/6 seçilir. Kayıtlı bir seri düzeltilirken kendi ok
+// sayısıyla açılır (g.okSay). Toplam az oklu sporcuda düşük kalır — tabloda adının yanında "3 ok" yazar, ok ortalaması doğrudur.
+function yzOkSayiK(d, k) { return (d && d.okK && d.okK[k]) || yzFormat(d).ok; }
+function yzOkSayiSec(n) {
+    let g = _yz.giris; if (!g || g.tip) return; let d0 = yzOku().durum; if (!d0) return;
+    let f = yzFormat(d0); g.okSay = n;
+    if (g.oklar.length > n) { g.oklar = g.oklar.slice(0, n); if (g.konumlar) g.konumlar = g.konumlar.slice(0, n); }
+    yzGuncelle(function (x) { if (!x.durum) return; x.durum.okK = Object.assign({}, x.durum.okK); if (n === f.ok) delete x.durum.okK[g.k]; else x.durum.okK[g.k] = n; });
+    yzGirisCiz(); yzCiz(); if (_yz.tv) yzTvCiz();
+}
 function yzOkEkle(p, konum) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(p); g.konumlar.push(konum || null); yzGirisCiz(); }
 function yzOkSil() { let g = _yz.giris; if (!g || !g.oklar.length) return; g.oklar.pop(); if (g.konumlar && g.konumlar.length > g.oklar.length) g.konumlar.length = g.oklar.length; yzGirisCiz(); }
 function yzGirisKapat() { _yz.giris = null; yzGirisCiz(); }
@@ -497,7 +509,7 @@ function yzGirisKaydet() {
     let o = yzOku(), d = o.durum;
     if (!d || d.id !== g.id) { yzGirisKapat(); return showToast('Tur değişmiş — giriş kaydedilmedi.', 'error'); }
     if (g.tip === 'set' || g.tip === 'shoot') return yzMacGirisKaydet(g, d);
-    let f = yzFormat(d); if (g.oklar.length < f.ok) return;
+    let f = yzFormat(d); if (g.oklar.length < yzGirisOkSay(g, d)) return;
     // Oklar büyükten küçüğe (WA) — hedefte işaretlenen konumlar okla BİRLİKTE sıralanır ki eşleşme bozulmasın
     let ciftler = g.oklar.map(function (p, i) { return { p: p, k: (g.konumlar || [])[i] || null }; }).sort(function (a, b) { return YZ_SIRA[b.p] - YZ_SIRA[a.p]; });
     let sirali = ciftler.map(function (c) { return c.p; }), konumlar = ciftler.map(function (c) { return c.k; }), konumVar = konumlar.some(function (c) { return c; });
@@ -1772,6 +1784,7 @@ function yzEkCssYukle() {
     let st = document.createElement('style'); st.id = 'yz-ek-css';
     st.textContent = [
         // TV'den yönetim: giriş/onay pencereleri TV'nin ÜSTÜNDE açılsın
+        '.yz-oksay{align-items:center}.yz-oksay span{font-size:12.5px;font-weight:700;opacity:.75;padding:0 6px;white-space:nowrap}.yz-okk{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:.72em;font-weight:800;background:rgba(253,142,1,.18);color:#FDB25A;vertical-align:middle}',
         '.yz-giris-arka{z-index:32000!important}body.yz-tv-acik #onay-modal{z-index:32500!important}',
         '.yz-tv-saat{display:flex;flex-direction:column;gap:.8vh;align-items:stretch}',
         '.yz-tv-kontrol{display:flex;gap:.5vw;flex-wrap:wrap;justify-content:center;max-width:26vw}',
