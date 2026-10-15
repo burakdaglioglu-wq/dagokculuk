@@ -1,3 +1,27 @@
+// Milo'da DAĞ'ın onayIste() penceresi yoktu (2026-10-16): "↪ Başka gün" tarih sorusu, çizelgeden kaydetmeden çıkış uyarısı
+// bunu çağırıyor. Aynı adlar/kimlikler (onay-modal, onay-evet-btn) — DAĞ ile ortak kod değişmeden çalışır; açıkken arka plan
+// yenilemesi durur (.modal-overlay görünür).
+if (typeof onayIste !== 'function') {
+    window._onayCb = null;
+    window.onayKapat = function () { window._onayCb = null; let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none'; };
+    window.onayOnayla = function () { let cb = window._onayCb; window.onayKapat(); if (typeof cb === 'function') { try { cb(); } catch (e) {} } };
+    window.onayIste = function (mesaj, cb, evet, hayir) {
+        let m = document.getElementById('onay-modal');
+        if (!m) {
+            m = document.createElement('div'); m.id = 'onay-modal'; m.className = 'modal-overlay';
+            m.style.cssText = 'position:fixed;inset:0;z-index:30000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55)';
+            m.innerHTML = '<div class="modal-content" style="max-width:380px;width:100%;padding:18px;border-radius:18px;background:var(--milo-card,#171513);color:var(--milo-ink,#F5F2EE);border:1px solid var(--milo-line,#2A2622)"><div id="onay-mesaj" style="font-size:15px;line-height:1.5;margin-bottom:16px"></div><div style="display:flex;gap:10px"><button id="onay-hayir-btn" onclick="onayKapat()" style="flex:1;min-height:44px;border-radius:12px;border:1px solid var(--milo-line,#2A2622);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer">Vazgeç</button><button id="onay-evet-btn" onclick="onayOnayla()" style="flex:1;min-height:44px;border-radius:12px;border:0;background:var(--milo-teal,#138A80);color:#fff;font:inherit;font-weight:800;cursor:pointer">Evet</button></div></div>';
+            m.addEventListener('click', function (e) { if (e.target === m) window.onayKapat(); });
+            document.body.appendChild(m);
+        }
+        window._onayCb = cb;
+        document.getElementById('onay-mesaj').innerHTML = mesaj;
+        document.getElementById('onay-evet-btn').textContent = evet || 'Evet';
+        document.getElementById('onay-hayir-btn').textContent = hayir || 'Vazgeç';
+        m.style.display = 'flex';
+    };
+}
+
 /* ================================================================================================
    📊 MILO ARAÇLARI (2026-09-29) — Dağ'daki Yoklama analizi / eğitmen yoklaması / çift kayıt / misafir takibi /
    veli rapor linkinin Milo karşılıkları. Milo sunucu-öncelikli çalışır (yerel senkron yok): her ekran veriyi
@@ -25,9 +49,11 @@ function maSlotGunler(s) { return (s.gunler && s.gunler.length ? s.gunler : [s.g
 function maIptal(s, iso) { return (s.istisnalar || []).some(i => i.tarih === iso); }
 function maUye(g, ad) { return MA.uyeler.find(u => u.grup === g && u.ad === ad); }
 function maAktifler() { return MA.uyeler.filter(u => !u.pasif); }
-function maSlotUyeler(s) { return (s.katilimcilar || []).map(k => maUye(k.grup, k.ad)).filter(u => u && !u.pasif); }
+// iso verilirse: ilk ders tarihinden (katilmaTarihi) önceki günde öğrenci o derste sayılmaz (2026-10-16, kullanıcı: "Arya bu ay başladı, Eylül'de kayıt bekliyor")
+function maSlotUyeler(s, iso) { return (s.katilimcilar || []).map(k => maUye(k.grup, k.ad)).filter(u => u && !u.pasif && !(iso && u.katilmaTarihi && iso < u.katilmaTarihi)); }
 function maTur(u) { let t = MA.tur[u.grup + '|' + u.ad]; return t && t.tur === 'misafir' ? 'misafir' : 'sporcu'; }
-function maDurum(u, iso) { let r = (MA.att[iso] || {})[u.ad]; if (!r) return null; if (r.grup && r.grup !== u.grup && MA.uyeler.some(x => x.grup === r.grup && x.ad === u.ad)) return null; return r.geldi ? 'g' : 'y'; }
+// 'k' = o gün gelmedi ama BAŞKA GÜN geldi (2026-10-16, kullanıcı: "bazen ders günü saatinde gelmeyip diğer grubun dersine gelebiliyor")
+function maDurum(u, iso) { let r = (MA.att[iso] || {})[u.ad]; if (!r) return null; if (r.grup && r.grup !== u.grup && MA.uyeler.some(x => x.grup === r.grup && x.ad === u.ad)) return null; if (r.geldi) return 'g'; let e = (MA.durum || {})[iso + '|' + u.ad]; return e && !e.sil && e.d === 'baska' ? 'k' : 'y'; }
 function maSonGelis(u) { let t = Object.keys(MA.att).filter(i => maDurum(u, i) === 'g').sort(); return t[t.length - 1] || null; }
 async function maMeta(key) { try { let r = await miloApi('/meta/' + key); return r && r.value ? JSON.parse(r.value) : {}; } catch (e) { return {}; } }
 // meta: kayıt başına son yazan kazanır (t); PUT öncesi sunucudakiyle birleştir
@@ -39,7 +65,8 @@ async function maMetaYaz(key, yerel) {
 }
 async function maYukle(zorla) {
     if (MA.yuklendi && !zorla) return;
-    let [u, a, p, per, tur, eg] = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), miloApi('/antrenman-programi'), miloApi('/personnel'), maMeta('kisi_turleri'), maMeta('egitmen_ders_yoklama')]);
+    let [u, a, p, per, tur, eg, dr] = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), miloApi('/antrenman-programi'), miloApi('/personnel'), maMeta('kisi_turleri'), maMeta('egitmen_ders_yoklama'), maMeta('yoklama_durum')]);
+    MA.durum = dr || {};
     MA.uyeler = u.members || []; MA.slotlar = p.slots || []; MA.personel = per.personnel || []; MA.tur = tur; MA.egDers = eg;
     MA.att = {}; (a.attendance || []).forEach(r => { (MA.att[r.tarih] = MA.att[r.tarih] || {})[r.ad] = { geldi: r.geldi !== 0 && r.geldi !== false, saat: r.saat, grup: r.grup }; });
     try { miloUyeler = MA.uyeler; } catch (e) {}
@@ -66,6 +93,7 @@ function maSadeCss() {
         '.ma .ma-kisi{background:#FAFBFB;border:1px solid #EEF2F0}.ma .ma-kisi.g{box-shadow:inset 3px 0 0 #138A80;background:#F2FAF8}.ma .ma-kisi.y{box-shadow:inset 3px 0 0 #B4372F;background:#FFF7F6}',
         '.ma .ma-av{background:#E3F4F1;color:#0F6F67}',
         '.ma .ma-sec button,.ma .ma-btn{border:1px solid #D7DFDC;border-radius:10px;font-weight:700}.ma .ma-sec button.g.aktif{background:#E3F4F1;border-color:#138A80;color:#0F6F67}.ma .ma-sec button.y.aktif{background:#FDEBEA;border-color:#B4372F;color:#B4372F}',
+        '.ma .ma-sec button.k.aktif{background:#E3F4F1;border-color:#138A80;color:#0F6F67;border-style:dashed}.ma .ma-kisi.k{box-shadow:inset 3px 0 0 #138A80;background:#F2FAF8}',
         '.ma .ma-btn.ana{background:#138A80;border-color:#138A80;color:#fff}.ma .ma-eg{background:#FAFBFB;border:1px solid #EEF2F0}.ma .ma-eg button.on{background:#EEE8FB;border-color:#6D4BB8;color:#6D4BB8}',
         '.ma .ma-satir{background:#fff;border-bottom:1px solid #EEF2F0;border-radius:0}.ma .ma-cip{background:#F3F6F5;border:0}',
         '.ma .ma-sayi{background:#fff;border:1px solid #E4E9E7}.ma .ma-sayi b{font-weight:800;letter-spacing:-.02em}',
@@ -114,6 +142,8 @@ function maCss() {
 .ma-sec button, .ma-btn { min-height:36px; padding:0 11px; border-radius:10px; border:1.5px solid var(--milo-line); background:var(--milo-card); color:var(--milo-ink); font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; font-family:inherit; }
 .ma-sec button.g.aktif { background:var(--milo-teal); border-color:var(--milo-teal); color:#fff; }
 .ma-sec button.y.aktif { background:var(--milo-coral); border-color:var(--milo-coral); color:#fff; }
+.ma-sec button.k.aktif { background:var(--milo-teal); border-color:var(--milo-teal); color:#fff; } .ma-kisi.k { box-shadow: inset 3px 0 0 var(--milo-teal); } .ma-sec { flex-wrap: wrap; }
+@media (max-width:640px) { .ma-kisi .ma-sec { grid-column: 1 / -1; justify-content: flex-start; } .ma-sec button { flex: 1; } }
 .ma-btn.ana { background:var(--milo-teal); border-color:var(--milo-teal); color:#fff; } .ma-btn.coral { background:var(--milo-coral); border-color:var(--milo-coral); color:#fff; }
 .ma-eg { display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding:8px 10px; border-radius:12px; background:var(--milo-card-raised); }
 .ma-eg span { font-size:11.5px; font-weight:800; color:var(--milo-ink-dim); }
@@ -167,7 +197,7 @@ function maCiz() {
     alan.innerHTML = `<div class="ma">
         <div class="ma-ust"><div><div class="ma-baslik">📋 Yoklama</div><div class="ma-alt">Hangi derste kim var, kim geldi, kim gelmedi.</div></div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap"><div class="ma-seg">${seg(MA.mod, 'hafta', "MA.mod='hafta'; maCiz()")}Hafta</button>${seg(MA.mod, 'ay', "MA.mod='ay'; maCiz()")}Ay</button></div>
-            <button class="ma-btn ana" onclick="maPdf()" title="Seçili dönemin ayrıntılı yoklama raporu">📄 PDF</button><div class="ma-nav"><button onclick="maKaydir(-1)" aria-label="Önceki">‹</button><span>${D.yazi}<small>${D.alt}</small></span><button onclick="maKaydir(1)" aria-label="Sonraki" ${(D.ay ? MA.ay : MA.hafta) >= 0 ? 'disabled' : ''}>›</button></div></div></div>
+            <button class="ma-btn" onclick="miloCizelgeAc()" title="Geçmiş yoklamayı kâğıttaki gibi çizelgeden gir">🗓 Geçmiş gir</button><button class="ma-btn ana" onclick="maPdf()" title="Seçili dönemin ayrıntılı yoklama raporu">📄 PDF</button><div class="ma-nav"><button onclick="maKaydir(-1)" aria-label="Önceki">‹</button><span>${D.yazi}<small>${D.alt}</small></span><button onclick="maKaydir(1)" aria-label="Sonraki" ${(D.ay ? MA.ay : MA.hafta) >= 0 ? 'disabled' : ''}>›</button></div></div></div>
         <div class="ma-seg">${seg(MA.alt, 'ders', "MA.alt='ders'; maCiz()")}📅 Dersler</button>${seg(MA.alt, 'sporcu', "MA.alt='sporcu'; maCiz()")}👥 Sporcular</button>${seg(MA.alt, 'sayilar', "MA.alt='sayilar'; maCiz()")}📊 Sayılar</button></div>
         ${govde}</div>`;
 }
@@ -187,10 +217,10 @@ function maDerslerHTML() {
     let dersler = MA.slotlar.filter(s => maSlotGunler(s).includes(gd)).sort((a, b) => maDk(a.baslangicSaat) - maDk(b.baslangicSaat));
     let kayitliTum = [], gelmeyen = [];
     let kartlar = dersler.map(s => {
-        let uy = maSlotUyeler(s); kayitliTum.push(...uy);
+        let uy = maSlotUyeler(s, iso); kayitliTum.push(...uy);
         let iptal = maIptal(s, iso), simdi = iso === bugun && dk >= maDk(s.baslangicSaat) && dk < maDk(s.bitisSaat), alinir = !iptal && iso <= bugun;
         let gel = uy.filter(u => maDurum(u, iso) === 'g').length, yok = uy.filter(u => maDurum(u, iso) === 'y').length;
-        if (alinir && !(iso === bugun && dk < maDk(s.baslangicSaat))) uy.forEach(u => { if (maDurum(u, iso) !== 'g' && !gelmeyen.some(x => x.u === u)) gelmeyen.push({ u, s }); });
+        if (alinir && !(iso === bugun && dk < maDk(s.baslangicSaat))) uy.forEach(u => { let d = maDurum(u, iso); if (d !== 'g' && d !== 'k' && !gelmeyen.some(x => x.u === u)) gelmeyen.push({ u, s }); });
         let isaretsiz = uy.filter(u => !maDurum(u, iso));
         return `<div class="ma-kart${simdi ? ' simdi' : ''}">
             <div class="ma-dbas"><div class="ma-saat">${s.baslangicSaat}<small>${s.bitisSaat}</small></div><div class="ma-dad">${miloEsc(s.grup || 'Ders')}${simdi ? ' · <span style="color:var(--milo-teal)">ŞU AN</span>' : ''}${s.dersPlani ? `<div class="ma-alt">📝 ${miloEsc(s.dersPlani)}</div>` : ''}</div>
@@ -208,8 +238,8 @@ function maDerslerHTML() {
 }
 function maKisiHTML(u, iso, alinir) {
     let st = maDurum(u, iso), r = (MA.att[iso] || {})[u.ad], k = maKey(u.grup, u.ad), mis = maTur(u) === 'misafir';
-    return `<div class="ma-kisi ${st || ''}"><span class="ma-av">${miloEsc(maIlk(u.ad))}</span><span style="min-width:0"><b>${miloEsc(u.ad)}</b><small>${miloEsc(u.grup)}${mis ? ' · 🎟️ Misafir' : ''}${st === 'g' && r && r.saat ? ' · ' + miloEsc(r.saat) : ''}</small></span>
-        ${alinir ? `<span class="ma-sec"><button class="g${st === 'g' ? ' aktif' : ''}" onclick="maYoklama('${k}', '${iso}', true)">✅ Geldi</button><button class="y${st === 'y' ? ' aktif' : ''}" onclick="maYoklama('${k}', '${iso}', false)">❌ Gelmedi</button></span>` : ''}</div>`;
+    return `<div class="ma-kisi ${st || ''}"><span class="ma-av">${miloEsc(maIlk(u.ad))}</span><span style="min-width:0"><b>${miloEsc(u.ad)}</b><small>${miloEsc(u.grup)}${mis ? ' · 🎟️ Misafir' : ''}${st === 'g' && r && r.saat ? ' · ' + miloEsc(r.saat) : ''}${st === 'k' ? ' · ↪ ' + maBaskaGunYazi(u, iso) : ''}</small></span>
+        ${alinir ? `<span class="ma-sec"><button class="g${st === 'g' ? ' aktif' : ''}" onclick="maYoklama('${k}', '${iso}', true)">✅ Geldi</button><button class="y${st === 'y' ? ' aktif' : ''}" onclick="maYoklama('${k}', '${iso}', false)">❌ Gelmedi</button><button class="k${st === 'k' ? ' aktif' : ''}" onclick="maBaskaGun('${k}', '${iso}')" title="Bu derse gelmedi ama başka gün (ör. diğer grubun dersine) geldi">↪ Başka gün</button></span>` : ''}</div>`;
 }
 async function maYoklama(key, iso, geldi) {
     let k = maCoz(key), u = maUye(k.g, k.ad); if (!u) return;
@@ -221,9 +251,32 @@ async function maYoklama(key, iso, geldi) {
         maCiz();
     } catch (e) { showToast('Kaydedilemedi — bağlantıyı kontrol et.', 'error'); }
 }
+function maBaskaGunYazi(u, iso) { let e = (MA.durum || {})[iso + '|' + u.ad]; if (!e || !e.ref) return 'başka gün geldi'; let d = new Date(e.ref + 'T12:00:00'); return d.getDate() + ' ' + ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][d.getMonth()] + '\'de geldi'; }
+// ↪ Başka gün: o gün "gelmedi" + işaret (devamsızlık sayılmaz, telafi hakkı doğurmaz), seçilen gün "geldi" (Defter'de normal ders sayılır)
+function maBaskaGun(key, iso) {
+    let k = maCoz(key), u = maUye(k.g, k.ad); if (!u) return;
+    let bugun = maBugun(), dun = maIso(new Date(Date.now() - 864e5)), vars = iso < bugun ? bugun : dun;
+    onayIste('<div style="text-align:left"><b>↪ ' + miloEsc(u.ad) + ' başka gün geldi</b><div style="font-size:13px;opacity:.8;margin:6px 0 10px">' + maTarih(iso) + ' dersine gelmedi ama başka bir gün (ör. diğer grubun dersine) geldi. Hangi gün geldi?</div>'
+        + '<input type="date" id="ma-bg-tarih" class="milo-input" max="' + bugun + '" value="' + vars + '" style="width:100%"><div style="font-size:12px;opacity:.7;margin-top:8px">O gün "geldi" olarak kaydedilir; bu ders devamsızlık sayılmaz, telafi hakkı doğurmaz.</div></div>',
+        function () { let t = (document.getElementById('ma-bg-tarih') || {}).value; if (!t || t === iso) return showToast('Farklı bir gün seç.', 'warning'); maBaskaGunKaydet(u, iso, t); }, '↪ Kaydet', 'Vazgeç');
+}
+async function maBaskaGunKaydet(u, iso, t) {
+    if (t > maBugun()) return showToast('İleri bir tarih seçilemez.', 'error');
+    let saatT = t === maBugun() ? new Date().toTimeString().slice(0, 5) : '12:00', saatI = ((MA.att[iso] || {})[u.ad] || {}).saat || '12:00';
+    try {
+        await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: iso, ad: u.ad, grup: u.grup, saat: saatI, elle: true, geldi: false }) });
+        await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: t, ad: u.ad, grup: u.grup, saat: saatT, elle: true, geldi: true }) });
+        let kayit = {}; kayit[iso + '|' + u.ad] = { d: 'baska', ref: t, t: Date.now() };
+        MA.durum = await maMetaYaz('yoklama_durum', kayit);
+        (MA.att[iso] = MA.att[iso] || {})[u.ad] = { geldi: false, saat: saatI, grup: u.grup };
+        (MA.att[t] = MA.att[t] || {})[u.ad] = { geldi: true, saat: saatT, grup: u.grup };
+        try { if (typeof MD !== 'undefined') MD.yuklendi = false; } catch (e) {}
+        maCiz(); showToast('↪ ' + u.ad + ': ' + maTarih(t) + ' günü geldi olarak kaydedildi', 'success');
+    } catch (e) { showToast('Kaydedilemedi — bağlantıyı kontrol et.', 'error'); }
+}
 async function maKalanlarGeldi(slotId, iso) {
     let s = MA.slotlar.find(x => x.id === slotId); if (!s) return;
-    let liste = maSlotUyeler(s).filter(u => !maDurum(u, iso));
+    let liste = maSlotUyeler(s, iso).filter(u => !maDurum(u, iso));
     for (let u of liste) await maYoklama(maKey(u.grup, u.ad), iso, true);
     showToast(`${liste.length} üye geldi işaretlendi ✅`, 'success');
 }

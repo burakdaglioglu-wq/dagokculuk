@@ -66,7 +66,8 @@ miloDersRosterCiz = function () {
             `<div class="mdp-gunler">${MDP_SIRA.map(g => `<button type="button" class="${gun.includes(g) ? 'on' : ''}" onclick="mdpGunDegis(${g})">${MDP_GUN[g]}</button>`).join('')}</div>`)
         + mdpSatir('saat', 'Saat', s.baslangicSaat + ' – ' + s.bitisSaat,
             `<div class="mdp-saat"><input type="time" value="${s.baslangicSaat}" onchange="mdpSaatDegis(this.value, null)" aria-label="Başlangıç"><span>–</span><input type="time" value="${s.bitisSaat}" onchange="mdpSaatDegis(null, this.value)" aria-label="Bitiş"></div>
-             <div class="mdp-cipler">${[30, 40, 45, 50, 60, 90].map(d => `<button type="button" class="${sure === d ? 'on' : ''}" onclick="mdpSaatDegis(null, '${mdpSaat(mdpDk(s.baslangicSaat) + d)}')">${d} dk</button>`).join('')}</div>`)
+             <div class="mdp-cipler">${[30, 40, 45, 50, 60, 90].map(d => `<button type="button" class="${sure === d ? 'on' : ''}" onclick="mdpSaatDegis(null, '${mdpSaat(mdpDk(s.baslangicSaat) + d)}')">${d} dk</button>`).join('')}</div>`
+             + (gun.length > 1 ? `<div class="mdp-gunsaat"><div class="mdp-gunsaat-not">Bir gün başka saatte mi? O günün saatini değiştir — o gün ayrı derse ayrılır (öğrenciler, kapasite, plan aynen kopyalanır).</div>${MDP_SIRA.filter(g => gun.includes(g)).map(g => `<label><span>${MDP_GUN[g]}</span><input type="time" value="${s.baslangicSaat}" onchange="mdpGunAyir(${g}, this.value)"></label>`).join('')}</div>` : ''))
         + mdpSatir('kap', 'Kapasite', s.kapasite ? s.kapasite + ' kişi' : 'Sınırsız',
             `<div class="mdp-cipler">${[4, 6, 8, 10, 12, 15, 0].map(n => `<button type="button" class="${(s.kapasite || 0) === n ? 'on' : ''}" onclick="mdpKapasite(${n})">${n || 'Sınırsız'}</button>`).join('')}</div>`)
         + mdpSatir('yas', 'Yaş aralığı', yasYazi ? miloEsc(yasYazi) : '<em>yok</em>',
@@ -136,6 +137,27 @@ function mdpSaatDegis(bas, bit) {
     if (mdpDk(bit) <= mdpDk(bas)) return showToast('Bitiş başlangıçtan sonra olmalı.', 'warning');
     mdpPut({ baslangicSaat: bas, bitisSaat: bit }, bas + ' – ' + bit);
 }
+// Çok günlü derste bir günü başka saate ayır (2026-10-16): yeni ders = aynı ad/süre/kapasite/plan/yaş + aynı öğrenciler, o gün eski dersten çıkar
+async function mdpGunAyir(g, bas) {
+    let s = _miloDrmSlot(); if (!s || !bas || bas === s.baslangicSaat) return;
+    let gun = mdpGunler(s); if (!gun.includes(g) || gun.length < 2) return;
+    if (mdpGunAyir.calisiyor) return; mdpGunAyir.calisiyor = true; // çift dokunuş / çift change olayı iki kopya açmasın
+    try { await mdpGunAyirIc(s, g, bas, gun); } finally { mdpGunAyir.calisiyor = false; }
+}
+async function mdpGunAyirIc(s, g, bas, gun) {
+    let sure = mdpDk(s.bitisSaat) - mdpDk(s.baslangicSaat), bit = mdpSaat(mdpDk(bas) + (sure > 0 ? sure : 45));
+    try {
+        let r = await miloApi('/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup: s.grup, gunler: [g], baslangicSaat: bas, bitisSaat: bit, kapasite: s.kapasite || null }) });
+        let id = r && r.id; if (!id) throw new Error('id yok');
+        if (s.dersPlani) await miloApi('/antrenman-programi/' + id, { method: 'PUT', body: JSON.stringify({ dersPlani: s.dersPlani }) });
+        try { let y = typeof mdsSlotYas === 'function' ? mdsSlotYas(s.id) : null; if (y) await mdsYasMetaYaz(id, y.minAy, y.maxAy); } catch (e) {}
+        for (let k of (s.katilimcilar || [])) await miloApi('/antrenman-programi/' + id + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: k.grup, ad: k.ad }) });
+        await miloApi('/antrenman-programi/' + s.id, { method: 'PUT', body: JSON.stringify({ gunler: gun.filter(x => x !== g) }) });
+        miloProgram = (await miloApi('/antrenman-programi')).slots;
+    } catch (e) { showToast('Ayrılamadı — bağlantını kontrol et.', 'error'); return; }
+    miloDersRosterCiz(); try { miloProgramIzgaraCiz(); } catch (e) {} try { miloProgramCiz(); } catch (e) {}
+    showToast('✓ ' + MDP_GUN[g] + ' ' + bas + '–' + bit + ' ayrı ders oldu', 'success');
+}
 function mdpKapasite(n) { mdpPut({ kapasite: n || null }, n ? 'Kapasite ' + n : 'Kapasite sınırsız'); }
 function mdpPlanKaydet() { let e = document.getElementById('mdp-plan'); if (!e) return; _mdp.acik = null; mdpPut({ dersPlani: e.value.trim() || null }, 'Plan kaydedildi'); }
 function mdpAdKaydet(v) {
@@ -180,6 +202,7 @@ function mdpCikar(g, a) { if (confirm(a + ' bu dersten çıkarılsın mı?')) mi
 .mdp-kirmizi{color:var(--milo-kirmizi,#FF6369)}
 .mdp-duz{padding:4px 16px 16px;border-top:0!important;display:flex;flex-direction:column;gap:10px}
 .mdp-gunler{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.mdp-gunsaat{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}.mdp-gunsaat-not{flex-basis:100%;font-size:12px;color:var(--milo-ink-dim)}.mdp-gunsaat label{display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--milo-line);border-radius:12px;font-weight:800;font-size:13px}.mdp-gunsaat input{border:0;background:transparent;color:var(--milo-ink);font:inherit;font-weight:700}
 .mdp-gunler button,.mdp-cipler button{border:0;font:inherit;cursor:pointer;font-weight:700;color:var(--milo-ink-dim);background:var(--milo-card-solid,var(--milo-opak,var(--milo-card)));transition:background .15s,color .15s}
 .mdp-gunler button{height:40px;border-radius:12px;font-size:13px}
 .mdp-gunler button.on{background:var(--milo-ink);color:var(--milo-bg)}

@@ -14,7 +14,7 @@
    pakete yazılır (8 ders + telafi = 9). Paket 8'i doldurduysa ve hak kullanılmadıysa uyarı.
    ================================================================================================ */
 const MD = { yuklendi: false, uyeler: [], att: {}, durum: {}, odeme: {}, slotlar: [], dues: [], secili: null, ay: null, ara: '', ekran: 'liste', secim: null, aktarim: null };
-const MD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '🔁', cls: 't' } };
+const MD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '🔁', cls: 't' }, k: { ad: 'Başka gün geldi', ikon: '↪', cls: 'k' } };
 const MD_AY = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 function mdIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function mdTR(iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
@@ -42,7 +42,7 @@ function mdGun(u, iso) {
     if (a.grup && a.grup !== u.grup && MD.uyeler.some(function (x) { return x.grup === a.grup && x.ad === u.ad; })) return null;
     let e = MD.durum[iso + '|' + u.ad], d = e && !e.sil ? e.d : null;
     if (a.geldi) return d === 'telafi' ? 't' : 'g';
-    return d === 'hasta' ? 'h' : 'y';
+    return d === 'hasta' ? 'h' : d === 'baska' ? 'k' : 'y'; // k: o gün gelmedi, başka gün geldi (2026-10-16)
 }
 function mdKayitlar(u) {
     return Object.keys(MD.att).filter(function (iso) { return mdGun(u, iso); }).sort().map(function (iso) { return { iso: iso, s: mdGun(u, iso) }; });
@@ -55,6 +55,7 @@ function mdPaketler(u) {
             if (!hedef) { yeni(); hedef = cur; }
             hedef.telafiler.push(r); return;
         }
+        if (r.s === 'k') return; // ↪ başka güne kaydı: paketten ders yemez, telafi hakkı doğurmaz (geldiği gün ders sayılır)
         if (!cur || cur.dersler.length >= 8) yeni();
         cur.dersler.push(r); if (r.s === 'y' || r.s === 'h') cur.hak++;
     });
@@ -67,7 +68,7 @@ function mdPaketler(u) {
     return pk;
 }
 function mdOzet(u) {
-    let k = mdKayitlar(u), say = { g: 0, y: 0, h: 0, t: 0 }; k.forEach(function (r) { say[r.s]++; });
+    let k = mdKayitlar(u), say = { g: 0, y: 0, h: 0, t: 0, k: 0 }; k.forEach(function (r) { say[r.s]++; });
     let pk = mdPaketler(u), hak = pk.reduce(function (a, p) { return a + p.kalanHak; }, 0), son = pk[pk.length - 1] || null;
     let odemeler = pk.filter(function (p) { return p.odeme && p.odeme.odendi; }).map(function (p) { return { no: p.no, tarih: p.odeme.odemeTarihi, tutar: p.odeme.tutar, not: p.odeme.not }; });
     let uyarilar = [];
@@ -89,9 +90,9 @@ async function mdGunYaz(u, iso, s) {
     if (s === null) await miloApi('/attendance/auto', { method: 'DELETE', body: JSON.stringify({ tarih: iso, ad: u.ad }) });
     else await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: iso, ad: u.ad, grup: u.grup, saat: '12:00', elle: true, geldi: s === 'g' || s === 't' }) });
     if (s === null) delete (MD.att[iso] || {})[u.ad]; else (MD.att[iso] = MD.att[iso] || {})[u.ad] = { geldi: s === 'g' || s === 't', grup: u.grup, saat: '12:00' };
-    let ek = s === 'h' ? 'hasta' : s === 't' ? 'telafi' : null, mevcut = MD.durum[anahtar];
+    let ek = s === 'h' ? 'hasta' : s === 't' ? 'telafi' : s === 'k' ? 'baska' : null, mevcut = MD.durum[anahtar];
     if (ek || (mevcut && !mevcut.sil && mevcut.d)) {
-        let kayit = {}; kayit[anahtar] = ek ? { d: ek, t: Date.now() } : { d: null, sil: true, t: Date.now() };
+        let kayit = {}; kayit[anahtar] = ek ? Object.assign({ d: ek, t: Date.now() }, s === 'k' && mdGunYaz.ref ? { ref: mdGunYaz.ref } : {}) : { d: null, sil: true, t: Date.now() };
         MD.durum[anahtar] = kayit[anahtar]; MD.durum = await mdMetaYaz('yoklama_durum', kayit);
     }
     return eski;
@@ -103,13 +104,14 @@ async function mdDefterAc(grup, ad) {
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
     if (!MD.yuklendi) { alan.innerHTML = '<div class="md-yuk">Yükleniyor…</div>'; try { await mdYukle(); } catch (e) { alan.innerHTML = '<div class="md-yuk">Yüklenemedi — bağlantını kontrol et.</div>'; return; } }
     if (grup && ad) { MD.secili = grup + '|' + ad; MD.ay = null; }
-    MD.ekran = 'liste'; mdCiz();
+    MD.ekran = MD.acilacak || 'liste'; MD.acilacak = null; mdCiz(); // acilacak: Yoklama'dan 'cizelge' ile gelinebilir
 }
 function mdUye(k) { return MD.uyeler.find(function (u) { return mdKey(u) === k; }); }
 function mdCiz(korunsun) {
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
     let y = korunsun ? (alan.scrollTop || 0) : 0, wy = korunsun ? window.scrollY : 0;
     if (MD.ekran === 'aktarim') alan.innerHTML = mdAktarimHTML();
+    else if (MD.ekran === 'cizelge') alan.innerHTML = mdCizelgeHTML();
     else alan.innerHTML = '<div class="md">' + mdListeHTML() + '<div class="md-detay" id="md-detay">' + (MD.secili && mdUye(MD.secili) ? mdDetayHTML(mdUye(MD.secili)) : '<div class="md-bos">👈 Bir öğrenci seç — takvim, paketler, telafi ve ödemeler burada.</div>') + '</div></div>';
     if (korunsun) { alan.scrollTop = y; window.scrollTo(0, wy); }
 }
@@ -126,7 +128,7 @@ function mdListeHTML() {
     let q = (MD.ara || '').toLocaleLowerCase('tr'), l = MD.uyeler.filter(function (u) { return !u.pasif && (!q || u.ad.toLocaleLowerCase('tr').indexOf(q) !== -1); }).sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
     let aktarim = '';
     try { if (!MD.kagitBitti && !localStorage.getItem('milo_kagit_aktarim_2026_10')) aktarim = '<button class="md-btn ana genis" onclick="mdAktarimAc()">📋 Kâğıt çizelgeyi aktar (okundu, onay bekliyor)</button>'; } catch (e) {}
-    return '<div class="md-liste"><div class="md-baslik">📒 Öğrenci Defteri</div>' + aktarim
+    return '<div class="md-liste"><div class="md-baslik">📒 Öğrenci Defteri</div>' + aktarim + '<button class="md-btn genis" onclick="mdCizelgeAc()">🗓 Geçmiş yoklama gir (çizelge)</button>'
         + '<input class="md-ara" placeholder="🔍 Öğrenci ara…" value="' + miloEsc(MD.ara) + '" oninput="MD.ara=this.value; mdListeYenile()">'
         + '<div class="md-satirlar" id="md-satirlar">' + mdSatirlarHTML(l) + '</div></div>';
 }
@@ -171,8 +173,8 @@ function mdTakvimHTML(u) {
     let h = '<div class="md-takvim">' + ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(function (g) { return '<div class="md-gb">' + g + '</div>'; }).join('');
     for (let i = 0; i < bos; i++) h += '<div></div>';
     for (let d = 1; d <= gunSay; d++) {
-        let iso = a + '-' + String(d).padStart(2, '0'), s = mdGun(u, iso), wd = new Date(iso + 'T12:00:00').getDay(), ders = !!dg[wd], gelecek = iso > bugun;
-        h += '<button class="md-gun' + (s ? ' ' + MD_DURUM[s].cls : '') + (ders ? ' ders' : '') + (iso === bugun ? ' bugun' : '') + (MD.secim === iso ? ' acik' : '') + '"' + (gelecek ? ' disabled' : '') + ' onclick="mdGunSec(\'' + iso + '\')" aria-label="' + d + ' ' + MD_AY[ilk.getMonth()] + (s ? ' ' + MD_DURUM[s].ad : '') + '"><span>' + d + '</span>' + (s ? '<i>' + MD_DURUM[s].ikon + '</i>' : '') + '</button>';
+        let iso = a + '-' + String(d).padStart(2, '0'), s = mdGun(u, iso), wd = new Date(iso + 'T12:00:00').getDay(), once = !!(u.katilmaTarihi && iso < u.katilmaTarihi), ders = !!dg[wd] && !once, gelecek = iso > bugun;
+        h += '<button class="md-gun' + (s ? ' ' + MD_DURUM[s].cls : '') + (ders ? ' ders' : '') + (iso === bugun ? ' bugun' : '') + (once && !s ? ' once' : '') + (MD.secim === iso ? ' acik' : '') + '"' + (gelecek ? ' disabled' : '') + ' onclick="mdGunSec(\'' + iso + '\')" aria-label="' + d + ' ' + MD_AY[ilk.getMonth()] + (s ? ' ' + MD_DURUM[s].ad : '') + '"><span>' + d + '</span>' + (s ? '<i>' + MD_DURUM[s].ikon + '</i>' : '') + '</button>';
     }
     h += '</div>';
     if (MD.secim && MD.secim.slice(0, 7) === a) {
@@ -184,11 +186,22 @@ function mdTakvimHTML(u) {
 function mdGunSec(iso) { MD.secim = MD.secim === iso ? null : iso; mdDetayYenile(); }
 async function mdDurumSec(s) {
     let u = mdUye(MD.secili), iso = MD.secim; if (!u || !iso) return;
+    if (s === 'k') return mdBaskaGunSor(u, iso);
     try { await mdGunYaz(u, iso, s); } catch (e) { showToast('Kaydedilemedi — bağlantını kontrol et.', 'error'); return; }
     MD.secim = null; mdDetayYenile();
     let o = mdOzet(u), w = o.uyarilar.find(function (x) { return x.tur === 'telafi'; });
     showToast(s ? mdTR(iso) + ': ' + MD_DURUM[s].ad : mdTR(iso) + ' boşaltıldı', 'success');
     if (w && (s === 'y' || s === 'h' || s === 'g')) setTimeout(function () { showToast('🔁 ' + w.metin, 'warning'); }, 900);
+}
+function mdBaskaGunSor(u, iso) {
+    let bugun = mdIso(new Date()), vars = iso < bugun ? bugun : mdIso(new Date(Date.now() - 864e5));
+    onayIste('<div style="text-align:left"><b>↪ ' + miloEsc(u.ad) + ' başka gün geldi</b><div style="font-size:13px;opacity:.8;margin:6px 0 10px">' + mdTR(iso) + ' dersine gelmedi ama başka bir gün geldi. Hangi gün?</div><input type="date" id="md-bg-tarih" class="milo-input" max="' + bugun + '" value="' + vars + '" style="width:100%"></div>',
+        async function () {
+            let t = (document.getElementById('md-bg-tarih') || {}).value; if (!t || t === iso || t > bugun) return showToast('Geçerli, farklı bir gün seç.', 'warning');
+            try { mdGunYaz.ref = t; await mdGunYaz(u, iso, 'k'); mdGunYaz.ref = null; if (mdGun(u, t) !== 'g' && mdGun(u, t) !== 't') await mdGunYaz(u, t, 'g'); }
+            catch (e) { mdGunYaz.ref = null; return showToast('Kaydedilemedi — bağlantını kontrol et.', 'error'); }
+            MD.secim = null; mdDetayYenile(); showToast('↪ ' + mdTR(t) + ' geldi olarak kaydedildi', 'success');
+        }, '↪ Kaydet', 'Vazgeç');
 }
 function mdPaketHTML(u, p) {
     let o = p.odeme || {}, k = mdEnc(mdKey(u) + '|' + p.no);
@@ -470,6 +483,137 @@ async function mdAktarimKaydet() {
 
 // ---------------- stil: "A · Sade" (2026-10-15, kullanıcı 3 tema arasından seçti): beyaz kâğıt, tek vurgu (petrol yeşili),
 // bol boşluk, kutu/çerçeve en aza; sayılar büyük, açıklamalar küçük. Uygulamanın koyu kabuğu içinde açık bir sayfa olarak durur.
+// ---------------- 🗓 GEÇMİŞ YOKLAMA ÇİZELGESİ (2026-10-16, kullanıcı: "yoklama geçmişini nasıl gireceğiz, bunu da kolaylaştır").
+// Kâğıttaki çizelgenin aynısı: grup + ay seçilir; satırlar öğrenciler, sütunlar o ayın ders günleri (programdan; elle gün de
+// eklenir). Hücreye dokun: boş → ✓ geldi → ✗ gelmedi → H hasta → T telafi → boş. Gün başlığı: o günün boşlarını "geldi" yapar.
+// Değişiklikler ekranda birikir (turuncu çerçeve), "Kaydet" tek seferde yazar (mdGunYaz — Defter'le aynı kurallar).
+// Bekleyen değişiklik varken arka plan yenilemesi ekrana dokunmaz (milo/app.js miloMesgulMu).
+const MD_CZ_SIRA = [null, 'g', 'y', 'h', 't', 'k'];
+function mdCzGruplar() { let g = {}; MD.uyeler.forEach(function (u) { if (!u.pasif) g[u.grup] = (g[u.grup] || 0) + 1; }); return Object.keys(g).sort(function (a, b) { return a.localeCompare(b, 'tr', { numeric: true }); }); }
+function mdCzDurum() {
+    if (!MD.cz) { let gr = mdCzGruplar(); MD.cz = { grup: gr[0] || '', ay: 0, bekleyen: {}, ekGun: {} }; }
+    return MD.cz;
+}
+async function mdCizelgeAc(grup) {
+    mdCss();
+    if (!MD.yuklendi) { let alan = document.getElementById('milo-icerik'); if (alan) alan.innerHTML = '<div class="md-yuk">Yükleniyor…</div>'; try { await mdYukle(); } catch (e) { if (alan) alan.innerHTML = '<div class="md-yuk">Yüklenemedi — bağlantını kontrol et.</div>'; return; } }
+    let cz = mdCzDurum(); if (grup) cz.grup = grup;
+    MD.ekran = 'cizelge'; mdCiz();
+}
+function mdCizelgeKapat() {
+    let n = Object.keys(mdCzDurum().bekleyen).length;
+    let kapat = function () { MD.cz.bekleyen = {}; MD.ekran = 'liste'; mdCiz(); };
+    if (n) return onayIste(n + ' değişiklik kaydedilmedi. Kaydetmeden çıkılsın mı?', kapat, 'Kaydetmeden çık', 'Kal');
+    kapat();
+}
+function mdCzAyBas(o) { let d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(1); d.setMonth(d.getMonth() + o); return d; }
+function mdCzUyeler() { let cz = mdCzDurum(), son = mdIso(new Date(mdCzAyBas(cz.ay).getFullYear(), mdCzAyBas(cz.ay).getMonth() + 1, 0, 12)); /* o ay kaydı varsa (tarih yanlış girilmiş olsa bile) gizleme */ let ayOn = son.slice(0, 7), kayitVar = function (u) { return Object.keys(MD.att).some(function (iso) { return iso.slice(0, 7) === ayOn && MD.att[iso][u.ad]; }); };
+    return MD.uyeler.filter(function (u) { return !u.pasif && u.grup === cz.grup && !(u.katilmaTarihi && u.katilmaTarihi > son && !cz.ilkAcik && !kayitVar(u)); }).sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); }); }
+// sütunlar: grubun ders günleri (programdaki slotlardan) + o ay kaydı olan günler + elle eklenen günler; bugünden sonrası yok
+function mdCzGunler() {
+    let cz = mdCzDurum(), bas = mdCzAyBas(cz.ay), ay = bas.getMonth(), bugun = mdIso(new Date()), uyeler = mdCzUyeler(), adlar = {};
+    uyeler.forEach(function (u) { adlar[u.ad] = 1; });
+    let haftaGun = {};
+    MD.slotlar.forEach(function (s) {
+        let ilgili = (s.katilimcilar || []).some(function (k) { return k.grup === cz.grup; }) || s.grup === cz.grup;
+        if (ilgili) (s.gunler && s.gunler.length ? s.gunler : [s.gun]).forEach(function (x) { haftaGun[+x] = 1; });
+    });
+    let set = {};
+    for (let d = new Date(bas); d.getMonth() === ay; d.setDate(d.getDate() + 1)) { let iso = mdIso(d); if (iso > bugun) break; if (haftaGun[d.getDay()]) set[iso] = 1; }
+    Object.keys(MD.att).forEach(function (iso) { if (iso.slice(0, 7) === mdIso(bas).slice(0, 7) && Object.keys(MD.att[iso]).some(function (ad) { return adlar[ad]; })) set[iso] = 1; });
+    Object.keys(cz.ekGun).forEach(function (iso) { if (iso.slice(0, 7) === mdIso(bas).slice(0, 7)) set[iso] = 1; });
+    return Object.keys(set).sort();
+}
+function mdCzHucre(u, iso) { let cz = mdCzDurum(), k = iso + '|' + mdKey(u); return k in cz.bekleyen ? cz.bekleyen[k] : mdGun(u, iso); }
+function mdCzDokun(kEnc, iso) {
+    let cz = mdCzDurum(), k = iso + '|' + decodeURIComponent(kEnc), u = mdUye(decodeURIComponent(kEnc)); if (!u) return;
+    let simdi = mdCzHucre(u, iso), yeni = MD_CZ_SIRA[(MD_CZ_SIRA.indexOf(simdi) + 1) % MD_CZ_SIRA.length];
+    if (yeni === mdGun(u, iso)) delete cz.bekleyen[k]; else cz.bekleyen[k] = yeni;
+    mdCzYenile();
+}
+function mdCzHepsiGeldi(iso) {
+    let cz = mdCzDurum(), n = 0;
+    mdCzUyeler().forEach(function (u) { if (mdCzHucre(u, iso) === null && !(u.katilmaTarihi && iso < u.katilmaTarihi)) { cz.bekleyen[iso + '|' + mdKey(u)] = 'g'; n++; } });
+    if (!n) showToast('Bu günde boş kalan yok.', 'info');
+    mdCzYenile();
+}
+function mdCzGunEkle(iso) { if (!iso) return; let cz = mdCzDurum(); cz.ekGun[iso] = 1; let d = new Date(iso + 'T12:00:00'), b = new Date(); cz.ay = (d.getFullYear() - b.getFullYear()) * 12 + d.getMonth() - b.getMonth(); mdCzYenile(); }
+function mdCzAy(o) { let cz = mdCzDurum(); cz.ay = Math.min(0, cz.ay + o); mdCzYenile(); }
+function mdCzGrup(g) { let cz = mdCzDurum(); if (Object.keys(cz.bekleyen).length) return showToast('Önce kaydet ya da değişiklikleri geri al.', 'warning'); cz.grup = decodeURIComponent(g); mdCzYenile(); }
+function mdCzGeriAl() { mdCzDurum().bekleyen = {}; mdCzYenile(); }
+function mdCzYenile() {
+    let alan = document.getElementById('milo-icerik'), y = alan ? alan.scrollTop : 0, wy = window.scrollY;
+    let kap = document.getElementById('md-cz'); if (!kap) return mdCiz(true);
+    let sx = (kap.querySelector('.md-cz-tablo-kap') || {}).scrollLeft || 0;
+    kap.outerHTML = mdCizelgeHTML();
+    let t = document.querySelector('#md-cz .md-cz-tablo-kap'); if (t) t.scrollLeft = sx;
+    if (alan) alan.scrollTop = y; window.scrollTo(0, wy);
+}
+function mdCizelgeHTML() {
+    let cz = mdCzDurum(), gruplar = mdCzGruplar(), uyeler = mdCzUyeler(), gunler = mdCzGunler(), bas = mdCzAyBas(cz.ay), n = Object.keys(cz.bekleyen).length;
+    let ayAd = MD_AY[bas.getMonth()] + ' ' + bas.getFullYear(), gAd = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    let isaret = { g: '✓', y: '✗', h: 'H', t: 'T', k: '↪' };
+    let bas2 = '<th class="ad">Öğrenci</th>' + gunler.map(function (iso) { let d = new Date(iso + 'T12:00:00'); return '<th><button class="md-cz-gun" onclick="mdCzHepsiGeldi(\'' + iso + '\')" title="Bu günün boşlarını geldi yap"><b>' + d.getDate() + '</b><small>' + gAd[d.getDay()] + '</small></button></th>'; }).join('') + '<th class="top">Geldi</th>';
+    let satir = uyeler.map(function (u) {
+        let k = mdKey(u), gel = 0;
+        let h = gunler.map(function (iso) {
+            let s = mdCzHucre(u, iso), deg = (iso + '|' + k) in cz.bekleyen; if (s === 'g' || s === 't') gel++;
+            if (!s && u.katilmaTarihi && iso < u.katilmaTarihi) return '<td><span class="md-cz-h once" title="' + miloEsc(u.ad) + ' ' + mdTR(u.katilmaTarihi) + ' tarihinde başladı">–</span></td>';
+            return '<td><button class="md-cz-h ' + (s || 'bos') + (deg ? ' deg' : '') + '" onclick="mdCzDokun(\'' + mdEnc(k) + '\',\'' + iso + '\')" aria-label="' + miloEsc(u.ad) + ' ' + mdTR(iso) + ': ' + (s ? MD_DURUM[s].ad : 'boş') + '">' + (s ? isaret[s] : '') + '</button></td>';
+        }).join('');
+        let bsl = u.katilmaTarihi && u.katilmaTarihi.slice(0, 7) === mdIso(bas).slice(0, 7) ? '<small class="md-cz-bas">' + mdKisaTR(u.katilmaTarihi) + '\'da başladı</small>' : '';
+        return '<tr><td class="ad">' + miloEsc(u.ad) + bsl + '</td>' + h + '<td class="top">' + gel + '</td></tr>';
+    }).join('');
+    return '<div class="md-aktarim md-cz" id="md-cz">'
+        + '<div class="md-ust"><div><div class="md-ad">🗓 Geçmiş yoklama</div><div class="md-alt">Kâğıttaki gibi: hücreye dokun → ✓ geldi → ✗ gelmedi → H hasta → T telafi → ↪ başka gün geldi → boş. Gün başlığına dokunmak o günün boşlarını "geldi" yapar. En sonda Kaydet.</div></div>'
+        + '<div class="md-cz-ust-btn"><button class="md-btn' + (cz.ilkAcik ? ' ana' : '') + '" onclick="mdCzIlkAcKapat()">📅 İlk ders tarihleri</button><button class="md-btn" onclick="mdCizelgeKapat()">← Defter</button></div></div>'
+        + (cz.ilkAcik ? mdCzIlkHTML() : '')
+        + '<div class="md-cz-secim"><div class="md-aylar">' + gruplar.map(function (g) { return '<button class="' + (g === cz.grup ? 'aktif' : '') + '" onclick="mdCzGrup(\'' + mdEnc(g) + '\')">' + miloEsc(g) + '</button>'; }).join('') + '</div>'
+        + '<div class="md-cz-ay"><button class="md-btn" onclick="mdCzAy(-1)" aria-label="Önceki ay">‹</button><b>' + ayAd + '</b><button class="md-btn" onclick="mdCzAy(1)"' + (cz.ay >= 0 ? ' disabled' : '') + ' aria-label="Sonraki ay">›</button>'
+        + '<label class="md-cz-ekle">+ gün <input type="date" max="' + mdIso(new Date()) + '" onchange="mdCzGunEkle(this.value)"></label></div></div>'
+        + (uyeler.length && gunler.length ? '<div class="md-cz-tablo-kap"><table class="md-cz-tablo"><thead><tr>' + bas2 + '</tr></thead><tbody>' + satir + '</tbody></table></div>'
+            : '<div class="md-bos">' + (uyeler.length ? 'Bu ay bu grubun ders günü yok — "+ gün" ile tarih ekleyebilirsin.' : 'Bu grupta öğrenci yok.') + '</div>')
+        + '<div class="md-cz-alt"><span class="md-cz-acik"><i class="md-cz-h g">✓</i> geldi <i class="md-cz-h y">✗</i> gelmedi <i class="md-cz-h h">H</i> hasta <i class="md-cz-h t">T</i> telafi <i class="md-cz-h k">↪</i> başka gün geldi</span>'
+        + (n ? '<button class="md-btn" onclick="mdCzGeriAl()">Geri al</button>' : '') + '<button class="md-btn ana buyuk" id="md-cz-kaydet" onclick="mdCzKaydet()"' + (n ? '' : ' disabled') + '>💾 Kaydet' + (n ? ' (' + n + ' değişiklik)' : '') + '</button></div></div>';
+}
+// 📅 İlk ders tarihleri (2026-10-16, kullanıcı: "öğrencilerin ilk ders tarihlerini girdiğim bir bölüm olsun — başladıkları tarihten
+// itibaren gruplarda ve günlerde yer alsınlar"). Üyenin katilmaTarihi alanı; ondan önceki günler Çizelge/Defter/Yoklama'da beklenmez.
+// Öneri: o öğrencinin en eski yoklama kaydı (kayıtlıysa).
+function mdCzIlkAcKapat() { let cz = mdCzDurum(); cz.ilkAcik = !cz.ilkAcik; mdCzYenile(); }
+function mdIlkYoklama(u) { let en = null; Object.keys(MD.att).forEach(function (iso) { let a = MD.att[iso][u.ad]; if (a && (!a.grup || a.grup === u.grup) && (!en || iso < en)) en = iso; }); return en; }
+function mdCzIlkHTML() {
+    let l = MD.uyeler.filter(function (u) { return !u.pasif && u.grup === mdCzDurum().grup; }).sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); }), bugun = mdIso(new Date());
+    return '<div class="md-cz-ilk"><div class="md-alt">Her öğrencinin <b>ilk ders tarihi</b>: bu tarihten önceki günler çizelgede "–" olur, yoklamada ve defterde beklenmez.</div>'
+        + l.map(function (u) {
+            let ilk = mdIlkYoklama(u), k = mdEnc(mdKey(u)), uyari = ilk && u.katilmaTarihi && ilk < u.katilmaTarihi;
+            return '<div class="md-cz-ilk-sat"><b>' + miloEsc(u.ad) + '</b><input type="date" max="' + bugun + '" value="' + (u.katilmaTarihi || '') + '" onchange="mdIlkDersKaydet(\'' + k + '\', this.value)" aria-label="' + miloEsc(u.ad) + ' ilk ders tarihi">'
+                + (ilk && ilk !== u.katilmaTarihi ? '<button class="md-btn' + (uyari ? ' uyari' : '') + '" onclick="mdIlkDersKaydet(\'' + k + '\', \'' + ilk + '\')" title="En eski yoklama kaydı">' + (uyari ? '⚠️ ' : '') + 'ilk yoklama: ' + mdKisaTR(ilk) + ' · kullan</button>' : '')
+                + '</div>';
+        }).join('') + '</div>';
+}
+async function mdIlkDersKaydet(kEnc, iso) {
+    let u = mdUye(decodeURIComponent(kEnc)); if (!u) return;
+    try { await miloApi('/members/' + encodeURIComponent(u.grup) + '/' + encodeURIComponent(u.ad), { method: 'PATCH', body: JSON.stringify({ katilmaTarihi: iso || null }) }); }
+    catch (e) { showToast('Kaydedilemedi — bağlantını kontrol et.', 'error'); return; }
+    u.katilmaTarihi = iso || null;
+    try { let m = (miloUyeler || []).find(function (x) { return x.grup === u.grup && x.ad === u.ad; }); if (m) m.katilmaTarihi = u.katilmaTarihi; } catch (e) {}
+    try { if (typeof MA !== 'undefined' && MA.uyeler) { let m = MA.uyeler.find(function (x) { return x.grup === u.grup && x.ad === u.ad; }); if (m) m.katilmaTarihi = u.katilmaTarihi; } } catch (e) {}
+    mdCzYenile();
+    showToast('✓ ' + u.ad + ': ilk ders ' + (iso ? mdTR(iso) : 'silindi'), 'success');
+}
+async function mdCzKaydet() {
+    let cz = mdCzDurum(), l = Object.keys(cz.bekleyen); if (!l.length) return;
+    let btn = document.getElementById('md-cz-kaydet'), ok = 0, hata = 0;
+    for (let i = 0; i < l.length; i++) {
+        let k = l[i], p = k.indexOf('|'), iso = k.slice(0, p), u = mdUye(k.slice(p + 1)), s = cz.bekleyen[k];
+        if (btn) btn.textContent = '💾 Kaydediliyor… ' + (i + 1) + '/' + l.length;
+        if (!u) { delete cz.bekleyen[k]; continue; }
+        try { await mdGunYaz(u, iso, s); delete cz.bekleyen[k]; ok++; } catch (e) { hata++; }
+    }
+    mdCzYenile();
+    showToast(hata ? ok + ' kaydedildi, ' + hata + ' kaydedilemedi — bağlantını kontrol edip tekrar Kaydet\'e bas.' : '✓ ' + ok + ' yoklama kaydedildi', hata ? 'error' : 'success');
+}
+
 function mdCss() {
     if (!document.getElementById('sade-font')) { let l = document.createElement('link'); l.id = 'sade-font'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap'; document.head.appendChild(l); }
     if (document.getElementById('md-css')) return;
@@ -523,7 +667,20 @@ function mdCss() {
         '.md-ak-alt{display:grid;gap:6px;position:sticky;bottom:0;padding:12px 0 2px;background:var(--s-zemin)}',
         '.md button:focus-visible,.md-aktarim button:focus-visible,.md input:focus-visible,.md select:focus-visible{outline:2px solid var(--s-vurgu);outline-offset:2px}',
         '@media (max-width:860px){.md{grid-template-columns:1fr}.md-liste{position:static;max-height:none}.md-satirlar{max-height:320px;overflow:auto}.md-detay{padding:16px}.md-odemeler div{grid-template-columns:1fr 1fr}}',
-        '@media (max-width:480px){.md,.md-aktarim{padding:10px;border-radius:14px}}'
+        '@media (max-width:480px){.md,.md-aktarim{padding:10px;border-radius:14px}}',
+        '.md-cz{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}.md-cz>*{min-width:0;max-width:100%}.md-cz .md-aylar{max-width:100%}.md-cz-secim{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.md-cz-ay{display:flex;gap:8px;align-items:center}.md-cz-ay b{min-width:120px;text-align:center}',
+        '.md-cz-ekle{font-size:12.5px;color:var(--s-dim);display:flex;gap:6px;align-items:center;font-weight:700}.md-cz-ekle input{border:1px solid var(--s-line);border-radius:8px;padding:5px 6px;background:var(--s-kagit);color:var(--s-ink);font:inherit}',
+        '.md-cz-tablo-kap{overflow:auto;max-height:65vh;border:1px solid var(--s-line);border-radius:12px;background:var(--s-kagit)}.md-cz-tablo{border-collapse:separate;border-spacing:0;font-size:13px}',
+        '.md-cz-tablo th,.md-cz-tablo td{padding:3px;text-align:center;border-bottom:1px solid var(--s-line)}.md-cz-tablo thead th{position:sticky;top:0;background:var(--s-kagit);z-index:2}',
+        '.md-cz-tablo .ad{position:sticky;left:0;background:var(--s-kagit);text-align:left;padding:6px 10px;font-weight:700;white-space:nowrap;z-index:1;min-width:150px}.md-cz-tablo thead .ad{z-index:3}.md-cz-tablo .top{font-weight:800;color:var(--s-vurgu);padding:0 10px}',
+        '.md-cz-gun{border:0;background:transparent;color:var(--s-ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:40px;padding:4px;border-radius:8px}.md-cz-gun:hover{background:var(--s-vurgu-a)}.md-cz-gun small{font-size:10px;color:var(--s-dim);font-weight:600}',
+        '.md-cz-h{width:40px;height:40px;border-radius:10px;border:1px solid var(--s-line);background:#F3F6F5;color:var(--s-ink);font:inherit;font-weight:900;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-style:normal;padding:0}',
+        '.md-cz-h.g{background:var(--s-vurgu-a);color:var(--s-vurgu);border-color:transparent}.md-cz-h.y{background:var(--s-kirmizi-a);color:var(--s-kirmizi);border-color:transparent}.md-cz-h.h{background:var(--s-mor-a);color:var(--s-mor);border-color:transparent}.md-cz-h.t{background:var(--s-amber-a);color:var(--s-amber);border-color:transparent}',
+        '.md-cz-h.k{background:var(--s-vurgu-a);color:var(--s-vurgu);border:1px dashed var(--s-vurgu)}.md-gun.k{box-shadow:inset 0 0 0 1.5px var(--s-vurgu);background:transparent}.md-gun.k i{color:var(--s-vurgu)}',
+        '.md-cz-h.deg{box-shadow:0 0 0 2px var(--s-uyari)}.md-cz-alt{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.md-cz-acik{margin-right:auto;font-size:12px;color:var(--s-dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}.md-cz-acik .md-cz-h{width:24px;height:24px;font-size:12px;border-radius:6px;cursor:default}',
+        '.md-cz-h.once{background:transparent;border-style:dashed;color:var(--s-dim);cursor:default;font-weight:600}.md-cz-bas{display:block;font-size:10.5px;font-weight:600;color:var(--s-amber)}.md-gun.once{opacity:.45}',
+        '.md-cz-ilk{display:grid;gap:8px;padding:14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-kagit)}.md-cz-ilk-sat{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--s-line)}.md-cz-ilk-sat:last-child{border-bottom:0}.md-cz-ilk-sat b{min-width:150px}.md-cz-ilk-sat input{border:1px solid var(--s-line);border-radius:8px;padding:6px 8px;background:var(--s-kagit);color:var(--s-ink);font:inherit}.md-btn.uyari{border-color:var(--s-uyari);color:var(--s-amber)}',
+        '.md-btn:disabled{opacity:.45;cursor:default}.md-cz-ust-btn{display:flex;gap:8px}@media (max-width:480px){.md-cz-tablo .ad{min-width:96px;max-width:118px;overflow:hidden;text-overflow:ellipsis;padding:6px}}'
     ].join('\n');
     document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }

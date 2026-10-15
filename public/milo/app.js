@@ -339,6 +339,7 @@ function miloMesgulMu() {
     if (Date.now() - _miloSonEtkilesim < 30000) return true;
     let a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
     if (miloUyeFormAcikMi) return true;
+    if (typeof MD !== 'undefined' && MD.ekran === 'cizelge' && MD.cz && Object.keys(MD.cz.bekleyen).length) return true; // çizelgede kaydedilmemiş değişiklik
     if (miloAktifSekme === 'program' && typeof mdsDuzenleniyor === 'function' && mdsDuzenleniyor()) return true;
     if (typeof mspMesgul === 'function' && mspMesgul()) return true;
     // açık pencere / alttan açılan sayfa (görünür bir sabit katman)
@@ -589,6 +590,7 @@ async function miloProfilAc(grup, ad) {
 function miloProfilKapat() { document.getElementById('milo-profil-modal').style.display = 'none'; }
 
 // Profilden öğrenci defterine (yoklama takvimi, paketler, telafi, ödemeler)
+function miloCizelgeAc() { try { MD.acilacak = 'cizelge'; } catch (e) {} miloSekme('defter'); }
 function miloDefterAc(grup, ad) { try { miloProfilKapat(); } catch (e) {} MD.secili = grup + '|' + ad; MD.ay = null; miloSekme('defter'); }
 function miloProfilCiz(u, skills) {
     let alan = document.getElementById('milo-profil-icerik');
