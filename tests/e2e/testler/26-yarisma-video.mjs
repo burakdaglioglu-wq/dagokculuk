@@ -46,6 +46,13 @@ export default async function ({ log }) {
     await p.locator('#onay-modal .yz-sure-elle button', { hasText: '−10' }).click();
     await p.locator('#onay-modal .yz-sure-elle button', { hasText: 'Uygula' }).click(); await p.waitForTimeout(300);
     esit(await p.evaluate(() => yzSure(yzOku().durum)), 80, 'elle süre');
+    // seriyi uzat: ⋯ → ➕ 1 seri (12 → 13), ➖ son boş seriyi kaldır (→ 12) (2026-10-15)
+    await p.evaluate(() => yzMenu()); await p.waitForTimeout(300);
+    await p.locator('#onay-modal button', { hasText: '1 seri' }).first().click(); await p.waitForTimeout(300);
+    esit(await p.evaluate(() => yzFormat(yzOku().durum).seri), 13, 'seri uzatma');
+    await p.evaluate(() => yzMenu()); await p.waitForTimeout(300);
+    await p.locator('#onay-modal button:has-text("Son boş seriyi kaldır")').click(); await p.waitForTimeout(300);
+    esit(await p.evaluate(() => yzFormat(yzOku().durum).seri), 12, 'uzatılan serinin geri alınması');
     // skor girişi → 🎥 Video
     await p.evaluate((kk) => yzGirisAc(encodeURIComponent(kk), 0), k); await p.waitForTimeout(300);
     await p.locator('#yz-giris button:has-text("🎥 Video")').click();
@@ -94,7 +101,7 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => !!yzOku().sayac), 'yumurtadan süre başlamadı');
     await p.evaluate(() => yzSayacDurdur());
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('elle süre 80 sn (yumurtada 75); 3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
+    log('seri uzat/kaldır; elle süre 80 sn (yumurtada 75); 3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
   } finally {
     if (yedek) await p.evaluate((y) => {
       try { kvKapat(); } catch (e) {}
