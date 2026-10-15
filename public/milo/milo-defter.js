@@ -151,7 +151,7 @@ function mdDetayHTML(u) {
     let kutu = function (n, ad, cls) { return '<div class="md-kutu ' + (cls || '') + '"><b>' + n + '</b><small>' + ad + '</small></div>'; };
     let p = o.son;
     return '<div class="md-ust"><div><div class="md-ad">' + miloEsc(u.ad) + '</div><div class="md-alt">' + miloEsc(u.grup) + (yas ? ' · ' + miloEsc(yas) : '') + (o.ilk ? ' · ilk ders ' + mdTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + mdTR(o.sonGelis) : '') + '</div></div>'
-        + (u.acilTelefon ? '<button class="md-btn" onclick="mdVeliMesaj(\'' + mdEnc(mdKey(u)) + '\')">💬 Veliye özet</button>' : '') + '</div>'
+        + '<span style="display:flex;gap:8px;flex-wrap:wrap"><button class="md-btn" onclick="mdOgrenciPdf(\'' + mdEnc(mdKey(u)) + '\')">📄 Öğrenci raporu PDF</button>' + (u.acilTelefon ? '<button class="md-btn" onclick="mdVeliMesaj(\'' + mdEnc(mdKey(u)) + '\')">💬 Veliye özet</button>' : '') + '</span></div>'
         + '<div class="md-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + kutu(p ? p.dersler.length + '/8' : '—', p ? 'paket ' + p.no : 'paket', '') + '</div>'
         + o.uyarilar.map(function (w) { return '<div class="md-uyari ' + w.tur + '">' + (w.tur === 'telafi' ? '🔁 ' : '💰 ') + miloEsc(w.metin) + '</div>'; }).join('')
         + '<div class="md-bolum"><div class="md-bolum-bas">🗓 Yoklama takvimi <small>güne dokun → durum seç · halkalı günler programdaki ders günleri</small></div>'
@@ -219,6 +219,170 @@ function mdVeliMesaj(kEnc) {
         + (o.sonGelis ? '• Son geldiği ders: ' + mdTR(o.sonGelis) + '\n' : '') + '\nGörüşmek üzere! 💛';
     let tel = String(u.acilTelefon || '').replace(/\D/g, ''); if (tel.startsWith('0')) tel = '90' + tel.slice(1); else if (tel && !tel.startsWith('90')) tel = '90' + tel;
     window.open((tel ? 'https://api.whatsapp.com/send?phone=' + tel + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(msg), '_blank');
+}
+
+
+// ================================================================================================
+// 📄 YOKLAMA RAPORU PDF + ÖĞRENCİ RAPORU PDF (2026-10-15, kullanıcı: "PDF çıktısı neden yok? güzel detaylı olsun").
+// "A · Sade" görünüm: beyaz kâğıt, ince başlık çizgisi, petrol yeşili; durum renkleri ekrandakiyle aynı.
+// Yoklama raporu (yatay): seçili dönem (Yoklama ekranındaki hafta/ay) — özet kutuları, gün gün katılım grafiği, grup
+// çubukları, en çok gelen / en uzun süredir yok, öğrenci tablosu (paket, geldi/gelmedi/hasta/telafi, açık hak, son geliş,
+// paket ödemesi) + gün gün çizelge. Öğrenci raporu (dikey): özet, son aylar takvimi, paketler, ödemeler — veliye verilebilir.
+// ================================================================================================
+const MD_PDF_RENK = { g: [19, 138, 128], y: [180, 55, 47], h: [109, 75, 184], t: [138, 90, 0] };
+function mdPdfBaslik(pdf, T, mx, uw, y, baslik, rozet) {
+    pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(17); pdf.text(T(baslik), mx, y + 8);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118); pdf.text('MILO FITT KIDS', mx, y + 14);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9.5); pdf.setTextColor(15, 111, 103); pdf.text(T(rozet || ''), mx + uw, y + 8, { align: 'right' });
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(107, 121, 118); pdf.text(T('Hazırlanma: ') + new Date().toLocaleDateString('tr-TR'), mx + uw, y + 14, { align: 'right' });
+    pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.5); pdf.line(mx, y + 17.5, mx + uw, y + 17.5);
+    return y + 25;
+}
+function mdPdfAlt(pdf, T, W, H) {
+    let n = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= n; i++) { pdf.setPage(i); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(154, 165, 162); pdf.text('Milo Fitt Kids', 14, H - 8); pdf.text(i + ' / ' + n, W - 14, H - 8, { align: 'right' }); }
+}
+function mdPdfKutu(pdf, T, x, y, w, sayi, ad, renk) {
+    pdf.setDrawColor(228, 233, 231); pdf.setLineWidth(0.3); pdf.roundedRect(x, y, w, 17, 2, 2, 'S');
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.setTextColor.apply(pdf, renk || [27, 36, 34]); pdf.text(String(sayi), x + 4, y + 9.5);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(107, 121, 118); pdf.text(T(ad), x + 4, y + 14.3);
+}
+async function mdYoklamaRaporPdf(bas, bit, donemAd) {
+    if (typeof _miloYeniPdfAl !== 'function') return showToast('PDF aracı yüklenemedi.', 'error');
+    showToast('📄 Yoklama raporu hazırlanıyor…', 'success');
+    try { if (!MD.yuklendi) await mdYukle(); } catch (e) { return showToast('Veri yüklenemedi.', 'error'); }
+    let bugun = mdIso(new Date()); if (bit > bugun) bit = bugun;
+    let gunler = []; for (let d = new Date(bas + 'T12:00:00'); mdIso(d) <= bit; d.setDate(d.getDate() + 1)) gunler.push(mdIso(d));
+    let aktif = MD.uyeler.filter(function (u) { return !u.pasif; }).sort(function (a, b) { return String(a.grup).localeCompare(String(b.grup), 'tr') || a.ad.localeCompare(b.ad, 'tr'); });
+    let satir = aktif.map(function (u) {
+        let say = { g: 0, y: 0, h: 0, t: 0 }, gun = {}; gunler.forEach(function (iso) { let s = mdGun(u, iso); if (s) { say[s]++; gun[iso] = s; } });
+        let o = mdOzet(u), p = o.son, son = o.sonGelis;
+        return { u: u, say: say, gun: gun, gel: say.g + say.t, paket: p ? p.no + ' · ' + p.dersler.length + '/8' : '—', hak: o.hak, son: son, odendi: p && p.odeme && p.odeme.odendi };
+    });
+    let dersGunleri = gunler.filter(function (iso) { return satir.some(function (r) { return r.gun[iso]; }); });
+    let toplamGel = satir.reduce(function (a, r) { return a + r.gel; }, 0), gelen = satir.filter(function (r) { return r.gel; }).length;
+    let hasta = satir.reduce(function (a, r) { return a + r.say.h; }, 0), telafi = satir.reduce(function (a, r) { return a + r.say.t; }, 0), gelmedi = satir.reduce(function (a, r) { return a + r.say.y; }, 0);
+    let pdf = await _miloYeniPdfAl('landscape'), T = typeof _miloTrTranslit === 'function' ? _miloTrTranslit : function (s) { return s; }, W = 297, H = 210, mx = 14, uw = W - 28;
+    let y = mdPdfBaslik(pdf, T, mx, uw, 10, 'Yoklama Raporu', donemAd);
+    // özet kutuları
+    let kutular = [[dersGunleri.length, 'ders günü'], [toplamGel, 'toplam katılım', MD_PDF_RENK.g], [dersGunleri.length ? (toplamGel / dersGunleri.length).toFixed(1).replace('.', ',') : '0', 'günlük ortalama'], [gelen + ' / ' + aktif.length, 'gelen öğrenci'], [gelmedi, 'gelmedi', MD_PDF_RENK.y], [hasta, 'hasta', MD_PDF_RENK.h], [telafi, 'telafi dersi', MD_PDF_RENK.t], [aktif.length - gelen, 'hiç gelmeyen', MD_PDF_RENK.y]];
+    let kw = (uw - 7 * 3) / 8; kutular.forEach(function (k, i) { mdPdfKutu(pdf, T, mx + i * (kw + 3), y, kw, k[0], k[1], k[2]); });
+    y += 24;
+    // gün gün grafik (sol) + gruplar (sağ)
+    let gx = mx, gw = uw * 0.6, gh = 40, maks = Math.max(1, ...gunler.map(function (iso) { return satir.filter(function (r) { return r.gun[iso] === 'g' || r.gun[iso] === 't'; }).length; }));
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(27, 36, 34); pdf.text(T('Gün gün katılım'), gx, y + 3);
+    let gy = y + 6, bw = gw / Math.max(1, gunler.length);
+    pdf.setDrawColor(228, 233, 231); pdf.setLineWidth(0.2); [0, 0.5, 1].forEach(function (f) { pdf.line(gx, gy + gh - gh * f, gx + gw, gy + gh - gh * f); });
+    gunler.forEach(function (iso, i) {
+        let n = satir.filter(function (r) { return r.gun[iso] === 'g' || r.gun[iso] === 't'; }).length, h = n / maks * (gh - 4), x = gx + i * bw, dt = new Date(iso + 'T12:00:00');
+        if (h > 0) { pdf.setFillColor(19, 138, 128); pdf.rect(x + bw * 0.18, gy + gh - h, bw * 0.64, h, 'F'); if (bw > 4.5) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.8); pdf.setTextColor(27, 36, 34); pdf.text(String(n), x + bw / 2, gy + gh - h - 1, { align: 'center' }); } }
+        if (bw > 3.6 || i % 2 === 0) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.2); pdf.setTextColor(140, 150, 147); pdf.text(String(dt.getDate()), x + bw / 2, gy + gh + 3.5, { align: 'center' }); }
+    });
+    let rx = mx + gw + 10, rw = uw - gw - 10, gruplar = {};
+    satir.forEach(function (r) { let g = r.u.grup || 'Grup yok'; gruplar[g] = gruplar[g] || { a: 0, g: 0 }; gruplar[g].a++; if (r.gel) gruplar[g].g++; });
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(27, 36, 34); pdf.text(T('Gruplara göre (gelen / aktif)'), rx, y + 3);
+    let ry = y + 8; Object.keys(gruplar).sort(function (a, b) { return a.localeCompare(b, 'tr'); }).slice(0, 8).forEach(function (g) {
+        let x = gruplar[g], oran = x.a ? x.g / x.a : 0;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(46, 57, 54); pdf.text(T(g).slice(0, 22), rx, ry + 3);
+        pdf.setFillColor(243, 246, 245); pdf.roundedRect(rx + 34, ry, rw - 52, 3.6, 1, 1, 'F');
+        if (oran > 0) { pdf.setFillColor(19, 138, 128); pdf.roundedRect(rx + 34, ry, Math.max(2, (rw - 52) * oran), 3.6, 1, 1, 'F'); }
+        pdf.setTextColor(107, 121, 118); pdf.text(x.g + ' / ' + x.a, rx + rw, ry + 3, { align: 'right' }); ry += 5.4;
+    });
+    y = gy + gh + 9;
+    // en çok gelen / en uzun süredir yok
+    let cok = satir.filter(function (r) { return r.gel; }).sort(function (a, b) { return b.gel - a.gel; }).slice(0, 6);
+    let uzun = satir.slice().sort(function (a, b) { return String(a.son || '').localeCompare(String(b.son || '')); }).slice(0, 6);
+    let lw = uw / 2 - 5;
+    [[cok, 'En çok gelenler', function (r) { return r.gel + ' ders'; }, MD_PDF_RENK.g], [uzun, 'En uzun süredir gelmeyenler', function (r) { return r.son ? mdTR(r.son) : 'hiç'; }, MD_PDF_RENK.y]].forEach(function (b, k) {
+        let x = mx + k * (lw + 10), yy = y;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor.apply(pdf, b[3]); pdf.text(T(b[1]), x, yy); yy += 4.5;
+        b[0].forEach(function (r) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.3); pdf.setTextColor(46, 57, 54); pdf.text(T(r.u.ad).slice(0, 34), x, yy); pdf.setTextColor(107, 121, 118); pdf.text(T(r.u.grup || ''), x + lw * 0.55, yy); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(27, 36, 34); pdf.text(T(b[2](r)), x + lw, yy, { align: 'right' }); yy += 4.2; });
+    });
+    // öğrenci tablosu + gün gün çizelge (yeni sayfa)
+    pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F');
+    y = mdPdfBaslik(pdf, T, mx, uw, 10, 'Öğrenci bazında yoklama', donemAd);
+    let sut = [['#', 7], ['Öğrenci', 44], ['Grup', 26], ['Paket', 16], ['Geldi', 11], ['Gelmedi', 13], ['Hasta', 10], ['Telafi', 11], ['Hak', 9], ['Son geliş', 17], ['Ödeme', 13]];
+    let sabit = sut.reduce(function (a, c) { return a + c[1]; }, 0), izGun = gunler.length <= 31 ? gunler : gunler.slice(-31), cw = Math.max(2.6, Math.min(6, (uw - sabit) / Math.max(1, izGun.length)));
+    let basCiz = function () {
+        pdf.setFillColor(243, 246, 245); pdf.rect(mx, y, uw, 9, 'F'); pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.3); pdf.line(mx, y + 9, mx + uw, y + 9);
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.2); pdf.setTextColor(61, 74, 71);
+        let x = mx; sut.forEach(function (c, i) { pdf.text(T(c[0]), i < 3 ? x + 1.2 : x + c[1] / 2, y + 5.8, i < 3 ? undefined : { align: 'center' }); x += c[1]; });
+        izGun.forEach(function (iso) { let dt = new Date(iso + 'T12:00:00'); pdf.setFontSize(5.2); pdf.text(String(dt.getDate()), x + cw / 2, y + 4.2, { align: 'center' }); pdf.setFontSize(4.2); pdf.text(T(['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'][dt.getDay()]), x + cw / 2, y + 7.6, { align: 'center' }); x += cw; });
+        y += 10;
+    };
+    basCiz();
+    satir.forEach(function (r, i) {
+        if (y + 6 > H - 14) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 14; basCiz(); }
+        if (i % 2) { pdf.setFillColor(250, 251, 251); pdf.rect(mx, y, uw, 6, 'F'); }
+        let x = mx, deger = [String(i + 1), T(r.u.ad).slice(0, 30), T(r.u.grup || '').slice(0, 18), T(r.paket), String(r.gel), String(r.say.y), String(r.say.h), String(r.say.t), String(r.hak || ''), r.son ? mdTR(r.son).slice(0, 5) : '—', r.odendi ? 'ödendi' : '—'];
+        sut.forEach(function (c, j) {
+            pdf.setFont('helvetica', j === 1 ? 'bold' : 'normal'); pdf.setFontSize(j === 1 ? 7 : 6.8);
+            let renk = j === 4 ? MD_PDF_RENK.g : j === 5 && r.say.y ? MD_PDF_RENK.y : j === 6 && r.say.h ? MD_PDF_RENK.h : j === 7 && r.say.t ? MD_PDF_RENK.t : j === 8 && r.hak ? MD_PDF_RENK.t : j === 10 && r.odendi ? MD_PDF_RENK.g : [46, 57, 54];
+            pdf.setTextColor.apply(pdf, renk); pdf.text(T(deger[j]), j < 3 ? x + 1.2 : x + c[1] / 2, y + 4.2, j < 3 ? undefined : { align: 'center' }); x += c[1];
+        });
+        izGun.forEach(function (iso) {
+            let s = r.gun[iso], cx = x + cw / 2, cy = y + 3;
+            if (s === 'g' || s === 't') { pdf.setFillColor.apply(pdf, MD_PDF_RENK[s]); pdf.rect(x + 0.6, y + 1, cw - 1.2, 4, 'F'); }
+            else if (s === 'h') { pdf.setFillColor.apply(pdf, MD_PDF_RENK.h); pdf.circle(cx, cy, Math.min(1.5, cw / 3), 'F'); }
+            else if (s === 'y') { pdf.setDrawColor.apply(pdf, MD_PDF_RENK.y); pdf.setLineWidth(0.45); pdf.line(cx - 1.1, cy - 1.1, cx + 1.1, cy + 1.1); pdf.line(cx - 1.1, cy + 1.1, cx + 1.1, cy - 1.1); }
+            x += cw;
+        });
+        y += 6;
+    });
+    y += 4; if (y > H - 20) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 16; }
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.8); pdf.setTextColor(107, 121, 118);
+    pdf.text(T('Çizelge: dolu yeşil = geldi · sarı = telafi dersi · mor nokta = hasta · kırmızı çarpı = gelmedi · boş = kayıt yok. Paket: 8 derslik paket no · dolan ders. Hak: kullanılmamış telafi hakkı.'), mx, y);
+    mdPdfAlt(pdf, T, W, H);
+    pdf.save('Milo_Yoklama_' + bas + '_' + bit + '.pdf');
+}
+// Öğrenci raporu (dikey, veliye verilebilir)
+async function mdOgrenciPdf(kEnc) {
+    let u = mdUye(decodeURIComponent(kEnc)); if (!u) return;
+    if (typeof _miloYeniPdfAl !== 'function') return showToast('PDF aracı yüklenemedi.', 'error');
+    showToast('📄 Öğrenci raporu hazırlanıyor…', 'success');
+    let o = mdOzet(u), pdf = await _miloYeniPdfAl('portrait'), T = typeof _miloTrTranslit === 'function' ? _miloTrTranslit : function (s) { return s; }, W = 210, H = 297, mx = 16, uw = W - 32;
+    let yas = typeof miloYasMetin === 'function' && u.dogumTarihi ? miloYasMetin(u.dogumTarihi) : '';
+    let y = mdPdfBaslik(pdf, T, mx, uw, 12, u.ad, u.grup);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(107, 121, 118);
+    pdf.text(T([yas, o.ilk ? 'İlk ders ' + mdTR(o.ilk) : '', o.sonGelis ? 'Son geliş ' + mdTR(o.sonGelis) : ''].filter(Boolean).join(' · ')), mx, y); y += 6;
+    let k = [[o.say.g + o.say.t, 'geldi', MD_PDF_RENK.g], [o.say.y, 'gelmedi', MD_PDF_RENK.y], [o.say.h, 'hasta', MD_PDF_RENK.h], [o.say.t, 'telafi dersi', MD_PDF_RENK.t], [o.hak, 'açık telafi hakkı', MD_PDF_RENK.t], [o.son ? o.son.dersler.length + '/8' : '—', o.son ? 'paket ' + o.son.no : 'paket']];
+    let kw = (uw - 5 * 3) / 6; k.forEach(function (x, i) { mdPdfKutu(pdf, T, mx + i * (kw + 3), y, kw, x[0], x[1], x[2]); }); y += 24;
+    // son 3 ayın takvimi
+    let aylar = mdAylar(u, o).slice(-3);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(27, 36, 34); pdf.text(T('Yoklama takvimi'), mx, y); y += 4;
+    let tw = (uw - 2 * 6) / 3;
+    aylar.forEach(function (a, ai) {
+        let x0 = mx + ai * (tw + 6), y0 = y, ilk = new Date(a + '-01T12:00:00'), gs = new Date(ilk.getFullYear(), ilk.getMonth() + 1, 0).getDate(), bos = (ilk.getDay() + 6) % 7, cw = tw / 7, ch = 6.2;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(15, 111, 103); pdf.text(T(MD_AY[ilk.getMonth()] + ' ' + ilk.getFullYear()), x0, y0 + 3);
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.5); pdf.setTextColor(140, 150, 147);
+        ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'].forEach(function (g, i) { pdf.text(T(g), x0 + i * cw + cw / 2, y0 + 7.5, { align: 'center' }); });
+        for (let d = 1; d <= gs; d++) {
+            let idx = bos + d - 1, cx = x0 + (idx % 7) * cw, cy = y0 + 9 + Math.floor(idx / 7) * ch, iso = a + '-' + String(d).padStart(2, '0'), s = mdGun(u, iso);
+            if (s) { pdf.setFillColor.apply(pdf, s === 'g' ? [227, 244, 241] : s === 'y' ? [253, 235, 234] : s === 'h' ? [238, 232, 251] : [255, 244, 217]); pdf.roundedRect(cx + 0.4, cy + 0.3, cw - 0.8, ch - 0.6, 1, 1, 'F'); }
+            pdf.setFont('helvetica', s ? 'bold' : 'normal'); pdf.setFontSize(6.3); pdf.setTextColor.apply(pdf, s ? MD_PDF_RENK[s] : [120, 130, 127]); pdf.text(String(d), cx + cw / 2, cy + ch / 2 + 1.2, { align: 'center' });
+        }
+    });
+    y += 9 + 6 * 6.2 + 6;
+    // paketler
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(27, 36, 34); pdf.text(T('Paketler (8 ders)'), mx, y); y += 5;
+    o.paketler.slice().reverse().forEach(function (p) {
+        if (y > H - 40) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 18; }
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(27, 36, 34); pdf.text(T('Paket ' + p.no), mx, y + 3);
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.3); pdf.setTextColor(107, 121, 118);
+        pdf.text(T(mdTR(p.bas) + (p.bit && p.bit !== p.bas ? ' – ' + mdTR(p.bit) : '') + ' · ' + p.dersler.length + '/8 ders · geldi ' + p.geldi + (p.hak ? ' · telafi hakkı ' + p.hak + ' (kullanılan ' + p.telafiler.length + ')' : '')), mx + 18, y + 3);
+        let od = p.odeme && p.odeme.odendi ? 'Ödendi' + (p.odeme.odemeTarihi ? ' ' + mdTR(p.odeme.odemeTarihi) : '') + (p.odeme.tutar ? ' · ' + p.odeme.tutar + ' TL' : '') + (p.odeme.not ? ' · ' + p.odeme.not : '') : 'Ödeme girilmedi';
+        pdf.setTextColor.apply(pdf, p.odeme && p.odeme.odendi ? MD_PDF_RENK.g : MD_PDF_RENK.y); pdf.text(T(od).slice(0, 70), mx + uw, y + 3, { align: 'right' });
+        y += 6; let x = mx;
+        p.dersler.concat(p.telafiler).forEach(function (r) {
+            pdf.setFillColor.apply(pdf, r.s === 'g' ? [227, 244, 241] : r.s === 'y' ? [253, 235, 234] : r.s === 'h' ? [238, 232, 251] : [255, 244, 217]); pdf.roundedRect(x, y, 17, 9, 1.5, 1.5, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor.apply(pdf, MD_PDF_RENK[r.s]); pdf.text(T(MD_DURUM[r.s].ad), x + 8.5, y + 4, { align: 'center' });
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.8); pdf.text(T(mdKisaTR(r.iso)), x + 8.5, y + 7.4, { align: 'center' }); x += 19;
+        });
+        y += 14; pdf.setDrawColor(228, 233, 231); pdf.setLineWidth(0.2); pdf.line(mx, y - 2.5, mx + uw, y - 2.5);
+    });
+    if (!o.paketler.length) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118); pdf.text(T('Henüz yoklama kaydı yok.'), mx, y + 3); }
+    mdPdfAlt(pdf, T, W, H);
+    pdf.save('Milo_' + u.ad.replace(/\s+/g, '_') + '_rapor.pdf');
 }
 
 // ================================================================================================

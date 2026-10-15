@@ -29074,12 +29074,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Seçili sınıfa göre süz
             if(skorSinifFiltre !== '__hepsi') listObj = listObj.filter(sp => sporcuSinifUye(sp, skorSinifFiltre));
             { let q = (skorAramaFiltre || '').trim().toLocaleLowerCase('tr'); if(q && !loggedInSporcu) listObj = listObj.filter(sp => (sp.ad || '').toLocaleLowerCase('tr').includes(q)); }
+            // HIZ (2026-10-15, kullanıcı: "yönetici şifre kısmı kasıyor"): satırlar diziye toplanıp TEK seferde yazılıyor.
+            // Eskiden her sporcu için alan.innerHTML += … yapılıyordu → 130 sporculuk grupta liste 130 kez baştan ayrıştırılıyor,
+            // açılıştaki bulut senkronunda telefonda saniyelerce donma (şifre ekranı dahil) yapıyordu.
+            let _satirlar = [];
             listObj.forEach(sp => {
                 let cRenk = sp.cinsiyet === 'K' ? 'var(--neon-pink)' : 'var(--neon-blue)'; let yIcon = sp.yay === 'Makaralı' ? '⚙️' : '🏹'; let sLen = sp.seriler ? sp.seriler.length : 0;
                 let grupOpt = `<option value="">🏷️ Grup yok</option>` + grupSecenekleri.map(g => `<option value="${g}" ${sp.sinif===g?'selected':''}>${g}</option>`).join('');
                 let duzenleBtn = loggedInSporcu ? '' : `<button class="duzenle-btn" onclick="duzenleModalAc('${sp.ad}')">✏️</button>`;
                 let grupSelect = loggedInSporcu ? '' : `<select onchange="sporcuGrupAta('${sp.ad.replace(/'/g,"\\'")}', this.value)" style="margin-top:6px; max-width:170px; padding:6px 8px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:6px; font-size:11px; pointer-events:auto; position:relative; z-index:6;">${grupOpt}</select>`;
-                alan.innerHTML += `<div class="sporcu-satir">
+                _satirlar.push(`<div class="sporcu-satir">
                     <div class="sporcu-bilgi-bloku" style="flex:1; min-width:0;">
                         <div class="sporcu-isim"><span style="color:${cRenk}; font-size:20px; line-height:1;">•</span> ${spEmoji(sp)}${sp.ad} ${duzenleBtn}</div>
                         <div class="sporcu-detay">${yIcon} ${sp.yay} | Atış: ${sLen}/${limit}</div>
@@ -29089,8 +29093,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="skor-gir-btn" onclick="skorEkraniniAc('${sp.ad}')">Hedef 🎯</button>
                         ${sLen > 0 ? `<button data-dersbitir="${sp.ad}" style="background:rgba(16,185,129,0.12);color:var(--neon-green);border:1px solid var(--neon-green);padding:4px 10px;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">✅ Seriyi Bitir</button>` : ''}
                     </div>
-                </div>`;
+                </div>`);
             });
+            alan.innerHTML = _satirlar.join('');
         }
         function sporcuDersiBitir(ad) {
             sporcuDersiBitirGrup(aktifGrup, ad);
@@ -30136,7 +30141,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         
         function takimDropdownDoldur(haricTAd = null) {
             let p1 = document.getElementById('takim-p1'); let p2 = document.getElementById('takim-p2'); let p3 = document.getElementById('takim-p3'); if(!p1) return;
-            p1.innerHTML = '<option value="">1. Sporcu Seç</option>'; p2.innerHTML = '<option value="">2. Sporcu Seç</option>'; p3.innerHTML = '<option value="">3. Sporcu Seç</option>';
+            let _opt = ''; // HIZ: seçenekler biriktirilip tek seferde yazılır (eskiden her sporcu için 3 kez innerHTML +=)
             let secili = new Set();
             takimlarDB.filter(t => t.lig === aktifGrup).forEach(t => { if(haricTAd && t.ad === haricTAd) return; if(t.p1) secili.add(t.p1); if(t.p2) secili.add(t.p2); if(t.p3) secili.add(t.p3); });
 
@@ -30144,11 +30149,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let yayTipi = turnuvaDB[aktifGrup][ad].yay === 'Makaralı' ? 'Mak.' : 'Kls.';
                 if(secili.has(ad)) {
                     let opt = `<option value="${ad}" disabled style="color:var(--neon-red); background:rgba(239,68,68,0.1);">⛔ ${ad} (${yayTipi} - Takımda)</option>`;
-                    p1.innerHTML += opt; p2.innerHTML += opt; p3.innerHTML += opt;
+                    _opt += opt;
                 } else {
-                    let opt = `<option value="${ad}">${ad} (${yayTipi})</option>`; p1.innerHTML += opt; p2.innerHTML += opt; p3.innerHTML += opt;
+                    _opt += `<option value="${ad}">${ad} (${yayTipi})</option>`;
                 }
             });
+            p1.innerHTML = '<option value="">1. Sporcu Seç</option>' + _opt; p2.innerHTML = '<option value="">2. Sporcu Seç</option>' + _opt; p3.innerHTML = '<option value="">3. Sporcu Seç</option>' + _opt;
         }
 
         // DENETİMDE BULUNAN HATA DÜZELTMESİ: takimListesiCiz 10 yerden çağrılıyordu ama tanımı yoktu
@@ -31588,15 +31594,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         function cizSira(dizi, dom, limit, bugunSkorFn) {
             if(dizi.length === 0) { dom.innerHTML = "<div style='color:var(--text-muted); font-size:11px;'>Sporcu yok.</div>"; return; }
+            let _h = dom.innerHTML; // HIZ: satırlar biriktirilip sonda tek seferde yazılır
             let aktifBugün = dizi.filter(sp => bugunSkorFn && bugunSkorFn(sp));
             let eskiDers = dizi.filter(sp => bugunSkorFn && !bugunSkorFn(sp) && (sp.toplamSkor || 0) > 0);
             let hicYok = dizi.filter(sp => !bugunSkorFn || (!bugunSkorFn(sp) && !(sp.toplamSkor > 0)));
-            if(aktifBugün.length > 0) { dom.innerHTML += `<div style="font-size:11px; font-weight:800; color:var(--neon-green); margin-bottom:6px;">🟢 Bu Ders (${aktifBugün.length} sporcu)</div>`; }
+            if(aktifBugün.length > 0) { _h += `<div style="font-size:11px; font-weight:800; color:var(--neon-green); margin-bottom:6px;">🟢 Bu Ders (${aktifBugün.length} sporcu)</div>`; }
             dizi.forEach((sp, idx) => {
               try {
                 let aktif = bugunSkorFn ? bugunSkorFn(sp) : true;
                 let eskiKalan = !aktif && (sp.toplamSkor || 0) > 0;
-                if(eskiKalan && aktifBugün.length > 0 && sp === eskiDers[0]) { dom.innerHTML += `<div style="font-size:11px; color:var(--text-muted); margin:10px 0 4px; border-top:1px dashed var(--border-color); padding-top:8px;">⏰ Önceki Ders — Henüz Bu Derste Atış Yok</div>`; }
+                if(eskiKalan && aktifBugün.length > 0 && sp === eskiDers[0]) { _h += `<div style="font-size:11px; color:var(--text-muted); margin:10px 0 4px; border-top:1px dashed var(--border-color); padding-top:8px;">⏰ Önceki Ders — Henüz Bu Derste Atış Yok</div>`; }
                 let madalya = ""; let rc = ""; if(idx === 0) { madalya = "🥇"; rc = "rank-1"; } else if(idx === 1) { madalya = "🥈"; rc = "rank-2"; } else if(idx === 2) { madalya = "🥉"; rc = "rank-3"; } else { madalya = `<span style="font-size:12px; margin-left:5px;">${idx+1}.</span>`; }
                 let cRenk = sp.cinsiyet === 'K' ? 'var(--neon-pink)' : 'var(--neon-blue)';
                 let macBilgi = getSporcuMacBilgisi(sp.ad); let serilerLen = sp.seriler ? sp.seriler.length : 0;
@@ -31607,7 +31614,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let eskiEtiket = eskiKalan ? `<span style="font-size:9px; background:rgba(255,255,255,0.08); color:var(--text-muted); padding:2px 5px; border-radius:4px; margin-left:4px;">önceki ders</span>` : '';
                 let canli = canliAtisAktifMi(aktifGrup, sp.ad);
                 let canliCerceve = canli ? 'border:2px solid var(--neon-green) !important; box-shadow:0 0 14px rgba(16,185,129,0.5);' : '';
-                dom.innerHTML += `<div class="tablo-satir ${rc}" style="${vurgu}${opaslik}${canliCerceve}">
+                _h += `<div class="tablo-satir ${rc}" style="${vurgu}${opaslik}${canliCerceve}">
                     <div style="font-weight:600; font-size:13px; display:flex; align-items:center; gap:5px;">
                         <span style="width:25px; text-align:center;">${madalya}</span>
                         <div style="display:flex; flex-direction:column;">
@@ -31623,6 +31630,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>`;
               } catch(satirHata) { /* hata yakalandı */ }
             });
+            dom.innerHTML = _h;
         }
 
         function getSporcuMacBilgisi(ad) {

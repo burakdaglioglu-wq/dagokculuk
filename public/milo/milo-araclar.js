@@ -167,10 +167,12 @@ function maCiz() {
     alan.innerHTML = `<div class="ma">
         <div class="ma-ust"><div><div class="ma-baslik">📋 Yoklama</div><div class="ma-alt">Hangi derste kim var, kim geldi, kim gelmedi.</div></div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap"><div class="ma-seg">${seg(MA.mod, 'hafta', "MA.mod='hafta'; maCiz()")}Hafta</button>${seg(MA.mod, 'ay', "MA.mod='ay'; maCiz()")}Ay</button></div>
-            <div class="ma-nav"><button onclick="maKaydir(-1)" aria-label="Önceki">‹</button><span>${D.yazi}<small>${D.alt}</small></span><button onclick="maKaydir(1)" aria-label="Sonraki" ${(D.ay ? MA.ay : MA.hafta) >= 0 ? 'disabled' : ''}>›</button></div></div></div>
+            <button class="ma-btn ana" onclick="maPdf()" title="Seçili dönemin ayrıntılı yoklama raporu">📄 PDF</button><div class="ma-nav"><button onclick="maKaydir(-1)" aria-label="Önceki">‹</button><span>${D.yazi}<small>${D.alt}</small></span><button onclick="maKaydir(1)" aria-label="Sonraki" ${(D.ay ? MA.ay : MA.hafta) >= 0 ? 'disabled' : ''}>›</button></div></div></div>
         <div class="ma-seg">${seg(MA.alt, 'ders', "MA.alt='ders'; maCiz()")}📅 Dersler</button>${seg(MA.alt, 'sporcu', "MA.alt='sporcu'; maCiz()")}👥 Sporcular</button>${seg(MA.alt, 'sayilar', "MA.alt='sayilar'; maCiz()")}📊 Sayılar</button></div>
         ${govde}</div>`;
 }
+// 📄 Seçili dönemin (hafta/ay) ayrıntılı yoklama raporu — milo-defter.js mdYoklamaRaporPdf (2026-10-15)
+function maPdf() { let D = maDonem(); if (typeof mdYoklamaRaporPdf !== 'function') return showToast('PDF aracı yüklenemedi.', 'error'); mdYoklamaRaporPdf(D.isoler[0], D.isoler[D.isoler.length - 1], D.yazi + ' · ' + D.alt).catch(function () { showToast('PDF oluşturulamadı.', 'error'); }); }
 function maKaydir(f) { if (MA.mod === 'ay') MA.ay = Math.min(0, Math.max(-12, MA.ay + f)); else { MA.hafta = Math.min(0, Math.max(-26, MA.hafta + f)); MA.gun = null; } maCiz(); }
 function maGunAc(iso) {
     let d = new Date(iso + 'T12:00:00'), pzt = new Date(d); pzt.setDate(d.getDate() - (d.getDay() + 6) % 7);
