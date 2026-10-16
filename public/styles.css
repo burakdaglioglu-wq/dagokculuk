@@ -307,6 +307,14 @@
         .km-arac-buyuk-yazi span { font-size: 13px; opacity: .9; }
         .km-arac-buyuk-yazi small { font-size: 11.5px; opacity: .72; }
         .km-arac-buyuk-ok { font-size: 30px; line-height: 1; opacity: .7; }
+        /* 2026-10-16 — 4 büyük kart (Skor, Form Lab, Oyunlar, Yarışma); Oyunlar/Yarışma altında hızlı düğmeler */
+        .km-arac-buyuk-kap { display: flex; flex-direction: column; border-radius: 22px; background: color-mix(in srgb, var(--km-ana) 14%, transparent); }
+        .km-arac-buyuk-kap > .km-arac-buyuk { flex: 1; }
+        .km-arac-hizli { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 10px 10px; }
+        .km-arac-hizli button { flex: 1 1 auto; min-height: 42px; padding: 0 14px; border-radius: 12px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
+            color: var(--text-primary); background: color-mix(in srgb, var(--km-ana) 22%, var(--bg-card, #111)); border: 1px solid color-mix(in srgb, var(--km-ana) 55%, transparent); }
+        .km-arac-hizli button:hover { background: color-mix(in srgb, var(--km-ana) 34%, var(--bg-card, #111)); }
+        .km-arac-hizli button:focus-visible { outline: 3px solid color-mix(in srgb, var(--km-ana) 70%, #fff); outline-offset: 2px; }
         .km-arac-ara { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: 14px; color: var(--text-secondary);
             border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent); background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
         .km-arac-ara input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 15px; }

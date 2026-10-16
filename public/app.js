@@ -11758,7 +11758,21 @@
         const KM_ARAC_ANA = {
             skor: { baslik:'Skor Gir', aciklama:'Oku at, puanı gir', renk:'var(--accent)' },
             formlab: { baslik:'Form Lab', aciklama:'Kamerayla çene altı, kol ve parmak bırakışı', renk:'#D73204' },
+            // 2026-10-16 (kullanıcı: "oyunlar bölümünü de Form Lab ve Skor gibi büyük, farklı yap, yarışmayı da — hızlı aksiyon alalım")
+            oyunlar: { baslik:'Oyunlar', aciklama:'Zirve, Canavar, Yumurta ve diğerleri', renk:'#1F8A6B' },
+            yarisma: { baslik:'Yarışma', aciklama:'Sıralama turu, süre, eleme, TV', renk:'#B07A00' },
         };
+        const KM_ARAC_ANA_SIRA = ['skor', 'formlab', 'oyunlar', 'yarisma'];
+        function kmAnaSonOyun() { try { let t = localStorage.getItem('dagsk_km_son_oyun'); return t && KM_OYUN_TEMALAR[t] ? t : null; } catch(e) { return null; } }
+        function kmAnaSonOyunAc() { let t = kmAnaSonOyun(); kmAracSec('oyunlar'); if(t) setTimeout(function() { try { kmOyunTemaSec(t); } catch(e) {} }, 60); }
+        function kmAnaYarismaDurum() {
+            try { if(typeof yzOku !== 'function') return null; let d = yzOku().durum; if(!d || !d.asama || d.asama === 'kurulum') return null; if(d.asama === 'bitti') return 'Son tur bitti · sonuçlar hazır'; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; let f = yzFormat(d); return '🎯 Tur sürüyor · seri ' + (Math.min(d.seri, f.seri - 1) + 1) + '/' + f.seri; } catch(e) { return null; }
+        }
+        function kmAnaHizliHTML(id) {
+            if(id === 'oyunlar') { let t = kmAnaSonOyun(), th = t && KM_OYUN_TEMALAR[t]; return '<div class="km-arac-hizli">' + (th ? '<button type="button" onclick="kmAnaSonOyunAc()">▶ ' + th.ikon + ' ' + esc(th.ad) + '</button>' : '') + '<button type="button" onclick="kmAracSec(\'yuva\')">🥚 Yumurta Yuvası</button></div>'; }
+            if(id === 'yarisma') return '<div class="km-arac-hizli"><button type="button" onclick="kmKarmaYarismayaGec(true)">📺 Yarışma TV</button></div>';
+            return '';
+        }
         const KM_ARAC_ACIKLAMA = {
             yuk: 'Haftalık ok sayısı ve yük', seviye: 'Mesafe/puan seviye sınavı', lig: 'Kulüp içi haftalık lig',
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
@@ -11797,13 +11811,13 @@
                     + '<div id="km-arac-govde"></div>';
             }
             // iki ana kart
-            document.getElementById('km-arac-ana').innerHTML = ['skor','formlab'].map(function(id) {
+            document.getElementById('km-arac-ana').innerHTML = KM_ARAC_ANA_SIRA.map(function(id) {
                 let a = kmAracBul(id), m = KM_ARAC_ANA[id]; if(!a) return '';
-                let durum = id === 'skor' ? kmAracDurumSatiri('skor') : (function(){ try { return Object.keys(kyDepoOku('form_lab') || {}).length ? 'Son analizler karnede' : m.aciklama; } catch(e) { return m.aciklama; } })();
-                return '<button type="button" class="km-arac-buyuk" style="--km-ana:' + m.renk + ';" onclick="kmAracSec(\'' + id + '\')">'
+                let durum = id === 'skor' ? kmAracDurumSatiri('skor') : id === 'yarisma' ? (kmAnaYarismaDurum() || m.aciklama) : id === 'oyunlar' ? m.aciklama : (function(){ try { return Object.keys(kyDepoOku('form_lab') || {}).length ? 'Son analizler karnede' : m.aciklama; } catch(e) { return m.aciklama; } })();
+                return '<div class="km-arac-buyuk-kap" style="--km-ana:' + m.renk + ';" data-ana="' + id + '"><button type="button" class="km-arac-buyuk" style="--km-ana:' + m.renk + ';" onclick="kmAracSec(\'' + id + '\')">'
                     + '<span class="km-arac-buyuk-ikon">' + kmAracSvg(a.icon, 26) + '</span>'
                     + '<span class="km-arac-buyuk-yazi"><b>' + m.baslik + '</b><span>' + m.aciklama + '</span>' + (durum !== m.aciklama ? '<small>' + esc(durum) + '</small>' : '') + '</span>'
-                    + '<span class="km-arac-buyuk-ok" aria-hidden="true">›</span></button>';
+                    + '<span class="km-arac-buyuk-ok" aria-hidden="true">›</span></button>' + kmAnaHizliHTML(id) + '</div>';
             }).join('');
             let hizli = kmAracSonKullanilan();
             document.getElementById('km-arac-govde').innerHTML = ''
@@ -24717,6 +24731,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // arasında geçiş — bkz. kmOyunSisFracUygula/GeriYukle tanımları (2026-09-24 düzeltmesi).
             if(_kmOyunAktifTema === 'sisharita' && tid !== 'sisharita') kmOyunSisFracGeriYukle();
             _kmOyunAktifTema = tid;
+            try { localStorage.setItem('dagsk_km_son_oyun', tid); } catch(e) {}
             if(tid === 'sisharita') kmOyunSisFracUygula();
             kmOyunTemaKullanildiIsaretle(tid);
             let wrap = document.getElementById('km-oyun-wrap'); if(wrap) wrap.dataset.tema = tid;
