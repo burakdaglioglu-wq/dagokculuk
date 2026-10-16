@@ -100,7 +100,32 @@ export default async function ({ log }) {
       dogrula(zirve.sonuc && zirve.sonuc.tamam, 'görev tamam sayılmadı: ' + JSON.stringify(zirve.sonuc));
       esit(zirve.bayrak, 1, 'kampa bayrak dikilmedi');
     }
+    // 🐉 Ortak Canavar 5.0 (2026-10-16): 12 yeni canavar çizilir; kaplumbağa tavanı, Zümrüdüanka dirilir, jöle bölünür, mamut ıskada iyileşir
+    const cnv = await p.evaluate(async () => {
+      kmOyunTemaSec('canavar'); kmCanavarDurumEmin();
+      const yedek = JSON.stringify(_kmCanavar), yeni = ['tepegoz', 'sahmeran', 'zumruduanka', 'karakoncolos', 'disli', 'kristal', 'jole', 'hayalet', 'kaplumbaga', 'solucan', 'mamut', 'kurbaga'];
+      const cizim = yeni.filter((t) => kmOyunCanavarSVG(t).length < 800);
+      const kur = (tip, can, max) => { _kmCanavar.aktif = { no: 2, tip, can, maxCan: max, istat: {}, izler: [], seri: 0, kalkan: false, kalkanEsik: [], enIyiKombo: 0 }; _kmCanavar.kombo = 0; kmCanavarKaydet(); };
+      const seri = async (oklar) => {
+        let s = _kmOyunRosterCache[0]; turnuvaDB[s.g][s.ad].devamModu = true;
+        kmOyunSporcuSec(0); _kmOyunSeriGirisleri = oklar.slice(0, _kmOyunOkSayisi); while (_kmOyunSeriGirisleri.length < _kmOyunOkSayisi) _kmOyunSeriGirisleri.push(oklar[0]); _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+        for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200));
+        let m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200)); }
+      };
+      const r = {};
+      kur('kaplumbaga', 500, 500); await seri(['X', 'X', 'X']); r.kap = 500 - _kmCanavar.aktif.can;
+      kur('zumruduanka', 5, 100); await seri(['9', '9', '9']); r.anka = { can: _kmCanavar.aktif.can, dirildi: !!_kmCanavar.aktif.dirildi, tip: _kmCanavar.aktif.tip };
+      kur('jole', 60, 100); await seri(['5', '5', '5']); r.jole = !!_kmCanavar.aktif.parca && _kmCanavar.aktif.parca.can[0] + _kmCanavar.aktif.parca.can[1] === _kmCanavar.aktif.can;
+      kur('mamut', 400, 500); await seri(['M', 'M', 'M']); r.mamut = _kmCanavar.aktif.can;
+      _kmCanavar = JSON.parse(yedek); kmCanavarKaydet(); kmOyunCanavarGovdeKur(true); kmOyunCanavarCiz();
+      return { cizim, ...r };
+    });
+    esit(cnv.cizim.length, 0, 'çizilmeyen canavar: ' + cnv.cizim.join(','));
+    dogrula(cnv.kap > 0 && cnv.kap <= 20, 'kaplumbağa kabuğu tavanı: ' + cnv.kap);
+    dogrula(cnv.anka.tip === 'zumruduanka' && cnv.anka.dirildi && cnv.anka.can === 30, 'Zümrüdüanka dirilmedi: ' + JSON.stringify(cnv.anka));
+    dogrula(cnv.jole, 'jöle ikiye bölünmedi');
+    esit(cnv.mamut, 415, 'mamut ıskada iyileşmedi');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log(`${TEMALAR.length} tema × 2 mod açıldı; Zirve: metre, kamp görevi, bayrak`);
+    log(`${TEMALAR.length} tema × 2 mod açıldı; Zirve: metre, kamp görevi, bayrak; Canavar 5.0: 12 yeni + kurallar`);
   } finally { await ctx.close(); }
 }
