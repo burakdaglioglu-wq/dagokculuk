@@ -13968,6 +13968,24 @@
 .km-cnv-gorunmez #km-cnv-canavar-ic{ opacity:.22; transition:opacity .6s; }
 .km-cnv-gomulu .km-cnv-solucan-govde{ opacity:.25; transition:opacity .6s; }
 .km-cnv-cip.ozel{ border-color:rgba(255,210,122,.55); }
+.km-oyun-karakter-kutu.km-cnv-rh{ width:min(1040px, 100%); }
+.km-cnv-rh-not{ font-family:var(--font-body); font-size:12.5px; color:var(--ink, #fff); opacity:.8; margin:-4px 0 10px; line-height:1.45; }
+.km-cnv-rh-bolum{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--ink, #fff); margin:14px 0 8px; }
+.km-cnv-rh-izgara{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
+.km-cnv-rh-kart{ display:flex; flex-direction:column; border-radius:14px; overflow:hidden; border:2px solid rgba(255,255,255,.1); background:#0d1018; }
+.km-cnv-rh-kart.aktif{ border-color:var(--rhr); box-shadow:0 0 0 3px color-mix(in srgb, var(--rhr) 30%, transparent); }
+.km-cnv-rh-resim{ position:relative; height:150px; background:linear-gradient(180deg, var(--rh1), var(--rh2)); }
+.km-cnv-rh-resim svg{ width:100%; height:100%; display:block; }
+.km-cnv-rh-rozet{ position:absolute; top:7px; left:7px; font-family:var(--font-body); font-weight:900; font-size:10.5px; color:#111; background:var(--rhr); border-radius:7px; padding:2px 7px; }
+.km-cnv-rh-rozet.yeni{ background:#ffd23f; }
+.km-cnv-rh-govde{ display:flex; flex-direction:column; gap:6px; padding:9px 11px 11px; font-family:var(--font-body); color:#eef2ff; flex:1; }
+.km-cnv-rh-govde > b{ font-family:var(--font-display); font-size:15px; }
+.km-cnv-rh-kural{ font-size:12px; line-height:1.4; }
+.km-cnv-rh-ipucu{ font-size:11.5px; line-height:1.4; opacity:.75; }
+.km-cnv-rh-alt{ margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; opacity:.95; }
+.km-cnv-rh-alt .km-cnv-yeni-btn{ position:static; }
+.km-cnv-rh-alt .km-cnv-yeni-btn:disabled{ opacity:.45; cursor:default; }
+.km-cnv-rh .km-cnv-goz, .km-cnv-rh .km-cnv-kanat, .km-cnv-rh .km-cnv-suzul, .km-cnv-rh .km-cnv-disli-don{ animation:none !important; }
 @media (prefers-reduced-motion: reduce){ .km-cnv-disli-don, .km-cnv-suzul{ animation:none; } }
 .km-cnv-araclar{ position:absolute; right:8px; bottom:92px; z-index:2; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; max-width:52%; }
 .km-cnv-araclar .km-cnv-yeni-btn{ position:static; }
@@ -23137,10 +23155,71 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmCanavarAraclarCiz() {
             let el = document.getElementById('km-cnv-araclar'); if(!el) return;
             let z = KM_CANAVAR_ZORLUK[kmCanavarZorluk()], takim = kmCanavarTakimAcik();
-            el.innerHTML = `<button class="km-cnv-yeni-btn" onclick="kmCanavarZorlukDegistir()" title="Zorluk: ${z.ad} — ${z.acik}. Dokun: Kolay → Normal → Zor">${z.ikon} ${z.ad}</button>`
+            el.innerHTML = `<button class="km-cnv-yeni-btn" onclick="kmCanavarRehberAc()" title="Bütün canavarlar: resim, kural, ipucu — istediğini seç">📖 Canavarlar</button>`
+                + `<button class="km-cnv-yeni-btn" onclick="kmCanavarZorlukDegistir()" title="Zorluk: ${z.ad} — ${z.acik}. Dokun: Kolay → Normal → Zor">${z.ikon} ${z.ad}</button>`
                 + `<button class="km-cnv-yeni-btn${takim ? ' aktif' : ''}" onclick="kmCanavarTakimDegistir()" title="Takım savaşı: sınıf ikiye ayrılır, canavarı önce indiren takım kazanır" aria-pressed="${takim}">⚔️ Takım${takim ? ' açık' : ''}</button>`
                 + `<button class="km-cnv-yeni-btn${_kmCnvSesAcik ? ' aktif' : ''}" onclick="kmCnvSesDegistir()" title="Savaş sesleri" aria-label="Savaş sesleri" aria-pressed="${_kmCnvSesAcik}">${_kmCnvSesAcik ? '🔊' : '🔇'}</button>`
                 + `<button class="km-cnv-yeni-btn" onclick="kmOyunCanavarYeniSavas()" title="Bugünkü savaşı sıfırla, 1. canavardan başla">🔄 Yeni Savaş</button>`;
+        }
+        // ---- 📖 Canavar rehberi + seçim (2026-10-16, kullanıcı: "canavarların infosu lazım, ben seçebiliyor muyum?").
+        // Bütün türler: resim (aynı SVG), kural, nasıl yenilir ipucu, sınıfın bu türü kaç kez yendiği (koleksiyon toplamı).
+        // "⚔️ Bununla savaş": sahnedeki canavar seçilen türle değişir (aynı sıra no → aynı can hesabı, tam can). Sefer haritası
+        // o adımda seçilen türü gösterir; Ejder Kral seçilirse yenilince sefer tamamlanmış sayılır.
+        const KM_CANAVAR_IPUCU = {
+            ejder: 'Sarıya nişan alın — sarı oklar %50 fazla vurur.', golem: 'Düşük puanlı oklar az işler; 5 ve üstünü hedefleyin.', buz: 'Beyaz halkaya düşen ok boşa gider; ortaya yaklaşın.',
+            kurt: 'X avı! Her X iki kat hasar.', volkan: 'Kalkan 3 kez açılır; %70+ serilerle kırın.', kral: 'Final: hasar azalır ama kritik seri (%90+) iki kat vurur.',
+            kraken: 'Mavi halka (6-5) bu kez değerli.', orman: 'Siyah halka (4-3) işlemez; kırmızıya çıkın.', anka: 'Kırmızı (8-7) oklar %50 fazla.',
+            akrep: 'Beyaz işlemez, 10\'lar %50 fazla.', mantar: 'Hedefe değen her ok en az 3 — herkes katkı verir.',
+            tepegoz: 'Tek göz ortada: sarıya atan iki kat vurur, dağınık atış zayıf kalır.', sahmeran: 'Her seride zayıf renk değişir — atıştan önce ekrandaki rengi söyleyin.',
+            zumruduanka: 'İki kez yenmek gerekir; ilk düşüşten sonra %30 canla döner.', karakoncolos: 'Iska yapmadan seri bitirin — tek ıska hasarı yarıya indirir.',
+            disli: 'Sıkı grup ödülü: üç ok aynı renkteyse iki kat.', kristal: 'X avı: her ok en fazla 8 sayılır ama X 15 vurur.',
+            jole: 'Yarıya inince ikiye bölünür; A ve B sırayla vurulur, ikisini de eritin.', hayalet: 'Görünmez seride yalnız %70+ seri işler — o sırayı en iyi atana verin.',
+            kaplumbaga: 'Bir seri en fazla 20 vurur: tek yıldız bitiremez, herkes atmalı.', solucan: 'Her 3. seride kuma girer; o seri ×1,5 birikip sonrakinde patlar.',
+            mamut: 'Kırmızı ×1,5 ama her ıska mamuta can verir — dikkatli atın.', kurbaga: 'Serideki en iyi ok iki kez sayılır — bir tane çok iyi ok yeter.'
+        };
+        function kmCanavarSinifYendi(tip) {
+            let n = 0; (_kmOyunRosterCache || []).forEach(function(s) { let k = kmCanavarKoleksiyon(s.g, s.ad); n = Math.max(n, k[tip] || 0); }); return n;
+        }
+        function kmCanavarRehberAc() {
+            kmCanavarDurumEmin();
+            let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
+            let aktif = _kmCanavar.aktif && _kmCanavar.aktif.tip, yeniler = ['tepegoz', 'sahmeran', 'zumruduanka', 'karakoncolos', 'disli', 'kristal', 'jole', 'hayalet', 'kaplumbaga', 'solucan', 'mamut', 'kurbaga'];
+            let kart = function(t) {
+                let oz = KM_CANAVAR_OZELLIK[t.id] || {}, gk = KM_CANAVAR_ARENA_GOK[t.id] || KM_CANAVAR_ARENA_GOK.ejder, yendi = kmCanavarSinifYendi(t.id);
+                return `<div class="km-cnv-rh-kart${t.id === aktif ? ' aktif' : ''}" style="--rh1:${gk[0]}; --rh2:${gk[1]}; --rhr:${t.renk2}">
+                    <div class="km-cnv-rh-resim"><svg viewBox="-340 -430 680 450" aria-hidden="true">${kmOyunCanavarSVG(t.id)}</svg>${t.id === aktif ? '<span class="km-cnv-rh-rozet">⚔️ Şu an sahnede</span>' : yeniler.indexOf(t.id) !== -1 ? '<span class="km-cnv-rh-rozet yeni">YENİ</span>' : ''}</div>
+                    <div class="km-cnv-rh-govde"><b>${t.ikon} ${esc(t.ad)}</b>
+                        <div class="km-cnv-rh-kural">${oz.ikon || ''} <b>${esc(oz.ad || '')}</b> — ${esc(oz.acik || '')}</div>
+                        <div class="km-cnv-rh-ipucu">💡 ${esc(KM_CANAVAR_IPUCU[t.id] || '')}</div>
+                        <div class="km-cnv-rh-alt"><span>${yendi ? '🏆 Sınıf ' + yendi + ' kez yendi' : 'Henüz yenilmedi'}</span><button class="km-cnv-yeni-btn" onclick="kmCanavarSec('${t.id}')"${t.id === aktif ? ' disabled' : ''}>⚔️ Bununla savaş</button></div></div></div>`;
+            };
+            let grup = function(baslik, l) { return '<div class="km-cnv-rh-bolum">' + baslik + '</div><div class="km-cnv-rh-izgara">' + l.map(kart).join('') + '</div>'; };
+            let tum = KM_CANAVAR_TIPLERI;
+            let m = document.createElement('div'); m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
+            m.innerHTML = `<div class="km-oyun-karakter-kutu km-cnv-rh" role="dialog" aria-label="Canavar rehberi">
+                <div class="km-oyun-karakter-baslik"><span>📖 Canavarlar — ${tum.length} tür</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat" aria-label="Kapat">✕</button></div>
+                <div class="km-cnv-rh-not">Her hafta sefer bu havuzdan 5 canavar + final Ejder Kral getirir. İstersen <b>⚔️ Bununla savaş</b> ile şimdi istediğin canavarı çağır (tam canla gelir, gerçek skora dokunmaz).</div>
+                ${grup('🆕 Yeni canavarlar', tum.filter(function(t) { return yeniler.indexOf(t.id) !== -1; }))}
+                ${grup('🐉 Klasik canavarlar', tum.filter(function(t) { return yeniler.indexOf(t.id) === -1 && t.id !== 'kral'; }))}
+                ${grup('👑 Final', tum.filter(function(t) { return t.id === 'kral'; }))}</div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
+            (document.getElementById('km-oyun-wrap') || document.body).appendChild(m);
+        }
+        function kmCanavarSec(tip) {
+            kmCanavarDurumEmin();
+            let c = _kmCanavar.aktif, t = kmCanavarTipById(tip);
+            let degistir = function() {
+                kmCanavarSinematikIptal();
+                let y = kmCanavarYeni(c ? c.no : 1); y.tip = t.id;
+                y.kalkanEsik = kmCanavarKalkanAcik() ? (t.id === 'volkan' ? [0.75, 0.5, 0.25] : KM_CANAVAR_KALKAN_ESIKLER).slice() : [];
+                _kmCanavar.aktif = y; _kmCanavar.kombo = 0; if(kmCanavarTakimAcik()) kmCanavarTakimEmin(y);
+                kmCanavarKaydet(); kmOyunKarakterSecKapat();
+                kmOyunCanavarGovdeKur(true); kmOyunCanavarCiz(); kmOyunChipleriCiz();
+                try { kmCnvSes('dogus'); } catch(e) {}
+                showToast(t.ikon + ' ' + t.ad + ' sahneye çıktı — ' + ((KM_CANAVAR_OZELLIK[t.id] || {}).ad || ''), 'success');
+            };
+            if(c && c.can > 0 && c.can < c.maxCan) return onayIste(t.ikon + ' <b>' + esc(t.ad) + '</b> çağrılsın mı?<br><small>Sahnedeki canavar (' + c.can + '/' + c.maxCan + ' can) gider, yenisi tam canla gelir.</small>', degistir, '⚔️ Çağır', 'Vazgeç');
+            degistir();
         }
         // Durum satırına eklenen çipler: sıradaki sporcunun görevi + takım savaşı can/skor.
         function kmCanavarEkCiplerHTML(c) {

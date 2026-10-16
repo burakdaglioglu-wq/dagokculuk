@@ -125,6 +125,15 @@ export default async function ({ log }) {
     dogrula(cnv.anka.tip === 'zumruduanka' && cnv.anka.dirildi && cnv.anka.can === 30, 'Zümrüdüanka dirilmedi: ' + JSON.stringify(cnv.anka));
     dogrula(cnv.jole, 'jöle ikiye bölünmedi');
     esit(cnv.mamut, 415, 'mamut ıskada iyileşmedi');
+    // 📖 Canavar rehberi: 23 tür kartı; "Bununla savaş" sahnedeki canavarı değiştirir
+    const yedekCnv = await p.evaluate(() => JSON.stringify(_kmCanavar));
+    await p.evaluate(() => { kmOyunTemaSec('canavar'); _kmCanavar.aktif.can = _kmCanavar.aktif.maxCan; kmCanavarKaydet(); kmOyunCanavarHudGuncelle(); });
+    await p.locator('#km-cnv-araclar button', { hasText: 'Canavarlar' }).click();
+    esit(await p.locator('.km-cnv-rh-kart').count(), await p.evaluate(() => KM_CANAVAR_TIPLERI.length), 'rehberdeki kart sayısı');
+    await p.locator('.km-cnv-rh-kart', { hasText: 'Tepegöz' }).locator('button', { hasText: 'Bununla savaş' }).click(); await p.waitForTimeout(400);
+    esit(await p.evaluate(() => _kmCanavar.aktif.tip + '|' + (_kmCanavar.aktif.can === _kmCanavar.aktif.maxCan)), 'tepegoz|true', 'seçilen canavar sahneye gelmedi');
+    dogrula(!(await p.locator('#km-oyun-karakter-modal').count()), 'rehber kapanmadı');
+    await p.evaluate((y) => { _kmCanavar = JSON.parse(y); kmCanavarKaydet(); kmOyunCanavarGovdeKur(true); kmOyunCanavarCiz(); }, yedekCnv);
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(`${TEMALAR.length} tema × 2 mod açıldı; Zirve: metre, kamp görevi, bayrak; Canavar 5.0: 12 yeni + kurallar`);
   } finally { await ctx.close(); }
