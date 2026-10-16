@@ -72,7 +72,35 @@ export default async function ({ log }) {
       return { teklif, acildi, ilkDogru: ilk === r[0].ad };
     });
     if (!toren.atla) { dogrula(toren.teklif, 'ilk 3 bitince tören önerilmedi'); dogrula(toren.acildi, 'tören açılmadı'); dogrula(toren.ilkDogru, 'podyum varış sırasına göre değil'); }
+    // ⛰️ Zirve 3 (2026-10-16): puan = metre (+N m), kampa varınca kamp görevi; sıradaki seride yapılırsa 🚩 bayrak + 90 m
+    await p.evaluate(() => kmAracSec('oyunlar')); await p.waitForSelector('#km-oyun-wrap', { timeout: 20000 });
+    const zirve = await p.evaluate(async () => {
+      kmOyunTemaSec('zirve'); if (typeof kmOyunModSec === 'function') kmOyunModSec(false);
+      let s = _kmOyunRosterCache[0]; if (!s) return { atla: true };
+      kmZirveGunlukSifirla();
+      let d = kmOyunDurumAl(s.g, s.ad); d.frac = 0.1; d.zirveGorev = null; s.frac = 0.1; kmOyunDurumKaydet();
+      turnuvaDB[s.g][s.ad].devamModu = true;
+      const seri = async (oklar) => {
+        kmOyunSporcuSec(0); _kmOyunSeriGirisleri = oklar.slice(0, _kmOyunOkSayisi); while (_kmOyunSeriGirisleri.length < _kmOyunOkSayisi) _kmOyunSeriGirisleri.push(oklar[0]); _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+        for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200));
+        let m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200)); }
+      };
+      await seri(['8', '8', '8']);
+      let metre = _kmZirveSeriSon && _kmZirveSeriSon.metre, g1 = kmOyunDurumAl(s.g, s.ad).zirveGorev;
+      kmOyunSporcuSec(0); kmZirveCagriGuncelle(); let bant = document.getElementById('km-zirve-cagri').textContent;
+      await seri(['9', '9', '9']);
+      let sonuc = _kmZirveSeriSon && _kmZirveSeriSon.gorev, b = (kmZirveGunluk().bayraklar || {})[0] || [];
+      let d2 = kmOyunDurumAl(s.g, s.ad); d2.frac = 0; d2.zirveGorev = null; s.frac = 0; kmOyunDurumKaydet(); kmZirveGunlukSifirla();
+      return { metre, g1: g1 && g1.id + '@' + g1.ci, bant, sonuc, bayrak: b.length };
+    });
+    if (!zirve.atla) {
+      dogrula(zirve.metre > 300, 'Zirve metre: ' + zirve.metre);
+      esit(zirve.g1, 'iskasiz@0', 'ilk kampta görev verilmedi');
+      dogrula(/görev/i.test(zirve.bant), 'görev bandı yok: ' + zirve.bant);
+      dogrula(zirve.sonuc && zirve.sonuc.tamam, 'görev tamam sayılmadı: ' + JSON.stringify(zirve.sonuc));
+      esit(zirve.bayrak, 1, 'kampa bayrak dikilmedi');
+    }
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log(`${TEMALAR.length} tema × 2 mod açıldı`);
+    log(`${TEMALAR.length} tema × 2 mod açıldı; Zirve: metre, kamp görevi, bayrak`);
   } finally { await ctx.close(); }
 }

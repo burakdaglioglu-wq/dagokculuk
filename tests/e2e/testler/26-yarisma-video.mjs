@@ -92,17 +92,25 @@ export default async function ({ log }) {
     esit(await p.evaluate(() => _fl.secili), k, 'Form Lab sporcusu');
     dogrula(!(await p.locator('#kv').count()), 'video penceresi kapanmadı');
     await p.evaluate(() => { _fl.iptal = true; });
-    // Yumurta Yuvası'nda da süre: şeritte ⏱ → −5 → Uygula (80 → 75), ▶ başlat (2026-10-15)
-    await p.evaluate(() => kmAracSec('yuva'));
-    await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('.yv-yz'), null, { timeout: 20000 });
-    await p.locator('.yv-yz button', { hasText: 'sn' }).click(); await p.waitForTimeout(300);
+    // Yumurta Yuvası'nda Yarışma artık SOLDA katlanır panel (2026-10-16): sekme → panel; ⏱ → −5 → Uygula (80 → 75), ▶ başlat, ⛶ büyük sayaç
+    await p.evaluate(() => { try { localStorage.setItem('dagsk_yuva_yz_acik', '0'); } catch (e) {} kmAracSec('yuva'); });
+    await p.waitForFunction(() => typeof kmYuvaCiz === 'function' && document.querySelector('.yv-yzp-sekme.canli'), null, { timeout: 20000 });
+    dogrula(!(await p.locator('.yv-ust button', { hasText: 'Yarışma' }).count()), 'üst menüde hâlâ Yarışma düğmesi var');
+    await p.locator('.yv-yzp-sekme').click(); await p.waitForSelector('.yv-yzp');
+    await p.locator('.yv-yzp button', { hasText: ' sn' }).click(); await p.waitForTimeout(300);
     await p.locator('#onay-modal .yz-sure-elle button', { hasText: '−5' }).click();
     await p.locator('#onay-modal .yz-sure-elle button', { hasText: 'Uygula' }).click(); await p.waitForTimeout(300);
     esit(await p.evaluate(() => yzSure(yzOku().durum)), 75, 'yumurtada elle süre');
-    dogrula((await p.locator('.yv-yz').innerText()).includes('75 sn'), 'yumurta şeridi yeni süreyi göstermiyor');
-    await p.locator('.yv-yz button', { hasText: 'Süreyi başlat' }).click(); await p.waitForTimeout(300);
+    dogrula((await p.locator('.yv-yzp').innerText()).includes('75 sn'), 'yumurta paneli yeni süreyi göstermiyor');
+    await p.locator('.yv-yzp button', { hasText: 'Süreyi başlat' }).click(); await p.waitForTimeout(300);
     dogrula(await p.evaluate(() => !!yzOku().sayac), 'yumurtadan süre başlamadı');
-    await p.evaluate(() => yzSayacDurdur());
+    await p.locator('.yv-yzp button', { hasText: 'Süreyi büyüt' }).click(); await p.waitForSelector('.yv-dev');
+    await p.evaluate(() => kmYuvaCiz()); await p.waitForTimeout(400);
+    dogrula(await p.locator('.yv-dev .yv-dev-sure').count(), 'büyük sayaç yeniden çizimde kayboldu');
+    dogrula(/^[0-9]+$/.test((await p.locator('.yv-dev-sure').innerText()).trim()), 'büyük sayaçta süre yok');
+    await p.locator('.yv-dev button', { hasText: 'Küçült' }).click();
+    dogrula(!(await p.locator('.yv-dev').count()), 'büyük sayaç kapanmadı');
+    await p.evaluate(() => { yzSayacDurdur(); try { localStorage.setItem('dagsk_yuva_yz_acik', '0'); } catch (e) {} });
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('seri uzat/kaldır; elle süre 80 sn (yumurtada 75); 3 ok seçimi + rozet + 6 oka dönüş; 🎥 skor girişinden açılır, 3 sn gecikmeli ayna çizer, ⏪ kare kare, açı çizimi, canlı kayıt → video → Form Lab (sporcu seçili) ✓');
   } finally {

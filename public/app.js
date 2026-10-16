@@ -14899,7 +14899,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-zirve-panorama{ position:absolute; inset:0; pointer-events:none; z-index:4; opacity:0; background:radial-gradient(ellipse at 50% 16%, rgba(255,214,140,.6), rgba(255,160,90,.2) 45%, transparent 75%); }
 .km-zirve-panorama.goster{ animation:kmZirvePanorama 4.2s ease-in-out 1; }
 @keyframes kmZirvePanorama{ 0%{ opacity:0; } 20%, 70%{ opacity:1; } 100%{ opacity:0; } }
-#km-zirve-cagri{ top:64px; }
+#km-zirve-cagri{ top:112px; }
+#km-zirve-cagri.gorev{ border-color:rgba(255,210,122,.7); background:linear-gradient(90deg,rgba(64,40,10,.94),rgba(30,20,8,.94)); }
+.km-zirve-kural{ font-size:10.5px; font-weight:800; opacity:.85; margin-top:2px; }
+.km-zirve-kural.gorev{ color:#ffd27a; opacity:1; }
+.km-zirve-cagri-gorev{ display:block; color:#ffd27a; margin-top:2px; }
 .km-zirve-kar{ box-shadow:0 0 0 1px rgba(60,90,130,.5); }
 @media (prefers-reduced-motion: reduce){ .km-zirve-bulut-kay, .km-zirve-ates, .km-zirve-kamp.yeni .km-zirve-kamp-ic, .km-zirve-tirmanici .km-zirve-sway, .km-zirve-elbayrak .bz, .km-zirve-kartal .kanat, .km-zirve-ruzgar i, .km-zirve-panorama.goster, .km-zirve-engel.tehlike .km-zirve-engel-tahta{ animation:none !important; } }
 .km-hrk-alt{ font-size:12px; color:var(--ink-dim, #aab); margin:0 0 12px; line-height:1.45; }
@@ -19172,7 +19176,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let bilgi = KM_OYUN_ZIRVE_EKIPMAN_BILGI[k], sahipMi = !!ekipman[k];
                 return `<span class="km-zirve-ekipman-ikon${sahipMi ? ' sahip' : ''}" title="${esc(bilgi.ad)}${sahipMi ? ' — kazanıldı' : ' — henüz kazanılmadı'}">${bilgi.ikon}</span>`;
             }).join('');
-            el.innerHTML = `<div class="km-zirve-yukseklik">⛰️ ${metre.toLocaleString('tr-TR')} m <span class="km-zirve-yukseklik-max">/ 3.000 m</span></div><div class="km-zirve-ekipman-serit">${ekipmanHTML}</div>`;
+            let gv = d0.zirveGorev ? kmZirveGorevBul(d0.zirveGorev.id) : null;
+            el.innerHTML = `<div class="km-zirve-yukseklik">⛰️ ${metre.toLocaleString('tr-TR')} m <span class="km-zirve-yukseklik-max">/ 3.000 m</span></div><div class="km-zirve-kural">1 puan = 15 m · ortalamanı geç ⚡ +60 m</div>${gv ? `<div class="km-zirve-kural gorev">⛺ Görev: ${gv.ikon} ${esc(gv.ad)}</div>` : ''}<div class="km-zirve-ekipman-serit">${ekipmanHTML}</div>`;
         }
         // Kar fırtınası görseli — SADECE aktif/sıradaki sporcunun kendi yüksekliği fırtına bölgesindeyse
         // (kullanıcı talimatı: "belirli bir yükseklikten sonra hava sertleşsin"). "Aşırıya kaçmasın"
@@ -19449,6 +19454,49 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { id: 'cig', ad: 'Çığ Bölgesi', ikon: '🌨️', frac: 0.83, esik: 0.7 }
         ];
         const KM_ZIRVE_ENGEL_PAY = 0.006, KM_ZIRVE_KIL_SURE = 1500, KM_ZIRVE_BULUT_FRAC = 0.5;
+        // Zirve 3 (2026-10-16, kullanıcı: "zirve yolu popülerliğini kaybetti, daha anlamlı ve daha iyi yapalım" → seçimleri: Skor = metre,
+        // Kamp görevleri). 1) PUAN = METRE: ilerleme zaten puanla orantılıydı ama görünmüyordu; artık her seride "+405 m" uçar,
+        // 1 puan = 15 m (3.000 m dağ). Kendi ortalamasını (son 30 seri, ok başına) geçen ⚡ ekstra hamle yapar (+60 m).
+        // 2) KAMP GÖREVLERİ: bir kampa varan sporcuya o kampın okçuluk görevi verilir ("hiç ıska yok", "sarıya bir ok"…);
+        // sıradaki serisinde yaparsa kampa 🚩 bayrak diker (+90 m), yapamazsa ceza yok, yola devam. Görev sporcunun oyun durumunda
+        // (d0.zirveGorev), dikilen bayraklar günlük durumda (bayraklar). Gerçek skora dokunmaz.
+        const KM_ZIRVE_METRE = 3000, KM_ZIRVE_HAMLE = 0.02, KM_ZIRVE_GOREV_BONUS = 0.03;
+        function kmZirveDeger(v) { return v === 'X' ? 10 : v === 'M' ? 0 : (+v || 0); }
+        function kmZirveSari(v) { return v === 'X' || v === '10' || v === '9'; }
+        const KM_ZIRVE_GOREVLER = [
+            { id: 'iskasiz', ikon: '🎯', ad: 'Hiç ıska yok', acik: 'okların hepsi hedefte olsun', kontrol: function(o) { return !o.some(function(v) { return v === 'M'; }); } },
+            { id: 'sari', ikon: '🟡', ad: 'Sarıya bir ok', acik: 'en az 1 ok sarıda (9-10-X)', kontrol: function(o) { return o.some(kmZirveSari); } },
+            { id: 'kendin', ikon: '⚡', ad: 'Kendini geç', acik: 'ok başına kendi ortalamanın üstünde', kontrol: function(o, c) { return c.ort == null ? o.reduce(function(a, v) { return a + kmZirveDeger(v); }, 0) / o.length >= 6 : c.okOrt > c.ort; } },
+            { id: 'kirmizi', ikon: '🔴', ad: 'Kırmızı ve içi', acik: 'okların hepsi 7 ya da üstü', kontrol: function(o, c) { let m = c.seviye === 'mini' ? 5 : 7; return o.every(function(v) { return kmZirveDeger(v) >= m; }); } },
+            { id: 'grup', ikon: '🤏', ad: 'Sıkı grup', acik: 'okların hepsi aynı renkte', kontrol: function(o) { let r = KM_OYUN_PAD_RENK[o[0]]; return r !== 'gri' && o.every(function(v) { return KM_OYUN_PAD_RENK[v] === r; }); } },
+            { id: 'guclu', ikon: '💪', ad: 'Güçlü seri', acik: 'ok başına 8 ve üstü', kontrol: function(o, c) { let m = c.seviye === 'mini' ? 6 : c.seviye === 'buyuk' ? 8.5 : 8; return o.reduce(function(a, v) { return a + kmZirveDeger(v); }, 0) / o.length >= m; } },
+            { id: 'sari2', ikon: '🌟', ad: 'Çifte sarı', acik: 'en az 2 ok sarıda', kontrol: function(o) { return o.filter(kmZirveSari).length >= 2; } }
+        ];
+        function kmZirveGorevBul(id) { return KM_ZIRVE_GOREVLER.find(function(g) { return g.id === id; }) || KM_ZIRVE_GOREVLER[0]; }
+        // Kişisel ortalama: son yazılan seri HARİÇ son 30 seri, ok başına (en az 6 ok yoksa null).
+        function kmZirveOrtalama(g, ad) {
+            let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return null;
+            let l = []; (sp.kartGecmisi || []).forEach(function(k) { (k.seriler || []).forEach(function(x) { l.push(x); }); }); (sp.seriler || []).forEach(function(x) { l.push(x); });
+            l = l.filter(function(x) { return x && Array.isArray(x.oklar) && x.oklar.length; }).slice(0, -1).slice(-30);
+            let p = 0, n = 0; l.forEach(function(x) { x.oklar.forEach(function(v) { p += kmZirveDeger(String(v)); n++; }); });
+            return n >= 6 ? p / n : null;
+        }
+        let _kmZirveSeriSon = null;
+        // kmOyunIlerlet'ten (Zirve): metre, ekstra hamle, bekleyen kamp görevinin sonucu → artış
+        function kmZirveSeriDegerlendir(s, d0, oklar, artis) {
+            let ort = kmZirveOrtalama(s.g, s.ad), okOrt = oklar.reduce(function(a, v) { return a + kmZirveDeger(v); }, 0) / Math.max(1, oklar.length);
+            let o = { metre: Math.round(Math.max(0, artis) * KM_ZIRVE_METRE), hamle: false, gorev: null };
+            if(ort != null && okOrt > ort && artis > 0) { o.hamle = true; artis += KM_ZIRVE_HAMLE; }
+            if(d0.zirveGorev) {
+                let gv = kmZirveGorevBul(d0.zirveGorev.id), tamam = !!gv.kontrol(oklar, { ort: ort, okOrt: okOrt, seviye: d0.seviye || 'orta' });
+                o.gorev = { ci: d0.zirveGorev.ci, id: gv.id, tamam: tamam };
+                if(tamam) artis += KM_ZIRVE_GOREV_BONUS;
+                d0.zirveGorev = null;
+            }
+            _kmZirveSeriSon = o;
+            return artis;
+        }
+        function kmZirveGorevVer(d0, ci) { d0.zirveGorev = { ci: ci, id: KM_ZIRVE_GOREVLER[ci % KM_ZIRVE_GOREVLER.length].id }; }
         let _kmZirveEngelSon = null, _kmZirveSonOran = 0, _kmZirveSaatEvre = null;
         function kmZirveTohum(seed) { return kmOyunNinjaTohum(seed); }
         function kmZirveSvgPct(x, y) { return kmOyunSvgPct('km-oyun-svg-zirve', x, y); }
@@ -19605,7 +19653,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmZirveKamplarCiz(yeniCi) {
             let g = document.getElementById('km-zirve-kamplar'); if(!g) return;
             let d = kmZirveGunluk();
-            g.innerHTML = Object.keys(d.kamplar).map(function(ci) {
+            let bayrak = Object.keys(d.bayraklar || {}).map(function(ci) {
+                let l = d.bayraklar[ci] || [], k = kmZirveKampNokta(+ci, 10);
+                return '<g class="km-zirve-gorev-bayrak" transform="translate(' + k.x.toFixed(1) + ',' + (k.y - 6).toFixed(1) + ')">' + l.slice(0, 6).map(function(b, j) { let x = (j - (Math.min(l.length, 6) - 1) / 2) * 9; return '<g transform="translate(' + x.toFixed(1) + ',0)"><title>' + esc(b.ad) + ' — kamp görevi tamam</title><line x1="0" y1="0" x2="0" y2="-16" stroke="#2a1d10" stroke-width="1.4"/><path d="M0,-16 L9,-13 L0,-10 Z" fill="' + b.renk + '" stroke="#2a1d10" stroke-width=".6"/></g>'; }).join('') + (l.length > 6 ? '<text x="' + (Math.min(l.length, 6) * 4.5 + 6) + '" y="-8" font-size="9" font-weight="900" fill="#fff">+' + (l.length - 6) + '</text>' : '') + '</g>';
+            }).join('');
+            g.innerHTML = bayrak + Object.keys(d.kamplar).map(function(ci) {
                 let c = d.kamplar[ci], k = kmZirveKampNokta(+ci, 34), yon = k.tx >= 0 ? -1 : 1;
                 return `<g class="km-zirve-kamp${+ci === yeniCi ? ' yeni' : ''}" transform="translate(${k.x.toFixed(1)},${k.y.toFixed(1)})"><g class="km-zirve-kamp-ic">
                     <path d="M-14,0 L0,-20 L14,0 Z" fill="${c.renk}" stroke="#2a1d10" stroke-width="1.2"/><path d="M-4,0 L0,-9 L4,0 Z" fill="#2a1d10"/>
@@ -19665,10 +19717,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 KM_ZIRVE_ENGELLER.forEach(function(e, ei) { let a = e.frac - KM_ZIRVE_ENGEL_PAY; if(hedef === -1 && s.frac <= a + 1e-6 && s.frac + menzil > a) hedef = ei; });
             }
             KM_ZIRVE_ENGELLER.forEach(function(e, ei) { let g = document.getElementById('km-zirve-engel-' + ei); if(g) g.classList.toggle('tehlike', ei === hedef); });
-            c.classList.toggle('goster', hedef !== -1);
+            let gorev = s && _kmOyunAktifTema === 'zirve' && s.frac < 1 ? kmOyunDurumAl(s.g, s.ad).zirveGorev : null;
+            c.classList.toggle('goster', hedef !== -1 || !!gorev);
+            c.classList.toggle('gorev', !!gorev && hedef === -1);
+            if(gorev && hedef === -1) { let gv = kmZirveGorevBul(gorev.id); c.innerHTML = `<span class="km-ninja-sinav-ikon">${gv.ikon}</span><span><b>⛺ ${esc((KM_OYUN_ZIRVE_KAMP_ISIMLERI[gorev.ci] || 'KAMP').toLocaleUpperCase('tr-TR'))} GÖREVİ: ${esc(gv.ad.toLocaleUpperCase('tr-TR'))}</b><small>${esc(kmOyunIlkAd(s.ad))}, bu seride ${esc(gv.acik)} → kampa 🚩 bayrak dik, +${Math.round(KM_ZIRVE_GOREV_BONUS * KM_ZIRVE_METRE)} m</small></span>`; return; }
             if(hedef !== -1) {
                 let e = KM_ZIRVE_ENGELLER[hedef], esik = kmZirveEngelEsik(e, kmOyunDurumAl(s.g, s.ad).seviye);
-                c.innerHTML = `<span class="km-ninja-sinav-ikon">${e.ikon}</span><span><b>${e.ad.toLocaleUpperCase('tr-TR')}</b><small>${esc(kmOyunIlkAd(s.ad))} engele yaklaşıyor — geçmek için bu seri <b>%${Math.round(esik * 100)}+</b> olmalı</small></span>`;
+                c.innerHTML = `<span class="km-ninja-sinav-ikon">${e.ikon}</span><span><b>${e.ad.toLocaleUpperCase('tr-TR')}</b><small>${esc(kmOyunIlkAd(s.ad))} engele yaklaşıyor — geçmek için bu seri <b>%${Math.round(esik * 100)}+</b> olmalı</small>${gorev ? `<small class="km-zirve-cagri-gorev">⛺ Kamp görevi de var: ${kmZirveGorevBul(gorev.id).ikon} ${esc(kmZirveGorevBul(gorev.id).ad)} (${esc(kmZirveGorevBul(gorev.id).acik)})</small>` : ''}</span>`;
             }
         }
         // ---- Karakter hareketleri (WAAPI, .km-zirve-hrk sarmalayıcısı; konum dış g'nin attribute'unda) ----
@@ -19710,7 +19765,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let no = el._varisNo = (el._varisNo || 0) + 1;
             let gecerli = function() { return el._varisNo === no && el.isConnected && _kmOyunAktifTema === 'zirve'; };
             let sgn = o.tegX >= 0 ? 1 : -1, adimlar = [], renk = kmOyunRenk('zirve', i), ad = kmOyunIlkAd(s.ad);
-            let e = o.engel ? KM_ZIRVE_ENGELLER[o.engel.e] : null;
+            let e = o.engel ? KM_ZIRVE_ENGELLER[o.engel.e] : null, zs = o.zs || {};
+            if(zs.metre > 0 && !(o.engel && o.engel.tip === 'gecemedi')) kmZirveYaziUcur(o.x, o.y - 52, '+' + zs.metre.toLocaleString('tr-TR') + ' m', '#ffffff');
+            if(zs.hamle) setTimeout(function() { if(gecerli()) kmZirveYaziUcur(o.x, o.y - 128, '⚡ EKSTRA HAMLE! Ortalamanı geçtin', '#ffe066'); }, 500);
+            if(zs.gorev) adimlar.push(function(sonraki) {
+                let gv = kmZirveGorevBul(zs.gorev.id), kampAd = KM_OYUN_ZIRVE_KAMP_ISIMLERI[zs.gorev.ci] || 'Kamp';
+                if(zs.gorev.tamam) {
+                    let d = kmZirveGunluk(); d.bayraklar = d.bayraklar || {}; let l = d.bayraklar[zs.gorev.ci] = d.bayraklar[zs.gorev.ci] || [];
+                    if(!l.some(function(b) { return b.ad === ad; })) l.push({ ad: ad, renk: renk }); kmZirveGunlukKaydet(d); kmZirveKamplarCiz();
+                    try { kmOyunBanner('🚩 GÖREV TAMAM!', ad + ' — ' + gv.ad + ' · ' + kampAd + ' kampına bayrak dikti, +' + Math.round(KM_ZIRVE_GOREV_BONUS * KM_ZIRVE_METRE) + ' m', 'harika'); } catch(er) {}
+                    try { sesCal(660, 0.08); setTimeout(function() { try { sesCal(990, 0.12); } catch(er) {} }, 130); } catch(er) {}
+                } else kmZirveYaziUcur(o.x, o.y - 100, gv.ikon + ' Görev olmadı — yola devam', '#ffd2b0');
+                setTimeout(sonraki, 900);
+            });
             if(o.engel && o.engel.tip === 'gecemedi') adimlar.push(function(sonraki) {
                 kmZirveYaziUcur(o.x, o.y - 76, '😱 AZ KALDI!', '#ff9b9b');
                 setTimeout(function() { kmZirveYaziUcur(o.x, o.y - 102, 'Sonraki seride %' + Math.round(o.engel.esik * 100) + '+', '#fff'); }, 900);
@@ -19736,6 +19803,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     try { sesCal(520, 0.08); setTimeout(function() { try { sesCal(780, 0.1); } catch(er) {} }, 140); } catch(er) {}
                 }
                 el.classList.add('bayrak'); setTimeout(function() { el.classList.remove('bayrak'); }, 1700);
+                let yg = kmOyunDurumAl(s.g, s.ad).zirveGorev;
+                if(yg && yg.ci === kampCi) { let gv = kmZirveGorevBul(yg.id); setTimeout(function() { try { kmOyunBanner('⛺ ' + (KM_OYUN_ZIRVE_KAMP_ISIMLERI[kampCi] || 'KAMP').toLocaleUpperCase('tr-TR') + ' · MOLA', ad + ' için kamp görevi: ' + gv.ikon + ' ' + gv.ad + ' (' + gv.acik + ')', 'cp'); } catch(er) {} try { kmZirveCagriGuncelle(); } catch(er) {} }, 1500); }
                 kmZirveHareket(el, [[0, 0, 0, 0, 0], [.15, 0, 3, 0, 0, 1, .85], [.3, 0, -26, 0, 0], [.45, 0, 2, 0, 0, 1, .88], [.6, 0, -18, 0, 0], [.76, 0, 0, 0, 0], [1, 0, 0, 0, 0]], 1300, sonraki);
             });
             if(o.eskiFrac < KM_ZIRVE_BULUT_FRAC && o.yeniFrac >= KM_ZIRVE_BULUT_FRAC) adimlar.push(function(sonraki) {
@@ -19898,7 +19967,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunZirveHudGuncelle();
                 kmOyunZirveFirtinaGuncelle();
                 kmZirveSaatGuncelle(true);
-                kmZirveVarisSahnesi(el, s, i, { x: varis.x, y: varis.y, tegX: kmZirveTegetLen(lenSon).x, engel: engel, oran: oran, geri: yeniFrac < eskiFrac, eskiCp: eskiCp, yeniCp: yeniCp, eskiFrac: eskiFrac, yeniFrac: yeniFrac });
+                kmZirveVarisSahnesi(el, s, i, { x: varis.x, y: varis.y, tegX: kmZirveTegetLen(lenSon).x, engel: engel, oran: oran, geri: yeniFrac < eskiFrac, eskiCp: eskiCp, yeniCp: yeniCp, eskiFrac: eskiFrac, yeniFrac: yeniFrac, zs: _kmZirveSeriSon });
+                try { kmZirveCagriGuncelle(); } catch(er) {}
             }
             requestAnimationFrame(frame);
         }
@@ -24354,6 +24424,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // yukarıdaki emsaliyle AYNI desen. GERÇEK skora (toplam/_skorKaydetCekirdek, YUKARIDA zaten
             // yazıldı) dokunmuyor — SADECE bu satırın altındaki görsel frac'ı etkiliyor.
             if(_kmOyunAktifTema === 'zirve') artis = kmOyunZirveArtisHesapla(kaydedilecek, toplam, maxPuan, eskiFrac, kmOyunDurumAl(s.g, s.ad));
+            if(_kmOyunAktifTema === 'zirve') { let zd = kmOyunDurumAl(s.g, s.ad); if(yeniGorev) zd.zirveGorev = null; artis = kmZirveSeriDegerlendir(s, zd, kaydedilecek.map(function(k) { return String(k.puan); }), artis); } else _kmZirveSeriSon = null;
             // ⚙️ Oyun Ayarları — yol oyunlarının uzunluğu (Standart = 1). Kendi mekaniği olan temalara (futbol, arena,
             // kehanet, gizli kelime, kule, canavar, yükseliş) dokunmaz. Ninja kapısı/çukurlar bu artışla aşağıda değerlendirilir.
             if(artis > 0 && ['futbol', 'futboltakim', 'arena', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'yukselis'].indexOf(_kmOyunAktifTema) === -1) artis *= (kmOyunAyar().yolCarpan || 1);
@@ -24415,6 +24486,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Zirve — durak geçildiyse yeni ekipman var mı kontrol et (GERÇEK skora dokunmuyor, bkz.
             // kmOyunZirveEkipmanKontrol'ün kendi yorumu).
             if(_kmOyunAktifTema === 'zirve' && yeniCp > eskiCp) kmOyunZirveEkipmanKontrol(d0, eskiCp, Math.min(yeniCp, KM_OYUN_CP_SAYISI - 1));
+            if(_kmOyunAktifTema === 'zirve' && yeniCp > eskiCp && yeniFrac < 1) kmZirveGorevVer(d0, Math.min(yeniCp, KM_OYUN_CP_SAYISI - 1) - 1);
+            if(_kmOyunAktifTema === 'zirve' && _kmZirveSeriSon) _kmZirveSeriSon.metre = Math.round(Math.max(0, yeniFrac - eskiFrac) * KM_ZIRVE_METRE);
 
             // Haftalık Kademe Ligi — GERÇEK toplamSkor'dan AYRI, sadece bu haftaya ait bir sayaç.
             // Takım Modu'nda da BİLEREK işliyor (paylaşılan yol farklı bir şey, kişisel haftalık katkı ayrı).

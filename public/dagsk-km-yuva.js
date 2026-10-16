@@ -502,6 +502,22 @@ const YUVA_CSS = `
 .yv-yz-et{font:900 12px var(--yvf-g);letter-spacing:.1em;color:#FD8E01;white-space:nowrap}.yv-yz-bilgi{flex:1;min-width:120px;font-weight:800;font-size:13px}
 .yv-yz .yz-sayac{background:rgba(0,0,0,.32);color:#FFF1E6;min-width:0;flex-direction:row;gap:8px;padding:4px 14px;border-radius:999px}.yv-yz .yz-sayac-alt{font-size:10.5px}.yv-yz .yz-sayac-sure{font-size:22px;line-height:1}
 .yv-yz-btn{display:flex;gap:6px;flex-wrap:wrap}
+.yv-yzp-sekme{position:fixed;left:0;top:38%;z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 7px;border:0;border-radius:0 14px 14px 0;background:#2A140B;color:#FFD9B8;box-shadow:inset -1.5px 0 0 rgba(253,142,1,.5),0 6px 18px rgba(0,0,0,.35);cursor:pointer;font:inherit}
+.yv-yzp-sekme.canli{background:linear-gradient(180deg,#D73204,#7A1A02);color:#fff}.yv-yzp-dikey{writing-mode:vertical-rl;transform:rotate(180deg);font:900 14px var(--yvf-b);letter-spacing:.04em}.yv-yzp-sekme small{font-weight:900;font-size:11px}
+.yv-yzp-sekme .yz-sayac{min-width:0;padding:3px 6px;border-radius:10px;background:rgba(0,0,0,.35);color:#fff;flex-direction:column;gap:0}.yv-yzp-sekme .yz-sayac-alt{display:none}.yv-yzp-sekme .yz-sayac-sure{font-size:18px;line-height:1}
+.yv-yzp{position:fixed;left:0;top:0;bottom:0;z-index:60;width:min(290px,86vw);box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:16px 14px;background:#1E0F08;color:#FFF1E6;box-shadow:6px 0 30px rgba(0,0,0,.45);border-right:1.5px solid rgba(253,142,1,.4)}
+.yv.acik .yv-yzp{background:#FFF8F0;color:var(--yazi)}.yv.acik .yv-yzp-sekme:not(.canli){background:#FFE3C7;color:#7A2A08}
+.yv-yzp-bas{display:flex;align-items:center;justify-content:space-between;font:800 19px var(--yvf-b)}.yv-yzp-kapat{border:0;background:rgba(253,142,1,.18);color:inherit;width:36px;height:36px;border-radius:10px;font-size:22px;font-weight:900;cursor:pointer}
+.yv-yzp-not{font-size:12.5px;font-weight:700;opacity:.75}.yv-yzp-bilgi{display:grid;gap:2px;font-size:13px;font-weight:700}.yv-yzp-bilgi b{font-size:14px;color:#FD8E01}
+.yv-yzp-sayac .yz-sayac{width:100%;box-sizing:border-box;background:rgba(0,0,0,.3);color:#fff;border-radius:14px;padding:8px}.yv.acik .yv-yzp-sayac .yz-sayac{background:#2A140B}.yv-yzp-sayac .yz-sayac-sure{font-size:44px;line-height:1}
+.yv-yzp-sat{display:flex;gap:6px}.yv-yzp-sat .yv-btn{flex:1}.yv-btn.genis{width:100%;justify-content:center}.yv-yzp-ayrac{height:1px;background:rgba(253,142,1,.3);margin:4px 0}
+@media (min-width:900px){.yv.yzp-acik{padding-left:306px}}
+.yv-dev{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;background:radial-gradient(circle at 50% 45%,#3A1708,#120703 70%);color:#FFF1E6;font-family:var(--yvf-b),system-ui,sans-serif}
+.yv-dev-ust{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;gap:10px}.yv-dev-seri{font:800 clamp(16px,2.6vw,30px) var(--yvf-b);color:#FFD9B8}
+.yv-dev-alt{font:900 clamp(20px,4vw,56px) var(--yvf-g);letter-spacing:.14em;color:#FD8E01}.yv-dev-sure{font:900 clamp(120px,38vmin,520px)/0.9 var(--yvf-b);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.yv-dev-btn{display:flex;gap:10px}.yv-dev-btn .yv-btn{font-size:18px;padding:12px 20px}
+.yv-dev.hazirlik .yv-dev-sure,.yv-dev.hazirlik .yv-dev-alt{color:#FFC94A}.yv-dev.atis .yv-dev-sure{color:#7CF29A}.yv-dev.atis .yv-dev-alt{color:#7CF29A}.yv-dev.son .yv-dev-sure,.yv-dev.son .yv-dev-alt{color:#FF5A3C}.yv-dev.bitti{background:radial-gradient(circle,#7A1A02,#2A0802 70%)}.yv-dev.bitti .yv-dev-sure,.yv-dev.bitti .yv-dev-alt{color:#FFB4A0}
+@media (prefers-reduced-motion:no-preference){.yv-dev.son .yv-dev-sure{animation:yvDevNabiz 1s ease-in-out infinite}}@keyframes yvDevNabiz{50%{transform:scale(1.04)}}
 /* Sporcular penceresi */
 .yv-sp-liste{display:grid;gap:6px;text-align:left}
 .yv-sp-sat{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(255,241,230,.06);box-shadow:inset 0 0 0 1.5px var(--cizgi,rgba(74,46,28,.1))}
@@ -570,6 +586,49 @@ function yuvaSporcular() {
     setTimeout(() => { try { ara.focus(); } catch (e) {} }, 50);
 }
 // Yarışma turu sürüyorsa üstte şerit: seri, bekleyen skor, süre (Yarışma'nın sayacı burada da işler) + geçiş düğmeleri.
+function yuvaYzDurum() {
+    if (typeof yzOku !== 'function') return null;
+    let o; try { o = yzOku(); } catch (e) { return null; }
+    const d = o.durum; if (!d || !d.asama || d.asama === 'kurulum' || d.asama === 'bitti') return { o, surer: false };
+    const f = d.asama === 'tur' ? yzFormat(d) : null, seri = f ? Math.min(d.seri, f.seri - 1) : 0, bek = f ? yzBekleyenler(o, seri).length : 0;
+    return { o, d, surer: true, bilgi: f ? 'Seri ' + (seri + 1) + '/' + f.seri + (bek ? ' · ' + bek + ' skor bekleniyor' : ' · seri tamam') : 'Eleme maçları', seriKisa: f ? (seri + 1) + '/' + f.seri : 'eleme' };
+}
+function yuvaYzAcik() { try { return localStorage.getItem('dagsk_yuva_yz_acik') === '1'; } catch (e) { return false; } }
+function yuvaYzAcKapat() { try { localStorage.setItem('dagsk_yuva_yz_acik', yuvaYzAcik() ? '0' : '1'); } catch (e) {} kmYuvaCiz(); }
+function yuvaYzPanelHTML() {
+    const y = yuvaYzDurum(); if (!y) return '';
+    if (!yuvaYzAcik()) return `<button class="yv-yzp-sekme${y.surer ? ' canli' : ''}" onclick="yuvaYzAcKapat()" title="Yarışma: süre, büyük sayaç, Yarışma ekranı ve TV"><span class="yv-yzp-dikey">🏆 Yarışma</span>${y.surer ? `<small>${y.seriKisa}</small>${y.o.sayac ? yzSayacHTML(y.o, 'yz-oyun-sayac') : ''}` : ''}</button>`;
+    const o = y.o, d = y.d;
+    const surer = y.surer ? `<div class="yv-yzp-bilgi"><b>🎯 Yarışma sürüyor</b><span>${y.bilgi}</span></div>
+        <div class="yv-yzp-sayac">${yzSayacHTML(o, 'yz-oyun-sayac')}</div>
+        <div class="yv-yzp-sat">${o.sayac ? '<button class="yv-btn" onclick="yuvaSayac(false)">⏹ Sıfırla</button>' : '<button class="yv-btn birincil" onclick="yuvaSayac(true)">▶ Süreyi başlat</button>'}<button class="yv-btn" onclick="yuvaSure()" title="Seri süresini değiştir — hazır süreler ya da elle">⏱ ${yzSure(d)} sn</button></div>
+        <button class="yv-btn genis" onclick="yuvaBuyukSayac()">⛶ Süreyi büyüt</button>`
+        : '<div class="yv-yzp-bilgi"><b>Şu an yarışma turu yok</b><span>Yarışma ekranından tur kurunca süre ve seri burada görünür.</span></div>';
+    return `<aside class="yv-yzp" aria-label="Yarışma"><div class="yv-yzp-bas"><b>🏆 Yarışma</b><button class="yv-yzp-kapat" onclick="yuvaYzAcKapat()" aria-label="Paneli kapat">‹</button></div>
+        <div class="yv-yzp-not">Yarışma yapan sınıflar için. Yumurta oyunu yarışmasız da oynanır.</div>
+        ${surer}
+        <div class="yv-yzp-ayrac"></div>
+        <button class="yv-btn genis" onclick="yuvaYarismayaGec(false)">🏆 Yarışma ekranı</button>
+        <button class="yv-btn genis birincil" onclick="yuvaYarismayaGec(true)">📺 Yarışma TV</button></aside>`;
+}
+// ⛶ Büyük sayaç (2026-10-16, kullanıcı: "büyütme ekranı da çıksın"): Yarışma'nın süresi ekranı kaplar — TV'den/uzaktan okunur.
+// Yuva yeniden çizilince silinmesin diye kökün DIŞINDA tutulur, çizimden sonra yeniden eklenir (tam ekranda kökün içinde olmalı).
+let _yvDev = null, _yvDevZ = null;
+function yuvaBuyukSayac() {
+    yuvaBuyukKapat(); try { yzCssYukle(); } catch (e) {}
+    _yvDev = document.createElement('div'); _yvDev.className = 'yv-dev'; _yvDev.setAttribute('role', 'dialog'); _yvDev.setAttribute('aria-label', 'Büyük sayaç');
+    _yvDev.innerHTML = '<div class="yv-dev-ust"><span class="yv-dev-seri"></span><button class="yv-btn" onclick="yuvaBuyukKapat()">✕ Küçült</button></div><div class="yv-dev-alt"></div><div class="yv-dev-sure"></div><div class="yv-dev-btn"></div>';
+    (document.getElementById('yv-kok') || document.body).appendChild(_yvDev);
+    const tik = () => {
+        if (!_yvDev) return; const y = yuvaYzDurum(); if (!y || !y.surer) return yuvaBuyukKapat();
+        const st = yzSayacDurum(y.o); _yvDev.className = 'yv-dev ' + st.faz;
+        _yvDev.querySelector('.yv-dev-sure').textContent = st.metin; _yvDev.querySelector('.yv-dev-alt').textContent = st.alt; _yvDev.querySelector('.yv-dev-seri').textContent = '🎯 ' + y.bilgi;
+        const b = (y.o.sayac ? 'd' : 'b') + yzSure(y.d), bt = _yvDev.querySelector('.yv-dev-btn');
+        if (bt.dataset.k !== b) { bt.dataset.k = b; bt.innerHTML = (y.o.sayac ? '<button class="yv-btn" onclick="yuvaSayac(false)">⏹ Sıfırla</button>' : '<button class="yv-btn birincil" onclick="yuvaSayac(true)">▶ Süreyi başlat</button>') + '<button class="yv-btn" onclick="yuvaSure()">⏱ ' + yzSure(y.d) + ' sn</button>'; }
+    };
+    tik(); _yvDevZ = setInterval(tik, 250);
+}
+function yuvaBuyukKapat() { clearInterval(_yvDevZ); _yvDevZ = null; if (_yvDev) _yvDev.remove(); _yvDev = null; }
 function yuvaYarismaHTML() {
     if (typeof yzOku !== 'function') return '';
     let o; try { o = yzOku(); } catch (e) { return ''; }
@@ -637,9 +696,9 @@ function kmYuvaCiz() {
     yuvaGorulenYaz(gorulen);
     let kok = document.getElementById('yv-kok');
     if (!kok || !ic.contains(kok)) { ic.innerHTML = '<div class="yv" id="yv-kok"></div>'; kok = document.getElementById('yv-kok'); }
-    kok.className = 'yv ' + yuvaTema() + (_yvTv ? ' yv-tv' : '');
+    kok.className = 'yv ' + yuvaTema() + (_yvTv ? ' yv-tv' : '') + (yuvaYzAcik() && yuvaYzDurum() ? ' yzp-acik' : '');
     const ust = `<div class="yv-ust"><div class="yv-logo">🥚<div>Yumurta Yuvası<small>${_yvTv ? 'Sınıf ekranı · seriler geldikçe kendiliğinden yenilenir' : 'Kendi rekorunu geç, yumurtan çatlasın'}</small></div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYarismaHTML();
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYzPanelHTML();
     if (!liste.length) kok.innerHTML = ust + '<p style="font-weight:800">Yumurtada oynayan sporcu yok. <button class="yv-btn birincil" onclick="yuvaSporcular()">👥 Sporcu ekle</button></p>';
     else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-ana"><div><div class="yv-bolum sinif">🏫 Sınıf yumurtası · hepimizin</div>${yuvaSinifHTML(sinif, 210, true)}</div><div><div class="yv-bolum">🥚 Herkesin kendi yumurtası</div><div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div></div></div>`;
     else kok.innerHTML = ust + yuvaSinifHTML(sinif, 96) + `
@@ -651,6 +710,7 @@ function kmYuvaCiz() {
     artilar.forEach(([i, n]) => { const el = document.getElementById('yv-kart-' + i); if (el) { const a = document.createElement('span'); a.className = 'yv-arti'; a.textContent = '+' + n + ' 🔥'; el.appendChild(a); } });
     if (yeniler.length) yuvaUcan(yeniler.length > 1 ? '🐣 Yumurtalar ısındı!' : '🐣 Yumurta ilerledi!');
     _yvImza = yuvaImza(); yuvaPollBaslat();
+    if (_yvDev && !kok.contains(_yvDev)) kok.appendChild(_yvDev);
     if (document.getElementById('yz-oyun-sayac') && typeof yzTimerBaslat === 'function') { try { yzTimerBaslat(); } catch (e) {} } // yarışma süresi şeritte işlesin
     if (liste.length) yuvaSinifKutla(sinif);
 }
