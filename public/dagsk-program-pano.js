@@ -47,7 +47,7 @@ programIzgaraCiz = function () {
     if (iz && b && iz.scrollWidth > iz.clientWidth + 4) iz.scrollLeft += b.getBoundingClientRect().left - iz.getBoundingClientRect().left - 4;
 };
 function dpkYeniDers(g) {
-    try { _gunSeciciState['program-gun'] = new Set([g]); let c = document.getElementById('program-gun-container'); if (c) c.innerHTML = _gunSeciciIcerikHTML('program-gun'); } catch (e) {}
+    try { _gunSeciciState['program-gun'] = new Set([g]); let c = document.getElementById('program-gun-container'); if (c) c.innerHTML = _gunSeciciIcerikHTML('program-gun'); programGunSaatCiz(); } catch (e) {}
     let c = document.getElementById('program-gun-container'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' });
     showToast('📅 ' + DPK_GUNU[g] + ' seçildi — saati ayarlayıp "Ekle"ye bas', 'info');
 }
@@ -93,7 +93,8 @@ dersRosterCiz = function () {
             `<div class="dpk-gunler">${DPK_SIRA.map(g => `<button type="button" class="${gun.includes(g) ? 'on' : ''}" onclick="dpkGunDegis(${g})">${DPK_GUN[g]}</button>`).join('')}</div>`)
         + dpkSatir('saat', 'Saat', s.baslangicSaat + ' – ' + s.bitisSaat,
             `<div class="dpk-saat"><input type="time" value="${s.baslangicSaat}" onchange="dpkSaatDegis(this.value, null)" aria-label="Başlangıç"><span>–</span><input type="time" value="${s.bitisSaat}" onchange="dpkSaatDegis(null, this.value)" aria-label="Bitiş"></div>
-             <div class="dpk-cipler">${[45, 60, 75, 90, 120].map(d => `<button type="button" class="${sure === d ? 'on' : ''}" onclick="dpkSaatDegis(null, '${dpkSaat(dpkDk(s.baslangicSaat) + d)}')">${d} dk</button>`).join('')}</div>`)
+             <div class="dpk-cipler">${[45, 60, 75, 90, 120].map(d => `<button type="button" class="${sure === d ? 'on' : ''}" onclick="dpkSaatDegis(null, '${dpkSaat(dpkDk(s.baslangicSaat) + d)}')">${d} dk</button>`).join('')}</div>`
+             + (gun.length > 1 ? `<div class="dpk-gunsaat"><div class="dpk-ipucu">Bir gün başka saatte mi? O günün saatini değiştir — o gün ayrı derse ayrılır (sporcular, kapasite, plan aynen kopyalanır).</div>${DPK_SIRA.filter(g => gun.includes(g)).map(g => `<label><span>${DPK_GUNU[g]}</span><input type="time" value="${s.baslangicSaat}" onchange="dpkGunAyir(${g}, this.value)" aria-label="${DPK_GUNU[g]} saati"></label>`).join('')}</div>` : ''))
         + dpkSatir('kap', 'Kapasite', s.kapasite ? s.kapasite + ' sporcu' : 'Sınırsız',
             `<div class="dpk-cipler">${[6, 8, 10, 12, 15, 20, 0].map(n => `<button type="button" class="${(s.kapasite || 0) === n ? 'on' : ''}" onclick="dpkPut({ kapasite: ${n || 'null'} }, '${n ? 'Kapasite ' + n : 'Kapasite sınırsız'}')">${n || 'Sınırsız'}</button>`).join('')}</div>`)
         + dpkSatir('zil', 'Hatırlatma', s.hatirlatmaAktif ? hdk + ' dk önce' : '<em>kapalı</em>',
@@ -165,6 +166,26 @@ function dpkSaatDegis(bas, bit) {
     if (dpkDk(bit) <= dpkDk(bas)) return showToast('Bitiş başlangıçtan sonra olmalı.', 'warning');
     dpkPut({ baslangicSaat: bas, bitisSaat: bit }, bas + ' – ' + bit);
 }
+// Çok günlü dersten bir günü başka saate ayır (2026-10-16, Milo'daki mdpGunAyir gibi): yeni ders = aynı süre/kapasite/hatırlatma/plan
+// + aynı sporcular; o gün eski dersten çıkar. Çift tetiklenmeye karşı kilit.
+async function dpkGunAyir(g, bas) {
+    let s = _drmSlot(); if (!s || !bas || bas === s.baslangicSaat || dpkGunAyir.calisiyor) return;
+    let gun = dpkGunler(s); if (!gun.includes(g) || gun.length < 2) return;
+    let sure = dpkDk(s.bitisSaat) - dpkDk(s.baslangicSaat), bit = dpkSaat(dpkDk(bas) + (sure > 0 ? sure : 90)), j = (u, o) => fetch(u, Object.assign({ headers: { 'content-type': 'application/json' } }, o)).then(r => r.json());
+    dpkGunAyir.calisiyor = true;
+    try {
+        let r = await j('/api/antrenman-programi', { method: 'POST', body: JSON.stringify({ grup: s.grup || 'genel', gunler: [g], baslangicSaat: bas, bitisSaat: bit, hatirlatmaAktif: !!s.hatirlatmaAktif, hatirlatmaDakika: s.hatirlatmaDakika || 30, kapasite: s.kapasite || null, dersPlani: s.dersPlani || null, deviceId: _cihazId }) });
+        let id = r && r.id; if (!r.applied || !id) throw new Error('id yok');
+        for (let k of (s.katilimcilar || [])) await j('/api/antrenman-programi/' + id + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: k.grup, ad: k.ad, deviceId: _cihazId }) });
+        let kalan = gun.filter(x => x !== g);
+        await j('/api/antrenman-programi/' + s.id, { method: 'PUT', body: JSON.stringify({ gunler: kalan, deviceId: _cihazId }) });
+        s.gunler = kalan; s.gun = Math.min.apply(null, kalan);
+        let d = await j('/api/antrenman-programi'); _programSlotlar = d.slots || _programSlotlar;
+    } catch (e) { showToast('Ayrılamadı — bağlantını kontrol et.', 'error'); return; }
+    finally { dpkGunAyir.calisiyor = false; }
+    dersRosterCiz(); programIzgaraCiz();
+    showToast('✓ ' + DPK_GUNU[g] + ' ' + bas + '–' + bit + ' ayrı ders oldu', 'success');
+}
 function dpkPlanKaydet() { let e = document.getElementById('dpk-plan'); if (!e) return; _dpk.acik = null; dpkPut({ dersPlani: e.value.trim() || null }, 'Plan kaydedildi'); }
 function dpkIptal(iso) {
     let s = _drmSlot(); if (!s) return;
@@ -223,6 +244,7 @@ function dpkCikar(g, a) { if (confirm(a + ' bu dersten çıkarılsın mı?')) de
 .dpk-gunler button{height:40px;border-radius:12px;font-size:13px}.dpk-gunler button.on{background:var(--p-ink);color:var(--p-yuzey)}
 .dpk-cipler{display:flex;flex-wrap:wrap;gap:6px}.dpk-cipler button{height:36px;padding:0 13px;border-radius:999px;font-size:13px}.dpk-cipler button.on{background:var(--p-acc);color:#fff}
 .dpk-saat{display:flex;align-items:center;gap:10px}.dpk-saat span{color:var(--p-dim)}
+.dpk-gunsaat{display:grid;gap:6px;margin-top:10px}.dpk-gunsaat label{display:flex;align-items:center;gap:10px}.dpk-gunsaat label span{width:90px;font-weight:700;color:var(--p-dim)}.dpk-gunsaat input{flex:1;min-width:0;height:40px;border-radius:10px;border:0;background:var(--p-kart2);color:var(--p-ink);font:inherit;font-weight:800;padding:0 10px}
 .dpk-saat input{flex:1;min-width:0;height:46px;border-radius:12px;border:0;background:var(--p-kart2);color:var(--p-ink);font:inherit;font-size:17px;font-weight:800;padding:0 12px;font-variant-numeric:tabular-nums}
 .dpk-plan{width:100%;min-height:90px;border:0;border-radius:14px;background:var(--p-kart2);color:var(--p-ink);padding:12px 14px;font:inherit;font-size:14px;resize:vertical;box-sizing:border-box}
 .dpk-sag{display:flex;justify-content:flex-end}

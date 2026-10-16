@@ -36,7 +36,9 @@ const YUVA_NADIR = {
 };
 const yuvaNadirMi = (renk) => !!YUVA_NADIR[yuvaEskiRenk(renk)];
 const yuvaEskiRenk = (id) => id === 'gokkusagi' ? 'elmas' : id;
-const yuvaRenkBul = (id) => (id = yuvaEskiRenk(id), false) || YUVA_NADIR[id] || YUVA_RENK.find((r) => r.id === id) || YUVA_RENK[0];
+// 🏫 Sınıf yumurtası rengi (2026-10-16, kullanıcı: "sınıf yumurtası ile çocuğun yumurtası karışıyor"): yalnız sınıfa ait — lacivert, altın yıldızlı
+const YUVA_SINIF_RENK = { id: 'sinif', ana: '#3346B8', ben: '#FFD45C', koyu: '#18216E' };
+const yuvaRenkBul = (id) => (id = yuvaEskiRenk(id), false) || (id === 'sinif' ? YUVA_SINIF_RENK : null) || YUVA_NADIR[id] || YUVA_RENK.find((r) => r.id === id) || YUVA_RENK[0];
 function yuvaHayvanlar() { return (typeof KM_OYUN_KARAKTERLER !== 'undefined' ? KM_OYUN_KARAKTERLER : []).filter((k) => k.no <= 9 || k.no >= 13); }
 function yuvaHayvan(no) { return yuvaHayvanlar().find((k) => k.no === no) || yuvaHayvanlar()[0]; }
 function yuvaSp(g, ad) { return turnuvaDB[g] && turnuvaDB[g][ad]; }
@@ -220,17 +222,17 @@ function yuvaSinifDurum(liste, durumlar) {
     liste.forEach((k, j) => { const d = durumlar[j], v = d && !d.yok ? d.bugunIsi : yuvaBugunHam(k.g, k.ad); toplam += v; if (v) katki.push({ ad: k.ad, v }); });
     katki.sort((a, b) => b.v - a.v);
     const tamam = Math.floor(toplam / hedef), ilerleme = toplam - tamam * hedef, oran = ilerleme / hedef, evre = oran >= 0.6 ? 2 : oran >= 0.3 ? 1 : 0;
-    const hl = yuvaHayvanlar(), yum = (j) => ({ no: hl[yuvaHash(bugun + '|sinif|' + j) % hl.length].no, renk: YUVA_RENK[yuvaHash(bugun + '|renk|' + j) % YUVA_RENK.length].id });
+    const hl = yuvaHayvanlar(), yum = (j) => ({ no: hl[yuvaHash(bugun + '|sinif|' + j) % hl.length].no, renk: 'sinif' });
     return { hedef, toplam, tamam, ilerleme, evre, aktif: yum(tamam), cikanlar: Array.from({ length: tamam }, (_, j) => yum(j)), katki, adim: tamam * 3 + evre };
 }
 function yuvaSinifHTML(s, boy, tv) {
     const kisa = (a) => esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(a) : a);
-    return `<div class="yv-sinif" id="yv-sinif"><div class="yv-sinif-yum">${yuvaGorselHTML({ aktif: s.aktif, evre: s.evre, secimGerek: false }, boy)}</div>
-      <div class="yv-sinif-bilgi"><div class="yv-sinif-bas">🏫 Sınıf yuvası${s.tamam ? ` <span class="yv-lv">${s.tamam + 1}. dev yumurta</span>` : ''}</div>
-        <small>Herkesin bugünkü ateşi bu dev yumurtayı ısıtır. Dolunca sınıfça sürpriz hayvan çıkar!</small>
+    return `<div class="yv-sinif" id="yv-sinif"><div class="yv-sinif-yum"><span class="yv-sinif-serit">🏫 SINIF</span>${yuvaGorselHTML({ aktif: s.aktif, evre: s.evre, secimGerek: false }, boy)}</div>
+      <div class="yv-sinif-bilgi"><div class="yv-sinif-bas">🏫 Sınıf yumurtası${s.tamam ? ` <span class="yv-lv">${s.tamam + 1}. dev yumurta</span>` : ''}</div>
+        <small>Ortak yumurta — herkesin bugünkü serileri ısıtır, dolunca sınıfça sürpriz hayvan çıkar. Herkesin kendi yumurtası aşağıda.</small>
         <div class="yv-cubuk buyuk"><i style="width:${Math.round(s.ilerleme / s.hedef * 100)}%"></i><span style="left:30%"></span><span style="left:60%"></span></div>
-        <div class="yv-sinif-sayi">🔥 <b>${s.ilerleme}</b>/${s.hedef} · ${['Isınıyor', 'Çatlıyor!', 'Yavru göründü!'][s.evre]}</div>
-        <div class="yv-katki">${s.katki.length ? s.katki.slice(0, tv ? 14 : 8).map((c) => `<span>${kisa(c.ad)} <b>+${c.v}</b></span>`).join('') : '<span>Henüz seri yok — ilk ateşi kim yakacak? 🔥</span>'}</div>
+        <div class="yv-sinif-sayi">🏫 <b>${s.ilerleme}</b>/${s.hedef} · ${['Isınıyor', 'Çatlıyor!', 'Yavru göründü!'][s.evre]}</div>
+        <div class="yv-katki">${s.katki.length ? '<em>Sınıfa katkı:</em>' + s.katki.slice(0, tv ? 14 : 8).map((c) => `<span>${kisa(c.ad)} <b>+${c.v}</b></span>`).join('') : '<span>Henüz seri yok — ilk ateşi kim yakacak? 🔥</span>'}</div>
         ${s.cikanlar.length ? `<div class="yv-sinif-cikan">Bugün sınıfça çıkanlar: ${s.cikanlar.map((c) => { const h = yuvaHayvan(c.no); return `<img src="${h.src}" alt="${esc(h.ad)}" title="${esc(h.ad)}">`; }).join('')}</div>` : ''}</div></div>`;
 }
 // Dev yumurta bu cihazda en son görülen adımı geçtiyse kutla (günde bir kayıt; açılışta ilk görüşte kutlama yok).
@@ -240,8 +242,9 @@ function yuvaSinifKutla(s) {
     if (o.t !== b || s.adim <= o.adim) { yaz(); return; }
     yaz();
     const tip = s.tamam > (o.tamam || 0) ? 'buyu' : s.evre === 2 ? 'yavru' : 'catla', c = tip === 'buyu' ? s.cikanlar[s.cikanlar.length - 1] : s.aktif;
-    let bekleme = 0; const oyna = () => { if (document.querySelector('.yv-sahne') && bekleme++ < 10) return setTimeout(oyna, 800); yuvaKirilma(tip, c.renk, c.no, '🏫 Sınıf yuvası'); };
-    setTimeout(oyna, 700);
+    // çocuğun sahnesi bitmeden başlamasın, arada nefes payı olsun (iki kırılma birbirine karışıyordu)
+    let bekleme = 0, bosT = 0; const oyna = () => { if (document.querySelector('.yv-sahne') && bekleme++ < 20) { bosT = 0; return setTimeout(oyna, 500); } if (bosT < 1) { bosT++; return setTimeout(oyna, 1200); } yuvaKirilma(tip, c.renk, c.no, 'Hepinizin ateşiyle — sınıfça!', null, null, null, true); };
+    setTimeout(oyna, 1500);
 }
 // Kaydedilen seride ekrana kıvılcım
 function yuvaKivilcim() {
@@ -254,7 +257,7 @@ function yuvaKivilcim() {
 // 2026-10-14 (kullanıcı: "yumurtalar güzel gözükmüyor, boş gibi; biraz daha düzgün yapalım"): yumurta artık hacimli
 // (ışık + kenar gölgesi + alt gölge), her rengin kendi deseni var (benek, zikzak, leke, yıldız, dalga, kuşak) ve bir
 // saman YUVANIN içinde duruyor. Kırılma animasyonu yuvasız çizer (yuvaYok) — çatlak koordinatları aynı (viewBox 92×110).
-const YUVA_DESEN = { pembe: 'benek', mavi: 'zikzak', yesil: 'leke', mor: 'yildiz', turuncu: 'dalga', sari: 'kusak', altin: 'elmasKesim', elmas: 'elmasKesim' };
+const YUVA_DESEN = { pembe: 'benek', mavi: 'zikzak', yesil: 'leke', mor: 'yildiz', turuncu: 'dalga', sari: 'kusak', altin: 'elmasKesim', elmas: 'elmasKesim', sinif: 'yildiz' };
 function yuvaDesenSVG(tip, r) {
     const b = r.ben, k = r.koyu || r.ana;
     if (tip === 'zikzak') return `<path d="M-4 60 L6 51 L16 60 L26 51 L36 60 L46 51 L56 60 L66 51 L76 60 L86 51 L96 60" fill="none" stroke="${b}" stroke-width="6" stroke-linejoin="round"/><path d="M-4 72 L6 63 L16 72 L26 63 L36 72 L46 63 L56 72 L66 63 L76 72 L86 63 L96 72" fill="none" stroke="${k}" stroke-opacity=".35" stroke-width="2.5" stroke-linejoin="round"/><circle cx="34" cy="30" r="4" fill="${b}"/><circle cx="58" cy="86" r="5" fill="${b}"/>`;
@@ -426,6 +429,12 @@ const YUVA_CSS = `
 .yv-dost-mini{display:inline-flex;align-items:center;gap:2px}.yv-dost-mini img{width:20px;height:20px;object-fit:contain}
 .yv-sinif{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,#fff,#FFF1DA);border-radius:24px;padding:14px 18px;box-shadow:0 6px 0 rgba(74,46,28,.10),inset 0 0 0 2px rgba(255,122,69,.25)}
 .yv-sinif-bas{font:800 22px/1.1 var(--yvf-b)}
+.yv-sinif{background:linear-gradient(135deg,#22307F,#141B55)!important;color:#F4F1FF;box-shadow:0 6px 0 rgba(0,0,0,.25),inset 0 0 0 3px #FFD45C!important}.yv-sinif .yv-sinif-bilgi small,.yv-sinif .yv-katki em{color:#C9CEF5}.yv-sinif .yv-sinif-sayi b{color:#FFD45C}.yv-sinif .yv-cubuk i{background:linear-gradient(90deg,#FFD45C,#FFB020)}
+.yv-sinif-yum{position:relative}.yv-sinif-serit{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:2;background:#FFD45C;color:#141B55;font:900 11px var(--yvf-g);letter-spacing:.12em;border-radius:999px;padding:3px 9px;white-space:nowrap;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.yv-katki em{font-style:normal;font-weight:800;font-size:12px;margin-right:2px}
+.yv-bolum{font:800 15px var(--yvf-b);margin:4px 0 -4px;opacity:.85}.yv-bolum.sinif{color:#FFD45C}
+.yv-secuyari{font-size:11.5px;font-weight:800;color:#C8501F;background:rgba(255,176,103,.18);border-radius:8px;padding:3px 6px;text-align:center}
+.yv-sahne.yv-s-sinif{background:radial-gradient(circle at 50% 45%,rgba(70,90,220,.97),rgba(34,48,127,.95) 60%,rgba(14,19,60,.95))}.yv-s-sinif .yv-sahne-yazi{color:#FFD45C}.yv-s-sinif .yv-sahne-isim{color:#E4E7FF}
 .yv-sinif-bilgi{display:grid;gap:6px;min-width:0}.yv-sinif-bilgi small{font-weight:800;color:var(--soluk);font-size:12.5px}
 .yv-cubuk.buyuk{height:18px}
 .yv-sinif-sayi{font:800 16px var(--yvf-b)}.yv-sinif-sayi b{font-size:22px;color:var(--ates)}
@@ -597,12 +606,13 @@ function yuvaKartHTML(k, d) {
     const alt = d.aktif ? [0, E.catla, E.yavru][d.evre] : 0, ust = d.aktif ? [E.catla, E.yavru, E.buyu][d.evre] : 1;
     const kaynar = d.aktif && (d.ilerleme - alt) / Math.max(1, ust - alt) >= 0.7; // bir sonraki evreye çok az kaldı → yumurta titrer
     const dost = d.dost ? '<span class="yv-dost-mini" title="Dostu"><img src="' + yuvaHayvan(d.dost).src + '" alt="">Lv' + yuvaDostSeviye(d.yem[d.dost]).lv + '</span>' : '';
-    return `<button class="yv-kart${kaynar ? ' kaynar' : ''}${d.bugunIsi ? ' sicak' : ''}" id="yv-kart-${i}" onclick="yuvaDetay(${i})">${!d.yok && yuvaHakCipHTML(d.hak) ? `<span class="yv-haklar">${yuvaHakCipHTML(d.hak)}</span>` : ''}${d.bugunIsi ? `<span class="yv-bugun">🔥 +${d.bugunIsi}</span>` : ''}
+    return `<button class="yv-kart${kaynar ? ' kaynar' : ''}${d.bugunIsi ? ' sicak' : ''}" id="yv-kart-${i}" onclick="yuvaDetay(${i})">${!d.yok && yuvaHakCipHTML(d.hak) ? `<span class="yv-haklar">${yuvaHakCipHTML(d.hak)}</span>` : ''}${d.bugunIsi ? `<span class="yv-bugun" title="Bugün kazandığı ateş (kendi yumurtasına ve sınıf yumurtasına gider)">🔥 +${d.bugunIsi} bugün</span>` : ''}
       <div class="yv-gorsel-kap">${d.bugunIsi ? '<span class="yv-alev"><i>🔥</i><i>✨</i><i>🔥</i></span>' : ''}${d.yok ? `<div class="yv-bos" style="width:84px;height:100px">🥚</div>` : yuvaGorselHTML(d, 84)}</div>
       <div class="yv-ad">${esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad)}</div><div class="yv-evre">${evreYazi}${!d.yok && !d.secimGerek && d.evre === 2 && d.aktif.ikiz ? ' 👯 İkiz!' : ''}</div>${!d.yok && !d.secimGerek && d.evre === 1 ? `<div class="yv-ipucu">${esc(yuvaIpucu(d.aktif.no))}</div>` : ''}
       <div class="yv-cubuk"><i style="width:${yuzde}%"></i><span style="left:${E.catla / E.buyu * 100}%"></span><span style="left:${E.yavru / E.buyu * 100}%"></span></div>
       ${yuvaGorevNoktaHTML(d)}
-      <div class="yv-alt"><span>🔥 ${d.aktif ? d.ilerleme : 0}/${E.buyu}</span>${dost}<span>🐾 ${d.album ? yuvaAlbumHayvanlar(d.album).length : 0}</span></div></button>`;
+      ${!d.yok && d.secimGerek && d.bugunIsi ? '<div class="yv-secuyari">⚠️ Yumurta seçmedi — ateşi şimdilik yalnız sınıfa gidiyor</div>' : ''}
+      <div class="yv-alt"><span title="Kendi yumurtasının ilerlemesi">🥚 ${d.aktif ? d.ilerleme : 0}/${E.buyu}</span>${dost}<span>🐾 ${d.album ? yuvaAlbumHayvanlar(d.album).length : 0}</span></div></button>`;
 }
 function yuvaTvKartHTML(k, d) {
     const isi = d.yok ? yuvaBugunHam(k.g, k.ad) : d.bugunIsi;
@@ -631,9 +641,10 @@ function kmYuvaCiz() {
     const ust = `<div class="yv-ust"><div class="yv-logo">🥚<div>Yumurta Yuvası<small>${_yvTv ? 'Sınıf ekranı · seriler geldikçe kendiliğinden yenilenir' : 'Kendi rekorunu geç, yumurtan çatlasın'}</small></div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn" onclick="yuvaYarismayaGec(false)">🏆 Yarışma</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYarismaHTML();
     if (!liste.length) kok.innerHTML = ust + '<p style="font-weight:800">Yumurtada oynayan sporcu yok. <button class="yv-btn birincil" onclick="yuvaSporcular()">👥 Sporcu ekle</button></p>';
-    else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-ana">${yuvaSinifHTML(sinif, 210, true)}<div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div></div>`;
+    else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-ana"><div><div class="yv-bolum sinif">🏫 Sınıf yumurtası · hepimizin</div>${yuvaSinifHTML(sinif, 210, true)}</div><div><div class="yv-bolum">🥚 Herkesin kendi yumurtası</div><div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div></div></div>`;
     else kok.innerHTML = ust + yuvaSinifHTML(sinif, 96) + `
       <div class="yv-kurallar"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div><div class="yv-kural">📋 Görev yap <b>+${YUVA_GOREV_ODUL}</b></div><div class="yv-kural nadir">⭐ Rekor seri → <b style="font-size:16px">Altın yumurta</b></div><div class="yv-kural nadir">💎 Ortalamanı 3 kez üst üste geç → <b style="font-size:16px">Elmas yumurta</b></div></div>
+      <div class="yv-bolum">🥚 Herkesin kendi yumurtası</div>
       <div class="yv-izgara">${liste.map((k, j) => yuvaKartHTML(k, durumlar[j])).join('')}</div>
       <p style="margin:0;font-weight:700;color:var(--soluk);font-size:13px">👆 Kartına dokun → serini buradan gir, görevlerini ve dostunu gör. Skor Gir, Oyunlar ya da Ok Partisi'nden girilen seriler de sayılır.</p>`;
     yeniler.forEach((i, j) => setTimeout(() => { const el = document.getElementById('yv-kart-' + i); if (el) { el.classList.add('yeni'); yuvaSes(880 + j * 60); } }, 300 + j * 350));
@@ -688,13 +699,13 @@ function yuvaDetay(i) {
 }
 // ---- KIRILMA ANİMASYONU (kullanıcı: "animasyon ile kırılabilir"). tip: 'catla' | 'yavru' | 'buyu'.
 // Tam ekranda da görünsün diye fullscreenElement'e (yoksa body'ye) eklenir; dokununca ya da süre bitince kapanır.
-function yuvaKirilma(tip, renk, no, isim, bitince, ikizNo, hediye) {
+function yuvaKirilma(tip, renk, no, isim, bitince, ikizNo, hediye, sinif) {
     const kok = document.fullscreenElement || document.body, h = yuvaHayvan(no), parlak = yuvaNadirMi(renk), h2 = ikizNo ? yuvaHayvan(ikizNo) : null;
     const yumurta = yuvaYumurtaSVG(renk, tip === 'catla' ? 0 : 1, 180, true); // kırılırken yuvasız (yarımlar uçar)
     const adlar = h.ad.toLocaleUpperCase('tr-TR') + (h2 ? ' VE ' + h2.ad.toLocaleUpperCase('tr-TR') : '');
-    const yazi = tip === 'catla' ? '🥚 ÇATLIYOR!' : tip === 'yavru' ? (h2 ? `👯 İKİZ! ${adlar} ÇIKTI!` : `🐣 ${parlak ? 'PARLAK ' : ''}${adlar} ÇIKTI!`) : `🎉 ${adlar} BÜYÜDÜ!`;
+    const yazi = sinif ? (tip === 'catla' ? '🏫 SINIF YUMURTASI ÇATLIYOR!' : tip === 'yavru' ? `🏫 SINIF YUMURTASINDAN ${adlar} ÇIKTI!` : `🏫 SINIFIN ${adlar} BÜYÜDÜ!`) : tip === 'catla' ? '🥚 ÇATLIYOR!' : tip === 'yavru' ? (h2 ? `👯 İKİZ! ${adlar} ÇIKTI!` : `🐣 ${parlak ? 'PARLAK ' : ''}${adlar} ÇIKTI!`) : `🎉 ${adlar} BÜYÜDÜ!`;
     const altYazi = tip === 'catla' ? yuvaIpucu(no) : tip === 'buyu' && hediye ? `🎁 Hediye getirdi: ${hediye}` : '';
-    const e = document.createElement('div'); e.className = 'yv-sahne yv-s-' + tip;
+    const e = document.createElement('div'); e.className = 'yv-sahne yv-s-' + tip + (sinif ? ' yv-s-sinif' : '');
     e.innerHTML = `<div class="yv-sahne-ic">
         <div class="yv-isinlar"></div>
         ${tip === 'buyu' ? '' : `<div class="yv-kirik ust">${yumurta}</div><div class="yv-kirik alt">${yumurta}</div>`}
@@ -778,7 +789,7 @@ function yuvaSeriSonrasi(g, ad) {
     if (m) { try { showToast(m, 'success'); } catch (e) {} yuvaSes(1046, 0.18); }
     if (_kmAktifSekme === 'yuva' && !document.querySelector('.yv-katman,.yv-sahne') && once.aktif && !(Date.now() - (window._yuvaPedKayitT || 0) < 3000)) {
         const tip = simdi.tamam > once.tamam ? 'buyu' : simdi.evre === 2 ? 'yavru' : 'catla';
-        setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim, null, once.aktif.ikiz, once.aktif.hediye), 250);
+        setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim + ' · kendi yumurtası', null, once.aktif.ikiz, once.aktif.hediye), 250);
     }
     if (_kmAktifSekme === 'yuva') kmYuvaCiz();
 }

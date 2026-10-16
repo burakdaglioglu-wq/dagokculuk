@@ -4,13 +4,14 @@
    Yönetici › ANTRENMAN › 📒 Öğrenci Defteri / 📝 Ders Günlüğü. Görünüm Milo ile aynı "A · Sade" (beyaz kâğıt, tek vurgu).
    Kayıtlar (yeni tablo yok):
      · yoklama: otomatikYoklamaDB[tarih][ad] (geldi true/false) → senkron + doğrudan POST; boşalt → DELETE /api/attendance/auto
-     · ek durum: meta 'yoklama_durum' { 'YYYY-MM-DD|ad': { d: 'hasta'|'telafi', t } }
+     · ek durum: meta 'yoklama_durum' { 'YYYY-MM-DD|ad': { d: 'hasta'|'telafi'|'baska', ref?, t } } — baska: o gün gelmedi, ref günü geldi
+     · ilk ders tarihi: sp.katilmaTarihi — öncesi takvimde/çizelgede/yoklamada beklenmez (2026-10-16, Milo'daki gibi)
      · aidat: aidatDB[ad][ay] — Defter yalnız GÖSTERİR (ödendi/ödenmedi + not, tutar yok); düzenleme Aidat sekmesinde (PIN kilidi)
    TELAFİ (aylık aidat düzeni): gelmediği / hasta olduğu her ders 1 telafi hakkı; telafi dersi hakkı açık en eski aya yazılır.
    Ders günlüğü: meta 'ders_gunlugu' — gruplar (Büyükler…Minikler) ve okçuluk becerileri; haftalık veli metni, aylık PDF.
    ================================================================================================ */
-const OD = { secili: null, ay: null, secim: null, ara: '', durum: {}, yuklendi: false };
-const OD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '↺', cls: 't' } };
+const OD = { secili: null, ay: null, secim: null, ara: '', durum: {}, yuklendi: false, ekran: 'liste', cz: null, slotlar: [] };
+const OD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '↺', cls: 't' }, k: { ad: 'Başka gün geldi', ikon: '↪', cls: 'k' } };
 const OD_AY = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const OD_GRUPLAR = ['buyukler', 'yildizlar', 'kucukler', 'minikler'];
 const OD_GRUP_AD = { buyukler: 'Büyükler', yildizlar: 'Yıldızlar', kucukler: 'Küçükler', minikler: 'Minikler' };
@@ -33,7 +34,7 @@ function odGun(u, iso) {
     if (a.grup && a.grup !== u.g && turnuvaDB[a.grup] && turnuvaDB[a.grup][u.ad]) return null;
     let e = OD.durum[iso + '|' + u.ad], d = e && !e.sil ? e.d : null;
     if (a.geldi !== false) return d === 'telafi' ? 't' : 'g';
-    return d === 'hasta' ? 'h' : 'y';
+    return d === 'hasta' ? 'h' : d === 'baska' ? 'k' : 'y';
 }
 function odKayitlar(u) { return Object.keys(otomatikYoklamaDB || {}).filter(function (iso) { return /^\d{4}-\d{2}-\d{2}$/.test(iso) && odGun(u, iso); }).sort().map(function (iso) { return { iso: iso, s: odGun(u, iso) }; }); }
 // Aylara göre: telafi hakkı = gelmedi + hasta; telafi dersi hakkı açık EN ESKİ aya yazılır.
@@ -41,6 +42,7 @@ function odAylar(u) {
     let A = {}, sira = [];
     let ay = function (a) { if (!A[a]) { A[a] = { ay: a, dersler: [], telafiler: [], hak: 0 }; sira.push(a); } return A[a]; };
     odKayitlar(u).forEach(function (r) {
+        if (r.s === 'k') return; // başka gün geldi: o günün dersi sayılmaz, telafi hakkı doğmaz (geldiği gün zaten 'g')
         let m = ay(r.iso.slice(0, 7));
         if (r.s === 't') { let hedef = sira.map(function (x) { return A[x]; }).find(function (x) { return x.hak > x.telafiler.length; }) || m; hedef.telafiler.push(r); return; }
         m.dersler.push(r); if (r.s === 'y' || r.s === 'h') m.hak++;
@@ -48,7 +50,7 @@ function odAylar(u) {
     sira.sort(); return sira.map(function (a) { let x = A[a]; x.geldi = x.dersler.filter(function (r) { return r.s === 'g'; }).length + x.telafiler.length; x.kalanHak = Math.max(0, x.hak - x.telafiler.length); return x; });
 }
 function odOzet(u) {
-    let k = odKayitlar(u), say = { g: 0, y: 0, h: 0, t: 0 }; k.forEach(function (r) { say[r.s]++; });
+    let k = odKayitlar(u), say = { g: 0, y: 0, h: 0, t: 0, k: 0 }; k.forEach(function (r) { say[r.s]++; });
     let aylar = odAylar(u), hak = aylar.reduce(function (a, x) { return a + x.kalanHak; }, 0), buAy = odIso(new Date()).slice(0, 7), uyarilar = [];
     aylar.forEach(function (x) { if (x.kalanHak && x.ay < buAy) uyarilar.push({ tur: 'telafi', metin: OD_AY[+x.ay.slice(5) - 1] + ': ' + x.kalanHak + ' telafi hakkı kullanılmadı.' }); else if (x.kalanHak) uyarilar.push({ tur: 'telafi', metin: 'Bu ay ' + x.kalanHak + ' telafi hakkı var.' }); });
     let rec = (typeof aidatDB !== 'undefined' && aidatDB[u.ad] && aidatDB[u.ad][buAy]) || null;
@@ -67,8 +69,8 @@ async function odGunYaz(u, iso, s) {
         if (s === null) await fetch('/api/attendance/auto', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tarih: iso, ad: u.ad }) });
         else await fetch('/api/attendance/auto', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tarih: iso, ad: u.ad, grup: u.g, saat: '12:00', elle: true, geldi: s === 'g' || s === 't' }) });
     } catch (e) {}
-    let ek = s === 'h' ? 'hasta' : s === 't' ? 'telafi' : null, mevcut = OD.durum[anahtar];
-    if (ek || (mevcut && !mevcut.sil && mevcut.d)) { let kayit = {}; kayit[anahtar] = ek ? { d: ek, t: Date.now() } : { d: null, sil: true, t: Date.now() }; OD.durum[anahtar] = kayit[anahtar]; try { OD.durum = await odMetaYaz('yoklama_durum', kayit); } catch (e) {} }
+    let ek = s === 'h' ? 'hasta' : s === 't' ? 'telafi' : s === 'k' ? 'baska' : null, mevcut = OD.durum[anahtar];
+    if (ek || (mevcut && !mevcut.sil && mevcut.d)) { let kayit = {}; kayit[anahtar] = ek ? Object.assign({ d: ek, t: Date.now() }, s === 'k' && odGunYaz.ref ? { ref: odGunYaz.ref } : {}) : { d: null, sil: true, t: Date.now() }; OD.durum[anahtar] = kayit[anahtar]; try { OD.durum = await odMetaYaz('yoklama_durum', kayit); } catch (e) {} }
     try { yoneticiDevamsizlikWidgetCiz(); } catch (e) {}
 }
 // ---------------- ekran
@@ -80,6 +82,7 @@ async function odAc() {
 }
 function odCiz() {
     let alan = document.getElementById('yonetici-liste'); if (!alan) return;
+    if (OD.ekran === 'cizelge') { alan.innerHTML = '<div class="od od-tek"><div class="od-detay">' + odCizelgeHTML() + '</div></div>'; return; }
     let u = OD.secili && odBul(OD.secili);
     alan.innerHTML = '<div class="od">' + odListeHTML() + '<div class="od-detay" id="od-detay">' + (u ? odDetayHTML(u) : '<div class="od-bos">Bir sporcu seç: takvim, telafi hakkı, aidat ve özet burada.</div>') + '</div></div>';
 }
@@ -92,7 +95,7 @@ function odDetayYenile() {
 }
 function odSatirAlt(u) { let o = odOzet(u), b = odIso(new Date()).slice(0, 7), m = o.aylar.find(function (x) { return x.ay === b; }); return (m ? 'bu ay ' + m.geldi + ' geldi' : 'bu ay kayıt yok') + (o.hak ? ' · <b class="od-amber">' + o.hak + ' telafi</b>' : '') + (o.uyarilar.some(function (x) { return x.tur === 'odeme'; }) ? ' · <b class="od-kirmizi">aidat</b>' : ''); }
 function odListeHTML() {
-    return '<div class="od-liste"><div class="od-baslik">📒 Öğrenci Defteri</div><input class="od-ara" id="od-ara" placeholder="Sporcu ara…" value="' + odEsc(OD.ara) + '" oninput="OD.ara=this.value; odListeYenile()"><div class="od-satirlar" id="od-satirlar">' + odSatirlarHTML() + '</div></div>';
+    return '<div class="od-liste"><div class="od-baslik">📒 Öğrenci Defteri</div><button class="od-btn genis" onclick="odCizelgeAc()">🗓 Geçmiş yoklama gir (çizelge)</button><input class="od-ara" id="od-ara" placeholder="Sporcu ara…" value="' + odEsc(OD.ara) + '" oninput="OD.ara=this.value; odListeYenile()"><div class="od-satirlar" id="od-satirlar">' + odSatirlarHTML() + '</div></div>';
 }
 function odSatirlarHTML() {
     let q = (OD.ara || '').toLocaleLowerCase('tr');
@@ -116,7 +119,7 @@ function odDetayHTML(u) {
     let yas = null; try { yas = typeof yasHesapla === 'function' ? yasHesapla(u.sp) : null; } catch (e) {}
     let m = o.aylar.find(function (x) { return x.ay === OD.ay; }) || { geldi: 0, dersler: [], telafiler: [], hak: 0, kalanHak: 0 };
     let kutu = function (n, ad, cls) { return '<div class="od-kutu ' + (cls || '') + '"><b>' + n + '</b><small>' + ad + '</small></div>'; };
-    return '<div class="od-ust"><div><div class="od-ad">' + odEsc(u.ad) + '</div><div class="od-alt">' + OD_GRUP_AD[u.g] + (yas ? ' · ' + yas + ' yaş' : '') + (o.ilk ? ' · ilk kayıt ' + odTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + odTR(o.sonGelis) : '') + '</div></div>'
+    return '<div class="od-ust"><div><div class="od-ad">' + odEsc(u.ad) + '</div><div class="od-alt">' + OD_GRUP_AD[u.g] + (yas ? ' · ' + yas + ' yaş' : '') + (u.sp.katilmaTarihi ? ' · ilk ders ' + odTR(u.sp.katilmaTarihi) : o.ilk ? ' · ilk kayıt ' + odTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + odTR(o.sonGelis) : '') + '</div></div>'
         + (u.sp.acilTelefon ? '<button class="od-btn" onclick="odVeliMesaj(\'' + odEnc(u.k) + '\')">Veliye özet</button>' : '') + '</div>'
         + '<div class="od-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + '</div>'
         + o.uyarilar.map(function (w) { return '<div class="od-uyari ' + w.tur + '">' + odEsc(w.metin) + '</div>'; }).join('')
@@ -127,6 +130,7 @@ function odDetayHTML(u) {
         + '<div class="od-bolum"><div class="od-bolum-bas">' + OD_AY[+OD.ay.slice(5) - 1] + ' özeti <small>gelmediği her ders 1 telafi hakkı</small></div>'
         + '<div class="od-ay-ozet"><span><b>' + m.geldi + '</b> geldi</span><span><b>' + m.dersler.filter(function (r) { return r.s === 'y'; }).length + '</b> gelmedi</span><span><b>' + m.dersler.filter(function (r) { return r.s === 'h'; }).length + '</b> hasta</span><span><b>' + m.telafiler.length + '</b> telafi</span>' + (m.kalanHak ? '<span class="od-amber"><b>' + m.kalanHak + '</b> hak açık</span>' : '') + '</div>'
         + '<div class="od-noktalar">' + m.dersler.concat(m.telafiler).sort(function (a, b) { return a.iso.localeCompare(b.iso); }).map(function (r) { return '<span class="od-n ' + OD_DURUM[r.s].cls + '" title="' + odTR(r.iso) + ' · ' + OD_DURUM[r.s].ad + '">' + OD_DURUM[r.s].ikon + '<small>' + odKisa(r.iso) + '</small></span>'; }).join('') + Array.from({ length: m.kalanHak }, function () { return '<span class="od-n hak" title="Kullanılmamış telafi hakkı">↺<small>hak</small></span>'; }).join('') + '</div></div>'
+        + '<div class="od-bolum"><div class="od-bolum-bas">İlk ders tarihi <small>öncesi beklenmez, telafi hakkı doğmaz</small></div><div class="od-cz-ilk-sat"><input type="date" max="' + odIso(new Date()) + '" value="' + (u.sp.katilmaTarihi || '') + '" onchange="odIlkDersKaydet(\'' + odEnc(u.k) + '\', this.value)" aria-label="İlk ders tarihi">' + (o.ilk && o.ilk !== u.sp.katilmaTarihi ? '<button class="od-btn kucuk" onclick="odIlkDersKaydet(\'' + odEnc(u.k) + '\', \'' + o.ilk + '\')">ilk yoklama: ' + odKisa(o.ilk) + ' · kullan</button>' : '') + '</div></div>'
         + '<div class="od-bolum"><div class="od-bolum-bas">Aidat <small>tutarlar Aidat sekmesinde (PIN ile)</small></div>' + odAidatHTML(u) + '</div>';
 }
 function odAidatHTML(u) {
@@ -141,8 +145,8 @@ function odTakvimHTML(u) {
     let h = '<div class="od-takvim">' + ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(function (g) { return '<div class="od-gb">' + g + '</div>'; }).join('');
     for (let i = 0; i < bos; i++) h += '<div></div>';
     for (let d = 1; d <= gunSay; d++) {
-        let iso = a + '-' + String(d).padStart(2, '0'), s = odGun(u, iso), gelecek = iso > bugun;
-        h += '<button class="od-gun' + (s ? ' ' + OD_DURUM[s].cls : '') + (iso === bugun ? ' bugun' : '') + (OD.secim === iso ? ' acik' : '') + '"' + (gelecek ? ' disabled' : '') + ' onclick="odGunSec(\'' + iso + '\')" aria-label="' + d + ' ' + OD_AY[ilk.getMonth()] + (s ? ' ' + OD_DURUM[s].ad : '') + '"><span>' + d + '</span>' + (s ? '<i>' + OD_DURUM[s].ikon + '</i>' : '') + '</button>';
+        let iso = a + '-' + String(d).padStart(2, '0'), s = odGun(u, iso), gelecek = iso > bugun, once = !s && u.sp.katilmaTarihi && iso < u.sp.katilmaTarihi;
+        h += '<button class="od-gun' + (s ? ' ' + OD_DURUM[s].cls : '') + (once ? ' once' : '') + (iso === bugun ? ' bugun' : '') + (OD.secim === iso ? ' acik' : '') + '"' + (gelecek ? ' disabled' : '') + ' onclick="odGunSec(\'' + iso + '\')" aria-label="' + d + ' ' + OD_AY[ilk.getMonth()] + (s ? ' ' + OD_DURUM[s].ad : '') + '"><span>' + d + '</span>' + (s ? '<i>' + OD_DURUM[s].ikon + '</i>' : '') + '</button>';
     }
     h += '</div>';
     if (OD.secim && OD.secim.slice(0, 7) === a) {
@@ -154,8 +158,146 @@ function odTakvimHTML(u) {
 function odGunSec(iso) { OD.secim = OD.secim === iso ? null : iso; odDetayYenile(); }
 async function odDurumSec(s) {
     let u = OD.secili && odBul(OD.secili), iso = OD.secim; if (!u || !iso) return;
+    if (s === 'k') return odBaskaGunSor(u, iso);
     await odGunYaz(u, iso, s); OD.secim = null; odDetayYenile();
     showToast(s ? odTR(iso) + ': ' + OD_DURUM[s].ad : odTR(iso) + ' boşaltıldı', 'success');
+}
+// ↪ Başka gün geldi (2026-10-16, kullanıcı: "o gün gelmedi ama farklı gün geldi — bazen diğer grubun dersine geliyor").
+// O gün 'k' (gelmedi, telafi hakkı doğmaz), seçilen gün 'g' (ders sayılır). meta yoklama_durum { d: 'baska', ref }.
+function odBaskaGunSor(u, iso, sonra) {
+    let bugun = odIso(new Date()), vars = iso < bugun ? bugun : odIso(new Date(Date.now() - 864e5));
+    onayIste('<div style="text-align:left"><b>↪ ' + odEsc(u.ad) + ' başka gün geldi</b><div style="font-size:13px;opacity:.8;margin:6px 0 10px">' + odTR(iso) + ' dersine gelmedi ama başka bir gün (ör. başka grubun dersine) geldi. Hangi gün?</div><input type="date" id="od-bg-tarih" max="' + bugun + '" value="' + vars + '" style="width:100%;min-height:42px;border-radius:10px;padding:8px;box-sizing:border-box"></div>',
+        async function () {
+            let t = (document.getElementById('od-bg-tarih') || {}).value; if (!t || t === iso || t > bugun) return showToast('Geçerli, farklı bir gün seç.', 'warning');
+            odGunYaz.ref = t; try { await odGunYaz(u, iso, 'k'); } finally { odGunYaz.ref = null; }
+            let st = odGun(u, t); if (st !== 'g' && st !== 't') await odGunYaz(u, t, 'g');
+            OD.secim = null; if (sonra) sonra(); else odDetayYenile(); showToast('↪ ' + odTR(t) + ' geldi olarak kaydedildi', 'success');
+        }, '↪ Kaydet', 'Vazgeç');
+}
+// ---------------- 🗓 GEÇMİŞ YOKLAMA ÇİZELGESİ (2026-10-16, Milo'dakinin DAĞ hâli; kullanıcı: "yoklama geçmişini nasıl gireceğiz, kolaylaştır")
+// Kâğıt yoklama gibi: satır = sporcu, sütun = o ayın ders günleri (seçili dersin günleri + kaydı olan günler + "+ gün").
+// Seçim: Ders Programı'ndaki bir ders (katılımcıları) ya da bir lig. Hücreye dokun: boş → ✓ → ✗ → H → T → ↪ → boş.
+// Değişiklikler birikir, Kaydet tek seferde odGunYaz ile yazar.
+const OD_CZ_SIRA = [null, 'g', 'y', 'h', 't', 'k'];
+const OD_GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+function odSlotGunler(s) { return (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number); }
+function odCzSecenekler() {
+    let l = (OD.slotlar || []).filter(function (s) { return (s.katilimcilar || []).length; }).slice().sort(function (a, b) { let ga = Math.min.apply(null, odSlotGunler(a).map(function (x) { return (x + 6) % 7; })), gb = Math.min.apply(null, odSlotGunler(b).map(function (x) { return (x + 6) % 7; })); return ga - gb || String(a.baslangicSaat).localeCompare(String(b.baslangicSaat)); })
+        .map(function (s) { return { id: 's' + s.id, ad: (s.grup || 'Ders') + ' · ' + odSlotGunler(s).map(function (x) { return OD_GUN_KISA[x]; }).join('+') + ' ' + (s.baslangicSaat || ''), slot: s }; });
+    return l.concat(OD_GRUPLAR.map(function (g) { return { id: 'l' + g, ad: OD_GRUP_AD[g] + ' (tümü)', lig: g }; }));
+}
+function odCzDurum() { if (!OD.cz) OD.cz = { sec: null, ay: 0, bekleyen: {}, ekGun: {}, ilkAcik: false }; let l = odCzSecenekler(); if (!l.some(function (x) { return x.id === OD.cz.sec; })) OD.cz.sec = l[0] ? l[0].id : null; return OD.cz; }
+function odCzSecim() { let cz = odCzDurum(); return odCzSecenekler().find(function (x) { return x.id === cz.sec; }) || null; }
+async function odCizelgeAc() {
+    let alan = document.getElementById('yonetici-liste'); if (alan) alan.innerHTML = '<div class="od-yuk">Yükleniyor…</div>';
+    try { let r = await fetch('/api/antrenman-programi'); let d = await r.json(); OD.slotlar = (d && (d.slots || d.program)) || []; } catch (e) { OD.slotlar = OD.slotlar || []; }
+    OD.ekran = 'cizelge'; odCzDurum(); odCiz();
+}
+function odCizelgeKapat() {
+    let n = Object.keys(odCzDurum().bekleyen).length, kapat = function () { OD.cz.bekleyen = {}; OD.ekran = 'liste'; odCiz(); };
+    if (n) return onayIste(n + ' değişiklik kaydedilmedi. Kaydetmeden çıkılsın mı?', kapat, 'Kaydetmeden çık', 'Kal');
+    kapat();
+}
+function odCzAyBas(o) { let d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(1); d.setMonth(d.getMonth() + o); return d; }
+function odCzUyeler() {
+    let cz = odCzDurum(), sec = odCzSecim(); if (!sec) return [];
+    let b = odCzAyBas(cz.ay), son = odIso(new Date(b.getFullYear(), b.getMonth() + 1, 0, 12)), ayOn = son.slice(0, 7);
+    let l = sec.slot ? (sec.slot.katilimcilar || []).map(function (k) { return odBul(k.grup + '|' + k.ad); }).filter(function (u) { return u && !u.sp.pasif; }) : odSporcular().filter(function (u) { return u.g === sec.lig; });
+    let kayitVar = function (u) { return Object.keys(otomatikYoklamaDB || {}).some(function (iso) { return iso.slice(0, 7) === ayOn && odGun(u, iso); }); };
+    return l.filter(function (u) { return !(u.sp.katilmaTarihi && u.sp.katilmaTarihi > son && !cz.ilkAcik && !kayitVar(u)); }).sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+}
+function odCzGunler(uyeler) {
+    let cz = odCzDurum(), sec = odCzSecim(), bas = odCzAyBas(cz.ay), ay = bas.getMonth(), ayOn = odIso(bas).slice(0, 7), bugun = odIso(new Date()), hg = {};
+    if (sec && sec.slot) odSlotGunler(sec.slot).forEach(function (x) { hg[x] = 1; });
+    else if (sec) (OD.slotlar || []).forEach(function (s) { if ((s.katilimcilar || []).some(function (k) { return k.grup === sec.lig; })) odSlotGunler(s).forEach(function (x) { hg[x] = 1; }); });
+    let set = {};
+    for (let d = new Date(bas); d.getMonth() === ay; d.setDate(d.getDate() + 1)) { let iso = odIso(d); if (iso > bugun) break; if (hg[d.getDay()] && !(sec && sec.slot && (sec.slot.istisnalar || []).some(function (i) { return i.tarih === iso; }))) set[iso] = 1; }
+    Object.keys(otomatikYoklamaDB || {}).forEach(function (iso) { if (iso.slice(0, 7) === ayOn && uyeler.some(function (u) { return odGun(u, iso); })) set[iso] = 1; });
+    Object.keys(cz.ekGun).forEach(function (iso) { if (iso.slice(0, 7) === ayOn) set[iso] = 1; });
+    return Object.keys(set).sort();
+}
+function odCzHucre(u, iso) { let k = iso + '|' + u.k, b = odCzDurum().bekleyen; return k in b ? b[k] : odGun(u, iso); }
+function odCzDokun(kEnc, iso) {
+    let cz = odCzDurum(), uk = decodeURIComponent(kEnc), u = odBul(uk), k = iso + '|' + uk; if (!u) return;
+    let yeni = OD_CZ_SIRA[(OD_CZ_SIRA.indexOf(odCzHucre(u, iso)) + 1) % OD_CZ_SIRA.length];
+    if (yeni === odGun(u, iso)) delete cz.bekleyen[k]; else cz.bekleyen[k] = yeni;
+    odCzYenile();
+}
+function odCzHepsiGeldi(iso) {
+    let cz = odCzDurum(), n = 0;
+    odCzUyeler().forEach(function (u) { if (odCzHucre(u, iso) === null && !(u.sp.katilmaTarihi && iso < u.sp.katilmaTarihi)) { cz.bekleyen[iso + '|' + u.k] = 'g'; n++; } });
+    if (!n) showToast('Bu günde boş kalan yok.', 'info');
+    odCzYenile();
+}
+function odCzGunEkle(iso) { if (!iso) return; let cz = odCzDurum(); cz.ekGun[iso] = 1; let d = new Date(iso + 'T12:00:00'), b = new Date(); cz.ay = Math.min(0, (d.getFullYear() - b.getFullYear()) * 12 + d.getMonth() - b.getMonth()); odCzYenile(); }
+function odCzAy(o) { let cz = odCzDurum(); cz.ay = Math.min(0, cz.ay + o); odCzYenile(); }
+function odCzSec(id) { let cz = odCzDurum(); if (Object.keys(cz.bekleyen).length) { showToast('Önce kaydet ya da değişiklikleri geri al.', 'warning'); return odCzYenile(); } cz.sec = id; odCzYenile(); }
+function odCzGeriAl() { odCzDurum().bekleyen = {}; odCzYenile(); }
+function odCzIlkAcKapat() { let cz = odCzDurum(); cz.ilkAcik = !cz.ilkAcik; odCzYenile(); }
+function odCzYenile() {
+    let kap = document.getElementById('od-cz'); if (!kap) return odCiz();
+    let ic = document.getElementById('yonetici-icerik') || document.scrollingElement, y = ic ? ic.scrollTop : 0, wy = window.scrollY, sx = (kap.querySelector('.od-cz-tablo-kap') || {}).scrollLeft || 0;
+    kap.outerHTML = odCizelgeHTML();
+    let t = document.querySelector('#od-cz .od-cz-tablo-kap'); if (t) t.scrollLeft = sx;
+    if (ic) ic.scrollTop = y; window.scrollTo(0, wy);
+}
+function odCizelgeHTML() {
+    let cz = odCzDurum(), sec = odCzSecim(), uyeler = odCzUyeler(), gunler = odCzGunler(uyeler), bas = odCzAyBas(cz.ay), n = Object.keys(cz.bekleyen).length, ayOn = odIso(bas).slice(0, 7);
+    let isaret = { g: '✓', y: '✗', h: 'H', t: 'T', k: '↪' };
+    let ust = '<th class="ad">Sporcu</th>' + gunler.map(function (iso) { let d = new Date(iso + 'T12:00:00'); return '<th><button class="od-cz-gun" onclick="odCzHepsiGeldi(\'' + iso + '\')" title="Bu günün boşlarını geldi yap"><b>' + d.getDate() + '</b><small>' + OD_GUN_KISA[d.getDay()] + '</small></button></th>'; }).join('') + '<th class="top">Geldi</th>';
+    let satir = uyeler.map(function (u) {
+        let gel = 0, kt = u.sp.katilmaTarihi;
+        let h = gunler.map(function (iso) {
+            let s = odCzHucre(u, iso), deg = (iso + '|' + u.k) in cz.bekleyen; if (s === 'g' || s === 't') gel++;
+            if (!s && kt && iso < kt) return '<td><span class="od-cz-h once" title="' + odEsc(u.ad) + ' ' + odTR(kt) + ' tarihinde başladı">–</span></td>';
+            return '<td><button class="od-cz-h ' + (s || 'bos') + (deg ? ' deg' : '') + '" onclick="odCzDokun(\'' + odEnc(u.k) + '\',\'' + iso + '\')" aria-label="' + odEsc(u.ad) + ' ' + odTR(iso) + ': ' + (s ? OD_DURUM[s].ad : 'boş') + '">' + (s ? isaret[s] : '') + '</button></td>';
+        }).join('');
+        let bsl = kt && kt.slice(0, 7) === ayOn ? '<small class="od-cz-bas">' + odKisa(kt) + '\'da başladı</small>' : '';
+        return '<tr><td class="ad">' + odEsc(u.ad) + (sec && sec.slot ? '<small>' + OD_GRUP_AD[u.g] + '</small>' : '') + bsl + '</td>' + h + '<td class="top">' + gel + '</td></tr>';
+    }).join('');
+    return '<div class="od-cz" id="od-cz"><div class="od-ust"><div><div class="od-ad">🗓 Geçmiş yoklama</div><div class="od-alt">Kâğıttaki gibi: hücreye dokun → ✓ geldi → ✗ gelmedi → H hasta → T telafi → ↪ başka gün geldi → boş. Gün başlığı o günün boşlarını "geldi" yapar. En sonda Kaydet.</div></div>'
+        + '<div class="od-cz-ust-btn"><button class="od-btn' + (cz.ilkAcik ? ' ana' : '') + '" onclick="odCzIlkAcKapat()">📅 İlk ders tarihleri</button><button class="od-btn" onclick="odCizelgeKapat()">← Defter</button></div></div>'
+        + (cz.ilkAcik ? odCzIlkHTML() : '')
+        + '<div class="od-cz-secim"><label class="od-cz-sec">Ders / lig <select onchange="odCzSec(this.value)">' + odCzSecenekler().map(function (x) { return '<option value="' + odEsc(x.id) + '"' + (x.id === cz.sec ? ' selected' : '') + '>' + odEsc(x.ad) + '</option>'; }).join('') + '</select></label>'
+        + '<div class="od-cz-ay"><button class="od-btn" onclick="odCzAy(-1)" aria-label="Önceki ay">‹</button><b>' + OD_AY[bas.getMonth()] + ' ' + bas.getFullYear() + '</b><button class="od-btn" onclick="odCzAy(1)"' + (cz.ay >= 0 ? ' disabled' : '') + ' aria-label="Sonraki ay">›</button>'
+        + '<label class="od-cz-ekle">+ gün <input type="date" max="' + odIso(new Date()) + '" onchange="odCzGunEkle(this.value)"></label></div></div>'
+        + (uyeler.length && gunler.length ? '<div class="od-cz-tablo-kap"><table class="od-cz-tablo"><thead><tr>' + ust + '</tr></thead><tbody>' + satir + '</tbody></table></div>'
+            : '<div class="od-bos">' + (uyeler.length ? 'Bu ay ders günü yok — "+ gün" ile tarih ekleyebilirsin.' : 'Bu derste/ligde sporcu yok.') + '</div>')
+        + '<div class="od-cz-alt"><span class="od-cz-acik"><i class="od-cz-h g">✓</i> geldi <i class="od-cz-h y">✗</i> gelmedi <i class="od-cz-h h">H</i> hasta <i class="od-cz-h t">T</i> telafi <i class="od-cz-h k">↪</i> başka gün geldi</span>'
+        + (n ? '<button class="od-btn" onclick="odCzGeriAl()">Geri al</button>' : '') + '<button class="od-btn ana buyuk" id="od-cz-kaydet" onclick="odCzKaydet()"' + (n ? '' : ' disabled') + '>💾 Kaydet' + (n ? ' (' + n + ' değişiklik)' : '') + '</button></div></div>';
+}
+// 📅 İlk ders tarihi (sp.katilmaTarihi — Aidat'taki "katılma tarihi" ile aynı alan). Öneri: sporcunun en eski yoklama kaydı.
+function odIlkYoklama(u) { let en = null; Object.keys(otomatikYoklamaDB || {}).forEach(function (iso) { if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && odGun(u, iso) && (!en || iso < en)) en = iso; }); return en; }
+function odCzIlkHTML() {
+    let cz = odCzDurum(), ilkAcik = cz.ilkAcik; cz.ilkAcik = true; let l = odCzUyeler(); cz.ilkAcik = ilkAcik; let bugun = odIso(new Date());
+    return '<div class="od-cz-ilk"><div class="od-alt">Her sporcunun <b>ilk ders tarihi</b>: bu tarihten önceki günler çizelgede "–" olur, yoklamada ve defterde beklenmez.</div>'
+        + l.map(function (u) {
+            let ilk = odIlkYoklama(u), kt = u.sp.katilmaTarihi || '', k = odEnc(u.k), uyari = ilk && kt && ilk < kt;
+            return '<div class="od-cz-ilk-sat"><b>' + odEsc(u.ad) + '</b><input type="date" max="' + bugun + '" value="' + kt + '" onchange="odIlkDersKaydet(\'' + k + '\', this.value)" aria-label="' + odEsc(u.ad) + ' ilk ders tarihi">'
+                + (ilk && ilk !== kt ? '<button class="od-btn kucuk' + (uyari ? ' uyari' : '') + '" onclick="odIlkDersKaydet(\'' + k + '\', \'' + ilk + '\')" title="En eski yoklama kaydı">' + (uyari ? '⚠️ ' : '') + 'ilk yoklama: ' + odKisa(ilk) + ' · kullan</button>' : '') + '</div>';
+        }).join('') + '</div>';
+}
+function odIlkDersKaydet(kEnc, iso) {
+    let u = odBul(decodeURIComponent(kEnc)); if (!u) return; iso = iso || null;
+    if (iso && iso > odIso(new Date())) return showToast('İlk ders tarihi gelecekte olamaz.', 'error');
+    if ((u.sp.katilmaTarihi || null) === iso) return;
+    u.sp.katilmaTarihi = iso; u.sp.lastModified = Date.now();
+    try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch (e) {}
+    try { bekleyenGonderim = true; bulutaGonderKontrol(); } catch (e) {}
+    if (OD.ekran === 'cizelge') odCzYenile(); else odDetayYenile();
+    showToast('✓ ' + u.ad + ': ilk ders ' + (iso ? odTR(iso) : 'silindi'), 'success');
+}
+async function odCzKaydet() {
+    let cz = odCzDurum(), l = Object.keys(cz.bekleyen); if (!l.length) return;
+    let btn = document.getElementById('od-cz-kaydet'), ok = 0;
+    if (btn) btn.disabled = true;
+    for (let i = 0; i < l.length; i++) {
+        let k = l[i], p = k.indexOf('|'), iso = k.slice(0, p), u = odBul(k.slice(p + 1));
+        if (btn) btn.textContent = '💾 Kaydediliyor… ' + (i + 1) + '/' + l.length;
+        if (u) { await odGunYaz(u, iso, cz.bekleyen[k]); ok++; }
+        delete cz.bekleyen[k];
+    }
+    odCzYenile(); showToast('✓ ' + ok + ' yoklama kaydedildi', 'success');
 }
 function odVeliMesaj(kEnc) {
     let u = odBul(decodeURIComponent(kEnc)); if (!u) return; let o = odOzet(u), b = odIso(new Date()).slice(0, 7), m = o.aylar.find(function (x) { return x.ay === b; });
@@ -352,9 +494,20 @@ function odCss() {
         '.od-konu{font-size:16px;font-weight:800}.od-kart ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;color:#2E3936;line-height:1.5}',
         '.od-et{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:#F3F6F5;font-size:11.5px;font-weight:700;color:#3D4A47}.od-et.yas{background:var(--s-vurgu-a);color:#0F6F67}',
         '.od-ay-sat{display:grid;grid-template-columns:100px 64px 1fr;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--s-line);font-size:14px;line-height:1.5}.od-ay-sat small{color:var(--s-dim);font-weight:600}',
+        '.od-gun.k{background:transparent;box-shadow:inset 0 0 0 1.5px var(--s-vurgu);color:#0F6F67}.od-gun.once{opacity:.4}.od-secici button.k{color:#0F6F67}.od-lejant .k i{border:1.5px dashed var(--s-vurgu);color:#0F6F67}.od-n.k{border:1.5px dashed var(--s-vurgu);color:#0F6F67}.od-btn.genis{justify-self:stretch;width:100%}.od-btn.uyari{border-color:var(--s-uyari);color:var(--s-amber)}',
+        '.od-cz{display:grid;gap:14px;min-width:0}.od-cz>*{min-width:0;max-width:100%}.od-cz-ust-btn{display:flex;gap:8px;flex-wrap:wrap}.od-cz-secim{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.od-cz-sec{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;color:var(--s-dim)}.od-cz-sec select{min-height:40px;border-radius:10px;border:1px solid var(--s-line);background:var(--s-kagit);color:var(--s-ink);font:inherit;font-weight:700;padding:0 10px;max-width:72vw}',
+        '.od-cz-ay{display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:100%}.od-cz-ekle input{min-width:0;max-width:100%}.od-cz-ay b{min-width:120px;text-align:center}.od-cz-ekle{font-size:12.5px;color:var(--s-dim);display:flex;gap:6px;align-items:center;font-weight:700}.od-cz-ekle input,.od-cz-ilk-sat input{border:1px solid var(--s-line);border-radius:8px;padding:6px 8px;background:var(--s-kagit);color:var(--s-ink);font:inherit}',
+        '.od-cz-tablo-kap{overflow:auto;max-height:65vh;border:1px solid var(--s-line);border-radius:12px;background:var(--s-kagit)}.od-cz-tablo{border-collapse:separate;border-spacing:0;font-size:13px}.od-cz-tablo th,.od-cz-tablo td{padding:3px;text-align:center;border-bottom:1px solid var(--s-line)}.od-cz-tablo thead th{position:sticky;top:0;background:var(--s-kagit);z-index:2}',
+        '.od-cz-tablo .ad{position:sticky;left:0;background:var(--s-kagit);text-align:left;padding:6px 10px;font-weight:700;white-space:nowrap;z-index:1;min-width:150px}.od-cz-tablo .ad small{display:block;font-size:10.5px;color:var(--s-dim);font-weight:600}.od-cz-tablo thead .ad{z-index:3}.od-cz-tablo .top{font-weight:800;color:var(--s-vurgu);padding:0 10px}',
+        '.od-cz-gun{border:0;background:transparent;color:var(--s-ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-width:40px;padding:4px;border-radius:8px}.od-cz-gun:hover{background:var(--s-vurgu-a)}.od-cz-gun small{font-size:10px;color:var(--s-dim);font-weight:600}',
+        '.od-cz-h{width:40px;height:40px;border-radius:10px;border:1px solid var(--s-line);background:#F3F6F5;color:var(--s-ink);font:inherit;font-weight:900;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-style:normal;padding:0}',
+        '.od-cz-h.g{background:var(--s-vurgu-a);color:var(--s-vurgu);border-color:transparent}.od-cz-h.y{background:var(--s-kirmizi-a);color:var(--s-kirmizi);border-color:transparent}.od-cz-h.h{background:var(--s-mor-a);color:var(--s-mor);border-color:transparent}.od-cz-h.t{background:var(--s-amber-a);color:var(--s-amber);border-color:transparent}.od-cz-h.k{background:var(--s-vurgu-a);color:var(--s-vurgu);border:1px dashed var(--s-vurgu)}',
+        '.od-cz-h.once{background:transparent;border-style:dashed;color:var(--s-dim);cursor:default;font-weight:600}.od-cz-bas{display:block;font-size:10.5px;font-weight:600;color:var(--s-amber)}.od-cz-h.deg{box-shadow:0 0 0 2px var(--s-uyari)}',
+        '.od-cz-alt{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap}.od-cz-acik{margin-right:auto;font-size:12px;color:var(--s-dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}.od-cz-acik .od-cz-h{width:24px;height:24px;font-size:12px;border-radius:6px;cursor:default}',
+        '.od-cz-ilk{display:grid;gap:8px;padding:14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-kagit)}.od-cz-ilk-sat{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--s-line)}.od-cz-ilk-sat:last-child{border-bottom:0}.od-cz-ilk .od-cz-ilk-sat b{min-width:150px}',
         '.od button:focus-visible,.od input:focus-visible,.od select:focus-visible,.od textarea:focus-visible{outline:2px solid var(--s-vurgu);outline-offset:2px}',
         '@media (max-width:860px){.od{grid-template-columns:1fr;padding:12px}.od-liste{position:static;max-height:none}.od-satirlar{max-height:320px;overflow:auto}.od-detay{padding:16px}.od-odemeler div{grid-template-columns:1fr 1fr}.od-odemeler small{grid-column:1 / -1}.od-ay-sat{grid-template-columns:1fr 1fr}.od-ay-sat div{grid-column:1 / -1}}'
     ].join('\n');
     document.head.appendChild(st); if (typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
 }
-window.odAc = odAc; window.dgAc = dgAc;
+window.odAc = odAc; window.dgAc = dgAc; window.odCizelgeAc = odCizelgeAc; window.odBaskaGunSor = odBaskaGunSor;

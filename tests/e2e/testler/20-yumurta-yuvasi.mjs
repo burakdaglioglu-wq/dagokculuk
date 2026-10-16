@@ -86,6 +86,9 @@ export default async function ({ log }) {
     }, sp0);
     dogrula(!nadir.hata && nadir.hak >= 1, 'rekor seri altın yumurta hakkı vermedi: ' + JSON.stringify(nadir));
     dogrula(nadir.renk === 'altin' && nadir.kalan === nadir.hak - 1, 'altın yumurta seçilemedi / hak düşmedi: ' + JSON.stringify(nadir));
+    // sınıf yumurtası çocuklarınkiyle karışmasın (2026-10-16): kendine ait renk, ayrı başlık, ayrı kırılma sahnesi
+    const sinif = await p.evaluate(() => { kmYuvaCiz(); const l = (_kmListe || []).map((k, i) => ({ ...k, i })); const s = yuvaSinifDurum(l, l.map((k) => yuvaDurum(k.g, k.ad))); yuvaKirilma('catla', 'sinif', s.aktif.no, 'test', null, null, null, true); const sahne = !!document.querySelector('.yv-sahne.yv-s-sinif'); document.querySelectorAll('.yv-sahne').forEach((e) => e.remove()); return { renk: s.aktif.renk, serit: !!document.querySelector('.yv-sinif-serit'), bolum: !!document.querySelector('.yv-bolum'), sahne, cocukRenkYok: !YUVA_RENK.some((r) => r.id === 'sinif') }; });
+    esit(sinif.renk, 'sinif', 'sınıf yumurtası kendi renginde değil'); dogrula(sinif.serit && sinif.bolum, 'sınıf şeridi/bölüm başlığı yok'); dogrula(sinif.sahne, 'sınıf kırılma sahnesi ayrı değil'); dogrula(sinif.cocukRenkYok, 'sınıf rengi çocuk havuzunda');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(`yumurta → çatladı → albüm (${son.album.length}), ikinci yumurta farklı hayvan`);
   } finally { await ctx.close(); }

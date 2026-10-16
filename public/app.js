@@ -2346,6 +2346,7 @@
             let secili = _gunSeciciState[idOnEki]; if(!secili) return;
             if(secili.has(gun)) { if(secili.size > 1) secili.delete(gun); } else secili.add(gun);
             let ic = document.getElementById(idOnEki+'-container'); if(ic) ic.innerHTML = _gunSeciciIcerikHTML(idOnEki);
+            if(idOnEki === 'program-gun') programGunSaatCiz();
         }
         function _gunSeciciOku(idOnEki) {
             let secili = _gunSeciciState[idOnEki]; if(!secili || !secili.size) return [];
@@ -2398,6 +2399,7 @@
         }
         function _bitisOtoAyarla(baslangicOnEki, bitisOnEki) {
             let baslangic = _saatSeciciOku(baslangicOnEki); if(!baslangic) return;
+            if(baslangicOnEki === 'program-baslangic') setTimeout(programGunSaatCiz, 0);
             let parcalar = baslangic.split(':').map(Number);
             let toplam = ((parcalar[0]*60 + parcalar[1] + 90) % 1440 + 1440) % 1440;
             let saatEl = document.getElementById(bitisOnEki+'-saat'), dakEl = document.getElementById(bitisOnEki+'-dakika');
@@ -2429,6 +2431,7 @@
                     <div style="margin-bottom:10px;">
                         ${_gunSeciciHTML('program-gun', [new Date().getDay()])}
                     </div>
+                    <div id="program-gunsaat"></div>
                     <div style="display:flex; gap:6px; margin-bottom:4px; align-items:center;">
                         ${_saatSeciciHTML('program-baslangic','18:00','program-bitis')}
                         <span style="color:var(--text-muted); font-weight:700;">–</span>
@@ -2589,6 +2592,33 @@
             html += '</div>';
             ic.innerHTML = html;
         }
+        // Günlere farklı saat (2026-10-16, Milo'daki gibi; kullanıcı: "perşembe 17.00 ama cumartesi 14.00 — ayrı ayrı yapamıyorum").
+        // Bir derste tek saat var; farklı saatli günler aynı süre/kapasite/hatırlatmayla AYRI ders olarak açılır.
+        // _programGunSaat = { haftaGünü: 'SS:DD' } — yalnız ana saatten farklı olanlar.
+        let _programGunSaat = {};
+        function programGunSaatCiz() {
+            let el = document.getElementById('program-gunsaat'); if(!el) return;
+            let gunler = _gunSeciciOku('program-gun'), bas = _saatSeciciOku('program-baslangic') || '18:00';
+            Object.keys(_programGunSaat).forEach(function(g) { if(gunler.indexOf(+g) === -1 || _programGunSaat[g] === bas) delete _programGunSaat[g]; });
+            if(gunler.length < 2) { el.innerHTML = ''; return; }
+            let sira = [1,2,3,4,5,6,0].filter(function(g) { return gunler.indexOf(g) !== -1; });
+            el.innerHTML = '<div style="font-size:9.5px; color:var(--text-muted); margin:0 0 4px;">Günlere farklı saat — bir gün başka saatteyse değiştir, o gün ayrı ders olur</div>'
+                + '<div style="display:grid; gap:4px; margin-bottom:10px;">' + sira.map(function(g) {
+                    let f = !!_programGunSaat[g];
+                    return '<div class="program-gs-sat" data-gun="'+g+'" onchange="programGunSaatDegis('+g+')" style="display:flex; align-items:center; gap:6px; padding:3px 6px; border-radius:8px; border:1px solid '+(f ? 'var(--aurora-cyan)' : 'var(--border-color)')+';">'
+                        + '<span style="width:74px; font-size:11.5px; font-weight:800; color:'+(f ? 'var(--aurora-cyan)' : 'var(--text-muted)')+';">'+GUN_ADI_TR[g]+'</span>' + _saatSeciciHTML('program-gs-'+g, _programGunSaat[g] || bas)
+                        + (f ? '<button type="button" onclick="delete _programGunSaat['+g+']; programGunSaatCiz()" title="Ana saate dön" style="border:0; background:none; color:var(--text-muted); cursor:pointer; font-size:14px;">↺</button>' : '') + '</div>';
+                }).join('') + '</div>';
+        }
+        function programGunSaatDegis(g) {
+            let v = _saatSeciciOku('program-gs-'+g), bas = _saatSeciciOku('program-baslangic');
+            if(!v || v === bas) delete _programGunSaat[g]; else _programGunSaat[g] = v;
+            programGunSaatCiz();
+        }
+        function programSaatGruplari(gunler, bas) {
+            let m = {}; gunler.forEach(function(g) { let b = _programGunSaat[g] || bas; (m[b] = m[b] || []).push(g); });
+            return Object.keys(m).sort().map(function(b) { return { bas: b, gunler: m[b].sort(function(x, y) { return x - y; }) }; });
+        }
         function programSlotEkle() {
             let grup = 'genel'; // dersler artık lig/sınıf bazlı değil — bkz. GENEL_RENK yorumu
             let gunler = _gunSeciciOku('program-gun');
@@ -2599,9 +2629,16 @@
             let hatirlatmaDakika = parseInt(document.getElementById('program-hatirlatma-dk').value) || 30;
             let kapasite = parseInt(document.getElementById('program-kapasite-input').value) || null;
             if(bitisSaat <= baslangicSaat) return showToast('Bitiş saati başlangıçtan sonra olmalı.', 'error');
-            fetch('/api/antrenman-programi', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ grup, gunler, baslangicSaat, bitisSaat, hatirlatmaAktif, hatirlatmaDakika, kapasite, deviceId: _cihazId }) })
-                .then(r => r.json()).then(d => { if(d.applied) { showToast('Ders eklendi ✅', 'success'); programListesiYenile(); } else showToast('Eklenemedi.', 'error'); })
-                .catch(() => showToast('Bağlantı hatası.', 'error'));
+            let dk = function(t) { let p = t.split(':').map(Number); return p[0] * 60 + (p[1] || 0); }, sure = dk(bitisSaat) - dk(baslangicSaat);
+            let saat = function(d) { d = ((d % 1440) + 1440) % 1440; return String(Math.floor(d / 60)).padStart(2, '0') + ':' + String(d % 60).padStart(2, '0'); };
+            let gruplar = programSaatGruplari(gunler, baslangicSaat);
+            Promise.all(gruplar.map(function(gr) {
+                return fetch('/api/antrenman-programi', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ grup, gunler: gr.gunler, baslangicSaat: gr.bas, bitisSaat: saat(dk(gr.bas) + sure), hatirlatmaAktif, hatirlatmaDakika, kapasite, deviceId: _cihazId }) }).then(r => r.json());
+            })).then(function(l) {
+                let ok = l.filter(function(d) { return d && d.applied; }).length;
+                if(ok) { showToast(ok > 1 ? ok + ' ayrı ders eklendi ✅ (' + gruplar.map(function(g) { return _gunlerEtiketKisa(g.gunler) + ' ' + g.bas; }).join(' · ') + ')' : 'Ders eklendi ✅', 'success'); _programGunSaat = {}; programGunSaatCiz(); programListesiYenile(); }
+                else showToast('Eklenemedi.', 'error');
+            }).catch(() => showToast('Bağlantı hatası.', 'error'));
         }
 
         // ===== DERS ROSTER MODALI =====
