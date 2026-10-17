@@ -52,13 +52,13 @@ export default async function ({ log }) {
     esit(pedSonra.seri, seriOnce + 1, 'pencereden girilen seri kaydedilmedi');
     dogrula(pedSonra.isi >= 2, 'pencereden girilen seri yumurtayı ısıtmadı');
     // 2026-10-14 geliştirme: ilk büyüyen hayvan kendiliğinden dost olur ve sonraki serilerle beslenir; günde 3 görev;
-    // sınıf yuvası bugünkü ısıyı toplar; 📺 Sınıf ekranı dev yumurta + küçük kartlar çizer.
-    const gel = await p.evaluate((k) => { const d = yuvaDurum(k.g, k.ad), liste = _kmListe.filter((x) => turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]); const s = yuvaSinifDurum(liste, liste.map((x) => yuvaDurum(x.g, x.ad))); return { dost: d.dost, ilk: turnuvaDB[k.g][k.ad].oyun.yuva.sira[0].no, yem: d.yem[d.dost] || 0, gorev: d.gorevler.length, sinif: s.toplam, hedef: s.hedef }; }, sp0);
+    // 📺 Sınıf ekranı kartları çizer. (Sınıf/ortak yumurtası 2026-10-17'de kaldırıldı.)
+    const gel = await p.evaluate((k) => { const d = yuvaDurum(k.g, k.ad), liste = _kmListe.filter((x) => turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]); return { dost: d.dost, ilk: turnuvaDB[k.g][k.ad].oyun.yuva.sira[0].no, yem: d.yem[d.dost] || 0, gorev: d.gorevler.length }; }, sp0);
     dogrula(gel.dost === gel.ilk && gel.yem >= 2, 'dost atanmadı / beslenmedi: ' + JSON.stringify(gel));
     esit(gel.gorev, 3, 'günün görevleri 3 değil');
-    dogrula(gel.sinif > 0 && gel.hedef >= 12, 'sınıf yuvası ısınmadı: ' + JSON.stringify(gel));
     await p.evaluate(() => { document.querySelectorAll('.yv-katman,.yv-sahne').forEach((x) => x.remove()); _yvTv = true; kmYuvaCiz(); });
-    dogrula(await p.locator('.yv-tv #yv-sinif').isVisible() && await p.locator('.yv-tv-kart').count() > 0, 'sınıf ekranı çizilmedi');
+    dogrula(await p.locator('.yv-tv-kart').count() > 0, 'sınıf ekranı çizilmedi');
+    esit(await p.locator('#yv-sinif').count(), 0, 'ortak sınıf yumurtası hâlâ çiziliyor');
     await p.evaluate(() => { _yvTv = false; kmYuvaCiz(); document.querySelectorAll('.yv-sahne').forEach((x) => x.remove()); });
     // 2026-10-14: koyu tema varsayılan; 👥 Sporcular ile çıkar/ekle (Yarışma hattındaki de eklenebilir → ikisini birden oynar)
     dogrula(await p.locator('#yv-kok.yv.koyu').count(), 'koyu tema varsayılan değil');
@@ -86,9 +86,7 @@ export default async function ({ log }) {
     }, sp0);
     dogrula(!nadir.hata && nadir.hak >= 1, 'rekor seri altın yumurta hakkı vermedi: ' + JSON.stringify(nadir));
     dogrula(nadir.renk === 'altin' && nadir.kalan === nadir.hak - 1, 'altın yumurta seçilemedi / hak düşmedi: ' + JSON.stringify(nadir));
-    // sınıf yumurtası çocuklarınkiyle karışmasın (2026-10-16): kendine ait renk, ayrı başlık, ayrı kırılma sahnesi
-    const sinif = await p.evaluate(() => { kmYuvaCiz(); const l = (_kmListe || []).map((k, i) => ({ ...k, i })); const s = yuvaSinifDurum(l, l.map((k) => yuvaDurum(k.g, k.ad))); yuvaKirilma('catla', 'sinif', s.aktif.no, 'test', null, null, null, true); const sahne = !!document.querySelector('.yv-sahne.yv-s-sinif'); document.querySelectorAll('.yv-sahne').forEach((e) => e.remove()); return { renk: s.aktif.renk, serit: !!document.querySelector('.yv-sinif-serit'), bolum: !!document.querySelector('.yv-bolum'), sahne, cocukRenkYok: !YUVA_RENK.some((r) => r.id === 'sinif') }; });
-    esit(sinif.renk, 'sinif', 'sınıf yumurtası kendi renginde değil'); dogrula(sinif.serit && sinif.bolum, 'sınıf şeridi/bölüm başlığı yok'); dogrula(sinif.sahne, 'sınıf kırılma sahnesi ayrı değil'); dogrula(sinif.cocukRenkYok, 'sınıf rengi çocuk havuzunda');
+    esit(await p.evaluate(() => { kmYuvaCiz(); return document.querySelectorAll('#yv-sinif, .yv-sinif').length; }), 0, 'sınıf yumurtası kaldırılmadı');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(`yumurta → çatladı → albüm (${son.album.length}), ikinci yumurta farklı hayvan`);
   } finally { await ctx.close(); }

@@ -18435,6 +18435,24 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunSporcuIzgaraAcik = !_kmOyunSporcuIzgaraAcik;
             kmOyunChipleriCiz();
         }
+        // 👆 İsme/karaktere dokun → o sporcu seçilir (2026-10-17, kullanıcı: "bütün oyunlarda sporcu seçmek için herhangi bir yerdeki
+        // ismine tıklamak yeterli olsun"). Sahnedeki her sporcu grubu (s.zirveEl, s.canavarEl, s.ninjaEl… ve içindeki ad etiketi) tek
+        // bir dinleyiciyle yakalanır; sıralama, "sonra" listesi ve podyum zaten tıklanıyordu. Animasyon sürerken (kilit) seçim yapılmaz.
+        function kmOyunSahneSporcuBul(hedef) {
+            let sahne = document.getElementById('km-oyun-wrap'); if(!sahne || !hedef || !sahne.contains(hedef)) return -1;
+            for(let n = hedef; n && n !== sahne; n = n.parentNode) {
+                if(n.dataset && n.dataset.kmSporcu != null && n.dataset.kmSporcu !== '') return +n.dataset.kmSporcu;
+                if(!(n instanceof Element)) continue;
+                for(let i = 0; i < _kmOyunRosterCache.length; i++) { let o = _kmOyunRosterCache[i]; for(let k in o) { if(k.length > 2 && k.slice(-2) === 'El' && o[k] === n) return i; } }
+            }
+            return -1;
+        }
+        document.addEventListener('click', function(ev) {
+            if(_kmOyunKilit || typeof _kmOyunRosterCache === 'undefined' || !_kmOyunRosterCache.length) return;
+            let i = kmOyunSahneSporcuBul(ev.target); if(i < 0 || !_kmOyunRosterCache[i]) return;
+            if(i !== _kmOyunAktifIndex) { kmOyunSporcuSec(i); try { showToast('🎯 ' + kmOyunIlkAd(_kmOyunRosterCache[i].ad) + ' seçildi', 'info'); } catch(e) {} }
+        });
+        document.addEventListener('pointerover', function(ev) { let i = typeof _kmOyunRosterCache !== 'undefined' && _kmOyunRosterCache.length ? kmOyunSahneSporcuBul(ev.target) : -1; if(i >= 0 && ev.target.style) ev.target.style.cursor = 'pointer'; });
         function kmOyunSporcuSec(i) {
             _kmOyunAktifIndex = i;
             // Koçun elle seçmesi de "sıra ona geldi" demek — koreografi anında yakınlaşsın (kilit

@@ -665,12 +665,12 @@ function yuvaKartHTML(k, d) {
     const alt = d.aktif ? [0, E.catla, E.yavru][d.evre] : 0, ust = d.aktif ? [E.catla, E.yavru, E.buyu][d.evre] : 1;
     const kaynar = d.aktif && (d.ilerleme - alt) / Math.max(1, ust - alt) >= 0.7; // bir sonraki evreye çok az kaldı → yumurta titrer
     const dost = d.dost ? '<span class="yv-dost-mini" title="Dostu"><img src="' + yuvaHayvan(d.dost).src + '" alt="">Lv' + yuvaDostSeviye(d.yem[d.dost]).lv + '</span>' : '';
-    return `<button class="yv-kart${kaynar ? ' kaynar' : ''}${d.bugunIsi ? ' sicak' : ''}" id="yv-kart-${i}" onclick="yuvaDetay(${i})">${!d.yok && yuvaHakCipHTML(d.hak) ? `<span class="yv-haklar">${yuvaHakCipHTML(d.hak)}</span>` : ''}${d.bugunIsi ? `<span class="yv-bugun" title="Bugün kazandığı ateş (kendi yumurtasına ve sınıf yumurtasına gider)">🔥 +${d.bugunIsi} bugün</span>` : ''}
+    return `<button class="yv-kart${kaynar ? ' kaynar' : ''}${d.bugunIsi ? ' sicak' : ''}" id="yv-kart-${i}" onclick="yuvaDetay(${i})">${!d.yok && yuvaHakCipHTML(d.hak) ? `<span class="yv-haklar">${yuvaHakCipHTML(d.hak)}</span>` : ''}${d.bugunIsi ? `<span class="yv-bugun" title="Bugün kazandığı ateş">🔥 +${d.bugunIsi} bugün</span>` : ''}
       <div class="yv-gorsel-kap">${d.bugunIsi ? '<span class="yv-alev"><i>🔥</i><i>✨</i><i>🔥</i></span>' : ''}${d.yok ? `<div class="yv-bos" style="width:84px;height:100px">🥚</div>` : yuvaGorselHTML(d, 84)}</div>
       <div class="yv-ad">${esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad)}</div><div class="yv-evre">${evreYazi}${!d.yok && !d.secimGerek && d.evre === 2 && d.aktif.ikiz ? ' 👯 İkiz!' : ''}</div>${!d.yok && !d.secimGerek && d.evre === 1 ? `<div class="yv-ipucu">${esc(yuvaIpucu(d.aktif.no))}</div>` : ''}
       <div class="yv-cubuk"><i style="width:${yuzde}%"></i><span style="left:${E.catla / E.buyu * 100}%"></span><span style="left:${E.yavru / E.buyu * 100}%"></span></div>
       ${yuvaGorevNoktaHTML(d)}
-      ${!d.yok && d.secimGerek && d.bugunIsi ? '<div class="yv-secuyari">⚠️ Yumurta seçmedi — ateşi şimdilik yalnız sınıfa gidiyor</div>' : ''}
+      ${!d.yok && d.secimGerek && d.bugunIsi ? '<div class="yv-secuyari">⚠️ Yumurta seçmedi — kartına dokunup yumurtasını seçsin</div>' : ''}
       <div class="yv-alt"><span title="Kendi yumurtasının ilerlemesi">🥚 ${d.aktif ? d.ilerleme : 0}/${E.buyu}</span>${dost}<span>🐾 ${d.album ? yuvaAlbumHayvanlar(d.album).length : 0}</span></div></button>`;
 }
 function yuvaTvKartHTML(k, d) {
@@ -683,7 +683,8 @@ function kmYuvaCiz() {
     const ic = document.getElementById('km-icerik'); if (!ic) return;
     const liste = (_kmListe || []).map((k, i) => ({ ...k, i })).filter((k) => yuvaSp(k.g, k.ad) && yuvaOyuncuMu(k)); // i = _kmListe sırası (detay/seçim onu kullanır) · oyuncu: oyun hattı + elle eklenenler − çıkarılanlar
     if (typeof yzOku !== 'function' && typeof dagskEkYukle === 'function' && !window._yvYzIstendi) { window._yvYzIstendi = 1; dagskEkYukle('dagsk-km-yarisma-pro.js').then(() => { if (document.getElementById('yv-kok')) kmYuvaCiz(); }).catch(() => {}); } // yarışma şeridi için
-    const durumlar = liste.map((k) => yuvaDurum(k.g, k.ad)), sinif = yuvaSinifDurum(liste, durumlar);
+    // 2026-10-17: sınıf (ortak) yumurtası kaldırıldı — kullanıcı: "ortak yumurta oyunu bozuyor, tamamen kalksın". Herkes yalnız kendi yumurtasıyla oynar.
+    const durumlar = liste.map((k) => yuvaDurum(k.g, k.ad));
     const gorulen = yuvaGorulenAl(), yeniler = [], artilar = [];
     liste.forEach((k, j) => {
         const d = durumlar[j], anahtar = k.g + '|' + k.ad;
@@ -700,10 +701,9 @@ function kmYuvaCiz() {
     const ust = `<div class="yv-ust"><div class="yv-logo">🥚<div>Yumurta Yuvası<small>${_yvTv ? 'Sınıf ekranı · seriler geldikçe kendiliğinden yenilenir' : 'Kendi rekorunu geç, yumurtan çatlasın'}</small></div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYzPanelHTML();
     if (!liste.length) kok.innerHTML = ust + '<p style="font-weight:800">Yumurtada oynayan sporcu yok. <button class="yv-btn birincil" onclick="yuvaSporcular()">👥 Sporcu ekle</button></p>';
-    else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-ana"><div><div class="yv-bolum sinif">🏫 Sınıf yumurtası · hepimizin</div>${yuvaSinifHTML(sinif, 210, true)}</div><div><div class="yv-bolum">🥚 Herkesin kendi yumurtası</div><div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div></div></div>`;
-    else kok.innerHTML = ust + yuvaSinifHTML(sinif, 96) + `
+    else if (_yvTv) kok.innerHTML = ust + `<div class="yv-tv-izgara">${liste.map((k, j) => yuvaTvKartHTML(k, durumlar[j])).join('')}</div>`;
+    else kok.innerHTML = ust + `
       <div class="yv-kurallar"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div><div class="yv-kural">📋 Görev yap <b>+${YUVA_GOREV_ODUL}</b></div><div class="yv-kural nadir">⭐ Rekor seri → <b style="font-size:16px">Altın yumurta</b></div><div class="yv-kural nadir">💎 Ortalamanı 3 kez üst üste geç → <b style="font-size:16px">Elmas yumurta</b></div></div>
-      <div class="yv-bolum">🥚 Herkesin kendi yumurtası</div>
       <div class="yv-izgara">${liste.map((k, j) => yuvaKartHTML(k, durumlar[j])).join('')}</div>
       <p style="margin:0;font-weight:700;color:var(--soluk);font-size:13px">👆 Kartına dokun → serini buradan gir, görevlerini ve dostunu gör. Skor Gir, Oyunlar ya da Ok Partisi'nden girilen seriler de sayılır.</p>`;
     yeniler.forEach((i, j) => setTimeout(() => { const el = document.getElementById('yv-kart-' + i); if (el) { el.classList.add('yeni'); yuvaSes(880 + j * 60); } }, 300 + j * 350));
@@ -712,7 +712,6 @@ function kmYuvaCiz() {
     _yvImza = yuvaImza(); yuvaPollBaslat();
     if (_yvDev && !kok.contains(_yvDev)) kok.appendChild(_yvDev);
     if (document.getElementById('yz-oyun-sayac') && typeof yzTimerBaslat === 'function') { try { yzTimerBaslat(); } catch (e) {} } // yarışma süresi şeritte işlesin
-    if (liste.length) yuvaSinifKutla(sinif);
 }
 function yuvaTamEkran() { const el = document.getElementById('yv-kok'); if (!el) return; if (document.fullscreenElement) { document.exitFullscreen(); return; } const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } }
 function yuvaPencere(html) { document.querySelectorAll('.yv-katman').forEach((x) => x.remove()); /* aynı anda tek pencere */ const kok = document.getElementById('yv-kok') || document.body, k = document.createElement('div'); k.className = 'yv-katman'; k.innerHTML = `<div class="yv-pencere">${html}</div>`; k.addEventListener('click', (e) => { if (e.target === k) k.remove(); }); kok.appendChild(k); return k; }
@@ -724,7 +723,7 @@ function yuvaNasil() {
       <p style="font:800 19px var(--yvf-b);color:var(--yazi)">Ok attıkça yumurtan ısınır. Çatlar, içinden bir yavru çıkar, yavru büyüyünce albümüne girer!</p>
       <div class="yv-kurallar" style="justify-content:center"><div class="yv-kural">🔥 Her seri <b>+1</b></div><div class="yv-kural">🎯 3 ok da hedefte <b>+1</b></div><div class="yv-kural">⭐ Kendi ortalamanı geç <b>+2</b></div></div>
       <p style="font-weight:800;color:var(--altin-yazi,#8A5A00)">✨ Nadir yumurtalar: ⭐ rekor seri atarsan <b>altın yumurta</b>, ortalamanı 3 kez üst üste geçersen 💎 <b>elmas yumurta</b> kazanırsın. Daha hızlı ısınır, içinden PARLAK hayvan çıkar!</p>
-      <p style="font-weight:800">📋 Her gün 3 <b>görev</b>: yaparsan +${YUVA_GOREV_ODUL} 🔥 · 🐾 Büyüyen hayvanını <b>dost</b> seç: her seri onu besler, Lv 5'e kadar çıkar, 🎀🧢🕶️👑 takar · 🏫 <b>Sınıf yuvası</b>: herkesin ateşi dev yumurtayı ısıtır!</p>
+      <p style="font-weight:800">📋 Her gün 3 <b>görev</b>: yaparsan +${YUVA_GOREV_ODUL} 🔥 · 🐾 Büyüyen hayvanını <b>dost</b> seç: her seri onu besler, Lv 5'e kadar çıkar, 🎀🧢🕶️👑 takar</p>
       <p style="font-weight:800">🎁 Sürprizler: bazen yumurtadan <b>ikiz</b> çıkar 👯, çatlayınca içinden <b>ipucu sesi</b> gelir 🔍, büyüyen hayvan sana <b>hediye</b> getirir 👑</p>
       <p style="font-size:13px">Küçükler daha çabuk: 7 yaş ve altında yumurta en hızlı, 10 yaş ve üstünde biraz daha geç çatlar.</p>
       <p>Başkasıyla değil, kendinle yarışırsın. Dünkü halini geçersen yumurtan daha hızlı ısınır. Albümde toplanacak ${yuvaHayvanlar().length} hayvan var!</p>
@@ -849,7 +848,7 @@ function yuvaSeriSonrasi(g, ad) {
     if (m) { try { showToast(m, 'success'); } catch (e) {} yuvaSes(1046, 0.18); }
     if (_kmAktifSekme === 'yuva' && !document.querySelector('.yv-katman,.yv-sahne') && once.aktif && !(Date.now() - (window._yuvaPedKayitT || 0) < 3000)) {
         const tip = simdi.tamam > once.tamam ? 'buyu' : simdi.evre === 2 ? 'yavru' : 'catla';
-        setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim + ' · kendi yumurtası', null, once.aktif.ikiz, once.aktif.hediye), 250);
+        setTimeout(() => yuvaKirilma(tip, once.aktif.renk, once.aktif.no, isim, null, once.aktif.ikiz, once.aktif.hediye), 250);
     }
     if (_kmAktifSekme === 'yuva') kmYuvaCiz();
 }

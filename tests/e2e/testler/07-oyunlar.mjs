@@ -72,6 +72,16 @@ export default async function ({ log }) {
       return { teklif, acildi, ilkDogru: ilk === r[0].ad };
     });
     if (!toren.atla) { dogrula(toren.teklif, 'ilk 3 bitince tören önerilmedi'); dogrula(toren.acildi, 'tören açılmadı'); dogrula(toren.ilkDogru, 'podyum varış sırasına göre değil'); }
+    // 👆 Sahnede bir sporcunun karakterine/adına dokununca o seçilir (2026-10-17) — gerçek fare tıklamasıyla
+    await p.evaluate(() => kmAracSec('oyunlar')); await p.waitForSelector('#km-oyun-wrap', { timeout: 20000 });
+    for (const t of ['zirve', 'canavar', 'hedef']) {
+      await p.evaluate((t) => { kmOyunTemaSec(t); if (typeof kmOyunModSec === 'function') kmOyunModSec(false); kmOyunSporcuSec(0); }, t);
+      await p.waitForTimeout(1200);
+      const r = await p.evaluate((t) => { for (let i = 1; i < _kmOyunRosterCache.length; i++) { const el = _kmOyunRosterCache[i][t + 'El']; if (!el) continue; for (const q of [el, ...el.querySelectorAll('*')]) { const b = q.getBoundingClientRect(); if (!b.width) continue; const x = b.x + b.width / 2, y = b.y + b.height / 2, e = document.elementFromPoint(x, y); if (e && el.contains(e)) return { x, y, i }; } } return null; }, t);
+      dogrula(r, t + ': tıklanabilir sporcu bulunamadı');
+      await p.mouse.click(r.x, r.y); await p.waitForTimeout(300);
+      esit(await p.evaluate(() => _kmOyunAktifIndex), r.i, t + ': isme dokununca sporcu seçilmedi');
+    }
     // ⛰️ Zirve 3 (2026-10-16): puan = metre (+N m), kampa varınca kamp görevi; sıradaki seride yapılırsa 🚩 bayrak + 90 m
     await p.evaluate(() => kmAracSec('oyunlar')); await p.waitForSelector('#km-oyun-wrap', { timeout: 20000 });
     const zirve = await p.evaluate(async () => {
@@ -130,8 +140,9 @@ export default async function ({ log }) {
     await p.evaluate(() => { kmOyunTemaSec('canavar'); _kmCanavar.aktif.can = _kmCanavar.aktif.maxCan; kmCanavarKaydet(); kmOyunCanavarHudGuncelle(); });
     await p.locator('#km-cnv-araclar button', { hasText: 'Canavarlar' }).click();
     esit(await p.locator('.km-cnv-rh-kart').count(), await p.evaluate(() => KM_CANAVAR_TIPLERI.length), 'rehberdeki kart sayısı');
-    await p.locator('.km-cnv-rh-kart', { hasText: 'Tepegöz' }).locator('button', { hasText: 'Bununla savaş' }).click(); await p.waitForTimeout(400);
-    esit(await p.evaluate(() => _kmCanavar.aktif.tip + '|' + (_kmCanavar.aktif.can === _kmCanavar.aktif.maxCan)), 'tepegoz|true', 'seçilen canavar sahneye gelmedi');
+    const [secAd, secId] = (await p.evaluate(() => _kmCanavar.aktif.tip)) === 'tepegoz' ? ['Kurbağa Kral', 'kurbaga'] : ['Tepegöz', 'tepegoz'];
+    await p.locator('.km-cnv-rh-kart', { hasText: secAd }).locator('button', { hasText: 'Bununla savaş' }).click(); await p.waitForTimeout(400);
+    esit(await p.evaluate(() => _kmCanavar.aktif.tip + '|' + (_kmCanavar.aktif.can === _kmCanavar.aktif.maxCan)), secId + '|true', 'seçilen canavar sahneye gelmedi');
     dogrula(!(await p.locator('#km-oyun-karakter-modal').count()), 'rehber kapanmadı');
     await p.evaluate((y) => { _kmCanavar = JSON.parse(y); kmCanavarKaydet(); kmOyunCanavarGovdeKur(true); kmOyunCanavarCiz(); }, yedekCnv);
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
