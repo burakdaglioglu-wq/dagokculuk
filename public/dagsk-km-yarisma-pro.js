@@ -291,7 +291,7 @@ function yzTurHTML(o) {
         + '<div class="yz-tur-bilgi"><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-seri-no">SERİ <b>' + (seri + 1) + '</b><span>/' + f.seri + '</span></div>'
         + (f.yari ? '<div class="yz-yari">' + (seri < f.yari ? '1. yarı' : '2. yarı') + '</div>' : '') + '</div>'
         + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '<button class="yz-btn" onclick="yzSureMenu()" title="Seri süresini değiştir">⏱ ' + yzSure(d) + ' sn</button>' + yzDevBtnHTML() + '</div></div>'
-        + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + (yzYuvaVarMi() ? '<button class="yz-btn" onclick="yzYuvayaGec()" title="Yumurta Yuvası — tur sürer, süre orada da görünür">🥚 Yumurta</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzVideoAc()" title="5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün">🎥 Ayna / Video</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
+        + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + (yzYuvaVarMi() ? '<button class="yz-btn" onclick="yzYuvayaGec()" title="Yumurta Yuvası — tur sürer, süre orada da görünür">🥚 Yumurta</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzVideoAc()" title="5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün">🎥 Ayna / Video</button><button class="yz-btn" onclick="yzAnalizAc()" title="Antrenör tablosu, ısı haritası, gelişim grafiği">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
         + '</div>'
         + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
         + yzYenilerHTML(o, false)
@@ -504,7 +504,7 @@ function yzGirisCiz() {
         + (!g.tip && yzFormat(d).ok === 6 ? '<div class="yz-giris-mod yz-oksay"><span>Bu seride kaç ok?</span>' + [3, 6].map(function (n) { return '<button class="' + (okSay === n ? 'aktif' : '') + '" onclick="yzOkSayiSec(' + n + ')">' + n + ' ok</button>'; }).join('') + '</div>' : '')
         + '<div class="yz-oklar">' + slotlar + '</div>'
         + '<div class="yz-giris-top">' + topSatir + '</div>'
-        + (yzGirisHedefMi() ? yzHedefGirisHTML(g, d, okSay) : '<div class="yz-tuslar">' + tus + '</div>')
+        + (yzGirisHedefMi() ? (yzLupKur(), yzHedefGirisHTML(g, d, okSay)) : '<div class="yz-tuslar">' + tus + '</div>')
         + '<div class="yz-giris-alt"><button class="yz-btn" onclick="yzOkSil()"' + (g.oklar.length ? '' : ' disabled') + '>⌫ Geri al</button>'
         + '<label class="yz-onay kucuk"><input type="checkbox"' + (_yz.siradaki ? ' checked' : '') + ' onchange="_yz.siradaki=this.checked; try{localStorage.setItem(\'dag_yz_siradaki\', this.checked?\'1\':\'0\')}catch(e){}"> Kaydedince sıradakine geç</label>'
         + '<button class="yz-btn ana buyuk" onclick="yzGirisKaydet()"' + (dolu ? '' : ' disabled') + '>💾 Kaydet</button></div>'
@@ -663,7 +663,7 @@ function yzSonucHTML(o) {
             + '<div class="yz-alt">Seçince eleme hemen başlar. 4 ve üstünde bronz madalya maçı da oynanır.</div></div>' : '');
     return '<div class="yz">'
         + '<div class="yz-sayfa-bas"><div><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-baslik">🏁 Sonuçlar</div></div>'
-        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
+        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
         + (elemeVar ? yzPodyumHTML(o) : yzGruplar(o, sira).map(function (gr) { return yzPodyumGrupHTML(gr); }).join(''))
         + yzYarisGrafikKartHTML(o, sira, true)
         + elemeKart
@@ -1365,7 +1365,9 @@ function yzV240CssYukle() {
 function yzArsivOku() { try { return JSON.parse(localStorage.getItem('dag_yz_arsiv') || '[]') || []; } catch (e) { return []; } }
 function yzArsivBirlestir(a, b) {
     let m = {}; (a || []).concat(b || []).forEach(function (r) { if (r && r.id && (!m[r.id] || (r.g || 0) >= (m[r.id].g || 0))) m[r.id] = r; });
-    return Object.values(m).sort(function (x, y) { return (x.t || 0) - (y.t || 0); }).slice(-80);
+    let l = Object.values(m).sort(function (x, y) { return (x.t || 0) - (y.t || 0); }).slice(-80);
+    // 📊 Sporcu Analizi ısı haritası için okların konumu yalnız son 10 turda tutulur (meta boyutu küçük kalsın)
+    return l.map(function (r, i) { if (i >= l.length - 10 || !(r.sporcular || []).some(function (x) { return x.kon; })) return r; return Object.assign({}, r, { sporcular: r.sporcular.map(function (x) { let y = Object.assign({}, x); delete y.kon; return y; }) }); });
 }
 function yzArsivCek(sonra) {
     fetch('/api/meta/yz_arsiv').then(function (r) { return r.json(); }).then(function (d) {
@@ -1387,8 +1389,8 @@ function yzArsivYaz(kayit) {
 function yzArsivKaydet(o) {
     let d = o && o.durum; if (!d) return;
     let sira = yzSiralama(o), el = o.eleme && o.eleme.id === d.id ? yzElemeHesapla(o) : null;
-    yzArsivYaz({ id: d.id, t: d.basla, g: Date.now(), tarih: bugunISO(new Date(d.basla)), mesafe: d.ayar.mesafe, format: d.ayar.format,
-        sporcular: sira.map(function (r) { return { k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, on: r.on, x: r.x, ok: r.ok, seriT: r.seriT, hp: r.hedefPuan, dag: yzDagilim(o, r.k), eleme: el ? yzElemeSonucu(el, r.k) : null }; }) });
+    yzArsivYaz({ id: d.id, t: d.basla, g: Date.now(), tarih: bugunISO(new Date(d.basla)), mesafe: d.ayar.mesafe, format: d.ayar.format, yuz: d.ayar.yuz || '6',
+        sporcular: sira.map(function (r) { let kon = yzKonumlar(o, r.k).map(function (p) { return [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]; }); return Object.assign({ k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, on: r.on, x: r.x, ok: r.ok, seriT: r.seriT, hp: r.hedefPuan, dag: yzDagilim(o, r.k), eleme: el ? yzElemeSonucu(el, r.k) : null }, kon.length ? { kon: kon } : {}); }) });
 }
 // Aynı format + mesafedeki önceki turlar (eskiden yeniye)
 function yzOncekiler(k, format, mesafe, haricId) {
@@ -1400,7 +1402,7 @@ function yzOncekiler(k, format, mesafe, haricId) {
 function yzArsivKartHTML() {
     if (!_yz.arsivCekildi) { _yz.arsivCekildi = true; yzArsivCek(function () { let d = yzOku().durum; if (_yz.mod === 'siralama' && (!d || !d.asama || d.asama === 'kurulum')) yzCiz(); }); }
     let l = yzArsivOku().slice(-8).reverse(); if (!l.length) return '';
-    return '<div class="yz-kart"><div class="yz-etiket">📚 Geçmiş turlar</div><div class="yz-arsiv">' + l.map(function (r) {
+    return '<div class="yz-kart"><div class="yz-etiket" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>📚 Geçmiş turlar</span><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button></div><div class="yz-arsiv">' + l.map(function (r) {
         let ilk = (r.sporcular || []).slice(0, 3).map(function (s) { return esc(yzKisaAd(s.ad)) + ' ' + s.toplam; }).join(' · ');
         return '<button class="yz-arsiv-sat" onclick="yzArsivGoster(\'' + yzEnc(r.id) + '\')"><span class="yz-arsiv-t">' + yzTarihTR(r.tarih) + '</span><span class="yz-arsiv-f">' + esc(r.mesafe) + ' · ' + yzFormatBul(r.format).kisa + ' · ' + (r.sporcular || []).length + ' sporcu</span><span class="yz-arsiv-i">' + ilk + '</span></button>';
     }).join('') + '</div></div>';
@@ -1705,6 +1707,8 @@ function yzRaporMetin(o, k) {
     s.push('Ok dağılımı: ' + YZ_DEGERLER.filter(function (p) { return v.dag[p]; }).map(function (p) { return p + '×' + v.dag[p]; }).join('  '));
     return s.join('\n');
 }
+// 📊 Sporcu Analizi (2026-10-17) — ayrı dosyada, ilk açılışta yüklenir
+function yzAnalizAc(kEnc) { (typeof yzaAc === 'function' ? Promise.resolve() : dagskEkYukle('dagsk-km-yarisma-analiz.js')).then(function () { yzaAc(kEnc); }).catch(function () { showToast('Analiz yüklenemedi — bağlantını kontrol et.', 'error'); }); }
 function yzRaporAc(kEnc) {
     let o = yzOku(), d = o.durum; if (!d) return;
     if (!_yz.raporArsivCek) { _yz.raporArsivCek = true; yzArsivCek(function () { if (document.getElementById('yz-rapor')) yzRaporAc(kEnc); }); }
@@ -1892,46 +1896,115 @@ function yzEkCssYukle() {
 const YZ_YUZ = {
     '6': { ad: '6 halka (80 cm)', halka: 6, R: 24 },
     '10': { ad: '10 halka (122 cm)', halka: 10, R: 61 },
-    '10k': { ad: '10 halka (80 cm)', halka: 10, R: 40 }
+    '10k': { ad: '10 halka (80 cm)', halka: 10, R: 40 },
+    // 2026-10-17 (kullanıcı: "skorları 3'lü hedef kağıdı üzerinde dokunarak da girelim; 3'lü kağıt 6 halkalı yüz gibi olsun,
+    // hassasiyet önemli"): dikey üçlü kağıt — her yüz 6 halkalı (10…5), halka genişliği 2 cm → yüz yarıçapı 12 cm. Okun
+    // konumu kendi yüzüne göre (merkez 0,0 · yarıçap 1) saklanır, s = yüz no (0 üst, 1 orta, 2 alt); grup analizi aynen çalışır.
+    '3lu': { ad: "3'lü dikey (6 halkalı yüzler)", halka: 6, R: 12, uclu: true }
 };
+const YZ_UCLU_ARA = 2.3, YZ_OK_YARICAP_CM = 0.28; // yüz merkezleri arası (yarıçap cinsinden) · ok gövdesinin yarıçapı (~5,5 mm ok)
+function yzMakaraliMi(k) { if (!k) return false; let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)]; return !!(sp && sp.yay === 'Makaralı'); }
 function yzYuz(d) { return YZ_YUZ[(d && d.ayar && d.ayar.yuz) || '6'] || YZ_YUZ['6']; }
 // Konum (merkez 0,0 · yüz yarıçapı 1) → puan. X: 10'un iç yarısı. Yüz dışı M.
-function yzKonumPuan(x, y, yuz) {
-    // Çizgiye değen ok yüksek puanı alır (WA): ok kalınlığı kadar pay (~halka genişliğinin %8'i) içeri doğru sayılır.
-    let r = Math.hypot(x, y), n = yuz.halka, pay = 0.08 / n;
+function yzKonumPuan(x, y, yuz, mak) {
+    // Çizgiye değen ok yüksek puanı alır (WA): okun merkezi değil KENARI sayılır → ok yarıçapı (cm → yüz birimi) kadar pay.
+    // Makaralı (WA): yalnız iç 10 (X halkası) 10 sayılır, dış 10 alanı 9 olur.
+    let r = Math.hypot(x, y), n = yuz.halka, pay = YZ_OK_YARICAP_CM / (yuz.R || 24), ic = 1 / (2 * n);
     if (r - pay > 1) return 'M';
-    if (r - pay <= 1 / (2 * n)) return 'X';
+    if (r - pay <= ic) return 'X';
+    if (mak && r - pay <= 1 / n) return '9';
     return String(11 - Math.max(1, Math.ceil((r - pay) * n)));
 }
 function yzHalkaRenk(deger) { return deger >= 9 ? ['#fde047', '#a16207'] : deger >= 7 ? ['#ef4444', '#7f1d1d'] : deger >= 5 ? ['#0ea5e9', '#075985'] : deger >= 3 ? ['#1f2937', '#9ca3af'] : ['#f8fafc', '#94a3b8']; }
-function yzHedefYuzSVG(yuz) {
-    let n = yuz.halka, s = '';
-    for (let i = n; i >= 1; i--) { let deger = 11 - i, c = yzHalkaRenk(deger); s += '<circle r="' + (i / n) + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="0.006"/>'; }
-    s += '<circle r="' + (1 / (2 * n)) + '" fill="none" stroke="#a16207" stroke-width="0.005"/>';
+function yzHedefYuzSVG(yuz, mak, cy) {
+    let n = yuz.halka, s = '', t = cy != null ? ' cy="' + cy + '"' : '';
+    for (let i = n; i >= 1; i--) { let deger = 11 - i, c = yzHalkaRenk(deger); s += '<circle' + t + ' r="' + (i / n) + '" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + (mak && i === 1 ? 0.004 : 0.006) + '"' + (mak && i === 1 ? ' stroke-dasharray="0.02 0.015"' : '') + '/>'; }
+    s += '<circle' + t + ' r="' + (1 / (2 * n)) + '" fill="' + (mak ? '#fef08a' : 'none') + '" stroke="' + (mak ? '#7c2d12' : '#a16207') + '" stroke-width="' + (mak ? 0.012 : 0.005) + '"/>';
+    if (cy != null) return s + '<line x1="-0.03" x2="0.03" y1="' + cy + '" y2="' + cy + '" stroke="#7c2d12" stroke-width="0.006"/><line y1="' + (cy - 0.03) + '" y2="' + (cy + 0.03) + '" x1="0" x2="0" stroke="#7c2d12" stroke-width="0.006"/>';
     s += '<line x1="-0.03" x2="0.03" y1="0" y2="0" stroke="#7c2d12" stroke-width="0.006"/><line y1="-0.03" y2="0.03" x1="0" x2="0" stroke="#7c2d12" stroke-width="0.006"/>';
     return s;
 }
 // ---- 🎯 hedefe dokunarak giriş (bu cihazın tercihi)
 function yzGirisHedefMi() { try { return localStorage.getItem('dag_yz_girismod') === 'hedef'; } catch (e) { return false; } }
 function yzGirisModSec(m) { try { localStorage.setItem('dag_yz_girismod', m); } catch (e) {} yzGirisCiz(); }
+// Hedef kağıdının çizimi (giriş + büyüteç aynı içeriği kullanır). Üçlüde yüzler dikey: merkezler y = -ARA, 0, +ARA.
+function yzKagitSVGIc(yuz, mak) {
+    if (!yuz.uclu) return '<rect x="-1.1" y="-1.1" width="2.2" height="2.2" fill="#f4efe6"/>' + yzHedefYuzSVG(yuz, mak);
+    let a = YZ_UCLU_ARA, s = '<rect x="-1.2" y="' + (-a - 1.2) + '" width="2.4" height="' + (2 * a + 2.4) + '" fill="#f4efe6"/>';
+    [-a, 0, a].forEach(function (cy) { s += yzHedefYuzSVG(yuz, mak, cy); });
+    return s;
+}
+function yzKagitViewBox(yuz) { return yuz.uclu ? '-1.2 ' + (-YZ_UCLU_ARA - 1.2) + ' 2.4 ' + (2 * YZ_UCLU_ARA + 2.4) : '-1.1 -1.1 2.2 2.2'; }
 function yzHedefGirisHTML(g, d, okSay) {
-    let yuz = yzYuz(d), noktalar = '';
+    let yuz = yzYuz(d), mak = yzMakaraliMi(g.k), noktalar = '', a = YZ_UCLU_ARA;
     (g.konumlar || []).forEach(function (k, i) {
         if (!k) return;
-        noktalar += '<g><circle cx="' + k.x + '" cy="' + k.y + '" r="0.045" fill="#10b981" stroke="#fff" stroke-width="0.012"/><text x="' + k.x + '" y="' + (k.y + 0.016) + '" text-anchor="middle" font-size="0.05" font-weight="900" fill="#fff">' + (i + 1) + '</text></g>';
+        let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0), p = g.oklar[i], acik = p === 'X' || p === '10' || p === '9';
+        noktalar += '<g><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01"/>'
+            + '<g transform="translate(' + (k.x + 0.11) + ',' + (gy - 0.11) + ')"><circle r="0.075" fill="' + (acik ? '#111827' : '#fff') + '" stroke="#111827" stroke-width="0.01"/><text y="0.026" text-anchor="middle" font-size="0.075" font-weight="900" fill="' + (acik ? '#fde047' : '#111827') + '">' + esc(p || '') + '</text></g></g>';
     });
-    let dolu = g.oklar.length >= okSay;
-    return '<div class="yz-hedef-giris"><svg id="yz-hedef-svg" viewBox="-1.1 -1.1 2.2 2.2" class="yz-hedef-svg' + (dolu ? ' dolu' : '') + '" onclick="yzHedefTik(event)" role="img" aria-label="Hedef — okun yerine dokun">'
-        + '<rect x="-1.1" y="-1.1" width="2.2" height="2.2" fill="#e5e7eb" opacity=".12"/>' + yzHedefYuzSVG(yuz) + noktalar + '</svg>'
-        + '<div class="yz-hedef-yan"><button class="yz-tus yz-r-kacan" onclick="yzOkEkle(\'M\')"' + (dolu ? ' disabled' : '') + '>M</button><div class="yz-alt">Okun hedefteki yerine dokun · ıska için M · ' + esc(yuz.ad) + '</div></div></div>';
+    let dolu = g.oklar.length >= okSay, sira = g.oklar.length, yuzNo = yuz.uclu ? (sira % 3) : null;
+    let ipucu = yuz.uclu ? (dolu ? 'Oklar tamam' : (sira + 1) + '. ok → ' + ['üst', 'orta', 'alt'][yuzNo] + ' yüz (istersen başka yüze de dokunabilirsin)') : 'Okun yerine dokun';
+    return '<div class="yz-hedef-giris' + (yuz.uclu ? ' uclu' : '') + '"><div class="yz-hedef-kap"><svg id="yz-hedef-svg" viewBox="' + yzKagitViewBox(yuz) + '" class="yz-hedef-svg' + (dolu ? ' dolu' : '') + (yuz.uclu ? ' uclu' : '') + '" role="img" aria-label="Hedef kağıdı — okun yerine dokun, parmağını kaydırıp bırak">'
+        + yzKagitSVGIc(yuz, mak) + (yuz.uclu && !dolu ? '<rect x="-1.18" y="' + ((yuzNo - 1) * a - 1.18) + '" width="2.36" height="2.36" rx="0.08" fill="none" stroke="#fd8e01" stroke-width="0.03" stroke-dasharray="0.08 0.05"/>' : '') + noktalar + '</svg></div>'
+        + '<div class="yz-hedef-yan"><button class="yz-tus yz-r-kacan" onclick="yzOkEkle(\'M\')"' + (dolu ? ' disabled' : '') + '>M</button>'
+        + '<div class="yz-alt">' + ipucu + '. Parmağını bastır, büyüteçte kaydır, bırakınca kaydolur · ıska için M</div>'
+        + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız <b>iç 10</b> (X) 10 sayılır, dış 10 → 9</div>' : '')
+        + '<div class="yz-alt">' + esc(yuz.ad) + '</div></div></div>';
+}
+// Dokunma → kağıt koordinatı → (üçlüde en yakın yüz) → yerel konum + puan
+function yzHedefNokta(svg, cx, cy) {
+    let d = yzOku().durum, yuz = yzYuz(d), pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+    let p = pt.matrixTransform(svg.getScreenCTM().inverse()), s = null, yy = p.y;
+    if (yuz.uclu) { s = Math.max(0, Math.min(2, Math.round(p.y / YZ_UCLU_ARA) + 1)); yy = p.y - (s - 1) * YZ_UCLU_ARA; }
+    let x = Math.round(p.x * 1000) / 1000, y = Math.round(yy * 1000) / 1000, g = _yz.giris;
+    return { px: p.x, py: p.y, k: yuz.uclu ? { x: x, y: y, s: s } : { x: x, y: y }, puan: yzKonumPuan(x, y, yuz, g && yzMakaraliMi(g.k)) };
 }
 function yzHedefTik(e) {
     let svg = document.getElementById('yz-hedef-svg'), g = _yz.giris, d = yzOku().durum; if (!svg || !g || !d) return;
     if (g.oklar.length >= yzGirisOkSay(g, d)) return;
-    let pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
-    let p = pt.matrixTransform(svg.getScreenCTM().inverse()), x = Math.round(p.x * 1000) / 1000, y = Math.round(p.y * 1000) / 1000;
-    yzOkEkle(yzKonumPuan(x, y, yzYuz(d)), { x: x, y: y });
+    let n = yzHedefNokta(svg, e.clientX, e.clientY); yzOkEkle(n.puan, n.k);
 }
+// 🔍 Büyüteç (hassas giriş): parmağın ALTINDAKİ nokta parmakla örtülmesin diye üstte 3× büyütülmüş görüntü + nişangah + canlı
+// puan. Bas → kaydır → bırak = kaydet. Kâğıdın dışına sürükleyip bırakmak iptal eder. Fare ile tek tık da çalışır.
+let _yzLup = null;
+function yzLupKur() {
+    if (_yzLup && _yzLup.bagli) return;
+    document.addEventListener('pointerdown', function (e) {
+        let svg = e.target && e.target.closest && e.target.closest('#yz-hedef-svg'); if (!svg || svg.classList.contains('dolu')) return;
+        e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch (er) {}
+        _yzLup = { bagli: true, svg: svg, id: e.pointerId }; yzLupGoster(e.clientX, e.clientY);
+    }, true);
+    document.addEventListener('pointermove', function (e) { if (_yzLup && _yzLup.svg && e.pointerId === _yzLup.id) { e.preventDefault(); yzLupGoster(e.clientX, e.clientY); } }, { capture: true, passive: false });
+    let bitir = function (e, iptal) {
+        if (!_yzLup || !_yzLup.svg || e.pointerId !== _yzLup.id) return;
+        let svg = _yzLup.svg, r = svg.getBoundingClientRect(), icerde = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        yzLupKapat(); _yzLup = { bagli: true };
+        if (iptal || !icerde) return;
+        let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return;
+        let n = yzHedefNokta(svg, e.clientX, e.clientY); yzOkEkle(n.puan, n.k);
+    };
+    document.addEventListener('pointerup', function (e) { bitir(e, false); }, true);
+    document.addEventListener('contextmenu', function (e) { if (e.target && e.target.closest && e.target.closest('#yz-hedef-svg')) e.preventDefault(); }, true);
+    document.addEventListener('selectstart', function (e) { if (e.target && e.target.closest && e.target.closest('.yz-hedef-giris')) e.preventDefault(); }, true);
+    document.addEventListener('pointercancel', function (e) { bitir(e, true); }, true);
+    _yzLup = { bagli: true };
+}
+function yzLupGoster(cx, cy) {
+    let svg = _yzLup && _yzLup.svg; if (!svg) return;
+    let d = yzOku().durum, yuz = yzYuz(d), n = yzHedefNokta(svg, cx, cy), g = _yz.giris, mak = g && yzMakaraliMi(g.k);
+    let lup = document.getElementById('yz-lup');
+    if (!lup) { lup = document.createElement('div'); lup.id = 'yz-lup'; (document.getElementById('yz-giris') || document.body).appendChild(lup); }
+    let w = 0.42, ic = yzKagitSVGIc(yuz, mak) + (svg.querySelectorAll('g').length ? Array.from(svg.children).filter(function (c) { return c.tagName === 'g'; }).map(function (c) { return c.outerHTML; }).join('') : '');
+    let acik = n.puan === 'X' || n.puan === '10' || n.puan === '9';
+    lup.innerHTML = '<svg viewBox="' + (n.px - w / 2) + ' ' + (n.py - w / 2) + ' ' + w + ' ' + w + '">' + ic
+        + '<g stroke="#111827" stroke-width="0.004"><line x1="' + (n.px - 0.06) + '" x2="' + (n.px - 0.012) + '" y1="' + n.py + '" y2="' + n.py + '"/><line x1="' + (n.px + 0.012) + '" x2="' + (n.px + 0.06) + '" y1="' + n.py + '" y2="' + n.py + '"/><line y1="' + (n.py - 0.06) + '" y2="' + (n.py - 0.012) + '" x1="' + n.px + '" x2="' + n.px + '"/><line y1="' + (n.py + 0.012) + '" y2="' + (n.py + 0.06) + '" x1="' + n.px + '" x2="' + n.px + '"/></g>'
+        + '<circle cx="' + n.px + '" cy="' + n.py + '" r="' + (YZ_OK_YARICAP_CM / yuz.R) + '" fill="rgba(17,24,39,.55)" stroke="#fff" stroke-width="0.003"/></svg>'
+        + '<b class="' + (acik ? 'acik' : '') + '">' + n.puan + '</b>';
+    let L = 150, x = cx - L / 2, y = cy - L - 46; if (y < 8) y = cy + 46; x = Math.max(8, Math.min(window.innerWidth - L - 8, x));
+    lup.style.left = x + 'px'; lup.style.top = y + 'px';
+}
+function yzLupKapat() { let l = document.getElementById('yz-lup'); if (l) l.remove(); }
 // ---- grup analizi + nişangah önerisi
 function yzKonumlar(o, k, bas, son) {
     let d = o.durum, arr = o[yzPKey(d.id, k)] || [], r = [];
@@ -2114,7 +2187,11 @@ function yzEk2CssYukle() {
     st.textContent = [
         '.yz-giris-mod{display:flex;gap:6px}.yz-giris-mod button{flex:1;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:10px;min-height:38px;font:inherit;font-weight:800;font-size:13px;cursor:pointer}.yz-giris-mod button.aktif{background:var(--accent-orange);border-color:var(--accent-orange);color:#1a0d05}',
         '.yz-hedef-giris{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}.yz-hedef-svg{width:min(100%,44vh,420px);height:auto;touch-action:manipulation;cursor:crosshair;border-radius:50%}.yz-hedef-svg.dolu{opacity:.6;cursor:default}',
-        '.yz-hedef-yan{display:flex;flex-direction:column;gap:8px;align-items:center;max-width:120px;text-align:center}.yz-hedef-yan .yz-tus{width:90px}',
+        '.yz-hedef-yan{display:flex;flex-direction:column;gap:8px;align-items:center;max-width:150px;text-align:center}.yz-hedef-yan .yz-tus{width:90px}',
+        '.yz-hedef-kap{display:flex;justify-content:center}.yz-hedef-svg,.yz-hedef-kap,.yz-hedef-svg *{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;outline:none}.yz-hedef-svg *::selection{background:transparent}.yz-hedef-svg.uclu{width:auto;height:min(62vh,640px);max-width:100%;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.25)}',
+        '.yz-mak-not{font-size:12px;font-weight:800;background:rgba(253,142,1,.14);border:1px solid rgba(253,142,1,.45);border-radius:10px;padding:6px 8px}',
+        '#yz-lup{position:fixed;z-index:40000;width:150px;height:150px;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:none;background:#f4efe6}#yz-lup svg{width:100%;height:100%;display:block}',
+        '#yz-lup b{position:absolute;right:8px;bottom:8px;min-width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:900 16px/1 system-ui,sans-serif;background:#111827;color:#fff;border:2px solid #fff}#yz-lup b.acik{background:#fde047;color:#111827}',
         '.yz-tablo .gel{font-weight:900}.yz-tablo .gel.ust{color:#22c55e}.yz-tablo .gel.alt{color:#ef4444}.yz-tablo .gel.bos{color:var(--text-muted);font-weight:600;font-size:.85em}',
         '.yz-tablo tr.yz-ayrac td{text-align:left;font-size:10.5px;font-weight:900;letter-spacing:.08em;color:#22c55e;padding:8px 8px 4px;border-bottom:1px dashed var(--border-color)}',
         '.yz-tv .yz-tablo tr.yz-ayrac td{height:auto;font-size:calc(var(--yz-satir) * .24);padding:.6vh 1vw;color:#4ade80;background:#0b1829}.yz-tv .yz-tablo .gel{font-size:1.1em}.yz-tv .yz-tablo th.gel{color:#4ade80}',
