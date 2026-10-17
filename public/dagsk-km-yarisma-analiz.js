@@ -9,7 +9,7 @@
    Veri: yzOku() (süren tur) + yzArsivOku() (geçmiş turlar; son 10 turda okların konumu da saklanır — kon). Gerçek skora dokunmaz.
    yza* önekli; dagsk-km-yarisma-pro.js'den yzAnalizAc() ile yüklenir.
    ================================================================================================ */
-const _yza = { sec: null, kapsam: 'son5', sirala: 'bugun', ters: false };
+const _yza = { sec: null, kapsam: 'son5', sirala: 'bugun', ters: false, antrenman: true };
 function yzaEsc(s) { return typeof esc === 'function' ? esc(s) : String(s == null ? '' : s); }
 function yzaTR(iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? +m[3] + ' ' + ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][+m[2] - 1] : ''; }
 function yzaSayi(v, h) { return v == null || isNaN(v) ? '·' : v.toFixed(h == null ? 2 : h).replace('.', ','); }
@@ -54,6 +54,7 @@ function yzaNoktalar(tur, k, kapsam) {
     let n = [];
     if (tur.canli) yzKonumlar(tur.o, k).forEach(function (p) { n.push([p.x, p.y]); });
     else { let s = (yzArsivOku().find(function (r) { return r.id === tur.id; }) || { sporcular: [] }).sporcular.find(function (x) { return x.k === k; }); if (s && s.kon) n = n.concat(s.kon); }
+    if (_yza.antrenman) n = n.concat(yzaAntrenmanNoktalari(k));
     if (kapsam === 'bu') return n;
     let a = yzArsivOku().filter(function (r) { return r.id !== tur.id; }).sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
     if (kapsam === 'son5') a = a.slice(0, 4);
@@ -61,6 +62,16 @@ function yzaNoktalar(tur, k, kapsam) {
     return n;
 }
 
+// 🏹 Antrenman okları (2026-10-18, "hedef girişi her yerde"): Skor Gir ve Oyunlar'da hedefe dokunarak girilen son 90 ok.
+// Koordinat: halka genişliği 10 birim (6 halka = 60); 3'lüde yüz merkezi y = (spot - 1) × 140. Yarışma yüzüne (yarıçap 1) çevrilir.
+function yzaAntrenmanNoktalari(k) {
+    let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)]; if (!sp || !sp.detayliOklar) return [];
+    return sp.detayliOklar.filter(function (o) { return o && o.x != null && o.y != null && !o.duello; }).slice(-90).map(function (o) {
+        let y = o.y; if (o.tip === '3spot') { let s = o.spot != null ? o.spot : Math.max(0, Math.min(2, Math.round(o.y / 140) + 1)); y = o.y - (s - 1) * 140; }
+        return [Math.round(o.x / 60 * 100) / 100, Math.round(y / 60 * 100) / 100];
+    }).filter(function (p) { return Math.hypot(p[0], p[1]) <= 1.15; });
+}
+function yzaAntrenmanDegis() { _yza.antrenman = !_yza.antrenman; yzaCiz(); }
 // ---------------------------------------------------------------- ekran
 function yzaAc(kEnc) {
     yzCssYukle(); yzaCss();
@@ -123,7 +134,7 @@ function yzaSparkSVG(g) {
 function yzaDetayHTML(tur, x) {
     let s = x.s, nk = yzaNoktalar(tur, s.k, _yza.kapsam), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz) : null;
     let bolge = yzaBolge(nk), kap = function (id, ad) { return '<button class="' + (_yza.kapsam === id ? 'aktif' : '') + '" onclick="event.stopPropagation();yzaKapsam(\'' + id + '\')">' + ad + '</button>'; };
-    let isi = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🔥 Isı haritası</span><span class="yza-sec">' + kap('bu', 'Bu tur') + kap('son5', 'Son 5 tur') + kap('tum', 'Tümü') + '</span></div>'
+    let isi = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🔥 Isı haritası</span><span class="yza-sec">' + kap('bu', 'Bu tur') + kap('son5', 'Son 5 tur') + kap('tum', 'Tümü') + '<button class="' + (_yza.antrenman ? 'aktif' : '') + '" onclick="event.stopPropagation();yzaAntrenmanDegis()" title="Skor Gir ve Oyunlar\'da hedefe dokunarak girilen son 90 ok">＋ Antrenman</button></span></div>'
         + (nk.length ? '<canvas id="yza-isi" width="360" height="360" role="img" aria-label="Okların hedefteki yoğunluğu"></canvas><div class="yz-alt" style="text-align:center">' + nk.length + ' ok · ' + yzaEsc(tur.yuz.ad) + '</div>'
             + '<div class="yza-bolge">' + bolge.map(function (b) { return '<div style="--o:' + b.o + '"><b>%' + b.p + '</b><small>' + b.ad + '</small></div>'; }).join('') + '</div>'
             + (on ? '<div class="yza-oneri ' + (on.merkezde ? 'iyi' : '') + '"><b>' + yzaEsc(on.kisa) + '</b><span>' + yzaEsc(on.oneri) + '</span>' + (on.uyari ? '<small>' + yzaEsc(on.uyari) + '</small>' : '') + '</div>' : '')

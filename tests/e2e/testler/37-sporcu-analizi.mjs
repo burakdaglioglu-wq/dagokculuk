@@ -31,6 +31,7 @@ export default async function ({ log }) {
     esit(await p.locator('.yza-bolge div').count(), 9, '9 bölge');
     dogrula((await p.locator('.yza-detay').innerText()).includes('Tespitler'.toLocaleUpperCase('tr-TR')) || (await p.locator('.yza-tespit li').count()) > 0, 'tespit yok');
     esit((await p.locator('#yza tr.acik .yza-durum').innerText()).trim(), 'Yükselişte', 'durum etiketi');
+    await p.evaluate(() => { _yza.antrenman = false; });
     await p.locator('.yza-sec button', { hasText: 'Tümü' }).click(); await p.waitForTimeout(200);
     dogrula((await p.locator('.yza-detay').innerText()).includes('108 ok'), 'Tümü kapsamında 6×18 ok olmalı');
     // tur sürerken kısa yollar (2026-10-18): tablodaki 📊 → o sporcu açık gelir; skor girişindeki 📊 Analiz; "← Tura dön"

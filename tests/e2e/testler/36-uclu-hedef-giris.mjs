@@ -56,11 +56,13 @@ export default async function ({ log }) {
     for (const [sp, dx, dy] of [[0, 0, 0], [1, 0.42, 0], [2, 0, 0.75]]) { a = await merkez(sp, dx, dy); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up(); }
     esit(await p.evaluate(() => _yz.giris.oklar.join(',')), 'X,8,6', 'üç ok');
     dogrula(await p.locator('#yz-hedef-svg.dolu').count(), 'hedef dolu değil');
-    // dolu hedefte 2. oka (orta yüz, 8) kısa dokun → silinir
+    // dolu hedefte 2. okun (orta yüz, 8) PUAN ETİKETİNE kısa dokun → silinir (deliğe dokunmak silmez)
     a = await merkez(1, 0.42, 0); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up(); await p.waitForTimeout(100);
+    esit(await p.evaluate(() => _yz.giris.oklar.length), 3, 'deliğe dokununca ok silinmemeli');
+    a = await merkez(1, 0.42 + 0.11, -0.11); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up(); await p.waitForTimeout(100);
     esit(await p.evaluate(() => _yz.giris.oklar.join(',')), 'X,6', 'oka dokununca silinmedi');
-    // 1. oku (üst X) sürükle → üst yüzde 7 bölgesine (r ≈ 0.58) taşı
-    a = await merkez(0, 0, 0); let b2 = await merkez(0, 0.58, 0);
+    // 1. okun (üst X) etiketini sürükle → üst yüzde 7 bölgesine (r ≈ 0.58) taşı
+    a = await merkez(0, 0.11, -0.11); let b2 = await merkez(0, 0.58, 0);
     await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(b2.x, b2.y, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(100);
     esit(await p.evaluate(() => _yz.giris.oklar.join(',') + '|' + _yz.giris.konumlar[0].s), '7,6|0', 'sürükleyince ok taşınmadı / puanı değişmedi');
     // üstteki kutucuk: 2. kutucuğa (6) dokun → silinir

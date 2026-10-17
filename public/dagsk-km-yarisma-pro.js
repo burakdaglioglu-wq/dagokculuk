@@ -1942,15 +1942,15 @@ function yzHedefGirisHTML(g, d, okSay) {
     (g.konumlar || []).forEach(function (k, i) {
         if (!k) return;
         let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0), p = g.oklar[i], acik = p === 'X' || p === '10' || p === '9';
-        noktalar += '<g data-ok-i="' + i + '" class="yz-hedef-ok"><circle cx="' + k.x + '" cy="' + gy + '" r="0.05" fill="transparent"/><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01"/>'
-            + '<g transform="translate(' + (k.x + 0.11) + ',' + (gy - 0.11) + ')"><circle r="0.075" fill="' + (acik ? '#111827' : '#fff') + '" stroke="#111827" stroke-width="0.01"/><text y="0.026" text-anchor="middle" font-size="0.075" font-weight="900" fill="' + (acik ? '#fde047' : '#111827') + '">' + esc(p || '') + '</text></g></g>';
+        noktalar += '<g><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01" pointer-events="none"/>'
+            + '<g data-ok-i="' + i + '" class="yz-hedef-ok" transform="translate(' + (k.x + 0.11) + ',' + (gy - 0.11) + ')"><circle r="0.075" fill="' + (acik ? '#111827' : '#fff') + '" stroke="#111827" stroke-width="0.01"/><text y="0.026" text-anchor="middle" font-size="0.075" font-weight="900" fill="' + (acik ? '#fde047' : '#111827') + '">' + esc(p || '') + '</text></g></g>';
     });
     let dolu = g.oklar.length >= okSay, sira = g.oklar.length, yuzNo = yuz.uclu ? (sira % 3) : null;
     let ipucu = yuz.uclu ? (dolu ? 'Oklar tamam' : (sira + 1) + '. ok → ' + ['üst', 'orta', 'alt'][yuzNo] + ' yüz (istersen başka yüze de dokunabilirsin)') : 'Okun yerine dokun';
     return '<div class="yz-hedef-giris' + (yuz.uclu ? ' uclu' : '') + '"><div class="yz-hedef-kap"><svg id="yz-hedef-svg" viewBox="' + yzKagitViewBox(yuz) + '" class="yz-hedef-svg' + (dolu ? ' dolu' : '') + (yuz.uclu ? ' uclu' : '') + '" role="img" aria-label="Hedef kağıdı — okun yerine dokun, parmağını kaydırıp bırak">'
         + yzKagitSVGIc(yuz, mak) + (yuz.uclu && !dolu ? '<rect x="-1.18" y="' + ((yuzNo - 1) * a - 1.18) + '" width="2.36" height="2.36" rx="0.08" fill="none" stroke="#fd8e01" stroke-width="0.03" stroke-dasharray="0.08 0.05"/>' : '') + noktalar + '</svg></div>'
         + '<div class="yz-hedef-yan"><button class="yz-tus yz-r-kacan" onclick="yzOkEkle(\'M\')"' + (dolu ? ' disabled' : '') + '>M</button>'
-        + '<div class="yz-alt">' + ipucu + '. Parmağını bastır, büyüteçte kaydır, bırakınca kaydolur · ıska için M · <b>bir oka dokun → sil, sürükle → taşı</b></div>'
+        + '<div class="yz-alt">' + ipucu + '. Parmağını bastır, büyüteçte kaydır, bırakınca kaydolur · ıska için M · <b>okun puan etiketine dokun → sil, sürükle → taşı</b></div>'
         + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız <b>iç 10</b> (X) 10 sayılır, dış 10 → 9</div>' : '')
         + '<div class="yz-alt">' + esc(yuz.ad) + '</div></div></div>';
 }

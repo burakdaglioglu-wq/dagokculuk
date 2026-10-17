@@ -14198,6 +14198,9 @@
 .km-oyun-hedefgiris{ display:flex; flex-direction:column; align-items:center; gap:4px; }
 .km-oyun-hedefgiris svg{ width:min(46vw, 230px); height:auto; aspect-ratio:1; border-radius:12px; background:#15171d; cursor:crosshair; touch-action:manipulation; display:block; }
 .km-oyun-hedefgiris.dolu svg{ opacity:.45; cursor:not-allowed; }
+.km-oyun-hedefgiris svg.uclu{ aspect-ratio:auto; width:auto; height:min(52vh, 400px); border-radius:8px; }
+.km-oyun-yuz-sec{ display:inline-flex; gap:4px; margin-right:6px; vertical-align:middle; }.km-oyun-yuz-sec button{ font:800 10.5px var(--font-body, system-ui); padding:3px 8px; border-radius:7px; border:1px solid var(--line,#445); background:transparent; color:var(--ink,#fff); cursor:pointer; }.km-oyun-yuz-sec button.aktif{ background:var(--a1,#fd8e01); color:#111; border-color:transparent; }
+.km-oyun-hedefgiris-ipucu b{ display:block; color:#fdba74; margin:3px 0; }
 .km-oyun-hedef-ok{ pointer-events:none; }
 .km-oyun-hedefgiris-ipucu{ font-size:10px; color:var(--ink-faint); font-weight:700; letter-spacing:.04em; text-align:center; }
 #km-oyun-wrap:fullscreen .km-oyun-hedefgiris svg{ width:min(40vw, 320px); }
@@ -18874,7 +18877,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(hg) { hg.style.display = hedefMi ? '' : 'none'; hg.classList.toggle('dolu', _kmOyunSeriGirisleri.length >= _kmOyunOkSayisi || kehanetKilitli); }
             let dokEl = document.getElementById('km-oyun-dok'); if(dokEl) dokEl.classList.toggle('km-oyun-dok-hedef', hedefMi);
             document.querySelectorAll('.km-oyun-giris-toggle button').forEach(function(b) { b.classList.toggle('aktif', b.dataset.giris === _kmOyunGirisModu); });
-            if(hedefMi) kmOyunHedefOklariCiz();
+            if(hedefMi) { kmOyunHedefSvgKur(); kmOyunHedefOklariCiz(); }
         }
         function kmOyunSlotlariCiz() {
             let w = document.getElementById('km-oyun-slotlar'); if(!w) return;
@@ -18910,27 +18913,55 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { localStorage.setItem(kmOyunDokAyarAnahtari('giris'), _kmOyunGirisModu); } catch(e) {}
             kmOyunPadCiz();
         }
+        // 🎯 Oyunlar hedef yüzü (2026-10-18): '6ring' tek yüz 6 halka · '3spot' dikey üçlü 6 halkalı (Skor Gir ile aynı koordinat:
+        // halka genişliği 10, üçlüde yüz merkezleri y = -140 / 0 / 140). Cihaz tercihi. Konumlar tip + spot ile kaydolur (analize akar).
+        function kmOyunHedefYuz() { try { return localStorage.getItem('dag_km_oyun_hedefyuz') === '3spot' ? '3spot' : '6ring'; } catch(e) { return '6ring'; } }
+        function kmOyunHedefYuzSec(y) { try { localStorage.setItem('dag_km_oyun_hedefyuz', y); } catch(e) {} _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = []; kmOyunHedefSvgKur(); kmOyunSlotlariCiz(); kmOyunPadCiz(); }
+        function kmOyunHedefMak() { let s = _kmOyunRosterCache[_kmOyunAktifIndex]; return !!(s && turnuvaDB[s.g] && turnuvaDB[s.g][s.ad] && turnuvaDB[s.g][s.ad].yay === 'Makaralı'); }
+        function kmOyunHedefSvgKur() {
+            let svg = document.getElementById('km-oyun-hedef-svg'); if(!svg) return;
+            let yuz = kmOyunHedefYuz(), mak = kmOyunHedefMak(), anahtar = yuz + (mak ? 'm' : '');
+            if(svg.dataset.yuz === anahtar) return; svg.dataset.yuz = anahtar;
+            let tek = function(cy) { return [[60, '#2f8fe0'], [50, '#2f8fe0'], [40, '#e53939'], [30, '#e53939'], [20, '#ffcc33'], [10, '#ffcc33']].map(function(r) { return '<circle cy="' + cy + '" r="' + r[0] + '" fill="' + r[1] + '" stroke="#1f1f24" stroke-width=".6"' + (mak && r[0] === 10 ? ' stroke-dasharray="1.5 1.2"' : '') + '/>'; }).join('') + '<circle cy="' + cy + '" r="5" fill="' + (mak ? 'rgba(255,255,255,.4)' : 'none') + '" stroke="#1f1f24" stroke-width="' + (mak ? 1.4 : .6) + '"/>'; };
+            svg.setAttribute('viewBox', yuz === '3spot' ? '-66 -206 132 412' : '-66 -66 132 132');
+            svg.innerHTML = '<rect data-hg-gizle x="-70" y="-210" width="140" height="420" fill="#ece6da"/>' + (yuz === '3spot' ? tek(-140) + tek(0) + tek(140) : tek(0)) + '<g id="km-oyun-hedef-oklar"></g>';
+            svg.classList.toggle('uclu', yuz === '3spot');
+            svg.dataset.hg = 'oyun'; svg.style.touchAction = 'none';
+            let ip = document.querySelector('.km-oyun-hedefgiris-ipucu');
+            if(ip) ip.innerHTML = '<span class="km-oyun-yuz-sec"><button class="' + (yuz === '6ring' ? 'aktif' : '') + '" onclick="kmOyunHedefYuzSec(\'6ring\')">Tek yüz</button><button class="' + (yuz === '3spot' ? 'aktif' : '') + '" onclick="kmOyunHedefYuzSec(\'3spot\')">3\'lü</button></span>' + (mak ? '<b>⚙️ Makaralı: yalnız iç 10</b>' : '') + 'Bastır → büyüteçte kaydır → bırak · puan etiketine dokun = sil';
+            hgBagla('oyun', {
+                aktifMi: function() { return !_kmOyunKilit && !(_kmOyunAktifTema === 'kehanet' && _kmKehanetTahmin === null); },
+                yerVar: function() { return _kmOyunSeriGirisleri.length < _kmOyunOkSayisi; },
+                puan: function(cx, cy) { let n = kmOyunHedefNokta(cx, cy); return n ? n.puan : ''; },
+                ekle: function(cx, cy) { kmOyunHedefEkle(cx, cy); },
+                sil: function(i) { kmOyunOkSil(i); },
+                tasi: function(i, cx, cy) { let n = kmOyunHedefNokta(cx, cy); if(!n) return; _kmOyunSeriGirisleri[i] = n.puan; _kmOyunSeriKonumlari[i] = n.k; kmOyunSlotlariCiz(); kmOyunPadCiz(); },
+                tikEngelle: function() { _kmOyunHedefTikEngel = Date.now(); },
+                lupGenislik: 34, okYaricap: 2.2
+            });
+        }
+        let _kmOyunHedefTikEngel = 0;
+        function kmOyunHedefNokta(cx, cy) {
+            let svg = document.getElementById('km-oyun-hedef-svg'); if(!svg) return null;
+            let pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; let ctm = svg.getScreenCTM(); if(!ctm) return null;
+            let p = pt.matrixTransform(ctm.inverse()), yuz = kmOyunHedefYuz(), spot = null, d;
+            if(yuz === '3spot') { spot = Math.max(0, Math.min(2, Math.round(p.y / 140) + 1)); d = Math.hypot(p.x, p.y - (spot - 1) * 140); } else d = Math.hypot(p.x, p.y);
+            let res = hedefeMesafePuan(d, kmOyunHedefMak(), yuz);
+            return { puan: res.puan, k: { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, tip: yuz, spot: spot } };
+        }
+        function kmOyunHedefEkle(cx, cy) {
+            if(_kmOyunKilit || _kmOyunSeriGirisleri.length >= _kmOyunOkSayisi) return;
+            let n = kmOyunHedefNokta(cx, cy); if(!n) return;
+            _kmOyunSeriGirisleri.push(n.puan); _kmOyunSeriKonumlari[_kmOyunSeriGirisleri.length - 1] = n.k;
+            try { sesCal(n.puan === 'M' ? 200 : 520 + kmOyunDegerSayi(n.puan) * 30, 0.04); } catch(e) {}
+            kmOyunSlotlariCiz(); kmOyunPadCiz();
+        }
         function kmOyunHedefTiklandi(ev) {
+            if(Date.now() - _kmOyunHedefTikEngel < 400) return; // büyüteçle zaten girildi
             if(_kmOyunKilit) return;
             if(_kmOyunSeriGirisleri.length >= _kmOyunOkSayisi) return;
             if(_kmOyunAktifTema === 'kehanet' && _kmKehanetTahmin === null) return;
-            let svg = document.getElementById('km-oyun-hedef-svg'); if(!svg) return;
-            // Normal Skor ekranındaki hedefTiklandi ile AYNI koordinat dönüşümü (zoom/ölçekten bağımsız) ve
-            // AYNI halka kuralı (hedefeMesafePuan — çizgiye değen üst puanı alır, dış = M).
-            // 2026-09-25: kutu artık transform:scale ile ölçekleniyor — getBoundingClientRect ölçeği zaten
-            // içerir; ek olarak preserveAspectRatio "meet" payı hesaba katılıyor (kutu kare değilse hedef
-            // ortalanır, eski doğrusal hesap o durumda kenarlara doğru kayıyordu).
-            let rect = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
-            if(!rect.width || !rect.height) return;
-            let k = Math.min(rect.width / vb.width, rect.height / vb.height);
-            let ox = rect.left + (rect.width - vb.width * k) / 2, oy = rect.top + (rect.height - vb.height * k) / 2;
-            let sx = vb.x + (ev.clientX - ox) / k;
-            let sy = vb.y + (ev.clientY - oy) / k;
-            let res = hedefeMesafePuan(Math.hypot(sx, sy), false, '10ring');
-            _kmOyunSeriGirisleri.push(res.puan);
-            _kmOyunSeriKonumlari[_kmOyunSeriGirisleri.length - 1] = { x: Math.round(sx * 10) / 10, y: Math.round(sy * 10) / 10 };
-            try { sesCal(res.puan === 'M' ? 200 : 520 + kmOyunDegerSayi(res.puan) * 30, 0.04); } catch(e) {}
-            kmOyunSlotlariCiz(); kmOyunPadCiz();
+            return kmOyunHedefEkle(ev.clientX, ev.clientY);
         }
         function kmOyunHedefOklariCiz() {
             let g = document.getElementById('km-oyun-hedef-oklar'); if(!g) return;
@@ -18939,7 +18970,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let renk = KM_OYUN_HEDEF_RENK[KM_OYUN_PAD_RENK[v]] || '#fff', yazi = (v === 'X' || v === '10' || v === '9' || v === '2' || v === '1') ? '#111' : '#fff';
                 // İşaretler tıklanamaz (pointer-events:none) — gerçek testte yakalandı: sıkı bir grupta 2. ok,
                 // 1. okun işaretinin ÜSTÜNE denk gelip onu SİLİYORDU. Silme, üstteki dolu slot kutucuğundan.
-                return `<g class="km-oyun-hedef-ok"><circle cx="${k.x}" cy="${k.y}" r="6.5" fill="${renk}" stroke="#fff" stroke-width="1.2"/><text x="${k.x}" y="${k.y + 2.6}" text-anchor="middle" font-size="7" font-weight="800" fill="${yazi}">${i + 1}</text></g>`;
+                return `<circle cx="${k.x}" cy="${k.y}" r="2.6" fill="#111827" stroke="#fff" stroke-width=".6" pointer-events="none"/><g data-hg-ok="${i}" class="hg-etiket" transform="translate(${k.x + 7},${k.y - 7})"><circle r="5.6" fill="${renk}" stroke="#111" stroke-width=".7"/><text y="2" text-anchor="middle" font-size="5.6" font-weight="800" fill="${yazi}">${v}</text></g>`;
             }).join('');
         }
         function kmOyunOkSayisiSec(n) {
@@ -24873,7 +24904,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // ömür boyu toplamıyla karışmasın diye.
             // Hedef-giriş modunda (2026-09-24) okun konumu da gider — _skorKaydetCekirdek bunu detayliOklar'a
             // yazar, normal Skor ekranındaki ısı haritası/grup analizleri bu okları da görür.
-            let kaydedilecek = _kmOyunSeriGirisleri.map(function(v, idx) { let k = _kmOyunSeriKonumlari[idx]; return k ? { puan: v, x: k.x, y: k.y, tip: '10ring' } : { puan: v }; });
+            let kaydedilecek = _kmOyunSeriGirisleri.map(function(v, idx) { let k = _kmOyunSeriKonumlari[idx]; return k ? { puan: v, x: k.x, y: k.y, tip: k.tip || '10ring', spot: k.spot != null ? k.spot : null } : { puan: v }; });
             let sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
             // Geri kalan tüm kayıt/animasyon akışı — hem normal yolda senkron, hem limit uzatma onayı
             // sonrası onayIste()'nin ASENKRON geri çağrısından çağrılabiliyor diye ayrı bir fonksiyona
@@ -30019,12 +30050,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // atlanıyordu (skorEkraniniAc HER sporcu için varsayılan olarak 6ring açtığından, bu kural
             // aslında tüm makaralı sporcular için her zaman devredeydi). Artık yay tipinden bağımsız,
             // herkes için X/10/9 sırası aynı — 2. sarı halka her zaman 10.
+            // 2026-10-18 (kullanıcı: "her yerde iç 10"): makaralıda yalnız iç 10 (X halkası) 10 sayılır, dış 10 alanı 9 olur.
+            else if (distance <= 10 && isMakarali) { p = '9'; bg = "var(--ring-yellow)"; c = "#000"; }
             else if (distance <= 10) { p = '10'; bg = "var(--ring-yellow)"; c = "#000"; }
             else if (distance <= 20) { p = '9'; bg = "var(--ring-yellow)"; c = "#000"; }
             else if (distance <= 30) { p = '8'; bg = "var(--ring-red)"; c = "#fff"; }
             else if (distance <= 40) { p = '7'; bg = "var(--ring-red)"; c = "#fff"; }
             else if (distance <= 50) { p = '6'; bg = "var(--ring-blue)"; c = "#fff"; }
-            else if (distance <= 60 && targetType !== '3spot') { p = '5'; bg = "var(--ring-blue)"; c = "#fff"; }
+            else if (distance <= 60) { p = '5'; bg = "var(--ring-blue)"; c = "#fff"; } // 3'lü yüz de 6 halkalı (10…5), 2026-10-18
             else if (distance <= 70 && targetType === '10ring') { p = '4'; bg = "var(--ring-black)"; c = "#fff"; }
             else if (distance <= 80 && targetType === '10ring') { p = '3'; bg = "var(--ring-black)"; c = "#fff"; }
             else if (distance <= 90 && targetType === '10ring') { p = '2'; bg = "var(--ring-white)"; c = "#000"; }
@@ -30044,11 +30077,103 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function hedefTiklandi(event) {
             if(hedefTapEngelle) return; // kaydırma hareketiydi, skor sayma
             let okAdet = getMaksOk(); if(anlikAtilanOklar.length >= okAdet) return;
-            let svg = document.getElementById(`hedef-svg-${aktifHedefTipi}`);
             let cx, cy;
             if (event.changedTouches && event.changedTouches.length > 0) { cx = event.changedTouches[0].clientX; cy = event.changedTouches[0].clientY; }
             else if (event.touches && event.touches.length > 0) { cx = event.touches[0].clientX; cy = event.touches[0].clientY; }
             else { cx = event.clientX; cy = event.clientY; }
+            hedefNoktaEkle(cx, cy);
+        }
+        // ===== 🎯 ORTAK HEDEF GİRİŞİ (2026-10-18, kullanıcı: "hedef girişi her yerde" — Yarışma'daki büyüteç, oka dokun-sil,
+        // makaralı iç 10 Skor Gir'e ve Oyunlar'a da). Parmağı bastır → üstte büyütülmüş görüntü + nişangah + canlı puan → kaydır →
+        // bırak = ok kaydolur (kağıt dışında bırak = iptal). Bir okun yanındaki PUAN ETİKETİNE kısa dokun = sil, sürükle = taşı.
+        // Okun deliğine dokunmak yeni ok koyar (sıkı grupta eski ok yanlışlıkla silinmesin — Oyunlar'da 2026-09'da yaşanmıştı).
+        // Skor Gir'de hedef 2× yakınlaştırılmış açılır ve tek parmakla kaydırılır: orada büyüteç BASILI TUTUNCA (~0,25 sn) açılır
+        // (ops.uzunBas); kısa dokunuş eskisi gibi ok koyar, hızlı sürükleme kaydırır.
+        const _hgKayit = {}; let _hg = null, _hgBekle = null;
+        function hgBagla(anahtar, ops) {
+            _hgKayit[anahtar] = ops;
+            if(hgBagla.kuruldu) return; hgBagla.kuruldu = true;
+            document.addEventListener('pointerdown', function(e) {
+                if(_hg && _hg.id !== e.pointerId) { hgLupKapat(); _hg = null; return; } // ikinci parmak (yakınlaştırma) → iptal
+                let svg = e.target && e.target.closest && e.target.closest('svg[data-hg]'); if(!svg) return;
+                let ops = _hgKayit[svg.dataset.hg]; if(!ops || !ops.aktifMi()) return;
+                let et = e.target.closest('[data-hg-ok]'), okI = et ? +et.dataset.hgOk : null;
+                if(okI == null && !ops.yerVar()) return;
+                if(okI == null && ops.uzunBas) {
+                    if(_hgBekle) clearTimeout(_hgBekle.t);
+                    let b = _hgBekle = { svg: svg, ops: ops, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY };
+                    b.t = setTimeout(function() { if(_hgBekle !== b) return; _hgBekle = null; try { svg.setPointerCapture(b.id); } catch(er) {} if(ops.basla) ops.basla(); _hg = { svg: svg, ops: ops, id: b.id, okI: null, x0: b.x0, y0: b.y0, tasindi: false }; hgLupGoster(b.x, b.y); }, 260);
+                    return;
+                }
+                e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch(er) {} if(ops.basla) ops.basla();
+                _hg = { svg: svg, ops: ops, id: e.pointerId, okI: okI, x0: e.clientX, y0: e.clientY, tasindi: false };
+                if(okI == null) hgLupGoster(e.clientX, e.clientY);
+            }, true);
+            document.addEventListener('pointermove', function(e) {
+                if(_hgBekle && e.pointerId === _hgBekle.id) { _hgBekle.x = e.clientX; _hgBekle.y = e.clientY; if(Math.hypot(e.clientX - _hgBekle.x0, e.clientY - _hgBekle.y0) > 8) { clearTimeout(_hgBekle.t); _hgBekle = null; } return; }
+                if(!_hg || e.pointerId !== _hg.id) return; e.preventDefault();
+                if(_hg.okI != null && !_hg.tasindi) { if(Math.hypot(e.clientX - _hg.x0, e.clientY - _hg.y0) < 8) return; _hg.tasindi = true; }
+                hgLupGoster(e.clientX, e.clientY);
+            }, { capture: true, passive: false });
+            let bitir = function(e, iptal) {
+                if(_hgBekle && e.pointerId === _hgBekle.id) { clearTimeout(_hgBekle.t); _hgBekle = null; return; } // kısa dokunuş: normal tık işler
+                if(!_hg || e.pointerId !== _hg.id) return;
+                let h = _hg, r = h.svg.getBoundingClientRect(), icerde = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                _hg = null; hgLupKapat(); if(h.ops.tikEngelle) h.ops.tikEngelle();
+                if(iptal) return;
+                if(h.okI != null) { if(!h.tasindi || !icerde) h.ops.sil(h.okI); else h.ops.tasi(h.okI, e.clientX, e.clientY); return; }
+                if(icerde && h.ops.yerVar()) h.ops.ekle(e.clientX, e.clientY);
+            };
+            document.addEventListener('pointerup', function(e) { bitir(e, false); }, true);
+            document.addEventListener('pointercancel', function(e) { bitir(e, true); }, true);
+            document.addEventListener('contextmenu', function(e) { if(e.target && e.target.closest && e.target.closest('svg[data-hg]')) e.preventDefault(); }, true);
+        }
+        function hgLupGoster(cx, cy) {
+            let h = _hg; if(!h) return;
+            let svg = h.svg, pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+            let ctm = svg.getScreenCTM(); if(!ctm) return; let p = pt.matrixTransform(ctm.inverse());
+            let puan = h.ops.puan(cx, cy), w = h.ops.lupGenislik || 34, acik = puan === 'X' || puan === '10' || puan === '9';
+            let lup = document.getElementById('hg-lup');
+            if(!lup) { lup = document.createElement('div'); lup.id = 'hg-lup'; (document.fullscreenElement || document.body).appendChild(lup); }
+            let ic = Array.from(svg.children).filter(function(c) { return !(c.getAttribute && c.getAttribute('data-hg-gizle') != null); }).map(function(c) { return c.outerHTML; }).join('');
+            let t = w / 60;
+            lup.innerHTML = '<svg viewBox="' + (p.x - w / 2) + ' ' + (p.y - w / 2) + ' ' + w + ' ' + w + '" style="background:' + (getComputedStyle(svg).backgroundColor || '#2a2a2c') + '">' + ic
+                + '<g stroke="#111827" stroke-width="' + (t * 0.8) + '"><line x1="' + (p.x - w * 0.16) + '" x2="' + (p.x - w * 0.03) + '" y1="' + p.y + '" y2="' + p.y + '"/><line x1="' + (p.x + w * 0.03) + '" x2="' + (p.x + w * 0.16) + '" y1="' + p.y + '" y2="' + p.y + '"/><line y1="' + (p.y - w * 0.16) + '" y2="' + (p.y - w * 0.03) + '" x1="' + p.x + '" x2="' + p.x + '"/><line y1="' + (p.y + w * 0.03) + '" y2="' + (p.y + w * 0.16) + '" x1="' + p.x + '" x2="' + p.x + '"/></g>'
+                + '<circle cx="' + p.x + '" cy="' + p.y + '" r="' + (h.ops.okYaricap || 1.2) + '" fill="rgba(17,24,39,.6)" stroke="#fff" stroke-width="' + (t * 0.5) + '"/></svg><b class="' + (acik ? 'acik' : '') + '">' + puan + '</b>';
+            let L = 150, x = cx - L / 2, y = cy - L - 46; if(y < 8) y = cy + 46; x = Math.max(8, Math.min(window.innerWidth - L - 8, x));
+            lup.style.left = x + 'px'; lup.style.top = y + 'px';
+        }
+        function hgLupKapat() { let l = document.getElementById('hg-lup'); if(l) l.remove(); }
+        (function() { let st = document.createElement('style'); st.id = 'hg-css'; st.textContent = '#hg-lup{position:fixed;z-index:40000;width:150px;height:150px;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:none}#hg-lup svg{width:100%;height:100%;display:block}#hg-lup b{position:absolute;right:8px;bottom:8px;min-width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:900 16px/1 system-ui,sans-serif;background:#111827;color:#fff;border:2px solid #fff}#hg-lup b.acik{background:#fde047;color:#111827}svg[data-hg]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}.hg-etiket{cursor:pointer}#hedef-wrapper-id.hg-mak circle[r="5"],#hedef-wrapper-id.hg-mak circle.inner-10-3spot{stroke-width:1.4;fill:rgba(255,255,255,.35)}.hg-mak-not{margin:6px auto 0;max-width:420px;text-align:center;font-size:12px;font-weight:800;padding:6px 10px;border-radius:10px;background:rgba(253,142,1,.14);border:1px solid rgba(253,142,1,.45)}'; document.head.appendChild(st); })();
+        // Skor Gir: üç hedef svg'sine büyüteç. Yakınlaştırılmışken (zoom > 1) eskisi gibi kaydırma/tek dokunuş çalışır.
+        function hedefLupKur() {
+            ['10ring', '6ring', '3spot'].forEach(function(t) { let svg = document.getElementById('hedef-svg-' + t); if(svg && !svg.dataset.hg) { svg.dataset.hg = 'skor-' + t; svg.style.touchAction = 'none'; } });
+            let ops = {
+                aktifMi: function() { return !hedefTapEngelle; },
+                uzunBas: true,
+                basla: function() { pzDown = false; pzMoved = false; },
+                yerVar: function() { return anlikAtilanOklar.length < getMaksOk(); },
+                puan: function(cx, cy) { let n = hedefNokta(cx, cy); return n ? n.res.puan : ''; },
+                ekle: function(cx, cy) { hedefNoktaEkle(cx, cy); },
+                sil: function(i) { hedefOkSil(i); },
+                tasi: function(i, cx, cy) { hedefOkTasi(i, cx, cy); },
+                tikEngelle: function() { hedefTapEngelle = true; setTimeout(function() { hedefTapEngelle = false; }, 120); },
+                lupGenislik: 34, okYaricap: 2.2
+            };
+            ['10ring', '6ring', '3spot'].forEach(function(t) { hgBagla('skor-' + t, ops); });
+        }
+        function hedefMakaraliGoster() {
+            let w = document.getElementById('hedef-wrapper-id'); if(!w) return; let mak = hedefMakaraliMi();
+            w.classList.toggle('hg-mak', mak);
+            let kap = w.closest('.hedef-scroll-container'), not = document.getElementById('hg-mak-not');
+            if(mak && !not && kap) { not = document.createElement('div'); not.id = 'hg-mak-not'; not.className = 'hg-mak-not'; not.textContent = '⚙️ Makaralı: yalnız iç 10 (X) 10 sayılır, dış 10 → 9'; kap.insertAdjacentElement('afterend', not); }
+            if(not) not.style.display = mak ? '' : 'none';
+            hedefLupKur();
+        }
+        function hedefMakaraliMi() { return !!(turnuvaDB[aktifGrup] && turnuvaDB[aktifGrup][secilenSporcu] && turnuvaDB[aktifGrup][secilenSporcu].yay === 'Makaralı'); }
+        // Ekran noktası → hedef koordinatı (viewBox birimi: halka genişliği 10) + yüz no + puan
+        function hedefNokta(cx, cy) {
+            let svg = document.getElementById(`hedef-svg-${aktifHedefTipi}`); if(!svg) return null;
 
             // Zoom/pan'dan etkilenmeyen güvenilir koordinat: ekrandaki gerçek kutuyu viewBox'a oranla
             let rect = svg.getBoundingClientRect();
@@ -30063,12 +30188,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 spotIdx = (distance === d1) ? 0 : (distance === d2 ? 1 : 2);
             } else { distance = Math.sqrt(sx*sx + sy*sy); }
 
-            let isMakarali = false; if(turnuvaDB[aktifGrup] && turnuvaDB[aktifGrup][secilenSporcu]) { isMakarali = turnuvaDB[aktifGrup][secilenSporcu].yay === 'Makaralı'; }
-            let res = hedefeMesafePuan(distance, isMakarali, aktifHedefTipi);
-            anlikAtilanOklar.push({ x: sx, y: sy, puan: res.puan, bg: res.bg, color: res.color, tip: aktifHedefTipi, spot: spotIdx });
+            let res = hedefeMesafePuan(distance, hedefMakaraliMi(), aktifHedefTipi);
+            return { sx: sx, sy: sy, spot: spotIdx, res: res };
+        }
+        function hedefNoktaEkle(cx, cy) {
+            let okAdet = getMaksOk(); if(anlikAtilanOklar.length >= okAdet) return;
+            let n = hedefNokta(cx, cy); if(!n) return;
+            anlikAtilanOklar.push({ x: n.sx, y: n.sy, puan: n.res.puan, bg: n.res.bg, color: n.res.color, tip: aktifHedefTipi, spot: n.spot });
             _okAraligiKaydet();
             hedefGorseliGuncelle(false);
         }
+        function hedefOkSil(i) { if(i < 0 || i >= anlikAtilanOklar.length) return; let p = anlikAtilanOklar[i].puan; anlikAtilanOklar.splice(i, 1); if(_seriAraliklari.length > i) _seriAraliklari.splice(i, 1); hedefGorseliGuncelle(false); showToast('🗑 ' + (i + 1) + '. ok (' + p + ') silindi', 'info'); }
+        function hedefOkTasi(i, cx, cy) { let o = anlikAtilanOklar[i], n = hedefNokta(cx, cy); if(!o || !n) return; Object.assign(o, { x: n.sx, y: n.sy, puan: n.res.puan, bg: n.res.bg, color: n.res.color, spot: n.spot }); hedefGorseliGuncelle(false); }
 
         function manuelSkorDegisti(index) {
             let val = document.getElementById(`ok_input_${index}`).value; let res = getRenkForPuan(val);
@@ -30114,13 +30245,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(ok.cezali) cezaVar = true;
                 if(ok.x !== null && ok.y !== null && g && ok.tip === aktifHedefTipi) {
                     let dotRenk = ok.cezali ? '#ef4444' : 'var(--accent-orange)';
-                    g.innerHTML += `<circle cx="${ok.x}" cy="${ok.y}" r="4" fill="${dotRenk}" stroke="#fff" stroke-width="0.5"></circle><text x="${ok.x}" y="${ok.y+1.5}" font-size="5" fill="#fff" text-anchor="middle" font-weight="bold">${idx+1}</text>`;
+                    let acik = efPuan === 'X' || efPuan === '10' || efPuan === '9';
+                    g.innerHTML += `<circle cx="${ok.x}" cy="${ok.y}" r="2.6" fill="#111827" stroke="#fff" stroke-width="0.6" pointer-events="none"></circle>`
+                        + `<g data-hg-ok="${idx}" class="hg-etiket" transform="translate(${ok.x + 7},${ok.y - 7})"><circle r="5.2" fill="${ok.cezali ? '#ef4444' : acik ? '#111827' : '#fff'}" stroke="#111827" stroke-width="0.6"></circle><text y="1.8" font-size="5" text-anchor="middle" font-weight="bold" fill="${ok.cezali ? '#fff' : acik ? '#fde047' : '#111827'}">${efPuan}</text></g>`;
                 }
                 toplam += puanDeger(efPuan);
                 if(!skipSelectUpdate) { let sel = document.getElementById(`ok_input_${idx}`); if(sel) sel.value = ok.puan; }
             });
             if(!skipSelectUpdate) { for(let i=anlikAtilanOklar.length; i<okAdet; i++) { let sel = document.getElementById(`ok_input_${i}`); if(sel) sel.value = ""; } }
             if(toplamPuanEl) toplamPuanEl.innerText = `${toplam}`;
+            try { hedefMakaraliGoster(); } catch(e) {}
             // FAZ 4b — seri şeridi + kaydet düğmesi durumu: SADECE render, veri kaynağı yukarıdaki
             // `oklar`/`okAdet`/`toplam` (zaten anlikAtilanOklar/efektifOklar()'dan hesaplanmış) — yeni
             // bir state tutulmuyor.
