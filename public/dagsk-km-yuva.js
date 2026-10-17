@@ -566,9 +566,10 @@ function yuvaSporcular() {
       <div class="yv-sp-bas">Derste olmayan sporcu ekle</div>
       <input class="yv-sp-ara" id="yv-sp-ara" type="search" placeholder="İsim yaz… (tüm gruplar)" autocomplete="off">
       <div class="yv-sp-adaylar" id="yv-sp-sonuc"></div>
-      <div><button class="yv-btn birincil" data-kapat="1">Tamam</button></div>`);
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="yv-btn birincil" data-kapat="1">Tamam</button><button class="yv-btn" data-yeni="1" title="Kulübe yeni sporcu kaydet, sonra derse ekle">＋ Yeni sporcu kaydet</button></div>`);
     const yenile = () => { kmYuvaCiz(); setTimeout(yuvaSporcular, 30); };
     p.querySelector('[data-kapat]').onclick = () => p.remove();
+    p.querySelector('[data-yeni]').onclick = () => { p.remove(); if (typeof kmOyunYeniSporcuAc === 'function') kmOyunYeniSporcuAc(); };
     p.querySelectorAll('[data-cik]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.cik), 'cik'); yenile(); });
     p.querySelectorAll('[data-ek]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.ek), 'ek'); yuvaSes(990); yenile(); });
     const ara = p.querySelector('#yv-sp-ara'), sonuc = p.querySelector('#yv-sp-sonuc');

@@ -18146,6 +18146,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             m.innerHTML = '<div class="kmoa-kutu"><div class="kmoa-ust"><h3>⚙️ Oyun Ayarları</h3><button onclick="kmOyunAyarKapat()" aria-label="Kapat">✕</button></div>'
                 + '<div class="kmoa-mod"><button class="' + (ozel ? '' : 'aktif') + '" onclick="kmOyunAyarMod(\'standart\')"><b>✅ Standart</b><small>Önerilen ayarlar</small></button>'
                 + '<button class="' + (ozel ? 'aktif' : '') + '" onclick="kmOyunAyarMod(\'ozel\')"><b>🛠️ Özel</b><small>Kendin ayarla</small></button></div>'
+                + '<div class="kmoa-kisi"><div class="kmoa-bas"><b>👤 Sporcular</b><small>Bu derste ' + ((_kmListe || []).length) + ' sporcu var</small></div><div class="kmoa-kisi-btn"><button class="birincil" onclick="kmOyunYeniSporcuAc()">＋ Yeni sporcu kaydet</button><button onclick="kmOyunAyarKapat(); kmSporcuEkle()">➕ Kayıtlı sporcuyu derse ekle</button></div></div>'
                 + (ozel ? '' : '<p class="kmoa-not">Şu an standart ayarlar kullanılıyor. Değiştirmek için <b>Özel</b>\'i seç.</p>')
                 + satir('yolSeri', '🏔️', 'İlerleme oyunları kaç seride bitsin?', 'Zirve, Ninja, Roket, Hazine, Dağ, Pist, Balon, Kayıp Ada, Monopoly · %70 isabetle atan bir sporcu için yaklaşık')
                 + satir('canavarSeri', '👹', 'Canavar ne kadar çabuk devrilsin?', 'Sınıftaki her sporcu yaklaşık kaç seri atınca canavar devrilir · sahnedeki canavara da hemen uygulanır')
@@ -18159,6 +18160,56 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             (document.fullscreenElement || document.body).appendChild(m);
         }
         function kmOyunAyarKapat() { let m = document.getElementById('km-oyun-ayar-modal'); if(m) m.remove(); }
+        // 👤 Oyunlardan yeni sporcu (2026-10-17, kullanıcı: "bütün oyunların ayarlar kısmına sporcu ekle düğmesi koy, kaydettiğimizde
+        // bu derse kaydedilsin mi diye sorsun"). Kayıt Yönetici › Sporcu Ekle ile AYNI kurallar (aynı isim başka grupta varsa yeni kayıt
+        // açmaz, o kişiyi derse eklemeyi önerir; silinmiş kaydı geri alır; anında buluta gider). Sonra "Bu derse eklensin mi?" → evet:
+        // Karışık Sınıf listesine girer, açık oyun yenilenir.
+        function kmOyunYeniSporcuAc() {
+            let kut = document.querySelector('#km-oyun-ayar-modal .kmoa-kutu'); if(!kut) { kmOyunAyarAc(); kut = document.querySelector('#km-oyun-ayar-modal .kmoa-kutu'); } if(!kut) return;
+            let say = {}; (_kmListe || []).forEach(function(k) { say[k.g] = (say[k.g] || 0) + 1; });
+            let vars = Object.keys(say).sort(function(a, b) { return say[b] - say[a]; })[0] || 'kucukler', yil = new Date().getFullYear();
+            kut.innerHTML = '<div class="kmoa-ust"><h3>👤 Yeni sporcu</h3><button onclick="kmOyunAyarKapat()" aria-label="Kapat">✕</button></div>'
+                + '<label class="kmoa-alan"><span>Ad soyad</span><input id="kmoa-ad" type="text" autocomplete="off" placeholder="Örn. Ayşe Yılmaz" onkeydown="if(event.key===\'Enter\') kmOyunYeniSporcuKaydet()"></label>'
+                + '<div class="kmoa-alan"><span>Grup</span><div class="kmoa-sec" id="kmoa-grup">' + ['minikler', 'kucukler', 'yildizlar', 'buyukler'].map(function(g) { return '<button type="button" data-g="' + g + '" class="' + (g === vars ? 'aktif' : '') + '" onclick="var b0=this; document.querySelectorAll(\'#kmoa-grup button\').forEach(function(b){b.classList.toggle(\'aktif\', b===b0)})">' + ({ minikler: 'Minikler', kucukler: 'Küçükler', yildizlar: 'Yıldızlar', buyukler: 'Büyükler' })[g] + '</button>'; }).join('') + '</div></div>'
+                + '<div class="kmoa-alan2"><label class="kmoa-alan"><span>Doğum yılı <small>(isteğe bağlı)</small></span><input id="kmoa-yil" type="number" inputmode="numeric" min="1950" max="' + yil + '" placeholder="' + (yil - 9) + '"></label>'
+                + '<div class="kmoa-alan"><span>Cinsiyet</span><div class="kmoa-sec" id="kmoa-cins"><button type="button" data-c="K" class="aktif" onclick="var b0=this; document.querySelectorAll(\'#kmoa-cins button\').forEach(function(b){b.classList.toggle(\'aktif\', b===b0)})">Kız</button><button type="button" data-c="E" onclick="var b0=this; document.querySelectorAll(\'#kmoa-cins button\').forEach(function(b){b.classList.toggle(\'aktif\', b===b0)})">Erkek</button></div></div></div>'
+                + '<div class="kmoa-alt"><button onclick="kmOyunAyarAc()">← Geri</button><button class="birincil" onclick="kmOyunYeniSporcuKaydet()">💾 Kaydet</button></div>';
+            setTimeout(function() { let i = document.getElementById('kmoa-ad'); if(i) i.focus(); }, 30);
+        }
+        function kmOyunYeniSporcuKaydet() {
+            let ad = ((document.getElementById('kmoa-ad') || {}).value || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
+            let gb = document.querySelector('#kmoa-grup button.aktif'), g = gb ? gb.dataset.g : 'kucukler';
+            let yil = ((document.getElementById('kmoa-yil') || {}).value || '').trim();
+            let cb = document.querySelector('#kmoa-cins button.aktif'), cins = cb ? cb.dataset.c : 'K';
+            if(ad.length < 2) { showToast('Sporcunun adını yaz.', 'error'); let i = document.getElementById('kmoa-ad'); if(i) i.focus(); return; }
+            if(yil && !/^(19|20)\d\d$/.test(yil)) return showToast('Doğum yılı 4 haneli olmalı (ör. 2016).', 'error');
+            let norm = turkceNormalize(ad), var_ = null;
+            ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(function(gg) { if(var_) return; Object.keys(turnuvaDB[gg] || {}).forEach(function(m) { if(!var_ && turkceNormalize(m) === norm) var_ = { g: gg, ad: m }; }); });
+            if(var_) {
+                kmOyunAyarKapat();
+                return onayIste('⚠️ <b>' + esc(var_.ad) + '</b> zaten <b>' + (LIG_ETIKET[var_.g] || var_.g) + '</b> grubunda kayıtlı.<br><small>Yeni kayıt açılmadı (skor geçmişi ikiye bölünmesin). Bu kişiyi derse ekleyeyim mi?</small>',
+                    function() { kmOyunSporcuyuDerseEkle(var_.g, var_.ad); }, '➕ Derse ekle', 'Vazgeç');
+            }
+            if(!turnuvaDB[g]) turnuvaDB[g] = {};
+            try { let sil = silinenlerDB.some(function(x) { return !x.tasindi && x.grup === g && x.ad === ad; }); if(sil) _sporcuSunucudaGeriAl(g, ad).then(function() { try { bulutaGonderKontrol(); } catch(e) {} }).catch(function() {}); silinenlerDB = silinenlerDB.filter(function(x) { return !(x.grup === g && x.ad === ad); }); silinenlerKaydet(); } catch(e) {}
+            turnuvaDB[g][ad] = { toplamSkor: 0, xAdet: 0, dogumYili: yil || '', cinsiyet: cins, yay: 'Klasik', seriler: [], detayliOklar: [], lastModified: Date.now() };
+            yoneticiKaydet();
+            try { sporcuListesiniYenile(); siralamaListesiDoldur(); } catch(e) {}
+            kmOyunAyarKapat();
+            onayIste('✅ <b>' + esc(ad) + '</b> kaydedildi (' + (LIG_ETIKET[g] || g) + ').<br><br>Bu derse eklensin mi?<br><small>Eklersen oyunlarda ve skor listesinde hemen görünür.</small>',
+                function() { kmOyunSporcuyuDerseEkle(g, ad); }, '✓ Evet, derse ekle', 'Hayır');
+        }
+        function kmOyunSporcuyuDerseEkle(g, ad) {
+            _kmListe = _kmListe || [];
+            if(_kmListe.some(function(k) { return k.g === g && k.ad === ad; })) return showToast(ad + ' zaten bu derste.', 'info');
+            _kmListe.push({ g: g, ad: ad });
+            try { _kmSecimler = _kmSecimler || {}; _kmSecimler[g + '_' + ad] = { g: g, ad: ad }; } catch(e) {}
+            _kmListeKaydet();
+            try { if(_kmAktifSekme === 'oyunlar') { kmOyunRosterYenile(); kmOyunSahneKurAktif(); kmOyunChipleriCiz(); kmOyunLiderCiz(); } } catch(e) {}
+            try { if(typeof kmYuvaCiz === 'function' && document.getElementById('yv-kok')) kmYuvaCiz(); } catch(e) {}
+            try { kmSinifKartiCiz(); } catch(e) {}
+            showToast('✅ ' + ad + ' derse eklendi', 'success');
+        }
         function kmOyunAyarMod(mod) { let h = kmOyunAyarHam(); h.mod = mod; if(mod === 'ozel' && !h.ozel) h.ozel = {}; kmOyunAyarKaydet(h); kmOyunAyarAc(); showToast(mod === 'ozel' ? '🛠️ Özel ayarlar açık' : '✅ Standart ayarlara dönüldü', 'success'); }
         function kmOyunAyarSec(anahtar, deger) { let h = kmOyunAyarHam(); if(h.mod !== 'ozel') return; h.ozel = h.ozel || {}; h.ozel[anahtar] = deger; kmOyunAyarKaydet(h); kmOyunAyarAc(); }
         (function() { let st = document.createElement('style'); st.id = 'kmoa-stil'; st.textContent = `
@@ -18171,6 +18222,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .kmoa-mod button b{display:block;font-size:16px}.kmoa-mod button small{color:var(--text-muted,#9aa3b5);font-weight:700}
 .kmoa-mod button.aktif{border-color:var(--accent,#ff8a3d);background:color-mix(in srgb,var(--accent,#ff8a3d) 14%,transparent)}
 .kmoa-not{margin:0;font-size:13px;color:var(--text-muted,#9aa3b5)}
+.kmoa-kisi{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--accent,#ff8a3d) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent,#ff8a3d) 35%,transparent)}
+.kmoa-kisi .kmoa-bas{display:grid}.kmoa-kisi .kmoa-bas small{color:var(--text-muted,#9aa3b5);font-weight:700}
+.kmoa-kisi-btn{display:flex;flex-wrap:wrap;gap:8px}
+.kmoa-kisi-btn button{min-height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--border-color,#2a3346);background:transparent;color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.kmoa-kisi-btn button.birincil{background:var(--accent,#ff8a3d);border-color:var(--accent,#ff8a3d);color:#1a0d05}
+.kmoa-alan{display:grid;gap:6px;font-weight:800;font-size:13px}.kmoa-alan small{color:var(--text-muted,#9aa3b5);font-weight:600}
+.kmoa-alan input{min-height:46px;border-radius:12px;border:1px solid var(--border-color,#2a3346);background:rgba(255,255,255,.05);color:inherit;font:inherit;font-size:16px;padding:0 12px}
+.kmoa-alan2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:520px){.kmoa-alan2{grid-template-columns:1fr}}
 .kmoa-satir{display:grid;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04)}
 .kmoa-satir.kapali{opacity:.55}
 .kmoa-bas b{display:block;font-size:14.5px}.kmoa-bas small{color:var(--text-muted,#9aa3b5);font-size:12px}
