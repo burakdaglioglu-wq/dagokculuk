@@ -495,7 +495,7 @@ function yzGirisCiz() {
         topSatir = '<span>Seri <b>' + seriTop + '</b></span><span>Toplam <b>' + (digerToplam + seriTop) + '</b></span>';
     }
     if (!kap) { kap = document.createElement('div'); kap.id = 'yz-giris'; kap.className = 'yz-giris-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yzGirisKapat(); }); (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap); document.addEventListener('keydown', yzGirisTus, true); }
-    let slotlar = ''; for (let i = 0; i < okSay; i++) { let p = g.oklar[i]; slotlar += '<span class="yz-ok ' + (p ? yzOkRenk(p) : 'bos') + '">' + (p || '') + '</span>'; }
+    let slotlar = ''; for (let i = 0; i < okSay; i++) { let p = g.oklar[i]; slotlar += p ? '<button type="button" class="yz-ok ' + yzOkRenk(p) + '" onclick="yzOkSilNo(' + i + ')" title="Bu oku sil" aria-label="' + (i + 1) + '. ok ' + p + ' — sil">' + p + '<i aria-hidden="true">×</i></button>' : '<span class="yz-ok bos"></span>'; }
     let tus = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].map(function (p) { return '<button class="yz-tus ' + yzOkRenk(p) + '" onclick="yzOkEkle(\'' + p + '\')"' + (g.oklar.length >= okSay ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
     let dolu = g.oklar.length >= okSay;
     kap.innerHTML = '<div class="yz-giris" role="dialog" aria-modal="true" aria-label="Skor girişi">'
@@ -547,6 +547,8 @@ function yzOkSayiSec(n) {
     yzGirisCiz(); yzCiz(); if (_yz.tv) yzTvCiz();
 }
 function yzOkEkle(p, konum) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(p); g.konumlar.push(konum || null); yzGirisCiz(); }
+// Herhangi bir oku sil (2026-10-17, kullanıcı: "sil tuşunu düzgün yapalım, üstüne basınca olabilir"): üstteki kutucuğa ya da hedefteki oka dokun.
+function yzOkSilNo(i) { let g = _yz.giris; if (!g || i == null || i < 0 || i >= g.oklar.length) return; let p = g.oklar[i]; g.oklar.splice(i, 1); if (g.konumlar) g.konumlar.splice(i, 1); yzGirisCiz(); try { showToast('🗑 ' + (i + 1) + '. ok (' + p + ') silindi', 'info'); } catch (e) {} }
 function yzOkSil() { let g = _yz.giris; if (!g || !g.oklar.length) return; g.oklar.pop(); if (g.konumlar && g.konumlar.length > g.oklar.length) g.konumlar.length = g.oklar.length; yzGirisCiz(); }
 function yzGirisKapat() { _yz.giris = null; yzGirisCiz(); }
 function yzGirisKaydet() {
@@ -1940,7 +1942,7 @@ function yzHedefGirisHTML(g, d, okSay) {
     (g.konumlar || []).forEach(function (k, i) {
         if (!k) return;
         let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0), p = g.oklar[i], acik = p === 'X' || p === '10' || p === '9';
-        noktalar += '<g><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01"/>'
+        noktalar += '<g data-ok-i="' + i + '" class="yz-hedef-ok"><circle cx="' + k.x + '" cy="' + gy + '" r="0.05" fill="transparent"/><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01"/>'
             + '<g transform="translate(' + (k.x + 0.11) + ',' + (gy - 0.11) + ')"><circle r="0.075" fill="' + (acik ? '#111827' : '#fff') + '" stroke="#111827" stroke-width="0.01"/><text y="0.026" text-anchor="middle" font-size="0.075" font-weight="900" fill="' + (acik ? '#fde047' : '#111827') + '">' + esc(p || '') + '</text></g></g>';
     });
     let dolu = g.oklar.length >= okSay, sira = g.oklar.length, yuzNo = yuz.uclu ? (sira % 3) : null;
@@ -1948,7 +1950,7 @@ function yzHedefGirisHTML(g, d, okSay) {
     return '<div class="yz-hedef-giris' + (yuz.uclu ? ' uclu' : '') + '"><div class="yz-hedef-kap"><svg id="yz-hedef-svg" viewBox="' + yzKagitViewBox(yuz) + '" class="yz-hedef-svg' + (dolu ? ' dolu' : '') + (yuz.uclu ? ' uclu' : '') + '" role="img" aria-label="Hedef kağıdı — okun yerine dokun, parmağını kaydırıp bırak">'
         + yzKagitSVGIc(yuz, mak) + (yuz.uclu && !dolu ? '<rect x="-1.18" y="' + ((yuzNo - 1) * a - 1.18) + '" width="2.36" height="2.36" rx="0.08" fill="none" stroke="#fd8e01" stroke-width="0.03" stroke-dasharray="0.08 0.05"/>' : '') + noktalar + '</svg></div>'
         + '<div class="yz-hedef-yan"><button class="yz-tus yz-r-kacan" onclick="yzOkEkle(\'M\')"' + (dolu ? ' disabled' : '') + '>M</button>'
-        + '<div class="yz-alt">' + ipucu + '. Parmağını bastır, büyüteçte kaydır, bırakınca kaydolur · ıska için M</div>'
+        + '<div class="yz-alt">' + ipucu + '. Parmağını bastır, büyüteçte kaydır, bırakınca kaydolur · ıska için M · <b>bir oka dokun → sil, sürükle → taşı</b></div>'
         + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız <b>iç 10</b> (X) 10 sayılır, dış 10 → 9</div>' : '')
         + '<div class="yz-alt">' + esc(yuz.ad) + '</div></div></div>';
 }
@@ -1971,17 +1973,28 @@ let _yzLup = null;
 function yzLupKur() {
     if (_yzLup && _yzLup.bagli) return;
     document.addEventListener('pointerdown', function (e) {
-        let svg = e.target && e.target.closest && e.target.closest('#yz-hedef-svg'); if (!svg || svg.classList.contains('dolu')) return;
+        let svg = e.target && e.target.closest && e.target.closest('#yz-hedef-svg'); if (!svg) return;
+        let okEl = e.target.closest('[data-ok-i]'); if (svg.classList.contains('dolu') && !okEl) return;
         e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch (er) {}
-        _yzLup = { bagli: true, svg: svg, id: e.pointerId }; yzLupGoster(e.clientX, e.clientY);
+        _yzLup = { bagli: true, svg: svg, id: e.pointerId, okI: okEl ? +okEl.dataset.okI : null, x0: e.clientX, y0: e.clientY, tasindi: false };
+        if (_yzLup.okI == null) yzLupGoster(e.clientX, e.clientY);
     }, true);
-    document.addEventListener('pointermove', function (e) { if (_yzLup && _yzLup.svg && e.pointerId === _yzLup.id) { e.preventDefault(); yzLupGoster(e.clientX, e.clientY); } }, { capture: true, passive: false });
+    document.addEventListener('pointermove', function (e) {
+        if (!(_yzLup && _yzLup.svg && e.pointerId === _yzLup.id)) return; e.preventDefault();
+        if (_yzLup.okI != null && !_yzLup.tasindi) { if (Math.hypot(e.clientX - _yzLup.x0, e.clientY - _yzLup.y0) < 8) return; _yzLup.tasindi = true; }
+        yzLupGoster(e.clientX, e.clientY);
+    }, { capture: true, passive: false });
     let bitir = function (e, iptal) {
         if (!_yzLup || !_yzLup.svg || e.pointerId !== _yzLup.id) return;
         let svg = _yzLup.svg, r = svg.getBoundingClientRect(), icerde = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-        yzLupKapat(); _yzLup = { bagli: true };
-        if (iptal || !icerde) return;
-        let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return;
+        let okI = _yzLup.okI, tasindi = _yzLup.tasindi; yzLupKapat(); _yzLup = { bagli: true };
+        if (iptal) return;
+        let g = _yz.giris, d = yzOku().durum; if (!g || !d) return;
+        if (okI != null) { // var olan ok: kısa dokunuş → sil · sürükle-bırak → yeni yer + yeni puan · kağıt dışına bırak → sil
+            if (!tasindi || !icerde) return yzOkSilNo(okI);
+            let m = yzHedefNokta(svg, e.clientX, e.clientY); g.konumlar = g.konumlar || []; g.konumlar[okI] = m.k; g.oklar[okI] = m.puan; yzGirisCiz(); return;
+        }
+        if (!icerde || g.oklar.length >= yzGirisOkSay(g, d)) return;
         let n = yzHedefNokta(svg, e.clientX, e.clientY); yzOkEkle(n.puan, n.k);
     };
     document.addEventListener('pointerup', function (e) { bitir(e, false); }, true);
@@ -2514,6 +2527,7 @@ function yzCssYukle() {
         '.yz-giris-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.yz-giris-bas b{font-size:17px}',
         '.yz-oklar{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}',
         '.yz-ok{height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;aspect-ratio:1;margin:auto;width:100%;max-width:58px}',
+        'button.yz-ok{position:relative;border:0;font-family:inherit;cursor:pointer;padding:0}button.yz-ok i{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#111827;color:#fff;font:900 13px/18px system-ui,sans-serif;font-style:normal;border:2px solid #fff}button.yz-ok:focus-visible{outline:3px solid #fd8e01;outline-offset:2px}.yz-hedef-ok{cursor:pointer}',
         '.yz-ok.bos{border:2px dashed var(--border-color)}',
         '.yz-giris-top{display:flex;justify-content:space-between;font-size:14px;color:var(--text-muted)}.yz-giris-top b{font-size:22px;color:var(--text-main);font-variant-numeric:tabular-nums}',
         '.yz-tuslar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}',

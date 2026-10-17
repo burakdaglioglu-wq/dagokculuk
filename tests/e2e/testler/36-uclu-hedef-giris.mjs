@@ -50,6 +50,23 @@ export default async function ({ log }) {
     a = await merkez(0, 0.15, 0); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up();
     esit(await p.evaluate(() => _yz.giris.oklar[0]), '9', 'makaralıda dış 10 → 9 olmalı');
     await p.evaluate((k) => { let i = k.indexOf('|'); turnuvaDB[k.slice(0, i)][k.slice(i + 1)].yay = 'Klasik'; yzGirisKapat(); }, k1);
+    // 🗑 oka dokun → sil, sürükle → taşı (yeni puan), üstteki kutucuğa dokun → sil (2026-10-17)
+    await p.evaluate((k) => { yzGirisAc(yzEnc(k), 1); }, k0);
+    await p.waitForSelector('#yz-hedef-svg.uclu');
+    for (const [sp, dx, dy] of [[0, 0, 0], [1, 0.42, 0], [2, 0, 0.75]]) { a = await merkez(sp, dx, dy); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up(); }
+    esit(await p.evaluate(() => _yz.giris.oklar.join(',')), 'X,8,6', 'üç ok');
+    dogrula(await p.locator('#yz-hedef-svg.dolu').count(), 'hedef dolu değil');
+    // dolu hedefte 2. oka (orta yüz, 8) kısa dokun → silinir
+    a = await merkez(1, 0.42, 0); await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.up(); await p.waitForTimeout(100);
+    esit(await p.evaluate(() => _yz.giris.oklar.join(',')), 'X,6', 'oka dokununca silinmedi');
+    // 1. oku (üst X) sürükle → üst yüzde 7 bölgesine (r ≈ 0.58) taşı
+    a = await merkez(0, 0, 0); let b2 = await merkez(0, 0.58, 0);
+    await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(b2.x, b2.y, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(100);
+    esit(await p.evaluate(() => _yz.giris.oklar.join(',') + '|' + _yz.giris.konumlar[0].s), '7,6|0', 'sürükleyince ok taşınmadı / puanı değişmedi');
+    // üstteki kutucuk: 2. kutucuğa (6) dokun → silinir
+    await p.locator('#yz-giris button.yz-ok').nth(1).click();
+    esit(await p.evaluate(() => _yz.giris.oklar.join(',')), '7', 'kutucuğa dokununca silinmedi');
+    await p.evaluate(() => yzGirisKapat());
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log("3'lü kağıt: büyüteç + canlı puan, oklar kendi yüzünde, çizgi kuralı, makaralı iç 10 ✓");
   } finally {
