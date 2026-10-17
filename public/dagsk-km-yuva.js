@@ -566,10 +566,10 @@ function yuvaSporcular() {
       <div class="yv-sp-bas">Derste olmayan sporcu ekle</div>
       <input class="yv-sp-ara" id="yv-sp-ara" type="search" placeholder="İsim yaz… (tüm gruplar)" autocomplete="off">
       <div class="yv-sp-adaylar" id="yv-sp-sonuc"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="yv-btn birincil" data-kapat="1">Tamam</button><button class="yv-btn" data-yeni="1" title="Kulübe yeni sporcu kaydet, sonra derse ekle">＋ Yeni sporcu kaydet</button></div>`);
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="yv-btn birincil" data-kapat="1">Tamam</button><button class="yv-btn" data-yenikayit="1" title="Kulübe yeni sporcu kaydet, sonra derse ekle">＋ Yeni sporcu kaydet</button></div>`);
     const yenile = () => { kmYuvaCiz(); setTimeout(yuvaSporcular, 30); };
     p.querySelector('[data-kapat]').onclick = () => p.remove();
-    p.querySelector('[data-yeni]').onclick = () => { p.remove(); if (typeof kmOyunYeniSporcuAc === 'function') kmOyunYeniSporcuAc(); };
+    p.querySelector('[data-yenikayit]').onclick = () => { p.remove(); if (typeof kmOyunYeniSporcuAc === 'function') kmOyunYeniSporcuAc(); };
     p.querySelectorAll('[data-cik]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.cik), 'cik'); yenile(); });
     p.querySelectorAll('[data-ek]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.ek), 'ek'); yuvaSes(990); yenile(); });
     const ara = p.querySelector('#yv-sp-ara'), sonuc = p.querySelector('#yv-sp-sonuc');
@@ -698,6 +698,7 @@ function kmYuvaCiz() {
     yuvaGorulenYaz(gorulen);
     let kok = document.getElementById('yv-kok');
     if (!kok || !ic.contains(kok)) { ic.innerHTML = '<div class="yv" id="yv-kok"></div>'; kok = document.getElementById('yv-kok'); }
+    const acikPencereler = Array.from(kok.querySelectorAll(':scope > .yv-katman')); // yeniden çizimde açık pencere (Sporcular, kart detayı…) kaybolmasın
     kok.className = 'yv ' + yuvaTema() + (_yvTv ? ' yv-tv' : '') + (yuvaYzAcik() && yuvaYzDurum() ? ' yzp-acik' : '');
     const ust = `<div class="yv-ust"><div class="yv-logo">🥚<div>Yumurta Yuvası<small>${_yvTv ? 'Sınıf ekranı · seriler geldikçe kendiliğinden yenilenir' : 'Kendi rekorunu geç, yumurtan çatlasın'}</small></div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${_yvTv ? '' : '<button class="yv-btn" onclick="yuvaNasil()">❓ Nasıl oynanır?</button>'}<button class="yv-btn" onclick="yuvaSporcular()">👥 Sporcular</button><button class="yv-btn${_yvTv ? ' birincil' : ''}" id="yv-tv-btn" onclick="yuvaTvDegis()">${_yvTv ? '🃏 Kartlara dön' : '📺 Sınıf ekranı'}</button><button class="yv-btn" onclick="yuvaTemaDegis()" title="Açık / koyu görünüm">${yuvaTema() === 'koyu' ? '☀️' : '🌙'}</button><button class="yv-btn" onclick="yuvaTamEkran()">🖥️ Tam ekran</button><button class="yv-btn" onclick="kmSekme('oyunlar')">← Oyunlar</button></div></div>` + yuvaYzPanelHTML();
@@ -712,6 +713,7 @@ function kmYuvaCiz() {
     if (yeniler.length) yuvaUcan(yeniler.length > 1 ? '🐣 Yumurtalar ısındı!' : '🐣 Yumurta ilerledi!');
     _yvImza = yuvaImza(); yuvaPollBaslat();
     if (_yvDev && !kok.contains(_yvDev)) kok.appendChild(_yvDev);
+    acikPencereler.forEach((p) => { if (!kok.contains(p)) kok.appendChild(p); });
     if (document.getElementById('yz-oyun-sayac') && typeof yzTimerBaslat === 'function') { try { yzTimerBaslat(); } catch (e) {} } // yarışma süresi şeritte işlesin
 }
 function yuvaTamEkran() { const el = document.getElementById('yv-kok'); if (!el) return; if (document.fullscreenElement) { document.exitFullscreen(); return; } const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } }

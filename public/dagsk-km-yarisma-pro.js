@@ -316,7 +316,7 @@ function yzTabloHTML(o, sira, sec) {
     let govde = sira.map(function (r, idx) {
         let hr = '', ayrac = sec.gelisim && idx === 3 ? '<tr class="yz-ayrac"><td colspan="40">📈 EN ÇOK GELİŞENLER · kendi ortalamasına göre (ilk 3 gerçek puana göre)</td></tr>' : '';
         if (sec.hareket) { let p = onceki[r.k]; hr = '<td class="hr">' + (p && p > r.sira ? '<span class="yuk">▲' + (p - r.sira) + '</span>' : p && p < r.sira ? '<span class="dus">▼' + (r.sira - p) + '</span>' : '') + '</td>'; }
-        let tr = ayrac + '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '" data-k="' + esc(r.k) + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + (d.okK && d.okK[r.k] ? ' <span class="yz-okk" title="Bu sporcu seri başına ' + d.okK[r.k] + ' ok atıyor">' + d.okK[r.k] + ' ok</span>' : '') + '</td>';
+        let tr = ayrac + '<tr class="' + (r.sira <= 3 && r.toplam > 0 ? 'p' + r.sira : '') + (sec.yeni && sec.yeni[r.k] ? ' yeni' : '') + (sec.tvGiris ? ' tv-tik' : '') + '" data-k="' + esc(r.k) + '"' + (sec.tvGiris ? ' onclick="yzTvSatir(\'' + yzEnc(r.k) + '\')"' : '') + '><td class="sira">' + r.sira + '</td>' + hr + '<td class="hdf">' + esc(r.hedef) + '</td><td class="ad">' + esc(sec.kompakt ? yzKisaAd(r.ad) : r.ad) + (sec.duzenle ? ' <button class="yz-an-btn" onclick="event.stopPropagation(); yzAnalizAc(\'' + encodeURIComponent(r.k) + '\')" title="' + esc(r.ad) + ' — analiz" aria-label="' + esc(r.ad) + ' analizi">📊</button>' : '') + (d.okK && d.okK[r.k] ? ' <span class="yz-okk" title="Bu sporcu seri başına ' + d.okK[r.k] + ' ok atıyor">' + d.okK[r.k] + ' ok</span>' : '') + '</td>';
         for (let i = 0; i < f.seri; i++) {
             let v = r.seriT[i], cls = 's' + (i === aktif ? ' aktif' : '') + (v == null ? ' bos' : ''), ic = v == null ? '·' : '<span class="yz-sv ' + yzSeriBant(v, f.ok) + '">' + v + '</span>';
             tr += sec.duzenle && (v != null || i <= aktif) ? '<td class="' + cls + ' tik" onclick="event.stopPropagation(); yzGirisAc(\'' + yzEnc(r.k) + '\',' + i + ')">' + ic + '</td>' : '<td class="' + cls + '">' + ic + '</td>';
@@ -464,7 +464,7 @@ function yzGirisTamamHTML(g, o, d) {
         + '<div class="yz-tamam-btnlar">'
         + (son ? '<button class="yz-btn ana buyuk" onclick="yzGirisKapat(); yzBitir()">🏁 Turu bitir — sonuçlar</button><div class="yz-uzat-satir"><button class="yz-btn buyuk" onclick="yzSeriUzat(1, true)">➕ 1 seri daha</button><button class="yz-btn buyuk" onclick="yzSeriUzat(2, true)">➕ 2 seri daha</button></div>'
             : '<button class="yz-btn ana buyuk" onclick="yzGirisSeriGec(true)">▶ ' + sonraki + '. seri + süreyi başlat</button><button class="yz-btn buyuk" onclick="yzGirisSeriGec(false)">▶ ' + sonraki + '. seriye geç (süre sonra)</button>')
-        + '<button class="yz-btn" onclick="yzGirisKapat()">Kapat — tabloya bak</button></div>'
+        + '<button class="yz-btn" onclick="yzGirisKapat()">Kapat — tabloya bak</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi — bu seriye kadar</button></div>'
         + '<div class="yz-alt" style="text-align:center">Enter: ' + (son ? 'turu bitir' : 'sonraki seri + süre') + ' · Esc: kapat</div></div>';
 }
 // 🎥 Video analiz (2026-10-15, kullanıcı: "sözlü uyarılamıyor, gözüyle kendini görmesi gerekiyor" + "5 sn gecikmeli aynayı da buraya al")
@@ -499,7 +499,7 @@ function yzGirisCiz() {
     let tus = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].map(function (p) { return '<button class="yz-tus ' + yzOkRenk(p) + '" onclick="yzOkEkle(\'' + p + '\')"' + (g.oklar.length >= okSay ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
     let dolu = g.oklar.length >= okSay;
     kap.innerHTML = '<div class="yz-giris" role="dialog" aria-modal="true" aria-label="Skor girişi">'
-        + '<div class="yz-giris-bas"><div><span class="yz-sp-hedef">' + esc(g.tip ? (g.taraf === 'a' ? 'A' : 'B') : ((d.hedefler || {})[g.k] || '')) + '</span> <b>' + esc(yzKAd(g.k)) + '</b><div class="yz-alt">' + altSatir + '</div></div><div style="display:flex;gap:6px">' + (g.k ? '<button class="yz-btn" onclick="yzVideoAc(\'' + encodeURIComponent(g.k) + '\')" title="Kendini görsün: gecikmeli ayna, canlı ya da video">🎥 Video</button>' : '') + '<button class="yz-btn" onclick="yzGirisKapat()" aria-label="Kapat">✕</button></div></div>'
+        + '<div class="yz-giris-bas"><div><span class="yz-sp-hedef">' + esc(g.tip ? (g.taraf === 'a' ? 'A' : 'B') : ((d.hedefler || {})[g.k] || '')) + '</span> <b>' + esc(yzKAd(g.k)) + '</b><div class="yz-alt">' + altSatir + '</div></div><div style="display:flex;gap:6px">' + (g.k ? '<button class="yz-btn" onclick="yzAnalizAc(\'' + encodeURIComponent(g.k) + '\')" title="Bu sporcunun analizi (ısı haritası, gelişim)">📊 Analiz</button><button class="yz-btn" onclick="yzVideoAc(\'' + encodeURIComponent(g.k) + '\')" title="Kendini görsün: gecikmeli ayna, canlı ya da video">🎥 Video</button>' : '') + '<button class="yz-btn" onclick="yzGirisKapat()" aria-label="Kapat">✕</button></div></div>'
         + '<div class="yz-giris-mod"><button class="' + (yzGirisHedefMi() ? 'aktif' : '') + '" onclick="yzGirisModSec(\'hedef\')">🎯 Hedefe dokun</button><button class="' + (yzGirisHedefMi() ? '' : 'aktif') + '" onclick="yzGirisModSec(\'tus\')">🔢 Tuşlar</button></div>'
         + (!g.tip && yzFormat(d).ok === 6 ? '<div class="yz-giris-mod yz-oksay"><span>Bu seride kaç ok?</span>' + [3, 6].map(function (n) { return '<button class="' + (okSay === n ? 'aktif' : '') + '" onclick="yzOkSayiSec(' + n + ')">' + n + ' ok</button>'; }).join('') + '</div>' : '')
         + '<div class="yz-oklar">' + slotlar + '</div>'
@@ -2517,6 +2517,7 @@ function yzCssYukle() {
         '.yz-tablo tr.p1 .sira{color:#eab308}.yz-tablo tr.p2 .sira{color:#94a3b8}.yz-tablo tr.p3 .sira{color:#c2410c}',
         '.yz-tablo .hr .yuk{color:#22c55e;font-weight:900}.yz-tablo .hr .dus{color:#ef4444;font-weight:900}',
         // giriş penceresi
+        '.yz-an-btn{border:0;background:rgba(253,142,1,.14);border-radius:8px;padding:2px 6px;margin-left:4px;font-size:13px;cursor:pointer;vertical-align:middle;line-height:1.4}.yz-an-btn:hover{background:rgba(253,142,1,.3)}.yz-an-btn:focus-visible{outline:2px solid #fd8e01}',
         '.yz-giris-arka{position:fixed;inset:0;z-index:30800;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:10px}',
         '@media (min-width:700px){.yz-giris-arka{align-items:center}}',
         '.yz-akis{display:grid;gap:8px;padding:10px 12px;border-radius:14px;border:1px dashed var(--border-color);background:rgba(253,142,1,.06)}',

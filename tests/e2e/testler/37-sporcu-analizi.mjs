@@ -33,6 +33,22 @@ export default async function ({ log }) {
     esit((await p.locator('#yza tr.acik .yza-durum').innerText()).trim(), 'Yükselişte', 'durum etiketi');
     await p.locator('.yza-sec button', { hasText: 'Tümü' }).click(); await p.waitForTimeout(200);
     dogrula((await p.locator('.yza-detay').innerText()).includes('108 ok'), 'Tümü kapsamında 6×18 ok olmalı');
+    // tur sürerken kısa yollar (2026-10-18): tablodaki 📊 → o sporcu açık gelir; skor girişindeki 📊 Analiz; "← Tura dön"
+    await p.evaluate(() => yzaKapat());
+    await p.evaluate(() => { _yz.kurulum = null; yzModAyarla('siralama'); yzKurAyar('kayit', false); let t = yzKurulumTaslak(); t.katilimci = yzRoster().slice(0, 2).map((k) => k.g + '|' + k.ad); yzBaslat(); let k = yzOku().durum.katilimci[0]; yzGirisAc(yzEnc(k), 0); ['10', '9', '8', '9', '8', '7'].slice(0, yzGirisOkSay(_yz.giris, yzOku().durum)).forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzGirisKapat(); });
+    await p.waitForSelector('.yz-an-btn');
+    const k2 = await p.evaluate(() => yzOku().durum.katilimci[1]), ad2 = k2.slice(k2.indexOf('|') + 1);
+    await p.locator('.yz-tablo tr[data-k="' + k2 + '"] .yz-an-btn').first().click();
+    await p.waitForSelector('#yza tr.acik', { timeout: 20000 });
+    dogrula((await p.locator('#yza tr.acik').innerText()).includes(ad2), '📊 doğru sporcuyu açmadı');
+    dogrula((await p.locator('#yza .yza-bas button').innerText()).includes('Tura dön'), 'Tura dön düğmesi yok');
+    await p.locator('#yza .yza-bas button').click();
+    dogrula(!(await p.locator('#yza').count()), 'analiz kapanmadı');
+    await p.evaluate(() => { let k = yzOku().durum.katilimci[0]; yzGirisAc(yzEnc(k), 1); });
+    await p.locator('#yz-giris button', { hasText: '📊 Analiz' }).click();
+    await p.waitForSelector('#yza tr.acik', { timeout: 20000 });
+    dogrula(await p.evaluate(() => { let a = getComputedStyle(document.querySelector('.yza-arka')).zIndex, b = getComputedStyle(document.getElementById('yz-giris')).zIndex; return +a > +b; }), 'analiz skor penceresinin altında kaldı');
+    await p.evaluate(() => { yzaKapat(); yzGirisKapat(); });
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('Sporcu Analizi: tablo + sıralama, ısı haritası (kapsam), 9 bölge, gelişim grafiği, durum etiketi; arşivde konum son 10 turda ✓');
   } finally {

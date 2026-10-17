@@ -72,9 +72,11 @@ function yzaAc(kEnc) {
         kap.addEventListener('click', function (e) { if (e.target === kap) yzaKapat(); });
         (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap);
     }
-    yzaCiz();
+    _yza.ham = localStorage.getItem(yzAnahtar()); yzaCiz(); yzaTazeleBaslat();
 }
-function yzaKapat() { let k = document.getElementById('yza'); if (k) k.remove(); }
+function yzaKapat() { clearInterval(_yza.z); _yza.z = null; let k = document.getElementById('yza'); if (k) k.remove(); }
+// Tur sürerken açık kalırsa: başka cihazdan/girişten skor geldikçe tablo kendiliğinden güncellenir (4 sn'de bir değişiklik bakılır)
+function yzaTazeleBaslat() { if (_yza.z) return; _yza.z = setInterval(function () { let k = document.getElementById('yza'); if (!k) { clearInterval(_yza.z); _yza.z = null; return; } let h = localStorage.getItem(yzAnahtar()); if (h !== _yza.ham) { _yza.ham = h; yzaCiz(); } }, 4000); }
 function yzaSec(kEnc) { let k = decodeURIComponent(kEnc); _yza.sec = _yza.sec === k ? null : k; yzaCiz(); if (_yza.sec) setTimeout(function () { let r = document.querySelector('#yza tr.acik'); if (r && r.scrollIntoView) r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 30); }
 function yzaKapsam(k) { _yza.kapsam = k; yzaCiz(); }
 function yzaSirala(s) { if (_yza.sirala === s) _yza.ters = !_yza.ters; else { _yza.sirala = s; _yza.ters = false; } yzaCiz(); }
@@ -100,13 +102,13 @@ function yzaCiz() {
         if (acik) tr += '<tr class="yza-detay"><td colspan="8">' + yzaDetayHTML(tur, x) + '</td></tr>';
         return tr;
     }).join('');
-    let sy = kap.querySelector('.yza-tablo-kap'), sx = sy ? sy.scrollLeft : 0, ust = kap.querySelector('.yza') ? kap.querySelector('.yza').scrollTop : 0;
+    let sy = kap.querySelector('.yza-tablo-kap'), sx = sy ? sy.scrollLeft : 0, ust = kap.scrollTop;
     kap.innerHTML = '<div class="yza" role="dialog" aria-modal="true" aria-label="Sporcu analizi">'
-        + '<div class="yza-bas"><div><b>📊 Sporcu Analizi</b><div class="yz-alt">' + yzaEsc(tur.mesafe) + ' · ' + yzaTR(tur.tarih) + (tur.canli ? ' · tur sürüyor' : ' · son tur') + ' · satıra dokun → ayrıntı</div></div><button class="yz-btn" onclick="yzaKapat()" aria-label="Kapat">✕</button></div>'
+        + '<div class="yza-bas"><div><b>📊 Sporcu Analizi</b><div class="yz-alt">' + yzaEsc(tur.mesafe) + ' · ' + yzaTR(tur.tarih) + (tur.canli ? ' · tur sürüyor' : ' · son tur') + ' · satıra dokun → ayrıntı' + (tur.canli ? ' · skor girildikçe kendiliğinden güncellenir' : '') + '</div></div><button class="yz-btn" onclick="yzaKapat()" aria-label="Kapat">' + (tur.canli ? '← Tura dön' : '✕') + '</button></div>'
         + '<div class="yza-tablo-kap"><table class="yza-tablo"><thead><tr>' + th('ad', 'Sporcu') + th('bugun', 'Bugün', 's') + th('ort', 'Ok ort.', 's') + '<th>Son turlar</th>' + th('on', '10+X', 's') + th('M', 'Iska', 's') + th('durum', 'Durum') + '<th></th></tr></thead><tbody>' + govde + '</tbody></table></div>'
         + '<div class="yz-alt">Durum: son 5 turun ok ortalamasından 0,3+ yukarı <b class="yza-r iyi">Yükselişte</b>, 0,3+ aşağı <b class="yza-r kotu">Dikkat</b>, oklar dağınıksa <b class="yza-r uy">Teknik bak</b>. Isı haritası için skorları 🎯 Hedefe dokun ile gir.</div>'
         + '</div>';
-    let ny = kap.querySelector('.yza-tablo-kap'); if (ny) ny.scrollLeft = sx; let nz = kap.querySelector('.yza'); if (nz) nz.scrollTop = ust;
+    let ny = kap.querySelector('.yza-tablo-kap'); if (ny) ny.scrollLeft = sx; kap.scrollTop = ust;
     if (_yza.sec) yzaIsiCiz(tur, _yza.sec);
 }
 function yzaSparkSVG(g) {
@@ -232,7 +234,7 @@ function yzaCss() {
     if (document.getElementById('yza-css')) return;
     let st = document.createElement('style'); st.id = 'yza-css';
     st.textContent = [
-        '.yza-arka{position:fixed;inset:0;z-index:31500;background:rgba(6,4,2,.72);display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top,0px)) 12px 12px;overflow:auto}',
+        '.yza-arka{position:fixed;inset:0;z-index:33000;background:rgba(6,4,2,.72);display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top,0px)) 12px 12px;overflow:auto}',
         '.yza{--yza-zemin:var(--bg-card,#1d120b);width:min(1240px,100%);background:var(--yza-zemin);color:var(--text-main,#fbeee3);border:1px solid var(--border-color,#3a2618);border-radius:20px;padding:16px;display:grid;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.5)}',
         '.yza-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.yza-bas b{font-size:20px}',
         '.yza-tablo-kap{overflow-x:auto;border:1px solid var(--border-color,#3a2618);border-radius:14px}',
