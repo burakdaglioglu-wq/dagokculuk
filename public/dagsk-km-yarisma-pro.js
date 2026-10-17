@@ -2876,8 +2876,10 @@ function yzTorenKontrol(o) {
     let d = o.durum, t = o.toren;
     if (!_yz.tv || !d || d.asama !== 'bitti' || !t || t.id !== d.id) return yzTorenKapatYerel();
     if (_yz.toren && _yz.toren.basla === t.basla) return;
+    // İleri (başlangıç kaydı): aynı tören açıksa yeniden kurma — 3B sahne sürer, sonraki adım canlı oynar
+    if (_yz.toren && !_yz.toren.ozel && _yz.toren.id === t.id && document.getElementById('yz-toren')) { _yz.toren.basla = t.basla; _yz.toren.adim = '__'; return; }
     yzTorenKapatYerel();
-    _yz.toren = { basla: t.basla, sahne: yzTorenSahneler(o), adim: '', d: d, katilimci: yzSiralama(o).map(function (r) { return r.k; }).concat(d.katilimci).filter(function (k, i, a) { return a.indexOf(k) === i; }) };
+    _yz.toren = { id: t.id, basla: t.basla, sahne: yzTorenSahneler(o), adim: '', d: d, katilimci: yzSiralama(o).map(function (r) { return r.k; }).concat(d.katilimci).filter(function (k, i, a) { return a.indexOf(k) === i; }) };
     let el = document.createElement('div'); el.id = 'yz-toren'; el.className = 'yz-toren';
     el.innerHTML = '<div class="yz-tor-isik a"></div><div class="yz-tor-isik b"></div><div class="yz-tor-konfeti"></div>'
         + '<div class="yz-tor-bas"><div class="yz-tor-ust">DAĞ S.K. · ' + esc(yzKatEtiket(d) + d.ayar.mesafe + ' · ' + new Date(d.basla).toLocaleDateString('tr-TR')) + '</div><div class="yz-tor-baslik">MADALYA TÖRENİ</div><div class="yz-tor-grup"></div></div>'
@@ -2885,7 +2887,7 @@ function yzTorenKontrol(o) {
         + '<div class="yz-tor-btn"><button onclick="yzTorenIleri()">⏭ İleri</button><button onclick="yzTorenBitir()">✕ Töreni kapat</button></div>';
     document.body.appendChild(el);
     yzTorenCss();
-    _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik();
+    _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik(); yzToren3dBagla(el);
 }
 // Özel tören (2026-10-07, Dönem Ligi kupa töreni): ortak tur durumuna YAZMAZ, bu cihazda oynar. Aynı zaman çizelgesi/
 // görseller/sesler; başlık ve sahneler dışarıdan gelir. veri: {ust, baslik, sahne:[{ad, liste:[{k,ad,sira,puan,alt}]}], katilimci:[k]}
@@ -2900,9 +2902,30 @@ function yzOzelToren(v) {
     document.body.appendChild(el);
     yzTorenCss();
     try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {}); } catch (e) {}
-    _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik();
+    _yz.torenZ = setInterval(yzTorenTik, 200); yzTorenTik(); yzToren3dBagla(el);
 }
-function yzTorenKapatYerel() { clearInterval(_yz.torenZ); _yz.torenZ = null; _yz.toren = null; let e = document.getElementById('yz-toren'); if (e) e.remove(); }
+// 🏟 3B sahne (2026-10-18, kullanıcı taslaklardan "A · Stadyum gecesi"ni seçti, "uygula hepsine"): Yarışma, Oyunlar ve Dönem
+// kupası aynı yzToren* akışını kullandığı için hepsine birden gelir. Zaman/İleri/TV eşlemesi burada kalır; dagsk-toren3d.js yalnız
+// çizer. three.js yerel (vendor/) — internetsiz de açılır. WebGL yoksa/yüklenemezse eski 2B kürsü olduğu gibi kalır.
+function yzToren3dBagla(el) {
+    let bagla = function () {
+        let T = _yz.toren; if (!T || T.uc || !el.isConnected || typeof dagskToren3D !== 'function') return;
+        let c = null; try { c = dagskToren3D(el, { ses: yzTorAC, yavas: function () { if (_yz.toren && _yz.toren.uc === c) { _yz.toren.uc = null; el.classList.remove('uc3'); } } }); } catch (e) { c = null; }
+        if (!c) return; T.uc = c; el.classList.add('uc3'); yzTorenTik();
+    };
+    if (typeof dagskToren3D === 'function' && typeof THREE !== 'undefined') return bagla();
+    if (typeof dagskEkYukle !== 'function') return;
+    (typeof THREE !== 'undefined' ? Promise.resolve() : dagskEkYukle('vendor/three-r128.min.js')).then(function () { return dagskEkYukle('dagsk-toren3d.js'); }).then(bagla).catch(function () {});
+}
+// Her tikte 3B sahneye o anki durum (geç açılan ekran aynı adıma animasyonsuz yerleşir) + şampiyondan önce 3-2-1.
+function yzToren3dTik(T, gi, ic, acik, son) {
+    if (son) return T.uc.durum({ son: true });
+    if (gi < 0) return T.uc.durum({ gi: -1 });
+    let sh = T.sahne[gi], L = Math.min(3, sh.liste.length), sirala = [3, 2, 1].filter(function (n) { return n <= L; });
+    T.uc.durum({ gi: gi, sh: sh, acilmis: sirala.slice(0, Math.max(0, acik - (3 - sirala.length))) });
+    let kalan = YZ_TOR.r1 - ic; T.uc.geriSay(acik === 2 && L >= 1 && kalan > 0 && kalan <= 2.4 ? Math.ceil(kalan / 0.8) : 0);
+}
+function yzTorenKapatYerel() { clearInterval(_yz.torenZ); _yz.torenZ = null; if (_yz.toren && _yz.toren.uc) { try { _yz.toren.uc.kapat(); } catch (e) {} } _yz.toren = null; let e = document.getElementById('yz-toren'); if (e) e.remove(); }
 function yzTorenBitir() { if (_yz.toren && _yz.toren.ozel) { yzTorenKapatYerel(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} return; } yzGuncelle(function (x) { x.toren = null; }); yzTorenKapatYerel(); }
 // İleri: başlangıcı sonraki olaya kaydır (ortak durumda — tüm ekranlar birlikte atlar)
 function yzTorenIleri() {
@@ -2914,7 +2937,7 @@ function yzTorenIleri() {
     let yeni = T.basla - (sonraki - gecen) * 1000 + 300;
     if (T.ozel) { T.basla = yeni; T.adim = '__'; let el = document.getElementById('yz-toren'); if (el) { let k = el.querySelector('.yz-tor-kursu'); if (k) k.dataset.gi = ''; } yzTorenTik(); return; }
     yzGuncelle(function (x) { if (x.toren) x.toren.basla = yeni; });
-    yzTorenKapatYerel(); yzTorenKontrol(yzOku());
+    yzTorenKontrol(yzOku()); yzTorenTik();
 }
 function yzTorenTik() {
     let T = _yz.toren, el = document.getElementById('yz-toren'); if (!T || !el) return;
@@ -2924,6 +2947,7 @@ function yzTorenTik() {
     let acik = gi < 0 ? 0 : ic >= YZ_TOR.r1 ? 3 : ic >= YZ_TOR.r2 ? 2 : ic >= YZ_TOR.r3 ? 1 : 0;
     let son = gecen >= finalT;
     let adim = son ? 'final' : gi + ':' + acik;
+    if (T.uc) { try { yzToren3dTik(T, gi, ic, acik, son); } catch (e) {} }
     // davul: bir sonraki açılıştan hemen önce (yalnız canlı izlenen anda; geç açılan ekran eski sesleri çalmaz)
     if (!son && gi >= 0) { let sr = [YZ_TOR.r3, YZ_TOR.r2, YZ_TOR.r1][acik], kimVar = sr != null && T.sahne[gi].liste.length >= 3 - acik; if (kimVar && ic >= sr - YZ_TOR.davul && ic < sr - YZ_TOR.davul + 0.4 && T.davul !== gi + ':' + acik) { T.davul = gi + ':' + acik; yzTorDavul(YZ_TOR.davul); } }
     if (adim === T.adim) return;

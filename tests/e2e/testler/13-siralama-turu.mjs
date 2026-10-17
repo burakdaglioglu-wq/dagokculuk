@@ -47,7 +47,9 @@ export default async function ({ log }) {
     const disaridan = await p.evaluate(() => { let kat = yzOku().durum.katilimci; return yzTumSporcular().find((x) => kat.indexOf(x.k) === -1 && !yzRoster().some((r) => r.g + '|' + r.ad === x.k)); });
     dogrula(disaridan, 'listede olmayan aday sporcu bulunamadı');
     await p.locator('#yz-sec-ara').fill(disaridan.ad.slice(0, 5));
-    await p.locator('.yz-sec-aday', { hasText: disaridan.ad }).first().click();
+    // aynı ad başka grupta da olabilir — doğru sporcunun düğmesi (onclick'teki kodlu anahtar)
+    const enc = await p.evaluate((k) => yzEnc(k), disaridan.k);
+    await p.locator('.yz-sec-aday[onclick*="' + enc + '"]').first().click();
     dogrula(await p.evaluate((k) => yzOku().durum.katilimci.includes(k), disaridan.k), 'sporcu tura eklenmedi');
     const cikan = await p.evaluate(() => yzOku().durum.katilimci[0]);
     await p.locator('.yz-sec-sat', { hasText: cikan.split('|')[1] }).locator('button', { hasText: 'Çıkar' }).click();
