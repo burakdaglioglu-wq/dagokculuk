@@ -17605,7 +17605,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Zirve'nin geniş yatay kıvrımı yerine YUKARI zikzak eden bir dağcı rotası, ve "engel" isteği
             // sürpriz kutucuklarında (kaya/rüzgar) + arka planda sürekli düşen küçük kaya parçacıklarında.
             if(tid === 'dag') return `<div class="km-oyun-panel" id="km-oyun-panel-dag">
-                <div id="km-oyun-kayalar-dag"></div>
+                <div id="km-oyun-kayalar-dag"></div><div id="km-dag3d" class="km-dag3d"></div><div id="km-dag-ip-hud" class="km-dag-ip-hud"></div>
                 <svg id="km-oyun-svg-dag" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <linearGradient id="kmDagTrailGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ffb27a"/><stop offset="100%" stop-color="#ffe0b0"/></linearGradient>
@@ -25020,6 +25020,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 artis = ao.artis; araOlaylar = ao.olaylar;
             }
             _kmAraOlaySon = araOlaylar.slice();
+            // 🪢 İp takımı (2026-10-19) — Dağ Tırmanışı, bireysel mod: zayıf seride kayıp ipte asılı kalırsın (asla geri gitmez),
+            // ip ortağının güçlü serisi seni patikaya çeker (+10 kurtarma puanı). Bkz. kmDagIpUygula.
+            let dagIp = null;
+            if(_kmOyunAktifTema === 'dag' && !takimAktifMi && !cokluAktifMi && kmDagIpAktifMi()) { dagIp = kmDagIpUygula(s, eskiFrac, artis, toplam / maxPuan); artis = dagIp.artis; }
+            _kmDagIpSon = dagIp;
             // Pist çok turlu (frac 1'i aşabilir) — diğer 9 tema için maxFrac hep 1, davranış AYNI kalıyor;
             // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor. Alt sınır (0) eskiden
             // hiç GEREKMİYORDU (artis her zaman >=0'dı) — Zirve'nin fırtına cezası ARTIK negatif
@@ -25035,6 +25040,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(araOlaylar.indexOf('bonus') !== -1) s.toplamSkor += KM_ARA_OLAY_BONUS;
             let d0 = kmOyunDurumAl(s.g, s.ad); d0.toplamSkor = s.toplamSkor;
             if(araOlaylar.length) kmAraOlayDuyur(_kmOyunAktifTema, s, araOlaylar, yeniCp > eskiCp);
+            if(dagIp && dagIp.tur === 'kurtarma') s.toplamSkor += KM_DAG_IP_KURTARMA_PUAN;
+            if(dagIp && dagIp.tur) kmDagIpDuyur(s, dagIp, yeniCp > eskiCp);
             if(senseiSonuc) kmNinjaSenseiDuyur(senseiSonuc, s);
             // Pist "Yarış uzunluğu" — sadece BİREYSEL modda kişi başı set sayacı (takım modunda paylaşılan
             // frac zaten farklı bir mekanizma, Stage 2 kapsamına alınmadı). GERÇEK skora dokunmuyor.
@@ -25112,7 +25119,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
                 // geri yükler (canavar öldüyse ve yenisi doğduysa bile doğru şekilde önceki canavara döner).
                 canavar: (_kmOyunAktifTema === 'canavar') ? JSON.parse(JSON.stringify(_kmCanavar)) : null,
-                yukselis: (_kmOyunAktifTema === 'yukselis') ? { gun: JSON.parse(JSON.stringify(_kmYks)), kalici: JSON.parse(JSON.stringify(_kmYksKalici)) } : null };
+                yukselis: (_kmOyunAktifTema === 'yukselis') ? { gun: JSON.parse(JSON.stringify(_kmYks)), kalici: JSON.parse(JSON.stringify(_kmYksKalici)) } : null,
+                dagIp: dagIp ? dagIp.geri : null };
             kmOyunGeriAlBtnGuncelle();
 
             function bitirOrtak() {
@@ -25365,6 +25373,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'yukselis') { kmOyunYukselisSifirla(); return; }
             if(!confirm(s.ad + ' için oyun ilerlemesi (yol + oyun-içi puan) sıfırlansın mı?\n\nGerçek skor/klasman ETKİLENMEZ, sadece bu eğlence katmanı sıfırlanır.')) return;
             kmOyunSporcuSifirlaCekirdek(s);
+            if(_kmOyunAktifTema === 'dag') { let ip = kmDagIpDurum(); delete ip.asili[s.g + '|' + s.ad]; kmDagIpKaydet(); }
             if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
             kmOyunResyncAktif();
             kmOyunChipleriCiz(); kmOyunLiderCiz();
@@ -25394,6 +25403,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(_kmOyunAktifTema === 'pist') { _kmOyunPistYarisSonucu = null; kmOyunPistSonucKapat(); }
                 if(_kmOyunAktifTema === 'ninja') kmNinjaTapinakSifirla();
                 if(_kmOyunAktifTema === 'zirve') kmZirveGunlukSifirla();
+                if(_kmOyunAktifTema === 'dag') kmDagIpSifirla();
                 // Resync DEĞİL — kaşif rozetleri "bulundu" görünümünden "?" görünümüne dönüyor, bu bir
                 // GÖRÜNÜM değişikliği (bkz. proje hafızası: Resync sadece konum/transform günceller).
                 kmOyunSahneKurAktif();
@@ -25460,6 +25470,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmCanavarKaydet();
                     if(_kmOyunAktifTema === 'canavar') kmOyunSahneKurCanavar();
                 }
+                if(g.dagIp) kmDagIpGeriAl(g.dagIp, s);
                 if(g.yukselis) {
                     _kmYks = g.yukselis.gun; _kmYksKalici = g.yukselis.kalici;
                     _kmYksYuklenenKonum = _kmAktifKonum; _kmYksKaliciYuklenenKonum = _kmAktifKonum;
@@ -25561,6 +25572,120 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunChipleriCiz(); kmOyunLiderCiz(); kmOyunMonopolyBadgeGuncelle();
             });
         }
+        // ===== 🏔 3B DAĞ TIRMANIŞI + 🪢 İP TAKIMI (2026-10-19) =====
+        // Kullanıcı: "dağ tırmanışını şu ana kadar en iyi görselli, en komplike ve en heyecanlı oyuna çevirelim" → 3B dağ + ip takımı.
+        // Çizim dagsk-dag3d.js'te (three.js yerel, tembel yüklenir); kurallar burada. WebGL yoksa / cihaz yavaşsa 2B SVG sahne kalır.
+        // İP TAKIMI: sporcular ders listesi sırasıyla ikişer ipe bağlanır (tek kalan son ipe üçüncü olarak katılır). Gerçek skora DOKUNMAZ.
+        //   • %35 altı seri → kayar, ipte asılı kalır (o seri ilerlemez, ASLA geri gitmez)
+        //   • asılıyken %50+ seri → kendi toparlanır, normal ilerler
+        //   • ip ortağı asılıyken %70+ seri → onu patikaya çeker (+3% yol) ve +10 kurtarma puanı alır
+        const KM_DAG_IP_DUSME = 0.35, KM_DAG_IP_TOPARLAN = 0.5, KM_DAG_IP_KURTAR = 0.7, KM_DAG_IP_CEKIS = 0.03, KM_DAG_IP_KURTARMA_PUAN = 10;
+        var _kmDag3d = null, _kmDag3dYukleniyor = false, _kmDag3dKapali = false, _kmDagIpSon = null, _kmDagIp = null, _kmDagIpKonum = null;
+        function kmDagIpAnahtar() { return 'dag_km_dag_ip_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmDagIpDurum() {
+            let gun = bugunISO();
+            if(!_kmDagIp || _kmDagIpKonum !== _kmAktifKonum) { try { _kmDagIp = JSON.parse(localStorage.getItem(kmDagIpAnahtar()) || 'null'); } catch(e) { _kmDagIp = null; } _kmDagIpKonum = _kmAktifKonum; }
+            if(!_kmDagIp || _kmDagIp.gun !== gun) _kmDagIp = { gun: gun, asili: {}, kurtarma: {} };
+            if(!_kmDagIp.asili) _kmDagIp.asili = {}; if(!_kmDagIp.kurtarma) _kmDagIp.kurtarma = {};
+            return _kmDagIp;
+        }
+        function kmDagIpKaydet() { try { localStorage.setItem(kmDagIpAnahtar(), JSON.stringify(kmDagIpDurum())); } catch(e) {} }
+        function kmDagIpSifirla() { _kmDagIp = null; try { localStorage.removeItem(kmDagIpAnahtar()); } catch(e) {} }
+        function kmDagIpAktifMi() { return !_kmOyunTakimModu && (_kmOyunRosterCache || []).length >= 2; }
+        // ip grupları: [[0,1],[2,3],[4,5,6]] (roster sırasına göre)
+        function kmDagIpGruplari() {
+            let n = (_kmOyunRosterCache || []).length, gr = [];
+            for(let i = 0; i + 1 < n; i += 2) gr.push([i, i + 1]);
+            if(n % 2 === 1 && gr.length) gr[gr.length - 1].push(n - 1);
+            return gr;
+        }
+        function kmDagIpGrupNo(i) { let gr = kmDagIpGruplari(); for(let g = 0; g < gr.length; g++) if(gr[g].indexOf(i) !== -1) return g; return -1; }
+        function kmDagIpOrtaklar(i) { let g = kmDagIpGrupNo(i); return g === -1 ? [] : kmDagIpGruplari()[g].filter(function(x) { return x !== i; }); }
+        function kmDagIpUygula(s, eskiFrac, artis, oran) {
+            let ip = kmDagIpDurum(), k = s.g + '|' + s.ad, roster = _kmOyunRosterCache, i = roster.indexOf(s);
+            let geri = { ip: JSON.stringify(ip), ortak: null, bonus: 0 }, sonuc = { artis: artis, tur: null, geri: geri, ortakI: -1 };
+            let ortaklar = kmDagIpOrtaklar(i);
+            if(ip.asili[k]) {
+                if(oran >= KM_DAG_IP_TOPARLAN) { delete ip.asili[k]; sonuc.tur = 'toparlandi'; }
+                else { sonuc.artis = 0; sonuc.tur = 'asili'; }
+            } else if(oran < KM_DAG_IP_DUSME && eskiFrac < 1) {
+                ip.asili[k] = Date.now(); sonuc.artis = 0; sonuc.tur = 'dusme';
+                let tutan = ortaklar.filter(function(j) { let o = roster[j]; return o && !ip.asili[o.g + '|' + o.ad]; })[0];
+                sonuc.ortakI = tutan == null ? (ortaklar[0] == null ? -1 : ortaklar[0]) : tutan;
+            } else if(oran >= KM_DAG_IP_KURTAR) {
+                let j = ortaklar.filter(function(j) { let o = roster[j]; return o && ip.asili[o.g + '|' + o.ad]; })[0];
+                if(j != null) {
+                    let o = roster[j], d = kmOyunDurumAl(o.g, o.ad), eski = Math.max(0, Math.min(1, o.frac || 0)), yeni = Math.min(0.995, eski + KM_DAG_IP_CEKIS * (kmOyunAyar().yolCarpan || 1));
+                    geri.ortak = { g: o.g, ad: o.ad, frac: o.frac || 0 }; geri.bonus = KM_DAG_IP_KURTARMA_PUAN;
+                    o.frac = yeni; d.frac = yeni; delete ip.asili[o.g + '|' + o.ad];
+                    ip.kurtarma[k] = (ip.kurtarma[k] || 0) + 1;
+                    sonuc.tur = 'kurtarma'; sonuc.ortakI = j; sonuc.ortakEski = eski; sonuc.ortakYeni = yeni;
+                }
+            }
+            kmDagIpKaydet();
+            return sonuc;
+        }
+        function kmDagIpGeriAl(gd, s) {
+            try { _kmDagIp = JSON.parse(gd.ip); _kmDagIpKonum = _kmAktifKonum; kmDagIpKaydet(); } catch(e) {}
+            if(gd.ortak) { let o = _kmOyunRosterCache.find(function(x) { return x.g === gd.ortak.g && x.ad === gd.ortak.ad; }); kmOyunDurumAl(gd.ortak.g, gd.ortak.ad).frac = gd.ortak.frac; if(o) o.frac = gd.ortak.frac; }
+            if(gd.bonus && s) { s.toplamSkor = Math.max(0, s.toplamSkor - gd.bonus); kmOyunDurumAl(s.g, s.ad).toplamSkor = s.toplamSkor; }
+        }
+        function kmDagIpDuyur(s, r, cpGecildi) {
+            if(typeof ciddiModAcik !== 'undefined' && ciddiModAcik && r.tur === 'asili') return;
+            let ad = kmOyunIlkAd(s.ad).toLocaleUpperCase('tr-TR'), o = _kmOyunRosterCache[r.ortakI], oad = o ? kmOyunIlkAd(o.ad) : '';
+            let m = r.tur === 'dusme' ? ['🪢 İP TUTTU!', ad + ' kaydı, ipte asılı' + (oad ? ' — ' + oad + ' %70+ seriyle kurtarabilir' : '')]
+                : r.tur === 'asili' ? ['🆘 HÂLÂ İPTE', ad + ' asılı — %50+ seriyle kendini toparlar' + (oad ? ', ' + oad + ' %70+ ile çeker' : '')]
+                : r.tur === 'toparlandi' ? ['💪 TOPARLANDI!', ad + ' kendi gücüyle patikaya döndü']
+                : ['🛟 KURTARMA! +' + KM_DAG_IP_KURTARMA_PUAN, ad + ', ' + oad + "'i ipten çekti"];
+            setTimeout(function() { try { kmOyunBanner(m[0], m[1], r.tur === 'kurtarma' || r.tur === 'toparlandi' ? 'harika' : 'cp'); } catch(e) {} try { sesCal(r.tur === 'kurtarma' ? 880 : r.tur === 'dusme' ? 220 : 520, 0.12); } catch(e) {} }, (cpGecildi ? 2000 : 900) + (_kmAraOlaySon && _kmAraOlaySon.length ? 1800 : 0));
+        }
+        // sol üst: ip takımları + kural (çocuklar için tek satır)
+        function kmDagIpHudCiz() {
+            let el = document.getElementById('km-dag-ip-hud'); if(!el) return;
+            if(!kmDagIpAktifMi() || _kmOyunAktifTema !== 'dag') { el.style.display = 'none'; return; }
+            kmDagIpCss();
+            let ip = kmDagIpDurum(), roster = _kmOyunRosterCache, renk = ['#ffd166', '#5cc8ff', '#ff6b9a', '#7ee081', '#c39bff', '#ff9f43', '#4dd6c4', '#f8f8f8'];
+            el.style.display = '';
+            el.innerHTML = '<div class="kdi-bas">🪢 İp takımları</div>' + kmDagIpGruplari().map(function(gr, gi) {
+                return '<div class="kdi-sat" style="--ip:' + renk[gi % renk.length] + '">' + gr.map(function(j) { let o = roster[j], k = o.g + '|' + o.ad, kr = ip.kurtarma[k] || 0; return '<span class="kdi-ad' + (ip.asili[k] ? ' asili' : '') + '" onclick="kmOyunSporcuSec(' + j + ')">' + (ip.asili[k] ? '🆘 ' : '') + esc(kmOyunIlkAd(o.ad)) + (kr ? ' <b>🛟' + kr + '</b>' : '') + '</span>'; }).join('<i></i>') + '</div>';
+            }).join('') + '<div class="kdi-kural">%35 altı: kayarsın, ip tutar · %70+: ortağını kurtar +10</div>';
+        }
+        function kmDagIpCss() {
+            if(document.getElementById('km-dag-ip-css')) return;
+            let st = document.createElement('style'); st.id = 'km-dag-ip-css';
+            st.textContent = '.km-dag-ip-hud{position:absolute;left:12px;top:12px;z-index:4;max-width:min(300px,42%);background:rgba(8,10,20,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:8px 10px;color:#fff;font-size:12px;display:grid;gap:4px;pointer-events:auto}'
+                + '.kdi-bas{font-weight:900;letter-spacing:.04em;font-size:12.5px}.kdi-sat{display:flex;align-items:center;flex-wrap:wrap;gap:2px}.kdi-sat i{width:14px;height:3px;border-radius:2px;background:var(--ip)}'
+                + '.kdi-ad{border:1.5px solid var(--ip);border-radius:999px;padding:2px 8px;font-weight:800;cursor:pointer;white-space:nowrap}.kdi-ad.asili{background:rgba(230,57,70,.35);border-color:#ff6b6b;animation:kdiNabiz 1s ease-in-out infinite}.kdi-ad b{color:#7ee081}'
+                + '.kdi-kural{font-size:10.5px;opacity:.75;line-height:1.3}@keyframes kdiNabiz{50%{opacity:.6}}'
+                + '#km-oyun-panel-dag .km-climber.asili .km-climber-inner{transform:translateY(16px) rotate(10deg);opacity:.8}'
+                + '@media (max-width:700px){.km-dag-ip-hud{font-size:11px;max-width:55%}.kdi-kural{display:none}}';
+            document.head.appendChild(st);
+        }
+        function kmDag3dVeri() {
+            let roster = _kmOyunRosterCache || [], ipA = kmDagIpAktifMi(), ip = ipA ? kmDagIpDurum() : { asili: {} };
+            let cpRenk = KM_OYUN_CP_FRAC.slice(0, -1).map(function(f) { let best = null; roster.forEach(function(s, i) { if(s.frac >= f - 1e-9 && (!best || s.frac > best.frac)) best = { frac: s.frac, i: i }; }); return best ? kmOyunRenk('dag', best.i) : null; });
+            return { sporcular: roster.map(function(s, i) { let no = kmOyunHayvanKarakterAta(s); return { k: s.g + '|' + s.ad, ad: s.ad, kisa: kmOyunIlkAd(s.ad), renk: kmOyunRenk('dag', i), frac: Math.max(0, Math.min(1, s.frac || 0)), img: kmOyunKarakterBilgi(no).src, oran: KM_OYUN_HAYVAN_ORAN[no - 1] || 1, asili: !!ip.asili[s.g + '|' + s.ad], ip: ipA ? kmDagIpGrupNo(i) : -1 }; }),
+                cp: KM_OYUN_CP_FRAC.slice(0, -1), cpRenk: cpRenk, olay: kmAraOlayYerleri('dag'), ipAcik: ipA };
+        }
+        function kmDag3dEmin() {
+            let kap = document.getElementById('km-dag3d'); if(!kap || _kmDag3dKapali) return;
+            if(_kmDag3d) { if(_kmDag3d.kap === kap) { try { _kmDag3d.kur(kmDag3dVeri()); } catch(e) {} return; } try { _kmDag3d.kapat(); } catch(e) {} _kmDag3d = null; }
+            let bagla = function() {
+                if(_kmDag3d || _kmDag3dKapali || _kmOyunAktifTema !== 'dag' || !kap.isConnected || typeof dagskDag3D !== 'function') return;
+                let c = null;
+                try { c = dagskDag3D(kap, { sec: function(i) { if(!_kmOyunKilit) kmOyunSporcuSec(i); }, aktif: function() { return _kmOyunAktifIndex; }, yavas: kmDag3dDus, altKapali: function() { let d = document.getElementById('km-oyun-dok'); if(!d || d.classList.contains('km-oyun-dok-kapali') || !d.offsetWidth) return 0; let a = d.getBoundingClientRect(), b = kap.getBoundingClientRect(); if(a.right < b.left + b.width * 0.25 || a.left > b.right - b.width * 0.25) return 0; return Math.max(0, b.bottom - Math.max(a.top, b.top)); } }); } catch(e) { c = null; }
+                if(!c) { _kmDag3dKapali = true; return; }
+                c.kap = kap; _kmDag3d = c;
+                let p = document.getElementById('km-oyun-panel-dag'); if(p) p.classList.add('d3');
+                try { c.kur(kmDag3dVeri()); } catch(e) { kmDag3dDus(); }
+            };
+            if(typeof dagskDag3D === 'function' && typeof THREE !== 'undefined') return bagla();
+            if(_kmDag3dYukleniyor) return; _kmDag3dYukleniyor = true;
+            (typeof THREE !== 'undefined' ? Promise.resolve() : dagskEkYukle('vendor/three-r128.min.js')).then(function() { return dagskEkYukle('dagsk-dag3d.js'); })
+                .then(function() { _kmDag3dYukleniyor = false; bagla(); }).catch(function() { _kmDag3dYukleniyor = false; });
+        }
+        // yavaş cihaz / hata: 3B kapanır, bu oturumda bir daha denenmez, 2B sahne görünür
+        function kmDag3dDus() { if(_kmDag3d) { try { _kmDag3d.kapat(); } catch(e) {} } _kmDag3d = null; _kmDag3dKapali = true; let p = document.getElementById('km-oyun-panel-dag'); if(p) p.classList.remove('d3'); }
         // ---- DAĞ TIRMANIŞI ---- (Zirve Yolu'nun ikizi: aynı patika-boyunca-ilerleme mekaniği, farklı
         // yol geometrisi/renk paleti — bkz. kmOyunSahneKurZirve için detaylı yorum.)
         // ===== ARA OLAYLAR — Dağ Tırmanışı & Hendek Akını (2026-09-25) =====
@@ -25757,6 +25882,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 s.dagEl = el;
             });
             kmOyunResyncDag();
+            kmDag3dEmin();
         }
         function kmOyunDagBayrakGuncelle(cpIndex, renk) {
             let grp = document.querySelector(`#km-oyun-dag-flags g[data-cp="${cpIndex}"]`); if(!grp) return;
@@ -25778,9 +25904,26 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             let sf = document.getElementById('km-oyun-dag-zirve');
             if(sf) sf.style.opacity = roster.some(function(s) { return s.frac >= 1; }) ? '1' : '0.55';
+            let ip = kmDagIpAktifMi() ? kmDagIpDurum() : null;
+            roster.forEach(function(s) { if(s.dagEl) s.dagEl.classList.toggle('asili', !!(ip && ip.asili[s.g + '|' + s.ad])); });
+            kmDagIpHudCiz();
+            if(_kmDag3d) { try { _kmDag3d.guncelle(kmDag3dVeri()); } catch(e) {} }
         }
         function kmOyunAnimateDag(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, sure = 1250, basla = performance.now();
+            // seri bitince ip durumu (asılı / kurtarıldı) ve paneli herkes için tazelensin
+            let done0 = done; done = function() { done0(); try { kmOyunResyncDag(); } catch(e) {} };
+            if(_kmDag3d) {
+                let ipS = _kmDagIpSon;
+                _kmDag3d.ilerlet(i, eskiFrac, yeniFrac, { cp: yeniCp > eskiCp, zirve: eskiFrac < 1 && yeniFrac >= 1, olaylar: (_kmAraOlaySon || []).slice(), iyi: toplam >= _kmOyunOkSayisi * 10 * 0.9, ip: ipS }, function() {
+                    // 2B sahne de arka planda güncel kalsın (3B kapanırsa aynı yerden devam eder)
+                    let pt = kmOyunDagNokta(yeniFrac), jj = kmOyunJitter(i, n);
+                    if(s.dagEl) s.dagEl.setAttribute('transform', `translate(${pt.x + jj[0]},${pt.y + jj[1]})`);
+                    if(yeniCp > eskiCp) for(let cp = eskiCp; cp < yeniCp && cp < KM_OYUN_CP_SAYISI - 1; cp++) kmOyunDagBayrakGuncelle(cp, kmOyunRenk('dag', i));
+                    done();
+                });
+                return;
+            }
             function frame(now) {
                 let t = Math.min(1, (now - basla) / sure), eased = 1 - Math.pow(1 - t, 3);
                 let pt = kmOyunDagNokta(eskiFrac + (yeniFrac - eskiFrac) * eased);
