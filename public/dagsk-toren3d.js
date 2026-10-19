@@ -81,13 +81,15 @@
         // ---------------- ses (yzTorAC: düdük sesleri kapalıysa null → sessiz)
         const AC = () => { try { return ops.ses ? ops.ses() : null; } catch (e) { return null; } };
         function ton(f, b, s, tur, v, f2) { const a = AC(); if (!a) return; try { const t = a.currentTime + b, o = a.createOscillator(), g = a.createGain(); o.type = tur || 'triangle'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + s); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v || .2, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + s); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + s + .05); } catch (e) {} }
-        function gur(b, s, v, fr, tip) { const a = AC(); if (!a) return; try { const n = Math.floor(a.sampleRate * s), bf = a.createBuffer(1, n, a.sampleRate), d = bf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2); const src = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain(); src.buffer = bf; fl.type = tip || 'lowpass'; fl.frequency.value = fr || 1200; g.gain.value = v || .3; src.connect(fl); fl.connect(g); g.connect(a.destination); src.start(a.currentTime + b); } catch (e) {} }
+        // ÇOCUK DOSTU SESLER (2026-10-20, kullanıcı: "ödül törenindeki patlama sesleri çok korkutucu"): gürültü patlaması, kalın
+        // bas "bum" ve tok darbe yok — yerine kabarcık "pop", ksilofon/çan arpejleri ve yumuşak tahta tıkırtısı.
+        const PENTA = [1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637];
         const SES = {
-            vurus() { gur(0, .4, .5, 260); ton(60, 0, .5, 'sine', .55); },
-            ding() { ton(1568, 0, .9, 'sine', .14); ton(2093, .03, 1, 'sine', .08); ton(784, 0, .6, 'triangle', .06); },
-            havai() { ton(500, 0, .7, 'sine', .05, 2400); gur(.75, .9, .45, 2600, 'lowpass'); for (let i = 0; i < 10; i++) gur(.85 + Math.random() * .6, .05, .06, 6000, 'highpass'); },
-            tok() { gur(0, .12, .7, 700); ton(140, 0, .25, 'sine', .5, 60); },
-            kalp() { ton(55, 0, .25, 'sine', .55); ton(55, .28, .25, 'sine', .4); }
+            vurus() { ton(520, 0, .12, 'sine', .12, 900); [523, 659, 784].forEach((f, i) => ton(f, .05 + i * .07, .35, 'triangle', .09)); },
+            ding() { ton(1568, 0, .9, 'sine', .12); ton(2093, .03, 1, 'sine', .07); ton(784, 0, .6, 'triangle', .05); },
+            havai() { ton(700, 0, .45, 'sine', .035, 1500); for (let i = 0; i < 6; i++) ton(PENTA[Math.floor(Math.random() * PENTA.length)], .45 + i * .07 + Math.random() * .04, .5, 'sine', .045); },
+            tok() { ton(880, 0, .14, 'triangle', .12); ton(1320, 0, .1, 'sine', .04); },
+            kalp() { ton(523, 0, .2, 'sine', .07); ton(392, .26, .22, 'sine', .06); }
         };
 
         // ---------------- dokular

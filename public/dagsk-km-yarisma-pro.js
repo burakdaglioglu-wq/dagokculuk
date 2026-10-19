@@ -2989,9 +2989,9 @@ function yzTorGurultu(ac, sure) { let n = Math.floor(ac.sampleRate * sure), b = 
 function yzTorDavul(sure) {
     let ac = yzTorAC(); if (!ac) return;
     try {
-        let t0 = ac.currentTime, kaz = ac.createGain(), f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900; f.connect(kaz); kaz.connect(ac.destination);
-        for (let t = 0; t < sure; t += 0.055) { let g = ac.createGain(), src = yzTorGurultu(ac, 0.05), a = 0.12 + 0.35 * (t / sure); g.gain.setValueAtTime(a, t0 + t); g.gain.exponentialRampToValueAtTime(0.001, t0 + t + 0.05); src.connect(g); g.connect(f); src.start(t0 + t); }
-        kaz.gain.value = 0.9;
+        // çocuk dostu (2026-10-20, "patlama sesleri korkutucu"): gürültülü trampet yerine yükselen yumuşak ksilofon tıkırtısı
+        let t0 = ac.currentTime, nota = [523, 587, 659, 784, 880, 988, 1047, 1175, 1319], k = 0;
+        for (let t = 0; t < sure; t += 0.09, k++) { let o = ac.createOscillator(), g = ac.createGain(), f = nota[Math.min(nota.length - 1, Math.floor(k / 2))], a = 0.03 + 0.05 * (t / sure); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + t); g.gain.exponentialRampToValueAtTime(a, t0 + t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + t + 0.12); o.connect(g); g.connect(ac.destination); o.start(t0 + t); o.stop(t0 + t + 0.15); }
     } catch (e) {}
 }
 function yzTorFanfar() {
@@ -2999,7 +2999,7 @@ function yzTorFanfar() {
     try {
         let t0 = ac.currentTime;
         [[523, 0, .18], [659, .18, .18], [784, .36, .18], [1047, .54, .7]].forEach(function (n) {
-            [1, 2].forEach(function (h) { let o = ac.createOscillator(), g = ac.createGain(); o.type = h === 1 ? 'sawtooth' : 'square'; o.frequency.value = n[0] * h; g.gain.setValueAtTime(0, t0 + n[1]); g.gain.linearRampToValueAtTime(h === 1 ? 0.09 : 0.025, t0 + n[1] + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t0 + n[1] + n[2]); o.connect(g); g.connect(ac.destination); o.start(t0 + n[1]); o.stop(t0 + n[1] + n[2] + 0.05); });
+            [1, 2].forEach(function (h) { let o = ac.createOscillator(), g = ac.createGain(); o.type = h === 1 ? 'triangle' : 'sine'; o.frequency.value = n[0] * h; g.gain.setValueAtTime(0, t0 + n[1]); g.gain.linearRampToValueAtTime(h === 1 ? 0.11 : 0.03, t0 + n[1] + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t0 + n[1] + n[2]); o.connect(g); g.connect(ac.destination); o.start(t0 + n[1]); o.stop(t0 + n[1] + n[2] + 0.05); });
         });
     } catch (e) {}
 }
