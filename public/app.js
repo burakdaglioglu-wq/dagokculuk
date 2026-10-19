@@ -25572,9 +25572,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunChipleriCiz(); kmOyunLiderCiz(); kmOyunMonopolyBadgeGuncelle();
             });
         }
-        // ===== 🏔 3B DAĞ TIRMANIŞI + 🪢 İP TAKIMI (2026-10-19) =====
+        // ===== 🏔 DAĞ TIRMANIŞI SAHNESİ + 🪢 İP TAKIMI (2026-10-19; 2026-10-20: 3B yerine kullanıcının seçtiği 2B "Altın Saat" sahnesi, dagsk-dag-altin.js) =====
         // Kullanıcı: "dağ tırmanışını şu ana kadar en iyi görselli, en komplike ve en heyecanlı oyuna çevirelim" → 3B dağ + ip takımı.
-        // Çizim dagsk-dag3d.js'te (three.js yerel, tembel yüklenir); kurallar burada. WebGL yoksa / cihaz yavaşsa 2B SVG sahne kalır.
+        // Çizim dagsk-dag-altin.js'te (düz 2B tuval, tembel yüklenir); kurallar burada. Yüklenemezse eski 2B SVG sahne kalır.
         // İP TAKIMI: sporcular ders listesi sırasıyla ikişer ipe bağlanır (tek kalan son ipe üçüncü olarak katılır). Gerçek skora DOKUNMAZ.
         //   • %35 altı seri → kayar, ipte asılı kalır (o seri ilerlemez, ASLA geri gitmez)
         //   • asılıyken %50+ seri → kendi toparlanır, normal ilerler
@@ -25671,17 +25671,18 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let kap = document.getElementById('km-dag3d'); if(!kap || _kmDag3dKapali) return;
             if(_kmDag3d) { if(_kmDag3d.kap === kap) { try { _kmDag3d.kur(kmDag3dVeri()); } catch(e) {} return; } try { _kmDag3d.kapat(); } catch(e) {} _kmDag3d = null; }
             let bagla = function() {
-                if(_kmDag3d || _kmDag3dKapali || _kmOyunAktifTema !== 'dag' || !kap.isConnected || typeof dagskDag3D !== 'function') return;
+                kap = document.getElementById('km-dag3d') || kap; // yükleme sürerken panel yeniden çizilmiş olabilir
+                if(_kmDag3d || _kmDag3dKapali || _kmOyunAktifTema !== 'dag' || !kap.isConnected || typeof dagskDagAltin !== 'function') return;
                 let c = null;
-                try { c = dagskDag3D(kap, { sec: function(i) { if(!_kmOyunKilit) kmOyunSporcuSec(i); }, aktif: function() { return _kmOyunAktifIndex; }, yavas: kmDag3dDus, cp: KM_OYUN_CP_FRAC.slice(0, -1), altKapali: function() { let d = document.getElementById('km-oyun-dok'); if(!d || d.classList.contains('km-oyun-dok-kapali') || !d.offsetWidth) return 0; let a = d.getBoundingClientRect(), b = kap.getBoundingClientRect(); if(a.right < b.left + b.width * 0.25 || a.left > b.right - b.width * 0.25) return 0; return Math.max(0, b.bottom - Math.max(a.top, b.top)); } }); } catch(e) { c = null; }
+                try { c = dagskDagAltin(kap, { sec: function(i) { if(!_kmOyunKilit) kmOyunSporcuSec(i); }, aktif: function() { return _kmOyunAktifIndex; }, yavas: kmDag3dDus, cp: KM_OYUN_CP_FRAC.slice(0, -1), altKapali: function() { let d = document.getElementById('km-oyun-dok'); if(!d || d.classList.contains('km-oyun-dok-kapali') || !d.offsetWidth) return 0; let a = d.getBoundingClientRect(), b = kap.getBoundingClientRect(); if(a.right < b.left + b.width * 0.25 || a.left > b.right - b.width * 0.25) return 0; return Math.max(0, b.bottom - Math.max(a.top, b.top)); } }); } catch(e) { c = null; }
                 if(!c) { _kmDag3dKapali = true; return; }
                 c.kap = kap; _kmDag3d = c;
                 let p = document.getElementById('km-oyun-panel-dag'); if(p) p.classList.add('d3');
                 try { c.kur(kmDag3dVeri()); } catch(e) { kmDag3dDus(); }
             };
-            if(typeof dagskDag3D === 'function' && typeof THREE !== 'undefined' && THREE.EffectComposer) return bagla();
+            if(typeof dagskDagAltin === 'function') return bagla();
             if(_kmDag3dYukleniyor) return; _kmDag3dYukleniyor = true;
-            (typeof THREE !== 'undefined' ? Promise.resolve() : dagskEkYukle('vendor/three-r128.min.js')).then(function() { return THREE.EffectComposer ? null : dagskEkYukle('vendor/three-post-r128.js').catch(function() {}); }).then(function() { return dagskEkYukle('dagsk-dag3d.js'); })
+            dagskEkYukle('dagsk-dag-altin.js')
                 .then(function() { _kmDag3dYukleniyor = false; bagla(); }).catch(function() { _kmDag3dYukleniyor = false; });
         }
         // yavaş cihaz / hata: 3B kapanır, bu oturumda bir daha denenmez, 2B sahne görünür
