@@ -13,7 +13,7 @@ export default async function ({ log }) {
       let l = Object.keys(turnuvaDB[g]).filter((ad) => !turnuvaDB[g][ad].pasif).slice(0, 3), ay = aidatAyStrOfset(-1);
       let y = { g, l, ay, filtre: _aidatGrupFiltre, kayit: l.map((ad) => JSON.stringify(aidatDB[ad] || null)), muaf: l.map((ad) => !!turnuvaDB[g][ad].aidatMuaf), kat: l.map((ad) => turnuvaDB[g][ad].katilmaTarihi || null) };
       _aidatGrupFiltre = g;
-      aidatDB[l[0]] = Object.assign({}, aidatDB[l[0]] || {}); aidatDB[l[0]][ay] = { odendi: true, tutar: 1234, tarih: ay + '-05' };
+      aidatDB[l[0]] = Object.assign({}, aidatDB[l[0]] || {}); aidatDB[l[0]][ay] = { odendi: true, tutar: 1234, tarih: ay + '-05T09:30:03.513Z' };
       aidatDB[l[1]] = Object.assign({}, aidatDB[l[1]] || {}); delete aidatDB[l[1]][ay]; turnuvaDB[g][l[1]].aidatMuaf = false; turnuvaDB[g][l[1]].katilmaTarihi = '2020-01-01';
       turnuvaDB[g][l[2]].aidatMuaf = true;
       return y;
@@ -22,6 +22,9 @@ export default async function ({ log }) {
     await p.waitForSelector('#aidat-odeme-durum');
     const v = await p.evaluate((y) => { let r = aidatOdemeDurumVeri(y.ay); let ad = (l) => l.map((x) => x.ad); return { o: ad(r.odeyen).includes(y.l[0]), x: ad(r.odemeyen).includes(y.l[1]), m: ad(r.muaf).includes(y.l[2]), metin: document.getElementById('aidat-odeme-durum').textContent }; }, yedek);
     dogrula(v.o && v.x && v.m, 'ödeyen/ödemeyen/muaf ayrımı yanlış');
+    // saatli damga ('…T09:30:03.513Z') listede/PDF'te karışık görünmesin (kullanıcı ekran görüntüsü 2026-10-21)
+    dogrula(!/T09:30/.test(v.metin) && v.metin.includes('05.' + yedek.ay.slice(5, 7) + '.' + yedek.ay.slice(0, 4)), 'ödeme tarihi gün.ay.yıl görünmeli');
+    esit(await p.evaluate(() => aidatTarihGoster('2026-10-04') + '|' + aidatTarihGoster('2026-10-04T19:30:03.513Z')), '04.10.2026|04.10.2026', 'tarih biçimi');
     dogrula(/ÖDEMEYENLER/.test(v.metin) && /ÖDEYENLER/.test(v.metin) && /1\.234₺/.test(v.metin), 'liste ekranda yok');
     // ay kaydırma + 6 aylık tablo
     await p.evaluate(() => aidatOdemeAyKaydir(1));

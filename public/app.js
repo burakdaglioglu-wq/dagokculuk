@@ -4927,7 +4927,7 @@
             let cip = (et, a) => `<button onclick="aidatOdemeDurumAc('${a}')" style="padding:6px 11px; border-radius:99px; font-weight:800; font-size:11.5px; cursor:pointer; border:1px solid ${ay === a ? 'var(--gold)' : 'var(--border-color)'}; background:${ay === a ? 'rgba(234,179,8,.18)' : 'var(--bg-panel)'}; color:var(--text-main);">${et}</button>`;
             let sat = (x, tip) => {
                 let rec = x.rec || {}, ek = '';
-                if(tip === 'odeyen') ek = `<b style="color:var(--neon-green)">${aidatPaketMi(rec) && !rec.tutar ? '📦 pakete dahil' : tl(rec.tutar)}</b><small>${rec.tarih ? '📅 ' + rec.tarih.split('-').reverse().join('.') : 'tarih yok'}</small>${rec.notMetin ? `<small style="max-width:240px; color:var(--text-muted);">📝 ${esc(rec.notMetin)}</small>` : ''}`;
+                if(tip === 'odeyen') ek = `<b style="color:var(--neon-green)">${aidatPaketMi(rec) && !rec.tutar ? '📦 pakete dahil' : tl(rec.tutar)}</b><small>${rec.tarih ? '📅 ' + aidatTarihGoster(rec.tarih) : 'tarih yok'}</small>${rec.notMetin ? `<small style="max-width:240px; color:var(--text-muted);">📝 ${esc(rec.notMetin)}</small>` : ''}`;
                 else if(tip === 'odemeyen') ek = (rec.notMetin ? `<small>📝 ${esc(rec.notMetin)}</small>` : '') + (x.tel ? `<button onclick="aidatBorcWhatsApp('${x.ad.replace(/'/g, "\\'")}', '${String(x.tel).replace(/'/g, "\\'")}')" style="margin-top:3px; padding:5px 9px; border-radius:8px; border:1px solid #25d366; background:transparent; color:#25d366; font-weight:800; font-size:11px; cursor:pointer;">💬 Hatırlat</button>` : '<small style="color:var(--text-muted)">telefon yok</small>');
                 else if(tip === 'yeni') ek = '<small>katılma: ' + (turnuvaDB[x.g][x.ad].katilmaTarihi || '').split('-').reverse().join('.') + '</small>';
                 return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:var(--bg-panel); font-size:13px;"><div style="min-width:0;"><b>${esc(x.ad)}</b><div style="font-size:10.5px; color:var(--text-muted);">${LIG_ETIKET_KISA_AIDAT[x.g] || ''}</div></div><div style="display:grid; justify-items:end; text-align:right; font-size:12px;">${ek}</div></div>`;
@@ -4955,6 +4955,12 @@
                 </div></div>`;
         }
         // Aidat ekranının en üstünde: seçili ayın ödeyen/ödemeyen sayısı + tek dokunuşla liste ve PDF (2026-10-21, "daha görünür yap")
+        // Ödeme tarihi bazen '2026-10-04', bazen saatli damga '2026-10-04T19:30:03.513Z' — ikisi de yerel gün olarak 04.10.2026
+        function aidatTarihGoster(t) {
+            t = String(t || ''); if (!t) return '';
+            if (t.length > 10 && t.indexOf('T') === 10) { let d = new Date(t); if (!isNaN(d)) return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear(); }
+            return t.slice(0, 10).split('-').reverse().join('.');
+        }
         function aidatOdemeSeritHTML() {
             let ay = aidatAy || aidatAyStrOfset(0), v = aidatOdemeDurumVeri(ay), ayAd = aidatAyAdUzun(ay).replace(/^./, c => c.toLocaleUpperCase('tr')) + ' ' + ay.slice(0, 4);
             return `<button onclick="aidatOdemeDurumAc('${ay}')" style="width:100%; display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; text-align:left; margin-bottom:12px; padding:14px 16px; border-radius:14px; border:2px solid var(--gold); background:linear-gradient(135deg, rgba(234,179,8,.22), rgba(234,179,8,.06)); color:var(--text-main); cursor:pointer; font:inherit;">
@@ -4984,7 +4990,7 @@
         function aidatOdemeDurumPdf() {
             let ay = _aidatOdemeAy, v = aidatOdemeDurumVeri(ay), ayAd = aidatAyAdUzun(ay).replace(/^./, c => c.toLocaleUpperCase('tr')) + ' ' + ay.slice(0, 4), TL = n => Math.round(n || 0).toLocaleString('tr-TR') + ' TL';
             let grupAd = _aidatGrupFiltre === 'tumu' ? 'Tüm gruplar' : LIG_ETIKET_KISA_AIDAT[_aidatGrupFiltre];
-            let tarih = r => r && r.tarih ? r.tarih.split('-').reverse().join('.') : '';
+            let tarih = r => r && r.tarih ? aidatTarihGoster(r.tarih) : '';
             // sıra: ödemeyenler (ad), ödeyenler (ödeme tarihine göre), muaf, henüz kayıtlı değil
             let satirlar = [].concat(
                 v.odemeyen.map(x => ({ x, d: 'ÖDEMEDİ', r: [220, 38, 38], tar: '', tut: '', not: (x.rec && x.rec.notMetin) || (x.tel ? 'Tel: ' + x.tel : '') })),
