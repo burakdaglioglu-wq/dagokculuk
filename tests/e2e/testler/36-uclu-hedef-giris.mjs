@@ -15,7 +15,7 @@ export default async function ({ log }) {
     const pu = await p.evaluate(() => { const y = YZ_YUZ['3lu']; return [yzKonumPuan(0, 0, y), yzKonumPuan(0.15, 0, y), yzKonumPuan(1 / 6 + 0.01, 0, y), yzKonumPuan(1 / 6 + 0.03, 0, y), yzKonumPuan(0.15, 0, y, true), yzKonumPuan(0.05, 0, y, true), yzKonumPuan(1.05, 0, y)].join(','); });
     esit(pu, 'X,10,10,9,9,X,M', 'puan kuralı (çizgi/makaralı)');
     await p.evaluate(() => {
-      localStorage.removeItem(yzAnahtar()); localStorage.setItem('dag_yz_girismod', 'hedef');
+      localStorage.removeItem(yzAnahtar()); localStorage.setItem('dag_yz_yon_v1', '1'); localStorage.setItem('dag_yz_girismod', 'hedef');
       if (yzRoster().length < 2) { _kmListe = Object.keys(turnuvaDB.buyukler || {}).slice(0, 3).map((ad) => ({ g: 'buyukler', ad })); }
       _yz.kurulum = null; yzModAyarla('siralama'); yzKurAyar('kayit', false); yzKurAyar('yuz', '3lu');
       let t = yzKurulumTaslak(); t.katilimci = yzRoster().slice(0, 2).map((k) => k.g + '|' + k.ad); yzKurSeriOk('ok', 3); yzBaslat();
