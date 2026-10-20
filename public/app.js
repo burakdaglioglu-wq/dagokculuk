@@ -10929,6 +10929,7 @@
             _anaSekmeSistemiBaslatildiMi = true;
             let g = (id, goster) => { let el = document.getElementById(id); if(el) el.style.display = goster ? '' : 'none'; };
             let sporcuModu = !!loggedInSporcu;
+            g('tab-yarisma', false); // yalnız sporcu kendi kimliğiyle girince açılır (aşağıda)
             document.body.classList.toggle('platform-sporcu', aktifPlatform !== 'egitmen');
             document.body.classList.toggle('sporcu-uye-modu', sporcuModu);
             // CSS'e güvenmeden, doğrudan JS ile kesin gizle/göster (orijinal display korunur)
@@ -10955,7 +10956,7 @@
                 }
             } else if(sporcuModu) {
                 // Sporcu: sadece kendi işine yarayan sekmeler + tüm liglerin canlı skor takibi
-                g('tab-ana', true); g('tab-skor', true); g('tab-gelisim', true);
+                g('tab-ana', true); g('tab-skor', true); g('tab-gelisim', true); g('tab-yarisma', true);
                 g('tab-canlitakip', true);
                 g('tab-liderlik', true); g('tab-klasman', true);
                 g('tab-basari', true); g('tab-oyun', true); g('tab-refleks', true);
@@ -10977,7 +10978,7 @@
             // FAZ 3 — alt bar/Daha kısayol butonları kendi gerçek tab-* karşılıklarının o anki
             // görünürlüğünü izler (ör. Sayaç sporcu rolünde gizli — kısayolu da gizlensin).
             try {
-                [['altbar-ana','tab-ana'], ['altbar-skor','tab-skor'], ['altbar-sayac','tab-timer'], ['altbar-gelisim','tab-gelisim'],
+                [['altbar-ana','tab-ana'], ['altbar-yarisma','tab-yarisma'], ['altbar-skor','tab-skor'], ['altbar-sayac','tab-timer'], ['altbar-gelisim','tab-gelisim'],
                  ['daha-canlitakip-kisayol','tab-canlitakip'], ['daha-liderlik-kisayol','tab-liderlik']].forEach(([aid, tid]) => {
                     let a = document.getElementById(aid), t = document.getElementById(tid);
                     if(a && t) a.style.display = (t.style.display === 'none') ? 'none' : '';
@@ -29776,6 +29777,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(loggedInSporcu) setTimeout(()=>{ let el=document.getElementById('klasman-ben-bu'); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); },300);
             }
             if(sekmeAd === 'ana') { try { sporcuAnaDoldur(); setTimeout(sezonSayaciniGuncelle, 100); } catch(e) {} }
+            if(sekmeAd === 'yarisma') { try { yrsSekmeYukle(); } catch(e) {} }
             if(sekmeAd === 'gelisim') try { sporcuGelisimDoldur(); } catch(e) {}
             if(sekmeAd === 'egitmen') egitmenPaneliDoldur();
             if(sekmeAd === 'canlitakip') canliTakipCiz();
@@ -31398,6 +31400,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
         /* LİDERLİK TABLOSU */
         // ======= SPORCU ANA EKRAN =======
+        // 🏆 Yarışma sekmesi (yalnız sporcu kendi kimliğiyle girince): 🎒 Ön hazırlık · ⚔️ Maç zamanı (dagsk-yarismalar.js)
+        function yrsSekmeYukle() {
+            let ad = loggedInSporcu, f = ad ? basariSporcuBul(ad) : null;
+            let calis = function() { try { yrsSekme(f ? f.grup : null, ad); } catch(e) {} };
+            if(typeof yrsSekme === 'function') return calis();
+            let el = document.getElementById('icerik-yarisma'); if(el) el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
+            if(typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-yarismalar.js').then(calis).catch(function() { if(el) el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
+        }
+        function yrsAnaKartYukle(grup, ad) {
+            let calis = function() { try { if(document.getElementById('yarisma-kart-ana')) yrsAnaKart(grup, ad); } catch(e) {} };
+            if(typeof yrsAnaKart === 'function') return calis();
+            if(typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-yarismalar.js').then(calis).catch(function() {});
+        }
         function sporcuAnaDoldur() {
             let el = document.getElementById('icerik-ana'); if(!el) return;
             let ad = loggedInSporcu || oyunSeciliSporcu || basariSeciliSporcu || '';
@@ -31431,7 +31446,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let avatarEmoji = sp.emoji || '🎯';
             let vitrinSec = sp.vitrinSec || []; let kazanilmis = sp.rozetler || [];
             let vitrinHtml = vitrinSec.length ? `<div style="display:flex; gap:4px; margin-top:4px;">${vitrinSec.slice(0,3).map(id => { let r = kazanilmis.find(x=>x.id===id); let def = (typeof ROZETLER!=='undefined') ? ROZETLER.find(x=>x.id===id) : null; let e = def ? def.emoji : r ? r.emoji : ''; return e ? `<div style="font-size:16px;" title="${def?def.ad:''}">${e}</div>` : ''; }).join('')}</div>` : '';
+            // 🏆 Yarışma kartı (2026-10-20, dagsk-yarismalar.js): sporcu bir yarışmaya kayıtlıysa ana ekranın en üstünde
+            setTimeout(function() { yrsAnaKartYukle(f.grup, ad); }, 0);
             el.innerHTML = `
+            <div id="yarisma-kart-ana"></div>
             <div class="card" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,98,0,0.12),rgba(59,130,246,0.08)); margin-bottom:14px;">
                 <div style="position:relative; flex-shrink:0;">
                     <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); display:flex; align-items:center; justify-content:center; font-size:26px; border:3px solid ${cerceveRenk}; box-shadow:0 0 14px rgba(255,106,26,0.25); overflow:hidden;">${sp.fotoUrl ? `<img src="${sp.fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : avatarEmoji}</div>

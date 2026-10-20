@@ -672,7 +672,7 @@ function yzSonucHTML(o) {
             + '<div class="yz-alt">Seçince eleme hemen başlar. 4 ve üstünde bronz madalya maçı da oynanır.</div></div>' : '');
     return '<div class="yz">'
         + '<div class="yz-sayfa-bas"><div><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-baslik">🏁 Sonuçlar</div></div>'
-        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
+        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzYarismalarAc()">🏆 Yarışmalar</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
         + (elemeVar ? yzPodyumHTML(o) : yzGruplar(o, sira).map(function (gr) { return yzPodyumGrupHTML(gr); }).join(''))
         + yzYarisGrafikKartHTML(o, sira, true)
         + elemeKart
@@ -1410,8 +1410,8 @@ function yzOncekiler(k, format, mesafe, haricId) {
 }
 function yzArsivKartHTML() {
     if (!_yz.arsivCekildi) { _yz.arsivCekildi = true; yzArsivCek(function () { let d = yzOku().durum; if (_yz.mod === 'siralama' && (!d || !d.asama || d.asama === 'kurulum')) yzCiz(); }); }
-    let l = yzArsivOku().slice(-8).reverse(); if (!l.length) return '';
-    return '<div class="yz-kart"><div class="yz-etiket" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>📚 Geçmiş turlar</span><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button></div><div class="yz-arsiv">' + l.map(function (r) {
+    let l = yzArsivOku().slice(-8).reverse(); if (!l.length) return '<div class="yz-kart"><div class="yz-etiket" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>🏆 Yarışmalar</span><button class="yz-btn" onclick="yzYarismalarAc()">🏆 Yarışmalar</button></div><div class="yz-alt">Hafta sonu yarışmasını ekle; seçtiğin sporcuların kendi ekranında geri sayım, hazırlık, hedef ve analiz çıkar.</div></div>';
+    return '<div class="yz-kart"><div class="yz-etiket" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>📚 Geçmiş turlar</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="yz-btn" onclick="yzYarismalarAc()">🏆 Yarışmalar</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button></span></div><div class="yz-arsiv">' + l.map(function (r) {
         let ilk = (r.sporcular || []).slice(0, 3).map(function (s) { return esc(yzKisaAd(s.ad)) + ' ' + s.toplam; }).join(' · ');
         return '<button class="yz-arsiv-sat" onclick="yzArsivGoster(\'' + yzEnc(r.id) + '\')"><span class="yz-arsiv-t">' + yzTarihTR(r.tarih) + '</span><span class="yz-arsiv-f">' + esc(r.mesafe) + ' · ' + yzFormatBul(r.format).kisa + ' · ' + (r.sporcular || []).length + ' sporcu</span><span class="yz-arsiv-i">' + ilk + '</span></button>';
     }).join('') + '</div></div>';
@@ -1717,6 +1717,8 @@ function yzRaporMetin(o, k) {
     return s.join('\n');
 }
 // 📊 Sporcu Analizi (2026-10-17) — ayrı dosyada, ilk açılışta yüklenir
+// 🏆 Yarışmalar (dagsk-yarismalar.js) — koç yarışma ekler, sporcu seçer, hedef/not yazar; sporcunun ana ekranında kart olur
+function yzYarismalarAc() { (typeof yrsYonetAc === 'function' ? Promise.resolve() : dagskEkYukle('dagsk-yarismalar.js')).then(function () { yrsYonetAc(); }).catch(function () { showToast('Yarışmalar yüklenemedi — bağlantını kontrol et.', 'error'); }); }
 function yzAnalizAc(kEnc) { (typeof yzaAc === 'function' ? Promise.resolve() : dagskEkYukle('dagsk-km-yarisma-analiz.js')).then(function () { yzaAc(kEnc); }).catch(function () { showToast('Analiz yüklenemedi — bağlantını kontrol et.', 'error'); }); }
 function yzRaporAc(kEnc) {
     let o = yzOku(), d = o.durum; if (!d) return;
