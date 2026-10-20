@@ -437,6 +437,8 @@ function yzGirisAc(kEnc, seri) {
     let mevcut = yzSkor(o, k)[seri];
     let mk = ((o[yzPKey(d.id, k)] || [])[seri]) || null;
     _yz.giris = { k: k, seri: seri, id: d.id, oklar: mevcut ? mevcut.slice() : [], okSay: mevcut ? mevcut.length : 0, konumlar: mevcut ? (mk && mk.length === mevcut.length ? mk.slice() : mevcut.map(function () { return null; })) : [], duzeltme: !!mevcut };
+    // 🔢 ok numarası (2026-10-20): kayıtta oklar büyükten küçüğe sıralı; numaralar varsa düzeltmede ok 1, ok 2… sırasına geri dizilir
+    let gg = _yz.giris; if (gg.konumlar.length && gg.konumlar.every(function (c) { return c && c.n; })) { let cf = gg.oklar.map(function (p, i) { return { p: p, k: gg.konumlar[i] }; }).sort(function (a, b) { return a.k.n - b.k.n; }); gg.oklar = cf.map(function (c) { return c.p; }); gg.konumlar = cf.map(function (c) { return c.k; }); }
     yzGirisCiz();
 }
 // ---- 2026-10-14 (kullanıcı: "TV'de bir sporcunun serisini girmedim ama diğer seriye geçmek istiyorum, yapamıyorum"). Kaydedince
@@ -495,7 +497,7 @@ function yzGirisCiz() {
         topSatir = '<span>Seri <b>' + seriTop + '</b></span><span>Toplam <b>' + (digerToplam + seriTop) + '</b></span>';
     }
     if (!kap) { kap = document.createElement('div'); kap.id = 'yz-giris'; kap.className = 'yz-giris-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yzGirisKapat(); }); (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap); document.addEventListener('keydown', yzGirisTus, true); }
-    let slotlar = ''; for (let i = 0; i < okSay; i++) { let p = g.oklar[i]; slotlar += p ? '<button type="button" class="yz-ok ' + yzOkRenk(p) + '" onclick="yzOkSilNo(' + i + ')" title="Bu oku sil" aria-label="' + (i + 1) + '. ok ' + p + ' — sil">' + p + '<i aria-hidden="true">×</i></button>' : '<span class="yz-ok bos"></span>'; }
+    let slotlar = ''; for (let i = 0; i < okSay; i++) { let p = g.oklar[i], no = '<small class="yz-ok-no" aria-hidden="true">Ok ' + (i + 1) + '</small>'; slotlar += '<span class="yz-ok-yer">' + (p ? '<button type="button" class="yz-ok ' + yzOkRenk(p) + '" onclick="yzOkSilNo(' + i + ')" title="Bu oku sil" aria-label="' + (i + 1) + ' numaralı ok ' + p + ' — sil">' + p + '<i aria-hidden="true">×</i></button>' : '<span class="yz-ok bos' + (i === (g.ekleYer != null ? g.ekleYer : g.oklar.length) ? ' sira' : '') + '"></span>') + no + '</span>'; }
     let tus = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].map(function (p) { return '<button class="yz-tus ' + yzOkRenk(p) + '" onclick="yzOkEkle(\'' + p + '\')"' + (g.oklar.length >= okSay ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
     let dolu = g.oklar.length >= okSay;
     kap.innerHTML = '<div class="yz-giris" role="dialog" aria-modal="true" aria-label="Skor girişi">'
@@ -546,9 +548,11 @@ function yzOkSayiSec(n) {
     yzGuncelle(function (x) { if (!x.durum) return; x.durum.okK = Object.assign({}, x.durum.okK); if (n === f.ok) delete x.durum.okK[g.k]; else x.durum.okK[g.k] = n; });
     yzGirisCiz(); yzCiz(); if (_yz.tv) yzTvCiz();
 }
-function yzOkEkle(p, konum) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(p); g.konumlar.push(konum || null); yzGirisCiz(); }
+function yzOkEkle(p, konum) { let g = _yz.giris, d = yzOku().durum; if (!g || !d || g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null);
+    let yer = g.ekleYer != null && g.ekleYer <= g.oklar.length ? g.ekleYer : g.oklar.length; g.ekleYer = null; // silinen okun numarasına yerleş
+    g.oklar.splice(yer, 0, p); g.konumlar.splice(yer, 0, konum || null); yzGirisCiz(); }
 // Herhangi bir oku sil (2026-10-17, kullanıcı: "sil tuşunu düzgün yapalım, üstüne basınca olabilir"): üstteki kutucuğa ya da hedefteki oka dokun.
-function yzOkSilNo(i) { let g = _yz.giris; if (!g || i == null || i < 0 || i >= g.oklar.length) return; let p = g.oklar[i]; g.oklar.splice(i, 1); if (g.konumlar) g.konumlar.splice(i, 1); yzGirisCiz(); try { showToast('🗑 ' + (i + 1) + '. ok (' + p + ') silindi', 'info'); } catch (e) {} }
+function yzOkSilNo(i) { let g = _yz.giris; if (!g || i == null || i < 0 || i >= g.oklar.length) return; let p = g.oklar[i]; g.oklar.splice(i, 1); if (g.konumlar) g.konumlar.splice(i, 1); g.ekleYer = i < g.oklar.length ? i : null; yzGirisCiz(); try { showToast('🗑 ' + (i + 1) + '. ok (' + p + ') silindi', 'info'); } catch (e) {} }
 function yzOkSil() { let g = _yz.giris; if (!g || !g.oklar.length) return; g.oklar.pop(); if (g.konumlar && g.konumlar.length > g.oklar.length) g.konumlar.length = g.oklar.length; yzGirisCiz(); }
 function yzGirisKapat() { if (_yz.yonBek) { clearTimeout(_yz.yonBek.z); _yz.yonBek = null; } _yz.giris = null; yzGirisCiz(); }
 function yzGirisKaydet() {
@@ -559,7 +563,9 @@ function yzGirisKaydet() {
     if (g.tip === 'set' || g.tip === 'shoot') return yzMacGirisKaydet(g, d);
     let f = yzFormat(d); if (g.oklar.length < yzGirisOkSay(g, d)) return;
     // Oklar büyükten küçüğe (WA) — hedefte işaretlenen konumlar okla BİRLİKTE sıralanır ki eşleşme bozulmasın
-    let ciftler = g.oklar.map(function (p, i) { return { p: p, k: (g.konumlar || [])[i] || null }; }).sort(function (a, b) { return YZ_SIRA[b.p] - YZ_SIRA[a.p]; });
+    // 🔢 Giriş sırası = ok numarası (kullanıcı: "hangi ok nereye gittiği önemli"): her okun konum kaydına n (1..6) eklenir;
+    // konumu olmayan ok da { n } taşır — ok bazlı puan tablosu yönsüz girişlerde de çalışsın.
+    let ciftler = g.oklar.map(function (p, i) { return { p: p, k: Object.assign({}, (g.konumlar || [])[i] || {}, { n: i + 1 }) }; }).sort(function (a, b) { return YZ_SIRA[b.p] - YZ_SIRA[a.p]; });
     let sirali = ciftler.map(function (c) { return c.p; }), konumlar = ciftler.map(function (c) { return c.k; }), konumVar = konumlar.some(function (c) { return c; });
     let onceVardi = false;
     yzGuncelle(function (x) {
@@ -1370,7 +1376,7 @@ function yzArsivBirlestir(a, b) {
     let m = {}; (a || []).concat(b || []).forEach(function (r) { if (r && r.id && (!m[r.id] || (r.g || 0) >= (m[r.id].g || 0))) m[r.id] = r; });
     let l = Object.values(m).sort(function (x, y) { return (x.t || 0) - (y.t || 0); }).slice(-80);
     // 📊 Sporcu Analizi ısı haritası için okların konumu yalnız son 10 turda tutulur (meta boyutu küçük kalsın)
-    return l.map(function (r, i) { if (i >= l.length - 10 || !(r.sporcular || []).some(function (x) { return x.kon; })) return r; return Object.assign({}, r, { sporcular: r.sporcular.map(function (x) { let y = Object.assign({}, x); delete y.kon; return y; }) }); });
+    return l.map(function (r, i) { if (i >= l.length - 10 || !(r.sporcular || []).some(function (x) { return x.kon || x.okd; })) return r; return Object.assign({}, r, { sporcular: r.sporcular.map(function (x) { let y = Object.assign({}, x); delete y.kon; delete y.okd; return y; }) }); });
 }
 function yzArsivCek(sonra) {
     fetch('/api/meta/yz_arsiv').then(function (r) { return r.json(); }).then(function (d) {
@@ -1393,7 +1399,7 @@ function yzArsivKaydet(o) {
     let d = o && o.durum; if (!d) return;
     let sira = yzSiralama(o), el = o.eleme && o.eleme.id === d.id ? yzElemeHesapla(o) : null;
     yzArsivYaz({ id: d.id, t: d.basla, g: Date.now(), tarih: bugunISO(new Date(d.basla)), mesafe: d.ayar.mesafe, format: d.ayar.format, yuz: d.ayar.yuz || '6',
-        sporcular: sira.map(function (r) { let kon = yzKonumlar(o, r.k).map(function (p) { return [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]; }); return Object.assign({ k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, on: r.on, x: r.x, ok: r.ok, seriT: r.seriT, hp: r.hedefPuan, dag: yzDagilim(o, r.k), eleme: el ? yzElemeSonucu(el, r.k) : null }, kon.length ? { kon: kon } : {}); }) });
+        sporcular: sira.map(function (r) { let kon = yzKonumlar(o, r.k).map(function (p) { return p.n ? [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.n] : [Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100]; }), okd = yzOkNoVeri(o, r.k).map(function (q) { return q.x == null ? [q.n, q.v, q.seri] : [q.n, q.v, q.seri, Math.round(q.x * 100) / 100, Math.round(q.y * 100) / 100]; }); return Object.assign({ k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, on: r.on, x: r.x, ok: r.ok, seriT: r.seriT, hp: r.hedefPuan, dag: yzDagilim(o, r.k), eleme: el ? yzElemeSonucu(el, r.k) : null }, kon.length ? { kon: kon } : {}, okd.length ? { okd: okd } : {}); }) });
 }
 // Aynı format + mesafedeki önceki turlar (eskiden yeniye)
 function yzOncekiler(k, format, mesafe, haricId) {
@@ -1980,8 +1986,8 @@ function yzParlakKagitSVG(yuz, mak, konumlar, oklar) {
             + '<ellipse cx="-0.25" cy="' + (cy - 0.42) + '" rx="0.75" ry="0.42" fill="url(#' + id + 'pr)" pointer-events="none"/>';
     });
     (konumlar || []).forEach(function (k, i) {
-        if (!k) return; let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0);
-        s += '<g class="yz-pk-ok"><circle cx="' + k.x + '" cy="' + gy + '" r="0.06" fill="#0b0d12" stroke="#fff" stroke-width="0.022"/><text x="' + (k.x + 0.1) + '" y="' + (gy - 0.07) + '" font-size="0.11" font-weight="900" fill="#0b0d12" stroke="#fff" stroke-width="0.025" paint-order="stroke">' + (i + 1) + '</text></g>';
+        if (!k || k.x == null) return; let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0);
+        s += '<g class="yz-pk-ok"><circle cx="' + k.x + '" cy="' + gy + '" r="0.06" fill="#0b0d12" stroke="#fff" stroke-width="0.022"/><text x="' + (k.x + 0.1) + '" y="' + (gy - 0.07) + '" font-size="0.11" font-weight="900" fill="#0b0d12" stroke="#fff" stroke-width="0.025" paint-order="stroke">' + (k.n || i + 1) + '</text></g>';
     });
     return s + '</svg>';
 }
@@ -2006,7 +2012,7 @@ function yzKagitViewBox(yuz) { return yuz.uclu ? '-1.2 ' + (-YZ_UCLU_ARA - 1.2) 
 function yzHedefGirisHTML(g, d, okSay) {
     let yuz = yzYuz(d), mak = yzMakaraliMi(g.k), noktalar = '', a = YZ_UCLU_ARA;
     (g.konumlar || []).forEach(function (k, i) {
-        if (!k) return;
+        if (!k || k.x == null) return;
         let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0), p = g.oklar[i], acik = p === 'X' || p === '10' || p === '9';
         noktalar += '<g><circle cx="' + k.x + '" cy="' + gy + '" r="' + (YZ_OK_YARICAP_CM / yuz.R * 1.6).toFixed(4) + '" fill="#111827" stroke="#fff" stroke-width="0.01" pointer-events="none"/>'
             + '<g data-ok-i="' + i + '" class="yz-hedef-ok" transform="translate(' + (k.x + 0.11) + ',' + (gy - 0.11) + ')"><circle r="0.075" fill="' + (acik ? '#111827' : '#fff') + '" stroke="#111827" stroke-width="0.01"/><text y="0.026" text-anchor="middle" font-size="0.075" font-weight="900" fill="' + (acik ? '#fde047' : '#111827') + '">' + esc(p || '') + '</text></g></g>';
@@ -2087,7 +2093,13 @@ function yzLupKapat() { let l = document.getElementById('yz-lup'); if (l) l.remo
 // ---- grup analizi + nişangah önerisi
 function yzKonumlar(o, k, bas, son) {
     let d = o.durum, arr = o[yzPKey(d.id, k)] || [], r = [];
-    arr.forEach(function (seri, i) { if (!seri || (bas != null && i < bas) || (son != null && i >= son)) return; seri.forEach(function (p) { if (p && Math.hypot(p.x, p.y) <= 1.1) r.push({ x: p.x, y: p.y, seri: i }); }); });
+    arr.forEach(function (seri, i) { if (!seri || (bas != null && i < bas) || (son != null && i >= son)) return; seri.forEach(function (p) { if (p && p.x != null && Math.hypot(p.x, p.y) <= 1.1) r.push({ x: p.x, y: p.y, seri: i, n: p.n || null }); }); });
+    return r;
+}
+// 🔢 Ok numarasına göre veri: [{n, v (puan değeri), p, x?, y?, seri}] — puanlar yzSkor, numara/konum p_ kaydından (aynı sıra)
+function yzOkNoVeri(o, k) {
+    let d = o.durum; if (!d) return []; let sk = yzSkor(o, k), pa = o[yzPKey(d.id, k)] || [], r = [];
+    sk.forEach(function (seri, si) { if (!seri) return; let ks = pa[si] || []; seri.forEach(function (p, i) { let c = ks[i]; if (!c || !c.n) return; let x = c.x != null && Math.hypot(c.x, c.y) <= 1.1 ? c.x : null; r.push({ n: c.n, p: p, v: p === 'X' ? 10 : p === 'M' ? 0 : +p, x: x, y: x == null ? null : c.y, seri: si }); }); });
     return r;
 }
 function yzGrup(noktalar) {
@@ -2592,7 +2604,7 @@ function yzCssYukle() {
         '.yz-giris-tamam{text-align:left}.yz-tamam-btnlar{display:grid;gap:10px;margin:14px 0 8px}.yz-tamam-btnlar .yz-btn{min-height:52px;font-size:16px}',
         '.yz-giris{width:min(560px,100%);max-height:100%;overflow:auto;background:linear-gradient(var(--bg-panel),var(--bg-panel)),var(--bg-main,#14121c);color:var(--text-main);border:1px solid var(--border-color);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 60px rgba(0,0,0,.5)}',
         '.yz-giris-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.yz-giris-bas b{font-size:17px}',
-        '.yz-oklar{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}',
+        '.yz-oklar{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.yz-ok-yer{display:grid;justify-items:center;gap:2px}.yz-ok-no{font-size:10.5px;font-weight:800;color:var(--text-muted);letter-spacing:.03em}.yz-ok.bos.sira{border-color:var(--accent-orange)!important;box-shadow:0 0 0 3px rgba(253,142,1,.25)}',
         '.yz-ok{height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:19px;aspect-ratio:1;margin:auto;width:100%;max-width:58px}',
         'button.yz-ok{position:relative;border:0;font-family:inherit;cursor:pointer;padding:0}button.yz-ok i{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#111827;color:#fff;font:900 13px/18px system-ui,sans-serif;font-style:normal;border:2px solid #fff}button.yz-ok:focus-visible{outline:3px solid #fd8e01;outline-offset:2px}.yz-hedef-ok{cursor:pointer}',
         '.yz-ok.bos{border:2px dashed var(--border-color)}',
