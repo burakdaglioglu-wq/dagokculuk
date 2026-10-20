@@ -1945,7 +1945,7 @@ const YZ_YON = { '↖': [-1, -1], '↑': [0, -1], '↗': [1, -1], '←': [-1, 0]
 function yzYonKonum(p, yon, yuz, mak, sira) {
     if (p === 'M' || !yon || !YZ_YON[yon]) return null;
     let v = YZ_YON[yon], l = Math.hypot(v[0], v[1]);
-    let s = yuz.uclu ? sira % 3 : null, kon = function (x, y) { return yuz.uclu ? { x: x, y: y, s: s, yak: 1 } : { x: x, y: y, yak: 1 }; };
+    let s = yuz.uclu ? ((sira % 3) + 3) % 3 : null, kon = function (x, y) { return yuz.uclu ? { x: x, y: y, s: s, yak: 1 } : { x: x, y: y, yak: 1 }; };
     if (!l) return (p === 'X' || p === '10') ? kon(0, 0) : null;
     let ux = v[0] / l, uy = v[1] / l, uygun = [];
     for (let r = 0; r <= 1.05; r += 0.004) if (yzKonumPuan(ux * r, uy * r, yuz, mak) === p) uygun.push(r);
@@ -1958,15 +1958,26 @@ function yzYonPuan(p) {
     if (_yz.yonBek) yzYonBitir(null, true);
     if (g.oklar.length >= yzGirisOkSay(g, d)) return yzGirisCiz();
     if (p === 'M') { yzOkEkle('M'); return; }
-    _yz.yonBek = { p: p, z: setTimeout(function () { yzYonBitir(null); }, 1500) };
+    let uc = yzYuz(d).uclu; _yz.yonBek = { p: p, z: setTimeout(function () { yzYonBitir(null); }, uc ? 2500 : 1500) };
     yzGirisCiz();
 }
-function yzYonBitir(yon, sessiz) {
+function yzYonBitir(yon, sessiz, yuzNo) {
     let b = _yz.yonBek; if (!b) return; clearTimeout(b.z); _yz.yonBek = null;
     let g = _yz.giris, d = yzOku().durum; if (!g || !d) return;
-    let k = yon ? yzYonKonum(b.p, yon, yzYuz(d), yzMakaraliMi(g.k), g.oklar.length) : null;
+    let k = yon ? yzYonKonum(b.p, yon, yzYuz(d), yzMakaraliMi(g.k), yuzNo != null ? yuzNo : g.oklar.length) : null;
     if (sessiz) { if (g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(b.p); g.konumlar.push(k); return; }
     yzOkEkle(b.p, k);
+}
+// 🎯 Kağıda dokun = yüz + yön (2026-10-20, kullanıcı: "16 yaş ve üstü 3'lü hedef kağıtlarına atıyor" → "tek dokunuşla yüz + yön").
+// Puana bastıktan sonra parlak kağıtta okun olduğu yüzün o tarafına dokunulur: dokunulan yüz (üst/orta/alt) ve merkeze göre yön
+// (8 yön; merkeze yakınsa ●) birlikte kaydolur. Tek yüzde de çalışır (yalnız yön). Kesin konum değil, yaklaşık (halka ortası).
+function yzYonKagitTik(e) {
+    let svg = e.currentTarget, g = _yz.giris, d = yzOku().durum; if (!svg || !g || !d) return;
+    if (!_yz.yonBek) { try { showToast('Önce puana bas, sonra kağıtta okun yerine dokun.', 'info'); } catch (er) {} return; }
+    let yuz = yzYuz(d), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; let p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    let sNo = yuz.uclu ? Math.max(0, Math.min(2, Math.round(p.y / YZ_UCLU_ARA) + 1)) : null, ly = yuz.uclu ? p.y - (sNo - 1) * YZ_UCLU_ARA : p.y, r = Math.hypot(p.x, ly);
+    let yon = r < 0.28 ? '●' : ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][((Math.round(Math.atan2(ly, p.x) / (Math.PI / 4)) % 8) + 8) % 8];
+    yzYonBitir(yon, false, sNo);
 }
 // Parlak hedef kağıdı: halkalar ışıltılı degrade, kağıt dokusu + gölge, üstte cam parlaması; oklar beyaz kenarlı delik.
 function yzParlakKagitSVG(yuz, mak, konumlar, oklar) {
@@ -1977,7 +1988,7 @@ function yzParlakKagitSVG(yuz, mak, konumlar, oklar) {
         + '<radialGradient id="' + id + 'pr" cx="30%" cy="22%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".45" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
     let anahtar = function (v) { return v >= 9 ? 's' : v >= 7 ? 'k' : v >= 5 ? 'm' : v >= 3 ? 'y' : 'b'; };
     let yukseklik = yuz.uclu ? 2 * a + 2.4 : 2.4, y0 = yuz.uclu ? -a - 1.2 : -1.2;
-    let s = '<svg class="yz-parlak-kagit' + (yuz.uclu ? ' uclu' : '') + '" viewBox="-1.25 ' + (y0 - 0.05) + ' 2.5 ' + (yukseklik + 0.1) + '" role="img" aria-label="Hedef kağıdı — girilen oklar"><defs>' + defs + '</defs>'
+    let s = '<svg class="yz-parlak-kagit' + (yuz.uclu ? ' uclu' : '') + (_yz.yonBek ? ' bekliyor' : '') + '" onclick="yzYonKagitTik(event)" viewBox="-1.25 ' + (y0 - 0.05) + ' 2.5 ' + (yukseklik + 0.1) + '" role="img" aria-label="Hedef kağıdı — girilen oklar"><defs>' + defs + '</defs>'
         + '<rect x="-1.2" y="' + y0 + '" width="2.4" height="' + yukseklik + '" rx="0.06" fill="url(#' + id + 'kg)" stroke="rgba(0,0,0,.12)" stroke-width="0.01"/>';
     ycler.forEach(function (cy) {
         for (let i = n; i >= 1; i--) { let v = 11 - i; s += '<circle cy="' + cy + '" r="' + (i / n) + '" fill="url(#' + id + anahtar(v) + ')" stroke="' + (v >= 3 && v <= 4 ? '#8b93a1' : 'rgba(0,0,0,.28)') + '" stroke-width="0.008"/>'; }
@@ -1997,8 +2008,9 @@ function yzYonGirisHTML(g, d, okSay) {
         .map(function (p) { return '<button class="yz-tus yz-yon-puan ' + yzOkRenk(p) + (b && b.p === p ? ' secili' : '') + '" onclick="yzYonPuan(\'' + p + '\')"' + (dolu ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
     let yon = Object.keys(YZ_YON).map(function (y) { return '<button class="yz-yon-b" onclick="yzYonBitir(\'' + y + '\')"' + (b ? '' : ' disabled') + ' aria-label="Yön ' + y + '">' + y + '</button>'; }).join('');
     return '<div class="yz-yon-giris"><div class="yz-yon-puanlar"' + (yuz.halka <= 6 ? ' style="grid-template-columns:repeat(4,minmax(0,1fr))"' : '') + '>' + tus + '</div>'
-        + '<div class="yz-yon-alt"><div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><div class="yz-yon-bas">' + (b ? '<b>' + b.p + '</b> — ok hangi tarafta?' : (dolu ? 'Oklar tamam' : 'Önce puana bas')) + '</div><div class="yz-yon-ped">' + yon + '</div>'
-        + '<div class="yz-alt">' + (b ? 'Basmazsan 1,5 sn sonra yalnız puan kaydolur' : 'Yön isteğe bağlı: ısı haritası için okun yaklaşık yeri') + '</div>' + (b ? '<i class="yz-yon-sure"></i>' : '') + '</div>'
+        + '<div class="yz-yon-alt' + (yuz.uclu ? ' uclu' : '') + '"><div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><div class="yz-yon-bas">' + (b ? '<b>' + b.p + '</b> — ' + (yuz.uclu ? 'okun olduğu <b>yüze</b>, o tarafına dokun' : 'ok hangi tarafta?') : (dolu ? 'Oklar tamam' : 'Önce puana bas')) + '</div>'
+        + (yuz.uclu ? '<div class="yz-uclu-ipucu"><b class="yz-uclu-ok">👉 Kağıda dokun</b><small>Kağıtta okun olduğu yüzün <b>sağına, soluna, üstüne…</b> dokun → yüz ve yön birlikte kaydolur. Ortaya dokun = merkez.</small></div>' : '<div class="yz-yon-ped">' + yon + '</div>')
+        + '<div class="yz-alt">' + (b ? 'Dokunmazsan ' + (yuz.uclu ? '2,5' : '1,5') + ' sn sonra yalnız puan kaydolur' : (yuz.uclu ? 'Yüz ve yön isteğe bağlı: hangi yüzde nereye gittiği analize girer' : 'Yön isteğe bağlı: ısı haritası için okun yaklaşık yeri')) + '</div>' + (b ? '<i class="yz-yon-sure' + (yuz.uclu ? ' uzun' : '') + '"></i>' : '') + '</div>'
         + '<div class="yz-yon-kagit">' + yzParlakKagitSVG(yuz, mak, g.konumlar, g.oklar) + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız iç 10 (X)</div>' : '') + '</div></div></div>';
 }
 // Hedef kağıdının çizimi (giriş + büyüteç aynı içeriği kullanır). Üçlüde yüzler dikey: merkezler y = -ARA, 0, +ARA.
@@ -2616,6 +2628,10 @@ function yzCssYukle() {
         '.yz-yon-bas{font-weight:800;font-size:15px}.yz-yon-bas b{font-size:22px}',
         '.yz-yon-ped{display:grid;grid-template-columns:repeat(3,58px);gap:6px}.yz-yon-b{height:54px;border-radius:12px;border:2px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:24px;cursor:pointer;touch-action:manipulation}.yz-yon-kutu.bekliyor .yz-yon-b{border-color:var(--accent-orange)}.yz-yon-b:disabled{opacity:.35;cursor:default}',
         '.yz-yon-sure{position:absolute;left:10px;right:10px;bottom:5px;height:4px;border-radius:2px;background:var(--accent-orange);transform-origin:left;animation:yzYonSure 1.5s linear forwards}@keyframes yzYonSure{to{transform:scaleX(0)}}',
+        '.yz-parlak-kagit{cursor:pointer;touch-action:manipulation;border-radius:8px;transition:box-shadow .2s}.yz-parlak-kagit.bekliyor{box-shadow:0 0 0 4px var(--accent-orange),0 0 24px rgba(253,142,1,.55);animation:yzPkNabiz 1s ease-in-out infinite}@keyframes yzPkNabiz{50%{box-shadow:0 0 0 2px var(--accent-orange),0 0 10px rgba(253,142,1,.3)}}',
+        '.yz-yon-alt.uclu{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}.yz-yon-alt.uclu .yz-parlak-kagit.uclu{height:min(500px,58vh)}',
+        '.yz-uclu-ipucu{display:grid;gap:6px;justify-items:center;text-align:center}.yz-uclu-ok{font-size:20px}.yz-uclu-ipucu small{font-size:12px;color:var(--text-muted);max-width:26ch;line-height:1.35}',
+        '.yz-yon-sure.uzun{animation-duration:2.5s}',
         '.yz-yon-kagit{display:grid;justify-items:center;gap:6px}.yz-parlak-kagit{width:min(100%,300px);height:auto;max-height:420px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}.yz-parlak-kagit.uclu{width:auto;height:min(420px,52vh);max-width:100%}',
         '@media (max-width:600px){.yz-yon-puanlar{grid-template-columns:repeat(4,minmax(0,1fr))}.yz-yon-alt{grid-template-columns:1fr}.yz-yon-puan{min-height:58px;font-size:24px}}',
         '@media (prefers-reduced-motion:reduce){.yz-yon-sure{animation:none}}',

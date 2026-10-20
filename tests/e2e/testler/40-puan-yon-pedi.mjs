@@ -25,14 +25,16 @@ export default async function ({ log }) {
     // 1. ok: 9 → ↗ (yön)
     await p.locator('.yz-yon-puan', { hasText: /^9$/ }).click();
     dogrula(await p.locator('.yz-yon-kutu.bekliyor').count(), 'yön kutusu beklemiyor');
-    await p.locator('.yz-yon-b[aria-label="Yön ↗"]').click();
+    // üçlüde yön pedi yok: parlak kağıtta okun olduğu yüzün o tarafına dokunulur (yüz + yön tek dokunuşta)
+    const kagit = (sNo, dx, dy) => p.evaluate(([sNo, dx, dy]) => { const svg = document.querySelector('.yz-parlak-kagit'), pt = svg.createSVGPoint(); pt.x = dx; pt.y = (sNo - 1) * YZ_UCLU_ARA + dy; const m = pt.matrixTransform(svg.getScreenCTM()); return { x: m.x, y: m.y }; }, [sNo, dx, dy]);
+    let q = await kagit(0, 0.45, -0.45); await p.mouse.click(q.x, q.y);
     // 2. ok: X → yön basma (1,5 sn sonra yalnız puan)
     await p.locator('.yz-yon-puan', { hasText: /^X$/ }).click(); await p.waitForTimeout(1800);
     // 3. ok: 7 → ← ; sonra M yok
-    await p.locator('.yz-yon-puan', { hasText: /^7$/ }).click(); await p.locator('.yz-yon-b[aria-label="Yön ←"]').click();
+    await p.locator('.yz-yon-puan', { hasText: /^7$/ }).click(); q = await kagit(1, -0.5, 0.02); await p.mouse.click(q.x, q.y); // sırası 3. yüz olsa da dokunulan orta yüz kaydolmalı
     const g = await p.evaluate(() => ({ oklar: _yz.giris.oklar.join(','), k: _yz.giris.konumlar.map((k) => k ? [k.s, Math.sign(k.x), Math.sign(k.y), yzKonumPuan(k.x, k.y, YZ_YUZ['3lu'])].join('/') : '-').join(' ') }));
     esit(g.oklar, '9,X,7', 'puanlar');
-    esit(g.k, '0/1/-1/9 - 2/-1/0/7', 'yaklaşık konumlar (yüz/yön/puan tutarlı)');
+    esit(g.k, '0/1/-1/9 - 1/-1/0/7', 'yaklaşık konumlar (dokunulan yüz + yön + puan tutarlı)');
     dogrula(await p.locator('.yz-parlak-kagit .yz-pk-ok').count() === 2, 'kağıtta 2 ok görünmeli');
     if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-yon.png' });
     await p.locator('.yz-giris button', { hasText: 'Kaydet' }).click(); await p.waitForTimeout(250);
