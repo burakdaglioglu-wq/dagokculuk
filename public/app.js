@@ -3781,6 +3781,7 @@
                 <div style="display:flex; align-items:flex-end; gap:4px; height:76px;">${cubuk}</div>
                 <div style="font-size:9.5px; color:var(--text-muted); margin-top:4px;">Paket ödemeleri ödendiği ayda sayılır.</div>
                 ${aidatTahminHTML()}
+                <button onclick="aidatOdemeDurumAc()" style="width:100%; margin-top:8px; background:var(--gold); color:#1b1b1b; border:none; padding:10px; border-radius:9px; font-weight:900; font-size:12.5px; cursor:pointer;">📋 Kim ödedi · kim ödemedi (ay seç, PDF)</button>
                 <button onclick="aidatKarZararPdf()" style="width:100%; margin-top:8px; background:var(--bg-panel); color:var(--gold); border:1px solid var(--gold); padding:9px; border-radius:9px; font-weight:800; font-size:12px; cursor:pointer;">📄 Kâr-zarar raporu (son 6 ay, PDF)</button>
             </div>`;
         }
@@ -4889,6 +4890,138 @@
 
         /* Devamsızlık Radarı ile aynı mantık: "kaç ay üst üste ödenmemiş" — geriye doğru en fazla
            6 ay bakar (daha eskisi genelde veri eksikliğinden kaynaklanır, gerçek borç sinyali değildir). */
+// ===== 📋 KİM ÖDEDİ · KİM ÖDEMEDİ (2026-10-21, kullanıcı: "aidat kısmında kim verdi kim vermedi nereden görebilirim, PDF çıktısı
+        // olarak istiyorum, geçmiş bu ay vs"). Ay seçilir (bu ay / geçen ay / ileri-geri); ödeyenler (tutar, tarih, paket), ödemeyenler
+        // (telefon + WhatsApp hatırlatma), muaflar, o ay henüz kayıtlı olmayanlar ayrı. 6 aylık tablo (✓ / 📦 / ✗ / muaf). İki PDF:
+        // seçili ay listesi ve 6 aylık tablo. Aidat ekranındaki grup seçimine uyar. Kayıtlara DOKUNMAZ, yalnız okur.
+        let _aidatOdemeAy = null, _aidatOdemeGorunum = 'ay';
+        function aidatOdemeDurumVeri(ay) {
+            let son = new Date(+ay.slice(0, 4), +ay.slice(5, 7), 0), sonISO = son.getFullYear() + '-' + String(son.getMonth() + 1).padStart(2, '0') + '-' + String(son.getDate()).padStart(2, '0');
+            let r = { ay, odeyen: [], odemeyen: [], muaf: [], yeni: [], toplam: 0 };
+            aidatGrupListesi().forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => {
+                let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif) return;
+                let rec = (aidatDB[ad] && aidatDB[ad][ay]) || null, x = { ad, g, tel: sp.acilTelefon || '', rec };
+                if(rec && rec.odendi) { r.odeyen.push(x); r.toplam += rec.tutar || 0; return; }
+                if(sp.aidatMuaf) { r.muaf.push(x); return; }
+                if(sp.katilmaTarihi && sp.katilmaTarihi > sonISO) { r.yeni.push(x); return; }
+                r.odemeyen.push(x);
+            }));
+            let s = (a, b) => a.ad.localeCompare(b.ad, 'tr'); r.odeyen.sort(s); r.odemeyen.sort(s); r.muaf.sort(s); r.yeni.sort(s);
+            return r;
+        }
+        function aidatOdemeDurumAc(ay) {
+            _aidatOdemeAy = ay || _aidatOdemeAy || aidatAyStrOfset(0);
+            let kap = document.getElementById('aidat-odeme-durum');
+            if(!kap) { kap = document.createElement('div'); kap.id = 'aidat-odeme-durum'; kap.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;justify-content:center;align-items:flex-start;padding:12px;overflow:auto;'; kap.addEventListener('click', e => { if(e.target === kap) kap.remove(); }); document.body.appendChild(kap); }
+            aidatOdemeDurumCiz();
+        }
+        function aidatOdemeAyKaydir(n) { _aidatOdemeAy = aidatAyEkle(_aidatOdemeAy, n); aidatOdemeDurumCiz(); }
+        function aidatOdemeDurumCiz() {
+            let kap = document.getElementById('aidat-odeme-durum'); if(!kap) return;
+            let ay = _aidatOdemeAy, v = aidatOdemeDurumVeri(ay), buAy = aidatAyStrOfset(0), adayAy = ay.slice(0, 7);
+            let ayAd = s => aidatAyAdUzun(s).replace(/^./, c => c.toLocaleUpperCase('tr')) + ' ' + s.slice(0, 4);
+            let tl = n => (n || 0).toLocaleString('tr-TR') + '₺';
+            let grupAd = _aidatGrupFiltre === 'tumu' ? 'Tüm gruplar' : LIG_ETIKET_KISA_AIDAT[_aidatGrupFiltre];
+            let beklenen = v.odeyen.length + v.odemeyen.length, oran = beklenen ? Math.round(v.odeyen.length / beklenen * 100) : 0;
+            let cip = (et, a) => `<button onclick="aidatOdemeDurumAc('${a}')" style="padding:6px 11px; border-radius:99px; font-weight:800; font-size:11.5px; cursor:pointer; border:1px solid ${ay === a ? 'var(--gold)' : 'var(--border-color)'}; background:${ay === a ? 'rgba(234,179,8,.18)' : 'var(--bg-panel)'}; color:var(--text-main);">${et}</button>`;
+            let sat = (x, tip) => {
+                let rec = x.rec || {}, ek = '';
+                if(tip === 'odeyen') ek = `<b style="color:var(--neon-green)">${aidatPaketMi(rec) && !rec.tutar ? '📦 pakete dahil' : tl(rec.tutar)}</b><small>${rec.tarih ? rec.tarih.split('-').reverse().join('.') : ''}${aidatPaketMi(rec) && rec.tutar ? ' · ' + esc(rec.notMetin) : ''}</small>`;
+                else if(tip === 'odemeyen') ek = (rec.notMetin ? `<small>📝 ${esc(rec.notMetin)}</small>` : '') + (x.tel ? `<button onclick="aidatBorcWhatsApp('${x.ad.replace(/'/g, "\\'")}', '${String(x.tel).replace(/'/g, "\\'")}')" style="margin-top:3px; padding:5px 9px; border-radius:8px; border:1px solid #25d366; background:transparent; color:#25d366; font-weight:800; font-size:11px; cursor:pointer;">💬 Hatırlat</button>` : '<small style="color:var(--text-muted)">telefon yok</small>');
+                else if(tip === 'yeni') ek = '<small>katılma: ' + (turnuvaDB[x.g][x.ad].katilmaTarihi || '').split('-').reverse().join('.') + '</small>';
+                return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:var(--bg-panel); font-size:13px;"><div style="min-width:0;"><b>${esc(x.ad)}</b><div style="font-size:10.5px; color:var(--text-muted);">${LIG_ETIKET_KISA_AIDAT[x.g] || ''}</div></div><div style="display:grid; justify-items:end; text-align:right; font-size:12px;">${ek}</div></div>`;
+            };
+            let blok = (baslik, renk, l, tip) => l.length ? `<div style="margin-top:12px;"><div style="font-size:11.5px; font-weight:900; letter-spacing:.06em; color:${renk}; margin-bottom:6px;">${baslik} · ${l.length}</div><div style="display:grid; gap:5px;">${l.map(x => sat(x, tip)).join('')}</div></div>` : '';
+            let icerik = _aidatOdemeGorunum === 'tablo' ? aidatOdemeTabloHTML(ay) : (blok('❌ ÖDEMEYENLER', 'var(--neon-red)', v.odemeyen, 'odemeyen') + blok('✅ ÖDEYENLER', 'var(--neon-green)', v.odeyen, 'odeyen') + blok('⚪ MUAF', '#a78bfa', v.muaf, 'muaf') + blok('🆕 O AY HENÜZ KAYITLI DEĞİLDİ', 'var(--text-muted)', v.yeni, 'yeni'));
+            kap.innerHTML = `<div style="width:min(720px,100%); background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:16px; color:var(--text-main); box-shadow:0 30px 80px rgba(0,0,0,.5);" role="dialog" aria-modal="true" aria-label="Kim ödedi kim ödemedi">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;"><div><div style="font-size:18px; font-weight:900;">📋 Kim ödedi · kim ödemedi</div><div style="font-size:12px; color:var(--text-muted);">${grupAd} · aidat ekranındaki grup seçimine göre</div></div><button onclick="document.getElementById('aidat-odeme-durum').remove()" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:800; cursor:pointer;" aria-label="Kapat">✕</button></div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:12px;"><button onclick="aidatOdemeAyKaydir(-1)" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:900; cursor:pointer;" aria-label="Önceki ay">◀</button><div style="flex:1; text-align:center; font-size:20px; font-weight:900;">${ayAd(ay)}</div><button onclick="aidatOdemeAyKaydir(1)" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:900; cursor:pointer;" aria-label="Sonraki ay"${ay >= buAy ? ' disabled' : ''}>▶</button></div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:8px;">${cip('Bu ay', buAy)}${cip('Geçen ay', aidatAyStrOfset(-1))}${cip('2 ay önce', aidatAyStrOfset(-2))}${cip('3 ay önce', aidatAyStrOfset(-3))}</div>
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;">
+                    <div style="background:var(--bg-panel); border-radius:10px; padding:8px;"><div style="font-size:22px; font-weight:900; color:var(--neon-green);">${v.odeyen.length}</div><div style="font-size:10px; color:var(--text-muted); font-weight:800;">ÖDEDİ</div></div>
+                    <div style="background:var(--bg-panel); border-radius:10px; padding:8px;"><div style="font-size:22px; font-weight:900; color:var(--neon-red);">${v.odemeyen.length}</div><div style="font-size:10px; color:var(--text-muted); font-weight:800;">ÖDEMEDİ</div></div>
+                    <div style="background:var(--bg-panel); border-radius:10px; padding:8px;"><div style="font-size:22px; font-weight:900;">%${oran}</div><div style="font-size:10px; color:var(--text-muted); font-weight:800;">TAHSİLAT</div></div>
+                    <div style="background:var(--bg-panel); border-radius:10px; padding:8px;"><div style="font-size:18px; font-weight:900; color:var(--gold);">${tl(v.toplam)}</div><div style="font-size:10px; color:var(--text-muted); font-weight:800;">TOPLANAN</div></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; background:var(--bg-panel); padding:4px; border-radius:12px;">
+                    <button onclick="_aidatOdemeGorunum='ay'; aidatOdemeDurumCiz()" style="padding:8px; border-radius:9px; border:0; font-weight:900; cursor:pointer; background:${_aidatOdemeGorunum === 'ay' ? 'var(--gold)' : 'transparent'}; color:${_aidatOdemeGorunum === 'ay' ? '#1b1b1b' : 'var(--text-muted)'};">Bu ayın listesi</button>
+                    <button onclick="_aidatOdemeGorunum='tablo'; aidatOdemeDurumCiz()" style="padding:8px; border-radius:9px; border:0; font-weight:900; cursor:pointer; background:${_aidatOdemeGorunum === 'tablo' ? 'var(--gold)' : 'transparent'}; color:${_aidatOdemeGorunum === 'tablo' ? '#1b1b1b' : 'var(--text-muted)'};">6 aylık tablo</button>
+                </div>
+                ${icerik}
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+                    <button onclick="aidatOdemeDurumPdf()" style="padding:12px; border-radius:12px; border:0; background:var(--gold); color:#1b1b1b; font-weight:900; cursor:pointer;">📄 ${ayAd(ay)} listesi (PDF)</button>
+                    <button onclick="aidatOdemeTabloPdf()" style="padding:12px; border-radius:12px; border:1px solid var(--gold); background:var(--bg-panel); color:var(--gold); font-weight:900; cursor:pointer;">📄 6 aylık tablo (PDF)</button>
+                </div></div>`;
+        }
+        function aidatOdemeAylar(ay) { return [-5, -4, -3, -2, -1, 0].map(n => aidatAyEkle(ay, n)); }
+        function aidatOdemeHucre(ad, g, ay) {
+            let sp = turnuvaDB[g][ad], rec = (aidatDB[ad] && aidatDB[ad][ay]) || null;
+            if(rec && rec.odendi) return aidatPaketMi(rec) && !rec.tutar ? 'p' : 'o';
+            if(sp.aidatMuaf) return 'm';
+            let son = new Date(+ay.slice(0, 4), +ay.slice(5, 7), 0), sonISO = son.getFullYear() + '-' + String(son.getMonth() + 1).padStart(2, '0') + '-' + String(son.getDate()).padStart(2, '0');
+            if(sp.katilmaTarihi && sp.katilmaTarihi > sonISO) return 'y';
+            return 'x';
+        }
+        function aidatOdemeTabloVeri(ay) {
+            let aylar = aidatOdemeAylar(ay), l = [];
+            aidatGrupListesi().forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif) return; let h = aylar.map(a => aidatOdemeHucre(ad, g, a)); l.push({ ad, g, h, borc: h.filter(x => x === 'x').length }); }));
+            l.sort((a, b) => b.borc - a.borc || a.ad.localeCompare(b.ad, 'tr'));
+            return { aylar, l };
+        }
+        function aidatOdemeTabloHTML(ay) {
+            let t = aidatOdemeTabloVeri(ay), ik = { o: ['✓', 'var(--neon-green)'], p: ['📦', 'var(--gold)'], x: ['✗', 'var(--neon-red)'], m: ['muaf', '#a78bfa'], y: ['–', 'var(--text-muted)'] };
+            return `<div style="overflow-x:auto; margin-top:12px; border:1px solid var(--border-color); border-radius:12px;"><table style="width:100%; border-collapse:collapse; font-size:12.5px; min-width:520px;"><thead><tr style="background:var(--bg-panel);"><th style="text-align:left; padding:8px;">Sporcu</th>${t.aylar.map(a => `<th style="padding:8px 4px;">${aidatAyAdKisa(a)}</th>`).join('')}<th style="padding:8px 4px;">Borç</th></tr></thead><tbody>${t.l.map(x => `<tr style="border-top:1px solid var(--border-color);"><td style="padding:6px 8px;"><b>${esc(x.ad)}</b></td>${x.h.map(c => `<td style="text-align:center; font-weight:900; color:${ik[c][1]};">${ik[c][0]}</td>`).join('')}<td style="text-align:center; font-weight:900; color:${x.borc ? 'var(--neon-red)' : 'var(--neon-green)'};">${x.borc || '—'}</td></tr>`).join('')}</tbody></table></div><div style="font-size:11px; color:var(--text-muted); margin-top:6px;">✓ ödedi · 📦 paket kapsıyor · ✗ ödemedi · muaf · – o ay henüz kayıtlı değildi</div>`;
+        }
+        function aidatOdemeDurumPdf() {
+            let ay = _aidatOdemeAy, v = aidatOdemeDurumVeri(ay), ayAd = aidatAyAdUzun(ay).replace(/^./, c => c.toLocaleUpperCase('tr')) + ' ' + ay.slice(0, 4), TL = n => Math.round(n || 0).toLocaleString('tr-TR') + ' TL';
+            let grupAd = _aidatGrupFiltre === 'tumu' ? 'Tüm gruplar' : LIG_ETIKET_KISA_AIDAT[_aidatGrupFiltre];
+            showToast('PDF hazırlanıyor…', 'warning');
+            _yeniPdfAl().then(function(pdf) {
+                let W = 210, H = 297, mx = 16, uw = W - mx * 2, T = _trTranslit;
+                let y = _kurumsalBaslikCiz(pdf, mx, uw, 14, 'AİDAT · ' + ayAd.toLocaleUpperCase('tr'), 'Kim ödedi · kim ödemedi — ' + grupAd);
+                let beklenen = v.odeyen.length + v.odemeyen.length, kw = (uw - 9) / 4;
+                [['Ödedi', String(v.odeyen.length), [22, 163, 74]], ['Ödemedi', String(v.odemeyen.length), [220, 38, 38]], ['Tahsilat', '%' + (beklenen ? Math.round(v.odeyen.length / beklenen * 100) : 0), [15, 23, 42]], ['Toplanan', TL(v.toplam), [180, 120, 0]]].forEach((k, i) => {
+                    let x = mx + i * (kw + 3); pdf.setFillColor(248, 250, 252); pdf.setDrawColor(226, 232, 240); pdf.roundedRect(x, y, kw, 18, 2, 2, 'FD');
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(100, 116, 139); pdf.text(T(k[0]), x + kw / 2, y + 6, { align: 'center' });
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(k[2][0], k[2][1], k[2][2]); pdf.text(T(k[1]), x + kw / 2, y + 14, { align: 'center' });
+                });
+                y += 26;
+                let baslik = (et, renk, n) => { if(y > H - 30) { pdf.addPage(); y = 20; } pdf.setFillColor(renk[0], renk[1], renk[2]); pdf.rect(mx, y, uw, 7.5, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9.5); pdf.setTextColor(255, 255, 255); pdf.text(T(et + ' (' + n + ')'), mx + 3, y + 5.2); y += 7.5; };
+                let satir = (i, sol, orta, sag) => { if(y > H - 20) { pdf.addPage(); y = 20; } if(i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, 7, 'F'); } pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.8); pdf.setTextColor(15, 23, 42); pdf.text(T(String(i + 1) + '. ' + sol).slice(0, 48), mx + 3, y + 4.8); pdf.setTextColor(100, 116, 139); pdf.text(T(orta || '').slice(0, 40), mx + 92, y + 4.8); pdf.setTextColor(15, 23, 42); pdf.text(T(sag || ''), mx + uw - 3, y + 4.8, { align: 'right' }); y += 7; };
+                if(v.odemeyen.length) { baslik('ÖDEMEYENLER', [220, 38, 38], v.odemeyen.length); v.odemeyen.forEach((x, i) => satir(i, x.ad, LIG_ETIKET_KISA_AIDAT[x.g] + (x.tel ? ' · ' + x.tel : ''), x.rec && x.rec.notMetin ? x.rec.notMetin.slice(0, 30) : '')); y += 5; }
+                if(v.odeyen.length) { baslik('ÖDEYENLER', [22, 163, 74], v.odeyen.length); v.odeyen.forEach((x, i) => { let r = x.rec || {}; satir(i, x.ad, LIG_ETIKET_KISA_AIDAT[x.g] + (r.tarih ? ' · ' + r.tarih.split('-').reverse().join('.') : ''), aidatPaketMi(r) && !r.tutar ? 'paket' : TL(r.tutar)); }); y += 5; }
+                if(v.muaf.length) { baslik('MUAF', [124, 58, 237], v.muaf.length); v.muaf.forEach((x, i) => satir(i, x.ad, LIG_ETIKET_KISA_AIDAT[x.g], '')); y += 5; }
+                if(v.yeni.length) { baslik('O AY HENÜZ KAYITLI DEĞİLDİ', [100, 116, 139], v.yeni.length); v.yeni.forEach((x, i) => satir(i, x.ad, LIG_ETIKET_KISA_AIDAT[x.g], '')); }
+                _kurumsalAltBilgiCiz(pdf, W, H);
+                pdf.save('DAG-aidat-odeme-' + ay + '.pdf');
+                showToast('PDF indirildi', 'success');
+            }).catch(() => showToast('PDF oluşturulamadı.', 'error'));
+        }
+        function aidatOdemeTabloPdf() {
+            let ay = _aidatOdemeAy, t = aidatOdemeTabloVeri(ay), grupAd = _aidatGrupFiltre === 'tumu' ? 'Tüm gruplar' : LIG_ETIKET_KISA_AIDAT[_aidatGrupFiltre];
+            showToast('PDF hazırlanıyor…', 'warning');
+            _yeniPdfAl().then(function(pdf) {
+                let W = 210, H = 297, mx = 14, uw = W - mx * 2, T = _trTranslit;
+                let y = _kurumsalBaslikCiz(pdf, mx, uw, 14, 'AİDAT · 6 AY', 'Ödeme tablosu ' + aidatAyAdKisa(t.aylar[0]) + ' – ' + aidatAyAdKisa(t.aylar[5]) + ' · ' + grupAd);
+                let adW = 62, hw = (uw - adW - 18) / 6;
+                let basSatir = () => { pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, uw, 8, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(255, 255, 255); pdf.text(T('Sporcu'), mx + 3, y + 5.5); t.aylar.forEach((a, i) => pdf.text(T(aidatAyAdKisa(a)), mx + adW + i * hw + hw / 2, y + 5.5, { align: 'center' })); pdf.text(T('Borç'), mx + uw - 9, y + 5.5, { align: 'center' }); y += 8; };
+                basSatir();
+                let renk = { o: [22, 163, 74], p: [180, 120, 0], x: [220, 38, 38], m: [124, 58, 237], y: [148, 163, 184] }, yazi = { o: 'ödedi', p: 'paket', x: 'YOK', m: 'muaf', y: '–' };
+                t.l.forEach((x, i) => {
+                    if(y > H - 20) { pdf.addPage(); y = 16; basSatir(); }
+                    if(i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, 7, 'F'); }
+                    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(15, 23, 42); pdf.text(T(x.ad).slice(0, 34), mx + 3, y + 4.8);
+                    x.h.forEach((c, j) => { let cx = mx + adW + j * hw + hw / 2; pdf.setFont('helvetica', c === 'x' ? 'bold' : 'normal'); pdf.setTextColor(renk[c][0], renk[c][1], renk[c][2]); pdf.text(T(yazi[c]), cx, y + 4.8, { align: 'center' }); });
+                    pdf.setFont('helvetica', 'bold'); pdf.setTextColor(x.borc ? 220 : 22, x.borc ? 38 : 163, x.borc ? 38 : 74); pdf.text(x.borc ? String(x.borc) : '-', mx + uw - 9, y + 4.8, { align: 'center' });
+                    y += 7;
+                });
+                y += 6; if(y > H - 20) { pdf.addPage(); y = 20; }
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(100, 116, 139); pdf.text(T('ödedi · paket: paket ödemesi o ayı kapsıyor · YOK: ödemedi · muaf · –: o ay henüz kayıtlı değildi'), mx, y);
+                _kurumsalAltBilgiCiz(pdf, W, H);
+                pdf.save('DAG-aidat-6ay-' + ay + '.pdf');
+                showToast('PDF indirildi', 'success');
+            }).catch(() => showToast('PDF oluşturulamadı.', 'error'));
+        }
         function aidatBorcListesi(esikAy) {
             let liste = [];
             let simdi = new Date();
