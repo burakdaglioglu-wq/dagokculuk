@@ -127,43 +127,106 @@ function yrsDeger(p) { return p === 'X' ? 10 : p === 'M' ? 0 : +p || 0; }
 function yrsMacHTML(y, anahtar, hd, sd) {
     let m = yrsMacVeri(sd), ok = +y.ok || 60, seriOk = +y.seriOk || 3, top = 0, atilan = 0;
     m.seriler.forEach(function (s) { s.forEach(function (p) { top += yrsDeger(p); atilan++; }); });
-    let su = _yrs.suanki || [], ort = atilan ? top / atilan : 0, kalanOk = Math.max(0, ok - atilan);
+    let su = (_yrs.suanki || []).map(function (q) { return typeof q === 'string' ? { p: q, k: null } : q; }), ort = atilan ? top / atilan : 0, kalanOk = Math.max(0, ok - atilan);
     let tahmin = atilan ? Math.round(top + ort * kalanOk) : null, tempo = hd.hedef && atilan ? Math.round(top - hd.hedef * atilan / ok) : null;
     let halka = y.yuz === '10' ? 10 : 6, tuslar = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].filter(function (p) { return p === 'X' || p === 'M' || +p >= 11 - halka; });
     let renk = function (p) { let v = yrsDeger(p); return p === 'M' ? 'm' : v >= 9 ? 's' : v >= 7 ? 'k' : v >= 5 ? 'b' : v >= 3 ? 'y' : 'w'; };
     let durum = '<div class="yrs-kart yrs-mac-durum"><div class="yrs-mac-sayilar"><div><b>' + top + '</b><small>TOPLAM</small></div><div><b>' + atilan + '<span>/' + ok + '</span></b><small>OK</small></div><div><b>' + (atilan ? ort.toFixed(2).replace('.', ',') : '–') + '</b><small>OK ORT.</small></div></div>'
         + (tempo != null ? '<div class="yrs-tempo ' + (tempo >= 0 ? 'iyi' : 'kotu') + '">' + (tempo >= 0 ? '▲ Hedef temposunun ' + tempo + ' puan önündesin' : '▼ Hedef temposunun ' + Math.abs(tempo) + ' puan gerisindesin') + '<small>Bu gidişle bitiş: <b>' + tahmin + '</b> · hedef ' + hd.hedef + '</small></div>' : (tahmin != null ? '<div class="yrs-tempo">Bu gidişle bitiş: <b>' + tahmin + '</b></div>' : '<div class="yrs-alt">İlk seriyi gir; toplam, ortalama ve hedef temposu burada görünür.</div>')) + '</div>';
-    let slot = ''; for (let i = 0; i < seriOk; i++) slot += '<span class="yrs-slot ' + (su[i] ? renk(su[i]) : 'bos') + '">' + (su[i] || '') + '</span>';
+    let slot = ''; for (let i = 0; i < seriOk; i++) { let q = su[i] && su[i].p; slot += '<span class="yrs-slot-yer"><span class="yrs-slot ' + (q ? renk(q) : 'bos') + '">' + (q || '') + '</span><small>Ok ' + (i + 1) + '</small></span>'; }
+    let bek = _yrs.bek, uclu = y.yuz === '3lu';
+    let yonPed = Object.keys(YRS_YON).map(function (yy) { return '<button type="button" class="yrs-yon-b" onclick="yrsMacYon(\'' + yrsE(anahtar) + '\',\'' + yy + '\')"' + (bek ? '' : ' disabled') + ' aria-label="Yön ' + yy + '">' + yy + '</button>'; }).join('');
+    let yonKutu = '<div class="yrs-yon-alan' + (uclu ? ' uclu' : '') + '"><div class="yrs-yon-kutu' + (bek ? ' bekliyor' : '') + '"><b>' + (bek ? bek.p + ' — ' + (uclu ? 'okun olduğu yüze, o tarafına dokun' : 'ok hangi tarafta?') : 'Önce puana bas') + '</b>' + (uclu ? '<small>Kağıtta okun olduğu yüzün sağına, soluna, üstüne… dokun. Ortaya dokun = merkez.</small>' : '<div class="yrs-yon-ped">' + yonPed + '</div>') + '<small>' + (bek ? 'Dokunmazsan ' + (uclu ? '2,5' : '1,5') + ' sn sonra yalnız puan kaydolur' : 'Yön, okların nereye gittiğini görmek için') + '</small>' + (bek ? '<i class="yrs-yon-sure' + (uclu ? ' uzun' : '') + '"></i>' : '') + '</div>'
+        + '<div class="yrs-kagit-yer">' + yrsKagitSVG(y, (su || []).map(function (q) { return q.k; }), bek, 'yrsMacKagit(event,\'' + yrsE(anahtar) + '\')') + '</div></div>';
     let giris = m.bitti ? '' : '<div class="yrs-kart"><div class="yrs-bas"><span class="yrs-etk">✍️ ' + (m.seriler.length + 1) + '. seri</span><span class="yrs-alt">' + seriOk + ' ok · dolunca kaydolur</span></div><div class="yrs-slotlar">' + slot + '</div>'
-        + '<div class="yrs-puanlar">' + tuslar.map(function (p) { return '<button type="button" class="' + renk(p) + '" onclick="yrsMacOk(\'' + yrsE(anahtar) + '\',\'' + p + '\')">' + p + '</button>'; }).join('') + '</div>'
+        + '<div class="yrs-puanlar">' + tuslar.map(function (p) { return '<button type="button" class="' + renk(p) + (bek && bek.p === p ? ' secili' : '') + '" onclick="yrsMacOk(\'' + yrsE(anahtar) + '\',\'' + p + '\')">' + p + '</button>'; }).join('') + '</div>' + yonKutu
         + '<div class="yrs-mac-alt"><button type="button" class="yz-btn" onclick="yrsMacGeri(\'' + yrsE(anahtar) + '\')"' + (su.length || m.seriler.length ? '' : ' disabled') + '>⌫ Geri al</button></div></div>';
     let seriler = m.seriler.length ? '<div class="yrs-kart"><span class="yrs-etk">📋 Seriler</span><div class="yrs-seri-izgara">' + m.seriler.map(function (s, i) { let t = s.reduce(function (a, p) { return a + yrsDeger(p); }, 0), hh = hd.hedef ? hd.hedef / ok * s.length : null; return '<div class="' + (hh != null ? (t >= hh ? 'iyi' : 'kotu') : '') + '"><small>' + (i + 1) + '</small><b>' + t + '</b><span>' + s.join(' ') + '</span></div>'; }).join('') + '</div></div>' : '';
+    let grup = yrsMacGrupHTML(y, m);
     let rutin = m.bitti ? '' : '<div class="yrs-kart yrs-rutin"><span class="yrs-etk">🧘 Seriler arası</span><div class="yrs-rutin-adim"><span>1 · Derin nefes</span><span>2 · Duruş + çapa</span><span>3 · Bırak ve takip et</span></div>' + (hd.not ? '<div class="yrs-not">💬 ' + yrsEsc(hd.not) + '</div>' : '') + '</div>';
     let nis = '<div class="yrs-kart"><span class="yrs-etk">🔧 Nişangah defteri</span><div class="yrs-alt" style="margin:4px 0 8px">Nişangahı oynattıysan dokun: hangi seriden sonra kaç tık nereye.</div><div class="yrs-nis-tus">' + [['⬅', 'sol'], ['➡', 'sağ'], ['⬆', 'yukarı'], ['⬇', 'aşağı']].map(function (x) { return '<button type="button" onclick="yrsMacNis(\'' + yrsE(anahtar) + '\',\'' + x[1] + '\')">' + x[0] + ' 1 tık ' + x[1] + '</button>'; }).join('') + '</div>'
         + (m.nis.length ? '<div class="yrs-nis-liste">' + m.nis.slice().reverse().slice(0, 8).map(function (n) { return '<span>' + n.seri + '. seriden sonra · ' + n.tik + ' tık ' + n.yon + '</span>'; }).join('') + '</div>' : '') + '</div>';
     let bitir = m.bitti ? yrsSonucHTML(y, anahtar, sd.sonuc || { puan: top }) : (atilan ? '<button type="button" class="yrs-ana-btn yrs-bitir" onclick="yrsMacBitir(\'' + yrsE(anahtar) + '\')">🏁 Yarışmayı bitir · ' + top + ' puan sonuca geçsin</button>' : '');
-    return durum + giris + seriler + rutin + nis + bitir;
+    return durum + giris + seriler + grup + rutin + nis + bitir;
+}
+function yrsKagitSVG(y, konumlar, vurgu, tik) {
+    let n = yrsHalka(y), uclu = y.yuz === '3lu', a = YRS_UCLU_ARA, ycler = uclu ? [-a, 0, a] : [0], id = 'yrspk', defs = '';
+    let R = { s: ['#fff6a8', '#ffd21f', '#d99a00'], k: ['#ff8f8f', '#ef3b3b', '#a51d1d'], m: ['#8fdcff', '#1aa3e8', '#0b5f8f'], y: ['#5b6474', '#272d38', '#0e1117'], b: ['#ffffff', '#f2f4f7', '#c9ced6'] };
+    Object.keys(R).forEach(function (k) { defs += '<radialGradient id="' + id + k + '" cx="38%" cy="32%" r="80%"><stop offset="0" stop-color="' + R[k][0] + '"/><stop offset=".55" stop-color="' + R[k][1] + '"/><stop offset="1" stop-color="' + R[k][2] + '"/></radialGradient>'; });
+    defs += '<radialGradient id="' + id + 'pr" cx="30%" cy="22%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset=".45" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
+    let an = function (v) { return v >= 9 ? 's' : v >= 7 ? 'k' : v >= 5 ? 'm' : v >= 3 ? 'y' : 'b'; }, hh = uclu ? 2 * a + 2.4 : 2.4, y0 = uclu ? -a - 1.2 : -1.2;
+    let s = '<svg class="yrs-kagit' + (uclu ? ' uclu' : '') + (vurgu ? ' bekliyor' : '') + '"' + (tik ? ' onclick="' + tik + '"' : '') + ' viewBox="-1.25 ' + (y0 - 0.05) + ' 2.5 ' + (hh + 0.1) + '" role="img" aria-label="Hedef kağıdı"><defs>' + defs + '</defs><rect x="-1.2" y="' + y0 + '" width="2.4" height="' + hh + '" rx="0.06" fill="#fbf6ec" stroke="rgba(0,0,0,.12)" stroke-width="0.01"/>';
+    ycler.forEach(function (cy) { for (let i = n; i >= 1; i--) { let v = 11 - i; s += '<circle cy="' + cy + '" r="' + (i / n) + '" fill="url(#' + id + an(v) + ')" stroke="rgba(0,0,0,.28)" stroke-width="0.008"/>'; } s += '<path d="M-.035 ' + cy + 'H.035M0 ' + (cy - 0.035) + 'V' + (cy + 0.035) + '" stroke="#7c2d12" stroke-width="0.007"/><ellipse cx="-0.25" cy="' + (cy - 0.42) + '" rx="0.75" ry="0.42" fill="url(#' + id + 'pr)" pointer-events="none"/>'; });
+    (konumlar || []).forEach(function (k, i) { if (!k || k.x == null) return; let gy = k.y + (uclu ? ((k.s != null ? k.s : 1) - 1) * a : 0); s += '<circle cx="' + k.x + '" cy="' + gy + '" r="0.055" fill="#0b0d12" stroke="#fff" stroke-width="0.02"/>' + (k.n || konumlar.length <= 6 ? '<text x="' + (k.x + 0.09) + '" y="' + (gy - 0.06) + '" font-size="0.1" font-weight="900" fill="#0b0d12" stroke="#fff" stroke-width="0.022" paint-order="stroke">' + (k.n || i + 1) + '</text>' : ''); });
+    return s + '</svg>';
+}
+function yrsMacGrupHTML(y, m) {
+    let tum = []; (m.kon || []).forEach(function (sk) { (sk || []).forEach(function (k) { if (k && k.x != null) tum.push(k); }); });
+    if (tum.length < 3) return '';
+    let n = tum.length, mx = tum.reduce(function (t, k) { return t + k.x; }, 0) / n, my = tum.reduce(function (t, k) { return t + k.y; }, 0) / n, R = y.yuz === '3lu' ? 12 : y.yuz === '10' ? 61 : 40, cm = Math.hypot(mx, my) * R;
+    let metin = cm < 2 ? '🎯 Grubun <b>merkezde</b>, nişangaha dokunma.' : '➡️ Grubun <b>~' + Math.round(cm) + ' cm ' + yrsYon(mx, my) + '</b>. Tekrar ediyorsa nişangahı biraz ' + yrsYonAl(mx, my) + ' al.';
+    let kopya = tum.map(function (k) { return { x: k.x, y: k.y, s: k.s }; });
+    return '<div class="yrs-kart"><span class="yrs-etk">🎯 Bugünkü grubun · ' + n + ' ok</span><div class="yrs-grup-ic"><div class="yrs-kagit-yer kucuk">' + yrsKagitSVG(y, kopya, false, null) + '</div><div class="yrs-tespit"><div><span></span><span>' + metin + '</span></div><div><span></span><span class="yrs-alt">Yalnız yönü girilen oklar; yaklaşık yerleri.</span></div></div></div></div>';
 }
 function yrsMacKaydet(anahtar, m) { let d = yrsOku('yarisma_sporcu')[anahtar] || {}, o = {}; o[anahtar] = Object.assign({}, d, { mac: m }); yrsYaz('yarisma_sporcu', o); }
 function yrsMacYenile() { if (_yrs.kim) yrsSekme(_yrs.kim.grup, _yrs.kim.ad); }
+// Puan + yön (2026-10-21, kullanıcı: "sporcular skorları girerken noktalama işaretleriyle yapsın" → "Puan + yön"): puan tuşu okun
+// puanını bekletir; yön pedi (tek yüz) ya da parlak kağıda dokunuş (3'lüde yüz + yön) okun yaklaşık yerini ekler; dokunulmazsa 1,5 sn
+// (3'lüde 2,5 sn) sonra yalnız puan. Giriş sırası = ok numarası. Konumlar m.kon[seri] = [{x, y, s, n}] (seriyle aynı sırada).
+const YRS_YON = { '↖': [-1, -1], '↑': [0, -1], '↗': [1, -1], '←': [-1, 0], '●': [0, 0], '→': [1, 0], '↙': [-1, 1], '↓': [0, 1], '↘': [1, 1] };
+const YRS_UCLU_ARA = 2.3;
+function yrsHalka(y) { return y.yuz === '10' ? 10 : 6; }
+function yrsYaklasikKonum(p, yon, y, s) {
+    if (p === 'M' || !YRS_YON[yon]) return null; let n = yrsHalka(y), v = YRS_YON[yon], l = Math.hypot(v[0], v[1]);
+    let r = p === 'X' ? 0.25 / n : p === '10' ? 0.75 / n : (11 - (+p) - 0.5) / n;
+    let k = !l ? ((p === 'X' || p === '10') ? { x: 0, y: 0 } : null) : { x: Math.round(v[0] / l * r * 1000) / 1000, y: Math.round(v[1] / l * r * 1000) / 1000 };
+    if (k && y.yuz === '3lu') k.s = s; return k;
+}
 function yrsMacOk(anahtar, p) {
-    anahtar = yrsD(anahtar); let y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, seriOk = +y.seriOk || 3, okTop = +y.ok || 60;
+    anahtar = yrsD(anahtar); let y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, okTop = +y.ok || 60;
+    if (_yrs.bek) yrsMacBekBitir(anahtar, null, null, true);
     let m = yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {}), atilan = m.seriler.reduce(function (a, s) { return a + s.length; }, 0);
-    if (atilan + (_yrs.suanki || []).length >= okTop) { if (typeof showToast === 'function') showToast('Tüm oklar girildi — yarışmayı bitir.', 'info'); return; }
-    _yrs.suanki = (_yrs.suanki || []).concat([p]);
+    if (atilan + (_yrs.suanki || []).length >= okTop) { if (typeof showToast === 'function') showToast('Tüm oklar girildi — yarışmayı bitir.', 'info'); return yrsMacYenile(); }
     try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
-    if (_yrs.suanki.length >= seriOk) {
-        let s = _yrs.suanki.slice().sort(function (a, b) { return yrsDeger(b) - yrsDeger(a) || (b === 'X') - (a === 'X'); }); m.seriler.push(s); _yrs.suanki = [];
-        yrsMacKaydet(anahtar, m);
-        let t = s.reduce(function (a, q) { return a + yrsDeger(q); }, 0); if (typeof showToast === 'function') showToast(m.seriler.length + '. seri: ' + t + ' ✓', 'success');
-    }
+    if (p === 'M') { yrsMacEkle(anahtar, { p: 'M', k: null }); return; }
+    _yrs.bek = { p: p, z: setTimeout(function () { yrsMacBekBitir(anahtar, null, null); }, y.yuz === '3lu' ? 2500 : 1500) };
     yrsMacYenile();
+}
+function yrsMacYon(anahtar, yon) { yrsMacBekBitir(yrsD(anahtar), yon, null); }
+function yrsMacKagit(e, anahtar) {
+    anahtar = yrsD(anahtar); if (!_yrs.bek) { if (typeof showToast === 'function') showToast('Önce puana bas, sonra kağıtta okun yerine dokun.', 'info'); return; }
+    let svg = e.currentTarget, y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; let q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    let uclu = y.yuz === '3lu', sNo = uclu ? Math.max(0, Math.min(2, Math.round(q.y / YRS_UCLU_ARA) + 1)) : null, ly = uclu ? q.y - (sNo - 1) * YRS_UCLU_ARA : q.y, r = Math.hypot(q.x, ly);
+    let yon = r < 0.28 ? '●' : ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][((Math.round(Math.atan2(ly, q.x) / (Math.PI / 4)) % 8) + 8) % 8];
+    yrsMacBekBitir(anahtar, yon, sNo);
+}
+function yrsMacBekBitir(anahtar, yon, sNo, sessiz) {
+    let b = _yrs.bek; if (!b) return; clearTimeout(b.z); _yrs.bek = null;
+    let y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, sira = (_yrs.suanki || []).length;
+    let k = yon ? yrsYaklasikKonum(b.p, yon, y, sNo != null ? sNo : sira % 3) : null;
+    yrsMacEkle(anahtar, { p: b.p, k: k }, sessiz);
+}
+function yrsMacEkle(anahtar, ok, sessiz) {
+    let y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, seriOk = +y.seriOk || 3;
+    _yrs.suanki = (_yrs.suanki || []).concat([ok]);
+    if (_yrs.suanki.length >= seriOk) {
+        let m = yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {});
+        let cift = _yrs.suanki.map(function (q, i) { return { p: q.p, k: q.k ? Object.assign({}, q.k, { n: i + 1 }) : { n: i + 1 } }; }).sort(function (a, b) { return yrsDeger(b.p) - yrsDeger(a.p) || (b.p === 'X') - (a.p === 'X'); });
+        m.seriler.push(cift.map(function (c) { return c.p; })); m.kon = (m.kon || []).slice(); while (m.kon.length < m.seriler.length - 1) m.kon.push(null); m.kon.push(cift.map(function (c) { return c.k; }));
+        _yrs.suanki = [];
+        yrsMacKaydet(anahtar, m);
+        let t = cift.reduce(function (a, q) { return a + yrsDeger(q.p); }, 0); if (typeof showToast === 'function') showToast(m.seriler.length + '. seri: ' + t + ' ✓', 'success');
+    }
+    if (!sessiz) yrsMacYenile();
 }
 function yrsMacGeri(anahtar) {
     anahtar = yrsD(anahtar);
+    if (_yrs.bek) { clearTimeout(_yrs.bek.z); _yrs.bek = null; return yrsMacYenile(); }
     if ((_yrs.suanki || []).length) { _yrs.suanki.pop(); return yrsMacYenile(); }
     let m = yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {}); if (!m.seriler.length) return;
-    let son = m.seriler.pop(); _yrs.suanki = son.slice(0, -1); yrsMacKaydet(anahtar, m); yrsMacYenile();
+    let son = m.seriler.pop(), sk = (m.kon || [])[m.seriler.length] || []; if (m.kon) m.kon = m.kon.slice(0, m.seriler.length);
+    let cf = son.map(function (p, i) { return { p: p, k: sk[i] && sk[i].x != null ? sk[i] : null, n: (sk[i] && sk[i].n) || i + 1 }; }).sort(function (a, b) { return a.n - b.n; });
+    _yrs.suanki = cf.slice(0, -1).map(function (c) { return { p: c.p, k: c.k }; }); yrsMacKaydet(anahtar, m); yrsMacYenile();
 }
 function yrsMacNis(anahtar, yon) {
     anahtar = yrsD(anahtar); let m = yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {}), seri = m.seriler.length, son = m.nis[m.nis.length - 1];
@@ -349,6 +412,15 @@ function yrsCss() {
         '.yrs-puanlar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.yrs-puanlar button{min-height:62px;border-radius:16px;border:0;font:inherit;font-size:26px;font-weight:900;cursor:pointer;touch-action:manipulation;box-shadow:inset 0 -4px 0 rgba(0,0,0,.2)}.yrs-puanlar button:active{transform:scale(.96)}',
         '.yrs-puanlar .s,.yrs-slot.s{background:#ffd43b;color:#3d2a00}.yrs-puanlar .k,.yrs-slot.k{background:#ff6b6b;color:#3a0808}.yrs-puanlar .b,.yrs-slot.b{background:#4dabf7;color:#06233d}.yrs-puanlar .y,.yrs-slot.y{background:#343a40;color:#fff}.yrs-puanlar .w,.yrs-slot.w{background:#f1f3f5;color:#222}.yrs-puanlar .m,.yrs-slot.m{background:#868e96;color:#fff}',
         '.yrs-mac-alt{display:flex;justify-content:flex-end;margin-top:8px}',
+        '.yrs-slot-yer{display:grid;justify-items:center;gap:2px}.yrs-slot-yer small{font-size:10px;font-weight:800;color:var(--text-muted)}',
+        '.yrs-puanlar button.secili{outline:4px solid #fd8e01;outline-offset:2px}',
+        '.yrs-yon-alan{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;margin-top:10px}.yrs-yon-alan.uclu{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}',
+        '.yrs-yon-kutu{position:relative;display:grid;gap:8px;justify-items:center;text-align:center;padding:10px 8px 14px;border-radius:14px;border:2px dashed var(--border-color)}.yrs-yon-kutu.bekliyor{border-color:#fd8e01;background:rgba(253,142,1,.08)}.yrs-yon-kutu b{font-size:14px}.yrs-yon-kutu small{font-size:11.5px;color:var(--text-muted);line-height:1.35}',
+        '.yrs-yon-ped{display:grid;grid-template-columns:repeat(3,52px);gap:5px}.yrs-yon-b{height:48px;border-radius:12px;border:2px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:22px;cursor:pointer;touch-action:manipulation}.yrs-yon-kutu.bekliyor .yrs-yon-b{border-color:#fd8e01}.yrs-yon-b:disabled{opacity:.35}',
+        '.yrs-yon-sure{position:absolute;left:10px;right:10px;bottom:5px;height:4px;border-radius:2px;background:#fd8e01;transform-origin:left;animation:yrsSure 1.5s linear forwards}.yrs-yon-sure.uzun{animation-duration:2.5s}@keyframes yrsSure{to{transform:scaleX(0)}}',
+        '.yrs-kagit-yer{display:grid;justify-items:center}.yrs-kagit{width:min(100%,220px);height:auto;cursor:pointer;touch-action:manipulation;border-radius:8px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}.yrs-kagit.uclu{width:auto;height:min(380px,50vh);max-width:100%}.yrs-kagit.bekliyor{box-shadow:0 0 0 4px #fd8e01,0 0 22px rgba(253,142,1,.5)}',
+        '.yrs-grup-ic{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center;margin-top:8px}.yrs-kagit-yer.kucuk .yrs-kagit{width:130px;cursor:default}.yrs-kagit-yer.kucuk .yrs-kagit.uclu{height:220px;width:auto}',
+        '@media (prefers-reduced-motion:reduce){.yrs-yon-sure{animation:none}}',
         '.yrs-seri-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:6px;margin-top:8px}.yrs-seri-izgara div{background:var(--bg-main);border-radius:10px;padding:6px;text-align:center;display:grid}.yrs-seri-izgara small{font-size:10px;color:var(--text-muted);font-weight:800}.yrs-seri-izgara b{font-size:20px;font-weight:900}.yrs-seri-izgara span{font-size:11px;color:var(--text-muted)}.yrs-seri-izgara .iyi b{color:#4ade80}.yrs-seri-izgara .kotu b{color:#f87171}',
         '.yrs-rutin-adim{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.yrs-rutin-adim span{font-size:13px;font-weight:800;padding:7px 10px;border-radius:10px;background:var(--bg-main)}',
         '.yrs-nis-tus{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.yrs-nis-tus button{min-height:44px;border-radius:12px;border:2px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:inherit;font-weight:800;cursor:pointer}.yrs-nis-liste{display:grid;gap:4px;margin-top:8px;font-size:12.5px;color:var(--text-muted);font-weight:700}',

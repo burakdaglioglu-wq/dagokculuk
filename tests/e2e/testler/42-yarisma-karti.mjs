@@ -42,9 +42,17 @@ export default async function ({ log }) {
     // ⚔️ maç zamanı: 2 seri gir (3 ok), tempo görünür, geri al, bitir → sonuç puanı
     await p.evaluate(() => yrsModSec('mac'));
     const bas = (v) => p.evaluate((v) => [...document.querySelectorAll('#icerik-yarisma .yrs-puanlar button')].find((b) => b.textContent === v).click(), v);
-    for (const v of ['10', '9', '9', 'X', '8', '7']) { await bas(v); await p.waitForTimeout(60); }
-    let m = await p.evaluate(({ yid, sp }) => ((kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).mac || {}).seriler, { yid, sp });
+    // puan + yön: ilk seride her puandan sonra parlak 3'lü kağıtta üst yüzün sağına dokun (yüz + yön); ikinci seri yalnız puan
+    const kagitSag = () => p.evaluate(() => { let svg = document.querySelector('#icerik-yarisma .yrs-kagit-yer .yrs-kagit'), pt = svg.createSVGPoint(); pt.x = 0.5; pt.y = -YRS_UCLU_ARA; let q = pt.matrixTransform(svg.getScreenCTM()); svg.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: q.x, clientY: q.y })); });
+    for (const v of ['10', '9', '9']) { await bas(v); await p.waitForTimeout(60); await kagitSag(); await p.waitForTimeout(60); }
+    for (const v of ['X', '8', '7']) { await bas(v); await p.waitForTimeout(60); }
+    await p.waitForTimeout(2900); // son ok 2,5 sn yön bekler, sonra yalnız puan kaydolur
+    let mm = await p.evaluate(({ yid, sp }) => ((kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).mac || {}), { yid, sp }), m = mm.seriler;
     esit(JSON.stringify(m), JSON.stringify([['10', '9', '9'], ['X', '8', '7']]), 'maç serileri');
+    let k0 = (mm.kon || [])[0] || [];
+    dogrula(k0.length === 3 && k0.every((k) => k && k.s === 0 && k.x > 0 && Math.abs(k.y) < 0.05), 'kağıda dokunuş yüz + yön kaydetmedi: ' + JSON.stringify(mm.kon));
+    dogrula(((mm.kon || [])[1] || []).every((k) => !k || k.x == null), 'yönsüz oklarda konum olmamalı');
+    dogrula(/Bugünkü grubun/.test(await p.locator('#icerik-yarisma').textContent()), 'grup kartı yok');
     dogrula(/Hedef temposunun/.test(await p.locator('#icerik-yarisma').textContent()), 'hedef temposu yok');
     await bas('5'); await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yrs-mac-alt button')][0].click());
     await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-bitir').click()); await p.waitForTimeout(200);
