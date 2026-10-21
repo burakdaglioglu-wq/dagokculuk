@@ -103,25 +103,52 @@ function fotoYukleAc(k, ad, sonra) {
     </div>`;
     fotoDugmeler();
 }
-function fotoDugmeler() { let b = document.getElementById('fp-kaydet'); if (b) b.disabled = FY.izin === null || (!FY.img && !(_fotoListe[FY.k] || {}).var && FY.izin === (_fotoListe[FY.k] || {}).izin); }
+// Kaydet: izin seçilmeden kapalı; fotoğraf seçilmediyse yalnız izni kaydettiğini açıkça söyler (2026-10-21: kullanıcı fotoğrafın
+// yüklendiğini sandı, oysa seçilen fotoğraf pencereye hiç girmemişti ve yalnız izin kaydedilmişti)
+function fotoDugmeler() {
+    let b = document.getElementById('fp-kaydet'); if (!b) return;
+    let f = _fotoListe[FY.k] || {};
+    b.disabled = FY.izin === null || (!FY.img && FY.izin === f.izin);
+    b.textContent = FY.img ? '💾 Fotoğrafı kaydet' : f.var ? '💾 İzni kaydet' : '💾 Yalnız izni kaydet';
+}
 function fotoYukleKapat() { let a = document.getElementById('foto-pencere'); if (a) a.remove(); FY.img = null; }
+function fotoDurum(metin, hata) { let e = document.getElementById('fp-durum'); if (!e) { let z = document.getElementById('fp-zoom'); if (!z) return; z.insertAdjacentHTML('beforebegin', '<div id="fp-durum" style="font-size:13px;line-height:1.45;padding:8px 10px;border-radius:10px"></div>'); e = document.getElementById('fp-durum'); } e.style.display = metin ? '' : 'none'; e.style.background = hata ? 'rgba(239,100,97,.14)' : 'rgba(90,169,255,.12)'; e.style.color = hata ? '#ef6461' : '#9cc8ff'; e.innerHTML = metin || ''; }
+// Seçilen dosya → en uzun kenarı 1600 px'lik tuval (dev telefon fotoğrafı belleği şişirmesin, EXIF yönü düzelsin)
+function _fotoTuvale(kaynak, w, h) { let o = Math.min(1, 1600 / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * o); c.height = Math.round(h * o); c.getContext('2d').drawImage(kaynak, 0, 0, c.width, c.height); return c; }
+function _fotoAc(dosya) {
+    let bitmap = typeof createImageBitmap === 'function' ? createImageBitmap(dosya, { imageOrientation: 'from-image' }).then(b => _fotoTuvale(b, b.width, b.height)) : Promise.reject();
+    return bitmap.catch(() => new Promise((ok, red) => { let url = URL.createObjectURL(dosya), im = new Image(); im.onload = () => { ok(_fotoTuvale(im, im.naturalWidth, im.naturalHeight)); URL.revokeObjectURL(url); }; im.onerror = () => { URL.revokeObjectURL(url); red(new Error('acilamadi')); }; im.src = url; }));
+}
 function fotoSec(kamera) {
+    // iPhone Safari: sayfaya eklenmemiş dosya seçicide "change" bazen hiç gelmiyor → gizli olarak sayfaya eklenir
     let i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; if (kamera) i.setAttribute('capture', 'environment');
-    i.onchange = () => {
-        let dosya = i.files && i.files[0]; if (!dosya) return;
-        let url = URL.createObjectURL(dosya), img = new Image();
-        img.onload = () => { FY.img = img; FY.z = 1; FY.x = 0; FY.y = 0; let k = document.getElementById('fp-kirp'); if (k) { k.style.backgroundImage = ''; k.textContent = ''; k.innerHTML = '<canvas width="' + FY_CIKTI + '" height="' + FY_CIKTI + '"></canvas>'; fotoSurukleBagla(k); } let z = document.getElementById('fp-zoom'); if (z) { z.style.display = ''; z.querySelector('input').value = 1; } fotoCiz(); fotoDugmeler(); };
-        img.onerror = () => showToast('Fotoğraf açılamadı.', 'error');
-        img.src = url;
+    i.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0';
+    document.body.appendChild(i);
+    let bitti = false;
+    let isle = () => {
+        if (bitti) return; let dosya = i.files && i.files[0]; if (!dosya) return; bitti = true; i.remove();
+        fotoDurum('⏳ Fotoğraf açılıyor…');
+        _fotoAc(dosya).then(c => {
+            FY.img = c; FY.z = 1; FY.x = 0; FY.y = 0;
+            let k = document.getElementById('fp-kirp'); if (k) { k.style.backgroundImage = ''; k.textContent = ''; k.innerHTML = '<canvas width="' + FY_CIKTI + '" height="' + FY_CIKTI + '"></canvas>'; fotoSurukleBagla(k); }
+            let z = document.getElementById('fp-zoom'); if (z) { z.style.display = ''; z.querySelector('input').value = 1; }
+            fotoDurum(FY.izin === null ? '✓ Fotoğraf seçildi — aşağıdan veli iznini seç, sonra Kaydet.' : '✓ Fotoğraf seçildi — yüzü daireye ortala, sonra Kaydet.');
+            fotoCiz(); fotoDugmeler();
+        }).catch(() => {
+            let heic = /heic|heif/i.test((dosya.type || '') + ' ' + (dosya.name || ''));
+            fotoDurum(heic ? '✗ Bu fotoğraf HEIC biçiminde ve bu tarayıcı açamıyor. iPhone: Ayarlar › Kamera › Biçimler › <b>En Uyumlu</b> seç; ya da fotoğrafın ekran görüntüsünü alıp onu yükle.'
+                : '✗ Fotoğraf açılamadı (' + esc(dosya.type || 'bilinmeyen biçim') + '). Başka bir fotoğraf dene ya da kamerayla çek.', true);
+        });
     };
+    i.addEventListener('change', isle); i.addEventListener('input', isle);
     i.click();
 }
 // kaynak görüntüden kare kesit: en kısa kenar = kare, z ile küçülür, x/y kaydırma (çıktı pikseli cinsinden)
 function fotoKesit() {
-    let im = FY.img, kenar = Math.min(im.naturalWidth, im.naturalHeight) / FY.z, olcek = kenar / FY_CIKTI;
-    let sx = (im.naturalWidth - kenar) / 2 - FY.x * olcek, sy = (im.naturalHeight - kenar) / 2 - FY.y * olcek;
-    sx = Math.max(0, Math.min(im.naturalWidth - kenar, sx)); sy = Math.max(0, Math.min(im.naturalHeight - kenar, sy));
-    FY.x = -(sx - (im.naturalWidth - kenar) / 2) / olcek; FY.y = -(sy - (im.naturalHeight - kenar) / 2) / olcek;
+    let im = FY.img, W = im.naturalWidth || im.width, Hh = im.naturalHeight || im.height, kenar = Math.min(W, Hh) / FY.z, olcek = kenar / FY_CIKTI;
+    let sx = (W - kenar) / 2 - FY.x * olcek, sy = (Hh - kenar) / 2 - FY.y * olcek;
+    sx = Math.max(0, Math.min(W - kenar, sx)); sy = Math.max(0, Math.min(Hh - kenar, sy));
+    FY.x = -(sx - (W - kenar) / 2) / olcek; FY.y = -(sy - (Hh - kenar) / 2) / olcek;
     return { sx, sy, kenar };
 }
 function fotoCiz() {

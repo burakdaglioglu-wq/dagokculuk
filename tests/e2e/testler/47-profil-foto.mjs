@@ -17,6 +17,17 @@ export default async function ({ log }) {
     await p.evaluate((x) => fotoYukleAc(fotoAnahtar(x.g, x.ad), x.ad), s);
     await p.waitForSelector('#foto-pencere #fp-kaydet');
     dogrula(await p.locator('#fp-kaydet').isDisabled(), 'izin seçilmeden Kaydet açık olmamalı');
+    // gerçek dosya seçici: PNG açılmalı; açılamayan (sahte HEIC) dosyada pencere nedenini yazmalı
+    {
+      const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.locator('#foto-pencere button:has-text("Galeriden")').click()]);
+      await fc.setFiles({ name: 'bozuk.heic', mimeType: 'image/heic', buffer: Buffer.from('bu bir resim degil') });
+      await p.waitForFunction(() => /HEIC/.test((document.getElementById('fp-durum') || {}).textContent || ''), null, { timeout: 8000 });
+      const [fc2] = await Promise.all([p.waitForEvent('filechooser'), p.locator('#foto-pencere button:has-text("Galeriden")').click()]);
+      await fc2.setFiles(new URL('../../../public/ikon-192.png', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+      await p.waitForFunction(() => !!FY.img, null, { timeout: 8000 });
+      dogrula(/Fotoğraf seçildi/.test(await p.locator('#fp-durum').textContent()), 'seçim onayı görünmeli');
+      await p.evaluate(() => { FY.img = null; fotoDugmeler(); });
+    }
     // fotoğraf seç (dosya penceresi yerine test görseli) → izin Var → kaydet
     await p.evaluate(() => new Promise((ok) => { let c = document.createElement('canvas'); c.width = 400; c.height = 300; let x = c.getContext('2d'); x.fillStyle = '#c33'; x.fillRect(0, 0, 400, 300); x.fillStyle = '#fff'; x.fillRect(150, 80, 100, 140); let im = new Image(); im.onload = () => { FY.img = im; let kk = document.getElementById('fp-kirp'); kk.innerHTML = '<canvas width="320" height="320"></canvas>'; fotoCiz(); fotoDugmeler(); ok(); }; im.src = c.toDataURL('image/png'); }));
     await p.locator('#fp-izin button').first().click();
