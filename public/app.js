@@ -4126,7 +4126,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=2';
+        const YN_DOSYA = 'yonetim-panel.js?v=3';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4179,6 +4179,8 @@
             };
         }
         let _ynDersOneri = null;
+        // Herhangi bir listeden sporcu kartı (Sporcular & Skor, …)
+        function yoneticiKartAc(g, ad) { dagskEkYukle(YN_DOSYA).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(g + '|' + ad); }).catch(function() { showToast('Sporcu kartı yüklenemedi.', 'error'); }); }
         // Aidat ek PIN'i Yönetici › 🔐 Güvenlik'te değişir (kullanıcı: "aidat şifresini değiştireceğim bir yer ver")
         function aidatSifreAc() {
             if(renderHedefId !== 'yonetici-liste' && typeof yoneticiPaneliAc === 'function') yoneticiPaneliAc();
@@ -10320,6 +10322,7 @@
 
                             <!-- Hızlı Aksiyonlar -->
                             <div class="adm-grid-2" style="margin-bottom:10px;">
+                                <button onclick="yoneticiKartAc('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:rgba(212,167,58,0.14);color:#f0c860;border-color:#d4a73a;font-weight:800;">🪪 Sporcu kartı</button>
                                 <button onclick="yoneticiDondur('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:${don?'rgba(16,185,129,0.1)':'rgba(245,158,11,0.1)'};border-color:${don?'var(--neon-green)':'var(--gold)'};">${don?'✅ Aktifleştir':'⏸ Dondur'}</button>
                                 <button onclick="yoneticiKodSifirla('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:rgba(59,130,246,0.1);border-color:var(--neon-blue);">🔑 Kodu Değiştir</button>
                                 <button onclick="yoneticiKategoriTasi('${g}','${adEsc}')" class="adm-btn adm-btn-sm" style="background:rgba(139,92,246,0.1);color:#a78bfa;border-color:#8b5cf6;">📂 Kategori Taşı</button>

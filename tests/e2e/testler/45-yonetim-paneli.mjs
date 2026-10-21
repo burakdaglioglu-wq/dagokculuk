@@ -59,6 +59,10 @@ export default async function ({ log }) {
       dogrula(await p.evaluate((y) => turnuvaDB[y.g][y.ad].pasif === false, yedek), 'aktif edilmedi');
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-kart.png' });
       await p.evaluate(() => ynKartKapat());
+      // Sporcular & Skor listesinden de kart açılır
+      await p.evaluate((y) => yoneticiKartAc(y.g, y.ad), yedek); await p.waitForSelector('#yn-kart .yn-aylar button', { timeout: 10000 });
+      dogrula((await p.locator('#yn-kart h2').textContent()) === yedek.ad, 'listeden açılan kart yanlış sporcu');
+      await p.evaluate(() => ynKartKapat());
       // aidat kutusu → aidat paneli ödemeyenler listesi
       await p.evaluate(() => ynGit('aidat', { liste: 'bekleyen' }));
       await p.waitForSelector('#ap-kok .ap-sekmeler', { timeout: 20000 });
@@ -113,6 +117,12 @@ export default async function ({ log }) {
       dogrula(u && u.pasif === false, 'Milo üye aktif edilmedi');
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-milo-kart.png' });
       await p.evaluate(() => ynKartKapat());
+      // Üyeler listesindeki 🪪 Kart düğmesi
+      await p.evaluate(() => miloSekme('uyeler')); await p.waitForFunction((a) => [...document.querySelectorAll('#milo-icerik button')].some((b) => /Kart/.test(b.textContent) && (b.getAttribute('onclick') || '').includes(a)), A, { timeout: 15000 });
+      await p.evaluate((a) => [...document.querySelectorAll('#milo-icerik button')].find((b) => /Kart/.test(b.textContent) && (b.getAttribute('onclick') || '').includes(a)).click(), A);
+      await p.waitForSelector('#yn-kart .yn-aylar button', { timeout: 10000 });
+      dogrula(/Ödendi/.test(await p.locator('#yn-kart').textContent()), 'Üyelerden açılan kartta bu ayın ödemesi görünmeli');
+      await p.evaluate(() => { ynKartKapat(); miloSekme('genel'); }); await p.waitForSelector('#milo-icerik #yn-genel', { timeout: 15000 });
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-milo.png' });
       esit(hatalar.length, 0, 'Milo sayfa hatası: ' + hatalar.join(' | '));
     } finally { await ctx.close(); }

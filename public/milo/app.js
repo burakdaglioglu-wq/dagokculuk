@@ -472,6 +472,7 @@ function miloUyelerCiz() {
                         ${u.aidatMuaf ? ' <span style="color:#8b5cf6; font-size:11px; font-weight:bold;">🎗️ MUAF</span>' : ''}
                     </div>
                     <div style="display:flex; gap:6px;">
+                        <button onclick="miloKartAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(212,167,58,0.14); border:1px solid #d4a73a; color:#d4a73a; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">🪪 Kart</button>
                         <button onclick="miloProfilAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:rgba(59,130,246,0.12); border:1px solid var(--neon-blue); color:var(--neon-blue); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📋 Profil</button>
                         <button onclick="miloSporcuProgramAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:color-mix(in srgb, var(--milo-teal) 12%, transparent); border:1px solid var(--milo-teal); color:var(--milo-teal); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">📅 Program</button>
                         <button onclick="miloUyeFormAc('${miloJsEsc(u.grup)}','${miloJsEsc(u.ad)}')" style="background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:11px; font-weight:bold;">✏️ Düzenle</button>
@@ -795,6 +796,15 @@ function miloYonetimAdaptor() {
         },
         araclar: [['📋 Yoklama', "miloSekme('analiz')"], ['↻ Yenile', 'mgbYukleVeCiz(true)']]
     };
+}
+// Üyeler listesinden sporcu kartı: aidat + yoklama yoksa önce yüklenir (kart ödenmemiş gibi göstermesin)
+async function miloKartAc(grup, ad) {
+    ynKulup(miloYonetimAdaptor()); ynKartAc(grup + '|' + ad);
+    try {
+        let l = await Promise.all([miloDuesTum.length ? null : miloApi('/dues'), miloAttendanceTum.length ? null : miloApi('/attendance/auto')]);
+        if (l[0]) miloDuesTum = l[0].dues || []; if (l[1]) miloAttendanceTum = l[1].attendance || [];
+        if (l[0] || l[1]) ynKartYenile();
+    } catch (e) {}
 }
 function miloAidatCiz() {
     let alan = document.getElementById('milo-icerik');

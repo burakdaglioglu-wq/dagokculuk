@@ -420,6 +420,10 @@
         kis.forEach(k => { let l = G[k.ad] || []; haftalar.forEach(h => { if (l.some(t => t >= h.a && t <= h.z)) h.n++; }); });
         let gelmeyen = aktif.map(k => { let s = son(k), ref = s || k.katilma || null; return { k, son: s, gun: ref ? gunFark(ref, b) : null }; })
             .filter(x => x.gun != null && x.gun >= 14).sort((x, y) => x.gun - y.gun);
+        let g28 = iso(new Date(Date.now() - 28 * 864e5)), g56 = iso(new Date(Date.now() - 56 * 864e5)), kopan = {};
+        gelmeyen.forEach(x => { kopan[x.k.id] = 1; });
+        let dusen = aktif.filter(k => !kopan[k.id]).map(k => { let l = G[k.ad] || []; return { k, son: l.filter(t => t > g28).length, once: l.filter(t => t > g56 && t <= g28).length }; })
+            .filter(x => x.once >= 4 && x.son <= x.once / 2).sort((x, y) => x.son / x.once - y.son / y.once);
         let dogum = aktif.filter(k => k.dogum).map(k => { let d = new Date(k.dogum + 'T12:00:00'), s = new Date(); s.setHours(12, 0, 0, 0); let bu = new Date(s.getFullYear(), d.getMonth(), d.getDate(), 12); if (bu < s) bu.setFullYear(bu.getFullYear() + 1); return { k, kalan: Math.round((bu - s) / 864e5), yas: bu.getFullYear() - d.getFullYear() }; })
             .filter(x => x.kalan <= 7).sort((x, y) => x.kalan - y.kalan);
         let aidatAcik = Y.aidatAcik ? Y.aidatAcik() : true, v = null;
@@ -428,7 +432,7 @@
         kis.forEach(k => { if (!gruplar.some(g => g.id === k.grup)) gruplar.push({ id: k.grup, ad: k.grupAd || k.grup, aktif: 0, gelen: 0, od: 0, bek: 0 }); });
         aktif.forEach(k => { let g = gruplar.find(x => x.id === k.grup); g.aktif++; if ((G[k.ad] || []).some(t => t.slice(0, 7) === ay)) g.gelen++; });
         if (v) { v.od.forEach(s => { let g = gruplar.find(x => x.id === s.k.grup); if (g) g.od++; }); v.bek.forEach(s => { let g = gruplar.find(x => x.id === s.k.grup); if (g) g.bek++; }); }
-        return { b, ay, kis, aktif, pasif: kis.length - aktif.length, yeni: aktif.filter(k => k.katilma && k.katilma.slice(0, 7) === ay).length, bugunGelen, son7, haftalar, gelmeyen, dogum, eksikTel: aktif.filter(k => !k.tel), v, aidatAcik, gruplar: gruplar.filter(g => g.aktif) };
+        return { b, ay, kis, aktif, pasif: kis.length - aktif.length, yeni: aktif.filter(k => k.katilma && k.katilma.slice(0, 7) === ay).length, bugunGelen, son7, haftalar, gelmeyen, dusen, dogum, eksikTel: aktif.filter(k => !k.tel), v, aidatAcik, gruplar: gruplar.filter(g => g.aktif) };
     }
 
     // ---- Genel Bakış ----
@@ -484,6 +488,7 @@
                 <div class="ap-panel"><h3>Bugünün dersleri</h3><div id="yn-dersler"><div class="yn-bos">Yükleniyor…</div></div></div>
             </div>
             <div class="ap-panel" id="yn-gelmeyen"><h3>14+ gündür gelmeyenler <span>${d.gelmeyen.length} sporcu · en yeni kopanlar üstte</span></h3>${gelmeyen}</div>
+            ${d.dusen.length ? `<div class="ap-panel"><h3>Katılımı düşenler <span>${d.dusen.length} sporcu · son 4 hafta, önceki 4 haftanın yarısı ya da altı — kopmadan önce ara</span></h3><div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Sporcu</th><th>Grup</th><th class="sag">Önceki 4 hafta</th><th class="sag">Son 4 hafta</th><th class="sag yn-pdf-gizle">İşlem</th></tr></thead><tbody>${d.dusen.slice(0, 10).map(x => `<tr onclick="ynKartAc('${js(x.k.id)}')"><td><b>${esc(x.k.ad)}</b></td><td>${esc(x.k.grupAd || '')}</td><td class="sag ap-num">${x.once} ders</td><td class="sag ap-num" style="color:var(--ap-uyari)">${x.son} ders</td><td class="sag yn-pdf-gizle" onclick="event.stopPropagation()">${x.k.tel ? `<button class="ap-btn" onclick="ynWa('${js(x.k.id)}','ozledik')">💬 Yaz</button> ` : ''}<button class="ap-btn" onclick="ynKartAc('${js(x.k.id)}')">Kart</button></td></tr>`).join('')}</tbody></table></div></div>` : ''}
             <div class="ap-panel"><h3>Gruplar <span>${esc(ayKisa(d.ay))} · satıra dokun → o grubun ödemeyenleri</span></h3>${gruplar}</div>
         </div>`;
         if (Y.dersler) Y.dersler().then(l => {
@@ -529,7 +534,7 @@
         let k = Y.kisiler().find(x => x.id === YN.kart); if (!k) { a.innerHTML = '<div class="ap"><div class="yn-bos">Sporcu bulunamadı.</div><button class="ap-btn" onclick="ynKartKapat()">Kapat</button></div>'; return; }
         let G = (Y.gelisler() || {})[k.ad] || [], b = bugun(), ay = b.slice(0, 7), sonG = G.length ? G[G.length - 1] : null;
         let ayGelis = m => G.filter(t => t.slice(0, 7) === m).length, son3 = [0, -1, -2].reduce((t, n) => t + ayGelis(ayEkle(ay, n)), 0);
-        let aidatAcik = Y.aidatAcik ? Y.aidatAcik() : true, A = Y.aidat;
+        let aidatHazir = !Y.aidatHazir || Y.aidatHazir(), aidatAcik = (Y.aidatAcik ? Y.aidatAcik() : true) && aidatHazir, A = Y.aidat;
         if (aidatAcik && A && A.hazirla) A.hazirla(ay);
         let yas = k.dogum ? Math.floor((Date.now() - new Date(k.dogum + 'T12:00:00')) / (365.25 * 864e5)) : null;
         let durum = k.pasif ? '<span class="ap-etk k">Pasif</span>' : '<span class="ap-etk i">Aktif</span>';
@@ -541,7 +546,8 @@
             + (aidatAcik ? tile(buRec && buRec.odendi ? 'iyi' : k.muaf || k.pasif ? '' : 'uyari', 'Aidat · ' + ayKisa(ay), buRec && buRec.odendi ? 'Ödendi' : k.muaf ? 'Muaf' : 'Ödenmedi', buRec && buRec.odendi ? (apOdemeGunu(buRec) || '').split('-').reverse().join('.') + (buRec.tutar ? ' · ' + tl(buRec.tutar) : '') : k.pasif ? 'pasif sporcu' : 'aylık ' + tl(A.aylik(k))) : tile('', 'Aidat', '🔒', 'kilitli'));
         // aidat yılı
         let yil = YN.kartYil, aidat;
-        if (!aidatAcik) aidat = `<div class="yn-bos">🔒 Aidat kilitli. PIN ile aç, sonra bu sporcunun aylarını buradan düzelt.</div><div class="ap-filtre yn-pdf-gizle"><input type="password" id="yn-kart-pin" placeholder="Aidat PIN'i" autocomplete="off" style="max-width:180px" onkeydown="if(event.key==='Enter') ynKartPin()"><button class="ap-btn ana" onclick="ynKartPin()">Kilidi aç</button></div>`;
+        if (!aidatHazir) aidat = '<div class="yn-bos">Aidat bilgisi yükleniyor…</div>';
+        else if (!aidatAcik) aidat = `<div class="yn-bos">🔒 Aidat kilitli. PIN ile aç, sonra bu sporcunun aylarını buradan düzelt.</div><div class="ap-filtre yn-pdf-gizle"><input type="password" id="yn-kart-pin" placeholder="Aidat PIN'i" autocomplete="off" style="max-width:180px" onkeydown="if(event.key==='Enter') ynKartPin()"><button class="ap-btn ana" onclick="ynKartPin()">Kilidi aç</button></div>`;
         else {
             let hucre = '';
             for (let i = 1; i <= 12; i++) {
