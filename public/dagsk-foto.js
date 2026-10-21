@@ -44,6 +44,8 @@ function _fotoSporcuyaYaz() {
         let s = fotoSrc(fotoAnahtar(g, ad), false);
         if (s) sp.fotoUrl = s; else if (sp.fotoUrl) delete sp.fotoUrl;
     }));
+    // oyun listesi önbelleği (Karışık Sınıf oyunları: sırada kartı, kalabalık, vuruş kartı) fotoğraflar yüklenmeden kurulduysa
+    try { if (typeof _kmOyunRosterCache !== 'undefined' && _kmOyunRosterCache) _kmOyunRosterCache.forEach(r => { let sp = r && turnuvaDB[r.g] && turnuvaDB[r.g][r.ad]; if (sp) r.foto = sp.fotoUrl || null; }); } catch (e) {}
 }
 function fotoListeCek(zorla) {
     if (_fotoCekim) return _fotoCekim;

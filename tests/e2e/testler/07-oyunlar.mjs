@@ -123,7 +123,7 @@ export default async function ({ log }) {
         let m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let i = 0; i < 60 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 200)); }
       };
       const r = {};
-      kur('kaplumbaga', 500, 500); await seri(['X', 'X', 'X']); r.kap = 500 - _kmCanavar.aktif.can;
+      kur('kaplumbaga', 500, 500); await seri(['X', 'X', 'X']); r.kap = 500 - _kmCanavar.aktif.can; r.kart = ((document.getElementById('km-cnv-vk') || {}).textContent || ''); r.kartAd = _kmOyunRosterCache[0].ad; r.menu = !!document.querySelector('#km-oyun-diger .km-oyun-diger-menu #km-oyun-sesli-btn');
       kur('zumruduanka', 5, 100); await seri(['9', '9', '9']); r.anka = { can: _kmCanavar.aktif.can, dirildi: !!_kmCanavar.aktif.dirildi, tip: _kmCanavar.aktif.tip };
       kur('jole', 60, 100); await seri(['5', '5', '5']); r.jole = !!_kmCanavar.aktif.parca && _kmCanavar.aktif.parca.can[0] + _kmCanavar.aktif.parca.can[1] === _kmCanavar.aktif.can;
       kur('mamut', 400, 500); await seri(['M', 'M', 'M']); r.mamut = _kmCanavar.aktif.can;
@@ -131,6 +131,8 @@ export default async function ({ log }) {
       return { cizim, ...r };
     });
     esit(cnv.cizim.length, 0, 'çizilmeyen canavar: ' + cnv.cizim.join(','));
+    dogrula(cnv.kart.includes(cnv.kartAd) && /−\d+|ISKA/.test(cnv.kart), 'vuruş kartında vuran sporcu / hasar yok: ' + cnv.kart);
+    dogrula(cnv.menu, 'Spiker düğmesi ⋯ Diğer menüsünde olmalı');
     dogrula(cnv.kap > 0 && cnv.kap <= 20, 'kaplumbağa kabuğu tavanı: ' + cnv.kap);
     dogrula(cnv.anka.tip === 'zumruduanka' && cnv.anka.dirildi && cnv.anka.can === 30, 'Zümrüdüanka dirilmedi: ' + JSON.stringify(cnv.anka));
     dogrula(cnv.jole, 'jöle ikiye bölünmedi');
@@ -138,6 +140,7 @@ export default async function ({ log }) {
     // 📖 Canavar rehberi: 23 tür kartı; "Bununla savaş" sahnedeki canavarı değiştirir
     const yedekCnv = await p.evaluate(() => JSON.stringify(_kmCanavar));
     await p.evaluate(() => { kmOyunTemaSec('canavar'); _kmCanavar.aktif.can = _kmCanavar.aktif.maxCan; kmCanavarKaydet(); kmOyunCanavarHudGuncelle(); });
+    await p.locator('#km-cnv-araclar button', { hasText: 'Canavar ▸' }).click(); // araçlar tek düğmede toplu (2026-10-21)
     await p.locator('#km-cnv-araclar button', { hasText: 'Canavarlar' }).click();
     esit(await p.locator('.km-cnv-rh-kart').count(), await p.evaluate(() => KM_CANAVAR_TIPLERI.length), 'rehberdeki kart sayısı');
     const [secAd, secId] = (await p.evaluate(() => _kmCanavar.aktif.tip)) === 'tepegoz' ? ['Kurbağa Kral', 'kurbaga'] : ['Tepegöz', 'tepegoz'];

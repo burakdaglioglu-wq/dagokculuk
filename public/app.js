@@ -14381,6 +14381,30 @@
 .km-cnv-katki, .km-cnv-ganimet{ position:absolute; bottom:8px; z-index:1; pointer-events:none; font-family:var(--font-body); font-size:11px; color:var(--ink-dim); background:rgba(0,0,0,.42); border:1px solid var(--line); border-radius:10px; padding:6px 9px; backdrop-filter:none; }
 .km-cnv-katki{ left:8px; min-width:130px; max-width:190px; }
 .km-cnv-ganimet{ right:8px; min-width:110px; text-align:right; }
+.km-cnv-katki.gizli{ display:none; }
+.km-cnv-cip.ozellik small{ display:none; }
+#km-cnv-vk{ position:absolute; z-index:6; transform:translate(-50%,-50%) scale(.7); opacity:0; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 10px; border-radius:18px; background:rgba(10,12,24,.94); border:2px solid #f6c945; box-shadow:0 12px 36px rgba(0,0,0,.5); color:#fff; pointer-events:none; transition:transform .3s cubic-bezier(.2,.9,.3,1.3), opacity .25s; max-width:min(480px,70%); font-family:var(--font-body); text-align:left; }
+#km-cnv-vk.acik{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+#km-cnv-vk.iska{ border-color:#94a3b8; }
+#km-cnv-vk.kritik{ border-color:#ffd23f; box-shadow:0 0 0 4px rgba(255,210,63,.35), 0 12px 36px rgba(0,0,0,.5); }
+.km-cnv-vk-foto{ width:64px; height:64px; flex:none; border-radius:50%; display:grid; place-items:center; font-weight:900; font-size:22px; color:#cfd6f5; background-color:#2b3150; background-size:cover; background-position:center; border:3px solid #f6c945; }
+.km-cnv-vk-ic{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.km-cnv-vk-ic b{ font-size:20px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.km-cnv-vk-ok{ display:flex; gap:4px; flex-wrap:wrap; }
+.km-cnv-vk-ok i{ font-style:normal; min-width:24px; height:24px; padding:0 4px; border-radius:7px; display:grid; place-items:center; font-size:12px; font-weight:900; background:#475569; color:#fff; }
+.km-cnv-vk-ok i.r-altin{ background:#f4d64a; color:#2a2208; } .km-cnv-vk-ok i.r-kirmizi{ background:#ef4444; } .km-cnv-vk-ok i.r-mavi{ background:#38bdf8; color:#04131a; } .km-cnv-vk-ok i.r-siyah{ background:#111827; border:1px solid #475569; } .km-cnv-vk-ok i.r-beyaz{ background:#f8fafc; color:#334155; }
+.km-cnv-vk-etk{ display:flex; gap:4px; flex-wrap:wrap; }
+.km-cnv-vk-etk em{ font-style:normal; font-size:12px; font-weight:800; padding:2px 8px; border-radius:99px; background:rgba(255,255,255,.12); white-space:nowrap; }
+.km-cnv-vk-etk em.kritik{ background:#ffd23f; color:#241a00; } .km-cnv-vk-etk em.zayif{ background:rgba(255,95,61,.25); color:#ffc2b4; } .km-cnv-vk-etk em.kombo{ background:rgba(95,184,255,.22); color:#cbe8ff; } .km-cnv-vk-etk em.gorev{ background:rgba(54,209,122,.22); color:#b4f5d0; } .km-cnv-vk-etk em.kalkan{ background:rgba(148,163,184,.3); }
+.km-cnv-vk-hasar{ font-size:44px; font-weight:900; color:#ff5a4f; line-height:1; margin-left:4px; font-variant-numeric:tabular-nums; }
+#km-cnv-vk.iska .km-cnv-vk-hasar{ color:#cbd5e1; font-size:28px; }
+@media (max-width:700px){ .km-cnv-vk-foto{ width:44px; height:44px; font-size:16px; } .km-cnv-vk-hasar{ font-size:30px; } .km-cnv-vk-ic b{ font-size:15px; } }
+.km-oyun-diger{ position:relative; }
+.km-oyun-diger-menu{ display:none; position:absolute; right:0; top:calc(100% + 6px); z-index:60; flex-direction:column; gap:4px; padding:8px; min-width:230px; border-radius:14px; background:#141729; border:1px solid rgba(255,255,255,.14); box-shadow:0 14px 40px rgba(0,0,0,.5); }
+.km-oyun-diger.acik .km-oyun-diger-menu{ display:flex; }
+.km-oyun-diger-menu .km-oyun-tam-btn{ width:100%; justify-content:flex-start; text-align:left; }
+.km-oyun-diger-menu .km-oyun-btn-etiket{ display:inline !important; }
+.km-oyun-not{ display:none; }
 .km-cnv-katki-baslik{ font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:3px; }
 .km-cnv-katki-satir{ display:flex; justify-content:space-between; gap:10px; padding:1px 0; }
 .km-cnv-katki-satir.lider .km-cnv-katki-ad, .km-cnv-katki-satir.lider .km-cnv-katki-deger{ color:#ffd23f; }
@@ -18384,6 +18408,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         </div>`;
         }
 
+        // ⋯ Diğer (2026-10-21, kullanıcı: "her yerde bir yazı bir şey var, derli toplu yapalım"): az kullanılan üst düğmeler menüde
+        function kmOyunDigerAcKapat(e) { if(e) e.stopPropagation(); let d = document.getElementById('km-oyun-diger'); if(!d) return; let ac = !d.classList.contains('acik'); d.classList.toggle('acik', ac); if(ac) setTimeout(function() { document.addEventListener('click', kmOyunDigerKapat, { once: true }); }, 0); }
+        function kmOyunDigerKapat() { let d = document.getElementById('km-oyun-diger'); if(d) d.classList.remove('acik'); }
+        function kmOyunNasilOynanir() { let th = KM_OYUN_TEMALAR[_kmOyunAktifTema] || {}; onayIste('<b>' + (th.ikon || '') + ' ' + esc(th.ad || '') + '</b><br><br>' + (th.aciklama || '') + '<br><br><span style="font-size:12px;color:var(--text-muted)">Bu bir eğlence katmanı — gerçek skor ve klasman değişmez.</span>', null, null); setTimeout(function() { let b = document.getElementById('onay-evet-btn'); if(b) b.style.display = 'none'; }, 50); }
         function kmOyunHTML() {
             let th = KM_OYUN_TEMALAR[_kmOyunAktifTema];
             kmOyunKameraKilitYukle();
@@ -18400,6 +18428,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${kmKarmaMi() ? ' aktif' : ''}" onclick="kmHatPanelAc()" title="Ders hatları — kim Oyun'da, kim Yarışma'da">🔀 ${kmKarmaMi() ? ((_kmListe.length - kmOyunListe().length) + ' Yarışma\'da') : 'Hatlar'}</button>
                     </div>
                     <div class="km-oyun-topbar-sag">
+                        <div class="km-oyun-diger" id="km-oyun-diger"><button class="km-oyun-tam-btn" onclick="kmOyunDigerAcKapat(event)" aria-haspopup="true" title="Spiker, dramatik, sayaç, tören, özet, oyun öner…">⋯ Diğer</button><div class="km-oyun-diger-menu" role="menu" onclick="kmOyunDigerKapat()">
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama — sonucu davul sesiyle, gerilimli açıklar">🎬<span class="km-oyun-btn-etiket"> Dramatik</span></button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir oyun öner">🎲<span class="km-oyun-btn-etiket"> Oyun Öner</span></button>
@@ -18409,6 +18438,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn km-oyun-sayac-buyut-btn${_kmOyunSayacBuyukAcik ? ' aktif' : ''}" onclick="kmOyunSayacBuyukAcKapat()" style="${_kmOyunSayacAcik ? '' : 'display:none;'}" title="Sayacı büyüt — ekranın istediğin yerine sürükleyebilirsin, sporcular uzaktan da görebilir">🔍 Büyüt</button>
                         <button class="km-oyun-tam-btn${_kmOyunKameraKilitli ? ' aktif' : ''}" id="km-oyun-kamera-kilit-btn" onclick="kmOyunKameraKilitDegistir()" style="${kameraVarMi ? '' : 'display:none;'}" title="${_kmOyunKameraKilitli ? 'Kamera geniş görünümde sabit — otomatik yakınlaşmayı açmak için dokun.' : 'Kamera otomatik yakınlaşıyor. Geniş görünümde sabitlemek için dokun.'}">${_kmOyunKameraKilitli ? '🔓' : '🔒'}<span class="km-oyun-kilit-etiket">${_kmOyunKameraKilitli ? ' Otomatik Kamera' : ' Geniş Görünümde Kal'}</span></button>
                         <button class="km-oyun-tam-btn" id="km-oyun-pist-uzunluk-btn" onclick="kmOyunPistUzunlukDegistir()" style="${_kmOyunAktifTema === 'pist' ? '' : 'display:none;'}" title="Yarışın kaç setten oluştuğunu ve kaç tur olduğunu ayarlar (sadece bu cihazda hatırlanır)">${_kmOyunAktifTema === 'pist' ? kmOyunPistUzunlukBtnMetni() : ''}</button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunNasilOynanir()">ⓘ<span class="km-oyun-btn-etiket"> Bu oyun nasıl oynanır?</span></button>
+                        </div></div>
                         <button class="km-oyun-tam-btn" id="km-oyun-tam-btn" onclick="kmOyunTamEkran()">🖥️ Tam Ekran</button>
                     </div>
                 </div>
@@ -23727,10 +23758,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmCanavarKoleksiyon(g, ad) { let sp = turnuvaDB[g] && turnuvaDB[g][ad]; return (sp && sp.oyun && sp.oyun.canavar) || {}; }
 
         // ---- Sağ üst araç çubuğu: zorluk · takım · ses · yeni savaş
+        let _kmCnvAracAcik = false, _kmCnvKatkiAcik = (function() { try { return localStorage.getItem('dag_km_cnv_katki') === '1'; } catch(e) { return false; } })();
+        function kmCnvKatkiDegistir() { _kmCnvKatkiAcik = !_kmCnvKatkiAcik; try { localStorage.setItem('dag_km_cnv_katki', _kmCnvKatkiAcik ? '1' : '0'); } catch(e) {} kmCanavarAraclarCiz(); }
         function kmCanavarAraclarCiz() {
             let el = document.getElementById('km-cnv-araclar'); if(!el) return;
             let z = KM_CANAVAR_ZORLUK[kmCanavarZorluk()], takim = kmCanavarTakimAcik();
-            el.innerHTML = `<button class="km-cnv-yeni-btn" onclick="kmCanavarRehberAc()" title="Bütün canavarlar: resim, kural, ipucu — istediğini seç">📖 Canavarlar</button>`
+            let katki = document.getElementById('km-cnv-katki'); if(katki) katki.classList.toggle('gizli', !_kmCnvKatkiAcik);
+            if(!_kmCnvAracAcik) { el.innerHTML = '<button class="km-cnv-yeni-btn" onclick="_kmCnvAracAcik=true; kmCanavarAraclarCiz()" title="Canavarlar, zorluk, takım savaşı, ses, hasar tablosu, yeni savaş">🐉 Canavar ▸</button>'; return; }
+            el.innerHTML = '<button class="km-cnv-yeni-btn aktif" onclick="_kmCnvAracAcik=false; kmCanavarAraclarCiz()" aria-label="Kapat">✕</button>'
+                + `<button class="km-cnv-yeni-btn${_kmCnvKatkiAcik ? ' aktif' : ''}" onclick="kmCnvKatkiDegistir()" title="Sol altta kim ne kadar hasar verdi">📊 Hasar</button>`
+                + `<button class="km-cnv-yeni-btn" onclick="kmCanavarRehberAc()" title="Bütün canavarlar: resim, kural, ipucu — istediğini seç">📖 Canavarlar</button>`
                 + `<button class="km-cnv-yeni-btn" onclick="kmCanavarZorlukDegistir()" title="Zorluk: ${z.ad} — ${z.acik}. Dokun: Kolay → Normal → Zor">${z.ikon} ${z.ad}</button>`
                 + `<button class="km-cnv-yeni-btn${takim ? ' aktif' : ''}" onclick="kmCanavarTakimDegistir()" title="Takım savaşı: sınıf ikiye ayrılır, canavarı önce indiren takım kazanır" aria-pressed="${takim}">⚔️ Takım${takim ? ' açık' : ''}</button>`
                 + `<button class="km-cnv-yeni-btn${_kmCnvSesAcik ? ' aktif' : ''}" onclick="kmCnvSesDegistir()" title="Savaş sesleri" aria-label="Savaş sesleri" aria-pressed="${_kmCnvSesAcik}">${_kmCnvSesAcik ? '🔊' : '🔇'}</button>`
@@ -24565,10 +24602,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Parti (sınıfın hayvan karakterleri) — soldan canavara bakan sıralar; 6'şarlı sıralar, arka
         // sıralar hafif yukarıda ve kaydırılmış. Konum SADECE attribute transform ile (Resync deseni).
         function kmOyunCanavarOkcuPoz(i) {
+            // x başlangıcı 240 (canavar x≈620'den başlar); arka sıralar yukarıda ve GERİDE çizilir (bkz. kmOyunSahneKurCanavar).
             let cap = 6, row = Math.floor(i / cap), col = i % cap;
-            // x başlangıcı 230: sol alttaki Hasar tablosu (~190 dünya birimi) ön sıranın isim etiketlerini
-            // örtmesin (gerçek testte yakalandı).
-            return { x: 230 + col * 72 + (row % 2) * 36, y: KM_CANAVAR_ZEMIN_Y - row * 46 };
+            return { x: 240 + col * 64 + (row % 2) * 32, y: KM_CANAVAR_ZEMIN_Y - row * 58 };
         }
         function kmOyunSahneKurCanavar() {
             kmCanavarDurumEmin(); kmCanavarRekorEmin();
@@ -24586,9 +24622,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Halka: CSS transform DEĞİL, SMIL r-nabzı — fill-box/transform-origin ile gerçek testte
                 // halka karakterden yana kayıyordu; SMIL'de hiç transform yok, merkez hep karakterde.
                 el.innerHTML = `<g class="km-cnv-okcu-ic"><circle class="km-cnv-okcu-halka" r="34" cy="-26" fill="none" stroke="${renk}" stroke-width="3"><animate attributeName="r" values="32;37;32" dur="1.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="1;.5;1" dur="1.4s" repeatCount="indefinite"/></circle>
-                    ${kmOyunHayvanKarakterSVG(s, renk, 56)}
+                    ${kmOyunHayvanKarakterSVG(s, renk, 56)}${s.foto ? `<g class="km-cnv-foto" transform="translate(0,-74)"><clipPath id="km-cnv-fk-${i}"><circle r="15"/></clipPath><circle r="18" fill="#fff" stroke="${renk}" stroke-width="3"/><image href="${s.foto}" x="-15" y="-15" width="30" height="30" preserveAspectRatio="xMidYMid slice" clip-path="url(#km-cnv-fk-${i})"/></g>` : ''}
                     <g transform="translate(0,16)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${esc(ilkAd)}</text></g></g>`;
-                pg.appendChild(el);
+                // arka sıra (i ≥ 6) önce çizilmiş gibi en alta: öndeki sıra onun üstünde kalır
+                if(i >= 6) pg.insertBefore(el, pg.firstChild); else pg.appendChild(el);
                 s.canavarEl = el;
             });
             kmOyunCanavarGovdeKur(false);
@@ -24676,6 +24713,23 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // Hasar sayısı — canavarın üstünde kırmızı/altın uçan "-N" (kmOyunFloatingSkor'un "+N"i okçunun
         // üstünde ayrıca uçuyor: okçu puan kazanır, canavar can kaybeder — iki ayrı bilgi).
+        let _kmCnvVkZaman = null;
+        function kmCnvVurusKarti(s, oklar, hasar, etk, kritikMi) {
+            let katman = document.getElementById('km-oyun-burst'); if(!katman) return;
+            let el = document.getElementById('km-cnv-vk');
+            if(!el) { el = document.createElement('div'); el.id = 'km-cnv-vk'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); katman.appendChild(el); }
+            let scr = kmOyunSvgPct('km-oyun-svg-canavar', KM_CANAVAR_X - 150, 92);
+            el.style.left = Math.max(22, Math.min(78, scr.xPct)) + '%'; el.style.top = Math.max(18, scr.yPct) + '%';
+            let bas = String(s.ad || '?').trim().split(/\s+/).slice(0, 2).map(function(p) { return p.charAt(0); }).join('').toLocaleUpperCase('tr-TR');
+            let okHTML = (oklar || []).map(function(v) { let r = KM_OYUN_PAD_RENK[v] || 'gri'; return '<i class="r-' + r + '">' + esc(v) + '</i>'; }).join('');
+            el.className = (kritikMi && hasar > 0 ? 'kritik' : '') + (hasar > 0 ? '' : ' iska');
+            el.innerHTML = '<span class="km-cnv-vk-foto"' + (s.foto ? ' style="background-image:url(\'' + s.foto + '\')"' : '') + '>' + (s.foto ? '' : esc(bas)) + '</span>'
+                + '<span class="km-cnv-vk-ic"><b>' + esc(s.ad) + '</b><span class="km-cnv-vk-ok">' + okHTML + '</span>'
+                + (etk.length ? '<span class="km-cnv-vk-etk">' + etk.map(function(e) { return '<em class="' + e[0] + '">' + esc(e[1]) + '</em>'; }).join('') + '</span>' : '') + '</span>'
+                + '<span class="km-cnv-vk-hasar">' + (hasar > 0 ? '−' + hasar : 'ISKA') + '</span>';
+            el.classList.remove('acik'); void el.offsetWidth; el.classList.add('acik');
+            clearTimeout(_kmCnvVkZaman); _kmCnvVkZaman = setTimeout(function() { el.classList.remove('acik'); }, 3400 + Math.min(4, etk.length) * 400);
+        }
         function kmOyunCanavarHasarYazisi(hasar, kritikMi) {
             let layer = document.getElementById('km-oyun-burst'); if(!layer) return;
             let scr = kmOyunSvgPct('km-oyun-svg-canavar', KM_CANAVAR_X + (Math.random() * 60 - 30), 200);
@@ -24876,27 +24930,27 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, kritikMi ? '#ffd23f' : kmCanavarTip(c.no).renk2, kritikMi ? 26 : 12, kritikMi);
                     if(kritikMi) {
                         let flash = document.getElementById('km-cnv-flash'); if(flash && !azaltilmis) { flash.classList.remove('goster'); void flash.getBoundingClientRect(); flash.classList.add('goster'); }
-                        let yazi = document.getElementById('km-cnv-kritik-yazi'); if(yazi && !azaltilmis) { yazi.classList.remove('goster'); void yazi.getBoundingClientRect(); yazi.classList.add('goster'); }
                         kmCnvSes('kritik');
                     } else kmCnvSes('vurus');
                 } else {
                     if(sar && !azaltilmis) { sar.classList.remove('km-cnv-alay'); void sar.getBoundingClientRect(); sar.classList.add('km-cnv-alay'); setTimeout(function() { sar.classList.remove('km-cnv-alay'); }, 900); }
                     kmCnvSes(kalkanSekti ? 'sekme' : 'iska');
-                    if(!kapali) showToast(kmCanavarTip(c.no).ikon + ' Canavar güldü — bu seri ıskaladı, sıradaki!', 'warning');
                 }
-                kmOyunCanavarHasarYazisi(hasar, kritikMi);
                 kmCanavarIzlerCiz();
-                // Kafaya saplanan X: ekranda KRİTİK! (seri kritik olmasa da)
-                if(oklar.indexOf('X') !== -1 && !kalkanSekti && !azaltilmis) { let yazi = document.getElementById('km-cnv-kritik-yazi'); if(yazi) { yazi.classList.remove('goster'); void yazi.getBoundingClientRect(); yazi.classList.add('goster'); } }
-                let kafa = KM_CANAVAR_KAFA[c.tip] || [0, -240];
-                if(kalkanSekti) kmCanavarYaziUcur('🛡️ SEKTİ!', KM_CANAVAR_X - 250, 190, 'kalkan');
+                // 🃏 Vuruş kartı (2026-10-21, kullanıcı: "her yerde bir yazı var, hangi sporcu gözükmüyor, derli toplu yapalım"):
+                // KRİTİK!, ZAYIF NOKTA, KOMBO, GÖREV, KALKAN ve canavarın özel kural notları ayrı ayrı uçmak yerine tek kartta —
+                // vuranın fotoğrafı, adı, okları, hasarı. Tek seferlik büyük olaylar (jöle bölündü, kalkan açtı, yeni zayıf nokta) aşağıda kalır.
+                let etk = [];
+                if(kritikMi && hasar > 0) etk.push(['kritik', '⚡ KRİTİK!']);
+                if(zayifEk && !kalkanSekti) etk.push(['zayif', '🎯 Zayıf nokta +' + zayifEk]);
+                if(_kmCanavar.kombo >= 2) etk.push(['kombo', '🔗 Kombo ×' + komboCarpan.toFixed(1)]); else if(komboKirildi) etk.push(['', 'Kombo kırıldı']);
+                if(gorevTamam && hasar > 0) { etk.push(['gorev', '📜 Görev ×1,5']); setTimeout(function() { kmCnvSes('gorev'); }, 260); }
+                if(kalkanSekti) etk.push(['kalkan', '🛡️ Kalkandan sekti']);
+                if(kalkanKirildi) etk.push(['kalkan', '🛡️ Kalkan kırıldı']);
+                ozelNot.forEach(function(n) { etk.push(['', n]); });
+                kmCnvVurusKarti(s, oklar, hasar, etk, kritikMi);
                 if(kalkanKirildi) kmCnvSes('kalkan-kirik');
-                if(kalkanKirildi) { kmCanavarYaziUcur('🛡️ KALKAN KIRILDI!', KM_CANAVAR_X - 160, 150, 'kalkan-kirik'); let kk = document.getElementById('km-cnv-kalkan'); if(kk) { kk.classList.remove('kirik'); void kk.getBoundingClientRect(); kk.classList.add('kirik'); setTimeout(function() { kk.classList.remove('kirik'); }, 800); } }
-                if(_kmCanavar.kombo >= 2) kmCanavarYaziUcur('🔗 KOMBO ×' + komboCarpan.toFixed(1), KM_CANAVAR_X + kafa[0], KM_CANAVAR_ZEMIN_Y + kafa[1] - 60, 'kombo');
-                else if(komboKirildi) kmCanavarYaziUcur('KOMBO KIRILDI', KM_CANAVAR_X - 120, 120, 'kombo-kirik');
-                if(zayifEk && !kalkanSekti) kmCanavarYaziUcur('🎯 ZAYIF NOKTA +' + zayifEk, KM_CANAVAR_X + 40, 300, 'zayif');
-                if(gorevTamam && hasar > 0) { kmCanavarYaziUcur('📜 GÖREV TAMAM! ×1,5', KM_CANAVAR_X - 230, 250, 'gorev'); setTimeout(function() { kmCnvSes('gorev'); }, 260); }
-                ozelNot.forEach(function(n, k) { setTimeout(function() { kmCanavarYaziUcur(n, KM_CANAVAR_X - 200, 120 + k * 46, 'gorev'); }, 200 + k * 420); });
+                if(kalkanKirildi) { let kk = document.getElementById('km-cnv-kalkan'); if(kk) { kk.classList.remove('kirik'); void kk.getBoundingClientRect(); kk.classList.add('kirik'); setTimeout(function() { kk.classList.remove('kirik'); }, 800); } }
                 if(joleBolundu) setTimeout(function() { kmCnvSes('evre'); kmCanavarYaziUcur('🟢 JÖLE İKİYE BÖLÜNDÜ!', KM_CANAVAR_X, 110, 'kukreme'); if(!kapali) { try { kmOyunBanner('🟢 JÖLE İKİYE BÖLÜNDÜ!', 'İkisini de bitirin — fazla hasar öbürüne geçmez', 'canavar-evre'); } catch(e) {} } }, 700);
                 if(ankaDirildi) setTimeout(function() { kmCnvSes('dogus'); kmCanavarYaziUcur('🔥 KÜLLERİNDEN DOĞDU!', KM_CANAVAR_X, 110, 'kukreme'); if(!kapali) { try { kmOyunBanner('🔥 ZÜMRÜDÜANKA KÜLLERİNDEN DOĞDU!', '%30 canla geri döndü — bir kez daha yenin!', 'canavar-evre'); } catch(e) {} } }, 600);
                 kmOyunCanavarHudGuncelle();
