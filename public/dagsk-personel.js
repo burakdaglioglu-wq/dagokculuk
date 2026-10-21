@@ -84,6 +84,9 @@ function psDurumEtk(b) {
     return '<span class="ap-etk i">Aktif</span>' + (b.calisma && b.calisma !== 'tam' ? ' <span class="ap-etk m">' + psEsc(psSecAd(PS_CALISMA, b.calisma)) + '</span>' : '');
 }
 function psBas(ad) { return String(ad || '?').trim().split(/\s+/).slice(0, 2).map(x => x.charAt(0)).join('').toLocaleUpperCase('tr-TR'); }
+// 📷 eğitmen fotoğrafı (dagsk-foto.js, anahtar 'p:<id>')
+function psAvatar(p, sinif) { return typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML('p:' + p.id, p.ad, sinif, true) : `<span class="${sinif}">${psEsc(psBas(p.ad))}</span>`; }
+function psFoto() { let p = psBul(PS.profil); if (p && typeof fotoYukleAc === 'function') fotoYukleAc('p:' + p.id, p.ad, () => { psProfilCiz(); if (yoneticiSekmeAktif === 'kisiler') psCiz(); }); }
 function psTel(t) { return typeof telefonWaFormat === 'function' ? telefonWaFormat(t) : String(t || '').replace(/\D/g, ''); }
 
 // ---- ekran ----
@@ -152,7 +155,7 @@ function psEgitmenHTML(kadro, tum) {
         <div><small>Bu ay hakediş</small><b>${acik ? psTl(hak) : '🔒'}</b><span>${acik ? 'ders + gün + aylık' : 'aidat PIN\'i ile görünür'}</span></div></div>`;
     let satir = kadro.slice().sort((a, b) => (psB(a.id).durum === 'ayrildi') - (psB(b.id).durum === 'ayrildi') || a.ad.localeCompare(b.ad, 'tr')).map(p => {
         let b = psB(p.id), bo = psBelgeOzet(p.id);
-        return `<tr onclick="psProfilAc('${psJs(p.id)}')"><td><span class="ps-kisi"><span class="ps-av">${psEsc(psBas(p.ad))}</span><b class="yn-isim">${psEsc(p.ad)}</b></span></td><td>${psEsc(psSecAd(PS_ROL, b.rol) || '—')}</td><td>${psEsc(b.tel || '—')}</td><td class="sag ap-num">${psDersSay(p.id, hafta)}</td><td><span class="ap-etk ${bo.cls}">${psEsc(bo.metin)}</span></td><td>${psDurumEtk(b)}</td></tr>`;
+        return `<tr onclick="psProfilAc('${psJs(p.id)}')"><td><span class="ps-kisi">${psAvatar(p, 'ps-av')}<b class="yn-isim">${psEsc(p.ad)}</b></span></td><td>${psEsc(psSecAd(PS_ROL, b.rol) || '—')}</td><td>${psEsc(b.tel || '—')}</td><td class="sag ap-num">${psDersSay(p.id, hafta)}</td><td><span class="ap-etk ${bo.cls}">${psEsc(bo.metin)}</span></td><td>${psDurumEtk(b)}</td></tr>`;
     }).join('');
     let liste = kadro.length ? `<div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Ad</th><th>Rol</th><th>Telefon</th><th class="sag">Bu hafta</th><th>Belgeler</th><th>Durum</th></tr></thead><tbody>${satir}</tbody></table></div>`
         : '<div class="yn-bos">Henüz eğitmen yok. Üstten <b>＋ Eğitmen ekle</b>.</div>';
@@ -325,7 +328,7 @@ function psProfilCiz() {
             <span class="yn-p-sag">${PS.duzen ? `<button class="ap-btn" onclick="PS.duzen=false; psProfilCiz()">Vazgeç</button><button class="ap-btn ana" onclick="psBilgiKaydet()">💾 Kaydet</button>` : `<button class="ap-btn ana" onclick="PS.duzen=true; psProfilCiz()">✏️ Düzenle</button><button class="ap-btn" onclick="ynPdf(document.getElementById('ps-profil-ic'), 'egitmen')">📄 PDF</button>`}</span></div>
         <div class="yn-p-izgara">
             <aside class="yn-p-kimlik">
-                <div class="ap-panel yn-p-kart"><div class="yn-av" style="background:#1d2c40;color:#5aa9ff">${psEsc(psBas(p.ad))}</div><h2>${psEsc(p.ad)}</h2><div class="yn-p-alt">${psEsc(psSecAd(PS_ROL, b.rol) || 'Eğitmen')}${b.baslama ? ' · ' + psTR(b.baslama) + "'den beri" : ''}</div><div>${psDurumEtk(b)}</div></div>
+                <div class="ap-panel yn-p-kart"><div class="yn-av" data-foto-k="p:${psEsc(p.id)}" data-foto-y="1" style="background-color:#1d2c40;color:#5aa9ff;${typeof fotoStil === 'function' ? fotoStil('p:' + p.id, true) : ''}">${psEsc(psBas(p.ad))}<button class="yn-av-foto yn-pdf-gizle" onclick="psFoto()" aria-label="Fotoğrafı değiştir">📷</button></div><h2>${psEsc(p.ad)}</h2><div class="yn-p-alt">${psEsc(psSecAd(PS_ROL, b.rol) || 'Eğitmen')}${b.baslama ? ' · ' + psTR(b.baslama) + "'den beri" : ''}</div><div>${psDurumEtk(b)}</div></div>
                 ${ozet.length ? `<div class="ap-panel"><dl class="yn-dl">${ozet.map(x => `<dt>${x[0]}</dt><dd>${psEsc(x[1])}</dd>`).join('')}</dl></div>` : ''}
                 <div class="yn-p-hizli yn-pdf-gizle">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none;text-align:center">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}','_blank')">💬 WhatsApp</button>` : '<span class="ap-etk u" style="grid-column:1/-1;text-align:center">Telefon yok · ✏️ Düzenle</span>'}</div>
             </aside>

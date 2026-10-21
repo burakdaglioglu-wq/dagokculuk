@@ -42,6 +42,7 @@ import { registerIhtiyacRoutes } from "./routes/ihtiyac";
 import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
 import { registerKmOrtakRoutes } from "./routes/kmOrtak";
 import { registerYayinRoutes } from "./routes/yayin";
+import { registerFotoRoutes } from "./routes/fotolar";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
@@ -86,6 +87,7 @@ registerIhtiyacRoutes(router);
 registerTeknikAnalizRoutes(router);
 registerKmOrtakRoutes(router);
 registerYayinRoutes(router);
+registerFotoRoutes(router);
 registerGirisRoutes(router, "/api/giris", (env) => env.DB);
 registerGirisRoutes(router, "/api/milo/giris", (env) => env.DB_MILO);
 

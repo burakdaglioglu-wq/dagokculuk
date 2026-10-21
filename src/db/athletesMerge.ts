@@ -90,6 +90,9 @@ export async function mergeAthlete(
       sec(dstRow.saglikRaporuBitis, kaynakSatir.saglikRaporuBitis), sec(dstRow.lisansBitis, kaynakSatir.lisansBitis), sec(dstRow.fotoUrl, kaynakSatir.fotoUrl), zaman,
       target.grup, target.ad
     ),
+    // profil fotoğrafı (fotolar, 2026-10-21): hedefte yoksa kaynağınki taşınır, varsa hedefinki kalır
+    env.DB.prepare("UPDATE OR IGNORE fotolar SET anahtar = ? WHERE anahtar = ?").bind("s:" + target.grup + "|" + target.ad, "s:" + source.grup + "|" + source.ad),
+    env.DB.prepare("DELETE FROM fotolar WHERE anahtar = ?").bind("s:" + source.grup + "|" + source.ad),
     // kaynak: sil + tombstone (tasindi=1, Silinenler listesinde görünmez) + yönlendirme
     env.DB.prepare("DELETE FROM athletes WHERE grup = ? AND ad = ?").bind(source.grup, source.ad),
     env.DB.prepare(

@@ -115,7 +115,7 @@ function toDTO(row: AthleteRow): AthleteDTO {
     saglikRaporuBitis: row.saglikRaporuBitis,
     lisansBitis: row.lisansBitis,
     hazirOlma: row.hazirOlma_json ? JSON.parse(row.hazirOlma_json) : null,
-    fotoUrl: row.fotoUrl,
+    fotoUrl: null, // 2026-10-21: fotoğraflar /api/foto/:anahtar (fotolar tablosu)
     ...gamification,
   };
 }

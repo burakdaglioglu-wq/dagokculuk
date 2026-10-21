@@ -100,6 +100,8 @@ export function registerAthleteRoutes(router: Router): void {
     // KVKK geçiş koruması: kişisel alanlara gelen null yok sayılır (girişsiz açılmış eski bir istemci "bende yok"u
     // null olarak gönderip gerçek veriyi silmesin). Bilerek boşaltma '' ile gelir ve uygulanır.
     for (const f of KISISEL_ALANLAR) if ((body.fields as Record<string, unknown>)[f] === null) delete (body.fields as Record<string, unknown>)[f];
+    // fotoğraflar artık /api/foto'da (0044_fotolar) — eski istemcinin yerelde kalan base64'ü geri yazılmaz
+    delete (body.fields as Record<string, unknown>).fotoUrl;
     if (Object.keys(body.fields).length === 0) return json({ applied: true });
     const sadeceOzServis = Object.keys(body.fields).every((f) => OZ_SERVIS_ALANLARI.has(f));
     if (!sadeceOzServis && !(await yetkiliOturum(request, env, false))) return unauthorized();
