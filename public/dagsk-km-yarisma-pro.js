@@ -123,7 +123,7 @@ function yzEk(fn) {
     let a = Array.prototype.slice.call(arguments, 1), cagir = function () { return window[fn].apply(null, a); };
     if (typeof window[fn] === 'function') return cagir();
     if (typeof dagskEkYukle !== 'function') return;
-    dagskEkYukle('dagsk-yarisma-ek.js?v=1').then(cagir).catch(function () { showToast('Yüklenemedi — bağlantıyı kontrol et.', 'error'); });
+    dagskEkYukle('dagsk-yarisma-ek.js?v=2').then(cagir).catch(function () { showToast('Yüklenemedi — bağlantıyı kontrol et.', 'error'); });
 }
 // 📷 Yarışmada fotoğraflar (2026-10-21, kullanıcı taslaktan B "Sahne"yi seçti): tablo satırı, hedef kartları, giriş penceresi,
 // eleme maçı, TV'de "Şimdi atıyor" şeridi ve fotoğraflı sıralama duyurusu. Yalnız veli izni olan fotoğraf (dagsk-foto.js fotoSrc);
@@ -290,7 +290,7 @@ function yzKurulumHTML() {
         + '<div><div class="yz-etiket">Hedef başına sporcu</div><div class="yz-cipler">' + [1, 2, 3, 4].map(function (n) { return cip(String(n), t.hedefBasi === n, 'yzKurAyar(\'hedefBasi\',' + n + ')'); }).join('') + '</div><div class="yz-alt">' + (t.katilimci.length ? hedefSay + ' hedef kullanılacak (1A, 1B, … sırayla atanır)' : '') + '</div></div>'
         + '</div>'
         + '<div class="yz-kart"><div class="yz-etiket">⏱ Seri süresi <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· + 10 sn hatta geçiş</span></div>' + yzSureSeciciHTML(t.sure || yzVarsayilanSure(t.format), 'kurulum') + '<div class="yz-ozet-satir"><span>⏱ <b>' + yzSureEtiket(t.sure || yzVarsayilanSure(t.format)) + '</b> / seri</span><span>🎯 ' + f.seri + ' seri × ' + f.ok + ' ok</span>' + (f.yari ? '<span>☕ ' + f.yari + '. seriden sonra ara</span>' : '') + '</div>'
-        + '<label class="yz-onay"><input type="checkbox"' + (t.lig ? ' checked' : '') + ' onchange="yzKurulumTaslak().lig=this.checked"> 🏆 Kulüp ligine sayılsın <span class="yz-alt" style="font-weight:600">· kategori içi sıraya göre lig puanı</span></label>'
+        + '<label class="yz-onay"><input type="checkbox"' + (t.lig ? ' checked' : '') + ' onchange="yzKurulumTaslak().lig=this.checked"> 🏆 Kulüp ligine sayılsın <span class="yz-alt" style="font-weight:600">· lig gününde zaten otomatik sayılır</span></label>'
         + '<label class="yz-onay"><input type="checkbox"' + (t.kayit ? ' checked' : '') + ' onchange="yzKurAyar(\'kayit\', this.checked)"> Okları sporcuların gerçek skoruna / karnesine işle</label>'
         + '<button class="yz-btn ana buyuk" ' + (t.katilimci.length ? '' : 'disabled') + ' onclick="yzBaslat()">🏁 Turu başlat</button></div>'
         + yzArsivKartHTML()

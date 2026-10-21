@@ -273,6 +273,8 @@
         }
         function sonrakiDersWidgetGuncelle() {
             try { evOdevWidgetCiz(); } catch(e) {}
+            // 📈 Gelişimim (dagsk-gelisim-plan.js): bugün nasıldı? · 4 haftalık plan · grup/nişangah — tek kart
+            try { if(document.getElementById('gelisim-widget')) { if(typeof gelisimWidgetCiz === 'function') gelisimWidgetCiz(); else dagskEkYukle('dagsk-gelisim-plan.js?v=1').then(function() { gelisimWidgetCiz(); }).catch(function() {}); } } catch(e) {}
             let el = document.getElementById('sonraki-ders-widget'); if(!el) return;
             let ad = loggedInSporcu || oyunSeciliSporcu || basariSeciliSporcu || ''; if(!ad) return;
             if(!_sporcuKendiDersleriCache || (Date.now() - _sporcuKendiDersleriCache.fetchT) > 5 * 60000) {
@@ -4127,7 +4129,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=6';
+        const YN_DOSYA = 'yonetim-panel.js?v=7';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4221,6 +4223,7 @@
                 },
                 dersBaslat: i => yoneticiDersBaslat(i),
                 fotoDegistir: k => { if(k) ysFotoSec(k.grup, k.ad); }, // profil avatarındaki 📷
+                ekPanel: k => typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '', // 📈 Gelişim (plan · grup · his)
                 dogumKarti: k => dogumGunuKartPaylas(k.grup, k.ad), // 🎉 Kutla → fotoğraflı kart
                 avatar: k => typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(k.grup, k.ad), k.ad, 'yn-mav', true) : '', // Genel Bakış tablolarında yüz
                 ekDikkat() {
@@ -4249,7 +4252,7 @@
         // Herhangi bir listeden sporcu kartı (Sporcular & Skor, …)
         function yoneticiKartAc(g, ad) { sporcuProfilAc(g + '|' + ad); }
         // 👤 Sporcu profili HER YERDEN (2026-10-21): adı data-sporcu="grup|ad" taşıyan öğeye dokununca açılır (satırın kendi işinden önce)
-        function sporcuProfilAc(id) { dagskEkYukle(YN_DOSYA).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         window.ynDisDelege = true;
         document.addEventListener('click', function(e) {
             let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if(!el) return;
@@ -32054,6 +32057,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 
             <div id="canli-takip-widget-ana"></div>
             <div id="sonraki-ders-widget"></div>
+            <div id="gelisim-widget"></div>
             <div id="ev-odev-widget"></div>
             <div id="haftalik-program-widget"></div>
             <div id="sezon-sayac-ana"></div>

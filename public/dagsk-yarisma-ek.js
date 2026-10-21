@@ -2,14 +2,10 @@
    📋 resmi skor kağıdı. dagsk-km-yarisma-pro.js'ten yzEk('fonksiyon') ile tembel yüklenir.
    - Belge: A4 yatay tuval (2339×1654) → PDF (sporcu başına bir sayfa) ya da PNG → WhatsApp (dagsk-foto.js _paylas).
      Fotoğraf: fotoVeriAl (izin şartı yok — belge veliye gider). Derece: eleme varsa podyum (yzPodyumListe), yoksa yay grubundaki sıra.
-   - Lig: geçmiş turlar arşivinden (meta yz_arsiv, tüm cihazlar) — yalnız "🏆 Lige sayılsın" işaretli turlar (d.ayar.lig → arşivde lig).
-     Puan her turda sporcunun KENDİ kategorisindeki (grup) sırasına göre: 25-18-15-12-10-8-6-4-2-1, her katılım +2; eşit toplam = aynı
-     sıra. Sezon Eylül–Ağustos. Sezon sonu kupa töreni: kategori başına sahne (yzOzelToren).
+   - Lig: tek lig = Karışık Sınıf Dönem ligi (dagsk-km-gelisim.js glLigTablo); burada yalnız tam ekran fotoğraflı tablo (bkz. aşağıda).
    - Skor kağıdı: hedef başına bir A4 (native jsPDF çizim), seri × ok kutuları, yarı/genel toplam, 10+X, X, atıcı + yazıcı imzası. */
 const YZB_W = 2339, YZB_H = 1654;
 const YZB_DERECE = ['BİRİNCİ', 'İKİNCİ', 'ÜÇÜNCÜ'];
-const YZL_PUAN = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], YZL_KATILIM = 2;
-const YZL_GRUP = { buyukler: '🏹 Büyükler', yildizlar: '⭐ Yıldızlar', kucukler: '🟢 Küçükler', minikler: '🌱 Minikler' };
 
 function yzbAy(t) { return new Date(t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); }
 function yzbGorsel(src, cors) { return new Promise(function (ok) { if (!src) return ok(null); let im = new Image(); if (cors) im.crossOrigin = 'anonymous'; im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = src; }); }
@@ -119,34 +115,25 @@ async function yzBelgePdf(tek) {
     } catch (e) { showToast('Belgeler hazırlanamadı.', 'error'); }
 }
 
-// ---------------------------------------------------------------- 🏆 kulüp ligi
-function yzlSezon(t) { let d = new Date(t); return d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; } // Eylül'de başlar
-function yzlSezonAd(y) { return y + '–' + String(y + 1).slice(2); }
-function yzlHesap(sezon) {
-    let turlar = yzArsivOku().filter(function (r) { return r.lig && yzlSezon(r.t) === sezon; }).sort(function (a, b) { return a.t - b.t; });
-    let kat = {};
-    turlar.forEach(function (r) {
-        let gr = {};
-        (r.sporcular || []).forEach(function (s) { let g = String(s.k || '').split('|')[0] || 'diger'; if (!YZL_GRUP[g]) g = 'diger'; (gr[g] = gr[g] || []).push(s); });
-        Object.keys(gr).forEach(function (g) {
-            let l = gr[g].slice().sort(function (a, b) { return (b.toplam || 0) - (a.toplam || 0) || (a.sira || 999) - (b.sira || 999); }), yer = 0, once = null;
-            l.forEach(function (s, i) {
-                if (!once || s.toplam !== once.toplam) yer = i + 1; once = s;
-                let K = kat[g] = kat[g] || {}, x = K[s.k] = K[s.k] || { k: s.k, ad: s.ad, puan: 0, yerler: {}, katilim: 0 };
-                x.puan += (YZL_PUAN[yer - 1] || 0) + YZL_KATILIM; x.yerler[r.id] = yer; x.katilim++; x.ad = s.ad;
-            });
-        });
-    });
-    let sonuc = {};
-    Object.keys(kat).forEach(function (g) { sonuc[g] = Object.values(kat[g]).sort(function (a, b) { return b.puan - a.puan || b.katilim - a.katilim || a.ad.localeCompare(b.ad, 'tr'); }); });
-    return { turlar: turlar, kat: sonuc };
+// ---------------------------------------------------------------- 🏆 kulüp ligi (tek lig, 2026-10-22)
+// Kullanıcı iki lig olmasın, "ikisini birleştir" dedi: HESAP Karışık Sınıf'taki Dönem ligi (dagsk-km-gelisim.js glLigTablo —
+// dönem, lig günü takvimi, tur bazında "lige sayılsın", kategori grup × yay, antrenman günü +1, dönem kupa töreni), GÖRÜNÜM bu
+// tam ekran fotoğraflı tablo. Yarışma'da kurulumdaki "🏆 Kulüp ligine sayılsın" işareti arşive lig:true yazar; glLigTurlari onu da sayar.
+let _yzl = { kat: null };
+function yzlYukle() {
+    let l = [];
+    if (typeof glLigTablo !== 'function') l.push(dagskEkYukle('dagsk-km-gelisim.js'));
+    if (typeof yzArsivCek !== 'function') l.push(dagskEkYukle('dagsk-km-yarisma-pro.js'));
+    return Promise.all(l);
 }
-let _yzl = { sezon: null, grup: null };
 function yzLigAc() {
-    if (typeof yzArsivCek === 'function') yzArsivCek(function () { if (document.getElementById('yzl-ekran')) yzLigCiz(); });
-    if (_yzl.sezon == null) _yzl.sezon = yzlSezon(Date.now());
     let a = document.getElementById('yzl-ekran'); if (!a) { a = document.createElement('div'); a.id = 'yzl-ekran'; document.body.appendChild(a); }
-    yzlCss(); yzLigCiz();
+    yzlCss(); a.innerHTML = '<div class="ic"><div class="bos">Yükleniyor…</div></div>';
+    yzlYukle().then(function () {
+        yzLigCiz();
+        try { kyDepoSenkron('kulup_lig', function () { return kyDepoOku('kulup_lig'); }, false).then(function () { if (document.getElementById('yzl-ekran')) yzLigCiz(); }).catch(function () {}); } catch (e) {}
+        try { yzArsivCek(function () { if (document.getElementById('yzl-ekran')) yzLigCiz(); }); } catch (e) {}
+    }).catch(function () { a.innerHTML = '<div class="ic"><div class="bos">Lig yüklenemedi — bağlantıyı kontrol et. <button onclick="yzLigKapat()">Kapat</button></div></div>'; });
 }
 function yzlCss() {
     if (document.getElementById('yzl-css')) return;
@@ -166,47 +153,40 @@ function yzlCss() {
         + '#yzl-ekran .tur{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:#efe7d6;font-size:12px;font-weight:900;margin:1px 3px 1px 0}'
         + '#yzl-ekran .tur.a{background:#f4c430}#yzl-ekran .tur.g{background:#cfd6df}#yzl-ekran .tur.b{background:#e2a874}#yzl-ekran .tur.y{background:transparent;color:#c9bfae}'
         + '#yzl-ekran .not{font-size:13px;color:#7c7466;margin-top:10px;line-height:1.5}#yzl-ekran .bos{padding:30px;text-align:center;color:#7c7466;font-size:15px}'
-        + '#yzl-ekran .turlar{margin-top:16px}#yzl-ekran .turlar div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #e7dfcf;font-size:14px}';
+        + '#yzl-ekran .turlar{margin-top:16px}#yzl-ekran .turlar div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #e7dfcf;font-size:14px}'
+        + '@media (max-width:640px){#yzl-ekran td:nth-child(3){display:none}#yzl-ekran th:nth-child(3){display:none}}';
     document.head.appendChild(s);
 }
 function yzLigCiz() {
-    let a = document.getElementById('yzl-ekran'); if (!a) return;
-    let h = yzlHesap(_yzl.sezon), gruplar = ['buyukler', 'yildizlar', 'kucukler', 'minikler', 'diger'].filter(function (g) { return h.kat[g] && h.kat[g].length; });
-    if (!_yzl.grup || gruplar.indexOf(_yzl.grup) === -1) _yzl.grup = gruplar[0] || null;
-    let liste = _yzl.grup ? h.kat[_yzl.grup] : [];
-    let foto = function (k, ad) { let s = typeof fotoSrc === 'function' ? fotoSrc('s:' + k, false) : ''; return '<span class="av"' + (s ? ' style="background-image:url(\'' + s + '\')"' : '') + '>' + (s ? '' : esc(String(ad).trim().split(/\s+/).slice(0, 2).map(function (p) { return p.charAt(0); }).join(''))) + '</span>'; };
-    let tablo = liste.length ? '<table><thead><tr><th>#</th><th>SPORCU</th><th>TURLAR</th><th style="text-align:center">KATILIM</th><th style="text-align:right">PUAN</th></tr></thead><tbody>' + liste.map(function (x, i) {
-        let tur = h.turlar.map(function (r) { let y = x.yerler[r.id]; return '<span class="tur ' + (!y ? 'y' : y === 1 ? 'a' : y === 2 ? 'g' : y === 3 ? 'b' : '') + '" title="' + yzTarihTR(r.tarih) + '">' + (y || '–') + '</span>'; }).join('');
-        return '<tr class="p' + (i + 1) + '"><td class="s">' + (i + 1) + '</td><td><span class="adk">' + foto(x.k, x.ad) + esc(x.ad) + '</span></td><td>' + tur + '</td><td class="n">' + x.katilim + '/' + h.turlar.length + '</td><td class="top">' + x.puan + '</td></tr>';
-    }).join('') + '</tbody></table>' : '<div class="bos">Bu sezon henüz lige sayılan tur yok.<br>Turu başlatırken <b>🏆 Kulüp ligine sayılsın</b> işaretle — ya da geçmiş turlardan birini aç ve lige ekle.</div>';
-    let turlar = h.turlar.length ? '<div class="turlar"><b>Lig turları</b>' + h.turlar.map(function (r) { return '<div><span>' + yzTarihTR(r.tarih) + ' · ' + esc(r.mesafe) + ' · ' + (r.sporcular || []).length + ' sporcu</span><button onclick="yzLigTurDegistir(\'' + encodeURIComponent(r.id) + '\', false)">Ligden çıkar</button></div>'; }).join('') + '</div>' : '';
-    a.innerHTML = '<div class="ic"><div class="bas"><div><small>DAĞ S.K.</small><h2>KULÜP LİGİ ' + yzlSezonAd(_yzl.sezon) + '</h2><span>' + h.turlar.length + ' lig turu' + (h.turlar.length ? ' · son tur ' + yzTarihTR(h.turlar[h.turlar.length - 1].tarih) : '') + '</span></div>'
-        + '<div class="dug"><button onclick="_yzl.sezon--; yzLigCiz()" aria-label="Önceki sezon">‹</button><button onclick="_yzl.sezon++; yzLigCiz()" aria-label="Sonraki sezon">›</button>'
-        + (liste.length ? '<button class="ana" onclick="yzLigToren()">🏅 Sezon kupa töreni</button>' : '') + '<button onclick="yzLigTamEkran()">📺 Tam ekran</button><button onclick="yzLigKapat()">✕ Kapat</button></div></div>'
-        + (gruplar.length > 1 ? '<div class="sek">' + gruplar.map(function (g) { return '<button aria-pressed="' + (g === _yzl.grup) + '" onclick="_yzl.grup=\'' + g + '\'; yzLigCiz()">' + (YZL_GRUP[g] || 'Diğer') + '</button>'; }).join('') + '</div>' : '')
-        + tablo
-        + '<div class="not">Puan: her lig turunda kendi kategorisindeki sıraya göre 1.=25 · 2.=18 · 3.=15 · 4.=12 · 5.=10 · 6.=8 · 7.=6 · 8.=4 · 9.=2 · 10.=1, her katılım +2. Kareler her turdaki yeri gösterir (sarı 1. · gri 2. · bronz 3. · – katılmadı). Sezon Eylül–Ağustos.</div>'
-        + turlar + '</div>';
+    let a = document.getElementById('yzl-ekran'); if (!a || typeof glLigTablo !== 'function') return;
+    let ayar = glLigAyar(), turlar = glLigTurlari().filter(function (t) { return t.say; }), sonuc = glLigTablo(), tablo = sonuc.tablo;
+    let kats = Object.keys(tablo).sort(function (x, y) { return GL_GRUPLAR.indexOf(y.split('|')[0]) - GL_GRUPLAR.indexOf(x.split('|')[0]) || x.localeCompare(y); });
+    if (!_yzl.kat || !tablo[_yzl.kat]) _yzl.kat = kats[0] || null;
+    let liste = _yzl.kat ? Object.values(tablo[_yzl.kat]).sort(function (x, y) { return y.puan - x.puan || x.enIyi - y.enIyi; }) : [];
+    let devam = ayar.devamPuani !== false;
+    let foto = function (g, ad) { let s = typeof fotoSrc === 'function' ? fotoSrc('s:' + g + '|' + ad, false) : ''; return '<span class="av"' + (s ? ' style="background-image:url(\'' + s + '\')"' : '') + '>' + (s ? '' : esc(String(ad).trim().split(/\s+/).slice(0, 2).map(function (p) { return p.charAt(0); }).join(''))) + '</span>'; };
+    let tablo_ = liste.length ? '<table><thead><tr><th>#</th><th>SPORCU</th><th>LİG TURLARI</th><th style="text-align:center">KATILIM</th>' + (devam ? '<th style="text-align:center">ANTRENMAN</th>' : '') + '<th style="text-align:right">PUAN</th></tr></thead><tbody>' + liste.map(function (x, i) {
+        let yer = {}; (x.son || []).forEach(function (s) { yer[s.ti] = s.sira; });
+        let kare = turlar.map(function (t, ti) { let y = yer[ti]; return '<span class="tur ' + (!y ? 'y' : y === 1 ? 'a' : y === 2 ? 'g' : y === 3 ? 'b' : '') + '" title="' + glTarihYaz(t.tarih) + '">' + (y || '–') + '</span>'; }).join('');
+        return '<tr class="p' + (i + 1) + '"><td class="s">' + (i + 1) + '</td><td><span class="adk">' + foto(x.g, x.ad) + esc(x.ad) + '</span></td><td>' + kare + '</td><td class="n">' + (x.katilim || 0) + '/' + turlar.length + '</td>' + (devam ? '<td class="n">' + (x.devam || 0) + ' gün</td>' : '') + '<td class="top">' + x.puan + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="bos">Bu dönem henüz puan yok.<br>Lig gününde Yarışma › Sıralama Turu at (ya da kurulumda <b>🏆 Kulüp ligine sayılsın</b> işaretle) — sonuç buraya kendiliğinden işlenir.</div>';
+    let turListe = turlar.length ? '<div class="turlar"><b>Lige sayılan turlar</b>' + turlar.slice().reverse().map(function (t) { return '<div><span>' + glTarihYaz(t.tarih) + ' · ' + esc(t.mesafe || '') + ' · ' + (t.sporcular || []).length + ' sporcu' + (t.otomatik ? ' · lig günü' : '') + '</span><button onclick="yzLigTurDegistir(\'' + encodeURIComponent(t.id) + '\', false)">Ligden çıkar</button></div>'; }).join('') + '</div>' : '';
+    a.innerHTML = '<div class="ic"><div class="bas"><div><small>DAĞ S.K.</small><h2>KULÜP LİGİ · ' + esc(glDonemAd(ayar)).toLocaleUpperCase('tr-TR') + '</h2><span>' + turlar.length + ' lig turu · ' + glTarihYaz(ayar.sezonBas) + ' – ' + glTarihYaz(ayar.sezonBit) + '</span></div>'
+        + '<div class="dug"><button onclick="glDonemSec(\'simdi\'); yzLigCiz()">Bu dönem</button><button onclick="glDonemSec(\'guz\'); yzLigCiz()">Güz</button><button onclick="glDonemSec(\'bahar\'); yzLigCiz()">Bahar</button>'
+        + (liste.length ? '<button class="ana" onclick="yzLigToren()">🏅 Dönem kupa töreni</button>' : '') + '<button onclick="yzLigTamEkran()">📺 Tam ekran</button><button onclick="yzLigKapat()">✕ Kapat</button></div></div>'
+        + (kats.length > 1 ? '<div class="sek">' + kats.map(function (k) { return '<button aria-pressed="' + (k === _yzl.kat) + '" onclick="_yzl.kat=\'' + k + '\'; yzLigCiz()">' + esc(glKategoriAd(k)) + '</button>'; }).join('') + '</div>' : '')
+        + tablo_
+        + '<div class="not">Puan: her lig turunda kendi kategorisinde (grup × yay) 1.=25 · 2.=18 · 3.=15 · 4.=12 · 5.=10 · 6.=8 · 7.=6 · 8.=4 · 9.=2 · 10.=1, her katılım +2' + (devam ? ', antrenmana gelinen her gün +1' : '') + '. Kareler her turdaki yeri gösterir (sarı 1. · gri 2. · bronz 3. · – katılmadı). Lig günleri, dönem ve antrenman puanı: Karışık Sınıf › Kulüp Ligi.</div>'
+        + turListe + '</div>';
 }
 function yzLigKapat() { let a = document.getElementById('yzl-ekran'); if (a) a.remove(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} }
 function yzLigTamEkran() { let a = document.getElementById('yzl-ekran'); try { if (a && a.requestFullscreen) a.requestFullscreen(); } catch (e) {} }
-// arşivdeki bir turu lige ekle / çıkar (tüm cihazlarda: yzArsivYaz id ile birleşir, g yeni olan kazanır)
-function yzLigTurDegistir(idEnc, lig) {
-    let id = decodeURIComponent(idEnc), r = yzArsivOku().find(function (x) { return x.id === id; }); if (!r) return;
-    yzArsivYaz(Object.assign({}, r, { lig: !!lig, g: Date.now() }));
-    showToast(lig ? '🏆 Tur lige eklendi' : 'Tur ligden çıkarıldı', 'success');
-    if (document.getElementById('yzl-ekran')) yzLigCiz();
+// bir turu lige ekle / çıkar — Dönem liginin kendi kaydı (kulup_lig "tur|id"), tüm cihazlarda
+function yzLigTurDegistir(idEnc, say) {
+    let id = decodeURIComponent(idEnc);
+    yzlYukle().then(function () { glLigYaz('tur|' + id, { say: !!say }); showToast(say ? '🏆 Tur lige eklendi' : 'Tur ligden çıkarıldı', 'success'); if (document.getElementById('yzl-ekran')) yzLigCiz(); });
 }
-function yzLigToren() {
-    let h = yzlHesap(_yzl.sezon), sahne = [];
-    ['buyukler', 'yildizlar', 'kucukler', 'minikler', 'diger'].forEach(function (g) {
-        let l = (h.kat[g] || []).slice(0, 3); if (!l.length) return;
-        sahne.push({ ad: '🏆 ' + (YZL_GRUP[g] || 'Diğer').replace(/^\S+\s/, '').toLocaleUpperCase('tr-TR'), liste: l.map(function (x, i) { return { k: x.k, ad: x.ad, sira: i + 1, puan: '', alt: x.puan + ' lig puanı · ' + x.katilim + ' tur' }; }) });
-    });
-    if (!sahne.length) return showToast('Ligde henüz sonuç yok.', 'warning');
-    yzLigKapat();
-    yzOzelToren({ ust: 'DAĞ S.K. · KULÜP LİGİ ' + yzlSezonAd(_yzl.sezon), baslik: 'SEZON KUPA TÖRENİ', sahne: sahne, katilimci: [] });
-}
+function yzLigToren() { yzLigKapat(); glDonemToreni(); }
 
 // ---------------------------------------------------------------- 📋 resmi skor kağıdı (hedef başına bir A4)
 async function yzSkorKagitlariPdf() {

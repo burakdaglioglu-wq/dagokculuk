@@ -274,7 +274,7 @@ function glLigTurlari() {
     let a = glLigAyar(), d = glLigDepo(), bugun = glBugun(), gunler = new Set(glLigGunleri(a.sezonBas, bugun < a.sezonBit ? bugun : a.sezonBit));
     let arsiv = []; try { arsiv = JSON.parse(localStorage.getItem('dag_yz_arsiv') || '[]') || []; } catch (e) {}
     return arsiv.filter(r => r && r.tarih >= a.sezonBas && r.tarih <= a.sezonBit && Array.isArray(r.sporcular) && r.sporcular.length).map(r => {
-        let el = d['tur|' + r.id], otomatik = gunler.has(r.tarih), say = el && !el.sil ? !!el.say : otomatik;
+        let el = d['tur|' + r.id], otomatik = gunler.has(r.tarih), say = el && !el.sil ? !!el.say : (otomatik || !!r.lig); // r.lig: Yarışma kurulumunda "🏆 Kulüp ligine sayılsın" (2026-10-22)
         return Object.assign({}, r, { say, otomatik });
     }).sort((x, y) => (x.t || 0) - (y.t || 0));
 }
@@ -319,6 +319,7 @@ function glDonemKartHTML(a, tablo) {
         <div class="gl-donem-alt"><b>${bitti ? 'Dönem bitti — kupa zamanı! 🏆' : kalan === 0 ? 'Dönemin son günü' : 'Dönem sonuna ' + kalan + ' gün'}</b><span>${kisi} sporcu puan topladı</span></div>
         <div class="gl-butonlar" style="justify-content:flex-start">
             <button class="gl-btn birincil" onclick="glDonemToreni()" ${kisi ? '' : 'disabled'}>🏆 Dönem kupa töreni</button>
+            <button class="gl-btn" onclick="dagskEkYukle('dagsk-yarisma-ek.js?v=2').then(function(){ yzLigAc(); })" title="Fotoğraflı tablo — TV için tam ekran">📺 Tam ekran tablo</button>
             <button class="gl-btn kucuk" onclick="glDonemSec('simdi')">Bu dönem</button><button class="gl-btn kucuk" onclick="glDonemSec('guz')">Güz</button><button class="gl-btn kucuk" onclick="glDonemSec('bahar')">Bahar</button>
             <label class="gl-mini">Başlangıç <input type="date" value="${a.sezonBas}" onchange="glLigAyarYaz('sezonBas', this.value)"></label>
             <label class="gl-mini">Bitiş <input type="date" value="${a.sezonBit}" onchange="glLigAyarYaz('sezonBit', this.value)"></label>
@@ -340,6 +341,8 @@ function glDonemToreni() {
         .catch(() => showToast('Tören açılamadı — bağlantını kontrol et.', 'error'));
 }
 function kmLigCiz() {
+    // tam ekran lig tablosu (dagsk-yarisma-ek.js) dönem düğmeleri buraya da çizdirir — yalnız Kulüp Ligi aracı açıksa
+    if (typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme !== 'lig') return;
     glCss();
     let el = document.getElementById('km-icerik'); if (!el) return;
     if (!_gl.senkL) { _gl.senkL = true; kyDepoSenkron('kulup_lig', () => kyDepoOku('kulup_lig'), false).catch(() => {}).then(() => fetch('/api/meta/yz_arsiv')).then(r => r && r.json ? r.json() : null).then(d => {

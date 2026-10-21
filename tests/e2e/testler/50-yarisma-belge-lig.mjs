@@ -9,24 +9,26 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'yarisma', 'kmYarismaGiris');
-    yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), liste: JSON.stringify(_kmListe), hat: localStorage.getItem(kmHatAnahtari()), arsiv: localStorage.getItem('dag_yz_arsiv') }));
-    await p.evaluate(() => dagskEkYukle('dagsk-yarisma-ek.js?v=1'));
-    // ---- 🏆 lig hesabı (sahte arşiv, sunucuya yazılmaz) ----
+    yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), liste: JSON.stringify(_kmListe), hat: localStorage.getItem(kmHatAnahtari()), arsiv: localStorage.getItem('dag_yz_arsiv'), lig: localStorage.getItem('dag_kulup_lig') }));
+    await p.evaluate(() => dagskEkYukle('dagsk-yarisma-ek.js?v=2').then(() => yzlYukle()));
+    // ---- 🏆 tek lig (Dönem ligi motoru) — sahte arşiv + yerel ayar, sunucuya yazılmaz ----
     const lig = await p.evaluate(() => {
-      let t = new Date(); t.setDate(15); let s = (k, ad, sira, toplam) => ({ k, ad, sira, toplam });
+      let gr = {}; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { let sp = turnuvaDB[g][ad]; if (!sp.pasif && kisiTuru(g, ad) === 'sporcu') (gr[glKategori(g, ad)] = gr[glKategori(g, ad)] || []).push({ g, ad }); }));
+      let iki = Object.values(gr).find((l) => l.length >= 2), [A, B] = iki, M = Object.values(gr).find((l) => l !== iki)[0];
+      let s = (x, sira, toplam) => ({ k: x.g + '|' + x.ad, ad: x.ad, sira, toplam });
+      localStorage.setItem('dag_kulup_lig', JSON.stringify({ ayar: { haftalar: [1, 3], gun: 6, sezonBas: '2026-09-01', sezonBit: '2027-01-31', devamPuani: false, t: Date.now() } }));
       localStorage.setItem('dag_yz_arsiv', JSON.stringify([
-        { id: 'e2e-l1', lig: true, t: Date.now() - 3000, tarih: '2026-10-01', mesafe: '18m', sporcular: [s('buyukler|A A', 'A A', 1, 600), s('minikler|M M', 'M M', 2, 400), s('buyukler|B B', 'B B', 3, 550)] },
-        { id: 'e2e-l2', lig: true, t: Date.now() - 2000, tarih: '2026-10-08', mesafe: '18m', sporcular: [s('buyukler|B B', 'B B', 1, 610), s('buyukler|A A', 'A A', 2, 610), s('minikler|M M', 'M M', 3, 300)] },
-        { id: 'e2e-x', lig: false, t: Date.now() - 1000, tarih: '2026-10-09', mesafe: '18m', sporcular: [s('buyukler|B B', 'B B', 1, 700)] }]));
-      let h = yzlHesap(yzlSezon(Date.now()));
-      return { tur: h.turlar.length, b: h.kat.buyukler.map((x) => x.ad + ':' + x.puan), m: h.kat.minikler.map((x) => x.ad + ':' + x.puan) };
+        { id: 'e2e-l1', lig: true, t: Date.now() - 3000, tarih: '2026-10-01', mesafe: '18m', sporcular: [s(A, 1, 600), s(M, 2, 400), s(B, 3, 550)] },
+        { id: 'e2e-l2', lig: true, t: Date.now() - 2000, tarih: '2026-10-08', mesafe: '18m', sporcular: [s(B, 1, 610), s(A, 2, 610), s(M, 3, 300)] },
+        { id: 'e2e-x', lig: false, t: Date.now() - 1000, tarih: '2026-10-09', mesafe: '18m', sporcular: [s(B, 1, 700)] }]));
+      let { tablo, turSay } = glLigTablo(), p = (x) => (tablo[glKategori(x.g, x.ad)][x.g + '|' + x.ad] || {}).puan;
+      return { tur: turSay, a: p(A), b: p(B), m: p(M) };
     });
-    esit(lig.tur, 2, 'yalnız lige sayılan turlar');
+    esit(lig.tur, 2, 'yalnız lige sayılan turlar (kurulum işareti lig:true)');
     // A: 1. (25+2) + eşit 1. (25+2) = 54 · B: 2. (18+2) + eşit 1. (25+2) = 47 · M: kendi kategorisinde iki kez 1. = 54
-    esit(lig.b.join(','), 'A A:54,B B:47', 'büyükler lig puanı');
-    esit(lig.m.join(','), 'M M:54', 'minikler kendi kategorisinde puan alır');
-    await p.evaluate(() => yzLigAc()); await p.waitForSelector('#yzl-ekran tbody tr');
-    esit(await p.locator('#yzl-ekran tbody tr').count(), 2, 'lig tablosu satırı');
+    esit([lig.a, lig.b, lig.m].join(','), '54,47,54', 'lig puanları (kategori içi, eşitlik, +2)');
+    await p.evaluate(() => { let a = document.createElement('div'); a.id = 'yzl-ekran'; document.body.appendChild(a); yzlCss(); yzLigCiz(); });
+    dogrula(await p.locator('#yzl-ekran tbody tr').count() >= 2, 'tam ekran lig tablosu satırı');
     await p.evaluate(() => yzLigKapat());
     // ---- 📋 skor kağıdı + 📜 belge (gerçek tur, kayda işlemez) ----
     await p.evaluate(() => {
@@ -50,7 +52,7 @@ export default async function ({ log }) {
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('lig puanı (kategori içi, eşitlik, +2), skor kağıdı PDF, belge PDF tamam');
   } finally {
-    if (yedek) await p.evaluate((y) => { if (y.yz) localStorage.setItem(yzAnahtar(), y.yz); else localStorage.removeItem(yzAnahtar()); _kmListe = JSON.parse(y.liste); if (y.hat) localStorage.setItem(kmHatAnahtari(), y.hat); else localStorage.removeItem(kmHatAnahtari()); if (y.arsiv) localStorage.setItem('dag_yz_arsiv', y.arsiv); else localStorage.removeItem('dag_yz_arsiv'); }, yedek).catch(() => {});
+    if (yedek) await p.evaluate((y) => { if (y.yz) localStorage.setItem(yzAnahtar(), y.yz); else localStorage.removeItem(yzAnahtar()); _kmListe = JSON.parse(y.liste); if (y.hat) localStorage.setItem(kmHatAnahtari(), y.hat); else localStorage.removeItem(kmHatAnahtari()); if (y.arsiv) localStorage.setItem('dag_yz_arsiv', y.arsiv); else localStorage.removeItem('dag_yz_arsiv'); if (y.lig) localStorage.setItem('dag_kulup_lig', y.lig); else localStorage.removeItem('dag_kulup_lig'); }, yedek).catch(() => {});
     await ctx.close();
   }
 }
