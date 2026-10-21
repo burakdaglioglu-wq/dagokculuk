@@ -18432,7 +18432,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama — sonucu davul sesiyle, gerilimli açıklar">🎬<span class="km-oyun-btn-etiket"> Dramatik</span></button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunBugununTemasi()" title="Bugün için az kullanılan bir oyun öner">🎲<span class="km-oyun-btn-etiket"> Oyun Öner</span></button>
-                        <button class="km-oyun-tam-btn" onclick="kmOyunTorenBaslat()" title="Madalya töreni — bugün sona ilk varanlar (yolsuz oyunlarda en yüksek oyun puanı) podyuma çıkar">🏅<span class="km-oyun-btn-etiket"> Tören</span></button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunTorenBaslat()" title="Madalya töreni — bugün sona ilk varanlar (yolsuz oyunlarda en yüksek oyun puanı) podyuma çıkar">🏅<span class="km-oyun-btn-etiket"> Oyun töreni</span></button>
+                        <button class="km-oyun-tam-btn" onclick="gunSonuTorenBaslat()" title="Günün en iyi ortalaması, en çok gelişen, emekçi, rekor kıranlar ve oyunun yıldızları — tek törende">🏆<span class="km-oyun-btn-etiket"> Gün sonu töreni</span></button>
                         <button class="km-oyun-tam-btn" onclick="kmDersOzetiAc()" title="Ders Sonu Özeti — kim ne kadar ilerledi, kim rekor kırdı; velilere gönder">🏁<span class="km-oyun-btn-etiket"> Özet</span></button>
                         <button class="km-oyun-tam-btn${_kmOyunSayacAcik ? ' aktif' : ''}" id="km-oyun-sayac-btn" onclick="kmOyunSayacDegistir()" title="Sayaç (Shot Clock) — açıkken her yeni seride otomatik geri sayar, gerçek yarışma temposu verir">⏱️<span class="km-oyun-btn-etiket"> Sayaç</span></button>
                         <button class="km-oyun-tam-btn km-oyun-sayac-buyut-btn${_kmOyunSayacBuyukAcik ? ' aktif' : ''}" onclick="kmOyunSayacBuyukAcKapat()" style="${_kmOyunSayacAcik ? '' : 'display:none;'}" title="Sayacı büyüt — ekranın istediğin yerine sürükleyebilirsin, sporcular uzaktan da görebilir">🔍 Büyüt</button>
@@ -19531,6 +19532,78 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(biten < gerek || _kmOyunTorenTeklif[anahtar]) return;
             _kmOyunTorenTeklif[anahtar] = true;
             onayIste('🏁 <b>' + (gerek === 3 ? 'İlk 3 sporcu' : 'Herkes') + ' ' + kmOyunTorenHedefYazi(_kmOyunAktifTema) + '!</b><br><span style="font-size:13px;opacity:.8">Madalya töreni başlasın mı? Podyum, madalyalar, alkış ve konfeti.</span>', kmOyunTorenBaslat, '🏅 Töreni başlat', 'Sonra');
+        }
+        // ===== 🏅 GÜN SONU MADALYA TÖRENİ (2026-10-21) =====
+        // Kullanıcı: "gün sonu madalya törenini yapalım" → 4 kategorinin hepsi, tek kürsü (yaş grubu ayrımı yok), ders bitince
+        // sorsun. Her kategori ayrı sahne (3B Stadyum gecesi, fotoğraflı): 🎯 en iyi ortalama (≥3 seri, ok başı), 📈 en çok gelişen
+        // (bugün ok başı − kendi son 30 gün ok başı; ≥2 seri bugün, ≥9 ok geçmiş), 🏹 emekçi (en çok ok), 🏅 rekor kıranlar (aynı ok
+        // sayılı ≥5 eski seriye göre en iyi serisini aşanlar) ve 🎮 açık oyunun yıldızları. Bugünün serileri sunucudan (başka
+        // cihazdan girilenler dahil); ulaşılamazsa yerel kayıtlar. Yalnız öğrenciler (eğitmen/misafir yok). Gerçek skora dokunmaz.
+        async function gunSonuTorenVeri() {
+            let bugun = bugunISO(), seriler = null;
+            try { let r = await fetch('/api/series?tarih=' + encodeURIComponent(bugun)); if(r.ok) seriler = ((await r.json()).series || []).filter(function(s) { return !s.iptal; }); } catch(e) {}
+            if(!seriler) seriler = _sgYerelSeriler().filter(function(s) { return s.tarih === bugun; });
+            let kisi = {};
+            seriler.forEach(function(s) {
+                let sp = turnuvaDB[s.grup] && turnuvaDB[s.grup][s.ad], n = (s.oklar || []).length; if(!sp || !n || yonKisiTuru(s.grup, s.ad) !== 'sporcu') return;
+                let k = s.grup + '|' + s.ad, x = kisi[k] || (kisi[k] = { k: k, g: s.grup, ad: s.ad, seri: 0, ok: 0, puan: 0, enIyi: {} });
+                x.seri++; x.ok += n; x.puan += Number(s.puan) || 0; x.enIyi[n] = Math.max(x.enIyi[n] || 0, Number(s.puan) || 0);
+            });
+            let l = Object.values(kisi); if(!l.length) return null;
+            let otuz = bsIsoTarih(new Date(Date.now() - 30 * 864e5));
+            l.forEach(function(x) {
+                x.oba = x.puan / x.ok;
+                let once = _ysSeriler(turnuvaDB[x.g][x.ad]).filter(function(s) { let t = String(s.tarih || '').slice(0, 10); return t && t < bugun && (s.oklar || []).length; });
+                let son30 = once.filter(function(s) { return String(s.tarih).slice(0, 10) >= otuz; }), ok30 = son30.reduce(function(a, s) { return a + s.oklar.length; }, 0);
+                x.oba30 = ok30 >= 9 ? son30.reduce(function(a, s) { return a + (Number(s.puan) || 0); }, 0) / ok30 : null;
+                x.rekor = null;
+                Object.keys(x.enIyi).forEach(function(n) {
+                    let eski = once.filter(function(s) { return s.oklar.length === +n; }).map(function(s) { return Number(s.puan) || 0; });
+                    if(eski.length < 5) return; let m = Math.max.apply(null, eski);
+                    if(x.enIyi[n] > m && (!x.rekor || x.enIyi[n] - m > x.rekor.fark)) x.rekor = { yeni: x.enIyi[n], eski: m, fark: x.enIyi[n] - m };
+                });
+            });
+            let v = function(n) { return n.toFixed(1).replace('.', ','); };
+            let kursu = function(liste, alt) { return liste.slice(0, 3).map(function(x, i) { return { k: x.k, ad: x.ad, sira: i + 1, puan: '', alt: alt(x) }; }); };
+            let sahne = [];
+            let ort = l.filter(function(x) { return x.seri >= 3; }).sort(function(a, b) { return b.oba - a.oba; });
+            if(ort.length) sahne.push({ ad: '🎯 GÜNÜN EN İYİ ORTALAMASI', liste: kursu(ort, function(x) { return 'ok başı ' + v(x.oba) + ' · ' + x.seri + ' seri'; }) });
+            let gel = l.filter(function(x) { return x.oba30 != null && x.seri >= 2 && x.oba > x.oba30; }).sort(function(a, b) { return (b.oba - b.oba30) - (a.oba - a.oba30); });
+            if(gel.length) sahne.push({ ad: '📈 GÜNÜN EN ÇOK GELİŞENİ', liste: kursu(gel, function(x) { return 'ok başı +' + v(x.oba - x.oba30) + ' (' + v(x.oba30) + ' → ' + v(x.oba) + ')'; }) });
+            let emek = l.slice().sort(function(a, b) { return b.ok - a.ok || b.seri - a.seri; });
+            sahne.push({ ad: '🏹 GÜNÜN EMEKÇİSİ', liste: kursu(emek, function(x) { return x.ok + ' ok · ' + x.seri + ' seri'; }) });
+            let rek = l.filter(function(x) { return x.rekor; }).sort(function(a, b) { return b.rekor.fark - a.rekor.fark; });
+            if(rek.length) sahne.push({ ad: '🏅 REKOR KIRANLAR', liste: kursu(rek, function(x) { return 'yeni rekor ' + x.rekor.yeni + ' (önceki ' + x.rekor.eski + ')'; }) });
+            try { let oy = gunSonuOyunSahnesi(); if(oy) sahne.push(oy); } catch(e) {}
+            return { ust: 'DAĞ S.K. · ' + new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' }), baslik: 'GÜN SONU TÖRENİ', sahne: sahne, katilimci: l.map(function(x) { return x.k; }) };
+        }
+        // 🎮 açık oyunun ilk 3'ü (Canavar'da en çok hasar)
+        function gunSonuOyunSahnesi() {
+            let t = typeof _kmOyunAktifTema !== 'undefined' ? _kmOyunAktifTema : null; if(!t) return null;
+            let tm = KM_OYUN_TEMALAR[t] || {}, ad = '🎮 ' + String(tm.ad || 'Oyun').toLocaleUpperCase('tr-TR') + ' YILDIZLARI';
+            if(t === 'canavar' && typeof _kmCanavar !== 'undefined' && _kmCanavar && _kmCanavar.tarih === bugunISO()) {
+                let h = Object.keys(_kmCanavar.hasarlar || {}).map(function(k) { return Object.assign({ k: k }, _kmCanavar.hasarlar[k]); }).filter(function(x) { return x.hasar > 0; }).sort(function(a, b) { return b.hasar - a.hasar; });
+                return h.length ? { ad: '🐉 CANAVAR AVCILARI', liste: h.slice(0, 3).map(function(x, i) { return { k: x.k, ad: x.ad, sira: i + 1, puan: '', alt: x.hasar + ' hasar' + (x.kritik ? ' · ' + x.kritik + ' kritik' : '') }; }) } : null;
+            }
+            if(typeof kmOyunTorenSiralama !== 'function' || !_kmOyunRosterCache || !_kmOyunRosterCache.length) return null;
+            let s = kmOyunTorenSiralama().filter(function(x) { return x.varis || x.frac > 0 || x.puan > 0; });
+            return s.length ? { ad: ad, liste: s.slice(0, 3).map(function(x, i) { return { k: x.s.g + '|' + x.s.ad, ad: x.s.ad, sira: i + 1, puan: '', alt: x.varis ? 'hedefe ulaştı' : x.puan > 0 ? x.puan + ' oyun puanı' : '%' + Math.round(x.frac * 100) + ' yol' }; }) } : null;
+        }
+        async function gunSonuTorenBaslat() {
+            showToast('🏅 Gün sonu töreni hazırlanıyor…', 'warning');
+            let v = null; try { v = await gunSonuTorenVeri(); } catch(e) {}
+            if(!v || !v.sahne.length || !v.sahne.some(function(s) { return s.liste.length; })) return showToast('Tören için bugün skor giren sporcu yok.', 'warning');
+            let ac = function() {
+                let bas = function() { try { yzOzelToren(v); } catch(e) { showToast('Tören açılamadı.', 'error'); } };
+                if(document.fullscreenElement) document.exitFullscreen().then(bas, bas); else bas(); // tören kendi tam ekranını açar
+            };
+            if(typeof yzOzelToren === 'function') ac();
+            else dagskEkYukle('dagsk-km-yarisma-pro.js').then(ac).catch(function() { showToast('Tören yüklenemedi.', 'error'); });
+        }
+        // Kapanış ve Ders Sonu Özeti'nin en üstündeki kutu ("ders bitince sorsun")
+        function gunSonuTorenKutuHTML() {
+            return '<div class="kmk-bolum" style="border:1px solid rgba(246,201,69,.5);background:linear-gradient(135deg,rgba(246,201,69,.14),rgba(246,201,69,.03))"><h4>🏅 Gün sonu madalya töreni <small>TV\'de 3B kürsü · fotoğraflı · en iyi ortalama, en çok gelişen, emekçi, rekor kıranlar, oyun</small></h4>'
+                + '<button class="kmoz-btn ana" onclick="try{kmKapanisKapat()}catch(e){} let m=document.getElementById(\'kmoz-modal\'); if(m) m.remove(); gunSonuTorenBaslat()">🏅 Töreni başlat</button></div>';
         }
         function kmOyunTorenBaslat() {
             let sira = kmOyunTorenSiralama();

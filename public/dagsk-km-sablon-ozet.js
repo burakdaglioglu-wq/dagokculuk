@@ -203,7 +203,7 @@ function kmDersOzetiAc() {
     vurgu.push(['🎯 Atılan seri', String(D.atanlar.reduce(function (a, s) { return a + s.seri; }, 0))]);
     let m = document.createElement('div'); m.id = 'kmoz-modal'; m.className = 'kmoz-bg';
     m.onclick = function (e) { if (e.target === m) m.remove(); };
-    m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Sonu Özeti"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏅 Ders Sonu Özeti</h3><p>' + D.tarih + (D.tema ? ' · ' + D.tema.ikon + ' ' + kmSablonEsc(D.tema.ad) : '') + ' · ' + D.satirlar.length + ' sporcu</p></div><button class="kmoz-btn" onclick="document.getElementById(\'kmoz-modal\').remove()" aria-label="Kapat">✕</button></div>'
+    m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Sonu Özeti"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏅 Ders Sonu Özeti</h3><p>' + D.tarih + (D.tema ? ' · ' + D.tema.ikon + ' ' + kmSablonEsc(D.tema.ad) : '') + ' · ' + D.satirlar.length + ' sporcu</p></div><button class="kmoz-btn" onclick="document.getElementById(\'kmoz-modal\').remove()" aria-label="Kapat">✕</button></div>' + (typeof gunSonuTorenKutuHTML === 'function' ? gunSonuTorenKutuHTML() : '')
         + '<div class="kmoz-govde"><div class="kmoz-vurgu">' + vurgu.map(function (v) { return '<div class="kmoz-v"><small>' + v[0] + '</small><b>' + v[1] + '</b></div>'; }).join('') + '</div>'
         + D.satirlar.map(function (s, i) {
             let rozet = [];
@@ -397,7 +397,7 @@ function kmKapanisCiz() {
         }).join('') : '') + '</div>' : '';
     let ozetVar = K.D && (K.D.atanlar.length || K.D.satirlar.some(function (s) { return s.deger > 0; }));
     let ozet = ozetVar ? '<div class="kmk-bolum"><h4>🏅 Sınıf özeti <small>veli grubuna tek mesaj</small></h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="kmoz-btn ana" onclick="kmOzetWa(null, kmOzetGrupMetni(_kmKapanis.D))">💬 Veli grubuna gönder</button><button class="kmoz-btn" onclick="kmKapanisOzetKopyala()">📋 Metni kopyala</button></div></div>' : '';
-    m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Kapanışı"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏁 Ders Kapanışı</h3><p>' + baslik + ' · ' + formatTarih(K.tarih) + ' · ' + K.kisiler.length + ' kişi</p></div><button class="kmoz-btn" onclick="kmKapanisKapat()" aria-label="Kapat">✕</button></div>'
+    m.innerHTML = '<div class="kmoz" role="dialog" aria-label="Ders Kapanışı"><div class="kmoz-ust"><div style="flex:1;min-width:0"><h3>🏁 Ders Kapanışı</h3><p>' + baslik + ' · ' + formatTarih(K.tarih) + ' · ' + K.kisiler.length + ' kişi</p></div><button class="kmoz-btn" onclick="kmKapanisKapat()" aria-label="Kapat">✕</button></div>' + (typeof gunSonuTorenKutuHTML === 'function' ? gunSonuTorenKutuHTML() : '')
         + '<div class="kmoz-govde">' + kmKapanisDenemeHTML(K) + yoklama + kocNot + veliGelmeyen + raporlar + ozet + '</div></div>';
 }
 function kmKapanisDurum(i, durum) { let x = _kmKapanis && _kmKapanis.kisiler[i]; if (!x) return; x.durum = durum; _kmKapanis.onaylandi = false; kmKapanisCiz(); }

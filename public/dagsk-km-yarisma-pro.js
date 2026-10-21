@@ -3137,7 +3137,7 @@ function yzTorenTik() {
     let canli = T.adim !== '' ; T.adim = adim;
     if (son) return yzTorenFinal(el, T, canli);
     let sh = T.sahne[Math.max(0, gi)];
-    el.querySelector('.yz-tor-grup').textContent = gi < 0 ? '' : (sh.ad ? (sh.ad === 'Makaralı' ? '⚙️ ' : '🏹 ') + sh.ad : '');
+    el.querySelector('.yz-tor-grup').textContent = gi < 0 ? '' : (sh.ad ? (sh.ad === 'Makaralı' ? '⚙️ ' : sh.ad === 'Klasik' ? '🏹 ' : '') + sh.ad : '');
     let kursu = el.querySelector('.yz-tor-kursu');
     if (gi < 0) { kursu.innerHTML = '<div class="yz-tor-giris">🏅</div>'; return; }
     if (kursu.dataset.gi !== String(gi)) {
