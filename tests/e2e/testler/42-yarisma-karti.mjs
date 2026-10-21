@@ -44,9 +44,13 @@ export default async function ({ log }) {
     const bas = (v) => p.evaluate((v) => [...document.querySelectorAll('#icerik-yarisma .yrs-puanlar button')].find((b) => b.textContent === v).click(), v);
     // puan + yön: ilk seride her puandan sonra parlak 3'lü kağıtta üst yüzün sağına dokun (yüz + yön); ikinci seri yalnız puan
     const kagitSag = () => p.evaluate(() => { let svg = document.querySelector('#icerik-yarisma .yrs-kagit-yer .yrs-kagit'), pt = svg.createSVGPoint(); pt.x = 0.5; pt.y = -YRS_UCLU_ARA; let q = pt.matrixTransform(svg.getScreenCTM()); svg.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: q.x, clientY: q.y })); });
+    // yön varsayılan kapalı (turnuvada hızlı giriş): puan tuşu oku hemen ekler. İlk seri için "🎯 Yön de gir" açılır.
+    esit(await p.locator('#icerik-yarisma .yrs-yon-alan').count(), 0, 'yön kutusu varsayılan kapalı olmalı');
+    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-yon-anahtar').click()); await p.waitForTimeout(100);
     for (const v of ['10', '9', '9']) { await bas(v); await p.waitForTimeout(60); await kagitSag(); await p.waitForTimeout(60); }
-    for (const v of ['X', '8', '7']) { await bas(v); await p.waitForTimeout(60); }
-    await p.waitForTimeout(2900); // son ok 2,5 sn yön bekler, sonra yalnız puan kaydolur
+    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-yon-anahtar').click()); await p.waitForTimeout(100);
+    for (const v of ['X', '8', '7']) { await bas(v); await p.waitForTimeout(40); }
+    await p.waitForTimeout(200); // yön kapalı: bekleme yok, seri hemen kaydolur
     let mm = await p.evaluate(({ yid, sp }) => ((kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).mac || {}), { yid, sp }), m = mm.seriler;
     esit(JSON.stringify(m), JSON.stringify([['10', '9', '9'], ['X', '8', '7']]), 'maç serileri');
     let k0 = (mm.kon || [])[0] || [];
@@ -54,7 +58,8 @@ export default async function ({ log }) {
     dogrula(((mm.kon || [])[1] || []).every((k) => !k || k.x == null), 'yönsüz oklarda konum olmamalı');
     dogrula(/Bugünkü grubun/.test(await p.locator('#icerik-yarisma').textContent()), 'grup kartı yok');
     dogrula(/Hedef temposunun/.test(await p.locator('#icerik-yarisma').textContent()), 'hedef temposu yok');
-    await bas('5'); await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yrs-mac-alt button')][0].click());
+    if (process.env.E2E_EKRAN) { await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => { let g = document.getElementById('giris-ekrani'); if (g) g.style.visibility = 'hidden'; document.querySelector('#icerik-yarisma .yrs-slotlar').scrollIntoView({ block: 'start' }); }); await p.screenshot({ path: process.env.E2E_EKRAN + '-mac-tel.png' }); await p.setViewportSize({ width: 1280, height: 900 }); await p.evaluate(() => { let g = document.getElementById('giris-ekrani'); if (g) g.style.visibility = ''; }); }
+    await bas('5'); await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-mac-alt .yrs-geri').click());
     await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-bitir').click()); await p.waitForTimeout(200);
     await p.evaluate(() => onayOnayla()); await p.waitForTimeout(250);
     let s = await p.evaluate(({ yid, sp }) => (kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).sonuc, { yid, sp });

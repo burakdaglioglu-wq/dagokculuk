@@ -139,8 +139,8 @@ function yrsMacHTML(y, anahtar, hd, sd) {
     let yonKutu = '<div class="yrs-yon-alan' + (uclu ? ' uclu' : '') + '"><div class="yrs-yon-kutu' + (bek ? ' bekliyor' : '') + '"><b>' + (bek ? bek.p + ' — ' + (uclu ? 'okun olduğu yüze, o tarafına dokun' : 'ok hangi tarafta?') : 'Önce puana bas') + '</b>' + (uclu ? '<small>Kağıtta okun olduğu yüzün sağına, soluna, üstüne… dokun. Ortaya dokun = merkez.</small>' : '<div class="yrs-yon-ped">' + yonPed + '</div>') + '<small>' + (bek ? 'Dokunmazsan ' + (uclu ? '2,5' : '1,5') + ' sn sonra yalnız puan kaydolur' : 'Yön, okların nereye gittiğini görmek için') + '</small>' + (bek ? '<i class="yrs-yon-sure' + (uclu ? ' uzun' : '') + '"></i>' : '') + '</div>'
         + '<div class="yrs-kagit-yer">' + yrsKagitSVG(y, (su || []).map(function (q) { return q.k; }), bek, 'yrsMacKagit(event,\'' + yrsE(anahtar) + '\')') + '</div></div>';
     let giris = m.bitti ? '' : '<div class="yrs-kart"><div class="yrs-bas"><span class="yrs-etk">✍️ ' + (m.seriler.length + 1) + '. seri</span><span class="yrs-alt">' + seriOk + ' ok · dolunca kaydolur</span></div><div class="yrs-slotlar">' + slot + '</div>'
-        + '<div class="yrs-puanlar">' + tuslar.map(function (p) { return '<button type="button" class="' + renk(p) + (bek && bek.p === p ? ' secili' : '') + '" onclick="yrsMacOk(\'' + yrsE(anahtar) + '\',\'' + p + '\')">' + p + '</button>'; }).join('') + '</div>' + yonKutu
-        + '<div class="yrs-mac-alt"><button type="button" class="yz-btn" onclick="yrsMacGeri(\'' + yrsE(anahtar) + '\')"' + (su.length || m.seriler.length ? '' : ' disabled') + '>⌫ Geri al</button></div></div>';
+        + '<div class="yrs-puanlar">' + tuslar.map(function (p) { return '<button type="button" class="' + renk(p) + (bek && bek.p === p ? ' secili' : '') + '" onclick="yrsMacOk(\'' + yrsE(anahtar) + '\',\'' + p + '\')">' + p + '</button>'; }).join('') + '</div>' + (yrsYonAcik() ? yonKutu : '')
+        + '<div class="yrs-mac-alt"><button type="button" class="yz-btn yrs-yon-anahtar' + (yrsYonAcik() ? ' acik' : '') + '" onclick="yrsYonDegis()" aria-pressed="' + yrsYonAcik() + '">🎯 Yön de gir: <b>' + (yrsYonAcik() ? 'Açık' : 'Kapalı') + '</b></button><button type="button" class="yz-btn yrs-geri" onclick="yrsMacGeri(\'' + yrsE(anahtar) + '\')"' + (su.length || m.seriler.length ? '' : ' disabled') + '>⌫ Geri al</button></div></div>';
     let seriler = m.seriler.length ? '<div class="yrs-kart"><span class="yrs-etk">📋 Seriler</span><div class="yrs-seri-izgara">' + m.seriler.map(function (s, i) { let t = s.reduce(function (a, p) { return a + yrsDeger(p); }, 0), hh = hd.hedef ? hd.hedef / ok * s.length : null; return '<div class="' + (hh != null ? (t >= hh ? 'iyi' : 'kotu') : '') + '"><small>' + (i + 1) + '</small><b>' + t + '</b><span>' + s.join(' ') + '</span></div>'; }).join('') + '</div></div>' : '';
     let grup = yrsMacGrupHTML(y, m);
     let rutin = m.bitti ? '' : '<div class="yrs-kart yrs-rutin"><span class="yrs-etk">🧘 Seriler arası</span><div class="yrs-rutin-adim"><span>1 · Derin nefes</span><span>2 · Duruş + çapa</span><span>3 · Bırak ve takip et</span></div>' + (hd.not ? '<div class="yrs-not">💬 ' + yrsEsc(hd.not) + '</div>' : '') + '</div>';
@@ -182,14 +182,22 @@ function yrsYaklasikKonum(p, yon, y, s) {
     let k = !l ? ((p === 'X' || p === '10') ? { x: 0, y: 0 } : null) : { x: Math.round(v[0] / l * r * 1000) / 1000, y: Math.round(v[1] / l * r * 1000) / 1000 };
     if (k && y.yuz === '3lu') k.s = s; return k;
 }
+// Yön girişi isteğe bağlı (2026-10-21, kullanıcı: "turnuva sırasında kimse bunu böyle yapamaz, telefondan rahat girilsin — Skor Gir
+// sekmesindeki gibi"): varsayılan KAPALI → puan tuşu oku hemen ekler, seri dolunca kendiliğinden kaydolur (bekleme yok).
+function yrsYonAcik() { try { return localStorage.getItem('dag_yrs_yon') === '1'; } catch (e) { return false; } }
+function yrsYonDegis() {
+    let ac = !yrsYonAcik(); try { localStorage.setItem('dag_yrs_yon', ac ? '1' : '0'); } catch (e) {}
+    if (!ac && _yrs.bek && _yrs.kim) { let a = _yrs.bek.anahtar; if (a) yrsMacBekBitir(a, null, null, true); }
+    yrsMacYenile();
+}
 function yrsMacOk(anahtar, p) {
     anahtar = yrsD(anahtar); let y = yrsOku('yarismalar')[anahtar.split('|')[0]] || {}, okTop = +y.ok || 60;
     if (_yrs.bek) yrsMacBekBitir(anahtar, null, null, true);
     let m = yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {}), atilan = m.seriler.reduce(function (a, s) { return a + s.length; }, 0);
     if (atilan + (_yrs.suanki || []).length >= okTop) { if (typeof showToast === 'function') showToast('Tüm oklar girildi — yarışmayı bitir.', 'info'); return yrsMacYenile(); }
     try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
-    if (p === 'M') { yrsMacEkle(anahtar, { p: 'M', k: null }); return; }
-    _yrs.bek = { p: p, z: setTimeout(function () { yrsMacBekBitir(anahtar, null, null); }, y.yuz === '3lu' ? 2500 : 1500) };
+    if (p === 'M' || !yrsYonAcik()) { yrsMacEkle(anahtar, { p: p, k: null }); return; }
+    _yrs.bek = { p: p, anahtar: anahtar, z: setTimeout(function () { yrsMacBekBitir(anahtar, null, null); }, y.yuz === '3lu' ? 2500 : 1500) };
     yrsMacYenile();
 }
 function yrsMacYon(anahtar, yon) { yrsMacBekBitir(yrsD(anahtar), yon, null); }
@@ -414,6 +422,8 @@ function yrsCss() {
         '.yrs-mac-alt{display:flex;justify-content:flex-end;margin-top:8px}',
         '.yrs-slot-yer{display:grid;justify-items:center;gap:2px}.yrs-slot-yer small{font-size:10px;font-weight:800;color:var(--text-muted)}',
         '.yrs-puanlar button.secili{outline:4px solid #fd8e01;outline-offset:2px}',
+        '.yrs-puanlar{gap:7px}.yrs-puanlar button{min-height:72px;font-size:30px;border-radius:14px;-webkit-tap-highlight-color:transparent;user-select:none}.yrs-mac-sayilar div{padding:7px 4px}.yrs-mac-sayilar b{font-size:24px}.yrs-tempo{padding:8px 10px;font-size:14px}.yrs-slotlar{margin:6px 0 10px}',
+        '.yrs-mac-alt{justify-content:space-between;gap:8px;flex-wrap:wrap}.yrs-mac-alt .yz-btn{min-height:46px;font-size:14px}.yrs-mac-alt .yrs-geri{flex:1 1 140px}.yrs-yon-anahtar b{font-weight:900}.yrs-yon-anahtar.acik{border-color:#fd8e01;color:#fd8e01}',
         '.yrs-yon-alan{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;margin-top:10px}.yrs-yon-alan.uclu{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}',
         '.yrs-yon-kutu{position:relative;display:grid;gap:8px;justify-items:center;text-align:center;padding:10px 8px 14px;border-radius:14px;border:2px dashed var(--border-color)}.yrs-yon-kutu.bekliyor{border-color:#fd8e01;background:rgba(253,142,1,.08)}.yrs-yon-kutu b{font-size:14px}.yrs-yon-kutu small{font-size:11.5px;color:var(--text-muted);line-height:1.35}',
         '.yrs-yon-ped{display:grid;grid-template-columns:repeat(3,52px);gap:5px}.yrs-yon-b{height:48px;border-radius:12px;border:2px solid var(--border-color);background:transparent;color:var(--text-main);font:inherit;font-size:22px;cursor:pointer;touch-action:manipulation}.yrs-yon-kutu.bekliyor .yrs-yon-b{border-color:#fd8e01}.yrs-yon-b:disabled{opacity:.35}',
