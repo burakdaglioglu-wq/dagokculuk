@@ -300,6 +300,9 @@ let miloAidatAcikAy = null;
 let miloAidatIstatistikAcik = false;
 let miloAidatIstatistikMuafDahil = false;
 let miloAidatBorcRaporuAcik = false;
+let miloAidatGorunum = 'panel'; // 📊 panel (/aidat-panel.js) · 👥 kartlar
+let miloAidatKartSinir = 40;
+let _miloApDevamYukleniyor = false;
 let miloAidatBorcEsikAy = 2;
 let miloMemberSkills = [];
 let miloAttendanceTum = [];
@@ -733,17 +736,60 @@ async function miloAidatAyTemizle(ad, ay) {
     showToast('Temizlendi.', 'success');
 }
 
+// 📊 Aidat paneli (2026-10-21, DAĞ ile ortak /aidat-panel.js): tahmin, kaçan para, gecikme, "ödemiş olabilir", tek tık ödendi.
+function miloAidatSekmelerHTML() {
+    let b = (k, et) => `<button onclick="miloAidatGorunum='${k}'; miloAidatCiz();" style="flex:1; padding:10px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; border:1px solid ${miloAidatGorunum === k ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloAidatGorunum === k ? 'color-mix(in srgb, var(--neon-pink) 14%, transparent)' : 'var(--bg-panel)'}; color:var(--text-main);">${et}</button>`;
+    return `<div style="display:flex; gap:8px; margin-bottom:10px;">${b('panel', '📊 Panel')}${b('kartlar', '👥 Üye kartları')}</div>`;
+}
+function miloAidatPanelAdaptor() {
+    let dues = {}, devam = {}, aylikMemo = {};
+    return {
+        hazirla(ay) {
+            dues = {}; devam = {}; aylikMemo = {};
+            miloDuesTum.forEach(d => { dues[d.ad + '|' + d.ay] = d; });
+            miloAttendanceTum.forEach(a => { if (a.geldi && String(a.tarih || '').slice(0, 7) === ay) (devam[a.ad] = devam[a.ad] || {})[String(a.tarih).slice(0, 10)] = 1; });
+        },
+        kisiler() { return miloUyeler.filter(u => !u.pasif).map(u => ({ id: u.grup + '|' + u.ad, ad: u.ad, grup: u.grup, grupAd: u.grup, muaf: !!u.aidatMuaf, tel: u.acilTelefon || u.veli2Telefon || '', katilma: u.katilmaTarihi || '' })); },
+        kayit(ad, ay) { return dues[ad + '|' + ay] || null; },
+        aylik(k) { if (aylikMemo[k.ad] == null) aylikMemo[k.ad] = miloAidatSonBilinenTutar(k.ad) || miloAidatVarsayilanTutar || 0; return aylikMemo[k.ad]; },
+        devam(k) { return miloAttendanceTum.length ? Object.keys(devam[k.ad] || {}).length : null; },
+        async kaydet(isler) {
+            for (const x of isler) {
+                let eski = miloAidatDuesKayit(x.kisi.ad, x.ay) || {};
+                await miloApi(`/dues/${encodeURIComponent(x.kisi.ad)}/${encodeURIComponent(x.ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: true, tutar: x.tutar || null, tarih: bugunISO(), notMetin: x.notMetin || eski.notMetin || null, odemeTarihi: x.odemeTarihi || bugunISO() }) });
+            }
+            miloDuesTum = (await miloApi('/dues')).dues;
+        },
+        hatirlat(k, ay) { miloAidatAy = ay; miloAidatHatirlat(k.grup, k.ad); },
+        detay(k, ay) { miloAidatGorunum = 'kartlar'; miloAidatAramaFiltre = k.ad; miloAidatAcikAd = k.ad; miloAidatAcikAy = null; miloAidatAy = ay; miloAidatYil = +ay.slice(0, 4); miloAidatCiz(); },
+        pdf() { apYazdir('Milo'); },
+        araclar: [['📄 Gelir raporu', 'miloAidatGelirRaporu()'], ['📊 Detaylı analiz (PDF)', 'miloAidatDetayliAnalizPDF()'], ['⚠️ Borç raporu', "miloAidatGorunum='kartlar'; miloAidatBorcRaporuAcik=true; miloAidatCiz()"], ['⚙️ Varsayılan tutar', "miloAidatGorunum='kartlar'; miloAidatCiz()"]]
+    };
+}
 function miloAidatCiz() {
     let alan = document.getElementById('milo-icerik');
+    if (miloAidatGorunum === 'panel') {
+        if (typeof apCiz !== 'function') { alan.innerHTML = miloAidatSekmelerHTML() + '<div style="padding:30px; text-align:center; color:var(--text-muted);">Panel yüklenemedi — sayfayı yenile.</div>'; return; }
+        let kap = document.getElementById('milo-aidat-panel-kap');
+        if (!kap || !alan.contains(kap)) { alan.innerHTML = miloAidatSekmelerHTML() + '<div id="milo-aidat-panel-kap"></div>'; kap = document.getElementById('milo-aidat-panel-kap'); }
+        apCiz(kap, miloAidatPanelAdaptor());
+        // "bu ay kaç ders geldi" için yoklama bir kez arka planda yüklenir
+        if (!miloAttendanceTum.length && !_miloApDevamYukleniyor) {
+            _miloApDevamYukleniyor = true;
+            miloApi('/attendance/auto').then(r => { miloAttendanceTum = r.attendance || []; if (miloAktifSekme === 'aidat' && miloAidatGorunum === 'panel') miloAidatCiz(); }).catch(() => {}).finally(() => { _miloApDevamYukleniyor = false; });
+        }
+        return;
+    }
     let aramaNorm = miloAidatAramaFiltre.trim().toLocaleLowerCase('tr');
     let isimler = miloUyeler.filter(u => !u.pasif && (!aramaNorm || u.ad.toLocaleLowerCase('tr').includes(aramaNorm)));
     let odemeBekleneler = isimler.filter(u => !u.aidatMuaf);
     let odeyen = 0, toplam = 0;
     isimler.forEach(u => { let rec = miloAidatDuesKayit(u.ad, miloAidatAy); if (rec && rec.odendi) { odeyen++; toplam += (rec.tutar || 0); } });
     let beklenen = odemeBekleneler.length * miloAidatVarsayilanTutar;
-    let kartlar = isimler.map(u => miloAidatKartHTML(u)).join('');
+    let gizli = miloAidatAramaFiltre.trim() ? 0 : Math.max(0, isimler.length - miloAidatKartSinir);
+    let kartlar = (gizli ? isimler.slice(0, miloAidatKartSinir) : isimler).map(u => miloAidatKartHTML(u)).join('') + (gizli ? `<button onclick="miloAidatKartSinir+=40; miloAidatCiz();" style="width:100%; margin-top:6px; padding:10px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-weight:800; cursor:pointer;">${gizli} üye daha · göster (ya da yukarıda ara)</button>` : '');
 
-    alan.innerHTML = `
+    alan.innerHTML = miloAidatSekmelerHTML() + `
         <input class="milo-input" id="milo-aidat-arama" placeholder="🔍 Üye ara..." value="${miloEsc(miloAidatAramaFiltre)}" oninput="miloAidatAramaFiltre=this.value; miloAidatCiz(); let el=document.getElementById('milo-aidat-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}">
         <div style="display:flex; gap:8px; margin-bottom:10px;">
             <input type="month" class="milo-input" style="margin-bottom:0; flex:1;" value="${miloAidatAy}" onchange="miloAidatAy=this.value; miloAidatCiz();">
