@@ -99,7 +99,7 @@ function odListeHTML() {
 }
 function odSatirlarHTML() {
     let q = (OD.ara || '').toLocaleLowerCase('tr');
-    return odSporcular().filter(function (u) { return !q || u.ad.toLocaleLowerCase('tr').indexOf(q) !== -1; }).map(function (u) { return '<button class="od-sat' + (OD.secili === u.k ? ' secili' : '') + '" data-k="' + odEsc(u.k) + '" onclick="odSec(\'' + odEnc(u.k) + '\')"><b>' + odEsc(u.ad) + '</b><small>' + OD_GRUP_AD[u.g] + '</small><span class="od-sat-alt">' + odSatirAlt(u) + '</span></button>'; }).join('') || '<div class="od-bos">Sporcu yok.</div>';
+    return odSporcular().filter(function (u) { return !q || u.ad.toLocaleLowerCase('tr').indexOf(q) !== -1; }).map(function (u) { return '<button class="od-sat' + (OD.secili === u.k ? ' secili' : '') + '" data-k="' + odEsc(u.k) + '" onclick="odSec(\'' + odEnc(u.k) + '\')"><b>' + odEsc(u.ad) + ' <span class="od-profil" data-sporcu="' + odEsc(u.k) + '" role="button" title="Profil · bilgileri düzelt" aria-label="' + odEsc(u.ad) + ' profili">👤</span></b><small>' + OD_GRUP_AD[u.g] + '</small><span class="od-sat-alt">' + odSatirAlt(u) + '</span></button>'; }).join('') || '<div class="od-bos">Sporcu yok.</div>';
 }
 function odListeYenile() { let el = document.getElementById('od-satirlar'); if (el) el.innerHTML = odSatirlarHTML(); }
 function odSec(kEnc) {
@@ -119,8 +119,8 @@ function odDetayHTML(u) {
     let yas = null; try { yas = typeof yasHesapla === 'function' ? yasHesapla(u.sp) : null; } catch (e) {}
     let m = o.aylar.find(function (x) { return x.ay === OD.ay; }) || { geldi: 0, dersler: [], telafiler: [], hak: 0, kalanHak: 0 };
     let kutu = function (n, ad, cls) { return '<div class="od-kutu ' + (cls || '') + '"><b>' + n + '</b><small>' + ad + '</small></div>'; };
-    return '<div class="od-ust"><div><div class="od-ad">' + odEsc(u.ad) + '</div><div class="od-alt">' + OD_GRUP_AD[u.g] + (yas ? ' · ' + yas + ' yaş' : '') + (u.sp.katilmaTarihi ? ' · ilk ders ' + odTR(u.sp.katilmaTarihi) : o.ilk ? ' · ilk kayıt ' + odTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + odTR(o.sonGelis) : '') + '</div></div>'
-        + (u.sp.acilTelefon ? '<button class="od-btn" onclick="odVeliMesaj(\'' + odEnc(u.k) + '\')">Veliye özet</button>' : '') + '</div>'
+    return '<div class="od-ust"><div><div class="od-ad"><span class="yn-isim" data-sporcu="' + odEsc(u.k) + '">' + odEsc(u.ad) + '</span></div><div class="od-alt">' + OD_GRUP_AD[u.g] + (yas ? ' · ' + yas + ' yaş' : '') + (u.sp.katilmaTarihi ? ' · ilk ders ' + odTR(u.sp.katilmaTarihi) : o.ilk ? ' · ilk kayıt ' + odTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + odTR(o.sonGelis) : '') + '</div></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="od-btn" data-sporcu="' + odEsc(u.k) + '">👤 Profil · düzenle</button>' + (u.sp.acilTelefon ? '<button class="od-btn" onclick="odVeliMesaj(\'' + odEnc(u.k) + '\')">Veliye özet</button>' : '') + '</div></div>'
         + '<div class="od-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + '</div>'
         + o.uyarilar.map(function (w) { return '<div class="od-uyari ' + w.tur + '">' + odEsc(w.metin) + '</div>'; }).join('')
         + '<div class="od-bolum"><div class="od-bolum-bas">Yoklama takvimi <small>güne dokun → durum seç</small></div>'
@@ -253,7 +253,7 @@ function odCizelgeHTML() {
             return '<td><button class="od-cz-h ' + (s || 'bos') + (deg ? ' deg' : '') + '" onclick="odCzDokun(\'' + odEnc(u.k) + '\',\'' + iso + '\')" aria-label="' + odEsc(u.ad) + ' ' + odTR(iso) + ': ' + (s ? OD_DURUM[s].ad : 'boş') + '">' + (s ? isaret[s] : '') + '</button></td>';
         }).join('');
         let bsl = kt && kt.slice(0, 7) === ayOn ? '<small class="od-cz-bas">' + odKisa(kt) + '\'da başladı</small>' : '';
-        return '<tr><td class="ad">' + odEsc(u.ad) + (sec && sec.slot ? '<small>' + OD_GRUP_AD[u.g] + '</small>' : '') + bsl + '</td>' + h + '<td class="top">' + gel + '</td></tr>';
+        return '<tr><td class="ad"><span class="yn-isim" data-sporcu="' + odEsc(u.k) + '">' + odEsc(u.ad) + '</span>' + (sec && sec.slot ? '<small>' + OD_GRUP_AD[u.g] + '</small>' : '') + bsl + '</td>' + h + '<td class="top">' + gel + '</td></tr>';
     }).join('');
     return '<div class="od-cz" id="od-cz"><div class="od-ust"><div><div class="od-ad">🗓 Geçmiş yoklama</div><div class="od-alt">Kâğıttaki gibi: hücreye dokun → ✓ geldi → ✗ gelmedi → H hasta → T telafi → ↪ başka gün geldi → boş. Gün başlığı o günün boşlarını "geldi" yapar. En sonda Kaydet.</div></div>'
         + '<div class="od-cz-ust-btn"><button class="od-btn' + (cz.ilkAcik ? ' ana' : '') + '" onclick="odCzIlkAcKapat()">📅 İlk ders tarihleri</button><button class="od-btn" onclick="odCizelgeKapat()">← Defter</button></div></div>'
@@ -460,6 +460,7 @@ function odCss() {
         '.od-ara,.od-metin{width:100%;box-sizing:border-box;min-height:42px;border-radius:10px;border:1px solid var(--s-line);background:var(--s-kagit);color:var(--s-ink);padding:9px 12px;font:inherit;font-size:14px}.od-metin{resize:vertical;line-height:1.55}',
         '.od-satirlar{display:flex;flex-direction:column;background:var(--s-kagit);border:1px solid var(--s-line);border-radius:14px;overflow:hidden}',
         '.od-sat{flex:none;display:grid;text-align:left;gap:1px;padding:11px 14px;border:0;border-bottom:1px solid var(--s-line);background:transparent;color:var(--s-ink);font:inherit;cursor:pointer;min-height:52px}.od-sat:last-child{border-bottom:0}.od-sat:hover{background:#FAFBFB}',
+        '.od .yn-isim{cursor:pointer;text-decoration:underline dotted;text-decoration-color:var(--s-dim);text-underline-offset:3px}.od-profil{display:inline-grid;place-items:center;width:26px;height:22px;margin-left:4px;border-radius:7px;background:var(--s-line);font-size:12px;vertical-align:1px;cursor:pointer}.od-profil:hover{filter:brightness(.92)}',
         '.od-sat.secili{background:var(--s-vurgu-a);box-shadow:inset 3px 0 0 var(--s-vurgu)}.od-sat b{font-size:14px;font-weight:700}.od-sat small,.od-sat-alt{font-size:12px;color:var(--s-dim)}',
         '.od-amber{color:var(--s-amber)}.od-kirmizi{color:var(--s-kirmizi)}.od-yesil{color:var(--s-vurgu)}',
         '.od-detay{display:grid;gap:18px;min-width:0;background:var(--s-kagit);border:1px solid var(--s-line);border-radius:18px;padding:24px;box-shadow:0 12px 40px rgba(20,40,35,.06)}',

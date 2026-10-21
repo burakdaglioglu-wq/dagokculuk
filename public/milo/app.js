@@ -239,6 +239,7 @@ async function miloGuvenlikYukle() {
             <button class="milo-btn-full" onclick="miloKullaniciEkle()">+ Kullanıcı ekle</button></div>
         <div class="milo-gs-blok"><b>📱 Giriş yapılmış cihazlar</b>${v.cihazlar.map(c => `<div class="milo-gs-satir"><span>${miloEsc(c.ad || '?')} · ${miloEsc(c.cihaz || '')}<small>${c.benim ? 'bu cihaz · ' : ''}son kullanım ${z(c.son_kullanim)}</small></span><span><button onclick="miloCihazCikar('${c.id}', ${c.benim})">Çıkar</button></span></div>`).join('') || '<small>Yok</small>'}</div>
         <div class="milo-gs-blok"><b>👆 Parmak izi kayıtları</b>${v.passkeyler.map(p => `<div class="milo-gs-satir"><span>${miloEsc(p.ad || '?')} · ${miloEsc(p.cihaz || '')}</span><span><button onclick="miloPasskeySil('${miloJsEsc(p.id)}')">Sil</button></span></div>`).join('') || '<small>Yok</small>'}</div>
+        <div class="milo-gs-blok"><b>💳 Aidat PIN'i</b><div class="milo-gs-not">${v.aidatPinAyarli ? 'Ayrı bir aidat PIN\'i ayarlı.' : 'Ayarlı değil — aidatı açmak için giren kişinin kendi PIN\'i sorulur.'}</div><div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"><input id="milo-aidat-pin" type="password" class="milo-input" style="margin:0; flex:1; min-width:160px;" placeholder="Yeni aidat PIN'i (6+ hane)" autocomplete="new-password"><button class="milo-btn-full" style="width:auto; margin:0; padding:0 16px;" onclick="miloAidatPinKaydet(false)">Kaydet</button>${v.aidatPinAyarli ? '<button class="milo-btn-full" style="width:auto; margin:0; padding:0 16px; background:var(--bg-main); color:var(--text-main);" onclick="miloAidatPinKaydet(true)">Kaldır</button>' : ''}</div></div>
         <div class="milo-gs-blok"><b>📜 İşlem günlüğü</b>${v.gunluk.slice(0, 20).map(g => `<div class="milo-gs-gunluk"><small>${z(g.zaman)}</small> <b>${miloEsc(g.ad || '—')}</b> ${miloEsc(g.olay)} <small>${miloEsc(g.detay || '')}</small></div>`).join('') || '<small>Kayıt yok</small>'}</div>`;
 }
 async function miloYonetimIstek(yol, govde, metod, basari) {
@@ -402,6 +403,7 @@ function miloYasHesapla(dogumTarihi) {
 // 2026-10-08: Beceri takibi kullanıcı isteğiyle kaldırıldı (veriler silinmedi, yalnız arayüzden çıktı).
 const MILO_DIGER_SEKMELER = { gunluk: '📝 Ders Günlüğü', hizli: '📝 Hızlı Düzenle', personel: '🧑‍🏫 Personel', ders: '📚 Dersler' };
 function miloSekme(k) {
+    if (k !== 'aidat') miloAidatAcik = false; // aidat ek kilidi: sekmeden çıkınca yeniden kilitlenir
     miloAktifSekme = k;
     [...document.querySelectorAll('#milo-tab-bar button')].forEach(b => {
         let digerMi = b.dataset.sekme === 'diger';
@@ -466,7 +468,7 @@ function miloUyelerCiz() {
             return `<div class="milo-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <div>
-                        <b>${typeof miloAdVeliHTML === 'function' ? miloAdVeliHTML(u) : miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span>
+                        <b class="yn-isim" data-sporcu="${miloEsc(u.grup + '|' + u.ad)}">${typeof miloAdVeliHTML === 'function' ? miloAdVeliHTML(u) : miloEsc(u.ad)}</b> <span style="color:var(--text-muted); font-size:12px;">· ${miloEsc(u.grup)}</span>
                         ${yas !== null ? `<span style="color:var(--text-muted); font-size:12px;"> · 🎂 ${miloYasMetin(u.dogumTarihi)}</span>` : ''}
                         ${u.pasif ? ' <span style="color:var(--neon-red); font-size:11px; font-weight:bold;">DONDURULDU</span>' : ''}
                         ${u.aidatMuaf ? ' <span style="color:#8b5cf6; font-size:11px; font-weight:bold;">🎗️ MUAF</span>' : ''}
@@ -667,7 +669,7 @@ function miloAidatKartHTML(u) {
     let secRec = miloAidatDuesKayit(ad, miloAidatAy), hatirlatVar = !u.aidatMuaf && !(secRec && secRec.odendi);
     return `<details class="milo-card" style="${u.aidatMuaf ? 'opacity:0.85; border-color:#8b5cf6;' : ''}" ${acikMi ? 'open' : ''}>
         <summary style="cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-weight:700; font-size:13px;">${miloEsc(ad)} <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(grup)}</span>${yas !== null ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${miloYasMetin(u.dogumTarihi)})</span>` : ''}</span>
+            <span style="font-weight:700; font-size:13px;"><span class="yn-isim" data-sporcu="${miloEsc(grup + '|' + ad)}">${miloEsc(ad)}</span> <span style="color:var(--text-muted); font-size:11px; font-weight:400;">· ${miloEsc(grup)}</span>${yas !== null ? ` <span style="color:var(--text-muted); font-size:11px; font-weight:400;">(${miloYasMetin(u.dogumTarihi)})</span>` : ''}</span>
             <span style="display:flex; gap:6px; align-items:center;">${hatirlatVar ? `<span onclick="event.preventDefault(); event.stopPropagation(); miloAidatHatirlat('${miloJsEsc(grup)}','${miloJsEsc(ad)}');" title="${miloEsc(miloAyTamAd(miloAidatAy))} aidatı için veliye WhatsApp hatırlatması" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:rgba(16,185,129,0.12); border:1px solid var(--neon-green); color:var(--neon-green);">💬 Hatırlat</span>` : ''}
             <span onclick="event.preventDefault(); event.stopPropagation(); miloAidatMuafToggle('${miloJsEsc(grup)}','${miloJsEsc(ad)}', ${u.aidatMuaf ? 'false' : 'true'});" style="cursor:pointer; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap; background:${u.aidatMuaf ? '#8b5cf622' : 'var(--bg-panel)'}; border:1px solid ${u.aidatMuaf ? '#8b5cf6' : 'var(--border-color)'}; color:${u.aidatMuaf ? '#a78bfa' : 'var(--text-muted)'};">🎗️ ${u.aidatMuaf ? 'Muaf' : 'Muaf İşaretle'}</span></span>
         </summary>
@@ -769,8 +771,9 @@ function miloAidatPanelAdaptor() {
 // 🏠 Yönetim paneli (/yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için Milo verisi — DAĞ'daki dagYonetimAdaptor ile aynı arayüz.
 function miloYonetimAdaptor() {
     return {
-        ad: 'MILO FITT KIDS', aidat: miloAidatPanelAdaptor(), aidatAcik: () => true, aidatHazir: () => miloDuesTum.length > 0,
-        kisiler: () => miloUyeler.map(u => ({ id: u.grup + '|' + u.ad, ad: u.ad, grup: u.grup, grupAd: u.grup, pasif: !!u.pasif, muaf: !!u.aidatMuaf, tel: u.acilTelefon || u.veli2Telefon || '', veli: u.acilTelefon ? (u.acilKisi || '') : (u.veli2Kisi || ''), katilma: u.katilmaTarihi || '', dogum: u.dogumTarihi || '', not: u.genelNot || '' })),
+        ad: 'MILO FITT KIDS', aidat: miloAidatPanelAdaptor(), aidatAcik: () => miloAidatAcik, aidatKilitAc: pin => miloAidatKilitAc(pin), aidatHazir: () => miloDuesTum.length > 0,
+        kisiler: () => miloUyeler.map(miloKisi),
+        kisiBul: id => { let u = miloUyeler.find(x => x.grup + '|' + x.ad === id); return u ? miloKisi(u) : null; },
         gelisler() { let h = {}; miloAttendanceTum.forEach(a => { if (a.geldi) (h[a.ad] = h[a.ad] || {})[String(a.tarih).slice(0, 10)] = 1; }); let v = {}; Object.keys(h).forEach(ad => { v[ad] = Object.keys(h[ad]).sort(); }); return v; },
         dersler() {
             let simdi = new Date(), gun = simdi.getDay(), bugun = bugunISO(), dk = simdi.getHours() * 60 + simdi.getMinutes(), d = s => { let p = String(s || '0:0').split(':'); return +p[0] * 60 + (+p[1] || 0); };
@@ -789,15 +792,85 @@ function miloYonetimAdaptor() {
             await miloApi(`/dues/${encodeURIComponent(k.ad)}/${encodeURIComponent(ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: false, tutar: null, notMetin: null, odemeTarihi: null, tarih: bugunISO() }) });
             miloDuesTum = (await miloApi('/dues')).dues;
         },
-        duzenle(k) {
-            miloSekme('uyeler');
-            let n = 0, bekle = () => { if (miloAktifSekme !== 'uyeler') return; if (document.getElementById('milo-uye-form-alani') && miloUyeler.length) { miloUyeFormAc(k.grup, k.ad); let e = document.getElementById('milo-uye-form-alani'); if (e) e.scrollIntoView({ block: 'start' }); } else if (n++ < 40) setTimeout(bekle, 150); };
-            setTimeout(bekle, 150);
+        ozet(k) { let u = miloUyeBul(k), t = x => x ? String(x).split('-').reverse().join('.') : ''; return [['Grup', u.grup], ['Doğum', t(u.dogumTarihi)], ['Katılma', t(u.katilmaTarihi)], ['Veli', u.acilKisi || ''], ['Telefon', u.acilTelefon || ''], ['2. veli', [u.veli2Kisi, u.veli2Telefon].filter(Boolean).join(' · ')]]; },
+        kpiEk(k) { let u = miloUyeBul(k); return u.boy || u.kilo ? [{ et: 'Boy / kilo', deger: (u.boy || '–') + ' / ' + (u.kilo || '–'), alt: 'cm / kg' }] : []; },
+        alanlar(k) {
+            let u = miloUyeBul(k), gruplar = [...new Set(miloUyeler.map(x => x.grup))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'tr'));
+            return [
+                { id: 'ad', et: 'Ad soyad', tip: 'metin', deger: u.ad, ipucu: 'Değişirse yoklama ve aidat yeni isme taşınır' },
+                { id: 'grup', et: 'Grup', tip: 'secim', deger: u.grup, secenekler: gruplar.map(g => [g, g]) },
+                { id: 'dogum', et: 'Doğum tarihi', tip: 'tarih', deger: u.dogumTarihi || '' },
+                { id: 'cinsiyet', et: 'Cinsiyet', tip: 'secim', deger: u.cinsiyet || '', secenekler: [['K', 'Kız'], ['E', 'Erkek']] },
+                { id: 'durum', et: 'Durum', tip: 'secim', deger: u.pasif ? 'pasif' : 'aktif', secenekler: [['aktif', 'Aktif'], ['pasif', 'Pasif']] },
+                { id: 'katilma', et: 'Katılma tarihi', tip: 'tarih', deger: u.katilmaTarihi || '' },
+                { id: 'veli', et: 'Veli adı', tip: 'metin', deger: u.acilKisi || '' },
+                { id: 'tel', et: 'Veli telefonu', tip: 'tel', deger: u.acilTelefon || '' },
+                { id: 'veli2', et: '2. veli adı', tip: 'metin', deger: u.veli2Kisi || '' },
+                { id: 'tel2', et: '2. veli telefonu', tip: 'tel', deger: u.veli2Telefon || '' },
+                { id: 'muaf', et: 'Aidattan muaf', tip: 'secim', deger: u.aidatMuaf ? '1' : '0', secenekler: [['0', 'Hayır'], ['1', 'Evet']] },
+                { id: 'boy', et: 'Boy (cm)', tip: 'sayi', deger: u.boy == null ? '' : u.boy },
+                { id: 'kilo', et: 'Kilo (kg)', tip: 'sayi', deger: u.kilo == null ? '' : u.kilo },
+                { id: 'antrenman', et: 'Antrenman günü / saati', tip: 'metin', deger: u.antrenmanNotu || '' },
+                { id: 'meslek', et: 'Aile iş / meslek', tip: 'metin', deger: u.aileMeslek || '' },
+                { id: 'saglik', et: 'Sağlık / özel durum', tip: 'not', deger: u.saglikNotu || '' },
+                { id: 'not', et: 'Genel not', tip: 'not', deger: u.genelNot || '' }
+            ];
         },
+        // isim/grup değişirse sunucuda rename (yoklama + aidat taşınır), sonra diğer alanlar tek PATCH
+        async kaydet(k, d) {
+            let g = k.grup, ad = k.ad, yeniAd = 'ad' in d ? d.ad.replace(/\s+/g, ' ').trim() : ad, yeniG = d.grup || g;
+            if (!yeniAd) throw new Error('isim boş olamaz');
+            if (yeniAd !== ad || yeniG !== g) {
+                if (miloUyeler.some(u => u.grup === yeniG && u.ad === yeniAd)) throw new Error('"' + yeniAd + '" o grupta zaten var');
+                await miloApi(`/members/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/rename`, { method: 'POST', body: JSON.stringify({ yeniAd, yeniGrup: yeniG }) });
+                g = yeniG; ad = yeniAd;
+            }
+            let es = { dogum: 'dogumTarihi', cinsiyet: 'cinsiyet', katilma: 'katilmaTarihi', veli: 'acilKisi', tel: 'acilTelefon', veli2: 'veli2Kisi', tel2: 'veli2Telefon', antrenman: 'antrenmanNotu', meslek: 'aileMeslek', saglik: 'saglikNotu', not: 'genelNot' }, f = {};
+            Object.keys(es).forEach(x => { if (x in d) f[es[x]] = d[x] || null; });
+            ['boy', 'kilo'].forEach(x => { if (x in d) f[x] = d[x] === '' ? null : Number(d[x]); });
+            if ('muaf' in d) f.aidatMuaf = d.muaf === '1' ? 1 : 0;
+            if ('durum' in d) f.pasif = d.durum === 'pasif' ? 1 : 0;
+            if (Object.keys(f).length) await miloApi(`/members/${encodeURIComponent(g)}/${encodeURIComponent(ad)}`, { method: 'PATCH', body: JSON.stringify(f) });
+            miloUyeler = (await miloApi('/members')).members;
+            if (yeniAd !== k.ad) miloDuesTum = (await miloApi('/dues')).dues;
+            return g + '|' + ad;
+        },
+        islemler(k) { let a = miloEsc(JSON.stringify(k.grup)), b = miloEsc(JSON.stringify(k.ad)); return [{ et: 'Sil', alt: 'Üye kaydı silinir — geri alınamaz', btn: '🗑 Sil', fn: 'miloProfilSil(' + a + ',' + b + ')', tehlike: true }]; },
+        sonra() { try { if (miloAktifSekme === 'uyeler') miloUyelerCiz(); } catch (e) {} },
         araclar: [['📋 Yoklama', "miloSekme('analiz')"], ['↻ Yenile', 'mgbYukleVeCiz(true)']]
     };
 }
-// Üyeler listesinden sporcu kartı: aidat + yoklama yoksa önce yüklenir (kart ödenmemiş gibi göstermesin)
+function miloUyeBul(k) { return miloUyeler.find(x => x.grup === k.grup && x.ad === k.ad) || {}; }
+function miloKisi(u) { return { id: u.grup + '|' + u.ad, ad: u.ad, grup: u.grup, grupAd: u.grup, pasif: !!u.pasif, muaf: !!u.aidatMuaf, tel: u.acilTelefon || u.veli2Telefon || '', veli: u.acilTelefon ? (u.acilKisi || '') : (u.veli2Kisi || ''), katilma: u.katilmaTarihi || '', dogum: u.dogumTarihi || '', not: u.genelNot || '', cinsiyetAd: u.cinsiyet === 'E' ? 'Erkek' : u.cinsiyet === 'K' ? 'Kız' : '' }; }
+async function miloProfilSil(grup, ad) {
+    if (!confirm(ad + ' silinsin mi? Bu işlem geri alınamaz.')) return;
+    try { await miloApi(`/members/${encodeURIComponent(grup)}/${encodeURIComponent(ad)}`, { method: 'DELETE' }); } catch (e) { return showToast('Silinemedi — bağlantıyı kontrol et.', 'error'); }
+    miloUyeler = miloUyeler.filter(u => !(u.grup === grup && u.ad === ad)); ynKartKapat(); showToast('Silindi.', 'success'); miloSekmeYenile();
+}
+// 💳 Aidat kilidi (2026-10-21, kullanıcı: "aidata ekstra şifre koyabilir miyiz göstermesi için"): sunucuda /api/milo/giris/aidat-dogrula —
+// Güvenlik'te ayrı aidat PIN'i ayarlıysa o, değilse giren kişinin kendi PIN'i. Aidat sekmesinden çıkınca yeniden kilitlenir (DAĞ ile aynı).
+let miloAidatAcik = false;
+async function miloAidatKilitAc(pin) {
+    let r = await miloGirisApi('/aidat-dogrula', { pin }).catch(() => ({ ok: false, status: 0, data: {} }));
+    if (r.ok) { miloAidatAcik = true; return true; }
+    showToast(miloGirisHata(r), 'error'); return false;
+}
+async function miloAidatKilitDogrula() {
+    let e = document.getElementById('milo-aidat-kilit-pin'), pin = e ? e.value.trim() : ''; if (!pin) return showToast('PIN gir.', 'warning');
+    if (await miloAidatKilitAc(pin)) miloAidatCiz(); else if (e) { e.value = ''; e.focus(); }
+}
+function miloAidatPinKaydet(kaldir) {
+    let pin = kaldir ? null : ((document.getElementById('milo-aidat-pin') || {}).value || '');
+    if (!kaldir && pin.length < 6) return showToast('Aidat PIN\'i en az 6 hane olmalı.', 'warning');
+    miloYonetimIstek('/yonetim/aidat-pin', { pin }, 'PUT', kaldir ? 'Aidat PIN\'i kaldırıldı.' : '💳 Aidat PIN\'i ayarlandı.');
+}
+// Her yerden sporcu profili: data-sporcu="grup|ad" taşıyan isme dokununca (önce eksik aidat/yoklama yüklenir)
+window.ynDisDelege = true;
+document.addEventListener('click', function (e) {
+    let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if (!el) return;
+    e.preventDefault(); e.stopPropagation(); let p = el.getAttribute('data-sporcu').split('|'), g = p.shift(); miloKartAc(g, p.join('|'));
+}, true);
+// Sporcu profili: aidat + yoklama yoksa önce yüklenir (aylar ödenmemiş gibi görünmesin)
 async function miloKartAc(grup, ad) {
     ynKulup(miloYonetimAdaptor()); ynKartAc(grup + '|' + ad);
     try {
@@ -808,6 +881,11 @@ async function miloKartAc(grup, ad) {
 }
 function miloAidatCiz() {
     let alan = document.getElementById('milo-icerik');
+    if (!miloAidatAcik) {
+        alan.innerHTML = `<div class="milo-card" style="max-width:420px; margin:30px auto; text-align:center;"><div style="font-size:34px;">🔒</div><b>Aidat kilitli</b><div style="font-size:12.5px; color:var(--text-muted); margin:6px 0 12px;">Aidat PIN'ini gir (ayrı PIN ayarlanmadıysa kendi giriş PIN'in).</div><input id="milo-aidat-kilit-pin" type="password" class="milo-input" autocomplete="off" aria-label="Aidat PIN'i" onkeydown="if(event.key==='Enter') miloAidatKilitDogrula()"><button class="milo-btn-full" onclick="miloAidatKilitDogrula()">🔓 Kilidi aç</button></div>`;
+        setTimeout(() => { let e = document.getElementById('milo-aidat-kilit-pin'); if (e) e.focus(); }, 80);
+        return;
+    }
     if (miloAidatGorunum === 'panel') {
         if (typeof apCiz !== 'function') { alan.innerHTML = miloAidatSekmelerHTML() + '<div style="padding:30px; text-align:center; color:var(--text-muted);">Panel yüklenemedi — sayfayı yenile.</div>'; return; }
         let kap = document.getElementById('milo-aidat-panel-kap');
@@ -2519,3 +2597,5 @@ function miloSporcuProfilCiz(s) {
         </div>` : ''}
     `;
 }
+// Profil / isim stilleri ve kulüp adaptörü uygulama açılır açılmaz hazır
+try { if (typeof ynKulup === 'function') ynKulup(miloYonetimAdaptor()); } catch (e) {}

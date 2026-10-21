@@ -336,15 +336,24 @@ function kyKisiSatir(x, q, secilebilir) {
     return `<div class="ky-kisi${sec ? ' secili' : ''}${sec && _ky.hedef === key ? ' hedef' : ''}">
         ${secilebilir ? `<button class="ky-sec" onclick="kySec('${kk}')" aria-pressed="${sec}" aria-label="${esc(x.ad)} seç">${sec ? '✓' : ''}</button>` : '<span></span>'}
         ${kyAvatar(x.g, x.ad, sp)}
-        <div style="min-width:0"><div class="ky-ad">${kyVurgula(x.ad, q)}${kyRozetHTML(x.g, x.ad)}</div>
+        <div style="min-width:0"><div class="ky-ad"><span class="yn-isim" data-sporcu="${esc(x.g + '|' + x.ad)}">${kyVurgula(x.ad, q)}</span>${kyRozetHTML(x.g, x.ad)}</div>
             <div class="ky-bilgi"><span class="ky-cip" style="color:${kyGrupRenk(x.g)}; border-color:${kyGrupRenk(x.g)}66">${esc(kyGrupAd(x.g))}</span>${durum}
                 <span><b>${o.seri}</b> seri</span><span><b>${o.yoklama}</b> yoklama günü</span>${o.aidat ? `<span><b>${o.aidat}</b> aidat ayı</span>` : ''}${o.ders ? `<span><b>${o.ders}</b> ders kaydı</span>` : ''}
                 <span>son geliş: <b>${kyTarih(o.son)}</b></span>${sp.dogumYili ? `<span>${esc(String(sp.dogumTarihi || sp.dogumYili))}</span>` : ''}</div></div>
-        <div class="ky-eylem"><button class="ky-btn" onclick="kyDuzenleAc('${kk}')">✏️ Adını düzelt</button></div>
+        <div class="ky-eylem"><button class="ky-btn" onclick="kyDuzenleAc('${kk}')">✏️ Adını düzelt</button><button class="ky-btn" style="color:var(--status-danger,#dc2626)" onclick="kySil('${kk}')">🗑 Sil</button></div>
         ${duz ? `<div class="ky-duz"><input id="ky-duz-ad" value="${esc(x.ad)}" aria-label="Yeni isim" onkeydown="if(event.key==='Enter') kyDuzenleKaydet('${kk}'); if(event.key==='Escape') kyDuzenleAc(null);">
             <button class="ky-btn yesil" onclick="kyDuzenleKaydet('${kk}')">💾 Kaydet</button><button class="ky-btn" onclick="kyDuzenleAc(null)">Vazgeç</button>
             <span class="ky-alt" style="flex-basis:100%">Seriler, yoklama, aidat ve ders kayıtları yeni isme taşınır — hiçbir veri kaybolmaz.</span></div>` : ''}
     </div>`;
+}
+// Çift Kayıt'tan sil (2026-10-21, kullanıcı: "yanlış yazılmış kişileri silemedim") — normal silme: Silinenler'e gider, geri alınabilir
+function kySil(kk) { let k = kyKeyCoz(kk); _ky.secili = _ky.secili.filter(x => x !== kyAnahtar(k.g, k.ad)); yoneticiSil(k.g, k.ad); }
+// Sporcu kaydı olmayan (yoklama/aidatta kalmış) isim çöpse: listeden "yok say" (meta kayitsiz_yoksay, tüm cihazlarda)
+function kyKayitsizYoksay(i) {
+    let x = (window._kyKayitsizCache || [])[i]; if (!x) return;
+    let d = kyDepoOku('kayitsiz_yoksay'); d[x.ad] = { t: Date.now() }; kyDepoYazYerel('kayitsiz_yoksay', d);
+    kyDepoSenkron('kayitsiz_yoksay', () => kyDepoOku('kayitsiz_yoksay'), true).catch(() => {});
+    showToast(x.ad + ' listeden kaldırıldı', 'success'); kyCiftKayitCiz();
 }
 function kyCiftKayitCiz() {
     kyCss();
@@ -380,7 +389,8 @@ function kyCiftKayitCiz() {
 }
 function kyKayitsizlar() {
     let var_ = new Set(); ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => var_.add(ad)));
-    let silinmis = new Set((typeof silinenlerDB !== 'undefined' ? silinenlerDB : []).map(x => x.ad));
+    let silinmis = new Set((typeof silinenlerDB !== 'undefined' ? silinenlerDB : []).map(x => x.ad)), yoksay = kyDepoOku('kayitsiz_yoksay');
+    Object.keys(yoksay).forEach(ad => silinmis.add(ad));
     let m = {};
     Object.keys(otomatikYoklamaDB || {}).forEach(t => Object.keys(otomatikYoklamaDB[t] || {}).forEach(ad => {
         if (var_.has(ad) || silinmis.has(ad)) return;
@@ -405,7 +415,7 @@ function kyKayitsizHTML() {
         <div class="ky-alt">Bu isimlerle yoklama ya da aidat girilmiş ama bu isimde bir sporcu yok (çoğunlukla farklı yazım: I/İ, eksik ikinci ad). Doğru sporcuyu seç → <b>Bağla</b>: o isimdeki tüm kayıtlar seçtiğin sporcuya taşınır.</div>
         <div class="ky-liste">${l.map((x, i) => `<div class="ky-bilgi" style="margin:0; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><span style="flex:1; min-width:150px"><b>${esc(x.ad)}</b> <span class="ky-alt">· ${[x.yoklama && x.yoklama + ' yoklama', x.aidat && x.aidat + ' aidat ayı'].filter(Boolean).join(', ')}</span></span>
             <select id="ky-kayitsiz-${i}" class="ky-ara" style="width:auto; min-width:220px; max-width:100%; padding:8px 10px; font-size:13px; font-weight:600;" aria-label="${esc(x.ad)} hangi sporcu">${x.adaylar.length ? '' : '<option value="">— sporcu seç —</option>'}${x.adaylar.map(y => `<option value="${esc(kyAnahtar(y.g, y.ad))}">${esc(y.ad)} (${esc(kyGrupAd(y.g))})</option>`).join('')}<optgroup label="Diğer sporcular">${kyTumKisiler().filter(y => !x.adaylar.includes(y)).sort((p, q) => p.ad.localeCompare(q.ad, 'tr')).map(y => `<option value="${esc(kyAnahtar(y.g, y.ad))}">${esc(y.ad)} (${esc(kyGrupAd(y.g))})</option>`).join('')}</optgroup></select>
-            <button class="ky-btn birincil" ${!_ky.calisiyor ? '' : 'disabled'} onclick="kyKayitsizBagla(${i})">🔗 Bağla</button></div>`).join('')}</div></div>`;
+            <button class="ky-btn birincil" ${!_ky.calisiyor ? '' : 'disabled'} onclick="kyKayitsizBagla(${i})">🔗 Bağla</button><button class="ky-btn" onclick="kyKayitsizYoksay(${i})" title="Bu isim kimse değil — listeden kaldır">Yok say</button></div>`).join('')}</div></div>`;
 }
 function kyKayitsizBagla(i) {
     let x = (window._kyKayitsizCache || [])[i], sel = document.getElementById('ky-kayitsiz-' + i); if (!x || !sel || _ky.calisiyor) return;
@@ -537,6 +547,7 @@ function kyDuzenleKaydet(kk) {
 
 // ---------------------------------------------------------------- 3) Eğitmen & Misafir
 function kyKisilerCiz() {
+    if (typeof psCiz === "function") return psCiz(); // 2026-10-21: yeni ekran dagsk-personel.js (misafir/tür işlemleri sonrası da)
     kyCss();
     if (!_ky.notCekildi) { _ky.notCekildi = true; kisiTurCek(() => { if (typeof yoneticiSekmeAktif !== "undefined" && yoneticiSekmeAktif === "kisiler") kyKisilerCiz(); }); }
     let alan = document.getElementById('yonetici-liste'); if (!alan) return;
@@ -555,7 +566,7 @@ function kyEgitmenHTML(liste) {
     liste.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
     return `<div class="ky-kart"><div class="ky-alt">Eğitmen olarak işaretli sporcu kayıtları. Karışık Sınıf'ta sporcu seçerken en altta <b>👔 Eğitmenler</b> bölümünde çıkarlar — atış yapıp verilerini kaydetmeye devam edebilirsiniz.</div>
         <div class="ky-liste">${liste.map(x => { let o = kyOzet(x.g, x.ad), kk = kyKaydirKey(x.g, x.ad); let son = x.sp.sonSkorZamani ? new Date(x.sp.sonSkorZamani).toLocaleDateString('tr-TR') : '—';
-            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad">${esc(x.ad)}</div><div class="ky-bilgi"><span class="ky-cip" style="color:${kyGrupRenk(x.g)}">${esc(kyGrupAd(x.g))}</span><span><b>${o.seri}</b> seri</span><span>son atış: <b>${son}</b></span></div></div>
+            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad"><span class="yn-isim" data-sporcu="${esc(x.g + "|" + x.ad)}">${esc(x.ad)}</span></div><div class="ky-bilgi"><span class="ky-cip" style="color:${kyGrupRenk(x.g)}">${esc(kyGrupAd(x.g))}</span><span><b>${o.seri}</b> seri</span><span>son atış: <b>${son}</b></span></div></div>
                 <div class="ky-eylem"><button class="ky-btn" onclick="kyTurDegistir('${kk}','sporcu')">🎯 Öğrenci yap</button></div></div>`; }).join('') || '<div class="ky-bos">Henüz eğitmen olarak işaretlenmiş kayıt yok.<br>Üstteki <b>🔎 Tür ata</b> sekmesinden kendi kaydınızı bulup <b>👔 Eğitmen</b> yapın.</div>'}</div></div>`;
 }
 function kyMisafirHTML(liste) {
@@ -569,7 +580,7 @@ function kyMisafirHTML(liste) {
     return `${form}${takipHTML}<div class="ky-kart"><div class="ky-alt">Günlük / deneme dersine gelenler. Geldiği günler yoklamadan otomatik görünür. Sürekli gelmeye başlayınca <b>⭐ Aktif sporcu yap</b> — tüm geçmişiyle öğrenci olur.</div>
         <div class="ky-liste">${liste.map(x => {
             let kk = kyKaydirKey(x.g, x.ad), key = kyAnahtar(x.g, x.ad), duz = _ky.duzenle === 'mis:' + key;
-            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad">${esc(x.ad)}</div>
+            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad"><span class="yn-isim" data-sporcu="${esc(x.g + "|" + x.ad)}">${esc(x.ad)}</span></div>
                 <div class="ky-bilgi"><span class="ky-cip" style="color:${kyGrupRenk(x.g)}">${esc(kyGrupAd(x.g))}</span>${x.b.eklenme ? `<span>kayıt: <b>${kyTarih(x.b.eklenme)}</b></span>` : ''}<span><b>${x.o.yoklama}</b> kez geldi</span><span>son: <b>${kyTarih(x.o.son)}</b></span>${x.b.tel ? `<span>📞 <b>${esc(x.b.tel)}</b></span>` : ''}</div>
                 ${x.b.not ? `<div class="ky-alt" style="margin-top:4px">📝 ${esc(x.b.not)}</div>` : ''}
                 ${x.o.gunler.length ? `<div class="ky-gunler" style="margin-top:6px">${x.o.gunler.slice(-8).reverse().map(t => `<span>${kyTarih(t)}</span>`).join('')}</div>` : ''}</div>
@@ -604,7 +615,7 @@ function kyMisafirTakipHTML(misafirler) {
             <div class="ky-oneri" style="border-style:solid"><span class="ky-alt">Aranacak</span><b style="font-size:24px; color:${aranacak.length ? 'var(--status-warning,#d97706)' : 'inherit'}">${aranacak.length}</b></div>
         </div>
         ${aranacak.length ? `<div class="ky-etiket" style="margin-top:4px">📞 Aranmayı bekleyenler</div><div class="ky-liste">${aranacak.map(x => { let kk = kyKaydirKey(x.g, x.ad);
-            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad">${esc(x.ad)}</div><div class="ky-bilgi"><span>${x.o.yoklama ? `<b>${x.o.yoklama}</b> kez geldi · son geliş <b>${x.gun} gün önce</b>` : `kayıt <b>${x.gun} gün önce</b>`}</span>${x.b.tel ? `<span>📞 <b>${esc(x.b.tel)}</b></span>` : '<span>telefon yok</span>'}</div></div>
+            return `<div class="ky-kisi"><span></span>${kyAvatar(x.g, x.ad, x.sp)}<div style="min-width:0"><div class="ky-ad"><span class="yn-isim" data-sporcu="${esc(x.g + "|" + x.ad)}">${esc(x.ad)}</span></div><div class="ky-bilgi"><span>${x.o.yoklama ? `<b>${x.o.yoklama}</b> kez geldi · son geliş <b>${x.gun} gün önce</b>` : `kayıt <b>${x.gun} gün önce</b>`}</span>${x.b.tel ? `<span>📞 <b>${esc(x.b.tel)}</b></span>` : '<span>telefon yok</span>'}</div></div>
                 <div class="ky-eylem"><button class="ky-btn yesil" onclick="kyMisafirWhatsApp('${kk}')">💬 WhatsApp</button><button class="ky-btn" onclick="kyTakip('${kk}','arandi')">✓ Arandı</button><button class="ky-btn" onclick="kyTakip('${kk}','ilgilenmiyor')">İlgilenmiyor</button></div></div>`; }).join('')}</div>` : '<div class="ky-alt">✅ Aranmayı bekleyen misafir yok.</div>'}
         ${donusen.length ? `<div class="ky-alt">⭐ Üye olanlar: ${donusen.map(x => `<b>${esc(x.ad)}</b> (${kyTarih(kisiBilgi(x.g, x.ad).aktifOldu)})`).join(', ')}</div>` : ''}</div>`;
 }
@@ -774,7 +785,7 @@ function egBordroSatirlari(ay) {
 }
 function egPara(n, tl) { return (Math.round(n * 100) / 100).toLocaleString('tr-TR') + (tl ? ' TL' : '₺'); }
 function egBordroHTML(ay) {
-    if (!_egUcretCekildi) { _egUcretCekildi = true; let yen = () => { try { if (yoneticiSekmeAktif === 'personel') egitmenRenderPersonel(); } catch (e) {} }; egUcretCek(yen); egDersCek(yen); }
+    if (!_egUcretCekildi) { _egUcretCekildi = true; let yen = () => { try { if (yoneticiSekmeAktif === 'kisiler' && typeof psCiz === 'function') psCiz(); else if (yoneticiSekmeAktif === 'personel') egitmenRenderPersonel(); } catch (e) {} }; egUcretCek(yen); egDersCek(yen); }
     let satir = egBordroSatirlari(ay), genel = satir.reduce((a, x) => a + x.top, 0);
     let ayAd = new Date(ay + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
     return `<details open style="margin-top:6px; margin-bottom:8px;">

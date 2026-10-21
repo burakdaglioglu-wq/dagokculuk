@@ -353,7 +353,7 @@
     const ayKisa = ay => AY_K[+ay.slice(5, 7) - 1];
     const gunYaz = g => g === 0 ? 'bugün' : g === 1 ? 'dün' : g + ' gün önce';
     const telNo = t => { let d = String(t || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '9' + d; else if (d.length === 10) d = '90' + d; return d; };
-    window.ynKulup = function (Y) { YN.Y = Y; };
+    window.ynKulup = function (Y) { YN.Y = Y; css(); };
     function css() {
         if (typeof apCss === 'function') apCss();
         if (document.getElementById('yn-css')) return;
@@ -384,10 +384,43 @@
 .ap .yn-tablo .sag{text-align:right}.ap .yn-tablo tbody tr{cursor:pointer}.ap .yn-tablo tbody tr:hover td{background:var(--ap-kart2)}
 .ap .yn-mini{display:inline-block;width:56px;height:6px;border-radius:9px;background:var(--ap-cizgi);overflow:hidden;vertical-align:middle;margin-left:6px}.ap .yn-mini i{display:block;height:100%}
 .ap .yn-bos{color:var(--ap-soluk);font-size:13px;padding:10px 0}
-.yn-kart-arka{position:fixed;inset:0;z-index:26000;background:rgba(4,6,9,.62);display:flex;justify-content:flex-end}
-.yn-kart-arka>.ap{width:min(580px,100%);height:100%;overflow-y:auto;border-radius:0;border-width:0 0 0 1px;padding:18px 18px 40px}
-.ap .yn-kart-bas{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
-.ap .yn-kart-bas h2{margin:0;font-size:20px;line-height:1.2;overflow-wrap:anywhere}.ap .yn-kart-bas p{margin:4px 0 0;color:var(--ap-soluk);font-size:13px}
+.yn-profil-arka{position:fixed;inset:0;z-index:26000;background:#0f1216;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.yn-profil-arka>.ap.yn-profil{border:0;border-radius:0;min-height:100%;padding:0 0 40px;gap:0}
+.ap .yn-p-ust{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(15,18,22,.97);border-bottom:1px solid var(--ap-cizgi);flex-wrap:wrap}
+.ap .yn-p-yol{flex:1 1 140px;min-width:0;color:var(--ap-soluk);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ap .yn-p-yol b{color:var(--ap-yazi)}
+.ap .yn-p-sag{display:flex;gap:6px}
+.ap .yn-p-izgara{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;padding:16px;max-width:1240px;margin:0 auto;width:100%;align-items:start}
+@media (max-width:860px){.ap .yn-p-izgara{grid-template-columns:1fr;padding:12px}}
+.ap .yn-p-kimlik{display:flex;flex-direction:column;gap:12px;position:sticky;top:64px}
+@media (max-width:860px){.ap .yn-p-kimlik{position:static}}
+.ap .yn-p-kart{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:20px 14px}
+.ap .yn-av{width:84px;height:84px;border-radius:20px;display:grid;place-items:center;font-weight:700;font-size:30px;background:#3a3020;color:#f0c860}
+.ap .yn-p-kart h2{margin:4px 0 0;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
+.ap .yn-p-alt{color:var(--ap-soluk);font-size:13px}
+.ap .yn-dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 10px;font-size:13px}.ap .yn-dl dt{color:var(--ap-soluk)}.ap .yn-dl dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.ap .yn-p-hizli{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ap .yn-p-icerik{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ap .yn-p-bant{padding:10px 14px;border-radius:10px;background:rgba(212,167,58,.12);border:1px solid rgba(212,167,58,.4);font-size:13px;line-height:1.45}
+.ap .yn-alanlar{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+@media (max-width:600px){.ap .yn-alanlar{grid-template-columns:1fr}}
+.ap .yn-alan{display:flex;flex-direction:column;gap:4px;min-width:0}.ap .yn-alan.tam{grid-column:1/-1}
+.ap .yn-alan label{font-size:11.5px;color:var(--ap-soluk);font-weight:600}
+.ap .yn-alan .deger{font-size:14px;padding:7px 0;border-bottom:1px dashed var(--ap-cizgi);min-height:34px;overflow-wrap:anywhere;white-space:pre-wrap}
+.ap .yn-alan input,.ap .yn-alan select,.ap .yn-alan textarea{font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--ap-cizgi);background:var(--ap-zemin);color:var(--ap-yazi);width:100%;min-height:38px;color-scheme:dark}
+.ap .yn-alan textarea{min-height:70px;resize:vertical}
+.ap .yn-alan small{color:var(--ap-soluk);font-size:11.5px}
+.ap .seg{display:flex;gap:4px;flex-wrap:wrap}
+.ap .seg button{font:inherit;font-size:13px;padding:7px 11px;border-radius:8px;border:1px solid var(--ap-cizgi);background:var(--ap-zemin);color:var(--ap-yazi);cursor:pointer;transform:none!important}
+.ap .seg button[aria-pressed=true]{border-color:var(--ap-vurgu);background:rgba(212,167,58,.14);color:#f0c860}
+.ap .yn-gecmis{display:flex;flex-direction:column}
+.ap .yn-olay{display:grid;grid-template-columns:82px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--ap-cizgi);font-size:12.5px}.ap .yn-olay:first-child{border-top:0}.ap .yn-olay time{color:var(--ap-soluk)}
+.ap .yn-tehlike{border:1px solid var(--ap-cizgi);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.ap .yn-tehlike h4{margin:0;font-size:13px;color:var(--ap-yazi)}
+.ap .yn-tehlike .satir{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.ap .yn-tehlike small{display:block;color:var(--ap-soluk);font-size:12px}
+.ap .ap-btn.tehlike{color:var(--ap-kotu);border-color:rgba(239,100,97,.45)}
+.yn-isim{cursor:pointer;text-decoration:underline dotted rgba(240,200,96,.55);text-underline-offset:3px}
+.yn-profil-ikon{border:0;background:none;padding:0 4px;cursor:pointer;font-size:14px;vertical-align:middle}
 .ap .yn-aylar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 @media (max-width:480px){.ap .yn-aylar{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .ap .yn-aylar button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--ap-cizgi);background:var(--ap-kart2);color:var(--ap-yazi);padding:7px 4px;display:grid;gap:1px;justify-items:center;min-height:62px;transform:none!important}
@@ -403,7 +436,7 @@
 .ap .yn-devam small{font-size:11px;color:var(--ap-soluk)}.ap .yn-devam b{font-size:11px}
 .ap.yn-pdf-cekim .yn-pdf-gizle{display:none!important}
 .ap #yn-ek-yuva .adm-card{background:transparent;border:0;box-shadow:none;padding:0;margin:8px 0 0}
-@media print{.yn-kart-arka{position:static;background:none}}`;
+@media print{.yn-profil-arka{position:static}}`;
         document.head.appendChild(s);
     }
     const tost = (m, t) => { if (typeof showToast === 'function') showToast(m, t || 'info'); };
@@ -470,7 +503,7 @@
         if (!isler) isler = '<div class="yn-bos">✓ Bekleyen iş yok.</div>';
         // gelmeyenler
         let gl = YN.gelmeyenTum ? d.gelmeyen : d.gelmeyen.slice(0, 8);
-        let gelmeyen = d.gelmeyen.length ? `<div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Sporcu</th><th>Grup</th><th>Son geliş</th><th class="sag">Gün</th><th class="sag yn-pdf-gizle">İşlem</th></tr></thead><tbody>${gl.map(x => `<tr onclick="ynKartAc('${js(x.k.id)}')"><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><b>${esc(x.k.ad)}</b></td><td>${esc(x.k.grupAd || '')}</td><td class="ap-num">${x.son ? x.son.split('-').reverse().join('.') : 'hiç gelmedi'}</td><td class="sag ap-num" style="color:${x.gun >= 45 ? 'var(--ap-kotu)' : 'var(--ap-uyari)'}">${x.gun}</td><td class="sag yn-pdf-gizle" onclick="event.stopPropagation()">${x.k.tel ? `<button class="ap-btn" onclick="ynWa('${js(x.k.id)}','ozledik')">💬 Yaz</button> ` : ''}<button class="ap-btn" onclick="ynKartAc('${js(x.k.id)}')">Kart</button></td></tr>`).join('')}</tbody></table></div>${d.gelmeyen.length > 8 ? `<div class="ap-alt yn-pdf-gizle"><span>${gl.length} / ${d.gelmeyen.length}</span><button class="ap-btn" onclick="YN.gelmeyenTum=!YN.gelmeyenTum; ynCiz(YN.el)">${YN.gelmeyenTum ? 'Daha az göster' : 'Tümünü göster'}</button></div>` : ''}<div class="yn-bos">45+ gündür gelmeyeni kartından pasife alabilirsin; ödemeyenler listesinden düşer.</div>` : '<div class="yn-bos">✓ 14 günden uzun süredir gelmeyen aktif sporcu yok.</div>';
+        let gelmeyen = d.gelmeyen.length ? `<div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Sporcu</th><th>Grup</th><th>Son geliş</th><th class="sag">Gün</th><th class="sag yn-pdf-gizle">İşlem</th></tr></thead><tbody>${gl.map(x => `<tr onclick="ynKartAc('${js(x.k.id)}')"><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><b class="yn-isim">${esc(x.k.ad)}</b></td><td>${esc(x.k.grupAd || '')}</td><td class="ap-num">${x.son ? x.son.split('-').reverse().join('.') : 'hiç gelmedi'}</td><td class="sag ap-num" style="color:${x.gun >= 45 ? 'var(--ap-kotu)' : 'var(--ap-uyari)'}">${x.gun}</td><td class="sag yn-pdf-gizle" onclick="event.stopPropagation()">${x.k.tel ? `<button class="ap-btn" onclick="ynWa('${js(x.k.id)}','ozledik')">💬 Yaz</button> ` : ''}<button class="ap-btn" onclick="ynKartAc('${js(x.k.id)}')">Kart</button></td></tr>`).join('')}</tbody></table></div>${d.gelmeyen.length > 8 ? `<div class="ap-alt yn-pdf-gizle"><span>${gl.length} / ${d.gelmeyen.length}</span><button class="ap-btn" onclick="YN.gelmeyenTum=!YN.gelmeyenTum; ynCiz(YN.el)">${YN.gelmeyenTum ? 'Daha az göster' : 'Tümünü göster'}</button></div>` : ''}<div class="yn-bos">45+ gündür gelmeyeni kartından pasife alabilirsin; ödemeyenler listesinden düşer.</div>` : '<div class="yn-bos">✓ 14 günden uzun süredir gelmeyen aktif sporcu yok.</div>';
         // gruplar
         let mini = (o, r) => `<span class="yn-mini"><i style="width:${o}%;background:${r}"></i></span>`;
         let gruplar = `<div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Grup</th><th class="sag">Aktif</th><th>Bu ay gelen</th>${v ? '<th>Tahsilat</th><th class="sag">Ödemeyen</th>' : ''}</tr></thead><tbody>${d.gruplar.map(g => { let go = Math.round(g.gelen / g.aktif * 100), to = g.od + g.bek ? Math.round(g.od / (g.od + g.bek) * 100) : 0; return `<tr onclick="ynGit('aidat',{liste:'bekleyen',grup:'${js(g.id)}'})"><td><b>${esc(g.ad)}</b></td><td class="sag ap-num">${g.aktif}</td><td class="ap-num">%${go}${mini(go, 'var(--ap-iyi)')}</td>${v ? `<td class="ap-num">%${to}${mini(to, 'var(--ap-vurgu)')}</td><td class="sag ap-num">${g.bek}</td>` : ''}</tr>`; }).join('')}</tbody></table></div>`;
@@ -488,7 +521,7 @@
                 <div class="ap-panel"><h3>Bugünün dersleri</h3><div id="yn-dersler"><div class="yn-bos">Yükleniyor…</div></div></div>
             </div>
             <div class="ap-panel" id="yn-gelmeyen"><h3>14+ gündür gelmeyenler <span>${d.gelmeyen.length} sporcu · en yeni kopanlar üstte</span></h3>${gelmeyen}</div>
-            ${d.dusen.length ? `<div class="ap-panel"><h3>Katılımı düşenler <span>${d.dusen.length} sporcu · son 4 hafta, önceki 4 haftanın yarısı ya da altı — kopmadan önce ara</span></h3><div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Sporcu</th><th>Grup</th><th class="sag">Önceki 4 hafta</th><th class="sag">Son 4 hafta</th><th class="sag yn-pdf-gizle">İşlem</th></tr></thead><tbody>${d.dusen.slice(0, 10).map(x => `<tr onclick="ynKartAc('${js(x.k.id)}')"><td><b>${esc(x.k.ad)}</b></td><td>${esc(x.k.grupAd || '')}</td><td class="sag ap-num">${x.once} ders</td><td class="sag ap-num" style="color:var(--ap-uyari)">${x.son} ders</td><td class="sag yn-pdf-gizle" onclick="event.stopPropagation()">${x.k.tel ? `<button class="ap-btn" onclick="ynWa('${js(x.k.id)}','ozledik')">💬 Yaz</button> ` : ''}<button class="ap-btn" onclick="ynKartAc('${js(x.k.id)}')">Kart</button></td></tr>`).join('')}</tbody></table></div></div>` : ''}
+            ${d.dusen.length ? `<div class="ap-panel"><h3>Katılımı düşenler <span>${d.dusen.length} sporcu · son 4 hafta, önceki 4 haftanın yarısı ya da altı — kopmadan önce ara</span></h3><div class="yn-tablo-kap"><table class="yn-tablo"><thead><tr><th>Sporcu</th><th>Grup</th><th class="sag">Önceki 4 hafta</th><th class="sag">Son 4 hafta</th><th class="sag yn-pdf-gizle">İşlem</th></tr></thead><tbody>${d.dusen.slice(0, 10).map(x => `<tr onclick="ynKartAc('${js(x.k.id)}')"><td><b class="yn-isim">${esc(x.k.ad)}</b></td><td>${esc(x.k.grupAd || '')}</td><td class="sag ap-num">${x.once} ders</td><td class="sag ap-num" style="color:var(--ap-uyari)">${x.son} ders</td><td class="sag yn-pdf-gizle" onclick="event.stopPropagation()">${x.k.tel ? `<button class="ap-btn" onclick="ynWa('${js(x.k.id)}','ozledik')">💬 Yaz</button> ` : ''}<button class="ap-btn" onclick="ynKartAc('${js(x.k.id)}')">Kart</button></td></tr>`).join('')}</tbody></table></div></div>` : ''}
             <div class="ap-panel"><h3>Gruplar <span>${esc(ayKisa(d.ay))} · satıra dokun → o grubun ödemeyenleri</span></h3>${gruplar}</div>
         </div>`;
         if (Y.dersler) Y.dersler().then(l => {
@@ -517,50 +550,56 @@
         window.open('https://api.whatsapp.com/send?phone=' + telNo(k.tel) + '&text=' + encodeURIComponent(m), '_blank');
     };
 
-    // ---- Sporcu kartı ----
+    // ---- Sporcu profili (B · tam sayfa; 2026-10-21, kullanıcı: "nerede bir sporcu adı yazıyorsa üstüne tıklayınca bilgilerini,
+    // kategorisini, yaşını, her şeyini düzeltebileyim ve kim bu diye bakabileyim — her yerde"). Solda kimlik, sağda özet · bilgiler
+    // (✏️ Düzenle → tüm alanlar) · aidat (aidat PIN'i ile) · devam + geçmiş · kayıt işlemleri. Alanlar/kaydetme kulüp adaptöründen:
+    //   kisiBul(id) · alanlar(k) → [{ id, et, tip: metin|tarih|tel|sayi|secim|not, deger, secenekler:[[değer, etiket]], ipucu }]
+    //   kaydet(k, degisen) → Promise<yeni id> · ozet(k) → [[etiket, değer]] · kpiEk(k) → [{ et, deger, alt }] · islemler(k) → [{ et, alt, btn, fn, tehlike }]
     window.ynKartAc = function (id, ay) {
         css(); if (!YN.Y) return;
         let l = document.getElementById('yn-ara-liste'); if (l) { l.innerHTML = ''; l.className = ''; }
-        YN.kart = id; YN.kartAy = ay || null; YN.kartYil = (ay || bugun()).slice(0, 4);
-        let a = document.getElementById('yn-kart'); if (!a) { a = document.createElement('div'); a.id = 'yn-kart'; a.className = 'yn-kart-arka'; a.addEventListener('click', e => { if (e.target === a) ynKartKapat(); }); document.body.appendChild(a); }
+        YN.kart = id; YN.kartAy = ay || null; YN.kartYil = (ay || bugun()).slice(0, 4); YN.duzen = false;
+        let a = document.getElementById('yn-kart'); if (!a) { a = document.createElement('div'); a.id = 'yn-kart'; a.className = 'yn-profil-arka'; document.body.appendChild(a); }
         document.addEventListener('keydown', ynKartEsc);
-        ynKartCiz();
+        ynKartCiz(); a.scrollTop = 0;
     };
-    function ynKartEsc(e) { if (e.key === 'Escape') ynKartKapat(); }
-    window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; document.removeEventListener('keydown', ynKartEsc); };
-    window.ynKartYenile = function () { if (YN.kart && document.getElementById('yn-kart')) ynKartCiz(); };
+    function ynKartEsc(e) { if (e.key === 'Escape' && !YN.duzen) ynKartKapat(); }
+    window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; YN.duzen = false; document.removeEventListener('keydown', ynKartEsc); };
+    window.ynKartYenile = function () { if (YN.kart && document.getElementById('yn-kart') && !YN.duzen) ynKartCiz(); };
+    const ynKisi = () => YN.Y.kisiBul ? YN.Y.kisiBul(YN.kart) : YN.Y.kisiler().find(x => x.id === YN.kart);
+    function alanDeger(a) { if (a.tip === 'secim') { let s = (a.secenekler || []).find(x => String(x[0]) === String(a.deger)); return s ? s[1] : (a.deger || '—'); } if (a.tip === 'tarih') return a.deger ? String(a.deger).split('-').reverse().join('.') : '—'; return a.deger === '' || a.deger == null ? '—' : esc(a.deger); }
+    function alanGirdi(a) {
+        let d = a.deger == null ? '' : String(a.deger);
+        if (a.tip === 'secim' && (a.secenekler || []).length <= 5) return `<div class="seg" data-alan="${a.id}" data-tip="seg">${a.secenekler.map(x => `<button type="button" data-v="${esc(x[0])}" aria-pressed="${String(x[0]) === d}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===this))">${esc(x[1])}</button>`).join('')}</div>`;
+        if (a.tip === 'secim') return `<select data-alan="${a.id}">${a.secenekler.map(x => `<option value="${esc(x[0])}"${String(x[0]) === d ? ' selected' : ''}>${esc(x[1])}</option>`).join('')}</select>`;
+        if (a.tip === 'not') return `<textarea data-alan="${a.id}" maxlength="500">${esc(d)}</textarea>`;
+        return `<input data-alan="${a.id}" type="${a.tip === 'tarih' ? 'date' : a.tip === 'sayi' ? 'number' : a.tip === 'tel' ? 'tel' : 'text'}" value="${esc(d)}"${a.tip === 'tarih' ? ` max="${bugun()}"` : ''}>`;
+    }
     function ynKartCiz() {
         let a = document.getElementById('yn-kart'), Y = YN.Y; if (!a) return;
-        let k = Y.kisiler().find(x => x.id === YN.kart); if (!k) { a.innerHTML = '<div class="ap"><div class="yn-bos">Sporcu bulunamadı.</div><button class="ap-btn" onclick="ynKartKapat()">Kapat</button></div>'; return; }
+        let k = ynKisi();
+        if (!k) { a.innerHTML = '<div class="ap yn-profil"><div class="yn-p-ust"><button class="ap-btn" onclick="ynKartKapat()">← Geri</button></div><div class="yn-bos">Sporcu bulunamadı (silinmiş ya da adı değişmiş olabilir).</div></div>'; return; }
         let G = (Y.gelisler() || {})[k.ad] || [], b = bugun(), ay = b.slice(0, 7), sonG = G.length ? G[G.length - 1] : null;
         let ayGelis = m => G.filter(t => t.slice(0, 7) === m).length, son3 = [0, -1, -2].reduce((t, n) => t + ayGelis(ayEkle(ay, n)), 0);
         let aidatHazir = !Y.aidatHazir || Y.aidatHazir(), aidatAcik = (Y.aidatAcik ? Y.aidatAcik() : true) && aidatHazir, A = Y.aidat;
         if (aidatAcik && A && A.hazirla) A.hazirla(ay);
-        let yas = k.dogum ? Math.floor((Date.now() - new Date(k.dogum + 'T12:00:00')) / (365.25 * 864e5)) : null;
-        let durum = k.pasif ? '<span class="ap-etk k">Pasif</span>' : '<span class="ap-etk i">Aktif</span>';
-        if (k.muaf) durum += ' <span class="ap-etk m">Aidattan muaf</span>';
-        let buRec = aidatAcik && A ? A.kayit(k.ad, ay) : null;
+        let yas = k.yas != null ? k.yas : k.dogum ? Math.floor((Date.now() - new Date(k.dogum + 'T12:00:00')) / (365.25 * 864e5)) : null;
+        let durum = (k.pasif ? '<span class="ap-etk k">Pasif</span>' : '<span class="ap-etk i">Aktif</span>') + (k.turAd ? ` <span class="ap-etk m">${esc(k.turAd)}</span>` : '') + (k.muaf ? ' <span class="ap-etk m">Aidattan muaf</span>' : '');
+        // aidat: bu yıl ödenmemiş (borç sayılan) aylar
+        let acikAy = 0, hucre = '', yil = YN.kartYil;
+        let ayDurum = m => { let r = A.kayit(k.ad, m), n = ayGelis(m); if (r && r.odendi) return ['od', r.tutar ? tl(r.tutar) : 'paket']; if (k.muaf) return ['muaf', 'muaf']; if ((k.katilma && k.katilma.slice(0, 7) > m) || m > ay) return ['bos', '—']; if (k.pasif && !n) return ['bos', 'pasif']; if (!k.katilma && !n) return ['bos', '—']; return ['bor', 'yok']; };
+        if (aidatAcik) [0, -1, -2, -3, -4, -5].forEach(n => { if (ayDurum(ayEkle(ay, n))[0] === 'bor') acikAy++; });
+        if (aidatAcik) for (let i = 1; i <= 12; i++) { let m = yil + '-' + String(i).padStart(2, '0'), d = ayDurum(m), n = ayGelis(m); hucre += `<button class="${d[0]}${YN.kartAy === m ? ' sec' : ''}" onclick="ynKartAySec('${m}')" aria-label="${ayKisa(m)} ${yil}: ${d[1]}${n ? ', ' + n + ' ders' : ''}"><small>${ayKisa(m)}</small><b>${d[1]}</b><em>${n ? n + ' ders' : '·'}</em></button>`; }
         let tile = (cls, et, deger, alt) => `<div class="${cls}"><small>${et}</small><b class="ap-num">${deger}</b><span>${alt}</span></div>`;
         let tiles = tile('', 'Son geliş', sonG ? gunYaz(gunFark(sonG, b)) : '—', sonG ? sonG.split('-').reverse().join('.') : 'yoklama kaydı yok')
             + tile('iyi', 'Bu ay', ayGelis(ay) + ' ders', 'son 3 ayda ' + son3 + ' ders')
-            + (aidatAcik ? tile(buRec && buRec.odendi ? 'iyi' : k.muaf || k.pasif ? '' : 'uyari', 'Aidat · ' + ayKisa(ay), buRec && buRec.odendi ? 'Ödendi' : k.muaf ? 'Muaf' : 'Ödenmedi', buRec && buRec.odendi ? (apOdemeGunu(buRec) || '').split('-').reverse().join('.') + (buRec.tutar ? ' · ' + tl(buRec.tutar) : '') : k.pasif ? 'pasif sporcu' : 'aylık ' + tl(A.aylik(k))) : tile('', 'Aidat', '🔒', 'kilitli'));
-        // aidat yılı
-        let yil = YN.kartYil, aidat;
+            + (!aidatAcik ? tile('', 'Aidat', '🔒', aidatHazir ? 'aidat PIN\'i ile görünür' : 'yükleniyor') : k.muaf ? tile('', 'Aidat', 'Muaf', 'ödeme beklenmiyor') : acikAy ? tile('kotu', 'Aidat · açık', tl(acikAy * A.aylik(k)), acikAy + ' ay ödenmemiş (son 6 ay)') : tile('iyi', 'Aidat', 'Güncel', 'son 6 ayda açık yok'))
+            + (Y.kpiEk ? Y.kpiEk(k) : []).map(x => tile('', x.et, x.deger, x.alt)).join('');
+        // aidat paneli
+        let aidat;
         if (!aidatHazir) aidat = '<div class="yn-bos">Aidat bilgisi yükleniyor…</div>';
-        else if (!aidatAcik) aidat = `<div class="yn-bos">🔒 Aidat kilitli. PIN ile aç, sonra bu sporcunun aylarını buradan düzelt.</div><div class="ap-filtre yn-pdf-gizle"><input type="password" id="yn-kart-pin" placeholder="Aidat PIN'i" autocomplete="off" style="max-width:180px" onkeydown="if(event.key==='Enter') ynKartPin()"><button class="ap-btn ana" onclick="ynKartPin()">Kilidi aç</button></div>`;
+        else if (!aidatAcik) aidat = `<div class="yn-bos">🔒 Aidat bilgileri aidat PIN'i ile görünür.</div><div class="ap-filtre yn-pdf-gizle"><input type="password" id="yn-kart-pin" placeholder="Aidat PIN'i" autocomplete="off" style="max-width:180px" onkeydown="if(event.key==='Enter') ynKartPin()"><button class="ap-btn ana" onclick="ynKartPin()">🔓 Göster</button></div>`;
         else {
-            let hucre = '';
-            for (let i = 1; i <= 12; i++) {
-                let m = yil + '-' + String(i).padStart(2, '0'), r = A.kayit(k.ad, m), n = ayGelis(m), cls, deger;
-                let once = k.katilma && k.katilma.slice(0, 7) > m, gelecek = m > ay;
-                if (r && r.odendi) { cls = 'od'; deger = r.tutar ? tl(r.tutar) : 'paket'; }
-                else if (k.muaf) { cls = 'muaf'; deger = 'muaf'; }
-                else if (once || gelecek) { cls = 'bos'; deger = '—'; }
-                else if (k.pasif && !n) { cls = 'bos'; deger = 'pasif'; }
-                else if (!k.katilma && !n) { cls = 'bos'; deger = '—'; } // katılma tarihi bilinmiyor: yalnız geldiği aylar borç sayılır
-                else { cls = 'bor'; deger = 'yok'; }
-                hucre += `<button class="${cls}${YN.kartAy === m ? ' sec' : ''}" onclick="ynKartAySec('${m}')" aria-label="${ayKisa(m)} ${yil}: ${deger}${n ? ', ' + n + ' ders' : ''}"><small>${ayKisa(m)}</small><b>${deger}</b><em>${n ? n + ' ders' : '·'}</em></button>`;
-            }
             let form = '';
             if (YN.kartAy && YN.kartAy.slice(0, 4) === yil) {
                 let m = YN.kartAy, r = A.kayit(k.ad, m) || {}, gun = apOdemeGunu(r) || (m === ay ? b : m + '-' + String(Math.min(28, new Date().getDate())).padStart(2, '0'));
@@ -569,28 +608,64 @@
                     <label>${ayKisa(m)} ${yil} · ödeme günü<input type="date" id="yn-k-gun" value="${gun}" max="${b}"></label>
                     <label>Tutar<input type="number" id="yn-k-tutar" value="${r.tutar || A.aylik(k) || ''}" inputmode="numeric" style="width:110px"></label>
                     <label class="genis">Not<input type="text" id="yn-k-not" value="${esc(r.notMetin || '')}" maxlength="200" placeholder="ör. geç ödedi, elden"></label>
-                    <button class="ap-btn iyi" onclick="ynKartKaydet()">✓ Ödendi kaydet</button>${r.odendi || r.notMetin ? `<button class="ap-btn" onclick="ynKartTemizle()">Ödenmedi yap</button>` : ''}<button class="ap-btn" onclick="YN.kartAy=null; ynKartYenile()">Vazgeç</button></div>`;
+                    <button class="ap-btn iyi" onclick="ynKartKaydet()">✓ Ödendi kaydet</button>${r.odendi || r.notMetin ? `<button class="ap-btn" onclick="ynKartTemizle()">Ödenmedi yap</button>` : ''}<button class="ap-btn" onclick="YN.kartAy=null; ynKartCiz()">Vazgeç</button></div>`;
             }
-            aidat = `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi düzelt</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartYenile()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartYenile()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}`;
+            aidat = `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartCiz()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartCiz()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}`;
         }
+        // devam + geçmiş (yoklama, ödemeler, katılma — en yeni üstte)
         let aylar6 = [-5, -4, -3, -2, -1, 0].map(n => ayEkle(ay, n)), dm = Math.max(1, ...aylar6.map(ayGelis));
         let devam = aylar6.map(m => `<div><b class="ap-num">${ayGelis(m)}</b><i style="height:${ayGelis(m) / dm * 100}%"></i><small>${ayKisa(m)}</small></div>`).join('');
-        let tel = k.tel ? telNo(k.tel) : '';
-        a.innerHTML = `<div class="ap" id="yn-kart-ic" role="dialog" aria-modal="true" aria-label="${esc(k.ad)} sporcu kartı">
-            <div class="yn-kart-bas"><div style="min-width:0"><h2>${esc(k.ad)}</h2><p>${esc(k.grupAd || '')}${yas != null ? ' · ' + yas + ' yaş' : ''}${k.katilma ? ' · ' + k.katilma.split('-').reverse().join('.') + "'den beri" : ''}</p><div style="margin-top:6px">${durum}</div></div><button class="ap-btn yn-pdf-gizle" onclick="ynKartKapat()" aria-label="Kapat">✕</button></div>
-            <div class="ap-araclar yn-pdf-gizle">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}','_blank')">💬 WhatsApp</button>` : '<span class="ap-etk u">Veli telefonu yok</span>'}
-                <button class="ap-btn${k.pasif ? ' iyi' : ''}" onclick="ynKartPasif(${k.pasif ? 'false' : 'true'})">${k.pasif ? '▶ Aktif et' : '⏸ Pasife al'}</button>${Y.duzenle ? `<button class="ap-btn" onclick="ynKartDuzenle()">✏️ Tüm bilgiler</button>` : ''}<button class="ap-btn" onclick="ynPdf(document.getElementById('yn-kart-ic'), 'sporcu-kart')">📄 PDF</button></div>
-            ${k.tel ? `<div class="yn-bos" style="padding:0">Veli: ${esc(k.veli || '')} ${esc(k.tel)}</div>` : ''}
-            <div class="ap-kpi">${tiles}</div>
-            <div class="ap-panel"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi · “ders” = o ay geldiği gün</span></h3>${aidat}</div>
-            <div class="ap-panel"><h3>Devam · son 6 ay <span>ayda geldiği gün</span></h3><div class="yn-devam">${devam}</div></div>
-            ${k.not ? `<div class="ap-panel"><h3>Not</h3><div style="font-size:13px;white-space:pre-wrap">${esc(k.not)}</div></div>` : ''}
-            ${Y.kartEk ? Y.kartEk(k) : ''}
+        let olay = G.slice(-6).map(t => ({ t, m: 'Derse geldi' }));
+        if (aidatAcik) for (let n = 0; n < 12; n++) { let m = ayEkle(ay, -n), r = A.kayit(k.ad, m); if (r && r.odendi) olay.push({ t: apOdemeGunu(r) || m + '-01', m: AY_UZUN_TR[+m.slice(5, 7) - 1] + ' aidatı ödendi' + (r.tutar ? ' · ' + tl(r.tutar) : '') + (r.notMetin ? ' · ' + r.notMetin : '') }); }
+        if (k.katilma) olay.push({ t: k.katilma, m: 'Kulübe katıldı' });
+        olay.sort((x, y) => y.t.localeCompare(x.t));
+        let gecmis = olay.length ? olay.slice(0, 10).map(o => `<div class="yn-olay"><time class="ap-num">${o.t.split('-').reverse().join('.')}</time><span>${esc(o.m)}</span></div>`).join('') : '<div class="yn-bos">Kayıt yok.</div>';
+        // bilgiler
+        let alanlar = Y.alanlar ? Y.alanlar(k) : [];
+        let bilgi = `<div class="yn-alanlar">${alanlar.map(x => `<div class="yn-alan${x.tip === 'not' ? ' tam' : ''}"><label>${esc(x.et)}</label>${YN.duzen ? alanGirdi(x) : `<div class="deger">${alanDeger(x)}</div>`}${YN.duzen && x.ipucu ? `<small>${esc(x.ipucu)}</small>` : ''}</div>`).join('')}</div>`;
+        let islemler = (Y.islemler ? Y.islemler(k) : []).map(x => `<div class="satir"><span><b>${esc(x.et)}</b><small>${esc(x.alt || '')}</small></span><button class="ap-btn${x.tehlike ? ' tehlike' : ''}" onclick="${x.fn}">${x.btn}</button></div>`).join('');
+        let tel = k.tel ? telNo(k.tel) : '', bas = k.ad.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('');
+        let ozet = (Y.ozet ? Y.ozet(k) : []).filter(x => x[1] !== '' && x[1] != null);
+        let alt = [k.grupAd, yas != null ? yas + ' yaş' : '', k.cinsiyetAd, k.yay].filter(Boolean).map(esc).join(' · ');
+        a.innerHTML = `<div class="ap yn-profil" id="yn-kart-ic" role="dialog" aria-modal="true" aria-label="${esc(k.ad)} profili">
+            <div class="yn-p-ust yn-pdf-gizle"><button class="ap-btn" onclick="ynKartKapat()">← Geri</button><span class="yn-p-yol">${esc(k.grupAd || '')} › <b>${esc(k.ad)}</b></span>
+                <span class="yn-p-sag">${YN.duzen ? `<button class="ap-btn" onclick="YN.duzen=false; ynKartCiz()">Vazgeç</button><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">💾 Kaydet</button>` : `${Y.kaydet ? '<button class="ap-btn ana" onclick="YN.duzen=true; ynKartCiz()">✏️ Düzenle</button>' : ''}<button class="ap-btn" onclick="ynPdf(document.getElementById('yn-kart-ic'), 'sporcu-' + ${JSON.stringify(k.ad).replace(/"/g, '&quot;')})">📄 PDF</button>`}</span></div>
+            <div class="yn-p-izgara">
+                <aside class="yn-p-kimlik">
+                    <div class="ap-panel yn-p-kart"><div class="yn-av"${k.foto ? ` style="background:url(${esc(k.foto)}) center/cover;color:transparent"` : ""}>${esc(bas)}</div><h2>${esc(k.ad)}</h2><div class="yn-p-alt">${alt}</div><div>${durum}</div></div>
+                    ${ozet.length ? `<div class="ap-panel"><dl class="yn-dl">${ozet.map(x => `<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl></div>` : ''}
+                    <div class="yn-p-hizli yn-pdf-gizle">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none;text-align:center">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}','_blank')">💬 WhatsApp</button>` : '<span class="ap-etk u" style="grid-column:1/-1;text-align:center">Veli telefonu yok</span>'}
+                        ${Y.pasifYap ? `<button class="ap-btn${k.pasif ? ' iyi' : ''}" style="grid-column:1/-1" onclick="ynKartPasif(${k.pasif ? 'false' : 'true'})">${k.pasif ? '▶ Aktif et' : '⏸ Pasife al'}</button>` : ''}</div>
+                </aside>
+                <main class="yn-p-icerik">
+                    ${YN.duzen ? '<div class="yn-p-bant">✏️ Düzenleme modu — alanları değiştir, sonra üstten <b>💾 Kaydet</b>. İsim ya da kategori değişirse tüm geçmişi (skor, yoklama, aidat) taşınır.</div>' : ''}
+                    <div class="ap-kpi">${tiles}</div>
+                    <div class="ap-panel"><h3>Bilgiler <span>${YN.duzen ? 'değiştir → Kaydet' : 'düzeltmek için ✏️ Düzenle'}</span></h3>${bilgi}</div>
+                    <div class="ap-iki">
+                        <div class="ap-panel"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi</span></h3>${aidat}</div>
+                        <div class="ap-panel"><h3>Devam · son 6 ay <span>ayda geldiği gün</span></h3><div class="yn-devam">${devam}</div><h3 style="margin-top:14px">Geçmiş <span>son olaylar</span></h3><div class="yn-gecmis">${gecmis}</div></div>
+                    </div>
+                    ${islemler ? `<div class="yn-tehlike yn-pdf-gizle"><h4>Kayıt işlemleri</h4>${islemler}</div>` : ''}
+                </main>
+            </div>
         </div>`;
     }
+    window.ynKartCiz = ynKartCiz; // profil düğmeleri (Düzenle, yıl, Vazgeç) çağırır
+    const AY_UZUN_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     window.ynKartAySec = function (m) { YN.kartAy = YN.kartAy === m ? null : m; ynKartCiz(); setTimeout(() => { let e = document.getElementById('yn-k-not'); if (e) e.focus(); }, 30); };
-    const ynKisi = () => YN.Y.kisiler().find(x => x.id === YN.kart);
-    async function sonra() { try { if (typeof apYenile === 'function' && AP.el && document.body.contains(AP.el)) apYenile(); } catch (e) {} try { if (YN.el && document.body.contains(YN.el)) ynCiz(YN.el); } catch (e) {} ynKartCiz(); }
+    async function sonra() { try { if (typeof apYenile === 'function' && AP.el && document.body.contains(AP.el)) apYenile(); } catch (e) {} try { if (YN.el && document.body.contains(YN.el)) ynCiz(YN.el); } catch (e) {} try { if (YN.Y.sonra) YN.Y.sonra(); } catch (e) {} ynKartCiz(); }
+    window.ynKartBilgiKaydet = async function () {
+        let k = ynKisi(), Y = YN.Y; if (!k || !Y.kaydet) return;
+        let eski = {}; (Y.alanlar(k) || []).forEach(x => { eski[x.id] = x.deger == null ? '' : String(x.deger); });
+        let yeni = {}, kap = document.getElementById('yn-kart-ic');
+        kap.querySelectorAll('[data-alan]').forEach(e => { let v = e.dataset.tip === 'seg' ? ((e.querySelector('[aria-pressed="true"]') || {}).dataset || {}).v : e.value; if (v == null) v = ''; v = String(v).trim(); if (v !== eski[e.dataset.alan]) yeni[e.dataset.alan] = v; });
+        if (!Object.keys(yeni).length) { YN.duzen = false; return ynKartCiz(); }
+        if (yeni.dogum && yeni.dogum > bugun()) return tost('Doğum tarihi gelecekte olamaz.', 'error');
+        let btn = kap.querySelector('.yn-p-sag .ana'); if (btn) { btn.disabled = true; btn.textContent = 'Kaydediliyor…'; }
+        try { let id = await Y.kaydet(k, yeni); if (id) YN.kart = id; YN.duzen = false; tost('✓ Bilgiler kaydedildi', 'success'); }
+        catch (e) { tost('Kaydedilemedi: ' + (e && e.message ? e.message : 'bağlantıyı kontrol et') + ' — hiçbir şey değişmedi.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '💾 Kaydet'; } return; }
+        sonra();
+    };
     window.ynKartKaydet = async function () {
         let k = ynKisi(); if (!k || !YN.kartAy) return;
         let gun = (document.getElementById('yn-k-gun') || {}).value || bugun(), tutar = parseInt((document.getElementById('yn-k-tutar') || {}).value, 10) || 0, notMetin = ((document.getElementById('yn-k-not') || {}).value || '').trim() || null;
@@ -614,13 +689,18 @@
         catch (e) { tost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); }
         sonra();
     };
-    window.ynKartDuzenle = function () { let k = ynKisi(); if (!k) return; ynKartKapat(); YN.Y.duzenle(k); };
     window.ynKartPin = async function () {
         let e = document.getElementById('yn-kart-pin'), pin = e ? e.value.trim() : ''; if (!pin) return tost('PIN gir.', 'warning');
         let ok = await YN.Y.aidatKilitAc(pin).catch(() => false);
         if (!ok) { if (e) { e.value = ''; e.focus(); } return; }
         sonra();
     };
+    // Her yerden: sporcu adı taşıyan öğe data-sporcu="grup|ad" → dokununca profil (satırın kendi tıklamasından önce yakalanır)
+    document.addEventListener('click', function (e) {
+        if (window.ynDisDelege) return; // DAĞ: app.js kendi yakalar (modül geç yüklenir)
+        let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if (!el || !YN.Y) return;
+        e.preventDefault(); e.stopPropagation(); ynKartAc(el.getAttribute('data-sporcu'));
+    }, true);
 
     // ---- ekran PDF'i: ekranda nasıl görünüyorsa öyle (html2canvas → jsPDF, A4 sayfalara bölünür) ----
     const yukle = src => new Promise((ok, hata) => { let s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = hata; document.head.appendChild(s); });

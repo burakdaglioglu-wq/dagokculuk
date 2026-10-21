@@ -8,7 +8,8 @@ import { unauthorized } from "../lib/json";
 // Genel meta geçişi PIN'siz (Karışık Sınıf) — ama kişisel bilgi taşıyan anahtarlar oturum ister (okuma + yazma).
 // yapilacak_tamam: "Bugün yapılacaklar" işaretleri — kimin aidatı gecikmiş bilgisini taşır.
 // program_gecmis: ders programı ekleme/çıkarma geçmişi (sunucu yazar, antrenmanProgrami.ts) — kimin hangi derste olduğu.
-const OTURUMLU_META = new Set<string>(["kisi_notlari", "personel_ders_ucret", "yapilacak_tamam", "program_gecmis", "deneme_adaylari"]);
+// personel_bilgi / personel_odeme: eğitmen telefonu, IBAN, acil durum kişisi, ücret ve ödeme defteri (dagsk-personel.js, 2026-10-21).
+const OTURUMLU_META = new Set<string>(["kisi_notlari", "personel_ders_ucret", "yapilacak_tamam", "program_gecmis", "deneme_adaylari", "silinen_gizli", "kayitsiz_yoksay", "personel_bilgi", "personel_odeme"]);
 
 interface CredentialsRow {
   yonetici_hash: string;

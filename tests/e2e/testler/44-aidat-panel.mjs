@@ -84,7 +84,8 @@ export default async function ({ log }) {
       await ctx.addInitScript((t) => { try { localStorage.setItem('milo_oturum', t); } catch (e) {} }, tok);
       await p.goto(B + '/milo/'); await p.waitForFunction(() => typeof miloUygulamayaGir === 'function', null, { timeout: 30000 });
       await p.evaluate(() => miloUygulamayaGir()); await p.waitForTimeout(800);
-      await p.evaluate(() => miloSekme('aidat')); await p.waitForSelector('#milo-aidat-panel-kap .ap .ap-kpi', { timeout: 20000 });
+      await p.evaluate(() => miloSekme('aidat')); await p.waitForSelector('#milo-aidat-kilit-pin', { timeout: 20000 }); // aidat ek kilidi
+      await p.evaluate(() => { miloAidatAcik = true; miloAidatCiz(); }); await p.waitForSelector('#milo-aidat-panel-kap .ap .ap-kpi', { timeout: 20000 });
       dogrula(await p.locator('#milo-aidat-panel-kap .ap-sat:not(.bas)').count() <= 20, 'Milo listesi sayfalanmalı');
       await p.evaluate((a) => { AP.grup = 'tumu'; AP.liste = 'geciken'; AP.arama = a; apTabloCiz(); }, A);
       const s = await p.evaluate((a) => { let x = AP.v.satirlar.find((q) => q.k.ad === a); return x && { gec: x.gec, aylik: x.aylik }; }, A);

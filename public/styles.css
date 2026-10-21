@@ -2404,6 +2404,9 @@
         /* Yönetici TAM SAYFA (2026-10-21, kullanıcı: "sporcu sekmesinin üstüne açmışsın gibi duruyor, kasıyor"): açıkken arkadaki
            uygulama gizlenir (çizim/kaydırma yükü yok), kabuk tüm ekranı kaplar; koyu grafit "Gece Kontrol" (aidat paneliyle aynı). */
         body.yon-acik { overflow: hidden; }
+        /* 👤 dokununca sporcu profili açılan isimler (data-sporcu) */
+        .yn-isim { cursor: pointer; text-decoration: underline dotted rgba(240,200,96,.55); text-underline-offset: 3px; }
+        .yn-profil-ikon { border: 0; background: none; padding: 0 4px; cursor: pointer; font-size: 14px; vertical-align: middle; }
         body.yon-acik #ust-bar, body.yon-acik #alt-bar, body.yon-acik .sekme-icerik { display: none !important; }
         body.yon-acik #yonetici-modal { padding: 0; background: #0f1216; align-items: stretch; justify-content: stretch; }
         body.yon-acik #yonetici-modal .modal-content.yon-shell { max-width: none; width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; box-shadow: none; margin: 0; }

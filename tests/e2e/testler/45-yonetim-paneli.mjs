@@ -46,7 +46,7 @@ export default async function ({ log }) {
       const r = await p.evaluate(({ y, ay }) => ({ k: aidatDB[y.ad][ay], put: window.__putSay }), { y: yedek, ay });
       dogrula(r.k && r.k.odendi && r.k.tutar === 1750 && r.k.notMetin === 'Karttan düzeltildi' && r.k.odemeTarihi === bugun, 'karttan ödeme kaydı yanlış: ' + JSON.stringify(r.k));
       esit(r.put, 1, 'sunucuya bir kez gönderilmeli');
-      dogrula(/Ödendi/.test(await p.locator('#yn-kart').textContent()), 'kart güncellenmedi');
+      dogrula(/aidatı ödendi/.test(await p.locator('#yn-kart').textContent()), 'profil geçmişinde ödeme görünmeli');
       // ödenmedi yap (temizle)
       await p.locator('#yn-kart .yn-aylar button').nth(ayNo - 1).click(); await p.waitForSelector('#yn-k-tutar');
       await p.evaluate(() => [...document.querySelectorAll('#yn-kart .ap-form .ap-btn')].find((b) => /Ödenmedi/.test(b.textContent)).click()); await p.waitForTimeout(300);
@@ -57,10 +57,34 @@ export default async function ({ log }) {
       dogrula(/Pasif/.test(await p.locator('#yn-kart').textContent()), 'kartta pasif görünmüyor');
       await p.evaluate(() => [...document.querySelectorAll('#yn-kart .ap-btn')].find((b) => /Aktif et/.test(b.textContent)).click()); await p.waitForTimeout(300);
       dogrula(await p.evaluate((y) => turnuvaDB[y.g][y.ad].pasif === false, yedek), 'aktif edilmedi');
+      // ✏️ Düzenle → veli adı + doğum tarihi → Kaydet (B · tam profil sayfası)
+      const eskiBilgi = await p.evaluate((y) => { let sp = turnuvaDB[y.g][y.ad]; return { veli: sp.acilKisi, dogum: sp.dogumTarihi, yil: sp.dogumYili }; }, yedek);
+      await p.evaluate(() => [...document.querySelectorAll('#yn-kart .ap-btn')].find((b) => /Düzenle/.test(b.textContent)).click());
+      await p.waitForSelector('#yn-kart [data-alan="veli"]');
+      await p.fill('#yn-kart [data-alan="veli"]', 'Test Veli Profil'); await p.fill('#yn-kart [data-alan="dogum"]', '2012-03-04');
+      await p.evaluate(() => [...document.querySelectorAll('#yn-kart .ap-btn')].find((b) => /Kaydet/.test(b.textContent) && !/Ödendi/.test(b.textContent)).click()); await p.waitForTimeout(400);
+      const bilgi = await p.evaluate((y) => { let sp = turnuvaDB[y.g][y.ad]; return { veli: sp.acilKisi, dogum: sp.dogumTarihi, duz: !!document.querySelector('#yn-kart [data-alan]') }; }, yedek);
+      dogrula(bilgi.veli === 'Test Veli Profil' && bilgi.dogum === '2012-03-04' && !bilgi.duz, 'profil düzenleme kaydedilmedi: ' + JSON.stringify(bilgi));
+      dogrula(/Test Veli Profil/.test(await p.locator('#yn-kart').textContent()), 'profil yeni bilgiyi göstermiyor');
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-kart.png' });
+      await p.evaluate(({ y, e }) => { let sp = turnuvaDB[y.g][y.ad]; sp.acilKisi = e.veli || ''; sp.dogumTarihi = e.dogum || ''; if (e.yil) sp.dogumYili = e.yil; sp.lastModified = Date.now(); bekleyenGonderim = true; }, { y: yedek, e: eskiBilgi });
+      await p.evaluate(() => ynKartKapat());
+      // Silinenler: "Listeyi temizle" kaydı listeden gizler, silme kaydı (geri gelmeyi engelleyen) durur
+      await p.evaluate(() => { silinenlerDB.push({ ad: 'ZZ E2E SİLİNEN', grup: 'buyukler', tarih: Date.now(), kod: '' }); yoneticiSekme('silinenler'); });
+      dogrula(/ZZ E2E SİLİNEN/.test(await p.locator('#yonetici-liste').textContent()), 'silinen listede yok');
+      await p.evaluate(() => { yoneticiSilinenleriTemizle(); }); await p.waitForTimeout(150); await p.evaluate(() => onayOnayla()); await p.waitForTimeout(200);
+      const sil = await p.evaluate(() => ({ liste: /ZZ E2E SİLİNEN/.test(document.getElementById('yonetici-liste').textContent), kayit: silinenlerDB.some((s) => s.ad === 'ZZ E2E SİLİNEN') }));
+      dogrula(!sil.liste && sil.kayit, 'temizle: listeden gizlenmeli, silme kaydı kalmalı ' + JSON.stringify(sil));
+      await p.evaluate(() => { silinenlerDB = silinenlerDB.filter((s) => s.ad !== 'ZZ E2E SİLİNEN'); silinenlerKaydet(); });
+      // Çift Kayıt: her satırda Sil
+      await p.evaluate((y) => { yoneticiSekme('ciftkayit'); _ky.ara = y.ad; kyCiftKayitCiz(); }, yedek);
+      dogrula(await p.evaluate(() => [...document.querySelectorAll('#yonetici-liste .ky-btn')].some((b) => /Sil/.test(b.textContent))), 'Çift Kayıt satırında Sil yok');
+      // isim → profil (Çift Kayıt satırındaki isim)
+      await p.evaluate(() => document.querySelector('#yonetici-liste .ky-ad .yn-isim').click()); await p.waitForSelector('#yn-kart .yn-p-kart', { timeout: 10000 });
+      dogrula(await p.locator('#yn-kart #yn-kart-pin').count() === 1, 'sekme değişince aidat yeniden kilitlenmeli (profilde PIN istenmeli)');
       await p.evaluate(() => ynKartKapat());
       // Sporcular & Skor listesinden de kart açılır
-      await p.evaluate((y) => yoneticiKartAc(y.g, y.ad), yedek); await p.waitForSelector('#yn-kart .yn-aylar button', { timeout: 10000 });
+      await p.evaluate((y) => { _aidatKilitAcikMi = true; yoneticiKartAc(y.g, y.ad); }, yedek); await p.waitForSelector('#yn-kart .yn-aylar button', { timeout: 10000 });
       dogrula((await p.locator('#yn-kart h2').textContent()) === yedek.ad, 'listeden açılan kart yanlış sporcu');
       await p.evaluate(() => ynKartKapat());
       // aidat kutusu → aidat paneli ödemeyenler listesi
@@ -99,6 +123,7 @@ export default async function ({ log }) {
       await p.goto(B + '/milo/'); await p.waitForFunction(() => typeof miloUygulamayaGir === 'function', null, { timeout: 30000 });
       await p.evaluate(() => miloUygulamayaGir()); await p.waitForTimeout(800);
       await p.evaluate(() => miloSekme('genel')); await p.waitForSelector('#milo-icerik #yn-genel .ap-kpi', { timeout: 30000 });
+      await p.evaluate(() => { miloAidatAcik = true; }); // aidat ek kilidi (PIN) — testte açık
       dogrula(await p.locator('#yn-genel .ap-kpi > button').count() >= 5, 'Milo özet kutuları eksik');
       // pasif üye aramada bulunur, kart açılır, geldiği ayın ödemesi düzeltilir
       await p.locator('#yn-ara-girdi').fill(A); await p.waitForSelector('#yn-ara-liste button');
@@ -118,10 +143,13 @@ export default async function ({ log }) {
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-milo-kart.png' });
       await p.evaluate(() => ynKartKapat());
       // Üyeler listesindeki 🪪 Kart düğmesi
-      await p.evaluate(() => miloSekme('uyeler')); await p.waitForFunction((a) => [...document.querySelectorAll('#milo-icerik button')].some((b) => /Kart/.test(b.textContent) && (b.getAttribute('onclick') || '').includes(a)), A, { timeout: 15000 });
+      await p.evaluate(() => { miloSekme('uyeler'); miloAidatAcik = true; }); await p.waitForFunction((a) => [...document.querySelectorAll('#milo-icerik button')].some((b) => /Kart/.test(b.textContent) && (b.getAttribute('onclick') || '').includes(a)), A, { timeout: 15000 });
       await p.evaluate((a) => [...document.querySelectorAll('#milo-icerik button')].find((b) => /Kart/.test(b.textContent) && (b.getAttribute('onclick') || '').includes(a)).click(), A);
       await p.waitForSelector('#yn-kart .yn-aylar button', { timeout: 10000 });
-      dogrula(/Ödendi/.test(await p.locator('#yn-kart').textContent()), 'Üyelerden açılan kartta bu ayın ödemesi görünmeli');
+      dogrula(/aidatı ödendi/.test(await p.locator('#yn-kart').textContent()), 'Üyelerden açılan profilde bu ayın ödemesi görünmeli');
+      // aidat kilidi: kilitliyken profil aidatı göstermez
+      await p.evaluate(() => { miloAidatAcik = false; ynKartYenile(); });
+      dogrula(await p.locator('#yn-kart #yn-kart-pin').count() === 1 && !/aidatı ödendi/.test(await p.locator('#yn-kart').textContent()), 'kilitliyken aidat gizli olmalı');
       await p.evaluate(() => { ynKartKapat(); miloSekme('genel'); }); await p.waitForSelector('#milo-icerik #yn-genel', { timeout: 15000 });
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-milo.png' });
       esit(hatalar.length, 0, 'Milo sayfa hatası: ' + hatalar.join(' | '));
