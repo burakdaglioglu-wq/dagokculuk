@@ -6951,7 +6951,7 @@
                 JSON.stringify(sr.oklar||[]) === JSON.stringify(s.oklar||[])
             );
             if(yakinDuplicate) { console.log('Yakın duplicate engellendi:', s.ad, s.puan); return; }
-            sp.seriler.push({ seriId: s.id, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, mesafe: s.mesafe || null });
+            sp.seriler.push({ seriId: s.id, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, mesafe: s.mesafe || null }); try { if(typeof kimAttiBildir === 'function') kimAttiBildir(s); } catch(e) {}
             sp.toplamSkor = (sp.seriler||[]).reduce((a,sr) => a+(sr.puan||0), 0);
             sp.xAdet = (sp.seriler||[]).reduce((a,sr) => a+((sr.oklar||[]).filter(o=>o==='X').length), 0);
             sp.sonSkorZamani = Math.max(sp.sonSkorZamani||0, s.t||0) || sp.sonSkorZamani;
@@ -7291,7 +7291,7 @@
                     let sp = turnuvaDB[s.g][s.ad];
                     if(!sp.seriler) sp.seriler = [];
                     if(!sp.seriler.some(sr => sr.seriId === s.id) && !(sp.kartGecmisi || []).some(k => (k.seriler || []).some(sr => sr.seriId === s.id))) {
-                        sp.seriler.push({ seriId: s.id, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, mesafe: s.mesafe || null });
+                        sp.seriler.push({ seriId: s.id, puan: s.puan, oklar: s.oklar, tarih: s.tarih, t: s.t, mesafe: s.mesafe || null }); try { if(typeof kimAttiBildir === 'function') kimAttiBildir(s); } catch(e) {}
                         sp.toplamSkor = sp.seriler.reduce((a,sr)=>a+(sr.puan||0),0);
                         sp.xAdet = sp.seriler.reduce((a,sr)=>a+((sr.oklar||[]).filter(o=>o==='X').length),0);
                         sp.sonSkorZamani = Math.max(sp.sonSkorZamani||0, s.t||0) || sp.sonSkorZamani;
@@ -31444,6 +31444,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             } catch(e) {}
         }
         function _seriSonrasiOdulVeLog(ad, grup, seriDoc, seriPuan, okDegerleri) {
+            try { if(typeof kimAttiBildir === 'function') kimAttiBildir(Object.assign({ g: grup, ad: ad, puan: seriPuan, oklar: okDegerleri, t: Date.now() }, seriDoc || {})); } catch(e) {} // 📺 kim attı bandı (TV, dagsk-foto.js)
             milyonOkDurakKontrol(ad, grup, (okDegerleri || []).length);
             try {
                 let seriSari = okDegerleri.filter(o => o === 'X' || o === '10' || o === '9').length;
@@ -32392,7 +32393,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let siraliOklar = [...okDegerleri].sort((a, b) => vMapSirala[b] - vMapSirala[a]);
             let seriDoc = { id: _cihazId + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), g: d.benimGrup, ad: d.benimAd, oklar: siraliOklar, puan: seriPuan, tarih: bugunISO(), t: Date.now(), cihazId: _cihazId };
             if(!grupData.seriler) grupData.seriler = [];
-            grupData.seriler.push({ seriId: seriDoc.id, puan: seriPuan, oklar: siraliOklar, tarih: seriDoc.tarih, t: seriDoc.t });
+            grupData.seriler.push({ seriId: seriDoc.id, puan: seriPuan, oklar: siraliOklar, tarih: seriDoc.tarih, t: seriDoc.t }); try { if(typeof kimAttiBildir === 'function') kimAttiBildir(seriDoc); } catch(e) {}
             try { sporcuPuanlariYenidenHesapla(grupData); } catch(e) {}
             grupData.lastModified = Date.now(); grupData.sonSkorZamani = Date.now();
             bekleyenGonderim = true;

@@ -57,6 +57,21 @@ export default async function ({ log }) {
     await p.locator('.yy-kutu .yy-yuz').first().click(); await p.waitForTimeout(200);
     esit(await p.evaluate(() => document.querySelector('.yy-kutu').className), ilkDurum, '3 dokunuşta başa dönmeli');
     await p.evaluate(() => { yoklamaYuzSec(false); yoneticiSekme('kullanicilar'); });
+    // 📺 "kim attı" alt bandı: TV gibi ekranda (Canlı Takip) yeni seri → fotoğraflı bant; aynı seri ikinci kez gelmez; eski seri gelmez
+    const bant = await p.evaluate(async (x) => {
+      document.getElementById('tab-canlitakip').classList.add('aktif');
+      let id = 'e2e-ka-' + Date.now();
+      kimAttiBildir({ id, g: x.g, ad: x.ad, puan: 52, oklar: ['X', '10', '9', '9', '8', '6'], t: Date.now(), mesafe: 18 });
+      kimAttiBildir({ id, g: x.g, ad: x.ad, puan: 52, oklar: ['X'], t: Date.now() });
+      kimAttiBildir({ id: id + 'eski', g: x.g, ad: x.ad, puan: 40, oklar: ['9'], t: Date.now() - 600000 });
+      await new Promise((ok) => setTimeout(ok, 700));
+      let el = document.getElementById('ka-bant'), r = { acik: !!el && el.classList.contains('acik'), foto: !!el && /api\/foto/.test(el.querySelector('.ka-foto').getAttribute('style') || ''), metin: el ? el.textContent : '', kuyruk: KA.kuyruk.length };
+      document.getElementById('tab-canlitakip').classList.remove('aktif');
+      return r;
+    }, s);
+    dogrula(bant.acik && bant.foto && /52/.test(bant.metin) && bant.metin.includes(s.ad), 'kim attı bandı: ' + JSON.stringify(bant));
+    esit(bant.kuyruk, 0, 'aynı seri / eski seri banda girmemeli');
+    dogrula(await p.evaluate((x) => /yz-pod-foto/.test(fotoYuzHTML(x.g + '|' + x.ad, 'yz-pod-foto')), s), 'kürsü yüzü');
     // izin Yok → girişsiz 401, oturumla (yönetici) görünür, sp.fotoUrl boşalır
     await p.evaluate((kk) => fotoIzinYaz(kk, 0), k); await p.waitForTimeout(300);
     const yeni = await p.evaluate((kk) => fotoBilgi(kk), k);

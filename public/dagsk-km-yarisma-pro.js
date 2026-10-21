@@ -659,7 +659,7 @@ function yzPodyumListe(o) {
 }
 function yzPodyumHTML(o) {
     let p = yzPodyumListe(o), ilk3 = p.liste; if (!ilk3.length) return '';
-    return '<div class="yz-podyum">' + [1, 0, 2].map(function (i) { let r = ilk3[i]; if (!r) return '<div class="yz-pod bos"></div>'; return '<div class="yz-pod p' + r.sira + '"><div class="yz-pod-madalya">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</div><div class="yz-pod-ad">' + esc(r.ad) + '</div><div class="yz-pod-puan">' + (p.eleme ? r.sira + '.' : r.toplam) + '</div><div class="yz-alt">' + esc(r.altMetin || '') + '</div><div class="yz-pod-blok"></div></div>'; }).join('') + '</div>'
+    return '<div class="yz-podyum">' + [1, 0, 2].map(function (i) { let r = ilk3[i]; if (!r) return '<div class="yz-pod bos"></div>'; return '<div class="yz-pod p' + r.sira + '">' + (typeof fotoYuzHTML === 'function' ? fotoYuzHTML(r.k, 'yz-pod-foto') : '') + '<div class="yz-pod-madalya">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</div><div class="yz-pod-ad">' + esc(r.ad) + '</div><div class="yz-pod-puan">' + (p.eleme ? r.sira + '.' : r.toplam) + '</div><div class="yz-alt">' + esc(r.altMetin || '') + '</div><div class="yz-pod-blok"></div></div>'; }).join('') + '</div>'
         + (p.eleme ? '<div class="yz-alt" style="text-align:center">Podyum eleme maçlarına göre · sıralama turu toplamları aşağıdaki tabloda</div>' : '');
 }
 function yzSonucHTML(o) {
@@ -1658,10 +1658,10 @@ function yzTvPodyumHTML(o) {
         let gruplar = yzGruplar(o, yzSiralama(o));
         if (gruplar.length > 1 || gruplar[0].ad) return gruplar.map(function (gr) {
             let ilk3 = gr.liste.filter(function (r) { return r.toplam > 0; }).slice(0, 3);
-            return '<div class="yz-tv-podyum"><div class="yz-tv-pod"><span class="a" style="color:#fbbf24">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + esc(gr.ad || '') + '</span></div>' + ilk3.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + esc(r.ad) + '</span><span class="p">' + r.toplam + '</span></div>'; }).join('') + '</div>';
+            return '<div class="yz-tv-podyum"><div class="yz-tv-pod"><span class="a" style="color:#fbbf24">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + esc(gr.ad || '') + '</span></div>' + ilk3.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + (typeof fotoYuzHTML === 'function' ? fotoYuzHTML(r.k, 'yz-tv-pod-foto') : '') + esc(r.ad) + '</span><span class="p">' + r.toplam + '</span></div>'; }).join('') + '</div>';
         }).join('');
     }
-    return '<div class="yz-tv-podyum">' + p.liste.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + esc(r.ad) + '</span><span class="p">' + (p.eleme ? esc(r.altMetin) : r.toplam) + '</span></div>'; }).join('') + '</div>';
+    return '<div class="yz-tv-podyum">' + p.liste.map(function (r) { return '<div class="yz-tv-pod p' + r.sira + '"><span class="m">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</span><span class="a">' + (typeof fotoYuzHTML === 'function' ? fotoYuzHTML(r.k, 'yz-tv-pod-foto') : '') + esc(r.ad) + '</span><span class="p">' + (p.eleme ? esc(r.altMetin) : r.toplam) + '</span></div>'; }).join('') + '</div>';
 }
 function yzTvElemeHTML(o) {
     let d = o.durum, el = yzElemeHesapla(o);
@@ -2272,7 +2272,7 @@ function yzGorunumKontrolHTML(o, tv) {
 function yzPodyumGrupHTML(gr) {
     let ilk3 = gr.liste.filter(function (r) { return r.toplam > 0; }).slice(0, 3); if (!ilk3.length) return '';
     return (gr.ad ? '<div class="yz-grup-bas" style="text-align:center">' + (gr.ad === 'Makaralı' ? '⚙️' : '🏹') + ' ' + gr.ad + '</div>' : '')
-        + '<div class="yz-podyum">' + [1, 0, 2].map(function (i) { let r = ilk3[i]; if (!r) return '<div class="yz-pod bos"></div>'; return '<div class="yz-pod p' + r.sira + '"><div class="yz-pod-madalya">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</div><div class="yz-pod-ad">' + esc(r.ad) + '</div><div class="yz-pod-puan">' + r.toplam + '</div><div class="yz-alt">' + r.on + ' × 10+X · ' + (r.ok ? (r.toplam / r.ok).toFixed(2) : '0') + ' ort.</div><div class="yz-pod-blok"></div></div>'; }).join('') + '</div>';
+        + '<div class="yz-podyum">' + [1, 0, 2].map(function (i) { let r = ilk3[i]; if (!r) return '<div class="yz-pod bos"></div>'; return '<div class="yz-pod p' + r.sira + '">' + (typeof fotoYuzHTML === 'function' ? fotoYuzHTML(r.k, 'yz-pod-foto') : '') + '<div class="yz-pod-madalya">' + (r.sira === 1 ? '🥇' : r.sira === 2 ? '🥈' : '🥉') + '</div><div class="yz-pod-ad">' + esc(r.ad) + '</div><div class="yz-pod-puan">' + r.toplam + '</div><div class="yz-alt">' + r.on + ' × 10+X · ' + (r.ok ? (r.toplam / r.ok).toFixed(2) : '0') + ' ort.</div><div class="yz-pod-blok"></div></div>'; }).join('') + '</div>';
 }
 // ---- 🔬 sonuç ekranı: teknik analiz kartı (grup + nişangah + tur içi)
 function yzTeknikKartHTML(o, sira) {

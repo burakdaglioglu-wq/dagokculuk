@@ -96,6 +96,16 @@
         const dokular = [];
         function tuvalDoku(w, h, ciz) { const c = document.createElement('canvas'); c.width = w; c.height = h; ciz(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; dokular.push(t); return t; }
         const yumusak = tuvalDoku(64, 64, (x) => { const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.3, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); });
+        // 📷 profil fotoğrafı (dagsk-foto.js, yalnız veli izni olan): yüklenince baş harfli doku fotoğraflı olanla değişir
+        function fotoDokuYukle(k, av) {
+            if (typeof fotoSrc !== 'function') return;
+            let anahtar = k.k ? 's:' + k.k : null;
+            if (!anahtar && typeof turnuvaDB !== 'undefined') { let g = ['buyukler', 'yildizlar', 'kucukler', 'minikler'].find(x => turnuvaDB[x] && turnuvaDB[x][k.ad]); if (g) anahtar = 's:' + g + '|' + k.ad; }
+            let src = anahtar ? fotoSrc(anahtar, false) : ''; if (!src) return;
+            const im = new Image();
+            im.onload = () => { const s = Math.min(im.naturalWidth, im.naturalHeight); av.material.map = tuvalDoku(512, 512, (x, w) => { x.save(); x.beginPath(); x.arc(w / 2, w / 2, w / 2 - 14, 0, 7); x.clip(); x.drawImage(im, (im.naturalWidth - s) / 2, (im.naturalHeight - s) / 2, s, s, 14, 14, w - 28, w - 28); x.restore(); x.lineWidth = 22; x.strokeStyle = '#fff'; x.beginPath(); x.arc(w / 2, w / 2, w / 2 - 14, 0, 7); x.stroke(); }); av.material.needsUpdate = true; };
+            im.src = src;
+        }
         function avatarDoku(ad, renk) { return tuvalDoku(512, 512, (x, w) => { const g = x.createRadialGradient(w * .35, w * .3, 20, w / 2, w / 2, w / 2); g.addColorStop(0, '#ffffff'); g.addColorStop(.25, renk); g.addColorStop(1, '#2a1a10'); x.fillStyle = g; x.beginPath(); x.arc(w / 2, w / 2, w / 2 - 14, 0, 7); x.fill(); x.lineWidth = 22; x.strokeStyle = '#fff'; x.stroke(); x.fillStyle = '#140b04'; x.font = '900 200px ' + YAZI; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(basHarf(ad), w / 2, w / 2 + 10); }); }
         function levhaDoku(ad, alt, renk) { return tuvalDoku(1024, 256, (x, w, h) => { x.fillStyle = 'rgba(10,7,5,.9)'; x.fillRect(0, 0, w, h); x.fillStyle = renk; x.fillRect(0, 0, w, 12); x.fillStyle = '#fff'; let fs = 120; x.font = '900 ' + fs + 'px ' + YAZI; while (x.measureText(ad).width > w - 60 && fs > 50) { fs -= 6; x.font = '900 ' + fs + 'px ' + YAZI; } x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ad, w / 2, h * .45); x.fillStyle = renk; x.font = '800 40px system-ui, sans-serif'; x.fillText(alt, w / 2, h * .85); }); }
 
@@ -170,7 +180,7 @@
                 const n = i + 1, renk = RENK[k.sira] || RENK[n], tab = P[n];
                 const g = new THREE.Group();
                 const arka = new THREE.Mesh(new THREE.CylinderGeometry(.95, .95, .12, 64), new THREE.MeshStandardMaterial({ color: renk, metalness: .9, roughness: .25 })); arka.rotation.x = Math.PI / 2; arka.position.z = -.07; g.add(arka);
-                const av = new THREE.Mesh(new THREE.CircleGeometry(.9, 64), new THREE.MeshBasicMaterial({ map: avatarDoku(k.ad, renk), toneMapped: false })); g.add(av);
+                const av = new THREE.Mesh(new THREE.CircleGeometry(.9, 64), new THREE.MeshBasicMaterial({ map: avatarDoku(k.ad, renk), toneMapped: false })); g.add(av); fotoDokuYukle(k, av);
                 g.position.set(BX[n], tab.yuk + 1.15, 0); g.scale.setScalar(.001); sc.add(g);
                 const puanYazi = (k.puan !== '' && k.puan != null ? k.puan + ' PUAN' : (k.alt || ''));
                 const levha = new THREE.Mesh(new THREE.PlaneGeometry(2.8, .7), new THREE.MeshBasicMaterial({ map: levhaDoku(kisaAd(k.ad).toLocaleUpperCase('tr-TR'), puanYazi.toLocaleUpperCase('tr-TR'), renk), transparent: true, toneMapped: false }));

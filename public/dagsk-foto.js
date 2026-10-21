@@ -286,3 +286,75 @@ async function dogumGunuKartPaylas(g, ad) {
 _fotoSporcuyaYaz();
 setTimeout(() => fotoListeCek(true), 1500);
 setInterval(() => { if (!document.hidden) fotoListeCek(true); }, 600000);
+
+// ---- 📺 "Kim attı" alt bandı (2026-10-21, kullanıcı taslaktan A'yı seçti) ----
+// Seri girilince (bu cihazda ya da canlı yayından) TV ekranında 4 sn alttan fotoğraf + isim + oklar + puan kayar; ekran kesilmez.
+// Kişisel rekorda altın bant. Yalnız "TV gibi" ekranlarda: tam ekran (Karışık Sınıf oyunları, Yuva TV…) ya da Canlı Takip sekmesi.
+// Yarışma TV'sinde gösterilmez (kendi sıralama duyurusu var). Fotoğraf yalnız veli izni olanlarda; yoksa baş harfler.
+const KA = { kuyruk: [], gorulen: {}, aktif: false };
+function kimAttiAcikMi() { try { return localStorage.getItem('dag_kim_atti') !== '0'; } catch (e) { return true; } }
+function kimAttiAyarla(v) { try { localStorage.setItem('dag_kim_atti', v ? '1' : '0'); } catch (e) {} showToast(v ? '📺 Kim attı bandı açık' : '📺 Kim attı bandı kapalı', 'success'); }
+function kimAttiEkranMi() {
+    if (!kimAttiAcikMi() || document.hidden) return false;
+    if (document.body.classList.contains('yz-tv-acik')) return false;
+    if (document.fullscreenElement) return true;
+    let ct = document.getElementById('tab-canlitakip'); return !!(ct && ct.classList.contains('aktif'));
+}
+// s: { id, g, ad, puan, oklar, mesafe, t } — aynı seri iki yoldan gelirse (yerel kayıt + yayın yankısı) bir kez
+function kimAttiBildir(s) {
+    if (!s || !s.ad || !s.g) return;
+    let anahtar = s.id || (s.g + '|' + s.ad + '|' + s.puan + '|' + Math.round((s.t || Date.now()) / 5000));
+    if (KA.gorulen[anahtar]) return; KA.gorulen[anahtar] = Date.now();
+    if (s.t && Date.now() - s.t > 120000) return; // eski seri (açılışta bugünün listesi) bant göstermez
+    if (!kimAttiEkranMi()) return;
+    KA.kuyruk.push(s); if (KA.kuyruk.length > 5) KA.kuyruk.shift();
+    if (!KA.aktif) kimAttiSiradaki();
+}
+function _kimAttiRekor(s) {
+    let sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]; if (!sp || typeof _ysSeriler !== 'function') return false;
+    let n = (s.oklar || []).length;
+    let once = _ysSeriler(sp).filter(x => x.seriId !== s.id && (x.oklar || []).length === n && (x.t || 0) < (s.t || Date.now()));
+    return once.length >= 5 && (Number(s.puan) || 0) > Math.max(...once.map(x => Number(x.puan) || 0));
+}
+// kürsü / podyum yüzü — k: 'grup|ad'; izinli fotoğraf yoksa '' (yer tutmaz)
+function fotoYuzHTML(k, sinif) { let s = k ? fotoSrc('s:' + k, false) : ''; return s ? '<span class="' + sinif + '" style="background-image:url(\'' + s + '\')"></span>' : ''; }
+(function () {
+    let st = document.createElement('style'); st.id = 'foto-genel-css';
+    st.textContent = '.yz-pod-foto{display:block;width:72px;height:72px;margin:0 auto 6px;border-radius:50%;background-size:cover;background-position:center;border:3px solid currentColor;box-shadow:0 4px 14px rgba(0,0,0,.35)}'
+        + '.yz-tv-pod-foto{display:inline-block;width:1.6em;height:1.6em;border-radius:50%;background-size:cover;background-position:center;vertical-align:middle;margin-right:.35em;border:2px solid rgba(255,255,255,.8)}';
+    document.head.appendChild(st);
+})();
+function kimAttiCss() {
+    if (document.getElementById('ka-css')) return;
+    let st = document.createElement('style'); st.id = 'ka-css';
+    st.textContent = `
+#ka-bant{position:fixed;left:3vw;bottom:5vh;z-index:2147483000;display:flex;align-items:center;gap:1.6vw;width:min(62vw,980px);min-width:300px;padding:1.2vw 1.6vw;border-radius:18px;background:linear-gradient(90deg,rgba(18,22,30,.97),rgba(18,22,30,.9));border:1px solid rgba(240,200,96,.45);box-shadow:0 10px 40px rgba(0,0,0,.5);color:#e8ebf0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transform:translateX(-120%);transition:transform .55s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+#ka-bant.acik{transform:none}
+#ka-bant.rekor{border-color:#f0c860;background:linear-gradient(90deg,#3a2c0b,#1a1408)}
+#ka-bant .ka-foto{width:clamp(56px,8vw,120px);aspect-ratio:1;border-radius:50%;border:3px solid #f0c860;flex:none;display:grid;place-items:center;font-weight:800;font-size:clamp(18px,2.6vw,40px);background:#3a3020;color:#f0c860;background-size:cover;background-position:center}
+#ka-bant .ka-ad{flex:1;min-width:0}
+#ka-bant small{display:block;color:#8f98a7;font-size:clamp(10px,1vw,14px);letter-spacing:.06em;text-transform:uppercase}
+#ka-bant .ka-isim{display:block;font-size:clamp(16px,2.3vw,32px);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ka-bant .ka-rozet{display:none;font-size:clamp(10px,1.1vw,15px);font-weight:800;color:#17130a;background:#f0c860;padding:2px 10px;border-radius:99px;margin-left:8px;vertical-align:middle}
+#ka-bant.rekor .ka-rozet{display:inline-block}
+#ka-bant .ka-oklar{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+#ka-bant .ka-oklar span{font-size:clamp(10px,1.05vw,15px);font-weight:800;padding:1px 7px;border-radius:6px;background:#fbbf24;color:#78350f}
+#ka-bant .ka-oklar span.k{background:#ef4444;color:#fff}#ka-bant .ka-oklar span.m{background:#3b82f6;color:#fff}#ka-bant .ka-oklar span.s{background:#1f2937;color:#fff}#ka-bant .ka-oklar span.b{background:#fff;color:#334155}#ka-bant .ka-oklar span.x{background:#e2e8f0;color:#64748b}
+#ka-bant .ka-puan{text-align:center;font-size:clamp(30px,4.4vw,62px);font-weight:900;color:#f0c860;line-height:1}
+#ka-bant .ka-puan small{font-size:clamp(9px,.9vw,13px);font-weight:700;letter-spacing:.08em}
+@media (prefers-reduced-motion:reduce){#ka-bant{transition:none}}`;
+    document.head.appendChild(st);
+}
+function kimAttiSiradaki() {
+    let s = KA.kuyruk.shift(); if (!s) { KA.aktif = false; return; }
+    KA.aktif = true; kimAttiCss();
+    let el = document.getElementById('ka-bant');
+    if (!el) { el = document.createElement('div'); el.id = 'ka-bant'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
+    let rekor = _kimAttiRekor(s), k = fotoAnahtar(s.g, s.ad), stil = fotoStil(k, false);
+    let ok = (s.oklar || []).map(o => { let c = (o === 'X' || o === '10' || o === '9') ? '' : (o === '8' || o === '7') ? 'k' : (o === '6' || o === '5') ? 'm' : (o === '4' || o === '3') ? 's' : o === 'M' ? 'x' : 'b'; return '<span class="' + c + '">' + esc(o) + '</span>'; }).join('');
+    let grup = (typeof LIG_ETIKET_KISA_AIDAT !== 'undefined' && LIG_ETIKET_KISA_AIDAT[s.g]) || s.g;
+    el.className = rekor ? 'rekor' : '';
+    el.innerHTML = '<div class="ka-foto" style="' + stil + '">' + (stil ? '' : esc(_basHarf(s.ad))) + '</div><div class="ka-ad"><small>' + esc(grup) + (s.mesafe ? ' · ' + esc(s.mesafe) + ' m' : '') + '</small><span class="ka-isim">' + esc(s.ad) + '<span class="ka-rozet">🏅 REKOR</span></span><div class="ka-oklar">' + ok + '</div></div><div class="ka-puan">' + (Number(s.puan) || 0) + '<small>PUAN</small></div>';
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('acik')));
+    setTimeout(() => { el.classList.remove('acik'); setTimeout(kimAttiSiradaki, 650); }, rekor ? 5200 : 4000);
+}
