@@ -300,7 +300,7 @@ let miloAidatAcikAy = null;
 let miloAidatIstatistikAcik = false;
 let miloAidatIstatistikMuafDahil = false;
 let miloAidatBorcRaporuAcik = false;
-let miloAidatGorunum = 'panel'; // 📊 panel (/aidat-panel.js) · 👥 kartlar
+let miloAidatGorunum = 'panel'; // 📊 panel (/yonetim-panel.js) · 👥 kartlar
 let miloAidatKartSinir = 40;
 let _miloApDevamYukleniyor = false;
 let miloAidatBorcEsikAy = 2;
@@ -736,7 +736,7 @@ async function miloAidatAyTemizle(ad, ay) {
     showToast('Temizlendi.', 'success');
 }
 
-// 📊 Aidat paneli (2026-10-21, DAĞ ile ortak /aidat-panel.js): tahmin, kaçan para, gecikme, "ödemiş olabilir", tek tık ödendi.
+// 📊 Aidat paneli (2026-10-21, DAĞ ile ortak /yonetim-panel.js): tahmin, kaçan para, gecikme, "ödemiş olabilir", tek tık ödendi.
 function miloAidatSekmelerHTML() {
     let b = (k, et) => `<button onclick="miloAidatGorunum='${k}'; miloAidatCiz();" style="flex:1; padding:10px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; border:1px solid ${miloAidatGorunum === k ? 'var(--neon-pink)' : 'var(--border-color)'}; background:${miloAidatGorunum === k ? 'color-mix(in srgb, var(--neon-pink) 14%, transparent)' : 'var(--bg-panel)'}; color:var(--text-main);">${et}</button>`;
     return `<div style="display:flex; gap:8px; margin-bottom:10px;">${b('panel', '📊 Panel')}${b('kartlar', '👥 Üye kartları')}</div>`;
@@ -761,9 +761,39 @@ function miloAidatPanelAdaptor() {
             miloDuesTum = (await miloApi('/dues')).dues;
         },
         hatirlat(k, ay) { miloAidatAy = ay; miloAidatHatirlat(k.grup, k.ad); },
-        detay(k, ay) { miloAidatGorunum = 'kartlar'; miloAidatAramaFiltre = k.ad; miloAidatAcikAd = k.ad; miloAidatAcikAy = null; miloAidatAy = ay; miloAidatYil = +ay.slice(0, 4); miloAidatCiz(); },
         pdf() { apYazdir('Milo'); },
         araclar: [['📄 Gelir raporu', 'miloAidatGelirRaporu()'], ['📊 Detaylı analiz (PDF)', 'miloAidatDetayliAnalizPDF()'], ['⚠️ Borç raporu', "miloAidatGorunum='kartlar'; miloAidatBorcRaporuAcik=true; miloAidatCiz()"], ['⚙️ Varsayılan tutar', "miloAidatGorunum='kartlar'; miloAidatCiz()"]]
+    };
+}
+// 🏠 Yönetim paneli (/yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için Milo verisi — DAĞ'daki dagYonetimAdaptor ile aynı arayüz.
+function miloYonetimAdaptor() {
+    return {
+        ad: 'MILO FITT KIDS', aidat: miloAidatPanelAdaptor(), aidatAcik: () => true, aidatHazir: () => miloDuesTum.length > 0,
+        kisiler: () => miloUyeler.map(u => ({ id: u.grup + '|' + u.ad, ad: u.ad, grup: u.grup, grupAd: u.grup, pasif: !!u.pasif, muaf: !!u.aidatMuaf, tel: u.acilTelefon || u.veli2Telefon || '', veli: u.acilTelefon ? (u.acilKisi || '') : (u.veli2Kisi || ''), katilma: u.katilmaTarihi || '', dogum: u.dogumTarihi || '', not: u.genelNot || '' })),
+        gelisler() { let h = {}; miloAttendanceTum.forEach(a => { if (a.geldi) (h[a.ad] = h[a.ad] || {})[String(a.tarih).slice(0, 10)] = 1; }); let v = {}; Object.keys(h).forEach(ad => { v[ad] = Object.keys(h[ad]).sort(); }); return v; },
+        dersler() {
+            let simdi = new Date(), gun = simdi.getDay(), bugun = bugunISO(), dk = simdi.getHours() * 60 + simdi.getMinutes(), d = s => { let p = String(s || '0:0').split(':'); return +p[0] * 60 + (+p[1] || 0); };
+            return Promise.resolve(miloProgram.filter(sl => (sl.gunler || [sl.gun]).indexOf(gun) !== -1 && !(sl.istisnalar || []).some(i => i.tarih === bugun) && d(sl.bitisSaat) >= dk)
+                .sort((a, b) => a.baslangicSaat.localeCompare(b.baslangicSaat)).map(sl => ({ saat: sl.baslangicSaat, bitis: sl.bitisSaat, ad: sl.grup, kisi: (sl.katilimcilar || []).length, simdi: d(sl.baslangicSaat) <= dk })));
+        },
+        git(h, o) {
+            if (h === 'aidat') { miloAidatGorunum = 'panel'; AP.liste = o.liste || 'bekleyen'; AP.grup = o.grup || 'tumu'; AP.ay = null; AP.sayfa = 0; AP.arama = ''; AP.acik = null; miloSekme('aidat'); return; }
+            miloSekme(h === 'yoklama' ? 'analiz' : h);
+        },
+        async pasifYap(k, pasif) {
+            await miloApi(`/members/${encodeURIComponent(k.grup)}/${encodeURIComponent(k.ad)}`, { method: 'PATCH', body: JSON.stringify({ pasif: pasif ? 1 : 0 }) });
+            let u = miloUyeler.find(x => x.grup === k.grup && x.ad === k.ad); if (u) u.pasif = !!pasif;
+        },
+        async aidatTemizle(k, ay) {
+            await miloApi(`/dues/${encodeURIComponent(k.ad)}/${encodeURIComponent(ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: false, tutar: null, notMetin: null, odemeTarihi: null, tarih: bugunISO() }) });
+            miloDuesTum = (await miloApi('/dues')).dues;
+        },
+        duzenle(k) {
+            miloSekme('uyeler');
+            let n = 0, bekle = () => { if (miloAktifSekme !== 'uyeler') return; if (document.getElementById('milo-uye-form-alani') && miloUyeler.length) { miloUyeFormAc(k.grup, k.ad); let e = document.getElementById('milo-uye-form-alani'); if (e) e.scrollIntoView({ block: 'start' }); } else if (n++ < 40) setTimeout(bekle, 150); };
+            setTimeout(bekle, 150);
+        },
+        araclar: [['📋 Yoklama', "miloSekme('analiz')"], ['↻ Yenile', 'mgbYukleVeCiz(true)']]
     };
 }
 function miloAidatCiz() {
@@ -772,6 +802,7 @@ function miloAidatCiz() {
         if (typeof apCiz !== 'function') { alan.innerHTML = miloAidatSekmelerHTML() + '<div style="padding:30px; text-align:center; color:var(--text-muted);">Panel yüklenemedi — sayfayı yenile.</div>'; return; }
         let kap = document.getElementById('milo-aidat-panel-kap');
         if (!kap || !alan.contains(kap)) { alan.innerHTML = miloAidatSekmelerHTML() + '<div id="milo-aidat-panel-kap"></div>'; kap = document.getElementById('milo-aidat-panel-kap'); }
+        ynKulup(miloYonetimAdaptor());
         apCiz(kap, miloAidatPanelAdaptor());
         // "bu ay kaç ders geldi" için yoklama bir kez arka planda yüklenir
         if (!miloAttendanceTum.length && !_miloApDevamYukleniyor) {

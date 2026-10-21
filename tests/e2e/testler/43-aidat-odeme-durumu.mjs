@@ -9,8 +9,8 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     yedek = await p.evaluate(() => {
-      let g = AIDAT_GRUPLAR.find((x) => Object.keys(turnuvaDB[x] || {}).filter((ad) => !turnuvaDB[x][ad].pasif).length >= 3);
-      let l = Object.keys(turnuvaDB[g]).filter((ad) => !turnuvaDB[g][ad].pasif).slice(0, 3), ay = aidatAyStrOfset(-1);
+      let g = AIDAT_GRUPLAR.find((x) => Object.keys(turnuvaDB[x] || {}).filter((ad) => !turnuvaDB[x][ad].pasif && !turnuvaDB[x][ad].donduruldu && yonKisiTuru(x, ad) === 'sporcu').length >= 3);
+      let l = Object.keys(turnuvaDB[g]).filter((ad) => !turnuvaDB[g][ad].pasif && !turnuvaDB[g][ad].donduruldu && yonKisiTuru(g, ad) === 'sporcu').slice(0, 3), ay = aidatAyStrOfset(-1);
       let y = { g, l, ay, filtre: _aidatGrupFiltre, kayit: l.map((ad) => JSON.stringify(aidatDB[ad] || null)), muaf: l.map((ad) => !!turnuvaDB[g][ad].aidatMuaf), kat: l.map((ad) => turnuvaDB[g][ad].katilmaTarihi || null) };
       _aidatGrupFiltre = g;
       aidatDB[l[0]] = Object.assign({}, aidatDB[l[0]] || {}); aidatDB[l[0]][ay] = { odendi: true, tutar: 1234, tarih: ay + '-05T09:30:03.513Z' };
@@ -18,6 +18,7 @@ export default async function ({ log }) {
       turnuvaDB[g][l[2]].aidatMuaf = true;
       return y;
     });
+    await p.evaluate(() => dagskEkYukle(YN_DOSYA));
     await p.evaluate((ay) => aidatOdemeDurumAc(ay), yedek.ay);
     await p.waitForSelector('#aidat-odeme-durum');
     const v = await p.evaluate((y) => { let r = aidatOdemeDurumVeri(y.ay); let ad = (l) => l.map((x) => x.ad); return { o: ad(r.odeyen).includes(y.l[0]), x: ad(r.odemeyen).includes(y.l[1]), m: ad(r.muaf).includes(y.l[2]), metin: document.getElementById('aidat-odeme-durum').textContent }; }, yedek);

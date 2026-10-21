@@ -15,109 +15,20 @@ async function mgbYukleVeCiz(zorla, cizme) { // cizme: arka plan yenilemesi yaln
     // 15 sn'lik otomatik yenileme her seferinde 6 istek atmasın: sunucudan en fazla dakikada bir, arada eldeki veriyle çiz
     if (!zorla && _mgbSon && Date.now() - _mgbSon < 60000 && miloUyeler.length) { if (!cizme) mgbCiz(); return; }
     _mgbSon = Date.now();
-    if (!cizme && !alan.querySelector('.mgb')) alan.innerHTML = '<div class="mgb-yukleniyor">Yükleniyor…</div>';
+    if (!cizme && !alan.querySelector('.ap')) alan.innerHTML = '<div class="mgb-yukleniyor">Yükleniyor…</div>';
     let al = function (yol, alanAd) { return miloApi(yol).then(function (d) { return d[alanAd] || []; }).catch(function () { return null; }); };
     let s = await Promise.all([al('/members', 'members'), al('/dues', 'dues'), al('/antrenman-programi', 'slots'), al('/attendance/auto', 'attendance'), al('/member-skills', 'skills'), al('/ders-icerikleri', 'dersler')]);
     if (s[0]) miloUyeler = s[0]; if (s[1]) miloDuesTum = s[1]; if (s[2]) miloProgram = s[2]; if (s[3]) miloAttendanceTum = s[3]; if (s[4]) miloMemberSkills = s[4]; if (s[5]) miloDersler = s[5];
     if (miloAktifSekme === 'genel' && !cizme) mgbCiz();
 }
 
-function mgbVeri() {
-    let bugun = mgbBugun(), ay = bugun.slice(0, 7), gun = new Date().getDay();
-    let aktif = miloUyeler.filter(function (u) { return !u.pasif; });
-    // aidat (bu ay)
-    let odemeli = aktif.filter(function (u) { return !u.aidatMuaf; });
-    let odeyen = odemeli.filter(function (u) { let r = miloAidatDuesKayit(u.ad, ay); return r && r.odendi; });
-    let toplanan = 0; aktif.forEach(function (u) { let r = miloAidatDuesKayit(u.ad, ay); if (r && r.odendi) toplanan += (r.tutar || 0); });
-    let geciken = odemeli.filter(function (u) { return odeyen.indexOf(u) === -1; });
-    // bugünkü dersler (istisna/iptal işaretli)
-    let dersler = miloProgram.filter(function (sl) { return (sl.gunler || [sl.gun]).indexOf(gun) !== -1; }).sort(function (a, b) { return a.baslangicSaat.localeCompare(b.baslangicSaat); })
-        .map(function (sl) { return { sl: sl, iptal: (sl.istisnalar || []).some(function (i) { return i.tarih === bugun; }), kisi: (sl.katilimcilar || []).length }; });
-    let bugunKisi = 0; dersler.forEach(function (x) { if (!x.iptal) bugunKisi += x.kisi; });
-    // devam (son 7 gün) ve son geliş
-    let yediGun = _miloBsIsoTarih(new Date(Date.now() - 6 * 864e5)), geldi = 0, gelmedi = 0, sonGelis = {};
-    miloAttendanceTum.forEach(function (a) {
-        if (a.tarih >= yediGun && a.tarih <= bugun) { if (a.geldi) geldi++; else gelmedi++; }
-        if (a.geldi && (!sonGelis[a.ad] || a.tarih > sonGelis[a.ad])) sonGelis[a.ad] = a.tarih;
-    });
-    // 2+ haftadır gelmeyen: daha önce gelmiş ya da 14+ gün önce katılmış, son 14 günde gelişi yok
-    let gelmeyen = aktif.map(function (u) {
-        let son = sonGelis[u.ad] || null, ref = son || u.katilmaTarihi || null;
-        return { u: u, son: son, gun: ref ? mgbGunFark(ref, bugun) : null };
-    }).filter(function (x) { return x.gun != null && x.gun >= 14; }).sort(function (a, b) { return b.gun - a.gun; });
-    let eksik = aktif.filter(function (u) { return !u.acilTelefon || !u.dogumTarihi; });
-    // doğum günleri (bugün + 7 gün)
-    let dg = aktif.filter(function (u) { return u.dogumTarihi; }).map(function (u) {
-        let d = new Date(u.dogumTarihi + 'T00:00:00'), simdi = new Date(), bu = new Date(simdi.getFullYear(), d.getMonth(), d.getDate());
-        let bugun0 = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate()); if (bu < bugun0) bu.setFullYear(bu.getFullYear() + 1);
-        return { u: u, kalan: Math.round((bu - bugun0) / 864e5), yas: bu.getFullYear() - d.getFullYear(), tarih: bu };
-    }).filter(function (x) { return x.kalan <= 7; }).sort(function (a, b) { return a.kalan - b.kalan; });
-    // son öğrenilen beceriler
-    let dersAd = {}; (miloDersler || []).forEach(function (d) { dersAd[d.id] = d.baslik; });
-    let beceri = (miloMemberSkills || []).filter(function (x) { return x.durum === 'ogrendi'; }).sort(function (a, b) { return (b.guncelleme || 0) - (a.guncelleme || 0); }).slice(0, 6);
-    let yeniUye = aktif.filter(function (u) { return u.katilmaTarihi && u.katilmaTarihi.slice(0, 7) === ay; }).length;
-    return { bugun: bugun, ay: ay, aktif: aktif, odemeli: odemeli, odeyen: odeyen, toplanan: toplanan, geciken: geciken, dersler: dersler, bugunKisi: bugunKisi, geldi: geldi, gelmedi: gelmedi, gelmeyen: gelmeyen, eksik: eksik, dg: dg, beceri: beceri, dersAd: dersAd, yeniUye: yeniUye };
-}
-
+// Genel Bakış = ortak yönetim paneli (/yonetim-panel.js, DAĞ ile aynı; 2026-10-21 "en iyi yönetim sayfaları gibi, hem Milo hem DAĞ").
 function mgbCiz() {
     let alan = document.getElementById('milo-icerik'); if (!alan) return;
-    let v = mgbVeri(), saat = new Date().getHours();
-    let selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
-    let tarih = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) + ' ' + MGB_GUN[new Date().getDay()];
-    let ayAd = miloAyTamAd(v.ay).split(' ')[0];
-    let oran = v.odemeli.length ? Math.round(v.odeyen.length / v.odemeli.length * 100) : 0;
-    let devam = v.geldi + v.gelmedi ? Math.round(v.geldi / (v.geldi + v.gelmedi) * 100) : null;
-    let kutu = function (ikon, deger, et, alt, sekme, renk, ekHTML) {
-        return '<button class="mgb-kutu" style="--r:' + renk + '" onclick="miloSekme(\'' + sekme + '\')"><span class="mgb-kutu-ikon">' + ikon + '</span><span class="mgb-kutu-deger">' + deger + '</span><span class="mgb-kutu-et">' + et + '</span><span class="mgb-kutu-alt">' + alt + '</span>' + (ekHTML || '') + '</button>';
-    };
-    let kutular = '<div class="mgb-kutular">'
-        + kutu('👥', v.aktif.length, 'Aktif üye', v.yeniUye ? '+' + v.yeniUye + ' bu ay katıldı' : 'bu ay yeni kayıt yok', 'uyeler', 'var(--milo-teal)')
-        + kutu('💰', v.toplanan.toLocaleString('tr-TR') + ' ₺', ayAd + ' aidatı', v.odeyen.length + '/' + v.odemeli.length + ' ödedi', 'aidat', '#22c55e', '<span class="mgb-bar"><i style="width:' + oran + '%"></i></span>')
-        + kutu('📅', v.dersler.filter(function (x) { return !x.iptal; }).length, 'Bugünkü ders', v.bugunKisi + ' sporcu bekleniyor', 'program', '#00C2D6')
-        + kutu('📈', devam == null ? '—' : '%' + devam, 'Devam (7 gün)', v.geldi + ' geldi · ' + v.gelmedi + ' gelmedi', 'analiz', devam == null || devam >= 75 ? '#FBBF24' : '#f97316')
-        + '</div>';
-    // Bugün
-    let bugunHTML = v.dersler.length ? v.dersler.map(function (x) {
-        return '<button class="mgb-ders' + (x.iptal ? ' iptal' : '') + '" onclick="miloSekme(\'analiz\')"><span class="mgb-ders-saat">' + x.sl.baslangicSaat + '<small>' + x.sl.bitisSaat + '</small></span><span class="mgb-ders-ad">' + miloEsc(x.sl.grup) + (x.iptal ? ' <b class="mgb-rozet kirmizi">İPTAL</b>' : '') + '</span><span class="mgb-ders-kisi">👥 ' + x.kisi + (x.sl.kapasite ? '/' + x.sl.kapasite : '') + '</span></button>';
-    }).join('') : '<div class="mgb-bos">Bugün ders yok 🎉</div>';
-    // Dikkat
-    let satir = function (ad, alt, dugme) { return '<div class="mgb-satir"><span><b>' + miloEsc(ad) + '</b><small>' + alt + '</small></span>' + (dugme || '') + '</div>'; };
-    let dikkatBolum = function (baslik, sayi, renk, icerik, tumuSekme, tumuFn) {
-        return '<div class="mgb-dikkat-bolum"><div class="mgb-dikkat-bas"><span class="mgb-nokta" style="background:' + renk + '"></span>' + baslik + ' <b>' + sayi + '</b>' + (sayi ? '<button class="mgb-link" onclick="' + (tumuFn || 'miloSekme(\'' + tumuSekme + '\')') + '">Tümü →</button>' : '') + '</div>' + (sayi ? icerik : '<div class="mgb-tamam">✓ Yok</div>') + '</div>';
-    };
-    let dikkat = '<div class="mgb-kart"><div class="mgb-kart-bas">⚠️ Dikkat</div>'
-        + dikkatBolum('Aidatı gecikenler', v.geciken.length, '#ef4444', v.geciken.slice(0, 4).map(function (u) { return satir(u.ad, miloEsc(u.grup) + ' · ' + ayAd + ' ödenmedi', '<button class="mgb-mini yesil" onclick="mgbAidatHatirlat(\'' + miloJsEsc(u.grup) + '\',\'' + miloJsEsc(u.ad) + '\')">💬 Hatırlat</button>'); }).join(''), 'aidat')
-        + dikkatBolum('2+ haftadır gelmeyen', v.gelmeyen.length, '#f97316', v.gelmeyen.slice(0, 4).map(function (x) { return satir(x.u.ad, x.son ? x.gun + ' gündür yok' : 'hiç yoklama kaydı yok', '<button class="mgb-mini" onclick="mgbOzledik(\'' + miloJsEsc(x.u.grup) + '\',\'' + miloJsEsc(x.u.ad) + '\')">💬 Özledik</button>'); }).join(''), 'analiz')
-        + dikkatBolum('Eksik bilgi', v.eksik.length, '#FBBF24', '<div class="mgb-alt-yazi">' + v.eksik.slice(0, 6).map(function (u) { return miloEsc(u.ad.split(' ')[0]) + (!u.acilTelefon ? ' (telefon)' : ' (doğum tarihi)'); }).join(', ') + (v.eksik.length > 6 ? ' …' : '') + '</div><button class="mgb-mini" onclick="mgbEksikTamamla()">📝 Hızlı Düzenle\'de tamamla</button>', null, 'mgbEksikTamamla()')
-        + '</div>';
-    let dgHTML = v.dg.length ? v.dg.map(function (x) { return satir(x.u.ad, (x.kalan === 0 ? '<b style="color:#FBBF24">BUGÜN</b>' : x.kalan === 1 ? 'yarın' : x.tarih.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })) + ' · ' + x.yas + ' yaşına giriyor', '<button class="mgb-mini" onclick="mgbKutla(\'' + miloJsEsc(x.u.grup) + '\',\'' + miloJsEsc(x.u.ad) + '\',' + x.yas + ')">🎉 Kutla</button>'); }).join('') : '<div class="mgb-bos">Bu hafta doğum günü yok</div>';
-    let becHTML = v.beceri.length ? v.beceri.map(function (b) { let g = b.guncelleme ? Math.floor((Date.now() - b.guncelleme) / 864e5) : null; return satir(b.ad, '⭐ ' + miloEsc(v.dersAd[b.dersId] || 'Beceri') + (g != null ? ' · ' + (g === 0 ? 'bugün' : g + ' gün önce') : '')); }).join('') : '<div class="mgb-bos">Henüz öğrenilen beceri kaydı yok</div>';
-    alan.innerHTML = '<div class="mgb">'
-        + '<div class="mgb-bas"><div><div class="mgb-selam">' + selam + ' 👋</div><div class="mgb-tarih">' + tarih + '</div></div><button class="mgb-yenile" onclick="mgbYukleVeCiz(true)" aria-label="Yenile">↻</button></div>'
-        + kutular
-        + '<div class="mgb-izgara">'
-        + '<div class="mgb-kart"><div class="mgb-kart-bas">📅 Bugün <button class="mgb-link" onclick="miloSekme(\'program\')">Program →</button></div>' + bugunHTML + '</div>'
-        + dikkat
-        + '<div class="mgb-kart"><div class="mgb-kart-bas">🎂 Doğum günleri <small>7 gün</small></div>' + dgHTML + '</div>'
-        + '</div></div>';
+    if (typeof ynCiz !== 'function') { alan.innerHTML = '<div class="mgb-yukleniyor">Panel yüklenemedi — sayfayı yenile.</div>'; return; }
+    ynKulup(miloYonetimAdaptor()); ynCiz(alan);
+    try { miloYanCiz(); } catch (e) {}
 }
-// ---- eylemler (mesajlar api.whatsapp.com/send ile — wa.me emojileri bozuyordu)
-function mgbUye(grup, ad) { return miloUyeler.find(function (x) { return x.grup === grup && x.ad === ad; }); }
-function mgbAidatHatirlat(grup, ad) { miloAidatAy = mgbBugun().slice(0, 7); miloAidatHatirlat(grup, ad); }
-function mgbVeliyeGonder(u, msg) {
-    let t1 = u.acilTelefon, t2 = u.veli2Telefon;
-    if (t1 && t2 && typeof mhdSor === 'function') return mhdSor('Mesaj hangi veliye gitsin?', u.ad, [['kal', 'Vazgeç'], ['v2', (u.veli2Kisi || '2. veli') + ' · ' + t2], ['v1', (u.acilKisi || 'Veli') + ' · ' + t1, 'ana']], function (a) { if (a === 'v1') miloWhatsAppAc(t1, msg); else if (a === 'v2') miloWhatsAppAc(t2, msg); });
-    miloWhatsAppAc(t1 || t2, msg);
-}
-function mgbOzledik(grup, ad) {
-    let u = mgbUye(grup, ad); if (!u) return;
-    mgbVeliyeGonder(u, 'Merhaba 🌟 MILO FITT KIDS\'ten yazıyoruz.\n\nSon günlerde ' + miloIlkAdBuyuk(ad) + ' derslerde yoktu, onu çok özledik 💜 Her şey yolundadır umarız. Tekrar aramızda görmek için sabırsızlanıyoruz!\n\nBir sorunuz olursa her zaman buradayız.\nMILO FITT KIDS');
-}
-function mgbKutla(grup, ad, yas) {
-    let u = mgbUye(grup, ad); if (!u) return;
-    mgbVeliyeGonder(u, '🎂 İyi ki doğdun ' + miloIlkAdBuyuk(ad) + '! 🎉\n\n' + yas + ' yaşın kutlu olsun! MILO FITT KIDS ailesi olarak nice mutlu, sağlıklı ve bol hareketli yıllar dileriz 💜\n\nMILO FITT KIDS');
-}
-function mgbEksikTamamla() { try { _mhd.eksik = true; _mhd.sayfa = 1; } catch (e) {} miloSekme('hizli'); }
 
 // ---- 🎨 Tema seçici (cihazda hatırlanır; temalar index.html'de html.milo-tema-* sınıfları)
 const MILO_TEMALAR = [
@@ -203,7 +114,7 @@ function miloDigerMenuKapat() { let m = document.getElementById('milo-diger-menu
 // 🧭 KOMUTA MERKEZİ (2026-10-02, kullanıcı DAĞ yönetici paneli için A tasarımını seçti ve "Milo'ya da yap"):
 // ≥700px'te solda sabit gruplu menü (tüm sekmeler, "Diğer"dekiler dahil), her sekmenin üstünde dokunulabilir
 // sayı şeridi (aidatı geciken · bugün gelen · bugünkü ders · 2+ haftadır gelmeyen). Dar ekranda üst sekme çubuğu
-// kalır. Sayılar mgbVeri()'den — Genel Bakış kutularıyla aynı kaynak.
+// kalır. Aidat sayısı aidat paneliyle aynı hesaptan (apOzet).
 // ================================================================================================
 const MILO_YAN_GRUPLAR = [
     ['YÖNETİM', [['genel', '🏠', 'Genel Bakış'], ['uyeler', '👤', 'Üyeler'], ['hizli', '📝', 'Hızlı Düzenle']]],
@@ -211,9 +122,12 @@ const MILO_YAN_GRUPLAR = [
     ['KULÜP İŞLERİ', [['aidat', '💰', 'Aidat'], ['personel', '🧑‍🏫', 'Personel']]]
 ];
 function miloSayilar() {
-    let v = mgbVeri(), bugun = v.bugun, gelen = 0;
-    (miloAttendanceTum || []).forEach(function (a) { if (a.tarih === bugun && a.geldi) gelen++; });
-    return { v: v, geciken: v.geciken.length, gelen: gelen, ders: v.dersler.filter(function (x) { return !x.iptal; }).length, gelmeyen: v.gelmeyen.length, aktif: v.aktif.length };
+    let bugun = mgbBugun(), gun = new Date().getDay(), aktif = miloUyeler.filter(u => !u.pasif), gelen = 0, son = {}, geciken = 0;
+    (miloAttendanceTum || []).forEach(a => { if (!a.geldi) return; if (a.tarih === bugun) gelen++; if (!son[a.ad] || a.tarih > son[a.ad]) son[a.ad] = a.tarih; });
+    try { if (typeof apOzet === 'function' && miloDuesTum.length) geciken = apOzet(miloAidatPanelAdaptor()).bek.length; } catch (e) {}
+    let ders = miloProgram.filter(sl => (sl.gunler || [sl.gun]).indexOf(gun) !== -1 && !(sl.istisnalar || []).some(i => i.tarih === bugun)).length;
+    let gelmeyen = aktif.filter(u => { let r = son[u.ad] || u.katilmaTarihi; return r && mgbGunFark(r, bugun) >= 14; }).length;
+    return { geciken, gelen, ders, gelmeyen, aktif: aktif.length };
 }
 function miloYanCiz(s) {
     let nav = document.getElementById('milo-yan'); if (!nav) return;
@@ -248,23 +162,6 @@ function miloAramaGit(q) { try { miloUyeAramaFiltre = q || ''; } catch (e) {} mi
     miloSekme = function (k) { let r = eskiSekme.apply(this, arguments); try { miloKomutaYenile(); } catch (e) {} return r; };
     let eskiYukle = mgbYukleVeCiz;
     mgbYukleVeCiz = async function () { let r = await eskiYukle.apply(this, arguments); try { miloKomutaYenile(); } catch (e) {} return r; };
-    // Genel Bakış başlığına arama kutusu (Komuta Merkezi başlığı)
-    let eskiCiz = mgbCiz;
-    mgbCiz = function () {
-        let odak = document.activeElement; if (odak && odak.id === 'mgb-ara' && document.getElementById('milo-icerik').contains(odak)) return; // yazarken yenileme silmesin
-        let r = eskiCiz.apply(this, arguments);
-        let bas = document.querySelector('#milo-icerik .mgb-bas');
-        if (bas && !document.getElementById('mgb-ara')) {
-            let yenile = bas.querySelector('.mgb-yenile');
-            let kap = document.createElement('div'); kap.className = 'mgb-bas-sag';
-            kap.innerHTML = '<label class="mgb-ara"><span aria-hidden="true">🔍</span><input id="mgb-ara" type="search" placeholder="Üye ara…" aria-label="Üye ara" onkeydown="if(event.key===\'Enter\') miloAramaGit(this.value)"></label>'
-                + '<button class="mgb-yoklama-btn" onclick="miloSekme(\'analiz\')">📋 Yoklama</button>';
-            if (yenile) kap.appendChild(yenile);
-            bas.appendChild(kap);
-        }
-        try { miloYanCiz(); } catch (e) {}
-        return r;
-    };
     let st = document.createElement('style');
     st.textContent = [
         '.milo-govde{flex:1;min-height:0;display:flex}',
@@ -282,16 +179,7 @@ function miloAramaGit(q) { try { miloUyeAramaFiltre = q || ''; } catch (e) {} mi
         '  .milo-yan-btn:focus-visible{outline:2px solid var(--milo-teal);outline-offset:1px}.milo-yan-ikon{font-size:15px;width:20px;text-align:center}',
         '  .milo-yan-rozet{margin-left:auto;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;color:var(--milo-ink-dim);font-variant-numeric:tabular-nums}.milo-yan-rozet.kirmizi{background:rgba(239,68,68,.18);color:#fca5a5}',
         '  #milo-icerik{padding:16px 22px!important}.milo-serit{padding:14px 22px 0}',
-        '}',
-        // Komuta Merkezi: düz yüzeyler (bulanık cam yok) + başlıkta arama
-        '.mgb-kutu,.mgb-kart{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--milo-card-raised,var(--milo-card))!important;border-radius:16px!important}',
-        '.mgb-kutu::before{display:none}',
-        '.mgb-bas{flex-wrap:wrap;gap:12px}.mgb-bas>div:first-child{flex:1 1 220px}.mgb-selam{font-size:26px!important;font-weight:900!important}',
-        '.mgb-bas-sag{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
-        '.mgb-ara{display:flex;align-items:center;gap:8px;width:260px;max-width:100%;height:44px;box-sizing:border-box;padding:0 12px;border-radius:12px;border:1px solid var(--milo-line);background:var(--milo-card-raised,var(--milo-card));color:var(--milo-ink-dim)}',
-        '.mgb-ara input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--milo-ink);font:inherit;font-size:13.5px}.mgb-ara:focus-within{border-color:var(--milo-teal)}',
-        '.mgb-yoklama-btn{height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--milo-teal);color:#fff;font:inherit;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap}',
-        '@media (max-width:699px){.mgb-bas-sag{width:100%}.mgb-ara{flex:1;width:auto}}'
+        '}'
     ].join('\n');
     document.head.appendChild(st);
 })();

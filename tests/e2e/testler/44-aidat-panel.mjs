@@ -1,5 +1,5 @@
 // 📊 Aidat paneli (2026-10-21, kullanıcı: "bir sürü isim düşünce kasıyor, basit bir site dashboard'u olsun: tahmin, istatistik,
-// kaçan / ödenmemiş ödemeler, belki ödendi ben girmedim → tıklayıp donmadan halledeyim"; "hem DAĞ hem Milo"). Ortak /aidat-panel.js.
+// kaçan / ödenmemiş ödemeler, belki ödendi ben girmedim → tıklayıp donmadan halledeyim"; "hem DAĞ hem Milo"). Ortak /yonetim-panel.js.
 // DAĞ: bellekte geçici aidat kaydı (sunucuya yazmaz, _aidatDuesPut susturulur), sonunda eski hali. Milo: test üyesi açılır, silinir.
 import { sayfaAc, uygulamaAc, miloApi, miloOturumAl, benzersiz, B, dogrula, esit, yataydaTasmaYok } from '../yardimci.mjs';
 
@@ -14,8 +14,8 @@ export default async function ({ log }) {
       await uygulamaAc(p);
       yedek = await p.evaluate(({ ay, bugun }) => {
         let ek = (a, k) => { let q = a.split('-').map(Number), d = new Date(q[0], q[1] - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
-        let g = AIDAT_GRUPLAR.find((x) => Object.keys(turnuvaDB[x] || {}).filter((ad) => !turnuvaDB[x][ad].pasif).length >= 3);
-        let l = Object.keys(turnuvaDB[g]).filter((ad) => !turnuvaDB[g][ad].pasif).slice(0, 3);
+        let g = AIDAT_GRUPLAR.find((x) => Object.keys(turnuvaDB[x] || {}).filter((ad) => !turnuvaDB[x][ad].pasif && !turnuvaDB[x][ad].donduruldu && yonKisiTuru(x, ad) === 'sporcu').length >= 3);
+        let l = Object.keys(turnuvaDB[g]).filter((ad) => !turnuvaDB[g][ad].pasif && !turnuvaDB[g][ad].donduruldu && yonKisiTuru(g, ad) === 'sporcu').slice(0, 3);
         let y = { g, l, kayit: l.map((ad) => JSON.stringify(aidatDB[ad] || null)), sp: l.map((ad) => JSON.stringify({ m: turnuvaDB[g][ad].aidatMuaf || false, k: turnuvaDB[g][ad].katilmaTarihi || null })), yok: JSON.stringify((otomatikYoklamaDB || {})[bugun] || null), put: null };
         window.__putSay = 0; window.__eskiPut = _aidatDuesPut; _aidatDuesPut = function () { window.__putSay++; };
         l.forEach((ad) => { turnuvaDB[g][ad].aidatMuaf = false; turnuvaDB[g][ad].katilmaTarihi = '2020-01-01'; aidatDB[ad] = {}; });

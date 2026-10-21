@@ -2039,7 +2039,9 @@
         }
         function ozelGrupSil(g) { if(!confirm(`"${g}" grubu silinsin mi? (Sporcular silinmez, grupları boşalır)`)) return; ozelSiniflar = ozelSiniflar.filter(x => x !== g); Object.keys(turnuvaDB[aktifGrup]||{}).forEach(ad => { if(turnuvaDB[aktifGrup][ad].sinif === g) turnuvaDB[aktifGrup][ad].sinif = ''; }); ozelSiniflariKaydet(); localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast('Grup silindi.', 'warning'); egitmenRenderSiniflar(); }
         // 2026-10-08: tek dokunuşla (Sil'in hemen yanında) onaysız pasife alıyordu → sporcu ders ekleme aramasından sessizce kayboluyordu.
-        function sporcuPasifYap(ad, durum) { let sp = turnuvaDB[aktifGrup][ad]; if(!sp) return; if(durum && !confirm(ad + ' pasife alınsın mı? (Bıraktı)\n\nPasif sporcular derslere eklenemez ve listelerde görünmez. İstediğin zaman "▶ Aktif Et" ile geri alabilirsin.')) return; sp.pasif = durum; sp.lastModified = Date.now(); bekleyenGonderim = true; localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); showToast(durum ? `${ad} pasife alındı.` : `${ad} tekrar aktif.`, durum ? 'warning' : 'success'); egitmenRenderSiniflar(); siralamaListesiDoldur(); }
+        // Pasif/aktif tek çekirdek: aktif edilince donduruldu da kalkar. Sporcu kartı (yonetim-panel.js), eğitmen listesi ve Karışık Sınıf kullanır.
+        function sporcuPasifAyarla(g, ad, pasif) { let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return false; sp.pasif = !!pasif; if(!pasif) sp.donduruldu = false; sp.lastModified = Date.now(); bekleyenGonderim = true; try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) {} return true; }
+        function sporcuPasifYap(ad, durum) { let sp = turnuvaDB[aktifGrup][ad]; if(!sp) return; if(durum && !confirm(ad + ' pasife alınsın mı? (Bıraktı)\n\nPasif sporcular derslere eklenemez ve listelerde görünmez. İstediğin zaman "▶ Aktif Et" ile geri alabilirsin.')) return; sporcuPasifAyarla(aktifGrup, ad, durum); showToast(durum ? `${ad} pasife alındı.` : `${ad} tekrar aktif.`, durum ? 'warning' : 'success'); egitmenRenderSiniflar(); siralamaListesiDoldur(); }
         function sporcuSil(ad) { if(typeof yoneticiSil === 'function') { yoneticiSil(aktifGrup, ad); return; } if(!confirm(`${ad} KALICI olarak silinsin mi?\n(Skorları ve kayıtları da gider. "Pasife Al" verileri korur.)`)) return; let sp = turnuvaDB[aktifGrup][ad]; let snap = sp ? JSON.parse(JSON.stringify(sp)) : null; if(!silindiMi(aktifGrup, ad)) silinenlerDB.push({ ad: ad, grup: aktifGrup, tarih: Date.now(), kod: sp ? (sp.kod || sp.dogumYili || '') : '', veri: snap }); silinenlerKaydet(); try { seriIptalEkle(((sp && sp.seriler) || []).map(s => s.seriId).filter(Boolean)); } catch(e) {} delete turnuvaDB[aktifGrup][ad]; yoneticiKaydet(); showToast(`${ad} silindi.`, 'warning'); egitmenRenderSiniflar(); siralamaListesiDoldur(); sporcuListesiniYenile(); }
 
         /* ============ PERSONEL (ÇALIŞAN EĞİTMEN) TAKİBİ ============ */
@@ -3725,21 +3727,22 @@
                 <button onclick="aidatKilitDogrula()" style="background:var(--gold); color:#1b1b1b; border:none; padding:10px 24px; border-radius:10px; font-weight:800; cursor:pointer;">Kilidi Aç</button>
             </div>`;
         }
+        // Aidat ek kilidi tek çekirdek (aidat ekranı + sporcu kartı): doğruysa kilit bu oturumda açılır
+        async function aidatKilitAc(pin) {
+            let r = await girisApi('/aidat-dogrula', { pin: pin }).catch(function() { return { ok: false, status: 0, data: {} }; });
+            if(r.ok) { _aidatKilitAcikMi = true; return true; }
+            showToast(r.status === 401 && r.data.error === 'oturum-yok' ? 'Oturumun sona ermiş — yeniden giriş yap.' : girisHataMesaji(r), 'error');
+            return false;
+        }
         async function aidatKilitDogrula() {
             let girilen = (document.getElementById('aidat-kilit-pin').value || '').trim();
             if(!girilen) return showToast('PIN girin.', 'error');
-            let r = await girisApi('/aidat-dogrula', { pin: girilen }).catch(function() { return { ok: false, status: 0, data: {} }; });
-            if(r.ok) {
-                _aidatKilitAcikMi = true;
-                egitmenRenderAidat();
-            } else {
-                showToast(r.status === 401 && r.data.error === 'oturum-yok' ? 'Oturumun sona ermiş — yeniden giriş yap.' : girisHataMesaji(r), 'error');
-                let el = document.getElementById('aidat-kilit-pin'); if(el) { el.value = ''; el.focus(); }
-            }
+            if(await aidatKilitAc(girilen)) { egitmenRenderAidat(); return; }
+            let el = document.getElementById('aidat-kilit-pin'); if(el) { el.value = ''; el.focus(); }
         }
 
         let _aidatKartSinir = 40;
-        let _aidatAltSekme = 'panel'; // 📊 panel (aidat-panel.js) · 👥 sporcu kartları ('gelir') · 📤 gider
+        let _aidatAltSekme = 'panel'; // 📊 panel (yonetim-panel.js) · 👥 sporcu kartları ('gelir') · 📤 gider
         const GIDER_KATEGORILERI = ['Kira','Fatura','Ekipman/Malzeme','Etkinlik/Turnuva','Ulaşım','Bakım/Onarım','Diğer'];
 
         // ---- 2026-10-04 (kullanıcı: "gelir takibini düzeltelim, 3 aylık paketler, bu ay / son 3 ay ne kazanıldı, kaç gün
@@ -4055,16 +4058,17 @@
 
             let sekmeBtn = (val, etiket) => `<button onclick="_aidatAltSekme='${val}'; egitmenRenderAidat();" style="flex:1; padding:10px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; border:1px solid ${_aidatAltSekme===val?'var(--gold)':'var(--border-color)'}; background:${_aidatAltSekme===val?'rgba(234,179,8,0.15)':'var(--bg-panel)'}; color:var(--text-main);">${etiket}</button>`;
             let sekmeler = `<div style="display:flex; gap:8px; margin-bottom:10px;">${sekmeBtn('panel','📊 Panel')}${sekmeBtn('gelir','👥 Sporcu kartları')}${sekmeBtn('gider','📤 Gider')}</div>`;
-            // 📊 Panel (2026-10-21, "bir sürü isim düşünce kasıyor → basit bir site dashboard'u"): aidat-panel.js, sayfalı liste.
+            // 📊 Panel (2026-10-21, "bir sürü isim düşünce kasıyor → basit bir site dashboard'u"): yonetim-panel.js, sayfalı liste.
             // Arka plan yenilemesinde kabı koru → açık "Ödendi" formu / arama kaybolmasın (apCiz kendisi korur).
             if(_aidatAltSekme === 'panel') {
                 let kap = document.getElementById('aidat-panel-kap');
                 if(typeof apCiz !== 'function') {
                     alan.innerHTML = `<div class="glass-panel" style="padding:14px; border-radius:12px;">${sekmeler}<div style="padding:30px; text-align:center; color:var(--text-muted);">Panel yükleniyor…</div></div>`;
-                    dagskEkYukle('aidat-panel.js?v=1').then(egitmenRenderAidat).catch(function() { showToast('Aidat paneli yüklenemedi, bağlantıyı kontrol et.', 'error'); });
+                    dagskEkYukle(YN_DOSYA).then(egitmenRenderAidat).catch(function() { showToast('Aidat paneli yüklenemedi, bağlantıyı kontrol et.', 'error'); });
                     return;
                 }
                 if(!kap || !alan.contains(kap)) { alan.innerHTML = `<div style="padding:2px;">${sekmeler}<div id="aidat-panel-kap"></div></div>`; kap = document.getElementById('aidat-panel-kap'); }
+                ynKulup(dagYonetimAdaptor());
                 apCiz(kap, aidatPanelAdaptor());
                 return;
             }
@@ -4085,7 +4089,7 @@
             }
         }
 
-        // 📊 aidat-panel.js için DAĞ verisi: aidatDB[ad][ay], turnuvaDB (AIDAT_GRUPLAR), otomatikYoklamaDB + seriler (devam)
+        // 📊 yonetim-panel.js aidat paneli için DAĞ verisi: aidatDB[ad][ay], turnuvaDB (AIDAT_GRUPLAR), otomatikYoklamaDB + seriler (devam)
         function aidatPanelAdaptor() {
             let yok = {}, aylikMemo = {};
             return {
@@ -4095,7 +4099,7 @@
                 },
                 kisiler() {
                     let l = [];
-                    AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif) return; l.push({ id: g + '|' + ad, ad, grup: g, grupAd: LIG_ETIKET_KISA_AIDAT[g] || g, muaf: !!sp.aidatMuaf, tel: sp.acilTelefon || '', katilma: sp.katilmaTarihi || '' }); }));
+                    AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif || sp.donduruldu || yonKisiTuru(g, ad) !== 'sporcu') return; l.push({ id: g + '|' + ad, ad, grup: g, grupAd: LIG_ETIKET_KISA_AIDAT[g] || g, muaf: !!sp.aidatMuaf, tel: sp.acilTelefon || '', katilma: sp.katilmaTarihi || '' }); }));
                     return l;
                 },
                 kayit(ad, ay) { return (aidatDB[ad] && aidatDB[ad][ay]) || null; },
@@ -4117,11 +4121,64 @@
                     return Promise.resolve();
                 },
                 hatirlat(k) { aidatBorcWhatsApp(k.ad, k.tel); },
-                detay(k, ay) { _aidatAltSekme = 'gelir'; _aidatGrupFiltre = k.grup; aktifGrup = k.grup; _aidatAramaFiltre = k.ad; _aidatAcikAd = k.ad; _aidatAcikAy = null; aidatAy = ay; egitmenRenderAidat(); },
                 pdf(ay, grup) { let eski = _aidatGrupFiltre; _aidatOdemeAy = ay; _aidatGrupFiltre = grup; try { aidatOdemeDurumPdf(); } finally { _aidatGrupFiltre = eski; } },
                 araclar: [['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
             };
         }
+        // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
+        const YN_DOSYA = 'yonetim-panel.js?v=2';
+        let _ynGelisOnbellek = null;
+        function dagYonetimAdaptor() {
+            return {
+                ad: 'DAĞ Spor Kulübü', kullanici: (typeof _oturum !== 'undefined' && _oturum && _oturum.ad) ? String(_oturum.ad).split(' ')[0] : '',
+                aidat: aidatPanelAdaptor(), aidatAcik: () => _aidatKilitAcikMi, aidatHazir: () => Object.keys(aidatDB || {}).length > 0, aidatKilitAc: pin => aidatKilitAc(pin),
+                kisiler() {
+                    let l = [];
+                    AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(!sp || yonKisiTuru(g, ad) !== 'sporcu') return; l.push({ id: g + '|' + ad, ad, grup: g, grupAd: LIG_ETIKET_KISA_AIDAT[g] || g, pasif: !!(sp.pasif || sp.donduruldu), muaf: !!sp.aidatMuaf, tel: sp.acilTelefon || '', veli: sp.acilKisi || '', katilma: sp.katilmaTarihi || '', dogum: sp.dogumTarihi || '', not: sp.genelNot || '' }); }));
+                    return l;
+                },
+                // derse geldiği günler: yoklama + skor girilen günler (aidatDevamHaritasi ile aynı kaynaklar), 2 sn önbellek (bir çizimde birden çok çağrı)
+                gelisler() {
+                    if(_ynGelisOnbellek && Date.now() - _ynGelisOnbellek.t < 2000) return _ynGelisOnbellek.v;
+                    let h = {}, ekle = (ad, t) => { (h[ad] = h[ad] || {})[String(t).slice(0, 10)] = 1; };
+                    Object.keys(otomatikYoklamaDB || {}).forEach(t => { let gun = otomatikYoklamaDB[t] || {}; Object.keys(gun).forEach(ad => { if(gun[ad] && gun[ad].geldi !== false) ekle(ad, t); }); });
+                    AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(!sp) return; [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(k => k.seriler || [])).forEach(x => { if(x && x.tarih && !x.iptal) ekle(ad, x.tarih); }); }));
+                    let v = {}; Object.keys(h).forEach(ad => { v[ad] = Object.keys(h[ad]).sort(); });
+                    _ynGelisOnbellek = { t: Date.now(), v };
+                    return v;
+                },
+                dersler() {
+                    if(typeof kmProgramSlotlariGetir !== 'function') return Promise.resolve([]);
+                    return kmProgramSlotlariGetir().then(sl => {
+                        _yonDersler = kmBugunDersleri(sl || []);
+                        try { let on = dersEklemeOnerileri(sl || []); _ynDersOneri = on.length ? { renk: 'var(--ap-vurgu)', baslik: on.length + ' sporcu derse eklensin mi?', alt: on.slice(0, 3).map(o => esc(o.ad.split(' ')[0])).join(', ') + ' · düzenli geliyor ama derste kayıtlı değil', dugme: ['Program', "yoneticiSekme('program')"] } : null; } catch(e) {}
+                        return _yonDersler.map(x => ({ saat: x.s.baslangicSaat, bitis: x.s.bitisSaat, ad: x.s.grup || 'Ders', kisi: kmDersSporculari(x.s).length, simdi: !!x.simdi }));
+                    });
+                },
+                dersBaslat: i => yoneticiDersBaslat(i),
+                ekDikkat() {
+                    let l = [], n = denemeDikkatSayisi();
+                    if(n) l.push({ renk: 'var(--ap-iyi)', baslik: n + ' deneme dersi adayı dönüş bekliyor', alt: 'Siteden / WhatsApp\'tan gelen adaylar', dugme: ['Aç', "yoneticiSekme('deneme')"] });
+                    if(_ynDersOneri) l.push(_ynDersOneri);
+                    return l;
+                },
+                ekYuva(el) { if(!el || typeof ypCiz !== 'function') return; el.innerHTML = '<div class="adm-card yp-kart" id="yp-kart"></div>'; ypCiz(); },
+                araclar: [['🎯 Karışık Sınıf', 'yoneticiKarisikSinifaGit()']],
+                git(h, o) {
+                    if(h === 'aidat') { _aidatAltSekme = 'panel'; if(typeof AP !== 'undefined') { AP.liste = o.liste || 'bekleyen'; AP.grup = o.grup || 'tumu'; AP.ay = null; AP.sayfa = 0; AP.arama = ''; AP.acik = null; } yoneticiSekme('aidat'); return; }
+                    yoneticiSekme(h === 'uyeler' ? 'kullanicilar' : h);
+                },
+                pasifYap(k, pasif) { return sporcuPasifAyarla(k.grup, k.ad, pasif) ? Promise.resolve() : Promise.reject(); },
+                aidatTemizle(k, ay) { _aidatAyTemizleCekirdek(k.ad, ay); return Promise.resolve(); },
+                duzenle(k) { dagskEkYukle('dagsk-hizli-duzenle.js').then(function() { _hd.ara = k.ad; _hd.grup = 'hepsi'; _hd.pasifler = !!k.pasif; _hd.sayfa = 1; yoneticiSekme('hizliduzenle'); }).catch(function() { yoneticiSekme('hizliduzenle'); }); },
+                kartEk(k) {
+                    let sp = turnuvaDB[k.grup] && turnuvaDB[k.grup][k.ad]; if(!sp) return '';
+                    let r = _raporIstatistik(sp); if(!r.seriSayisi) return '';
+                    return '<div class="ap-panel"><h3>Atış <span>tüm kayıtlar</span></h3><div class="ap-kpi"><div><small>Seri</small><b class="ap-num">' + r.seriSayisi + '</b><span>toplam</span></div><div><small>Seri ortalaması</small><b class="ap-num">' + r.ort + '</b><span>en iyi ' + r.enIyi + '</span></div><div><small>X</small><b class="ap-num">' + r.xSay + '</b><span>tam merkez</span></div></div></div>';
+                }
+            };
+        }
+        let _ynDersOneri = null;
         // Aidat ek PIN'i Yönetici › 🔐 Güvenlik'te değişir (kullanıcı: "aidat şifresini değiştireceğim bir yer ver")
         function aidatSifreAc() {
             if(renderHedefId !== 'yonetici-liste' && typeof yoneticiPaneliAc === 'function') yoneticiPaneliAc();
@@ -4441,11 +4498,14 @@
             showToast('✅ Kaydedildi.', 'success');
         }
 
-        function aidatAyTemizle(ad, ay) {
+        function _aidatAyTemizleCekirdek(ad, ay) {
             if(aidatDB[ad]) delete aidatDB[ad][ay];
             aidatKaydet();
             // Bulutta gerçek satır silme yok (upsert-only tasarım) — boş/etkisiz bir kayıtla üzerine yazıyoruz.
             _aidatDuesPut(ad, ay, { odendi: false, tutar: null, notMetin: null, odemeTarihi: null, tarih: new Date().toISOString(), deviceId: _cihazId });
+        }
+        function aidatAyTemizle(ad, ay) {
+            _aidatAyTemizleCekirdek(ad, ay);
             _aidatAcikAd = null; _aidatAcikAy = null;
             egitmenRenderAidat();
             showToast('Temizlendi.', 'success');
@@ -4954,16 +5014,9 @@
         // seçili ay listesi ve 6 aylık tablo. Aidat ekranındaki grup seçimine uyar. Kayıtlara DOKUNMAZ, yalnız okur.
         let _aidatOdemeAy = null, _aidatOdemeGorunum = 'ay';
         function aidatOdemeDurumVeri(ay) {
-            let son = new Date(+ay.slice(0, 4), +ay.slice(5, 7), 0), sonISO = son.getFullYear() + '-' + String(son.getMonth() + 1).padStart(2, '0') + '-' + String(son.getDate()).padStart(2, '0');
-            let r = { ay, odeyen: [], odemeyen: [], muaf: [], yeni: [], toplam: 0 };
-            aidatGrupListesi().forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif) return;
-                let rec = (aidatDB[ad] && aidatDB[ad][ay]) || null, x = { ad, g, tel: sp.acilTelefon || '', rec };
-                if(rec && rec.odendi) { r.odeyen.push(x); r.toplam += rec.tutar || 0; return; }
-                if(sp.aidatMuaf) { r.muaf.push(x); return; }
-                if(sp.katilmaTarihi && sp.katilmaTarihi > sonISO) { r.yeni.push(x); return; }
-                r.odemeyen.push(x);
-            }));
+            // Tek kaynak: aidat paneli hesabı (apOzet, yonetim-panel.js) — ödemeyen sayısı her ekranda aynı
+            let v = apOzet(aidatPanelAdaptor(), ay, _aidatGrupFiltre), x = s => ({ ad: s.k.ad, g: s.k.grup, tel: s.k.tel, rec: s.rec });
+            let r = { ay, odeyen: v.od.map(x), odemeyen: v.bek.map(x), muaf: v.muaf.map(x), yeni: v.yeni.concat(v.takipsiz).map(x), toplam: v.toplanan };
             let s = (a, b) => a.ad.localeCompare(b.ad, 'tr'); r.odeyen.sort(s); r.odemeyen.sort(s); r.muaf.sort(s); r.yeni.sort(s);
             return r;
         }
@@ -6502,9 +6555,13 @@
             tumEkranlariYenile();
         }
         function tumEkranlariYenile() {
-            try { sporcuListesiniYenile(); } catch(e) {}
-            try { siralamaListesiDoldur(); } catch(e) {}
-            try { takimDropdownDoldur(); takimListesiCiz(); } catch(e) {}
+            // Yönetici açıkken arkadaki (gizli) sporcu listeleri çizilmez — kapanınca yoneticiPaneliKapat bir kez çizer (kasma)
+            let yonAcik = document.body.classList.contains('yon-acik');
+            if(!yonAcik) {
+                try { sporcuListesiniYenile(); } catch(e) {}
+                try { siralamaListesiDoldur(); } catch(e) {}
+                try { takimDropdownDoldur(); takimListesiCiz(); } catch(e) {}
+            }
             try { let b = document.getElementById('icerik-basari'); if(b && b.classList.contains('aktif')) basariPaneliDoldur(); } catch(e) {}
             // CANLI: açık karne (sporcu/aile görüntülerken) yeni atış gelince anında güncellensin
             try { let dm = document.getElementById('detay-modal'); if(dm && dm.style.display !== 'none' && getComputedStyle(dm).display !== 'none' && detayKarneSporcu) sporcuDetayGoster(detayKarneSporcu); } catch(e) {}
@@ -6514,6 +6571,7 @@
                 let ym = document.getElementById('yonetici-modal');
                 let odaktaMi = document.activeElement && ym && ym.contains(document.activeElement);
                 if(ym && getComputedStyle(ym).display !== 'none' && !odaktaMi) yoneticiSekme(yoneticiSekmeAktif);
+                if(typeof ynKartYenile === 'function' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#yn-kart'))) ynKartYenile();
             } catch(e) {}
         }
 
@@ -8003,6 +8061,8 @@
             // 'buyukler' ile başladığı için o kullanılamazdı) — böyle bir durumda arka planı Canlı
             // Takip'e ayarlıyoruz, Çıkış artık anlamlı bir yere düşer.
             let sogukBaslangic = !_anaSekmeSistemiBaslatildiMi;
+            document.body.classList.add('yon-acik'); // tam sayfa: arkadaki ekran gizli (styles.css), tumEkranlariYenile onu çizmez
+            try { dagskEkYukle(YN_DOSYA).catch(function() {}); } catch(e) {}
             renderHedefId = 'yonetici-liste'; if(!aktifGrup) aktifGrup = 'buyukler';
             let m = document.getElementById('yonetici-modal'); if(m) m.style.display = 'flex';
             // Panel açıkken banner'lar üstte kalıp başlığı/içeriği kapatmasın (pwa-banner z-index:99000,
@@ -8012,9 +8072,6 @@
             if(sogukBaslangic) { try { sekmeAc('canlitakip'); } catch(e) {} }
             yoneticiSekmeAktif = 'panel'; yoneticiSekme('panel');
             try { sistemDurumGuncelle(); } catch(e) {}
-            try { yoneticiCanliAkisCiz(); } catch(e) {}
-            try { yoneticiDevamsizlikWidgetCiz(); } catch(e) {}
-            try { yoneticiDogumGunuWidgetCiz(); } catch(e) {}
         }
         // DÜZELTME: "✕ Çıkış" eskiden _kilitKaldir() + location.reload() yapıyordu — sadece düzenleme
         // kilidini temizlemek ve birkaç state değişkenini sıfırlamak için tüm sayfayı (ve mobil bağlantıyı)
@@ -8024,6 +8081,8 @@
             _aidatKilitAcikMi = false;
             try { _kilitKaldir(); } catch(e) {}
             let m = document.getElementById('yonetici-modal'); if(m) m.style.display = 'none';
+            document.body.classList.remove('yon-acik');
+            try { if(typeof ynKartKapat === 'function') ynKartKapat(); } catch(e) {}
             renderHedefId = 'egitmen-liste';
             yoneticiSekmeAktif = 'panel';
             let arama = document.getElementById('yonetici-arama'); if(arama) arama.value = '';
@@ -8031,6 +8090,7 @@
             try { let b = document.getElementById('bayat-veri-banner'); if(b && b.dataset.admGizli) { delete b.dataset.admGizli; b.style.display = 'flex'; } } catch(e) {}
             try { sporcuListesiniYenile(); } catch(e) {}
             try { siralamaListesiDoldur(); } catch(e) {}
+            try { takimDropdownDoldur(); takimListesiCiz(); } catch(e) {}
         }
         // ANA MENÜ (2026-09-13) — kullanıcı bulgusu: "yönetici panelinde ana menüye dön yok, genel
         // olarak banner'a ana menüye dön de, ana menüde seçim menüsü olsun". Var olan "Ana Ekran"
@@ -8369,7 +8429,7 @@
             }));
             // aidatDB henüz yüklenmediyse (aidat kilidi açılmadı / ilk senkron sürüyor) "0" yanıltıcı olur → null ("–")
             let aidat = null;
-            try { if(typeof ypAidatListe === 'function' && Object.keys(aidatDB || {}).length) aidat = ypAidatListe().length; } catch(e) {}
+            try { if(typeof apOzet === 'function' && Object.keys(aidatDB || {}).length) aidat = apOzet(aidatPanelAdaptor()).bek.length; } catch(e) {}
             let gunKaydi = (personelYoklamaDB || []).find(r => r.tarih === bugun);
             let personel = ((gunKaydi && gunKaydi.gelenler) || []).length;
             let aktif = 0;
@@ -8390,73 +8450,14 @@
         let _yonDersler = [];
         function yoneticiOzetCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
-            // 10 sn'lik yenileme, kullanıcı aramaya yazarken yazdığını silmesin
-            let odak = document.activeElement; if(odak && odak.id === 'yon3-ara-girdi' && alan.contains(odak)) return;
-            let s = yoneticiSayilar(); _yonSayilarSon = s;
-            let saat = new Date().getHours(), selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
-            let ad = (typeof _oturum !== 'undefined' && _oturum && _oturum.ad) ? String(_oturum.ad).split(' ')[0] : '';
-            let kisaTarih = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
-            let kutu = (r, deger, et, alt, sekme) => `<button class="yon3-kutu" style="--r:${r}" onclick="${sekme}"><span class="yon3-kutu-et">${et}</span><span class="yon3-kutu-deger">${deger}</span><span class="yon3-kutu-alt">${alt}</span></button>`;
-            // Dikkat: aidat (özet), katılımı düşenler, düşük hazır olma, bu hafta doğum günü
-            let erkL = [], dusL = [], dogum = [];
-            try { erkL = erkenUyariListesi(); } catch(e) {}
-            try { dusL = yoneticiDusukHazirOlmaListesi(); } catch(e) {}
-            try { dogum = _dogumGunuListesi(7); } catch(e) {}
-            let satir = (renk, baslik, alt, dugme) => `<div class="yon3-dikkat"><span class="yon3-nokta" style="background:${renk}"></span><span class="yon3-dikkat-m"><b>${baslik}</b><small>${alt}</small></span>${dugme || ''}</div>`;
-            let dikkat = '';
-            if(s.aidat) dikkat += satir('var(--neon-red)', s.aidat + ' sporcunun aidatı gecikti', 'yapılacaklar listesinden veliye hatırlat', `<button class="yon3-link" onclick="yoneticiSekme('aidat')">Aidat</button>`);
-            erkL.slice(0, 3).forEach((x, i) => { dikkat += satir('var(--gold)', esc(x.ad), (LIG_ETIKET[x.g] || x.g) + ' · son 2 haftada daha az geliyor', `<button class="yon3-link" onclick="yoneticiDikkatWa(${i})" aria-label="Veliye WhatsApp">💬</button>`); });
-            if(erkL.length > 3) dikkat += satir('var(--gold)', '+' + (erkL.length - 3) + ' sporcunun katılımı düşüyor', 'yoklama sekmesinde', `<button class="yon3-link" onclick="yoneticiSekme('yoklama')">Gör</button>`);
-            dusL.slice(0, 3).forEach(x => { dikkat += satir('var(--neon-red)', esc(x.ad), (LIG_ETIKET[x.g] || x.g) + ' · hazır olma ' + x.skor.toFixed(1) + '/10' + (x.sakatlik ? ' · sakatlık bildirdi' : '')); });
-            if(dogum.length) dikkat += satir('var(--neon-blue)', dogum.length + ' doğum günü bu hafta', dogum.slice(0, 3).map(x => esc(x.ad.split(' ')[0]) + (x.gunSonra === 0 ? ' (bugün)' : '')).join(' · '));
-            if(!dikkat) dikkat = '<div class="yon3-bos">✓ Her şey yolunda — geciken aidat, katılımı düşen ya da hazır olma skoru düşük sporcu yok.</div>';
-            _yonDikkatErk = erkL;
-            alan.innerHTML = '<div class="yon3">'
-                + '<div class="yon3-bas"><div class="yon3-bas-m"><h2 class="yon3-selam">' + selam + (ad ? ', ' + esc(ad) : '') + '</h2><div class="yon3-alt">' + kisaTarih + ' · <span id="yon3-ders-ozet">bugünün dersleri yükleniyor…</span> · 🌐 bu ay <span id="yon-ziyaretci-sayisi">…</span> site ziyareti</div></div>'
-                + '<label class="yon3-ara"><span aria-hidden="true">🔍</span><input id="yon3-ara-girdi" type="search" placeholder="Sporcu ara…" aria-label="Sporcu ara" onkeydown="if(event.key===\'Enter\') yoneticiAramaGit(this.value)"></label>'
-                + '<button class="yon3-km" onclick="yoneticiKarisikSinifaGit()">🎯 Karışık Sınıf</button></div>'
-                + '<div class="yon3-kutular">'
-                + kutu('var(--neon-green)', s.gelen, 'Bugün gelen sporcu', s.gelen ? 'yoklamaya göre' : 'henüz yoklama yok', "yoneticiSekme('yoklama')")
-                + kutu('var(--accent-orange)', s.seri, 'Bugün atılan seri', s.atan + ' sporcu atış yaptı', "yoneticiSekme('bugunskor')")
-                + kutu('var(--neon-red)', s.aidat == null ? '–' : s.aidat, 'Aidatı geciken', s.aidat == null ? 'aidat bilgisi henüz yüklenmedi' : s.aidat ? 'dokun → Aidat' : 'geciken yok', "yoneticiSekme('aidat')")
-                + kutu('var(--neon-blue)', s.personel, 'Bugün gelen personel', s.personelToplam ? s.personelToplam + ' kişiden' : 'personel yoklaması', "yoneticiSekme('personel')")
-                + '</div>'
-                + '<div class="yon3-izgara">'
-                + '<div class="yon3-sutun"><section class="yon3-kart" aria-label="Bugünün dersleri"><h3 class="yon3-kart-bas">Bugünün dersleri <small>Ders Programı\'ndan</small></h3><div id="yon3-dersler"><div class="yon3-bos">Yükleniyor…</div></div></section><div id="yon-yp-yuva"></div></div>'
-                + '<section class="yon3-kart" aria-label="Dikkat isteyenler"><h3 class="yon3-kart-bas">Dikkat isteyenler</h3><div id="yon3-ders-oneri"></div>' + dikkat + '</section>'
-                + '</div></div>';
-            try { yoneticiSidebarCiz(); } catch(e) {}
-            // Bugünün dersleri — Karışık Sınıf'ın "programdan ders" yardımcıları (dagsk-km-sablon-ozet.js, 2 dk önbellek)
-            if(typeof kmProgramSlotlariGetir === 'function') {
-                kmProgramSlotlariGetir().then(sl => {
-                    _yonDersler = kmBugunDersleri(sl || []);
-                    try {
-                        let on = dersEklemeOnerileri(sl || []), yer = document.getElementById('yon3-ders-oneri');
-                        if(yer) yer.innerHTML = on.length ? '<div class="yon3-dikkat"><span class="yon3-nokta" style="background:var(--aurora-gold)"></span><span class="yon3-dikkat-m"><b>' + on.length + ' sporcu derse eklensin mi?</b><small>' + on.slice(0, 3).map(o => esc(o.ad.split(' ')[0]) + ' → ' + esc(o.slot.baslangicSaat)).join(' · ') + ' — hep aynı saatte geliyor, kayıtlı değil</small></span><button class="yon3-link" onclick="yoneticiSekme(\'program\')">Gör</button></div>' : '';
-                    } catch(e) {}
-                    let el = document.getElementById('yon3-dersler'), oz = document.getElementById('yon3-ders-ozet');
-                    if(oz) oz.textContent = _yonDersler.length ? 'bugün ' + _yonDersler.length + ' ders daha var, ilki ' + _yonDersler[0].s.baslangicSaat : 'bugün başka ders yok';
-                    if(!el) return;
-                    if(!_yonDersler.length) { el.innerHTML = '<div class="yon3-bos">Bugün için kalan ders yok.</div>'; return; }
-                    el.innerHTML = _yonDersler.slice(0, 6).map((x, i) => {
-                        let n = kmDersSporculari(x.s).length;
-                        return `<div class="yon3-ders${x.simdi ? ' simdi' : ''}"><span class="yon3-ders-saat">${esc(x.s.baslangicSaat)}<small>${esc(x.s.bitisSaat)}</small></span><span class="yon3-ders-m"><b>${esc(x.s.grup || 'Ders')}</b><small>${n ? n + ' kayıtlı sporcu' : 'kayıtlı sporcu yok'}${x.simdi ? ' · şimdi' : ''}</small></span>${n ? `<button class="yon3-ders-btn" onclick="yoneticiDersBaslat(${i})">▶ Dersi başlat</button>` : ''}</div>`;
-                    }).join('');
-                }).catch(() => {});
+            _yonSayilarSon = yoneticiSayilar();
+            if(typeof ynCiz !== 'function') {
+                alan.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">Panel yükleniyor…</div>';
+                dagskEkYukle(YN_DOSYA).then(function() { if(yoneticiSekmeAktif === 'panel') yoneticiOzetCiz(); }).catch(function() { alan.innerHTML = '<div style="padding:40px; text-align:center;">Panel yüklenemedi — bağlantıyı kontrol edip yenile.</div>'; });
+                return;
             }
-            try {
-                fetch('/api/tanitim/ziyaret-ozet').then(r => r.json()).then(d => {
-                    let el = document.getElementById('yon-ziyaretci-sayisi');
-                    if(el) el.textContent = d.toplam || 0;
-                }).catch(() => {});
-            } catch(e) {}
-        }
-        let _yonDikkatErk = [];
-        function yoneticiDikkatWa(i) { let x = _yonDikkatErk[i]; if(x) devamsizlikWhatsApp(x.ad, 0); }
-        // Genel Bakış araması → Sporcular & Skor sekmesi, arama kutusu dolu (Enter)
-        function yoneticiAramaGit(q) {
-            yoneticiSekme('kullanicilar');
-            let a = document.getElementById('yonetici-arama'); if(a) { a.value = q || ''; yoneticiPaneliCiz(); a.focus(); }
+            ynKulup(dagYonetimAdaptor()); ynCiz(alan);
+            try { yoneticiSidebarCiz(); } catch(e) {}
         }
         // Bugünün dersine tek dokunuş (yönetici): paneli kapat, eğitmen panelindeki ile aynı akış.
         function yoneticiDersBaslat(i) {
@@ -11636,8 +11637,7 @@
         function kmPasifAktifEt(g, ad) {
             let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return;
             if(!confirm(ad + ' ' + (sp.pasif ? 'pasif (bıraktı)' : 'dondurulmuş') + ' olarak işaretli. Tekrar aktif edilsin mi?')) return;
-            sp.pasif = false; sp.donduruldu = false; sp.lastModified = Date.now(); bekleyenGonderim = true;
-            localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
+            sporcuPasifAyarla(g, ad, false);
             _kmSecimler[g + '_' + ad] = { g: g, ad: ad };
             showToast('▶ ' + ad + ' tekrar aktif ve seçildi', 'success');
             kmModalDoldur();

@@ -26,17 +26,16 @@ function ypIlkAd(ad) { let i = String(ad || '').trim().split(/\s+/)[0] || ''; re
 function ypTarih(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : ''; }
 
 // 💰 Aidatı gecikenler — yapılacaklar listesi, yönetici sayı şeridi ve Genel Bakış AYNI kuralı kullanır (2026-10-02).
-function ypAidatListe(bugun, ay, aktifler) {
-    bugun = bugun || new Date(); ay = ay || ypIso(bugun).slice(0, 7); aktifler = aktifler || ypAktifler();
+// Tek kaynak (2026-10-21): aidat paneliyle aynı hesap — apOzet (yonetim-panel.js). Borç = bu ay + art arda ödenmemiş önceki aylar.
+function ypAidatListe(bugun, ay) {
+    bugun = bugun || new Date(); ay = ay || ypIso(bugun).slice(0, 7);
     let is = [];
-    if (typeof aidatDB !== 'undefined' && Object.keys(aidatDB || {}).length) {
-        aktifler.forEach(function (x) {
-            if (x.sp.aidatMuaf || !ypSporcuMu(x.g, x.ad)) return;
-            // Aidat sisteminde hiç kaydı olmayan (henüz aidat takibine alınmamış) sporcu listeyi boğmasın.
-            if (!aidatDB[x.ad] || !Object.keys(aidatDB[x.ad]).length) return;
-            let borc = 0, d = new Date(bugun.getFullYear(), bugun.getMonth(), 1);
-            for (let i = 0; i < 6; i++) { let a = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); let rec = aidatDB[x.ad] && aidatDB[x.ad][a]; if (rec && rec.odendi) break; borc++; d.setMonth(d.getMonth() - 1); }
-            if (borc >= 2 || (borc >= 1 && bugun.getDate() >= 10)) is.push({ id: 'aidat|' + x.ad + '|' + ay, tur: 'aidat', g: x.g, ad: x.ad, alt: borc >= 6 ? '6+ aydır ödenmedi' : borc + ' aydır ödenmedi', tel: x.sp.acilTelefon,
+    if (typeof apOzet === 'function' && typeof aidatPanelAdaptor === 'function' && typeof aidatDB !== 'undefined' && Object.keys(aidatDB || {}).length) {
+        apOzet(aidatPanelAdaptor(), ay).bek.forEach(function (s) {
+            // Aidat sisteminde hiç takibi olmayan (ödemesi de katılma tarihi de yok) sporcu listeyi boğmasın.
+            if (!s.son && !s.k.katilma) return;
+            let borc = 1 + s.gec, x = { g: s.k.grup, ad: s.k.ad };
+            if (borc >= 2 || bugun.getDate() >= 10) is.push({ id: 'aidat|' + x.ad + '|' + ay, tur: 'aidat', g: x.g, ad: x.ad, alt: borc >= 6 ? '6+ aydır ödenmedi' : borc + ' aydır ödenmedi', tel: s.k.tel,
                 mesaj: "Merhaba 🌟 DAĞ Spor Kulübü'nden yazıyoruz.\n\n" + ypIlkAd(x.ad) + " için bu ayki aidat ödemesini henüz göremedik. Uygun olduğunuzda tamamlarsanız çok seviniriz 🧡 Ödemeyi yaptıysanız bize bildirmeniz yeterli.\n\nDAĞ Spor Kulübü" });
         });
     }
@@ -48,7 +47,7 @@ function ypListe() {
     let aktifler = ypAktifler(), is = [];
     // 💰 Aidat — geçen ayı ödemeyen her zaman; bu ayı ödemeyen ayın 10'undan sonra. aidatDB boşsa (giriş yok / henüz
     // yüklenmedi) bölüm hiç gösterilmez — yoksa herkes borçlu görünürdü.
-    is = is.concat(ypAidatListe(bugun, ay, aktifler));
+    is = is.concat(ypAidatListe(bugun, ay));
     // 📉 2+ haftadır gelmeyenler (daha önce en az bir kez gelmiş olanlar — hiç kaydı olmayan yeni sporcu gürültü yapmasın)
     try {
         devamsizlikListesi(14).forEach(function (x) {
