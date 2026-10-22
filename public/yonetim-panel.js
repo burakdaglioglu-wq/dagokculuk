@@ -35,6 +35,10 @@
         return t.slice(0, 10);
     }
     const gunGoster = iso => iso ? iso.split('-').reverse().join('.') : '—';
+    // ❄️ Dondurulmuş ay (2026-10-23, kullanıcı: "pasife almayı unutmuşuz, o aylar dondurulmuş olarak işaretlenebilir"): ödenmemiş kayıt +
+    // notMetin "❄️ Dondurulmuş" (tabloda ayrı alan yok). Borç / beklenen sayılmaz; para girilirse normal ödeme olur (ciroya yazılır).
+    const DONDU_NOT = '❄️ Dondurulmuş', dondu = r => !!(r && !r.odendi && /^❄️/.test(r.notMetin || ''));
+    window.apDondu = dondu; window.AP_DONDU_NOT = DONDU_NOT;
     const borclu = s => s.d === 'bekliyor' || s.d === 'takipsiz'; // bu ay ödenebilir (takipsiz: ödeme kaydı/katılma tarihi yok)
     window.apOdemeGunu = odemeGunu;
 
@@ -135,18 +139,31 @@
     window.apCss = css;
 
     // ---- hesap ----
+    // Aidat başlangıç ayı (2026-10-23, kullanıcı: "yeni kayıtlı sporcular 6 ay hiç ödemedi diyor, yanlış"). Sporcuların çoğunda katılma
+    // tarihi yok → bu ay ilk kez ödeyen yeni sporcunun önceki 6 ayı borç sayılıyordu. Katılma tarihi varsa o; yoksa ilk ödeme (36 ay geriye)
+    // ile ilk derse gelişin (adaptör ilkGelis(k) → 'YYYY-MM-DD') erkeni. Öncesi borç sayılmaz. Hiçbiri yoksa null.
+    function baslangic(a, k, ilkGelis) {
+        if (k.katilma) return { ay: k.katilma.slice(0, 7), kaynak: 'katilma' };
+        let ilk = null, simdi = buAy();
+        for (let i = 0; i <= 36; i++) { let m = ayEkle(simdi, -i), r = a.kayit(k.ad, m); if (r && r.odendi) ilk = m; }
+        let g = ilkGelis !== undefined ? ilkGelis : (a.ilkGelis ? a.ilkGelis(k) : null), gAy = g ? String(g).slice(0, 7) : null;
+        if (gAy && (!ilk || gAy < ilk)) return { ay: gAy, kaynak: 'gelis' };
+        return ilk ? { ay: ilk, kaynak: 'odeme' } : null;
+    }
+    window.apBaslangic = baslangic;
     function hesapla(a, ay, grupSec) {
         if (a.hazirla) a.hazirla(ay);
         let hepsi = a.kisiler(), gruplar = [];
         hepsi.forEach(k => { if (!gruplar.some(g => g[0] === k.grup)) gruplar.push([k.grup, k.grupAd || k.grup]); });
         let kisiler = grupSec === 'tumu' ? hepsi : hepsi.filter(k => k.grup === grupSec);
         let simdi = buAy(), gecmisAy = ay < simdi, gelecekAy = ay > simdi;
-        let uygun = (k, m) => !k.muaf && !(k.katilma && k.katilma > aySonu(m));
+        let basMemo = {}, bas = k => { if (!(k.id in basMemo)) { let b = baslangic(a, k); basMemo[k.id] = b ? b.ay : null; } return basMemo[k.id]; };
+        let uygun = (k, m) => !k.muaf && !(bas(k) && bas(k) > m) && !dondu(a.kayit(k.ad, m));
         let satirlar = kisiler.map(k => {
             let rec = a.kayit(k.ad, ay), aylik = a.aylik(k) || 0, d;
-            if (rec && rec.odendi) d = 'odedi'; else if (k.muaf) d = 'muaf'; else if (k.katilma && k.katilma > aySonu(ay)) d = 'yeni'; else d = 'bekliyor';
+            if (rec && rec.odendi) d = 'odedi'; else if (k.muaf) d = 'muaf'; else if (dondu(rec)) d = 'dondu'; else if (bas(k) && bas(k) > ay) d = 'yeni'; else d = 'bekliyor';
             let gec = 0, gecAylar = [];
-            for (let i = 1; i <= 6; i++) { let m = ayEkle(ay, -i); if (!uygun(k, m)) break; let r = a.kayit(k.ad, m); if (r && r.odendi) break; gec++; gecAylar.push(m); }
+            for (let i = 1; i <= 6; i++) { let m = ayEkle(ay, -i), r = a.kayit(k.ad, m); if (dondu(r)) continue; if (!uygun(k, m)) break; if (r && r.odendi) break; gec++; gecAylar.push(m); }
             let son = null; for (let i = 0; i <= 12 && !son; i++) { let m = ayEkle(ay, -i), r = a.kayit(k.ad, m); if (r && r.odendi) son = { ay: m, gun: odemeGunu(r) }; }
             // katılma tarihi yok + son 12 ayda hiç ödemesi yok = aidatı takip edilmiyor (eski kayıt) → eski borç sayılmaz
             if (!k.katilma && !son) { gec = 0; gecAylar = []; if (d === 'bekliyor') d = 'takipsiz'; } // ödemeyen sayılmaz, "Muaf / takipsiz" listesinde
@@ -175,7 +192,7 @@
         });
         if (!gecmisAy && !gelecekAy) grafik[5].tahmin = tahmin;
         let yok = bek.filter(s => s.devam === 0);
-        return { ay, kisiler, gruplar, satirlar, bek, od, muaf: satirlar.filter(s => s.d === 'muaf'), takipsiz: satirlar.filter(s => s.d === 'takipsiz'), yeni: satirlar.filter(s => s.d === 'yeni'), toplanan, bekTL, kacan, kacanKisi, tahmin, oran, gecenOran, grafik, yok, gecmisAy, gelecekAy,
+        return { ay, kisiler, gruplar, satirlar, bek, od, muaf: satirlar.filter(s => s.d === 'muaf'), takipsiz: satirlar.filter(s => s.d === 'takipsiz'), yeni: satirlar.filter(s => s.d === 'yeni'), dondu: satirlar.filter(s => s.d === 'dondu'), toplanan, bekTL, kacan, kacanKisi, tahmin, oran, gecenOran, grafik, yok, gecmisAy, gelecekAy,
             olabilir: bek.filter(s => s.olabilir), geciken: satirlar.filter(s => s.d !== 'muaf' && s.gec > 0) };
     }
 
@@ -234,7 +251,7 @@
     window.apTabloGit = function () { let e = document.getElementById('ap-tablo-panel'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
     function liste(v) {
-        let L = { bekleyen: v.bek, olabilir: v.olabilir, geciken: v.geciken, odedi: v.od, muaf: v.muaf.concat(v.takipsiz, v.yeni) }[AP.liste] || v.bek;
+        let L = { bekleyen: v.bek, olabilir: v.olabilir, geciken: v.geciken, odedi: v.od, muaf: v.muaf.concat(v.dondu, v.takipsiz, v.yeni) }[AP.liste] || v.bek;
         let q = AP.arama.trim().toLocaleLowerCase('tr');
         if (q) L = L.filter(s => (s.k.ad + ' ' + (s.k.grupAd || '')).toLocaleLowerCase('tr').includes(q));
         let sira = AP.liste === 'odedi' ? (x, y) => (odemeGunu(y.rec) || '').localeCompare(odemeGunu(x.rec) || '') : (x, y) => (y.gec - x.gec) || (y.olabilir - x.olabilir) || x.k.ad.localeCompare(y.k.ad, 'tr');
@@ -253,7 +270,7 @@
         } else {
             satir = `<div class="ap-sat bas"><span></span><span>Sporcu</span><span>Durum</span><span class="sag">Borç</span><span>Son ödeme</span><span>Ders</span><span class="sag">İşlem</span></div>` + parca.map(s => {
                 let id = esc(s.k.id), borc = muafMi ? 0 : s.aylik * ((borclu(s) ? 1 : 0) + s.gec);
-                let durum = s.d === 'muaf' ? '<span class="ap-etk m">Muaf</span>' : s.d === 'takipsiz' ? '<span class="ap-etk m">Aidat takibi yok</span>' : s.d === 'yeni' ? '<span class="ap-etk m">Henüz kayıtlı değildi</span>' : s.d === 'odedi' ? `<span class="ap-etk i">Bu ay ödedi</span>${s.gec ? ` <span class="ap-etk k">${s.gec} ay eski borç</span>` : ''}` : s.olabilir ? '<span class="ap-etk i">Ödemiş olabilir</span>' : s.gec >= 1 ? `<span class="ap-etk k">${s.gec + 1} aydır yok</span>` : s.devam === 0 ? '<span class="ap-etk u">Derse gelmiyor</span>' : '<span class="ap-etk u">Bu ay</span>';
+                let durum = s.d === 'muaf' ? '<span class="ap-etk m">Muaf</span>' : s.d === 'dondu' ? '<span class="ap-etk m">❄️ Dondurulmuş</span>' : s.d === 'takipsiz' ? '<span class="ap-etk m">Aidat takibi yok</span>' : s.d === 'yeni' ? '<span class="ap-etk m">Henüz kayıtlı değildi</span>' : s.d === 'odedi' ? `<span class="ap-etk i">Bu ay ödedi</span>${s.gec ? ` <span class="ap-etk k">${s.gec} ay eski borç</span>` : ''}` : s.olabilir ? '<span class="ap-etk i">Ödemiş olabilir</span>' : s.gec >= 1 ? `<span class="ap-etk k">${s.gec + 1} aydır yok</span>` : s.devam === 0 ? '<span class="ap-etk u">Derse gelmiyor</span>' : '<span class="ap-etk u">Bu ay</span>';
                 let odenebilir = borclu(s) || (s.d === 'odedi' && s.gec > 0);
                 let r = `<div class="ap-sat"><span class="c">${odenebilir ? `<input type="checkbox" ${AP.sec[s.k.id] ? 'checked' : ''} onchange="AP.sec['${id}']=this.checked; apSecimYaz()" aria-label="${esc(s.k.ad)} seç">` : ''}</span>
                     <div class="ad"><b title="${esc(s.k.ad)}" style="cursor:pointer" onclick="apDetay('${id}')">${esc(s.k.ad)}</b><small>${esc(s.k.grupAd || '')}${s.k.tel ? '' : ' · tel yok'}</small></div>
@@ -265,7 +282,7 @@
             }).join('');
         }
         kap.innerHTML = `<h3 style="margin:0 0 10px;font-size:13.5px;font-weight:800;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">Sporcular <span style="font-weight:500;color:var(--ap-soluk);font-size:12px">${ayAd(v.ay)}</span></h3>
-            <div class="ap-sekmeler" role="group" aria-label="Liste">${sek('bekleyen', 'Ödemeyenler', v.bek.length)}${sek('olabilir', 'Ödemiş olabilir', v.olabilir.length)}${sek('geciken', 'Eski borçlu', v.geciken.length)}${sek('odedi', 'Ödeyenler', v.od.length)}${sek('muaf', 'Muaf / takipsiz', v.muaf.length + v.takipsiz.length + v.yeni.length)}</div>
+            <div class="ap-sekmeler" role="group" aria-label="Liste">${sek('bekleyen', 'Ödemeyenler', v.bek.length)}${sek('olabilir', 'Ödemiş olabilir', v.olabilir.length)}${sek('geciken', 'Eski borçlu', v.geciken.length)}${sek('odedi', 'Ödeyenler', v.od.length)}${sek('muaf', 'Muaf / takipsiz', v.muaf.length + v.dondu.length + v.takipsiz.length + v.yeni.length)}</div>
             <div class="ap-filtre"><input type="search" id="ap-ara" placeholder="Sporcu ara" value="${esc(AP.arama)}" oninput="apAra(this.value)" aria-label="Sporcu ara">${odediMi || muafMi ? '' : `<label><input type="checkbox" onchange="apHepsiniSec(this.checked)" ${parca.length && parca.every(s => AP.sec[s.k.id]) ? 'checked' : ''}> Sayfadakileri seç</label><button class="ap-btn" id="ap-toplu" onclick="apToplu()" ${secSay ? '' : 'disabled'}>✓ Seçilenler ödendi${secSay ? ' (' + secSay + ')' : ''}</button>`}</div>
             <div class="ap-satirlar">${parca.length ? satir : `<div class="ap-bos">${AP.arama ? 'Aramaya uyan sporcu yok.' : AP.liste === 'bekleyen' ? 'Bu ay ödemeyen yok.' : 'Bu listede kimse yok.'}</div>`}</div>
             <div class="ap-alt"><span>${L.length ? (AP.sayfa * SAYFA + 1) + '–' + Math.min(L.length, AP.sayfa * SAYFA + SAYFA) + ' / ' + L.length : ''}</span>${sayfaSay > 1 ? `<span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="AP.sayfa--; AP.acik=null; apTabloCiz()" ${AP.sayfa ? '' : 'disabled'}>‹ Önceki</button><span class="ap-num">${AP.sayfa + 1} / ${sayfaSay}</span><button class="ap-btn" onclick="AP.sayfa++; AP.acik=null; apTabloCiz()" ${AP.sayfa < sayfaSay - 1 ? '' : 'disabled'}>Sonraki ›</button></span>` : ''}</div>`;
@@ -318,11 +335,11 @@
     // PDF'i olmayan kulüp için: yazdırılabilir liste (tarayıcıda "PDF olarak kaydet")
     window.apYazdir = function (baslik) {
         let v = AP.v; if (!v) return;
-        let sat = [].concat(v.bek.map(s => [s, 'ÖDEMEDİ']), v.od.slice().sort((x, y) => (odemeGunu(x.rec) || '').localeCompare(odemeGunu(y.rec) || '')).map(s => [s, 'ÖDEDİ']), v.muaf.map(s => [s, 'MUAF']));
+        let sat = [].concat(v.bek.map(s => [s, 'ÖDEMEDİ']), v.od.slice().sort((x, y) => (odemeGunu(x.rec) || '').localeCompare(odemeGunu(y.rec) || '')).map(s => [s, 'ÖDEDİ']), v.muaf.map(s => [s, 'MUAF']), v.dondu.map(s => [s, 'DONDURULMUŞ']));
         let w = window.open('', '_blank'); if (!w) return apTost('Açılır pencere engellendi.', 'warning');
         w.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${esc(baslik)} · ${ayAd(v.ay)}</title><style>body{font-family:system-ui,sans-serif;color:#111;margin:24px}h1{font-size:18px;margin:0}p{color:#555;font-size:12px;margin:4px 0 14px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#0f172a;color:#fff;text-align:left;padding:6px}td{padding:6px;border-bottom:1px solid #e2e8f0;vertical-align:top}.k{color:#c62828;font-weight:700}.i{color:#15803d;font-weight:700}.m{color:#7c3aed;font-weight:700}.r{text-align:right}</style></head><body>
             <h1>${esc(baslik)} · Aidat ${ayAd(v.ay)}</h1><p>Ödedi ${v.od.length} · Ödemedi ${v.bek.length} · Tahsilat %${v.oran} · Toplanan ${tl(v.toplanan)} · Hazırlanma ${gunGoster(bugun())}</p>
-            <table><thead><tr><th>#</th><th>Sporcu</th><th>Grup</th><th>Durum</th><th>Ödeme günü</th><th class="r">Tutar</th><th>Not</th></tr></thead><tbody>${sat.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x[0].k.ad)}</td><td>${esc(x[0].k.grupAd || '')}</td><td class="${x[1] === 'ÖDEDİ' ? 'i' : x[1] === 'MUAF' ? 'm' : 'k'}">${x[1]}${x[0].gec ? ' · ' + x[0].gec + ' ay eski borç' : ''}</td><td>${x[1] === 'ÖDEDİ' ? gunGoster(odemeGunu(x[0].rec)) : ''}</td><td class="r">${x[1] === 'ÖDEDİ' ? tl(x[0].rec.tutar) : ''}</td><td>${esc((x[0].rec && x[0].rec.notMetin) || '')}</td></tr>`).join('')}</tbody></table>
+            <table><thead><tr><th>#</th><th>Sporcu</th><th>Grup</th><th>Durum</th><th>Ödeme günü</th><th class="r">Tutar</th><th>Not</th></tr></thead><tbody>${sat.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x[0].k.ad)}</td><td>${esc(x[0].k.grupAd || '')}</td><td class="${x[1] === 'ÖDEDİ' ? 'i' : x[1] === 'MUAF' || x[1] === 'DONDURULMUŞ' ? 'm' : 'k'}">${x[1]}${x[0].gec ? ' · ' + x[0].gec + ' ay eski borç' : ''}</td><td>${x[1] === 'ÖDEDİ' ? gunGoster(odemeGunu(x[0].rec)) : ''}</td><td class="r">${x[1] === 'ÖDEDİ' ? tl(x[0].rec.tutar) : ''}</td><td>${esc((x[0].rec && x[0].rec.notMetin) || '')}</td></tr>`).join('')}</tbody></table>
             <script>setTimeout(function(){print()},300)<\/script></body></html>`);
         w.document.close();
     };
@@ -423,6 +440,8 @@
 .yn-mav{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#3a3020;color:#f0c860;font-size:10px;font-weight:700;vertical-align:middle;margin-right:7px}
 .yn-isim{cursor:pointer;text-decoration:underline dotted rgba(240,200,96,.55);text-underline-offset:3px}
 .yn-profil-ikon{border:0;background:none;padding:0 4px;cursor:pointer;font-size:14px;vertical-align:middle}
+.ap .yn-aidat-ayar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 10px;padding:9px 10px;border:1px solid var(--ap-cizgi);border-radius:10px;background:var(--ap-kart2)}
+.ap .yn-aidat-ayar span{display:grid;gap:1px;font-size:12.5px;min-width:0}.ap .yn-aidat-ayar small{font-size:11px;color:var(--ap-soluk)}
 .ap .yn-aylar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 @media (max-width:480px){.ap .yn-aylar{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .ap .yn-aylar button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--ap-cizgi);background:var(--ap-kart2);color:var(--ap-yazi);padding:7px 4px;display:grid;gap:1px;justify-items:center;min-height:62px;transform:none!important}
@@ -430,7 +449,7 @@
 .ap .yn-aylar button em{font-style:normal;font-size:10.5px;color:var(--ap-soluk)}
 .ap .yn-aylar .od{background:var(--ap-iyi-z);border-color:rgba(63,191,127,.45)}.ap .yn-aylar .od b{color:var(--ap-iyi)}
 .ap .yn-aylar .bor{background:var(--ap-kotu-z);border-color:rgba(239,100,97,.45)}.ap .yn-aylar .bor b{color:var(--ap-kotu)}
-.ap .yn-aylar .muaf b{color:var(--ap-mor)}.ap .yn-aylar .bos{opacity:.55}
+.ap .yn-aylar .muaf b{color:var(--ap-mor)}.ap .yn-aylar .dondu b{color:#7dd3fc}.ap .yn-aylar .bos{opacity:.55}
 .ap .yn-aylar .sec{outline:2px solid var(--ap-vurgu);outline-offset:1px}
 .ap .yn-devam{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end;height:86px}
 .ap .yn-devam div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
@@ -591,8 +610,10 @@
         let durum = (k.pasif ? '<span class="ap-etk k">Pasif</span>' : '<span class="ap-etk i">Aktif</span>') + (k.turAd ? ` <span class="ap-etk m">${esc(k.turAd)}</span>` : '') + (k.muaf ? ' <span class="ap-etk m">Aidattan muaf</span>' : '');
         // aidat: bu yıl ödenmemiş (borç sayılan) aylar
         let acikAy = 0, hucre = '', yil = YN.kartYil;
-        let ayDurum = m => { let r = A.kayit(k.ad, m), n = ayGelis(m); if (r && r.odendi) return ['od', r.tutar ? tl(r.tutar) : 'paket']; if (k.muaf) return ['muaf', 'muaf']; if ((k.katilma && k.katilma.slice(0, 7) > m) || m > ay) return ['bos', '—']; if (k.pasif && !n) return ['bos', 'pasif']; if (!k.katilma && !n) return ['bos', '—']; return ['bor', 'yok']; };
+        let basl = aidatAcik && typeof apBaslangic === 'function' ? apBaslangic(A, k, G[0] || null) : null, basAy = basl ? basl.ay : null;
+        let ayDurum = m => { let r = A.kayit(k.ad, m), n = ayGelis(m); if (r && r.odendi) return ['od', r.tutar ? tl(r.tutar) : 'paket']; if (apDondu(r)) return ['dondu', '❄️ donmuş']; if (k.muaf) return ['muaf', 'muaf']; if ((basAy && basAy > m) || m > ay) return ['bos', '—']; if (k.pasif && !n) return ['bos', 'pasif']; if (!k.katilma && !n) return ['bos', '—']; return ['bor', 'yok']; };
         if (aidatAcik) [0, -1, -2, -3, -4, -5].forEach(n => { if (ayDurum(ayEkle(ay, n))[0] === 'bor') acikAy++; });
+        let borAylar = []; if (aidatAcik) for (let n = 0; n < 12; n++) { let m = ayEkle(ay, -n); if (ayDurum(m)[0] === 'bor') borAylar.unshift(m); }
         if (aidatAcik) for (let i = 1; i <= 12; i++) { let m = yil + '-' + String(i).padStart(2, '0'), d = ayDurum(m), n = ayGelis(m); hucre += `<button class="${d[0]}${YN.kartAy === m ? ' sec' : ''}" onclick="ynKartAySec('${m}')" aria-label="${ayKisa(m)} ${yil}: ${d[1]}${n ? ', ' + n + ' ders' : ''}"><small>${ayKisa(m)}</small><b>${d[1]}</b><em>${n ? n + ' ders' : '·'}</em></button>`; }
         let tile = (cls, et, deger, alt) => `<div class="${cls}"><small>${et}</small><b class="ap-num">${deger}</b><span>${alt}</span></div>`;
         let tiles = tile('', 'Son geliş', sonG ? gunYaz(gunFark(sonG, b)) : '—', sonG ? sonG.split('-').reverse().join('.') : 'yoklama kaydı yok')
@@ -611,10 +632,13 @@
                 form = `<div class="ap-form" style="margin-top:10px" role="group" aria-label="${ayKisa(m)} ödeme">
                     <label>${ayKisa(m)} ${yil} · ödeme günü<input type="date" id="yn-k-gun" value="${gun}" max="${b}"></label>
                     <label>Tutar<input type="number" id="yn-k-tutar" value="${r.tutar || A.aylik(k) || ''}" inputmode="numeric" style="width:110px"></label>
-                    <label class="genis">Not<input type="text" id="yn-k-not" value="${esc(r.notMetin || '')}" maxlength="200" placeholder="ör. geç ödedi, elden"></label>
-                    <button class="ap-btn iyi" onclick="ynKartKaydet()">✓ Ödendi kaydet</button>${r.odendi || r.notMetin ? `<button class="ap-btn" onclick="ynKartTemizle()">Ödenmedi yap</button>` : ''}<button class="ap-btn" onclick="YN.kartAy=null; ynKartCiz()">Vazgeç</button></div>`;
+                    <label class="genis">Not<input type="text" id="yn-k-not" value="${esc(apDondu(r) ? '' : r.notMetin || '')}" maxlength="200" placeholder="ör. geç ödedi, elden"></label>
+                    <button class="ap-btn iyi" onclick="ynKartKaydet()">✓ Ödendi kaydet</button>${apDondu(r) ? `<button class="ap-btn" onclick="ynKartTemizle()">Dondurmayı kaldır</button>` : r.odendi || r.notMetin ? `<button class="ap-btn" onclick="ynKartTemizle()">Ödenmedi yap</button>` : ''}${!r.odendi && !apDondu(r) && Y.aidatDondur ? `<button class="ap-btn" onclick="ynKartDondur(['${m}'])" title="Bu ay ödeme beklenmez, borç sayılmaz">❄️ Dondurulmuş</button>` : ''}${Y.kaydet && m !== basAy ? `<button class="ap-btn" onclick="ynKartBaslangic('${m}')" title="Katılma tarihi ${ayKisa(m)} ${m.slice(0, 4)} olur; öncesi borç sayılmaz">📌 Bu aydan başladı</button>` : ''}<button class="ap-btn" onclick="YN.kartAy=null; ynKartCiz()">Vazgeç</button></div>`;
             }
-            aidat = `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartCiz()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartCiz()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}`;
+            // muaf + aidat başlangıcı (2026-10-23, kullanıcı: "sporcu kartının aidat bölümünde muaf olarak da işaretleyebileyim")
+            let basMetin = !basl ? 'henüz ödeme / ders yok' : ayKisa(basl.ay) + ' ' + basl.ay.slice(0, 4) + (basl.kaynak === 'katilma' ? ' · katılma tarihi' : basl.kaynak === 'odeme' ? ' · ilk ödemeden' : ' · ilk dersten');
+            let ayar = Y.kaydet ? `<div class="yn-aidat-ayar yn-pdf-gizle"><button class="ap-btn${k.muaf ? ' ana' : ''}" aria-pressed="${!!k.muaf}" onclick="ynKartMuaf(${k.muaf ? 'false' : 'true'})">🎗️ ${k.muaf ? 'Muaf ✓ (kaldır)' : 'Muaf yap'}</button>${borAylar.length && Y.aidatDondur ? `<button class="ap-btn" onclick="ynKartDondur(${esc(JSON.stringify(borAylar))})" title="Gelmediği / pasife almayı unuttuğun aylar: borç sayılmaz">❄️ Ödenmemiş ${borAylar.length} ayı dondur</button>` : ''}<span>Aidat başlangıcı: <b>${basMetin}</b><small>Yanlışsa başladığı aya dokun → 📌 Bu aydan başladı</small></span></div>` : '';
+            aidat = ayar + `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi / ❄️ dondurulmuş</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartCiz()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartCiz()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}`;
         }
         // devam + geçmiş (yoklama, ödemeler, katılma — en yeni üstte)
         let aylar6 = [-5, -4, -3, -2, -1, 0].map(n => ayEkle(ay, n)), dm = Math.max(1, ...aylar6.map(ayGelis));
@@ -680,10 +704,33 @@
         catch (e) { tost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); }
         sonra();
     };
+    window.ynKartMuaf = async function (muaf) {
+        let k = ynKisi(); if (!k || !YN.Y.kaydet) return;
+        if (!confirm(muaf ? k.ad + ' aidattan muaf yapılsın mı?\n\nÖdeme beklenmez, ödemeyenler / eski borç listelerinden ve tahsilat oranından düşer.' : k.ad + ' için muaf kaldırılsın mı? Tekrar ödeme beklenir.')) return;
+        try { let id = await YN.Y.kaydet(k, { muaf: muaf ? '1' : '0' }); if (id) YN.kart = id; tost(muaf ? '🎗️ ' + k.ad + ' aidattan muaf' : k.ad + ' artık muaf değil', 'success'); }
+        catch (e) { tost('Kaydedilemedi: ' + (e && e.message ? e.message : 'bağlantıyı kontrol et'), 'error'); }
+        sonra();
+    };
+    window.ynKartBaslangic = async function (m) {
+        let k = ynKisi(); if (!k || !YN.Y.kaydet) return;
+        if (!confirm(k.ad + ' kulübe ' + ayKisa(m) + ' ' + m.slice(0, 4) + ' ayında başladı olarak kaydedilsin mi?\n\nKatılma tarihi 01.' + m.slice(5) + '.' + m.slice(0, 4) + ' olur; daha önceki aylar borç sayılmaz.')) return;
+        try { let id = await YN.Y.kaydet(k, { katilma: m + '-01' }); if (id) YN.kart = id; YN.kartAy = null; tost('📌 Aidat ' + ayKisa(m) + ' ' + m.slice(0, 4) + ' ayından başlıyor', 'success'); }
+        catch (e) { tost('Kaydedilemedi: ' + (e && e.message ? e.message : 'bağlantıyı kontrol et'), 'error'); }
+        sonra();
+    };
+    window.ynKartDondur = async function (aylar) {
+        let k = ynKisi(); if (!k || !YN.Y.aidatDondur || !aylar || !aylar.length) return;
+        let ad = aylar.map(m => ayKisa(m) + ' ' + m.slice(0, 4)).join(', ');
+        if (!confirm(k.ad + ' · ' + ad + ' dondurulmuş olarak işaretlensin mi?\n\nBu aylarda ödeme beklenmez, borç sayılmaz. Sonradan para girersen normal ödeme olarak ciroya yazılır.')) return;
+        try { for (const m of aylar) await YN.Y.aidatDondur(k, m); tost('❄️ ' + aylar.length + ' ay dondurulmuş', 'success'); YN.kartAy = null; }
+        catch (e) { tost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); }
+        sonra();
+    };
     window.ynKartTemizle = async function () {
         let k = ynKisi(); if (!k || !YN.kartAy || !YN.Y.aidatTemizle) return;
-        if (!confirm(k.ad + ' · ' + ayKisa(YN.kartAy) + ' ' + YN.kartAy.slice(0, 4) + ' ödemesi silinsin mi (ödenmedi olur)?')) return;
-        try { await YN.Y.aidatTemizle(k, YN.kartAy); tost(ayKisa(YN.kartAy) + ' ödenmedi yapıldı', 'warning'); YN.kartAy = null; }
+        let don = apDondu(YN.Y.aidat.kayit(k.ad, YN.kartAy));
+        if (!confirm(k.ad + ' · ' + ayKisa(YN.kartAy) + ' ' + YN.kartAy.slice(0, 4) + (don ? ' dondurması kaldırılsın mı (tekrar ödeme beklenir)?' : ' ödemesi silinsin mi (ödenmedi olur)?'))) return;
+        try { await YN.Y.aidatTemizle(k, YN.kartAy); tost(ayKisa(YN.kartAy) + (don ? ' dondurma kaldırıldı' : ' ödenmedi yapıldı'), 'warning'); YN.kartAy = null; }
         catch (e) { tost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); }
         sonra();
     };

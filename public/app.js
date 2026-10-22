@@ -4094,10 +4094,10 @@
 
         // 📊 yonetim-panel.js aidat paneli için DAĞ verisi: aidatDB[ad][ay], turnuvaDB (AIDAT_GRUPLAR), otomatikYoklamaDB + seriler (devam)
         function aidatPanelAdaptor() {
-            let yok = {}, aylikMemo = {};
+            let yok = {}, aylikMemo = {}, ilk = null;
             return {
                 hazirla(ay) {
-                    yok = {}; aylikMemo = {};
+                    yok = {}; aylikMemo = {}; ilk = null;
                     Object.keys(otomatikYoklamaDB || {}).forEach(iso => { if(iso.slice(0, 7) !== ay) return; let gun = otomatikYoklamaDB[iso] || {}; Object.keys(gun).forEach(ad => { let r = gun[ad]; if(r && r.geldi !== false) (yok[ad] = yok[ad] || {})[iso] = 1; }); });
                 },
                 kisiler() {
@@ -4107,6 +4107,15 @@
                 },
                 kayit(ad, ay) { return (aidatDB[ad] && aidatDB[ad][ay]) || null; },
                 aylik(k) { if(aylikMemo[k.ad] == null) aylikMemo[k.ad] = aidatAylikTutar(k.ad) || aidatVarsayilanTutar || 0; return aylikMemo[k.ad]; },
+                // ilk derse geldiği gün (yoklama + skor) → katılma tarihi yoksa aidat buradan başlar (yeni sporcuya eski borç yazılmaz)
+                ilkGelis(k) {
+                    if(!ilk) {
+                        ilk = {}; let ekle = (ad, t) => { t = String(t).slice(0, 10); if(!ilk[ad] || t < ilk[ad]) ilk[ad] = t; };
+                        Object.keys(otomatikYoklamaDB || {}).forEach(iso => { let gun = otomatikYoklamaDB[iso] || {}; Object.keys(gun).forEach(ad => { if(gun[ad] && gun[ad].geldi !== false) ekle(ad, iso); }); });
+                        AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(sp) [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(x => x.seriler || [])).forEach(x => { if(x && x.tarih && !x.iptal) ekle(ad, x.tarih); }); }));
+                    }
+                    return ilk[k.ad] || null;
+                },
                 devam(k, ay) {
                     let h = Object.assign({}, yok[k.ad] || {}), sp = turnuvaDB[k.grup] && turnuvaDB[k.grup][k.ad];
                     if(sp) (sp.seriler || []).forEach(x => { if(x && x.tarih && !x.iptal && String(x.tarih).slice(0, 7) === ay) h[String(x.tarih).slice(0, 10)] = 1; });
@@ -4129,7 +4138,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=7';
+        const YN_DOSYA = 'yonetim-panel.js?v=9';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4240,6 +4249,8 @@
                 },
                 pasifYap(k, pasif) { return sporcuPasifAyarla(k.grup, k.ad, pasif) ? Promise.resolve() : Promise.reject(); },
                 aidatTemizle(k, ay) { _aidatAyTemizleCekirdek(k.ad, ay); return Promise.resolve(); },
+                // ❄️ dondurulmuş ay: ödenmemiş kayıt + not (yonetim-panel.js apDondu)
+                aidatDondur(k, ay) { let kayit = { odendi: false, tutar: null, notMetin: AP_DONDU_NOT, tarih: new Date().toISOString(), odemeTarihi: null }; (aidatDB[k.ad] = aidatDB[k.ad] || {})[ay] = kayit; aidatKaydet(); _aidatDuesPut(k.ad, ay, Object.assign({ deviceId: _cihazId }, kayit)); bekleyenGonderim = true; return Promise.resolve(); },
             };
         }
         // Kişi nesnesi (yönetim paneli, aidat paneli, profil aynı biçimi kullanır)

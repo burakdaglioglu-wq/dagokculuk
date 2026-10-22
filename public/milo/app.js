@@ -756,6 +756,7 @@ function miloAidatPanelAdaptor() {
         kayit(ad, ay) { return dues[ad + '|' + ay] || null; },
         aylik(k) { if (aylikMemo[k.ad] == null) aylikMemo[k.ad] = miloAidatSonBilinenTutar(k.ad) || miloAidatVarsayilanTutar || 0; return aylikMemo[k.ad]; },
         devam(k) { return miloAttendanceTum.length ? Object.keys(devam[k.ad] || {}).length : null; },
+        ilkGelis(k) { let t = null; miloAttendanceTum.forEach(a => { if (a.geldi && a.ad === k.ad && a.tarih && (!t || String(a.tarih).slice(0, 10) < t)) t = String(a.tarih).slice(0, 10); }); return t; },
         async kaydet(isler) {
             for (const x of isler) {
                 let eski = miloAidatDuesKayit(x.kisi.ad, x.ay) || {};
@@ -787,6 +788,10 @@ function miloYonetimAdaptor() {
         async pasifYap(k, pasif) {
             await miloApi(`/members/${encodeURIComponent(k.grup)}/${encodeURIComponent(k.ad)}`, { method: 'PATCH', body: JSON.stringify({ pasif: pasif ? 1 : 0 }) });
             let u = miloUyeler.find(x => x.grup === k.grup && x.ad === k.ad); if (u) u.pasif = !!pasif;
+        },
+        async aidatDondur(k, ay) {
+            await miloApi(`/dues/${encodeURIComponent(k.ad)}/${encodeURIComponent(ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: false, tutar: null, notMetin: AP_DONDU_NOT, odemeTarihi: null, tarih: bugunISO() }) });
+            miloDuesTum = (await miloApi('/dues')).dues;
         },
         async aidatTemizle(k, ay) {
             await miloApi(`/dues/${encodeURIComponent(k.ad)}/${encodeURIComponent(ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: false, tutar: null, notMetin: null, odemeTarihi: null, tarih: bugunISO() }) });

@@ -41,7 +41,7 @@ export function registerVeliRaporRoutes(router: Router): void {
     const aylar = [-5, -4, -3, -2, -1, 0].map((n) => ayEkle(ay, n)), ilk = aylar[0] + "-01", son = ay + "-31";
     const sp = await env.DB.prepare("SELECT aidatMuaf FROM athletes WHERE grup = ? AND ad = ?").bind(hedef.grup, hedef.ad).first<{ aidatMuaf: number }>();
     const due = await env.DB.prepare("SELECT odendi, notMetin FROM dues WHERE ad = ? AND ay = ?").bind(hedef.ad, ay).first<{ odendi: number; notMetin: string | null }>();
-    const aidat = sp?.aidatMuaf ? null : { durum: due?.odendi ? "odendi" : "bekleniyor", paket: due?.odendi && due.notMetin && due.notMetin.startsWith("📦") ? due.notMetin.split(" · ")[0] : null };
+    const aidat = sp?.aidatMuaf || (!due?.odendi && due?.notMetin?.startsWith("❄️")) ? null : { durum: due?.odendi ? "odendi" : "bekleniyor", paket: due?.odendi && due.notMetin && due.notMetin.startsWith("📦") ? due.notMetin.split(" · ")[0] : null };
     const { results: y6 } = await env.DB.prepare(
       `SELECT tarih, geldi, grup FROM attendance_auto WHERE ad = ?1 AND tarih BETWEEN ?2 AND ?3
        UNION ALL SELECT tarih, geldi, grup FROM attendance_auto_archive WHERE ad = ?1 AND tarih BETWEEN ?2 AND ?3`
