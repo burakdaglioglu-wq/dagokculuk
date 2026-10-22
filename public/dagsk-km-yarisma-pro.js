@@ -850,6 +850,7 @@ function yzTvCiz() {
     // Satır yüksekliği: tüm sporcular ekrana sığsın
     let gorN = yzGruplar(o, sira).length, n = Math.max(sira.length + (gorN - 1) * 1.6 + (yzGorunum().mod === 'gelisim' ? gorN * 0.8 : 0), 4), yuk = Math.max(28, Math.min(84, Math.floor((window.innerHeight * (bitti ? 0.6 : 0.63)) / (n + 1))));
     el.style.setProperty('--yz-satir', yuk + 'px');
+    let serit = document.getElementById('yz-tv-serit'); // 🎯 hedef şeridi yeniden çizimde korunur (animasyon baştan başlamasın)
     el.innerHTML = '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button>'
         + '<div class="yz-tv-bas">'
         + '<div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">' + (bitti ? 'SIRALAMA TURU · SONUÇLAR' : 'SIRALAMA TURU') + '</div><div class="yz-tv-alt">' + yzKatEtiket(d) + esc(d.ayar.mesafe) + ' · ' + f.ad + ' · ' + new Date(d.basla).toLocaleDateString('tr-TR') + '</div>' + yzGorunumKontrolHTML(o, true) + '</div>'
@@ -862,7 +863,11 @@ function yzTvCiz() {
         + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
         + yzTvOyunSeridiHTML()
         + yzTvDuyuruHTML(o, sira, yeni);
+    if (serit && !bitti) { let tb = el.querySelector('.yz-tv-tablo'); el.insertBefore(serit, tb ? tb.nextSibling : null); } else el.classList.remove('serit-var');
     yzTvSigdir(el);
+    // 🎯 hedef şeridi (dagsk-tv-serit.js): okların konumu + ısı haritası, ışık sporcudan sporcuya; büyük sayaçta alt yarıyı kaplar
+    if (typeof yzhsTazele === 'function') yzhsTazele(el, o, sira);
+    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=6').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
     yzTorenKontrol(o);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
@@ -1276,7 +1281,10 @@ function yzDevSayacGuncelle(o, s) {
     let goster = !!(sy && d && s && yzDevAyar() && _yz.devGizle !== sy.basla && (document.getElementById('yz-sayac') || document.getElementById('yz-tv-sayac')));
     if (goster && s.faz === 'bitti') goster = Date.now() - (sy.basla + (sy.faz === 'shoot' ? sy.sure : (sy.hazir || 0) + (sy.sure || 0)) * 1000) < 2600;
     else if (goster && ['hazirlik', 'atis', 'son'].indexOf(s.faz) === -1) goster = false;
+    let devOnce = document.documentElement.classList.contains('yz-dev-acik');
     document.documentElement.classList.toggle('yz-dev-acik', goster); // içerik şeridin altına itilir → hiçbir düğme örtülmez
+    // TV'de büyük sayaç açılıp kapanınca tablo/hedef şeridi yer değiştirir → yeniden sığdır
+    if (devOnce !== goster && _yz.tv) setTimeout(function () { let tv = document.getElementById('yz-tv'); if (!tv) return; yzTvSigdir(tv); if (typeof yzhsCiz === 'function' && document.getElementById('yz-tv-serit')) yzhsCiz([]); }, 450);
     if (!goster) {
         if (el && !el.classList.contains('kucul')) { el.classList.add('kucul'); setTimeout(function () { let e2 = document.getElementById('yz-dev-sayac'); if (e2 && e2.classList.contains('kucul')) e2.remove(); }, 750); }
         return;
