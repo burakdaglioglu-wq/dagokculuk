@@ -1,4 +1,4 @@
-// 📷 Yarışmada fotoğraflar (2026-10-21, kullanıcı taslaktan B "Sahne"yi seçti): TV tablosunda yüz, "Şimdi atıyor" şeridi (giriş
+// 📷 Yarışmada fotoğraflar (2026-10-21, kullanıcı taslaktan B "Sahne"yi seçti): TV tablosunda yüz, (v307'de kaldırıldı) "Şimdi atıyor" şeridi (giriş
 // açıkken girilen oklar), hedef kartlarında ve giriş penceresinde fotoğraflı hedef rozeti, sıra yükselince fotoğraflı duyuru.
 // 4 sporcuya geçici fotoğraf (izin Var) verilir; sonda kaldırılır. Tur kayda işlemez (kayit=false), eski tur geri yüklenir.
 import { sayfaAc, uygulamaAc, karisikSinifArac, dogrula, esit } from '../yardimci.mjs';
@@ -28,11 +28,11 @@ export default async function ({ log }) {
     await p.locator('.yz-tur-btn button:has-text("TV ekranı")').click(); await p.waitForTimeout(700);
     dogrula(await p.evaluate(() => [...document.querySelectorAll('#yz-tv td.ad .yz-yuz')].filter((e) => /api\/foto/.test(e.getAttribute('style') || '')).length) >= 4, 'TV tablosunda yüzler yok');
     esit(await p.locator('#yz-tv td.ad .yz-yuz').count(), 5, 'her satırda yüz (fotoğrafsızda baş harf)');
-    dogrula(await p.locator('#yz-tv .yz-tv-simdi .yz-sm').count() >= 1, '"Şimdi atıyor" şeridi yok');
-    // giriş penceresi: fotoğraflı rozet + şeritte girilen oklar
+    // v307: 'Şimdi atıyor' hedef kartları TV'den kaldırıldı (tablo yer kazandı)
+    esit(await p.locator('#yz-tv .yz-tv-simdi').count(), 0, '"Şimdi atıyor" şeridi TV\'de olmamalı');
+    // giriş penceresi: fotoğraflı rozet
     const ilk = await p.evaluate(() => { let o = yzOku(), s = yzHedefSirasi(o); let k = s.find((x) => /api\/foto/.test(yzFotoSrc(x))); yzGirisAc(yzEnc(k), 1); yzOkEkle('10'); yzOkEkle('9'); return k; });
     dogrula(await p.locator('#yz-giris .yz-giris-bas .yz-sp-foto').count() === 1, 'giriş penceresinde fotoğraf yok');
-    dogrula(await p.evaluate(() => { let a = document.querySelector('#yz-tv .yz-sm.aktif'); return !!a && a.querySelectorAll('.ok i.yz-r-sari').length === 2; }), 'şeritte girilen oklar görünmüyor');
     // sıra yükselişi duyurusu: son sıradakine çok yüksek seri → fotoğraflı "yükseldi"
     await p.evaluate(() => { try { yzGirisKapat(); } catch (e) { _yz.giris = null; } let o = yzOku(), sira = yzSiralama(o), son = sira[sira.length - 1].k; yzGirisAc(yzEnc(son), 1); ['X', 'X', 'X', 'X', 'X', 'X'].forEach((v) => yzOkEkle(v)); _yz.siradaki = false; yzGirisKaydet(); try { yzGirisKapat(); } catch (e) {} });
     await p.waitForTimeout(600);

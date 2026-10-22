@@ -859,7 +859,7 @@ function yzTvCiz() {
         + '</div>'
         + (bitti ? yzTvPodyumHTML(o) : '')
         + (bitti ? '' : yzYenilerHTML(o, true))
-        + (bitti ? '' : yzTvSimdiHTML(o, seri))
+        // (v307: 'Şimdi atıyor' hedef kartları TV'den kaldırıldı — kullanıcı: "hedef 1, hedef 2 yazan yerleri kaldır, sporcuların genel puanları görünsün"; tablo yer kazandı)
         + '<div class="yz-tv-tablo">' + yzGorunumHTML(o, sira, { hareket: !bitti, yeni: yeni, tvGiris: !bitti, duzenle: true }) + '</div>'
         + yzTvOyunSeridiHTML()
         + yzTvDuyuruHTML(o, sira, yeni);
@@ -867,7 +867,7 @@ function yzTvCiz() {
     yzTvSigdir(el);
     // 🎯 hedef şeridi (dagsk-tv-serit.js): okların konumu + ısı haritası, ışık sporcudan sporcuya; büyük sayaçta alt yarıyı kaplar
     if (typeof yzhsTazele === 'function') yzhsTazele(el, o, sira);
-    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=6').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
+    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=11').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
     yzTorenKontrol(o);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
