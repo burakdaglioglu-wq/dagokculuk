@@ -4232,7 +4232,7 @@
                 },
                 dersBaslat: i => yoneticiDersBaslat(i),
                 fotoDegistir: k => { if(k) ysFotoSec(k.grup, k.ad); }, // profil avatarındaki 📷
-                ekPanel: k => typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '', // 📈 Gelişim (plan · grup · his)
+                ekPanel: k => (typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '') + (typeof yrsKarneHTML === 'function' ? yrsKarneHTML(k.grup, k.ad) : ''), // 📈 Gelişim (plan · grup · his) + 🏆 sezon karnesi (v313)
                 dogumKarti: k => dogumGunuKartPaylas(k.grup, k.ad), // 🎉 Kutla → fotoğraflı kart
                 avatar: k => typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(k.grup, k.ad), k.ad, 'yn-mav', true) : '', // Genel Bakış tablolarında yüz
                 ekDikkat() {
@@ -4263,7 +4263,7 @@
         // Herhangi bir listeden sporcu kartı (Sporcular & Skor, …)
         function yoneticiKartAc(g, ad) { sporcuProfilAc(g + '|' + ad); }
         // 👤 Sporcu profili HER YERDEN (2026-10-21): adı data-sporcu="grup|ad" taşıyan öğeye dokununca açılır (satırın kendi işinden önce)
-        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         window.ynDisDelege = true;
         document.addEventListener('click', function(e) {
             let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if(!el) return;

@@ -55,6 +55,35 @@ export default async function ({ log }) {
     esit(await p.evaluate(() => aktifGrup), eskiGrup, 'aktif grup geri gelmeli');
     const t2 = await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yrs-isi tbody tr td.top')].map((x) => x.textContent).join('|'));
     dogrula(/^200.*\|24/.test(t2), 'koçun girdiği seri tabloda yok: ' + t2);
+    // v313 · antrenman ortalaması normal Skor Gir serilerinden: dün 9 seri × 3 ok eklenince 27 ok daha sayılmalı (yalnız bu sayfanın belleğinde)
+    const bk = await p.evaluate(({ yid, sp }) => {
+      let s = turnuvaDB[sp[0].g][sp[0].ad], dun = yrsGunEkle(yrsBugun(), -1), y = kyDepoOku('yarismalar')[yid];
+      let once = yrsBeklenenBilgi(y, sp[0].k), onceOk = once && /antrenman/.test(once.kaynak) ? once.ok : 0;
+      s.seriler = (s.seriler || []).concat(Array.from({ length: 9 }, (_, i) => ({ oklar: ['8', '8', '8'], puan: 24, tarih: dun, t: Date.now() - 864e5 + i, seriId: 'TESTBK' + i })));
+      let b = yrsBeklenenBilgi(y, sp[0].k); return b ? [b.ok - onceOk, /antrenman/.test(b.kaynak)].join('|') : null;
+    }, { yid, sp });
+    esit(bk, '27|true', 'antrenman ortalaması Skor Gir serilerini saymalı (+27 ok)');
+    // v313 · 🏅 resmi sonuç: 1. sporcu 205 (uygulamada 200 → fark uyarısı), 2. sporcu 250 · 2. · 🥈
+    await p.evaluate((yid) => yrsResmiAc(yid), yid);
+    await p.waitForSelector('#icerik-yarisma .yrs-resmi tbody tr', { state: 'attached' });
+    await p.evaluate((sp) => { let tr = [...document.querySelectorAll('#icerik-yarisma .yrs-resmi tbody tr')]; let bul = (k) => tr.find((x) => decodeURIComponent(x.dataset.k) === k); let a = bul(sp[0].k), b = bul(sp[1].k); a.querySelector('.r-puan').value = '205'; b.querySelector('.r-puan').value = '250'; b.querySelector('.r-sira').value = '2'; b.querySelector('.r-mad').value = '🥈'; document.querySelector('#icerik-yarisma .yrs-resmi .r-kisi').value = '12'; }, sp);
+    await p.evaluate((yid) => yrsResmiKaydet(yid), yid); await p.waitForTimeout(200);
+    const rs = await p.evaluate(({ yid, sp }) => { let h = kyDepoOku('yarisma_hedef'), e = document.getElementById('icerik-yarisma'); return { a: JSON.stringify(h[yid + '|' + sp[0].k].resmi), b: JSON.stringify(h[yid + '|' + sp[1].k].resmi), top: [...e.querySelectorAll('.yrs-isi tbody tr td.top')].map((x) => x.textContent).join('|'), dikkat: /resmi puan 205, uygulamaya girilen 200/.test(e.textContent), madalya: /🥈/.test(e.querySelector('.yrs-isi tbody tr').textContent) }; }, { yid, sp });
+    dogrula(/"puan":205/.test(rs.a) && /"puan":250,"sira":2,"kisi":12,"madalya":"🥈"/.test(rs.b), 'resmi sonuç kaydı: ' + rs.a + ' ' + rs.b);
+    esit(rs.top, '250resmi · ⚠ 24|205resmi · ⚠ 200', 'tabloda resmi puan + uygulama farkı (2. sporcuya eğitmen 1 seri girmişti)');
+    dogrula(rs.dikkat && rs.madalya, 'Dikkat farkı / madalya yok');
+    // v313 · 📄 rapor görseli + WhatsApp metni
+    await p.evaluate((yid) => yrsRaporAc(yid), yid);
+    await p.waitForSelector('#yrs-rapor .yrs-rapor-img', { state: 'attached' });
+    const rp = await p.evaluate((yid) => ({ h: _yrs.rapor.c.height, w: _yrs.rapor.c.width, metin: yrsRaporMetinYap(kyDepoOku('yarismalar')[yid]) }), yid);
+    dogrula(rp.w === 1080 && rp.h > 700, 'rapor boyutu ' + rp.w + 'x' + rp.h);
+    dogrula(/TEST Canlı Kupa/.test(rp.metin) && /🥈/.test(rp.metin) && /— 250/.test(rp.metin), 'rapor metni: ' + rp.metin);
+    if (process.env.E2E_EKRAN) await p.evaluate(() => { let a = document.createElement('a'); a.id = 'rapor-veri'; a.textContent = _yrs.rapor.c.toDataURL('image/png'); a.style.display = 'none'; document.body.appendChild(a); });
+    if (process.env.E2E_EKRAN) { const fs = await import('fs'); fs.writeFileSync(process.env.E2E_EKRAN + '-rapor.png', Buffer.from((await p.locator('#rapor-veri').textContent()).split(',')[1], 'base64')); }
+    await p.evaluate(() => yrsRaporKapat());
+    // v313 · 📈 sezon karnesi
+    dogrula(await p.evaluate((sp) => /Sezon karnesi · 1 yarışma/.test(yrsKarneHTML(sp[1].g, sp[1].ad)) && /250/.test(yrsKarneHTML(sp[1].g, sp[1].ad)), sp), 'sezon karnesi');
+    await p.evaluate((sp) => { let s = turnuvaDB[sp[0].g][sp[0].ad]; s.seriler = (s.seriler || []).filter((x) => !String(x.seriId || '').startsWith('TESTBK')); }, sp);
     // ← Yarışmalar → liste; ✏️ düzenle açılır
     await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yz-btn')].find((b) => /Yarışmalar/.test(b.textContent)).click());
     await p.waitForSelector('#icerik-yarisma .yrs-yar-duz', { state: 'attached' });

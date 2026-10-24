@@ -44,6 +44,7 @@ import { registerKmOrtakRoutes } from "./routes/kmOrtak";
 import { registerYayinRoutes } from "./routes/yayin";
 import { registerFotoRoutes } from "./routes/fotolar";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
+import { checkAndSendYarismaReminders } from "./lib/yarismaHatirlatma";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
 export { ClubSync } from "./durable-objects/ClubSync";
@@ -218,6 +219,7 @@ export default {
     ctx.waitUntil(checkAndSendAidatReminders(env));
     ctx.waitUntil(checkAndSendBelgeReminders(env));
     ctx.waitUntil(checkAndSendBirthdayReminders(env));
+    ctx.waitUntil(checkAndSendYarismaReminders(env));
     ctx.waitUntil(archiveOldAttendance(env));
   },
 };
