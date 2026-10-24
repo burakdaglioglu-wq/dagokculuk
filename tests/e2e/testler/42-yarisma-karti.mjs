@@ -39,27 +39,35 @@ export default async function ({ log }) {
     await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-plan button').click()); await p.waitForTimeout(150);
     const st = await p.evaluate(({ yid, sp }) => kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k], { yid, sp });
     dogrula(st && st.hazir && st.hazir[0] && st.plan && st.plan[0], 'hazırlık/plan işareti kaydolmadı');
-    // ⚔️ maç zamanı: 2 seri gir (3 ok), tempo görünür, geri al, bitir → sonuç puanı
+    // ⚔️ maç zamanı (v309): 'Skor gir' normal Skor Gir ekranını yarışma modunda açar — hedefe dokunarak 1. seri (3'lü: her yüze
+    // bir ok, yeri kaydolur), hızlı girişle 2. seri (otomatik kaydet). Seriler antrenmana değil yarisma_sporcu.mac'e yazılır.
     await p.evaluate(() => yrsModSec('mac'));
-    const bas = (v) => p.evaluate((v) => [...document.querySelectorAll('#icerik-yarisma .yrs-puanlar button')].find((b) => b.textContent === v).click(), v);
-    // puan + yön: ilk seride her puandan sonra parlak 3'lü kağıtta üst yüzün sağına dokun (yüz + yön); ikinci seri yalnız puan
-    const kagitSag = () => p.evaluate(() => { let svg = document.querySelector('#icerik-yarisma .yrs-kagit-yer .yrs-kagit'), pt = svg.createSVGPoint(); pt.x = 0.5; pt.y = -YRS_UCLU_ARA; let q = pt.matrixTransform(svg.getScreenCTM()); svg.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: q.x, clientY: q.y })); });
-    // yön varsayılan kapalı (turnuvada hızlı giriş): puan tuşu oku hemen ekler. İlk seri için "🎯 Yön de gir" açılır.
-    esit(await p.locator('#icerik-yarisma .yrs-yon-alan').count(), 0, 'yön kutusu varsayılan kapalı olmalı');
-    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-yon-anahtar').click()); await p.waitForTimeout(100);
-    for (const v of ['10', '9', '9']) { await bas(v); await p.waitForTimeout(60); await kagitSag(); await p.waitForTimeout(60); }
-    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-yon-anahtar').click()); await p.waitForTimeout(100);
-    for (const v of ['X', '8', '7']) { await bas(v); await p.waitForTimeout(40); }
-    await p.waitForTimeout(200); // yön kapalı: bekleme yok, seri hemen kaydolur
+    const spSeri0 = await p.evaluate((sp) => ((turnuvaDB[sp.g][sp.ad] || {}).seriler || []).length, sp);
+    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-gir-btn').click());
+    await p.waitForSelector('#skor-grid-paneli-baba #yrs-giris-bant', { timeout: 8000 });
+    esit(await p.evaluate(() => [aktifHedefTipi, getMaksOk(), document.getElementById('skor-grid-paneli-baba').style.display].join(',')), '3spot,3,block', 'yarışma modu: 3lü hedef, 3 ok, Skor Gir açık');
+    const dokun = (x, y) => p.evaluate(([x, y]) => { let svg = document.getElementById('hedef-svg-3spot'), pt = svg.createSVGPoint(); pt.x = x; pt.y = y; let q = pt.matrixTransform(svg.getScreenCTM()); hedefNoktaEkle(q.x, q.y); }, [x, y]);
+    await dokun(8, -140); await dokun(15, 0); await dokun(15, 140);
+    await p.evaluate(() => document.getElementById('skor-kaydet-btn').click()); await p.waitForTimeout(150);
+    for (const v of ['X', '8', '7']) { await p.evaluate((v) => hizliOkEkle(v), v); await p.waitForTimeout(40); }
+    await p.waitForTimeout(700); // otomatik kaydet (350 ms)
     let mm = await p.evaluate(({ yid, sp }) => ((kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).mac || {}), { yid, sp }), m = mm.seriler;
     esit(JSON.stringify(m), JSON.stringify([['10', '9', '9'], ['X', '8', '7']]), 'maç serileri');
     let k0 = (mm.kon || [])[0] || [];
-    dogrula(k0.length === 3 && k0.every((k) => k && k.s === 0 && k.x > 0 && Math.abs(k.y) < 0.05), 'kağıda dokunuş yüz + yön kaydetmedi: ' + JSON.stringify(mm.kon));
-    dogrula(((mm.kon || [])[1] || []).every((k) => !k || k.x == null), 'yönsüz oklarda konum olmamalı');
+    dogrula(k0.length === 3 && k0.every((k) => k && k.x > 0 && Math.abs(k.y) < 0.05) && k0.map((k) => k.s).sort().join() === '0,1,2', 'dokunuş yeri (yüz + konum) kaydolmadı: ' + JSON.stringify(mm.kon));
+    dogrula(((mm.kon || [])[1] || []).every((k) => !k || k.x == null), 'hızlı girişte konum olmamalı');
+    esit(await p.evaluate((sp) => ((turnuvaDB[sp.g][sp.ad] || {}).seriler || []).length, sp), spSeri0, 'yarışma serisi antrenmana yazılmamalı');
+    dogrula(/53/.test(await p.locator('#yrs-giris-bant').textContent()), 'bantta toplam 53 yok');
+    // ✏️ önceki seriyi düzelt: son seri geri gelir, yeniden kaydedilir
+    await p.evaluate(() => oncekiSeriyiDuzelt()); await p.waitForTimeout(100);
+    esit(await p.evaluate(({ yid, sp }) => [kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k].mac.seriler.length, anlikAtilanOklar.map((o) => o.puan).join('')].join(':'), { yid, sp }), '1:X87', 'geri al');
+    await p.evaluate(() => skorKaydet()); await p.waitForTimeout(150);
+    await p.evaluate(() => skorEkraniniKapat()); await p.waitForTimeout(300);
+    esit(await p.evaluate((sp) => [!!window._yrsGiris, aktifGrup === sp.g, document.getElementById('icerik-yarisma').classList.contains('aktif')].join(','), sp), 'false,true,true', 'çıkınca Yarışma sekmesine dönmeli');
+    await p.waitForSelector('#icerik-yarisma .yrs-gir-btn', { state: 'attached' });
+    dogrula(/3. seriyi gir/.test(await p.locator('#icerik-yarisma .yrs-gir-btn').textContent()), 'düğme 3. seriyi göstermeli');
     dogrula(/Bugünkü grubun/.test(await p.locator('#icerik-yarisma').textContent()), 'grup kartı yok');
     dogrula(/Hedef temposunun/.test(await p.locator('#icerik-yarisma').textContent()), 'hedef temposu yok');
-    if (process.env.E2E_EKRAN) { await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => { let g = document.getElementById('giris-ekrani'); if (g) g.style.visibility = 'hidden'; document.querySelector('#icerik-yarisma .yrs-slotlar').scrollIntoView({ block: 'start' }); }); await p.screenshot({ path: process.env.E2E_EKRAN + '-mac-tel.png' }); await p.setViewportSize({ width: 1280, height: 900 }); await p.evaluate(() => { let g = document.getElementById('giris-ekrani'); if (g) g.style.visibility = ''; }); }
-    await bas('5'); await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-mac-alt .yrs-geri').click());
     await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-bitir').click()); await p.waitForTimeout(200);
     await p.evaluate(() => onayOnayla()); await p.waitForTimeout(250);
     let s = await p.evaluate(({ yid, sp }) => (kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).sonuc, { yid, sp });
@@ -70,11 +78,11 @@ export default async function ({ log }) {
     await p.waitForTimeout(250);
     s = await p.evaluate(({ yid, sp }) => (kyDepoOku('yarisma_sporcu')[yid + '|' + sp.k] || {}).sonuc, { yid, sp });
     esit(s && [s.puan, s.sira, s.kisi, s.madalya].join(','), '53,2,19,🥈', 'sonuç kaydı');
-    // koç çıkış yapınca sekme kalkmalı
-    esit(await p.evaluate(() => { loggedInSporcu = null; aktifPlatform = 'egitmen'; tablariPlatformaGoreAyarla(); return document.getElementById('tab-yarisma').style.display; }), 'none', 'eğitmende Yarışma sekmesi gizli olmalı');
+    // eğitmen platformunda da Yarışma sekmesi var (v309: liste + yeni yarışma + canlı ısı haritası)
+    esit(await p.evaluate(() => { loggedInSporcu = null; aktifPlatform = 'egitmen'; tablariPlatformaGoreAyarla(); return document.getElementById('tab-yarisma').style.display; }), '', 'eğitmende de Yarışma sekmesi görünmeli (v309)');
     if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-kart.png', fullPage: true });
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('🏆 yarışma: koç ekler, sporcu sekmesi (ön hazırlık: sayaç/liste/plan · maç zamanı: seri/tempo/geri al/bitir), sonuç ✓');
+    log('🏆 yarışma: koç ekler, sporcu sekmesi (ön hazırlık: sayaç/liste/plan · maç zamanı: Skor Gir yarışma modu, dokun + hızlı giriş, geri al, bitir), sonuç ✓');
   } finally {
     if (yid) await p.evaluate((yid) => { try { let o = {}; o[yid] = Object.assign({}, kyDepoOku('yarismalar')[yid], { sil: true }); yrsYaz('yarismalar', o); loggedInSporcu = null; } catch (e) {} }, yid).catch(() => {});
     await p.waitForTimeout(500);

@@ -5665,54 +5665,108 @@
             let el = document.getElementById('canli-takip-widget-ana'); if(!el) return;
             try { el.innerHTML = await canliTakipOzetHTML(); } catch(e) {}
         }
+        // 📡 CANLI TAKİP · DERS SEANSLARI (v310, kullanıcı: "günlük atan kişilerin olduğu canlı skor çok karışık" → 3 taslaktan
+        // "B · Ders Seansları"). Sporcular derse göre gruplanır (bir sporcunun ilk serisi dersin son serisinden en çok 20 dk sonraysa
+        // o derse girer); şu anki ders en üstte açık, sporcu × seri ısı haritası (renk = seri puanı / ok × 10 — Yarışma ekranıyla
+        // aynı dil); biten dersler katlı tek satır (dokun → açılır). İsme dokun → seri dökümü. Sporcunun kendi satırı vurgulu.
+        // Yeniden çizimde açık/kapalı dersler, seçili sporcu ve tablonun yatay kaydırması korunur.
+        let _ct = { acik: {}, acikHesap: {}, sec: null, kaydir: {}, hedef: null };
+        function _ctCss() {
+            if(document.getElementById('ct-css')) return;
+            let st = document.createElement('style'); st.id = 'ct-css';
+            st.textContent = [
+                '.ct-ozet{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}.ct-ozet div{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:8px 4px;text-align:center}.ct-ozet b{display:block;font-size:22px;font-weight:900;line-height:1.1}.ct-ozet small{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.05em}.ct-ozet .ct-yesil{color:#22c55e}',
+                '.ct-seans{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:12px;margin-bottom:10px;min-width:0}.ct-seans.ct-canli{border-color:rgba(34,197,94,.6)}',
+                '.ct-bas{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;background:none;border:0;padding:0;color:var(--text-main);font:inherit;text-align:left;cursor:pointer}.ct-bas b{font-size:15px;display:flex;align-items:center;gap:7px}.ct-bas small{display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:11.5px;color:var(--text-muted);margin-top:2px}.ct-sag{font-size:12px;font-weight:800;color:var(--text-muted);white-space:nowrap}.ct-canli .ct-sag{color:#22c55e;font-weight:900}',
+                '.ct-lig{font-size:9.5px;font-weight:900;padding:2px 6px;border-radius:6px;letter-spacing:.03em;background:rgba(127,127,127,.15)}',
+                '.ct-kap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:10px}.ct-isi{border-collapse:separate;border-spacing:2px;font-size:12px;min-width:100%}',
+                '.ct-isi th{font-size:9.5px;color:var(--text-muted);font-weight:800}.ct-isi td{text-align:center;border-radius:5px;padding:6px 1px;min-width:24px;font-weight:900;font-variant-numeric:tabular-nums}.ct-isi td.ct-bos{background:rgba(127,127,127,.08)}',
+                '.ct-isi .ct-ad{position:sticky;left:0;z-index:1;background:var(--bg-card);text-align:left;padding:0 6px 0 0}.ct-isi .ct-ad button{display:flex;align-items:center;gap:5px;font:inherit;font-size:12.5px;font-weight:800;color:var(--text-main);background:none;border:0;padding:5px 2px;cursor:pointer;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis}',
+                '.ct-isi tr.ct-ben .ct-ad button{color:var(--accent-orange)}.ct-isi tr.ct-ben td.ct-top{outline:2px solid var(--accent-orange)}.ct-isi tr.ct-secili .ct-ad button{text-decoration:underline}',
+                '.ct-isi td.ct-top{background:var(--bg-main);border:1px solid var(--border-color);padding:4px 7px;font-size:13px;min-width:44px}.ct-isi td.ct-simdi{border:2px dashed #22c55e;color:#22c55e;font-size:10.5px;white-space:nowrap;padding:4px 4px}',
+                '.ct-nabiz{display:inline-block;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.7);animation:ctNabiz 1.6s infinite;flex:0 0 auto}@keyframes ctNabiz{70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}',
+                '.ct-not{font-size:11px;color:var(--text-muted);margin-top:6px}',
+                '.ct-detay{margin-top:10px;padding:10px;border-radius:12px;border:1px solid var(--accent-orange);background:var(--bg-main)}.ct-detay-bas{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.ct-detay-bas b{font-size:14px}.ct-detay-bas button{font:inherit;font-weight:800;background:none;border:1px solid var(--border-color);color:var(--text-main);border-radius:8px;padding:4px 10px;cursor:pointer}',
+                '.ct-seri{display:grid;grid-template-columns:34px 1fr auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--border-color);font-size:12px}.ct-seri:last-child{border-bottom:0}.ct-seri>span:first-child{color:var(--text-muted);font-weight:800}.ct-seri b{font-size:14px}',
+                '.ct-kapali-oz{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}.ct-kapali-oz span{font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:8px;background:var(--bg-main);color:var(--text-muted)}.ct-kapali-oz span b{color:var(--text-main)}',
+                '@media (prefers-reduced-motion:reduce){.ct-nabiz{animation:none}}'
+            ].join('\n');
+            document.head.appendChild(st);
+        }
+        function _ctRenk(puan, okSay) { let q = okSay ? puan / (okSay * 10) : 0; return q >= 0.8 ? ['#16a34a', '#04210d'] : q >= 0.63 ? ['#4ade80', '#06230f'] : q >= 0.47 ? ['#fd8e01', '#1a0d05'] : q >= 0.27 ? ['#c2410c', '#fff'] : ['#7f1d1d', '#fff']; }
+        function _ctSaat(t) { let d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+        function _ctKod(s) { return encodeURIComponent(s).replace(/'/g, '%27'); }
+        function _ctToplam(r) { return r.bugunSeriler.reduce((t, q) => t + (q.puan || 0), 0); }
+        function _ctOk(r) { return r.bugunSeriler.reduce((t, q) => t + (q.oklar || []).length, 0); }
+        // Dersler: sporcular ilk seri zamanına göre sıralanır; ilk serisi dersin son serisinden en çok 20 dk sonraysa o derse katılır,
+        // değilse yeni ders başlar. Henüz serisi olmayan "şu an atıyor" sporcusu son zamanına göre yerleşir.
+        function _ctSeanslar(satirlar) {
+            let simdi = Date.now(), l = satirlar.map(r => {
+                let ts = r.bugunSeriler.map(s => s.t || 0).filter(Boolean);
+                return Object.assign({}, r, { ilk: ts.length ? Math.min.apply(null, ts) : (r.sonZaman || simdi), son: ts.length ? Math.max.apply(null, ts) : (r.sonZaman || simdi) });
+            }).sort((a, b) => a.ilk - b.ilk);
+            let seanslar = [];
+            l.forEach(r => {
+                let s = seanslar[seanslar.length - 1];
+                if(s && r.ilk <= s.son + 20 * 60000) { s.l.push(r); s.son = Math.max(s.son, r.son); }
+                else seanslar.push({ bas: r.ilk, son: r.son, l: [r] });
+            });
+            seanslar.forEach(s => { s.canli = s.l.some(r => r.canli); s.anahtar = _ctSaat(s.bas); s.ligler = [...new Set(s.l.map(r => r.grup))]; });
+            return seanslar.sort((a, b) => (b.canli - a.canli) || (b.bas - a.bas));
+        }
+        function _ctSeansHTML(s, acik) {
+            let ben = loggedInSporcu || '', okTop = s.l.reduce((t, r) => t + _ctOk(r), 0);
+            let ligler = s.ligler.map(g => `<span class="ct-lig" style="color:${GRUP_RENK[g] || 'var(--text-muted)'}">${esc(String(LIG_ETIKET[g] || g).replace(/^\S+\s/, ''))}</span>`).join('');
+            let baslik = s.canli ? `<span class="ct-nabiz"></span> Şu anki ders · ${_ctSaat(s.bas)}'dan beri` : `${_ctSaat(s.bas)}–${_ctSaat(s.son)} dersi`;
+            let bas = `<button type="button" class="ct-bas" data-seans="${s.anahtar}" onclick="ctSeansAcKapa(this.dataset.seans)" aria-expanded="${acik}"><span><b>${baslik}</b><small>${s.l.length} sporcu · ${okTop} ok ${ligler}</small></span><span class="ct-sag">${s.canli ? 'CANLI ' : ''}${acik ? '▴' : '▾'}</span></button>`;
+            let sirali = s.l.slice().sort((a, b) => _ctToplam(b) - _ctToplam(a));
+            if(!acik) {
+                let oz = sirali.slice(0, 6).map(r => `<span>${esc(r.ad.split(/\s+/)[0])} <b>${_ctToplam(r)}</b></span>`).join('') + (sirali.length > 6 ? `<span>+${sirali.length - 6}</span>` : '');
+                return `<div class="ct-seans${s.canli ? ' ct-canli' : ''}">${bas}<div class="ct-kapali-oz">${oz}</div></div>`;
+            }
+            let N = Math.max(1, ...s.l.map(r => r.bugunSeriler.length + (r.canli && r.canliOklar && r.canliOklar.length ? 1 : 0)));
+            let th = ''; for(let i = 0; i < N; i++) th += `<th>${i + 1}</th>`;
+            let govde = sirali.map(r => {
+                let k = r.grup + '|' + r.ad, td = '';
+                for(let i = 0; i < N; i++) {
+                    let q = r.bugunSeriler[i];
+                    if(q) { let c = _ctRenk(q.puan || 0, (q.oklar || []).length); td += `<td style="background:${c[0]};color:${c[1]}" title="${i + 1}. seri: ${esc((q.oklar || []).join(' '))}">${q.puan || 0}</td>`; }
+                    else if(i === r.bugunSeriler.length && r.canli && r.canliOklar && r.canliOklar.length) td += `<td class="ct-simdi" title="Şu an atıyor">${esc(r.canliOklar.join('·'))}</td>`;
+                    else td += '<td class="ct-bos"></td>';
+                }
+                return `<tr class="${r.ad === ben ? 'ct-ben' : ''}${_ct.sec === k ? ' ct-secili' : ''}"><td class="ct-ad"><button type="button" data-k="${_ctKod(k)}" onclick="ctSporcuSec(this.dataset.k)">${r.canli ? '<span class="ct-nabiz" title="Şu an atıyor"></span>' : ''}${esc(r.ad)}</button></td>${td}<td class="ct-top">${_ctToplam(r)}</td></tr>`;
+            }).join('');
+            let sec = _ct.sec && s.l.find(r => r.grup + '|' + r.ad === _ct.sec);
+            return `<div class="ct-seans${s.canli ? ' ct-canli' : ''}">${bas}<div class="ct-kap" data-seans="${s.anahtar}"><table class="ct-isi"><thead><tr><th class="ct-ad"></th>${th}<th>TOP</th></tr></thead><tbody>${govde}</tbody></table></div>`
+                + `<div class="ct-not">kutu = seri puanı · koyu yeşil iyi, koyu kırmızı düşük · isme dokun → seri dökümü</div>${sec ? _ctDetayHTML(sec) : ''}</div>`;
+        }
+        function _ctDetayHTML(r) {
+            let top = _ctToplam(r), ok = _ctOk(r);
+            let durum = r.canli ? '<span style="color:#22c55e;font-weight:900">● şu an atıyor</span>' : (r.sonZaman ? 'son atış ' + _gecenSureYazi(Date.now() - r.sonZaman) : '');
+            let seriler = r.bugunSeriler.map((q, i) => ({ q, i })).reverse().map(({ q, i }) => `<div class="ct-seri"><span>S${i + 1}</span><span>${(q.oklar || []).map(o => { let c = getRenkForPuan(o); return `<span class="seri-cip" style="min-width:18px; height:20px; font-size:11px; background:${c.bg}; color:${c.c};">${esc(o)}</span>`; }).join('')}</span><b>${q.puan || 0}</b></div>`).join('');
+            return `<div class="ct-detay"><div class="ct-detay-bas"><span><b>${esc(r.ad)}</b><div class="ct-not" style="margin:0">${top} puan · ${r.bugunSeriler.length} seri · ok ort ${ok ? (top / ok).toFixed(2).replace('.', ',') : '–'} · ${durum}</div></span><button type="button" onclick="ctSporcuSec(null)" aria-label="Kapat">✕</button></div>${seriler || '<div class="ct-not">Henüz tamamlanmış seri yok.</div>'}</div>`;
+        }
+        function ctSeansAcKapa(a) { _ct.acik[a] = !_ct.acikHesap[a]; canliTakipCiz(_ct.hedef); }
+        function ctSporcuSec(k) { _ct.sec = k ? decodeURIComponent(k) : null; canliTakipCiz(_ct.hedef); }
         async function canliTakipCiz(hedefId) {
             let alan = document.getElementById(hedefId || 'canli-takip-liste'); if(!alan) return;
-            let simdi = Date.now();
+            _ctCss(); _ct.hedef = hedefId || null;
             let satirlar = [];
             try { satirlar = await _canliTakipVerisiTopla(); } catch(e) { alan.innerHTML = `<div class="empty"><div class="empty-title" style="color:var(--status-danger);">Veri okunamadı</div><div class="empty-hint">"🔄 Yenile" ile tekrar dene.</div></div>`; return; }
             if(satirlar.length === 0) {
                 alan.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">Bugün henüz kimse atış yapmadı</div></div>`;
                 return;
             }
-            let html = '';
-            satirlar.forEach(row => {
-              try {
-                let gEtiket = LIG_ETIKET[row.grup] || row.grup;
-                let toplamPuanBugun = row.bugunSeriler.reduce((t, s) => t + (s.puan || 0), 0);
-                let toplamOkBugun = row.bugunSeriler.reduce((t, s) => t + (s.oklar || []).length, 0);
-                let gunPct = toplamOkBugun ? (toplamPuanBugun / (toplamOkBugun * 10)) * 100 : 0;
-                let durumHTML = row.canli
-                    ? `<span style="font-size:10px; font-weight:900; color:var(--status-success); animation:canliAtisNabiz 1.2s infinite;">🎯 ŞU AN ATIYOR</span>`
-                    : (row.sonZaman ? `<span style="font-size:10px; font-weight:800; color:var(--text-secondary);">🕐 Son atış: ${_gecenSureYazi(simdi - row.sonZaman)}</span>` : '');
-                let canliSeriHTML = (row.canli && row.canliOklar && row.canliOklar.length) ? `<div style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(16,185,129,0.10); border-radius:var(--radius-sm); margin-bottom:6px;"><span style="font-size:10px; color:var(--status-success); font-weight:800; flex-shrink:0;">ŞİMDİ ATIYOR</span>${_canliOkCipleriHTML(row.canliOklar)}</div>` : '';
-                let seriHTML = row.bugunSeriler.map((s, i) => {
-                    // FAZ 5 — .seri-cip (Faz 4b'de tanımlandı): ok rozetleri için tek görsel dil,
-                    // Skor ekranıyla AYNI class — üçüncü bir ayrı stil icat edilmedi.
-                    let oklarHTML = (s.oklar || []).map(o => { let r = getRenkForPuan(o); return `<span class="seri-cip" style="min-width:18px; height:20px; font-size:11px; background:${r.bg}; color:${r.c};">${o}</span>`; }).join('');
-                    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 0; border-bottom:1px dashed var(--surface-border);"><span style="font-size:10px; color:var(--text-secondary); flex-shrink:0; width:26px;">S${i + 1}</span><span style="flex:1;">${oklarHTML}</span><b style="color:var(--accent); font-size:12px; flex-shrink:0;">${s.puan} P</b></div>`;
-                }).join('');
-                html += `<div class="card" style="padding:12px 14px; margin-bottom:10px; ${row.canli ? 'border-color:var(--status-success); background:rgba(34,197,94,0.06);' : ''}">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        ${row.bugunSeriler.length ? gmRingHTML(toplamPuanBugun, gunPct, {kucuk:true}) : ''}
-                        <div style="flex:1; min-width:0;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-                                <span style="font-weight:800; font-size:14px;">${row.ad}</span>
-                                <span style="font-size:10px; font-weight:800; color:${GRUP_RENK[row.grup] || 'var(--text-secondary)'};">${gEtiket}</span>
-                            </div>
-                            <div style="margin-top:3px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-                                ${durumHTML}
-                                <span style="font-size:11px; color:var(--text-secondary);">${row.bugunSeriler.length} seri</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top:8px;">
-                        ${canliSeriHTML}
-                        ${seriHTML || '<div style="font-size:11px; color:var(--text-secondary); font-style:italic;">Henüz tamamlanmış seri yok.</div>'}
-                    </div>
-                </div>`;
-              } catch(satirHata) { /* tek sporcu verisi bozuksa listeyi çökertme, sadece atla */ }
-            });
-            alan.innerHTML = html;
+            let seanslar = _ctSeanslar(satirlar), canliVar = seanslar.some(x => x.canli);
+            // Açık/kapalı: kullanıcı dokunduysa onun seçimi; yoksa şu anki ders (yoksa en son ders) açık, diğerleri kapalı
+            _ct.acikHesap = {};
+            seanslar.forEach((s, i) => { _ct.acikHesap[s.anahtar] = (s.anahtar in _ct.acik) ? _ct.acik[s.anahtar] : (s.canli || (i === 0 && !canliVar)); });
+            alan.querySelectorAll('.ct-kap').forEach(k => { _ct.kaydir[k.dataset.seans] = k.scrollLeft; });
+            let atan = satirlar.filter(r => r.canli).length, okTop = satirlar.reduce((t, r) => t + _ctOk(r), 0);
+            alan.innerHTML = `<div class="ct-ozet"><div><b class="${atan ? 'ct-yesil' : ''}">${atan}</b><small>ŞU AN ATIYOR</small></div><div><b>${satirlar.length}</b><small>BUGÜN ATAN</small></div><div><b>${okTop}</b><small>OK ATILDI</small></div></div>`
+                + seanslar.map(s => _ctSeansHTML(s, _ct.acikHesap[s.anahtar])).join('');
+            // Yatay kaydırma önceki konumda kalır; ilk açılışta canlı derste en son seriler görünsün diye sona kaydırılır
+            alan.querySelectorAll('.ct-kap').forEach(k => { let a = k.dataset.seans; if(a in _ct.kaydir) k.scrollLeft = _ct.kaydir[a]; else if(k.closest('.ct-canli')) k.scrollLeft = k.scrollWidth; });
         }
         const RENK_GRUP = [ ['Sarı', ['X','10','9'], 'var(--score-ring-yellow)'], ['Kırmızı', ['8','7'], 'var(--score-ring-red)'], ['Mavi', ['6','5'], 'var(--score-ring-blue)'], ['Siyah', ['4','3'], 'var(--score-ring-black)'], ['Beyaz', ['2','1'], 'var(--score-ring-white)'], ['Karavana', ['M'], '#10b981'] ];
         function okAnaliziHTML(sp, sfx) {
@@ -8577,6 +8631,7 @@
         // (dagsk-km-sablon-ozet.js kmProgramSlotlariGetir/kmBugunDersleri — Karışık Sınıf'ın "bugünün dersleri" ile aynı).
         let _egtDevamsiz = [], _egtDersler = [];
         function egitmenOzetCiz() {
+            try { egitmenYarismaKartGuncelle(); } catch(e) {}
             let ust = document.getElementById('egt-ozet-ust'), alt = document.getElementById('egt-ozet-alt');
             if(!ust || !alt) return;
             let simdi = Date.now(), saat = new Date().getHours();
@@ -11406,7 +11461,7 @@
             });
             document.querySelectorAll('.sadece-sporcu').forEach(el => { el.style.display = sporcuModu ? '' : 'none'; });
             if(aktifPlatform === 'egitmen') {
-                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
+                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','duello','basari','oyun','refleks','gelisim','yarisma'].forEach(id => g('tab-'+id, true)); // yarisma: v309 eğitmen Yarışma sekmesi (liste + yeni + canlı ısı haritası)
                 // 2026-09-29: Ders İçerikleri / Teknik Çalışma / Video (+ Kamera Hedef Hakemi kısayolu) eğitmende
                 // Karışık Sınıf araçlarının içinde (Ders Kütüphanesi, Malzemeler, Video & Duruş) — menüde ikinci kez yok.
                 // Sporcu tarafında (Gecikmeli Ayna, salt-okunur içerik) aynen duruyor.
@@ -30332,6 +30387,21 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }, 30);
         }
 
+        // 🏆 Eğitmen paneli › Yarışmalar kartı (v310): lige girmeden doğrudan eğitmenin Yarışma sekmesine geçer.
+        function egitmenYarismaAc() {
+            grupKurulumu(aktifGrup || 'buyukler');
+            try { sekmeAc('yarisma'); } catch(e) {}
+        }
+        function egitmenYarismaKartGuncelle() {
+            let k = document.getElementById('yrs-giris-btn'), c = document.getElementById('yrs-giris-chip'); if(!k || !c) return;
+            let d = {}; try { d = typeof kyDepoOku === 'function' ? kyDepoOku('yarismalar') : {}; } catch(e) {}
+            let bugun = bugunISO(), l = Object.keys(d || {}).map(x => d[x]).filter(y => y && !y.sil && y.tarih >= bugun).sort((a, b) => String(a.tarih).localeCompare(String(b.tarih)));
+            let y = l[0], bugunMu = y && y.tarih === bugun;
+            k.classList.toggle('aktif-ders', !!bugunMu);
+            c.textContent = bugunMu ? 'BUGÜN: ' + String(y.ad || 'yarışma').trim().slice(0, 40).toLocaleUpperCase('tr-TR') + ' — DOKUN, SKORLARI GÖR' : '';
+            if(!egitmenYarismaKartGuncelle._cekildi && typeof kyDepoSenkron === 'function') { egitmenYarismaKartGuncelle._cekildi = true; kyDepoSenkron('yarismalar', () => kyDepoOku('yarismalar'), false).then(() => egitmenYarismaKartGuncelle()).catch(() => {}); }
+            let det = k.querySelector('.detay'); if(det) det.textContent = !bugunMu && y ? 'Sıradaki: ' + String(y.ad || '').trim().slice(0, 40) + ' · ' + y.tarih.split('-').reverse().slice(0, 2).join('.') : 'Ayarlanmış yarışmalar · yeni yarışma · sporcuların skorları (canlı)';
+        }
         function grupKurulumu(grup) {
             aktifGrup = grup; kronometreSureAyarla();
             document.getElementById('aktif-grup-etiket').innerText = LIG_ETIKET[grup] || grup.toUpperCase();
@@ -31026,7 +31096,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(stb) { if(okAdet > 0 && anlikAtilanOklar.length >= okAdet) { stb.innerHTML = `✅ ${okAdet} OK TAM GİRDİNİZ — Kaydet!`; stb.style.display = 'block'; } else stb.style.display = 'none'; }
             let uyari = document.getElementById('spot-uyari');
             if(uyari) uyari.innerHTML = cezaVar ? "⚠️ Aynı spota birden fazla ok düştü: büyük puanlı ok <b>karavana (M)</b> sayıldı." : "";
-            try { canliAtisYayinla(); } catch(e) {}
+            try { if(!window._yrsGiris) canliAtisYayinla(); } catch(e) {}
         }
 
         // ============================================================
@@ -31380,6 +31450,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { isimFlashGoster(ad); } catch(e) {}
         }
         function oncekiSeriyiDuzelt() {
+            if(window._yrsGiris && typeof yrsGirisGeriAl === 'function') return yrsGirisGeriAl();
             if(!secilenSporcu) return;
             let sp = turnuvaDB[aktifGrup][secilenSporcu];
             if(!sp || !sp.seriler || sp.seriler.length === 0) { showToast('Düzeltilecek önceki seri yok.', 'warning'); return; }
@@ -31389,8 +31460,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(anlikAtilanOklar && anlikAtilanOklar.length > 0) {
                 if(!confirm('Bu seride KAYDEDİLMEMİŞ oklar var!\nÇıkarsan girdiğin oklar kaybolur.\n\nYine de çıkılsın mı? (İptal = kal ve "Seriyi Kaydet")')) return;
             }
-            try { if(secilenSporcu) canliAtisBitirYayinla(aktifGrup, secilenSporcu); } catch(e) {}
+            try { if(secilenSporcu && !window._yrsGiris) canliAtisBitirYayinla(aktifGrup, secilenSporcu); } catch(e) {}
             anlikAtilanOklar = []; secilenSporcu = ""; let _stb = document.getElementById('seri-tamam-banner'); if(_stb) _stb.style.display = 'none'; document.getElementById('skor-grid-paneli-baba').style.display = 'none';
+            if(window._yrsGiris && typeof yrsGirisKapat === 'function') { yrsGirisKapat(); return; } // 🏆 yarışma modundan çıkış → Yarışma sekmesi
             // Karışık Sınıf oturumu sırasında skor ekranı kaydetmeden (geri/iptal ile) kapatılırsa da
             // HER ZAMAN Karışık Sınıf'ın Skor sekmesine dön — küçük sporcular başka sekmede kalıp şaşırmasın.
             if(window._kmSkorAktif) { kmSkorSonrasiGeriDon(); return; }
@@ -31671,6 +31743,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return { ok: true, seriDoc, seriPuan, okDegerleri, grupData, limit };
         }
         function skorKaydet() {
+            if(window._yrsGiris && typeof yrsGirisKaydet === 'function') return yrsGirisKaydet(); // 🏆 yarışma modu: seri yarışmaya yazılır (dagsk-yarismalar.js)
             if(!secilenSporcu) return;
             if(!skorKaydetKilitKontrol()) return;
             let okAdet = getMaksOk();
@@ -31997,8 +32070,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // 🏆 Yarışma sekmesi (yalnız sporcu kendi kimliğiyle girince): 🎒 Ön hazırlık · ⚔️ Maç zamanı (dagsk-yarismalar.js)
         function yrsSekmeYukle() {
             let ad = loggedInSporcu, f = ad ? basariSporcuBul(ad) : null;
-            let calis = function() { try { yrsSekme(f ? f.grup : null, ad); } catch(e) {} };
-            if(typeof yrsSekme === 'function') return calis();
+            let calis = function() { try { if(!ad && aktifPlatform === 'egitmen' && typeof yrsEgitmenSekme === 'function') yrsEgitmenSekme(); else yrsSekme(f ? f.grup : null, ad); } catch(e) {} };
+            if(typeof yrsSekme === 'function' && typeof yrsEgitmenSekme === 'function') return calis();
             let el = document.getElementById('icerik-yarisma'); if(el) el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
             if(typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-yarismalar.js').then(calis).catch(function() { if(el) el.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
         }

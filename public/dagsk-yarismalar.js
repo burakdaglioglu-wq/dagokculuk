@@ -138,9 +138,8 @@ function yrsMacHTML(y, anahtar, hd, sd) {
     let yonPed = Object.keys(YRS_YON).map(function (yy) { return '<button type="button" class="yrs-yon-b" onclick="yrsMacYon(\'' + yrsE(anahtar) + '\',\'' + yy + '\')"' + (bek ? '' : ' disabled') + ' aria-label="Yön ' + yy + '">' + yy + '</button>'; }).join('');
     let yonKutu = '<div class="yrs-yon-alan' + (uclu ? ' uclu' : '') + '"><div class="yrs-yon-kutu' + (bek ? ' bekliyor' : '') + '"><b>' + (bek ? bek.p + ' — ' + (uclu ? 'okun olduğu yüze, o tarafına dokun' : 'ok hangi tarafta?') : 'Önce puana bas') + '</b>' + (uclu ? '<small>Kağıtta okun olduğu yüzün sağına, soluna, üstüne… dokun. Ortaya dokun = merkez.</small>' : '<div class="yrs-yon-ped">' + yonPed + '</div>') + '<small>' + (bek ? 'Dokunmazsan ' + (uclu ? '2,5' : '1,5') + ' sn sonra yalnız puan kaydolur' : 'Yön, okların nereye gittiğini görmek için') + '</small>' + (bek ? '<i class="yrs-yon-sure' + (uclu ? ' uzun' : '') + '"></i>' : '') + '</div>'
         + '<div class="yrs-kagit-yer">' + yrsKagitSVG(y, (su || []).map(function (q) { return q.k; }), bek, 'yrsMacKagit(event,\'' + yrsE(anahtar) + '\')') + '</div></div>';
-    let giris = m.bitti ? '' : '<div class="yrs-kart"><div class="yrs-bas"><span class="yrs-etk">✍️ ' + (m.seriler.length + 1) + '. seri</span><span class="yrs-alt">' + seriOk + ' ok · dolunca kaydolur</span></div><div class="yrs-slotlar">' + slot + '</div>'
-        + '<div class="yrs-puanlar">' + tuslar.map(function (p) { return '<button type="button" class="' + renk(p) + (bek && bek.p === p ? ' secili' : '') + '" onclick="yrsMacOk(\'' + yrsE(anahtar) + '\',\'' + p + '\')">' + p + '</button>'; }).join('') + '</div>' + (yrsYonAcik() ? yonKutu : '')
-        + '<div class="yrs-mac-alt"><button type="button" class="yz-btn yrs-yon-anahtar' + (yrsYonAcik() ? ' acik' : '') + '" onclick="yrsYonDegis()" aria-pressed="' + yrsYonAcik() + '">🎯 Yön de gir: <b>' + (yrsYonAcik() ? 'Açık' : 'Kapalı') + '</b></button><button type="button" class="yz-btn yrs-geri" onclick="yrsMacGeri(\'' + yrsE(anahtar) + '\')"' + (su.length || m.seriler.length ? '' : ' disabled') + '>⌫ Geri al</button></div></div>';
+    let N = Math.ceil(ok / seriOk), tamam = m.seriler.length >= N;
+    let giris = m.bitti ? '' : '<div class="yrs-kart yrs-gir-kart"><button type="button" class="yrs-gir-btn" onclick="yrsGirisAc(\'' + yrsE(anahtar) + '\')"><span class="yrs-gir-ikon">🎯</span><span><b>' + (tamam ? 'Bütün seriler girildi' : m.seriler.length ? (m.seriler.length + 1) + '. seriyi gir' : 'Skor girmeye başla') + '</b><small>' + (tamam ? 'düzeltmek için aç · sonra 🏁 Bitir' : 'Skor Gir ekranı açılır: hedefe dokun ya da hızlı giriş · ' + m.seriler.length + '/' + N + ' seri') + '</small></span><span class="yrs-gir-ok">›</span></button></div>';
     let seriler = m.seriler.length ? '<div class="yrs-kart"><span class="yrs-etk">📋 Seriler</span><div class="yrs-seri-izgara">' + m.seriler.map(function (s, i) { let t = s.reduce(function (a, p) { return a + yrsDeger(p); }, 0), hh = hd.hedef ? hd.hedef / ok * s.length : null; return '<div class="' + (hh != null ? (t >= hh ? 'iyi' : 'kotu') : '') + '"><small>' + (i + 1) + '</small><b>' + t + '</b><span>' + s.join(' ') + '</span></div>'; }).join('') + '</div></div>' : '';
     let grup = yrsMacGrupHTML(y, m);
     let rutin = m.bitti ? '' : '<div class="yrs-kart yrs-rutin"><span class="yrs-etk">🧘 Seriler arası</span><div class="yrs-rutin-adim"><span>1 · Derin nefes</span><span>2 · Duruş + çapa</span><span>3 · Bırak ve takip et</span></div>' + (hd.not ? '<div class="yrs-not">💬 ' + yrsEsc(hd.not) + '</div>' : '') + '</div>';
@@ -312,14 +311,18 @@ function yrsYonetAc() {
 function yrsYonetKapat() { let k = document.getElementById('yrs-yonet'); if (k) k.remove(); _yrs.duzenle = null; }
 function yrsYonetCiz() {
     let kap = document.getElementById('yrs-yonet'); if (!kap) return;
-    let ust = kap.scrollTop;
+    let ust = kap.scrollTop, sekme = kap.classList.contains('yrs-sekme-yonet'), sar = function (ic, et) { return sekme ? '<div class="yrs-pen yrs-pen-sekme">' + ic + '</div>' : '<div class="yrs-pen" role="dialog" aria-modal="true" aria-label="' + et + '">' + ic + '</div>'; };
     if (_yrs.duzenle) { kap.innerHTML = yrsFormHTML(); kap.scrollTop = ust; return; }
+    if (_yrs.canli) { let h = yrsCanliHTML(_yrs.canli); if (h) { kap.innerHTML = sar(h + (sekme ? '' : '<button class="yz-btn" onclick="yrsYonetKapat()">✕ Kapat</button>'), 'Yarışma sonuçları'); kap.scrollTop = ust; yrsCanliZamanla(); return; } }
     let bugun = yrsBugun(), l = yrsListe(), gelen = l.filter(function (y) { return y.tarih >= bugun; }), eski = l.filter(function (y) { return y.tarih < bugun; }).reverse(), sp = yrsOku('yarisma_sporcu');
-    let sat = function (y) { let n = (y.katilimci || []).length, sonuc = (y.katilimci || []).filter(function (k) { return (sp[y.id + '|' + k] || {}).sonuc; }).length; return '<button class="yrs-yar" onclick="yrsDuzenle(\'' + yrsE(y.id) + '\')"><span class="yrs-yar-t"><b>' + yrsTarihTR(y.tarih).split(' ')[0] + '</b>' + yrsTarihTR(y.tarih).split(' ')[1].slice(0, 3) + '</span><span><b>' + yrsEsc(y.ad) + '</b><small>' + [y.mesafe, YRS_YUZ[y.yuz] || '', y.kategori, n + ' sporcu'].filter(Boolean).map(yrsEsc).join(' · ') + (y.tarih < bugun ? ' · ' + sonuc + '/' + n + ' sonuç' : '') + '</small></span><span class="yrs-ok">›</span></button>'; };
-    kap.innerHTML = '<div class="yrs-pen" role="dialog" aria-modal="true" aria-label="Yarışmalar"><div class="yrs-pen-bas"><div><b>🏆 Yarışmalar</b><div class="yrs-alt">Eklenen yarışma, seçilen sporcuların kendi ana ekranında kart olarak görünür (geri sayım, hazırlık, hedef, analiz, sonuç).</div></div><button class="yz-btn" onclick="yrsYonetKapat()" aria-label="Kapat">✕</button></div>'
+    let sat = function (y) {
+        let n = (y.katilimci || []).length, sonuc = (y.katilimci || []).filter(function (k) { let d = sp[y.id + '|' + k] || {}; return d.sonuc || yrsMacVeri(d).seriler.length; }).length, gun = y.tarih === bugun;
+        return '<div class="yrs-yar-sat"><button class="yrs-yar' + (gun ? ' bugun' : '') + '" onclick="yrsCanliAc(\'' + yrsE(y.id) + '\')"><span class="yrs-yar-t"><b>' + yrsTarihTR(y.tarih).split(' ')[0] + '</b>' + yrsTarihTR(y.tarih).split(' ')[1].slice(0, 3) + '</span><span><b>' + (gun ? '<span class="yrs-canli-rozet">● BUGÜN</span> ' : '') + yrsEsc(y.ad) + '</b><small>' + [y.mesafe, YRS_YUZ[y.yuz] || '', y.kategori, n + ' sporcu'].filter(Boolean).map(yrsEsc).join(' · ') + (y.tarih <= bugun ? ' · ' + sonuc + '/' + n + ' skor girdi' : '') + '</small></span><span class="yrs-ok">' + (y.tarih <= bugun ? '📊' : '›') + '</span></button><button class="yz-btn yrs-yar-duz" onclick="yrsDuzenle(\'' + yrsE(y.id) + '\')" aria-label="Düzenle">✏️</button></div>';
+    };
+    kap.innerHTML = sar('<div class="yrs-pen-bas"><div><b>🏆 Yarışmalar</b><div class="yrs-alt">Yarışmaya dokun → sporcuların skorları (canlı ısı haritası, düşüş / yükseliş). Eklenen yarışma seçilen sporcuların ekranında görünür; yarışma günü skorlarını Skor Gir ekranından girerler.</div></div>' + (sekme ? '' : '<button class="yz-btn" onclick="yrsYonetKapat()" aria-label="Kapat">✕</button>') + '</div>'
         + '<button class="yrs-ana-btn" onclick="yrsDuzenle(null)">＋ Yeni yarışma</button>'
         + '<div class="yrs-etk" style="margin-top:6px">Yaklaşan</div>' + (gelen.length ? gelen.map(sat).join('') : '<div class="yrs-alt">Yaklaşan yarışma yok.</div>')
-        + (eski.length ? '<div class="yrs-etk" style="margin-top:10px">Geçmiş</div>' + eski.slice(0, 12).map(sat).join('') : '') + '</div>';
+        + (eski.length ? '<div class="yrs-etk" style="margin-top:10px">Geçmiş</div>' + eski.slice(0, 20).map(sat).join('') : ''), 'Yarışmalar');
     kap.scrollTop = ust;
 }
 function yrsDuzenle(id) { id = id ? yrsD(id) : id;
@@ -369,6 +372,214 @@ function yrsSil() {
     let y = _yrs.duzenle; if (!y) return;
     let sil = function () { let o = {}; o[y.id] = Object.assign({}, yrsOku('yarismalar')[y.id] || y, { sil: true }); delete o[y.id].yeni; yrsYaz('yarismalar', o); _yrs.duzenle = null; yrsYonetCiz(); };
     if (typeof onayIste === 'function') onayIste(yrsEsc(y.ad) + ' silinsin mi? Sporcuların ekranından da kalkar.', sil, 'Sil', 'Vazgeç'); else sil();
+}
+
+// ---------------------------------------------------------------- 🎯 yarışmada skor girişi = normal Skor Gir ekranı (v309)
+// Kullanıcı (2026-10-24, yarışma günü): "sporcuların skor gireceği yeri düzgün yap, normal Skor Gir ekranı gayet iyi".
+// Maç zamanı artık kendi tuş takımını değil Skor Gir'in kendisini açar (hedefe dokun, büyüteç, yakınlaştır, hızlı giriş,
+// otomatik kaydet, 3'lü spot kuralı). window._yrsGiris açıkken app.js'teki skorKaydet / oncekiSeriyiDuzelt /
+// skorEkraniniKapat buraya döner: seri antrenmana (turnuvaDB) DEĞİL yarisma_sporcu.mac'e yazılır. Okun yeri
+// kağıt birimine (yüz yarıçapı = 1, 3'lüde s = yüz no) çevrilip m.kon'a yazılır → eğitmen grubu/yönü görür.
+const YRS_HEDEF_TIP = { '3lu': '3spot', '10': '10ring', '6': '6ring' };
+function yrsAnahtarAc(a) { let p = a.split('|'); return { id: p[0], grup: p[1], ad: p.slice(2).join('|') }; }
+function yrsSeriToplam(s) { return (s || []).reduce(function (a, p) { return a + yrsDeger(p); }, 0); }
+function yrsGirisAc(anahtar) {
+    anahtar = yrsD(anahtar);
+    let a = yrsAnahtarAc(anahtar), y = yrsOku('yarismalar')[a.id];
+    if (!y || typeof skorEkraniniAc !== 'function') return;
+    if (typeof turnuvaDB === 'undefined' || !turnuvaDB[a.grup] || !turnuvaDB[a.grup][a.ad]) { if (typeof showToast === 'function') showToast('Sporcu bulunamadı.', 'error'); return; }
+    if (yrsMacVeri(yrsOku('yarisma_sporcu')[anahtar] || {}).bitti) { if (typeof showToast === 'function') showToast('Bu yarışma bitti olarak işaretli.', 'warning'); return; }
+    yrsCss();
+    window._yrsGiris = { anahtar: anahtar, id: a.id, grup: a.grup, ad: a.ad, eskiGrup: aktifGrup, eskiOk: manuelOkSayisi };
+    aktifGrup = a.grup; manuelOkSayisi = +y.seriOk || 3;
+    document.body.classList.add('yrs-giris-acik');
+    skorEkraniniAc(a.ad);
+    setHedefTipi(YRS_HEDEF_TIP[y.yuz] || '6ring');
+    let bar = document.getElementById('hizli-gecis-bar'); if (bar) bar.innerHTML = '';
+    yrsGirisBantCiz();
+}
+function yrsGirisBantCiz() {
+    let g = window._yrsGiris; if (!g) return;
+    let y = yrsOku('yarismalar')[g.id] || {}, m = yrsMacVeri(yrsOku('yarisma_sporcu')[g.anahtar] || {}), hd = yrsOku('yarisma_hedef')[g.anahtar] || {};
+    let seriOk = +y.seriOk || 3, ok = +y.ok || 60, N = Math.ceil(ok / seriOk), top = 0, atilan = 0;
+    m.seriler.forEach(function (s) { top += yrsSeriToplam(s); atilan += s.length; });
+    let tempo = hd.hedef && atilan ? Math.round(top - hd.hedef * atilan / ok) : null, bitti = m.seriler.length >= N;
+    let el = document.getElementById('yrs-giris-bant');
+    if (!el) { el = document.createElement('div'); el.id = 'yrs-giris-bant'; let ref = document.getElementById('hizli-gecis-bar'); if (!ref) return; ref.insertAdjacentElement('beforebegin', el); }
+    el.innerHTML = '<div class="yrs-gb-ust"><span><b>🏆 ' + yrsEsc(y.ad || 'Yarışma') + '</b><small>' + (bitti ? 'Bütün seriler girildi' : (m.seriler.length + 1) + '. seri / ' + N) + (tempo != null ? ' · hedef temposu ' + (tempo >= 0 ? '+' : '') + tempo : '') + '</small></span><span class="yrs-gb-say"><b>' + top + '</b><small>' + atilan + '/' + ok + ' ok</small></span></div>'
+        + '<div class="yrs-gb-cubuk"><i style="width:' + Math.min(100, Math.round(m.seriler.length / N * 100)) + '%"></i></div>'
+        + (m.seriler.length ? '<div class="yrs-gb-seriler">' + m.seriler.slice(-8).map(function (s, i, l) { return '<span>' + yrsSeriToplam(s) + '</span>'; }).join('') + '<small>son seriler</small></div>' : '')
+        + (bitti || atilan ? '<button type="button" class="yrs-gb-bitir' + (bitti ? ' tam' : '') + '" onclick="yrsGirisBitir()">🏁 Yarışmayı bitir · ' + top + ' puan</button>' : '');
+    let b = document.getElementById('giris-paneli-baslik'); if (b) b.innerText = '🏆 ' + g.ad + ' · ' + (bitti ? 'tamam' : (m.seriler.length + 1) + '. seri');
+}
+function yrsKonumCevir(o, n) {
+    if (!o || o.x == null || o.y == null) return { n: n };
+    if (o.tip === '3spot') { let s = o.spot != null ? o.spot : 1; return { x: +(o.x / 60).toFixed(3), y: +((o.y - (s - 1) * 140) / 60).toFixed(3), s: s, n: n }; }
+    let R = o.tip === '10ring' ? 100 : 60; return { x: +(o.x / R).toFixed(3), y: +(o.y / R).toFixed(3), n: n };
+}
+function yrsKonumGeri(k, tip) {
+    if (!k || k.x == null) return { x: null, y: null, spot: null };
+    if (tip === '3spot') { let s = k.s != null ? k.s : 1; return { x: k.x * 60, y: k.y * 60 + (s - 1) * 140, spot: s }; }
+    let R = tip === '10ring' ? 100 : 60; return { x: k.x * R, y: k.y * R, spot: null };
+}
+function yrsGirisKaydet() {
+    let g = window._yrsGiris; if (!g) return;
+    let y = yrsOku('yarismalar')[g.id] || {}, okAdet = getMaksOk();
+    if (anlikAtilanOklar.length !== okAdet) { if (typeof buyukHata === 'function') buyukHata('EKSİK SKOR!\n\nBu seride ' + okAdet + ' ok olmalı, şu an ' + anlikAtilanOklar.length + ' ok var.'); return; }
+    let d = yrsOku('yarisma_sporcu')[g.anahtar] || {}, m = yrsMacVeri(d), N = Math.ceil((+y.ok || 60) / okAdet);
+    if (m.bitti) { if (typeof showToast === 'function') showToast('Yarışma bitti olarak işaretli.', 'warning'); return; }
+    if (m.seriler.length >= N) { if (typeof showToast === 'function') showToast('Bütün seriler zaten girildi — 🏁 Bitir.', 'warning'); return; }
+    let oklar = efektifOklar().map(function (o, i) { return { p: o.cezali ? 'M' : String(o.puan), k: yrsKonumCevir(o, i + 1) }; })
+        .sort(function (a, b) { return yrsDeger(b.p) - yrsDeger(a.p) || (b.p === 'X') - (a.p === 'X'); });
+    m.seriler.push(oklar.map(function (o) { return o.p; }));
+    m.kon = (m.kon || []).slice(); while (m.kon.length < m.seriler.length - 1) m.kon.push(null); m.kon.push(oklar.map(function (o) { return o.k; }));
+    m.son = Date.now();
+    yrsMacKaydet(g.anahtar, m);
+    anlikAtilanOklar = []; if (typeof _seriAraliklari !== 'undefined') _seriAraliklari = [];
+    hedefGorseliGuncelle(false);
+    try { sesCal(900, 0.12); } catch (e) {}
+    let t = oklar.reduce(function (a, o) { return a + yrsDeger(o.p); }, 0);
+    if (typeof showToast === 'function') showToast(m.seriler.length + '. seri: ' + t + ' ✓' + (navigator.onLine ? '' : ' — internet gelince gönderilecek'), navigator.onLine ? 'success' : 'warning');
+    yrsGirisBantCiz();
+    if (m.seriler.length >= N) yrsGirisBitir();
+}
+function yrsGirisGeriAl() {
+    let g = window._yrsGiris; if (!g) return;
+    let d = yrsOku('yarisma_sporcu')[g.anahtar] || {}, m = yrsMacVeri(d);
+    if (!m.seriler.length || m.bitti) { if (typeof showToast === 'function') showToast('Düzeltilecek seri yok.', 'warning'); return; }
+    let geri = function () {
+        let son = m.seriler.pop(), sk = (m.kon || [])[m.seriler.length] || []; m.kon = (m.kon || []).slice(0, m.seriler.length);
+        let tip = aktifHedefTipi;
+        anlikAtilanOklar = son.map(function (p, i) { return { p: p, k: sk[i], n: (sk[i] && sk[i].n) || i + 1 }; }).sort(function (a, b) { return a.n - b.n; })
+            .map(function (q) { let r = getRenkForPuan(q.p), kk = q.k && q.k.x != null && (tip === '3spot') === (q.k.s != null) ? yrsKonumGeri(q.k, tip) : { x: null, y: null, spot: null }; return { x: kk.x, y: kk.y, puan: q.p, bg: r.bg, color: r.c, tip: tip, spot: kk.spot }; });
+        if (typeof _seriAraliklari !== 'undefined') _seriAraliklari = [];
+        yrsMacKaydet(g.anahtar, m); hedefGorseliGuncelle(false); yrsGirisBantCiz();
+        if (typeof showToast === 'function') showToast('Son seri geri alındı — oku sil / taşı, sonra yeniden kaydet.', 'info');
+    };
+    if (anlikAtilanOklar.length) { if (typeof onayIste === 'function') onayIste('Bu seride girdiğin oklar silinip son kaydedilen seri açılsın mı?', geri, 'Aç', 'Vazgeç'); else geri(); } else geri();
+}
+function yrsGirisBitir() {
+    let g = window._yrsGiris; if (!g) return;
+    let a = g.anahtar, d = yrsOku('yarisma_sporcu')[a] || {}, m = yrsMacVeri(d), top = m.seriler.reduce(function (t, s) { return t + yrsSeriToplam(s); }, 0);
+    let bit = function () { m.bitti = true; let o = {}; o[a] = Object.assign({}, d, { mac: m, sonuc: Object.assign({}, d.sonuc || {}, { puan: top }) }); yrsYaz('yarisma_sporcu', o); anlikAtilanOklar = []; skorEkraniniKapat(); if (typeof showToast === 'function') showToast('🏁 ' + top + ' puan kaydedildi.', 'success'); };
+    if (typeof onayIste === 'function') onayIste('Yarışmayı bitirelim mi? <b>' + m.seriler.length + ' seri · ' + top + ' puan</b>', bit, '🏁 Bitir', 'Devam'); else bit();
+}
+function yrsGirisKapat() {
+    let g = window._yrsGiris; if (!g) return;
+    window._yrsGiris = null;
+    aktifGrup = g.eskiGrup; manuelOkSayisi = g.eskiOk;
+    document.body.classList.remove('yrs-giris-acik');
+    let el = document.getElementById('yrs-giris-bant'); if (el) el.remove();
+    let l = document.getElementById('skor-liste-gorunumu'); if (l) l.style.display = 'block';
+    try { okSayisiGorunumGuncelle(); } catch (e) {}
+    if (typeof sekmeAc === 'function') sekmeAc('yarisma');
+}
+
+// ---------------------------------------------------------------- 🏆 eğitmen sekmesi + canlı ısı haritası (v309)
+// Kullanıcı: "yarışma oldu, sporcular skor girdi ama eğitmen olarak görebileceğim yer bulamadım; düşüşleri/yükselişleri
+// görmek istiyorum" + "eğitmen için Yarışma sekmesi: ayarlanmış yarışmalar + yeni yarışma". Üç taslaktan B · Canlı Isı
+// Haritası: herkes × seriler tek tabloda (renk = seri puanı), ± antrenmana göre, Dikkat kutusu, kulüp seri ortalaması.
+// Yarışma günü açıkken 15 sn'de bir tazelenir (yalnız bu ekran açıkken).
+function yrsEgitmenSekme() {
+    let el = document.getElementById('icerik-yarisma'); if (!el) return;
+    yrsCss();
+    let m = document.getElementById('yrs-yonet'); if (m && !m.classList.contains('yrs-sekme-yonet')) m.remove();
+    if (!el.querySelector('.yrs-sekme-yonet')) el.innerHTML = '<div id="yrs-yonet" class="yrs-sekme-yonet"></div>';
+    yrsSenkron(function () { if (el.classList.contains('aktif')) yrsYonetCiz(); });
+    yrsYonetCiz();
+}
+function yrsSatirlar(y) {
+    let sp = yrsOku('yarisma_sporcu'), tum = yrsTumSporcular(), seriOk = +y.seriOk || 3;
+    return (y.katilimci || []).map(function (k) {
+        let d = sp[y.id + '|' + k] || {}, m = yrsMacVeri(d), st = m.seriler.map(yrsSeriToplam), x = tum.find(function (t) { return t.k === k; });
+        let top = st.reduce(function (a, b) { return a + b; }, 0), atilan = m.seriler.reduce(function (a, s) { return a + s.length; }, 0);
+        let bek = yrsBeklenenOrt(y, k), fark = bek != null && atilan ? Math.round(top - bek * atilan) : null;
+        if (!atilan && d.sonuc && d.sonuc.puan) top = +d.sonuc.puan || 0; // yalnız sonucu elle girilmiş
+        return { k: k, ad: x ? x.ad : k.slice(k.indexOf('|') + 1), m: m, st: st, top: top, atilan: atilan, bek: bek, fark: fark, sonuc: d.sonuc, seriOk: seriOk, son: m.son || 0 };
+    }).sort(function (a, b) { return (b.atilan > 0) - (a.atilan > 0) || b.top - a.top || a.ad.localeCompare(b.ad, 'tr'); });
+}
+// Antrenman ok ortalaması: aynı mesafedeki Yarışma provaları (yz_arsiv), yarışmadan ÖNCE, en az 24 oklu turlar, son 5;
+// toplam puan / toplam ok (kısa turlar ortalamayı şişirmesin). 24 oklu tur yoksa kısalar da sayılır.
+function yrsBeklenenOrt(y, k) {
+    let ms = yrsMesafeNorm(y.mesafe), bas = yrsHedefTarih(y), sinir = bas ? new Date(bas.getFullYear(), bas.getMonth(), bas.getDate()).getTime() : Date.now();
+    let l = yrsArsiv().filter(function (r) { return yrsMesafeNorm(r.mesafe) === ms && (r.t || 0) < sinir; }).sort(function (a, b) { return (a.t || 0) - (b.t || 0); })
+        .map(function (r) { let s = (r.sporcular || []).find(function (x) { return x.k === k; }); return s && s.ok ? s : null; }).filter(Boolean);
+    let uzun = l.filter(function (s) { return s.ok >= 24; }), sec = (uzun.length ? uzun : l).slice(-5);
+    if (!sec.length) return null;
+    let p = sec.reduce(function (a, s) { return a + (+s.toplam || 0); }, 0), o = sec.reduce(function (a, s) { return a + s.ok; }, 0);
+    return o ? p / o : null;
+}
+function yrsHucreRenk(v, seriOk) { let q = v / (seriOk * 10); return q >= 0.8 ? ['#16a34a', '#04210d'] : q >= 0.63 ? ['#4ade80', '#06230f'] : q >= 0.47 ? ['#fd8e01', '#1a0d05'] : q >= 0.27 ? ['#c2410c', '#fff'] : ['#7f1d1d', '#fff']; }
+function yrsFarkHTML(f) { return f == null ? '<span class="yrs-f notr">—</span>' : '<span class="yrs-f ' + (f >= 3 ? 'ok' : f <= -3 ? 'dus' : 'notr') + '">' + (f > 0 ? '▲ +' + f : f < 0 ? '▼ ' + f : '＝ 0') + '</span>'; }
+function yrsDikkat(y, sat) {
+    let t = [], gun = y.tarih <= yrsBugun();
+    sat.forEach(function (s) {
+        let n = s.st.length, ad = '<b>' + yrsEsc(s.ad.split(' ')[0]) + '</b>', esik = s.seriOk * 0.67;
+        if (!n) { if (gun && !(s.sonuc && s.sonuc.puan)) t.push([3, '✏️', ad + ' skor girmedi', s.k]); return; }
+        if (n >= 8) { let h = n >> 1, a1 = s.st.slice(0, h), a2 = s.st.slice(h), o1 = a1.reduce(function (a, b) { return a + b; }, 0), o2 = a2.reduce(function (a, b) { return a + b; }, 0), fark = o2 / a2.length - o1 / a1.length;
+            if (fark <= -esik) t.push([0, '📉', ad + ' 2. yarıda düştü: seri ort. ' + (o1 / a1.length).toFixed(1).replace('.', ',') + ' → ' + (o2 / a2.length).toFixed(1).replace('.', ',') + '. Yorulma / konsantrasyon — seri arası rutin.']);
+            else if (fark >= esik) t.push([2, '📈', ad + ' 2. yarıda yükseldi: seri ort. ' + (o1 / a1.length).toFixed(1).replace('.', ',') + ' → ' + (o2 / a2.length).toFixed(1).replace('.', ',') + '.']); }
+        let sifir = s.st.map(function (v, i) { return v === 0 ? i + 1 : 0; }).filter(Boolean);
+        if (sifir.length) t.push([1, '⚠️', ad + ' ' + sifir.length + ' seride hiç vuramadı (' + sifir.join('., ') + '.) · ' + s.m.seriler.reduce(function (a, q) { return a + q.filter(function (p) { return p === 'M'; }).length; }, 0) + ' karavana.']);
+        if (n >= 6 && !s.m.bitti) { let ort = s.top / n, son3 = s.st.slice(-3).reduce(function (a, b) { return a + b; }, 0) / 3; if (son3 <= ort - esik * 1.5) t.push([0, '🔻', ad + ' son 3 seride düşüşte (' + s.st.slice(-3).join(', ') + ') — şimdi müdahale et.']); }
+    });
+    return t.sort(function (a, b) { return a[0] - b[0]; });
+}
+function yrsSeriBarSVG(st, seriOk, w, h) {
+    if (!st.length) return '';
+    let mx = seriOk * 10, bw = w / Math.max(st.length, 10), ort = st.reduce(function (a, b) { return a + b; }, 0) / st.length, esik = seriOk * 0.67;
+    let s = '<svg class="yrs-bar" viewBox="0 0 ' + w + ' ' + (h + 14) + '" preserveAspectRatio="none" role="img" aria-label="Seri puanları"><line x1="0" x2="' + w + '" y1="' + (h - ort / mx * h) + '" y2="' + (h - ort / mx * h) + '" stroke="currentColor" stroke-opacity=".45" stroke-dasharray="3 3"/>';
+    st.forEach(function (v, i) { let bh = Math.max(2, v / mx * h), c = v >= ort + esik ? '#4ade80' : v <= ort - esik * 1.5 ? '#f87171' : '#fd8e01'; s += '<rect x="' + (i * bw + 1.5) + '" y="' + (h - bh) + '" width="' + Math.max(2, bw - 3) + '" height="' + bh + '" rx="2" fill="' + c + '"><title>' + (i + 1) + '. seri: ' + v + '</title></rect>' + (st.length <= 12 || i % 2 === 0 ? '<text x="' + (i * bw + bw / 2) + '" y="' + (h + 11) + '" font-size="8" text-anchor="middle" fill="currentColor" fill-opacity=".6">' + (i + 1) + '</text>' : ''); });
+    return s + '</svg>';
+}
+function yrsCanliHTML(id) {
+    let y = yrsOku('yarismalar')[id]; if (!y || y.sil) { _yrs.canli = null; return ''; }
+    let seriOk = +y.seriOk || 3, N = Math.ceil((+y.ok || 60) / seriOk), sat = yrsSatirlar(y), bugun = yrsBugun(), canli = y.tarih === bugun;
+    let girdi = sat.filter(function (s) { return s.atilan || (s.sonuc && s.sonuc.puan); }), simdi = sat.filter(function (s) { return s.son && Date.now() - s.son < 4 * 60000 && !s.m.bitti; }).length;
+    let ortTop = girdi.length ? Math.round(girdi.reduce(function (a, s) { return a + s.top; }, 0) / girdi.length) : 0, dusen = sat.filter(function (s) { return s.fark != null && s.fark <= -3; }).length;
+    let bas = '<div class="yrs-pen-bas"><div><button class="yz-btn" onclick="_yrs.canli=null;_yrs.canliSec=null;yrsYonetCiz()">← Yarışmalar</button></div><div class="yrs-cn-sag">' + (canli ? '<span class="yrs-canli-rozet">● CANLI</span>' : '') + '<button class="yz-btn" onclick="_yrs.senkron=0;yrsSenkron(yrsYonetCiz)" aria-label="Yenile">⟳</button><button class="yz-btn" onclick="yrsDuzenle(\'' + yrsE(y.id) + '\')">✏️ Düzenle</button></div></div>';
+    let hero = '<div class="yrs-hero yrs-cn-hero"><div class="yrs-yer">' + (canli ? '🏆 Bugün · ' : '🏆 ') + yrsTarihTR(y.tarih, true) + (y.saat ? ' · ' + yrsEsc(y.saat) : '') + '</div><h2>' + yrsEsc(y.ad) + '</h2><div class="yrs-bilgi">' + [y.mesafe ? '🎯 ' + y.mesafe : '', y.yuz ? '🧾 ' + (YRS_YUZ[y.yuz] || y.yuz) : '', y.kategori ? '🏷 ' + y.kategori : '', '🏹 ' + (+y.ok || 60) + ' ok · ' + N + ' seri'].filter(Boolean).map(function (x) { return '<span>' + yrsEsc(x) + '</span>'; }).join('') + '</div></div>';
+    let tiles = '<div class="yrs-cn-tiles"><div><b>' + girdi.length + '<small>/' + sat.length + '</small></b><span>SONUÇ</span></div><div><b>' + (ortTop || '–') + '</b><span>KULÜP ORT.</span></div><div><b class="' + (dusen ? 'dus' : '') + '">' + dusen + '</b><span>ANTRENMANIN ALTINDA</span></div>' + (canli ? '<div><b class="' + (simdi ? 'ok' : '') + '">' + simdi + '</b><span>ŞU AN ATIYOR</span></div>' : '') + '</div>';
+    if (!sat.length) return bas + hero + '<div class="yrs-kart yrs-alt">Bu yarışmaya sporcu eklenmemiş. ✏️ Düzenle → sporcu seç.</div>';
+    let th = ''; for (let i = 0; i < N; i++) th += '<th>' + (i + 1) + '</th>';
+    let satir = sat.map(function (s) {
+        let td = ''; for (let i = 0; i < N; i++) { let v = s.st[i]; if (v == null) td += '<td class="bos"></td>'; else { let r = yrsHucreRenk(v, seriOk); td += '<td style="background:' + r[0] + ';color:' + r[1] + '" title="' + (i + 1) + '. seri: ' + (s.m.seriler[i] || []).join(' ') + '">' + v + '</td>'; } }
+        let simdiAt = s.son && Date.now() - s.son < 4 * 60000 && !s.m.bitti;
+        return '<tr class="' + (_yrs.canliSec === s.k ? 'sec' : '') + (s.atilan ? '' : ' girmedi') + '"><td class="ad"><button onclick="yrsCanliSec(\'' + yrsE(s.k) + '\')">' + (simdiAt ? '<i class="yrs-nabiz" title="Şu an atıyor"></i>' : s.m.bitti ? '🏁 ' : '') + yrsEsc(s.ad) + '</button></td>' + td
+            + '<td class="top">' + (s.atilan || (s.sonuc && s.sonuc.puan) ? '<b>' + s.top + '</b>' + (s.atilan && !s.m.bitti ? '<small>' + s.st.length + '/' + N + '</small>' : '') : (y.tarih <= bugun ? '<button class="yrs-sen-gir" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ Gir</button>' : '—')) + '</td><td class="fk">' + yrsFarkHTML(s.fark) + '</td></tr>';
+    }).join('');
+    let tablo = '<div class="yrs-kart"><span class="yrs-etk">Seri ısı haritası · koyu yeşil = seri başı ' + Math.ceil(seriOk * 8) + '+ · koyu kırmızı = ' + Math.floor(seriOk * 2.7) + ' ve altı · ± = antrenman ortalamasına göre</span><div class="yrs-isi-kap"><table class="yrs-isi"><thead><tr><th class="ad"></th>' + th + '<th>TOP</th><th>±</th></tr></thead><tbody>' + satir + '</tbody></table></div><div class="yrs-alt" style="margin-top:6px">İsme dokun → seri dökümü' + (canli ? ' · sporcu seriyi kaydedince kutu dolar' : '') + '</div></div>';
+    let sec = _yrs.canliSec && sat.find(function (s) { return s.k === _yrs.canliSec; });
+    let detay = sec ? yrsCanliDetayHTML(y, sec, N) : '';
+    let dk = yrsDikkat(y, sat), dikkat = '<div class="yrs-kart"><span class="yrs-etk">⚡ Dikkat</span>' + (dk.length ? dk.map(function (u) { return '<div class="yrs-uyari"><em>' + u[1] + '</em><span>' + u[2] + (u[3] ? ' · <button class="yrs-link" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + u[3]) + '\')">sen gir</button>' : '') + '</span></div>'; }).join('') : '<div class="yrs-alt">' + (girdi.length ? 'Belirgin düşüş yok.' : 'Seriler girildikçe düşüş/yükseliş burada çıkar.') + '</div>') + '</div>';
+    let kulupSt = []; for (let i = 0; i < N; i++) { let v = sat.filter(function (s) { return s.st[i] != null; }).map(function (s) { return s.st[i]; }); if (v.length) kulupSt.push(Math.round(v.reduce(function (a, b) { return a + b; }, 0) / v.length * 10) / 10); }
+    let kulup = kulupSt.length ? '<div class="yrs-kart"><span class="yrs-etk">Kulüp seri ortalaması</span>' + yrsSeriBarSVG(kulupSt, seriOk, 320, 90) + '<div class="yrs-alt">Her seride sporcuların ortalaması · kesik çizgi = genel ortalama</div></div>' : '';
+    return bas + hero + tiles + tablo + detay + '<div class="yrs-cn-ikili">' + dikkat + kulup + '</div>';
+}
+function yrsCanliDetayHTML(y, s, N) {
+    let n = s.st.length, kap = '<button class="yz-btn" onclick="yrsCanliSec(null)" aria-label="Kapat">✕</button>';
+    let gir = y.tarih <= yrsBugun() && !s.m.bitti ? '<button class="yz-btn" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ ' + (n ? 'Seri ekle / düzelt' : 'Skor gir') + '</button>' : '';
+    let ust = '<div class="yrs-bas"><span class="yrs-etk">📋 ' + yrsEsc(s.ad) + (s.m.bitti ? ' · 🏁 bitti' : n ? ' · ' + n + '/' + N + ' seri' : '') + '</span><span style="display:flex;gap:6px">' + gir + kap + '</span></div>';
+    if (!n) return '<div class="yrs-kart yrs-cn-detay">' + ust + '<div class="yrs-alt">' + (s.sonuc && s.sonuc.puan ? 'Yalnız sonuç girilmiş: ' + s.sonuc.puan + ' puan.' : 'Henüz seri girilmedi.') + '</div></div>';
+    let h = n >> 1, y1 = s.st.slice(0, h).reduce(function (a, b) { return a + b; }, 0), y2 = s.st.slice(h).reduce(function (a, b) { return a + b; }, 0);
+    let say = function (k) { return s.m.seriler.reduce(function (a, q) { return a + q.filter(function (p) { return p === k; }).length; }, 0); };
+    let puanlar = (y.yuz === '10' ? ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'] : ['X', '10', '9', '8', '7', '6', '5', 'M']).filter(function (k) { return say(k) || k === 'M' || k === '10'; });
+    let dag = '<div class="yrs-cn-dag">' + puanlar.map(function (k) { let v = yrsDeger(k); return '<span class="' + (k === 'M' ? 'm' : v >= 9 ? 's' : v >= 7 ? 'k' : v >= 5 ? 'b' : 'y') + '">' + k + '<b>' + say(k) + '</b></span>'; }).join('') + '</div>';
+    let yari = n >= 4 ? '<div class="yrs-cn-yari"><div><b>' + y1 + '</b><small>1–' + h + '. SERİ</small></div><div><b class="' + (y2 / (n - h) > y1 / h ? 'ok' : y2 / (n - h) < y1 / h ? 'dus' : '') + '">' + y2 + '</b><small>' + (h + 1) + '–' + n + '. SERİ</small></div><div><b>' + (s.top / s.atilan).toFixed(2).replace('.', ',') + '</b><small>OK ORT.</small></div><div><b>' + (s.bek != null ? s.bek.toFixed(2).replace('.', ',') : '–') + '</b><small>ANTRENMAN ORT.</small></div></div>' : '';
+    let sonuc = s.sonuc && (s.sonuc.sira || s.sonuc.madalya) ? '<div class="yrs-alt" style="margin-top:6px">🏅 ' + (s.sonuc.madalya || '') + (s.sonuc.sira ? ' ' + s.sonuc.sira + '.' + (s.sonuc.kisi ? ' / ' + s.sonuc.kisi : '') : '') + '</div>' : '';
+    let nis = (s.m.nis || []).length ? '<div class="yrs-alt" style="margin-top:6px">🔧 ' + s.m.nis.map(function (q) { return q.seri + '. seriden sonra ' + q.tik + ' tık ' + q.yon; }).join(' · ') + '</div>' : '';
+    return '<div class="yrs-kart yrs-cn-detay">' + ust + yrsSeriBarSVG(s.st, s.seriOk, 320, 90) + yari + dag + sonuc + nis + '</div>' + yrsMacGrupHTML(y, s.m).replace('Bugünkü grubun', 'Ok grubu').replace('Yalnız yönü girilen oklar; yaklaşık yerleri.', 'Hedefe dokunarak girilen oklar.');
+}
+function yrsCanliSec(k) { _yrs.canliSec = k ? yrsD(k) : null; yrsYonetCiz(); }
+function yrsCanliAc(id) { _yrs.canli = yrsD(id); _yrs.canliSec = null; _yrs.duzenle = null; yrsYonetCiz(); }
+function yrsCanliZamanla() {
+    clearInterval(_yrs.canliZ);
+    _yrs.canliZ = setInterval(function () {
+        let k = document.getElementById('yrs-yonet'), y = _yrs.canli && yrsOku('yarismalar')[_yrs.canli];
+        if (!k || !_yrs.canli || !y || y.tarih !== yrsBugun() || (k.classList.contains('yrs-sekme-yonet') && !k.closest('.sekme-icerik.aktif')) || document.hidden) { if (!k || !_yrs.canli) clearInterval(_yrs.canliZ); return; }
+        let once = JSON.stringify(yrsOku('yarisma_sporcu'));
+        kyDepoSenkron('yarisma_sporcu', function () { return yrsOku('yarisma_sporcu'); }, false).then(function (t) { if (JSON.stringify(t) !== once && document.getElementById('yrs-yonet') && _yrs.canli && !_yrs.duzenle) yrsYonetCiz(); }).catch(function () {});
+    }, 15000);
 }
 
 // ---------------------------------------------------------------- stil
@@ -435,6 +646,40 @@ function yrsCss() {
         '.yrs-rutin-adim{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.yrs-rutin-adim span{font-size:13px;font-weight:800;padding:7px 10px;border-radius:10px;background:var(--bg-main)}',
         '.yrs-nis-tus{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.yrs-nis-tus button{min-height:44px;border-radius:12px;border:2px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font:inherit;font-weight:800;cursor:pointer}.yrs-nis-liste{display:grid;gap:4px;margin-top:8px;font-size:12.5px;color:var(--text-muted);font-weight:700}',
         '.yrs-bitir{background:#22c55e}',
+        // v309: Skor Gir yarışma bandı + sporcu "Skor gir" düğmesi
+        'body.yrs-giris-acik #hizli-gecis-bar,body.yrs-giris-acik [onclick="seriUzat()"],body.yrs-giris-acik #tavsan-ana-btn{display:none!important}',
+        '#yrs-giris-bant{display:grid;gap:6px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(253,142,1,.28),rgba(253,142,1,.08));border:1px solid rgba(253,142,1,.55);color:var(--text-main)}',
+        '.yrs-gb-ust{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.yrs-gb-ust b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yrs-gb-ust small{display:block;font-size:12px;color:var(--text-muted);font-weight:700}',
+        '.yrs-gb-say{text-align:right}.yrs-gb-say b{font-size:26px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}',
+        '.yrs-gb-cubuk{height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden}.yrs-gb-cubuk i{display:block;height:100%;background:#fd8e01}',
+        '.yrs-gb-seriler{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.yrs-gb-seriler span{font-size:12px;font-weight:900;padding:2px 7px;border-radius:7px;background:rgba(0,0,0,.25)}.yrs-gb-seriler small{font-size:10.5px;color:var(--text-muted);font-weight:700}',
+        '.yrs-gb-bitir{font:800 13px system-ui,sans-serif;padding:8px;border-radius:10px;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer}.yrs-gb-bitir.tam{background:#22c55e;color:#04210d;font-size:15px;padding:12px}',
+        '.yrs-gir-kart{padding:6px}.yrs-gir-btn{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;text-align:left;padding:16px 14px;border-radius:14px;border:0;background:#fd8e01;color:#1a0d05;font:inherit;cursor:pointer}.yrs-gir-ikon{font-size:34px}.yrs-gir-btn b{display:block;font-size:19px;font-weight:900}.yrs-gir-btn small{display:block;font-size:12.5px;font-weight:700;opacity:.8}.yrs-gir-ok{font-size:28px;font-weight:900}',
+        // v309: eğitmen sekmesi + canlı ısı haritası
+        '.yrs-sekme-yonet{padding:12px 12px 90px;overflow-x:hidden}.yrs-pen-sekme{width:min(1100px,100%);margin:0 auto;box-shadow:none;border:0;background:transparent;padding:0}',
+        '.yrs-pen{grid-template-columns:minmax(0,1fr);min-width:0}.yrs-pen>*{min-width:0}',
+        // Yarışma (KM) modülü yüklenmeden sekme açılınca .yz-btn/.yz-cip stilsiz kalmasın (aynı görünüm)
+        '.yrs-pen .yz-btn{border:1px solid var(--border-color);background:var(--bg-panel);color:var(--text-main);border-radius:12px;padding:0 14px;min-height:42px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}',
+        '.yrs-pen .yz-cip{border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:999px;padding:0 13px;min-height:38px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}',
+        '.yrs-yar-sat{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:stretch}.yrs-yar-duz{min-width:48px}.yrs-yar.bugun{border-color:#fd8e01;background:rgba(253,142,1,.1)}',
+        '.yrs-canli-rozet{display:inline-block;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;background:rgba(74,222,128,.16);color:#4ade80;letter-spacing:.04em;vertical-align:middle}',
+        '.yrs-cn-sag{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.yrs-cn-hero{margin:0}.yrs-cn-hero h2{padding-right:0}',
+        '.yrs-cn-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}.yrs-cn-tiles div{background:var(--bg-main);border:1px solid var(--border-color);border-radius:12px;padding:8px 4px;text-align:center}.yrs-cn-tiles b{display:block;font-size:24px;font-weight:900;line-height:1.1}.yrs-cn-tiles b small{font-size:13px;color:var(--text-muted)}.yrs-cn-tiles span{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:.05em}',
+        '.yrs-cn-tiles .ok,.yrs-f.ok,.yrs-cn-yari .ok{color:#4ade80}.yrs-cn-tiles .dus,.yrs-f.dus,.yrs-cn-yari .dus{color:#f87171}.yrs-f{font-size:11.5px;font-weight:900;white-space:nowrap}.yrs-f.notr{color:var(--text-muted)}',
+        '.yrs-isi-kap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px}.yrs-isi{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-width:100%}',
+        '.yrs-isi th{font-size:10px;color:var(--text-muted);font-weight:800;padding:0 1px}.yrs-isi td{text-align:center;border-radius:6px;padding:7px 2px;min-width:26px;font-weight:900;font-variant-numeric:tabular-nums}.yrs-isi td.bos{background:rgba(127,127,127,.1)}',
+        '.yrs-isi td.ad,.yrs-isi th.ad{position:sticky;left:0;z-index:1;background:var(--bg-card);text-align:left;padding:0 6px 0 0}.yrs-isi td.ad button{font:inherit;font-weight:800;font-size:13px;color:var(--text-main);background:none;border:0;padding:6px 4px;cursor:pointer;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}',
+        '.yrs-isi tr.sec td.ad button{color:#fd8e01}.yrs-isi tr.girmedi td.ad button{opacity:.6}.yrs-isi td.top{background:var(--bg-main);border:1px solid var(--border-color);padding:4px 8px;min-width:52px}.yrs-isi td.top b{font-size:15px;display:block}.yrs-isi td.top small{font-size:10px;color:var(--text-muted)}.yrs-isi td.fk{padding:0 4px}',
+        '.yrs-sen-gir{font:800 11.5px system-ui,sans-serif;padding:5px 7px;border-radius:8px;border:1px solid #fd8e01;background:transparent;color:#fd8e01;cursor:pointer;white-space:nowrap}.yrs-link{font:inherit;font-weight:800;color:#fd8e01;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}',
+        '.yrs-nabiz{display:inline-block;width:9px;height:9px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:yrsNabiz 1.6s infinite;flex:0 0 auto}@keyframes yrsNabiz{70%{box-shadow:0 0 0 8px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}',
+        '.yrs-cn-ikili{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;align-items:start}',
+        '.yrs-uyari{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;padding:9px 10px;border-radius:12px;background:var(--bg-main);margin-top:6px;font-size:13.5px;line-height:1.4}.yrs-uyari em{font-style:normal;font-size:18px}',
+        '.yrs-bar{width:100%;height:120px;display:block;margin-top:6px;color:var(--text-main)}.yrs-cn-detay{border-color:#fd8e01}',
+        '.yrs-cn-yari{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.yrs-cn-yari div{background:var(--bg-main);border-radius:10px;padding:7px 4px;text-align:center}.yrs-cn-yari b{display:block;font-size:19px;font-weight:900}.yrs-cn-yari small{font-size:9.5px;color:var(--text-muted);font-weight:800}',
+        '.yrs-cn-dag{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}.yrs-cn-dag span{flex:1 1 34px;text-align:center;font-size:11px;font-weight:900;border-radius:8px;padding:4px 0;display:grid}.yrs-cn-dag b{font-size:14px}',
+        '.yrs-cn-dag .s{background:#ffd43b;color:#3d2a00}.yrs-cn-dag .k{background:#ff6b6b;color:#3a0808}.yrs-cn-dag .b{background:#4dabf7;color:#06233d}.yrs-cn-dag .y{background:#343a40;color:#fff}.yrs-cn-dag .m{background:#868e96;color:#fff}',
+        '@media (prefers-reduced-motion:reduce){.yrs-nabiz{animation:none}}',
+        '@media (max-width:560px){.yrs-cn-yari{grid-template-columns:repeat(2,1fr)}.yrs-sekme-yonet{padding:10px 10px 90px}}',
         '@media (max-width:560px){.yrs-form{grid-template-columns:1fr}.yrs-sp{grid-template-columns:minmax(0,1fr) 70px auto}}'
     ].join('\n');
     document.head.appendChild(st);
