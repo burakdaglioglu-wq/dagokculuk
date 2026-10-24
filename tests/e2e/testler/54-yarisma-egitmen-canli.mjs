@@ -84,6 +84,14 @@ export default async function ({ log }) {
     // v313 · 📈 sezon karnesi
     dogrula(await p.evaluate((sp) => /Sezon karnesi · 1 yarışma/.test(yrsKarneHTML(sp[1].g, sp[1].ad)) && /250/.test(yrsKarneHTML(sp[1].g, sp[1].ad)), sp), 'sezon karnesi');
     await p.evaluate((sp) => { let s = turnuvaDB[sp[0].g][sp[0].ad]; s.seriler = (s.seriler || []).filter((x) => !String(x.seriId || '').startsWith('TESTBK')); }, sp);
+    // v314 · telefon: ısı haritası yerine sporcu kartları + analiz, hiçbir şey yana taşmaz; dokun → döküm kartın altında
+    await p.setViewportSize({ width: 375, height: 812 }); await p.evaluate(() => yrsYonetCiz()); await p.waitForTimeout(300);
+    const tl = await p.evaluate(() => { let e = document.getElementById('icerik-yarisma'), w = innerWidth, tas = [...e.querySelectorAll('*')].filter((x) => { let b = x.getBoundingClientRect(); return b.width && b.right > w + 1 && !x.closest('.yrs-isi-kap'); }).length; return { kart: e.querySelectorAll('.yrs-sk').length, tablo: e.querySelectorAll('.yrs-isi').length, analiz: e.querySelectorAll('.yrs-sk-analiz div').length, tas }; });
+    dogrula(tl.kart === 2 && tl.tablo === 0 && tl.analiz >= 3 && tl.tas === 0, 'telefon kart görünümü: ' + JSON.stringify(tl));
+    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-sk').click()); await p.waitForTimeout(200);
+    dogrula(await p.evaluate(() => { let k = document.querySelector('#icerik-yarisma .yrs-sk.acik'); return !!k && !!k.nextElementSibling && k.nextElementSibling.classList.contains('yrs-cn-detay'); }), 'kart altında seri dökümü açılmalı');
+    await p.evaluate(() => yrsCanliSec(null));
+    await p.setViewportSize({ width: 1280, height: 900 }); await p.waitForTimeout(300);
     // ← Yarışmalar → liste; ✏️ düzenle açılır
     await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yz-btn')].find((b) => /Yarışmalar/.test(b.textContent)).click());
     await p.waitForSelector('#icerik-yarisma .yrs-yar-duz', { state: 'attached' });
