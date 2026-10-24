@@ -28,7 +28,11 @@ export default async function ({ log }) {
     // ana ekranda kısa şerit, sekme düğmesi görünür (yalnız sporcu kimliğiyle)
     await p.waitForSelector('#yarisma-kart-ana .yrs-serit', { timeout: 15000, state: 'attached' });
     esit(await p.evaluate(() => document.getElementById('tab-yarisma').style.display), '', 'sporcuya Yarışma sekmesi görünmeli');
+    // v312: sekme önce sorar (Bugün atılanlar / Dün / Benim skorum / Tüm yarışmalar) → Benim skorum
     await p.evaluate(() => sekmeAc('yarisma'));
+    await p.waitForSelector('#icerik-yarisma .yrs-acilis .yrs-sec-kart', { timeout: 15000, state: 'attached' });
+    dogrula(/Benim skorum/.test(await p.locator('#icerik-yarisma').textContent()), 'sporcu açılışında Benim skorum yok');
+    await p.evaluate(() => yrsAcilisSec('benim'));
     await p.waitForSelector('#icerik-yarisma .yrs-hero', { timeout: 15000, state: 'attached' });
     const k = await p.evaluate(() => { let e = document.getElementById('icerik-yarisma'); return { metin: e.textContent, sayac: e.querySelectorAll('#yrs-sayac div').length, madde: e.querySelectorAll('.yrs-liste input').length, plan: e.querySelectorAll('.yrs-plan button').length, mod: e.querySelectorAll('.yrs-mod button').length }; });
     dogrula(/TEST Salon Yarışması/.test(k.metin) && /540/.test(k.metin) && /Rutini bozma/.test(k.metin), 'sekmede yarışma/hedef/not yok');

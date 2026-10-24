@@ -13,6 +13,10 @@ export default async function ({ log }) {
     await p.evaluate(() => { loggedInSporcu = null; aktifPlatform = 'egitmen'; tablariPlatformaGoreAyarla(); });
     esit(await p.evaluate(() => document.getElementById('tab-yarisma').style.display), '', 'eğitmende Yarışma sekmesi görünmeli');
     await p.evaluate(() => sekmeAc('yarisma'));
+    // v312: önce soru ekranı; eğitmende Benim skorum yok, Tüm yarışmalar → yönetim listesi
+    await p.waitForSelector('#icerik-yarisma .yrs-acilis .yrs-sec-kart', { timeout: 15000, state: 'attached' });
+    dogrula(!/Benim skorum/.test(await p.locator('#icerik-yarisma').textContent()), 'eğitmende Benim skorum olmamalı');
+    await p.evaluate(() => yrsAcilisSec('liste'));
     await p.waitForSelector('#icerik-yarisma .yrs-sekme-yonet .yrs-ana-btn', { timeout: 15000, state: 'attached' });
     await p.evaluate(() => { let o = {}; yrsListe().filter((y) => /^TEST/.test(y.ad)).forEach((y) => { o[y.id] = Object.assign({}, y, { sil: true }); }); if (Object.keys(o).length) yrsYaz('yarismalar', o); });
     const sp = await p.evaluate(() => yrsTumSporcular().slice(0, 2));
@@ -54,6 +58,16 @@ export default async function ({ log }) {
     // ← Yarışmalar → liste; ✏️ düzenle açılır
     await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yz-btn')].find((b) => /Yarışmalar/.test(b.textContent)).click());
     await p.waitForSelector('#icerik-yarisma .yrs-yar-duz', { state: 'attached' });
+    // 🔴 açılış → Bugün atılanlar: bugünkü yarışmanın ısı haritası gömülü (geri düğmesi yok, Düzenle var); Dün çipi boş
+    await p.evaluate(() => yrsAcilisSec(null));
+    await p.waitForSelector('#icerik-yarisma .yrs-sec-kart.ana', { state: 'attached' });
+    dogrula(/TEST Canlı Kupa/.test(await p.locator('#icerik-yarisma .yrs-sec-kart.ana').textContent()), 'Bugün atılanlar kartında yarışma yok');
+    await p.evaluate(() => document.querySelector('#icerik-yarisma .yrs-sec-kart.ana').click());
+    await p.waitForSelector('#icerik-yarisma .yrs-gun-blok .yrs-isi', { state: 'attached' });
+    const gv = await p.evaluate(() => { let e = document.getElementById('icerik-yarisma'); return { geri: /← Yarışmalar/.test(e.textContent), duz: /Düzenle/.test(e.textContent), cip: e.querySelectorAll('.yrs-gun-cip button').length }; });
+    esit([gv.geri, gv.duz, gv.cip].join(','), 'false,true,4', 'gün görünümü');
+    await p.evaluate(() => yrsGunSec('hafta'));
+    dogrula(await p.locator('#icerik-yarisma .yrs-yar', { hasText: 'TEST Canlı Kupa' }).count(), 'Bu hafta listesinde yarışma yok');
     // 📊 sporcu görünümü (v311): "Yarışma skorları" kartı herkesin ısı haritasını salt okunur açar (Düzenle / Gir yok)
     dogrula(await p.evaluate(() => /TEST Canlı Kupa/.test(yrsSkorKartHTML())), 'sporcu skor kartında bugünkü yarışma yok');
     await p.evaluate((yid) => yrsSonuclarAc(yid), yid);

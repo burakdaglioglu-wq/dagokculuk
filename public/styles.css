@@ -658,6 +658,14 @@
         .hedef-wrapper.panning { cursor: grabbing; transition: none; }
         .svg-hedef { width: 350px; aspect-ratio: 1/1; display: block; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: white; cursor: crosshair;}
         .svg-3spot { aspect-ratio: 11/25; max-height: 48vh; border-radius: 12px; background: #e2e8f0; width: 140px; }
+        /* 📱 3'lü "Yüz yüz" (v312): telefonda tek yüz ekranı kaplar, üstte 3 mini yüz (ucluYuzYuzUygula) */
+        body.uclu-yuz-yuz #hedef-svg-3spot { aspect-ratio: 1/1 !important; width: min(90vw, 50vh) !important; max-width: none !important; max-height: none !important; border-radius: 14px; }
+        body.uclu-yuz-yuz .hedef-scroll-container { max-height: none; }
+        #uclu-yuz-sec { display: flex; gap: 8px; justify-content: center; margin: 0 0 8px; }
+        #uclu-yuz-sec button { display: grid; justify-items: center; gap: 2px; padding: 4px 10px; border-radius: 12px; border: 2px solid var(--border-color); background: var(--bg-card); color: var(--text-muted); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+        #uclu-yuz-sec button svg { width: 42px; height: 42px; display: block; }
+        #uclu-yuz-sec button.dolu { border-color: #22c55e; }
+        #uclu-yuz-sec button.akt { border-color: var(--accent-orange); color: var(--text-main); box-shadow: 0 0 0 3px rgba(253,142,1,.2); }
 
         /* GÜVENLİ INPUTLAR VE BUTONLAR */
         .satir-inputs { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; margin-bottom: 10px;}

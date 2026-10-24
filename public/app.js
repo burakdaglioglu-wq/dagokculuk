@@ -30668,7 +30668,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(currentZoom <= 1.0) { panX = 0; panY = 0; }
             w.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
         }
-        function hedefGorunumSifirla() { currentZoom = 2.0; panX = 0; panY = 0; applyHedefTransform(); }
+        function hedefGorunumSifirla() { currentZoom = (typeof ucluYuzYuzMu === 'function' && ucluYuzYuzMu()) ? 1.0 : 2.0; panX = 0; panY = 0; applyHedefTransform(); }
 
         /* PARMAKLA KAYDIRMA + İKİ PARMAK PINCH ZOOM - tek dokunuş hâlâ skor girer */
         let pzPinchAktif = false, pzBaslangicMesafe = 0, pzBaslangicZoom = 1;
@@ -31097,7 +31097,35 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let uyari = document.getElementById('spot-uyari');
             if(uyari) uyari.innerHTML = cezaVar ? "⚠️ Aynı spota birden fazla ok düştü: büyük puanlı ok <b>karavana (M)</b> sayıldı." : "";
             try { if(!window._yrsGiris) canliAtisYayinla(); } catch(e) {}
+            try { ucluYuzYuzUygula(); } catch(e) {}
         }
+        // 📱 3'lü hedef "Yüz yüz" (v312, kullanıcı: "sporcu kendi girişinde 3'lü halka telefonda küçük görünüyor, rahat dokunarak
+        // giriş" → 3 taslaktan A). Telefonda (≤700 px) 3'lü kağıdın yalnız bir yüzü ekranı kaplar (viewBox o yüze odaklanır; puan /
+        // yüz hesabı hedefNokta'da değişmeden çalışır). Ok konunca ilk boş yüze geçer; üstte 3 mini yüz: hangisinde ok var, dokun → o yüz.
+        // Yakınlaştırma 1×'e iner (yüz zaten büyük). Antrenman ve yarışma modu (window._yrsGiris) aynı ekranı kullanır.
+        let _yy = { secili: null, sonSay: -1 };
+        function ucluYuzYuzMu() { let p = document.getElementById('skor-grid-paneli-baba'); return aktifHedefTipi === '3spot' && window.innerWidth <= 700 && !!p && p.style.display !== 'none'; }
+        function ucluYuzYuzUygula() {
+            let svg = document.getElementById('hedef-svg-3spot'); if(!svg) return;
+            let acik = ucluYuzYuzMu(), onceki = document.body.classList.contains('uclu-yuz-yuz'), bar = document.getElementById('uclu-yuz-sec');
+            document.body.classList.toggle('uclu-yuz-yuz', acik);
+            if(!acik) {
+                if(onceki) { svg.setAttribute('viewBox', '-110 -250 220 500'); currentZoom = 2.0; panX = 0; panY = 0; applyHedefTransform(); }
+                if(bar) bar.style.display = 'none';
+                return;
+            }
+            if(!onceki) { currentZoom = 1.0; panX = 0; panY = 0; applyHedefTransform(); }
+            if(anlikAtilanOklar.length !== _yy.sonSay) { _yy.sonSay = anlikAtilanOklar.length; _yy.secili = null; }
+            let oklar = anlikAtilanOklar.filter(o => o.tip === '3spot' && o.x != null), dolu = [0, 1, 2].map(i => oklar.some(o => o.spot === i));
+            let ilkBos = [0, 1, 2].find(i => !dolu[i]), aktif = _yy.secili != null ? _yy.secili : (ilkBos != null ? ilkBos : 2);
+            svg.setAttribute('viewBox', `-64 ${(aktif - 1) * 140 - 64} 128 128`);
+            if(!bar) { bar = document.createElement('div'); bar.id = 'uclu-yuz-sec'; let kap = svg.closest('.hedef-scroll-container'); if(!kap) return; kap.parentNode.insertBefore(bar, kap); }
+            bar.style.display = '';
+            let halka = [[60, 'var(--score-ring-blue)'], [50, 'var(--score-ring-blue)'], [40, 'var(--score-ring-red)'], [30, 'var(--score-ring-red)'], [20, 'var(--score-ring-yellow)'], [10, 'var(--score-ring-yellow)']];
+            bar.innerHTML = [0, 1, 2].map(i => `<button type="button" class="${i === aktif ? 'akt' : ''}${dolu[i] ? ' dolu' : ''}" onclick="ucluYuzSec(${i})" aria-label="Yüz ${i + 1}"><svg viewBox="-62 -62 124 124">${halka.map(h => `<circle r="${h[0]}" style="fill:${h[1]}" stroke="#222" stroke-width="1"></circle>`).join('')}${oklar.filter(o => o.spot === i).map(o => `<circle cx="${o.x}" cy="${o.y - (i - 1) * 140}" r="9" fill="#111827" stroke="#fff" stroke-width="3"></circle>`).join('')}</svg><span>Yüz ${i + 1}</span></button>`).join('');
+        }
+        function ucluYuzSec(i) { _yy.secili = i; ucluYuzYuzUygula(); }
+        window.addEventListener('resize', () => { try { if(aktifHedefTipi === '3spot') ucluYuzYuzUygula(); } catch(e) {} });
 
         // ============================================================
         // 🐇 TAVŞAN ATLET — hayali rakip sistemi
