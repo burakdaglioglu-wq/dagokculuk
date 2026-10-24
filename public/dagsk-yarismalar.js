@@ -91,7 +91,7 @@ function yrsSekme(grup, ad) {
     let k = grup + '|' + ad, bil = yrsSporcununki(k);
     _yrs.kim = { grup: grup, ad: ad };
     yrsSenkron(function () { if (document.getElementById('icerik-yarisma') && document.getElementById('icerik-yarisma').classList.contains('aktif')) yrsSekme(grup, ad); });
-    if (!bil.y) { el.innerHTML = '<div class="yrs"><div class="yrs-bos"><div style="font-size:44px">🏆</div><b>Yaklaşan yarışman yok</b><div class="yrs-alt">Koçun seni bir yarışmaya eklediğinde burada ön hazırlık ve maç zamanı açılır.</div></div>' + (bil.gecmis.length ? yrsGecmisHTML(bil.gecmis) : '') + '</div>'; return; }
+    if (!bil.y) { el.innerHTML = '<div class="yrs"><div class="yrs-bos"><div style="font-size:44px">🏆</div><b>Yaklaşan yarışman yok</b><div class="yrs-alt">Koçun seni bir yarışmaya eklediğinde burada ön hazırlık ve maç zamanı açılır.</div></div>' + (bil.gecmis.length ? yrsGecmisHTML(bil.gecmis) : '') + yrsSkorKartHTML() + '</div>'; return; }
     let y = bil.y, anahtar = y.id + '|' + k, hd = yrsOku('yarisma_hedef')[anahtar] || {}, sd = yrsOku('yarisma_sporcu')[anahtar] || {}, bugun = yrsBugun();
     let gecti = y.tarih < bugun, gunu = y.tarih === bugun;
     if (!_yrs.mod || _yrs.modY !== y.id) { _yrs.mod = (gunu || gecti || (sd.mac && (sd.mac.seriler || []).length)) ? 'mac' : 'hazirlik'; _yrs.modY = y.id; }
@@ -101,7 +101,7 @@ function yrsSekme(grup, ad) {
         + '<div class="yrs-bilgi">' + [y.mesafe ? '🎯 ' + y.mesafe : '', y.yuz ? '🧾 ' + (YRS_YUZ[y.yuz] || y.yuz) : '', y.kategori ? '🏷 ' + y.kategori : '', y.ok ? '🏹 ' + y.ok + ' ok' : ''].filter(Boolean).map(function (x) { return '<span>' + yrsEsc(x) + '</span>'; }).join('') + '</div></div>';
     let sec = '<div class="yrs-mod" role="tablist" aria-label="Yarışma modu"><button type="button" role="tab" aria-selected="' + (_yrs.mod === 'hazirlik') + '" class="' + (_yrs.mod === 'hazirlik' ? 'akt' : '') + '" onclick="yrsModSec(\'hazirlik\')"><b>🎒 Ön hazırlık</b><small>liste · hedef · plan · analiz</small></button><button type="button" role="tab" aria-selected="' + (_yrs.mod === 'mac') + '" class="' + (_yrs.mod === 'mac' ? 'akt' : '') + '" onclick="yrsModSec(\'mac\')"><b>⚔️ Maç zamanı</b><small>seri seri skor · tempo · nişangah</small></button></div>';
     let ic = _yrs.mod === 'mac' ? yrsMacHTML(y, anahtar, hd, sd) : yrsHazirlikHTML(y, k, anahtar, hd, sd);
-    el.innerHTML = '<div class="yrs">' + hero + sec + ic + (bil.gecmis.length ? yrsGecmisHTML(bil.gecmis) : '') + '</div>';
+    el.innerHTML = '<div class="yrs">' + hero + sec + ic + yrsSkorKartHTML() + (bil.gecmis.length ? yrsGecmisHTML(bil.gecmis) : '') + '</div>';
     yrsSayacBaslat();
 }
 function yrsModSec(m) { _yrs.mod = m; if (_yrs.kim) yrsSekme(_yrs.kim.grup, _yrs.kim.ad); }
@@ -302,13 +302,14 @@ function yrsSayacBaslat() {
 // ---------------------------------------------------------------- 🧑‍🏫 koç: yarışma yönetimi
 function yrsTumSporcular() { let r = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(function (g) { Object.keys((typeof turnuvaDB !== 'undefined' && turnuvaDB[g]) || {}).forEach(function (ad) { let sp = turnuvaDB[g][ad]; if (sp && !sp.pasif && !sp.donduruldu) r.push({ k: g + '|' + ad, g: g, ad: ad }); }); }); return r.sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); }); }
 function yrsYonetAc() {
+    if (_yrs.salt) { _yrs.salt = false; _yrs.canli = null; }
     yrsCss();
     let kap = document.getElementById('yrs-yonet');
     if (!kap) { kap = document.createElement('div'); kap.id = 'yrs-yonet'; kap.className = 'yrs-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yrsYonetKapat(); }); (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap); }
     _yrs.senkron = 0; yrsSenkron(function () { if (document.getElementById('yrs-yonet')) yrsYonetCiz(); });
     yrsYonetCiz();
 }
-function yrsYonetKapat() { let k = document.getElementById('yrs-yonet'); if (k) k.remove(); _yrs.duzenle = null; }
+function yrsYonetKapat() { let k = document.getElementById('yrs-yonet'); if (k) k.remove(); _yrs.duzenle = null; if (_yrs.salt) { _yrs.salt = false; _yrs.canli = null; _yrs.canliSec = null; } }
 function yrsYonetCiz() {
     let kap = document.getElementById('yrs-yonet'); if (!kap) return;
     let ust = kap.scrollTop, sekme = kap.classList.contains('yrs-sekme-yonet'), sar = function (ic, et) { return sekme ? '<div class="yrs-pen yrs-pen-sekme">' + ic + '</div>' : '<div class="yrs-pen" role="dialog" aria-modal="true" aria-label="' + et + '">' + ic + '</div>'; };
@@ -481,6 +482,7 @@ function yrsGirisKapat() {
 // Haritası: herkes × seriler tek tabloda (renk = seri puanı), ± antrenmana göre, Dikkat kutusu, kulüp seri ortalaması.
 // Yarışma günü açıkken 15 sn'de bir tazelenir (yalnız bu ekran açıkken).
 function yrsEgitmenSekme() {
+    if (_yrs.salt) { _yrs.salt = false; _yrs.canli = null; }
     let el = document.getElementById('icerik-yarisma'); if (!el) return;
     yrsCss();
     let m = document.getElementById('yrs-yonet'); if (m && !m.classList.contains('yrs-sekme-yonet')) m.remove();
@@ -537,7 +539,7 @@ function yrsCanliHTML(id) {
     let seriOk = +y.seriOk || 3, N = Math.ceil((+y.ok || 60) / seriOk), sat = yrsSatirlar(y), bugun = yrsBugun(), canli = y.tarih === bugun;
     let girdi = sat.filter(function (s) { return s.atilan || (s.sonuc && s.sonuc.puan); }), simdi = sat.filter(function (s) { return s.son && Date.now() - s.son < 4 * 60000 && !s.m.bitti; }).length;
     let ortTop = girdi.length ? Math.round(girdi.reduce(function (a, s) { return a + s.top; }, 0) / girdi.length) : 0, dusen = sat.filter(function (s) { return s.fark != null && s.fark <= -3; }).length;
-    let bas = '<div class="yrs-pen-bas"><div><button class="yz-btn" onclick="_yrs.canli=null;_yrs.canliSec=null;yrsYonetCiz()">← Yarışmalar</button></div><div class="yrs-cn-sag">' + (canli ? '<span class="yrs-canli-rozet">● CANLI</span>' : '') + '<button class="yz-btn" onclick="_yrs.senkron=0;yrsSenkron(yrsYonetCiz)" aria-label="Yenile">⟳</button><button class="yz-btn" onclick="yrsDuzenle(\'' + yrsE(y.id) + '\')">✏️ Düzenle</button></div></div>';
+    let salt = !!_yrs.salt, bas = '<div class="yrs-pen-bas"><div>' + (salt ? '<b>📊 Yarışma skorları</b>' : '<button class="yz-btn" onclick="_yrs.canli=null;_yrs.canliSec=null;yrsYonetCiz()">← Yarışmalar</button>') + '</div><div class="yrs-cn-sag">' + (canli ? '<span class="yrs-canli-rozet">● CANLI</span>' : '') + '<button class="yz-btn" onclick="_yrs.senkron=0;yrsSenkron(yrsYonetCiz)" aria-label="Yenile">⟳</button>' + (salt ? '<button class="yz-btn" onclick="yrsYonetKapat()" aria-label="Kapat">✕</button>' : '<button class="yz-btn" onclick="yrsDuzenle(\'' + yrsE(y.id) + '\')">✏️ Düzenle</button>') + '</div></div>';
     let hero = '<div class="yrs-hero yrs-cn-hero"><div class="yrs-yer">' + (canli ? '🏆 Bugün · ' : '🏆 ') + yrsTarihTR(y.tarih, true) + (y.saat ? ' · ' + yrsEsc(y.saat) : '') + '</div><h2>' + yrsEsc(y.ad) + '</h2><div class="yrs-bilgi">' + [y.mesafe ? '🎯 ' + y.mesafe : '', y.yuz ? '🧾 ' + (YRS_YUZ[y.yuz] || y.yuz) : '', y.kategori ? '🏷 ' + y.kategori : '', '🏹 ' + (+y.ok || 60) + ' ok · ' + N + ' seri'].filter(Boolean).map(function (x) { return '<span>' + yrsEsc(x) + '</span>'; }).join('') + '</div></div>';
     let tiles = '<div class="yrs-cn-tiles"><div><b>' + girdi.length + '<small>/' + sat.length + '</small></b><span>SONUÇ</span></div><div><b>' + (ortTop || '–') + '</b><span>KULÜP ORT.</span></div><div><b class="' + (dusen ? 'dus' : '') + '">' + dusen + '</b><span>ANTRENMANIN ALTINDA</span></div>' + (canli ? '<div><b class="' + (simdi ? 'ok' : '') + '">' + simdi + '</b><span>ŞU AN ATIYOR</span></div>' : '') + '</div>';
     if (!sat.length) return bas + hero + '<div class="yrs-kart yrs-alt">Bu yarışmaya sporcu eklenmemiş. ✏️ Düzenle → sporcu seç.</div>';
@@ -546,19 +548,19 @@ function yrsCanliHTML(id) {
         let td = ''; for (let i = 0; i < N; i++) { let v = s.st[i]; if (v == null) td += '<td class="bos"></td>'; else { let r = yrsHucreRenk(v, seriOk); td += '<td style="background:' + r[0] + ';color:' + r[1] + '" title="' + (i + 1) + '. seri: ' + (s.m.seriler[i] || []).join(' ') + '">' + v + '</td>'; } }
         let simdiAt = s.son && Date.now() - s.son < 4 * 60000 && !s.m.bitti;
         return '<tr class="' + (_yrs.canliSec === s.k ? 'sec' : '') + (s.atilan ? '' : ' girmedi') + '"><td class="ad"><button onclick="yrsCanliSec(\'' + yrsE(s.k) + '\')">' + (simdiAt ? '<i class="yrs-nabiz" title="Şu an atıyor"></i>' : s.m.bitti ? '🏁 ' : '') + yrsEsc(s.ad) + '</button></td>' + td
-            + '<td class="top">' + (s.atilan || (s.sonuc && s.sonuc.puan) ? '<b>' + s.top + '</b>' + (s.atilan && !s.m.bitti ? '<small>' + s.st.length + '/' + N + '</small>' : '') : (y.tarih <= bugun ? '<button class="yrs-sen-gir" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ Gir</button>' : '—')) + '</td><td class="fk">' + yrsFarkHTML(s.fark) + '</td></tr>';
+            + '<td class="top">' + (s.atilan || (s.sonuc && s.sonuc.puan) ? '<b>' + s.top + '</b>' + (s.atilan && !s.m.bitti ? '<small>' + s.st.length + '/' + N + '</small>' : '') : (y.tarih <= bugun && !salt ? '<button class="yrs-sen-gir" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ Gir</button>' : '—')) + '</td><td class="fk">' + yrsFarkHTML(s.fark) + '</td></tr>';
     }).join('');
     let tablo = '<div class="yrs-kart"><span class="yrs-etk">Seri ısı haritası · koyu yeşil = seri başı ' + Math.ceil(seriOk * 8) + '+ · koyu kırmızı = ' + Math.floor(seriOk * 2.7) + ' ve altı · ± = antrenman ortalamasına göre</span><div class="yrs-isi-kap"><table class="yrs-isi"><thead><tr><th class="ad"></th>' + th + '<th>TOP</th><th>±</th></tr></thead><tbody>' + satir + '</tbody></table></div><div class="yrs-alt" style="margin-top:6px">İsme dokun → seri dökümü' + (canli ? ' · sporcu seriyi kaydedince kutu dolar' : '') + '</div></div>';
     let sec = _yrs.canliSec && sat.find(function (s) { return s.k === _yrs.canliSec; });
     let detay = sec ? yrsCanliDetayHTML(y, sec, N) : '';
-    let dk = yrsDikkat(y, sat), dikkat = '<div class="yrs-kart"><span class="yrs-etk">⚡ Dikkat</span>' + (dk.length ? dk.map(function (u) { return '<div class="yrs-uyari"><em>' + u[1] + '</em><span>' + u[2] + (u[3] ? ' · <button class="yrs-link" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + u[3]) + '\')">sen gir</button>' : '') + '</span></div>'; }).join('') : '<div class="yrs-alt">' + (girdi.length ? 'Belirgin düşüş yok.' : 'Seriler girildikçe düşüş/yükseliş burada çıkar.') + '</div>') + '</div>';
+    let dk = yrsDikkat(y, sat), dikkat = '<div class="yrs-kart"><span class="yrs-etk">⚡ Dikkat</span>' + (dk.length ? dk.map(function (u) { return '<div class="yrs-uyari"><em>' + u[1] + '</em><span>' + u[2] + (u[3] && !_yrs.salt ? ' · <button class="yrs-link" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + u[3]) + '\')">sen gir</button>' : '') + '</span></div>'; }).join('') : '<div class="yrs-alt">' + (girdi.length ? 'Belirgin düşüş yok.' : 'Seriler girildikçe düşüş/yükseliş burada çıkar.') + '</div>') + '</div>';
     let kulupSt = []; for (let i = 0; i < N; i++) { let v = sat.filter(function (s) { return s.st[i] != null; }).map(function (s) { return s.st[i]; }); if (v.length) kulupSt.push(Math.round(v.reduce(function (a, b) { return a + b; }, 0) / v.length * 10) / 10); }
     let kulup = kulupSt.length ? '<div class="yrs-kart"><span class="yrs-etk">Kulüp seri ortalaması</span>' + yrsSeriBarSVG(kulupSt, seriOk, 320, 90) + '<div class="yrs-alt">Her seride sporcuların ortalaması · kesik çizgi = genel ortalama</div></div>' : '';
     return bas + hero + tiles + tablo + detay + '<div class="yrs-cn-ikili">' + dikkat + kulup + '</div>';
 }
 function yrsCanliDetayHTML(y, s, N) {
     let n = s.st.length, kap = '<button class="yz-btn" onclick="yrsCanliSec(null)" aria-label="Kapat">✕</button>';
-    let gir = y.tarih <= yrsBugun() && !s.m.bitti ? '<button class="yz-btn" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ ' + (n ? 'Seri ekle / düzelt' : 'Skor gir') + '</button>' : '';
+    let gir = y.tarih <= yrsBugun() && !s.m.bitti && !_yrs.salt ? '<button class="yz-btn" onclick="yrsGirisAc(\'' + yrsE(y.id + '|' + s.k) + '\')">✏️ ' + (n ? 'Seri ekle / düzelt' : 'Skor gir') + '</button>' : '';
     let ust = '<div class="yrs-bas"><span class="yrs-etk">📋 ' + yrsEsc(s.ad) + (s.m.bitti ? ' · 🏁 bitti' : n ? ' · ' + n + '/' + N + ' seri' : '') + '</span><span style="display:flex;gap:6px">' + gir + kap + '</span></div>';
     if (!n) return '<div class="yrs-kart yrs-cn-detay">' + ust + '<div class="yrs-alt">' + (s.sonuc && s.sonuc.puan ? 'Yalnız sonuç girilmiş: ' + s.sonuc.puan + ' puan.' : 'Henüz seri girilmedi.') + '</div></div>';
     let h = n >> 1, y1 = s.st.slice(0, h).reduce(function (a, b) { return a + b; }, 0), y2 = s.st.slice(h).reduce(function (a, b) { return a + b; }, 0);
@@ -580,6 +582,23 @@ function yrsCanliZamanla() {
         let once = JSON.stringify(yrsOku('yarisma_sporcu'));
         kyDepoSenkron('yarisma_sporcu', function () { return yrsOku('yarisma_sporcu'); }, false).then(function (t) { if (JSON.stringify(t) !== once && document.getElementById('yrs-yonet') && _yrs.canli && !_yrs.duzenle) yrsYonetCiz(); }).catch(function () {});
     }, 15000);
+}
+
+// 📊 Herkesin yarışma skorları (salt okunur, v311). Kullanıcı (2026-10-25): "PC'den skorları gördüm, telefondan girince yeni
+// seri gözüküyor" — telefon sporcu hesabıyla açıktı, sporcu görünümü yalnız kendi seri girişini gösteriyordu. Artık sporcu
+// görünümünde de bugünkü / son 10 gündeki yarışmaların canlı ısı haritası açılır (düzenle / gir düğmeleri olmadan).
+function yrsSkorKartHTML() {
+    let bugun = yrsBugun(), l = yrsListe().filter(function (y) { return y.tarih <= bugun && y.tarih >= yrsGunEkle(bugun, -10) && (y.katilimci || []).length; }).reverse();
+    if (!l.length) return '';
+    return '<div class="yrs-kart"><span class="yrs-etk">📊 Yarışma skorları · herkes</span><div class="yrs-skor-liste">' + l.slice(0, 4).map(function (y) { return '<button type="button" class="yrs-yar' + (y.tarih === bugun ? ' bugun' : '') + '" onclick="yrsSonuclarAc(\'' + yrsE(y.id) + '\')"><span class="yrs-yar-t"><b>' + yrsTarihTR(y.tarih).split(' ')[0] + '</b>' + yrsTarihTR(y.tarih).split(' ')[1].slice(0, 3) + '</span><span><b>' + (y.tarih === bugun ? '<span class="yrs-canli-rozet">● BUGÜN</span> ' : '') + yrsEsc(y.ad) + '</b><small>' + [y.mesafe, y.kategori, (y.katilimci || []).length + ' sporcu'].filter(Boolean).map(yrsEsc).join(' · ') + '</small></span><span class="yrs-ok">📊</span></button>'; }).join('') + '</div></div>';
+}
+function yrsSonuclarAc(id) {
+    yrsCss();
+    let kap = document.getElementById('yrs-yonet'); if (kap) kap.remove();
+    kap = document.createElement('div'); kap.id = 'yrs-yonet'; kap.className = 'yrs-arka'; kap.addEventListener('click', function (e) { if (e.target === kap) yrsYonetKapat(); }); document.body.appendChild(kap);
+    _yrs.salt = true; _yrs.canli = yrsD(id); _yrs.canliSec = null; _yrs.duzenle = null;
+    _yrs.senkron = 0; yrsSenkron(function () { if (document.getElementById('yrs-yonet')) yrsYonetCiz(); });
+    yrsYonetCiz();
 }
 
 // ---------------------------------------------------------------- stil
@@ -661,6 +680,7 @@ function yrsCss() {
         // Yarışma (KM) modülü yüklenmeden sekme açılınca .yz-btn/.yz-cip stilsiz kalmasın (aynı görünüm)
         '.yrs-pen .yz-btn{border:1px solid var(--border-color);background:var(--bg-panel);color:var(--text-main);border-radius:12px;padding:0 14px;min-height:42px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}',
         '.yrs-pen .yz-cip{border:1px solid var(--border-color);background:transparent;color:var(--text-muted);border-radius:999px;padding:0 13px;min-height:38px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}',
+        '.yrs-skor-liste{display:grid;gap:6px;margin-top:6px}',
         '.yrs-yar-sat{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:stretch}.yrs-yar-duz{min-width:48px}.yrs-yar.bugun{border-color:#fd8e01;background:rgba(253,142,1,.1)}',
         '.yrs-canli-rozet{display:inline-block;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;background:rgba(74,222,128,.16);color:#4ade80;letter-spacing:.04em;vertical-align:middle}',
         '.yrs-cn-sag{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.yrs-cn-hero{margin:0}.yrs-cn-hero h2{padding-right:0}',

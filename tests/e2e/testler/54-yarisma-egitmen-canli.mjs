@@ -54,6 +54,14 @@ export default async function ({ log }) {
     // ← Yarışmalar → liste; ✏️ düzenle açılır
     await p.evaluate(() => [...document.querySelectorAll('#icerik-yarisma .yz-btn')].find((b) => /Yarışmalar/.test(b.textContent)).click());
     await p.waitForSelector('#icerik-yarisma .yrs-yar-duz', { state: 'attached' });
+    // 📊 sporcu görünümü (v311): "Yarışma skorları" kartı herkesin ısı haritasını salt okunur açar (Düzenle / Gir yok)
+    dogrula(await p.evaluate(() => /TEST Canlı Kupa/.test(yrsSkorKartHTML())), 'sporcu skor kartında bugünkü yarışma yok');
+    await p.evaluate((yid) => yrsSonuclarAc(yid), yid);
+    await p.waitForSelector('#yrs-yonet.yrs-arka .yrs-isi', { state: 'attached' });
+    const ro = await p.evaluate(() => { let k = document.getElementById('yrs-yonet'); return { gir: k.querySelectorAll('.yrs-sen-gir, .yrs-link').length, duz: /Düzenle/.test(k.textContent), satir: k.querySelectorAll('.yrs-isi tbody tr').length }; });
+    esit([ro.gir, ro.duz, ro.satir].join(','), '0,false,2', 'salt okunur skor tablosu');
+    await p.evaluate(() => yrsYonetKapat());
+    esit(await p.evaluate(() => [!!document.getElementById('yrs-yonet'), !!_yrs.salt].join(',')), 'false,false', 'kapatınca salt okunur mod kalkmalı');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('🏆 eğitmen Yarışma sekmesi: yeni yarışma, canlı ısı haritası, Dikkat, seri dökümü, ✏️ Gir → Skor Gir yarışma modu ✓');
   } finally {
