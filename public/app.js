@@ -4199,9 +4199,11 @@
                 },
                 islemler(k) {
                     let a = esc(JSON.stringify(k.grup)), b = esc(JSON.stringify(k.ad)), sp = turnuvaDB[k.grup][k.ad] || {};
+                    let yrs = typeof yrsKartOzet === 'function' ? yrsKartOzet(k.grup, k.ad) : null;
                     // Sporcular & Skor'daki eski düğme yığını buraya taşındı (2026-10-21); 🔗 Canlı İzleme Linki kaldırıldı
                     return [
                         { et: '🎯 Skorları düzelt', alt: 'Aktif seriler ve geçmiş kartlar · ' + (sp.seriler || []).length + ' aktif seri, ' + (sp.kartGecmisi || []).length + ' kart', btn: 'Skorlar', fn: 'ynKartKapat(); ysSkorlaraGit(' + a + ',' + b + ')' },
+                        ...(yrs ? [{ et: '🏆 Yarışma skorları', alt: yrs, btn: 'Isı haritası', fn: 'yrsKarttanAc(' + a + ',' + b + ')' }] : []),
                         { et: '🔑 Giriş kodu', alt: 'Sporcunun uygulamaya giriş kodu · şu an ' + (String(sp.kod || sp.dogumYili || '—')), btn: 'Değiştir', fn: 'yoneticiKodSifirla(' + a + ',' + b + ')' },
                         { et: '📷 Fotoğraf', alt: (function() { let f = fotoBilgi(fotoAnahtar(k.grup, k.ad)) || {}; return (f.var ? 'Fotoğraf var' : 'Henüz fotoğraf yok') + ' · veli izni: ' + fotoIzinAd(f.izin); })(), btn: (fotoBilgi(fotoAnahtar(k.grup, k.ad)) || {}).var ? 'Değiştir' : 'Yükle', fn: 'ysFotoSec(' + a + ',' + b + ')' },
                         { et: '🪪 Sporcu kartı', alt: 'Fotoğraflı kart · QR ile velinin canlı karnesi · PNG, WhatsApp, PDF', btn: 'Kartı aç', fn: 'sporcuKartAc(' + a + ',' + b + ')' },

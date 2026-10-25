@@ -20,7 +20,31 @@ function yrsD(k) { try { return decodeURIComponent(k); } catch (e) { return k; }
 function yrsBugun() { return typeof bugunISO === 'function' ? bugunISO() : new Date().toISOString().slice(0, 10); }
 function yrsTarihTR(iso, gun) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); if (!m) return ''; let d = new Date(+m[1], +m[2] - 1, +m[3]); return +m[3] + ' ' + ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'][+m[2] - 1] + (gun ? ' ' + ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'][d.getDay()] : ''); }
 function yrsOku(a) { return typeof kyDepoOku === 'function' ? kyDepoOku(a) : {}; }
-function yrsYaz(a, kayitlar) { let d = yrsOku(a); Object.keys(kayitlar).forEach(function (k) { d[k] = Object.assign({}, kayitlar[k], { t: Date.now() }); }); if (typeof kyDepoYazYerel === 'function') kyDepoYazYerel(a, d); if (typeof kyDepoSenkron === 'function') kyDepoSenkron(a, function () { return yrsOku(a); }, true).catch(function () {}); }
+function yrsYaz(a, kayitlar) { let d = yrsOku(a); Object.keys(kayitlar).forEach(function (k) { d[k] = Object.assign({}, kayitlar[k], { t: Date.now() }); }); if (typeof kyDepoYazYerel === 'function') kyDepoYazYerel(a, d); yrsGonder(a, true); }
+// ☁️ Gönderim durumu (2026-10-25). Kullanıcı: "bugün ne anlık görebildim ne de çalıştı" — 25 Ekim yarışmasında sporcular
+// telefondan girdi ama sunucuya hiçbir skor ulaşmadı; telefon "✓" diyordu (yalnız navigator.onLine'a bakıyordu). Artık
+// skor giriş bandı gerçek durumu gösterir (gönderildi / telefonda bekliyor), bekleyen kayıt 15 sn'de bir yeniden denenir
+// ve dosya yüklenince bir kez sunucuyla birleştirilir (sunucuda olmayan yerel skorlar geri gönderilir).
+let _yrsGon = null; // null | 'gidiyor' | 'tamam' | 'bekliyor'
+function yrsBekleyenVar() { return typeof kyBekleyenler === 'function' && kyBekleyenler().some(function (a) { return /^yarisma/.test(a); }); }
+function yrsGonder(a, yaz) {
+    if (typeof kyDepoSenkron !== 'function') return Promise.resolve();
+    _yrsGon = 'gidiyor'; yrsGonderimGoster();
+    return kyDepoSenkron(a, function () { return yrsOku(a); }, yaz).catch(function () {}).then(function () { _yrsGon = yrsBekleyenVar() ? 'bekliyor' : 'tamam'; yrsGonderimGoster(); });
+}
+function yrsGonderimHTML() {
+    if (!_yrsGon) return '';
+    let b = _yrsGon === 'bekliyor', g = _yrsGon === 'gidiyor';
+    return '<div id="yrs-gonderim" class="yrs-gon ' + _yrsGon + '">' + (b ? '⚠️ İnternet yok — skorlar telefonda saklı, bağlanınca kendisi gönderecek' : g ? '☁️ gönderiliyor…' : '☁️ eğitmene gönderildi ✓') + '</div>';
+}
+function yrsGonderimGoster() { let el = document.getElementById('yrs-gonderim'); if (el) el.outerHTML = yrsGonderimHTML() || '<div id="yrs-gonderim"></div>'; }
+function yrsBekleyenleriGonder() {
+    if (!yrsBekleyenVar()) { if (_yrsGon === 'bekliyor') { _yrsGon = 'tamam'; yrsGonderimGoster(); } return; } // ortak kuyruk (kyBekleyenGonder) göndermiş olabilir
+    if (navigator.onLine !== false) kyBekleyenler().filter(function (a) { return /^yarisma/.test(a); }).forEach(function (a) { yrsGonder(a, true); });
+}
+setInterval(yrsBekleyenleriGonder, 15000);
+window.addEventListener('online', function () { setTimeout(yrsBekleyenleriGonder, 1000); });
+setTimeout(function () { if (typeof kyDepoSenkron === 'function') ['yarisma_sporcu', 'yarisma_hedef'].forEach(function (a) { if (Object.keys(yrsOku(a)).length) kyDepoSenkron(a, function () { return yrsOku(a); }, false).catch(function () {}); }); }, 4000);
 function yrsSenkron(sonra) {
     if (typeof kyDepoSenkron !== 'function' || Date.now() - _yrs.senkron < 45000) return;
     _yrs.senkron = Date.now();
@@ -420,6 +444,7 @@ function yrsGirisBantCiz() {
     if (!el) { el = document.createElement('div'); el.id = 'yrs-giris-bant'; let ref = document.getElementById('hizli-gecis-bar'); if (!ref) return; ref.insertAdjacentElement('beforebegin', el); }
     el.innerHTML = '<div class="yrs-gb-ust"><span><b>🏆 ' + yrsEsc(y.ad || 'Yarışma') + '</b><small>' + (bitti ? 'Bütün seriler girildi' : (m.seriler.length + 1) + '. seri / ' + N) + (tempo != null ? ' · hedef temposu ' + (tempo >= 0 ? '+' : '') + tempo : '') + '</small></span><span class="yrs-gb-say"><b>' + top + '</b><small>' + atilan + '/' + ok + ' ok</small></span></div>'
         + '<div class="yrs-gb-cubuk"><i style="width:' + Math.min(100, Math.round(m.seriler.length / N * 100)) + '%"></i></div>'
+        + (yrsGonderimHTML() || '<div id="yrs-gonderim"></div>')
         + (m.seriler.length ? '<div class="yrs-gb-seriler">' + m.seriler.slice(-8).map(function (s, i, l) { return '<span>' + yrsSeriToplam(s) + '</span>'; }).join('') + '<small>son seriler</small></div>' : '')
         + (bitti || atilan ? '<button type="button" class="yrs-gb-bitir' + (bitti ? ' tam' : '') + '" onclick="yrsGirisBitir()">🏁 Yarışmayı bitir · ' + top + ' puan</button>' : '');
     let b = document.getElementById('giris-paneli-baslik'); if (b) b.innerText = '🏆 ' + g.ad + ' · ' + (bitti ? 'tamam' : (m.seriler.length + 1) + '. seri');
@@ -451,7 +476,7 @@ function yrsGirisKaydet() {
     hedefGorseliGuncelle(false);
     try { sesCal(900, 0.12); } catch (e) {}
     let t = oklar.reduce(function (a, o) { return a + yrsDeger(o.p); }, 0);
-    if (typeof showToast === 'function') showToast(m.seriler.length + '. seri: ' + t + ' ✓' + (navigator.onLine ? '' : ' — internet gelince gönderilecek'), navigator.onLine ? 'success' : 'warning');
+    if (typeof showToast === 'function') showToast(m.seriler.length + '. seri: ' + t + ' kaydedildi', 'success');
     yrsGirisBantCiz();
     if (m.seriler.length >= N) yrsGirisBitir();
 }
@@ -861,6 +886,22 @@ async function yrsRaporPdf() {
     } catch (e) { if (typeof showToast === 'function') showToast('PDF hazırlanamadı.', 'error'); }
 }
 
+// 🏆 Yönetici sporcu kartı "Kayıt işlemleri" satırı (2026-10-25). Kullanıcı: "bugün Toprak için atışları göremedim" — kart yalnız
+// antrenman serilerini sayıyordu ("0 aktif seri"). Satır son yarışmayı özetler; dokununca o yarışmanın ısı haritası bu sporcu
+// açık hâlde gelir.
+function yrsSporcuYarismalari(g, ad) { let k = g + '|' + ad, bugun = yrsBugun(); return yrsListe().filter(function (y) { return y.tarih <= bugun && (y.katilimci || []).indexOf(k) !== -1; }).reverse(); }
+function yrsKartOzet(g, ad) {
+    let l = yrsSporcuYarismalari(g, ad); if (!l.length) return null;
+    let y = l[0], m = yrsMacVeri(yrsOku('yarisma_sporcu')[y.id + '|' + g + '|' + ad] || {}), top = m.seriler.reduce(function (a, s) { return a + yrsSeriToplam(s); }, 0);
+    return yrsTarihTR(y.tarih) + ' · ' + (m.seriler.length ? m.seriler.length + ' seri, ' + top + ' puan' + (m.bitti ? ' · bitti' : '') : 'sunucuya skor gelmedi') + (l.length > 1 ? ' · toplam ' + l.length + ' yarışma' : '');
+}
+function yrsKarttanAc(g, ad) {
+    let l = yrsSporcuYarismalari(g, ad); if (!l.length) return;
+    let t = document.querySelector('#icerik-yarisma .yrs-sekme-yonet'); if (t) t.remove(); // sekmedeki #yrs-yonet ile aynı id çakışmasın
+    _yrs.egitmen = true; yrsYonetAc();
+    _yrs.canli = l[0].id; _yrs.canliSec = g + '|' + ad; yrsYonetCiz();
+}
+
 // 📈 Sezon karnesi: sporcunun katıldığı yarışmalar (resmi puan > sonuç > uygulama toplamı), ok ortalaması çizgisi + antrenman
 // ortalaması (kesik) + liste. Sporcu profilinde (ekPanel), Benim skorum'da ve canlı tablodaki seri dökümünde görünür.
 function yrsKarneVeri(g, ad) {
@@ -964,6 +1005,7 @@ function yrsCss() {
         'body.yrs-giris-acik #hizli-gecis-bar,body.yrs-giris-acik [onclick="seriUzat()"],body.yrs-giris-acik #tavsan-ana-btn{display:none!important}',
         '#yrs-giris-bant{display:grid;gap:6px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(253,142,1,.28),rgba(253,142,1,.08));border:1px solid rgba(253,142,1,.55);color:var(--text-main)}',
         '.yrs-gb-ust{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.yrs-gb-ust b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yrs-gb-ust small{display:block;font-size:12px;color:var(--text-muted);font-weight:700}',
+        '.yrs-gon{margin-top:6px;padding:5px 9px;border-radius:9px;font-size:12px;font-weight:800;background:rgba(34,197,94,.14);color:#4ade80}.yrs-gon.gidiyor{background:rgba(148,163,184,.14);color:var(--text-muted)}.yrs-gon.bekliyor{background:rgba(245,158,11,.18);color:#fbbf24}',
         '.yrs-gb-say{text-align:right}.yrs-gb-say b{font-size:26px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}',
         '.yrs-gb-cubuk{height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden}.yrs-gb-cubuk i{display:block;height:100%;background:#fd8e01}',
         '.yrs-gb-seriler{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.yrs-gb-seriler span{font-size:12px;font-weight:900;padding:2px 7px;border-radius:7px;background:rgba(0,0,0,.25)}.yrs-gb-seriler small{font-size:10.5px;color:var(--text-muted);font-weight:700}',

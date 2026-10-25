@@ -11,6 +11,24 @@ import { unauthorized } from "../lib/json";
 // personel_bilgi / personel_odeme: eğitmen telefonu, IBAN, acil durum kişisi, ücret ve ödeme defteri (dagsk-personel.js, 2026-10-21).
 const OTURUMLU_META = new Set<string>(["kisi_notlari", "personel_ders_ucret", "yapilacak_tamam", "program_gecmis", "deneme_adaylari", "silinen_gizli", "kayitsiz_yoksay", "personel_bilgi", "personel_odeme"]);
 
+// Yarışma kayıtları ({ anahtar: { ..., t } }) birçok telefondan aynı anda yazılır. İstemci (kyDepoSenkron) GET → birleştir →
+// PUT yapıyor; iki telefon aynı anda GET yapınca ikinci PUT birincinin sporcusunu silebiliyordu (2026-10-25 yarışmasında hiçbir
+// sporcunun skoru sunucuya ulaşmamıştı). Bu anahtarlarda sunucu da kayıt başına birleştirir: daha yeni t kazanır, hiçbir kayıt düşmez
+// (silme zaten sil:true işaretiyle yapılıyor).
+const KAYIT_BIRLESTIR = new Set<string>(["yarisma_sporcu", "yarisma_hedef", "yarismalar"]);
+type Kayitlar = Record<string, { t?: number } | null>;
+function kayitBirlestir(eski: string | null, gelen: string): string | null {
+  let a: Kayitlar, b: Kayitlar;
+  try { a = eski ? JSON.parse(eski) : {}; b = JSON.parse(gelen); } catch { return null; }
+  if (!a || typeof a !== "object" || Array.isArray(a) || !b || typeof b !== "object" || Array.isArray(b)) return null;
+  const m: Kayitlar = { ...a };
+  for (const k of Object.keys(b)) {
+    const x = b[k];
+    if (x && (!m[k] || (x.t ?? 0) > (m[k]?.t ?? 0))) m[k] = x;
+  }
+  return JSON.stringify(m);
+}
+
 interface CredentialsRow {
   yonetici_hash: string;
   egitmen_hash: string;
@@ -47,6 +65,13 @@ export function registerMetaRoutes(router: Router): void {
     if (OTURUMLU_META.has(params.key) && !(await yetkiliOturum(request, env, false))) return unauthorized();
     const body = await readJson<{ value: string }>(request);
     if (typeof body.value !== "string") return badRequest("value is required");
+    if (KAYIT_BIRLESTIR.has(params.key)) {
+      const yeni = kayitBirlestir(await metaDb.getMeta(env, params.key), body.value);
+      if (yeni !== null) {
+        await metaDb.setMeta(env, params.key, yeni);
+        return json({ applied: true });
+      }
+    }
     await metaDb.setMeta(env, params.key, body.value);
     return json({ applied: true });
   });

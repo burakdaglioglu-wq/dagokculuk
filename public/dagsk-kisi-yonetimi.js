@@ -27,16 +27,23 @@ function kyDepoBirlestir(a, b) {
 // SIRAYLA çalışır (hızlı aç-kapa'da eski içerikli bir PUT'un yenisinin üstüne yazmaması için) ve her adım
 // yereli o anki haliyle okur (yerelAl).
 let _kySenkronZincir = {};
+// Zayıf mobil internette (yarışma salonu) bir istek dakikalarca askıda kalıp aynı anahtarın sıradaki bütün senkronlarını
+// bekletiyordu → 12 sn'de kesilir; GET kesilirse "internet yok" sayılır, PUT kesilirse anahtar bekleyenlere girer.
+function kyFetch(url, o) {
+    if (typeof AbortController !== 'function') return fetch(url, o);
+    let c = new AbortController(), z = setTimeout(() => c.abort(), 12000);
+    return fetch(url, Object.assign({}, o, { signal: c.signal })).finally(() => clearTimeout(z));
+}
 function kyDepoSenkron(anahtar, yerelAl, yazmaGerek, buda) {
     let al = typeof yerelAl === 'function' ? yerelAl : () => yerelAl;
-    let adim = () => fetch('/api/meta/' + anahtar).then(r => r.json()).catch(() => null).then(d => {
+    let adim = () => kyFetch('/api/meta/' + anahtar).then(r => r.json()).catch(() => null).then(d => {
         let uzak = {}; try { uzak = d && d.value ? JSON.parse(d.value) : {}; } catch (e) {}
         let tum = kyDepoBirlestir(uzak, al());
         if (buda) tum = buda(tum);
         kyDepoYazYerel(anahtar, tum);
         let fark = JSON.stringify(tum) !== JSON.stringify(uzak);
         if (d === null) { if (yazmaGerek || kyBekleyenler().includes(anahtar)) kyBekleyenEkle(anahtar); return tum; } // internet yok → sonra gönder
-        if (fark || yazmaGerek) return fetch('/api/meta/' + anahtar, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(tum) }) })
+        if (fark || yazmaGerek) return kyFetch('/api/meta/' + anahtar, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value: JSON.stringify(tum) }) })
             .then(r => { if (r && r.ok) kyBekleyenSil(anahtar); else kyBekleyenEkle(anahtar); }, () => kyBekleyenEkle(anahtar)).then(() => tum);
         kyBekleyenSil(anahtar);
         return tum;
