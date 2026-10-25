@@ -43,6 +43,7 @@ import { registerTeknikAnalizRoutes } from "./routes/teknikAnaliz";
 import { registerKmOrtakRoutes } from "./routes/kmOrtak";
 import { registerYayinRoutes } from "./routes/yayin";
 import { registerFotoRoutes } from "./routes/fotolar";
+import { registerSporcuGirisRoutes } from "./routes/sporcuGiris";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { checkAndSendYarismaReminders } from "./lib/yarismaHatirlatma";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
@@ -89,6 +90,7 @@ registerTeknikAnalizRoutes(router);
 registerKmOrtakRoutes(router);
 registerYayinRoutes(router);
 registerFotoRoutes(router);
+registerSporcuGirisRoutes(router);
 registerGirisRoutes(router, "/api/giris", (env) => env.DB);
 registerGirisRoutes(router, "/api/milo/giris", (env) => env.DB_MILO);
 
@@ -124,6 +126,9 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   "/api/tanitim/talep",
   "/api/ihtiyac",
   "/api/milo/sporcu-girisi",
+  // Sporcu girişi bildirimi + sporcunun kendi fotoğrafı: oturum yok, sunucu ad + kodu athletes tablosundan kontrol eder.
+  "/api/sporcu-giris",
+  "/api/foto-sporcu",
   // Form Lab telefondan yayın: telefon sayfası (kamera.html) oturumsuz; her istek oda kodu + gizli anahtar ister.
   "/api/yayin",
   "/api/yayin/:kod/teklif",
@@ -150,6 +155,7 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/ihtiyac",
   "/api/tanitim/ziyaret-ozet",
   "/api/athlete-moves/kopuk",
+  "/api/sporcu-girisler",
   "/api/milo/dues",
   "/api/milo/personnel",
   "/api/milo/attendance/personnel",

@@ -1,6 +1,7 @@
 import type { Router } from "../router";
 import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json";
 import { yetkiliOturum } from "../auth";
+import { sporcuKodDogru } from "./sporcuGiris";
 
 // 📷 Profil fotoğrafları (2026-10-21) — bkz. migrations/0044_fotolar.sql.
 //   GET  /api/fotolar          { fotolar: { anahtar: { t, izin, var } } } — küçük sürüm listesi (girişsiz okunur; görsel içermez)
@@ -22,7 +23,10 @@ export function registerFotoRoutes(router: Router): void {
     const r = await env.DB.prepare("SELECT * FROM fotolar WHERE anahtar = ?").bind(params.anahtar).first<FotoRow>();
     if (!r || !r.veri) return notFound("foto yok");
     const acik = r.izin === 1;
-    if (!acik && !(await yetkiliOturum(request, env, false))) return unauthorized("izin-yok");
+    // sporcu kendi fotoğrafını (veli izni yokken de) ?sk=<giriş kodu> ile görür
+    const sk = new URL(request.url).searchParams.get("sk");
+    const kendi = !acik && !!sk && params.anahtar.startsWith("s:") && (await (async () => { const i = params.anahtar.indexOf("|"); return sporcuKodDogru(env, params.anahtar.slice(2, i), params.anahtar.slice(i + 1), sk); })());
+    if (!acik && !kendi && !(await yetkiliOturum(request, env, false))) return unauthorized("izin-yok");
     const m = /^data:(image\/[a-z]+);base64,(.*)$/.exec(r.veri);
     if (!m) return notFound("foto bozuk");
     const bin = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));

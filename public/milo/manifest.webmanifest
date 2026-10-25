@@ -1,0 +1,15 @@
+{
+  "id": "/milo/",
+  "name": "MILO FITT KIDS",
+  "short_name": "MILO",
+  "lang": "tr",
+  "start_url": "/milo/",
+  "scope": "/milo/",
+  "display": "standalone",
+  "background_color": "#0b0a08",
+  "theme_color": "#0b0a08",
+  "icons": [
+    { "src": "/milo/ikon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/milo/ikon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -88,18 +88,39 @@ function fotoCss() {
 #foto-pencere .fp-izin{display:flex;flex-direction:column;gap:6px;border:1px solid #2b313b;border-radius:12px;padding:10px 12px}`;
     document.head.appendChild(s);
 }
-function fotoYukleAc(k, ad, sonra) {
+// 🙋 Sporcu kendi fotoğrafını değiştirir (2026-10-25, kullanıcı: "profil fotolarını kendileri değiştirebilsinler"). Aynı pencere,
+// veli izni bölümü yok (izin yalnız yönetici); kayıt PUT /api/foto-sporcu (ad + giriş kodu sunucuda kontrol edilir). Fotoğraf hemen
+// geçerli; izin yoksa sporcu kendi fotoğrafını ?sk=kod ile görür.
+function sporcuKendiKod(sp) { return String((sp && (sp.kod || sp.dogumYili)) || '').trim(); }
+function sporcuKendiFotoSrc(g, ad, sp) {
+    let k = fotoAnahtar(g, ad), f = _fotoListe[k]; if (!f || !f.var) return '';
+    if (f.izin === 1) return fotoSrc(k, false);
+    let kod = sporcuKendiKod(sp); return kod ? '/api/foto/' + encodeURIComponent(k) + '?v=' + f.t + '&sk=' + encodeURIComponent(kod) : '';
+}
+function sporcuFotoDegistir() {
+    let ad = typeof loggedInSporcu !== 'undefined' ? loggedInSporcu : null; if (!ad) return;
+    let f = typeof basariSporcuBul === 'function' ? basariSporcuBul(ad) : null; if (!f) return;
+    fotoYukleAc(fotoAnahtar(f.grup, ad), ad, () => { try { sporcuAnaDoldur(); } catch (e) {} }, { g: f.grup, ad, kod: sporcuKendiKod(f.sp) });
+}
+// fotoğraf listesi geç gelirse / değişirse sporcunun ana ekranındaki avatar yenilensin
+window.addEventListener('dag-foto', () => { try { let a = document.getElementById('icerik-ana'); if (loggedInSporcu && a && a.classList.contains('aktif')) sporcuAnaDoldur(); } catch (e) {} });
+function fotoSporcuKaydet(s, veri) {
+    return fetch('/api/foto-sporcu', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup: s.g, ad: s.ad, kod: s.kod, veri }) })
+        .then(r => r.json().catch(() => ({})).then(d => { if (!r.ok || !d.applied) throw new Error(r.status === 401 ? (d.error === 'kapali' ? 'girişin kapalı' : 'giriş kodun değişmiş — çıkış yapıp yeniden gir') : (d.error || 'internet yok ya da kaydedilemedi')); return d; }))
+        .then(d => { let k = fotoAnahtar(s.g, s.ad); _fotoListe[k] = { t: d.t, izin: d.izin, var: d.var }; try { localStorage.setItem('dag_fotolar', JSON.stringify(_fotoListe)); } catch (e) {} _fotoSporcuyaYaz(); fotoDegisti(); return d; });
+}
+function fotoYukleAc(k, ad, sonra, sporcu) {
     fotoCss();
     let f = _fotoListe[k] || {};
-    Object.assign(FY, { k, ad, sonra, img: null, x: 0, y: 0, z: 1, izin: f.izin === 1 || f.izin === 0 ? f.izin : null, surukle: null });
+    Object.assign(FY, { k, ad, sonra, sporcu: sporcu || null, img: null, x: 0, y: 0, z: 1, izin: f.izin === 1 || f.izin === 0 ? f.izin : null, surukle: null });
     let a = document.getElementById('foto-pencere'); if (!a) { a = document.createElement('div'); a.id = 'foto-pencere'; document.body.appendChild(a); }
     a.onclick = e => { if (e.target === a) fotoYukleKapat(); };
     a.innerHTML = `<div class="fp" role="dialog" aria-modal="true" aria-label="${esc(ad)} fotoğrafı">
         <h3>📷 ${esc(ad)}</h3>
-        <div class="fp-kirp" id="fp-kirp"${f.var ? ` style="${fotoStil(k, true)}"` : ''}>${f.var ? '' : esc(String(ad || '?').trim().split(/\s+/).slice(0, 2).map(s => s.charAt(0)).join(''))}</div>
+        <div class="fp-kirp" id="fp-kirp"${f.var ? ` style="${sporcu ? (s => s ? "background-image:url('" + s + "');background-size:cover;background-position:center;color:transparent;" : '')(sporcuKendiFotoSrc(sporcu.g, sporcu.ad, { kod: sporcu.kod })) : fotoStil(k, true)}"` : ''}>${f.var ? '' : esc(String(ad || '?').trim().split(/\s+/).slice(0, 2).map(s => s.charAt(0)).join(''))}</div>
         <div id="fp-zoom" style="display:none"><small>Yakınlaştır — fotoğrafı parmağınla kaydırıp yüzü daireye ortala</small><input type="range" min="1" max="3" step="0.01" value="1" oninput="FY.z=+this.value; fotoCiz()"></div>
         <div class="fp-btnlar"><button onclick="fotoSec(true)">📷 Kamerayla çek</button><button onclick="fotoSec(false)">🖼 Galeriden seç</button></div>
-        <div class="fp-izin"><b style="font-size:13.5px">${k.indexOf('p:') === 0 ? 'Fotoğraf kullanım izni' : 'Veli fotoğraf izni'}</b><small>İzin varsa fotoğraf TV'de, Karışık Sınıf'ta ve oyunlarda görünür. Yoksa yalnız yönetici ekranında.</small>
+        ${sporcu ? '<small>Yüzün ortada, ışık önden gelsin. Kaydedince profilinde hemen görünür.</small>' : ''}<div class="fp-izin"${sporcu ? ' style="display:none"' : ''}><b style="font-size:13.5px">${k.indexOf('p:') === 0 ? 'Fotoğraf kullanım izni' : 'Veli fotoğraf izni'}</b><small>İzin varsa fotoğraf TV'de, Karışık Sınıf'ta ve oyunlarda görünür. Yoksa yalnız yönetici ekranında.</small>
             <div class="fp-btnlar" id="fp-izin">${[[1, '✓ Var'], [0, '✗ Yok']].map(x => `<button aria-pressed="${FY.izin === x[0]}" onclick="FY.izin=${x[0]}; document.querySelectorAll('#fp-izin button').forEach((b,i)=>b.setAttribute('aria-pressed', i===${x[0] === 1 ? 0 : 1})); fotoDugmeler()">${x[1]}</button>`).join('')}</div></div>
         <div class="fp-btnlar"><button onclick="fotoYukleKapat()">Vazgeç</button>${f.var ? '<button class="tehlike" onclick="fotoKaldir()">🗑 Kaldır</button>' : ''}<button class="ana" id="fp-kaydet" onclick="fotoYukleKaydet()">💾 Kaydet</button></div>
     </div>`;
@@ -110,6 +131,7 @@ function fotoYukleAc(k, ad, sonra) {
 function fotoDugmeler() {
     let b = document.getElementById('fp-kaydet'); if (!b) return;
     let f = _fotoListe[FY.k] || {};
+    if (FY.sporcu) { b.disabled = !FY.img; b.textContent = FY.img ? '💾 Fotoğrafı kaydet' : 'Önce fotoğraf seç'; return; }
     b.disabled = FY.izin === null || (!FY.img && FY.izin === f.izin);
     b.textContent = FY.img ? '💾 Fotoğrafı kaydet' : f.var ? '💾 İzni kaydet' : '💾 Yalnız izni kaydet';
 }
@@ -165,8 +187,8 @@ function fotoSurukleBagla(el) {
     el.onwheel = e => { e.preventDefault(); FY.z = Math.max(1, Math.min(3, FY.z - e.deltaY * 0.002)); let r = document.querySelector('#fp-zoom input'); if (r) r.value = FY.z; fotoCiz(); };
 }
 function fotoYukleKaydet() {
-    if (FY.izin === null) return showToast('Veli izni var mı, seç.', 'error');
-    let govde = { izin: FY.izin };
+    if (FY.izin === null && !FY.sporcu) return showToast('Veli izni var mı, seç.', 'error');
+    let govde = FY.sporcu ? {} : { izin: FY.izin };
     if (FY.img) {
         let c = document.createElement('canvas'); c.width = c.height = FY_CIKTI;
         let k = fotoKesit(); c.getContext('2d').drawImage(FY.img, k.sx, k.sy, k.kenar, k.kenar, 0, 0, FY_CIKTI, FY_CIKTI);
@@ -174,12 +196,12 @@ function fotoYukleKaydet() {
     }
     let b = document.getElementById('fp-kaydet'); if (b) { b.disabled = true; b.textContent = 'Kaydediliyor…'; }
     let sonra = FY.sonra;
-    fotoKaydet(FY.k, govde).then(() => { fotoYukleKapat(); showToast(govde.veri ? '📷 Fotoğraf kaydedildi' : '✓ İzin kaydedildi', 'success'); if (sonra) try { sonra(); } catch (e) {} })
+    (FY.sporcu ? fotoSporcuKaydet(FY.sporcu, govde.veri) : fotoKaydet(FY.k, govde)).then(() => { fotoYukleKapat(); showToast(govde.veri ? '📷 Fotoğraf kaydedildi' : '✓ İzin kaydedildi', 'success'); if (sonra) try { sonra(); } catch (e) {} })
         .catch(e => { showToast('Kaydedilemedi: ' + e.message, 'error'); if (b) { b.disabled = false; b.textContent = '💾 Kaydet'; } });
 }
 function fotoKaldir() {
-    let k = FY.k, sonra = FY.sonra;
-    onayIste('Fotoğraf kaldırılsın mı?', () => fotoKaydet(k, { veri: null }).then(() => { fotoYukleKapat(); showToast('Fotoğraf kaldırıldı', 'success'); if (sonra) try { sonra(); } catch (e) {} }).catch(e => showToast('Kaldırılamadı: ' + e.message, 'error')), '🗑 Kaldır');
+    let k = FY.k, sonra = FY.sonra, sporcu = FY.sporcu;
+    onayIste('Fotoğraf kaldırılsın mı?', () => (sporcu ? fotoSporcuKaydet(sporcu, null) : fotoKaydet(k, { veri: null })).then(() => { fotoYukleKapat(); showToast('Fotoğraf kaldırıldı', 'success'); if (sonra) try { sonra(); } catch (e) {} }).catch(e => showToast('Kaldırılamadı: ' + e.message, 'error')), '🗑 Kaldır');
 }
 function fotoIzinYaz(k, izin) { return fotoKaydet(k, { izin: izin === '1' || izin === 1 ? 1 : izin === '0' || izin === 0 ? 0 : null }); }
 

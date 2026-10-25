@@ -7426,9 +7426,30 @@
                     setTimeout(() => { if(veliBeklenen) { veliGiris(veliBeklenen.ad, veliBeklenen.kod); veliBeklenen = null; } }, 2500);
                 }
             } catch(e) {}
+            // 🔑 GİRİŞ LİNKİ (2026-10-25, yönetici → Sporcu Girişleri → 📤 / QR kart): ?sg=AD&sk=KOD → doğrudan sporcu girişi, beni
+            // hatırla açık. Yeni telefonda sporcu listesi buluttan gelene kadar 20 sn boyunca saniyede bir denenir.
+            let _sgLink = null;
+            try {
+                let params = new URLSearchParams(location.search);
+                if(params.get('sg')) {
+                    _sgLink = { ad: params.get('sg'), kod: params.get('sk') || '' };
+                    let ks = document.getElementById('kulup-secim-ekrani'); if(ks) ks.style.display = 'none'; // link DAĞ'ın — kulüp seçimi sorulmaz
+                    let hedef = turkceNormalize(_sgLink.ad);
+                    let dene = (n) => {
+                        let var_ = ['buyukler', 'yildizlar', 'kucukler', 'minikler'].some(g => Object.keys(turnuvaDB[g] || {}).some(i => turkceNormalize(i) === hedef));
+                        if(!var_ && n > 0) return setTimeout(() => dene(n - 1), 1000);
+                        if(loggedInSporcu) return;
+                        let adEl = document.getElementById('sporcu-giris-ad'), kodEl = document.getElementById('sporcu-giris-kod');
+                        if(adEl) adEl.value = _sgLink.ad; if(kodEl) kodEl.value = _sgLink.kod;
+                        aktifPlatform = 'sporcu'; sporcuGirisDene();
+                        try { history.replaceState(null, '', location.pathname); } catch(e) {}
+                    };
+                    setTimeout(() => dene(20), 1500);
+                }
+            } catch(e) {}
             // BENİ HATIRLA: kayıtlı sporcu varsa (veli QR yoksa) otomatik giriş yap
             try {
-                if(!veliBeklenen) {
+                if(!veliBeklenen && !_sgLink) {
                     let k = hatirlaOku();
                     if(k && k.ad) { setTimeout(() => { try { if(!loggedInSporcu && document.getElementById('giris-ekrani').style.display !== 'none') hatirlaGiris(); } catch(e) {} }, 500); }
                 }
@@ -7497,6 +7518,9 @@
             });
             if(!bulundu) return showToast('Ad veya kod hatalı. (Kod yoksa doğum yılını dene)', 'error');
             if(turnuvaDB[bulunanGrup][bulundu].donduruldu) return showToast('⛔ Hesabın donduruldu. Lütfen antrenörün / yöneticinle iletişime geç.', 'error');
+            if(_sgKapaliListe().includes(bulunanGrup + '|' + bulundu)) { // bu telefonda kapalı biliniyor → sunucuya sor, yönetici açtıysa gir
+                return sgGirisBildir(bulunanGrup, bulundu, kod).then(d => { if(d && d.ok) sporcuGirisDene(); else showToast('⛔ Uygulama girişin kapalı. Antrenörünle konuş.', 'error'); });
+            }
             loggedInSporcu = bulundu; aktifGrup = bulunanGrup; aktifPlatform = 'sporcu';
             try { if(window.dagskSync && window.dagskSync.pushAboneOl) window.dagskSync.pushAboneOl(bulunanGrup, bulundu); } catch(e) {}
             try { duelloPollingBaslat(); } catch(e) {}
@@ -7510,7 +7534,22 @@
             try { siralamaListesiDoldur(); } catch(e) {}
             tablariPlatformaGoreAyarla(); // içerikler dolduktan sonra tekrar uygula (garanti)
             try { let chk = document.getElementById('beni-hatirla-chk'); if(!chk || chk.checked) hatirlaKaydet(bulundu, kod, bulunanGrup); else hatirlaTemizle(); } catch(e) {}
+            sgGirisBildir(bulunanGrup, bulundu, kod);
             showToast(`Hoş geldin, ${bulundu}! 🎯`, 'success');
+        }
+        // 🔑 Sporcu girişleri (2026-10-25, yönetici → Sporcu Girişleri / dagsk-sporcu-giris.js): her giriş sunucuya bildirilir
+        // (yönetici son girişi ve hiç girmeyenleri görür). Yönetici girişi kapattıysa sunucu "kapali" der → oturum kapanır ve
+        // bu telefonda internetsiz de açılmaz (dag_giris_kapali). Girişin kendisi yine telefonda; internet yoksa engellemez.
+        function _sgKapaliListe() { try { return JSON.parse(localStorage.getItem('dag_giris_kapali') || '[]') || []; } catch(e) { return []; } }
+        function sgGirisBildir(grup, ad, kod) {
+            if(!kod) return Promise.resolve(null);
+            return fetch('/api/sporcu-giris', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ grup, ad, kod }) }).then(r => r.json()).then(d => {
+                let a = grup + '|' + ad, l = _sgKapaliListe().filter(x => x !== a);
+                if(d && d.kapali) l.push(a); else if(!d || !d.ok) return d;
+                try { localStorage.setItem('dag_giris_kapali', JSON.stringify(l)); } catch(e) {}
+                if(d.kapali && loggedInSporcu === ad) { showToast('⛔ Uygulama girişin kapatıldı. Antrenörünle konuş.', 'error'); setTimeout(() => { try { sporcuCikis(); } catch(e) {} }, 2500); }
+                return d;
+            }).catch(() => null);
         }
         function hatirlaKaydet(ad, kod, grup) { try { localStorage.setItem('okculuk_hatirla', JSON.stringify({ ad, kod, grup })); } catch(e) {} }
         function hatirlaTemizle() { try { localStorage.removeItem('okculuk_hatirla'); } catch(e) {} }
@@ -7534,6 +7573,8 @@
             ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(g => { let db = turnuvaDB[g] || {}; Object.keys(db).forEach(isim => { if(turkceNormalize(isim) === ad) { let sp = db[isim]; let dk = String(sp.kod || sp.dogumYili || '').trim(); if(!kod || dk === String(kod).trim()) { bulundu = isim; grup = g; } } }); });
             if(!bulundu) { showToast('QR/bağlantı geçersiz — sporcu bulunamadı.', 'error'); return false; }
             if(turnuvaDB[grup][bulundu].donduruldu) { showToast('⛔ Bu hesap donduruldu. Antrenörle iletişime geçin.', 'error'); return false; }
+            if(_sgKapaliListe().includes(grup + '|' + bulundu)) { sgGirisBildir(grup, bulundu, kod).then(d => { if(d && d.ok) veliGiris(ad, kod); else showToast('⛔ Bu hesabın girişi kapalı. Antrenörle iletişime geçin.', 'error'); }); return false; }
+            sgGirisBildir(grup, bulundu, kod);
             loggedInSporcu = bulundu; aktifGrup = grup; aktifPlatform = 'sporcu';
             try { document.getElementById('aktif-grup-etiket').innerText = (aktifGrup === 'buyukler' ? 'BÜYÜKLER' : 'KÜÇÜKLER'); } catch(e) {}
             let ge = document.getElementById('giris-ekrani'); if(ge) ge.style.display = 'none';
@@ -8264,7 +8305,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
             ['PERSONEL', [['kisiler','🪪','Eğitmen & Misafir']]],
             ['ANTRENMAN', [['bugunskor','🎯','Skor Girenler'],['yoklama','✅','Yoklama'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
@@ -8389,7 +8430,7 @@
             try { let la = document.getElementById('yonetici-liste'); if(la) { if(k === 'yoklama') sadeYoklamaCss(); la.classList.toggle('sade-yok', k === 'yoklama'); } } catch(e) {}
             let arama = document.getElementById('yonetici-arama');
             let ligBar = document.getElementById('yon-lig-bar');
-            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
+            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'girisler' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
             yoneticiLigButonGuncelle();
             if(k === 'kullanicilar') { renderHedefId = 'yonetici-liste'; if(arama) arama.style.display = 'block'; yoneticiPaneliCiz(); return; }
             if(arama) arama.style.display = 'none';
@@ -8413,6 +8454,13 @@
             if(k === 'guvenlik') { let alan = document.getElementById('yonetici-liste'); if(alan) { alan.innerHTML = '<div id="guvenlik-panel" class="gv-panel"></div>'; guvenlikYukle(); } return; }
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
             if(k === 'ciftkayit') { kyCiftKayitCiz(); return; }
+            // 🔑 Sporcu Girişleri (2026-10-25) — kodlar, giriş aç/kapat, son giriş, WhatsApp / QR kart (dagsk-sporcu-giris.js)
+            if(k === 'girisler') {
+                let la = document.getElementById('yonetici-liste');
+                if(la && typeof sgAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
+                dagskEkYukle('dagsk-sporcu-giris.js?v=1').then(() => { if(yoneticiSekmeAktif === 'girisler') sgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
+                return;
+            }
             // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).
             if(k === 'hizliduzenle') { let la = document.getElementById('yonetici-liste'); if(la && typeof hdCiz !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-hizli-duzenle.js').then(function() { if(yoneticiSekmeAktif === 'hizliduzenle') hdCiz(); }).catch(function() { showToast('Hızlı Düzenle yüklenemedi.', 'error'); }); return; }
             if(k === 'kisiler') {
@@ -32141,6 +32189,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let aksItem = (typeof MAGAZA !== 'undefined') ? (MAGAZA.aksesuar || []).find(x => x.id === (mg.aksesuar || 'yok')) : null;
             let aksEmoji = (aksItem && aksItem.id !== 'yok') ? aksItem.emoji : '';
             let avatarEmoji = sp.emoji || '🎯';
+            let kendiFoto = (loggedInSporcu === ad && typeof sporcuKendiFotoSrc === 'function' ? sporcuKendiFotoSrc(f.grup, ad, sp) : '') || sp.fotoUrl || '';
             let vitrinSec = sp.vitrinSec || []; let kazanilmis = sp.rozetler || [];
             let vitrinHtml = vitrinSec.length ? `<div style="display:flex; gap:4px; margin-top:4px;">${vitrinSec.slice(0,3).map(id => { let r = kazanilmis.find(x=>x.id===id); let def = (typeof ROZETLER!=='undefined') ? ROZETLER.find(x=>x.id===id) : null; let e = def ? def.emoji : r ? r.emoji : ''; return e ? `<div style="font-size:16px;" title="${def?def.ad:''}">${e}</div>` : ''; }).join('')}</div>` : '';
             // 🏆 Yarışma kartı (2026-10-20, dagsk-yarismalar.js): sporcu bir yarışmaya kayıtlıysa ana ekranın en üstünde
@@ -32149,7 +32198,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             <div id="yarisma-kart-ana"></div>
             <div class="card" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,98,0,0.12),rgba(59,130,246,0.08)); margin-bottom:14px;">
                 <div style="position:relative; flex-shrink:0;">
-                    <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); display:flex; align-items:center; justify-content:center; font-size:26px; border:3px solid ${cerceveRenk}; box-shadow:0 0 14px rgba(255,106,26,0.25); overflow:hidden;">${sp.fotoUrl ? `<img src="${sp.fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : avatarEmoji}</div>
+                    <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); display:flex; align-items:center; justify-content:center; font-size:26px; border:3px solid ${cerceveRenk}; box-shadow:0 0 14px rgba(255,106,26,0.25); overflow:hidden;">${kendiFoto ? `<img src="${kendiFoto}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : avatarEmoji}</div>
+                    ${loggedInSporcu === ad && typeof sporcuFotoDegistir === 'function' ? `<button type="button" onclick="sporcuFotoDegistir()" aria-label="Profil fotoğrafımı değiştir" title="Profil fotoğrafımı değiştir" style="position:absolute; left:-4px; bottom:-4px; width:26px; height:26px; border-radius:50%; border:2px solid var(--bg-main); background:var(--accent-orange); color:#fff; font-size:12px; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transform:none;">📷</button>` : ''}
                     ${aksEmoji ? `<div style="position:absolute; bottom:-2px; right:-2px; font-size:14px;">${aksEmoji}</div>` : ''}
                 </div>
                 <div style="flex:1; min-width:0;">
