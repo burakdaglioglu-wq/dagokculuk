@@ -21,6 +21,35 @@
         let pwaPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); pwaPrompt = e; try { document.getElementById('pwa-banner').style.display='flex'; } catch(_) {} });
         function pwaKur() { if(pwaPrompt) { pwaPrompt.prompt(); pwaPrompt.userChoice.then(() => { pwaPrompt=null; try { document.getElementById('pwa-banner').style.display='none'; } catch(_) {} }); } }
+        function pwaKuruluMu() { try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch(e) { return false; } }
+        // 📲 Kurulum rehberi (2026-10-26, kullanıcı: "linki indirmek isteyenlere göndereceğim, hem internetten hem uygulama şeklinde
+        // çalışsın"). Giriş linkiyle gelen sporcuya bir kez, sonra ana ekrandaki "📲 Uygulamayı kur" düğmesiyle. Telefona göre adım:
+        // Android'de tarayıcı kurulum teklifi varsa tek düğme; iPhone'da Safari → Paylaş → Ana Ekrana Ekle. WhatsApp/Instagram içi
+        // tarayıcıda kurulum yok → önce Safari/Chrome'da açması söylenir.
+        function kurulumRehberiAc(zorla) {
+            if(pwaKuruluMu()) return;
+            if(!zorla) { try { if(localStorage.getItem('dag_kurulum_rehberi')) return; } catch(e) {} }
+            let ua = navigator.userAgent, ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), android = /Android/i.test(ua);
+            let ici = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|Instagram|FBAN|FBAV|WhatsApp|; wv\)/i.test(ua);
+            let adim = ios ? (ici ? ['Bu sayfayı <b>Safari</b>\'de aç (menüden "Safari\'de Aç" ya da linki kopyalayıp Safari\'ye yapıştır).', 'Safari\'de alttaki <b>Paylaş</b> ⬆️ düğmesine dokun.', '<b>"Ana Ekrana Ekle"</b> → sağ üstte <b>Ekle</b>.']
+                    : ['Alttaki <b>Paylaş</b> ⬆️ düğmesine dokun (iPad\'de üstte).', 'Listeyi kaydır, <b>"Ana Ekrana Ekle"</b>yi seç.', 'Sağ üstte <b>Ekle</b>\'ye dokun — DAĞ S.K. ikonu ana ekranına gelir.'])
+                : android ? (ici ? ['Sağ üstteki <b>⋮</b> menüden <b>"Chrome\'da aç"</b>ı seç.', 'Chrome\'da <b>⋮</b> → <b>"Uygulamayı yükle"</b> (ya da "Ana ekrana ekle").', '<b>Yükle</b>\'ye dokun.']
+                    : ['Sağ üstteki <b>⋮</b> menüye dokun.', '<b>"Uygulamayı yükle"</b> ya da <b>"Ana ekrana ekle"</b>yi seç.', '<b>Yükle</b>\'ye dokun.'])
+                : ['Tarayıcı menüsünden <b>"Uygulamayı yükle"</b> ya da <b>"Ana ekrana ekle"</b>yi seç.'];
+            let tek = !!pwaPrompt && !ios;
+            let el = document.getElementById('kurulum-rehberi'); if(el) el.remove();
+            ['ios-ekle-banner', 'pwa-banner'].forEach(id => { let b = document.getElementById(id); if(b) b.style.display = 'none'; }); // eski bantlar rehberle üst üste binmesin
+            el = document.createElement('div'); el.id = 'kurulum-rehberi';
+            el.style.cssText = 'position:fixed;inset:0;z-index:99500;background:rgba(4,6,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+            el.innerHTML = `<div role="dialog" aria-modal="true" aria-label="Uygulamayı kur" style="background:#0f172a;color:#f1f5f9;border:1px solid rgba(255,255,255,.12);border-radius:18px;width:min(440px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.45;margin-bottom:max(4px,env(safe-area-inset-bottom,0px))">
+                <div style="display:flex;gap:12px;align-items:center"><img src="/ikon-192.png" alt="" style="width:52px;height:52px;border-radius:12px;flex-shrink:0"><div><b style="font-size:17px">DAĞ S.K. uygulamasını kur</b><div style="color:#94a3b8;font-size:12.5px;margin-top:2px">Ana ekranına eklenir, tam ekran açılır, internet yokken de çalışır. Ücretsiz, mağaza gerekmez.</div></div></div>
+                ${tek ? '' : `<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">${adim.map(a => '<li>' + a + '</li>').join('')}</ol>`}
+                <div style="display:flex;gap:8px;flex-wrap:wrap">${tek ? '<button type="button" onclick="pwaKur(); kurulumRehberiKapat()" style="flex:1 1 auto;font:inherit;font-weight:800;padding:12px;border-radius:12px;border:none;background:#f97316;color:#fff;cursor:pointer;transform:none">📲 Şimdi kur</button>' : ''}<button type="button" onclick="kurulumRehberiKapat()" style="flex:1 1 auto;font:inherit;font-weight:700;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#cbd5e1;cursor:pointer;transform:none">${tek ? 'Şimdilik tarayıcıda devam et' : 'Tamam'}</button></div>
+            </div>`;
+            el.addEventListener('click', e => { if(e.target === el) kurulumRehberiKapat(); });
+            document.body.appendChild(el);
+        }
+        function kurulumRehberiKapat() { try { localStorage.setItem('dag_kurulum_rehberi', '1'); } catch(e) {} let el = document.getElementById('kurulum-rehberi'); if(el) el.remove(); }
         // iOS Safari'de beforeinstallprompt YOK — Apple programatik kurulum teklifine izin vermiyor, bu
         // yüzden elle talimatlı ayrı bir banner (bkz. index.html #ios-ekle-banner).
         function _iosSafariPWADegilMi() {
@@ -29,7 +58,7 @@
         }
         function iosEkleBannerGoster() {
             try {
-                if(!_iosSafariPWADegilMi() || localStorage.getItem('dag_ios_ekle_kapatildi')) return;
+                if(!_iosSafariPWADegilMi() || localStorage.getItem('dag_ios_ekle_kapatildi') || document.getElementById('kurulum-rehberi')) return;
                 let b = document.getElementById('ios-ekle-banner'); if(b) b.style.display = 'flex';
             } catch(e) {}
         }
@@ -7431,9 +7460,14 @@
             let _sgLink = null;
             try {
                 let params = new URLSearchParams(location.search);
-                if(params.get('sg')) {
+                let hk = hatirlaOku();
+                // kurulu uygulama her açılışta giriş linkiyle başlar (start_url); bu telefonda o sporcu zaten hatırlanıyorsa link
+                // atlanır — yönetici kodu sonradan değiştirse de hatırlanan giriş çalışmaya devam eder
+                if(params.get('sg') && !(hk && hk.ad && turkceNormalize(hk.ad) === turkceNormalize(params.get('sg')))) {
                     _sgLink = { ad: params.get('sg'), kod: params.get('sk') || '' };
                     let ks = document.getElementById('kulup-secim-ekrani'); if(ks) ks.style.display = 'none'; // link DAĞ'ın — kulüp seçimi sorulmaz
+                    // 📲 ana ekrana eklenirse uygulama bu linkle açılsın (iPhone'da kurulu uygulama Safari'nin girişini görmez)
+                    if(!pwaKuruluMu()) { let ml = document.querySelector('link[rel="manifest"]'); if(ml) ml.href = '/api/manifest?sg=' + encodeURIComponent(_sgLink.ad) + '&sk=' + encodeURIComponent(_sgLink.kod); }
                     let hedef = turkceNormalize(_sgLink.ad);
                     let dene = (n) => {
                         let var_ = ['buyukler', 'yildizlar', 'kucukler', 'minikler'].some(g => Object.keys(turnuvaDB[g] || {}).some(i => turkceNormalize(i) === hedef));
@@ -7442,7 +7476,9 @@
                         let adEl = document.getElementById('sporcu-giris-ad'), kodEl = document.getElementById('sporcu-giris-kod');
                         if(adEl) adEl.value = _sgLink.ad; if(kodEl) kodEl.value = _sgLink.kod;
                         aktifPlatform = 'sporcu'; sporcuGirisDene();
-                        try { history.replaceState(null, '', location.pathname); } catch(e) {}
+                        // iPhone Safari "Ana Ekrana Ekle" bazı sürümlerde sayfanın adresini kullanır → orada link adresi kalsın
+                        if(!_iosSafariPWADegilMi()) { try { history.replaceState(null, '', location.pathname); } catch(e) {} }
+                        if(!pwaKuruluMu()) setTimeout(() => { if(loggedInSporcu) kurulumRehberiAc(); }, 3500); // "Hoş geldin" bildirimi kaybolunca
                     };
                     setTimeout(() => dene(20), 1500);
                 }
@@ -8458,7 +8494,7 @@
             if(k === 'girisler') {
                 let la = document.getElementById('yonetici-liste');
                 if(la && typeof sgAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
-                dagskEkYukle('dagsk-sporcu-giris.js?v=1').then(() => { if(yoneticiSekmeAktif === 'girisler') sgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
+                dagskEkYukle('dagsk-sporcu-giris.js?v=2').then(() => { if(yoneticiSekmeAktif === 'girisler') sgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
                 return;
             }
             // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).
@@ -32211,6 +32247,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="text-align:right; flex-shrink:0;"><div style="font-size:20px; font-weight:900; color:var(--gold);">💎 ${sp.coin || 0}</div><div style="font-size:10px; color:var(--text-muted);">elmas</div></div>
             </div>
 
+            ${loggedInSporcu === ad && !pwaKuruluMu() ? `<button onclick="kurulumRehberiAc(true)" class="btn" style="width:100%; margin-bottom:10px;">📲 Uygulamayı telefonuma kur</button>` : ''}
             <button onclick="ihtiyacBildirAc()" class="btn" style="width:100%; margin-bottom:14px;">💬 Öneri, Övgü & Şikayet — Bize Yaz</button>
 
             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">

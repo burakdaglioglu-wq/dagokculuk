@@ -66,7 +66,7 @@ export default async function ({ log }) {
     log('🔑 Sporcu Girişleri: kod ver, kapat → link reddedildi, aç → girdi, son giriş görünür; 📷 sporcu kendi fotoğrafını değiştirdi (izin aynı) ✓');
   } finally {
     if (s) await p.evaluate(({ s, eskiKod, eskiFoto }) => {
-      let sp = turnuvaDB[s.g][s.ad]; if (eskiKod) sp.kod = eskiKod; else delete sp.kod; sp.lastModified = Date.now(); try { yoneticiKaydet(); } catch (e) {}
+      let sp = turnuvaDB[s.g][s.ad]; sp.kod = eskiKod || ''; /* '' = kod yok — sunucu null'u yok sayar, eski kod kalırdı */ sp.lastModified = Date.now(); try { yoneticiKaydet(); } catch (e) {}
       fetch('/api/sporcu-giris/' + encodeURIComponent(s.k), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kapali: false }) }).catch(() => {});
       if (!eskiFoto || !eskiFoto.var) fotoKaydet(fotoAnahtar(s.g, s.ad), { veri: null, izin: eskiFoto ? eskiFoto.izin : null }).catch(() => {});
     }, { s, eskiKod, eskiFoto }).catch(() => {});

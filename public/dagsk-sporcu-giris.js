@@ -157,7 +157,7 @@ function sgKapaliYaz(k, kapali) {
         .catch(e => { showToast('Değiştirilemedi: ' + e.message, 'error'); sgCiz(); });
 }
 function sgMesaj(ad, sp) {
-    return `Merhaba 👋\n${ad} için DAĞ Spor Kulübü uygulamasının giriş bilgileri:\n\n👉 ${sgLink(ad, sp)}\n(Linke dokununca doğrudan giriş yapılır.)\n\nElle giriş: Sporcu Girişi → Ad: ${ad} · Kod: ${sgKod(sp)}\n\nSkorlarını, yarışmalarını ve gelişimini buradan takip edebilir; profil fotoğrafını kendisi değiştirebilir. 🎯`;
+    return `Merhaba 👋\n${ad} için DAĞ Spor Kulübü uygulamasının giriş bilgileri:\n\n👉 ${sgLink(ad, sp)}\n(Linke dokununca doğrudan giriş yapılır.)\n\n📲 Uygulama olarak kurmak için (ücretsiz, mağaza gerekmez, internetsiz de açılır):\n• iPhone: linki Safari'de aç → Paylaş ⬆️ → "Ana Ekrana Ekle"\n• Android: linki Chrome'da aç → ⋮ → "Uygulamayı yükle"\n\nElle giriş: Sporcu Girişi → Ad: ${ad} · Kod: ${sgKod(sp)}\n\nSkorlarını, yarışmalarını ve gelişimini buradan takip edebilir; profil fotoğrafını kendisi değiştirebilir. 🎯`;
 }
 function sgGonder(k) {
     let b = sgBul(k); if (!b || !sgKod(b.sp)) return;

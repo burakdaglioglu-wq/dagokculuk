@@ -52,6 +52,18 @@ export function registerSporcuGirisRoutes(router: Router): void {
     return json({ applied: true, kapali: !!b.kapali });
   });
 
+  // 📲 Kişiye özel uygulama tanımı (2026-10-26). iPhone'da ana ekrana eklenen uygulama Safari'den ayrı depolama kullanır →
+  // linkle Safari'de giriş yapan sporcu, ana ekrandaki uygulamayı açınca yine giriş ekranını görürdü. Giriş linkiyle gelen
+  // sayfa manifest bağlantısını buraya çevirir: aynı uygulama (id aynı), açılış adresi giriş linki → ilk açılışta kendisi girer.
+  router.get("/api/manifest", async (request, env) => {
+    const u = new URL(request.url);
+    const r = await env.ASSETS.fetch(new Request(new URL("/manifest.webmanifest", u.origin)));
+    const m = (await r.json()) as Record<string, unknown>;
+    const sg = (u.searchParams.get("sg") || "").slice(0, 80), sk = (u.searchParams.get("sk") || "").slice(0, 20);
+    if (sg && sk) m.start_url = "/app.html?sg=" + encodeURIComponent(sg) + "&sk=" + encodeURIComponent(sk);
+    return new Response(JSON.stringify(m), { headers: { "content-type": "application/manifest+json", "cache-control": "no-store" } });
+  });
+
   router.put("/api/foto-sporcu", async (request, env) => {
     const b = await readJson<{ grup: string; ad: string; kod: string; veri: string | null }>(request);
     if (!(await sporcuKodDogru(env, b.grup, b.ad, b.kod))) return unauthorized("kod");
