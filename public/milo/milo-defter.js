@@ -29,10 +29,10 @@ async function mdMetaYaz(k, yerel) {
     return m;
 }
 async function mdYukle() {
-    let r = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), mdMeta('yoklama_durum'), mdMeta('paket_odeme'), miloApi('/antrenman-programi'), miloApi('/dues').catch(function () { return { dues: [] }; }), mdMeta('kagit_aktarim')]);
+    let r = await Promise.all([miloApi('/members'), miloApi('/attendance/auto'), mdMeta('yoklama_durum'), mdMeta('paket_odeme'), miloApi('/antrenman-programi'), miloApi('/dues').catch(function () { return { dues: [] }; }), mdMeta('kagit_aktarim'), mdMeta('paket_hatirlatma')]);
     MD.uyeler = r[0].members || []; MD.att = {};
     (r[1].attendance || []).forEach(function (a) { (MD.att[a.tarih] = MD.att[a.tarih] || {})[a.ad] = { geldi: a.geldi !== 0 && a.geldi !== false, grup: a.grup, saat: a.saat }; });
-    MD.durum = r[2] || {}; MD.odeme = r[3] || {}; MD.slotlar = (r[4] && r[4].slots) || []; MD.dues = (r[5] && r[5].dues) || []; MD.kagitBitti = !!(r[6] && r[6].bitti);
+    MD.durum = r[2] || {}; MD.odeme = r[3] || {}; MD.slotlar = (r[4] && r[4].slots) || []; MD.dues = (r[5] && r[5].dues) || []; MD.kagitBitti = !!(r[6] && r[6].bitti); MD.hatirlatma = r[7] || {};
     try { miloUyeler = MD.uyeler; } catch (e) {}
     MD.yuklendi = true;
 }
@@ -129,6 +129,7 @@ function mdListeHTML() {
     let aktarim = '';
     try { if (!MD.kagitBitti && !localStorage.getItem('milo_kagit_aktarim_2026_10')) aktarim = '<button class="md-btn ana genis" onclick="mdAktarimAc()">📋 Kâğıt çizelgeyi aktar (okundu, onay bekliyor)</button>'; } catch (e) {}
     return '<div class="md-liste"><div class="md-baslik">📒 Öğrenci Defteri</div>' + aktarim + '<button class="md-btn genis" onclick="mdCizelgeAc()">🗓 Geçmiş yoklama gir (çizelge)</button>'
+        + mdPaketKartHTML()
         + '<input class="md-ara" placeholder="🔍 Öğrenci ara…" value="' + miloEsc(MD.ara) + '" oninput="MD.ara=this.value; mdListeYenile()">'
         + '<div class="md-satirlar" id="md-satirlar">' + mdSatirlarHTML(l) + '</div></div>';
 }
@@ -155,6 +156,7 @@ function mdDetayHTML(u) {
     return '<div class="md-ust"><div><div class="md-ad">' + miloEsc(u.ad) + '</div><div class="md-alt">' + miloEsc(u.grup) + (yas ? ' · ' + miloEsc(yas) : '') + (o.ilk ? ' · ilk ders ' + mdTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + mdTR(o.sonGelis) : '') + '</div></div>'
         + '<span style="display:flex;gap:8px;flex-wrap:wrap"><button class="md-btn" onclick="mdOgrenciPdf(\'' + mdEnc(mdKey(u)) + '\')">📄 Öğrenci raporu PDF</button>' + (u.acilTelefon ? '<button class="md-btn" onclick="mdVeliMesaj(\'' + mdEnc(mdKey(u)) + '\')">💬 Veliye özet</button>' : '') + '</span></div>'
         + '<div class="md-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + kutu(p ? p.dersler.length + '/8' : '—', p ? 'paket ' + p.no : 'paket', '') + '</div>'
+        + mdPaketUyariHTML(u)
         + o.uyarilar.map(function (w) { return '<div class="md-uyari ' + w.tur + '">' + (w.tur === 'telafi' ? '🔁 ' : '💰 ') + miloEsc(w.metin) + '</div>'; }).join('')
         + '<div class="md-bolum"><div class="md-bolum-bas">🗓 Yoklama takvimi <small>güne dokun → durum seç · halkalı günler programdaki ders günleri</small></div>'
         + '<div class="md-aylar">' + aylar.map(function (a) { let say = o.kayit.filter(function (r) { return r.iso.slice(0, 7) === a; }).length; return '<button class="' + (a === MD.ay ? 'aktif' : '') + '" onclick="MD.ay=\'' + a + '\'; MD.secim=null; mdDetayYenile()">' + MD_AY[+a.slice(5) - 1] + (a.slice(0, 4) !== String(new Date().getFullYear()) ? ' ' + a.slice(0, 4) : '') + (say ? ' <i>' + say + '</i>' : '') + '</button>'; }).join('') + '</div>'
@@ -223,6 +225,61 @@ async function mdOdemeKaydet(kEnc, no) {
     let kayit = {}; kayit[k] = { odendi: odendi, tutar: tutar, odemeTarihi: tarih, not: not, t: Date.now() };
     try { MD.odeme = await mdMetaYaz('paket_odeme', kayit); } catch (e) { showToast('Kaydedilemedi.', 'error'); return; }
     showToast('💰 Paket ' + no + ' ödemesi kaydedildi', 'success'); mdDetayYenile();
+}
+// ---- 📦 Paket bitiyor hatırlatması (2026-10-27, kullanıcı: "7. derste veliye 'Son dersiniz yaklaşıyor, yeni paket' mesajı hazır olsun.
+// Telafi hakkı varsa onu da yazsın"). Son paketi 7 ya da 8 derse ulaşan ve sıradaki paketi henüz ödenmemiş öğrenciler; mesaj hazır,
+// tek dokunuşla WhatsApp. Gönderilen: meta 'paket_hatirlatma' { 'grup|ad|paketNo': { t } } → her cihazda "✓ gönderildi" görünür.
+// Paket bitmiş, telafi hakkı da yok ve 45+ gündür gelmiyorsa (ayrılmış olabilir) listeye girmez.
+function mdPaketBitenler() {
+    let bugun = mdIso(new Date());
+    return MD.uyeler.filter(function (u) { return !u.pasif; }).map(function (u) {
+        let o = mdOzet(u), p = o.son; if (!p || p.dersler.length < 7) return null;
+        let sonraki = MD.odeme[mdKey(u) + '|' + (p.no + 1)]; if (sonraki && sonraki.odendi) return null;
+        if (p.dolu && !o.hak && p.bit && (new Date(bugun) - new Date(p.bit)) / 864e5 > 45) return null;
+        let h = (MD.hatirlatma || {})[mdKey(u) + '|' + p.no];
+        return { u: u, o: o, p: p, kalan: Math.max(0, 8 - p.dersler.length), hak: o.hak, gonderildi: h && h.t ? h.t : null };
+    }).filter(Boolean).sort(function (a, b) { return (a.gonderildi ? 1 : 0) - (b.gonderildi ? 1 : 0) || a.kalan - b.kalan || a.u.ad.localeCompare(b.u.ad, 'tr'); });
+}
+function mdPaketBul(u) { return mdPaketBitenler().find(function (x) { return x.u === u; }) || null; }
+function mdPaketMesaj(x) {
+    let ilk = typeof miloIlkAdBuyuk === 'function' ? miloIlkAdBuyuk(x.u.ad) : x.u.ad.split(' ')[0], p = x.p;
+    let son = x.o.odemeler.filter(function (o) { return o.tutar; }).pop();
+    return 'Merhaba 🌟 MILO FITT KIDS\'ten yazıyoruz.\n\n' + ilk + ' için kısa bilgi:\n'
+        + '• ' + p.no + '. paket: ' + p.dersler.length + '/8 ders tamamlandı' + (x.kalan === 1 ? ', son 1 dersi kaldı.' : x.kalan ? ', ' + x.kalan + ' dersi kaldı.' : '.') + '\n'
+        + (x.hak ? '• 🔁 ' + x.hak + ' telafi hakkı var: gelemediği ders' + (x.hak > 1 ? 'ler' : '') + ' için uygun bir günde telafi yapabiliriz.\n' : '')
+        + '\n' + (x.kalan ? 'Son dersiniz yaklaşıyor 💛 Derslere ara vermeden devam etmek için yeni paketi (8 ders) şimdiden yenileyebilirsiniz.' : 'Paketiniz tamamlandı 💛 Derslere ara vermeden devam etmek için yeni paketi (8 ders) yenileyebilirsiniz.')
+        + (son ? '\nPaket ücreti: ' + son.tutar + ' ₺' : '') + '\n\nSorunuz olursa buradan yazabilirsiniz. Görüşmek üzere!';
+}
+async function mdPaketHatirlat(kEnc) {
+    let u = mdUye(decodeURIComponent(kEnc)), x = u && mdPaketBul(u); if (!x) return;
+    let msg = mdPaketMesaj(x), tel = String(u.acilTelefon || u.veli2Telefon || '').replace(/\D/g, '');
+    if (tel.startsWith('0')) tel = '90' + tel.slice(1); else if (tel && !tel.startsWith('90')) tel = '90' + tel;
+    if (tel) window.open('https://api.whatsapp.com/send?phone=' + tel + '&text=' + encodeURIComponent(msg), '_blank');
+    else { try { await navigator.clipboard.writeText(msg); showToast('Veli telefonu yok — mesaj kopyalandı, kendin yapıştır.', 'warning'); } catch (e) { showToast('Veli telefonu yok.', 'warning'); } }
+    let kayit = {}; kayit[mdKey(u) + '|' + x.p.no] = { t: Date.now() };
+    try { MD.hatirlatma = await mdMetaYaz('paket_hatirlatma', kayit); } catch (e) { MD.hatirlatma = Object.assign({}, MD.hatirlatma, kayit); }
+    mdCiz(true);
+}
+function mdPaketDurum(x) { return x.p.no + '. paket · ' + x.p.dersler.length + '/8' + (x.kalan === 1 ? ' · son ders' : !x.kalan ? ' · bitti' : '') + (x.hak ? ' · 🔁 ' + x.hak + ' telafi' : ''); }
+function mdPaketKartHTML() {
+    let l = mdPaketBitenler(); if (!l.length) return '';
+    let bekleyen = l.filter(function (x) { return !x.gonderildi; }).length;
+    return '<div class="md-ph"><div class="md-ph-bas">📦 Paketi bitiyor <small>' + (bekleyen ? bekleyen + ' veliye hatırlatma hazır' : 'hepsine gönderildi') + '</small></div>'
+        + l.map(function (x) { let k = mdEnc(mdKey(x.u));
+            return '<div class="md-ph-s' + (x.gonderildi ? ' gitti' : '') + '"><button class="md-ph-ad" onclick="mdSec(\'' + k + '\')"><b>' + miloEsc(x.u.ad) + '</b><small>' + miloEsc(mdPaketDurum(x)) + '</small></button>'
+                + '<button class="md-btn' + (x.gonderildi ? '' : ' ana') + '" onclick="mdPaketHatirlat(\'' + k + '\')">' + (x.gonderildi ? '✓ ' + mdKisaTR(mdIso(new Date(x.gonderildi))) + ' · tekrar' : '💬 Hatırlat') + '</button></div>'; }).join('') + '</div>';
+}
+function mdPaketUyariHTML(u) {
+    let x = mdPaketBul(u); if (!x) return '';
+    return '<div class="md-uyari paket">📦 ' + (x.kalan ? 'Son ' + (x.kalan === 1 ? 'ders' : x.kalan + ' ders') + ' kaldı' : 'Paket bitti') + ' — yeni paket hatırlatması' + (x.hak ? ' (' + x.hak + ' telafi hakkıyla)' : '') + ' hazır.'
+        + ' <button class="md-btn ana" onclick="mdPaketHatirlat(\'' + mdEnc(mdKey(u)) + '\')">' + (x.gonderildi ? '✓ Gönderildi · tekrar' : '💬 Veliye gönder') + '</button></div>';
+}
+// Genel Bakış "dikkat" listesi (yonetim-panel ekDikkat): Defter verisi yoksa bir kez arka planda yüklenir, sonra yeniden çizilir
+let _mdPaketDikkatYuk = false;
+function mdPaketDikkat() {
+    if (!MD.yuklendi) { if (!_mdPaketDikkatYuk) { _mdPaketDikkatYuk = true; mdYukle().then(function () { if (typeof miloAktifSekme !== 'undefined' && miloAktifSekme === 'genel' && typeof mgbCiz === 'function') mgbCiz(); }).catch(function () {}); } return []; }
+    let l = mdPaketBitenler().filter(function (x) { return !x.gonderildi; }); if (!l.length) return [];
+    return [{ renk: 'var(--ap-uyari)', baslik: l.length + ' öğrencinin paketi bitiyor', alt: l.slice(0, 4).map(function (x) { return miloEsc(x.u.ad.split(' ')[0]) + ' ' + x.p.dersler.length + '/8'; }).join(', ') + (l.length > 4 ? '…' : '') + ' · yeni paket mesajı hazır', dugme: ['Hatırlat', "miloSekme('defter')"] }];
 }
 function mdVeliMesaj(kEnc) {
     let u = mdUye(decodeURIComponent(kEnc)); if (!u) return; let o = mdOzet(u), p = o.son;
@@ -634,6 +691,9 @@ function mdCss() {
         '.md-btn.ana{background:var(--s-vurgu);border-color:var(--s-vurgu);color:#fff}.md-btn.genis{width:100%}.md-btn.buyuk{min-height:50px;font-size:15px;padding:0 20px}',
         '.md-kutular{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:4px 16px}.md-kutu{padding:0}.md-kutu b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}.md-kutu small{font-size:12px;color:var(--s-dim);font-weight:600}',
         '.md-kutu.g b{color:var(--s-vurgu)}.md-kutu.y b{color:var(--s-kirmizi)}.md-kutu.h b{color:var(--s-mor)}.md-kutu.t b{color:var(--s-amber)}.md-kutu.uyari b{color:var(--s-amber)}',
+        '.md-uyari.paket{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-left-color:var(--s-vurgu);background:var(--s-vurgu-a)}',
+        '.md-ph{background:var(--s-kagit);border:1px solid var(--s-line);border-radius:14px;overflow:hidden}.md-ph-bas{padding:10px 14px;font-weight:800;font-size:14px;background:var(--s-amber-a);display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.md-ph-bas small{font-size:12px;font-weight:600;color:var(--s-amber)}',
+        '.md-ph-s{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-top:1px solid var(--s-line)}.md-ph-s.gitti{opacity:.6}.md-ph-ad{flex:1;min-width:0;display:grid;gap:1px;text-align:left;border:0;background:transparent;color:var(--s-ink);font:inherit;cursor:pointer;padding:0}.md-ph-ad b{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-ph-ad small{font-size:12px;color:var(--s-dim)}.md-ph-s .md-btn{flex:none;min-height:36px;padding:0 12px;font-size:12.5px}',
         '.md-uyari{padding:10px 14px;border-left:3px solid var(--s-uyari);background:#FFF8EC;font-size:13px;font-weight:600;border-radius:0 8px 8px 0}.md-uyari.odeme{border-left-color:var(--s-kirmizi);background:#FFF4F3}',
         '.md-bolum{display:grid;gap:12px;padding-top:18px;border-top:1px solid var(--s-line)}.md-bolum-bas{font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.md-bolum-bas small{font-size:12px;font-weight:500;color:var(--s-dim)}',
         '.md-aylar{display:flex;gap:18px;overflow-x:auto;border-bottom:1px solid var(--s-line)}.md-aylar button{flex:none;min-height:38px;padding:0 0 6px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--s-dim);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}',

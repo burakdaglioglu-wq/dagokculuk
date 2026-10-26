@@ -788,6 +788,7 @@ function miloAidatPanelAdaptor() {
 // 🏠 Yönetim paneli (/yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için Milo verisi — DAĞ'daki dagYonetimAdaptor ile aynı arayüz.
 function miloYonetimAdaptor() {
     return {
+        ekDikkat: () => (typeof mdPaketDikkat === 'function' ? mdPaketDikkat() : []), // 📦 paketi biten öğrenciler (milo-defter.js)
         ad: 'MILO FITT KIDS', aidat: miloAidatPanelAdaptor(), aidatAcik: () => miloAidatAcik, aidatKilitAc: pin => miloAidatKilitAc(pin), aidatHazir: () => miloDuesTum.length > 0,
         kisiler: () => miloUyeler.map(miloKisi),
         kisiBul: id => { let u = miloUyeler.find(x => x.grup + '|' + x.ad === id); return u ? miloKisi(u) : null; },
