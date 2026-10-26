@@ -21,13 +21,11 @@ export default async function ({ log }) {
     await p.click('#sporcu-giris-ad');
     const kay = await p.evaluate(() => Math.round(document.getElementById('sgr-form').getBoundingClientRect().x - document.querySelector('.sgr-kart').getBoundingClientRect().x));
     dogrula(kay >= 15, 'odaklanınca kart kaydı: iç boşluk ' + kay);
-    await p.keyboard.type('yoklamat', { delay: 20 });
-    await p.waitForSelector('#sgr-oneri.acik button', { timeout: 3000 });
-    dogrula(await p.locator('#sgr-oneri button', { hasText: 'YoklamaTest' }).count() === 1, 'öneride YoklamaTest yok');
-    await p.locator('#sgr-oneri button', { hasText: 'YoklamaTest' }).click();
-    await p.waitForFunction(() => document.activeElement && document.activeElement.id === 'sporcu-giris-kod', null, { timeout: 2000 }).catch(() => {});
-    esit(await p.evaluate(() => document.activeElement.id), 'sporcu-giris-kod', 'seçince kod kutusuna geçmeli');
-    dogrula(/YoklamaTest/.test(await p.locator('#sgr-secili').innerText()), 'seçili sporcu görünmeli');
+    // v321: isim önerisi yok — başka sporcuların adları giriş ekranında görünmemeli; ad küçük harf / fazla boşlukla da tutar
+    await p.keyboard.type('yoklamat', { delay: 20 }); await p.waitForTimeout(300);
+    esit(await p.locator('#sgr-oneri button').count(), 0, 'giriş ekranında isim önerisi çıkmamalı');
+    await p.fill('#sporcu-giris-ad', '  yoklamatest '); await p.keyboard.press('Enter');
+    esit(await p.evaluate(() => document.activeElement.id), 'sporcu-giris-kod', 'Enter kod kutusuna geçmeli');
     // yanlış kod: panelde nazik hata, toast yok
     await p.keyboard.type('0'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
     dogrula(await p.locator('#sgr-hata').isVisible() && /Kod tutmadı/.test(await p.locator('#sgr-hata').innerText()), 'panelde hata yok');
@@ -43,7 +41,7 @@ export default async function ({ log }) {
     dogrula(await p.locator('#sgr-form').isVisible() && !(await p.locator('#sgr-tanidik').isVisible()), '"Ben değilim" formu açmalı');
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'telefonda taşma');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('🎯 Sporcu giriş ekranı: öneri + seç → kod, nazik hata (toast yok), giriş, kişisel karşılama, Ben değilim, kart kaymıyor ✓');
+    log('🎯 Sporcu giriş ekranı: isim önerisi yok, ad yaz → kod, nazik hata (toast yok), giriş, kişisel karşılama, Ben değilim, kart kaymıyor ✓');
   } finally {
     await p.evaluate(() => { try { hatirlaTemizle(); } catch (e) {} }).catch(() => {});
     await b.close();

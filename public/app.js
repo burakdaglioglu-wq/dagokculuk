@@ -7581,20 +7581,20 @@
                 .trim().replace(/\s+/g, ' ');
         }
         function sporcuGirisDene() {
-            let ad = turkceNormalize((document.getElementById('sporcu-giris-ad').value || '').trim());
+            let ad = turkceNormalize((document.getElementById('sporcu-giris-ad').value || '').trim().replace(/\s+/g, ' '));
             let kod = (document.getElementById('sporcu-giris-kod').value || '').trim();
-            if(!ad || !kod) { sgrHata(!ad ? 'Önce adını yaz ve listeden kendini seç 🙂' : 'Kodunu da yazar mısın? Kod verilmediyse doğum yılın.'); return _sgrGorunur() ? undefined : showToast('Ad ve kod gir.', 'warning'); }
+            if(!ad || !kod) { sgrHata(!ad ? 'Önce adını ve soyadını yaz 🙂' : 'Kodunu da yazar mısın? Kod verilmediyse doğum yılın.'); return _sgrGorunur() ? undefined : showToast('Ad ve kod gir.', 'warning'); }
             let bulundu = null, bulunanGrup = null, adVar = false;
             ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(g => {
                 let db = turnuvaDB[g] || {};
                 Object.keys(db).forEach(isim => {
-                    if(turkceNormalize(isim) === ad) { adVar = true;
+                    if(turkceNormalize(isim.trim().replace(/\s+/g, ' ')) === ad) { adVar = true;
                         let sp = db[isim]; let dogruKod = String(sp.kod || sp.dogumYili || '').trim();
                         if(dogruKod && dogruKod === kod) { bulundu = isim; bulunanGrup = g; }
                     }
                 });
             });
-            if(!bulundu) { sgrHata(adVar ? 'Kod tutmadı 🤔 Kod verilmediyse <b>doğum yılını</b> dene; olmazsa antrenörüne sor.' : 'Bu isimde sporcu bulamadık. Adının ilk harflerini yaz, <b>listeden kendini seç</b>.'); return _sgrGorunur() ? undefined : showToast('Ad veya kod hatalı. (Kod yoksa doğum yılını dene)', 'error'); }
+            if(!bulundu) { sgrHata(adVar ? 'Kod tutmadı 🤔 Kod verilmediyse <b>doğum yılını</b> dene; olmazsa antrenörüne sor.' : 'Bu adı bulamadık 🤔 Adını ve soyadını <b>kayıttaki gibi</b> yaz; olmazsa antrenörüne sor.'); return _sgrGorunur() ? undefined : showToast('Ad veya kod hatalı. (Kod yoksa doğum yılını dene)', 'error'); }
             if(turnuvaDB[bulunanGrup][bulundu].donduruldu) { sgrHata('⛔ Hesabın donduruldu. Antrenörün / yöneticinle konuş.'); } if(turnuvaDB[bulunanGrup][bulundu].donduruldu) return showToast('⛔ Hesabın donduruldu. Lütfen antrenörün / yöneticinle iletişime geç.', 'error');
             if(_sgKapaliListe().includes(bulunanGrup + '|' + bulundu)) { // bu telefonda kapalı biliniyor → sunucuya sor, yönetici açtıysa gir
                 return sgGirisBildir(bulunanGrup, bulundu, kod).then(d => { if(d && d.ok) sporcuGirisDene(); else showToast('⛔ Uygulama girişin kapalı. Antrenörünle konuş.', 'error'); });
@@ -7647,19 +7647,9 @@
         }
         function _sgrBul(ad) { for(const g of ['buyukler', 'yildizlar', 'kucukler', 'minikler']) { let sp = (turnuvaDB[g] || {})[ad]; if(sp) return { g, sp }; } return null; }
         function sgrAdYazildi() {
-            sgrHataGizle();
-            let q = turkceNormalize(document.getElementById('sporcu-giris-ad').value), kut = document.getElementById('sgr-oneri');
-            _sgrSecim = -1; _sgrListe = [];
-            if(q.length >= 2) {
-                ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => {
-                    let sp = turnuvaDB[g][ad]; if(!sp || sp.pasif) return;
-                    let n = turkceNormalize(ad), i = n.indexOf(q);
-                    if(i === 0 || (i > 0 && n.charAt(i - 1) === ' ')) _sgrListe.push({ g, ad, sp, bas: i === 0 });
-                }));
-                _sgrListe.sort((a, b) => (b.bas - a.bas) || a.ad.localeCompare(b.ad, 'tr')); _sgrListe = _sgrListe.slice(0, 5);
-            }
-            kut.innerHTML = _sgrListe.map((x, i) => `<button type="button" role="option" onmousedown="event.preventDefault()" onclick="sgrSec(${i})">${_sgrAvatar(x.g, x.ad, x.sp)}<span>${esc(x.ad)}</span><small>${SGR_GRUP_AD[x.g] || ''}</small></button>`).join('');
-            kut.classList.toggle('acik', _sgrListe.length > 0);
+            // İsim önerisi kaldırıldı (kullanıcı 2026-10-26): giriş ekranı başka sporcuların adlarını göstermesin; sporcu adını kendisi yazar.
+            sgrHataGizle(); _sgrSecim = -1; _sgrListe = [];
+            let kut = document.getElementById('sgr-oneri'); if(kut) { kut.innerHTML = ''; kut.classList.remove('acik'); }
         }
         function sgrAdTus(e) {
             let kut = document.getElementById('sgr-oneri'); if(!_sgrListe.length) { if(e.key === 'Enter') { e.preventDefault(); document.getElementById('sporcu-giris-kod').focus(); } return; }
@@ -32338,67 +32328,17 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             setTimeout(function() { yrsAnaKartYukle(f.grup, ad); }, 0);
             el.innerHTML = `
             <div id="yarisma-kart-ana"></div>
-            <div class="card" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,98,0,0.12),rgba(59,130,246,0.08)); margin-bottom:14px;">
-                <div style="position:relative; flex-shrink:0;">
-                    <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--accent-orange),#ff8a3d); display:flex; align-items:center; justify-content:center; font-size:26px; border:3px solid ${cerceveRenk}; box-shadow:0 0 14px rgba(255,106,26,0.25); overflow:hidden;">${kendiFoto ? `<img src="${kendiFoto}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : avatarEmoji}</div>
-                    ${loggedInSporcu === ad && typeof sporcuFotoDegistir === 'function' ? `<button type="button" onclick="sporcuFotoDegistir()" aria-label="Profil fotoğrafımı değiştir" title="Profil fotoğrafımı değiştir" style="position:absolute; left:-4px; bottom:-4px; width:26px; height:26px; border-radius:50%; border:2px solid var(--bg-main); background:var(--accent-orange); color:#fff; font-size:12px; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transform:none;">📷</button>` : ''}
-                    ${aksEmoji ? `<div style="position:absolute; bottom:-2px; right:-2px; font-size:14px;">${aksEmoji}</div>` : ''}
-                </div>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-weight:900; font-size:17px;">${ad}${vitrinHtml}</div>
-                    <div style="font-size:12px; color:var(--text-muted);">${sp.yay || ''} · ${sp.sinif || ''} · ${streak > 0 ? `🔥 ${streak} gün seri` : 'Seri yok'}</div>
-                    <div style="height:7px; background:var(--bg-main); border-radius:4px; overflow:hidden; margin-top:6px; border:1px solid var(--border-color);"><div style="height:100%; width:${((st.xp||0) % 50) / 50 * 100}%; background:linear-gradient(90deg,var(--aurora-cyan),var(--aurora-magenta)); box-shadow:0 0 10px rgba(253,142,1,0.55);"></div></div>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Lv ${sv} · ${(st.xp||0) % 50}/50 XP</div>
-                </div>
-                <div style="text-align:right; flex-shrink:0;"><div style="font-size:20px; font-weight:900; color:var(--gold);">💎 ${sp.coin || 0}</div><div style="font-size:10px; color:var(--text-muted);">elmas</div></div>
-            </div>
-
-            ${typeof istAnaKartHTML === 'function' ? istAnaKartHTML(sp) : ''}
-            ${loggedInSporcu === ad && !pwaKuruluMu() ? `<button onclick="kurulumRehberiAc(true)" class="btn" style="width:100%; margin-bottom:10px;">📲 Uygulamayı telefonuma kur</button>` : ''}
-            <button onclick="ihtiyacBildirAc()" class="btn" style="width:100%; margin-bottom:14px;">💬 Öneri, Övgü & Şikayet — Bize Yaz</button>
-
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--accent-orange);">${sp.toplamSkor || 0}</div><div style="font-size:10px; color:var(--text-muted);">Bu Antr. Puan</div></div>
-                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-green);">${enIyi}</div><div style="font-size:10px; color:var(--text-muted);">En İyi Seri</div></div>
-                <div class="card" style="padding:12px; text-align:center;"><div style="font-size:20px; font-weight:900; color:var(--neon-blue);">${toplamOk}</div><div style="font-size:10px; color:var(--text-muted);">Bugün Ok</div></div>
-            </div>
-
+            ${typeof spkKartHTML === 'function' ? spkKartHTML({ g: f.grup, ad, sp, sv, xp: st.xp || 0, coin: sp.coin, streak, foto: kendiFoto, fotoDegis: loggedInSporcu === ad && typeof sporcuFotoDegistir === 'function', avatarEmoji, cerceveRenk, aksEmoji, vitrinHtml, sonNot, gorevTamam, rutinYapildi, kurBtn: loggedInSporcu === ad && !pwaKuruluMu() }) : ''}
+            ${seri.length ? `<div class="card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">BUGÜN · ${seri.length} seri · ${toplamOk} ok</div><div style="font-size:22px; font-weight:900; color:var(--accent-orange);">${sp.toplamSkor || 0} puan</div></div><div style="font-size:11px; color:var(--text-muted); text-align:right; max-width:150px;">${karsilastirma}</div></div>` : ''}
             <div id="canli-takip-widget-ana"></div>
             <div id="sonraki-ders-widget"></div>
             <div id="gelisim-widget"></div>
             <div id="ev-odev-widget"></div>
             <div id="haftalik-program-widget"></div>
             <div id="sezon-sayac-ana"></div>
-            ${haftaOrt ? `<div class="card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">7 ANTRENMAN ORTALAMASI</div><div style="font-size:22px; font-weight:900; color:var(--gold);">${haftaOrt} ${trend}</div></div><button onclick="sekmeAc('gelisim')" class="btn btn-sm">Grafik →</button></div>` : ''}
-            ${seri.length ? `<div class="card" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:12px; color:var(--text-muted); font-weight:600;">BUGÜNKÜ ORTALAMA</div><div style="font-size:22px; font-weight:900; color:var(--accent-orange);">${ortSeri}</div></div><div style="font-size:11px; color:var(--text-muted); text-align:right; max-width:140px;">${karsilastirma}</div></div>` : ''}
-
-            <div class="card" style="background:${gorevTamam ? 'rgba(16,185,129,0.1)' : 'rgba(251,191,36,0.08)'}; border-color:${gorevTamam ? 'var(--neon-green)' : 'var(--gold)'}; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
-                <div style="font-size:26px;">${gorevTamam ? '✅' : '🎯'}</div>
-                <div style="flex:1; min-width:0;"><div style="font-size:11px; font-weight:800; color:var(--gold);">GÜNLÜK GÖREV${gorevTamam ? ' — TAMAM!' : ' (+5 💎)'}</div><div style="font-size:12px;">${rfxGunlukGorev ? rfxGunlukGorev().metin : 'Reaksiyon Lab\'ı aç!'}</div></div>
-                <button onclick="sekmeAc('refleks')" class="btn btn-sm">Oyna →</button>
-            </div>
-
-            ${!rutinYapildi ? `<div class="card" style="background:rgba(59,130,246,0.08); border-color:var(--neon-blue); margin-bottom:14px;">
-                <div style="font-weight:800; color:var(--neon-blue); margin-bottom:6px; font-size:13px;">🎯 Atış Öncesi Rutin</div>
-                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Antrenman başlamadan önce zihnini ve bedenini hazırla.</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button onclick="rutinBaslat('${ad}')" class="btn btn-sm">▶️ Rutin Başlat</button>
-                    <button onclick="sekmeAc('refleks')" class="btn btn-sm">🧠 Reaksiyon Oyunu</button>
-                </div>
-            </div>` : `<div class="card" style="background:rgba(16,185,129,0.08); border-color:var(--neon-green); margin-bottom:14px; text-align:center; font-weight:800; color:var(--neon-green);">✅ Bugünkü rutin tamamlandı!</div>`}
-
-            ${sonNot ? `<div class="card" style="border-left:3px solid var(--accent-orange); margin-bottom:14px;"><div style="font-size:11px; font-weight:800; color:var(--accent-orange); margin-bottom:4px;">📝 KOÇUN NOTU ${sonNot.tarih ? '<span style="font-weight:400; color:var(--text-muted);">· ' + esc(sonNot.tarih) + '</span>' : ''}</div><div style="font-size:13px; color:var(--text-main); white-space:pre-wrap;">${esc(sonNot.not)}</div></div>` : ''}
-
+            ${typeof istAnaKartHTML === 'function' ? istAnaKartHTML(sp) : ''}
             <div id="duyuru-slayt-ana" style="margin-bottom:14px;"></div>
-            <div id="google-yorum-slayt-ana" style="margin-bottom:14px;"></div>
-
-            <button onclick="dueloBaslat('${ad.replace(/'/g, "\\'")}')" class="btn" style="width:100%; margin-bottom:8px; padding:14px; font-size:13.5px;">⚔️ DÜELLO MODU — Baskı Altında Yarış!</button>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                <button onclick="sekmeAc('skor')" class="btn btn-primary" style="padding:14px; font-size:13px;">🎯 Skor Gir</button>
-                <button onclick="sekmeAc('basari')" class="btn" style="padding:14px; font-size:13px;">🏅 Rozetlerim</button>
-                <button onclick="sekmeAc('oyun')" class="btn" style="padding:14px; font-size:13px;">🎮 Mağaza</button>
-                <button onclick="sekmeAc('liderlik')" class="btn" style="padding:14px; font-size:13px;">🏆 Sıralama</button>
-            </div>`;
+            <div id="google-yorum-slayt-ana" style="margin-bottom:14px;"></div>`;
             try { canliTakipWidgetGuncelle(); } catch(e) {}
             try { googleYorumSlaytiBaslat('google-yorum-slayt-ana'); } catch(e) {}
             try { duyuruSlaytiBaslat('duyuru-slayt-ana'); } catch(e) {}
