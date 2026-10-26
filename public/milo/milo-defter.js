@@ -9,12 +9,13 @@
      · ek durum: meta 'yoklama_durum' { 'YYYY-MM-DD|ad': { d: 'hasta'|'telafi', t } }  (hasta = gelmedi + neden,
        telafi = geldi + telafi dersi)
      · paket ödemeleri: meta 'paket_odeme' { 'grup|ad|paketNo': { odendi, tutar, odemeTarihi, not, t } }
+   (2026-10-27: TELAFİ KURALI değişti — aşağıda mdHesap; 📞 Haber verdi durumu eklendi.)
    PAKET HESABI (saklanmaz): öğrencinin kayıtları tarih sırasıyla; telafi olmayan her kayıt (geldi/gelmedi/hasta) paketin
    8 dersinden birini doldurur, 8 dolunca yeni paket. Gelmediği her ders 1 telafi hakkı; telafi kaydı hakkı açık en eski
    pakete yazılır (8 ders + telafi = 9). Paket 8'i doldurduysa ve hak kullanılmadıysa uyarı.
    ================================================================================================ */
 const MD = { yuklendi: false, uyeler: [], att: {}, durum: {}, odeme: {}, slotlar: [], dues: [], secili: null, ay: null, ara: '', ekran: 'liste', secim: null, aktarim: null };
-const MD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '🔁', cls: 't' }, k: { ad: 'Başka gün geldi', ikon: '↪', cls: 'k' } };
+const MD_DURUM = { g: { ad: 'Geldi', ikon: '✓', cls: 'g' }, y: { ad: 'Gelmedi', ikon: '✕', cls: 'y' }, m: { ad: 'Haber verdi', ikon: '📞', cls: 'm' }, h: { ad: 'Hasta', ikon: '🤒', cls: 'h' }, t: { ad: 'Telafi', ikon: '🔁', cls: 't' }, k: { ad: 'Başka gün geldi', ikon: '↪', cls: 'k' } };
 const MD_AY = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 function mdIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function mdTR(iso) { let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
@@ -42,41 +43,93 @@ function mdGun(u, iso) {
     if (a.grup && a.grup !== u.grup && MD.uyeler.some(function (x) { return x.grup === a.grup && x.ad === u.ad; })) return null;
     let e = MD.durum[iso + '|' + u.ad], d = e && !e.sil ? e.d : null;
     if (a.geldi) return d === 'telafi' ? 't' : 'g';
-    return d === 'hasta' ? 'h' : d === 'baska' ? 'k' : 'y'; // k: o gün gelmedi, başka gün geldi (2026-10-16)
+    return d === 'hasta' ? 'h' : d === 'haber' ? 'm' : d === 'baska' ? 'k' : 'y'; // k: o gün gelmedi, başka gün geldi (2026-10-16) · m: haber verdi (2026-10-27)
 }
 function mdKayitlar(u) {
     return Object.keys(MD.att).filter(function (iso) { return mdGun(u, iso); }).sort().map(function (iso) { return { iso: iso, s: mdGun(u, iso) }; });
 }
-function mdPaketler(u) {
-    let pk = [], cur = null, yeni = function () { cur = { no: pk.length + 1, dersler: [], telafiler: [], hak: 0 }; pk.push(cur); };
+// TELAFİ KURALI (2026-10-27, kullanıcı: "telafi yanlış anlaşılmış; her gelmeme hak olmamalı, hakkın süresi olmalı, yönetici elle
+// düzeltebilsin, ekranda karışık" → "hasta + haber verdi", "30 gün"):
+//   · 🤒 hasta ya da 📞 haber verdi → 1 telafi hakkı, o dersten itibaren 30 gün geçerli; ✕ habersiz gelmedi → hak yok.
+//   · MD_KURAL_TARIH'ten önce "gelmedi" işaretlenen dersler eski kurala göre hak taşır, 30 günü o tarihten sayılır.
+//   · Yönetici her derste değiştirir: yoklama_durum kaydında hak:'ver'|'yok', bitis:'YYYY-MM-DD' (süreyi uzat).
+//   · Telafi dersi, o gün geçerli olan en eski açık hakkı kapatır ve o hakkın paketine yazılır; açık hak yoksa yine
+//     kaydedilir (fazla telafi), paketten ders yemez.
+// public/milo/../src/routes/milo/veliPano.ts aynı kuralı sunucuda hesaplar — biri değişirse öbürü de.
+const MD_TELAFI_GUN = 30, MD_KURAL_TARIH = '2026-10-28';
+function mdGunEkle(iso, n) { let d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return mdIso(d); }
+function mdHakAyar(u, iso) { let e = MD.durum[iso + '|' + u.ad]; return e && !e.sil ? e : {}; }
+// Bu derste telafi hakkı doğar mı (kural + yöneticinin elle ayarı)
+function mdHakVarMi(u, r) {
+    if (r.s !== 'y' && r.s !== 'h' && r.s !== 'm') return false;
+    let e = mdHakAyar(u, r.iso); if (e.hak === 'ver') return true; if (e.hak === 'yok') return false;
+    return r.s === 'h' || r.s === 'm' || r.iso < MD_KURAL_TARIH;
+}
+function mdHakBitis(u, iso) { let e = mdHakAyar(u, iso); return e.bitis || mdGunEkle(iso < MD_KURAL_TARIH ? MD_KURAL_TARIH : iso, MD_TELAFI_GUN); }
+function mdPaketler(u) { return mdHesap(u).paketler; }
+function mdHesap(u) {
+    let pk = [], haklar = [], fazla = [], bugun = mdIso(new Date()), cur = null, yeni = function () { cur = { no: pk.length + 1, dersler: [], telafiler: [], hak: 0 }; pk.push(cur); };
     mdKayitlar(u).forEach(function (r) {
         if (r.s === 't') {
-            let hedef = pk.find(function (p) { return p.hak > p.telafiler.length; }) || cur;
-            if (!hedef) { yeni(); hedef = cur; }
-            hedef.telafiler.push(r); return;
+            let h = haklar.find(function (x) { return !x.kullanim && x.iso <= r.iso && r.iso <= x.bitis; });
+            if (h) { h.kullanim = r.iso; pk[h.paket - 1].telafiler.push(r); }
+            else { if (!cur) yeni(); cur.telafiler.push(r); fazla.push(r); }
+            return;
         }
-        if (r.s === 'k') return; // ↪ başka güne kaydı: paketten ders yemez, telafi hakkı doğurmaz (geldiği gün ders sayılır)
+        if (r.s === 'k') return; // ↪ başka güne kaydı: paketten ders yemez, hak doğurmaz (geldiği gün ders sayılır)
         if (!cur || cur.dersler.length >= 8) yeni();
-        cur.dersler.push(r); if (r.s === 'y' || r.s === 'h') cur.hak++;
+        cur.dersler.push(r);
+        if (mdHakVarMi(u, r)) { cur.hak++; haklar.push({ iso: r.iso, s: r.s, paket: cur.no, bitis: mdHakBitis(u, r.iso), kullanim: null, elle: mdHakAyar(u, r.iso).hak || null }); }
     });
+    haklar.forEach(function (h) { h.durum = h.kullanim ? 'kullanildi' : h.bitis < bugun ? 'dustu' : 'acik'; });
     pk.forEach(function (p) {
         p.bas = p.dersler.length ? p.dersler[0].iso : (p.telafiler[0] || {}).iso; let son = p.dersler.concat(p.telafiler).map(function (r) { return r.iso; }).sort(); p.bit = son[son.length - 1];
         p.geldi = p.dersler.filter(function (r) { return r.s === 'g'; }).length + p.telafiler.length;
-        p.dolu = p.dersler.length >= 8; p.kalanHak = Math.max(0, p.hak - p.telafiler.length);
+        p.dolu = p.dersler.length >= 8; p.kalanHak = haklar.filter(function (h) { return h.paket === p.no && h.durum === 'acik'; }).length;
         p.odeme = MD.odeme[mdKey(u) + '|' + p.no] || null;
     });
-    return pk;
+    return { paketler: pk, haklar: haklar, fazla: fazla };
 }
 function mdOzet(u) {
-    let k = mdKayitlar(u), say = { g: 0, y: 0, h: 0, t: 0, k: 0 }; k.forEach(function (r) { say[r.s]++; });
-    let pk = mdPaketler(u), hak = pk.reduce(function (a, p) { return a + p.kalanHak; }, 0), son = pk[pk.length - 1] || null;
+    let k = mdKayitlar(u), say = { g: 0, y: 0, m: 0, h: 0, t: 0, k: 0 }; k.forEach(function (r) { say[r.s]++; });
+    let hs = mdHesap(u), pk = hs.paketler, acik = hs.haklar.filter(function (h) { return h.durum === 'acik'; }), hak = acik.length, son = pk[pk.length - 1] || null;
+    let hakYok = k.filter(function (r) { return (r.s === 'y' || r.s === 'h' || r.s === 'm') && !mdHakVarMi(u, r); });
     let odemeler = pk.filter(function (p) { return p.odeme && p.odeme.odendi; }).map(function (p) { return { no: p.no, tarih: p.odeme.odemeTarihi, tutar: p.odeme.tutar, not: p.odeme.not }; });
     let uyarilar = [];
-    pk.forEach(function (p) {
-        if (p.dolu && p.kalanHak > 0) uyarilar.push({ tur: 'telafi', metin: 'Paket ' + p.no + ': 8 ders doldu — ' + p.kalanHak + ' telafi hakkı var (toplam ' + (8 + p.hak) + ' ders).' });
-        if (!(p.odeme && p.odeme.odendi) && (p.dersler.length || p.telafiler.length)) uyarilar.push({ tur: 'odeme', metin: 'Paket ' + p.no + ' ödemesi girilmedi.' });
-    });
-    return { kayit: k, say: say, paketler: pk, hak: hak, son: son, odemeler: odemeler, uyarilar: uyarilar, ilk: k.length ? k[0].iso : null, sonGelis: (k.filter(function (r) { return r.s === 'g' || r.s === 't'; }).pop() || {}).iso || null };
+    if (hak) { let ilk = acik.slice().sort(function (a, b) { return a.bitis < b.bitis ? -1 : 1; })[0]; uyarilar.push({ tur: 'telafi', metin: hak + ' telafi hakkı açık · ilkinin son günü ' + mdTR(ilk.bitis) + '.' }); }
+    pk.forEach(function (p) { if (!(p.odeme && p.odeme.odendi) && (p.dersler.length || p.telafiler.length)) uyarilar.push({ tur: 'odeme', metin: 'Paket ' + p.no + ' ödemesi girilmedi.' }); });
+    return { kayit: k, say: say, paketler: pk, haklar: hs.haklar, hakYok: hakYok, fazla: hs.fazla, acikHaklar: acik, hak: hak, son: son, odemeler: odemeler, uyarilar: uyarilar, ilk: k.length ? k[0].iso : null, sonGelis: (k.filter(function (r) { return r.s === 'g' || r.s === 't'; }).pop() || {}).iso || null };
+}
+// Yöneticinin telafi düzeltmesi: ver (kural dışı hak) · yok (hak verme) · uzat (bugünden 30 gün) · geri (kurala dön)
+async function mdHakIslem(kEnc, iso, islem) {
+    let u = mdUye(decodeURIComponent(kEnc)); if (!u) return;
+    let anahtar = iso + '|' + u.ad, e = Object.assign({ d: null }, mdHakAyar(u, iso));
+    delete e.sil;
+    if (islem === 'ver') e.hak = 'ver'; else if (islem === 'yok') { e.hak = 'yok'; delete e.bitis; }
+    else if (islem === 'uzat') { e.bitis = mdGunEkle(mdIso(new Date()), MD_TELAFI_GUN); if (e.hak === 'yok') delete e.hak; }
+    else { delete e.hak; delete e.bitis; }
+    e.t = Date.now(); let kayit = {}; kayit[anahtar] = e;
+    try { MD.durum = await mdMetaYaz('yoklama_durum', kayit); } catch (x) { showToast('Kaydedilemedi — bağlantını kontrol et.', 'error'); return; }
+    showToast({ ver: '🔁 ' + mdTR(iso) + ' için telafi hakkı verildi', yok: mdTR(iso) + ': telafi hakkı kaldırıldı', uzat: '🔁 Süre uzatıldı: ' + mdTR(e.bitis || '') + ' son gün', geri: mdTR(iso) + ': kurala döndü' }[islem] || 'Kaydedildi', 'success');
+    mdDetayYenile();
+}
+function mdHakHTML(u, o) {
+    let k = mdEnc(mdKey(u)), bugun = mdIso(new Date()), sinir = mdGunEkle(bugun, -150);
+    let satir = o.haklar.map(function (h) { return { iso: h.iso, s: h.s, h: h }; }).concat(o.hakYok.map(function (r) { return { iso: r.iso, s: r.s, h: null }; }))
+        .filter(function (x) { return x.iso >= sinir || (x.h && x.h.durum === 'acik'); }).sort(function (a, b) { return a.iso < b.iso ? 1 : -1; });
+    if (!satir.length && !o.fazla.length) return '';
+    let dugme = function (islem, yazi, ana) { return '<button class="md-btn' + (ana ? ' ana' : '') + '" onclick="mdHakIslem(\'' + k + '\',\'' + this.iso + '\',\'' + islem + '\')">' + yazi + '</button>'; };
+    let sayi = { acik: 0, kullanildi: 0, dustu: 0 }; o.haklar.forEach(function (h) { sayi[h.durum]++; });
+    return '<div class="md-bolum"><div class="md-bolum-bas">🔁 Telafi hakları <small>🤒 hasta / 📞 haber verdi → ' + MD_TELAFI_GUN + ' gün geçerli hak · ✕ habersiz → hak yok · her satırı değiştirebilirsin</small></div>'
+        + '<div class="md-haklar">' + satir.map(function (x) {
+            let d = { iso: x.iso }, el = mdHakAyar(u, x.iso).hak, kalan = x.h ? Math.round((new Date(x.h.bitis) - new Date(bugun)) / 864e5) : 0, rozet, metin, btn;
+            if (!x.h) { rozet = '<span class="md-hd yok">Hak yok</span>'; metin = el === 'yok' ? 'Elle kaldırıldı' : 'Haber verilmeden gelmedi, kurala göre hak yok'; btn = el === 'yok' ? dugme.call(d, 'geri', 'Geri al') : dugme.call(d, 'ver', 'Yine de hak ver', true); }
+            else if (x.h.durum === 'acik') { rozet = '<span class="md-hd acik">Açık</span>'; metin = '<b>' + mdTR(x.h.bitis) + '</b> tarihine kadar (' + kalan + ' gün)' + (el === 'ver' ? ' · elle verildi' : ''); btn = el === 'ver' ? dugme.call(d, 'geri', 'Geri al') : dugme.call(d, 'yok', 'Hak verme'); }
+            else if (x.h.durum === 'kullanildi') { rozet = '<span class="md-hd kul">Kullanıldı</span>'; metin = mdTR(x.h.kullanim) + ' telafi dersiyle'; btn = ''; }
+            else { rozet = '<span class="md-hd dus">Süresi doldu</span>'; metin = mdTR(x.h.bitis) + ' tarihinde düştü'; btn = dugme.call(d, 'uzat', 'Süreyi uzat'); }
+            return '<div class="md-hs"><div class="md-hs-t"><b>' + mdKisaTR(x.iso) + ' ' + ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'][new Date(x.iso + 'T12:00:00').getDay()] + '</b><small>' + MD_DURUM[x.s].ikon + ' ' + (x.s === 'y' ? 'Gelmedi (habersiz)' : MD_DURUM[x.s].ad) + '</small></div><div class="md-hs-m">' + rozet + metin + '</div>' + btn + '</div>';
+        }).join('') + '</div>'
+        + (o.fazla.length ? '<div class="md-alt">Açık hak olmadan yapılan telafi dersi: ' + o.fazla.map(function (r) { return mdTR(r.iso); }).join(', ') + ' (pakete sayılmadı).</div>' : '') + '</div>';
 }
 // Programda bu öğrencinin dersi olan günler (takvimde halka) — slot.gunler: 0=Pazar … 6=Cumartesi
 function mdDersGunleri(u) {
@@ -90,7 +143,7 @@ async function mdGunYaz(u, iso, s) {
     if (s === null) await miloApi('/attendance/auto', { method: 'DELETE', body: JSON.stringify({ tarih: iso, ad: u.ad }) });
     else await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: iso, ad: u.ad, grup: u.grup, saat: '12:00', elle: true, geldi: s === 'g' || s === 't' }) });
     if (s === null) delete (MD.att[iso] || {})[u.ad]; else (MD.att[iso] = MD.att[iso] || {})[u.ad] = { geldi: s === 'g' || s === 't', grup: u.grup, saat: '12:00' };
-    let ek = s === 'h' ? 'hasta' : s === 't' ? 'telafi' : s === 'k' ? 'baska' : null, mevcut = MD.durum[anahtar];
+    let ek = s === 'h' ? 'hasta' : s === 'm' ? 'haber' : s === 't' ? 'telafi' : s === 'k' ? 'baska' : null, mevcut = MD.durum[anahtar];
     if (ek || (mevcut && !mevcut.sil && mevcut.d)) {
         let kayit = {}; kayit[anahtar] = ek ? Object.assign({ d: ek, t: Date.now() }, s === 'k' && mdGunYaz.ref ? { ref: mdGunYaz.ref } : {}) : { d: null, sil: true, t: Date.now() };
         MD.durum[anahtar] = kayit[anahtar]; MD.durum = await mdMetaYaz('yoklama_durum', kayit);
@@ -155,13 +208,14 @@ function mdDetayHTML(u) {
     let p = o.son;
     return '<div class="md-ust"><div><div class="md-ad">' + miloEsc(u.ad) + '</div><div class="md-alt">' + miloEsc(u.grup) + (yas ? ' · ' + miloEsc(yas) : '') + (o.ilk ? ' · ilk ders ' + mdTR(o.ilk) : '') + (o.sonGelis ? ' · son geliş ' + mdTR(o.sonGelis) : '') + '</div></div>'
         + '<span style="display:flex;gap:8px;flex-wrap:wrap"><button class="md-btn" onclick="mdOgrenciPdf(\'' + mdEnc(mdKey(u)) + '\')">📄 Öğrenci raporu PDF</button>' + (u.acilTelefon ? '<button class="md-btn" onclick="mdVeliMesaj(\'' + mdEnc(mdKey(u)) + '\')">💬 Veliye özet</button>' : '') + '</span></div>'
-        + '<div class="md-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + kutu(p ? p.dersler.length + '/8' : '—', p ? 'paket ' + p.no : 'paket', '') + '</div>'
+        + '<div class="md-kutular">' + kutu(o.say.g + o.say.t, 'geldi', 'g') + kutu(o.say.y, 'gelmedi', 'y') + kutu(o.say.m, 'haber verdi', 'm') + kutu(o.say.h, 'hasta', 'h') + kutu(o.say.t, 'telafi yaptı', 't') + kutu(o.hak, 'açık telafi hakkı', o.hak ? 'uyari' : '') + kutu(p ? p.dersler.length + '/8' : '—', p ? 'paket ' + p.no : 'paket', '') + '</div>'
         + mdPaketUyariHTML(u)
         + o.uyarilar.map(function (w) { return '<div class="md-uyari ' + w.tur + '">' + (w.tur === 'telafi' ? '🔁 ' : '💰 ') + miloEsc(w.metin) + '</div>'; }).join('')
         + '<div class="md-bolum"><div class="md-bolum-bas">🗓 Yoklama takvimi <small>güne dokun → durum seç · halkalı günler programdaki ders günleri</small></div>'
         + '<div class="md-aylar">' + aylar.map(function (a) { let say = o.kayit.filter(function (r) { return r.iso.slice(0, 7) === a; }).length; return '<button class="' + (a === MD.ay ? 'aktif' : '') + '" onclick="MD.ay=\'' + a + '\'; MD.secim=null; mdDetayYenile()">' + MD_AY[+a.slice(5) - 1] + (a.slice(0, 4) !== String(new Date().getFullYear()) ? ' ' + a.slice(0, 4) : '') + (say ? ' <i>' + say + '</i>' : '') + '</button>'; }).join('') + '</div>'
         + mdTakvimHTML(u) + '<div class="md-lejant">' + Object.keys(MD_DURUM).map(function (k) { return '<span class="' + MD_DURUM[k].cls + '"><i>' + MD_DURUM[k].ikon + '</i>' + MD_DURUM[k].ad + '</span>'; }).join('') + '</div></div>'
-        + '<div class="md-bolum"><div class="md-bolum-bas">📦 Paketler (8 ders) <small>gelmediği her ders 1 telafi hakkı · telafiyle 9 ders</small></div>' + (o.paketler.length ? o.paketler.slice().reverse().map(function (pk) { return mdPaketHTML(u, pk); }).join('') : '<div class="md-bos">Henüz yoklama yok — takvimden gün işaretle.</div>') + '</div>'
+        + mdHakHTML(u, o)
+        + '<div class="md-bolum"><div class="md-bolum-bas">📦 Paketler (8 ders) <small>telafi dersleri pakete sayılmaz</small></div>' + (o.paketler.length ? o.paketler.slice().reverse().map(function (pk) { return mdPaketHTML(u, pk); }).join('') : '<div class="md-bos">Henüz yoklama yok — takvimden gün işaretle.</div>') + '</div>'
         + '<div class="md-bolum"><div class="md-bolum-bas">💰 Ödemeler</div>' + (o.odemeler.length ? '<div class="md-odemeler">' + o.odemeler.map(function (x) { return '<div><b>Paket ' + x.no + '</b><span>' + (x.tarih ? mdTR(x.tarih) : 'tarih yok') + '</span><span>' + (x.tutar ? x.tutar + ' ₺' : '') + '</span><small>' + miloEsc(x.not || '') + '</small></div>'; }).join('') + '</div>' : '<div class="md-bos">Paket ödemesi girilmedi.</div>')
         + mdAylikAidatHTML(u) + '</div>';
 }
@@ -193,7 +247,8 @@ async function mdDurumSec(s) {
     MD.secim = null; mdDetayYenile();
     let o = mdOzet(u), w = o.uyarilar.find(function (x) { return x.tur === 'telafi'; });
     showToast(s ? mdTR(iso) + ': ' + MD_DURUM[s].ad : mdTR(iso) + ' boşaltıldı', 'success');
-    if (w && (s === 'y' || s === 'h' || s === 'g')) setTimeout(function () { showToast('🔁 ' + w.metin, 'warning'); }, 900);
+    if (w && (s === 'm' || s === 'h')) setTimeout(function () { showToast('🔁 ' + w.metin, 'warning'); }, 900);
+    if (s === 'y' && iso >= MD_KURAL_TARIH) setTimeout(function () { showToast('✕ Habersiz gelmedi: telafi hakkı yok. Haber verdiyse 📞 Haber verdi seç.', 'info'); }, 900);
 }
 function mdBaskaGunSor(u, iso) {
     let bugun = mdIso(new Date()), vars = iso < bugun ? bugun : mdIso(new Date(Date.now() - 864e5));
@@ -210,8 +265,8 @@ function mdPaketHTML(u, p) {
     let nokta = p.dersler.map(function (r) { return '<span class="md-n ' + MD_DURUM[r.s].cls + '" title="' + mdTR(r.iso) + ' · ' + MD_DURUM[r.s].ad + '">' + MD_DURUM[r.s].ikon + '<small>' + mdKisaTR(r.iso) + '</small></span>'; }).join('')
         + Array.from({ length: Math.max(0, 8 - p.dersler.length) }, function () { return '<span class="md-n bos"><small>—</small></span>'; }).join('')
         + p.telafiler.map(function (r) { return '<span class="md-n t" title="Telafi ' + mdTR(r.iso) + '">🔁<small>' + mdKisaTR(r.iso) + '</small></span>'; }).join('')
-        + Array.from({ length: p.kalanHak }, function () { return '<span class="md-n hak" title="Kullanılmamış telafi hakkı">🔁<small>hak</small></span>'; }).join('');
-    let durum = p.dolu ? (p.kalanHak ? '<b class="md-turuncu">8/8 · ' + p.kalanHak + ' telafi hakkı açık</b>' : '<b class="md-yesil">tamamlandı</b>') : p.dersler.length + '/8 ders';
+        + Array.from({ length: p.kalanHak }, function () { return '<span class="md-n hak" title="Açık telafi hakkı">🔁<small>açık</small></span>'; }).join('');
+    let durum = (p.dolu ? '<b class="md-yesil">8/8 ders işlendi</b>' : p.dersler.length + '/8 ders işlendi') + (p.kalanHak ? ' · <b class="md-turuncu">' + p.kalanHak + ' telafi hakkı açık</b>' : '');
     return '<div class="md-paket' + (p.dolu && !p.kalanHak ? ' bitti' : '') + '"><div class="md-paket-bas"><b>Paket ' + p.no + '</b><span>' + mdTR(p.bas) + (p.bit && p.bit !== p.bas ? ' → ' + mdTR(p.bit) : '') + '</span><span>' + durum + ' · geldi ' + p.geldi + '</span></div>'
         + '<div class="md-noktalar">' + nokta + '</div>'
         + '<div class="md-odeme"><input type="number" inputmode="numeric" placeholder="Tutar ₺" value="' + (o.tutar || '') + '" id="md-o-tutar-' + p.no + '"><label><input type="checkbox" id="md-o-odendi-' + p.no + '"' + (o.odendi ? ' checked' : '') + '> Ödendi</label><input type="date" id="md-o-tarih-' + p.no + '" value="' + (o.odemeTarihi || '') + '" max="' + mdIso(new Date()) + '">'
@@ -246,7 +301,7 @@ function mdPaketMesaj(x) {
     let son = x.o.odemeler.filter(function (o) { return o.tutar; }).pop();
     return 'Merhaba 🌟 MILO FITT KIDS\'ten yazıyoruz.\n\n' + ilk + ' için kısa bilgi:\n'
         + '• ' + p.no + '. paket: ' + p.dersler.length + '/8 ders tamamlandı' + (x.kalan === 1 ? ', son 1 dersi kaldı.' : x.kalan ? ', ' + x.kalan + ' dersi kaldı.' : '.') + '\n'
-        + (x.hak ? '• 🔁 ' + x.hak + ' telafi hakkı var: gelemediği ders' + (x.hak > 1 ? 'ler' : '') + ' için uygun bir günde telafi yapabiliriz.\n' : '')
+        + (x.hak ? '• 🔁 ' + x.hak + ' telafi hakkı var (' + mdTR(x.o.acikHaklar.map(function (h) { return h.bitis; }).sort()[0]) + ' tarihine kadar): uygun bir derste telafi yapabiliriz.\n' : '')
         + '\n' + (x.kalan ? 'Son dersiniz yaklaşıyor 💛 Derslere ara vermeden devam etmek için yeni paketi (8 ders) şimdiden yenileyebilirsiniz.' : 'Paketiniz tamamlandı 💛 Derslere ara vermeden devam etmek için yeni paketi (8 ders) yenileyebilirsiniz.')
         + (son ? '\nPaket ücreti: ' + son.tutar + ' ₺' : '') + '\n\nSorunuz olursa buradan yazabilirsiniz. Görüşmek üzere!';
 }
@@ -299,7 +354,7 @@ function mdVeliMesaj(kEnc) {
 // çubukları, en çok gelen / en uzun süredir yok, öğrenci tablosu (paket, geldi/gelmedi/hasta/telafi, açık hak, son geliş,
 // paket ödemesi) + gün gün çizelge. Öğrenci raporu (dikey): özet, son aylar takvimi, paketler, ödemeler — veliye verilebilir.
 // ================================================================================================
-const MD_PDF_RENK = { g: [19, 138, 128], y: [180, 55, 47], h: [109, 75, 184], t: [138, 90, 0] };
+const MD_PDF_RENK = { g: [19, 138, 128], y: [180, 55, 47], m: [37, 99, 235], h: [109, 75, 184], t: [138, 90, 0], k: [107, 121, 118] };
 function mdPdfBaslik(pdf, T, mx, uw, y, baslik, rozet) {
     pdf.setTextColor(27, 36, 34); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(17); pdf.text(T(baslik), mx, y + 8);
     pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118); pdf.text('MILO FITT KIDS', mx, y + 14);
@@ -325,13 +380,13 @@ async function mdYoklamaRaporPdf(bas, bit, donemAd) {
     let gunler = []; for (let d = new Date(bas + 'T12:00:00'); mdIso(d) <= bit; d.setDate(d.getDate() + 1)) gunler.push(mdIso(d));
     let aktif = MD.uyeler.filter(function (u) { return !u.pasif; }).sort(function (a, b) { return String(a.grup).localeCompare(String(b.grup), 'tr') || a.ad.localeCompare(b.ad, 'tr'); });
     let satir = aktif.map(function (u) {
-        let say = { g: 0, y: 0, h: 0, t: 0 }, gun = {}; gunler.forEach(function (iso) { let s = mdGun(u, iso); if (s) { say[s]++; gun[iso] = s; } });
+        let say = { g: 0, y: 0, m: 0, h: 0, t: 0, k: 0 }, gun = {}; gunler.forEach(function (iso) { let s = mdGun(u, iso); if (s) { say[s]++; gun[iso] = s; } });
         let o = mdOzet(u), p = o.son, son = o.sonGelis;
         return { u: u, say: say, gun: gun, gel: say.g + say.t, paket: p ? p.no + ' · ' + p.dersler.length + '/8' : '—', hak: o.hak, son: son, odendi: p && p.odeme && p.odeme.odendi };
     });
     let dersGunleri = gunler.filter(function (iso) { return satir.some(function (r) { return r.gun[iso]; }); });
     let toplamGel = satir.reduce(function (a, r) { return a + r.gel; }, 0), gelen = satir.filter(function (r) { return r.gel; }).length;
-    let hasta = satir.reduce(function (a, r) { return a + r.say.h; }, 0), telafi = satir.reduce(function (a, r) { return a + r.say.t; }, 0), gelmedi = satir.reduce(function (a, r) { return a + r.say.y; }, 0);
+    let hasta = satir.reduce(function (a, r) { return a + r.say.h; }, 0), telafi = satir.reduce(function (a, r) { return a + r.say.t; }, 0), gelmedi = satir.reduce(function (a, r) { return a + r.say.y + r.say.m; }, 0);
     let pdf = await _miloYeniPdfAl('landscape'), T = typeof _miloTrTranslit === 'function' ? _miloTrTranslit : function (s) { return s; }, W = 297, H = 210, mx = 14, uw = W - 28;
     let y = mdPdfBaslik(pdf, T, mx, uw, 10, 'Yoklama Raporu', donemAd);
     // özet kutuları
@@ -384,7 +439,7 @@ async function mdYoklamaRaporPdf(bas, bit, donemAd) {
     satir.forEach(function (r, i) {
         if (y + 6 > H - 14) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); y = 14; basCiz(); }
         if (i % 2) { pdf.setFillColor(250, 251, 251); pdf.rect(mx, y, uw, 6, 'F'); }
-        let x = mx, deger = [String(i + 1), T(r.u.ad).slice(0, 30), T(r.u.grup || '').slice(0, 18), T(r.paket), String(r.gel), String(r.say.y), String(r.say.h), String(r.say.t), String(r.hak || ''), r.son ? mdTR(r.son).slice(0, 5) : '—', r.odendi ? 'ödendi' : '—'];
+        let x = mx, deger = [String(i + 1), T(r.u.ad).slice(0, 30), T(r.u.grup || '').slice(0, 18), T(r.paket), String(r.gel), String(r.say.y + r.say.m), String(r.say.h), String(r.say.t), String(r.hak || ''), r.son ? mdTR(r.son).slice(0, 5) : '—', r.odendi ? 'ödendi' : '—'];
         sut.forEach(function (c, j) {
             pdf.setFont('helvetica', j === 1 ? 'bold' : 'normal'); pdf.setFontSize(j === 1 ? 7 : 6.8);
             let renk = j === 4 ? MD_PDF_RENK.g : j === 5 && r.say.y ? MD_PDF_RENK.y : j === 6 && r.say.h ? MD_PDF_RENK.h : j === 7 && r.say.t ? MD_PDF_RENK.t : j === 8 && r.hak ? MD_PDF_RENK.t : j === 10 && r.odendi ? MD_PDF_RENK.g : [46, 57, 54];
@@ -394,6 +449,7 @@ async function mdYoklamaRaporPdf(bas, bit, donemAd) {
             let s = r.gun[iso], cx = x + cw / 2, cy = y + 3;
             if (s === 'g' || s === 't') { pdf.setFillColor.apply(pdf, MD_PDF_RENK[s]); pdf.rect(x + 0.6, y + 1, cw - 1.2, 4, 'F'); }
             else if (s === 'h') { pdf.setFillColor.apply(pdf, MD_PDF_RENK.h); pdf.circle(cx, cy, Math.min(1.5, cw / 3), 'F'); }
+            else if (s === 'm') { pdf.setDrawColor.apply(pdf, MD_PDF_RENK.m); pdf.setLineWidth(0.45); pdf.circle(cx, cy, Math.min(1.4, cw / 3), 'S'); }
             else if (s === 'y') { pdf.setDrawColor.apply(pdf, MD_PDF_RENK.y); pdf.setLineWidth(0.45); pdf.line(cx - 1.1, cy - 1.1, cx + 1.1, cy + 1.1); pdf.line(cx - 1.1, cy + 1.1, cx + 1.1, cy - 1.1); }
             x += cw;
         });
@@ -415,7 +471,7 @@ async function mdOgrenciPdf(kEnc) {
     let y = mdPdfBaslik(pdf, T, mx, uw, 12, u.ad, u.grup);
     pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(107, 121, 118);
     pdf.text(T([yas, o.ilk ? 'İlk ders ' + mdTR(o.ilk) : '', o.sonGelis ? 'Son geliş ' + mdTR(o.sonGelis) : ''].filter(Boolean).join(' · ')), mx, y); y += 6;
-    let k = [[o.say.g + o.say.t, 'geldi', MD_PDF_RENK.g], [o.say.y, 'gelmedi', MD_PDF_RENK.y], [o.say.h, 'hasta', MD_PDF_RENK.h], [o.say.t, 'telafi dersi', MD_PDF_RENK.t], [o.hak, 'açık telafi hakkı', MD_PDF_RENK.t], [o.son ? o.son.dersler.length + '/8' : '—', o.son ? 'paket ' + o.son.no : 'paket']];
+    let k = [[o.say.g + o.say.t, 'geldi', MD_PDF_RENK.g], [o.say.y + o.say.m, 'gelmedi', MD_PDF_RENK.y], [o.say.h, 'hasta', MD_PDF_RENK.h], [o.say.t, 'telafi dersi', MD_PDF_RENK.t], [o.hak, 'açık telafi hakkı', MD_PDF_RENK.t], [o.son ? o.son.dersler.length + '/8' : '—', o.son ? 'paket ' + o.son.no : 'paket']];
     let kw = (uw - 5 * 3) / 6; k.forEach(function (x, i) { mdPdfKutu(pdf, T, mx + i * (kw + 3), y, kw, x[0], x[1], x[2]); }); y += 24;
     // son 3 ayın takvimi
     let aylar = mdAylar(u, o).slice(-3);
@@ -545,7 +601,7 @@ async function mdAktarimKaydet() {
 // eklenir). Hücreye dokun: boş → ✓ geldi → ✗ gelmedi → H hasta → T telafi → boş. Gün başlığı: o günün boşlarını "geldi" yapar.
 // Değişiklikler ekranda birikir (turuncu çerçeve), "Kaydet" tek seferde yazar (mdGunYaz — Defter'le aynı kurallar).
 // Bekleyen değişiklik varken arka plan yenilemesi ekrana dokunmaz (milo/app.js miloMesgulMu).
-const MD_CZ_SIRA = [null, 'g', 'y', 'h', 't', 'k'];
+const MD_CZ_SIRA = [null, 'g', 'y', 'm', 'h', 't', 'k'];
 function mdCzGruplar() { let g = {}; MD.uyeler.forEach(function (u) { if (!u.pasif) g[u.grup] = (g[u.grup] || 0) + 1; }); return Object.keys(g).sort(function (a, b) { return a.localeCompare(b, 'tr', { numeric: true }); }); }
 function mdCzDurum() {
     if (!MD.cz) { let gr = mdCzGruplar(); MD.cz = { grup: gr[0] || '', ay: 0, bekleyen: {}, ekGun: {} }; }
@@ -609,7 +665,7 @@ function mdCzYenile() {
 function mdCizelgeHTML() {
     let cz = mdCzDurum(), gruplar = mdCzGruplar(), uyeler = mdCzUyeler(), gunler = mdCzGunler(), bas = mdCzAyBas(cz.ay), n = Object.keys(cz.bekleyen).length;
     let ayAd = MD_AY[bas.getMonth()] + ' ' + bas.getFullYear(), gAd = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-    let isaret = { g: '✓', y: '✗', h: 'H', t: 'T', k: '↪' };
+    let isaret = { g: '✓', y: '✗', m: '📞', h: 'H', t: 'T', k: '↪' };
     let bas2 = '<th class="ad">Öğrenci</th>' + gunler.map(function (iso) { let d = new Date(iso + 'T12:00:00'); return '<th><button class="md-cz-gun" onclick="mdCzHepsiGeldi(\'' + iso + '\')" title="Bu günün boşlarını geldi yap"><b>' + d.getDate() + '</b><small>' + gAd[d.getDay()] + '</small></button></th>'; }).join('') + '<th class="top">Geldi</th>';
     let satir = uyeler.map(function (u) {
         let k = mdKey(u), gel = 0;
@@ -691,6 +747,13 @@ function mdCss() {
         '.md-btn.ana{background:var(--s-vurgu);border-color:var(--s-vurgu);color:#fff}.md-btn.genis{width:100%}.md-btn.buyuk{min-height:50px;font-size:15px;padding:0 20px}',
         '.md-kutular{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:4px 16px}.md-kutu{padding:0}.md-kutu b{display:block;font-size:28px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}.md-kutu small{font-size:12px;color:var(--s-dim);font-weight:600}',
         '.md-kutu.g b{color:var(--s-vurgu)}.md-kutu.y b{color:var(--s-kirmizi)}.md-kutu.h b{color:var(--s-mor)}.md-kutu.t b{color:var(--s-amber)}.md-kutu.uyari b{color:var(--s-amber)}',
+        '.md-gun.m{background:#E8F0FE;color:#2563EB}.md-secici button.m{color:#2563EB}.md-lejant .m i{background:#E8F0FE;color:#2563EB}.md-n.m{background:#E8F0FE;color:#2563EB}.md-kutu.m b{color:#2563EB}',
+        '.md-cz-h.m{background:#E8F0FE;color:#2563EB;border-color:transparent}',
+        '.md-haklar{display:flex;flex-direction:column;border:1px solid var(--s-line);border-radius:12px;overflow:hidden}',
+        '.md-hs{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--s-line)}.md-hs:first-child{border-top:0}',
+        '.md-hs-t b{display:block;font-size:13.5px}.md-hs-t small{font-size:12px;color:var(--s-dim);font-weight:600}.md-hs-m{font-size:13px;font-weight:600;line-height:1.4}.md-hs .md-btn{min-height:36px;font-size:12.5px;padding:0 12px;white-space:nowrap}',
+        '.md-hd{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;margin-right:6px}.md-hd.acik{background:var(--s-vurgu-a);color:#0D6B63}.md-hd.yok{background:#F1F3F2;color:var(--s-dim)}.md-hd.kul{background:#EEF2FF;color:#4338CA}.md-hd.dus{background:var(--s-kirmizi-a);color:var(--s-kirmizi)}',
+        '@media (max-width:640px){.md-hs{grid-template-columns:1fr}}',
         '.md-uyari.paket{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-left-color:var(--s-vurgu);background:var(--s-vurgu-a)}',
         '.md-ph{background:var(--s-kagit);border:1px solid var(--s-line);border-radius:14px;overflow:hidden}.md-ph-bas{padding:10px 14px;font-weight:800;font-size:14px;background:var(--s-amber-a);display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.md-ph-bas small{font-size:12px;font-weight:600;color:var(--s-amber)}',
         '.md-ph-s{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-top:1px solid var(--s-line)}.md-ph-s.gitti{opacity:.6}.md-ph-ad{flex:1;min-width:0;display:grid;gap:1px;text-align:left;border:0;background:transparent;color:var(--s-ink);font:inherit;cursor:pointer;padding:0}.md-ph-ad b{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md-ph-ad small{font-size:12px;color:var(--s-dim)}.md-ph-s .md-btn{flex:none;min-height:36px;padding:0 12px;font-size:12.5px}',

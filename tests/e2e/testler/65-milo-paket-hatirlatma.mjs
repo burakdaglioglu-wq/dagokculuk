@@ -11,6 +11,7 @@ export default async function ({ log }) {
   try {
     await miloApi('/members', { method: 'POST', body: JSON.stringify({ grup: G, ad: A, acilTelefon: '05321234567' }) });
     for (const [i, t] of tarihler.entries()) await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: t, ad: A, grup: G, saat: '10:00', elle: true, geldi: i !== 2 }) });
+    const yd = await metaOku('yoklama_durum'); yd[tarihler[2] + '|' + A] = { d: 'haber', t: Date.now() }; await miloApi('/meta/yoklama_durum', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(yd) }) }); // 📞 haber verdi → telafi hakkı
     const tok = await miloOturumAl();
     const { ctx, p, hatalar } = await sayfaAc({ girisli: false, genislik: 1280, yukseklik: 860 });
     try {
@@ -21,7 +22,7 @@ export default async function ({ log }) {
       const kart = await p.evaluate((ad) => { let s = [...document.querySelectorAll('.md-ph-s')].find((x) => x.textContent.includes(ad)); return s ? { metin: s.textContent, btn: s.querySelector('.md-btn').textContent } : null; }, A);
       dogrula(kart && /7\/8/.test(kart.metin) && /son ders/.test(kart.metin) && /1 telafi/.test(kart.metin) && /Hatırlat/.test(kart.btn), 'Paketi bitiyor kartı: ' + JSON.stringify(kart));
       const msg = await p.evaluate((k) => mdPaketMesaj(mdPaketBul(mdUye(k))), anahtar);
-      dogrula(/1\. paket: 7\/8 ders tamamlandı, son 1 dersi kaldı/.test(msg) && /1 telafi hakkı var/.test(msg) && /Son dersiniz yaklaşıyor/.test(msg) && /yeni paketi/.test(msg), 'mesaj: ' + msg);
+      dogrula(/1\. paket: 7\/8 ders tamamlandı, son 1 dersi kaldı/.test(msg) && /1 telafi hakkı var \(.+ tarihine kadar\)/.test(msg) && /Son dersiniz yaklaşıyor/.test(msg) && /yeni paketi/.test(msg), 'mesaj: ' + msg);
       // öğrenci sayfası uyarısı → gönder
       await p.evaluate((k) => mdSec(encodeURIComponent(k)), anahtar); await p.waitForSelector('.md-uyari.paket');
       await p.locator('.md-uyari.paket button').click(); await p.waitForTimeout(800);
@@ -38,8 +39,9 @@ export default async function ({ log }) {
       esit(await p.evaluate((k) => !!mdPaketBul(mdUye(k)), anahtar), false, 'yeni paket ödenince hatırlatma kalkmalı');
       esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     } finally { await ctx.close(); }
-    log('7/8 + 1 gelmedi → kart, uyarı, mesaj (son 1 ders + 1 telafi), WhatsApp veli no, gönderildi meta, dikkat listesi, ödenince düşer');
+    log('7/8 + 1 haber verdi → kart, uyarı, mesaj (son 1 ders + 1 telafi), WhatsApp veli no, gönderildi meta, dikkat listesi, ödenince düşer');
   } finally {
+    { const v = await metaOku('yoklama_durum').catch(() => ({})); delete v[tarihler[2] + '|' + A]; await miloApi('/meta/yoklama_durum', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(v) }) }).catch(() => {}); }
     for (const k of ['paket_hatirlatma', 'paket_odeme']) { const v = await metaOku(k).catch(() => ({})); Object.keys(v).filter((x) => x.startsWith(anahtar + '|')).forEach((x) => delete v[x]); await miloApi('/meta/' + k, { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(v) }) }).catch(() => {}); }
     for (const t of tarihler) await miloApi('/attendance/auto', { method: 'DELETE', body: JSON.stringify({ tarih: t, ad: A }) }).catch(() => {});
     await miloApi('/members/' + encodeURIComponent(G) + '/' + encodeURIComponent(A), { method: 'DELETE' }).catch(() => {});

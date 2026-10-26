@@ -1,11 +1,17 @@
-// 🎡 Milo veli panosu (2026-10-26, kullanıcı taslaklardan "2 · Halka pano"yu seçti) — sporcu girişinde dönen ek bilgiler:
-// 8 derslik paket (Öğrenci Defteri'nin hesabı), telafi hakkı, ödeme durumu (tutar YOK), çocuğun dersleri (sıradaki dersi istemci
-// hesaplar — cihaz saatiyle), Ders Günlüğü'nden son "neler yaptık". Hepsi mevcut kayıtlardan okunur, yeni tablo yok.
-// Paket kuralları public/milo/milo-defter.js mdGun / mdPaketler ile BİREBİR aynı — biri değişirse öbürü de.
+// 🎡 Milo veli panosu (2026-10-26, "2 · Halka pano"; 2026-10-27 "Takvim + Delikli kart") — sporcu girişinde dönen ek bilgiler:
+// 8 derslik paket (Öğrenci Defteri'nin hesabı), telafi hakları (son günüyle), ödeme durumu (tutar YOK), son kayıtlar (takvim ve
+// "girdiği dersler"), çocuğun dersleri (gireceği dersleri ve ödeme gününü istemci hesaplar — cihaz saatiyle), Ders Günlüğü.
+// Paket + TELAFİ KURALI public/milo/milo-defter.js mdGun / mdHesap ile BİREBİR aynı — biri değişirse öbürü de:
+// 🤒 hasta / 📞 haber verdi → 30 gün geçerli hak; habersiz gelmedi → hak yok (KURAL_TARIH öncesi eski kural); yönetici
+// yoklama_durum kaydında hak:'ver'|'yok' ve bitis ile değiştirir; telafi dersi o gün geçerli en eski açık hakkı kapatır.
 
-type Durum = "g" | "y" | "h" | "t" | "k";
+type Durum = "g" | "y" | "m" | "h" | "t" | "k";
 interface Kayit { iso: string; s: Durum }
-interface Paket { no: number; dersler: Kayit[]; telafiler: Kayit[]; hak: number }
+interface Paket { no: number; dersler: Kayit[]; telafiler: Kayit[] }
+interface Hak { iso: string; s: Durum; paket: number; bitis: string; kullanim: string | null; durum?: string }
+const TELAFI_GUN = 30, KURAL_TARIH = "2026-10-28";
+
+function gunEkle(iso: string, n: number): string { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
 async function metaOku(db: D1Database, key: string): Promise<Record<string, any>> {
   const r = await db.prepare("SELECT value FROM meta WHERE key = ?").bind(key).first<{ value: string | null }>();
@@ -23,18 +29,28 @@ function yasBul(ad: string): string | null {
   return null;
 }
 
-function paketler(kayitlar: Kayit[]): Paket[] {
-  const pk: Paket[] = [];
-  const yeni = (): Paket => { const p: Paket = { no: pk.length + 1, dersler: [], telafiler: [], hak: 0 }; pk.push(p); return p; };
+function hesap(kayitlar: Kayit[], ayar: (iso: string) => Record<string, any>, bugun: string) {
+  const pk: Paket[] = [], haklar: Hak[] = [];
+  const yeni = (): Paket => { const p: Paket = { no: pk.length + 1, dersler: [], telafiler: [] }; pk.push(p); return p; };
+  const hakVar = (r: Kayit) => {
+    if (r.s !== "y" && r.s !== "h" && r.s !== "m") return false;
+    const e = ayar(r.iso); if (e.hak === "ver") return true; if (e.hak === "yok") return false;
+    return r.s === "h" || r.s === "m" || r.iso < KURAL_TARIH;
+  };
   for (const r of kayitlar) {
-    const cur = pk[pk.length - 1]; // istemcideki "cur" = her zaman son açılan paket
-    if (r.s === "t") { (pk.find((p) => p.hak > p.telafiler.length) || cur || yeni()).telafiler.push(r); continue; }
-    if (r.s === "k") continue; // başka güne kaydı: paketten ders yemez
+    const cur = pk[pk.length - 1];
+    if (r.s === "t") {
+      const h = haklar.find((x) => !x.kullanim && x.iso <= r.iso && r.iso <= x.bitis);
+      if (h) { h.kullanim = r.iso; pk[h.paket - 1].telafiler.push(r); } else (cur || yeni()).telafiler.push(r);
+      continue;
+    }
+    if (r.s === "k") continue;
     const p = cur && cur.dersler.length < 8 ? cur : yeni();
     p.dersler.push(r);
-    if (r.s === "y" || r.s === "h") p.hak++;
+    if (hakVar(r)) haklar.push({ iso: r.iso, s: r.s, paket: p.no, bitis: ayar(r.iso).bitis || gunEkle(r.iso < KURAL_TARIH ? KURAL_TARIH : r.iso, TELAFI_GUN), kullanim: null });
   }
-  return pk;
+  for (const h of haklar) h.durum = h.kullanim ? "kullanildi" : h.bitis < bugun ? "dustu" : "acik";
+  return { pk, haklar };
 }
 
 export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: string }) {
@@ -52,21 +68,31 @@ export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: st
   for (const a of attRes.results) {
     if (a.grup && a.grup !== uye.grup && gruplar.has(a.grup)) continue; // aynı adlı başka üyenin kaydı
     const e = yoklamaDurum[a.tarih + "|" + uye.ad], d = e && !e.sil ? e.d : null;
-    const s: Durum = a.geldi ? (d === "telafi" ? "t" : "g") : d === "hasta" ? "h" : d === "baska" ? "k" : "y";
+    const s: Durum = a.geldi ? (d === "telafi" ? "t" : "g") : d === "hasta" ? "h" : d === "haber" ? "m" : d === "baska" ? "k" : "y";
     kayitlar.push({ iso: a.tarih, s });
   }
-  const pk = paketler(kayitlar);
+  const bugun = new Date(Date.now() + 3 * 36e5).toISOString().slice(0, 10); // Türkiye saati
+  const ayar = (iso: string) => { const e = yoklamaDurum[iso + "|" + uye.ad]; return e && !e.sil ? e : {}; };
+  const { pk, haklar } = hesap(kayitlar, ayar, bugun);
   const son = pk[pk.length - 1] || null;
-  const telafiHakki = pk.reduce((t, p) => t + Math.max(0, p.hak - p.telafiler.length), 0);
+  const telafiHakki = haklar.filter((h) => h.durum === "acik").length;
   const odeme = son ? paketOdeme[uye.grup + "|" + uye.ad + "|" + son.no] : null;
+  const sonrakiOdeme = son ? paketOdeme[uye.grup + "|" + uye.ad + "|" + (son.no + 1)] : null;
   const paket = son ? {
     no: son.no,
     dersler: son.dersler.map((r) => r.s),
+    tarihler: son.dersler.map((r) => r.iso),
     telafi: son.telafiler.length,
     odendi: !!(odeme && odeme.odendi),
     odemeTarihi: odeme && odeme.odendi ? odeme.odemeTarihi || null : null,
     telafiHakki,
+    sonrakiOdendi: !!(sonrakiOdeme && sonrakiOdeme.odendi),
   } : null;
+  // telafi hakları (veliye: açıklar + son 60 günde kullanılan / düşen) ve son 70 günün kayıtları (takvim, girdiği dersler)
+  const sinir60 = gunEkle(bugun, -60), sinir70 = gunEkle(bugun, -70);
+  const telafiler = haklar.filter((h) => h.durum === "acik" || h.iso >= sinir60).map((h) => ({ iso: h.iso, s: h.s, bitis: h.bitis, durum: h.durum, kullanim: h.kullanim }));
+  const sonKayitlar = kayitlar.filter((r) => r.iso >= sinir70).map((r) => ({ iso: r.iso, s: r.s, hak: hakVarMi(r) }));
+  function hakVarMi(r: Kayit) { return haklar.some((h) => h.iso === r.iso); }
 
   // ---- dersleri (programda kayıtlı olduğu saatler; yoksa grubunun saatleri)
   let { results: slotlar } = await db.prepare(
@@ -111,5 +137,5 @@ export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: st
   const kazanacak = Object.keys(say).sort((a, b) => say[b] - say[a]).slice(0, 8).map((id) => ({ id, ders: say[id] }));
   const buAy = new Date().toISOString().slice(0, 7), buAyGeldi = kayitlar.filter((r) => r.iso.slice(0, 7) === buAy && (r.s === "g" || r.s === "t")).length;
 
-  return { paket, dersler, buHafta, kazanacak, buAyGeldi };
+  return { paket, dersler, buHafta, kazanacak, buAyGeldi, telafiler, kayitlar: sonKayitlar, bugun };
 }

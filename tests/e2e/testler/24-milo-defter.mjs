@@ -29,23 +29,34 @@ export default async function ({ log }) {
       await p.waitForTimeout(500);
       const sonra = await p.evaluate(() => document.getElementById('milo-icerik').scrollTop);
       dogrula(Math.abs(sonra - once) < 5, 'gün seçince sayfa kaydı: ' + once + ' → ' + sonra);
-      // paket hesabı: 8 normal ders (1 gelmedi zaten) → telafi hakkı uyarısı; telafi → hak kapanır; hasta durumu; boşalt
+      // paket + TELAFİ KURALI (2026-10-27): 📞 haber verdi / 🤒 hasta → 30 gün hak, habersiz → hak yok (kural tarihinden önce eski
+      // kural); yönetici "hak verme" / "geri al"; son günü geçen hak düşer; telafi dersi açık hakkı kapatır; hasta; boşalt
       const r = await p.evaluate(async (ad) => {
-        const u = MD.uyeler.find((x) => x.ad === ad), gun = (n) => { const d = new Date(); d.setDate(d.getDate() - 60 + n); return mdIso(d); };
+        const u = MD.uyeler.find((x) => x.ad === ad), gun = (n) => { const d = new Date(); d.setDate(d.getDate() - 40 + n); return mdIso(d); }, k = encodeURIComponent(mdKey(u));
         const once = mdKayitlar(u).length, yazilan = [];
-        for (let i = 0; i < 7; i++) { await mdGunYaz(u, gun(i * 2), 'g'); yazilan.push(gun(i * 2)); }
-        const pk1 = mdPaketler(u), uy = mdOzet(u).uyarilar.map((w) => w.tur);
-        await mdGunYaz(u, gun(20), 't'); yazilan.push(gun(20));
-        const pk2 = mdPaketler(u);
+        for (let i = 0; i < 6; i++) { await mdGunYaz(u, gun(i * 2), 'g'); yazilan.push(gun(i * 2)); }
+        const hak0 = mdOzet(u).hak;
+        await mdGunYaz(u, gun(12), 'm'); yazilan.push(gun(12));
+        const o1 = mdOzet(u), hm = o1.haklar.find((h) => h.iso === gun(12));
+        const kural = { eskiY: mdHakVarMi(u, { iso: '2020-01-01', s: 'y' }), yeniY: mdHakVarMi(u, { iso: '2099-01-01', s: 'y' }), yeniH: mdHakVarMi(u, { iso: '2099-01-01', s: 'h' }), yeniM: mdHakVarMi(u, { iso: '2099-01-01', s: 'm' }) };
+        await mdHakIslem(k, gun(12), 'yok'); const hakYok = mdOzet(u).hak, satirYok = /Elle kaldırıldı/.test((document.querySelector('.md-haklar') || {}).textContent || '');
+        await mdHakIslem(k, gun(12), 'geri'); const hakGeri = mdOzet(u).hak, satirAcik = /Açık/.test((document.querySelector('.md-haklar') || {}).textContent || '');
+        const e = MD.durum[gun(12) + '|' + ad], eskiB = e.bitis; e.bitis = '2020-01-02';
+        const dus = mdOzet(u).haklar.find((h) => h.iso === gun(12)).durum; if (eskiB) e.bitis = eskiB; else delete e.bitis;
+        await mdGunYaz(u, gun(16), 't'); yazilan.push(gun(16));
+        const o2 = mdOzet(u), kul = o2.haklar.filter((h) => h.kullanim === gun(16)).length, telafiPaket = o2.paketler.some((pp) => pp.telafiler.some((t) => t.iso === gun(16)));
         await mdGunYaz(u, gun(22), 'h'); yazilan.push(gun(22));
         const hasta = mdGun(u, gun(22)), metaH = (await mdMeta('yoklama_durum'))[gun(22) + '|' + ad];
         await mdGunYaz(u, gun(22), null);
         const bos = mdGun(u, gun(22)), sunucu = (await miloApi('/attendance/auto?tarih=' + gun(22))).attendance.some((x) => x.ad === ad);
-        return { once, dolu: pk1[0].dolu, hak: pk1[0].kalanHak, uy, telafiSonra: pk2[0].kalanHak, telafiSayi: pk2[0].telafiler.length, hasta, metaH: metaH && metaH.d, bos, sunucu, yazilan };
+        return { once, hak0, hak1: o1.hak, hm: hm && hm.durum, hmBitisOk: !!(hm && hm.bitis >= mdIso(new Date())), uy: o1.uyarilar.map((w) => w.tur), kural, hakYok, satirYok, hakGeri, satirAcik, dus, hak2: o2.hak, kul, telafiPaket, hasta, metaH: metaH && metaH.d, bos, sunucu, yazilan };
       }, A);
       tarihler.push(...r.yazilan);
-      dogrula(r.dolu && r.hak === 1 && r.uy.includes('telafi'), '8 ders + 1 gelmedi → telafi uyarısı yok: ' + JSON.stringify(r));
-      dogrula(r.telafiSayi === 1 && r.telafiSonra === 0, 'telafi hakkı kapatmadı: ' + JSON.stringify(r));
+      dogrula(r.hm === 'acik' && r.hmBitisOk && r.hak1 === r.hak0 + 1 && r.uy.includes('telafi'), '📞 haber verdi → 30 gün açık hak: ' + JSON.stringify(r));
+      dogrula(r.kural.eskiY && !r.kural.yeniY && r.kural.yeniH && r.kural.yeniM, 'kural: eski gelmedi hak, yeni habersiz hak yok, hasta/haber hak: ' + JSON.stringify(r.kural));
+      dogrula(r.hakYok === r.hak0 && r.satirYok && r.hakGeri === r.hak1 && r.satirAcik, 'yönetici hak verme / geri al: ' + JSON.stringify(r));
+      esit(r.dus, 'dustu', 'son günü geçen hak düşmeli');
+      dogrula(r.kul === 1 && r.hak2 === r.hak1 - 1 && r.telafiPaket, 'telafi dersi açık hakkı kapatmalı: ' + JSON.stringify(r));
       dogrula(r.hasta === 'h' && r.metaH === 'hasta', 'hasta kaydı: ' + JSON.stringify(r));
       dogrula(r.bos === null && !r.sunucu, 'boşalt sunucudan silmedi: ' + JSON.stringify(r));
       // ödeme: tutar + not
@@ -83,7 +94,7 @@ export default async function ({ log }) {
       // günlük kaydını sil
       await p.evaluate(async (k) => { const id = Object.keys(MG.kayit).find((x) => MG.kayit[x].konu === k); if (id) await mgYaz(id, { sil: true, tarih: MG.kayit[id].tarih }); }, 'E2E ' + G);
       esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-      log('defter: kaydırma yerinde, paket 8 + telafi uyarısı, telafi/hasta/boşalt, notlu ödeme, kâğıt aktarımı; günlük → haftalık metin → PDF');
+      log('defter: kaydırma yerinde, 📞 haber verdi → 30 gün hak, kural (habersiz hak yok), hak verme/geri al, süre dolunca düşer, telafi hakkı kapatır, telafi/hasta/boşalt, notlu ödeme, kâğıt aktarımı; günlük → haftalık metin → PDF');
     } finally { await ctx.close(); }
   } finally {
     for (const ad of [A, A2]) {

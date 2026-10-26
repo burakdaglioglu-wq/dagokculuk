@@ -1,5 +1,5 @@
 // Milo › Geçmiş yoklama çizelgesi (2026-10-16, kullanıcı: "yoklama geçmişini nasıl gireceğiz, bunu da kolaylaştır").
-// Yoklama → 🗓 Geçmiş gir → grup + önceki ay; boş hücre 1 dokunuş = geldi, 3 dokunuş = hasta; Kaydet → sunucuda; geri alınır.
+// Yoklama → 🗓 Geçmiş gir → grup + önceki ay; boş hücre 1 dokunuş = geldi, 3 dokunuş = 📞 haber verdi; Kaydet → sunucuda; geri alınır.
 import { miloOturumAl, miloApi, sayfaAc, B, dogrula, esit } from '../yardimci.mjs';
 
 export default async function ({ log }) {
@@ -21,7 +21,7 @@ export default async function ({ log }) {
     await p.evaluate((oc) => { eval(oc); }, bos[0]);
     if (bos[1]) for (let i = 0; i < 3; i++) await p.evaluate((oc) => { eval(oc); }, bos[1]);
     kayitlar = await p.evaluate(() => Object.entries(MD.cz.bekleyen));
-    esit(kayitlar[0][1], 'g', '1 dokunuş geldi olmalı'); if (kayitlar[1]) esit(kayitlar[1][1], 'h', '3 dokunuş hasta olmalı');
+    esit(kayitlar[0][1], 'g', '1 dokunuş geldi olmalı'); if (kayitlar[1]) esit(kayitlar[1][1], 'm', '3 dokunuş haber verdi olmalı (2026-10-27: sıra geldi → gelmedi → 📞 haber verdi → hasta)');
     dogrula(await p.evaluate(() => miloMesgulMu()), 'bekleyen değişiklik varken arka plan yenilemesi durmuyor');
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'telefonda sayfa taşıyor');
     await p.locator('#md-cz-kaydet').click();
@@ -29,7 +29,7 @@ export default async function ({ log }) {
     const att = (await miloApi('/attendance/auto')).d.attendance;
     for (const [k, s] of kayitlar) { const [iso, , ad] = k.split('|'); const a = att.find((r) => r.tarih === iso && r.ad === ad); dogrula(a && !!a.geldi === (s === 'g'), k + ' sunucuya yazılmadı'); }
     dogrula(!hatalar.length, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('Geçmiş gir → çizelge: geldi/hasta dokunuşla, Kaydet sunucuya yazdı, telefonda taşma yok ✓');
+    log('Geçmiş gir → çizelge: geldi/haber verdi dokunuşla, Kaydet sunucuya yazdı, telefonda taşma yok ✓');
   } finally {
     for (const [k] of kayitlar) { const [iso, , ad] = k.split('|'); await miloApi('/attendance/auto', { method: 'DELETE', body: JSON.stringify({ tarih: iso, ad }) }).catch(() => {}); }
     await ctx.close();

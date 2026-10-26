@@ -13,7 +13,7 @@ export default async function ({ log }) {
     await miloApi('/members', { method: 'POST', body: JSON.stringify({ grup: G, ad: A, dogumTarihi: '2023-04-10', genelNot: 'Denge tahtasında elimi tutmadan yürüyor.', acilTelefon: '05550000000' }) });
     for (const [i, t] of tarihler.entries()) await miloApi('/attendance/auto', { method: 'POST', body: JSON.stringify({ tarih: t, ad: A, grup: G, saat: '10:00', elle: true, geldi: i !== 1 && i !== 3 }) });
     for (const k of ['yoklama_durum', 'paket_odeme', 'ders_gunlugu']) metaYedek[k] = await metaOku(k);
-    await metaYaz('yoklama_durum', { ...metaYedek.yoklama_durum, [tarihler[3] + '|' + A]: { d: 'hasta', t: Date.now() } });
+    await metaYaz('yoklama_durum', { ...metaYedek.yoklama_durum, [tarihler[1] + '|' + A]: { d: 'haber', t: Date.now() }, [tarihler[3] + '|' + A]: { d: 'hasta', t: Date.now() } });
     await metaYaz('paket_odeme', { ...metaYedek.paket_odeme, [G + '|' + A + '|1']: { odendi: true, tutar: 1234, odemeTarihi: gun(12), not: 'gizli not', t: Date.now() } });
     await metaYaz('ders_gunlugu', { ...metaYedek.ders_gunlugu, e2epano: { tarih: gun(3), slot: G + ' 10:00', yaslar: ['3 yaş'], beceriler: ['denge', 'ziplama'], konu: 'Hayvan yürüyüşleri parkuru', yapilanlar: 'Ayı ve yengeç yürüyüşü', t: Date.now() } });
     const yarin = (new Date().getDay() + 1) % 7;
@@ -23,7 +23,8 @@ export default async function ({ log }) {
     // sunucu: paket 5/8 (2 gelmedi/hasta → 2 telafi hakkı), ödendi ama TUTAR/NOT yok, ders, bu hafta
     const r = await miloApi('/sporcu-girisi', { method: 'POST', body: JSON.stringify({ ad: A.toLocaleLowerCase('tr'), dogumYili: '2023' }) }, true);
     const s = r.d.sporcu;
-    esit(s.paket && s.paket.dersler.join(''), 'gyghg', 'paket dersleri (geldi/gelmedi/hasta)');
+    esit(s.paket && s.paket.dersler.join(''), 'gmghg', 'paket dersleri (geldi / haber verdi / hasta)');
+    dogrula(s.telafiler.filter((h) => h.durum === 'acik').length === 2 && s.telafiler.every((h) => h.bitis >= s.bugun) && s.kayitlar.length === 5 && s.paket.tarihler.length === 5 && s.paket.sonrakiOdendi === false, 'telafiler / kayıtlar: ' + JSON.stringify({ t: s.telafiler, k: s.kayitlar.length }));
     dogrula(s.paket.no === 1 && s.paket.telafiHakki === 2 && s.paket.odendi === true && s.paket.odemeTarihi === gun(12), 'paket: ' + JSON.stringify(s.paket));
     dogrula(!JSON.stringify(r.d).includes('1234') && !JSON.stringify(r.d).includes('gizli not'), 'ödeme tutarı / notu veliye gitmemeli');
     dogrula(s.dersler.length === 1 && s.dersler[0].gunler.includes(yarin) && s.dersler[0].bas === '10:00', 'dersler: ' + JSON.stringify(s.dersler));
@@ -38,20 +39,22 @@ export default async function ({ log }) {
       await p.waitForSelector('#milo-sporcu-app.mvp-kap .mvp-hero', { timeout: 10000 });
       await p.waitForTimeout(1300);
       const e = await p.evaluate(() => ({
-        orta: document.querySelector('.mvp-orta b').textContent, dolu: document.querySelectorAll('.mvp-dilim.dolu').length, dilim: document.querySelectorAll('.mvp-dilim').length,
+        baslik: document.querySelector('.mvp-hero h3').textContent, orta: document.querySelector('.mvp-orta').textContent, delik: document.querySelectorAll('.mvp-delik').length, islenen: document.querySelectorAll('.mvp-delik:not(.s)').length, bos: document.querySelectorAll('.mvp-delik.s').length, tarihli: [...document.querySelectorAll('.mvp-delik.s')].filter((d) => d.querySelector('b')).length,
+        takvim: document.querySelectorAll('.mvp-tg.geldi').length + document.querySelectorAll('.mvp-tg.haber').length + document.querySelectorAll('.mvp-tg.hasta').length, gelecek: document.querySelectorAll('.mvp-tg.gelecek').length, odeme: document.querySelectorAll('.mvp-tg.odeme').length, telafi: document.querySelectorAll('.mvp-telafi').length, yakinda: !!document.querySelector('.mvp-yakinda'), sira: [...document.querySelectorAll('.mvp-d')].map((x) => x.textContent).join(' | '),
         cip: [...document.querySelectorAll('.mvp-hero .mvp-cip')].map((c) => c.textContent).join(' | '),
-        sonraki: (document.querySelector('.mvp-sonraki') || {}).textContent || '', kare: [...document.querySelectorAll('.mvp-kare b')].map((b) => b.textContent).join(','),
-        konu: (document.querySelector('.mvp-konu b') || {}).textContent, beceri: document.querySelectorAll('.mvp-beceri').length, not: (document.querySelector('.mvp-not') || {}).textContent || '', kz: document.querySelectorAll('.mvp-kz-s').length, kzBaslik: [...document.querySelectorAll('.mvp h4')].some((h) => /Bunları kazanacak/.test(h.textContent)), ogrendi: /öğrendi/.test(document.querySelector('.mvp').textContent),
+        konu: (document.querySelector('.mvp-konu b') || {}).textContent, not: (document.querySelector('.mvp-not') || {}).textContent || '', kz: document.querySelectorAll('.mvp-kz-s').length, ogrendi: /beceri öğrendi|rozet/.test(document.querySelector('.mvp').textContent),
         tasma: [...document.querySelectorAll('.mvp *')].filter((x) => !x.closest('.mvp-yatay') && x.getBoundingClientRect().right > innerWidth + 1).length,
       }));
       await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/mvp-e2e.png' }).catch(() => {});
-      dogrula(e.orta === '5/8' && e.dilim === 8 && e.dolu === 5, 'halka: ' + JSON.stringify(e));
-      dogrula(/2 telafi hakkı/.test(e.cip) && /Ödendi/.test(e.cip), 'paket çipleri: ' + e.cip);
-      dogrula(/Sıradaki ders · 10:00/.test(e.sonraki) && /Yarın/.test(e.sonraki), 'sıradaki ders: ' + e.sonraki);
-      dogrula(e.konu === 'Hayvan yürüyüşleri parkuru' && e.beceri === 2 && /Denge tahtasında/.test(e.not) && e.tasma === 0 && e.kz === 2 && e.kzBaslik && !e.ogrendi, 'pano içeriği: ' + JSON.stringify(e));
+      dogrula(/^Ödemeye \d+ gün$/.test(e.baslik) && /gün kaldı/.test(e.orta), 'ödeme geri sayımı: ' + JSON.stringify(e));
+      dogrula(e.delik === 8 && e.islenen === 5 && e.bos === 3 && e.tarihli === 3, 'delikli kart: ' + JSON.stringify(e));
+      dogrula(e.takvim >= 1 && e.gelecek >= 1 && e.odeme === 1 && e.telafi === 2 && e.yakinda, 'takvim / telafi / yakında: ' + JSON.stringify(e));
+      dogrula(/6\. ders · 10:00/.test(e.sira) && /Yarın/.test(e.sira), 'gireceği dersler: ' + e.sira);
+      dogrula(/2 telafi hakkı/.test(e.cip) && /1. paket ödendi/.test(e.cip), 'çipler: ' + e.cip);
+      dogrula(e.konu === 'Hayvan yürüyüşleri parkuru' && /Denge tahtasında/.test(e.not) && e.tasma === 0 && !e.ogrendi && !e.kz, 'pano içeriği: ' + JSON.stringify(e));
       esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     } finally { await ctx.close(); }
-    log('sporcu girişi → halka 5/8 (gelmedi + hasta = 2 telafi), ödendi (tutarsız), yarınki ders, bu hafta + beceriler, bunları kazanacak (öğrendi yok), not, 390 px taşma yok');
+    log('sporcu girişi → ödemeye N gün, delikli kart 5 işlendi + 3 tarihli, takvim (geldi/haber/hasta, gireceği, yeni paket günü), 2 telafi hakkı (haber verdi + hasta) son günüyle, gireceği dersler, bu hafta, beceri bahçesi yakında, ödeme tutarı gizli, 390 px taşma yok');
   } finally {
     for (const k of Object.keys(metaYedek)) {
       const v = await metaOku(k).catch(() => ({}));
