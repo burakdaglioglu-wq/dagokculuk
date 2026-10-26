@@ -51,21 +51,22 @@ function mdKayitlar(u) {
 // TELAFİ KURALI (2026-10-27, kullanıcı: "telafi yanlış anlaşılmış; her gelmeme hak olmamalı, hakkın süresi olmalı, yönetici elle
 // düzeltebilsin, ekranda karışık" → "hasta + haber verdi", "30 gün"):
 //   · 🤒 hasta ya da 📞 haber verdi → 1 telafi hakkı, o dersten itibaren 30 gün geçerli; ✕ habersiz gelmedi → hak yok.
-//   · MD_KURAL_TARIH'ten önce "gelmedi" işaretlenen dersler eski kurala göre hak taşır, 30 günü o tarihten sayılır.
+//   · Eski kayıtlara da aynı kural (2026-10-27, kullanıcı: "3 telafi hakkı diyor, bu kadar hakkı yok"): düz gelmedi hak değil,
+//     30 gün dersin kendi tarihinden. Gerçekten hakkı olan için yönetici "Yine de hak ver" / "Süreyi uzat" der.
 //   · Yönetici her derste değiştirir: yoklama_durum kaydında hak:'ver'|'yok', bitis:'YYYY-MM-DD' (süreyi uzat).
 //   · Telafi dersi, o gün geçerli olan en eski açık hakkı kapatır ve o hakkın paketine yazılır; açık hak yoksa yine
 //     kaydedilir (fazla telafi), paketten ders yemez.
 // public/milo/../src/routes/milo/veliPano.ts aynı kuralı sunucuda hesaplar — biri değişirse öbürü de.
-const MD_TELAFI_GUN = 30, MD_KURAL_TARIH = '2026-10-28';
+const MD_TELAFI_GUN = 30;
 function mdGunEkle(iso, n) { let d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return mdIso(d); }
 function mdHakAyar(u, iso) { let e = MD.durum[iso + '|' + u.ad]; return e && !e.sil ? e : {}; }
 // Bu derste telafi hakkı doğar mı (kural + yöneticinin elle ayarı)
 function mdHakVarMi(u, r) {
     if (r.s !== 'y' && r.s !== 'h' && r.s !== 'm') return false;
     let e = mdHakAyar(u, r.iso); if (e.hak === 'ver') return true; if (e.hak === 'yok') return false;
-    return r.s === 'h' || r.s === 'm' || r.iso < MD_KURAL_TARIH;
+    return r.s === 'h' || r.s === 'm';
 }
-function mdHakBitis(u, iso) { let e = mdHakAyar(u, iso); return e.bitis || mdGunEkle(iso < MD_KURAL_TARIH ? MD_KURAL_TARIH : iso, MD_TELAFI_GUN); }
+function mdHakBitis(u, iso) { let e = mdHakAyar(u, iso); return e.bitis || mdGunEkle(iso, MD_TELAFI_GUN); }
 function mdPaketler(u) { return mdHesap(u).paketler; }
 function mdHesap(u) {
     let pk = [], haklar = [], fazla = [], bugun = mdIso(new Date()), cur = null, yeni = function () { cur = { no: pk.length + 1, dersler: [], telafiler: [], hak: 0 }; pk.push(cur); };
@@ -248,7 +249,7 @@ async function mdDurumSec(s) {
     let o = mdOzet(u), w = o.uyarilar.find(function (x) { return x.tur === 'telafi'; });
     showToast(s ? mdTR(iso) + ': ' + MD_DURUM[s].ad : mdTR(iso) + ' boşaltıldı', 'success');
     if (w && (s === 'm' || s === 'h')) setTimeout(function () { showToast('🔁 ' + w.metin, 'warning'); }, 900);
-    if (s === 'y' && iso >= MD_KURAL_TARIH) setTimeout(function () { showToast('✕ Habersiz gelmedi: telafi hakkı yok. Haber verdiyse 📞 Haber verdi seç.', 'info'); }, 900);
+    if (s === 'y') setTimeout(function () { showToast('✕ Habersiz gelmedi: telafi hakkı yok. Haber verdiyse 📞 Haber verdi seç.', 'info'); }, 900);
 }
 function mdBaskaGunSor(u, iso) {
     let bugun = mdIso(new Date()), vars = iso < bugun ? bugun : mdIso(new Date(Date.now() - 864e5));

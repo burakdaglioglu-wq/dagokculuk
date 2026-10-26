@@ -2,14 +2,14 @@
 // 8 derslik paket (Öğrenci Defteri'nin hesabı), telafi hakları (son günüyle), ödeme durumu (tutar YOK), son kayıtlar (takvim ve
 // "girdiği dersler"), çocuğun dersleri (gireceği dersleri ve ödeme gününü istemci hesaplar — cihaz saatiyle), Ders Günlüğü.
 // Paket + TELAFİ KURALI public/milo/milo-defter.js mdGun / mdHesap ile BİREBİR aynı — biri değişirse öbürü de:
-// 🤒 hasta / 📞 haber verdi → 30 gün geçerli hak; habersiz gelmedi → hak yok (KURAL_TARIH öncesi eski kural); yönetici
+// 🤒 hasta / 📞 haber verdi → 30 gün geçerli hak; habersiz gelmedi → hak yok (eski kayıtlar dahil); yönetici
 // yoklama_durum kaydında hak:'ver'|'yok' ve bitis ile değiştirir; telafi dersi o gün geçerli en eski açık hakkı kapatır.
 
 type Durum = "g" | "y" | "m" | "h" | "t" | "k";
 interface Kayit { iso: string; s: Durum }
 interface Paket { no: number; dersler: Kayit[]; telafiler: Kayit[] }
 interface Hak { iso: string; s: Durum; paket: number; bitis: string; kullanim: string | null; durum?: string }
-const TELAFI_GUN = 30, KURAL_TARIH = "2026-10-28";
+const TELAFI_GUN = 30;
 
 function gunEkle(iso: string, n: number): string { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
@@ -35,7 +35,7 @@ function hesap(kayitlar: Kayit[], ayar: (iso: string) => Record<string, any>, bu
   const hakVar = (r: Kayit) => {
     if (r.s !== "y" && r.s !== "h" && r.s !== "m") return false;
     const e = ayar(r.iso); if (e.hak === "ver") return true; if (e.hak === "yok") return false;
-    return r.s === "h" || r.s === "m" || r.iso < KURAL_TARIH;
+    return r.s === "h" || r.s === "m";
   };
   for (const r of kayitlar) {
     const cur = pk[pk.length - 1];
@@ -47,7 +47,7 @@ function hesap(kayitlar: Kayit[], ayar: (iso: string) => Record<string, any>, bu
     if (r.s === "k") continue;
     const p = cur && cur.dersler.length < 8 ? cur : yeni();
     p.dersler.push(r);
-    if (hakVar(r)) haklar.push({ iso: r.iso, s: r.s, paket: p.no, bitis: ayar(r.iso).bitis || gunEkle(r.iso < KURAL_TARIH ? KURAL_TARIH : r.iso, TELAFI_GUN), kullanim: null });
+    if (hakVar(r)) haklar.push({ iso: r.iso, s: r.s, paket: p.no, bitis: ayar(r.iso).bitis || gunEkle(r.iso, TELAFI_GUN), kullanim: null });
   }
   for (const h of haklar) h.durum = h.kullanim ? "kullanildi" : h.bitis < bugun ? "dustu" : "acik";
   return { pk, haklar };

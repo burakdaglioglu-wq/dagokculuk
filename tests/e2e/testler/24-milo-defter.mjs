@@ -53,7 +53,7 @@ export default async function ({ log }) {
       }, A);
       tarihler.push(...r.yazilan);
       dogrula(r.hm === 'acik' && r.hmBitisOk && r.hak1 === r.hak0 + 1 && r.uy.includes('telafi'), '📞 haber verdi → 30 gün açık hak: ' + JSON.stringify(r));
-      dogrula(r.kural.eskiY && !r.kural.yeniY && r.kural.yeniH && r.kural.yeniM, 'kural: eski gelmedi hak, yeni habersiz hak yok, hasta/haber hak: ' + JSON.stringify(r.kural));
+      dogrula(!r.kural.eskiY && !r.kural.yeniY && r.kural.yeniH && r.kural.yeniM, 'kural: düz gelmedi (eski de) hak yok, hasta/haber hak: ' + JSON.stringify(r.kural));
       dogrula(r.hakYok === r.hak0 && r.satirYok && r.hakGeri === r.hak1 && r.satirAcik, 'yönetici hak verme / geri al: ' + JSON.stringify(r));
       esit(r.dus, 'dustu', 'son günü geçen hak düşmeli');
       dogrula(r.kul === 1 && r.hak2 === r.hak1 - 1 && r.telafiPaket, 'telafi dersi açık hakkı kapatmalı: ' + JSON.stringify(r));
