@@ -890,6 +890,12 @@ async function yrsRaporPdf() {
 // antrenman serilerini sayıyordu ("0 aktif seri"). Satır son yarışmayı özetler; dokununca o yarışmanın ısı haritası bu sporcu
 // açık hâlde gelir.
 function yrsSporcuYarismalari(g, ad) { let k = g + '|' + ad, bugun = yrsBugun(); return yrsListe().filter(function (y) { return y.tarih <= bugun && (y.katilimci || []).indexOf(k) !== -1; }).reverse(); }
+// yönetici sporcu kartı (A · kart ızgarası) için ham bilgi: son yarışma, seri toplamları (renkli şerit), yarışma sayısı
+function yrsKartVeri(g, ad) {
+    let l = yrsSporcuYarismalari(g, ad); if (!l.length) return null;
+    let y = l[0], m = yrsMacVeri(yrsOku('yarisma_sporcu')[y.id + '|' + g + '|' + ad] || {}), st = m.seriler.map(yrsSeriToplam);
+    return { ad: String(y.ad || 'Yarışma').trim(), tarih: yrsTarihTR(y.tarih), seri: st.length, puan: st.reduce(function (a, b) { return a + b; }, 0), bitti: !!m.bitti, serit: st.map(function (v) { return yrsHucreRenk(v, +y.seriOk || 3)[0]; }), sayi: l.length };
+}
 function yrsKartOzet(g, ad) {
     let l = yrsSporcuYarismalari(g, ad); if (!l.length) return null;
     let y = l[0], m = yrsMacVeri(yrsOku('yarisma_sporcu')[y.id + '|' + g + '|' + ad] || {}), top = m.seriler.reduce(function (a, s) { return a + yrsSeriToplam(s); }, 0);

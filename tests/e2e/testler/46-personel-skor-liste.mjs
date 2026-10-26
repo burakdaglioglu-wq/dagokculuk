@@ -20,7 +20,7 @@ export default async function ({ log }) {
     await p.locator('#ys-ekran .ys-sat .yn-isim').first().click();
     await p.waitForSelector('#yn-kart .yn-p-kart', { timeout: 15000 });
     const prof = await p.locator('#yn-kart').textContent();
-    for (const x of ['Giriş kodu', 'Fotoğraf', 'Haftalık program', 'Skorları düzelt']) dogrula(prof.includes(x), 'profilde "' + x + '" işlemi yok');
+    for (const x of ['Uygulama girişi', 'Giriş linkini gönder', 'Fotoğraf', 'Haftalık program', 'Skorları düzelt', 'Çift kayıt']) dogrula(prof.includes(x), 'profilde "' + x + '" işlemi yok');
     await p.evaluate(() => ynKartKapat());
     await p.locator('#ys-ekran .ys-sat .isl .ap-btn').first().click();
     await p.waitForSelector('#ys-ekran .ys-skor', { timeout: 5000 });

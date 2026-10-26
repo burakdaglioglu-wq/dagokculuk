@@ -73,6 +73,11 @@ function sgYukle() {
         .catch(e => { SG.hata = e.message; if (!SG.liste) SG.liste = {}; }).finally(() => { SG.yukleniyor = false; });
 }
 function sgAc() { sgCss(); sgCiz(); sgYukle().then(() => { if (yoneticiSekmeAktif === 'girisler') sgCiz(); }); }
+// işlemler bu ekrandan da sporcu kartından (Kayıt işlemleri → 📱 Uygulama girişi) da çağrılır: açık olanı yeniden çiz
+function sgYenile() {
+    if (typeof yoneticiSekmeAktif !== 'undefined' && yoneticiSekmeAktif === 'girisler') sgCiz();
+    try { if (typeof ynKartIslemYenile === 'function') ynKartIslemYenile(); } catch (e) {}
+}
 
 function sgCiz() {
     let alan = document.getElementById('yonetici-liste'); if (!alan) return;
@@ -131,13 +136,13 @@ function sgKodDegistir(k) {
     girdiIste(`🔑 <b>${esc(b.ad)}</b> için giriş kodu:`, b.sp.kod || '', yeni => {
         if (yeni === null) return; yeni = String(yeni).trim();
         if (!/^[0-9A-Za-z]{3,12}$/.test(yeni)) return showToast('Kod 3–12 harf/rakam olmalı.', 'error');
-        sgKodYaz(b, yeni); showToast('🔑 ' + b.ad + ': yeni kod ' + yeni, 'success'); sgCiz();
+        sgKodYaz(b, yeni); showToast('🔑 ' + b.ad + ': yeni kod ' + yeni, 'success'); sgYenile();
     });
 }
 function sgKodUret(k) {
     let b = sgBul(k); if (!b) return;
     let yeni = sgYeniKod();
-    onayIste(`<b>${esc(b.ad)}</b> için yeni kod: <b style="font-size:20px;letter-spacing:.08em">${yeni}</b><br><small>Eski kod ve eski giriş linki çalışmaz olur.</small>`, () => { sgKodYaz(b, yeni); showToast('🔑 ' + b.ad + ': ' + yeni, 'success'); sgCiz(); }, 'Kaydet', 'Vazgeç');
+    onayIste(`<b>${esc(b.ad)}</b> için yeni kod: <b style="font-size:20px;letter-spacing:.08em">${yeni}</b><br><small>Eski kod ve eski giriş linki çalışmaz olur.</small>`, () => { sgKodYaz(b, yeni); showToast('🔑 ' + b.ad + ': ' + yeni, 'success'); sgYenile(); }, 'Kaydet', 'Vazgeç');
 }
 function sgTopluKod() {
     let l = sgSporcular().filter(x => x.zayif); if (!l.length) return;
@@ -146,15 +151,15 @@ function sgTopluKod() {
         l.forEach(x => { let k = sgYeniKod(ver); ver.push(k); x.sp.kod = k; x.sp.lastModified = Date.now(); });
         try { yoneticiKaydet(); } catch (e) {}
         try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch (e) {}
-        SG.filtre = 'hepsi'; showToast('🎲 ' + l.length + ' sporcuya yeni kod verildi', 'success'); sgCiz();
+        SG.filtre = 'hepsi'; showToast('🎲 ' + l.length + ' sporcuya yeni kod verildi', 'success'); sgYenile();
     }, '🎲 Kod ver', 'Vazgeç');
 }
 function sgKapaliYaz(k, kapali) {
     let b = sgBul(k); if (!b) return;
     fetch('/api/sporcu-giris/' + encodeURIComponent(k), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kapali }) })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status === 401 ? 'oturum gerekli' : 'kaydedilemedi')))
-        .then(() => { SG.liste = SG.liste || {}; SG.liste[k] = Object.assign({}, SG.liste[k] || {}, { kapali }); showToast(kapali ? '⛔ ' + b.ad + ' artık giriş yapamaz' : '✓ ' + b.ad + ' girişi açık', kapali ? 'warning' : 'success'); sgCiz(); })
-        .catch(e => { showToast('Değiştirilemedi: ' + e.message, 'error'); sgCiz(); });
+        .then(() => { SG.liste = SG.liste || {}; SG.liste[k] = Object.assign({}, SG.liste[k] || {}, { kapali }); showToast(kapali ? '⛔ ' + b.ad + ' artık giriş yapamaz' : '✓ ' + b.ad + ' girişi açık', kapali ? 'warning' : 'success'); sgYenile(); })
+        .catch(e => { showToast('Değiştirilemedi: ' + e.message, 'error'); sgYenile(); });
 }
 function sgMesaj(ad, sp) {
     return `Merhaba 👋\n${ad} için DAĞ Spor Kulübü uygulamasının giriş bilgileri:\n\n👉 ${sgLink(ad, sp)}\n(Linke dokununca doğrudan giriş yapılır.)\n\n📲 Uygulama olarak kurmak için (ücretsiz, mağaza gerekmez, internetsiz de açılır):\n• iPhone: linki Safari'de aç → Paylaş ⬆️ → "Ana Ekrana Ekle"\n• Android: linki Chrome'da aç → ⋮ → "Uygulamayı yükle"\n\nElle giriş: Sporcu Girişi → Ad: ${ad} · Kod: ${sgKod(sp)}\n\nSkorlarını, yarışmalarını ve gelişimini buradan takip edebilir; profil fotoğrafını kendisi değiştirebilir. 🎯`;

@@ -44,6 +44,9 @@ export default async function ({ log }) {
     // (3) yönetici sporcu kartı: 🏆 Yarışma skorları satırı → ısı haritası bu sporcu açık
     const satir = await p.evaluate((s) => (dagYonetimAdaptor().islemler({ grup: s.g, ad: s.ad }).find((x) => /Yarışma skorları/.test(x.et)) || {}).alt || '', sp[0]);
     dogrula(/1 seri, 27 puan/.test(satir), 'kart satırı: ' + satir);
+    // v318 kart ızgarası (Kayıt işlemleri → 🏆 Skor & yarışma): puan + seri sayısı + şerit + Isı haritası düğmesi
+    const panel = await p.evaluate((s) => dagYonetimAdaptor().islemPanel({ grup: s.g, ad: s.ad }), sp[0]);
+    dogrula(/TEST Gönderim/.test(panel) && panel.includes('<b>27</b>') && /1 seri/.test(panel) && /ynk-serit/.test(panel) && /Isı haritası/.test(panel) && /Giriş linkini gönder/.test(panel), 'kart ızgarası eksik');
     await p.evaluate((s) => yrsKarttanAc(s.g, s.ad), sp[0]);
     await p.waitForSelector('#yrs-yonet.yrs-arka .yrs-cn-detay', { state: 'attached', timeout: 8000 });
     dogrula((await p.locator('#yrs-yonet .yrs-cn-detay').textContent()).includes(sp[0].ad), 'ısı haritasında sporcu seçili açılmalı');

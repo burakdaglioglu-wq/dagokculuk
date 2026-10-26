@@ -4167,7 +4167,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=9';
+        const YN_DOSYA = 'yonetim-panel.js?v=10';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4241,6 +4241,39 @@
                         { et: 'Sil', alt: 'Silinenler\'e gider; oradan geri alınabilir', btn: '🗑 Sil', fn: 'yoneticiSil(' + a + ',' + b + ')', tehlike: true }
                     ];
                 },
+                // Kayıt işlemleri = kart ızgarası (2026-10-26, kullanıcı iki taslaktan "A" + B'nin renkli ikonları, grup başlıkları,
+                // sıkı yerleşimi). Uzun liste + ekranın en sağındaki düğmeler yerine 4 kart: durum büyük ve renkli (kod zayıf mı, hiç
+                // girdi mi, son yarışma), düğme yazının altında; Çift kayıt / Sil en altta ayrı. Giriş durumu, yarışma ve program
+                // sunucudan kart açılınca tazelenir (_ynkTazele) — eskiden yarışma satırı bu cihazda Yarışma hiç açılmadıysa görünmüyordu.
+                islemPanel(k) {
+                    let a = esc(JSON.stringify(k.grup)), b = esc(JSON.stringify(k.ad)), sp = turnuvaDB[k.grup][k.ad] || {}, an = k.grup + '|' + k.ad;
+                    let kod = String(sp.kod || sp.dogumYili || '').trim(), zayif = !String(sp.kod || '').trim() || String(sp.kod) === String(sp.dogumYili || '');
+                    let sgB = (typeof SG !== 'undefined' && SG.liste) ? (SG.liste[an] || {}) : null;
+                    let son = !sgB ? '<b>…</b>' : sgB.son ? '<b class="i">' + esc(sgSure(sgB.son)) + ' · ' + sgB.sayi + ' giriş</b>' : '<b class="k">Hiç girmedi</b>';
+                    let ik = (c, e) => '<span class="ynk-ik ' + c + '">' + e + '</span>';
+                    let giris = `<div class="ynk-k"><h5>${ik('tr', '📱')}Uygulama girişi</h5>
+                        <div class="ynk-buyuk"><b>${kod ? esc(kod) : '—'}</b>${!kod ? '<span class="ap-etk k">kod yok</span>' : zayif ? '<span class="ap-etk u">⚠ doğum yılı — tahmin edilir</span>' : '<span class="ap-etk i">✓ kendi kodu</span>'}</div>
+                        <div class="ynk-s"><span>Son giriş</span>${son}</div>
+                        <div class="ynk-s"><span>Uygulamaya girebilir</span>${sgB ? `<label class="ynk-anahtar"><input type="checkbox" ${sgB.kapali ? '' : 'checked'} onchange="sgKapaliYaz(${esc(JSON.stringify(an))}, !this.checked)" aria-label="Giriş açık">${sgB.kapali ? 'Kapalı' : 'Açık'}</label>` : '<b>…</b>'}</div>
+                        <div class="ynk-d"><button class="ap-btn ana" onclick="sgGonder(${esc(JSON.stringify(an))})" ${kod && typeof sgGonder === 'function' ? '' : 'disabled'}>📤 Giriş linkini gönder</button><button class="ap-btn" onclick="sgKodUret(${esc(JSON.stringify(an))})" ${typeof sgKodUret === 'function' ? '' : 'disabled'} title="Rastgele 4 haneli kod">🎲 Yeni kod</button><button class="ap-btn" onclick="yoneticiKodSifirla(${a},${b})" aria-label="Kodu elle değiştir">✏️</button></div></div>`;
+                    let y = typeof yrsKartVeri === 'function' ? yrsKartVeri(k.grup, k.ad) : null;
+                    let skor = `<div class="ynk-k"><h5>${ik('sr', '🏆')}Skor & yarışma</h5>
+                        ${y ? `<div class="ynk-yar"><b>${y.seri ? y.puan : '—'}</b><span><b>${esc(y.ad)}</b><small>${esc(y.tarih)} · ${y.seri ? y.seri + ' seri' + (y.bitti ? ' · bitti' : '') : 'sunucuya skor gelmedi'}</small>${y.serit.length ? '<div class="ynk-serit">' + y.serit.map(c => '<i style="background:' + c + '"></i>').join('') + '</div>' : ''}</span></div>` : '<div class="ynk-s"><span>Yarışma</span><b>henüz yok</b></div>'}
+                        <div class="ynk-s"><span>Antrenman</span><b>${(sp.kartGecmisi || []).length} kart · ${(sp.seriler || []).length} açık seri</b></div>
+                        <div class="ynk-d">${y ? `<button class="ap-btn" onclick="yrsKarttanAc(${a},${b})">📊 Isı haritası</button>` : ''}<button class="ap-btn" onclick="ynKartKapat(); ysSkorlaraGit(${a},${b})">🎯 Skorları düzelt</button></div></div>`;
+                    let fk = fotoAnahtar(k.grup, k.ad), f = fotoBilgi(fk) || {};
+                    let foto = `<div class="ynk-k"><h5>${ik('mv', '🪪')}Fotoğraf & sporcu kartı</h5>
+                        <div class="ynk-foto">${fotoAvatarHTML(fk, k.ad, 'f', true)}<div><b style="font-size:13px">${f.var ? 'Fotoğraf var' : 'Fotoğraf yok'}</b><div style="margin-top:3px"><span class="ap-etk ${f.izin === 1 ? 'i' : f.izin === 0 ? 'k' : 'u'}">${f.izin === 1 ? '✓ veli izni var' : f.izin === 0 ? 'veli izni yok' : 'veli izni bilinmiyor'}</span></div></div></div>
+                        <div class="ynk-d"><button class="ap-btn" onclick="ysFotoSec(${a},${b})">📷 ${f.var ? 'Değiştir' : 'Yükle'}</button><button class="ap-btn" onclick="sporcuKartAc(${a},${b})">🪪 Sporcu kartı</button></div></div>`;
+                    let dersler = _programSlotlar.filter(s => (s.katilimcilar || []).some(x => x.grup === k.grup && x.ad === k.ad)).flatMap(s => (s.gunler || [s.gun]).map(g => ({ g, s }))).sort((x, z) => ((x.g + 6) % 7) - ((z.g + 6) % 7) || String(x.s.baslangicSaat).localeCompare(String(z.s.baslangicSaat)));
+                    let ay = bugunISO().slice(0, 7), gel = ((this.gelisler() || {})[k.ad] || []).filter(t => t.slice(0, 7) === ay).length;
+                    let prog = `<div class="ynk-k"><h5>${ik('ys', '📅')}Haftalık program</h5>
+                        <div class="ynk-s"><span>Dersleri</span><b>${!_programSlotlar.length ? '…' : dersler.length ? esc(dersler.map(x => GUN_KISA_TR[x.g] + ' ' + x.s.baslangicSaat).join(' · ')) : 'programda yok'}</b></div>
+                        <div class="ynk-s"><span>Bu ay geldiği</span><b>${gel} gün</b></div>
+                        <div class="ynk-d"><button class="ap-btn" onclick="ynKartKapat(); sporcuProgramAc(${a},${b})">📅 Programı düzenle</button></div></div>`;
+                    return `<div class="ynk yn-pdf-gizle" id="ynk-panel"><h4>Kayıt işlemleri</h4><div class="ynk-izgara"><div class="ynk-gb">UYGULAMA & SKOR</div>${giris}${skor}<div class="ynk-gb">KART & PROGRAM</div>${foto}${prog}</div>
+                        <div class="ynk-alt"><span>Kayıt bakımı — aynı kişi iki kez yazıldıysa birleştir; silinen Silinenler'den geri alınabilir.</span><div><button class="ap-btn" onclick="ynKartKapat(); _ky.ara=${b}; yoneticiSekme('ciftkayit')">🧹 Çift kayıt</button><button class="ap-btn tehlike" onclick="yoneticiSil(${a},${b})">🗑 Sil</button></div></div></div>`;
+                },
                 kpiEk(k) { let sp = turnuvaDB[k.grup][k.ad], r = _raporIstatistik(sp); return r.seriSayisi ? [{ et: 'Seri ortalaması', deger: r.ort, alt: r.seriSayisi + ' seri · en iyi ' + r.enIyi }] : []; },
                 sonra() { try { if(document.getElementById('yonetici-modal') && document.body.classList.contains('yon-acik') && yoneticiSekmeAktif !== 'panel' && yoneticiSekmeAktif !== 'aidat') yoneticiSekme(yoneticiSekmeAktif); } catch(e) {} },
                 // derse geldiği günler: yoklama + skor girilen günler (aidatDevamHaritasi ile aynı kaynaklar), 2 sn önbellek (bir çizimde birden çok çağrı)
@@ -4294,7 +4327,15 @@
         // Herhangi bir listeden sporcu kartı (Sporcular & Skor, …)
         function yoneticiKartAc(g, ad) { sporcuProfilAc(g + '|' + ad); }
         // 👤 Sporcu profili HER YERDEN (2026-10-21): adı data-sporcu="grup|ad" taşıyan öğeye dokununca açılır (satırın kendi işinden önce)
-        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        // sporcu kartı açılınca Kayıt işlemleri kartlarının sunucu bilgileri: giriş durumu, yarışmalar, ders programı → kart yenilenir
+        function _ynkTazele() {
+            let yenile = () => { try { ynKartIslemYenile(); } catch(e) {} }, isler = [];
+            if(typeof sgYukle === 'function') isler.push(sgYukle());
+            if(!_programSlotlar.length) isler.push(fetch('/api/antrenman-programi').then(r => r.json()).then(d => { _programSlotlar = d.slots || []; }).catch(() => {}));
+            if(typeof kyDepoSenkron === 'function') ['yarismalar', 'yarisma_sporcu'].forEach(a => isler.push(kyDepoSenkron(a, () => kyDepoOku(a), false).catch(() => {})));
+            Promise.all(isler).then(yenile, yenile);
+        }
+        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {}), dagskEkYukle('dagsk-sporcu-giris.js?v=2').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); _ynkTazele(); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         window.ynDisDelege = true;
         document.addEventListener('click', function(e) {
             let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if(!el) return;
@@ -32247,6 +32288,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="text-align:right; flex-shrink:0;"><div style="font-size:20px; font-weight:900; color:var(--gold);">💎 ${sp.coin || 0}</div><div style="font-size:10px; color:var(--text-muted);">elmas</div></div>
             </div>
 
+            ${typeof istAnaKartHTML === 'function' ? istAnaKartHTML(sp) : ''}
             ${loggedInSporcu === ad && !pwaKuruluMu() ? `<button onclick="kurulumRehberiAc(true)" class="btn" style="width:100%; margin-bottom:10px;">📲 Uygulamayı telefonuma kur</button>` : ''}
             <button onclick="ihtiyacBildirAc()" class="btn" style="width:100%; margin-bottom:14px;">💬 Öneri, Övgü & Şikayet — Bize Yaz</button>
 
@@ -33185,6 +33227,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="font-size:16px; font-weight:900;">📈 ${ad} — Kişisel Gelişim</div>
                 ${devamSerisi > 0 ? `<div style="font-size:11px; font-weight:800; color:var(--gold); background:rgba(251,191,36,0.12); border:1px solid var(--gold); border-radius:20px; padding:4px 10px; white-space:nowrap;">🔥 ${devamSerisi} hafta üst üste</div>` : ''}
             </div>
+            <div id="ist-gelisim" data-ad="${esc(ad)}">${typeof istPanoHTML === 'function' ? istPanoHTML(f.grup, ad, sp) : ''}</div>
             <div class="glass-panel" style="padding:12px 14px; margin-bottom:14px;">
                 <div style="font-weight:800; font-size:13px; margin-bottom:8px;">📄 Sezon Raporu</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Tüm sezon istatistiklerini (katılım, ortalama, en iyi seri) içeren bir rapor indir ya da aileye WhatsApp'tan gönder.</div>
@@ -33195,7 +33238,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <button onclick="sezonOzetiGoster('${ad.replace(/'/g, "\\'")}')" style="width:100%; background:linear-gradient(120deg, rgba(253,142,1,0.15), rgba(215,50,4,0.15)); color:var(--text-main); border:1px solid var(--aurora-cyan); padding:10px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer;">📊 Sezon Özetini Gör</button>
             </div>
             ${hedefKartHTML(sp, ad, ekipmanDuzenlenebilir)}
-            ${grafik || '<div class="glass-panel" style="padding:16px; text-align:center; color:var(--text-muted); margin-bottom:14px; font-size:13px;">📈 Grafik için en az 2 antrenman gerekli.</div>'}
+            ${typeof istPanoHTML === 'function' ? '' : (grafik || '')} <!-- 📊 İstatistiklerim panosu ok ortalaması çizgisini veriyor; eski toplam puan grafiği farklı mesafeleri karıştırıyordu -->
             ${ritim}
             <details class="card" style="padding:0; margin-bottom:14px;">
                 <summary style="cursor:pointer; list-style:none; padding:11px 14px; font-size:13px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">🩺 Analiz & Teşhis<span style="margin-left:auto; font-size:11px; color:var(--text-secondary);">▾</span></summary>

@@ -436,6 +436,27 @@
 .ap .yn-tehlike h4{margin:0;font-size:13px;color:var(--ap-yazi)}
 .ap .yn-tehlike .satir{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .ap .yn-tehlike small{display:block;color:var(--ap-soluk);font-size:12px}
+.ap .ynk{border:1px solid var(--ap-cizgi);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ap .ynk>h4{margin:0 2px;font-size:13px;color:var(--ap-yazi)}
+.ap .ynk-izgara{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ap .ynk-gb{grid-column:1/-1;font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--ap-soluk);margin:2px 2px -4px}
+.ap .ynk-k{background:var(--ap-kart2);border:1px solid var(--ap-cizgi);border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.ap .ynk-k h5{margin:0;font-size:13.5px;display:flex;align-items:center;gap:8px;color:var(--ap-yazi)}
+.ap .ynk-ik{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
+.ap .ynk-ik.tr{background:rgba(249,115,22,.16)}.ap .ynk-ik.sr{background:rgba(234,179,8,.16)}.ap .ynk-ik.mv{background:rgba(96,165,250,.16)}.ap .ynk-ik.ys{background:rgba(34,197,94,.16)}
+.ap .ynk-buyuk{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ap .ynk-buyuk b{font-size:22px;font-weight:800;letter-spacing:.05em;font-variant-numeric:tabular-nums;line-height:1.1}
+.ap .ynk-s{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--ap-soluk);font-size:12.5px;min-width:0}.ap .ynk-s b{color:var(--ap-yazi);text-align:right;overflow:hidden;text-overflow:ellipsis}
+.ap .ynk-s b.k{color:var(--ap-kotu)}.ap .ynk-s b.i{color:var(--ap-iyi)}
+.ap .ynk-d{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}.ap .ynk-d .ap-btn{padding:6px 10px;font-size:12.5px}
+.ap .ynk-yar{display:flex;gap:10px;align-items:center;min-width:0}.ap .ynk-yar>b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.ap .ynk-yar span{min-width:0}.ap .ynk-yar span b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ap .ynk-yar small{color:var(--ap-soluk);font-size:12px}
+.ap .ynk-serit{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap}.ap .ynk-serit i{width:8px;height:14px;border-radius:2px}
+.ap .ynk-foto{display:flex;gap:10px;align-items:center}.ap .ynk-foto .f{width:48px;height:48px;border-radius:50%;background:var(--ap-zemin);display:grid;place-items:center;font-weight:800;font-size:15px;flex-shrink:0;color:var(--ap-soluk)}
+.ap .ynk-anahtar{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:12px;cursor:pointer;user-select:none;color:var(--ap-yazi)}
+.ap .ynk-anahtar input{width:36px;height:20px;appearance:none;-webkit-appearance:none;border-radius:999px;background:var(--ap-kotu);position:relative;cursor:pointer;margin:0;flex-shrink:0}
+.ap .ynk-anahtar input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
+.ap .ynk-anahtar input:checked{background:var(--ap-iyi)}.ap .ynk-anahtar input:checked::after{left:19px}
+.ap .ynk-alt{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 2px 0;border-top:1px dashed var(--ap-cizgi);color:var(--ap-soluk);font-size:12px}.ap .ynk-alt div{display:flex;gap:6px}.ap .ynk-alt .ap-btn{padding:6px 10px;font-size:12px}
+@media (max-width:700px){.ap .ynk-izgara{grid-template-columns:1fr}}
 .ap .ap-btn.tehlike{color:var(--ap-kotu);border-color:rgba(239,100,97,.45)}
 .yn-mav{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#3a3020;color:#f0c860;font-size:10px;font-weight:700;vertical-align:middle;margin-right:7px}
 .yn-isim{cursor:pointer;text-decoration:underline dotted rgba(240,200,96,.55);text-underline-offset:3px}
@@ -588,6 +609,9 @@
     function ynKartEsc(e) { if (e.key === 'Escape' && !YN.duzen) ynKartKapat(); }
     window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; YN.duzen = false; document.removeEventListener('keydown', ynKartEsc); };
     window.ynKartYenile = function () { if (YN.kart && document.getElementById('yn-kart') && !YN.duzen) ynKartCiz(); };
+    // yalnız "Kayıt işlemleri" kartları (Y.islemPanel → #ynk-panel): sunucudan gelen giriş/yarışma/program bilgisi kartın geri
+    // kalanını (yazılmakta olan plan, aidat formu) silmeden yerine konur
+    window.ynKartIslemYenile = function () { let k = YN.kart && ynKisi(), el = document.getElementById('ynk-panel'); if (k && el && YN.Y.islemPanel) el.outerHTML = YN.Y.islemPanel(k); };
     const ynKisi = () => YN.Y.kisiBul ? YN.Y.kisiBul(YN.kart) : YN.Y.kisiler().find(x => x.id === YN.kart);
     window.ynKisi = ynKisi; // profil düğmeleri (📷 fotoğraf) açık kişiyi alır
     function alanDeger(a) { if (a.tip === 'secim') { let s = (a.secenekler || []).find(x => String(x[0]) === String(a.deger)); return s ? s[1] : (a.deger || '—'); } if (a.tip === 'tarih') return a.deger ? String(a.deger).split('-').reverse().join('.') : '—'; return a.deger === '' || a.deger == null ? '—' : esc(a.deger); }
@@ -674,7 +698,7 @@
                         <div class="ap-panel"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi</span></h3>${aidat}</div>
                         <div class="ap-panel"><h3>Devam · son 6 ay <span>ayda geldiği gün</span></h3><div class="yn-devam">${devam}</div><h3 style="margin-top:14px">Geçmiş <span>son olaylar</span></h3><div class="yn-gecmis">${gecmis}</div></div>
                     </div>
-                    ${islemler ? `<div class="yn-tehlike yn-pdf-gizle"><h4>Kayıt işlemleri</h4>${islemler}</div>` : ''}
+                    ${Y.islemPanel ? Y.islemPanel(k) : islemler ? `<div class="yn-tehlike yn-pdf-gizle"><h4>Kayıt işlemleri</h4>${islemler}</div>` : ''}
                 </main>
             </div>
         </div>`;
