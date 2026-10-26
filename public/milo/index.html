@@ -286,9 +286,19 @@
         <button class="milo-secim-btn" onclick="document.getElementById('milo-platform-secim').style.display='none'; document.getElementById('milo-sporcu-giris').style.display='flex'; miloSporcuHatirlaOku();">🤸 Sporcu Girişi <span>İsim + doğum yılı ile — kendi gelişimini gör</span></button>
     </div>
 
+    <style>
+        /* 🤸 Sporcu girişi: Milo logosunun renkleri — yeşil #12c46e · magenta #c2186e · sarı-turuncu #f8b858 (2026-10-27) */
+        .mvg-logo{background:#fff;border-radius:26px;padding:10px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}.mvg-logo img{display:block;width:min(48vw,180px);height:auto}
+        #milo-sporcu-giris .milo-logo{color:#12c46e!important;background:none!important;-webkit-text-fill-color:#12c46e}
+        #milo-sporcu-giris .milo-ribbon{background:linear-gradient(90deg,#12c46e,#c2186e,#f8b858)!important;opacity:1}
+        #milo-sporcu-giris input[type=checkbox]{accent-color:#12c46e!important}
+        #milo-sporcu-giris button[onclick="miloSporcuGirisDene()"]{background:#12c46e!important;color:#03261a!important}
+        #milo-sporcu-giris #milo-sporcu-hizli-giris-btn{background:#c2186e!important;color:#fff!important}
+    </style>
     <!-- SPORCU GİRİŞİ — PIN gerekmez, isim + doğum yılı ile. Admin PIN akışından tamamen bağımsız. -->
     <div id="milo-sporcu-giris" style="display:none; position:fixed; inset:0; z-index:10001; background:var(--milo-bg); flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px;">
-        <div class="milo-logo" style="font-size:26px;">🤸 Sporcu Girişi</div>
+        <div class="mvg-logo"><img src="/milo/milo-logo.png" alt="MILO FITT KIDS"></div>
+        <div class="milo-logo" style="font-size:22px;">🤸 Sporcu Girişi</div>
         <div class="milo-ribbon"></div>
         <div style="color:var(--milo-ink-dim); font-size:12px; text-align:center; max-width:300px;">Adını ve doğum yılını gir, kendi sayfanı gör!</div>
         <button id="milo-sporcu-hizli-giris-btn" onclick="miloSporcuHizliGiris()" style="display:none; width:100%; max-width:300px; padding:13px; background:var(--milo-teal); color:#fff; border:none; border-radius:14px; font-weight:bold; font-size:15px;">⚡ Hızlı Giriş</button>
@@ -424,6 +434,6 @@
     <script src="milo-program-pano.js?v=1"></script>
     <script src="milo-defter.js?v=12"></script>
     <script src="milo-gunluk.js?v=3"></script>
-    <script src="milo-veli-pano.js?v=6"></script>
+    <script src="milo-veli-pano.js?v=7"></script>
 </body>
 </html>
