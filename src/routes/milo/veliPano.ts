@@ -89,9 +89,17 @@ export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: st
     sonrakiOdendi: !!(sonrakiOdeme && sonrakiOdeme.odendi),
   } : null;
   // telafi hakları (veliye: açıklar + son 60 günde kullanılan / düşen) ve son 70 günün kayıtları (takvim, girdiği dersler)
-  const sinir60 = gunEkle(bugun, -60), sinir70 = gunEkle(bugun, -70);
+  const sinir60 = gunEkle(bugun, -60);
   const telafiler = haklar.filter((h) => h.durum === "acik" || h.iso >= sinir60).map((h) => ({ iso: h.iso, s: h.s, bitis: h.bitis, durum: h.durum, kullanim: h.kullanim }));
-  const sonKayitlar = kayitlar.filter((r) => r.iso >= sinir70).map((r) => ({ iso: r.iso, s: r.s, hak: hakVarMi(r) }));
+  // bütün kayıtlar (veli "girdiği dersler" tablosunda ay ay gezer) + paket no; telafi dersi hangi pakete yazıldıysa o
+  const paketNo: Record<string, number> = {};
+  for (const p of pk) for (const r of p.dersler.concat(p.telafiler)) paketNo[r.iso] = p.no;
+  const sonKayitlar = kayitlar.map((r) => ({ iso: r.iso, s: r.s, hak: hakVarMi(r), pk: paketNo[r.iso] || null }));
+  // ödeme tablosu (2026-10-27, kullanıcı: "ödeme tablosu da olsun, 1. paketi 20.10'da ödemiş görebilsin") — tutar YOK
+  const odemeler = pk.map((p) => {
+    const o = paketOdeme[uye.grup + "|" + uye.ad + "|" + p.no], tum = p.dersler.concat(p.telafiler).map((r) => r.iso).sort();
+    return { no: p.no, bas: tum[0] || null, bit: tum[tum.length - 1] || null, ders: p.dersler.length, odendi: !!(o && o.odendi), odemeTarihi: o && o.odendi ? o.odemeTarihi || null : null };
+  });
   function hakVarMi(r: Kayit) { return haklar.some((h) => h.iso === r.iso); }
 
   // ---- dersleri (programda kayıtlı olduğu saatler; yoksa grubunun saatleri)
@@ -137,5 +145,5 @@ export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: st
   const kazanacak = Object.keys(say).sort((a, b) => say[b] - say[a]).slice(0, 8).map((id) => ({ id, ders: say[id] }));
   const buAy = new Date().toISOString().slice(0, 7), buAyGeldi = kayitlar.filter((r) => r.iso.slice(0, 7) === buAy && (r.s === "g" || r.s === "t")).length;
 
-  return { paket, dersler, buHafta, kazanacak, buAyGeldi, telafiler, kayitlar: sonKayitlar, bugun };
+  return { paket, dersler, buHafta, kazanacak, buAyGeldi, telafiler, kayitlar: sonKayitlar, odemeler, bugun };
 }

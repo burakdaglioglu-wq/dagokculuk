@@ -100,8 +100,65 @@ function mvpKutla() {
     ['⭐', '💛', '✨', '🧡', '⭐', '✨'].forEach(function (e, i) { let s = document.createElement('i'); s.className = 'mvp-konfeti'; s.textContent = e; s.style.setProperty('--a', (i * 60 - 150) + 'deg'); k.appendChild(s); setTimeout(function () { s.remove(); }, 1300); });
 }
 
+// ---- 📋 sekmeler: Gireceği · Girdiği · Takvim · Ödemeler (ilk üçünde ay seçilir)
+const MVP_SEKMELER = [['gelecek', 'Gireceği'], ['girdi', 'Girdiği'], ['takvim', 'Takvim'], ['odeme', 'Ödemeler']];
+function mvpAyAd(ay) { return MVP_AY[+ay.slice(5) - 1] + ' ' + ay.slice(0, 4); }
+function mvpAyEkle(ay, n) { let d = new Date(ay + '-01T12:00:00'); d.setMonth(d.getMonth() + n); return mvpIso(d).slice(0, 7); }
+function mvpAyAralik() {
+    let c = MVP.ctx, l = [c.bugun.slice(0, 7)];
+    c.kayitlar.forEach(function (r) { l.push(r.iso.slice(0, 7)); }); c.gelecek.forEach(function (g) { l.push(g.iso.slice(0, 7)); });
+    l.sort(); return [l[0], l[l.length - 1]];
+}
+function mvpSekmeSec(k) { MVP.sekme = k; let e = document.getElementById('mvp-sekme'); if (e) e.innerHTML = mvpSekmeHTML(); }
+function mvpAyKaydir(n) { let a = mvpAyAralik(), y = mvpAyEkle(MVP.ay, n); if (y < a[0] || y > a[1]) return; MVP.ay = y; mvpSekmeSec(MVP.sekme); }
+// Gireceği derslerin paket sırası: kalan dersler bu pakette, sonra her 8 ders yeni paket
+function mvpGelecekSira(j) {
+    let c = MVP.ctx, p = c.p; if (!p) return { etiket: '', yeni: false };
+    if (j < c.kalan) return { etiket: p.no + '. paket · ' + (c.n + j + 1) + '. ders', son: c.n + j + 1 === 8 };
+    let k = j - c.kalan, no = p.no + 1 + Math.floor(k / 8), d = k % 8 + 1;
+    return { etiket: no + '. paket · ' + d + '. ders', yeni: d === 1, son: d === 8 };
+}
+function mvpSekmeHTML() {
+    let c = MVP.ctx; if (!c) return '';
+    let sek = '<div class="mvp-sekmeler" role="tablist">' + MVP_SEKMELER.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (MVP.sekme === x[0]) + '" class="' + (MVP.sekme === x[0] ? 'on' : '') + '" onclick="mvpSekmeSec(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>';
+    let ar = mvpAyAralik(), ayNav = MVP.sekme === 'odeme' ? '' : '<div class="mvp-aynav"><button type="button" onclick="mvpAyKaydir(-1)"' + (MVP.ay <= ar[0] ? ' disabled' : '') + ' aria-label="Önceki ay">‹</button><b>' + mvpAyAd(MVP.ay) + '</b><button type="button" onclick="mvpAyKaydir(1)"' + (MVP.ay >= ar[1] ? ' disabled' : '') + ' aria-label="Sonraki ay">›</button></div>';
+    let ic = '', bos = function (m) { return '<div class="mvp-bos">' + m + '</div>'; };
+    if (MVP.sekme === 'gelecek') {
+        let l = c.gelecek.map(function (g, j) { return { g: g, s: mvpGelecekSira(j) }; }).filter(function (x) { return x.g.iso.slice(0, 7) === MVP.ay; });
+        ic = l.length ? '<table class="mvp-tablo"><thead><tr><th>Tarih</th><th>Saat</th><th>Ders</th></tr></thead><tbody>' + l.map(function (x) {
+            return '<tr' + (x.s.yeni ? ' class="yeni"' : '') + '><td><b>' + x.g.tarih.getDate() + ' ' + MVP_AY[x.g.tarih.getMonth()].slice(0, 3) + '</b><small>' + MVP_GUN[x.g.tarih.getDay()] + (x.g.gun <= 1 ? ' · ' + mvpKalanYazi(x.g.gun) : '') + '</small></td><td>' + miloEsc(x.g.bas) + '</td><td>' + miloEsc(x.s.etiket) + (x.s.yeni ? ' <span class="mvp-e y">💳 yeni paket</span>' : x.s.son ? ' <span class="mvp-e son">son ders</span>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table>' : bos(MVP.ay < c.bugun.slice(0, 7) ? 'Geçmiş ay — girdiği dersler için "Girdiği" sekmesine bak.' : 'Bu ay için ders görünmüyor.');
+    } else if (MVP.sekme === 'girdi') {
+        let l = c.kayitlar.filter(function (r) { return r.iso.slice(0, 7) === MVP.ay; }).slice().reverse(), say = {};
+        l.forEach(function (r) { say[r.s] = (say[r.s] || 0) + 1; });
+        ic = l.length ? '<div class="mvp-ozet">' + ['g', 't', 'm', 'h', 'y'].filter(function (k) { return say[k]; }).map(function (k) { return '<span class="d-' + k + '">' + MVP_DURUM[k][0] + ' ' + say[k] + ' ' + MVP_DURUM[k][1].toLocaleLowerCase('tr') + '</span>'; }).join('') + '</div>'
+            + '<table class="mvp-tablo"><thead><tr><th>Tarih</th><th>Durum</th><th>Paket</th></tr></thead><tbody>' + l.map(function (r) {
+                let d = new Date(r.iso + 'T12:00:00'), t = MVP_DURUM[r.s] || ['•', r.s];
+                return '<tr><td><b>' + d.getDate() + ' ' + MVP_AY[d.getMonth()].slice(0, 3) + '</b><small>' + MVP_GUN[d.getDay()] + '</small></td><td><span class="mvp-dr d-' + r.s + '">' + t[0] + ' ' + t[1] + '</span>' + (r.hak ? '<small>🔁 telafi hakkı</small>' : '') + '</td><td>' + (r.pk ? r.pk + '. paket' : '—') + '</td></tr>';
+            }).join('') + '</tbody></table>' : bos('Bu ay kayıtlı ders yok.');
+    } else if (MVP.sekme === 'takvim') {
+        let ay = MVP.ay, ilkGun = new Date(ay + '-01T12:00:00'), gunSay = new Date(ilkGun.getFullYear(), ilkGun.getMonth() + 1, 0).getDate(), b = (ilkGun.getDay() + 6) % 7;
+        let h = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(function (g) { return '<div class="mvp-tb">' + g + '</div>'; }).join('');
+        for (let i = 0; i < b; i++) h += '<div></div>';
+        for (let d = 1; d <= gunSay; d++) {
+            let iso = ay + '-' + String(d).padStart(2, '0'), k = c.kayit[iso], cls = '';
+            if (k === 'g' || k === 't') cls = 'geldi'; else if (k === 'm') cls = 'haber'; else if (k === 'h') cls = 'hasta'; else if (k === 'y') cls = 'yok';
+            else if (iso === c.odemeIso) cls = 'odeme'; else if (c.gelecekIso[iso]) cls = 'gelecek'; else if (c.digerDers[iso]) cls = 'ders';
+            h += '<div class="mvp-tg ' + cls + (iso === c.bugun ? ' bugun' : '') + '" title="' + miloEsc(mvpTarih(iso) + (k && MVP_DURUM[k] ? ' · ' + MVP_DURUM[k][1] : iso === c.odemeIso ? ' · yeni paket' : c.gelecekIso[iso] ? ' · ders' : '')) + '">' + d + '</div>';
+        }
+        ic = '<div class="mvp-takvim">' + h + '</div><div class="mvp-lejant"><span><i class="geldi"></i>geldi</span><span><i class="haber"></i>haber verdi</span><span><i class="hasta"></i>hasta</span><span><i class="yok"></i>gelmedi</span><span><i class="gelecek"></i>gireceği ders</span>' + (c.odemeIso ? '<span><i class="odeme"></i>yeni paket</span>' : '') + '</div>';
+    } else {
+        let l = c.odemeler.slice().reverse();
+        ic = l.length ? '<table class="mvp-tablo"><thead><tr><th>Paket</th><th>Dersler</th><th>Ödeme</th></tr></thead><tbody>' + l.map(function (o) {
+            return '<tr><td><b>' + o.no + '. paket</b><small>' + o.ders + ' ders</small></td><td>' + (o.bas ? mvpKisa(o.bas) + (o.bit && o.bit !== o.bas ? ' – ' + mvpKisa(o.bit) : '') : '—') + '</td><td>' + (o.odendi ? '<span class="mvp-dr d-g">✓ Ödendi</span><small>' + (o.odemeTarihi ? miloEsc(mvpTarih(o.odemeTarihi)) : 'tarih yok') + '</small>' : '<span class="mvp-dr d-bek">⏳ Bekliyor</span>') + '</td></tr>';
+        }).join('') + '</tbody></table>' : bos('Henüz paket yok.');
+    }
+    return sek + ayNav + ic;
+}
+
 function miloSporcuProfilCiz(s) {
     mvpCss();
+    if (!MVP.s || MVP.s.ad !== s.ad) { MVP.ay = null; MVP.sekme = null; } // başka çocuk → bu ay, "Gireceği" sekmesi
     MVP.s = s; MVP.kim = { ad: ((document.getElementById('milo-sporcu-giris-ad') || {}).value || s.ad || '').trim(), yil: ((document.getElementById('milo-sporcu-giris-yil') || {}).value || '').trim() };
     let kap = document.getElementById('milo-sporcu-app'); if (kap) kap.classList.add('mvp-kap');
     let alan = document.getElementById('milo-sporcu-icerik'); if (!alan) return;
@@ -120,8 +177,8 @@ function miloSporcuProfilCiz(s) {
     else { odemeBaslik = kalan ? kalan + ' ders kaldı' : 'Paket tamamlandı'; odemeAlt = 'Yeni paket, paket bitince başlar.'; }
     let R = 15.5, C = 2 * Math.PI * R, dolu = C * (p ? n / 8 : 0);
     let halka = '<div class="mvp-halka"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="' + R + '" fill="none" stroke="var(--mvp-cizgi)" stroke-width="3.2"/><circle class="mvp-halka-d" cx="18" cy="18" r="' + R + '" fill="none" stroke="var(--mvp-vurgu)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="' + dolu.toFixed(2) + ' ' + C.toFixed(2) + '" style="--c:' + C.toFixed(2) + '"/></svg>'
-        + '<div class="mvp-orta"><div>' + (odemeGun != null ? '<b>' + odemeGun + '</b><small>gün kaldı</small>' : '<b>' + n + '/8</b><small>ders</small>') + '</div></div></div>';
-    let cipler = (p ? '<span class="mvp-cip">' + (kalan ? kalan + ' ders kaldı' : '8/8 tamam') + '</span>' : '')
+        + '<div class="mvp-orta"><div>' + (odemeGun != null ? '<b>' + odemeGun + '</b><small>gün kaldı</small>' : '<b>' + kalan + '</b><small>ders kaldı</small>') + '</div></div></div>';
+    let cipler = (p && odemeGun != null ? '<span class="mvp-cip">' + (kalan ? kalan + ' ders kaldı' : 'paket tamam') + '</span>' : '')
         + (p && p.odendi ? '<span class="mvp-cip yesil">✓ ' + p.no + '. paket ödendi' + (p.odemeTarihi ? ' · ' + miloEsc(mvpKisa(p.odemeTarihi)) : '') + '</span>' : '')
         + (acikHak.length ? '<span class="mvp-cip mor">🔁 ' + acikHak.length + ' telafi hakkı</span>' : '');
     let ustHTML = '<div class="mvp-hero ' + odemeCls + '">' + halka + '<div class="mvp-hero-m"><h3>' + miloEsc(odemeBaslik) + '</h3><p>' + miloEsc(odemeAlt) + '</p><div class="mvp-rozetler">' + cipler + '</div></div></div>';
@@ -139,28 +196,13 @@ function miloSporcuProfilCiz(s) {
             + '<div class="mvp-bilet-not">' + ['g', 'm', 'h', 'y'].filter(function (k) { return olan[k]; }).map(function (k) { return MVP_DURUM[k][0] + ' ' + MVP_DURUM[k][1].toLocaleLowerCase('tr'); }).join(' · ') + (p.telafi ? ' · +' + p.telafi + ' telafi dersi' : '') + '</div></div>';
     }
 
-    // ---- takvim (bu ay; ödeme günü / kalan dersler sonraki aydaysa o ay da)
+    // ---- 📋 sekmeli kart (2026-10-27, kullanıcı: "gireceği dersleri ay olarak seçip tablo olarak görsün, girdiği dersleri de ayrıca
+    // görebilsin, ödeme tablosu da olsun — 1. paketi 20.10'da ödemiş görebilsin"): Gireceği · Girdiği · Takvim · Ödemeler, ay seçmeli
     let gelecekIso = {}; paketDersleri.forEach(function (g) { gelecekIso[g.iso] = 1; });
     let digerDers = {}; gelecek.forEach(function (g) { if (!gelecekIso[g.iso]) digerDers[g.iso] = 1; });
     let odemeIso = !p || !p.odendi || p.sonrakiOdendi || !yeniPaket ? null : yeniPaket.iso;
-    let aylar = [bugun.slice(0, 7)], sonIso = odemeIso || (paketDersleri.length ? paketDersleri[paketDersleri.length - 1].iso : bugun);
-    if (sonIso.slice(0, 7) !== aylar[0]) aylar.push(sonIso.slice(0, 7));
-    let takvimHTML = aylar.map(function (ay, ai) {
-        let ilkGun = new Date(ay + '-01T12:00:00'), gunSay = new Date(ilkGun.getFullYear(), ilkGun.getMonth() + 1, 0).getDate(), bos = (ilkGun.getDay() + 6) % 7, h = '';
-        let say = { g: 0, m: 0, h: 0, y: 0 };
-        if (!ai) h += ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(function (g) { return '<div class="mvp-tb">' + g + '</div>'; }).join('');
-        for (let i = 0; i < bos; i++) h += '<div></div>';
-        for (let d = 1; d <= gunSay; d++) {
-            let iso = ay + '-' + String(d).padStart(2, '0'), k = kayit[iso], cls = '';
-            if (k === 'g' || k === 't') cls = 'geldi'; else if (k === 'm') cls = 'haber'; else if (k === 'h') cls = 'hasta'; else if (k === 'y') cls = 'yok';
-            else if (iso === odemeIso) cls = 'odeme'; else if (gelecekIso[iso]) cls = 'gelecek'; else if (digerDers[iso]) cls = 'ders';
-            let sk = k === 't' ? 'g' : k; if (sk && say[sk] != null) say[sk]++;
-            h += '<div class="mvp-tg ' + cls + (iso === bugun ? ' bugun' : '') + '" title="' + miloEsc(mvpTarih(iso) + (k && MVP_DURUM[k] ? ' · ' + MVP_DURUM[k][1] : iso === odemeIso ? ' · yeni paket' : gelecekIso[iso] ? ' · ders' : '')) + '">' + d + '</div>';
-        }
-        let ozet = [say.g ? say.g + ' geldi' : '', say.m ? say.m + ' haber verdi' : '', say.h ? say.h + ' hasta' : '', say.y ? say.y + ' gelmedi' : ''].filter(Boolean).join(' · ');
-        return '<h4' + (ai ? ' style="margin-top:14px"' : '') + '>' + MVP_AY[ilkGun.getMonth()] + (ozet ? ' <span>' + ozet + '</span>' : '') + '</h4><div class="mvp-takvim">' + h + '</div>';
-    }).join('');
-    let lejant = '<div class="mvp-lejant"><span><i class="geldi"></i>geldi</span><span><i class="haber"></i>haber verdi</span><span><i class="hasta"></i>hasta</span><span><i class="yok"></i>gelmedi</span><span><i class="gelecek"></i>gireceği ders</span>' + (odemeIso ? '<span><i class="odeme"></i>yeni paket</span>' : '') + '</div>';
+    MVP.ctx = { p: p, n: n, kalan: kalan, bugun: bugun, kayit: kayit, kayitlar: s.kayitlar || [], gelecek: gelecek, gelecekIso: gelecekIso, digerDers: digerDers, odemeIso: odemeIso, odemeler: s.odemeler || [] };
+    if (!MVP.ay) MVP.ay = bugun.slice(0, 7); if (!MVP.sekme) MVP.sekme = 'gelecek';
 
     // ---- telafi
     let telafiHTML = acikHak.map(function (h) {
@@ -170,23 +212,15 @@ function miloSporcuProfilCiz(s) {
     let kullanilan = (s.telafiler || []).filter(function (h) { return h.durum === 'kullanildi' && h.kullanim; });
     if (!telafiHTML && kullanilan.length) telafiHTML = '<div class="mvp-not-sat">✓ ' + miloEsc(mvpTarih(kullanilan[kullanilan.length - 1].kullanim)) + ' telafi dersi yapıldı.</div>';
 
-    // ---- gireceği dersler
-    let sira = gelecek.slice(0, Math.min(3, kalan + 1)).map(function (g, i) {
-        let no = n + i + 1, yeni = p && i >= kalan, etiket = yeni ? '<span class="mvp-e y">💳 Yeni paket</span>' : no === 8 ? '<span class="mvp-e son">Son ders</span>' : g.gun <= 1 ? '<span class="mvp-e s">' + mvpKalanYazi(g.gun) + '</span>' : '';
-        return '<div class="mvp-d"><div class="mvp-dg"><small>' + MVP_GUN_KISA[g.tarih.getDay()] + '</small><b>' + g.tarih.getDate() + '</b></div><div class="mvp-dm"><b>' + (p ? (yeni ? (p.no + 1) + '. paket başlıyor' : no + '. ders') : 'Ders') + ' · ' + miloEsc(g.bas) + '</b><small>' + mvpKalanYazi(g.gun) + (g.gun > 1 ? ' · ' + MVP_GUN[g.tarih.getDay()] : '') + (yeni && !p.sonrakiOdendi ? ' · ödeme bu derse kadar' : '') + '</small></div>' + etiket + '</div>';
-    }).join('');
-    let siraHTML = sira ? '<div class="mvp-kart"><h4>Gireceği dersler</h4><div class="mvp-dersler">' + sira + '</div></div>'
-        : (s.dersler && s.dersler.length ? '' : '<div class="mvp-not-sat">Ders programı henüz girilmedi.</div>');
-
     // ---- bu hafta neler yaptık (Ders Günlüğü)
     let bh = s.buHafta || [], buHaftaHTML = '';
     if (bh.length) buHaftaHTML = '<div class="mvp-kart"><h4>Bu hafta neler yaptık <span>' + miloEsc(mvpTarih(bh[0].tarih)) + '</span></h4>'
         + bh.filter(function (k) { return k.konu || k.yapilanlar; }).slice(0, 2).map(function (k) { let kisa = mvpKisaCumle(k.yapilanlar); return '<div class="mvp-konu">' + (k.konu ? '<b>' + miloEsc(k.konu) + '</b>' : '') + (kisa ? '<p>' + miloEsc(kisa) + '</p>' : '') + '</div>'; }).join('') + '</div>';
 
     alan.innerHTML = '<div class="mvp">'
-        + '<div class="mvp-ust"><div><small>Merhaba</small><b>' + miloEsc(ilk) + '</b><span>' + miloEsc(s.grup) + (p ? ' · ' + p.no + '. paket · ' + n + '/8 ders' : '') + '</span></div><div class="mvp-av-kap" id="mvp-av-kap">' + mvpAvatarHTML(s, ilk) + '</div></div>'
-        + ustHTML + biletHTML + telafiHTML + siraHTML
-        + '<div class="mvp-kart">' + takvimHTML + lejant + '</div>'
+        + '<div class="mvp-ust"><div><small>Merhaba</small><b>' + miloEsc(ilk) + '</b><span>' + miloEsc(s.grup) + '</span></div><div class="mvp-av-kap" id="mvp-av-kap">' + mvpAvatarHTML(s, ilk) + '</div></div>'
+        + ustHTML + biletHTML + telafiHTML
+        + '<div class="mvp-kart mvp-sekmeli" id="mvp-sekme">' + mvpSekmeHTML() + '</div>'
         + buHaftaHTML
         + '<div class="mvp-kart mvp-yakinda"><span class="mvp-yk-r">Yakında</span><div class="mvp-bahce"><span>🌱</span><span>🌷</span><span>🌼</span><span>🌻</span></div><b>Beceri bahçesi</b><div class="mvp-alt">' + miloEsc(ilk) + ' öğrendiği her beceriyle burada bir çiçek açacak. Çok yakında! 🐝</div></div>'
         + (s.antrenorNotu ? '<div class="mvp-kart"><h4>Antrenörün notu</h4><div class="mvp-not">' + miloEsc(s.antrenorNotu) + '</div></div>' : '')
@@ -198,15 +232,15 @@ function mvpCss() {
     let st = document.createElement('style'); st.id = 'mvp-css';
     st.textContent = [
         // Seçilen taslağın koyu paleti, tek turuncu vurgu
-        '#milo-sporcu-app.mvp-kap{--mvp-zemin:#0c0b0a;--mvp-kart:#171513;--mvp-yukselt:#1f1c19;--mvp-cizgi:#2a2622;--mvp-yazi:#f3eee8;--mvp-soluk:#9b928a;--mvp-vurgu:#ff7a2b;--mvp-sari:#facc15;--mvp-yesil:#4ade80;--mvp-mor:#c4b5fd;--mvp-hasta:#f9a8d4;background:var(--mvp-zemin)!important;color:var(--mvp-yazi);font-family:Manrope,system-ui,sans-serif;color-scheme:dark}',
+        '#milo-sporcu-app.mvp-kap{--mvp-zemin:#0d1211;--mvp-kart:#161d1c;--mvp-yukselt:#1f2827;--mvp-cizgi:#2a3533;--mvp-yazi:#eef4f2;--mvp-soluk:#93a39f;--mvp-vurgu:#1fada0;--mvp-sari:#ffc542;--mvp-koyu:#04201d;--mvp-gri:#2f3836;--mvp-yesil:#4ade80;--mvp-mor:#c4b5fd;--mvp-hasta:#f9a8d4;background:var(--mvp-zemin)!important;color:var(--mvp-yazi);font-family:Manrope,system-ui,sans-serif;color-scheme:dark}',
         '#milo-sporcu-app.mvp-kap>button{background:var(--mvp-kart)!important;color:var(--mvp-soluk)!important;border:0!important;box-shadow:none!important;border-radius:99px!important}',
         '.mvp{display:flex;flex-direction:column;gap:12px;padding-bottom:30px}',
         '.mvp-ust{display:flex;justify-content:space-between;align-items:flex-end;margin:0 2px 2px}.mvp-ust small{color:var(--mvp-soluk);font-weight:700;font-size:13px}.mvp-ust b{display:block;font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.05}.mvp-ust span{display:block;color:var(--mvp-soluk);font-weight:600;font-size:12.5px;margin-top:2px}',
         // 📷 avatar: yuvarlak, turuncu-pembe halka, köşede ✨ (foto yoksa kesikli halka + 📷)
         '.mvp-av-kap{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}',
-        '.mvp-av{position:relative;width:74px;height:74px;border-radius:50%;padding:3px;border:0;cursor:pointer;background:conic-gradient(from 200deg,#ff7a2b,#f472b6,#facc15,#ff7a2b);display:grid;place-items:center;font:inherit}',
+        '.mvp-av{position:relative;width:74px;height:74px;border-radius:50%;padding:3px;border:0;cursor:pointer;background:conic-gradient(from 200deg,#1fada0,#4ade80,#ffc542,#1fada0);display:grid;place-items:center;font:inherit}',
         '.mvp-av img,.mvp-av span{width:100%;height:100%;border-radius:50%;border:3px solid var(--mvp-zemin);object-fit:cover;display:grid;place-items:center;background:var(--mvp-yukselt);color:var(--mvp-vurgu);font-weight:800;font-size:26px;box-sizing:border-box}',
-        '.mvp-av.bos{background:transparent;border:2px dashed rgba(255,122,43,.6)}.mvp-av.bos span{border:0}',
+        '.mvp-av.bos{background:transparent;border:2px dashed rgba(31,173,160,.6)}.mvp-av.bos span{border:0}',
         '.mvp-av.foto img{animation:mvpFotoGir .5s cubic-bezier(.2,1.5,.4,1)}@keyframes mvpFotoGir{from{transform:scale(.6);opacity:0}}',
         '.mvp-av-r{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:var(--mvp-kart);display:grid;place-items:center;font-style:normal;font-size:14px;box-shadow:0 0 0 2px var(--mvp-zemin)}',
         '.mvp-av.foto .mvp-av-r{animation:mvpZipla 2.4s ease-in-out infinite}@keyframes mvpZipla{0%,80%,100%{transform:none}88%{transform:translateY(-4px) rotate(12deg)}}',
@@ -228,15 +262,15 @@ function mvpCss() {
         '.mvp-orta{position:absolute;inset:0;display:grid;place-items:center;text-align:center}.mvp-orta b{font-size:30px;font-weight:800;line-height:1}.mvp-orta small{display:block;font-size:10.5px;font-weight:800;color:var(--mvp-soluk);margin-top:3px}',
         '.mvp-hero-m{min-width:0}.mvp-hero h3{margin:0 0 4px;font-size:16px;font-weight:800}.mvp-hero p{margin:0;color:var(--mvp-soluk);font-size:12.5px;font-weight:600;line-height:1.45}',
         // delikli kart
-        '.mvp-bilet{background:var(--mvp-vurgu);color:#1a0c03;border-radius:22px;padding:16px 16px 14px;position:relative}',
+        '.mvp-bilet{background:var(--mvp-vurgu);color:var(--mvp-koyu);border-radius:22px;padding:16px 16px 14px;position:relative}',
         '.mvp-bilet::before,.mvp-bilet::after{content:"";position:absolute;top:44px;width:18px;height:18px;border-radius:50%;background:var(--mvp-zemin)}.mvp-bilet::before{left:-9px}.mvp-bilet::after{right:-9px}',
         '.mvp-bilet-b{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mvp-bilet-b b{font-size:16px;font-weight:800}.mvp-bilet-b span{font-size:12px;font-weight:800;opacity:.72}',
-        '.mvp-bilet-c{border-top:2px dashed rgba(26,12,3,.25);margin:14px 0 12px}',
+        '.mvp-bilet-c{border-top:2px dashed rgba(4,32,29,.25);margin:14px 0 12px}',
         '.mvp-delikler{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}',
-        '.mvp-delik{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;background:rgba(26,12,3,.12);font-size:11px;animation:mvpDelik .35s backwards}',
+        '.mvp-delik{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;background:rgba(4,32,29,.12);font-size:11px;animation:mvpDelik .35s backwards}',
         '.mvp-delik i{font-style:normal;font-size:17px}.mvp-delik small{font-size:9.5px;opacity:.75;margin-top:2px}.mvp-delik b{font-size:16px}',
-        '.mvp-delik.g,.mvp-delik.t{background:#1a0c03;color:var(--mvp-vurgu)}.mvp-delik.m{background:#1a0c03;color:var(--mvp-mor)}.mvp-delik.h{background:#1a0c03;color:var(--mvp-hasta)}.mvp-delik.y{background:rgba(26,12,3,.35);color:#fff3ea}',
-        '.mvp-delik.s{border:2px dashed rgba(26,12,3,.45);background:transparent}.mvp-delik.son{border-style:solid}',
+        '.mvp-delik.g,.mvp-delik.t{background:var(--mvp-koyu);color:var(--mvp-vurgu)}.mvp-delik.m{background:var(--mvp-koyu);color:var(--mvp-mor)}.mvp-delik.h{background:var(--mvp-koyu);color:var(--mvp-hasta)}.mvp-delik.y{background:rgba(4,32,29,.35);color:#eafff9}',
+        '.mvp-delik.s{border:2px dashed rgba(4,32,29,.45);background:transparent}.mvp-delik.son{border-style:solid}',
         '.mvp-delikler .mvp-delik:nth-child(2){animation-delay:.05s}.mvp-delikler .mvp-delik:nth-child(3){animation-delay:.1s}.mvp-delikler .mvp-delik:nth-child(4){animation-delay:.15s}.mvp-delikler .mvp-delik:nth-child(5){animation-delay:.2s}.mvp-delikler .mvp-delik:nth-child(6){animation-delay:.25s}.mvp-delikler .mvp-delik:nth-child(7){animation-delay:.3s}.mvp-delikler .mvp-delik:nth-child(8){animation-delay:.35s}',
         '@keyframes mvpDelik{from{transform:scale(.6);opacity:0}}',
         '.mvp-bilet-not{font-size:12px;font-weight:700;margin-top:12px;opacity:.85}',
@@ -249,14 +283,26 @@ function mvpCss() {
         '.mvp-dersler{display:flex;flex-direction:column}.mvp-d{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--mvp-cizgi)}.mvp-d:first-child{border-top:0}',
         '.mvp-dg{text-align:center;line-height:1.05}.mvp-dg small{display:block;font-size:10px;font-weight:800;color:var(--mvp-vurgu);text-transform:uppercase}.mvp-dg b{font-size:17px;font-weight:800}',
         '.mvp-dm{min-width:0}.mvp-dm b{display:block;font-size:13.5px;font-weight:700}.mvp-dm small{color:var(--mvp-soluk);font-size:12px;font-weight:600}',
-        '.mvp-e{font-size:12px;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap}.mvp-e.s{color:var(--mvp-vurgu);background:rgba(255,122,43,.12)}.mvp-e.son{color:#1a0c03;background:var(--mvp-vurgu)}.mvp-e.y{color:var(--mvp-yazi);background:var(--mvp-yukselt)}',
+        '.mvp-e{font-size:12px;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap}.mvp-e.s{color:var(--mvp-vurgu);background:rgba(31,173,160,.12)}.mvp-e.son{color:var(--mvp-koyu);background:var(--mvp-vurgu)}.mvp-e.y{color:var(--mvp-yazi);background:var(--mvp-yukselt)}',
+        // 📋 sekmeli kart: sekmeler, ay seçici, tablolar
+        '.mvp-sekmeler{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:var(--mvp-yukselt);margin-bottom:12px}',
+        '.mvp-sekmeler button{border:0;border-radius:10px;background:transparent;color:var(--mvp-soluk);font:inherit;font-weight:800;font-size:12.5px;padding:9px 2px;cursor:pointer;min-height:38px}.mvp-sekmeler button.on{background:var(--mvp-vurgu);color:var(--mvp-koyu)}',
+        '.mvp-aynav{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px}.mvp-aynav b{font-size:15px;font-weight:800}',
+        '.mvp-aynav button{width:38px;height:38px;border-radius:12px;border:0;background:var(--mvp-yukselt);color:var(--mvp-yazi);font-size:20px;font-weight:800;cursor:pointer}.mvp-aynav button:disabled{opacity:.3;cursor:default}',
+        '.mvp-tablo{width:100%;border-collapse:collapse;font-size:13px}.mvp-tablo th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mvp-soluk);padding:0 6px 8px}',
+        '.mvp-tablo td{padding:9px 6px;border-top:1px solid var(--mvp-cizgi);vertical-align:middle;font-weight:600}.mvp-tablo td b{display:block;font-size:13.5px;font-weight:800}.mvp-tablo td small{display:block;color:var(--mvp-soluk);font-size:11.5px;font-weight:600;margin-top:2px}',
+        '.mvp-tablo tr.yeni td{background:rgba(255,197,66,.07)}.mvp-tablo .mvp-e{font-size:11px;padding:3px 7px;margin-left:2px;display:inline-block}',
+        '.mvp-dr{display:inline-block;font-size:12px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--mvp-yukselt);white-space:nowrap}',
+        '.mvp-dr.d-g,.mvp-dr.d-t{color:var(--mvp-yesil);background:rgba(74,222,128,.1)}.mvp-dr.d-m{color:var(--mvp-mor);background:rgba(196,181,253,.12)}.mvp-dr.d-h{color:var(--mvp-hasta);background:rgba(249,168,212,.12)}.mvp-dr.d-y{color:var(--mvp-soluk)}.mvp-dr.d-bek{color:var(--mvp-sari);background:rgba(255,197,66,.12)}',
+        '.mvp-ozet{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.mvp-ozet span{font-size:12px;font-weight:800;padding:4px 9px;border-radius:99px;background:var(--mvp-yukselt)}',
+        '.mvp-bos{color:var(--mvp-soluk);font-size:13px;font-weight:600;padding:14px 4px;text-align:center}',
         // takvim
         '.mvp-takvim{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}.mvp-tb{font-size:10.5px;font-weight:800;color:var(--mvp-soluk)}',
         '.mvp-tg{aspect-ratio:1;border-radius:10px;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:#5d554e}',
         '.mvp-tg.ders{color:var(--mvp-yazi);background:var(--mvp-yukselt)}.mvp-tg.geldi{background:var(--mvp-yesil);color:#052e16}.mvp-tg.haber{background:var(--mvp-mor);color:#2e1065}.mvp-tg.hasta{background:var(--mvp-hasta);color:#500724}',
-        '.mvp-tg.yok{background:#3a3430;color:#b5aba2;text-decoration:line-through}.mvp-tg.gelecek{box-shadow:inset 0 0 0 2px var(--mvp-vurgu);color:var(--mvp-vurgu)}.mvp-tg.odeme{background:var(--mvp-vurgu);color:#1a0c03}.mvp-tg.bugun{outline:2px solid var(--mvp-yazi);outline-offset:1px}',
+        '.mvp-tg.yok{background:var(--mvp-gri);color:#b5aba2;text-decoration:line-through}.mvp-tg.gelecek{box-shadow:inset 0 0 0 2px var(--mvp-sari);color:var(--mvp-sari)}.mvp-tg.odeme{background:var(--mvp-sari);color:#3d2a00}.mvp-tg.bugun{outline:2px solid var(--mvp-yazi);outline-offset:1px}',
         '.mvp-lejant{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:12px;font-size:11.5px;font-weight:700;color:var(--mvp-soluk)}.mvp-lejant i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}',
-        '.mvp-lejant i.geldi{background:var(--mvp-yesil)}.mvp-lejant i.haber{background:var(--mvp-mor)}.mvp-lejant i.hasta{background:var(--mvp-hasta)}.mvp-lejant i.yok{background:#3a3430}.mvp-lejant i.gelecek{box-shadow:inset 0 0 0 2px var(--mvp-vurgu)}.mvp-lejant i.odeme{background:var(--mvp-vurgu)}',
+        '.mvp-lejant i.geldi{background:var(--mvp-yesil)}.mvp-lejant i.haber{background:var(--mvp-mor)}.mvp-lejant i.hasta{background:var(--mvp-hasta)}.mvp-lejant i.yok{background:var(--mvp-gri)}.mvp-lejant i.gelecek{box-shadow:inset 0 0 0 2px var(--mvp-sari)}.mvp-lejant i.odeme{background:var(--mvp-sari)}',
         // bu hafta
         '.mvp-konu b{display:block;font-size:14.5px;font-weight:800}.mvp-konu p{margin:3px 0 0;color:var(--mvp-soluk);font-size:13px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.mvp-konu+.mvp-konu{margin-top:10px}',
         // 🌱 beceri bahçesi · yakında
