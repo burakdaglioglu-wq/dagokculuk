@@ -37,6 +37,13 @@ function mvpGelecek(dersler, kayitli, simdi) {
     }
     return l;
 }
+// "Bu hafta neler yaptık" kısa olsun (2026-10-27, kullanıcı: "o kadar uzun geçmesin, ana başlık altına kısa bir cümle"): yapılanların
+// ilk cümlesi, en çok ~90 harf
+function mvpKisaCumle(t) {
+    t = String(t || '').replace(/\s+/g, ' ').trim(); if (!t) return '';
+    let c = (t.match(/^.+?[.!?](\s|$)/) || [t])[0].trim();
+    return c.length > 90 ? c.slice(0, 88).replace(/[\s,;:]+\S*$/, '') + '…' : c;
+}
 function mvpSiradaki(dersler, simdi) { return mvpGelecek(dersler, {}, simdi)[0] || null; }
 
 function miloSporcuProfilCiz(s) {
@@ -119,7 +126,7 @@ function miloSporcuProfilCiz(s) {
     // ---- bu hafta neler yaptık (Ders Günlüğü)
     let bh = s.buHafta || [], buHaftaHTML = '';
     if (bh.length) buHaftaHTML = '<div class="mvp-kart"><h4>Bu hafta neler yaptık <span>' + miloEsc(mvpTarih(bh[0].tarih)) + '</span></h4>'
-        + bh.filter(function (k) { return k.konu || k.yapilanlar; }).map(function (k) { return '<div class="mvp-konu">' + (k.konu ? '<b>' + miloEsc(k.konu) + '</b>' : '') + (k.yapilanlar ? '<p>' + miloEsc(k.yapilanlar) + '</p>' : '') + '</div>'; }).join('') + '</div>';
+        + bh.filter(function (k) { return k.konu || k.yapilanlar; }).slice(0, 2).map(function (k) { let kisa = mvpKisaCumle(k.yapilanlar); return '<div class="mvp-konu">' + (k.konu ? '<b>' + miloEsc(k.konu) + '</b>' : '') + (kisa ? '<p>' + miloEsc(kisa) + '</p>' : '') + '</div>'; }).join('') + '</div>';
 
     alan.innerHTML = '<div class="mvp">'
         + '<div class="mvp-ust"><div><small>Merhaba</small><b>' + miloEsc(ilk) + '</b><span>' + miloEsc(s.grup) + (p ? ' · ' + p.no + '. paket · ' + n + '/8 ders' : '') + '</span></div><div class="mvp-av">' + miloEsc(ilk.charAt(0).toLocaleUpperCase('tr') || '?') + '</div></div>'
@@ -184,7 +191,7 @@ function mvpCss() {
         '.mvp-lejant{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:12px;font-size:11.5px;font-weight:700;color:var(--mvp-soluk)}.mvp-lejant i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}',
         '.mvp-lejant i.geldi{background:var(--mvp-yesil)}.mvp-lejant i.haber{background:var(--mvp-mor)}.mvp-lejant i.hasta{background:var(--mvp-hasta)}.mvp-lejant i.yok{background:#3a3430}.mvp-lejant i.gelecek{box-shadow:inset 0 0 0 2px var(--mvp-vurgu)}.mvp-lejant i.odeme{background:var(--mvp-vurgu)}',
         // bu hafta
-        '.mvp-konu b{display:block;font-size:14.5px;font-weight:800}.mvp-konu p{margin:4px 0 0;color:var(--mvp-soluk);font-size:13px;font-weight:600;line-height:1.5;white-space:pre-line}.mvp-konu+.mvp-konu{margin-top:10px}',
+        '.mvp-konu b{display:block;font-size:14.5px;font-weight:800}.mvp-konu p{margin:3px 0 0;color:var(--mvp-soluk);font-size:13px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.mvp-konu+.mvp-konu{margin-top:10px}',
         // 🌱 beceri bahçesi · yakında
         '.mvp-yakinda{position:relative;overflow:hidden;background:linear-gradient(160deg,#1b2a1f,#171513 60%);border:1px dashed #3b5a43}',
         '.mvp-bahce{display:flex;gap:6px;font-size:26px;margin:2px 0 8px}.mvp-bahce span{display:inline-block;animation:mvpSalla 2.6s ease-in-out infinite;transform-origin:bottom center}',
