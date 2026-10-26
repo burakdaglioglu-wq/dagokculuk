@@ -126,6 +126,7 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   "/api/tanitim/talep",
   "/api/ihtiyac",
   "/api/milo/sporcu-girisi",
+  "/api/milo/sporcu-foto", // 📷 sporcunun kendi fotoğrafı — ad + doğum yılı kontrolü içeride
   // Sporcu girişi bildirimi + sporcunun kendi fotoğrafı: oturum yok, sunucu ad + kodu athletes tablosundan kontrol eder.
   "/api/sporcu-giris",
   "/api/foto-sporcu",

@@ -1,3 +1,4 @@
+import type { Env } from "../../env";
 import type { Router } from "../../router";
 import { json, badRequest, readJson } from "../../lib/json";
 import { veliPanoVerisi } from "./veliPano";
@@ -47,21 +48,40 @@ const SEVIYE_ESIK: Record<string, number> = { Başlangıç: 3, Gelişen: 8 };
 /** MILO FITT KIDS sporcu girisi — PIN'siz, isim + dogum yili ile (okculuktaki sporcuGirisDene'nin
  * ayni guvenlik seviyesindeki karsiligi). TEK bilinclil acik uc: idari alanlar (acilKisi/acilTelefon/
  * aileMeslek) hicbir zaman donmez, sadece eslesen TEK sporcunun sade ozeti donuyor. */
+// Ad + doğum yılıyla eşleşen aktif üye (sporcu girişi ve 📷 fotoğraf aynı kontrolü kullanır)
+async function uyeBul(env: Env, ad: string, dogumYili: string | number): Promise<MiloMemberRow | null> {
+  const aranan = turkceNormalize(ad), yilA = String(dogumYili).trim();
+  const { results } = await env.DB_MILO.prepare("SELECT grup, ad, dogumTarihi, genelNot, pasif, devamDuzeltme FROM members").all<MiloMemberRow>();
+  return results.find((m) => !m.pasif && turkceNormalize(m.ad) === aranan && (m.dogumTarihi ? m.dogumTarihi.slice(0, 4) : null) === yilA) || null;
+}
+// 📷 Sporcunun fotoğrafı (2026-10-27, kullanıcı: "fotoğraf koymaya izin ver, sporcunun fotosu olsun, tatlı bir şey olsun").
+// Yeni tablo yok: meta 'foto:<ad>' = { veri: data:image/jpeg;base64 (istemci 320 px'e küçültür), t }. Yalnız kendi sporcu ekranında
+// görünür (girişte döner). ad-only anahtar (Milo'da üye alt kayıtlarının ortak düzeni — grup değişince kopmasın).
+const FOTO_MAKS = 220000;
+function fotoAnahtar(ad: string): string { return "foto:" + ad; }
+async function fotoOku(env: Env, ad: string): Promise<string | null> {
+  const r = await env.DB_MILO.prepare("SELECT value FROM meta WHERE key = ?").bind(fotoAnahtar(ad)).first<{ value: string | null }>();
+  try { const v = r?.value ? JSON.parse(r.value) : null; return v && typeof v.veri === "string" ? v.veri : null; } catch { return null; }
+}
+
 export function registerMiloSporcuGirisiRoutes(router: Router): void {
+  router.post("/api/milo/sporcu-foto", async (request, env) => {
+    const body = await readJson<{ ad: string; dogumYili: string | number; veri?: string | null }>(request);
+    if (!body.ad || !body.dogumYili) return badRequest("ad ve dogumYili gerekli");
+    const uye = await uyeBul(env, body.ad, body.dogumYili);
+    if (!uye) return json({ found: false }, { status: 404 });
+    if (!body.veri) { await env.DB_MILO.prepare("DELETE FROM meta WHERE key = ?").bind(fotoAnahtar(uye.ad)).run(); return json({ ok: true, foto: null }); }
+    if (typeof body.veri !== "string" || body.veri.length > FOTO_MAKS || !/^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(body.veri)) return badRequest("foto");
+    await env.DB_MILO.prepare("INSERT INTO meta (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at")
+      .bind(fotoAnahtar(uye.ad), JSON.stringify({ veri: body.veri, t: Date.now() }), Date.now()).run();
+    return json({ ok: true });
+  });
+
   router.post("/api/milo/sporcu-girisi", async (request, env) => {
     const body = await readJson<{ ad: string; dogumYili: string | number }>(request);
     if (!body.ad || !body.dogumYili) return badRequest("ad ve dogumYili gerekli");
 
-    const aranan = turkceNormalize(body.ad);
-    const aranankYil = String(body.dogumYili).trim();
-
-    const { results } = await env.DB_MILO.prepare("SELECT grup, ad, dogumTarihi, genelNot, pasif, devamDuzeltme FROM members").all<MiloMemberRow>();
-    const eslesen = results.find((m) => {
-      if (m.pasif) return false;
-      if (turkceNormalize(m.ad) !== aranan) return false;
-      const yil = m.dogumTarihi ? m.dogumTarihi.slice(0, 4) : null;
-      return yil === aranankYil;
-    });
+    const eslesen = await uyeBul(env, body.ad, body.dogumYili);
 
     if (!eslesen) return json({ found: false });
 
@@ -112,7 +132,7 @@ export function registerMiloSporcuGirisiRoutes(router: Router): void {
     }
 
     // 🎡 veli panosu: paket, dersleri, bu hafta neler yapıldı (veliPano.ts)
-    const pano = await veliPanoVerisi(env.DB_MILO, eslesen);
+    const [pano, foto] = await Promise.all([veliPanoVerisi(env.DB_MILO, eslesen), fotoOku(env, eslesen.ad)]);
 
     return json({
       found: true,
@@ -128,6 +148,7 @@ export function registerMiloSporcuGirisiRoutes(router: Router): void {
         siradakiHedefler,
         grupBilgisi,
         ...pano,
+        foto,
       },
     });
   });

@@ -46,8 +46,63 @@ function mvpKisaCumle(t) {
 }
 function mvpSiradaki(dersler, simdi) { return mvpGelecek(dersler, {}, simdi)[0] || null; }
 
+// ---- 📷 Sporcunun fotoğrafı (2026-10-27, kullanıcı: "foto koymaya izin ver, sporcunun fotosu olsun, tatlı bir şey olsun").
+// Avatara dokun → kamera / galeri → kare kırpılıp 360 px JPEG'e küçültülür → POST /api/milo/sporcu-foto (ad + doğum yılı kontrolü,
+// meta 'foto:<ad>'). Yalnız kendi sporcu ekranında görünür. İlk eklemede küçük bir kutlama.
+let MVP = { s: null, kim: null };
+function mvpAvatarHTML(s, ilk) {
+    let ic = s.foto ? '<img src="' + miloEsc(s.foto) + '" alt="">' : '<span>' + miloEsc(String(ilk || '?').charAt(0).toLocaleUpperCase('tr')) + '</span>';
+    return '<button type="button" class="mvp-av' + (s.foto ? ' foto' : ' bos') + '" onclick="mvpFotoMenu()" aria-label="' + (s.foto ? 'Fotoğrafı değiştir' : 'Fotoğraf ekle') + '">' + ic + '<i class="mvp-av-r" aria-hidden="true">' + (s.foto ? '✨' : '📷') + '</i></button>'
+        + (s.foto ? '' : '<small class="mvp-av-ip">Fotoğraf ekle</small>')
+        + '<input type="file" id="mvp-foto-dosya" accept="image/*" hidden onchange="mvpFotoSecildi(this)">';
+}
+function mvpFotoMenu() {
+    let k = document.getElementById('mvp-av-kap'); if (!k || !MVP.s) return;
+    if (!MVP.s.foto) return document.getElementById('mvp-foto-dosya').click();
+    let m = document.getElementById('mvp-foto-menu'); if (m) return m.remove();
+    m = document.createElement('div'); m.id = 'mvp-foto-menu'; m.className = 'mvp-foto-menu';
+    m.innerHTML = '<button type="button" onclick="document.getElementById(\'mvp-foto-menu\').remove(); document.getElementById(\'mvp-foto-dosya\').click()">📷 Fotoğrafı değiştir</button><button type="button" onclick="mvpFotoKaldir()">🗑 Kaldır</button>';
+    k.appendChild(m);
+}
+function mvpFotoKucult(dosya) {
+    return new Promise(function (ok, red) {
+        let url = URL.createObjectURL(dosya), img = new Image();
+        img.onload = function () {
+            let K = 360, c = document.createElement('canvas'); c.width = c.height = K;
+            let w = img.naturalWidth, h = img.naturalHeight, kenar = Math.min(w, h), x = (w - kenar) / 2, y = Math.max(0, (h - kenar) / 2.6); // dikey fotoda yüz üstte → biraz yukarıdan kırp
+            c.getContext('2d').drawImage(img, x, y, kenar, kenar, 0, 0, K, K); URL.revokeObjectURL(url);
+            ok(c.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); red(new Error('resim')); };
+        img.src = url;
+    });
+}
+async function mvpFotoYukle(veri) {
+    let k = MVP.kim || {}, r = await fetch('/api/milo/sporcu-foto', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ad: k.ad, dogumYili: k.yil, veri: veri }) });
+    if (!r.ok) throw new Error('yukle ' + r.status);
+}
+async function mvpFotoSecildi(inp) {
+    let f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
+    let ilkKez = !MVP.s.foto, veri;
+    try { veri = await mvpFotoKucult(f); } catch (e) { return showToast('Bu fotoğraf açılamadı, başka bir fotoğraf dene.', 'error'); }
+    try { await mvpFotoYukle(veri); } catch (e) { return showToast('Fotoğraf yüklenemedi, internet bağlantını kontrol et.', 'error'); }
+    MVP.s.foto = veri; mvpAvatarYenile();
+    if (ilkKez) mvpKutla(); showToast('📷 Fotoğraf eklendi', 'success');
+}
+async function mvpFotoKaldir() {
+    let m = document.getElementById('mvp-foto-menu'); if (m) m.remove();
+    try { await mvpFotoYukle(null); } catch (e) { return showToast('Kaldırılamadı, internet bağlantını kontrol et.', 'error'); }
+    MVP.s.foto = null; mvpAvatarYenile(); showToast('Fotoğraf kaldırıldı', 'info');
+}
+function mvpAvatarYenile() { let k = document.getElementById('mvp-av-kap'); if (k && MVP.s) k.innerHTML = mvpAvatarHTML(MVP.s, String(MVP.s.ad || '').split(' ')[0]); }
+function mvpKutla() {
+    let k = document.getElementById('mvp-av-kap'); if (!k) return;
+    ['⭐', '💛', '✨', '🧡', '⭐', '✨'].forEach(function (e, i) { let s = document.createElement('i'); s.className = 'mvp-konfeti'; s.textContent = e; s.style.setProperty('--a', (i * 60 - 150) + 'deg'); k.appendChild(s); setTimeout(function () { s.remove(); }, 1300); });
+}
+
 function miloSporcuProfilCiz(s) {
     mvpCss();
+    MVP.s = s; MVP.kim = { ad: ((document.getElementById('milo-sporcu-giris-ad') || {}).value || s.ad || '').trim(), yil: ((document.getElementById('milo-sporcu-giris-yil') || {}).value || '').trim() };
     let kap = document.getElementById('milo-sporcu-app'); if (kap) kap.classList.add('mvp-kap');
     let alan = document.getElementById('milo-sporcu-icerik'); if (!alan) return;
     let ilk = String(s.ad || '').split(' ')[0], p = s.paket, bugun = mvpIso(new Date());
@@ -129,7 +184,7 @@ function miloSporcuProfilCiz(s) {
         + bh.filter(function (k) { return k.konu || k.yapilanlar; }).slice(0, 2).map(function (k) { let kisa = mvpKisaCumle(k.yapilanlar); return '<div class="mvp-konu">' + (k.konu ? '<b>' + miloEsc(k.konu) + '</b>' : '') + (kisa ? '<p>' + miloEsc(kisa) + '</p>' : '') + '</div>'; }).join('') + '</div>';
 
     alan.innerHTML = '<div class="mvp">'
-        + '<div class="mvp-ust"><div><small>Merhaba</small><b>' + miloEsc(ilk) + '</b><span>' + miloEsc(s.grup) + (p ? ' · ' + p.no + '. paket · ' + n + '/8 ders' : '') + '</span></div><div class="mvp-av">' + miloEsc(ilk.charAt(0).toLocaleUpperCase('tr') || '?') + '</div></div>'
+        + '<div class="mvp-ust"><div><small>Merhaba</small><b>' + miloEsc(ilk) + '</b><span>' + miloEsc(s.grup) + (p ? ' · ' + p.no + '. paket · ' + n + '/8 ders' : '') + '</span></div><div class="mvp-av-kap" id="mvp-av-kap">' + mvpAvatarHTML(s, ilk) + '</div></div>'
         + ustHTML + biletHTML + telafiHTML + siraHTML
         + '<div class="mvp-kart">' + takvimHTML + lejant + '</div>'
         + buHaftaHTML
@@ -147,7 +202,19 @@ function mvpCss() {
         '#milo-sporcu-app.mvp-kap>button{background:var(--mvp-kart)!important;color:var(--mvp-soluk)!important;border:0!important;box-shadow:none!important;border-radius:99px!important}',
         '.mvp{display:flex;flex-direction:column;gap:12px;padding-bottom:30px}',
         '.mvp-ust{display:flex;justify-content:space-between;align-items:flex-end;margin:0 2px 2px}.mvp-ust small{color:var(--mvp-soluk);font-weight:700;font-size:13px}.mvp-ust b{display:block;font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.05}.mvp-ust span{display:block;color:var(--mvp-soluk);font-weight:600;font-size:12.5px;margin-top:2px}',
-        '.mvp-av{width:46px;height:46px;border-radius:14px;background:var(--mvp-vurgu);display:grid;place-items:center;font-weight:800;font-size:19px;color:#1a0c03;flex:none}',
+        // 📷 avatar: yuvarlak, turuncu-pembe halka, köşede ✨ (foto yoksa kesikli halka + 📷)
+        '.mvp-av-kap{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}',
+        '.mvp-av{position:relative;width:74px;height:74px;border-radius:50%;padding:3px;border:0;cursor:pointer;background:conic-gradient(from 200deg,#ff7a2b,#f472b6,#facc15,#ff7a2b);display:grid;place-items:center;font:inherit}',
+        '.mvp-av img,.mvp-av span{width:100%;height:100%;border-radius:50%;border:3px solid var(--mvp-zemin);object-fit:cover;display:grid;place-items:center;background:var(--mvp-yukselt);color:var(--mvp-vurgu);font-weight:800;font-size:26px;box-sizing:border-box}',
+        '.mvp-av.bos{background:transparent;border:2px dashed rgba(255,122,43,.6)}.mvp-av.bos span{border:0}',
+        '.mvp-av.foto img{animation:mvpFotoGir .5s cubic-bezier(.2,1.5,.4,1)}@keyframes mvpFotoGir{from{transform:scale(.6);opacity:0}}',
+        '.mvp-av-r{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:var(--mvp-kart);display:grid;place-items:center;font-style:normal;font-size:14px;box-shadow:0 0 0 2px var(--mvp-zemin)}',
+        '.mvp-av.foto .mvp-av-r{animation:mvpZipla 2.4s ease-in-out infinite}@keyframes mvpZipla{0%,80%,100%{transform:none}88%{transform:translateY(-4px) rotate(12deg)}}',
+        '.mvp-av-ip{font-size:11px;font-weight:800;color:var(--mvp-vurgu)}',
+        '.mvp-foto-menu{position:absolute;top:84px;right:0;z-index:5;display:flex;flex-direction:column;min-width:180px;background:var(--mvp-yukselt);border:1px solid var(--mvp-cizgi);border-radius:14px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.45)}',
+        '.mvp-foto-menu button{border:0;background:transparent;color:var(--mvp-yazi);font:inherit;font-weight:700;font-size:14px;text-align:left;padding:12px 14px;cursor:pointer}.mvp-foto-menu button+button{border-top:1px solid var(--mvp-cizgi)}',
+        '.mvp-konfeti{position:absolute;left:50%;top:37px;font-style:normal;font-size:18px;pointer-events:none;animation:mvpKonfeti 1.2s ease-out forwards}',
+        '@keyframes mvpKonfeti{from{transform:translate(-50%,-50%) rotate(var(--a)) translateY(0) scale(.4);opacity:1}to{transform:translate(-50%,-50%) rotate(var(--a)) translateY(-70px) scale(1.2);opacity:0}}',
         '.mvp-kart{background:var(--mvp-kart);border-radius:20px;padding:16px}',
         '.mvp h4{margin:0 0 10px;font-size:14.5px;font-weight:800;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.mvp h4 span{color:var(--mvp-soluk);font-size:12px;font-weight:700}',
         '.mvp-alt{color:var(--mvp-soluk);font-size:12.5px;font-weight:600;line-height:1.45}',
@@ -199,7 +266,7 @@ function mvpCss() {
         '.mvp-yakinda b{font-size:15px;font-weight:800}.mvp-yk-r{position:absolute;right:14px;top:14px;font-size:11px;font-weight:800;color:#86efac;background:rgba(134,239,172,.12);padding:4px 9px;border-radius:99px}',
         '.mvp-not{font-size:13.5px;line-height:1.55;font-weight:600;white-space:pre-line}',
         '@media (max-width:360px){.mvp-hero{grid-template-columns:100px minmax(0,1fr)}.mvp-halka{width:100px;height:100px}.mvp-delikler{gap:7px}}',
-        '@media (prefers-reduced-motion:reduce){.mvp-halka-d,.mvp-delik,.mvp-bahce span{animation:none}}'
+        '@media (prefers-reduced-motion:reduce){.mvp-halka-d,.mvp-delik,.mvp-bahce span,.mvp-av img,.mvp-av-r,.mvp-konfeti{animation:none}.mvp-konfeti{display:none}}'
     ].join('\n');
     document.head.appendChild(st);
 }

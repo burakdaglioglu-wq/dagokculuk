@@ -52,9 +52,29 @@ export default async function ({ log }) {
       dogrula(/6\. ders · 10:00/.test(e.sira) && /Yarın/.test(e.sira), 'gireceği dersler: ' + e.sira);
       dogrula(/2 telafi hakkı/.test(e.cip) && /1. paket ödendi/.test(e.cip), 'çipler: ' + e.cip);
       dogrula(e.konu === 'Hayvan yürüyüşleri parkuru' && /Denge tahtasında/.test(e.not) && e.tasma === 0 && !e.ogrendi && !e.kz, 'pano içeriği: ' + JSON.stringify(e));
+      // 📷 fotoğraf: avatar boşken "Fotoğraf ekle" → seçilen resim kare küçültülür, yüklenir, avatar fotoğraf olur, kutlama;
+      // tekrar girişte gelir; menüden kaldırılır
+      dogrula(await p.evaluate(() => !!document.querySelector('.mvp-av.bos') && /Fotoğraf ekle/.test(document.querySelector('.mvp-av-kap').textContent)), 'boş avatar');
+      const fy = await p.evaluate(async () => {
+        let c = document.createElement('canvas'); c.width = 800; c.height = 1200; let x = c.getContext('2d'); x.fillStyle = '#f59e0b'; x.fillRect(0, 0, 800, 1200); x.fillStyle = '#1d4ed8'; x.beginPath(); x.arc(400, 420, 200, 0, 7); x.fill();
+        let blob = await new Promise((ok) => c.toBlob(ok, 'image/png')), f = new File([blob], 'inci.png', { type: 'image/png' });
+        await mvpFotoSecildi({ files: [f], value: '' });
+        let img = document.querySelector('.mvp-av.foto img'), konfeti = document.querySelectorAll('.mvp-konfeti').length;
+        let w = await new Promise((ok) => { let i = new Image(); i.onload = () => ok(i.naturalWidth + 'x' + i.naturalHeight); i.src = img.src; });
+        return { img: !!img, boyut: w, uzunluk: img.src.length, konfeti, jpeg: img.src.startsWith('data:image/jpeg') };
+      });
+      dogrula(fy.img && fy.boyut === '360x360' && fy.jpeg && fy.uzunluk < 120000 && fy.konfeti > 0, 'fotoğraf yükleme: ' + JSON.stringify(fy));
+      const g2 = await miloApi('/sporcu-girisi', { method: 'POST', body: JSON.stringify({ ad: A, dogumYili: '2023' }) }, true);
+      dogrula(g2.d.sporcu.foto && g2.d.sporcu.foto.startsWith('data:image/jpeg'), 'girişte fotoğraf dönmeli');
+      const yanlis = await miloApi('/sporcu-foto', { method: 'POST', body: JSON.stringify({ ad: A, dogumYili: '2019', veri: g2.d.sporcu.foto }) }, true);
+      const bozuk = await miloApi('/sporcu-foto', { method: 'POST', body: JSON.stringify({ ad: A, dogumYili: '2023', veri: 'data:text/html;base64,PHNjcmlwdD4=' }) }, true);
+      dogrula(yanlis.s === 404 && bozuk.s === 400, 'yanlış kişi / bozuk veri reddedilmeli: ' + yanlis.s + ' ' + bozuk.s);
+      await p.locator('.mvp-av.foto').click(); await p.locator('#mvp-foto-menu button', { hasText: 'Kaldır' }).click(); await p.waitForSelector('.mvp-av.bos');
+      const g3 = await miloApi('/sporcu-girisi', { method: 'POST', body: JSON.stringify({ ad: A, dogumYili: '2023' }) }, true);
+      esit(g3.d.sporcu.foto, null, 'kaldırınca fotoğraf silinmeli');
       esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     } finally { await ctx.close(); }
-    log('sporcu girişi → ödemeye N gün, delikli kart 5 işlendi + 3 tarihli, takvim (geldi/haber/hasta, gireceği, yeni paket günü), 2 telafi hakkı (haber verdi + hasta) son günüyle, gireceği dersler, bu hafta, beceri bahçesi yakında, ödeme tutarı gizli, 390 px taşma yok');
+    log('sporcu girişi → ödemeye N gün, delikli kart 5 işlendi + 3 tarihli, takvim (geldi/haber/hasta, gireceği, yeni paket günü), 2 telafi hakkı (haber verdi + hasta) son günüyle, gireceği dersler, bu hafta, beceri bahçesi yakında, ödeme tutarı gizli, 📷 fotoğraf ekle (360 px JPEG, kutlama) / girişte gelir / kaldır / yanlış kişi-bozuk veri red, 390 px taşma yok');
   } finally {
     for (const k of Object.keys(metaYedek)) {
       const v = await metaOku(k).catch(() => ({}));
@@ -63,6 +83,7 @@ export default async function ({ log }) {
     }
     if (slotId) await miloApi('/antrenman-programi/' + slotId, { method: 'DELETE' }).catch(() => {});
     for (const t of tarihler) await miloApi('/attendance/auto', { method: 'DELETE', body: JSON.stringify({ tarih: t, ad: A }) }).catch(() => {});
+    await miloApi('/sporcu-foto', { method: 'POST', body: JSON.stringify({ ad: A, dogumYili: '2023', veri: null }) }, true).catch(() => {});
     await miloApi('/members/' + encodeURIComponent(G) + '/' + encodeURIComponent(A), { method: 'DELETE' }).catch(() => {});
   }
 }
