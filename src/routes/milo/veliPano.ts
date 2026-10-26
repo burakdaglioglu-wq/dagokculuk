@@ -145,5 +145,11 @@ export async function veliPanoVerisi(db: D1Database, uye: { grup: string; ad: st
   const kazanacak = Object.keys(say).sort((a, b) => say[b] - say[a]).slice(0, 8).map((id) => ({ id, ders: say[id] }));
   const buAy = new Date().toISOString().slice(0, 7), buAyGeldi = kayitlar.filter((r) => r.iso.slice(0, 7) === buAy && (r.s === "g" || r.s === "t")).length;
 
-  return { paket, dersler, buHafta, kazanacak, buAyGeldi, telafiler, kayitlar: sonKayitlar, odemeler, bugun };
+  // Aidat sekmesinden girilen aylık ödemeler (2026-10-27, kullanıcı: "ödemeleri girdiklerim gözükmedi") — tutar ve not YOK;
+  // ❄️ ile başlayan not = o ay dondurulmuş (yonetim-panel apDondu ile aynı işaret)
+  const { results: duesR } = await db.prepare("SELECT ay, odendi, odemeTarihi, notMetin FROM dues WHERE ad = ? ORDER BY ay").bind(uye.ad)
+    .all<{ ay: string; odendi: number; odemeTarihi: string | null; notMetin: string | null }>();
+  const aidat = duesR.map((d) => ({ ay: d.ay, odendi: !!d.odendi, odemeTarihi: d.odendi ? d.odemeTarihi || null : null, dondu: /^\s*❄/.test(d.notMetin || "") }));
+
+  return { paket, dersler, buHafta, kazanacak, buAyGeldi, telafiler, kayitlar: sonKayitlar, odemeler, aidat, bugun };
 }

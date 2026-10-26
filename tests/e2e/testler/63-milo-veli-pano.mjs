@@ -21,12 +21,15 @@ export default async function ({ log }) {
     slotId = sl.d.id; await miloApi('/antrenman-programi/' + slotId + '/katilimci', { method: 'POST', body: JSON.stringify({ grup: G, ad: A }) });
 
     // sunucu: paket 5/8 (2 gelmedi/hasta → 2 telafi hakkı), ödendi ama TUTAR/NOT yok, ders, bu hafta
+    // 💰 Aidat sekmesinden girilen aylık ödeme de veliye görünmeli (kullanıcı: "ödemeleri girdiklerim gözükmedi")
+    const aidatAy = gun(40).slice(0, 7); await miloApi('/dues/' + encodeURIComponent(A) + '/' + aidatAy, { method: 'PUT', body: JSON.stringify({ odendi: true, tutar: 999, odemeTarihi: gun(40), notMetin: 'gizli aidat notu' }) });
     const r = await miloApi('/sporcu-girisi', { method: 'POST', body: JSON.stringify({ ad: A.toLocaleLowerCase('tr'), dogumYili: '2023' }) }, true);
     const s = r.d.sporcu;
     esit(s.paket && s.paket.dersler.join(''), 'gmghg', 'paket dersleri (geldi / haber verdi / hasta)');
     dogrula(s.telafiler.filter((h) => h.durum === 'acik').length === 2 && s.telafiler.every((h) => h.bitis >= s.bugun) && s.kayitlar.length === 5 && s.paket.tarihler.length === 5 && s.paket.sonrakiOdendi === false, 'telafiler / kayıtlar: ' + JSON.stringify({ t: s.telafiler, k: s.kayitlar.length }));
     dogrula(s.paket.no === 1 && s.paket.telafiHakki === 2 && s.paket.odendi === true && s.paket.odemeTarihi === gun(12), 'paket: ' + JSON.stringify(s.paket));
-    dogrula(!JSON.stringify(r.d).includes('1234') && !JSON.stringify(r.d).includes('gizli not'), 'ödeme tutarı / notu veliye gitmemeli');
+    dogrula(!JSON.stringify(r.d).includes('1234') && !JSON.stringify(r.d).includes('gizli not') && !JSON.stringify(r.d).includes('999') && !JSON.stringify(r.d).includes('gizli aidat'), 'ödeme tutarı / notu veliye gitmemeli');
+    dogrula(s.aidat.some((a) => a.ay === aidatAy && a.odendi && a.odemeTarihi === gun(40)), 'Aidat ödemesi dönmeli: ' + JSON.stringify(s.aidat));
     dogrula(s.dersler.length === 1 && s.dersler[0].gunler.includes(yarin) && s.dersler[0].bas === '10:00', 'dersler: ' + JSON.stringify(s.dersler));
     dogrula(s.buHafta.length === 1 && s.buHafta[0].konu === 'Hayvan yürüyüşleri parkuru' && s.buHafta[0].beceriler.join() === 'denge,ziplama', 'bu hafta: ' + JSON.stringify(s.buHafta));
     dogrula(s.kazanacak.map((b) => b.id + ':' + b.ders).sort().join() === 'denge:1,ziplama:1' && typeof s.buAyGeldi === 'number', 'kazanacak: ' + JSON.stringify(s.kazanacak));
@@ -57,15 +60,18 @@ export default async function ({ log }) {
         mvpSekmeSec('girdi'); aylar.forEach((a) => { MVP.ay = a; mvpSekmeSec('girdi'); girdi.push(...[...document.querySelectorAll('#mvp-sekme .mvp-tablo tbody tr')].map((r) => r.textContent)); });
         MVP.ay = tar[4].slice(0, 7); mvpSekmeSec('takvim'); let tk = document.querySelectorAll('#mvp-sekme .mvp-tg.geldi, #mvp-sekme .mvp-tg.haber, #mvp-sekme .mvp-tg.hasta').length;
         MVP.ay = c.odemeIso.slice(0, 7); mvpSekmeSec('takvim'); let od = document.querySelectorAll('#mvp-sekme .mvp-tg.odeme').length;
+        let aylik = (() => { let b = c.bugun, ba = b.slice(0, 7), o1 = mvpOdeme({ odemeler: [], aidat: [{ ay: ba, odendi: true, odemeTarihi: b }] }, null, null, b), o2 = mvpOdeme({ odemeler: [], aidat: [{ ay: mvpAyEkle(ba, -1), odendi: true, odemeTarihi: b }] }, null, null, b); return { m1: o1.model, b1: o1.baslik, s1: o1.sonraki && o1.sonraki.ne, b2: o2.baslik, c2: o2.cls }; })();
         mvpSekmeSec('odeme'); let odm = [...document.querySelectorAll('#mvp-sekme .mvp-tablo tbody tr')].map((r) => r.textContent).join(' | '), ayNav = !!document.querySelector('#mvp-sekme .mvp-aynav');
         mvpSekmeSec('gelecek');
-        return { gel, yeniPaket, girdi, tk, od, odm, ayNav, ilkSira: mvpGelecekSira(0).etiket };
+        return { aylik, gel, yeniPaket, girdi, tk, od, odm, ayNav, ilkSira: mvpGelecekSira(0).etiket };
       }, tarihler);
       dogrula(sk.ilkSira === '1. paket · 6. ders' && /1\. paket · 6\. ders/.test(sk.gel) && /10:00/.test(sk.gel) && sk.yeniPaket, 'Gireceği tablosu: ' + JSON.stringify(sk));
       dogrula(sk.girdi.length === 5 && sk.girdi.filter((t) => /1\. paket/.test(t)).length === 5 && sk.girdi.some((t) => /Haber verdi.*telafi hakkı/.test(t)) && sk.girdi.some((t) => /Hasta/.test(t)), 'Girdiği tablosu: ' + JSON.stringify(sk.girdi));
       dogrula(sk.tk >= 1 && sk.od === 1, 'takvim sekmesi: ' + JSON.stringify(sk));
+      dogrula(sk.aylik.m1 === 'aylik' && /^(Ödemeye \d+ gün|Ödeme bugün)$/.test(sk.aylik.b1) && / ödemesi$/.test(sk.aylik.s1) && /ödemesi bekleniyor$/.test(sk.aylik.b2) && sk.aylik.c2 === 'bek', 'aylık model: ' + JSON.stringify(sk.aylik));
+      dogrula(/sıradaki ödeme/.test(sk.odm) && /ödemesi/.test(sk.odm), 'Ödemeler: sıradaki + aidat ödemesi: ' + sk.odm);
       dogrula(/1\. paket/.test(sk.odm) && /Ödendi/.test(sk.odm) && !/1234/.test(sk.odm) && !sk.ayNav, 'Ödemeler tablosu: ' + sk.odm);
-      dogrula(/2 telafi hakkı/.test(e.cip) && /1. paket ödendi/.test(e.cip), 'çipler: ' + e.cip);
+      dogrula(/2 telafi hakkı/.test(e.cip) && /✓ Son ödeme · \d+ /.test(e.cip), 'çipler: ' + e.cip);
       dogrula(e.konu === 'Hayvan yürüyüşleri parkuru' && /Denge tahtasında/.test(e.not) && e.tasma === 0 && !e.ogrendi && !e.kz, 'pano içeriği: ' + JSON.stringify(e));
       // 📷 fotoğraf: avatar boşken "Fotoğraf ekle" → seçilen resim kare küçültülür, yüklenir, avatar fotoğraf olur, kutlama;
       // tekrar girişte gelir; menüden kaldırılır

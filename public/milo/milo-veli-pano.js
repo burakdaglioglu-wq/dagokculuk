@@ -146,14 +146,46 @@ function mvpSekmeHTML() {
             else if (iso === c.odemeIso) cls = 'odeme'; else if (c.gelecekIso[iso]) cls = 'gelecek'; else if (c.digerDers[iso]) cls = 'ders';
             h += '<div class="mvp-tg ' + cls + (iso === c.bugun ? ' bugun' : '') + '" title="' + miloEsc(mvpTarih(iso) + (k && MVP_DURUM[k] ? ' · ' + MVP_DURUM[k][1] : iso === c.odemeIso ? ' · yeni paket' : c.gelecekIso[iso] ? ' · ders' : '')) + '">' + d + '</div>';
         }
-        ic = '<div class="mvp-takvim">' + h + '</div><div class="mvp-lejant"><span><i class="geldi"></i>geldi</span><span><i class="haber"></i>haber verdi</span><span><i class="hasta"></i>hasta</span><span><i class="yok"></i>gelmedi</span><span><i class="gelecek"></i>gireceği ders</span>' + (c.odemeIso ? '<span><i class="odeme"></i>yeni paket</span>' : '') + '</div>';
+        ic = '<div class="mvp-takvim">' + h + '</div><div class="mvp-lejant"><span><i class="geldi"></i>geldi</span><span><i class="haber"></i>haber verdi</span><span><i class="hasta"></i>hasta</span><span><i class="yok"></i>gelmedi</span><span><i class="gelecek"></i>gireceği ders</span>' + (c.odemeIso ? '<span><i class="odeme"></i>ödeme günü</span>' : '') + '</div>';
     } else {
-        let l = c.odemeler.slice().reverse();
-        ic = l.length ? '<table class="mvp-tablo"><thead><tr><th>Paket</th><th>Dersler</th><th>Ödeme</th></tr></thead><tbody>' + l.map(function (o) {
-            return '<tr><td><b>' + o.no + '. paket</b><small>' + o.ders + ' ders</small></td><td>' + (o.bas ? mvpKisa(o.bas) + (o.bit && o.bit !== o.bas ? ' – ' + mvpKisa(o.bit) : '') : '—') + '</td><td>' + (o.odendi ? '<span class="mvp-dr d-g">✓ Ödendi</span><small>' + (o.odemeTarihi ? miloEsc(mvpTarih(o.odemeTarihi)) : 'tarih yok') + '</small>' : '<span class="mvp-dr d-bek">⏳ Bekliyor</span>') + '</td></tr>';
-        }).join('') + '</tbody></table>' : bos('Henüz paket yok.');
+        // Ödemeler: en üstte sıradaki ödeme (ne zaman), altında yapılan ödemeler (ne zaman, ne için) — Defter + Aidat birlikte
+        let o = c.odeme || {}, satir = '';
+        if (o.sonraki) satir += '<tr class="sonraki"><td><b>' + (o.sonraki.tarih ? miloEsc(mvpKisa(o.sonraki.tarih)) : '—') + '</b><small>' + (o.sonraki.gun != null ? (o.sonraki.gun <= 0 ? 'şimdi' : mvpKalanYazi(o.sonraki.gun)) : '') + '</small></td><td><b>' + miloEsc(o.sonraki.ne) + '</b><small>sıradaki ödeme</small></td><td><span class="mvp-dr d-bek">' + (o.sonraki.gun != null && o.sonraki.gun <= 0 ? '⏳ Bekliyor' : '📅 Yapılacak') + '</span></td></tr>';
+        (o.bekleyen || []).forEach(function (b) { satir += '<tr><td><b>—</b></td><td><b>' + miloEsc(b.ne) + '</b>' + (b.alt ? '<small>' + miloEsc(b.alt) + '</small>' : '') + '</td><td><span class="mvp-dr d-bek">⏳ Bekliyor</span></td></tr>'; });
+        (o.gecmis || []).forEach(function (h) { satir += '<tr><td><b>' + (h.tarih ? miloEsc(mvpKisa(h.tarih)) : '—') + '</b><small>' + (h.tarih ? MVP_GUN[new Date(h.tarih + 'T12:00:00').getDay()] + ' · ' + h.tarih.slice(0, 4) : 'ödeme günü girilmedi') + '</small></td><td><b>' + miloEsc(h.ne) + '</b>' + (h.alt ? '<small>' + miloEsc(h.alt) + '</small>' : '') + '</td><td><span class="mvp-dr d-g">✓ Ödendi</span></td></tr>'; });
+        ic = satir ? '<table class="mvp-tablo"><thead><tr><th>Tarih</th><th>Ne için</th><th>Durum</th></tr></thead><tbody>' + satir + '</tbody></table>' : bos('Henüz ödeme kaydı yok.');
     }
     return sek + ayNav + ic;
+}
+
+// ---- 💳 ödeme durumu (2026-10-27, kullanıcı: "ne zaman ödeme yaptıkları ve ne zaman ödeme yapacakları da gözüksün; ödemeleri
+// girdiklerim gözükmedi"). Milo'da ödeme iki yerden girilebiliyor: 📒 Defter'de paket ödemesi (meta paket_odeme) ve 💰 Aidat
+// sekmesinde aylık kayıt (dues). İkisi de geçmişe yazılır. Model: çocuğun Defter paket ödemesi varsa PAKET (sıradaki ödeme =
+// yeni paketin ilk dersi); yoksa ve Aidat'ta kaydı varsa AYLIK (sıradaki ödeme = ödenmemiş / dondurulmamış ilk ayın 1'i).
+function mvpOdeme(s, p, yeniPaket, bugun) {
+    let pak = s.odemeler || [], aid = s.aidat || [], ayAd = function (ay) { return MVP_AY[+ay.slice(5) - 1] + ' ' + ay.slice(0, 4); };
+    let gecmis = [];
+    pak.forEach(function (o) { if (o.odendi) gecmis.push({ tarih: o.odemeTarihi, sira: o.odemeTarihi || o.bas || '', ne: o.no + '. paket (8 ders)', alt: o.bas ? mvpKisa(o.bas) + (o.bit && o.bit !== o.bas ? ' – ' + mvpKisa(o.bit) : '') + ' dersleri' : '' }); });
+    aid.forEach(function (a) { if (a.odendi) gecmis.push({ tarih: a.odemeTarihi, sira: a.odemeTarihi || a.ay + '-01', ne: ayAd(a.ay) + ' ödemesi', alt: '' }); });
+    gecmis.sort(function (a, b) { return a.sira < b.sira ? 1 : a.sira > b.sira ? -1 : 0; });
+    let son = gecmis[0] || null, model = pak.some(function (o) { return o.odendi; }) ? 'paket' : aid.length ? 'aylik' : 'paket';
+    let r = { model: model, gecmis: gecmis, son: son, bekleyen: [], sonraki: null, gun: null, cls: '' };
+    if (model === 'aylik') {
+        let buAy = bugun.slice(0, 7), kayit = {}; aid.forEach(function (a) { kayit[a.ay] = a; });
+        let ay = buAy; for (let i = 0; i < 24 && kayit[ay] && (kayit[ay].odendi || kayit[ay].dondu); i++) ay = mvpAyEkle(ay, 1);
+        let gun = Math.max(0, mvpGunFark(bugun, ay + '-01'));
+        r.sonraki = { tarih: ay === buAy ? null : ay + '-01', ne: ayAd(ay) + ' ödemesi', gun: ay === buAy ? 0 : gun };
+        if (ay === buAy) { r.baslik = ayAd(ay).split(' ')[0] + ' ödemesi bekleniyor'; r.alt = son ? 'Son ödeme ' + (son.tarih ? mvpTarih(son.tarih) : son.ne) + '.' : 'Bu ayın ödemesi henüz girilmedi.'; r.cls = 'bek'; }
+        else { r.gun = gun; r.baslik = gun === 0 ? 'Ödeme bugün' : 'Ödemeye ' + gun + ' gün'; r.alt = ayAd(ay).split(' ')[0] + ' ödemesi ' + mvpTarih(ay + '-01') + '. ' + (kayit[buAy] && kayit[buAy].odendi ? ayAd(buAy).split(' ')[0] + ' ödendi ✓' : ''); }
+        return r;
+    }
+    pak.forEach(function (o) { if (!o.odendi) r.bekleyen.push({ ne: o.no + '. paket (8 ders)', alt: o.bas ? mvpKisa(o.bas) + "'den beri" : '' }); });
+    if (!p) { r.baslik = 'Paket'; r.alt = 'İlk dersten itibaren 8 derslik paketin burada dolar.'; }
+    else if (!p.odendi) { r.baslik = 'Ödeme bekleniyor'; r.alt = p.no + '. paketin ödemesi henüz girilmedi.' + (son ? ' Son ödeme ' + (son.tarih ? mvpTarih(son.tarih) : son.ne) + '.' : ''); r.cls = 'bek'; }
+    else if (p.sonrakiOdendi) { r.baslik = 'Sonraki paket de ödendi ✓'; r.alt = (p.no + 1) + '. paket hazır, ödeme beklenmiyor.'; }
+    else if (yeniPaket) { r.gun = yeniPaket.gun; r.baslik = r.gun === 0 ? 'Ödeme bugün' : 'Ödemeye ' + r.gun + ' gün'; r.alt = (p.no + 1) + '. paket ' + mvpTarih(yeniPaket.iso) + ' ' + MVP_GUN[yeniPaket.tarih.getDay()] + ' dersiyle başlıyor.'; r.sonraki = { tarih: yeniPaket.iso, ne: (p.no + 1) + '. paket (8 ders)', gun: r.gun }; }
+    else { let kalan = Math.max(0, 8 - p.dersler.length); r.baslik = kalan ? kalan + ' ders kaldı' : 'Paket tamamlandı'; r.alt = 'Yeni paket, paket bitince başlar.'; }
+    return r;
 }
 
 function miloSporcuProfilCiz(s) {
@@ -168,18 +200,13 @@ function miloSporcuProfilCiz(s) {
     let paketDersleri = p ? gelecek.slice(0, kalan) : [], yeniPaket = p ? gelecek[kalan] || null : null;
     let acikHak = (s.telafiler || []).filter(function (h) { return h.durum === 'acik'; });
 
-    // ---- ödeme
-    let odemeGun = null, odemeBaslik, odemeAlt, odemeCls = '';
-    if (!p) { odemeBaslik = 'Paket'; odemeAlt = 'İlk dersten itibaren 8 derslik paketin burada dolar.'; }
-    else if (!p.odendi) { odemeBaslik = 'Ödeme bekleniyor'; odemeAlt = p.no + '. paketin ödemesi henüz girilmedi.'; odemeCls = 'bek'; }
-    else if (p.sonrakiOdendi) { odemeBaslik = 'Sonraki paket de ödendi ✓'; odemeAlt = (p.no + 1) + '. paket hazır, ödeme beklenmiyor.'; }
-    else if (yeniPaket) { odemeGun = yeniPaket.gun; odemeBaslik = odemeGun === 0 ? 'Ödeme bugün' : 'Ödemeye ' + odemeGun + ' gün'; odemeAlt = (p.no + 1) + '. paket ' + mvpTarih(yeniPaket.iso) + ' ' + MVP_GUN[yeniPaket.tarih.getDay()] + ' dersiyle başlıyor.'; }
-    else { odemeBaslik = kalan ? kalan + ' ders kaldı' : 'Paket tamamlandı'; odemeAlt = 'Yeni paket, paket bitince başlar.'; }
+    // ---- ödeme (Defter paket ödemesi + Aidat sekmesindeki aylık ödemeler — mvpOdeme)
+    let od = mvpOdeme(s, p, yeniPaket, bugun), odemeGun = od.gun, odemeBaslik = od.baslik, odemeAlt = od.alt, odemeCls = od.cls;
     let R = 15.5, C = 2 * Math.PI * R, dolu = C * (p ? n / 8 : 0);
     let halka = '<div class="mvp-halka"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="' + R + '" fill="none" stroke="var(--mvp-cizgi)" stroke-width="3.2"/><circle class="mvp-halka-d" cx="18" cy="18" r="' + R + '" fill="none" stroke="var(--mvp-vurgu)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="' + dolu.toFixed(2) + ' ' + C.toFixed(2) + '" style="--c:' + C.toFixed(2) + '"/></svg>'
         + '<div class="mvp-orta"><div>' + (odemeGun != null ? '<b>' + odemeGun + '</b><small>gün kaldı</small>' : '<b>' + kalan + '</b><small>ders kaldı</small>') + '</div></div></div>';
     let cipler = (p && odemeGun != null ? '<span class="mvp-cip">' + (kalan ? kalan + ' ders kaldı' : 'paket tamam') + '</span>' : '')
-        + (p && p.odendi ? '<span class="mvp-cip yesil">✓ ' + p.no + '. paket ödendi' + (p.odemeTarihi ? ' · ' + miloEsc(mvpKisa(p.odemeTarihi)) : '') + '</span>' : '')
+        + (od.son ? '<span class="mvp-cip yesil">✓ Son ödeme · ' + (od.son.tarih ? miloEsc(mvpKisa(od.son.tarih)) : miloEsc(od.son.ne)) + '</span>' : '')
         + (acikHak.length ? '<span class="mvp-cip mor">🔁 ' + acikHak.length + ' telafi hakkı</span>' : '');
     let ustHTML = '<div class="mvp-hero ' + odemeCls + '">' + halka + '<div class="mvp-hero-m"><h3>' + miloEsc(odemeBaslik) + '</h3><p>' + miloEsc(odemeAlt) + '</p><div class="mvp-rozetler">' + cipler + '</div></div></div>';
 
@@ -200,8 +227,8 @@ function miloSporcuProfilCiz(s) {
     // görebilsin, ödeme tablosu da olsun — 1. paketi 20.10'da ödemiş görebilsin"): Gireceği · Girdiği · Takvim · Ödemeler, ay seçmeli
     let gelecekIso = {}; paketDersleri.forEach(function (g) { gelecekIso[g.iso] = 1; });
     let digerDers = {}; gelecek.forEach(function (g) { if (!gelecekIso[g.iso]) digerDers[g.iso] = 1; });
-    let odemeIso = !p || !p.odendi || p.sonrakiOdendi || !yeniPaket ? null : yeniPaket.iso;
-    MVP.ctx = { p: p, n: n, kalan: kalan, bugun: bugun, kayit: kayit, kayitlar: s.kayitlar || [], gelecek: gelecek, gelecekIso: gelecekIso, digerDers: digerDers, odemeIso: odemeIso, odemeler: s.odemeler || [] };
+    let odemeIso = od.sonraki && od.sonraki.tarih && od.sonraki.gun > 0 ? od.sonraki.tarih : null; // takvimde sıradaki ödeme günü
+    MVP.ctx = { p: p, n: n, kalan: kalan, bugun: bugun, kayit: kayit, kayitlar: s.kayitlar || [], gelecek: gelecek, gelecekIso: gelecekIso, digerDers: digerDers, odemeIso: odemeIso, odeme: od, odemeler: s.odemeler || [] };
     if (!MVP.ay) MVP.ay = bugun.slice(0, 7); if (!MVP.sekme) MVP.sekme = 'gelecek';
 
     // ---- telafi
@@ -292,6 +319,7 @@ function mvpCss() {
         '.mvp-aynav button{width:38px;height:38px;border-radius:12px;border:0;background:var(--mvp-yukselt);color:var(--mvp-yazi);font-size:20px;font-weight:800;cursor:pointer}.mvp-aynav button:disabled{opacity:.3;cursor:default}',
         '.mvp-tablo{width:100%;border-collapse:collapse;font-size:13px}.mvp-tablo th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mvp-soluk);padding:0 6px 8px}',
         '.mvp-tablo td{padding:9px 6px;border-top:1px solid var(--mvp-cizgi);vertical-align:middle;font-weight:600}.mvp-tablo td b{display:block;font-size:13.5px;font-weight:800}.mvp-tablo td small{display:block;color:var(--mvp-soluk);font-size:11.5px;font-weight:600;margin-top:2px}',
+        '.mvp-tablo tr.sonraki td{background:rgba(194,24,110,.12)}.mvp-tablo tr.sonraki td:first-child{border-radius:10px 0 0 10px}.mvp-tablo tr.sonraki td:last-child{border-radius:0 10px 10px 0}',
         '.mvp-tablo tr.yeni td{background:rgba(248,184,88,.07)}.mvp-tablo .mvp-e{font-size:11px;padding:3px 7px;margin-left:2px;display:inline-block}',
         '.mvp-dr{display:inline-block;font-size:12px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--mvp-yukselt);white-space:nowrap}',
         '.mvp-dr.d-g,.mvp-dr.d-t{color:var(--mvp-yesil);background:rgba(74,222,128,.1)}.mvp-dr.d-m{color:var(--mvp-mor);background:rgba(196,181,253,.12)}.mvp-dr.d-h{color:var(--mvp-hasta);background:rgba(249,168,212,.12)}.mvp-dr.d-y{color:var(--mvp-soluk)}.mvp-dr.d-bek{color:var(--mvp-sari);background:rgba(248,184,88,.12)}',
