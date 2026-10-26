@@ -2334,7 +2334,26 @@
         const AY_ADI_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
         const AY_KISA_TR = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
         function aidatKaydet() { try { localStorage.setItem('okculuk_aidat', JSON.stringify(aidatDB)); } catch(e) {} }
-        function aidatTutarDegis(d) { aidatVarsayilanTutar = parseInt(d) || 0; try { localStorage.setItem('okculuk_aidat_tutar', String(aidatVarsayilanTutar)); } catch(e) {} }
+        // Varsayılan aylık tutar KULÜP GENELİ (2026-10-26, kullanıcı: "ödemeyenlerin tutarını girdim ama yansıtmıyor, 8 sporcu ödemedi diyor ama
+        // rakamı göstermiyor"): eskiden yalnız girildiği cihazın tarayıcısında kalıyordu → başka cihazda bekleyen 0₺. Artık meta 'aidat_ayar'
+        // { tutar: { v, t } } ile senkron (son yazan kazanır); yerel 'okculuk_aidat_tutar' çevrimdışı açılış için kalır.
+        let _aidatAyarZ = null, _aidatAyarSenk = false;
+        function aidatTutarDegis(d) {
+            aidatVarsayilanTutar = parseInt(d) || 0; try { localStorage.setItem('okculuk_aidat_tutar', String(aidatVarsayilanTutar)); } catch(e) {}
+            if(typeof kyDepoYazYerel === 'function') kyDepoYazYerel('aidat_ayar', { tutar: { v: aidatVarsayilanTutar, t: Date.now() } });
+            clearTimeout(_aidatAyarZ); _aidatAyarZ = setTimeout(() => aidatVarsayilanSenkron(true), 700);
+        }
+        function aidatVarsayilanSenkron(yaz) {
+            if(typeof kyDepoSenkron !== 'function') return Promise.resolve(false);
+            let yerel = kyDepoOku('aidat_ayar');
+            if(!yerel.tutar && aidatVarsayilanTutar) kyDepoYazYerel('aidat_ayar', { tutar: { v: aidatVarsayilanTutar, t: 1 } }); // eski cihaz değeri: sunucudaki daha yeniyse o kazanır
+            return kyDepoSenkron('aidat_ayar', () => kyDepoOku('aidat_ayar'), !!yaz).then(d => {
+                let v = d && d.tutar ? parseInt(d.tutar.v) || 0 : null;
+                if(v == null || v === aidatVarsayilanTutar) return false;
+                aidatVarsayilanTutar = v; try { localStorage.setItem('okculuk_aidat_tutar', String(v)); } catch(e) {}
+                return true;
+            }).catch(() => false);
+        }
         // otomatikYoklamaMerge ile aynı desen: yerel/uzak hücre çiftlerinde daha yeni TARİH kazanır,
         // tarihsiz bir kayıt asla tarihli birine karşı kazanamaz (bkz. dues PUT rotasındaki eşdeğer kural).
         function aidatMerge(yerel, uzak) {
@@ -4087,6 +4106,7 @@
             let alan = document.getElementById(renderHedefId); if(!alan) return;
             if(!_aidatKilitAcikMi) { alan.innerHTML = aidatKilitEkraniHTML(); setTimeout(() => { let el = document.getElementById('aidat-kilit-pin'); if(el) el.focus(); }, 100); return; }
             if(!aidatAy) aidatAy = bugunISO().slice(0, 7);
+            if(!_aidatAyarSenk) { _aidatAyarSenk = true; aidatVarsayilanSenkron(false).then(degisti => { if(degisti && egitmenAltSekme === 'aidat') egitmenRenderAidat(); }); }
 
             let sekmeBtn = (val, etiket) => `<button onclick="_aidatAltSekme='${val}'; egitmenRenderAidat();" style="flex:1; padding:10px; border-radius:10px; font-weight:800; font-size:12.5px; cursor:pointer; border:1px solid ${_aidatAltSekme===val?'var(--gold)':'var(--border-color)'}; background:${_aidatAltSekme===val?'rgba(234,179,8,0.15)':'var(--bg-panel)'}; color:var(--text-main);">${etiket}</button>`;
             let sekmeler = `<div style="display:flex; gap:8px; margin-bottom:10px;">${sekmeBtn('panel','📊 Panel')}${sekmeBtn('gelir','👥 Sporcu kartları')}${sekmeBtn('gider','📤 Gider')}</div>`;
@@ -4136,6 +4156,8 @@
                 },
                 kayit(ad, ay) { return (aidatDB[ad] && aidatDB[ad][ay]) || null; },
                 aylik(k) { if(aylikMemo[k.ad] == null) aylikMemo[k.ad] = aidatAylikTutar(k.ad) || aidatVarsayilanTutar || 0; return aylikMemo[k.ad]; },
+                varsayilanTutar() { return aidatVarsayilanTutar; },
+                varsayilanTutarYaz(v) { aidatTutarDegis(v); clearTimeout(_aidatAyarZ); return aidatVarsayilanSenkron(true); },
                 // ilk derse geldiği gün (yoklama + skor) → katılma tarihi yoksa aidat buradan başlar (yeni sporcuya eski borç yazılmaz)
                 ilkGelis(k) {
                     if(!ilk) {
@@ -4167,7 +4189,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=10';
+        const YN_DOSYA = 'yonetim-panel.js?v=11';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {

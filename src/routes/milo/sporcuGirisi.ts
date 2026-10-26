@@ -1,5 +1,6 @@
 import type { Router } from "../../router";
 import { json, badRequest, readJson } from "../../lib/json";
+import { veliPanoVerisi } from "./veliPano";
 
 interface MiloMemberRow {
   grup: string;
@@ -110,6 +111,9 @@ export function registerMiloSporcuGirisiRoutes(router: Router): void {
       grupBilgisi = { yasKategorisi: yasRow?.ad ?? "", grup: eslesen.grup, program: programSatirlari };
     }
 
+    // 🎡 veli panosu: paket, dersleri, bu hafta neler yapıldı (veliPano.ts)
+    const pano = await veliPanoVerisi(env.DB_MILO, eslesen);
+
     return json({
       found: true,
       sporcu: {
@@ -123,6 +127,7 @@ export function registerMiloSporcuGirisiRoutes(router: Router): void {
         antrenorNotu: eslesen.genelNot || null,
         siradakiHedefler,
         grupBilgisi,
+        ...pano,
       },
     });
   });

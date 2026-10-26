@@ -343,7 +343,7 @@ function yzTurHTML(o) {
         + '<div class="yz-tur-bas">'
         + '<div class="yz-tur-bilgi"><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-seri-no">SERİ <b>' + (seri + 1) + '</b><span>/' + f.seri + '</span></div>'
         + (f.yari ? '<div class="yz-yari">' + (seri < f.yari ? '1. yarı' : '2. yarı') + '</div>' : '') + '</div>'
-        + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '<button class="yz-btn" onclick="yzSureMenu()" title="Seri süresini değiştir">⏱ ' + yzSure(d) + ' sn</button>' + yzDevBtnHTML() + '</div></div>'
+        + '<div class="yz-sayac-kap">' + yzSayacHTML(o, 'yz-sayac') + '<div class="yz-sayac-btn">' + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Sıfırla</button>' : '<button class="yz-btn yesil" onclick="yzSayacBaslat()">▶ Süreyi başlat</button>') + '<button class="yz-btn" onclick="yzSureMenu()" title="Seri süresini değiştir">⏱ ' + yzSure(d) + ' sn</button>' + yzDevBtnHTML() + '<button class="yz-btn yz-mola-btn" onclick="yzMolaMenu()" title="Mola sayacı: TV\'de büyük geri sayım, altında hedefler döner">' + yzMolaBtnYazi(o) + '</button></div></div>'
         + '<div class="yz-tur-btn">' + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? '<button class="yz-btn" onclick="kmKarmaOyunaGec()" title="Oyun hattına geç">🎮 Oyunlar</button>' : '') + (yzYuvaVarMi() ? '<button class="yz-btn" onclick="yzYuvayaGec()" title="Yumurta Yuvası — tur sürer, süre orada da görünür">🥚 Yumurta</button>' : '') + '<button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzEk(\'yzSkorKagitlariPdf\')" title="Hedef başına basılı skor kağıdı (atıcı + yazıcı imzası)">🖨 Skor kâğıtları</button><button class="yz-btn" onclick="yzVideoAc()" title="5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün">🎥 Ayna / Video</button><button class="yz-btn" onclick="yzAnalizAc()" title="Antrenör tablosu, ısı haritası, gelişim grafiği">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzHedeflerAc()">🎯 Hedefler</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + d.katilimci.length + ')</button><button class="yz-btn" onclick="yzMenu()" aria-label="Diğer">⋯</button></div>'
         + '</div>'
         + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
@@ -654,7 +654,7 @@ function yzGercekKaydet(k, oklar, mesafe, kaynak) {
 
 // ---- süre sayacı (WA: 10 sn hatta geçiş → atış → son 30 sn sarı → bitti)
 function yzSesHazirla() { try { let AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; _yz.ac = _yz.ac || new AC(); if (_yz.ac.state === 'suspended') _yz.ac.resume(); } catch (e) {} }
-function yzSayacBaslat() { yzSesHazirla(); let d = yzOku().durum; if (!d) return; yzGuncelle(function (o) { o.sayac = { basla: Date.now(), hazir: YZ_HAZIRLIK, sure: yzSure(d), seri: d.seri }; }); yzCiz(); }
+function yzSayacBaslat() { yzSesHazirla(); let d = yzOku().durum; if (!d) return; yzGuncelle(function (o) { o.sayac = { basla: Date.now(), hazir: YZ_HAZIRLIK, sure: yzSure(d), seri: d.seri }; o.mola = null; }); yzCiz(); }
 function yzSayacDurdur() { yzGuncelle(function (o) { o.sayac = null; }); yzCiz(); }
 function yzSayacDurum(o) {
     let s = o.sayac, d = o.durum;
@@ -667,6 +667,30 @@ function yzSayacDurum(o) {
     if (kalan <= 0) return { faz: 'bitti', metin: '0', alt: 'SÜRE BİTTİ' };
     return { faz: kalan <= 30 ? 'son' : 'atis', metin: yzSaat(kalan), alt: kalan <= 30 ? 'SON 30 SN' : 'ATIŞ' };
 }
+// ---- ☕ Mola sayacı (2026-10-26, kullanıcı: "mola timer'ı da ekle; molalarda açayım, millet baksın ne kadar kaldı diye; bu sırada
+// atışlar slayt şeklinde dönsün"). o.mola = {basla, sure sn} turla birlikte saklanır (TV aynı kaydı okur). Seri sayacı çalışmıyorsa
+// büyük sayaç şeridi molayı gösterir (⛶ ayarından bağımsız), altında hedef şeridi slayt gibi döner. Süre bitince 6 sn "MOLA BİTTİ".
+const YZ_MOLA_DK = [3, 5, 10, 15, 20], YZ_MOLA_BITTI_SN = 6;
+function yzMolaDurum(o) {
+    let m = o && o.mola; if (!m || !m.basla) return null;
+    let kalan = m.sure - (Date.now() - m.basla) / 1000;
+    if (kalan < -YZ_MOLA_BITTI_SN) return null;
+    let k = Math.max(0, Math.ceil(kalan));
+    return { kalan: kalan, bitti: kalan <= 0, metin: Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0'), oran: Math.max(0, Math.min(1, kalan / m.sure)) };
+}
+function yzMolaMenu() {
+    let o = yzOku(), m = yzMolaDurum(o), dk = function (n) { return '<button class="yz-cip" onclick="yzMolaBaslat(' + n + ')">' + n + ' dk</button>'; };
+    onayIste('<div style="text-align:left"><b>☕ Mola</b><div class="yz-alt" style="margin:4px 0 10px">' + (m && !m.bitti ? 'Mola sürüyor: <b>' + m.metin + '</b> kaldı. Yeni süre seçersen baştan başlar.' : 'Büyük geri sayım açılır, altında sporcuların hedefleri slayt gibi döner. Seri süresini başlatınca mola biter.') + '</div>'
+        + '<div class="yz-cipler">' + YZ_MOLA_DK.map(dk).join('') + '</div>'
+        + (m && !m.bitti ? '<div class="yz-cipler" style="margin-top:10px"><button class="yz-cip" onclick="yzMolaUzat(60)">+1 dk</button><button class="yz-cip" onclick="yzMolaGoster()">⛶ Büyük göster</button><button class="yz-cip" onclick="yzMolaBitir()">⏹ Molayı bitir</button></div>' : '') + '</div>', null, null, 'Kapat');
+}
+function yzMolaKapatModal() { let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none'; }
+function yzMolaYenile() { _yz.devGizle = null; yzCiz(); if (_yz.tv) yzTvCiz(); yzTimerBaslat(); yzDevSayacGuncelle(yzOku()); }
+function yzMolaBaslat(dk) { yzSesHazirla(); yzGuncelle(function (o) { o.mola = { basla: Date.now(), sure: Math.round(dk * 60) }; }); yzMolaKapatModal(); yzMolaYenile(); showToast('☕ ' + dk + ' dk mola başladı', 'success'); }
+function yzMolaUzat(sn) { yzGuncelle(function (o) { if (o.mola) o.mola.sure += sn; }); yzMolaKapatModal(); yzMolaYenile(); }
+function yzMolaBitir() { yzGuncelle(function (o) { o.mola = null; }); yzMolaKapatModal(); yzMolaYenile(); }
+function yzMolaGoster() { yzMolaKapatModal(); _yz.devGizle = null; yzDevSayacGuncelle(yzOku()); }
+function yzMolaBtnYazi(o) { let m = yzMolaDurum(o); return m && !m.bitti ? '☕ ' + m.metin : '☕ Mola'; }
 function yzSayacHTML(o, id) { let s = yzSayacDurum(o); return '<div id="' + id + '" class="yz-sayac ' + s.faz + '"><span class="yz-sayac-alt">' + s.alt + '</span><span class="yz-sayac-sure">' + s.metin + '</span></div>'; }
 function yzTimerBaslat() {
     if (_yz.timer) return;
@@ -678,6 +702,7 @@ function yzTimerBaslat() {
         yzOyunHattiKartTazele();
         [a, b, c].forEach(function (el) { if (!el) return; el.className = 'yz-sayac ' + s.faz; el.querySelector('.yz-sayac-alt').textContent = s.alt; el.querySelector('.yz-sayac-sure').textContent = s.metin; });
         yzSesKontrol(o, s); yzDevSayacGuncelle(o, s);
+        let mb = yzMolaBtnYazi(o); document.querySelectorAll('.yz-mola-btn').forEach(function (b) { if (b.textContent !== mb) b.textContent = mb; });
     }, 250);
 }
 // WA düdükleri: hatta geçiş 2, atış başlangıcı 1, süre sonu 3. Her geçiş cihaz başına bir kez; sayfa geç açıldıysa eski geçişi çalmaz.
@@ -867,7 +892,7 @@ function yzTvCiz() {
     yzTvSigdir(el);
     // 🎯 hedef şeridi (dagsk-tv-serit.js): okların konumu + ısı haritası, ışık sporcudan sporcuya; büyük sayaçta alt yarıyı kaplar
     if (typeof yzhsTazele === 'function') yzhsTazele(el, o, sira);
-    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=11').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
+    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=13').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
     yzTorenKontrol(o);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();
@@ -1273,7 +1298,21 @@ function yzDevSayacDegis() {
     showToast(v ? '⛶ Büyük sayaç açık — süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür' : 'Büyük sayaç kapalı', 'success');
     yzCiz(); yzDevSayacGuncelle(yzOku());
 }
-function yzDevKucult() { let o = yzOku(); _yz.devGizle = o.sayac ? o.sayac.basla : null; yzDevSayacGuncelle(o); }
+function yzDevKucult() {
+    let o = yzOku(), e = document.getElementById('yz-dev-sayac');
+    _yz.devGizle = e && e.classList.contains('mola') && o.mola ? 'm' + o.mola.basla : o.sayac ? o.sayac.basla : null; yzDevSayacGuncelle(o);
+}
+// Büyük sayaç boyu (2026-10-26, kullanıcı: "saniyenin boyutunu ayarlayabileyim; büyük/küçük/orta, orta sabit kalsın"): cihaz başına,
+// varsayılan Orta (eski boy). Küçük yatay tek satır, Büyük ekranın çoğu. Şeritteki seçiciyle değişir.
+const YZ_DEV_BOYLAR = [['kucuk', 'Küçük'], ['orta', 'Orta'], ['buyuk', 'Büyük']];
+function yzDevBoy() { try { let b = localStorage.getItem('dag_yz_dev_boy'); return b === 'kucuk' || b === 'buyuk' ? b : 'orta'; } catch (e) { return 'orta'; } }
+function yzDevBoyUygula() { let b = yzDevBoy(), h = document.documentElement; h.classList.toggle('yz-dev-b-kucuk', b === 'kucuk'); h.classList.toggle('yz-dev-b-buyuk', b === 'buyuk'); }
+function yzDevBoySec(b, e) {
+    if (e) e.stopPropagation(); try { localStorage.setItem('dag_yz_dev_boy', b); } catch (x) {}
+    yzDevBoyUygula(); document.querySelectorAll('#yz-dev-sayac .yz-dev-boy button').forEach(function (x) { x.classList.toggle('secili', x.getAttribute('data-b') === b); });
+    // şeridin boyu değişti → TV'de tablo/hedef şeridi yeniden sığsın
+    setTimeout(function () { let tv = document.getElementById('yz-tv'); if (!tv) return; yzTvSigdir(tv); if (typeof yzhsCiz === 'function' && document.getElementById('yz-tv-serit')) yzhsCiz(true); }, 450);
+}
 function yzDevSayacGuncelle(o, s) {
     yzV240CssYukle();
     let el = document.getElementById('yz-dev-sayac'), sy = o && o.sayac, d = o && o.durum;
@@ -1281,10 +1320,16 @@ function yzDevSayacGuncelle(o, s) {
     let goster = !!(sy && d && s && yzDevAyar() && _yz.devGizle !== sy.basla && (document.getElementById('yz-sayac') || document.getElementById('yz-tv-sayac')));
     if (goster && s.faz === 'bitti') goster = Date.now() - (sy.basla + (sy.faz === 'shoot' ? sy.sure : (sy.hazir || 0) + (sy.sure || 0)) * 1000) < 2600;
     else if (goster && ['hazirlik', 'atis', 'son'].indexOf(s.faz) === -1) goster = false;
+    // ☕ seri sayacı yoksa mola sayacı (⛶ ayarından bağımsız: molada herkes kalan süreyi görsün)
+    let mola = !goster && d && (document.getElementById('yz-sayac') || document.getElementById('yz-tv-sayac')) ? yzMolaDurum(o) : null;
+    if (mola && _yz.devGizle === 'm' + o.mola.basla) mola = null;
+    if (mola) goster = true;
+    if (mola && mola.bitti && _yz.ses && !_yz.calinan['mola:' + o.mola.basla]) { _yz.calinan['mola:' + o.mola.basla] = 1; if (mola.kalan > -3) yzDuduk(2); }
+    yzDevBoyUygula();
     let devOnce = document.documentElement.classList.contains('yz-dev-acik');
     document.documentElement.classList.toggle('yz-dev-acik', goster); // içerik şeridin altına itilir → hiçbir düğme örtülmez
     // TV'de büyük sayaç açılıp kapanınca tablo/hedef şeridi yer değiştirir → yeniden sığdır
-    if (devOnce !== goster && _yz.tv) setTimeout(function () { let tv = document.getElementById('yz-tv'); if (!tv) return; yzTvSigdir(tv); if (typeof yzhsCiz === 'function' && document.getElementById('yz-tv-serit')) yzhsCiz([]); }, 450);
+    if (devOnce !== goster && _yz.tv) setTimeout(function () { let tv = document.getElementById('yz-tv'); if (!tv) return; yzTvSigdir(tv); if (typeof yzhsCiz === 'function' && document.getElementById('yz-tv-serit')) yzhsCiz(true); }, 450);
     if (!goster) {
         if (el && !el.classList.contains('kucul')) { el.classList.add('kucul'); setTimeout(function () { let e2 = document.getElementById('yz-dev-sayac'); if (e2 && e2.classList.contains('kucul')) e2.remove(); }, 750); }
         return;
@@ -1292,8 +1337,17 @@ function yzDevSayacGuncelle(o, s) {
     if (!el || el.classList.contains('kucul')) {
         if (el) el.remove();
         el = document.createElement('div'); el.id = 'yz-dev-sayac'; el.setAttribute('role', 'timer'); el.onclick = yzDevKucult;
-        el.innerHTML = '<div class="yz-dev-ust"><span class="yz-dev-faz"></span><span class="yz-dev-seri"></span></div><div class="yz-dev-sure"></div><div class="yz-dev-bar"><i></i></div><div class="yz-dev-ipucu">Dokun → küçült</div>';
+        el.innerHTML = '<div class="yz-dev-ust"><span class="yz-dev-faz"></span><span class="yz-dev-seri"></span></div><div class="yz-dev-sure"></div><div class="yz-dev-bar"><i></i></div><div class="yz-dev-ipucu">Dokun → küçült</div><div class="yz-dev-boy" role="group" aria-label="Sayaç boyu">' + YZ_DEV_BOYLAR.map(function (b) { return '<button type="button" data-b="' + b[0] + '"' + (b[0] === yzDevBoy() ? ' class="secili"' : '') + ' onclick="yzDevBoySec(\'' + b[0] + '\', event)">' + b[1] + '</button>'; }).join('') + '</div>';
         (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(el);
+    }
+    if (mola) {
+        el.className = 'mola' + (mola.bitti ? ' bitti' : '');
+        el.querySelector('.yz-dev-faz').textContent = mola.bitti ? 'MOLA BİTTİ' : '☕ MOLA';
+        el.querySelector('.yz-dev-sure').textContent = mola.bitti ? 'HATTA GEL' : mola.metin;
+        let f0 = d.asama === 'tur' ? yzFormat(d) : null;
+        el.querySelector('.yz-dev-seri').textContent = f0 && !mola.bitti ? 'SONRA ' + (Math.min(d.seri, f0.seri - 1) + 1) + '. SERİ' : '';
+        el.querySelector('.yz-dev-bar i').style.width = (mola.oran * 100).toFixed(1) + '%';
+        return;
     }
     el.className = s.faz;
     el.querySelector('.yz-dev-faz').textContent = s.alt;
@@ -1428,6 +1482,16 @@ function yzV240CssYukle() {
         '.yz-dev-bar{width:min(80vw,1400px);height:1.6vh;min-height:10px;border-radius:99px;background:rgba(0,0,0,.22);overflow:hidden}.yz-dev-bar i{display:block;height:100%;background:currentColor;border-radius:99px;transition:width .25s linear}',
         '.yz-dev-ipucu{font-size:max(12px,1.1vw);font-weight:800;opacity:.6;letter-spacing:.06em}',
         '#yz-dev-sayac.son .yz-dev-sure{animation:yzDevNabiz 1s ease-in-out infinite}@keyframes yzDevNabiz{50%{transform:scale(1.04)}}',
+        // ☕ mola rengi + boy seçici (Küçük / Orta / Büyük; Orta = eski boy)
+        '#yz-dev-sayac.mola{background:#0f4c75;color:#fff}#yz-dev-sayac.mola.bitti{background:#c81e1e}',
+        'html.yz-dev-acik #yz-dev-sayac{height:var(--yz-dev-h)}',
+        'html.yz-dev-acik.yz-dev-b-kucuk{--yz-dev-h:24vh}html.yz-dev-acik.yz-dev-b-buyuk{--yz-dev-h:58vh}html.yz-dev-acik.yz-tv-kok.yz-dev-b-kucuk{--yz-dev-h:28vh}html.yz-dev-acik.yz-tv-kok.yz-dev-b-buyuk{--yz-dev-h:68vh}',
+        'html.yz-dev-acik #yz-dev-sayac .yz-dev-sure{font-size:min(calc(var(--yz-dev-h) * .68),34vw)!important}html.yz-dev-acik #yz-dev-sayac.bitti .yz-dev-sure{font-size:min(calc(var(--yz-dev-h) * .36),18vw)!important}',
+        'html.yz-dev-b-kucuk #yz-dev-sayac{flex-direction:row;gap:4vw}html.yz-dev-b-kucuk .yz-dev-ust{flex-direction:column;gap:.6vh;align-items:flex-end}html.yz-dev-b-kucuk .yz-dev-ipucu{display:none}',
+        'html.yz-dev-acik.yz-dev-b-kucuk #yz-dev-sayac .yz-dev-sure{font-size:min(calc(var(--yz-dev-h) * .78),26vw)!important}html.yz-dev-b-kucuk .yz-dev-bar{position:absolute;left:10vw;right:10vw;bottom:1.4vh;width:auto;height:1.1vh}',
+        '.yz-dev-boy{position:absolute;right:max(10px,1.2vw);bottom:max(8px,1.4vh);display:flex;gap:2px;padding:3px;border-radius:99px;background:rgba(0,0,0,.25)}html.yz-dev-b-kucuk .yz-dev-boy{bottom:auto;top:max(8px,1.4vh)}',
+        '.yz-dev-boy button{font-family:inherit;font-weight:800;font-size:max(12px,.85vw);line-height:1;color:inherit;background:transparent;border:0;border-radius:99px;padding:max(6px,.7vh) max(10px,.9vw);cursor:pointer;opacity:.8;min-height:30px}.yz-dev-boy button.secili{background:rgba(255,255,255,.92);color:#1a1a1a;opacity:1}',
+        '#yz-dev-sayac.son .yz-dev-boy button.secili{background:#1a1a1a;color:#facc15}',
         '@media (prefers-reduced-motion:reduce){#yz-dev-sayac,#yz-dev-sayac .yz-dev-sure{transition:none;animation:none}}'
     ].join('\n');
     document.head.appendChild(st);
@@ -2430,7 +2494,7 @@ function yzTvDuyuruHTML(o, sira, yeni) {
 function yzTvKontrolHTML(o, el) {
     let d = o.durum, dugme = function (yazi, fn, cls, baslik) { return '<button class="yz-tv-k' + (cls ? ' ' + cls : '') + '" onclick="' + fn + '"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
     let sayac = o.sayac ? dugme('⏹ Sıfırla', 'yzSayacDurdur()') : dugme('▶ Başlat', 'yzSayacBaslat()', 'yesil', 'Süreyi başlat (10 sn hatta geçiş + atış)');
-    let sure = dugme('⏱ ' + yzSure(d) + ' sn', 'yzSureMenu()', '', 'Süreyi değiştir');
+    let sure = dugme('⏱ ' + yzSure(d) + ' sn', 'yzSureMenu()', '', 'Süreyi değiştir') + dugme(yzMolaBtnYazi(o), 'yzMolaMenu()', 'yz-mola-btn', 'Mola sayacı: büyük geri sayım, altında hedefler döner');
     let oyunaGec = (typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '') + (yzYuvaVarMi() ? dugme('🥚', 'yzYuvayaGec()', 'oyun', 'Yumurta Yuvası — tam ekran sürer') : '');
     if (d.asama === 'eleme') {
         let sh = el && el.maclar.some(function (m) { return m.shootGerek && !m.kazanan; });

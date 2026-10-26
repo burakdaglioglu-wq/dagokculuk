@@ -641,6 +641,7 @@ async function flKameraListesi() {
     if (flTelBagliMi()) secenek.push(['tel', 'Telefon (QR ile bağlı)']);
     secenek.push(flTelBagliMi() ? ['yerel', 'Bu cihazın kamerası'] : ['oto', 'Varsayılan kamera']);
     l.forEach((d, i) => secenek.push([d.deviceId, d.label || ('Kamera ' + (i + 1))]));
+    if (flSalonGoster()) secenek.push(['salon', '📹 Salon kamerası (Tapo)'], ['salon-ayar', '⚙️ Salon kamerası kurulumu…']);
     let secili = _fl.kamera || (flTelBagliMi() ? 'tel' : 'oto');
     if (_fl.akisTel) secili = 'tel';
     sel.innerHTML = secenek.map(([v, a]) => `<option value="${flEsc(v)}" ${v === secili ? 'selected' : ''}>${flEsc(a)}</option>`).join('');
@@ -649,10 +650,12 @@ async function flKameraListesi() {
 }
 function flKameraDegis(v) {
     if (_fl.canli && _fl.canli.kayit) return;
+    if (v === 'salon-ayar') { flKameraListesi(); flSalonKurulum(); return; }
+    _fl.salonElle = v === 'salon';
     _fl.kamera = v; try { localStorage.setItem('dagsk_formlab_kamera', v); } catch (e) {}
     flKameraBaslat().catch(() => showToast('Bu kamera açılamadı', 'error'));
 }
-function flAkisBirak() { if (_fl.akis && !_fl.akisTel) _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; _fl.akisTel = false; }
+function flAkisBirak() { if (_fl.akis && !_fl.akisTel) _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; _fl.akisTel = false; flSalonKapat(); }
 async function flKameraBaslat() {
     if (_fl.kamera == null) { try { _fl.kamera = localStorage.getItem('dagsk_formlab_kamera') || 'oto'; } catch (e) { _fl.kamera = 'oto'; } }
     let sec = _fl.kamera;
@@ -662,11 +665,116 @@ async function flKameraBaslat() {
         flCanliBagla(); flKameraListesi(); flTelYaz(); flYerelSesKapat(); flSesBaslat(_fl.tel.akis); return;
     }
     flAkisBirak();
+    if (sec === 'salon') {
+        let elle = _fl.salonElle; _fl.salonElle = false;
+        if (elle) showToast('📹 Salon kamerasına bağlanılıyor…', 'info');
+        try { _fl.akis = await flSalonAkis(); }
+        catch (e) {
+            flSalonKapat(); _fl.kamera = 'oto';
+            showToast('📹 Salon kamerasına bağlanılamadı — bu cihazın kamerası açıldı', 'warning');
+            if (elle) flSalonKurulum(); return flKameraBaslat();
+        }
+        flCanliBagla(); flKameraListesi(); flTelYaz(); flYerelSesAc(); return;
+    }
     let ozel = sec && sec !== 'oto' && sec !== 'tel' && sec !== 'yerel';
     let video = ozel ? { deviceId: { exact: sec }, width: { ideal: 1920 }, height: { ideal: 1080 } } : { facingMode: (_fl.canli && _fl.canli.yon) || 'environment', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } };
     try { _fl.akis = await navigator.mediaDevices.getUserMedia({ audio: false, video }); }
     catch (e) { if (ozel) { _fl.kamera = 'oto'; return flKameraBaslat(); } throw e; } // seçilen kamera artık yoksa varsayılana dön
     flCanliBagla(); flKameraListesi(); flTelYaz(); flYerelSesAc();
+}
+// ---- 📹 Salon kamerası (2026-10-26, kullanıcı: "Tapo C212 var, PC'ye bağlayacağım; kulüpte internet yok, telefondan sağlıyorum").
+// PC ve Tapo telefonun hotspot'una bağlı. Tarayıcı RTSP açamaz → PC'de go2rtc köprüsü (dagsk-kamera-koprusu.bat: ilk açılışta go2rtc'yi
+// indirir, kamera IP / Kamera Hesabı'nı sorar, 127.0.0.1:1984'te çalışır; akışlar tapo = 2K stream1, tapo_dusuk = stream2).
+// Görüntü önce WebRTC ile gelir, olmazsa MSE (WebSocket, fMP4) + captureStream; ikisi de MediaStream → canlı analiz ve kayıt
+// telefon / web kamerasındaki gibi çalışır. https sayfadan 127.0.0.1'e istek serbest (tarayıcı "yerel ağ" izni sorabilir).
+const FL_KOPRU = 'http://127.0.0.1:1984';
+function flSalonGoster() { try { if (localStorage.getItem('dagsk_formlab_kamera') === 'salon' || localStorage.getItem('dagsk_salon_kalite')) return true; } catch (e) {} return !!(window.matchMedia && matchMedia('(pointer:fine)').matches) && !/Android|iPhone|iPad/i.test(navigator.userAgent); }
+function flSalonAkisAdi() { try { return localStorage.getItem('dagsk_salon_kalite') === 'dusuk' ? 'tapo_dusuk' : 'tapo'; } catch (e) { return 'tapo'; } }
+async function flKopruGet(yol, ms) {
+    let c = new AbortController(), z = setTimeout(() => c.abort(), ms || 2500);
+    try { let r = await fetch(FL_KOPRU + yol, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); } finally { clearTimeout(z); }
+}
+async function flSalonAkis() {
+    let src = flSalonAkisAdi();
+    try { return await flSalonWebrtc(src); } catch (e) { flSalonKapat(); _fl.salonHata = 'WebRTC: ' + (e && e.message || e); }
+    return await flSalonMse(src);
+}
+// Akış gerçekten kare veriyor mu (ontrack görüntü gelmeden de tetiklenir)
+function flSalonKareBekle(akis, ms) {
+    return new Promise((ok, red) => {
+        let v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = akis; v.play().catch(() => {});
+        let bas = Date.now(), z = setInterval(() => { if (v.videoWidth > 0) { clearInterval(z); v.srcObject = null; ok(akis); } else if (Date.now() - bas > ms) { clearInterval(z); v.srcObject = null; red(new Error('görüntü gelmedi')); } }, 150);
+    });
+}
+async function flSalonWebrtc(src) {
+    let pc = new RTCPeerConnection({ iceServers: [] }); _fl.salonPc = pc;
+    pc.addTransceiver('video', { direction: 'recvonly' });
+    let iz = new Promise((ok, red) => { pc.ontrack = e => ok(e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track])); setTimeout(() => red(new Error('iz gelmedi')), 8000); });
+    await pc.setLocalDescription(await pc.createOffer());
+    await new Promise(ok => { if (pc.iceGatheringState === 'complete') return ok(); let z = setTimeout(ok, 1500); pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(z); ok(); } }); });
+    // ham SDP (text/plain) → ön kontrolsüz basit istek; go2rtc ham SDP cevabı döner
+    let r = await fetch(FL_KOPRU + '/api/webrtc?src=' + encodeURIComponent(src), { method: 'POST', body: pc.localDescription.sdp });
+    if (!r.ok) throw new Error('köprü ' + r.status + ' ' + (await r.text()).slice(0, 120));
+    await pc.setRemoteDescription({ type: 'answer', sdp: await r.text() });
+    return flSalonKareBekle(await iz, 9000);
+}
+async function flSalonMse(src) {
+    if (!window.MediaSource) throw new Error('Bu tarayıcıda MSE yok');
+    let v = document.createElement('video'); v.muted = true; v.playsInline = true; v.autoplay = true;
+    v.style.cssText = 'position:fixed;left:-9999px;top:0;width:4px;height:4px;opacity:0;pointer-events:none'; document.body.appendChild(v);
+    let ms = new MediaSource(), m = _fl.salonMse = { v, ms, ws: null, z: null };
+    v.src = URL.createObjectURL(ms);
+    await new Promise(ok => ms.addEventListener('sourceopen', ok, { once: true }));
+    let ws = m.ws = new WebSocket(FL_KOPRU.replace(/^http/, 'ws') + '/api/ws?src=' + encodeURIComponent(src)); ws.binaryType = 'arraybuffer';
+    let sb = null, kuyruk = [], besle = () => { if (sb && !sb.updating && kuyruk.length) { try { sb.appendBuffer(kuyruk.shift()); } catch (e) { kuyruk.length = 0; } } };
+    let kodekler = ['avc1.640029', 'avc1.64002A', 'avc1.640033', 'avc1.4D401F', 'avc1.42E01E', 'hvc1.1.6.L153.B0', 'mp4a.40.2'].filter(c => MediaSource.isTypeSupported('video/mp4; codecs="' + c + '"')).join(',');
+    ws.onopen = () => ws.send(JSON.stringify({ type: 'mse', value: kodekler }));
+    ws.onmessage = e => {
+        if (typeof e.data === 'string') { let j = {}; try { j = JSON.parse(e.data); } catch (x) {} if (j.type === 'mse' && !sb) { sb = ms.addSourceBuffer(j.value); sb.mode = 'segments'; sb.addEventListener('updateend', besle); } else if (j.type === 'error') _fl.salonHata = 'MSE: ' + j.value; return; }
+        kuyruk.push(e.data); besle();
+    };
+    // canlı kalsın: tampon 1,5 sn'yi geçerse sona atla, eski tamponu sil
+    m.z = setInterval(() => { try { let b = v.buffered; if (!b.length) return; let son = b.end(b.length - 1); if (son - v.currentTime > 1.5) v.currentTime = son - 0.3; if (sb && !sb.updating && v.currentTime - b.start(0) > 20) sb.remove(b.start(0), v.currentTime - 10); if (v.paused) v.play().catch(() => {}); } catch (e) {} }, 1000);
+    let bas = Date.now(); while (!(v.videoWidth > 0)) { if (Date.now() - bas > 10000) throw new Error(_fl.salonHata || 'görüntü gelmedi'); if (ws.readyState > 1) throw new Error('köprü bağlantısı kapandı'); await new Promise(ok => setTimeout(ok, 200)); }
+    let akis = v.captureStream ? v.captureStream() : v.mozCaptureStream ? v.mozCaptureStream() : null;
+    if (!akis) throw new Error('captureStream yok');
+    return akis;
+}
+function flSalonKapat() {
+    if (_fl.salonPc) { try { _fl.salonPc.close(); } catch (e) {} _fl.salonPc = null; }
+    let m = _fl.salonMse; if (m) { clearInterval(m.z); try { m.ws && m.ws.close(); } catch (e) {} try { URL.revokeObjectURL(m.v.src); } catch (e) {} m.v.remove(); _fl.salonMse = null; }
+}
+// Kurulum + kontrol penceresi (kulüpte adım adım; durum satırı köprüyü ve kamera tanımını kendisi kontrol eder)
+function flSalonKurulum() {
+    let kal = flSalonAkisAdi() === 'tapo_dusuk' ? 'dusuk' : 'hd', adim = (n, b, a) => `<li style="margin:0 0 8px"><b>${n}. ${b}</b><div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;line-height:1.4">${a}</div></li>`;
+    onayIste(`<div style="text-align:left;max-width:560px"><b style="font-size:17px">📹 Salon kamerası (Tapo C212)</b>
+        <div id="fl-salon-durum" style="margin:10px 0;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.14);font-weight:700;font-size:13.5px">Kontrol ediliyor…</div>
+        <ol style="padding-left:0;list-style:none;margin:0">
+        ${adim(1, 'Telefonda hotspot\'u aç', 'Android: bant <b>2,4 GHz</b>. iPhone: <b>Uyumluluğu En Üst Düzeye Çıkar</b> açık. PC\'yi ve Tapo\'yu bu hotspot\'a bağla (Tapo\'yu kurarken Wi-Fi olarak hotspot\'u seç).')}
+        ${adim(2, 'Tapo uygulamasında kamera hesabı', 'Kamera → ⚙️ → Gelişmiş Ayarlar → <b>Kamera Hesabı</b>: kullanıcı adı + şifre (yalnız harf ve rakam). IP adresi: ⚙️ → <b>Cihaz Bilgisi</b>.')}
+        ${adim(3, 'Köprüyü indir ve çalıştır', '<a href="/dagsk-kamera-koprusu.bat" download style="font-weight:800">⬇ dagsk-kamera-koprusu.bat</a> — çift tıkla. Windows uyarırsa <b>Ek bilgi → Yine de çalıştır</b>. İlk açılışta köprü programı indirilir, IP / kullanıcı / şifre sorulur; güvenlik duvarı sorarsa <b>Erişime izin ver</b>. Siyah pencere açık kalsın. IP değişirse pencereyi kapatıp dosyayı yeniden çalıştır, yeni IP\'yi yaz.')}
+        ${adim(4, 'Tarayıcı izni', 'Tarayıcı "yerel ağdaki cihazlara / bu cihazdaki uygulamalara erişim" izni sorarsa <b>İzin ver</b>.')}
+        ${adim(5, 'Kamerayı seç', 'Form Lab\'da kamera listesinden <b>📹 Salon kamerası (Tapo)</b>. Kamerayı yandan, atış hattına dik, 3–5 m uzağa, göğüs hizasına koy; sporcunun tüm boyu ve yayı kadrajda olsun.')}
+        </ol>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px"><span style="font-size:13px;font-weight:700">Görüntü:</span>
+        <button type="button" class="btn ${kal === 'hd' ? 'btn-primary' : ''}" onclick="flSalonKaliteSec('hd')">2K (analiz için)</button>
+        <button type="button" class="btn ${kal === 'dusuk' ? 'btn-primary' : ''}" onclick="flSalonKaliteSec('dusuk')">Hafif (PC yavaşsa)</button>
+        <button type="button" class="btn" onclick="flSalonTeshis()">🔄 Yeniden kontrol et</button>
+        <button type="button" class="btn btn-primary" onclick="flSalonSec()">📹 Bağlan</button></div></div>`, null, null, 'Kapat');
+    flSalonTeshis();
+}
+function flSalonKaliteSec(k) { try { localStorage.setItem('dagsk_salon_kalite', k === 'dusuk' ? 'dusuk' : 'hd'); } catch (e) {} flSalonKurulum(); if (_fl.kamera === 'salon' && (_fl.salonPc || _fl.salonMse)) flKameraBaslat().catch(() => {}); }
+function flSalonSec() { let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none'; let sel = document.getElementById('fl-kamera-sec'); if (sel) sel.value = 'salon'; flKameraDegis('salon'); }
+async function flSalonTeshis() {
+    let el = document.getElementById('fl-salon-durum'); if (!el) return false;
+    let yaz = (renk, html) => { el.style.background = renk; el.innerHTML = html; };
+    yaz('rgba(127,127,127,.14)', 'Kontrol ediliyor…');
+    try { await flKopruGet('/api', 2500); }
+    catch (e) { yaz('rgba(220,38,38,.16)', '❌ Köprü çalışmıyor. 3. adımdaki dosyayı çalıştır, siyah pencere açık kalsın. (Tarayıcı izin sorduysa <b>İzin ver</b>\'e bas.)'); return false; }
+    let st = null; try { st = await flKopruGet('/api/streams', 2500); } catch (e) {}
+    if (!st || !st.tapo) { yaz('rgba(234,179,8,.2)', '⚠️ Köprü çalışıyor ama kamera tanımlı değil. Pencereyi kapat, dosyayı yeniden çalıştır, IP / kullanıcı / şifreyi gir.'); return false; }
+    yaz('rgba(22,163,74,.18)', '✅ Köprü çalışıyor, kamera tanımlı. <b>📹 Bağlan</b>\'a bas. Görüntü gelmezse IP ya da şifre yanlış olabilir: köprü penceresindeki kırmızı satırlara bak.' + (_fl.salonHata ? '<div style="font-size:12px;font-weight:600;opacity:.75;margin-top:4px">Son hata: ' + flEsc(_fl.salonHata) + '</div>' : ''));
+    return true;
 }
 function flCanliBagla() {
     let v = document.getElementById('fl-canli-video'); if (!v || !_fl.akis) return;

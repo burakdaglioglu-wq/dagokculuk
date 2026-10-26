@@ -92,6 +92,7 @@
 .ap .ap-yas .sag{text-align:right}
 .ap .ap-ipucu{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--ap-uyari-z);color:var(--ap-yazi);font-size:13px;line-height:1.45}
 .ap .ap-ipucu+.ap-ipucu{margin-top:6px}
+.ap .ap-vt{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.ap .ap-vt input{width:130px;padding:7px 10px;border-radius:8px;border:1px solid var(--ap-cizgi,rgba(127,127,127,.35));background:var(--ap-kart,transparent);color:inherit;font:inherit;font-weight:700}
 .ap .ap-ipucu.mavi{background:var(--ap-iyi-z)}
 .ap .ap-ipucu button{margin-left:6px;padding:4px 9px;font-size:12px}
 .ap .ap-sekmeler{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -160,7 +161,7 @@
         let basMemo = {}, bas = k => { if (!(k.id in basMemo)) { let b = baslangic(a, k); basMemo[k.id] = b ? b.ay : null; } return basMemo[k.id]; };
         let uygun = (k, m) => !k.muaf && !(bas(k) && bas(k) > m) && !dondu(a.kayit(k.ad, m));
         let satirlar = kisiler.map(k => {
-            let rec = a.kayit(k.ad, ay), aylik = a.aylik(k) || 0, d;
+            let rec = a.kayit(k.ad, ay), aylik = (rec && !rec.odendi && rec.tutar > 0 ? rec.tutar : a.aylik(k)) || 0, d; // ödenmemiş kayda yazılan tutar = o ay beklenen
             if (rec && rec.odendi) d = 'odedi'; else if (k.muaf) d = 'muaf'; else if (dondu(rec)) d = 'dondu'; else if (bas(k) && bas(k) > ay) d = 'yeni'; else d = 'bekliyor';
             let gec = 0, gecAylar = [];
             for (let i = 1; i <= 6; i++) { let m = ayEkle(ay, -i), r = a.kayit(k.ad, m); if (dondu(r)) continue; if (!uygun(k, m)) break; if (r && r.odendi) break; gec++; gecAylar.push(m); }
@@ -225,7 +226,9 @@
         let ipucu = '';
         if (v.olabilir.length) ipucu += `<div class="ap-ipucu mavi"><b>${v.olabilir.length} kişi ödemiş olabilir:</b> derse geliyor ve son aylarda hep ödemiş. Girmeyi unuttuysan listeden tek tıkla işaretle.<button class="ap-btn" onclick="AP.liste='olabilir'; AP.sayfa=0; apTabloCiz(); apTabloGit()">Göster</button></div>`;
         let tutarsiz = v.bek.filter(s => !s.aylik).length;
-        if (tutarsiz) ipucu += `<div class="ap-ipucu"><b>${tutarsiz} sporcunun aylık tutarı belli değil</b> (hiç ödemesi yok, varsayılan tutar boş); bekleyen ve tahmin eksik görünür. Aşağıda Diğer araçlar › ⚙️ Varsayılan tutar.</div>`;
+        if (tutarsiz) ipucu += AP.a.varsayilanTutarYaz
+            ? `<div class="ap-ipucu"><b>${tutarsiz} sporcunun aylık tutarı belli değil</b> (hiç ödemesi yok). Varsayılan aylık tutarı gir; bütün cihazlarda geçerli olur, bekleyen tutar hemen hesaplanır.<span class="ap-vt"><input type="number" id="ap-vt" inputmode="numeric" min="0" placeholder="₺ aylık" value="${AP.a.varsayilanTutar() || ''}" aria-label="Varsayılan aylık tutar" onkeydown="if(event.key==='Enter') apVarsayilanKaydet()"><button class="ap-btn" onclick="apVarsayilanKaydet()">Kaydet</button></span></div>`
+            : `<div class="ap-ipucu"><b>${tutarsiz} sporcunun aylık tutarı belli değil</b> (hiç ödemesi yok, varsayılan tutar boş); bekleyen ve tahmin eksik görünür. Aşağıda Diğer araçlar › ⚙️ Varsayılan tutar.</div>`;
         if (v.yok.length) ipucu +=`<div class="ap-ipucu"><b>${v.yok.length} kişi</b> ödemedi ve bu ay hiç derse gelmedi; ayrılmış olabilir, arayın.</div>`;
         if (!ipucu) ipucu = `<div class="ap-ipucu mavi">${v.bek.length ? 'Ödemiş olabilecek kimse görünmüyor.' : 'Bu ay herkes ödedi.'}</div>`;
         let araclar = (AP.a.araclar || []).map(x => `<button class="ap-btn" onclick="${x[1]}">${x[0]}</button>`).join('');
@@ -245,6 +248,12 @@
         </div>`;
         apTabloCiz();
         if (aramaOdak) { let e = document.getElementById('ap-ara'); if (e) { e.focus(); try { e.setSelectionRange(imlec, imlec); } catch (x) {} } }
+    };
+    window.apVarsayilanKaydet = async function () {
+        let e = document.getElementById('ap-vt'), v = e ? parseInt(e.value, 10) : NaN;
+        if (!(v > 0)) { if (typeof showToast === 'function') showToast('Aylık tutarı yaz (₺).', 'warning'); return; }
+        await AP.a.varsayilanTutarYaz(v); apYenile();
+        if (typeof showToast === 'function') showToast('Varsayılan aylık tutar ' + tl(v) + ' — bütün cihazlarda geçerli', 'success');
     };
     window.apYenile = function () { if (AP.el && AP.a) { AP.acik = null; apCiz(AP.el, AP.a); } };
     window.apAyKaydir = function (n) { AP.ay = ayEkle(AP.ay || buAy(), n); AP.sayfa = 0; AP.sec = {}; AP.acik = null; apYenile(); };

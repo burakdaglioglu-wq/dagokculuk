@@ -642,9 +642,23 @@ function miloAidatSonBilinenTutar(ad) {
     kayitlar.sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
     return kayitlar[0].tutar || miloAidatVarsayilanTutar;
 }
+// Varsayılan aylık tutar kulüp geneli (2026-10-26, DAĞ'la aynı düzeltme): meta 'aidat_ayar' { v, t } — son yazan kazanır.
+let _miloAidatAyarZ = null, _miloAidatAyarSenk = false;
 function miloAidatTutarDegis(d) {
     miloAidatVarsayilanTutar = parseInt(d) || 0;
-    try { localStorage.setItem('milo_aidat_tutar', String(miloAidatVarsayilanTutar)); } catch (e) {}
+    try { localStorage.setItem('milo_aidat_tutar', String(miloAidatVarsayilanTutar)); localStorage.setItem('milo_aidat_ayar_t', String(Date.now())); } catch (e) {}
+    clearTimeout(_miloAidatAyarZ); _miloAidatAyarZ = setTimeout(() => miloAidatVarsayilanSenkron(true), 700);
+}
+async function miloAidatVarsayilanSenkron(yaz) {
+    let yt = 0; try { yt = parseInt(localStorage.getItem('milo_aidat_ayar_t') || '0') || 0; } catch (e) {}
+    let uzak = null; try { let r = await miloApi('/meta/aidat_ayar'); uzak = r && r.value ? JSON.parse(r.value) : null; } catch (e) { return false; }
+    if (uzak && (uzak.t || 0) > yt) {
+        let v = parseInt(uzak.v) || 0, degisti = v !== miloAidatVarsayilanTutar;
+        miloAidatVarsayilanTutar = v; try { localStorage.setItem('milo_aidat_tutar', String(v)); localStorage.setItem('milo_aidat_ayar_t', String(uzak.t)); } catch (e) {}
+        return degisti;
+    }
+    if ((yaz || !uzak) && miloAidatVarsayilanTutar) { try { await miloApi('/meta/aidat_ayar', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify({ v: miloAidatVarsayilanTutar, t: yt || 1 }) }) }); } catch (e) {} }
+    return false;
 }
 
 function miloAidatKartHTML(u) {
@@ -755,6 +769,8 @@ function miloAidatPanelAdaptor() {
         kisiler() { return miloUyeler.filter(u => !u.pasif).map(u => ({ id: u.grup + '|' + u.ad, ad: u.ad, grup: u.grup, grupAd: u.grup, muaf: !!u.aidatMuaf, tel: u.acilTelefon || u.veli2Telefon || '', katilma: u.katilmaTarihi || '' })); },
         kayit(ad, ay) { return dues[ad + '|' + ay] || null; },
         aylik(k) { if (aylikMemo[k.ad] == null) aylikMemo[k.ad] = miloAidatSonBilinenTutar(k.ad) || miloAidatVarsayilanTutar || 0; return aylikMemo[k.ad]; },
+        varsayilanTutar() { return miloAidatVarsayilanTutar; },
+        varsayilanTutarYaz(v) { miloAidatTutarDegis(v); clearTimeout(_miloAidatAyarZ); return miloAidatVarsayilanSenkron(true); },
         devam(k) { return miloAttendanceTum.length ? Object.keys(devam[k.ad] || {}).length : null; },
         ilkGelis(k) { let t = null; miloAttendanceTum.forEach(a => { if (a.geldi && a.ad === k.ad && a.tarih && (!t || String(a.tarih).slice(0, 10) < t)) t = String(a.tarih).slice(0, 10); }); return t; },
         async kaydet(isler) {
