@@ -574,6 +574,54 @@
         body.light-theme .giris-secim-btn { background: #ffffff; color: #111827; border-color: #cbd5e1; }
         .giris-secim-btn:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
         .giris-secim-btn span { display: block; font-size: 12px; font-weight: 400; color: var(--text-muted); margin-top: 4px; text-transform: none; }
+
+        /* 🎯 Sporcu girişi (2026-10-26) — sade, sıcak; açık/koyu temada aynı token'lar */
+        .sgr { width: 100%; max-width: 360px; display: none; flex-direction: column; align-items: stretch; gap: 10px; }
+        .sgr-kart { position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 22px; padding: 20px 18px 18px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+        /* süs katmanı ayrı ve kırpılmış: kartın kendisi taşmasın — taşarsa yazı kutusuna odaklanınca tarayıcı kartı yana kaydırıyordu */
+        .sgr-sus { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+        .sgr-sus::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 92px; background: linear-gradient(135deg, rgba(255,122,26,.22), rgba(255,183,77,.10) 60%, transparent); pointer-events: none; }
+        .sgr-hedef { position: absolute; top: -18px; right: -18px; width: 110px; height: 110px; opacity: .9; pointer-events: none; }
+        .sgr-hedef .h1 { fill: #fde7d3; } .sgr-hedef .h2 { fill: #fbb17a; } .sgr-hedef .h3 { fill: #f97316; } .sgr-hedef .h4 { fill: #fde68a; }
+        .sgr-hedef .ok { stroke: var(--text-main); stroke-width: 3; stroke-linecap: round; opacity: .75; } .sgr-hedef .uc { fill: var(--text-main); opacity: .75; }
+        body:not(.light-theme) .sgr-hedef .h1 { fill: #3b2215; } body:not(.light-theme) .sgr-hedef .h2 { fill: #7c3a12; }
+        .sgr-form, .sgr-tanidik { position: relative; display: flex; flex-direction: column; gap: 8px; }
+        .sgr-selam { display: flex; flex-direction: column; gap: 2px; margin: 0 70px 6px 0; text-align: left; }
+        .sgr-selam b { font-size: 21px; font-weight: 900; color: var(--text-main); }
+        .sgr-selam span { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+        .sgr-etk { font-size: 12px; font-weight: 800; color: var(--text-muted); text-align: left; margin-top: 4px; letter-spacing: .02em; }
+        .sgr-girdi { width: 100%; box-sizing: border-box; padding: 13px 14px; background: var(--bg-main); border: 1.5px solid var(--border-color); color: var(--text-main); border-radius: 14px; font-size: 16px; font-family: inherit; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .sgr-girdi:focus { border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
+        .sgr-ad-kap, .sgr-kod-kap { position: relative; }
+        .sgr-oneri { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,.25); overflow: hidden; }
+        .sgr-oneri.acik { display: block; }
+        .sgr-oneri button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; background: transparent; border: 0; border-bottom: 1px solid var(--border-color); color: var(--text-main); font: inherit; font-size: 14.5px; font-weight: 700; text-align: left; cursor: pointer; transform: none !important; }
+        .sgr-oneri button:last-child { border-bottom: 0; }
+        .sgr-oneri button:hover, .sgr-oneri button.secili { background: rgba(249,115,22,.12); }
+        .sgr-oneri small { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+        .sgr-av { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 13px; font-weight: 900; color: #fff; background: linear-gradient(135deg, #fb923c, #f97316); background-size: cover; background-position: center; }
+        .sgr-av.buyuk { width: 72px; height: 72px; font-size: 24px; box-shadow: 0 0 0 4px var(--bg-panel), 0 0 0 6px rgba(249,115,22,.55); }
+        .sgr-secili { display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 9px; background: rgba(249,115,22,.10); border: 1.5px solid rgba(249,115,22,.45); border-radius: 14px; }
+        .sgr-secili b { flex: 1; min-width: 0; font-size: 15px; color: var(--text-main); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sgr-secili button { background: transparent; border: 0; color: var(--text-muted); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; transform: none !important; }
+        .sgr-kod { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: .35em; padding-right: 48px; padding-left: 48px; }
+        .sgr-goz { position: absolute; right: 8px; top: 50%; transform: translateY(-50%) !important; width: 36px; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 17px; cursor: pointer; opacity: .7; }
+        .sgr-ipucu { font-size: 12px; color: var(--text-muted); text-align: center; }
+        .sgr-hata { font-size: 13px; line-height: 1.45; color: #ef4444; background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.35); border-radius: 12px; padding: 9px 11px; text-align: left; }
+        .sgr-hata.salla { animation: sgr-salla .35s; }
+        @keyframes sgr-salla { 25% { transform: translateX(-6px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
+        .sgr-hatirla { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: left; margin-top: 2px; }
+        .sgr-hatirla input { width: 19px; height: 19px; accent-color: var(--accent-orange); flex-shrink: 0; }
+        .sgr-hatirla span { font-weight: 500; color: var(--text-muted); }
+        .sgr-ana { width: 100%; margin-top: 6px; padding: 14px; border: 0; border-radius: 14px; font: inherit; font-size: 16px; font-weight: 900; color: #fff; background: linear-gradient(135deg, #fb923c, #ea580c); box-shadow: 0 8px 20px rgba(234,88,12,.30); cursor: pointer; transform: none !important; }
+        .sgr-ana:active { filter: brightness(.95); }
+        .sgr-ikinci { width: 100%; padding: 11px; border-radius: 12px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transform: none !important; }
+        .sgr-tanidik { align-items: center; text-align: center; padding-top: 6px; }
+        .sgr-tanidik .sgr-merhaba { font-size: 13px; color: var(--text-muted); font-weight: 700; margin-top: 6px; }
+        .sgr-tanidik .sgr-isim { font-size: 22px; font-weight: 900; color: var(--text-main); line-height: 1.2; }
+        .sgr-tanidik .sgr-not { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .sgr-geri { width: 100%; padding: 10px; font: inherit; font-size: 12.5px; font-weight: 600; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; transform: none !important; }
+        #giris-ekrani.sgr-modu .gv-vizor { display: none; }
         .pin-btn { padding: 18px 0; font-size: 22px; font-weight: 800; color: var(--text-main); background: #1a1a1c; border: 2px solid #333336; border-radius: 12px; cursor: pointer; }
         body.light-theme .pin-btn { background: #fff; color: #111827; border-color: #cbd5e1; }
         .pin-btn:active { background: var(--accent-orange); color: #fff; }

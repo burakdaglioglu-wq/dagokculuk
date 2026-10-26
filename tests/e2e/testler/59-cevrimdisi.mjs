@@ -25,7 +25,8 @@ export default async function ({ log }) {
     const sure1 = (Date.now() - t0) / 1000;
     dogrula(await p.evaluate(() => typeof html2pdf === 'function' && typeof Chart === 'function'), 'internetsiz PDF / grafik kütüphanesi yüklenmedi');
     const once = await p.evaluate(() => ({ seri: (turnuvaDB[aktifGrup].YoklamaTest.seriler || []).length, kuyruk: _seriBekleyen.length }));
-    await p.evaluate(() => skorEkraniniAc('YoklamaTest')); await p.waitForTimeout(500);
+    // test sporcusunun açık kartında önceki koşulardan seri birikiyor → cihazın seri sınırı (varsayılan 12) testi durdurmasın
+    await p.evaluate(() => { let t = document.getElementById('toplam-seri-ayar'); if (t) t.value = 999; skorEkraniniAc('YoklamaTest'); }); await p.waitForTimeout(500);
     const n = await p.evaluate(() => getMaksOk());
     for (let i = 0; i < n; i++) { await p.evaluate(() => hizliOkEkle('8')); await p.waitForTimeout(60); }
     await p.waitForFunction((o) => _seriBekleyen.length > o.kuyruk && (turnuvaDB[aktifGrup].YoklamaTest.seriler || []).length > o.seri, once, { timeout: 8000 });

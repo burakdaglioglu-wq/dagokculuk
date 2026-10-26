@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v319</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v320</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -100,14 +100,34 @@
         </div>
         <!-- Eğitmen/Yönetici girişi — içerik app.js'teki girisPaneliCiz() tarafından çizilir (kişi seçimi, PIN, hatırla, passkey). -->
         <div id="giris-sifre" class="gs-panel" style="display:none;"></div>
-        <div id="giris-sporcu" style="width:100%; max-width:320px; display:none; flex-direction:column; align-items:center; gap:12px;">
-            <div style="color:var(--text-muted); font-size:12px; text-align:center;">Adını ve kişisel kodunu gir<br>(kod verilmediyse <b>doğum yılın</b>)</div>
-            <button id="hizli-giris-btn" onclick="hatirlaGiris()" style="display:none; width:100%; padding:13px; background:var(--neon-green); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:15px; cursor:pointer;">⚡ Hızlı Giriş</button>
-            <input type="text" id="sporcu-giris-ad" placeholder="Ad Soyad" autocomplete="off" style="width:100%; padding:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; text-align:center; font-size:15px;">
-            <input type="text" id="sporcu-giris-kod" placeholder="Kişisel kod" inputmode="numeric" autocomplete="off" style="width:100%; padding:12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; text-align:center; font-size:15px;">
-            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main); align-self:flex-start; cursor:pointer;"><input type="checkbox" id="beni-hatirla-chk" checked style="width:19px; height:19px; accent-color:var(--accent-orange);"> Beni hatırla (çıkana kadar açık kal)</label>
-            <button onclick="sporcuGirisDene()" style="width:100%; padding:13px; background:var(--accent-orange); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:15px;">Giriş yap</button>
-            <button onclick="platformGeri()" style="width:100%; padding:9px; font-size:12px; background:transparent; color:var(--text-muted); border:1px solid var(--border-color); border-radius:8px;">← Geri</button>
+        <!-- 🎯 Sporcu girişi (2026-10-26, kullanıcı: "sporcu kartı giriş yerini daha kullanılabilir, kendini özel hissettiren, sade
+             tatlı bir temaya getir"). Hatırlanan sporcuya kişisel karşılama (foto/baş harf + Devam et), isim yazarken öneri (Türkçe
+             karakter derdi yok), büyük kod kutusu (göster/gizle), hata panelin içinde ve nazik. Çizim/akış: app.js sgr*. -->
+        <div id="giris-sporcu" class="sgr" style="display:none;">
+            <div class="sgr-kart">
+                <span class="sgr-sus" aria-hidden="true"><svg class="sgr-hedef" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" class="h1"/><circle cx="60" cy="60" r="42" class="h2"/><circle cx="60" cy="60" r="28" class="h3"/><circle cx="60" cy="60" r="14" class="h4"/><path d="M60 60 L104 16" class="ok"/><path d="M98 14 l8 -2 -2 8 z" class="uc"/></svg></span>
+                <div id="sgr-tanidik" class="sgr-tanidik" style="display:none;"></div>
+                <div id="sgr-form" class="sgr-form">
+                    <div class="sgr-selam"><b>Merhaba! 👋</b><span>Adını yaz, listeden kendini seç, kodunu gir.</span></div>
+                    <label class="sgr-etk" for="sporcu-giris-ad">Adın</label>
+                    <div class="sgr-ad-kap">
+                        <div id="sgr-secili" class="sgr-secili" style="display:none;"></div>
+                        <input type="text" id="sporcu-giris-ad" class="sgr-girdi" placeholder="Ad Soyad" autocomplete="off" autocapitalize="words" spellcheck="false" oninput="sgrAdYazildi()" onkeydown="sgrAdTus(event)">
+                        <div id="sgr-oneri" class="sgr-oneri" role="listbox" aria-label="Eşleşen sporcular"></div>
+                    </div>
+                    <label class="sgr-etk" for="sporcu-giris-kod">Kişisel kodun</label>
+                    <div class="sgr-kod-kap">
+                        <input type="password" id="sporcu-giris-kod" class="sgr-girdi sgr-kod" placeholder="• • • •" inputmode="numeric" autocomplete="off" oninput="sgrHataGizle()" onkeydown="if(event.key==='Enter') sporcuGirisDene()">
+                        <button type="button" class="sgr-goz" onclick="sgrKodGoster()" aria-label="Kodu göster" id="sgr-goz">👁</button>
+                    </div>
+                    <div class="sgr-ipucu">Kod verilmediyse <b>doğum yılın</b> (ör. 2012)</div>
+                    <div id="sgr-hata" class="sgr-hata" role="alert" style="display:none;"></div>
+                    <label class="sgr-hatirla"><input type="checkbox" id="beni-hatirla-chk" checked> Beni hatırla <span>— bir dahaki sefere tek dokunuş</span></label>
+                    <button type="button" class="sgr-ana" onclick="sporcuGirisDene()">Hedefe çık 🎯</button>
+                </div>
+                <button type="button" id="hizli-giris-btn" style="display:none;" onclick="hatirlaGiris()"></button>
+            </div>
+            <button type="button" class="sgr-geri" onclick="platformGeri()">← Geri</button>
         </div>
     </div>
     <!-- KARIŞIK SINIF MODAL -->
