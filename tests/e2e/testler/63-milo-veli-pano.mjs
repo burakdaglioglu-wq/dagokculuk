@@ -42,15 +42,15 @@ export default async function ({ log }) {
       await p.waitForSelector('#milo-sporcu-app.mvp-kap .mvp-hero', { timeout: 10000 });
       await p.waitForTimeout(1300);
       const e = await p.evaluate(() => ({
-        baslik: document.querySelector('.mvp-hero h3').textContent, orta: document.querySelector('.mvp-orta').textContent, delik: document.querySelectorAll('.mvp-delik').length, islenen: document.querySelectorAll('.mvp-delik:not(.s)').length, bos: document.querySelectorAll('.mvp-delik.s').length, tarihli: [...document.querySelectorAll('.mvp-delik.s')].filter((d) => d.querySelector('b')).length,
-        telafi: document.querySelectorAll('.mvp-telafi').length, yakinda: !!document.querySelector('.mvp-yakinda'), sekme: [...document.querySelectorAll('.mvp-sekmeler button')].map((b) => b.textContent).join(','), turuncu: /255, 122, 43|ff7a2b/i.test(getComputedStyle(document.querySelector('.mvp-bilet')).backgroundColor + getComputedStyle(document.getElementById('milo-sporcu-app')).getPropertyValue('--mvp-vurgu')),
+        baslik: document.querySelector('.mvp-hero h3').textContent, orta: document.querySelector('.mvp-orta').textContent, delik: document.querySelectorAll('.mvp-yol .mvp-nk').length, islenen: document.querySelectorAll('.mvp-yol .mvp-nk:not(.s)').length, bos: document.querySelectorAll('.mvp-yol .mvp-nk.s').length, tarihli: /başladı/.test(document.querySelector('.mvp-yol-e').textContent) && /son ders/.test(document.querySelector('.mvp-yol-e').textContent) ? 3 : 0, eskiKart: !!document.querySelector('.mvp-bilet'),
+        telafi: document.querySelectorAll('.mvp-telafi').length, yakinda: !!document.querySelector('.mvp-yakinda'), sekme: [...document.querySelectorAll('.mvp-sekmeler button')].map((b) => b.textContent).join(','), turuncu: /255, 122, 43|ff7a2b/i.test(getComputedStyle(document.querySelector('.mvp-yol .mvp-nk')).backgroundColor + getComputedStyle(document.getElementById('milo-sporcu-app')).getPropertyValue('--mvp-vurgu')),
         cip: [...document.querySelectorAll('.mvp-hero .mvp-cip')].map((c) => c.textContent).join(' | '),
         konu: (document.querySelector('.mvp-konu b') || {}).textContent, not: (document.querySelector('.mvp-not') || {}).textContent || '', kz: document.querySelectorAll('.mvp-kz-s').length, ogrendi: /beceri öğrendi|rozet/.test(document.querySelector('.mvp').textContent),
         tasma: [...document.querySelectorAll('.mvp *')].filter((x) => !x.closest('.mvp-yatay') && x.getBoundingClientRect().right > innerWidth + 1).length,
       }));
       await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/mvp-e2e.png' }).catch(() => {});
       dogrula(/^Ödemeye \d+ gün$/.test(e.baslik) && /gün kaldı/.test(e.orta), 'ödeme geri sayımı: ' + JSON.stringify(e));
-      dogrula(e.delik === 8 && e.islenen === 5 && e.bos === 3 && e.tarihli === 3, 'delikli kart: ' + JSON.stringify(e));
+      dogrula(e.delik === 8 && e.islenen === 5 && e.bos === 3 && e.tarihli === 3 && !e.eskiKart, 'nokta yolu: ' + JSON.stringify(e));
       dogrula(e.telafi === 2 && e.yakinda && e.sekme === 'Gireceği,Girdiği,Takvim,Ödemeler' && !e.turuncu, 'telafi / yakında / sekmeler / renk: ' + JSON.stringify(e));
       // sekmeler: Gireceği (ay tablosu, paket sırası) · Girdiği (durum + paket) · Takvim · Ödemeler (ödeme tarihi, tutar yok)
       const sk = await p.evaluate((tar) => {

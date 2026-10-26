@@ -210,17 +210,21 @@ function miloSporcuProfilCiz(s) {
         + (acikHak.length ? '<span class="mvp-cip mor">🔁 ' + acikHak.length + ' telafi hakkı</span>' : '');
     let ustHTML = '<div class="mvp-hero ' + odemeCls + '">' + halka + '<div class="mvp-hero-m"><h3>' + miloEsc(odemeBaslik) + '</h3><p>' + miloEsc(odemeAlt) + '</p><div class="mvp-rozetler">' + cipler + '</div></div></div>';
 
-    // ---- delikli kart (paketin 8 dersi)
+    // ---- nokta yolu: paketin 8 dersi (2026-10-27, kullanıcı büyük yeşil delikli kartı beğenmedi → seçenekler
+    // https://claude.ai/artifact/YBE4zMdhHCgLHr5SjSJzXJ → "C · Nokta yolu"): çizgiyle bağlı 8 küçük nokta, işlenenler dolu,
+    // kalanlar kesikli; uçlarda paketin başladığı gün ve son dersin günü
     let biletHTML = '';
     if (p) {
-        let delik = '';
+        let yol = '';
         for (let i = 0; i < 8; i++) {
-            if (i < n) { let d = p.dersler[i], t = MVP_DURUM[d] || ['•', '']; delik += '<div class="mvp-delik ' + d + '" title="' + miloEsc(mvpTarih(p.tarihler[i]) + ' · ' + t[1]) + '"><i>' + t[0] + '</i><small>' + miloEsc(mvpKisa(p.tarihler[i])) + '</small></div>'; }
-            else { let g = paketDersleri[i - n]; delik += '<div class="mvp-delik s' + (i === 7 ? ' son' : '') + '">' + (g ? '<b>' + g.tarih.getDate() + '</b><small>' + MVP_AY[g.tarih.getMonth()].slice(0, 3) + '</small>' : '<small>—</small>') + '</div>'; }
+            if (i) yol += '<span class="mvp-cz' + (i < n ? ' d' : '') + '"></span>';
+            if (i < n) { let d = p.dersler[i], t = MVP_DURUM[d] || ['•', '']; yol += '<span class="mvp-nk ' + d + '" title="' + miloEsc(mvpTarih(p.tarihler[i]) + ' · ' + t[1]) + '">' + (d === 'g' || d === 't' ? '✓' : d === 'y' ? '✕' : t[0]) + '</span>'; }
+            else { let g = paketDersleri[i - n]; yol += '<span class="mvp-nk s" title="' + (g ? miloEsc(mvpTarih(g.iso)) : '') + '"></span>'; }
         }
-        let olan = {}; p.dersler.forEach(function (d) { olan[d] = 1; });
-        biletHTML = '<div class="mvp-bilet"><div class="mvp-bilet-b"><b>' + p.no + '. paket · 8 ders</b><span>' + (kalan ? kalan + ' ders kaldı' : 'tamamlandı') + '</span></div><div class="mvp-bilet-c"></div><div class="mvp-delikler">' + delik + '</div>'
-            + '<div class="mvp-bilet-not">' + ['g', 'm', 'h', 'y'].filter(function (k) { return olan[k]; }).map(function (k) { return MVP_DURUM[k][0] + ' ' + MVP_DURUM[k][1].toLocaleLowerCase('tr'); }).join(' · ') + (p.telafi ? ' · +' + p.telafi + ' telafi dersi' : '') + '</div></div>';
+        let sonG = kalan ? paketDersleri[kalan - 1] : null, sonIso = kalan ? (sonG ? sonG.iso : null) : p.tarihler[7];
+        biletHTML = '<div class="mvp-kart mvp-paket"><div class="mvp-paket-b"><b>' + p.no + '. paket</b><span>' + (kalan ? kalan + ' ders kaldı' : 'tamamlandı') + '</span></div>'
+            + '<div class="mvp-yol">' + yol + '</div>'
+            + '<div class="mvp-yol-e"><span>' + (p.tarihler[0] ? miloEsc(mvpKisa(p.tarihler[0])) + ' · başladı' : '') + '</span><span>' + (sonIso ? miloEsc(mvpKisa(sonIso)) + ' · son ders' : '') + '</span></div></div>';
     }
 
     // ---- 📋 sekmeli kart (2026-10-27, kullanıcı: "gireceği dersleri ay olarak seçip tablo olarak görsün, girdiği dersleri de ayrıca
@@ -289,19 +293,15 @@ function mvpCss() {
         '.mvp-halka-d{animation:mvpHalka 1s .1s cubic-bezier(.2,.8,.2,1) backwards}@keyframes mvpHalka{from{stroke-dasharray:0 var(--c)}}',
         '.mvp-orta{position:absolute;inset:0;display:grid;place-items:center;text-align:center}.mvp-orta b{font-size:30px;font-weight:800;line-height:1}.mvp-orta small{display:block;font-size:10.5px;font-weight:800;color:var(--mvp-soluk);margin-top:3px}',
         '.mvp-hero-m{min-width:0}.mvp-hero h3{margin:0 0 4px;font-size:16px;font-weight:800}.mvp-hero p{margin:0;color:var(--mvp-soluk);font-size:12.5px;font-weight:600;line-height:1.45}',
-        // delikli kart
-        '.mvp-bilet{background:var(--mvp-vurgu);color:var(--mvp-koyu);border-radius:22px;padding:16px 16px 14px;position:relative}',
-        '.mvp-bilet::before,.mvp-bilet::after{content:"";position:absolute;top:44px;width:18px;height:18px;border-radius:50%;background:var(--mvp-zemin)}.mvp-bilet::before{left:-9px}.mvp-bilet::after{right:-9px}',
-        '.mvp-bilet-b{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mvp-bilet-b b{font-size:16px;font-weight:800}.mvp-bilet-b span{font-size:12px;font-weight:800;opacity:.72}',
-        '.mvp-bilet-c{border-top:2px dashed rgba(4,32,29,.25);margin:14px 0 12px}',
-        '.mvp-delikler{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}',
-        '.mvp-delik{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;background:rgba(4,32,29,.12);font-size:11px;animation:mvpDelik .35s backwards}',
-        '.mvp-delik i{font-style:normal;font-size:17px}.mvp-delik small{font-size:9.5px;opacity:.75;margin-top:2px}.mvp-delik b{font-size:16px}',
-        '.mvp-delik.g,.mvp-delik.t{background:var(--mvp-koyu);color:var(--mvp-vurgu)}.mvp-delik.m{background:var(--mvp-koyu);color:var(--mvp-mor)}.mvp-delik.h{background:var(--mvp-koyu);color:var(--mvp-hasta)}.mvp-delik.y{background:rgba(4,32,29,.35);color:#eafff9}',
-        '.mvp-delik.s{border:2px dashed rgba(4,32,29,.45);background:transparent}.mvp-delik.son{border-style:solid}',
-        '.mvp-delikler .mvp-delik:nth-child(2){animation-delay:.05s}.mvp-delikler .mvp-delik:nth-child(3){animation-delay:.1s}.mvp-delikler .mvp-delik:nth-child(4){animation-delay:.15s}.mvp-delikler .mvp-delik:nth-child(5){animation-delay:.2s}.mvp-delikler .mvp-delik:nth-child(6){animation-delay:.25s}.mvp-delikler .mvp-delik:nth-child(7){animation-delay:.3s}.mvp-delikler .mvp-delik:nth-child(8){animation-delay:.35s}',
+        // nokta yolu (paketin 8 dersi)
+        '.mvp-paket-b{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mvp-paket-b b{font-size:14.5px;font-weight:800}.mvp-paket-b span{color:var(--mvp-soluk);font-size:12px;font-weight:700}',
+        '.mvp-yol{display:flex;align-items:center;margin:14px 2px 8px}',
+        '.mvp-nk{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none;animation:mvpDelik .35s backwards}',
+        '.mvp-nk.g,.mvp-nk.t{background:var(--mvp-vurgu);color:var(--mvp-koyu)}.mvp-nk.y{background:var(--mvp-gri);color:var(--mvp-soluk)}.mvp-nk.m{background:var(--mvp-mor);font-size:11px}.mvp-nk.h{background:var(--mvp-hasta);font-size:11px}',
+        '.mvp-nk.s{width:20px;height:20px;border:2px dashed var(--mvp-sari);box-sizing:border-box}',
+        '.mvp-cz{flex:1;height:2px;background:var(--mvp-cizgi);min-width:4px}.mvp-cz.d{background:var(--mvp-vurgu)}',
+        '.mvp-yol-e{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--mvp-soluk)}',
         '@keyframes mvpDelik{from{transform:scale(.6);opacity:0}}',
-        '.mvp-bilet-not{font-size:12px;font-weight:700;margin-top:12px;opacity:.85}',
         // telafi
         '.mvp-telafi{display:flex;gap:12px;align-items:flex-start}.mvp-tik{width:40px;height:40px;border-radius:12px;background:rgba(196,181,253,.12);display:grid;place-items:center;font-size:19px;flex:none}',
         '.mvp-telafi b{font-size:14px;font-weight:800;display:block;margin-bottom:2px}.mvp-telafi>div:last-child{flex:1;min-width:0}',
@@ -340,8 +340,8 @@ function mvpCss() {
         '.mvp-bahce span:nth-child(2){animation-delay:.4s}.mvp-bahce span:nth-child(3){animation-delay:.8s;opacity:.45}.mvp-bahce span:nth-child(4){animation-delay:1.2s;opacity:.25}@keyframes mvpSalla{50%{transform:rotate(-8deg) scale(1.06)}}',
         '.mvp-yakinda b{font-size:15px;font-weight:800}.mvp-yk-r{position:absolute;right:14px;top:14px;font-size:11px;font-weight:800;color:#86efac;background:rgba(134,239,172,.12);padding:4px 9px;border-radius:99px}',
         '.mvp-not{font-size:13.5px;line-height:1.55;font-weight:600;white-space:pre-line}',
-        '@media (max-width:360px){.mvp-hero{grid-template-columns:100px minmax(0,1fr)}.mvp-halka{width:100px;height:100px}.mvp-delikler{gap:7px}}',
-        '@media (prefers-reduced-motion:reduce){.mvp-halka-d,.mvp-delik,.mvp-bahce span,.mvp-av img,.mvp-av-r,.mvp-konfeti{animation:none}.mvp-konfeti{display:none}}'
+        '@media (max-width:360px){.mvp-hero{grid-template-columns:100px minmax(0,1fr)}.mvp-halka{width:100px;height:100px}.mvp-nk{width:21px;height:21px}}',
+        '@media (prefers-reduced-motion:reduce){.mvp-halka-d,.mvp-nk,.mvp-bahce span,.mvp-av img,.mvp-av-r,.mvp-konfeti{animation:none}.mvp-konfeti{display:none}}'
     ].join('\n');
     document.head.appendChild(st);
 }
