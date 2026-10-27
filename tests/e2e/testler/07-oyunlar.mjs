@@ -1,7 +1,7 @@
 // Karışık Sınıf › Oyunlar: her tema bireysel + takım modunda açılır, kart ve liderlik çizilir, sıralama modları çalışır.
 import { sayfaAc, uygulamaAc, karisikSinifArac, dogrula, esit } from '../yardimci.mjs';
 
-const TEMALAR = ['zirve', 'yildiz', 'hazine', 'pist', 'ninja', 'monopoly', 'dag', 'balon', 'hedef', 'futbol', 'futboltakim', 'arena', 'sisharita', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'yukselis'];
+const TEMALAR = ['zirve', 'yildiz', 'hazine', 'pist', 'ninja', 'monopoly', 'dag', 'balon', 'hedef', 'futbol', 'futboltakim', 'arena', 'sisharita', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'hapsirik', 'yukselis'];
 
 export default async function ({ log }) {
   const { ctx, p, hatalar } = await sayfaAc({ genislik: 1400, yukseklik: 900 });

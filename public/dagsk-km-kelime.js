@@ -232,6 +232,8 @@ function kmKelimeOyunculariKur(mod) {
 function kmKelimeBaslat() {
     let oyuncular = kmKelimeOyunculariKur(_kmKelimeKurulum.mod);
     if(!oyuncular.length) { showToast('Bu derste sporcu yok — takım modunu seç ya da derse sporcu ekle.', 'warning'); return; }
+    // ⚖️ Adil başlangıç (app.js kmAdilTakimBaslangic, 2026-10-27): hiç ilk başlamamış sporcu/takım başlar, sıra ondan döner.
+    try { if(typeof kmAdilTakimBaslangic === 'function') { let a = kmAdilTakimBaslangic(oyuncular.map(function(o) { return { uyeler: o.uyeler.length ? o.uyeler : [o.ad] }; })); oyuncular.forEach(function(o, i) { if(o.uyeler.length) o.atan = a.atanlar[i] || 0; }); oyuncular = oyuncular.slice(a.sira).concat(oyuncular.slice(0, a.sira)); } } catch(e) {}
     let b = kmKelimeBulmacaUret();
     if(!b) { showToast('Bulmaca üretilemedi, tekrar dene.', 'error'); return; }
     let hucre = {}, sinir = { minR: 99, maxR: -1, minC: 99, maxC: -1 };

@@ -182,6 +182,9 @@ function kpBaslat() {
     if (takimlar.length < 2) { showToast('Ok Partisi için derste en az 2 sporcu olmalı.', 'warning'); return; }
     _kp = { surum: 1, tarih: (typeof bugunISO === 'function' ? bugunISO() : ''), tur: 1, turSayisi: _kpKurulum.tur, gercek: _kpKurulum.gercek, sira: 0, oklar: [], kilit: false, sandik: 12, bitti: false, gunluk: [],
         takimlar: takimlar.map((t) => ({ ad: t.ad, res: t.res, r: t.r, uyeler: t.uyeler, atan: 0, poz: 0, anahtar: 1, kupa: 0, kalkan: 0, cift: 0 })) };
+    // ⚖️ Adil başlangıç (app.js kmAdilTakimBaslangic, 2026-10-27): hiç ilk atmamış sporcunun takımı başlar (takım sırası
+    // ondan döner, tur yapısı bozulmasın diye dizi döndürülür), her takımda da ilk atan en uzun süredir ilk atmamış olan.
+    try { if (typeof kmAdilTakimBaslangic === 'function') { const a = kmAdilTakimBaslangic(_kp.takimlar); _kp.takimlar.forEach((t, i) => { t.atan = a.atanlar[i] || 0; }); _kp.takimlar = _kp.takimlar.slice(a.sira).concat(_kp.takimlar.slice(0, a.sira)); } } catch (e) { }
     kpLogSessiz('Parti başladı! Her takıma 1 anahtar.'); kpKaydetDurum(); kpOyunCiz(); kpNasil();
 }
 function kpLogSessiz(m) { _kp.gunluk.unshift(m); }

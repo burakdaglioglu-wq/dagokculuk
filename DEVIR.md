@@ -5129,3 +5129,45 @@ edilmedi); sadece "iyi" (hiç hatalı yok) karneleri olan bir sporcuda pozitif m
 DOM'da mevcut, sayfa düzeni bozulmadı. 16 tema Oyunlar regresyonu 0 hata, 0 JS hatası.
 
 **Deploy durumu (54)**: Kullanıcı onayladı (2026-09-25), commit + push + deploy edildi.
+
+## 55. 🤧 Hapşırık! — küçükler için yeni ortak Oyunlar teması + ⚖️ adil başlangıç (2026-10-27, v325)
+
+Kullanıcı: çocuklar Ortak Canavar'a bayıldı ("ortak bir şeyi devirmek, canavarların ara ara tepki vermesi"); küçük yaş
+grubu için yeni oyun istedi. İki taslak turu (Trol Köprüsü/Devin Kulesi → "daha iyi senaryo" → Hapşırık/Sınıf Robotu)
+sonra **Hapşırık** seçildi + 4 ek (ses, kahraman anı, rüya baloncuğu, gizli hassas nokta) + "karakterler aynı olmasın".
+
+**Oyun** (tema `hapsirik`, kod `public/dagsk-km-hapsirik.js`, `hps*`, ilk açılışta tembel yüklenir): yolu kapatan
+yaratık uyuyor; her ok atan çocuğun yerinden uçan bir tüy. Halka rengi → yer: sarı burun/hortum (15), kırmızı
+göbek/gıdı (10), mavi ayak/pati (10), siyah-beyaz kuyruk/sırt/kulak (6), M horlar; X ×1.5. Yaratığın gizli PUANI
+(5-8) var → o puanı atanın tüyü gizli yere (kulak/koltuk altı/çene/diz/…) gider, kahkaha, ilk bulan ekrana yazılır
+(25, sonra 20). Gereken gıdık = sınıftaki her çocuktan ~1 seri (çocuğun son-30 ok ortalaması, `kmCanavarSporcuOrtalama`)
+× (1 + 0.15·no). %100'de "ha… haa… HAAAA…", yaratık başına bir kez %50 "…hıh. Geçti!" (gıdık %80), sonra HAPŞUUU,
+🏅 "Hapşırtan: <ad>" (taç + rozet `sp.oyun.hapsirik.hapsirtti`, gizli bulana `.gizli`), "Hep birlikte: ÇOK YAŞA!",
+yaratık kenara çekilir, kapı ışığı, çocuklar geçer, sıradaki yaratık gelir. Rüya baloncuğu %33 tüy, %66 "pasta BROKOLİ
+oldu" vb., hapşırıkta POF. Sesler WebAudio sentez, ses düğmesi cihaza özel (`dag_hps_ses`).
+
+**4 farklı yaratık** (aynı yerel çerçeve: yer y=500, baş solda; ortak parça kimlikleri `hps-bas/burun/ayak/kuyruk/agiz/
+go1/gk1…` + hedef işaretleri `hps-h-<yer>`): 🐉 Uykucu Ejder (köy tüneli, toz bulutu), 🐸 Koca Vırak (bataklık köprüsü,
+gıdı şişer, baloncuk), 🦣 Tüylü Mamut (buz geçidi, hortum, kar), 🐻 Uykucu Ayı (orman kapısı, pati/kulak, yaprak).
+Sıra günün tohumuyla karışır (her gün başka biriyle başlar), 4'ten sonra "II".
+
+**Durum** `dag_km_hapsirik_<konum>` (km-ortak ile paylaşılır, GÜNE ÖZEL): {tarih,no,tip,gerekli,gidik,sahte,katki,
+gizli{yer,deger},bulan,hapsirtanlar,seri}. Seri gelince ÖNCE durum hesaplanıp yazılır, sonra görsel oynar; `durum()`
+her çağrıda depoyu okur (başka cihazdan gelen değişiklik kaçmasın). Tören sırasında yeni seri gelirse tören kesilir.
+
+**Kabuk bağlantıları** (Canavar listesi): KM_OYUN_TEMALAR, panel display CSS, kmOyunPanelHTML (boş kap) + panel listesi,
+Resync/SahneKur (`kmOyunResyncHapsirik/SahneKurHapsirik` → dosyayı yükler), takım dışlamaları, `artis = 0`,
+`_kmOyunSonGiris.hapsirik = hpsAnlik()` + geri al `hpsGeriYukle`, animate dispatch `kmOyunAnimateHapsirik`, çip
+"GIDIK", `kmOyunSiradaGuncelle` → halka, dock varsayılan sol (çocuklar sol üst tepede), KM_DA_OYUN minik/küçük.
+
+**⚖️ Adil başlangıç** (kullanıcı: "hep X'ten başlıyor, her defasında hiç en başta başlamamış kişiyle başlasın — diğer
+oyunlara da ekle"): `dag_km_ilkbaslayan_<konum>` {t:{'g|ad': son ilk başlama}, oyun:{id:{gun,k}}}. Oyunlar kabuğunda
+(`kmOyunAdilBaslangicUygula`, kmOyunlarCiz + kmOyunTemaSec) her tema o gün ilk açıldığında hiç ilk başlamamış (yoksa en
+eski) sporcu sıraya gelir; aynı gün dönülünce sıra yerinde, sayfa yenilenirse cihaza özel `dagsk_km_sirada_<konum>`'dan
+kaldığı yerden (Arena hariç — kendi eşleşme sırası var). Ok Partisi ve Kelime Hedefi başlatınca `kmAdilTakimBaslangic`:
+başlayan takım dizinin başına döndürülür (tur yapısı bozulmaz), her takımda ilk atan en eski olan. Yumurta Yuvası ve
+Hayvan Kurtarma'da sıra yok (kart dokunmalı) — dokunulmadı.
+
+**Test**: `66-hapsirik` (adil başlangıç, aynı gün sıra korunur, gerçek seri, gizli nokta, geri al, hapşırık → farklı
+yaratık, kahraman, rozet, 4 yaratık çizimi, takım yardımcısı, 390 px). `07-oyunlar` tema listesine eklendi.
+`yardimci.mjs`: `DAGSK_TEST_TOKEN` (hazır yerel oturum) PIN yerine kullanılabilir.

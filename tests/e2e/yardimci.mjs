@@ -15,6 +15,7 @@ export function canliMiKontrol() {
 let _token = null;
 export async function oturumAl() {
   if (_token) return _token;
+  if (process.env.DAGSK_TEST_TOKEN) return (_token = process.env.DAGSK_TEST_TOKEN); // hazır yerel oturum (PIN yoksa)
   const ad = process.env.DAGSK_TEST_KULLANICI || 'Burak';
   const pin = process.env.DAGSK_TEST_PIN;
   if (!pin) throw new Error('DAGSK_TEST_PIN ortam değişkeni gerekli (yerel test hesabının PIN\'i). Bkz. tests/e2e/README.md');

@@ -13887,7 +13887,7 @@
             yildiz: { mesafe: '18-30 m', ok: 6, not: 'Hedef kağıdı analizi: grup nerede toplanıyor?' },
             buyuk: { mesafe: '30-70 m', ok: 6, not: 'Yarışma ritmi: sayaçla atış, seri ortalaması takip.' }
         };
-        const KM_DA_OYUN = { minik: ['balon', 'hazine', 'canavar'], kucuk: ['canavar', 'ninja', 'sisharita'], yildiz: ['arena', 'ninja', 'kelime'], buyuk: ['yukselis', 'arena', 'pist'] };
+        const KM_DA_OYUN = { minik: ['hapsirik', 'balon', 'canavar'], kucuk: ['canavar', 'hapsirik', 'ninja'], yildiz: ['arena', 'ninja', 'kelime'], buyuk: ['yukselis', 'arena', 'pist'] };
         const KM_DA_SOGUMA = [
             { ikon: '🤝', ad: 'Omuz çapraz germe', doz: '20 sn × her kol', not: 'Kol göğüs önünden karşıya, diğer el dirseği çeker.' },
             { ikon: '💪', ad: 'Triseps germe', doz: '20 sn × her kol', not: 'El sırta, diğer el dirseği aşağı bastırır.' },
@@ -14343,6 +14343,7 @@
 #km-oyun-wrap[data-tema="gizlikelime"] #km-oyun-panel-gizlikelime,
 #km-oyun-wrap[data-tema="kule"] #km-oyun-panel-kule,
 #km-oyun-wrap[data-tema="canavar"] #km-oyun-panel-canavar,
+#km-oyun-wrap[data-tema="hapsirik"] #km-oyun-panel-hapsirik,
 #km-oyun-wrap[data-tema="yukselis"] #km-oyun-panel-yukselis { display:flex; }
 /* KÖK NEDEN DÜZELTMESİ (2026-09-18) — bu kural eskiden ".km-oyun-panel svg" idi (HERHANGİ derinlikte
    torun), bu yüzden panel içine gömülü küçük ikon SVG'lerini (Kehanet'in uyarı/mesafe/alev ikonları,
@@ -16525,6 +16526,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             canavar: { ad: 'Ortak Canavar', ikon: '🐉', renkler: ['#ffd23f', '#ff5f3d', '#7dd3fc', '#c77dff', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — tüm sınıf TEK bir canavara karşı: her seri toplamı kadar hasar verir, %90+ seri KRİTİK vuruştur. Canavar yenilince daha güçlüsü gelir.', btn: '⚔️ Vur', finish: '', cp: '', birim: 'hasar', bitis: '',
                 surprizler: [] },
             // Yükseliş (2026-09-24) — YETİŞKİN modu: maskot yok, mum grafiği/istatistik. Bkz. kmOyunAnimateYukselis.
+            // 🤧 Hapşırık (2026-10-27) — küçükler için ortak oyun: tüylerle gıdıkla, yaratık hapşırsın. Bkz. dagsk-km-hapsirik.js.
+            hapsirik: { ad: 'Hapşırık!', ikon: '🤧', renkler: ['#ffd23f', '#ff8fa8', '#7dd3fc', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok bir tüy olur, halkanın rengi uyuyan yaratığın bir yerini gıdıklar. Gıdık dolunca HAPŞUUU! Sonra hep birlikte: ÇOK YAŞA!', btn: '🪶 Gıdıkla', finish: '', cp: '', birim: 'gıdık', bitis: '',
+                surprizler: [] },
             yukselis: { ad: 'Yükseliş', ikon: '📈', renkler: ['#22d3a0', '#5fb8ff', '#f5c451', '#a78bfa', '#ff5470', '#38bdf8'], aciklama: 'Yetişkin modu — sporcular gerçekten atış yapar, siz sonucu girersiniz; her sporcu bir hisse gibi: seri kendi ortalamasını geçerse endeks yükselir, altında kalırsa düşer. Mum grafiği, zirve, tutarlılık ve grup istatistikleri.', btn: '📈 İşle', finish: '', cp: '', birim: 'endeks', bitis: '',
                 surprizler: [] },
         };
@@ -16561,6 +16565,52 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let h = {};
             (_kmListe || []).forEach(function(s) { let y = kmSporcuYasi(s.g, s.ad); h[s.g + '|' + s.ad] = tur === 'yas' && y !== null && y >= 12 ? 'yarisma' : 'oyun'; });
             kmHatKaydet(h); kmHatHafizaKaydet(Object.keys(h), h); kmHatPanelCiz();
+        }
+        // ---- ⚖️ ADİL BAŞLANGIÇ (2026-10-27, kullanıcı: "skor girecek sporcular X Y Z D diyelim, hep X'ten başlıyor; her
+        // defasında hiç en başta başlamamış kişiyle başlasın, haksızlık olmasın — bu mantığı diğer oyunlara da ekle").
+        // Konuma özel 'dag_km_ilkbaslayan_<konum>' (km-ortak ile her cihaza gider) = { t: {'grup|ad': en son İLK başladığı an},
+        // oyun: {oyunKimligi: {gun, k}} }. Bir oyun o gün ilk kez açılınca hiç ilk başlamamış (yoksa en uzun süredir
+        // başlamamış) sporcu seçilir; sıra listedeki düzenle ondan döner, kimse atlanmaz. Aynı gün aynı oyuna dönülünce
+        // sıra yerinde kalır (oyun ortasında başa zıplamaz). Takımlı oyunlarda (Ok Partisi, Kelime Hedefi) aynı kural.
+        function kmAdilAnahtar() { return 'dag_km_ilkbaslayan_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmAdilOku() { try { let o = JSON.parse(localStorage.getItem(kmAdilAnahtar()) || '{}') || {}; o.t = o.t || {}; o.oyun = o.oyun || {}; return o; } catch(e) { return { t: {}, oyun: {} }; } }
+        function kmAdilYaz(o) { try { localStorage.setItem(kmAdilAnahtar(), JSON.stringify(o)); } catch(e) {} }
+        function kmAdilKisi(x) { if(typeof x === 'string') { let k = (_kmListe || []).find(function(y) { return y.ad === x; }); return k ? k.g + '|' + k.ad : '?|' + x; } return x.g + '|' + x.ad; }
+        // liste: [{g, ad}] → { i, yeni } — yeni=false: bu oyun bugün zaten başladı, başlayan hâlâ listede.
+        function kmAdilBaslangicSec(oyunId, liste, zorla) {
+            if(!liste || !liste.length) return { i: 0, yeni: false };
+            let o = kmAdilOku(), gun = bugunISO(), kayit = o.oyun[oyunId];
+            if(!zorla && kayit && kayit.gun === gun) { let j = liste.findIndex(function(x) { return kmAdilKisi(x) === kayit.k; }); if(j !== -1) return { i: j, yeni: false }; }
+            let en = 0; liste.forEach(function(x, i) { if((o.t[kmAdilKisi(x)] || 0) < (o.t[kmAdilKisi(liste[en])] || 0)) en = i; });
+            let k = kmAdilKisi(liste[en]); o.t[k] = Date.now(); o.oyun[oyunId] = { gun: gun, k: k }; kmAdilYaz(o);
+            return { i: en, yeni: true };
+        }
+        // takimlar: [{ uyeler: [{g, ad} | ad] }] → { sira: başlayan takım, atanlar: [her takımın ilk atanı] }
+        function kmAdilTakimBaslangic(takimlar) {
+            let o = kmAdilOku(), simdi = Date.now(), atanlar = [], enEski = Infinity, sira = 0;
+            takimlar.forEach(function(tk, ti) {
+                let uy = tk.uyeler || [], en = 0;
+                uy.forEach(function(u, i) { if((o.t[kmAdilKisi(u)] || 0) < (o.t[kmAdilKisi(uy[en])] || 0)) en = i; });
+                atanlar.push(en);
+                if(uy.length) { let onceki = o.t[kmAdilKisi(uy[en])] || 0; if(onceki < enEski) { enEski = onceki; sira = ti; } }
+            });
+            takimlar.forEach(function(tk, ti) { let u = (tk.uyeler || [])[atanlar[ti]]; if(u !== undefined) o.t[kmAdilKisi(u)] = simdi + (ti === sira ? 0 : 1); });
+            kmAdilYaz(o);
+            return { sira: sira, atanlar: atanlar };
+        }
+        // Oyunlar kabuğu: tema bugün ilk kez açılıyorsa adil başlangıç; sayfa yenilendiyse sıra kaldığı yerden
+        // (cihaza özel 'dagsk_km_sirada_<konum>', paylaşılmaz — her seride yazıldığı için senkron trafiği yaratmasın).
+        let _kmAdilOturum = {};
+        function kmOyunSiraHafizaAnahtari() { return 'dagsk_km_sirada_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunAdilBaslangicUygula() {
+            if(_kmOyunAktifTema === 'arena' || !_kmOyunRosterCache.length) return;
+            let tema = _kmOyunAktifTema, r = kmAdilBaslangicSec('oyunlar:' + tema, _kmOyunRosterCache);
+            if(r.yeni) { _kmOyunAktifIndex = r.i; _kmAdilOturum[tema] = 1; return; }
+            if(_kmAdilOturum[tema]) return;
+            _kmAdilOturum[tema] = 1;
+            let i = r.i;
+            try { let h = JSON.parse(localStorage.getItem(kmOyunSiraHafizaAnahtari()) || 'null'); if(h && h.gun === bugunISO() && h.tema === tema) { let j = _kmOyunRosterCache.findIndex(function(x) { return kmAdilKisi(x) === h.k; }); if(j !== -1) i = j; } } catch(e) {}
+            _kmOyunAktifIndex = i;
         }
         // ---- HAT HAFIZASI (2026-10-12, kullanıcı seçimi). Kulüp çapında (konumdan bağımsız) meta 'km_hat_hafiza':
         // { acik, at, h: { 'grup|ad': { hat, t } } }. Her hat değişikliği (açık/kapalı fark etmeksizin) kaydedilir; ayar AÇIKSA
@@ -17169,6 +17219,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'futbol') kmOyunResyncFutbol();
             else if(tid === 'futboltakim') kmOyunResyncFutbolTakim();
             else if(tid === 'canavar') kmOyunCanavarCiz();
+            else if(tid === 'hapsirik') kmOyunResyncHapsirik();
             else if(tid === 'yukselis') kmOyunYukselisCiz();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
@@ -17196,6 +17247,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             else if(tid === 'gizlikelime') kmOyunSahneKurGizliKelime();
             else if(tid === 'kule') kmOyunSahneKurKule();
             else if(tid === 'canavar') kmOyunSahneKurCanavar();
+            else if(tid === 'hapsirik') kmOyunSahneKurHapsirik();
             else if(tid === 'yukselis') kmOyunSahneKurYukselis();
             else kmOyunArenaCiz();
             kmOyunKabukGuncelle();
@@ -17410,7 +17462,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(ust) ust.style.display = kmOyunOzelYarisTablosuMu() ? 'none' : '';
         }
         function kmOyunOzelYarisTablosuMu() {
-            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') return true;
+            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'hapsirik' && _kmOyunAktifTema !== 'yukselis') return true;
             return _kmOyunAktifTema === 'pist' && !_kmOyunTakimModu;
         }
         // Skor girme paneli — esnek/animasyonlu (2026-09-09). Üç görsel ayar + "otomatik davranış"
@@ -17440,7 +17492,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // tablosunun üstü — sıradaki sporcu zaten sağ kartta). Koç Canavar'dayken açıkça "Alt Orta"yı seçerse
         // (cihaza özel 'dokcnvorta' bayrağı) ya da Sağ/serbest konum kullanıyorsa ona dokunulmaz.
         // Kayıp Ada (2026-09-29): kamera sıradaki sporcuyu ortalıyor, ortadaki panel onu örtüyordu → varsayılan SAĞ.
-        const KM_OYUN_DOK_VARSAYILAN = { canavar: 'sol', sisharita: 'sag' };
+        const KM_OYUN_DOK_VARSAYILAN = { canavar: 'sol', hapsirik: 'sol', sisharita: 'sag' };
         function kmOyunDokOrtaBayrak() { return kmOyunDokAyarAnahtari(_kmOyunAktifTema === 'canavar' ? 'cnvorta' : _kmOyunAktifTema + 'orta'); }
         function kmOyunDokEtkinKonum() {
             let v = KM_OYUN_DOK_VARSAYILAN[_kmOyunAktifTema];
@@ -17810,6 +17862,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // (2026-09-03 Menzil Sahnesi fikri) — kmOyunChipleriCiz'in HER çağrısında otomatik güncellenir
         // (aktif index değişen her yerde zaten çağrılıyor), ayrı bir çağrı noktası eklemeye gerek kalmadı.
         function kmOyunSiradaGuncelle() {
+            try { if(_kmOyunAktifTema === 'hapsirik' && typeof hpsGuncelle === 'function') hpsGuncelle(); } catch(e) {}
+            try { let s0 = _kmOyunRosterCache[_kmOyunAktifIndex]; if(s0) localStorage.setItem(kmOyunSiraHafizaAnahtari(), JSON.stringify({ gun: bugunISO(), tema: _kmOyunAktifTema, k: kmAdilKisi(s0) })); } catch(e) {}
             let el = document.getElementById('km-oyun-sirada'); if(!el) return;
             let n = _kmOyunRosterCache.length;
             let s = _kmOyunRosterCache[_kmOyunAktifIndex];
@@ -18596,6 +18650,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         </div>`;
         // 🐉 Ortak Canavar paneli (2026-09-24) — SVG doğrudan çocuk (.km-oyun-panel > svg deseni). Parti
         // solda, canavar sağda (x=900); HUD (can barı/evre), hasar tablosu, ganimet rafı HTML overlay.
+        // 🤧 Hapşırık (2026-10-27) — içi dagsk-km-hapsirik.js'te kurulur (hpsSahneKur).
+        if(tid === 'hapsirik') return '<div class="km-oyun-panel km-oyun-panel-hapsirik" id="km-oyun-panel-hapsirik"></div>';
         if(tid === 'canavar') return `<div class="km-oyun-panel km-oyun-panel-canavar" id="km-oyun-panel-canavar">
             <svg id="km-oyun-svg-canavar" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                 <defs>
@@ -18723,7 +18779,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                      olarak görünür. .km-arac-izgara/.card Faz 2/7'den — burada yeni stil yazılmadı. -->
                 <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
                 <div id="km-oyun-govde">
-                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar' || _kmOyunAktifTema === 'yukselis') ? 'display:none;' : ''}">
+                <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar' || _kmOyunAktifTema === 'hapsirik' || _kmOyunAktifTema === 'yukselis') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
                         <button class="${_kmOyunTakimModu ? 'aktif' : ''}" data-takim="1" onclick="kmOyunModSec(true)">🤝 Takım</button>
@@ -18739,7 +18795,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 </div>
                 <div class="km-oyun-cp-rail" id="km-oyun-cp-rail" style="display:none;"></div>
                 <div class="km-oyun-scene" id="km-oyun-sahne">
-                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}${kmOyunPanelHTML('yukselis')}
+                    ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}${kmOyunPanelHTML('hapsirik')}${kmOyunPanelHTML('yukselis')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
                     <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
@@ -19046,6 +19102,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunPartiAc() { kmOyunSeciciKapat(); kmSekme('parti'); }
         function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
         function kmOyunKurtarmaAc() { kmOyunSeciciKapat(); kmSekme('kurtarma'); }
+        // 🤧 Hapşırık — kabuk teması; durum + çizim public/dagsk-km-hapsirik.js'te (ilk açılışta tembel yüklenir).
+        function kmOyunHapsirikHazir() { return dagskEkYukle('dagsk-km-hapsirik.js'); }
+        function kmOyunSahneKurHapsirik() { kmOyunHapsirikHazir().then(function() { if(_kmOyunAktifTema === 'hapsirik' && document.getElementById('km-oyun-panel-hapsirik')) hpsSahneKur(); }).catch(function() { showToast('Hapşırık yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
+        function kmOyunResyncHapsirik() { if(typeof hpsGuncelle === 'function' && document.getElementById('hps-svg')) hpsGuncelle(); else kmOyunSahneKurHapsirik(); }
+        function kmOyunAnimateHapsirik(s, i, kaydedilecek, done) { kmOyunHapsirikHazir().then(function() { hpsSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         function kmOyunSeciciAc() {
             let secici = document.getElementById('km-oyun-secici'); if(!secici) return;
             secici.innerHTML = kmOyunSeciciKartlari();
@@ -19188,6 +19249,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'futboltakim') ilerlemeDeger = String(s.futbolTakimGol || 0);
             else if(_kmOyunAktifTema === 'canavar') { kmCanavarDurumEmin(); let hh = _kmCanavar.hasarlar[s.g + '|' + s.ad]; ilerlemeDeger = String(hh ? hh.hasar : 0); }
             else if(_kmOyunAktifTema === 'yukselis') { let st = kmYksIstatistik(s.g + '|' + s.ad); ilerlemeDeger = st.endeks.toFixed(1); }
+            else if(_kmOyunAktifTema === 'hapsirik') ilerlemeDeger = String(typeof hpsSporcuGidik === 'function' ? hpsSporcuGidik(s.g, s.ad) : 0);
             else if(!th.bitis) { ilerlemeLbl = 'Alkış'; ilerlemeDeger = String(d.alkis || 0); }
             else { adimlarMi = true; ilerlemeDeger = s.frac >= 1 ? esc(th.bitis) : `${Math.floor(s.frac * KM_OYUN_CP_SAYISI)}<small>/${KM_OYUN_CP_SAYISI}</small>`; }
             let skorSirasi = _kmOyunRosterCache.filter(function(o) { return o.toplamSkor > s.toplamSkor; }).length + 1;
@@ -19898,7 +19960,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let el = document.getElementById('km-oyun-lider-ic'); if(!el) return;
             kmOyunCpRailCiz();
             kmOyunSiralamaSekmeGuncelle();
-            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') { kmOyunTakimYarisCiz(el); return; }
+            if(_kmOyunTakimModu && _kmOyunCokluMu && _kmOyunTakimlar.length >= 2 && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'hapsirik' && _kmOyunAktifTema !== 'yukselis') { kmOyunTakimYarisCiz(el); return; }
             // Pist — Çoklu Takım'ın (kmOyunTakimYarisCiz) AYNI dallanma önceliğinde: bireysel modda
             // GERÇEK toplamSkor yerine frac'a (yarış ilerlemesine) göre sıralı, yüzdeli bir liste
             // (Faz 9, Stage 4: "sağdaki listede sıralama ve yüzde"). kmOyunLiderCiz'in geri kalanına
@@ -25695,6 +25757,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { localStorage.setItem('dagsk_km_son_oyun', tid); } catch(e) {}
             if(tid === 'sisharita') kmOyunSisFracUygula();
             kmOyunTemaKullanildiIsaretle(tid);
+            try { kmOyunAdilBaslangicUygula(); } catch(e) {}
             let wrap = document.getElementById('km-oyun-wrap'); if(wrap) wrap.dataset.tema = tid;
             document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.classList.toggle('aktif', b.dataset.tema === tid); });
             let th = KM_OYUN_TEMALAR[tid];
@@ -25713,7 +25776,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // mekaniği terk edildi) burada ARTIK gizlenmiyor — Takım Modu diğer temalarda çalıştığı gibi
             // burada da çalışır.
             // Ortak Canavar — doğası gereği tüm sınıf zaten birlikte; Bireysel/Takım anahtarı anlamsız, gizli.
-            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar' || tid === 'yukselis') ? 'none' : 'flex';
+            let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar' || tid === 'hapsirik' || tid === 'yukselis') ? 'none' : 'flex';
             if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
             // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
@@ -25789,7 +25852,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Çoklu Takım (Yarış) (2026-09-06) — "Sınıf" (tek paylaşılan frac) yerine, sporcunun KENDİ
             // takımının frac'ı kullanılıyor; sporcu HİÇBİR takıma atanmamışsa (çoklu modda unutulmuş
             // olabilir) sessizce bireysel moda düşüyor, girişi engellemiyor.
-            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis';
+            let takimGecerliMi = _kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'hapsirik' && _kmOyunAktifTema !== 'yukselis';
             let cokluTakimIndex = (takimGecerliMi && _kmOyunCokluMu) ? kmOyunSporcuTakimIndex(s.g, s.ad) : -1;
             let cokluAktifMi = cokluTakimIndex !== -1;
             let takimAktifMi = takimGecerliMi && (!_kmOyunCokluMu || cokluAktifMi);
@@ -25833,6 +25896,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'kule') artis = 0;
             // Ortak Canavar (2026-09-24) — frac/yol YOK; hasar kmOyunAnimateCanavar'da paylaşılan cana uygulanır.
             if(_kmOyunAktifTema === 'canavar') { artis = 0; kmCanavarDurumEmin(); }
+            // 🤧 Hapşırık (2026-10-27) — frac/yol YOK; gıdık dagsk-km-hapsirik.js'te paylaşılan yaratığa uygulanır.
+            if(_kmOyunAktifTema === 'hapsirik') artis = 0;
             // Yükseliş (2026-09-24) — frac/yol YOK; endeks kmOyunAnimateYukselis'te hesaplanır.
             if(_kmOyunAktifTema === 'yukselis') { artis = 0; kmYksDurumEmin(); }
             // Faz 14, 4-5. adım (2026-09-12) — Zirve'nin KENDİ "ince hava"/"fırtına" override'ı, Pist'in
@@ -25842,7 +25907,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'zirve') { let zd = kmOyunDurumAl(s.g, s.ad); if(yeniGorev) zd.zirveGorev = null; artis = kmZirveSeriDegerlendir(s, zd, kaydedilecek.map(function(k) { return String(k.puan); }), artis); } else _kmZirveSeriSon = null;
             // ⚙️ Oyun Ayarları — yol oyunlarının uzunluğu (Standart = 1). Kendi mekaniği olan temalara (futbol, arena,
             // kehanet, gizli kelime, kule, canavar, yükseliş) dokunmaz. Ninja kapısı/çukurlar bu artışla aşağıda değerlendirilir.
-            if(artis > 0 && ['futbol', 'futboltakim', 'arena', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'yukselis'].indexOf(_kmOyunAktifTema) === -1) artis *= (kmOyunAyar().yolCarpan || 1);
+            if(artis > 0 && ['futbol', 'futboltakim', 'arena', 'kehanet', 'gizlikelime', 'kule', 'canavar', 'hapsirik', 'yukselis'].indexOf(_kmOyunAktifTema) === -1) artis *= (kmOyunAyar().yolCarpan || 1);
             _kmOyunSonSeriOklar = kaydedilecek.map(function(k) { return String(k.puan); });
             // Sensei'nin Sınavı (2026-09-25) — Ninja'da tapınağa girecek seri %70+ olmalı; değilse ninja kapıda
             // (KM_NINJA_KAPI_FRAC) bekler, sonraki seride yeniden dener. Asla geri gitmez, gerçek skora dokunmaz.
@@ -25972,6 +26037,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
                 // geri yükler (canavar öldüyse ve yenisi doğduysa bile doğru şekilde önceki canavara döner).
                 canavar: (_kmOyunAktifTema === 'canavar') ? JSON.parse(JSON.stringify(_kmCanavar)) : null,
+                hapsirik: (_kmOyunAktifTema === 'hapsirik' && typeof hpsAnlik === 'function') ? hpsAnlik() : null,
                 yukselis: (_kmOyunAktifTema === 'yukselis') ? { gun: JSON.parse(JSON.stringify(_kmYks)), kalici: JSON.parse(JSON.stringify(_kmYksKalici)) } : null,
                 dagIp: dagIp ? dagIp.geri : null };
             kmOyunGeriAlBtnGuncelle();
@@ -26015,7 +26081,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 30, true);
                     kmOyunBanner('🏆 YENİ REKOR!', s.ad + ' — ' + toplam + ' puan!', 'rekor');
                     try { sesCal(880, 0.1); setTimeout(function() { try { sesCal(1175, 0.15); } catch(e) {} }, 90); setTimeout(function() { try { sesCal(1568, 0.22); } catch(e) {} }, 180); setTimeout(function() { try { sesCal(1760, 0.28); } catch(e) {} }, 280); } catch(e) {}
-                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'yukselis') {
+                } else if(_kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim' && _kmOyunAktifTema !== 'arena' && _kmOyunAktifTema !== 'kehanet' && _kmOyunAktifTema !== 'gizlikelime' && _kmOyunAktifTema !== 'kule' && _kmOyunAktifTema !== 'canavar' && _kmOyunAktifTema !== 'hapsirik' && _kmOyunAktifTema !== 'yukselis') {
                     // Bitiş, önceliği her zaman kazanır — sadece "az önce bitirdi" anında (eskiFrac<pistToplamTur'dan
                     // yeniFrac>=pistToplamTur'a geçiş) bir kez ateşlenir. Diğer 9 temada pistToplamTur hep 1,
                     // davranış AYNI; Pist'te GERÇEK bitiş ancak SON tur tamamlanınca (1. tur sonunda DEĞİL).
@@ -26166,6 +26232,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 else if(_kmOyunAktifTema === 'gizlikelime') kmOyunAnimateGizliKelime(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'kule') kmOyunAnimateKule(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'canavar') kmOyunAnimateCanavar(s, i, kaydedilecek, bitirOrtak);
+                else if(_kmOyunAktifTema === 'hapsirik') kmOyunAnimateHapsirik(s, i, kaydedilecek, bitirOrtak);
                 else if(_kmOyunAktifTema === 'yukselis') kmOyunAnimateYukselis(s, i, kaydedilecek, bitirOrtak);
                 else kmOyunAnimateArena(s, i, kaydedilecek, bitirOrtak);
             }
@@ -26323,6 +26390,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     kmCanavarKaydet();
                     if(_kmOyunAktifTema === 'canavar') kmOyunSahneKurCanavar();
                 }
+                if(g.hapsirik && typeof hpsGeriYukle === 'function') hpsGeriYukle(g.hapsirik);
                 if(g.dagIp) kmDagIpGeriAl(g.dagIp, s);
                 if(g.yukselis) {
                     _kmYks = g.yukselis.gun; _kmYksKalici = g.yukselis.kalici;
@@ -28092,6 +28160,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunBaslangicSkorEmin();
             kmOyunLigEmin();
             if(_kmOyunAktifIndex >= _kmOyunRosterCache.length) _kmOyunAktifIndex = 0;
+            try { kmOyunAdilBaslangicUygula(); } catch(e) {}
             _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
             _kmOyunKilit = false;
             _kmOyunSonGiris = null;
