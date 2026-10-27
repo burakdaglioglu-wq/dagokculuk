@@ -5180,3 +5180,35 @@ karşılaştırıyordu; otomatik arşiv artık yok, kart elle "Yeni antrenman" i
 birikiyor ve çocuk o gün hiç atmadan limit doluyordu (Oyunlar, Yumurta, Kurtarma, Parti, Skor Gir — hepsi çekirdeği
 kullanıyor). Düzeltme: `bugunkuSeriSayisi(sp)` (seri `tarih`'i, yoksa `t` damgası bugün olanlar) — çekirdek kapı ve Skor
 Gir başlığındaki "Tamamlandı". Kart/seri numaralama ve karne görünümü değişmedi. Test `67-gunluk-seri-limiti`.
+
+## 57. 📺 Tanıtım Ekranı — boştaki bilgisayar için oyun vitrini (2026-10-27, v327)
+
+Yönetici › Kulüp İşleri › **📺 Tanıtım Ekranı** (`YONETICI_BOLUMLER` 'vitrin'; `yoneticiSekme('vitrin')` sekme değiştirmez,
+`vitrinAc()` → `dagskEkYukle('dagsk-vitrin.js')` → `vtAc()`). Kullanıcı: "bilgisayar boşta kalınca açayım, oyunları
+tanıtarak dolaşsın, full reklam". İki tarayıcı taslağından **B · Oyun Kanalı** seçildi: solda büyük oyun ekranı (yavaş
+yakınlaşma) + alt bant başlık/açıklama, sağda oyun listesi (oynayan vurgulu, 9 sn dolan çizgi), üstte logo + saat, altta
+sabit tanıtım şeridi; 3., 6. ve 8. oyundan sonra ara kart (nasıl çalışır / ücretsiz deneme dersi + WhatsApp/Instagram /
+neden oyun). Kullanıcı seçimi: **rakam yok, sadece sabit tanıtım yazıları**.
+- Tam ekran + Wake Lock; fare/dokunuşta 3 sn "⛶ Tam ekran / ✕ Kapat" çubuğu, imleç boşta gizli. Esc: önce tam ekrandan
+  çıkar, ikinci Esc kapatır. Zamanlayıcılar `V.nesil` ile korunur, kapatınca hepsi temizlenir.
+- Görüntüler `public/vitrin/<tema>.webp` (hapsirik, canavar, yildiz, zirve, ninja, hazine, balon, sisharita): Oyunlar
+  sahnesinden skor paneli gizli, sağ sıralama sütunu kırpılarak, **sporcu adları örnek adlarla değiştirilerek** çekildi.
+  Dağ Tırmanışı (adlar tuvalde çizili, değiştirilemiyor), Pist/Kule/Arena (yerel veride boş görünüyor) alınmadı. Yeniden
+  çekerken gerçek çocuk adı çıkmamasına dikkat. QR yok (paket indirme izni yoktu) — numara büyük yazılı.
+- Test `68-vitrin`.
+
+**v327 ek — 🤧 Hapşırık seviyesi** (kullanıcı: "oyunlarda ayarlar kısmında hapşırık için de seviye belirle"): Oyun Ayarları
+(Özel modda) `hapsirikSeri` = yaratık hapşırana kadar kişi başı yaklaşık seri — Çok kolay ½ · Kolay ¾ · **Normal 1 (standart)**
+· Zor 1,5 · Çok zor 2. `gerekliHesapla` bu çarpanla çarpar (alt sınır 60×k); `kmOyunAyarKaydet` → `hpsAyarUygula()` sahnedeki
+yaratığın gereken gıdığını yeniden hesaplar, dolu oranı korur (tören sırasında dokunmaz). Test `66-hapsirik`.
+
+**v327 ek — Hapşırık tablet düzeltmeleri + 8 yaratık** (kullanıcı: "bulut ve yazılar taşıyor, atış yaptığımız şey bazen kare
+gözüküyor, skor girişte atış yap kısmı gözükmüyor, otomatik 3 atışla başlasın, daha fazla hayvan koy"):
+- `#km-oyun-wrap[data-tema="hapsirik"]` renk değişkenleri EKSİKTİ → dock'un Gıdıkla düğmesi, ok kutucukları, üst araç
+  düğmeleri koyu zeminde kayboluyordu. Yeni tema eklerken bu satırı unutma (14275 civarı, canavar'ın yanında).
+- Oyun açılınca (`kmOyunTemaSec`) ok sayısı her zaman 3'e döner (Yükseliş hariç); eskiden başka oyunda seçilen 6 taşınıyordu.
+- 🪶 tüy artık SVG (`TUY_SVG_IC`); eski cihazlarda kare çıkan emojiler değişti: 🦣→🐘, 🪰→🐝, 🧊→⛄, 🦵→😝, düğme '✨ Gıdıkla'.
+- Rüya bulutu ×1.15, yazı bulutun geniş ortasında, 14 harften uzunsa iki satır (`ruyaYazi`); bulutlar başın üstüne/sağa
+  alındı, çocuk tepesi ~57 birim yukarı (tablette sol alttaki skor kutusunun altında kalmasın).
+- Yeni yaratıklar: 🐊 timsah (Nehir Geçidi), 🐢 kaplumbaga (Kumsal Yolu), 🐳 balina (Liman Ağzı, hapşırık nefes deliğinden),
+  🐌 salyangoz (Bahçe Kapısı) → `TIPLER` 8. Yaratık isteğe bağlı `kuyrukSoz` alanı alır.

@@ -65,7 +65,7 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => /Hapşırtan/.test(document.getElementById('hps-dev').textContent)), 'kahraman anı (Hapşırtan) gösterilmedi');
     const rozet = await p.evaluate((ad) => { const s = _kmOyunRosterCache.find((x) => x.ad === ad); const sp = turnuvaDB[s.g][s.ad]; return sp.oyun && sp.oyun.hapsirik && sp.oyun.hapsirik.hapsirtti; }, r3.ad);
     dogrula(rozet >= 1, 'hapşırtan rozeti yazılmadı');
-    // dört yaratık da çizilir (farklı gövdeler)
+    // sekiz yaratığın hepsi çizilir (farklı gövdeler)
     const yar = await p.evaluate(async () => {
       const k = 'dag_km_hapsirik_' + (_kmAktifKonum || 'varsayilan'), sonuc = {};
       for (const tip of Object.keys(hpsYaratiklar)) {
@@ -75,7 +75,7 @@ export default async function ({ log }) {
       }
       return sonuc;
     });
-    esit(Object.keys(yar).length, 4, 'yaratık sayısı');
+    esit(Object.keys(yar).length, 8, 'yaratık sayısı');
     dogrula(Object.values(yar).every(Boolean), 'eksik çizilen yaratık: ' + JSON.stringify(yar));
     // ⚖️ takım yardımcısı (Ok Partisi / Kelime Hedefi): en uzun süredir ilk başlamamış sporcunun takımı başlar
     const tk = await p.evaluate(() => {
@@ -86,6 +86,21 @@ export default async function ({ log }) {
       return { sira: a.sira };
     });
     if (!tk.atla) esit(tk.sira, 1, 'takım başlangıcı: hiç ilk başlamamış sporcunun takımı başlamadı');
+    // ⚙️ Oyun Ayarları › Hapşırık seviyesi: Çok zor (2 seri/kişi) gereken gıdığı ikiye katlar, sahnedekine hemen uygulanır
+    const sv = await p.evaluate(() => {
+      const k = 'dag_km_hapsirik_' + (_kmAktifKonum || 'varsayilan'), oku = () => JSON.parse(localStorage.getItem(k));
+      const yedek = localStorage.getItem('dag_km_oyun_ayar');
+      kmOyunAyarAc(); const satir = /Hapşırık seviyesi/.test(document.getElementById('km-oyun-ayar-modal').textContent); kmOyunAyarKapat();
+      kmOyunAyarKaydet({ mod: 'standart', ozel: {} }); const std = oku().gerekli;
+      kmOyunAyarKaydet({ mod: 'ozel', ozel: { hapsirikSeri: 2 } }); const zor = oku();
+      kmOyunAyarKaydet({ mod: 'ozel', ozel: { hapsirikSeri: 0.5 } }); const kolay = oku().gerekli;
+      if (yedek) localStorage.setItem('dag_km_oyun_ayar', yedek); else localStorage.removeItem('dag_km_oyun_ayar'); kmOyunAyarKaydet(kmOyunAyarHam());
+      return { satir, std, zor: zor.gerekli, kolay, oran: zor.gidik / zor.gerekli };
+    });
+    dogrula(sv.satir, 'Oyun Ayarları\'nda Hapşırık seviyesi satırı yok');
+    dogrula(Math.abs(sv.zor / sv.std - 2) < 0.05, `Çok zor gereken gıdığı 2 katına çıkarmadı (${sv.std} → ${sv.zor})`);
+    dogrula(sv.kolay < sv.std, `Çok kolay gereken gıdığı düşürmedi (${sv.std} → ${sv.kolay})`);
+    dogrula(sv.oran < 1, 'seviye değişince yaratık doldu sayıldı');
     // telefon genişliğinde taşma yok
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(500);
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), '390 px genişlikte yatay taşma');

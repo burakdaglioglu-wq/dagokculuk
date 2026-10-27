@@ -8462,7 +8462,7 @@
             ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
             ['PERSONEL', [['kisiler','🪪','Eğitmen & Misafir']]],
             ['ANTRENMAN', [['bugunskor','🎯','Skor Girenler'],['yoklama','✅','Yoklama'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü'],['program','📅','Antrenman Programı']]],
-            ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['yedek','💾','Yedek']]]
+            ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['vitrin','📺','Tanıtım Ekranı'],['yedek','💾','Yedek']]]
         ];
         // DÜZELTME: eskiden 9 sekme butonu HER ZAMAN ekranda açık duruyordu — telefonda modalın
         // yarısına yakınını kaplayıp asıl içeriğe çok az yer bırakıyordu. Artık hamburger menü:
@@ -8577,6 +8577,8 @@
             document.head.appendChild(st); if(typeof sadeGeceEkle === 'function') sadeGeceEkle(st);
         }
         function yoneticiSekme(k) {
+            // 📺 Tanıtım Ekranı (2026-10-27): sekme değil — salondaki bilgisayar boştayken tam ekran oyun vitrini (dagsk-vitrin.js)
+            if(k === 'vitrin') { vitrinAc(); return; }
             // Eğitmen Panosu ve eski Personel (2026-10-21) → 🪪 Eğitmen & Misafir (dagsk-personel.js): kadro, profil, 💰 ödemeler & bordro
             if(k === 'egitmen' || k === 'personel') { if(k === 'personel' && typeof PS !== 'undefined') PS.sekme = 'para'; else window._psIlkSekme = k === 'personel' ? 'para' : 'egitmen'; k = 'kisiler'; }
             if(k !== 'aidat' && !(k === 'kisiler' && yoneticiSekmeAktif === 'kisiler')) _aidatKilitAcikMi = false; // Aidat'tan çıkınca ek kilit yeniden devreye girsin (personel ekranı içinde yenilemede değil)
@@ -14271,6 +14273,7 @@
 #km-oyun-wrap[data-tema="kehanet"]{ --bg:#0f0d1a; --panel:#181425; --panel-hi:#221c33; --line:#3a2f55; --ink:#f3eeff; --ink-dim:#c9bce6; --ink-faint:#7f6fa8; --a1:#a78bfa; --a2:#7dd3fc; --a3:#ffd23f; --a4:#f472b6; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="kule"]{ --bg:#0d1218; --panel:#161d26; --panel-hi:#1f2833; --line:#34424f; --ink:#f2f6fa; --ink-dim:#b8c6d4; --ink-faint:#6f8294; --a1:#c9a876; --a2:#8c7355; --a3:#7dd3fc; --a4:#ff8a3d; --a5:#3ddc97; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="canavar"]{ --bg:#0b0712; --panel:#150d1f; --panel-hi:#1f1430; --line:#3a2a52; --ink:#f6efff; --ink-dim:#cbb8e6; --ink-faint:#7f6a9e; --a1:#ffd23f; --a2:#ff5f3d; --a3:#7dd3fc; --a4:#c77dff; --a5:#3ddc97; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
+#km-oyun-wrap[data-tema="hapsirik"]{ --bg:#0d111c; --panel:#161c2b; --panel-hi:#20283b; --line:#34405a; --ink:#f4f6ff; --ink-dim:#bcc6dd; --ink-faint:#74809a; --a1:#ffd23f; --a2:#ff8fa8; --a3:#7dd3fc; --a4:#a8e6a1; --a5:#c9a6ff; --font-display:'Baloo 2',system-ui,sans-serif; --font-body:'Nunito',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="yukselis"]{ --bg:#06080f; --panel:#0b0f18; --panel-hi:#121826; --line:#1c2636; --ink:#e8eef7; --ink-dim:#a9b7cc; --ink-faint:#5d6b82; --a1:#22d3a0; --a2:#ff5470; --a3:#5fb8ff; --a4:#f5c451; --a5:#a78bfa; --font-display:'Exo 2',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap[data-tema="arena"]{ --bg:#170b0b; --panel:#241212; --panel-hi:#301818; --line:#4a2626; --ink:#fff3f0; --ink-dim:#d6a8a0; --ink-faint:#8f6460; --a1:#ff3b3b; --a2:#3fa9ff; --a3:#ffd23f; --a4:#3ddc84; --a5:#c77dff; --font-display:'Bungee',system-ui,sans-serif; --font-body:'Rajdhani',system-ui,sans-serif; }
 #km-oyun-wrap{ background:var(--bg); color:var(--ink); font-family:var(--font-body); }
@@ -16527,7 +16530,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 surprizler: [] },
             // Yükseliş (2026-09-24) — YETİŞKİN modu: maskot yok, mum grafiği/istatistik. Bkz. kmOyunAnimateYukselis.
             // 🤧 Hapşırık (2026-10-27) — küçükler için ortak oyun: tüylerle gıdıkla, yaratık hapşırsın. Bkz. dagsk-km-hapsirik.js.
-            hapsirik: { ad: 'Hapşırık!', ikon: '🤧', renkler: ['#ffd23f', '#ff8fa8', '#7dd3fc', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok bir tüy olur, halkanın rengi uyuyan yaratığın bir yerini gıdıklar. Gıdık dolunca HAPŞUUU! Sonra hep birlikte: ÇOK YAŞA!', btn: '🪶 Gıdıkla', finish: '', cp: '', birim: 'gıdık', bitis: '',
+            hapsirik: { ad: 'Hapşırık!', ikon: '🤧', renkler: ['#ffd23f', '#ff8fa8', '#7dd3fc', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok bir tüy olur, halkanın rengi uyuyan yaratığın bir yerini gıdıklar. Gıdık dolunca HAPŞUUU! Sonra hep birlikte: ÇOK YAŞA!', btn: '✨ Gıdıkla', finish: '', cp: '', birim: 'gıdık', bitis: '',
                 surprizler: [] },
             yukselis: { ad: 'Yükseliş', ikon: '📈', renkler: ['#22d3a0', '#5fb8ff', '#f5c451', '#a78bfa', '#ff5470', '#38bdf8'], aciklama: 'Yetişkin modu — sporcular gerçekten atış yapar, siz sonucu girersiniz; her sporcu bir hisse gibi: seri kendi ortalamasını geçerse endeks yükselir, altında kalırsa düşer. Mum grafiği, zirve, tutarlılık ve grup istatistikleri.', btn: '📈 İşle', finish: '', cp: '', birim: 'endeks', bitis: '',
                 surprizler: [] },
@@ -18920,13 +18923,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // serilerde bitirme"). Yol oyunları ve yumurta artık doğrudan SERİ SAYISIYLA ayarlanır (yolSeri / yuvaSeri → içte çarpana
         // çevrilir; eski kayıtlardaki yolCarpan/yuvaCarpan da okunur). Canavar: canavarSeri = her sporcunun yaklaşık kaç serisiyle
         // devrileceği (standart 2), canavarKalkan = 1 açık / 0 kapalı (kapalıyken zorluk ne olursa olsun kalkan hiç açılmaz).
-        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1 };
+        // 2026-10-27 (kullanıcı: "ayarlarda hapşırık için de seviye belirle"): hapsirikSeri = yaratık hapşırana kadar kişi başı
+        // yaklaşık seri (standart 1) → dagsk-km-hapsirik.js gerekliHesapla çarpanı; hpsAyarUygula sahnedekine de uygular.
+        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1 };
         const KM_OYUN_AYAR_SECENEK = {
             yolCarpan: [[2, 'Çok kısa', '≈5 seri'], [1.45, 'Kısa', '≈7 seri'], [1, 'Standart', '≈10 seri'], [0.7, 'Uzun', '≈14 seri'], [0.5, 'Çok uzun', '≈20 seri']],
             yolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri'], [15, '15 seri'], [20, '20 seri']],
             yuvaSeri: [[6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri'], [15, '15 seri'], [18, '18 seri']],
             canavarSeri: [[1, 'Çok hızlı', '≈1 seri/kişi'], [1.5, 'Hızlı', '≈1,5 seri/kişi'], [2, 'Standart', '≈2 seri/kişi'], [3, 'Uzun', '≈3 seri/kişi'], [4, 'Çok uzun', '≈4 seri/kişi']],
             canavarKalkan: [[1, '🛡️ Açık'], [0, 'Kapalı']],
+            hapsirikSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
             futbolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri']],
             sayacSn: [[60, '1 dk'], [90, '1,5 dk'], [120, '2 dk'], [180, '3 dk'], [300, '5 dk']],
             yuvaCarpan: [[0.5, 'Çok hızlı'], [0.75, 'Hızlı'], [1, 'Standart'], [1.3, 'Yavaş']],
@@ -18941,7 +18947,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return a;
         }
         window.kmOyunAyar = kmOyunAyar;
-        function kmOyunAyarKaydet(h) { try { localStorage.setItem('dag_km_oyun_ayar', JSON.stringify(h)); } catch(e) {} kmOyunAyarUygula(); try { kmCanavarAyarUygula(); } catch(e) {} }
+        function kmOyunAyarKaydet(h) { try { localStorage.setItem('dag_km_oyun_ayar', JSON.stringify(h)); } catch(e) {} kmOyunAyarUygula(); try { kmCanavarAyarUygula(); } catch(e) {} try { if(typeof hpsAyarUygula === 'function') hpsAyarUygula(); } catch(e) {} }
         // Metinleri ve sayacı güncel ayara getirir (futbolun "8 seri" yazıları, sayaç süresi).
         function kmOyunAyarUygula() {
             let a = kmOyunAyar();
@@ -18968,6 +18974,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + satir('yolSeri', '🏔️', 'İlerleme oyunları kaç seride bitsin?', 'Zirve, Ninja, Roket, Hazine, Dağ, Pist, Balon, Kayıp Ada, Monopoly · %70 isabetle atan bir sporcu için yaklaşık')
                 + satir('canavarSeri', '👹', 'Canavar ne kadar çabuk devrilsin?', 'Sınıftaki her sporcu yaklaşık kaç seri atınca canavar devrilir · sahnedeki canavara da hemen uygulanır')
                 + satir('canavarKalkan', '🛡️', 'Canavar kalkanı açılsın mı?', 'Kapalıyken canavar hiç kalkan açmaz (zorluk ayarından bağımsız)')
+                + satir('hapsirikSeri', '🤧', 'Hapşırık seviyesi', 'Yaratığın hapşırması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki yaratığa da hemen uygulanır')
                 + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
                 + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
                 + satir('yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)')
@@ -19103,6 +19110,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
         function kmOyunKurtarmaAc() { kmOyunSeciciKapat(); kmSekme('kurtarma'); }
         // 🤧 Hapşırık — kabuk teması; durum + çizim public/dagsk-km-hapsirik.js'te (ilk açılışta tembel yüklenir).
+        function vitrinAc() { dagskEkYukle('dagsk-vitrin.js').then(function() { vtAc(); }).catch(function() { showToast('Tanıtım ekranı yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunHapsirikHazir() { return dagskEkYukle('dagsk-km-hapsirik.js'); }
         function kmOyunSahneKurHapsirik() { kmOyunHapsirikHazir().then(function() { if(_kmOyunAktifTema === 'hapsirik' && document.getElementById('km-oyun-panel-hapsirik')) hpsSahneKur(); }).catch(function() { showToast('Hapşırık yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncHapsirik() { if(typeof hpsGuncelle === 'function' && document.getElementById('hps-svg')) hpsGuncelle(); else kmOyunSahneKurHapsirik(); }
@@ -25777,7 +25785,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // burada da çalışır.
             // Ortak Canavar — doğası gereği tüm sınıf zaten birlikte; Bireysel/Takım anahtarı anlamsız, gizli.
             let takimToggleRow = document.getElementById('km-oyun-takim-toggle-row'); if(takimToggleRow) takimToggleRow.style.display = (futbolMu || tid === 'canavar' || tid === 'hapsirik' || tid === 'yukselis') ? 'none' : 'flex';
-            if(futbolMu && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
+            // 2026-10-27 (kullanıcı: "otomatik olarak 3 atış ile başlasın"): oyun açılınca her zaman 3 ok — başka oyunda seçilen 6 ok
+            // taşınmaz. Yetişkin modu Yükseliş'te seçim korunur.
+            if(tid !== 'yukselis' && _kmOyunOkSayisi !== 3) kmOyunOkSayisiSec(3);
             // Pist "Yarış uzunluğu" düğmesi — sadece Pist'te görünür (diğer temalarda gizli, panelin
             // kendisine dokunmuyor, üst yardımcı buton sırasında).
             let pistUzunlukBtn = document.getElementById('km-oyun-pist-uzunluk-btn');

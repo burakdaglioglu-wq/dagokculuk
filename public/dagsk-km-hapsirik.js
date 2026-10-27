@@ -77,6 +77,8 @@
     function zzz(x, y) { return `<g id="hps-zzz"><text class="hps-zzzt" x="${x}" y="${y}" font-size="28" font-weight="800" fill="#cfe3ff">z</text><text class="hps-zzzt" style="animation-delay:.8s" x="${x + 20}" y="${y - 20}" font-size="22" font-weight="800" fill="#cfe3ff">z</text><text class="hps-zzzt" style="animation-delay:1.6s" x="${x + 36}" y="${y - 38}" font-size="17" font-weight="800" fill="#cfe3ff">z</text></g>`; }
     function balon(x, y, r) { return `<circle id="hps-balon" class="hps-burun-balon" style="transform-box:fill-box;transform-origin:right bottom" cx="${x}" cy="${y}" r="${r}" fill="#cfe9ff" opacity=".55" stroke="#fff" stroke-width="2"/>`; }
     function hedef(yer, x, y) { return `<circle id="hps-h-${yer}" cx="${x}" cy="${y}" r="2" opacity="0"/>`; }
+    // Tüy (40×40): yumuşak bayrak + sap. Emoji kullanılmıyor — 🪶 eski tablet/Windows'ta kare görünüyordu.
+    const TUY_SVG_IC = '<path d="M35 4C22 5 9 15 7 31c5-1 11-4 15-8-4 0-6-1-7-2 4 0 8-2 11-5-3 0-5-1-6-2 5-1 9-4 15-10z" fill="#fff7e6" stroke="#c9a66b" stroke-width="1.6" stroke-linejoin="round"/><path d="M35 4L4 37" stroke="#a8844a" stroke-width="2" stroke-linecap="round"/>';
     function og(id, x, y) { return `id="${id}" style="transform-box:view-box;transform-origin:${x}px ${y}px"`; }
 
     const Y = {
@@ -85,7 +87,7 @@
             yer: 'KÖYÜN TÜNELİ', gok: ['#2b3550', '#5f6f8c'], zemin: ['#4f5e3a', '#6a7c48'],
             bolge: { burun: 'BURUN', gobek: 'GÖBEK', ayak: 'AYAK', kuyruk: 'KUYRUK' },
             gizliler: [{ yer: 'kulak', ad: 'KULAK', iy: 'kulağı', emoji: '👂' }, { yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'cene', ad: 'ÇENE', iy: 'çenesi', emoji: '😆' }],
-            ruya: ['🎂', 'mmm... pasta...'], karisik: ['🥦', 'Pasta BROKOLİ oldu!'], ruyaXY: [330, 220],
+            ruya: ['🎂', 'mmm... pasta...'], karisik: ['🥦', 'Pasta BROKOLİ oldu!'], ruyaXY: [470, 215],
             hapsirik: { cesit: 'toz', renk: ['#efe6cc', '#e0d4b0', '#f6efd8'] },
             agiz: { uyku: 'M372 444 q30 12 64 -4', ha: 'M378 440 q28 -2 54 -2', acik: 'M380 432 a22 16 0 1 0 44 0 a22 16 0 1 0 -44 0', utanc: 'M380 440 a14 10 0 1 0 28 0 a14 10 0 1 0 -28 0', gulumse: 'M374 438 q30 22 64 -2' },
             arka() {
@@ -125,8 +127,8 @@
             ad: 'Koca Vırak', ikon: '🐸', perde: 1.35, ten: '#7cbf5a', koyu: '#2f6a2a', karin: '#eaf2b8',
             yer: 'BATAKLIK KÖPRÜSÜ', gok: ['#1c2e33', '#3f6460'], zemin: ['#2f5a4c', '#4a7a5e'],
             bolge: { burun: 'BURUN', gobek: 'GIDI', ayak: 'PERDE AYAK', kuyruk: 'SIRT' },
-            gizliler: [{ yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'diz', ad: 'DİZ', iy: 'dizi', emoji: '🦵' }, { yer: 'yanak', ad: 'YANAK', iy: 'yanağı', emoji: '😊' }],
-            ruya: ['🪰', 'vızzz... sinek...'], karisik: ['🧦', 'Sinek ÇORAP oldu!'], ruyaXY: [400, 200],
+            gizliler: [{ yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'diz', ad: 'DİZ', iy: 'dizi', emoji: '😝' }, { yer: 'yanak', ad: 'YANAK', iy: 'yanağı', emoji: '😊' }],
+            ruya: ['🐝', 'vızzz... arı...'], karisik: ['🧦', 'Arı ÇORAP oldu!'], ruyaXY: [440, 150],
             hapsirik: { cesit: 'kabarcik', renk: ['#bfeeff', '#d8fff0', '#9fe3d0'] },
             agiz: { uyku: 'M470 372 Q595 402 720 372', ha: 'M480 378 Q595 384 710 378', acik: 'M520 372 Q595 446 670 372 Q595 390 520 372Z', utanc: 'M582 384 a12 9 0 1 0 24 0 a12 9 0 1 0 -24 0', gulumse: 'M470 366 Q595 424 720 366' },
             arka() {
@@ -162,11 +164,11 @@
             }
         },
         mamut: {
-            ad: 'Tüylü Mamut', ikon: '🦣', perde: .7, ten: '#9a6a48', koyu: '#4a2e1c', karin: '#c79a74',
+            ad: 'Tüylü Mamut', ikon: '🐘', perde: .7, ten: '#9a6a48', koyu: '#4a2e1c', karin: '#c79a74',
             yer: 'BUZ GEÇİDİ', gok: ['#1e2a40', '#5d7a9c'], zemin: ['#cfe2ef', '#eef6fb'],
             bolge: { burun: 'HORTUM', gobek: 'GÖBEK', ayak: 'AYAK', kuyruk: 'KUYRUK' },
             gizliler: [{ yer: 'kulak', ad: 'KULAK', iy: 'kulağı', emoji: '👂' }, { yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'sirt', ad: 'SIRT', iy: 'sırtı', emoji: '🙃' }],
-            ruya: ['🍉', 'karpuuuz...'], karisik: ['🧊', 'Karpuz BUZ KÜPÜ oldu!'], ruyaXY: [330, 170],
+            ruya: ['🍉', 'karpuuuz...'], karisik: ['⛄', 'Karpuz KARDAN ADAM oldu!'], ruyaXY: [440, 100],
             hapsirik: { cesit: 'kar', renk: ['#ffffff', '#dff1ff', '#c8e6ff'] },
             agiz: { uyku: 'M445 352 q12 6 24 0', ha: 'M443 352 h28', acik: 'M445 345 a12 9 0 1 0 24 0 a12 9 0 1 0 -24 0', utanc: 'M450 350 a7 6 0 1 0 14 0 a7 6 0 1 0 -14 0', gulumse: 'M442 348 q14 14 30 0' },
             arka() {
@@ -211,7 +213,7 @@
             yer: 'ORMAN KAPISI', gok: ['#16241c', '#3a5240'], zemin: ['#2d3f24', '#46603a'],
             bolge: { burun: 'BURUN', gobek: 'GÖBEK', ayak: 'PATİ', kuyruk: 'KULAK' },
             gizliler: [{ yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'gidi', ad: 'GIDI', iy: 'gıdısı', emoji: '😆' }, { yer: 'gobekdeligi', ad: 'GÖBEK DELİĞİ', iy: 'göbek deliği', emoji: '😝' }],
-            ruya: ['🍯', 'baaal...'], karisik: ['🥕', 'Bal HAVUÇ oldu!'], ruyaXY: [430, 150],
+            ruya: ['🍯', 'baaal...'], karisik: ['🥕', 'Bal HAVUÇ oldu!'], ruyaXY: [450, 150],
             hapsirik: { cesit: 'yaprak', renk: ['#c98a3a', '#8aa84a', '#d9b25a', '#6f8f3a'] },
             agiz: { uyku: 'M646 286 q14 8 28 0', ha: 'M646 288 h28', acik: 'M648 282 a12 10 0 1 0 24 0 a12 10 0 1 0 -24 0', utanc: 'M653 286 a7 6 0 1 0 14 0 a7 6 0 1 0 -14 0', gulumse: 'M640 282 q20 18 40 0' },
             arka() {
@@ -246,9 +248,168 @@
                 ${hedef('burun', 660, 254)}${hedef('gobek', 690, 400)}${hedef('ayak', 524, 468)}${hedef('kuyruk', 590, 160)}
                 ${hedef('koltuk', 556, 336)}${hedef('gidi', 660, 318)}${hedef('gobekdeligi', 660, 436)}`;
             }
+        },
+        // ---- 2026-10-27 (kullanıcı: "daha fazla hayvan koy, az hapşırık hayvanı var") — 4 yeni, her biri ayrı gövde biçimi.
+        // Emojiler eski tabletlerde de çıkanlardan (🪶 🦣 🪰 🧊 gibi yeni emojiler kare görünüyordu).
+        timsah: {
+            ad: 'Uykucu Timsah', ikon: '🐊', perde: .9, ten: '#5f9a5a', koyu: '#22401f', karin: '#e3e6a8', kuyrukSoz: 'kuyruk şap!',
+            yer: 'NEHİR GEÇİDİ', gok: ['#1b2a2a', '#4b6d5c'], zemin: ['#55683a', '#76894a'],
+            bolge: { burun: 'BURUN', gobek: 'GÖBEK', ayak: 'PENÇE', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'cene', ad: 'ÇENE', iy: 'çenesi', emoji: '😆' }, { yer: 'sirt', ad: 'SIRT', iy: 'sırtı', emoji: '🙃' }],
+            ruya: ['🐟', 'balııık...'], karisik: ['🥒', 'Balık SALATALIK oldu!'], ruyaXY: [450, 255],
+            hapsirik: { cesit: 'kabarcik', renk: ['#bfeeff', '#d8fff0', '#9fe3d0'] },
+            agiz: { uyku: 'M334 452 Q440 468 556 462', ha: 'M336 454 Q440 460 552 458', acik: 'M342 450 Q440 504 556 466 Q440 470 342 450Z', utanc: 'M520 460 a10 7 0 1 0 20 0 a10 7 0 1 0 -20 0', gulumse: 'M332 448 Q440 482 558 458' },
+            arka() {
+                return `<path d="M520 500 Q530 250 750 232 Q965 245 975 500Z" fill="#3b4a3a"/><path d="M560 500 Q565 285 750 272 Q935 282 940 500Z" fill="#0f1a16"/>
+                    ${[[540, 300], [600, 255], [690, 238], [800, 240], [890, 262], [950, 310]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="26" ry="16" fill="#56664f"/>`).join('')}`;
+            },
+            isikXY: [748, 400],
+            svg(c) {
+                let pul = ''; for (let x = 520; x <= 880; x += 30) pul += `<path d="M${x - 12} ${396 + Math.abs(x - 700) * .05} l12 -20 l12 20z" fill="${c.koyu}"/>`;
+                return `<g ${og('hps-kuyruk', 900, 460)}><path d="M880 432 Q960 446 998 490 Q940 482 880 478Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>${[920, 950].map((x) => `<path d="M${x - 8} ${448 + (x - 920) * .5} l8 -14 l8 14z" fill="${c.koyu}"/>`).join('')}</g>
+                <ellipse cx="822" cy="484" rx="32" ry="20" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>
+                <g ${og('hps-nefes', 690, 500)} class="hps-nefes"><g ${og('hps-govde', 690, 500)}>${pul}
+                  <ellipse cx="690" cy="446" rx="232" ry="56" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="690" cy="474" rx="200" ry="20" fill="${c.karin}"/>
+                  ${[560, 620, 680, 740, 800].map((x) => `<path d="M${x} 418 q20 -10 40 0" stroke="${c.koyu}" stroke-width="2.5" fill="none" opacity=".35"/>`).join('')}</g></g>
+                <g ${og('hps-ayak', 560, 488)}><ellipse cx="560" cy="484" rx="34" ry="20" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>${[536, 552, 568].map((x) => `<path d="M${x} 498 l-6 8 h12z" fill="#f5efd8"/>`).join('')}</g>
+                <g ${og('hps-bas', 470, 450)}>
+                  <path d="M566 398 Q470 388 336 416 Q300 428 312 452 Q430 464 566 462Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5" stroke-linejoin="round"/>
+                  <path d="M318 456 Q430 478 566 474 L566 462 Q430 464 318 452Z" fill="${c.karin}" stroke="${c.koyu}" stroke-width="3"/>
+                  ${[350, 380, 410, 440, 470, 500, 530].map((x) => `<path d="M${x} 456 l6 9 l6 -9z" fill="#fff"/>`).join('')}
+                  <circle cx="470" cy="398" r="20" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/><circle cx="516" cy="394" r="20" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>
+                  <ellipse cx="440" cy="414" rx="50" ry="8" fill="#fff" opacity=".13"/>
+                  <g ${og('hps-burun', 326, 428)}><ellipse cx="324" cy="424" rx="6" ry="4" fill="${c.koyu}"/><ellipse cx="338" cy="420" rx="6" ry="4" fill="${c.koyu}"/></g>
+                  ${balon(304, 420, 20)}
+                  <ellipse id="hps-yanak" cx="530" cy="440" rx="18" ry="9" fill="#ff8fa8" opacity=".25"/>
+                  ${gozler([470, 396], [516, 392], 11, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(560, 350)}
+                </g>
+                ${hedef('burun', 324, 426)}${hedef('gobek', 690, 474)}${hedef('ayak', 560, 488)}${hedef('kuyruk', 958, 476)}
+                ${hedef('koltuk', 612, 474)}${hedef('cene', 430, 470)}${hedef('sirt', 720, 394)}`;
+            }
+        },
+        kaplumbaga: {
+            ad: 'Koca Kabuk', ikon: '🐢', perde: .75, ten: '#7aa05a', koyu: '#2f441f', karin: '#e3d39a', kuyrukSoz: 'kuyrukçuk!',
+            yer: 'KUMSAL YOLU', gok: ['#2a3352', '#b9806a'], zemin: ['#d6bd86', '#ead6a4'],
+            bolge: { burun: 'BURUN', gobek: 'KABUK ALTI', ayak: 'AYAK', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'boyun', ad: 'BOYUN', iy: 'boynu', emoji: '😆' }, { yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'tepe', ad: 'KABUK TEPESİ', iy: 'kabuk tepesi', emoji: '🙃' }],
+            ruya: ['🍓', 'çileeek...'], karisik: ['🌶️', 'Çilek BİBER oldu!'], ruyaXY: [440, 205],
+            hapsirik: { cesit: 'toz', renk: ['#f1dfae', '#e6cc8e', '#fff2cf'] },
+            agiz: { uyku: 'M380 420 q20 8 40 0', ha: 'M382 420 h36', acik: 'M384 414 a16 12 0 1 0 32 0 a16 12 0 1 0 -32 0', utanc: 'M392 418 a8 6 0 1 0 16 0 a8 6 0 1 0 -16 0', gulumse: 'M378 414 q22 18 44 0' },
+            arka() {
+                return `<path d="M530 500 Q540 230 750 215 Q965 230 975 500Z" fill="#8a6a52"/><path d="M570 500 Q575 270 750 258 Q930 268 935 500Z" fill="#2c1f19"/>
+                    <path d="M990 500 Q975 330 1005 200" fill="none" stroke="#6b4a2a" stroke-width="16"/><path d="M1005 200 q-60 -10 -90 30 M1005 200 q-40 -40 -100 -30 M1005 200 q30 -40 -10 -70" fill="none" stroke="#3f6a3a" stroke-width="12" stroke-linecap="round"/>`;
+            },
+            isikXY: [750, 390],
+            svg(c) {
+                const kabuk = '#8a6a3a', kabukK = '#4a3418';
+                const desen = [[620, 330], [700, 300], [780, 330], [660, 400], [740, 400], [820, 400], [580, 410]].map((p) => `<path d="M${p[0] - 30} ${p[1]} l15 -24 h30 l15 24 l-15 24 h-30z" fill="none" stroke="${kabukK}" stroke-width="4" opacity=".45"/>`).join('');
+                return `<g ${og('hps-kuyruk', 930, 470)}><path d="M915 455 l40 16 l-40 12z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3" stroke-linejoin="round"/></g>
+                <rect x="822" y="440" width="56" height="58" rx="22" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>
+                <g ${og('hps-nefes', 700, 480)} class="hps-nefes"><g ${og('hps-govde', 700, 480)}>
+                  <path d="M478 466 Q488 240 700 232 Q912 240 922 466Z" fill="${kabuk}" stroke="${kabukK}" stroke-width="6"/>${desen}
+                  <ellipse cx="680" cy="290" rx="90" ry="22" fill="#fff" opacity=".12"/>
+                  <rect x="468" y="452" width="464" height="28" rx="14" fill="${c.karin}" stroke="${kabukK}" stroke-width="4"/></g></g>
+                <g ${og('hps-ayak', 540, 490)}><rect x="512" y="448" width="58" height="52" rx="22" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>${[524, 540, 556].map((x) => `<ellipse cx="${x}" cy="496" rx="6" ry="4" fill="#f5efd8"/>`).join('')}</g>
+                <g ${og('hps-bas', 480, 430)}>
+                  <path d="M540 440 Q490 430 440 404" fill="none" stroke="${c.koyu}" stroke-width="58" stroke-linecap="round"/><path d="M540 440 Q490 430 440 404" fill="none" stroke="${c.ten}" stroke-width="50" stroke-linecap="round"/>
+                  ${[470, 500].map((x) => `<path d="M${x} ${404 + (x - 470) * .5} q6 14 0 28" stroke="${c.koyu}" stroke-width="2.5" fill="none" opacity=".35"/>`).join('')}
+                  <circle cx="420" cy="395" r="58" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="412" cy="428" rx="34" ry="16" fill="${c.karin}"/><ellipse cx="410" cy="358" rx="28" ry="10" fill="#fff" opacity=".15"/>
+                  <g ${og('hps-burun', 370, 394)}><ellipse cx="368" cy="388" rx="4" ry="3" fill="${c.koyu}"/><ellipse cx="370" cy="400" rx="4" ry="3" fill="${c.koyu}"/></g>
+                  ${balon(350, 384, 20)}
+                  <ellipse id="hps-yanak" cx="450" cy="410" rx="16" ry="9" fill="#ff8fa8" opacity=".25"/>
+                  ${gozler([404, 376], [444, 372], 12, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(470, 320)}
+                </g>
+                ${hedef('burun', 366, 394)}${hedef('gobek', 700, 466)}${hedef('ayak', 540, 490)}${hedef('kuyruk', 940, 470)}
+                ${hedef('boyun', 488, 424)}${hedef('koltuk', 600, 462)}${hedef('tepe', 700, 250)}`;
+            }
+        },
+        balina: {
+            ad: 'Uykucu Balina', ikon: '🐳', perde: .6, ten: '#4f7fb8', koyu: '#1f3a63', karin: '#d2e2f2', kuyrukSoz: 'şap şap!',
+            yer: 'LİMAN AĞZI', gok: ['#14223a', '#3f6c90'], zemin: ['#1f4f73', '#3a7aa5'],
+            bolge: { burun: 'NEFES DELİĞİ', gobek: 'GÖBEK', ayak: 'YÜZGEÇ', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'koltuk', ad: 'YÜZGEÇ ALTI', iy: 'yüzgeç altı', emoji: '🤭' }, { yer: 'cene', ad: 'ÇENE', iy: 'çenesi', emoji: '😆' }, { yer: 'sirt', ad: 'SIRT', iy: 'sırtı', emoji: '🙃' }],
+            ruya: ['🦐', 'karideees...'], karisik: ['🍦', 'Karides DONDURMA oldu!'], ruyaXY: [440, 190],
+            hapsirik: { cesit: 'kabarcik', renk: ['#cfefff', '#e6f8ff', '#a8dcff'] },
+            agiz: { uyku: 'M372 440 Q422 456 482 448', ha: 'M374 442 Q422 446 478 444', acik: 'M382 436 Q426 486 478 446 Q426 452 382 436Z', utanc: 'M430 446 a9 7 0 1 0 18 0 a9 7 0 1 0 -18 0', gulumse: 'M370 436 Q422 470 484 444' },
+            arka() {
+                return `<rect x="540" y="230" width="34" height="275" fill="#5d6a78"/><rect x="926" y="230" width="34" height="275" fill="#5d6a78"/>
+                    <path d="M530 236 Q750 170 970 236" fill="none" stroke="#7a8796" stroke-width="18" stroke-linecap="round"/><path d="M574 500 V248 Q750 196 926 248 V500Z" fill="#0d1b2a"/>
+                    <rect x="990" y="150" width="22" height="350" fill="#e9eef3"/><rect x="990" y="190" width="22" height="18" fill="#d94a3a"/><rect x="990" y="250" width="22" height="18" fill="#d94a3a"/><circle cx="1001" cy="140" r="12" fill="#ffe08a"/>`;
+            },
+            isikXY: [748, 390],
+            svg(c) {
+                return `<g ${og('hps-kuyruk', 930, 400)}><path d="M900 410 Q940 380 950 330" fill="none" stroke="${c.ten}" stroke-width="40" stroke-linecap="round"/>
+                  <path d="M950 330 q-50 -40 -66 -12 q34 0 66 12 q20 -54 50 -40 q-30 14 -50 40z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" stroke-linejoin="round"/></g>
+                <g ${og('hps-nefes', 660, 480)} class="hps-nefes"><g ${og('hps-govde', 660, 480)}>
+                  <path d="M360 420 Q370 300 560 296 Q800 296 910 400 Q930 470 860 486 L420 486 Q360 476 360 420Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <path d="M380 452 Q560 500 860 470 L860 486 L420 486 Q380 476 380 452Z" fill="${c.karin}"/>
+                  ${[440, 500, 560, 620, 680, 740, 800].map((x) => `<path d="M${x} ${470 + (x > 700 ? -6 : 0)} v12" stroke="${c.koyu}" stroke-width="2.5" opacity=".3"/>`).join('')}
+                  <ellipse cx="620" cy="320" rx="120" ry="16" fill="#fff" opacity=".13"/></g></g>
+                <g ${og('hps-ayak', 560, 462)}><path d="M540 450 Q580 470 600 510 Q560 498 530 466Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" stroke-linejoin="round"/></g>
+                <g ${og('hps-bas', 440, 420)}>
+                  <ellipse cx="430" cy="420" rx="66" ry="58" fill="${c.ten}"/>
+                  <g ${og('hps-burun', 520, 302)}><ellipse cx="520" cy="300" rx="14" ry="5" fill="${c.koyu}"/></g>
+                  ${balon(520, 280, 18)}
+                  <ellipse id="hps-yanak" cx="482" cy="428" rx="18" ry="9" fill="#ff8fa8" opacity=".25"/>
+                  ${gozler([414, 398], [456, 394], 11, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(560, 250)}
+                </g>
+                <rect x="250" y="482" width="820" height="26" fill="#3a7aa5" opacity=".55"/>
+                ${[300, 420, 560, 700, 840, 980].map((x) => `<path d="M${x} 484 q14 -8 28 0 q14 8 28 0" fill="none" stroke="#cfe9ff" stroke-width="3" opacity=".6"/>`).join('')}
+                ${hedef('burun', 520, 300)}${hedef('gobek', 640, 474)}${hedef('ayak', 572, 478)}${hedef('kuyruk', 960, 330)}
+                ${hedef('koltuk', 600, 462)}${hedef('cene', 420, 462)}${hedef('sirt', 720, 304)}`;
+            }
+        },
+        salyangoz: {
+            ad: 'Mışıl Salyangoz', ikon: '🐌', perde: 1.2, ten: '#f0b77a', koyu: '#7a4a22', karin: '#ffe0b8', kuyrukSoz: 'kuyruk kıvrıl!',
+            yer: 'BAHÇE KAPISI', gok: ['#22304a', '#6a8fb0'], zemin: ['#4a7a3a', '#6a9a4a'],
+            bolge: { burun: 'BURUN', gobek: 'KARIN', ayak: 'TABAN', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'anten', ad: 'ANTEN', iy: 'anteni', emoji: '😆' }, { yer: 'kabuk', ad: 'KABUK ORTASI', iy: 'kabuk ortası', emoji: '🙃' }, { yer: 'yanak', ad: 'YANAK', iy: 'yanağı', emoji: '😊' }],
+            ruya: ['🍃', 'yapraaak...'], karisik: ['🍕', 'Yaprak PİZZA oldu!'], ruyaXY: [500, 175],
+            hapsirik: { cesit: 'toz', renk: ['#ffe08a', '#ffc2d8', '#fff2b8'] },
+            agiz: { uyku: 'M380 440 q16 8 32 0', ha: 'M382 440 h28', acik: 'M384 434 a14 11 0 1 0 28 0 a14 11 0 1 0 -28 0', utanc: 'M390 438 a7 6 0 1 0 14 0 a7 6 0 1 0 -14 0', gulumse: 'M378 434 q18 16 36 0' },
+            arka() {
+                return `<rect x="560" y="250" width="20" height="250" fill="#f2efe6"/><rect x="920" y="250" width="20" height="250" fill="#f2efe6"/>
+                    <path d="M560 262 Q750 150 940 262" fill="none" stroke="#5a8a3a" stroke-width="26" stroke-linecap="round"/><path d="M580 500 V274 Q750 178 920 274 V500Z" fill="#14231a"/>
+                    ${[[600, 236, '#ff8fb8'], [680, 196, '#ffd23f'], [760, 186, '#ff8fb8'], [840, 200, '#c9a6ff'], [905, 236, '#ffd23f']].map((f) => `<circle cx="${f[0]}" cy="${f[1]}" r="11" fill="${f[2]}"/><circle cx="${f[0]}" cy="${f[1]}" r="4" fill="#fff8d0"/>`).join('')}`;
+            },
+            isikXY: [750, 390],
+            svg(c) {
+                const kab = '#a27ad8', kabK = '#4e2f7a';
+                return `<g ${og('hps-kuyruk', 930, 484)}><path d="M900 470 Q950 478 972 498 L900 500Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" stroke-linejoin="round"/></g>
+                <g ${og('hps-nefes', 680, 490)} class="hps-nefes"><g ${og('hps-govde', 680, 490)}>
+                  <path d="M400 500 Q390 450 450 440 L880 456 Q920 470 916 500Z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5" stroke-linejoin="round"/>
+                  <path d="M450 470 L880 478" stroke="${c.karin}" stroke-width="14" stroke-linecap="round"/>
+                  <circle cx="700" cy="330" r="140" fill="${kab}" stroke="${kabK}" stroke-width="6"/>
+                  <path d="M700 330 m-18 0 a18 18 0 1 1 36 0 a36 36 0 1 1 -72 0 a54 54 0 1 1 108 0 a72 72 0 1 1 -144 0 a90 90 0 1 1 180 0 a104 104 0 1 1 -208 0" fill="none" stroke="${kabK}" stroke-width="7" opacity=".55" stroke-linecap="round"/>
+                  <ellipse cx="660" cy="240" rx="56" ry="18" fill="#fff" opacity=".18"/></g></g>
+                <g ${og('hps-ayak', 470, 496)}><path d="M420 500 q12 -12 24 0 q12 -12 24 0 q12 -12 24 0 q12 -12 24 0" fill="${c.karin}" stroke="${c.koyu}" stroke-width="3"/></g>
+                <g ${og('hps-bas', 420, 440)}>
+                  <path d="M398 372 Q388 330 380 300 M428 368 Q432 330 432 292" fill="none" stroke="${c.koyu}" stroke-width="14" stroke-linecap="round"/>
+                  <path ${og('hps-kulak', 405, 300)} d="M398 372 Q388 330 380 300 M428 368 Q432 330 432 292" fill="none" stroke="${c.ten}" stroke-width="9" stroke-linecap="round"/>
+                  <circle cx="380" cy="296" r="15" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/><circle cx="432" cy="288" r="15" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/>
+                  <ellipse cx="412" cy="412" rx="58" ry="62" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="400" cy="378" rx="26" ry="10" fill="#fff" opacity=".2"/>
+                  <g ${og('hps-burun', 372, 418)}><ellipse cx="368" cy="414" rx="4" ry="3" fill="${c.koyu}"/><ellipse cx="380" cy="418" rx="4" ry="3" fill="${c.koyu}"/></g>
+                  ${balon(350, 410, 18)}
+                  <ellipse id="hps-yanak" cx="440" cy="428" rx="16" ry="9" fill="#ff8fa8" opacity=".35"/>
+                  ${gozler([380, 296], [432, 288], 10, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(470, 270)}
+                </g>
+                ${hedef('burun', 372, 416)}${hedef('gobek', 560, 476)}${hedef('ayak', 470, 496)}${hedef('kuyruk', 940, 488)}
+                ${hedef('anten', 432, 300)}${hedef('kabuk', 700, 330)}${hedef('yanak', 440, 428)}`;
+            }
         }
     };
-    const TIPLER = ['ejder', 'kurbaga', 'mamut', 'ayi'];
+    const TIPLER = ['ejder', 'kurbaga', 'mamut', 'ayi', 'timsah', 'kaplumbaga', 'balina', 'salyangoz'];
     // Gün + yaratık sırası tohumla karışır (her gün başka bir yaratıkla başlar, her cihaz aynı sırayı görür).
     function tipSec(no, tarih) {
         const t = TIPLER.slice(); let h = hash(tarih + '|hps');
@@ -262,11 +423,13 @@
     let _st = null, _stKonum = null, _stHam = null;
     function liste() { return (typeof _kmOyunRosterCache !== 'undefined' && _kmOyunRosterCache) || []; }
     // Gereken gıdık: sınıftaki her çocuktan ~1 seri. Çocuğun ok ortalaması (son 30 seri, Canavar'la aynı ölçü) beklenen
-    // gıdığı belirler; hiç kaydı olmayan için 6. Her sonraki yaratık %15 daha gıdıklanmaz.
+    // gıdığı belirler; hiç kaydı olmayan için 6. Her sonraki yaratık %15 daha gıdıklanmaz. Oyun Ayarları › Hapşırık seviyesi
+    // (hapsirikSeri, kişi başı seri; standart 1) bunu çarpar.
+    function seviye() { try { const a = typeof kmOyunAyar === 'function' ? kmOyunAyar() : null; return (a && a.hapsirikSeri > 0) ? a.hapsirikSeri : 1; } catch (e) { return 1; } }
     function gerekliHesapla(no) {
-        let top = 0;
+        let top = 0; const k = seviye();
         liste().forEach((s) => { let o = 6; try { if (typeof kmCanavarSporcuOrtalama === 'function') { const a = kmCanavarSporcuOrtalama(s.g, s.ad); if (a > 0) o = a; } } catch (e) { } top += 3 * (4 + o * 1.1); });
-        return Math.round(Math.max(60, top) * (1 + .15 * no));
+        return Math.round(Math.max(60 * k, top * k) * (1 + .15 * no));
     }
     function yeniYaratik(st, no) {
         st.no = no; st.tip = tipSec(no, st.tarih); st.gerekli = gerekliHesapla(no); st.gidik = 0; st.sahte = false; st.katki = {};
@@ -295,7 +458,7 @@
     function panel() { return $('km-oyun-panel-hapsirik'); }
     const T = 'translate(208 112) scale(.8)'; // yerel yaratık çerçevesi (x 290..990) → sahnede x 440..1000
     // Çocuklar sol üstteki tepede (skor kutusu varsayılan olarak sol altta — Canavar gibi); 6'şarlı sıralar, arka sıra yukarıda.
-    function cocukXY(i) { const satir = Math.floor(i / 6), sutun = i % 6; return { x: 34 + sutun * 50 + (satir % 2) * 25, y: 262 - satir * 54 }; }
+    function cocukXY(i) { const satir = Math.floor(i / 6), sutun = i % 6; return { x: 34 + sutun * 50 + (satir % 2) * 25, y: 205 - satir * 50 }; }
     function sahneHTML(st) {
         const c = Y[st.tip], gb = gizliBilgi(st);
         let cocuk = '';
@@ -322,13 +485,13 @@
             <text x="748" y="${({ mamut: 176, ayi: 104, kurbaga: 150 })[st.tip] || 132}" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" opacity=".6">${c.yer}</text>
             <g id="hps-yaratik" style="transform-box:view-box;transform-origin:690px 500px;transition:transform 1.8s ease-in-out"><g ${og('hps-yuvarlan', 690, 500)}>${c.svg(c)}<g id="hps-gizli-iz"></g></g></g>
             <g id="hps-ruya" style="transform-box:view-box;transform-origin:${c.ruyaXY[0]}px ${c.ruyaXY[1]}px;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .35s">
-              <g fill="#fff" opacity=".92" transform="translate(${c.ruyaXY[0] - 332} ${c.ruyaXY[1] - 225})"><circle cx="430" cy="312" r="7" opacity=".9"/><circle cx="405" cy="288" r="11" opacity=".9"/><circle cx="300" cy="215" r="44"/><circle cx="350" cy="200" r="50"/><circle cx="392" cy="225" r="38"/><circle cx="335" cy="250" r="40"/><circle cx="268" cy="245" r="32"/></g>
-              <g ${og('hps-ruya-ic', c.ruyaXY[0], c.ruyaXY[1])}><text id="hps-ruya-emoji" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] + 8}" text-anchor="middle" font-size="52">${c.ruya[0]}</text><text id="hps-ruya-tuy" x="${c.ruyaXY[0] + 46}" y="${c.ruyaXY[1] - 13}" font-size="30" opacity="0">🪶</text></g>
-              <text id="hps-ruya-yazi" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] + 44}" text-anchor="middle" font-size="15" font-weight="800" fill="#4a4550">${c.ruya[1]}</text>
+              <g fill="#fff" opacity=".92" transform="translate(${c.ruyaXY[0]} ${c.ruyaXY[1]}) scale(1.15) translate(-332 -225)"><circle cx="430" cy="312" r="7" opacity=".9"/><circle cx="405" cy="288" r="11" opacity=".9"/><circle cx="300" cy="215" r="44"/><circle cx="350" cy="200" r="50"/><circle cx="392" cy="225" r="38"/><circle cx="335" cy="250" r="40"/><circle cx="268" cy="245" r="32"/></g>
+              <g ${og('hps-ruya-ic', c.ruyaXY[0], c.ruyaXY[1])}><text id="hps-ruya-emoji" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] - 4}" text-anchor="middle" font-size="46">${c.ruya[0]}</text><g id="hps-ruya-tuy" opacity="0" transform="translate(${c.ruyaXY[0] + 40} ${c.ruyaXY[1] - 46}) scale(.9)">${TUY_SVG_IC}</g></g>
+              <text id="hps-ruya-yazi" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] + 22}" text-anchor="middle" font-size="14" font-weight="800" fill="#4a4550"></text>
             </g>
             <g id="hps-hapsu"></g>
           </g>
-          <path d="M-400 560 V282 Q60 236 190 250 Q320 266 430 340 V560Z" fill="${c.zemin[0]}" opacity=".92"/><path d="M-400 282 Q60 236 190 250 Q320 266 430 340" fill="none" stroke="${c.zemin[1]}" stroke-width="6"/>
+          <path d="M-400 560 V226 Q60 180 190 194 Q320 210 430 284 V560Z" fill="${c.zemin[0]}" opacity=".92"/><path d="M-400 226 Q60 180 190 194 Q320 210 430 284" fill="none" stroke="${c.zemin[1]}" stroke-width="6"/>
           <g id="hps-cocuklar">${cocuk}</g>
         </svg>
         <div class="hps-hud"><div class="hps-hud-ust"><span class="hps-ad" id="hps-ad"></span><span class="hps-cip" id="hps-gizli-cip"></span>
@@ -397,10 +560,16 @@
     function ucur(i, hedefId, cb) {
         const u = $('hps-ust'), c = $('hps-c' + i), h = $(hedefId); if (!u || !h) { cb(); return; }
         const a = c ? nokta(c.querySelector('.hps-ci') || c) : { x: 40, y: 200 }, b = nokta(h), k = olcek();
-        const d = document.createElement('div'); d.className = 'hps-tuy'; d.textContent = '🪶'; d.style.left = a.x + 'px'; d.style.top = a.y + 'px'; d.style.fontSize = Math.max(18, 40 * k) + 'px'; u.appendChild(d);
+        const d = document.createElement('div'); d.className = 'hps-tuy'; const tb = Math.max(22, 46 * k); d.innerHTML = '<svg viewBox="0 0 40 40" width="' + tb + '" height="' + tb + '">' + TUY_SVG_IC + '</svg>'; d.style.left = (a.x - tb / 2) + 'px'; d.style.top = (a.y - tb / 2) + 'px'; u.appendChild(d);
         const dx = b.x - a.x + (Math.random() * 14 - 7) * k, dy = b.y - a.y + (Math.random() * 10 - 5) * k, tep = -Math.max(70, Math.abs(dx) * .28) * k;
         const an = d.animate([{ transform: 'translate(0,0) rotate(-50deg)' }, { transform: `translate(${dx / 2}px,${dy / 2 + tep}px) rotate(0deg)`, offset: .5 }, { transform: `translate(${dx}px,${dy}px) rotate(50deg)` }], { duration: 800, easing: 'ease-in-out' });
         an.onfinish = () => { d.remove(); cb(); };
+    }
+    // Bulut ~190 birim geniş: 14 harften uzun yazı iki dengeli satıra bölünür (eskiden buluttan taşıyordu).
+    function ruyaYazi(yz, t) {
+        const x = yz.getAttribute('x'), w = String(t).split(' '); let satir = [t];
+        if (t.length > 14 && w.length > 1) { let en = 1, fark = 1e9; for (let i = 1; i < w.length; i++) { const d = Math.abs(w.slice(0, i).join(' ').length - w.slice(i).join(' ').length); if (d < fark) { fark = d; en = i; } } satir = [w.slice(0, en).join(' '), w.slice(en).join(' ')]; }
+        yz.innerHTML = satir.map((s, i) => '<tspan x="' + x + '" dy="' + (i ? '1.15em' : '0') + '">' + kacis(s) + '</tspan>').join('');
     }
     function ruyaAsamaUygula(st, sessiz) {
         const c = Y[st.tip], o = st.gidik / st.gerekli * 100, a = o >= 66 ? 2 : o >= 33 ? 1 : 0;
@@ -408,7 +577,7 @@
         const once = +(($('hps-ruya') || {}).dataset || {}).asama || 0;
         tuy.setAttribute('opacity', a >= 1 ? 1 : 0);
         em.textContent = a >= 2 ? c.karisik[0] : c.ruya[0];
-        yz.textContent = a >= 2 ? c.karisik[1] : a === 1 ? 'hı? bir şey gıdıklıyor...' : c.ruya[1];
+        ruyaYazi(yz, a >= 2 ? c.karisik[1] : a === 1 ? 'hı? bir şey gıdıklıyor...' : c.ruya[1]);
         $('hps-ruya').dataset.asama = a;
         if (!sessiz) { anim('hps-ruya-ic', 'hps-kikir'); if (a === 2 && once < 2) { pop('Rüyası karıştı! 😵', 'hps-ruya-emoji', -70, 24, '#ffe9a8'); SES.ruya(); } }
     }
@@ -498,7 +667,7 @@
         } else if (o.yer === 'burun') { SES.burun(); anim('hps-burun', 'hps-kipir'); pop(rnd(['hı... hıı', 'fıss!', 'hıhh?']), 'hps-h-burun', -50, 28, '#ffd0dc'); const b = $('hps-balon'); if (b) { b.style.display = 'none'; setTimeout(() => { if (b.isConnected && !_toren) b.style.display = ''; }, 2500); } }
         else if (o.yer === 'gobek') { SES.kikir(); anim(_aktifTip === 'kurbaga' ? 'hps-gidi' : 'hps-govde', _aktifTip === 'kurbaga' ? 'hps-sisir' : 'hps-kikir'); pop(rnd(['kıkıkı!', 'hihihi', 'kih kih']), 'hps-h-gobek', -80, 28, '#ffe9a8'); }
         else if (o.yer === 'ayak') { SES.ayak(); anim('hps-ayak', 'hps-ayak-salla'); pop(rnd(['hiii!', 'ayy', 'kıpır kıpır']), 'hps-h-ayak', -60, 24, '#d8f0ff'); }
-        else if (o.yer === 'kuyruk') { SES.kuyruk(); anim('hps-kuyruk', _aktifTip === 'kurbaga' ? 'hps-kipir' : 'hps-kuyruk-salla'); pop(_aktifTip === 'ayi' ? 'kulak kıpır!' : _aktifTip === 'kurbaga' ? 'hıhı sırtım!' : 'fış fış', 'hps-h-kuyruk', -40, 22, '#e8f0d8'); }
+        else if (o.yer === 'kuyruk') { SES.kuyruk(); anim('hps-kuyruk', _aktifTip === 'kurbaga' ? 'hps-kipir' : 'hps-kuyruk-salla'); pop(c.kuyrukSoz || (_aktifTip === 'ayi' ? 'kulak kıpır!' : _aktifTip === 'kurbaga' ? 'hıhı sırtım!' : 'fış fış'), 'hps-h-kuyruk', -40, 22, '#e8f0d8'); }
         if (o.v === 'X') pop('X! ×1.5', o.yer === 'gizli' ? 'hps-h-' + (_ekranGizli || durum().gizli).yer : 'hps-h-' + o.yer, -110, 22, '#ffe08a');
         if (o.oran >= .5 && o.oran < 1 && Math.random() < .55) { goz(2, true); setTimeout(() => goz(2, false), 800); konus(rnd(['Mmm... kim o?', 'Hıı... rüya mı bu?', 'Beş dakika daha...']), 1500); }
         if (o.oran >= .75 && o.oran < 1) { agiz('ha'); pop('ha...', 'hps-h-burun', -30, 30); }
@@ -557,7 +726,7 @@
         sonra(() => {
             const enCok = h.enCok ? liste().find((s) => s.g + '|' + s.ad === h.enCok) : null, bulan = h.gizliBulan ? liste().find((s) => s.g + '|' + s.ad === h.gizliBulan) : null;
             const st = durum(), yeni = Y[st.tip];
-            dev(`${c.ikon} ${kacis(h.adi)} hapşırdı! 🎉<small>🏅 Hapşırtan: ${kacis(ilkAd(h.ad))}${enCok ? ' · 🪶 En çok gıdıklayan: ' + kacis(ilkAd(enCok.ad)) : ''}${bulan ? ' · ✨ Gizli noktayı bulan: ' + kacis(ilkAd(bulan.ad)) : ''}<br>Sıradaki: ${yeni.ikon} ${kacis(yaratikAdi(st))}</small>`, 5200);
+            dev(`${c.ikon} ${kacis(h.adi)} hapşırdı! 🎉<small>🏅 Hapşırtan: ${kacis(ilkAd(h.ad))}${enCok ? ' · ✨ En çok gıdıklayan: ' + kacis(ilkAd(enCok.ad)) : ''}${bulan ? ' · ✨ Gizli noktayı bulan: ' + kacis(ilkAd(bulan.ad)) : ''}<br>Sıradaki: ${yeni.ikon} ${kacis(yaratikAdi(st))}</small>`, 5200);
         }, 16000);
         sonra(() => { _toren = false; hpsSahneKur(); SES.geldi(); const p = panel(); if (p) { const y = $('hps-yaratik'); if (y) { y.style.transition = 'none'; y.style.transform = 'translate(420px,0) scale(.7)'; void y.getBoundingClientRect(); y.style.transition = 'transform 1.4s cubic-bezier(.3,1.2,.5,1)'; y.style.transform = ''; } } }, 21400);
     }
@@ -593,7 +762,7 @@
 .hps-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d97a9a,#f2b3c8);transition:width .5s}
 .hps-bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 .hps-ust{position:absolute;inset:0;pointer-events:none;z-index:2}
-.hps-tuy{position:absolute;margin:-18px 0 0 -14px;pointer-events:none}
+.hps-tuy{position:absolute;pointer-events:none;line-height:0;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
 .hps-pop{position:absolute;font-weight:900;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35);white-space:nowrap;transform:translate(-50%,-50%);animation:hpsPop 1.3s ease-out forwards}
 @keyframes hpsPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
 .hps-konus{position:absolute;background:#fffaf0;color:#2a2018;border-radius:16px;padding:8px 14px;font-weight:800;font-size:clamp(13px,1.6vw,18px);transform:translate(-50%,-100%) scale(.6);opacity:0;transition:.25s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.35)}
@@ -653,4 +822,10 @@
     window.hpsGeriYukle = hpsGeriYukle;
     window.hpsSporcuGidik = hpsSporcuGidik;
     window.hpsYaratiklar = Y;
+    // Oyun Ayarları › Hapşırık seviyesi değişince sahnedeki yaratığın gereken gıdığı yeniden hesaplanır (dolu oran korunur).
+    window.hpsAyarUygula = function () {
+        if (_toren) return; const st = durum(), yeni = gerekliHesapla(st.no); if (!yeni || yeni === st.gerekli) return;
+        const oran = Math.min(.98, st.gidik / (st.gerekli || 1)); st.gerekli = yeni; st.gidik = Math.round(oran * yeni); kaydet();
+        if (panel() && $('hps-svg')) hpsGuncelle();
+    };
 })();
