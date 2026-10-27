@@ -38,5 +38,6 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `66-hapsirik` | Oyunlar › Hapşırık: gerçek seri, gizli nokta, geri al, hapşırık → sıradaki yaratık, 4 yaratık; adil başlangıç (hiç ilk başlamamış başlar) |
 | `67-gunluk-seri-limiti` | Günlük seri limiti yalnız bugünün serilerini sayar (eski kart serileri limiti doldurmaz) |
 | `68-vitrin` | Yönetici › Tanıtım Ekranı: ilk oyun + alt bant, görüntüler sunucudan gelir, ara kart, 390 px taşma yok, Esc kapatır |
+| `69-akvaryum` | Oyunlar › Sınıf Akvaryumu: gerçek seri, her isabet bir canlı (iska yok), X nadir + rozet, geri al, dolunca tören → sıradaki akvaryum, 5 akvaryum, çocuğa dokununca sıra, Akvaryum seviyesi |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.

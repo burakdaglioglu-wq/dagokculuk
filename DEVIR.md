@@ -5232,3 +5232,13 @@ deneme dersini kaldır → arkadaşını getir %20 indirim; karakterleri biraz d
   Önizleme/test: `vtAraGoster(tip)`.
 - Hapşırık: + aslan (Savana Kapısı), penguen (Buz Köprüsü), ahtapot (Mercan Kapısı, mürekkep hapşırığı), baykuş (Ay Işığı
   Kapısı) → 12. Yeni isteğe bağlı alanlar: `ruyaAyna` (başı sağda kalan yaratıkta bulut aynalı), `yerY` (yer yazısı yüksekliği).
+
+
+## 58. 🐠 Sınıf Akvaryumu — yeni ortak Oyunlar teması (2026-10-28, v330)
+Kullanıcı yeni oyun önerisi istedi; tarayıcıda iki taslak sayfası (6 fikir) gösterildi, **Sınıf Akvaryumu**'nu seçti (Robot Fabrikası'nı da beğendi, henüz yapılmadı).
+- **Oyun:** her ok, atan çocuğun yerinden suya düşen bir damla → düştüğü yerde canlı doğar. Iska yalnız kabarcık; 1-4 🐟, 5-6 🐠 🦀 🦐, 7-8 🐢 🐙 🦑, 9 🐬 🐡, **10 ve X nadir** 🐋 🦈 🐳 (X doluluğa ×1,5). Canlının altında getiren çocuğun adı yüzer.
+- Doluluk %100 → "AKVARYUM DOLDU!" töreni (canlılar dans eder, son canlıyı getiren 👑 + rozet, en çok canlı getiren, nadir bulanlar), canlılar sağdan yüzüp gider, **sıradaki farklı akvaryum** gelir: Mercan Bahçesi / Derin Deniz / Buz Denizi / Batık Gemi / Ay Işığı Lagünü (gün tohumlu sıra, Hapşırık'taki tipSec gibi).
+- **Kod:** `public/dagsk-km-akvaryum.js` (akv*, tembel yüklenir), Hapşırık'ın kabuk bağlantılarının birebir eşi (tema tanımı, CSS değişken satırı, panel, Resync/SahneKur/Animate zincirleri, takım anahtarı gizli, artis=0, geri al kopyası, ilerleme kutusu 'canlı', dock varsayılanı sol). Durum `dag_km_akvaryum_<konum>` güne özel, km-ortak ile paylaşılır. Rozet `sp.oyun.akvaryum = { doldurdu, nadir }`.
+- **Oyun Ayarları › Akvaryum seviyesi** (`akvaryumSeri`, ½…2 seri/kişi) → `akvAyarUygula`.
+- Dikkat: canlının konumu dış `<g transform>` özniteliğinde; dans/ayrılış CSS animasyonları iç `.akv-govde`'de (CSS transform özniteliği ezer). Yüzme dış grupta (ad yazısı birlikte gider), dönüş yalnız emojide (`.akv-don`) — yazı ayna görünmez. Tören sürerken HUD `_ekranHud` ile eski akvaryumu gösterir.
+- Yalnız eski emojiler (🪸 🪼 🦭 tablette kare). Test `69-akvaryum`.
