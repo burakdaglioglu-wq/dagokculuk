@@ -65,7 +65,7 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => /Hapşırtan/.test(document.getElementById('hps-dev').textContent)), 'kahraman anı (Hapşırtan) gösterilmedi');
     const rozet = await p.evaluate((ad) => { const s = _kmOyunRosterCache.find((x) => x.ad === ad); const sp = turnuvaDB[s.g][s.ad]; return sp.oyun && sp.oyun.hapsirik && sp.oyun.hapsirik.hapsirtti; }, r3.ad);
     dogrula(rozet >= 1, 'hapşırtan rozeti yazılmadı');
-    // sekiz yaratığın hepsi çizilir (farklı gövdeler)
+    // 12 yaratığın hepsi çizilir (farklı gövdeler)
     const yar = await p.evaluate(async () => {
       const k = 'dag_km_hapsirik_' + (_kmAktifKonum || 'varsayilan'), sonuc = {};
       for (const tip of Object.keys(hpsYaratiklar)) {
@@ -75,7 +75,7 @@ export default async function ({ log }) {
       }
       return sonuc;
     });
-    esit(Object.keys(yar).length, 8, 'yaratık sayısı');
+    esit(Object.keys(yar).length, 12, 'yaratık sayısı');
     dogrula(Object.values(yar).every(Boolean), 'eksik çizilen yaratık: ' + JSON.stringify(yar));
     // ⚖️ takım yardımcısı (Ok Partisi / Kelime Hedefi): en uzun süredir ilk başlamamış sporcunun takımı başlar
     const tk = await p.evaluate(() => {

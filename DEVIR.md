@@ -5220,3 +5220,15 @@ o kişi atabilsin"): çocuk grupları `data-km-sporcu="<i>"` taşır → kabuğu
 Test `66-hapsirik` (gerçek fare tıklaması).
 Ek (kullanıcı fotoğrafı, "burada geçişlerin olması lazım"): sırası gelen çocuk zıplar (`hps-sira-geldi`), adı sarı (`hps-aktif`);
 adlar koyu konturlu (karlı mamut zemininde beyaz yazı okunmuyordu).
+
+**v329 — Tanıtım Ekranı genişledi + tam ekran düzeltmesi + Hapşırık 12 yaratık** (kullanıcı: "tanıtım tam ekrana geçmiyor,
+genişletelim: derste ne kazandıkları, lisanslı sporcu olabilirler, Google'dan değerlendirin BÜYÜK, resepsiyon yok sil, ücretsiz
+deneme dersini kaldır → arkadaşını getir %20 indirim; karakterleri biraz daha çoğalt"):
+- Tam ekran: `vitrinAc` belgeyi TIKLAMA ANINDA tam ekran yapar (`window._vtTamIstendi`); eskiden dosya inerken kullanıcı hareketi
+  kaçıyordu. vtAc bu durumda kendi katmanını ayrıca tam ekran yapmaz (iç içe iki tam ekran olup tek Esc'le çıkılmıyordu).
+- Ara kartlar (neredeyse her oyundan sonra, `ARALAR` + kart başı `sn`): nasıl çalışır · kazanımlar (6 kutu) · Google'da
+  değerlendirin (BÜYÜK + QR, `GOOGLE_YORUM` writereview linki, QR qrcode-generator@1.4.4 jsDelivr'dan, internet yoksa yalnız yazı)
+  · lisanslı sporcu yolu · arkadaşını getir %20 · neden oyun · Google (tekrar). "resepsiyon"/"deneme dersi" hiçbir yerde yok.
+  Önizleme/test: `vtAraGoster(tip)`.
+- Hapşırık: + aslan (Savana Kapısı), penguen (Buz Köprüsü), ahtapot (Mercan Kapısı, mürekkep hapşırığı), baykuş (Ay Işığı
+  Kapısı) → 12. Yeni isteğe bağlı alanlar: `ruyaAyna` (başı sağda kalan yaratıkta bulut aynalı), `yerY` (yer yazısı yüksekliği).

@@ -19110,7 +19110,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
         function kmOyunKurtarmaAc() { kmOyunSeciciKapat(); kmSekme('kurtarma'); }
         // 🤧 Hapşırık — kabuk teması; durum + çizim public/dagsk-km-hapsirik.js'te (ilk açılışta tembel yüklenir).
-        function vitrinAc() { dagskEkYukle('dagsk-vitrin.js').then(function() { vtAc(); }).catch(function() { showToast('Tanıtım ekranı yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
+        // Tam ekran TIKLAMA ANINDA istenir: tarayıcı yalnız kullanıcı hareketinin içinde izin veriyor, dosya ilk kez inerken o an
+        // kaçıyordu (kullanıcı: "tanıtım tam ekran moduna geçmiyor"). vtKapat bu bayrakla tam ekrandan çıkar.
+        function vitrinAc() { try { if(!document.fullscreenElement && document.documentElement.requestFullscreen) { window._vtTamIstendi = true; document.documentElement.requestFullscreen().catch(function() { window._vtTamIstendi = false; }); } } catch(e) {} dagskEkYukle('dagsk-vitrin.js').then(function() { vtAc(); }).catch(function() { showToast('Tanıtım ekranı yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunHapsirikHazir() { return dagskEkYukle('dagsk-km-hapsirik.js'); }
         function kmOyunSahneKurHapsirik() { kmOyunHapsirikHazir().then(function() { if(_kmOyunAktifTema === 'hapsirik' && document.getElementById('km-oyun-panel-hapsirik')) hpsSahneKur(); }).catch(function() { showToast('Hapşırık yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncHapsirik() { if(typeof hpsGuncelle === 'function' && document.getElementById('hps-svg')) hpsGuncelle(); else kmOyunSahneKurHapsirik(); }

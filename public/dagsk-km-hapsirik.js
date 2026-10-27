@@ -407,9 +407,162 @@
                 ${hedef('burun', 372, 416)}${hedef('gobek', 560, 476)}${hedef('ayak', 470, 496)}${hedef('kuyruk', 940, 488)}
                 ${hedef('anten', 432, 300)}${hedef('kabuk', 700, 330)}${hedef('yanak', 440, 428)}`;
             }
+        },
+        // ---- 2026-10-27 ikinci ek (kullanıcı: "karakterleri biraz daha çoğaltabiliriz") — 12 yaratık.
+        aslan: {
+            ad: 'Uykucu Aslan', ikon: '🦁', perde: .65, ten: '#e8b25a', koyu: '#6a3e14', karin: '#f6dca0', kuyrukSoz: 'püskül salla!',
+            yer: 'SAVANA KAPISI', gok: ['#3a2a3a', '#d08a4a'], zemin: ['#b08a40', '#cfa85a'],
+            bolge: { burun: 'BURUN', gobek: 'GÖBEK', ayak: 'PATİ', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'kulak', ad: 'KULAK', iy: 'kulağı', emoji: '👂' }, { yer: 'yele', ad: 'YELE', iy: 'yelesi', emoji: '😆' }, { yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }],
+            ruya: ['🍖', 'mmm... köfte...'], karisik: ['🍌', 'Köfte MUZ oldu!'], ruyaXY: [480, 175],
+            hapsirik: { cesit: 'toz', renk: ['#f1dfae', '#e6cc8e', '#d9b25a'] },
+            agiz: { uyku: 'M382 422 q13 8 26 0', ha: 'M383 424 h24', acik: 'M384 418 a12 10 0 1 0 24 0 a12 10 0 1 0 -24 0', utanc: 'M389 422 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0', gulumse: 'M378 418 q17 16 34 0' },
+            arka() {
+                return `<rect x="560" y="220" width="40" height="280" fill="#8a6a46"/><rect x="900" y="220" width="40" height="280" fill="#8a6a46"/><rect x="540" y="200" width="420" height="34" rx="6" fill="#a07a50"/>
+                    <rect x="600" y="234" width="300" height="266" fill="#2a1a12"/>
+                    <path d="M1000 500 V250" stroke="#4a3220" stroke-width="12"/><ellipse cx="1000" cy="240" rx="80" ry="22" fill="#3f5a2a"/><ellipse cx="1010" cy="222" rx="50" ry="16" fill="#4c6a32"/>`;
+            },
+            isikXY: [750, 390],
+            svg(c) {
+                const yele = '#b0601e', yeleK = '#6a3010';
+                let kenar = ''; for (let a = 0; a < 360; a += 30) { const t = a * Math.PI / 180; kenar += `<circle cx="${448 + 92 * Math.cos(t)}" cy="${384 + 92 * Math.sin(t)}" r="24" fill="${yele}"/>`; }
+                return `<g ${og('hps-kuyruk', 890, 440)}><path d="M880 440 Q960 450 958 384" fill="none" stroke="${c.ten}" stroke-width="12" stroke-linecap="round"/><ellipse cx="958" cy="376" rx="14" ry="20" fill="${yele}"/></g>
+                <ellipse cx="842" cy="484" rx="44" ry="20" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>
+                <g ${og('hps-nefes', 700, 500)} class="hps-nefes"><g ${og('hps-govde', 700, 500)}>
+                  <ellipse cx="700" cy="430" rx="200" ry="72" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="690" cy="470" rx="160" ry="22" fill="${c.karin}"/><ellipse cx="700" cy="378" rx="110" ry="16" fill="#fff" opacity=".15"/></g></g>
+                <g ${og('hps-ayak', 520, 484)}><ellipse cx="520" cy="482" rx="48" ry="22" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>${[496, 514, 532].map((x) => `<path d="M${x} 474 v14" stroke="${c.koyu}" stroke-width="2.5" opacity=".5"/>`).join('')}</g>
+                <g ${og('hps-bas', 450, 420)}>
+                  <g ${og('hps-yele', 448, 384)}>${kenar}<circle cx="448" cy="384" r="94" fill="${yele}" stroke="${yeleK}" stroke-width="4"/></g>
+                  <g ${og('hps-kulak', 440, 330)}><circle cx="410" cy="338" r="16" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/><circle cx="476" cy="334" r="16" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/></g>
+                  <circle cx="440" cy="390" r="62" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/>
+                  <ellipse cx="404" cy="414" rx="32" ry="22" fill="${c.karin}"/>
+                  <g ${og('hps-burun', 395, 404)}><path d="M384 396 h22 l-11 13z" fill="${c.koyu}"/></g>
+                  ${balon(372, 396, 20)}
+                  <ellipse id="hps-yanak" cx="470" cy="408" rx="16" ry="9" fill="#ff8fa8" opacity=".3"/>
+                  ${gozler([420, 372], [462, 368], 12, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(510, 280)}
+                </g>
+                ${hedef('burun', 395, 402)}${hedef('gobek', 700, 470)}${hedef('ayak', 520, 484)}${hedef('kuyruk', 958, 380)}
+                ${hedef('kulak', 476, 334)}${hedef('yele', 530, 380)}${hedef('koltuk', 600, 468)}`;
+            }
+        },
+        penguen: {
+            ad: 'Mışıl Penguen', ikon: '🐧', perde: 1.4, ten: '#2a3242', koyu: '#141a24', karin: '#f4f7fb', kuyrukSoz: 'kuyrukçuk!',
+            yer: 'BUZ KÖPRÜSÜ', yerY: 330, gok: ['#0f1c33', '#3d5f8a'], zemin: ['#e2eef8', '#ffffff'],
+            bolge: { burun: 'GAGA', gobek: 'GÖBEK', ayak: 'AYAK', kuyruk: 'KUYRUK' },
+            gizliler: [{ yer: 'kanat', ad: 'KANAT ALTI', iy: 'kanat altı', emoji: '🤭' }, { yer: 'ense', ad: 'ENSE', iy: 'ensesi', emoji: '😆' }, { yer: 'yanak', ad: 'YANAK', iy: 'yanağı', emoji: '😊' }],
+            ruya: ['❄️', 'kar tanesi...'], karisik: ['🍿', 'Kar PATLAMIŞ MISIR oldu!'], ruyaXY: [770, 150], ruyaAyna: true,
+            hapsirik: { cesit: 'kar', renk: ['#ffffff', '#dff1ff', '#c8e6ff'] },
+            agiz: { uyku: 'M478 266 q12 6 24 0', ha: 'M478 267 h24', acik: 'M480 262 a10 8 0 1 0 20 0 a10 8 0 1 0 -20 0', utanc: 'M484 265 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0', gulumse: 'M474 262 q16 14 32 0' },
+            arka() {
+                return `<path d="M610 500 Q620 250 790 240 Q960 250 970 500Z" fill="#bcd8ee"/><path d="M655 500 Q660 300 790 292 Q920 300 925 500Z" fill="#132235"/>
+                    ${[[630, 420], [640, 340], [700, 270], [790, 250], [880, 270], [940, 340], [950, 420]].map((p) => `<rect x="${p[0] - 22}" y="${p[1] - 14}" width="44" height="28" rx="6" fill="none" stroke="#e8f4ff" stroke-width="3" opacity=".7"/>`).join('')}`;
+            },
+            isikXY: [790, 400],
+            svg(c) {
+                return `<g ${og('hps-kuyruk', 690, 478)}><path d="M660 470 l40 16 l-40 10z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/></g>
+                <g ${og('hps-nefes', 550, 500)} class="hps-nefes"><g ${og('hps-govde', 550, 500)}>
+                  <ellipse cx="552" cy="380" rx="132" ry="124" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="538" cy="402" rx="92" ry="98" fill="${c.karin}"/>
+                  <ellipse cx="440" cy="390" rx="26" ry="82" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" transform="rotate(16 440 390)"/>
+                  <ellipse cx="672" cy="390" rx="26" ry="82" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" transform="rotate(-16 672 390)"/></g></g>
+                <g ${og('hps-ayak', 545, 496)}><path d="M478 500 q22 -26 44 0z M560 500 q22 -26 44 0z" fill="#f2a33a" stroke="#a8641a" stroke-width="3"/></g>
+                <g ${og('hps-bas', 540, 300)}>
+                  <circle cx="540" cy="232" r="82" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="516" cy="240" rx="30" ry="34" fill="${c.karin}"/><ellipse cx="562" cy="236" rx="30" ry="34" fill="${c.karin}"/>
+                  <ellipse cx="560" cy="180" rx="34" ry="10" fill="#fff" opacity=".14"/>
+                  <g ${og('hps-burun', 470, 254)}><path d="M478 244 l-44 10 l44 14z" fill="#f2a33a" stroke="#a8641a" stroke-width="3" stroke-linejoin="round"/></g>
+                  ${balon(438, 244, 18)}
+                  <ellipse id="hps-yanak" cx="586" cy="262" rx="14" ry="8" fill="#ff8fa8" opacity=".45"/>
+                  ${gozler([514, 226], [560, 222], 11, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="#a8641a" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(610, 150)}
+                </g>
+                ${hedef('burun', 440, 256)}${hedef('gobek', 540, 420)}${hedef('ayak', 520, 496)}${hedef('kuyruk', 696, 482)}
+                ${hedef('kanat', 440, 410)}${hedef('ense', 606, 196)}${hedef('yanak', 586, 262)}`;
+            }
+        },
+        ahtapot: {
+            ad: 'Uykucu Ahtapot', ikon: '🐙', perde: 1.1, ten: '#e0708a', koyu: '#7a2440', karin: '#f6b6c4', kuyrukSoz: 'kol kıvrıl!',
+            yer: 'MERCAN KAPISI', yerY: 330, gok: ['#0b2236', '#1f5f7a'], zemin: ['#d8c08a', '#ead6a4'],
+            bolge: { burun: 'BURUN', gobek: 'GÖBEK', ayak: 'KOL', kuyruk: 'ARKA KOL' },
+            gizliler: [{ yer: 'vantuz', ad: 'VANTUZ', iy: 'vantuzları', emoji: '😆' }, { yer: 'koltuk', ad: 'KOLTUK ALTI', iy: 'koltuk altı', emoji: '🤭' }, { yer: 'tepe', ad: 'KAFA TEPESİ', iy: 'kafa tepesi', emoji: '🙃' }],
+            ruya: ['🦀', 'yengeeeç...'], karisik: ['🎈', 'Yengeç BALON oldu!'], ruyaXY: [770, 200], ruyaAyna: true,
+            hapsirik: { cesit: 'murekkep', renk: ['#2a2440', '#3d3560', '#1a1830'] },
+            agiz: { uyku: 'M508 404 q12 6 24 0', ha: 'M508 405 h24', acik: 'M510 398 a10 8 0 1 0 20 0 a10 8 0 1 0 -20 0', utanc: 'M514 402 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0', gulumse: 'M504 398 q16 14 32 0' },
+            arka() {
+                return `<path d="M640 500 Q610 360 680 280 Q760 210 860 260 Q960 320 940 500Z" fill="#c8506a" opacity=".75"/><path d="M690 500 Q680 360 740 320 Q800 290 860 330 Q910 380 900 500Z" fill="#0a1a26"/>
+                    ${[[660, 300, '#ff9a6a'], [930, 330, '#ffd06a'], [700, 240, '#ff7aa8']].map((p) => `<path d="M${p[0]} ${p[1]} l-14 -30 m14 30 l10 -34 m-10 34 l24 -20" stroke="${p[2]}" stroke-width="8" stroke-linecap="round"/>`).join('')}
+                    ${[[600, 150], [640, 90], [880, 120]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="#cfefff" stroke-width="2" opacity=".6"/>`).join('')}`;
+            },
+            isikXY: [790, 400],
+            svg(c) {
+                const kol = (d) => `<path d="${d}" fill="none" stroke="${c.koyu}" stroke-width="34" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c.ten}" stroke-width="27" stroke-linecap="round"/>`;
+                const vantuz = [[640, 486], [690, 488], [740, 486], [790, 482]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6" fill="${c.karin}"/>`).join('');
+                return `<g ${og('hps-kuyruk', 880, 440)}>${kol('M640 450 Q820 470 880 430 Q930 390 900 360')}</g>
+                <g ${og('hps-nefes', 560, 480)} class="hps-nefes"><g ${og('hps-govde', 560, 480)}>
+                  ${kol('M560 440 Q700 500 820 484')}${kol('M500 440 Q440 500 360 488 Q330 486 334 466')}${kol('M540 448 Q560 500 640 500')}
+                  ${vantuz}<ellipse cx="540" cy="440" rx="110" ry="40" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4"/></g></g>
+                <g ${og('hps-ayak', 430, 480)}>${kol('M470 444 Q400 470 410 500 Q420 510 446 500')}</g>
+                <g ${og('hps-bas', 520, 420)}>
+                  <ellipse cx="520" cy="320" rx="120" ry="130" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="500" cy="240" rx="50" ry="22" fill="#fff" opacity=".16"/>
+                  ${[[470, 250, 10], [560, 230, 13], [590, 290, 8], [450, 300, 7]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="${c.koyu}" opacity=".2"/>`).join('')}
+                  <g ${og('hps-burun', 520, 380)}><ellipse cx="514" cy="380" rx="4" ry="3" fill="${c.koyu}"/><ellipse cx="528" cy="380" rx="4" ry="3" fill="${c.koyu}"/></g>
+                  ${balon(500, 376, 18)}
+                  <ellipse id="hps-yanak" cx="590" cy="386" rx="16" ry="9" fill="#ff8fa8" opacity=".4"/>
+                  ${gozler([486, 356], [556, 352], 14, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="${c.koyu}" stroke-width="4" stroke-linecap="round"/>
+                  ${zzz(620, 190)}
+                </g>
+                ${hedef('burun', 520, 380)}${hedef('gobek', 540, 444)}${hedef('ayak', 412, 496)}${hedef('kuyruk', 900, 364)}
+                ${hedef('vantuz', 690, 488)}${hedef('koltuk', 440, 430)}${hedef('tepe', 520, 200)}`;
+            }
+        },
+        baykus: {
+            ad: 'Uykucu Baykuş', ikon: '🦉', perde: 1.3, ten: '#8a6a4a', koyu: '#3e2a18', karin: '#ecdcb8', kuyrukSoz: 'tüy kıpır!',
+            yer: 'AY IŞIĞI KAPISI', gok: ['#101a33', '#2c3d66'], zemin: ['#2a3a2a', '#3f553a'],
+            bolge: { burun: 'GAGA', gobek: 'GÖBEK', ayak: 'PENÇE', kuyruk: 'KUYRUK TÜYÜ' },
+            gizliler: [{ yer: 'kulak', ad: 'KULAK TÜYÜ', iy: 'kulak tüyü', emoji: '👂' }, { yer: 'kanat', ad: 'KANAT ALTI', iy: 'kanat altı', emoji: '🤭' }, { yer: 'tepe', ad: 'KAFA TEPESİ', iy: 'kafa tepesi', emoji: '🙃' }],
+            ruya: ['🐭', 'fareee...'], karisik: ['🧀', 'Fare PEYNİR oldu!'], ruyaXY: [420, 160],
+            hapsirik: { cesit: 'yaprak', renk: ['#c9a676', '#8a6a4a', '#ecdcb8'] },
+            agiz: { uyku: 'M590 322 q10 5 20 0', ha: 'M590 322 h20', acik: 'M591 318 a9 7 0 1 0 18 0 a9 7 0 1 0 -18 0', utanc: 'M594 320 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0', gulumse: 'M586 318 q14 12 28 0' },
+            arka() {
+                return `<circle cx="880" cy="130" r="58" fill="#fff2c0" opacity=".9"/><circle cx="900" cy="118" r="12" fill="#e8d8a0" opacity=".6"/>
+                    <rect x="690" y="230" width="30" height="270" fill="#5a5a6a"/><rect x="930" y="230" width="30" height="270" fill="#5a5a6a"/><path d="M680 236 Q825 160 970 236" fill="none" stroke="#6e6e80" stroke-width="22" stroke-linecap="round"/>
+                    <path d="M720 500 V250 Q825 196 930 250 V500Z" fill="#0c1220"/>`;
+            },
+            isikXY: [820, 400],
+            svg(c) {
+                const tuyIz = [[560, 380], [600, 372], [640, 380], [580, 410], [620, 410], [600, 440]].map((p) => `<path d="M${p[0] - 10} ${p[1]} q10 10 20 0" fill="none" stroke="${c.koyu}" stroke-width="2.5" opacity=".35"/>`).join('');
+                return `<rect x="380" y="470" width="560" height="34" rx="16" fill="#6a4a2a" stroke="#3e2a18" stroke-width="4"/><circle cx="380" cy="487" r="16" fill="#8a6a46" stroke="#3e2a18" stroke-width="3"/>
+                <g ${og('hps-kuyruk', 680, 450)}><path d="M660 430 l50 30 l-10 10 l-44 -18z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="3"/></g>
+                <g ${og('hps-nefes', 600, 470)} class="hps-nefes"><g ${og('hps-govde', 600, 470)}>
+                  <ellipse cx="600" cy="360" rx="120" ry="118" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <ellipse cx="600" cy="392" rx="76" ry="76" fill="${c.karin}"/>${tuyIz}
+                  <ellipse cx="490" cy="370" rx="30" ry="80" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" transform="rotate(14 490 370)"/>
+                  <ellipse cx="710" cy="370" rx="30" ry="80" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" transform="rotate(-14 710 370)"/></g></g>
+                <g ${og('hps-ayak', 600, 470)}><path d="M566 474 l-8 14 m14 -14 l0 16 m12 -16 l8 14 M622 474 l-8 14 m14 -14 l0 16 m12 -16 l8 14" stroke="#f2a33a" stroke-width="6" stroke-linecap="round"/></g>
+                <g ${og('hps-bas', 600, 320)}>
+                  <g ${og('hps-kulak', 600, 200)}><path d="M532 236 l-14 -54 l40 36z M668 236 l14 -54 l-40 36z" fill="${c.ten}" stroke="${c.koyu}" stroke-width="4" stroke-linejoin="round"/></g>
+                  <ellipse cx="600" cy="262" rx="104" ry="80" fill="${c.ten}" stroke="${c.koyu}" stroke-width="5"/>
+                  <circle cx="562" cy="266" r="44" fill="${c.karin}"/><circle cx="638" cy="266" r="44" fill="${c.karin}"/>
+                  <ellipse cx="600" cy="204" rx="44" ry="12" fill="#fff" opacity=".14"/>
+                  <g ${og('hps-burun', 600, 300)}><path d="M588 290 h24 l-12 22z" fill="#f2a33a" stroke="#a8641a" stroke-width="3" stroke-linejoin="round"/></g>
+                  ${balon(576, 300, 16)}
+                  <ellipse id="hps-yanak" cx="530" cy="296" rx="16" ry="9" fill="#ff8fa8" opacity=".35"/>
+                  ${gozler([562, 266], [638, 266], 18, c.koyu)}
+                  <path id="hps-agiz" fill="none" stroke="#a8641a" stroke-width="3" stroke-linecap="round"/>
+                  ${zzz(700, 170)}
+                </g>
+                ${hedef('burun', 600, 300)}${hedef('gobek', 600, 400)}${hedef('ayak', 600, 484)}${hedef('kuyruk', 700, 460)}
+                ${hedef('kulak', 528, 196)}${hedef('kanat', 490, 400)}${hedef('tepe', 600, 190)}`;
+            }
         }
     };
-    const TIPLER = ['ejder', 'kurbaga', 'mamut', 'ayi', 'timsah', 'kaplumbaga', 'balina', 'salyangoz'];
+    const TIPLER = ['ejder', 'kurbaga', 'mamut', 'ayi', 'timsah', 'kaplumbaga', 'balina', 'salyangoz', 'aslan', 'penguen', 'ahtapot', 'baykus'];
     // Gün + yaratık sırası tohumla karışır (her gün başka bir yaratıkla başlar, her cihaz aynı sırayı görür).
     function tipSec(no, tarih) {
         const t = TIPLER.slice(); let h = hash(tarih + '|hps');
@@ -482,10 +635,10 @@
           <g transform="${T}">
             ${c.arka()}
             <ellipse id="hps-isik" cx="${c.isikXY[0]}" cy="${c.isikXY[1]}" rx="190" ry="160" fill="url(#hps-isikg)" opacity="0" style="transition:opacity 1.5s"/>
-            <text x="748" y="${({ mamut: 176, ayi: 104, kurbaga: 150 })[st.tip] || 132}" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" opacity=".6">${c.yer}</text>
+            <text x="748" y="${c.yerY || ({ mamut: 176, ayi: 104, kurbaga: 150 })[st.tip] || 132}" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" opacity=".6">${c.yer}</text>
             <g id="hps-yaratik" style="transform-box:view-box;transform-origin:690px 500px;transition:transform 1.8s ease-in-out"><g ${og('hps-yuvarlan', 690, 500)}>${c.svg(c)}<g id="hps-gizli-iz"></g></g></g>
             <g id="hps-ruya" style="transform-box:view-box;transform-origin:${c.ruyaXY[0]}px ${c.ruyaXY[1]}px;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .35s">
-              <g fill="#fff" opacity=".92" transform="translate(${c.ruyaXY[0]} ${c.ruyaXY[1]}) scale(1.15) translate(-332 -225)"><circle cx="430" cy="312" r="7" opacity=".9"/><circle cx="405" cy="288" r="11" opacity=".9"/><circle cx="300" cy="215" r="44"/><circle cx="350" cy="200" r="50"/><circle cx="392" cy="225" r="38"/><circle cx="335" cy="250" r="40"/><circle cx="268" cy="245" r="32"/></g>
+              <g fill="#fff" opacity=".92" transform="translate(${c.ruyaXY[0]} ${c.ruyaXY[1]}) scale(${c.ruyaAyna ? -1.15 : 1.15} 1.15) translate(-332 -225)"><circle cx="430" cy="312" r="7" opacity=".9"/><circle cx="405" cy="288" r="11" opacity=".9"/><circle cx="300" cy="215" r="44"/><circle cx="350" cy="200" r="50"/><circle cx="392" cy="225" r="38"/><circle cx="335" cy="250" r="40"/><circle cx="268" cy="245" r="32"/></g>
               <g ${og('hps-ruya-ic', c.ruyaXY[0], c.ruyaXY[1])}><text id="hps-ruya-emoji" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] - 4}" text-anchor="middle" font-size="46">${c.ruya[0]}</text><g id="hps-ruya-tuy" opacity="0" transform="translate(${c.ruyaXY[0] + 40} ${c.ruyaXY[1] - 46}) scale(.9)">${TUY_SVG_IC}</g></g>
               <text id="hps-ruya-yazi" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] + 22}" text-anchor="middle" font-size="14" font-weight="800" fill="#4a4550"></text>
             </g>
