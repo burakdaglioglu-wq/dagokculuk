@@ -36,5 +36,6 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `07-oyunlar` | Oyunlar'daki her tema bireysel + takım modunda açılır; Kelime Hedefi ayrı dosyadan yüklenir |
 | `08-milo` | Milo: veri kaybısız isim/grup düzeltme + birleştirme, girişli meta, veli raporu, Analiz / Çift Kayıt / Misafir ekranları |
 | `66-hapsirik` | Oyunlar › Hapşırık: gerçek seri, gizli nokta, geri al, hapşırık → sıradaki yaratık, 4 yaratık; adil başlangıç (hiç ilk başlamamış başlar) |
+| `67-gunluk-seri-limiti` | Günlük seri limiti yalnız bugünün serilerini sayar (eski kart serileri limiti doldurmaz) |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.

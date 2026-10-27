@@ -31661,7 +31661,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let sp = turnuvaDB[aktifGrup][ad]; let limit = parseInt(document.getElementById('toplam-seri-ayar').value) || 12; let sLen = sp.seriler ? sp.seriler.length + 1 : 1;
             if(!sp.seriler || sp.seriler.length === 0) sp.devamModu = false; // yeni kart: devam modu sıfırla
             if(sp.devamModu) document.getElementById('giris-paneli-baslik').innerText = `${ad} - ${sLen}. Seri (Ekstra)`;
-            else if(sLen > limit) document.getElementById('giris-paneli-baslik').innerText = `${ad} - Tamamlandı`;
+            else if(bugunkuSeriSayisi(sp) >= limit) document.getElementById('giris-paneli-baslik').innerText = `${ad} - Tamamlandı`;
             else document.getElementById('giris-paneli-baslik').innerText = `${ad} - ${sLen}. Seri`;
             setHedefTipi('6ring'); 
             ciddiModGorunumGuncelle();
@@ -31997,11 +31997,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // SESSİZ/ÇEKİRDEK KAYIT — sadece veriyi yazar, EKRANA/aktif sporcuya hiç dokunmaz. Hem normal
         // skorKaydet() (aşağıda) hem de gecikmiş otomatik-kaydet "kurtarma" yolu (bkz. hizliOkEkle)
         // bunu kullanır — sporcu değişse bile eski sporcunun verisi arka planda güvenle yazılabiliyor.
+        // GÜNLÜK seri sayısı (2026-10-27, kullanıcı tabletten: "hep böyle hata veriyor bütün oyunlarda" — her girişte "günlük seri
+        // limiti doldu" penceresi). Limit eskiden aktif karttaki TÜM serileri sayıyordu; kart elle arşivlenmeyince (Yeni
+        // antrenman) önceki derslerin serileri birikiyor, sporcu o gün tek seri atmadan pencere çıkıyordu. Artık yalnız BUGÜN
+        // atılan seriler sayılır (tarih yoksa zaman damgasından).
+        function bugunkuSeriSayisi(sp) {
+            let b = bugunISO();
+            return ((sp && sp.seriler) || []).filter(function(x) { return x && (x.tarih ? x.tarih === b : (x.t ? bugunISO(new Date(x.t)) === b : false)); }).length;
+        }
         function _skorKaydetCekirdek(grup, sporcu, kaydedilecek, okAraliklari) {
             let grupData = turnuvaDB[grup] && turnuvaDB[grup][sporcu];
             if(!grupData) return { ok: false, sebep: 'sporcu-yok' };
             let limit = parseInt(document.getElementById('toplam-seri-ayar').value) || 12;
-            if(!grupData.devamModu && grupData.seriler && grupData.seriler.length >= limit) return { ok: false, sebep: 'limit-doldu', grupData, limit };
+            if(!grupData.devamModu && bugunkuSeriSayisi(grupData) >= limit) return { ok: false, sebep: 'limit-doldu', grupData, limit };
 
             let seriPuan = 0; let okDegerleri = []; if(grupData.xAdet === undefined) grupData.xAdet = 0; if(grupData.toplamSkor === undefined) grupData.toplamSkor = 0;
             kaydedilecek.forEach(ok => {

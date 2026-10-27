@@ -5171,3 +5171,12 @@ Hayvan Kurtarma'da sıra yok (kart dokunmalı) — dokunulmadı.
 **Test**: `66-hapsirik` (adil başlangıç, aynı gün sıra korunur, gerçek seri, gizli nokta, geri al, hapşırık → farklı
 yaratık, kahraman, rozet, 4 yaratık çizimi, takım yardımcısı, 390 px). `07-oyunlar` tema listesine eklendi.
 `yardimci.mjs`: `DAGSK_TEST_TOKEN` (hazır yerel oturum) PIN yerine kullanılabilir.
+
+## 56. Günlük seri limiti yalnız BUGÜNÜ sayar (2026-10-27, v326)
+
+Kullanıcı tabletten ekran görüntüsü: "hep böyle hata veriyor bütün oyunlarda" — her girişte "EBRU … için günlük seri limiti
+(16) doldu, uzatayım mı?". Kök neden: `_skorKaydetCekirdek` limiti aktif karttaki TÜM serilerle (`seriler.length`)
+karşılaştırıyordu; otomatik arşiv artık yok, kart elle "Yeni antrenman" ile arşivlenmezse önceki derslerin serileri
+birikiyor ve çocuk o gün hiç atmadan limit doluyordu (Oyunlar, Yumurta, Kurtarma, Parti, Skor Gir — hepsi çekirdeği
+kullanıyor). Düzeltme: `bugunkuSeriSayisi(sp)` (seri `tarih`'i, yoksa `t` damgası bugün olanlar) — çekirdek kapı ve Skor
+Gir başlığındaki "Tamamlandı". Kart/seri numaralama ve karne görünümü değişmedi. Test `67-gunluk-seri-limiti`.
