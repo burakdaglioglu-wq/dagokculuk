@@ -5212,3 +5212,11 @@ gözüküyor, skor girişte atış yap kısmı gözükmüyor, otomatik 3 atışl
   alındı, çocuk tepesi ~57 birim yukarı (tablette sol alttaki skor kutusunun altında kalmasın).
 - Yeni yaratıklar: 🐊 timsah (Nehir Geçidi), 🐢 kaplumbaga (Kumsal Yolu), 🐳 balina (Liman Ağzı, hapşırık nefes deliğinden),
   🐌 salyangoz (Bahçe Kapısı) → `TIPLER` 8. Yaratık isteğe bağlı `kuyrukSoz` alanı alır.
+
+**v328 — Hapşırık'ta çocuğa dokununca seçim + halka hatası** (kullanıcı: "kişi seçmede sorun, karakter ya da isme tıkladığımda
+o kişi atabilsin"): çocuk grupları `data-km-sporcu="<i>"` taşır → kabuğun ortak dinleyicisi (`kmOyunSahneSporcuBul`) seçer,
+"🎯 … seçildi" bildirimi; `kmOyunSporcuSec` artık `hpsGuncelle()` da çağırır. HATA: çocuklar ters sırada çizildiği için
+`hpsGuncelle` halkayı DOM sırasına göre yakıyordu — sırası gelen değil başka çocuk halkalıydı; artık `hps-c<i>` kimliğine göre.
+Test `66-hapsirik` (gerçek fare tıklaması).
+Ek (kullanıcı fotoğrafı, "burada geçişlerin olması lazım"): sırası gelen çocuk zıplar (`hps-sira-geldi`), adı sarı (`hps-aktif`);
+adlar koyu konturlu (karlı mamut zemininde beyaz yazı okunmuyordu).

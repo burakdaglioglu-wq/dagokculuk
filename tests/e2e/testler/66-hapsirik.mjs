@@ -86,6 +86,11 @@ export default async function ({ log }) {
       return { sira: a.sira };
     });
     if (!tk.atla) esit(tk.sira, 1, 'takım başlangıcı: hiç ilk başlamamış sporcunun takımı başlamadı');
+    // 👆 çocuğun karakterine dokununca sıra ona geçer (gerçek tıklama — üstteki katmanlar engellemesin)
+    await p.evaluate(() => { _kmOyunAktifIndex = 0; kmOyunSahneKurHapsirik(); }); await p.waitForTimeout(600);
+    const kb = await p.locator('#hps-c1 .hps-ci').boundingBox(); await p.mouse.click(kb.x + kb.width / 2, kb.y + kb.height / 2); await p.waitForTimeout(300); // karakterler hafif sallandığı için locator.click 'stabil' beklerdi
+    const sec = await p.evaluate(() => ({ i: _kmOyunAktifIndex, halka: document.querySelector('#hps-c1 .hps-halka').getAttribute('opacity') }));
+    esit(sec.i, 1, 'karaktere tıklayınca sıra o sporcuya geçmedi'); esit(sec.halka, '1', 'seçilen çocuğun halkası yanmadı');
     // ⚙️ Oyun Ayarları › Hapşırık seviyesi: Çok zor (2 seri/kişi) gereken gıdığı ikiye katlar, sahnedekine hemen uygulanır
     const sv = await p.evaluate(() => {
       const k = 'dag_km_hapsirik_' + (_kmAktifKonum || 'varsayilan'), oku = () => JSON.parse(localStorage.getItem(k));

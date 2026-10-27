@@ -19356,6 +19356,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'monopoly') kmOyunMonopolyBadgeGuncelle();
             if(_kmOyunAktifTema === 'yukselis') kmOyunYukselisCiz();
             else if(_kmOyunAktifTema === 'canavar') { try { kmOyunCanavarHudGuncelle(); } catch(e) {} }
+            else if(_kmOyunAktifTema === 'hapsirik') { try { if(typeof hpsGuncelle === 'function') hpsGuncelle(); } catch(e) {} }
             else if(_kmOyunAktifTema === 'pist') kmOyunResyncPist();
             else if(_kmOyunAktifTema === 'kehanet') kmOyunKehanetAlevGuncelle();
             else if(_kmOyunAktifTema === 'ninja') kmNinjaSenseiCagriGuncelle();

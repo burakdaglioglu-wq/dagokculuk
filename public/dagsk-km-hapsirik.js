@@ -465,9 +465,9 @@
         liste().map((s, i) => [s, i]).reverse().forEach(([s, i]) => {
             const p = cocukXY(i), renk = typeof kmOyunRenk === 'function' ? kmOyunRenk('hapsirik', i) : '#ffd23f';
             const kar = typeof kmOyunHayvanKarakterSVG === 'function' ? kmOyunHayvanKarakterSVG(s, renk, 40) : `<circle cy="-18" r="16" fill="${renk}"/>`;
-            cocuk += `<g class="hps-cocuk" id="hps-c${i}" data-dy="${488 - p.y}" style="transition:transform 2s ease-in-out ${i * .12}s,opacity .6s ease ${1.6 + i * .12}s"><g transform="translate(${p.x} ${p.y})"><g class="hps-ci">${kar}</g>
+            cocuk += `<g class="hps-cocuk" id="hps-c${i}" data-km-sporcu="${i}" data-dy="${488 - p.y}" style="transition:transform 2s ease-in-out ${i * .12}s,opacity .6s ease ${1.6 + i * .12}s"><g transform="translate(${p.x} ${p.y})"><g class="hps-ci">${kar}</g>
                 <circle class="hps-halka" cx="0" cy="-20" r="25" fill="none" stroke="#ffd23f" stroke-width="3" opacity="0"/>
-                <text y="14" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" opacity=".85">${kacis(ilkAd(s.ad)).slice(0, 8)}</text></g></g>`;
+                <text class="hps-ad-yazi" y="15" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" stroke="#1b2233" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke">${kacis(ilkAd(s.ad)).slice(0, 8)}</text></g></g>`;
         });
         return `<svg id="hps-svg" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
           <defs><linearGradient id="hps-gok" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.gok[0]}"/><stop offset="1" stop-color="${c.gok[1]}"/></linearGradient>
@@ -530,9 +530,14 @@
         $('hps-ses-btn').textContent = sesAcik() ? '🔊' : '🔇';
     }
     // Sıradaki çocuğun halkası (kabuk her sıra değişiminde Resync çağırır)
+    let _sonAi = -1;
     function hpsGuncelle() {
         const ai = typeof _kmOyunAktifIndex !== 'undefined' ? _kmOyunAktifIndex : 0;
-        document.querySelectorAll('#hps-cocuklar .hps-halka').forEach((h, i) => h.setAttribute('opacity', i === ai ? 1 : 0));
+        // çocuklar ters sırada çizilir (arka sıra önce) — halka DOM sırasına değil çocuğun kimliğine (hps-c<i>) göre yanar
+        // Sıra geçişi görünsün (kullanıcı: "burada geçişlerin olması lazım"): sırası gelen zıplar, adı sarı yanar.
+        document.querySelectorAll('#hps-cocuklar .hps-cocuk').forEach((g) => { const aktif = +g.id.slice(5) === ai, h = g.querySelector('.hps-halka'); if (h) h.setAttribute('opacity', aktif ? 1 : 0); g.classList.toggle('hps-aktif', aktif); });
+        if (ai !== _sonAi && !_toren) { const c = $('hps-c' + ai); if (c && c.querySelector('.hps-ci')) { const e = c.querySelector('.hps-ci'); e.classList.remove('hps-sira-geldi'); void e.getBoundingClientRect(); e.classList.add('hps-sira-geldi'); } }
+        _sonAi = ai;
         if (!_toren) hudCiz();
     }
     function agiz(sekil) { const a = $('hps-agiz'); if (!a) return; const c = Y[_aktifTip]; a.setAttribute('d', c.agiz[sekil] || c.agiz.uyku); a.setAttribute('fill', (sekil === 'acik' || sekil === 'utanc') ? '#5a2620' : 'none'); }
@@ -762,6 +767,11 @@
 .hps-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d97a9a,#f2b3c8);transition:width .5s}
 .hps-bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 .hps-ust{position:absolute;inset:0;pointer-events:none;z-index:2}
+/* çocuğa dokununca sıra ona geçer: kabuğun ortak data-km-sporcu dinleyicisi (app.js kmOyunSahneSporcuBul) */
+.hps-cocuk{cursor:pointer}
+.hps-halka{transition:opacity .3s}.hps-cocuk.hps-aktif .hps-ad-yazi{fill:#ffd23f}
+.hps-sira-geldi{transform-box:fill-box;transform-origin:50% 100%;animation:hpsSiraGeldi .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes hpsSiraGeldi{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-16px) scale(1.18)}100%{transform:translateY(0) scale(1)}}.hps-cocuk:hover .hps-ci{filter:brightness(1.15)}
 .hps-tuy{position:absolute;pointer-events:none;line-height:0;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
 .hps-pop{position:absolute;font-weight:900;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35);white-space:nowrap;transform:translate(-50%,-50%);animation:hpsPop 1.3s ease-out forwards}
 @keyframes hpsPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
