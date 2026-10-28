@@ -41,5 +41,7 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `69-akvaryum` | Oyunlar › Sınıf Akvaryumu: gerçek seri, her isabet bir canlı (iska yok), X nadir + rozet, geri al, dolunca tören → sıradaki akvaryum, 5 akvaryum, çocuğa dokununca sıra, Akvaryum seviyesi |
 | `70-kale` | Oyunlar › Kale Savunması: gerçek seri, ok en öndeki düşmana hasar (ıska vermez), düşmanlar yaklaşır, geri al, dalga temiz → 2. dalga + rozet, kapıya varan can alır, kale düşerse aynı dalga baştan, 5 düşman tipi (domuz yok), çocuğa dokununca sıra, Kale seviyesi |
 | `71-fener` | Oyunlar › Fener Alayı (29 Ekim): hedef = Cumhuriyet'in yaşı, halka → fener sayısı (ıska 0, X 5), 1923 bilgi kartı, geri al, hepsi yanınca tören → 2. tur + rozet, çocuğa dokununca sıra |
+| `72-halat` | Oyunlar › Dev Halat Çekme: dengeli AL/AK, raunt HERKES atmadan bitmez (önce atan avantajı yok), herkes atınca önde olan alır, geri al, ⏭️ atanlarla bitirme, 2 raunt → maç + rozet, çocuğa dokununca sıra |
+| `73-il` | Oyunlar › 81 İl: 81 petek (yalnız il yok), eşik/kaçtı, bayrak, savundu (eşitlik yetmez), ÇALDI + X komşu il, Ankara ×5, geri al, 🏁 adil bitiş (herkes eşit atınca) |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.
