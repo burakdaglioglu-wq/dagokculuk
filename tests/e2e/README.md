@@ -48,5 +48,6 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `76-analiz-pdf` | Yarışma › Sporcu analiz PDF: konumlu oklarla tur bitirilir, sonuç ekranındaki düğme sporcu başına 1 sayfa indirir; Sporcu raporları penceresinden tek sporcu 1 sayfa; Sporcu Analizi başlığında düğme |
 | `77-km-vitrin` | Karışık Sınıf › Tanıtım Ekranı (ızgara kutusu + Oyunlar hızlı düğmesi) gerçek tıklamayla tam ekran açılır, KM sekmesi değişmez; aramada "reklam" bulur |
 | `78-kale-heyecan` | Kale Savunması › heyecan: ayar satırı; ⚔️ zırhlı goblin sarısız oku sektirir + konuşur, sarı işler; ejderha öfkesi ateş (-1 can); düşerse 1 dalga geri; 😈 gece, 2 can, 2 dalga geri; 🙂 Tatlı temiz |
+| `79-yol-heyecan` | Oyunlar › Hazine Adası heyecanı: 🙂 deniz görünümü; ⚔️ geçit 9+ ister + papağan, herkes atınca korsan gemisi yürür, önünden geçtiğini geri iter, geri al geri yükler; 😈 gece, 3 geçit |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.

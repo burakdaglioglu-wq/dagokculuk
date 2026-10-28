@@ -18978,7 +18978,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // devrileceği (standart 2), canavarKalkan = 1 açık / 0 kapalı (kapalıyken zorluk ne olursa olsun kalkan hiç açılmaz).
         // 2026-10-27 (kullanıcı: "ayarlarda hapşırık için de seviye belirle"): hapsirikSeri = yaratık hapşırana kadar kişi başı
         // yaklaşık seri (standart 1) → dagsk-km-hapsirik.js gerekliHesapla çarpanı; hpsAyarUygula sahnedekine de uygular.
-        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1, kaleMod: 1 };
+        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1, kaleMod: 1, yolMod: 1 };
         const KM_OYUN_AYAR_SECENEK = {
             yolCarpan: [[2, 'Çok kısa', '≈5 seri'], [1.45, 'Kısa', '≈7 seri'], [1, 'Standart', '≈10 seri'], [0.7, 'Uzun', '≈14 seri'], [0.5, 'Çok uzun', '≈20 seri']],
             yolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri'], [15, '15 seri'], [20, '20 seri']],
@@ -18989,6 +18989,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             akvaryumSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
             // 2026-10-28 (kullanıcı: "kale savunmasını daha zor, korkutucu, kaybetme hissiyle — ayarlardan seviyeye göre açayım")
             kaleMod: [[1, '🙂 Tatlı', 'ceza yok · aynı dalga baştan'], [2, '⚔️ Heyecanlı', 'konuşan, zırhlı düşmanlar · düşerse 1 dalga geri'], [3, '😈 Korkutucu', 'gece · 2 can · düşerse 2 dalga geri']],
+            yolMod: [[1, '🙂 Tatlı', 'yeni görseller · ceza yok'], [2, '⚔️ Heyecanlı', 'kovalayan · 2 sarı kapı · konuşan karakterler'], [3, '😈 Korkutucu', 'gece · hızlı kovalayan · 3 kapı, 2 sarı ister']],
             kaleSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
             futbolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri']],
             sayacSn: [[60, '1 dk'], [90, '1,5 dk'], [120, '2 dk'], [180, '3 dk'], [300, '5 dk']],
@@ -19004,7 +19005,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             return a;
         }
         window.kmOyunAyar = kmOyunAyar;
-        function kmOyunAyarKaydet(h) { try { localStorage.setItem('dag_km_oyun_ayar', JSON.stringify(h)); } catch(e) {} kmOyunAyarUygula(); try { kmCanavarAyarUygula(); } catch(e) {} try { if(typeof hpsAyarUygula === 'function') hpsAyarUygula(); } catch(e) {} try { if(typeof akvAyarUygula === 'function') akvAyarUygula(); } catch(e) {} try { if(typeof kaleAyarUygula === 'function') kaleAyarUygula(); } catch(e) {} }
+        function kmOyunAyarKaydet(h) { try { localStorage.setItem('dag_km_oyun_ayar', JSON.stringify(h)); } catch(e) {} kmOyunAyarUygula(); try { kmCanavarAyarUygula(); } catch(e) {} try { if(typeof hpsAyarUygula === 'function') hpsAyarUygula(); } catch(e) {} try { if(typeof akvAyarUygula === 'function') akvAyarUygula(); } catch(e) {} try { if(typeof kaleAyarUygula === 'function') kaleAyarUygula(); } catch(e) {} try { if(typeof hyAyarUygula === 'function') hyAyarUygula(); } catch(e) {} }
         // Metinleri ve sayacı güncel ayara getirir (futbolun "8 seri" yazıları, sayaç süresi).
         function kmOyunAyarUygula() {
             let a = kmOyunAyar();
@@ -19035,6 +19036,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + satir('akvaryumSeri', '🐠', 'Akvaryum seviyesi', 'Akvaryumun dolması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki akvaryuma da hemen uygulanır')
                 + satir('kaleSeri', '🏰', 'Kale Savunması seviyesi', 'Bir dalgayı temizlemek için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · düşmanlar da buna göre yavaşlar · sahnedeki dalgaya hemen uygulanır')
                 + satir('kaleMod', '⚔️', 'Kale Savunması heyecanı', 'Tatlı: bugünkü oyun · Heyecanlı: düşmanlar laf atar ("Sarı atamazsan beni düşüremezsin!"), zırhlı/kalkanlı düşmanlar, öfkeli ejderha · Korkutucu: gece, kızıl gözler, daha kalabalık dalgalar')
+                + satir('yolMod', '🏝️', 'Yol oyunları heyecanı (şimdilik Hazine Adası)', 'Tatlı: bugünkü oyun, yeni deniz görünümü · Heyecanlı: arkadan korsan gemisi kovalar (herkes atınca bir adım), yakaladığını geri iter; kayalık geçitler sarı ok ister; papağan ve korsanlar laf atar · Korkutucu: gece, daha hızlı kovalayan, 3 geçit, 2 sarı')
                 + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
                 + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
                 + satir('yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)')
@@ -19193,6 +19195,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncFener() { if(typeof fenerGuncelle === 'function' && document.getElementById('fener-svg')) fenerGuncelle(); else kmOyunSahneKurFener(); }
         function kmOyunAnimateFener(s, i, kaydedilecek, done) { kmOyunFenerHazir().then(function() { fenerSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         function kmOyunKaleHazir() { return dagskEkYukle('dagsk-km-kale.js'); }
+        // ⚔️ Yol oyunları heyecanı + A görünümü (v340, dagsk-km-heyecan.js) — şimdilik Hazine Adası
+        function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
+        function kmOyunHeyecanCiz(t) { kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyCiz(t); }).catch(function() {}); }
         function kmOyunSahneKurKale() { kmOyunKaleHazir().then(function() { if(_kmOyunAktifTema === 'kale' && document.getElementById('km-oyun-panel-kale')) kaleSahneKur(); }).catch(function() { showToast('Kale Savunması yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncKale() { if(typeof kaleGuncelle === 'function' && document.getElementById('kale-svg')) kaleGuncelle(); else kmOyunSahneKurKale(); }
         function kmOyunAnimateKale(s, i, kaydedilecek, done) { kmOyunKaleHazir().then(function() { kaleSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -21489,6 +21494,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }).join('');
             roster.forEach(function(s, i) { s.hazineEl = document.getElementById('km-oyun-ship-' + i); });
             kmOyunResyncHazine();
+            kmOyunHeyecanCiz('hazine');
         }
         function kmOyunResyncHazine() {
             let roster = _kmOyunRosterCache, n = roster.length;
@@ -21504,6 +21510,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let seal = document.getElementById('km-oyun-seal-' + ci);
                 if(seal) { seal.classList.toggle('hit', !!best); if(best) seal.style.setProperty('--_c', kmOyunRenk('hazine', best.i)); }
             }
+            if(typeof hyGuncelle === 'function') hyGuncelle('hazine');
         }
         function kmOyunAnimateHazine(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, jj = kmOyunJitter(i, n), el = s.hazineEl; if(!el) { done(); return; }
@@ -26058,6 +26065,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let dagIp = null;
             if(_kmOyunAktifTema === 'dag' && !takimAktifMi && !cokluAktifMi && kmDagIpAktifMi()) { dagIp = kmDagIpUygula(s, eskiFrac, artis, toplam / maxPuan); artis = dagIp.artis; }
             _kmDagIpSon = dagIp;
+            // ⚔️ Yol heyecanı (v340) — sarı kapı: yeterli sarı yoksa sporcu kapının önünde bekler (asla geri gitmez). Kovalayan
+            // seri bitince (bitirOrtak → hySeriSonu) yürür. Takım modunda kapalı. Bkz. dagsk-km-heyecan.js.
+            let yolHy = null;
+            if(typeof hyKapiUygula === 'function' && !takimAktifMi && !cokluAktifMi) { yolHy = hyKapiUygula(_kmOyunAktifTema, s, eskiFrac, artis, kaydedilecek); if(yolHy) artis = yolHy.artis; }
             // Pist çok turlu (frac 1'i aşabilir) — diğer 9 tema için maxFrac hep 1, davranış AYNI kalıyor;
             // sadece Pist'te maxFrac kmOyunPistToplamTur()'a (2 ya da 3) açılıyor. Alt sınır (0) eskiden
             // hiç GEREKMİYORDU (artis her zaman >=0'dı) — Zirve'nin fırtına cezası ARTIK negatif
@@ -26159,7 +26170,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 halat: (_kmOyunAktifTema === 'halat' && typeof halatAnlik === 'function') ? halatAnlik() : null,
                 il: (_kmOyunAktifTema === 'il' && typeof ilAnlik === 'function') ? ilAnlik() : null,
                 yukselis: (_kmOyunAktifTema === 'yukselis') ? { gun: JSON.parse(JSON.stringify(_kmYks)), kalici: JSON.parse(JSON.stringify(_kmYksKalici)) } : null,
-                dagIp: dagIp ? dagIp.geri : null };
+                dagIp: dagIp ? dagIp.geri : null,
+                heyecan: (typeof hyAnlik === 'function' && !takimAktifMi && !cokluAktifMi) ? hyAnlik(_kmOyunAktifTema) : null };
             kmOyunGeriAlBtnGuncelle();
 
             function bitirOrtak() {
@@ -26326,6 +26338,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Bireysel modda yukarıdaki dallar hiç çalışmıyor (kmOyunResyncAktif zaten oradan
                 // kmOyunKabukGuncelle'i tetikliyor) — kamera/sıradaki-vurgu HER durumda güncellensin.
                 kmOyunKabukGuncelle();
+                if(typeof hySeriSonu === 'function' && !takimAktifMi && !cokluAktifMi) { try { hySeriSonu(_kmOyunAktifTema, s, yolHy); } catch(e) {} }
                 _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
                 setTimeout(function() { _kmOyunKilit = false; kmOyunSlotlariCiz(); document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.disabled = false; }); kmOyunSayacYeniSeri(); }, 200);
@@ -26522,6 +26535,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(g.halat && typeof halatGeriYukle === 'function') halatGeriYukle(g.halat);
                 if(g.il && typeof ilGeriYukle === 'function') ilGeriYukle(g.il);
                 if(g.dagIp) kmDagIpGeriAl(g.dagIp, s);
+                if(g.heyecan && typeof hyGeriYukle === 'function') hyGeriYukle(g.heyecan);
                 if(g.yukselis) {
                     _kmYks = g.yukselis.gun; _kmYksKalici = g.yukselis.kalici;
                     _kmYksYuklenenKonum = _kmAktifKonum; _kmYksKaliciYuklenenKonum = _kmAktifKonum;

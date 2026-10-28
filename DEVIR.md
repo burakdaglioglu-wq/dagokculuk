@@ -5308,3 +5308,11 @@ Kullanıcı: "Yarışma modunda sporcuların o anki seri ve şu ana kadar attı�
 - `dagsk-tv-serit.js` (`?v=14`): `yzhsVeri` her sporcuya `seriler` ([{i, oklar, t}]) ekler. Hedefte önceki serilerin okları seri başına renkte (`YZHS_SERI_RENK`, `yzhsSeriRenk` — hedef halkalarına benzemez), daha büyük; `slice(-30)` → `-90`.
 - Yakın çekimde "Son seri"nin altında `.yzhs-tumseri`: önceki her seri bir hap (renk noktası = hedefteki renk, oklar, toplam). Konumu girilmemiş seri kesik halkalı. Etiket ısı haritasının kaç serinin kaç okundan çizildiğini söyler (ısı haritası zaten tüm konumlardan).
 - Test `52-tv-hedef-seridi` önceki seriler hapını da doğrular.
+
+## 68. ⚔️ Yol oyunlarına heyecan — Hazine Adası (2026-10-29, v340)
+Kullanıcı: "Kale'deki heyecan seviyesi diğer oyunlara da gelsin, görsellerini değiştirelim." İki taslaktan **A · Çizgi film** seçildi; 7 yol oyunu (Zirve, Roket, Hazine, Pist, Ninja, Dağ, Balon) hedef, **önce Hazine** gösterilip onay alınacak.
+- Yeni `dagsk-km-heyecan.js` (`hy*`, `HY_TEMALAR` — yeni oyun = buraya `{svg, panel, nokta, ust}` + `HY_SOZ` + sahne fonksiyonu). Ayar `yolMod` (Oyun Ayarları › Özel › "Yol oyunları heyecanı").
+- 🙂 Tatlı: yalnız A görünümü (`hyHazineSahne`: deniz, dalgalar, durak adacıkları; grid/pusula gizli). ⚔️: korsan gemisi (`st.kov`), herkes bir seri atınca `HY_ADIM` yürür; önünden geçtiği sporcuyu (`eski < frac <= kov`) `HY_GERI` geri iter; 2 kayalık geçit (`HY_KAPI`) sarı ister. 😈: gece, 3 geçit, 2 sarı, hızlı gemi.
+- Kancalar `kmOyunIlerlet`: `hyKapiUygula` (artis), `bitirOrtak` → `hySeriSonu`; `_kmOyunSonGiris.heyecan` = `hyAnlik` (kovalayan + herkesin frac'ı) → `hyGeriYukle`. Takım modunda kapalı.
+- Durum `dag_km_hy_<tema>_<konum>` (km-ortak senkron). d.frac 7 yol oyununda ortak — geri itme ortak ilerlemeyi etkiler.
+- Test `79-yol-heyecan`.
