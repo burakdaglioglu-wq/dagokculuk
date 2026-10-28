@@ -21,9 +21,13 @@ function yzhsVeri(o, sira) {
     return sira.map(function (r) {
         let si = -1; for (let i = r.seriT.length - 1; i >= 0; i--) if (r.seriT[i] != null) { si = i; break; }
         let skor = yzSkor(o, r.k);
-        return { k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, son: si >= 0 ? r.seriT[si] : null, sonSeri: si, sonOklar: si >= 0 ? (skor[si] || []) : [], kon: yzKonumlar(o, r.k), seriT: r.seriT.filter(function (t) { return t != null; }), tum: [].concat.apply([], skor.filter(Boolean)), d: d };
+        return { k: r.k, ad: r.ad, sira: r.sira, toplam: r.toplam, son: si >= 0 ? r.seriT[si] : null, sonSeri: si, sonOklar: si >= 0 ? (skor[si] || []) : [], kon: yzKonumlar(o, r.k), seriT: r.seriT.filter(function (t) { return t != null; }), tum: [].concat.apply([], skor.filter(Boolean)), seriler: r.seriT.map(function (t, i) { return skor[i] && skor[i].length ? { i: i, oklar: skor[i], t: t } : null; }).filter(Boolean), d: d };
     });
 }
+// v339 (2026-10-28, kullanıcı: "o anki seri ve şu ana kadar attığı tüm serilerin ok yönleri ve ısı haritası gözüksün"): önceki
+// serilerin okları seri başına kendi renginde (hedef halkalarına benzemeyen renkler), yakın çekimde tüm seriler listelenir.
+const YZHS_SERI_RENK = ['#22c55e', '#a855f7', '#f97316', '#ec4899', '#14b8a6', '#84cc16', '#8b5cf6', '#06b6d4', '#f43f5e', '#65a30d'];
+function yzhsSeriRenk(i) { return YZHS_SERI_RENK[i % YZHS_SERI_RENK.length]; }
 function yzhsAcikAyar() { try { return localStorage.getItem('dag_yz_hs_acik') === '1'; } catch (e) { return false; } }
 // Geri sayım sürüyor mu (hatta geç / atış / son 30 sn) ya da ☕ mola mı
 function yzhsSayacta(o) {
@@ -116,9 +120,9 @@ function yzhsCiz(zorla) {
 function yzhsHedefHTML(v, yuz, o) {
     o = o || {};
     let gr = v.kon.length >= 3 ? yzGrup(v.kon) : null, gx = gr ? ((gr.mx + 1.1) / 2.2 * 100).toFixed(1) + '%' : '50%', gy = gr ? ((gr.my + 1.1) / 2.2 * 100).toFixed(1) + '%' : '50%';
-    let l = v.kon.slice(-30), t0 = o.t0 || 0, anim = !!o.anim, sonlar = l.filter(function (p) { return p.seri === v.sonSeri; }), es = l.filter(function (p) { return p.seri !== v.sonSeri; });
+    let l = v.kon.slice(-90), t0 = o.t0 || 0, anim = !!o.anim, sonlar = l.filter(function (p) { return p.seri === v.sonSeri; }), es = l.filter(function (p) { return p.seri !== v.sonSeri; });
     sonlar.sort(function (a, b) { return (a.n || 99) - (b.n || 99); });
-    let ust = es.map(function (p, i) { return '<circle class="yzhs-ok' + (anim ? ' bel' : '') + '"' + (anim ? ' style="--d:' + (t0 + 0.1 + i * 0.025).toFixed(2) + 's"' : '') + ' cx="' + p.x.toFixed(3) + '" cy="' + p.y.toFixed(3) + '" r=".036"/>'; }).join('');
+    let ust = es.map(function (p, i) { return '<circle class="yzhs-ok' + (anim ? ' bel' : '') + '" style="fill:' + yzhsSeriRenk(p.seri) + (anim ? ';--d:' + (t0 + 0.1 + i * 0.02).toFixed(2) + 's' : '') + '" cx="' + p.x.toFixed(3) + '" cy="' + p.y.toFixed(3) + '" r="' + (l.length > 40 ? '.038' : '.046') + '"/>'; }).join('');
     ust += sonlar.map(function (p, i) {
         let x = p.x.toFixed(3), y = p.y.toFixed(3), d = (t0 + 0.55 + i * 0.3).toFixed(2), no = p.n || i + 1;
         let num = anim || o.num ? '<text class="yzhs-no" x="' + (p.x + 0.075).toFixed(3) + '" y="' + (p.y - 0.06).toFixed(3) + '">' + no + '</text>' : '';
@@ -169,14 +173,18 @@ function yzhsIsiKaynak(v, W) {
 // ---- 🔭 yakın çekim (geri sayım / mola)
 function yzhsYakinCiz(s, veri, zorla) {
     let o = yzOku(), yuz = yzYuz(o.durum), v = veri[_yzhs.aktif] || veri[0]; if (!v) return;
-    if (!s.querySelector('.yzhs-a')) { s.innerHTML = '<div class="yzhs-a"><div class="yzhs-baslik"><span>🎯 Oklar nereye gitti?</span><small><i class="yzhs-lj son"></i> son seri (numaralı) <i class="yzhs-lj"></i> önceki oklar <b>+</b> grup merkezi <em>→</em> nişangah yönü</small></div><div class="yzhs-a-ana"></div><div class="yzhs-a-film"></div></div>'; }
+    if (!s.querySelector('.yzhs-a')) { s.innerHTML = '<div class="yzhs-a"><div class="yzhs-baslik"><span>🎯 Oklar nereye gitti?</span><small><i class="yzhs-lj son"></i> son seri (numaralı) <i class="yzhs-lj cok"></i> önceki seriler (seri başına renk) · ısı haritası tüm seriler <b>+</b> grup merkezi <em>→</em> nişangah yönü</small></div><div class="yzhs-a-ana"></div><div class="yzhs-a-film"></div></div>'; }
     let ana = s.querySelector('.yzhs-a-ana'), film = s.querySelector('.yzhs-a-film');
     let ok = v.tum.length, gr = v.kon.length >= 3 ? yzGrup(v.kon) : null, on = gr && v.kon.length >= 6 ? yzGrupOneri(gr, yuz) : null;
     let sonOklar = v.sonOklar.length ? '<div class="yzhs-sonseri"><span class="yzhs-et">Son seri' + (v.sonSeri >= 0 ? ' · ' + (v.sonSeri + 1) + '. seri' : '') + '</span>' + v.sonOklar.map(function (p, i) { return '<i class="yz-ok ' + yzOkRenk(p) + '" style="--d:' + (0.2 + 0.55 + i * 0.3 + 0.3).toFixed(2) + 's">' + esc(p) + '</i>'; }).join('') + '<b class="yzhs-esit" style="--d:' + (0.2 + 0.55 + v.sonOklar.length * 0.3 + 0.3).toFixed(2) + 's">= ' + v.son + '</b></div>' : '<div class="yzhs-sonseri"><span class="yzhs-et">Henüz seri yok</span></div>';
+    let onceki = v.seriler.filter(function (x) { return x.i !== v.sonSeri; }), konSeri = {}; v.kon.forEach(function (p) { konSeri[p.seri] = 1; });
+    let tumSeri = onceki.length ? '<div class="yzhs-tumseri"><span class="yzhs-et">Önceki seriler · ısı haritası ' + Object.keys(konSeri).length + ' serinin ' + v.kon.length + ' okundan' + (Object.keys(konSeri).length < v.seriler.length ? ' (kesik halka = yalnız puan girildi)' : '') + '</span><div class="yzhs-ts-l">' + onceki.map(function (x) {
+        return '<span class="yzhs-ts"><i class="yzhs-ts-r' + (konSeri[x.i] ? '' : ' bos') + '" style="--c:' + yzhsSeriRenk(x.i) + '" title="' + (konSeri[x.i] ? 'hedefte bu renk' : 'yalnız puan girildi') + '"></i><em>' + (x.i + 1) + '.</em>' + x.oklar.map(function (p) { return '<i class="yz-ok ' + yzOkRenk(p) + '">' + esc(p) + '</i>'; }).join('') + '<b>' + (x.t != null ? x.t : '') + '</b></span>';
+    }).join('') + '</div></div>' : '';
     let html = '<div class="yzhs-a-hedef">' + yzhsHedefHTML(v, yuz, { anim: true, grup: true, t0: 0.2 }) + '</div>'
         + '<div class="yzhs-a-bilgi">'
         + '<div class="yzhs-kimlik" style="--d:.15s">' + yzFotoYuz(v.k) + '<div class="yzhs-kim-ad"><b>' + esc(v.ad) + '</b><small><span class="yzhs-rozet">' + v.sira + '. sıra</span>' + v.seriT.length + ' seri · ' + ok + ' ok</small></div><div class="yzhs-kim-top"><b data-say="' + v.toplam + '">' + v.toplam + '</b><small>Toplam</small></div></div>'
-        + '<div style="--d:.35s">' + sonOklar + '</div>'
+        + '<div style="--d:.35s">' + sonOklar + '</div>' + (tumSeri ? '<div style="--d:.6s">' + tumSeri + '</div>' : '')
         + '<div class="yzhs-kutular" style="--d:1.2s">'
         + '<div class="yzhs-kutu"><span class="yzhs-et">Seriler</span>' + yzhsCizgiHTML(v.seriT) + '</div>'
         + '<div class="yzhs-kutu"><span class="yzhs-et">Halka dağılımı</span>' + yzhsDagilimHTML(v.tum) + '</div>'
@@ -229,7 +237,7 @@ function yzhsPusulaHTML(gr, yuz) {
 // ---- açık şerit (tablonun altında): kartlar, aktif kart büyür, okları düşer
 function yzhsKartlarCiz(s, veri, zorla) {
     let n = yzhsSayfaBoy(), sayfa = Math.floor(_yzhs.aktif / n), parca = veri.slice(sayfa * n, sayfa * n + n), yuz = yzYuz(yzOku().durum);
-    let html = '<button type="button" class="yzhs-tut acik" onclick="yzhsAcKapat()"><span>🎯 Hedef kâğıtları</span><small><i class="yzhs-lj son"></i> son seri <i class="yzhs-lj"></i> önceki oklar</small><b>▼ Kapat</b></button>'
+    let html = '<button type="button" class="yzhs-tut acik" onclick="yzhsAcKapat()"><span>🎯 Hedef kâğıtları</span><small><i class="yzhs-lj son"></i> son seri <i class="yzhs-lj cok"></i> önceki seriler · ısı: tümü</small><b>▼ Kapat</b></button>'
         + '<div class="yzhs-kartlar">' + parca.map(function (v, j) {
             let i = sayfa * n + j, akt = i === _yzhs.aktif, gr = v.kon.length >= 6 ? yzGrup(v.kon) : null, on = akt && gr ? yzGrupOneri(gr, yuz) : null;
             let oklar = akt && v.sonOklar.length ? '<div class="yzhs-oklar">' + v.sonOklar.map(function (p) { return '<i class="yz-ok ' + yzOkRenk(p) + '">' + esc(p) + '</i>'; }).join('') + '</div>' : '';
@@ -292,7 +300,7 @@ function yzhsCss() {
         '.yzhs-kare>canvas{z-index:1;border-radius:50%;opacity:0;pointer-events:none}.yzhs-kare>.yzhs-ust-k{z-index:2;overflow:visible}',
         '.yzhs-kare.isi>canvas{animation:yzhsIsi 1.1s cubic-bezier(.2,.8,.2,1) forwards}',
         '@keyframes yzhsIsi{from{opacity:0;clip-path:circle(0% at var(--gx) var(--gy))}to{opacity:1;clip-path:circle(80% at var(--gx) var(--gy))}}',
-        '.yzhs-ok{fill:#16a34a;stroke:#fff;stroke-width:.016}.yzhs-ok.son{fill:#facc15;stroke:#1d1a16;stroke-width:.022}.yzhs-kare.isi .yzhs-ok:not(.son){opacity:.6}',
+        '.yzhs-ok{fill:#16a34a;stroke:#fff;stroke-width:.016}.yzhs-ok.son{fill:#facc15;stroke:#1d1a16;stroke-width:.022}.yzhs-kare.isi .yzhs-ok:not(.son){opacity:.85}',
         '.yzhs-ok.bel{opacity:0;animation:yzhsBel .4s var(--d) forwards}@keyframes yzhsBel{to{opacity:.85}}',
         '.yzhs-no{font-weight:900;font-size:.085px;fill:#1d1a16;paint-order:stroke;stroke:#fff;stroke-width:.026px}',
         // ok uçuşu: iz → saplanma → halka dalgası → numara
@@ -350,6 +358,12 @@ function yzhsCss() {
         '.yzhs-kim-top{margin-left:auto;text-align:right;flex:none}.yzhs-kim-top b{display:block;font-weight:900;font-size:max(26px,min(14cqh,7cqw));line-height:.9;font-variant-numeric:tabular-nums}.yzhs-kim-top small{font-weight:900;font-size:max(10px,min(2.4cqh,1.1cqw));letter-spacing:.1em;text-transform:uppercase;color:var(--hs-soluk)}',
         '.yzhs-et{display:block;width:100%;font-weight:900;font-size:max(10px,min(2.4cqh,1.05cqw));letter-spacing:.08em;text-transform:uppercase;color:var(--hs-soluk)}',
         '.yzhs-sonseri{display:flex;align-items:center;gap:.8cqw;flex-wrap:wrap}',
+        '.yzhs-lj.cok{background:conic-gradient(#22c55e 0 33%,#a855f7 0 66%,#f97316 0)}',
+        '.yzhs-tumseri .yzhs-ts-l{display:flex;flex-wrap:wrap;gap:.5cqh .9cqw;max-height:max(52px,22cqh);overflow:hidden}',
+        '.yzhs-ts{display:inline-flex;align-items:center;gap:.25cqw;padding:.3cqh .5cqw;border-radius:99px;background:var(--hs-kart);border:1.5px solid var(--hs-cizgi);font-variant-numeric:tabular-nums}',
+        '.yzhs-ts .yz-ok{width:max(17px,min(5cqh,2.3cqw));height:max(17px,min(5cqh,2.3cqw));font-size:max(9px,min(2.5cqh,1.15cqw));font-style:normal;margin:0}',
+        '.yzhs-ts em{font-style:normal;font-weight:900;font-size:max(10px,min(2.4cqh,1.1cqw));color:var(--hs-soluk)}.yzhs-ts b{font-weight:900;font-size:max(11px,min(3cqh,1.4cqw));margin-left:.2cqw}',
+        '.yzhs-ts-r{width:max(10px,min(2.6cqh,1.2cqw));height:max(10px,min(2.6cqh,1.2cqw));border-radius:50%;background:var(--c);border:1.5px solid #fff;flex:none}.yzhs-ts-r.bos{background:transparent;border:2px dashed var(--c)}',
         '.yzhs-sonseri .yz-ok{width:max(24px,min(9cqh,4.4cqw));height:max(24px,min(9cqh,4.4cqw));font-size:max(12px,min(4.4cqh,2.1cqw));font-style:normal;margin:0;transform:scale(0);animation:yzhsSapla .45s var(--d) cubic-bezier(.2,1.8,.4,1) forwards}',
         '.yzhs-esit{font-weight:900;font-size:max(18px,min(7cqh,3.3cqw));margin-left:.4cqw;white-space:nowrap;opacity:0;animation:yzhsBel2 .3s var(--d) forwards}',
         '.yzhs-kutular{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1cqw}',

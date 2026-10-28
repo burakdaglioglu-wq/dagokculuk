@@ -29,7 +29,7 @@ export default async function ({ log }) {
     await p.waitForSelector('#yz-tv #yz-tv-serit.kapali .yzhs-tut', { timeout: 15000 });
     const kapali = await p.evaluate(() => ({ kart: document.querySelectorAll('#yz-tv-serit .yzhs-k').length, sayfa: document.querySelectorAll('#yz-tv .yz-tv-sayfa').length, satir: [...document.querySelectorAll('#yz-tv .yz-tv-tablo tbody tr[data-k]')].filter((t) => t.offsetHeight > 0).length, simdi: document.querySelectorAll('#yz-tv .yz-tv-simdi').length, h: document.getElementById('yz-tv-serit').offsetHeight }));
     dogrula(kapali.kart === 0 && kapali.sayfa === 0 && kapali.satir === 10 && kapali.simdi === 0 && kapali.h < 80, 'kapalı şerit + 10 satırın hepsi: ' + JSON.stringify(kapali));
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/acda31fc-ee77-42e4-bdbc-66748f4e0583/scratchpad/hs-kapali.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-kapali.png' }).catch(() => {});
     // çubuğa dokun → açık
     await p.locator('#yz-tv-serit .yzhs-tut').click();
     await p.waitForSelector('#yz-tv #yz-tv-serit.acik .yzhs-k', { timeout: 5000 });
@@ -38,7 +38,7 @@ export default async function ({ log }) {
     await p.waitForTimeout(2600);
     dogrula(await p.evaluate(() => document.querySelectorAll('#yz-tv-serit .yzhs-kare.isi').length >= 1), 'ısı haritası açılmalı');
     // ışık döner
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/acda31fc-ee77-42e4-bdbc-66748f4e0583/scratchpad/hs-acik.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-acik.png' }).catch(() => {});
     const once = await p.evaluate(() => document.querySelector('#yz-tv-serit .yzhs-k.aktif').getAttribute('data-k'));
     await p.waitForTimeout(4800);
     const sonra = await p.evaluate(() => document.querySelector('#yz-tv-serit .yzhs-k.aktif').getAttribute('data-k'));
@@ -59,7 +59,10 @@ export default async function ({ log }) {
     dogrula(say.tablo === 'none' && say.h > say.ekran * 0.45 && say.k && say.hedefH > say.ekran * 0.3 && say.ucus >= 1 && say.film >= 3 && say.filmAktif === 1 && say.kutu === 3 && say.sag <= 1600, 'geri sayımda yakın çekim: ' + JSON.stringify(say));
     await p.waitForTimeout(3200);
     dogrula(await p.evaluate(() => !!document.querySelector('#yz-tv-serit .yzhs-a-ana .yzhs-kare.isi')), 'yakın çekimde ısı haritası yayılmalı');
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/hs-yakin.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-yakin.png' }).catch(() => {});
+    // v339: yakın çekimde önceki seriler de listelenir (seri başına renk, hedefte aynı renkte oklar); 2 serisi olan sporcu ışıktayken
+    const tum = await p.evaluate((k) => { let a = document.querySelector('#yz-tv-serit .yzhs-a-ana'); return { k: a.getAttribute('data-k'), ts: a.querySelectorAll('.yzhs-tumseri .yzhs-ts').length, ok: a.querySelectorAll('.yzhs-tumseri .yz-ok').length, renkli: [...a.querySelectorAll('.yzhs-a-hedef circle.yzhs-ok:not(.son)')].filter((c) => /fill:#/.test(c.getAttribute('style') || '')).length, et: (a.querySelector('.yzhs-tumseri .yzhs-et') || {}).textContent }; }, hedef);
+    dogrula(tum.k !== hedef || (tum.ts === 1 && tum.ok === 6 && (tum.renkli === 6 || tum.renkli === 0) && /serinin [0-9]+ okundan/.test(tum.et)), 'yakın çekimde önceki seriler: ' + JSON.stringify(tum));
     // aynı sporcu ekrandayken başka kayıt gelirse büyük kart yeniden çizilmez (animasyon baştan başlamaz)
     const ayni = await p.evaluate(() => { let a = document.querySelector('#yz-tv-serit .yzhs-a-hedef'); yzTvCiz(); return a === document.querySelector('#yz-tv-serit .yzhs-a-hedef'); });
     dogrula(ayni, 'yeniden çizimde yakın çekim korunmalı');
@@ -70,17 +73,17 @@ export default async function ({ log }) {
     await p.waitForFunction(() => document.documentElement.classList.contains('yz-dev-acik') && document.getElementById('yz-dev-sayac') && document.getElementById('yz-tv').classList.contains('hs-sayac'), null, { timeout: 5000 });
     await p.waitForTimeout(900);
     const buyuk = await p.evaluate(() => ({ tablo: getComputedStyle(document.querySelector('#yz-tv .yz-tv-tablo')).display, kucukSayac: getComputedStyle(document.getElementById('yz-tv-sayac')).display, h: document.getElementById('yz-tv-serit').offsetHeight, ekran: innerHeight }));
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/acda31fc-ee77-42e4-bdbc-66748f4e0583/scratchpad/hs-buyuk.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-buyuk.png' }).catch(() => {});
     dogrula(buyuk.tablo === 'none' && buyuk.kucukSayac === 'none' && buyuk.h > buyuk.ekran * 0.25, 'büyük sayaçta şerit: ' + JSON.stringify(buyuk));
     // sayaç boyu: Küçük / Orta (varsayılan) / Büyük
     const boy = async (b) => { if (b) await p.locator('#yz-dev-sayac .yz-dev-boy button[data-b="' + b + '"]').click(); await p.waitForTimeout(800); return p.evaluate(() => ({ dev: document.getElementById('yz-dev-sayac').offsetHeight, serit: document.getElementById('yz-tv-serit').offsetHeight, ekran: innerHeight, secili: (document.querySelector('#yz-dev-sayac .yz-dev-boy .secili') || {}).textContent, sure: document.querySelector('.yz-dev-sure').getBoundingClientRect().toJSON(), devR: document.getElementById('yz-dev-sayac').getBoundingClientRect().bottom })); };
     const orta = await boy(null);
     dogrula(orta.secili === 'Orta' && Math.abs(orta.dev - orta.ekran * 0.5) < 6, 'varsayılan Orta: ' + JSON.stringify(orta));
     const bb = await boy('buyuk');
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/hs-buyuk-boy.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-buyuk-boy.png' }).catch(() => {});
     dogrula(bb.secili === 'Büyük' && bb.dev > bb.ekran * 0.6 && bb.serit > 60 && bb.sure.bottom <= bb.devR + 2, 'Büyük boy: ' + JSON.stringify(bb));
     const kk = await boy('kucuk');
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/hs-kucuk-boy.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-kucuk-boy.png' }).catch(() => {});
     dogrula(kk.secili === 'Küçük' && kk.dev < kk.ekran * 0.32 && kk.serit > kk.ekran * 0.5 && kk.sure.top >= -2 && kk.sure.bottom <= kk.devR + 2, 'Küçük boy: ' + JSON.stringify(kk));
     esit(await p.evaluate(() => localStorage.getItem('dag_yz_dev_boy')), 'kucuk', 'boy cihazda hatırlanır');
     dogrula(await p.evaluate(() => !!document.querySelector('#yz-dev-sayac:not(.kucul)') && document.documentElement.classList.contains('yz-dev-acik')), 'boy seçmek sayacı küçültmemeli');
@@ -96,7 +99,7 @@ export default async function ({ log }) {
     const mola = await p.evaluate(() => ({ sure: document.querySelector('#yz-dev-sayac .yz-dev-sure').textContent, faz: document.querySelector('#yz-dev-sayac .yz-dev-faz').textContent, btn: document.querySelector('#yz-tv .yz-mola-btn').textContent, modal: getComputedStyle(document.getElementById('onay-modal')).display, k: document.querySelector('#yz-tv-serit .yzhs-a-ana').getAttribute('data-k') }));
     dogrula(/^[45]:\d\d$/.test(mola.sure) && mola.faz.includes('MOLA') && /☕ [45]:\d\d/.test(mola.btn) && mola.modal === 'none', 'mola sayacı: ' + JSON.stringify(mola));
     await p.waitForTimeout(3000);
-    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8cce1594-4a72-48c2-b738-81e8bb994514/scratchpad/hs-mola.png' }).catch(() => {});
+    await p.screenshot({ path: 'C:/Users/burak/AppData/Local/Temp/claude/c--Users-burak-Desktop-dagsk/8e1e5275-a99c-45fa-8281-b2a12772c033/scratchpad/hs-mola.png' }).catch(() => {});
     await p.waitForFunction((k) => { let a = document.querySelector('#yz-tv-serit .yzhs-a-ana'); return a && a.getAttribute('data-k') !== k; }, mola.k, { timeout: 8000 });
     // süre başlatınca mola biter
     await p.evaluate(() => { yzSayacBaslat(); });

@@ -999,7 +999,7 @@ function yzTvCiz() {
     yzTvSigdir(el);
     // 🎯 hedef şeridi (dagsk-tv-serit.js): okların konumu + ısı haritası, ışık sporcudan sporcuya; büyük sayaçta alt yarıyı kaplar
     if (typeof yzhsTazele === 'function') yzhsTazele(el, o, sira);
-    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=13').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
+    else if (!bitti && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-tv-serit.js?v=14').then(function () { let o2 = yzOku(); if (o2.durum && o2.durum.asama === 'tur') yzhsTazele(document.getElementById('yz-tv'), o2, yzSiralama(o2)); }).catch(function () {});
     yzTorenKontrol(o);
     clearTimeout(_yz.duyuruZ); if (el.querySelector('.yz-tv-duyuru')) _yz.duyuruZ = setTimeout(function () { let e2 = document.querySelector('.yz-tv-duyuru'); if (e2) e2.classList.add('gizle'); }, 9000);
     yzTimerBaslat();

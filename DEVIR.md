@@ -5302,3 +5302,9 @@ Kullanıcı: "çocuklar çok sevdi; biraz daha zor, korkutucu, kaybetme hissi �
 - Ejderha öfkesi (`d.ofke`, `OFKE_SINIR` 4/3): sarısız her seri +1, sarı gelince 0; sınırda ateş topu (`atesGoster`) → -1 can.
 - Kale düşünce `GERI_DALGA` (0/1/2) dalga geri; ⚔️/😈'de surlar yıkılır, bayrak düşer, düşmanlar güler. 😈: gece sahnesi (`_gece`, `.kale-gece`), kızıl gözler, kara-kızıl ejderha, +1 düşman, %15 hızlı, 2 can.
 - Durumda `st.mod`; ayar değişince (`kaleAyarUygula`) dalga yeni seviyenin düşmanlarıyla baştan kurulur. Test `78-kale-heyecan`; `70-kale` 8 düşman tipi.
+
+## 67. 🎯 TV yakın çekim: tüm seriler (2026-10-28, v339)
+Kullanıcı: "Yarışma modunda sporcuların o anki seri ve şu ana kadar attığı tüm serilerin ok yönleri ve ısı haritası gözüksün, sadece o attığı seri değil."
+- `dagsk-tv-serit.js` (`?v=14`): `yzhsVeri` her sporcuya `seriler` ([{i, oklar, t}]) ekler. Hedefte önceki serilerin okları seri başına renkte (`YZHS_SERI_RENK`, `yzhsSeriRenk` — hedef halkalarına benzemez), daha büyük; `slice(-30)` → `-90`.
+- Yakın çekimde "Son seri"nin altında `.yzhs-tumseri`: önceki her seri bir hap (renk noktası = hedefteki renk, oklar, toplam). Konumu girilmemiş seri kesik halkalı. Etiket ısı haritasının kaç serinin kaç okundan çizildiğini söyler (ısı haritası zaten tüm konumlardan).
+- Test `52-tv-hedef-seridi` önceki seriler hapını da doğrular.
