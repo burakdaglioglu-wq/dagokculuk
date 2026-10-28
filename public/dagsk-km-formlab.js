@@ -304,7 +304,7 @@ function flCanliHTML() {
         <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas></div>
             ${flSiraCanliHTML()}
             <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet ${c.kayit ? 'kayit' : ''}">${c.kayit ? '● KAYIT' : 'HAZIR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<span id="fl-canli-atis" class="fl-rozet">ATIŞ ${c.atisSay || 0}</span><button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
-            <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
+            <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevir; yan ya da ters görünüyorsa alttaki <b>Döndür</b>'e bas</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
             ${flAltBantHTML(c)}
             <div class="fl-hazir" id="fl-hazir" hidden></div>
@@ -328,7 +328,7 @@ function flAynaHTML(c) {
     return `<div class="fl-canli fl-ayna${_fl.tamEkran ? ' fl-tam' : ''}${_fl.tv ? ' fl-tv' : ''}">
         <div class="fl-canli-sahne" onclick="flKisiTiklandi(event)"><div class="fl-zoom" id="fl-zoom"><video id="fl-canli-video" playsinline muted autoplay></video><canvas id="fl-canli-katman"></canvas><canvas id="fl-olcu-katman" class="${o.arac ? 'aktif' : ''}"></canvas></div>
             <div class="fl-canli-ust"><span id="fl-canli-sure" class="fl-rozet">${c.donuk ? 'DONDURULDU' : 'CANLI AÇILAR'}</span><span class="fl-ust-sag"><span id="fl-ses-rozet" class="fl-rozet fl-rozet-ses" style="${_fl.ses ? '' : 'display:none'}" title="Kiriş sesi dinleniyor">SES</span><span id="fl-canli-tel" class="fl-rozet fl-rozet-tel" style="display:none">TELEFON</span><button class="fl-rozet fl-son-btn" onclick="flTekrarSon()">Son 3 sn</button>${flAyarHTML()}<button class="fl-rozet fl-tam-btn" onclick="flTamEkranDegis()">${_fl.tamEkran ? 'Küçült' : 'Tam ekran'}</button></span></div>
-            <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevirirsen ekranı doldurur</div>
+            <div class="fl-yon-ipucu" id="fl-yon-ipucu" style="display:none">Görüntü dikey geliyor — telefonu <b>yatay</b> çevir; yan ya da ters görünüyorsa alttaki <b>Döndür</b>'e bas</div>
             <div class="fl-canli-ipucu" id="fl-canli-ipucu">${flEsc(c.ipucu || '')}</div>
             ${flAltBantHTML(c)}
         </div>
@@ -633,7 +633,7 @@ function flTelYaz() {
     let ro = document.getElementById('fl-canli-tel'); if (ro) ro.style.display = flTelBagliMi() && _fl.akisTel ? '' : 'none';
 }
 // ---- kamera seç
-function flKameraSecHTML() { return `<select id="fl-kamera-sec" class="fl-kamera-sec" onchange="flKameraDegis(this.value)" aria-label="Kamera seç" style="display:none"></select>`; }
+function flKameraSecHTML() { return `<select id="fl-kamera-sec" class="fl-kamera-sec" onchange="flKameraDegis(this.value)" aria-label="Kamera seç" style="display:none"></select><button class="fl-btn fl-don-btn" id="fl-don-btn" onclick="flGoruntuDondur()" title="Görüntü yan ya da ters geliyorsa 90° çevirir">${flDonEtiket()}</button>`; }
 async function flKameraListesi() {
     let sel = document.getElementById('fl-kamera-sec'); if (!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
     let l = []; try { l = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); } catch (e) {}
@@ -655,7 +655,55 @@ function flKameraDegis(v) {
     _fl.kamera = v; try { localStorage.setItem('dagsk_formlab_kamera', v); } catch (e) {}
     flKameraBaslat().catch(() => showToast('Bu kamera açılamadı', 'error'));
 }
-function flAkisBirak() { if (_fl.akis && !_fl.akisTel) _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; _fl.akisTel = false; flSalonKapat(); }
+function flAkisBirak() { flDonBirak(); if (_fl.akis && !_fl.akisTel) _fl.akis.getTracks().forEach(t => t.stop()); _fl.akis = null; _fl.akisTel = false; flSalonKapat(); }
+// ---- Görüntüyü döndür (2026-10-28, kullanıcı: "telefondan kamerayı açınca açı ters yöne bakıyor, telefon açısını değiştir ekle").
+// Telefon yön kilidindeyken yan/ters tutulunca görüntü yan ya da baş aşağı gelir. Kaynak akış gizli bir videodan kanvasa
+// döndürülerek çizilir, ekranda kanvasın akışı oynar → canlı analiz, ağır çekim tekrar ve kayıt düz görüntüyü görür.
+// Telefon kendi karesinde analiz ettiyse noktaları burada aynı açıyla çevrilir. Seçim cihazda kalır (90° adımlarla).
+function flDonus() { if (_fl.donus == null) { try { _fl.donus = (+localStorage.getItem('dagsk_formlab_donus') || 0) % 360; } catch (e) { _fl.donus = 0; } } return _fl.donus; }
+function flDonEtiket() { let d = flDonus(); return 'Döndür' + (d ? ' · ' + d + '°' : ''); }
+// normalize nokta [x, y, ...] → d derece saat yönünde döndürülmüş karedeki yeri
+function flDonNokta(q, d) { let x = q[0], y = q[1], k = d === 90 ? [1 - y, x] : d === 180 ? [1 - x, 1 - y] : d === 270 ? [y, 1 - x] : [x, y]; return q.length > 2 ? k.concat(q.slice(2)) : k; }
+function flDonBirak() {
+    let g = _fl.donAkis; if (!g) return; _fl.donAkis = null;
+    cancelAnimationFrame(g.raf); try { g.akis.getTracks().forEach(t => t.stop()); } catch (e) {}
+    try { g.v.pause(); g.v.srcObject = null; g.v.remove(); } catch (e) {}
+}
+// ekranda / kayıtta kullanılacak akış: döndürme yoksa kaynağın kendisi
+function flGorAkis() {
+    let d = flDonus(), g = _fl.donAkis;
+    if (!_fl.akis || !d) { flDonBirak(); return _fl.akis; }
+    if (g && g.kaynak === _fl.akis && g.d === d) return g.akis;
+    flDonBirak();
+    let cv = document.createElement('canvas'); cv.width = cv.height = 2;
+    if (!cv.captureStream) { showToast('Bu tarayıcı görüntüyü döndüremiyor', 'warning'); return _fl.akis; }
+    let v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.autoplay = true;
+    v.style.cssText = 'position:fixed;left:-9999px;top:0;width:4px;height:4px;opacity:0;pointer-events:none'; document.body.appendChild(v);
+    v.srcObject = _fl.akis; v.play().catch(() => {});
+    let x = cv.getContext('2d');
+    g = _fl.donAkis = { kaynak: _fl.akis, d, v, cv, akis: cv.captureStream(30) };
+    const ciz = () => {
+        if (_fl.donAkis !== g) return; g.raf = requestAnimationFrame(ciz);
+        let W = v.videoWidth, H = v.videoHeight; if (!W || !H || v.readyState < 2) return;
+        let yan = d !== 180, cw = yan ? H : W, ch = yan ? W : H;
+        if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+        if (d === 90) x.setTransform(0, 1, -1, 0, H, 0); else if (d === 180) x.setTransform(-1, 0, 0, -1, W, H); else x.setTransform(0, -1, 1, 0, 0, W);
+        x.drawImage(v, 0, 0, W, H);
+    };
+    g.raf = requestAnimationFrame(ciz);
+    return g.akis;
+}
+function flGoruntuDondur() {
+    let c = _fl.canli;
+    if (c && c.kayit) return showToast('Kayıt sürerken döndürülemez', 'info');
+    if (c && c.donuk) return showToast('Önce "Devam" ile görüntüyü aç', 'info');
+    _fl.donus = (flDonus() + 90) % 360; try { localStorage.setItem('dagsk_formlab_donus', String(_fl.donus)); } catch (e) {}
+    _fl.sonTp = null; _fl.zoom = { z: 1, tx: 0, ty: 0 }; _fl.zoomHedef = null;
+    if (_fl.olcu) flOlcuTemizle(true);
+    flCanliBagla();
+    let b = document.getElementById('fl-don-btn'); if (b) b.textContent = flDonEtiket();
+    showToast(_fl.donus ? 'Görüntü ' + _fl.donus + '° döndürüldü' : 'Görüntü düz — döndürme kapalı', 'info');
+}
 async function flKameraBaslat() {
     if (_fl.kamera == null) { try { _fl.kamera = localStorage.getItem('dagsk_formlab_kamera') || 'oto'; } catch (e) { _fl.kamera = 'oto'; } }
     let sec = _fl.kamera;
@@ -778,7 +826,7 @@ async function flSalonTeshis() {
 }
 function flCanliBagla() {
     let v = document.getElementById('fl-canli-video'); if (!v || !_fl.akis) return;
-    if (v.srcObject !== _fl.akis) { v.srcObject = _fl.akis; v.play().catch(() => {}); }
+    let a = flGorAkis(); if (v.srcObject !== a) { v.srcObject = a; v.play().catch(() => {}); }
 }
 async function flKameraCevir() {
     if (!_fl.canli || _fl.canli.kayit) return;
@@ -834,7 +882,7 @@ function flKayitBaslat() {
     let c = _fl.canli, v = document.getElementById('fl-canli-video'); if (!v || !v.videoWidth) return;
     c.kareler = []; c.atisSay = 0; c.yakinBas = null; c.parcalar = []; c.sesler = []; c.W = v.videoWidth; c.H = v.videoHeight; c.telKare = 0; c.pcKare = 0; c.akisBoylar = [];
     let sesIzi = _fl.ses && _fl.ses.iz && _fl.ses.iz.readyState === 'live' ? [_fl.ses.iz] : [];
-    let kayitAkisi = new MediaStream([..._fl.akis.getVideoTracks(), ...sesIzi]);
+    let kayitAkisi = new MediaStream([...(flGorAkis() || _fl.akis).getVideoTracks(), ...sesIzi]);
     let tipler = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
     let tip = window.MediaRecorder ? (tipler.find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '') : null;
     _fl.kaydedici = null;
@@ -846,7 +894,7 @@ function flKayitBaslat() {
         } catch (e) { _fl.kaydedici = null; }
     }
     c.bas = performance.now(); c.kayit = true; flKonus('Kayıt başladı', 'kayit');
-    c.telKayitId = null; if (_fl.akisTel) { let id = Date.now().toString(36); if (flTelKayitKomut('bas', id)) c.telKayitId = id; }
+    c.telKayitId = null; if (_fl.akisTel && !flDonus()) { let id = Date.now().toString(36); if (flTelKayitKomut('bas', id)) c.telKayitId = id; }
     let b = document.getElementById('fl-kayit-btn'); if (b) { b.classList.add('kayitta'); b.setAttribute('aria-label', 'Kaydı bitir ve analiz et'); }
     let ro = document.getElementById('fl-canli-sure'); if (ro) ro.classList.add('kayit'); flAltBantNo('ATIŞ 0');
 }
@@ -914,7 +962,7 @@ function flCanliDongu() {
         let c = _fl.canli, W = v.videoWidth, H = v.videoHeight, ts = flTs(simdi), kare = { t: (simdi - c.bas) / 1000, p: null, h: null };
         let lm = null;
         if (tp) { // telefonda, tam kaliteli kareden çıkarılmış noktalar
-            if (tp.p) { kare.p = tp.p; kare.h = tp.h || null; kare.hD = tp.hD || 0; kare.tel = 1; if (kare.h) _fl.parmakSon = performance.now(); }
+            if (tp.p) { let dn = flDonus(); kare.p = dn ? tp.p.map(q => flDonNokta(q, dn)) : tp.p; kare.h = tp.h ? (dn ? tp.h.map(e => e.map(q => flDonNokta(q, dn))) : tp.h) : null; kare.hD = tp.hD || 0; kare.tel = 1; if (kare.h) _fl.parmakSon = performance.now(); }
             _fl.kisiSayisi = tp.n || 0; c.telKare = (c.telKare || 0) + 1;
         } else {
             let r = _fl.pose.detectForVideo(v, ts); lm = flKisiSec(r && r.landmarks, v.videoWidth, v.videoHeight);
@@ -1782,7 +1830,7 @@ function flKisiTiklandi(e) {
     let nx = (lx - ox) / (v.videoWidth * olc), ny = (ly - oy) / (v.videoHeight * olc);
     if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
     _fl.takip = [nx, ny]; _fl.kisiKilit = true;
-    try { let k = _fl.akisTel && _fl.tel && _fl.tel.kanal; if (k && k.readyState === 'open') k.send(JSON.stringify({ takip: [nx, ny] })); } catch (er) {}
+    try { let k = _fl.akisTel && _fl.tel && _fl.tel.kanal; if (k && k.readyState === 'open') k.send(JSON.stringify({ takip: flDonNokta([nx, ny], (360 - flDonus()) % 360) })); } catch (er) {}
     flCanliIpucu('Sporcu seçildi — artık onu takip ediyorum'); showToast('Takip edilecek sporcu seçildi', 'success');
 }
 // ---- sporcunun gerçek omuz genişliği
@@ -3033,7 +3081,7 @@ function flCss() {
 .fl-canli.fl-tam .fl-ayna-araclar .fl-btn{ color:#fff; }
 .fl-dondur-btn{ min-width:120px; min-height:56px; border-radius:28px; border:3px solid #fff; background:rgba(255,255,255,.12); color:#fff; font:800 16px/1 'Archivo',sans-serif; cursor:pointer; }
 .fl-dondur-btn.donuk{ background:#ff6a1a; border-color:#ff6a1a; }
-.fl-kamera-satir{ display:flex; justify-content:center; }
+.fl-kamera-satir{ display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
 .fl-kamera-sec{ width:auto; max-width:min(420px, 100%); min-height:40px; padding:0 12px; border-radius:8px; border:1px solid rgba(236,230,220,.25); background:#1b1917; color:#efebe5; font:600 13px/1 'Archivo',sans-serif; }
 .fl-rozet-tel{ background:#198754; }
 .fl-tel{ flex-direction:row; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; }

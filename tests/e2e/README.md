@@ -44,5 +44,6 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `72-halat` | Oyunlar › Dev Halat Çekme: dengeli AL/AK, raunt HERKES atmadan bitmez (önce atan avantajı yok), herkes atınca önde olan alır, geri al, ⏭️ atanlarla bitirme, 2 raunt → maç + rozet, çocuğa dokununca sıra |
 | `73-il` | Oyunlar › 81 İl: 81 petek (yalnız il yok), eşik/kaçtı, bayrak, savundu (eşitlik yetmez), ÇALDI + X komşu il, Ankara ×5, geri al, 🏁 adil bitiş (herkes eşit atınca) |
 | `74-dogrudan-eleme` | Yarışma › Doğrudan eleme: tür seçimi, 8'li tablo + 3 bay (en üst tohumlara), İlk 4, elle ▲▼ tohum, toplam puan (5×3) + eşitlikte shoot-off, bronz, sonuç ekranı + TV; sıralama sonrası eleme sistemi/bronz ayarı, set sistemi 6-0 |
+| `75-formlab-dondur` | Form Lab › Döndür: sahte kamera akışı 0°/90°/180°/270° (boyut + kırmızı köşe pikseli yer değiştirir), telefon noktaları flDonNokta ile çevrilir, seçim cihazda kalır, düzken katman kapanır |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.
