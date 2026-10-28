@@ -12314,6 +12314,9 @@
         // FAZ 7 — Araç ızgarasından bir araç seçilince: ızgara+sınıf kartı gizlenir, #km-icerik +
         // geri dönüş çubuğu gösterilir, AYNEN mevcut kmSekme(id) çağrılır (dispatch'e dokunulmadı).
         function kmAracSec(id) {
+            // 2026-10-28 (kullanıcı: "tanıtım bölümünü karışık sınıfın içinde de yap, TV ekranı tam ekran devam etsin"): sekme açmaz,
+            // Yönetici'deki 📺 Tanıtım Ekranı'nı açar — vitrinAc tam ekranı bu tıklamanın içinde (eşzamanlı) ister.
+            if(id === 'vitrin') { kmAracKullanildi(id); vitrinAc(); return; }
             document.getElementById('km-sinif-karti').style.display = 'none';
             document.getElementById('km-arac-izgara').style.display = 'none';
             document.getElementById('km-icerik-geri-bar').style.display = 'flex';
@@ -12437,6 +12440,7 @@
             { id:'dersler', ad:'Ders Kütüphanesi', grup:'yesil', icon:'<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>' },
             { id:'malzeme', ad:'Malzemeler', grup:'sari', icon:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>' },
             { id:'durus', ad:'Video & Duruş', grup:'mavi', icon:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>' },
+            { id:'vitrin', ad:'Tanıtım Ekranı', grup:'mavi', icon:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M10 8l4 2-4 2z"/><path d="M8 20h8M12 16v4"/>' },
             { id:'baski', ad:'Baskı Görevleri', grup:'kirmizi', icon:'<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.5 4.6V17h7v-3.4C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20h5"/>' },
         ];
         // Kulüp paleti (2026-10-11): kategori ikonları da turuncu ailesinden — kehribar / turuncu / koyu turuncu / kızıl
@@ -12481,7 +12485,7 @@
             { ad:'Skor & sıralama', alt:'Puanlar, maçlar, ligler', idler:['lider','klasman','canli','yarisma','resmitur','lig','milyonok'] },
             { ad:'Teknik & video', alt:'Duruşu gör, düzelt', idler:['kocluk','teknikanaliz','durus','okanaliz','ritim'] },
             { ad:'Gelişim & kondisyon', alt:'Yük, test, kuvvet', idler:['yuk','seviye','kuvvet','fitness','performans','baski','makarali'] },
-            { ad:'Oyun & motivasyon', alt:'Eğlence ve davranış', idler:['oyunlar','reaksiyon','kasifkarti','pozitif','disiplin'] },
+            { ad:'Oyun & motivasyon', alt:'Eğlence ve davranış', idler:['oyunlar','vitrin','reaksiyon','kasifkarti','pozitif','disiplin'] },
         ];
         const KM_ARAC_ANA = {
             skor: { baslik:'Skor Gir', aciklama:'Oku at, puanı gir', renk:'var(--accent)' },
@@ -12497,7 +12501,7 @@
             try { if(typeof yzOku !== 'function') return null; let d = yzOku().durum; if(!d || !d.asama || d.asama === 'kurulum') return null; if(d.asama === 'bitti') return 'Son tur bitti · sonuçlar hazır'; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; let f = yzFormat(d); return '🎯 Tur sürüyor · seri ' + (Math.min(d.seri, f.seri - 1) + 1) + '/' + f.seri; } catch(e) { return null; }
         }
         function kmAnaHizliHTML(id) {
-            if(id === 'oyunlar') { let t = kmAnaSonOyun(), th = t && KM_OYUN_TEMALAR[t]; return '<div class="km-arac-hizli">' + (th ? '<button type="button" onclick="kmAnaSonOyunAc()">▶ ' + th.ikon + ' ' + esc(th.ad) + '</button>' : '') + '<button type="button" onclick="kmAracSec(\'yuva\')">🥚 Yumurta Yuvası</button></div>'; }
+            if(id === 'oyunlar') { let t = kmAnaSonOyun(), th = t && KM_OYUN_TEMALAR[t]; return '<div class="km-arac-hizli">' + (th ? '<button type="button" onclick="kmAnaSonOyunAc()">▶ ' + th.ikon + ' ' + esc(th.ad) + '</button>' : '') + '<button type="button" onclick="kmAracSec(\'yuva\')">🥚 Yumurta Yuvası</button><button type="button" onclick="kmAracSec(\'vitrin\')">📺 Tanıtım Ekranı</button></div>'; }
             if(id === 'yarisma') return '<div class="km-arac-hizli"><button type="button" onclick="kmKarmaYarismayaGec(true)">📺 Yarışma TV</button></div>';
             return '';
         }
@@ -12505,11 +12509,11 @@
             yuk: 'Haftalık ok sayısı ve yük', seviye: 'Mesafe/puan seviye sınavı', lig: 'Kulüp içi haftalık lig',
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
             makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
-            formlab: 'Kamerayla çene altı, kol ve parmak bırakışı',
+            formlab: 'Kamerayla çene altı, kol ve parmak bırakışı', vitrin: 'Oyunları tanıtır, tam ekran TV',
         };
         const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
             formlab: 'video kamera çapa çene altı bırakış analiz form yapay zeka çizim', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
-            durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence',
+            durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence', vitrin: 'tanıtım reklam tv ekran vitrin veli boşta',
             kocluk: 'hata ipucu teknik', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
         };
         function kmAracSvg(icon, b) { return '<svg viewBox="0 0 24 24" width="' + b + '" height="' + b + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon + '</svg>'; }
@@ -18974,7 +18978,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // devrileceği (standart 2), canavarKalkan = 1 açık / 0 kapalı (kapalıyken zorluk ne olursa olsun kalkan hiç açılmaz).
         // 2026-10-27 (kullanıcı: "ayarlarda hapşırık için de seviye belirle"): hapsirikSeri = yaratık hapşırana kadar kişi başı
         // yaklaşık seri (standart 1) → dagsk-km-hapsirik.js gerekliHesapla çarpanı; hpsAyarUygula sahnedekine de uygular.
-        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1 };
+        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1, kaleMod: 1 };
         const KM_OYUN_AYAR_SECENEK = {
             yolCarpan: [[2, 'Çok kısa', '≈5 seri'], [1.45, 'Kısa', '≈7 seri'], [1, 'Standart', '≈10 seri'], [0.7, 'Uzun', '≈14 seri'], [0.5, 'Çok uzun', '≈20 seri']],
             yolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri'], [15, '15 seri'], [20, '20 seri']],
@@ -18983,6 +18987,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             canavarKalkan: [[1, '🛡️ Açık'], [0, 'Kapalı']],
             hapsirikSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
             akvaryumSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
+            // 2026-10-28 (kullanıcı: "kale savunmasını daha zor, korkutucu, kaybetme hissiyle — ayarlardan seviyeye göre açayım")
+            kaleMod: [[1, '🙂 Tatlı', 'ceza yok · aynı dalga baştan'], [2, '⚔️ Heyecanlı', 'konuşan, zırhlı düşmanlar · düşerse 1 dalga geri'], [3, '😈 Korkutucu', 'gece · 2 can · düşerse 2 dalga geri']],
             kaleSeri: [[0.5, 'Çok kolay', '≈½ seri/kişi'], [0.75, 'Kolay', '≈¾ seri/kişi'], [1, 'Normal', '≈1 seri/kişi'], [1.5, 'Zor', '≈1,5 seri/kişi'], [2, 'Çok zor', '≈2 seri/kişi']],
             futbolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri']],
             sayacSn: [[60, '1 dk'], [90, '1,5 dk'], [120, '2 dk'], [180, '3 dk'], [300, '5 dk']],
@@ -19028,6 +19034,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + satir('hapsirikSeri', '🤧', 'Hapşırık seviyesi', 'Yaratığın hapşırması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki yaratığa da hemen uygulanır')
                 + satir('akvaryumSeri', '🐠', 'Akvaryum seviyesi', 'Akvaryumun dolması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki akvaryuma da hemen uygulanır')
                 + satir('kaleSeri', '🏰', 'Kale Savunması seviyesi', 'Bir dalgayı temizlemek için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · düşmanlar da buna göre yavaşlar · sahnedeki dalgaya hemen uygulanır')
+                + satir('kaleMod', '⚔️', 'Kale Savunması heyecanı', 'Tatlı: bugünkü oyun · Heyecanlı: düşmanlar laf atar ("Sarı atamazsan beni düşüremezsin!"), zırhlı/kalkanlı düşmanlar, öfkeli ejderha · Korkutucu: gece, kızıl gözler, daha kalabalık dalgalar')
                 + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
                 + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
                 + satir('yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)')

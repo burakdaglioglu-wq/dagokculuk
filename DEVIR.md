@@ -5288,3 +5288,17 @@ Kullanıcı: "yarışma modundaki sonucu bitirdikten sonra sporcu analiz PDF dos
 - `yzaPdfSayfa` (native jsPDF, Roboto): başlık + ad/grup/durum (`yzaDurum`), kutular (sıra, toplam, ok ort., 10+X, ıska, hedef, önceki tur), hedefte bu turun okları + grup merkezi/yayılımı (`yzaNoktalar 'bu'`, antrenman okları PDF'te kapalı), 9 hedef bölgesi, grup çapı + nişangâh (`yzGrupOneri`), yön eğilimi (`yzaYonVeri`), seri seri, gelişim çizgisi (son 10 tur + sınıf ort.), ok numaraları tablosu + uyarılar (`yzaOkNoHesap`), tespitler, yer kalırsa antrenör notu satırları.
 - Ekran ve PDF aynı hesabı kullanır: `yzaOkNoHesap` (eskiden `yzaOkNoHTML` içindeydi) ve `yzaYonVeri` (eskiden `yzaYonHTML` içindeydi) ayrıldı. `yzaPdfMetin` HTML etiketini ve emojiyi siler.
 - Test `76-analiz-pdf` (sonuç → 3 sayfa, tek sporcu → 1 sayfa).
+
+## 65. 📺 Tanıtım Ekranı Karışık Sınıf'ta da (2026-10-28, v337)
+Kullanıcı: "tanıtım bölümünü karışık sınıfın içinde de yap, TV ekranı tam ekran devam etsin".
+- KM aracı `vitrin` (`KM_ARAC_LISTESI`, grup "Oyun & motivasyon") + Oyunlar büyük kartının altında "📺 Tanıtım Ekranı" hızlı düğmesi. `kmAracSec('vitrin')` sekme açmaz, doğrudan `vitrinAc()` çağırır — tam ekran tıklamanın içinde eşzamanlı istenir (§57 v329 kuralı). Kapatınca KM ızgarası yerinde kalır.
+- Arama: "tanıtım reklam tv ekran vitrin veli boşta". Test `77-km-vitrin`.
+
+## 66. ⚔️ Kale Savunması: heyecan seviyesi (2026-10-28, v338)
+Kullanıcı: "çocuklar çok sevdi; biraz daha zor, korkutucu, kaybetme hissi — ayarlardan seviyeye göre açayım; goblinler, ejderhalar 'sarı atamazsan beni düşüremezsin' desin".
+- Oyun Ayarları › **Kale Savunması heyecanı** (`kaleMod`, standart 1): 🙂 Tatlı (eski oyun) · ⚔️ Heyecanlı · 😈 Korkutucu. Mevcut "Kale seviyesi" (`kaleSeri`, can/hız) ayrı kalır.
+- ⚔️ ve üstü: yeni düşmanlar `zirhli` (Altın Zırhlı Goblin, `min:9` — 9/10/X dışındaki ok seker, `tavan:32` can), `kalkanci` (Kalkanlı Trol, `min:7`, `tavan:48`), `yavruejder` (uçar). İlk göründükleri dalgada (2/3/4) tanıtım kartı (`tanit`). Kurallı düşmanın başında "9+"/"7+" yazar.
+- Konuşma balonu (`konus`, `SOZ`/`TEHLIKE`/`GULUS`): sekince kuralını söyler; seri sonunda tehlike (kapıya bir adım — kırmızı çerçeve `#kale-vinyet` + kalp sesi) > ejderha öfke uyarısı > hiç değmediyse gülme > %60 rastgele laf.
+- Ejderha öfkesi (`d.ofke`, `OFKE_SINIR` 4/3): sarısız her seri +1, sarı gelince 0; sınırda ateş topu (`atesGoster`) → -1 can.
+- Kale düşünce `GERI_DALGA` (0/1/2) dalga geri; ⚔️/😈'de surlar yıkılır, bayrak düşer, düşmanlar güler. 😈: gece sahnesi (`_gece`, `.kale-gece`), kızıl gözler, kara-kızıl ejderha, +1 düşman, %15 hızlı, 2 can.
+- Durumda `st.mod`; ayar değişince (`kaleAyarUygula`) dalga yeni seviyenin düşmanlarıyla baştan kurulur. Test `78-kale-heyecan`; `70-kale` 8 düşman tipi.

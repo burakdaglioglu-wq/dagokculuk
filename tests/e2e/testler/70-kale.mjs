@@ -1,7 +1,7 @@
 // Karışık Sınıf › Oyunlar › 🏰 Kale Savunması (2026-10-28).
 // Tema seçiciden açılır, dosya tembel yüklenir, düşmanlar çizilir (domuz yok); dock'tan girilen seri GERÇEK kayda yazılır, her ok
 // en öndeki düşmana hasar verir, seriden sonra düşmanlar yaklaşır; dalga temizlenince tören + sıradaki dalga; kapıya varan can
-// alır, kale düşerse aynı dalga baştan; geri al; 5 düşman tipi çizilir; çocuğa dokununca sıra; Oyun Ayarları › Kale seviyesi.
+// alır, kale düşerse aynı dalga baştan; geri al; 8 düşman tipi çizilir; çocuğa dokununca sıra; Oyun Ayarları › Kale seviyesi.
 import { sayfaAc, uygulamaAc, karisikSinifArac, dogrula, esit } from '../yardimci.mjs';
 
 export default async function ({ log }) {
@@ -70,14 +70,14 @@ export default async function ({ log }) {
     await p.waitForTimeout(1500);
     dogrula(await p.evaluate(() => /KALE DÜŞTÜ/.test(document.getElementById('kale-dev').textContent)), 'kale düştü mesajı yok');
     await p.waitForTimeout(3000);
-    // 5 düşman tipi çizilir
+    // 8 düşman tipi çizilir
     const tipler = await p.evaluate(async (anahtar) => {
       const k = anahtar + (_kmAktifKonum || 'varsayilan'), st = JSON.parse(localStorage.getItem(k));
       st.dusmanlar = Object.keys(kaleDusmanlar).map((t, i) => ({ id: 900 + i, tip: t, can: 10, max: 10, x: 500 + i * 90, y: kaleDusmanlar[t].ucar ? 360 : 486 }));
       kaleGeriYukle(st); await new Promise((r) => setTimeout(r, 200));
       return Object.keys(kaleDusmanlar).map((t) => { const e = document.querySelector('.kale-dusman[data-tip="' + t + '"]'); return e && e.getBBox().width > 20 ? t : '!' + t; });
     }, anahtar);
-    esit(tipler.length, 5, 'düşman tipi sayısı');
+    esit(tipler.length, 8, 'düşman tipi sayısı (v338: + zırhlı, kalkanlı, yavru ejderha)');
     dogrula(tipler.every((t) => t[0] !== '!'), 'eksik çizilen düşman: ' + tipler.join(','));
     // 👆 çocuğun karakterine dokununca sıra ona geçer
     await p.evaluate(() => { _kmOyunAktifIndex = 0; kmOyunSahneKurKale(); }); await p.waitForTimeout(600);
