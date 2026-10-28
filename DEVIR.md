@@ -5242,3 +5242,12 @@ Kullanıcı yeni oyun önerisi istedi; tarayıcıda iki taslak sayfası (6 fikir
 - **Oyun Ayarları › Akvaryum seviyesi** (`akvaryumSeri`, ½…2 seri/kişi) → `akvAyarUygula`.
 - Dikkat: canlının konumu dış `<g transform>` özniteliğinde; dans/ayrılış CSS animasyonları iç `.akv-govde`'de (CSS transform özniteliği ezer). Yüzme dış grupta (ad yazısı birlikte gider), dönüş yalnız emojide (`.akv-don`) — yazı ayna görünmez. Tören sürerken HUD `_ekranHud` ile eski akvaryumu gösterir.
 - Yalnız eski emojiler (🪸 🪼 🦭 tablette kare). Test `69-akvaryum`.
+
+
+## 59. 🏰 Kale Savunması — yeni ortak Oyunlar teması (2026-10-28, v331)
+Akvaryum'dan sonra kullanıcı yine öneri istedi. 3. tur taslakta (Robot / Pizza / Gizli Resim) Pizza için "ilgi çeker mi bilemedim", 4. turda (heyecan · ödül · koleksiyon: Kale Savunması / Lunapark / Yaratık Avcısı) **Kale Savunması**'nı seçti: **"yap ama domuz olmasın"** (taslaktaki 🐗 çıkarıldı).
+- **Oyun:** çocuklar kale burçlarında okçu (ön sur y210, iç sur y160, kule y110 — 6'şarlı sıralar). Düşmanlar sağdan yolda kaleye yürür. Her ok **en öndeki** düşmana: puan = hasar, 9/10/X kritik ×1,5, X ateşli ok (arkadakine +5), ıska yere saplanır. Her seriden sonra düşmanlar bir adım yaklaşır (yarasa ×1,3); kapıya (x=360) varan kalenin bir canını alır (❤️×3). Dalga temiz → kutlama (son düşüren 👑, en çok düşüren) → daha güçlü dalga; her 3. dalgada ejderha. Kale düşerse ceza yok: aynı dalga baştan, kale 3 can.
+- **Düşmanlar emoji değil SVG** (`D` nesnesi): goblin, yarasa (uçar), ork, taş golem, ejderha (boss). Sevimli, korkutucu değil; domuz YOK.
+- **Denge:** dalga canı = Σ sporcu (3 ok × ok ortalaması × 1,1) × seviye × (1 + 0,12·(dalga−1)); adım = 600 / (max(3, sınıf) × 1,6 × seviye) px (18–140). Oyun Ayarları › **Kale Savunması seviyesi** (`kaleSeri`) → `kaleAyarUygula` (kalan can oranı korunur).
+- **Kod:** `public/dagsk-km-kale.js` (kale*), Akvaryum/Hapşırık'ın kabuk bağlantılarının birebir eşi. Durum `dag_km_kale_<konum>` güne özel; rozet `sp.oyun.kale = { temizledi, ejderha }`. İlerleme kutusu 'hasar'.
+- Düşman konumu dış `<g>`'nin **CSS** transform'unda (adım geçişi .6s), yürüme/sallanma iç `.kale-govde`'de. Tören sırasında HUD `_ekranHud` ile eski dalgayı gösterir. Test `70-kale`.
