@@ -17222,6 +17222,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunKameraGuncelle();
             kmOyunKarakterSinirKisitla();
             kmOyunEtiketKenarDuzelt();
+            kmOyunHeyecanTazele(_kmOyunAktifTema);
         }
         function kmTakimAnahtari() { return 'dag_km_takim_' + (_kmAktifKonum || 'varsayilan'); }
         function kmTakimDurumEmin() {
@@ -18302,6 +18303,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <svg id="km-oyun-svg-pist" viewBox="0 0 1200 440" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <radialGradient id="kmPistZemin" cx="50%" cy="35%" r="75%"><stop offset="0%" stop-color="#1b232e"/><stop offset="100%" stop-color="#0b0e13"/></radialGradient>
+                    <linearGradient id="kmPistParlak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset=".22" stop-color="#000" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".45"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>
+                    <linearGradient id="kmPistCam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfe9ff"/><stop offset=".45" stop-color="#5b7a99"/><stop offset="1" stop-color="#1e293b"/></linearGradient>
                     <pattern id="kmPistDama" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><rect width="8" height="8" fill="#e8e8ee"/><rect width="4" height="4" fill="#1a1a20"/><rect x="4" y="4" width="4" height="4" fill="#1a1a20"/></pattern>
                   </defs>
                   <rect x="0" y="0" width="1200" height="440" fill="url(#kmPistZemin)"/>
@@ -19036,7 +19039,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + satir('akvaryumSeri', '🐠', 'Akvaryum seviyesi', 'Akvaryumun dolması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki akvaryuma da hemen uygulanır')
                 + satir('kaleSeri', '🏰', 'Kale Savunması seviyesi', 'Bir dalgayı temizlemek için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · düşmanlar da buna göre yavaşlar · sahnedeki dalgaya hemen uygulanır')
                 + satir('kaleMod', '⚔️', 'Kale Savunması heyecanı', 'Tatlı: bugünkü oyun · Heyecanlı: düşmanlar laf atar ("Sarı atamazsan beni düşüremezsin!"), zırhlı/kalkanlı düşmanlar, öfkeli ejderha · Korkutucu: gece, kızıl gözler, daha kalabalık dalgalar')
-                + satir('yolMod', '🏝️', 'Yol oyunları heyecanı (şimdilik Hazine Adası)', 'Tatlı: bugünkü oyun, yeni deniz görünümü · Heyecanlı: arkadan korsan gemisi kovalar (herkes atınca bir adım), yakaladığını geri iter; kayalık geçitler sarı ok ister; papağan ve korsanlar laf atar · Korkutucu: gece, daha hızlı kovalayan, 3 geçit, 2 sarı')
+                + satir('yolMod', '🏝️', 'Yol oyunları heyecanı', 'Hazine, Zirve, Roket, Pist, Ninja, Dağ, Balon · Tatlı: bugünkü oyun (Hazine/Pist/Balon yeni çizgi film görünümüyle) · Heyecanlı: arkadan kovalayan gelir (korsan gemisi, kar topu, meteor, Kara Kamyon, gölge ninja, kar fırtınası, şimşekli bulut) — herkes atınca bir adım, yakaladığını geri iter; yolda sarı kapılar 9+ ister; karakterler laf atar · Korkutucu: gece, daha hızlı kovalayan, 3 kapı, 2 sarı')
                 + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
                 + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
                 + satir('yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)')
@@ -19195,9 +19198,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncFener() { if(typeof fenerGuncelle === 'function' && document.getElementById('fener-svg')) fenerGuncelle(); else kmOyunSahneKurFener(); }
         function kmOyunAnimateFener(s, i, kaydedilecek, done) { kmOyunFenerHazir().then(function() { fenerSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         function kmOyunKaleHazir() { return dagskEkYukle('dagsk-km-kale.js'); }
-        // ⚔️ Yol oyunları heyecanı + A görünümü (v340, dagsk-km-heyecan.js) — şimdilik Hazine Adası
+        // ⚔️ Yol oyunları heyecanı + A görünümü (v340–341, dagsk-km-heyecan.js) — kmOyunKabukGuncelle her sahne kurulumu/resync'te tazeler
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
-        function kmOyunHeyecanCiz(t) { kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyCiz(t); }).catch(function() {}); }
+        const KM_OYUN_HY_TEMALAR = ['hazine', 'zirve', 'yildiz', 'pist', 'ninja', 'dag', 'balon'];
+        function kmOyunHeyecanTazele(t) { if(KM_OYUN_HY_TEMALAR.indexOf(t) === -1) return; if(typeof hyTazele === 'function') { hyTazele(t); return; } kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyTazele(t); }).catch(function() {}); }
         function kmOyunSahneKurKale() { kmOyunKaleHazir().then(function() { if(_kmOyunAktifTema === 'kale' && document.getElementById('km-oyun-panel-kale')) kaleSahneKur(); }).catch(function() { showToast('Kale Savunması yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncKale() { if(typeof kaleGuncelle === 'function' && document.getElementById('kale-svg')) kaleGuncelle(); else kmOyunSahneKurKale(); }
         function kmOyunAnimateKale(s, i, kaydedilecek, done) { kmOyunKaleHazir().then(function() { kaleSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -21494,7 +21498,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }).join('');
             roster.forEach(function(s, i) { s.hazineEl = document.getElementById('km-oyun-ship-' + i); });
             kmOyunResyncHazine();
-            kmOyunHeyecanCiz('hazine');
         }
         function kmOyunResyncHazine() {
             let roster = _kmOyunRosterCache, n = roster.length;
@@ -21510,7 +21513,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let seal = document.getElementById('km-oyun-seal-' + ci);
                 if(seal) { seal.classList.toggle('hit', !!best); if(best) seal.style.setProperty('--_c', kmOyunRenk('hazine', best.i)); }
             }
-            if(typeof hyGuncelle === 'function') hyGuncelle('hazine');
         }
         function kmOyunAnimateHazine(s, i, eskiFrac, yeniFrac, eskiCp, yeniCp, toplam, done) {
             let n = _kmOyunRosterCache.length, jj = kmOyunJitter(i, n), el = s.hazineEl; if(!el) { done(); return; }
@@ -21738,16 +21740,29 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 el.setAttribute('class', 'km-pist-araba');
                 el.setAttribute('transform', `translate(${konum.x.toFixed(1)},${konum.y.toFixed(1)})`);
-                el.innerHTML = `<g class="km-pist-araba-govde" transform="rotate(${konum.aci.toFixed(1)})">
-                        <ellipse class="km-pist-golge" cx="0" cy="7" rx="14" ry="4"/>
-                        <circle class="km-pist-teker" cx="-8" cy="6" r="4"/><circle class="km-pist-teker" cx="8" cy="6" r="4"/>
-                        <rect class="km-pist-govde-sekli" x="-13" y="-6" width="26" height="12" rx="4" fill="${renk}"/>
-                        <rect class="km-pist-spoiler" x="9" y="-7" width="3" height="9" rx="1"/>
-                        <rect class="km-pist-vizor" x="-4" y="-9" width="8" height="4" rx="1.5"/>
-                    </g>
-                    <g transform="translate(0,-13)"><circle class="km-pist-surucu" r="9" fill="${renk}"/>${kmOyunAvatarSVG(s, 7, 'pist-' + i)}</g>
-                    <g class="km-pist-rozet" transform="translate(11,-19)"><circle r="6.5"/><text class="km-pist-rozet-text" y="2.5">${i + 1}</text></g>
-                    <g transform="translate(0,26)"><rect class="km-tag-bg" x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" stroke="${renk}"/><text class="km-tag-text" x="0" y="4" font-size="10.5" text-anchor="middle">${ilkAd}</text></g>`;
+                // Gerçekçi spor araba (v341, kullanıcı: "araba çok kötü" → iki çizgi film taslağı beğenilmedi → "gerçekçi spor araba"):
+                // yukarıdan, +x yönüne bakar; parlak boya (kmPistParlak), cam (kmPistCam), far/stop, jant, spoiler, yarış şeridi.
+                // Havada duran sürücü baloncuğu kaldırıldı; isim beyaz plakada (her zeminde okunur), sıra altın rozette.
+                let govdeYol = 'M-30,-8 C-30,-12 -26,-13 -19,-13 L13,-12 C23,-11 30,-7 31,0 C30,7 23,11 13,12 L-19,13 C-26,13 -30,12 -30,8 Z';
+                el.innerHTML = `<g class="km-pist-araba-govde" transform="rotate(${konum.aci.toFixed(1)})"><g transform="scale(.82)">
+                        <rect x="-31" y="-12" width="64" height="28" rx="11" fill="#000" opacity=".28" transform="translate(2,3)"/>
+                        <g fill="#111827"><rect x="-23" y="-16" width="12" height="6" rx="2"/><rect x="-23" y="10" width="12" height="6" rx="2"/><rect x="12" y="-15.5" width="11" height="5.5" rx="2"/><rect x="12" y="10" width="11" height="5.5" rx="2"/></g>
+                        <g fill="#9ca3af"><rect x="-20" y="-15.5" width="6" height="2" rx="1"/><rect x="-20" y="13.5" width="6" height="2" rx="1"/><rect x="14.5" y="-15" width="6" height="2" rx="1"/><rect x="14.5" y="13" width="6" height="2" rx="1"/></g>
+                        <path d="${govdeYol}" fill="${renk}" stroke="rgba(0,0,0,.55)" stroke-width="1.1"/>
+                        <path d="${govdeYol}" fill="url(#kmPistParlak)"/>
+                        <rect x="-30" y="-3.2" width="61" height="2.2" fill="#fff" opacity=".85"/><rect x="-30" y="1" width="61" height="2.2" fill="#fff" opacity=".85"/>
+                        <path d="M14,-8 Q22,0 14,8" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+                        <path d="M2,-9.5 L10,-7.5 Q13.5,0 10,7.5 L2,9.5 Q4.5,0 2,-9.5 Z" fill="url(#kmPistCam)" stroke="rgba(0,0,0,.5)" stroke-width=".8"/>
+                        <rect x="-13" y="-9" width="15" height="18" rx="4" fill="${renk}" stroke="rgba(0,0,0,.45)" stroke-width=".8"/>
+                        <rect x="-13" y="-9" width="15" height="18" rx="4" fill="url(#kmPistParlak)"/>
+                        <path d="M-13,-8 L-18,-7 Q-20,0 -18,7 L-13,8 Q-15,0 -13,-8 Z" fill="url(#kmPistCam)" stroke="rgba(0,0,0,.5)" stroke-width=".8"/>
+                        <ellipse cx="5" cy="-13.5" rx="2.6" ry="1.6" fill="${renk}" stroke="rgba(0,0,0,.5)" stroke-width=".7"/><ellipse cx="5" cy="13.5" rx="2.6" ry="1.6" fill="${renk}" stroke="rgba(0,0,0,.5)" stroke-width=".7"/>
+                        <ellipse cx="28" cy="-6.8" rx="2" ry="2.8" fill="#fffbe6" stroke="#475569" stroke-width=".6"/><ellipse cx="28" cy="6.8" rx="2" ry="2.8" fill="#fffbe6" stroke="#475569" stroke-width=".6"/>
+                        <rect x="-31" y="-10" width="2" height="5" rx="1" fill="#ef4444"/><rect x="-31" y="5" width="2" height="5" rx="1" fill="#ef4444"/>
+                        <rect x="-35" y="-13" width="4.5" height="26" rx="1.6" fill="#1f2937"/><rect x="-33" y="-4" width="3" height="8" fill="#1f2937"/>
+                    </g></g>
+                    <g class="km-pist-rozet" transform="translate(16,-17)"><circle r="7.5" style="fill:#facc15;stroke:#1d1a16;stroke-width:1.6"/><text class="km-pist-rozet-text" y="3" style="fill:#1d1a16;font-size:9px">${i + 1}</text></g>
+                    <g transform="translate(0,24)"><rect x="${-genislik / 2}" y="-9" width="${genislik}" height="18" rx="9" style="fill:#fff;stroke:${renk};stroke-width:2.5"/><text x="0" y="4" font-size="10.5" text-anchor="middle" style="fill:#1d1a16;font-weight:800;font-family:var(--font-display)">${ilkAd}</text></g>`;
                 cg.appendChild(el);
                 s.pistEl = el;
             });

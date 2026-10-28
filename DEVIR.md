@@ -5316,3 +5316,10 @@ Kullanıcı: "Kale'deki heyecan seviyesi diğer oyunlara da gelsin, görsellerin
 - Kancalar `kmOyunIlerlet`: `hyKapiUygula` (artis), `bitirOrtak` → `hySeriSonu`; `_kmOyunSonGiris.heyecan` = `hyAnlik` (kovalayan + herkesin frac'ı) → `hyGeriYukle`. Takım modunda kapalı.
 - Durum `dag_km_hy_<tema>_<konum>` (km-ortak senkron). d.frac 7 yol oyununda ortak — geri itme ortak ilerlemeyi etkiler.
 - Test `79-yol-heyecan`.
+
+## 69. ⚔️ Yol heyecanı diğer 6 oyunda (2026-10-29, v341)
+Kullanıcı Hazine'den sonra "diğer 6 oyuna da geç".
+- `HY_TEMALAR`: zirve (kar topu, büyür; **kapısız** — kendi kaya duvarı/yarık engelleri var), yildiz (meteor, asteroit kapısı), pist (Kara Kamyon, bariyer; `olcek` 2.4, `tur()` — kapılar her turda), ninja (gölge ninja; **kapısız** — Sensei/çukur var), dag (kar fırtınası, yarık köprüsü), balon (`bant`: aşağıdan yükselen şimşekli bulut bandı, kapı = yatay rüzgâr çizgisi).
+- A görünümü (Tatlı'da da): Hazine deniz, Pist çimenli rally (bordür, tribün, ağaçlar; `hyPistSahne`), Balon güneşli gök (`hyBalonSahne`). Zirve/Roket/Ninja/Dağ zaten zengin çizimli — yalnız heyecan katmanı; 😈'de koşucuların altına koyu örtü (`#hy-ortu`).
+- Kanca tekleşti: `kmOyunKabukGuncelle` → `kmOyunHeyecanTazele` → `hyTazele` (`data-hy` imzası değişince `hyCiz`, yoksa `hyGuncelle`). Hazine'ye özel kancalar kaldırıldı.
+- Test `80-yol-heyecan-hepsi`.
