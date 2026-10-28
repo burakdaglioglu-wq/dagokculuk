@@ -5251,3 +5251,10 @@ Akvaryum'dan sonra kullanıcı yine öneri istedi. 3. tur taslakta (Robot / Pizz
 - **Denge:** dalga canı = Σ sporcu (3 ok × ok ortalaması × 1,1) × seviye × (1 + 0,12·(dalga−1)); adım = 600 / (max(3, sınıf) × 1,6 × seviye) px (18–140). Oyun Ayarları › **Kale Savunması seviyesi** (`kaleSeri`) → `kaleAyarUygula` (kalan can oranı korunur).
 - **Kod:** `public/dagsk-km-kale.js` (kale*), Akvaryum/Hapşırık'ın kabuk bağlantılarının birebir eşi. Durum `dag_km_kale_<konum>` güne özel; rozet `sp.oyun.kale = { temizledi, ejderha }`. İlerleme kutusu 'hasar'.
 - Düşman konumu dış `<g>`'nin **CSS** transform'unda (adım geçişi .6s), yürüme/sallanma iç `.kale-govde`'de. Tören sırasında HUD `_ekranHud` ile eski dalgayı gösterir. Test `70-kale`.
+
+
+## 60. 🏮 Fener Alayı — 29 Ekim Cumhuriyet Bayramı oyunu (2026-10-28, v332)
+Kullanıcı 6'lı hızlı taslak sayfasından (Fener Alayı / Havai Fişek / İtfaiye / Dino Parkı / Çiftlik / Gezegen) seçti: "29 Ekim için Cumhuriyet oyunu yap, ben de aktivite yapacağım".
+- **Oyun:** gece, bayraklı binalar, üstte 4 sıra kırmızı-beyaz fener. Hedef = takvim yılı − 1923 (2026 → **103 fener**). Her ok kıvılcım olur, sıradaki fenerleri yakar: ıska 0 · 1-4 → 1 · 5-6 → 2 · 7-8 → 3 · 9-10 → 4 · X → 5 + havai fişek. Fenerler yandıkça soldaki gönderde bayrak yükselir. Eşiklerde kısa bilgi kartı (10: 29 Ekim 1923 · 23: başkent Ankara 13 Ekim 1923 · 40: ilk cumhurbaşkanı Atatürk · 60: cumhuriyet nedir · 80: fener alayı · 95: az kaldı). Hepsi yanınca tören: bayrak tepede, davul + fanfar, kırmızı-beyaz havai fişekler, "Cumhuriyetimiz 103 yaşında!", son feneri yakan 👑 + en çok yakan → yeni tur (taşan fenerler yeni tura).
+- **Kod:** `public/dagsk-km-fener.js` (fener*), kabuk bağlantıları Kale/Akvaryum'un birebir eşi. Durum `dag_km_fener_<konum>` güne özel; rozet `sp.oyun.fener.tamamladi`; ilerleme kutusu 'fener'. Çocuğun elindeki küçük fener, o gün fener yaktıysa yanar.
+- **🇹🇷 bayrak emojisi Windows'ta "TR" harfleri olarak görünür** — tema ikonu ve yazılarda 🏮 kullanıldı, bayraklar SVG çizildi. Test `71-fener`.
