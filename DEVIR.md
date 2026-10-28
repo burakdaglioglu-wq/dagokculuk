@@ -5322,4 +5322,5 @@ Kullanıcı Hazine'den sonra "diğer 6 oyuna da geç".
 - `HY_TEMALAR`: zirve (kar topu, büyür; **kapısız** — kendi kaya duvarı/yarık engelleri var), yildiz (meteor, asteroit kapısı), pist (Kara Kamyon, bariyer; `olcek` 2.4, `tur()` — kapılar her turda), ninja (gölge ninja; **kapısız** — Sensei/çukur var), dag (kar fırtınası, yarık köprüsü), balon (`bant`: aşağıdan yükselen şimşekli bulut bandı, kapı = yatay rüzgâr çizgisi).
 - A görünümü (Tatlı'da da): Hazine deniz, Pist çimenli rally (bordür, tribün, ağaçlar; `hyPistSahne`), Balon güneşli gök (`hyBalonSahne`). Zirve/Roket/Ninja/Dağ zaten zengin çizimli — yalnız heyecan katmanı; 😈'de koşucuların altına koyu örtü (`#hy-ortu`).
 - Kanca tekleşti: `kmOyunKabukGuncelle` → `kmOyunHeyecanTazele` → `hyTazele` (`data-hy` imzası değişince `hyCiz`, yoksa `hyGuncelle`). Hazine'ye özel kancalar kaldırıldı.
+- Pist arabaları gerçekçi spor araba (kullanıcı "araba çok kötü"; çizgi film/kuşbakışı taslakları beğenilmedi → "gerçekçi spor araba"): `kmPistParlak`/`kmPistCam` degrade, far/stop/jant/spoiler/şerit; sürücü baloncuğu kaldırıldı, isim beyaz plakada, sıra altın rozette.
 - Test `80-yol-heyecan-hepsi`.
