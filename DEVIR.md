@@ -5281,3 +5281,10 @@ Kullanıcı: "telefondan kamerayı açınca açı ters yöne bakıyor, telefon a
 - `flGorAkis()`: döndürme varsa kaynak akış (`_fl.akis`: yerel kamera, QR'lı telefon ya da salon kamerası) gizli videodan kanvasa `setTransform` ile döndürülerek çizilir, ekrandaki video kanvasın `captureStream(30)` akışını oynar → bilgisayardaki analiz, ağır çekim tekrar, küçük resimler ve MediaRecorder kaydı düz görüntüyü görür. `flDonBirak()` `flAkisBirak` içinde. `_fl.akis` hep KAYNAK kalır (telefon karşılaştırmaları bozulmasın).
 - Telefon kendi karesinde analiz ettiyse noktalar (`tp.p`, `tp.h`) `flDonNokta(q, d)` ile çevrilir; kişi seçimi (`{takip}`) telefona ters açıyla gider. Döndürmeliyken telefonun yüksek kaliteli kaydı istenmez (telefon kaydı döndürülmemiş olurdu, oynatıcıdaki iskeletle örtüşmezdi).
 - Test `75-formlab-dondur` (sahte 640×360 kanvas akışı, kırmızı köşe piksel konumu 4 açıda + nokta çevirme + kalıcılık).
+
+## 64. 📄 Yarışma: Sporcu analiz PDF'i (2026-10-28, v336)
+Kullanıcı: "yarışma modundaki sonucu bitirdikten sonra sporcu analiz PDF dosyasını istiyorum".
+- Sonuç ekranında **📄 Sporcu analiz PDF** (`yzAnalizPdf()` → analiz dosyasını yükler → `yzaPdf()`): her sporcuya bir A4 sayfa. Tek sporcu: Sporcu raporları penceresinde "📄 Analiz PDF", Sporcu Analizi'nde başlıkta (tümü) ve sporcu ayrıntısında (o sporcu).
+- `yzaPdfSayfa` (native jsPDF, Roboto): başlık + ad/grup/durum (`yzaDurum`), kutular (sıra, toplam, ok ort., 10+X, ıska, hedef, önceki tur), hedefte bu turun okları + grup merkezi/yayılımı (`yzaNoktalar 'bu'`, antrenman okları PDF'te kapalı), 9 hedef bölgesi, grup çapı + nişangâh (`yzGrupOneri`), yön eğilimi (`yzaYonVeri`), seri seri, gelişim çizgisi (son 10 tur + sınıf ort.), ok numaraları tablosu + uyarılar (`yzaOkNoHesap`), tespitler, yer kalırsa antrenör notu satırları.
+- Ekran ve PDF aynı hesabı kullanır: `yzaOkNoHesap` (eskiden `yzaOkNoHTML` içindeydi) ve `yzaYonVeri` (eskiden `yzaYonHTML` içindeydi) ayrıldı. `yzaPdfMetin` HTML etiketini ve emojiyi siler.
+- Test `76-analiz-pdf` (sonuç → 3 sayfa, tek sporcu → 1 sayfa).

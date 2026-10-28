@@ -42,8 +42,8 @@ export default async function ({ log }) {
     await p.locator('.yz-tablo tr[data-k="' + k2 + '"] .yz-an-btn').first().click();
     await p.waitForSelector('#yza tr.acik', { timeout: 20000 });
     dogrula((await p.locator('#yza tr.acik').innerText()).includes(ad2), '📊 doğru sporcuyu açmadı');
-    dogrula((await p.locator('#yza .yza-bas button').innerText()).includes('Tura dön'), 'Tura dön düğmesi yok');
-    await p.locator('#yza .yza-bas button').click();
+    dogrula((await p.locator('#yza .yza-bas button[aria-label="Kapat"]').innerText()).includes('Tura dön'), 'Tura dön düğmesi yok');
+    await p.locator('#yza .yza-bas button[aria-label="Kapat"]').click();
     dogrula(!(await p.locator('#yza').count()), 'analiz kapanmadı');
     await p.evaluate(() => { let k = yzOku().durum.katilimci[0]; yzGirisAc(yzEnc(k), 1); });
     await p.locator('#yz-giris button', { hasText: '📊 Analiz' }).click();

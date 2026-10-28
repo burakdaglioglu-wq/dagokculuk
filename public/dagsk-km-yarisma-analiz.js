@@ -115,7 +115,7 @@ function yzaCiz() {
     }).join('');
     let sy = kap.querySelector('.yza-tablo-kap'), sx = sy ? sy.scrollLeft : 0, ust = kap.scrollTop;
     kap.innerHTML = '<div class="yza" role="dialog" aria-modal="true" aria-label="Sporcu analizi">'
-        + '<div class="yza-bas"><div><b>📊 Sporcu Analizi</b><div class="yz-alt">' + yzaEsc(tur.mesafe) + ' · ' + yzaTR(tur.tarih) + (tur.canli ? ' · tur sürüyor' : ' · son tur') + ' · satıra dokun → ayrıntı' + (tur.canli ? ' · skor girildikçe kendiliğinden güncellenir' : '') + '</div></div><button class="yz-btn" onclick="yzaKapat()" aria-label="Kapat">' + (tur.canli ? '← Tura dön' : '✕') + '</button></div>'
+        + '<div class="yza-bas"><div><b>📊 Sporcu Analizi</b><div class="yz-alt">' + yzaEsc(tur.mesafe) + ' · ' + yzaTR(tur.tarih) + (tur.canli ? ' · tur sürüyor' : ' · son tur') + ' · satıra dokun → ayrıntı' + (tur.canli ? ' · skor girildikçe kendiliğinden güncellenir' : '') + '</div></div><button class="yz-btn" onclick="yzaPdf()" title="Her sporcuya bir sayfa">📄 Analiz PDF</button><button class="yz-btn" onclick="yzaKapat()" aria-label="Kapat">' + (tur.canli ? '← Tura dön' : '✕') + '</button></div>'
         + '<div class="yza-tablo-kap"><table class="yza-tablo"><thead><tr>' + th('ad', 'Sporcu') + th('bugun', 'Bugün', 's') + th('ort', 'Ok ort.', 's') + '<th>Son turlar</th>' + th('on', '10+X', 's') + th('M', 'Iska', 's') + th('durum', 'Durum') + '<th></th></tr></thead><tbody>' + govde + '</tbody></table></div>'
         + '<div class="yz-alt">Durum: son 5 turun ok ortalamasından 0,3+ yukarı <b class="yza-r iyi">Yükselişte</b>, 0,3+ aşağı <b class="yza-r kotu">Dikkat</b>, oklar dağınıksa <b class="yza-r uy">Teknik bak</b>. Isı haritası için skorları 🎯 Hedefe dokun ile gir.</div>'
         + '</div>';
@@ -141,7 +141,7 @@ function yzaDetayHTML(tur, x) {
             : '<div class="yza-bos">Bu sporcunun hedefe dokunarak girilmiş oku yok.<br><small>Skor girerken 🎯 Hedefe dokun\'u seç; oklar burada ısı haritası olur.</small></div>') + '</div>';
     let gel = '<div class="yza-k genis"><div class="yza-k-bas"><span class="yz-etiket">📈 Gelişim · ' + yzaEsc(tur.mesafe) + ' turları</span></div>' + yzaGelisimSVG(x.g) + yzaGelisimOzet(x.g) + '</div>';
     let seri = s.seriT && s.seriT.some(function (v) { return v != null; }) ? '<div class="yza-k"><span class="yz-etiket">Bu tur · seri seri</span>' + yzaSeriSVG(s.seriT, x.g) + '</div>' : '';
-    let tes = '<div class="yza-k"><span class="yz-etiket">🔎 Tespitler</span><ul class="yza-tespit">' + yzaTespitler(tur, x, nk, gr, bolge).map(function (t) { return '<li><span>' + t[0] + '</span><div>' + t[1] + '</div></li>'; }).join('') + '</ul></div>';
+    let tes = '<div class="yza-k"><span class="yz-etiket">🔎 Tespitler</span><ul class="yza-tespit">' + yzaTespitler(tur, x, nk, gr, bolge).map(function (t) { return '<li><span>' + t[0] + '</span><div>' + t[1] + '</div></li>'; }).join('') + '</ul><button class="yz-btn" style="margin-top:8px" onclick="yzaPdf(\'' + yzEnc(s.k) + '\')">📄 ' + yzaEsc(yzKisaAd(s.ad)) + ' — analiz PDF</button></div>';
     return '<div class="yza-detay-ic" onclick="event.stopPropagation()">' + isi + yzaOkNoHTML(tur, s) + yzaYonHTML(tur, s) + gel + seri + tes + '</div>';
 }
 // ---------------------------------------------------------------- 🔢 ok numaraları + 🧭 yön eğilimi (2026-10-20)
@@ -163,10 +163,8 @@ function yzaYon(dx, dy) { if (Math.hypot(dx, dy) < 1e-6) return { ad: 'merkez', 
 function yzaMerkez(l) { if (!l.length) return null; let x = 0, y = 0; l.forEach(function (p) { x += p.x; y += p.y; }); x /= l.length; y /= l.length; let yay = 0; l.forEach(function (p) { yay += Math.hypot(p.x - x, p.y - y); }); return { x: x, y: y, yay: yay / l.length, n: l.length }; }
 function yzaOrtanca(l) { if (!l.length) return null; let md = function (a) { a = a.slice().sort(function (p, q) { return p - q; }); let m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }; let x = md(l.map(function (p) { return p.x; })), y = md(l.map(function (p) { return p.y; })); return { x: x, y: y, yay: md(l.map(function (p) { return Math.hypot(p.x - x, p.y - y); })), n: l.length }; }
 function yzaHedefZemin(n) { let s = '', renk = function (v) { return v >= 9 ? '#5c4a0e' : v >= 7 ? '#4f1c1d' : v >= 5 ? '#14294d' : v >= 3 ? '#1b1d22' : '#3b3a37'; }; for (let i = n; i >= 1; i--) s += '<circle r="' + (i / n) + '" fill="' + renk(11 - i) + '" stroke="rgba(255,255,255,.25)" stroke-width="0.006"/>'; return s + '<path d="M-.04 0H.04M0 -.04V.04" stroke="rgba(255,255,255,.6)" stroke-width=".008"/>'; }
-function yzaOkNoHTML(tur, s) {
-    let veri = yzaOkVeri(tur, s.k, _yza.kapsam), R = tur.yuz.R || 12;
-    let bas = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🔢 Ok numaraları</span><span class="yz-alt">' + ({ bu: 'bu tur', son5: 'son 5 tur', tum: 'tümü' }[_yza.kapsam] || '') + '</span></div>';
-    if (!veri.length) return bas + '<div class="yza-bos">Henüz ok numarası yok.<br><small>Skor girerken okları numara sırasıyla oku: 1. girdiğin 1 numaralı ok, 2.si 2 numaralı… (slotların altında "Ok 1, Ok 2" yazar).</small></div></div>';
+function yzaOkNoHesap(tur, k, kapsam) {
+    let veri = yzaOkVeri(tur, k, kapsam), R = tur.yuz.R || 12; if (!veri.length) return null;
     let no = {}; veri.forEach(function (q) { (no[q.n] = no[q.n] || []).push(q); });
     let nlar = Object.keys(no).map(Number).sort(function (a, b) { return a - b; });
     // referans grup merkezi ORTANCA ile: tek bir sorunlu ok (ör. hep sağa giden 3 numara) ortalamayı kendine çekip diğer okları da 'sorunlu' göstermesin
@@ -178,6 +176,19 @@ function yzaOkNoHTML(tur, s) {
         return { n: n, say: l.length, ort: ort, on: on, m: m, kl: kl, mz: mz, kay: kay };
     });
     let yeterli = satir.filter(function (x) { return x.say >= 3; }), enIyi = yeterli.length > 1 ? yeterli.reduce(function (a, b) { return b.ort > a.ort ? b : a; }) : null, enKotu = yeterli.length > 1 ? yeterli.reduce(function (a, b) { return b.ort < a.ort ? b : a; }) : null;
+    // sorunlu ok
+    let uyari = [];
+    if (genel && konumlu.length >= 8) satir.forEach(function (x) { if (x.kl.length >= 4 && x.kay && x.kay.cm >= Math.max(3, genel.yay * R * 0.75)) uyari.push(['⚠️', '<b>' + x.n + ' numaralı ok</b> grubun ~' + Math.round(x.kay.cm) + ' cm ' + x.kay.yon.ad + 'ına gidiyor (' + x.kl.length + ' atış). Ok bükük, uç gevşek ya da tüy hasarlı olabilir: kontrol et, gerekirse değiştir.']); });
+    satir.forEach(function (x) { if (x.say >= 5 && ortGenel - x.ort >= 1) uyari.push(['📉', '<b>' + x.n + ' numaralı okun</b> ortalaması diğerlerinden ' + yzaSayi(ortGenel - x.ort, 1) + ' düşük.']); });
+    if (!uyari.length && konumlu.length >= 12 && satir.every(function (x) { return x.kl.length >= 2; })) uyari.push(['✅', 'Okların hepsi aynı grupta; ok kaynaklı bir sapma görünmüyor.']);
+    if (konumlu.length < 8) uyari.push(['ℹ️', 'Hangi okun nereye gittiğini görmek için puandan sonra yönü de bas (⚡ Puan + yön) ya da 🎯 hedefe dokun.']);
+    return { veri: veri, satir: satir, genel: genel, konumlu: konumlu, enIyi: enIyi, enKotu: enKotu, uyari: uyari };
+}
+function yzaOkNoHTML(tur, s) {
+    let h = yzaOkNoHesap(tur, s.k, _yza.kapsam);
+    let bas = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🔢 Ok numaraları</span><span class="yz-alt">' + ({ bu: 'bu tur', son5: 'son 5 tur', tum: 'tümü' }[_yza.kapsam] || '') + '</span></div>';
+    if (!h) return bas + '<div class="yza-bos">Henüz ok numarası yok.<br><small>Skor girerken okları numara sırasıyla oku: 1. girdiğin 1 numaralı ok, 2.si 2 numaralı… (slotların altında "Ok 1, Ok 2" yazar).</small></div></div>';
+    let satir = h.satir, genel = h.genel, konumlu = h.konumlu, enIyi = h.enIyi, enKotu = h.enKotu;
     // harita
     let svg = '<svg class="yza-okno-harita" viewBox="-1.12 -1.12 2.24 2.24" role="img" aria-label="Ok numarasına göre okların yeri">' + yzaHedefZemin(tur.yuz.halka || 6);
     satir.forEach(function (x) { let c = YZA_OK_RENK[(x.n - 1) % YZA_OK_RENK.length]; x.kl.forEach(function (q) { svg += '<circle cx="' + q.x + '" cy="' + q.y + '" r="0.032" fill="' + c + '" stroke="#111" stroke-width="0.006"/>'; }); });
@@ -190,16 +201,10 @@ function yzaOkNoHTML(tur, s) {
         let cls = x === enIyi ? 'iyi' : x === enKotu ? 'kotu' : '';
         return '<tr class="' + cls + '"><td><b style="color:' + YZA_OK_RENK[(x.n - 1) % YZA_OK_RENK.length] + '">● ' + x.n + '</b></td><td>' + x.say + '</td><td><b>' + yzaSayi(x.ort, 1) + '</b>' + (x === enIyi ? ' <small>en iyi</small>' : x === enKotu ? ' <small>en zayıf</small>' : '') + '</td><td>' + x.on + '</td><td>' + (x.m || '·') + '</td><td>' + (x.kay && x.kl.length >= 2 ? (x.kay.cm < 1.5 ? 'grupta' : x.kay.yon.ok + ' ' + Math.round(x.kay.cm) + ' cm') : '<small>yön yok</small>') + '</td></tr>';
     }).join('') + '</tbody></table>';
-    // sorunlu ok
-    let uyari = [];
-    if (genel && konumlu.length >= 8) satir.forEach(function (x) { if (x.kl.length >= 4 && x.kay && x.kay.cm >= Math.max(3, genel.yay * R * 0.75)) uyari.push(['⚠️', '<b>' + x.n + ' numaralı ok</b> grubun ~' + Math.round(x.kay.cm) + ' cm ' + x.kay.yon.ad + 'ına gidiyor (' + x.kl.length + ' atış). Ok bükük, uç gevşek ya da tüy hasarlı olabilir: kontrol et, gerekirse değiştir.']); });
-    satir.forEach(function (x) { if (x.say >= 5 && ortGenel - x.ort >= 1) uyari.push(['📉', '<b>' + x.n + ' numaralı okun</b> ortalaması diğerlerinden ' + yzaSayi(ortGenel - x.ort, 1) + ' düşük.']); });
-    if (!uyari.length && konumlu.length >= 12 && satir.every(function (x) { return x.kl.length >= 2; })) uyari.push(['✅', 'Okların hepsi aynı grupta; ok kaynaklı bir sapma görünmüyor.']);
-    if (konumlu.length < 8) uyari.push(['ℹ️', 'Hangi okun nereye gittiğini görmek için puandan sonra yönü de bas (⚡ Puan + yön) ya da 🎯 hedefe dokun.']);
-    return bas + '<div class="yza-okno">' + svg + lejant + '</div>' + tablo + '<ul class="yza-tespit">' + uyari.map(function (t) { return '<li><span>' + t[0] + '</span><div>' + t[1] + '</div></li>'; }).join('') + '</ul></div>';
+    return bas + '<div class="yza-okno">' + svg + lejant + '</div>' + tablo + '<ul class="yza-tespit">' + h.uyari.map(function (t) { return '<li><span>' + t[0] + '</span><div>' + t[1] + '</div></li>'; }).join('') + '</ul></div>';
 }
-function yzaYonHTML(tur, s) {
-    let R = tur.yuz.R || 12, bas = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🧭 Yön eğilimi</span></div>';
+function yzaYonVeri(tur, s) {
+    let R = tur.yuz.R || 12;
     // bu tur: seri seri grup merkezi
     let bu = tur.canli ? yzKonumlar(tur.o, s.k).map(function (p) { return { x: p.x, y: p.y, seri: p.seri }; }) : yzaOkVeri(tur, s.k, 'bu').filter(function (q) { return q.x != null; });
     let seriler = {}; bu.forEach(function (p) { (seriler[p.seri] = seriler[p.seri] || []).push(p); });
@@ -210,17 +215,23 @@ function yzaYonHTML(tur, s) {
         let m = yzaMerkez(sp.kon.map(function (p) { return { x: p[0], y: p[1] }; })); return { tarih: r.tarih, m: m };
     }).filter(Boolean);
     let buM = yzaMerkez(bu); if (buM && bu.length >= 3) turlar.push({ tarih: tur.tarih, m: buM, simdi: true });
+    let ozet = '';
+    if (yol.length >= 3) { let ilk = yol.slice(0, Math.ceil(yol.length / 2)), son = yol.slice(Math.floor(yol.length / 2)), mi = yzaMerkez(ilk), ms = yzaMerkez(son), d = Math.hypot(ms.x - mi.x, ms.y - mi.y) * R; ozet = d >= 2 ? 'Tur ilerledikçe grup <b>' + yzaYon(ms.x - mi.x, ms.y - mi.y).ad + 'a ~' + Math.round(d) + ' cm</b> kaydı (yorgunluk ya da çapa/duruş değişimi olabilir).' : 'Tur boyunca grup <b>aynı yerde</b> kaldı.'; }
+    let surekli = null;
+    if (turlar.length >= 3) { let yonler = turlar.map(function (t) { return Math.hypot(t.m.x, t.m.y) * R >= 2 ? yzaYon(t.m.x, t.m.y).ad : null; }), sayac = {}; yonler.forEach(function (y) { if (y) sayac[y] = (sayac[y] || 0) + 1; }); let en = Object.keys(sayac).sort(function (a, b) { return sayac[b] - sayac[a]; })[0]; if (en && sayac[en] >= Math.ceil(turlar.length * 0.6)) surekli = { baslik: 'Sürekli ' + en + ' eğilimi', metin: 'Son ' + turlar.length + ' turun ' + sayac[en] + '\'inde grup ' + en + 'da. Tek turluk değil — nişangâhı küçük adımlarla ' + en + ' tarafa al (nişangâh oku takip eder).' }; }
+    return { R: R, yol: yol, turlar: turlar, ozet: ozet, surekli: surekli };
+}
+function yzaYonHTML(tur, s) {
+    let bas = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🧭 Yön eğilimi</span></div>';
+    let v = yzaYonVeri(tur, s), R = v.R, yol = v.yol, turlar = v.turlar;
     if (!yol.length && !turlar.length) return bas + '<div class="yza-bos">Yön verisi yok.<br><small>Puandan sonra yönü bas (⚡ Puan + yön) ya da 🎯 hedefe dokun.</small></div></div>';
     let svg = '<svg class="yza-okno-harita" viewBox="-0.62 -0.62 1.24 1.24" role="img" aria-label="Seri seri grup merkezinin kayması">' + yzaHedefZemin(tur.yuz.halka || 6);
     if (yol.length > 1) svg += '<path d="M' + yol.map(function (p) { return p.x + ' ' + p.y; }).join('L') + '" fill="none" stroke="#ffb347" stroke-width="0.012" stroke-dasharray="0.03 0.02"/>';
     yol.forEach(function (p, j) { let son = j === yol.length - 1; svg += '<circle cx="' + p.x + '" cy="' + p.y + '" r="' + (son ? 0.045 : 0.034) + '" fill="' + (son ? '#fd8e01' : '#ffd8a8') + '" stroke="#111" stroke-width="0.006"/><text x="' + p.x + '" y="' + (p.y + 0.016) + '" text-anchor="middle" font-size="0.045" font-weight="900" fill="#111">' + (p.i + 1) + '</text>'; });
     svg += '</svg>';
-    let ozet = '';
-    if (yol.length >= 3) { let ilk = yol.slice(0, Math.ceil(yol.length / 2)), son = yol.slice(Math.floor(yol.length / 2)), mi = yzaMerkez(ilk), ms = yzaMerkez(son), d = Math.hypot(ms.x - mi.x, ms.y - mi.y) * R; ozet = d >= 2 ? 'Tur ilerledikçe grup <b>' + yzaYon(ms.x - mi.x, ms.y - mi.y).ad + 'a ~' + Math.round(d) + ' cm</b> kaydı (yorgunluk ya da çapa/duruş değişimi olabilir).' : 'Tur boyunca grup <b>aynı yerde</b> kaldı.'; }
     let cip = turlar.map(function (t) { let d = Math.hypot(t.m.x, t.m.y) * R, y = yzaYon(t.m.x, t.m.y); return '<span class="yza-cip' + (t.simdi ? ' iyi' : '') + '"><b>' + (d < 2 ? '● merkez' : y.ok + ' ' + Math.round(d) + ' cm') + '</b>' + (t.simdi ? 'bu tur' : yzaTR(t.tarih)) + '</span>'; }).join('');
-    let surekli = '';
-    if (turlar.length >= 3) { let yonler = turlar.map(function (t) { return Math.hypot(t.m.x, t.m.y) * R >= 2 ? yzaYon(t.m.x, t.m.y).ad : null; }), sayac = {}; yonler.forEach(function (y) { if (y) sayac[y] = (sayac[y] || 0) + 1; }); let en = Object.keys(sayac).sort(function (a, b) { return sayac[b] - sayac[a]; })[0]; if (en && sayac[en] >= Math.ceil(turlar.length * 0.6)) surekli = '<div class="yza-oneri"><b>Sürekli ' + en + ' eğilimi</b><span>Son ' + turlar.length + ' turun ' + sayac[en] + '\'inde grup ' + en + 'da. Tek turluk değil — nişangâhı küçük adımlarla ' + en + ' tarafa al (nişangâh oku takip eder).</span></div>'; }
-    return bas + (yol.length ? '<div class="yza-okno">' + svg + '<div class="yz-alt" style="text-align:center">Bu tur · seri seri grup merkezi (1 → ' + (yol[yol.length - 1].i + 1) + ')</div></div>' : '') + (ozet ? '<div class="yz-alt" style="font-size:13px">' + ozet + '</div>' : '')
+    let surekli = v.surekli ? '<div class="yza-oneri"><b>' + v.surekli.baslik + '</b><span>' + v.surekli.metin + '</span></div>' : '';
+    return bas + (yol.length ? '<div class="yza-okno">' + svg + '<div class="yz-alt" style="text-align:center">Bu tur · seri seri grup merkezi (1 → ' + (yol[yol.length - 1].i + 1) + ')</div></div>' : '') + (v.ozet ? '<div class="yz-alt" style="font-size:13px">' + v.ozet + '</div>' : '')
         + (cip ? '<div class="yz-alt" style="font-weight:800">Turlar boyunca grup merkezi</div><div class="yza-cipler">' + cip + '</div>' : '') + surekli + '</div>';
 }
 function yzaBolge(nk) {
@@ -320,6 +331,172 @@ function yzaTespitler(tur, x, nk, gr, bolge) {
     if (!t.length) t.push(['ℹ️', 'Daha fazla tespit için daha çok tur ve hedefe dokunarak giriş gerekli.']);
     return t;
 }
+// ---------------------------------------------------------------- 📄 Sporcu analiz PDF'i (2026-10-28)
+// Kullanıcı: "yarışma modundaki sonucu bitirdikten sonra sporcu analiz PDF dosyasını istiyorum". Sporcu başına bir A4 sayfa
+// (native jsPDF — html2canvas bu projede boş sayfa üretiyor): özet kutular, hedefte bu turun okları + grup, hedef bölgeleri,
+// nişangâh önerisi, seri seri, gelişim çizgisi, ok numaraları, yön eğilimi, tespitler, antrenör notu. Ekrandaki analizle aynı
+// hesaplar (yzaNoktalar 'bu', yzaOkNoHesap, yzaYonVeri, yzaTespitler); antrenman okları PDF'e karışmaz.
+function yzaPdfMetin(h) {
+    let t = String(h == null ? '' : h).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    t = t.replace(/[\u{1F000}-\u{1FFFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2B00}-\u{2BFF}️‍]/gu, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1').trim();
+    return _trTranslit(t);
+}
+function yzaPdf(kEnc) {
+    let tur = yzaTurBilgi();
+    if (!tur || !tur.sporcular.length) { showToast('Analiz için tur yok — bir tur bitince PDF alınır.', 'warning'); return; }
+    let k = kEnc ? decodeURIComponent(kEnc) : null, liste = tur.sporcular.filter(function (s) { return s.ok > 0 && (!k || s.k === k); });
+    if (!liste.length) { showToast(k ? 'Bu sporcunun bu turda oku yok.' : 'Bu turda ok atan sporcu yok.', 'warning'); return; }
+    if (typeof _yeniPdfAl !== 'function') { showToast('PDF altyapısı yüklenemedi.', 'error'); return; }
+    showToast('Analiz PDF\'i hazırlanıyor...', 'warning');
+    let eskiAnt = _yza.antrenman;
+    _yeniPdfAl().then(function (pdf) {
+        _yza.antrenman = false;
+        try { liste.forEach(function (s, i) { if (i > 0) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, 210, 297, 'F'); } yzaPdfSayfa(pdf, tur, s); }); }
+        finally { _yza.antrenman = eskiAnt; }
+        _kurumsalAltBilgiCiz(pdf, 210, 297);
+        let ad = liste.length === 1 ? yzaPdfMetin(liste[0].ad).replace(/[^\w]+/g, '_') : 'Tum_Sporcular';
+        pdf.save('Sporcu_Analizi_' + ad + '_' + String(tur.tarih || '').replace(/-/g, '') + '.pdf');
+        showToast('PDF indirildi! 📄', 'success');
+    }).catch(function (e) { _yza.antrenman = eskiAnt; console.error(e); showToast('PDF oluşturulamadı.', 'error'); });
+}
+function yzaPdfSayfa(pdf, tur, s) {
+    let W = 210, mx = 14, uw = W - mx * 2, T = yzaPdfMetin, R = tur.yuz.R || 12;
+    let g = yzaGecmis(tur, s.k), durum = yzaDurum(g, tur, s), v = null;
+    if (tur.canli) { try { v = yzRaporVeri(tur.o, s.k); } catch (e) { v = null; } }
+    let nk = yzaNoktalar(tur, s.k, 'bu'), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz) : null, bolge = yzaBolge(nk);
+    let tarih = tur.t ? new Date(tur.t).toLocaleDateString('tr-TR') : yzaTR(tur.tarih);
+    let y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU ANALİZİ', 'Sıralama turu  |  ' + tur.mesafe + '  |  ' + (v ? v.f.ad + '  |  ' : '') + tarih);
+    const yazi = function (boy, kalin, renk) { pdf.setFont('helvetica', kalin ? 'bold' : 'normal'); pdf.setFontSize(boy); let c = renk || [51, 65, 85]; pdf.setTextColor(c[0], c[1], c[2]); };
+    const baslik = function (m, x, yy) { yazi(9.5, true, [9, 22, 43]); pdf.text(T(m), x, yy); };
+    const yer = function (h) { if (y + h > 282) { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, 210, 297, 'F'); y = 16; } };
+    // ad + grup
+    yazi(18, true, [9, 22, 43]); pdf.text(T(s.ad), mx, y + 4);
+    let grupAd = (typeof LIG_ETIKET !== 'undefined' && LIG_ETIKET[s.k.slice(0, s.k.indexOf('|'))]) || '';
+    yazi(9, true, durum.cls === 'iyi' ? [21, 128, 61] : durum.cls === 'kotu' ? [185, 28, 28] : durum.cls === 'uy' ? [180, 83, 9] : [71, 85, 105]);
+    pdf.text(T((grupAd ? grupAd + '  |  ' : '') + 'Durum: ' + durum.ad + (durum.not ? ' (' + durum.not + ')' : '') + (v && v.pb ? '  |  KİŞİSEL REKOR' : '')), W - mx, y + 4, { align: 'right' });
+    y += 10;
+    // özet kutular
+    let kutular = [['SIRA', s.sira + '.', tur.sporcular.length + ' sporcu'], ['TOPLAM', String(s.toplam), s.ok + ' ok'], ['OK ORT.', yzaSayi(s.ok ? s.toplam / s.ok : null), ''], ['10+X', String(s.on), 'X: ' + s.x], ['ISKA', String(s.M || 0), '']];
+    if (v && v.r.hedefPuan) kutular.push(['HEDEF', String(v.r.hedefPuan), s.toplam >= v.r.hedefPuan ? 'ulaşıldı +' + (s.toplam - v.r.hedefPuan) : (v.r.hedefPuan - s.toplam) + ' eksik']);
+    if (v && v.son) kutular.push(['ÖNCEKİ TUR', String(v.son.toplam), (s.toplam - v.son.toplam >= 0 ? '+' : '') + (s.toplam - v.son.toplam)]);
+    let kw = (uw - (kutular.length - 1) * 2.5) / kutular.length;
+    kutular.forEach(function (kt, i) {
+        let x = mx + i * (kw + 2.5); pdf.setFillColor(241, 245, 249); pdf.roundedRect(x, y, kw, 18, 2, 2, 'F');
+        yazi(6.3, true, [100, 116, 139]); pdf.text(T(kt[0]), x + kw / 2, y + 5, { align: 'center' });
+        yazi(13.5, true, [9, 22, 43]); pdf.text(T(kt[1]), x + kw / 2, y + 11.5, { align: 'center' });
+        yazi(6.3, false, [100, 116, 139]); pdf.text(T(kt[2]), x + kw / 2, y + 15.6, { align: 'center' });
+    });
+    y += 25;
+    // hedef + bölgeler + öneri
+    let hc = 58, cx = mx + hc / 2, cy = y + 4 + hc / 2, hr = hc / 2, halka = tur.yuz.halka || 6;
+    baslik('Hedefte bu turun okları', mx, y);
+    let rk = function (deger) { return deger >= 9 ? [250, 204, 21] : deger >= 7 ? [239, 68, 68] : deger >= 5 ? [59, 130, 246] : deger >= 3 ? [30, 41, 59] : [248, 250, 252]; };
+    for (let i = halka; i >= 1; i--) { let c = rk(11 - i); pdf.setFillColor(c[0], c[1], c[2]); pdf.setDrawColor(148, 163, 184); pdf.setLineWidth(0.15); pdf.circle(cx, cy, hr * i / halka, 'FD'); }
+    pdf.setDrawColor(15, 23, 42); pdf.setLineWidth(0.2); pdf.line(cx - 1.5, cy, cx + 1.5, cy); pdf.line(cx, cy - 1.5, cx, cy + 1.5);
+    if (nk.length) {
+        nk.forEach(function (p) { let px = cx + Math.max(-1.08, Math.min(1.08, p[0])) * hr, py = cy + Math.max(-1.08, Math.min(1.08, p[1])) * hr; pdf.setFillColor(255, 255, 255); pdf.setDrawColor(0, 0, 0); pdf.setLineWidth(0.3); pdf.circle(px, py, 1.05, 'FD'); });
+        if (gr) {
+            let gx = cx + gr.mx * hr, gy = cy + gr.my * hr;
+            pdf.setDrawColor(22, 163, 74); pdf.setLineWidth(0.6);
+            if (pdf.setLineDashPattern) pdf.setLineDashPattern([1.6, 1.2], 0);
+            pdf.circle(gx, gy, Math.max(2.5, gr.yay * hr * 1.4), 'S');
+            if (pdf.setLineDashPattern) pdf.setLineDashPattern([], 0);
+            pdf.setLineWidth(0.8); pdf.line(gx - 2.2, gy, gx + 2.2, gy); pdf.line(gx, gy - 2.2, gx, gy + 2.2);
+        }
+        yazi(7, false, [100, 116, 139]); pdf.text(T(nk.length + ' ok · ' + tur.yuz.ad + (gr ? ' · yeşil: grup merkezi ve yayılımı' : '')), cx, cy + hr + 4.5, { align: 'center' });
+    } else {
+        pdf.setFillColor(255, 255, 255); pdf.roundedRect(cx - 26, cy - 5, 52, 10, 2, 2, 'F');
+        yazi(7, false, [71, 85, 105]); pdf.text(T('Okların yeri girilmemiş'), cx, cy - 0.6, { align: 'center' }); pdf.text(T('(hedefe dokun ya da puan + yön)'), cx, cy + 3, { align: 'center' });
+    }
+    let sx = mx + hc + 8, sw = uw - hc - 8;
+    baslik('Hedef bölgeleri', sx, y);
+    let hk = 15, gw = hk * 3 + 4;
+    bolge.forEach(function (b, i) {
+        let bx = sx + (i % 3) * (hk + 2), by = y + 4 + Math.floor(i / 3) * (hk * 0.62 + 2), a = nk.length ? b.o / 60 : 0;
+        pdf.setFillColor(Math.round(255 - (255 - 253) * a), Math.round(255 - (255 - 142) * a), Math.round(255 - 255 * a)); pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.roundedRect(bx, by, hk, hk * 0.62, 1.2, 1.2, 'FD');
+        yazi(8.5, true, a > 0.6 ? [255, 255, 255] : [9, 22, 43]); pdf.text(nk.length ? '%' + b.p : '-', bx + hk / 2, by + 4.2, { align: 'center' });
+        yazi(5.2, false, a > 0.6 ? [255, 255, 255] : [100, 116, 139]); pdf.text(T(b.ad), bx + hk / 2, by + 7.6, { align: 'center' });
+    });
+    let oy = y + 4 + 3 * (hk * 0.62 + 2) + 4;
+    if (on) {
+        pdf.setFillColor(on.merkezde ? 240 : 255, on.merkezde ? 253 : 247, on.merkezde ? 244 : 237); pdf.roundedRect(sx, oy, sw, 6, 1.5, 1.5, 'F');
+        yazi(8.5, true, [9, 22, 43]); pdf.text(T(on.kisa + ' · grup çapı ~' + on.cap + ' cm (' + on.sik + ')'), sx + 2, oy + 4.2); oy += 9;
+        yazi(8, false); let sat = pdf.splitTextToSize(T('Nişangâh: ' + on.oneri), sw); pdf.text(sat, sx, oy); oy += sat.length * 3.6 + 1;
+        if (on.uyari) { yazi(7, false, [100, 116, 139]); let u = pdf.splitTextToSize(T(on.uyari), sw); pdf.text(u, sx, oy); oy += u.length * 3.2; }
+    } else { yazi(8, false, [100, 116, 139]); pdf.text(pdf.splitTextToSize(T(nk.length ? 'Grup için en az 3 ok yeri gerekli.' : 'Okların yeri girilince grup ve nişangâh önerisi burada çıkar.'), sw), sx, oy + 2); oy += 8; }
+    // yön eğilimi (sağ sütunda devam)
+    let yv = yzaYonVeri(tur, s);
+    if (yv.ozet || yv.surekli || yv.turlar.length) {
+        oy += 2; baslik('Yön eğilimi', sx, oy); oy += 4.5; yazi(8, false);
+        if (yv.ozet) { let l = pdf.splitTextToSize(T(yv.ozet), sw); pdf.text(l, sx, oy); oy += l.length * 3.6 + 0.8; }
+        if (yv.turlar.length) { let l = pdf.splitTextToSize(T('Grup merkezi: ' + yv.turlar.map(function (t) { let d = Math.hypot(t.m.x, t.m.y) * R; return (t.simdi ? 'bu tur ' : yzaTR(t.tarih) + ' ') + (d < 2 ? 'merkez' : yzaYon(t.m.x, t.m.y).ad + ' ' + Math.round(d) + ' cm'); }).join(', ')), sw); pdf.text(l, sx, oy); oy += l.length * 3.6 + 0.8; }
+        if (yv.surekli) { yazi(8, true, [180, 83, 9]); let l = pdf.splitTextToSize(T(yv.surekli.baslik + ': ' + yv.surekli.metin), sw); pdf.text(l, sx, oy); oy += l.length * 3.6; }
+    }
+    y = Math.max(y + 4 + hc + 12, oy + 4);
+    // seri seri + gelişim
+    yer(58);
+    let yw = (uw - 8) / 2, gh = 33, seriT = s.seriT || [], dolu = seriT.filter(function (x) { return x != null; });
+    baslik('Bu tur · seri seri', mx, y); baslik('Gelişim · ' + tur.mesafe + ' turları (ok ort.)', mx + yw + 8, y);
+    let gy0 = y + 4;
+    if (dolu.length) {
+        let tepe = Math.max.apply(null, dolu), dip = Math.min.apply(null, dolu), bw = yw / seriT.length, taban = Math.max(0, dip - (tepe - dip) - 4), ort = dolu.reduce(function (a, b) { return a + b; }, 0) / dolu.length;
+        let Y = function (x) { return gy0 + gh - (x - taban) / Math.max(1, tepe - taban) * (gh - 7); };
+        pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.line(mx, gy0 + gh, mx + yw, gy0 + gh);
+        seriT.forEach(function (x, i) {
+            yazi(6, false, [148, 163, 184]); pdf.text(String(i + 1), mx + i * bw + bw / 2, gy0 + gh + 3.5, { align: 'center' });
+            if (x == null) return;
+            let c = tepe !== dip && x === tepe ? [34, 197, 94] : tepe !== dip && x === dip ? [239, 68, 68] : [14, 165, 233];
+            pdf.setFillColor(c[0], c[1], c[2]); pdf.rect(mx + i * bw + Math.min(1.2, bw * 0.15), Y(x), bw - Math.min(2.4, bw * 0.3), gy0 + gh - Y(x), 'F');
+            if (seriT.length <= 14) { yazi(6.5, true, [30, 41, 59]); pdf.text(String(x), mx + i * bw + bw / 2, Y(x) - 1.2, { align: 'center' }); }
+        });
+        pdf.setDrawColor(253, 142, 1); pdf.setLineWidth(0.4); if (pdf.setLineDashPattern) pdf.setLineDashPattern([1.5, 1], 0); pdf.line(mx, Y(ort), mx + yw, Y(ort)); if (pdf.setLineDashPattern) pdf.setLineDashPattern([], 0);
+        yazi(6.5, false, [100, 116, 139]); pdf.text(T('kesikli: seri ortalaması ' + yzaSayi(ort, 1) + (v && v.f.yari ? '   |   1. yarı ' + v.r.y1 + ' · 2. yarı ' + v.r.y2 : '')), mx, gy0 + gh + 8);
+    }
+    let gx0 = mx + yw + 8, gl = g.slice(-10);
+    if (gl.length >= 2) {
+        let tum = []; gl.forEach(function (p) { tum.push(p.v); if (p.sinifOrt != null) tum.push(p.sinifOrt); });
+        let mn = Math.max(0, Math.floor((Math.min.apply(null, tum) - 0.3) * 2) / 2), mxv = Math.min(10, Math.ceil((Math.max.apply(null, tum) + 0.3) * 2) / 2); if (mxv - mn < 1) mxv = Math.min(10, mn + 1);
+        let sol = 8, X = function (i) { return gx0 + sol + i * (yw - sol - 8) / (gl.length - 1); }, Y = function (val) { return gy0 + gh - (val - mn) / (mxv - mn) * (gh - 4); };
+        pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15);
+        for (let t = Math.ceil(mn * 2) / 2; t <= mxv + 1e-9; t += (mxv - mn > 3 ? 1 : 0.5)) { pdf.line(gx0 + sol, Y(t), gx0 + yw, Y(t)); yazi(5.8, false, [148, 163, 184]); pdf.text(yzaSayi(t, 1), gx0 + sol - 1.2, Y(t) + 1, { align: 'right' }); }
+        let sinif = gl.map(function (p, i) { return p.sinifOrt != null ? [X(i), Y(p.sinifOrt)] : null; }).filter(Boolean);
+        if (sinif.length >= 2) { pdf.setDrawColor(148, 163, 184); pdf.setLineWidth(0.4); if (pdf.setLineDashPattern) pdf.setLineDashPattern([1.2, 1], 0); for (let i = 1; i < sinif.length; i++) pdf.line(sinif[i - 1][0], sinif[i - 1][1], sinif[i][0], sinif[i][1]); if (pdf.setLineDashPattern) pdf.setLineDashPattern([], 0); }
+        pdf.setDrawColor(253, 142, 1); pdf.setLineWidth(0.8);
+        for (let i = 1; i < gl.length; i++) pdf.line(X(i - 1), Y(gl[i - 1].v), X(i), Y(gl[i].v));
+        gl.forEach(function (p, i) { let son = i === gl.length - 1; pdf.setFillColor(son ? 253 : 255, son ? 142 : 255, son ? 1 : 255); pdf.setDrawColor(253, 142, 1); pdf.setLineWidth(0.5); pdf.circle(X(i), Y(p.v), son ? 1.4 : 1, 'FD'); if (gl.length <= 6 || i % 2 === (gl.length - 1) % 2) { yazi(5.5, son, [100, 116, 139]); pdf.text(T(son ? 'bugün' : yzaTR(p.tarih)), X(i), gy0 + gh + 3.5, { align: 'center' }); } });
+        let ilk = gl[0], son = gl[gl.length - 1];
+        yazi(6.5, false, [100, 116, 139]); pdf.text(T('turuncu: sporcu · kesikli: sınıf ort. · ' + (son.v - ilk.v >= 0 ? '+' : '') + yzaSayi(son.v - ilk.v) + ' (' + gl.length + ' turda)'), gx0, gy0 + gh + 8);
+    } else { pdf.setFillColor(248, 250, 252); pdf.roundedRect(gx0, gy0, yw, gh, 2, 2, 'F'); yazi(8, false, [100, 116, 139]); pdf.text(T('Bu mesafede ilk tur — gelişim çizgisi'), gx0 + yw / 2, gy0 + gh / 2 - 1, { align: 'center' }); pdf.text(T('bir sonraki turdan sonra çıkar.'), gx0 + yw / 2, gy0 + gh / 2 + 3, { align: 'center' }); }
+    y = gy0 + gh + 14;
+    // ok numaraları
+    let okn = yzaOkNoHesap(tur, s.k, 'bu');
+    if (okn && okn.satir.length > 1) {
+        yer(14 + okn.satir.length * 4.4); baslik('Ok numaraları (bu tur)', mx, y); y += 3;
+        let sut = [['Ok', 14], ['Atış', 16], ['Ort.', 18], ['10+X', 16], ['Iska', 16], ['Gruba göre', 40]], tx = mx;
+        pdf.setFillColor(9, 22, 43); pdf.rect(mx, y, 120, 5.5, 'F'); yazi(7, true, [255, 255, 255]); sut.forEach(function (c) { pdf.text(T(c[0]), tx + 2, y + 3.8); tx += c[1]; }); y += 5.5;
+        okn.satir.forEach(function (x, i) {
+            if (i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, 120, 4.4, 'F'); }
+            let deger = [String(x.n), String(x.say), yzaSayi(x.ort, 1) + (x === okn.enIyi ? ' en iyi' : x === okn.enKotu ? ' en zayıf' : ''), String(x.on), String(x.m || '-'), x.kay && x.kl.length >= 2 ? (x.kay.cm < 1.5 ? 'grupta' : x.kay.yon.ad + ' ' + Math.round(x.kay.cm) + ' cm') : 'yön yok'];
+            tx = mx; deger.forEach(function (d, j) { yazi(7.5, j === 0 || (j === 2 && (x === okn.enIyi || x === okn.enKotu)), j === 2 && x === okn.enIyi ? [21, 128, 61] : j === 2 && x === okn.enKotu ? [185, 28, 28] : [30, 41, 59]); pdf.text(T(d), tx + 2, y + 3.2); tx += sut[j][1]; });
+            y += 4.4;
+        });
+        y += 2;
+        okn.uyari.filter(function (u) { return u[0] !== 'ℹ️'; }).forEach(function (u) { yazi(7.5, false); let l = pdf.splitTextToSize(T(u[1]), uw); yer(l.length * 3.5 + 1); pdf.text(l, mx, y + 2); y += l.length * 3.5 + 1; });
+        y += 3;
+    }
+    // tespitler
+    let tes = yzaTespitler(tur, { s: s, g: g }, nk, gr, bolge);
+    yer(10); baslik('Tespitler', mx, y); y += 2;
+    tes.forEach(function (t) {
+        yazi(8, false); let l = pdf.splitTextToSize(T(t[1]), uw - 6); yer(l.length * 3.7 + 2);
+        pdf.setFillColor(253, 142, 1); pdf.circle(mx + 1.5, y + 2.4, 0.9, 'F'); pdf.text(l, mx + 5, y + 3.3); y += l.length * 3.7 + 1.6;
+    });
+    // antrenör notu — yalnız sayfada yer kaldıysa (boş ikinci sayfa açmaz)
+    y += 2; if (y + 17 > 284) return;
+    baslik('Antrenör notu', mx, y + 3); pdf.setDrawColor(203, 213, 225); pdf.setLineWidth(0.3);
+    for (let i = 0; i < 3 && y + 10 + i * 7 < 284; i++) pdf.line(mx, y + 10 + i * 7, mx + uw, y + 10 + i * 7);
+}
+
 function yzaCss() {
     if (document.getElementById('yza-css')) return;
     let st = document.createElement('style'); st.id = 'yza-css';
