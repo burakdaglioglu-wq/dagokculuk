@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v342</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v343</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -467,6 +467,7 @@
             </div>
             <div class="daha-grup">
                 <div class="daha-grup-baslik">Antrenman</div>
+                <button id="tab-ozelders" class="sekme-btn daha-satir" onclick="sekmeAc('ozelders')" style="display:none; border-left:3px solid #7c5cff; background:rgba(124,92,255,0.10);"><span style="font-size:18px; margin-right:4px;">💪</span><span style="font-weight:800;">Özel Ders · Sporla Gelişiyorum</span><span style="font-size:9px; font-weight:800; background:#7c5cff; color:#fff; padding:2px 6px; border-radius:6px; margin-left:auto;">YENİ</span></button>
                 <button id="tab-hedef-hakemi-daha" class="sekme-btn daha-satir" onclick="sekmeAc('video'); setTimeout(()=>vaModSec('hedef_kamera'), 50); dahaPanelKapat();" style="border-left:3px solid var(--accent-orange); background:rgba(255,106,26,0.08);">
                     <span style="font-size:18px; margin-right:4px;">🎯</span>
                     <span style="font-weight:800; color:var(--accent-orange);">Kamera Hedef Hakemi</span>
@@ -495,6 +496,7 @@
     <div id="icerik-ana" class="sekme-icerik"></div>
     <div id="icerik-yarisma" class="sekme-icerik"></div>
     <div id="icerik-gelisim" class="sekme-icerik"></div>
+    <div id="icerik-ozelders" class="sekme-icerik"></div>
     <div id="icerik-timer" class="sekme-icerik aktif">
         <div id="timer-panel" class="glass-panel" style="flex: 1; display: flex; flex-direction: column; padding: 15px; position: relative; align-items:center;">
             <div class="panel-header" style="width:100%; border:none;">
@@ -1889,5 +1891,6 @@
     <script src="dagsk-yapilacaklar.js"></script>
     <script src="dagsk-km-ortak.js"></script>
     <script src="dagsk-km-sablon-ozet.js"></script>
+    <script src="dagsk-ozel-ders.js"></script>
 </body>
 </html>

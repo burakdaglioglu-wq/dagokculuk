@@ -11667,7 +11667,7 @@
             });
             document.querySelectorAll('.sadece-sporcu').forEach(el => { el.style.display = sporcuModu ? '' : 'none'; });
             if(aktifPlatform === 'egitmen') {
-                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','duello','basari','oyun','refleks','gelisim','yarisma'].forEach(id => g('tab-'+id, true)); // yarisma: v309 eğitmen Yarışma sekmesi (liste + yeni + canlı ısı haritası)
+                ['ana','timer','skor','canlitakip','liderlik','klasman','takimlar','duello','basari','oyun','refleks','gelisim','yarisma','ozelders'].forEach(id => g('tab-'+id, true)); // ozelders: v343 💪 Sporla Gelişiyorum // yarisma: v309 eğitmen Yarışma sekmesi (liste + yeni + canlı ısı haritası)
                 // 2026-09-29: Ders İçerikleri / Teknik Çalışma / Video (+ Kamera Hedef Hakemi kısayolu) eğitmende
                 // Karışık Sınıf araçlarının içinde (Ders Kütüphanesi, Malzemeler, Video & Duruş) — menüde ikinci kez yok.
                 // Sporcu tarafında (Gecikmeli Ayna, salt-okunur içerik) aynen duruyor.
@@ -11698,6 +11698,7 @@
                 // Gizlenenler
                 g('tab-timer', false);
                 g('tab-takimlar', false);
+                g('tab-ozelders', false);
                 try { sekmeAc('ana'); } catch(e) {}
             } else {
                 ['ana','timer','skor','canlitakip','liderlik','klasman','egitmen','takimlar','dersicerik','video','teknik','hedef-hakemi-daha','duello','basari','oyun','refleks','gelisim'].forEach(id => g('tab-'+id, true));
@@ -12187,6 +12188,7 @@
 
         function kmPlatformGoster() {
             document.getElementById('karisik-platform').style.display = 'flex';
+            try { if(typeof ozdKmBanner === 'function') ozdKmBanner(); } catch(e) {} // 💪 özel ders konumu şeridi
             kmSekme('skor');
             // FAZ 7 — platform her açıldığında GÖRÜNÜR başlangıç durumu ızgara olsun (kmSekme('skor')
             // yine de çalışıyor — _kmAktifSekme ve #km-icerik'in İÇERİĞİ doğru kalsın diye, sadece
@@ -19814,6 +19816,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(hedefMi) { kmOyunHedefSvgKur(); kmOyunHedefOklariCiz(); }
         }
         function kmOyunSlotlariCiz() {
+            try { if(typeof ozdDokGuncelle === 'function') ozdDokGuncelle(); } catch(e) {} // 💪 özel ders: hangi hareket puanlanıyor
             let w = document.getElementById('km-oyun-slotlar'); if(!w) return;
             let html = '';
             // "bilmeyerek atış skoru girdiğimde düzeltemiyorum" (2026-09-02) — dolu bir slota tıklamak
@@ -19912,7 +19915,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmOyunOkSayisi = n;
             _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
             document.querySelectorAll('.km-oyun-ok-toggle button').forEach(function(b) { b.classList.toggle('aktif', parseInt(b.dataset.n, 10) === n); });
-            let lbl = document.getElementById('km-oyun-ok-lbl'); if(lbl) lbl.textContent = 'Bu Serinin Puanları — ' + n + ' Ok';
+            let lbl = document.getElementById('km-oyun-ok-lbl'); if(lbl) lbl.textContent = (typeof ozdHareketModu === 'function' && ozdHareketModu()) ? '🤸 Hareket puanı — ' + n + ' tekrar' : 'Bu Serinin Puanları — ' + n + ' Ok';
             kmOyunSlotlariCiz(); kmOyunPadCiz();
         }
 
@@ -25955,7 +25958,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Hedef-giriş modunda (2026-09-24) okun konumu da gider — _skorKaydetCekirdek bunu detayliOklar'a
             // yazar, normal Skor ekranındaki ısı haritası/grup analizleri bu okları da görür.
             let kaydedilecek = _kmOyunSeriGirisleri.map(function(v, idx) { let k = _kmOyunSeriKonumlari[idx]; return k ? { puan: v, x: k.x, y: k.y, tip: k.tip || '10ring', spot: k.spot != null ? k.spot : null } : { puan: v }; });
-            let sonuc = _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
+            // 💪 Sporla Gelişiyorum (v343): özel ders konumunda ('ozel_…') puan = hareket değerlendirmesi — okçuluk kaydına
+            // DEĞİL özel ders defterine yazılır (dagsk-ozel-ders.js ozdSeriKaydet); klasman/yoklama/kuşak atlanır.
+            let ozdMod = typeof ozdHareketModu === 'function' && ozdHareketModu();
+            let sonuc = ozdMod ? ozdSeriKaydet(s.g, s.ad, kaydedilecek) : _skorKaydetCekirdek(s.g, s.ad, kaydedilecek);
             // Geri kalan tüm kayıt/animasyon akışı — hem normal yolda senkron, hem limit uzatma onayı
             // sonrası onayIste()'nin ASENKRON geri çağrısından çağrılabiliyor diye ayrı bir fonksiyona
             // alındı. `sonuc`/`s`/`i`/`kaydedilecek` closure'dan okunuyor (aşağıda `sonuc` yeniden
@@ -25970,9 +25976,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
                 return;
             }
+            if(!ozdMod) {
             try { klasmanDoldur(); } catch(e) {}
             try { otomatikYoklamaIsaretle(s.ad, s.g); } catch(e) {}
             try { kmKusakPuanEkle(s.g, s.ad, sonuc.seriPuan); } catch(e) {}
+            } else { try { ozdDokGuncelle(); } catch(e) {} }
 
             _kmOyunKilit = true;
             let btn = document.getElementById('km-oyun-ilerlet-btn'); if(btn) btn.disabled = true;
@@ -26177,7 +26185,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunDurumKaydet();
 
             // "yanlışlıkla girilmiş skorları düzeltebilir miyiz" — bir adımlık geri al için son girişi sakla.
-            _kmOyunSonGiris = { grup: s.g, ad: s.ad, seriId: sonuc.seriDoc.id, seriPuan: toplam, eskiFrac: eskiFracGercek, takim: takimAktifMi, cokluTakim: cokluAktifMi ? cokluTakimIndex : -1,
+            _kmOyunSonGiris = { ozd: !!sonuc.ozd, grup: s.g, ad: s.ad, seriId: sonuc.seriDoc.id, seriPuan: toplam, eskiFrac: eskiFracGercek, takim: takimAktifMi, cokluTakim: cokluAktifMi ? cokluTakimIndex : -1,
                 futbol: (_kmOyunAktifTema === 'futbol') ? { eskiSeri: futbolEskiSeri, eskiGol: futbolEskiGol, eskiStreak: futbolEskiStreak } : null,
                 futboltakim: futbolTakimOncesi,
                 // Ortak Canavar — vuruştan ÖNCEKİ tam durumun kopyası (küçük nesne); geri al bunu aynen
@@ -26491,6 +26499,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunSonGirisiGeriAl() {
             let g = _kmOyunSonGiris; if(!g) return;
+            if(g.ozd) {
+                // 💪 özel ders: hareket puanı özel ders defterinden silinir, okçuluk kaydı zaten yok
+                if(!confirm(g.ad + ' için az önce girdiğin hareket puanı (' + g.seriPuan + ') silinsin mi?')) return;
+                try { ozdSeriGeriAl(g.grup, g.ad, g.seriId); ozdDokGuncelle(); } catch(e) {}
+            } else {
             let sp = turnuvaDB[g.grup] && turnuvaDB[g.grup][g.ad];
             if(!sp || !sp.seriler) { showToast('Kayıt bulunamadı.', 'error'); _kmOyunSonGiris = null; kmOyunGeriAlBtnGuncelle(); return; }
             let idx = sp.seriler.findIndex(function(x) { return x.seriId === g.seriId; });
@@ -26503,6 +26516,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
             bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {}
             try { klasmanDoldur(); } catch(e) {}
+            }
 
             let s = _kmOyunRosterCache.find(function(x) { return x.g === g.grup && x.ad === g.ad; });
             if(s) {
@@ -30884,6 +30898,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(sekmeAd === 'takimlar') { takimDropdownDoldur(); takimListesiCiz(); maclariCiz(); takimMaclariCiz(); }
             if(sekmeAd === 'dersicerik') { try { dersIcerikleriTabDoldur(); } catch(e) {} }
             if(sekmeAd === 'teknik') { try { teknikCalismaDoldur(); } catch(e) {} }
+            if(sekmeAd === 'ozelders') { try { ozdSekmeDoldur(); } catch(e) {} } // 💪 Sporla Gelişiyorum (dagsk-ozel-ders.js)
             if(sekmeAd !== 'video') {
                 try { if(window.DAGSK_AI_POSE) DAGSK_AI_POSE.stopLiveCamera(); } catch(e) {}
                 try { aynaDurdur(); } catch(e) {}
@@ -30902,7 +30917,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let altDaha = document.getElementById('altbar-daha');
                 if(altDaha) altDaha.classList.toggle('aktif', !altBtn);
                 let dahaTab = document.getElementById('daha-tab-btn');
-                if(dahaTab) dahaTab.classList.toggle('aktif', ['klasman','takimlar','dersicerik','teknik','video','duello','basari','oyun','refleks'].includes(sekmeAd));
+                if(dahaTab) dahaTab.classList.toggle('aktif', ['klasman','takimlar','dersicerik','teknik','video','duello','basari','oyun','refleks','ozelders'].includes(sekmeAd));
                 dahaPanelKapat();
             } catch(e) {}
         }
