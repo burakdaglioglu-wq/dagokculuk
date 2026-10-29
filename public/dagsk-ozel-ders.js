@@ -208,6 +208,8 @@ function ozdSinifaDon() {
 }
 
 /* ---------------- sekme ---------------- */
+// Eğitmen Paneli kartı (Karışık Sınıf / Yarışmalar'ın yanında) — egitmenYarismaAc ile aynı yol
+function egitmenOzelDersAc() { try { grupKurulumu(aktifGrup || 'buyukler'); } catch (e) { } try { sekmeAc('ozelders'); } catch (e) { } }
 function ozdSekmeDoldur() {
     ozdCss(); ozdCiz();
     ozdSenkron().then(() => ozdCiz()).catch(() => {});

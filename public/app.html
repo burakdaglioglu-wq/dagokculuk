@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v344</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v345</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -85,6 +85,15 @@
                     <div class="ad">Yarışmalar</div>
                     <div class="detay">Ayarlanmış yarışmalar · yeni yarışma · sporcuların skorları (canlı)</div>
                     <div class="chip"><span class="nokta"></span><span id="yrs-giris-chip">BUGÜN YARIŞMA VAR</span></div>
+                </div>
+                <div class="ok">›</div>
+            </div>
+            <!-- 💪 Özel Ders (v345, kullanıcı: "buraya koymanı istiyorum") — Sporla Gelişiyorum sekmesini açar (dagsk-ozel-ders.js). -->
+            <div id="ozd-giris-btn" class="km-secim-kart" onclick="egitmenOzelDersAc()">
+                <div class="ikon">💪</div>
+                <div class="metin">
+                    <div class="ad">Özel Ders · Sporla Gelişiyorum</div>
+                    <div class="detay">Koordinasyon · denge · güç · dumbbell · sprint · test — oyunlarla, veliye özet</div>
                 </div>
                 <div class="ok">›</div>
             </div>
