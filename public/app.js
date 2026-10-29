@@ -12310,6 +12310,8 @@
         // AÇILIŞ HIZI (2026-09-29): video/kamera modülleri (~200 KB: yapay zekâ duruş, ikili karşılaştırma, kamera
         // hedef hakemi) artık her açılışta değil, sadece Video ekranı (ya da Karışık Sınıf › Video & Duruş) açılınca
         // yükleniyor. Teknik Çalışma ve Ritim modülleri de kendi ekranları açılınca.
+        // 📷 Hedef Haritası (v354) — Skor Gir'deki "Fotoğrafla puanla" düğmesi; modül ilk dokunuşta yüklenir.
+        function hedefFotoAc() { dagskEkYukle('dagsk-hedef-foto.js').then(function() { window.hfAc(); }).catch(function() { showToast('Hedef Haritası yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         function videoModulleriYukle() { return Promise.all(['dagsk-ai-pose.js', 'dagsk-video-compare.js', 'dagsk-target-cv.js'].map(dagskEkYukle)); }
         function kmEkCalistir(dosya, fnAd) {
             if(typeof window[fnAd] === 'function') { window[fnAd](); return; }
@@ -32268,7 +32270,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 // Isı Haritası 2.0 — Ekipman Kıyaslama: her ok, o anda sporcuya atanmış ekipman etiketiyle
                 // damgalanır (geçmiş oklar dokunulmadan kalır — etiket değişince SADECE bundan sonraki
                 // atışlar yeni etikete sahip olur, gerçek "eski yayım / yeni yayım" ayrımı böyle oluşur).
-                if(!grupData.detayliOklar) grupData.detayliOklar = []; grupData.detayliOklar.push(Object.assign({}, ok, { puan: efPuan, ekipman: grupData.ekipmanEtiketi || null, okNo: ok.okNo != null ? ok.okNo : (aktifOkNumarasi || null) }));
+                if(!grupData.detayliOklar) grupData.detayliOklar = []; grupData.detayliOklar.push(Object.assign({}, ok, { puan: efPuan, ekipman: grupData.ekipmanEtiketi || null, okNo: ok.okNo != null ? ok.okNo : (aktifOkNumarasi || null), t: ok.t || Date.now() })); // t (v354): Hedef Haritası "bugünün grubu" için
             });
 
             // OK SIRALAMA SİSTEMİ (BÜYÜKTEN KÜÇÜĞE WA STANDARDI)

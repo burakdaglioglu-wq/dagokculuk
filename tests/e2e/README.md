@@ -52,5 +52,6 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `80-yol-heyecan-hepsi` | Oyunlar › yol heyecanı diğer 6 oyun: her birinde kovalayan + HUD, kapı sayısı (Zirve/Ninja kapısız, Pist her turda 2); Pist bariyeri 9+ ister; Balon fırtına bandı yakalar; 😈 gece; 🙂 Pist/Balon yeni sahne |
 | `81-kale-birlikte` | Kale Savunması › hep birlikte: son anda durdurulan düşmana vuran herkes anılır; ❄️ buz 2 adım, ⚡ 10-10-10 yıldırım, 🎯 8-8-8 zırh deler; 🔨 atölye mancınık/hendek/sur; dalga temiz → o dalgada vuran herkese rozet, taç yok; 📜 defter; Ortak Canavar birlikte vuranlar; 390 px |
 | `82-ozel-ders` | Eğitmen › Özel Ders (Sporla Gelişiyorum): sekme yalnız eğitmende; öğrenci ekle, hareket + hızlı puan, gelişim ▲; 🎮 oyunlarla devam → özel konum + şerit + dock hareket seçimi, seri okçuluk kaydına YAZILMAZ, geri al; dönüşte eski konum; veli mesajı + WhatsApp; 390 px |
+| `83-hedef-foto` | Skor Gir › 📷 Fotoğrafla puanla (Hedef Haritası): yapay açılı 3'lü spot fotoğrafında spot merkezi/ölçeği; büyük ekranda dokunarak ok (X/9/8), kısa dokunuş sil + geri al; SERİYE YAZ → seri + detayliOklar (x,y,t,spot); 2. fotoğrafta fark → öneri (9/8/7); M; grup analizi + veli metni; 390 px |
 
 Yeni bir özellik eklerken `testler/` altına aynı biçimde (varsayılan dışa aktarılan `async function ({ log })`) bir dosya ekle.

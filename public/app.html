@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v353</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v354</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -666,8 +666,9 @@
                     
                     <!-- SOL PANEL: HEDEF VE ZOOM AYARLARI -->
                     <div class="skor-left-panel">
-                        <button onclick="sekmeAc('video'); setTimeout(()=>vaModSec('hedef_kamera'), 50);" class="va-btn va-btn-orange" style="width:100%; margin-bottom:12px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; border-radius:10px; box-shadow:0 4px 14px rgba(255,106,26,0.35);">
-                            🎯 Kameradan Oku Puanla (HIKVISION / WebCam)
+                        <!-- v354: 📷 Hedef Haritası (dagsk-hedef-foto.js) — fotoğraftan spot bulma + ok düzeltme + grup analizi. Eski HIKVISION/WebCam hakemi Video ekranında duruyor. -->
+                        <button id="hf-giris-btn" onclick="hedefFotoAc()" class="va-btn va-btn-orange" style="width:100%; margin-bottom:12px; font-size:13.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; border-radius:10px; box-shadow:0 4px 14px rgba(255,106,26,0.35);">
+                            📷 Fotoğrafla puanla · Hedef Haritası
                         </button>
                         <div class="hedef-sec-grup">
                             <button class="hedef-sec-btn aktif" id="btn-10ring" onclick="setHedefTipi('10ring')">10 Halkalı</button>
