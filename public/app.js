@@ -25985,6 +25985,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { klasmanDoldur(); } catch(e) {}
             try { otomatikYoklamaIsaretle(s.ad, s.g); } catch(e) {}
             try { kmKusakPuanEkle(s.g, s.ad, sonuc.seriPuan); } catch(e) {}
+            try { if(typeof ozdDinSeriSonu === 'function') ozdDinSeriSonu(); } catch(e) {} // ⏱️ dinlenme (okçuluk tarafı, oto açıksa)
             } else { try { ozdDokGuncelle(); } catch(e) {} }
 
             _kmOyunKilit = true;

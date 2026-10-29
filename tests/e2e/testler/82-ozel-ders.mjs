@@ -119,6 +119,11 @@ export default async function ({ log }) {
     await p.evaluate((k) => ozdOyunaGec(k), k); await p.waitForTimeout(400);
     const km = await p.evaluate(() => { kmAc(); return { mod: ozdHareketModu(), konum: _kmAktifKonum, baslik: document.getElementById('km-baslik').textContent }; });
     dogrula(!km.mod && km.konum === yedek.konum && /Karışık Sınıf/.test(km.baslik), 'Karışık Sınıf açılınca özel ders modu sürdü: ' + JSON.stringify(km));
+    // v349: okçuluk tarafındaki oyunlarda da dinlenme sayacı var — ayarları ayrı, oto varsayılan kapalı
+    await p.waitForTimeout(1500); await p.evaluate(() => { ['karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); kmPlatformGoster(); kmAracSec('oyunlar'); });
+    await p.waitForFunction(() => !!document.getElementById('km-oyun-wrap'), null, { timeout: 30000 }); await p.waitForTimeout(1300);
+    const okc = await p.evaluate(() => ({ var: !!document.getElementById('ozd-dinlen'), on: ozdDinOn(), oto: ozdDinOto(), serit: !!document.getElementById('ozd-km-banner') }));
+    dogrula(okc.var && okc.on === 'dag_km_dinlenme' && okc.oto === false && !okc.serit, 'okçuluk oyunlarında dinlenme sayacı / ayrımı yanlış: ' + JSON.stringify(okc));
     await p.waitForTimeout(1500); // kmAc gerçekten Karışık Sınıf'ı (okçuluk) açar — kapat, özel ders sayfasına dön
     await p.evaluate(() => { ['karisik-platform', 'karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); sekmeAc('ozelders'); }); await p.waitForTimeout(200);
 

@@ -228,8 +228,16 @@ try { if (typeof _kmAktifKonum !== 'undefined' && String(_kmAktifKonum || '').in
    büyütülebilir — özel dersteki yerden bahsediyorum") — yalnız hareket modunda, Karışık Sınıf ekranının üstünde yüzer.
    Her puan girişinden sonra kendiliğinden başlar (otomatik kapatılabilir); süre çipleri; ⤢ ile TV için ekran boyu. ---------------- */
 let _ozdDin = { kalan: 0, toplam: 0, t: null, buyuk: false };
-function ozdDinSure() { let v = 30; try { v = +localStorage.getItem('dag_ozd_dinlenme') || 30; } catch (e) { } return v; }
-function ozdDinOto() { try { return localStorage.getItem('dag_ozd_dinlenme_oto') !== '0'; } catch (e) { return true; } }
+// v349 (kullanıcı: "bu dinlenmeyi diğer tarafa da taşı — Karışık Sınıf'taki bütün oyunlarda bir köşede küçük dursun, büyütebileyim"):
+// sayaç Karışık Sınıf oyunlarında (okçuluk) da var. İki taraf KARIŞMAZ: süre / oto / yer-boy ayarları ayrı anahtarlarda
+// ('dag_ozd_dinlenme*' özel ders, 'dag_km_dinlenme*' okçuluk). Okçulukta oto varsayılan KAPALI (sınıfta her çocuğun serisinden sonra
+// başlaması karışık olur — süre çipine dokununca başlar), özel derste AÇIK.
+function ozdDinOn() { return ozdHareketModu() ? 'dag_ozd_dinlenme' : 'dag_km_dinlenme'; }
+function ozdDinGoster() { if (ozdHareketModu()) return true; const p = document.getElementById('karisik-platform'), w = document.getElementById('km-oyun-wrap'); return !!(p && p.style.display !== 'none' && w && w.isConnected && w.offsetParent !== null || (w && (document.fullscreenElement === w || document.webkitFullscreenElement === w))); }
+function ozdDinSure() { let v = 30; try { v = +localStorage.getItem(ozdDinOn()) || 30; } catch (e) { } return v; }
+function ozdDinOto() { try { const v = localStorage.getItem(ozdDinOn() + '_oto'); return v === null ? ozdHareketModu() : v === '1'; } catch (e) { return ozdHareketModu(); } }
+// okçuluk seri girişi (kmOyunIlerlet) — oto açıksa dinlenme başlar
+function ozdDinSeriSonu() { if (!ozdHareketModu() && ozdDinGoster() && ozdDinOto()) ozdDinBaslat(); }
 function ozdDinBip(f, s, gec) { try { const A = ozdDinBip.a || (ozdDinBip.a = new (window.AudioContext || window.webkitAudioContext)()); if (A.state === 'suspended') A.resume(); const t = A.currentTime + (gec || 0), o = A.createOscillator(), g = A.createGain(); o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + s); o.connect(g).connect(A.destination); o.start(t); o.stop(t + s + .05); } catch (e) { } }
 function ozdDinBaslat(sn) {
     clearInterval(_ozdDin.t); _ozdDin.toplam = _ozdDin.kalan = sn || ozdDinSure();
@@ -242,13 +250,13 @@ function ozdDinBaslat(sn) {
     ozdDinCiz();
 }
 function ozdDinDur() { if (_ozdDin.t) { clearInterval(_ozdDin.t); _ozdDin.t = null; } else if (_ozdDin.kalan > 0) ozdDinBaslat(_ozdDin.kalan); ozdDinCiz(); }
-function ozdDinSec(sn) { try { localStorage.setItem('dag_ozd_dinlenme', sn); } catch (e) { } ozdDinBaslat(sn); }
-function ozdDinOtoDegis() { try { localStorage.setItem('dag_ozd_dinlenme_oto', ozdDinOto() ? '0' : '1'); } catch (e) { } ozdDinCiz(); }
+function ozdDinSec(sn) { try { localStorage.setItem(ozdDinOn(), sn); } catch (e) { } ozdDinBaslat(sn); }
+function ozdDinOtoDegis() { try { localStorage.setItem(ozdDinOn() + '_oto', ozdDinOto() ? '0' : '1'); } catch (e) { } ozdDinCiz(); }
 function ozdDinBuyut() { _ozdDin.buyuk = !_ozdDin.buyuk; ozdDinCiz(); }
 // v347 (kullanıcı: "sağ altta güzel ama oynatılabilir, küçültebileyim büyütebileyim"): 4 boy (➖➕) + sürükle-bırak; ikisi de cihazda saklı
 const OZD_DIN_BOY = [10, 13, 17, 22];
-function ozdDinAyar() { try { return JSON.parse(localStorage.getItem('dag_ozd_dinlenme_yer') || '{}') || {}; } catch (e) { return {}; } }
-function ozdDinAyarYaz(o) { try { localStorage.setItem('dag_ozd_dinlenme_yer', JSON.stringify(Object.assign(ozdDinAyar(), o))); } catch (e) { } }
+function ozdDinAyar() { try { return JSON.parse(localStorage.getItem(ozdDinOn() + '_yer') || '{}') || {}; } catch (e) { return {}; } }
+function ozdDinAyarYaz(o) { try { localStorage.setItem(ozdDinOn() + '_yer', JSON.stringify(Object.assign(ozdDinAyar(), o))); } catch (e) { } }
 function ozdDinBoy(d) { const a = ozdDinAyar(), v = Math.max(0, Math.min(OZD_DIN_BOY.length - 1, (a.boy != null ? a.boy : 1) + d)); ozdDinAyarYaz({ boy: v }); ozdDinCiz(); }
 function ozdDinYerUygula(e) {
     const a = ozdDinAyar(), boy = OZD_DIN_BOY[a.boy != null ? a.boy : (innerWidth < 640 ? 0 : 1)];
@@ -277,8 +285,11 @@ function ozdDinSurukle(e) {
     e.addEventListener('click', (ev) => { if (!_ozdDin.buyuk || ev.target.closest('button') || (_ozdDin.t && ev.target.closest('.ozd-din-say'))) return; ev.stopPropagation(); ozdDinBuyut(); }, true);
 }
 function ozdDinCiz() {
+    try { ozdCss(); } catch (e) { }
     const p = document.getElementById('karisik-platform'); let e = document.getElementById('ozd-dinlen');
-    if (!p || !ozdHareketModu()) { if (e) e.remove(); clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = 0; return; }
+    // taraf değişti (özel ders ↔ okçuluk) ya da oyun ekranı kapandı → sayaç sıfırlanır / kalkar
+    const taraf = ozdDinOn(); if (_ozdDin.taraf && _ozdDin.taraf !== taraf) { clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = _ozdDin.toplam = 0; _ozdDin.buyuk = false; } _ozdDin.taraf = taraf;
+    if (!p || !ozdDinGoster()) { if (e) e.remove(); clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = 0; _ozdDin.buyuk = false; return; }
     if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; ozdDinSurukle(e); }
     // v348 (kullanıcı: "tam ekranda dinlenme saniyesi açılmıyor"): oyun tam ekrandayken (#km-oyun-wrap) yalnız o öğe görünür —
     // sayaç tam ekran öğesinin içine taşınır, çıkınca Karışık Sınıf ekranına geri döner
@@ -293,7 +304,9 @@ function ozdDinCiz() {
     ozdDinYerUygula(e);
 }
 
-['fullscreenchange', 'webkitfullscreenchange'].forEach((o) => document.addEventListener(o, () => { try { if (ozdHareketModu() && document.getElementById('ozd-dinlen')) ozdDinCiz(); } catch (e) { } }));
+['fullscreenchange', 'webkitfullscreenchange'].forEach((o) => document.addEventListener(o, () => { try { if (document.getElementById('ozd-dinlen') || ozdDinGoster()) ozdDinCiz(); } catch (e) { } }));
+
+setInterval(() => { try { if (!!document.getElementById('ozd-dinlen') !== ozdDinGoster()) ozdDinCiz(); } catch (e) { } }, 1000);
 
 /* ---------------- sekme ---------------- */
 // Eğitmen Paneli kartı (Karışık Sınıf / Yarışmalar'ın yanında) — egitmenYarismaAc ile aynı yol
@@ -553,7 +566,7 @@ function ozdCss() {
 #karisik-platform.ozd-modu .km-sk-kusak{display:none}
 /* ⏱️ dinlenme: boy (--b) ile her şey em cinsinden ölçeklenir; konum sürüklenir (sol/üst piksel, cihazda saklı) */
 .ozd-dinlen{position:fixed;right:14px;bottom:14px;z-index:20050;font-size:var(--b,13px);width:15.4em;background:rgba(20,14,36,.94);color:#fff;border-radius:1.4em;padding:.8em .9em;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 2px #7c5cff;font-family:inherit;transition:background .3s;touch-action:none;user-select:none}
-.ozd-din-ust{display:flex;align-items:center;gap:.3em;cursor:grab}.ozd-din-ust b{flex:1;font-size:1em}.ozd-din-ust button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:.6em;width:2.3em;height:2.3em;font-size:1em;cursor:pointer;flex-shrink:0}
+.ozd-din-ust{display:flex;align-items:center;gap:.3em;cursor:grab}.ozd-din-ust b{flex:1;min-width:0;font-size:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ozd-din-ust button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:.6em;width:2.3em;height:2.3em;font-size:1em;cursor:pointer;flex-shrink:0}
 .ozd-dinlen.surukle .ozd-din-ust{cursor:grabbing}.ozd-din-tut{opacity:.5;letter-spacing:-.15em;margin-right:.2em}
 .ozd-din-say{font-size:4.2em;font-weight:900;text-align:center;line-height:1.1;cursor:pointer;font-variant-numeric:tabular-nums;margin:.05em 0}
 .ozd-din-bar{height:.6em;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}.ozd-din-bar i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#ff6a1a);transition:width 1s linear}
