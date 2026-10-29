@@ -5324,3 +5324,13 @@ Kullanıcı Hazine'den sonra "diğer 6 oyuna da geç".
 - Kanca tekleşti: `kmOyunKabukGuncelle` → `kmOyunHeyecanTazele` → `hyTazele` (`data-hy` imzası değişince `hyCiz`, yoksa `hyGuncelle`). Hazine'ye özel kancalar kaldırıldı.
 - Pist arabaları gerçekçi spor araba (kullanıcı "araba çok kötü"; çizgi film/kuşbakışı taslakları beğenilmedi → "gerçekçi spor araba"): `kmPistParlak`/`kmPistCam` degrade, far/stop/jant/spoiler/şerit; sürücü baloncuğu kaldırıldı, isim beyaz plakada, sıra altın rozette.
 - Test `80-yol-heyecan-hepsi`.
+
+## 70. 🤝 Kale Savunması: hep birlikte + özel oklar + atölye (2026-10-29, v342)
+Kullanıcı: "en son atan sanki kaleyi kurtarmış hissi veriyorsun, canavarda da öyle — aslında toplu yapıyorlar, bu hissiyatı vermek lazım" + önerilen 3 (özel oklar), 8 (son anda), 1 (atölye).
+- **İlke (bütün ortak oyunlar):** son vuranı kahraman yapma. Kale'de 👑 ve "son düşüren / en çok düşüren" kalktı; dalga temizlenince o dalgada vuran herkes parlar (`birlikParlat` — altın bağ çizgisi `#kale-bag`), adları birlikte yazılır, `temizledi` rozeti hepsine (`rozetToplu`), `ejderha` rozeti ejderhaya vuran herkese (`d.vuran`). `st.dalgaKatki` dalga başına.
+- **Özel oklar** (`ozelOk`, serinin tamamı): ⚡ 10-10-10 yıldırım (bütün düşmanlara −10) · ❄️ üçü de 9+ buz (`st.donma` = 2 adım, `.kale-donuk`) · 🎯 üçü aynı 7/8 delici (zırh/kalkan işlemez). Sayaç `st.ozel`.
+- **Son anda:** seri başında kapıya bir adım kalanlar (`tehlikede`) düşerse `kurtarGoster` — o düşmana vuran herkes. `st.kurtarma`.
+- **🔨 Kale Atölyesi:** dalga 1 altın (ejderha dalgası 2) → `st.altin`; HUD 🔨 düğmesi / tören sonrası kart (`#kale-atolye`, sağ üst — sol altta dock örtüyordu). Mancınık (her seri en arkadakine 3×sv, kimsenin hanesine yazılmaz, kapı üstünde çizilir), Hendek (adım ×(1−0,15·sv), kapı önünde su), Okçu Kulesi (isabet eden her ok +sv), Sur Onarımı (+1 ❤️, en çok kalp+1 → 🧡). Seviye üst sınırı 3.
+- **📜 Kale Defteri:** günün ortak özeti + WhatsApp (api.whatsapp.com/send).
+- **Ortak Canavar:** banner "Sınıf birlikte başardı — N okçu hep birlikte!" (`kmCanavarBirlikteYazi`), özet satırı "🤝 Birlikte vuran" (`kmCanavarBirlikteAdlar`, c.istat). Ders özeti (`dagsk-km-sablon-ozet.js`) "son vuruşuyla o yendi / Son vuruşlar / 🗡️ rozet" yerine birlikte cümleleri. `h.sonVurus` verisi hâlâ tutulur, gösterilmez.
+- Test `81-kale-birlikte`; `70-kale` artık "HEP BİRLİKTE" bekler.

@@ -53,7 +53,7 @@ export default async function ({ log }) {
     esit(r2.st.dalga, 2, 'dalga temizlenince 2. dalga gelmeli');
     esit(r2.st.temizlenen, 1, 'temizlenen dalga sayısı');
     await p.waitForTimeout(3200);
-    dogrula(await p.evaluate(() => /düşüren/.test(document.getElementById('kale-dev').textContent)), 'kahraman anı gösterilmedi');
+    dogrula(await p.evaluate(() => /HEP BİRLİKTE/.test(document.getElementById('kale-dev').textContent)), 'hep birlikte anı gösterilmedi');
     const rozet = await p.evaluate(([g, ad]) => { const sp = turnuvaDB[g][ad]; return sp.oyun && sp.oyun.kale && sp.oyun.kale.temizledi; }, [r2.g, r2.ad]);
     dogrula(rozet >= 1, 'temizledi rozeti yazılmadı');
     await p.waitForTimeout(4000);

@@ -114,7 +114,7 @@ function kmSablonKaydetAc() {
 
 // ---------------------------------------------------------------- 🏅 DERS SONU ÖZETİ
 function kmOzetIlkAd(ad) { let i = String(ad || '').trim().split(/\s+/)[0] || ''; return i.charAt(0) + i.slice(1).toLocaleLowerCase('tr-TR'); }
-// Ortak Canavar'ın BUGÜNKÜ kaydı (bu konum) — varsa sporcu başına hasar/kritik/son vuruş ve yenilen canavarlar.
+// Ortak Canavar'ın BUGÜNKÜ kaydı (bu konum) — varsa sporcu başına hasar/kritik ve yenilen canavarlar.
 // Doğrudan yerel kayıttan okunur (kmCanavarDurumEmin yeni kayıt oluşturup yazabileceği için çağrılmaz).
 function kmOzetCanavar() {
     try {
@@ -163,7 +163,8 @@ function kmOzetVeliMetni(s, D) {
     if (s.rekor) satir.push('🏆 *Kişisel rekor kırdı!* (önceki en iyi serisi ' + s.oncekiEnIyi + ')');
     if (s.canavar && s.canavar.hasar > 0) {
         satir.push('🐉 Ortak Canavar\'a *' + s.canavar.hasar + ' hasar* verdi' + (s.canavar.kritik ? ' (' + s.canavar.kritik + ' kritik vuruş)' : ''));
-        if (s.canavar.sonVurus) satir.push('🗡️ ' + (s.canavar.sonVurus > 1 ? s.canavar.sonVurus + ' canavarı' : 'Bir canavarı') + ' son vuruşuyla o yendi!');
+        // 2026-10-29: son vuruş tek kişiye mal edilmez — canavarlar sınıfça yenilir
+        if (D.canavar && D.canavar.yenilenler.length) satir.push('🤝 Sınıfıyla birlikte ' + D.canavar.yenilenler.length + ' canavar yendi!');
         if (s.canavar.gorev) satir.push('📜 ' + s.canavar.gorev + ' canavar görevini tamamladı!');
         if (s.canavarMvp) satir.push('👑 Bugün canavara en çok hasar veren sporcu oldu!');
     }
@@ -183,8 +184,8 @@ function kmOzetGrupMetni(D) {
         let y = D.canavar.yenilenler, mvp = D.satirlar.find(function (s) { return s.canavarMvp; });
         satir.push('', '🐉 *Ortak Canavar:* sınıf toplam ' + D.canavar.toplamHasar + ' hasar verdi' + (y.length ? ', ' + y.length + ' canavar yendi (' + y.map(function (c) { return c.ad; }).join(', ') + ')' : ''));
         if (mvp && D.olcu !== 'hasar') satir.push('👑 En çok hasar: ' + kmOzetIlkAd(mvp.ad) + ' (' + mvp.canavar.hasar + ')');
-        let sv = D.satirlar.filter(function (s) { return s.canavar && s.canavar.sonVurus; });
-        if (sv.length) satir.push('🗡️ Son vuruşlar: ' + sv.map(function (s) { return kmOzetIlkAd(s.ad) + (s.canavar.sonVurus > 1 ? ' ×' + s.canavar.sonVurus : ''); }).join(', '));
+        let bv = D.satirlar.filter(function (s) { return s.canavar && s.canavar.hasar > 0; });
+        if (bv.length > 1) satir.push('🤝 ' + bv.length + ' sporcu hep birlikte vurdu');
     }
     satir.push('', 'Hepsine emekleri için teşekkürler! 🧡');
     return satir.join('\n');
@@ -210,7 +211,6 @@ function kmDersOzetiAc() {
             if (s.rekor) rozet.push('<span class="rekor">🏆 Rekor ' + s.enIyi + ' (önce ' + s.oncekiEnIyi + ')</span>');
             if (D.enCokGelisen === s) rozet.push('<span class="yildiz">⭐ En çok gelişen</span>');
             if (s.canavarMvp) rozet.push('<span class="rekor">👑 Canavar MVP</span>');
-            if (s.canavar && s.canavar.sonVurus) rozet.push('<span class="rekor">🗡️ Son vuruş' + (s.canavar.sonVurus > 1 ? ' ×' + s.canavar.sonVurus : '') + '</span>');
             if (s.canavar && s.canavar.hasar > 0) rozet.push('<span>🐉 ' + s.canavar.hasar + ' hasar' + (s.canavar.kritik ? ' · ⚡' + s.canavar.kritik : '') + (s.canavar.gorev ? ' · 📜' + s.canavar.gorev : '') + '</span>');
             if (s.seri) rozet.push('<span>' + s.seri + ' seri · ' + s.toplam + ' puan · en iyi ' + s.enIyi + (s.x ? ' · ' + s.x + ' X' : '') + '</span>'); else rozet.push('<span>Bugün seri yok</span>');
             return '<div class="kmoz-sat"><div class="kmoz-sira">' + (s.sira <= 3 && s.deger > 0 ? ['🥇', '🥈', '🥉'][s.sira - 1] : s.sira) + '</div><div class="kmoz-ad">' + kmSablonEsc(s.ad) + '<small>' + kmOzetOlcuYazi(s, D) + '</small></div>'

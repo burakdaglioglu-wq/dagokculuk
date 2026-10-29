@@ -24715,6 +24715,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let scr = kmOyunSvgPct('km-oyun-svg-canavar', x, y - 70);
             setTimeout(function() { kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, '#ffd23f', 34, true); kmOyunBurst(document.getElementById('km-oyun-burst'), scr.xPct, scr.yPct, renk, 20, true); }, 420);
         }
+        // 2026-10-29 (kullanıcı: "en son atan sanki kurtarmış hissi veriyorsun — aslında toplu yapıyorlar"): yenilince son vuranı
+        // değil, o canavara vuran HERKESİ söyle (c.istat).
+        function kmCanavarBirlikteListe(c) { return Object.keys(c.istat || {}).map(function(k) { return c.istat[k]; }).filter(function(x) { return x.hasar > 0; }); }
+        function kmCanavarBirlikteYazi(c) { let n = kmCanavarBirlikteListe(c).length; return n > 1 ? 'Sınıf birlikte başardı — ' + n + ' okçu hep birlikte!' : 'Sınıf birlikte başardı!'; }
+        function kmCanavarBirlikteAdlar(c) { let l = kmCanavarBirlikteListe(c); return l.length ? '<small>' + l.length + ' okçu · </small>' + l.map(function(x) { return esc(kmOyunIlkAd(x.ad)); }).join(' · ') : '—'; }
         function kmCanavarOzetGoster(c, s) {
             let o = document.getElementById('km-cnv-ozet'); if(!o) return;
             let liste = Object.keys(c.istat || {}).map(function(k) { return c.istat[k]; });
@@ -24726,7 +24731,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div class="km-cnv-ozet-baslik">${t.ikon} ${esc(kmCanavarAd(c.no)).toLocaleUpperCase('tr-TR')} YENİLDİ</div>
                 <div class="km-cnv-ozet-alt">Savaş Özeti · ${c.seri || 0} seri · ${c.maxCan} can</div>
                 ${c.tip === 'kral' ? '<div class="km-cnv-ozet-sefer">👑 HAFTALIK SEFER TAMAMLANDI!</div>' : ''}
-                ${satir('🗡️', 'Son vuruş', esc(kmOyunIlkAd(s.ad)))}
+                ${satir('🤝', 'Birlikte vuran', kmCanavarBirlikteAdlar(c))}
                 ${enHasar ? satir('⚔️', 'En çok hasar', esc(kmOyunIlkAd(enHasar.ad)) + ' <small>' + enHasar.hasar + '</small>') : ''}
                 ${enKritik && enKritik.kritik ? satir('⚡', 'En çok kritik', esc(kmOyunIlkAd(enKritik.ad)) + ' <small>' + enKritik.kritik + '</small>') : satir('⚡', 'En çok kritik', '—')}
                 ${satir('🔗', 'En uzun kombo', (c.enIyiKombo || 0) + ' seri')}
@@ -25344,7 +25349,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 setTimeout(function() { let oz = KM_CANAVAR_OZELLIK[_kmCanavar.aktif.tip]; if(oz) kmCanavarYaziUcur(oz.ikon + ' ' + oz.ad + ': ' + oz.acik, KM_CANAVAR_X - 120, 150, 'ozellik'); }, 1400);
             }
             if(azaltilmis) {
-                if(!kapali) { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', 'Sınıf birlikte başardı — son vuruş: ' + kmOyunIlkAd(s.ad), 'canavar-oldu'); }
+                if(!kapali) { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', kmCanavarBirlikteYazi(c), 'canavar-oldu'); }
                 setTimeout(function() { sonrakiDogsun(); bitir(); }, 900);
                 return;
             }
@@ -25356,7 +25361,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let parti = document.getElementById('km-cnv-parti');
             if(parti) { parti.classList.remove('km-cnv-zafer'); void parti.getBoundingClientRect(); parti.classList.add('km-cnv-zafer'); setTimeout(function() { parti.classList.remove('km-cnv-zafer'); }, 1800); }
             if(!kapali) {
-                setTimeout(function() { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', 'Sınıf birlikte başardı — son vuruş: ' + kmOyunIlkAd(s.ad), 'canavar-oldu'); }, 300);
+                setTimeout(function() { kmOyunBanner('💀 ' + yenilenAd.toUpperCase() + ' YENİLDİ!', kmCanavarBirlikteYazi(c), 'canavar-oldu'); }, 300);
             }
             setTimeout(bitir, 700);
             // Sinematik: yıkılış (2.4s) → ganimet sandığı → savaş özeti. Sonraki canavar özet kapanınca doğar

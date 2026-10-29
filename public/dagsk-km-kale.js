@@ -22,6 +22,17 @@
                       4 seri → ateş, -1 can; sarı atılınca sakinleşir), kale yıkılır ve 1 dalga geri.
      3 😈 Korkutucu — gece sahnesi + kızıl gözler, daha kalabalık/hızlı dalga, 2 can, ejderha 3 seride ateşler, 2 dalga geri.
    Durumda ek alanlar: mod (dalga hangi seviyeyle kuruldu), boss düşmanda ofke.
+   v342 HEP BİRLİKTE (kullanıcı: "en son atan sanki kaleyi kurtarmış hissi veriyorsun; aslında toplu yapıyorlar, bu hissiyatı
+   vermek lazım"): son düşüreni öne çıkaran 👑 / "son düşüren" kalktı. Dalga temizlenince o dalgada vuran HERKES parlar,
+   aralarına altın bir bağ çizilir, adları birlikte yazılır; 'temizledi' rozeti hepsine, 'ejderha' rozeti ejderhaya vuran
+   herkese. Düşman başına d.vuran (anahtarlar), dalga başına st.dalgaKatki.
+     ⚡/❄️/🎯 Özel oklar (serinin tamamı): 10-10-10 yıldırım (bütün düşmanlara −10) · üçü de sarı buz (düşmanlar 2 adım donar,
+       st.donma) · üçü aynı 7/8 delici (bu seride zırh/kalkan işlemez).
+     🛡️ Son anda: kapıya bir adım kalmış düşman düşerse "SON ANDA DURDURDUK" — o düşmana vuran herkes adıyla.
+     🔨 Kale Atölyesi: dalga = 1 altın (ejderha dalgası 2). st.altin ile st.atolye {mancinik, hendek, kule} (en çok 3) alınır;
+       Sur Onarımı +1 ❤️ (kalp sayısının 1 fazlasına kadar). Mancınık her seriden sonra en arkadakine 3×sv taş (kimsenin
+       hanesine yazılmaz), hendek adımı %15×sv kısaltır, okçu kulesi isabet eden her oka +sv.
+     📜 Kale Defteri: günün ortak özeti (dalga, düşman, ejderha, son anda kurtarış, ortak hasar, okçular) + WhatsApp.
    ================================================================================================ */
 (function () {
     'use strict';
@@ -189,6 +200,29 @@
     };
     const TEHLIKE = ['Kapıya bir adım kaldı!', 'Kapı neredeyse bizim!', 'Toc toc! Geldik bile!'];
     const GULUS = ['Hahaha! Hiç değmedi!', 'Iska! Hı hı hı!', 'Bize ok yetişmez!'];
+    // v342 Özel oklar — serinin tamamına bakar
+    function ozelOk(oklar) {
+        const v = (oklar || []).map((k) => okDeger(k.puan));
+        if (v.length < 3) return null;
+        if (v.every((d) => d === 10)) return 'yildirim';
+        if (v.every((d) => d >= 9)) return 'buz';
+        if (v[0] >= 7 && v.every((d) => d === v[0])) return 'delici';
+        return null;
+    }
+    const OZEL = {
+        yildirim: ['⚡ YILDIRIM OKU!', '10-10-10 — gökten yıldırım: bütün düşmanlara −10'],
+        buz: ['❄️ BUZ OKU!', 'Üç ok da sarı — düşmanlar 2 adım donuyor'],
+        delici: ['🎯 DELİCİ OK!', 'Üç ok aynı halkada — bu seride zırh ve kalkan işlemez']
+    };
+    // v342 Kale Atölyesi — dalga temizleyince kazanılan altınla sınıfça seçilir
+    const ATOLYE = [
+        { id: 'mancinik', ikon: '🪨', ad: 'Mancınık', acik: (n) => `Her seriden sonra en arkadaki düşmana taş: −${3 * n}` },
+        { id: 'hendek', ikon: '🌊', ad: 'Hendek', acik: (n) => `Düşmanlar %${15 * n} yavaş yürür` },
+        { id: 'kule', ikon: '🏹', ad: 'Okçu Kulesi', acik: (n) => `İsabet eden her ok +${n} hasar` },
+        { id: 'sur', ikon: '🧱', ad: 'Sur Onarımı', acik: () => '+1 ❤️ — kale bir fazla canla savaşır' }
+    ];
+    const ATOLYE_UST = 3;
+    function hizCarpan(st) { return 1 - .15 * ((st.atolye && st.atolye.hendek) || 0); }
     function adimHesapla() { return Math.max(18, Math.min(160, 600 / (Math.max(3, liste().length) * 1.6 * seviye()) * (kmod() === 3 ? 1.15 : 1))); }
     function dalgaTipleri(dalga) {
         const m = kmod(), havuz = ['goblin']; if (dalga >= 2) havuz.push('yarasa'); if (dalga >= 3) havuz.push('ork'); if (dalga >= 4) havuz.push('golem');
@@ -201,7 +235,7 @@
     }
     function dusmanCan(t, top, ag) { return Math.max(6, Math.min(D[t].tavan || 1e9, Math.round(top * D[t].agirlik / ag))); }
     function yeniDalga(st, dalga) {
-        st.dalga = dalga; st.adim = adimHesapla(); st.mod = kmod();
+        st.dalga = dalga; st.adim = adimHesapla(); st.mod = kmod(); st.dalgaKatki = {}; st.donma = 0;
         const tipler = dalgaTipleri(dalga), top = toplamCan(dalga), ag = tipler.reduce((a, t) => a + D[t].agirlik, 0);
         st.dusmanlar = tipler.map((t, i) => { const c = dusmanCan(t, top, ag), d = { id: ++st.sonId, tip: t, can: c, max: c, x: 800 + i * 52 + (D[t].boss ? 70 : 0), y: D[t].ucar ? 360 + (i % 2) * 24 : 486 + (i % 2) * 12 }; if (D[t].boss && OFKE_SINIR[st.mod]) d.ofke = 0; return d; });
     }
@@ -216,7 +250,16 @@
         const sp = typeof turnuvaDB !== 'undefined' && turnuvaDB[g] && turnuvaDB[g][ad]; if (!sp) return;
         const o = typeof rfxOyunStat === 'function' ? rfxOyunStat(sp) : (sp.oyun = sp.oyun || {});
         o.kale = o.kale || {}; o.kale[alan] = (o.kale[alan] || 0) + 1; sp.lastModified = Date.now();
+    }
+    // Rozet o işi BİRLİKTE yapan herkese ('g|ad' anahtarları)
+    function rozetToplu(anahtarlar, alan) {
+        (anahtarlar || []).forEach((k) => { const j = k.indexOf('|'); rozetYaz(k.slice(0, j), k.slice(j + 1), alan); });
         try { if (typeof oyVeriKaydet === 'function') oyVeriKaydet(); } catch (e) { }
+    }
+    function sporcuIndex(k) { return liste().findIndex((s) => s.g + '|' + s.ad === k); }
+    function isimler(anahtarlar, ust) {
+        const ad = anahtarlar.map((k) => { const s = liste()[sporcuIndex(k)]; return s ? kacis(ilkAd(s.ad)) : null; }).filter(Boolean);
+        ust = ust || 10; return ad.length > ust ? ad.slice(0, ust).join(' · ') + ` ve ${ad.length - ust} kişi daha` : ad.join(' · ');
     }
 
     /* ---------------- ÇİZİM ---------------- */
@@ -264,15 +307,17 @@
           <path d="M300 420 L470 260 L580 360 L700 240 L860 400 L1000 300 L1400 420Z" fill="${g ? '#24101e' : '#5a3f6e'}" opacity=".7"/>
           <path d="M-400 440 Q300 400 600 430 T1400 420 V760 H-400Z" fill="${g ? '#22381f' : '#4f7a44'}"/>
           <path d="M330 492 Q600 470 1400 486" fill="none" stroke="#b08a5a" stroke-width="46" stroke-linecap="round" opacity=".85"/>
-          <g id="kale-dusmanlar">${st.dusmanlar.map(dusmanSVG).join('')}</g>
-          <g id="kale-sur">${surHTML()}</g>
+          ${atolyeSahne(st, 'hendek')}
+          <g id="kale-dusmanlar" class="${st.donma > 0 ? 'kale-donuk' : ''}">${st.dusmanlar.map(dusmanSVG).join('')}</g>
+          <g id="kale-sur">${surHTML()}${atolyeSahne(st, 'mancinik')}</g>
           <g id="kale-cocuklar">${cocuk}</g>
-          <g id="kale-ucan"></g><g id="kale-pop"></g>
+          <g id="kale-bag"></g><g id="kale-ucan"></g><g id="kale-pop"></g>
         </svg>
         <div class="kale-hud"><div class="kale-hud-ust"><span class="kale-ad" id="kale-ad"></span><span class="kale-cip" id="kale-canlar"></span>
+          <button class="kale-btn kale-btn-genis" id="kale-atolye-btn" title="Kale Atölyesi — altınla kaleyi güçlendirin">🔨</button><button class="kale-btn" id="kale-defter-btn" title="Bugünün Kale Defteri">📜</button>
           <button class="kale-btn" id="kale-ses-btn" title="Ses">🔊</button><button class="kale-btn" id="kale-nasil-btn" title="Nasıl oynanır?">❓</button><button class="kale-btn" id="kale-yeni-btn" title="Baştan başla">🔄</button></div>
-          <div class="kale-bar"><i id="kale-bar-ic"></i><span id="kale-bar-yazi"></span></div></div>
-        <div class="kale-vinyet" id="kale-vinyet"></div><div class="kale-dev" id="kale-dev"></div>`;
+          <div class="kale-bar"><i id="kale-bar-ic"></i><span id="kale-bar-yazi"></span></div><div class="kale-guc" id="kale-guc"></div></div>
+        <div class="kale-vinyet" id="kale-vinyet"></div><div class="kale-dev" id="kale-dev"></div><div class="kale-atolye" id="kale-atolye"></div>`;
     }
     function kaleSahneKur(p) {
         p = p || panel(); if (!p) return; css();
@@ -282,7 +327,17 @@
         $('kale-ses-btn').onclick = () => { try { localStorage.setItem('dag_kale_ses', sesAcik() ? '0' : '1'); } catch (e) { } hudCiz(); if (sesAcik()) SES.boru(); };
         $('kale-nasil-btn').onclick = nasil;
         $('kale-yeni-btn').onclick = yeniOyunSor;
+        $('kale-atolye-btn').onclick = () => { const a = $('kale-atolye'); if (a && a.classList.contains('goster')) atolyeKapat(); else atolyeAc(); };
+        $('kale-defter-btn').onclick = defter;
         _sonAi = -1; hudCiz(); kaleGuncelle();
+    }
+    // Atölyede alınanlar sahnede de görünür: kapının önünde hendek, kapının üstünde mancınık (sol sur skor paneliyle örtülür)
+    function atolyeSahne(st, id) {
+        const n = (st.atolye && st.atolye[id]) || 0; if (!n) return '';
+        if (id === 'hendek') return `<g class="kale-hendek"><path d="M332 508 Q380 ${520 + n * 4} 470 508 Q420 ${500 - n * 2} 332 508Z" fill="#3fa7d6" opacity=".85"/><path d="M350 509 q10 -4 20 0 M392 511 q10 -4 20 0 M430 509 q10 -4 20 0" stroke="#bfe9ff" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>`;
+        let m = ''; for (let k = 0; k < n; k++) m += `<g transform="translate(${268 + k * 26} 404) scale(.75)"><rect x="-18" y="-6" width="36" height="10" rx="3" fill="#7a5233"/><circle cx="-11" cy="6" r="6" fill="#4a3020"/><circle cx="11" cy="6" r="6" fill="#4a3020"/>
+            <path d="M-4 -6 L16 -30" stroke="#8b6240" stroke-width="5" stroke-linecap="round"/><circle cx="17" cy="-32" r="6" fill="#8a8f9c"/></g>`;
+        return `<g class="kale-mancinik">${m}</g>`;
     }
     let _ekranHud = null; // tören sırasında HUD ekrandaki (eski) dalgayı gösterir
     function hudCiz() {
@@ -294,8 +349,11 @@
         const y = Math.round((1 - can / top) * 100);
         $('kale-bar-ic').style.width = y + '%'; $('kale-bar-yazi').textContent = kalan ? `Kalan düşman ${kalan} · %${y}` : 'Dalga temiz!';
         $('kale-ses-btn').textContent = sesAcik() ? '🔊' : '🔇';
+        const gs = durum(), altin = gs.altin || 0, at = gs.atolye || {};
+        const ab = $('kale-atolye-btn'); if (ab) { ab.textContent = '🔨' + (altin ? ' 💰' + altin : ''); ab.classList.toggle('kale-btn-parla', altin > 0); }
+        const gc = $('kale-guc'); if (gc) gc.innerHTML = ATOLYE.filter((a) => at[a.id]).map((a) => `<span title="${a.ad}">${a.ikon} ${at[a.id]}</span>`).join('') + (gs.donma > 0 ? '<span>❄️ donuk</span>' : '');
     }
-    function kalpler(can) { let s = ''; for (let i = 0; i < kalpSayisi(); i++) s += i < can ? '❤️' : '🖤'; return s; }
+    function kalpler(can) { let s = ''; for (let i = 0; i < Math.max(kalpSayisi(), can); i++) s += i < can ? (i >= kalpSayisi() ? '🧡' : '❤️') : '🖤'; return s; }
     let _sonAi = -1;
     function kaleGuncelle() {
         const ai = typeof _kmOyunAktifIndex !== 'undefined' ? _kmOyunAktifIndex : 0;
@@ -335,31 +393,57 @@
     // Önce DURUM hesaplanır ve kaydedilir (geri al / yenile / diğer cihaz tutarlı), sonra görsel oynar.
     function kaleSeri(s, i, kaydedilecek, done) {
         if (_toren) { zamanTemizle(); kaleSahneKur(); }
-        const st = durum(), key = s.g + '|' + s.ad, olaylar = [];
-        st.seri = (st.seri || 0) + 1;
+        atolyeKapat();
+        const st = durum(), key = s.g + '|' + s.ad, olaylar = [], at = st.atolye || {};
+        st.seri = (st.seri || 0) + 1; st.dalgaKatki = st.dalgaKatki || {};
+        const ozel = ozelOk(kaydedilecek);
+        if (ozel) { st.ozel = st.ozel || {}; st.ozel[ozel] = (st.ozel[ozel] || 0) + 1; }
+        // kapıya bir adım kalmış olanlar — bu seride düşerse "son anda, hep birlikte durdurduk"
+        const tehlikede = st.dusmanlar.filter((d) => d.x - KAPI_X <= st.adim * hizCarpan(st) * (D[d.tip].ucar ? 1.3 : 1)).map((d) => d.id);
         let temiz = null, dustu = false;
-        (kaydedilecek || []).forEach((k) => {
-            const v = String(k.puan), d = okDeger(v);
-            const on = st.dusmanlar.slice().sort((a, b) => a.x - b.x)[0];
-            if (!on || temiz) return;
-            if (!d) { olaylar.push({ tur: 'iska', id: on.id }); return; }
-            if (D[on.tip].min && d < D[on.tip].min) { olaylar.push({ tur: 'blok', id: on.id }); return; } // ⚔️ zırh/kalkan: ok seker
-            const kritik = d >= 9, hasar = Math.round(d * (kritik ? 1.5 : 1));
-            on.can -= hasar; st.katki[key] = (st.katki[key] || 0) + hasar;
-            const o = { tur: 'ok', id: on.id, hasar: hasar, kritik: kritik, ates: v === 'X', oldu: [] };
-            if (o.ates) { const arka = st.dusmanlar.filter((x) => x !== on).sort((a, b) => a.x - b.x)[0]; if (arka) { arka.can -= 5; o.arka = arka.id; st.katki[key] += 5; } }
-            st.dusmanlar.filter((x) => x.can <= 0).forEach((x) => { o.oldu.push(x.id); st.dusuren[key] = (st.dusuren[key] || 0) + 1; if (x.tip === 'ejderha') { rozetYaz(s.g, s.ad, 'ejderha'); o.ejder = true; } });
+        const ejderDalga = dalgaTipleri(st.dalga).indexOf('ejderha') >= 0;
+        const onDusman = () => st.dusmanlar.slice().sort((a, b) => a.x - b.x)[0];
+        const vur = (d, h) => { d.can -= h; d.vuran = d.vuran || []; if (d.vuran.indexOf(key) < 0) d.vuran.push(key); st.katki[key] = (st.katki[key] || 0) + h; st.dalgaKatki[key] = (st.dalgaKatki[key] || 0) + h; };
+        // ölenleri ayıkla; son düşman da gittiyse dalga HEP BİRLİKTE temizlenmiştir
+        const ayikla = (o, kim) => {
+            st.dusmanlar.filter((x) => x.can <= 0).forEach((x) => {
+                o.oldu.push(x.id); st.dusen = (st.dusen || 0) + 1;
+                if (kim) st.dusuren[kim] = (st.dusuren[kim] || 0) + 1;
+                if (x.tip === 'ejderha') { o.ejder = (x.vuran || []).slice(); st.ejderha = (st.ejderha || 0) + 1; rozetToplu(o.ejder, 'ejderha'); }
+                if (tehlikede.indexOf(x.id) >= 0) { o.kurtar = { tip: x.tip, vuran: (x.vuran || []).slice() }; st.kurtarma = (st.kurtarma || 0) + 1; }
+            });
             st.dusmanlar = st.dusmanlar.filter((x) => x.can > 0);
             o.durum = st.dusmanlar.map((x) => ({ id: x.id, can: x.can, max: x.max }));
-            olaylar.push(o);
-            if (!st.dusmanlar.length) {
-                const sira = Object.entries(st.dusuren).sort((a, b) => b[1] - a[1])[0];
-                temiz = { dalga: st.dalga, ad: s.ad, g: s.g, i: i, enCok: sira ? sira[0] : null };
-                st.temizlenen = (st.temizlenen || 0) + 1; rozetYaz(s.g, s.ad, 'temizledi');
+            if (!st.dusmanlar.length && !temiz) {
+                const okcular = liste().map((x) => x.g + '|' + x.ad).filter((k) => st.dalgaKatki[k] > 0), altin = ejderDalga ? 2 : 1;
+                temiz = { dalga: st.dalga, okcular: okcular, altin: altin, ejder: ejderDalga };
+                st.temizlenen = (st.temizlenen || 0) + 1; st.altin = (st.altin || 0) + altin; rozetToplu(okcular, 'temizledi');
                 _ekranHud = { dalga: st.dalga, can: st.can, dusmanlar: [] };
                 yeniDalga(st, st.dalga + 1);
             }
+        };
+        (kaydedilecek || []).forEach((k) => {
+            const v = String(k.puan), d = okDeger(v);
+            const on = onDusman();
+            if (!on || temiz) return;
+            if (!d) { olaylar.push({ tur: 'iska', id: on.id }); return; }
+            if (ozel !== 'delici' && D[on.tip].min && d < D[on.tip].min) { olaylar.push({ tur: 'blok', id: on.id }); return; } // ⚔️ zırh/kalkan: ok seker
+            const kritik = d >= 9, hasar = Math.round(d * (kritik ? 1.5 : 1)) + (at.kule || 0);
+            vur(on, hasar);
+            const o = { tur: 'ok', id: on.id, hasar: hasar, kritik: kritik, ates: v === 'X', oldu: [] };
+            if (o.ates) { const arka = st.dusmanlar.filter((x) => x !== on).sort((a, b) => a.x - b.x)[0]; if (arka) { vur(arka, 5); o.arka = arka.id; } }
+            ayikla(o, key); olaylar.push(o);
         });
+        // ⚡ yıldırım: serinin üç oku da 10 → bütün düşmanlara −10
+        if (ozel === 'yildirim' && !temiz && st.dusmanlar.length) {
+            const o = { tur: 'yildirim', ids: st.dusmanlar.map((x) => x.id), oldu: [] };
+            st.dusmanlar.forEach((x) => vur(x, 10)); ayikla(o, key); olaylar.push(o);
+        }
+        // 🪨 mancınık (sınıfın — kimsenin hanesine yazılmaz): en arkadaki düşmana taş
+        if (at.mancinik && !temiz && st.dusmanlar.length) {
+            const arka = st.dusmanlar.slice().sort((a, b) => b.x - a.x)[0], h = 3 * at.mancinik;
+            arka.can -= h; const o = { tur: 'tas', id: arka.id, hasar: h, oldu: [] }; ayikla(o, null); olaylar.push(o);
+        }
         // dalga sürüyorsa düşmanlar bir adım yaklaşır; kapıya varan kalenin canını alır
         let adim = null, ates = null;
         if (!temiz) {
@@ -370,14 +454,17 @@
                 ej.ofke = sari ? 0 : ej.ofke + 1;
                 if (ej.ofke >= sinir) { ej.ofke = 0; st.can -= 1; ates = { id: ej.id }; }
             }
-            const varan = [];
-            st.dusmanlar.forEach((d) => { d.x = Math.max(KAPI_X, d.x - st.adim * (D[d.tip].ucar ? 1.3 : 1)); if (d.x <= KAPI_X) varan.push(d.id); });
+            const varan = [], hz = hizCarpan(st);
+            // ❄️ buz oku: bu adım ve sonraki adım donar
+            if (ozel === 'buz') st.donma = 2;
+            const donuk = st.donma > 0; if (donuk) st.donma--;
+            if (!donuk) st.dusmanlar.forEach((d) => { d.x = Math.max(KAPI_X, d.x - st.adim * hz * (D[d.tip].ucar ? 1.3 : 1)); if (d.x <= KAPI_X) varan.push(d.id); });
             st.dusmanlar = st.dusmanlar.filter((d) => varan.indexOf(d.id) < 0);
             st.can -= varan.length;
-            adim = { konum: st.dusmanlar.map((d) => ({ id: d.id, x: d.x, y: d.y })), varan: varan, ofke: ej && st.dusmanlar.indexOf(ej) >= 0 ? { id: ej.id, n: ej.ofke, sinir: sinir } : null };
-            // kapıya bir adım kalan var mı (⚔️ tehlike uyarısı)
-            const on = st.dusmanlar.slice().sort((a, b) => a.x - b.x)[0];
-            if (on && on.x - KAPI_X <= st.adim * (D[on.tip].ucar ? 1.3 : 1)) adim.tehlike = on.id;
+            adim = { konum: st.dusmanlar.map((d) => ({ id: d.id, x: d.x, y: d.y })), varan: varan, ofke: ej && st.dusmanlar.indexOf(ej) >= 0 ? { id: ej.id, n: ej.ofke, sinir: sinir } : null, donuk: donuk, buzKalan: st.donma };
+            // kapıya bir adım kalan var mı (⚔️ tehlike uyarısı) — sonraki adım donuksa tehlike yok
+            const on = onDusman();
+            if (on && !st.donma && on.x - KAPI_X <= st.adim * hz * (D[on.tip].ucar ? 1.3 : 1)) adim.tehlike = on.id;
             adim.hasarli = olaylar.some((o) => o.tur === 'ok');
             if (st.can <= 0) {
                 const yd = Math.max(1, st.dalga - (GERI_DALGA[kmod()] || 0));
@@ -395,14 +482,18 @@
             sonra(() => { try { done(); } catch (e) { } if (temiz) temizGoster(temiz); else if (dustu) dustuGoster(dustu); }, (adim ? 700 : 100) + gec);
         };
         if (!hepsi) { bitti(); return; }
+        if (ozel) { SES.boru(); dev(`${OZEL[ozel][0]}<small>${kacis(ilkAd(s.ad))}: ${OZEL[ozel][1]}</small>`, 1700); }
+        const tek = () => { n++; if (n === hepsi) setTimeout(bitti, 350); };
         olaylar.forEach((o, k) => {
             setTimeout(() => {
+                if (o.tur === 'yildirim') { yildirimGoster(o); setTimeout(tek, 700); return; }
+                if (o.tur === 'tas') { tasUcur(o, tek); return; }
                 // hedefin EKRANDAKİ yeri (durum çoktan adım atmış / düşman ölmüş olabilir)
                 const e = $('kale-d' + o.id), m = e ? /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(e.style.transform) : null;
                 const h = hedefNokta({ x: m ? +m[1] : 700, y: m ? +m[2] : 486, tip: (e && e.dataset.tip) || 'goblin' });
                 SES.vin();
                 const tx = o.tur === 'iska' ? h.x - 40 - Math.random() * 60 : h.x, ty = o.tur === 'iska' ? 500 : h.y;
-                okUcur(i, tx, ty, o.ates, () => { okTepki(o, h, tx, ty); n++; if (n === hepsi) setTimeout(bitti, 350); });
+                okUcur(i, tx, ty, o.ates, () => { okTepki(o, h, tx, ty); tek(); });
             }, k * 420);
         });
     }
@@ -420,16 +511,61 @@
         const e = $('kale-d' + o.id); if (e) anim(e.querySelector('.kale-govde'), 'kale-vurul');
         pop((o.kritik ? '💥 ' : '') + '-' + o.hasar, h.x, h.y - 40, o.kritik ? 30 : 24, o.kritik ? '#ffd23f' : '#fff');
         if (o.ates) { pop('🔥 ATEŞLİ OK!', h.x, h.y - 80, 22, '#ff9f43'); if (o.arka) { const a = $('kale-d' + o.arka); if (a) anim(a.querySelector('.kale-govde'), 'kale-vurul'); } }
+        sonucGoster(o);
+    }
+    // can çubukları + düşenler + birlikte anları (ok, yıldırım ve taş için ortak)
+    function sonucGoster(o) {
         (o.durum || []).forEach((d) => { const b = document.querySelector('#kale-d' + d.id + ' .kale-can'); if (b) { const r = Math.max(0, d.can / d.max); b.setAttribute('width', 44 * r); b.setAttribute('fill', r > .5 ? '#7cf29a' : r > .25 ? '#ffd23f' : '#ff6b6b'); } });
         o.oldu.forEach((id) => { const d = $('kale-d' + id); if (!d) return; SES.dus(); d.classList.add('kale-ol'); setTimeout(() => d.remove(), 600); });
-        if (o.ejder) { SES.ejder(); dev('🐲 EJDERHA DÜŞTÜ!', 1800); }
+        if (o.ejder) { SES.ejder(); birlikParlat(o.ejder, 2600); dev(`🐲 EJDERHA DÜŞTÜ!<small>${o.ejder.length > 1 ? o.ejder.length + ' okçu birlikte devirdi: ' : ''}${isimler(o.ejder)}</small>`, 2600); }
+        else if (o.kurtar && !_ekranHud) kurtarGoster(o.kurtar);
         if (!_ekranHud) hudCiz(); else ekranHudGuncelle(o);
+    }
+    // 🛡️ Son anda: kapının dibindeki düşmanı düşüren tek kişi değil — ona vuran herkes
+    function kurtarGoster(k) {
+        SES.boru(); birlikParlat(k.vuran, 2600);
+        const ad = (D[k.tip] || D.goblin).ad, n = k.vuran.length;
+        dev(`🛡️ SON ANDA DURDURDUK!<small>${n > 1 ? `${ad}'i ${n} okçu birlikte vurdu: ` : `${ad} kapıdan döndü: `}${isimler(k.vuran)}</small>`, 2600);
+    }
+    // Birlikte vuranlar parlar, aralarına altın bir bağ çizilir
+    function birlikParlat(anahtarlar, ms) {
+        const idx = (anahtarlar || []).map(sporcuIndex).filter((x) => x >= 0).sort((a, b) => a - b);
+        idx.forEach((x) => { const c = $('kale-c' + x); if (c) { c.classList.add('kale-birlik'); setTimeout(() => c.classList.remove('kale-birlik'), ms); } });
+        const g = $('kale-bag'); if (!g || idx.length < 2) return;
+        const p = idx.map((x) => { const q = cocukXY(x); return `${q.x},${q.y - 22}`; }).join(' ');
+        const e = svgEl('polyline', { points: p, fill: 'none', stroke: '#ffd23f', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: 'kale-bag-cizgi' }, g);
+        setTimeout(() => e.remove(), ms);
+    }
+    // ⚡ Yıldırım: her düşmana gökten şimşek
+    function yildirimGoster(o) {
+        SES.ates(); SES.vur(true);
+        const w = document.getElementById('km-oyun-sahne') || panel(); anim(w, 'kale-flas');
+        const g = $('kale-ucan');
+        o.ids.forEach((id) => {
+            const e = $('kale-d' + id), m = e && /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(e.style.transform); if (!m || !g) return;
+            const x = +m[1], y = +m[2] - 40;
+            const s = svgEl('path', { d: `M${x + 20} -20 L${x - 6} ${y * .45} L${x + 12} ${y * .5} L${x - 4} ${y}`, fill: 'none', stroke: '#fff7b0', 'stroke-width': 6, 'stroke-linejoin': 'round', class: 'kale-simsek' }, g);
+            setTimeout(() => s.remove(), 600);
+            anim(e.querySelector('.kale-govde'), 'kale-vurul'); pop('⚡-10', x, y - 30, 24, '#fff7b0');
+        });
+        sonucGoster(o);
+    }
+    // 🪨 Mancınık taşı: surdan en arkadaki düşmana
+    function tasUcur(o, cb) {
+        const e = $('kale-d' + o.id), m = e && /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(e.style.transform), g = $('kale-ucan');
+        const bitir = () => { SES.vur(false); if (e) anim(e.querySelector('.kale-govde'), 'kale-vurul'); if (m) pop('🪨 -' + o.hasar, +m[1], +m[2] - 70, 22, '#e6e0d0'); sonucGoster(o); cb(); };
+        if (!m || !g || !g.animate) { bitir(); return; }
+        const x = +m[1], y = +m[2] - 30, t = svgEl('circle', { r: 9, fill: '#8a8f9c', stroke: '#4a4f5c', 'stroke-width': 2 }, g);
+        const an = t.animate([{ transform: 'translate(281px,380px)' }, { transform: `translate(${(281 + x) / 2}px,${Math.min(380, y) - 180}px)` }, { transform: `translate(${x}px,${y}px)` }], { duration: 700, easing: 'ease-in-out' });
+        an.onfinish = () => { t.remove(); bitir(); };
     }
     function ekranHudGuncelle(o) {
         const bar = $('kale-bar-ic'); if (bar && !(o.durum || []).length) { bar.style.width = '100%'; $('kale-bar-yazi').textContent = 'Dalga temiz!'; }
     }
     function adimGoster(a, dustu) {
-        SES.adim();
+        const dg = $('kale-dusmanlar'); if (dg) dg.classList.toggle('kale-donuk', a.buzKalan > 0);
+        if (a.donuk) { SES.tink(); pop('❄️ Donup kaldılar!', 640, 380, 26, '#bfe9ff'); }
+        else SES.adim();
         a.konum.forEach((d) => { const e = $('kale-d' + d.id); if (e) e.style.transform = `translate(${d.x}px,${d.y}px)`; });
         a.varan.forEach((id) => { const e = $('kale-d' + id); if (!e) return; e.style.transform = `translate(${KAPI_X}px,${e.style.transform.match(/,\s*([-\d.]+)px/)[1]}px)`; setTimeout(() => { e.classList.add('kale-ol'); setTimeout(() => e.remove(), 600); }, 650); });
         if (a.varan.length) {
@@ -499,12 +635,54 @@
         dev(`DALGA ${h.dalga} TEMİZ! 🎉`, 2200);
         const b = $('kale-bayrak'); if (b) anim(b, 'kale-bayrak-sevin');
         document.querySelectorAll('#kale-cocuklar .kale-ci').forEach((e, k) => { e.style.animationDelay = (k % 6) * .07 + 's'; e.classList.add('kale-zipla'); });
+        // v342: son düşüren değil — o dalgada vuran herkes birlikte (kullanıcı: "aslında toplu yapıyorlar")
         sonra(() => {
-            const ce = $('kale-c' + h.i); if (ce) { ce.classList.add('kale-kahraman'); const g = ce.querySelector('g'); if (g) g.insertAdjacentHTML('beforeend', '<text y="-50" text-anchor="middle" font-size="22">👑</text>'); }
-            const bul = (k) => liste().find((s) => s.g + '|' + s.ad === k), enCok = h.enCok ? bul(h.enCok) : null, st = durum();
-            dev(`🏅 Son düşmanı düşüren: ${kacis(ilkAd(h.ad))}!<small>${enCok ? '🏹 Bugün en çok düşüren: ' + kacis(ilkAd(enCok.ad)) + ' · ' : ''}Sıradaki: Dalga ${st.dalga}${dalgaTipleri(st.dalga).indexOf('ejderha') >= 0 ? ' — 🐲 EJDERHA geliyor!' : ''}</small>`, 3600);
+            const st = durum(), n = h.okcular.length; birlikParlat(h.okcular, 4000);
+            dev(`🤝 HEP BİRLİKTE BAŞARDINIZ!<small>${n > 1 ? n + ' okçu birlikte savundu: ' : ''}${isimler(h.okcular, 14)}<br>💰 +${h.altin} altın — 🔨 Atölye'de kaleyi güçlendirin · Sıradaki: Dalga ${st.dalga}${dalgaTipleri(st.dalga).indexOf('ejderha') >= 0 ? ' — 🐲 EJDERHA geliyor!' : ''}</small>`, 3800);
         }, 2500);
-        sonra(() => { _toren = false; _ekranHud = null; kaleSahneKur(); SES.boru(); const g = $('kale-dusmanlar'); if (g) anim(g, 'kale-geliyor'); sonra(tanit, 1200); }, 6600);
+        sonra(() => { _toren = false; _ekranHud = null; kaleSahneKur(); SES.boru(); const g = $('kale-dusmanlar'); if (g) anim(g, 'kale-geliyor'); sonra(tanit, 1200); if (durum().altin > 0) sonra(atolyeAc, 400); }, 6600);
+    }
+    /* ---------------- 🔨 KALE ATÖLYESİ ---------------- */
+    function atolyeAc() {
+        const a = $('kale-atolye'); if (!a) return;
+        const st = durum(), altin = st.altin || 0, at = st.atolye || {};
+        a.innerHTML = `<div class="kale-at-bas"><b>🔨 Kale Atölyesi</b><span class="kale-at-altin">💰 ${altin} altın</span><button class="kale-at-x" data-at="x" title="Kapat">✕</button></div>
+          <div class="kale-at-not">${altin ? 'Sınıfça seçin — hepimizin kalesi! (her biri 1 altın)' : 'Altın yok — dalga temizleyin, altın kazanın (🐲 ejderha dalgası 2 altın).'}</div>
+          <div class="kale-at-liste">${ATOLYE.map((x) => {
+            const sv = at[x.id] || 0, dolu = x.id === 'sur' ? st.can >= kalpSayisi() + 1 : sv >= ATOLYE_UST, kapali = dolu || altin < 1;
+            const etiket = x.id === 'sur' ? (dolu ? 'kale tam güçte' : x.acik()) : (dolu ? 'en üst seviye' : x.acik(sv + 1));
+            return `<button class="kale-at-btn" data-at="${x.id}"${kapali ? ' disabled' : ''}><span class="kale-at-ikon">${x.ikon}</span><span><b>${x.ad}${x.id !== 'sur' ? ` <i>${'●'.repeat(sv)}${'○'.repeat(ATOLYE_UST - sv)}</i>` : ''}</b><small>${etiket}</small></span></button>`;
+          }).join('')}</div>`;
+        a.onclick = (e) => { const b = e.target.closest('[data-at]'); if (!b || b.disabled) return; if (b.dataset.at === 'x') atolyeKapat(); else atolyeAl(b.dataset.at); };
+        a.classList.add('goster');
+    }
+    function atolyeKapat() { const a = $('kale-atolye'); if (a) a.classList.remove('goster'); }
+    function atolyeAl(id) {
+        const st = durum(), x = ATOLYE.find((y) => y.id === id); if (!x || (st.altin || 0) < 1) return;
+        st.atolye = st.atolye || {};
+        if (id === 'sur') { if (st.can >= kalpSayisi() + 1) return; st.can++; }
+        else { if ((st.atolye[id] || 0) >= ATOLYE_UST) return; st.atolye[id] = (st.atolye[id] || 0) + 1; }
+        st.altin--; kaydet(); SES.fanfar();
+        if (!_toren) kaleSahneKur(); else hudCiz();
+        pop(`${x.ikon} ${x.ad}${id !== 'sur' ? ' ' + st.atolye[id] + '. seviye' : ''}!`, 330, 300, 30, '#ffd23f');
+        atolyeAc(); if (!st.altin) sonra(atolyeKapat, 1400);
+    }
+    /* ---------------- 📜 KALE DEFTERİ — günün ortak özeti ---------------- */
+    function defter() {
+        const st = durum(), okcular = liste().map((x) => x.g + '|' + x.ad).filter((k) => st.katki[k] > 0);
+        const hasar = Object.keys(st.katki || {}).reduce((a, k) => a + st.katki[k], 0), oz = st.ozel || {};
+        const satir = [`🏰 ${st.temizlenen || 0} dalga temizlendi`, `👹 ${st.dusen || 0} düşman düştü`, st.ejderha ? `🐲 ${st.ejderha} ejderha` : '', st.kurtarma ? `🛡️ ${st.kurtarma} kez son anda` : '', `⚔️ ${hasar} ortak hasar`,
+            oz.yildirim ? `⚡ ${oz.yildirim} yıldırım` : '', oz.buz ? `❄️ ${oz.buz} buz oku` : '', oz.delici ? `🎯 ${oz.delici} delici ok` : ''].filter(Boolean);
+        dev(`📜 Bugünün Kale Defteri<small>${satir.join(' · ')}<br>🤝 ${okcular.length} okçu hep birlikte: ${isimler(okcular, 30) || '—'}<br>
+          <button class="kale-wa" id="kale-wa">💬 WhatsApp'ta paylaş</button><br><i>(kapatmak için dokun)</i></small>`);
+        const d = $('kale-dev'); if (!d) return;
+        d.style.pointerEvents = 'auto'; d.onclick = () => { d.classList.remove('goster'); d.style.pointerEvents = ''; d.onclick = null; };
+        const w = $('kale-wa'); if (w) w.onclick = (e) => {
+            e.stopPropagation();
+            const adlar = okcular.map((k) => { const s = liste()[sporcuIndex(k)]; return s ? ilkAd(s.ad) : ''; }).filter(Boolean).join(', ');
+            const metin = `🏰 *Kale Savunması — bugün hep birlikte!*\n${satir.join('\n')}\n\n🤝 ${okcular.length} okçu birlikte savundu: ${adlar}\n\n🏹 DAĞ Spor Kulübü`;
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(metin), '_blank');
+        };
     }
     function dustuGoster(h) {
         _toren = true; SES.kapi();
@@ -520,6 +698,8 @@
           🟡 9-10 kritik ×1,5 💥 · X ateşli ok 🔥 (arkadakine de vurur) · Iska → ok yere saplanır<br>
           Her seriden sonra düşmanlar bir adım yaklaşır. Kapıya varan kalenin bir canını alır ❤️❤️❤️<br>
           Dalga temizlenince daha güçlüsü gelir — her 3. dalgada 🐲 ejderha!<br>
+          ⚡ 10-10-10 yıldırım (bütün düşmanlara) · ❄️ üçü de sarı: düşmanlar 2 adım donar · 🎯 üçü aynı 7 ya da 8: zırh/kalkan işlemez<br>
+          🤝 Kaleyi hep birlikte koruyoruz: her dalga 💰 altın → 🔨 Atölye'de mancınık, hendek, okçu kulesi, sur onarımı<br>
           ${kmod() >= 2 ? `<b>${kmod() === 3 ? '😈 Korkutucu' : '⚔️ Heyecanlı'}:</b> 🛡️ Zırhlı Goblin'e yalnız sarı, Kalkanlı Trol'e 7 ve üstü işler ·
           ejderha sarısız ${OFKE_SINIR[kmod()]} seride ateş püskürtür · kale düşerse ${GERI_DALGA[kmod()]} dalga geri${kmod() === 3 ? ' · kalenin 2 canı var' : ''}<br>` : ''}<i>(kapatmak için dokun)</i></small>`);
         const d = $('kale-dev'); if (d) { d.style.pointerEvents = 'auto'; d.onclick = () => { d.classList.remove('goster'); d.style.pointerEvents = ''; d.onclick = null; }; }
@@ -554,7 +734,6 @@
 .kale-sira-geldi{animation:kaleSiraGeldi .7s cubic-bezier(.3,1.6,.5,1)}
 @keyframes kaleSiraGeldi{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-16px) scale(1.18)}100%{transform:translateY(0) scale(1)}}
 .kale-zipla{animation:kaleZipla .45s ease-in-out 6}@keyframes kaleZipla{50%{transform:translateY(-14px)}}
-.kale-kahraman .kale-ci{filter:drop-shadow(0 0 10px #ffd860)}
 /* düşman konumu dış g'nin CSS transform'unda (adım geçişi), iç .kale-govde yürür/sallanır — CSS transform özniteliği ezerdi */
 .kale-dusman{transition:transform .6s ease-in-out}
 .kale-govde{transform-box:fill-box;transform-origin:50% 100%}
@@ -583,7 +762,30 @@
 .kale-dev{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) scale(.4);opacity:0;font-weight:900;font-size:clamp(28px,6vw,80px);color:#fff;text-shadow:0 6px 0 rgba(0,0,0,.35);text-align:center;pointer-events:none;transition:.35s cubic-bezier(.3,1.6,.5,1);z-index:3;line-height:1.05;width:92%}
 .kale-dev small{display:block;font-size:.3em;font-weight:800;margin-top:8px;color:#ffe9b8;line-height:1.35}
 .kale-dev.goster{opacity:1;transform:translate(-50%,-50%) scale(1)}
-@media (max-width:700px){.kale-hud{width:62%}.kale-ad,.kale-cip{font-size:12px;padding:4px 9px}}
+/* v342 hep birlikte · özel oklar · atölye */
+.kale-btn-genis{width:auto;min-width:34px;padding:0 10px;font-size:14px;font-weight:900;white-space:nowrap}
+.kale-btn-parla{box-shadow:0 0 0 2px #ffd23f;animation:kaleParla 1.4s ease-in-out infinite}@keyframes kaleParla{50%{box-shadow:0 0 0 2px #ffd23f,0 0 16px #ffd23f}}
+.kale-guc{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}.kale-guc:empty{display:none}
+.kale-guc span{background:rgba(20,14,36,.74);color:#ffe9b8;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:900}
+.kale-birlik .kale-ci{filter:drop-shadow(0 0 10px #ffd860) drop-shadow(0 0 4px #fff)}.kale-birlik .kale-ad-yazi{fill:#ffd23f}
+.kale-bag-cizgi{stroke-dasharray:14 10;animation:kaleBag .8s linear infinite;filter:drop-shadow(0 0 6px #ffd23f);opacity:.9}@keyframes kaleBag{to{stroke-dashoffset:-24}}
+.kale-donuk .kale-govde{filter:saturate(.3) brightness(1.15) drop-shadow(0 0 6px #9fe0ff);animation-play-state:paused}
+.kale-simsek{filter:drop-shadow(0 0 10px #fff7b0)}
+.kale-flas{animation:kaleFlas .45s ease-out}@keyframes kaleFlas{0%{filter:brightness(2.4)}100%{filter:none}}
+.kale-wa{pointer-events:auto;margin:10px 0 4px;border:0;border-radius:999px;background:#25d366;color:#08311a;font-weight:900;font-size:16px;padding:9px 18px;cursor:pointer}
+.kale-atolye{position:absolute;right:12px;top:84px;z-index:4;width:min(400px,calc(100% - 24px));background:rgba(20,14,36,.93);color:#f6efff;border-radius:18px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 2px #ffd23f55;transform:translateY(-14px);opacity:0;pointer-events:none;transition:.3s cubic-bezier(.3,1.4,.5,1)}
+.kale-atolye.goster{transform:none;opacity:1;pointer-events:auto}
+.kale-at-bas{display:flex;align-items:center;gap:8px}.kale-at-bas b{font-size:17px;flex:1}
+.kale-at-altin{background:#ffd23f;color:#3a2600;border-radius:999px;padding:3px 10px;font-weight:900;font-size:13px}
+.kale-at-x{border:0;background:transparent;color:#c9bde3;font-size:18px;cursor:pointer;width:32px;height:32px}
+.kale-at-not{font-size:12px;color:#c9bde3;margin:4px 0 8px}
+.kale-at-liste{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.kale-at-btn{display:flex;gap:8px;align-items:center;text-align:left;border:0;border-radius:12px;background:#2e2452;color:#f6efff;padding:8px;cursor:pointer;font:inherit;min-height:56px}
+.kale-at-btn:not(:disabled):hover{background:#3d3070;box-shadow:0 0 0 2px #ffd23f}
+.kale-at-btn:disabled{opacity:.45;cursor:default}
+.kale-at-ikon{font-size:24px}.kale-at-btn b{display:block;font-size:13px}.kale-at-btn b i{font-style:normal;color:#ffd23f;font-size:10px;letter-spacing:1px}
+.kale-at-btn small{display:block;font-size:11px;color:#c9bde3;line-height:1.25}
+@media (max-width:700px){.kale-hud{width:62%}.kale-ad,.kale-cip{font-size:12px;padding:4px 9px}.kale-atolye{top:auto;bottom:12px;right:12px}.kale-at-liste{grid-template-columns:1fr}.kale-at-btn{min-height:44px}}
 @media (prefers-reduced-motion:reduce){.km-oyun-panel-kale *{animation-duration:.01ms!important;animation-iteration-count:1!important}}`;
         document.head.appendChild(st);
     }
