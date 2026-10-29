@@ -311,9 +311,9 @@ function ozdDinSurukle(e) {
     });
     const bit = () => { if (!bas) return; bas = null; e.classList.remove('surukle'); ozdDinAyarYaz({ x: parseFloat(e.style.left) || 0, y: parseFloat(e.style.top) || 0 }); };
     e.addEventListener('pointerup', bit); e.addEventListener('pointercancel', bit);
-    // kullanıcı: "bittiğinde illa ✕ değil, boşa tıkladığımda da küçülsün" — tam ekranda düğme dışı her dokunuş küçültür
-    // (sayaç sürerken rakama dokunmak yine durdur/devam)
-    e.addEventListener('click', (ev) => { if (!_ozdDin.buyuk || ev.target.closest('button') || (_ozdDin.t && ev.target.closest('.ozd-din-say'))) return; ev.stopPropagation(); ozdDinBuyut(); }, true);
+    // kullanıcı: "bittiğinde illa ✕ değil, boşa tıkladığımda da küçülsün" — tam ekranda düğme dışı her dokunuş küçültür.
+    // v352 (kullanıcı: "ekstra büyüt yazmasın, sayaca tıkladığımda açılsın kapansın"): rakam = tam ekran aç/kapat, durdurma ⏸ düğmesinde.
+    e.addEventListener('click', (ev) => { if (!_ozdDin.buyuk || ev.target.closest('button')) return; ev.stopPropagation(); ozdDinBuyut(); }, true);
 }
 function ozdDinCiz() {
     try { ozdCss(); } catch (e) { }
@@ -329,8 +329,8 @@ function ozdDinCiz() {
     const k = _ozdDin.kalan, bitti = !_ozdDin.t && k <= 0 && _ozdDin.toplam > 0, oran = _ozdDin.toplam ? Math.max(0, k) / _ozdDin.toplam : 0;
     const say = k > 0 ? (k >= 60 ? Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0') : String(k)) : (bitti ? 'HAZIR! 💪' : '—');
     e.className = 'ozd-dinlen' + (_ozdDin.buyuk ? ' buyuk' : '') + (k > 0 && k <= 3 ? ' son' : '') + (bitti ? ' bitti' : '');
-    e.innerHTML = `<div class="ozd-din-ust" title="Sürükleyip taşı"><b><span class="ozd-din-tut">⋮⋮</span>⏱️ Dinlenme</b>${_ozdDin.buyuk ? '' : `<button onclick="ozdDinBoy(-1)" title="Küçült">➖</button><button onclick="ozdDinBoy(1)" title="Büyüt">➕</button>`}<button onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Tam ekran (TV)'}">${_ozdDin.buyuk ? '✕' : '⤢'}</button></div>
-      <div class="ozd-din-say" onclick="ozdDinDur()" title="Durdur / devam">${say}</div><div class="ozd-din-bar"><i style="width:${oran * 100}%"></i></div>
+    e.innerHTML = `<div class="ozd-din-ust" title="Sürükleyip taşı"><b><span class="ozd-din-tut">⋮⋮</span>⏱️ Dinlenme</b>${_ozdDin.buyuk ? '' : `<button onclick="ozdDinBoy(-1)" title="Küçült">➖</button><button onclick="ozdDinBoy(1)" title="Büyüt">➕</button>`}${k > 0 ? `<button onclick="ozdDinDur()" title="${_ozdDin.t ? 'Durdur' : 'Devam'}">${_ozdDin.t ? '⏸' : '▶'}</button>` : ''}</div>
+      <div class="ozd-din-say" onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Tam ekran (TV)'}">${say}</div><div class="ozd-din-bar"><i style="width:${oran * 100}%"></i></div>
       ${k > 0 ? `<div class="ozd-din-soz">${ozdEsc(ozdDinSoz())}</div>` : ''}
       <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button class="${[15, 20, 30, 45, 60, 90].indexOf(ozdDinSure()) < 0 ? 'aktif' : ''}" onclick="ozdDinElle()" title="Süreyi elle yaz: 45 · 1:30 · 2 dk">✏️ ${[15, 20, 30, 45, 60, 90].indexOf(ozdDinSure()) < 0 ? ozdDinYazi(ozdDinSure()) : ''}</button><button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
     ozdDinYerUygula(e);

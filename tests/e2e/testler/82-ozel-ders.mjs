@@ -74,6 +74,13 @@ export default async function ({ log }) {
     // v351: elle süre (1:15 → 75 sn) + dinlenirken cümle
     const elle = await p.evaluate(() => { const sn = ozdDinCoz('1:15'); ozdDinSec(sn); const e = document.getElementById('ozd-dinlen'); return { sn, kalan: _ozdDin.kalan, soz: (e.querySelector('.ozd-din-soz') || {}).textContent || '', cip: [...e.querySelectorAll('.ozd-din-cip button')].some((b) => /1:15/.test(b.textContent) && b.classList.contains('aktif')) }; });
     dogrula(elle.sn === 75 && elle.kalan === 75 && elle.soz.length > 5 && elle.cip, 'elle süre / dinlenme cümlesi yok: ' + JSON.stringify(elle));
+    // v352: rakama dokun = tam ekran aç/kapat, ⏸ durdurur, ayrı ⤢ yok
+    await p.click('#ozd-dinlen .ozd-din-say'); await p.waitForTimeout(150); const ac = await p.evaluate(() => _ozdDin.buyuk);
+    await p.click('#ozd-dinlen .ozd-din-say'); await p.waitForTimeout(150); const kapa = await p.evaluate(() => _ozdDin.buyuk);
+    await p.click('#ozd-dinlen button[title="Durdur"]'); await p.waitForTimeout(100);
+    const dur = await p.evaluate(() => ({ t: !!_ozdDin.t, tam: [...document.querySelectorAll('#ozd-dinlen button')].some((b) => b.textContent.trim() === '⤢') }));
+    dogrula(ac && !kapa && !dur.t && !dur.tam, 'rakama dokunma / durdur düğmesi yanlış: ' + JSON.stringify({ ac, kapa, dur }));
+    await p.evaluate(() => ozdDinDur());
     // v347: ➕ büyür, başlıktan sürüklenir; yer ve boy saklanır
     const w0 = await p.evaluate(() => { localStorage.removeItem('dag_ozd_dinlenme_yer'); ozdDinCiz(); return document.getElementById('ozd-dinlen').offsetWidth; });
     await p.locator('#ozd-dinlen button[title="Büyüt"]').click(); await p.waitForTimeout(100);
