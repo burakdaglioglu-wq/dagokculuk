@@ -71,6 +71,9 @@ export default async function ({ log }) {
     // ⏱️ dinlenme: seri girilince kendiliğinden başlar, büyütülür
     const din = await p.evaluate(() => { const e = document.getElementById('ozd-dinlen'); const a = { var: !!e, kalan: _ozdDin.kalan }; ozdDinBuyut(); a.buyuk = document.getElementById('ozd-dinlen').classList.contains('buyuk'); ozdDinBuyut(); return a; });
     dogrula(din.var && din.kalan > 0 && din.buyuk, 'dinlenme sayacı başlamadı / büyümedi: ' + JSON.stringify(din));
+    // v351: elle süre (1:15 → 75 sn) + dinlenirken cümle
+    const elle = await p.evaluate(() => { const sn = ozdDinCoz('1:15'); ozdDinSec(sn); const e = document.getElementById('ozd-dinlen'); return { sn, kalan: _ozdDin.kalan, soz: (e.querySelector('.ozd-din-soz') || {}).textContent || '', cip: [...e.querySelectorAll('.ozd-din-cip button')].some((b) => /1:15/.test(b.textContent) && b.classList.contains('aktif')) }; });
+    dogrula(elle.sn === 75 && elle.kalan === 75 && elle.soz.length > 5 && elle.cip, 'elle süre / dinlenme cümlesi yok: ' + JSON.stringify(elle));
     // v347: ➕ büyür, başlıktan sürüklenir; yer ve boy saklanır
     const w0 = await p.evaluate(() => { localStorage.removeItem('dag_ozd_dinlenme_yer'); ozdDinCiz(); return document.getElementById('ozd-dinlen').offsetWidth; });
     await p.locator('#ozd-dinlen button[title="Büyüt"]').click(); await p.waitForTimeout(100);
@@ -85,7 +88,7 @@ export default async function ({ log }) {
     const tam = await p.evaluate(() => { const fe = document.fullscreenElement, e = document.getElementById('ozd-dinlen'); if (!fe) return { fe: false }; const r = e.getBoundingClientRect(), u = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { fe: true, icinde: fe.contains(e), gorunur: !!(u && e.contains(u)) }; });
     if (tam.fe) dogrula(tam.icinde && tam.gorunur, 'tam ekranda dinlenme sayacı görünmüyor: ' + JSON.stringify(tam)); else log('(bu tarayıcıda tam ekran açılmadı — tam ekran kontrolü atlandı)');
     await p.evaluate(() => { if (document.fullscreenElement) return document.exitFullscreen(); }); await p.waitForTimeout(400);
-    dogrula(await p.evaluate(() => document.getElementById('ozd-dinlen').parentNode.id === 'karisik-platform'), 'tam ekrandan çıkınca sayaç geri dönmedi');
+    dogrula(await p.evaluate(() => document.getElementById('ozd-dinlen').parentNode === document.body), 'tam ekrandan çıkınca sayaç geri dönmedi');
     // tam ekranda boş yere dokununca küçülür
     await p.evaluate(() => { if (!_ozdDin.buyuk) ozdDinBuyut(); }); await p.mouse.click(40, 860); await p.waitForTimeout(150);
     dogrula(await p.evaluate(() => !_ozdDin.buyuk && !document.getElementById('ozd-dinlen').classList.contains('buyuk')), 'tam ekran sayaç boş yere dokununca küçülmedi'); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');

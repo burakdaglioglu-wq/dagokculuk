@@ -241,7 +241,7 @@ function ozdDinOto() { try { const v = localStorage.getItem(ozdDinOn() + '_oto')
 function ozdDinSeriSonu() { if (!ozdHareketModu() && ozdDinGoster() && ozdDinOto()) ozdDinBaslat(); }
 function ozdDinBip(f, s, gec) { try { const A = ozdDinBip.a || (ozdDinBip.a = new (window.AudioContext || window.webkitAudioContext)()); if (A.state === 'suspended') A.resume(); const t = A.currentTime + (gec || 0), o = A.createOscillator(), g = A.createGain(); o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + s); o.connect(g).connect(A.destination); o.start(t); o.stop(t + s + .05); } catch (e) { } }
 function ozdDinBaslat(sn) {
-    clearInterval(_ozdDin.t); _ozdDin.toplam = _ozdDin.kalan = sn || ozdDinSure();
+    clearInterval(_ozdDin.t); _ozdDin.toplam = _ozdDin.kalan = sn || ozdDinSure(); _ozdDin.sozBas = Math.floor(Math.random() * 8);
     _ozdDin.t = setInterval(() => {
         _ozdDin.kalan--;
         if (_ozdDin.kalan > 0 && _ozdDin.kalan <= 3) ozdDinBip(660, .15);
@@ -251,6 +251,36 @@ function ozdDinBaslat(sn) {
     ozdDinCiz();
 }
 function ozdDinDur() { if (_ozdDin.t) { clearInterval(_ozdDin.t); _ozdDin.t = null; } else if (_ozdDin.kalan > 0) ozdDinBaslat(_ozdDin.kalan); ozdDinCiz(); }
+// v351 (kullanıcı: "dinlenme saniyesini elle saniye/dakika girebileyim; o arada sporculara dinlenmeleri gerektiği gibi cümleler ekranda yazsın")
+function ozdDinYazi(sn) { return sn >= 60 ? Math.floor(sn / 60) + ':' + String(sn % 60).padStart(2, '0') : sn + ' sn'; }
+// "45" · "1:30" · "2 dk" · "2,5 dk" · "90 sn" → saniye (5–1800)
+function ozdDinCoz(t) {
+    t = String(t || '').trim().toLocaleLowerCase('tr-TR').replace(',', '.');
+    let m = /^(\d+):(\d{1,2})$/.exec(t); if (m) return +m[1] * 60 + +m[2];
+    m = /^(\d+(?:\.\d+)?)\s*(dk|dakika|d|m)$/.exec(t); if (m) return Math.round(+m[1] * 60);
+    m = /^(\d+)\s*(sn|saniye|s)?$/.exec(t); if (m) return +m[1];
+    return NaN;
+}
+function ozdDinElle() {
+    const g = prompt('Dinlenme süresi — saniye (45), dakika:saniye (1:30) ya da dakika (2 dk):', ozdDinYazi(ozdDinSure()).replace(' sn', ''));
+    if (g === null) return;
+    const sn = ozdDinCoz(g);
+    if (!(sn >= 5 && sn <= 1800)) { if (typeof showToast === 'function') showToast('Süre 5 saniye ile 30 dakika arası olmalı (ör. 45 · 1:30 · 2 dk)', 'error'); return; }
+    ozdDinSec(sn);
+}
+// Dinlenirken ekranda dönen cümleler — özel derste kondisyon, okçulukta atış
+const OZD_DIN_SOZ = {
+    dag_ozd_dinlenme: ['🌬️ Burnundan derin nefes al, ağzından yavaşça ver', '💧 Bir yudum su iç', '🙌 Kollarını ve bacaklarını hafifçe silkele', '🫁 Nefesin sakinleşsin — 4 say al, 4 say ver',
+        '🧘 Omuzlarını gevşet, boynunu yavaşça çevir', '🚶 Olduğun yerde yavaş yürü, kalbin dinlensin', '💪 Az önceki hareketi düşün: neyi daha iyi yapabilirsin?', '😊 Harika gidiyorsun, gurur duy!'],
+    dag_km_dinlenme: ['🌬️ Derin nefes al, omuzlarını indir', '💧 Bir yudum su iç', '🏹 Yayını indir, kolunu dinlendir', '🙌 Çekiş kolunu ve parmaklarını gevşet',
+        '🎯 Son seriyi düşün: duruşun, çekişin, bırakışın nasıldı?', '🧠 Bir sonraki ok için tek bir şeye odaklan', '🧘 Ayaklarını yere bas, dik dur, sakin ol', '😊 Her ok bir ders — devam!']
+};
+function ozdDinSoz() {
+    const k = _ozdDin.kalan;
+    if (k <= 5) return '⏳ Hazırlan, birazdan başlıyoruz! 💪';
+    const l = OZD_DIN_SOZ[ozdDinOn()] || OZD_DIN_SOZ.dag_ozd_dinlenme;
+    return l[((_ozdDin.sozBas || 0) + Math.floor((_ozdDin.toplam - k) / 6)) % l.length]; // her 6 sn'de bir sonraki cümle
+}
 function ozdDinSec(sn) { try { localStorage.setItem(ozdDinOn(), sn); } catch (e) { } ozdDinBaslat(sn); }
 function ozdDinOtoDegis() { try { localStorage.setItem(ozdDinOn() + '_oto', ozdDinOto() ? '0' : '1'); } catch (e) { } ozdDinCiz(); }
 function ozdDinBuyut() { _ozdDin.buyuk = !_ozdDin.buyuk; ozdDinCiz(); }
@@ -294,14 +324,15 @@ function ozdDinCiz() {
     if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; ozdDinSurukle(e); }
     // v348 (kullanıcı: "tam ekranda dinlenme saniyesi açılmıyor"): oyun tam ekrandayken (#km-oyun-wrap) yalnız o öğe görünür —
     // sayaç tam ekran öğesinin içine taşınır, çıkınca Karışık Sınıf ekranına geri döner
-    const fs_ = document.fullscreenElement || document.webkitFullscreenElement, kap = fs_ && p.contains(fs_) ? fs_ : p;
+    const fs_ = document.fullscreenElement || document.webkitFullscreenElement, kap = fs_ && p.contains(fs_) ? fs_ : document.body; // body: Karışık Sınıf katmanının (z 20000) üstüne, tam ekranda yarışma sayacının da üstüne çıkabilsin
     if (e.parentNode !== kap) kap.appendChild(e);
     const k = _ozdDin.kalan, bitti = !_ozdDin.t && k <= 0 && _ozdDin.toplam > 0, oran = _ozdDin.toplam ? Math.max(0, k) / _ozdDin.toplam : 0;
     const say = k > 0 ? (k >= 60 ? Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0') : String(k)) : (bitti ? 'HAZIR! 💪' : '—');
     e.className = 'ozd-dinlen' + (_ozdDin.buyuk ? ' buyuk' : '') + (k > 0 && k <= 3 ? ' son' : '') + (bitti ? ' bitti' : '');
     e.innerHTML = `<div class="ozd-din-ust" title="Sürükleyip taşı"><b><span class="ozd-din-tut">⋮⋮</span>⏱️ Dinlenme</b>${_ozdDin.buyuk ? '' : `<button onclick="ozdDinBoy(-1)" title="Küçült">➖</button><button onclick="ozdDinBoy(1)" title="Büyüt">➕</button>`}<button onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Tam ekran (TV)'}">${_ozdDin.buyuk ? '✕' : '⤢'}</button></div>
       <div class="ozd-din-say" onclick="ozdDinDur()" title="Durdur / devam">${say}</div><div class="ozd-din-bar"><i style="width:${oran * 100}%"></i></div>
-      <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
+      ${k > 0 ? `<div class="ozd-din-soz">${ozdEsc(ozdDinSoz())}</div>` : ''}
+      <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button class="${[15, 20, 30, 45, 60, 90].indexOf(ozdDinSure()) < 0 ? 'aktif' : ''}" onclick="ozdDinElle()" title="Süreyi elle yaz: 45 · 1:30 · 2 dk">✏️ ${[15, 20, 30, 45, 60, 90].indexOf(ozdDinSure()) < 0 ? ozdDinYazi(ozdDinSure()) : ''}</button><button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
     ozdDinYerUygula(e);
 }
 
@@ -574,8 +605,10 @@ function ozdCss() {
 .ozd-din-cip{display:flex;flex-wrap:wrap;gap:.3em;margin-top:.6em}.ozd-din-cip button{flex:1;min-width:2.4em;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:.6em;padding:.4em .1em;font-weight:800;font-size:.92em;cursor:pointer}.ozd-din-cip button.aktif{background:#7c5cff;border-color:#7c5cff}
 .ozd-dinlen.son{background:rgba(160,40,20,.95)}.ozd-dinlen.son .ozd-din-say{animation:ozdNabiz .5s ease-in-out infinite alternate}@keyframes ozdNabiz{to{transform:scale(1.12)}}
 .ozd-dinlen.bitti{background:rgba(20,120,60,.95)}.ozd-dinlen.bitti .ozd-din-say{font-size:2.6em}
-.ozd-dinlen.buyuk{inset:0!important;width:auto;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:4vh 6vw;z-index:20100;font-size:clamp(18px,2.6vw,34px)}
-.ozd-dinlen.buyuk .ozd-din-ust{cursor:default}.ozd-dinlen.buyuk .ozd-din-say{font-size:min(38vw,60vh)}.ozd-dinlen.buyuk.bitti .ozd-din-say{font-size:min(16vw,30vh)}.ozd-dinlen.buyuk .ozd-din-bar{height:1em}
+.ozd-dinlen.buyuk{inset:0!important;width:auto;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:4vh 6vw;z-index:100000;background:#120c22;font-size:clamp(18px,2.6vw,34px)}
+.ozd-dinlen.buyuk .ozd-din-ust{cursor:default}.ozd-dinlen.buyuk .ozd-din-say{font-size:min(30vw,52vh)}.ozd-dinlen.buyuk.bitti .ozd-din-say{font-size:min(16vw,30vh)}.ozd-dinlen.buyuk .ozd-din-bar{height:1em}
+.ozd-din-soz{font-weight:800;font-size:.95em;text-align:center;line-height:1.3;margin-top:.55em;min-height:2.6em;display:flex;align-items:center;justify-content:center;color:#ffe9b8}
+.ozd-dinlen.buyuk .ozd-din-soz{font-size:clamp(22px,3.4vw,48px);min-height:0;margin-top:3vh;color:#fff}
 .ozd-dinlen.buyuk .ozd-din-cip{max-width:760px;margin:1em auto 0;width:100%}
 .ozd-km-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:linear-gradient(90deg,#7c5cff,#ff6a1a);color:#fff;font-size:13px;flex-shrink:0}
 .ozd-km-banner span{opacity:.9;font-size:12px;flex:1;min-width:160px}.ozd-km-banner button{border:0;border-radius:999px;background:rgba(0,0,0,.28);color:#fff;font-weight:800;padding:6px 12px;cursor:pointer}
