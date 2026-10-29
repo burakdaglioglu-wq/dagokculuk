@@ -15384,6 +15384,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-sayac-buyuk.tam.km-oyun-sayac-duraklatildi{ opacity:1; filter:saturate(.45); }
 .km-oyun-sayac-buyut-btn{ font-family:var(--font-display, inherit); font-weight:700; font-size:11px; padding:4px 9px; border-radius:8px; border:1px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; }
 .km-oyun-sayac-buyut-btn.aktif{ border-color:var(--gold); color:var(--gold); }
+.km-oyun-sayac.km-oyun-sayac-ust[data-isik]:not([data-isik="hazir"]){ opacity:1; animation:none; font-weight:900; }
+.km-oyun-sayac.km-oyun-sayac-ust{ position:static; right:auto; top:auto; z-index:auto; display:inline-flex; align-items:center; font-size:13px; padding:6px 12px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.km-oyun-sayac[data-isik="hazirlan"], .km-oyun-sayac[data-isik="stop"]{ color:#fff; background:#b91c1c; border-color:#ff5a5a; animation:none; }
+.km-oyun-sayac[data-isik="yesil"]{ color:#fff; background:#15803d; border-color:#34d36b; }
+.km-oyun-sayac[data-isik="sari"]{ color:#1a1300; background:#facc15; border-color:#facc15; }
+.km-oyun-sayac[data-isik="son10"]{ color:#1a1300; background:#facc15; border-color:#ff5a5a; }
+.km-oyun-sayac[data-isik="toplama"]{ color:#fff; background:#0369a1; border-color:#38bdf8; }
 .km-oyun-sayac-kritik{ color:#ff5f6d; border-color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
 .km-oyun-sayac-bitti{ color:#ff2e2e; border-color:#ff2e2e; background:rgba(255,46,46,0.18); animation:none; }
 /* Süreölçer'in renk kuralı birebir: ATIŞ SERBEST yeşil, OK TOPLAMA turuncu, DURAKLATILDI soluk (opacity .6) */
@@ -18855,6 +18862,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button class="km-oyun-tam-btn${kmKarmaMi() ? ' aktif' : ''}" onclick="kmHatPanelAc()" title="Ders hatları — kim Oyun'da, kim Yarışma'da">🔀 ${kmKarmaMi() ? ((_kmListe.length - kmOyunListe().length) + ' Yarışma\'da') : 'Hatlar'}</button>
                     </div>
                     <div class="km-oyun-topbar-sag">
+                        <!-- v353 (kullanıcı: "üst üste binmiş ve kötü"): sayaç rozeti sahnenin sağ üstünde oyunların kendi HUD'unun (Fener, Kale…) üstüne biniyordu — artık düğme satırında -->
+                        <div class="km-oyun-sayac km-oyun-sayac-ust" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
                         <div class="km-oyun-diger" id="km-oyun-diger"><button class="km-oyun-tam-btn" onclick="kmOyunDigerAcKapat(event)" aria-haspopup="true" title="Spiker, dramatik, sayaç, tören, özet, oyun öner…">⋯ Diğer</button><div class="km-oyun-diger-menu" role="menu" onclick="kmOyunDigerKapat()">
                         <button class="km-oyun-tam-btn${_kmOyunSesliMod ? ' aktif' : ''}" id="km-oyun-sesli-btn" onclick="kmOyunSesliDegistir()" title="Sesli Spiker — sonuçları yüksek sesle okur">${kmOyunSesliBtnHTML()}</button>
                         <button class="km-oyun-tam-btn${_kmOyunDramatikMod ? ' aktif' : ''}" id="km-oyun-dramatik-btn" onclick="kmOyunDramatikDegistir()" title="Dramatik Açıklama — sonucu davul sesiyle, gerilimli açıklar">🎬<span class="km-oyun-btn-etiket"> Dramatik</span></button>
@@ -18896,7 +18905,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     ${kmOyunPanelHTML('zirve')}${kmOyunPanelHTML('yildiz')}${kmOyunPanelHTML('hazine')}${kmOyunPanelHTML('pist')}${kmOyunPanelHTML('ninja')}${kmOyunPanelHTML('monopoly')}${kmOyunPanelHTML('dag')}${kmOyunPanelHTML('balon')}${kmOyunPanelHTML('hedef')}${kmOyunPanelHTML('futbol')}${kmOyunPanelHTML('futboltakim')}${kmOyunPanelHTML('arena')}${kmOyunPanelHTML('sisharita')}${kmOyunPanelHTML('kehanet')}${kmOyunPanelHTML('gizlikelime')}${kmOyunPanelHTML('kule')}${kmOyunPanelHTML('canavar')}${kmOyunPanelHTML('hapsirik')}${kmOyunPanelHTML('akvaryum')}${kmOyunPanelHTML('kale')}${kmOyunPanelHTML('fener')}${kmOyunPanelHTML('halat')}${kmOyunPanelHTML('il')}${kmOyunPanelHTML('yukselis')}
                     <div class="km-oyun-sirada" id="km-oyun-sirada"></div>
                     <div class="km-oyun-zirve-hud" id="km-oyun-zirve-hud" style="display:none;"></div>
-                    <div class="km-oyun-sayac" id="km-oyun-sayac-oyun" onclick="kmOyunSayacDokun()" title="Dokun: Başlat / Duraklat" style="display:none;"></div>
                     <div id="km-oyun-zirve-kar" style="position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; display:none;"></div>
                     <div class="km-oyun-burst" id="km-oyun-burst"></div>
                     <div class="km-oyun-banner" id="km-oyun-banner"><b id="km-oyun-banner-t"></b><span id="km-oyun-banner-s"></span></div>
@@ -19669,6 +19677,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(!_kmOyunSayacAcik) { el.style.display = 'none'; return; }
                 el.style.display = '';
                 el.textContent = kmOyunSayacMetni();
+                el.dataset.isik = kmOyunSayacIsik()[0];
                 tumSiniflar.forEach(function(s) { el.classList.remove(s); });
                 if(renk) el.classList.add(renk);
                 if(duraklatildi) el.classList.add('km-oyun-sayac-duraklatildi');
