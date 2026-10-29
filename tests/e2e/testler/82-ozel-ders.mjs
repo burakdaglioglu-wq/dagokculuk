@@ -55,6 +55,10 @@ export default async function ({ log }) {
     const mod = await p.evaluate(() => ({ konum: _kmAktifKonum, mod: ozdHareketModu(), serit: !!document.getElementById('ozd-km-banner'), dok: !!document.getElementById('ozd-dok'), lbl: (document.getElementById('km-oyun-ok-lbl') || {}).textContent, liste: _kmListe.length }));
     dogrula(/^ozel_/.test(mod.konum) && mod.mod, 'özel konum / hareket modu açılmadı: ' + JSON.stringify(mod));
     dogrula(mod.serit && mod.dok, 'şerit ya da dock hareket seçimi yok'); dogrula(/Hareket puanı/.test(mod.lbl), 'dock etiketi hareket puanı değil: ' + mod.lbl); esit(mod.liste, 1, 'özel derste tek sporcu olmalı');
+    // v346: özel ders Karışık Sınıf'la karışmaz — cihazın konumu değişmez, konum listesinde yok, başlık okçuluk değil, kuşak gizli
+    const ayri = await p.evaluate(async () => ({ cihaz: localStorage.getItem('dag_km_konum'), liste: (await _kmKonumlariGetir()).some((x) => String(x.id).indexOf('ozel_') === 0), baslik: document.getElementById('km-baslik').textContent, kusak: [...document.querySelectorAll('#karisik-platform .km-sk-kusak')].every((e) => getComputedStyle(e).display === 'none') }));
+    esit(ayri.cihaz, yedek.konum, 'özel ders cihazın Karışık Sınıf konumunu değiştirdi'); dogrula(!ayri.liste, 'özel ders konumu Karışık Sınıf listesinde');
+    dogrula(/Sporla Gelişiyorum/.test(ayri.baslik), 'başlık hâlâ Karışık Sınıf: ' + ayri.baslik); dogrula(ayri.kusak, 'özel derste okçuluk kuşağı görünüyor');
     await p.locator('#ozd-dok .ozd-cip', { hasText: 'Uçak duruşu' }).click(); await p.waitForTimeout(150);
     await p.evaluate(async () => {
       _kmOyunAktifIndex = 0; _kmOyunSeriGirisleri = ['9', '7', 'X']; _kmOyunSeriKonumlari = []; kmOyunIlerlet();
@@ -63,7 +67,10 @@ export default async function ({ log }) {
     esit(await p.evaluate(([g, ad]) => (turnuvaDB[g][ad].seriler || []).length, [g, ad]), seri0, 'hareket puanı okçuluk kaydına yazıldı');
     d = await p.evaluate((k) => ozdDers(k), k);
     const son = d.kayitlar[d.kayitlar.length - 1];
-    esit(son.h, 'ucak', 'oyundaki seri seçili harekete yazılmadı'); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');
+    esit(son.h, 'ucak', 'oyundaki seri seçili harekete yazılmadı');
+    // ⏱️ dinlenme: seri girilince kendiliğinden başlar, büyütülür
+    const din = await p.evaluate(() => { const e = document.getElementById('ozd-dinlen'); const a = { var: !!e, kalan: _ozdDin.kalan }; ozdDinBuyut(); a.buyuk = document.getElementById('ozd-dinlen').classList.contains('buyuk'); ozdDinBuyut(); return a; });
+    dogrula(din.var && din.kalan > 0 && din.buyuk, 'dinlenme sayacı başlamadı / büyümedi: ' + JSON.stringify(din)); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');
     dogrula(await p.evaluate(() => { const k = JSON.parse(localStorage.getItem('dag_km_kale_' + _kmAktifKonum) || 'null'); return k && k.seri >= 1; }), 'oyun (kale) ilerlemedi');
     await p.waitForTimeout(1500);
     await p.evaluate(() => kmOyunSonGirisiGeriAl()); await p.waitForTimeout(300);
@@ -74,7 +81,7 @@ export default async function ({ log }) {
     // özel ders sayfasına dön → eski konum
     await p.click('#ozd-km-banner button'); await p.waitForTimeout(500);
     const don = await p.evaluate(() => ({ konum: _kmAktifKonum, km: document.getElementById('karisik-platform').style.display, aktif: document.getElementById('icerik-ozelders').classList.contains('aktif') }));
-    esit(don.konum, yedek.konum, 'eski Karışık Sınıf konumu geri gelmedi'); esit(don.km, 'none', 'Karışık Sınıf kapanmadı'); dogrula(don.aktif, 'özel ders sekmesine dönülmedi');
+    esit(don.konum, yedek.konum, 'eski Karışık Sınıf konumu geri gelmedi'); esit(don.km, 'none', 'Karışık Sınıf kapanmadı'); dogrula(await p.evaluate(() => !document.getElementById('ozd-dinlen')), 'dinlenme sayacı özel ders dışında kaldı'); dogrula(don.aktif, 'özel ders sekmesine dönülmedi');
 
     // 🏋️ v344 dumbbell: kg seç → puanlanan tekrar o kg ile kaydedilir
     await p.evaluate((k) => ozdHareketToggle(k, 'db-goblet'), k); await p.waitForTimeout(150);
@@ -90,8 +97,15 @@ export default async function ({ log }) {
     esit(await p.evaluate((k) => (ozdDepo()['test|' + k + '|' + ozdBugun()] || {}).olcum['t-sprint20'], k), 4.21, 'test ölçümü kaydedilmedi');
     dogrula(await p.evaluate(() => [...document.querySelectorAll('.ozd-t')].some((e) => /20 m sprint/.test(e.textContent) && e.querySelector('.ozd-g-fark.art'))), 'sprint süresi azaldığı halde gelişme (▲) görünmüyor');
 
+    // Karışık Sınıf'a girmek (kmAc) her zaman okçuluk: özel ders modundan çıkar
+    await p.evaluate((k) => ozdOyunaGec(k), k); await p.waitForTimeout(400);
+    const km = await p.evaluate(() => { kmAc(); return { mod: ozdHareketModu(), konum: _kmAktifKonum, baslik: document.getElementById('km-baslik').textContent }; });
+    dogrula(!km.mod && km.konum === yedek.konum && /Karışık Sınıf/.test(km.baslik), 'Karışık Sınıf açılınca özel ders modu sürdü: ' + JSON.stringify(km));
+    await p.waitForTimeout(1500); // kmAc gerçekten Karışık Sınıf'ı (okçuluk) açar — kapat, özel ders sayfasına dön
+    await p.evaluate(() => { ['karisik-platform', 'karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); sekmeAc('ozelders'); }); await p.waitForTimeout(200);
+
     // veli mesajı
-    await p.click('text=Veliye “Bugün ne yaptık?” gönder'); await p.waitForTimeout(300);
+    await p.evaluate((k) => ozdVeliOnizle(k), k); await p.waitForTimeout(300);
     const metin = await p.evaluate(() => document.getElementById('ozd-mesaj').value);
     dogrula(/Bugün çalıştıklarımız/.test(metin) && /Denge/.test(metin) && /Gelişeceğimiz|en iyi/.test(metin), 'veli mesajı eksik: ' + metin);
     dogrula(/Goblet squat \(4 kg\)/.test(metin) && /20 m sprint: 4,21 sn 📈/.test(metin), 'veli mesajında dumbbell ya da test yok: ' + metin);

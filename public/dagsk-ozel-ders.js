@@ -8,8 +8,8 @@
    • Sekme #icerik-ozelders (yalnız eğitmen): özel ders öğrencileri → öğrenci sayfası: bugünün hareketleri (kütüphaneden
      seçilir), hızlı puan, 🎮 oyunlarla devam, ders notu, 📩 veliye "bugün ne yaptık", gelişim (kategori ortalamaları,
      çizgi), geçmiş dersler.
-   • 🎮 Oyunlar: Karışık Sınıf'ın kendi konumu açılır — 'ozel_<kısa kimlik>' (konum listesine "🤸 Özel Ders · Ad" olarak
-     eklenir, TV/ikinci cihaz oradan katılır). Bu konumda HAREKET MODU (ozdHareketModu): kmOyunIlerlet seriyi okçuluk
+   • 🎮 Oyunlar: Karışık Sınıf'ın kendi konumu açılır — 'ozel_<kısa kimlik>' (v346: yalnız bellekte; Karışık Sınıf'ın konum listesine ve
+     cihazın konumuna YAZILMAZ — TV de özel ders sayfasından aynı öğrenciyle açılır, durum km-ortak ile aynı konumda buluşur). Bu konumda HAREKET MODU (ozdHareketModu): kmOyunIlerlet seriyi okçuluk
      kaydına (_skorKaydetCekirdek) YAZMAZ, ozdSeriKaydet ile özel ders defterine yazar; klasman/yoklama/kuşak atlanır.
      Dock'ta hangi hareketin puanlandığı seçilir (ozdDokHTML). Puan = hareket değerlendirmesi: X mükemmel … M yapamadı.
    • Veri: meta 'ozel_ders' (kyDepo, kayıt başına LWW 't'):
@@ -143,6 +143,7 @@ function ozdSeriKaydet(g, ad, kaydedilecek, hareketId) {
     d.kayitlar = (d.kayitlar || []).concat([kayit]);
     ozdYaz('ders|' + k + '|' + d.tarih, d);
     if (_ozdSecili === k) setTimeout(ozdCiz, 0);
+    if (ozdHareketModu() && ozdDinOto()) setTimeout(() => ozdDinBaslat(), 0); // ⏱️ seri girildi → dinlenme
     return { ok: true, seriPuan: p.reduce((a, v) => a + ozdDeger(v), 0), seriDoc: { id: id }, ozd: true };
 }
 function ozdSeriGeriAl(g, ad, id) {
@@ -173,7 +174,10 @@ function ozdDokGuncelle() {
 function ozdKmBanner() {
     const p = document.getElementById('karisik-platform'); if (!p) return;
     let b = document.getElementById('ozd-km-banner');
-    if (!ozdHareketModu()) { if (b) b.remove(); return; }
+    // v346: özel derste ekran okçuluk gibi görünmez — başlık Sporla Gelişiyorum, kuşak kartı gizli (.ozd-modu)
+    const mod = ozdHareketModu(), bas = document.getElementById('km-baslik');
+    p.classList.toggle('ozd-modu', mod); try { ozdDinCiz(); } catch (e) { } if (bas) bas.textContent = mod ? '💪 Sporla Gelişiyorum · Özel Ders' : '🎯 Karışık Sınıf';
+    if (!mod) { if (b) b.remove(); return; }
     const k = ozdKonumKisi(), ad = k ? ozdIlkAd(ozdAyir(k)[1]) : '';
     const html = `<div id="ozd-km-banner" class="ozd-km-banner">💪 <b>Sporla Gelişiyorum · ${ozdEsc(ad)}</b><span>Puanlar hareket değerlendirmesidir — okçuluk kaydına yazılmaz</span><button onclick="ozdSinifaDon()">↩ Özel ders sayfası</button></div>`;
     if (b) b.outerHTML = html; else p.insertAdjacentHTML('afterbegin', html);
@@ -181,30 +185,75 @@ function ozdKmBanner() {
 function ozdOyunaGec(k) {
     const [g, ad] = ozdAyir(k), kon = ozdKonum(k);
     if (typeof _kmAktifKonum === 'undefined') return;
-    if (!ozdHareketModu()) { try { localStorage.setItem('dag_ozd_onceki_konum', _kmAktifKonum || ''); } catch (e) { } }
+    // v346 (kullanıcı: "bu bölümü diğer tarafla karıştırma — Karışık Sınıf okçuluk, özel ders kişisel gelişim"): cihazın Karışık Sınıf
+    // konumu ('dag_km_konum') DEĞİŞMEZ ve özel ders konumu paylaşılan konum listesine EKLENMEZ — özel konum yalnız bu oturumun belleğinde.
+    // Karışık Sınıf'a nereden girilirse girilsin (kmAc / konum seçici / Bugünün dersleri) ozdKonumuBirak okçuluk konumuna döner.
     // Bugünün dersi kaydedilsin (oyun ilk seriyi yazmadan önce de hareket listesi görünsün)
     if (!ozdDers(k)) ozdYaz('ders|' + k + '|' + ozdBugun(), ozdBugunDers(k));
-    // konum listesine ekle — TV / ikinci cihaz "Karışık Sınıf › konum" ile bu derse katılabilsin
-    try { _kmKonumlariGetir().then((l) => { if (!l.some((x) => x.id === kon)) _kmKonumlariKaydet(l.concat([{ id: kon, ad: '🤸 Özel Ders · ' + ozdIlkAd(ad) }])); }).catch(() => {}); } catch (e) { }
-    _kmAktifKonum = kon; try { localStorage.setItem('dag_km_konum', kon); } catch (e) { }
+    _kmAktifKonum = kon;
     _kmListe = [{ g: g, ad: ad }]; _kmSecimler = {}; _kmSecimler[g + '_' + ad] = _kmListe[0];
     _kmListeKaydet();
     kmPlatformGoster();
     setTimeout(() => { try { kmAracSec('oyunlar'); } catch (e) { } }, 60);
 }
-function ozdSinifaDon() {
-    let once = ''; try { once = localStorage.getItem('dag_ozd_onceki_konum') || ''; } catch (e) { }
-    if (ozdHareketModu()) {
-        _kmAktifKonum = once || null;
-        try { if (once) localStorage.setItem('dag_km_konum', once); else localStorage.removeItem('dag_km_konum'); } catch (e) { }
-        try { _kmListe = JSON.parse(localStorage.getItem(kmLocalAnahtari()) || '[]') || []; _kmSecimler = {}; _kmListe.forEach((s) => { _kmSecimler[s.g + '_' + s.ad] = s; }); } catch (e) { _kmListe = []; }
+// Özel ders modundan çık: cihazın kendi (okçuluk) Karışık Sınıf konumu ve listesi geri gelir
+function ozdKonumuBirak() {
+    if (!ozdHareketModu()) return;
+    let k = null; try { k = localStorage.getItem('dag_km_konum') || null; } catch (e) { }
+    if (k && k.indexOf('ozel_') === 0) { // v343–345'te özel konuma takılı kalmış cihaz
+        let o = null; try { o = localStorage.getItem('dag_ozd_onceki_konum') || null; } catch (e) { }
+        k = o && o.indexOf('ozel_') !== 0 ? o : null;
+        try { if (k) localStorage.setItem('dag_km_konum', k); else localStorage.removeItem('dag_km_konum'); } catch (e) { }
     }
+    _kmAktifKonum = k;
+    try { _kmListe = JSON.parse(localStorage.getItem(kmLocalAnahtari()) || '[]') || []; } catch (e) { _kmListe = []; }
+    _kmSecimler = {}; (_kmListe || []).forEach((s) => { _kmSecimler[s.g + '_' + s.ad] = s; });
+    try { _kmOyunRosterCache = []; } catch (e) { }
+    try { ozdKmBanner(); } catch (e) { }
+    const dk = document.getElementById('ozd-dok'); if (dk) dk.remove();
+    try { kmDevamBanneriGuncelle(); } catch (e) { }
+}
+function ozdSinifaDon() {
     try { if (typeof kmOyunKapat === 'function' && document.getElementById('km-oyun-wrap')) kmOyunKapat(); } catch (e) { }
+    ozdKonumuBirak();
     const p = document.getElementById('karisik-platform'); if (p) p.style.display = 'none';
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
-    try { kmDevamBanneriGuncelle(); } catch (e) { }
-    const b = document.getElementById('ozd-km-banner'); if (b) b.remove();
     try { sekmeAc('ozelders'); } catch (e) { }
+}
+// v343–345'te konumu özel derse takılmış cihaz açılışta düzelir
+try { if (typeof _kmAktifKonum !== 'undefined' && String(_kmAktifKonum || '').indexOf('ozel_') === 0) ozdKonumuBirak(); } catch (e) { }
+
+/* ---------------- ⏱️ dinlenme sayacı (v346, kullanıcı: "oyunların içerisinde dinlenme saniyelerini de koy, görünür bir yere,
+   büyütülebilir — özel dersteki yerden bahsediyorum") — yalnız hareket modunda, Karışık Sınıf ekranının üstünde yüzer.
+   Her puan girişinden sonra kendiliğinden başlar (otomatik kapatılabilir); süre çipleri; ⤢ ile TV için ekran boyu. ---------------- */
+let _ozdDin = { kalan: 0, toplam: 0, t: null, buyuk: false };
+function ozdDinSure() { let v = 30; try { v = +localStorage.getItem('dag_ozd_dinlenme') || 30; } catch (e) { } return v; }
+function ozdDinOto() { try { return localStorage.getItem('dag_ozd_dinlenme_oto') !== '0'; } catch (e) { return true; } }
+function ozdDinBip(f, s, gec) { try { const A = ozdDinBip.a || (ozdDinBip.a = new (window.AudioContext || window.webkitAudioContext)()); if (A.state === 'suspended') A.resume(); const t = A.currentTime + (gec || 0), o = A.createOscillator(), g = A.createGain(); o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + s); o.connect(g).connect(A.destination); o.start(t); o.stop(t + s + .05); } catch (e) { } }
+function ozdDinBaslat(sn) {
+    clearInterval(_ozdDin.t); _ozdDin.toplam = _ozdDin.kalan = sn || ozdDinSure();
+    _ozdDin.t = setInterval(() => {
+        _ozdDin.kalan--;
+        if (_ozdDin.kalan > 0 && _ozdDin.kalan <= 3) ozdDinBip(660, .15);
+        if (_ozdDin.kalan <= 0) { clearInterval(_ozdDin.t); _ozdDin.t = null; ozdDinBip(880, .25); ozdDinBip(1175, .4, .25); }
+        ozdDinCiz();
+    }, 1000);
+    ozdDinCiz();
+}
+function ozdDinDur() { if (_ozdDin.t) { clearInterval(_ozdDin.t); _ozdDin.t = null; } else if (_ozdDin.kalan > 0) ozdDinBaslat(_ozdDin.kalan); ozdDinCiz(); }
+function ozdDinSec(sn) { try { localStorage.setItem('dag_ozd_dinlenme', sn); } catch (e) { } ozdDinBaslat(sn); }
+function ozdDinOtoDegis() { try { localStorage.setItem('dag_ozd_dinlenme_oto', ozdDinOto() ? '0' : '1'); } catch (e) { } ozdDinCiz(); }
+function ozdDinBuyut() { _ozdDin.buyuk = !_ozdDin.buyuk; ozdDinCiz(); }
+function ozdDinCiz() {
+    const p = document.getElementById('karisik-platform'); let e = document.getElementById('ozd-dinlen');
+    if (!p || !ozdHareketModu()) { if (e) e.remove(); clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = 0; return; }
+    if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; p.appendChild(e); }
+    const k = _ozdDin.kalan, bitti = !_ozdDin.t && k <= 0 && _ozdDin.toplam > 0, oran = _ozdDin.toplam ? Math.max(0, k) / _ozdDin.toplam : 0;
+    const say = k > 0 ? (k >= 60 ? Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0') : String(k)) : (bitti ? 'HAZIR! 💪' : '—');
+    e.className = 'ozd-dinlen' + (_ozdDin.buyuk ? ' buyuk' : '') + (k > 0 && k <= 3 ? ' son' : '') + (bitti ? ' bitti' : '');
+    e.innerHTML = `<div class="ozd-din-ust"><b>⏱️ Dinlenme</b><button onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Büyüt (TV)'}">${_ozdDin.buyuk ? '✕' : '⤢'}</button></div>
+      <div class="ozd-din-say" onclick="ozdDinDur()" title="Durdur / devam">${say}</div><div class="ozd-din-bar"><i style="width:${oran * 100}%"></i></div>
+      <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
 }
 
 /* ---------------- sekme ---------------- */
@@ -462,6 +511,19 @@ function ozdCss() {
 .ozd-modal{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
 .ozd-modal-k{background:var(--bg-main,#1b1530);box-shadow:0 20px 60px rgba(0,0,0,.6);color:var(--text-primary);border:1px solid var(--border-color);border-radius:16px;padding:16px;width:min(560px,100%);max-height:90vh;overflow:auto}
 .ozd-mesaj{min-height:300px;font-size:13px;line-height:1.45}.ozd-modal-alt{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
+#karisik-platform.ozd-modu .km-sk-kusak{display:none}
+.ozd-dinlen{position:fixed;right:14px;bottom:14px;z-index:20050;width:200px;background:rgba(20,14,36,.94);color:#fff;border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 2px #7c5cff;font-family:inherit;transition:background .3s}
+.ozd-din-ust{display:flex;justify-content:space-between;align-items:center;font-size:13px}.ozd-din-ust button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer}
+.ozd-din-say{font-size:54px;font-weight:900;text-align:center;line-height:1.1;cursor:pointer;font-variant-numeric:tabular-nums;margin:4px 0}
+.ozd-din-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}.ozd-din-bar i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#ff6a1a);transition:width 1s linear}
+.ozd-din-cip{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.ozd-din-cip button{flex:1;min-width:32px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:8px;padding:5px 2px;font-weight:800;font-size:12px;cursor:pointer}.ozd-din-cip button.aktif{background:#7c5cff;border-color:#7c5cff}
+.ozd-dinlen.son{background:rgba(160,40,20,.95)}.ozd-dinlen.son .ozd-din-say{animation:ozdNabiz .5s ease-in-out infinite alternate}@keyframes ozdNabiz{to{transform:scale(1.12)}}
+.ozd-dinlen.bitti{background:rgba(20,120,60,.95)}.ozd-dinlen.bitti .ozd-din-say{font-size:34px}
+.ozd-dinlen.buyuk{inset:0;width:auto;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:4vh 6vw;z-index:20100}
+.ozd-dinlen.buyuk .ozd-din-ust{font-size:clamp(20px,3vw,40px)}.ozd-dinlen.buyuk .ozd-din-ust button{width:56px;height:56px;font-size:26px}
+.ozd-dinlen.buyuk .ozd-din-say{font-size:min(38vw,60vh)}.ozd-dinlen.buyuk.bitti .ozd-din-say{font-size:min(16vw,30vh)}.ozd-dinlen.buyuk .ozd-din-bar{height:22px}
+.ozd-dinlen.buyuk .ozd-din-cip{max-width:720px;margin:20px auto 0;width:100%}.ozd-dinlen.buyuk .ozd-din-cip button{font-size:20px;padding:12px 4px}
+@media (max-width:640px){.ozd-dinlen:not(.buyuk){width:150px;right:8px;bottom:auto;top:120px;padding:8px}.ozd-dinlen:not(.buyuk) .ozd-din-say{font-size:40px}.ozd-dinlen:not(.buyuk) .ozd-din-cip button{font-size:11px;padding:4px 1px;min-width:26px}}
 .ozd-km-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:linear-gradient(90deg,#7c5cff,#ff6a1a);color:#fff;font-size:13px;flex-shrink:0}
 .ozd-km-banner span{opacity:.9;font-size:12px;flex:1;min-width:160px}.ozd-km-banner button{border:0;border-radius:999px;background:rgba(0,0,0,.28);color:#fff;font-weight:800;padding:6px 12px;cursor:pointer}
 .ozd-dok{margin-bottom:8px}.ozd-dok-bas{font-size:12px;font-weight:900;margin-bottom:5px}.ozd-dok-bas small{font-weight:600;opacity:.7;margin-left:4px}

@@ -8893,6 +8893,7 @@
         function egitmenDersBaslat(i) { let x = _egtDersler[i]; if(x) _dersSlotBaslat(x); }
         // Ortak: eğitmen paneli ve yönetici Genel Bakış'tan "▶ Dersi başlat" (x = kmBugunDersleri öğesi).
         function _dersSlotBaslat(x) {
+            try { if(typeof ozdKonumuBirak === 'function') ozdKonumuBirak(); } catch(e) {} // 💪 Karışık Sınıf = okçuluk: özel ders modundan çık (v346)
             if(!_kmAktifKonum) { showToast('Önce dersin yapılacağı konumu seç, sonra "Bugünün dersleri"nden başlat', 'info'); kmKonumSeciciAc(); return; }
             let buradaDers = _kmYerelListeVar(_kmAktifKonum) || (_kmSunucuAktif || []).some(function(d) { return d.konum.id === _kmAktifKonum; });
             if(buradaDers) { showToast('Bu konumda devam eden bir ders var — önce onu açıyorum', 'info'); kmKonumaGir(); return; }
@@ -11925,6 +11926,7 @@
             try { return localStorage.getItem('dag_km_konum_ad') || ''; } catch(e) { return ''; }
         }
         function kmAc() {
+            try { if(typeof ozdKonumuBirak === 'function') ozdKonumuBirak(); } catch(e) {} // 💪 Karışık Sınıf = okçuluk: özel ders modundan çık (v346)
             // Bu cihazda ders yok ama başka cihazda açılmış ders var → ona katıl (birden çoksa seçtir).
             let btn = document.getElementById('km-giris-btn'), katil = btn && btn.dataset.katil, yerelAktif = false;
             if(_kmAktifKonum) { try { let s = JSON.parse(localStorage.getItem(kmLocalAnahtari()) || '[]'); yerelAktif = Array.isArray(s) && s.length > 0; } catch(e) {} }
@@ -12008,6 +12010,8 @@
             return fetch('/api/meta/karisik_sinif_konumlar').then(r => r.json()).then(data => {
                 let liste = null;
                 try { liste = data && data.value ? JSON.parse(data.value) : null; } catch(e) {}
+                // 💪 özel ders konumları (ozel_…) Karışık Sınıf listesinde görünmez — o dersler okçuluk değil (v346)
+                if(liste) liste = liste.filter(function(k) { return k && String(k.id).indexOf('ozel_') !== 0; });
                 if(!liste || !liste.length) liste = [{ id: 'varsayilan', ad: 'Ana Salon' }];
                 return liste;
             }).catch(() => [{ id: 'varsayilan', ad: 'Ana Salon' }]);
@@ -12019,6 +12023,7 @@
             return fetch('/api/meta/karisik_sinif_konumlar', { method: 'PUT', headers: {'content-type':'application/json'}, body: JSON.stringify({ value: JSON.stringify(liste) }) }).catch(() => {});
         }
         function kmKonumSeciciAc() {
+            try { if(typeof ozdKonumuBirak === 'function') ozdKonumuBirak(); } catch(e) {} // 💪 Karışık Sınıf = okçuluk: özel ders modundan çık (v346)
             let modal = document.getElementById('karisik-konum-modal'); if(!modal) return;
             let alan = document.getElementById('km-konum-liste');
             alan.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Yükleniyor...</div>';

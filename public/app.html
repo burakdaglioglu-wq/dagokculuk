@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v345</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v346</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -176,7 +176,7 @@
             border-bottom:1px solid var(--border-color);">
             <button onclick="kmGeri()" class="adm-btn adm-btn-sm" style="min-width:38px; padding:0 10px; flex-shrink:0;">←</button>
             <div style="flex:1; min-width:0;">
-                <div style="font-size:13px;font-weight:900;">🎯 Karışık Sınıf</div>
+                <div id="km-baslik" style="font-size:13px;font-weight:900;">🎯 Karışık Sınıf</div>
                 <div id="km-ders-sayac" style="font-size:10px;color:var(--text-muted);"></div>
             </div>
             <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px; flex-shrink:0;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); kmSekme(_kmAktifSekme); setTimeout(()=>this.classList.remove('donuyor'), 800);">
