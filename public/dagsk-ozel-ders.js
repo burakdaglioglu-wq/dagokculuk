@@ -15,7 +15,9 @@
    • Veri: meta 'ozel_ders' (kyDepo, kayıt başına LWW 't'):
        'ogr|g|ad'          { g, ad, aktif, saatler, hedef, t }
        'ders|g|ad|tarih'   { g, ad, tarih, hareketler:[id], kayitlar:[{id, h, p:[puan], t}], not, gonderildi, t }
-       'hrk|id'            { id, ad, kat, t }  — eğitmenin eklediği hareket (kütüphanedekilere ek)
+       'hrk|id'            { id, ad, kat, grup, kg, t }  — eğitmenin eklediği hareket (kütüphanedekilere ek)
+       'test|g|ad|tarih'   { g, ad, tarih, olcum:{testId: sayı}, t }  — 📏 fiziksel test (v344)
+     Ders kaydında kg:{hareketId: kg} (dumbbell, v344); kayitlar[].kg o serinin ağırlığı.
    ================================================================================================ */
 
 const OZD_KAT = {
@@ -26,17 +28,46 @@ const OZD_KAT = {
     esnek: { ad: 'Esneklik', ikon: '🤸', renk: '#c9a6ff', ev: 'Evde: yatmadan önce öne eğilme ve kelebek esnemesi, 1\'er dk.' },
     dayan: { ad: 'Dayanıklılık', ikon: '❤️', renk: '#ff8fa8', ev: 'Evde: 1 dk jumping jack, 30 sn mola, 3 tur.' }
 };
+// v344 (kullanıcı: "bazen vücut ağırlığıyla, bazen okçuluk alanındaki 1–10 kg dumbbell'larla geliştirme hareketleri, bazen sprint,
+// bazen topla, BOSU / denge tahtası, zıplama-sıçrama… hepsini düşün") — kütüphane EKİPMANA göre gruplu (grup), gelişim yine
+// kategoriye göre (kat). kg:true → dumbbell ağırlığı da kaydedilir. Eski kimlikler (v343 kayıtları) korunur.
+const OZD_GRUP = {
+    vucut: '🧍 Vücut ağırlığı', dumbbell: '🏋️ Dumbbell (1–10 kg)', sprint: '🏃 Sprint & koşu', top: '⚽ Topla',
+    bosu: '🟣 BOSU & denge tahtası', zipla: '🦘 Zıplama & sıçrama', esnek: '🧘 Esneme & mobilite'
+};
 const OZD_HAREKETLER = [
-    { id: 'top-sektir', ad: 'Top sektirme (sağ-sol)', kat: 'koord' }, { id: 'merdiven', ad: 'Koordinasyon merdiveni', kat: 'koord' },
-    { id: 'at-tut', ad: 'Top at-tut (jonglör)', kat: 'koord' }, { id: 'zipla-alkis', ad: 'Zıpla + alkış', kat: 'koord' }, { id: 'capraz', ad: 'Çapraz kol-bacak', kat: 'koord' },
-    { id: 'tek-ayak', ad: 'Tek ayak duruş', kat: 'denge' }, { id: 'bosu', ad: 'Denge tahtası', kat: 'denge' }, { id: 'cizgi', ad: 'Çizgide yürüme', kat: 'denge' },
-    { id: 'flamingo-top', ad: 'Flamingo + top tutma', kat: 'denge' }, { id: 'ucak', ad: 'Uçak duruşu', kat: 'denge' },
-    { id: 'squat', ad: 'Squat', kat: 'guc' }, { id: 'sinav', ad: 'Şınav (dizden)', kat: 'guc' }, { id: 'plank', ad: 'Plank', kat: 'guc' },
-    { id: 'kopru', ad: 'Köprü', kat: 'guc' }, { id: 'ayi', ad: 'Ayı yürüyüşü', kat: 'guc' },
-    { id: 'slalom', ad: 'Koni slalom', kat: 'cevik' }, { id: 'mekik-kosu', ad: 'Mekik koşusu', kat: 'cevik' }, { id: 'reaksiyon', ad: 'Reaksiyon çıkışı', kat: 'cevik' },
-    { id: 'yan-kayma', ad: 'Yan kayma', kat: 'cevik' }, { id: 'seksek', ad: 'Seksek', kat: 'cevik' },
-    { id: 'one-egil', ad: 'Öne eğilme', kat: 'esnek' }, { id: 'kelebek', ad: 'Kelebek', kat: 'esnek' }, { id: 'kedi-inek', ad: 'Kedi-inek', kat: 'esnek' }, { id: 'omuz', ad: 'Omuz açma', kat: 'esnek' },
-    { id: 'jumping', ad: 'Jumping jack', kat: 'dayan' }, { id: 'ip', ad: 'İp atlama', kat: 'dayan' }, { id: 'tirmanici', ad: 'Dağ tırmanıcı', kat: 'dayan' }
+    { id: 'squat', ad: 'Squat', kat: 'guc', grup: 'vucut' }, { id: 'sinav', ad: 'Şınav', kat: 'guc', grup: 'vucut' }, { id: 'plank', ad: 'Plank', kat: 'guc', grup: 'vucut' },
+    { id: 'yan-plank', ad: 'Yan plank', kat: 'guc', grup: 'vucut' }, { id: 'hamle', ad: 'Hamle (lunge)', kat: 'guc', grup: 'vucut' }, { id: 'kopru', ad: 'Köprü', kat: 'guc', grup: 'vucut' },
+    { id: 'superman', ad: 'Süpermen', kat: 'guc', grup: 'vucut' }, { id: 'ayi', ad: 'Ayı yürüyüşü', kat: 'koord', grup: 'vucut' }, { id: 'capraz', ad: 'Çapraz kol-bacak', kat: 'koord', grup: 'vucut' },
+    { id: 'tirmanici', ad: 'Dağ tırmanıcı', kat: 'dayan', grup: 'vucut' }, { id: 'jumping', ad: 'Jumping jack', kat: 'dayan', grup: 'vucut' },
+    { id: 'db-goblet', ad: 'Goblet squat', kat: 'guc', grup: 'dumbbell', kg: true }, { id: 'db-omuz', ad: 'Omuz press', kat: 'guc', grup: 'dumbbell', kg: true },
+    { id: 'db-row', ad: 'Tek kol row (sırt)', kat: 'guc', grup: 'dumbbell', kg: true }, { id: 'db-yan', ad: 'Yana açış', kat: 'guc', grup: 'dumbbell', kg: true },
+    { id: 'db-curl', ad: 'Biceps curl', kat: 'guc', grup: 'dumbbell', kg: true }, { id: 'db-hamle', ad: 'Dumbbell hamle', kat: 'guc', grup: 'dumbbell', kg: true },
+    { id: 'db-rdl', ad: 'Romen deadlift', kat: 'guc', grup: 'dumbbell', kg: true }, { id: 'db-ciftci', ad: 'Çiftçi yürüyüşü', kat: 'dayan', grup: 'dumbbell', kg: true },
+    { id: 'sprint-10', ad: '10 m çıkış sprinti', kat: 'cevik', grup: 'sprint' }, { id: 'sprint-20', ad: '20 m sprint', kat: 'cevik', grup: 'sprint' },
+    { id: 'mekik-kosu', ad: 'Mekik koşusu', kat: 'cevik', grup: 'sprint' }, { id: 'reaksiyon', ad: 'Reaksiyon çıkışı', kat: 'cevik', grup: 'sprint' },
+    { id: 'slalom', ad: 'Koni slalom', kat: 'cevik', grup: 'sprint' }, { id: 'yan-kayma', ad: 'Yan kayma', kat: 'cevik', grup: 'sprint' },
+    { id: 'merdiven', ad: 'Koordinasyon merdiveni', kat: 'koord', grup: 'sprint' }, { id: 'yuksek-diz', ad: 'Yüksek diz koşu', kat: 'dayan', grup: 'sprint' },
+    { id: 'top-sektir', ad: 'Top sektirme (sağ-sol)', kat: 'koord', grup: 'top' }, { id: 'at-tut', ad: 'Top at-tut (jonglör)', kat: 'koord', grup: 'top' },
+    { id: 'top-duvar', ad: 'Duvara pas-tut', kat: 'koord', grup: 'top' }, { id: 'top-ayak', ad: 'Ayakla top sürme', kat: 'koord', grup: 'top' },
+    { id: 'saglik-topu', ad: 'Sağlık topu fırlatma', kat: 'guc', grup: 'top' }, { id: 'flamingo-top', ad: 'Tek ayakta top yakalama', kat: 'denge', grup: 'top' },
+    { id: 'bosu', ad: 'Denge tahtası', kat: 'denge', grup: 'bosu' }, { id: 'bosu-tek', ad: 'BOSU tek ayak', kat: 'denge', grup: 'bosu' },
+    { id: 'bosu-squat', ad: 'BOSU squat', kat: 'denge', grup: 'bosu' }, { id: 'bosu-top', ad: 'BOSU üstünde top at-tut', kat: 'koord', grup: 'bosu' },
+    { id: 'tek-ayak', ad: 'Tek ayak duruş', kat: 'denge', grup: 'bosu' }, { id: 'ucak', ad: 'Uçak duruşu', kat: 'denge', grup: 'bosu' }, { id: 'cizgi', ad: 'Çizgide yürüme', kat: 'denge', grup: 'bosu' },
+    { id: 'durarak-uzun', ad: 'Durarak uzun atlama', kat: 'guc', grup: 'zipla' }, { id: 'squat-jump', ad: 'Squat jump', kat: 'guc', grup: 'zipla' },
+    { id: 'kutu', ad: 'Kutuya sıçrama', kat: 'guc', grup: 'zipla' }, { id: 'engel', ad: 'Engel üstünden sıçrama', kat: 'cevik', grup: 'zipla' },
+    { id: 'yan-sicrama', ad: 'Yana sıçrama', kat: 'cevik', grup: 'zipla' }, { id: 'seksek', ad: 'Seksek', kat: 'cevik', grup: 'zipla' },
+    { id: 'zipla-alkis', ad: 'Zıpla + alkış', kat: 'koord', grup: 'zipla' }, { id: 'ip', ad: 'İp atlama', kat: 'dayan', grup: 'zipla' },
+    { id: 'one-egil', ad: 'Öne eğilme', kat: 'esnek', grup: 'esnek' }, { id: 'kelebek', ad: 'Kelebek', kat: 'esnek', grup: 'esnek' },
+    { id: 'kedi-inek', ad: 'Kedi-inek', kat: 'esnek', grup: 'esnek' }, { id: 'omuz', ad: 'Omuz açma', kat: 'esnek', grup: 'esnek' }
+];
+// 📏 Fiziksel test (sınav) — dönem dönem ölçülür; az: düşük değer daha iyi (süre)
+const OZD_TESTLER = [
+    { id: 't-sprint20', ad: '20 m sprint', birim: 'sn', az: true, ondalik: 2 }, { id: 't-mekik', ad: 'Mekik koşusu 4×10 m', birim: 'sn', az: true, ondalik: 2 },
+    { id: 't-uzun', ad: 'Durarak uzun atlama', birim: 'cm' }, { id: 't-dikey', ad: 'Dikey sıçrama', birim: 'cm' },
+    { id: 't-tekayak', ad: 'Tek ayak denge (gözler kapalı)', birim: 'sn', ondalik: 1 }, { id: 't-bosu', ad: 'BOSU üstünde denge', birim: 'sn', ondalik: 1 },
+    { id: 't-plank', ad: 'Plank', birim: 'sn' }, { id: 't-sinav', ad: '30 sn şınav', birim: 'adet' }, { id: 't-squat', ad: '30 sn squat', birim: 'adet' },
+    { id: 't-top', ad: 'Sağlık topu fırlatma', birim: 'm', ondalik: 1 }, { id: 't-esnek', ad: 'Otur-uzan', birim: 'cm' }
 ];
 const OZD_PUAN = ['X', '10', '9', '8', '7', '6', '5', '4', '3', 'M'];
 const OZD_PUAN_AD = { X: 'Mükemmel', 10: 'Harika', 9: 'Çok iyi', 8: 'Çok iyi', 7: 'İyi', 6: 'İyi', 5: 'Gelişiyor', 4: 'Gelişiyor', 3: 'Zorlandı', 2: 'Zorlandı', 1: 'Zorlandı', M: 'Yapamadı' };
@@ -66,7 +97,8 @@ function ozdSenkron() { try { return kyDepoSenkron('ozel_ders', () => kyDepoOku(
 function ozdOgrenciler() { const d = ozdDepo(); return Object.keys(d).filter((k) => k.indexOf('ogr|') === 0 && d[k] && d[k].aktif !== false).map((k) => d[k]); }
 function ozdOgr(k) { return ozdDepo()['ogr|' + k] || null; }
 function ozdHareketler() { const d = ozdDepo(), ek = Object.keys(d).filter((k) => k.indexOf('hrk|') === 0 && d[k] && !d[k].sil).map((k) => d[k]); return OZD_HAREKETLER.concat(ek); }
-function ozdHareket(id) { return ozdHareketler().find((h) => h.id === id) || { id: id, ad: id, kat: 'koord' }; }
+function ozdHareket(id) { return ozdHareketler().find((h) => h.id === id) || { id: id, ad: id, kat: 'koord', grup: 'vucut' }; }
+function ozdKg(d, id) { return ozdHareket(id).kg ? ((d.kg && d.kg[id]) || null) : null; }
 function ozdDersler(k) { const d = ozdDepo(), on = 'ders|' + k + '|'; return Object.keys(d).filter((x) => x.indexOf(on) === 0 && d[x]).map((x) => d[x]).sort((a, b) => a.tarih < b.tarih ? -1 : 1); }
 function ozdDers(k, tarih) { return ozdDepo()['ders|' + k + '|' + (tarih || ozdBugun())] || null; }
 // Bugünün dersi (yoksa son dersin hareketleriyle kurulur — program gibi sürer)
@@ -107,7 +139,8 @@ function ozdSeriKaydet(g, ad, kaydedilecek, hareketId) {
     const h = hareketId || ozdSeciliHareket(k) || 'top-sektir';
     if (d.hareketler.indexOf(h) < 0) d.hareketler.push(h);
     const p = (kaydedilecek || []).map((x) => String(x.puan)), id = 'oz' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    d.kayitlar = (d.kayitlar || []).concat([{ id: id, h: h, p: p, t: Date.now() }]);
+    const kayit = { id: id, h: h, p: p, t: Date.now() }, kg = ozdKg(d, h); if (kg) kayit.kg = kg;
+    d.kayitlar = (d.kayitlar || []).concat([kayit]);
     ozdYaz('ders|' + k + '|' + d.tarih, d);
     if (_ozdSecili === k) setTimeout(ozdCiz, 0);
     return { ok: true, seriPuan: p.reduce((a, v) => a + ozdDeger(v), 0), seriDoc: { id: id }, ozd: true };
@@ -124,8 +157,8 @@ function ozdDokHTML() {
     const k = ozdKonumKisi(); if (!k) return '';
     const d = ozdBugunDers(k), s = ozdSeciliHareket(k), oz = ozdDersOzet(d);
     return `<div class="ozd-dok" id="ozd-dok"><div class="ozd-dok-bas">🤸 Hangi hareket? <small>puan = hareket değerlendirmesi · X mükemmel · M yapamadı</small></div><div class="ozd-dok-cipler">${d.hareketler.map((id) => {
-        const h = ozdHareket(id), kt = OZD_KAT[h.kat] || OZD_KAT.koord, o = oz.h[id];
-        return `<button class="ozd-cip${id === s ? ' aktif' : ''}" style="--r:${kt.renk}" onclick="ozdHareketSec('${ozdEsc(k).replace(/'/g, "\\'")}','${id}')">${kt.ikon} ${ozdEsc(h.ad)}${o != null ? ` <b>${ozdSayi(o)}</b>` : ''}</button>`;
+        const h = ozdHareket(id), kt = OZD_KAT[h.kat] || OZD_KAT.koord, o = oz.h[id], kg = ozdKg(d, id);
+        return `<button class="ozd-cip${id === s ? ' aktif' : ''}" style="--r:${kt.renk}" onclick="ozdHareketSec('${ozdEsc(k).replace(/'/g, "\\'")}','${id}')">${kt.ikon} ${ozdEsc(h.ad)}${kg ? ' · ' + kg + ' kg' : ''}${o != null ? ` <b>${ozdSayi(o)}</b>` : ''}</button>`;
     }).join('')}</div></div>`;
 }
 function ozdDokGuncelle() {
@@ -225,7 +258,8 @@ function ozdOgrenciHTML(k) {
     const yas = typeof kmSporcuYasi === 'function' ? kmSporcuYasi(o.g, o.ad) : null, oyunda = ozdHareketModu() && ozdKonumKisi() === k;
     const satir = (id) => {
         const h = ozdHareket(id), kt = OZD_KAT[h.kat] || OZD_KAT.koord, p = [].concat(...(d.kayitlar || []).filter((r) => r.h === id).map((r) => r.p));
-        return `<div class="ozd-hs${id === s ? ' aktif' : ''}" style="--r:${kt.renk}" onclick="ozdHareketSec('${ke}','${id}')"><span class="ozd-hs-ad">${kt.ikon} ${ozdEsc(h.ad)}<small>${kt.ad}</small></span>
+        const kg = h.kg ? `<select class="ozd-kg" title="Dumbbell ağırlığı" onclick="event.stopPropagation()" onchange="ozdKgSec('${ke}','${id}',this.value)"><option value="">🏋️ kg?</option>${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `<option value="${n}"${ozdKg(d, id) === n ? ' selected' : ''}>🏋️ ${n} kg</option>`).join('')}</select>` : '';
+        return `<div class="ozd-hs${id === s ? ' aktif' : ''}" style="--r:${kt.renk}" onclick="ozdHareketSec('${ke}','${id}')"><span class="ozd-hs-ad">${kt.ikon} ${ozdEsc(h.ad)}<small>${kt.ad} · ${(OZD_GRUP[h.grup] || '').replace(/^\S+\s/, '')}</small></span>${kg}
           <span class="ozd-hs-p">${p.map((v) => `<i class="${ozdDeger(v) >= 9 ? 'iyi' : ozdDeger(v) <= 4 ? 'zor' : ''}">${v}</i>`).join('') || '<em>puan yok</em>'}</span><b>${oz.h[id] != null ? ozdSayi(oz.h[id]) : ''}</b></div>`;
     };
     return `<div class="ozd-ust"><button class="ozd-btn" onclick="ozdGeri()">‹ Öğrenciler</button><button class="ozd-btn ozd-sil" onclick="ozdOgrenciCikar('${ke}')">Listeden çıkar</button></div>
@@ -243,19 +277,54 @@ function ozdOgrenciHTML(k) {
       </section>
       <section class="ozd-panel"><h3>📝 Ders notu</h3><textarea class="ozd-input ozd-ta" placeholder="Bugün neye dikkat ettik, nasıl hissetti…" onchange="ozdNotKaydet('${ke}',this.value)">${ozdEsc(d.not || '')}</textarea>
         <button class="ozd-btn ozd-ana ozd-gonder" onclick="ozdVeliOnizle('${ke}')">📩 Veliye “Bugün ne yaptık?” gönder${d.gonderildi ? ' <small>✓ gönderildi</small>' : ''}</button></section>
+      ${ozdTestHTML(k)}
       ${ozdGelisimHTML(k)}`;
 }
+
+/* ---------------- 📏 fiziksel test (sınav) ---------------- */
+function ozdTestKayitlari(k) { const d = ozdDepo(), on = 'test|' + k + '|'; return Object.keys(d).filter((x) => x.indexOf(on) === 0 && d[x] && d[x].olcum).map((x) => d[x]).sort((a, b) => a.tarih < b.tarih ? -1 : 1); }
+function ozdTestGecmis(k, id) { return ozdTestKayitlari(k).filter((r) => typeof r.olcum[id] === 'number').map((r) => ({ tarih: r.tarih, v: r.olcum[id] })); }
+function ozdTestYazi(t, v) { return v == null ? '—' : v.toLocaleString('tr-TR', { maximumFractionDigits: t.ondalik || 0 }) + ' ' + t.birim; }
+// son ölçüm önceki ölçüme göre: { fark, iyi } (süre testlerinde azalma iyidir)
+function ozdTestFark(t, g) { if (g.length < 2) return null; const f = g[g.length - 1].v - g[g.length - 2].v; return { fark: f, iyi: t.az ? f < 0 : f > 0, ayni: Math.abs(f) < 1e-9 }; }
+function ozdTestHTML(k) {
+    const ke = ozdEsc(k).replace(/'/g, "\\'"), bugun = (ozdDepo()['test|' + k + '|' + ozdBugun()] || {}).olcum || {}, kayit = ozdTestKayitlari(k), son = kayit[kayit.length - 1];
+    const satir = (t) => {
+        const g = ozdTestGecmis(k, t.id), f = ozdTestFark(t, g), ilk = g[0];
+        return `<div class="ozd-t"><span class="ozd-t-ad">${ozdEsc(t.ad)}<small>${t.az ? 'düşük daha iyi' : 'yüksek daha iyi'}${ilk && g.length > 1 ? ' · ilk ' + ozdTestYazi(t, ilk.v) : ''}</small></span>
+          <input class="ozd-input ozd-t-in" data-test="${t.id}" inputmode="decimal" placeholder="${t.birim}" value="${bugun[t.id] != null ? String(bugun[t.id]).replace('.', ',') : ''}">
+          <span class="ozd-t-son">${g.length ? ozdTestYazi(t, g[g.length - 1].v) : '—'}</span>
+          <span class="ozd-g-fark ${f && !f.ayni ? (f.iyi ? 'art' : 'az') : ''}">${f ? (f.ayni ? '=' : (f.iyi ? '▲ ' : '▼ ') + Math.abs(f.fark).toLocaleString('tr-TR', { maximumFractionDigits: t.ondalik || 0 })) : ''}</span></div>`;
+    };
+    return `<details class="ozd-panel ozd-test"${Object.keys(bugun).length ? ' open' : ''}><summary><h3>📏 Fiziksel test (sınav) <small>${son ? 'son test ' + ozdTarihYazi(son.tarih) + ' · ' + kayit.length + ' test günü' : 'henüz test yok'} — dönem dönem ölç, gelişimi gör</small></h3></summary>
+      <div class="ozd-t ozd-t-bas"><span>Test</span><span>Bugün</span><span>Son</span><span>Değişim</span></div>${OZD_TESTLER.map(satir).join('')}
+      <button class="ozd-btn ozd-ana ozd-gonder" onclick="ozdTestKaydet('${ke}')">💾 Bugünkü ölçümleri kaydet</button></details>`;
+}
+function ozdTestKaydet(k) {
+    const [g, ad] = ozdAyir(k), olcum = {};
+    document.querySelectorAll('.ozd-t-in').forEach((i) => { const v = parseFloat(String(i.value).replace(',', '.')); if (isFinite(v) && v >= 0) olcum[i.dataset.test] = v; });
+    ozdYaz('test|' + k + '|' + ozdBugun(), { g: g, ad: ad, tarih: ozdBugun(), olcum: olcum });
+    ozdCiz(); if (typeof showToast === 'function') showToast('📏 ' + Object.keys(olcum).length + ' ölçüm kaydedildi', 'success');
+}
+// Dumbbell: her harekette derslerdeki en yüksek ağırlık — ilk → son
+function ozdKgGelisim(k) {
+    const m = {}; ozdDersler(k).forEach((d) => (d.kayitlar || []).forEach((r) => { if (!r.kg) return; const x = m[r.h] = m[r.h] || {}; x[d.tarih] = Math.max(x[d.tarih] || 0, r.kg); }));
+    return Object.keys(m).map((id) => { const t = Object.keys(m[id]).sort(); return { id: id, ilk: m[id][t[0]], son: m[id][t[t.length - 1]], n: t.length }; });
+}
+// Kütüphane ekipmana göre gruplu; çipin rengi gelişim kategorisi
 function ozdKutuphaneHTML(k, d) {
     const ke = ozdEsc(k).replace(/'/g, "\\'"), l = ozdHareketler();
-    return Object.keys(OZD_KAT).map((kat) => `<div class="ozd-kat"><b>${OZD_KAT[kat].ikon} ${OZD_KAT[kat].ad}</b><div>${l.filter((h) => h.kat === kat).map((h) => `<button class="ozd-cip${d.hareketler.indexOf(h.id) >= 0 ? ' aktif' : ''}" style="--r:${OZD_KAT[kat].renk}" onclick="ozdHareketToggle('${ke}','${ozdEsc(h.id)}')">${ozdEsc(h.ad)}</button>`).join('')}</div></div>`).join('')
-        + `<div class="ozd-yeni"><input id="ozd-yeni-ad" class="ozd-input" placeholder="Yeni hareket adı"><select id="ozd-yeni-kat" class="ozd-input">${Object.keys(OZD_KAT).map((x) => `<option value="${x}">${OZD_KAT[x].ikon} ${OZD_KAT[x].ad}</option>`).join('')}</select><button class="ozd-btn" onclick="ozdYeniHareket('${ke}')">Ekle</button></div>`;
+    return `<div class="ozd-lejant">${Object.keys(OZD_KAT).map((x) => `<span style="--r:${OZD_KAT[x].renk}">${OZD_KAT[x].ikon} ${OZD_KAT[x].ad}</span>`).join('')}</div>`
+        + Object.keys(OZD_GRUP).map((gr) => `<div class="ozd-kat"><b>${OZD_GRUP[gr]}</b><div>${l.filter((h) => (h.grup || 'vucut') === gr).map((h) => { const kt = OZD_KAT[h.kat] || OZD_KAT.koord; return `<button class="ozd-cip${d.hareketler.indexOf(h.id) >= 0 ? ' aktif' : ''}" style="--r:${kt.renk}" title="${kt.ad}" onclick="ozdHareketToggle('${ke}','${ozdEsc(h.id)}')">${kt.ikon} ${ozdEsc(h.ad)}</button>`; }).join('')}</div></div>`).join('')
+        + `<div class="ozd-yeni"><input id="ozd-yeni-ad" class="ozd-input" placeholder="Yeni hareket adı"><select id="ozd-yeni-grup" class="ozd-input">${Object.keys(OZD_GRUP).map((x) => `<option value="${x}">${OZD_GRUP[x]}</option>`).join('')}</select><select id="ozd-yeni-kat" class="ozd-input">${Object.keys(OZD_KAT).map((x) => `<option value="${x}">${OZD_KAT[x].ikon} ${OZD_KAT[x].ad}</option>`).join('')}</select><button class="ozd-btn" onclick="ozdYeniHareket('${ke}')">Ekle</button></div>`;
 }
+function ozdKgSec(k, id, v) { ozdDersYaz(k, (d) => { d.kg = d.kg || {}; if (+v > 0) d.kg[id] = +v; else delete d.kg[id]; }); }
 function ozdDersYaz(k, fn) { const d = JSON.parse(JSON.stringify(ozdBugunDers(k))); fn(d); ozdYaz('ders|' + k + '|' + d.tarih, d); ozdCiz(); ozdDokGuncelle(); }
 function ozdHareketToggle(k, id) { ozdDersYaz(k, (d) => { const i = d.hareketler.indexOf(id); if (i >= 0) d.hareketler.splice(i, 1); else d.hareketler.push(id); }); const det = document.querySelector('.ozd-kutup'); if (det) det.open = true; }
 function ozdYeniHareket(k) {
-    const ad = ((document.getElementById('ozd-yeni-ad') || {}).value || '').trim(), kat = (document.getElementById('ozd-yeni-kat') || {}).value || 'koord';
+    const ad = ((document.getElementById('ozd-yeni-ad') || {}).value || '').trim(), kat = (document.getElementById('ozd-yeni-kat') || {}).value || 'koord', grup = (document.getElementById('ozd-yeni-grup') || {}).value || 'vucut';
     if (!ad) return; const id = 'e' + Date.now().toString(36);
-    ozdYaz('hrk|' + id, { id: id, ad: ad.slice(0, 40), kat: kat }); ozdHareketToggle(k, id);
+    ozdYaz('hrk|' + id, { id: id, ad: ad.slice(0, 40), kat: kat, grup: grup, kg: grup === 'dumbbell' }); ozdHareketToggle(k, id);
 }
 function ozdHizliPuan(k, v) { ozdSeriKaydet(...ozdAyir(k), [{ puan: v }]); ozdCiz(); }
 function ozdSonPuanSil(k) {
@@ -286,7 +355,8 @@ function ozdGelisimHTML(k) {
           <small>${s.length} ders · ilk ${ozdSayi(ilk)}</small></div>`;
     }).join('');
     const gecmis = G.ds.slice().reverse().slice(0, 8).map((d) => { const o = ozdDersOzet(d); return `<div class="ozd-gm"><span>${ozdTarihYazi(d.tarih)}</span><span>${Object.keys(o.h).length} hareket · ${o.tekrar} tekrar</span><b>${ozdSayi(o.ort)}</b>${d.gonderildi ? '<span title="Veliye gönderildi">📩</span>' : '<span></span>'}</div>`; }).join('');
-    return `<section class="ozd-panel"><h3>📈 Gelişim <small>kategori ortalaması (10 üzerinden) · son derse göre</small></h3>${satir}</section>
+    const kg = ozdKgGelisim(k).map((x) => `<div class="ozd-gm"><span>🏋️ ${ozdEsc(ozdHareket(x.id).ad)}</span><span>${x.n} ders</span><b>${x.ilk === x.son ? x.son + ' kg' : x.ilk + ' → ' + x.son + ' kg'}</b><span>${x.son > x.ilk ? '📈' : ''}</span></div>`).join('');
+    return `<section class="ozd-panel"><h3>📈 Gelişim <small>kategori ortalaması (10 üzerinden) · son derse göre</small></h3>${satir}${kg ? '<h3 style="margin-top:12px">🏋️ Dumbbell ağırlıkları</h3>' + kg : ''}</section>
       <section class="ozd-panel"><h3>🗂️ Geçmiş dersler</h3>${gecmis}</section>`;
 }
 
@@ -300,7 +370,7 @@ function ozdVeliMetni(k) {
     else {
         s.push('*Bugün çalıştıklarımız:*');
         katlar.forEach((x) => {
-            const kt = OZD_KAT[x], h = Object.keys(oz.h).filter((id) => ozdHareket(id).kat === x).map((id) => ozdHareket(id).ad).join(', ');
+            const kt = OZD_KAT[x], h = Object.keys(oz.h).filter((id) => ozdHareket(id).kat === x).map((id) => ozdHareket(id).ad + (ozdKg(d, id) ? ' (' + ozdKg(d, id) + ' kg)' : '')).join(', ');
             const f = oo && oo.kat[x] != null ? oz.kat[x] - oo.kat[x] : null;
             s.push(`${kt.ikon} ${kt.ad}: ${h} — ${ozdYildiz(oz.kat[x])}${f != null && Math.abs(f) >= 0.3 ? (f > 0 ? ' 📈 geçen derse göre gelişti' : ' (bugün biraz zorlandı)') : ''}`);
         });
@@ -312,6 +382,12 @@ function ozdVeliMetni(k) {
             const evKat = [...new Set(gel.map((id) => ozdHareket(id).kat))].slice(0, 2);
             evKat.forEach((x) => s.push('🏠 ' + OZD_KAT[x].ev));
         }
+    }
+    // 📏 bugün test yapıldıysa: ölçüm + öncekine göre
+    const tb = (ozdDepo()['test|' + k + '|' + d.tarih] || {}).olcum || {}, tl = OZD_TESTLER.filter((t) => typeof tb[t.id] === 'number');
+    if (tl.length) {
+        s.push('', '📏 *Bugünkü fiziksel test:*');
+        tl.forEach((t) => { const g = ozdTestGecmis(k, t.id).filter((x) => x.tarih <= d.tarih), f = ozdTestFark(t, g); s.push(`• ${t.ad}: ${ozdTestYazi(t, tb[t.id])}${f && !f.ayni ? (f.iyi ? ' 📈 önceki teste göre gelişti' : ' (önceki test ' + ozdTestYazi(t, g[g.length - 2].v) + ')') : ''}`); });
     }
     if (o.hedef) s.push('', '🧭 Hedefimiz: ' + o.hedef);
     if (d.not) s.push('', '💬 Antrenör notu: ' + d.not);
@@ -388,6 +464,13 @@ function ozdCss() {
 .ozd-km-banner span{opacity:.9;font-size:12px;flex:1;min-width:160px}.ozd-km-banner button{border:0;border-radius:999px;background:rgba(0,0,0,.28);color:#fff;font-weight:800;padding:6px 12px;cursor:pointer}
 .ozd-dok{margin-bottom:8px}.ozd-dok-bas{font-size:12px;font-weight:900;margin-bottom:5px}.ozd-dok-bas small{font-weight:600;opacity:.7;margin-left:4px}
 .ozd-dok-cipler{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px}.ozd-dok .ozd-cip{white-space:nowrap;font-size:12px;padding:6px 10px;color:inherit}.ozd-dok .ozd-cip.aktif{color:#1b1230}
-@media (max-width:640px){.ozd-iki{grid-template-columns:1fr}.ozd-g{grid-template-columns:110px 1fr 36px 50px}.ozd-cizgi{display:none}.ozd-yeni{grid-template-columns:1fr}.ozd-hs{flex-wrap:wrap}.ozd-hs-p{max-width:100%}}`;
+.ozd-kg{background:var(--bg-panel);color:var(--text-primary);border:1px solid var(--border-color);border-radius:8px;padding:5px 6px;font-weight:800;font-size:12.5px;font-family:inherit}
+.ozd-lejant{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px;font-size:11px;color:var(--text-muted)}.ozd-lejant span{border-left:3px solid var(--r);padding-left:5px}
+.ozd-test>summary{cursor:pointer;list-style:none}.ozd-test>summary::-webkit-details-marker{display:none}.ozd-test>summary h3{margin:0}.ozd-test[open]>summary h3{margin-bottom:8px}
+.ozd-t{display:grid;grid-template-columns:1fr 92px 86px 64px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--border-color)}
+.ozd-t-bas{font-size:11px;font-weight:800;color:var(--text-muted);border-top:0}.ozd-t-ad{font-weight:800;font-size:13px}.ozd-t-ad small{display:block;font-weight:600;color:var(--text-muted);font-size:10.5px}
+.ozd-t-in{padding:7px 8px;text-align:center}.ozd-t-son{font-size:12.5px;font-weight:700}
+.ozd-yeni{grid-template-columns:1fr 170px 150px auto}
+@media (max-width:640px){.ozd-iki{grid-template-columns:1fr}.ozd-t{grid-template-columns:1fr 78px 64px}.ozd-t>.ozd-g-fark{grid-column:3}.ozd-t-bas span:last-child{display:none}.ozd-t{row-gap:2px}.ozd-g{grid-template-columns:110px 1fr 36px 50px}.ozd-cizgi{display:none}.ozd-yeni{grid-template-columns:1fr}.ozd-hs{flex-wrap:wrap}.ozd-hs-p{max-width:100%}}`;
     document.head.appendChild(st);
 }

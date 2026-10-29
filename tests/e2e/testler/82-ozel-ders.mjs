@@ -76,10 +76,25 @@ export default async function ({ log }) {
     const don = await p.evaluate(() => ({ konum: _kmAktifKonum, km: document.getElementById('karisik-platform').style.display, aktif: document.getElementById('icerik-ozelders').classList.contains('aktif') }));
     esit(don.konum, yedek.konum, 'eski Karışık Sınıf konumu geri gelmedi'); esit(don.km, 'none', 'Karışık Sınıf kapanmadı'); dogrula(don.aktif, 'özel ders sekmesine dönülmedi');
 
+    // 🏋️ v344 dumbbell: kg seç → puanlanan tekrar o kg ile kaydedilir
+    await p.evaluate((k) => ozdHareketToggle(k, 'db-goblet'), k); await p.waitForTimeout(150);
+    await p.locator('.ozd-hs', { hasText: 'Goblet squat' }).locator('select.ozd-kg').selectOption('4'); await p.waitForTimeout(150);
+    await p.locator('.ozd-hs', { hasText: 'Goblet squat' }).click(); await p.waitForTimeout(100);
+    await p.locator('.ozd-pad button', { hasText: /^9$/ }).click(); await p.waitForTimeout(150);
+    d = await p.evaluate((k) => ozdDers(k), k);
+    const gb = d.kayitlar[d.kayitlar.length - 1]; esit(gb.h + '|' + gb.kg, 'db-goblet|4', 'dumbbell ağırlığı kayda yazılmadı');
+    // 📏 v344 fiziksel test: dünkü 20 m sprint 4,5 sn → bugün 4,21 sn = gelişme (süre azaldı)
+    await p.evaluate(([k, g, ad]) => { const dn = new Date(); dn.setDate(dn.getDate() - 1); const t = dn.getFullYear() + '-' + String(dn.getMonth() + 1).padStart(2, '0') + '-' + String(dn.getDate()).padStart(2, '0'); ozdYaz('test|' + k + '|' + t, { g, ad, tarih: t, olcum: { 't-sprint20': 4.5 } }); ozdYaz('test|' + k + '|' + ozdBugun(), { g, ad, tarih: ozdBugun(), olcum: {} }); ozdCiz(); document.querySelector('.ozd-test').open = true; }, [k, g, ad]);
+    await p.fill('.ozd-t-in[data-test="t-sprint20"]', '4,21');
+    await p.click('text=Bugünkü ölçümleri kaydet'); await p.waitForTimeout(200);
+    esit(await p.evaluate((k) => (ozdDepo()['test|' + k + '|' + ozdBugun()] || {}).olcum['t-sprint20'], k), 4.21, 'test ölçümü kaydedilmedi');
+    dogrula(await p.evaluate(() => [...document.querySelectorAll('.ozd-t')].some((e) => /20 m sprint/.test(e.textContent) && e.querySelector('.ozd-g-fark.art'))), 'sprint süresi azaldığı halde gelişme (▲) görünmüyor');
+
     // veli mesajı
-    await p.click('.ozd-gonder'); await p.waitForTimeout(300);
+    await p.click('text=Veliye “Bugün ne yaptık?” gönder'); await p.waitForTimeout(300);
     const metin = await p.evaluate(() => document.getElementById('ozd-mesaj').value);
     dogrula(/Bugün çalıştıklarımız/.test(metin) && /Denge/.test(metin) && /Gelişeceğimiz|en iyi/.test(metin), 'veli mesajı eksik: ' + metin);
+    dogrula(/Goblet squat \(4 kg\)/.test(metin) && /20 m sprint: 4,21 sn 📈/.test(metin), 'veli mesajında dumbbell ya da test yok: ' + metin);
     await p.click('.ozd-wa'); await p.waitForTimeout(300);
     const acilan = await p.evaluate(() => window.__acilan.slice(-1)[0] || '');
     dogrula(/^https:\/\/api\.whatsapp\.com\/send/.test(acilan), 'WhatsApp açılmadı: ' + acilan);
