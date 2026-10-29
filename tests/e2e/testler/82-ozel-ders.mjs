@@ -80,6 +80,12 @@ export default async function ({ log }) {
     const yer = await p.evaluate(() => ({ r: document.getElementById('ozd-dinlen').getBoundingClientRect().left, a: JSON.parse(localStorage.getItem('dag_ozd_dinlenme_yer') || '{}') }));
     dogrula(yer.r < 400 && yer.a.x != null && yer.a.boy === 2, 'sürükleme / saklama olmadı: ' + JSON.stringify(yer));
     await p.evaluate(() => localStorage.removeItem('dag_ozd_dinlenme_yer'));
+    // v348: oyun tam ekrandayken sayaç tam ekranın içinde görünür
+    await p.click('#km-oyun-tam-btn'); await p.waitForTimeout(600);
+    const tam = await p.evaluate(() => { const fe = document.fullscreenElement, e = document.getElementById('ozd-dinlen'); if (!fe) return { fe: false }; const r = e.getBoundingClientRect(), u = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { fe: true, icinde: fe.contains(e), gorunur: !!(u && e.contains(u)) }; });
+    if (tam.fe) dogrula(tam.icinde && tam.gorunur, 'tam ekranda dinlenme sayacı görünmüyor: ' + JSON.stringify(tam)); else log('(bu tarayıcıda tam ekran açılmadı — tam ekran kontrolü atlandı)');
+    await p.evaluate(() => { if (document.fullscreenElement) return document.exitFullscreen(); }); await p.waitForTimeout(400);
+    dogrula(await p.evaluate(() => document.getElementById('ozd-dinlen').parentNode.id === 'karisik-platform'), 'tam ekrandan çıkınca sayaç geri dönmedi');
     // tam ekranda boş yere dokununca küçülür
     await p.evaluate(() => { if (!_ozdDin.buyuk) ozdDinBuyut(); }); await p.mouse.click(40, 860); await p.waitForTimeout(150);
     dogrula(await p.evaluate(() => !_ozdDin.buyuk && !document.getElementById('ozd-dinlen').classList.contains('buyuk')), 'tam ekran sayaç boş yere dokununca küçülmedi'); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');

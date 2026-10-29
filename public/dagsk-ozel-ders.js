@@ -279,7 +279,11 @@ function ozdDinSurukle(e) {
 function ozdDinCiz() {
     const p = document.getElementById('karisik-platform'); let e = document.getElementById('ozd-dinlen');
     if (!p || !ozdHareketModu()) { if (e) e.remove(); clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = 0; return; }
-    if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; p.appendChild(e); ozdDinSurukle(e); }
+    if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; ozdDinSurukle(e); }
+    // v348 (kullanıcı: "tam ekranda dinlenme saniyesi açılmıyor"): oyun tam ekrandayken (#km-oyun-wrap) yalnız o öğe görünür —
+    // sayaç tam ekran öğesinin içine taşınır, çıkınca Karışık Sınıf ekranına geri döner
+    const fs_ = document.fullscreenElement || document.webkitFullscreenElement, kap = fs_ && p.contains(fs_) ? fs_ : p;
+    if (e.parentNode !== kap) kap.appendChild(e);
     const k = _ozdDin.kalan, bitti = !_ozdDin.t && k <= 0 && _ozdDin.toplam > 0, oran = _ozdDin.toplam ? Math.max(0, k) / _ozdDin.toplam : 0;
     const say = k > 0 ? (k >= 60 ? Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0') : String(k)) : (bitti ? 'HAZIR! 💪' : '—');
     e.className = 'ozd-dinlen' + (_ozdDin.buyuk ? ' buyuk' : '') + (k > 0 && k <= 3 ? ' son' : '') + (bitti ? ' bitti' : '');
@@ -288,6 +292,8 @@ function ozdDinCiz() {
       <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
     ozdDinYerUygula(e);
 }
+
+['fullscreenchange', 'webkitfullscreenchange'].forEach((o) => document.addEventListener(o, () => { try { if (ozdHareketModu() && document.getElementById('ozd-dinlen')) ozdDinCiz(); } catch (e) { } }));
 
 /* ---------------- sekme ---------------- */
 // Eğitmen Paneli kartı (Karışık Sınıf / Yarışmalar'ın yanında) — egitmenYarismaAc ile aynı yol
