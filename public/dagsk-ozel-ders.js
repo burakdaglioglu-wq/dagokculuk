@@ -218,6 +218,7 @@ function ozdSinifaDon() {
     try { if (typeof kmOyunKapat === 'function' && document.getElementById('km-oyun-wrap')) kmOyunKapat(); } catch (e) { }
     ozdKonumuBirak();
     const p = document.getElementById('karisik-platform'); if (p) p.style.display = 'none';
+    try { ozdDinCiz(); } catch (e) { } // Karışık Sınıf kapandı → dinlenme sayacı da kalkar
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
     try { sekmeAc('ozelders'); } catch (e) { }
 }

@@ -15350,6 +15350,38 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-sayac-buyuk-ayarlar button{ font-family:inherit; font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:9px; border:1.5px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; min-height:36px; }
 .km-oyun-sayac-buyuk-ayarlar button.aktif{ border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,0.14); }
 .km-oyun-sayac-buyuk-kapat{ position:absolute; top:-12px; right:-12px; width:30px; height:30px; border-radius:50%; background:var(--bg-panel); border:1.5px solid var(--border-color); color:var(--text-main); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+/* v350 YARIŞMA IŞIKLARI (kullanıcı: "yarışma sayacını tam ekranda büyük gösterebilsin, renklerle saniyenin anlamı anlaşılsın"):
+   data-isik = hazir · hazirlan (kırmızı) · yesil (atış serbest) · sari (son 30 sn) · son10 (sarı/kırmızı yanıp söner) · stop (kırmızı) · toplama (mavi) · bitti.
+   Pencerede rakam + çerçeve rengi, tam ekranda (.tam) bütün ekran o renge boyanır. Üçlü ışık + anlam yazısı her iki hâlde. */
+.km-sayac-isik{ display:flex; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,.45); }
+.km-sayac-isik i{ width:18px; height:18px; border-radius:50%; background:#2a2f3a; box-shadow:inset 0 0 0 2px rgba(255,255,255,.08); transition:background .2s, box-shadow .2s; }
+.km-oyun-sayac-buyuk[data-isik="hazirlan"] .km-sayac-isik i.k, .km-oyun-sayac-buyuk[data-isik="stop"] .km-sayac-isik i.k{ background:#ff3b3b; box-shadow:0 0 14px #ff3b3b; }
+.km-oyun-sayac-buyuk[data-isik="sari"] .km-sayac-isik i.s, .km-oyun-sayac-buyuk[data-isik="son10"] .km-sayac-isik i.s{ background:#facc15; box-shadow:0 0 14px #facc15; }
+.km-oyun-sayac-buyuk[data-isik="yesil"] .km-sayac-isik i.y{ background:#22c55e; box-shadow:0 0 14px #22c55e; }
+.km-oyun-sayac-buyuk[data-isik="toplama"] .km-sayac-isik i{ background:#38bdf8; box-shadow:0 0 10px #38bdf8; }
+.km-oyun-sayac-buyuk-anlam{ font-weight:800; font-size:13px; text-align:center; max-width:340px; line-height:1.3; }
+.km-oyun-sayac-buyuk-tam{ position:absolute; top:-12px; right:24px; width:30px; height:30px; border-radius:50%; background:var(--bg-panel); border:1.5px solid var(--border-color); color:var(--text-main); font-size:14px; cursor:pointer; }
+.km-oyun-sayac-buyuk[data-isik="hazirlan"]{ border-color:#ff3b3b; } .km-oyun-sayac-buyuk[data-isik="hazirlan"] .km-oyun-sayac-buyuk-metin{ color:#ff5a5a; animation:none; }
+.km-oyun-sayac-buyuk[data-isik="yesil"]{ border-color:#22c55e; } .km-oyun-sayac-buyuk[data-isik="yesil"] .km-oyun-sayac-buyuk-metin{ color:#34d36b; animation:none; }
+.km-oyun-sayac-buyuk[data-isik="sari"]{ border-color:#facc15; } .km-oyun-sayac-buyuk[data-isik="sari"] .km-oyun-sayac-buyuk-metin{ color:#facc15; animation:none; }
+.km-oyun-sayac-buyuk[data-isik="son10"]{ border-color:#facc15; } .km-oyun-sayac-buyuk[data-isik="son10"] .km-oyun-sayac-buyuk-metin{ color:#facc15; animation:kmSayacYanip .5s ease-in-out infinite; }
+.km-oyun-sayac-buyuk[data-isik="stop"]{ border-color:#ff2e2e; } .km-oyun-sayac-buyuk[data-isik="stop"] .km-oyun-sayac-buyuk-metin{ color:#ff2e2e; animation:none; }
+.km-oyun-sayac-buyuk[data-isik="toplama"]{ border-color:#38bdf8; } .km-oyun-sayac-buyuk[data-isik="toplama"] .km-oyun-sayac-buyuk-metin{ color:#5ccbff; animation:none; }
+.km-oyun-sayac-buyuk.tam{ left:0 !important; top:0 !important; right:0; bottom:0; max-width:none; box-sizing:border-box; overflow:hidden; width:100vw; height:100vh; height:100dvh; border-radius:0; border-width:0; justify-content:center; gap:2vh; padding:3vh 4vw; background:#0b1020; transition:background .25s; }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-metin{ font-size:min(36vw, 50vh); color:#fff !important; text-shadow:0 8px 40px rgba(0,0,0,.35); }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-etiket{ font-size:clamp(20px, 4vw, 54px); color:#fff; letter-spacing:4px; }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-anlam{ font-size:clamp(16px, 2.4vw, 32px); max-width:none; color:#fff; }
+.km-oyun-sayac-buyuk.tam .km-sayac-isik{ padding:1.2vh 2vw; gap:2vw; } .km-oyun-sayac-buyuk.tam .km-sayac-isik i{ width:clamp(28px, 5vw, 70px); height:clamp(28px, 5vw, 70px); }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-tutamac{ display:none; }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-kapat, .km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-tam{ top:16px; width:52px; height:52px; font-size:22px; } .km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-kapat{ right:16px; } .km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-tam{ right:80px; }
+.km-oyun-sayac-buyuk.tam .km-oyun-sayac-buyuk-ayarlar button{ font-size:clamp(13px, 1.6vw, 20px); padding:10px 16px; background:rgba(0,0,0,.25); color:#fff; }
+.km-oyun-sayac-buyuk.tam .km-sayac-lejant{ display:flex; }
+.km-sayac-lejant{ display:none; gap:2vw; flex-wrap:wrap; justify-content:center; font-weight:800; font-size:clamp(12px, 1.5vw, 18px); color:rgba(255,255,255,.85); }
+.km-oyun-sayac-buyuk.tam[data-isik="hazir"]{ background:#141a2e; } .km-oyun-sayac-buyuk.tam[data-isik="hazirlan"]{ background:#b91c1c; }
+.km-oyun-sayac-buyuk.tam[data-isik="yesil"]{ background:#15803d; } .km-oyun-sayac-buyuk.tam[data-isik="sari"]{ background:#b98a04; }
+.km-oyun-sayac-buyuk.tam[data-isik="son10"]{ animation:kmSayacTamSon10 1s steps(1) infinite; } @keyframes kmSayacTamSon10{ 0%{ background:#b98a04; } 50%{ background:#b91c1c; } }
+.km-oyun-sayac-buyuk.tam[data-isik="stop"]{ background:#7f1d1d; } .km-oyun-sayac-buyuk.tam[data-isik="toplama"]{ background:#075985; } .km-oyun-sayac-buyuk.tam[data-isik="bitti"]{ background:#334155; }
+.km-oyun-sayac-buyuk.tam.km-oyun-sayac-duraklatildi{ opacity:1; filter:saturate(.45); }
 .km-oyun-sayac-buyut-btn{ font-family:var(--font-display, inherit); font-weight:700; font-size:11px; padding:4px 9px; border-radius:8px; border:1px solid var(--border-color); background:rgba(255,255,255,0.06); color:var(--text-main); cursor:pointer; }
 .km-oyun-sayac-buyut-btn.aktif{ border-color:var(--gold); color:var(--gold); }
 .km-oyun-sayac-kritik{ color:#ff5f6d; border-color:#ff5f6d; animation:kmSayacYanip 1s ease-in-out infinite; }
@@ -19618,6 +19650,16 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunSayacFaz === 3) return (_kmOyunSayacKalan <= 5) ? 'km-oyun-sayac-kritik' : 'km-oyun-sayac-toplama';
             return '';
         }
+        // v350 yarışma ışıkları: hangi renk ne demek (bkz. CSS data-isik)
+        let _kmOyunSayacTam = false;
+        function kmOyunSayacIsik() {
+            if(_kmOyunSayacSonMetin) return _kmOyunSayacSonMetin === 'STOP' ? ['stop', '🔴 STOP — atış bitti, yayını indir'] : ['bitti', '⏹ Süre bitti — sıradaki seriye hazırlan'];
+            if(_kmOyunSayacFaz === 1) return ['hazirlan', '🔴 HAZIRLAN — atış çizgisine geç, henüz atma'];
+            if(_kmOyunSayacFaz === 2) return _kmOyunSayacKalan <= 10 ? ['son10', '🟡 SON 10 SANİYE — son okunu at!'] : _kmOyunSayacKalan <= 30 ? ['sari', '🟡 SON 30 SANİYE — acele etmeden bitir'] : ['yesil', '🟢 ATIŞ SERBEST — okunu atabilirsin'];
+            if(_kmOyunSayacFaz === 3) return ['toplama', '🔵 OK TOPLAMA — hedefe yürü, skorunu yaz'];
+            return ['hazir', 'Başlatmak için rakama dokun'];
+        }
+        function kmOyunSayacTamDegistir() { _kmOyunSayacTam = !_kmOyunSayacTam; kmOyunSayacCiz(); }
         function kmOyunSayacCiz() {
             kmOyunSayacAyarYukle();
             let renk = kmOyunSayacRenkSinifi();
@@ -19641,6 +19683,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     if(metinEl) metinEl.textContent = kmOyunSayacRakam();
                     let etiketEl = document.getElementById('km-oyun-sayac-buyuk-etiket');
                     if(etiketEl) etiketEl.textContent = kmOyunSayacEtiket();
+                    let isik = kmOyunSayacIsik(), anlamEl = document.getElementById('km-oyun-sayac-buyuk-anlam');
+                    buyuk.dataset.isik = isik[0]; if(anlamEl) anlamEl.textContent = isik[1] + (duraklatildi ? ' · ⏸ duraklatıldı' : '');
+                    buyuk.classList.toggle('tam', _kmOyunSayacTam);
+                    // oyun tam ekrandayken yalnız o öğe görünür — sayaç onun içine taşınır (v350)
+                    let fe = document.fullscreenElement || document.webkitFullscreenElement, kap = fe && fe !== document.documentElement ? fe : document.body;
+                    if(buyuk.parentNode !== kap) kap.appendChild(buyuk);
                     tumSiniflar.forEach(function(s) { buyuk.classList.remove(s); });
                     if(renk) buyuk.classList.add(renk);
                     if(duraklatildi) buyuk.classList.add('km-oyun-sayac-duraklatildi');
@@ -19728,10 +19776,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 return `<button data-sure="${s}" onclick="kmOyunSayacSureAyarla(${s})">${Math.floor(s/60)}:${(s%60<10?'0':'')+(s%60)}</button>`;
             }).join('');
             el.innerHTML = `
-                <button class="km-oyun-sayac-buyuk-kapat" onclick="kmOyunSayacBuyukAcKapat()" title="Küçült">✕</button>
+                <button class="km-oyun-sayac-buyuk-kapat" onclick="kmOyunSayacBuyukAcKapat()" title="Kapat">✕</button>
+                <button class="km-oyun-sayac-buyuk-tam" onclick="kmOyunSayacTamDegistir()" title="Tam ekran (TV) / küçült">⤢</button>
+                <div class="km-sayac-isik" title="Yarışma ışıkları"><i class="k"></i><i class="s"></i><i class="y"></i></div>
                 <div class="km-oyun-sayac-buyuk-tutamac" id="km-oyun-sayac-buyuk-tutamac" title="Sürükleyerek taşı">⠿ ⠿ ⠿</div>
                 <div class="km-oyun-sayac-buyuk-metin" id="km-oyun-sayac-buyuk-metin" onclick="kmOyunSayacDokun()" title="Başlat / Duraklat" style="cursor:pointer;"></div>
                 <div class="km-oyun-sayac-buyuk-etiket" id="km-oyun-sayac-buyuk-etiket"></div>
+                <div class="km-oyun-sayac-buyuk-anlam" id="km-oyun-sayac-buyuk-anlam"></div>
+                <div class="km-sayac-lejant"><span>🔴 hazırlan / STOP</span><span>🟢 atış serbest</span><span>🟡 son 30 sn</span><span>🔵 ok toplama</span></div>
                 <div class="km-oyun-sayac-buyuk-ayarlar">
                     ${sureBtnHTML}
                     <button onclick="kmOyunSayacManuelSure()">✏️ Özel</button>
@@ -19741,6 +19793,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             document.body.appendChild(el);
             kmOyunSayacBuyukKonumUygula(el);
             kmOyunSayacBuyukSurukleKur(el);
+            el.addEventListener('click', function(ev) { if(_kmOyunSayacTam && !ev.target.closest('button') && !ev.target.closest('.km-oyun-sayac-buyuk-metin')) { _kmOyunSayacTam = false; kmOyunSayacCiz(); } });
+            ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(o) { document.addEventListener(o, function() { if(el.style.display !== 'none') kmOyunSayacCiz(); }); });
             window.addEventListener('resize', function() { if(el.style.display !== 'none') kmOyunSayacBuyukKonumUygula(el); });
             return el;
         }
@@ -19786,6 +19840,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSayacAyarYukle();
             kmOyunSayacBuyukEmin();
             _kmOyunSayacBuyukAcik = !_kmOyunSayacBuyukAcik;
+            if(!_kmOyunSayacBuyukAcik) _kmOyunSayacTam = false;
             kmOyunSayacAyarKaydet();
             kmOyunSayacCiz();
         }
