@@ -70,7 +70,19 @@ export default async function ({ log }) {
     esit(son.h, 'ucak', 'oyundaki seri seçili harekete yazılmadı');
     // ⏱️ dinlenme: seri girilince kendiliğinden başlar, büyütülür
     const din = await p.evaluate(() => { const e = document.getElementById('ozd-dinlen'); const a = { var: !!e, kalan: _ozdDin.kalan }; ozdDinBuyut(); a.buyuk = document.getElementById('ozd-dinlen').classList.contains('buyuk'); ozdDinBuyut(); return a; });
-    dogrula(din.var && din.kalan > 0 && din.buyuk, 'dinlenme sayacı başlamadı / büyümedi: ' + JSON.stringify(din)); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');
+    dogrula(din.var && din.kalan > 0 && din.buyuk, 'dinlenme sayacı başlamadı / büyümedi: ' + JSON.stringify(din));
+    // v347: ➕ büyür, başlıktan sürüklenir; yer ve boy saklanır
+    const w0 = await p.evaluate(() => { localStorage.removeItem('dag_ozd_dinlenme_yer'); ozdDinCiz(); return document.getElementById('ozd-dinlen').offsetWidth; });
+    await p.locator('#ozd-dinlen button[title="Büyüt"]').click(); await p.waitForTimeout(100);
+    const w1 = await p.evaluate(() => document.getElementById('ozd-dinlen').offsetWidth); dogrula(w1 > w0, 'büyüt düğmesi boyu artırmadı ' + w0 + ' → ' + w1);
+    const bb = await p.locator('#ozd-dinlen .ozd-din-ust b').boundingBox();
+    await p.mouse.move(bb.x + 10, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(300, 200, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(100);
+    const yer = await p.evaluate(() => ({ r: document.getElementById('ozd-dinlen').getBoundingClientRect().left, a: JSON.parse(localStorage.getItem('dag_ozd_dinlenme_yer') || '{}') }));
+    dogrula(yer.r < 400 && yer.a.x != null && yer.a.boy === 2, 'sürükleme / saklama olmadı: ' + JSON.stringify(yer));
+    await p.evaluate(() => localStorage.removeItem('dag_ozd_dinlenme_yer'));
+    // tam ekranda boş yere dokununca küçülür
+    await p.evaluate(() => { if (!_ozdDin.buyuk) ozdDinBuyut(); }); await p.mouse.click(40, 860); await p.waitForTimeout(150);
+    dogrula(await p.evaluate(() => !_ozdDin.buyuk && !document.getElementById('ozd-dinlen').classList.contains('buyuk')), 'tam ekran sayaç boş yere dokununca küçülmedi'); esit(son.p.join(','), '9,7,X', 'oyundaki seri puanları');
     dogrula(await p.evaluate(() => { const k = JSON.parse(localStorage.getItem('dag_km_kale_' + _kmAktifKonum) || 'null'); return k && k.seri >= 1; }), 'oyun (kale) ilerlemedi');
     await p.waitForTimeout(1500);
     await p.evaluate(() => kmOyunSonGirisiGeriAl()); await p.waitForTimeout(300);

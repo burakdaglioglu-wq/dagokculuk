@@ -174,6 +174,7 @@ function ozdDokGuncelle() {
 function ozdKmBanner() {
     const p = document.getElementById('karisik-platform'); if (!p) return;
     let b = document.getElementById('ozd-km-banner');
+    try { ozdCss(); } catch (e) { } // stil, özel ders sekmesi hiç açılmadan oyuna girilse de yüklü olsun
     // v346: özel derste ekran okçuluk gibi görünmez — başlık Sporla Gelişiyorum, kuşak kartı gizli (.ozd-modu)
     const mod = ozdHareketModu(), bas = document.getElementById('km-baslik');
     p.classList.toggle('ozd-modu', mod); try { ozdDinCiz(); } catch (e) { } if (bas) bas.textContent = mod ? '💪 Sporla Gelişiyorum · Özel Ders' : '🎯 Karışık Sınıf';
@@ -244,16 +245,48 @@ function ozdDinDur() { if (_ozdDin.t) { clearInterval(_ozdDin.t); _ozdDin.t = nu
 function ozdDinSec(sn) { try { localStorage.setItem('dag_ozd_dinlenme', sn); } catch (e) { } ozdDinBaslat(sn); }
 function ozdDinOtoDegis() { try { localStorage.setItem('dag_ozd_dinlenme_oto', ozdDinOto() ? '0' : '1'); } catch (e) { } ozdDinCiz(); }
 function ozdDinBuyut() { _ozdDin.buyuk = !_ozdDin.buyuk; ozdDinCiz(); }
+// v347 (kullanıcı: "sağ altta güzel ama oynatılabilir, küçültebileyim büyütebileyim"): 4 boy (➖➕) + sürükle-bırak; ikisi de cihazda saklı
+const OZD_DIN_BOY = [10, 13, 17, 22];
+function ozdDinAyar() { try { return JSON.parse(localStorage.getItem('dag_ozd_dinlenme_yer') || '{}') || {}; } catch (e) { return {}; } }
+function ozdDinAyarYaz(o) { try { localStorage.setItem('dag_ozd_dinlenme_yer', JSON.stringify(Object.assign(ozdDinAyar(), o))); } catch (e) { } }
+function ozdDinBoy(d) { const a = ozdDinAyar(), v = Math.max(0, Math.min(OZD_DIN_BOY.length - 1, (a.boy != null ? a.boy : 1) + d)); ozdDinAyarYaz({ boy: v }); ozdDinCiz(); }
+function ozdDinYerUygula(e) {
+    const a = ozdDinAyar(), boy = OZD_DIN_BOY[a.boy != null ? a.boy : (innerWidth < 640 ? 0 : 1)];
+    e.style.setProperty('--b', boy + 'px');
+    if (a.x == null || _ozdDin.buyuk) { e.style.left = e.style.top = ''; e.style.right = e.style.bottom = ''; return; }
+    // ekran döndü / küçüldü: kutu görünür alanda kalsın
+    const w = e.offsetWidth || 200, h = e.offsetHeight || 150, x = Math.max(4, Math.min(innerWidth - w - 4, a.x)), y = Math.max(4, Math.min(innerHeight - h - 4, a.y));
+    e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.right = e.style.bottom = 'auto';
+}
+function ozdDinSurukle(e) {
+    let bas = null;
+    e.addEventListener('pointerdown', (ev) => {
+        if (_ozdDin.buyuk || !ev.target.closest('.ozd-din-ust') || ev.target.closest('button')) return;
+        const r = e.getBoundingClientRect(); bas = { dx: ev.clientX - r.left, dy: ev.clientY - r.top };
+        e.setPointerCapture(ev.pointerId); e.classList.add('surukle'); ev.preventDefault();
+    });
+    e.addEventListener('pointermove', (ev) => {
+        if (!bas) return;
+        const x = Math.max(4, Math.min(innerWidth - e.offsetWidth - 4, ev.clientX - bas.dx)), y = Math.max(4, Math.min(innerHeight - e.offsetHeight - 4, ev.clientY - bas.dy));
+        e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.right = e.style.bottom = 'auto';
+    });
+    const bit = () => { if (!bas) return; bas = null; e.classList.remove('surukle'); ozdDinAyarYaz({ x: parseFloat(e.style.left) || 0, y: parseFloat(e.style.top) || 0 }); };
+    e.addEventListener('pointerup', bit); e.addEventListener('pointercancel', bit);
+    // kullanıcı: "bittiğinde illa ✕ değil, boşa tıkladığımda da küçülsün" — tam ekranda düğme dışı her dokunuş küçültür
+    // (sayaç sürerken rakama dokunmak yine durdur/devam)
+    e.addEventListener('click', (ev) => { if (!_ozdDin.buyuk || ev.target.closest('button') || (_ozdDin.t && ev.target.closest('.ozd-din-say'))) return; ev.stopPropagation(); ozdDinBuyut(); }, true);
+}
 function ozdDinCiz() {
     const p = document.getElementById('karisik-platform'); let e = document.getElementById('ozd-dinlen');
     if (!p || !ozdHareketModu()) { if (e) e.remove(); clearInterval(_ozdDin.t); _ozdDin.t = null; _ozdDin.kalan = 0; return; }
-    if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; p.appendChild(e); }
+    if (!e) { e = document.createElement('div'); e.id = 'ozd-dinlen'; p.appendChild(e); ozdDinSurukle(e); }
     const k = _ozdDin.kalan, bitti = !_ozdDin.t && k <= 0 && _ozdDin.toplam > 0, oran = _ozdDin.toplam ? Math.max(0, k) / _ozdDin.toplam : 0;
     const say = k > 0 ? (k >= 60 ? Math.floor(k / 60) + ':' + String(k % 60).padStart(2, '0') : String(k)) : (bitti ? 'HAZIR! 💪' : '—');
     e.className = 'ozd-dinlen' + (_ozdDin.buyuk ? ' buyuk' : '') + (k > 0 && k <= 3 ? ' son' : '') + (bitti ? ' bitti' : '');
-    e.innerHTML = `<div class="ozd-din-ust"><b>⏱️ Dinlenme</b><button onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Büyüt (TV)'}">${_ozdDin.buyuk ? '✕' : '⤢'}</button></div>
+    e.innerHTML = `<div class="ozd-din-ust" title="Sürükleyip taşı"><b><span class="ozd-din-tut">⋮⋮</span>⏱️ Dinlenme</b>${_ozdDin.buyuk ? '' : `<button onclick="ozdDinBoy(-1)" title="Küçült">➖</button><button onclick="ozdDinBoy(1)" title="Büyüt">➕</button>`}<button onclick="ozdDinBuyut()" title="${_ozdDin.buyuk ? 'Küçült' : 'Tam ekran (TV)'}">${_ozdDin.buyuk ? '✕' : '⤢'}</button></div>
       <div class="ozd-din-say" onclick="ozdDinDur()" title="Durdur / devam">${say}</div><div class="ozd-din-bar"><i style="width:${oran * 100}%"></i></div>
       <div class="ozd-din-cip">${[15, 20, 30, 45, 60, 90].map((n) => `<button class="${n === ozdDinSure() ? 'aktif' : ''}" onclick="ozdDinSec(${n})">${n}</button>`).join('')}<button onclick="ozdDinOtoDegis()" title="Her puan girişinden sonra kendiliğinden başlasın">${ozdDinOto() ? '🔁 oto' : '✋ elle'}</button></div>`;
+    ozdDinYerUygula(e);
 }
 
 /* ---------------- sekme ---------------- */
@@ -512,18 +545,18 @@ function ozdCss() {
 .ozd-modal-k{background:var(--bg-main,#1b1530);box-shadow:0 20px 60px rgba(0,0,0,.6);color:var(--text-primary);border:1px solid var(--border-color);border-radius:16px;padding:16px;width:min(560px,100%);max-height:90vh;overflow:auto}
 .ozd-mesaj{min-height:300px;font-size:13px;line-height:1.45}.ozd-modal-alt{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
 #karisik-platform.ozd-modu .km-sk-kusak{display:none}
-.ozd-dinlen{position:fixed;right:14px;bottom:14px;z-index:20050;width:200px;background:rgba(20,14,36,.94);color:#fff;border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 2px #7c5cff;font-family:inherit;transition:background .3s}
-.ozd-din-ust{display:flex;justify-content:space-between;align-items:center;font-size:13px}.ozd-din-ust button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer}
-.ozd-din-say{font-size:54px;font-weight:900;text-align:center;line-height:1.1;cursor:pointer;font-variant-numeric:tabular-nums;margin:4px 0}
-.ozd-din-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}.ozd-din-bar i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#ff6a1a);transition:width 1s linear}
-.ozd-din-cip{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.ozd-din-cip button{flex:1;min-width:32px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:8px;padding:5px 2px;font-weight:800;font-size:12px;cursor:pointer}.ozd-din-cip button.aktif{background:#7c5cff;border-color:#7c5cff}
+/* ⏱️ dinlenme: boy (--b) ile her şey em cinsinden ölçeklenir; konum sürüklenir (sol/üst piksel, cihazda saklı) */
+.ozd-dinlen{position:fixed;right:14px;bottom:14px;z-index:20050;font-size:var(--b,13px);width:15.4em;background:rgba(20,14,36,.94);color:#fff;border-radius:1.4em;padding:.8em .9em;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 2px #7c5cff;font-family:inherit;transition:background .3s;touch-action:none;user-select:none}
+.ozd-din-ust{display:flex;align-items:center;gap:.3em;cursor:grab}.ozd-din-ust b{flex:1;font-size:1em}.ozd-din-ust button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:.6em;width:2.3em;height:2.3em;font-size:1em;cursor:pointer;flex-shrink:0}
+.ozd-dinlen.surukle .ozd-din-ust{cursor:grabbing}.ozd-din-tut{opacity:.5;letter-spacing:-.15em;margin-right:.2em}
+.ozd-din-say{font-size:4.2em;font-weight:900;text-align:center;line-height:1.1;cursor:pointer;font-variant-numeric:tabular-nums;margin:.05em 0}
+.ozd-din-bar{height:.6em;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}.ozd-din-bar i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#ff6a1a);transition:width 1s linear}
+.ozd-din-cip{display:flex;flex-wrap:wrap;gap:.3em;margin-top:.6em}.ozd-din-cip button{flex:1;min-width:2.4em;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:.6em;padding:.4em .1em;font-weight:800;font-size:.92em;cursor:pointer}.ozd-din-cip button.aktif{background:#7c5cff;border-color:#7c5cff}
 .ozd-dinlen.son{background:rgba(160,40,20,.95)}.ozd-dinlen.son .ozd-din-say{animation:ozdNabiz .5s ease-in-out infinite alternate}@keyframes ozdNabiz{to{transform:scale(1.12)}}
-.ozd-dinlen.bitti{background:rgba(20,120,60,.95)}.ozd-dinlen.bitti .ozd-din-say{font-size:34px}
-.ozd-dinlen.buyuk{inset:0;width:auto;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:4vh 6vw;z-index:20100}
-.ozd-dinlen.buyuk .ozd-din-ust{font-size:clamp(20px,3vw,40px)}.ozd-dinlen.buyuk .ozd-din-ust button{width:56px;height:56px;font-size:26px}
-.ozd-dinlen.buyuk .ozd-din-say{font-size:min(38vw,60vh)}.ozd-dinlen.buyuk.bitti .ozd-din-say{font-size:min(16vw,30vh)}.ozd-dinlen.buyuk .ozd-din-bar{height:22px}
-.ozd-dinlen.buyuk .ozd-din-cip{max-width:720px;margin:20px auto 0;width:100%}.ozd-dinlen.buyuk .ozd-din-cip button{font-size:20px;padding:12px 4px}
-@media (max-width:640px){.ozd-dinlen:not(.buyuk){width:150px;right:8px;bottom:auto;top:120px;padding:8px}.ozd-dinlen:not(.buyuk) .ozd-din-say{font-size:40px}.ozd-dinlen:not(.buyuk) .ozd-din-cip button{font-size:11px;padding:4px 1px;min-width:26px}}
+.ozd-dinlen.bitti{background:rgba(20,120,60,.95)}.ozd-dinlen.bitti .ozd-din-say{font-size:2.6em}
+.ozd-dinlen.buyuk{inset:0!important;width:auto;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:4vh 6vw;z-index:20100;font-size:clamp(18px,2.6vw,34px)}
+.ozd-dinlen.buyuk .ozd-din-ust{cursor:default}.ozd-dinlen.buyuk .ozd-din-say{font-size:min(38vw,60vh)}.ozd-dinlen.buyuk.bitti .ozd-din-say{font-size:min(16vw,30vh)}.ozd-dinlen.buyuk .ozd-din-bar{height:1em}
+.ozd-dinlen.buyuk .ozd-din-cip{max-width:760px;margin:1em auto 0;width:100%}
 .ozd-km-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:linear-gradient(90deg,#7c5cff,#ff6a1a);color:#fff;font-size:13px;flex-shrink:0}
 .ozd-km-banner span{opacity:.9;font-size:12px;flex:1;min-width:160px}.ozd-km-banner button{border:0;border-radius:999px;background:rgba(0,0,0,.28);color:#fff;font-weight:800;padding:6px 12px;cursor:pointer}
 .ozd-dok{margin-bottom:8px}.ozd-dok-bas{font-size:12px;font-weight:900;margin-bottom:5px}.ozd-dok-bas small{font-weight:600;opacity:.7;margin-left:4px}
