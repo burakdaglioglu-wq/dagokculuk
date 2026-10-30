@@ -40,6 +40,8 @@
     const DONDU_NOT = '❄️ Dondurulmuş', dondu = r => !!(r && !r.odendi && /^❄️/.test(r.notMetin || ''));
     window.apDondu = dondu; window.AP_DONDU_NOT = DONDU_NOT;
     const borclu = s => s.d === 'bekliyor' || s.d === 'takipsiz'; // bu ay ödenebilir (takipsiz: ödeme kaydı/katılma tarihi yok)
+    // arama: isimler büyük harf + düz I ile kayıtlı ("KARADENIZ"); tr küçültme I→ı yapıp "karadeniz" aramasını kaçırıyordu → harfleri katla
+    const katla = s => String(s || '').toLocaleLowerCase('tr').replace(/[ıiî]/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/[üû]/g, 'u').replace(/â/g, 'a').replace(/\s+/g, ' ');
     window.apOdemeGunu = odemeGunu;
 
     function css() {
@@ -124,6 +126,18 @@
 .ap .ap-alt{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--ap-soluk);flex-wrap:wrap}
 .ap .ap-bos{padding:18px 4px;color:var(--ap-soluk);font-size:13px}
 .ap .ap-araclar{display:flex;gap:6px;flex-wrap:wrap}
+.ap .ap-gir{border-color:var(--ap-vurgu);padding:14px 16px}
+.ap .ap-gir-bas{margin:0 0 10px;font-size:16px;font-weight:800;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.ap .ap-gir-bas span{font-weight:500;color:var(--ap-soluk);font-size:12.5px}
+.ap input.ap-gir-ara{width:100%;font-size:17px;padding:12px 14px;min-height:48px;border:2px solid var(--ap-cizgi);border-radius:10px}
+.ap input.ap-gir-ara:focus{border-color:var(--ap-vurgu);outline:none}
+.ap .ap-gir-ipucu{margin:7px 2px 12px;font-size:12.5px;color:var(--ap-soluk);line-height:1.5}
+.ap .ap-gir-ipucu b{color:var(--ap-yazi)}
+.ap .ap-link{font:inherit;font-size:12.5px;font-weight:700;background:none;border:0;padding:0;color:var(--ap-vurgu);cursor:pointer;text-decoration:underline}
+.ap .ap-sekmeler.sonuk{opacity:.55}
+.ap .ap-acil>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ap-soluk);padding:8px 2px;list-style-position:inside}
+.ap .ap-acil>summary b{color:var(--ap-iyi)}
+.ap .ap-acil[open]>summary{margin-bottom:8px}
 @media (max-width:760px){
  .ap{padding:12px}
  .ap .ap-sat{grid-template-columns:24px minmax(0,1fr) auto;grid-template-areas:"c ad borc" "c durum durum" "c isl isl";row-gap:5px}
@@ -235,15 +249,16 @@
         el.innerHTML = `<div class="ap" id="ap-kok" role="region" aria-label="Aidat paneli">
             <div class="ap-bas">
                 <div><h2>Aidat · ${ayAd(v.ay)}</h2><small>${esc(grupAd)} · ${aktifSay} aktif sporcu${ortAylik ? ' · ort. aylık ' + tl(ortAylik) : ''}</small></div>
-                <div class="ap-arac"><button class="ap-btn" onclick="apAyKaydir(-1)" aria-label="Önceki ay">◀ ${ayKisa(ayEkle(v.ay, -1))}</button>${v.ay !== buAy() ? `<button class="ap-btn" onclick="AP.ay=null; AP.sayfa=0; apYenile()">Bu ay</button>` : ''}<button class="ap-btn" onclick="apAyKaydir(1)" aria-label="Sonraki ay">${ayKisa(ayEkle(v.ay, 1))} ▶</button>${ms}${AP.a.pdf ? `<button class="ap-btn" onclick="AP.a.pdf(AP.ay, AP.grup)">📄 Liste PDF</button>` : ''}<button class="ap-btn ana" onclick="ynPdf(document.getElementById('ap-kok'), 'aidat')">📄 Ekran PDF</button></div>
+                <div class="ap-arac"><button class="ap-btn" onclick="apAyKaydir(-1)" aria-label="Önceki ay">◀ ${ayKisa(ayEkle(v.ay, -1))}</button>${v.ay !== buAy() ? `<button class="ap-btn" onclick="AP.ay=null; AP.sayfa=0; apYenile()">Bu ay</button>` : ''}<button class="ap-btn" onclick="apAyKaydir(1)" aria-label="Sonraki ay">${ayKisa(ayEkle(v.ay, 1))} ▶</button>${ms}${AP.a.pdf ? `<button class="ap-btn" onclick="AP.a.pdf(AP.ay, AP.grup)">📄 Liste PDF</button>` : ''}<button class="ap-btn" onclick="let d=document.getElementById('ap-ist'); if(d) d.open=true; ynPdf(document.getElementById('ap-kok'), 'aidat')">📄 Ekran PDF</button></div>
             </div>
+            <div class="ap-panel ap-gir" id="ap-tablo-panel"><div id="ap-tablo"></div></div>
             <div class="ap-kpi">${kpi}</div>
+            <details class="ap-acil" id="ap-ist"${AP.istAcik ? ' open' : ''} ontoggle="AP.istAcik=this.open"><summary>📊 Grafikler ve ipuçları${v.olabilir.length ? ` · <b>${v.olabilir.length} kişi ödemiş olabilir</b>` : ''}</summary>
             <div class="ap-iki">
                 <div class="ap-panel"><h3>Son 6 ay · toplanan / beklenen <span>${v.grafik[5].tahmin ? ayKisa(v.ay) + ' = tahminli' : ''}</span></h3><div class="ap-grafik">${grafik}</div>
                     <div class="ap-leje"><span><i style="background:var(--ap-vurgu)"></i>Toplanan</span><span><i style="background:var(--ap-bek)"></i>Beklenen</span>${v.grafik[5].tahmin ? '<span><i style="border:1px solid var(--ap-vurgu)"></i>Ay sonu tahmini</span>' : ''}</div></div>
                 <div class="ap-panel"><h3>Ödemeyenler · gecikme süresi <span>${v.bek.length} kişi</span></h3><div class="ap-yas">${yas}</div>${ipucu}</div>
-            </div>
-            <div class="ap-panel" id="ap-tablo-panel"><div id="ap-tablo"></div></div>
+            </div></details>
             ${araclar ? `<div class="ap-panel"><h3>Diğer araçlar</h3><div class="ap-araclar">${araclar}</div></div>` : ''}
         </div>`;
         apTabloCiz();
@@ -260,9 +275,10 @@
     window.apTabloGit = function () { let e = document.getElementById('ap-tablo-panel'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
     function liste(v) {
+        let q = katla(AP.arama.trim());
+        // arama yazılınca seçili sekme değil BÜTÜN sporcular (2026-10-30, kullanıcı: "arama tuşu çalışmıyor" — çocuk başka sekmedeydi)
+        if (q) return v.satirlar.filter(s => katla(s.k.ad + ' ' + (s.k.grupAd || '')).includes(q)).sort((x, y) => (borclu(y) - borclu(x)) || x.k.ad.localeCompare(y.k.ad, 'tr'));
         let L = { bekleyen: v.bek, olabilir: v.olabilir, geciken: v.geciken, odedi: v.od, muaf: v.muaf.concat(v.dondu, v.takipsiz, v.yeni) }[AP.liste] || v.bek;
-        let q = AP.arama.trim().toLocaleLowerCase('tr');
-        if (q) L = L.filter(s => (s.k.ad + ' ' + (s.k.grupAd || '')).toLocaleLowerCase('tr').includes(q));
         let sira = AP.liste === 'odedi' ? (x, y) => (odemeGunu(y.rec) || '').localeCompare(odemeGunu(x.rec) || '') : (x, y) => (y.gec - x.gec) || (y.olabilir - x.olabilir) || x.k.ad.localeCompare(y.k.ad, 'tr');
         return L.slice().sort(sira);
     }
@@ -270,8 +286,9 @@
         let kap = document.getElementById('ap-tablo'), v = AP.v; if (!kap || !v) return;
         let L = liste(v), sayfaSay = Math.max(1, Math.ceil(L.length / SAYFA)); if (AP.sayfa >= sayfaSay) AP.sayfa = sayfaSay - 1;
         let parca = L.slice(AP.sayfa * SAYFA, AP.sayfa * SAYFA + SAYFA);
-        let sek = (k, et, n) => `<button aria-pressed="${AP.liste === k}" onclick="AP.liste='${k}'; AP.sayfa=0; AP.acik=null; apTabloCiz()">${et}<b>${n}</b></button>`;
-        let odediMi = AP.liste === 'odedi', muafMi = AP.liste === 'muaf';
+        let aramaVar = !!AP.arama.trim();
+        let sek = (k, et, n) => `<button aria-pressed="${!aramaVar && AP.liste === k}" onclick="AP.liste='${k}'; AP.arama=''; AP.sayfa=0; AP.acik=null; apTabloCiz()">${et}<b>${n}</b></button>`;
+        let odediMi = !aramaVar && AP.liste === 'odedi', muafMi = !aramaVar && AP.liste === 'muaf';
         let secSay = Object.keys(AP.sec).filter(id => AP.sec[id]).length;
         let satir;
         if (odediMi) {
@@ -290,13 +307,23 @@
                 return r;
             }).join('');
         }
-        kap.innerHTML = `<h3 style="margin:0 0 10px;font-size:13.5px;font-weight:800;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">Sporcular <span style="font-weight:500;color:var(--ap-soluk);font-size:12px">${ayAd(v.ay)}</span></h3>
-            <div class="ap-sekmeler" role="group" aria-label="Liste">${sek('bekleyen', 'Ödemeyenler', v.bek.length)}${sek('olabilir', 'Ödemiş olabilir', v.olabilir.length)}${sek('geciken', 'Eski borçlu', v.geciken.length)}${sek('odedi', 'Ödeyenler', v.od.length)}${sek('muaf', 'Muaf / takipsiz', v.muaf.length + v.dondu.length + v.takipsiz.length + v.yeni.length)}</div>
-            <div class="ap-filtre"><input type="search" id="ap-ara" placeholder="Sporcu ara" value="${esc(AP.arama)}" oninput="apAra(this.value)" aria-label="Sporcu ara">${odediMi || muafMi ? '' : `<label><input type="checkbox" onchange="apHepsiniSec(this.checked)" ${parca.length && parca.every(s => AP.sec[s.k.id]) ? 'checked' : ''}> Sayfadakileri seç</label><button class="ap-btn" id="ap-toplu" onclick="apToplu()" ${secSay ? '' : 'disabled'}>✓ Seçilenler ödendi${secSay ? ' (' + secSay + ')' : ''}</button>`}</div>
-            <div class="ap-satirlar">${parca.length ? satir : `<div class="ap-bos">${AP.arama ? 'Aramaya uyan sporcu yok.' : AP.liste === 'bekleyen' ? 'Bu ay ödemeyen yok.' : 'Bu listede kimse yok.'}</div>`}</div>
+        kap.innerHTML = `<h3 class="ap-gir-bas">💳 Aidat gir <span>${ayAd(v.ay)}</span></h3>
+            <input type="search" id="ap-ara" class="ap-gir-ara" placeholder="Çocuğun adını yaz…" value="${esc(AP.arama)}" oninput="apAra(this.value)" onkeydown="apAraTus(event)" aria-label="Sporcu ara" autocomplete="off">
+            <p class="ap-gir-ipucu">${aramaVar ? `<b>${L.length}</b> sonuç · bütün sporcularda arandı. <button class="ap-link" onclick="apAra(''); setTimeout(function(){let e=document.getElementById('ap-ara'); if(e) e.focus();},200)">Aramayı temizle</button>` : `İsmi yaz → yeşil <b>✓ Ödendi</b>'ye bas → tutarı kontrol et → <b>Kaydet</b>. Ya da aşağıdaki listeden seç.`}</p>
+            <div class="ap-sekmeler${aramaVar ? ' sonuk' : ''}" role="group" aria-label="Liste">${sek('bekleyen', 'Ödemeyenler', v.bek.length)}${sek('olabilir', 'Ödemiş olabilir', v.olabilir.length)}${sek('geciken', 'Eski borçlu', v.geciken.length)}${sek('odedi', 'Ödeyenler', v.od.length)}${sek('muaf', 'Muaf / takipsiz', v.muaf.length + v.dondu.length + v.takipsiz.length + v.yeni.length)}</div>
+            ${odediMi || muafMi || aramaVar ? '' : `<div class="ap-filtre"><label><input type="checkbox" onchange="apHepsiniSec(this.checked)" ${parca.length && parca.every(s => AP.sec[s.k.id]) ? 'checked' : ''}> Sayfadakileri seç</label><button class="ap-btn" id="ap-toplu" onclick="apToplu()" ${secSay ? '' : 'disabled'}>✓ Seçilenler ödendi${secSay ? ' (' + secSay + ')' : ''}</button></div>`}
+            <div class="ap-satirlar">${parca.length ? satir : `<div class="ap-bos">${aramaVar ? 'Bu isimde sporcu yok. Pasif ya da dondurulmuş olabilir: ana menüdeki sporcu listesinden kontrol et.' : AP.liste === 'bekleyen' ? 'Bu ay ödemeyen yok.' : 'Bu listede kimse yok.'}</div>`}</div>
             <div class="ap-alt"><span>${L.length ? (AP.sayfa * SAYFA + 1) + '–' + Math.min(L.length, AP.sayfa * SAYFA + SAYFA) + ' / ' + L.length : ''}</span>${sayfaSay > 1 ? `<span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="AP.sayfa--; AP.acik=null; apTabloCiz()" ${AP.sayfa ? '' : 'disabled'}>‹ Önceki</button><span class="ap-num">${AP.sayfa + 1} / ${sayfaSay}</span><button class="ap-btn" onclick="AP.sayfa++; AP.acik=null; apTabloCiz()" ${AP.sayfa < sayfaSay - 1 ? '' : 'disabled'}>Sonraki ›</button></span>` : ''}</div>`;
     };
     window.apAra = function (q) { AP.arama = q; AP.sayfa = 0; clearTimeout(AP.z); AP.z = setTimeout(function () { let e = document.getElementById('ap-ara'), p = e ? e.selectionStart : 0; apTabloCiz(); let n = document.getElementById('ap-ara'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (x) {} } }, 160); };
+    // Enter: tek ödenebilir sonuç varsa formu doğrudan aç
+    window.apAraTus = function (e) {
+        if (e.key === 'Escape') { e.target.value = ''; apAra(''); return; }
+        if (e.key !== 'Enter' || !AP.v) return;
+        clearTimeout(AP.z); AP.arama = e.target.value; AP.sayfa = 0;
+        let L = liste(AP.v).filter(s => borclu(s) || (s.d === 'odedi' && s.gec > 0));
+        if (L.length === 1) apFormAc(L[0].k.id); else apTabloCiz();
+    };
     window.apSecimYaz = function () { let n = Object.keys(AP.sec).filter(id => AP.sec[id]).length, b = document.getElementById('ap-toplu'); if (b) { b.disabled = !n; b.textContent = '✓ Seçilenler ödendi' + (n ? ' (' + n + ')' : ''); } };
     window.apHepsiniSec = function (on) { let L = liste(AP.v).slice(AP.sayfa * SAYFA, AP.sayfa * SAYFA + SAYFA); L.forEach(s => { if (borclu(s) || (s.d === 'odedi' && s.gec > 0)) AP.sec[s.k.id] = on; }); apTabloCiz(); };
     const bul = id => AP.v && AP.v.satirlar.find(s => s.k.id === id);

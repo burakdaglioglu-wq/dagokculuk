@@ -57,7 +57,15 @@ export default async function ({ log }) {
       dogrula(k.bu && k.bu.odendi && k.bu.tutar > 0 && k.bu.odemeTarihi === bugun && k.bu.notMetin === 'Test: elden', 'bu ay ödendi kaydı yanlış: ' + JSON.stringify(k.bu));
       dogrula(k.a1 && k.a1.odendi && k.a2 && k.a2.odendi, 'eski borç ayları ödendi olmalı');
       esit(k.put, 3, 'üç ay sunucuya gönderilmeli');
+      // v355: arama bütün sekmelerde + Türkçe harf katlama (KARADENIZ ↔ "karadeniz"); tek sonuçta Enter formu açar
+      await p.evaluate(() => { AP.liste = 'odedi'; AP.acik = null; apTabloCiz(); });
+      const katli = yedek.l[1].toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ü/g, 'u');
+      await p.locator('#ap-ara').fill(katli); await p.waitForTimeout(400);
+      const ar2 = await p.evaluate(() => [...document.querySelectorAll('#tmp-aidat .ap-sat:not(.bas) .ad b')].map((b) => b.textContent));
+      dogrula(ar2.includes(yedek.l[1]), 'ödeyenler sekmesindeyken "' + katli + '" araması ödemeyen sporcuyu bulmalı: ' + JSON.stringify(ar2));
+      if (ar2.length === 1) { await p.locator('#ap-ara').press('Enter'); await p.waitForSelector('#ap-f-not', { timeout: 3000 }); }
       // toplu: ödemiş olabilir olanı seç → ödendi
+      await p.evaluate(() => { AP.acik = null; });
       await p.locator('#ap-ara').fill(''); await p.waitForTimeout(300);
       await p.evaluate((y) => { AP.liste = 'olabilir'; AP.sec = {}; AP.sec[y.g + '|' + y.l[1]] = true; apTabloCiz(); window.confirm = () => true; }, yedek);
       await p.locator('#ap-toplu').click(); await p.waitForTimeout(300);
