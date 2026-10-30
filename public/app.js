@@ -4145,11 +4145,12 @@
 
         // 📊 yonetim-panel.js aidat paneli için DAĞ verisi: aidatDB[ad][ay], turnuvaDB (AIDAT_GRUPLAR), otomatikYoklamaDB + seriler (devam)
         let _aidatGiderOnbellek = null;
+        let _aidatGelirOnbellek = null;
         function aidatPanelAdaptor() {
-            let yok = {}, aylikMemo = {}, ilk = null;
+            let yok = {}, aylikMemo = {}, ilk = null, son = null;
             return {
                 hazirla(ay) {
-                    yok = {}; aylikMemo = {}; ilk = null;
+                    yok = {}; aylikMemo = {}; ilk = null; son = null;
                     Object.keys(otomatikYoklamaDB || {}).forEach(iso => { if(iso.slice(0, 7) !== ay) return; let gun = otomatikYoklamaDB[iso] || {}; Object.keys(gun).forEach(ad => { let r = gun[ad]; if(r && r.geldi !== false) (yok[ad] = yok[ad] || {})[iso] = 1; }); });
                 },
                 kisiler() {
@@ -4170,6 +4171,14 @@
                     }
                     return ilk[k.ad] || null;
                 },
+                sonGelis(k) {
+                    if(!son) {
+                        son = {}; let ekle = (ad, t) => { t = String(t).slice(0, 10); if(!son[ad] || t > son[ad]) son[ad] = t; };
+                        Object.keys(otomatikYoklamaDB || {}).forEach(iso => { let gun = otomatikYoklamaDB[iso] || {}; Object.keys(gun).forEach(ad => { if(gun[ad] && gun[ad].geldi !== false) ekle(ad, iso); }); });
+                        AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { let sp = turnuvaDB[g][ad]; if(sp) (sp.seriler || []).forEach(x => { if(x && x.tarih && !x.iptal) ekle(ad, x.tarih); }); }));
+                    }
+                    return son[k.ad] || null;
+                },
                 devam(k, ay) {
                     let h = Object.assign({}, yok[k.ad] || {}), sp = turnuvaDB[k.grup] && turnuvaDB[k.grup][k.ad];
                     if(sp) (sp.seriler || []).forEach(x => { if(x && x.tarih && !x.iptal && String(x.tarih).slice(0, 7) === ay) h[String(x.tarih).slice(0, 10)] = 1; });
@@ -4178,7 +4187,8 @@
                 kaydet(isler) {
                     isler.forEach(x => {
                         let ad = x.kisi.ad, eski = (aidatDB[ad] && aidatDB[ad][x.ay]) || {};
-                        let kayit = { odendi: true, tutar: x.tutar || null, notMetin: x.notMetin || eski.notMetin || null, tarih: new Date().toISOString(), odemeTarihi: x.odemeTarihi || bugunISO() };
+                        let kayit = { odendi: true, tutar: x.tutar || null, notMetin: x.notMetin || eski.notMetin || null, tarih: new Date().toISOString(), odemeTarihi: x.odemeTarihi || bugunISO(),
+                            yontem: x.yontem || (eski.odendi && eski.yontem) || null, giren: (eski.odendi && eski.giren) || (_oturum && _oturum.ad) || null };
                         if(!aidatDB[ad]) aidatDB[ad] = {};
                         aidatDB[ad][x.ay] = kayit;
                         _aidatDuesPut(ad, x.ay, Object.assign({ deviceId: _cihazId }, kayit));
@@ -4194,6 +4204,12 @@
                     return fetch('/api/gider').then(r => { if(!r.ok) throw new Error('gider'); return r.json(); }).then(d => { _aidatGiderOnbellek = { t: Date.now(), l: d.giderler || [] }; return _aidatGiderOnbellek.l; });
                 },
                 giderGit() { _aidatAltSekme = 'gider'; egitmenRenderAidat(); },
+                gelir() {
+                    if(_aidatGelirOnbellek && Date.now() - _aidatGelirOnbellek.t < 60000) return Promise.resolve(_aidatGelirOnbellek.l);
+                    return fetch('/api/gelir').then(r => { if(!r.ok) throw new Error('gelir'); return r.json(); }).then(d => { _aidatGelirOnbellek = { t: Date.now(), l: d.gelirler || [] }; return _aidatGelirOnbellek.l; });
+                },
+                gelirEkle(x) { return fetch('/api/gelir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(x) }).then(r => { if(!r.ok) throw new Error('gelir'); _aidatGelirOnbellek = null; }); },
+                gelirSil(id) { return fetch('/api/gelir/' + encodeURIComponent(id), { method: 'DELETE' }).then(r => { if(!r.ok) throw new Error('gelir'); _aidatGelirOnbellek = null; }); },
                 bildirim: {
                     gun() { let d = typeof kyDepoOku === 'function' ? kyDepoOku('aidat_ayar') : {}; return d && d.bildirimGun ? parseInt(d.bildirimGun.v) || 0 : 0; },
                     gunYaz(g) {
@@ -4209,7 +4225,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=14';
+        const YN_DOSYA = 'yonetim-panel.js?v=15';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {

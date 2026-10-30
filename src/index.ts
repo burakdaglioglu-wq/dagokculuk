@@ -23,6 +23,7 @@ import { registerDuelloRoutes } from "./routes/duello";
 import { registerDuyuruRoutes } from "./routes/duyuru";
 import { registerWeatherRoutes } from "./routes/weather";
 import { registerGiderRoutes } from "./routes/gider";
+import { registerGelirRoutes } from "./routes/gelir";
 import { registerAntrenmanProgramiRoutes } from "./routes/antrenmanProgrami";
 import { registerDersIcerikleriRoutes } from "./routes/dersIcerikleri";
 import { registerMiloMemberRoutes } from "./routes/milo/members";
@@ -71,6 +72,7 @@ registerDuelloRoutes(router);
 registerDuyuruRoutes(router);
 registerWeatherRoutes(router);
 registerGiderRoutes(router);
+registerGelirRoutes(router);
 registerAntrenmanProgramiRoutes(router);
 registerDersIcerikleriRoutes(router);
 registerMiloMemberRoutes(router);
@@ -153,6 +155,7 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/personnel",
   "/api/attendance/personnel",
   "/api/gider",
+  "/api/gelir",
   "/api/backups",
   "/api/ihtiyac",
   "/api/tanitim/ziyaret-ozet",
@@ -174,7 +177,7 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
 // bölümler (aidat, gider, personel, yedekten geri yükleme) kişi adıyla kaydedilir.
 function gunlugeYazilsinMi(method: string, path: string): boolean {
   if (method === "DELETE") return !path.startsWith("/api/lock") && !path.startsWith("/api/push/");
-  return path.startsWith("/api/dues") || path.startsWith("/api/milo/dues") || path.startsWith("/api/gider") || path.startsWith("/api/personnel") || path.startsWith("/api/milo/personnel") || path.endsWith("/restore");
+  return path.startsWith("/api/dues") || path.startsWith("/api/milo/dues") || path.startsWith("/api/gider") || path.startsWith("/api/gelir") || path.startsWith("/api/personnel") || path.startsWith("/api/milo/personnel") || path.endsWith("/restore");
 }
 
 export default {
@@ -206,6 +209,7 @@ export default {
           const milo = url.pathname.startsWith("/api/milo/");
           const oturum = await yetkiliOturum(request, env, milo);
           if (!oturum) return unauthorized("oturum-yok");
+          match.params._oturumAd = oturum.ad || ""; // aidat ödemesinde "kim tahsil etti" (sunucu yazar, istemciye güvenilmez)
           if (gunlugeYazilsinMi(request.method, match.path)) {
             ctx.waitUntil(gunluk(milo ? env.DB_MILO : env.DB, { kullaniciId: oturum.kullaniciId, ad: oturum.ad }, "islem", request.method + " " + url.pathname).catch(() => {}));
           }

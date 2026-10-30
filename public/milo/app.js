@@ -773,10 +773,11 @@ function miloAidatPanelAdaptor() {
         varsayilanTutarYaz(v) { miloAidatTutarDegis(v); clearTimeout(_miloAidatAyarZ); return miloAidatVarsayilanSenkron(true); },
         devam(k) { return miloAttendanceTum.length ? Object.keys(devam[k.ad] || {}).length : null; },
         ilkGelis(k) { let t = null; miloAttendanceTum.forEach(a => { if (a.geldi && a.ad === k.ad && a.tarih && (!t || String(a.tarih).slice(0, 10) < t)) t = String(a.tarih).slice(0, 10); }); return t; },
+        sonGelis(k) { if (!miloAttendanceTum.length) return null; let t = null; miloAttendanceTum.forEach(a => { if (a.geldi && a.ad === k.ad && a.tarih && (!t || String(a.tarih).slice(0, 10) > t)) t = String(a.tarih).slice(0, 10); }); return t; },
         async kaydet(isler) {
             for (const x of isler) {
                 let eski = miloAidatDuesKayit(x.kisi.ad, x.ay) || {};
-                await miloApi(`/dues/${encodeURIComponent(x.kisi.ad)}/${encodeURIComponent(x.ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: true, tutar: x.tutar || null, tarih: bugunISO(), notMetin: x.notMetin || eski.notMetin || null, odemeTarihi: x.odemeTarihi || bugunISO() }) });
+                await miloApi(`/dues/${encodeURIComponent(x.kisi.ad)}/${encodeURIComponent(x.ay)}`, { method: 'PUT', body: JSON.stringify({ odendi: true, tutar: x.tutar || null, tarih: bugunISO(), notMetin: x.notMetin || eski.notMetin || null, odemeTarihi: x.odemeTarihi || bugunISO(), yontem: x.yontem || (eski.odendi && eski.yontem) || null }) });
             }
             miloDuesTum = (await miloApi('/dues')).dues;
         },

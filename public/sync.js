@@ -217,7 +217,7 @@
     // bulutVeriyiUygula da "if(p.X)" ile atlar — girişsiz cihazda yerel veri silinmez, senkronun geri kalanı sürer.
     const aidatDB = duesRes ? {} : undefined;
     if (duesRes) duesRes.dues.forEach((d) => {
-      (aidatDB[d.ad] = aidatDB[d.ad] || {})[d.ay] = { odendi: d.odendi, tutar: d.tutar, tarih: d.tarih, notMetin: d.notMetin, odemeTarihi: d.odemeTarihi };
+      (aidatDB[d.ad] = aidatDB[d.ad] || {})[d.ay] = { odendi: d.odendi, tutar: d.tutar, tarih: d.tarih, notMetin: d.notMetin, odemeTarihi: d.odemeTarihi, yontem: d.yontem || null, giren: d.giren || null };
     });
 
     const otomatikYoklamaDB = {};

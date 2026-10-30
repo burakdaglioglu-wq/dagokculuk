@@ -13,6 +13,8 @@
 //   hatirlat(kisi, ay)     — WhatsApp hatırlatma
 //   pdf(ay, grup)          — liste PDF'i
 //   araclar                — [[etiket, 'onclick kodu']] alt araç düğmeleri
+//   (isteğe bağlı) sonGelis(kisi) → 'YYYY-MM-DD' | null · gelir() → Promise<[{ id, tarih, kategori, aciklama, tutar, yontem, sporcu, giren }]>
+//   gelirEkle(x) / gelirSil(id) → Promise · kayıtta rec.yontem ('nakit'|'iban'|'kart') ve rec.giren (tahsil eden) olabilir
 (function () {
     const AP = window.AP = { ay: null, grup: 'tumu', arama: '', liste: 'bekleyen', sayfa: 0, acik: null, sec: {}, el: null, a: null, v: null, z: null };
     const SAYFA = 20;
@@ -43,6 +45,16 @@
     // arama: isimler büyük harf + düz I ile kayıtlı ("KARADENIZ"); tr küçültme I→ı yapıp "karadeniz" aramasını kaçırıyordu → harfleri katla
     const katla = s => String(s || '').toLocaleLowerCase('tr').replace(/[ıiî]/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/[üû]/g, 'u').replace(/â/g, 'a').replace(/\s+/g, ' ');
     window.apOdemeGunu = odemeGunu;
+    const gunFark = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+    // 💵 ödeme yöntemi (2026-10-30): kasa "çekmecede olması gereken nakit" ile "bankaya gelen"i ayırır; son seçilen hatırlanır
+    const YONTEM = [['nakit', '💵 Nakit'], ['iban', '🏦 IBAN'], ['kart', '💳 Kart']], YON_AD = { nakit: 'Nakit', iban: 'IBAN', kart: 'Kart' };
+    const yonAd = y => YON_AD[y] || 'Belirtilmedi';
+    try { AP.sonYontem = localStorage.getItem('ap_son_yontem') || 'nakit'; } catch (e) { AP.sonYontem = 'nakit'; }
+    function yontemHTML(sec) {
+        return `<div class="ap-yon" role="radiogroup" aria-label="Nasıl ödedi?"><small>Nasıl ödedi?</small><span>${YONTEM.map(y => `<label><input type="radio" name="ap-f-yon" value="${y[0]}"${sec === y[0] ? ' checked' : ''}><b>${y[1]}</b></label>`).join('')}</span></div>`;
+    }
+    const GELMIYOR_GUN = 21; // ödüyor ama gelmiyor: son derse gelişten bu yana gün
+    const GELIR_KAT = ['Kayıt ücreti', 'Forma / kıyafet', 'Ekipman satışı', 'Ok / malzeme', 'Yarışma ücreti', 'Özel ders', 'Diğer'];
 
     function css() {
         if (document.getElementById('ap-css')) return;
@@ -160,6 +172,21 @@
 .ap .ap-tablo{width:100%;border-collapse:collapse;font-size:13px}.ap .ap-tablo th{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ap-soluk);text-align:left;padding:6px 8px;border-bottom:1px solid var(--ap-cizgi)}
 .ap .ap-tablo td{padding:7px 8px;border-bottom:1px solid var(--ap-cizgi)}.ap .ap-tablo .sag{text-align:right}.ap .ap-tablo tr.on td{background:var(--ap-kart2);font-weight:700}
 .ap .ap-bl select{min-width:150px}
+.ap .ap-yon{display:flex;flex-direction:column;gap:3px}.ap .ap-yon small{font-size:12px;color:var(--ap-soluk)}
+.ap .ap-yon>span{display:flex;gap:4px;flex-wrap:wrap}
+.ap .ap-yon label{position:relative;cursor:pointer}.ap .ap-yon input{position:absolute;opacity:0;width:1px;height:1px}
+.ap .ap-yon label b{display:block;font-size:13px;font-weight:700;padding:8px 11px;border-radius:8px;border:1px solid var(--ap-cizgi);background:var(--ap-kart);color:var(--ap-soluk);min-height:36px}
+.ap .ap-yon input:checked+b{border-color:var(--ap-vurgu);color:var(--ap-yazi);background:var(--ap-kart2);box-shadow:inset 0 0 0 1px var(--ap-vurgu)}
+.ap .ap-yon input:focus-visible+b{outline:2px solid var(--ap-vurgu);outline-offset:2px}
+.ap .ap-serit.mor{background:var(--ap-mor-z);border-color:var(--ap-mor)}
+.ap .ap-kasa-yon{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.ap .ap-kasa-yon>div{background:var(--ap-kart2);border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:1px}
+.ap .ap-kasa-yon small{font-size:11.5px;color:var(--ap-soluk);font-weight:700}.ap .ap-kasa-yon b{font-size:18px}.ap .ap-kasa-yon span{font-size:11.5px;color:var(--ap-soluk)}
+.ap .ap-kd h4{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--ap-yazi)}
+.ap .ap-gelir-form{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--ap-kart2);border-radius:8px;padding:10px;margin-bottom:10px}
+.ap .ap-gelir-form label{font-size:12px;color:var(--ap-soluk);display:flex;flex-direction:column;gap:3px}
+.ap .ap-sil{color:var(--ap-kotu)!important}
+.ap .ap-gelir-form .genis{min-width:200px;flex:1}
 @media (max-width:760px){
  .ap{padding:12px}
  .ap .ap-sat{grid-template-columns:24px minmax(0,1fr) auto;grid-template-areas:"c ad borc" "c durum durum" "c isl isl";row-gap:5px}
@@ -242,7 +269,19 @@
         });
         if (!gecmisAy && !gelecekAy) grafik[5].tahmin = tahmin;
         let yok = bek.filter(s => s.devam === 0);
-        return { ay, kisiler, gruplar, satirlar, bek, od, muaf: satirlar.filter(s => s.d === 'muaf'), takipsiz: satirlar.filter(s => s.d === 'takipsiz'), yeni: satirlar.filter(s => s.d === 'yeni'), dondu: satirlar.filter(s => s.d === 'dondu'), toplanan, bekTL, kacan, kacanKisi, tahmin, oran, gecenOran, grafik, yok, gecmisAy, gelecekAy,
+        // ödüyor ama gelmiyor (2026-10-30): bu ay ya da geçen ay ödemiş, son derse gelişi 3 haftayı geçmiş → ayrılmak üzere olabilir
+        let gelmiyor = [];
+        if (ay === simdi && a.sonGelis) {
+            let gm = ayEkle(ay, -1), bg = bugun();
+            satirlar.forEach(s => {
+                if (s.d === 'muaf' || s.d === 'dondu') return;
+                let r0 = a.kayit(s.k.ad, gm); if (!(s.d === 'odedi' || (r0 && r0.odendi))) return;
+                let g = a.sonGelis(s.k); if (!g) return;
+                let n = gunFark(g, bg); if (n >= GELMIYOR_GUN) { s.sonGelis = g; s.gelmiyor = n; gelmiyor.push(s); }
+            });
+            gelmiyor.sort((x, y) => y.gelmiyor - x.gelmiyor);
+        }
+        return { gelmiyor, ay, kisiler, gruplar, satirlar, bek, od, muaf: satirlar.filter(s => s.d === 'muaf'), takipsiz: satirlar.filter(s => s.d === 'takipsiz'), yeni: satirlar.filter(s => s.d === 'yeni'), dondu: satirlar.filter(s => s.d === 'dondu'), toplanan, bekTL, kacan, kacanKisi, tahmin, oran, gecenOran, grafik, yok, gecmisAy, gelecekAy,
             olabilir: bek.filter(s => s.olabilir), geciken: satirlar.filter(s => s.d !== 'muaf' && s.gec > 0), alisilmadik: bek.filter(s => s.alisilmadik) };
     }
 
@@ -261,30 +300,45 @@
         let say = m => { let x = tum.filter(o => o.ay === m); return { n: new Set(x.map(o => o.ad)).size, t: x.reduce((t, o) => t + (o.rec.tutar || 0), 0) }; };
         return { bu: say(ay), gecen: say(ayEkle(ay, -12)), say };
     }
-    function kasa(tum, gun) {
-        let liste = tum.filter(o => odemeGunu(o.rec) === gun).sort((x, y) => String(y.rec.tarih || '').localeCompare(String(x.rec.tarih || '')));
-        return { liste, toplam: liste.reduce((t, o) => t + (o.rec.tutar || 0), 0) };
+    // kasa: ödeme günü 'YYYY-MM-DD' (gün) ya da 'YYYY-MM' (ay) ile başlayan bütün aidat ödemeleri + aidat dışı gelirler (o.gelir = 1)
+    function kasa(tum, onEk) {
+        let gel = (AP.gelirHepsi || []).filter(x => String(x.tarih || '').startsWith(onEk)).map(x => ({ ad: x.sporcu || x.kategori, ay: null, gelir: x, rec: { tutar: +x.tutar || 0, yontem: x.yontem, giren: x.giren, odemeTarihi: x.tarih, tarih: String(x.t || ''), notMetin: x.kategori + (x.aciklama ? ' · ' + x.aciklama : '') } }));
+        let liste = tum.filter(o => odemeGunu(o.rec).startsWith(onEk)).concat(gel).sort((x, y) => (odemeGunu(y.rec) || '').localeCompare(odemeGunu(x.rec) || '') || String(y.rec.tarih || '').localeCompare(String(x.rec.tarih || '')));
+        let yon = { nakit: 0, iban: 0, kart: 0, '': 0 }, kim = {};
+        liste.forEach(o => { let t = o.rec.tutar || 0, y = YON_AD[o.rec.yontem] ? o.rec.yontem : ''; yon[y] += t; let g = o.rec.giren || '—'; (kim[g] = kim[g] || { nakit: 0, iban: 0, kart: 0, '': 0, top: 0, n: 0 }); kim[g][y] += t; kim[g].top += t; kim[g].n++; });
+        return { liste, toplam: liste.reduce((t, o) => t + (o.rec.tutar || 0), 0), yon, kim };
     }
-    // gider (adaptör gider(ay) → Promise<[{ tarih, kategori, aciklama, tutar }]>) — bir kez yüklenir, kutu yerinde güncellenir
+    function kasaIc() {
+        let ks = kasa(AP.tum || [], bugun());
+        return `<small>Bugün kasa</small><b class="ap-num">${tl(ks.toplam)}</b><span>${ks.liste.length ? ks.liste.length + ' ödeme' + (ks.yon.nakit ? ' · nakit ' + tl(ks.yon.nakit) : '') : 'Bugün ödeme girilmedi'}</span>`;
+    }
+    // gider (adaptör gider() → Promise<[{ tarih, kategori, aciklama, tutar }]>) + aidat dışı gelir (gelir()) — bir kez yüklenir, kutular yerinde güncellenir
+    const gelirAy = ay => (AP.gelirHepsi || []).filter(x => String(x.tarih || '').slice(0, 7) === ay);
     function netIc(v) {
         let g = AP.gider && AP.gider.ay === v.ay ? AP.gider : null;
         if (!g || g.yukleniyor) return `<b class="ap-num">…</b><span>Giderler yükleniyor</span>`;
         if (g.hata) return `<b class="ap-num">—</b><span>Giderler alınamadı</span>`;
-        let net = v.toplanan - g.toplam;
-        return `<b class="ap-num" style="color:${net >= 0 ? 'var(--ap-iyi)' : 'var(--ap-kotu)'}">${net < 0 ? '−' : ''}${tl(Math.abs(net))}</b><span>Gelir ${tl(v.toplanan)} − gider ${tl(g.toplam)}</span>`;
+        let dg = gelirAy(v.ay).reduce((t, x) => t + (+x.tutar || 0), 0), net = v.toplanan + dg - g.toplam;
+        return `<b class="ap-num" style="color:${net >= 0 ? 'var(--ap-iyi)' : 'var(--ap-kotu)'}">${net < 0 ? '−' : ''}${tl(Math.abs(net))}</b><span>Aidat ${tl(v.toplanan)}${dg ? ' + diğer ' + tl(dg) : ''} − gider ${tl(g.toplam)}</span>`;
     }
     window.apGiderYukle = function (ay) {
-        AP.gider = { ay, yukleniyor: true, toplam: 0, liste: [] };
-        Promise.resolve(AP.a.gider(ay)).then(l => { l = (l || []).filter(x => String(x.tarih || '').slice(0, 7) === ay); AP.gider = { ay, toplam: l.reduce((t, x) => t + (+x.tutar || 0), 0), liste: l }; })
-            .catch(() => { AP.gider = { ay, hata: true, toplam: 0, liste: [] }; })
-            .then(() => { if (!AP.v || AP.v.ay !== ay) return; let b = document.querySelector('#ap-kok .ap-kpi>button[data-k="net"]'); if (b) b.innerHTML = `<small>Net · ${ayKisa(ay)} (gelir − gider)</small>` + netIc(AP.v); if (AP.kpi === 'net') apKpiDetayCiz(); });
+        AP.gider = { ay, yukleniyor: true, toplam: 0, liste: [], hepsi: [] };
+        Promise.all([Promise.resolve(AP.a.gider(ay)), AP.a.gelir ? Promise.resolve(AP.a.gelir()).catch(() => null) : null])
+            .then(r => { let h = r[0] || [], l = h.filter(x => String(x.tarih || '').slice(0, 7) === ay); AP.gider = { ay, toplam: l.reduce((t, x) => t + (+x.tutar || 0), 0), liste: l, hepsi: h }; if (r[1]) AP.gelirHepsi = r[1]; })
+            .catch(() => { AP.gider = { ay, hata: true, toplam: 0, liste: [], hepsi: [] }; })
+            .then(() => {
+                if (!AP.v || AP.v.ay !== ay) return;
+                let b = document.querySelector('#ap-kok .ap-kpi>button[data-k="net"]'); if (b) b.innerHTML = `<small>Net · ${ayKisa(ay)} (gelir − gider)</small>` + netIc(AP.v);
+                let k = document.querySelector('#ap-kok .ap-kpi>button[data-k="kasa"]'); if (k) k.innerHTML = kasaIc();
+                if (['net', 'kasa'].includes(AP.kpi)) apKpiDetayCiz();
+            });
     };
 
     // ---- çizim ----
     window.apCiz = function (el, adaptor) {
         css(); AP.el = el; AP.a = adaptor; if (!AP.ay) AP.ay = buAy();
         // arka plan yenilemesi açık formu / yazılan aramayı silmesin
-        let odak = document.activeElement, formAcik = AP.acik && el.querySelector('.ap-form');
+        let odak = document.activeElement, formAcik = (AP.acik && el.querySelector('.ap-form')) || (AP.gelirForm && el.querySelector('.ap-gelir-form'));
         if (formAcik && odak && formAcik.contains(odak)) { AP.bekleyen = true; return; }
         let aramaOdak = odak && odak.id === 'ap-ara', imlec = aramaOdak ? odak.selectionStart : 0;
         let v = AP.v = hesapla(AP.a, AP.ay, AP.grup);
@@ -300,11 +354,12 @@
             ${kb('kacan', 'kotu')}<small>Kaçan (eski aylar)</small><b class="ap-num">${tl(v.kacan)}</b><span>${v.kacanKisi ? v.kacanKisi + ' sporcunun önceki ay borcu' : 'Eski aydan borç yok'}</span></button>
             ${kb('tahmin', '')}<small>${v.gecmisAy ? 'Ay kapandı' : 'Ay sonu tahmini'}</small><b class="ap-num">${tl(Math.round(v.tahmin / 50) * 50)}</b><span>${v.gecmisAy ? 'Bu ay toplanan' : 'Son 3 ayın ödeme alışkanlığına göre'}</span></button>`;
         // 2026-10-30 ek kutular: net (gelir − gider, adaptör gider verirse), geçen yılın aynı ayı, bugünün kasası
-        let tum = AP.tum = tumOdemeler(AP.a), sz = sezon(tum, v.ay), ks = kasa(tum, bugun());
+        let tum = AP.tum = tumOdemeler(AP.a), sz = sezon(tum, v.ay);
         if (AP.a.gider) kpi += `${kb('net', '')}<small>Net · ${ayKisa(v.ay)} (gelir − gider)</small>${netIc(v)}</button>`;
         kpi += `${kb('sezon', '')}<small>Geçen yıl ${ayKisa(v.ay)}</small><b class="ap-num">${sz.gecen.n ? (sz.bu.n - sz.gecen.n > 0 ? '+' : '') + (sz.bu.n - sz.gecen.n) + ' ödeyen' : '—'}</b><span>${sz.gecen.n ? `Bu yıl ${sz.bu.n}, geçen yıl ${sz.gecen.n} ödeyen` : 'Geçen yıl bu ay kayıt yok'}</span></button>
-            ${kb('kasa', 'iyi')}<small>Bugün kasa</small><b class="ap-num">${tl(ks.toplam)}</b><span>${ks.liste.length ? ks.liste.length + ' ödeme girildi · ' + gunGoster(bugun()) : 'Bugün ödeme girilmedi'}</span></button>`;
+            ${kb('kasa', 'iyi')}${kasaIc()}</button>`;
         let kopanSerit = v.yok.length ? `<div class="ap-serit" role="status">⚠ <span><b>${v.yok.length} kişi</b> ${ayKisa(v.ay)} aidatını ödemedi ve bu ay hiç derse gelmedi: bırakmış olabilir.</span><button class="ap-btn" onclick="apKpiAc('kopan')">Ara / pasife al</button></div>` : '';
+        if (v.gelmiyor.length) kopanSerit += `<div class="ap-serit mor" role="status">💜 <span><b>${v.gelmiyor.length} kişi</b> aidatını ödüyor ama ${Math.floor(GELMIYOR_GUN / 7)} haftadır derse gelmiyor. Ayrılmak üzere olabilir; aranıp ilgi görürse kalır.</span><button class="ap-btn" onclick="apKpiAc('gelmiyor')">Kimler?</button></div>`;
         if (AP.a.gider && (!AP.gider || AP.gider.ay !== v.ay)) apGiderYukle(v.ay);
         let mx = Math.max(1, ...v.grafik.map(g => Math.max(g.b, g.t, g.tahmin || 0)));
         let grafik = v.grafik.map(g => `<div class="${g.m === v.ay ? 'on' : ''}" title="${ayAd(g.m)}: toplanan ${tl(g.t)} / beklenen ${tl(g.b)}${g.tahmin ? ' · tahmin ' + tl(g.tahmin) : ''}"><b class="ap-num">${g.t >= 1000 ? (Math.round(g.t / 100) / 10).toLocaleString('tr-TR') + 'B' : g.t}</b><div class="s"><em style="height:${g.b / mx * 100}%"></em>${g.tahmin ? `<i class="t" style="height:${g.tahmin / mx * 100}%"></i>` : ''}<i style="height:${g.t / mx * 100}%"></i></div><small>${ayKisa(g.m)}</small></div>`).join('');
@@ -320,7 +375,8 @@
         if (v.yok.length) ipucu +=`<div class="ap-ipucu"><b>${v.yok.length} kişi</b> ödemedi ve bu ay hiç derse gelmedi; ayrılmış olabilir, arayın.<button class="ap-btn" onclick="apKpiAc('kopan')">Göster</button></div>`;
         if (v.alisilmadik.length) ipucu += `<div class="ap-ipucu"><b>⚠ ${v.alisilmadik.length} kişi</b> her zamanki ödeme gününü ${GECIKME_PAY} günden fazla geçti (düzenli öderdi): ${v.alisilmadik.slice(0, 3).map(s => esc(s.k.ad)).join(', ')}${v.alisilmadik.length > 3 ? '…' : ''}<button class="ap-btn" onclick="apKpiAc('bekleyen')">Göster</button></div>`;
         if (!ipucu) ipucu = `<div class="ap-ipucu mavi">${v.bek.length ? 'Ödemiş olabilecek kimse görünmüyor.' : 'Bu ay herkes ödedi.'}</div>`;
-        let araclar = (AP.a.araclar || []).map(x => `<button class="ap-btn" onclick="${x[1]}">${x[0]}</button>`).join('');
+        let araclar = (AP.a.gider ? `<button class="ap-btn" onclick="apKpiAc('net', true)">📒 Aylık muhasebe raporu</button>` : '') + `<button class="ap-btn" onclick="AP.kasaMod='ay'; apKpiAc('kasa', true)">🤝 Kim tahsil etti (teslim listesi)</button><button class="ap-btn" onclick="apKpiAc('yil', true)">📅 Yıl sonu özeti (veliye)</button>`
+            + (AP.a.araclar || []).map(x => `<button class="ap-btn" onclick="${x[1]}">${x[0]}</button>`).join('');
         el.innerHTML = `<div class="ap" id="ap-kok" role="region" aria-label="Aidat paneli">
             <div class="ap-bas">
                 <div><h2>Aidat · ${ayAd(v.ay)}</h2><small>${esc(grupAd)} · ${aktifSay} aktif sporcu${ortAylik ? ' · ort. aylık ' + tl(ortAylik) : ''}</small></div>
@@ -397,7 +453,7 @@
     }
     function odSatirHTML(s, yer) {
         let id = esc(s.k.id);
-        let r = `<div class="ap-sat od"><div class="ad"><b title="${esc(s.k.ad)}">${esc(s.k.ad)}</b><small>${esc(s.k.grupAd || '')}</small></div><span class="tar ap-num">${gunGoster(odemeGunu(s.rec))}</span><span class="tut sag ap-num">${s.rec.tutar ? tl(s.rec.tutar) : 'paket'}</span><span class="not" title="${esc(s.rec.notMetin || '')}">${esc(s.rec.notMetin || '—')}</span><span class="isl"><button class="ap-btn" onclick="apFormAc('${id}','${yer}','duzelt')">✎ Düzelt</button><button class="ap-btn" onclick="apDetay('${id}')">Kart</button></span></div>`;
+        let r = `<div class="ap-sat od"><div class="ad"><b title="${esc(s.k.ad)}">${esc(s.k.ad)}</b><small>${esc(s.k.grupAd || '')}${s.rec.yontem ? ' · ' + yonAd(s.rec.yontem) : ''}${s.rec.giren ? ' · ' + esc(s.rec.giren) + ' aldı' : ''}</small></div><span class="tar ap-num">${gunGoster(odemeGunu(s.rec))}</span><span class="tut sag ap-num">${s.rec.tutar ? tl(s.rec.tutar) : 'paket'}</span><span class="not" title="${esc(s.rec.notMetin || '')}">${esc(s.rec.notMetin || '—')}</span><span class="isl"><button class="ap-btn" onclick="apFormAc('${id}','${yer}','duzelt')">✎ Düzelt</button><button class="ap-btn" onclick="apDetay('${id}')">Kart</button></span></div>`;
         if (formBurada(s, yer)) r += apFormHTML(s);
         return r;
     }
@@ -422,6 +478,104 @@
         Promise.resolve(Y.pasifYap(k, true)).then(() => { apTost(s.k.ad + ' pasife alındı', 'success'); apYenile(); }, () => apTost('Pasife alınamadı.', 'error'));
     };
     window.apKasaGun = function (n) { let d = new Date((AP.kasaGun || bugun()) + 'T12:00:00'); d.setDate(d.getDate() + n); let g = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); AP.kasaGun = g >= bugun() ? null : g; apKpiDetayCiz(); };
+    window.apKasaAy = function (n) { let m = ayEkle(AP.kasaAy || AP.v.ay, n); AP.kasaAy = m > buAy() ? buAy() : m; apKpiDetayCiz(); };
+    // ödüyor ama gelmiyor (2026-10-30): ara / "özledik" mesajı
+    function gelmiyorSatirHTML(s) {
+        let id = esc(s.k.id), tel = telNo(s.k.tel), ilk = String(s.k.ad).split(' ')[0];
+        let msj = encodeURIComponent(`Merhaba, ${ilk} son ${s.gelmiyor} gündür derslere gelemedi, onu özledik! Her şey yolunda mı? Saatler uymuyorsa birlikte uygun bir ders bulalım 🙂`);
+        return `<div class="ap-sat"><span class="c"></span>
+            <div class="ad"><b title="${esc(s.k.ad)}" style="cursor:pointer" onclick="apDetay('${id}')">${esc(s.k.ad)}</b><small>${esc(s.k.grupAd || '')} · son ders ${gunGoster(s.sonGelis)}${tel ? '' : ' · tel yok'}</small></div>
+            <span class="durum"><span class="ap-etk m">${s.gelmiyor} gündür yok</span> <span class="ap-etk i">${s.d === 'odedi' ? 'Bu ay ödedi' : 'Geçen ay ödedi'}</span></span><span class="borc"></span><span class="son"></span><span class="ders"></span>
+            <span class="isl">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}&text=${msj}','_blank')" aria-label="${esc(ilk)} velisine WhatsApp">💬 Yaz</button>` : ''}<button class="ap-btn" onclick="apDetay('${id}')">Kart</button></span></div>`;
+    }
+    // 💵 aidat dışı gelir (2026-10-30): kayıt ücreti, forma, ekipman satışı… Net'e ve kasaya eklenir
+    function gelirFormHTML() {
+        return `<div class="ap-gelir-form" role="group" aria-label="Diğer gelir ekle">
+            <label>Ne?<select id="ap-g-kat">${GELIR_KAT.map(c => `<option>${c}</option>`).join('')}</select></label>
+            <label>Tutar (₺)<input type="number" id="ap-g-tutar" inputmode="numeric" min="1" style="width:110px"></label>
+            ${yontemHTML(AP.sonYontem).replace(/ap-f-yon/g, 'ap-g-yon')}
+            <label>Gün<input type="date" id="ap-g-gun" value="${bugun()}" max="${bugun()}"></label>
+            <label>Sporcu (isteğe bağlı)<input type="text" id="ap-g-sporcu" list="ap-g-liste" maxlength="120" autocomplete="off"></label>
+            <datalist id="ap-g-liste">${AP.a.kisiler().map(k => `<option value="${esc(k.ad)}">`).join('')}</datalist>
+            <label class="genis">Açıklama<input type="text" id="ap-g-acik" maxlength="200" placeholder="ör. 2 forma, M beden"></label>
+            <button class="ap-btn ana" onclick="apGelirKaydet()">Kaydet</button><button class="ap-btn" onclick="AP.gelirForm=false; apKpiDetayCiz()">Vazgeç</button></div>`;
+    }
+    const gelirYenile = () => { AP.gider = null; if (AP.v) apGiderYukle(AP.v.ay); };
+    window.apGelirKaydet = function () {
+        let d = id => (document.getElementById(id) || {}).value || '', tutar = parseInt(d('ap-g-tutar'), 10) || 0, tarih = d('ap-g-gun') || bugun();
+        if (!(tutar > 0)) return apTost('Tutarı yaz.', 'warning');
+        if (tarih > bugun()) return apTost('Gün gelecekte olamaz.', 'error');
+        let yontem = ((document.querySelector('#ap-kok input[name="ap-g-yon"]:checked')) || {}).value || null;
+        let x = { tarih, kategori: d('ap-g-kat') || 'Diğer', tutar, yontem, sporcu: d('ap-g-sporcu').trim() || null, aciklama: d('ap-g-acik').trim() || null };
+        document.querySelectorAll('.ap-gelir-form .ap-btn').forEach(b => b.disabled = true);
+        Promise.resolve(AP.a.gelirEkle(x)).then(() => { AP.gelirForm = false; apTost('✓ ' + x.kategori + ' · ' + tl(tutar) + ' gelir olarak kaydedildi', 'success'); gelirYenile(); },
+            () => { apTost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); document.querySelectorAll('.ap-gelir-form .ap-btn').forEach(b => b.disabled = false); });
+    };
+    window.apGelirSil = function (id) {
+        let x = (AP.gelirHepsi || []).find(g => g.id === id); if (!x) return;
+        if (!confirm(x.kategori + ' · ' + tl(x.tutar) + ' (' + gunGoster(x.tarih) + ') silinsin mi?')) return;
+        Promise.resolve(AP.a.gelirSil(id)).then(() => { apTost('Gelir silindi', 'success'); gelirYenile(); }, () => apTost('Silinemedi.', 'error'));
+    };
+    // 📒 aylık muhasebe raporu (2026-10-30): NAKİT ESASI — o ay içinde eline geçen bütün aidat ödemeleri (hangi ayın aidatı olursa olsun)
+    // + aidat dışı gelir − o ayın giderleri. Yazdır/PDF ya da Excel (CSV: Türkçe Excel için ; ayraç, virgüllü ondalık, BOM).
+    window.apMuhasebe = function (tur) {
+        let v = AP.v, g = AP.gider; if (!v || !g || g.ay !== v.ay || g.yukleniyor) return apTost('Giderler yükleniyor, birazdan tekrar dene.', 'warning');
+        if (g.hata) return apTost('Giderler alınamadı; rapor eksik olur. Bağlantıyı kontrol et.', 'error');
+        let ay = v.ay, ks = kasa(AP.tum || [], ay), artan = (x, y) => (odemeGunu(x.rec) || '').localeCompare(odemeGunu(y.rec) || '') || x.ad.localeCompare(y.ad, 'tr');
+        let aidatL = ks.liste.filter(o => !o.gelir).sort(artan), digerL = ks.liste.filter(o => o.gelir).sort(artan), giderL = g.liste.slice().sort((x, y) => String(x.tarih).localeCompare(String(y.tarih)));
+        let aT = aidatL.reduce((t, o) => t + (o.rec.tutar || 0), 0), dT = digerL.reduce((t, o) => t + (o.rec.tutar || 0), 0), gT = g.toplam, net = aT + dT - gT;
+        let dk = {}, gk = {}; digerL.forEach(o => { dk[o.gelir.kategori] = (dk[o.gelir.kategori] || 0) + o.rec.tutar; }); giderL.forEach(x => { let c = x.kategori || 'Diğer'; gk[c] = (gk[c] || 0) + (+x.tutar || 0); });
+        let kulup = (window.YN && YN.Y && YN.Y.ad) || '', baslik = (kulup ? kulup + ' · ' : '') + 'Muhasebe raporu · ' + ayAd(ay);
+        if (tur === 'csv') {
+            let q = x => { x = String(x == null ? '' : x); return /[;"\r\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }, n = x => String(Math.round((+x || 0) * 100) / 100).replace('.', ',');
+            let R = [[baslik], ['Hazırlanma', gunGoster(bugun())], [], ['ÖZET', 'Tutar (TL)'], ['Aidat tahsilatı', n(aT)]];
+            Object.keys(dk).forEach(c => R.push(['Diğer gelir: ' + c, n(dk[c])]));
+            R.push(['TOPLAM GELİR', n(aT + dT)]); Object.keys(gk).forEach(c => R.push(['Gider: ' + c, n(gk[c])])); R.push(['TOPLAM GİDER', n(gT)], ['NET', n(net)], []);
+            R.push(['YÖNTEME GÖRE GELİR', 'Tutar (TL)'], ['Nakit', n(ks.yon.nakit)], ['IBAN', n(ks.yon.iban)], ['Kart', n(ks.yon.kart)], ['Belirtilmedi', n(ks.yon[''])], []);
+            R.push(['TAHSİL EDENE GÖRE', 'Ödeme', 'Nakit', 'IBAN', 'Kart', 'Belirtilmedi', 'Toplam']); Object.keys(ks.kim).forEach(k => { let x = ks.kim[k]; R.push([k === '—' ? 'Bilinmiyor' : k, x.n, n(x.nakit), n(x.iban), n(x.kart), n(x['']), n(x.top)]); }); R.push([]);
+            R.push(['AİDAT TAHSİLATLARI'], ['Tarih', 'Sporcu', 'Hangi ayın aidatı', 'Yöntem', 'Tahsil eden', 'Tutar (TL)', 'Not']);
+            aidatL.forEach(o => R.push([gunGoster(odemeGunu(o.rec)), o.ad, ayAd(o.ay), yonAd(o.rec.yontem), o.rec.giren || '', n(o.rec.tutar), o.rec.notMetin || ''])); R.push([]);
+            R.push(['DİĞER GELİRLER'], ['Tarih', 'Kalem', 'Sporcu', 'Yöntem', 'Giren', 'Tutar (TL)', 'Açıklama']);
+            digerL.forEach(o => R.push([gunGoster(odemeGunu(o.rec)), o.gelir.kategori, o.gelir.sporcu || '', yonAd(o.gelir.yontem), o.gelir.giren || '', n(o.gelir.tutar), o.gelir.aciklama || ''])); R.push([]);
+            R.push(['GİDERLER'], ['Tarih', 'Kategori', 'Açıklama', 'Giren', 'Tutar (TL)']);
+            giderL.forEach(x => R.push([gunGoster(String(x.tarih || '').slice(0, 10)), x.kategori || '', x.aciklama || '', x.giren || '', n(x.tutar)]));
+            let blob = new Blob(['﻿' + R.map(r => r.map(q).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'muhasebe-' + ay + '.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            return apTost('Excel dosyası indirildi: muhasebe-' + ay + '.csv', 'success');
+        }
+        let w = window.open('', '_blank'); if (!w) return apTost('Açılır pencere engellendi.', 'warning');
+        let satir = (et, t, k) => `<tr${k ? ' class="' + k + '"' : ''}><td>${esc(et)}</td><td class="r">${tl(t)}</td></tr>`;
+        let tablo = (bas, L) => `<table><thead><tr>${bas.map((b, i) => `<th${i === bas.length - 1 || /Tutar/.test(b) ? ' class="r"' : ''}>${b}</th>`).join('')}</tr></thead><tbody>${L.length ? L.join('') : `<tr><td colspan="${bas.length}" style="color:#777">Kayıt yok</td></tr>`}</tbody></table>`;
+        w.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${esc(baslik)}</title><style>body{font-family:system-ui,sans-serif;color:#111;margin:24px;font-size:12px}h1{font-size:18px;margin:0}h2{font-size:14px;margin:22px 0 6px;border-bottom:2px solid #0f172a;padding-bottom:3px}p{color:#555;margin:4px 0 12px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th{background:#0f172a;color:#fff;text-align:left;padding:5px 6px;font-size:11px}td{padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:top}.r{text-align:right;white-space:nowrap}.t td{font-weight:800;border-top:2px solid #0f172a}.n td{font-weight:800;font-size:14px;background:#f1f5f9}.ozet{max-width:420px}@media print{h2{break-after:avoid}}</style></head><body>
+            <h1>${esc(baslik)}</h1><p>Nakit esası: ${ayAd(ay)} içinde alınan ödemeler (hangi ayın aidatı olursa olsun) ve bu ayın giderleri · Hazırlanma ${gunGoster(bugun())}</p>
+            <h2>Özet</h2><table class="ozet"><tbody>${satir('Aidat tahsilatı', aT)}${Object.keys(dk).map(c => satir('Diğer gelir: ' + c, dk[c])).join('')}${satir('Toplam gelir', aT + dT, 't')}${Object.keys(gk).sort((a, b) => gk[b] - gk[a]).map(c => satir('Gider: ' + c, gk[c])).join('')}${satir('Toplam gider', gT, 't')}<tr class="n"><td>NET</td><td class="r">${net < 0 ? '−' : ''}${tl(Math.abs(net))}</td></tr></tbody></table>
+            <h2>Yönteme göre gelir</h2><table class="ozet"><tbody>${satir('Nakit', ks.yon.nakit)}${satir('IBAN / havale', ks.yon.iban)}${satir('Kart', ks.yon.kart)}${ks.yon[''] ? satir('Belirtilmedi', ks.yon['']) : ''}</tbody></table>
+            <h2>Tahsil edene göre</h2>${tablo(['Kişi', 'Ödeme', 'Nakit', 'IBAN', 'Kart', 'Toplam'], Object.keys(ks.kim).map(k => { let x = ks.kim[k]; return `<tr><td>${esc(k === '—' ? 'Bilinmiyor (eski kayıt)' : k)}</td><td>${x.n}</td><td class="r">${tl(x.nakit)}</td><td class="r">${tl(x.iban)}</td><td class="r">${tl(x.kart)}</td><td class="r">${tl(x.top)}</td></tr>`; }))}
+            <h2>Aidat tahsilatları (${aidatL.length})</h2>${tablo(['Tarih', 'Sporcu', 'Hangi ay', 'Yöntem', 'Tahsil eden', 'Not', 'Tutar'], aidatL.map(o => `<tr><td>${gunGoster(odemeGunu(o.rec))}</td><td>${esc(o.ad)}</td><td>${ayKisa(o.ay)} ${o.ay.slice(0, 4)}</td><td>${yonAd(o.rec.yontem)}</td><td>${esc(o.rec.giren || '')}</td><td>${esc(o.rec.notMetin || '')}</td><td class="r">${tl(o.rec.tutar)}</td></tr>`))}
+            <h2>Diğer gelirler (${digerL.length})</h2>${tablo(['Tarih', 'Kalem', 'Sporcu', 'Yöntem', 'Açıklama', 'Tutar'], digerL.map(o => `<tr><td>${gunGoster(odemeGunu(o.rec))}</td><td>${esc(o.gelir.kategori)}</td><td>${esc(o.gelir.sporcu || '')}</td><td>${yonAd(o.gelir.yontem)}</td><td>${esc(o.gelir.aciklama || '')}</td><td class="r">${tl(o.gelir.tutar)}</td></tr>`))}
+            <h2>Giderler (${giderL.length})</h2>${tablo(['Tarih', 'Kategori', 'Açıklama', 'Giren', 'Tutar'], giderL.map(x => `<tr><td>${gunGoster(String(x.tarih || '').slice(0, 10))}</td><td>${esc(x.kategori || '')}</td><td>${esc(x.aciklama || '')}</td><td>${esc(x.giren || '')}</td><td class="r">${tl(x.tutar)}</td></tr>`))}
+            <script>setTimeout(function(){print()},300)<\/script></body></html>`);
+        w.document.close();
+    };
+    // 📅 yıl sonu özeti (2026-10-30): her veliye o yıl ödediği aylar + toplam (tutarlar velinin kendi ödemeleri)
+    window.apYilAra = function (q) { AP.yilAra = q; clearTimeout(AP.yz); AP.yz = setTimeout(function () { apKpiDetayCiz(); let e = document.getElementById('ap-yil-ara'); if (e) { e.focus(); try { e.setSelectionRange(q.length, q.length); } catch (x) {} } }, 160); };
+    const yilVarsayilan = () => { let d = new Date(); return d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear(); };
+    const yilSatirlar = x => x.l.map(o => ({ ay: AY_UZUN[+o.ay.slice(5, 7) - 1], tutar: o.rec.tutar, gun: gunGoster(odemeGunu(o.rec)), yon: o.rec.yontem ? yonAd(o.rec.yontem) : '' }));
+    window.apYilGonder = function (i) {
+        let x = (AP.yilListe || [])[i], tel = x && x.k && telNo(x.k.tel); if (!tel) return;
+        let kulup = (window.YN && YN.Y && YN.Y.ad) || '', yil = AP.yilSecili;
+        let metin = `*${kulup ? kulup + ' · ' : ''}${yil} aidat özeti*\nSporcu: ${x.ad}\n\n` + yilSatirlar(x).map(r => `✓ ${r.ay}: ${r.tutar ? tl(r.tutar) : 'paket'} (${r.gun}${r.yon ? ', ' + r.yon : ''})`).join('\n') + `\n\n*Toplam: ${x.l.length} ay · ${tl(x.top)}*\nBu yıl da bizimle olduğunuz için teşekkür ederiz 🙏`;
+        window.open('https://api.whatsapp.com/send?phone=' + tel + '&text=' + encodeURIComponent(metin), '_blank');
+    };
+    window.apYilYazdir = function (i) {
+        let L = i < 0 ? (AP.yilListe || []) : [(AP.yilListe || [])[i]].filter(Boolean); if (!L.length) return;
+        let kulup = (window.YN && YN.Y && YN.Y.ad) || '', yil = AP.yilSecili, w = window.open('', '_blank'); if (!w) return apTost('Açılır pencere engellendi.', 'warning');
+        let sayfa = x => `<section><h1>${esc(kulup ? kulup + ' · ' : '')}${yil} yılı aidat özeti</h1><p>Sporcu: <b>${esc(x.ad)}</b>${x.k && x.k.grupAd ? ' · ' + esc(x.k.grupAd) : ''}</p>
+            <table><thead><tr><th>Ay</th><th>Ödeme günü</th><th>Yöntem</th><th class="r">Tutar</th></tr></thead><tbody>${yilSatirlar(x).map(r => `<tr><td>${r.ay}</td><td>${r.gun}</td><td>${r.yon || '—'}</td><td class="r">${r.tutar ? tl(r.tutar) : 'paket'}</td></tr>`).join('')}<tr class="t"><td>Toplam</td><td colspan="2">${x.l.length} ay</td><td class="r">${tl(x.top)}</td></tr></tbody></table>
+            <p class="alt">Hazırlanma ${gunGoster(bugun())} · Bu yıl da bizimle olduğunuz için teşekkür ederiz.</p></section>`;
+        w.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${yil} aidat özeti</title><style>body{font-family:system-ui,sans-serif;color:#111;margin:24px;font-size:13px}section{break-after:page;max-width:620px}section:last-child{break-after:auto}h1{font-size:18px;margin:0 0 6px}p{margin:4px 0 12px}.alt{color:#555;font-size:12px;margin-top:14px}table{width:100%;border-collapse:collapse}th{background:#0f172a;color:#fff;text-align:left;padding:6px}td{padding:6px;border-bottom:1px solid #e2e8f0}.r{text-align:right}.t td{font-weight:800;border-top:2px solid #0f172a}</style></head><body>${L.map(sayfa).join('')}<script>setTimeout(function(){print()},300)<\/script></body></html>`);
+        w.document.close();
+    };
 
     // ---- özet kutusu detayı (2026-10-30, kullanıcı: "bu bölgeleri detaylandır, tıkladığım zaman o içerisinde girebileyim") ----
     const KPI_SINIR = 60;
@@ -430,8 +584,8 @@
         let G = Object.keys(m); if (G.length < 2) return '';
         return `<div class="ap-kd-grup">${G.sort((a, b) => m[b][1] - m[a][1]).map(g => `<span><b>${esc(g)}</b> ${m[g][0]} kişi · ${tl(m[g][1])}</span>`).join('')}</div>`;
     }
-    window.apKpiAc = function (k) {
-        AP.kpi = AP.kpi === k ? null : k; if (AP.acikYer === 'kpi') AP.acik = null;
+    window.apKpiAc = function (k, zorla) {
+        AP.kpi = AP.kpi === k && !zorla ? null : k; if (AP.acikYer === 'kpi') AP.acik = null;
         apKpiDetayCiz();
         let e = document.getElementById('ap-kpi-detay'); if (AP.kpi && e) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
@@ -465,13 +619,19 @@
             bas = `Ödemedi ve gelmedi · ${ay}`; ust = `<p class="ap-kd-not">Bu ay aidatı yok ve hiç derse gelmedi. Bırakmış olabilir: ara ya da yaz; bıraktıysa <b>Pasife al</b> (aidat listesinden çıkar, kayıtları silinmez).</p>`;
             sat = L.map(s => kopanSatirHTML(s)).join(''); bos = 'Böyle kimse yok.';
         } else if (k === 'kasa') {
-            let gun = AP.kasaGun || bugun(), ks = kasa(AP.tum || [], gun);
+            let ayMod = AP.kasaMod === 'ay', gun = AP.kasaGun || bugun(), kAy = AP.kasaAy || v.ay, ks = kasa(AP.tum || [], ayMod ? kAy : gun);
             L = ks.liste;
-            bas = `Kasa · ${gunGoster(gun)}${gun === bugun() ? ' (bugün)' : ''}`;
-            ust = `<div class="ap-filtre"><button class="ap-btn" onclick="apKasaGun(-1)" aria-label="Önceki gün">◀</button><input type="date" value="${gun}" max="${bugun()}" onchange="AP.kasaGun=this.value||null; apKpiDetayCiz()" aria-label="Gün"><button class="ap-btn" onclick="apKasaGun(1)" aria-label="Sonraki gün" ${gun >= bugun() ? 'disabled' : ''}>▶</button>${gun !== bugun() ? `<button class="ap-btn" onclick="AP.kasaGun=null; apKpiDetayCiz()">Bugün</button>` : ''}</div>
-                <p class="ap-kd-not">${L.length} ödeme, toplam <b style="color:var(--ap-iyi);font-size:17px">${tl(ks.toplam)}</b>. Ödeme günü bu gün olan bütün kayıtlar (hangi ayın aidatı olursa olsun, peşinler dahil).</p>`;
-            sat = `<div class="ap-sat od bas"><span>Sporcu</span><span>Hangi ay</span><span class="sag">Tutar</span><span>Not</span><span></span></div>` + L.map(o => `<div class="ap-sat od"><div class="ad"><b>${esc(o.ad)}</b></div><span class="tar">${ayKisa(o.ay)} ${o.ay.slice(0, 4)}</span><span class="tut sag ap-num">${o.rec.tutar ? tl(o.rec.tutar) : 'paket'}</span><span class="not">${esc(o.rec.notMetin || '—')}</span><span></span></div>`).join('');
-            bos = 'Bu gün girilmiş ödeme yok.';
+            bas = ayMod ? `Kasa · ${ayAd(kAy)}` : `Kasa · ${gunGoster(gun)}${gun === bugun() ? ' (bugün)' : ''}`;
+            let mod = `<div class="ap-sekmeler" role="group" aria-label="Kasa dönemi"><button aria-pressed="${!ayMod}" onclick="AP.kasaMod='gun'; apKpiDetayCiz()">Gün</button><button aria-pressed="${ayMod}" onclick="AP.kasaMod='ay'; apKpiDetayCiz()">Ay · teslim listesi</button></div>`;
+            let secici = ayMod ? `<div class="ap-filtre"><button class="ap-btn" onclick="apKasaAy(-1)" aria-label="Önceki ay">◀</button><b style="min-width:110px;text-align:center">${ayAd(kAy)}</b><button class="ap-btn" onclick="apKasaAy(1)" aria-label="Sonraki ay" ${kAy >= buAy() ? 'disabled' : ''}>▶</button></div>`
+                : `<div class="ap-filtre"><button class="ap-btn" onclick="apKasaGun(-1)" aria-label="Önceki gün">◀</button><input type="date" value="${gun}" max="${bugun()}" onchange="AP.kasaGun=this.value||null; apKpiDetayCiz()" aria-label="Gün"><button class="ap-btn" onclick="apKasaGun(1)" aria-label="Sonraki gün" ${gun >= bugun() ? 'disabled' : ''}>▶</button>${gun !== bugun() ? `<button class="ap-btn" onclick="AP.kasaGun=null; apKpiDetayCiz()">Bugün</button>` : ''}</div>`;
+            let yk = (y, et, alt) => `<div><small>${et}</small><b class="ap-num">${tl(ks.yon[y])}</b><span>${alt}</span></div>`;
+            let yonKutu = `<div class="ap-kasa-yon">${yk('nakit', '💵 Nakit', 'çekmecede olmalı')}${yk('iban', '🏦 IBAN', 'bankaya gelen')}${yk('kart', '💳 Kart', 'POS / kart')}${ks.yon[''] ? yk('', '❔ Belirtilmedi', 'yöntem seçilmemiş') : ''}</div>`;
+            let kimler = Object.keys(ks.kim).sort((a, b) => ks.kim[b].top - ks.kim[a].top);
+            let kimTablo = kimler.length ? `<h4>🤝 Kim tahsil etti</h4><div class="ap-tablo-kap"><table class="ap-tablo"><thead><tr><th>Kişi</th><th class="sag">Ödeme</th><th class="sag">Nakit</th><th class="sag">IBAN</th><th class="sag">Kart</th><th class="sag">Belirsiz</th><th class="sag">Toplam</th></tr></thead><tbody>${kimler.map(g => { let x = ks.kim[g]; return `<tr><td>${g === '—' ? '<span style="color:var(--ap-soluk)">Bilinmiyor (eski kayıt)</span>' : esc(g)}</td><td class="sag ap-num">${x.n}</td><td class="sag ap-num"><b>${tl(x.nakit)}</b></td><td class="sag ap-num">${tl(x.iban)}</td><td class="sag ap-num">${tl(x.kart)}</td><td class="sag ap-num">${x[''] ? tl(x['']) : '—'}</td><td class="sag ap-num">${tl(x.top)}</td></tr>`; }).join('')}</tbody></table></div><p class="ap-kd-not" style="margin-top:6px"><b>Nakit</b> sütunu = o kişinin kasaya teslim etmesi gereken para.</p>` : '';
+            ust = mod + secici + `<p class="ap-kd-not">${L.length} ödeme, toplam <b style="color:var(--ap-iyi);font-size:17px">${tl(ks.toplam)}</b>. Ödeme günü bu ${ayMod ? 'ay' : 'gün'} olan bütün kayıtlar (hangi ayın aidatı olursa olsun; peşinler ve aidat dışı gelirler dahil).</p>` + (L.length ? yonKutu + kimTablo + '<h4>Ödemeler</h4>' : '');
+            sat = `<div class="ap-sat od bas"><span>Sporcu</span><span>Hangi ay</span><span class="sag">Tutar</span><span>Not</span><span></span></div>` + L.slice(0, KPI_SINIR).map(o => `<div class="ap-sat od"><div class="ad"><b>${esc(o.ad)}</b><small>${yonAd(o.rec.yontem)}${o.rec.giren ? ' · ' + esc(o.rec.giren) : ''}</small></div><span class="tar">${o.gelir ? 'Diğer gelir' : ayKisa(o.ay) + ' ' + o.ay.slice(0, 4)}${ayMod ? ' · ' + gunGoster(odemeGunu(o.rec)).slice(0, 5) : ''}</span><span class="tut sag ap-num">${o.rec.tutar ? tl(o.rec.tutar) : 'paket'}</span><span class="not">${esc(o.rec.notMetin || '—')}</span><span></span></div>`).join('');
+            bos = ayMod ? 'Bu ay girilmiş ödeme yok.' : 'Bu gün girilmiş ödeme yok.';
         } else if (k === 'sezon') {
             let sz = sezon(AP.tum || [], v.ay), sat12 = [];
             for (let i = 11; i >= 0; i--) { let m = ayEkle(v.ay, -i), b = sz.say(m), g = sz.say(ayEkle(m, -12)); sat12.push({ m, b, g }); }
@@ -481,14 +641,35 @@
             sat = `<div class="ap-tablo-kap"><table class="ap-tablo"><thead><tr><th>Ay</th><th class="sag">Bu yıl</th><th class="sag">Geçen yıl</th><th class="sag">Fark</th><th class="sag">Bu yıl ₺</th><th class="sag">Geçen yıl ₺</th></tr></thead><tbody>${sat12.slice().reverse().map(x => { let f = x.b.n - x.g.n; return `<tr${x.m === v.ay ? ' class="on"' : ''}><td>${ayKisa(x.m)} ${x.m.slice(0, 4)}</td><td class="sag ap-num">${x.b.n}</td><td class="sag ap-num">${x.g.n || '—'}</td><td class="sag ap-num" style="color:${!x.g.n ? 'var(--ap-soluk)' : f >= 0 ? 'var(--ap-iyi)' : 'var(--ap-kotu)'}">${x.g.n ? (f > 0 ? '+' : '') + f : '—'}</td><td class="sag ap-num">${tl(x.b.t)}</td><td class="sag ap-num">${x.g.t ? tl(x.g.t) : '—'}</td></tr>`; }).join('')}</tbody></table></div>`;
             bos = '';
         } else if (k === 'net') {
-            let g = AP.gider && AP.gider.ay === v.ay ? AP.gider : null;
-            L = g && !g.yukleniyor ? g.liste.slice().sort((x, y) => String(y.tarih).localeCompare(String(x.tarih))) : [];
+            let g = AP.gider && AP.gider.ay === v.ay ? AP.gider : null, hazir = g && !g.yukleniyor && !g.hata;
+            L = hazir ? g.liste.slice().sort((x, y) => String(y.tarih).localeCompare(String(x.tarih))) : [];
             let kat = {}; L.forEach(x => { kat[x.kategori || 'Diğer'] = (kat[x.kategori || 'Diğer'] || 0) + (+x.tutar || 0); });
-            let km = Math.max(1, ...Object.values(kat));
+            let km = Math.max(1, ...Object.values(kat)), dg = gelirAy(v.ay), dgT = dg.reduce((t, x) => t + (+x.tutar || 0), 0), net = v.toplanan + dgT - (hazir ? g.toplam : 0);
             bas = `Net · ${ay}`;
-            ust = !g || g.yukleniyor ? `<p class="ap-kd-not">Giderler yükleniyor…</p>` : g.hata ? `<p class="ap-kd-not">Giderler alınamadı; bağlantıyı kontrol et.</p>` : `<p class="ap-kd-not">Aidat geliri <b style="color:var(--ap-iyi)">${tl(v.toplanan)}</b> − gider <b style="color:var(--ap-kotu)">${tl(g.toplam)}</b> = <b>${v.toplanan - g.toplam < 0 ? '−' : ''}${tl(Math.abs(v.toplanan - g.toplam))}</b></p>${Object.keys(kat).length ? `<div class="ap-yas ap-kd-oran" style="margin-bottom:12px">${Object.keys(kat).sort((a, b) => kat[b] - kat[a]).map(c => `<div><span>${esc(c)}</span><span class="bar"><i style="width:${kat[c] / km * 100}%;background:var(--ap-kotu)"></i></span><span class="sag ap-num">${tl(kat[c])}</span></div>`).join('')}</div>` : ''}${AP.a.giderGit ? `<div class="ap-filtre"><button class="ap-btn ana" onclick="AP.a.giderGit()">➕ Gider ekle</button></div>` : ''}`;
+            let dugme = `<div class="ap-filtre">${AP.a.giderGit ? `<button class="ap-btn ana" onclick="AP.a.giderGit()">➕ Gider ekle</button>` : ''}${AP.a.gelirEkle ? `<button class="ap-btn" onclick="AP.gelirForm=!AP.gelirForm; apKpiDetayCiz()" aria-expanded="${!!AP.gelirForm}">➕ Diğer gelir (kayıt, forma, ekipman)</button>` : ''}<button class="ap-btn" onclick="apMuhasebe('pdf')">📒 Muhasebe raporu (PDF)</button><button class="ap-btn" onclick="apMuhasebe('csv')">⬇ Excel</button></div>`;
+            let dgListe = dg.length ? `<h4>Diğer gelirler · ${tl(dgT)}</h4><div class="ap-satirlar">${dg.slice().sort((x, y) => String(y.tarih).localeCompare(String(x.tarih))).map(x => `<div class="ap-sat od"><div class="ad"><b>${esc(x.kategori)}</b><small>${x.sporcu ? esc(x.sporcu) + ' · ' : ''}${yonAd(x.yontem)}${x.giren ? ' · ' + esc(x.giren) : ''}</small></div><span class="tar ap-num">${gunGoster(String(x.tarih || '').slice(0, 10))}</span><span class="tut sag ap-num">${tl(x.tutar)}</span><span class="not">${esc(x.aciklama || '—')}</span><span class="isl">${AP.a.gelirSil ? `<button class="ap-btn ap-sil" onclick="apGelirSil('${esc(x.id)}')" aria-label="${esc(x.kategori)} gelirini sil">Sil</button>` : ''}</span></div>`).join('')}</div>` : '';
+            ust = !g || g.yukleniyor ? `<p class="ap-kd-not">Giderler yükleniyor…</p>` : g.hata ? `<p class="ap-kd-not">Giderler alınamadı; bağlantıyı kontrol et.</p>`
+                : `<p class="ap-kd-not">Aidat geliri <b style="color:var(--ap-iyi)">${tl(v.toplanan)}</b>${dgT ? ` + diğer gelir <b style="color:var(--ap-iyi)">${tl(dgT)}</b>` : ''} − gider <b style="color:var(--ap-kotu)">${tl(g.toplam)}</b> = <b>${net < 0 ? '−' : ''}${tl(Math.abs(net))}</b></p>${Object.keys(kat).length ? `<div class="ap-yas ap-kd-oran" style="margin-bottom:12px">${Object.keys(kat).sort((a, b) => kat[b] - kat[a]).map(c => `<div><span>${esc(c)}</span><span class="bar"><i style="width:${kat[c] / km * 100}%;background:var(--ap-kotu)"></i></span><span class="sag ap-num">${tl(kat[c])}</span></div>`).join('')}</div>` : ''}${dugme}${AP.gelirForm ? gelirFormHTML() : ''}${dgListe}<h4>Giderler</h4>`;
             sat = `<div class="ap-sat od bas"><span>Gider</span><span>Tarih</span><span class="sag">Tutar</span><span>Açıklama</span><span></span></div>` + L.map(x => `<div class="ap-sat od"><div class="ad"><b>${esc(x.kategori || 'Diğer')}</b></div><span class="tar ap-num">${gunGoster(String(x.tarih || '').slice(0, 10))}</span><span class="tut sag ap-num">${tl(x.tutar)}</span><span class="not">${esc(x.aciklama || '—')}</span><span></span></div>`).join('');
-            bos = g && !g.yukleniyor && !g.hata ? 'Bu ay gider girilmemiş.' : '';
+            bos = hazir ? 'Bu ay gider girilmemiş.' : '';
+        } else if (k === 'gelmiyor') {
+            L = v.gelmiyor;
+            bas = `Ödüyor ama gelmiyor · ${ay}`;
+            ust = `<p class="ap-kd-not">Aidatını ödüyor ama son ${GELMIYOR_GUN} günden fazladır derse gelmedi. Ödeyip gelmeyen aile çoğu zaman bir sonraki ay bırakır; bir telefon ya da "özledik" mesajı çoğu zaman geri getirir.</p>`;
+            sat = L.map(gelmiyorSatirHTML).join(''); bos = 'Böyle kimse yok.';
+        } else if (k === 'yil') {
+            let yil = AP.yil || yilVarsayilan(), m = {}, kim = {};
+            AP.a.kisiler().forEach(x => { kim[x.ad] = x; });
+            (AP.tum || []).forEach(o => { if (o.ay.slice(0, 4) === String(yil)) (m[o.ad] = m[o.ad] || []).push(o); });
+            let yq = katla((AP.yilAra || '').trim());
+            L = AP.yilListe = Object.keys(m).filter(ad => !yq || katla(ad).includes(yq)).sort((a, b) => a.localeCompare(b, 'tr')).map(ad => ({ ad, k: kim[ad] || null, l: m[ad].sort((x, y) => x.ay.localeCompare(y.ay)), top: m[ad].reduce((t, o) => t + (o.rec.tutar || 0), 0) }));
+            AP.yilSecili = yil;
+            bas = `Yıl sonu özeti · ${yil}`;
+            ust = `<div class="ap-filtre"><button class="ap-btn" onclick="AP.yil=${yil - 1}; apKpiDetayCiz()" aria-label="Önceki yıl">◀ ${yil - 1}</button><b>${yil}</b><button class="ap-btn" onclick="AP.yil=${yil + 1}; apKpiDetayCiz()" aria-label="Sonraki yıl" ${yil >= new Date().getFullYear() ? 'disabled' : ''}>${yil + 1} ▶</button>${L.length ? `<button class="ap-btn" onclick="apYilYazdir(-1)">🖨 ${yq ? 'Bulunanları' : 'Hepsini'} yazdır (her veliye bir sayfa)</button>` : ''}</div>
+                <div class="ap-filtre"><input type="search" id="ap-yil-ara" placeholder="Sporcu ara…" value="${esc(AP.yilAra || '')}" oninput="apYilAra(this.value)" aria-label="Yıl özetinde sporcu ara" autocomplete="off"></div>
+                <p class="ap-kd-not">${L.length} sporcunun ${yil} yılında ödediği aylar ve toplamı (ayrılanlar dahil), toplam <b>${tl(L.reduce((t, x) => t + x.top, 0))}</b>. <b>💬 Gönder</b> özeti veliye WhatsApp'ta hazır açar; <b>🖨</b> yazdırır ya da PDF yapar.</p>`;
+            sat = `<div class="ap-sat od bas"><span>Sporcu</span><span>Ay</span><span class="sag">Toplam</span><span>Ödenen aylar</span><span></span></div>` + L.slice(0, KPI_SINIR).map((x, i) => `<div class="ap-sat od"><div class="ad"><b>${esc(x.ad)}</b><small>${x.k ? esc(x.k.grupAd || '') : 'ayrıldı / pasif'}</small></div><span class="tar ap-num">${x.l.length} ay</span><span class="tut sag ap-num">${tl(x.top)}</span><span class="not">${x.l.map(o => ayKisa(o.ay)).join(', ')}</span><span class="isl">${x.k && telNo(x.k.tel) ? `<button class="ap-btn" onclick="apYilGonder(${i})" aria-label="${esc(x.ad)} velisine gönder">💬 Gönder</button>` : ''}<button class="ap-btn" onclick="apYilYazdir(${i})" aria-label="${esc(x.ad)} özetini yazdır">🖨</button></span></div>`).join('');
+            bos = yq ? 'Bu isimde ödeme kaydı yok.' : yil + ' yılında ödeme kaydı yok.';
         } else {
             L = v.bek.slice().sort((x, y) => ihtimal(y) - ihtimal(x) || x.k.ad.localeCompare(y.k.ad, 'tr'));
             let bekBek = Math.max(0, v.tahmin - v.toplanan);
@@ -497,7 +678,7 @@
         }
         kap.className = 'ap-panel ap-kd';
         kap.innerHTML = `<h3>${bas}<button class="ap-btn" onclick="apKpiAc(null)">✕ Kapat</button></h3>${ust}
-            <div class="ap-satirlar">${L.length ? sat : `<div class="ap-bos">${bos}</div>`}</div>${L.length > KPI_SINIR && ['toplanan', 'oran', 'bekleyen', 'kacan', 'tahmin'].includes(k) ? `<div class="ap-alt"><span>İlk ${KPI_SINIR} / ${L.length} gösteriliyor · gerisi yukarıdaki listede</span></div>` : ''}`;
+            <div class="ap-satirlar">${L.length ? sat : `<div class="ap-bos">${bos}</div>`}</div>${L.length > KPI_SINIR && ['toplanan', 'oran', 'bekleyen', 'kacan', 'tahmin', 'kasa', 'yil'].includes(k) ? `<div class="ap-alt"><span>İlk ${KPI_SINIR} / ${L.length} gösteriliyor · ${k === 'yil' ? 'isimle ara' : k === 'kasa' ? 'tamamı muhasebe raporunda' : 'gerisi yukarıdaki listede'}</span></div>` : ''}`;
     };
 
     window.apTabloCiz = function () {
@@ -534,7 +715,9 @@
         if (AP.acikMod === 'duzelt' && s.rec && s.rec.odendi) return `<div class="ap-form" role="group" aria-label="${esc(s.k.ad)} ödemeyi düzelt">
             <label>Ödeme günü<input type="date" id="ap-f-gun" value="${odemeGunu(s.rec) || bugun()}" max="${bugun()}"></label>
             <label>${ayKisa(AP.ay)} tutarı<input type="number" id="ap-f-tutar" value="${s.rec.tutar || ''}" inputmode="numeric" style="width:110px"></label>
-            <label class="genis">Not<input type="text" id="ap-f-not" value="${esc(s.rec.notMetin || '')}" placeholder="ör. havale, dekont alındı" maxlength="200"></label>
+            ${yontemHTML(s.rec.yontem || '')}
+            <label class="genis">Not<input type="text" id="ap-f-not" value="${esc(s.rec.notMetin || '')}" placeholder="ör. dekont alındı" maxlength="200"></label>
+            ${s.rec.giren ? `<span class="ap-pesin">Tahsil eden: <b style="color:var(--ap-yazi);font-size:13px">${esc(s.rec.giren)}</b></span>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;
         let eskiAylar = s.gecAylar.slice().reverse(), buAyBorc = borclu(s), eskiIsaret = !buAyBorc || (AP.acikYer === 'kpi' && AP.kpi === 'kacan');
         return `<div class="ap-form" role="group" aria-label="${esc(s.k.ad)} ödeme">
@@ -542,7 +725,8 @@
             ${buAyBorc ? `<label>Kaç ay?<select id="ap-f-sure" onchange="apPesinYaz()"><option value="1">1 ay (${ayKisa(AP.ay)})</option><option value="3">3 ay peşin</option><option value="6">6 ay peşin</option><option value="12">12 ay (yıllık)</option></select></label>
             <label>Aylık tutar<input type="number" id="ap-f-tutar" value="${s.aylik || ''}" inputmode="numeric" style="width:110px" oninput="apPesinYaz()"></label>
             <label id="ap-f-ind-l" hidden>İndirim %<input type="number" id="ap-f-ind" value="0" min="0" max="90" inputmode="numeric" style="width:80px" oninput="apPesinYaz()"></label>` : ''}
-            <label class="genis">Not<input type="text" id="ap-f-not" placeholder="ör. havale, dekont alındı" maxlength="200"></label>
+            ${yontemHTML(AP.sonYontem)}
+            <label class="genis">Not<input type="text" id="ap-f-not" placeholder="ör. dekont alındı" maxlength="200"></label>
             ${buAyBorc ? `<div class="ap-pesin" id="ap-f-pesin" hidden></div>` : ''}
             ${eskiAylar.length ? `<label class="yan"><input type="checkbox" id="ap-f-eski" ${eskiIsaret ? 'checked' : ''}> Eski borç da ödendi: ${eskiAylar.map(ayKisa).join(', ')} (${tl(s.aylik * eskiAylar.length)})</label>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;
@@ -569,9 +753,11 @@
         let gun = (document.getElementById('ap-f-gun') || {}).value || bugun(), notMetin = ((document.getElementById('ap-f-not') || {}).value || '').trim() || null;
         if (gun > bugun()) return apTost('Ödeme günü gelecekte olamaz.', 'error');
         let tEl = document.getElementById('ap-f-tutar'), tutar = tEl ? (parseInt(tEl.value, 10) || 0) : 0, eski = (document.getElementById('ap-f-eski') || {}).checked;
+        let yontem = ((AP.el && AP.el.querySelector('input[name="ap-f-yon"]:checked')) || {}).value || null;
+        if (yontem) { AP.sonYontem = yontem; try { localStorage.setItem('ap_son_yontem', yontem); } catch (e) {} }
         if (AP.acikMod === 'duzelt' && s.d === 'odedi') {
             if (!tutar) return apTost('Tutarı yaz.', 'warning');
-            return apKaydet([{ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin }], s.k.ad + ' · ' + ayAd(AP.ay) + ' ödemesi düzeltildi');
+            return apKaydet([{ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin, yontem }], s.k.ad + ' · ' + ayAd(AP.ay) + ' ödemesi düzeltildi');
         }
         let isler = [];
         let p = pesinHesap();
@@ -583,6 +769,7 @@
         } else if (borclu(s)) { if (!tutar) return apTost('Tutarı yaz.', 'warning'); isler.push({ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin }); }
         if (eski) s.gecAylar.forEach(m => isler.push({ kisi: s.k, ay: m, tutar: s.aylik, odemeTarihi: gun, notMetin: notMetin || ('Geç ödeme · ' + gunGoster(gun)) }));
         if (!isler.length) return apTost('Kaydedilecek ay seçilmedi.', 'warning');
+        isler.forEach(x => { x.yontem = yontem; });
         await apKaydet(isler, s.k.ad + ' · ' + isler.length + ' ay ödendi olarak kaydedildi');
     };
     window.apToplu = async function () {

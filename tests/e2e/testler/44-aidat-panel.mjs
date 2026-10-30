@@ -1,6 +1,7 @@
 // 📊 Aidat paneli (2026-10-21, kullanıcı: "bir sürü isim düşünce kasıyor, basit bir site dashboard'u olsun: tahmin, istatistik,
 // kaçan / ödenmemiş ödemeler, belki ödendi ben girmedim → tıklayıp donmadan halledeyim"; "hem DAĞ hem Milo"). Ortak /yonetim-panel.js.
 // DAĞ: bellekte geçici aidat kaydı (sunucuya yazmaz, _aidatDuesPut susturulur), sonunda eski hali. Milo: test üyesi açılır, silinir.
+import fs from 'node:fs';
 import { sayfaAc, uygulamaAc, miloApi, miloOturumAl, benzersiz, B, dogrula, esit, yataydaTasmaYok } from '../yardimci.mjs';
 
 export default async function ({ log }) {
@@ -90,21 +91,53 @@ export default async function ({ log }) {
       // v357: peşin 3 ay %10 indirim → 3 ay ayrı kayıt, her birine indirimli aylık + "Peşin 3 ay" notu; kasaya düşer
       await p.evaluate(({ y, ay }) => { aidatDB[y.l[2]] = {}; aidatDB[y.l[2]][ay.slice(0, 4) + '-01'] = { odendi: true, tutar: 1000, odemeTarihi: ay.slice(0, 4) + '-01-05' }; AP.kpi = null; AP.liste = 'bekleyen'; AP.arama = y.l[2]; apYenile(); apFormAc(y.g + '|' + y.l[2], 'tablo'); }, { y: yedek, ay });
       await p.waitForSelector('#ap-f-sure');
-      await p.fill('#ap-f-tutar', '1000'); await p.selectOption('#ap-f-sure', '3'); await p.fill('#ap-f-ind', '10'); await p.dispatchEvent('#ap-f-ind', 'input');
+      await p.fill('#ap-f-tutar', '1000'); await p.selectOption('#ap-f-sure', '3'); await p.waitForSelector('#ap-f-ind', { state: 'visible' });
+      // indirim kutusu select değişince görünür; fill bazen görünmeden önce yazıp boşa gidiyordu → değeri tutana kadar yaz
+      for (let i = 0; i < 5 && (await p.inputValue('#ap-f-ind')) !== '10'; i++) { await p.fill('#ap-f-ind', '10'); await p.waitForTimeout(50); }
+      await p.dispatchEvent('#ap-f-ind', 'input');
+      await p.locator('#tmp-aidat .ap-form .ap-yon label', { hasText: 'IBAN' }).click(); // v358 ödeme yöntemi
       dogrula(/2\.700₺/.test(await p.textContent('#ap-f-pesin')), 'peşin özeti 3 × 900 = 2.700₺ göstermeli: ' + await p.textContent('#ap-f-pesin'));
       await p.locator('#tmp-aidat .ap-form .ap-btn.ana').click(); await p.waitForTimeout(300);
       const ps = await p.evaluate(({ y, ay }) => { let ek = (a, k) => { let q = a.split('-').map(Number), d = new Date(q[0], q[1] - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }; return [0, 1, 2].map((i) => aidatDB[y.l[2]][ek(ay, i)]); }, { y: yedek, ay });
-      dogrula(ps.every((r) => r && r.odendi && r.tutar === 900 && /^Peşin 3 ay .*%10 indirim/.test(r.notMetin || '')), 'peşin kayıtları yanlış: ' + JSON.stringify(ps));
+      dogrula(ps.every((r) => r && r.odendi && r.tutar === 900 && /^Peşin 3 ay .*%10 indirim/.test(r.notMetin || '') && r.yontem === 'iban'), 'peşin kayıtları yanlış: ' + JSON.stringify(ps));
       // alışılmadık gecikme: son 3 ay hep ayın 1'inde ödemiş, bu ay yok → (bugün 9'undan sonraysa) uyarı
       const alis = await p.evaluate(({ y, ay }) => { let ek = (a, k) => { let q = a.split('-').map(Number), d = new Date(q[0], q[1] - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }; aidatDB[y.l[0]] = {}; [-1, -2, -3].forEach((k) => { aidatDB[y.l[0]][ek(ay, k)] = { odendi: true, tutar: 1500, odemeTarihi: ek(ay, k) + '-01' }; }); apYenile(); return { var: AP.v.alisilmadik.some((s) => s.k.ad === y.l[0]), gun: new Date().getDate(), metin: document.querySelector('#tmp-aidat .ap-kpi').textContent }; }, { y: yedek, ay });
       if (alis.gun > 8) dogrula(alis.var && /alışılmadık gecikme/.test(alis.metin), 'alışılmadık gecikme bulunmadı: ' + JSON.stringify(alis)); else dogrula(!alis.var, 'ayın ilk günlerinde uyarı çıkmamalı');
       // kasa: bugün girilen peşin ödemeler; geçen yıl tablosu 12 satır; bildirim + net kutuları
       await p.locator('#tmp-aidat .ap-kpi > button[data-k="kasa"]').click();
       dogrula(await p.evaluate((ad) => document.querySelector('#ap-kpi-detay').textContent.includes(ad), yedek.l[2]), 'kasada bugünkü peşin ödeme yok');
+      // v358: kasa yönteme göre ayrılır (IBAN kutusunda en az 2.700₺) + kim tahsil etti; ay modu = teslim listesi
+      const kd = await p.evaluate(() => { let b = [...document.querySelectorAll('#ap-kpi-detay .ap-kasa-yon>div')].map((d) => d.textContent); return { b, kim: !!document.querySelector('#ap-kpi-detay h4') && /Kim tahsil etti/.test(document.querySelector('#ap-kpi-detay').textContent) }; });
+      dogrula(kd.b.some((t) => /IBAN/.test(t) && parseInt(t.replace(/\D/g, ''), 10) >= 2700) && kd.kim, 'kasa yöntem / kim dökümü yok: ' + JSON.stringify(kd));
+      await p.locator('#ap-kpi-detay .ap-sekmeler button', { hasText: 'teslim' }).click();
+      dogrula(await p.evaluate(() => AP.kasaMod === 'ay' && /Kasa · /.test(document.querySelector('#ap-kpi-detay h3').textContent) && !!document.querySelector('#ap-kpi-detay .ap-tablo')), 'kasa ay modu (teslim listesi) açılmadı');
+      await p.evaluate(() => { AP.kasaMod = 'gun'; });
+      // v358: ödüyor ama gelmiyor (bu ay ödedi, son ders 25 gün önce) → mor şerit + detay
+      const gm = await p.evaluate((y) => { let d = new Date(); d.setDate(d.getDate() - 25); let g = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); AP.a.sonGelis = (k) => (k.ad === y.l[1] ? g : null); AP.kpi = null; apYenile(); return { var: AP.v.gelmiyor.some((s) => s.k.ad === y.l[1]), serit: !!document.querySelector('#tmp-aidat .ap-serit.mor') }; }, yedek);
+      dogrula(gm.var && gm.serit, 'ödüyor ama gelmiyor bulunmadı: ' + JSON.stringify(gm));
+      await p.locator('#tmp-aidat .ap-serit.mor button').click();
+      dogrula(await p.evaluate((ad) => AP.kpi === 'gelmiyor' && document.querySelector('#ap-kpi-detay').textContent.includes(ad) && /gündür yok/.test(document.querySelector('#ap-kpi-detay').textContent), yedek.l[1]), 'gelmiyor detayı yanlış');
+      // v358: yıl sonu özeti — peşin ödeyen bu yılın listesinde, toplam 3×900 + Ocak 1000
+      await p.evaluate(() => apKpiAc('yil', true));
+      const yl = await p.evaluate((ad) => { let x = (AP.yilListe || []).find((q) => q.ad === ad); return x && { n: x.l.length, top: x.top }; }, yedek.l[2]);
+      if (new Date().getMonth() > 0 && new Date().getMonth() <= 9) dogrula(yl && yl.n === 4 && yl.top === 3700, 'yıl sonu özeti yanlış: ' + JSON.stringify(yl));
       await p.locator('#tmp-aidat .ap-kpi > button[data-k="sezon"]').click();
       esit(await p.locator('#ap-kpi-detay .ap-tablo tbody tr').count(), 12, 'geçen yıl tablosu 12 ay');
       await p.locator('#tmp-aidat .ap-kpi > button[data-k="net"]').click(); await p.waitForTimeout(800);
       dogrula(await p.evaluate(() => /Aidat geliri|Giderler alınamadı/.test(document.querySelector('#ap-kpi-detay').textContent)), 'net detayı açılmadı');
+      // v358: aidat dışı gelir (sunucuya gerçekten yazar, sonunda silinir) → Net + kasa; muhasebe raporu Excel
+      if (await p.evaluate(() => !!(AP.a.gelirEkle && AP.gider && !AP.gider.hata))) {
+        await p.locator('#ap-kpi-detay button', { hasText: 'Diğer gelir' }).click();
+        await p.selectOption('#ap-g-kat', 'Forma / kıyafet'); await p.fill('#ap-g-tutar', '357'); await p.fill('#ap-g-acik', 'E2E test forması');
+        await p.locator('#ap-kpi-detay .ap-gelir-form .ap-btn.ana').click();
+        await p.waitForFunction(() => (AP.gelirHepsi || []).some((x) => x.aciklama === 'E2E test forması') && AP.gider && !AP.gider.yukleniyor, null, { timeout: 15000 });
+        const gl = await p.evaluate(() => ({ x: AP.gelirHepsi.find((x) => x.aciklama === 'E2E test forması'), net: document.querySelector('#ap-kpi-detay').textContent, kasa: document.querySelector('.ap-kpi>button[data-k="kasa"]').textContent }));
+        dogrula(gl.x.tutar === 357 && gl.x.yontem && gl.x.giren && /diğer gelir/.test(gl.net) && /357/.test(gl.net), 'diğer gelir kaydı / Net yanlış: ' + JSON.stringify(gl));
+        const [indir] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => apMuhasebe('csv'))]);
+        const csv = fs.readFileSync(await indir.path(), 'utf8');
+        dogrula(/AİDAT TAHSİLATLARI/.test(csv) && /E2E test forması/.test(csv) && /;357;|;357\r?\n|;357$/m.test(csv) && /NET;/.test(csv), 'muhasebe CSV eksik: ' + csv.slice(0, 300));
+        await p.evaluate((id) => AP.a.gelirSil(id), gl.x.id);
+      }
       dogrula(await p.locator('#tmp-aidat .ap-bl #ap-bl-gun').count() === 1, 'aylık hatırlatma kutusu yok');
       if (process.env.E2E_EKRAN) { await p.locator('#tmp-aidat .ap-kpi > button[data-k="bekleyen"]').click(); await p.locator('#ap-kpi-detay').scrollIntoViewIfNeeded(); }
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-dag.png', fullPage: false });
@@ -137,11 +170,12 @@ export default async function ({ log }) {
       dogrula(s && s.gec === 2 && s.aylik === 900, 'Milo eski borç / aylık tutar yanlış: ' + JSON.stringify(s));
       await p.locator('#milo-aidat-panel-kap .ap-sat .ap-btn.iyi').first().click();
       await p.waitForSelector('#ap-f-not'); await p.check('#ap-f-eski');
+      await p.locator('#milo-aidat-panel-kap .ap-form .ap-yon label', { hasText: 'Kart' }).click();
       await p.locator('#milo-aidat-panel-kap .ap-form .ap-btn.ana').click();
       await p.waitForFunction((a) => AP.v && AP.v.od.some((q) => q.k.ad === a), A, { timeout: 15000 });
       const d = (await miloApi('/dues')).d.dues.filter((x) => x.ad === A && x.odendi);
       esit(d.length, 4, 'Milo: bu ay + 2 eski ay + eski kayıt ödendi olmalı');
-      dogrula(d.some((x) => x.ay === ay && x.odemeTarihi === bugun && x.tutar === 900), 'Milo bu ay kaydı yanlış');
+      dogrula(d.some((x) => x.ay === ay && x.odemeTarihi === bugun && x.tutar === 900 && x.yontem === 'kart' && x.giren), 'Milo bu ay kaydı yanlış: ' + JSON.stringify(d.find((x) => x.ay === ay)));
       // üye kartları sekmesi hâlâ çalışıyor
       await p.evaluate(() => { miloAidatGorunum = 'kartlar'; miloAidatCiz(); }); await p.waitForSelector('#milo-aidat-arama');
       if (process.env.E2E_EKRAN) { await p.evaluate(() => { miloAidatGorunum = 'panel'; miloAidatCiz(); }); await p.screenshot({ path: process.env.E2E_EKRAN + '-milo.png' }); }
@@ -151,5 +185,5 @@ export default async function ({ log }) {
     for (const m of [0, -1, -2, -3]) await miloApi(`/dues/${encodeURIComponent(A)}/${ayEkle(ay, m)}`, { method: 'PUT', body: JSON.stringify({ odendi: false, tutar: null, notMetin: null, odemeTarihi: null, tarih: bugun }) }).catch(() => {});
     await miloApi(`/members/${encodeURIComponent(G)}/${encodeURIComponent(A)}`, { method: 'DELETE' }).catch(() => {});
   }
-  log('📊 aidat paneli (DAĞ + Milo): sayfalı liste, ödemiş olabilir, eski borç, arama, tek tık + toplu ödendi, telefon ✓');
+  log('📊 aidat paneli (DAĞ + Milo): sayfalı liste, ödemiş olabilir, eski borç, arama, tek tık + toplu ödendi, yöntem/kasa/teslim, diğer gelir + muhasebe, gelmiyor, yıl özeti, telefon ✓');
 }

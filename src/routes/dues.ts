@@ -1,6 +1,9 @@
 import type { Router } from "../router";
 import { json, badRequest, readJson } from "../lib/json";
 
+// ödeme yöntemi (2026-10-30): yalnız bu üçü; başka değer null yazılır
+const YONTEMLER = ["nakit", "iban", "kart"];
+
 interface DuesRow {
   ad: string;
   ay: string;
@@ -9,6 +12,8 @@ interface DuesRow {
   tarih: string | null;
   notMetin: string | null;
   odemeTarihi: string | null;
+  yontem: string | null;
+  giren: string | null;
 }
 
 export function registerDuesRoutes(router: Router): void {
@@ -34,6 +39,7 @@ export function registerDuesRoutes(router: Router): void {
       tarih?: string | null;
       notMetin?: string | null;
       odemeTarihi?: string | null;
+      yontem?: string | null;
       deviceId?: string;
     }>(request);
     if (typeof body.odendi !== "boolean") return badRequest("odendi is required");
@@ -43,12 +49,14 @@ export function registerDuesRoutes(router: Router): void {
     // dönük girişler için). İkisi kasıtlı olarak ayrı: odemeTarihi geçmiş bir tarihe ayarlansa bile
     // güncelleme senkron korumasına takılmasın diye "tarih" alanı bundan etkilenmez.
     await env.DB.prepare(
-      `INSERT INTO dues (ad, ay, odendi, tutar, tarih, notMetin, odemeTarihi) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO dues (ad, ay, odendi, tutar, tarih, notMetin, odemeTarihi, yontem, giren) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(ad, ay) DO UPDATE SET
-         odendi = excluded.odendi, tutar = excluded.tutar, tarih = excluded.tarih, notMetin = excluded.notMetin, odemeTarihi = excluded.odemeTarihi
+         odendi = excluded.odendi, tutar = excluded.tutar, tarih = excluded.tarih, notMetin = excluded.notMetin, odemeTarihi = excluded.odemeTarihi,
+         yontem = CASE WHEN excluded.odendi = 0 THEN NULL ELSE COALESCE(excluded.yontem, dues.yontem) END,
+         giren = CASE WHEN excluded.odendi = 0 THEN NULL WHEN dues.odendi = 1 AND dues.giren IS NOT NULL THEN dues.giren ELSE excluded.giren END
        WHERE excluded.tarih IS NOT NULL AND (dues.tarih IS NULL OR excluded.tarih >= dues.tarih)`
     )
-      .bind(params.ad, params.ay, body.odendi ? 1 : 0, body.tutar ?? null, body.tarih ?? null, body.notMetin ?? null, body.odemeTarihi ?? null)
+      .bind(params.ad, params.ay, body.odendi ? 1 : 0, body.tutar ?? null, body.tarih ?? null, body.notMetin ?? null, body.odemeTarihi ?? null, YONTEMLER.includes(body.yontem || "") ? body.yontem : null, body.odendi ? params._oturumAd || null : null)
       .run();
 
     return json({ applied: true });
