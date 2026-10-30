@@ -44,6 +44,10 @@
      Dalga sırası artık dalgaya bağlı karışık (her cihazda aynı), aynı desen tekrar etmez.
      ⚖️ Gerçek atışa göre denge: st.olcum {n seri, h ham hasar = puan × kritik}. 4 seriden sonra yeni dalganın canı, sınıfın
        bugün gerçekten attığı seri hasarı beklenenden yüksekse o oranda artar (en çok ×2,2, asla kolaylaşmaz) — yakın mesafe.
+   v360 🎯 SAPANCI GOBLİN (kullanıcı: "onlar da bir şey fırlatsa"): dalga 3'ten (her seviyede). Her 2 seride kaleye bir şey
+     fırlatır, şey havada asılı kalır (st.mermi {tur, kaynak, x, y}, aynı anda tek). Sonraki serinin ilk 8+ oku onu havada
+     vurur (o ok düşmana gitmez; sınıfa 💰 +1, st.havada). Vurulamazsa çarpar: 🙂 domates (zararsız leke) · ⚔️ taş (st.catlak,
+     3 çatlak = −1 ❤️; Sur Onarımı çatlakları da kapatır) · 😈 ateş topu (−1 ❤️). Çocuğa değil hep kaleye atar.
    ================================================================================================ */
 (function () {
     'use strict';
@@ -197,6 +201,19 @@
                   <path d="M-24 4 L-24 -64" stroke="#6b4a2a" stroke-width="4" stroke-linecap="round"/><circle class="kale-kure" cx="-24" cy="-70" r="8" fill="#c77dff"/><circle cx="-26.5" cy="-72.5" r="2.6" fill="#fff"/>`;
             }
         },
+        // v360 🎯 Sapancı Goblin: her 2 seride kaleye bir şey fırlatır; havada asılı kalır, sıradaki okçu 8+ atarsa havada vurulur
+        sapanci: {
+            ad: 'Sapancı Goblin', agirlik: .9, olcek: 1, ucar: false, bas: [0, -48, 16],
+            svg() {
+                return `<ellipse cx="0" cy="-2" rx="16" ry="4" fill="#0004"/><rect x="-10" y="-14" width="7" height="14" rx="3" fill="#4f8f3e"/><rect x="3" y="-14" width="7" height="14" rx="3" fill="#4f8f3e"/>
+                  <ellipse cx="0" cy="-26" rx="16" ry="15" fill="#c0612b"/><path d="M-14 -30 h28" stroke="#ffd23f" stroke-width="3"/><circle cx="9" cy="-20" r="5" fill="#e8413c"/><circle cx="12" cy="-26" r="4" fill="#e8413c"/>
+                  <path d="M-15 -50 L-33 -58 L-18 -41Z M15 -50 L33 -58 L18 -41Z" fill="#6fbf5a"/><circle cx="0" cy="-48" r="16" fill="#7fcf66"/>
+                  <path d="M-16 -53 Q0 -67 16 -53 L16 -49 Q0 -58 -16 -49Z" fill="#e8413c"/><path d="M15 -52 l10 -3 l-3 8Z" fill="#e8413c"/>
+                  ${gozler(-6, 7, -45, 4.5)}<path d="M-5 -36 q5 3 10 0" fill="none" stroke="#2d5a24" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M-18 -14 L-24 -34 M-24 -34 L-31 -48 M-24 -34 L-17 -48" stroke="#8b5a2b" stroke-width="4" stroke-linecap="round" fill="none"/>
+                  <path d="M-31 -48 Q-24 -40 -17 -48" stroke="#f0d9a8" stroke-width="2" fill="none"/><circle cx="-24" cy="-43" r="3.5" fill="#9aa0ad"/>`;
+            }
+        },
         ejderha: {
             ad: 'Ejderha', agirlik: 5, olcek: 2.1, ucar: false, boss: true, bas: [-14, -64, 18],
             svg() {
@@ -236,7 +253,26 @@
     const OFKE_SINIR = { 2: 4, 3: 3 };           // ejderha kaç sarısız seride ateş püskürtür
     const GERI_DALGA = { 1: 0, 2: 1, 3: 2 };     // kale düşünce kaç dalga geri
     // ilk göründüğü dalga (tanıtım kartı): [tip, en düşük kaleMod]
-    const YENI_DUSMAN = { 2: ['zirhli', 2], 3: ['kalkanci', 2], 4: ['yavruejder', 2], 5: ['balcik', 1], 6: ['hayalet', 1], 8: ['saman', 2] };
+    const YENI_DUSMAN = { 2: [['zirhli', 2]], 3: [['kalkanci', 2], ['sapanci', 1]], 4: [['yavruejder', 2]], 5: [['balcik', 1]], 6: [['hayalet', 1]], 8: [['saman', 2]] };
+    // v360 🎯 Fırlatılan şey seviyeye göre: 🙂 domates (zararsız, şlap!) · ⚔️ taş (3 çatlak = −1 ❤️) · 😈 ateş topu (−1 ❤️)
+    const MERMI = { 1: { tur: 'domates', ad: 'DOMATES', ikon: '🍅' }, 2: { tur: 'tas', ad: 'TAŞ', ikon: '🪨' }, 3: { tur: 'ates', ad: 'ATEŞ TOPU', ikon: '🔥' } };
+    const MERMI_ESIK = 8, CATLAK_SINIR = 3;
+    function mermiSVG(tur) {
+        if (tur === 'tas') return '<path d="M-15 4 Q-17 -10 -4 -15 Q12 -17 16 -2 Q15 12 0 14 Q-12 14 -15 4Z" fill="#8a8f9c" stroke="#4a4f5c" stroke-width="2.5"/><path d="M-6 -4 l5 3 M4 4 l4 -3" stroke="#5e6370" stroke-width="2" fill="none"/>';
+        if (tur === 'ates') return '<circle r="21" fill="#ff5f1f" opacity=".45"/><circle r="14" fill="#ff9f43"/><circle r="7" fill="#ffd23f"/><path d="M-10 -12 q4 -12 10 -16 q-2 8 4 12" fill="#ff9f43"/>';
+        return '<circle r="15" fill="#e8413c"/><circle cx="-5" cy="-5" r="4" fill="#ff9a8f" opacity=".85"/><path d="M0 -13 l-7 -6 M0 -13 l7 -6 M0 -13 v-8" stroke="#3fae4a" stroke-width="4" stroke-linecap="round"/>';
+    }
+    // Havada asılı: sallanır, çevresinde dönen hedef halkası, "8+ ile vur!"
+    function mermiAsili(m) {
+        return `<g transform="translate(${m.x} ${m.y})"><circle class="kale-mermi-halka" r="34" fill="none" stroke="#ffd23f" stroke-width="4" stroke-dasharray="10 8"/>
+          <g class="kale-mermi-sal"><g transform="scale(1.45)">${mermiSVG(m.tur)}</g></g><text y="-46" text-anchor="middle" font-size="17" font-weight="900" fill="#ffd23f" stroke="#1b1230" stroke-width="4" paint-order="stroke">${MERMI_ESIK}+ ile vur!</text></g>`;
+    }
+    // Ön surdaki çatlaklar (⚔️ taş)
+    function catlakSVG(n) {
+        const C = ['M327 170 l-9 14 l7 10 l-8 16 l5 12', 'M300 224 l10 12 l-8 12 l9 14', 'M333 246 l-11 14 l8 12 l-6 14'];
+        return C.slice(0, n).map((d) => `<path d="${d}" fill="none" stroke="#2a2030" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+    }
+
     // v359 ✨ evre: 1 normal · 2 🪖 Savaşçı · 3 👑 Kral
     function evreDalga(dalga) { return dalga >= 7 ? 3 : dalga >= 4 ? 2 : 1; }
     const EVRE = [null, { ad: '', ikon: '' }, { ad: 'Savaşçı', ikon: '🪖' }, { ad: 'Kral', ikon: '👑' }];
@@ -265,6 +301,7 @@
         goblin: ['Hı hı! Beni vuramazsın!', 'Kapıyı açın, geldik!', 'Okların beni gıdıklıyor!'],
         yarasa: ['Vız vız! Yakala beni!', 'Yukarıdayım, görmedin bile!'],
         ork: ['Ork gücü! Kapı benim!', 'Bu ok mu? Kürdan sandım!'],
+        sapanci: ['Sapanım hazır, nişan aldım!', 'Bir tane daha atayım mı?'],
         golem: ['Taşım... çok... sert...', 'Yavaşım ama hiç durmam!'],
         balcik: ['Blop blop! Vur beni, ikiye olurum!', 'Yapış yapış geliyorum!'], minibalcik: ['Blop!', 'Biz de geldik!'],
         hayalet: ['Hu huuu! Göremezsin beni!', 'Okların içimden geçer!'], saman: ['Güçlenin kardeşlerim!', 'Büyüm sizi geliştirir!'],
@@ -300,14 +337,14 @@
     function hizCarpan(st) { return 1 - .15 * ((st.atolye && st.atolye.hendek) || 0); }
     function adimHesapla() { return Math.max(18, Math.min(160, 600 / (Math.max(3, liste().length) * 1.6 * seviye()) * (kmod() === 3 ? 1.15 : 1))); }
     function dalgaTipleri(dalga) {
-        const m = kmod(), havuz = ['goblin']; if (dalga >= 2) havuz.push('yarasa'); if (dalga >= 3) havuz.push('ork'); if (dalga >= 4) havuz.push('golem');
+        const m = kmod(), havuz = ['goblin']; if (dalga >= 2) havuz.push('yarasa'); if (dalga >= 3) havuz.push('ork', 'sapanci'); if (dalga >= 4) havuz.push('golem');
         if (dalga >= 5) havuz.push('balcik'); if (dalga >= 6) havuz.push('hayalet');
         if (m >= 2) { if (dalga >= 2) havuz.push('zirhli'); if (dalga >= 3) havuz.push('kalkanci'); if (dalga >= 4) havuz.push('yavruejder'); }
         const n = Math.min(m === 3 ? 9 : 8, 3 + Math.floor(dalga / 2) + (m === 3 ? 1 : 0)), t = [];
         // v359 dalgaya bağlı karışık sıra (her cihazda aynı dalga) — ilk dalgalar iki goblinle başlar
         let tohum = dalga * 7919 + m * 131; const rs = () => (tohum = (tohum * 9301 + 49297) % 233280) / 233280;
         for (let i = 0; i < n; i++) t.push(dalga < 4 && i < 2 ? 'goblin' : havuz[Math.floor(rs() * havuz.length)]);
-        const yeni = YENI_DUSMAN[dalga]; if (yeni && m >= yeni[1] && t.indexOf(yeni[0]) < 0) t[n - 1] = yeni[0];
+        (YENI_DUSMAN[dalga] || []).filter((y) => m >= y[1]).forEach((y, k) => { if (t.indexOf(y[0]) < 0) t[n - 1 - k] = y[0]; });
         // 🧙 şaman (⚔️+, dalga 8+): en arkada, dalgada bir tane
         if (m >= 2 && dalga >= 8) t.push('saman');
         if (dalga % 3 === 0) t.push('ejderha');
@@ -315,7 +352,7 @@
     }
     function dusmanCan(t, top, ag) { return Math.max(6, Math.min(D[t].tavan || 1e9, Math.round(top * D[t].agirlik / ag))); }
     function yeniDalga(st, dalga) {
-        st.dalga = dalga; st.adim = adimHesapla(); st.mod = kmod(); st.dalgaKatki = {}; st.donma = 0;
+        st.dalga = dalga; st.adim = adimHesapla(); st.mod = kmod(); st.dalgaKatki = {}; st.donma = 0; st.mermi = null;
         const tipler = dalgaTipleri(dalga), top = toplamCan(dalga, st), ag = tipler.reduce((a, t) => a + D[t].agirlik, 0), ev = evreDalga(dalga);
         st.dusmanlar = tipler.map((t, i) => { const c = dusmanCan(t, top, ag), d = { id: ++st.sonId, tip: t, can: c, max: c, evre: ev, x: 800 + i * 52 + (D[t].boss ? 70 : 0), y: D[t].ucar ? 360 + (i % 2) * 24 : 486 + (i % 2) * 12 }; if (D[t].boss && OFKE_SINIR[st.mod]) d.ofke = 0; return d; });
     }
@@ -389,9 +426,9 @@
           <path d="M330 492 Q600 470 1400 486" fill="none" stroke="#b08a5a" stroke-width="46" stroke-linecap="round" opacity=".85"/>
           ${atolyeSahne(st, 'hendek')}
           <g id="kale-dusmanlar" class="${st.donma > 0 ? 'kale-donuk' : ''}">${st.dusmanlar.map(dusmanSVG).join('')}</g>
-          <g id="kale-sur">${surHTML()}${atolyeSahne(st, 'mancinik')}</g>
+          <g id="kale-sur">${surHTML()}<g id="kale-catlak">${catlakSVG(st.catlak || 0)}</g>${atolyeSahne(st, 'mancinik')}</g>
           <g id="kale-cocuklar">${cocuk}</g>
-          <g id="kale-bag"></g><g id="kale-ucan"></g><g id="kale-pop"></g>
+          <g id="kale-mermi">${st.mermi ? mermiAsili(st.mermi) : ''}</g><g id="kale-bag"></g><g id="kale-ucan"></g><g id="kale-pop"></g>
         </svg>
         <div class="kale-hud"><div class="kale-hud-ust"><span class="kale-ad" id="kale-ad"></span><span class="kale-cip" id="kale-canlar"></span>
           <button class="kale-btn kale-btn-genis" id="kale-atolye-btn" title="Kale Atölyesi — altınla kaleyi güçlendirin">🔨</button><button class="kale-btn" id="kale-defter-btn" title="Bugünün Kale Defteri">📜</button>
@@ -431,7 +468,7 @@
         $('kale-ses-btn').textContent = sesAcik() ? '🔊' : '🔇';
         const gs = durum(), altin = gs.altin || 0, at = gs.atolye || {};
         const ab = $('kale-atolye-btn'); if (ab) { ab.textContent = '🔨' + (altin ? ' 💰' + altin : ''); ab.classList.toggle('kale-btn-parla', altin > 0); }
-        const gc = $('kale-guc'); if (gc) gc.innerHTML = ATOLYE.filter((a) => at[a.id]).map((a) => `<span title="${a.ad}">${a.ikon} ${at[a.id]}</span>`).join('') + (gs.donma > 0 ? '<span>❄️ donuk</span>' : '');
+        const gc = $('kale-guc'); if (gc) gc.innerHTML = ATOLYE.filter((a) => at[a.id]).map((a) => `<span title="${a.ad}">${a.ikon} ${at[a.id]}</span>`).join('') + (gs.donma > 0 ? '<span>❄️ donuk</span>' : '') + (gs.catlak ? `<span title="3 çatlakta sur yıkılır: -1 ❤️">🧱 çatlak ${gs.catlak}/${CATLAK_SINIR}</span>` : '');
     }
     function kalpler(can) { let s = ''; for (let i = 0; i < Math.max(kalpSayisi(), can); i++) s += i < can ? (i >= kalpSayisi() ? '🧡' : '❤️') : '🖤'; return s; }
     let _sonAi = -1;
@@ -516,7 +553,10 @@
         };
         (kaydedilecek || []).forEach((k) => {
             const v = String(k.puan), d = okDeger(v);
-            if (!st.dusmanlar.length || temiz) return;
+            if (temiz) return;
+            // 🎯 havadaki şey: sıradaki okçunun ilk 8+ oku onu havada vurur (sınıfa 💰 +1)
+            if (st.mermi && d >= MERMI_ESIK) { olaylar.push({ tur: 'mermi', m: st.mermi }); st.mermi = null; st.havada = (st.havada || 0) + 1; st.altin = (st.altin || 0) + 1; return; }
+            if (!st.dusmanlar.length) return;
             const on = onDusman();
             if (!on) { if (d) olaylar.push({ tur: 'gecti', id: onDusman(true).id }); else olaylar.push({ tur: 'iska', id: onDusman(true).id }); return; } // 👻 hepsi görünmez
             if (!d) { olaylar.push({ tur: 'iska', id: on.id }); return; }
@@ -541,6 +581,14 @@
         // dalga sürüyorsa düşmanlar bir adım yaklaşır; kapıya varan kalenin canını alır
         let adim = null, ates = null;
         if (!temiz) {
+            // 🎯 havada vurulamayan şey kaleye çarpar
+            if (st.mermi) {
+                const mm = st.mermi, c = { tur: 'carpti', m: mm }; st.mermi = null;
+                if (mm.tur === 'tas') { st.catlak = (st.catlak || 0) + 1; if (st.catlak >= CATLAK_SINIR) { st.catlak = 0; st.can -= 1; c.can = true; } c.catlak = st.catlak; }
+                else if (mm.tur === 'ates') { st.can -= 1; c.can = true; }
+                olaylar.push(c);
+            }
+
             // ⚔️/😈 ejderha öfkesi: bu seride sarı (9-10-X) yoksa bir alev dolar, sarı gelince söner; dolunca kaleye ateş (-1 can)
             const sinir = OFKE_SINIR[st.mod || 1], ej = sinir ? st.dusmanlar.find((d) => d.ofke != null) : null;
             if (ej) {
@@ -562,7 +610,12 @@
                 const h = st.dusmanlar.filter((d) => d.tip !== 'saman' && !D[d.tip].boss && (d.evre || 1) < 3).sort((a, b) => a.x - b.x)[0];
                 if (h) { const ek = Math.round(h.max * .3); h.evre = (h.evre || 1) + 1; h.max += ek; h.can += ek; st.gelisen = (st.gelisen || 0) + 1; gelisti = { kaynak: sm.id, d: JSON.parse(JSON.stringify(h)) }; }
             }
-            adim = { hayalet: hay, gelisti: gelisti, konum: st.dusmanlar.map((d) => ({ id: d.id, x: d.x, y: d.y })), varan: varan, ofke: ej && st.dusmanlar.indexOf(ej) >= 0 ? { id: ej.id, n: ej.ofke, sinir: sinir } : null, donuk: donuk, buzKalan: st.donma };
+            // 🎯 sapancı her 2 seride fırlatır (havada aynı anda tek şey; donukken atamaz)
+            let firlat = null;
+            if (!donuk) st.dusmanlar.forEach((d) => { if (d.tip === 'sapanci') d.sayac = (d.sayac || 0) + 1; });
+            const sp = st.mermi || donuk ? null : st.dusmanlar.filter((d) => d.tip === 'sapanci' && d.sayac >= 2 && d.x < 1000).sort((a, b) => a.x - b.x)[0];
+            if (sp) { sp.sayac = 0; st.mermi = { tur: MERMI[st.mod || 1].tur, kaynak: sp.id, x: Math.round(Math.max(470, Math.min(680, sp.x - 140))), y: 250 }; firlat = Object.assign({}, st.mermi); st.atilan = (st.atilan || 0) + 1; }
+            adim = { firlat: firlat, hayalet: hay, gelisti: gelisti, konum: st.dusmanlar.map((d) => ({ id: d.id, x: d.x, y: d.y })), varan: varan, ofke: ej && st.dusmanlar.indexOf(ej) >= 0 ? { id: ej.id, n: ej.ofke, sinir: sinir } : null, donuk: donuk, buzKalan: st.donma };
             // kapıya bir adım kalan var mı (⚔️ tehlike uyarısı) — sonraki adım donuksa tehlike yok
             const onT = onDusman(true);
             if (onT && !st.donma && onT.x - KAPI_X <= st.adim * hz * hiz(onT.tip)) adim.tehlike = onT.id;
@@ -589,6 +642,8 @@
             setTimeout(() => {
                 if (o.tur === 'yildirim') { yildirimGoster(o); setTimeout(tek, 700); return; }
                 if (o.tur === 'tas') { tasUcur(o, tek); return; }
+                if (o.tur === 'carpti') { mermiCarp(o, tek); return; }
+                if (o.tur === 'mermi') { SES.vin(); okUcur(i, o.m.x, o.m.y, false, () => { mermiPatla(o); tek(); }); return; }
                 // hedefin EKRANDAKİ yeri (durum çoktan adım atmış / düşman ölmüş olabilir)
                 const e = $('kale-d' + o.id), m = e ? /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(e.style.transform) : null;
                 const h = hedefNokta({ x: m ? +m[1] : 700, y: m ? +m[2] : 486, tip: (e && e.dataset.tip) || 'goblin' });
@@ -684,17 +739,60 @@
         } else if (!dustu) setTimeout(hudCiz, 650);
         if (a.ofke) { const e = document.querySelector('#kale-d' + a.ofke.id + ' .kale-ofke'); if (e) e.innerHTML = ofkeSVG(a.ofke.n); }
         (a.hayalet || []).forEach((h) => { const e = $('kale-d' + h.id); if (e) e.classList.toggle('kale-gorunmez', h.g); });
+        if (a.firlat && !dustu) sonra(() => mermiFirlat(a.firlat), 900);
         if (a.gelisti && !dustu) { sonra(() => gelisimGoster(a.gelisti), 750); }
         // ⚔️ düşmanlar konuşur: tehlike > ejderha öfkesi > hiç değmedi > rastgele laf
         const vin = $('kale-vinyet'); if (vin) vin.classList.toggle('on', kmod() >= 2 && !!a.tehlike && !dustu);
         if (kmod() < 2 || dustu) return;
         setTimeout(() => {
-            if (_toren || a.gelisti) return;
+            if (_toren || a.gelisti || a.firlat) return;
             if (a.tehlike) { SES.kalp(); konus(a.tehlike, rnd(TEHLIKE)); return; }
             if (a.ofke && a.ofke.n === a.ofke.sinir - 1) { SES.ejder(); konus(a.ofke.id, 'Bir seri daha sarı gelmezse... ATEŞ!'); return; }
             if (!a.hasarli) { SES.gulus(); konus(null, rnd(GULUS)); return; }
             if (Math.random() < .6) { const l = a.konum.filter((d) => d.x < 960); const d = l.length ? rnd(l) : null, e = d && $('kale-d' + d.id); if (e) konus(d.id, rnd(SOZ[e.dataset.tip] || SOZ.goblin)); }
         }, 800);
+    }
+    /* ---------------- 🎯 SAPANCI: fırlat · havada vur · çarp ---------------- */
+    function mermiFirlat(f) {
+        const g = $('kale-ucan'), mg = $('kale-mermi'), e = $('kale-d' + f.kaynak), m = e && /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(e.style.transform);
+        const M = Object.values(MERMI).find((x) => x.tur === f.tur) || MERMI[1];
+        SES.vin(); if (e) konus(f.kaynak, f.tur === 'domates' ? 'Domates geliyor! Hi hi!' : f.tur === 'tas' ? 'Taş geliyor, kaçın!' : 'Ateş topu! Yanacaksınız!');
+        const yerles = () => { if (mg) mg.innerHTML = mermiAsili(f); pop(`${M.ikon} ${M.ad} GELİYOR! Sıradaki okçu ${MERMI_ESIK}+ atsın!`, 500, 170, 22, '#ffd23f'); };
+        if (!m || !g || !g.animate) { yerles(); return; }
+        const t = svgEl('g', {}, g); t.innerHTML = mermiSVG(f.tur);
+        const sx = +m[1] - 28, sy = +m[2] - 44;
+        const an = t.animate([{ transform: `translate(${sx}px,${sy}px) scale(.5)` }, { transform: `translate(${(sx + f.x) / 2}px,${Math.min(sy, f.y) - 130}px) scale(1)` }, { transform: `translate(${f.x}px,${f.y}px) scale(1)` }], { duration: 750, easing: 'ease-out' });
+        an.onfinish = () => { t.remove(); yerles(); };
+    }
+    function mermiPatla(o) {
+        const mg = $('kale-mermi'); if (mg) mg.innerHTML = '';
+        SES.vur(true); SES.fanfar();
+        const g = $('kale-ucan');
+        if (g) for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, p = svgEl('circle', { cx: o.m.x, cy: o.m.y, r: 6, fill: o.m.tur === 'domates' ? '#e8413c' : o.m.tur === 'ates' ? '#ffb347' : '#a8aebb', class: 'kale-parca' }, g); p.style.setProperty('--dx', Math.cos(a) * 60 + 'px'); p.style.setProperty('--dy', Math.sin(a) * 60 + 'px'); setTimeout(() => p.remove(), 800); }
+        pop('💥 HAVADA VURDUNUZ! +💰1', o.m.x, o.m.y - 40, 26, '#ffd23f');
+        if (!_ekranHud) hudCiz();
+    }
+    function mermiCarp(o, cb) {
+        const mg = $('kale-mermi'), g = $('kale-ucan'); if (mg) mg.innerHTML = '';
+        const hx = 316, hy = 228; // skor paneli sol alt suru örter — kapı üstü görünür
+        const bitir = () => {
+            const w = document.getElementById('km-oyun-sahne') || panel();
+            if (o.m.tur === 'domates') {
+                SES.iska(); SES.gulus(); pop('ŞLAP! 🍅 Hiç zararı yok!', hx, hy - 30, 24, '#ff9a8f');
+                const s = $('kale-sur'); if (s) { const l = svgEl('g', { class: 'kale-leke' }, s); l.innerHTML = `<g transform="translate(${hx} ${hy})"><path d="M-22 -6 q-6 -14 8 -16 q6 -12 16 -2 q14 -4 12 10 q12 8 0 16 q2 14 -12 10 q-8 12 -16 0 q-14 2 -10 -10 q-12 -6 2 -18Z" fill="#e8413c" opacity=".9"/><circle cx="-26" cy="16" r="4" fill="#e8413c"/><circle cx="26" cy="-18" r="3" fill="#e8413c"/></g>`; setTimeout(() => l.remove(), 6000); }
+            } else {
+                SES.kapi(); if (o.m.tur === 'ates') SES.ates(); anim(w, 'kale-salla');
+                const c = $('kale-catlak'); if (c && o.m.tur === 'tas') c.innerHTML = catlakSVG(o.can ? CATLAK_SINIR : o.catlak);
+                pop(o.can ? (o.m.tur === 'tas' ? '🧱 Sur yıkıldı! -1 ❤️' : '🔥 Kaleye çarptı! -1 ❤️') : `🧱 Sur çatladı! ${o.catlak}/${CATLAK_SINIR}`, hx, hy - 30, 26, '#ff8fa8');
+                if (o.can && c) setTimeout(() => { c.innerHTML = ''; }, 1600);
+            }
+            if (!_ekranHud) hudCiz();
+            cb();
+        };
+        if (!g || !g.animate) { bitir(); return; }
+        const t = svgEl('g', {}, g); t.innerHTML = mermiSVG(o.m.tur);
+        const an = t.animate([{ transform: `translate(${o.m.x}px,${o.m.y}px)` }, { transform: `translate(${hx}px,${hy}px) scale(1.3)` }], { duration: 450, easing: 'ease-in' });
+        an.onfinish = () => { t.remove(); bitir(); };
     }
     // 🧙 Şaman bir düşmanı geliştirir: mor büyü çizgisi, düşman yeni evresiyle yeniden çizilir
     function gelisimGoster(g) {
@@ -745,13 +843,14 @@
     }
     // Yeni dalgada ilk kez görünen düşmanı / öfkeli ejderhayı tanıt (⚔️ ve üstü)
     function tanit() {
-        const m = kmod(), st = durum(), y = YENI_DUSMAN[st.dalga], var_ = (t) => st.dusmanlar.some((d) => d.tip === t), ev = evreDalga(st.dalga), kart = [];
+        const m = kmod(), st = durum(), var_ = (t) => st.dusmanlar.some((d) => d.tip === t), ev = evreDalga(st.dalga), kart = [];
         const K = {
             zirhli: '🛡️ YENİ DÜŞMAN: Altın Zırhlı Goblin<small>Zırhına sadece <b>SARI</b> (9-10-X) işler! Sarı atamazsanız onu düşüremezsiniz.</small>',
             kalkanci: '🛡️ YENİ DÜŞMAN: Kalkanlı Trol<small>Kalkanını sadece <b>KIRMIZI ya da SARI</b> (7 ve üstü) deler!</small>',
             yavruejder: '🐉 YENİ DÜŞMAN: Yavru Ejderha<small>Uçar ve çok hızlıdır — çabuk düşürün!</small>',
             balcik: '🟢 YENİ DÜŞMAN: Balçık<small>Düşünce <b>ikiye bölünür</b> — iki minik balçık daha gelir! Hepsini durdurun.</small>',
             hayalet: '👻 YENİ DÜŞMAN: Hayalet<small>Bir seri görünür, bir seri <b>görünmez</b> olur — görünmezken oklar içinden geçip arkadakine gider!</small>',
+            sapanci: `🎯 YENİ DÜŞMAN: Sapancı Goblin<small>Kaleye ${MERMI[m].ikon} <b>${MERMI[m].ad.toLocaleLowerCase('tr-TR')}</b> fırlatır — havada asılı kalır! Sıradaki okçu <b>${MERMI_ESIK} ve üstü</b> atarsa havada vurur (💰 +1). ${m === 1 ? 'Vuramazsanız sura yapışır, zararı yok!' : m === 2 ? 'Vuramazsanız sur çatlar — 3 çatlakta -1 ❤️' : 'Vuramazsanız kale yanar: -1 ❤️'}</small>`,
             saman: '🧙 YENİ DÜŞMAN: Goblin Şaman<small>En arkada büyü yapar: her 2 seride bir düşmanı <b>geliştirir</b>! 🔥 X ve 🪨 mancınık arkayı vurur.</small>'
         };
         // ✨ evre değişti: günde bir kez "CANAVARLAR GELİŞTİ"
@@ -760,8 +859,9 @@
             const kural = m < 2 ? '' : ev === 2 ? '<br>⚔️ Kalkanlı Trol artık <b>8 ve üstü</b> ister!' : '<br>⚔️ Kalkanlı Trol <b>9+</b>, Altın Zırhlı Goblin yalnız <b>10</b>!';
             kart.push([`✨ CANAVARLAR GELİŞTİ!<small><span class="kale-evrim">${miniSVG('goblin', ev - 1)}<b>➜</b>${miniSVG('goblin', ev)}</span>Artık hepsi ${EVRE[ev].ikon} <b>${EVRE[ev].ad}</b> — ${ev === 2 ? 'miğferli ve boynuzlu! Daha dikkatli nişan alın.' : 'taçlı krallar geldi! Hep birlikte durduralım.'}${kural}</small>`, 5200]);
         }
-        if (y && m >= y[1] && K[y[0]] && var_(y[0])) kart.push([K[y[0]].replace('<small>', `<small><span class="kale-evrim">${miniSVG(y[0], ev)}</span>`), 4600]);
-        else if (m >= 2 && st.dusmanlar.some((d) => d.ofke != null)) kart.push([`🐲 EJDERHA GELİYOR!<small>Sarı atılmayan her seride öfkelenir 🔥 — ${OFKE_SINIR[m]} seri üst üste sarı gelmezse kaleye ateş püskürtür! Sarı atın, sakinleşsin.</small>`, 4600]);
+        const yk = (YENI_DUSMAN[st.dalga] || []).filter((y) => m >= y[1] && K[y[0]] && var_(y[0]));
+        yk.forEach((y) => kart.push([K[y[0]].replace('<small>', `<small><span class="kale-evrim">${miniSVG(y[0], ev)}</span>`), 4600]));
+        if (!yk.length && m >= 2 && st.dusmanlar.some((d) => d.ofke != null)) kart.push([`🐲 EJDERHA GELİYOR!<small>Sarı atılmayan her seride öfkelenir 🔥 — ${OFKE_SINIR[m]} seri üst üste sarı gelmezse kaleye ateş püskürtür! Sarı atın, sakinleşsin.</small>`, 4600]);
         let t = 0; kart.forEach(([h, ms]) => { sonra(() => dev(h, ms), t); t += ms + 350; });
     }
     function temizGoster(h) {
@@ -794,7 +894,7 @@
     function atolyeAl(id) {
         const st = durum(), x = ATOLYE.find((y) => y.id === id); if (!x || (st.altin || 0) < 1) return;
         st.atolye = st.atolye || {};
-        if (id === 'sur') { if (st.can >= kalpSayisi() + 1) return; st.can++; }
+        if (id === 'sur') { if (st.can >= kalpSayisi() + 1) return; st.can++; st.catlak = 0; }
         else { if ((st.atolye[id] || 0) >= ATOLYE_UST) return; st.atolye[id] = (st.atolye[id] || 0) + 1; }
         st.altin--; kaydet(); SES.fanfar();
         if (!_toren) kaleSahneKur(); else hudCiz();
@@ -806,7 +906,7 @@
         const st = durum(), okcular = liste().map((x) => x.g + '|' + x.ad).filter((k) => st.katki[k] > 0);
         const hasar = Object.keys(st.katki || {}).reduce((a, k) => a + st.katki[k], 0), oz = st.ozel || {};
         const satir = [`🏰 ${st.temizlenen || 0} dalga temizlendi`, `👹 ${st.dusen || 0} düşman düştü`, st.ejderha ? `🐲 ${st.ejderha} ejderha` : '', st.kurtarma ? `🛡️ ${st.kurtarma} kez son anda` : '', `⚔️ ${hasar} ortak hasar`,
-            oz.yildirim ? `⚡ ${oz.yildirim} yıldırım` : '', oz.buz ? `❄️ ${oz.buz} buz oku` : '', oz.delici ? `🎯 ${oz.delici} delici ok` : '', st.bolunen ? `🟢 ${st.bolunen} balçık bölündü` : '', st.gelisen ? `🧙 ${st.gelisen} canavar geliştirildi` : ''].filter(Boolean);
+            oz.yildirim ? `⚡ ${oz.yildirim} yıldırım` : '', oz.buz ? `❄️ ${oz.buz} buz oku` : '', oz.delici ? `🎯 ${oz.delici} delici ok` : '', st.bolunen ? `🟢 ${st.bolunen} balçık bölündü` : '', st.gelisen ? `🧙 ${st.gelisen} canavar geliştirildi` : '', st.havada ? `🎯 ${st.havada} kez havada vurduk` : ''].filter(Boolean);
         dev(`📜 Bugünün Kale Defteri<small>${satir.join(' · ')}<br>🤝 ${okcular.length} okçu hep birlikte: ${isimler(okcular, 30) || '—'}<br>
           <button class="kale-wa" id="kale-wa">💬 WhatsApp'ta paylaş</button><br><i>(kapatmak için dokun)</i></small>`);
         const d = $('kale-dev'); if (!d) return;
@@ -835,13 +935,14 @@
           ⚡ 10-10-10 yıldırım (bütün düşmanlara) · ❄️ üçü de sarı: düşmanlar 2 adım donar · 🎯 üçü aynı 7 ya da 8: zırh/kalkan işlemez<br>
           🤝 Kaleyi hep birlikte koruyoruz: her dalga 💰 altın → 🔨 Atölye'de mancınık, hendek, okçu kulesi, sur onarımı<br>
           ✨ Canavarlar gelişir: 4. dalgadan 🪖 Savaşçı, 7. dalgadan 👑 Kral · 🟢 Balçık ikiye bölünür · 👻 Hayalet bir seri görünmez<br>
+          🎯 Sapancı Goblin kaleye bir şey fırlatır, havada asılı kalır — sıradaki okçu ${MERMI_ESIK}+ atarsa havada vurur (💰 +1)<br>
           ⚖️ Dalgalar sınıfın bugünkü atışına göre güçlenir — yakından çok puan atınca canavarlar da güçlü gelir<br>
           ${kmod() >= 2 ? `<b>${kmod() === 3 ? '😈 Korkutucu' : '⚔️ Heyecanlı'}:</b> 🛡️ Zırhlı Goblin'e yalnız sarı, Kalkanlı Trol'e 7 ve üstü işler (canavarlar geliştikçe eşik yükselir) · 🧙 Şaman düşmanları geliştirir ·
           ejderha sarısız ${OFKE_SINIR[kmod()]} seride ateş püskürtür · kale düşerse ${GERI_DALGA[kmod()]} dalga geri${kmod() === 3 ? ' · kalenin 2 canı var' : ''}<br>` : ''}<i>(kapatmak için dokun)</i></small>`);
         const d = $('kale-dev'); if (d) { d.style.pointerEvents = 'auto'; d.onclick = () => { d.classList.remove('goster'); d.style.pointerEvents = ''; d.onclick = null; }; }
     }
     function yeniOyunSor() {
-        const f = () => { const st = durum(); st.can = kalpSayisi(); st.evreGor = 1; yeniDalga(st, 1); kaydet(); kaleSahneKur(); if (typeof showToast === 'function') showToast('🔄 Kale savunması baştan başladı!', 'success'); };
+        const f = () => { const st = durum(); st.can = kalpSayisi(); st.evreGor = 1; st.catlak = 0; yeniDalga(st, 1); kaydet(); kaleSahneKur(); if (typeof showToast === 'function') showToast('🔄 Kale savunması baştan başladı!', 'success'); };
         if (typeof onayIste === 'function') onayIste('Kale savunması 1. dalgadan yeniden başlasın mı?<br><small>Sporcuların serileri silinmez.</small>', f, 'Baştan başla', 'Vazgeç'); else f();
     }
 
@@ -916,6 +1017,10 @@
 .kale-kure{animation:kaleKure 1.2s ease-in-out infinite}@keyframes kaleKure{50%{opacity:.55}}
 .kale-evrim{display:flex;justify-content:center;align-items:center;gap:6px;margin:4px 0 6px}.kale-evrim b{font-size:1.6em;color:#ffd23f}
 .kale-mini{overflow:visible;filter:drop-shadow(0 4px 0 rgba(0,0,0,.3))}
+.kale-mermi-sal{animation:kaleMermiSal 1s ease-in-out infinite;transform-box:fill-box;transform-origin:center}@keyframes kaleMermiSal{50%{transform:translateY(-8px) rotate(14deg)}}
+.kale-mermi-halka{animation:kaleMermiHalka 2s linear infinite;transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 6px #ffd23f)}@keyframes kaleMermiHalka{to{transform:rotate(360deg)}}
+.kale-parca{animation:kaleParca .7s ease-out forwards;transform-box:fill-box}@keyframes kaleParca{to{transform:translate(var(--dx),var(--dy)) scale(.3);opacity:0}}
+.kale-leke{animation:kaleLeke 6s ease-in forwards}@keyframes kaleLeke{0%{opacity:0}5%{opacity:1}80%{opacity:1}100%{opacity:0}}
 .kale-flas{animation:kaleFlas .45s ease-out}@keyframes kaleFlas{0%{filter:brightness(2.4)}100%{filter:none}}
 .kale-wa{pointer-events:auto;margin:10px 0 4px;border:0;border-radius:999px;background:#25d366;color:#08311a;font-weight:900;font-size:16px;padding:9px 18px;cursor:pointer}
 .kale-atolye{position:absolute;right:12px;top:84px;z-index:4;width:min(400px,calc(100% - 24px));background:rgba(20,14,36,.93);color:#f6efff;border-radius:18px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 2px #ffd23f55;transform:translateY(-14px);opacity:0;pointer-events:none;transition:.3s cubic-bezier(.3,1.4,.5,1)}

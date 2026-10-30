@@ -79,6 +79,33 @@ export default async function ({ log }) {
     esit(st.dusmanlar.filter((d) => d.tip === 'yavruejder').length, 2, 'ejderha yardımcı çağırmadı');
     dogrula(st.dusmanlar.find((d) => d.tip === 'ejderha').cagirdi === true, 'çağrı işareti yok');
 
+    // 🎯 v360 Sapancı (⚔️): 2. seride taş fırlatır → havada asılı; vurulamazsa çatlak; 8+ ilk ok havada vurur (+💰, düşmana gitmez);
+    // 3. çatlak −1 ❤️ ve çatlaklar sıfırlanır
+    await yaz(goblinler("st.dusmanlar = st.dusmanlar.slice(0, 3); st.can = 3; st.catlak = 0; st.altin = 0; st.mermi = null; st.dusmanlar[0].x = 600; const s = st.dusmanlar[2]; s.tip = 'sapanci'; s.x = 950; s.sayac = 1;"));
+    await seri(['M', 'M', 'M']); await p.waitForTimeout(2200);
+    st = await oku();
+    dogrula(st.mermi && st.mermi.tur === 'tas', 'sapancı taş fırlatmadı: ' + JSON.stringify(st.mermi));
+    dogrula(await p.evaluate(() => /8\+ ile vur/.test(document.getElementById('kale-mermi').textContent)), 'havadaki taş çizilmedi');
+    await seri(['5', '5', '5']); await p.waitForTimeout(1200); st = await oku();
+    dogrula(!st.mermi && st.catlak === 1 && st.can === 3, 'vurulamayan taş çatlak açmadı: ' + JSON.stringify({ m: st.mermi, c: st.catlak, can: st.can }));
+    dogrula(await p.evaluate(() => document.querySelectorAll('#kale-catlak path').length === 1 && /çatlak 1\/3/.test(document.getElementById('kale-guc').textContent)), 'çatlak çizimi / HUD yok');
+    await yaz("st.mermi = { tur: 'tas', kaynak: 0, x: 520, y: 250 }; st.dusmanlar.forEach((d) => { d.can = 200; d.sayac = 0; });");
+    const onG = (await oku()).dusmanlar.slice().sort((a, b) => a.x - b.x)[0].id;
+    await seri(['9', '5', '5']); await p.waitForTimeout(800); st = await oku();
+    dogrula(!st.mermi && st.havada === 1 && st.altin === 1, 'havada vurma çalışmadı: ' + JSON.stringify({ m: st.mermi, h: st.havada, a: st.altin }));
+    esit(st.dusmanlar.find((d) => d.id === onG).can, 190, '8+ ok havadaki taşa gitmeli, diğer iki ok düşmana');
+    await yaz("st.catlak = 2; st.mermi = { tur: 'tas', kaynak: 0, x: 520, y: 250 }; st.dusmanlar.forEach((d) => { d.x = 900; });");
+    await seri(['5', '5', '5']); st = await oku();
+    dogrula(st.can === 2 && st.catlak === 0, '3. çatlak −1 ❤️ yapmadı: ' + JSON.stringify({ can: st.can, c: st.catlak }));
+    // 🙂 Tatlı: domates zararsız; 3. dalgada sapancı gelir
+    await ayar(1); await p.waitForTimeout(400);
+    await yaz("st.can = 3; st.catlak = 0; st.mermi = { tur: 'domates', kaynak: 0, x: 520, y: 250 }; st.dusmanlar.forEach((d) => { d.x = 900; d.tip = 'goblin'; });");
+    await seri(['5', '5', '5']); st = await oku();
+    dogrula(st.can === 3 && !st.catlak && !st.mermi, 'domates zarar verdi');
+    await yaz('st.dalga = 3; st.mod = 2;'); await p.evaluate(() => kaleAyarUygula()); st = await oku();
+    dogrula(st.dusmanlar.some((d) => d.tip === 'sapanci'), '3. dalgada sapancı yok: ' + st.dusmanlar.map((d) => d.tip).join(','));
+    await ayar(2); await p.waitForTimeout(400);
+
     // ⚖️ gerçek atış ölçümü: sınıf beklenenden çok vuruyorsa dalga canı artar
     const can = await p.evaluate(() => {
       const k = 'dag_km_kale_' + (_kmAktifKonum || 'varsayilan'), top = () => JSON.parse(localStorage.getItem(k)).dusmanlar.reduce((a, d) => a + d.max, 0);

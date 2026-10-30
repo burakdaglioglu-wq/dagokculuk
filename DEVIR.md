@@ -5377,3 +5377,9 @@ Kullanıcı: "bir noktaya kadar güzel, bir noktadan sonra sıkıyor; canavarlar
 - Dalga sırası dalgaya bağlı tohumla karışık (her cihazda aynı).
 - **Denge** `st.olcum {n, h}`: her serinin ham hasarı (puan × kritik; kule/özel ok hariç). 4 seriden sonra `toplamCan(dalga, st)`, gerçek/beklenen oranı >1 ise o kadar artar (en çok ×2,2; asla kolaylaşmaz).
 - Defter: bölünen balçık, geliştirilen canavar. Test `84-kale-gelisim`; `70-kale` artık 12 tip bekler.
+
+## 74. 🎯 Kale Savunması: Sapancı Goblin — havada vur (2026-10-31, v360)
+Kullanıcı: "onlar da bir şey fırlatsa nasıl olur?". İlke: çocuğa değil hep kaleye atar, kimse suçlanmaz.
+- `sapanci` dalga 3'ten (her seviyede; `YENI_DUSMAN` artık `{dalga: [[tip, enDüşükMod], ...]}`, tanıtım kartları sırayla). Her sapancının `d.sayac`'ı; 2'ye varınca (donuk değilken, ekrandaysa, havada başka şey yoksa) `st.mermi = {tur, kaynak, x, y}` havada asılı kalır (`#kale-mermi`, `mermiAsili`).
+- Sonraki serinin **ilk 8+ oku** (`MERMI_ESIK`) onu havada vurur: o ok düşmana gitmez, `st.havada`++, 💰 +1 altın. Vurulamazsa çarpar (`carpti`): 🙂 `domates` zararsız leke · ⚔️ `tas` `st.catlak` (3'te −1 ❤️, sıfırlanır; HUD 🧱 çipi; Sur Onarımı kapatır) · 😈 `ates` −1 ❤️. `yeniDalga` havadakini siler.
+- Çatlak ve çarpma noktası kapı üstünde (sol alttaki skor paneli ön suru örter). Test `84-kale-gelisim` (sapancı bölümü); `70-kale` 13 tip bekler.
