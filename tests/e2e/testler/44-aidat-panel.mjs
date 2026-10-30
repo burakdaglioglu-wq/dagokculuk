@@ -87,6 +87,25 @@ export default async function ({ log }) {
       }
       await p.locator('#tmp-aidat .ap-kpi > button[data-k="tahmin"]').click();
       dogrula(await p.evaluate(() => AP.kpi === null && !document.querySelector('#ap-kpi-detay').innerHTML), 'aynı kutuya ikinci dokunuş detayı kapatmalı');
+      // v357: peşin 3 ay %10 indirim → 3 ay ayrı kayıt, her birine indirimli aylık + "Peşin 3 ay" notu; kasaya düşer
+      await p.evaluate(({ y, ay }) => { aidatDB[y.l[2]] = {}; aidatDB[y.l[2]][ay.slice(0, 4) + '-01'] = { odendi: true, tutar: 1000, odemeTarihi: ay.slice(0, 4) + '-01-05' }; AP.kpi = null; AP.liste = 'bekleyen'; AP.arama = y.l[2]; apYenile(); apFormAc(y.g + '|' + y.l[2], 'tablo'); }, { y: yedek, ay });
+      await p.waitForSelector('#ap-f-sure');
+      await p.fill('#ap-f-tutar', '1000'); await p.selectOption('#ap-f-sure', '3'); await p.fill('#ap-f-ind', '10'); await p.dispatchEvent('#ap-f-ind', 'input');
+      dogrula(/2\.700₺/.test(await p.textContent('#ap-f-pesin')), 'peşin özeti 3 × 900 = 2.700₺ göstermeli: ' + await p.textContent('#ap-f-pesin'));
+      await p.locator('#tmp-aidat .ap-form .ap-btn.ana').click(); await p.waitForTimeout(300);
+      const ps = await p.evaluate(({ y, ay }) => { let ek = (a, k) => { let q = a.split('-').map(Number), d = new Date(q[0], q[1] - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }; return [0, 1, 2].map((i) => aidatDB[y.l[2]][ek(ay, i)]); }, { y: yedek, ay });
+      dogrula(ps.every((r) => r && r.odendi && r.tutar === 900 && /^Peşin 3 ay .*%10 indirim/.test(r.notMetin || '')), 'peşin kayıtları yanlış: ' + JSON.stringify(ps));
+      // alışılmadık gecikme: son 3 ay hep ayın 1'inde ödemiş, bu ay yok → (bugün 9'undan sonraysa) uyarı
+      const alis = await p.evaluate(({ y, ay }) => { let ek = (a, k) => { let q = a.split('-').map(Number), d = new Date(q[0], q[1] - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }; aidatDB[y.l[0]] = {}; [-1, -2, -3].forEach((k) => { aidatDB[y.l[0]][ek(ay, k)] = { odendi: true, tutar: 1500, odemeTarihi: ek(ay, k) + '-01' }; }); apYenile(); return { var: AP.v.alisilmadik.some((s) => s.k.ad === y.l[0]), gun: new Date().getDate(), metin: document.querySelector('#tmp-aidat .ap-kpi').textContent }; }, { y: yedek, ay });
+      if (alis.gun > 8) dogrula(alis.var && /alışılmadık gecikme/.test(alis.metin), 'alışılmadık gecikme bulunmadı: ' + JSON.stringify(alis)); else dogrula(!alis.var, 'ayın ilk günlerinde uyarı çıkmamalı');
+      // kasa: bugün girilen peşin ödemeler; geçen yıl tablosu 12 satır; bildirim + net kutuları
+      await p.locator('#tmp-aidat .ap-kpi > button[data-k="kasa"]').click();
+      dogrula(await p.evaluate((ad) => document.querySelector('#ap-kpi-detay').textContent.includes(ad), yedek.l[2]), 'kasada bugünkü peşin ödeme yok');
+      await p.locator('#tmp-aidat .ap-kpi > button[data-k="sezon"]').click();
+      esit(await p.locator('#ap-kpi-detay .ap-tablo tbody tr').count(), 12, 'geçen yıl tablosu 12 ay');
+      await p.locator('#tmp-aidat .ap-kpi > button[data-k="net"]').click(); await p.waitForTimeout(800);
+      dogrula(await p.evaluate(() => /Aidat geliri|Giderler alınamadı/.test(document.querySelector('#ap-kpi-detay').textContent)), 'net detayı açılmadı');
+      dogrula(await p.locator('#tmp-aidat .ap-bl #ap-bl-gun').count() === 1, 'aylık hatırlatma kutusu yok');
       if (process.env.E2E_EKRAN) { await p.locator('#tmp-aidat .ap-kpi > button[data-k="bekleyen"]').click(); await p.locator('#ap-kpi-detay').scrollIntoViewIfNeeded(); }
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-dag.png', fullPage: false });
       // telefon genişliği: yana taşma yok

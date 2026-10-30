@@ -781,6 +781,7 @@ function miloAidatPanelAdaptor() {
             miloDuesTum = (await miloApi('/dues')).dues;
         },
         hatirlat(k, ay) { miloAidatAy = ay; miloAidatHatirlat(k.grup, k.ad); },
+        tumOdemeler() { return miloDuesTum.map(d => ({ ad: d.ad, ay: d.ay, rec: d })); }, // geçen yıl kıyası + günün kasası (ayrılanlar dahil)
         pdf() { apYazdir('Milo'); },
         araclar: [['📄 Gelir raporu', 'miloAidatGelirRaporu()'], ['📊 Detaylı analiz (PDF)', 'miloAidatDetayliAnalizPDF()'], ['⚠️ Borç raporu', "miloAidatGorunum='kartlar'; miloAidatBorcRaporuAcik=true; miloAidatCiz()"], ['⚙️ Varsayılan tutar', "miloAidatGorunum='kartlar'; miloAidatCiz()"]]
     };

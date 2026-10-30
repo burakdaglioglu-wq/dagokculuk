@@ -45,6 +45,7 @@ import { registerYayinRoutes } from "./routes/yayin";
 import { registerFotoRoutes } from "./routes/fotolar";
 import { registerSporcuGirisRoutes } from "./routes/sporcuGiris";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
+import { checkAndSendAidatYoneticiOzet } from "./lib/aidatYonetici";
 import { checkAndSendYarismaReminders } from "./lib/yarismaHatirlatma";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
 
@@ -224,6 +225,7 @@ export default {
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(checkAndSendReminders(env));
     ctx.waitUntil(checkAndSendAidatReminders(env));
+    ctx.waitUntil(checkAndSendAidatYoneticiOzet(env));
     ctx.waitUntil(checkAndSendBelgeReminders(env));
     ctx.waitUntil(checkAndSendBirthdayReminders(env));
     ctx.waitUntil(checkAndSendYarismaReminders(env));

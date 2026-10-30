@@ -42,6 +42,18 @@ export function registerVeliRaporRoutes(router: Router): void {
     const sp = await env.DB.prepare("SELECT aidatMuaf FROM athletes WHERE grup = ? AND ad = ?").bind(hedef.grup, hedef.ad).first<{ aidatMuaf: number }>();
     const due = await env.DB.prepare("SELECT odendi, notMetin FROM dues WHERE ad = ? AND ay = ?").bind(hedef.ad, ay).first<{ odendi: number; notMetin: string | null }>();
     const aidat = sp?.aidatMuaf || (!due?.odendi && due?.notMetin?.startsWith("❄️")) ? null : { durum: due?.odendi ? "odendi" : "bekleniyor", paket: due?.odendi && due.notMetin && due.notMetin.startsWith("📦") ? due.notMetin.split(" · ")[0] : null };
+    // 2026-10-30: son 12 ayın aidat durumu (yine TUTAR YOK). İlk ödemeden önceki aylar gösterilmez (o zaman kulüpte değildi);
+    // dondurulmuş ay "dondu". Muaf sporcuda hiç dönmez.
+    let aidatGecmis: { ay: string; durum: "odendi" | "bekleniyor" | "dondu" }[] | null = null;
+    if (aidat) {
+      const { results: d12 } = await env.DB.prepare("SELECT ay, odendi, notMetin FROM dues WHERE ad = ? AND ay BETWEEN ? AND ?")
+        .bind(hedef.ad, ayEkle(ay, -11), ay).all<{ ay: string; odendi: number; notMetin: string | null }>();
+      const m: Record<string, { odendi: number; notMetin: string | null }> = {};
+      d12.forEach((r) => { m[r.ay] = r; });
+      const ilkOdeme = d12.filter((r) => r.odendi).map((r) => r.ay).sort()[0];
+      if (ilkOdeme) aidatGecmis = Array.from({ length: 12 }, (_, i) => ayEkle(ay, i - 11)).filter((a) => a >= ilkOdeme)
+        .map((a) => ({ ay: a, durum: m[a]?.odendi ? "odendi" : (m[a]?.notMetin || "").startsWith("❄️") ? "dondu" : "bekleniyor" }));
+    }
     const { results: y6 } = await env.DB.prepare(
       `SELECT tarih, geldi, grup FROM attendance_auto WHERE ad = ?1 AND tarih BETWEEN ?2 AND ?3
        UNION ALL SELECT tarih, geldi, grup FROM attendance_auto_archive WHERE ad = ?1 AND tarih BETWEEN ?2 AND ?3`
@@ -68,6 +80,7 @@ export function registerVeliRaporRoutes(router: Router): void {
       grup: hedef.grup,
       ay,
       aidat,
+      aidatGecmis,
       gelisim,
       formLab,
       skorGunleri: [...new Set(seriler.map((s) => s.tarih))],

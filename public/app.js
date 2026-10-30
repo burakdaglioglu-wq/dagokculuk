@@ -15,6 +15,8 @@
                         else dueloDavetGoster(msg.data); // 'kabul' veya doğrudan bildirime tıklama -> daveti göster, kullanıcı onaylasın
                     }, 400);
                 }
+                // aylık yönetici aidat bildirimi → aidat paneli, ödemeyenler listesi
+                if(msg.data && msg.data.kind === 'aidat-yonetici') setTimeout(() => { try { dagYonetimAdaptor().git('aidat', { liste: 'bekleyen' }); } catch(e) {} }, 600);
             });
         }
         // ===== PWA: Kurulum teklifi =====
@@ -2340,7 +2342,7 @@
         let _aidatAyarZ = null, _aidatAyarSenk = false;
         function aidatTutarDegis(d) {
             aidatVarsayilanTutar = parseInt(d) || 0; try { localStorage.setItem('okculuk_aidat_tutar', String(aidatVarsayilanTutar)); } catch(e) {}
-            if(typeof kyDepoYazYerel === 'function') kyDepoYazYerel('aidat_ayar', { tutar: { v: aidatVarsayilanTutar, t: Date.now() } });
+            if(typeof kyDepoYazYerel === 'function') kyDepoYazYerel('aidat_ayar', Object.assign(kyDepoOku('aidat_ayar'), { tutar: { v: aidatVarsayilanTutar, t: Date.now() } })); // bildirimGun gibi diğer alanlar silinmesin
             clearTimeout(_aidatAyarZ); _aidatAyarZ = setTimeout(() => aidatVarsayilanSenkron(true), 700);
         }
         function aidatVarsayilanSenkron(yaz) {
@@ -4142,6 +4144,7 @@
         }
 
         // 📊 yonetim-panel.js aidat paneli için DAĞ verisi: aidatDB[ad][ay], turnuvaDB (AIDAT_GRUPLAR), otomatikYoklamaDB + seriler (devam)
+        let _aidatGiderOnbellek = null;
         function aidatPanelAdaptor() {
             let yok = {}, aylikMemo = {}, ilk = null;
             return {
@@ -4184,12 +4187,29 @@
                     return Promise.resolve();
                 },
                 hatirlat(k) { aidatBorcWhatsApp(k.ad, k.tel); },
+                // 2026-10-30: geçen yıl kıyası + günün kasası (ayrılanlar dahil bütün kayıtlar), net için gider, aylık yönetici bildirimi
+                tumOdemeler() { let l = []; Object.keys(aidatDB || {}).forEach(ad => Object.keys(aidatDB[ad] || {}).forEach(ay => { if(/^\d{4}-\d{2}$/.test(ay)) l.push({ ad, ay, rec: aidatDB[ad][ay] }); })); return l; },
+                gider() {
+                    if(_aidatGiderOnbellek && Date.now() - _aidatGiderOnbellek.t < 60000) return Promise.resolve(_aidatGiderOnbellek.l);
+                    return fetch('/api/gider').then(r => { if(!r.ok) throw new Error('gider'); return r.json(); }).then(d => { _aidatGiderOnbellek = { t: Date.now(), l: d.giderler || [] }; return _aidatGiderOnbellek.l; });
+                },
+                giderGit() { _aidatAltSekme = 'gider'; egitmenRenderAidat(); },
+                bildirim: {
+                    gun() { let d = typeof kyDepoOku === 'function' ? kyDepoOku('aidat_ayar') : {}; return d && d.bildirimGun ? parseInt(d.bildirimGun.v) || 0 : 0; },
+                    gunYaz(g) {
+                        if(typeof kyDepoSenkron !== 'function') return Promise.reject();
+                        kyDepoYazYerel('aidat_ayar', Object.assign(kyDepoOku('aidat_ayar'), { bildirimGun: { v: g, t: Date.now() } }));
+                        return kyDepoSenkron('aidat_ayar', () => kyDepoOku('aidat_ayar'), true);
+                    },
+                    aboneOl() { return window.dagskSync && window.dagskSync.pushAboneOl ? window.dagskSync.pushAboneOl('__yonetici', 'yonetici-' + _cihazId) : Promise.resolve({ ok: false, reason: 'unsupported' }); },
+                    deneme() { return fetch('/api/push/yonetici-deneme', { method: 'POST' }).then(r => r.json()); }
+                },
                 pdf(ay, grup) { let eski = _aidatGrupFiltre; _aidatOdemeAy = ay; _aidatGrupFiltre = grup; try { aidatOdemeDurumPdf(); } finally { _aidatGrupFiltre = eski; } },
                 araclar: [['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=13';
+        const YN_DOSYA = 'yonetim-panel.js?v=14';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
