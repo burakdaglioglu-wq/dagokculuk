@@ -70,6 +70,24 @@ export default async function ({ log }) {
       await p.evaluate((y) => { AP.liste = 'olabilir'; AP.sec = {}; AP.sec[y.g + '|' + y.l[1]] = true; apTabloCiz(); window.confirm = () => true; }, yedek);
       await p.locator('#ap-toplu').click(); await p.waitForTimeout(300);
       dogrula(await p.evaluate(({ y, ay }) => !!(aidatDB[y.l[1]][ay] && aidatDB[y.l[1]][ay].odendi), { y: yedek, ay }), 'toplu ödendi kaydetmedi');
+      // v356: özet kutusuna dokun → altında detay açılır, içinden ödeme düzeltilir / girilir
+      await p.evaluate((g) => { AP.grup = g; AP.kpi = null; apYenile(); }, yedek.g);
+      await p.locator('#tmp-aidat .ap-kpi > button[data-k="toplanan"]').click();
+      await p.waitForSelector('#ap-kpi-detay.ap-kd', { timeout: 3000 });
+      await p.locator('#ap-kpi-detay .ap-sat.od:not(.bas)', { hasText: yedek.l[0] }).locator('button', { hasText: 'Düzelt' }).click();
+      await p.waitForSelector('#ap-kpi-detay #ap-f-tutar');
+      esit(await p.inputValue('#ap-f-tutar'), '1500', 'düzelt formu eski tutarla gelmeli');
+      await p.fill('#ap-f-tutar', '1600'); await p.locator('#ap-kpi-detay .ap-form .ap-btn.ana').click(); await p.waitForTimeout(300);
+      const dz = await p.evaluate(({ y, ay }) => ({ r: aidatDB[y.l[0]][ay], acik: AP.kpi, detay: !!document.querySelector('#ap-kpi-detay.ap-kd') }), { y: yedek, ay });
+      dogrula(dz.r.odendi && dz.r.tutar === 1600 && dz.r.notMetin === 'Havale, dekont alındı', 'düzeltme kaydı yanlış: ' + JSON.stringify(dz.r));
+      dogrula(dz.acik === 'toplanan' && dz.detay, 'kaydettikten sonra detay açık kalmalı');
+      for (const k of ['oran', 'bekleyen', 'kacan', 'tahmin']) {
+        await p.locator(`#tmp-aidat .ap-kpi > button[data-k="${k}"]`).click();
+        dogrula(await p.evaluate((k) => AP.kpi === k && !!document.querySelector('#ap-kpi-detay h3') && document.querySelector(`.ap-kpi > button[data-k="${k}"]`).getAttribute('aria-pressed') === 'true', k), k + ' detayı açılmadı');
+      }
+      await p.locator('#tmp-aidat .ap-kpi > button[data-k="tahmin"]').click();
+      dogrula(await p.evaluate(() => AP.kpi === null && !document.querySelector('#ap-kpi-detay').innerHTML), 'aynı kutuya ikinci dokunuş detayı kapatmalı');
+      if (process.env.E2E_EKRAN) { await p.locator('#tmp-aidat .ap-kpi > button[data-k="bekleyen"]').click(); await p.locator('#ap-kpi-detay').scrollIntoViewIfNeeded(); }
       if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-dag.png', fullPage: false });
       // telefon genişliği: yana taşma yok
       await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => apYenile()); await p.waitForTimeout(200);

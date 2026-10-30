@@ -4189,7 +4189,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=12';
+        const YN_DOSYA = 'yonetim-panel.js?v=13';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
