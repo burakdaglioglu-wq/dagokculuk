@@ -5368,3 +5368,12 @@ Kullanıcı bir okçuluk uygulamasının "fotoğraftan otomatik puan" videosunu 
 - `_skorKaydetCekirdek`: `detayliOklar`'a artık `t` (Date.now) yazılıyor (Skor Gir'de hedefe dokunarak girilenler dahil) — analiz "bugün"ü buradan bulur.
 - Fotoğraf hiçbir yere yüklenmez. Eski, hiç açılmayan `#foto-modal` (elle merkez/kenar) yerinde duruyor.
 - Test: `83-hedef-foto` (yapay açılı 3'lü spot fotoğrafı; merkez/ölçek, dokunarak X/9/8, sil + geri al, kayıt, ikinci fotoğrafta öneri 9/8/7, M, analiz, 390 px). Gerçek salon fotoğraflarıyla öneri ayarı henüz yapılmadı.
+
+## 73. ✨ Kale Savunması: gelişen canavarlar + gerçek atışa göre denge (2026-10-31, v359)
+Kullanıcı: "bir noktaya kadar güzel, bir noktadan sonra sıkıyor; canavarlar değişerek gelsin, belki gelişsin — çocuklar yakından attığı için yüksek skor atıyorlar".
+- **Evre** `evreDalga(dalga)`: 1-3 normal · 4-6 🪖 Savaşçı (miğfer + boynuz) · 7+ 👑 Kral (taç, altın parıltı `.kale-e3`, ×1,12). Düşmanda `d.evre`; aksesuar `aksesuar(tip, evre)` her tipin `bas: [x, y, r]` noktasına çizilir. Evre değişince "✨ CANAVARLAR GELİŞTİ" kartı (önce → sonra `miniSVG`), günde bir kez (`st.evreGor`). ⚔️+ eşik evreyle: `minEvre` Kalkanlı 7/8/9, Zırhlı 9/9/10 (`minPuan(d)`).
+- **Yeni düşmanlar** (`YENI_DUSMAN = {dalga: [tip, enDüşükMod]}`): 🟢 `balcik` dalga 5 (düşünce 2 `minibalcik`, can %30) · 👻 `hayalet` dalga 6 (`d.gorunmez` her seri değişir; görünmezken hedef olmaz, oklar arkadakine; hepsi görünmezse `gecti`) · 🧙 `saman` dalga 8, ⚔️+ (hız 0,7, en arkada; her 2 seride öndeki bir düşmana +1 evre +%30 can, `st.gelisen`). Hız `hiz(tip)` (`D[t].hiz`, yoksa uçan 1,3).
+- 🐲 Ejderha yarı canda bir kez 2 yardımcı (⚔️+ yavru ejderha, 🙂 yarasa; `d.cagirdi`). Yeni doğanlar `o.yeni` → `sonucGoster` sahneye ekler (`.kale-dogdu`).
+- Dalga sırası dalgaya bağlı tohumla karışık (her cihazda aynı).
+- **Denge** `st.olcum {n, h}`: her serinin ham hasarı (puan × kritik; kule/özel ok hariç). 4 seriden sonra `toplamCan(dalga, st)`, gerçek/beklenen oranı >1 ise o kadar artar (en çok ×2,2; asla kolaylaşmaz).
+- Defter: bölünen balçık, geliştirilen canavar. Test `84-kale-gelisim`; `70-kale` artık 12 tip bekler.

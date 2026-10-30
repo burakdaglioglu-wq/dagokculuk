@@ -77,7 +77,7 @@ export default async function ({ log }) {
       kaleGeriYukle(st); await new Promise((r) => setTimeout(r, 200));
       return Object.keys(kaleDusmanlar).map((t) => { const e = document.querySelector('.kale-dusman[data-tip="' + t + '"]'); return e && e.getBBox().width > 20 ? t : '!' + t; });
     }, anahtar);
-    esit(tipler.length, 8, 'düşman tipi sayısı (v338: + zırhlı, kalkanlı, yavru ejderha)');
+    esit(tipler.length, 12, 'düşman tipi sayısı (v338: + zırhlı, kalkanlı, yavru ejderha; v359: + balçık, minik balçık, hayalet, şaman)');
     dogrula(tipler.every((t) => t[0] !== '!'), 'eksik çizilen düşman: ' + tipler.join(','));
     // 👆 çocuğun karakterine dokununca sıra ona geçer
     await p.evaluate(() => { _kmOyunAktifIndex = 0; kmOyunSahneKurKale(); }); await p.waitForTimeout(600);
