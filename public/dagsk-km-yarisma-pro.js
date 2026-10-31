@@ -445,7 +445,6 @@ function yzTurHTML(o) {
         + arac('🎯', 'Hedefler', 'yzHedeflerAc()', 'Kişisel hedef puanları')
         + arac('👥', 'Sporcular (' + d.katilimci.length + ')', "yzSporcuSecici(\'tur\')", 'Sporcu ekle / çıkar')
         + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? arac('🎮', 'Oyunlar', 'kmKarmaOyunaGec()', 'Oyun hattına geç') : '')
-        + (yzYuvaVarMi() ? arac('🥚', 'Yumurta', 'yzYuvayaGec()', 'Yumurta Yuvası — tur sürer, süre orada da görünür') : '')
         + arac('🎨', 'Tema', 'yzAnaTemaAc()', 'Ekran teması')
         + arac('⋯', 'Diğer', 'yzMenu()', 'Tur menüsü: PDF, bitir, iptal')
         + '</div></aside>';
@@ -2663,7 +2662,7 @@ function yzTvKontrolHTML(o, el) {
     let d = o.durum, dugme = function (yazi, fn, cls, baslik) { return '<button class="yz-tv-k' + (cls ? ' ' + cls : '') + '" onclick="' + fn + '"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
     let sayac = o.sayac ? dugme('⏹ Sıfırla', 'yzSayacDurdur()') : dugme('▶ Başlat', 'yzSayacBaslat()', 'yesil', 'Süreyi başlat (10 sn hatta geçiş + atış)');
     let sure = dugme('⏱ ' + yzSure(d) + ' sn', 'yzSureMenu()', '', 'Süreyi değiştir') + dugme(yzMolaBtnYazi(o), 'yzMolaMenu()', 'yz-mola-btn', 'Mola sayacı: büyük geri sayım, altında hedefler döner');
-    let oyunaGec = (typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '') + (yzYuvaVarMi() ? dugme('🥚', 'yzYuvayaGec()', 'oyun', 'Yumurta Yuvası — tam ekran sürer') : '');
+    let oyunaGec = (typeof kmKarmaMi === 'function' && kmKarmaMi() ? dugme('🎮 Oyun', 'kmKarmaOyunaGec()', 'oyun', 'Oyun hattına geç — tam ekran sürer') : '');
     if (d.asama === 'eleme') {
         let sh = el && el.maclar.some(function (m) { return m.shootGerek && !m.kazanan; });
         return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür') + (sh ? dugme('🎯 Shoot-off 40 sn', 'yzShootSayac()') : '') + '</div>';

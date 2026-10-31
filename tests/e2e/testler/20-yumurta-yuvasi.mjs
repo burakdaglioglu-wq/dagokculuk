@@ -60,17 +60,19 @@ export default async function ({ log }) {
     dogrula(await p.locator('.yv-tv-kart').count() > 0, 'sınıf ekranı çizilmedi');
     esit(await p.locator('#yv-sinif').count(), 0, 'ortak sınıf yumurtası hâlâ çiziliyor');
     await p.evaluate(() => { _yvTv = false; kmYuvaCiz(); document.querySelectorAll('.yv-sahne').forEach((x) => x.remove()); });
-    // 2026-10-14: koyu tema varsayılan; 👥 Sporcular ile çıkar/ekle (Yarışma hattındaki de eklenebilir → ikisini birden oynar)
+    // 2026-10-14: koyu tema varsayılan; 👥 Sporcular ile çıkar/ekle. 2026-10-31 "ya yarışma ya oyun": Yarışma hattındaki
+    // yumurtada görünmez ('ek' işareti olsa bile); eklemek onu Oyun hattına geçirir (yuvaOyunaAl).
     dogrula(await p.locator('#yv-kok.yv.koyu').count(), 'koyu tema varsayılan değil');
     const liste = await p.evaluate((k) => {
-      const say = () => document.querySelectorAll('.yv-izgara .yv-kart').length, once = say();
-      yuvaListeAyarla(k.g + '|' + k.ad, 'cik'); kmYuvaCiz(); const cik = say();
-      const h = kmHatlar(); h[k.g + '|' + k.ad] = 'yarisma'; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h));
-      yuvaListeAyarla(k.g + '|' + k.ad, 'ek'); kmYuvaCiz(); const ek = say();
-      delete h[k.g + '|' + k.ad]; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h)); localStorage.removeItem(yuvaListeAnahtar()); kmYuvaCiz();
-      return { once, cik, ek };
+      const say = () => document.querySelectorAll('.yv-izgara .yv-kart').length, once = say(), key = k.g + '|' + k.ad;
+      yuvaListeAyarla(key, 'cik'); kmYuvaCiz(); const cik = say();
+      const h = kmHatlar(); h[key] = 'yarisma'; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h));
+      yuvaListeAyarla(key, 'ek'); kmYuvaCiz(); const yarismada = say();
+      yuvaOyunaAl(key); kmYuvaCiz(); const ek = say(), hat = kmHat(k.g, k.ad);
+      const h2 = kmHatlar(); delete h2[key]; localStorage.setItem(kmHatAnahtari(), JSON.stringify(h2)); localStorage.removeItem(yuvaListeAnahtar()); kmYuvaCiz();
+      return { once, cik, yarismada, ek, hat };
     }, sp0);
-    dogrula(liste.cik === liste.once - 1 && liste.ek === liste.once, 'yumurtadan çıkar/ekle çalışmadı: ' + JSON.stringify(liste));
+    dogrula(liste.cik === liste.once - 1 && liste.yarismada === liste.once - 1 && liste.ek === liste.once && liste.hat === 'oyun', 'yumurtadan çıkar/ekle (ya yarışma ya oyun) çalışmadı: ' + JSON.stringify(liste));
     await p.locator('#yv-kok .yv-btn', { hasText: 'Sporcular' }).click();
     dogrula(await p.locator('.yv-pencere .yv-sp-liste').isVisible(), 'Sporcular penceresi açılmadı');
     await p.evaluate(() => document.querySelectorAll('.yv-katman,.yv-sahne').forEach((x) => x.remove()));

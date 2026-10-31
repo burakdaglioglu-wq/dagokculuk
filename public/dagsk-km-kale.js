@@ -360,6 +360,7 @@
         let ham = null; try { ham = localStorage.getItem(anahtar()); } catch (e) { }
         if (_stKonum !== konum() || ham !== _stHam || !_st) { try { _st = JSON.parse(ham || 'null'); } catch (e) { _st = null; } _stKonum = konum(); _stHam = ham; }
         if (!_st || _st.tarih !== bugun() || !Array.isArray(_st.dusmanlar)) { _st = { tarih: bugun(), can: kalpSayisi(), sonId: 0, katki: {}, dusuren: {}, temizlenen: 0, dustu: 0, seri: 0 }; yeniDalga(_st, 1); kaydet(); }
+        else if (!_st.dusmanlar.length) { yeniDalga(_st, (_st.dalga || 0) + 1); kaydet(); } // eski sürümde takılı kalmış boş dalga
         return _st;
     }
     function kaydet() { try { _stHam = JSON.stringify(_st); localStorage.setItem(anahtar(), _stHam); } catch (e) { } }
@@ -519,7 +520,7 @@
         const tehlikede = st.dusmanlar.filter((d) => d.x - KAPI_X <= st.adim * hizCarpan(st) * hiz(d.tip)).map((d) => d.id);
         st.olcum = st.olcum || { n: 0, h: 0 }; // ⚖️ gerçek atış (kule/özel ok hariç ham hasar)
         if ((kaydedilecek || []).length) { st.olcum.n++; (kaydedilecek || []).forEach((k) => { const d = okDeger(k.puan); st.olcum.h += d * (d >= 9 ? 1.5 : 1); }); }
-        let temiz = null, dustu = false;
+        let temiz = null, dustu = false, gecti = null;
         const ejderDalga = dalgaTipleri(st.dalga).indexOf('ejderha') >= 0;
         // 👻 görünmez hayalet hedef olmaz — ok arkadakine gider
         const onDusman = (hepsi) => st.dusmanlar.filter((d) => hepsi || !d.gorunmez).sort((a, b) => a.x - b.x)[0];
@@ -623,17 +624,21 @@
             if (st.can <= 0) {
                 const yd = Math.max(1, st.dalga - (GERI_DALGA[kmod()] || 0));
                 dustu = { dalga: st.dalga, yeni: yd }; st.dustu = (st.dustu || 0) + 1; st.can = kalpSayisi(); _ekranHud = { dalga: st.dalga, can: 0, dusmanlar: [] }; yeniDalga(st, yd);
+            } else if (!st.dusmanlar.length) {
+                // 2026-10-31 bug: son düşman(lar) kapıya varıp kale ayakta kalınca dalga boş kalıyor, yeni dalga hiç gelmiyordu
+                // (oklar boşa gidiyordu). Kale dayandı → altın yok, sıradaki dalga gelir.
+                gecti = { dalga: st.dalga }; _ekranHud = { dalga: st.dalga, can: st.can, dusmanlar: [] }; yeniDalga(st, st.dalga + 1);
             }
         }
         kaydet();
         if (!panel() || !$('kale-svg')) { _ekranHud = null; try { done(); } catch (e) { } return; }
         let n = 0; const hepsi = olaylar.length;
         const bitti = () => {
-            if (temiz || dustu) _toren = true;
+            if (temiz || dustu || gecti) _toren = true;
             const gec = ates ? 1000 : 0;
             if (ates) atesGoster(ates, !!dustu);
             if (adim) sonra(() => adimGoster(adim, !!dustu), gec);
-            sonra(() => { try { done(); } catch (e) { } if (temiz) temizGoster(temiz); else if (dustu) dustuGoster(dustu); }, (adim ? 700 : 100) + gec);
+            sonra(() => { try { done(); } catch (e) { } if (temiz) temizGoster(temiz); else if (dustu) dustuGoster(dustu); else if (gecti) gectiGoster(gecti); }, (adim ? 700 : 100) + gec + (gecti ? 900 : 0));
         };
         if (!hepsi) { bitti(); return; }
         if (ozel) { SES.boru(); dev(`${OZEL[ozel][0]}<small>${kacis(ilkAd(s.ad))}: ${OZEL[ozel][1]}</small>`, 1700); }
@@ -925,6 +930,12 @@
         if (m >= 2) { const s = $('kale-sur'), b = $('kale-bayrak'); if (s) s.classList.add('kale-yikil'); if (b) b.classList.add('kale-bayrak-dus'); setTimeout(() => { SES.gulus(); konus(null, 'Kale bizim! Hahaha!'); }, 500); }
         dev('KALE DÜŞTÜ! 😱<small>' + (geri > 0 ? `Düşmanlar bizi ${geri} dalga geri itti — Dalga ${h.yeni}'den tekrar! Kaleyi geri alalım!` : `Hep birlikte tekrar — aynı dalga baştan, kale yine ${kalpSayisi()} canlı!`) + '</small>', m >= 2 ? 4400 : 3200);
         sonra(() => { _toren = false; _ekranHud = null; kaleSahneKur(); SES.boru(); const g = $('kale-dusmanlar'); if (g) anim(g, 'kale-geliyor'); if (geri > 0) sonra(tanit, 1200); }, m >= 2 ? 4800 : 3600);
+    }
+    // Son düşmanlar kapıdan geçti ama kale ayakta: sıradaki dalga gelir (altın yok)
+    function gectiGoster(h) {
+        _toren = true; SES.boru();
+        dev(`🛡️ KALE DAYANDI!<small>Dalga ${h.dalga} kapıdan geçti ama kale hâlâ ayakta (${kalpler(durum().can)}). Sıradaki: Dalga ${durum().dalga} — hep birlikte durduralım!</small>`, 3000);
+        sonra(() => { _toren = false; _ekranHud = null; kaleSahneKur(); const g = $('kale-dusmanlar'); if (g) anim(g, 'kale-geliyor'); sonra(tanit, 1200); }, 3400);
     }
     function nasil() {
         dev(`🏰 Kaleyi koruyun!<small style="text-align:left;display:inline-block;max-width:580px">

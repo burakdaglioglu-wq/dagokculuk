@@ -12279,6 +12279,7 @@
             if(_kmAktifSekme === 'durus' && s !== 'durus') { try { kmVaGeriKoy(); } catch(e) {} }
             if(_kmAktifSekme === 'formlab' && s !== 'formlab') { try { cancelAnimationFrame(_fl.oynatRaf); if(_fl.durum === 'analiz') _fl.iptal = true; if(_fl.durum === 'canli') { flCanliKapat(); _fl.canli = null; _fl.durum = 'bos'; } } catch(e) {} }
             _kmAktifSekme = s;
+            try { kmOyunBayatSifirla(); } catch(e) {}
             if(typeof window.yuvaSeriSonrasi !== 'function' && typeof dagskEkYukle === 'function') { try { dagskEkYukle('dagsk-km-yuva.js').catch(function(){}); } catch(e) {} }
             ['skor','lider','klasman','canli','yarisma','veli','disiplin','pozitif','oyunlar','reaksiyon','ritim','teknikanaliz','kasifkarti','fitness','kelime','parti','yuva','kurtarma','dersakisi','resmitur','okanaliz','baski','dersler','malzeme','durus','yoklamaanaliz','kocluk','milyonok','yuk','seviye','lig','kuvvet','performans','evodev','makarali','formlab'].forEach(function(k){
                 let btn = document.getElementById('kms-'+k);
@@ -15165,7 +15166,7 @@
 .km-oyun-rail-alt > button{ min-height:40px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--ink-dim); font-weight:800; font-size:calc(11.5px * var(--rs)); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:0 10px; }
 .km-oyun-rail-alt > button:hover{ color:var(--ink); border-color:var(--a1); }
 .km-oyun-rail-alt #km-oyun-geri-al-btn{ flex:1; }
-.km-oyun-rail-diger{ margin-left:auto; width:44px; padding:0 !important; font-size:16px !important; }
+.km-oyun-rail-diger{ margin-left:auto; padding:0 12px !important; white-space:nowrap; }
 .km-oyun-rail-menu{ position:absolute; right:10px; bottom:calc(100% + 4px); z-index:3; min-width:210px; display:flex; flex-direction:column; gap:4px; padding:6px; border-radius:12px; background:rgba(10,13,26,0.98); border:1px solid var(--line); box-shadow:0 12px 30px rgba(0,0,0,0.5); }
 .km-oyun-rail-menu button{ min-height:40px; text-align:left; border:none; border-radius:8px; background:transparent; color:var(--ink); font-weight:700; font-size:12px; padding:0 10px; cursor:pointer; display:flex; align-items:center; gap:8px; }
 .km-oyun-rail-menu button:hover{ background:rgba(255,255,255,0.07); }
@@ -16650,6 +16651,42 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         };
 
         function kmOyunAnahtari() { return 'dag_km_oyun_' + (_kmAktifKonum || 'varsayilan'); }
+        // ⏰ 12 SAAT KURALI (2026-10-31, kullanıcı: "oyunlar arasında 12 saat geçtiyse otomatik sıfırlansın, yumurta hariç").
+        // Konumda son seriden 12 saatten uzun süre geçmişse bu konumun bütün oyun durumları temizlenir: yol ilerlemesi
+        // (çok günlüktü), takım/çoklu takım ilerlemesi, Kale, Akvaryum, Fener, Halat, 81 İl, Hapşırık, Canavar seferi, Kurtarma,
+        // Ok Partisi, Kelime, Kayıp Ada, kovalayıcı. Yumurta Yuvası (sp.oyun.yuva), gerçek skorlar, kuşak, karakter/amblem
+        // seçimleri ve takım kurulumları DOKUNULMAZ. Damga her kayıtta (_skorKaydetCekirdek), kontrol ekran açılırken.
+        const KM_OYUN_BAYAT_MS = 12 * 3600 * 1000;
+        const KM_OYUN_SIFIR_ONEK = ['dag_km_oyun_', 'dag_km_takim_', 'dag_km_cokludurum_', 'dag_km_akvaryum_', 'dag_km_fener_', 'dag_km_halat_', 'dag_km_hapsirik_', 'dag_km_il_', 'dag_km_kale_', 'dag_km_canavar_', 'dag_km_kurtarma_', 'dag_km_parti_', 'dag_km_kelime_', 'dag_km_zirve_gunluk_', 'dag_km_ninja_tapinak_', 'dag_km_dag_ip_', 'dag_km_sisharita_gunluk_', 'dag_km_sisharita_kesif_'];
+        function kmOyunSonAnahtari() { return 'dag_km_oyun_son_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmOyunDamgala() { try { localStorage.setItem(kmOyunSonAnahtari(), String(Date.now())); } catch(e) {} }
+        function kmOyunBayatSifirla() {
+            let son = 0; try { son = +localStorage.getItem(kmOyunSonAnahtari()) || 0; } catch(e) {}
+            if(!son || Date.now() - son <= KM_OYUN_BAYAT_MS) return false;
+            let k = _kmAktifKonum || 'varsayilan', sil = [];
+            try {
+                for(let i = 0; i < localStorage.length; i++) {
+                    let a = localStorage.key(i); if(!a) continue;
+                    if(KM_OYUN_SIFIR_ONEK.some(function(o) { return a === o + k; }) || (a.indexOf('dag_km_hy_') === 0 && a.slice(-(k.length + 1)) === '_' + k)) sil.push(a);
+                }
+                sil.forEach(function(a) { localStorage.removeItem(a); });
+                localStorage.removeItem(kmOyunSonAnahtari());
+            } catch(e) {}
+            // bellekteki kopyalar da (konum değişmediği için kendiliğinden yeniden okunmazlardı)
+            _kmOyunDurum = {}; _kmOyunYuklenenKonum = null; _kmTakimDurum = null; _kmTakimYuklenenKonum = null;
+            _kmOyunCokluDurum = {}; _kmOyunCokluYuklenenKonum = null; _kmCanavar = null; _kmCanavarYuklenenKonum = null;
+            _kmDagIp = null; _kmSisGunluk = null; _kmSisKesiflerYuklenenKonum = null; _kmOyunPistYarisSonucu = null;
+            try { if(typeof _kmKelimeYuklenenKonum !== 'undefined') _kmKelimeYuklenenKonum = null; } catch(e) {}
+            try { if(typeof _kp !== 'undefined') _kp = null; } catch(e) {}
+            try { (_kmOyunRosterCache || []).forEach(function(s) { s.frac = 0; s.toplamSkor = 0; }); } catch(e) {}
+            try { showToast('🔄 Son oyundan 12 saatten fazla geçti — oyunlar baştan başladı (yumurtalar yerinde).', 'success'); } catch(e) {}
+            return true;
+        }
+        // Tablet gece boyunca oyun ekranında kaldıysa: ekran tekrar görününce de bakılır
+        document.addEventListener('visibilitychange', function() {
+            if(document.visibilityState !== 'visible') return;
+            try { let kp = document.getElementById('karisik-platform'); if(!kp || kp.style.display === 'none' || !_kmAktifSekme) return; if(kmOyunBayatSifirla()) kmSekme(_kmAktifSekme); } catch(e) {}
+        });
         function kmOyunDurumEmin() {
             if(_kmOyunYuklenenKonum !== _kmAktifKonum) {
                 try { let raw = localStorage.getItem(kmOyunAnahtari()); _kmOyunDurum = raw ? JSON.parse(raw) : {}; } catch(e) { _kmOyunDurum = {}; }
@@ -18962,7 +18999,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         </div>
                         <div class="km-oyun-rail-alt">
                             <button id="km-oyun-geri-al-btn" onclick="kmOyunSonGirisiGeriAl()" style="display:none;" title="Son girilen seriyi geri al">↩️ Son girişi geri al</button>
-                            <button class="km-oyun-rail-diger" onclick="kmOyunRailMenuAcKapat()" aria-label="Diğer: sıfırlama seçenekleri" title="Sıfırlama seçenekleri">⋯</button>
+                            <button class="km-oyun-rail-diger" onclick="kmOyunRailMenuAcKapat()" aria-label="Yeniden başlat: sıfırlama seçenekleri" title="Yeniden başlat (sıfırlama seçenekleri)">🔄 Yeniden başlat</button>
                             <div class="km-oyun-rail-menu" id="km-oyun-rail-menu" style="display:none;">
                                 <button id="km-oyun-sifirla-btn" onclick="kmOyunRailMenuAcKapat(true); kmOyunSporcuSifirla()" style="${_kmOyunTakimModu ? 'display:none;' : ''}">🔄 Sıradaki sporcuyu sıfırla</button>
                                 <button id="km-oyun-takim-sifirla-btn" onclick="kmOyunRailMenuAcKapat(true); kmOyunTakimSifirla()" style="${_kmOyunTakimModu ? '' : 'display:none;'}">↻ Takımın ilerlemesini sıfırla</button>
@@ -26581,6 +26618,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // aynı temiz adayı istendiğinde ANINDA verir. onayIste() kullanıldı — native confirm() burada da
         // aynı tablet güvenilirlik sorununu taşırdı (bkz. Oyunlar'daki önceki seri-limit düzeltmesi).
         function kmOyunHepsiSifirla() {
+            // Kendi oyun durumu olan temalar kendi "baştan" akışıyla sıfırlanır (yol ilerlemesi onlarda kullanılmıyor)
+            let kendi = { kale: 'kale-yeni-btn', fener: 'fener-yeni-btn', akvaryum: 'akv-yeni-btn', hapsirik: 'hps-yeni-btn', halat: 'halat-yeni-btn', il: 'il-yeni-btn' }[_kmOyunAktifTema];
+            if(kendi) { let b = document.getElementById(kendi); if(b) { b.click(); return; } }
+            if(_kmOyunAktifTema === 'canavar') { kmOyunCanavarYeniSavas(); return; }
             let roster = _kmOyunRosterCache; if(!roster || !roster.length) return;
             let mesaj = 'TÜM SINIFIN (' + roster.length + ' sporcu) bu eğlence katmanı ilerlemesi sıfırlansın mı?<br><br>Gerçek skor/klasman ETKİLENMEZ' +
                 (_kmOyunAktifTema === 'sisharita' ? ', Kayıp Ada da yeniden sisleniyor.' : '.');
@@ -28427,6 +28468,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let el = document.getElementById('km-icerik'); if(!el) return;
             kmOyunKaynaklarYukle();
             kmOyunAyarUygula();
+            try { kmOyunBayatSifirla(); } catch(e) {}
             kmOyunDurumEmin();
             kmOyunTakimModuYukle();
             _kmOyunSesliMod = kmOyunBayrakYukle('sesli');
@@ -28828,7 +28870,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         // Tabletlerde tarayıcının kendi confirm() penceresi elden ele geçen cihazda karışıklık çıkarıyordu → uygulamanın
         // onay penceresi. Bitince yoklama + veli mesajları + özet tek ekranda (dagsk-km-sablon-ozet.js kmKapanis*).
+        // "Dersi bitir dediğimde bazen sorun" (2026-10-31): Ders Paneli Yarışma TV'sinin üstüne çıkıyor (z 33600) ama onay
+        // penceresi 31000'de kalıyordu; tam ekran oyunda da (#km-oyun-wrap / #yv-kok) body'deki pencere hiç görünmüyordu →
+        // basınca "hiçbir şey olmuyor". Önce TV kapanır ve tam ekrandan çıkılır, sonra onay sorulur.
         function kmDersiBitir() {
+            try { if(typeof _yz !== 'undefined' && _yz && _yz.tv && typeof yzTvKapat === 'function') yzTvKapat(true); } catch(e) {}
+            try { if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function() {}); } catch(e) {}
             onayIste('<b>Dersi bitirmek istiyor musun?</b><br><span style="font-size:12px;color:var(--text-muted)">Skorlar arşivlenir ve sıfırlanır; ardından yoklama, veli mesajları ve özet tek ekranda açılır.</span>', kmDersiBitirOnayli, '🏁 Evet, dersi bitir');
         }
         function kmDersiBitirOnayli() {
@@ -28836,6 +28883,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // aksi halde tarayıcı bindirmeyi boyamadan hemen ana thread'i bloke eder, hiç görünmez.
             islemYukleniyorGoster('Ders bitiriliyor...');
             setTimeout(function() {
+                // Beklenmeyen bir hata bindirmeyi açık bırakıp ekranı kilitlemesin (donmuş gibi görünüyordu).
+                try { kmDersiBitirIs(); }
+                catch(e) { console.error('kmDersiBitir', e); showToast('⚠️ Ders bitirilirken bir sorun oldu — tekrar dene (veriler kaybolmadı).', 'error'); }
+                islemYukleniyorGizle();
+            }, 30);
+        }
+        function kmDersiBitirIs() {
                 _kmOncekiSira = {}; // ders bitince eski sıralama anlamsız kalır
                 let bugun = bugunISO();
                 let arsivlenenler = [];
@@ -28911,8 +28965,6 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 } else {
                     showToast('⚠️ Kaydedilemedi — cihaz depolama alanı dolu olabilir. Biraz yer açıp tekrar dene (veriniz kaybolmadı).', 'error');
                 }
-                islemYukleniyorGizle();
-            }, 30);
         }
 
         // ===== KARIŞIK SINIF — YARIŞMA MODU =====
@@ -32336,6 +32388,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             seriBulutaYaz(seriDoc);
             // 🥚 Yumurta Yuvası (2026-10-11): her gerçek seri yumurtayı ısıtır — evre değiştiyse kutla (dagsk-km-yuva.js).
             try { if(typeof window.yuvaSeriSonrasi === 'function') setTimeout(function(){ try { window.yuvaSeriSonrasi(grup, sporcu); } catch(e) {} }, 0); } catch(e) {}
+            // ⏰ oyunların 12 saat kuralı için son seri zamanı (yalnız Karışık Sınıf açıkken — o konumun dersi)
+            try { let kp = document.getElementById('karisik-platform'); if(kp && kp.style.display !== 'none') kmOyunDamgala(); } catch(e) {}
             return { ok: true, seriDoc, seriPuan, okDegerleri, grupData, limit };
         }
         function skorKaydet() {

@@ -30,8 +30,8 @@ function krListe() {
     let yl = {}; try { yl = JSON.parse(localStorage.getItem('dag_km_yuvaliste_' + krKonum()) || '{}') || {}; } catch (e) {}
     return (_kmListe || []).map(function (k, i) { return Object.assign({}, k, { i: i }); }).filter(function (k) {
         if (!(turnuvaDB[k.g] && turnuvaDB[k.g][k.ad])) return false;
-        let a = yl[k.g + '|' + k.ad]; if (a === 'cik') return false; if (a === 'ek') return true;
-        return typeof kmHat !== 'function' || kmHat(k.g, k.ad) !== 'yarisma';
+        if (typeof kmHat === 'function' && kmHat(k.g, k.ad) === 'yarisma') return false; // ya yarışma ya oyun (2026-10-31)
+        return yl[k.g + '|' + k.ad] !== 'cik';
     });
 }
 // Kafes j: kilit sayısı çocuk sayısına göre (her çocuk ~2 kilit), her kafeste bir artar. Renk dağılımı sabit tohumla.

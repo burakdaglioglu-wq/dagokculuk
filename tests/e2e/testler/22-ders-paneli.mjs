@@ -22,11 +22,10 @@ export default async function ({ log }) {
     // yoklama: Geldi → kayıt
     await sat.locator('button', { hasText: 'Geldi' }).click();
     esit(await p.evaluate((s) => { const y = (otomatikYoklamaDB[bugunISO()] || {})[s.ad]; return y && y.geldi !== false && y.grup === s.g; }, k), true, 'geldi yazılmadı');
-    // hat: Yarışma → kmHat; "Yumurtada da" kutusu → yuvaliste 'ek'
+    // hat: Yarışma → kmHat; 2026-10-31 "ya yarışma ya oyun": Yarışma'dakinde "Yumurtada da" kutusu yok
     await p.locator('#km-dp .km-dp-sat').first().locator('button', { hasText: 'Yarışma' }).click();
     esit(await p.evaluate((s) => kmHat(s.g, s.ad), k), 'yarisma', 'hat Yarışma olmadı');
-    await p.locator('#km-dp .km-dp-sat').first().locator('input[type=checkbox]').check();
-    esit(await p.evaluate((s) => JSON.parse(localStorage.getItem('dag_km_yuvaliste_' + (_kmAktifKonum || 'varsayilan')) || '{}')[s.g + '|' + s.ad], k), 'ek', 'yumurtada da işaretlenmedi');
+    esit(await p.locator('#km-dp .km-dp-sat').first().locator('input[type=checkbox]').count(), 0, 'Yarışma\'dakinde yumurta kutusu kalmamalı');
     // dersten çıkar → onay → liste 3
     await p.locator('#km-dp .km-dp-sat').first().locator('.km-dp-cik').click();
     await p.locator('#onay-evet-btn').click();
@@ -38,7 +37,7 @@ export default async function ({ log }) {
     await p.waitForTimeout(800);
     dogrula(!(await p.locator('#km-dp').count()) && await p.evaluate(() => _kmAktifSekme === 'yarisma'), 'Yarışma\'ya geçilmedi');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('panel: yoklama, hat, yumurtada da, dersten çıkar, Yarışma\'ya geçiş');
+    log('panel: yoklama, hat (yumurta kutusu yok), dersten çıkar, Yarışma\'ya geçiş');
   } finally {
     if (yedek) await p.evaluate((y) => {
       try { kmDpKapat(); } catch (e) {}

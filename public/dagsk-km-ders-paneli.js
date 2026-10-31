@@ -88,7 +88,8 @@ function kmDpCiz(odak) {
             + '<div class="km-dp-kim"><b>' + esc(k.ad) + '</b><small>' + esc(lig(k.g)) + (yas != null ? ' · ' + yas + ' yaş' : '') + (bs.n ? ' · bugün ' + bs.n + ' seri · ' + bs.puan + ' p' : ' · bugün seri yok') + '</small></div>'
             + '<div class="km-dp-seg yok">' + seg(y === 'geldi', 'geldi', '✓ Geldi', 'yesil', 'kmDpYoklamaYaz(\'' + gE + '\',\'' + aE + '\',' + (y === 'geldi' ? 'null' : '\'geldi\'') + ')') + seg(y === 'gelmedi', 'gelmedi', '✕ Yok', 'kirmizi', 'kmDpYoklamaYaz(\'' + gE + '\',\'' + aE + '\',' + (y === 'gelmedi' ? 'null' : '\'gelmedi\'') + ')') + '</div>'
             + '<div class="km-dp-seg hat">' + seg(hat === 'oyun', 'oyun', '🎮 Oyun', 'mavi', 'kmDpHatYaz(\'' + kE + '\',\'oyun\')') + seg(hat === 'yarisma', 'yarisma', '🏆 Yarışma', 'turuncu', 'kmDpHatYaz(\'' + kE + '\',\'yarisma\')') + '</div>'
-            + '<div class="km-dp-ek">' + (hat === 'yarisma' ? '<label title="Yarışmadayken Yumurta Yuvası\'nda da oynasın (yarışma serileri yumurtasını ısıtır)"><input type="checkbox"' + (kmDpYuvada(k) ? ' checked' : '') + ' onchange="kmDpYuvaYaz(\'' + kE + '\', this.checked)"> 🥚 Yumurtada da</label>' : '')
+            // 2026-10-31 kullanıcı: "ya yarışma modunda ya oyun modunda" — Yarışma'daki sporcu ayrıca yumurtaya bağlanmaz
+            + '<div class="km-dp-ek">'
             + (tur && hat === 'yarisma' ? (turda ? '<span class="km-dp-rozet">turda · ' + esc((tur.hedefler || {})[k.g + '|' + k.ad] || '') + '</span>' : '<button class="km-dp-mini" onclick="kmDpTuraEkle(\'' + kE + '\')">+ Tura ekle</button>') : '') + '</div>'
             + '<button class="km-dp-cik" onclick="kmDpCikar(\'' + kE + '\')" title="Dersten çıkar" aria-label="' + esc(k.ad) + ' dersten çıkar">✕</button>'
             + '</div>';

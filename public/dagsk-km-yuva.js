@@ -553,16 +553,22 @@ function yuvaListeAnahtar() { return 'dag_km_yuvaliste_' + (typeof _kmAktifKonum
 function yuvaListeAyar() { try { return JSON.parse(localStorage.getItem(yuvaListeAnahtar()) || '{}') || {}; } catch (e) { return {}; } }
 function yuvaListeAyarla(k, v) { const a = yuvaListeAyar(); a[k] = v; try { localStorage.setItem(yuvaListeAnahtar(), JSON.stringify(a)); } catch (e) {} }
 function yuvaYarismadaMi(k) { return typeof kmHat === 'function' && kmHat(k.g, k.ad) === 'yarisma'; }
-function yuvaOyuncuMu(k) { const a = yuvaListeAyar()[k.g + '|' + k.ad]; if (a === 'ek') return true; if (a === 'cik') return false; return !yuvaYarismadaMi(k); }
+// 2026-10-31 kullanıcı: "ya yarışma modunda ya oyun modunda" — Yarışma hattındaki sporcu yumurtada oynamaz (eski 'ek' işareti yok sayılır).
+function yuvaOyuncuMu(k) { if (yuvaYarismadaMi(k)) return false; return yuvaListeAyar()[k.g + '|' + k.ad] !== 'cik'; }
+// Yarışmadaki sporcuyu yumurtaya almak = onu Oyun hattına geçirmek
+function yuvaOyunaAl(k) {
+    if (typeof kmHatlar !== 'function' || typeof kmHatKaydet !== 'function') return;
+    const h = kmHatlar(); h[k] = 'oyun'; kmHatKaydet(h); try { kmHatHafizaKaydet([k], h); } catch (e) {}
+}
 const yuvaKatla = (x) => String(x || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
 function yuvaSporcular() {
     const kisa = (k) => esc(typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(k.ad) : k.ad), kod = (k) => esc(encodeURIComponent(k.g + '|' + k.ad));
     const grup = (g) => esc(typeof LIG_ETIKET !== 'undefined' && LIG_ETIKET[g] ? LIG_ETIKET[g] : g);
     const ders = (_kmListe || []).filter((k) => yuvaSp(k.g, k.ad)), icinde = ders.filter(yuvaOyuncuMu), disinda = ders.filter((k) => !yuvaOyuncuMu(k));
     const p = yuvaPencere(`<h2>👥 Yumurta oyuncuları</h2>
-      <p>Yarışmadaki sporcuyu da ekleyebilirsin — ikisini birden oynar; yarışmada attığı seriler yumurtasını da ısıtır.</p>
-      <div class="yv-sp-liste">${icinde.map((k) => `<div class="yv-sp-sat"><span><b>${kisa(k)}</b><small>${grup(k.g)}${yuvaYarismadaMi(k) ? ' · 🏆 yarışmada da' : ''}</small></span><button class="yv-btn" data-cik="${kod(k)}">Çıkar</button></div>`).join('') || '<p>Yumurtada kimse yok — aşağıdan ekle.</p>'}</div>
-      ${disinda.length ? `<div class="yv-sp-bas">Derste ama yumurtada değil</div><div class="yv-sp-adaylar">${disinda.map((k) => `<button class="yv-sp-aday" data-ek="${kod(k)}"><span>+ ${kisa(k)}</span><small>${yuvaYarismadaMi(k) ? '🏆 yarışmada — ikisinde de oynasın' : 'çıkarılmıştı'}</small></button>`).join('')}</div>` : ''}
+      <p>Sporcu ya Oyun'da ya Yarışma'da. Yarışmadakini buraya eklersen Oyun hattına geçer.</p>
+      <div class="yv-sp-liste">${icinde.map((k) => `<div class="yv-sp-sat"><span><b>${kisa(k)}</b><small>${grup(k.g)}</small></span><button class="yv-btn" data-cik="${kod(k)}">Çıkar</button></div>`).join('') || '<p>Yumurtada kimse yok — aşağıdan ekle.</p>'}</div>
+      ${disinda.length ? `<div class="yv-sp-bas">Derste ama yumurtada değil</div><div class="yv-sp-adaylar">${disinda.map((k) => `<button class="yv-sp-aday" data-ek="${kod(k)}"><span>+ ${kisa(k)}</span><small>${yuvaYarismadaMi(k) ? '🏆 yarışmada — Oyun\'a geçsin' : 'çıkarılmıştı'}</small></button>`).join('')}</div>` : ''}
       <div class="yv-sp-bas">Derste olmayan sporcu ekle</div>
       <input class="yv-sp-ara" id="yv-sp-ara" type="search" placeholder="İsim yaz… (tüm gruplar)" autocomplete="off">
       <div class="yv-sp-adaylar" id="yv-sp-sonuc"></div>
@@ -571,7 +577,7 @@ function yuvaSporcular() {
     p.querySelector('[data-kapat]').onclick = () => p.remove();
     p.querySelector('[data-yenikayit]').onclick = () => { p.remove(); if (typeof kmOyunYeniSporcuAc === 'function') kmOyunYeniSporcuAc(); };
     p.querySelectorAll('[data-cik]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.cik), 'cik'); yenile(); });
-    p.querySelectorAll('[data-ek]').forEach((b) => b.onclick = () => { yuvaListeAyarla(decodeURIComponent(b.dataset.ek), 'ek'); yuvaSes(990); yenile(); });
+    p.querySelectorAll('[data-ek]').forEach((b) => b.onclick = () => { const k = decodeURIComponent(b.dataset.ek); yuvaOyunaAl(k); yuvaListeAyarla(k, 'ek'); yuvaSes(990); yenile(); });
     const ara = p.querySelector('#yv-sp-ara'), sonuc = p.querySelector('#yv-sp-sonuc');
     ara.oninput = () => {
         const q = yuvaKatla(ara.value.trim()); if (q.length < 2) { sonuc.innerHTML = ''; return; }
