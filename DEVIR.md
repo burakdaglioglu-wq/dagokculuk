@@ -5421,3 +5421,12 @@ Kullanıcı: "yarışmada grup yarışması da olsun, isteğe göre" → seçim 
 - `yzGrupArasi(sira)`: grup başına ok başı ortalama (adil: grup büyüklüğü/seri farkı), toplam, en iyi sporcu → `yzGrupArasiHTML` (.yz-ga) tabloların üstünde.
 - Grup elemesi: `yzElemeBaslat(sayi, lig)` yalnız o grubun sporcuları, kendi sırasıyla; `o.eleme.lig`. Sonuç ekranında "👥 Grup grup eleme" düğmeleri (biri bitince sıradaki).
 - `yzGorunumAyarla` TV açıksa TV'yi de çizer. Test `88-grup-yarismasi`.
+
+## 79. 🎤 DAĞ Yetenek Şovu — çocuklar için sıralama turu ekranı (2026-11-01, v363)
+Kullanıcı: "çocuklar için eğlenceli bir yarışma sayfası, eğlenceli karakterler; önce sun sonra yap". İki taslak turu (A Hayvan Koşusu / B Kule / C Kartlar, sonra D Yetenek Şovu / E Meyve Bahçesi / F Tren) → **D**. Ek: "sıralama rastgele olsun — puan sıralamasında alt sırada kalan küçük çocuk kendini kötü hissediyor".
+- Ayrı dosya `public/dagsk-yz-sov.js` (`yzSovAc` / `yzSovKapat`), giriş `yzSovEkran()` (yarisma-pro): tur araçlarında "🎤 Yetenek Şovu", sonuç ekranında "🎤 Şov töreni". Tam ekran overlay `#yz-sov` z 31600 (skor girişi 32000 üstte). SW önbelleğinde.
+- **Kural: tur boyunca puan sıralaması YOK.** Sağda "Sahne sırası" = kura sırası (bitenin bu seri puanı, sıradaki, kalanlar siluet "?"). Törende yalnız ilk 3 podyum (3. → 2. → 1. davul + açılış); diğerleri tura özel karışık sırada, herkese unvan (`yzSovUnvanlar`: ıskasız, en çok gelişen, sarı avcısı, sabit nişancı, en iyi seri; kalanlara pes etmeyen/sahnenin neşesi…). Gruplar ayrı ise grup grup tören (20 sn'de bir / "Sonraki grup").
+- **Kura** `yzSovKura(d, seri)`: katılımcılar hash(id|seri|k) ile sıralı → her cihaz aynı, kayıt yok; önceki serinin ilki başa düşmez. Seri başında şapka + davul animasyonu.
+- Skor girişi aynı (`yzGirisAc`, "✏️ Skor gir" sahnedeki için). Yeni giren seri (`S.goruldu` = id|seri|k, önceki seri de taranır) → 3 hayvan jüri (Köpek/Zürafa/Penguen) ok değerini halka renginde kart kart kaldırır (6 okta 3+3), X altın kart, M "–" + "Olsun, sonraki oka!", toplam balonu, alkış ölçer (puan/maks), kendi beklentisini (yzBeklenenOrt) geçince konfeti + fanfar. Seyirci silüetleri alkışlar.
+- "🤝 Sınıfça N puan" çubuğu (katılımcı × seri × ok × 7). Ses kendi düğmesi (`dag_yz_sov_ses`). Karakter = oyunlardaki hayvan (`kmOyunHayvanKarakterAta`).
+- Test `89-yetenek-sovu`. Taslaklar: https://claude.ai/artifact/Q2CKoeBNbehUtoyTeKJTXb

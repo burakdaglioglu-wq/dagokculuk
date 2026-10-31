@@ -439,6 +439,7 @@ function yzTurHTML(o) {
         + '<div class="yz-a-ilerle">' + ilerlemeBtn + (seri > 0 ? '<button class="yz-btn" onclick="yzOncekiSeri()" title="Önceki seriye dön (skorlar silinmez)">◀ ' + seri + '. seri</button>' : '') + '</div>'
         + '<div class="yz-tur-btn yz-a-araclar">'
         + arac('📺', 'TV ekranı', 'yzTvAc()', 'Salon TV\'sinde canlı sıralama', 'tv')
+        + arac('🎤', 'Yetenek Şovu', 'yzSovEkran()', 'Çocuklar için şov ekranı: kurayla sahneye çıkış, hayvan jüri, tören — puan sıralaması tur boyunca görünmez')
         + arac('🖨', 'Skor kâğıtları', "yzEk(\'yzSkorKagitlariPdf\')", 'Hedef başına basılı skor kağıdı (atıcı + yazıcı imzası)')
         + arac('🎥', 'Ayna / Video', 'yzVideoAc()', '5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün')
         + arac('📊', 'Analiz', 'yzAnalizAc()', 'Antrenör tablosu, ısı haritası, gelişim grafiği')
@@ -858,7 +859,7 @@ function yzSonucHTML(o) {
             + '<div class="yz-alt">Seçince eleme hemen başlar.</div>' + grupEleme + '</div>' : '');
     return '<div class="yz">'
         + '<div class="yz-sayfa-bas"><div><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-baslik">🏁 Sonuçlar</div></div>'
-        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzYarismalarAc()">🏆 Yarışmalar</button><button class="yz-btn" onclick="yzEk(\'yzLigAc\')" title="Kulüp ligi — sezon sıralaması, TV, kupa töreni">🏅 Kulüp ligi</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzAnalizPdf()" title="Her sporcuya bir sayfa: hedefte oklar, grup, nişangâh, seri, gelişim, ok numaraları, yön, tespitler">📄 Sporcu analiz PDF</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn" onclick="yzEk(\'yzBelgelerAc\')" title="Her sporcuya fotoğraflı başarı belgesi — PDF / WhatsApp">📜 Belgeler</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
+        + '<div class="yz-tur-btn"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzSovEkran()" title="Çocuklar için ödül töreni">🎤 Şov töreni</button><button class="yz-btn" onclick="yzAnaTemaAc()" title="Ekran teması">🎨 Tema</button><button class="yz-btn" onclick="yzYarismalarAc()">🏆 Yarışmalar</button><button class="yz-btn" onclick="yzEk(\'yzLigAc\')" title="Kulüp ligi — sezon sıralaması, TV, kupa töreni">🏅 Kulüp ligi</button><button class="yz-btn" onclick="yzAnalizAc()">📊 Sporcu Analizi</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button><button class="yz-btn" onclick="yzAnalizPdf()" title="Her sporcuya bir sayfa: hedefte oklar, grup, nişangâh, seri, gelişim, ok numaraları, yön, tespitler">📄 Sporcu analiz PDF</button><button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF</button><button class="yz-btn" onclick="yzEk(\'yzBelgelerAc\')" title="Her sporcuya fotoğraflı başarı belgesi — PDF / WhatsApp">📜 Belgeler</button><button class="yz-btn toren" onclick="yzTorenBaslat()">🏅 Madalya töreni</button><button class="yz-btn" onclick="yzSeriUzat(1)" title="Tur yeniden açılır, yeni seriye geçilir">➕ Seri ekle, devam et</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
         + (elemeVar ? yzPodyumHTML(o) : yzGruplar(o, sira).map(function (gr) { return yzPodyumGrupHTML(gr); }).join(''))
         + yzYarisGrafikKartHTML(o, sira, true)
         + elemeKart
@@ -2720,6 +2721,8 @@ function yzTvKontrolHTML(o, el) {
 // 🥚 Yarışma → Yumurta Yuvası (2026-10-14, kullanıcı: "yumurta oyunu yarışma moduyla birlikte çalışmıyor, geçiş yeri yok").
 // Düğme, derste yumurtası olan biri varsa ya da karma derste görünür. TV/tam ekrandan gelince yumurta ekranı tam ekran açılır.
 // ⚔️ Sıralama turu sonucu → Takım & Düello: dengeli takımlar + eşleşme (app.js kmYarismaSiralamadanKur, 2026-11-01)
+// 🎤 Yetenek Şovu (çocuk TV ekranı) — ayrı dosya, ilk açılışta yüklenir (2026-11-01, v363)
+function yzSovEkran() { yzSesHazirla(); dagskEkYukle('dagsk-yz-sov.js').then(function () { yzSovAc(); }).catch(function () { showToast('Yetenek Şovu yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
 function yzSiralamadanTakim() { yzModAyarla('takim'); _yzK.sira = null; _yzK.eski = false; if (!_yzK.tur || _yzK.tur === 'hayali') _yzK.tur = 'takim'; if (typeof _kmYarismaBracketGorunum !== 'undefined' && !_kmYarismaAktif) _kmYarismaBracketGorunum = null; yzTakimlariKur(); kmYarismaGiris(); }
 function yzYuvaVarMi() {
     if (typeof kmKarmaMi === 'function' && kmKarmaMi()) return true;
