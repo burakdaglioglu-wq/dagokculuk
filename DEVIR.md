@@ -5391,3 +5391,33 @@ Kullanıcı: "dersi bitir dediğimde bazen sorun; kale savunmasında kaleye kada
 - **12 saat kuralı:** `_skorKaydetCekirdek` Karışık Sınıf açıkken `dag_km_oyun_son_<konum>` damgalar; `kmSekme` / `kmOyunlarCiz` / ekran görünür olunca `kmOyunBayatSifirla()` — 12 saatten eskiyse `KM_OYUN_SIFIR_ONEK` anahtarları (yol ilerlemesi, takım, çoklu durum, akvaryum, fener, halat, hapşırık, il, kale, canavar seferi, kurtarma, parti, kelime, zirve/ninja/dağ/sis günlük) + `dag_km_hy_*` silinir, bellek kopyaları sıfırlanır. Yumurta (`sp.oyun.yuva`), seriler, kuşak, karakter/amblem, takım kurulumu, canavar rekoru kalır. Günlük (tarih) sıfırlamalar da sürüyor.
 - **Yeniden başlat:** Oyunlar panelinin altındaki ⋯ artık "🔄 Yeniden başlat" yazıyor; "Tüm sınıfı sıfırla" kendi durumu olan temalarda (kale/fener/akvaryum/hapşırık/halat/il) o temanın 🔄 akışını, canavarda Yeni Savaş'ı çağırır.
 - **Ya yarışma ya oyun:** Ders Paneli'ndeki "🥚 Yumurtada da" ve Yarışma ekranı/TV'deki 🥚 düğmesi kaldırıldı. `yuvaOyuncuMu` / `krListe` Yarışma hattındakini almaz ('ek' yok sayılır); Yumurta › Sporcular'dan eklemek onu Oyun hattına geçirir (`yuvaOyunaAl`). Testler `20`, `22` güncellendi.
+
+## 76. ⚙️ Oyun Ayarları: açık oyun + yeniden başlat + tek ses + gün özeti + sıfırlama süresi (2026-10-31, v362)
+Kullanıcı: "oyunlar için özel özellikler ekle (özellikler panelinde), oyunu yeniden başlat düğmesi de gelsin" — seçtiği 4 özelliğin hepsi.
+- `kmOyunAyarAc` satırları artık veri listesi → `kmOyunAyarGovde(satir, liste)`: en üstte **🎯 Açık oyun** kutusu (`KM_OYUN_AYAR_TEMA` / `kmOyunAyarTemaAnahtar`: kale → kaleMod+kaleSeri, yol temaları → yolSeri+yolMod, canavar, hapşırık, akvaryum, futbol) + **🔄 Oyunu yeniden başlat** (`kmOyunHepsiSifirla`, modüllerde kendi 🔄 akışı). Sonra 🔊 / 📜 kartları, altta "Diğer oyunlar ve genel ayarlar". Üst çubukta da 🔄 Yeniden başlat.
+- **🔊 Tek ses:** `dag_km_oyun_sessiz`='1' → 6 modülün `sesAcik()`, `krSes`, `kpBip`, `yuvaSes`, `kmCnvSes`, spiker (`kmOyunSesliSoyle`) susar. Açınca oyunların kendi kapalı tercihleri de '1' olur.
+- **📜 Gün özeti:** `kmOyunGunOzetiMetni()` — bugünün gerçek serileri (seriler + kartGecmisi, seriId tekil) → sporcu/seri/ok/sarı + oyunların bugünkü kayıtları (sıfır satırlar gizli) + atan herkes adıyla (aynı ilk ad → soyad baş harfi). Kopyala / WhatsApp (api.whatsapp.com).
+- **⏰ `sifirSaat`** ayarı (Kapalı/6/12/24, standart 12) — `kmOyunBayatSifirla` bunu kullanır; Kapalı'da yalnız oyunların günlük sıfırlaması kalır.
+- `onayKapat` pencereyi body'ye geri koyar; `onayIste` tam ekran öğesinin içine taşır (`tamEkranKatmanlariTasi` ile aynı amaç, yeniden çizimde silinmesin).
+- Test `86-oyun-ayarlar`.
+- **🧩 İçerik aç/kapat** (2026-11-01, kullanıcı: "her oyunun içeriğini aç/kapat"): `KM_OYUN_ICERIK` (kale, yol, hapsirik, fener) + cihaz ayarı `dag_km_oyun_icerik` ({oyun: {özellik: false}}; yazılmamış = açık), `window.kmOyunIcerik(oyun, özellik)`. Standart/Özel'den bağımsız. Açık oyunun kutusunda "🧩 Oyunun içeriği", altta "Diğer oyunların içeriği".
+  - Kale (`ic(k)`): `dalgaTipleri` kapalı türü goblin yapar (kalkancı = zirhli anahtarı), şaman/ejderha eklenmez; `ozelOk`, `atolyeAc` (+🔨 düğmesi gizli), `konus`. `kaleAyarUygula` sahnedeki kapalı türü hemen goblin yapar.
+  - Yol (`hyIc`): `kapi` → `hyKapilar` boş; `kovalayan` → `hySeriSonu` yürümez, `hyGuncelle` çizmez, tehlike/vinyet yok; `konusma` → `hyKonus`.
+  - Hapşırık: `gizli` (gizli nokta + çip), `sahte` ("…hıh. Geçti!"). Fener: `bilgi` kartları.
+  - Test `86-oyun-ayarlar` (sapancı kapat → sahnede goblin).
+
+## 77. 🏹→⚔️ Takım & Düello sıralama turuna göre (2026-11-01, v362)
+Kullanıcı: "Yarışma'daki grup yarışmasını düzeltelim — var olan yarışma sonrası sıralama ve eşleşme olsun" → seçim: "Takım maçları sıralamaya göre".
+- Kaynak `kmYarismaSiralamaKaynagi()` (app.js): süren/biten 🏹 Sıralama turu (`yzOku().durum`, doğrudan eleme değil, `yzSiralama`), yoksa bugünün arşivi (`dag_yz_arsiv`). Liste sıralı `{g, ad, toplam}`.
+- Sihirbaz (yarisma-pro `yzSihirbazCiz`): adım 2'de "🏹 Sıralama turuna göre" kartı — kaynak varsa varsayılan AÇIK (`_yzK.sira`: null açık / false kapalı, `yzSiraDegis`). `yzTakimlariKur` gücü `yzSiraGuc` (sıralamada olan 1000+puan, olmayan karne ort.) → takımlar yılan dağıtımla tur puanına göre; düelloda sıralama sırası. Takım kartında "🏹 530p".
+- `yzSihirbazBaslat`: kaynak varsa `kmYarismaTohumdanEslestir(tohum)` — tohum düelloda sıra, takımda üyelerin tur puanı toplamı; 1–N, 2–(N−1), tek sayıda 1. tohum bay. `_kmYarismaSiralama.kaynak='yz'` (eşleştirme panelinde takım gücü + üyeler; "yeniden eşleştir" aynı tohumlarla).
+- Sıralama turu sonuç ekranında "🤝 Takım maçları — ⚔️ Bu sıralamayla takım maçları kur" (`yzSiralamadanTakim`). Eski ayrıntılı kurulumda da "🏹 Sıralama turuna göre kur" kartı (`kmYarismaSiralamadanKur`).
+- Test `87-takim-siralamadan`.
+
+## 78. 👥 Grup yarışması — isteğe bağlı (2026-11-01, v362)
+Kullanıcı: "yarışmada grup yarışması da olsun, isteğe göre" → seçim "ikisi de" (her grup kendi içinde + gruplar birbirine karşı).
+- Görünüm (cihaz, `dag_yz_gorunum`): `grup: 'birlikte' | 'ayri'`, `arasi: bool`. Çipler canlı tabloda, sonuçlarda ve TV'de; yalnız turda 2+ yaş grubu varsa görünür. Varsayılan birlikte (eskisi gibi).
+- `yzGruplar` genelleşti: parçalar `{ad, ikon, lig, f}` — yaş grubu (`yzLig(k)`, `YZ_LIG_SIRA`, ad `LIG_ETIKET`) × yay (Klasik/Makaralı/Ayrı) birleşir; her grup `yzGrupSirala` ile 1'den sıralanır, kendi podyumu (sonuç, TV, tören).
+- `yzGrupArasi(sira)`: grup başına ok başı ortalama (adil: grup büyüklüğü/seri farkı), toplam, en iyi sporcu → `yzGrupArasiHTML` (.yz-ga) tabloların üstünde.
+- Grup elemesi: `yzElemeBaslat(sayi, lig)` yalnız o grubun sporcuları, kendi sırasıyla; `o.eleme.lig`. Sonuç ekranında "👥 Grup grup eleme" düğmeleri (biri bitince sıradaki).
+- `yzGorunumAyarla` TV açıksa TV'yi de çizer. Test `88-grup-yarismasi`.

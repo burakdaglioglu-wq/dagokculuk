@@ -62,7 +62,7 @@
 
     /* ---------------- SES (WebAudio sentezi; cihaza özel aç/kapa) ---------------- */
     let AC = null;
-    function sesAcik() { try { return localStorage.getItem('dag_kale_ses') !== '0'; } catch (e) { return true; } }
+    function sesAcik() { try { return localStorage.getItem('dag_km_oyun_sessiz') !== '1' && localStorage.getItem('dag_kale_ses') !== '0'; } catch (e) { return true; } }
     function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
     function ton(f1, f2, dur, tip, vol, gec) {
         const a = ac(); if (!a || !sesAcik()) return; const t = a.currentTime + (gec || 0), o = a.createOscillator(), g = a.createGain();
@@ -248,6 +248,8 @@
         return Math.round(Math.max(40, top) * k * (1 + .12 * (dalga - 1)));
     }
     // Kale heyecanı (Oyun Ayarları › kaleMod): 1 Tatlı · 2 Heyecanlı · 3 Korkutucu — dosya başındaki açıklama
+    // 🧩 Ayarlar › Oyunun içeriği (2026-11-01): kapatılan içerik bu oyunda hiç çıkmaz (yazılmamış = açık)
+    function ic(k) { try { return typeof kmOyunIcerik !== 'function' || kmOyunIcerik('kale', k); } catch (e) { return true; } }
     function kmod() { try { const a = typeof kmOyunAyar === 'function' ? kmOyunAyar() : null; return (a && [1, 2, 3].indexOf(a.kaleMod) >= 0) ? a.kaleMod : 1; } catch (e) { return 1; } }
     function kalpSayisi() { return kmod() === 3 ? 2 : 3; }
     const OFKE_SINIR = { 2: 4, 3: 3 };           // ejderha kaç sarısız seride ateş püskürtür
@@ -314,6 +316,7 @@
     const GULUS = ['Hahaha! Hiç değmedi!', 'Iska! Hı hı hı!', 'Bize ok yetişmez!'];
     // v342 Özel oklar — serinin tamamına bakar
     function ozelOk(oklar) {
+        if (!ic('ozelOk')) return null;
         const v = (oklar || []).map((k) => okDeger(k.puan));
         if (v.length < 3) return null;
         if (v.every((d) => d === 10)) return 'yildirim';
@@ -346,9 +349,10 @@
         for (let i = 0; i < n; i++) t.push(dalga < 4 && i < 2 ? 'goblin' : havuz[Math.floor(rs() * havuz.length)]);
         (YENI_DUSMAN[dalga] || []).filter((y) => m >= y[1]).forEach((y, k) => { if (t.indexOf(y[0]) < 0) t[n - 1 - k] = y[0]; });
         // 🧙 şaman (⚔️+, dalga 8+): en arkada, dalgada bir tane
-        if (m >= 2 && dalga >= 8) t.push('saman');
-        if (dalga % 3 === 0) t.push('ejderha');
-        return t;
+        if (m >= 2 && dalga >= 8 && ic('saman')) t.push('saman');
+        if (dalga % 3 === 0 && ic('ejderha')) t.push('ejderha');
+        // kapatılan türlerin yerine goblin (dalga kalabalığı aynı kalır)
+        return t.map((x) => (x === 'kalkanci' ? ic('zirhli') : ic(x)) ? x : 'goblin');
     }
     function dusmanCan(t, top, ag) { return Math.max(6, Math.min(D[t].tavan || 1e9, Math.round(top * D[t].agirlik / ag))); }
     function yeniDalga(st, dalga) {
@@ -468,7 +472,7 @@
         $('kale-bar-ic').style.width = y + '%'; $('kale-bar-yazi').textContent = kalan ? `Kalan düşman ${kalan} · %${y}` : 'Dalga temiz!';
         $('kale-ses-btn').textContent = sesAcik() ? '🔊' : '🔇';
         const gs = durum(), altin = gs.altin || 0, at = gs.atolye || {};
-        const ab = $('kale-atolye-btn'); if (ab) { ab.textContent = '🔨' + (altin ? ' 💰' + altin : ''); ab.classList.toggle('kale-btn-parla', altin > 0); }
+        const ab = $('kale-atolye-btn'); if (ab) { ab.style.display = ic('atolye') ? '' : 'none'; ab.textContent = '🔨' + (altin ? ' 💰' + altin : ''); ab.classList.toggle('kale-btn-parla', altin > 0); }
         const gc = $('kale-guc'); if (gc) gc.innerHTML = ATOLYE.filter((a) => at[a.id]).map((a) => `<span title="${a.ad}">${a.ikon} ${at[a.id]}</span>`).join('') + (gs.donma > 0 ? '<span>❄️ donuk</span>' : '') + (gs.catlak ? `<span title="3 çatlakta sur yıkılır: -1 ❤️">🧱 çatlak ${gs.catlak}/${CATLAK_SINIR}</span>` : '');
     }
     function kalpler(can) { let s = ''; for (let i = 0; i < Math.max(kalpSayisi(), can); i++) s += i < can ? (i >= kalpSayisi() ? '🧡' : '❤️') : '🖤'; return s; }
@@ -816,6 +820,7 @@
     }
     // Konuşma balonu: düşmanın başının üstünde, ~2,8 sn (aynı anda tek balon). id yoksa en öndeki konuşur.
     function konus(id, metin) {
+        if (!ic('konusma')) return;
         const g = $('kale-pop'); if (!g) return;
         let e = id != null ? $('kale-d' + id) : null;
         if (!e) { let enOn = null, ex = 1e9; document.querySelectorAll('#kale-dusmanlar .kale-dusman:not(.kale-ol)').forEach((x) => { const m = /translate\(([-\d.]+)px/.exec(x.style.transform); if (m && +m[1] < ex) { ex = +m[1]; enOn = x; } }); e = enOn; }
@@ -883,6 +888,7 @@
     }
     /* ---------------- 🔨 KALE ATÖLYESİ ---------------- */
     function atolyeAc() {
+        if (!ic('atolye')) return;
         const a = $('kale-atolye'); if (!a) return;
         const st = durum(), altin = st.altin || 0, at = st.atolye || {};
         a.innerHTML = `<div class="kale-at-bas"><b>🔨 Kale Atölyesi</b><span class="kale-at-altin">💰 ${altin} altın</span><button class="kale-at-x" data-at="x" title="Kapat">✕</button></div>
@@ -1063,6 +1069,8 @@
         if (_toren) return; const st = durum();
         // Kale heyecanı değişti: dalga yeni seviyenin düşmanlarıyla baştan kurulur (dalga numarası korunur, can yeni üst sınıra iner)
         if ((st.mod || 1) !== kmod()) { st.can = Math.max(1, Math.min(st.can, kalpSayisi())); if (kmod() === 1 && st.can < 3) st.can = 3; yeniDalga(st, st.dalga); kaydet(); if (panel() && $('kale-svg')) { kaleSahneKur(); tanit(); } return; }
+        // 🧩 içerikten kapatılan tür sahnedeyse hemen goblin olur (uçan yere iner, ejderha öfkesi biter)
+        st.dusmanlar.forEach((d) => { if ((d.tip === 'kalkanci' || d.tip === 'minibalcik') ? ic(d.tip === 'kalkanci' ? 'zirhli' : 'balcik') : ic(d.tip)) return; if (D[d.tip].ucar) d.y = 486; d.tip = 'goblin'; delete d.ofke; delete d.gorunmez; });
         const top = toplamCan(st.dalga, st), tipler = dalgaTipleri(st.dalga), ag = tipler.reduce((a, t) => a + D[t].agirlik, 0);
         st.dusmanlar.forEach((d) => { const yeni = dusmanCan(d.tip, top, ag), oran = d.can / (d.max || 1); d.max = yeni; d.can = Math.max(1, Math.round(oran * yeni)); });
         st.adim = adimHesapla(); kaydet();

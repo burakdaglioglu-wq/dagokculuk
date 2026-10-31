@@ -22,6 +22,7 @@
     const rnd = (a) => a[Math.floor(Math.random() * a.length)];
     function hash(m) { let h = 2166136261; for (let i = 0; i < m.length; i++) { h ^= m.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
     function bugun() { return typeof bugunISO === 'function' ? bugunISO() : new Date().toISOString().slice(0, 10); }
+const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIcerik('hapsirik', k); } catch (e) { return true; } }; // 🧩 Ayarlar › Oyunun içeriği
     function konum() { return (typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum) ? _kmAktifKonum : 'varsayilan'; }
     function ilkAd(ad) { return typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(ad) : String(ad).split(' ')[0]; }
     function kacis(t) { return typeof esc === 'function' ? esc(t) : String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -30,7 +31,7 @@
 
     /* ---------------- SES (WebAudio sentezi, dosya yok; cihaza özel aç/kapa) ---------------- */
     let AC = null;
-    function sesAcik() { try { return localStorage.getItem('dag_hps_ses') !== '0'; } catch (e) { return true; } }
+    function sesAcik() { try { return localStorage.getItem('dag_km_oyun_sessiz') !== '1' && localStorage.getItem('dag_hps_ses') !== '0'; } catch (e) { return true; } }
     function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
     function ton(f1, f2, dur, tip, vol, gec) {
         const a = ac(); if (!a || !sesAcik()) return; const t = a.currentTime + (gec || 0), o = a.createOscillator(), g = a.createGain();
@@ -678,7 +679,7 @@
         const st = durum(), c = Y[st.tip], gb = gizliBilgi(st), y = Math.min(100, Math.round(st.gidik));
         if (!$('hps-ad')) return;
         $('hps-ad').textContent = c.ikon + ' ' + yaratikAdi(st);
-        $('hps-gizli-cip').innerHTML = st.bulan ? `${gb.emoji} <b>${st.gizli.deger}</b> = ${gb.ad.toLocaleLowerCase('tr')}` : '🤫 Gizli nokta: <b>?</b>';
+        $('hps-gizli-cip').style.display = ic('gizli') ? '' : 'none'; $('hps-gizli-cip').innerHTML = st.bulan ? `${gb.emoji} <b>${st.gizli.deger}</b> = ${gb.ad.toLocaleLowerCase('tr')}` : '🤫 Gizli nokta: <b>?</b>';
         $('hps-bar-ic').style.width = y + '%'; $('hps-bar-yazi').textContent = 'Gıdık %' + y;
         $('hps-ses-btn').textContent = sesAcik() ? '🔊' : '🔇';
     }
@@ -751,18 +752,18 @@
         (kaydedilecek || []).forEach((k) => {
             const v = String(k.puan), r = halka(v);
             if (hapsirdi) { // aynı seride hapşırtan oktan sonrakiler sıradaki yaratığa sayılır
-                if (r !== 'gri') { const ek = (okDeger(v) === st.gizli.deger ? 25 : { sari: 15, kirmizi: 10, mavi: 10, siyahbeyaz: 6 }[r]) * (v === 'X' ? 1.5 : 1); st.gidik = Math.min(st.gerekli * .95, st.gidik + ek); st.katki[key] = (st.katki[key] || 0) + ek; }
+                if (r !== 'gri') { const ek = (ic('gizli') && okDeger(v) === st.gizli.deger ? 25 : { sari: 15, kirmizi: 10, mavi: 10, siyahbeyaz: 6 }[r]) * (v === 'X' ? 1.5 : 1); st.gidik = Math.min(st.gerekli * .95, st.gidik + ek); st.katki[key] = (st.katki[key] || 0) + ek; }
                 return;
             }
             let yer = r === 'sari' ? 'burun' : r === 'kirmizi' ? 'gobek' : r === 'mavi' ? 'ayak' : r === 'siyahbeyaz' ? 'kuyruk' : null;
-            if (okDeger(v) === st.gizli.deger) yer = 'gizli';
+            if (ic('gizli') && okDeger(v) === st.gizli.deger) yer = 'gizli';
             const o = { v: v, yer: yer, ek: 0, gizliYeni: false, sahte: false };
             if (yer) {
                 o.ek = (yer === 'gizli' ? (st.bulan ? 20 : 25) : { burun: 15, gobek: 10, ayak: 10, kuyruk: 6 }[yer]) * (v === 'X' ? 1.5 : 1);
                 if (yer === 'gizli' && !st.bulan) { st.bulan = key; o.gizliYeni = true; rozetYaz(s.g, s.ad, 'gizli'); }
                 st.gidik += o.ek; st.katki[key] = (st.katki[key] || 0) + o.ek;
                 if (st.gidik >= st.gerekli) {
-                    if (!st.sahte && hash(st.tarih + '|' + st.no + '|' + st.seri) % 2 === 0) { st.sahte = true; st.gidik = Math.round(st.gerekli * .8); o.sahte = true; }
+                    if (!st.sahte && ic('sahte') && hash(st.tarih + '|' + st.no + '|' + st.seri) % 2 === 0) { st.sahte = true; st.gidik = Math.round(st.gerekli * .8); o.sahte = true; }
                     else {
                         const kac = Object.entries(st.katki).sort((a, b) => b[1] - a[1])[0];
                         hapsirdi = { tip: st.tip, no: st.no, ad: s.ad, g: s.g, i: i, gizliBulan: st.bulan, enCok: kac ? kac[0] : null, adi: yaratikAdi(st) };

@@ -11350,8 +11350,8 @@
         // DÜZELTME (2026-09-28, "birleştir onayında sadece İptal çıkıyor"): kendi düğmeleri olan akışlar (Kategori
         // Taşı, aynı-isim uyarısı, misafir grup seçimi) Evet'i display:none yapıyordu ve hiçbir yer geri açmıyordu —
         // sonraki TÜM onaylarda Evet kayboluyordu. Artık her açılışta: geri çağrı varsa görünür, yoksa gizli.
-        function onayIste(mesaj, cb, btnYazi, hayirYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) { b.innerText = btnYazi || 'Evet'; b.style.display = typeof cb === 'function' ? '' : 'none'; } let hb = document.querySelector('#onay-modal button[onclick="onayKapat()"]'); if(hb) hb.innerText = hayirYazi || 'İptal'; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'flex'; }
-        function onayKapat() { _onayCb = null; let mod = document.getElementById('onay-modal'); if(mod) mod.style.display = 'none'; }
+        function onayIste(mesaj, cb, btnYazi, hayirYazi) { _onayCb = cb; let m = document.getElementById('onay-mesaj'); if(m) m.innerHTML = mesaj; let b = document.getElementById('onay-evet-btn'); if(b) { b.innerText = btnYazi || 'Evet'; b.style.display = typeof cb === 'function' ? '' : 'none'; } let hb = document.querySelector('#onay-modal button[onclick="onayKapat()"]'); if(hb) hb.innerText = hayirYazi || 'İptal'; let mod = document.getElementById('onay-modal'); if(mod) { /* tam ekrandaki öğe içinde de görünsün (body'deki pencere tam ekranda görünmez) */ let fs = document.fullscreenElement || document.webkitFullscreenElement, yer = fs && fs !== document.documentElement ? fs : document.body; if(mod.parentNode !== yer) yer.appendChild(mod); mod.style.display = 'flex'; } }
+        function onayKapat() { _onayCb = null; let mod = document.getElementById('onay-modal'); if(mod) { mod.style.display = 'none'; if(mod.parentNode !== document.body) document.body.appendChild(mod); } }
         function onayOnayla() { let cb = _onayCb; onayKapat(); if(typeof cb === 'function') { try { cb(); } catch(e) {} } }
         // İşlem yükleniyor bindirmesi — uzun sürebilecek senkron işler (ör. kmDersiBitir'in tüm kulüp
         // verisini JSON'a çevirmesi) öncesinde çağrılır. islemYukleniyorGoster()'dan hemen sonra o ağır
@@ -16656,13 +16656,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // (çok günlüktü), takım/çoklu takım ilerlemesi, Kale, Akvaryum, Fener, Halat, 81 İl, Hapşırık, Canavar seferi, Kurtarma,
         // Ok Partisi, Kelime, Kayıp Ada, kovalayıcı. Yumurta Yuvası (sp.oyun.yuva), gerçek skorlar, kuşak, karakter/amblem
         // seçimleri ve takım kurulumları DOKUNULMAZ. Damga her kayıtta (_skorKaydetCekirdek), kontrol ekran açılırken.
-        const KM_OYUN_BAYAT_MS = 12 * 3600 * 1000;
         const KM_OYUN_SIFIR_ONEK = ['dag_km_oyun_', 'dag_km_takim_', 'dag_km_cokludurum_', 'dag_km_akvaryum_', 'dag_km_fener_', 'dag_km_halat_', 'dag_km_hapsirik_', 'dag_km_il_', 'dag_km_kale_', 'dag_km_canavar_', 'dag_km_kurtarma_', 'dag_km_parti_', 'dag_km_kelime_', 'dag_km_zirve_gunluk_', 'dag_km_ninja_tapinak_', 'dag_km_dag_ip_', 'dag_km_sisharita_gunluk_', 'dag_km_sisharita_kesif_'];
         function kmOyunSonAnahtari() { return 'dag_km_oyun_son_' + (_kmAktifKonum || 'varsayilan'); }
         function kmOyunDamgala() { try { localStorage.setItem(kmOyunSonAnahtari(), String(Date.now())); } catch(e) {} }
         function kmOyunBayatSifirla() {
             let son = 0; try { son = +localStorage.getItem(kmOyunSonAnahtari()) || 0; } catch(e) {}
-            if(!son || Date.now() - son <= KM_OYUN_BAYAT_MS) return false;
+            let saat = 12; try { saat = kmOyunAyar().sifirSaat; } catch(e) {}
+            if(!saat || !son || Date.now() - son <= saat * 3600 * 1000) return false;
             let k = _kmAktifKonum || 'varsayilan', sil = [];
             try {
                 for(let i = 0; i < localStorage.length; i++) {
@@ -16679,7 +16679,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { if(typeof _kmKelimeYuklenenKonum !== 'undefined') _kmKelimeYuklenenKonum = null; } catch(e) {}
             try { if(typeof _kp !== 'undefined') _kp = null; } catch(e) {}
             try { (_kmOyunRosterCache || []).forEach(function(s) { s.frac = 0; s.toplamSkor = 0; }); } catch(e) {}
-            try { showToast('🔄 Son oyundan 12 saatten fazla geçti — oyunlar baştan başladı (yumurtalar yerinde).', 'success'); } catch(e) {}
+            try { showToast('🔄 Son oyundan ' + saat + ' saatten fazla geçti — oyunlar baştan başladı (yumurtalar yerinde).', 'success'); } catch(e) {}
             return true;
         }
         // Tablet gece boyunca oyun ekranında kaldıysa: ekran tekrar görününce de bakılır
@@ -17977,6 +17977,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             window.speechSynthesis.onvoiceschanged = function() { _kmOyunSesliSes = kmOyunSesliSesSec(); };
         }
         function kmOyunSesliSoyle(metin) {
+            if(kmOyunSessiz()) return;
             try {
                 if(!window.speechSynthesis) return;
                 window.speechSynthesis.cancel();
@@ -18932,7 +18933,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                     <div style="display:flex; align-items:center; gap:8px; min-width:0;">
                         <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
                         <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
-                        <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Oyun süreleri ve seri sayıları">⚙️ Ayarlar</button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Bu oyunun ayarları, ses, gün sonu özeti, yeniden başlat">⚙️ Ayarlar</button>
+                        <button class="km-oyun-tam-btn" onclick="kmOyunHepsiSifirla()" title="Bu oyunu bütün sınıf için baştan başlat (gerçek skorlar ve yumurtalar silinmez)">🔄 Yeniden başlat</button>
                         ${kmKarmaMi() ? '<button class="km-oyun-tam-btn aktif" onclick="kmKarmaYarismayaGec(true)" title="Yarışma hattı — TV skor tablosu (tam ekrandaysan tam ekranda açılır)">📺 Yarışma TV</button>' : ''}
                         <button class="km-oyun-tam-btn${kmKarmaMi() ? ' aktif' : ''}" onclick="kmHatPanelAc()" title="Ders hatları — kim Oyun'da, kim Yarışma'da">🔀 ${kmKarmaMi() ? ((_kmListe.length - kmOyunListe().length) + ' Yarışma\'da') : 'Hatlar'}</button>
                     </div>
@@ -19103,7 +19105,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // devrileceği (standart 2), canavarKalkan = 1 açık / 0 kapalı (kapalıyken zorluk ne olursa olsun kalkan hiç açılmaz).
         // 2026-10-27 (kullanıcı: "ayarlarda hapşırık için de seviye belirle"): hapsirikSeri = yaratık hapşırana kadar kişi başı
         // yaklaşık seri (standart 1) → dagsk-km-hapsirik.js gerekliHesapla çarpanı; hpsAyarUygula sahnedekine de uygular.
-        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1, kaleMod: 1, yolMod: 1 };
+        const KM_OYUN_AYAR_STANDART = { yolCarpan: 1, yolSeri: 10, futbolSeri: 8, sayacSn: 120, yuvaCarpan: 1, yuvaSeri: 12, partiTur: 5, canavarSeri: 2, canavarKalkan: 1, hapsirikSeri: 1, akvaryumSeri: 1, kaleSeri: 1, kaleMod: 1, yolMod: 1, sifirSaat: 12 };
         const KM_OYUN_AYAR_SECENEK = {
             yolCarpan: [[2, 'Çok kısa', '≈5 seri'], [1.45, 'Kısa', '≈7 seri'], [1, 'Standart', '≈10 seri'], [0.7, 'Uzun', '≈14 seri'], [0.5, 'Çok uzun', '≈20 seri']],
             yolSeri: [[4, '4 seri'], [6, '6 seri'], [8, '8 seri'], [10, '10 seri'], [12, '12 seri'], [15, '15 seri'], [20, '20 seri']],
@@ -19120,6 +19122,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             sayacSn: [[60, '1 dk'], [90, '1,5 dk'], [120, '2 dk'], [180, '3 dk'], [300, '5 dk']],
             yuvaCarpan: [[0.5, 'Çok hızlı'], [0.75, 'Hızlı'], [1, 'Standart'], [1.3, 'Yavaş']],
             partiTur: [[3, '3 tur'], [5, '5 tur'], [7, '7 tur'], [10, '10 tur']],
+            // 2026-10-31: oyunlar son seriden kaç saat sonra kendiliğinden baştan başlasın (0 = kapalı; günlük sıfırlama yine olur)
+            sifirSaat: [[0, 'Kapalı', 'yalnız gün değişince'], [6, '6 saat'], [12, '12 saat'], [24, '24 saat']],
         };
         function kmOyunAyarHam() { try { return JSON.parse(localStorage.getItem('dag_km_oyun_ayar') || 'null') || { mod: 'standart', ozel: {} }; } catch(e) { return { mod: 'standart', ozel: {} }; } }
         function kmOyunAyar() {
@@ -19154,23 +19158,133 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 + '<button class="' + (ozel ? 'aktif' : '') + '" onclick="kmOyunAyarMod(\'ozel\')"><b>🛠️ Özel</b><small>Kendin ayarla</small></button></div>'
                 + '<div class="kmoa-kisi"><div class="kmoa-bas"><b>👤 Sporcular</b><small>Bu derste ' + ((_kmListe || []).length) + ' sporcu var</small></div><div class="kmoa-kisi-btn"><button class="birincil" onclick="kmOyunYeniSporcuAc()">＋ Yeni sporcu kaydet</button><button onclick="kmOyunAyarKapat(); kmSporcuEkle()">➕ Kayıtlı sporcuyu derse ekle</button></div></div>'
                 + (ozel ? '' : '<p class="kmoa-not">Şu an standart ayarlar kullanılıyor. Değiştirmek için <b>Özel</b>\'i seç.</p>')
-                + satir('yolSeri', '🏔️', 'İlerleme oyunları kaç seride bitsin?', 'Zirve, Ninja, Roket, Hazine, Dağ, Pist, Balon, Kayıp Ada, Monopoly · %70 isabetle atan bir sporcu için yaklaşık')
-                + satir('canavarSeri', '👹', 'Canavar ne kadar çabuk devrilsin?', 'Sınıftaki her sporcu yaklaşık kaç seri atınca canavar devrilir · sahnedeki canavara da hemen uygulanır')
-                + satir('canavarKalkan', '🛡️', 'Canavar kalkanı açılsın mı?', 'Kapalıyken canavar hiç kalkan açmaz (zorluk ayarından bağımsız)')
-                + satir('hapsirikSeri', '🤧', 'Hapşırık seviyesi', 'Yaratığın hapşırması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki yaratığa da hemen uygulanır')
-                + satir('akvaryumSeri', '🐠', 'Akvaryum seviyesi', 'Akvaryumun dolması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki akvaryuma da hemen uygulanır')
-                + satir('kaleSeri', '🏰', 'Kale Savunması seviyesi', 'Bir dalgayı temizlemek için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · düşmanlar da buna göre yavaşlar · sahnedeki dalgaya hemen uygulanır')
-                + satir('kaleMod', '⚔️', 'Kale Savunması heyecanı', 'Tatlı: bugünkü oyun · Heyecanlı: düşmanlar laf atar ("Sarı atamazsan beni düşüremezsin!"), zırhlı/kalkanlı düşmanlar, öfkeli ejderha · Korkutucu: gece, kızıl gözler, daha kalabalık dalgalar')
-                + satir('yolMod', '🏝️', 'Yol oyunları heyecanı', 'Hazine, Zirve, Roket, Pist, Ninja, Dağ, Balon · Tatlı: bugünkü oyun (Hazine/Pist/Balon yeni çizgi film görünümüyle) · Heyecanlı: arkadan kovalayan gelir (korsan gemisi, kar topu, meteor, Kara Kamyon, gölge ninja, kar fırtınası, şimşekli bulut) — herkes atınca bir adım, yakaladığını geri iter; yolda sarı kapılar 9+ ister; karakterler laf atar · Korkutucu: gece, daha hızlı kovalayan, 3 kapı, 2 sarı')
-                + satir('futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter')
-                + satir('sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi')
-                + satir('yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)')
-                + satir('partiTur', '🎉', 'Ok Partisi kaç tur?', 'Yeni partinin varsayılan tur sayısı')
+                + kmOyunAyarGovde(satir, [
+                ['yolSeri', '🏔️', 'İlerleme oyunları kaç seride bitsin?', 'Zirve, Ninja, Roket, Hazine, Dağ, Pist, Balon, Kayıp Ada, Monopoly · %70 isabetle atan bir sporcu için yaklaşık'],
+                ['canavarSeri', '👹', 'Canavar ne kadar çabuk devrilsin?', 'Sınıftaki her sporcu yaklaşık kaç seri atınca canavar devrilir · sahnedeki canavara da hemen uygulanır'],
+                ['canavarKalkan', '🛡️', 'Canavar kalkanı açılsın mı?', 'Kapalıyken canavar hiç kalkan açmaz (zorluk ayarından bağımsız)'],
+                ['hapsirikSeri', '🤧', 'Hapşırık seviyesi', 'Yaratığın hapşırması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki yaratığa da hemen uygulanır'],
+                ['akvaryumSeri', '🐠', 'Akvaryum seviyesi', 'Akvaryumun dolması için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · sahnedeki akvaryuma da hemen uygulanır'],
+                ['kaleSeri', '🏰', 'Kale Savunması seviyesi', 'Bir dalgayı temizlemek için sınıftaki her sporcunun yaklaşık kaç seri atması gerekir · düşmanlar da buna göre yavaşlar · sahnedeki dalgaya hemen uygulanır'],
+                ['kaleMod', '⚔️', 'Kale Savunması heyecanı', 'Tatlı: bugünkü oyun · Heyecanlı: düşmanlar laf atar ("Sarı atamazsan beni düşüremezsin!"), zırhlı/kalkanlı düşmanlar, öfkeli ejderha · Korkutucu: gece, kızıl gözler, daha kalabalık dalgalar'],
+                ['yolMod', '🏝️', 'Yol oyunları heyecanı', 'Hazine, Zirve, Roket, Pist, Ninja, Dağ, Balon · Tatlı: bugünkü oyun (Hazine/Pist/Balon yeni çizgi film görünümüyle) · Heyecanlı: arkadan kovalayan gelir (korsan gemisi, kar topu, meteor, Kara Kamyon, gölge ninja, kar fırtınası, şimşekli bulut) — herkes atınca bir adım, yakaladığını geri iter; yolda sarı kapılar 9+ ister; karakterler laf atar · Korkutucu: gece, daha hızlı kovalayan, 3 kapı, 2 sarı'],
+                ['futbolSeri', '⚽', 'Futbol maçı kaç seri?', 'Bireysel futbolda maç bu kadar seride biter'],
+                ['sayacSn', '⏱️', 'Sayaç süresi', 'Oyunlardaki atış sayacının varsayılan süresi'],
+                ['yuvaSeri', '🥚', 'Yumurta kaç seride büyüsün?', '10 yaş ve üstü için yaklaşık; 8-9 yaşta ×0,8, 7 ve altında ×0,6 seride (yaş ayarı ayrıca uygulanır)'],
+                ['partiTur', '🎉', 'Ok Partisi kaç tur?', 'Yeni partinin varsayılan tur sayısı'],
+                    ['sifirSaat', '⏰', 'Oyunlar ne zaman kendiliğinden baştan başlasın?', 'Son seriden bu kadar saat geçince bütün oyunlar sıfırlanır · 🥚 yumurtalar, gerçek skorlar ve kuşaklar hiç silinmez · Kapalı: yalnız gün değişince'],
+                ])
                 + '<div class="kmoa-alt">' + (ozel ? '<button onclick="kmOyunAyarMod(\'standart\')">↺ Standarda dön</button>' : '') + '<button class="birincil" onclick="kmOyunAyarKapat()">Tamam</button></div></div>';
             m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunAyarKapat(); });
             (document.fullscreenElement || document.body).appendChild(m);
         }
         function kmOyunAyarKapat() { let m = document.getElementById('km-oyun-ayar-modal'); if(m) m.remove(); }
+        // 2026-10-31 (kullanıcı: "oyunlar için özel özellikler ekle, oyunu yeniden başlat düğmesi de gelsin"): Ayarlar'da
+        // en üstte AÇIK oyunun kendi ayarları + 🔄 yeniden başlat; sonra 🔊 tüm oyunların sesi, 📜 gün sonu özeti; altta diğer oyunlar.
+        const KM_OYUN_AYAR_TEMA = { canavar: ['canavarSeri', 'canavarKalkan'], hapsirik: ['hapsirikSeri'], akvaryum: ['akvaryumSeri'], kale: ['kaleMod', 'kaleSeri'], futbol: ['futbolSeri'] };
+        function kmOyunAyarTemaAnahtar(t) {
+            if(KM_OYUN_AYAR_TEMA[t]) return KM_OYUN_AYAR_TEMA[t];
+            if(KM_OYUN_YOL_TEMALARI.indexOf(t) >= 0 || t === 'pist' || t === 'sisharita') return ['yolSeri', 'yolMod'];
+            return [];
+        }
+        function kmOyunAyarGovde(satir, liste) {
+            let t = _kmAktifSekme === 'oyunlar' ? _kmOyunAktifTema : null, th = t && KM_OYUN_TEMALAR[t], ozelK = t ? kmOyunAyarTemaAnahtar(t) : [];
+            let ust = th ? '<div class="kmoa-acik"><div class="kmoa-acik-bas"><b>🎯 Açık oyun: ' + th.ikon + ' ' + esc(th.ad) + '</b><button class="kmoa-yeniden" onclick="kmOyunAyarKapat(); kmOyunHepsiSifirla()">🔄 Oyunu yeniden başlat</button></div>'
+                + (ozelK.length ? liste.filter(function(r) { return ozelK.indexOf(r[0]) >= 0; }).sort(function(a, b) { return ozelK.indexOf(a[0]) - ozelK.indexOf(b[0]); }).map(function(r) { return satir.apply(null, r); }).join('') : '<p class="kmoa-not">Bu oyunun ayrı bir ayarı yok — aşağıdaki genel ayarlar geçerli.</p>') + kmOyunIcerikHTML(kmOyunIcerikTema(t)) + '</div>' : '';
+            let sessiz = kmOyunSessiz();
+            let araclar = '<div class="kmoa-arac"><button class="' + (sessiz ? '' : 'aktif') + '" onclick="kmOyunSesTumuDegis()"><b>' + (sessiz ? '🔇 Ses kapalı' : '🔊 Ses açık') + '</b><small>bütün oyunlar · spiker dahil · dokun: ' + (sessiz ? 'aç' : 'kapat') + '</small></button>'
+                + '<button onclick="kmOyunGunOzetiAc()"><b>📜 Bugünün oyun özeti</b><small>kim attı, hangi oyunda ne oldu · WhatsApp</small></button></div>';
+            let digerler = liste.filter(function(r) { return ozelK.indexOf(r[0]) < 0; }).map(function(r) { return satir.apply(null, r); }).join('');
+            let acikIc = t ? kmOyunIcerikTema(t) : null, icerikler = Object.keys(KM_OYUN_ICERIK).filter(function(o) { return o !== acikIc; }).map(function(o) { return kmOyunIcerikHTML(o, true); }).join('');
+            return ust + araclar + (th ? '<div class="kmoa-ara-bas">Diğer oyunlar ve genel ayarlar</div>' : '') + digerler + '<div class="kmoa-ara-bas">Diğer oyunların içeriği</div>' + icerikler;
+        }
+        // 🧩 OYUN İÇERİĞİ AÇ/KAPAT (2026-11-01, kullanıcı: "her oyunun içeriğini aç/kapat"). Cihaz ayarı 'dag_km_oyun_icerik'
+        // = { kale: { sapanci: false, … }, … } — yazılmayan her şey AÇIK. Oyun dosyaları window.kmOyunIcerik(oyun, ozellik) sorar.
+        // Düşman türleri bir sonraki dalgadan, diğerleri hemen geçerli. Standart/Özel modundan bağımsız (her zaman değişir).
+        const KM_OYUN_ICERIK = {
+            kale: { ad: '🏰 Kale Savunması', not: 'Kapatılan düşman sahnedeyse goblin olur · zırhlı/kalkanlı ve yavru ejderha yalnız Heyecanlı/Korkutucu\'da çıkar', liste: [
+                ['yarasa', '🦇', 'Yarasa'], ['sapanci', '🎯', 'Sapancı Goblin'], ['balcik', '🟢', 'Balçık (ikiye bölünür)'], ['hayalet', '👻', 'Hayalet'],
+                ['zirhli', '🛡️', 'Zırhlı Goblin + Kalkanlı Trol'], ['yavruejder', '🐉', 'Yavru Ejderha'], ['saman', '🧙', 'Goblin Şaman'], ['ejderha', '🐲', 'Ejderha (her 3. dalga)'],
+                ['ozelOk', '⚡', 'Özel oklar (yıldırım, buz, delici)'], ['atolye', '🔨', 'Atölye (altınla güçlendirme)'], ['konusma', '💬', 'Düşmanlar konuşsun']] },
+            yol: { ad: '🏝️ Yol oyunları', not: 'Yalnız "Yol oyunları heyecanı" Heyecanlı ya da Korkutucu iken', liste: [
+                ['kovalayan', '👾', 'Arkadan kovalayan'], ['kapi', '🚧', 'Sarı kapılar'], ['konusma', '💬', 'Karakterler konuşsun']] },
+            hapsirik: { ad: '🤧 Hapşırık', liste: [['gizli', '🤫', 'Gizli hassas nokta'], ['sahte', '😮', '"…hıh. Geçti!" şakası']] },
+            fener: { ad: '🏮 Fener Alayı', liste: [['bilgi', '📜', 'Cumhuriyet bilgi kartları']] }
+        };
+        function kmOyunIcerikHam() { try { return JSON.parse(localStorage.getItem('dag_km_oyun_icerik') || '{}') || {}; } catch(e) { return {}; } }
+        function kmOyunIcerik(oyun, ozellik) { let o = kmOyunIcerikHam()[oyun]; return !(o && o[ozellik] === false); }
+        window.kmOyunIcerik = kmOyunIcerik;
+        function kmOyunIcerikDegis(oyun, ozellik) {
+            let h = kmOyunIcerikHam(); h[oyun] = h[oyun] || {};
+            if(kmOyunIcerik(oyun, ozellik)) h[oyun][ozellik] = false; else delete h[oyun][ozellik];
+            try { localStorage.setItem('dag_km_oyun_icerik', JSON.stringify(h)); } catch(e) {}
+            try { if(oyun === 'yol' && typeof hyAyarUygula === 'function') hyAyarUygula(); } catch(e) {}
+            try { if(oyun === 'kale' && typeof kaleAyarUygula === 'function') kaleAyarUygula(); } catch(e) {}
+            kmOyunAyarAc();
+        }
+        function kmOyunIcerikTema(t) { return KM_OYUN_ICERIK[t] ? t : (KM_OYUN_YOL_TEMALARI.indexOf(t) >= 0 || t === 'pist') ? 'yol' : null; }
+        function kmOyunIcerikHTML(oyun, adli) {
+            let d = KM_OYUN_ICERIK[oyun]; if(!d) return '';
+            let kapali = d.liste.filter(function(x) { return !kmOyunIcerik(oyun, x[0]); }).length;
+            return '<div class="kmoa-icerik"><div class="kmoa-bas"><b>' + (adli ? d.ad + ' — içerik' : '🧩 Oyunun içeriği') + '</b><small>' + (d.not ? d.not + ' · ' : '') + 'dokun: aç / kapat' + (kapali ? ' · ' + kapali + ' kapalı' : '') + '</small></div><div class="kmoa-icerik-l">'
+                + d.liste.map(function(x) { let acik = kmOyunIcerik(oyun, x[0]); return '<button class="' + (acik ? 'acik' : '') + '" aria-pressed="' + acik + '" onclick="kmOyunIcerikDegis(\'' + oyun + '\',\'' + x[0] + '\')"><span>' + x[1] + '</span>' + esc(x[2]) + '<i>' + (acik ? 'Açık' : 'Kapalı') + '</i></button>'; }).join('') + '</div></div>';
+        }
+        // 🔊 Tek yerden ses: 'dag_km_oyun_sessiz' her oyunun kendi ses kontrolünden önce bakılır. Açınca oyunların kendi
+        // kapalı tercihleri de açılır ("Ses açık" gerçekten açık olsun).
+        function kmOyunSessiz() { try { return localStorage.getItem('dag_km_oyun_sessiz') === '1'; } catch(e) { return false; } }
+        function kmOyunSesTumuDegis() {
+            let kapat = !kmOyunSessiz();
+            try {
+                if(kapat) { localStorage.setItem('dag_km_oyun_sessiz', '1'); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e) {} }
+                else { localStorage.removeItem('dag_km_oyun_sessiz'); ['dag_kale_ses', 'dag_akv_ses', 'dag_fener_ses', 'dag_halat_ses', 'dag_hps_ses', 'dag_il_ses'].forEach(function(k) { localStorage.setItem(k, '1'); }); localStorage.setItem('dag_cnv_ses', '1'); _kmCnvSesAcik = true; }
+            } catch(e) {}
+            showToast(kapat ? '🔇 Bütün oyunların sesi kapandı' : '🔊 Bütün oyunların sesi açıldı', 'success');
+            kmOyunAyarAc();
+        }
+        // 📜 Gün sonu oyun özeti — bugünün gerçek serilerinden ve oyunların bugünkü kayıtlarından. Hep birlikte: atan herkes adıyla.
+        function kmOyunGunOzetiMetni() {
+            let bugun = bugunISO(), kn = _kmAktifKonum || 'varsayilan', atanlar = [], seri = 0, ok = 0, sari = 0;
+            (_kmListe || []).forEach(function(k) {
+                let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]; if(!sp) return;
+                let l = (sp.seriler || []).filter(function(s) { return s && s.tarih === bugun; });
+                (sp.kartGecmisi || []).forEach(function(kg) { if(kg && kg.tarih === bugun) l = l.concat((kg.seriler || []).filter(function(s) { return s && s.tarih === bugun && !l.some(function(x) { return x.seriId && x.seriId === s.seriId; }); })); });
+                if(!l.length) return;
+                atanlar.push(k.ad); seri += l.length;
+                l.forEach(function(s) { (s.oklar || []).forEach(function(v) { ok++; if(v === 'X' || v === '10' || v === '9') sari++; }); });
+            });
+            // ilk ad; aynı ilk adlı iki sporcu varsa soyadın baş harfi de (Ali Y., Ali K.)
+            let ilk = atanlar.map(kmOyunIlkAd); atanlar = atanlar.map(function(ad, i) { let p = String(ad).trim().split(/\s+/); return ilk.filter(function(x) { return x === ilk[i]; }).length > 1 && p.length > 1 ? ilk[i] + ' ' + p[p.length - 1].charAt(0) + '.' : ilk[i]; });
+            let oku = function(a) { try { let v = JSON.parse(localStorage.getItem(a + kn) || 'null'); return v && (v.tarih === bugun || v.gun === bugun) ? v : null; } catch(e) { return null; } };
+            let satirlar = [], k;
+            if((k = oku('dag_km_kale_')) && k.seri && ((k.temizlenen || 0) + (k.dusen || 0))) satirlar.push('🏰 Kale Savunması: ' + (k.temizlenen || 0) + ' dalga temizlendi · ' + (k.dusen || 0) + ' düşman düştü' + (k.ejderha ? ' · 🐲 ' + k.ejderha + ' ejderha' : '') + (k.kurtarma ? ' · 🛡️ ' + k.kurtarma + ' kez son anda' : ''));
+            if((k = oku('dag_km_akvaryum_')) && (k.dolanlar || []).length) satirlar.push('🐠 Akvaryum: ' + (k.dolanlar || []).length + ' akvaryum doldu');
+            if((k = oku('dag_km_hapsirik_')) && (k.hapsirtanlar || []).length) satirlar.push('🤧 Hapşırık: ' + (k.hapsirtanlar || []).length + ' yaratık hapşırdı');
+            if((k = oku('dag_km_fener_')) && k.seri && ((k.yanan || 0) || k.tur > 1)) satirlar.push('🏮 Fener Alayı: ' + (k.yanan || 0) + ' fener yandı' + (k.tur > 1 ? ' · ' + (k.tur - 1) + ' alay tamamlandı' : ''));
+            if((k = oku('dag_km_halat_')) && (k.gecmis || []).length) satirlar.push('🪢 Halat Çekme: ' + (k.gecmis || []).length + ' raunt oynandı');
+            if((k = oku('dag_km_il_')) && Object.keys(k.iller || {}).length) satirlar.push('🗺️ 81 İl: ' + Object.keys(k.iller || {}).length + ' il kapıldı');
+            if((k = oku('dag_km_canavar_')) && k.toplamHasar) satirlar.push('👹 Canavar Savaşı: ' + ((k.yenilenler || []).length ? (k.yenilenler || []).length + ' canavar devrildi · ' : '') + k.toplamHasar + ' ortak hasar');
+            try { if(typeof krHesapla === 'function') { let r = krHesapla(); if(r && r.o && r.o.tarih === bugun && r.kurtarilan.length) satirlar.push('🔓 Hayvan Kurtarma: ' + r.kurtarilan.length + ' hayvan kurtarıldı'); } } catch(e) {}
+            let yol = Object.keys(_kmOyunDurum || {}).filter(function(x) { return (_kmOyunDurum[x].frac || 0) > 0; }).length;
+            if(yol && KM_OYUN_YOL_TEMALARI.indexOf(_kmOyunAktifTema) >= 0) satirlar.push(KM_OYUN_TEMALAR[_kmOyunAktifTema].ikon + ' ' + KM_OYUN_TEMALAR[_kmOyunAktifTema].ad + ': ' + yol + ' sporcu yolda ilerledi');
+            return { atanlar: atanlar, seri: seri, ok: ok, sari: sari, satirlar: satirlar, tarih: bugun };
+        }
+        function kmOyunGunOzetiAc() {
+            let kut = document.querySelector('#km-oyun-ayar-modal .kmoa-kutu'); if(!kut) { kmOyunAyarAc(); kut = document.querySelector('#km-oyun-ayar-modal .kmoa-kutu'); } if(!kut) return;
+            let O = kmOyunGunOzetiMetni();
+            let govde = O.atanlar.length
+                ? '<div class="kmoa-ozet"><div class="kmoa-ozet-sayi"><span><b>' + O.atanlar.length + '</b>sporcu</span><span><b>' + O.seri + '</b>seri</span><span><b>' + O.ok + '</b>ok</span><span><b>' + O.sari + '</b>sarı</span></div>'
+                    + (O.satirlar.length ? '<ul>' + O.satirlar.map(function(s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>' : '<p class="kmoa-not">Bugün oyunlarda kayıtlı bir olay yok — seriler yine de sayıldı.</p>')
+                    + '<p class="kmoa-ozet-kim">🤝 Hep birlikte: ' + esc(O.atanlar.join(', ')) + '</p></div>'
+                : '<p class="kmoa-not">Bugün bu derste henüz seri atılmadı.</p>';
+            kut.innerHTML = '<div class="kmoa-ust"><h3>📜 Bugünün oyun özeti</h3><button onclick="kmOyunAyarKapat()" aria-label="Kapat">✕</button></div>' + govde
+                + '<div class="kmoa-alt"><button onclick="kmOyunAyarAc()">← Geri</button>' + (O.atanlar.length ? '<button onclick="kmOyunGunOzetiKopyala()">📋 Kopyala</button><button class="birincil" onclick="kmOyunGunOzetiWa()">💬 WhatsApp</button>' : '') + '</div>';
+        }
+        function kmOyunGunOzetiYazi() {
+            let O = kmOyunGunOzetiMetni();
+            return '🎮 *Bugün oyunlarda hep birlikte!* (' + formatTarih(O.tarih) + ')\n🏹 ' + O.atanlar.length + ' sporcu · ' + O.seri + ' seri · ' + O.ok + ' ok · ' + O.sari + ' sarı\n'
+                + (O.satirlar.length ? '\n' + O.satirlar.join('\n') + '\n' : '') + '\n🤝 ' + O.atanlar.join(', ') + '\n\n🏹 DAĞ Spor Kulübü';
+        }
+        function kmOyunGunOzetiWa() { window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(kmOyunGunOzetiYazi()), '_blank'); }
+        function kmOyunGunOzetiKopyala() { try { navigator.clipboard.writeText(kmOyunGunOzetiYazi()).then(function() { showToast('📋 Özet kopyalandı', 'success'); }, function() { showToast('Kopyalanamadı', 'error'); }); } catch(e) { showToast('Kopyalanamadı', 'error'); } }
         // 👤 Oyunlardan yeni sporcu (2026-10-17, kullanıcı: "bütün oyunların ayarlar kısmına sporcu ekle düğmesi koy, kaydettiğimizde
         // bu derse kaydedilsin mi diye sorsun"). Kayıt Yönetici › Sporcu Ekle ile AYNI kurallar (aynı isim başka grupta varsa yeni kayıt
         // açmaz, o kişiyi derse eklemeyi önerir; silinmiş kaydı geri alır; anında buluta gider). Sonra "Bu derse eklensin mi?" → evet:
@@ -19233,6 +19347,25 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .kmoa-mod button b{display:block;font-size:16px}.kmoa-mod button small{color:var(--text-muted,#9aa3b5);font-weight:700}
 .kmoa-mod button.aktif{border-color:var(--accent,#ff8a3d);background:color-mix(in srgb,var(--accent,#ff8a3d) 14%,transparent)}
 .kmoa-not{margin:0;font-size:13px;color:var(--text-muted,#9aa3b5)}
+.kmoa-acik{display:grid;gap:10px;padding:12px;border-radius:16px;border:2px solid var(--accent,#ff8a3d);background:color-mix(in srgb,var(--accent,#ff8a3d) 8%,transparent)}
+.kmoa-acik-bas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}.kmoa-acik-bas b{font-size:16px}
+.kmoa-yeniden{min-height:42px;padding:0 16px;border-radius:12px;border:0;background:var(--accent,#ff8a3d);color:#1a0d05;font:inherit;font-weight:900;cursor:pointer}
+.kmoa-arac{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kmoa-arac button{border:2px solid var(--border-color,#2a3346);background:transparent;color:inherit;border-radius:14px;padding:12px;cursor:pointer;text-align:left;font:inherit}
+.kmoa-arac button b{display:block;font-size:15px}.kmoa-arac button small{color:var(--text-muted,#9aa3b5);font-weight:700}
+.kmoa-arac button.aktif{border-color:color-mix(in srgb,var(--accent,#ff8a3d) 60%,transparent)}
+.kmoa-icerik{display:grid;gap:8px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--border-color,#2a3346)}
+.kmoa-icerik .kmoa-bas{display:grid}.kmoa-icerik .kmoa-bas small{color:var(--text-muted,#9aa3b5);font-weight:700}
+.kmoa-icerik-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.kmoa-icerik-l button{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 10px;border-radius:12px;border:1.5px solid var(--border-color,#2a3346);background:transparent;color:var(--text-muted,#9aa3b5);font:inherit;font-weight:800;font-size:13px;text-align:left;cursor:pointer;opacity:.75}
+.kmoa-icerik-l button span{font-size:18px}.kmoa-icerik-l button i{margin-left:auto;font-style:normal;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06)}
+.kmoa-icerik-l button.acik{color:var(--text-main,#fff);opacity:1;border-color:color-mix(in srgb,var(--accent,#ff8a3d) 55%,transparent);background:color-mix(in srgb,var(--accent,#ff8a3d) 8%,transparent)}
+.kmoa-icerik-l button.acik i{background:var(--accent,#ff8a3d);color:#1a0d05}
+.kmoa-ara-bas{font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted,#9aa3b5);margin-top:4px}
+.kmoa-ozet{display:grid;gap:10px}.kmoa-ozet ul{margin:0;padding-left:20px;display:grid;gap:6px;font-weight:700}
+.kmoa-ozet-sayi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kmoa-ozet-sayi span{display:grid;text-align:center;padding:10px 4px;border-radius:12px;background:color-mix(in srgb,var(--accent,#ff8a3d) 10%,transparent);font-size:12px;font-weight:700;color:var(--text-muted,#9aa3b5)}
+.kmoa-ozet-sayi b{font-size:22px;color:var(--text-main,#fff)}.kmoa-ozet-kim{margin:0;font-weight:700;line-height:1.5}
+@media (max-width:520px){.kmoa-arac{grid-template-columns:1fr}.kmoa-ozet-sayi{grid-template-columns:repeat(2,1fr)}}
 .kmoa-kisi{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--accent,#ff8a3d) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent,#ff8a3d) 35%,transparent)}
 .kmoa-kisi .kmoa-bas{display:grid}.kmoa-kisi .kmoa-bas small{color:var(--text-muted,#9aa3b5);font-weight:700}
 .kmoa-kisi-btn{display:flex;flex-wrap:wrap;gap:8px}
@@ -24305,7 +24438,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmCnvSesAcik) kmCnvSes('gorev');
         }
         function kmCnvSes(tip) {
-            if(!_kmCnvSesAcik) return;
+            if(!_kmCnvSesAcik || kmOyunSessiz()) return;
             try {
                 let AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
                 let ac = _kmCnvAC || (_kmCnvAC = new AC()); if(ac.state === 'suspended') ac.resume();
@@ -29279,6 +29412,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // Tohumlama: sıralamaya göre 1–N, 2–(N−1), ... Tek sayıda takımda 1 numara bay (havuzda kalır,
         // eşleştirme ekranı zaten "açıkta kalan otomatik üst tura çıkar" diye gösteriyor).
         function kmYarismaSiralamaEslestir() {
+            // sıralama Yarışma'nın 🏹 turundan geldiyse (kmYarismaSiralamadanKur) aynı tohumlarla yeniden eşleştir
+            if(_kmYarismaSiralama && _kmYarismaSiralama.kaynak === 'yz') { kmYarismaTohumdanEslestir(_kmYarismaSiralama.siralama.filter(function(i) { return _kmTakimlar[i] && _kmTakimlar[i].uyeler.length; })); _kmYarismaBracketGorunum = 'eslestirme'; showToast('Sıralama turuna göre yeniden eşleşti', 'success'); return kmYarismaCiz(); }
             let v = kmYarismaSiralamaVerisi(); if(!v) return;
             if(!v.hepsiTamam && !confirm('Herkes seri sayısını tamamlamadı. Mevcut toplamlara göre sıralayıp eşleştirelim mi?')) return;
             let tohumlar = v.sirali.map(function(x) { return x.idx; });
@@ -29302,13 +29437,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmYarismaSiralamaPanelHTML() {
             let s = _kmYarismaSiralama;
             if(s && s.tamam && s.siralama) {
-                let ozet = s.siralama.map(function(idx, i) { let t = _kmTakimlar[idx]; return t ? `<span style="color:${t.renk}; font-weight:800;">${i + 1}. ${esc(t.ad)}</span>` : ''; }).join(' <span style="color:var(--text-muted);">·</span> ');
+                let ozet = s.siralama.map(function(idx, i) { let t = _kmTakimlar[idx]; return t ? `<span style="color:${t.renk}; font-weight:800;">${i + 1}. ${esc(t.ad)}${s.guc ? ' <span style="color:var(--text-muted); font-weight:600;">(' + s.guc[idx] + 'p · ' + t.uyeler.map(function(u) { return esc(kmOyunIlkAd(u.ad)); }).join(', ') + ')</span>' : ''}</span>` : ''; }).join(s.guc ? '<br>' : ' <span style="color:var(--text-muted);">·</span> ');
                 return `<div style="background:var(--bg-panel); border:1px solid var(--gold); border-radius:12px; padding:10px 12px; margin-bottom:12px;">
-                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:6px;">🎯 Sıralama turu tamamlandı — tohumlar</div>
+                    <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-bottom:6px;">${s.kaynak === 'yz' ? '🏹 ' + esc(s.etiket || 'Sıralama turu') + ' — takım gücüne göre tohumlar' : '🎯 Sıralama turu tamamlandı — tohumlar'}</div>
                     <div style="font-size:11px; line-height:1.7;">${ozet}</div>
                     <div style="display:flex; gap:6px; margin-top:8px;">
                         <div onclick="kmYarismaSiralamaEslestir()" style="flex:1; text-align:center; cursor:pointer; font-size:10.5px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:6px;">↻ Sıralamaya göre yeniden eşleştir</div>
-                        <div onclick="kmYarismaSiralamaBaslat(${s.seriSayisi})" style="flex:1; text-align:center; cursor:pointer; font-size:10.5px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:6px;">🎯 Yeni sıralama turu</div>
+                        <div onclick="kmYarismaSiralamaBaslat(${s.seriSayisi || 2})" style="flex:1; text-align:center; cursor:pointer; font-size:10.5px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:6px;">🎯 Yeni sıralama turu</div>
                     </div>
                 </div>`;
             }
@@ -29317,6 +29452,74 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">🎯 Sıralama Turu <span style="font-weight:600; text-transform:none; letter-spacing:0;">(isteğe bağlı)</span> ${_kmBilgi('tohum', true)}</div>
                 <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:8px;">Her sporcu kısa bir tur atar, bracket gerçek WA gibi tohumlanır (1–8, 2–7 …). Atlayıp elle/rastgele de eşleştirebilirsin.</div>
                 <div style="display:flex; gap:6px;">${btn(1)}${btn(2)}${btn(3)}</div>
+            </div>`;
+        }
+        // 🏹→⚔️ SIRALAMA TURUNDAN TAKIM MAÇI (2026-11-01, kullanıcı: "grup yarışmayı düzeltelim; var olan yarışma sonrası
+        // sıralama ve eşleşme olsun" → "takım maçları sıralamaya göre"). Yarışma'nın 🏹 Sıralama turu sonucu (süren/biten tur,
+        // yoksa bugünün arşivi) okunur; takımlar YILAN dağıtımla dengeli kurulur (1→A, 2→B, 3→C, 4→C, 5→B, 6→A …), takım gücü =
+        // üyelerin tur puanı toplamı; bracket bu güce göre tohumlanır (1–N, 2–(N−1); tek sayıda takımda 1. tohum bay).
+        function kmYarismaSiralamaKaynagi() {
+            let sat = function(k, toplam) { let i = k.indexOf('|'), g = k.slice(0, i), ad = k.slice(i + 1); return turnuvaDB[g] && turnuvaDB[g][ad] ? { g: g, ad: ad, toplam: toplam || 0 } : null; };
+            try {
+                if(typeof yzOku === 'function' && typeof yzSiralama === 'function') {
+                    let o = yzOku(), d = o.durum;
+                    if(d && (d.asama === 'tur' || d.asama === 'bitti') && !(d.ayar && d.ayar.dogrudan) && (d.katilimci || []).length) {
+                        let l = yzSiralama(o).filter(function(r) { return r.girilen > 0 || r.toplam > 0; }).map(function(r) { return sat(r.k, r.toplam); }).filter(Boolean);
+                        if(l.length >= 2) return { liste: l, t: d.basla, etiket: (d.asama === 'tur' ? 'Süren sıralama turu' : 'Son sıralama turu') + ' · ' + (d.ayar.mesafe || '') };
+                    }
+                }
+                if(typeof yzArsivOku === 'function') {
+                    let bugun = bugunISO(), a = yzArsivOku().filter(function(r) { return r.tarih === bugun && (r.sporcular || []).some(function(s) { return s.toplam > 0; }); }).sort(function(x, y) { return (y.g || y.t) - (x.g || x.t); })[0];
+                    if(a) { let l = a.sporcular.slice().sort(function(x, y) { return (x.sira || 99) - (y.sira || 99) || y.toplam - x.toplam; }).map(function(s) { return sat(s.k, s.toplam); }).filter(Boolean); if(l.length >= 2) return { liste: l, t: a.t, etiket: 'Bugünün sıralama turu · ' + (a.mesafe || '') }; }
+                }
+            } catch(e) { console.warn('sıralama kaynağı', e); }
+            return null;
+        }
+        function kmYarismaSiralamadanKur() {
+            let k = kmYarismaSiralamaKaynagi(); if(!k) return showToast('Bugün bitmiş ya da süren bir sıralama turu yok.', 'warning');
+            let f = Math.max(1, Math.min(5, _kmYarismaFormat || 2)), n = k.liste.length;
+            let T = Math.max(2, Math.min(5, Math.ceil(n / f)));
+            _kmRakipTipi = 'gercek'; _kmYarismaTakimSayisi = T;
+            let eski = _kmTakimlar; _kmTakimlar = _kmTakimlarOlustur(T);
+            _kmTakimlar.forEach(function(t, i) { if(eski[i] && eski[i].ad && !/^Takım \d+$/.test(eski[i].ad)) t.ad = eski[i].ad; });
+            // derste olmayan sıralama sporcusu derse eklenir (takımda görünsün, skoru kaydedilsin)
+            let eklenen = 0;
+            k.liste.slice(0, T * f).forEach(function(s) { if(!_kmListe.some(function(x) { return x.g === s.g && x.ad === s.ad; })) { _kmListe.push({ g: s.g, ad: s.ad }); eklenen++; } });
+            if(eklenen) { try { _kmListeKaydet(); } catch(e) {} }
+            // 🐍 yılan dağıtım
+            let guc = _kmTakimlar.map(function() { return 0; });
+            k.liste.slice(0, T * f).forEach(function(s, i) {
+                let tur = Math.floor(i / T), p = i % T, ti = tur % 2 === 0 ? p : T - 1 - p;
+                _kmTakimlar[ti].uyeler.push({ g: s.g, ad: s.ad }); guc[ti] += s.toplam;
+            });
+            let acikta = Math.max(0, n - T * f);
+            // tohumlama: takım gücüne göre
+            let tohum = _kmTakimlar.map(function(t, i) { return i; }).filter(function(i) { return _kmTakimlar[i].uyeler.length; }).sort(function(a, b) { return guc[b] - guc[a] || a - b; });
+            _kmYarismaSiralama = { seriSayisi: 0, snapshot: {}, tamam: true, siralama: tohum.slice(), kaynak: 'yz', guc: guc, etiket: k.etiket };
+            kmYarismaTohumdanEslestir(tohum);
+            _kmYarismaBracketGorunum = 'eslestirme';
+            showToast('⚖️ ' + T + ' dengeli takım kuruldu, sıralamaya göre eşleşti' + (acikta ? ' · ' + acikta + ' sporcu açıkta (takımlar dolu)' : ''), acikta ? 'warning' : 'success');
+            kmYarismaCiz();
+        }
+        function kmYarismaTohumdanEslestir(tohum) {
+            let havuz = tohum.slice();
+            if(havuz.length % 2 === 1) havuz.shift(); // 1 numaralı tohum bay
+            _kmYarismaBracketEslesmeler = [];
+            for(let i = 0; i < Math.floor(havuz.length / 2); i++) _kmYarismaBracketEslesmeler.push({ aIdx: havuz[i], bIdx: havuz[havuz.length - 1 - i] });
+            _kmYarismaBracketSecili = null;
+            _kmYarismaAktifSporcuKey = null; _kmYarismaSeriGirisleri = []; _kmYarismaSonGiris = null;
+        }
+        function kmYarismaSiralamadanKartHTML() {
+            if(_kmRakipTipi === 'hayali') return '';
+            let k = kmYarismaSiralamaKaynagi(); if(!k) return '';
+            let f = Math.max(1, Math.min(5, _kmYarismaFormat || 2)), T = Math.max(2, Math.min(5, Math.ceil(k.liste.length / f))), saat = k.t ? new Date(k.t).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+            let ilk = k.liste.slice(0, 6).map(function(s, i) { return '<span style="white-space:nowrap;"><b>' + (i + 1) + '.</b> ' + esc(kmOyunIlkAd(s.ad)) + ' <span style="color:var(--text-muted);">' + s.toplam + '</span></span>'; }).join(' · ');
+            return `<div style="background:linear-gradient(135deg, color-mix(in srgb, var(--gold) 14%, var(--bg-panel)), var(--bg-panel)); border:1.5px solid var(--gold); border-radius:14px; padding:12px; margin-bottom:12px;">
+                <div style="font-size:13px; font-weight:900; margin-bottom:2px;">🏹 Sıralama turuna göre kur</div>
+                <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:8px;">${esc(k.etiket)}${saat ? ' · ' + saat : ''} · ${k.liste.length} sporcu</div>
+                <div style="font-size:11px; line-height:1.7; margin-bottom:10px;">${ilk}${k.liste.length > 6 ? ' …' : ''}</div>
+                <button onclick="kmYarismaSiralamadanKur()" style="width:100%; padding:12px; border-radius:11px; border:none; background:var(--gold); color:#3d2c00; font-weight:900; font-size:13px; cursor:pointer;">⚖️ ${f === 1 ? 'Sıralamaya göre ' + T + ' sporcu eşleştir' : T + ' dengeli takım (' + f + 'v' + f + ') kur + eşleştir'}</button>
+                <div style="font-size:10px; color:var(--text-muted); margin-top:6px;">Yılan dağıtım: 1. A'ya, 2. B'ye … sonra ters sırayla — takımlar güç olarak dengeli. Eşleşme takım gücüne göre: 1. ile sonuncu, 2. ile sondan ikinci. Takım boyunu üstteki 1v1–5v5'ten seç (1v1 = bireysel, en çok 5 kişi); kurduktan sonra elle düzeltebilirsin.</div>
             </div>`;
         }
         function kmYarismaBracketEslestirmeyeGec() {
@@ -29892,6 +30095,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="display:flex; gap:6px; margin-bottom:10px;">${rakipTipiBtn('gercek','🧑‍🤝‍🧑 Gerçek Takım')}${rakipTipiBtn('hayali','🤖 Hayali Rakip')}</div>
                 ${_kmRakipTipi === 'gercek' ? `<div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 6px 2px;">Kaç Takım?</div><div style="display:flex; gap:6px; margin-bottom:8px;">${[2,3,4,5].map(takimSayisiBtn).join('')}</div>` : ''}
                 <div style="display:flex; gap:6px; margin-bottom:8px;">${[1,2,3,4,5].map(formatBtn).join('')}</div>
+                ${kmYarismaSiralamadanKartHTML()}
                 <div onclick="kmYarismaRastgeleKaristir()" style="text-align:center; cursor:pointer; font-size:11px; font-weight:800; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:9px; padding:7px; margin-bottom:14px;">🎲 Otomatik Dağıt</div>
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">${takimKolonlarHTML}</div>
                 <div style="font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 2px;">Atanmamış Sporcular (dokun → takıma ekle)</div>

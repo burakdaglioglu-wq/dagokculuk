@@ -91,6 +91,8 @@ const HY_SOZ = {
 };
 
 function hyMod() { try { let m = kmOyunAyar().yolMod || 1; return m >= 1 && m <= 3 ? m : 1; } catch (e) { return 1; } }
+// 🧩 Ayarlar › Oyunun içeriği (2026-11-01): kovalayan / sarı kapılar / konuşma tek tek kapatılabilir
+function hyIc(k) { try { return typeof kmOyunIcerik !== 'function' || kmOyunIcerik('yol', k); } catch (e) { return true; } }
 function hyAcik(t) { return !!HY_TEMALAR[t] && hyMod() >= 2 && !_kmOyunTakimModu; }
 function hyAnahtar(t) { return 'dag_km_hy_' + t + '_' + (_kmAktifKonum || 'varsayilan'); }
 function hyKey(s) { return s.g + '|' + s.ad; }
@@ -99,7 +101,7 @@ function hyOlcek(t) { return HY_TEMALAR[t].olcek || 1; }
 function hyTur(t) { let c = HY_TEMALAR[t]; try { return c.tur ? c.tur() : 1; } catch (e) { return 1; } }
 // Kapılar her turda tekrar eder (yalnız Pist'te birden çok tur var)
 function hyKapilar(t) {
-    if (!HY_TEMALAR[t].kapi) return [];
+    if (!HY_TEMALAR[t].kapi || !hyIc('kapi')) return [];
     let l = [], k = HY_KAPI[hyMod()] || []; for (let tur = 0; tur < hyTur(t); tur++) k.forEach(function (g) { l.push(tur + g); }); return l;
 }
 // Bitirmiş sporcu kovalanmaz; sıradaki seride yolu baştan başlar.
@@ -136,6 +138,7 @@ function hySeriSonu(t, s, h) {
     let st = hyOku(t), k = hyKey(s);
     if (st.atanlar.indexOf(k) === -1) st.atanlar.push(k);
     if (h && h.kapi) setTimeout(function () { hyKapiGoster(t, h); }, 150);
+    if (!hyIc('kovalayan')) { st.atanlar = []; hyYaz(t, st); hyGuncelle(t); return; }
     let roster = (_kmOyunRosterCache || []).map(hyKey), turBitti = roster.length && roster.every(function (x) { return st.atanlar.indexOf(x) !== -1; });
     if (!turBitti) { hyYaz(t, st); hyGuncelle(t); return; }
     let m = hyMod(), o = hyOlcek(t), eski = st.kov;
@@ -250,6 +253,7 @@ function hyBantSVG(y) {
 // Konumlar: kovalayan + tehlike çerçevesi (kovalayanın bir adım önündeki sporcu varsa)
 function hyGuncelle(t) {
     let c = HY_TEMALAR[t], kg = document.getElementById('hy-kov'); if (!c || !kg || !hyAcik(t)) return;
+    if (!hyIc('kovalayan')) { kg.innerHTML = ''; hyVinyet(t, false); return; }
     let st = hyOku(t), p = c.nokta(st.kov), sayi = st.atanlar.length ? (st.atanlar.length + '/' + _kmOyunRosterCache.length + ' attı') : 'bekliyor';
     if (c.bant) {
         kg.innerHTML = '<g id="hy-kov-g" transform="translate(0 ' + (p.y - 400).toFixed(1) + ')">' + hyBantSVG(400) + '</g>'
@@ -262,7 +266,7 @@ function hyGuncelle(t) {
     }
     hyVinyet(t, hyTehlikedekiler(t, st).length > 0);
 }
-function hyTehlikedekiler(t, st) { let a = HY_ADIM[hyMod()] * hyOlcek(t); return hyAktifler(t).filter(function (o) { return o.frac > st.kov && o.frac <= st.kov + a; }); }
+function hyTehlikedekiler(t, st) { if (!hyIc('kovalayan')) return []; let a = HY_ADIM[hyMod()] * hyOlcek(t); return hyAktifler(t).filter(function (o) { return o.frac > st.kov && o.frac <= st.kov + a; }); }
 function hyVinyet(t, acik) {
     let panel = document.getElementById(HY_TEMALAR[t].panel); if (!panel) return;
     let v = document.getElementById('hy-vinyet');
@@ -272,7 +276,7 @@ function hyVinyet(t, acik) {
 }
 // Konuşma balonu (SVG, ~3 sn): x,y noktasının üstünde
 function hyKonus(t, x, y, metin, tur) {
-    let g = document.getElementById('hy-balonlar'); if (!g || !metin) return;
+    let g = document.getElementById('hy-balonlar'); if (!g || !metin || !hyIc('konusma')) return;
     let w = Math.max(120, Math.min(330, metin.length * 8.6 + 30)), bx = Math.max(8, Math.min(1192 - w, x - w / 2)), by = Math.max(6, y - 74);
     let el = document.createElementNS('http://www.w3.org/2000/svg', 'g'); el.setAttribute('class', 'hy-balon ' + (tur || ''));
     let kx = Math.max(bx + 14, Math.min(bx + w - 14, x));

@@ -27,7 +27,7 @@
 
     /* ---------------- SES ---------------- */
     let AC = null;
-    function sesAcik() { try { return localStorage.getItem('dag_halat_ses') !== '0'; } catch (e) { return true; } }
+    function sesAcik() { try { return localStorage.getItem('dag_km_oyun_sessiz') !== '1' && localStorage.getItem('dag_halat_ses') !== '0'; } catch (e) { return true; } }
     function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
     function ton(f1, f2, dur, tip, vol, gec) {
         const a = ac(); if (!a || !sesAcik()) return; const t = a.currentTime + (gec || 0), o = a.createOscillator(), g = a.createGain();

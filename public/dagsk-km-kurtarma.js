@@ -132,7 +132,7 @@ function krYeniOyun() {
     }, 'Yeni oyun', 'Vazgeç');
 }
 function krTamEkran() { let el = document.getElementById('kr-kok'); if (!el) return; if (document.fullscreenElement) { document.exitFullscreen(); return; } try { let p = el.requestFullscreen(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
-let _krSes = null; function krSes(f, d) { try { _krSes = _krSes || new (window.AudioContext || window.webkitAudioContext)(); let o = _krSes.createOscillator(), g = _krSes.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.1, _krSes.currentTime); g.gain.exponentialRampToValueAtTime(0.001, _krSes.currentTime + d); o.connect(g).connect(_krSes.destination); o.start(); o.stop(_krSes.currentTime + d); } catch (e) {} }
+let _krSes = null; function krSes(f, d) { if (localStorage.getItem('dag_km_oyun_sessiz') === '1') return; try { _krSes = _krSes || new (window.AudioContext || window.webkitAudioContext)(); let o = _krSes.createOscillator(), g = _krSes.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.1, _krSes.currentTime); g.gain.exponentialRampToValueAtTime(0.001, _krSes.currentTime + d); o.connect(g).connect(_krSes.destination); o.start(); o.stop(_krSes.currentTime + d); } catch (e) {} }
 function krPencere(html) {
     document.querySelectorAll('.kr-katman').forEach(function (x) { x.remove(); });
     let kok = document.getElementById('kr-kok') || document.body, k = document.createElement('div'); k.className = 'kr-katman';

@@ -16,6 +16,7 @@
     const $ = (id) => document.getElementById(id);
     const NS = 'http://www.w3.org/2000/svg';
     function bugun() { return typeof bugunISO === 'function' ? bugunISO() : new Date().toISOString().slice(0, 10); }
+const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIcerik('fener', k); } catch (e) { return true; } }; // 🧩 Ayarlar › Oyunun içeriği
     function konum() { return (typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum) ? _kmAktifKonum : 'varsayilan'; }
     function ilkAd(ad) { return typeof kmOyunIlkAd === 'function' ? kmOyunIlkAd(ad) : String(ad).split(' ')[0]; }
     function kacis(t) { return typeof esc === 'function' ? esc(t) : String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -36,7 +37,7 @@
 
     /* ---------------- SES ---------------- */
     let AC = null;
-    function sesAcik() { try { return localStorage.getItem('dag_fener_ses') !== '0'; } catch (e) { return true; } }
+    function sesAcik() { try { return localStorage.getItem('dag_km_oyun_sessiz') !== '1' && localStorage.getItem('dag_fener_ses') !== '0'; } catch (e) { return true; } }
     function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
     function ton(f1, f2, dur, tip, vol, gec) {
         const a = ac(); if (!a || !sesAcik()) return; const t = a.currentTime + (gec || 0), o = a.createOscillator(), g = a.createGain();
@@ -202,7 +203,7 @@
             if (tamam) { st.yanan += n; return; } // tur bittikten sonraki oklar yeni turun fenerleri
             const once = st.yanan; st.yanan += n;
             const o = { v: v, n: n, bas: once, son: Math.min(HEDEF, st.yanan), x: v === 'X' };
-            o.bilgi = BILGI.filter((b) => once < b[0] && st.yanan >= b[0]).pop() || null;
+            o.bilgi = !ic('bilgi') ? null : BILGI.filter((b) => once < b[0] && st.yanan >= b[0]).pop() || null;
             if (st.yanan >= HEDEF) {
                 const sira = Object.entries(st.katki).sort((a, b) => b[1] - a[1])[0];
                 tamam = { tur: st.tur, ad: s.ad, g: s.g, i: i, enCok: sira ? sira[0] : null };
