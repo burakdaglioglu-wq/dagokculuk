@@ -29,9 +29,9 @@ export default async function ({ log }) {
     esit(JSON.stringify(t), JSON.stringify([[sec[0], sec[7]], [sec[1], sec[6]], [sec[2], sec[5]], [sec[3], sec[4]]]), 'takımlar tur puanına göre yılan dağıtılmadı');
     dogrula(/🏹 530p/.test(await p.locator('.yz-sk-takimlar').textContent()), 'takım kartında tur puanı yok');
     // kapat → karne ortalamasına döner, açıklama değişir
-    await p.locator('.yz-sk-sira button').click(); await p.waitForTimeout(200);
+    await p.locator('.yz-sk-sira button', { hasText: 'Karne ortalamasına göre' }).click(); await p.waitForTimeout(200);
     dogrula(await p.evaluate(() => _yzK.sira === false && /kapalı/.test(document.querySelector('.yz-sk-sira').textContent)), 'sıralama kapanmadı');
-    await p.locator('.yz-sk-sira button').click(); await p.waitForTimeout(200);
+    await p.locator('.yz-sk-sira button', { hasText: 'Sıralama turuna göre' }).click(); await p.waitForTimeout(200);
     // düello, 5 sporcu: 1. bay, 2–5, 3–4
     const d = await p.evaluate((sec) => {
       _kmListe = sec.slice(0, 5).reverse().map((k) => { const i = k.indexOf('|'); return { g: k.slice(0, i), ad: k.slice(i + 1) }; });
