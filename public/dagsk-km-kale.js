@@ -271,7 +271,7 @@
     }
     // Ön surdaki çatlaklar (⚔️ taş)
     function catlakSVG(n) {
-        const C = ['M327 170 l-9 14 l7 10 l-8 16 l5 12', 'M300 224 l10 12 l-8 12 l9 14', 'M333 246 l-11 14 l8 12 l-6 14'];
+        const C = ['M322 226 l-9 14 l7 10 l-8 16 l5 12', 'M296 262 l10 12 l-8 12 l9 14', 'M330 300 l-11 14 l8 12 l-6 14']; // sur yüzünde, kapının üstü
         return C.slice(0, n).map((d) => `<path d="${d}" fill="none" stroke="#2a2030" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
     }
 
@@ -404,12 +404,33 @@
         for (let k = 0; k < S; k++) m += `<circle cx="${(k - (S - 1) / 2) * 15}" cy="0" r="5.5" fill="${k < n ? '#ff5f1f' : '#0007'}" stroke="${k < n ? '#ffd23f' : '#ffffff55'}" stroke-width="1.5"/>`;
         return m;
     }
-    function surHTML() {
-        const dis = (y, renk, koyu) => { let m = ''; for (let x = -400; x < 335; x += 30) m += `<rect x="${x}" y="${y - 16}" width="18" height="18" fill="${renk}"/>`; return `<rect x="-400" y="${y}" width="735" height="${560 - y}" fill="${renk}"/>${m}<path d="M-400 ${y + 1} H335" stroke="${koyu}" stroke-width="3"/>`; };
-        let tas = ''; for (let y = 240; y < 500; y += 26) for (let x = -400 + ((y / 26) % 2) * 22; x < 293; x += 44) tas += `<rect x="${x}" y="${y}" width="42" height="24" rx="3" fill="none" stroke="#00000018" stroke-width="2"/>`;
-        return dis(110, '#5d6478', '#4a5063') + dis(160, '#6f7790', '#5a6178') + dis(210, '#858da6', '#6c7390') + tas
-            + '<path d="M250 500 v-64 a36 36 0 0 1 72 0 v64Z" fill="#3a2a1e"/><path d="M256 500 v-60 M268 500 v-70 M280 500 v-72 M292 500 v-72 M304 500 v-70 M316 500 v-60" stroke="#24180f" stroke-width="3"/>'
-            + '<rect x="-10" y="40" width="6" height="74" fill="#5a4030"/><path id="kale-bayrak" class="kale-bayrak" d="M-4 42 l46 14 l-46 14Z" fill="#ffd23f"/>';
+    // 🏰 Masal Kalesi (2026-11-02, kullanıcı taslaktan 3'ü seçti): açık taş sur, arkada mavi konik çatılı iki kule + bayraklar,
+    // ışıklı kemerli pencereler, çocuk sıraları taş balkonlarda (eskiden üç kat dolu gri sur). Yerleşim aynı: çocuk sıraları
+    // y 205/155/105 (cocukXY), sur üstü 210, kapı 250–322; 😈 gecede taş koyu, pencereler daha sıcak.
+    function surHTML(satir) {
+        const g = _gece, tas = g ? '#6f6a7c' : '#d3ccbd', derz = g ? '#575264' : '#ada593', tasA = g ? '#7b7689' : '#ddd6c8', cati = g ? '#3b2f73' : '#3f6fd8', catiG = g ? '#30265f' : '#335cc0', isik = g ? '#ffb347' : '#ffcf6a';
+        const ust = 210 - (Math.max(1, satir) - 1) * 50, kuleUst = Math.min(130, ust - 16);
+        const pen = (x, y, w) => `<path d="M${x} ${y} v-${w * .9} a${w / 2} ${w / 2} 0 0 1 ${w} 0 v${w * .9}Z" fill="${isik}"/><path d="M${x} ${y} v-${w * .9} a${w / 2} ${w / 2} 0 0 1 ${w} 0 v${w * .9}Z" fill="none" stroke="${derz}" stroke-width="3"/>`;
+        const kule = (x, w, renk, bayrakId) => {
+            let p = ''; for (let y = kuleUst + 60; y < 205; y += 62) p += pen(x + w / 2 - 8, y, 16);
+            return `<rect x="${x}" y="${kuleUst}" width="${w}" height="${560 - kuleUst}" fill="url(#kale-tas)"/>${p}`
+                + `<path d="M${x - 9} ${kuleUst + 2} L${x + w / 2} ${kuleUst - 72} L${x + w + 9} ${kuleUst + 2}Z" fill="${cati}"/><path d="M${x - 9} ${kuleUst + 2} L${x + w / 2} ${kuleUst - 72} L${x + w / 2} ${kuleUst + 2}Z" fill="${catiG}"/>`
+                + `<rect x="${x + w / 2 - 2.5}" y="${kuleUst - 120}" width="5" height="50" fill="#5a4030"/><path${bayrakId ? ' id="kale-bayrak"' : ''} class="kale-bayrak" d="M${x + w / 2 + 2.5} ${kuleUst - 118} l42 11 l-42 12Z" fill="${renk}"/>`;
+        };
+        const balkon = (y) => {
+            let s = ''; for (let x = -34; x < 330; x += 18) s += `<rect x="${x}" y="${y - 15}" width="3.5" height="15" fill="${tasA}"/>`;
+            let k = ''; for (let x = -30; x < 330; x += 36) k += `<path d="M${x} ${y + 10} q9 14 18 0Z" fill="${derz}"/>`;
+            return s + `<rect x="-40" y="${y - 17}" width="370" height="4" rx="2" fill="${tasA}"/><rect x="-40" y="${y}" width="370" height="11" rx="3" fill="${tasA}"/><rect x="-40" y="${y + 9}" width="370" height="2" fill="${derz}"/>` + k;
+        };
+        let bal = ''; for (let r = Math.max(1, satir) - 1; r >= 1; r--) bal += balkon(210 - r * 50);
+        let mz = ''; for (let x = -400; x < 335; x += 30) mz += `<path d="M${x} 214 v-15 h18 v15Z" fill="url(#kale-tas)"/>`;
+        return `<defs><pattern id="kale-tas" width="36" height="22" patternUnits="userSpaceOnUse"><rect width="36" height="22" fill="${tas}"/><path d="M0 .5 H36 M0 11 H36 M18 0 V11 M0 11 V22 M36 11 V22" stroke="${derz}" stroke-width="2"/></pattern></defs>`
+            + kule(2, 58, '#e0569b', false) + kule(196, 58, '#ffd23f', true) + bal
+            + `<rect x="-400" y="212" width="735" height="350" fill="url(#kale-tas)"/>${mz}<rect x="-400" y="210" width="735" height="5" fill="${derz}"/>`
+            + pen(40, 330, 24) + pen(140, 330, 24)
+            + `<path d="M250 500 v-64 a36 36 0 0 1 72 0 v64Z" fill="#5a3a24"/><path d="M250 500 v-64 a36 36 0 0 1 72 0 v64Z" fill="none" stroke="${derz}" stroke-width="7"/>`
+            + `<path d="M286 400 V500" stroke="#3e2410" stroke-width="3"/><circle cx="278" cy="462" r="3" fill="#ffd23f"/><circle cx="294" cy="462" r="3" fill="#ffd23f"/>`
+            + [236, 336].map((x) => `<g transform="translate(${x} 424)"><rect x="-2.5" y="0" width="5" height="16" fill="#4a3020"/><path class="kale-mesale" d="M0 1 q-7 -9 0 -19 q7 10 0 19Z" fill="#ffb02e"/><circle cy="-8" r="15" fill="#ffb02e" opacity=".18"/></g>`).join('');
     }
     function sahneHTML(st) {
         let cocuk = '';
@@ -431,7 +452,7 @@
           <path d="M330 492 Q600 470 1400 486" fill="none" stroke="#b08a5a" stroke-width="46" stroke-linecap="round" opacity=".85"/>
           ${atolyeSahne(st, 'hendek')}
           <g id="kale-dusmanlar" class="${st.donma > 0 ? 'kale-donuk' : ''}">${st.dusmanlar.map(dusmanSVG).join('')}</g>
-          <g id="kale-sur">${surHTML()}<g id="kale-catlak">${catlakSVG(st.catlak || 0)}</g>${atolyeSahne(st, 'mancinik')}</g>
+          <g id="kale-sur">${surHTML(Math.ceil(liste().length / 6))}<g id="kale-catlak">${catlakSVG(st.catlak || 0)}</g>${atolyeSahne(st, 'mancinik')}</g>
           <g id="kale-cocuklar">${cocuk}</g>
           <g id="kale-mermi">${st.mermi ? mermiAsili(st.mermi) : ''}</g><g id="kale-bag"></g><g id="kale-ucan"></g><g id="kale-pop"></g>
         </svg>
@@ -999,6 +1020,7 @@
 .kale-geliyor{animation:kaleGeliyor 1.1s ease-out}@keyframes kaleGeliyor{from{transform:translateX(320px);opacity:0}}
 .kale-bayrak{transform-box:fill-box;transform-origin:0 50%;animation:kaleBayrak 1.8s ease-in-out infinite}@keyframes kaleBayrak{50%{transform:scaleX(.82) skewY(4deg)}}
 .kale-bayrak-sevin{animation:kaleBayrak .3s ease-in-out 10}
+.kale-mesale{transform-box:fill-box;transform-origin:50% 100%;animation:kaleMesale .5s ease-in-out infinite alternate}@keyframes kaleMesale{to{transform:scaleY(1.3) scaleX(.85)}}
 /* ⚔️/😈 heyecan */
 .kale-bayrak.kale-bayrak-dus{animation:kaleBayrakDus 1.2s ease-in forwards}@keyframes kaleBayrakDus{to{transform:translateY(64px) rotate(80deg);opacity:.35}}
 #kale-sur.kale-yikil{animation:kaleYikil 1.8s ease-in forwards;transform-box:fill-box;transform-origin:50% 100%}
