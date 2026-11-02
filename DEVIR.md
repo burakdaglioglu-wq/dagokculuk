@@ -5482,3 +5482,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **📦 Paket:** öğrenci sayfasında "Paket (kaç derslik)" + "Paket başlangıcı"; yapılan dersler (geldi+telafi, başlangıçtan beri) düşer, ≤1 kalınca uyarı. Gelmedi/iptal düşmez. Tutar yok.
 - Test 96.
 - **v371 ⏪ Geçmişe giriş** (kullanıcı: "geçmişe giriş yapabilir miyim, onu da dahil et"): gün seçicinin altında son 35 günün ders günleri çipleri (hepsi işaretliyse ✓); aylık çizelgede sütunlar = işaretli günler + ders saatlerindeki günler (bugüne kadar) + "＋ gün ekle" ile seçilen gün; kutuya dokunmak `ozdYokHucre` ile Geldi → Gelmedi → Telafi → İptal → boş döner. `ozdGunDersVar` artık kelime sonu kontrolüyle ("cuma" ≠ "cumartesi").
+
+## 87. 🦸 Oyunlar › Blok Kahramanlar — 8 yaş, iki boss (2026-11-03, v372)
+- Kullanıcı 8 yaş için oyun istedi; iki taslak turu (pasta/robot, orkestra/saklambaç/kar topu/penguen) reddedildi, sonra "süper kahraman / canavar + oyun dünyası (blok) + hep birlikte büyük düşman" seçti ve iki boss taslağına "bu ikisini de yap" dedi.
+- **Modül:** `public/dagsk-km-blok.js` (blk*, tembel yüklenir; Hapşırık kalıbı): `blkSahneKur · blkGuncelle · blkSeri · blkAnlik · blkGeriYukle · blkSporcu · blkAyarUygula · blkFinalZorla`. Tek `<canvas>`; zemin ve golem gövdesi değişince önceden çizilir, döngü ~30 fps ve yalnız tema açıkken. Kahramanların üstünde şeffaf `data-km-sporcu` kutuları (dokununca sıra).
+- **Boss'lar:** 🌋 Lav Golemi (izometrik voksel, şehir 6 bina) / 🐉 Gölge Ejder (blok zincir, kale: duvar 0–5 + 4 kule). Sırayla gelir, HUD'dan seçilir. Can azaldıkça küp küp dağılır, evre 2'de öfkelenir.
+- **Halka gücü:** sarı ⚡ 3 küp (X 4) · kırmızı 👊 2 · mavi ❄️ 1 + donma (sıradaki saldırı boşa) · siyah 🛡️ 1 + onarım · beyaz 🔨 1 · M 🍌 0. Her 5 seride saldırı (golem bina yıkar; ejder duvar ≥3 ise seker, değilse kule devirir). 🧩 içerik: `saldiri`.
+- **STANDING (hep birlikte):** boss, listede olup atış kaydı tutulabilen herkes en az bir ok atmadan düşmez (`atabilenler`, kayıtta olmayan satır sayılmaz). Can bitince "SON KÜP" + HUD'da koç düğmesi **⚡ Hep birlikte bitir** (`blkFinalZorla`, onaylı). Final: bütün kahramanlar aynı anda ışın, "HEP BİRLİKTE YENDİK!" + atan herkesin adı, `sp.oyun.blok.yenen` herkese, sıradaki boss diğer tip.
+- **Durum:** `dag_km_blok_<konum>` (günlük, KM_OYUN_SIFIR_ONEK'te). Ayar `blokSeri` (boss canı, kişi başı seri). Geri al `_kmOyunSonGiris.blok`. Dock varsayılanı sağ; sahne ve kahramanlar sola kayık.
+- Test 97.
