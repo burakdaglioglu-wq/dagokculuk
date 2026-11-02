@@ -5474,3 +5474,10 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Keşifler:** id'ler KORUNDU (günlük id tutar), adlar/semboller: Üç Boynuzlu, Uzun Boyunlu, Uçan Sürüngen, Zırhlı Dino, Sırt Plakalı, Yanardağ, Yavru T-Rex. Tapınak → **Dinozor Yuvası**. Ara olay bonusu "Dinozor İzi".
 - **🦴 Fosil kazısı** (`kmSisFosilEkle`, hep birlikte): sarı halka (X/10/9) = 1 kemik, `_kmSisFosil {kemik, kim, tamam}` keşif kaydında (günlük). Hedef `kmSisFosilHedef` = mevcut×4 (16–80). Dolunca `kmSisDevDinozor`: dev T-Rex sahneyi yürüyerek geçer, kükreme, "Kemikleri hep birlikte bulduk: …" (tüm adlar). HUD sağ üst kutuda iskelet. Geri al `sisFosil` anlık görüntüsünü geri yükler; Tüm Sınıfı Sıfırla temizler.
 - Test 95.
+
+## 86. 📋 Özel Ders › Yoklama (2026-11-03, v370)
+- Kullanıcı: "özel dersler için bir yoklama listesi oluştur". Sporla Gelişiyorum ana sayfasında **📋 Yoklama** düğmesi + özet kartı (bugün dersi olanlar, işaretlenen sayısı, bitmek üzere olan paketler). Karışık Sınıf yoklamasından AYRI.
+- **Kayıt:** `ozel_ders` deposunda `yok|<g|ad>|<tarih>` = `{durum: geldi|gelmedi|telafi|iptal|null}` (kayıt başına birleşir, cihazlar arası). Aynı düğmeye tekrar basmak `null` yazar (işareti kaldırır). O gün hareket puanı girilmiş ders varsa ve elle işaret yoksa otomatik "geldi" (`ozdYokDurum`).
+- **Ekran (`ozdYoklamaHTML`):** gün seçici (‹ › + tarih), öğrenciler — ders saatlerinde günün adı geçenler üstte ("bu gün dersi var", `ozdGunDersVar`), 4 büyük düğme. Altında **aylık çizelge** (işaretli günler sütun, Ders = geldi+telafi, ❌, paketten kalan) + "Ay özetini kopyala" (`ozdYokOzetMetni`).
+- **📦 Paket:** öğrenci sayfasında "Paket (kaç derslik)" + "Paket başlangıcı"; yapılan dersler (geldi+telafi, başlangıçtan beri) düşer, ≤1 kalınca uyarı. Gelmedi/iptal düşmez. Tutar yok.
+- Test 96.

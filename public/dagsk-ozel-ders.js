@@ -350,7 +350,7 @@ function ozdSekmeDoldur() {
 function ozdCiz() {
     const el = document.getElementById('icerik-ozelders'); if (!el) return;
     if (_ozdSecili && !ozdOgr(_ozdSecili)) _ozdSecili = null;
-    el.innerHTML = `<div class="ozd">${_ozdSecili ? ozdOgrenciHTML(_ozdSecili) : ozdListeHTML()}</div>`;
+    el.innerHTML = `<div class="ozd">${_ozdYoklama ? ozdYoklamaHTML() : _ozdSecili ? ozdOgrenciHTML(_ozdSecili) : ozdListeHTML()}</div>`;
 }
 function ozdListeHTML() {
     const l = ozdOgrenciler();
@@ -361,8 +361,9 @@ function ozdListeHTML() {
           <small>${son ? `Son ders ${ozdTarihYazi(son.tarih)} · ort. ${ozdSayi(oz.ort)}` : 'Henüz ders yok'} · ${ds.length} ders</small></span><span class="ozd-ok">›</span></button>`;
     };
     return `<div class="ozd-bas"><div><h2>💪 Sporla Gelişiyorum</h2><p>Özel ders — koordinasyon, denge, güç… Hareketleri puanla, oyunlarda ilerlesin, veliye "bugün ne yaptık" gitsin.</p></div>
-      <button class="ozd-btn ozd-ana" onclick="ozdOgrenciEkleAc()">＋ Öğrenci ekle</button></div>
+      <div class="ozd-bas-btn"><button class="ozd-btn" onclick="ozdYoklamaAc()">📋 Yoklama</button><button class="ozd-btn ozd-ana" onclick="ozdOgrenciEkleAc()">＋ Öğrenci ekle</button></div></div>
       <div id="ozd-ekle"></div>
+      ${l.length ? ozdYokOzetHTML(l) : ''}
       ${l.length ? `<div class="ozd-kartlar">${l.map(kart).join('')}</div>` : '<div class="ozd-bos">Henüz özel ders öğrencisi yok.<br>“＋ Öğrenci ekle” ile aktif sporculardan seç (ör. Furkan).</div>'}`;
 }
 function ozdOgrenciEkleAc() {
@@ -388,6 +389,116 @@ function ozdOgrenciCikar(k) {
     if (typeof onayIste === 'function') onayIste('Özel ders listesinden çıkarılsın mı?<br><small>Geçmiş dersler silinmez.</small>', f, 'Çıkar', 'Vazgeç'); else if (confirm('Özel ders listesinden çıkarılsın mı?')) f();
 }
 
+/* ---------------- 📋 yoklama (2026-11-03, kullanıcı: "özel dersler için bir yoklama listesi") ----------------
+   Kayıt: 'yok|<g|ad>|<tarih>' = { durum: geldi | gelmedi | telafi | iptal | null }. O gün hareket puanı girilmiş bir
+   ders varsa ve elle işaret yoksa "geldi" sayılır (otomatik). Yapılan ders = geldi + telafi; paket bu sayıyla düşer.
+   Karışık Sınıf yoklamasından AYRI (özel ders ile okçuluk tarafı karıştırılmaz). */
+const OZD_YOK = {
+    geldi: { ikon: '✅', ad: 'Geldi' },
+    gelmedi: { ikon: '❌', ad: 'Gelmedi' },
+    telafi: { ikon: '🔁', ad: 'Telafi' },
+    iptal: { ikon: '🚫', ad: 'İptal' }
+};
+const OZD_GUNLER = ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'];
+let _ozdYoklama = false, _ozdYokTarih = null, _ozdYokAy = null;
+function ozdTarihEkle(t, n) { const d = new Date(t + 'T12:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function ozdAyEkle(ay, n) { const d = new Date(ay + '-15T12:00:00'); d.setMonth(d.getMonth() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function ozdAyYazi(ay) { try { return new Date(ay + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); } catch (e) { return ay; } }
+// Elle işaret > (o gün puanlı ders varsa) otomatik geldi > işaretsiz
+function ozdYokDurum(k, tarih) {
+    const r = ozdDepo()['yok|' + k + '|' + tarih];
+    if (r && r.durum !== undefined) return { durum: r.durum || null, oto: false };
+    const d = ozdDers(k, tarih);
+    return d && (d.kayitlar || []).length ? { durum: 'geldi', oto: true } : { durum: null, oto: false };
+}
+function ozdYokIsaretle(k, tarih, durum) {
+    const simdi = ozdYokDurum(k, tarih);
+    ozdYaz('yok|' + k + '|' + tarih, { durum: !simdi.oto && simdi.durum === durum ? null : durum }); // aynı düğmeye tekrar basmak işareti kaldırır
+    ozdCiz();
+}
+// Ders saatlerinde bu günün adı geçiyor mu ("Salı 17:00 · Perşembe 17:00")
+function ozdGunDersVar(o, tarih) {
+    const gun = OZD_GUNLER[new Date(tarih + 'T12:00:00').getDay()], m = String(o.saatler || '').toLocaleLowerCase('tr-TR');
+    return gun === 'pazar' ? /pazar(?!tesi)/.test(m) : m.indexOf(gun) >= 0;
+}
+// Bir öğrencinin aralıktaki işaretli (ya da puanlı dersi olan) günleri
+function ozdYokGunler(k, bas, son) {
+    const d = ozdDepo(), on = 'yok|' + k + '|', g = {};
+    Object.keys(d).forEach((x) => { if (x.indexOf(on) === 0) { const t = x.slice(on.length); if (t >= bas && t <= son) g[t] = 1; } });
+    ozdDersler(k).forEach((x) => { if (x.tarih >= bas && x.tarih <= son && (x.kayitlar || []).length) g[x.tarih] = 1; });
+    const l = {}; Object.keys(g).forEach((t) => { const y = ozdYokDurum(k, t); if (y.durum) l[t] = y; });
+    return l;
+}
+function ozdYokSay(gunler) { const c = { geldi: 0, gelmedi: 0, telafi: 0, iptal: 0 }; Object.values(gunler).forEach((y) => { c[y.durum]++; }); c.yapilan = c.geldi + c.telafi; return c; }
+// 📦 Paket: öğrenci sayfasında "kaç derslik" + başlangıç tarihi; o tarihten bu yana yapılan derslerle düşer
+function ozdPaket(k) {
+    const o = ozdOgr(k) || {}, n = parseInt(o.paket, 10); if (!(n > 0)) return null;
+    const c = ozdYokSay(ozdYokGunler(k, o.paketBas || '0000-00-00', '9999-12-31'));
+    return { adet: n, kullanilan: c.yapilan, kalan: n - c.yapilan };
+}
+function ozdPaketYazi(p) { return !p ? '' : p.kalan > 0 ? p.kullanilan + '/' + p.adet + ' ders · ' + p.kalan + ' kaldı' : p.kalan === 0 ? p.adet + '/' + p.adet + ' · paket bitti' : p.adet + ' derslik paket aşıldı (+' + (-p.kalan) + ')'; }
+function ozdPaketHTML(k) {
+    const p = ozdPaket(k); if (!p) return '';
+    return `<div class="ozd-paket${p.kalan <= 1 ? ' uyari' : ''}"><i style="--o:${Math.min(100, Math.round(p.kullanilan / p.adet * 100))}%"></i><span>📦 ${ozdPaketYazi(p)}</span></div>`;
+}
+// Ana sayfadaki kısa özet: bugün dersi olanlar, işaret durumu, bitmek üzere olan paketler
+function ozdYokOzetHTML(l) {
+    const t = ozdBugun(), bugun = l.filter((o) => ozdGunDersVar(o, t));
+    const isaretli = bugun.filter((o) => ozdYokDurum(o.g + '|' + o.ad, t).durum).length;
+    const bitecek = l.filter((o) => { const p = ozdPaket(o.g + '|' + o.ad); return p && p.kalan <= 1; });
+    return `<button class="ozd-yok-ozet" onclick="ozdYoklamaAc()"><b>📋 Yoklama</b><span>${bugun.length ? 'Bugün ' + bugun.length + ' öğrencinin dersi var · ' + isaretli + ' işaretlendi' : 'Bugün ders saati yazılı öğrenci yok — yine de işaretleyebilirsin'}${bitecek.length ? ' · ⚠️ ' + bitecek.map((o) => ozdEsc(ozdIlkAd(o.ad))).join(', ') + ' paketi bitiyor' : ''}</span><em>›</em></button>`;
+}
+function ozdYoklamaAc(tarih) { _ozdYoklama = true; _ozdYokTarih = tarih || _ozdYokTarih || ozdBugun(); _ozdYokAy = _ozdYokTarih.slice(0, 7); ozdCiz(); if (window.scrollTo) window.scrollTo(0, 0); }
+function ozdYoklamaKapat() { _ozdYoklama = false; ozdCiz(); }
+function ozdYokTarihSec(t) { if (!/^\d{4}-\d{2}-\d{2}$/.test(t || '')) return; _ozdYokTarih = t; _ozdYokAy = t.slice(0, 7); ozdCiz(); }
+function ozdYokAySec(n) { _ozdYokAy = ozdAyEkle(_ozdYokAy || ozdBugun().slice(0, 7), n); ozdCiz(); }
+function ozdYoklamaHTML() {
+    const t = _ozdYokTarih || ozdBugun(), l = ozdOgrenciler().slice();
+    l.sort((a, b) => (ozdGunDersVar(b, t) - ozdGunDersVar(a, t)) || a.ad.localeCompare(b.ad, 'tr'));
+    const satir = (o) => {
+        const k = o.g + '|' + o.ad, ke = ozdEsc(k).replace(/'/g, "\\'"), y = ozdYokDurum(k, t), dv = ozdGunDersVar(o, t), p = ozdPaket(k);
+        return `<div class="ozd-yok-s${y.durum ? ' ' + y.durum : ''}"><span class="ozd-av">${ozdEsc(ozdIlkAd(o.ad).charAt(0))}</span>
+          <span class="ozd-yok-ad"><b>${ozdEsc(o.ad)}</b><small>${dv ? '🗓️ bu gün dersi var · ' : ''}${o.saatler ? ozdEsc(o.saatler) : 'ders saati yazılmadı'}${p ? ' · 📦 ' + ozdPaketYazi(p) : ''}${y.oto ? ' · 💪 puan girilmiş, geldi sayıldı' : ''}</small></span>
+          <span class="ozd-yok-dgm">${Object.keys(OZD_YOK).map((d) => `<button class="${y.durum === d ? 'aktif ' + d : ''}" onclick="ozdYokIsaretle('${ke}','${t}','${d}')" aria-pressed="${y.durum === d}" title="${OZD_YOK[d].ad}">${OZD_YOK[d].ikon}<small>${OZD_YOK[d].ad}</small></button>`).join('')}</span></div>`;
+    };
+    const say = { geldi: 0, gelmedi: 0, telafi: 0, iptal: 0, bos: 0 }; l.forEach((o) => { const y = ozdYokDurum(o.g + '|' + o.ad, t); say[y.durum || 'bos']++; });
+    return `<div class="ozd-ust"><button class="ozd-btn" onclick="ozdYoklamaKapat()">‹ Öğrenciler</button></div>
+      <div class="ozd-bas"><div><h2>📋 Özel ders yoklaması</h2><p>Gelen, gelmeyen, telafi ve iptal dersleri işaretle. O gün hareket puanı girdiysen otomatik "geldi" sayılır. Aynı düğmeye tekrar basmak işareti kaldırır.</p></div></div>
+      <section class="ozd-panel">
+        <div class="ozd-yok-tarih"><button class="ozd-btn" onclick="ozdYokTarihSec('${ozdTarihEkle(t, -1)}')" aria-label="Önceki gün">‹</button>
+          <label><b>${ozdTarihYazi(t)}</b>${t === ozdBugun() ? '<small>bugün</small>' : `<small><a href="#" onclick="ozdYokTarihSec('${ozdBugun()}');return false">bugüne dön</a></small>`}<input id="ozd-yok-tarih" type="date" value="${t}" onchange="ozdYokTarihSec(this.value)" aria-label="Tarih seç"></label>
+          <button class="ozd-btn" onclick="ozdYokTarihSec('${ozdTarihEkle(t, 1)}')" aria-label="Sonraki gün">›</button></div>
+        <div class="ozd-yok-say">✅ ${say.geldi} geldi · ❌ ${say.gelmedi} gelmedi · 🔁 ${say.telafi} telafi · 🚫 ${say.iptal} iptal${say.bos ? ' · ' + say.bos + ' işaretsiz' : ''}</div>
+        <div class="ozd-yok-liste">${l.map(satir).join('') || '<div class="ozd-bos-k">Henüz özel ders öğrencisi yok.</div>'}</div>
+      </section>
+      ${ozdYokAyHTML(l)}`;
+}
+// Aylık çizelge: satır öğrenci, sütun işaretli günler; sağda yapılan ders, gelmedi ve paketten kalan
+function ozdYokAyHTML(l) {
+    const ay = _ozdYokAy || ozdBugun().slice(0, 7), bas = ay + '-01', son = ay + '-31';
+    const veri = l.map((o) => { const k = o.g + '|' + o.ad, g = ozdYokGunler(k, bas, son); return { o: o, g: g, c: ozdYokSay(g), p: ozdPaket(k) }; });
+    const gunler = Object.keys(Object.assign({}, ...veri.map((v) => v.g))).sort();
+    return `<section class="ozd-panel"><div class="ozd-p-bas"><h3>🗓️ Aylık çizelge</h3>
+        <div class="ozd-yok-ay"><button class="ozd-btn" onclick="ozdYokAySec(-1)" aria-label="Önceki ay">‹</button><b>${ozdAyYazi(ay)}</b><button class="ozd-btn" onclick="ozdYokAySec(1)" aria-label="Sonraki ay">›</button></div></div>
+      ${gunler.length ? `<div class="ozd-yok-tablo-kap"><table class="ozd-yok-tablo"><thead><tr><th>Öğrenci</th>${gunler.map((t) => `<th><button onclick="ozdYokTarihSec('${t}')" title="${ozdTarihYazi(t)}">${+t.slice(8)}</button></th>`).join('')}<th title="Yapılan ders (geldi + telafi)">Ders</th><th title="Gelmedi">❌</th><th>Paket</th></tr></thead>
+        <tbody>${veri.map((v) => `<tr><td>${ozdEsc(v.o.ad)}</td>${gunler.map((t) => { const y = v.g[t]; return `<td class="${y ? y.durum : ''}" title="${y ? OZD_YOK[y.durum].ad + (y.oto ? ' (puan girilmiş)' : '') : ''}">${y ? OZD_YOK[y.durum].ikon : ''}</td>`; }).join('')}<td><b>${v.c.yapilan}</b></td><td>${v.c.gelmedi || ''}</td><td class="${v.p && v.p.kalan <= 1 ? 'uyari' : ''}">${v.p ? (v.p.kalan >= 0 ? v.p.kalan + ' kaldı' : '+' + (-v.p.kalan)) : '—'}</td></tr>`).join('')}</tbody></table></div>
+        <button class="ozd-btn ozd-yok-kopya" onclick="ozdYokKopyala()">📋 Ay özetini kopyala</button>` : '<div class="ozd-bos-k">Bu ay işaretlenmiş ders yok.</div>'}
+    </section>`;
+}
+function ozdYokOzetMetni() {
+    const ay = _ozdYokAy || ozdBugun().slice(0, 7), bas = ay + '-01', son = ay + '-31';
+    const sat = ozdOgrenciler().map((o) => {
+        const k = o.g + '|' + o.ad, g = ozdYokGunler(k, bas, son), c = ozdYokSay(g), p = ozdPaket(k);
+        const gunler = Object.keys(g).sort().map((t) => +t.slice(8) + (g[t].durum === 'geldi' ? '' : ' ' + OZD_YOK[g[t].durum].ad.toLocaleLowerCase('tr-TR'))).join(', ');
+        return '• ' + o.ad + ': ' + c.yapilan + ' ders' + (c.gelmedi ? ', ' + c.gelmedi + ' gelmedi' : '') + (c.iptal ? ', ' + c.iptal + ' iptal' : '') + (gunler ? ' (' + gunler + ')' : '') + (p ? ' · paket: ' + ozdPaketYazi(p) : '');
+    });
+    return '📋 Özel ders yoklaması — ' + ozdAyYazi(ay) + '\n' + sat.join('\n');
+}
+function ozdYokKopyala() {
+    const t = ozdYokOzetMetni(), tamam = () => { if (typeof showToast === 'function') showToast('📋 Ay özeti kopyalandı', 'success'); };
+    try { navigator.clipboard.writeText(t).then(tamam).catch(() => { prompt('Kopyala:', t); }); } catch (e) { prompt('Kopyala:', t); }
+}
+
 function ozdOgrenciHTML(k) {
     const o = ozdOgr(k), sp = ozdSp(k), d = ozdBugunDers(k), oz = ozdDersOzet(d), s = ozdSeciliHareket(k), ke = ozdEsc(k).replace(/'/g, "\\'");
     const yas = typeof kmSporcuYasi === 'function' ? kmSporcuYasi(o.g, o.ad) : null, oyunda = ozdHareketModu() && ozdKonumKisi() === k;
@@ -402,7 +513,10 @@ function ozdOgrenciHTML(k) {
       <div class="ozd-iki">
         <label>🗓️ Ders saatleri<input class="ozd-input" value="${ozdEsc(o.saatler || '')}" placeholder="ör. Salı 17:00 · Perşembe 17:00" onchange="ozdAlanKaydet('${ke}','saatler',this.value)"></label>
         <label>🎯 Hedef<input class="ozd-input" value="${ozdEsc(o.hedef || '')}" placeholder="ör. koordinasyon ve denge" onchange="ozdAlanKaydet('${ke}','hedef',this.value)"></label>
+        <label>📦 Paket (kaç derslik)<input class="ozd-input" type="number" min="0" max="99" inputmode="numeric" value="${ozdEsc(o.paket || '')}" placeholder="ör. 8 — boşsa paket takibi yok" onchange="ozdAlanKaydet('${ke}','paket',this.value);ozdCiz()"></label>
+        <label>📅 Paket başlangıcı<input class="ozd-input" type="date" value="${ozdEsc(o.paketBas || '')}" onchange="ozdAlanKaydet('${ke}','paketBas',this.value);ozdCiz()"></label>
       </div>
+      ${ozdPaketHTML(k)}
       <section class="ozd-panel"><div class="ozd-p-bas"><h3>📋 Bugünün dersi <small>${ozdTarihYazi(d.tarih)}</small></h3>
         <button class="ozd-btn ozd-oyun" onclick="ozdOyunaGec('${ke}')">🎮 ${oyunda ? 'Oyunlara dön' : 'Oyunlarla devam (TV)'}</button></div>
         <p class="ozd-not">Bir harekete dokun → aşağıdan puan ver ya da oyunlarda puanla (oyunda her seri = 3 tekrar, oyun ilerler).</p>
@@ -553,7 +667,29 @@ function ozdCss() {
     st.textContent = `
 .ozd{max-width:880px;margin:0 auto;padding:12px 16px 90px;color:var(--text-primary)}
 .ozd h2{margin:0;font-size:22px}.ozd h3{margin:0 0 8px;font-size:16px}.ozd h3 small,.ozd-p-bas small{font-weight:600;color:var(--text-muted);font-size:11.5px;margin-left:6px}
-.ozd-bas{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}.ozd-bas p{margin:4px 0 0;color:var(--text-muted);font-size:13px;max-width:560px}
+.ozd-bas{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.ozd-bas-btn{display:flex;gap:8px;flex-wrap:wrap}
+.ozd-yok-ozet{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid var(--border-color);border-left:4px solid #22c55e;background:var(--bg-panel);color:inherit;font-family:inherit;cursor:pointer;flex-wrap:wrap}
+.ozd-yok-ozet span{flex:1;min-width:180px;color:var(--text-muted);font-size:12.5px}.ozd-yok-ozet em{font-style:normal;font-size:22px;color:var(--text-muted)}
+.ozd-yok-tarih{display:flex;align-items:center;gap:8px}.ozd-yok-tarih label{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}.ozd-yok-tarih label b{font-size:15px}.ozd-yok-tarih small{color:var(--text-muted);font-size:11.5px}.ozd-yok-tarih small a{color:var(--accent-orange)}
+.ozd-yok-tarih input{margin-top:4px;background:var(--bg-dark,rgba(0,0,0,.25));border:1px solid var(--border-color);color:var(--text-primary);border-radius:8px;padding:5px 8px;font-family:inherit}
+.ozd-yok-say{margin:10px 0 8px;font-size:12.5px;font-weight:700;color:var(--text-muted)}
+.ozd-yok-liste{display:flex;flex-direction:column;gap:6px}
+.ozd-yok-s{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;border:1px solid var(--border-color);flex-wrap:wrap}
+.ozd-yok-s.geldi,.ozd-yok-s.telafi{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.07)}.ozd-yok-s.gelmedi{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.07)}.ozd-yok-s.iptal{opacity:.75}
+.ozd-yok-ad{flex:1;min-width:150px;display:flex;flex-direction:column;gap:2px}.ozd-yok-ad small{color:var(--text-muted);font-size:11.5px}
+.ozd-yok-dgm{display:flex;gap:5px}.ozd-yok-dgm button{min-width:58px;min-height:48px;border-radius:10px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;font-size:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:inherit}
+.ozd-yok-dgm button small{font-size:10px;font-weight:800;color:var(--text-muted)}.ozd-yok-dgm button.aktif small{color:inherit}
+.ozd-yok-dgm button.aktif.geldi,.ozd-yok-dgm button.aktif.telafi{background:#22c55e;border-color:#22c55e;color:#06290f}.ozd-yok-dgm button.aktif.gelmedi{background:#ef5350;border-color:#ef5350;color:#fff}.ozd-yok-dgm button.aktif.iptal{background:#64748b;border-color:#64748b;color:#fff}
+.ozd-yok-ay{display:flex;align-items:center;gap:8px}.ozd-yok-ay b{min-width:110px;text-align:center}.ozd-yok-ay .ozd-btn{padding:6px 11px}
+.ozd-yok-tablo-kap{overflow-x:auto;margin-top:10px}
+.ozd-yok-tablo{border-collapse:collapse;font-size:12.5px;min-width:100%}.ozd-yok-tablo th,.ozd-yok-tablo td{padding:6px 5px;border-bottom:1px solid var(--border-color);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ozd-yok-tablo th:first-child,.ozd-yok-tablo td:first-child{text-align:left;position:sticky;left:0;background:var(--bg-panel);font-weight:800;padding-right:10px}
+.ozd-yok-tablo th{color:var(--text-muted);font-size:11px}.ozd-yok-tablo th button{border:0;background:transparent;color:inherit;font:inherit;font-weight:800;cursor:pointer;padding:2px 4px;border-radius:6px}.ozd-yok-tablo th button:hover{background:rgba(255,255,255,.08)}
+.ozd-yok-tablo td.uyari{color:#ffb020;font-weight:800}.ozd-yok-kopya{margin-top:10px}
+.ozd-paket{margin:10px 0 0;padding:9px 12px;border-radius:11px;border:1px solid var(--border-color);font-size:13px;font-weight:800;position:relative;overflow:hidden}.ozd-paket span{position:relative}
+.ozd-paket i{position:absolute;left:0;top:0;bottom:0;width:var(--o);background:rgba(124,92,255,.18)}.ozd-paket.uyari{border-color:#ffb020}.ozd-paket.uyari i{background:rgba(255,176,32,.2)}
+@media (max-width:640px){.ozd-yok-dgm{width:100%}.ozd-yok-dgm button{flex:1;min-width:0}}.ozd-bas p{margin:4px 0 0;color:var(--text-muted);font-size:13px;max-width:560px}
 .ozd-btn{border:1px solid var(--border-color);background:var(--bg-panel);color:var(--text-primary);border-radius:10px;padding:9px 13px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
 .ozd-btn:hover{border-color:var(--accent-orange)}.ozd-ana{background:var(--accent-orange);border-color:var(--accent-orange);color:#fff}.ozd-oyun{background:linear-gradient(135deg,#7c5cff,#ff6a1a);border:0;color:#fff}
 .ozd-sil{color:var(--text-muted);font-weight:700}.ozd-wa{background:#25d366;border-color:#25d366;color:#08311a}
