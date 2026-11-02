@@ -5460,3 +5460,10 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **⧉ Köşeye al** (`kvMini`, `.kv-mini`): sağ altta küçük pencere, alttaki Yarışma ekranı (skor girişi) kullanılır; köşedeyken `kvTus` tuşları yutmaz (Esc skor girişine kalır).
 - **Kim atıyor?** `.kv-sporcu` select → `_kv.k` (başlık + köşe başlığı); canlı kayıt → "Form Lab'da analiz et" bu sporcuyla gider.
 - Gerçek Tapo + köprü zinciri hâlâ DONANIMDA DENENMEDİ (bkz. §salon kamerası v322). Test 93 (sahte flSalonAkis).
+
+## 84. 🏯 Ninja › Ay Işığı Kalesi — gece görünümü, Fener Nöbeti, kalenin pencereleri (2026-11-02, v368)
+- Kullanıcıya iki taslak gösterildi (A Ay Işığı Kalesi / B Mürekkep Dojo), **A seçildi**. Bambu Yolu görünümü kalktı; oyun mantığı (yol, `KM_NINJA_PLATFORMLAR`, çukurlar, takla, imza hareketleri, Sensei, klan) aynı.
+- **Sahne (app.js panel SVG + `kmOyunNinjaSahneParcalari`):** hep gece (`kmNinjaSaatGuncelle` artık sadece `.km-ninja-gece-modu` ekler; gün batımı evreleri yok), dev ay, uzak kasaba, her platform pencereli bir binanın çatısı (sırt = zemin), gözcü kulesi + bekçi, son platform kalenin taş avlusu, sağda 4 katlı kale, sol üstte kiraz dalı, pembe yapraklar. Kapılar → kâğıt fener direği / taş fener. Çukurlar: "Çatı Arası" %50, "Derin Sokak" %70.
+- **🏮 Fener Nöbeti** (`kmNinjaFenerUygula`, sadece bireysel): sporcunun her 3. ninja serisinde (`d.ninjaSeri`) %60+ → gölgede saklanır, +0.025 adım; altı → artış 0 (yerinde bekler, geri gitmez). Sensei/çukurdan önce uygulanır. Sırası gelene `#km-ninja-sinav` çağrısı + `.km-ninja-fener-aktif` (koni parlak). Geri al `ninjaFener` sayacını geri yazar.
+- **Kalenin pencereleri** (`KM_NINJA_PENCERELER` 25, `kmNinjaTapinakCiz`): kaleye varan her ninja/klan bir pencereyi kendi renginde yakar; tabela "KALEDE · n / toplam". Herkes gelince `kmNinjaKaleTamam`: havai fişek + "BÜTÜN KALE YANDI! Hep birlikte: …" (tek kahraman yok). Günlük durum `dag_km_ninja_tapinak_*` (`tamam` bayrağı).
+- Test 94.
