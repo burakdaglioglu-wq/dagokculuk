@@ -15,7 +15,7 @@
         { id: 'ninja', ik: '🥷', ad: 'Ninja Oyunu', kat: 'Disiplin', m: 'Sisli bambu ormanında kapıdan kapıya koş. Hedef: dağdaki tapınak.' },
         { id: 'hazine', ik: '🏝️', ad: 'Hazine Adası', kat: 'Merak', m: 'Tekneler şamandıradan şamandıraya ilerler. Hazine sandığına ilk kim varacak?' },
         { id: 'balon', ik: '🎈', ad: 'Balon Yarışı', kat: 'Sakinlik', m: 'Her seri sıcak hava balonunu bir bulut katmanı yukarı taşır. Sakin nefes, düzgün atış, yüksek balon.' },
-        { id: 'sisharita', ik: '🗺️', ad: 'Sis Haritası', kat: 'Keşif', m: 'Kayıp Ada sisle kaplı. Fenerler ilerledikçe sis açılır; 7 gizli yeri ilk bulanın adı haritaya yazılır.' }
+        { id: 'sisharita', ik: '🗺️', ad: 'Sis Haritası', kat: 'Keşif', m: 'Dinozor Vadisi sisle kaplı. Fenerler ilerledikçe sis açılır, 7 dinozoru ilk bulanın adı yazılır; sarı oklarla kazılan kemiklerle sınıf dev dinozoru birlikte canlandırır.' }
     ];
     // ara kartlar: "sonra" = o sıradaki oyundan sonra gösterilir
     const ARALAR = [
