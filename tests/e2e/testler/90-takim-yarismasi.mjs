@@ -51,9 +51,11 @@ export default async function ({ log }) {
     await p.locator('.yz-sure-elle .uygula').click(); await p.waitForTimeout(200);
     esit(await p.evaluate(() => _yzTkS.sure + '|' + localStorage.getItem('dag_yz_tk_sure')), '155|155', 'seri süresi ayarlanmadı');
     dogrula(/155 sn/.test(await p.locator('.yz-sk-alt .yz-btn.ana').textContent()), 'başlat düğmesinde süre yok');
-    // başlat → eleme ağacı + üst çubukta sayaç, dokun: hatta geçiş
+    // başlat → eleme ağacı + üst çubukta sayaç, dokun: hatta geçiş; eski genel sayaç açıksa maçta kapanır (çift sayaç olmasın)
+    const eskiSayac = await p.evaluate(() => { const e = _kmOyunSayacAcik; if (!e) kmOyunSayacDegistir(); return e; });
     await p.locator('.yz-sk-alt .yz-btn.ana').click(); await p.waitForTimeout(400);
     esit(await p.evaluate(() => _kmYarismaBracketGorunum), 'agac', 'turnuva başlamadı');
+    dogrula(await p.evaluate(() => _kmOyunSayacAcik === false && !document.querySelector('#km-yarisma-sayac-toggle:not([style*="display: none"])')?.offsetParent), 'eski sayaç takım maçında kapanmadı / görünüyor');
     const say = p.locator('.yz-ust-bar .yz-tk-sayac');
     dogrula(await say.count() === 1, 'üst çubukta seri sayacı yok');
     dogrula(/155/.test(await say.textContent()), 'sayaç süresi 155 değil: ' + await say.textContent());
@@ -63,6 +65,9 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => _yzTkS.basla === null), 'sayaç durmadı');
     // takım adı maça taşındı
     dogrula((await p.locator('#km-icerik').textContent()).includes(adlar[1]), 'eleme ağacında takım adı görünmüyor');
+    // maç sıfırlanınca eski sayaç geri açılır, sonra kullanıcının ilk ayarına dönülür
+    const gr = await p.evaluate(() => { const k = localStorage.getItem('dag_yz_eski_sayac'), a = _kmOyunSayacAcik; kmYarismaSifirla(); return { k, a, b: _kmOyunSayacAcik }; }); dogrula(gr.b === true, 'eski sayaç maç bitince geri açılmadı ' + JSON.stringify(gr));
+    await p.evaluate((e) => { if (_kmOyunSayacAcik !== e) kmOyunSayacDegistir(); }, eskiSayac);
     await p.setViewportSize({ width: 390, height: 800 }); await p.waitForTimeout(200);
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), '390 px\'te taşma');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));

@@ -108,7 +108,8 @@ function sgListeCiz() {
     if (SG.yukleniyor && !SG.liste) { el.innerHTML = '<div class="sg-bos">Yükleniyor…</div>'; return; }
     if (!l.length) { el.innerHTML = '<div class="sg-bos">Bu süzgeçte sporcu yok.</div>'; return; }
     el.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + l.map(x => {
-        let a = esc(JSON.stringify(x.k)), kod = sgKod(x.sp), sure = sgSure(x.son), yeni = x.son && Date.now() - x.son < 7 * 864e5;
+        let a = esc(JSON.stringify(x.k)).replace(/"/g, "&quot;"), // onclick içinde: esc tırnak kaçırmaz (2026-11-02)
+            kod = sgKod(x.sp), sure = sgSure(x.son), yeni = x.son && Date.now() - x.son < 7 * 864e5;
         return `<div class="sg-satir${x.kapali ? ' kapali' : ''}">
             <div class="sg-ad"><b>${esc(x.ad)}</b><small>${esc(x.gAd)}${x.sp.acilTelefon ? ' · 📞 veli' : ''}</small></div>
             <div><span class="sg-kod">${kod ? esc(kod) : '—'}</span>${x.zayif === 'yok' ? '<span class="sg-rozet yok">KOD YOK</span>' : x.zayif === 'dogum' ? '<span class="sg-rozet">doğum yılı</span>' : ''}</div>

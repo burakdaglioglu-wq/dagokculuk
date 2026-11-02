@@ -2942,8 +2942,20 @@ function yzBurayaTasi(ti) {
     let u = _kmTakimlar[s.ti].uyeler.splice(s.ui, 1)[0]; _kmTakimlar[ti].uyeler.push(u);
     _yzK.secili = null; try { _kmYarismaKurulumKaydet(); } catch (e) {} kmYarismaKurulumCiz();
 }
+// Eski genel KM sayacı (Skor Gir'deki "⏱ HAZIR 120") takım maçında üstteki seri sayacıyla çift sayaç oluyordu (2026-11-02):
+// maç başlarken açıksa kapatılır, maç sıfırlanınca (Yeni turnuva / ders bitti) eski haline döner. Düğmeleri CSS ile gizlenir.
+function yzEskiSayacKapat() {
+    if (typeof _kmOyunSayacAcik === 'undefined' || !_kmOyunSayacAcik || typeof kmOyunSayacDegistir !== 'function') return;
+    kmOyunSayacDegistir(); try { localStorage.setItem('dag_yz_eski_sayac', '1'); } catch (e) {}
+}
+function yzEskiSayacGeriAc() {
+    let k = null; try { k = localStorage.getItem('dag_yz_eski_sayac'); localStorage.removeItem('dag_yz_eski_sayac'); } catch (e) {}
+    if (k === '1' && typeof _kmOyunSayacAcik !== 'undefined' && !_kmOyunSayacAcik && typeof kmOyunSayacDegistir === 'function') kmOyunSayacDegistir();
+}
+if (typeof kmYarismaSifirla === 'function') { const _yzEskiSifirla = kmYarismaSifirla; kmYarismaSifirla = function () { let r = _yzEskiSifirla.apply(this, arguments); yzEskiSayacGeriAc(); return r; }; }
 function yzSihirbazBaslat() {
     yzTakimAdlariniDuzelt();
+    if (_kmRakipTipi !== 'hayali') yzEskiSayacKapat();
     if (_kmRakipTipi === 'hayali') return kmYarismaBaslat();
     if (_kmYarismaAktifTakimlar().length < 2) return showToast('En az 2 katılımcı gerekli.', 'error');
     let K = yzSiraKaynak();
@@ -3072,6 +3084,7 @@ function yzSkCssYukle() {
         '.yz-tk-renk{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid color-mix(in srgb,var(--text-main) 25%,transparent);background:var(--tr);cursor:pointer;padding:0}',
         '.yz-tk-ad-gir{flex:1;min-width:0;background:transparent;border:1px dashed color-mix(in srgb,var(--tr) 45%,transparent);border-radius:8px;color:var(--tr);font:inherit;font-weight:900;font-size:15px;padding:5px 7px}.yz-tk-ad-gir:focus{outline:none;border-style:solid;border-color:var(--tr);background:var(--bg-panel)}',
         '.yz-sk-uye{display:flex;align-items:center;gap:8px}.yz-sk-uye small{margin-left:auto;font-size:11px;color:var(--text-muted)}.yz-tk-sno{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:900;background:var(--bg-main);color:var(--text-muted)}',
+        '#km-icerik:has(.yz-tk-bar-sayac) :is(.km-oyun-sayac,#km-yarisma-sayac-toggle,.km-oyun-sayac-buyut-btn),body:has(.yz-tk-bar-sayac) #km-oyun-sayac-buyuk{display:none!important}',
         '.yz-tk-bar-sayac{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.yz-tk-sayac{border:0;font:inherit;cursor:pointer;min-width:118px;padding:4px 12px}.yz-tk-bar-sayac .yz-tk-sayac .yz-sayac-sure{font-size:26px}.yz-tk-bar-sayac .yz-tk-sayac .yz-sayac-alt{font-size:9.5px}',
         '.yz-sk-sira{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px;border-radius:14px;border:1px dashed var(--border-color);margin:2px 0 10px}.yz-sk-sira.aktif{border-style:solid;border-color:color-mix(in srgb,var(--gold,#e8b54a) 70%,transparent);background:color-mix(in srgb,var(--gold,#e8b54a) 8%,transparent)}.yz-sk-sira .yz-alt{flex:1 1 220px}',
         '.yz-sk-adim{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px;border-radius:18px;border:1px solid var(--border-color);background:var(--bg-panel)}',

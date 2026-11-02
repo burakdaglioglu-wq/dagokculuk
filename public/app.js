@@ -463,16 +463,19 @@
             } catch(e) { showToast('Gönderilemedi (bağlantı hatası).', 'error'); }
         }
         // ===== CANLI VELİ İZLEME — admin, sporcuya özel PIN'siz izleme linki üretir/paylaşır =====
+        // 2026-11-02: eskiden oturum doğrulanamayınca (401) genel fetch sarmalayıcısı oturumu silip kullanıcıyı sistemden
+        // atıyordu (kullanıcı: "sistemden tamamen atıyor"). Bu istek _oturumKorur ile gider: 401'de yalnız uyarı.
         async function canliIzlemeLinkiGoster(g, ad) {
             try {
-                let res = await fetch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/izle-kodu`, { method: 'POST' });
+                let res = await fetch(`/api/athletes/${encodeURIComponent(g)}/${encodeURIComponent(ad)}/izle-kodu`, { method: 'POST', _oturumKorur: true });
                 let data = await res.json().catch(() => ({}));
+                if(res.status === 401) { showToast('🔒 Link için giriş gerekli — çıkış yapmadan Giriş ekranından yeniden giriş yap.', 'error'); return; }
                 if(!res.ok || !data.kod) { showToast('Link oluşturulamadı.', 'error'); return; }
                 let link = location.origin + '/izle.html?kod=' + data.kod;
                 document.getElementById('izle-linki-baslik').textContent = '🔗 ' + ad + ' — Canlı İzleme Linki';
                 document.getElementById('izle-linki-input').value = link;
                 document.getElementById('izle-linki-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(link);
-                document.getElementById('izle-linki-modal').style.display = 'flex';
+                let izm = document.getElementById('izle-linki-modal'); izm.style.setProperty('z-index', '27000', 'important'); izm.style.display = 'flex'; // profil (yn-kart z 26000) üstünde
             } catch(e) { showToast('Link oluşturulamadı (bağlantı hatası).', 'error'); }
         }
         // ===== SPORCU FOTOĞRAFI — SADECE yönetici/eğitmen yükler (PIN'siz sporcu girişinden ASLA
@@ -618,6 +621,8 @@
         function bugunISO(d) { d = d || new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
         // Serbest metin (duyuru, not, açıklama vb.) innerHTML içine basılmadan önce buradan geçmeli — XSS önlemi.
         function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        // onclick="fn(${escQ(x)})" için: JS değeri + çift tırnak kaçışı (esc tırnak kaçırmaz — profil düğmeleri bu yüzden bozuktu, 2026-11-02)
+        function escQ(v) { return esc(JSON.stringify(v)).replace(/"/g, '&quot;'); }
         function yeniDersBaslat() {
             let isimler = Object.keys(turnuvaDB[aktifGrup] || {});
             let arsivlenecek = isimler.filter(ad => { let sp = turnuvaDB[aktifGrup][ad]; return sp.seriler && sp.seriler.length > 0; });
@@ -4285,17 +4290,17 @@
                     return g + '|' + ad;
                 },
                 islemler(k) {
-                    let a = esc(JSON.stringify(k.grup)), b = esc(JSON.stringify(k.ad)), sp = turnuvaDB[k.grup][k.ad] || {};
+                    let a = escQ(k.grup), b = escQ(k.ad), sp = turnuvaDB[k.grup][k.ad] || {};
                     let yrs = typeof yrsKartOzet === 'function' ? yrsKartOzet(k.grup, k.ad) : null;
-                    // Sporcular & Skor'daki eski düğme yığını buraya taşındı (2026-10-21); 🔗 Canlı İzleme Linki kaldırıldı
+                    // Sporcular & Skor'daki eski düğme yığını buraya taşındı (2026-10-21); 🔗 Canlı İzleme Linki 2026-11-02'de islemPanel'e
+                    // (Fotoğraf & sporcu kartı) geri geldi — oturum düşürme düzeltildi, bkz. canliIzlemeLinkiGoster
                     return [
                         { et: '🎯 Skorları düzelt', alt: 'Aktif seriler ve geçmiş kartlar · ' + (sp.seriler || []).length + ' aktif seri, ' + (sp.kartGecmisi || []).length + ' kart', btn: 'Skorlar', fn: 'ynKartKapat(); ysSkorlaraGit(' + a + ',' + b + ')' },
                         ...(yrs ? [{ et: '🏆 Yarışma skorları', alt: yrs, btn: 'Isı haritası', fn: 'yrsKarttanAc(' + a + ',' + b + ')' }] : []),
                         { et: '🔑 Giriş kodu', alt: 'Sporcunun uygulamaya giriş kodu · şu an ' + (String(sp.kod || sp.dogumYili || '—')), btn: 'Değiştir', fn: 'yoneticiKodSifirla(' + a + ',' + b + ')' },
                         { et: '📷 Fotoğraf', alt: (function() { let f = fotoBilgi(fotoAnahtar(k.grup, k.ad)) || {}; return (f.var ? 'Fotoğraf var' : 'Henüz fotoğraf yok') + ' · veli izni: ' + fotoIzinAd(f.izin); })(), btn: (fotoBilgi(fotoAnahtar(k.grup, k.ad)) || {}).var ? 'Değiştir' : 'Yükle', fn: 'ysFotoSec(' + a + ',' + b + ')' },
                         { et: '🪪 Sporcu kartı', alt: 'Fotoğraflı kart · QR ile velinin canlı karnesi · PNG, WhatsApp, PDF', btn: 'Kartı aç', fn: 'sporcuKartAc(' + a + ',' + b + ')' },
-                        { et: '📅 Haftalık program', alt: 'Hangi gün hangi derste', btn: 'Düzenle', fn: 'ynKartKapat(); sporcuProgramAc(' + a + ',' + b + ')' },
-                        { et: 'Çift kaydı birleştir', alt: 'Aynı kişi iki kez yazılmışsa — Çift Kayıt ekranında bu isimle açılır', btn: '🧹 Çift Kayıt', fn: 'ynKartKapat(); _ky.ara=' + b + '; yoneticiSekme(\'ciftkayit\')' },
+                        { et: '📅 Haftalık program', alt: 'Hangi gün hangi derste', btn: 'Düzenle', fn: 'ynKartKapat(); sporcuProgramAc(' + a + ',' + b + ')' },                        { et: 'Çift kaydı birleştir', alt: 'Aynı kişi iki kez yazılmışsa — Çift Kayıt ekranında bu isimle açılır', btn: '🧹 Çift Kayıt', fn: 'ynKartKapat(); _ky.ara=' + b + '; yoneticiSekme(\'ciftkayit\')' },
                         { et: 'Sil', alt: 'Silinenler\'e gider; oradan geri alınabilir', btn: '🗑 Sil', fn: 'yoneticiSil(' + a + ',' + b + ')', tehlike: true }
                     ];
                 },
@@ -4304,7 +4309,7 @@
                 // girdi mi, son yarışma), düğme yazının altında; Çift kayıt / Sil en altta ayrı. Giriş durumu, yarışma ve program
                 // sunucudan kart açılınca tazelenir (_ynkTazele) — eskiden yarışma satırı bu cihazda Yarışma hiç açılmadıysa görünmüyordu.
                 islemPanel(k) {
-                    let a = esc(JSON.stringify(k.grup)), b = esc(JSON.stringify(k.ad)), sp = turnuvaDB[k.grup][k.ad] || {}, an = k.grup + '|' + k.ad;
+                    let a = escQ(k.grup), b = escQ(k.ad), sp = turnuvaDB[k.grup][k.ad] || {}, an = k.grup + '|' + k.ad;
                     let kod = String(sp.kod || sp.dogumYili || '').trim(), zayif = !String(sp.kod || '').trim() || String(sp.kod) === String(sp.dogumYili || '');
                     let sgB = (typeof SG !== 'undefined' && SG.liste) ? (SG.liste[an] || {}) : null;
                     let son = !sgB ? '<b>…</b>' : sgB.son ? '<b class="i">' + esc(sgSure(sgB.son)) + ' · ' + sgB.sayi + ' giriş</b>' : '<b class="k">Hiç girmedi</b>';
@@ -4312,8 +4317,8 @@
                     let giris = `<div class="ynk-k"><h5>${ik('tr', '📱')}Uygulama girişi</h5>
                         <div class="ynk-buyuk"><b>${kod ? esc(kod) : '—'}</b>${!kod ? '<span class="ap-etk k">kod yok</span>' : zayif ? '<span class="ap-etk u">⚠ doğum yılı — tahmin edilir</span>' : '<span class="ap-etk i">✓ kendi kodu</span>'}</div>
                         <div class="ynk-s"><span>Son giriş</span>${son}</div>
-                        <div class="ynk-s"><span>Uygulamaya girebilir</span>${sgB ? `<label class="ynk-anahtar"><input type="checkbox" ${sgB.kapali ? '' : 'checked'} onchange="sgKapaliYaz(${esc(JSON.stringify(an))}, !this.checked)" aria-label="Giriş açık">${sgB.kapali ? 'Kapalı' : 'Açık'}</label>` : '<b>…</b>'}</div>
-                        <div class="ynk-d"><button class="ap-btn ana" onclick="sgGonder(${esc(JSON.stringify(an))})" ${kod && typeof sgGonder === 'function' ? '' : 'disabled'}>📤 Giriş linkini gönder</button><button class="ap-btn" onclick="sgKodUret(${esc(JSON.stringify(an))})" ${typeof sgKodUret === 'function' ? '' : 'disabled'} title="Rastgele 4 haneli kod">🎲 Yeni kod</button><button class="ap-btn" onclick="yoneticiKodSifirla(${a},${b})" aria-label="Kodu elle değiştir">✏️</button></div></div>`;
+                        <div class="ynk-s"><span>Uygulamaya girebilir</span>${sgB ? `<label class="ynk-anahtar"><input type="checkbox" ${sgB.kapali ? '' : 'checked'} onchange="sgKapaliYaz(${escQ(an)}, !this.checked)" aria-label="Giriş açık">${sgB.kapali ? 'Kapalı' : 'Açık'}</label>` : '<b>…</b>'}</div>
+                        <div class="ynk-d"><button class="ap-btn ana" onclick="sgGonder(${escQ(an)})" ${kod && typeof sgGonder === 'function' ? '' : 'disabled'}>📤 Giriş linkini gönder</button><button class="ap-btn" onclick="sgKodUret(${escQ(an)})" ${typeof sgKodUret === 'function' ? '' : 'disabled'} title="Rastgele 4 haneli kod">🎲 Yeni kod</button><button class="ap-btn" onclick="yoneticiKodSifirla(${a},${b})" aria-label="Kodu elle değiştir">✏️</button></div></div>`;
                     let y = typeof yrsKartVeri === 'function' ? yrsKartVeri(k.grup, k.ad) : null;
                     let skor = `<div class="ynk-k"><h5>${ik('sr', '🏆')}Skor & yarışma</h5>
                         ${y ? `<div class="ynk-yar"><b>${y.seri ? y.puan : '—'}</b><span><b>${esc(y.ad)}</b><small>${esc(y.tarih)} · ${y.seri ? y.seri + ' seri' + (y.bitti ? ' · bitti' : '') : 'sunucuya skor gelmedi'}</small>${y.serit.length ? '<div class="ynk-serit">' + y.serit.map(c => '<i style="background:' + c + '"></i>').join('') + '</div>' : ''}</span></div>` : '<div class="ynk-s"><span>Yarışma</span><b>henüz yok</b></div>'}
@@ -4322,7 +4327,7 @@
                     let fk = fotoAnahtar(k.grup, k.ad), f = fotoBilgi(fk) || {};
                     let foto = `<div class="ynk-k"><h5>${ik('mv', '🪪')}Fotoğraf & sporcu kartı</h5>
                         <div class="ynk-foto">${fotoAvatarHTML(fk, k.ad, 'f', true)}<div><b style="font-size:13px">${f.var ? 'Fotoğraf var' : 'Fotoğraf yok'}</b><div style="margin-top:3px"><span class="ap-etk ${f.izin === 1 ? 'i' : f.izin === 0 ? 'k' : 'u'}">${f.izin === 1 ? '✓ veli izni var' : f.izin === 0 ? 'veli izni yok' : 'veli izni bilinmiyor'}</span></div></div></div>
-                        <div class="ynk-d"><button class="ap-btn" onclick="ysFotoSec(${a},${b})">📷 ${f.var ? 'Değiştir' : 'Yükle'}</button><button class="ap-btn" onclick="sporcuKartAc(${a},${b})">🪪 Sporcu kartı</button></div></div>`;
+                        <div class="ynk-d"><button class="ap-btn" onclick="ysFotoSec(${a},${b})">📷 ${f.var ? 'Değiştir' : 'Yükle'}</button><button class="ap-btn" onclick="sporcuKartAc(${a},${b})">🪪 Sporcu kartı</button><button class="ap-btn" onclick="canliIzlemeLinkiGoster(${a},${b})" title="Veli, çocuğun o anki serisini telefondan canlı izler · PIN gerekmez">🔗 Canlı izleme</button></div></div>`;
                     let dersler = _programSlotlar.filter(s => (s.katilimcilar || []).some(x => x.grup === k.grup && x.ad === k.ad)).flatMap(s => (s.gunler || [s.gun]).map(g => ({ g, s }))).sort((x, z) => ((x.g + 6) % 7) - ((z.g + 6) % 7) || String(x.s.baslangicSaat).localeCompare(String(z.s.baslangicSaat)));
                     let ay = bugunISO().slice(0, 7), gel = ((this.gelisler() || {})[k.ad] || []).filter(t => t.slice(0, 7) === ay).length;
                     let prog = `<div class="ynk-k"><h5>${ik('ys', '📅')}Haftalık program</h5>
@@ -4393,7 +4398,7 @@
             if(typeof kyDepoSenkron === 'function') ['yarismalar', 'yarisma_sporcu'].forEach(a => isler.push(kyDepoSenkron(a, () => kyDepoOku(a), false).catch(() => {})));
             Promise.all(isler).then(yenile, yenile);
         }
-        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {}), dagskEkYukle('dagsk-sporcu-giris.js?v=2').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); _ynkTazele(); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {}), dagskEkYukle('dagsk-sporcu-giris.js?v=3').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); _ynkTazele(); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         window.ynDisDelege = true;
         document.addEventListener('click', function(e) {
             let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if(!el) return;
@@ -7821,7 +7826,7 @@
                     opts.headers = Object.assign({}, opts.headers, { 'X-Dagsk-Oturum': _oturumToken });
                 }
                 let p = orijinalFetch(url, opts);
-                if(yol.indexOf('/api/') === 0 && metod !== 'GET' && yol.indexOf(GIRIS_API) !== 0) {
+                if(yol.indexOf('/api/') === 0 && metod !== 'GET' && yol.indexOf(GIRIS_API) !== 0 && !(opts && opts._oturumKorur)) {
                     p.then(function(res) { if(res.status === 401) oturumDustu(); }).catch(function() {});
                 }
                 return p;
@@ -8650,7 +8655,7 @@
             if(k === 'girisler') {
                 let la = document.getElementById('yonetici-liste');
                 if(la && typeof sgAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
-                dagskEkYukle('dagsk-sporcu-giris.js?v=2').then(() => { if(yoneticiSekmeAktif === 'girisler') sgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
+                dagskEkYukle('dagsk-sporcu-giris.js?v=3').then(() => { if(yoneticiSekmeAktif === 'girisler') sgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi — bağlantını kontrol et.</div>'; });
                 return;
             }
             // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).

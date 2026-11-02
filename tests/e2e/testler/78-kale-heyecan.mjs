@@ -55,16 +55,32 @@ export default async function ({ log }) {
     dogrula(!z || z.can === 20 - 14, 'sarı ok zırhlıya 9×1,5 hasar vermedi (' + (z && z.can) + ')');
     await p.waitForTimeout(1200);
 
-    // ejderha öfkesi: dalga 3'te ejderha, öfke 3 (sınır 4) → sarısız seri → ateş, -1 can, öfke sıfırlanır
+    // ejderha öfkesi: dalga 3'te ejderha, öfke 3 (sınır 4) → sarısız seri → ateş topu HAVADA asılı kalır (2026-11-02), öfke
+    // sıfırlanır; sıradaki seride sarı yoksa kaleye çarpar (-1 can); sarı (9+) ilk ok onu söndürür (💰 +1, can gitmez)
     await yaz("st.can = 3; st.dalga = 3; st.mod = 1;"); await p.evaluate(() => kaleAyarUygula());
-    await yaz("const e = st.dusmanlar.find((d) => d.tip === 'ejderha'); e.ofke = 3; e.x = 900; st.dusmanlar.forEach((d) => { if (d !== e) { d.x = 700; d.tip = 'goblin'; } });");
+    await yaz("const e = st.dusmanlar.find((d) => d.tip === 'ejderha'); e.ofke = 3; e.x = 900; st.dusmanlar.forEach((d) => { if (d !== e) { d.x = 960; d.tip = 'goblin'; } });");
     st = await oku();
     dogrula(st.dusmanlar.some((d) => d.tip === 'ejderha' && d.ofke === 3), 'ejderhada öfke alanı yok');
     dogrula(await p.evaluate(() => document.querySelectorAll('.kale-ofke circle').length === 4), 'ejderhanın öfke göstergesi (4 alev) çizilmedi');
     await seri(['5', '5', '5']);
     st = await oku();
-    esit(st.can, 2, 'öfkeli ejderha ateş edip kalenin canını almadı');
+    esit(st.can, 3, 'ateş topu havada asılı kalmadan kaleyi yaktı');
+    dogrula(st.mermi && st.mermi.ejder && st.mermi.tur === 'ates' && st.mermi.esik === 9, 'ejderha ateş topu havada değil: ' + JSON.stringify(st.mermi));
     esit(st.dusmanlar.find((d) => d.tip === 'ejderha').ofke, 0, 'ateşten sonra öfke sıfırlanmadı');
+    await p.waitForTimeout(1600);
+    dogrula(/SARI ile söndür/.test(await p.evaluate(() => document.getElementById('kale-mermi').textContent)), 'ateş topunda "SARI ile söndür" yazmıyor');
+    await seri(['8', '5', '5']); // 8 sarı değil → söndüremez, çarpar
+    st = await oku();
+    esit(st.can, 2, 'söndürülemeyen ateş topu kalenin canını almadı');
+    dogrula(!st.mermi, 'çarpan ateş topu havada kaldı');
+    await p.waitForTimeout(1500);
+    await yaz("st.can = 3; const e = st.dusmanlar.find((d) => d.tip === 'ejderha'); e.ofke = 3; e.x = 900; st.dusmanlar.forEach((d) => { if (d !== e) d.x = 960; });");
+    await seri(['5', '5', '5']); await p.waitForTimeout(1600);
+    const altin0 = (await oku()).altin || 0;
+    await seri(['9', '5', '5']); // ilk sarı ok ateş topunu söndürür
+    st = await oku();
+    esit(st.can, 3, 'söndürülen ateş topu yine de can aldı');
+    dogrula(!st.mermi && (st.altin || 0) === altin0 + 1, 'sarı ok ateş topunu söndürmedi / altın gelmedi');
     await p.waitForTimeout(1500);
 
     // kale düşerse 1 dalga geri (3 → 2)
