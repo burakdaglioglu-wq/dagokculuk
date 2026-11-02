@@ -19,12 +19,14 @@ const KV_HZ = 15, KV_MAKS_G = 960; // yalnız MediaSource olmayan cihazlardaki y
 function kvEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function kvAd(k) { if (!k) return ''; let i = k.indexOf('|'); return i < 0 ? k : k.slice(i + 1); }
 
-function kvAc(k, mod) {
+function kvAc(k, mod, ops) {
     kvCss();
     if (_kv) kvKapat();
-    _kv = { k: k || null, mod: mod || 'ayna', gecikme: 5, yuz: 'environment', ayna: false, arac: null, noktalar: [], sekiller: [],
+    ops = ops || {};
+    _kv = { k: k || null, mod: mod || 'ayna', sporcular: ops.sporcular || null, mini: false, gecikme: 5, yuz: 'environment', ayna: false, arac: null, noktalar: [], sekiller: [],
         akis: null, akisTel: false, kaynak: 'yerel', kareler: [], tekrar: null, video: null, videoUrl: null, videoAd: '', kayit: null, hiz: 1, raf: 0, zam: 0, temiz: false };
-    try { if (localStorage.getItem('kv_kaynak') === 'tel') _kv.kaynak = 'tel'; } catch (e) {}
+    try { let kk = localStorage.getItem('kv_kaynak'); if (kk === 'tel' || (kk === 'salon' && kvSalonGoster())) _kv.kaynak = kk; } catch (e) {}
+    if (ops.kaynak) _kv.kaynak = ops.kaynak;
     try { let g = parseInt(localStorage.getItem('kv_gecikme'), 10); if ([3, 5, 8, 10].indexOf(g) !== -1) _kv.gecikme = g; } catch (e) {}
     let kap = document.createElement('div'); kap.id = 'kv'; kap.className = 'kv-arka';
     (document.fullscreenElement && document.fullscreenElement !== document.documentElement ? document.fullscreenElement : document.body).appendChild(kap);
@@ -36,7 +38,7 @@ function kvAc(k, mod) {
 }
 // Bilgisayarın kamerası yoksa (kullanıcı: "PC'nin kamerası yok, telefonun kamerasını PC'ye, oradan TV'ye yansıtacağım") kaynak kendiliğinden telefon
 async function kvKameraVarMi() {
-    if (!_kv || _kv.kaynak === 'tel' || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    if (!_kv || _kv.kaynak !== 'yerel' || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
     let l = []; try { l = (await navigator.mediaDevices.enumerateDevices()).filter(function (d) { return d.kind === 'videoinput'; }); } catch (e) { return; }
     if (!l.length && _kv && _kv.kaynak !== 'tel') kvKaynakSec('tel');
 }
@@ -53,7 +55,7 @@ function kvKapat() {
     _kv = null;
 }
 function kvTus(e) {
-    if (!_kv) return;
+    if (!_kv || _kv.mini) return; // köşedeyken tuşlar alttaki ekranın (skor girişi vb.)
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return kvKapat(); }
     if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
     if (e.key === ' ') { e.preventDefault(); e.stopPropagation(); kvOynatDurdur(); }
@@ -88,11 +90,14 @@ function kvCiz() {
             + (_kv.akisTel ? '' : '<video id="kv-canli-kucuk" playsinline muted autoplay></video>') + '</div>'; // telefon kaynağında küçük canlı görüntü yok (telefonun ekranı gösteriyor, PC'ye ek yük)
     }
     kap.innerHTML = '<div class="kv" role="dialog" aria-modal="true" aria-label="Video analiz">'
-        + '<div class="kv-ust"><div class="kv-baslik"><b>🎥 ' + (_kv.k ? kvEsc(kvAd(_kv.k)) : 'Video analiz') + '</b><span>' + (m === 'ayna' ? 'Atışını yap, dön ve kendini izle' : m === 'canli' ? 'Canlı görüntü · kaydet, sonra yavaş izle' : 'Yavaş çekim · kare kare') + '</span></div>'
+        + '<div class="kv-ust"><div class="kv-baslik"><b id="kv-ad">' + kvBaslikYazi() + '</b><span>' + (m === 'ayna' ? 'Atışını yap, dön ve kendini izle' : m === 'canli' ? 'Canlı görüntü · kaydet, sonra yavaş izle' : 'Yavaş çekim · kare kare') + '</span></div>'
         + '<div class="kv-sekmeler">' + sekme('ayna', '⏱', 'Ayna', '(gecikmeli)') + sekme('canli', '🔴', 'Canlı') + sekme('video', '📁', 'Video') + '</div>'
-        + '<div class="kv-ust-sag"><button class="kv-kapat" onclick="kvTemiz(true)" title="Yalnız görüntü (TV için) — ekrana dokununca düğmeler geri gelir" aria-label="Yalnız görüntü">👁</button><button class="kv-kapat" onclick="kvTamEkran()" title="Tam ekran" aria-label="Tam ekran">⛶</button><button class="kv-kapat" onclick="kvKapat()" aria-label="Kapat">✕</button></div></div>'
+        + kvSporcuSecHTML()
+        + '<div class="kv-ust-sag"><button class="kv-kapat" onclick="kvMini(true)" title="Köşeye al — görüntü küçük pencerede sürer, alttaki ekranı (skor girişi) kullanabilirsin" aria-label="Köşeye al">⧉</button><button class="kv-kapat" onclick="kvTemiz(true)" title="Yalnız görüntü (TV için) — ekrana dokununca düğmeler geri gelir" aria-label="Yalnız görüntü">👁</button><button class="kv-kapat" onclick="kvTamEkran()" title="Tam ekran" aria-label="Tam ekran">⛶</button><button class="kv-kapat" onclick="kvKapat()" aria-label="Kapat">✕</button></div></div>'
         + '<div class="kv-sahne" id="kv-sahne">' + sahne + '<div class="kv-ipucu" id="kv-ipucu" hidden></div></div>'
-        + '<div class="kv-alt" id="kv-alt"></div></div>';
+        + '<div class="kv-alt" id="kv-alt"></div>'
+        + '<div class="kv-mini-bar"><b id="kv-mini-ad">' + kvBaslikYazi() + '</b><button onclick="kvMini(false)" aria-label="Büyüt" title="Büyüt">⤢</button><button onclick="kvKapat()" aria-label="Kapat">✕</button></div></div>';
+    kap.classList.toggle('kv-mini', !!_kv.mini);
     kvAltCiz();
     kvBagla();
 }
@@ -105,7 +110,7 @@ function kvAltCiz() {
     let hizlar = '<div class="kv-grup">' + [0.25, 0.5, 1].map(function (h) { return '<button class="' + (_kv.hiz === h ? 'aktif' : '') + '" onclick="kvHiz(' + h + ')">' + (h === 1 ? '1×' : h === 0.5 ? '½×' : '¼×') + '</button>'; }).join('') + '</div>';
     let oynat = '<div class="kv-grup"><button onclick="kvKare(-1)" aria-label="Bir kare geri">◀</button><button class="genis" id="kv-oynat" onclick="kvOynatDurdur()">⏯</button><button onclick="kvKare(1)" aria-label="Bir kare ileri">▶</button></div>';
     let surgu = '<input type="range" id="kv-surgu" class="kv-surgu" min="0" max="1000" value="0" oninput="kvSurgu(this.value)" aria-label="Zaman">';
-    let kaynak = '<div class="kv-grup"><button class="' + (_kv.kaynak === 'yerel' ? 'aktif' : '') + '" onclick="kvKaynakSec(\'yerel\')" title="Bu cihazın kamerası">📷 Bu cihaz</button><button class="' + (_kv.kaynak === 'tel' ? 'aktif' : '') + '" onclick="kvKaynakSec(\'tel\')" title="Telefonun kamerası QR ile bu ekrana gelir">📱 Telefon</button></div>';
+    let kaynak = '<div class="kv-grup"><button class="' + (_kv.kaynak === 'yerel' ? 'aktif' : '') + '" onclick="kvKaynakSec(\'yerel\')" title="Bu cihazın kamerası">📷 Bu cihaz</button><button class="' + (_kv.kaynak === 'tel' ? 'aktif' : '') + '" onclick="kvKaynakSec(\'tel\')" title="Telefonun kamerası QR ile bu ekrana gelir">📱 Telefon</button>' + (kvSalonGoster() || _kv.kaynak === 'salon' ? '<button class="' + (_kv.kaynak === 'salon' ? 'aktif' : '') + '" onclick="kvKaynakSec(\'salon\')" title="Atış hattındaki Tapo kamerası (bilgisayarda köprü açık olmalı)">📹 Salon</button>' : '') + '</div>';
     if (m === 'ayna' && !tekrar) {
         alt = '<div class="kv-alt-satir">' + kaynak + '<div class="kv-grup"><span class="kv-et">Gecikme</span>' + [3, 5, 8, 10].map(function (g) { return '<button class="' + (_kv.gecikme === g ? 'aktif' : '') + '" onclick="kvGecikme(' + g + ')">' + g + ' sn</button>'; }).join('') + '</div>'
             + '<button class="kv-btn ana" onclick="kvTekrar()">⏪ Son 10 sn\'yi yavaş izle</button><button class="kv-btn" onclick="kvKameraCevir()">🔄 Kamera</button></div>'
@@ -275,6 +280,7 @@ function kvMseTekrar() {
 async function kvKameraAc() {
     if (!_kv) return;
     let mod = _kv.mod;
+    if (_kv.kaynak === 'salon') { let a = await kvSalonAkis(mod); if (!a || !_kv || _kv.mod !== mod || _kv.kaynak !== 'salon') return; _kv.akis = a; _kv.akisSalon = true; _kv.akisTel = false; return kvAkisHazir(mod); }
     if (_kv.kaynak === 'tel') { let a = await kvTelAkis(mod); if (!a || !_kv || _kv.mod !== mod) return; _kv.akis = a; _kv.akisTel = true; return kvAkisHazir(mod); }
     try {
         _kv.akis = await navigator.mediaDevices.getUserMedia({ video: { facingMode: _kv.yuz, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: false }); // 720p: ayna için yeterli, işlemciye 1080'in yarısı yük
@@ -339,7 +345,7 @@ function kvKareCiz(blob) {
     }).catch(function () { if (_kv) _kv.ciziliyor = false; });
 }
 function kvGecikme(g) { if (!_kv) return; _kv.gecikme = g; try { localStorage.setItem('kv_gecikme', String(g)); } catch (e) {} _kv.sonKare = null; if (_kv.mse) { let v = _kv.mse.v, b = v.buffered; if (b.length) v.currentTime = Math.max(b.start(0), b.end(b.length - 1) - g); } kvAltCiz(); }
-function kvAkisDurdur() { if (_kv && _kv.akis && _kv.akisTel) { _kv.akis = null; _kv.akisTel = false; return; } if (_kv && _kv.akis) { try { _kv.akis.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} _kv.akis = null; } }
+function kvAkisDurdur() { if (_kv && _kv.akisSalon) { kvSalonKapat(); _kv.akis = null; _kv.akisSalon = false; return; } if (_kv && _kv.akis && _kv.akisTel) { _kv.akis = null; _kv.akisTel = false; return; } if (_kv && _kv.akis) { try { _kv.akis.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} _kv.akis = null; } }
 function kvKameraKapat() {
     if (!_kv) return;
     clearInterval(_kv.kayitSaat);
@@ -348,7 +354,7 @@ function kvKameraKapat() {
     kvMseKapat();
     kvAkisDurdur(); _kv.gizli = null; _kv.kareler = []; _kv.sonKare = null;
 }
-function kvKameraCevir() { if (!_kv) return; if (_kv.akisTel) { try { _fl.tel.kanal.send(JSON.stringify({ cevir: true })); } catch (e) {} if (typeof showToast === 'function') showToast('Telefonda kamera çevrildi', 'info'); return; } _kv.yuz = _kv.yuz === 'environment' ? 'user' : 'environment'; let m = _kv.mod; kvKameraKapat(); kvCiz(); if (m === 'ayna' || m === 'canli') kvKameraAc(); }
+function kvKameraCevir() { if (!_kv) return; if (_kv.kaynak === 'salon') { if (typeof showToast === 'function') showToast('Salon kamerası sabit — yönünü Tapo uygulamasından çevir', 'info'); return; } if (_kv.akisTel) { try { _fl.tel.kanal.send(JSON.stringify({ cevir: true })); } catch (e) {} if (typeof showToast === 'function') showToast('Telefonda kamera çevrildi', 'info'); return; } _kv.yuz = _kv.yuz === 'environment' ? 'user' : 'environment'; let m = _kv.mod; kvKameraKapat(); kvCiz(); if (m === 'ayna' || m === 'canli') kvKameraAc(); }
 
 // ⏪ arabelleği dondur → kare kare / yavaş izle
 function kvTekrar() {
@@ -550,6 +556,10 @@ function kvCss() {
         '@media (orientation:landscape) and (max-height:560px){.kv{grid-template-columns:minmax(0,1fr) minmax(220px,34vw);grid-template-rows:auto minmax(0,1fr)}.kv-ust{grid-column:1/-1}.kv-sahne{grid-column:1;grid-row:2}.kv-alt{grid-column:2;grid-row:2;overflow-y:auto;border-top:0;border-left:1px solid #222b28;justify-content:flex-start}.kv-alt-satir{flex-wrap:wrap;overflow:visible;justify-content:flex-start}.kv-surgu{flex-basis:100%!important;max-width:none}.kv-temiz .kv{grid-template-columns:minmax(0,1fr)}}',
         '.kv button:focus-visible,.kv-btn:focus-within{outline:2px solid #FFE066;outline-offset:2px}',
         '.kv-grup button,.kv-btn{white-space:nowrap}',
+        '.kv-sporcu{min-height:40px;max-width:200px;padding:0 10px;border-radius:10px;border:1px solid #2c3633;background:#161c1a;color:#e7ecea;font:inherit;font-weight:700;font-size:13.5px;flex-shrink:1;min-width:0}',
+        '.kv-mini-bar{display:none}.kv-arka.kv-mini{inset:auto 12px 12px auto;width:min(380px,calc(100vw - 24px));height:auto;aspect-ratio:16/10;border-radius:14px;overflow:hidden;border:1px solid #2c3633;box-shadow:0 18px 50px rgba(0,0,0,.55)}',
+        '.kv-mini .kv-ust,.kv-mini .kv-alt,.kv-mini .kv-ipucu{display:none!important}.kv-mini .kv{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}.kv-mini .kv-sahne{grid-column:1!important;grid-row:1!important}.kv-mini .kv-bos{transform:scale(.6)}',
+        '.kv-mini .kv-mini-bar{display:flex;position:absolute;left:0;right:0;top:0;z-index:2;align-items:center;gap:4px;padding:4px 4px 10px 10px;background:linear-gradient(rgba(0,0,0,.7),transparent)}.kv-mini-bar b{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kv-mini-bar button{width:34px;height:34px;border-radius:9px;border:0;background:rgba(22,28,26,.85);color:#e7ecea;font-size:16px;cursor:pointer}',
         '@media (max-width:760px){.kv-uzun,.kv-baslik span{display:none}.kv-baslik b{font-size:16px}.kv-sekmeler button{padding:0 10px}.kv-btn{padding:0 12px}.kv-surgu{min-width:140px}}',
         '@media (max-width:480px){.kv-ust{flex-wrap:wrap;row-gap:6px}.kv-baslik{flex:1 1 0}.kv-sekmeler{order:3;width:100%}.kv-sekmeler button{flex:1}.kv-ust-sag .kv-kapat{width:40px;height:40px}.kv-alt-satir{flex-wrap:wrap;overflow:visible}.kv-surgu{flex-basis:100%!important;max-width:none}}',
         '@media (max-height:520px){.kv-ust{padding:4px 10px}.kv-baslik span{display:none}.kv-kapat{width:38px;height:38px}.kv-sekmeler button,.kv-grup button{min-height:34px}.kv-btn{min-height:36px}.kv-btn.buyuk{min-height:40px}.kv-alt{gap:4px;padding:6px 10px calc(6px + env(safe-area-inset-bottom))}.kv-surgu{height:24px}}'
@@ -623,4 +633,58 @@ function kvTelPanel() {
         + (t.kod ? '<div class="kv-tel-kod">Oda kodu <b>' + kvEsc(t.kod) + '</b> · telefon ve bilgisayar aynı Wi-Fi\'de olursa en akıcı (720p–1080p)</div>' : '')
         + '<div class="kv-tel-durum" id="kv-tel-durum"><i></i><span>' + kvEsc(durum) + '</span></div>'
         + '<div class="kv-tel-btn"><button class="kv-btn" onclick="flTelefonKes()">Vazgeç</button><button class="kv-btn" onclick="kvKaynakSec(\'yerel\')">📷 Bu cihazın kamerası</button></div></div></div></div>';
+}
+// ---------------------------------------------------------------- 📹 salon kamerası (Tapo C212 → bilgisayardaki go2rtc köprüsü)
+// Kullanıcı (2026-11-02): "Yarışma sekmesinde bir bölüm oluştur, bu bölümde sporcu atarken izlenebilsin". Form Lab'ın köprü
+// bağlantısı (flSalonAkis: önce WebRTC, olmazsa MSE) kullanılır ama bağlantı tutamakları bu pencereye ayrılır — Form Lab kendi
+// kamerasını açıp kapatınca (flAkisBirak → flSalonKapat) bu pencerenin görüntüsü kopmasın. go2rtc aynı akışı iki izleyiciye verir.
+function kvSalonGoster() {
+    try { if (localStorage.getItem('dagsk_salon_kalite') || localStorage.getItem('dagsk_formlab_kamera') === 'salon' || localStorage.getItem('kv_kaynak') === 'salon') return true; } catch (e) {}
+    return !!(window.matchMedia && matchMedia('(pointer:fine)').matches) && !/Android|iPhone|iPad/i.test(navigator.userAgent);
+}
+async function kvSalonAkis(mod) {
+    if (typeof flSalonAkis !== 'function') {
+        try { await dagskEkYukle('dagsk-km-formlab.js'); } catch (e) { kvSahneMesaj('<b>Salon kamerası yüklenemedi</b><p>Sayfayı yenileyip tekrar dene.</p>'); return null; }
+    }
+    if (!_kv || _kv.mod !== mod) return null;
+    kvSahneMesaj('<b>📹 Salon kamerasına bağlanılıyor…</b><p>Bilgisayardaki köprü penceresi (siyah pencere) açık olmalı.</p>');
+    let onceki = { pc: _fl.salonPc, mse: _fl.salonMse }, akis = null, hata = null;
+    _fl.salonPc = null; _fl.salonMse = null;
+    try { akis = await flSalonAkis(); } catch (e) { hata = e; }
+    let benim = { pc: _fl.salonPc, mse: _fl.salonMse };
+    _fl.salonPc = onceki.pc; _fl.salonMse = onceki.mse;
+    if (akis && _kv && _kv.mod === mod && _kv.kaynak === 'salon') { _kv.salon = benim; return akis; }
+    kvSalonKapat(benim);
+    if (_kv && _kv.mod === mod && _kv.kaynak === 'salon') {
+        kvSahneMesaj('<b>Salon kamerasına bağlanılamadı</b><p>Bilgisayarda <b>dagsk-kamera-koprusu.bat</b> açık mı, Tapo ve bilgisayar aynı hotspot\'ta mı? Kurulum penceresi köprüyü ve kamerayı kendisi kontrol eder.'
+            + (hata ? '<br><small style="opacity:.7">' + kvEsc(String(hata && hata.message || hata)) + '</small>' : '') + '</p>'
+            + '<button class="kv-btn ana buyuk" onclick="kvKaynakYenile()">🔄 Tekrar dene</button><button class="kv-btn" onclick="flSalonKurulum()">⚙️ Kurulum / kontrol</button>'
+            + '<div class="kv-tel-btn"><button class="kv-btn" onclick="kvKaynakSec(\'tel\')">📱 Telefon</button><button class="kv-btn" onclick="kvKaynakSec(\'yerel\')">📷 Bu cihaz</button></div>');
+    }
+    return null;
+}
+function kvSalonKapat(h) {
+    h = h || (_kv && _kv.salon); if (_kv && h === _kv.salon) _kv.salon = null;
+    if (!h || typeof flSalonKapat !== 'function') return;
+    let onceki = { pc: _fl.salonPc, mse: _fl.salonMse };
+    _fl.salonPc = h.pc; _fl.salonMse = h.mse; flSalonKapat();
+    _fl.salonPc = onceki.pc; _fl.salonMse = onceki.mse;
+}
+// ⧉ Köşeye al: görüntü sağ altta küçük pencerede sürer, alttaki Yarışma ekranı (skor girişi, sayaç) kullanılır
+function kvMini(ac) {
+    if (!_kv) return; _kv.mini = !!ac;
+    let kp = document.getElementById('kv'); if (kp) kp.classList.toggle('kv-mini', _kv.mini);
+    if (_kv.mini) { _kv.arac = null; _kv.noktalar = []; kvAltCiz(); }
+    setTimeout(kvYerlesim, 30);
+}
+// Kim atıyor? — Yarışmadan açılınca sporcu listesi gelir; seçilen ad başlıkta görünür, kayıt Form Lab'a bu sporcuyla gider
+function kvBaslikYazi() { return '🎥 ' + (_kv && _kv.k ? kvEsc(kvAd(_kv.k)) : _kv && _kv.sporcular ? 'Atış hattı · canlı' : 'Video analiz'); }
+function kvSporcuSecHTML() {
+    if (!_kv || !_kv.sporcular || !_kv.sporcular.length) return '';
+    return '<select class="kv-sporcu" onchange="kvSporcuSec(this.value)" aria-label="Kim atıyor?"><option value="">Kim atıyor? —</option>'
+        + _kv.sporcular.map(function (k) { return '<option value="' + kvEsc(k) + '"' + (k === _kv.k ? ' selected' : '') + '>' + kvEsc(kvAd(k)) + '</option>'; }).join('') + '</select>';
+}
+function kvSporcuSec(k) {
+    if (!_kv) return; _kv.k = k || null;
+    ['kv-ad', 'kv-mini-ad'].forEach(function (id) { let el = document.getElementById(id); if (el) el.innerHTML = kvBaslikYazi(); });
 }

@@ -250,6 +250,8 @@ function yzSecimCiz() {
         + '<span class="yz-tur-acik">2v2 · 3v3 · 4v4 · 5v5 — takımlara isim ver, sıralama turuna göre dengeli kur, sıralama turundaki gibi süreli seriler, eleme ağacı.</span><span class="yz-tur-durum sakin">Sıralama turundan sonra ideal</span></button>'
         + '<button class="yz-tur" onclick="yzTurdenAc(\'duello\')"><span class="yz-tur-ikon">🥊</span><span class="yz-tur-ad">Düello &amp; Hayali Rakip</span>'
         + '<span class="yz-tur-acik">Herkes kendi başına eleme ağacında ya da sınıf birlikte sanal rakibe karşı.</span><span class="yz-tur-durum sakin">Ders içi eğlenceli rekabet</span></button>'
+        + '<button class="yz-tur" onclick="yzCanliIzle()"><span class="yz-tur-ikon">📹</span><span class="yz-tur-ad">Atış Hattı · Canlı İzle</span>'
+        + '<span class="yz-tur-acik">Sporcu atarken salon kamerasından (Tapo) ya da telefondan canlı izle; kaydet, yavaş izle, Form Lab\'a gönder. Köşeye alınca skor girişi sürer.</span><span class="yz-tur-durum sakin">Salon kamerası · telefon · bu cihaz</span></button>'
         + '</div></div>';
     yzUstBarEkle(null);
 }
@@ -454,6 +456,7 @@ function yzTurHTML(o) {
         + arac('📺', 'TV ekranı', 'yzTvAc()', 'Salon TV\'sinde canlı sıralama', 'tv')
         + arac('🎤', 'Yetenek Şovu', 'yzSovEkran()', 'Çocuklar için şov ekranı: kurayla sahneye çıkış, hayvan jüri, tören — puan sıralaması tur boyunca görünmez')
         + arac('🖨', 'Skor kâğıtları', "yzEk(\'yzSkorKagitlariPdf\')", 'Hedef başına basılı skor kağıdı (atıcı + yazıcı imzası)')
+        + arac('📹', 'Canlı izle', 'yzCanliIzle()', 'Atış hattını canlı izle (salon kamerası / telefon) — köşeye alıp skor girmeye devam edebilirsin')
         + arac('🎥', 'Ayna / Video', 'yzVideoAc()', '5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün')
         + arac('📊', 'Analiz', 'yzAnalizAc()', 'Antrenör tablosu, ısı haritası, gelişim grafiği')
         + arac('🎯', 'Hedefler', 'yzHedeflerAc()', 'Kişisel hedef puanları')
@@ -643,6 +646,16 @@ function yzGirisTamamHTML(g, o, d) {
 function yzVideoAc(kEnc) {
     let k = kEnc ? decodeURIComponent(kEnc) : null;
     let ac = function () { kvAc(k, 'ayna'); };
+    if (typeof kvAc === 'function') return ac();
+    (typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-km-video.js') : Promise.reject()).then(ac).catch(function () { if (typeof showToast === 'function') showToast('Video aracı yüklenemedi.', 'error'); });
+}
+// 📹 Atış hattı canlı izle (2026-11-02, kullanıcı: "yarışma sekmesinde bir bölüm oluştur, bu bölümde sporcu atarken izlenebilsin").
+// Aynı video penceresi (kv*) canlı modda; bilgisayarda kaynak salon kamerası (Tapo → go2rtc köprüsü). "Kim atıyor?" listesi
+// süren turun sporcuları (hedef sırasıyla) ya da dersin listesi; kayıt Form Lab'a seçilen sporcuyla gider. ⧉ ile köşeye alınır.
+function yzCanliIzle() {
+    let o = yzOku(), d = o.durum, sp = d && d.katilimci && d.katilimci.length && d.asama && d.asama !== 'kurulum' ? yzHedefSirasi(o)
+        : (typeof _kmListe !== 'undefined' && _kmListe || []).map(function (x) { return x.g + '|' + x.ad; });
+    let ac = function () { kvAc(null, 'canli', { sporcular: sp, kaynak: kvSalonGoster() ? 'salon' : null }); };
     if (typeof kvAc === 'function') return ac();
     (typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-km-video.js') : Promise.reject()).then(ac).catch(function () { if (typeof showToast === 'function') showToast('Video aracı yüklenemedi.', 'error'); });
 }
