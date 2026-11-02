@@ -21,7 +21,7 @@ export default async function ({ log }) {
       const t = ozdBugun(), dun = ozdTarihEkle(t, -1), once = ozdTarihEkle(t, -2), [g, ad] = ozdAyir(k);
       const gun = OZD_GUNLER[new Date(t + 'T12:00:00').getDay()];
       ozdYaz('ogr|' + k, { g, ad, aktif: true, saatler: gun.charAt(0).toLocaleUpperCase('tr-TR') + gun.slice(1) + ' 17:00', paket: '' });
-      ['yok|' + k + '|' + t, 'yok|' + k + '|' + dun, 'yok|' + k + '|' + once].forEach((x) => { const d = ozdDepo(); delete d[x]; kyDepoYazYerel('ozel_ders', d); });
+      ['yok|' + k + '|' + t, 'yok|' + k + '|' + dun, 'yok|' + k + '|' + once].forEach((x) => { ozdYaz(x, {}); }); // durum alanı yok → elle işaret yok sayılır; sunucudaki eski koşu kaydını da ezer
       ozdYaz('ders|' + k + '|' + once, { g, ad, tarih: once, hareketler: ['ucak'], kayitlar: [{ id: 'y1', h: 'ucak', p: ['7'], t: 1 }], not: '' });
       const d0 = ozdDepo(); delete d0['ders|' + k + '|' + t]; delete d0['ders|' + k + '|' + dun]; kyDepoYazYerel('ozel_ders', d0);
       _ozdSecili = null; _ozdYoklama = false; ozdCiz();
@@ -57,6 +57,16 @@ export default async function ({ log }) {
     await p.evaluate((t) => ozdYokTarihSec(t), tarihler.t); await p.waitForTimeout(150);
     const tablo = await p.evaluate((ad) => { const tr = [...document.querySelectorAll('.ozd-yok-tablo tbody tr')].find((x) => x.textContent.indexOf(ad) >= 0); return tr ? tr.textContent : ''; }, k.split('|')[1]);
     dogrula(/🔁/.test(tablo) && /kaldı/.test(tablo), 'aylık çizelge satırı: ' + tablo);
+    // ⏪ geçmişe giriş: geçmiş ders günü çipleri; elle eklenen eski günün kutusu sırayla Geldi → Gelmedi
+    dogrula(await p.locator('.ozd-yok-gecmis .ozd-cip').count() > 0, 'geçmiş ders çipleri yok');
+    const eski = await p.evaluate(([t, k]) => { const x = ozdTarihEkle(t, -9); ozdYaz('yok|' + k + '|' + x, {}); const d = ozdDepo(); delete d['ders|' + k + '|' + x]; kyDepoYazYerel('ozel_ders', d); ozdYokGunEkle(x); return x; }, [tarihler.t, k]);
+    await p.evaluate((x) => { _ozdYokAy = x.slice(0, 7); ozdCiz(); }, eski); await p.waitForTimeout(150);
+    const hucre = () => p.locator('.ozd-yok-tablo tbody tr', { hasText: k.split('|')[1] }).first().locator(`button.ozd-yok-hucre[onclick*="${eski}"]`);
+    await hucre().click(); await p.waitForTimeout(120);
+    esit(await p.evaluate(([k, x]) => ozdYokDurum(k, x).durum, [k, eski]), 'geldi', 'çizelge kutusu 1. dokunuş');
+    await hucre().click(); await p.waitForTimeout(120);
+    esit(await p.evaluate(([k, x]) => ozdYokDurum(k, x).durum, [k, eski]), 'gelmedi', 'çizelge kutusu 2. dokunuş');
+    await p.evaluate(([k, x]) => { ozdYaz('yok|' + k + '|' + x, { durum: null }); }, [k, eski]);
     // telefon genişliği
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(250);
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), '390 px yatay taşma');
