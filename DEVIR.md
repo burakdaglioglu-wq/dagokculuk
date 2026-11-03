@@ -5510,3 +5510,18 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Yeni uç:** `PUT /api/gider/:id` (src/routes/gider.ts + `updateGider`), oturumlu ve günlüğe yazılır. Eski aidatGiderPaneliHTML / aidatGiderListesiYukle / aidatButce* / giderEkle / giderSil kaldırıldı; bağlantısız ekleme kuyruğu (`_giderBekleyenPostlar`) aynı.
 - **Yönetici → Canlı Takip düzeltmesi:** Yönetici paneli uygulama açılışında doğrudan açılınca arka plan `canlitakip` yapılıyordu, panelden çıkan boş Canlı Takip görüyordu. Artık `ana`.
 - Test 99. Bu sürümde eski kodda da kalan testler: 23-hayvan-kurtarma, 53-aidat-muaf-baslangic, 96-ozel-ders-yoklama (gerilemesi değil, ayrıca bakılmalı); Milo testleri PIN olmadan çalıştırılmadı.
+
+## 90. 📷 Fotoğrafla puanla güçlendi + 📱 Atış Ölçer (2026-11-04, v374)
+- Kullanıcı rakip uygulamayı (Arrow Tempo: kamerayla ok bulma, saat/AirPods hareketiyle atış zamanlaması, "Aim Replay") gösterdi; karşılaştırmadan sonra "son ikisini yap" dedi: fotoğraf puanlamayı güçlendir + telefonun hareket sensörü. Saat, nabız ve AirPods tarayıcıdan erişilemediği için yapılmadı.
+- **Fotoğrafla puanla (dagsk-hedef-foto.js):**
+  - **İlk fotoğrafta ok bulma** (`radyalAday`): önceki fotoğraf yoksa düzleştirilmiş spotta her 1 birimlik yarıçap diliminin ortanca rengi = halka rengi; komşu dilimlerin ortancasından 120+ sapan pikseller (halka sınırının ±0,9 birimi hariç) → 3 px komşulukla bileşen → yalnız düz ve ince parçalar (boy ≥ 9, genişlik ≤ 6 birim, PCA oranı ≥ 9, pikselleri çoğunlukla sınırda değil) = ok gövdesi. Eski kâğıt delikleri önerilmez. Uç bulma + "bütün gövdeler aynı yöne" oylaması `oneriler()`'de ortak; ok + gölgesi 3,5 birimden yakınsa tek öneri.
+  - **Emin değil (?)**: `supheBul` — uç halka çizgisine 1,2 birimden yakın ("çizgide") ya da gövdesiz leke ("belirsiz") → kırmızı kesikli halka + ? (kanvas), `.hf-chip.supheli`, "N ok emin değil" uyarısı; ok sürüklenince kalkar.
+  - **Hedef türü seçici** kamera ekranında: 6 halka · Tam hedef · 3'lü dikey · **Vegas 3'lü** (üçgen; puanlama ve kayıt 3'lü spotla aynı, `_hf.yerlesim`, `dagsk_hf_yerlesim`).
+  - Düzleştirme fotoğraftaki dönmeyi korumaz (simetrik M) → testler u,v değil merkeze uzaklık / puan karşılaştırır. `_hfIc.radyalAday` test için açık. Test 83 genişledi.
+- **📱 Atış Ölçer (yeni, dagsk-hareket.js, hk*)**: Skor Gir'de "📷 Fotoğrafla puanla"nın altındaki düğme (`hareketAc()`), KM › Diğer araçlar › Teknik & video (`atisolcer`, kmAracSec'te tam ekran açılır, sporcu dersten seçilir).
+  - `hkIsle` saf durum makinesi (devicemotion): BEKLE → yerçekimi dinlenme yönüne göre 35°+ → KALDIR → dönme 400 ms < 12°/s → NİŞAN → doğrusal ivme > 15 m/s² ya da dönme > 220°/s → BIRAKTI → TAKİP → yay iner (< 20°) → BEKLE. Atmadan inerse İNDİRDİ (sayılır); atıştan sonra inmek sayılmaz.
+  - Her ok: tutuş, kaldır→bırak, salınım (son 2 sn, derece), iz (son 2 sn, 30 nokta). İz yerçekimine göre: yatay = ĝ etrafında, dikey = ĝ × e (yayda e = ekran normali z, kolda telefon uzun ekseni y); işaret "Yönü çevir".
+  - Hedef tutuş (3–6 sn) aşılınca `navigator.vibrate` (yalnız Android), bırakışta isteğe bağlı bip, Wake Lock. iPhone'da `DeviceMotionEvent.requestPermission` Başla dokunuşunda.
+  - Bitir → özet (ort. tutuş, ±tutarlılık, kaldır→bırak, indirme, tutuş–puan ilişkisi) + **NİŞAN İZİ TEKRARI**: oturumdan sonra işaretlenen detayliOklar sırayla eşleşir, her iz okun deldiği yerde biter (ölçek: mesafe seçimi, 1° = tan(1°)·mesafe; 80 cm yüzde 1 birim 0,4 cm).
+  - Oturumlar cihazda: `dagsk_atis_olcer` {grup|ad: son 10}, ayar `dagsk_hk_ayar`, yön `dagsk_hk_cevir`. Test için `_hkIc.besle(örnekler)`. Test 100 (sahte sensör: 3 atış 4/3/6 sn + 1 indirme).
+  - **AÇIK:** gerçek telefonla denenmedi; eşikler (35°/12°/s/15 m/s²) sahada ayarlanmalı.

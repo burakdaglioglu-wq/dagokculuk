@@ -6,18 +6,19 @@
 import { sayfaAc, uygulamaAc, dogrula, esit } from '../yardimci.mjs';
 
 // sayfada çalışır: yapay hedef fotoğrafı (dataURL değil, canvas döner)
-const FOTO_CIZ = `window._hfTestFoto = function (delikler) {
+const FOTO_CIZ = `window._hfTestFoto = function (delikler, ucgen) {
   const c = document.createElement('canvas'); c.width = 900; c.height = 1400; const g = c.getContext('2d');
   g.fillStyle = '#5a4634'; g.fillRect(0, 0, 900, 1400); g.fillStyle = '#ece6d8'; g.fillRect(150, 160, 600, 1080);
   const A = { k: 2.2, sy: 0.84, rot: 0.12 };
   const P = (u, v) => { const x = u * A.k, y = v * A.k * A.sy, c1 = Math.cos(A.rot), s1 = Math.sin(A.rot); return [450 + x * c1 - y * s1, 700 + x * s1 + y * c1]; };
-  [-140, 0, 140].forEach((oy, s) => {
+  const YER = ucgen ? [[0, -75], [-72, 62], [72, 62]] : [[0, -140], [0, 0], [0, 140]]; // v374 Vegas üçgen
+  YER.forEach(([ox, oy], s) => {
     [[60, '#2f7fd6'], [50, '#2f7fd6'], [40, '#e23b2e'], [30, '#e23b2e'], [20, '#f5d32a'], [10, '#f5d32a'], [5, '#f5d32a']].forEach(([r, f]) => {
-      g.beginPath(); for (let t = 0; t <= 60; t++) { const a = t / 60 * Math.PI * 2, p = P(Math.cos(a) * r, oy + Math.sin(a) * r); t ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }
+      g.beginPath(); for (let t = 0; t <= 60; t++) { const a = t / 60 * Math.PI * 2, p = P(ox + Math.cos(a) * r, oy + Math.sin(a) * r); t ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }
       g.closePath(); g.fillStyle = f; g.fill(); g.strokeStyle = '#222'; g.lineWidth = 1; g.stroke();
     });
-    (delikler[s] || []).forEach(([u, v, golge]) => { const p = P(u, oy + v); g.fillStyle = '#111'; g.beginPath(); g.arc(p[0], p[1], 5, 0, Math.PI * 2); g.fill();
-      if (golge) { const q = P(u + 22, oy + v - 30); g.strokeStyle = '#1b1b1b'; g.lineWidth = 6; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } });
+    (delikler[s] || []).forEach(([u, v, golge]) => { const p = P(ox + u, oy + v); g.fillStyle = '#111'; g.beginPath(); g.arc(p[0], p[1], 5, 0, Math.PI * 2); g.fill();
+      if (golge) { const q = P(ox + u + 22, oy + v - 30); g.strokeStyle = '#1b1b1b'; g.lineWidth = 6; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } });
   });
   return c;
 };`;
@@ -102,6 +103,31 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => document.querySelectorAll('#hf .hf-chip.oneri').length >= 3), 'öneriler işaretli (kesikli) değil');
     await p.click('#hf >> text=✓ SERİYE YAZ'); await p.waitForTimeout(400);
     esit(await p.evaluate(([g, ad]) => turnuvaDB[g][ad].seriler[turnuvaDB[g][ad].seriler.length - 1].puan, [g, ad]), 24, 'ikinci seri puanı');
+
+    // ④ v374 İLK FOTOĞRAF: önceki fotoğraf yok, oklar hedefte (gövdeli) → halka arka plan modeliyle bulunur; eski delikler önerilmez.
+    // Spot 2'deki ok tam 8/7 çizgisinde (r = 30) → kırmızı ? (emin değil).
+    const ilkOk = [[-15, 0], [0, 30], [-25, -25]];
+    await p.evaluate(([eski, ilkOk]) => { _hfIc.durum().onceki = {}; _hfIc.fotoIsle(_hfTestFoto(eski.map((e, s) => e.concat([[ilkOk[s][0], ilkOk[s][1], true]])))); }, [eski, ilkOk]);
+    await p.waitForTimeout(300);
+    const t7 = await p.evaluate(() => _hfIc.durum().oklar.map((o) => ({ s: o.s, u: o.u, v: o.v, sup: o.supheli })));
+    log('ilk fotoğraf: ' + JSON.stringify(t7.map((o) => [o.s, +o.u.toFixed(1), +o.v.toFixed(1), o.sup])));
+    esit(t7.length, 3, 'ilk fotoğrafta her spotta bir ok bulunmalı');
+    // çerçeve fotoğraftaki dönmeyi korumaz (simetrik M) → merkeze uzaklık (= puan) karşılaştırılır
+    t7.forEach((o) => { const g = ilkOk[o.s], r = Math.hypot(o.u, o.v), rg = Math.hypot(g[0], g[1]); dogrula(Math.abs(r - rg) < 2, `spot ${o.s + 1} okunun merkeze uzaklığı ${r.toFixed(1)} ≠ ${rg.toFixed(1)}`); });
+    esit(t7.find((o) => o.s === 1).sup, 'çizgide', 'çizgideki ok ? ile işaretlenmeli');
+    dogrula(t7.filter((o) => o.s !== 1).every((o) => !o.sup), 'çizgide olmayan oklar emin olmalı');
+    dogrula(await p.evaluate(() => document.querySelectorAll('#hf .hf-toplam .hf-chip.supheli').length === 1 && /emin değil/.test(document.getElementById('hf').textContent)), 'emin değil uyarısı / ? çipi yok');
+
+    // ⑤ v374 Vegas 3'lü (üçgen): tür seçici → spotlar üçgende bulunur, sıra üstteki → soldaki → sağdaki
+    await p.evaluate(() => { hfGeri(); });
+    await p.waitForSelector('#hf .hf-tur');
+    await p.locator('#hf .hf-tur', { hasText: 'Vegas' }).click(); await p.waitForTimeout(200);
+    dogrula(await p.evaluate(() => /VEGAS 3'LÜ/.test(document.getElementById('hf').textContent) && _hfIc.durum().yerlesim === 'ucgen'), 'Vegas seçilmedi');
+    await p.evaluate(() => _hfIc.fotoIsle(_hfTestFoto([[], [], []], true))); await p.waitForTimeout(250);
+    const t8 = await p.evaluate(() => { const d = _hfIc.durum(); return { akis: d.akis, sp: d.spotlar.map((s) => [Math.round(s.x), Math.round(s.y)]) }; });
+    esit(t8.akis, 'duzelt', 'Vegas: düzelt ekranına geçmedi'); esit(t8.sp.length, 3, 'Vegas: 3 spot');
+    dogrula(t8.sp[0][1] < t8.sp[1][1] && t8.sp[1][0] < t8.sp[2][0], 'Vegas spot sırası yanlış: ' + JSON.stringify(t8.sp));
+    await p.evaluate(() => { hfGeri(); hfTipSec('3spot', 'dikey'); });
 
     // M (ıska) + eksik ok: 2 ok + 1 M
     await p.evaluate(([eski]) => _hfIc.fotoIsle(_hfTestFoto(eski)), [eski]); await p.waitForTimeout(200);

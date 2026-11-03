@@ -12429,6 +12429,8 @@
         // hedef hakemi) artık her açılışta değil, sadece Video ekranı (ya da Karışık Sınıf › Video & Duruş) açılınca
         // yükleniyor. Teknik Çalışma ve Ritim modülleri de kendi ekranları açılınca.
         // 📷 Hedef Haritası (v354) — Skor Gir'deki "Fotoğrafla puanla" düğmesi; modül ilk dokunuşta yüklenir.
+        // 📱 Atış Ölçer (v374, dagsk-hareket.js): telefonun hareket sensörüyle kaldırma · nişan · bırakış, nişan izi tekrarı
+        function hareketAc(ops) { dagskEkYukle('dagsk-hareket.js').then(function() { window.hkAc(ops); }).catch(function() { showToast('Atış Ölçer yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         function hedefFotoAc() { dagskEkYukle('dagsk-hedef-foto.js').then(function() { window.hfAc(); }).catch(function() { showToast('Hedef Haritası yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         function videoModulleriYukle() { return Promise.all(['dagsk-ai-pose.js', 'dagsk-video-compare.js', 'dagsk-target-cv.js'].map(dagskEkYukle)); }
         function kmEkCalistir(dosya, fnAd) {
@@ -12444,6 +12446,7 @@
             // 2026-10-28 (kullanıcı: "tanıtım bölümünü karışık sınıfın içinde de yap, TV ekranı tam ekran devam etsin"): sekme açmaz,
             // Yönetici'deki 📺 Tanıtım Ekranı'nı açar — vitrinAc tam ekranı bu tıklamanın içinde (eşzamanlı) ister.
             if(id === 'vitrin') { kmAracKullanildi(id); vitrinAc(); return; }
+            if(id === 'atisolcer') { kmAracKullanildi(id); hareketAc({ km: true }); return; } // tam ekran, sekme açmaz; sporcu dersten seçilir
             document.getElementById('km-sinif-karti').style.display = 'none';
             document.getElementById('km-arac-izgara').style.display = 'none';
             document.getElementById('karisik-platform').classList.remove('ks-ana-acik');
@@ -12560,6 +12563,8 @@
             { id:'malzeme', ad:'Malzemeler', grup:'sari', icon:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>' },
             { id:'durus', ad:'Video & Duruş', grup:'mavi', icon:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>' },
             { id:'vitrin', ad:'Tanıtım Ekranı', grup:'mavi', icon:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M10 8l4 2-4 2z"/><path d="M8 20h8M12 16v4"/>' },
+            // Atış Ölçer (2026-11-04, v374) — telefonun hareket sensörü: kaldırma, nişan süresi, salınım — kod: public/dagsk-hareket.js
+            { id:'atisolcer', ad:'Atış Ölçer', grup:'mavi', icon:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8c1.5 1 1.5 3 0 4M21 8c-1.5 1-1.5 3 0 4"/>' },
             { id:'baski', ad:'Baskı Görevleri', grup:'kirmizi', icon:'<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.5 4.6V17h7v-3.4C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20h5"/>' },
         ];
         // Kulüp paleti (2026-10-11): kategori ikonları da turuncu ailesinden — kehribar / turuncu / koyu turuncu / kızıl
@@ -12602,7 +12607,7 @@
         const KM_ARAC_GRUPLAR = [
             { ad:'Ders', alt:'Yoklama, akış, içerik', idler:['yoklamaanaliz','dersakisi','dersler','malzeme','evodev','veli'] },
             { ad:'Skor & sıralama', alt:'Puanlar, maçlar, ligler', idler:['lider','klasman','canli','yarisma','resmitur','lig','milyonok'] },
-            { ad:'Teknik & video', alt:'Duruşu gör, düzelt', idler:['kocluk','teknikanaliz','durus','okanaliz','ritim'] },
+            { ad:'Teknik & video', alt:'Duruşu gör, düzelt', idler:['kocluk','teknikanaliz','durus','okanaliz','ritim','atisolcer'] },
             { ad:'Gelişim & kondisyon', alt:'Yük, test, kuvvet', idler:['yuk','seviye','kuvvet','fitness','performans','baski','makarali'] },
             { ad:'Oyun & motivasyon', alt:'Eğlence ve davranış', idler:['oyunlar','vitrin','reaksiyon','kasifkarti','pozitif','disiplin'] },
         ];
@@ -12629,11 +12634,12 @@
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
             makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
             formlab: 'Kamerayla çene altı, kol ve parmak bırakışı', vitrin: 'Oyunları tanıtır, tam ekran TV',
+            atisolcer: 'Telefon yayda: nişan süresi, salınım, iz',
         };
         const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
             formlab: 'video kamera çapa çene altı bırakış analiz form yapay zeka çizim', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
             durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence', vitrin: 'tanıtım reklam tv ekran vitrin veli boşta',
-            kocluk: 'hata ipucu teknik', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
+            kocluk: 'hata ipucu teknik', atisolcer: 'sensör hareket tutuş nişan süre salınım titreşim saat zamanlama tempo', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
         };
         function kmAracSvg(icon, b) { return '<svg viewBox="0 0 24 24" width="' + b + '" height="' + b + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon + '</svg>'; }
         function kmAracBul(id) { return KM_ARAC_LISTESI.find(function(a){ return a.id === id; }); }

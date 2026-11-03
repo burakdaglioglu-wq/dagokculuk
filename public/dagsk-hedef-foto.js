@@ -26,7 +26,12 @@
     const tost = (m, t) => { try { showToast(m, t || 'info'); } catch (e) { } };
     function spotSayisi(tip) { return tip === '3spot' ? 3 : 1; }
     function yuzR(tip) { return tip === '10ring' ? 100 : 60; } // görünen yüzün yarıçapı (birim)
-    function tipAd(tip) { return tip === '3spot' ? "3'LÜ SPOT" : (tip === '10ring' ? 'TAM HEDEF' : '6 HALKA'); }
+    function tipAd(tip) { return tip === '3spot' ? (_hf && _hf.yerlesim === 'ucgen' ? "VEGAS 3'LÜ" : "3'LÜ SPOT") : (tip === '10ring' ? 'TAM HEDEF' : '6 HALKA'); }
+    // v374: hedef türü kamera ekranında seçilir. Vegas 3'lü = 3'lü spotla aynı puanlama (10…6, X), spotlar üçgen dizili — bulma
+    // yerleşimden bağımsız (yukarıdan aşağı, soldan sağa sıralanır), kayıt 3'lü spot koordinatlarıyla (spot 0/1/2).
+    const HF_TURLER = [['6ring', 'dikey', '6 halka'], ['10ring', 'dikey', 'Tam hedef'], ['3spot', 'dikey', "3'lü dikey"], ['3spot', 'ucgen', "Vegas 3'lü"]];
+    window.hfTipSec = function (tip, yer) { if (!_hf || (_hf.tip === tip && (_hf.yerlesim || 'dikey') === yer)) return; _hf.tip = tip; _hf.yerlesim = yer; _hf.onceki = {}; try { localStorage.setItem('dagsk_hf_yerlesim', yer); } catch (e) { } kameraDurdur(); hfKamera(); };
+    function turSeciciHTML() { return '<div class="hf-turler" role="group" aria-label="Hedef türü">' + HF_TURLER.map(([t, y, ad]) => { const on = _hf.tip === t && (_hf.yerlesim || 'dikey') === y; return '<button type="button" class="hf-tur' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="hfTipSec(\'' + t + '\',\'' + y + '\')">' + ad + '</button>'; }).join('') + '</div>'; }
     function maksOk() { try { return getMaksOk(); } catch (e) { return 3; } }
     function spotBasina() { return _hf.tip === '3spot' ? Math.ceil(maksOk() / 3) : maksOk(); }
     function makarali() { const sp = hfSp(); return !!(sp && sp.yay === 'Makaralı'); }
@@ -148,8 +153,62 @@
     // onaylanan noktalara değen farklar) elenir. Hizalama kayması (halka çizgileri) için önceki görüntü ±2 piksel
     // toleransla karşılaştırılır: piksel, önceki görüntünün 5×5 komşuluğundaki en açık/en koyu aralığın dışındaysa fark sayılır.
     // (Halka çizgisini maskelemek ok gövdesi halkaya paralel gidince deliği siliyordu.)
+    // ---- İLK FOTOĞRAF (v374, kullanıcı: rakip uygulama "okları kendisi buluyor" → "son ikisini yap"): önceki fotoğraf yoksa
+    // halka arka plan modeli. Düzleştirilmiş spotta halkalar eşmerkezli → her yarıçapın (1 birimlik dilim) ortanca rengi o
+    // halkanın rengidir (oklar açının küçük bir kısmını kaplar, ortancayı bozmaz). Komşu dilimlerin ortancasından da belirgin
+    // sapan pikseller "halka değil" → bileşenler → yalnız UZUN olanlar (ok gövdesi) önerilir; eski kâğıt delikleri (küçük
+    // yuvarlak) önerilmez. Gövde ucu bulma ve "hepsi aynı yöne uzanır" oylaması oneriler()'de, fark yoluyla aynı.
+    const RAD_S = 200;
+    function radyalAday(s) {
+        const kc = _hf.kucuk && _hf.kucuk[s]; if (!kc) return [];
+        const t = document.createElement('canvas'); t.width = t.height = RAD_S; const c = t.getContext('2d', { willReadFrequently: true }); c.drawImage(kc, 0, 0, RAD_S, RAD_S);
+        const d = c.getImageData(0, 0, RAD_S, RAD_S).data, N = RAD_S * RAD_S, R = yuzR(_hf.tip) + 8, bp = (2 * R) / RAD_S, yR = yuzR(_hf.tip);
+        const dilim = new Int16Array(N).fill(-1), kutu = [];
+        for (let y = 0; y < RAD_S; y++) for (let x = 0; x < RAD_S; x++) {
+            const u = (x + 0.5) * bp - R, v = (y + 0.5) * bp - R, r = Math.hypot(u, v); if (r > yR - 1.2) continue;
+            const b = Math.floor(r), i = y * RAD_S + x; dilim[i] = b; (kutu[b] = kutu[b] || []).push(i);
+        }
+        const med = kutu.map((l) => {
+            if (!l || !l.length) return null; const m = [0, 1, 2].map((k) => { const a = l.map((i) => d[i * 4 + k]).sort((p, q) => p - q); return a[a.length >> 1]; });
+            return m;
+        });
+        const sapma = (i, b) => { let en = 1e9; for (let k = b - 1; k <= b + 1; k++) { const m = med[k]; if (!m) continue; const f = Math.abs(d[i * 4] - m[0]) + Math.abs(d[i * 4 + 1] - m[1]) + Math.abs(d[i * 4 + 2] - m[2]); if (f < en) en = f; } return en; };
+        const mask = new Uint8Array(N);
+        // halka sınırının ±0,9 birimi maskelenmez: çizgi/baskı izi gövdeye yapışıp onu yay gibi göstermesin (gövde 3 px komşulukla atlar)
+        const sinirYakin = (i) => { const x = i % RAD_S, y = (i / RAD_S) | 0, r = Math.hypot((x + 0.5) * bp - R, (y + 0.5) * bp - R); return Math.abs(r - 5) < 0.9 || Math.abs(r - Math.round(r / 10) * 10) < 0.9; };
+        for (let i = 0; i < N; i++) if (dilim[i] >= 0 && !sinirYakin(i) && sapma(i, dilim[i]) > 120) mask[i] = 1;
+        const lab = new Int32Array(N).fill(-1), q = new Int32Array(N), adaylar = [];
+        for (let i = 0; i < N; i++) {
+            if (!mask[i] || lab[i] >= 0) continue; let qh = 0, qt = 0; q[qt++] = i; lab[i] = i; const pix = [];
+            while (qh < qt) { const p = q[qh++]; pix.push(p); const x = p % RAD_S, y = (p / RAD_S) | 0;
+                for (let j = -3; j <= 3; j++) for (let ii = -3; ii <= 3; ii++) { const xx = x + ii, yy = y + j; if (xx < 0 || yy < 0 || xx >= RAD_S || yy >= RAD_S) continue; const pp = yy * RAD_S + xx; if (mask[pp] && lab[pp] < 0) { lab[pp] = i; q[qt++] = pp; } } }
+            if (pix.length < 10) continue;
+            const uv = pix.map((p) => [((p % RAD_S) + 0.5) * bp - R, (((p / RAD_S) | 0) + 0.5) * bp - R]);
+            const mu = uv.reduce((t2, a) => t2 + a[0], 0) / uv.length, mv = uv.reduce((t2, a) => t2 + a[1], 0) / uv.length;
+            let cuu = 0, cvv = 0, cuv = 0; uv.forEach((a) => { const du = a[0] - mu, dv = a[1] - mv; cuu += du * du; cvv += dv * dv; cuv += du * dv; });
+            const th = 0.5 * Math.atan2(2 * cuv, cuu - cvv), ex = [Math.cos(th), Math.sin(th)];
+            let lo = 1e9, hi = -1e9, aLo = null, aHi = null; uv.forEach((a) => { const t2 = (a[0] - mu) * ex[0] + (a[1] - mv) * ex[1]; if (t2 < lo) { lo = t2; aLo = a; } if (t2 > hi) { hi = t2; aHi = a; } });
+            const boy = hi - lo, en = uv.length * bp * bp / Math.max(1, boy); // ortalama genişlik (birim)
+            if (boy < 9 || en > 6) continue; // gövde değil: delik, leke, geniş gölge
+            // düz çizgi olmalı: halka çizgisi (çember/yay) iki eksende de yayılır
+            const iz = cuu + cvv, dt = cuu * cvv - cuv * cuv, kk = Math.sqrt(Math.max(0, iz * iz / 4 - dt)), l1 = iz / 2 + kk, l2 = Math.max(1e-6, iz / 2 - kk);
+            if (l1 / l2 < 9) continue;
+            // pikselleri çoğunlukla halka sınırına yapışıksa çizgi/baskı izidir (gövde sınırları keser, üstünde yürümez)
+            const sinirda = uv.filter((a) => { const r = Math.hypot(a[0], a[1]); return Math.abs(r - 5) < 1.6 || Math.abs(r - Math.round(r / 10) * 10) < 1.6; }).length;
+            if (sinirda > uv.length * 0.5) continue;
+            adaylar.push({ s, uv, boy: pix.length, mu, mv, ex, uzun: true, a: aLo, b: aHi, ilk: true });
+        }
+        return adaylar;
+    }
+    // Emin olunamayan öneri: ucu halka çizgisine 1,2 birimden yakın (üst puan mı alt puan mı belli değil) ya da gövdesiz leke.
+    function supheBul(o) {
+        const r = Math.hypot(o.u, o.v), sinirlar = []; for (let b = 10; b <= yuzR(_hf.tip); b += 10) sinirlar.push(b); sinirlar.push(5);
+        if (sinirlar.some((b) => Math.abs(r - b) < 1.2)) return 'çizgide';
+        if (o.lekeMi) return 'belirsiz';
+        return null;
+    }
     function oneriBul(s, gri) {
-        const on = _hf.onceki && _hf.onceki[s]; if (!on) return [];
+        const on = _hf.onceki && _hf.onceki[s]; if (!on) return radyalAday(s);
         const R = yuzR(_hf.tip) + 8, bp = (2 * R) / GRI_S, yR = yuzR(_hf.tip), N = GRI_S * GRI_S, mask = new Uint8Array(N), P = on.gri;
         for (let y = 2; y < GRI_S - 2; y++) for (let x = 2; x < GRI_S - 2; x++) {
             const u = (x + 0.5) * bp - R, v = (y + 0.5) * bp - R; if (Math.hypot(u, v) > yR - 1) continue;
@@ -188,12 +247,15 @@
         hepsi.forEach((a) => {
             const uc = !a.uzun ? [a.mu, a.mv] : (oy >= 0 ? a.a : a.b);
             const yakin = a.uv.filter((p) => Math.hypot(p[0] - uc[0], p[1] - uc[1]) < 5);
-            const e = { u: yakin.reduce((t, p) => t + p[0], 0) / yakin.length, v: yakin.reduce((t, p) => t + p[1], 0) / yakin.length, boy: a.boy };
+            const e = { u: yakin.reduce((t, p) => t + p[0], 0) / yakin.length, v: yakin.reduce((t, p) => t + p[1], 0) / yakin.length, boy: a.boy, lekeMi: !a.uzun };
             const on = _hf.onceki[a.s];
-            if (on.oklar.some((o) => Math.hypot(e.u - o.u, e.v - o.v) < 6 || Math.hypot(a.mu - o.u, a.mv - o.v) < 4)) return; // çekilen eski ok (ucu eski noktada)
-            (sonuc[a.s] = sonuc[a.s] || []).push(e);
+            if (on && on.oklar.some((o) => Math.hypot(e.u - o.u, e.v - o.v) < 6 || Math.hypot(a.mu - o.u, a.mv - o.v) < 4)) return; // çekilen eski ok (ucu eski noktada)
+            const l = (sonuc[a.s] = sonuc[a.s] || []);
+            const ayni = l.find((x) => Math.hypot(x.u - e.u, x.v - e.v) < 3.5); // ok + gölgesi aynı noktadan çıkar → tek öneri
+            if (ayni) { if (e.boy > ayni.boy) Object.assign(ayni, e); return; }
+            l.push(e);
         });
-        Object.keys(sonuc).forEach((s) => { sonuc[s].sort((a, b) => b.boy - a.boy); sonuc[s] = sonuc[s].slice(0, spotBasina()); });
+        Object.keys(sonuc).forEach((s) => { sonuc[s].sort((a, b) => b.boy - a.boy); sonuc[s] = sonuc[s].slice(0, spotBasina()); sonuc[s].forEach((o) => { o.supheli = supheBul(o); }); });
         return sonuc;
     }
 
@@ -232,7 +294,11 @@
 #hf .hf-spot small{position:absolute;left:8px;top:6px;font:900 11px Consolas,monospace;color:#fff;text-shadow:0 0 3px #000}
 #hf .hf-spot .hf-sp-p{display:flex;justify-content:center;gap:4px;margin-top:5px;min-height:24px;flex-wrap:wrap}
 #hf .hf-chip{min-width:30px;padding:3px 6px;border-radius:3px;font:900 15px Consolas,monospace;text-align:center}
+#hf .hf-turler{display:flex;gap:6px;margin:10px 14px 0;overflow-x:auto;scrollbar-width:none}#hf .hf-turler::-webkit-scrollbar{display:none}
+#hf .hf-tur{flex:none;min-height:40px;padding:0 12px;border-radius:3px;border:1px solid #3a2a12;background:#1a1a1a;color:#f4e6d0;font:800 12.5px Consolas,monospace;cursor:pointer;white-space:nowrap}#hf .hf-tur.on{background:${AKS};border-color:${AKS};color:#120800}
 #hf .hf-chip.oneri{outline:2px dashed ${AKS};outline-offset:1px}
+#hf .hf-chip.supheli{outline:2px solid #ef4444;outline-offset:1px;position:relative}#hf .hf-chip.supheli::after{content:'?';position:absolute;top:-9px;right:-7px;width:15px;height:15px;border-radius:50%;background:#ef4444;color:#fff;font:900 11px/15px system-ui;text-align:center}
+#hf .hf-uyari{margin-top:8px;padding:8px 10px;border-radius:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);color:#fca5a5;font-size:12.5px;font-weight:700}
 #hf .hf-toplam{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #hf .hf-n{font-size:40px;font-weight:900;line-height:1;color:${AKS};text-shadow:0 0 12px rgba(253,142,1,.55)}
 #hf .hf-istat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -266,7 +332,8 @@
     window.hfAc = function () {
         if (typeof secilenSporcu === 'undefined' || !secilenSporcu) return tost('Önce sporcuyu seç.', 'warning');
         hfCss();
-        _hf = { ad: secilenSporcu, g: aktifGrup, tip: aktifHedefTipi || '6ring', km: window._kmSkorAktif ? Object.assign({}, window._kmSkorAktif) : null, oklar: [], gecmis: [], onceki: {}, foto: null, spotlar: [] };
+        _hf = { ad: secilenSporcu, g: aktifGrup, tip: aktifHedefTipi || '6ring', km: window._kmSkorAktif ? Object.assign({}, window._kmSkorAktif) : null, oklar: [], gecmis: [], onceki: {}, foto: null, spotlar: [], yerlesim: 'dikey' };
+        if (_hf.tip === '3spot') { try { _hf.yerlesim = localStorage.getItem('dagsk_hf_yerlesim') === 'ucgen' ? 'ucgen' : 'dikey'; } catch (e) { } }
         hfKamera();
     };
     function kameraDurdur() {
@@ -277,6 +344,7 @@
         _hf.akis = 'kamera'; _hf.oklar = []; _hf.gecmis = []; _hf.spotlar = []; _hf.mSay = 0;
         const n = spotSayisi(_hf.tip);
         kabuk(ustBaslik(), `<span class="hf-etk">${tipAd(_hf.tip)}</span>`, `
+${turSeciciHTML()}
 <div class="hf-vizor" id="hf-vizor"><video id="hf-video" playsinline muted autoplay></video><canvas id="hf-ortu"></canvas>
   <div class="hf-ipucu" id="hf-ipucu">KAMERA AÇILIYOR…</div></div>
 <div class="hf-kart"><div class="hf-muted">💡 Okları <b>çekmeden önce</b> fotoğrafla. Bir adım geri çık, ${n > 1 ? 'üç spot da' : 'hedef'} çerçeveye girsin, mümkün olduğunca karşıdan çek. Önceki serinin fotoğrafı varsa yeni oklar kendiliğinden önerilir.</div></div>
@@ -353,7 +421,7 @@
     }
     function elleYazi() {
         const n = spotSayisi(_hf.tip), e = _hf.elle, no = e.spotlar.length + 1, dis = _hf.tip === '10ring' ? 'BEYAZIN dış kenarına' : 'MAVİNİN dış kenarına';
-        return (n > 1 ? `Spot ${no}/${n} (yukarıdan aşağı) — ` : '') + (e.merkez ? dis + ' dokun' : 'sarının tam ORTASINA dokun');
+        return (n > 1 ? `Spot ${no}/${n} (${_hf.yerlesim === 'ucgen' ? 'üstten alta, soldan sağa' : 'yukarıdan aşağı'}) — ` : '') + (e.merkez ? dis + ' dokun' : 'sarının tam ORTASINA dokun');
     }
     function elleCiz() {
         const cv = $('hf-elle-cv'); if (!cv || !_hf.foto) return;
@@ -378,10 +446,10 @@
         _hf.spotlar.forEach((sp, s) => {
             const cv = hfDuzle(sp, 640); _hf.kucuk[s] = cv; _hf.gri[s] = griAl(cv);
         });
-        const onr = oneriler(); Object.keys(onr).forEach((s) => onr[s].forEach((o) => _hf.oklar.push({ s: +s, u: o.u, v: o.v, oneri: true })));
+        const onr = oneriler(); Object.keys(onr).forEach((s) => onr[s].forEach((o) => _hf.oklar.push({ s: +s, u: o.u, v: o.v, oneri: true, supheli: o.supheli || null })));
         hfDuzeltCiz();
-        const on = _hf.oklar.length;
-        if (on) tost(`🎯 ${on} ok önerildi — kontrol et, yanlışsa sürükle.`, 'info');
+        const on = _hf.oklar.length, sup = _hf.oklar.filter((o) => o.supheli).length;
+        if (on) tost(`🎯 ${on} ok bulundu${sup ? ` · ${sup} tanesi emin değil (?)` : ''} — kontrol et, yanlışsa sürükle.`, sup ? 'warning' : 'info');
     }
     function yuzSvg(oklar, boyut, ops) {
         ops = ops || {}; const tip = ops.tip || _hf.tip, R = ops.R || yuzR(tip), s = boyut / 2 / (R + 2); // ops.R: yakınlaştır (analiz)
@@ -429,9 +497,9 @@
         const spotHTML = _hf.spotlar.map((sp, s) => {
             const sp_o = oklar.filter((o) => o.s === s);
             return `<div class="hf-spot" onclick="hfBuyukAc(${s})">${n > 1 ? `<small>${s + 1}</small>` : ''}<canvas id="hf-k-${s}" width="300" height="300"></canvas>
-<div class="hf-sp-p">${sp_o.map((o) => `<span class="hf-chip${o.oneri ? ' oneri' : ''}" style="${chipRenk(o.p)}">${o.p}</span>`).join('') || '<span class="hf-muted">dokun, ok koy</span>'}</div></div>`;
+<div class="hf-sp-p">${sp_o.map((o) => `<span class="hf-chip${o.supheli ? ' supheli' : (o.oneri ? ' oneri' : '')}" style="${chipRenk(o.p)}"${o.supheli ? ' title="Emin değil: ' + o.supheli + '"' : ''}>${o.p}</span>`).join('') || '<span class="hf-muted">dokun, ok koy</span>'}</div></div>`;
         }).join('');
-        const tumChip = oklar.map((o) => `<span class="hf-chip${o.oneri ? ' oneri' : ''}" style="${chipRenk(o.p)}">${o.p}</span>`).join('') + Array.from({ length: _hf.mSay || 0 }, () => `<span class="hf-chip" style="${chipRenk('M')}">M</span>`).join('');
+        const tumChip = oklar.map((o) => `<span class="hf-chip${o.supheli ? ' supheli' : (o.oneri ? ' oneri' : '')}" style="${chipRenk(o.p)}"${o.supheli ? ' title="Emin değil: ' + o.supheli + '"' : ''}>${o.p}</span>`).join('') + Array.from({ length: _hf.mSay || 0 }, () => `<span class="hf-chip" style="${chipRenk('M')}">M</span>`).join('');
         kabuk(ustBaslik(), `<button class="hf-etk" onclick="hfGeriAl()" ${_hf.gecmis.length ? '' : 'disabled style="opacity:.4"'}>↶ GERİ AL</button>`, `
 <div class="hf-kart"><div class="hf-ikili">
   <div><div class="hf-lbl">Bu seri</div>${yuzSvg(oklar, 190)}</div>
@@ -440,7 +508,8 @@
 </div></div>
 <div class="hf-kart"><div class="hf-lbl">${n > 1 ? 'Spotlar — dokun, büyüt, düzelt' : 'Hedef — dokun, büyüt, düzelt'}</div>
   <div class="hf-spotlar" style="grid-template-columns:repeat(${n > 1 ? 3 : 1},1fr)">${spotHTML}</div>
-  <div class="hf-muted" style="margin-top:8px">${_hf.oklar.some((o) => o.oneri) ? '🟧 Kesikli çerçeve = önerilen ok, kontrol et. ' : ''}Büyük ekranda: boş yere dokun = ok koy · oku sürükle = taşı · oka kısa dokun = sil. Çizgiye değen üst puanı alır.</div>
+  <div class="hf-muted" style="margin-top:8px">${_hf.oklar.some((o) => o.oneri) ? '🟧 Kesikli çerçeve = bulunan ok, kontrol et. ' : ''}Büyük ekranda: boş yere dokun = ok koy · oku sürükle = taşı · oka kısa dokun = sil. Çizgiye değen üst puanı alır.</div>
+  ${_hf.oklar.some((o) => o.supheli) ? `<div class="hf-uyari">⚠ ${_hf.oklar.filter((o) => o.supheli).length} ok emin değil (kırmızı ?) — büyütüp bak; ok çizgideyse üst puanı al, yeri doğruysa olduğu gibi bırak.</div>` : ''}
 </div>
 <div class="hf-kart hf-toplam"><div style="display:flex;gap:5px;flex-wrap:wrap">${tumChip || '<span class="hf-muted">Henüz ok yok</span>'}</div><div style="display:flex;align-items:baseline;gap:6px"><span class="hf-muted">Seri</span><span class="hf-n">${toplam}</span></div></div>
 <div class="hf-kart" style="border-color:${eksik === 0 ? '#2c2c2c' : '#5a3a10'}"><div class="hf-muted mono" style="font-weight:800;color:${eksik === 0 ? '#4ade80' : AKS}">${eksik === 0 ? `✓ ${maksOk()}/${maksOk()} OK TAMAM` : (eksik > 0 ? `${maksOk() - eksik}/${maksOk()} OK — ${eksik} eksik (hedefi ıskaladıysa M ekle)` : `${-eksik} OK FAZLA — birini sil`)}</div></div>
@@ -462,7 +531,8 @@
         _hf.oklar.forEach((o, i) => {
             if (o.s !== s) return; const x = c + o.u * k, y = c + o.v * k, rr = Math.max(4, S / 42), p = puanUV(o.u, o.v);
             g.lineWidth = Math.max(2, S / 160);
-            if (o.oneri) { g.setLineDash([S / 70, S / 110]); g.strokeStyle = AKS; g.beginPath(); g.arc(x, y, rr * 1.9, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+            if (o.oneri) { g.setLineDash([S / 70, S / 110]); g.strokeStyle = o.supheli ? '#ef4444' : AKS; g.beginPath(); g.arc(x, y, rr * 1.9, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+            if (o.supheli) { const qx = x + rr * 1.5, qy = y + rr * 1.6, qr = Math.max(7, S / 48); g.fillStyle = '#ef4444'; g.beginPath(); g.arc(qx, qy, qr, 0, Math.PI * 2); g.fill(); g.fillStyle = '#fff'; g.font = '900 ' + Math.round(qr * 1.4) + 'px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', qx, qy + 1); g.textAlign = 'start'; g.textBaseline = 'alphabetic'; }
             g.fillStyle = 'rgba(0,0,0,.55)'; g.strokeStyle = '#fff'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill(); g.stroke();
             g.beginPath(); g.moveTo(x - rr * 0.5, y); g.lineTo(x + rr * 0.5, y); g.moveTo(x, y - rr * 0.5); g.lineTo(x, y + rr * 0.5); g.stroke();
             if (S > 400) { g.font = `900 ${Math.round(S / 26)}px Consolas,monospace`; g.fillStyle = AKS; g.fillText(p, x + rr * 1.5, y - rr * 1.2); }
@@ -501,7 +571,7 @@
             if (tut.i >= 0) {
                 if (!tut.tasindi && Math.hypot(e.clientX - tut.x0, e.clientY - tut.y0) < 8) return;
                 if (!tut.gecmisAlindi) { kaydetGecmis(); tut.gecmisAlindi = true; }
-                tut.tasindi = true; const [u, v] = cvUV(cv, e.clientX, e.clientY); Object.assign(_hf.oklar[tut.i], { u, v, oneri: false }); buyukCiz();
+                tut.tasindi = true; const [u, v] = cvUV(cv, e.clientX, e.clientY); Object.assign(_hf.oklar[tut.i], { u, v, oneri: false, supheli: null }); buyukCiz();
             }
             lupGoster(cv, e.clientX, e.clientY);
         });
@@ -610,5 +680,5 @@ ${seriler.length ? `<div class="hf-kart"><div class="hf-lbl">Seri seri · bugün
         hfKamera();
     };
     // test/iç kullanım
-    window._hfIc = { spotBul, renk, olcekle, durum: () => _hf, fotoIsle: (c) => fotoIsle(c) };
+    window._hfIc = { spotBul, renk, olcekle, radyalAday, durum: () => _hf, fotoIsle: (c) => fotoIsle(c) };
 })();

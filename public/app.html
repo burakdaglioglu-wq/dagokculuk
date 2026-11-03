@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v373</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v374</b> · Otomatik Kamera Hedef Hakemi & HIKVISION DVR</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -670,6 +670,8 @@
                         <button id="hf-giris-btn" onclick="hedefFotoAc()" class="va-btn va-btn-orange" style="width:100%; margin-bottom:12px; font-size:13.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px; border-radius:10px; box-shadow:0 4px 14px rgba(255,106,26,0.35);">
                             📷 Fotoğrafla puanla · Hedef Haritası
                         </button>
+                        <!-- v374: 📱 Atış Ölçer (dagsk-hareket.js) — telefonun hareket sensörüyle kaldırma · nişan süresi · salınım · nişan izi -->
+                        <button id="hk-giris-btn" onclick="hareketAc()" class="va-btn va-btn-grey" style="width:100%; margin:-4px 0 12px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; border-radius:10px;">📱 Atış Ölçer · nişan süresi ve salınım</button>
                         <div class="hedef-sec-grup">
                             <button class="hedef-sec-btn aktif" id="btn-10ring" onclick="setHedefTipi('10ring')">10 Halkalı</button>
                             <button class="hedef-sec-btn" id="btn-6ring" onclick="setHedefTipi('6ring')">6 Halkalı</button>
