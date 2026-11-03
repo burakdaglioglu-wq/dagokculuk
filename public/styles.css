@@ -2657,3 +2657,75 @@
         body.light-theme .km-arac:hover { background: #FFFFFF; border-color: #C9D3D0; }
         body.light-theme .km-arac-ikon { color: var(--accent) !important; background: var(--accent-soft) !important; }
         body.light-theme .km-arac-ara { background: #FFFFFF; border-color: var(--border-color); }
+
+        /* ===== KARIŞIK SINIF · SADE ANA EKRAN (v373, 2026-11-03) =====================================================
+           Kullanıcı: "hocalarım karışık sınıfı kullanıyor ama karışık geliyor — sade, bilgilendirici ikonlu, Nike uygulaması gibi".
+           Taslak: https://claude.ai/artifact/PZK3pvwQfw2dbK696qMaMV (V2 satırı). Ana ekran = Yarışma · Oyun · Form Lab büyük;
+           üstte yoklama ve "kim ne yapıyor" şeritleri; altta Yeni sınıf · Yeni sporcu · Diğer araçlar (eski gruplu ızgara).
+           Renkler tema başına AYRI tanımlanır (alias token kuralı). Yeni ekranlar: dagsk-km-sade.js (ks*). */
+        :root { --ks-zemin: #0A0A0A; --ks-kart: #151515; --ks-kart2: #1C1C1C; --ks-cizgi: #262626; --ks-yazi: #F5F2EF; --ks-soluk: #A8A29E;
+            --ks-vurgu: #FC5B01; --ks-vurgu-yazi: #160600; --ks-vurgu2: #FD8E01; --ks-acik: #F5F2EF; --ks-acik-yazi: #0A0A0A;
+            --ks-yesil: #5FBF7F; --ks-kirmizi: #FF7A5C; --ks-baslik-font: 'Barlow Condensed', 'Archivo', sans-serif; }
+        body.light-theme { --ks-zemin: #F4F1EC; --ks-kart: #FFFFFF; --ks-kart2: #F1ECE6; --ks-cizgi: #E2DAD1; --ks-yazi: #17120E; --ks-soluk: #6B5F55;
+            --ks-vurgu: #C2410C; --ks-vurgu-yazi: #FFFFFF; --ks-vurgu2: #C2410C; --ks-acik: #17120E; --ks-acik-yazi: #FFFFFF;
+            --ks-yesil: #1F7A45; --ks-kirmizi: #B42318; }
+        html body #karisik-platform.ks-ana-acik { background: var(--ks-zemin) !important; } /* satır içi stil ve buzlu cam mesh zemini (body:not(.light-theme) #karisik-platform) ezilir */
+        #karisik-platform.ks-ana-acik > div:first-child { background: var(--ks-zemin) !important; border-bottom-color: var(--ks-cizgi) !important; }
+        #karisik-platform.ks-ana-acik #km-sinif-karti.ks-ust { margin: 14px 16px 0 !important; padding: 0; background: transparent; border: 0; box-shadow: none; }
+        #karisik-platform.ks-ana-acik #km-arac-izgara.km-arac-izgara { margin: 12px 16px 24px !important; gap: 10px; }
+        .ks-ust, .ks-ana-kartlar, .ks-diger { color: var(--ks-yazi); }
+        .ks-ust { display: flex; flex-direction: column; gap: 10px; }
+        .ks-bas { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+        .ks-etiket { display: block; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ks-soluk); }
+        .ks-dev { margin: 2px 0 0; font-family: var(--ks-baslik-font); font-weight: 800; font-size: 40px; line-height: .92; text-transform: uppercase; letter-spacing: -.005em; color: var(--ks-yazi); }
+        .ks-hap { min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); font: inherit; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; }
+        .ks-serit { display: flex; align-items: stretch; gap: 8px; border-radius: 16px; background: var(--ks-kart); border: 1px solid var(--ks-cizgi); padding: 8px; box-sizing: border-box; }
+        .ks-serit-ana { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 7px; min-height: 44px; padding: 2px 6px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }
+        .ks-serit-ust { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+        .ks-serit-ust b { font-weight: 800; }
+        .ks-serit-ust span { color: var(--ks-soluk); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ks-serit-ust em { font-style: normal; color: var(--ks-yesil); }
+        .ks-bar { display: flex; height: 6px; border-radius: 3px; background: var(--ks-cizgi); overflow: hidden; }
+        .ks-bar i { display: block; background: var(--ks-yesil); }
+        .ks-bar i.k { background: var(--ks-kirmizi); }
+        .ks-serit-ekle { flex-shrink: 0; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 0; background: var(--ks-acik); color: var(--ks-acik-yazi); font: inherit; font-size: 13.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+        .ks-kimne { align-items: center; min-height: 48px; padding: 0 14px; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ks-yazi); cursor: pointer; text-align: left; width: 100%; }
+        .ks-kimne .ks-soluk { color: var(--ks-soluk); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ks-nokta { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .ks-nokta::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--ks-yazi); }
+        .ks-nokta.y::before { background: var(--ks-vurgu2); }
+        .ks-ok { color: var(--ks-soluk); display: inline-flex; }
+        .ks-ana-kartlar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .ks-yarisma { grid-column: 1 / -1; border-radius: 22px; background: var(--ks-vurgu); color: var(--ks-vurgu-yazi); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .ks-yarisma-bas { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; border-radius: 12px; }
+        .ks-yarisma-bas .ks-etiket { color: inherit; opacity: .85; }
+        .ks-kart-baslik { display: block; font-family: var(--ks-baslik-font); font-weight: 800; font-size: 38px; line-height: .95; text-transform: uppercase; }
+        .ks-yarisma-btn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .ks-yarisma-btn button { min-height: 50px; border-radius: 25px; font: inherit; font-size: 14.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; padding: 0 10px; }
+        .ks-yarisma-btn .dolu { border: 0; background: #0A0A0A; color: #F5F2EF; }
+        body.light-theme .ks-yarisma-btn .dolu { background: #FFFFFF; color: #17120E; }
+        .ks-yarisma-btn .bos { border: 1.5px solid currentColor; background: transparent; color: inherit; }
+        .ks-karo { min-height: 148px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 12px; text-align: left; font: inherit; cursor: pointer; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); min-width: 0; }
+        .ks-karo.acik { background: var(--ks-acik); color: var(--ks-acik-yazi); border-color: var(--ks-acik); }
+        .ks-karo .ks-karo-ikon { color: var(--ks-vurgu2); display: inline-flex; }
+        .ks-karo.acik .ks-karo-ikon { color: inherit; }
+        .ks-karo-yazi { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; }
+        .ks-karo-yazi .ks-kart-baslik { font-size: 30px; }
+        .ks-karo-yazi small { font-size: 12.5px; font-weight: 600; opacity: .8; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .ks-satir { grid-column: 1 / -1; min-height: 54px; padding: 0 14px; border-radius: 16px; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); font: inherit; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; }
+        .ks-satir b { font-size: 15px; font-weight: 800; white-space: nowrap; }
+        .ks-satir span { flex: 1; min-width: 0; font-size: 13px; color: var(--ks-soluk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ks-alt-is { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+        .ks-alt-is button { min-height: 60px; border-radius: 16px; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); font: inherit; font-size: 12.5px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 6px 4px; }
+        .ks-alt-is button[aria-expanded="true"] { border-color: var(--ks-vurgu2); color: var(--ks-vurgu2); }
+        .ks-diger { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
+        .ks-diger[hidden] { display: none; }
+        .ks-hap:focus-visible, .ks-serit-ana:focus-visible, .ks-serit-ekle:focus-visible, .ks-kimne:focus-visible, .ks-karo:focus-visible, .ks-satir:focus-visible, .ks-alt-is button:focus-visible { outline: 3px solid var(--ks-vurgu2); outline-offset: 2px; }
+        .ks-yarisma button:focus-visible { outline: 3px solid var(--ks-vurgu-yazi); outline-offset: 2px; }
+        @media (hover: hover) { .ks-karo:hover, .ks-satir:hover, .ks-alt-is button:hover, .ks-hap:hover { border-color: var(--ks-soluk); } }
+        @media (min-width: 720px) {
+            #karisik-platform.ks-ana-acik #km-sinif-karti.ks-ust, #karisik-platform.ks-ana-acik #km-arac-izgara.km-arac-izgara { width: min(860px, calc(100% - 32px)); margin-left: auto !important; margin-right: auto !important; box-sizing: border-box; }
+            .ks-ana-kartlar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .ks-yarisma { grid-column: span 2; grid-row: span 2; justify-content: space-between; }
+            .ks-karo { min-height: 0; grid-column: span 2; }
+        }

@@ -15,7 +15,7 @@ export default async function ({ log }) {
       kmGeri(); document.getElementById('karisik-platform').style.display = 'flex'; document.getElementById('km-icerik').style.display = 'none'; document.getElementById('km-sinif-karti').style.display = ''; kmSinifKartiCiz();
       const s = _kmListe.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr'))[0]; delete (otomatikYoklamaDB[bugunISO()] || {})[s.ad]; kmSinifKartiCiz(); return s;
     });
-    await p.locator('.km-dp-buton').click();
+    await p.evaluate(() => kmDersPaneli()); // v373: büyük düğme ana ekrandan kalktı, ⋯ menüsünde
     await p.waitForSelector('#km-dp .km-dp-sat', { timeout: 15000 });
     esit(await p.locator('#km-dp .km-dp-sat').count(), 4, 'panelde 4 sporcu olmalı');
     const sat = p.locator('#km-dp .km-dp-sat').first();

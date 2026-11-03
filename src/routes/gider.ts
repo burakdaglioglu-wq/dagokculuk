@@ -1,6 +1,6 @@
 import type { Router } from "../router";
 import { json, badRequest, readJson } from "../lib/json";
-import { listGiderler, createGider, deleteGider } from "../db/gider";
+import { listGiderler, createGider, deleteGider, updateGider } from "../db/gider";
 
 export function registerGiderRoutes(router: Router): void {
   router.get("/api/gider", async (request, env) => {
@@ -25,6 +25,15 @@ export function registerGiderRoutes(router: Router): void {
       t: Date.now(),
     });
     return json({ applied: true, id });
+  });
+
+  // v374 düzenleme: yanlış girilen gider silinip yeniden girilmek zorunda kalmasın.
+  router.put("/api/gider/:id", async (request, env, params) => {
+    const body = await readJson<{ tarih: string; kategori: string; aciklama?: string | null; tutar: number }>(request);
+    if (!body.tarih || !body.kategori || typeof body.tutar !== "number") return badRequest("tarih, kategori and tutar are required");
+    if (body.tutar <= 0) return badRequest("tutar must be positive");
+    const degisti = await updateGider(env, params.id, { tarih: body.tarih, kategori: body.kategori, aciklama: body.aciklama ?? null, tutar: body.tutar, t: Date.now() });
+    return json({ applied: degisti });
   });
 
   router.delete("/api/gider/:id", async (_request, env, params) => {

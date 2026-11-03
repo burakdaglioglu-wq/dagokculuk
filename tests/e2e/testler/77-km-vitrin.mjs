@@ -8,7 +8,7 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'skor');
-    await p.evaluate(() => kmIzgaraGeriDon()); await p.waitForTimeout(500);
+    await p.evaluate(() => { kmIzgaraGeriDon(); if (!kmDigerAcik()) kmDigerDegis(); }); await p.waitForTimeout(500); // v373: gruplu ızgara “Diğer araçlar”da
     const ac = async (loc, ne) => {
       dogrula(await loc.count(), ne + ' düğmesi yok');
       await loc.first().click();
@@ -19,12 +19,11 @@ export default async function ({ log }) {
       await p.evaluate(() => vtKapat()); await p.waitForFunction(() => !document.getElementById('vt') && !document.fullscreenElement, null, { timeout: 5000 }); await p.waitForTimeout(2500); // pencere eski boyuna dönsün (tam ekran çıkışı sürerken yeni istek reddedilir)
     };
     await ac(p.locator('#km-arac-govde button.km-arac', { hasText: 'Tanıtım Ekranı' }), 'ızgara');
-    await ac(p.locator('.km-arac-hizli button', { hasText: 'Tanıtım Ekranı' }), 'Oyunlar hızlı');
     // arama da bulur
     await p.fill('#km-arac-ara', 'reklam'); await p.waitForTimeout(300);
     dogrula(await p.locator('#km-arac-govde button.km-arac:visible', { hasText: 'Tanıtım Ekranı' }).count(), 'aramada "reklam" Tanıtım Ekranı\'nı bulmadı');
     await p.fill('#km-arac-ara', '');
     dogrula(!hatalar.length, 'sayfa hataları: ' + hatalar.join(' | '));
-    log('KM ızgarası + Oyunlar hızlı düğmesi → tam ekran tanıtım; arama "reklam" bulur');
+    log('KM ızgarası (Diğer araçlar) → tam ekran tanıtım; arama "reklam" bulur');
   } finally { await ctx.close(); }
 }

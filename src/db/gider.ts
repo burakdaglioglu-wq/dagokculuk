@@ -27,3 +27,10 @@ export async function createGider(env: Env, row: GiderRow): Promise<void> {
 export async function deleteGider(env: Env, id: string): Promise<void> {
   await env.DB.prepare("DELETE FROM gider WHERE id = ?").bind(id).run();
 }
+
+export async function updateGider(env: Env, id: string, row: { tarih: string; kategori: string; aciklama: string | null; tutar: number; t: number }): Promise<boolean> {
+  const r = await env.DB.prepare("UPDATE gider SET tarih = ?, kategori = ?, aciklama = ?, tutar = ?, t = ? WHERE id = ?")
+    .bind(row.tarih, row.kategori, row.aciklama, row.tutar, row.t, id)
+    .run();
+  return (r.meta?.changes ?? 0) > 0;
+}
