@@ -32,7 +32,7 @@ export default async function ({ log }) {
       const ad = Object.keys(turnuvaDB[g]).find((a) => !turnuvaDB[g][a].pasif);
       aktifGrup = g; skorEkraniniAc(ad);
       window.__titre = []; navigator.vibrate = (x) => { window.__titre.push(x); return true; };
-      return { g, ad, detay: (turnuvaDB[g][ad].detayliOklar || []).length, gecmis: localStorage.getItem('dagsk_atis_olcer'), ayar: localStorage.getItem('dagsk_hk_ayar') };
+      return { g, ad, detay: (turnuvaDB[g][ad].detayliOklar || []).length, gecmis: localStorage.getItem('dagsk_atis_olcer'), ayar: localStorage.getItem('dagsk_hk_ayar'), hedef: localStorage.getItem('dagsk_hk_hedef'), rapor: localStorage.getItem('dagsk_hk_rapor') };
     });
     dogrula(await p.locator('#hk-giris-btn').isVisible(), 'Skor Gir\'de Atış Ölçer düğmesi yok');
     await p.locator('#hk-giris-btn').click();
@@ -55,6 +55,32 @@ export default async function ({ log }) {
     const titre = await p.evaluate(() => window.__titre);
     dogrula(titre.some((x) => x === 220), '5 sn hedef aşılınca titremedi: ' + JSON.stringify(titre));
     dogrula(/3/.test(await p.locator('#hk .hk-sayac div').first().innerText()), 'canlı sayaçta 3 ok yok');
+    // v375 sesli uyarı: hedef aşılınca güçlü bip, bırakışta kısa bip
+    const bip = await p.evaluate(() => _hkIc.durum().bipler);
+    dogrula(bip.includes(700) && bip.includes(880), 'sesli uyarı çalmadı: ' + JSON.stringify(bip));
+    // v375 yanlış bildirme: son oku çıkarır + ham pencereyi saklar (sporcu adı yok); kaçan atış not edilir
+    await p.locator('#hk .hk-bildir .hk-cip', { hasText: 'Yanlış saydı' }).click();
+    esit(await p.evaluate(() => _hkIc.durum().D.oklar.length), 2, 'Yanlış saydı oku çıkarmadı');
+    await p.locator('#hk .hk-bildir .hk-cip', { hasText: 'Atış kaçtı' }).click();
+    esit(await p.evaluate(() => JSON.stringify(_hkIc.durum().kacan)), '[2]', 'kaçan atış konumu yanlış');
+    const rap = await p.evaluate((ad) => { const l = JSON.parse(localStorage.getItem('dagsk_hk_rapor')).slice(-2); return { tur: l.map((r) => r.tur), dolu: l.every((r) => r.ornek.length > 50), ad: JSON.stringify(l).includes(ad) }; }, geri.ad);
+    esit(JSON.stringify(rap.tur), JSON.stringify(['yanlis-sayim', 'kacan-atis']), 'bildirim türleri');
+    dogrula(rap.dolu, 'bildirimde ham sensör verisi yok');
+    dogrula(!rap.ad, 'sensör kaydında sporcu adı olmamalı');
+    // eslestir: kaçan atış sonraki okları bir kaydırır
+    const es = await p.evaluate(() => _hkIc.eslestir({ t: 1000000, oklar: [{ tutus: 1 }, { tutus: 2 }], kacan: [1] }, [{ t: 1000001, puan: 'A' }, { t: 1000002, puan: 'B' }, { t: 1000003, puan: 'C' }], null).map((e) => e.o && e.o.puan));
+    esit(JSON.stringify(es), JSON.stringify(['A', 'C']), 'kaçan atıştan sonra eşleşme kaymadı');
+    // tutusAnaliz: az okta karar yok; 4-6 sn iyi → aralık çıkar; fark yoksa aralık yok
+    const an = await p.evaluate(() => {
+      const c = (d) => d.flatMap(([sn, puan, n]) => Array(n).fill(0).map(() => ({ tutus: sn * 1000 + 100, puan })));
+      return { az: _hkIc.tutusAnaliz(c([[4, 9, 5]])), iyi: _hkIc.tutusAnaliz(c([[3, 7, 5], [4, 9, 5], [5, 9, 5], [7, 6, 5]])), yok: _hkIc.tutusAnaliz(c([[3, 8, 6], [4, 8, 6], [5, 8, 6], [7, 8, 6]])), tek: _hkIc.tutusAnaliz(c([[4, 9, 18]])) };
+    });
+    dogrula(!an.az.hazir, '18 oktan azla karar verilmemeli');
+    esit(an.iyi.bas, 4, 'en iyi aralık 4 sn başlamalı'); esit(an.iyi.son, 6, 'en iyi aralık 6 sn bitmeli');
+    esit(an.yok.bas, null, 'fark yokken aralık önerilmemeli');
+    esit(an.tek.bas, null, 'hep aynı sürede karşılaştırma yapılmamalı');
+    // kalan testler 3 oku bekler: sahte akışı temiz oturumla yeniden besle
+    await p.evaluate(() => { const h = _hkIc.durum(); h.kacan = []; h.D = _hkIc.yeniDurum(); _hkIc.besle(_hkSahte()); });
     // bugün işaretlenen 3 ok (Skor Gir / fotoğraf) → nişan izi tekrarında eşleşir
     await p.evaluate(({ g, ad }) => { const sp = turnuvaDB[g][ad]; sp.detayliOklar = sp.detayliOklar || []; const t = Date.now(); [[0, 4, 'X'], [12, -6, '9'], [-20, 14, '8']].forEach(([x, y, puan]) => sp.detayliOklar.push({ x, y, puan, tip: '6ring', t })); }, geri);
     await p.locator('#hk .hk-ana', { hasText: 'Bitir' }).click();
@@ -65,6 +91,13 @@ export default async function ({ log }) {
     await p.waitForTimeout(400);
     dogrula(await p.evaluate(() => { const c = document.getElementById('hk-tekrar').getContext('2d').getImageData(0, 0, 320, 320).data; let r = 0; for (let i = 0; i < c.length; i += 4) if (c[i] > 200 && c[i + 1] > 100 && c[i + 1] < 170 && c[i + 2] < 60) r++; return r > 20; }), 'tekrar çiziminde turuncu iz yok');
     dogrula(await p.evaluate(({ g, ad }) => { const k = JSON.parse(localStorage.getItem('dagsk_atis_olcer') || '{}')[g + '|' + ad]; return k && k.length && k[k.length - 1].oklar.length === 3; }, geri), 'oturum geçmişe yazılmadı');
+    // v375 uygun süre kartı: 3/18 ilerleme; sensör kayıtları dosya olarak iner; özette ok çıkarınca geçmiş de güncellenir
+    dogrula(/3 \/ 18/.test(await p.locator('#hk .hk-kisisel').innerText()), 'uygun süre ilerlemesi yok');
+    const [indir] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }), p.locator('#hk .hk-rapor').click()]);
+    dogrula(/^atis-olcer-sensor-.*\.json$/.test(indir.suggestedFilename()), 'sensör kaydı dosya adı');
+    await p.locator('#hk .hk-sat-sil').first().click();
+    await p.waitForFunction(() => document.querySelectorAll('#hk .hk-sat').length === 2);
+    dogrula(await p.evaluate(({ g, ad }) => { const k = JSON.parse(localStorage.getItem('dagsk_atis_olcer'))[g + '|' + ad]; const son = k[k.length - 1]; return son.oklar.length === 2 && k.filter((s) => s.t === son.t).length === 1; }, geri), 'ok çıkarınca geçmiş güncellenmedi');
     dogrula(await p.evaluate(() => document.getElementById('hk').scrollWidth <= document.getElementById('hk').clientWidth + 1), 'özet ekranı taşıyor');
     // KM: Diğer araçlar › Teknik & video
     dogrula(await p.evaluate(() => KM_ARAC_GRUPLAR.some((gr) => gr.idler.includes('atisolcer')) && !!kmAracBul('atisolcer')), 'KM araç listesinde Atış Ölçer yok');
@@ -78,6 +111,8 @@ export default async function ({ log }) {
       const sp = turnuvaDB[y.g][y.ad]; if (sp && sp.detayliOklar) sp.detayliOklar = sp.detayliOklar.slice(0, y.detay);
       if (y.gecmis == null) localStorage.removeItem('dagsk_atis_olcer'); else localStorage.setItem('dagsk_atis_olcer', y.gecmis);
       if (y.ayar == null) localStorage.removeItem('dagsk_hk_ayar'); else localStorage.setItem('dagsk_hk_ayar', y.ayar);
+      if (y.hedef == null) localStorage.removeItem('dagsk_hk_hedef'); else localStorage.setItem('dagsk_hk_hedef', y.hedef);
+      if (y.rapor == null) localStorage.removeItem('dagsk_hk_rapor'); else localStorage.setItem('dagsk_hk_rapor', y.rapor);
     }, geri).catch(() => { });
     await ctx.close();
   }

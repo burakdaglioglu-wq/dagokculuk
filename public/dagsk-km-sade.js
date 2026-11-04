@@ -8,6 +8,7 @@
      kimne   — iki sütun Yarışma | Oyun, isme dokun öbür tarafa geçsin; hazır bölüşümler
      yarisma — tek ekran yeni yarışma: 36 / 60 / 72 ok, mesafe, kâğıt, süre → Başlat (sporcular Yarışma tarafından)
      yeni    — Yeni sınıf (ad + gruplar → yeni konum, sporcular otomatik) · Yeni sporcu (ad, grup, doğum yılı, bugünkü derse ekle)
+     yeniler — v375: yeni özellikler, ne işe yarar, nasıl kullanılır (KS_YENILER; rozet süresi app.js KM_YENI_BITIS)
    YENİ VERİ YOK: otomatikYoklamaDB, _kmListe (_kmListeKaydet), dag_km_hat_<konum> (kmHatKaydet + hat hafızası), karisik_sinif_konumlar,
    Yarışma kurulum taslağı (yzKurulumTaslak → yzBaslat / yzDogrudanBaslat), turnuvaDB (yoneticiKaydet). Renkler styles.css --ks-*.
    ================================================================================================ */
@@ -73,14 +74,61 @@ function ksImza() { return JSON.stringify(_kmListe || []) + '|' + JSON.stringify
 function ksCiz(odakAra) {
     let kap = document.getElementById('ks-ekran'); if (!kap) return;
     _ks.imza = ksImza();
-    let html = _ks.ekran === 'yoklama' ? ksYoklamaHTML() : _ks.ekran === 'kimne' ? ksKimNeHTML() : _ks.ekran === 'yarisma' ? ksYarismaHTML() : ksYeniHTML();
-    kap.setAttribute('aria-label', { yoklama: 'Yoklama', kimne: 'Kim ne yapacak', yarisma: 'Yeni yarışma', yeni: _ks.yeniTur === 'sinif' ? 'Yeni sınıf' : 'Yeni sporcu' }[_ks.ekran] || 'Karışık Sınıf');
+    let html = _ks.ekran === 'yoklama' ? ksYoklamaHTML() : _ks.ekran === 'kimne' ? ksKimNeHTML() : _ks.ekran === 'yarisma' ? ksYarismaHTML() : _ks.ekran === 'yeniler' ? ksYenilerHTML() : ksYeniHTML();
+    kap.setAttribute('aria-label', { yoklama: 'Yoklama', kimne: 'Kim ne yapacak', yarisma: 'Yeni yarışma', yeniler: 'Yeni özellikler', yeni: _ks.yeniTur === 'sinif' ? 'Yeni sınıf' : 'Yeni sporcu' }[_ks.ekran] || 'Karışık Sınıf');
     kap.innerHTML = '<div class="ks-sayfa">' + html + '</div>';
     if (odakAra) { let a = document.getElementById('ks-ara'); if (a) { a.focus(); try { a.setSelectionRange(a.value.length, a.value.length); } catch (e) {} } }
 }
 function ksUst(geriFn, etiket, sagHTML) {
     return '<div class="ks-e-ust"><button type="button" class="ks-yuvarlak" onclick="' + geriFn + '" aria-label="' + (geriFn === 'ksKapat()' ? 'Kapat' : 'Geri') + '">' + ksIkon(geriFn === 'ksKapat()' ? 'kapat' : 'geri', 18) + '</button>'
         + '<span class="ks-etiket">' + esc(etiket) + '</span><span style="flex:1"></span>' + (sagHTML || '') + '</div>';
+}
+
+// ---------------------------------------------------------------- yeni özellikler (v375)
+const KS_YENILER = [
+    {
+        id: 'atisolcer', ad: 'Atış Ölçer', ne: 'Sporcunun nişanda ne kadar kaldığını ve ne kadar oynadığını telefonun hareket sensörüyle ölçer.',
+        ikon: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8c1.5 1 1.5 3 0 4M21 8c-1.5 1-1.5 3 0 4"/>',
+        ozellik: [
+            ['Tutuş süresi', 'Her okta nişanda kaç saniye kaldığını ve sürenin oktan oka ne kadar değiştiğini gösterir.'],
+            ['Uygun süre', 'Puanla eşleşen 18 oktan sonra sporcunun en iyi puan aldığı süreyi bulur.'],
+            ['Sesli uyarı', 'Hedef süre aşılınca bip çalar, Android\'de ayrıca titrer.'],
+            ['Salınım ve nişan izi', 'Bırakıştan önceki 2 saniyede yayın ne kadar oynadığını gösterir, izi hedefte tekrar oynatır.'],
+            ['İndirme sayacı', 'Atmadan yayı indirdiği okları sayar.'],
+            ['Yanlış bildir', 'Sayım tutmazsa "Yanlış saydı" ya da "Atış kaçtı"ya bas. Ölçüm bu kayıtlarla iyileştirilir.']
+        ],
+        adim: ['Derse eklenen sporculardan birini seç.', 'Telefonu sporcunun yay koluna sıkıca bağla, Başla\'ya bas.', 'Bitince Bitir\'e bas, okları Skor Gir\'de işaretle.'],
+        not: 'Telefon gerekir, bilgisayarda ölçmez. Sonuçlar yalnız bu telefonda kalır. Henüz salonda denenmedi; ilk derslerde sayımı kontrol et.',
+        ac: 'Atış Ölçer\'i aç'
+    },
+    {
+        id: 'foto', ad: 'Fotoğrafla puanla', ne: 'Hedefin fotoğrafından okları bulur ve puanları önerir. Artık ilk fotoğrafta da çalışır.',
+        ikon: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+        ozellik: [
+            ['İlk fotoğrafta ok bulma', 'Önceki fotoğraf olmadan okları bulur, eski delikleri ok saymaz.'],
+            ['Emin değilse "?"', 'Çizgideki ya da belirsiz okları kırmızı "?" ile işaretler.'],
+            ['Hedef türü seçimi', '6 halka, tam hedef, 3\'lü dikey ve Vegas 3\'lü.']
+        ],
+        adim: ['Skor Gir\'de sporcuya dokun.', '"Fotoğrafla puanla"ya bas, hedef türünü seç, fotoğraf çek.', '"?" olanları kontrol et, kaydet.'],
+        not: 'Henüz gerçek hedef fotoğraflarıyla denenmedi. Kaydetmeden önce okları mutlaka kontrol et.',
+        ac: 'Skor Gir\'e git'
+    }
+];
+function ksYenilerHTML() {
+    return ksUst('ksKapat()', 'Karışık Sınıf') + '<h1 class="ks-e-baslik">Yeni özellikler</h1><p class="ks-e-alt">Ne işe yarar, nasıl kullanılır?</p>'
+        + KS_YENILER.map(function (y) {
+            return '<section class="ks-yeni-kart" data-yeni="' + y.id + '"><div class="ks-yeni-bas"><span class="ks-yeni-ikon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + y.ikon + '</svg></span><h2>' + esc(y.ad) + '</h2></div>'
+                + '<p class="ks-yeni-ne">' + esc(y.ne) + '</p>'
+                + '<p class="ks-alan-ad">NELER VAR?</p><dl class="ks-yeni-liste">' + y.ozellik.map(function (o) { return '<div><dt>' + esc(o[0]) + '</dt><dd>' + esc(o[1]) + '</dd></div>'; }).join('') + '</dl>'
+                + '<p class="ks-alan-ad">NASIL KULLANILIR?</p><ol class="ks-yeni-adim">' + y.adim.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol>'
+                + '<p class="ks-yeni-not">' + esc(y.not) + '</p>'
+                + '<button type="button" class="ks-ana-btn" onclick="ksYeniAc(\'' + y.id + '\')">' + esc(y.ac) + ksIkon('ileri', 18, 2.4) + '</button></section>';
+        }).join('');
+}
+function ksYeniAc(id) {
+    ksKapat();
+    if (id === 'foto') { kmAracSec('skor'); showToast('Sporcuya dokun, sonra Fotoğrafla puanla', 'info'); }
+    else kmAracSec(id);
 }
 
 // ---------------------------------------------------------------- 1) yoklama + derse sporcu ekle
@@ -429,6 +477,11 @@ function ksCss() {
         + '.ks-yuvarlak{width:44px;height:44px;border-radius:22px;border:0;background:var(--ks-kart);color:var(--ks-yazi);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}'
         + '.ks-e-baslik{margin:4px 0 0;font-family:var(--ks-baslik-font);font-weight:800;font-size:44px;line-height:.92;text-transform:uppercase;color:var(--ks-yazi)}'
         + '.ks-e-alt{margin:0;font-size:13.5px;line-height:1.45;color:var(--ks-soluk)}'
+        + '.ks-yeni-kart{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:20px;background:var(--ks-kart);border:1px solid var(--ks-cizgi);color:var(--ks-yazi)}'
+        + '.ks-yeni-bas{display:flex;align-items:center;gap:12px}.ks-yeni-ikon{width:44px;height:44px;flex-shrink:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:var(--ks-kart2);color:var(--ks-vurgu2)}'
+        + '.ks-yeni-kart h2{margin:0;font-family:var(--ks-baslik-font);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase;color:var(--ks-yazi)}'
+        + '.ks-yeni-ne{margin:0;font-size:15px;line-height:1.45}.ks-yeni-liste{margin:0;display:flex;flex-direction:column;gap:9px}.ks-yeni-liste dt{font-size:14px;font-weight:800}.ks-yeni-liste dd{margin:1px 0 0;font-size:13.5px;line-height:1.4;color:var(--ks-soluk)}'
+        + '.ks-yeni-adim{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;font-size:14px;line-height:1.4}.ks-yeni-not{margin:2px 0;padding:10px 12px;border-radius:12px;background:var(--ks-kart2);font-size:13px;line-height:1.4;color:var(--ks-soluk)}'
         + '.ks-sayac-satir{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}'
         + '.ks-sayac{display:block;font-family:var(--ks-baslik-font);font-weight:800;font-size:64px;line-height:.85;font-variant-numeric:tabular-nums}.ks-sayac span{color:var(--ks-soluk);opacity:.6}'
         + '.ks-sayac-alt{display:block;margin-top:6px;font-size:13px;font-weight:600;color:var(--ks-soluk)}.ks-sayac-alt em{font-style:normal}.ks-sayac-alt em.y{color:var(--ks-yesil)}.ks-sayac-alt em.k{color:var(--ks-kirmizi)}'

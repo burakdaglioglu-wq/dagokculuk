@@ -2715,6 +2715,9 @@
         .ks-satir { grid-column: 1 / -1; min-height: 54px; padding: 0 14px; border-radius: 16px; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); font: inherit; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; }
         .ks-satir b { font-size: 15px; font-weight: 800; white-space: nowrap; }
         .ks-satir span { flex: 1; min-width: 0; font-size: 13px; color: var(--ks-soluk); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .km-yeni { display: inline-block; margin-left: 6px; padding: 2px 6px; border-radius: 6px; background: var(--ks-vurgu); color: var(--ks-vurgu-yazi); font-size: 10px; font-style: normal; font-weight: 800; line-height: 1.2; letter-spacing: .04em; vertical-align: middle; white-space: nowrap; }
+        .ks-yeniler .km-yeni { margin-left: 0; flex-shrink: 0; }
+        .ks-rozetli { display: inline-flex; align-items: center; }
         .ks-alt-is { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
         .ks-alt-is button { min-height: 60px; border-radius: 16px; border: 1px solid var(--ks-cizgi); background: var(--ks-kart); color: var(--ks-yazi); font: inherit; font-size: 12.5px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 6px 4px; }
         .ks-alt-is button[aria-expanded="true"] { border-color: var(--ks-vurgu2); color: var(--ks-vurgu2); }

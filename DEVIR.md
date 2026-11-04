@@ -5525,3 +5525,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
   - Bitir → özet (ort. tutuş, ±tutarlılık, kaldır→bırak, indirme, tutuş–puan ilişkisi) + **NİŞAN İZİ TEKRARI**: oturumdan sonra işaretlenen detayliOklar sırayla eşleşir, her iz okun deldiği yerde biter (ölçek: mesafe seçimi, 1° = tan(1°)·mesafe; 80 cm yüzde 1 birim 0,4 cm).
   - Oturumlar cihazda: `dagsk_atis_olcer` {grup|ad: son 10}, ayar `dagsk_hk_ayar`, yön `dagsk_hk_cevir`. Test için `_hkIc.besle(örnekler)`. Test 100 (sahte sensör: 3 atış 4/3/6 sn + 1 indirme).
   - **AÇIK:** gerçek telefonla denenmedi; eşikler (35°/12°/s/15 m/s²) sahada ayarlanmalı.
+
+## 91. 📱 Atış Ölçer: uygun süre, yanlış bildirme, sesli uyarı + KM "Yeni özellikler" (2026-11-04, v375)
+- Kullanıcı "nasıl geliştiririz" sorusuna önerilen 1 · 3 · 5'i onayladı; ayrıca "yeni yaptıklarını Karışık Sınıf'ta kutucuğun yanında YENİ olarak göster, ne işe yaradığını göster" dedi.
+- **Uygun süre (dagsk-hareket.js):** `tutusAnaliz` (saf) + `ciftlerTopla` + `kisiselKart`. Aynı mesafe ve en sık hedef türündeki oturumlar, `tumOklar` (detayliOklar + kartGecmisi) ile `eslestir`ilir, böylece oturum kapandıktan sonra işaretlenen oklar da sayılır. 18 oktan önce ilerleme; sonra saniye dilimleri ve en iyi 2 sn'lik aralık (en az 6 ok ve %20; dışında en az 4 ok; fark ≥ 0,5). Fark yoksa "belirgin etki yok" der. "Hedef tutuşu N sn yap" sporcu başına saklanır (`dagsk_hk_hedef`).
+- **Yanlış bildirme:** canlıda `hkBildir('yanlis'|'kacti')`, özette `hkOkCikar(i)`. Kaçan atışın konumu `kacan[]`, sonraki okların eşleşmesini bir kaydırır. Her bildirim ham sensör penceresini saklar (`dagsk_hk_rapor`, son 8, sporcu adı YOK; tam hız, çünkü sarsıntı tek örnek olabilir). `hkRaporPaylas` JSON paylaşır/indirir. **Eşikler bu kayıtlarla ayarlanacak**; ok başına `lin` / `hiz` de saklanır.
+- **Sesli uyarı:** hedef aşılınca 700 Hz, +2 sn'de çift 520 Hz. AudioContext Başla dokunuşunda açılır (`sesAc`), iPhone jestsiz açılanı susturur. iPhone sessizdeyse duyulmaz.
+- **Varsayılan yer yay kolu** (önceki "yay" ayarı kayıtlı cihazda korunur); "Yayın üstünde" seçilince sarsıntı uyarısı. **AÇIK:** kolda bırakış sarsıntısı 15 m/s² eşiğine ulaşmayabilir, sahada ölçülmedi.
+- **KM Yeni özellikler:** `kmYeniRozet` (Skor Gir, Diğer araçlar, Atış Ölçer kutusu), ana ekranda `.ks-yeniler` satırı, `ksAc('yeniler')` → `ksYenilerHTML` (`KS_YENILER`). Rozetler `KM_YENI_BITIS` = 2026-12-05'e kadar; yeni özellik ekleyince KS_YENILER, KM_YENI_SAYI ve bitiş tarihi güncellenir.
+- Testler: 100 genişledi, 101-km-yeniler (1280/390/360).

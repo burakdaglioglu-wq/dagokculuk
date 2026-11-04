@@ -12634,12 +12634,18 @@
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
             makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
             formlab: 'Kamerayla çene altı, kol ve parmak bırakışı', vitrin: 'Oyunları tanıtır, tam ekran TV',
-            atisolcer: 'Telefon yayda: nişan süresi, salınım, iz',
+            atisolcer: 'Telefon kolda: nişan süresi, salınım, iz',
         };
+        // v375 (kullanıcı: "yeni yaptıklarını karışık sınıfta kutucuğun yanında yeni olarak göster, ne işe yaradığını göster"):
+        // YENİ rozetleri ve ana ekrandaki satır bu tarihe kadar görünür, sonra kendiliğinden kalkar. İçerik: dagsk-km-sade.js KS_YENILER.
+        const KM_YENI_BITIS = '2026-12-05';
+        const KM_YENI_SAYI = 2;
+        function kmYeniMi(tarih) { return (tarih || bugunISO()) <= KM_YENI_BITIS; }
+        function kmYeniRozet(sinif) { return kmYeniMi() ? '<i class="km-yeni' + (sinif ? ' ' + sinif : '') + '">YENİ</i>' : ''; }
         const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
             formlab: 'video kamera çapa çene altı bırakış analiz form yapay zeka çizim', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
             durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence', vitrin: 'tanıtım reklam tv ekran vitrin veli boşta',
-            kocluk: 'hata ipucu teknik', atisolcer: 'sensör hareket tutuş nişan süre salınım titreşim saat zamanlama tempo', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
+            kocluk: 'hata ipucu teknik', atisolcer: 'yeni sensör hareket tutuş nişan süre salınım titreşim saat zamanlama tempo', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
         };
         function kmAracSvg(icon, b) { return '<svg viewBox="0 0 24 24" width="' + b + '" height="' + b + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon + '</svg>'; }
         function kmAracBul(id) { return KM_ARAC_LISTESI.find(function(a){ return a.id === id; }); }
@@ -12657,7 +12663,7 @@
             let aranan = (a.ad + ' ' + durum + ' ' + (KM_ARAC_ANAHTAR[a.id] || '')).toLocaleLowerCase('tr');
             return '<button type="button" class="km-arac" data-ara="' + esc(aranan) + '" onclick="kmAracSec(\'' + a.id + '\')">'
                 + '<span class="km-arac-ikon" style="color:' + renk + '; background:color-mix(in srgb, ' + renk + ' 16%, transparent);">' + kmAracSvg(a.icon, 18) + '</span>'
-                + '<span class="km-arac-yazi"><b>' + esc(a.ad) + '</b>' + (durum ? '<small>' + esc(durum) + '</small>' : '') + '</span></button>';
+                + '<span class="km-arac-yazi"><b>' + esc(a.ad) + (a.id === 'atisolcer' ? kmYeniRozet() : '') + '</b>' + (durum ? '<small>' + esc(durum) + '</small>' : '') + '</span></button>';
         }
         // v373 SADE ANA EKRAN: Yarışma (turuncu, "Yeni yarışma" + TV), Oyun (son oyun kaldığı yerden), Form Lab, Skor Gir satırı;
         // altta Yeni sınıf · Yeni sporcu · Diğer araçlar. "Diğer araçlar" eski aramalı gruplu ızgarayı (#km-arac-govde) açar —
@@ -12708,11 +12714,12 @@
                 + '<span class="ks-karo-yazi"><span class="ks-kart-baslik">Oyun</span><small>' + (sonTh ? '▶ ' + esc(sonTh.ad) : 'Sınıfça oyna') + '</small></span></button>'
                 + '<button type="button" class="ks-karo" data-ana="formlab" onclick="kmAracSec(\'formlab\')"><span class="ks-karo-ikon">' + ikon(IK.formlab, 34) + '</span>'
                 + '<span class="ks-karo-yazi"><span class="ks-kart-baslik">Form Lab</span><small>' + esc(fl) + '</small></span></button>'
-                + '<button type="button" class="ks-satir" data-ana="skor" onclick="kmAracSec(\'skor\')">' + ikon(IK.hedef, 20) + '<b>Skor Gir</b><span>' + esc(skorDurum) + ' · serbest atış</span>' + ikon(IK.sag, 16) + '</button>'
+                + '<button type="button" class="ks-satir" data-ana="skor" onclick="kmAracSec(\'skor\')">' + ikon(IK.hedef, 20) + '<b>Skor Gir' + kmYeniRozet() + '</b><span>' + esc(skorDurum) + ' · serbest atış</span>' + ikon(IK.sag, 16) + '</button>'
+                + (kmYeniMi() ? '<button type="button" class="ks-satir ks-yeniler" onclick="ksAc(\'yeniler\')">' + kmYeniRozet() + '<b>' + KM_YENI_SAYI + ' yeni özellik</b><span>Ne işe yarar, nasıl kullanılır?</span>' + ikon(IK.sag, 16) + '</button>' : '')
                 + '<div class="ks-alt-is">'
                 + '<button type="button" onclick="ksAc(\'yeni\',\'sinif\')">' + ikon(IK.sinif, 20) + 'Yeni sınıf</button>'
                 + '<button type="button" onclick="ksAc(\'yeni\',\'sporcu\')">' + ikon(IK.sporcu, 20) + 'Yeni sporcu</button>'
-                + '<button type="button" onclick="kmDigerDegis()" aria-expanded="' + digerAcik + '" aria-controls="km-arac-diger">' + ikon(IK.diger, 20) + 'Diğer araçlar</button></div>';
+                + '<button type="button" onclick="kmDigerDegis()" aria-expanded="' + digerAcik + '" aria-controls="km-arac-diger"><span class="ks-rozetli">' + ikon(IK.diger, 20) + kmYeniRozet() + '</span>Diğer araçlar</button></div>';
             let diger = document.getElementById('km-arac-diger'); if(diger) diger.hidden = !digerAcik;
             let hizli = kmAracSonKullanilan();
             document.getElementById('km-arac-govde').innerHTML = ''
