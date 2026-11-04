@@ -295,6 +295,7 @@ export async function moveAthlete(
        ON CONFLICT(eski_grup, eski_ad) DO UPDATE SET yeni_grup = excluded.yeni_grup, yeni_ad = excluded.yeni_ad, tasindi_zaman = excluded.tasindi_zaman`
     ).bind(source.grup, source.ad, toGrup, toAd, zaman),
     env.DB.prepare("UPDATE athletes SET grup = ?, ad = ? WHERE grup = ? AND ad = ?").bind(toGrup, toAd, source.grup, source.ad),
+    env.DB.prepare("UPDATE fiziksel_foto SET grup = ?, ad = ? WHERE grup = ? AND ad = ?").bind(toGrup, toAd, source.grup, source.ad),
   ]);
 
   return { applied: true };

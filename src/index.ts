@@ -19,6 +19,7 @@ import { registerMetaRoutes } from "./routes/meta";
 import { registerLiveRoutes } from "./routes/live";
 import { registerVeliRaporRoutes } from "./routes/veliRapor";
 import { registerVeliOdemeRoutes } from "./routes/veliOdeme";
+import { registerFizikselRoutes } from "./routes/fiziksel";
 import { registerPushRoutes } from "./routes/push";
 import { registerDuelloRoutes } from "./routes/duello";
 import { registerDuyuruRoutes } from "./routes/duyuru";
@@ -69,6 +70,7 @@ registerMetaRoutes(router);
 registerLiveRoutes(router);
 registerVeliRaporRoutes(router);
 registerVeliOdemeRoutes(router);
+registerFizikselRoutes(router);
 registerPushRoutes(router);
 registerDuelloRoutes(router);
 registerDuyuruRoutes(router);
@@ -166,6 +168,10 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/tanitim/ziyaret-ozet",
   "/api/athlete-moves/kopuk",
   "/api/sporcu-girisler",
+  // Fiziksel dosya: çocuk fotoğrafları, hiçbir zaman oturumsuz okunmaz.
+  "/api/fiziksel-ozet",
+  "/api/fiziksel/:grup/:ad",
+  "/api/fiziksel-foto/:id",
   "/api/milo/dues",
   "/api/milo/personnel",
   "/api/milo/attendance/personnel",

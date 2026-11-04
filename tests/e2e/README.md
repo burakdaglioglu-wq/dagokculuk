@@ -53,6 +53,7 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `81-kale-birlikte` | Kale Savunması › hep birlikte: son anda durdurulan düşmana vuran herkes anılır; ❄️ buz 2 adım, ⚡ 10-10-10 yıldırım, 🎯 8-8-8 zırh deler; 🔨 atölye mancınık/hendek/sur; dalga temiz → o dalgada vuran herkese rozet, taç yok; 📜 defter; Ortak Canavar birlikte vuranlar; 390 px |
 | `82-ozel-ders` | Eğitmen › Özel Ders (Sporla Gelişiyorum): sekme yalnız eğitmende; öğrenci ekle, hareket + hızlı puan, gelişim ▲; 🎮 oyunlarla devam → özel konum + şerit + dock hareket seçimi, seri okçuluk kaydına YAZILMAZ, geri al; dönüşte eski konum; veli mesajı + WhatsApp; 390 px |
 | `83-hedef-foto` | Skor Gir › 📷 Fotoğrafla puanla (Hedef Haritası): yapay açılı 3'lü spot fotoğrafında spot merkezi/ölçeği; büyük ekranda dokunarak ok (X/9/8), kısa dokunuş sil + geri al; SERİYE YAZ → seri + detayliOklar (x,y,t,spot); 2. fotoğrafta fark → öneri (9/8/7); M; grup analizi + veli metni; 390 px |
+| `103-fiziksel-form` | Fiziksel dosya: oturumsuz görsel yok, duruş fotoğrafı veli onayı ister, ad değişince taşınır; karşılaştırma; kayıt formu PDF; form okuma kontrol ekranı (sahte yanıt), onaysız kayıt yok |
 | `102-veli-odeme` | Veli ödeme ekranı: link + son 4 hane, kilit, sızıntı yok, numara değişince oturum biter, rapor linkinde hâlâ tutar yok, 390/360 |
 | `101-km-yeniler` | Karışık Sınıf › Yeni özellikler: YENİ rozetleri, anlatım ekranı, Atış Ölçer ve Skor Gir geçişi, bitiş tarihi, 1280/390/360 taşma yok |
 

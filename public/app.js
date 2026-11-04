@@ -8595,7 +8595,7 @@
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
+            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['fiziksel','🗂️','Fiziksel Dosya'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
             ['PERSONEL', [['kisiler','🪪','Eğitmen & Misafir']]],
             ['ANTRENMAN', [['bugunskor','🎯','Skor Girenler'],['yoklama','✅','Yoklama'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü'],['program','📅','Antrenman Programı']]],
             ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['vitrin','📺','Tanıtım Ekranı'],['yedek','💾','Yedek']]]
@@ -8754,6 +8754,7 @@
                 return;
             }
             // 📝 Hızlı Düzenle (2026-09-30) — tablo halinde sporcu bilgileri; kod gerektiğinde yüklenir (dagsk-hizli-duzenle.js).
+            if(k === 'fiziksel') { let la = document.getElementById('yonetici-liste'); if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-fiziksel.js').then(function() { if(yoneticiSekmeAktif === 'fiziksel') fzCiz(); }).catch(function() { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Fiziksel Dosya yüklenemedi. Bağlantını kontrol et.</div>'; }); }
             if(k === 'hizliduzenle') { let la = document.getElementById('yonetici-liste'); if(la && typeof hdCiz !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>'; dagskEkYukle('dagsk-hizli-duzenle.js').then(function() { if(yoneticiSekmeAktif === 'hizliduzenle') hdCiz(); }).catch(function() { showToast('Hızlı Düzenle yüklenemedi.', 'error'); }); return; }
             if(k === 'kisiler') {
                 let la = document.getElementById('yonetici-liste');

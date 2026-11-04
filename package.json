@@ -23,6 +23,7 @@
     "wrangler": "^4.0.0"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.5.0",
     "@block65/webcrypto-web-push": "^1.0.2"
   }
 }
