@@ -138,7 +138,17 @@ export default async function ({ log }) {
     await p.waitForTimeout(150);
 
     // grup analizi
+    // v376 saf kararlar: nişangâh, bulma başarısı
+    const kr = await p.evaluate(() => { const K = _hfIc.nisanKarar, O = _hfIc.dogrulukOlc; return {
+      az: K({ u: 20, v: 0, r: 5, cap: 10 }, 3).tur, orta: K({ u: 1, v: 1, r: 5, cap: 10 }, 12).tur, oynat: K({ u: 12, v: 0, r: 6, cap: 12 }, 12), rast: K({ u: 8, v: 0, r: 30, cap: 60 }, 8).tur,
+      olc: O([{ s: 0, u: 0, v: 0 }, { s: 0, u: 20, v: 20 }, { s: 1, u: 5, v: 5 }], [{ s: 0, u: 1, v: 1 }, { s: 0, u: 30, v: 30 }, { s: 0, u: 5, v: 5 }]) }; });
+    esit(kr.az, 'az', '6 oktan az karar verilmemeli'); esit(kr.orta, 'ortada', 'ortadaki grup'); esit(kr.oynat.tur, 'oynat', 'tutarlı kayma'); esit(kr.oynat.yon.yazi, 'sağ', 'kayma yönü'); esit(kr.rast, 'rastgele', 'dağınık grupta nişangâh oynatılmamalı');
+    esit(JSON.stringify(kr.olc), JSON.stringify({ onerilen: 3, kaydedilen: 3, dogru: 1 }), 'bulma başarısı: başka spot ve uzak ok doğru sayılmamalı');
     await p.evaluate(() => hfAnaliz()); await p.waitForTimeout(200);
+    dogrula(await p.locator('#hf-nisan-karar').isVisible(), 'nişangâh kartı yok');
+    dogrula(await p.locator('#hf-basari').isVisible(), 'bulma başarısı kartı yok (seri yazılmıştı)');
+    const dg = await p.evaluate(() => JSON.parse(localStorage.getItem('dagsk_hf_dogruluk') || '[]'));
+    dogrula(dg.length > 0 && dg.every((x) => x.dogru <= x.kaydedilen), 'bulma başarısı kaydı yok');
     const t6 = await p.evaluate(() => { const h = document.getElementById('hf'); return { t: h.textContent, svg: !!h.querySelector('svg'), veli: h.querySelector('.hf-btn') && !h.querySelector('.hf-btn').disabled, metin: _hfIc.durum().analizMetin }; });
     dogrula(/GRUP ANALİZİ/.test(t6.t) && /Grup çapı/.test(t6.t) && /halka/.test(t6.t), 'analiz ekranı eksik');
     dogrula(t6.svg && t6.veli, 'analizde hedef çizimi ya da veliye gönder yok'); dogrula(/antrenman özeti/.test(t6.metin) && /Grup çapı/.test(t6.metin), 'veli metni eksik');

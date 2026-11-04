@@ -14,6 +14,9 @@
  *     nişangâh önerisi, veliye WhatsApp.
  * Koordinatlar Skor Gir hedef SVG'siyle aynı: halka genişliği 10 birim, X yarıçapı 5; 3'lü spot merkezleri y = -140/0/140.
  * Fotoğraf hiçbir yere yüklenmez, yalnız bu ekranın belleğinde durur.
+ * v376: nisanKarar (kayma, dağılıma göre anlamlı mı → "oynat" / "oynatma"), dogrulukOlc (bulunan oklar ↔ kaydedilen oklar). Hoca düzeltme
+ * yaptıysa düzleştirilmiş hedef kesiti + iki ok listesi CİHAZDA saklanır (dagsk_hf_ornek, son 5, sporcu adı YOK; kullanıcı "Paylaş" derse
+ * dosya olur) ki eşikler gerçek fotoğraflarla ayarlansın. Sayılar dagsk_hf_dogruluk (son 50).
  */
 (function () {
     'use strict';
@@ -447,6 +450,7 @@ ${turSeciciHTML()}
             const cv = hfDuzle(sp, 640); _hf.kucuk[s] = cv; _hf.gri[s] = griAl(cv);
         });
         const onr = oneriler(); Object.keys(onr).forEach((s) => onr[s].forEach((o) => _hf.oklar.push({ s: +s, u: o.u, v: o.v, oneri: true, supheli: o.supheli || null })));
+        _hf.ilkOneri = _hf.oklar.map((o) => ({ s: o.s, u: o.u, v: o.v })); _hf.oncekiVardi = Object.keys(_hf.onceki || {}).length > 0;
         hfDuzeltCiz();
         const on = _hf.oklar.length, sup = _hf.oklar.filter((o) => o.supheli).length;
         if (on) tost(`🎯 ${on} ok bulundu${sup ? ` · ${sup} tanesi emin değil (?)` : ''} — kontrol et, yanlışsa sürükle.`, sup ? 'warning' : 'info');
@@ -486,6 +490,60 @@ ${turSeciciHTML()}
         return { ok, yazi: [yat, dik].filter(Boolean).join('-') };
     }
     const halka = (b) => (b / 10).toLocaleString('tr-TR', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+    // Nişangâh kararı. gr.r ortalama uzaklıktır; ortalamanın eksen başına standart hatası ≈ 0,8·r/√n, kayma bunun 2 katını geçmiyorsa rastgele sayılır.
+    function nisanKarar(gr, n) {
+        if (!gr) return { tur: 'yok' };
+        if (n < 6) return { tur: 'az', n };
+        const kayma = Math.hypot(gr.u, gr.v), yon = yonYazi(gr.u, gr.v);
+        if (yon.yazi === 'ortada') return { tur: 'ortada', kayma, yon };
+        if (kayma < 1.6 * gr.r / Math.sqrt(n)) return { tur: 'rastgele', kayma, yon };
+        return { tur: 'oynat', kayma, yon, genis: gr.r > 25 };
+    }
+    function nisanMetin(k, gr) {
+        if (k.tur === 'yok') return 'Analiz için okların hedefte işaretlenmiş olması gerekir (📷 fotoğraf ya da Skor Gir\'de hedefe dokunarak).';
+        if (k.tur === 'az') return k.n + ' ok var. Nişangâh kararı için en az 6 ok gerekir, biraz daha at.';
+        if (k.tur === 'ortada') return 'Grup ortada 👏 Nişangâhı oynatma. Şimdi hedef grubu sıkılaştırmak: grup çapı ' + halka(gr.cap) + ' halka.';
+        if (k.tur === 'rastgele') return 'Grup ' + k.yon.yazi + ' tarafa ' + halka(k.kayma) + ' halka kayık görünüyor ama oklar dağınık, bu rastgele olabilir. Nişangâhı şimdilik oynatma; önce bırakış ve duruşa bak.';
+        return 'Grup ' + k.yon.yazi + ' tarafa ' + halka(k.kayma) + ' halka kayık ve kayma tutarlı. Nişangâhı ' + k.yon.yazi.replace('üst', 'yukarı').replace('alt', 'aşağı') + ' yönüne al (nişangâh grubu takip eder), sonra bir seri daha atıp kontrol et.' + (k.genis ? ' Grup geniş olduğu için küçük adımlarla ilerle.' : '');
+    }
+    // Bulunan (öneri) ve kaydedilen oklar: aynı spotta 4 birimden (0,4 halka) yakın olan "doğru bulundu" sayılır.
+    function dogrulukOlc(oneri, son) {
+        const kalan = son.slice(); let dogru = 0;
+        oneri.forEach((o) => {
+            let en = -1, ed = 4;
+            kalan.forEach((x, i) => { if (x.s !== o.s) return; const d = Math.hypot(x.u - o.u, x.v - o.v); if (d <= ed) { ed = d; en = i; } });
+            if (en >= 0) { dogru++; kalan.splice(en, 1); }
+        });
+        return { onerilen: oneri.length, kaydedilen: son.length, dogru };
+    }
+    function jsonOku(k, v) { try { return JSON.parse(localStorage.getItem(k) || 'null') || v; } catch (e) { return v; } }
+    function dogrulukKaydet() {
+        const tek = (o) => ({ s: o.s, u: Math.round(o.u * 10) / 10, v: Math.round(o.v * 10) / 10 });
+        const oneri = (_hf.ilkOneri || []).map(tek), son = _hf.oklar.map(tek), m = dogrulukOlc(oneri, son), ilk = !_hf.oncekiVardi;
+        try { localStorage.setItem('dagsk_hf_dogruluk', JSON.stringify(jsonOku('dagsk_hf_dogruluk', []).concat([Object.assign({ t: Date.now(), tip: _hf.tip, ilk }, m)]).slice(-50))); } catch (e) { }
+        if (m.dogru === m.onerilen && m.dogru === m.kaydedilen) return; // düzeltme yok, fotoğraf saklanmaz
+        let foto = [];
+        try { foto = _hf.kucuk.map((c) => { const k = document.createElement('canvas'); k.width = k.height = 320; k.getContext('2d').drawImage(c, 0, 0, 320, 320); return k.toDataURL('image/jpeg', 0.7); }); } catch (e) { }
+        let l = jsonOku('dagsk_hf_ornek', []).concat([{ t: Date.now(), tip: _hf.tip, yerlesim: _hf.yerlesim || null, ilk, oneri, son, foto }]).slice(-5);
+        while (l.length) { try { localStorage.setItem('dagsk_hf_ornek', JSON.stringify(l)); return; } catch (e) { l = l.slice(1); } } // depo dolarsa eskiler düşer
+    }
+    window.hfOrnekPaylas = async function () {
+        const l = jsonOku('dagsk_hf_ornek', []); if (!l.length) return tost('Düzeltilmiş fotoğraf yok.', 'info');
+        const ad = 'hedef-foto-ornek-' + new Date().toLocaleDateString('sv-SE') + '.json', metin = JSON.stringify({ surum: 1, ornekler: l, sayilar: jsonOku('dagsk_hf_dogruluk', []) });
+        const dosya = typeof File === 'function' ? new File([metin], ad, { type: 'application/json' }) : null;
+        if (dosya && navigator.canShare && navigator.share && navigator.canShare({ files: [dosya] })) {
+            try { await navigator.share({ files: [dosya], title: 'Hedef fotoğrafı örnekleri' }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+        }
+        const u = URL.createObjectURL(new Blob([metin], { type: 'application/json' })), a = document.createElement('a');
+        a.href = u; a.download = ad; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 5000);
+    };
+    function basariKart() {
+        const l = jsonOku('dagsk_hf_dogruluk', []); if (!l.length) return '';
+        const kay = l.reduce((t, x) => t + x.kaydedilen, 0), dog = l.reduce((t, x) => t + x.dogru, 0), orn = jsonOku('dagsk_hf_ornek', []).length;
+        if (!kay) return '';
+        return '<div class="hf-kart" id="hf-basari"><div class="hf-lbl">Otomatik bulma · son ' + l.length + ' seri</div><div class="hf-muted" style="margin-top:6px">Kaydedilen ' + kay + ' okun <b style="color:#f4e6d0">' + dog + '</b> tanesini uygulama doğru yerde buldu (%' + Math.round(dog / kay * 100) + ').</div>'
+            + (orn ? '<button class="hf-btn2" style="margin-top:10px;width:100%" onclick="hfOrnekPaylas()">Düzeltilen fotoğrafları paylaş (' + orn + ')</button>' : '') + '</div>';
+    }
 
     function hfDuzeltCiz() {
         const n = spotSayisi(_hf.tip), oklar = _hf.oklar.map((o) => Object.assign({}, o, { p: puanUV(o.u, o.v) }));
@@ -619,6 +677,7 @@ ${turSeciciHTML()}
         try { skorKaydet(); } catch (e) { console.error(e); }
         const sp2 = hfSp(), sonra = (sp2 && sp2.seriler || []).length;
         if (sonra <= once) { tost('Seri kaydedilemedi — Skor Gir ekranına bak.', 'error'); return hfKapat(); }
+        dogrulukKaydet();
         // bu seriyi bir sonrakinin "önceki"si yap (fark → öneri)
         _hf.onceki = {}; _hf.spotlar.forEach((x, s) => { _hf.onceki[s] = { gri: _hf.gri[s], oklar: _hf.oklar.filter((o) => o.s === s).map((o) => ({ u: o.u, v: o.v })) }; });
         _hf.mSay = 0;
@@ -641,9 +700,7 @@ ${turSeciciHTML()}
         const yon = gr ? yonYazi(gr.u, gr.v) : null, tipGor = bugunN.some((o) => o.tip === '10ring') ? '10ring' : (_hf.tip || '6ring');
         const fark = (a, b2, ters2) => { if (b2 == null) return ''; const d = a - b2; if (Math.abs(d) < 0.05) return '<span class="hf-muted">geçen haftayla aynı</span>'; const iyi = ters2 ? d < 0 : d > 0; return `<span class="${iyi ? 'yesil' : 'kirmizi'}">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} geçen hafta</span>`; };
         const enb = Math.max(30, ...seriler.map((s) => s.puan || 0));
-        const oneri = !gr ? 'Analiz için okların hedefte işaretlenmiş olması gerekir (📷 fotoğraf ya da Skor Gir\'de hedefe dokunarak).'
-            : (yon.yazi === 'ortada' ? `Grup ortada 👏 Şimdi hedef grubu sıkılaştırmak: grup çapı ${halka(gr.cap)} halka.`
-                : `Grup ${yon.yazi} tarafa ${halka(Math.hypot(gr.u, gr.v))} halka kayık. Grup sıkıysa nişangâhı ${yon.yazi.replace('üst', 'yukarı').replace('alt', 'aşağı')} yönüne al (nişangâh grubu takip eder); dağınıksa önce bırakış ve duruşa bak.`);
+        const oneri = nisanMetin(nisanKarar(gr, bugunN.length), gr);
         _hf.analizMetin = gr ? `🎯 ${_hf.ad} — ${b.split('-').reverse().join('.')} antrenman özeti\n` +
             `• ${bugunN.length} ok · ortalama ${ort.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} · X+10: ${x10}\n` +
             `• Grup çapı: ${halka(gr.cap)} halka${gh ? ` (geçen hafta ${halka(gh.cap)})` : ''}\n` +
@@ -657,7 +714,8 @@ ${turSeciciHTML()}
   <div><span>X + 10</span><b>${x10} / ${bugunN.length}</b><span>${bugunN.length ? '%' + Math.round(x10 / bugunN.length * 100) : ''}</span></div>
 </div></div>
 ${seriler.length ? `<div class="hf-kart"><div class="hf-lbl">Seri seri · bugün</div><div class="hf-cubuk" style="margin-top:16px">${seriler.map((s) => `<span style="height:${Math.max(4, (s.puan || 0) / enb * 100)}%"><i>${s.puan}</i></span>`).join('')}</div></div>` : ''}
-<div class="hf-kart"><div class="hf-muted">💬 ${esc(oneri)}</div></div>
+<div class="hf-kart" id="hf-nisan-karar"><div class="hf-lbl">Nişangâh</div><div class="hf-muted" style="margin-top:6px">${esc(oneri)}</div></div>
+${basariKart()}
 <div style="margin:12px 14px 0;display:flex;gap:8px">
   <button class="hf-btn2" style="flex:1" onclick="hfKamera()">📷 Sıradaki seri</button>
   <button class="hf-btn" style="flex:1;font-size:14px;white-space:nowrap" onclick="hfVeli()" ${gr ? '' : 'disabled'}>💬 VELİYE GÖNDER</button>
@@ -680,5 +738,5 @@ ${seriler.length ? `<div class="hf-kart"><div class="hf-lbl">Seri seri · bugün
         hfKamera();
     };
     // test/iç kullanım
-    window._hfIc = { spotBul, renk, olcekle, radyalAday, durum: () => _hf, fotoIsle: (c) => fotoIsle(c) };
+    window._hfIc = { nisanKarar, dogrulukOlc, spotBul, renk, olcekle, radyalAday, durum: () => _hf, fotoIsle: (c) => fotoIsle(c) };
 })();

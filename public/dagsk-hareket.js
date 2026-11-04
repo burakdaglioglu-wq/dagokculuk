@@ -10,6 +10,7 @@
    iz (jiroskop entegrali, derece). Hedef tutuş aşılınca titreşim (navigator.vibrate — Android; iPhone tarayıcısı desteklemez).
    Bitirince: bugün bu oturumdan sonra işaretlenen oklarla (detayliOklar, sırayla) eşleşir → NİŞAN İZİ TEKRARI: her okun
    salınım izi hedefte, deldiği yerde biter. Oturum özetleri cihazda (localStorage dagsk_atis_olcer), kimseye gönderilmez.
+   v376: GELİŞİM kartı (gelisimVeri, saf): aynı yerdeki son 10 oturumda tutuş, tutarlılık ve salınım. Yalnız bu telefonda.
    v375 (kullanıcı: "yap bakalım"):
      · UYGUN SÜRE: aynı mesafe + hedef türündeki tüm oturumlar puanlı oklarla eşleşir (tutusAnaliz, saf), 18 oktan sonra en iyi
        2 sn'lik tutuş aralığı çıkar, fark 0,5 puandan azsa "belirgin etki yok" der. Hedef tutuş sporcu başına hatırlanır (dagsk_hk_hedef).
@@ -106,6 +107,11 @@
         }
         if (iyi && iyi.ort - iyi.dOrt >= FARK_MIN) { r.bas = iyi.s; r.son = iyi.s + 2; r.ort = iyi.ort; r.disiOrt = iyi.dOrt; r.pencereN = iyi.n; }
         return r;
+    }
+    // Oturumlar → gelişim dizileri. 3 oktan az oturum gürültüdür, sayılmaz; yay ve kol salınımı karşılaştırılamaz, yalnız aynı yer.
+    function gelisimVeri(g, yer) {
+        const l = g.filter((s) => s.yer === yer && s.oklar && s.oklar.length >= 3).sort((a, b) => a.t - b.t).map((s) => { const z = ozet(s.oklar); return { t: s.t, ort: z.ort / 1000, sd: z.sd / 1000, sal: z.sal }; });
+        return l.length >= 2 ? l : null;
     }
     const puanSayi = (p) => p === 'X' ? 10 : (p === 'M' ? 0 : (parseInt(p) || 0));
     // Oturumun oklarını işaretlenen oklarla sırayla eşleştirir; "Atış kaçtı" denen yerde bir işaretli ok atlanır.
@@ -211,7 +217,7 @@
             + (_hk.yer === 'yay' ? '<div class="hk-uyari">Bırakış sarsıntısı telefonu düşürebilir ya da zarar verebilir. Yalnız sağlam bir tutucuyla kullan; çocuklarda ve güçlü yaylarda yay kolunu seç.</div>' : '')
             + '<p class="hk-alan">HEDEF TUTUŞ · aşınca uyarır</p><div class="hk-cipler">' + [0, 3, 4, 5, 6, 7, 8].map((s) => cip(s ? s + ' sn' : 'Kapalı', _hk.hedefSn === s, 'hkAyar(\'hedefSn\',' + s + ')')).join('') + '</div>'
             + '<p class="hk-alan">MESAFE · nişan izinin ölçeği</p><div class="hk-cipler">' + [10, 18, 30, 50, 70].map((m) => cip(m + ' m', _hk.mesafe === m, 'hkAyar(\'mesafe\',' + m + ')')).join('') + '</div>'
-            + (_hk.ad ? kisiselKart() : '')
+            + (_hk.ad ? kisiselKart() + gelisimKart() : '')
             + '<label class="hk-onay"><input type="checkbox"' + (_hk.ses ? ' checked' : '') + ' onchange="_hkAyarSes(this.checked)"><span class="hk-kutu"></span>Sesli uyarı: hedef süre aşılınca ve bırakışta bip</label>'
             + (_hk.gecmis.length ? '<p class="hk-alan">SON OTURUMLAR</p><div class="hk-gecmis">' + _hk.gecmis.slice(-3).reverse().map((g) => { const z = ozet(g.oklar); return '<div><b>' + new Date(g.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</b><span>' + (z ? z.n + ' ok · tutuş ' + sn(z.ort) + ' sn ±' + sn(z.sd) : 'ok yok') + '</span></div>'; }).join('') + '</div>' : '')
             + (rapor ? '<button type="button" class="hk-cip hk-rapor" onclick="hkRaporPaylas()">Sensör kayıtlarını paylaş (' + rapor + ')</button>' : '')
@@ -252,6 +258,22 @@
                 : '<p>Şimdilik tutuş süresi puanı belirgin etkilemiyor (' + a.n + ' ok, ' + _hk.mesafe + ' m).</p>' + cubuk;
         }
         return '<div class="hk-kisisel"><p class="hk-alan">BU SPORCUYA UYGUN SÜRE</p>' + ic + '</div>';
+    }
+    function cizgi(d) {
+        const a = Math.min(...d), b = Math.max(...d), r = b - a || 1, W = 120, H = 34;
+        const n = d.map((v, i) => [Math.round(i / (d.length - 1) * (W - 6) + 3), Math.round(H - 4 - (v - a) / r * (H - 8))]), s = n[n.length - 1];
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="34" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="' + n.map((p) => p.join(',')).join(' ') + '"/><circle cx="' + s[0] + '" cy="' + s[1] + '" r="3" fill="currentColor"/></svg>';
+    }
+    function gelisimKart() {
+        const v = gelisimVeri(_hk.gecmis, _hk.yer); if (!v) return '';
+        const f = (x) => x.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), f2 = (x) => x.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const kutu = (ad, d, yaz, sinif) => '<div class="hk-gel ' + sinif + '"><span>' + ad + '</span><b>' + yaz(d[0]) + ' → ' + yaz(d[d.length - 1]) + '</b>' + cizgi(d) + '</div>';
+        const sinif = (d) => d[d.length - 1] < d[0] ? 'iyi' : (d[d.length - 1] > d[0] ? 'kotu' : ''); // düşük daha iyi
+        return '<div class="hk-kisisel" id="hk-gelisim"><p class="hk-alan">GELİŞİM · son ' + v.length + ' oturum</p><div class="hk-gel-kap">'
+            + kutu('Ort. tutuş', v.map((x) => x.ort), (x) => f(x) + ' sn', '')
+            + kutu('Tutarlılık', v.map((x) => x.sd), (x) => '±' + f(x), sinif(v.map((x) => x.sd)))
+            + kutu('Salınım', v.map((x) => x.sal), (x) => f2(x) + '°', sinif(v.map((x) => x.sal)))
+            + '</div></div>';
     }
     const EVRE = { bekle: ['HAZIR', 'Yayı kaldır'], kaldir: ['KALDIRIYOR', 'Çek, nişan al'], nisan: ['NİŞAN', ''], takip: ['BIRAKTI', 'Takip — pozisyonu koru'] };
     function canliCiz(tam) {
@@ -303,7 +325,7 @@
         kabuk('<h1 class="hk-baslik">' + (z ? z.n + ' ok' : 'Özet') + '</h1>'
             + (z ? '<div class="hk-sayac"><div><b>' + sn(z.ort) + '</b><span>ort. tutuş sn</span></div><div><b>±' + sn(z.sd) + '</b><span>tutarlılık</span></div><div><b>' + sn(z.top) + '</b><span>kaldır→bırak</span></div><div><b>' + D.indirme + '</b><span>indirme</span></div></div>' : '')
             + '<div class="hk-not-kart">' + esc(not) + '</div>'
-            + kisiselKart()
+            + kisiselKart() + gelisimKart()
             + (z ? '<p class="hk-alan">NİŞAN İZİ TEKRARI' + (n ? ' · ' + n + ' ok hedefle eşleşti' : '') + '</p>'
                 + '<div class="hk-tekrar"><canvas id="hk-tekrar" width="320" height="320" aria-label="Nişan izi tekrarı" role="img"></canvas>'
                 + '<div class="hk-tekrar-btn"><button type="button" class="hk-cip" onclick="hkTekrar()">' + svg('yenile', 15) + 'Oynat</button><button type="button" class="hk-cip" onclick="_hkCevir(\'X\')">↔ Yönü çevir</button><button type="button" class="hk-cip" onclick="_hkCevir(\'Y\')">↕ Yönü çevir</button></div>'
@@ -378,7 +400,7 @@
         durdur(); const el = $('hk'); if (el) el.remove(); _hk = null;
     };
     // testler: sahte örnek akışı (performance.now yerine verilen t) ve saf fonksiyonlar
-    window._hkIc = { hkIsle, yeniDurum, ozet, tutusAnaliz, eslestir, durum: () => _hk, besle: (l) => { if (!_hk) return; l.forEach(ornekAl); canliCiz(true); } };
+    window._hkIc = { hkIsle, yeniDurum, ozet, tutusAnaliz, eslestir, gelisimVeri, durum: () => _hk, besle: (l) => { if (!_hk) return; l.forEach(ornekAl); canliCiz(true); } };
 
     function hkCss() {
         if ($('hk-css')) return;
@@ -419,6 +441,7 @@
             + '.hk-kisisel-sure{font-family:var(--ks-baslik-font,sans-serif);font-weight:800;font-size:38px;line-height:1;color:var(--ks-vurgu2,#FD8E01);font-variant-numeric:tabular-nums}'
             + '.hk-ilerle{height:8px;border-radius:4px;background:var(--ks-kart2,#1C1C1C);overflow:hidden}.hk-ilerle i{display:block;height:100%;background:var(--ks-vurgu2,#FD8E01)}'
             + '.hk-cubuklar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;align-items:end;margin-top:4px}.hk-cubuklar div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-height:92px;color:var(--ks-soluk,#A8A29E)}.hk-cubuklar b{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}.hk-cubuklar span{width:100%;border-radius:4px 4px 0 0;background:var(--ks-cizgi,#262626)}.hk-cubuklar em{font-style:normal;font-size:11px}.hk-cubuklar .on{color:var(--ks-yazi,#F5F2EF)}.hk-cubuklar .on span{background:var(--ks-vurgu2,#FD8E01)}'
+            + '.hk-gel-kap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.hk-gel{display:flex;flex-direction:column;gap:3px;min-width:0;color:var(--ks-soluk,#A8A29E)}.hk-gel span{font-size:11px}.hk-gel b{font-size:12px;font-weight:700;color:var(--ks-yazi,#F5F2EF);font-variant-numeric:tabular-nums}.hk-gel.iyi{color:var(--ks-yesil,#5FBF7F)}.hk-gel.kotu{color:var(--ks-kirmizi,#FF7A5C)}'
             + '.hk-kisisel-btn{min-height:44px;border-radius:22px;border:0;background:var(--ks-acik,#F5F2EF);color:var(--ks-acik-yazi,#0A0A0A);font:inherit;font-size:14px;font-weight:800;cursor:pointer}'
             + '#hk button:focus-visible{outline:3px solid var(--ks-vurgu2,#FD8E01);outline-offset:2px}';
         document.head.appendChild(st);

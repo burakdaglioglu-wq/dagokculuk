@@ -79,6 +79,10 @@ export default async function ({ log }) {
     esit(an.iyi.bas, 4, 'en iyi aralık 4 sn başlamalı'); esit(an.iyi.son, 6, 'en iyi aralık 6 sn bitmeli');
     esit(an.yok.bas, null, 'fark yokken aralık önerilmemeli');
     esit(an.tek.bas, null, 'hep aynı sürede karşılaştırma yapılmamalı');
+    // v376 gelişim: 3 oktan az oturum ve başka yer sayılmaz; iki oturumla dizi çıkar
+    const gel = await p.evaluate(() => { const o = (ms, sal) => [0, 1, 2].map(() => ({ tutus: ms, salinim: sal })); return { tek: _hkIc.gelisimVeri([{ t: 1, yer: 'kol', oklar: o(4000, 0.5) }], 'kol'), iki: _hkIc.gelisimVeri([{ t: 2, yer: 'kol', oklar: o(5000, 0.3) }, { t: 1, yer: 'kol', oklar: o(4000, 0.5) }, { t: 3, yer: 'yay', oklar: o(1000, 9) }, { t: 4, yer: 'kol', oklar: o(1000, 9).slice(0, 2) }], 'kol') }; });
+    esit(gel.tek, null, 'tek oturumla gelişim gösterilmemeli');
+    esit(gel.iki.length, 2, 'gelişim yalnız aynı yer ve 3+ ok saymalı'); esit(gel.iki[0].ort, 4, 'gelişim sırası eskiden yeniye olmalı');
     // kalan testler 3 oku bekler: sahte akışı temiz oturumla yeniden besle
     await p.evaluate(() => { const h = _hkIc.durum(); h.kacan = []; h.D = _hkIc.yeniDurum(); _hkIc.besle(_hkSahte()); });
     // bugün işaretlenen 3 ok (Skor Gir / fotoğraf) → nişan izi tekrarında eşleşir

@@ -5534,3 +5534,10 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Varsayılan yer yay kolu** (önceki "yay" ayarı kayıtlı cihazda korunur); "Yayın üstünde" seçilince sarsıntı uyarısı. **AÇIK:** kolda bırakış sarsıntısı 15 m/s² eşiğine ulaşmayabilir, sahada ölçülmedi.
 - **KM Yeni özellikler:** `kmYeniRozet` (Skor Gir, Diğer araçlar, Atış Ölçer kutusu), ana ekranda `.ks-yeniler` satırı, `ksAc('yeniler')` → `ksYenilerHTML` (`KS_YENILER`). Rozetler `KM_YENI_BITIS` = 2026-12-05'e kadar; yeni özellik ekleyince KS_YENILER, KM_YENI_SAYI ve bitiş tarihi güncellenir.
 - Testler: 100 genişledi, 101-km-yeniler (1280/390/360).
+
+## 92. Fotoğraf nişangâh kararı, bulma başarısı + Atış Ölçer gelişim (2026-11-04, v376)
+- Kullanıcı "daha fazla istiyorum" dedi. Nişangâh önerisi zaten vardı ama iki ihtimali de söylüyordu.
+- **nisanKarar** (dagsk-hedef-foto.js, saf): 6 oktan az karar yok · ortada · kayma < 1,6·r/√n ise "rastgele, oynatma" · değilse "oynat" (r > 25 ise küçük adım). Grup analizinde `#hf-nisan-karar`.
+- **dogrulukOlc** (saf) + `dogrulukKaydet`: bulunan oklar (`_hf.ilkOneri`) ile kaydedilenler, aynı spotta 4 birim içinde. Sayılar `dagsk_hf_dogruluk` (son 50). Düzeltme varsa düzleştirilmiş hedef kesiti (320 px JPEG) + iki liste `dagsk_hf_ornek` (son 5, sporcu adı YOK), `hfOrnekPaylas` ile dosya. Yalnız kullanıcı paylaşırsa cihazdan çıkar. **Eşikler (radyal sapma 120 vb.) bu örneklerle ayarlanacak.**
+- **gelisimVeri** (dagsk-hareket.js, saf) + `gelisimKart`: aynı yerdeki 3+ oklu son 10 oturumda tutuş, tutarlılık, salınım; 2 oturumdan önce gösterilmez. Veri yalnız bu telefonda (sporcu kartına/sunucuya gitmez).
+- KS_YENILER güncellendi. Testler 83 ve 100 genişledi.

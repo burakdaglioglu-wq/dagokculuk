@@ -95,6 +95,7 @@ const KS_YENILER = [
             ['Sesli uyarı', 'Hedef süre aşılınca bip çalar, Android\'de ayrıca titrer.'],
             ['Salınım ve nişan izi', 'Bırakıştan önceki 2 saniyede yayın ne kadar oynadığını gösterir, izi hedefte tekrar oynatır.'],
             ['İndirme sayacı', 'Atmadan yayı indirdiği okları sayar.'],
+            ['Gelişim', 'Oturumlar boyunca tutuş, tutarlılık ve salınımın nasıl değiştiğini gösterir.'],
             ['Yanlış bildir', 'Sayım tutmazsa "Yanlış saydı" ya da "Atış kaçtı"ya bas. Ölçüm bu kayıtlarla iyileştirilir.']
         ],
         adim: ['Derse eklenen sporculardan birini seç.', 'Telefonu sporcunun yay koluna sıkıca bağla, Başla\'ya bas.', 'Bitince Bitir\'e bas, okları Skor Gir\'de işaretle.'],
@@ -107,7 +108,9 @@ const KS_YENILER = [
         ozellik: [
             ['İlk fotoğrafta ok bulma', 'Önceki fotoğraf olmadan okları bulur, eski delikleri ok saymaz.'],
             ['Emin değilse "?"', 'Çizgideki ya da belirsiz okları kırmızı "?" ile işaretler.'],
-            ['Hedef türü seçimi', '6 halka, tam hedef, 3\'lü dikey ve Vegas 3\'lü.']
+            ['Hedef türü seçimi', '6 halka, tam hedef, 3\'lü dikey ve Vegas 3\'lü.'],
+            ['Nişangâh önerisi', 'Grup analizinde kayma tutarlıysa hangi yöne alacağını söyler; oklar dağınıksa oynatma der.'],
+            ['Bulma başarısı', 'Uygulamanın okların yüzde kaçını doğru bulduğunu gösterir. Düzeltmelerin bulmayı iyileştirmek için saklanır.']
         ],
         adim: ['Skor Gir\'de sporcuya dokun.', '"Fotoğrafla puanla"ya bas, hedef türünü seç, fotoğraf çek.', '"?" olanları kontrol et, kaydet.'],
         not: 'Henüz gerçek hedef fotoğraflarıyla denenmedi. Kaydetmeden önce okları mutlaka kontrol et.',
