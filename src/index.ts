@@ -18,6 +18,7 @@ import { registerPersonnelRoutes } from "./routes/personnel";
 import { registerMetaRoutes } from "./routes/meta";
 import { registerLiveRoutes } from "./routes/live";
 import { registerVeliRaporRoutes } from "./routes/veliRapor";
+import { registerVeliOdemeRoutes } from "./routes/veliOdeme";
 import { registerPushRoutes } from "./routes/push";
 import { registerDuelloRoutes } from "./routes/duello";
 import { registerDuyuruRoutes } from "./routes/duyuru";
@@ -67,6 +68,7 @@ registerPersonnelRoutes(router);
 registerMetaRoutes(router);
 registerLiveRoutes(router);
 registerVeliRaporRoutes(router);
+registerVeliOdemeRoutes(router);
 registerPushRoutes(router);
 registerDuelloRoutes(router);
 registerDuyuruRoutes(router);
@@ -133,6 +135,9 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
   // Sporcu girişi bildirimi + sporcunun kendi fotoğrafı: oturum yok, sunucu ad + kodu athletes tablosundan kontrol eder.
   "/api/sporcu-giris",
   "/api/foto-sporcu",
+  // Veli ödeme ekranı: personel oturumu yok; kod + telefonun son 4 hanesi, deneme sınırı ve kendi oturumu routes/veliOdeme.ts içinde.
+  "/api/veli-odeme/giris",
+  "/api/veli-odeme/cikis",
   // Form Lab telefondan yayın: telefon sayfası (kamera.html) oturumsuz; her istek oda kodu + gizli anahtar ister.
   "/api/yayin",
   "/api/yayin/:kod/teklif",

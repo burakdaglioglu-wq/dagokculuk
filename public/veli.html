@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0A0A0A">
+<title>Veli Ödeme — DAĞ S.K.</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+  /* Veli ödeme ekranı (2026-11-04). Kullanıcı taslaklardan "B ve A'yı birleştir" dedi: A'nın sıradaki ödeme kartı + B'nin 12 ay takvimi.
+     Taslak: https://claude.ai/artifact/ABqdtT7vu4endryfNWweTh */
+  :root{--zemin:#0A0A0A;--kart:#151515;--kart2:#1C1C1C;--cizgi:#262626;--yazi:#F5F2EF;--soluk:#A8A29E;--vurgu:#FC5B01;--vurgu-yazi:#160600;--vurgu2:#FD8E01;--acik:#F5F2EF;--acik-yazi:#0A0A0A;--yesil:#5FBF7F;--kirmizi:#FF7A5C;
+    --baslik:'Barlow Condensed',Impact,sans-serif;--od-z:#1C2B21;--od-k:#2E4A38;--od-y:#A9E0BC;--do-z:#16222C;--do-k:#2A3E50;--do-y:#A5CDEE;--be-z:#2B1A14;--be-k:#7A3B26;--be-y:#FFB39F}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--zemin);color:var(--yazi);font-family:Manrope,-apple-system,'Segoe UI',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+  button,input,a{font:inherit}
+  #v{width:min(480px,100%);min-height:100dvh;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+  .etiket{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--soluk);text-transform:uppercase}
+  .ust{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 4px}
+  .ust>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+  h1{margin:0;font-family:var(--baslik);font-weight:800;font-size:40px;line-height:1;text-transform:uppercase;overflow-wrap:anywhere}
+  .cik{flex-shrink:0;min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--cizgi);background:transparent;color:var(--soluk);font-size:13px;font-weight:700;cursor:pointer}
+  .kahraman{padding:18px;border-radius:22px;background:var(--vurgu);color:var(--vurgu-yazi);display:flex;flex-direction:column;gap:6px}
+  .kahraman .etiket{color:inherit;font-weight:800}
+  .kahraman b{font-family:var(--baslik);font-weight:800;font-size:68px;line-height:.95;font-variant-numeric:tabular-nums}
+  .kahraman b.kucuk{font-size:44px}
+  .kahraman span.alt{font-size:15px;font-weight:700}
+  .kahraman.tamam{background:var(--od-z);color:var(--od-y);border:1px solid var(--od-k)}
+  .kahraman.notr{background:var(--kart);color:var(--yazi);border:1px solid var(--cizgi)}
+  .son{padding:14px 16px;border-radius:18px;background:var(--kart);display:flex;align-items:center;gap:12px}
+  .son svg{flex-shrink:0;color:var(--yesil)}
+  .son div{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .son small{font-size:12px;color:var(--soluk)}
+  .son strong{font-size:15px;font-weight:800}
+  .yil{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px;margin-top:6px}
+  .yil-sec{display:flex;align-items:center;gap:2px}
+  .yil-sec button{width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:var(--yazi);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  .yil-sec button:disabled{opacity:.25;cursor:default}
+  .yil-sec b{font-family:var(--baslik);font-weight:800;font-size:30px;font-variant-numeric:tabular-nums}
+  .yil>span{font-size:13px;font-weight:700;color:var(--soluk);text-align:right}
+  .izgara{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .ay{min-height:74px;border-radius:16px;border:1px solid var(--cizgi);background:var(--kart);color:var(--soluk);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:0 12px;cursor:pointer;text-align:left}
+  .ay b{font-size:14px;font-weight:800}
+  .ay span{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+  .ay.odendi{background:var(--od-z);border-color:var(--od-k);color:var(--od-y)}
+  .ay.dondu{background:var(--do-z);border-color:var(--do-k);color:var(--do-y)}
+  .ay.bekleniyor{background:var(--be-z);border-color:var(--be-k);color:var(--be-y)}
+  .ay.sirada{border:1px dashed var(--vurgu2);color:var(--vurgu2)}
+  .ay.secili{outline:2px solid var(--yazi);outline-offset:1px}
+  .detay{padding:16px;border-radius:20px;background:var(--kart);display:flex;flex-direction:column;gap:8px}
+  .detay strong{font-family:var(--baslik);font-weight:800;font-size:40px;line-height:1.02}
+  .detay .ikili{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px}
+  .detay .ikili div{display:flex;flex-direction:column}
+  .detay small{font-size:12px;color:var(--soluk)}
+  .detay .ikili b{font-size:15px;font-weight:800}
+  .detay p{margin:0;font-size:14px;line-height:1.45;color:var(--soluk)}
+  .btn{min-height:54px;border:0;border-radius:27px;background:var(--acik);color:var(--acik-yazi);font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;padding:0 16px;text-align:center}
+  .btn.ana{background:var(--vurgu);color:var(--vurgu-yazi);min-height:58px;border-radius:29px;font-size:16px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .not{margin:0;font-size:13px;line-height:1.45;color:var(--soluk);padding:0 4px}
+  /* giriş */
+  .giris{flex:1;display:flex;flex-direction:column;gap:14px;padding-top:32px}
+  .giris h1{font-size:54px;line-height:.92}
+  .giris p{margin:0;font-size:15px;line-height:1.5;color:var(--soluk)}
+  .giris label{margin-top:18px;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--soluk)}
+  .giris input{height:72px;width:100%;padding:0 20px;border-radius:18px;border:2px solid var(--cizgi);background:var(--kart);color:var(--yazi);font-size:34px;font-weight:800;letter-spacing:.3em;outline:0}
+  .giris input:focus{border-color:var(--vurgu2)}
+  .giris form{display:flex;flex-direction:column;gap:14px;flex:1}
+  .hata{min-height:20px;margin:0;font-size:14px;font-weight:700;color:var(--kirmizi)}
+  .bosluk{flex:1}
+  .yukle{flex:1;display:flex;align-items:center;justify-content:center;color:var(--soluk);font-size:14px;font-weight:700}
+  button:focus-visible,a:focus-visible{outline:3px solid var(--vurgu2);outline-offset:2px}
+  @media (max-width:370px){h1{font-size:36px}.giris h1{font-size:46px}.kahraman b{font-size:58px}.detay strong{font-size:34px}.ay{padding:0 9px}}
+  @media (prefers-reduced-motion:no-preference){.detay,.kahraman{animation:gir .18s ease-out}@keyframes gir{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<main id="v" aria-live="polite"><div class="yukle">Yükleniyor…</div></main>
+<script>
+(function () {
+  'use strict';
+  var WA = '905469107893', AY = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'], YONTEM = { nakit: 'Nakit', iban: 'IBAN', kart: 'Kart' };
+  var kod = new URLSearchParams(location.search).get('kod') || '', V = document.getElementById('v'), D = null, S = { secili: null, yil: null, ilkAd: '' };
+  var ANAHTAR = 'dag_veli_' + kod.slice(0, 16);
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function tl(n) { return n == null ? '' : Number(n).toLocaleString('tr-TR') + ' ₺'; }
+  function ayAd(a) { return AY[+a.slice(5, 7) - 1]; }
+  function ayKisa(a) { return ayAd(a).slice(0, 3); }
+  function tarihYaz(t, yilli) { if (!t) return ''; var p = t.split('-'); return +p[2] + ' ' + AY[+p[1] - 1] + (yilli ? ' ' + p[0] : ''); }
+  function oku() { try { return localStorage.getItem(ANAHTAR) || sessionStorage.getItem(ANAHTAR) || ''; } catch (e) { return ''; } }
+  function yaz(t) { try { localStorage.setItem(ANAHTAR, t); } catch (e) { try { sessionStorage.setItem(ANAHTAR, t); } catch (e2) { } } }
+  function sil() { try { localStorage.removeItem(ANAHTAR); sessionStorage.removeItem(ANAHTAR); } catch (e) { } }
+  function waLink(metin) { return 'https://api.whatsapp.com/send?phone=' + WA + '&text=' + encodeURIComponent(metin); }
+
+  function hataCiz(baslik, metin) {
+    V.innerHTML = '<div class="giris"><span class="etiket">DAĞ Spor Kulübü · Veli</span><h1>' + esc(baslik) + '</h1><p>' + esc(metin) + '</p><div class="bosluk"></div>'
+      + '<a class="btn" href="' + waLink('Merhaba, veli ödeme ekranına giremiyorum.') + '" target="_blank" rel="noopener">Kulübe WhatsApp\'tan yaz</a></div>';
+  }
+  function girisCiz(hata) {
+    V.innerHTML = '<div class="giris"><span class="etiket">DAĞ Spor Kulübü · Veli</span><h1>' + esc(S.ilkAd ? S.ilkAd + ' için' : 'Veli') + '<br>ödemeler</h1>'
+      + '<p>Devam etmek için kulübe kayıtlı telefon numaranızın son 4 hanesini yazın.</p>'
+      + '<form id="f" novalidate><label for="son4">SON 4 HANE</label><input id="son4" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*" aria-describedby="hata">'
+      + '<p class="hata" id="hata" role="alert">' + esc(hata || '') + '</p><p class="not" style="padding:0">Bu telefonda hatırlanır. Numaranız değiştiyse kulübe yazın.</p><div class="bosluk"></div>'
+      + '<button class="btn ana" id="gir" type="submit">Giriş yap</button></form></div>';
+    var i = document.getElementById('son4');
+    i.addEventListener('input', function () { i.value = i.value.replace(/\D/g, '').slice(0, 4); });
+    document.getElementById('f').addEventListener('submit', girisYap);
+    i.focus();
+  }
+  function girisYap(e) {
+    e.preventDefault();
+    var i = document.getElementById('son4'), h = document.getElementById('hata'), b = document.getElementById('gir');
+    if (!/^\d{4}$/.test(i.value)) { h.textContent = '4 hane yazın.'; return; }
+    b.disabled = true; h.textContent = '';
+    fetch('/api/veli-odeme/giris', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kod: kod, son4: i.value }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) {
+        if (d.ok && d.token) { yaz(d.token); return yukle(); }
+        b.disabled = false; i.value = ''; i.focus();
+        h.textContent = d.sebep === 'kilit' ? 'Çok fazla deneme. ' + Math.max(1, Math.ceil((d.kalanMs || 60000) / 60000)) + ' dakika sonra tekrar deneyin.' : 'Numara eşleşmedi. Kulübe kayıtlı numarayı deneyin.';
+      })
+      .catch(function () { b.disabled = false; h.textContent = 'Bağlantı kurulamadı, tekrar deneyin.'; });
+  }
+  function yukle(yil) {
+    var t = oku();
+    if (!t) return girisCiz();
+    return fetch('/api/veli-odeme' + (yil ? '?yil=' + yil : ''), { headers: { 'x-veli-oturum': t } })
+      .then(function (r) { if (r.status === 401) { sil(); girisCiz(); return null; } if (!r.ok) throw new Error('sunucu'); return r.json(); })
+      .then(function (d) {
+        if (!d) return;
+        D = d; S.yil = d.yil;
+        if (!S.secili || S.secili.slice(0, 4) !== String(d.yil)) S.secili = String(d.yil) === d.buAy.slice(0, 4) ? d.buAy : d.yil + '-01';
+        ciz();
+      })
+      .catch(function () { if (D) return; hataCiz('Açılamadı', 'Bağlantı kurulamadı. İnternetinizi kontrol edip sayfayı yenileyin.'); });
+  }
+  function kahramanHTML() {
+    if (D.muaf) return '<section class="kahraman tamam"><span class="etiket">Aidat</span><b class="kucuk">Muaf</b><span class="alt">Ödeme beklenmiyor.</span></section>';
+    if (D.kapali) return '<section class="kahraman notr"><span class="etiket">Aidat</span><b class="kucuk">Ara verildi</b><span class="alt">Şu an ödeme beklenmiyor.</span></section>';
+    if (!D.siradaki) return '<section class="kahraman notr"><span class="etiket">Sıradaki ödeme</span><b class="kucuk">Kayıt yok</b><span class="alt">Yakın zamanda ödeme kaydı görünmüyor. Bilgi için kulübe yazın.</span></section>';
+    var s = D.siradaki, bu = s.ay === D.buAy, alt;
+    if (s.gecikmis) alt = ayAd(s.ay) + ' aidatı bekleniyor' + (D.gecikenAy > 1 ? ' · toplam ' + D.gecikenAy + ' ay' : '');
+    else if (bu) alt = ayAd(s.ay) + ' aidatı · bu ay bekleniyor';
+    else alt = ayAd(s.ay) + ' aidatı · 1 ' + ayAd(s.ay) + '\'a ' + s.gun + ' gün';
+    return '<section class="kahraman" id="kahraman"><span class="etiket">' + (s.gecikmis ? 'Bekleyen ödeme' : 'Sıradaki ödeme') + '</span>'
+      + (s.tutar ? '<b>' + esc(tl(s.tutar)) + '</b>' : '<b class="kucuk">' + esc(ayAd(s.ay)) + '</b>') + '<span class="alt">' + esc(alt) + '</span>'
+      + (s.tutar ? '' : '<span class="alt">Tutarı kulüpten öğrenebilirsiniz.</span>') + '</section>';
+  }
+  function hucreYazi(a) {
+    if (a.durum === 'odendi') return a.tutar ? tl(a.tutar) : (a.paket ? 'Pakette' : 'Ödendi');
+    return { dondu: 'Donduruldu', bekleniyor: 'Bekleniyor', gelecek: 'Gelecek', muaf: 'Muaf', yok: '—' }[a.durum] || '';
+  }
+  function detayHTML() {
+    var a = D.aylar.filter(function (x) { return x.ay === S.secili; })[0]; if (!a) return '';
+    var bas = '<small class="etiket">' + esc(ayAd(a.ay)) + ' ' + a.ay.slice(0, 4) + '</small>', ic;
+    if (a.durum === 'odendi') {
+      ic = '<strong>' + (a.tutar ? esc(tl(a.tutar)) + ' ödendi' : 'Ödendi') + '</strong><div class="ikili"><div><small>Tarih</small><b>' + esc(a.tarih ? tarihYaz(a.tarih, true) : '—') + '</b></div><div><small>Yöntem</small><b>' + esc(YONTEM[a.yontem] || '—') + '</b></div></div>'
+        + (a.paket > 1 ? '<p>' + a.paket + ' aylık paket ödemesi.</p>' : (a.paket === 1 && !a.tutar ? '<p>Paket kapsamında.</p>' : (a.tutar ? '' : '')));
+    } else if (a.durum === 'dondu') ic = '<strong>Donduruldu</strong><p>Bu ay ara verildi, ödeme beklenmiyor.</p>';
+    else if (a.durum === 'bekleniyor') ic = '<strong>' + (a.tutar ? esc(tl(a.tutar)) + ' bekleniyor' : 'Bekleniyor') + '</strong><p>Ödediyseniz kaydı henüz işlenmemiş olabilir, kulübe yazın.</p>';
+    else if (a.durum === 'gelecek') ic = '<strong>' + (a.tutar ? esc(tl(a.tutar)) : 'Gelecek ay') + '</strong><p>1 ' + esc(ayAd(a.ay)) + ' itibarıyla.' + (a.tutar ? ' Tutar son ödemenize göre tahmindir.' : '') + '</p>';
+    else if (a.durum === 'muaf') ic = '<strong>Muaf</strong><p>Ödeme beklenmiyor.</p>';
+    else ic = '<strong>Kayıt yok</strong><p>Bu ay için ödeme kaydı görünmüyor.</p>';
+    return '<section class="detay" id="detay">' + bas + ic + '</section>';
+  }
+  function ciz() {
+    var sag = D.yilAySayisi ? D.yilAySayisi + ' ay ödendi' + (D.yilToplam ? ' · ' + tl(D.yilToplam) : '') : 'Ödeme yok';
+    var izgara = D.aylar.map(function (a) {
+      var sira = D.siradaki && D.siradaki.ay === a.ay && a.durum !== 'bekleniyor';
+      return '<button type="button" class="ay ' + a.durum + (sira ? ' sirada' : '') + (a.ay === S.secili ? ' secili' : '') + '" data-ay="' + a.ay + '" aria-pressed="' + (a.ay === S.secili) + '"><b>' + ayKisa(a.ay) + '</b><span>' + esc(sira ? 'Sırada' : hucreYazi(a)) + '</span></button>';
+    }).join('');
+    var ok = function (d) { return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>'; };
+    V.innerHTML = '<header class="ust"><div><span class="etiket">DAĞ Spor Kulübü · Veli</span><h1>' + esc(D.ad) + '</h1></div><button type="button" class="cik" id="cik">Çıkış</button></header>'
+      + kahramanHTML()
+      + (D.son ? '<section class="son" id="son"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><div><small>Son ödeme</small><strong>' + esc((D.son.tarih ? tarihYaz(D.son.tarih) + ' · ' : '') + tl(D.son.tutar) + ' · ' + ayAd(D.son.ay) + ' aidatı') + '</strong></div></section>' : '')
+      + '<div class="yil"><div class="yil-sec"><button type="button" id="yil-g" aria-label="Önceki yıl"' + (D.yil <= D.ilkYil ? ' disabled' : '') + '>' + ok('M15 6l-6 6 6 6') + '</button><b>' + D.yil + '</b><button type="button" id="yil-i" aria-label="Sonraki yıl"' + (D.yil >= D.sonYil ? ' disabled' : '') + '>' + ok('M9 6l6 6-6 6') + '</button></div><span id="yil-ozet">' + esc(sag) + '</span></div>'
+      + '<div class="izgara" id="izgara">' + izgara + '</div>' + detayHTML()
+      + '<a class="btn" href="' + waLink('Merhaba, ' + D.ad + ' için ödeme hakkında yazıyorum.') + '" target="_blank" rel="noopener">Kulübe WhatsApp\'tan yaz</a>';
+    document.getElementById('izgara').addEventListener('click', function (e) { var b = e.target.closest('.ay'); if (!b) return; S.secili = b.getAttribute('data-ay'); ciz(); var y = document.querySelector('[data-ay="' + S.secili + '"]'); if (y) y.focus(); });
+    var g = document.getElementById('yil-g'), i = document.getElementById('yil-i');
+    g.addEventListener('click', function () { yukle(D.yil - 1); }); i.addEventListener('click', function () { yukle(D.yil + 1); });
+    document.getElementById('cik').addEventListener('click', function () {
+      if (!confirm('Bu telefondan çıkış yapılsın mı?')) return;
+      var t = oku(); sil(); D = null; S.secili = null;
+      fetch('/api/veli-odeme/cikis', { method: 'POST', headers: { 'x-veli-oturum': t } }).catch(function () { }); girisCiz();
+    });
+  }
+  if (!/^[A-Za-z0-9-]{8,64}$/.test(kod)) { hataCiz('Link eksik', 'Kulübün gönderdiği linki WhatsApp\'tan yeniden açın.'); return; }
+  fetch('/api/veli-odeme/bilgi/' + encodeURIComponent(kod)).then(function (r) { if (r.status === 404) { hataCiz('Link geçersiz', 'Bu link artık çalışmıyor. Kulüpten yeni link isteyin.'); return null; } return r.ok ? r.json() : {}; })
+    .then(function (d) { if (!d) return; S.ilkAd = d.ad || ''; if (d.telefonVar === false) return hataCiz('Numara kayıtlı değil', 'Giriş için kulübe kayıtlı bir veli telefonu gerekiyor. Kulübe yazın, numaranızı eklesinler.'); return yukle(); })
+    .catch(function () { oku() ? yukle() : hataCiz('Açılamadı', 'Bağlantı kurulamadı. İnternetinizi kontrol edip sayfayı yenileyin.'); });
+})();
+</script>
+</body>
+</html>

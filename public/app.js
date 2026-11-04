@@ -4072,6 +4072,23 @@
                 aidatGonderildiIsaretle(isaret); setTimeout(egitmenRenderAidat, 300);
             });
         }
+        // Veli ödeme ekranı (v377, public/veli.html): giriş = bu link + kayıtlı telefonun son 4 hanesi. Pencere tıklama anında açılır (telefon engeli).
+        function aidatVeliOdemeTel(sp) { return sp.acilTelefon || sp.veli2Telefon || ''; }
+        function aidatVeliOdemeLinkGonder(i) {
+            let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
+            let tel = aidatVeliOdemeTel(x.sp); if(!tel) { showToast('Önce veli telefonunu ekle: giriş için gerekli.', 'warning'); return; }
+            let w = window.open('', '_blank');
+            fetch('/api/athletes/' + encodeURIComponent(x.g) + '/' + encodeURIComponent(x.ad) + '/izle-kodu', { method: 'POST' }).then(r => r.ok ? r.json() : null).then(d => {
+                if(!d || !d.kod) { if(w) w.close(); showToast('Link oluşturulamadı.', 'error'); return; }
+                let metin = 'Merhaba 🌟 DAĞ Spor Kulübü: ' + aidatIlkAd(x.ad) + ' için ödemelerinizi ve sıradaki ödemeyi buradan görebilirsiniz:\n' + location.origin + '/veli.html?kod=' + d.kod + '\n\nGirişte kulübe kayıtlı telefonunuzun son 4 hanesi sorulur.';
+                let numara = telefonWaFormat(tel), url = (numara ? 'https://api.whatsapp.com/send?phone=' + numara + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(metin);
+                if(w) w.location.href = url; else window.open(url, '_blank');
+                aidatGonderildiIsaretle('veliodeme|' + x.ad); setTimeout(egitmenRenderAidat, 300);
+            }).catch(() => { if(w) w.close(); showToast('Link oluşturulamadı.', 'error'); });
+        }
+        // "Sıradaki veli": linki henüz gönderilmemiş, telefonu kayıtlı, muaf olmayan ilk aile. İşaret bu cihazda (dag_aidat_gonderildi).
+        function aidatVeliOdemeKalanlar() { let gon = aidatGonderildi(); return (_aidatVeliOzetListe || []).map((x, i) => ({ x, i })).filter(o => !o.x.sp.aidatMuaf && aidatVeliOdemeTel(o.x.sp) && !gon['veliodeme|' + o.x.ad]); }
+        function aidatVeliOdemeSiradaki() { let k = aidatVeliOdemeKalanlar()[0]; if(!k) { showToast('Gönderilecek veli kalmadı.', 'success'); return; } aidatVeliOdemeLinkGonder(k.i); }
         function aidatVeliOzetKopyala(i) {
             let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
             aidatRaporLinkAl(x, aidatAy).then(link => { try { navigator.clipboard.writeText(aidatVeliOzetMetin(x, aidatAy, link)).then(() => showToast('Mesaj kopyalandı', 'success')); } catch(e) {} });
@@ -4086,10 +4103,13 @@
             let satirlar = _aidatVeliOzetListe.map((x, i) => {
                 let gunSay = (aidatDevamHaritasi(x.g, x.ad)[ay] || []).length, rec = aidatDB[x.ad] && aidatDB[x.ad][ay], g = gon['ozet|' + ay + '|' + x.ad];
                 return `<div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--border-color); ${g ? 'opacity:.55;' : ''}"><div style="flex:1; min-width:0;"><div style="font-weight:800; font-size:12.5px;">${esc(x.ad)}</div><div style="font-size:11px; color:var(--text-muted);">🗓 ${gunSay} gün · ${x.sp.aidatMuaf ? 'muaf' : (rec && rec.odendi ? '✓ ödendi' : '✗ ödeme bekleniyor')}${x.sp.acilTelefon ? '' : ' · ⚠️ telefon yok'}</div></div>
+                    <button onclick="aidatVeliOdemeLinkGonder(${i})" aria-label="${esc(x.ad)} velisine ödeme linki gönder" title="${aidatVeliOdemeTel(x.sp) ? 'Veli ödeme ekranının linkini WhatsApp ile gönder' : 'Veli telefonu kayıtlı değil'}" style="flex-shrink:0; background:var(--bg-panel); color:${aidatVeliOdemeTel(x.sp) ? 'var(--text-main)' : 'var(--neon-red)'}; border:1px solid var(--border-color); padding:7px 9px; border-radius:8px; font-weight:800; font-size:11px; cursor:pointer;">${aidatVeliOdemeTel(x.sp) ? (gon['veliodeme|' + x.ad] ? '✓ Link gitti' : 'Ödeme linki') : 'Telefon yok'}</button>
                     <button onclick="aidatVeliOzetKopyala(${i})" style="flex-shrink:0; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:7px 9px; border-radius:8px; font-weight:800; font-size:11px; cursor:pointer;">Kopyala</button>
                     <button onclick="aidatVeliOzetGonder(${i})" style="flex-shrink:0; background:${g ? 'var(--bg-panel)' : 'rgba(16,185,129,0.15)'}; color:${g ? 'var(--text-muted)' : 'var(--neon-green)'}; border:1px solid ${g ? 'var(--border-color)' : 'var(--neon-green)'}; padding:7px 10px; border-radius:8px; font-weight:800; font-size:11.5px; cursor:pointer;">${g ? '✓ Gönderildi' : '💬 Gönder'}</button></div>`;
             }).join('');
+            let telYok = _aidatVeliOzetListe.filter(x => !aidatVeliOdemeTel(x.sp) && !x.sp.aidatMuaf).length;
             return btn + `<div style="border:1px solid var(--neon-green); border-radius:12px; padding:10px; margin-bottom:12px;">
+                <div id="aidat-veli-odeme-not" style="font-size:12px; margin-bottom:8px; padding:8px; border-radius:8px; background:var(--bg-main);"><b>Ödeme linki:</b> Veli kendi ödemelerini ve sıradaki ödemeyi görür, girişte kayıtlı telefonunun son 4 hanesi sorulur.${telYok ? ` <b style="color:var(--neon-red)">${telYok} sporcunun telefonu yok, bu veliler giremez.</b>` : ''}${(() => { let k = aidatVeliOdemeKalanlar(); return k.length ? `<button id="aidat-veli-siradaki" onclick="aidatVeliOdemeSiradaki()" style="display:block; width:100%; min-height:48px; margin-top:8px; background:var(--neon-green); color:#04140c; border:0; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer;">Sıradaki veli: ${esc(k[0].x.ad)} · ${k.length} kaldı</button>` : '<div style="margin-top:6px; font-weight:800; color:var(--neon-green);">✓ Telefonu kayıtlı tüm velilere link gitti.</div>'; })()}</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Her veliye bu ayın devam günleri ve aidat durumu gider. "Gönder" WhatsApp'ı o velinin numarasıyla açar; gönderdiklerin işaretlenir. Mesaj örneği:</div>
                 ${_aidatVeliOzetListe.length ? `<div style="font-size:11px; white-space:pre-line; background:var(--bg-main); border-radius:8px; padding:8px; margin-bottom:6px;">${esc(aidatVeliOzetMetin(_aidatVeliOzetListe[0], ay))}</div>` : ''}
                 <div style="max-height:360px; overflow-y:auto;">${satirlar || '<div style="font-size:12px; color:var(--text-muted);">Sporcu yok.</div>'}</div>
