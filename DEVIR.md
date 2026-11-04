@@ -5558,3 +5558,11 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Form okuma:** `POST /api/form-oku` (oturumlu). @anthropic-ai/sdk, claude-opus-5-5, effort high, `fallbacks: "default"`, json_schema yapısal çıktı. Secret: `npx wrangler secret put ANTHROPIC_API_KEY`; yoksa 503 `anahtar-yok`, kalan her şey çalışır. Sunucu görseli saklamaz; günlük 300 okuma sınırı (`form_oku_sayac`). Fiyatı düşürmek gerekirse model tek satır.
 - **Kural:** Okunan bilgi asla doğrudan kaydedilmez. Hoca kontrol eder; kayıtlıdan farklı değer varsayılan işaretlenmez, geçersiz telefon yazılamaz, belirsiz alan sarı. Yapay zekâ onayı işaretlenmeden fotoğraf seçilemez. Onay sonrası: PATCH (veli, telefon, meslek = aileMeslek "a / b", doğum), biyomotor kaydı, form fotoğrafı dosyaya tür=form.
 - **AÇIK:** Gerçek okuma hiç denenmedi (anahtar yok, test 103 sahte yanıt kullanır). Formdaki onay metinleri taslak, KVKK danışmanına gösterilmeli. Sporcu silinince fotoğraflar kalır (geri alınabilir silme); kesin silme ayrıca ele alınmalı.
+
+## 95. 🛰️ Son Üs (2026-11-05, v379)
+- Kullanıcı: "8 yaş çocuklar oyunlardan sıkıldı gibi, ne yapalım". Teşhis: bütün oyunlar aynı döngü. Taslağa "yap bakalım, bunu sevdim": https://claude.ai/artifact/Jq49VDJq1ZPfkxzL6S3g4Z
+- `public/dagsk-km-sonus.js` (su*), DOM + SVG, tema 'sonus', KM_DA_OYUN kucuk ilk öneri. 6 bölümlük hikâye (BOLUMLER), sonra yeni sezon. Faz: hikaye → savas → karar → son.
+- **Gizli görev:** ortalamaya göre 3 seviye (GOREVLER), bölüm başına sabit; "Gizli görev" düğmesiyle görünür, hoca söyler; yapınca kalkan +1 ve herkes görür. **Aynı ekran TV'ye aynalanıyorsa görev TV'de de görünür.**
+- **Karar:** kalkan, sıradaki düşmanın gücü (zayif) veya ekibe dost (bölüm başına +1 kalkan) değiştirir; "Geçen ders" yazısına girer.
+- **STANDING:** düşman herkes atmadan bitmez, "Hep birlikte bitir", finalde herkesin adı, sıralama yok. **12 saat istisnası:** 'dag_km_sonus_<konum>' KM_OYUN_SIFIR_ONEK'te değil; sınıf başına kalıcı; gün değişince yarım savaş sıfırlanır, hikâye kalır. "Hikâyeyi sıfırla" onaylı.
+- Test 104. AÇIK: gerçek çocuklarla ve TV'de denenmedi.
