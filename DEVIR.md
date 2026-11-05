@@ -5583,3 +5583,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
   - Analiz: yzaTutusHTML/yzaTutusDilim; arşive sporcu.tut = [[ms, puan]]. Eleme setleri bu grafiğe girmez.
   - Üzerine gelince kart koyu, en çok 2 cümle (.yz-hov).
 - Test 105 genişledi; 50, 76, 93 taşınan düğmeler için güncellendi. AÇIK: köprü gerçek telefonla denenmedi (test sahte sensörle). Yarışmalar › Maç zamanı bağlı değil. Telefon KM'den girmeli ki km-ortak eşitlesin.
+
+## 97. 🧟 Zombi Salgını, Son Üs kalktı (2026-11-06, v381)
+- Kullanıcı Son Üs (§95) için "çok kötü, yeni oyun yap". Dört farklı oyundan Zombi Salgını'nı seçti. Son Üs'ün dosyası, testi ve teması silindi; 8 yaş ilk önerisi artık 'zombi'.
+- `public/dagsk-km-zombi.js` (zb*), DOM + SVG, can barı yok. Kalabalık bir kez kurulur, sınıflar değişir.
+- **Kural:** başlangıçta sınıfın ~1/6'sı zombi. Panzehir çocuğun kendi seviyesine göre (ort. <5 mavi, 5-7 kırmızı, 7+ sarı; esikOf). Bir seride en çok 1 kişi kurtulur: zombi çocuk önce kendini, sağlam çocuk en eski zombiyi. Her atıştan sonra 1 ısırık (en az ısırılana). Zombi kalmazsa yeni dalga. Herkes atınca sağlam çoğunluktaysa kazanılır.
+- **Denge simülasyonu (8-24 çocuk):** ok başı %40 iyi atış ~%80 kazanma, kalabalığın ~%40'ı zombi; %25'te ~%20 kazanma. Aralık 2 olunca oyun gerilimsizdi.
+- **STANDING:** sonuç herkes atmadan belli olmaz, ısırık atan çocuğa yazılmaz, sıralama yok, finalde herkesin adı. Koçta "Hep birlikte bitir" sınıfın yarısı atınca çıkar. 12 saat kuralına girer.
+- Sağ üstte sıradaki çocuğun adı ve hedefte panzehir bölgesi. Dock sağda varsayılır; sola alınırsa kalabalık altında kalır (Son Üs'te de öyleydi).
+- Test 106. AÇIK: gerçek çocuklarla ve TV'de denenmedi; süre sınıfı yorarsa bekleme kısaltılır (seri başına en çok ~2,5 sn).
