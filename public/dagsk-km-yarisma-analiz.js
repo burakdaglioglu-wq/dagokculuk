@@ -131,6 +131,26 @@ function yzaSparkSVG(g) {
 }
 
 // ---------------------------------------------------------------- ayrıntı
+// ⏱ Tutuş süresi ve puan (2026-11-06). Veri: Atış Ölçer'in bu tura yazdığı süreler + aynı mesafedeki arşiv turları (tut). 3 oktan az aralık "en iyi" sayılmaz.
+function yzaTutusCiftleri(tur, k) {
+    let l = []; yzArsivOku().forEach(function (r) { if (r.mesafe !== tur.mesafe || (tur.canli && r.id === tur.id)) return; let s = (r.sporcular || []).find(function (q) { return q.k === k; }); if (s && s.tut) l = l.concat(s.tut); });
+    return tur.canli && typeof yzOlcumCiftleri === 'function' ? l.concat(yzOlcumCiftleri(tur.o, k)) : l;
+}
+function yzaTutusDilim(c) {
+    let d = []; for (let s = 2; s <= 8; s++) d.push({ s: s, n: 0, top: 0 });
+    c.forEach(function (x) { let b = d[Math.max(2, Math.min(8, Math.floor(x[0] / 1000))) - 2]; b.n++; b.top += x[1]; });
+    d.forEach(function (b) { b.ort = b.n ? b.top / b.n : null; b.ad = b.s === 2 ? '<3' : b.s === 8 ? '8+' : String(b.s); b.uzun = b.s === 2 ? '3 sn\'den kısa' : b.s === 8 ? '8 sn ve üstü' : b.s + '–' + (b.s + 1) + ' sn'; });
+    let en = null; d.forEach(function (b) { if (b.n >= 3 && (!en || b.ort > en.ort)) en = b; });
+    return { n: c.length, dilim: d, en: en };
+}
+function yzaTutusHTML(tur, k) {
+    let v = yzaTutusDilim(yzaTutusCiftleri(tur, k)), bas = '<div class="yza-k" id="yza-tutus"><span class="yz-etiket">⏱ Tutuş süresi ve puan · ' + yzaEsc(tur.mesafe) + '</span>';
+    if (!v.n) return bas + '<div class="yza-bos">Atış Ölçer ile ölçülen ok yok.<br><small>Sporcu telefonu koluna taksın, süreleri skorlarla burada eşleşsin.</small></div></div>';
+    let cub = v.dilim.map(function (b) {
+        return '<div class="yza-tt' + (v.en && b.s === v.en.s ? ' en' : '') + '" title="' + b.uzun + ': ' + (b.n ? 'ok başı ' + yzaSayi(b.ort, 1) + ', ' + b.n + ' ok' : 'ok yok') + '"><b>' + (b.n ? yzaSayi(b.ort, 1) : '–') + '</b><i style="height:' + (b.n ? Math.max(4, Math.round(b.ort / 10 * 96)) : 0) + 'px"></i><span>' + b.ad + '</span><small>' + b.n + ' ok</small></div>';
+    }).join('');
+    return bas + '<div class="yza-tt-oz">' + (v.en ? 'En iyi aralık: <b>' + v.en.uzun + '</b> · ok başı ' + yzaSayi(v.en.ort, 1) + ' (' + v.en.n + ' ok)' : 'Bir aralık için en az 3 ok gerekli.') + ' <small>Toplam ' + v.n + ' ok' + (v.n < 18 ? ', az veri: ok arttıkça netleşir' : '') + '</small></div><div class="yza-tt-kap" role="img" aria-label="Tutuş süresine göre ok başı puan">' + cub + '</div><div class="yz-alt" style="text-align:center">saniye</div></div>';
+}
 function yzaDetayHTML(tur, x) {
     let s = x.s, nk = yzaNoktalar(tur, s.k, _yza.kapsam), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz) : null;
     let bolge = yzaBolge(nk), kap = function (id, ad) { return '<button class="' + (_yza.kapsam === id ? 'aktif' : '') + '" onclick="event.stopPropagation();yzaKapsam(\'' + id + '\')">' + ad + '</button>'; };
@@ -142,7 +162,7 @@ function yzaDetayHTML(tur, x) {
     let gel = '<div class="yza-k genis"><div class="yza-k-bas"><span class="yz-etiket">📈 Gelişim · ' + yzaEsc(tur.mesafe) + ' turları</span></div>' + yzaGelisimSVG(x.g) + yzaGelisimOzet(x.g) + '</div>';
     let seri = s.seriT && s.seriT.some(function (v) { return v != null; }) ? '<div class="yza-k"><span class="yz-etiket">Bu tur · seri seri</span>' + yzaSeriSVG(s.seriT, x.g) + '</div>' : '';
     let tes = '<div class="yza-k"><span class="yz-etiket">🔎 Tespitler</span><ul class="yza-tespit">' + yzaTespitler(tur, x, nk, gr, bolge).map(function (t) { return '<li><span>' + t[0] + '</span><div>' + t[1] + '</div></li>'; }).join('') + '</ul><button class="yz-btn" style="margin-top:8px" onclick="yzaPdf(\'' + yzEnc(s.k) + '\')">📄 ' + yzaEsc(yzKisaAd(s.ad)) + ' — analiz PDF</button></div>';
-    return '<div class="yza-detay-ic" onclick="event.stopPropagation()">' + isi + yzaOkNoHTML(tur, s) + yzaYonHTML(tur, s) + gel + seri + tes + '</div>';
+    return '<div class="yza-detay-ic" onclick="event.stopPropagation()">' + isi + yzaOkNoHTML(tur, s) + yzaYonHTML(tur, s) + gel + seri + yzaTutusHTML(tur, s.k) + tes + '</div>';
 }
 // ---------------------------------------------------------------- 🔢 ok numaraları + 🧭 yön eğilimi (2026-10-20)
 // Kullanıcı: "ok yönleri çok önemli, diğer önemli olan hangi okun nereye gittiği — analizini tut". Girişte giriş sırası = ok numarası
@@ -501,6 +521,8 @@ function yzaCss() {
     if (document.getElementById('yza-css')) return;
     let st = document.createElement('style'); st.id = 'yza-css';
     st.textContent = [
+        '.yza-tt-oz{font-size:14px;line-height:1.4}.yza-tt-oz small{display:block;font-size:12px;color:var(--text-muted)}.yza-tt-kap{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-top:8px;border-bottom:0}',
+        '.yza-tt{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:158px;min-width:0}.yza-tt b{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text-main);margin-bottom:3px}.yza-tt i{display:block;width:min(100%,32px);border-radius:4px 4px 0 0;background:color-mix(in srgb,var(--accent-orange) 45%,transparent)}.yza-tt.en i{background:var(--accent-orange)}.yza-tt span{font-size:12px;font-weight:800;margin-top:4px}.yza-tt small{font-size:10.5px;color:var(--text-muted);white-space:nowrap}',
         '.yza-arka{position:fixed;inset:0;z-index:33000;background:rgba(6,4,2,.72);display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top,0px)) 12px 12px;overflow:auto}',
         '.yza{--yza-zemin:var(--bg-card,#1d120b);width:min(1240px,100%);background:var(--yza-zemin);color:var(--text-main,#fbeee3);border:1px solid var(--border-color,#3a2618);border-radius:20px;padding:16px;display:grid;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.5)}',
         '.yza-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.yza-bas b{font-size:20px}',

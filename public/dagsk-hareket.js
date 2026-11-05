@@ -18,6 +18,12 @@
        son 8, sporcu adı YOK) saklar; "Paylaş" JSON verir, eşikler bu kayıtlarla ayarlanır. Kaçan atış sonraki okların eşleşmesini kaydırır.
      · SESLİ UYARI: hedef aşılınca bip (iPhone titreyemediği için). AudioContext Başla dokunuşunda açılır (iPhone jestsiz açılanı susturur).
      · Varsayılan yer yay kolu; yaya takmada sarsıntı uyarısı.
+   v380 YARIŞMAYA BAĞLI (kullanıcı, gerçek telefonla koluna takıp denedi: "kaç saniye kaldığını gösterdi ama skoru zaten genel yarışmada giriyorum; orada düzelt, yarışmadaysa skor girişini de ekle"):
+     · Sıralama turu sürerken süreler o turun o serisine yazılır (yzOlcerYaz, 't_<id>_<k>'): masadaki tablette hedef kartında ve skor penceresinde görünür.
+     · seriSec (saf): koç ilerlediyse onun serisi, seri dolduysa sıradaki. Seri dolunca telefon skor ekranını açar; masa girdiyse sormadan devam eder, üzerine yazmaz.
+     · Skor ekranı açıkken sensör durur: hedefe yürürken sahte ok sayılmaz. Telefondan girilen puan okla birebir eşleşir; masadan girilen, giriş sırasıyla (ok sayısı tutarsa).
+     · Eleme maçında da çalışır: set = seri, 3 ok; maç değişince telefon yeni maça geçer. Shoot-off masada girilir.
+     · Uygun süre artık konumsuz okları da sayar (önce yalnız hedefe dokunarak işaretlenenler sayılıyordu, yarışmada numarayla girilen hiçbir ok eşleşmiyordu).
    ================================================================================================ */
 (function () {
     'use strict';
@@ -120,6 +126,13 @@
         return s.oklar.map((a, i) => ({ s: a, o: l[i + kacan.filter((p) => p <= i).length] || null }));
     }
 
+    // Yeni ok hangi seriye yazılır? p: telefonun serisi, simdi: turun serisi, sayi: p'de kaç ok var.
+    function seriSec(p, simdi, toplam, okSay, sayi) {
+        if (p == null || simdi > p) return simdi;
+        if (sayi >= okSay && p + 1 < toplam) return p + 1;
+        return p;
+    }
+
     /* ================= sensör ================= */
     function dinle(e) {
         if (!_hk || !_hk.calisiyor) return;
@@ -128,6 +141,7 @@
         ornekAl({ t: performance.now(), ag: [ag.x, ag.y, ag.z], l: l && l.x != null ? [l.x, l.y, l.z] : null, r: r && r.alpha != null ? [r.alpha, r.beta, r.gamma] : [0, 0, 0] });
     }
     function ornekAl(o) {
+        if (_hk.duraklat) return; // skor ekranında: hedefe yürürken sahte ok sayılmasın
         _hk.ornek++; hamEkle(o);
         olayIsle(hkIsle(_hk.D, o, { hedefMs: _hk.hedefSn * 1000, yer: _hk.yer }));
     }
@@ -151,7 +165,7 @@
         if (tur === 'yanlis') {
             const ok = D.oklar.pop(); if (!ok) return tost('Silinecek ok yok.', 'warning');
             _hk.kacan = _hk.kacan.map((p) => Math.min(p, D.oklar.length));
-            raporYaz('yanlis-sayim', ok.t, ok); tost('Son ok çıkarıldı, sensör kaydı saklandı.', 'success');
+            raporYaz('yanlis-sayim', ok.t, ok); if (ok.seri != null) yzOlcumYaz(ok.seri); tost('Son ok çıkarıldı, sensör kaydı saklandı.', 'success');
         } else {
             if (!_hk.ham.length) return tost('Sensör verisi gelmiyor, kayıt alınamadı.', 'warning');
             _hk.kacan.push(D.oklar.length);
@@ -163,7 +177,7 @@
         if (!_hk || _hk.ekran !== 'ozet') return; const D = _hk.D, ok = D.oklar[i]; if (!ok) return;
         if (!confirm((i + 1) + '. ok yanlış sayıldı, çıkarılsın mı?')) return;
         D.oklar.splice(i, 1); _hk.kacan = _hk.kacan.map((p) => p > i ? p - 1 : p);
-        raporYaz('yanlis-sayim', ok.t, ok); gecmisYaz(); _hk.gecmis = gecmisOku(); ozetCiz();
+        raporYaz('yanlis-sayim', ok.t, ok); if (ok.seri != null) yzOlcumYaz(ok.seri); gecmisYaz(); _hk.gecmis = gecmisOku(); ozetCiz();
     };
     window.hkRaporPaylas = async function () {
         const l = raporlarOku(); if (!l.length) return tost('Sensör kaydı yok.', 'info');
@@ -178,7 +192,7 @@
     function olayIsle(D) {
         const o = D.olay; if (!o) return;
         try {
-            if (o === 'birakti') { titre(60); sesBip(880, 0.08); }
+            if (o === 'birakti') { titre(60); sesBip(880, 0.08); yzOkBagla(); }
             else if (o === 'uzun') { titre(220); sesBip(700, 0.3); }
             else if (o === 'cokuzun') { titre([120, 90, 120]); sesBip(520, 0.3); sesBip(520, 0.3, 0.18); }
             else if (o === 'indirdi') titre([40, 60, 40]);
@@ -203,7 +217,7 @@
         el.innerHTML = '<div class="hk-sayfa"><div class="hk-ust"><button type="button" class="hk-yuv" onclick="hkKapat()" aria-label="Kapat">' + svg('kapat') + '</button><span class="hk-etiket">ATIŞ ÖLÇER' + (_hk.ad ? ' · ' + esc(_hk.ad) : '') + '</span></div>' + govde + '</div>';
         return el;
     }
-    function kmSporcular() { try { return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter((k) => turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]); } catch (e) { return []; } }
+    function kmSporcular() { try { const t = typeof yzOlcerKatilimci === 'function' ? yzOlcerKatilimci() : null; if (t && t.length) return t.filter((k) => turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]); return (typeof _kmListe !== 'undefined' ? _kmListe : []).filter((k) => turnuvaDB[k.g] && turnuvaDB[k.g][k.ad]); } catch (e) { return []; } }
     function hazirlikCiz() {
         _hk.ekran = 'hazir';
         const km = _hk.km ? kmSporcular() : [];
@@ -212,6 +226,7 @@
         kabuk('<h1 class="hk-baslik">Kaldır,<br>nişan al, bırak.</h1>'
             + '<p class="hk-alt">Telefonu yay koluna sıkıca bağla. Her okta kaldırma, nişan (tutuş) süresi ve salınım ölçülür; bırakışı sarsıntıdan anlar.</p>'
             + (_hk.km && !km.length && !_hk.ad ? '<div class="hk-uyari">Derste sporcu yok. Önce Yoklama\'dan derse sporcu ekle, sonra buraya dön.</div>' : '')
+            + yzKartHTML()
             + (km.length ? '<p class="hk-alan">SPORCU</p><div class="hk-cipler">' + km.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map((k) => cip(esc(k.ad), _hk.ad === k.ad && _hk.g === k.g, 'hkSporcu(\'' + encodeURIComponent(k.g) + '\',\'' + encodeURIComponent(k.ad).replace(/'/g, '%27') + '\')')).join('') + '</div>' : '')
             + '<p class="hk-alan">TELEFON NEREDE?</p><div class="hk-cipler">' + cip('Yay kolunda', _hk.yer === 'kol', 'hkAyar(\'yer\',\'kol\')') + cip('Yayın üstünde', _hk.yer === 'yay', 'hkAyar(\'yer\',\'yay\')') + '</div>'
             + (_hk.yer === 'yay' ? '<div class="hk-uyari">Bırakış sarsıntısı telefonu düşürebilir ya da zarar verebilir. Yalnız sağlam bir tutucuyla kullan; çocuklarda ve güçlü yaylarda yay kolunu seç.</div>' : '')
@@ -226,17 +241,26 @@
     }
     function masaustu() { try { return matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; } }
     // Sporcunun tüm işaretli okları: bugünkü kart + arşivlenen kartlar (kart sıfırlanınca oklar kartGecmisi'ne taşınır).
-    function tumOklar() {
+    function tumOklar(konumsuzDa) {
         const sp = turnuvaDB[_hk.g] && turnuvaDB[_hk.g][_hk.ad]; if (!sp) return [];
         const g = new Set(), l = [];
-        [sp.detayliOklar].concat((sp.kartGecmisi || []).map((k) => k.detayliOklar)).forEach((d) => (Array.isArray(d) ? d : []).forEach((o) => {
-            if (!o || !o.t || o.x == null || o.y == null) return; const k = o.t + '|' + o.x + '|' + o.y + '|' + (o.okNo || ''); if (g.has(k)) return; g.add(k); l.push(o);
-        }));
+        [sp.detayliOklar].concat((sp.kartGecmisi || []).map((k) => k.detayliOklar)).forEach((d) => {
+            const say = {}; // aynı milisaniyede kaydedilen konumsuz oklar birbirini silmesin; aynı ok iki kartta varsa yine bir kez sayılır
+            (Array.isArray(d) ? d : []).forEach((o) => {
+                if (!o || !o.t || (!konumsuzDa && (o.x == null || o.y == null))) return;
+                const t = o.t + '|' + o.x + '|' + o.y + '|' + (o.okNo || '') + '|' + o.puan; say[t] = (say[t] || 0) + 1; const k = t + '|' + say[t];
+                if (g.has(k)) return; g.add(k); l.push(o);
+            });
+        });
         return l.sort((a, b) => a.t - b.t);
     }
     function ciftlerTopla() {
-        const oklar = tumOklar(), s = _hk.gecmis.slice().sort((a, b) => a.t - b.t), c = [];
-        s.forEach((o, i) => { if (o.mesafe !== _hk.mesafe) return; eslestir(o, oklar, s[i + 1] && s[i + 1].t).forEach((e) => { if (e.o) c.push({ tutus: e.s.tutus, puan: puanSayi(e.o.puan), tip: e.o.tip || '6ring' }); }); });
+        const oklar = tumOklar(true), s = _hk.gecmis.slice().sort((a, b) => a.t - b.t), c = [];
+        s.forEach((o, i) => {
+            if (o.mesafe !== _hk.mesafe) return;
+            if (o.oklar.some((a) => a.yzId)) { o.oklar.forEach((a) => { if (a.puan != null) c.push({ tutus: a.tutus, puan: puanSayi(a.puan), tip: '6ring' }); }); return; } // yarışma: seri seri eşleşti
+            eslestir(o, oklar, s[i + 1] && s[i + 1].t).forEach((e) => { if (e.o) c.push({ tutus: e.s.tutus, puan: puanSayi(e.o.puan), tip: e.o.tip || '6ring' }); });
+        });
         const say = {}; c.forEach((x) => { say[x.tip] = (say[x.tip] || 0) + 1; }); // farklı hedef türlerinin puanı karşılaştırılmaz
         const tip = Object.keys(say).sort((a, b) => say[b] - say[a])[0];
         return c.filter((x) => x.tip === tip);
@@ -247,7 +271,7 @@
         const a = tutusAnaliz(ciftlerTopla());
         if (!a.n && !_hk.gecmis.length) return '';
         let ic;
-        if (!a.hazir) ic = '<p>' + _hk.mesafe + ' m\'de puanla eşleşen <b>' + a.n + ' / ' + a.min + '</b> ok. ' + a.min + ' oka ulaşınca bu sporcunun en iyi tutuş süresi çıkar. Okları Skor Gir\'de hedefe dokunarak ya da fotoğrafla işaretle.</p><div class="hk-ilerle"><i style="width:' + Math.round(a.n / a.min * 100) + '%"></i></div>';
+        if (!a.hazir) ic = '<p>' + _hk.mesafe + ' m\'de puanla eşleşen <b>' + a.n + ' / ' + a.min + '</b> ok. ' + a.min + ' oka ulaşınca bu sporcunun en iyi tutuş süresi çıkar. Skor burada, yarışmada ya da Skor Gir\'de girildikçe dolar.</p><div class="hk-ilerle"><i style="width:' + Math.round(a.n / a.min * 100) + '%"></i></div>';
         else {
             const m = Math.max(10, ...a.dilimler.map((d) => d.ort || 0));
             const cubuk = '<div class="hk-cubuklar">' + a.dilimler.map((d) => '<div class="' + (a.bas != null && (d.s === a.bas || d.s === a.bas + 1) ? 'on' : '') + '"><b>' + (d.n ? v1(d.ort) : '–') + '</b><span style="height:' + (d.n ? Math.max(6, Math.round(d.ort / m * 56)) : 2) + 'px"></span><em>' + (d.s === 2 ? '<3' : d.s === 8 ? '8+' : d.s) + '</em></div>').join('') + '</div>';
@@ -287,7 +311,7 @@
             return;
         }
         const z = ozet(D.oklar);
-        kabuk('<div class="hk-canli">'
+        kabuk('<div class="hk-canli">' + yzSeritHTML()
             + '<div class="hk-evre-kap"><span class="hk-evre ' + D.evre + '" id="hk-evre">' + e[0] + '</span><span class="hk-evre-alt" id="hk-evre-alt">' + (D.evre === 'nisan' ? (_hk.hedefSn ? 'hedef ' + _hk.hedefSn + ' sn' : 'tut') : e[1]) + '</span></div>'
             + '<canvas id="hk-nisan" width="300" height="300" aria-label="Nişan izi" role="img"></canvas>'
             + '<div class="hk-sayac"><div><b>' + D.oklar.length + '</b><span>ok</span></div><div><b>' + (z ? sn(z.ort) : '—') + '</b><span>ort. tutuş</span></div><div><b>' + (z ? '±' + sn(z.sd) : '—') + '</b><span>tutarlılık</span></div><div><b>' + D.indirme + '</b><span>indirme</span></div></div>'
@@ -325,6 +349,7 @@
         kabuk('<h1 class="hk-baslik">' + (z ? z.n + ' ok' : 'Özet') + '</h1>'
             + (z ? '<div class="hk-sayac"><div><b>' + sn(z.ort) + '</b><span>ort. tutuş sn</span></div><div><b>±' + sn(z.sd) + '</b><span>tutarlılık</span></div><div><b>' + sn(z.top) + '</b><span>kaldır→bırak</span></div><div><b>' + D.indirme + '</b><span>indirme</span></div></div>' : '')
             + '<div class="hk-not-kart">' + esc(not) + '</div>'
+            + yzSeriOzetHTML()
             + kisiselKart() + gelisimKart()
             + (z ? '<p class="hk-alan">NİŞAN İZİ TEKRARI' + (n ? ' · ' + n + ' ok hedefle eşleşti' : '') + '</p>'
                 + '<div class="hk-tekrar"><canvas id="hk-tekrar" width="320" height="320" aria-label="Nişan izi tekrarı" role="img"></canvas>'
@@ -376,31 +401,128 @@
         _hk = { km, g, ad, yer: ayar.yer || 'kol', hedefSn: ayar.hedefSn != null ? ayar.hedefSn : 5, mesafe: ayar.mesafe || 18, ses: ayar.ses !== false, cevirX: !!cev.x, cevirY: !!cev.y, D: yeniDurum(), ornek: 0, gecmis: [], ham: [], kacan: [], bipler: [] };
         _hk.gecmis = _hk.ad ? gecmisOku() : [];
         if (_hk.ad) hedefOku();
-        hkCss(); hazirlikCiz();
+        hkCss(); hazirlikCiz(); yarismaYukle();
     };
     function ayarKaydet() { try { localStorage.setItem('dagsk_hk_ayar', JSON.stringify({ yer: _hk.yer, hedefSn: _hk.hedefSn, mesafe: _hk.mesafe, ses: _hk.ses })); } catch (e) { } }
     window.hkAyar = function (a, v) { if (!_hk) return; _hk[a] = v; ayarKaydet(); if (a === 'hedefSn') hedefYaz(); if (_hk.ekran === 'ozet') ozetCiz(); else hazirlikCiz(); };
     window._hkAyarSes = function (v) { if (!_hk) return; _hk.ses = !!v; ayarKaydet(); };
-    window.hkSporcu = function (gE, aE) { if (!_hk) return; _hk.g = decodeURIComponent(gE); _hk.ad = decodeURIComponent(aE); _hk.gecmis = gecmisOku(); hedefOku(); hazirlikCiz(); };
+    window.hkSporcu = function (gE, aE) { if (!_hk) return; _hk.g = decodeURIComponent(gE); _hk.ad = decodeURIComponent(aE); _hk.gecmis = gecmisOku(); hedefOku(); yzBagla(true); masaPuanlari(_hk.gecmis, true); hazirlikCiz(); };
     window.hkBasla = async function () {
         if (!_hk || !_hk.ad) return;
         if (_hk.ses) sesAc(); // izin penceresinden önce: dokunuş hâlâ geçerli
         const izin = await izinIste(); if (!izin) return tost('Hareket sensörü izni verilmedi.', 'error');
-        _hk.D = yeniDurum(); _hk.ham = []; _hk.kacan = []; _hk.ornek = 0; _hk.basT = performance.now(); _hk.basDuvar = Date.now(); _hk.calisiyor = true; _hk.ekran = 'canli';
+        _hk.D = yeniDurum(); _hk.ham = []; _hk.kacan = []; _hk.ornek = 0; _hk.duraklat = false; _hk.skor = null; yzBagla(false); _hk.basT = performance.now(); _hk.basDuvar = Date.now(); _hk.calisiyor = true; _hk.ekran = 'canli';
         window.addEventListener('devicemotion', dinle); uyanikTut();
         clearInterval(_hk.ciz); _hk.ciz = setInterval(() => canliCiz(false), 100);
         setTimeout(() => { if (_hk && _hk.ekran === 'canli' && !_hk.ornek) canliCiz(true); }, 2800);
         canliCiz(true);
     };
-    function durdur() { if (!_hk) return; _hk.calisiyor = false; window.removeEventListener('devicemotion', dinle); clearInterval(_hk.ciz); clearInterval(_hk.tekrarZ); uyanikBirak(); }
-    window.hkBitir = function () { if (!_hk) return; durdur(); gecmisYaz(); _hk.gecmis = gecmisOku(); ozetCiz(); };
+    function durdur() { if (!_hk) return; clearTimeout(_hk.padZ); _hk.calisiyor = false; window.removeEventListener('devicemotion', dinle); clearInterval(_hk.ciz); clearInterval(_hk.tekrarZ); uyanikBirak(); }
+    window.hkBitir = function () { if (!_hk) return; durdur(); masaPuanlari([{ oklar: _hk.D.oklar }], false); gecmisYaz(); _hk.gecmis = gecmisOku(); masaPuanlari(_hk.gecmis, true); ozetCiz(); };
     window.hkYeniden = function () { if (!_hk) return; durdur(); _hk.D = yeniDurum(); _hk.kacan = []; hazirlikCiz(); };
     window.hkKapat = function () {
-        if (_hk && _hk.ekran === 'canli' && _hk.D.oklar.length) { durdur(); gecmisYaz(); }
+        if (_hk && (_hk.ekran === 'canli' || _hk.ekran === 'skor') && _hk.D.oklar.length) { durdur(); gecmisYaz(); }
         durdur(); const el = $('hk'); if (el) el.remove(); _hk = null;
+        try { if (typeof yzCiz === 'function' && typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme === 'yarisma') yzCiz(); } catch (e) { }
     };
+    /* ================= yarışma köprüsü (v380) ================= */
+    function yzDurum() { try { return _hk && _hk.ad && typeof yzOlcerDurum === 'function' ? yzOlcerDurum(_hk.g + '|' + _hk.ad) : null; } catch (e) { return null; } }
+    const seriOklari = (D, id, s) => D.oklar.filter((a) => a.yzId === id && a.seri === s);
+    function yzBagla(mesafeDe) {
+        _hk.yzSeri = null; const b = yzDurum(); if (!b) return null; _hk.yzBid = b.id;
+        _hk.yzSeri = b.skor[b.simdi] && b.simdi + 1 < b.toplam ? b.simdi + 1 : b.simdi; // bu seri zaten girildiyse sıradakini ölç
+        if (mesafeDe) _hk.mesafe = b.mesafe;
+        return b;
+    }
+    // Yarışma varsa modül yüklenir; yoksa sporcunun telefonu boş yere 470 KB indirmez.
+    function yarismaYukle() {
+        const hazir = () => { if (!_hk || _hk.ekran !== 'hazir') return; yzBagla(true); masaPuanlari(_hk.gecmis, true); hazirlikCiz(); };
+        if (typeof yzOlcerDurum === 'function') return hazir();
+        let var_ = false; try { const kn = typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum ? _kmAktifKonum : 'varsayilan', o = JSON.parse(localStorage.getItem('dag_km_yarismatur_' + kn) || 'null'); var_ = !!(o && o.durum && o.durum.id); } catch (e) { }
+        if (var_ && typeof dagskEkYukle === 'function') dagskEkYukle('dagsk-km-yarisma-pro.js').then(hazir).catch(() => { });
+    }
+    function yzOlcumYaz(s) { const b = yzDurum(); if (!b || typeof yzOlcerYaz !== 'function') return; yzOlcerYaz(b, s, seriOklari(_hk.D, b.id, s).map((a) => ({ t: a.tutus, s: a.salinim }))); }
+    function yzOkBagla() {
+        const b = yzDurum(), D = _hk.D, ok = D.oklar[D.oklar.length - 1]; if (!b || !ok) return;
+        if (_hk.yzBid !== b.id) { _hk.yzBid = b.id; _hk.yzSeri = b.simdi; } // maç değişti ya da eleme başladı
+        const s = seriSec(_hk.yzSeri, b.simdi, b.toplam, b.ok, _hk.yzSeri == null ? 0 : seriOklari(D, b.id, _hk.yzSeri).length);
+        _hk.yzSeri = s; ok.yzId = b.id; ok.seri = s; yzOlcumYaz(s);
+        if (seriOklari(D, b.id, s).length !== b.ok) return;
+        sesBip(660, 0.1, 0.12); clearTimeout(_hk.padZ);
+        _hk.padZ = setTimeout(() => { // takip bitsin
+            if (!_hk || _hk.ekran !== 'canli') return; const y = yzDurum(); if (!y) return;
+            if (y.skor[s]) return tost((s + 1) + '. ' + y.birim + ' masadan girilmiş, süreler bağlandı.', 'success');
+            skorAc(s);
+        }, 1500);
+    }
+    // Masadan girilen puanı oka yaz. Ok sayısı tutmuyorsa eşleşmez: yanlış "uygun süre" çıkmasın.
+    function masaPuanlari(oturumlar, kaydet) {
+        if (!_hk || !_hk.ad || typeof yzOlcerPuanlar !== 'function') return; const k = _hk.g + '|' + _hk.ad; let degisti = false;
+        (oturumlar || []).forEach((o) => {
+            const gr = {}; (o.oklar || []).forEach((a) => { if (a.yzId) { const x = a.yzId + '|' + a.seri; (gr[x] = gr[x] || []).push(a); } });
+            Object.keys(gr).forEach((x) => { const l = gr[x]; if (l.every((a) => a.puan != null)) return; const p = yzOlcerPuanlar(k, l[0].yzId, l[0].seri); if (p && p.length === l.length) { l.forEach((a, i) => { a.puan = p[i]; }); degisti = true; } });
+        });
+        if (degisti && kaydet) { try { const t = JSON.parse(localStorage.getItem('dagsk_atis_olcer') || '{}') || {}; t[k] = _hk.gecmis; localStorage.setItem('dagsk_atis_olcer', JSON.stringify(t)); } catch (e) { } }
+    }
+    function yzKartHTML() {
+        const b = yzDurum();
+        if (!b) return _hk.ad && typeof yzOlcerKatilimci === 'function' && yzOlcerKatilimci() ? '<div class="hk-yz-kart"><b>Bu sporcu yarışmada değil</b><span>Süreler yalnız bu telefonda kalır.</span></div>' : '';
+        return '<div class="hk-yz-kart on" id="hk-yz-kart"><b>Yarışmaya bağlı · ' + (b.mac ? esc(b.etiket) + ' · ' : '') + (b.simdi + 1) + '. ' + b.birim + ' / ' + b.toplam + '</b><span>' + b.ok + ' ok · ' + b.mesafe + ' m. Süreler bu ' + b.birim + 'e yazılır. Skoru burada da girebilirsin, masadan da.</span></div>';
+    }
+    function yzSeritHTML() {
+        const b = yzDurum(); if (!b) return ''; const s = _hk.yzBid === b.id && _hk.yzSeri != null ? _hk.yzSeri : b.simdi, n = seriOklari(_hk.D, b.id, s).length;
+        return '<div class="hk-yz-serit" id="hk-yz-serit"><div><b>' + (s + 1) + '. ' + b.birim + '</b><span>' + n + ' / ' + b.ok + ' ok · ' + (b.mac ? esc(b.etiket) : b.toplam + ' seriden') + '</span></div><button type="button" class="hk-cip on" id="hk-skor-ac" onclick="hkSkorAc()">Skor gir</button></div>';
+    }
+    function skorAc(s) { clearTimeout(_hk.padZ); _hk.duraklat = true; _hk.ekran = 'skor'; _hk.skor = { seri: s, p: [] }; skorCiz(); }
+    const TUSLAR = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'];
+    const tusRenk = (p) => p === 'X' || p === '10' || p === '9' ? 'sari' : p === '8' || p === '7' ? 'kirmizi' : p === '6' || p === '5' ? 'mavi' : p === '4' || p === '3' ? 'siyah' : p === 'M' ? 'iska' : 'beyaz';
+    function skorCiz() {
+        const b = yzDurum(), S = _hk.skor; if (!b || !S) return skorKapat(false);
+        const l = seriOklari(_hk.D, b.id, S.seri), dolu = b.skor[S.seri], top = (a) => a.reduce((t, p) => t + puanSayi(p), 0);
+        const bas = '<p class="hk-alan">' + (b.mac ? esc(b.etiket).toLocaleUpperCase('tr-TR') : 'YARIŞMA') + ' · ' + (S.seri + 1) + '. ' + b.birim.toLocaleUpperCase('tr-TR') + ' / ' + b.toplam + '</p><h1 class="hk-baslik hk-skor-baslik">' + esc(_hk.ad) + '</h1>';
+        if (dolu) {
+            kabuk(bas + '<div class="hk-yz-kart on" id="hk-skor-dolu"><b>Bu ' + b.birim + ' masadan girilmiş · ' + top(dolu) + ' puan</b><span>' + dolu.map(esc).join(' · ') + '. Süreler buna bağlandı, skora dokunulmadı.</span></div>'
+                + '<div class="hk-alt-bar"><button type="button" class="hk-ana" onclick="hkSkorKapat(true)">Ölçüme devam</button></div>');
+            return;
+        }
+        const yer = []; for (let i = 0; i < b.ok; i++) yer.push('<div class="hk-skor-yer' + (i === S.p.length ? ' sira' : '') + '"><b class="hk-tus-yuz ' + (S.p[i] ? tusRenk(S.p[i]) : '') + '">' + (S.p[i] ? esc(S.p[i]) : '') + '</b><span>' + (l[i] ? sn(l[i].tutus) + ' sn' : (i + 1) + '. ok') + '</span></div>');
+        kabuk(bas + '<div class="hk-skor-yerler" style="--n:' + b.ok + '">' + yer.join('') + '</div>'
+            + (l.length !== b.ok ? '<div class="hk-uyari">Sensör ' + l.length + ' ok saydı, burada ' + b.ok + ' ok var. Skor kaydedilir ama süreyle eşleşmez.</div>' : '')
+            + '<div class="hk-skor-top"><span>Seri</span><b id="hk-skor-top">' + top(S.p) + '</b></div>'
+            + '<div class="hk-tuslar">' + TUSLAR.map((p) => '<button type="button" class="hk-tus ' + tusRenk(p) + '" onclick="hkSkorTus(\'' + p + '\')"' + (S.p.length >= b.ok ? ' disabled' : '') + '>' + p + '</button>').join('') + '</div>'
+            + '<div class="hk-bildir"><button type="button" class="hk-cip" onclick="hkSkorKapat(false)">Ölçüme dön</button><button type="button" class="hk-cip" id="hk-skor-gec" onclick="hkSkorKapat(true)">Skoru masa girecek</button></div>'
+            + '<div class="hk-alt-bar iki"><button type="button" class="hk-ana acik" onclick="hkSkorSil()"' + (S.p.length ? '' : ' disabled') + '>Geri al</button><button type="button" class="hk-ana" id="hk-skor-kaydet" onclick="hkSkorKaydet()"' + (S.p.length >= b.ok ? '' : ' disabled') + '>Kaydet</button></div>');
+    }
+    function skorKapat(ilerle) {
+        if (!_hk) return; const b = yzDurum(), S = _hk.skor, D = _hk.D;
+        if (ilerle && b && S && S.seri === _hk.yzSeri && _hk.yzSeri + 1 < b.toplam) _hk.yzSeri++;
+        _hk.skor = null; _hk.duraklat = false; _hk.ekran = 'canli';
+        D.evre = 'bekle'; D.g = null; D.dinlen = null; D.sakinBas = null; D.sonT = 0; // telefon yeniden kola takılmış olabilir: dinlenme yönü baştan öğrenilir
+        canliCiz(true);
+    }
+    window.hkSkorAc = function () { if (!_hk) return; const b = yzDurum(); if (b) skorAc(_hk.yzBid === b.id && _hk.yzSeri != null ? _hk.yzSeri : b.simdi); };
+    window.hkSkorKapat = skorKapat;
+    window.hkSkorTus = function (p) { const b = yzDurum(), S = _hk && _hk.skor; if (!b || !S || S.p.length >= b.ok) return; S.p.push(p); skorCiz(); };
+    window.hkSkorSil = function () { const S = _hk && _hk.skor; if (S && S.p.length) { S.p.pop(); skorCiz(); } };
+    window.hkSkorKaydet = function () {
+        const b = yzDurum(), S = _hk && _hk.skor; if (!b || !S || S.p.length < b.ok) return;
+        const r = yzOlcerSkorKaydet(b, S.seri, S.p.slice());
+        if (!r.ok) { tost(r.neden === 'dolu' ? 'Bu ' + b.birim + ' masadan girilmiş, senin girdiğin yazılmadı.' : 'Tur ya da maç bitmiş, skor kaydedilmedi.', 'warning'); return skorCiz(); }
+        const l = seriOklari(_hk.D, b.id, S.seri); if (l.length === S.p.length) l.forEach((a, i) => { a.puan = S.p[i]; });
+        gecmisYaz(); tost((S.seri + 1) + '. ' + b.birim + ' kaydedildi.', 'success'); skorKapat(true);
+    };
+    function yzSeriOzetHTML() {
+        const D = _hk.D, gr = {}, k = []; D.oklar.forEach((a) => { if (!a.yzId) return; const x = a.yzId + '|' + a.seri; if (!gr[x]) { gr[x] = []; k.push(x); } gr[x].push(a); }); // atış sırasıyla
+        if (!k.length) return '';
+        const b = yzDurum();
+        return '<p class="hk-alan">YARIŞMA · SERİ SERİ</p><div class="hk-liste" id="hk-seri-ozet">' + k.map((x) => {
+            const l = gr[x], s = l[0].seri, mac = l[0].yzId.indexOf('m:') === 0, ort = l.reduce((t, a) => t + a.tutus, 0) / l.length, sk = b && b.id === l[0].yzId && b.skor[s] ? b.skor[s] : (l.every((a) => a.puan != null) ? l.map((a) => a.puan) : null);
+            return '<div class="hk-seri-sat"><b>' + (s + 1) + '. ' + (mac ? 'set' : 'seri') + '</b><span>ort. tutuş ' + sn(ort) + ' sn</span><i class="hk-puan">' + (sk ? sk.reduce((t, p) => t + puanSayi(p), 0) : '—') + '</i></div>';
+        }).join('') + '</div>';
+    }
+
     // testler: sahte örnek akışı (performance.now yerine verilen t) ve saf fonksiyonlar
-    window._hkIc = { hkIsle, yeniDurum, ozet, tutusAnaliz, eslestir, gelisimVeri, durum: () => _hk, besle: (l) => { if (!_hk) return; l.forEach(ornekAl); canliCiz(true); } };
+    window._hkIc = { hkIsle, yeniDurum, ozet, tutusAnaliz, eslestir, gelisimVeri, seriSec, ciftlerTopla, durum: () => _hk, besle: (l) => { if (!_hk) return; l.forEach(ornekAl); canliCiz(true); } };
 
     function hkCss() {
         if ($('hk-css')) return;
@@ -443,6 +565,14 @@
             + '.hk-cubuklar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;align-items:end;margin-top:4px}.hk-cubuklar div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-height:92px;color:var(--ks-soluk,#A8A29E)}.hk-cubuklar b{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}.hk-cubuklar span{width:100%;border-radius:4px 4px 0 0;background:var(--ks-cizgi,#262626)}.hk-cubuklar em{font-style:normal;font-size:11px}.hk-cubuklar .on{color:var(--ks-yazi,#F5F2EF)}.hk-cubuklar .on span{background:var(--ks-vurgu2,#FD8E01)}'
             + '.hk-gel-kap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.hk-gel{display:flex;flex-direction:column;gap:3px;min-width:0;color:var(--ks-soluk,#A8A29E)}.hk-gel span{font-size:11px}.hk-gel b{font-size:12px;font-weight:700;color:var(--ks-yazi,#F5F2EF);font-variant-numeric:tabular-nums}.hk-gel.iyi{color:var(--ks-yesil,#5FBF7F)}.hk-gel.kotu{color:var(--ks-kirmizi,#FF7A5C)}'
             + '.hk-kisisel-btn{min-height:44px;border-radius:22px;border:0;background:var(--ks-acik,#F5F2EF);color:var(--ks-acik-yazi,#0A0A0A);font:inherit;font-size:14px;font-weight:800;cursor:pointer}'
+            + '.hk-yz-kart{display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:14px;border:1px solid var(--ks-cizgi,#262626);font-size:13.5px;line-height:1.4}.hk-yz-kart.on{border-color:var(--ks-vurgu2,#FD8E01)}.hk-yz-kart b{font-size:15px;font-weight:800}.hk-yz-kart span{color:var(--ks-soluk,#A8A29E)}'
+            + '.hk-yz-serit{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:16px;background:var(--ks-kart,#151515)}.hk-yz-serit div{display:flex;flex-direction:column}.hk-yz-serit b{font-family:var(--ks-baslik-font,sans-serif);font-weight:800;font-size:24px;line-height:1.05;text-transform:uppercase}.hk-yz-serit span{font-size:13px;color:var(--ks-soluk,#A8A29E);font-variant-numeric:tabular-nums}.hk-yz-serit .hk-cip{min-height:48px}'
+            + '.hk-skor-baslik{font-size:30px;line-height:1}.hk-skor-yerler{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px}.hk-skor-yer{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.hk-skor-yer span{font-size:11.5px;color:var(--ks-soluk,#A8A29E);font-variant-numeric:tabular-nums;white-space:nowrap}'
+            + '.hk-tus-yuz{width:100%;max-width:52px;aspect-ratio:1;border-radius:50%;box-sizing:border-box;border:2px dashed var(--ks-cizgi,#262626);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}.hk-skor-yer.sira .hk-tus-yuz{border-color:var(--ks-vurgu2,#FD8E01)}.hk-tus-yuz.sari,.hk-tus-yuz.kirmizi,.hk-tus-yuz.mavi,.hk-tus-yuz.siyah,.hk-tus-yuz.beyaz,.hk-tus-yuz.iska{border:0}'
+            + '.hk-skor-top{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;font-size:13px;color:var(--ks-soluk,#A8A29E)}.hk-skor-top b{font-family:var(--ks-baslik-font,sans-serif);font-size:30px;font-weight:800;color:var(--ks-yazi,#F5F2EF);font-variant-numeric:tabular-nums}'
+            + '.hk-tuslar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hk-tus{min-height:60px;border-radius:14px;border:0;font:inherit;font-size:22px;font-weight:800;cursor:pointer}.hk-tus:disabled{opacity:.4;cursor:default}'
+            + '.hk-tus.sari,.hk-tus-yuz.sari{background:#F5D32A;color:#1A1400}.hk-tus.kirmizi,.hk-tus-yuz.kirmizi{background:#E23B2E;color:#fff}.hk-tus.mavi,.hk-tus-yuz.mavi{background:#2F7FD6;color:#fff}.hk-tus.siyah,.hk-tus-yuz.siyah{background:#2A2A2A;color:#fff;box-shadow:inset 0 0 0 1px #4A4A4A}.hk-tus.beyaz,.hk-tus-yuz.beyaz{background:#F4F4F0;color:#111}.hk-tus.iska,.hk-tus-yuz.iska{background:#3F4654;color:#fff}'
+            + '.hk-seri-sat{display:grid;grid-template-columns:70px minmax(0,1fr) 44px;gap:8px;align-items:center;min-height:44px;border-bottom:1px solid var(--ks-cizgi,#262626);font-size:13.5px;font-variant-numeric:tabular-nums}'
             + '#hk button:focus-visible{outline:3px solid var(--ks-vurgu2,#FD8E01);outline-offset:2px}';
         document.head.appendChild(st);
     }

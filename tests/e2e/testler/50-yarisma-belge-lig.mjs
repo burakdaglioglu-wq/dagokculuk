@@ -38,9 +38,10 @@ export default async function ({ log }) {
     });
     await p.locator('button:has-text("Turu başlat")').click(); await p.waitForTimeout(400);
     esit(await p.evaluate(() => yzOku().durum.ayar.lig), true, 'lig işareti tura geçmeli');
-    const [kd] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), p.locator('button:has-text("Skor kâğıtları")').first().click()]);
+    const [kd] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), (async () => { await p.evaluate(() => yzMenu()); await p.waitForTimeout(200); await p.locator('#onay-modal button:has-text("Skor kâğıtları")').click(); })()]);
     dogrula(/Skor_Kagitlari/.test(kd.suggestedFilename()), 'skor kağıdı PDF adı: ' + kd.suggestedFilename());
     await p.evaluate(() => { let o = yzOku(); yzHedefSirasi(o).forEach((k, i) => { yzGirisAc(yzEnc(k), 0); ['10', '9', '9', '8', '8', '7'].slice(i % 3).concat(['7', '7', '7']).slice(0, 6).forEach((v) => yzOkEkle(v)); _yz.siradaki = false; yzGirisKaydet(); }); yzGuncelle((x) => { x.durum.asama = 'bitti'; }); yzCiz(); });
+    await p.waitForSelector('#yz-sonuc-diger', { timeout: 10000 }); await p.locator('#yz-sonuc-diger').click(); await p.waitForTimeout(200); // 2026-11-06: ⋯ Diğer'de
     await p.waitForSelector('button:has-text("Belgeler")', { timeout: 10000 });
     await p.locator('button:has-text("Belgeler")').first().click();
     await p.waitForSelector('#yzb-pencere');

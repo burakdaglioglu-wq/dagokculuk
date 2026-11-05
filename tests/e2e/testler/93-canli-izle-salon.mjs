@@ -50,7 +50,7 @@ export default async function ({ log }) {
     dogrula(await p.locator('#kv button:has-text("Kurulum")').isVisible() && await p.locator('#kv button:has-text("Tekrar dene")').isVisible(), 'hata ekranı düğmeleri');
     await p.evaluate(() => kvKapat());
     // tur ekranında araç düğmesi
-    dogrula(await p.evaluate(() => /yzCanliIzle/.test(yzTurHTML.toString())), 'tur araçlarında Canlı izle yok');
+    dogrula(await p.evaluate(() => /yzCanliIzle/.test(yzMenu.toString())), 'tur Diğer menüsünde Canlı izle yok');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('tür seçiminde kart, canlı + salon kaynağı, kim atıyor, köşeye al (Esc alta kalır), ayrı bağlantı kapanır, hata ekranı');
   } finally {

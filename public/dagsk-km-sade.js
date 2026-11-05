@@ -91,6 +91,7 @@ const KS_YENILER = [
         ikon: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8c1.5 1 1.5 3 0 4M21 8c-1.5 1-1.5 3 0 4"/>',
         ozellik: [
             ['Tutuş süresi', 'Her okta nişanda kaç saniye kaldığını ve sürenin oktan oka ne kadar değiştiğini gösterir.'],
+            ['Yarışmaya bağlı', 'Sıralama turu sürerken süreler o seriye yazılır, tablette de görünür. Skor telefondan da girilir, masadan girilmişse üzerine yazılmaz.'],
             ['Uygun süre', 'Puanla eşleşen 18 oktan sonra sporcunun en iyi puan aldığı süreyi bulur.'],
             ['Sesli uyarı', 'Hedef süre aşılınca bip çalar, Android\'de ayrıca titrer.'],
             ['Salınım ve nişan izi', 'Bırakıştan önceki 2 saniyede yayın ne kadar oynadığını gösterir, izi hedefte tekrar oynatır.'],

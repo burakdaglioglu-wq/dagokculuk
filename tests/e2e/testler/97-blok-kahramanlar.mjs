@@ -29,6 +29,10 @@ export default async function ({ log }) {
       const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let k = 0; k < 100 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 150)); }
       return { ad: s.ad, key: s.g + '|' + s.ad, once, sonra: (sp.seriler || []).length, st: JSON.parse(JSON.stringify(blkDurum())), i, sira: _kmOyunAktifIndex };
     }, [oklar, hedef]);
+    // 12 kahraman: sınıfta 12 kişiye kadar aynısı yok, atanan kalıcı (2026-11-06)
+    const kh = await p.evaluate(() => { const a = 'dag_km_blokkh_' + (_kmAktifKonum || 'varsayilan'), l = _kmOyunRosterCache.slice(0, 12).map((s) => s.g + '|' + s.ad), ilk = l.map((k) => blkKahraman(k)), kayit = JSON.parse(localStorage.getItem(a) || '{}'); return { tur: _blkKahramanlar().length, n: l.length, farkli: new Set(ilk).size, ayni: JSON.stringify(ilk) === JSON.stringify(l.map((k) => blkKahraman(k))), kayitli: l.every((k) => kayit[k] != null), sifir: KM_OYUN_SIFIR_ONEK.some((o) => a.indexOf(o) === 0) }; });
+    esit(kh.tur, 12, '12 kahraman'); esit(kh.farkli, kh.n, 'aynı kahraman çıkmamalı'); dogrula(kh.ayni && kh.kayitli, 'kahraman kalıcı değil'); esit(kh.sifir, false, 'kahraman 12 saat kuralıyla silinmemeli');
+    dogrula(/:/.test(await p.locator('#blk-sira-kh').innerText()), 'HUD kahraman adını göstermiyor');
     const c0 = await p.evaluate(() => blkDurum().can);
     const r1 = await seri(['10', '7', '5']); // 3 + 2 + 1, mavi donar
     esit(r1.sonra, r1.once + 1, 'seri gerçek kayda yazılmadı');

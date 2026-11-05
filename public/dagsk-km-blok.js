@@ -2,6 +2,8 @@
    🦸 BLOK KAHRAMANLAR — Karışık Sınıf › Oyunlar teması 'blok' (2026-11-03, v372).
    Kullanıcı 8 yaş için oyun istedi; iki taslak turu beğenilmedi, sonra "süper kahraman / canavar + oyun dünyası (blok)
    + hep birlikte büyük düşman" seçti, iki boss taslağına "bu ikisini de yap" dedi.
+   KAHRAMANLAR (2026-11-06, v381; kullanıcı: "blok kahramanları çoğalt"): 12 ayrı kahraman (KAHRAMANLAR). Pelerin yine çocuğun rengi. Her çocuğun kahramanı
+     kalıcıdır ('dag_km_blokkh_<konum>': 12 saat kuralına girmez, km-ortak ile cihazlara gider); sınıfta 12 kişiye kadar aynı kahraman çıkmaz.
    OYUN: Her çocuk blok blok çizilmiş bir süper kahraman (pelerin = kendi rengi). Dev boss'a karşı bütün sınıf:
      🌋 Lav Golemi (gündüz blok şehir) · 🐉 Gölge Ejder (gece blok kale). Sırayla gelirler, HUD'dan seçilebilir.
    Her ok halkasına göre bir süper güç: sarı ⚡ 3 küp (X 4) · kırmızı 👊 2 · mavi ❄️ 1 + boss donar (saldırısı boşa gider) ·
@@ -177,7 +179,7 @@
     function cocukYer(i, n) {
         const sira = n > 12 ? (i < Math.ceil(n / 2) ? 0 : 1) : 0, satirN = n > 12 ? (sira === 0 ? Math.ceil(n / 2) : n - Math.ceil(n / 2)) : n, j = sira === 0 ? i : i - Math.ceil(n / 2);
         // skor kutusu varsayılan olarak sağ altta → kahramanlar sol üçte ikide dizilir (24 çocukta da sığar)
-        const ara = Math.min(92, 640 / Math.max(1, satirN)), x0 = 350 - ara * (satirN - 1) / 2;
+        const ara = Math.min(88, 590 / Math.max(1, satirN)), x0 = 322 - ara * (satirN - 1) / 2;
         return { x: x0 + j * ara + (sira ? ara / 2 : 0), y: sira === 0 ? 586 : 548, o: sira === 0 ? 1 : .82 };
     }
     // Dokununca sıra o çocuğa geçsin: kabuğun ortak data-km-sporcu dinleyicisi için şeffaf kutular
@@ -220,19 +222,55 @@
     }
     function ejderGorunen(st) { return st.can <= 0 ? 1 : Math.max(1, Math.ceil(EJDER_N * 1.6 * st.can / (st.toplam || 1))); }
 
-    function kahramanCiz(c, x, y, rk, ad, t, i, aktif, o, atis) {
+    /* ---- 12 kahraman: hepsi aynı iskelet (baş -66..-42, gövde -42..-14), kendine özgü kafa + gövde + silah ---- */
+    const r = (c, f, x, y, w, h) => { c.fillStyle = f; c.fillRect(x, y, w, h); };
+    const goz = (c, f) => { r(c, f || '#fff', -8, -59, 5, 4); r(c, f || '#fff', 3, -59, 5, 4); r(c, '#1b1b24', -6, -58, 2, 2); r(c, '#1b1b24', 5, -58, 2, 2); };
+    const KAHRAMANLAR = [
+        { id: 'ates', ad: 'Ateş Savaşçısı', ten: '#f2c79a', govde: '#d73204', bacak: '#3b1a10', kafa(c, rk, t) { goz(c); [-12, -6, 0, 6].forEach((x, i) => { const h = 12 + Math.sin(t * 9 + i * 2) * 4; r(c, '#fd8e01', x, -66 - h, 6, h); r(c, '#ffd23f', x + 1, -66 - h * .55, 4, h * .55); }); }, gogus(c) { r(c, '#fd8e01', -5, -38, 10, 12); r(c, '#ffd23f', -2, -33, 4, 7); }, silah(c, t) { r(c, '#fd8e01', 20, -56, 12, 12); r(c, '#ffd23f', 23, -53, 6, 6); r(c, '#ff5a1f', 32 + Math.sin(t * 20) * 2, -53, 6, 6); } },
+        { id: 'buz', ad: 'Buz Ninja', ten: '#f2c79a', govde: '#1d3f66', bacak: '#132c48', kafa(c) { r(c, '#1d3f66', -13, -67, 26, 26); r(c, '#f2c79a', -10, -61, 20, 8); goz(c, '#bfefff'); r(c, '#5fd4ff', -13, -66, 26, 4); r(c, '#5fd4ff', 13, -64, 7, 3); r(c, '#5fd4ff', 18, -60, 5, 3); }, gogus(c) { r(c, '#5fd4ff', -2, -41, 4, 26); r(c, '#bfefff', -6, -32, 12, 4); }, silah(c) { r(c, '#bfefff', 20, -60, 4, 14); r(c, '#bfefff', 15, -55, 14, 4); r(c, '#5fd4ff', 20, -55, 4, 4); } },
+        { id: 'robot', ad: 'Demir Robot', ten: '#aab4c6', govde: '#7d8aa0', bacak: '#4a556a', kafa(c, rk, t) { r(c, '#aab4c6', -13, -67, 26, 25); r(c, '#1b1f2a', -10, -61, 20, 8); const g = Math.sin(t * 4) > 0 ? '#ff4b3e' : '#c02a20'; r(c, g, -8, -59, 5, 4); r(c, g, 3, -59, 5, 4); r(c, '#1b1f2a', -7, -49, 14, 3); r(c, '#7d8aa0', -1, -75, 2, 8); r(c, '#ff4b3e', -3, -79, 6, 5); }, gogus(c, rk, t) { r(c, '#1b1f2a', -8, -38, 16, 14); r(c, Math.sin(t * 6) > 0 ? '#5fd4ff' : '#2a88b8', -5, -35, 10, 8); }, silah(c) { r(c, '#4a556a', 13, -52, 20, 10); r(c, '#1b1f2a', 33, -50, 5, 6); r(c, '#ff4b3e', 22, -49, 4, 4); } },
+        { id: 'sovalye', ad: 'Çelik Şövalye', ten: '#f2c79a', govde: '#8e9bb0', bacak: '#5a6578', kafa(c, rk) { r(c, '#a9b5c8', -13, -68, 26, 27); r(c, '#1b1b24', -9, -59, 18, 4); r(c, '#6f7b90', -1, -68, 2, 27); r(c, rk, -3, -78, 6, 11); r(c, rk, -9, -80, 8, 5); }, gogus(c, rk) { r(c, rk, -7, -38, 14, 16); r(c, '#f5f0d8', -1, -38, 2, 16); r(c, '#f5f0d8', -7, -32, 14, 2); }, silah(c) { r(c, '#d7dee8', 21, -78, 5, 30); r(c, '#ffd23f', 15, -50, 17, 4); r(c, '#5a3a22', 21, -46, 5, 8); } },
+        { id: 'buyucu', ad: 'Fırtına Büyücüsü', ten: '#f2c79a', govde: '#4b2a86', bacak: '#2c1a52', kafa(c) { goz(c); r(c, '#ece7da', -11, -50, 22, 8); r(c, '#4b2a86', -16, -67, 32, 6); r(c, '#4b2a86', -10, -77, 20, 10); r(c, '#4b2a86', -6, -87, 12, 10); r(c, '#ffd23f', -2, -74, 4, 4); }, gogus(c) { r(c, '#ffd23f', -6, -28, 12, 3); r(c, '#b79cff', -2, -40, 4, 12); }, silah(c, t) { r(c, '#7a5230', 22, -80, 4, 36); const f = Math.sin(t * 12) > 0 ? '#ffd23f' : '#b79cff'; r(c, f, 18, -88, 12, 10); r(c, '#fff', 22, -85, 4, 4); } },
+        { id: 'pilot', ad: 'Uzay Pilotu', ten: '#f2c79a', govde: '#e8ecf3', bacak: '#aeb7c6', kafa(c, rk) { r(c, '#e8ecf3', -14, -69, 28, 28); r(c, '#0f2740', -10, -63, 20, 13); r(c, '#5fd4ff', -8, -61, 6, 4); r(c, rk, -14, -44, 28, 3); }, gogus(c, rk) { r(c, '#1b1f2a', -8, -38, 16, 11); r(c, rk, -6, -36, 4, 3); r(c, '#ff4b3e', 0, -36, 3, 3); r(c, '#7edc9e', 4, -36, 3, 3); r(c, '#ffd23f', -6, -31, 12, 2); }, silah(c, t) { r(c, '#aeb7c6', 13, -52, 14, 9); r(c, '#5fd4ff', 27, -51, 8 + Math.sin(t * 22) * 2, 7); } },
+        { id: 'korsan', ad: 'Korsan Kaptan', ten: '#e0ad80', govde: '#6a1e1e', bacak: '#23252f', kafa(c) { goz(c); r(c, '#1b1b24', 2, -60, 8, 6); r(c, '#1b1b24', -12, -62, 24, 2); r(c, '#b3261e', -13, -69, 26, 10); r(c, '#f5f0d8', -5, -66, 3, 3); r(c, '#f5f0d8', 2, -66, 3, 3); r(c, '#b3261e', 13, -64, 6, 3); r(c, '#3b2415', -10, -48, 20, 6); }, gogus(c) { r(c, '#f5f0d8', -3, -41, 6, 14); r(c, '#23252f', -13, -22, 26, 4); r(c, '#ffd23f', -3, -23, 6, 6); }, silah(c) { r(c, '#d7dee8', 19, -72, 5, 24); r(c, '#d7dee8', 24, -72, 3, 6); r(c, '#ffd23f', 15, -49, 13, 4); } },
+        { id: 'kurt', ad: 'Gece Kurdu', ten: '#6b7384', govde: '#2f3442', bacak: '#1f232e', kafa(c) { r(c, '#6b7384', -13, -67, 26, 25); r(c, '#6b7384', -13, -75, 8, 9); r(c, '#6b7384', 5, -75, 8, 9); r(c, '#d6a2a2', -11, -72, 4, 5); r(c, '#d6a2a2', 7, -72, 4, 5); r(c, '#ffd23f', -8, -60, 5, 4); r(c, '#ffd23f', 3, -60, 5, 4); r(c, '#aeb5c4', -6, -52, 12, 10); r(c, '#1b1b24', -2, -52, 4, 3); r(c, '#fff', -5, -44, 3, 3); r(c, '#fff', 2, -44, 3, 3); }, gogus(c) { r(c, '#6b7384', -8, -40, 16, 8); r(c, '#ff4b3e', -8, -30, 3, 10); r(c, '#ff4b3e', -2, -32, 3, 10); r(c, '#ff4b3e', 4, -30, 3, 10); }, silah(c) { r(c, '#6b7384', 15, -54, 13, 10); r(c, '#fff', 28, -55, 5, 3); r(c, '#fff', 28, -51, 5, 3); r(c, '#fff', 28, -47, 5, 3); } },
+        { id: 'simsek', ad: 'Şimşek Koşucu', ten: '#f2c79a', govde: '#ffb000', bacak: '#8a2b0a', kafa(c) { r(c, '#c21f1f', -13, -68, 26, 15); r(c, '#f2c79a', -9, -60, 18, 7); goz(c); r(c, '#ffd23f', -17, -68, 5, 12); r(c, '#ffd23f', 12, -68, 5, 12); }, gogus(c) { r(c, '#c21f1f', 1, -41, 5, 9); r(c, '#c21f1f', -4, -33, 8, 4); r(c, '#c21f1f', -3, -30, 5, 11); }, silah(c, t) { const f = Math.sin(t * 24) > 0 ? '#fff' : '#ffd23f'; r(c, f, 17, -62, 7, 6); r(c, f, 22, -56, 7, 6); r(c, f, 27, -50, 7, 6); r(c, f, 22, -46, 7, 4); } },
+        { id: 'avci', ad: 'Orman Avcısı', ten: '#e6b98c', govde: '#2f6b3a', bacak: '#3a2a18', kafa(c) { r(c, '#2f6b3a', -14, -69, 28, 15); r(c, '#2f6b3a', -14, -55, 5, 13); r(c, '#2f6b3a', 9, -55, 5, 13); r(c, '#1d4a27', -2, -76, 4, 8); goz(c); }, gogus(c) { r(c, '#7a5230', -13, -40, 4, 4); r(c, '#7a5230', -9, -36, 4, 4); r(c, '#7a5230', -5, -32, 4, 4); r(c, '#7a5230', -1, -28, 4, 4); r(c, '#7a5230', 3, -24, 4, 4); r(c, '#7a5230', -13, -22, 26, 3); }, silah(c) { r(c, '#7a5230', 20, -70, 4, 8); r(c, '#7a5230', 24, -62, 4, 20); r(c, '#7a5230', 20, -42, 4, 8); r(c, '#f5f0d8', 19, -66, 2, 28); r(c, '#f5f0d8', 2, -53, 22, 2); r(c, '#ff4b3e', -2, -54, 4, 4); } },
+        { id: 'dev', ad: 'Taş Dev', ten: '#8b7a66', govde: '#6d5e4d', bacak: '#4d4236', genis: true, kafa(c) { r(c, '#8b7a66', -14, -67, 28, 25); r(c, '#6d5e4d', -14, -67, 28, 6); r(c, '#fd8e01', -9, -59, 6, 4); r(c, '#fd8e01', 3, -59, 6, 4); r(c, '#3b3127', -8, -50, 16, 4); r(c, '#6d5e4d', 4, -48, 6, 4); }, gogus(c) { r(c, '#8b7a66', -13, -40, 12, 11); r(c, '#8b7a66', 1, -40, 12, 11); r(c, '#fd8e01', -1, -32, 2, 16); }, silah(c) { r(c, '#8b7a66', 13, -56, 20, 18); r(c, '#6d5e4d', 13, -44, 20, 6); r(c, '#fd8e01', 20, -52, 6, 3); } },
+        { id: 'golge', ad: 'Gölge Kılıç', ten: '#3a2f55', govde: '#17131f', bacak: '#0f0c15', kafa(c) { r(c, '#17131f', -14, -69, 28, 28); r(c, '#17131f', -9, -77, 18, 9); r(c, '#b6f', -9, -59, 7, 4); r(c, '#b6f', 2, -59, 7, 4); }, gogus(c) { r(c, '#b6f', -7, -38, 14, 2); r(c, '#b6f', -1, -36, 2, 18); r(c, '#b6f', -5, -24, 10, 2); }, silah(c, t) { const f = Math.sin(t * 10) > 0 ? '#c9a2ff' : '#7c5cff'; r(c, f, 21, -84, 4, 38); r(c, '#fff', 22, -84, 2, 38); r(c, '#17131f', 15, -48, 16, 4); } }
+    ];
+    // Kalıcı atama: önce adın karması; sınıfta boştaki kahramanlar bitmeden aynısı verilmez. Atanan bir daha değişmez.
+    function kahramanHarita() {
+        const a = 'dag_km_blokkh_' + konum(); let m = {}; try { m = JSON.parse(localStorage.getItem(a) || '{}') || {}; } catch (e) { m = {}; }
+        const l = liste().map((s) => s.g + '|' + s.ad).sort(); let degisti = false;
+        const kul = {}; l.forEach((k) => { if (m[k] != null && KAHRAMANLAR[m[k]]) kul[m[k]] = (kul[m[k]] || 0) + 1; });
+        l.forEach((k) => {
+            if (m[k] != null && KAHRAMANLAR[m[k]]) return;
+            let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
+            const en = Math.min(...KAHRAMANLAR.map((_, i) => kul[i] || 0)); let j = h % KAHRAMANLAR.length; while ((kul[j] || 0) > en) j = (j + 1) % KAHRAMANLAR.length;
+            m[k] = j; kul[j] = (kul[j] || 0) + 1; degisti = true;
+        });
+        if (degisti) { try { localStorage.setItem(a, JSON.stringify(m)); } catch (e) { } }
+        return m;
+    }
+    let _khIm = '', _khM = {};
+    function kahramanOf(k) { const im = liste().length + '|' + konum(); if (im !== _khIm || _khM[k] == null) { _khM = kahramanHarita(); _khIm = im; } return KAHRAMANLAR[_khM[k]] || KAHRAMANLAR[0]; }
+    function kahramanCiz(c, x, y, rk, ad, t, i, aktif, o, atis, kh) {
         const z = aktif ? Math.abs(Math.sin(t * 6)) * 8 : Math.abs(Math.sin(t * 2 + i)) * 2;
+        kh = kh || KAHRAMANLAR[i % KAHRAMANLAR.length];
         c.save(); c.translate(x, y - z); c.scale(o, o);
-        c.fillStyle = koyu(rk, .78); c.fillRect(-15, -44, 30, 40 + Math.sin(t * 5 + i) * 3);
-        c.fillStyle = '#3a4a6a'; c.fillRect(-11, -14, 9, 14); c.fillRect(2, -14, 9, 14);
-        c.fillStyle = rk; c.fillRect(-13, -42, 26, 28); c.fillStyle = '#ffd23f'; c.fillRect(-5, -36, 10, 10);
-        c.fillStyle = '#f2c79a'; c.fillRect(-12, -66, 24, 24); c.fillStyle = koyu(rk, .6); c.fillRect(-12, -60, 24, 6);
-        c.fillStyle = '#fff'; c.fillRect(-8, -59, 5, 4); c.fillRect(3, -59, 5, 4); c.fillStyle = '#1b1b24'; c.fillRect(-6, -58, 2, 2); c.fillRect(5, -58, 2, 2);
-        c.fillStyle = rk; if (atis) { c.fillRect(13, -48, 8, 8); c.fillRect(18, -54, 14, 8); } else { c.fillRect(-19, -40, 8, 22); c.fillRect(13, -40, 8, 22); }
+        c.fillStyle = koyu(rk, .78); c.fillRect(-15, -44, 30, 40 + Math.sin(t * 5 + i) * 3); // pelerin = çocuğun rengi
+        const gw = kh.genis ? 32 : 26, ka = kh.genis ? 9 : 8;
+        c.fillStyle = kh.bacak; c.fillRect(-11, -14, 9, 14); c.fillRect(2, -14, 9, 14);
+        c.fillStyle = kh.govde; c.fillRect(-gw / 2, -42, gw, 28);
+        kh.gogus(c, rk, t);
+        c.fillStyle = kh.ten; c.fillRect(-12, -66, 24, 24);
+        kh.kafa(c, rk, t);
+        c.fillStyle = kh.govde; if (atis) { c.fillRect(gw / 2, -48, ka, 8); kh.silah(c, t); } else { c.fillRect(-gw / 2 - ka, -40, ka, 22); c.fillRect(gw / 2, -40, ka, 22); }
         c.restore();
-        c.font = '800 ' + (aktif ? 15 : 13) + 'px system-ui,sans-serif'; const w = c.measureText(ad).width + 14;
-        c.fillStyle = aktif ? '#ffd23f' : 'rgba(0,0,0,.62)'; c.fillRect(x - w / 2, y + 4, w, 19);
-        c.fillStyle = aktif ? '#2a1d00' : '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ad, x, y + 14); c.textBaseline = 'alphabetic';
+        c.font = '800 ' + (aktif ? 15 : 13) + 'px system-ui,sans-serif'; const w = c.measureText(ad).width + 14, ly = o < 1 ? y - 92 * o - 19 : y + 4;
+        c.fillStyle = aktif ? '#ffd23f' : 'rgba(0,0,0,.62)'; c.fillRect(x - w / 2, ly, w, 19);
+        c.fillStyle = aktif ? '#2a1d00' : '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ad, x, ly + 10); c.textBaseline = 'alphabetic';
     }
     // Boss'un ekrandaki hedef noktası (ışınların gittiği yer)
     function hedefNokta(st, t) {
@@ -299,7 +337,7 @@
         c.fillStyle = 'rgba(0,0,0,.28)'; c.fillRect(0, n > 12 ? 470 : 512, W, 130);
         const atanIdx = _isinlar.length ? _isinlar[_isinlar.length - 1].i : -1;
         // arka sıra önce çizilir
-        l.map((s, i) => i).sort((a, b) => cocukYer(a, n).y - cocukYer(b, n).y).forEach((i) => { const p = cocukYer(i, n); kahramanCiz(c, p.x, p.y - 26, renk(i), ilkAd(l[i].ad).slice(0, 9), t, i, i === ai && !_toren, p.o, i === atanIdx || (_final && _final.atis)); });
+        l.map((s, i) => i).sort((a, b) => cocukYer(a, n).y - cocukYer(b, n).y).forEach((i) => { const p = cocukYer(i, n); kahramanCiz(c, p.x, p.y - 26, renk(i), ilkAd(l[i].ad).slice(0, 9), t, i, i === ai && !_toren, p.o, i === atanIdx || (_final && _final.atis), kahramanOf(l[i].g + '|' + l[i].ad)); });
         // yazılar
         _yazi = _yazi.filter((y) => t - y.t0 < 1.3);
         _yazi.forEach((y) => { const p = (t - y.t0) / 1.3, s = p < .2 ? .5 + p * 3 : 1.1; c.save(); c.globalAlpha = 1 - Math.max(0, p - .6) / .4; c.translate(y.x, y.y - p * 60); c.scale(s, s); c.font = '900 ' + y.boy + 'px system-ui,sans-serif'; c.textAlign = 'center'; c.lineWidth = 6; c.strokeStyle = 'rgba(0,0,0,.6)'; c.strokeText(y.m, 0, 0); c.fillStyle = y.renk; c.fillText(y.m, 0, 0); c.restore(); });
@@ -328,7 +366,7 @@
         const sonra5 = 5 - (st.seri % 5);
         h.innerHTML = `<div class="blk-bas"><b>${BOSS[st.tip].ikon} ${BOSS[st.tip].ad.toLocaleUpperCase('tr-TR')}</b><span>${st.can <= 0 ? '⚡ SON KÜP — herkes atınca hep birlikte!' : ['', 'Zırhlı', 'Öfkeli!', 'Son güç!'][e]}</span></div>
           <div class="blk-can" aria-label="Boss canı">${Array.from({ length: n }, (_, i) => `<i class="${i < dolu ? (i < n * .3 ? 'k' : 'd') : ''}"></i>`).join('')}</div>
-          <div class="blk-alt"><span title="Bu boss'a en az bir ok atan kahraman">🦸 ${atan}/${top} kahraman attı</span><span>${durumYazi}</span>${st.can <= 0 && !_toren ? '<button class="blk-bitir" id="blk-bitir">⚡ Hep birlikte bitir</button>' : ''}${ic('saldiri') ? `<span>${st.donmus ? '❄️ Boss dondu' : '👊 Saldırı: ' + sonra5 + ' seri sonra'}</span>` : ''}</div>`;
+          <div class="blk-alt">${liste()[typeof _kmOyunAktifIndex !== 'undefined' ? _kmOyunAktifIndex : -1] ? '<span id="blk-sira-kh" class="blk-sira-kh">' + ilkAd(liste()[_kmOyunAktifIndex].ad) + ': ' + kahramanOf(liste()[_kmOyunAktifIndex].g + '|' + liste()[_kmOyunAktifIndex].ad).ad + '</span>' : ''}<span title="Bu boss'a en az bir ok atan kahraman">🦸 ${atan}/${top} kahraman attı</span><span>${durumYazi}</span>${st.can <= 0 && !_toren ? '<button class="blk-bitir" id="blk-bitir">⚡ Hep birlikte bitir</button>' : ''}${ic('saldiri') ? `<span>${st.donmus ? '❄️ Boss dondu' : '👊 Saldırı: ' + sonra5 + ' seri sonra'}</span>` : ''}</div>`;
         const bt = $('blk-bitir'); if (bt) bt.onclick = blkFinalZorla;
         const ses = $('blk-ses'); if (ses) ses.textContent = sesAcik() ? '🔊' : '🔇';
         document.querySelectorAll('.blk-sec button').forEach((b) => b.classList.toggle('aktif', b.dataset.tip === st.tip));
@@ -444,6 +482,8 @@
 
     /* ---------------- GERİ AL / CHIP / AYAR ---------------- */
     function blkAnlik() { return JSON.parse(JSON.stringify(durum())); }
+    window.blkKahraman = (k) => kahramanOf(k).ad;
+    window._blkKahramanlar = () => KAHRAMANLAR.map((x) => x.ad);
     function blkGeriYukle(k) { if (!k) return; zamanTemizle(); _toren = false; _final = null; _st = k; _stKonum = konum(); kaydet(); _golemOn = null; if (panel()) hudCiz(); }
     function blkSporcu(g, ad) { const st = durum(); return Math.round(st.katki[g + '|' + ad] || 0); }
     function blkAyarUygula() { const st = durum(); if (_toren) return; const yeni = toplamHesapla(st.no); if (!yeni || yeni === st.toplam) return; const oran = st.can / (st.toplam || 1); st.toplam = yeni; st.can = Math.round(oran * yeni); kaydet(); _golemOn = null; hudCiz(); }

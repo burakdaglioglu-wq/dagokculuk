@@ -88,7 +88,7 @@ export default async function ({ log }) {
       yzBitir(true);
     });
     dogrula((await p.locator('.yz-ust-etiket').first().textContent()).includes('9-12 YAŞ'), 'sonuç başlığında kategori yok');
-    dogrula(await p.locator('.yz-btn.toren').count(), 'madalya töreni düğmesi yok');
+    await p.locator('#yz-sonuc-diger').click(); await p.waitForTimeout(150); dogrula(await p.locator('#onay-modal button', { hasText: 'Madalya töreni' }).count(), 'madalya töreni düğmesi yok'); await p.evaluate(() => { document.getElementById('onay-modal').style.display = 'none'; }); // 2026-11-06: ⋯ Diğer'de
     await p.evaluate(() => { yzTvAc(); yzTorenBaslat(true); });
     await p.waitForSelector('#yz-toren', { timeout: 5000 });
     for (const n of [3, 2, 1]) {

@@ -35,6 +35,7 @@ export default async function ({ log }) {
       return ks.length;
     });
     esit(await p.evaluate(() => yzOku().durum.asama), 'bitti', 'tur bitmeli');
+    await p.locator('#yz-sonuc-diger').click(); await p.waitForTimeout(200); // 2026-11-06: Sonuçlar'da ⋯ Diğer'e taşındı
     const btn = p.locator('.yz-tur-btn button', { hasText: 'Sporcu analiz PDF' });
     dogrula(await btn.count(), 'sonuç ekranında "Sporcu analiz PDF" düğmesi yok');
     const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), btn.click()]);

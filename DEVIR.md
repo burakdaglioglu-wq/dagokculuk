@@ -5566,3 +5566,20 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Karar:** kalkan, sıradaki düşmanın gücü (zayif) veya ekibe dost (bölüm başına +1 kalkan) değiştirir; "Geçen ders" yazısına girer.
 - **STANDING:** düşman herkes atmadan bitmez, "Hep birlikte bitir", finalde herkesin adı, sıralama yok. **12 saat istisnası:** 'dag_km_sonus_<konum>' KM_OYUN_SIFIR_ONEK'te değil; sınıf başına kalıcı; gün değişince yarım savaş sıfırlanır, hikâye kalır. "Hikâyeyi sıfırla" onaylı.
 - Test 104. AÇIK: gerçek çocuklarla ve TV'de denenmedi.
+
+## 96. 🏹 Yarışma sadeleşti + Atış Ölçer yarışmaya bağlı (2026-11-06, v380)
+- Kullanıcı: "yarışma karışık oldu, sporcu ekle çıkarı daha büyük yap, yeni seri ekleyi düzelt". Atış Ölçer'i gerçek telefonda koluna takıp denedi: süre çalıştı, ama "skoru zaten genel yarışmada giriyorum; orada düzelt, yarışmadaysa skor girişini de ekle".
+- **Panel (yzTurHTML):** seri kartında büyük `Sporcular` ve `Seri ekle` (#yz-seri-ekle; eklenen seri varsa ➖). Araçlar: TV, Atış Ölçer, Ayna/Video, Analiz, Hedefler, Diğer. Yetenek Şovu, Skor kâğıtları, Canlı izle, Tema artık ⋯ Diğer'de (yzMenu). Tur başlayınca sayfa başa döner.
+- **Seri ekle:** turda yalnız ⋯ Diğer'deydi; Sonuçlar'da 13 düğmenin arasındaydı. Şimdi panel, son seride "1 seri daha", Sonuçlar'da ayrı #yz-sonuc-uzat. Eleme başladıysa eklenmez.
+- **Sporcu penceresi (yzSporcuSeciciCiz):** 1040 px, iki sütun, 390 px'te iki sekme (_yzSec.sekme), 72 px satır, grup süzgeci, Kapat hep görünür. Dokunmatikte klavye kendiliğinden açılmaz. Arama yalnız listeyi yeniler (yzSecAra). İlk 80 aday, kalanı "isim yaz" der. Kurulumda da çipler ve düğme büyüdü.
+- **Atış Ölçer köprüsü (dagsk-hareket.js + yzOlcer*):** süreler `t_<id>_<grup|ad>` = [{t:[ms],s:[°]}] (km-ortak üst anahtar bazında birleştirir, masa ve telefon birbirini ezmez; yzTurTemizle siler). seriSec (saf): koç ilerlediyse onun serisi, dolduysa sıradaki. Seri dolunca 1,5 sn sonra skor ekranı; masa girdiyse açılmaz, üzerine yazılmaz. Skor ekranında sensör durur (_hk.duraklat), dönünce dinlenme yönü baştan öğrenilir. yzOlcerSkorKaydet masadaki yzGirisKaydet yolunu kullanır (karne dahil).
+- **Puan eşleşmesi:** telefondan girilen birebir; masadan girilen giriş sırasıyla (n), ok sayısı tutarsa. Bu, koçun okları atış sırasıyla girdiğini varsayar. Eski hata: tumOklar yalnız konumlu okları sayıyordu, numarayla girilen hiçbir ok "uygun süre"ye girmiyordu; ciftlerTopla artık konumsuzları da sayar. Nişan izi tekrarı yine konumlu ister.
+- Masada: hedef kartında "⏱ 4,3 sn", skor penceresinde her okun süresi (#yz-olcum-satir). Özet: seri seri tutuş + puan (#hk-seri-ozet).
+- **Kullanıcı önerilerin hepsine "evet hepsini yap" dedi:**
+  - Telefonda sıralama kartları (yzTelKartlarHTML; ≤700 px tablo gizli, sadece sec.duzenle; TV'ye dokunmaz; açık kart _yz.telAcik ile korunur).
+  - Sonuçlar: TV, Sporcu raporları, Eleme, Diğer (yzSonucMenu), Yeni tur. Gerisi menüde.
+  - Geçen seferki gibi: o.sonAyar (yoksa son arşiv), #yz-hizli. Sporcular bugünkü seçimden.
+  - Eleme: yzOlcerDurum asama 'eleme' ise oynanabilir maçı döndürür (id 'm:<tur>:<maç>', birim 'set', ok 3, toplam 5). Süre t_<tur>_m<maç>_<k>. 5 set bittiyse null: shoot-off masada.
+  - Analiz: yzaTutusHTML/yzaTutusDilim; arşive sporcu.tut = [[ms, puan]]. Eleme setleri bu grafiğe girmez.
+  - Üzerine gelince kart koyu, en çok 2 cümle (.yz-hov).
+- Test 105 genişledi; 50, 76, 93 taşınan düğmeler için güncellendi. AÇIK: köprü gerçek telefonla denenmedi (test sahte sensörle). Yarışmalar › Maç zamanı bağlı değil. Telefon KM'den girmeli ki km-ortak eşitlesin.
