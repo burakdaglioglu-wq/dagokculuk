@@ -72,11 +72,25 @@ export default async function ({ log }) {
       return { n: kisi.length, icinde: kisi.every((r) => r.bottom <= sahne.bottom + 1 && r.top >= sahne.top - 1), boy: Math.min(...kisi.map((r) => r.height)), carpan: dr ? kisi.filter((r) => r.right > dr.left + 2 && r.bottom > dr.top + 2 && r.left < dr.right && r.top < dr.bottom).length : 0, dok: !!dr };
     });
     esit(kalab.n, 24, '24 çocuk'); dogrula(kalab.icinde, '24 çocuk sahneden taşıyor'); dogrula(kalab.boy >= 60, 'karakter küçük: ' + kalab.boy); if (kalab.dok) esit(kalab.carpan, 0, 'skor paneli çocukları kapatıyor');
+    // Son barikat (2026-11-07): zombiler barikatın arkasında, sağlamlar önünde; ısırılan barikatı geçer; sahne ve karakterler çizildi
+    const bk = await p.evaluate(async () => {
+      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle(); await new Promise((r) => setTimeout(r, 1200));
+      const bar = () => document.getElementById('zb-barikat').getBoundingClientRect().top;
+      const yer = () => { const b = bar(), hepsi = [...document.querySelectorAll('.zb-kisi')]; return { arka: hepsi.filter((e) => e.classList.contains('zombi')).every((e) => e.getBoundingClientRect().bottom <= b + 2), on: hepsi.filter((e) => !e.classList.contains('zombi')).every((e) => e.getBoundingClientRect().top >= b - 2), genis: document.getElementById('zb-barikat').getBoundingClientRect().width >= document.querySelector('.zb-sahne').getBoundingClientRect().width - 2 }; };
+      const y1 = yer(), hedef = l[10], el = document.querySelector('.zb-kisi[data-k="' + CSS.escape(hedef) + '"]'), once = el.getBoundingClientRect().top;
+      const st2 = zbDurum(); st2.zombi[hedef] = 1; localStorage.setItem(k, JSON.stringify(st2)); zbGuncelle(); await new Promise((r) => setTimeout(r, 1200));
+      const y2 = yer(), sonra = document.querySelector('.zb-kisi[data-k="' + CSS.escape(hedef) + '"]').getBoundingClientRect().top;
+      const zem = document.getElementById('zb-zemin'), px = zem.getContext('2d').getImageData(10, 10, 1, 1).data[3], spr = getComputedStyle(el.querySelector('.zb-spr.z')).backgroundImage;
+      return { y1, y2, once, sonra, px, spr: /^url\("data:image\/png/.test(spr) };
+    });
+    dogrula(bk.y1.genis && bk.y1.arka && bk.y1.on && bk.y2.arka && bk.y2.on, 'barikat iki yanı: ' + JSON.stringify(bk));
+    dogrula(bk.sonra < bk.once, 'ısırılan çocuk barikatın arkasına geçmeli: ' + JSON.stringify(bk));
+    esit(bk.px, 255, 'sahne çizilmeli'); dogrula(bk.spr, 'karakter çizilmeli');
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(300);
     const tel = await p.evaluate(() => { const x = document.querySelector('.zb-sahne'); return x.scrollWidth <= x.clientWidth + 1; });
     dogrula(tel, '390 px taşıyor');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log(n + ' çocuk · kurallar · gerçek seri · geri al · herkes atınca sonuç · 12 saat · 24 çocuk · 390 px');
+    log(n + ' çocuk · barikat · kurallar · gerçek seri · geri al · herkes atınca sonuç · 12 saat · 24 çocuk · 390 px');
   } finally {
     await p.evaluate((y) => { try { localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) { } }, yedek).catch(() => { });
     await ctx.close();

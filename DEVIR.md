@@ -5602,3 +5602,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - Yüz +z yönünde ve dış katmanda olmalı, yoksa gövdeye gömülür. Parıltı (`v.goz`) koyu göze konmaz.
 - Test 97 genişledi: 8 canavarın tam/hasarlı/son küp çizimi, sıranın yeni güne geçmesi, galeriden seçim, Kraken'de saldırı + onarım.
 - AÇIK: TV'de gerçek çocuklarla denenmedi. Yerel veride 17 sporcu vardı, 24 ile çekilmedi (kahraman dizilimi değişmedi). Telefonda sağ panel açıkken seçici düğmesinin üstünü kapatıyor, oyunlar kabuğunun eski davranışı.
+
+## 99. 🧟 Zombi Salgını: Son barikat görünümü (2026-11-07, v383)
+- Kullanıcı: "zombi görünümünü daha iyi yapmalıyız". İki canlı taslak (A Yanan sokak, B Son barikat; https://claude.ai/artifact/GhoKfJASfQQ82VuLvC53SL), B seçildi. **Kurallar değişmedi** (§97).
+- **Sahne:** gece sokağı. `zeminCiz` barikat çizgisine göre bir kez çizer, `canliCiz` (`#zb-canli`, ~30 kare/sn) ışık, ateş, sis. Kum torbaları `#zb-barikat`, kişilerle aynı katmanda: zombiler z 10+, barikat 50, sağlamlar 60+.
+- **Kalabalık:** zombiler barikatın arkasında (`BAR_ORAN` .5), sağlamlar önünde. `yerlesim(zombiler)` iki bölgeyi `izgara`/`diz` ile dizer, ısırılan barikatı geçer (left/top geçişi 1 sn). Transform kullanılmadı, global button:active bozmasın. Ölçü değişince geçiş kapanır.
+- **Karakter:** 26x36 piksel, iki kare, `spriteOf` çocuk başına data URL üretir (`.zb-spr.n` / `.z`). Sağlamın elinde yay; saç, ten, stil addan; tişört çocuğun rengi, zombide solgun.
+- **Final:** yazılar yarı saydam kutuda, altında bütün sınıf; kazanınca sağlamlar zıplar. Çok uzun ad listesinde kaydırılır, Yeni salgın düğmesi kalabalığın üstünde.
+- Test 106: barikatın iki yanı, ısırılanın geçmesi, sahne ve karakter çizimi.
+- AÇIK: TV'de çocuklarla denenmedi. 390 px'te sağlam çocuklar küçük (bölge alçak), adlar kısalıyor.
