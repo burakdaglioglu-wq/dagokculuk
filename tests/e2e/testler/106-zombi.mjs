@@ -86,11 +86,23 @@ export default async function ({ log }) {
     dogrula(bk.y1.genis && bk.y1.arka && bk.y1.on && bk.y2.arka && bk.y2.on, 'barikat iki yanı: ' + JSON.stringify(bk));
     dogrula(bk.sonra < bk.once, 'ısırılan çocuk barikatın arkasına geçmeli: ' + JSON.stringify(bk));
     esit(bk.px, 255, 'sahne çizilmeli'); dogrula(bk.spr, 'karakter çizilmeli');
+    // Isırık anı (2026-11-07): sokaktan ADSIZ zombi atlar, hiçbir çocuk ısıran olmaz; panzehirde ok; bittikten sonra sokak zombisi kalmaz
+    const an = await p.evaluate(async () => {
+      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; st.atan = {}; st.faz = 'oyun'; st.basladi = true; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; st.zamani[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle();
+      _kmOyunAktifIndex = l.findIndex((x, i) => i >= 6 && turnuvaDB[_kmOyunRosterCache[i].g] && turnuvaDB[_kmOyunRosterCache[i].g][_kmOyunRosterCache[i].ad]);
+      _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+      let npc = null; for (let i = 0; i < 60 && !npc; i++) { await new Promise((r) => setTimeout(r, 60)); npc = document.querySelector('.zb-npc'); }
+      const adsiz = npc ? !npc.hasAttribute('data-k') && !npc.hasAttribute('data-km-sporcu') && !npc.textContent.trim() : false;
+      for (let i = 0; i < 120 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 1200));
+      return { npc: !!npc, adsiz, kalan: document.querySelectorAll('.zb-npc').length, efekt: !!document.getElementById('zb-efekt') };
+    });
+    dogrula(an.npc && an.adsiz, 'sokak zombisi atlamadı ya da adı var: ' + JSON.stringify(an)); esit(an.kalan, 0, 'sokak zombisi temizlenmeli'); dogrula(an.efekt, 'efekt katmanı');
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(300);
     const tel = await p.evaluate(() => { const x = document.querySelector('.zb-sahne'); return x.scrollWidth <= x.clientWidth + 1; });
     dogrula(tel, '390 px taşıyor');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log(n + ' çocuk · barikat · kurallar · gerçek seri · geri al · herkes atınca sonuç · 12 saat · 24 çocuk · 390 px');
+    log(n + ' çocuk · barikat · ısırık anı · kurallar · gerçek seri · geri al · herkes atınca sonuç · 12 saat · 24 çocuk · 390 px');
   } finally {
     await p.evaluate((y) => { try { localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) { } }, yedek).catch(() => { });
     await ctx.close();

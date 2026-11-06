@@ -5611,3 +5611,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Final:** yazılar yarı saydam kutuda, altında bütün sınıf; kazanınca sağlamlar zıplar. Çok uzun ad listesinde kaydırılır, Yeni salgın düğmesi kalabalığın üstünde.
 - Test 106: barikatın iki yanı, ısırılanın geçmesi, sahne ve karakter çizimi.
 - AÇIK: TV'de çocuklarla denenmedi. 390 px'te sağlam çocuklar küçük (bölge alçak), adlar kısalıyor.
+
+## 100. 🧟 Zombi Salgını: anlar (2026-11-07, v384)
+- Kullanıcı önerilen dördü seçti: ısırık anı, panzehir oku, zombi sesleri, final sahnesi. Kurallar değişmedi.
+- **Isırık (`npcGonder`):** sokaktan ADSIZ gri bir zombi barikatı aşıp çocuğa atlar, çocuk onunla geri çekilir. STANDING: ısıran hiçbir çocuk olmaz, bu yüzden zombi çocuklardan biri gönderilmez.
+- **Panzehir (`okUcur`, `patla`, `#zb-efekt`):** parlayan ok, vurunca parçacık; çocuk ok değince iyileşir (300 ms sonra). Efekt tuvali kişilerin üstünde, tıklamayı geçirir.
+- **Ses:** `SES.ok/atla/isir/kurtar/boom`, `hirilti` (sentez, dosya yok). Zombi varken 8-15 sn'de bir kısık hırıltı. Oyunlar sessiz anahtarına uyar.
+- **Final (`finalSahne`, `_gok`):** kazanınca güneş doğar, son zombiler sırayla iyileşir; kaybedince barikat yıkılır, kızıl gök, herkes zombi. ~2,8 sn sürer, sonra `sonCiz`. Oynarken `guncelle` sonucu erken çizmez (`_finalOynuyor`, `_kilit`). Yenileyince gök `_gok` ile doğrudan son halinde. Koçun Hep birlikte bitir düğmesi de aynı sahneyi oynatır.
+- Duyuru artık göstergelerin altında ince şerit (olayı kapatıyordu). `kmOyunBanner` kaldırıldı, başlığın üstüne biniyordu; adlar finalde zaten var.
+- Test 106: sokak zombisi çıkar, adsızdır, sonra temizlenir. Bir seri ısırıkla en çok ~3 sn. AÇIK: gerçek TV hoparlöründe ses seviyesi ve çocuklarla süre denenmedi.
