@@ -5483,7 +5483,7 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - Test 96.
 - **v371 ⏪ Geçmişe giriş** (kullanıcı: "geçmişe giriş yapabilir miyim, onu da dahil et"): gün seçicinin altında son 35 günün ders günleri çipleri (hepsi işaretliyse ✓); aylık çizelgede sütunlar = işaretli günler + ders saatlerindeki günler (bugüne kadar) + "＋ gün ekle" ile seçilen gün; kutuya dokunmak `ozdYokHucre` ile Geldi → Gelmedi → Telafi → İptal → boş döner. `ozdGunDersVar` artık kelime sonu kontrolüyle ("cuma" ≠ "cumartesi").
 
-## 87. 🦸 Oyunlar › Blok Kahramanlar — 8 yaş, iki boss (2026-11-03, v372)
+## 87. 🦸 Oyunlar › Blok Kahramanlar — 8 yaş, iki boss (2026-11-03, v372; 8 canavar için bkz. §98)
 - Kullanıcı 8 yaş için oyun istedi; iki taslak turu (pasta/robot, orkestra/saklambaç/kar topu/penguen) reddedildi, sonra "süper kahraman / canavar + oyun dünyası (blok) + hep birlikte büyük düşman" seçti ve iki boss taslağına "bu ikisini de yap" dedi.
 - **Modül:** `public/dagsk-km-blok.js` (blk*, tembel yüklenir; Hapşırık kalıbı): `blkSahneKur · blkGuncelle · blkSeri · blkAnlik · blkGeriYukle · blkSporcu · blkAyarUygula · blkFinalZorla`. Tek `<canvas>`; zemin ve golem gövdesi değişince önceden çizilir, döngü ~30 fps ve yalnız tema açıkken. Kahramanların üstünde şeffaf `data-km-sporcu` kutuları (dokununca sıra).
 - **Boss'lar:** 🌋 Lav Golemi (izometrik voksel, şehir 6 bina) / 🐉 Gölge Ejder (blok zincir, kale: duvar 0–5 + 4 kule). Sırayla gelir, HUD'dan seçilir. Can azaldıkça küp küp dağılır, evre 2'de öfkelenir.
@@ -5592,3 +5592,13 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **STANDING:** sonuç herkes atmadan belli olmaz, ısırık atan çocuğa yazılmaz, sıralama yok, finalde herkesin adı. Koçta "Hep birlikte bitir" sınıfın yarısı atınca çıkar. 12 saat kuralına girer.
 - Sağ üstte sıradaki çocuğun adı ve hedefte panzehir bölgesi. Dock sağda varsayılır; sola alınırsa kalabalık altında kalır (Son Üs'te de öyleydi).
 - Test 106. AÇIK: gerçek çocuklarla ve TV'de denenmedi; süre sınıfı yorarsa bekleme kısaltılır (seri başına en çok ~2,5 sn).
+
+## 98. 🦸 Blok Kahramanlar: 8 canavar (2026-11-06, v382)
+- Kullanıcı: "sadece iki canavar var, en az 7-8 olmalı". Yeni: 🧊 Buz Devi (Kar Köyü) · 🤖 Dev Robot (Metropol) · 🕷️ Dev Örümcek (Orman Köyü) · 🐙 Kraken (Liman) · 💀 İskelet Kral (Gece Köyü) · 👾 Uzay Canavarı (Ay Üssü). Sıra `TIPLER`: golem, ejder, buz, robot, orumcek, kraken, iskelet, uzayli.
+- **Kurallar değişmedi** (§87): halka güçleri, 5 seride saldırı, herkes atmadan düşmez. Yeni canavarlar şehir kuralını kullanır (`st.sehir`, 6 yapı); yalnız Ejder kale kuralında.
+- **Kalıcı sıra:** `dag_km_blokbs_<konum>` = `{sira, yenilen{tip:n}}`, 12 saat kuralına girmez, km-ortak ile cihazlara gider. Eskiden her gün golemle başlıyordu; böyle kalsa yeni canavarlar sınıfa neredeyse hiç gelmezdi. Geri al, canavar yenmeyi de geri alır.
+- **Galeri:** eski iki düğmeli seçici yerine `#blk-boss-btn` → `galeriAc` (8 küçük resim, kaç kez yenildi). `body`'ye (tam ekranda tam ekran öğesine) açılır, çünkü panelin içinde skor kutusunun altında kalıyordu.
+- **Yeni canavar eklemek:** `VOKSEL` + `HAREKET` + `YAPI` + `BOSS` + `DUNYA` + `zeminSus` satırı, `TIPLER`'e ekle. Gövde önceden çizilir; `v.u` işaretli uzuvlar her karede (`uzuvCiz`, Kraken'de kare ~2 ms). `v.kalp` en son kopar, `v.son` son küptür.
+- Yüz +z yönünde ve dış katmanda olmalı, yoksa gövdeye gömülür. Parıltı (`v.goz`) koyu göze konmaz.
+- Test 97 genişledi: 8 canavarın tam/hasarlı/son küp çizimi, sıranın yeni güne geçmesi, galeriden seçim, Kraken'de saldırı + onarım.
+- AÇIK: TV'de gerçek çocuklarla denenmedi. Yerel veride 17 sporcu vardı, 24 ile çekilmedi (kahraman dizilimi değişmedi). Telefonda sağ panel açıkken seçici düğmesinin üstünü kapatıyor, oyunlar kabuğunun eski davranışı.

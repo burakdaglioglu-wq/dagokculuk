@@ -14,7 +14,7 @@ export default async function ({ log }) {
     yedekListe = await p.evaluate(() => JSON.stringify(_kmListe));
     const n = await p.evaluate(() => {
       let tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
-      _kmListe = tum.slice(0, 4); localStorage.removeItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan')); _kmOyunRosterCache.forEach((s) => { const sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]; if (sp) sp.devamModu = true; }); kmOyunTemaSec('blok'); return _kmOyunRosterCache.length; });
+      _kmListe = tum.slice(0, 4); localStorage.removeItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan')); localStorage.removeItem('dag_km_blokbs_' + (_kmAktifKonum || 'varsayilan')); _kmOyunRosterCache.forEach((s) => { const sp = turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]; if (sp) sp.devamModu = true; }); kmOyunTemaSec('blok'); return _kmOyunRosterCache.length; });
     dogrula(n >= 2, 'testte en az 2 sporcu gerekli (gelen ' + n + ')');
     await p.waitForFunction(() => !!document.getElementById('blk-cv') && /LAV GOLEMİ/.test((document.getElementById('blk-hud') || {}).textContent || ''), null, { timeout: 30000 });
     const ilk = await p.evaluate(() => ({ kutu: document.querySelectorAll('#blk-kutular [data-km-sporcu]').length, tema: KM_OYUN_TEMALAR.blok && KM_OYUN_TEMALAR.blok.ad, sifir: KM_OYUN_SIFIR_ONEK.indexOf('dag_km_blok_') >= 0, icerik: !!KM_OYUN_ICERIK.blok }));
@@ -68,15 +68,38 @@ export default async function ({ log }) {
     dogrula(/GÖLGE EJDER/.test(await p.evaluate(() => document.getElementById('blk-hud').textContent)), 'Ejder HUD');
     // koç: atmayan kaldıysa ⚡ Hep birlikte bitir
     const zorla = await p.evaluate(async () => { const k = 'dag_km_blok_' + (_kmAktifKonum || 'varsayilan'), st = blkDurum(), x = _kmOyunRosterCache[0]; st.can = 0; st.atanlar = {}; st.atanlar[x.g + '|' + x.ad] = 1; localStorage.setItem(k, JSON.stringify(st)); const no = st.no; blkGuncelle(); blkFinalZorla(); await new Promise((r) => setTimeout(r, 200)); onayOnayla(); await new Promise((r) => setTimeout(r, 300)); const s2 = blkDurum(); return { no, sonra: s2.no, tip: s2.tip, adlar: s2.yenilenler[s2.yenilenler.length - 1].adlar.length }; });
-    dogrula(zorla.sonra === zorla.no + 1 && zorla.tip === 'golem' && zorla.adlar === 1, 'hep birlikte bitir: ' + JSON.stringify(zorla));
+    dogrula(zorla.sonra === zorla.no + 1 && zorla.tip === 'buz' && zorla.adlar === 1, 'hep birlikte bitir: ' + JSON.stringify(zorla));
     await p.waitForTimeout(8000);
+    // 8 canavar (2026-11-06): sıra kalıcı (yeni gün kalınan yerden), her biri tam / hasarlı / son küp halinde hatasız çizilir, sahneler farklı, galeriden seçilir
+    const bs = await p.evaluate(() => {
+      const k = 'dag_km_blok_' + (_kmAktifKonum || 'varsayilan'), ka = 'dag_km_blokbs_' + (_kmAktifKonum || 'varsayilan'), tipler = _blkBosslar(), kal = JSON.parse(localStorage.getItem(ka) || '{}');
+      const st0 = blkDurum(); st0.tarih = '2000-01-01'; localStorage.setItem(k, JSON.stringify(st0));
+      const yeniGun = blkDurum().tip;
+      const resim = new Set(), hata = [];
+      tipler.forEach((t) => { [1, .4, 0].forEach((o) => { try { const st = blkDurum(); st.tip = t; st.can = Math.round(st.toplam * o); localStorage.setItem(k, JSON.stringify(st)); _blkCizDene(); if (o === 1) resim.add(document.getElementById('blk-cv').toDataURL('image/png').length); } catch (e) { hata.push(t + ':' + e.message); } }); });
+      return { n: tipler.length, sira: kal.sira, golem: kal.yenilen && kal.yenilen.golem, ejder: kal.yenilen && kal.yenilen.ejder, yeniGun, farkli: resim.size, hata };
+    });
+    esit(bs.n, 8, '8 canavar'); esit(bs.hata.length, 0, 'çizim: ' + bs.hata.join(' | ')); esit(bs.farkli, 8, 'her canavarın sahnesi farklı olmalı');
+    dogrula(bs.sira === 'buz' && bs.golem >= 1 && bs.ejder >= 1, 'kalıcı sıra: ' + JSON.stringify(bs));
+    esit(bs.yeniGun, 'buz', 'yeni gün kalınan canavardan sürmeli');
+    await p.evaluate(() => { const st = blkDurum(); st.tip = 'buz'; st.can = st.toplam; localStorage.setItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan'), JSON.stringify(st)); });
+    await p.click('#blk-boss-btn');
+    esit(await p.locator('#blk-galeri .blk-g-kart').count(), 8, 'galeride 8 kart');
+    await p.click('#blk-galeri .blk-g-kart[data-tip="kraken"]');
+    dogrula(await p.evaluate(() => blkDurum().tip === 'kraken' && JSON.parse(localStorage.getItem('dag_km_blokbs_' + (_kmAktifKonum || 'varsayilan'))).sira === 'kraken' && /KRAKEN/.test(document.getElementById('blk-hud').textContent)), 'galeriden seçim');
+    // yeni canavarda da saldırı evi yıkar, siyah onarır
+    await p.evaluate(() => { const st = blkDurum(); st.seri = 4; st.donmus = 0; localStorage.setItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan'), JSON.stringify(st)); });
+    const rk = await seri(['M', 'M', 'M']);
+    esit(rk.st.sehir.filter(Boolean).length, 5, 'kraken saldırısı bir gemi batırmalı');
+    const rk2 = await seri(['4', 'M', 'M']);
+    esit(rk2.st.sehir.filter(Boolean).length, 6, 'siyah halka gemiyi onarmalı');
     // dokununca sıra o çocuğa
     const dok = await p.evaluate(() => { const hedef = (_kmOyunAktifIndex + 1) % _kmOyunRosterCache.length; document.querySelector('#blk-kutular [data-km-sporcu="' + hedef + '"]').click(); return { hedef, ai: _kmOyunAktifIndex }; });
     esit(dok.ai, dok.hedef, 'kahramana dokununca sıra geçmedi');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log(`${n} kahraman · halka gücü (3+2+1, donma) · donmuşken saldırı boşa · bina yıkılır/onarılır · geri al · herkes atmadan düşmez → hep birlikte final · Ejder sırada · dokununca sıra`);
+    log(`${n} kahraman · 8 canavar + kalıcı sıra + galeri · halka gücü (3+2+1, donma) · donmuşken saldırı boşa · bina yıkılır/onarılır · geri al · herkes atmadan düşmez → hep birlikte final · Ejder sırada · dokununca sıra`);
   } finally {
-    await p.evaluate((y) => { try { localStorage.removeItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) {} }, yedekListe).catch(() => {});
+    await p.evaluate((y) => { try { localStorage.removeItem('dag_km_blok_' + (_kmAktifKonum || 'varsayilan')); localStorage.removeItem('dag_km_blokbs_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) {} }, yedekListe).catch(() => {});
     await ctx.close();
   }
 }
