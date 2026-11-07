@@ -5620,3 +5620,12 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Final (`finalSahne`, `_gok`):** kazanınca güneş doğar, son zombiler sırayla iyileşir; kaybedince barikat yıkılır, kızıl gök, herkes zombi. ~2,8 sn sürer, sonra `sonCiz`. Oynarken `guncelle` sonucu erken çizmez (`_finalOynuyor`, `_kilit`). Yenileyince gök `_gok` ile doğrudan son halinde. Koçun Hep birlikte bitir düğmesi de aynı sahneyi oynatır.
 - Duyuru artık göstergelerin altında ince şerit (olayı kapatıyordu). `kmOyunBanner` kaldırıldı, başlığın üstüne biniyordu; adlar finalde zaten var.
 - Test 106: sokak zombisi çıkar, adsızdır, sonra temizlenir. Bir seri ısırıkla en çok ~3 sn. AÇIK: gerçek TV hoparlöründe ses seviyesi ve çocuklarla süre denenmedi.
+
+## 101. 🎯 Yarışma: Puan, sonra yön (2026-11-07, v385)
+- Kullanıcı önce "saniyeyi açınca ok yönleri görünmüyor" dedi. Yerelde (sayaç, büyük sayaç, TV, 390 px) yeniden üretilemedi, veri doğru kaydediliyordu; hangi ekran olduğu hâlâ belli değil (AÇIK). Sonra "orayı yeniden tasarlayalım" → 3 canlı taslak (A Hedefe dokun, B Puan sonra yön, C Ok ok kartlar; https://claude.ai/artifact/JJdSYFT5BhPn8kUyzGhZWe), animasyonlu istedi, B seçildi: "ama illa oka tıklamama gerek kalmasın".
+- **Tek yüz (yzYonGirisHTML, .yz-yon-b2):** solda adım şeridi (1 · Puana bas / 2 · İstersen tarafına dokun) + 4 sütun puan tuşu, sağda büyük parlak kağıt. 3x3 yön pedi kalktı. Üçlü kağıt eskisi gibi.
+- **Vurgu (yzYonVurguSVG / yzYonHalka):** bekleyen puanın halkası yzKonumPuan taramasıyla bulunur (makaralı ve 6 halka doğru), gerisi kararır, 8 yön oku halkadan dışarı açılır. Oklar yalnız kılavuz (pointer-events none).
+- **Dokunma (yzYonKagitTik):** tek yüzde hedefin her yeri yön sayılır (merkeze göre açı); orta yalnız X için (r<0,12). 10 da açıdan yön alır, yoksa ● konumu X sayılıyordu.
+- **Yalnız puan:** 2 sn (önce 1,5) ya da sıradaki puana basınca. Üçlüde 2,5 sn.
+- **Animasyon (yzYonUcur, _yz.yonUc):** yeni ok sağ üstten uçar, saplanıp titrer, kağıt sarsılır (.yz-sars), halka dalgası; sonra numaralı delik (.yz-pk-ok.bekle → .cik). Puan yuvası zıplar (.yz-pop). 1,5 sn eski yonUc yok sayılır. Animasyonlar "hareketi azalt" ayarında da oynar (kullanıcı istedi).
+- Test 107. AÇIK: gerçek tablette 16-24 sporcuyla denenmedi. 390 px'te kağıdın alt yarısı ekran altında kalıyor (dokunmaya üst yarı yeter).

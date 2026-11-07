@@ -711,6 +711,7 @@ function yzGirisCiz() {
         + (g.tip ? '' : yzGirisAkisHTML(o, g, d))
         + '<div class="yz-alt" style="text-align:center">Klavye: X · 0 = 10 · 1-9 · M · ⌫ · Enter</div>'
         + '</div>';
+    yzYonUcur(kap);
 }
 function yzGirisAkisHTML(o, g, d) {
     let f = yzFormat(d); if (g.seri !== Math.min(d.seri, f.seri - 1)) return ''; // eski seriyi düzeltiyorsa akış düğmeleri yok
@@ -2366,13 +2367,14 @@ function yzYonPuan(p) {
     if (_yz.yonBek) yzYonBitir(null, true);
     if (g.oklar.length >= yzGirisOkSay(g, d)) return yzGirisCiz();
     if (p === 'M') { yzOkEkle('M'); return; }
-    let uc = yzYuz(d).uclu; _yz.yonBek = { p: p, z: setTimeout(function () { yzYonBitir(null); }, uc ? 2500 : 1500) };
+    let uc = yzYuz(d).uclu; _yz.yonBek = { p: p, z: setTimeout(function () { yzYonBitir(null); }, uc ? 2500 : 2000) };
     yzGirisCiz();
 }
 function yzYonBitir(yon, sessiz, yuzNo) {
     let b = _yz.yonBek; if (!b) return; clearTimeout(b.z); _yz.yonBek = null;
     let g = _yz.giris, d = yzOku().durum; if (!g || !d) return;
     let k = yon ? yzYonKonum(b.p, yon, yzYuz(d), yzMakaraliMi(g.k), yuzNo != null ? yuzNo : g.oklar.length) : null;
+    _yz.yonUc = { i: sessiz ? g.oklar.length : (g.ekleYer != null && g.ekleYer <= g.oklar.length ? g.ekleYer : g.oklar.length), kon: !!k, t: Date.now() };
     if (sessiz) { if (g.oklar.length >= yzGirisOkSay(g, d)) return; g.konumlar = g.konumlar || []; while (g.konumlar.length < g.oklar.length) g.konumlar.push(null); g.oklar.push(b.p); g.konumlar.push(k); return; }
     yzOkEkle(b.p, k);
 }
@@ -2384,7 +2386,8 @@ function yzYonKagitTik(e) {
     if (!_yz.yonBek) { try { showToast('Önce puana bas, sonra kağıtta okun yerine dokun.', 'info'); } catch (er) {} return; }
     let yuz = yzYuz(d), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; let p = pt.matrixTransform(svg.getScreenCTM().inverse());
     let sNo = yuz.uclu ? Math.max(0, Math.min(2, Math.round(p.y / YZ_UCLU_ARA) + 1)) : null, ly = yuz.uclu ? p.y - (sNo - 1) * YZ_UCLU_ARA : p.y, r = Math.hypot(p.x, ly);
-    let yon = r < 0.28 ? '●' : ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][((Math.round(Math.atan2(ly, p.x) / (Math.PI / 4)) % 8) + 8) % 8];
+    let ortaR = yuz.uclu ? 0.28 : (_yz.yonBek.p === 'X' ? 0.12 : -1);
+    let yon = r < ortaR ? '●' : ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][((Math.round(Math.atan2(ly, p.x) / (Math.PI / 4)) % 8) + 8) % 8];
     yzYonBitir(yon, false, sNo);
 }
 // Parlak hedef kağıdı: halkalar ışıltılı degrade, kağıt dokusu + gölge, üstte cam parlaması; oklar beyaz kenarlı delik.
@@ -2406,20 +2409,73 @@ function yzParlakKagitSVG(yuz, mak, konumlar, oklar) {
     });
     (konumlar || []).forEach(function (k, i) {
         if (!k || k.x == null) return; let gy = k.y + (yuz.uclu ? (k.s - 1) * a : 0);
-        s += '<g class="yz-pk-ok"><circle cx="' + k.x + '" cy="' + gy + '" r="0.06" fill="#0b0d12" stroke="#fff" stroke-width="0.022"/><text x="' + (k.x + 0.1) + '" y="' + (gy - 0.07) + '" font-size="0.11" font-weight="900" fill="#0b0d12" stroke="#fff" stroke-width="0.025" paint-order="stroke">' + (k.n || i + 1) + '</text></g>';
+        s += '<g class="yz-pk-ok' + (_yz.yonUc && _yz.yonUc.kon && _yz.yonUc.i === i && Date.now() - _yz.yonUc.t < 1500 ? ' bekle' : '') + '" data-x="' + k.x + '" data-y="' + gy + '"><circle cx="' + k.x + '" cy="' + gy + '" r="0.06" fill="#0b0d12" stroke="#fff" stroke-width="0.022"/><text x="' + (k.x + 0.1) + '" y="' + (gy - 0.07) + '" font-size="0.11" font-weight="900" fill="#0b0d12" stroke="#fff" stroke-width="0.025" paint-order="stroke">' + (k.n || i + 1) + '</text></g>';
     });
+    if (_yz.yonBek && !yuz.uclu) s += yzYonVurguSVG(_yz.yonBek.p, yuz, mak);
     return s + '</svg>';
+}
+// 🎯 Puan, sonra yön (2026-11-07, kullanıcı 3 taslaktan B'yi seçti: "Puan, sonra yön olsun ama illa oka tıklamama gerek kalmasın";
+// taslak https://claude.ai/artifact/JJdSYFT5BhPn8kUyzGhZWe). Puana basınca hedefin geri kalanı kararır, yalnız o puanın halkası parlar,
+// 8 yön oku halkadan dışarı açılır (yalnız kılavuz, basmak gerekmez). Hedefte HERHANGİ bir yere dokunmak yön sayılır (merkeze göre açı).
+// Dokunmazsan 2 sn sonra ya da sıradaki puana basınca yalnız puan kaydolur. 3x3 yön pedi kalktı.
+function yzYonHalka(p, yuz, mak) { let a = null, b = 0; for (let r = 0; r <= 1.0001; r += 0.002) if (yzKonumPuan(r, 0, yuz, mak) === p) { if (a == null) a = r; b = r; } return a == null ? null : [a, b]; }
+function yzYonVurguSVG(p, yuz, mak) {
+    let h = yzYonHalka(p, yuz, mak); if (!h) return '';
+    let ri = h[0] < 0.01 ? 0 : h[0], ro = h[1], c = function (r, sw) { return 'M' + r + ' 0A' + r + ' ' + r + ' 0 1 ' + sw + ' ' + (-r) + ' 0A' + r + ' ' + r + ' 0 1 ' + sw + ' ' + r + ' 0Z'; };
+    let s = '<g class="yz-yv" pointer-events="none"><rect x="-1.25" y="-1.25" width="2.5" height="2.5" fill="#0b0907" fill-opacity=".62"/>'
+        + '<path class="yz-yv-halka" d="' + c(ro, 0) + (ri ? c(ri, 1) : '') + '" fill="#fff" fill-opacity=".22" fill-rule="evenodd" stroke="#fff" stroke-width="0.02"/>';
+    let rg = Math.max(ro + 0.2, 0.62), i = 0;
+    Object.keys(YZ_YON).forEach(function (y) {
+        let v = YZ_YON[y], l = Math.hypot(v[0], v[1]); if (!l) return; let ux = v[0] / l, uy = v[1] / l, x = (ux * rg).toFixed(3), yy = (uy * rg).toFixed(3);
+        s += '<g class="yz-yv-ok" style="--i:' + (i++) + '"><line x1="' + (ux * (ro + 0.03)).toFixed(3) + '" y1="' + (uy * (ro + 0.03)).toFixed(3) + '" x2="' + x + '" y2="' + yy + '" stroke="#fd8e01" stroke-width="0.014" stroke-dasharray="0.03 0.025"/>'
+            + '<circle cx="' + x + '" cy="' + yy + '" r="0.105" fill="#fd8e01" stroke="#fff" stroke-width="0.016"/><text x="' + x + '" y="' + (+yy + 0.048).toFixed(3) + '" text-anchor="middle" font-size="0.13" font-weight="900" fill="#2a1407">' + y + '</text></g>';
+    });
+    return s + '</g>';
+}
+// Yeni ok kağıda uçar, saplanıp titrer, kağıt sarsılır, halka dalgası yayılır; sonra numaralı delik belirir. Puan yuvası zıplar.
+function yzYonUcur(kap) {
+    let u = _yz.yonUc; if (!u || Date.now() - u.t > 1500) { _yz.yonUc = null; return; } _yz.yonUc = null;
+    let yer = kap.querySelectorAll('.yz-ok-yer .yz-ok')[u.i]; if (yer) yer.classList.add('yz-pop');
+    let svg = kap.querySelector('.yz-parlak-kagit'), pin = svg && svg.querySelector('.yz-pk-ok.bekle'); if (!pin) return;
+    let goster = function () { pin.classList.remove('bekle'); pin.classList.add('cik'); };
+    let x = +pin.getAttribute('data-x'), y = +pin.getAttribute('data-y'), NS = 'http://www.w3.org/2000/svg';
+    let el = function (a, o) { let e = document.createElementNS(NS, a); Object.keys(o).forEach(function (k) { e.setAttribute(k, o[k]); }); return e; };
+    let g = el('g', { 'pointer-events': 'none' }), govde = el('line', { stroke: '#f1ece2', 'stroke-width': 0.024, 'stroke-linecap': 'round' }), tuy = el('path', { fill: '#fd8e01', stroke: '#fff', 'stroke-width': 0.006 }), uc = el('circle', { r: 0.02, fill: '#cfd3da' });
+    g.appendChild(govde); g.appendChild(tuy); g.appendChild(uc); svg.appendChild(g);
+    let dx = 0.42, dy = -0.9, L = 0.46, sx = x + dx * 1.9, sy = y + dy * 1.9;
+    let ciz = function (tx, ty, ac) {
+        let ex = tx + (dx + Math.sin(ac) * 0.07) * L, ey = ty + dy * L;
+        govde.setAttribute('x1', tx); govde.setAttribute('y1', ty); govde.setAttribute('x2', ex); govde.setAttribute('y2', ey); uc.setAttribute('cx', tx); uc.setAttribute('cy', ty);
+        tuy.setAttribute('d', 'M' + ex + ' ' + ey + 'l-0.07 -0.03l0.02 0.09Z M' + ex + ' ' + ey + 'l0.07 -0.01l-0.05 0.08Z');
+    };
+    let t0 = performance.now();
+    (function kare(t) {
+        if (!svg.isConnected) return; let f = Math.min(1, (t - t0) / 300), e = f * f * (3 - 2 * f);
+        if (f < 1) { ciz(sx + (x - sx) * e, sy + (y - sy) * e, 0); return requestAnimationFrame(kare); }
+        svg.classList.add('yz-sars'); setTimeout(function () { svg.classList.remove('yz-sars'); }, 400);
+        let dalga = el('circle', { cx: x, cy: y, r: 0.04, fill: 'none', stroke: '#fff', 'stroke-width': 0.024 }); svg.insertBefore(dalga, g); let d0 = performance.now();
+        (function dk(t) { let q = Math.min(1, (t - d0) / 520); dalga.setAttribute('r', 0.04 + q * 0.3); dalga.setAttribute('stroke-opacity', 1 - q); if (q < 1) requestAnimationFrame(dk); else dalga.remove(); })(d0);
+        let s0 = performance.now();
+        (function tit(t) { let q = (t - s0) / 650; if (q >= 1 || !svg.isConnected) { g.remove(); return goster(); } ciz(x, y, Math.sin(q * 42) * (1 - q) * 2.2); requestAnimationFrame(tit); })(s0);
+    })(t0);
 }
 function yzYonGirisHTML(g, d, okSay) {
     let yuz = yzYuz(d), mak = yzMakaraliMi(g.k), dolu = g.oklar.length >= okSay, b = _yz.yonBek;
     let tus = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'].filter(function (p) { if (p === 'M' || p === 'X') return true; return +p >= 11 - yuz.halka; })
         .map(function (p) { return '<button class="yz-tus yz-yon-puan ' + yzOkRenk(p) + (b && b.p === p ? ' secili' : '') + '" onclick="yzYonPuan(\'' + p + '\')"' + (dolu ? ' disabled' : '') + '>' + p + '</button>'; }).join('');
-    let yon = Object.keys(YZ_YON).map(function (y) { return '<button class="yz-yon-b" onclick="yzYonBitir(\'' + y + '\')"' + (b ? '' : ' disabled') + ' aria-label="Yön ' + y + '">' + y + '</button>'; }).join('');
-    return '<div class="yz-yon-giris"><div class="yz-yon-puanlar"' + (yuz.halka <= 6 ? ' style="grid-template-columns:repeat(4,minmax(0,1fr))"' : '') + '>' + tus + '</div>'
-        + '<div class="yz-yon-alt' + (yuz.uclu ? ' uclu' : '') + '"><div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><div class="yz-yon-bas">' + (b ? '<b>' + b.p + '</b> — ' + (yuz.uclu ? 'okun olduğu <b>yüze</b>, o tarafına dokun' : 'ok hangi tarafta?') : (dolu ? 'Oklar tamam' : 'Önce puana bas')) + '</div>'
-        + (yuz.uclu ? '<div class="yz-uclu-ipucu"><b class="yz-uclu-ok">👉 Kağıda dokun</b><small>Kağıtta okun olduğu yüzün <b>sağına, soluna, üstüne…</b> dokun → yüz ve yön birlikte kaydolur. Ortaya dokun = merkez.</small></div>' : '<div class="yz-yon-ped">' + yon + '</div>')
-        + '<div class="yz-alt">' + (b ? 'Dokunmazsan ' + (yuz.uclu ? '2,5' : '1,5') + ' sn sonra yalnız puan kaydolur' : (yuz.uclu ? 'Yüz ve yön isteğe bağlı: hangi yüzde nereye gittiği analize girer' : 'Yön isteğe bağlı: ısı haritası için okun yaklaşık yeri')) + '</div>' + (b ? '<i class="yz-yon-sure' + (yuz.uclu ? ' uzun' : '') + '"></i>' : '') + '</div>'
-        + '<div class="yz-yon-kagit">' + yzParlakKagitSVG(yuz, mak, g.konumlar, g.oklar) + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız iç 10 (X)</div>' : '') + '</div></div></div>';
+    let puanlar = '<div class="yz-yon-puanlar"' + (yuz.halka <= 6 || !yuz.uclu ? ' style="grid-template-columns:repeat(4,minmax(0,1fr))"' : '') + '>' + tus + '</div>';
+    let kagit = '<div class="yz-yon-kagit">' + yzParlakKagitSVG(yuz, mak, g.konumlar, g.oklar) + (mak ? '<div class="yz-mak-not">⚙️ Makaralı: yalnız iç 10 (X)</div>' : '') + '</div>';
+    let sure = b ? '<i class="yz-yon-sure' + (yuz.uclu ? ' uzun' : '') + '"></i>' : '';
+    if (yuz.uclu) return '<div class="yz-yon-giris">' + puanlar
+        + '<div class="yz-yon-alt uclu"><div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><div class="yz-yon-bas">' + (b ? '<b>' + b.p + '</b> — okun olduğu <b>yüze</b>, o tarafına dokun' : (dolu ? 'Oklar tamam' : 'Önce puana bas')) + '</div>'
+        + '<div class="yz-uclu-ipucu"><b class="yz-uclu-ok">👉 Kağıda dokun</b><small>Kağıtta okun olduğu yüzün <b>sağına, soluna, üstüne…</b> dokun → yüz ve yön birlikte kaydolur. Ortaya dokun = merkez.</small></div>'
+        + '<div class="yz-alt">' + (b ? 'Dokunmazsan 2,5 sn sonra yalnız puan kaydolur' : 'Yüz ve yön isteğe bağlı: hangi yüzde nereye gittiği analize girer') + '</div>' + sure + '</div>' + kagit + '</div></div>';
+    return '<div class="yz-yon-giris yz-yon-b2"><div class="yz-yon-sol">'
+        + '<div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><span class="yz-yon-adim' + (b || dolu ? '' : ' aktif') + '">1 · Puana bas</span><span class="yz-yon-adim' + (b ? ' aktif' : '') + '">2 · İstersen tarafına dokun</span></div>'
+        + puanlar + '</div>'
+        + '<div class="yz-yon-sag"><div class="yz-yon-bas">' + (b ? 'Ok ' + (g.oklar.length + 1) + ' · <b>' + b.p + '</b> — hedefte okun tarafına dokun' : (dolu ? 'Oklar tamam' : 'Ok ' + (g.oklar.length + 1) + ' için puana bas')) + '</div>'
+        + kagit + '<div class="yz-yon-sure-kap">' + sure + '</div>'
+        + '<div class="yz-alt">' + (b ? 'Hedefin her yeri olur. Dokunmazsan ya da sıradaki puana basarsan yalnız puan kaydolur.' : 'Yön isteğe bağlı: hedefteki oklar ısı haritasına ve analize girer.') + '</div></div></div>';
 }
 // Hedef kağıdının çizimi (giriş + büyüteç aynı içeriği kullanır). Üçlüde yüzler dikey: merkezler y = -ARA, 0, +ARA.
 function yzKagitSVGIc(yuz, mak) {
@@ -3333,7 +3389,14 @@ function yzCssYukle() {
         '.yz-uclu-ipucu{display:grid;gap:6px;justify-items:center;text-align:center}.yz-uclu-ok{font-size:20px}.yz-uclu-ipucu small{font-size:12px;color:var(--text-muted);max-width:26ch;line-height:1.35}',
         '.yz-yon-sure.uzun{animation-duration:2.5s}',
         '.yz-yon-kagit{display:grid;justify-items:center;gap:6px}.yz-parlak-kagit{width:min(100%,300px);height:auto;max-height:420px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}.yz-parlak-kagit.uclu{width:auto;height:min(420px,52vh);max-width:100%}',
-        '@media (max-width:600px){.yz-yon-puanlar{grid-template-columns:repeat(4,minmax(0,1fr))}.yz-yon-alt{grid-template-columns:1fr}.yz-yon-puan{min-height:58px;font-size:24px}}',
+        '.yz-yon-b2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.yz-yon-sol{display:grid;gap:10px}.yz-yon-sag{display:grid;gap:8px;justify-items:center;text-align:center}',
+        '.yz-yon-b2 .yz-yon-kutu{display:flex;gap:6px;padding:0;border:0;background:none}.yz-yon-adim{flex:1;border-radius:12px;padding:8px 6px;background:var(--bg-main);border:1px solid var(--border-color);color:var(--text-muted);font-weight:800;font-size:13px;text-align:center;transition:background .2s,color .2s}.yz-yon-adim.aktif{background:var(--accent-orange);border-color:transparent;color:#2a1407}',
+        '.yz-yon-b2 .yz-yon-puan{min-height:66px}.yz-yon-b2 .yz-parlak-kagit{width:min(100%,360px);max-height:none}.yz-yon-sure-kap{position:relative;width:min(100%,360px);height:6px;border-radius:3px;background:var(--bg-main);overflow:hidden}.yz-yon-sure-kap .yz-yon-sure{left:0;right:0;bottom:0;top:0;height:auto;animation-duration:2s}',
+        '.yz-yv-ok{transform-box:view-box;transform-origin:0 0;animation:yzYvPatla .42s cubic-bezier(.2,1.6,.4,1) backwards;animation-delay:calc(var(--i) * 28ms)}@keyframes yzYvPatla{from{transform:scale(.15);opacity:0}}.yz-yv-halka{animation:yzYvParla 1s ease-in-out infinite alternate}@keyframes yzYvParla{from{fill-opacity:.1}to{fill-opacity:.32}}',
+        '.yz-pk-ok{transform-box:fill-box;transform-origin:center}.yz-pk-ok.bekle{opacity:0}.yz-pk-ok.cik{animation:yzPkCik .4s cubic-bezier(.2,1.9,.4,1)}@keyframes yzPkCik{0%{transform:scale(0)}60%{transform:scale(1.35)}100%{transform:none}}',
+        '.yz-parlak-kagit.yz-sars{animation:yzSars .38s ease-out}@keyframes yzSars{20%{transform:translate(2px,-1px) rotate(.6deg)}45%{transform:translate(-2px,1px) rotate(-.5deg)}70%{transform:translate(1px,0) rotate(.25deg)}}',
+        '.yz-ok.yz-pop{animation:yzOkPop .5s cubic-bezier(.2,1.9,.4,1)}@keyframes yzOkPop{0%{transform:scale(.2) rotate(-25deg)}70%{transform:scale(1.18)}100%{transform:none}}',
+        '@media (max-width:600px){.yz-yon-puanlar{grid-template-columns:repeat(4,minmax(0,1fr))}.yz-yon-alt,.yz-yon-b2{grid-template-columns:1fr}.yz-yon-puan{min-height:58px;font-size:24px}.yz-yon-b2 .yz-parlak-kagit{width:min(100%,300px)}}',
         '@media (prefers-reduced-motion:reduce){.yz-yon-sure{animation:none}}',
         '.yz-tus{min-height:62px;border-radius:16px;border:none;font:inherit;font-size:24px;font-weight:900;cursor:pointer;touch-action:manipulation}.yz-tus:disabled{opacity:.3;filter:saturate(.4)}',
         '.yz-r-sari{background:#fde047;color:#1a1a1a}.yz-r-kirmizi{background:#ef4444;color:#fff}.yz-r-mavi{background:#0ea5e9;color:#fff}.yz-r-siyah{background:#111827;color:#fff;box-shadow:inset 0 0 0 2px #4b5563}.yz-r-beyaz{background:#f8fafc;color:#111;box-shadow:inset 0 0 0 2px #cbd5e1}.yz-r-kacan{background:#475569;color:#fff}',
