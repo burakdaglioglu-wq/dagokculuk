@@ -39,10 +39,14 @@ export default async function ({ log }) {
     // 4. ok: 7, 2 sn bekle → yalnız puan
     await puan('7'); await p.waitForTimeout(2300);
     dogrula(!(await p.locator('.yz-yv').count()), 'süre bitince vurgu kapanmalı');
+    // 5. ok: M → hedefin solundan kaçtı (2026-11-08: M'nin de yönü)
+    await puan('M'); await p.waitForTimeout(150);
+    dogrula(await p.locator('.yz-yv-halka').count() === 1, 'M için hedefin dışı parlamıyor');
+    q = await kagit(-0.5, 0.05); await p.mouse.click(q.x, q.y); await p.waitForTimeout(1200);
     const g = await p.evaluate(() => { const yuz = yzYuz(yzOku().durum); return { o: _yz.giris.oklar.join(','), k: _yz.giris.konumlar.map((k) => k ? yzKonumPuan(k.x, k.y, yuz) + '@' + Math.sign(Math.round(k.x * 10)) + '/' + Math.sign(Math.round(k.y * 10)) : '-').join(' ') }; });
-    esit(g.o, '9,8,10,7', 'puanlar');
-    esit(g.k, '9@1/-1 - 10@-1/0 -', 'yön: hedefin her yeri sayılır, yönsüzler yalnız puan');
-    esit(await p.locator('.yz-parlak-kagit .yz-pk-ok').count(), 2, 'kağıtta 2 ok');
+    esit(g.o, '9,8,10,7,M', 'puanlar');
+    esit(g.k, '9@1/-1 - 10@-1/0 - M@-1/0', 'yön: hedefin her yeri sayılır, yönsüzler yalnız puan');
+    esit(await p.locator('.yz-parlak-kagit .yz-pk-ok').count(), 3, 'kağıtta 3 ok (M dahil)');
     // 390 px: taşma yok
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(300);
     dogrula(await p.evaluate(() => { const e = document.querySelector('.yz-giris'); return e.scrollWidth <= e.clientWidth + 1; }), '390 px giriş penceresi yana taşıyor');

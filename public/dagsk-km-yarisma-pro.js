@@ -2352,10 +2352,12 @@ function yzGirisMod() { try { if (!localStorage.getItem('dag_yz_yon_v1')) { loca
 // yeter); basılmazsa yalnız puan kaydolur. Yanda parlak hedef kağıdı okları gösterir. Üçlü yüzde sıradaki ok sıradaki yüze konur.
 const YZ_YON = { '↖': [-1, -1], '↑': [0, -1], '↗': [1, -1], '←': [-1, 0], '●': [0, 0], '→': [1, 0], '↙': [-1, 1], '↓': [0, 1], '↘': [1, 1] };
 function yzYonKonum(p, yon, yuz, mak, sira) {
-    if (p === 'M' || !yon || !YZ_YON[yon]) return null;
+    if (!yon || !YZ_YON[yon]) return null;
     let v = YZ_YON[yon], l = Math.hypot(v[0], v[1]);
     let s = yuz.uclu ? ((sira % 3) + 3) % 3 : null, kon = function (x, y) { return yuz.uclu ? { x: x, y: y, s: s, yak: 1 } : { x: x, y: y, yak: 1 }; };
     if (!l) return (p === 'X' || p === '10') ? kon(0, 0) : null;
+    // M (2026-11-08, kullanıcı: "M olanın yönünü de belirleyelim"): ıska hedefin hemen dışına, o yönde konur (yzKonumPuan → M, analiz sınırı 1,1 içinde)
+    if (p === 'M') return kon(Math.round(v[0] / l * 1.06 * 1000) / 1000, Math.round(v[1] / l * 1.06 * 1000) / 1000);
     let ux = v[0] / l, uy = v[1] / l, uygun = [];
     for (let r = 0; r <= 1.05; r += 0.004) if (yzKonumPuan(ux * r, uy * r, yuz, mak) === p) uygun.push(r);
     if (!uygun.length) return null;
@@ -2366,7 +2368,6 @@ function yzYonPuan(p) {
     let g = _yz.giris, d = yzOku().durum; if (!g || !d) return;
     if (_yz.yonBek) yzYonBitir(null, true);
     if (g.oklar.length >= yzGirisOkSay(g, d)) return yzGirisCiz();
-    if (p === 'M') { yzOkEkle('M'); return; }
     let uc = yzYuz(d).uclu; _yz.yonBek = { p: p, z: setTimeout(function () { yzYonBitir(null); }, uc ? 2500 : 2000) };
     yzGirisCiz();
 }
@@ -2420,11 +2421,11 @@ function yzParlakKagitSVG(yuz, mak, konumlar, oklar) {
 // Dokunmazsan 2 sn sonra ya da sıradaki puana basınca yalnız puan kaydolur. 3x3 yön pedi kalktı.
 function yzYonHalka(p, yuz, mak) { let a = null, b = 0; for (let r = 0; r <= 1.0001; r += 0.002) if (yzKonumPuan(r, 0, yuz, mak) === p) { if (a == null) a = r; b = r; } return a == null ? null : [a, b]; }
 function yzYonVurguSVG(p, yuz, mak) {
-    let h = yzYonHalka(p, yuz, mak); if (!h) return '';
+    let h = p === 'M' ? [1.0, 1.24] : yzYonHalka(p, yuz, mak); if (!h) return '';
     let ri = h[0] < 0.01 ? 0 : h[0], ro = h[1], c = function (r, sw) { return 'M' + r + ' 0A' + r + ' ' + r + ' 0 1 ' + sw + ' ' + (-r) + ' 0A' + r + ' ' + r + ' 0 1 ' + sw + ' ' + r + ' 0Z'; };
     let s = '<g class="yz-yv" pointer-events="none"><rect x="-1.25" y="-1.25" width="2.5" height="2.5" fill="#0b0907" fill-opacity=".62"/>'
         + '<path class="yz-yv-halka" d="' + c(ro, 0) + (ri ? c(ri, 1) : '') + '" fill="#fff" fill-opacity=".22" fill-rule="evenodd" stroke="#fff" stroke-width="0.02"/>';
-    let rg = Math.max(ro + 0.2, 0.62), i = 0;
+    let rg = p === 'M' ? 0.62 : Math.max(ro + 0.2, 0.62), i = 0;
     Object.keys(YZ_YON).forEach(function (y) {
         let v = YZ_YON[y], l = Math.hypot(v[0], v[1]); if (!l) return; let ux = v[0] / l, uy = v[1] / l, x = (ux * rg).toFixed(3), yy = (uy * rg).toFixed(3);
         s += '<g class="yz-yv-ok" style="--i:' + (i++) + '"><line x1="' + (ux * (ro + 0.03)).toFixed(3) + '" y1="' + (uy * (ro + 0.03)).toFixed(3) + '" x2="' + x + '" y2="' + yy + '" stroke="#fd8e01" stroke-width="0.014" stroke-dasharray="0.03 0.025"/>'
@@ -2473,7 +2474,7 @@ function yzYonGirisHTML(g, d, okSay) {
     return '<div class="yz-yon-giris yz-yon-b2"><div class="yz-yon-sol">'
         + '<div class="yz-yon-kutu' + (b ? ' bekliyor' : '') + '"><span class="yz-yon-adim' + (b || dolu ? '' : ' aktif') + '">1 · Puana bas</span><span class="yz-yon-adim' + (b ? ' aktif' : '') + '">2 · İstersen tarafına dokun</span></div>'
         + puanlar + '</div>'
-        + '<div class="yz-yon-sag"><div class="yz-yon-bas">' + (b ? 'Ok ' + (g.oklar.length + 1) + ' · <b>' + b.p + '</b> — hedefte okun tarafına dokun' : (dolu ? 'Oklar tamam' : 'Ok ' + (g.oklar.length + 1) + ' için puana bas')) + '</div>'
+        + '<div class="yz-yon-sag"><div class="yz-yon-bas">' + (b ? 'Ok ' + (g.oklar.length + 1) + ' · <b>' + b.p + '</b> — ' + (b.p === 'M' ? 'ok hedefin hangi tarafından kaçtı? O tarafa dokun' : 'hedefte okun tarafına dokun') : (dolu ? 'Oklar tamam' : 'Ok ' + (g.oklar.length + 1) + ' için puana bas')) + '</div>'
         + kagit + '<div class="yz-yon-sure-kap">' + sure + '</div>'
         + '<div class="yz-alt">' + (b ? 'Hedefin her yeri olur. Dokunmazsan ya da sıradaki puana basarsan yalnız puan kaydolur.' : 'Yön isteğe bağlı: hedefteki oklar ısı haritasına ve analize girer.') + '</div></div></div>';
 }

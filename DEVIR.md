@@ -5636,3 +5636,7 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **veliLinkGonder(g, ad):** tek mesaj, iki link: ödeme ekranı veli.html (telefon son 4 hane) + rapor.html (bu ay; tutarsız). Telefon yoksa WhatsApp numarasız açılır, yalnız rapor linki gider (ödeme ekranı telefonsuz açılmaz), uyarı çıkar. Muafta ödeme linki yok. Pencere tıklama anında açılır (telefon engeli).
 - **Yönetim › Aidat araçları:** ilk sırada **📤 Velilere link gönder (sıradaki)** (veliLinkSiradaki): tüm gruplarda telefonu olan, muaf olmayan, linki gitmemiş ilk aile; işaret `veliodeme|ad` (bu cihazda). Eski Veli özeti ekranı yerinde.
 - Test 108.
+
+## 103. 🎯 M'nin de yönü (2026-11-08, v387)
+- Kullanıcı: "M olanın yönünü de belirleyelim". Puan + yön'de M artık hemen kaydolmuyor: hedefin dışı (1,0-1,24 bandı) parlar, okun kaçtığı tarafa dokununca ıska o yönde hedefin hemen dışına (r 1,06) konur. Yalnız puan için yine 2 sn bekle ya da sıradaki puana bas.
+- yzYonKonum M'ye konum verir (yzKonumPuan → M; yzKonumlar/yzOkNoVeri sınırı 1,1 içinde, ısı haritası ve grup analizine girer). Test 107 genişledi.
