@@ -5629,3 +5629,10 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Yalnız puan:** 2 sn (önce 1,5) ya da sıradaki puana basınca. Üçlüde 2,5 sn.
 - **Animasyon (yzYonUcur, _yz.yonUc):** yeni ok sağ üstten uçar, saplanıp titrer, kağıt sarsılır (.yz-sars), halka dalgası; sonra numaralı delik (.yz-pk-ok.bekle → .cik). Puan yuvası zıplar (.yz-pop). 1,5 sn eski yonUc yok sayılır. Animasyonlar "hareketi azalt" ayarında da oynar (kullanıcı istedi).
 - Test 107. AÇIK: gerçek tablette 16-24 sporcuyla denenmedi. 390 px'te kağıdın alt yarısı ekran altında kalıyor (dokunmaya üst yarı yeter).
+
+## 102. 🔗 Veliye link tek dokunuşta (2026-11-08, v386)
+- Kullanıcı: "velilere bilgilendirme veya aidat bilgilerinin olduğu linki atamıyorum, o kadar zorlaştırdın ki". Link gönderme yalnız eski Aidat listesinde, kapalı "veli özeti" bölümünde, satır başına küçük düğmeydi; Yönetim panelinde ve sporcu kartında yoktu.
+- **Sporcu kartı (Yönetim › kişi):** Ara/WhatsApp altında büyük **🔗 Veliye link gönder** (.yn-veli-link, adaptörde `veliLink`; yalnız DAĞ, Milo'da yok). yonetim-panel.js?v=16.
+- **veliLinkGonder(g, ad):** tek mesaj, iki link: ödeme ekranı veli.html (telefon son 4 hane) + rapor.html (bu ay; tutarsız). Telefon yoksa WhatsApp numarasız açılır, yalnız rapor linki gider (ödeme ekranı telefonsuz açılmaz), uyarı çıkar. Muafta ödeme linki yok. Pencere tıklama anında açılır (telefon engeli).
+- **Yönetim › Aidat araçları:** ilk sırada **📤 Velilere link gönder (sıradaki)** (veliLinkSiradaki): tüm gruplarda telefonu olan, muaf olmayan, linki gitmemiş ilk aile; işaret `veliodeme|ad` (bu cihazda). Eski Veli özeti ekranı yerinde.
+- Test 108.

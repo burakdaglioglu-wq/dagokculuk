@@ -4089,6 +4089,32 @@
         // "Sıradaki veli": linki henüz gönderilmemiş, telefonu kayıtlı, muaf olmayan ilk aile. İşaret bu cihazda (dag_aidat_gonderildi).
         function aidatVeliOdemeKalanlar() { let gon = aidatGonderildi(); return (_aidatVeliOzetListe || []).map((x, i) => ({ x, i })).filter(o => !o.x.sp.aidatMuaf && aidatVeliOdemeTel(o.x.sp) && !gon['veliodeme|' + o.x.ad]); }
         function aidatVeliOdemeSiradaki() { let k = aidatVeliOdemeKalanlar()[0]; if(!k) { showToast('Gönderilecek veli kalmadı.', 'success'); return; } aidatVeliOdemeLinkGonder(k.i); }
+        // 🔗 Veliye link: TEK dokunuş, TEK mesaj (2026-11-08, kullanıcı: "velilere bilgilendirme veya aidat bilgilerinin olduğu linki atamıyorum,
+        // o kadar zorlaştırdın ki"). Eskiden yalnız Aidat › Veli özeti'nin içindeydi. Şimdi sporcu kartında ve Yönetim › Aidat araçlarında.
+        // Mesajda iki link: ödeme ekranı (veli.html, telefon son 4 hane) + devam/gelişim raporu (rapor.html, tutarsız). Telefon yoksa WhatsApp
+        // kişi seçtirir ve yalnız rapor linki gider (ödeme ekranına telefonsuz girilemez).
+        function veliLinkGonder(g, ad) {
+            let sp = turnuvaDB[g] && turnuvaDB[g][ad]; if(!sp) return;
+            let tel = aidatVeliOdemeTel(sp), w = window.open('', '_blank'), ay = bugunISO().slice(0, 7);
+            fetch('/api/athletes/' + encodeURIComponent(g) + '/' + encodeURIComponent(ad) + '/izle-kodu', { method: 'POST' }).then(r => r.ok ? r.json() : null).then(d => {
+                if(!d || !d.kod) { if(w) w.close(); showToast('Link oluşturulamadı, internet bağlantısını kontrol et.', 'error'); return; }
+                let ilk = aidatIlkAd(ad), odeme = location.origin + '/veli.html?kod=' + d.kod, rapor = location.origin + '/rapor.html?kod=' + d.kod + '&ay=' + ay;
+                let metin = 'Merhaba 🌟 DAĞ Spor Kulübü\n\n'
+                    + (tel && !sp.aidatMuaf ? '💳 ' + ilk + ' için ödemeler ve sıradaki ödeme:\n' + odeme + '\n(Girişte kulübe kayıtlı telefonunuzun son 4 hanesi sorulur.)\n\n' : '')
+                    + '📊 Devam takvimi ve gelişim:\n' + rapor + '\n\nGörüşmek üzere 🧡';
+                let numara = telefonWaFormat(tel || ''), url = (numara ? 'https://api.whatsapp.com/send?phone=' + numara + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(metin);
+                if(w) w.location.href = url; else window.open(url, '_blank');
+                if(tel) aidatGonderildiIsaretle('veliodeme|' + ad);
+                if(!tel) showToast('Veli telefonu kayıtlı değil: WhatsApp\'ta kişiyi sen seç. Ödeme ekranı telefon ister, bu yüzden yalnız gelişim linki gitti.', 'warning');
+            }).catch(() => { if(w) w.close(); showToast('Link oluşturulamadı, internet bağlantısını kontrol et.', 'error'); });
+        }
+        // Yönetim › Aidat araçları: linki henüz gitmemiş, telefonu olan, muaf olmayan sıradaki aile (tüm gruplar)
+        function veliLinkSiradaki() {
+            let gon = aidatGonderildi(), l = _aidatGelirOzetHesapla(aidatAy || bugunISO().slice(0, 7), true).kisiler.filter(x => !x.sp.aidatMuaf && aidatVeliOdemeTel(x.sp) && !gon['veliodeme|' + x.ad]);
+            if(!l.length) { showToast('Telefonu kayıtlı bütün velilere link gitti.', 'success'); return; }
+            veliLinkGonder(l[0].g, l[0].ad);
+            showToast(l[0].ad + ' velisine gidiyor · kalan ' + (l.length - 1), 'info');
+        }
         function aidatVeliOzetKopyala(i) {
             let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
             aidatRaporLinkAl(x, aidatAy).then(link => { try { navigator.clipboard.writeText(aidatVeliOzetMetin(x, aidatAy, link)).then(() => showToast('Mesaj kopyalandı', 'success')); } catch(e) {} });
@@ -4251,11 +4277,11 @@
                     deneme() { return fetch('/api/push/yonetici-deneme', { method: 'POST' }).then(r => r.json()); }
                 },
                 pdf(ay, grup) { let eski = _aidatGrupFiltre; _aidatOdemeAy = ay; _aidatGrupFiltre = grup; try { aidatOdemeDurumPdf(); } finally { _aidatGrupFiltre = eski; } },
-                araclar: [['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
+                araclar: [['📤 Velilere link gönder (sıradaki)', 'veliLinkSiradaki()'], ['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=15';
+        const YN_DOSYA = 'yonetim-panel.js?v=16';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4384,6 +4410,7 @@
                 },
                 dersBaslat: i => yoneticiDersBaslat(i),
                 fotoDegistir: k => { if(k) ysFotoSec(k.grup, k.ad); }, // profil avatarındaki 📷
+                veliLink: k => { if(k) veliLinkGonder(k.grup, k.ad); }, // profilde 🔗 Veliye link gönder (ödeme + gelişim, tek mesaj)
                 ekPanel: k => (typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '') + (typeof yrsKarneHTML === 'function' ? yrsKarneHTML(k.grup, k.ad) : ''), // 📈 Gelişim (plan · grup · his) + 🏆 sezon karnesi (v313)
                 dogumKarti: k => dogumGunuKartPaylas(k.grup, k.ad), // 🎉 Kutla → fotoğraflı kart
                 avatar: k => typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(k.grup, k.ad), k.ad, 'yn-mav', true) : '', // Genel Bakış tablolarında yüz

@@ -1153,6 +1153,7 @@
                     <div class="ap-panel yn-p-kart"><div class="yn-av"${k.fotoK ? ` data-foto-k="${esc(k.fotoK)}" data-foto-y="1"` : ""}${k.foto ? ` style="background:url('${esc(k.foto)}') center/cover;color:transparent"` : ""}>${esc(bas)}${Y.fotoDegistir ? `<button class="yn-av-foto yn-pdf-gizle" onclick="YN.Y.fotoDegistir(ynKisi())" aria-label="Fotoğrafı değiştir">📷</button>` : ""}</div><h2>${esc(k.ad)}</h2><div class="yn-p-alt">${alt}</div><div>${durum}</div></div>
                     ${ozet.length ? `<div class="ap-panel"><dl class="yn-dl">${ozet.map(x => `<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl></div>` : ''}
                     <div class="yn-p-hizli yn-pdf-gizle">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none;text-align:center">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}','_blank')">💬 WhatsApp</button>` : '<span class="ap-etk u" style="grid-column:1/-1;text-align:center">Veli telefonu yok</span>'}
+                        ${Y.veliLink ? `<button class="ap-btn ana yn-veli-link" style="grid-column:1/-1;min-height:48px" onclick="YN.Y.veliLink(ynKisi())">🔗 Veliye link gönder</button>` : ''}
                         ${Y.pasifYap ? `<button class="ap-btn${k.pasif ? ' iyi' : ''}" style="grid-column:1/-1" onclick="ynKartPasif(${k.pasif ? 'false' : 'true'})">${k.pasif ? '▶ Aktif et' : '⏸ Pasife al'}</button>` : ''}</div>
                 </aside>
                 <main class="yn-p-icerik">
