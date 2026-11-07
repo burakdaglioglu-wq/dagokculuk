@@ -49,6 +49,8 @@ export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900
   const ctx = await b.newContext({ viewport: { width: genislik, height: yukseklik }, acceptDownloads: true });
   if (girisli) { const t = await oturumAl(); await ctx.addInitScript((tk) => { try { localStorage.setItem('dag_oturum', tk); } catch (e) {} }, t); }
   await ctx.addInitScript(() => { window.__acilan = []; window.open = (u) => { window.__acilan.push(u); return null; }; });
+  // v388: TV ilk açılışta Sahne; eski testler Tablo görünümüne bakar (Sahne testi 109 anahtarı kendisi siler)
+  await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yz_tv_gorunum')) localStorage.setItem('dag_yz_tv_gorunum', 'tablo'); } catch (e) {} });
   const p = await ctx.newPage();
   const hatalar = [];
   p.on('pageerror', (e) => { if (!/Failed to fetch/.test(e.message)) hatalar.push(e.message); });

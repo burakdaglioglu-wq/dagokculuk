@@ -1027,6 +1027,15 @@ function yzTvCiz() {
     let o = yzOku(), d = o.durum;
     if (!d || !d.asama || d.asama === 'kurulum') { el.innerHTML = '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button><div class="yz-tv-bos"><div class="yz-tv-logo">DAĞ S.K.</div><div>Tur henüz başlamadı</div><small>Tablette Yarışma → Sıralama Turu → Turu başlat</small></div>'; return; }
     if (d.asama === 'eleme' || (d.asama === 'bitti' && d.ayar.dogrudan && o.eleme)) { el.innerHTML = yzTvElemeHTML(o); yzTimerBaslat(); return; }
+    if (d.asama === 'tur' && yzTvGorunum() === 'sahne') {
+        if (typeof yzSahneCiz === 'function') { yzSahneCiz(el, o); yzTimerBaslat(); return; }
+        if (typeof dagskEkYukle === 'function') {
+            if (!el.classList.contains('yzs-yukleniyor')) { el.classList.add('yzs-yukleniyor'); el.innerHTML = '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button><div class="yz-tv-bos"><div class="yz-tv-logo">DAĞ S.K.</div><div>Sahne hazırlanıyor…</div></div>';
+                dagskEkYukle(YZ_SAHNE_DOSYA).then(function () { el.classList.remove('yzs-yukleniyor'); el.innerHTML = ''; _yz.tvHam = null; yzTvCiz(); }).catch(function () { el.classList.remove('yzs-yukleniyor'); try { localStorage.setItem('dag_yz_tv_gorunum', 'tablo'); } catch (e) {} yzTvCiz(); }); }
+            return;
+        }
+    }
+    if (el.classList.contains('yzs-acik')) { el.classList.remove('yzs-acik'); el.innerHTML = ''; }
     let f = yzFormat(d), sira = yzSiralama(o), seri = Math.min(d.seri, f.seri - 1), bitti = d.asama === 'bitti';
     el.classList.toggle('kagit', yzTvTema() === 'kagit'); yzKagitCss();
     // Yeni gelen seri skorlarını birkaç saniye vurgula
@@ -1597,7 +1606,11 @@ function yzAnaTemaAc() {
     let su = yzAnaTema();
     onayIste('<div style="text-align:left"><b>🎨 Yarışma ekranı teması</b><div class="yz-alt" style="margin:4px 0 12px">Bu cihazda hatırlanır. TV ekranının görünümü ayrıdır (TV\'de ☀️/🌙).</div><div class="yzt-secici">'
         + YZ_ANA_TEMALAR.map(function (t) { return '<button type="button" class="yzt-sec' + (t.id === su ? ' aktif' : '') + '" onclick="yzAnaTemaSec(\'' + t.id + '\')"><span class="yzt-onizle" style="background:' + t.renk[0] + '"><i style="background:' + t.renk[1] + '"></i><i style="background:' + t.renk[1] + '"></i><em style="background:' + t.renk[2] + '"></em><u style="background:' + t.renk[3] + '"></u></span><b>' + (t.id === su ? '✓ ' : '') + t.ad + '</b><small>' + t.acik + '</small></button>'; }).join('')
-        + '</div></div>', null);
+        + '</div>'
+        + '<div style="margin-top:16px"><b>📺 TV görünümü</b><div class="yz-alt" style="margin:4px 0 8px">TV ilk açıldığında Sahne gelir. Bu cihazda hatırlanır.</div><div class="yz-cipler">'
+        + '<button type="button" class="yz-cip' + (yzTvGorunum() === 'sahne' ? ' aktif' : '') + '" onclick="yzTvGorunumSec(\'sahne\')">🎭 Sahne · son skoru gireni büyük gösterir</button>'
+        + '<button type="button" class="yz-cip' + (yzTvGorunum() === 'tablo' ? ' aktif' : '') + '" onclick="yzTvGorunumSec(\'tablo\')">📋 Tablo · eski görünüm</button></div></div>'
+        + '</div>', null);
 }
 function yzAnaTemaSec(id) {
     try { localStorage.setItem('dag_yz_ana_tema', id); } catch (e) {}
@@ -2880,6 +2893,15 @@ function yzTvDuyuruHTML(o, sira, yeni) {
     msj.sort(function (a, b) { return (b.d === 'ulasti') - (a.d === 'ulasti'); });
     return '<div class="yz-tv-duyuru">' + yuks + msj.slice(0, yuks ? 2 : 3).map(function (h) { return '<div class="yz-tv-dy ' + h.d + '"><span>' + h.i + '</span>' + esc(h.metin) + '</div>'; }).join('') + '</div>';
 }
+// 📺 TV görünümü (2026-11-08, v388): 'sahne' (varsayılan, dagsk-tv-sahne.js) ya da 'tablo' (eski). Cihaz başına; Tema penceresinden ve TV'deki düğmeden değişir.
+const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=1';
+function yzTvGorunum() { try { return localStorage.getItem('dag_yz_tv_gorunum') === 'tablo' ? 'tablo' : 'sahne'; } catch (e) { return 'sahne'; } }
+function yzTvGorunumSec(g) {
+    try { localStorage.setItem('dag_yz_tv_gorunum', g === 'tablo' ? 'tablo' : 'sahne'); } catch (e) {}
+    let m = document.getElementById('onay-modal'); if (m) m.style.display = 'none';
+    let el = document.getElementById('yz-tv'); if (el) { el.classList.remove('yzs-acik'); el.innerHTML = ''; _yz.tvHam = null; yzTvCiz(); }
+    showToast(g === 'tablo' ? '📋 TV: Tablo görünümü' : '🎭 TV: Sahne görünümü', 'success');
+}
 function yzTvKontrolHTML(o, el) {
     let d = o.durum, dugme = function (yazi, fn, cls, baslik) { return '<button class="yz-tv-k' + (cls ? ' ' + cls : '') + '" onclick="' + fn + '"' + (baslik ? ' title="' + baslik + '"' : '') + '>' + yazi + '</button>'; };
     let sayac = o.sayac ? dugme('⏹ Sıfırla', 'yzSayacDurdur()') : dugme('▶ Başlat', 'yzSayacBaslat()', 'yesil', 'Süreyi başlat (10 sn hatta geçiş + atış)');
@@ -2892,7 +2914,7 @@ function yzTvKontrolHTML(o, el) {
     let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), bek = yzBekleyenler(o, seri).length, son = seri >= f.seri - 1;
     // 2026-10-14 (kullanıcı: "TV ekranında her şeyi yapabileyim"): sporcu ekle/çıkar, önceki seriye dön ve tur menüsü
     // TV'den de; düğmeler büyüdü ve sığmazsa alt satıra geçer (eskiden tek satırda sıkışıyordu).
-    return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür') + dugme('🎯', 'yzHedeflerAc()', '', 'Kişisel hedef puanları') + dugme('🎥', 'yzVideoAc()', '', 'Gecikmeli ayna / canlı / video')
+    return '<div class="yz-tv-kontrol">' + oyunaGec + sayac + sure + dugme('⛶', 'yzDevSayacDegis()', yzDevAyar() ? 'dev-acik' : '', 'Büyük sayaç: süre başlayınca üstte dev şerit olur (düğmeler altta kullanılır), bitince küçülür') + dugme('🎯', 'yzHedeflerAc()', '', 'Kişisel hedef puanları') + dugme('🎥', 'yzVideoAc()', '', 'Gecikmeli ayna / canlı / video') + (yzTvGorunum() === 'tablo' ? dugme('🎭 Sahne', "yzTvGorunumSec('sahne')", '', 'Sahne görünümü: son skoru gireni büyük hedefiyle gösterir') : '')
         + dugme('👥 ' + d.katilimci.length, 'yzSporcuSecici(\'tur\')', '', 'Sporcu ekle / çıkar')
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
         + (seri > 0 ? dugme('◀', 'yzOncekiSeri()', '', 'Önceki seriye dön (skorlar silinmez)') : '')
@@ -3390,6 +3412,7 @@ function yzCssYukle() {
         '.yz-uclu-ipucu{display:grid;gap:6px;justify-items:center;text-align:center}.yz-uclu-ok{font-size:20px}.yz-uclu-ipucu small{font-size:12px;color:var(--text-muted);max-width:26ch;line-height:1.35}',
         '.yz-yon-sure.uzun{animation-duration:2.5s}',
         '.yz-yon-kagit{display:grid;justify-items:center;gap:6px}.yz-parlak-kagit{width:min(100%,300px);height:auto;max-height:420px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}.yz-parlak-kagit.uclu{width:auto;height:min(420px,52vh);max-width:100%}',
+        '.yz-giris-bas>div:first-child{min-width:0;overflow-wrap:anywhere}@media (max-width:440px){.yz-giris-bas>div:last-child{flex-wrap:wrap;justify-content:flex-end}}',
         '.yz-yon-b2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.yz-yon-sol{display:grid;gap:10px}.yz-yon-sag{display:grid;gap:8px;justify-items:center;text-align:center}',
         '.yz-yon-b2 .yz-yon-kutu{display:flex;gap:6px;padding:0;border:0;background:none}.yz-yon-adim{flex:1;border-radius:12px;padding:8px 6px;background:var(--bg-main);border:1px solid var(--border-color);color:var(--text-muted);font-weight:800;font-size:13px;text-align:center;transition:background .2s,color .2s}.yz-yon-adim.aktif{background:var(--accent-orange);border-color:transparent;color:#2a1407}',
         '.yz-yon-b2 .yz-yon-puan{min-height:66px}.yz-yon-b2 .yz-parlak-kagit{width:min(100%,360px);max-height:none}.yz-yon-sure-kap{position:relative;width:min(100%,360px);height:6px;border-radius:3px;background:var(--bg-main);overflow:hidden}.yz-yon-sure-kap .yz-yon-sure{left:0;right:0;bottom:0;top:0;height:auto;animation-duration:2s}',

@@ -56,6 +56,7 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `106-zombi` | Oyunlar › Zombi Salgını: gerçek seri, seviyeye göre panzehir, zombi önce kendini kurtarır, ısırık, herkes atmadan bitmez, geri al, 12 saat, 24 çocuk ve 390 px taşma yok |
 | `107-puan-sonra-yon` | Yarışma › Puan + yön (v385): puana basınca halka parlar ve 8 yön kılavuzu açılır, hedefin her yeri yön sayılır, sıradaki puan ya da 2 sn yalnız puan, 3x3 ped yok, ok uçuşu, 390 px taşma yok |
 | `108-veli-link` | Sporcu kartında 🔗 Veliye link gönder: tek WhatsApp mesajında ödeme ekranı + gelişim raporu, tutar yok; telefonsuz numarasız ve yalnız rapor; Aidat araçlarında sıradaki veli |
+| `109-tv-sahne` | Yarışma TV ilk açılışta Sahne: 24 sporcu sığar, son skoru giren sahnede (6 ok numarasıyla, seri puanı sayarak), satıra dokun → skor girişi, Tablo ⇄ Sahne, Tema penceresinde TV görünümü |
 | `105-yarisma-sade-olcer` | Yarışma paneli: büyük Sporcular + Seri ekle, az araç; seri ekle (panel, son seri, Sonuçlar); yeni sporcu penceresi 1280/390 px; Atış Ölçer: süre seriye yazılır, telefonda skor, masa ezilmez, puan eşleşmesi |
 | `103-fiziksel-form` | Fiziksel dosya: oturumsuz görsel yok, duruş fotoğrafı veli onayı ister, ad değişince taşınır; karşılaştırma; kayıt formu PDF; form okuma kontrol ekranı (sahte yanıt), onaysız kayıt yok |
 | `102-veli-odeme` | Veli ödeme ekranı: link + son 4 hane, kilit, sızıntı yok, numara değişince oturum biter, rapor linkinde hâlâ tutar yok, 390/360 |
