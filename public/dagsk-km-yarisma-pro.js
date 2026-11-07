@@ -2894,7 +2894,7 @@ function yzTvDuyuruHTML(o, sira, yeni) {
     return '<div class="yz-tv-duyuru">' + yuks + msj.slice(0, yuks ? 2 : 3).map(function (h) { return '<div class="yz-tv-dy ' + h.d + '"><span>' + h.i + '</span>' + esc(h.metin) + '</div>'; }).join('') + '</div>';
 }
 // 📺 TV görünümü (2026-11-08, v388): 'sahne' (varsayılan, dagsk-tv-sahne.js) ya da 'tablo' (eski). Cihaz başına; Tema penceresinden ve TV'deki düğmeden değişir.
-const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=1';
+const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=2';
 function yzTvGorunum() { try { return localStorage.getItem('dag_yz_tv_gorunum') === 'tablo' ? 'tablo' : 'sahne'; } catch (e) { return 'sahne'; } }
 function yzTvGorunumSec(g) {
     try { localStorage.setItem('dag_yz_tv_gorunum', g === 'tablo' ? 'tablo' : 'sahne'); } catch (e) {}

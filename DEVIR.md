@@ -5647,3 +5647,9 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **Görünüm ayarı:** `dag_yz_tv_gorunum` = sahne (varsayılan) | tablo, cihaz başına. Tema penceresinde "📺 TV görünümü", Tablo'daki TV'de 🎭 Sahne düğmesi. Yükleme başarısızsa Tablo'ya düşer.
 - e2e yardımcısı anahtar yoksa tablo yazar (eski TV testleri); test 109 anahtarı silip ilk açılışı dener. Ayrıca skor penceresi başlığı 390 px'te uzun adla 3 px taşıyordu (Analiz/Video/✕): ad küçülebilir, düğmeler sarar.
 - AÇIK: salondaki TV'de çocuklarla denenmedi. Masadaki yarışma ekranının görünümü ve 5 masa teması değişmedi; kullanıcı teması da sevmediğini söyledi.
+
+## 105. ⏱ Sahne: süre başlayınca sırayla (2026-11-08, v389)
+- Kullanıcı (ekran görüntüsüyle): "süre başlayınca sporcuların atışları ekranda animasyon ile gözüksün, sırayla geçmesi lazım". Görüntüde büyük sayaç sahnenin üstünü ve sıralamayı kapatıyordu, uzun soyad harf ortasından bölünüyordu.
+- **yzsDon (500 ms):** hatta geçiş/atış/son 30 sn boyunca her 5,5 sn hedef sırasında skoru olan bir sonraki sporcu sahneye (okları yeniden düşer, sahne kayarak girer, etikette SIRAYLA). Yeni skor gelince o sporcu 8 sn kalır. Süre yokken son skoru giren kalır.
+- **Ölçek:** büyük sayaç açıksa (html.yz-dev-acik) sahne #yz-dev-sayac'ın altındaki alana sığar; yzsDon her turda yeniden ölçer.
+- **Ad boyu (yzsAdBoy):** en uzun kelime tek satıra sığacak kadar küçülür, harf ortasından bölünmez. dagsk-tv-sahne.js?v=2. Test 109 genişledi.

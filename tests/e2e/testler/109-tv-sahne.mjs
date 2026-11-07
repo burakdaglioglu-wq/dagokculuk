@@ -47,6 +47,16 @@ export default async function ({ log }) {
     dogrula(await p.locator('#onay-modal button', { hasText: 'Sahne' }).count() === 1, 'Tema penceresinde TV görünümü yok');
     await p.locator('#onay-modal button', { hasText: 'Sahne' }).click(); await p.waitForTimeout(600);
     dogrula(await p.locator('#yz-tv .yzs-tv').count() === 1, "Tema'dan Sahne'ye dönmedi");
+    // süre başlayınca sırayla: sahnedeki sporcu değişir, etiket SIRAYLA; büyük sayaç açıkken sahne şeridin altında
+    await p.evaluate(() => { if (!yzDevAyar()) yzDevSayacDegis(); yzSayacBaslat(); });
+    const ad1 = (await p.locator('#yzs-sahne .yzs-ad').textContent()).trim();
+    await p.waitForTimeout(9500);
+    const ad2 = (await p.locator('#yzs-sahne .yzs-ad').textContent()).trim();
+    dogrula(ad1 !== ad2, 'süre başlayınca sporcular sırayla geçmedi: ' + ad1);
+    dogrula(/SIRAYLA/.test(await p.locator('#yzs-sahne .yzs-kim > small').textContent()), 'sırayla etiketi yok');
+    dogrula(await p.evaluate(() => { const dv = document.getElementById('yz-dev-sayac'), tv = document.querySelector('.yzs-tv'); return !dv || tv.getBoundingClientRect().top >= dv.getBoundingClientRect().bottom - 2; }), 'büyük sayaç sahnenin üstünü kapatıyor');
+    if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-sirayla.png' });
+    await p.evaluate(() => { yzSayacDurdur(); if (yzDevAyar()) yzDevSayacDegis(); });
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('🎭 TV Sahne: ilk açılışta, ' + n + ' sporcu sığar, son skoru giren sahnede, satır → skor girişi, Tablo ⇄ Sahne, Tema penceresi ✓');
   } finally {
