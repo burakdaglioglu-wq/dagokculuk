@@ -4273,7 +4273,8 @@
                     isler.forEach(x => {
                         let ad = x.kisi.ad, eski = (aidatDB[ad] && aidatDB[ad][x.ay]) || {};
                         let kayit = { odendi: true, tutar: x.tutar || null, notMetin: x.notMetin || eski.notMetin || null, tarih: new Date().toISOString(), odemeTarihi: x.odemeTarihi || bugunISO(),
-                            yontem: x.yontem || (eski.odendi && eski.yontem) || null, giren: (eski.odendi && eski.giren) || (_oturum && _oturum.ad) || null };
+                            yontem: x.yontem || (eski.odendi && eski.yontem) || null, giren: (eski.odendi && eski.giren) || (_oturum && _oturum.ad) || null,
+                            veliNot: x.veliNot !== undefined ? (x.veliNot || null) : (eski.veliNot || null) }; // 💬 veliye görünen not (yalnız bu alan; notMetin iç not)
                         if(!aidatDB[ad]) aidatDB[ad] = {};
                         aidatDB[ad][x.ay] = kayit;
                         _aidatDuesPut(ad, x.ay, Object.assign({ deviceId: _cihazId }, kayit));
@@ -4310,7 +4311,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=16';
+        const YN_DOSYA = 'yonetim-panel.js?v=17';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {

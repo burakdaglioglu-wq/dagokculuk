@@ -716,7 +716,8 @@
             <label>Ödeme günü<input type="date" id="ap-f-gun" value="${odemeGunu(s.rec) || bugun()}" max="${bugun()}"></label>
             <label>${ayKisa(AP.ay)} tutarı<input type="number" id="ap-f-tutar" value="${s.rec.tutar || ''}" inputmode="numeric" style="width:110px"></label>
             ${yontemHTML(s.rec.yontem || '')}
-            <label class="genis">Not<input type="text" id="ap-f-not" value="${esc(s.rec.notMetin || '')}" placeholder="ör. dekont alındı" maxlength="200"></label>
+            <label class="genis">İç not <small style="font-weight:400;opacity:.75">(yalnız yönetim görür)</small><input type="text" id="ap-f-not" value="${esc(s.rec.notMetin || '')}" placeholder="ör. dekont alındı" maxlength="200"></label>
+            <label class="genis">💬 Veliye not <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" value="${esc(s.rec.veliNot || '')}" placeholder="ör. Kasım ve Aralık için teşekkürler" maxlength="300"></label>
             ${s.rec.giren ? `<span class="ap-pesin">Tahsil eden: <b style="color:var(--ap-yazi);font-size:13px">${esc(s.rec.giren)}</b></span>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;
         let eskiAylar = s.gecAylar.slice().reverse(), buAyBorc = borclu(s), eskiIsaret = !buAyBorc || (AP.acikYer === 'kpi' && AP.kpi === 'kacan');
@@ -726,7 +727,8 @@
             <label>Aylık tutar<input type="number" id="ap-f-tutar" value="${s.aylik || ''}" inputmode="numeric" style="width:110px" oninput="apPesinYaz()"></label>
             <label id="ap-f-ind-l" hidden>İndirim %<input type="number" id="ap-f-ind" value="0" min="0" max="90" inputmode="numeric" style="width:80px" oninput="apPesinYaz()"></label>` : ''}
             ${yontemHTML(AP.sonYontem)}
-            <label class="genis">Not<input type="text" id="ap-f-not" placeholder="ör. dekont alındı" maxlength="200"></label>
+            <label class="genis">İç not <small style="font-weight:400;opacity:.75">(yalnız yönetim görür)</small><input type="text" id="ap-f-not" placeholder="ör. dekont alındı" maxlength="200"></label>
+            <label class="genis">💬 Veliye not <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" placeholder="ör. Teşekkürler, Kasım ödemesi alındı" maxlength="300"></label>
             ${buAyBorc ? `<div class="ap-pesin" id="ap-f-pesin" hidden></div>` : ''}
             ${eskiAylar.length ? `<label class="yan"><input type="checkbox" id="ap-f-eski" ${eskiIsaret ? 'checked' : ''}> Eski borç da ödendi: ${eskiAylar.map(ayKisa).join(', ')} (${tl(s.aylik * eskiAylar.length)})</label>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;
@@ -750,14 +752,14 @@
     window.apFormAc = function (id, yer, mod) { AP.acik = id; AP.acikYer = yer || 'tablo'; AP.acikMod = mod || ''; apListeCiz(); setTimeout(function () { let e = document.getElementById(mod === 'duzelt' ? 'ap-f-tutar' : 'ap-f-not'); if (e) e.focus(); }, 30); };
     window.apFormKaydet = async function (id) {
         let s = bul(id); if (!s) return;
-        let gun = (document.getElementById('ap-f-gun') || {}).value || bugun(), notMetin = ((document.getElementById('ap-f-not') || {}).value || '').trim() || null;
+        let gun = (document.getElementById('ap-f-gun') || {}).value || bugun(), notMetin = ((document.getElementById('ap-f-not') || {}).value || '').trim() || null, veliNot = ((document.getElementById('ap-f-veli') || {}).value || '').trim();
         if (gun > bugun()) return apTost('Ödeme günü gelecekte olamaz.', 'error');
         let tEl = document.getElementById('ap-f-tutar'), tutar = tEl ? (parseInt(tEl.value, 10) || 0) : 0, eski = (document.getElementById('ap-f-eski') || {}).checked;
         let yontem = ((AP.el && AP.el.querySelector('input[name="ap-f-yon"]:checked')) || {}).value || null;
         if (yontem) { AP.sonYontem = yontem; try { localStorage.setItem('ap_son_yontem', yontem); } catch (e) {} }
         if (AP.acikMod === 'duzelt' && s.d === 'odedi') {
             if (!tutar) return apTost('Tutarı yaz.', 'warning');
-            return apKaydet([{ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin, yontem }], s.k.ad + ' · ' + ayAd(AP.ay) + ' ödemesi düzeltildi');
+            return apKaydet([{ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin, yontem, veliNot }], s.k.ad + ' · ' + ayAd(AP.ay) + ' ödemesi düzeltildi');
         }
         let isler = [];
         let p = pesinHesap();
@@ -769,7 +771,7 @@
         } else if (borclu(s)) { if (!tutar) return apTost('Tutarı yaz.', 'warning'); isler.push({ kisi: s.k, ay: AP.ay, tutar, odemeTarihi: gun, notMetin }); }
         if (eski) s.gecAylar.forEach(m => isler.push({ kisi: s.k, ay: m, tutar: s.aylik, odemeTarihi: gun, notMetin: notMetin || ('Geç ödeme · ' + gunGoster(gun)) }));
         if (!isler.length) return apTost('Kaydedilecek ay seçilmedi.', 'warning');
-        isler.forEach(x => { x.yontem = yontem; });
+        isler.forEach((x, i) => { x.yontem = yontem; if (i === 0 && veliNot) x.veliNot = veliNot; }); // 💬 veliye not ilk aya (peşinde tekrarlanmasın)
         await apKaydet(isler, s.k.ad + ' · ' + isler.length + ' ay ödendi olarak kaydedildi');
     };
     window.apToplu = async function () {

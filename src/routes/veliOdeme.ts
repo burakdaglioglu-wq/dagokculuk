@@ -7,14 +7,14 @@ import { turkiyeSaatBilgisi } from "../lib/reminders";
 
 /** Veli ödeme ekranı (2026-11-04, public/veli.html). Kullanıcı kararları: önce DAĞ; giriş = kişiye özel link + kayıtlı telefonun son 4 hanesi;
  * veli kendi çocuğunun TUTARINI görür. Herkese açık /api/veli-rapor ve rapor.html'de tutar YOK kuralı aynen sürer: tutar yalnız buradan çıkar.
- * ASLA dönmez: notMetin (yalnız paket adı ayrıştırılır), giren, telefon, kulübün diğer sporcuları.
+ * ASLA dönmez: notMetin (yalnız paket adı ayrıştırılır; veliye görünen not ayrı alan: veliNot), giren, telefon, kulübün diğer sporcuları.
  * Veliye yanlış borç göstermemek için: son 6 ayda hiç ödemesi olmayan (takip edilmeyen) sporcuda borç gösterilmez, 6 aydan eski ödenmemiş aylar
  * gecikmiş sayılmaz (aidatYoneticiOzet ile aynı fikir; eski aylarda dues kaydı eksik olabilir). */
 const KOD = /^[A-Za-z0-9-]{8,64}$/;
 const OTURUM_MS = 180 * 864e5;
 const NO_STORE = { "cache-control": "no-store" };
 
-interface DuesSatir { ay: string; odendi: number; tutar: number | null; tarih: string | null; notMetin: string | null; odemeTarihi: string | null; yontem: string | null }
+interface DuesSatir { ay: string; odendi: number; tutar: number | null; tarih: string | null; notMetin: string | null; odemeTarihi: string | null; yontem: string | null; veliNot?: string | null }
 interface Sporcu { ad: string; acilTelefon: string | null; veli2Telefon: string | null; aidatMuaf: number; pasif: number; donduruldu: number }
 
 export const son4Al = (t: string | null | undefined): string | null => { const d = String(t || "").replace(/\D/g, ""); return d.length >= 7 ? d.slice(-4) : null; };
@@ -49,6 +49,7 @@ export function veliOdemeHesap(g: { dues: DuesSatir[]; muaf: boolean; kapali: bo
       tutar: od ? (r!.tutar || null) : (d === "bekleniyor" || d === "gelecek" ? (r?.tutar || aylik) : null),
       tarih: od ? tarihAl(r!) : null,
       yontem: od ? (r!.yontem || null) : null,
+      veliNot: od ? (r!.veliNot || null) : null, // 💬 yalnız 'Veliye not' alanı; notMetin (iç not) asla
       paket: od ? (paketAy(r!.notMetin) > 1 ? paketAy(r!.notMetin) : (paketAy(r!.notMetin) ? 1 : 0)) : 0,
     };
   });
@@ -69,7 +70,7 @@ export function veliOdemeHesap(g: { dues: DuesSatir[]; muaf: boolean; kapali: bo
   const yilOdenen = aylar.filter((a) => a.durum === "odendi");
   return {
     muaf: g.muaf, kapali: g.kapali, takipli, bugun: g.bugun, buAy, yil: g.yil, aylar, siradaki, gecikenAy,
-    son: sonOdeme ? { ay: sonOdeme.ay, tutar: sonOdeme.tutar, tarih: tarihAl(sonOdeme), yontem: sonOdeme.yontem || null } : null,
+    son: sonOdeme ? { ay: sonOdeme.ay, tutar: sonOdeme.tutar, tarih: tarihAl(sonOdeme), yontem: sonOdeme.yontem || null, veliNot: sonOdeme.veliNot || null } : null,
     yilAySayisi: yilOdenen.length, yilToplam: yilOdenen.reduce((t, a) => t + (a.tutar || 0), 0),
     ilkYil: Math.min(ilk ? +ilk.slice(0, 4) : +g.bugun.slice(0, 4), +g.bugun.slice(0, 4)), sonYil: +g.bugun.slice(0, 4) + 1,
   };
@@ -124,7 +125,7 @@ export function registerVeliOdemeRoutes(router: Router): void {
     const bugun = turkiyeSaatBilgisi(new Date()).tarih;
     const y = new URL(request.url).searchParams.get("yil") || "";
     const yil = /^\d{4}$/.test(y) ? +y : +bugun.slice(0, 4);
-    const { results } = await env.DB.prepare("SELECT ay, odendi, tutar, tarih, notMetin, odemeTarihi, yontem FROM dues WHERE ad = ?").bind(s.ad).all<DuesSatir>();
+    const { results } = await env.DB.prepare("SELECT ay, odendi, tutar, tarih, notMetin, odemeTarihi, yontem, veliNot FROM dues WHERE ad = ?").bind(s.ad).all<DuesSatir>();
     let varsayilan = 0;
     try { varsayilan = parseInt(JSON.parse((await getMeta(env, "aidat_ayar")) || "{}")?.tutar?.v) || 0; } catch { /* ayar yok */ }
     return json({ ad: s.ad, ...veliOdemeHesap({ dues: results, muaf: !!s.aidatMuaf, kapali: !!s.pasif || !!s.donduruldu, varsayilan, bugun, yil }) }, { headers: NO_STORE });

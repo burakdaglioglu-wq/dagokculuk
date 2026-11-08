@@ -82,6 +82,31 @@
   /* Milo (kulup=milo): sıcak siyah + turkuaz/mercan */
   html[data-kulup="milo"]{ --orange:#FF6B5E; --green:#1FADA0; --gold:#FFC542; }
   @media (prefers-color-scheme: dark){ html[data-kulup="milo"]{ --bg:#0B0A08; --panel:#171410; --panel2:#211D17; --border:#2D2820; --ink:#F5F3EC; --muted:#9C948A; } }
+  /* 💳 ödemeler kartı */
+  .od-kilit{ display:flex; flex-direction:column; gap:6px; margin-top:14px; padding:12px; border-radius:14px; background:var(--panel2); }
+  .od-giris{ display:flex; gap:8px; margin-top:4px; }
+  .od-giris input{ flex:1; min-width:0; min-height:48px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--ink); font-size:22px; font-weight:800; letter-spacing:.3em; text-align:center; font-variant-numeric:tabular-nums; }
+  .od-giris button{ min-height:48px; padding:0 20px; border:0; border-radius:12px; background:var(--orange); color:#fff; font-weight:800; font-size:16px; cursor:pointer; }
+  .od-giris button:disabled{ opacity:.6; }
+  .od-hata{ color:var(--red); font-size:13px; font-weight:700; }
+  .od-bu{ display:flex; align-items:center; gap:14px; }
+  .od-bu .rozet{ flex:0 0 auto; width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900; background:var(--panel2); color:var(--muted); }
+  .od-bu.ok .rozet{ background:var(--green); color:#fff; }
+  .od-bu small{ display:block; color:var(--muted); font-size:12px; font-weight:700; }
+  .od-bu b{ display:block; font-size:28px; font-weight:900; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .od-not{ margin-top:12px; padding:12px 14px; border-radius:14px 14px 14px 4px; background:var(--panel2); font-size:15px; line-height:1.45; border-left:3px solid var(--orange); }
+  .od-not span{ display:block; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--orange); margin-bottom:3px; }
+  .od-sira{ margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--panel2); font-size:14px; }
+  .od-sira.gec{ background:var(--gecmedi); color:var(--red); }
+  .od-liste{ display:flex; flex-direction:column; gap:6px; }
+  .od-liste > div{ display:flex; gap:12px; align-items:flex-start; background:var(--panel2); border-radius:12px; padding:10px 12px; }
+  .od-ay{ font-weight:900; min-width:34px; color:var(--muted); }
+  .od-orta{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .od-orta b{ font-variant-numeric:tabular-nums; }
+  .od-orta em{ font-style:normal; font-size:13px; color:var(--ink); }
+  .od-alt{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; font-size:13px; }
+  .od-alt a{ color:var(--orange); font-weight:800; text-decoration:none; }
+  .od-alt button{ background:none; border:0; color:var(--muted); font-size:12px; text-decoration:underline; cursor:pointer; padding:6px 0; }
   .beceri{ display:flex; flex-direction:column; gap:6px; }
   .beceri div{ display:flex; justify-content:space-between; gap:8px; background:var(--panel2); border-radius:10px; padding:8px 10px; font-size:13px; }
   .beceri em{ font-style:normal; font-weight:800; font-size:12px; }
@@ -109,7 +134,70 @@
     fetch(API + encodeURIComponent(kod) + '?ay=' + ay).then(r => { if (r.status === 404) throw 'kod'; if (!r.ok) throw 'ag'; return r.json(); })
       .then(ciz).catch(e => { sar.innerHTML = '<div class="kart hata">' + (e === 'kod' ? 'Bu link artık geçerli değil. Lütfen kulüpten yeni link isteyin.' : 'Rapor yüklenemedi — internet bağlantınızı kontrol edip sayfayı yenileyin.') + '</div>'; });
   }
+  // 💳 ÖDEMELER (2026-11-09, kullanıcı: "veli ne kadar vermiş, verdiğindeki not gözüksün, yöneticinin yazdığı"). Bu sayfa herkese açık
+  // linkle açılır: tutar /api/veli-rapor'dan ASLA gelmez. Tutar + tarih + yöntem + "Veliye not" telefonun son 4 hanesiyle /api/veli-odeme'den
+  // gelir — veli.html ile AYNI oturum anahtarı (dag_veli_<kod16>): birinde doğrulayan öbüründe tekrar sorulmaz. İç not (notMetin) hiç gelmez.
+  const AYK = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'], AYU = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const VANAHTAR = 'dag_veli_' + String(kod || '').slice(0, 16);
+  const tokenOku = () => { try { return localStorage.getItem(VANAHTAR) || sessionStorage.getItem(VANAHTAR) || ''; } catch (e) { return ''; } };
+  const tokenYaz = t => { try { localStorage.setItem(VANAHTAR, t); } catch (e) { try { sessionStorage.setItem(VANAHTAR, t); } catch (e2) { } } };
+  const tokenSil = () => { try { localStorage.removeItem(VANAHTAR); sessionStorage.removeItem(VANAHTAR); } catch (e) { } };
+  const tl = v => (Math.round(v) || 0).toLocaleString('tr-TR') + ' ₺';
+  const tarihYaz = t => { if (!t) return ''; let [yy, mm, dd] = t.split('-').map(Number); return dd + ' ' + AYK[mm - 1] + (yy !== bugun.getFullYear() ? ' ' + yy : ''); };
+  const yontemYaz = y => ({ nakit: 'Nakit', iban: 'Havale / EFT', kart: 'Kart' })[y] || '';
+  let D = null, O = { durum: 'bos', veri: null, yil: null, telefonVar: true, hata: '' };
+  function odemeKilitliHTML() {
+    let a = D.aidat, ayAdi = AYU[+ay.slice(5, 7) - 1] + ' ' + ay.slice(0, 4);
+    let ust = `<div class="etiket">Ödemeler</div><div class="aidat ${a.durum === 'odendi' ? 'ok' : 'bek'}"><span class="rozet">${a.durum === 'odendi' ? '✓' : '…'}</span><div><b>${esc(ayAdi)}: ${a.durum === 'odendi' ? 'ödendi' : 'ödemesi henüz görünmüyor'}</b><div class="alt">${a.durum === 'odendi' ? (a.paket ? esc(a.paket.replace(/^📦\s*/, '')) : 'Teşekkür ederiz.') : 'Ödediyseniz kulübe haber vermeniz yeterli; kayıt güncellenecek.'}</div></div></div>`;
+    let serit = D.aidatGecmis && D.aidatGecmis.length > 1 ? `<div class="aidat-12" aria-label="Son aylarda aidat durumu">${D.aidatGecmis.map(x => `<span class="${x.durum}"><b>${x.durum === 'odendi' ? '✓' : x.durum === 'dondu' ? '❄' : '…'}</b>${AYK[+x.ay.slice(5, 7) - 1]}</span>`).join('')}</div>` : '';
+    let kilit = !O.telefonVar ? `<div class="od-kilit"><b>🔒 Tutarlar ve kulübün notu</b><span class="alt">Kulüpte kayıtlı telefon numaranız yok. Görmek için kulübe numaranızı bildirin.</span></div>`
+      : `<form class="od-kilit" onsubmit="event.preventDefault(); __odGiris()"><b>🔒 Ödenen tutarları ve kulübün notunu görün</b><span class="alt">Kulüpte kayıtlı telefonunuzun <b>son 4 hanesini</b> girin. Bu cihazda hatırlanır.</span>
+        <div class="od-giris"><input id="od-son4" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="• • • •" aria-label="Telefonun son 4 hanesi"><button type="submit" ${O.durum === 'yukleniyor' ? 'disabled' : ''}>${O.durum === 'yukleniyor' ? '…' : 'Göster'}</button></div>${O.hata ? `<span class="od-hata">${esc(O.hata)}</span>` : ''}</form>`;
+    return ust + serit + kilit;
+  }
+  function odemeAcikHTML() {
+    let v = O.veri, a = v.aylar.find(x => x.ay === ay) || null, ayAdi = AYU[+ay.slice(5, 7) - 1];
+    let not = n => n ? `<div class="od-not"><span>💬 Kulüpten not</span>${esc(n)}</div>` : '';
+    let bu;
+    if (a && a.durum === 'odendi') bu = `<div class="od-bu ok"><span class="rozet">✓</span><div><small>${esc(ayAdi)} ödendi</small><b>${a.tutar ? tl(a.tutar) : 'Ödendi'}</b><span class="alt">${[tarihYaz(a.tarih), yontemYaz(a.yontem), a.paket > 1 ? a.paket + ' aylık paket' : ''].filter(Boolean).join(' · ')}</span></div></div>${not(a.veliNot)}`;
+    else if (a && a.durum === 'dondu') bu = `<div class="od-bu"><span class="rozet">❄</span><div><small>${esc(ayAdi)}</small><b>Dondurulmuş</b><span class="alt">Bu ay aidat alınmıyor.</span></div></div>`;
+    else if (v.muaf) bu = `<div class="od-bu"><span class="rozet">★</span><div><small>Aidat</small><b>Muaf</b></div></div>`;
+    else bu = `<div class="od-bu bek"><span class="rozet">…</span><div><small>${esc(ayAdi)}</small><b>${a && a.tutar ? tl(a.tutar) : 'Ödemesi görünmüyor'}</b><span class="alt">${a && a.durum === 'bekleniyor' ? 'Ödemesi henüz görünmüyor. Ödediyseniz kulübe haber verin.' : a && a.durum === 'gelecek' ? 'Henüz zamanı gelmedi.' : 'Kayıt yok.'}</span></div></div>`;
+    let sira = v.siradaki && !(a && a.ay === v.siradaki.ay && a.durum !== 'odendi') ? `<div class="od-sira ${v.siradaki.gecikmis ? 'gec' : ''}">${v.siradaki.gecikmis ? '⚠️ Gecikmiş' : '📅 Sıradaki'}: <b>${AYU[+v.siradaki.ay.slice(5, 7) - 1]}</b>${v.siradaki.tutar ? ' · ' + tl(v.siradaki.tutar) : ''}${!v.siradaki.gecikmis && v.siradaki.gun > 0 ? ' · ' + v.siradaki.gun + ' gün sonra' : ''}</div>` : '';
+    let gecmis = v.aylar.filter(x => x.durum === 'odendi' && x.ay !== ay).sort((x, y) => y.ay.localeCompare(x.ay)).slice(0, 4);
+    let liste = gecmis.length ? `<div class="etiket" style="margin:14px 0 6px">${v.yil} · önceki ödemeler</div><div class="od-liste">${gecmis.map(x => `<div><span class="od-ay">${AYK[+x.ay.slice(5, 7) - 1]}</span><span class="od-orta"><b>${x.tutar ? tl(x.tutar) : '✓'}</b><span class="alt">${[tarihYaz(x.tarih), yontemYaz(x.yontem)].filter(Boolean).join(' · ')}</span>${x.veliNot ? `<em>💬 ${esc(x.veliNot)}</em>` : ''}</span></div>`).join('')}</div>` : '';
+    let ozet = v.yilAySayisi ? `<div class="alt" style="margin-top:10px">${v.yil} toplamı: <b style="color:var(--ink)">${v.yilAySayisi} ay · ${tl(v.yilToplam)}</b></div>` : '';
+    return `<div class="etiket">Ödemeler</div>${bu}${sira}${liste}${ozet}<div class="od-alt"><a href="/veli?kod=${encodeURIComponent(kod)}">Tüm ödemeler ve 12 ay takvimi →</a><button type="button" onclick="__odCikis()">Bu cihazda gizle</button></div>`;
+  }
+  function odemeKartHTML() {
+    if (!D || !D.aidat) return '';
+    if (O.durum === 'acik' && O.veri && O.yil === +ay.slice(0, 4)) return odemeAcikHTML();
+    return odemeKilitliHTML();
+  }
+  function odemeYaz() { let k = document.getElementById('odeme-kart'); if (k) k.innerHTML = odemeKartHTML(); }
+  function odemeYukle() {
+    let t = tokenOku(), yil = +ay.slice(0, 4);
+    if (!t) { O.durum = 'kilitli'; odemeYaz(); fetch('/api/veli-odeme/bilgi/' + encodeURIComponent(kod)).then(r => r.ok ? r.json() : null).then(b => { if (b && b.telefonVar === false) { O.telefonVar = false; odemeYaz(); } }).catch(() => { }); return; }
+    if (O.durum === 'acik' && O.yil === yil) return odemeYaz();
+    fetch('/api/veli-odeme?yil=' + yil, { headers: { 'x-veli-oturum': t } }).then(r => { if (r.status === 401) { tokenSil(); throw 'oturum'; } if (!r.ok) throw 'ag'; return r.json(); })
+      .then(v => { O.durum = 'acik'; O.veri = v; O.yil = yil; odemeYaz(); })
+      .catch(() => { O.durum = 'kilitli'; odemeYaz(); });
+  }
+  window.__odGiris = function () {
+    let i = document.getElementById('od-son4'), s4 = (i && i.value || '').replace(/\D/g, '');
+    if (s4.length !== 4) { O.hata = 'Telefonunuzun son 4 hanesini yazın.'; return odemeYaz(); }
+    O.durum = 'yukleniyor'; O.hata = ''; odemeYaz();
+    fetch('/api/veli-odeme/giris', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kod: kod, son4: s4 }) })
+      .then(r => r.json().then(b => ({ r, b })))
+      .then(({ r, b }) => {
+        if (b && b.ok && b.token) { tokenYaz(b.token); O.durum = 'bos'; return odemeYukle(); }
+        O.durum = 'kilitli'; O.hata = b && b.sebep === 'kilit' ? 'Çok fazla deneme yapıldı. ' + Math.ceil((b.kalanMs || 60000) / 60000) + ' dakika sonra tekrar deneyin.' : 'Numara tutmadı. Kulüpte kayıtlı telefonun son 4 hanesini girin.'; odemeYaz();
+      }).catch(() => { O.durum = 'kilitli'; O.hata = 'Bağlantı kurulamadı, tekrar deneyin.'; odemeYaz(); });
+  };
+  window.__odCikis = function () { let t = tokenOku(); if (t) fetch('/api/veli-odeme/cikis', { method: 'POST', headers: { 'x-veli-oturum': t } }).catch(() => { }); tokenSil(); O = { durum: 'kilitli', veri: null, yil: null, telefonVar: true, hata: '' }; odemeYaz(); };
+
   function ciz(d) {
+    D = d;
     let [y, m] = ay.split('-').map(Number), gunSay = new Date(y, m, 0).getDate(), bas = new Date(y, m - 1, 1);
     let ayAdi = bas.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
     let geldi = {}, gelmedi = {};
@@ -142,17 +230,18 @@
         <div class="sayi"><small>Haftada</small><b>${d.dersler.reduce((a, s) => a + s.gunler.length, 0)}</b><span>ders günü</span></div>` : `<div class="sayi"><small>Atılan seri</small><b>${seriSay}</b><span>${okTop} ok</span></div>
         <div class="sayi"><small>Seri ortalaması</small><b>${seriSay ? ort.toFixed(1).replace('.', ',') : '—'}</b><span>${seriSay ? 'en iyi seri ' + enIyi : 'henüz seri yok'}</span></div>`}
       </div>
+      ${!milo && d.aidat ? `<div class="kart" id="odeme-kart">${odemeKartHTML()}</div>` : ''}
       <div class="kart"><div class="etiket">Devam takvimi</div>
         <div class="takvim">${['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map(g => `<span class="b">${g}</span>`).join('')}${'<span class="gun bos"></span>'.repeat(bosluk)}${gunler.map(g => {
           let c = geldi[g.t] ? 'geldi' : gelmedi[g.t] ? 'gelmedi' : g.iptalOldu ? 'iptal' : (g.dersVar && g.t <= bugunIso ? 'dersgunu' : '');
           return `<span class="gun ${c}${g.t === bugunIso ? ' bugun' : ''}" title="${g.dt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}">${g.dt.getDate()}${geldi[g.t] && geldi[g.t] !== true ? `<small>${esc(geldi[g.t])}</small>` : ''}</span>`; }).join('')}</div>
         <div class="lej"><span><i style="background:var(--green)"></i>geldi</span><span><i style="background:var(--gecmedi); box-shadow:inset 0 0 0 1.5px var(--red)"></i>gelmedi</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--muted)"></i>ders günü</span><span><i style="background:var(--gunbos); opacity:.6"></i>iptal / ders yok</span></div></div>
       ${hk.length ? `<div class="kart"><div class="etiket">Haftalık seri ortalaması</div><div class="grafik">${hk.map(k => { let v = hafta[k].reduce((a, b) => a + b, 0) / hafta[k].length; return `<div><div class="sut" style="height:${Math.max(4, v / hmax * 100)}%"><em>${v.toFixed(0)}</em></div><small>${new Date(k + 'T12:00:00').getDate()} ${new Date(k + 'T12:00:00').toLocaleDateString('tr-TR', { month: 'short' })}</small></div>`; }).join('')}</div></div>` : ''}
-      ${!milo && d.aidat ? `<div class="kart"><div class="etiket">Aidat · ${esc(ayAdi)}</div><div class="aidat ${d.aidat.durum === 'odendi' ? 'ok' : 'bek'}"><span class="rozet">${d.aidat.durum === 'odendi' ? '✓' : '…'}</span><div><b>${d.aidat.durum === 'odendi' ? 'Ödendi' : 'Ödemesi henüz görünmüyor'}</b><div class="alt">${d.aidat.durum === 'odendi' ? (d.aidat.paket ? esc(d.aidat.paket.replace(/^📦\s*/, '')) : 'Teşekkür ederiz.') : 'Ödediyseniz kulübe haber vermeniz yeterli; kayıt güncellenecek.'}</div></div></div>${d.aidatGecmis && d.aidatGecmis.length > 1 ? `<div class="aidat-12" aria-label="Son aylarda aidat durumu">${d.aidatGecmis.map(x => `<span class="${x.durum}" title="${x.durum === 'odendi' ? 'Ödendi' : x.durum === 'dondu' ? 'Dondurulmuş' : 'Ödemesi görünmüyor'}"><b>${x.durum === 'odendi' ? '✓' : x.durum === 'dondu' ? '❄' : '…'}</b>${['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][+x.ay.slice(5, 7) - 1]}</span>`).join('')}</div><div class="alt" style="margin-top:6px">✓ ödendi · … ödemesi görünmüyor${d.aidatGecmis.some(x => x.durum === 'dondu') ? ' · ❄ dondurulmuş' : ''}</div>` : ''}</div>` : ''}
       ${!milo && (d.gelisim || []).some(x => x.gun) ? (() => { let gm = Math.max(1, ...d.gelisim.map(x => x.gun)); return `<div class="kart"><div class="etiket">Son 6 ay · geldiği gün ve ok ortalaması</div><div class="alti" style="height:150px">${d.gelisim.map(x => `<div style="height:100%; justify-content:flex-end"><b>${x.gun}</b><div class="sut${x.ay === ay ? ' bu' : ''}" style="height:${Math.max(3, x.gun / gm * 80)}%"></div><small>${new Date(x.ay + '-15T12:00:00').toLocaleDateString('tr-TR', { month: 'short' })}</small><em>${x.okOrt != null ? String(x.okOrt).replace('.', ',') : '—'}</em></div>`).join('')}</div><div class="alt" style="margin-top:8px">Sütun: o ay antrenmana geldiği gün sayısı. Alttaki sayı: ok başına ortalama puan.</div></div>`; })() : ''}
       ${!milo && (d.formLab || []).length ? `<div class="kart"><div class="etiket">Form Lab karnesi · video analizi</div><div class="fl">${d.formLab.slice(0, 3).map((r, i) => { let o = d.formLab[i + 1], fk = o ? r.puan - o.puan : null; return `<div><span class="p">${r.puan}<span>/100</span></span><span><b>${esc(r.tarih.split('-').reverse().join('.'))}</b> · ${r.n} atış${fk != null && fk !== 0 ? ` · <span style="color:${fk > 0 ? 'var(--green)' : 'var(--red)'}; font-weight:800">${fk > 0 ? '▲' : '▼'} ${Math.abs(fk)}</span>` : ''}<br><span class="alt">${r.bulgular.length ? 'Üzerinde çalışılan: ' + r.bulgular.map(esc).join(', ') : 'Belirgin bir hata görülmedi'}</span></span></div>`; }).join('')}</div><div class="alt" style="margin-top:8px">Puan atışların ne kadar aynı yapıldığını (tutarlılık) gösterir; skor değildir.</div></div>` : ''}
       ${d.dersler.length ? `<div class="kart"><div class="etiket">Kayıtlı olduğu dersler</div><div class="dersler">${d.dersler.map(s => `<div class="ders"><span class="saat">${esc(s.baslangicSaat)}</span><span><b>${s.gunler.map(g => GUN[g]).join(', ')}</b> · ${esc(s.baslangicSaat)}–${esc(s.bitisSaat)}${s.iptaller.length ? `<br><span class="alt">Bu ay ${s.iptaller.length} ders iptal edildi</span>` : ''}</span></div>`).join('')}</div></div>` : ''}
       <div class="alt-bilgi">Bu sayfa yalnızca bu linke sahip kişiler içindir · ${KULUP}</div>`;
+    if (!milo && d.aidat) odemeYukle();
   }
   window.__ay = f => { let yeni = ayKaydir(ay, f); if (yeni > buAy) return; ay = yeni; history.replaceState(null, '', '?' + (milo ? 'kulup=milo&' : '') + 'kod=' + encodeURIComponent(kod) + '&ay=' + ay); sar.innerHTML = '<div class="kart bos-mesaj">Yükleniyor…</div>'; yukle(); };
   yukle();

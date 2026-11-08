@@ -23,7 +23,9 @@ export default async function ({ log }) {
     const koy = (a, m, g) => api(`/api/dues/${encodeURIComponent(a)}/${m}`, { method: 'PUT', body: JSON.stringify({ tarih: damga, ...g }) });
     await koy(AD, ay(-3), { odendi: true, tutar: 1400, odemeTarihi: ay(-3) + '-05', yontem: 'kart', notMetin: 'GIZLI-NOT-A' });
     await koy(AD, ay(-2), { odendi: false, notMetin: '❄️ dondu' });
-    await koy(AD, ay(-1), { odendi: true, tutar: 1500, odemeTarihi: ay(-1) + '-02', yontem: 'iban' });
+    await koy(AD, ay(-1), { odendi: true, tutar: 1500, odemeTarihi: ay(-1) + '-02', yontem: 'iban', veliNot: 'Teşekkürler, EFT alındı' });
+    // eski sürüm cihaz / master senkronu veliNot göndermeden yazar: veliye not KORUNMALI (2026-11-09)
+    await api(`/api/dues/${encodeURIComponent(AD)}/${ay(-1)}`, { method: 'PUT', body: JSON.stringify({ tarih: new Date(Date.now() + 1000).toISOString(), odendi: true, tutar: 1500, odemeTarihi: ay(-1) + '-02', yontem: 'iban' }) });
     await koy(AD2, ay(-1), { odendi: true, tutar: 9999, odemeTarihi: ay(-1) + '-01' });
     const kod = (await api(`/api/athletes/yildizlar/${encodeURIComponent(AD)}/izle-kodu`, { method: 'POST' })).d.kod;
     const kod2 = (await api(`/api/athletes/yildizlar/${encodeURIComponent(AD2)}/izle-kodu`, { method: 'POST' })).d.kod;
@@ -46,6 +48,7 @@ export default async function ({ log }) {
     const metin = JSON.stringify(r.d);
     for (const yok of ['GIZLI-NOT-A', '9999', '555', '7788', 'notMetin', 'giren', 'acilTelefon']) dogrula(!metin.includes(yok), 'sızıntı: ' + yok);
     esit(r.d.son.tutar, 1500, 'son ödeme tutarı'); esit(r.d.son.tarih, ay(-1) + '-02', 'son ödeme tarihi'); esit(r.d.son.yontem, 'iban', 'son ödeme yöntemi');
+    esit(r.d.son.veliNot, 'Teşekkürler, EFT alındı', 'veliye not dönmeli (ve veliNot göndermeyen yazım silmemeli)');
     esit(r.d.siradaki.ay, ay(0), 'sıradaki bu ay olmalı'); esit(r.d.siradaki.tutar, 1500, 'sıradaki tutar son ödemeden gelmeli'); esit(r.d.gecikenAy, 0, 'dondurulan ay gecikmiş sayılmamalı');
 
     // eski yılda öncesi yok, dondurulan ay doğru: ay(-2) aynı yıldaysa durum dondu
@@ -77,6 +80,29 @@ export default async function ({ log }) {
         const kucuk = await p.evaluate(() => [...document.querySelectorAll('#v button, #v a')].filter((b) => b.getBoundingClientRect().height < 44).length);
         esit(kucuk, 0, 'dokunma alanı 44 px altında');
         await p.reload(); await p.waitForSelector('#izgara'); // hatırlanır
+        esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
+      } finally { await ctx.close(); }
+    }
+
+    // 💳 rapor sayfası (2026-11-09): tutar ancak son 4 haneyle; oturum veli.html ile ortak
+    {
+      const { ctx, p, hatalar } = await sayfaAc({ girisli: false, genislik: 390, yukseklik: 844 });
+      try {
+        await p.goto(`${B}/rapor.html?kod=${kod}&ay=${ay(-1)}`);
+        await p.waitForSelector('#odeme-kart #od-son4');
+        dogrula(!(await p.locator('#odeme-kart').innerText()).includes('1.500'), 'doğrulamadan tutar görünmemeli');
+        await p.fill('#od-son4', '1234'); await p.click('#odeme-kart button[type=submit]');
+        await p.waitForFunction(() => (document.querySelector('.od-hata') || {}).textContent);
+        await p.fill('#od-son4', '2233'); await p.click('#odeme-kart button[type=submit]');
+        await p.waitForSelector('#odeme-kart .od-bu');
+        const kart = await p.locator('#odeme-kart').innerText();
+        dogrula(kart.includes('1.500') && kart.includes('Havale'), 'kartta tutar/yöntem yok: ' + kart.slice(0, 120));
+        dogrula(kart.includes('Teşekkürler, EFT alındı'), 'kartta veliye not yok');
+        dogrula(!kart.includes('GIZLI-NOT-A'), 'iç not sızdı');
+        dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'rapor 390 px yana taşma');
+        await p.goto(`${B}/veli.html?kod=${kod}`); await p.waitForSelector('#izgara', { timeout: 15000 }); // aynı oturum: tekrar sorulmaz
+        await p.locator(`.ay[data-ay="${ay(-1)}"]`).click();
+        dogrula((await p.locator('#detay').innerText()).includes('Teşekkürler, EFT alındı'), 'veli.html ayrıntısında veliye not yok');
         esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
       } finally { await ctx.close(); }
     }
