@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DAĞ SK</string>
+    <string name="title_activity_main">DAĞ SK</string>
+    <string name="package_name">com.dagsporkulubu.app</string>
+    <string name="custom_url_scheme">com.dagsporkulubu.app</string>
+</resources>

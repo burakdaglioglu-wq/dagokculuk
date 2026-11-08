@@ -1,0 +1,19 @@
+{
+  "appId": "com.dagsporkulubu.app",
+  "appName": "DAĞ SK",
+  "webDir": "www",
+  "server": {
+    "url": "https://dagsporkulubu.com/app",
+    "allowNavigation": ["dagsporkulubu.com", "*.dagsporkulubu.com"],
+    "errorPath": "index.html"
+  },
+  "backgroundColor": "#160804",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#160804",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "backgroundColor": "#160804"
+  }
+}

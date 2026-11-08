@@ -10,3 +10,9 @@ _yerel-gorseller/
 # Reklam malzemesi (uretilmis gorsel/video) - commit edilmez
 _reklam/
 tests/e2e/_reklam-*.mjs
+
+# Android imza anahtari - ASLA commit edilmez; kaybolursa Android uygulamasi guncellenemez (yedekle)
+mobil/imza/
+mobil/node_modules/
+mobil/android/app/build/
+mobil/android/.gradle/

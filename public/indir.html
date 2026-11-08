@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DAĞ SK Uygulamasını İndir</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#160804">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+/* İndirme sayfası (2026-11-09). Uygulama App Store/Play'de LİSTELENMEZ: iPhone → TestFlight açık linki, Android → APK,
+   ikisi de olmazsa Ana Ekrana Ekle. Linkler aşağıdaki LINKLER nesnesinde; boşsa düğme "Çok yakında" olur. */
+:root { --zemin: #160804; --kart: #24130a; --cizgi: #3a2316; --yazi: #fff1e6; --soluk: #c2a998; --turuncu: #ff7a2e; --yesil: #34d07f; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--zemin); color: var(--yazi); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.sar { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+.bas { display: flex; align-items: center; gap: 14px; }
+.bas img { width: 64px; height: 64px; border-radius: 16px; }
+.bas h1 { margin: 0; font-size: 26px; line-height: 1.1; font-weight: 900; }
+.bas p { margin: 2px 0 0; color: var(--soluk); font-size: 14px; }
+.kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 20px; padding: 18px; display: grid; gap: 12px; }
+.kart.one { border: 2px solid var(--turuncu); }
+.kart h2 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.rozet { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; background: var(--turuncu); color: #fff; border-radius: 999px; padding: 2px 9px; }
+ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: a; }
+ol li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; counter-increment: a; }
+ol li::before { content: counter(a); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #3a2316; font-weight: 800; }
+.dugme { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border-radius: 14px; background: var(--turuncu); color: #fff; font-weight: 800; font-size: 17px; text-decoration: none; margin-top: 8px; }
+.dugme.ikincil { background: transparent; border: 1px solid var(--cizgi); color: var(--yazi); }
+.dugme[aria-disabled="true"] { background: #3a2316; color: var(--soluk); pointer-events: none; }
+.not { color: var(--soluk); font-size: 14px; margin: 0; }
+.ana-ekran svg { vertical-align: -4px; }
+footer { color: var(--soluk); font-size: 13px; text-align: center; }
+a { color: var(--turuncu); }
+</style>
+</head>
+<body>
+<div class="sar">
+  <header class="bas">
+    <img src="/ikon-192.png" alt="">
+    <div><h1>DAĞ SK uygulaması</h1><p>Antrenörler, sporcular ve veliler için · telefon ve tablet</p></div>
+  </header>
+
+  <section class="kart" id="ios" aria-labelledby="ios-bas">
+    <h2 id="ios-bas">📱 iPhone ve iPad</h2>
+    <ol>
+      <li><div><b>TestFlight'ı kur.</b> Apple'ın ücretsiz uygulaması; DAĞ SK onun üzerinden kurulur.<a class="dugme ikincil" href="https://apps.apple.com/app/testflight/id899247664">App Store'da TestFlight</a></div></li>
+      <li><div><b>DAĞ SK'yı kur.</b> TestFlight kurulduktan sonra bu düğmeye dokun, açılan sayfada <b>Kabul Et</b> ve <b>Yükle</b> de.<a class="dugme" id="ios-link" href="#">DAĞ SK'yı iPhone'a kur</a></div></li>
+      <li><div><b>Aç ve giriş yap.</b> Uygulama ana ekranda DAĞ SK simgesiyle durur.</div></li>
+    </ol>
+    <p class="not">Uygulama App Store aramasında çıkmaz; yalnızca bu sayfadan kurulur. Güncellemeler TestFlight'tan kendiliğinden gelir.</p>
+  </section>
+
+  <section class="kart" id="android" aria-labelledby="and-bas">
+    <h2 id="and-bas">🤖 Android</h2>
+    <ol>
+      <li><div><b>Uygulama dosyasını indir.</b><a class="dugme" id="apk-link" href="#">DAĞ SK'yı Android'e indir</a></div></li>
+      <li><div><b>İndirilen dosyaya dokun.</b> Telefon "bilinmeyen kaynak" izni isterse <b>Ayarlar › Bu kaynağa izin ver</b>'i aç, geri dön.</div></li>
+      <li><div><b>Yükle</b>'ye bas, sonra aç ve giriş yap.</div></li>
+    </ol>
+    <p class="not">Google Play Protect uyarı gösterirse <b>Yine de yükle</b> de. Dosya kulübümüzün kendi imzasını taşır.</p>
+  </section>
+
+  <section class="kart ana-ekran" aria-labelledby="pwa-bas">
+    <h2 id="pwa-bas">⚡ Kurmadan hemen kullan</h2>
+    <p style="margin:0">Uygulama hazır olana kadar, ya da kuramıyorsan, siteyi ana ekrana ekle: uygulama gibi tam ekran açılır.</p>
+    <ol>
+      <li><div><b>iPhone:</b> Safari'de <a href="/app">dagsporkulubu.com/app</a> adresini aç › alttaki <b>Paylaş</b> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8"/></svg> › <b>Ana Ekrana Ekle</b>.</div></li>
+      <li><div><b>Android:</b> Chrome'da aynı adresi aç › sağ üstteki <b>⋮</b> › <b>Ana ekrana ekle</b> ya da <b>Uygulamayı yükle</b>.</div></li>
+    </ol>
+    <a class="dugme ikincil" href="/app">Uygulamayı tarayıcıda aç</a>
+  </section>
+
+  <footer>Sorun yaşarsan antrenörüne yaz. · <a href="/">dagsporkulubu.com</a></footer>
+</div>
+<script>
+(function () {
+  // Linkler gelince yalnız burası değişir. Boş link → düğme "Çok yakında".
+  var LINKLER = {
+    ios: '',      // TestFlight açık linki, ör. https://testflight.apple.com/join/XXXXXXXX
+    android: ''   // APK adresi, ör. /indir/dagsk.apk
+  };
+  function bagla(id, url) {
+    var a = document.getElementById(id); if (!a) return;
+    if (url) { a.href = url; } else { a.textContent = 'Çok yakında'; a.setAttribute('aria-disabled', 'true'); a.removeAttribute('href'); }
+  }
+  bagla('ios-link', LINKLER.ios); bagla('apk-link', LINKLER.android);
+  // Telefonun türüne göre önce onun kartı (iPadOS masaüstü gibi görünür: dokunmatik Mac = iPad)
+  var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), and = /Android/.test(ua);
+  var ilk = ios ? 'ios' : and ? 'android' : null;
+  if (ilk) { var k = document.getElementById(ilk); k.classList.add('one'); k.querySelector('h2').insertAdjacentHTML('beforeend', '<span class="rozet">Senin telefonun</span>'); k.parentNode.insertBefore(k, k.parentNode.children[1]); }
+})();
+</script>
+</body>
+</html>

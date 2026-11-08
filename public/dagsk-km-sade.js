@@ -87,6 +87,32 @@ function ksUst(geriFn, etiket, sagHTML) {
 // ---------------------------------------------------------------- yeni özellikler (v375)
 const KS_YENILER = [
     {
+        id: 'cokaci', ad: 'Çok Açılı Kamera', ne: 'Dört telefona kadar aynı anda çeker; bilgisayarda önden, yandan, arkadan ve hedef görüntüsü yan yana görünür.',
+        ikon: '<rect x="3" y="5" width="8" height="6" rx="1"/><rect x="13" y="5" width="8" height="6" rx="1"/><rect x="3" y="13" width="8" height="6" rx="1"/><rect x="13" y="13" width="8" height="6" rx="1"/>',
+        ozellik: [
+            ['Dört açı birden', 'Her açıya ayrı telefon bağlanır; bir açıya dokununca büyür.'],
+            ['Gecikmeli izleme', '3, 5, 8 ya da 10 sn geriden gösterir: sporcu atar, döner, kendini dört açıdan görür.'],
+            ['Tekrar', 'Son 12 saniyeyi dört açıdan aynı anda, istersen yavaş ya da kare kare oynatır.'],
+            ['Bir kez kur', "Telefon QR'ı bir kez okutur; sonraki derslerde kamera simgesinden açılınca aynı açıya kendiliğinden bağlanır."]
+        ],
+        adim: ["Bilgisayarda Çok Açılı Kamera'yı aç.", "Her açıda Telefon bağla'ya bas, o telefonla QR'ı okut.", 'Telefonları sehpaya koy; Canlı ya da gecikme seç.'],
+        not: "Telefonlar ve bilgisayar aynı Wi-Fi'de olmalı. Video kaydedilmez. Henüz salonda dört telefonla denenmedi.",
+        ac: "Çok Açılı Kamera'yı aç"
+    },
+    {
+        id: 'okhizi', ad: 'Ok Hızı', ne: 'Telefon ipin bırakılma sesini ve okun hedefe çarpma sesini duyar, okun hızını km/s olarak söyler.',
+        ikon: '<path d="M3 12h13"/><path d="M13 8l4 4-4 4"/><path d="M3 8h4M3 16h4"/><circle cx="20" cy="12" r="1.6"/>',
+        ozellik: [
+            ['Ek alet yok', 'Kronograf gerekmez, telefonun mikrofonu yeter.'],
+            ['Rekor', 'Her sporcunun mesafe başına en hızlı oku saklanır, sporcu kartında görünür.'],
+            ['Videodan ölç', 'Telefonun kamerasıyla çekilmiş atış videosunu seçersen sesinden hızı bulur.'],
+            ['Elle düzelt', 'Çarpma yanlış duyulduysa ses dalgasında çarpma anına dokun, hız yeniden hesaplanır.']
+        ],
+        adim: ['Derse eklenen sporculardan birini ve hedef mesafesini seç.', 'Telefonu atış çizgisine, sporcunun yanına koy, Dinlemeye başla\'ya bas.', 'Sporcu atsın; hız ekrana büyük yazılır. Bitince Bitir\'e bas.'],
+        not: 'Salon sessiz olmalı; yan hedeflerden gelen sesler karışabilir. Henüz salonda denenmedi; ilk derslerde sonuçları kontrol et.',
+        ac: 'Ok Hızı\'nı aç'
+    },
+    {
         id: 'atisolcer', ad: 'Atış Ölçer', ne: 'Sporcunun nişanda ne kadar kaldığını ve ne kadar oynadığını telefonun hareket sensörüyle ölçer.',
         ikon: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/><path d="M3 8c1.5 1 1.5 3 0 4M21 8c-1.5 1-1.5 3 0 4"/>',
         ozellik: [

@@ -251,6 +251,8 @@ function yzSecimCiz() {
         + '<span class="yz-tur-acik">2v2 · 3v3 · 4v4 · 5v5 — takımlara isim ver, sıralama turuna göre dengeli kur, sıralama turundaki gibi süreli seriler, eleme ağacı.</span><span class="yz-tur-durum sakin">Sıralama turundan sonra ideal</span></button>'
         + '<button class="yz-tur" onclick="yzTurdenAc(\'duello\')"><span class="yz-tur-ikon">🥊</span><span class="yz-tur-ad">Düello &amp; Hayali Rakip</span>'
         + '<span class="yz-tur-acik">Herkes kendi başına eleme ağacında ya da sınıf birlikte sanal rakibe karşı.</span><span class="yz-tur-durum sakin">Ders içi eğlenceli rekabet</span></button>'
+        + '<button class="yz-tur" onclick="yzCokAciAc()"><span class="yz-tur-ikon">🎥</span><span class="yz-tur-ad">Çok Açılı Kamera</span>'
+        + '<span class="yz-tur-acik">Dört telefonla önden, yandan, arkadan ve hedeften çek; canlı, gecikmeli ya da dört açıdan yavaş tekrar. Köşeye alınca skor girişi sürer.</span><span class="yz-tur-durum sakin">1–4 telefon · aynı Wi-Fi</span></button>'
         + '<button class="yz-tur" onclick="yzCanliIzle()"><span class="yz-tur-ikon">📹</span><span class="yz-tur-ad">Atış Hattı · Canlı İzle</span>'
         + '<span class="yz-tur-acik">Sporcu atarken salon kamerasından (Tapo) ya da telefondan canlı izle; kaydet, yavaş izle, Form Lab\'a gönder. Köşeye alınca skor girişi sürer.</span><span class="yz-tur-durum sakin">Salon kamerası · telefon · bu cihaz</span></button>'
         + '</div></div>';
@@ -471,6 +473,7 @@ function yzTurHTML(o) {
         + arac('📺', 'TV ekranı', 'yzTvAc()', 'Salon TV\'sinde canlı sıralama', 'tv')
         + arac('📱', 'Atış Ölçer', 'hareketAc({km:true})', 'Telefon kolda: nişan süresi bu seriye yazılır, skor telefondan da girilir')
         + arac('🎥', 'Ayna / Video', 'yzVideoAc()', '5 sn gecikmeli ayna, canlı kamera ya da video — sporcu kendini görsün')
+        + arac('🎦', 'Çok açı', 'yzCokAciAc()', '4 telefon, 4 açı: canlı, gecikmeli, birlikte tekrar; köşeye alınca skor girişi sürer')
         + arac('📊', 'Analiz', 'yzAnalizAc()', 'Antrenör tablosu, ısı haritası, gelişim grafiği')
         + arac('🎯', 'Hedefler', 'yzHedeflerAc()', 'Kişisel hedef puanları')
         + (typeof kmKarmaMi === 'function' && kmKarmaMi() ? arac('🎮', 'Oyunlar', 'kmKarmaOyunaGec()', 'Oyun hattına geç') : '')
@@ -541,6 +544,7 @@ function yzMenu() {
         + '<button class="yz-btn" onclick="document.getElementById(\'onay-modal\').style.display=\'none\'; yzSovEkran()">🎤 Yetenek Şovu</button>'
         + '<button class="yz-btn" onclick="document.getElementById(\'onay-modal\').style.display=\'none\'; yzEk(\'yzSkorKagitlariPdf\')">🖨 Skor kâğıtları</button>'
         + '<button class="yz-btn" onclick="document.getElementById(\'onay-modal\').style.display=\'none\'; yzCanliIzle()">📹 Canlı izle</button>'
+        + '<button class="yz-btn" onclick="document.getElementById(\'onay-modal\').style.display=\'none\'; yzCokAciAc()">🎦 Çok açılı kamera</button>'
         + '<button class="yz-btn" onclick="document.getElementById(\'onay-modal\').style.display=\'none\'; yzAnaTemaAc()">🎨 Tema</button>'
         + '<button class="yz-btn" onclick="yzSesDegis()">' + (_yz.ses ? '🔔 Düdük sesleri açık (bu cihaz)' : '🔕 Düdük sesleri kapalı (bu cihaz)') + '</button>'
         + '<button class="yz-btn" onclick="yzPdf()">📄 Sonuç PDF\'i (şu anki durum)</button>'
@@ -673,6 +677,13 @@ function yzCanliIzle() {
     let ac = function () { kvAc(null, 'canli', { sporcular: sp, kaynak: kvSalonGoster() ? 'salon' : null }); };
     if (typeof kvAc === 'function') return ac();
     (typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-km-video.js') : Promise.reject()).then(ac).catch(function () { if (typeof showToast === 'function') showToast('Video aracı yüklenemedi.', 'error'); });
+}
+// 🎦 Çok Açılı Kamera (v391, kullanıcı: "bunu yarışma içerisine entegre"): dagsk-coklu-kamera.js; yarışmadan açılınca üstte seri + süre,
+// "Köşeye al" ile küçük pencere olur, skor girişi altta sürer.
+function yzCokAciAc() {
+    let ac = function () { ckAc({ yarisma: true }); };
+    if (typeof ckAc === 'function') return ac();
+    (typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-coklu-kamera.js?v=1') : Promise.reject()).then(ac).catch(function () { if (typeof showToast === 'function') showToast('Çok Açılı Kamera yüklenemedi.', 'error'); });
 }
 function yzGirisCiz() {
     let g = _yz.giris, kap = document.getElementById('yz-giris');

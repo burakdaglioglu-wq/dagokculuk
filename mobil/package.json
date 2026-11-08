@@ -1,0 +1,20 @@
+{
+  "name": "dagsk-mobil",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DAĞ Spor Kulübü telefon/tablet uygulaması (Capacitor). Uygulama canlı siteyi (https://dagsporkulubu.com/app) açar; güncellemeler yayınla birlikte gelir.",
+  "scripts": {
+    "senk": "cap sync",
+    "android:apk": "cd android && gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.6.0",
+    "sharp": "0.33.5"
+  }
+}
