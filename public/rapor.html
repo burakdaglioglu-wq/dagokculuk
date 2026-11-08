@@ -83,6 +83,7 @@
   html[data-kulup="milo"]{ --orange:#FF6B5E; --green:#1FADA0; --gold:#FFC542; }
   @media (prefers-color-scheme: dark){ html[data-kulup="milo"]{ --bg:#0B0A08; --panel:#171410; --panel2:#211D17; --border:#2D2820; --ink:#F5F3EC; --muted:#9C948A; } }
   /* 💳 ödemeler kartı */
+  .yeni-r{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:999px; background:#22c55e; color:#04130a; font-size:10px; font-weight:900; letter-spacing:.04em; vertical-align:1px; }
   .od-kilit{ display:flex; flex-direction:column; gap:6px; margin-top:14px; padding:12px; border-radius:14px; background:var(--panel2); }
   .od-giris{ display:flex; gap:8px; margin-top:4px; }
   .od-giris input{ flex:1; min-width:0; min-height:48px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--ink); font-size:22px; font-weight:800; letter-spacing:.3em; text-align:center; font-variant-numeric:tabular-nums; }
@@ -145,10 +146,11 @@
   const tl = v => (Math.round(v) || 0).toLocaleString('tr-TR') + ' ₺';
   const tarihYaz = t => { if (!t) return ''; let [yy, mm, dd] = t.split('-').map(Number); return dd + ' ' + AYK[mm - 1] + (yy !== bugun.getFullYear() ? ' ' + yy : ''); };
   const yontemYaz = y => ({ nakit: 'Nakit', iban: 'Havale / EFT', kart: 'Kart' })[y] || '';
+  const YENI = bugunIso <= '2026-12-09' ? '<span class="yeni-r">YENİ</span>' : ''; // 🆕 yeni özellik rozeti, tarihten sonra kalkar
   let D = null, O = { durum: 'bos', veri: null, yil: null, telefonVar: true, hata: '' };
   function odemeKilitliHTML() {
     let a = D.aidat, ayAdi = AYU[+ay.slice(5, 7) - 1] + ' ' + ay.slice(0, 4);
-    let ust = `<div class="etiket">Ödemeler</div><div class="aidat ${a.durum === 'odendi' ? 'ok' : 'bek'}"><span class="rozet">${a.durum === 'odendi' ? '✓' : '…'}</span><div><b>${esc(ayAdi)}: ${a.durum === 'odendi' ? 'ödendi' : 'ödemesi henüz görünmüyor'}</b><div class="alt">${a.durum === 'odendi' ? (a.paket ? esc(a.paket.replace(/^📦\s*/, '')) : 'Teşekkür ederiz.') : 'Ödediyseniz kulübe haber vermeniz yeterli; kayıt güncellenecek.'}</div></div></div>`;
+    let ust = `<div class="etiket">Ödemeler${YENI}</div><div class="aidat ${a.durum === 'odendi' ? 'ok' : 'bek'}"><span class="rozet">${a.durum === 'odendi' ? '✓' : '…'}</span><div><b>${esc(ayAdi)}: ${a.durum === 'odendi' ? 'ödendi' : 'ödemesi henüz görünmüyor'}</b><div class="alt">${a.durum === 'odendi' ? (a.paket ? esc(a.paket.replace(/^📦\s*/, '')) : 'Teşekkür ederiz.') : 'Ödediyseniz kulübe haber vermeniz yeterli; kayıt güncellenecek.'}</div></div></div>`;
     let serit = D.aidatGecmis && D.aidatGecmis.length > 1 ? `<div class="aidat-12" aria-label="Son aylarda aidat durumu">${D.aidatGecmis.map(x => `<span class="${x.durum}"><b>${x.durum === 'odendi' ? '✓' : x.durum === 'dondu' ? '❄' : '…'}</b>${AYK[+x.ay.slice(5, 7) - 1]}</span>`).join('')}</div>` : '';
     let kilit = !O.telefonVar ? `<div class="od-kilit"><b>🔒 Tutarlar ve kulübün notu</b><span class="alt">Kulüpte kayıtlı telefon numaranız yok. Görmek için kulübe numaranızı bildirin.</span></div>`
       : `<form class="od-kilit" onsubmit="event.preventDefault(); __odGiris()"><b>🔒 Ödenen tutarları ve kulübün notunu görün</b><span class="alt">Kulüpte kayıtlı telefonunuzun <b>son 4 hanesini</b> girin. Bu cihazda hatırlanır.</span>
@@ -167,7 +169,7 @@
     let gecmis = v.aylar.filter(x => x.durum === 'odendi' && x.ay !== ay).sort((x, y) => y.ay.localeCompare(x.ay)).slice(0, 4);
     let liste = gecmis.length ? `<div class="etiket" style="margin:14px 0 6px">${v.yil} · önceki ödemeler</div><div class="od-liste">${gecmis.map(x => `<div><span class="od-ay">${AYK[+x.ay.slice(5, 7) - 1]}</span><span class="od-orta"><b>${x.tutar ? tl(x.tutar) : '✓'}</b><span class="alt">${[tarihYaz(x.tarih), yontemYaz(x.yontem)].filter(Boolean).join(' · ')}</span>${x.veliNot ? `<em>💬 ${esc(x.veliNot)}</em>` : ''}</span></div>`).join('')}</div>` : '';
     let ozet = v.yilAySayisi ? `<div class="alt" style="margin-top:10px">${v.yil} toplamı: <b style="color:var(--ink)">${v.yilAySayisi} ay · ${tl(v.yilToplam)}</b></div>` : '';
-    return `<div class="etiket">Ödemeler</div>${bu}${sira}${liste}${ozet}<div class="od-alt"><a href="/veli?kod=${encodeURIComponent(kod)}">Tüm ödemeler ve 12 ay takvimi →</a><button type="button" onclick="__odCikis()">Bu cihazda gizle</button></div>`;
+    return `<div class="etiket">Ödemeler${YENI}</div>${bu}${sira}${liste}${ozet}<div class="od-alt"><a href="/veli?kod=${encodeURIComponent(kod)}">Tüm ödemeler ve 12 ay takvimi →</a><button type="button" onclick="__odCikis()">Bu cihazda gizle</button></div>`;
   }
   function odemeKartHTML() {
     if (!D || !D.aidat) return '';

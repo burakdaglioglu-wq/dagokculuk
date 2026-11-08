@@ -717,7 +717,7 @@
             <label>${ayKisa(AP.ay)} tutarı<input type="number" id="ap-f-tutar" value="${s.rec.tutar || ''}" inputmode="numeric" style="width:110px"></label>
             ${yontemHTML(s.rec.yontem || '')}
             <label class="genis">İç not <small style="font-weight:400;opacity:.75">(yalnız yönetim görür)</small><input type="text" id="ap-f-not" value="${esc(s.rec.notMetin || '')}" placeholder="ör. dekont alındı" maxlength="200"></label>
-            <label class="genis">💬 Veliye not <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" value="${esc(s.rec.veliNot || '')}" placeholder="ör. Kasım ve Aralık için teşekkürler" maxlength="300"></label>
+            <label class="genis">💬 Veliye not${typeof yeniRozet === 'function' ? yeniRozet() : ''} <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" value="${esc(s.rec.veliNot || '')}" placeholder="ör. Kasım ve Aralık için teşekkürler" maxlength="300"></label>
             ${s.rec.giren ? `<span class="ap-pesin">Tahsil eden: <b style="color:var(--ap-yazi);font-size:13px">${esc(s.rec.giren)}</b></span>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;
         let eskiAylar = s.gecAylar.slice().reverse(), buAyBorc = borclu(s), eskiIsaret = !buAyBorc || (AP.acikYer === 'kpi' && AP.kpi === 'kacan');
@@ -728,7 +728,7 @@
             <label id="ap-f-ind-l" hidden>İndirim %<input type="number" id="ap-f-ind" value="0" min="0" max="90" inputmode="numeric" style="width:80px" oninput="apPesinYaz()"></label>` : ''}
             ${yontemHTML(AP.sonYontem)}
             <label class="genis">İç not <small style="font-weight:400;opacity:.75">(yalnız yönetim görür)</small><input type="text" id="ap-f-not" placeholder="ör. dekont alındı" maxlength="200"></label>
-            <label class="genis">💬 Veliye not <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" placeholder="ör. Teşekkürler, Kasım ödemesi alındı" maxlength="300"></label>
+            <label class="genis">💬 Veliye not${typeof yeniRozet === 'function' ? yeniRozet() : ''} <small style="font-weight:400;opacity:.75">(veli ödeme ekranında görür)</small><input type="text" id="ap-f-veli" placeholder="ör. Teşekkürler, Kasım ödemesi alındı" maxlength="300"></label>
             ${buAyBorc ? `<div class="ap-pesin" id="ap-f-pesin" hidden></div>` : ''}
             ${eskiAylar.length ? `<label class="yan"><input type="checkbox" id="ap-f-eski" ${eskiIsaret ? 'checked' : ''}> Eski borç da ödendi: ${eskiAylar.map(ayKisa).join(', ')} (${tl(s.aylik * eskiAylar.length)})</label>` : ''}
             <button class="ap-btn ana" onclick="apFormKaydet('${esc(s.k.id)}')">Kaydet</button>${vaz}</div>`;

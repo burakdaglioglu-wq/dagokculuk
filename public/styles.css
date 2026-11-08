@@ -2732,3 +2732,6 @@
             .ks-yarisma { grid-column: span 2; grid-row: span 2; justify-content: space-between; }
             .ks-karo { min-height: 0; grid-column: span 2; }
         }
+
+/* 🆕 Genel YENİ rozeti (2026-11-09) — app.js yeniRozet(); tarih geçince HTML'den kalkar */
+.dag-yeni { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #22c55e; color: #04130a; font-size: 10px; font-style: normal; font-weight: 900; letter-spacing: .04em; line-height: 1.35; vertical-align: 1px; white-space: nowrap; }
