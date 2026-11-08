@@ -2598,30 +2598,46 @@ function yzGrup(noktalar) {
     let yay = 0; noktalar.forEach(function (p) { yay += Math.hypot(p.x - mx, p.y - my); }); yay /= n;
     return { n: n, mx: mx, my: my, yay: yay };
 }
-// Nişangah oku takip eder: grup sağdaysa nişangah sağa, aşağıdaysa aşağı.
-function yzGrupOneri(gr, yuz) {
+// 🎚️ Klik Testi kaydı (v390, sp.ekipmanBilgisi.klik — dagsk-klik-testi.js): o mesafedeki son ölçüm; yoksa en yakın
+// ölçülmüş mesafeden ölçeklenir (klikin hedefteki kayması mesafeyle doğru orantılı) ve "yaklaşık" işaretlenir.
+function yzKlikBul(k, mesafe) {
+    try {
+        if (!k || typeof turnuvaDB === 'undefined') return null;
+        let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)];
+        let l = sp && sp.ekipmanBilgisi && Array.isArray(sp.ekipmanBilgisi.klik) ? sp.ekipmanBilgisi.klik.filter(function (x) { return x.yatay > 0 && x.dikey > 0; }) : [];
+        if (!l.length) return null;
+        let m = parseFloat(mesafe), tam = l.filter(function (x) { return x.mesafe === mesafe; }).sort(function (a, b) { return b.t - a.t; })[0];
+        if (tam) return { yatay: tam.yatay, dikey: tam.dikey, yaklasik: false };
+        if (isNaN(m)) return null;
+        let en = l.slice().sort(function (a, b) { return Math.abs(parseFloat(a.mesafe) - m) - Math.abs(parseFloat(b.mesafe) - m) || b.t - a.t; })[0], m0 = parseFloat(en.mesafe);
+        if (!(m0 > 0)) return null;
+        return { yatay: en.yatay * m / m0, dikey: en.dikey * m / m0, yaklasik: true, kaynak: en.mesafe };
+    } catch (e) { return null; }
+}
+// Nişangah oku takip eder: grup sağdaysa nişangah sağa, aşağıdaysa aşağı. klik (yzKlikBul) varsa kaç klik olduğu da yazılır.
+function yzGrupOneri(gr, yuz, klik) {
     if (!gr) return null;
     let cx = gr.mx * yuz.R, cy = gr.my * yuz.R, kay = Math.hypot(cx, cy), cap = gr.yay * 2 * yuz.R;
     let sik = gr.yay < 0.22 ? 'sıkı' : gr.yay < 0.4 ? 'orta' : 'dağınık';
-    let yon = [], ayar = [];
-    if (Math.abs(cx) >= 2) { yon.push(Math.round(Math.abs(cx)) + ' cm ' + (cx > 0 ? 'sağda' : 'solda')); ayar.push(cx > 0 ? 'sağa' : 'sola'); }
-    if (Math.abs(cy) >= 2) { yon.push(Math.round(Math.abs(cy)) + ' cm ' + (cy > 0 ? 'aşağıda' : 'yukarıda')); ayar.push(cy > 0 ? 'aşağı' : 'yukarı'); }
-    let merkezde = kay < 2.5 || !ayar.length;
+    let yon = [], ayar = [], kSay = function (cm, bir) { let n = klik ? Math.round(Math.abs(cm) / bir) : 0; return n >= 1 ? (klik.yaklasik ? '~' : '') + n + ' klik ' : ''; };
+    if (Math.abs(cx) >= 2) { yon.push(Math.round(Math.abs(cx)) + ' cm ' + (cx > 0 ? 'sağda' : 'solda')); ayar.push(kSay(cx, klik && klik.yatay) + (cx > 0 ? 'sağa' : 'sola')); }
+    if (Math.abs(cy) >= 2) { yon.push(Math.round(Math.abs(cy)) + ' cm ' + (cy > 0 ? 'aşağıda' : 'yukarıda')); ayar.push(kSay(cy, klik && klik.dikey) + (cy > 0 ? 'aşağı' : 'yukarı')); }
+    let merkezde = kay < 2.5 || !ayar.length, kNot = !merkezde && klik && klik.yaklasik ? ' Klik sayısı ' + klik.kaynak + ' testinden tahmin.' : '';
     return {
         merkezde: merkezde, cap: Math.round(cap), sik: sik, n: gr.n,
         kisa: merkezde ? 'Grup merkezde ✓' : 'Grup ' + yon.join(', '),
         oneri: merkezde ? 'Nişangahı değiştirme' + (sik === 'dağınık' ? ' — önce grubu toplamaya çalış (tutarlı nişan/bırakış)' : '') + '.'
-            : 'Nişangahı ' + ayar.join(' ve ') + ' al' + (sik === 'dağınık' ? ' (grup dağınık — önce tutarlılık, ayarı küçük adımlarla yap)' : '') + '.',
+            : 'Nişangahı ' + ayar.join(' ve ') + ' al' + (sik === 'dağınık' ? ' (grup dağınık — önce tutarlılık, ayarı küçük adımlarla yap)' : '') + '.' + kNot,
         uyari: gr.n < 12 ? 'Az ok (' + gr.n + ') — ayar kararı için en az 12 ok önerilir.' : ''
     };
 }
 // Nişangah önerisi: yorulma (kalıcı düşüş) varsa SADECE yorulmadan önceki oklardan — yorgunlukla aşağı düşen
 // oklar nişangah hatası sanılıp "nişangahı aşağı al" denmesin. Çizim yine tüm okları gösterir.
 function yzOneriVeri(o, r, yg) {
-    let yuz = yzYuz(o.durum), nokta = yzKonumlar(o, r.k), gr = yzGrup(nokta), on = yzGrupOneri(gr, yuz);
+    let yuz = yzYuz(o.durum), kl = yzKlikBul(r.k, o.durum && o.durum.ayar && o.durum.ayar.mesafe), nokta = yzKonumlar(o, r.k), gr = yzGrup(nokta), on = yzGrupOneri(gr, yuz, kl);
     if (yg && yg.durum === 'dayaniklilik' && yg.kirilma != null) {
         let erken = yzGrup(yzKonumlar(o, r.k, 0, yg.kirilma));
-        if (erken && erken.n >= 6) { on = yzGrupOneri(erken, yuz); on.not = 'Yorulma öncesi ' + erken.n + ' oka göre (sonraki oklar yorgunlukla kaydı — nişangah değil kuvvet sorunu).'; }
+        if (erken && erken.n >= 6) { on = yzGrupOneri(erken, yuz, kl); on.not = 'Yorulma öncesi ' + erken.n + ' oka göre (sonraki oklar yorgunlukla kaydı — nişangah değil kuvvet sorunu).'; }
     }
     return { nokta: nokta, gr: gr, on: on };
 }

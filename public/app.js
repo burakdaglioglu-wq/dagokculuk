@@ -1785,6 +1785,29 @@
             el.innerHTML = `<span style="font-size:10px; color:var(--text-muted); display:block;">Tahmini çekiş uzunluğu</span><b style="font-size:26px; font-weight:900; color:var(--aurora-cyan);">${inc.toFixed(1)}"</b>`;
         }
 
+        /* 🎚️ Klik Testi (v390) — kaydedilen "1 klik kaç mm" değerleri + test düğmesi. Test ekranı: dagsk-klik-testi.js */
+        function klikOzetHTML(eki, ad, sfx, editable) {
+            let liste = (Array.isArray(eki.klik) ? eki.klik : []).slice().sort((a, b) => b.t - a.t);
+            let mm = v => (Math.round(v * 100) / 10).toLocaleString('tr-TR');
+            let satir = liste.map(k => {
+                let R = { '40': 20, '60': 30, '80': 40, '122': 61 }[k.yuz] || 40, halka = R / 10;
+                let sil = editable ? `<button onclick="klikKaydiSil('${ad}','${k.id}','${sfx}')" style="background:transparent; border:none; color:var(--neon-red); font-size:13px; cursor:pointer;" aria-label="Sil">🗑️</button>` : '';
+                return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border-color); font-size:12px;"><div><b style="color:var(--neon-blue);">${esc(k.mesafe)}</b> · 1 klik ↔ <b>${mm(k.yatay)} mm</b> · ↕ <b>${mm(k.dikey)} mm</b> <span style="color:var(--text-muted);">· 1 halka ≈ ${Math.round(halka / k.yatay)}↔ / ${Math.round(halka / k.dikey)}↕ klik</span><div style="font-size:10px; color:var(--text-muted);">${formatTarih(k.tarih)} · ${esc(k.giren)} · ${k.n} klik, ${k.ok} ok</div></div>${sil}</div>`;
+            }).join('');
+            let btn = editable ? `<button onclick="klikTestiBaslat('${ad}','${sfx}')" style="width:100%; margin-top:6px; background:rgba(56,189,248,0.12); border:1px solid var(--neon-blue); color:var(--text-main); padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">🎚️ Klik Testi: 1 halka kaç klik? <span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:999px; background:var(--neon-green); color:#04130a; font-size:10px; font-weight:900; letter-spacing:.04em; vertical-align:1px;">YENİ</span></button>` : '';
+            if (!satir && !btn) return '';
+            return `<div style="margin-top:10px;"><div style="font-size:12px; font-weight:800; color:var(--neon-blue); margin-bottom:4px;">🎚️ Klik Ayarı</div>${satir || `<div style="font-size:11px; color:var(--text-muted);">Henüz klik testi yok. Test bir kez yapılınca yarışmadaki nişangah önerisi kaç klik oynatacağını da yazar.</div>`}${btn}</div>`;
+        }
+        function klikTestiBaslat(ad, sfx) {
+            dagskEkYukle('dagsk-klik-testi.js?v=1').then(() => klikTestiAc(ad, sfx)).catch(() => showToast('Klik testi yüklenemedi — bağlantını kontrol et.', 'error'));
+        }
+        function klikKaydiSil(ad, id, sfx) {
+            if(!confirm('Bu klik kaydı silinsin mi?')) return;
+            let sp = turnuvaDB[aktifGrup] && turnuvaDB[aktifGrup][ad]; if(!sp) return;
+            let eki = ekipmanBos(sp); eki.klik = (eki.klik || []).filter(k => k.id !== id);
+            ekipmanKaydet(sp); showToast('Silindi.', 'warning'); ekipmanYenile(sfx);
+        }
+
         function ekipmanKartHTML(sp, opts) {
             opts = opts || {}; let sfx = opts.sfx || ''; let ad = opts.ad; let editable = !!opts.editable;
             let eki = ekipmanBos(sp);
@@ -1835,6 +1858,7 @@
                 <div style="font-size:13px; font-weight:bold; color:var(--accent-orange); margin-bottom:10px;">🎯 Ekipman & Nişangah</div>
                 <div style="font-size:12px; font-weight:800; color:var(--neon-blue); margin-bottom:6px;">📐 Nişangah Ayarları</div>
                 ${nisForm}${nisListe}
+                ${klikOzetHTML(eki, ad, sfx, editable)}
                 <details style="margin-top:10px;">
                     <summary style="cursor:pointer; list-style:none; font-size:12px; font-weight:800; color:var(--gold); padding:6px 0;">🧮 Hesaplayıcılar <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(Nişangah · Ok Sertliği · Çekiş Uzunluğu)</span></summary>
                     ${nisangahHesaplaHTML(sp, ad, sfx)}

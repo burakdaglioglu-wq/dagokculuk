@@ -152,7 +152,7 @@ function yzaTutusHTML(tur, k) {
     return bas + '<div class="yza-tt-oz">' + (v.en ? 'En iyi aralık: <b>' + v.en.uzun + '</b> · ok başı ' + yzaSayi(v.en.ort, 1) + ' (' + v.en.n + ' ok)' : 'Bir aralık için en az 3 ok gerekli.') + ' <small>Toplam ' + v.n + ' ok' + (v.n < 18 ? ', az veri: ok arttıkça netleşir' : '') + '</small></div><div class="yza-tt-kap" role="img" aria-label="Tutuş süresine göre ok başı puan">' + cub + '</div><div class="yz-alt" style="text-align:center">saniye</div></div>';
 }
 function yzaDetayHTML(tur, x) {
-    let s = x.s, nk = yzaNoktalar(tur, s.k, _yza.kapsam), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz) : null;
+    let s = x.s, nk = yzaNoktalar(tur, s.k, _yza.kapsam), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz, yzKlikBul(s.k, tur.mesafe)) : null;
     let bolge = yzaBolge(nk), kap = function (id, ad) { return '<button class="' + (_yza.kapsam === id ? 'aktif' : '') + '" onclick="event.stopPropagation();yzaKapsam(\'' + id + '\')">' + ad + '</button>'; };
     let isi = '<div class="yza-k"><div class="yza-k-bas"><span class="yz-etiket">🔥 Isı haritası</span><span class="yza-sec">' + kap('bu', 'Bu tur') + kap('son5', 'Son 5 tur') + kap('tum', 'Tümü') + '<button class="' + (_yza.antrenman ? 'aktif' : '') + '" onclick="event.stopPropagation();yzaAntrenmanDegis()" title="Skor Gir ve Oyunlar\'da hedefe dokunarak girilen son 90 ok">＋ Antrenman</button></span></div>'
         + (nk.length ? '<canvas id="yza-isi" width="360" height="360" role="img" aria-label="Okların hedefteki yoğunluğu"></canvas><div class="yz-alt" style="text-align:center">' + nk.length + ' ok · ' + yzaEsc(tur.yuz.ad) + '</div>'
@@ -383,7 +383,7 @@ function yzaPdfSayfa(pdf, tur, s) {
     let W = 210, mx = 14, uw = W - mx * 2, T = yzaPdfMetin, R = tur.yuz.R || 12;
     let g = yzaGecmis(tur, s.k), durum = yzaDurum(g, tur, s), v = null;
     if (tur.canli) { try { v = yzRaporVeri(tur.o, s.k); } catch (e) { v = null; } }
-    let nk = yzaNoktalar(tur, s.k, 'bu'), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz) : null, bolge = yzaBolge(nk);
+    let nk = yzaNoktalar(tur, s.k, 'bu'), gr = nk.length >= 3 ? yzGrup(nk.map(function (p) { return { x: p[0], y: p[1] }; })) : null, on = gr ? yzGrupOneri(gr, tur.yuz, yzKlikBul(s.k, tur.mesafe)) : null, bolge = yzaBolge(nk);
     let tarih = tur.t ? new Date(tur.t).toLocaleDateString('tr-TR') : yzaTR(tur.tarih);
     let y = _kurumsalBaslikCiz(pdf, mx, uw, 12, 'SPORCU ANALİZİ', 'Sıralama turu  |  ' + tur.mesafe + '  |  ' + (v ? v.f.ad + '  |  ' : '') + tarih);
     const yazi = function (boy, kalin, renk) { pdf.setFont('helvetica', kalin ? 'bold' : 'normal'); pdf.setFontSize(boy); let c = renk || [51, 65, 85]; pdf.setTextColor(c[0], c[1], c[2]); };
