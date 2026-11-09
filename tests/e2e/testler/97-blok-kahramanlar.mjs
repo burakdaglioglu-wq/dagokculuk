@@ -25,9 +25,10 @@ export default async function ({ log }) {
       if (typeof hedef === 'number') _kmOyunAktifIndex = hedef; else for (let j = 0; j < _kmOyunRosterCache.length && !gecerli(_kmOyunAktifIndex); j++) _kmOyunAktifIndex = (_kmOyunAktifIndex + 1) % _kmOyunRosterCache.length;
       const i = _kmOyunAktifIndex, s = _kmOyunRosterCache[i], sp = (turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]) || {}, once = (sp.seriler || []).length;
       _kmOyunSeriGirisleri = oklar.slice(); _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+      const huds = []; for (let k = 0; k < 6; k++) { await new Promise((r) => setTimeout(r, 120)); if (!_kmOyunKilit) break; huds.push((document.getElementById('blk-hud') || {}).textContent || ''); }
       for (let k = 0; k < 100 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 150));
       const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let k = 0; k < 100 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 150)); }
-      return { ad: s.ad, key: s.g + '|' + s.ad, once, sonra: (sp.seriler || []).length, st: JSON.parse(JSON.stringify(blkDurum())), i, sira: _kmOyunAktifIndex };
+      return { ad: s.ad, key: s.g + '|' + s.ad, once, sonra: (sp.seriler || []).length, st: JSON.parse(JSON.stringify(blkDurum())), i, sira: _kmOyunAktifIndex, huds };
     }, [oklar, hedef]);
     // 12 kahraman: sınıfta 12 kişiye kadar aynısı yok, atanan kalıcı (2026-11-06)
     const kh = await p.evaluate(() => { const a = 'dag_km_blokkh_' + (_kmAktifKonum || 'varsayilan'), l = _kmOyunRosterCache.slice(0, 12).map((s) => s.g + '|' + s.ad), ilk = l.map((k) => blkKahraman(k)), kayit = JSON.parse(localStorage.getItem(a) || '{}'); return { tur: _blkKahramanlar().length, n: l.length, farkli: new Set(ilk).size, ayni: JSON.stringify(ilk) === JSON.stringify(l.map((k) => blkKahraman(k))), kayitli: l.every((k) => kayit[k] != null), sifir: KM_OYUN_SIFIR_ONEK.some((o) => a.indexOf(o) === 0) }; });
@@ -64,6 +65,8 @@ export default async function ({ log }) {
     for (const j of kalan) son = await seri(['3', 'M', 'M'], j);
     dogrula(son.st.no === no0 + 1 && son.st.tip === 'ejder' && son.st.can === son.st.toplam && son.st.yenilenler.length >= 1, 'final + sıradaki boss: ' + JSON.stringify({ no: son.st.no, tip: son.st.tip }));
     esit(son.st.yenilenler[son.st.yenilenler.length - 1].adlar.length, nv, 'finalde atan herkesin adı');
+    // v395: son vuruş animasyonunda sıradaki boss (Ejder) GÖRÜNMEZ — vurulan boss ekranda kalır, sonra patlar
+    dogrula(son.huds.length > 0 && son.huds.every((h) => !/GÖLGE EJDER/.test(h)), 'son vuruşta sıradaki boss göründü: ' + JSON.stringify(son.huds.map((h) => h.slice(0, 30))));
     await p.waitForTimeout(8200);
     dogrula(/GÖLGE EJDER/.test(await p.evaluate(() => document.getElementById('blk-hud').textContent)), 'Ejder HUD');
     // koç: atmayan kaldıysa ⚡ Hep birlikte bitir

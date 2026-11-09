@@ -140,7 +140,7 @@
     // Koç: "⚡ Hep birlikte bitir" — can bitti ama atmayan biri kaldıysa (erken çıktı, bugün atmıyor) finali o an başlatır.
     function blkFinalZorla() {
         const st = durum(); if (st.can > 0 || _toren) return;
-        const f = () => { const s2 = durum(); if (s2.can > 0) return; const fin = finalKur(s2); kaydet(); _toren = true; finalGoster(fin); };
+        const f = () => { const s2 = durum(); if (s2.can > 0) return; _gorSt = JSON.parse(JSON.stringify(s2)); _golemOn = null; const fin = finalKur(s2); kaydet(); _toren = true; finalGoster(fin); };
         const kalan = atabilenler().length - atanSayi(st);
         if (typeof onayIste === 'function') onayIste('Süper ışın şimdi ateşlensin mi?<br><small>' + kalan + ' kahraman henüz atmadı. Atanların hepsi finalde adıyla görünür.</small>', f, 'Hep birlikte bitir', 'Bekle'); else f();
     }
@@ -296,7 +296,7 @@
 
     /* ---------------- SAHNE ---------------- */
     let _cv = null, _c = null, _boy = { w: 0, h: 0, k: 1, ox: 0, oy: 0 }, _raf = 0, _zemin = null, _zeminTip = null, _golemOn = null, _golemAnahtar = '', _yapiOnC = null, _yapiAnahtar = '';
-    let _efekt = [], _parca = [], _yazi = [], _sallan = 0, _isinlar = [], _saldiri = null, _final = null, _toren = false, _zaman = [], _aktifZ = 0;
+    let _efekt = [], _parca = [], _yazi = [], _sallan = 0, _isinlar = [], _saldiri = null, _final = null, _gorSt = null, _toren = false, _zaman = [], _aktifZ = 0;
     function sonra(fn, ms) { const t = setTimeout(() => { _zaman = _zaman.filter((x) => x !== t); fn(); }, ms); _zaman.push(t); return t; }
     function panel() { return $('km-oyun-panel-blok'); }
     function boyutla() {
@@ -505,7 +505,7 @@
         const seg = ejderSeg(t, st), i = Math.floor(Math.random() * Math.min(seg.length, 30)); return { x: seg[i][0], y: seg[i][1], r: '#7c5cff' };
     }
     function sahneCiz(ms) {
-        const c = _c; if (!c) return; const st = durum(), t = ms / 1000, b = _boy;
+        const c = _c; if (!c) return; const st = _gorSt || durum(), t = ms / 1000, b = _boy;
         // kutlamada yenilen boss'un dünyası kalır, boss küplere dağılmış (çizilmez); durum çoktan sıradaki boss'a geçti
         const gt = _final ? _final.tip : st.tip, bossYok = !!_final;
         c.setTransform(b.d, 0, 0, b.d, 0, 0); c.fillStyle = gt === 'ejder' ? '#2b2440' : DUNYA[gt].alt; c.fillRect(0, 0, b.w, b.h);
@@ -587,7 +587,7 @@
 
     /* ---------------- HUD ---------------- */
     function hudCiz() {
-        const st = durum(), h = $('blk-hud'); if (!h) return;
+        const st = (_gorSt && !_final) ? _gorSt : durum(), h = $('blk-hud'); if (!h) return;
         const n = 24, dolu = st.can <= 0 ? 0 : Math.max(1, Math.round(st.can / (st.toplam || 1) * n)), e = evre(st);
         const atan = atanSayi(st), top = atabilenler().length;
         const durumYazi = st.tip !== 'ejder' ? BOSS[st.tip].yapi + ' ' + st.sehir.filter(Boolean).length + '/6' : '🧱 Duvar ' + st.duvar + '/5 · 🏰 ' + st.kule.filter(Boolean).length + '/4';
@@ -603,7 +603,7 @@
 
     /* ---------------- SERİ ---------------- */
     function blkSeri(s, i, kaydedilecek, done) {
-        if (_toren) { zamanTemizle(); _toren = false; _final = null; }
+        if (_toren) { zamanTemizle(); _toren = false; _final = null; } _gorSt = null; _golemOn = null;
         const st = durum(), key = s.g + '|' + s.ad, olay = [];
         st.seri = (st.seri || 0) + 1; st.atanlar[key] = 1;
         (kaydedilecek || []).forEach((k) => {
@@ -628,13 +628,15 @@
         if (saldiri) st.donmus = 0; // donma bir saldırıyı boşa çıkarır
         // final: can bitti VE herkes attı
         let final = null;
-        if (st.can <= 0 && herkesAtti(st)) final = finalKur(st);
+        // v394 (kullanıcı: "son vuruşta animasyon bir sonraki karaktere geçip vurduğu karaktere dönüp patlıyor"): finalKur durumu hemen
+        // sıradaki boss'a geçirir; vuruş + patlama bitene kadar ekranda VURULAN boss'un kopyası (_gorSt) çizilir.
+        if (st.can <= 0 && herkesAtti(st)) { _gorSt = JSON.parse(JSON.stringify(st)); _golemOn = null; final = finalKur(st); }
         kaydet();
         // görsel
         if (!panel() || !_cv) { try { done(); } catch (e) { } return; }
         const l = liste(), n = l.length, p = cocukYer(i, n), bas = { x: p.x + 14, y: p.y - 26 - 48 * p.o };
         olay.forEach((o, k) => sonra(() => {
-            const tt = performance.now() / 1000, hedef = hedefNokta(final ? Object.assign({}, st, { tip: final.tip }) : st, tt), G = GUC[o.tip];
+            const tt = performance.now() / 1000, hedef = hedefNokta(_gorSt || st, tt), G = GUC[o.tip];
             if (o.tip === 'muz') { SES.muz(); _yazi.push({ m: 'ups! 🍌 kaydı', x: p.x, y: p.y - 120, renk: '#ffe14a', boy: 26, t0: tt }); return; }
             _isinlar.push({ x1: bas.x, y1: bas.y, x2: hedef.x, y2: hedef.y, renk: G.renk, kalin: o.tip === 'isin' ? 14 : 9, t0: tt, i: i });
             SES[o.tip] && SES[o.tip]();
@@ -673,7 +675,7 @@
         for (let q = 0; q < 140; q++) _parca.push({ x: hedef.x + (Math.random() - .5) * 120, y: hedef.y + (Math.random() - .5) * 120, vx: (Math.random() - .5) * 16, vy: -6 - Math.random() * 9, d: 0, vd: (Math.random() - .5) * .5, s: 12 + Math.random() * 12, r: rnd(BOSS[f.tip].parca) });
         _sallan = 22; sonra(SES.zafer, 900);
         try { if (typeof kmOyunBanner === 'function') sonra(() => kmOyunBanner('🦸 ' + BOSS[f.tip].ad.toLocaleUpperCase('tr-TR') + ' YENİLDİ!', 'Hep birlikte: ' + f.adlar.slice(0, 14).join(', ') + (f.adlar.length > 14 ? ' ve ' + (f.adlar.length - 14) + ' kahraman daha' : ''), 'bitis'), 1400); } catch (e) { }
-        sonra(() => { _final = null; _toren = false; _golemOn = null; hudCiz(); const st = durum(); _yazi.push({ m: BOSS[st.tip].ikon + ' Yeni boss geliyor: ' + BOSS[st.tip].ad + '!', x: 600, y: 160, renk: '#fff', boy: 32, t0: performance.now() / 1000 }); }, 7600);
+        sonra(() => { _final = null; _gorSt = null; _toren = false; _golemOn = null; _yapiOnC = null; hudCiz(); const st = durum(); _yazi.push({ m: BOSS[st.tip].ikon + ' Yeni boss geliyor: ' + BOSS[st.tip].ad + '!', x: 600, y: 160, renk: '#fff', boy: 32, t0: performance.now() / 1000 }); }, 7600);
     }
     function zamanTemizle() { _zaman.forEach(clearTimeout); _zaman = []; }
 
@@ -700,12 +702,12 @@
         d.querySelectorAll('.blk-g-kart').forEach((b) => { b.onclick = () => { kapat(); bossSec(b.dataset.tip); }; });
     }
     function yeniSor() {
-        const f = () => { const st = durum(); yeniBoss(st, st.tip); kaydet(); _golemOn = null; zamanTemizle(); _toren = false; _final = null; hudCiz(); if (typeof showToast === 'function') showToast('🔄 Boss baştan başladı', 'success'); };
+        const f = () => { const st = durum(); yeniBoss(st, st.tip); kaydet(); _golemOn = null; zamanTemizle(); _toren = false; _final = null; _gorSt = null; hudCiz(); if (typeof showToast === 'function') showToast('🔄 Boss baştan başladı', 'success'); };
         if (typeof onayIste === 'function') onayIste('Boss baştan başlasın mı?<br><small>Can dolar, şehir/kale onarılır (sporcuların serileri silinmez).</small>', f, 'Baştan başlat', 'Vazgeç'); else f();
     }
     function blkSahneKur() {
         const p = panel(); if (!p) return; css();
-        zamanTemizle(); _toren = false; _final = null; _isinlar = []; _parca = []; _yazi = []; _saldiri = null; _golemOn = null; _zeminTip = null;
+        zamanTemizle(); _toren = false; _final = null; _gorSt = null; _isinlar = []; _parca = []; _yazi = []; _saldiri = null; _golemOn = null; _zeminTip = null;
         p.innerHTML = `<canvas id="blk-cv" aria-label="Blok Kahramanlar sahnesi"></canvas><div id="blk-kutular"></div>
           <div class="blk-hud" id="blk-hud"></div>
           <div class="blk-ust"><button class="blk-boss-btn" id="blk-boss-btn" title="Canavar seç" aria-haspopup="dialog"></button>
@@ -732,7 +734,7 @@
         const simdi = _st && _st.yenilenler ? _st.yenilenler : [], eski = k.yenilenler || [], ka = kalici();
         simdi.slice(eski.length).forEach((y) => { if (ka.yenilen[y.tip] > 0) ka.yenilen[y.tip]--; });
         ka.sira = BOSS[k.tip] ? k.tip : ka.sira; kaliciYaz(ka);
-        zamanTemizle(); _toren = false; _final = null; _st = k; _stKonum = konum(); kaydet(); _golemOn = null; if (panel()) hudCiz(); }
+        zamanTemizle(); _toren = false; _final = null; _gorSt = null; _st = k; _stKonum = konum(); kaydet(); _golemOn = null; if (panel()) hudCiz(); }
     function blkSporcu(g, ad) { const st = durum(); return Math.round(st.katki[g + '|' + ad] || 0); }
     function blkAyarUygula() { const st = durum(); if (_toren) return; const yeni = toplamHesapla(st.no); if (!yeni || yeni === st.toplam) return; const oran = st.can / (st.toplam || 1); st.toplam = yeni; st.can = Math.round(oran * yeni); kaydet(); _golemOn = null; hudCiz(); }
 

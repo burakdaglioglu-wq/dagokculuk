@@ -5669,3 +5669,7 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 ## 107. ⏱️ Dinlenme sayacı gizlenir (2026-11-09, v394)
 - Kullanıcı: "Dinlenme ekranda kalıyor, kaybedemiyorum, isteğe göre aç". Başlıkta ✕ → küçük ⏱️ hap düğmesi (`.ozd-dinlen.kapali`); hapa dokununca açılır. Sayaç çalışırken hapta kalan süre görünür.
 - `ozdDinKapali()`: `<taraf>_yer.kapali`; yoksa okçulukta (KM) KAPALI, özel derste açık. Test 82.
+
+## 108. Blok Kahramanlar son vuruş düzeltmesi (2026-11-09, v395)
+- Kullanıcı: "son vuruşta animasyon bir sonraki karaktere geçip vurduğu karaktere dönüp patlıyor". Sebep: `finalKur` durumu hemen sıradaki boss'a geçiriyordu; vuruş animasyonu sırasında sahne ve HUD yeni boss'u çiziyordu, sonra `finalGoster` eskisine dönüyordu.
+- Düzeltme: `_gorSt`, vurulan boss'un kopyası; patlama/kutlama bitene kadar sahne onu çizer (HUD final başlayana kadar). Yeni seri, sıfırlama ve geri yükle bunu temizler. Test 97 son vuruştaki HUD'u örnekler.
