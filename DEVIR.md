@@ -5679,3 +5679,10 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - Numaralar kalıcı; yeni karakter hep sona eklenir. Rastgele atama ve hayvan listeleri (Yuva, Kurtarma) yalnız `kmOyunHayvanMi` (1–9, 13–26) kullanır.
 - Blok Kahramanlar: 🎭 Karakter, kendi 12 kahramanını canvas önizlemeyle seçtirir (`blkKahramanSec`, kayıt `dag_km_blokkh_`).
 - Zombi (piksel çocuklar) ve Dev Tahta (takımlar) kendi görünümünde kaldı. Test 111.
+
+## 110. Karma ders sadeleşti + 🚫 Derste yok + oyunda ☕ mola (2026-11-09, v397)
+- Kullanıcı (fotoğraf, Blok + karma ders): "derste olmayan sporcular da gözüküyor, karmakarışık, yarışmadaki ☕ mola çalışmıyor".
+- Canlı veri (okuma izniyle): ders Ders Programı'ndan başlamıştı. Programdan başlayan derse kayıtlı HERKES gelir (kmProgramDersBaslat); Emir ve Zeynep gelmemişti, 18:15'te elle çıkarıldı. Bugün hiç mola yazılmamış; mola yalnız Yarışma ekranı/TV'deydi (onayIste modalı tam ekran oyunda görünmez).
+- Oyunlar sıra kartında **🚫 Bugün derste yok**: `kmOyunDersteYok(i)` listeden çıkarır (`_kmListeKaydet` → tüm cihazlar). Bugün serisi yoksa yoklamaya `geldi:false` yazar. Oyun içinde 6 sn "↩ Geri al" (`#km-yok-geri`), modal yok.
+- Yarışma hattı paneli (`#yz-karma-dok`) varsayılan KAPALI (`dagsk_karma_dok_acik === '1'` açık). Açıkken üstte ☕ 3/5/10 dk, +1 dk, Bitir (`yzKarmaMola`); kapalı başlıkta kalan mola süresi.
+- Oyun köşe sayacı `yzOyunSayacGor`: seri süresi > mola > "SÜRE BİTTİ" (bittikten sonra 8 sn) > gizli. Test 112.

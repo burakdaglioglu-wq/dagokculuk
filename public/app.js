@@ -15371,6 +15371,10 @@
 .km-sk-dugmeler .km-sk-alkis{ background:var(--sk-renk, var(--a1)); color:#0b0f1c; border-color:transparent; }
 .km-sk-dugmeler .km-sk-alkis b{ font-variant-numeric:tabular-nums; }
 .km-sk-dugmeler.dort{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+.km-sk-yok{ width:100%; margin-top:calc(6px * var(--rs)); min-height:calc(34px * var(--rs)); border-radius:10px; border:1px dashed var(--line); background:transparent; color:var(--ink); opacity:.75; font-family:var(--font-body); font-weight:700; font-size:calc(11.5px * var(--rs)); cursor:pointer; }
+.km-sk-yok:hover{ opacity:1; border-color:#ef4444; }
+#km-yok-geri{ position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:90; display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; border-radius:999px; background:rgba(15,18,30,.95); color:#fff; font-weight:800; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+#km-yok-geri button{ min-height:36px; padding:0 14px; border-radius:999px; border:none; background:#FD8E01; color:#1a0700; font:inherit; font-weight:900; cursor:pointer; }
 .km-kusak-merdiven em{ font-style:normal; font-size:10px; font-weight:800; color:var(--a1, #7dd3fc); text-align:center; }
 .km-sk-alkis-pop{ animation:kmOyunAlkisPop .5s ease; }
 /* SONRA satırı + "Değiştir" ile açılan tüm sınıf ızgarası (sıralama görünümü takım/lig olsa bile
@@ -19988,6 +19992,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                         <button onclick="kmOyunSeviyeDegistir(${i})" title="Adil Sıralama seviyesi — değiştirmek için dokun">${KM_SEVIYE_IKON[sev]} Seviye</button>
                         ${_kmOyunAktifTema === 'ninja' ? `<button onclick="kmNinjaHareketSecAc(${i})" title="İmza hareketini seç — kuşakla yenileri açılır">🤸 ${esc(kmNinjaImzaHareket(s.g, s.ad).ad)}</button>` : ''}
                     </div>
+                    <button class="km-sk-yok" onclick="kmOyunDersteYok(${i})" title="Bugün gelmedi: ders listesinden ve oyundan çıkar (skorları silinmez)">🚫 Bugün derste yok${typeof yeniRozet === 'function' ? yeniRozet() : ''}</button>
                 </div>
                 <div class="km-sk-sonra">${n > 1 ? `<span class="km-sk-sonra-lbl">SONRA</span>${sonra}` : ''}<button class="km-sk-degistir${_kmOyunSporcuIzgaraAcik ? ' aktif' : ''}" onclick="kmOyunSporcuIzgaraAcKapat()" aria-expanded="${_kmOyunSporcuIzgaraAcik ? 'true' : 'false'}">${_kmOyunSporcuIzgaraAcik ? 'Kapat' : 'Değiştir'}</button></div>
                 ${izgara}`;
@@ -21170,6 +21175,42 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunSahneKurHepsi();
             kmOyunChipleriCiz();
             showToast('🎭 ' + kmOyunIlkAd(s.ad) + ' artık ' + kmOyunKarakterBilgi(no).ad + '!', 'success');
+        }
+        // v397 (kullanıcı: "derste olmayan sporcular da gözüküyor"): Ders Programı'ndan başlayan derste kayıtlı HERKES listeye gelir;
+        // gelmeyen çocuk oyunun sıra kartından tek dokunuşla çıkar (modal yok — tam ekran oyunda da çalışır). Bugün serisi yoksa
+        // yoklamaya "gelmedi" yazılır. Liste km-ortak ile tüm cihazlara gider. 6 sn "Geri al".
+        let _kmYokGeri = null;
+        function kmOyunDersteYok(i) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            let g = s.g, ad = s.ad, eskiListe = (_kmListe || []).slice(), tarih = bugunISO();
+            let sp = turnuvaDB[g] && turnuvaDB[g][ad], seriVar = !!(sp && (sp.seriler || []).some(function(x) { return x && x.tarih === tarih; }));
+            let eskiYok = otomatikYoklamaDB[tarih] && otomatikYoklamaDB[tarih][ad] ? JSON.parse(JSON.stringify(otomatikYoklamaDB[tarih][ad])) : null;
+            _kmListe = eskiListe.filter(function(x) { return !(x.g === g && x.ad === ad); });
+            try { delete _kmSecimler[g + '_' + ad]; } catch(e) {}
+            if(!seriVar) { if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {}; otomatikYoklamaDB[tarih][ad] = { saat: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), grup: g, elle: true, geldi: false }; otomatikYoklamaKaydet(); bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {} }
+            try { _kmListeKaydet(); } catch(e) {}
+            _kmYokGeri = { liste: eskiListe, g: g, ad: ad, tarih: tarih, yok: eskiYok, yazdi: !seriVar };
+            kmOyunListeDegisti();
+            let w = document.getElementById('km-oyun-wrap');
+            if(w) {
+                let b = document.getElementById('km-yok-geri'); if(b) b.remove();
+                b = document.createElement('div'); b.id = 'km-yok-geri';
+                b.innerHTML = '<span>🚫 ' + esc(kmOyunIlkAd(ad)) + ' bugünkü dersten çıktı</span><button onclick="kmOyunDersteYokGeriAl()">↩ Geri al</button>';
+                w.appendChild(b); clearTimeout(kmOyunDersteYok.z); kmOyunDersteYok.z = setTimeout(function() { let x = document.getElementById('km-yok-geri'); if(x) x.remove(); _kmYokGeri = null; }, 6000);
+            } else showToast(kmOyunIlkAd(ad) + ' bugünkü dersten çıktı', 'warning');
+        }
+        function kmOyunDersteYokGeriAl() {
+            let u = _kmYokGeri; if(!u) return; _kmYokGeri = null;
+            _kmListe = u.liste; _kmSecimler = {}; _kmListe.forEach(function(x) { _kmSecimler[x.g + '_' + x.ad] = x; });
+            if(u.yazdi) { if(!otomatikYoklamaDB[u.tarih]) otomatikYoklamaDB[u.tarih] = {}; if(u.yok) otomatikYoklamaDB[u.tarih][u.ad] = u.yok; else delete otomatikYoklamaDB[u.tarih][u.ad]; otomatikYoklamaKaydet(); bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {} }
+            try { _kmListeKaydet(); } catch(e) {}
+            let x = document.getElementById('km-yok-geri'); if(x) x.remove();
+            kmOyunListeDegisti();
+        }
+        function kmOyunListeDegisti() {
+            try { _kmOyunAktifIndex = 0; } catch(e) {}
+            try { kmOyunDurumEmin(); kmOyunRosterYenile(); kmOyunSahneKurAktif(); kmOyunChipleriCiz(); kmOyunLiderCiz(); } catch(e) { console.warn('liste değişti', e); }
+            try { kmSinifKartiCiz(); } catch(e) {}
         }
         function kmOyunZirveKarakterSVG(s) {
             return kmOyunHayvanKarakterSVG(s, null, 56);
