@@ -5694,3 +5694,12 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - Ödül kartları: merkeze en yakın grup, en sıkı grup, turun en iyi serisi, en çok 10, formu yükselen. Ad ve hedef 2,4 sn bulanık, davul sallanır, sonra açılır.
 - Mola bitince normal sahne. Molada TV sayacı "SÜRE BİTTİ" yerine ☕ MOLA (pro.js `yzOyunSayacGor` ile). Test 113.
 - Isı haritasına yalnız hedefe dokunarak girilmiş oklar girer; konumsuz sporcuda "yalnız puan".
+
+## 112. 🐊 Uyuyan Dev — cezalı ortak oyun (2026-11-09, v399)
+- Kullanıcı: "oyunlara dönelim, cezalı oyunlar olsun". Dört fikirden (Ceza Çarkı, Bomba Takımı, Timsah Bataklığı, Lanetli Kurallar) Bomba + Timsah taslakları gösterildi (https://claude.ai/artifact/NzMtD8eMq8tkPkocJQZ657); kullanıcı "Uyuyan Dev"i seçti.
+- Oyunlar teması `timsah`, modül `public/dagsk-km-timsah.js?v=1` (tm*: `tmSahneKur`, `tmGuncelle`, `tmSeri`, `tmAnlik`, `tmGeriYukle`, `tmSporcu`, `tmAyarUygula`, `tmFinalZorla`, test için `_tmIc`). Durum `dag_km_timsah_<konum>` (km-ortak ile paylaşılır, `KM_OYUN_SIFIR_ONEK`'te).
+- Bütün sınıf birlikte, timsahı uyandırmadan kovaya balık toplar. Ok çocuğun kendi seviyesine göre (`esikOf` Dev Tahta ile aynı): kendi hedefi 🐟🐟, hedefe değen 🐟, ıska 🔊🔊, seviyesinin 4 altındaki ok 🔊. 3 ok kendi hedefinde = 🎵 ninni (metre −2).
+- Uyku metresi 10. Her seride 1/6 şans olayı (🦆 🪵 🐸 🤧 metreyi doldurur; 🌙 indirir, 🐟 +3 balık), iyi de kötü de atana çıkar. Metre ≥7: göz yarı açık, kırmızı kenar, kalp atışı.
+- Metre dolunca: göz açılır → kükreme → kovadan %10 (en az 2) balık kapar → çark son uyku döneminde atanlardan 1–3 kişi seçer (ağırlık 1 + yaptığı gürültü; iyi atan da seçilebilir) → ceza görevi kartı (20 sn, "Yaptık" / "Geç"), timsah yeniden uyur. Sıradaki seri girilirse görev yapılmış sayılır.
+- Hedef = çocuk × tur × ok/seri × 0,9 balık. Sonuç herkes atınca; erken bitişte atış başına bakılır. Finalde herkesin adı, kişisel balık sıralaması yok.
+- Ayar `timsahTur` (1/2/3), içerik `sans`, `kapma`, `gerilim`. Seçicide YENİ rozeti Dev Tahta'dan buraya geçti. Test 114. (110 yerel veride piyon sayısında düşüyor; değişiklikten önce de aynı.)
