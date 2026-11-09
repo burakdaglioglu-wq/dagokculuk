@@ -15778,6 +15778,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
 .km-oyun-karakter-kutu{ width:min(680px, 100%); max-height:100%; overflow:auto; background:var(--panel, #10141c); border:1.5px solid var(--a1, #7dd3fc); border-radius:18px; padding:14px 16px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
 .km-oyun-karakter-baslik{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--ink, #fff); margin-bottom:12px; }
 .km-oyun-karakter-baslik button{ background:none; border:1px solid var(--line, #445); color:var(--ink, #fff); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:14px; }
+.km-oyun-karakter-grup{ font-family:var(--font-display); font-weight:800; font-size:13px; margin:14px 2px 8px; color:var(--ink, #fff); display:flex; align-items:center; gap:6px; }
+.km-oyun-karakter-grup small{ opacity:.55; font-weight:700; }
 .km-oyun-karakter-izgara{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; }
 .km-oyun-karakter-yeni{ position:absolute; top:5px; right:5px; font-style:normal; font-family:var(--font-body); font-weight:900; font-size:8.5px; letter-spacing:.06em; color:#111; background:#ffd23f; border-radius:6px; padding:1px 5px; }
 .km-oyun-karakter-sec{ position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px 8px; border-radius:14px; border:2px solid var(--line, #445); background:rgba(255,255,255,0.04); color:var(--ink, #fff); cursor:pointer; transition:transform .12s, border-color .12s; }
@@ -21026,10 +21028,44 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             { no: 23, ad: 'Kedi', src: '/hayvankarakter/yeni/kedi.webp', oran: 276 / 460, yeni: 1 },
             { no: 24, ad: 'Deniz Kaplumbağası', src: '/hayvankarakter/yeni/deniz-kaplumbagasi.webp', oran: 460 / 302, yeni: 1 },
             { no: 25, ad: 'Timsah', src: '/hayvankarakter/yeni/timsah.webp', oran: 448 / 460, yeni: 1 },
-            { no: 26, ad: 'Yeşil Timsah', src: '/hayvankarakter/yeni/yesil-timsah.webp', oran: 324 / 460, yeni: 1 }
+            { no: 26, ad: 'Yeşil Timsah', src: '/hayvankarakter/yeni/yesil-timsah.webp', oran: 324 / 460, yeni: 1 },
+            // 2026-11-09 v396 (kullanıcı: "tüm oyunlarda karakter seçimlerini çoğaltalım") — oyunlara özel duran okçu/ninja/korsan
+            // figürleri ortak havuza eklendi (27–55). Yalnız ELLE seçilir; rastgele atama ve hayvan listeleri (Yuva, Kurtarma) 1–9 + 13–26.
+            { no: 27, ad: 'Elf Okçu', src: '/okcu-karakterler/okcu-e-elf.webp', oran: 532 / 696, grup: 'okcu', yeni: 2 },
+            { no: 28, ad: 'Sarı Elf', src: '/okcu-karakterler/okcu-k-elf-sari.webp', oran: 417 / 575, grup: 'okcu', yeni: 2 },
+            { no: 29, ad: 'Kırmızı Okçu', src: '/okcu-karakterler/okcu-e-kirmizi-cocuk.webp', oran: 479 / 526, grup: 'okcu', yeni: 2 },
+            { no: 30, ad: 'Pelerinli Okçu', src: '/okcu-karakterler/okcu-e-pelerinli.webp', oran: 430 / 586, grup: 'okcu', yeni: 2 },
+            { no: 31, ad: 'Sarı Tişörtlü', src: '/okcu-karakterler/okcu-e-sari-cocuk.webp', oran: 305 / 456, grup: 'okcu', yeni: 2 },
+            { no: 32, ad: 'Tilki Okçu', src: '/okcu-karakterler/okcu-e-tilki.webp', oran: 349 / 492, grup: 'okcu', yeni: 2 },
+            { no: 33, ad: 'Altın Saçlı', src: '/okcu-karakterler/okcu-k-stilize-sari.webp', oran: 453 / 463, grup: 'okcu', yeni: 2 },
+            { no: 34, ad: 'Kahve Saçlı', src: '/okcu-karakterler/okcu-k-kahve-sacli-kiz.webp', oran: 333 / 559, grup: 'okcu', yeni: 2 },
+            { no: 35, ad: 'Sporcu Kırmızı', src: '/okcu-karakterler/okcu-e-sportif-kirmizi.webp', oran: 334 / 423, grup: 'okcu', yeni: 2 },
+            { no: 36, ad: 'Kızıl Saçlı Sporcu', src: '/okcu-karakterler/okcu-e-sportif-kirmizi-sacli.webp', oran: 468 / 532, grup: 'okcu', yeni: 2 },
+            { no: 37, ad: 'Sporcu Mavi', src: '/okcu-karakterler/okcu-e-sportif-mavi.webp', oran: 419 / 541, grup: 'okcu', yeni: 2 },
+            { no: 38, ad: 'Mavi Şampiyon', src: '/okcu-karakterler/okcu-k-sportif-mavi.webp', oran: 276 / 587, grup: 'okcu', yeni: 2 },
+            { no: 39, ad: 'At Kuyruklu', src: '/okcu-karakterler/okcu-k-ponytail-turuncu.webp', oran: 324 / 629, grup: 'okcu', yeni: 2 },
+            { no: 40, ad: 'Pembe Okçu', src: '/okcu-karakterler/okcu-k-pembe-turuncu-etek.webp', oran: 366 / 798, grup: 'okcu', yeni: 2 },
+            { no: 41, ad: 'Koşan Ninja', src: '/ninja-karakterler/ninja-e-kosuyor.webp', oran: 326 / 385, grup: 'ninja', yeni: 2 },
+            { no: 42, ad: 'Yıldız Ninja', src: '/ninja-karakterler/ninja-e-firlatma.webp', oran: 382 / 622, grup: 'ninja', yeni: 2 },
+            { no: 43, ad: 'Kılıçlı Ninja', src: '/ninja-karakterler/ninja-e-kilic.webp', oran: 387 / 680, grup: 'ninja', yeni: 2 },
+            { no: 44, ad: 'Tekmeci Ninja', src: '/ninja-karakterler/ninja-e-tekme.webp', oran: 423 / 526, grup: 'ninja', yeni: 2 },
+            { no: 45, ad: 'Kara Ninja', src: '/ninja-karakterler/ninja-k-siyah-tekme.webp', oran: 567 / 577, grup: 'ninja', yeni: 2 },
+            { no: 46, ad: 'Gece Ninjası', src: '/ninja-karakterler/ninja-k-lacivert-tekme.webp', oran: 715 / 824, grup: 'ninja', yeni: 2 },
+            { no: 47, ad: 'Gölge Ninja', src: '/ninja-karakterler/ninja-k-gri-kaptanli.webp', oran: 390 / 585, grup: 'ninja', yeni: 2 },
+            { no: 48, ad: 'Samuray', src: '/ninja-karakterler/ninja-k-pembe-samuray.webp', oran: 479 / 494, grup: 'ninja', yeni: 2 },
+            { no: 49, ad: 'Kaptan Kanca', src: '/korsan-karakterler/korsan-cocuk-kanca.webp', oran: 258 / 429, grup: 'korsan', yeni: 2 },
+            { no: 50, ad: 'Mavi Korsan', src: '/korsan-karakterler/korsan-cocuk-mavi.webp', oran: 401 / 604, grup: 'korsan', yeni: 2 },
+            { no: 51, ad: 'Korsan Kız', src: '/korsan-karakterler/korsan-kiz-sise.webp', oran: 286 / 444, grup: 'korsan', yeni: 2 },
+            { no: 52, ad: 'Yaşlı Kurt', src: '/korsan-karakterler/korsan-yasli-korsan.webp', oran: 348 / 390, grup: 'korsan', yeni: 2 },
+            { no: 53, ad: 'Korsan Papağan', src: '/korsan-karakterler/korsan-papagan-kilic.webp', oran: 374 / 509, grup: 'korsan', yeni: 2 },
+            { no: 54, ad: 'Şekerci Papağan', src: '/korsan-karakterler/korsan-papagan-seker.webp', oran: 340 / 394, grup: 'korsan', yeni: 2 },
+            { no: 55, ad: 'Korsan Yengeç', src: '/korsan-karakterler/korsan-yengec.webp', oran: 468 / 348, grup: 'korsan', yeni: 2 }
         ];
+        function kmOyunHayvanMi(no) { return no <= KM_OYUN_HAYVAN_SAYISI || (no >= 13 && no <= 26); }
+        var KM_OYUN_KARAKTER_GRUPLAR = [['hayvan', '🐾 Hayvanlar'], ['okcu', '🏹 Okçular'], ['ninja', '🥷 Ninjalar'], ['korsan', '🏴‍☠️ Korsanlar'], ['macera', '⛰️ Maceracılar']];
+        function kmOyunKarakterGrup(k) { return k.grup || (k.no >= 10 && k.no <= 12 ? 'macera' : 'hayvan'); }
         // Rastgele atama yalnız HAYVANLARDAN (1-9 ve 13-26) — İzci/Tırmanıcı figürleri sadece elle seçilir.
-        var KM_OYUN_RASTGELE_HAVUZ = KM_OYUN_KARAKTERLER.filter(function(k) { return k.no <= KM_OYUN_HAYVAN_SAYISI || k.no >= 13; }).map(function(k) { return k.no; });
+        var KM_OYUN_RASTGELE_HAVUZ = KM_OYUN_KARAKTERLER.filter(function(k) { return kmOyunHayvanMi(k.no); }).map(function(k) { return k.no; });
         function kmOyunRastgeleKarakter() { return KM_OYUN_RASTGELE_HAVUZ[Math.floor(Math.random() * KM_OYUN_RASTGELE_HAVUZ.length)]; }
         var KM_OYUN_HAYVAN_ORAN = KM_OYUN_KARAKTERLER.map(function(k) { return k.oran; });
         function kmOyunKarakterBilgi(no) { return KM_OYUN_KARAKTERLER[(no || 1) - 1] || KM_OYUN_KARAKTERLER[0]; }
@@ -21086,17 +21122,40 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let s = _kmOyunRosterCache[i]; if(!s) return;
             // Yükseliş (yetişkin modu) — hayvan karakteri yerine ciddi amblem seçici.
             if(_kmOyunAktifTema === 'yukselis') { kmOyunAmblemSecAc(i); return; }
+            if(_kmOyunAktifTema === 'blok' && typeof blkKahramanOnizle === 'function') { kmOyunBlokKahramanSecAc(i); return; }
             let mevcut = kmOyunHayvanKarakterAta(s);
             let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
             let m = document.createElement('div');
             m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
             m.innerHTML = `<div class="km-oyun-karakter-kutu">
                 <div class="km-oyun-karakter-baslik"><span>🎭 ${esc(s.ad)} — karakter seç</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat">✕</button></div>
-                <div class="km-oyun-karakter-izgara">${KM_OYUN_KARAKTERLER.map(function(k) { return `<button class="km-oyun-karakter-sec${k.no === mevcut ? ' secili' : ''}" onclick="kmOyunKarakterSec(${i}, ${k.no})">${k.yeni ? '<i class="km-oyun-karakter-yeni">YENİ</i>' : ''}<img src="${k.src}" alt="" loading="lazy"><span>${esc(k.ad)}</span></button>`; }).join('')}</div>
+                ${KM_OYUN_KARAKTER_GRUPLAR.map(function(gr) { let l = KM_OYUN_KARAKTERLER.filter(function(k) { return kmOyunKarakterGrup(k) === gr[0]; }); return `<div class="km-oyun-karakter-grup">${gr[1]} <small>${l.length}</small>${l.some(function(k) { return k.yeni === 2; }) && typeof yeniRozet === 'function' ? yeniRozet() : ''}</div><div class="km-oyun-karakter-izgara">${l.map(function(k) { return `<button class="km-oyun-karakter-sec${k.no === mevcut ? ' secili' : ''}" onclick="kmOyunKarakterSec(${i}, ${k.no})"><img src="${k.src}" alt="" loading="lazy"><span>${esc(k.ad)}</span></button>`; }).join('')}</div>`; }).join('')}
                 <div class="km-oyun-karakter-alt"><button onclick="kmOyunKarakterSec(${i}, 0)">🎲 Rastgele</button></div>
             </div>`;
             m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
             (document.getElementById('km-oyun-wrap') || document.body).appendChild(m);
+        }
+        // v396 — Blok Kahramanlar'ın kendi çizilmiş 12 kahramanı (hayvan havuzu orada kullanılmıyor)
+        function kmOyunBlokKahramanSecAc(i) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            let key = s.g + '|' + s.ad, mevcut = blkKahramanNo(key), adlar = _blkKahramanlar();
+            let eski = document.getElementById('km-oyun-karakter-modal'); if(eski) eski.remove();
+            let m = document.createElement('div');
+            m.id = 'km-oyun-karakter-modal'; m.className = 'km-oyun-karakter-modal';
+            m.innerHTML = `<div class="km-oyun-karakter-kutu">
+                <div class="km-oyun-karakter-baslik"><span>🦸 ${esc(s.ad)} — kahraman seç ${typeof yeniRozet === 'function' ? yeniRozet() : ''}</span><button onclick="kmOyunKarakterSecKapat()" title="Kapat">✕</button></div>
+                <div class="km-oyun-karakter-izgara">${adlar.map(function(ad, j) { return `<button class="km-oyun-karakter-sec${j === mevcut ? ' secili' : ''}" onclick="kmOyunBlokKahramanSec(${i}, ${j})"><canvas width="64" height="80" data-kh="${j}"></canvas><span>${esc(ad)}</span></button>`; }).join('')}</div>
+            </div>`;
+            m.addEventListener('click', function(ev) { if(ev.target === m) kmOyunKarakterSecKapat(); });
+            (document.getElementById('km-oyun-wrap') || document.body).appendChild(m);
+            let rk = typeof kmOyunRenk === 'function' ? kmOyunRenk('blok', i) : '#7c5cff';
+            m.querySelectorAll('canvas[data-kh]').forEach(function(cv) { try { blkKahramanOnizle(cv, +cv.dataset.kh, /^#/.test(rk) ? rk : '#7c5cff'); } catch(e) {} });
+        }
+        function kmOyunBlokKahramanSec(i, j) {
+            let s = _kmOyunRosterCache[i]; if(!s) return;
+            blkKahramanSec(s.g + '|' + s.ad, j); kmOyunKarakterSecKapat();
+            try { sesCal(900, 0.06); } catch(e) {}
+            showToast('🦸 ' + kmOyunIlkAd(s.ad) + ' artık ' + _blkKahramanlar()[j] + '!', 'success');
         }
         function kmOyunKarakterSecKapat() { let m = document.getElementById('km-oyun-karakter-modal'); if(m) m.remove(); }
         function kmOyunKarakterSec(i, no) {

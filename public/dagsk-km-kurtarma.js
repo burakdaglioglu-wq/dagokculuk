@@ -22,7 +22,7 @@ function krDurumOku() { try { return JSON.parse(localStorage.getItem(krAnahtar()
 function krDurumYaz(o) { try { localStorage.setItem(krAnahtar(), JSON.stringify(o)); } catch (e) {} }
 function krBasla() { let o = krDurumOku(); if (!o || !o.basla || o.tarih !== bugunISO()) { o = { basla: Date.now(), tarih: bugunISO() }; krDurumYaz(o); } return o; }
 function krHash(m) { let h = 2166136261; for (let i = 0; i < m.length; i++) { h ^= m.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-function krHayvanlar() { return (typeof KM_OYUN_KARAKTERLER !== 'undefined' ? KM_OYUN_KARAKTERLER : []).filter(function (k) { return k.no <= 9 || k.no >= 13; }); }
+function krHayvanlar() { return (typeof KM_OYUN_KARAKTERLER !== 'undefined' ? KM_OYUN_KARAKTERLER : []).filter(function (k) { return k.no <= 9 || (k.no >= 13 && k.no <= 26); }); }
 function krDeger(v) { return v === 'X' ? 10 : v === 'M' ? 0 : (+v || 0); }
 function krHalka(v) { if (v === 'M') return null; let d = krDeger(v); return d >= 9 ? 'sari' : d >= 7 ? 'kirmizi' : d >= 5 ? 'mavi' : 'diger'; }
 // Oyuncular: oyun hattı (Yarışma'dakiler hariç); Yumurta'da "ikisinde de" işaretli olanlar da katılır.

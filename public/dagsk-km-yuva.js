@@ -39,7 +39,7 @@ const yuvaEskiRenk = (id) => id === 'gokkusagi' ? 'elmas' : id;
 // 🏫 Sınıf yumurtası rengi (2026-10-16, kullanıcı: "sınıf yumurtası ile çocuğun yumurtası karışıyor"): yalnız sınıfa ait — lacivert, altın yıldızlı
 const YUVA_SINIF_RENK = { id: 'sinif', ana: '#3346B8', ben: '#FFD45C', koyu: '#18216E' };
 const yuvaRenkBul = (id) => (id = yuvaEskiRenk(id), false) || (id === 'sinif' ? YUVA_SINIF_RENK : null) || YUVA_NADIR[id] || YUVA_RENK.find((r) => r.id === id) || YUVA_RENK[0];
-function yuvaHayvanlar() { return (typeof KM_OYUN_KARAKTERLER !== 'undefined' ? KM_OYUN_KARAKTERLER : []).filter((k) => k.no <= 9 || k.no >= 13); }
+function yuvaHayvanlar() { return (typeof KM_OYUN_KARAKTERLER !== 'undefined' ? KM_OYUN_KARAKTERLER : []).filter((k) => k.no <= 9 || (k.no >= 13 && k.no <= 26)); }
 function yuvaHayvan(no) { return yuvaHayvanlar().find((k) => k.no === no) || yuvaHayvanlar()[0]; }
 function yuvaSp(g, ad) { return turnuvaDB[g] && turnuvaDB[g][ad]; }
 function yuvaKayit(sp) { const o = sp && sp.oyun; return (o && o.yuva) || null; }

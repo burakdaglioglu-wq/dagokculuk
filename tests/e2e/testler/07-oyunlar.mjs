@@ -36,7 +36,7 @@ export default async function ({ log }) {
     if (!tam.atla) { esit(tam.icinde, 'km-oyun-wrap', 'tam ekranda onay penceresi oyunun içine taşınmadı'); dogrula(tam.sonra, 'tam ekrandan çıkınca onay penceresi geri dönmedi'); }
     // Karakter seçici: 26 karakter (14 yeni), yeni bir hayvan seçilip sahnede çizilir
     const kar = await p.evaluate(() => { kmOyunKarakterSecAc(0); const n = document.querySelectorAll('.km-oyun-karakter-sec').length; kmOyunKarakterSec(0, 19); return { n, cizildi: !!document.querySelector('#km-oyun-sahne image[href*="yunus"]') }; });
-    esit(kar.n, 26, 'karakter sayısı'); dogrula(kar.cizildi, 'seçilen yeni karakter sahnede çizilmedi');
+    esit(kar.n, 55, 'karakter sayısı (v396: +okçu/ninja/korsan)'); dogrula(kar.cizildi, 'seçilen yeni karakter sahnede çizilmedi');
     // Kelime Hedefi ayrı dosyada (dagsk-km-kelime.js) — Oyunlar seçicisinden açılınca yüklenmeli ve çizilmeli
     esit(await p.evaluate(() => typeof kmKelimeCiz), 'undefined', 'Kelime Hedefi açılışta yüklenmemeli');
     await p.evaluate(() => kmOyunKelimeAc());

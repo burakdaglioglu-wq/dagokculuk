@@ -5673,3 +5673,9 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 ## 108. Blok Kahramanlar son vuruş düzeltmesi (2026-11-09, v395)
 - Kullanıcı: "son vuruşta animasyon bir sonraki karaktere geçip vurduğu karaktere dönüp patlıyor". Sebep: `finalKur` durumu hemen sıradaki boss'a geçiriyordu; vuruş animasyonu sırasında sahne ve HUD yeni boss'u çiziyordu, sonra `finalGoster` eskisine dönüyordu.
 - Düzeltme: `_gorSt`, vurulan boss'un kopyası; patlama/kutlama bitene kadar sahne onu çizer (HUD final başlayana kadar). Yeni seri, sıfırlama ve geri yükle bunu temizler. Test 97 son vuruştaki HUD'u örnekler.
+
+## 109. 🎭 Karakter seçimi çoğaldı (2026-11-09, v396)
+- Kullanıcı: "tüm oyunlarda karakter seçimlerini çoğaltalım". Ortak havuz `KM_OYUN_KARAKTERLER` 26 → 55. Eklenenler oyunlara özel duran figürler: 27–40 okçu, 41–48 ninja, 49–55 korsan (`grup` alanı). Seçici 5 başlıkta gruplu (`KM_OYUN_KARAKTER_GRUPLAR`).
+- Numaralar kalıcı; yeni karakter hep sona eklenir. Rastgele atama ve hayvan listeleri (Yuva, Kurtarma) yalnız `kmOyunHayvanMi` (1–9, 13–26) kullanır.
+- Blok Kahramanlar: 🎭 Karakter, kendi 12 kahramanını canvas önizlemeyle seçtirir (`blkKahramanSec`, kayıt `dag_km_blokkh_`).
+- Zombi (piksel çocuklar) ve Dev Tahta (takımlar) kendi görünümünde kaldı. Test 111.

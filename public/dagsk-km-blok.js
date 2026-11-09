@@ -726,6 +726,10 @@
     function blkAnlik() { return JSON.parse(JSON.stringify(durum())); }
     window.blkKahraman = (k) => kahramanOf(k).ad;
     window._blkKahramanlar = () => KAHRAMANLAR.map((x) => x.ad);
+    // v396 (kullanıcı: "tüm oyunlarda karakter seçimlerini çoğaltalım"): 🎭 Karakter Blok'ta 12 kahramandan seçtirir (kalıcı, aynı kayıt)
+    window.blkKahramanNo = (k) => { kahramanOf(k); return _khM[k] != null ? _khM[k] : 0; };
+    window.blkKahramanSec = (k, j) => { if (!KAHRAMANLAR[j]) return; const a = 'dag_km_blokkh_' + konum(); let m = {}; try { m = JSON.parse(localStorage.getItem(a) || '{}') || {}; } catch (e) { } m[k] = j; try { localStorage.setItem(a, JSON.stringify(m)); } catch (e) { } _khIm = ''; _khM = {}; try { hudCiz(); } catch (e) { } };
+    window.blkKahramanOnizle = (cv, j, rk) => { const c = cv.getContext('2d'); c.clearRect(0, 0, cv.width, cv.height); kahramanCiz(c, cv.width / 2, cv.height - 4, rk || '#7c5cff', '', 0.3, 0, false, Math.min(cv.width / 44, (cv.height - 8) / 86), false, KAHRAMANLAR[j]); };
     window._blkBosslar = () => TIPLER.slice();
     window._blkCizDene = () => sahneCiz(performance.now()); // test: sahne hatası döngüde yutulur, burada görünür
     function blkGeriYukle(k) {
