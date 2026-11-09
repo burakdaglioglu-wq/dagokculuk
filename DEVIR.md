@@ -5686,3 +5686,11 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - Oyunlar sıra kartında **🚫 Bugün derste yok**: `kmOyunDersteYok(i)` listeden çıkarır (`_kmListeKaydet` → tüm cihazlar). Bugün serisi yoksa yoklamaya `geldi:false` yazar. Oyun içinde 6 sn "↩ Geri al" (`#km-yok-geri`), modal yok.
 - Yarışma hattı paneli (`#yz-karma-dok`) varsayılan KAPALI (`dagsk_karma_dok_acik === '1'` açık). Açıkken üstte ☕ 3/5/10 dk, +1 dk, Bitir (`yzKarmaMola`); kapalı başlıkta kalan mola süresi.
 - Oyun köşe sayacı `yzOyunSayacGor`: seri süresi > mola > "SÜRE BİTTİ" (bittikten sonra 8 sn) > gizli. Test 112.
+
+## 111. ☕ TV Sahne'de mola analizi (2026-11-09, v398)
+- Kullanıcı (TV fotoğrafı): "molada sporcular dönmüyor; bütün okların sıcak analizi, görseller güzel olsun, merak ettirsin" + "Tablo kısmında yapmışsın ama Sahne kısmında yapmamışsın".
+- `dagsk-tv-sahne.js?v=3`: mola sürerken (`yzsMolaAktif`) sahne slayt gibi döner (`yzsMolaCiz`, `yzsDon` tick). Kişisel slaytlar 8,5 sn, ödül slaytları 10 sn.
+- Sıra: 🔥 sınıfın ısı haritası (`yzsIsiCiz`, termal + eş yükselti; en sıcak bölge yönü, 10/X/ıska) → 🥁 ödül kartları → aralarda her sporcunun kişisel ısı haritası + seri çubukları + yön + grup sıkılığı.
+- Ödül kartları: merkeze en yakın grup, en sıkı grup, turun en iyi serisi, en çok 10, formu yükselen. Ad ve hedef 2,4 sn bulanık, davul sallanır, sonra açılır.
+- Mola bitince normal sahne. Molada TV sayacı "SÜRE BİTTİ" yerine ☕ MOLA (pro.js `yzOyunSayacGor` ile). Test 113.
+- Isı haritasına yalnız hedefe dokunarak girilmiş oklar girer; konumsuz sporcuda "yalnız puan".

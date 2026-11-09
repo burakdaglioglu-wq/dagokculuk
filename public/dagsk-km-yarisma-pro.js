@@ -857,7 +857,9 @@ function yzTimerBaslat() {
         let o = yzOku(), s = yzSayacDurum(o);
         if (c) yzOyunSayacEtiket(o, s);
         yzOyunHattiKartTazele();
-        [a, b].forEach(function (el) { if (!el) return; el.className = 'yz-sayac ' + s.faz; el.querySelector('.yz-sayac-alt').textContent = s.alt; el.querySelector('.yz-sayac-sure').textContent = s.metin; });
+        let gm = b && yzMolaDurum(o) && ['hazirlik', 'atis', 'son'].indexOf(s.faz) === -1 ? yzOyunSayacGor(o, s) : null; // TV sahnesinde molada "SÜRE BİTTİ 0" yerine mola
+        if (b && gm) { b.className = 'yz-sayac ' + gm.faz; b.querySelector('.yz-sayac-alt').textContent = gm.alt; b.querySelector('.yz-sayac-sure').textContent = gm.metin; }
+        [a, gm ? null : b].forEach(function (el) { if (!el) return; el.className = 'yz-sayac ' + s.faz; el.querySelector('.yz-sayac-alt').textContent = s.alt; el.querySelector('.yz-sayac-sure').textContent = s.metin; });
         yzSesKontrol(o, s); yzDevSayacGuncelle(o, s);
         let mb = yzMolaBtnYazi(o); document.querySelectorAll('.yz-mola-btn').forEach(function (b) { if (b.textContent !== mb) b.textContent = mb; });
     }, 250);
@@ -2936,7 +2938,7 @@ function yzTvDuyuruHTML(o, sira, yeni) {
     return '<div class="yz-tv-duyuru">' + yuks + msj.slice(0, yuks ? 2 : 3).map(function (h) { return '<div class="yz-tv-dy ' + h.d + '"><span>' + h.i + '</span>' + esc(h.metin) + '</div>'; }).join('') + '</div>';
 }
 // 📺 TV görünümü (2026-11-08, v388): 'sahne' (varsayılan, dagsk-tv-sahne.js) ya da 'tablo' (eski). Cihaz başına; Tema penceresinden ve TV'deki düğmeden değişir.
-const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=2';
+const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=3';
 function yzTvGorunum() { try { return localStorage.getItem('dag_yz_tv_gorunum') === 'tablo' ? 'tablo' : 'sahne'; } catch (e) { return 'sahne'; } }
 function yzTvGorunumSec(g) {
     try { localStorage.setItem('dag_yz_tv_gorunum', g === 'tablo' ? 'tablo' : 'sahne'); } catch (e) {}
