@@ -5653,3 +5653,14 @@ Kullanıcı: "Tapo ile Form Lab'da analiz yapabilir miyiz + yarışma sekmesinde
 - **yzsDon (500 ms):** hatta geçiş/atış/son 30 sn boyunca her 5,5 sn hedef sırasında skoru olan bir sonraki sporcu sahneye (okları yeniden düşer, sahne kayarak girer, etikette SIRAYLA). Yeni skor gelince o sporcu 8 sn kalır. Süre yokken son skoru giren kalır.
 - **Ölçek:** büyük sayaç açıksa (html.yz-dev-acik) sahne #yz-dev-sayac'ın altındaki alana sığar; yzsDon her turda yeniden ölçer.
 - **Ad boyu (yzsAdBoy):** en uzun kelime tek satıra sığacak kadar küçülür, harf ortasından bölünmez. dagsk-tv-sahne.js?v=2. Test 109 genişledi.
+
+## 106. 🎲 Dev Tahta (2026-11-09, v393)
+Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan say, gel yaz, ilerle); arada fiziksel aktivite de olsun". Beş fikirden (https://claude.ai/artifact/XuTJaKccAE7qEJMhedb7d7) **B Salon Tahtası + A Görev Kartı** seçildi. Oyunlar teması `tahta`, `public/dagsk-km-tahta.js` (`tb*`), test 110.
+- **Takımlar:** 2–4 takım (otomatik: ≤9 çocuk 2, ≤17 3, üstü 4), ortalamaya göre yılan dağıtımla dengeli. Oyun ortasında gelen çocuk en küçük takıma.
+- **Adım:** kendi hedefini vuran ok 2 (eşik `esikOf`: 5/7/9, Zombi ile aynı), hedefe değen 1, ıska 0. Küçük takım eşitlenir: adım × (en büyük/bu takım), kesir birikir ve "+1 küçük takım" olarak görünür.
+- **El:** `tahtaEl` (aynı anda atan kişi, varsayılan 4) kadar seri girilince yeni el başlar. Her elde yeni kural kartı (Renk Avı, Çift Güç, İlk/Son Ok Joker, Tam Seri, Şanslı El), yeni yürüyüş kartı (yalnız hedefe giderken, eller boş) ve yeni piyonlar. Koçun "🃏 Yeni kart" düğmesi de var.
+- **Kareler:** 🏃 Hareket (takım görevi; yaylar yerde, çizginin arkasında; 15 sn sonra ya da sıradaki seri girilince +1, "Geç" ödülsüz), 🚀 Roket +3, 🌪️ Fırtına −2, 🃏 Sürpriz (2 ileri, herkes 1 ileri, sıradaki atış ×2, zafer dansı +2).
+- **Piyon:** salonda koni yolu varsa takımın piyonu adımları zıplar; piyon her el değişir, en az piyon olan önce.
+- **Bitiş (STANDING):** kazanan herkes atınca belli olur; bitişe erken varan bekler, fazla adım sayılır. "Hep birlikte bitir" atış başına konuma bakar. Finalde takımlar sabit sırada, herkesin adı. Kişisel puan/adım sıralaması yok.
+- **Ayarlar:** `tahtaTur`, `tahtaEl`, `tahtaTakim`. İçerik anahtarları `KM_OYUN_ICERIK.tahta`: kart, toplama, hareket, firtina, piyon. Durum `dag_km_tahta_<konum>`, 12 saat kuralında.
+- Gerçek çocuklarla ve TV'de denenmedi.

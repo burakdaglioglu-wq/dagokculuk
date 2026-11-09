@@ -16,7 +16,7 @@ export default async function ({ log }) {
     dogrula(n >= 3, 'en az 3 sporcu gerekli');
     await p.waitForSelector('#zb-kalabalik .zb-kisi', { timeout: 30000 });
     const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.zombi && KM_OYUN_TEMALAR.zombi.ad, eski: !!KM_OYUN_TEMALAR.sonus, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_zombi_'), icerik: !!KM_OYUN_ICERIK.zombi, oner: KM_DA_OYUN.kucuk[0] }));
-    esit(kur.tema, 'Zombi Salgını', 'tema'); esit(kur.eski, false, 'Son Üs kalkmalı'); esit(kur.sifir, true, '12 saat kuralına girmeli'); dogrula(kur.icerik, 'içerik anahtarı'); esit(kur.oner, 'zombi', '8 yaş önerisi');
+    esit(kur.tema, 'Zombi Salgını', 'tema'); esit(kur.eski, false, 'Son Üs kalkmalı'); esit(kur.sifir, true, '12 saat kuralına girmeli'); dogrula(kur.icerik, 'içerik anahtarı'); esit(kur.oner, 'tahta', '8 yaş önerisi (v393: Dev Tahta önde, Zombi ikinci)');
     esit(await p.locator('#km-oyun-rightpanel').isVisible().catch(() => false), false, 'puan sıralaması görünmemeli');
     const seri = (oklar, hedef) => p.evaluate(async ([oklar, hedef]) => {
       if (typeof hedef === 'number') _kmOyunAktifIndex = hedef;
