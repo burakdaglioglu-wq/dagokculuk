@@ -89,6 +89,12 @@ export default async function ({ log }) {
     await p.mouse.move(bb.x + 10, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(300, 200, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(100);
     const yer = await p.evaluate(() => ({ r: document.getElementById('ozd-dinlen').getBoundingClientRect().left, a: JSON.parse(localStorage.getItem('dag_ozd_dinlenme_yer') || '{}') }));
     dogrula(yer.r < 400 && yer.a.x != null && yer.a.boy === 2, 'sürükleme / saklama olmadı: ' + JSON.stringify(yer));
+    // v394: ✕ küçük ⏱️ düğmesine indirir, düğme geri açar; okçulukta (KM) varsayılan kapalı
+    await p.locator('#ozd-dinlen button[title="Gizle"]').click(); await p.waitForTimeout(100);
+    const gz = await p.evaluate(() => { const e = document.getElementById('ozd-dinlen'); return { kapali: e.classList.contains('kapali'), cip: !!e.querySelector('.ozd-din-cip'), w: e.offsetWidth, km: (() => { const o = ozdHareketModu; ozdHareketModu = () => false; const v = ozdDinKapali(); ozdHareketModu = o; return v; })() }; });
+    dogrula(gz.kapali && !gz.cip && gz.km, 'gizle olmadı: ' + JSON.stringify(gz));
+    await p.locator('#ozd-dinlen .ozd-din-ac').click(); await p.waitForTimeout(100);
+    dogrula(await p.evaluate(() => !!document.querySelector('#ozd-dinlen .ozd-din-cip')), 'tekrar açılmadı');
     await p.evaluate(() => localStorage.removeItem('dag_ozd_dinlenme_yer'));
     // v348: oyun tam ekrandayken sayaç tam ekranın içinde görünür
     await p.click('#km-oyun-tam-btn'); await p.waitForTimeout(600);
@@ -130,10 +136,10 @@ export default async function ({ log }) {
     const km = await p.evaluate(() => { kmAc(); return { mod: ozdHareketModu(), konum: _kmAktifKonum, baslik: document.getElementById('km-baslik').textContent }; });
     dogrula(!km.mod && km.konum === yedek.konum && /Karışık Sınıf/.test(km.baslik), 'Karışık Sınıf açılınca özel ders modu sürdü: ' + JSON.stringify(km));
     // v349: okçuluk tarafındaki oyunlarda da dinlenme sayacı var — ayarları ayrı, oto varsayılan kapalı
-    await p.waitForTimeout(1500); await p.evaluate(() => { ['karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); kmPlatformGoster(); kmAracSec('oyunlar'); });
+    await p.waitForTimeout(1500); await p.evaluate(() => { ['karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); kmPlatformGoster(); if (!_kmListe.length) { ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif && _kmListe.length < 4) _kmListe.push({ g, ad }); })); } kmAracSec('oyunlar'); });
     await p.waitForFunction(() => !!document.getElementById('km-oyun-wrap'), null, { timeout: 30000 }); await p.waitForTimeout(1300);
-    const okc = await p.evaluate(() => ({ var: !!document.getElementById('ozd-dinlen'), on: ozdDinOn(), oto: ozdDinOto(), serit: !!document.getElementById('ozd-km-banner') }));
-    dogrula(okc.var && okc.on === 'dag_km_dinlenme' && okc.oto === false && !okc.serit, 'okçuluk oyunlarında dinlenme sayacı / ayrımı yanlış: ' + JSON.stringify(okc));
+    const okc = await p.evaluate(() => ({ var: !!document.getElementById('ozd-dinlen'), on: ozdDinOn(), oto: ozdDinOto(), serit: !!document.getElementById('ozd-km-banner'), kapali: (document.getElementById('ozd-dinlen') || { classList: { contains: () => false } }).classList.contains('kapali') }));
+    dogrula(okc.var && okc.on === 'dag_km_dinlenme' && okc.oto === false && !okc.serit && okc.kapali, 'okçuluk oyunlarında dinlenme sayacı / ayrımı yanlış: ' + JSON.stringify(okc));
     await p.waitForTimeout(1500); // kmAc gerçekten Karışık Sınıf'ı (okçuluk) açar — kapat, özel ders sayfasına dön
     await p.evaluate(() => { ['karisik-platform', 'karisik-konum-modal', 'karisik-modal'].forEach((id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; }); sekmeAc('ozelders'); }); await p.waitForTimeout(200);
 

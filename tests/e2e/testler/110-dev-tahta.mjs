@@ -52,7 +52,7 @@ export default async function ({ log }) {
       return { key: s.g + '|' + s.ad, i, once, sonra: (sp.seriler || []).length, st: JSON.parse(JSON.stringify(tbDurum())) };
     }, [oklar, hedef]);
     // belirlilik: düz tahta, kart yok
-    const duz = () => p.evaluate(() => { const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.kareler = st.kareler.map((x, i) => i === 0 ? 'bas' : i === st.L ? 'bitis' : 'bos'); st.kart = null; localStorage.setItem(k, JSON.stringify(st)); tbGuncelle(); });
+    const duz = () => p.evaluate(() => { const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.kareler = st.kareler.map((x, i) => i === 0 ? 'bas' : i === st.L ? 'bitis' : 'bos'); st.kart = null; localStorage.setItem(k, JSON.stringify(st)); localStorage.setItem('dag_km_oyun_icerik', JSON.stringify({ tahta: { ceza: false } })); tbGuncelle(); });
     await duz();
 
     // gerçek seri: X-10-9 her seviyede 6 adım
@@ -64,6 +64,15 @@ export default async function ({ log }) {
     // geri al
     const ga = await p.evaluate(() => { window.confirm = () => true; const once = tbDurum().seri; kmOyunSonGirisiGeriAl(); return { once, sonra: tbDurum().seri, poz: tbDurum().poz.join(',') }; });
     esit(ga.sonra, ga.once - 1, 'geri al'); esit(ga.poz, '0,0', 'geri alınca piyon başa');
+    // v394 ceza şansı: iyi atış (X-10-9 = 6) 🐍 yılan karesine düşerse 3 geri; tahtada yılan var; kara bulut 0 adımda da yakalar
+    const yl = await p.evaluate(() => { const t = _tbIc.tahtaUret(24, () => .3, { firtina: true, hareket: true, ceza: true }); return { yilan: t.filter((x) => x === 'yilan').length, sonaYakin: t.slice(18, 24).indexOf('yilan') >= 0, yok: _tbIc.tahtaUret(24, () => .3, { firtina: true, hareket: true, ceza: false }).indexOf('yilan') }; });
+    dogrula(yl.yilan >= 2 && yl.sonaYakin && yl.yok < 0, 'yılan kareleri: ' + JSON.stringify(yl));
+    await p.evaluate(() => { localStorage.setItem('dag_km_oyun_icerik', '{}'); const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.kareler[6] = 'yilan'; localStorage.setItem(k, JSON.stringify(st)); tbGuncelle(); });
+    const ry = await seri(['X', '10', '9'], 0); esit(ry.st.poz[ry.st.takim[ry.key]], 3, 'iyi atış yılana düşünce 6 → 3'); await p.evaluate(() => { window.confirm = () => true; kmOyunSonGirisiGeriAl(); }); await p.waitForTimeout(300); esit(await p.evaluate(() => tbDurum().poz.join(',')), '0,0', 'yılan geri alındı');
+    const rb = await p.evaluate(async () => { const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.kareler[6] = 'bos'; st.poz = st.poz.map(() => 4); localStorage.setItem(k, JSON.stringify(st)); tbGuncelle(); const R = Math.random; Math.random = () => 0; const s = _kmOyunRosterCache[0]; _kmOyunAktifIndex = 0; _kmOyunSeriGirisleri = ['M', 'M', 'M']; _kmOyunSeriKonumlari = []; kmOyunIlerlet(); for (let i = 0; i < 150 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 120)); Math.random = R; const d = tbDurum(); return d.poz[d.takim[s.g + '|' + s.ad]]; });
+    dogrula(rb < 4, 'kara bulut kötü atışta da geri götürmeli: ' + rb);
+    await p.evaluate(() => { kmOyunSonGirisiGeriAl(); }); await p.waitForTimeout(400); await p.evaluate(() => { localStorage.setItem('dag_km_oyun_icerik', JSON.stringify({ tahta: { ceza: false } })); const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.poz = st.poz.map(() => 0); localStorage.setItem(k, JSON.stringify(st)); tbGuncelle(); });
+    esit(await p.evaluate(() => tbDurum().poz.join(',')), '0,0', 'ceza denemesi geri alındı');
     // hareket karesi: 1-1-1 → 3 adım, 3. kare hareket → görev penceresi, "Yaptık" +1
     await p.evaluate(() => { const k = 'dag_km_tahta_' + (_kmAktifKonum || 'varsayilan'), st = tbDurum(); st.kareler[3] = 'hareket'; localStorage.setItem(k, JSON.stringify(st)); tbGuncelle(); });
     const r2 = await seri(['1', '1', '1'], 0); const t2 = r2.st.takim[r2.key];

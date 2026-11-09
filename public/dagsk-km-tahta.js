@@ -51,7 +51,12 @@
     const YURUYUS = [['🦀', 'YENGEÇ YÜRÜYÜŞÜ'], ['🐧', 'PENGUEN YÜRÜYÜŞÜ'], ['🤖', 'ROBOT GİBİ'], ['🐘', 'DEV FİL ADIMLARI'], ['🐭', 'PARMAK UCU, SESSİZ'], ['🦆', 'ÖRDEK YÜRÜYÜŞÜ'], ['🐻', 'AYI YÜRÜYÜŞÜ'], ['🐇', 'TAVŞAN SEKMESİ']];
     const SURPRIZ = [{ t: 'ileri', ikon: '💨', ad: 'RÜZGÂR ARKADA', yaz: '2 kare ileri!' }, { t: 'herkes', ikon: '🤝', ad: 'HEP BİRLİKTE', yaz: 'Bütün takımlar 1 kare ileri' },
         { t: 'cift', ikon: '✨', ad: 'GÜÇ YÜKLEMESİ', yaz: 'Takımın sıradaki atışı çift adım' }, { t: 'dans', ikon: '🕺', ad: 'ZAFER DANSI', yaz: 'Takım 10 sn dans etsin: +2 kare' }];
-    const KARE = { bos: { ikon: '', ad: '' }, bas: { ikon: '', ad: 'BAŞLA' }, bitis: { ikon: '🏆', ad: 'BİTİŞ' }, hareket: { ikon: '🏃', ad: 'HAREKET' }, roket: { ikon: '🚀', ad: '+3' }, firtina: { ikon: '🌪️', ad: '−2' }, kart: { ikon: '🃏', ad: 'SÜRPRİZ' } };
+    // v394 (kullanıcı: "iyi de atsa kötü de atsa ceza yeme ihtimali olsun"): sürprizin yarısı kötü; her seride küçük bir KARA BULUT şansı
+    const SURPRIZ_KOTU = [{ t: 'geri', ikon: '🍌', ad: 'MUZ KABUĞU', yaz: '2 kare geri kaydı!', n: 2 }, { t: 'geri', ikon: '🌬️', ad: 'TERS RÜZGÂR', yaz: '1 kare geri', n: 1 },
+        { t: 'buz', ikon: '🧊', ad: 'DONDU', yaz: 'Takımın sıradaki atışı yarım adım' }];
+    const BULUT = [{ ikon: '⛈️', ad: 'KARA BULUT', yaz: 'Şimşek çaktı, 1 kare geri!', n: 1 }, { ikon: '🦅', ad: 'KARTAL KAPTI', yaz: 'Bayrağı kaptı, 2 kare geri!', n: 2 }, { ikon: '🕳️', ad: 'ÇUKUR', yaz: 'Piyon çukura düştü, 1 kare geri', n: 1 }];
+    const BULUT_SANS = 1 / 7;
+    const KARE = { bos: { ikon: '', ad: '' }, bas: { ikon: '', ad: 'BAŞLA' }, bitis: { ikon: '🏆', ad: 'BİTİŞ' }, hareket: { ikon: '🏃', ad: 'HAREKET' }, roket: { ikon: '🚀', ad: '+3' }, firtina: { ikon: '🌪️', ad: '−2' }, yilan: { ikon: '🐍', ad: '−3' }, kart: { ikon: '🃏', ad: 'SÜRPRİZ' } };
 
     /* ---- kurallar (saf) ---- */
     function esikOf(ort) { return ort >= 7 ? 9 : ort >= 5 ? 7 : 5; } // yeni başlayan maviye, orta kırmızıya, iyi sarıya vurunca 2 adım
@@ -84,6 +89,7 @@
         koy(Math.round(L * .28), 'roket'); if (L >= 16) koy(Math.round(L * .62), 'roket');
         koy(Math.round(L * .17), 'kart'); if (L >= 14) koy(Math.round(L * .74), 'kart');
         if (acik.firtina && L >= 12) { koy(Math.round(L * .5), 'firtina'); if (L >= 22) koy(Math.round(L * .86), 'firtina'); }
+        if (acik.ceza) { koy(Math.round(L * .38), 'yilan'); if (L >= 14) koy(L - 3, 'yilan'); if (L >= 26) koy(Math.round(L * .7), 'yilan'); }
         if (acik.hareket) for (let i = 3; i < L - 1; i += 4) koy(i + (r() < .5 ? 0 : 1), 'hareket');
         return k;
     }
@@ -128,8 +134,8 @@
         const T = takimSayisi(l.length, +ayar('tahtaTakim', 0)); st.T = T;
         st.takim = takimlaraBol(l, T, ortKey, Math.random);
         const boy = Math.max(...Array.from({ length: T }, (_, i) => l.filter((k) => st.takim[k] === i).length));
-        st.L = uzunluk(boy, turSay()); st.kareler = tahtaUret(st.L, Math.random, { firtina: ic('firtina'), hareket: ic('hareket') });
-        st.poz = Array(T).fill(0); st.kesir = Array(T).fill(0); st.gorev = Array(T).fill(0); st.cift = Array(T).fill(0);
+        st.L = uzunluk(boy, turSay()); st.kareler = tahtaUret(st.L, Math.random, { firtina: ic('firtina'), hareket: ic('hareket'), ceza: ic('ceza') });
+        st.poz = Array(T).fill(0); st.kesir = Array(T).fill(0); st.gorev = Array(T).fill(0); st.cift = Array(T).fill(0); st.buz = Array(T).fill(0);
         st.kart = ic('kart') ? kartCek(null, Math.random) : null; st.yuruyus = Math.floor(Math.random() * YURUYUS.length);
         piyonSec(st); st.basladi = true; _gor = st.poz.slice();
     }
@@ -229,13 +235,13 @@
     }
     function takimlarCiz(st) {
         const l = liste(), ai = aktifIndeks(), kutu = $('tb-takimlar'); if (!kutu) return;
-        const imza = st.T + '|' + l.map((s, i) => { const k = kimlik(s); return k + ':' + st.takim[k] + ':' + (st.atan[k] || 0) + ':' + (i === ai ? 1 : 0); }).join(',') + '|' + st.piyon.join(',') + '|' + st.poz.join(',') + '|' + st.cift.join(',') + '|' + ic('piyon');
+        const imza = st.T + '|' + l.map((s, i) => { const k = kimlik(s); return k + ':' + st.takim[k] + ':' + (st.atan[k] || 0) + ':' + (i === ai ? 1 : 0); }).join(',') + '|' + st.piyon.join(',') + '|' + st.poz.join(',') + '|' + st.cift.join(',') + '|' + (st.buz || []).join(',') + '|' + ic('piyon');
         if (kutu._imza === imza) return; kutu._imza = imza;
         let h = '';
         for (let ti = 0; ti < st.T; ti++) {
             const tk = TAKIM[ti], p = st.poz[ti] || 0, yer = p >= st.L ? '🏁' + (p > st.L ? '+' + (p - st.L) : '') : p + '<small>/' + st.L + '</small>';
             const uy = l.map((s, i) => ({ s, i, k: kimlik(s) })).filter((x) => st.takim[x.k] === ti);
-            h += '<div class="tb-tk" style="--t:' + tk.renk + '"><div class="tb-tk-bas"><i>' + tk.ikon + '</i><b>' + tk.ad + '</b>' + (st.cift[ti] ? '<u>✨ ×2</u>' : '') + '<em>' + yer + '</em></div><div class="tb-tk-uye">'
+            h += '<div class="tb-tk" style="--t:' + tk.renk + '"><div class="tb-tk-bas"><i>' + tk.ikon + '</i><b>' + tk.ad + '</b>' + (st.cift[ti] ? '<u>✨ ×2</u>' : '') + (st.buz && st.buz[ti] ? '<u>🧊 ½</u>' : '') + '<em>' + yer + '</em></div><div class="tb-tk-uye">'
                 + uy.map((x) => { const at = (st.atan[x.k] || 0) >= turSay(), pi = ic('piyon') && st.piyon[ti] === x.k; return '<button type="button" class="tb-uye' + (at ? ' atti' : '') + (x.i === ai ? ' aktif' : '') + (pi ? ' piyon' : '') + '" data-km-sporcu="' + x.i + '" data-k="' + esc(x.k) + '">' + (pi ? '<i title="Piyon: salonda zıplar">👟</i>' : '') + esc(ilkAd(x.s.ad)) + '</button>'; }).join('') + '</div></div>';
         }
         kutu.innerHTML = h; kutu.style.setProperty('--n', Math.max(1, st.T)); kutu.classList.toggle('sik', l.length > 14);
@@ -325,15 +331,18 @@
         const key = kimlik(s); if (st.takim[key] == null) { st.takim[key] = 0; }
         const ti = st.takim[key], tk = TAKIM[ti], puanlar = (kaydedilecek || []).map((k) => puan(k.puan)), esik = esikOf(ortalama(s)), kart = st.kart, r = seriAdim(puanlar, esik, kart);
         let adim = r.toplam; const guc = !!st.cift[ti]; if (guc) { adim *= 2; st.cift[ti] = 0; }
+        if (!st.buz) st.buz = []; const buzlu = !!st.buz[ti]; if (buzlu) { if (!guc) adim = Math.ceil(adim / 2); st.buz[ti] = 0; }
         st.kesir[ti] = (st.kesir[ti] || 0) + adim * (carpan(st, ti) - 1); const ek = adim > 0 ? Math.floor(st.kesir[ti] + 1e-9) : 0; st.kesir[ti] -= ek;
         const from = st.poz[ti] || 0, ara = from + adim + ek, kare = ara >= st.L ? 'bitis' : st.kareler[ara];
-        let to = ara, sur = null, gorev = null;
+        let to = ara, sur = null, gorev = null, bulut = null;
         if (adim + ek > 0) {
             if (kare === 'roket') to = ara + 3;
             else if (kare === 'firtina') to = Math.max(0, ara - 2);
-            else if (kare === 'kart') { sur = rastgele(SURPRIZ); if (sur.t === 'ileri') to = ara + 2; else if (sur.t === 'cift') st.cift[ti] = 1; else if (sur.t === 'dans') gorev = { ti, g: 'dans', odul: 2, sn: 12 }; }
+            else if (kare === 'yilan') to = Math.max(0, ara - 3);
+            else if (kare === 'kart') { sur = rastgele(ic('ceza') && Math.random() < .5 ? SURPRIZ_KOTU : SURPRIZ); if (sur.t === 'geri') to = Math.max(0, ara - sur.n); else if (sur.t === 'buz') st.buz[ti] = 1; else if (sur.t === 'ileri') to = ara + 2; else if (sur.t === 'cift') st.cift[ti] = 1; else if (sur.t === 'dans') gorev = { ti, g: 'dans', odul: 2, sn: 12 }; }
             else if (kare === 'hareket' && ic('hareket')) gorev = { ti, g: Math.floor(Math.random() * GOREVLER.length), odul: 1, sn: 15 };
         }
+        if (ic('ceza') && to === ara && ara < st.L && (st.kareler[ara] === 'bos' || st.kareler[ara] === 'bas' || !(adim + ek)) && from > 0 && Math.random() < BULUT_SANS) { bulut = rastgele(BULUT); to = Math.max(0, to - bulut.n); }
         const onceGor = st.poz.slice(), piyonOnce = st.piyon[ti];
         st.poz[ti] = to; if (sur && sur.t === 'herkes') st.poz = st.poz.map((x) => x + 1);
         st.atan[key] = (st.atan[key] || 0) + 1; st.adim[key] = (st.adim[key] || 0) + adim + ek; st.seri = (st.seri || 0) + 1;
@@ -348,7 +357,7 @@
         if (!$('tb-oyun')) oyunIskelet();
         tahtaCiz(); _gor = onceGor; piyonYerlestir();
         const adi = buyuk(ilkAd(s.ad)), chips = puanlar.map((p, j) => '<i class="tb-ok" style="--h:' + HALKA_RENK[halka(p)] + (halka(p) === 'beyaz' || halka(p) === 'sari' ? ';--hy:#151515' : '') + '"><s>' + (p === 10 && String((kaydedilecek[j] || {}).puan) === 'X' ? 'X' : p === 0 ? 'M' : p) + '</s>+' + r.oklar[j] + '</i>').join('');
-        const ekler = (r.bonus ? '<u>+' + r.bonus + ' TAM SERİ</u>' : '') + (guc ? '<u>✨ ×2 GÜÇ</u>' : '') + (ek ? '<u>+' + ek + ' küçük takım</u>' : '');
+        const ekler = (r.bonus ? '<u>+' + r.bonus + ' TAM SERİ</u>' : '') + (guc ? '<u>✨ ×2 GÜÇ</u>' : '') + (buzlu && !guc ? '<u>🧊 yarım adım</u>' : '') + (ek ? '<u>+' + ek + ' küçük takım</u>' : '');
         const piyonAd = ic('piyon') && piyonOnce ? adOf(piyonOnce) : null;
         const toplamA = adim + ek;
         duyur('<span class="tb-d-ad" style="color:' + tk.renk + '">' + tk.ikon + ' ' + esc(adi) + '</span><span class="tb-d-ok">' + chips + '</span><b class="tb-d-top">' + (toplamA ? '= ' + toplamA + ' ADIM' : 'ADIM YOK') + '</b>' + ekler + (toplamA && piyonAd ? '<small>👟 Salonda: ' + esc(piyonAd) + ' ' + toplamA + ' kare zıplasın</small>' : ''), toplamA ? '' : 'sonuk');
@@ -361,9 +370,12 @@
         if (toplamA) {
             if (kare === 'roket') ozel('<b>🚀 ROKET! 3 KARE UÇTU!</b>', 'iyi', SES.roket, () => { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc'); const m = merkezOf(x); if (m) patla(m.x, m.y, ['#FFB347', '#FFE08A', '#FF6B3D'], 22); }, 650); }, 1500);
             else if (kare === 'firtina') ozel('<b>🌪️ FIRTINA! 2 KARE GERİ</b><small>Sıradaki atış toparlar!</small>', 'kotu', SES.firtina, () => { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc', 'don'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc', 'don'); }, 900); }, 1500);
+            else if (kare === 'yilan') ozel('<b>🐍 YILAN! 3 KARE KAYDI</b><small>Herkesin başına gelebilir — sıradaki atış toparlar!</small>', 'kotu', SES.firtina, () => { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc', 'don'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc', 'don'); }, 900); }, 1500);
+            else if (sur && (sur.t === 'geri' || sur.t === 'buz')) ozel('<b>🃏 SÜRPRİZ: ' + sur.ikon + ' ' + sur.ad + '</b><small>' + esc(sur.yaz) + '</small>', 'kotu', SES.firtina, () => { if (sur.t === 'geri') { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc', 'don'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc', 'don'); }, 900); } takimlarCiz(st); }, 1900);
             else if (sur) ozel('<b>🃏 SÜRPRİZ: ' + sur.ikon + ' ' + sur.ad + '</b><small>' + esc(sur.yaz) + '</small>', 'iyi', SES.kart, () => { if (sur.t === 'ileri' || sur.t === 'herkes') { _gor = st.poz.slice(); document.querySelectorAll('.tb-piyon').forEach((e) => e.classList.add('uc')); piyonYerlestir(); sonra(() => document.querySelectorAll('.tb-piyon').forEach((e) => e.classList.remove('uc')), 700); } takimlarCiz(st); }, 1900);
             else if (ara >= st.L && from < st.L) ozel('<b>🏁 ' + tk.ikon + ' ' + tk.ad + ' BİTİŞTE!</b><small>Kazanan herkes atınca belli olur; fazla adımlar da sayılır.</small>', 'iyi', SES.bitis, () => { const m = merkezOf($('tb-p' + ti)); if (m) patla(m.x, m.y, [tk.renk, '#FFFFFF', '#FFD86B'], 30); }, 1800);
         }
+        if (bulut) ozel('<b>' + bulut.ikon + ' ' + bulut.ad + '!</b><small>' + esc(bulut.yaz) + ' Şans işi — iyi atan da yakalanır.</small>', 'kotu', SES.firtina, () => { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc', 'don'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc', 'don'); }, 900); }, 1700);
         sonra(() => {
             duyuruKapa(); _gor = st.poz.slice(); piyonYerlestir(); takimlarCiz(st);
             if (final) { _kilit = true; finalSahne(st, () => { sonCiz(st); _kilit = false; try { done(); } catch (e) { } }); return; }
@@ -386,7 +398,7 @@
     }
     function nasil() {
         const m = 'Sınıf takımlara bölünür, her takımın tahtada bir piyonu var.<br>Seri adıma dönüşür: <b>kendi hedefini</b> vuran ok 2, hedefe değen ok 1 adım (yeni başlayana mavi, ortaya kırmızı, iyiye sarı).<br>'
-            + 'Her elde yeni bir <b>kural kartı</b> çıkar (Renk Avı, Çift Güç, Joker…) ve hedefe giderken yapılacak <b>yürüyüş</b>.<br>🏃 Hareket karesi: takım çizginin arkasında görevi yapar, +1. 🚀 Roket +3, 🌪️ Fırtına −2, 🃏 Sürpriz.<br>'
+            + 'Her elde yeni bir <b>kural kartı</b> çıkar (Renk Avı, Çift Güç, Joker…) ve hedefe giderken yapılacak <b>yürüyüş</b>.<br>🏃 Hareket karesi: takım çizginin arkasında görevi yapar, +1. 🚀 Roket +3, 🌪️ Fırtına −2, 🐍 Yılan −3, 🃏 Sürpriz (iyi de çıkar kötü de).<br>⛈️ Kara bulut: her seride küçük bir şans — iyi atan da kötü atan da 1–2 kare geri gidebilir.<br>'
             + '👟 Piyon: salonda koni yolu varsa o çocuk adımları zıplar.<br>Kazanan herkes atınca belli olur. Küçük takımın adımları eşitlenir.';
         if (typeof onayIste === 'function' && !document.fullscreenElement) onayIste(m, () => { }, 'Tamam', 'Kapat');
     }
@@ -422,7 +434,7 @@
             + '.tb-orta{flex:1;min-height:0;position:relative}.tb-tahta{position:absolute;inset:0}.tb-yol{position:absolute;left:0;top:0;pointer-events:none}'
             + '.tb-kare{position:absolute;box-sizing:border-box;border-radius:14%;background:#262A5A;border:2px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}.tb-kare.tek{background:#2E3368}'
             + '.tb-kare s{position:absolute;left:8%;top:6%;text-decoration:none;font-size:max(10px,calc(var(--fs) * .38));font-weight:800;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}.tb-kare i{font-style:normal;font-size:var(--fs)}.tb-kare em{font-style:normal;font-family:"Barlow Condensed",Impact,sans-serif;font-weight:800;font-size:max(10px,calc(var(--fs) * .42));letter-spacing:.03em;margin-top:2px}'
-            + '.tb-kare.k-hareket{background:#147A44;border-color:#36D47F}.tb-kare.k-roket{background:#B84A0F;border-color:#FF9A3D}.tb-kare.k-firtina{background:#5B2BA8;border-color:#A77BFF}.tb-kare.k-kart{background:#A3245E;border-color:#FF6FAE}'
+            + '.tb-kare.k-hareket{background:#147A44;border-color:#36D47F}.tb-kare.k-roket{background:#B84A0F;border-color:#FF9A3D}.tb-kare.k-yilan{background:#3F6B12;border-color:#B4F04A}.tb-kare.k-firtina{background:#5B2BA8;border-color:#A77BFF}.tb-kare.k-kart{background:#A3245E;border-color:#FF6FAE}'
             + '.tb-kare.k-bas{background:#E8EAF6;border-color:#fff;color:#15173A}.tb-kare.k-bas em{font-size:max(11px,calc(var(--fs) * .5))}.tb-kare.k-bitis{background:repeating-conic-gradient(#F4F5FF 0 25%,#1B1D3A 0 50%) 0 0/34% 34%;border:3px solid #FFD86B;box-shadow:0 0 22px rgba(255,216,107,.45)}.tb-kare.k-bitis i{filter:drop-shadow(0 2px 2px #000)}.tb-kare.k-bitis em{background:#FFD86B;color:#1A1000;padding:1px 5px;border-radius:5px}'
             + '.tb-piyon{position:absolute;z-index:5;box-sizing:border-box;border-radius:50% 50% 46% 46%;background:radial-gradient(circle at 35% 30%,#fff 0 8%,var(--t) 9% 60%,color-mix(in srgb,var(--t) 60%,#000) 100%);border:3px solid #fff;box-shadow:0 6px 0 rgba(0,0,0,.35),0 0 16px var(--t);display:grid;place-items:center;transition:left .2s ease-out,top .2s ease-out;pointer-events:none}.tb-piyon.ani{transition:none}.tb-piyon.uc{transition:left .6s cubic-bezier(.3,1.4,.5,1),top .6s cubic-bezier(.3,1.4,.5,1)}.tb-piyon i{font-style:normal;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}'
             + '.tb-fazla{position:absolute;right:-12px;top:-10px;font-family:"Barlow Condensed",sans-serif;font-size:15px;font-weight:800;background:#FFD86B;color:#1A1000;border-radius:8px;padding:0 5px}.tb-fazla:empty{display:none}'

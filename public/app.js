@@ -19506,7 +19506,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ['kovalayan', '👾', 'Arkadan kovalayan'], ['kapi', '🚧', 'Sarı kapılar'], ['konusma', '💬', 'Karakterler konuşsun']] },
             hapsirik: { ad: '🤧 Hapşırık', liste: [['gizli', '🤫', 'Gizli hassas nokta'], ['sahte', '😮', '"…hıh. Geçti!" şakası']] },
             zombi: { ad: '🧟 Zombi Salgını', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin']] },
-            tahta: { ad: '🎲 Dev Tahta', not: 'Kare türleri yeni oyunda, kartlar hemen geçerli', liste: [['kart', '🃏', 'Her elde kural kartı'], ['toplama', '🦀', 'Hedefe giderken yürüyüş kartı'], ['hareket', '🏃', 'Hareket kareleri (takım görevi)'], ['firtina', '🌪️', 'Fırtına kareleri (2 geri)'], ['piyon', '👟', 'Piyon salonda zıplasın (koni yolu)']] },
+            tahta: { ad: '🎲 Dev Tahta', not: 'Kare türleri yeni oyunda, kartlar hemen geçerli', liste: [['kart', '🃏', 'Her elde kural kartı'], ['toplama', '🦀', 'Hedefe giderken yürüyüş kartı'], ['hareket', '🏃', 'Hareket kareleri (takım görevi)'], ['firtina', '🌪️', 'Fırtına kareleri (2 geri)'], ['ceza', '🐍', 'Ceza şansı: yılan kareleri, kötü sürpriz, kara bulut'], ['piyon', '👟', 'Piyon salonda zıplasın (koni yolu)']] },
             blok: { ad: '🦸 Blok Kahramanlar', liste: [['saldiri', '👊', 'Boss saldırısı (her 5 seride bina/kule yıkar)']] },
             fener: { ad: '🏮 Fener Alayı', liste: [['bilgi', '📜', 'Cumhuriyet bilgi kartları']] }
         };
@@ -19769,7 +19769,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunAnimateAkvaryum(s, i, kaydedilecek, done) { kmOyunAkvaryumHazir().then(function() { akvSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         // 🦸 Blok Kahramanlar — kabuk teması; durum + çizim public/dagsk-km-blok.js'te (ilk açılışta tembel yüklenir).
         // 🎲 Dev Tahta — kabuk teması; durum + çizim public/dagsk-km-tahta.js'te (ilk açılışta tembel yüklenir).
-        function kmOyunTahtaHazir() { return dagskEkYukle('dagsk-km-tahta.js?v=1'); }
+        function kmOyunTahtaHazir() { return dagskEkYukle('dagsk-km-tahta.js?v=2'); }
         function kmOyunSahneKurTahta() { kmOyunTahtaHazir().then(function() { if(_kmOyunAktifTema === 'tahta' && document.getElementById('km-oyun-panel-tahta')) tbSahneKur(); }).catch(function() { showToast('Dev Tahta yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncTahta() { if(typeof tbGuncelle === 'function' && document.getElementById('tb-icerik')) tbGuncelle(); else kmOyunSahneKurTahta(); }
         function kmOyunAnimateTahta(s, i, kaydedilecek, done) { kmOyunTahtaHazir().then(function() { tbSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }

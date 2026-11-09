@@ -5664,3 +5664,8 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - **Bitiş (STANDING):** kazanan herkes atınca belli olur; bitişe erken varan bekler, fazla adım sayılır. "Hep birlikte bitir" atış başına konuma bakar. Finalde takımlar sabit sırada, herkesin adı. Kişisel puan/adım sıralaması yok.
 - **Ayarlar:** `tahtaTur`, `tahtaEl`, `tahtaTakim`. İçerik anahtarları `KM_OYUN_ICERIK.tahta`: kart, toplama, hareket, firtina, piyon. Durum `dag_km_tahta_<konum>`, 12 saat kuralında.
 - Gerçek çocuklarla ve TV'de denenmedi.
+- **v394 ceza şansı** (kullanıcı: "iyi de atsa kötü de atsa ceza yeme ihtimali olsun"): içerik anahtarı `ceza` (varsayılan açık). 🐍 yılan kareleri −3 (biri bitişe 3 kala, iyi atan da yakalanır); 🃏 sürprizin yarısı kötü (🍌 −2, 🌬️ −1, 🧊 sıradaki atış yarım adım, `st.buz`); ⛈️ kara bulut: düz karede, başlangıçta değilken her seride 1/7 şans 1–2 kare geri (0 adım atan da). Test 110 düz tahtada `ceza:false` ile çalışır, ceza ayrı denenir.
+
+## 107. ⏱️ Dinlenme sayacı gizlenir (2026-11-09, v394)
+- Kullanıcı: "Dinlenme ekranda kalıyor, kaybedemiyorum, isteğe göre aç". Başlıkta ✕ → küçük ⏱️ hap düğmesi (`.ozd-dinlen.kapali`); hapa dokununca açılır. Sayaç çalışırken hapta kalan süre görünür.
+- `ozdDinKapali()`: `<taraf>_yer.kapali`; yoksa okçulukta (KM) KAPALI, özel derste açık. Test 82.
