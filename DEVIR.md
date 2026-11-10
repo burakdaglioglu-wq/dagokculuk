@@ -5703,3 +5703,13 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - Metre dolunca: göz açılır → kükreme → kovadan %10 (en az 2) balık kapar → çark son uyku döneminde atanlardan 1–3 kişi seçer (ağırlık 1 + yaptığı gürültü; iyi atan da seçilebilir) → ceza görevi kartı (20 sn, "Yaptık" / "Geç"), timsah yeniden uyur. Sıradaki seri girilirse görev yapılmış sayılır.
 - Hedef = çocuk × tur × ok/seri × 0,9 balık. Sonuç herkes atınca; erken bitişte atış başına bakılır. Finalde herkesin adı, kişisel balık sıralaması yok.
 - Ayar `timsahTur` (1/2/3), içerik `sans`, `kapma`, `gerilim`. Seçicide YENİ rozeti Dev Tahta'dan buraya geçti. Test 114. (110 yerel veride piyon sayısında düşüyor; değişiklikten önce de aynı.)
+
+## 113. 💣 Fitil Hattı (Bomba Takımı) — cezalı takım oyunu (2026-11-10, v400)
+- Kullanıcı: cezalı oyunlardan ikincisi "Bomba Takımı"; taslaklardan (https://claude.ai/artifact/NzMtD8eMq8tkPkocJQZ657) "A · Fitil Hattı"nı seçti (B · İmha Ekibi yapılmadı).
+- Oyunlar teması `bomba`, modül `public/dagsk-km-bomba.js?v=1` (bm*: `bmSahneKur`, `bmGuncelle`, `bmSeri`, `bmAnlik`, `bmGeriYukle`, `bmSporcu`, `bmAyarUygula`, `bmFinalZorla`, test için `_bmIc`). Durum `dag_km_bomba_<konum>` (km-ortak ile paylaşılır, `KM_OYUN_SIFIR_ONEK`te).
+- Sınıf 2–4 dengeli takıma bölünür (Dev Tahta ile aynı yılan dağıtımı; Kırmızı/Mavi/Sarı/Yeşil). İlk seri girilene kadar kadro ya da takım ayarı değişirse takımlar yeniden kurulur; sonra gelen çocuk en küçük takıma.
+- Fitil 30 sn başlar, en çok 60. Her ok fitili 4 sn yakar. Ok çocuğun kendi seviyesine göre (`esikOf`): kendi hedefi +6, hedefe değen +2, seviyesinin 4 altı −2, ıska −5. 3 ok kendi hedefinde = 🧯 söndürücü +4. Ortalama bir seri ≈ −5 sn.
+- 1/6 şans olayı (✂️ kısa fitil −8, 🌬️ rüzgâr −6, 🐀 fare −5 · 💧 ıslak fitil +8, 🧵 yedek fitil +10), iyi de kötü de atana çıkar. Fitil ≤12: kart titrer, tik sesi.
+- Fitil biterse: BUUUM, takımın patlama sayısı artar, takım HEP BİRLİKTE ceza görevi yapar (20 sn, "Yaptık" / "Geç"; mesaj atanı suçlamaz, takımın bütün adları), bomba 30 sn ile yeniden kurulur. Sıradaki seri girilirse görev yapılmış sayılır.
+- Kazanan herkes atınca: en az patlayan takım, eşitlikte uzun fitil, yine eşitse berabere. Erken bitişte seri başına patlama. Finalde her takımın bütün adları.
+- Ayar `bombaTur` (1/2/3), `bombaTakim` (otomatik/2/3/4); içerik `sans`, `ceza`, `gerilim`. YENİ rozeti Uyuyan Dev'den buraya geçti. Test 115. 114 ve 115 yerel kadroyu 4 çocuğa sabitler (17 çocukta 114 eski kodda da sonuçta takılıyordu).

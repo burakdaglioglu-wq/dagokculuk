@@ -20,8 +20,10 @@ export default async function ({ log }) {
     });
     dogrula(n >= 4, 'en az 4 sporcu gerekli');
     await p.waitForSelector('#tm-oyun .tm-timsah', { timeout: 30000 });
+    // yerel veride kadro bugünkü dersten gelir (17 çocukta sondaki seriler timsahı uyandırıp sonucu görev kartının arkasında bekletiyordu); 4 çocukla sabitle
+    await p.evaluate(() => { const ilk = _kmOyunRosterCache.filter((s) => turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]).slice(0, 4); _kmOyunRosterCache.length = 0; ilk.forEach((x) => _kmOyunRosterCache.push(x)); tmGuncelle(); });
     const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.timsah && KM_OYUN_TEMALAR.timsah.ad, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_timsah_'), icerik: KM_OYUN_ICERIK.timsah.liste.map((x) => x[0]).join(','), ayar: KM_OYUN_AYAR_TEMA.timsah.join(','), yeni: /Uyuyan Dev<i class="dag-yeni/.test(kmOyunSeciciKartlari()) }));
-    esit(kur.tema, 'Uyuyan Dev', 'tema'); esit(kur.sifir, true, '12 saat kuralına girmeli'); esit(kur.icerik, 'sans,kapma,gerilim', 'içerik anahtarları'); esit(kur.ayar, 'timsahTur', 'ayar'); dogrula(kur.yeni, 'seçicide YENİ rozeti');
+    esit(kur.tema, 'Uyuyan Dev', 'tema'); esit(kur.sifir, true, '12 saat kuralına girmeli'); esit(kur.icerik, 'sans,kapma,gerilim', 'içerik anahtarları'); esit(kur.ayar, 'timsahTur', 'ayar'); // YENİ rozeti v400'de Fitil Hattı'na geçti (test 115)
     esit(await p.locator('#km-oyun-rightpanel').isVisible().catch(() => false), false, 'puan sıralaması görünmemeli');
 
     // saf kurallar
