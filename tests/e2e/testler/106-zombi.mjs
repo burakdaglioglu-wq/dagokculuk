@@ -11,7 +11,7 @@ export default async function ({ log }) {
     yedek = await p.evaluate(() => JSON.stringify(_kmListe));
     const n = await p.evaluate(() => {
       const tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
-      _kmListe = tum.slice(0, 4); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); kmOyunTemaSec('zombi'); return _kmListe.length;
+      _kmListe = tum.slice(0, 4); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); localStorage.removeItem('dag_km_zombikamp_' + (_kmAktifKonum || 'varsayilan')); kmOyunTemaSec('zombi'); kmOyunListeDegisti(); return _kmListe.length;
     });
     dogrula(n >= 3, 'en az 3 sporcu gerekli');
     await p.waitForSelector('#zb-kalabalik .zb-kisi', { timeout: 30000 });
@@ -88,7 +88,7 @@ export default async function ({ log }) {
     esit(bk.px, 255, 'sahne çizilmeli'); dogrula(bk.spr, 'karakter çizilmeli');
     // Isırık anı (2026-11-07): sokaktan ADSIZ zombi atlar, hiçbir çocuk ısıran olmaz; panzehirde ok; bittikten sonra sokak zombisi kalmaz
     const an = await p.evaluate(async () => {
-      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; st.atan = {}; st.faz = 'oyun'; st.basladi = true; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; st.zamani[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle();
+      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; st.atan = {}; st.faz = 'oyun'; st.basladi = true; st.gece = 1; st.sahne = 'sokak'; st.projektorKul = true; st.dev = null; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; st.zamani[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle();
       _kmOyunAktifIndex = l.findIndex((x, i) => i >= 6 && turnuvaDB[_kmOyunRosterCache[i].g] && turnuvaDB[_kmOyunRosterCache[i].g][_kmOyunRosterCache[i].ad]);
       _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet();
       let npc = null; for (let i = 0; i < 60 && !npc; i++) { await new Promise((r) => setTimeout(r, 60)); npc = document.querySelector('.zb-npc'); }
@@ -104,7 +104,7 @@ export default async function ({ log }) {
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(n + ' çocuk · barikat · ısırık anı · kurallar · gerçek seri · geri al · herkes atınca sonuç · 12 saat · 24 çocuk · 390 px');
   } finally {
-    await p.evaluate((y) => { try { localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) { } }, yedek).catch(() => { });
+    await p.evaluate((y) => { try { localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); localStorage.removeItem('dag_km_zombikamp_' + (_kmAktifKonum || 'varsayilan')); if (y) _kmListe = JSON.parse(y); } catch (e) { } }, yedek).catch(() => { });
     await ctx.close();
   }
 }

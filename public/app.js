@@ -16953,7 +16953,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             bomba: { ad: 'Fitil Hattı', ikon: '💣', renkler: ['#FF5A5A', '#4DA3FF', '#FFD34D', '#5FD38D', '#FF7A2F', '#B79CFF', '#4FD1C5', '#FF9BCF', '#8FA8FF', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Bomba Takımı: her takımın fitili her okta yanar, kendi hedefini vuran fitili uzatır. Fitil biterse bomba patlar, takım hep birlikte ceza görevi yapar. Herkes atınca en az patlayan takım kazanır.',
                 surprizler: [] },
             // 🧟 Zombi Salgını (2026-11-06, v381) — 8 yaş: iyi atış arkadaşını kurtarır, zombiler her atıştan sonra ısırır, herkes atınca sonuç. Bkz. dagsk-km-zombi.js.
-            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur.', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
+            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur. X ya da 10 süper panzehir, üç ok da panzehirse ışık bombası, art arda üç çocuk zincir kurar. Son turda dev zombi gelir, son ok atılınca düşer ya da barikatı aşar. Kazanınca yeni gece açılır, sığınak büyür.', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
                 surprizler: [] },
             // 🐠 Sınıf Akvaryumu (2026-10-28) — ortak oyun: her ok bir deniz canlısı, akvaryum dolunca kutlama. Bkz. dagsk-km-akvaryum.js.
             akvaryum: { ad: 'Sınıf Akvaryumu', ikon: '🐠', renkler: ['#7dd3fc', '#ffd23f', '#ff8fa8', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok suya bir damla olur ve bir deniz canlısı doğar; halka ne kadar içteyse canlı o kadar büyük, 10 ve X nadir canlı getirir. Akvaryum dolunca kutlama, sonra sıradaki akvaryum!', btn: '💧 Bırak', finish: '', cp: '', birim: 'canlı', bitis: '',
@@ -17236,6 +17236,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunTakimModu && _kmOyunAktifTema !== 'futbol' && _kmOyunAktifTema !== 'futboltakim') {
                 kmOyunTakimFracYay();
             }
+            try { let b = document.querySelector('#km-kv-btn b'); if(b) b.textContent = kmOyunListe().length; } catch(e) {}
             return _kmOyunRosterCache;
         }
         // Çoklu Takım (Yarış) — 2026-09-06, "takımları normal yarış gibi 2-4 farklı takım halinde
@@ -19251,9 +19252,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             let kameraVarMi = !!KM_OYUN_KAMERA_SVG_ID[_kmOyunAktifTema];
             return `<div id="km-oyun-wrap" data-tema="${_kmOyunAktifTema}">
                 <div class="km-oyun-topbar">
-                    <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:wrap;">
                         <h3 class="km-oyun-baslik" id="km-oyun-baslik">${th.ikon} ${th.ad}</h3>
                         <button class="km-oyun-tam-btn" onclick="kmOyunSeciciAc()">🔀 Değiştir</button>
+                        <button class="km-oyun-tam-btn" id="km-kv-btn" onclick="kmKvAc()" title="Bugün kimler var — gelmeyenleri çıkar, sonradan geleni ekle">👥 Kimler var <b>${kmOyunListe().length}</b>${typeof yeniRozet === 'function' ? yeniRozet() : ''}</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunAyarAc()" title="Bu oyunun ayarları, ses, gün sonu özeti, yeniden başlat">⚙️ Ayarlar</button>
                         <button class="km-oyun-tam-btn" onclick="kmOyunHepsiSifirla()" title="Bu oyunu bütün sınıf için baştan başlat (gerçek skorlar ve yumurtalar silinmez)">🔄 Yeniden başlat</button>
                         ${kmKarmaMi() ? '<button class="km-oyun-tam-btn aktif" onclick="kmKarmaYarismayaGec(true)" title="Yarışma hattı — TV skor tablosu (tam ekrandaysan tam ekranda açılır)">📺 Yarışma TV</button>' : ''}
@@ -19545,7 +19547,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             yol: { ad: '🏝️ Yol oyunları', not: 'Yalnız "Yol oyunları heyecanı" Heyecanlı ya da Korkutucu iken', liste: [
                 ['kovalayan', '👾', 'Arkadan kovalayan'], ['kapi', '🚧', 'Sarı kapılar'], ['konusma', '💬', 'Karakterler konuşsun']] },
             hapsirik: { ad: '🤧 Hapşırık', liste: [['gizli', '🤫', 'Gizli hassas nokta'], ['sahte', '😮', '"…hıh. Geçti!" şakası']] },
-            zombi: { ad: '🧟 Zombi Salgını', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin']] },
+            zombi: { ad: '🧟 Zombi Salgını', not: 'Gece, sahne ve sığınak oyunun içindeki 🌙 düğmesinde', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin'], ['ozelOk', '⭐', 'Özel oklar (süper panzehir, ışık bombası, zincir)'], ['dev', '👹', 'Dev zombi finali'], ['koro', '🎤', 'Zombi korosu ve kurtulma pozu'], ['kampanya', '🌙', 'Gece gece zorlaşan salgın (kapalıysa hep 1. gece)'], ['siginak', '🏚️', 'Sığınak yardımları (kazanılan gecelerle)']] },
             tahta: { ad: '🎲 Dev Tahta', not: 'Kare türleri yeni oyunda, kartlar hemen geçerli', liste: [['kart', '🃏', 'Her elde kural kartı'], ['toplama', '🦀', 'Hedefe giderken yürüyüş kartı'], ['hareket', '🏃', 'Hareket kareleri (takım görevi)'], ['firtina', '🌪️', 'Fırtına kareleri (2 geri)'], ['ceza', '🐍', 'Ceza şansı: yılan kareleri, kötü sürpriz, kara bulut'], ['piyon', '👟', 'Piyon salonda zıplasın (koni yolu)']] },
             timsah: { ad: '🐊 Uyuyan Dev', liste: [['sans', '🎲', 'Şans olayları (ördek, dal, hapşırık · ay, balık sürüsü)'], ['kapma', '🐟', 'Uyanınca kovadan balık kapsın'], ['gerilim', '💓', 'Kalp atışı ve kızaran ekran (metre %70 üstü)']] },
             bomba: { ad: '💣 Fitil Hattı', liste: [['sans', '🎲', 'Şans olayları (kısa fitil, rüzgâr, fare · ıslak fitil, yedek fitil)'], ['ceza', '💥', 'Bomba patlayınca takım ceza görevi'], ['gerilim', '⏳', 'Fitil azalınca titreyen kart ve tik sesi']] },
@@ -19742,7 +19744,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let aktifMi = tid === _kmOyunAktifTema;
                 return '<div class="card" onclick="kmOyunKartSec(\'' + tid + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;' + (aktifMi ? ' border-color:var(--accent);' : '') + '">'
                     + '<div style="font-size:22px; line-height:1;">' + t.ikon + '</div>'
-                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + (tid === 'bomba' && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
+                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + ((tid === 'bomba' || tid === 'zombi') && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
                     + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + t.aciklama + '</div>'
                     + '</div>';
             }).join('')
@@ -19827,7 +19829,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunSahneKurBomba() { kmOyunBombaHazir().then(function() { if(_kmOyunAktifTema === 'bomba' && document.getElementById('km-oyun-panel-bomba')) bmSahneKur(); }).catch(function() { showToast('Fitil Hattı yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
-        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js'); }
+        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=2'); }
         function kmOyunSahneKurZombi() { kmOyunZombiHazir().then(function() { if(_kmOyunAktifTema === 'zombi' && document.getElementById('km-oyun-panel-zombi')) zbSahneKur(); }).catch(function() { showToast('Zombi Salgını yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncZombi() { if(typeof zbGuncelle === 'function' && document.getElementById('zb-icerik')) zbGuncelle(); else kmOyunSahneKurZombi(); }
         function kmOyunAnimateZombi(s, i, kaydedilecek, done) { kmOyunZombiHazir().then(function() { zbSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -21241,6 +21243,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { delete _kmSecimler[g + '_' + ad]; } catch(e) {}
             if(!seriVar) { if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {}; otomatikYoklamaDB[tarih][ad] = { saat: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), grup: g, elle: true, geldi: false }; otomatikYoklamaKaydet(); bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {} }
             try { _kmListeKaydet(); } catch(e) {}
+            try { kmKvCikanEkle(g, ad, !seriVar); } catch(e) {}
             _kmYokGeri = { liste: eskiListe, g: g, ad: ad, tarih: tarih, yok: eskiYok, yazdi: !seriVar };
             kmOyunListeDegisti();
             let w = document.getElementById('km-oyun-wrap');
@@ -21256,6 +21259,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             _kmListe = u.liste; _kmSecimler = {}; _kmListe.forEach(function(x) { _kmSecimler[x.g + '_' + x.ad] = x; });
             if(u.yazdi) { if(!otomatikYoklamaDB[u.tarih]) otomatikYoklamaDB[u.tarih] = {}; if(u.yok) otomatikYoklamaDB[u.tarih][u.ad] = u.yok; else delete otomatikYoklamaDB[u.tarih][u.ad]; otomatikYoklamaKaydet(); bekleyenGonderim = true; try { bulutaGonderKontrol(); } catch(e) {} }
             try { _kmListeKaydet(); } catch(e) {}
+            try { kmKvCikanSil(u.g, u.ad); } catch(e) {}
             let x = document.getElementById('km-yok-geri'); if(x) x.remove();
             kmOyunListeDegisti();
         }
@@ -21264,6 +21268,119 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { kmOyunDurumEmin(); kmOyunRosterYenile(); kmOyunSahneKurAktif(); kmOyunChipleriCiz(); kmOyunLiderCiz(); } catch(e) { console.warn('liste değişti', e); }
             try { kmSinifKartiCiz(); } catch(e) {}
         }
+        // 👥 BUGÜN KİMLER VAR (v401, 2026-11-10, kullanıcı: "tüm oyunlar içerisinde sporcuları seçebileceğim, gelmeyenleri çıkartabileceğim bir bölüm").
+        // Her oyunun üst çubuğunda. Kutucuğa dokun = geldi/gelmedi; arama ile listede olmayanı ekle; "Uygula" hepsini tek seferde yapar.
+        // Çıkarma kmOyunDersteYok ile aynı kural: dersten çıkar, o gün serisi yoksa yoklamaya "gelmedi" yazar, skorlar silinmez.
+        // Bugün çıkarılanlar konum başına hatırlanır (dag_km_kv_<konum>), panelde soluk durur; geri seçilince yazdığımız "gelmedi" silinir.
+        let _kmKv = null;
+        function kmKvAnahtar() { return 'dag_km_kv_' + (_kmAktifKonum || 'varsayilan'); }
+        function kmKvCikanlar() { try { let o = JSON.parse(localStorage.getItem(kmKvAnahtar()) || 'null'); if(o && o.tarih === bugunISO() && Array.isArray(o.l)) return o.l; } catch(e) {} return []; }
+        function kmKvCikanlarYaz(l) { try { localStorage.setItem(kmKvAnahtar(), JSON.stringify({ tarih: bugunISO(), l: l })); } catch(e) {} }
+        function kmKvCikanEkle(g, ad, yazdi) { let l = kmKvCikanlar().filter(function(x) { return !(x.g === g && x.ad === ad); }); l.push({ g: g, ad: ad, yazdi: !!yazdi }); kmKvCikanlarYaz(l); }
+        function kmKvCikanSil(g, ad) { kmKvCikanlarYaz(kmKvCikanlar().filter(function(x) { return !(x.g === g && x.ad === ad); })); }
+        function kmKvAc() {
+            let liste = (_kmListe || []).map(function(x) { return { g: x.g, ad: x.ad }; });
+            kmKvCikanlar().forEach(function(c) { if(!liste.some(function(x) { return x.g === c.g && x.ad === c.ad; }) && turnuvaDB[c.g] && turnuvaDB[c.g][c.ad]) liste.push({ g: c.g, ad: c.ad }); });
+            let sec = {}; (_kmListe || []).forEach(function(x) { sec[x.g + '|' + x.ad] = 1; });
+            _kmKv = { kisiler: liste, sec: sec, ara: '' };
+            kmKvKapat(true);
+            let p = document.createElement('div'); p.id = 'km-kv'; p.className = 'km-kv-perde';
+            p.onclick = function(e) { if(e.target === p) kmKvKapat(); };
+            p.innerHTML = '<div class="km-kv-kutu" role="dialog" aria-label="Bugün kimler var"><div class="km-kv-ust"><div><h3>👥 Bugün kimler var?</h3><small id="km-kv-say"></small></div><button onclick="kmKvKapat()" aria-label="Kapat">✕</button></div>'
+                + '<p class="km-kv-not">Dokun: <b>geldi</b> ↔ <b>gelmedi</b>. Gelmeyen bütün oyunlardan ve ders listesinden çıkar; skorları silinmez.</p>'
+                + '<input id="km-kv-ara" class="km-kv-ara" type="search" placeholder="🔎 Ara ya da listede olmayanı ekle…" oninput="kmKvAra(this.value)" autocomplete="off">'
+                + '<div id="km-kv-govde"></div>'
+                + '<div class="km-kv-alt"><button class="km-kv-ikincil" onclick="kmKvHepsi(1)">✓ Hepsi geldi</button><button class="km-kv-ikincil" onclick="kmKvHepsi(0)">Hiçbiri</button><button class="km-kv-uygula" id="km-kv-uygula" onclick="kmKvUygula()">Uygula</button></div></div>';
+            (document.fullscreenElement || document.webkitFullscreenElement || document.body).appendChild(p);
+            kmKvCiz();
+        }
+        function kmKvKapat(sessiz) { let p = document.getElementById('km-kv'); if(p) p.remove(); if(!sessiz) _kmKv = null; }
+        function kmKvAra(v) { if(!_kmKv) return; _kmKv.ara = v || ''; kmKvCiz(); }
+        function kmKvHepsi(on) { if(!_kmKv) return; _kmKv.kisiler.forEach(function(k) { if(on) _kmKv.sec[k.g + '|' + k.ad] = 1; else delete _kmKv.sec[k.g + '|' + k.ad]; }); kmKvCiz(); }
+        function kmKvDokun(i) { let k = _kmKv && _kmKv.kisiler[i]; if(!k) return; let a = k.g + '|' + k.ad; if(_kmKv.sec[a]) delete _kmKv.sec[a]; else _kmKv.sec[a] = 1; kmKvCiz(); }
+        function kmKvEkle(j) { let b = _kmKv && _kmKv.bul && _kmKv.bul[j]; if(!b) return; let g = b.g, ad = b.ad; if(!_kmKv.kisiler.some(function(x) { return x.g === g && x.ad === ad; })) _kmKv.kisiler.push({ g: g, ad: ad }); _kmKv.sec[g + '|' + ad] = 1; _kmKv.ara = ''; let i = document.getElementById('km-kv-ara'); if(i) i.value = ''; kmKvCiz(); }
+        function kmKvDegisim() {
+            let cik = [], gir = [];
+            _kmKv.kisiler.forEach(function(k) { let icinde = (_kmListe || []).some(function(x) { return x.g === k.g && x.ad === k.ad; }), s = !!_kmKv.sec[k.g + '|' + k.ad]; if(icinde && !s) cik.push(k); else if(!icinde && s) gir.push(k); });
+            return { cik: cik, gir: gir };
+        }
+        function kmKvCiz() {
+            let g = document.getElementById('km-kv-govde'); if(!g || !_kmKv) return;
+            let h = kmHatlar(), q = turkceNormalize(_kmKv.ara.trim()), cache = {};
+            (_kmOyunRosterCache || []).forEach(function(o) { cache[o.g + '|' + o.ad] = o; });
+            let html = '<div class="km-kv-izgara">', gorunen = 0;
+            _kmKv.kisiler.forEach(function(k, i) {
+                if(q && turkceNormalize(k.ad).indexOf(q) === -1) return; gorunen++;
+                let a = k.g + '|' + k.ad, on = !!_kmKv.sec[a], sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad], foto = (cache[a] && cache[a].foto) || (sp && sp.fotoUrl) || null;
+                let av = foto ? '<img src="' + esc(foto) + '" alt="">' : esc(kmOyunKisaAd(k.ad));
+                html += '<button class="km-kv-kisi' + (on ? ' on' : '') + '" onclick="kmKvDokun(' + i + ')" aria-pressed="' + on + '" title="' + esc(k.ad) + '"><span class="km-kv-av">' + av + '</span><span class="km-kv-ad">' + esc(kmOyunIlkAd(k.ad)) + '</span><span class="km-kv-durum">' + (on ? (h[a] === 'yarisma' ? '🏹 Yarışma' : '✓ Geldi') : '✕ Gelmedi') + '</span></button>';
+            });
+            html += '</div>';
+            if(q && !gorunen && q.length < 2) html += '<p class="km-kv-not">Eşleşen yok.</p>';
+            if(q.length >= 2) {
+                let bul = [];
+                ['minikler', 'kucukler', 'yildizlar', 'buyukler'].forEach(function(gg) { Object.keys(turnuvaDB[gg] || {}).forEach(function(ad) { if(bul.length < 12 && turkceNormalize(ad).indexOf(q) !== -1 && !_kmKv.kisiler.some(function(x) { return x.g === gg && x.ad === ad; }) && !(turnuvaDB[gg][ad] && turnuvaDB[gg][ad].pasif)) bul.push({ g: gg, ad: ad }); }); });
+                _kmKv.bul = bul;
+                if(bul.length) html += '<div class="km-kv-bas">➕ Derse ekle</div><div class="km-kv-ekle">' + bul.map(function(b, j) { return '<button onclick="kmKvEkle(' + j + ')">+ ' + esc(b.ad) + ' <small>' + esc(LIG_ETIKET[b.g] || b.g) + '</small></button>'; }).join('') + '</div>';
+                else if(!gorunen) html += '<p class="km-kv-not">Bu adla kayıtlı sporcu yok. Yeni kayıt için ⚙️ Ayarlar › Yeni sporcu.</p>';
+            }
+            g.innerHTML = html;
+            let n = _kmKv.kisiler.filter(function(k) { return _kmKv.sec[k.g + '|' + k.ad]; }).length, d = kmKvDegisim(), say = document.getElementById('km-kv-say'), u = document.getElementById('km-kv-uygula');
+            if(say) say.textContent = n + ' geldi · ' + (_kmKv.kisiler.length - n) + ' gelmedi';
+            if(u) { let p = []; if(d.cik.length) p.push(d.cik.length + ' çıkar'); if(d.gir.length) p.push(d.gir.length + ' ekle'); u.textContent = p.length ? '✓ Uygula · ' + p.join(', ') : 'Kapat'; u.classList.toggle('bos', !p.length); }
+        }
+        function kmKvUygula() {
+            if(!_kmKv) return kmKvKapat();
+            let d = kmKvDegisim(); if(!d.cik.length && !d.gir.length) return kmKvKapat();
+            let tarih = bugunISO(), yokDegisti = false;
+            d.cik.forEach(function(k) {
+                _kmListe = (_kmListe || []).filter(function(x) { return !(x.g === k.g && x.ad === k.ad); });
+                try { delete _kmSecimler[k.g + '_' + k.ad]; } catch(e) {}
+                let sp = turnuvaDB[k.g] && turnuvaDB[k.g][k.ad], seriVar = !!(sp && (sp.seriler || []).some(function(x) { return x && x.tarih === tarih; }));
+                if(!seriVar) { if(!otomatikYoklamaDB[tarih]) otomatikYoklamaDB[tarih] = {}; otomatikYoklamaDB[tarih][k.ad] = { saat: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), grup: k.g, elle: true, geldi: false }; yokDegisti = true; }
+                kmKvCikanEkle(k.g, k.ad, !seriVar);
+            });
+            let cikanlar = kmKvCikanlar();
+            d.gir.forEach(function(k) {
+                _kmListe = _kmListe || []; _kmListe.push({ g: k.g, ad: k.ad });
+                try { _kmSecimler = _kmSecimler || {}; _kmSecimler[k.g + '_' + k.ad] = { g: k.g, ad: k.ad }; } catch(e) {}
+                let c = cikanlar.find(function(x) { return x.g === k.g && x.ad === k.ad; }), y = otomatikYoklamaDB[tarih] && otomatikYoklamaDB[tarih][k.ad];
+                if(c && c.yazdi && y && y.elle && y.geldi === false) { delete otomatikYoklamaDB[tarih][k.ad]; yokDegisti = true; }
+                kmKvCikanSil(k.g, k.ad);
+            });
+            if(yokDegisti) { try { otomatikYoklamaKaydet(); bekleyenGonderim = true; bulutaGonderKontrol(); } catch(e) {} }
+            try { _kmListeKaydet(); } catch(e) {}
+            _kmYokGeri = null;
+            kmKvKapat();
+            kmOyunListeDegisti();
+            try { if(typeof kmYuvaCiz === 'function' && document.getElementById('yv-kok')) kmYuvaCiz(); } catch(e) {}
+            let p = []; if(d.cik.length) p.push(d.cik.length + ' kişi çıktı'); if(d.gir.length) p.push(d.gir.length + ' kişi eklendi');
+            showToast('👥 ' + p.join(', ') + ' · derste ' + kmOyunListe().length + ' kişi', 'success');
+        }
+        (function() { let st = document.createElement('style'); st.id = 'km-kv-stil'; st.textContent = `
+.km-kv-perde{position:fixed;inset:0;z-index:99999;background:rgba(5,8,18,.74);display:flex;align-items:center;justify-content:center;padding:12px}
+.km-kv-kutu{width:min(760px,100%);max-height:100%;display:flex;flex-direction:column;gap:10px;background:var(--bg-card,#141a26);color:var(--text-main,#fff);border-radius:20px;padding:16px;border:1px solid var(--border-color,#2a3346);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.km-kv-ust{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.km-kv-ust h3{margin:0;font-size:20px}.km-kv-ust small{color:var(--text-muted,#9aa3b5);font-weight:700;font-size:13px}
+.km-kv-ust button{flex:none;background:none;border:1px solid var(--border-color,#2a3346);color:inherit;border-radius:10px;width:40px;height:40px;cursor:pointer;font-size:16px}
+.km-kv-not{margin:0;font-size:12.5px;color:var(--text-muted,#9aa3b5);line-height:1.4}
+.km-kv-ara{width:100%;box-sizing:border-box;min-height:44px;border-radius:12px;border:1px solid var(--border-color,#2a3346);background:var(--bg-main,#0b1020);color:inherit;font:inherit;font-size:15px;padding:0 12px}
+#km-kv-govde{overflow:auto;min-height:0;flex:1}
+.km-kv-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.km-kv-kisi{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:14px;border:2px solid var(--border-color,#2a3346);background:transparent;color:inherit;font:inherit;cursor:pointer;opacity:.5;min-height:112px}
+.km-kv-kisi.on{opacity:1;border-color:#3ddc84;background:color-mix(in srgb,#3ddc84 12%,transparent)}
+.km-kv-kisi:not(.on) .km-kv-ad{text-decoration:line-through}
+.km-kv-av{width:46px;height:46px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-main,#0b1020);font-weight:900;font-size:16px}.km-kv-av img{width:100%;height:100%;object-fit:cover}
+.km-kv-kisi:not(.on) .km-kv-av{filter:grayscale(1)}
+.km-kv-ad{font-weight:800;font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.km-kv-durum{font-size:11px;font-weight:800;color:var(--text-muted,#9aa3b5)}.km-kv-kisi.on .km-kv-durum{color:#3ddc84}
+.km-kv-bas{margin:12px 0 6px;font-weight:900;font-size:13px}
+.km-kv-ekle{display:flex;flex-wrap:wrap;gap:6px}.km-kv-ekle button{min-height:40px;border-radius:999px;border:1px dashed var(--accent,#ff8a3d);background:transparent;color:inherit;font:inherit;font-weight:800;font-size:13px;padding:0 12px;cursor:pointer}.km-kv-ekle small{color:var(--text-muted,#9aa3b5);font-weight:700}
+.km-kv-alt{display:flex;gap:8px;flex-wrap:wrap}
+.km-kv-ikincil{min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--border-color,#2a3346);background:transparent;color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.km-kv-uygula{flex:1;min-width:150px;min-height:46px;border-radius:12px;border:0;background:var(--accent,#ff8a3d);color:#1a0d05;font:inherit;font-weight:900;font-size:15px;cursor:pointer}
+.km-kv-uygula.bos{background:var(--bg-main,#0b1020);color:inherit;border:1px solid var(--border-color,#2a3346)}
+@media (max-width:640px){.km-kv-perde{padding:0;align-items:stretch}.km-kv-kutu{border-radius:0;height:100%}.km-kv-izgara{grid-template-columns:repeat(3,minmax(0,1fr))}.km-kv-kisi{min-height:100px}}
+`; document.head.appendChild(st); })();
         function kmOyunZirveKarakterSVG(s) {
             return kmOyunHayvanKarakterSVG(s, null, 56);
         }
