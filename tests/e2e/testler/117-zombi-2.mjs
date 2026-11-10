@@ -44,7 +44,7 @@ export default async function ({ log }) {
     // ---- başlangıç: 1. gece, sokak; gece düğmesi; içerik anahtarları ----
     const b0 = await p.evaluate(() => ({ st: zbDurum(), yazi: document.getElementById('zb-gece-yazi').textContent, ic: KM_OYUN_ICERIK.zombi.liste.map((x) => x[0]).join(','), yeni: /Zombi Salgını<i class="dag-yeni/.test(kmOyunSeciciKartlari()) }));
     esit(b0.st.gece, 1, '1. gece'); esit(b0.st.sahne, 'sokak', 'sokak'); dogrula(/GECE 1/.test(b0.yazi), 'gece yazısı: ' + b0.yazi);
-    esit(b0.ic, 'dalga,ozelOk,dev,koro,kampanya,siginak', 'içerik anahtarları'); dogrula(b0.yeni, 'seçicide YENİ');
+    esit(b0.ic, 'dalga,ozelOk,dev,koro,kampanya,siginak,gorev,gerilim', 'içerik anahtarları'); dogrula(b0.yeni, 'seçicide YENİ');
 
     const seri = (oklar, hedef) => p.evaluate(async ([oklar, hedef]) => {
       _kmOyunAktifIndex = hedef; const s = _kmOyunRosterCache[hedef];
@@ -98,7 +98,7 @@ export default async function ({ log }) {
     esit(await p.evaluate(() => document.getElementById('zb-z').textContent), '?', 'sis: zombi sayısı gizli');
     const isir = await p.evaluate(async () => {
       const st = zbDurum(); st.basladi = true; st.zombi = {}; const l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi[l[0]] = 1; st.zamani[l[0]] = 0; localStorage.setItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), JSON.stringify(st)); zbGuncelle();
-      _kmOyunAktifIndex = 1; _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet();
+      _kmOyunAktifIndex = 1; _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet(); await new Promise((r) => setTimeout(r, 150)); { const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') onayOnayla(); }
       let alt = '', gorev = false; for (let i = 0; i < 80; i++) { await new Promise((r) => setTimeout(r, 100)); const d = document.querySelector('#zb-duyuru small'); if (d && /HIRRR/.test(d.textContent)) alt = d.textContent; if (document.getElementById('zb-gorev')) gorev = true; if (alt && gorev) break; }
       for (let k = 0; k < 150 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 120));
       return { alt, gorev, g: (document.getElementById('zb-gorev') || {}).textContent || '' };
@@ -111,6 +111,36 @@ export default async function ({ log }) {
       dogrula(ok, sh + ' sahnesi çizilmedi');
       await p.screenshot({ path: 'tests/e2e/_cikti/117-' + sh + '.png' }).catch(() => {});
     }
+
+    // ---- v402: kişisel görev, kalas kalkanı, sınıf görevi, gerilim katmanı ----
+    const gv = await p.evaluate(() => {
+      const I = _zbIc, G = (k) => I.GOREV.find((x) => x.k === k);
+      return {
+        ok: [G('ilk').ok([9, 1, 1], 7), G('ilk').ok([1, 9, 9], 7), G('son').ok([1, 1, 7], 7), G('iska').ok([1, 2, 3], 7), G('iska').ok([1, 0, 3], 7), G('iki').ok([7, 8, 1], 7), G('ust').ok([8, 8, 8], 7), G('ust').ok([9, 1, 1], 7), G('toplam').ok([5, 5, 2], 5), G('toplam').ok([5, 5, 1], 5)].join(','),
+        sabit: I.gorevOf('a|b', 0, '2026-11-11').k === I.gorevOf('a|b', 0, '2026-11-11').k, cesit: new Set(Array.from({ length: 40 }, (_, i) => I.gorevOf('x|' + i, 0, 't').k)).size, kalkan: I.KALAS_KALKAN
+      };
+    });
+    esit(gv.ok, 'true,false,true,true,false,true,false,true,true,false', 'görev kuralları'); dogrula(gv.sabit, 'görev atış başına sabit'); dogrula(gv.cesit >= 4, 'görevler çeşitli'); esit(gv.kalkan, 2, '2 kalas = 1 ısırık');
+    const kal = await p.evaluate(async () => {
+      const k = _kmAktifKonum || 'varsayilan'; localStorage.setItem('dag_km_zombikamp_' + k, JSON.stringify({ gece: 1, enYuksek: 1, kazanilan: 0, sahne: 'sokak' })); localStorage.removeItem('dag_km_zombi_' + k); kmOyunSahneKurZombi(); await new Promise((r) => setTimeout(r, 700));
+      const gorevYazi = (document.getElementById('zb-yan-gorev') || {}).textContent || '';
+      const st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.basladi = true; st.zombi = {}; st.zombi[l[0]] = 1; st.zamani[l[0]] = 0; st.kalas = 2; st.seri = 4; localStorage.setItem('dag_km_zombi_' + k, JSON.stringify(st)); zbGuncelle();
+      const hud = document.getElementById('zb-kalas').textContent;
+      _kmOyunAktifIndex = 1; _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet(); await new Promise((r) => setTimeout(r, 150)); { const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') onayOnayla(); }
+      let dur = ''; for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const d = document.getElementById('zb-duyuru'); if (d && /KALASLAR DAYANDI/.test(d.textContent)) { dur = d.textContent; break; } }
+      for (let i = 0; i < 150 && _kmOyunKilit; i++) await new Promise((r) => setTimeout(r, 120));
+      const s2 = zbDurum(); await new Promise((r) => setTimeout(r, 600));
+      return { gorevYazi, hud, dur, kalas: s2.kalas, zombi: l.filter((x) => s2.zombi[x]).length, kart: !!document.getElementById('zb-sgorev'), sg: s2.sgBekle };
+    });
+    dogrula(/GÖREV/.test(kal.gorevYazi), 'sırada görev yazısı: ' + kal.gorevYazi); dogrula(/🪵 2/.test(kal.hud), 'kalas sayacı: ' + kal.hud);
+    dogrula(kal.dur, 'kalas ısırığı durdurmalı'); esit(kal.zombi, 1, 'kalasla ısırık yok'); esit(kal.kalas, 0, 'kalaslar harcandı');
+    esit(kal.kart, true, '5. atışta sınıf görevi kartı'); dogrula(kal.sg != null, 'sınıf görevi bekliyor');
+    await p.click('#zb-sg-tamam');
+    const sg2 = await p.evaluate(() => ({ kart: !!document.getElementById('zb-sgorev'), kalas: zbDurum().kalas, n: zbDurum().sinifGorev, bek: zbDurum().sgBekle }));
+    esit(sg2.kart, false, 'kart kapanır'); esit(sg2.kalas, 1, 'Yaptık: +1 kalas'); esit(sg2.n, 1, 'sınıf görevi sayıldı'); esit(sg2.bek, null, 'bekleyen yok');
+    // gerilim: zombiler çoğalınca sis yaklaşır, sürü büyür (tuvalde çizim; ekran görüntüsü)
+    await p.evaluate(async () => { const st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); l.slice(0, 3).forEach((x, i) => { st.zombi[x] = 1; st.zamani[x] = i; }); l.slice(0, 2).forEach((x) => { st.atan[x] = 1; }); localStorage.setItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), JSON.stringify(st)); zbGuncelle(); await new Promise((r) => setTimeout(r, 900)); });
+    await p.screenshot({ path: 'tests/e2e/_cikti/117-gerilim.png' }).catch(() => {});
 
     // ---- 390 px: panel taşmaz ----
     await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(400);

@@ -88,7 +88,7 @@ export default async function ({ log }) {
     esit(bk.px, 255, 'sahne çizilmeli'); dogrula(bk.spr, 'karakter çizilmeli');
     // Isırık anı (2026-11-07): sokaktan ADSIZ zombi atlar, hiçbir çocuk ısıran olmaz; panzehirde ok; bittikten sonra sokak zombisi kalmaz
     const an = await p.evaluate(async () => {
-      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; st.atan = {}; st.faz = 'oyun'; st.basladi = true; st.gece = 1; st.sahne = 'sokak'; st.projektorKul = true; st.dev = null; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; st.zamani[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle();
+      const k = 'dag_km_zombi_' + (_kmAktifKonum || 'varsayilan'), st = zbDurum(), l = _kmOyunRosterCache.map((s) => s.g + '|' + s.ad); st.zombi = {}; st.zamani = {}; st.atan = {}; st.faz = 'oyun'; st.basladi = true; st.gece = 1; st.sahne = 'sokak'; st.projektorKul = true; st.dev = null; st.kalas = 0; st.kalas = 0; l.slice(0, 6).forEach((x) => { st.zombi[x] = 1; st.zamani[x] = 1; }); localStorage.setItem(k, JSON.stringify(st)); zbGuncelle();
       _kmOyunAktifIndex = l.findIndex((x, i) => i >= 6 && turnuvaDB[_kmOyunRosterCache[i].g] && turnuvaDB[_kmOyunRosterCache[i].g][_kmOyunRosterCache[i].ad]);
       _kmOyunSeriGirisleri = ['1', '1', '1']; _kmOyunSeriKonumlari = []; kmOyunIlerlet();
       let npc = null; for (let i = 0; i < 60 && !npc; i++) { await new Promise((r) => setTimeout(r, 60)); npc = document.querySelector('.zb-npc'); }
