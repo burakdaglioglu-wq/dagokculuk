@@ -12724,7 +12724,7 @@
             yarisma: { baslik:'Yarışma', aciklama:'Sıralama turu, süre, eleme, TV', renk:'#B07A00' },
         };
         const KM_ARAC_ANA_SIRA = ['skor', 'formlab', 'oyunlar', 'yarisma'];
-        function kmAnaSonOyun() { try { let t = localStorage.getItem('dagsk_km_son_oyun'); return t && KM_OYUN_TEMALAR[t] ? t : null; } catch(e) { return null; } }
+        function kmAnaSonOyun() { try { let t = localStorage.getItem('dagsk_km_son_oyun'); return t && KM_OYUN_TEMALAR[t] && kmOyunGorunurMu(t) ? t : null; } catch(e) { return null; } }
         function kmAnaSonOyunAc() { let t = kmAnaSonOyun(); kmAracSec('oyunlar'); if(t) setTimeout(function() { try { kmOyunTemaSec(t); } catch(e) {} }, 60); }
         function kmAnaYarismaDurum() {
             try { if(typeof yzOku !== 'function') return null; let d = yzOku().durum; if(!d || !d.asama || d.asama === 'kurulum') return null; if(d.asama === 'bitti') return 'Son tur bitti · sonuçlar hazır'; if(d.asama === 'eleme') return 'Eleme maçları sürüyor'; let f = yzFormat(d); return '🎯 Tur sürüyor · seri ' + (Math.min(d.seri, f.seri - 1) + 1) + '/' + f.seri; } catch(e) { return null; }
@@ -14179,7 +14179,7 @@
             yildiz: { mesafe: '18-30 m', ok: 6, not: 'Hedef kağıdı analizi: grup nerede toplanıyor?' },
             buyuk: { mesafe: '30-70 m', ok: 6, not: 'Yarışma ritmi: sayaçla atış, seri ortalaması takip.' }
         };
-        const KM_DA_OYUN = { minik: ['hapsirik', 'tahta', 'balon'], kucuk: ['tahta', 'zombi', 'blok'], yildiz: ['arena', 'ninja', 'kelime'], buyuk: ['yukselis', 'arena', 'pist'] };
+        const KM_DA_OYUN = { minik: ['hapsirik', 'balon', 'akvaryum'], kucuk: ['zombi', 'blok', 'hapsirik'], yildiz: ['arena', 'ninja', 'kelime'], buyuk: ['yukselis', 'arena', 'pist'] };
         const KM_DA_SOGUMA = [
             { ikon: '🤝', ad: 'Omuz çapraz germe', doz: '20 sn × her kol', not: 'Kol göğüs önünden karşıya, diğer el dirseği çeker.' },
             { ikon: '💪', ad: 'Triseps germe', doz: '20 sn × her kol', not: 'El sırta, diğer el dirseği aşağı bastırır.' },
@@ -16859,6 +16859,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         const KM_ROKET_KATMANLAR = [['Bulutlar', '2 km'], ['Ses Hızı', '12 km'], ['Stratosfer', '30 km'], ['Uzay Sınırı', '100 km'], ['Uzay İstasyonu', '400 km'], ['Ay', '384 bin km'], ['Asteroitler', 'milyonlarca km']];
         const KM_ROKET_MARS = { x: 1128, y: 206, r: 56 };
 
+        // v403 (2026-11-11): Dev Tahta, Uyuyan Dev, Fitil Hattı salonda tutmadı (kurallar anlaşılmadı, yavaş,
+        // adil değil, ekranda bozuk). Kod duruyor; düzeltilene kadar seçicide, önerilerde ve son oyunda görünmez.
+        const KM_OYUN_GIZLI = ['tahta', 'timsah', 'bomba'];
+        function kmOyunGorunurMu(tid) { return KM_OYUN_GIZLI.indexOf(tid) === -1; }
         const KM_OYUN_TEMALAR = {
             zirve: { ad: 'Zirve Yolu', ikon: '🏔️', renkler: ['#00e5ff', '#ff2e9a', '#ffcc33', '#8b6bf6', '#3ddc97'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her giriş o sporcuyu zirveye doğru ilerletir.', btn: '🚀 İlerlet', finish: 'ZİRVEYE ULAŞTI!', cp: 'KONTROL NOKTASI!', birim: 'kontrol noktası', bitis: 'Zirvede! 🏔️',
                 surprizler: [{ikon:'🦅',metin:'Bir kartal gördü!'},{ikon:'🐐',metin:'Yaban keçisi selam verdi!'},{ikon:'🌤️',metin:'Hava açtı!'},{ikon:'⛰️',metin:'Yeni bir manzara keşfetti!'},{ikon:'🧭',metin:'Doğru rotayı buldu!'}] },
@@ -16953,7 +16957,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             bomba: { ad: 'Fitil Hattı', ikon: '💣', renkler: ['#FF5A5A', '#4DA3FF', '#FFD34D', '#5FD38D', '#FF7A2F', '#B79CFF', '#4FD1C5', '#FF9BCF', '#8FA8FF', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Bomba Takımı: her takımın fitili her okta yanar, kendi hedefini vuran fitili uzatır. Fitil biterse bomba patlar, takım hep birlikte ceza görevi yapar. Herkes atınca en az patlayan takım kazanır.',
                 surprizler: [] },
             // 🧟 Zombi Salgını (2026-11-06, v381) — 8 yaş: iyi atış arkadaşını kurtarır, zombiler her atıştan sonra ısırır, herkes atınca sonuç. Bkz. dagsk-km-zombi.js.
-            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur. X ya da 10 süper panzehir, üç ok da panzehirse ışık bombası, art arda üç çocuk zincir kurar. Son turda dev zombi gelir, son ok atılınca düşer ya da barikatı aşar. Kazanınca yeni gece açılır, sığınak büyür.', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
+            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur.', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
                 surprizler: [] },
             // 🐠 Sınıf Akvaryumu (2026-10-28) — ortak oyun: her ok bir deniz canlısı, akvaryum dolunca kutlama. Bkz. dagsk-km-akvaryum.js.
             akvaryum: { ad: 'Sınıf Akvaryumu', ikon: '🐠', renkler: ['#7dd3fc', '#ffd23f', '#ff8fa8', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok suya bir damla olur ve bir deniz canlısı doğar; halka ne kadar içteyse canlı o kadar büyük, 10 ve X nadir canlı getirir. Akvaryum dolunca kutlama, sonra sıradaki akvaryum!', btn: '💧 Bırak', finish: '', cp: '', birim: 'canlı', bitis: '',
@@ -18415,7 +18419,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunBugununTemasi() {
             let g = kmOyunTemaGecmisiOku();
-            let tids = Object.keys(KM_OYUN_TEMALAR).sort(function(a, b) { return (g[a] || 0) - (g[b] || 0); });
+            let tids = Object.keys(KM_OYUN_TEMALAR).filter(kmOyunGorunurMu).sort(function(a, b) { return (g[a] || 0) - (g[b] || 0); });
             let secilen = tids[0];
             kmOyunTemaSec(secilen);
             let th = KM_OYUN_TEMALAR[secilen];
@@ -19547,7 +19551,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             yol: { ad: '🏝️ Yol oyunları', not: 'Yalnız "Yol oyunları heyecanı" Heyecanlı ya da Korkutucu iken', liste: [
                 ['kovalayan', '👾', 'Arkadan kovalayan'], ['kapi', '🚧', 'Sarı kapılar'], ['konusma', '💬', 'Karakterler konuşsun']] },
             hapsirik: { ad: '🤧 Hapşırık', liste: [['gizli', '🤫', 'Gizli hassas nokta'], ['sahte', '😮', '"…hıh. Geçti!" şakası']] },
-            zombi: { ad: '🧟 Zombi Salgını', not: 'Gece, sahne ve sığınak oyunun içindeki 🌙 düğmesinde', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin'], ['ozelOk', '⭐', 'Özel oklar (süper panzehir, ışık bombası, zincir)'], ['dev', '👹', 'Dev zombi finali'], ['koro', '🎤', 'Zombi korosu ve kurtulma pozu'], ['kampanya', '🌙', 'Gece gece zorlaşan salgın (kapalıysa hep 1. gece)'], ['siginak', '🏚️', 'Sığınak yardımları (kazanılan gecelerle)'], ['gorev', '🎯', 'Sporcu görevleri ve sınıf hareket görevi (🪵 kalas)'], ['gerilim', '💓', 'Arka plan: zombi sürüsü, yaklaşan sis, dev gölgesi, kalp atışı']] },
+            zombi: { ad: '🧟 Zombi Salgını', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin']] },
             tahta: { ad: '🎲 Dev Tahta', not: 'Kare türleri yeni oyunda, kartlar hemen geçerli', liste: [['kart', '🃏', 'Her elde kural kartı'], ['toplama', '🦀', 'Hedefe giderken yürüyüş kartı'], ['hareket', '🏃', 'Hareket kareleri (takım görevi)'], ['firtina', '🌪️', 'Fırtına kareleri (2 geri)'], ['ceza', '🐍', 'Ceza şansı: yılan kareleri, kötü sürpriz, kara bulut'], ['piyon', '👟', 'Piyon salonda zıplasın (koni yolu)']] },
             timsah: { ad: '🐊 Uyuyan Dev', liste: [['sans', '🎲', 'Şans olayları (ördek, dal, hapşırık · ay, balık sürüsü)'], ['kapma', '🐟', 'Uyanınca kovadan balık kapsın'], ['gerilim', '💓', 'Kalp atışı ve kızaran ekran (metre %70 üstü)']] },
             bomba: { ad: '💣 Fitil Hattı', liste: [['sans', '🎲', 'Şans olayları (kısa fitil, rüzgâr, fare · ıslak fitil, yedek fitil)'], ['ceza', '💥', 'Bomba patlayınca takım ceza görevi'], ['gerilim', '⏳', 'Fitil azalınca titreyen kart ve tik sesi']] },
@@ -19739,12 +19743,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // FAZ 7 SONRASI — 11 oyunun kart ızgarası (eski yatay şeridin yerine). Sadece SEÇİM ekranı,
         // hiçbir hesaplama/yazma yok — mevcut kmOyunTemaSec(tid) AYNEN çağrılıyor.
         function kmOyunSeciciKartlari() {
-            return Object.keys(KM_OYUN_TEMALAR).map(function(tid) {
+            return Object.keys(KM_OYUN_TEMALAR).filter(kmOyunGorunurMu).map(function(tid) {
                 let t = KM_OYUN_TEMALAR[tid];
                 let aktifMi = tid === _kmOyunAktifTema;
                 return '<div class="card" onclick="kmOyunKartSec(\'' + tid + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;' + (aktifMi ? ' border-color:var(--accent);' : '') + '">'
                     + '<div style="font-size:22px; line-height:1;">' + t.ikon + '</div>'
-                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + ((tid === 'bomba' || tid === 'zombi') && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
+                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + (tid === 'zombi' && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
                     + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + t.aciklama + '</div>'
                     + '</div>';
             }).join('')
@@ -19829,7 +19833,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunSahneKurBomba() { kmOyunBombaHazir().then(function() { if(_kmOyunAktifTema === 'bomba' && document.getElementById('km-oyun-panel-bomba')) bmSahneKur(); }).catch(function() { showToast('Fitil Hattı yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
-        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=3'); }
+        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=4'); }
         function kmOyunSahneKurZombi() { kmOyunZombiHazir().then(function() { if(_kmOyunAktifTema === 'zombi' && document.getElementById('km-oyun-panel-zombi')) zbSahneKur(); }).catch(function() { showToast('Zombi Salgını yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncZombi() { if(typeof zbGuncelle === 'function' && document.getElementById('zb-icerik')) zbGuncelle(); else kmOyunSahneKurZombi(); }
         function kmOyunAnimateZombi(s, i, kaydedilecek, done) { kmOyunZombiHazir().then(function() { zbSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }

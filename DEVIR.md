@@ -5732,3 +5732,9 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - 💓 Gerilim (canlı tuval, `_atm`): ufukta kırmızı gözlü zombi sürüsü (zombi oranıyla 4→20), barikata yaklaşan yeşil sis, son tura doğru binaların arkasından yükselen dev gölgesi (dev gelince kalkar), zombiler %40'ı geçince kızaran kenarlar + kalp atışı sesi.
 - Telefon: yeni satırlar kalabalığın yüksekliğini 0'a indiriyordu (çocuklar kayboluyordu) → ≤860 px `.zb-kalabalik{min-height:42%}`, yan yazı en az 170 px. Test 117 (yerel veride günlük 12 seri sınırı dolunca açılan onayı kabul eder), 106 kalası sıfırlar.
 - Bilinen: 07-oyunlar "canavar: tıklanabilir sporcu bulunamadı", 53, 96, 98 bugün yerel veride v400 koduyla da düşüyor (değişiklik kaynaklı değil).
+
+## 116. ⏪ Yeni oyunlar geri çekildi (2026-11-11, v403)
+- Kullanıcı: "senin yüzünden rezil oldum, yeni oyunlar çok kötü kurgulanmış". Dev Tahta (v393/394), Uyuyan Dev (v399), Fitil Hattı (v400) ve Zombi 2.0 (v401/402) gerçek derste tutmadı: kurallar anlaşılmadı, çok adım / yavaş, adil değil / sıkıcı, ekranda bozuk.
+- Zombi Salgını → çocukların sevdiği v384 sürümüne döndü (`dagsk-km-zombi.js` = 405c627, `?v=4`). Geceler, özel oklar, dev zombi, sığınak, görevler/kalas, gerilim katmanı YOK. Testler: 106-zombi eski haline döndü, 117-zombi-2 silindi. Eski kayıtlar uyumlu (yeni alanlar yok sayılır). 👥 Kimler var paneli (app.js) KALDI.
+- `KM_OYUN_GIZLI = ['tahta','timsah','bomba']` + `kmOyunGorunurMu`: oyun seçicide, "Bugünün teması"nda, son oyunda (`kmAnaSonOyun`) ve `KM_DA_OYUN` önerilerinde görünmezler. Kod ve dosyalar duruyor; düzeltilmeden listeye geri koyma.
+- KURAL: yeni oyun / büyük mekanik ancak şunlarla: koçun yüksek sesle söyleyebileceği tek cümlelik kural, ok başına ≤1 dokunuş, 18–24 gerçek adla 360–390 px ve TV boyutunda tam tur simülasyonu, yayından ÖNCE kullanıcıya ekran görüntüsü.

@@ -22,9 +22,9 @@ export default async function ({ log }) {
     await p.waitForSelector('#bm-oyun .bm-bomba', { timeout: 30000 });
     // yerel veride kadro bugünkü dersten gelir; belirlilik için 4 çocukla başla (ilk seriye kadar takımlar kadroya göre yeniden kurulur)
     await p.evaluate(() => { const ilk = _kmOyunRosterCache.filter((s) => turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]).slice(0, 4); _kmOyunRosterCache.length = 0; ilk.forEach((x) => _kmOyunRosterCache.push(x)); bmGuncelle(); });
-    const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.bomba && KM_OYUN_TEMALAR.bomba.ad, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_bomba_'), icerik: KM_OYUN_ICERIK.bomba.liste.map((x) => x[0]).join(','), ayar: KM_OYUN_AYAR_TEMA.bomba.join(','), yeni: /Fitil Hattı<i class="dag-yeni/.test(kmOyunSeciciKartlari()), eskiYeni: /Uyuyan Dev<i class="dag-yeni/.test(kmOyunSeciciKartlari()), T: bmDurum().T }));
+    const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.bomba && KM_OYUN_TEMALAR.bomba.ad, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_bomba_'), icerik: KM_OYUN_ICERIK.bomba.liste.map((x) => x[0]).join(','), ayar: KM_OYUN_AYAR_TEMA.bomba.join(','), yeni: /Fitil Hattı/.test(kmOyunSeciciKartlari()), eskiYeni: /Uyuyan Dev<i class="dag-yeni/.test(kmOyunSeciciKartlari()), T: bmDurum().T }));
     esit(kur.tema, 'Fitil Hattı', 'tema'); esit(kur.sifir, true, '12 saat kuralına girmeli'); esit(kur.icerik, 'sans,ceza,gerilim', 'içerik anahtarları'); esit(kur.ayar, 'bombaTur,bombaTakim', 'ayar');
-    dogrula(kur.yeni, 'seçicide YENİ rozeti'); dogrula(!kur.eskiYeni, 'YENİ rozeti Uyuyan Dev\'den kalkmalı'); esit(kur.T, 2, '4 çocuk → 2 takım');
+    dogrula(!kur.yeni, 'v403: Fitil Hattı seçicide görünmemeli'); dogrula(!kur.eskiYeni, 'YENİ rozeti Uyuyan Dev\'den kalkmalı'); esit(kur.T, 2, '4 çocuk → 2 takım');
     esit(await p.locator('#km-oyun-rightpanel').isVisible().catch(() => false), false, 'puan sıralaması görünmemeli');
     esit(await p.locator('.bm-tk').count(), 2, '2 bomba kartı');
 

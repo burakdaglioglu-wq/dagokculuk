@@ -16,8 +16,8 @@ export default async function ({ log }) {
     });
     dogrula(n >= 4, 'en az 4 sporcu gerekli');
     await p.waitForSelector('#tb-tahta .tb-kare', { timeout: 30000 });
-    const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.tahta && KM_OYUN_TEMALAR.tahta.ad, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_tahta_'), icerik: !!KM_OYUN_ICERIK.tahta, oner: KM_DA_OYUN.kucuk[0], ayar: KM_OYUN_AYAR_TEMA.tahta.join(','), yeni: /dag-yeni/.test(kmOyunSeciciKartlari()) }));
-    esit(kur.tema, 'Dev Tahta', 'tema'); esit(kur.sifir, true, '12 saat kuralına girmeli'); dogrula(kur.icerik, 'içerik anahtarı'); esit(kur.oner, 'tahta', '8 yaş önerisi'); esit(kur.ayar, 'tahtaTur,tahtaEl,tahtaTakim', 'ayarlar'); dogrula(kur.yeni, 'seçicide YENİ rozeti');
+    const kur = await p.evaluate(() => ({ tema: KM_OYUN_TEMALAR.tahta && KM_OYUN_TEMALAR.tahta.ad, sifir: KM_OYUN_SIFIR_ONEK.includes('dag_km_tahta_'), icerik: !!KM_OYUN_ICERIK.tahta, oner: KM_DA_OYUN.kucuk[0], ayar: KM_OYUN_AYAR_TEMA.tahta.join(','), yeni: /Dev Tahta/.test(kmOyunSeciciKartlari()) }));
+    esit(kur.tema, 'Dev Tahta', 'tema'); esit(kur.sifir, true, '12 saat kuralına girmeli'); dogrula(kur.icerik, 'içerik anahtarı'); esit(kur.oner, 'zombi', '8 yaş önerisi (v403: Dev Tahta gizli)'); esit(kur.ayar, 'tahtaTur,tahtaEl,tahtaTakim', 'ayarlar'); dogrula(!kur.yeni, 'v403: Dev Tahta seçicide görünmemeli');
     esit(await p.locator('#km-oyun-rightpanel').isVisible().catch(() => false), false, 'puan sıralaması görünmemeli');
 
     // saf kurallar
