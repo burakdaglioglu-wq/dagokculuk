@@ -38,6 +38,11 @@ export default async function ({ log }) {
     dogrula(/3\/8 attı/.test(await p.locator('#km-icerik .yz-hy-tur').textContent()), '"3/8 attı" yazmıyor');
     dogrula(await p.evaluate(() => _kmHayaliTurlar.length === 0), 'robot, sınıfta herkes atmadan turunu attı');
     await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-tablet.png' });
+    // ✏️ takım adına dokun → değiştir
+    await p.evaluate(() => { window.__prm = window.prompt; window.prompt = () => 'Kartallar'; });
+    await p.locator('#km-icerik .yz-hy-ad-btn').click(); await p.waitForTimeout(300);
+    await p.evaluate(() => { window.prompt = window.__prm; });
+    dogrula(/Kartallar/.test(await p.locator('#km-icerik .yz-hy-ad-btn').textContent()), 'takım adı değişmedi');
 
     // 📺 TV
     await p.setViewportSize({ width: 1920, height: 1080 }); await p.waitForTimeout(300);

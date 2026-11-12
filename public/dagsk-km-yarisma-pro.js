@@ -3231,7 +3231,8 @@ function yzSihirbazCiz() {
             + (kat.length % _yzK.boyut ? '<div class="yz-bilgi">⚠️ ' + kat.length + ' sporcu ' + _yzK.boyut + '\'li takımlara tam bölünmüyor — ' + _kmTakimlar.filter(function (t) { return t.uyeler.length < _yzK.boyut; }).map(function (t) { return esc(t.ad) + ' ' + t.uyeler.length + ' kişi'; }).join(', ') + '. Eksik yer güçlü sporculara verildi; istersen bir sporcuyu çıkar ya da başka takım boyutu seç.</div>' : '')
             + '<div class="yz-alt">Değiştirmek için: bir sporcuya dokun → başka takımdaki sporcuya dokun (yer değiştirir) ya da “＋ buraya taşı”.</div>';
     } else if (_yzK.tur === 'hayali') {
-        takimHTML = '<div class="yz-sk-cipler" style="margin-top:8px"><span class="yz-alt" style="align-self:center">Rakip zorluğu:</span>' + ['rookie', 'dengeli', 'usta'].map(function (z) { return '<button class="yz-cip' + (_kmHayaliZorluk === z ? ' aktif' : '') + '" onclick="_kmHayaliZorluk=\'' + z + '\'; kmYarismaKurulumCiz()">' + HAYALI_ZORLUKLER[z].avatar + ' ' + HAYALI_ZORLUKLER[z].ad + '</button>'; }).join('') + '</div>';
+        takimHTML = (_kmTakimlar[0] ? '<div class="yz-sk-cipler" style="margin-top:8px;align-items:center"><span class="yz-alt">Takımın adı:</span><input class="yz-tk-ad-gir" style="--tr:var(--accent-orange);max-width:260px" value="' + esc(/^Takım [0-9]+$/.test(_kmTakimlar[0].ad || '') ? '' : _kmTakimlar[0].ad) + '" placeholder="SINIF" maxlength="24" aria-label="Takım adı" oninput="yzTakimAd(0,this.value,1)" onchange="yzTakimAd(0,this.value)" onkeydown="if(event.key===\'Enter\')this.blur()"></div>' : '')
+            + '<div class="yz-sk-cipler" style="margin-top:8px"><span class="yz-alt" style="align-self:center">Rakip zorluğu:</span>' + ['rookie', 'dengeli', 'usta'].map(function (z) { return '<button class="yz-cip' + (_kmHayaliZorluk === z ? ' aktif' : '') + '" onclick="_kmHayaliZorluk=\'' + z + '\'; kmYarismaKurulumCiz()">' + HAYALI_ZORLUKLER[z].avatar + ' ' + HAYALI_ZORLUKLER[z].ad + '</button>'; }).join('') + '</div>';
     } else {
         let n = kat.length, tur = n >= 2 ? Math.ceil(Math.log2(n)) : 0;
         takimHTML = '<div class="yz-alt" style="margin-top:6px">' + (n >= 2 ? n + ' sporcu · ' + tur + ' tur' + (n & (n - 1) ? ' · bazı sporcular ilk turu bay geçer' : '') : 'En az 2 sporcu seç.') + '</div>';
@@ -4430,7 +4431,7 @@ function yzHyHTML(v, olay, tv) {
     return '<div class="yz-hy' + (tv ? ' tv' : '') + (kaz != null ? ' bitti' : '') + '">'
         + '<div class="yz-hy-ust"><div class="yz-hy-hedef">🤖 HAYALİ RAKİP · ' + esc(v.z.ad) + '<small>' + hedefYazi + '</small></div></div>'
         + '<div class="yz-hy-sahne">'
-        + '<div class="yz-hy-taraf sinif' + (kaz === 0 ? ' kazan' : '') + '" style="--hr:' + v.A.renk + '"><div class="yz-hy-sinif-ik">🏹</div><div class="yz-hy-ad">' + esc(adA) + '</div><div class="yz-hy-puan">' + buyuk[0] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + ' · ' + v.uyeler.length + ' okçu birlikte</div></div>'
+        + '<div class="yz-hy-taraf sinif' + (kaz === 0 ? ' kazan' : '') + '" style="--hr:' + v.A.renk + '"><div class="yz-hy-sinif-ik">🏹</div><button type="button" class="yz-hy-ad yz-hy-ad-btn" onclick="yzHyAdDegis()" title="Takım adını değiştir">' + esc(adA) + ' <span class="yz-hy-kalem">✏️</span></button><div class="yz-hy-puan">' + buyuk[0] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + ' · ' + v.uyeler.length + ' okçu birlikte</div></div>'
         + '<div class="yz-hy-vs">VS</div>'
         + '<div class="yz-hy-taraf rakip' + (kaz === 1 ? ' kazan' : '') + (olay.bot ? ' atti' : '') + '" style="--hr:' + v.B.renk + '"><div class="yz-hy-balon">' + balon + '</div>' + yzHyRobotSVG(v.zor, buyuk[0] > buyuk[1]) + '<div class="yz-hy-ad">' + esc(v.B.ad) + '</div><div class="yz-hy-puan">' + buyuk[1] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + '</div></div>'
         + '</div>'
@@ -4439,6 +4440,15 @@ function yzHyHTML(v, olay, tv) {
         + durum
         + '<div class="yz-hy-cocuklar">' + cocuk + '</div>'
         + '</div>';
+}
+// ✏️ takım adı (2026-11-12, kullanıcı: "takım ismini nereden düzeltiyorum") — maç sırasında da değişir
+function yzHyAdDegis() {
+    let t = _kmTakimlar && _kmTakimlar[0]; if (!t) return;
+    let v = prompt('Takımın adı:', /^Takım [0-9]+$/.test(t.ad || '') ? '' : t.ad); if (v == null) return;
+    yzTakimAd(0, v);
+    try { if (typeof _kmYarismaKurulumKaydet === 'function') _kmYarismaKurulumKaydet(); } catch (e) {}
+    if (typeof kmYarismaCiz === 'function') kmYarismaCiz();
+    if (document.getElementById('yz-tk-tv')) { _yzTk.imza = ''; yzTkCiz(); }
 }
 function yzHyCss() {
     if (document.getElementById('yz-hy-css')) return;
@@ -4474,6 +4484,7 @@ function yzHyCss() {
         '.yz-hy-cocuk .ad{font-weight:900;font-size:clamp(14px,1.4vw,26px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yz-hy-cocuk .dr{font-size:clamp(11px,1vw,18px);font-weight:800;color:#fde68a}',
         '.yz-hy-cocuk.atti{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.12)}.yz-hy-cocuk.atti .dr{color:#86efac}.yz-hy-cocuk.yeni{animation:yzHyYeni 1.2s ease-out;box-shadow:0 0 0 3px #22c55e}',
         '.yz-hy.bitti .yz-hy-cocuklar{opacity:.6}',
+        '.yz-hy-ad-btn{background:none;border:0;font-family:inherit;cursor:pointer;padding:0 4px;border-radius:8px}.yz-hy-ad-btn:hover,.yz-hy-ad-btn:focus-visible{background:rgba(255,255,255,.08);outline:none}.yz-hy-kalem{font-size:.55em;opacity:.7;vertical-align:middle}',
         '.yz-hy.tv .yz-hy-puan{font-size:10vh}.yz-hy.tv .yz-hy-robot{width:auto;height:12vh}.yz-hy.tv .yz-hy-sinif-ik{font-size:9vh}.yz-hy.tv .yz-hy-balon{font-size:2.2vh}.yz-hy.tv .yz-hy-taraf{padding:1vh 1vw}.yz-hy.tv .yz-hy-ad{font-size:3.6vh}.yz-hy.tv .yz-hy-yol{height:3.6vh}.yz-hy.tv .yz-hy-kutu{font-size:2.8vh}.yz-hy.tv .yz-hy-cocuk{min-height:6vh;padding:.6vh}.yz-hy.tv .yz-hy-cocuk .ad{font-size:2.4vh}.yz-hy.tv .yz-hy-cocuk .dr{font-size:1.7vh}',
         '.yz-hy-tablet-alt{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.yz-hy-tablet-alt button{flex:1;min-height:48px;border-radius:12px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}',
         '.yz-hy-sure{text-align:center;font-weight:800;color:#fbbf24;margin-bottom:8px}',
