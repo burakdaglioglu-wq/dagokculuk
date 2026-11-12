@@ -30156,7 +30156,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // deseni (bkz. kmLiderCiz/kmKlasmanCiz), yeni bir polling/interval eklenmedi.
         function _kmHayaliRakipGuncelle() {
             let gercekTurlar = _kmYarismaTurBazliPuanlar(_kmTakimlar[0]);
-            while(_kmHayaliTurlar.length < gercekTurlar.length) {
+            // v408 (2026-11-12): robot turunu ancak SINIFTA HERKES o turu atınca atar — eskiden ilk çocuk atar atmaz atıyor,
+            // 8 çocuktan 3'ü atmışken seti "kazanıyordu" (171-72). Kural: kazanan herkes attıktan sonra belli olur.
+            let tamamTur = _kmTakimlar[0].uyeler.length ? Math.min.apply(null, _kmTakimlar[0].uyeler.map(function(u) { let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad], snap = _kmYarismaBaslangicPuan[u.g + '|' + u.ad] || { seriSayisi: 0 }; return sp ? Math.max(0, (sp.seriler || []).length - snap.seriSayisi) : 0; })) : 0;
+            while(_kmHayaliTurlar.length < Math.min(tamamTur, gercekTurlar.length)) {
                 let turPuani = _kmHayaliTurUret();
                 _kmHayaliTurlar.push(turPuani);
                 _kmHayaliPuan += turPuani;

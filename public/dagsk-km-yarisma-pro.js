@@ -4358,3 +4358,163 @@ document.addEventListener('mousedown', function () { yzHoverKapat(); }, true);
 })();
 // 📺 TV açıkken giriş penceresinde her ok girişi "Şimdi atıyor" şeridine de yansısın (aynı cihazda TV + giriş, 2026-10-21)
 (function () { let asil = yzGirisCiz; yzGirisCiz = function () { let r = asil.apply(this, arguments); try { if (_yz.tv) yzTvSimdiTazele(); } catch (e) {} return r; }; })();
+
+// ================================================================================================
+// 🤖 HAYALİ RAKİP SAHNESİ (v408, 2026-11-12 — kullanıcı: "küçük yaş grubu, herkes hayali tek rakibe karşı; görseli çok kötü,
+// TV ekranı da yok"). Tablet ve TV AYNI sahneyi çizer: solda SINIF (herkes birlikte), sağda robot rakip; altta yarış pisti
+// (set / toplam / tur hedefine göre), tur kutuları, robotun konuşma balonu ve çocuk düğmeleri (dokun → skor gir,
+// aynı yzTkGirisAc penceresi → kmYarismaSeriKaydet). Çocuklara puan SIRALAMASI gösterilmez (yalnız "bu turda attı ✓").
+// ================================================================================================
+let _yzHy = { sayim: {}, son: null, botN: 0, botSon: null };
+function yzHyVeri() {
+    try { if (typeof _kmHayaliRakipGuncelle === 'function') _kmHayaliRakipGuncelle(); } catch (e) {}
+    let A = _kmTakimlar[0], B = _kmTakimlar[1] || { ad: 'Robot', renk: '#a78bfa', uyeler: [] };
+    let ta = _kmYarismaTurBazliPuanlar(A), tb = (_kmHayaliTurlar || []).slice();
+    let deg = null;
+    try { deg = kmYarismaMacSonucDegerlendir([{ t: A, idx: 0, turlar: ta }, { t: B, idx: 1, turlar: tb }]); } catch (e) {}
+    let z = HAYALI_ZORLUKLER[_kmHayaliZorluk] || HAYALI_ZORLUKLER.dengeli;
+    return { A: A, B: B, ta: ta, tb: tb, deg: deg, uyeler: yzTkUyeler(A, _kmYarismaBaslangicPuan, false), z: z, zor: HAYALI_ZORLUKLER[_kmHayaliZorluk] ? _kmHayaliZorluk : 'dengeli', yorum: (_kmHayaliYorumGecmisi[0] || {}).metin || '' };
+}
+function yzHySonTespit(v) {
+    let simdi = Date.now();
+    v.uyeler.forEach(function (u) { let n = u.seriler.length, e = _yzHy.sayim[u.k]; if (e != null && n > e) _yzHy.son = { k: u.k, ad: u.ad, z: simdi }; _yzHy.sayim[u.k] = n; });
+    if (v.tb.length > _yzHy.botN && _yzHy.botN > 0 || (v.tb.length === 1 && _yzHy.botN === 0)) _yzHy.botSon = { p: v.tb[v.tb.length - 1], z: simdi };
+    _yzHy.botN = v.tb.length;
+    return { son: _yzHy.son && simdi - _yzHy.son.z < 6000 ? _yzHy.son : null, bot: _yzHy.botSon && simdi - _yzHy.botSon.z < 6000 ? _yzHy.botSon : null };
+}
+function yzHyRobotSVG(zor, kizgin) {
+    let r = zor === 'usta' ? '#f43f5e' : zor === 'rookie' ? '#34d399' : '#a78bfa', g = zor === 'usta' ? '#fde047' : '#67e8f9';
+    let kas = zor === 'usta' ? '<path d="M30 40 L44 45 M70 40 L56 45" stroke="#0b1020" stroke-width="4" stroke-linecap="round"/>' : '';
+    let agiz = kizgin ? '<path d="M38 66 Q50 58 62 66" stroke="' + g + '" stroke-width="4" fill="none" stroke-linecap="round"/>' : '<path d="M38 62 Q50 72 62 62" stroke="' + g + '" stroke-width="4" fill="none" stroke-linecap="round"/>';
+    return '<svg class="yz-hy-robot" viewBox="0 0 100 120" aria-hidden="true"><line x1="50" y1="6" x2="50" y2="20" stroke="' + r + '" stroke-width="4"/><circle class="yz-hy-anten" cx="50" cy="6" r="5" fill="' + g + '"/>'
+        + '<rect x="18" y="20" width="64" height="58" rx="16" fill="' + r + '"/><rect x="26" y="32" width="48" height="38" rx="10" fill="#0b1020"/>'
+        + '<circle class="yz-hy-goz" cx="40" cy="48" r="6" fill="' + g + '"/><circle class="yz-hy-goz" cx="60" cy="48" r="6" fill="' + g + '"/>' + kas + agiz
+        + '<rect x="10" y="40" width="8" height="20" rx="4" fill="' + r + '"/><rect x="82" y="40" width="8" height="20" rx="4" fill="' + r + '"/>'
+        + '<rect x="30" y="82" width="40" height="30" rx="10" fill="' + r + '" opacity=".85"/><circle cx="50" cy="97" r="7" fill="' + g + '" opacity=".9"/></svg>';
+}
+function yzHyHTML(v, olay, tv) {
+    let d = v.deg, k = d ? d.kural : null, setMod = !k || k.hedefTip === 'set';
+    let topA = v.ta.reduce(function (a, b) { return a + b; }, 0), topB = v.tb.reduce(function (a, b) { return a + b; }, 0);
+    let buyuk = setMod && d ? d.setSonuc.setPuanlari : [topA, topB];
+    let ilerle = function (i) {
+        if (!k) return 0;
+        if (k.hedefTip === 'set') return Math.min(1, (d.setSonuc.setPuanlari[i] || 0) / (k.hedefSetPuani || 6));
+        if (k.hedefTip === 'toplam') return Math.min(1, (i ? topB : topA) / (k.hedefPuan || 1));
+        let m = Math.max(topA, topB, 1); return (i ? topB : topA) / m * Math.min(1, v.ta.length / (k.hedefTur || 1));
+    };
+    let kaz = d && d.durum === 'bitti' ? d.kazananIdx : null, ek = d && d.durum === 'shootoff', adA = /^Takım [0-9]+$/.test(v.A.ad || '') ? 'SINIF' : v.A.ad;
+    let hedefYazi = !k ? '' : k.hedefTip === 'set' ? k.hedefSetPuani + ' set puanına ilk ulaşan kazanır' : k.hedefTip === 'toplam' ? k.hedefPuan + ' puana ilk ulaşan kazanır' : k.hedefTur + ' tur — en çok puanı toplayan';
+    // tur durumu: bu turda kim attı (sıralama yok)
+    let n = v.uyeler.map(function (u) { return u.seriler.length; }), enAz = n.length ? Math.min.apply(null, n) : 0, enCok = n.length ? Math.max.apply(null, n) : 0;
+    let attiMi = function (u) { return enCok > enAz && u.seriler.length > enAz; };
+    let atti = v.uyeler.filter(attiMi).length, okSay = yzTkOkSayisi(k, d);
+    let cocuk = v.uyeler.map(function (u) {
+        let ok = attiMi(u), yeni = olay.son && olay.son.k === u.k;
+        return '<button class="yz-hy-cocuk' + (ok ? ' atti' : '') + (yeni ? ' yeni' : '') + '" onclick="yzTkGirisAc(\'' + yzEnc(u.k) + '\',' + okSay + ')"><span class="ad">' + esc(yzKisaAd(u.ad)) + '</span><span class="dr">' + (ok ? '✓ attı' : '🏹 sırada') + '</span></button>';
+    }).join('');
+    let pist = function (i, renk, ikon, ad) {
+        let p = Math.round(ilerle(i) * 100);
+        return '<div class="yz-hy-serit" style="--hr:' + renk + '"><span class="yz-hy-serit-ad">' + ad + '</span><div class="yz-hy-yol"><div class="yz-hy-dolu" style="width:' + p + '%"></div><span class="yz-hy-kosucu" style="left:' + Math.max(3, Math.min(94, p)) + '%">' + ikon + '</span><span class="yz-hy-bayrak">🏁</span></div></div>';
+    };
+    let kutular = '', sut = Math.max(v.ta.length, v.tb.length, setMod && k ? Math.min(k.maxSet || 5, 5) : 3);
+    for (let i = 0; i < sut; i++) {
+        let a = v.ta[i], b = v.tb[i], c = a != null && b != null ? (a > b ? 'a' : b > a ? 'b' : 'e') : '';
+        kutular += '<div class="yz-hy-kutu ' + c + '"><small>' + (k && setMod && i >= k.maxSet ? 'EK' : (i + 1) + '. ' + (setMod ? 'SET' : 'TUR')) + '</small><b class="ka">' + (a != null ? a : '·') + '</b><b class="kb">' + (b != null ? b : '·') + '</b></div>';
+    }
+    let durum = kaz === 0 ? '<div class="yz-hy-son kaz">🏆 ' + esc(adA) + ' KAZANDI! Hep birlikte yendiniz!</div>'
+        : kaz === 1 ? '<div class="yz-hy-son kay">🤖 Bu sefer robot kazandı — rövanş!</div>'
+        : ek ? '<div class="yz-hy-son ek">🎯 BERABERE — EK ATIŞ: tek ok!</div>'
+        : '<div class="yz-hy-tur"><b>' + (enAz + 1) + '. ' + (setMod ? 'SET' : 'TUR') + '</b> · ' + atti + '/' + v.uyeler.length + ' attı' + (olay.son ? ' · 🎯 <b>' + esc(yzKisaAd(olay.son.ad)) + '</b> attı!' : '') + '</div>';
+    let ilkSoz = (HAYALI_SOZLER.baslangic[v.zor] || [''])[0];
+    let balon = olay.bot ? 'Ben de attım: <b>' + olay.bot.p + '</b>!' : esc(v.yorum || ilkSoz);
+    return '<div class="yz-hy' + (tv ? ' tv' : '') + (kaz != null ? ' bitti' : '') + '">'
+        + '<div class="yz-hy-ust"><div class="yz-hy-hedef">🤖 HAYALİ RAKİP · ' + esc(v.z.ad) + '<small>' + hedefYazi + '</small></div></div>'
+        + '<div class="yz-hy-sahne">'
+        + '<div class="yz-hy-taraf sinif' + (kaz === 0 ? ' kazan' : '') + '" style="--hr:' + v.A.renk + '"><div class="yz-hy-sinif-ik">🏹</div><div class="yz-hy-ad">' + esc(adA) + '</div><div class="yz-hy-puan">' + buyuk[0] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + ' · ' + v.uyeler.length + ' okçu birlikte</div></div>'
+        + '<div class="yz-hy-vs">VS</div>'
+        + '<div class="yz-hy-taraf rakip' + (kaz === 1 ? ' kazan' : '') + (olay.bot ? ' atti' : '') + '" style="--hr:' + v.B.renk + '"><div class="yz-hy-balon">' + balon + '</div>' + yzHyRobotSVG(v.zor, buyuk[0] > buyuk[1]) + '<div class="yz-hy-ad">' + esc(v.B.ad) + '</div><div class="yz-hy-puan">' + buyuk[1] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + '</div></div>'
+        + '</div>'
+        + '<div class="yz-hy-pist">' + pist(0, v.A.renk, '🏹', 'SINIF') + pist(1, v.B.renk, '🤖', 'ROBOT') + '</div>'
+        + '<div class="yz-hy-kutular" style="--ra:' + v.A.renk + ';--rb:' + v.B.renk + '">' + kutular + '</div>'
+        + durum
+        + '<div class="yz-hy-cocuklar">' + cocuk + '</div>'
+        + '</div>';
+}
+function yzHyCss() {
+    if (document.getElementById('yz-hy-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-hy-css';
+    st.textContent = [
+        '.yz-hy{display:flex;flex-direction:column;gap:12px;color:#eef2ff;background:radial-gradient(120% 80% at 50% 0%,#1e1b4b 0%,#0b1224 60%);border-radius:20px;padding:14px;position:relative;overflow:hidden}',
+        '.yz-hy.tv{flex:1;min-height:0;border-radius:1.4vw;padding:1.6vh 1.6vw;gap:1.4vh;overflow:auto}',
+        '.yz-hy-ust{display:flex;justify-content:center}.yz-hy-hedef{text-align:center;font-weight:900;letter-spacing:.06em;font-size:clamp(14px,1.6vw,26px)}.yz-hy-hedef small{display:block;font-weight:700;letter-spacing:0;color:#a5b4fc;font-size:clamp(11px,1.1vw,18px)}',
+        '.yz-hy-sahne{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:stretch}',
+        '.yz-hy-taraf{position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--hr) 26%,transparent),rgba(255,255,255,.03));border:2px solid var(--hr);border-radius:18px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;text-align:center;min-width:0}',
+        '.yz-hy-taraf.kazan{box-shadow:0 0 0 4px #fbbf24,0 0 40px #fbbf2499;animation:yzHyZipla .8s ease-in-out infinite alternate}',
+        '.yz-hy-sinif-ik{font-size:clamp(46px,6vw,120px);line-height:1;animation:yzHyBob 2.8s ease-in-out infinite}',
+        '.yz-hy-ad{font-weight:900;font-size:clamp(16px,2.2vw,40px);color:var(--hr);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+        '.yz-hy-puan{font-weight:900;line-height:.95;font-size:clamp(54px,8vw,170px);color:#fff;text-shadow:0 4px 24px color-mix(in srgb,var(--hr) 60%,transparent)}',
+        '.yz-hy-alt{font-size:clamp(11px,1vw,17px);color:#c7d2fe;font-weight:700}',
+        '.yz-hy-vs{align-self:center;font-weight:900;font-size:clamp(22px,3vw,56px);color:#fbbf24;text-shadow:0 0 18px #f59e0b}',
+        '.yz-hy-robot{width:clamp(70px,9vw,180px);height:auto;animation:yzHyBob 2.4s ease-in-out infinite}.yz-hy-taraf.atti .yz-hy-robot{animation:yzHyAt .6s ease-out 2}',
+        '.yz-hy-goz{transform-box:fill-box;transform-origin:center;animation:yzHyGoz 3.2s infinite}.yz-hy-anten{animation:yzHyAnten 1.2s infinite alternate}',
+        '.yz-hy-balon{position:relative;background:#fff;color:#1e1b4b;border-radius:14px;padding:6px 10px;font-weight:800;font-size:clamp(11px,1.2vw,22px);line-height:1.3;max-width:100%;margin-bottom:6px}.yz-hy-balon:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-top-color:#fff;border-bottom:0}',
+        '.yz-hy-pist{display:flex;flex-direction:column;gap:8px}',
+        '.yz-hy-serit{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}.yz-hy-serit-ad{font-weight:900;font-size:clamp(11px,1.1vw,20px);color:var(--hr);min-width:58px}',
+        '.yz-hy-yol{position:relative;height:clamp(24px,2.6vw,48px);border-radius:999px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 18px,rgba(255,255,255,.02) 18px 36px);border:1px solid rgba(255,255,255,.12)}',
+        '.yz-hy-dolu{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--hr) 35%,transparent),var(--hr));transition:width 1s cubic-bezier(.2,.9,.3,1.2)}',
+        '.yz-hy-kosucu{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:clamp(18px,2.4vw,44px);transition:left 1s cubic-bezier(.2,.9,.3,1.2);filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}',
+        '.yz-hy-bayrak{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:clamp(16px,2vw,38px)}',
+        '.yz-hy-kutular{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}',
+        '.yz-hy-kutu{display:flex;flex-direction:column;align-items:center;min-width:clamp(48px,5.4vw,100px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:4px 6px;font-size:clamp(15px,1.8vw,34px);font-weight:900;color:#94a3b8}',
+        '.yz-hy-kutu small{font-size:clamp(9px,.8vw,14px);letter-spacing:.1em;color:#a5b4fc}.yz-hy-kutu.a .ka{color:var(--ra)}.yz-hy-kutu.b .kb{color:var(--rb)}.yz-hy-kutu.e b{color:#fff}.yz-hy-kutu.a{border-color:var(--ra)}.yz-hy-kutu.b{border-color:var(--rb)}',
+        '.yz-hy-tur{text-align:center;font-size:clamp(14px,1.6vw,30px);font-weight:700;color:#c7d2fe}.yz-hy-tur b{color:#fff}',
+        '.yz-hy-son{text-align:center;font-weight:900;font-size:clamp(18px,2.6vw,52px);padding:8px;border-radius:14px}.yz-hy-son.kaz{color:#fde047;background:rgba(250,204,21,.14);animation:yzHyZipla .8s ease-in-out infinite alternate}.yz-hy-son.kay{color:#c4b5fd;background:rgba(167,139,250,.14)}.yz-hy-son.ek{color:#fb923c}',
+        '.yz-hy-cocuklar{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(110px,11vw,200px),1fr));gap:8px}',
+        '.yz-hy-cocuk{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:58px;padding:8px;border-radius:14px;border:2px solid #fbbf24;background:rgba(251,191,36,.12);color:#fff;font:inherit;cursor:pointer;min-width:0}',
+        '.yz-hy-cocuk .ad{font-weight:900;font-size:clamp(14px,1.4vw,26px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yz-hy-cocuk .dr{font-size:clamp(11px,1vw,18px);font-weight:800;color:#fde68a}',
+        '.yz-hy-cocuk.atti{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.12)}.yz-hy-cocuk.atti .dr{color:#86efac}.yz-hy-cocuk.yeni{animation:yzHyYeni 1.2s ease-out;box-shadow:0 0 0 3px #22c55e}',
+        '.yz-hy.bitti .yz-hy-cocuklar{opacity:.6}',
+        '.yz-hy.tv .yz-hy-puan{font-size:10vh}.yz-hy.tv .yz-hy-robot{width:auto;height:12vh}.yz-hy.tv .yz-hy-sinif-ik{font-size:9vh}.yz-hy.tv .yz-hy-balon{font-size:2.2vh}.yz-hy.tv .yz-hy-taraf{padding:1vh 1vw}.yz-hy.tv .yz-hy-ad{font-size:3.6vh}.yz-hy.tv .yz-hy-yol{height:3.6vh}.yz-hy.tv .yz-hy-kutu{font-size:2.8vh}.yz-hy.tv .yz-hy-cocuk{min-height:6vh;padding:.6vh}.yz-hy.tv .yz-hy-cocuk .ad{font-size:2.4vh}.yz-hy.tv .yz-hy-cocuk .dr{font-size:1.7vh}',
+        '.yz-hy-tablet-alt{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.yz-hy-tablet-alt button{flex:1;min-height:48px;border-radius:12px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}',
+        '.yz-hy-sure{text-align:center;font-weight:800;color:#fbbf24;margin-bottom:8px}',
+        '@keyframes yzHyBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes yzHyAt{0%{transform:scale(1)}40%{transform:scale(1.18) rotate(-6deg)}100%{transform:scale(1)}}',
+        '@keyframes yzHyGoz{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}@keyframes yzHyAnten{to{opacity:.35}}@keyframes yzHyZipla{to{transform:translateY(-4px) scale(1.02)}}@keyframes yzHyYeni{0%{transform:scale(1.06)}100%{transform:none}}',
+        '@media (max-width:560px){.yz-hy{padding:10px}.yz-hy-sahne{gap:6px}.yz-hy-taraf{padding:8px}.yz-hy-vs{font-size:18px}.yz-hy-serit-ad{min-width:44px}}',
+        '@media (prefers-reduced-motion:reduce){.yz-hy *{animation:none!important;transition:none!important}}'
+    ].join('\n');
+    document.head.appendChild(st);
+}
+(function () {
+    // 📺 TV: hayali modu artık boş ekran değil, sahne
+    let asilHTML = yzTkHTML;
+    yzTkHTML = function (v, son) {
+        if (v && v.mod === 'hayali' && typeof _kmYarismaAktif !== 'undefined' && _kmYarismaAktif && _kmTakimlar[0]) {
+            yzHyCss();
+            let hv = yzHyVeri(), olay = yzHySonTespit(hv);
+            return '<button class="yz-tv-kapat" onclick="yzTkTvKapat()">✕ Kapat</button><div class="yz-tv-bas"><div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">SINIF vs ROBOT</div><div class="yz-tv-alt">hep birlikte · her ok sınıfın</div></div>' + yzTkSayacHTML('yz-tk-tv-sayac') + '</div>'
+                + '<div class="yz-tk-govde">' + yzHyHTML(hv, olay, true) + '</div>';
+        }
+        let h = asilHTML.apply(this, arguments);
+        return v && v.mod === 'hayali' ? h.replace('TV ekranı gerçek takım ve düello maçları içindir.', 'Tablette Hayali Rakip maçını başlatınca burada canlı görünür.') : h;
+    };
+    // 📱 Tablet: Hayali Rakip canlı maç ekranı da aynı sahne
+    let asilSkor = window.kmYarismaSkorbordCiz;
+    if (typeof asilSkor !== 'function') return;
+    window.kmYarismaSkorbordCiz = function () {
+        let r = asilSkor.apply(this, arguments);
+        try {
+            if (_kmRakipTipi === 'hayali' && _kmYarismaAktif && _kmTakimlar[0]) {
+                let el = document.getElementById('km-icerik'); if (!el) return r;
+                yzHyCss(); yzTkCssYukle(); yzCssYukle();
+                let bar = el.querySelector('.yz-geri-bar'), barHTML = bar ? bar.outerHTML : '';
+                let hv = yzHyVeri(), olay = yzHySonTespit(hv);
+                el.innerHTML = barHTML + (_kmYarismaSuresi > 0 ? '<div id="km-yarisma-sure" class="yz-hy-sure"></div>' : '') + yzHyHTML(hv, olay, false)
+                    + '<div class="yz-hy-tablet-alt"><button style="border:1px solid #6366f1;background:rgba(99,102,241,.15);color:#c7d2fe" onclick="yzTkTvAc()">📺 TV ekranı</button><button style="border:1px solid var(--neon-red);background:rgba(239,68,68,.12);color:var(--neon-red)" onclick="kmYarismaBitir()">🏁 Yarışmayı Bitir</button></div>';
+                if (typeof yeniRozet === 'function') { let h = el.querySelector('.yz-hy-hedef'); if (h) h.insertAdjacentHTML('beforeend', ' ' + yeniRozet()); }
+                if (_kmYarismaSuresi > 0 && typeof kmYarismaTikTak === 'function') kmYarismaTikTak();
+                if (document.getElementById('yz-tk-tv')) { _yzTk.imza = ''; yzTkCiz(); }
+            }
+        } catch (e) { console.warn('hayali sahne', e); }
+        return r;
+    };
+})();

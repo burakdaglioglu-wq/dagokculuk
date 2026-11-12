@@ -5779,3 +5779,9 @@ paneli/ana ekran — düğmenin ortasındaki öğe gerçekten düğme mi + onay 
 - Ejderha dalgasından sonraki dalga (4, 7, 10…) ilk kez gelince `st.kontrol` olur (`kontrolMu`, `yeniDalga` içinde). Kale düşünce `yd = max(1, st.kontrol, dalga − GERI_DALGA)`: ⚔️/😈 kontrol noktasının gerisine dönmez.
 - ⚔️/😈: `tanit()` önce "🚩 KONTROL NOKTASI!" kartını (YENİ rozeti) gösterir; HUD `· 🚩N`; düşme kartı "Kontrol noktası bizi korudu" der. 🙂 Tatlı zaten geri gitmediği için kart yok.
 - "Baştan başla" ve gün değişimi kontrolü 1'e indirir. Test 78 genişletildi (4'te düşüş → 4 kalır; kontrol yokken 4 → 2).
+
+## 123. 🤖 Hayali Rakip sahnesi + TV (2026-11-12, v408)
+
+- Küçük yaş, herkes tek hayali rakibe karşı. Tablet canlı maç ekranı ve 📺 TV (`yzTkHTML` hayali dalı) aynı sahneyi çiziyor: `yzHyHTML` (dagsk-km-yarisma-pro.js sonu). SINIF ↔ SVG robot (zorluğa göre renk, önde olunca üzgün), yarış pisti (set/toplam/tur hedefi), tur kutuları, robot balonu, çocuk düğmeleri (dokun → `yzTkGirisAc` → `kmYarismaSeriKaydet`). Sıralama yok, yalnız ✓ attı / 🏹 sırada.
+- BUG düzeltmesi: `_kmHayaliRakipGuncelle` robot turunu artık sınıfta HERKES o turu atınca üretiyor (eskiden ilk çocuk atınca → set 3/8 kişiyle karar veriliyordu).
+- Test 122 (tablet 1180, TV 1920, telefon 390).
