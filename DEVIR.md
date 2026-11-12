@@ -5766,3 +5766,10 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - `public/dagsk-film.js?v=1`, `dagFilmAc()` / app.js `dagFilmAcYukle()`. 186 sn, 10 sahne, tek canvas 1600x900 + kulübün fotoğrafları (galeri/hero/kulup/vitrin) Ken Burns + WebAudio müzik (84 BPM; los/yumusak/zor/yuksel/epik/son) + speechSynthesis tr-TR + altyazı (ekranda yazanlar `, 0` ile altyazıya yazılmaz). Her şey t'ye bağlı: duraklat/sar/tekrar.
 - Açılış: Karışık Sınıf aracı `film` (Oyun & motivasyon, YENİ), KS_YENILER ilk kart, sporcunun ana ekranında 🎬 kart (`sporcuAnaDoldur`). Test: 120-film.
 - Instagram (@dagokculuk) girişsiz okunamıyor; gönderi linkleri ya da dosyalar gelirse filme eklenebilir.
+
+## 121. 🏁 "Dersi Bitir"e tıklanamıyordu (2026-11-12, v406)
+Kullanıcı: "bazen ders bitire tıklayamıyorum". Neden: Karışık Sınıf üst çubuğunun (⋯ menüsü) katman önceliği yoktu → gövdedeki
+konumlu öğeler (oyun ekranının sağ paneli / SIRADA kartı — Hapşırık, Blok; Yolculuk ders başı kartı z 2000) AÇIK MENÜNÜN ÜSTÜNDE
+kalıyor, "Dersi Bitir"e dokunuş o karta gidiyordu. Düzeltme: `kmMenuOne()` menü açıkken üst çubuğa z-index 9999 verir, kapanınca
+siler; menüye max-height + kaydırma. Test: `121-dersi-bitir` (1180 ve 390 px; zombi/hapşırık/blok/yolculuk kartı/yarışma/ders
+paneli/ana ekran — düğmenin ortasındaki öğe gerçekten düğme mi + onay penceresinin "Evet"i en üstte mi).

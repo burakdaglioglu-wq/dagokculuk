@@ -29520,11 +29520,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmMenuAcKapat() {
             let el = document.getElementById('km-menu-acilir'); if(!el) return;
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            kmMenuOne(el);
+        }
+        // "Bazen Dersi Bitir'e tıklayamıyorum" (2026-11-12): üst çubuğun katman önceliği yoktu → oyun ekranının sağ
+        // paneli (SIRADA kartı, araç çubuğu) AÇIK MENÜNÜN ÜSTÜNDE kalıyor, "Dersi Bitir"e dokunuş o karta gidiyordu
+        // (Hapşırık, Blok…). Menü açıkken üst çubuk öne alınır, kapanınca eski hâline döner.
+        function kmMenuOne(el) {
+            let bas = el && el.parentElement && el.parentElement.parentElement; if(!bas) return;
+            bas.style.zIndex = el.style.display === 'none' ? '' : '9999'; // Yolculuk kartı (2000) vb. gövde katmanlarının da üstünde
         }
         document.addEventListener('click', function(e) {
             let menu = document.getElementById('km-menu-acilir'); if(!menu || menu.style.display === 'none') return;
             if(e.target.closest('#km-menu-acilir') || e.target.closest('#km-menu-btn')) return;
-            menu.style.display = 'none';
+            menu.style.display = 'none'; kmMenuOne(menu);
         });
         // Karışık Sınıf'ta eğitmen sadece elle eklediği (telefonu olmayan) sporcuları görürdü —
         // aynı anda telefonlarından atan diğer sporcuları görmek için bu ekrandan hiç çıkmadan
