@@ -5773,3 +5773,9 @@ konumlu öğeler (oyun ekranının sağ paneli / SIRADA kartı — Hapşırık, 
 kalıyor, "Dersi Bitir"e dokunuş o karta gidiyordu. Düzeltme: `kmMenuOne()` menü açıkken üst çubuğa z-index 9999 verir, kapanınca
 siler; menüye max-height + kaydırma. Test: `121-dersi-bitir` (1180 ve 390 px; zombi/hapşırık/blok/yolculuk kartı/yarışma/ders
 paneli/ana ekran — düğmenin ortasındaki öğe gerçekten düğme mi + onay penceresinin "Evet"i en üstte mi).
+
+## 122. 🚩 Kale Savunması: kontrol noktası (2026-11-12, v407)
+
+- Ejderha dalgasından sonraki dalga (4, 7, 10…) ilk kez gelince `st.kontrol` olur (`kontrolMu`, `yeniDalga` içinde). Kale düşünce `yd = max(1, st.kontrol, dalga − GERI_DALGA)`: ⚔️/😈 kontrol noktasının gerisine dönmez.
+- ⚔️/😈: `tanit()` önce "🚩 KONTROL NOKTASI!" kartını (YENİ rozeti) gösterir; HUD `· 🚩N`; düşme kartı "Kontrol noktası bizi korudu" der. 🙂 Tatlı zaten geri gitmediği için kart yok.
+- "Baştan başla" ve gün değişimi kontrolü 1'e indirir. Test 78 genişletildi (4'te düşüş → 4 kalır; kontrol yokken 4 → 2).

@@ -98,7 +98,18 @@ export default async function ({ log }) {
     esit(st.mod, 3, 'dalga Korkutucu seviyeyle kurulmadı'); dogrula(st.can <= 2, 'Korkutucu: can 2\'yi geçmemeli (' + st.can + ')');
     dogrula(await p.evaluate(() => document.getElementById('kale-svg').classList.contains('kale-gece')), 'Korkutucu gece sahnesi çizilmedi');
     esit(await p.evaluate(() => [...document.getElementById('kale-canlar').textContent].filter((c) => c === '❤' || c === '🖤').length), 2, 'Korkutucu HUD 2 kalp göstermeli');
+    // v407 🚩 kontrol noktası: dalga 4'e ilk gelişte dikilir — kale düşse de gerisine dönülmez
+    esit((await oku()).kontrol, 4, 'dalga 4 kontrol noktası olarak kaydedilmedi');
     await yaz("st.can = 1; st.dusmanlar.forEach((d) => { d.x = 900; d.ofke = d.ofke != null ? 0 : d.ofke; }); st.dusmanlar[0].x = 365;");
+    await seri(['M', 'M', 'M']);
+    st = await oku();
+    esit(st.dalga, 4, 'Korkutucu: kontrol noktası 4 iken kale düşünce 4 gerisine gitmemeli'); esit(st.can, 2, 'Korkutucu: kale 2 canla başlamalı');
+    await p.waitForTimeout(1500);
+    dogrula(await p.evaluate(() => /Kontrol noktası bizi korudu/.test(document.getElementById('kale-dev').textContent)), '"Kontrol noktası bizi korudu" mesajı yok');
+    dogrula(await p.evaluate(() => /🚩4/.test(document.getElementById('kale-ad').textContent)), 'HUD 🚩4 göstermiyor');
+    await p.waitForTimeout(4000);
+    // kontrol noktası yokken (eski davranış) 2 dalga geri
+    await yaz("st.kontrol = 1; st.can = 1; st.dusmanlar.forEach((d) => { d.x = 900; d.ofke = d.ofke != null ? 0 : d.ofke; }); st.dusmanlar[0].x = 365;");
     await seri(['M', 'M', 'M']);
     st = await oku();
     esit(st.dalga, 2, 'Korkutucu: kale düşünce 2 dalga geri gitmeli (4 → 2)'); esit(st.can, 2, 'Korkutucu: kale 2 canla başlamalı');

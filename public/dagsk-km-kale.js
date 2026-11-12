@@ -277,6 +277,8 @@
     }
 
     // v359 ✨ evre: 1 normal · 2 🪖 Savaşçı · 3 👑 Kral
+    // v407 🚩 kontrol noktası: her ejderha dalgasından sonraki dalga (4, 7, 10…). Kale düşse de oyun bunun gerisine dönmez.
+    function kontrolMu(dalga) { return dalga >= 4 && (dalga - 1) % 3 === 0; }
     function evreDalga(dalga) { return dalga >= 7 ? 3 : dalga >= 4 ? 2 : 1; }
     const EVRE = [null, { ad: '', ikon: '' }, { ad: 'Savaşçı', ikon: '🪖' }, { ad: 'Kral', ikon: '👑' }];
     function dusmanAd(tip, evre) { const e = EVRE[evre || 1]; return (e && e.ad ? e.ad + ' ' : '') + D[tip].ad; }
@@ -358,6 +360,7 @@
     function dusmanCan(t, top, ag) { return Math.max(6, Math.min(D[t].tavan || 1e9, Math.round(top * D[t].agirlik / ag))); }
     function yeniDalga(st, dalga) {
         st.dalga = dalga; st.adim = adimHesapla(); st.mod = kmod(); st.dalgaKatki = {}; st.donma = 0; st.mermi = null;
+        if (kontrolMu(dalga) && dalga > (st.kontrol || 1)) { st.kontrol = dalga; st.yeniKontrol = dalga; }
         const tipler = dalgaTipleri(dalga), top = toplamCan(dalga, st), ag = tipler.reduce((a, t) => a + D[t].agirlik, 0), ev = evreDalga(dalga);
         st.dusmanlar = tipler.map((t, i) => { const c = dusmanCan(t, top, ag), d = { id: ++st.sonId, tip: t, can: c, max: c, evre: ev, x: 800 + i * 52 + (D[t].boss ? 70 : 0), y: D[t].ucar ? 360 + (i % 2) * 24 : 486 + (i % 2) * 12 }; if (D[t].boss && OFKE_SINIR[st.mod]) d.ofke = 0; return d; });
     }
@@ -491,7 +494,7 @@
         if (!$('kale-ad')) return;
         const st = _ekranHud || durum(), kalan = st.dusmanlar.length, top = st.dusmanlar.reduce((a, d) => a + d.max, 0) || 1, can = st.dusmanlar.reduce((a, d) => a + Math.max(0, d.can), 0);
         const m = kmod();
-        $('kale-ad').textContent = '🏰 Dalga ' + st.dalga + (EVRE[evreDalga(st.dalga)].ikon ? ' ' + EVRE[evreDalga(st.dalga)].ikon : '') + (dalgaTipleri(st.dalga).indexOf('ejderha') >= 0 ? ' · 🐲' : '') + (m === 3 ? ' · 😈' : m === 2 ? ' · ⚔️' : '');
+        $('kale-ad').textContent = '🏰 Dalga ' + st.dalga + (EVRE[evreDalga(st.dalga)].ikon ? ' ' + EVRE[evreDalga(st.dalga)].ikon : '') + (dalgaTipleri(st.dalga).indexOf('ejderha') >= 0 ? ' · 🐲' : '') + (m >= 2 && durum().kontrol > 1 ? ' · 🚩' + durum().kontrol : '') + (m === 3 ? ' · 😈' : m === 2 ? ' · ⚔️' : '');
         $('kale-canlar').textContent = kalpler(st.can);
         const y = Math.round((1 - can / top) * 100);
         $('kale-bar-ic').style.width = y + '%'; $('kale-bar-yazi').textContent = kalan ? `Kalan düşman ${kalan} · %${y}` : 'Dalga temiz!';
@@ -660,8 +663,8 @@
             if (onT && !st.donma && onT.x - KAPI_X <= st.adim * hz * hiz(onT.tip)) adim.tehlike = onT.id;
             adim.hasarli = olaylar.some((o) => o.tur === 'ok');
             if (st.can <= 0) {
-                const yd = Math.max(1, st.dalga - (GERI_DALGA[kmod()] || 0));
-                dustu = { dalga: st.dalga, yeni: yd }; st.dustu = (st.dustu || 0) + 1; st.can = kalpSayisi(); _ekranHud = { dalga: st.dalga, can: 0, dusmanlar: [] }; yeniDalga(st, yd);
+                const ham = st.dalga - (GERI_DALGA[kmod()] || 0), yd = Math.max(1, st.kontrol || 1, ham);
+                dustu = { dalga: st.dalga, yeni: yd, kurtardi: ham < yd && yd > 1 }; st.dustu = (st.dustu || 0) + 1; st.can = kalpSayisi(); _ekranHud = { dalga: st.dalga, can: 0, dusmanlar: [] }; yeniDalga(st, yd);
             } else if (!st.dusmanlar.length) {
                 // 2026-10-31 bug: son düşman(lar) kapıya varıp kale ayakta kalınca dalga boş kalıyor, yeni dalga hiç gelmiyordu
                 // (oklar boşa gidiyordu). Kale dayandı → altın yok, sıradaki dalga gelir.
@@ -906,6 +909,8 @@
             const kural = m < 2 ? '' : ev === 2 ? '<br>⚔️ Kalkanlı Trol artık <b>8 ve üstü</b> ister!' : '<br>⚔️ Kalkanlı Trol <b>9+</b>, Altın Zırhlı Goblin yalnız <b>10</b>!';
             kart.push([`✨ CANAVARLAR GELİŞTİ!<small><span class="kale-evrim">${miniSVG('goblin', ev - 1)}<b>➜</b>${miniSVG('goblin', ev)}</span>Artık hepsi ${EVRE[ev].ikon} <b>${EVRE[ev].ad}</b> — ${ev === 2 ? 'miğferli ve boynuzlu! Daha dikkatli nişan alın.' : 'taçlı krallar geldi! Hep birlikte durduralım.'}${kural}</small>`, 5200]);
         }
+        // 🚩 yeni kontrol noktası (ejderha yenildi) — ⚔️/😈'de anlamlı (🙂'de kale zaten geri gitmez)
+        if (st.yeniKontrol) { const kd = st.yeniKontrol; st.yeniKontrol = 0; kaydet(); if (m >= 2) kart.unshift([`🚩 KONTROL NOKTASI! ${typeof yeniRozet === 'function' ? yeniRozet() : ''}<small>Bayrağı diktik — <b>Dalga ${kd}</b>! Kale düşse bile artık bunun gerisine dönmüyoruz. Hep birlikte kazandık!</small>`, 4200]); }
         const yk = (YENI_DUSMAN[st.dalga] || []).filter((y) => m >= y[1] && K[y[0]] && var_(y[0]));
         yk.forEach((y) => kart.push([K[y[0]].replace('<small>', `<small><span class="kale-evrim">${miniSVG(y[0], ev)}</span>`), 4600]));
         if (!yk.length && m >= 2 && st.dusmanlar.some((d) => d.ofke != null)) kart.push([`🐲 EJDERHA GELİYOR!<small>Sarı atılmayan her seride öfkelenir 🔥 — ${OFKE_SINIR[m]} seri üst üste sarı gelmezse ateş topu fırlatır — havada asılı kalır, sıradaki okçu SARI atarsa söndürür! Sarı atın, sakinleşsin.</small>`, 4600]);
@@ -971,7 +976,8 @@
         const m = kmod(), geri = h ? h.dalga - h.yeni : 0;
         // ⚔️/😈 kaybetme hissi: surlar yıkılır, bayrak düşer, düşmanlar güler
         if (m >= 2) { const s = $('kale-sur'), b = $('kale-bayrak'); if (s) s.classList.add('kale-yikil'); if (b) b.classList.add('kale-bayrak-dus'); setTimeout(() => { SES.gulus(); konus(null, 'Kale bizim! Hahaha!'); }, 500); }
-        dev('KALE DÜŞTÜ! 😱<small>' + (geri > 0 ? `Düşmanlar bizi ${geri} dalga geri itti — Dalga ${h.yeni}'den tekrar! Kaleyi geri alalım!` : `Hep birlikte tekrar — aynı dalga baştan, kale yine ${kalpSayisi()} canlı!`) + '</small>', m >= 2 ? 4400 : 3200);
+        const cpNot = h && h.kurtardi ? `<br>🚩 Kontrol noktası bizi korudu — Dalga ${h.yeni}'nin gerisine dönmüyoruz!` : '';
+        dev('KALE DÜŞTÜ! 😱<small>' + (geri > 0 ? `Düşmanlar bizi ${geri} dalga geri itti — Dalga ${h.yeni}'den tekrar! Kaleyi geri alalım!` : `Hep birlikte tekrar — aynı dalga baştan, kale yine ${kalpSayisi()} canlı!`) + cpNot + '</small>', m >= 2 ? 4400 : 3200);
         sonra(() => { _toren = false; _ekranHud = null; kaleSahneKur(); SES.boru(); const g = $('kale-dusmanlar'); if (g) anim(g, 'kale-geliyor'); if (geri > 0) sonra(tanit, 1200); }, m >= 2 ? 4800 : 3600);
     }
     // Son düşmanlar kapıdan geçti ama kale ayakta: sıradaki dalga gelir (altın yok)
@@ -992,11 +998,11 @@
           🎯 Sapancı Goblin kaleye bir şey fırlatır, havada asılı kalır — sıradaki okçu ${MERMI_ESIK}+ atarsa havada vurur (💰 +1)<br>
           ⚖️ Dalgalar sınıfın bugünkü atışına göre güçlenir — yakından çok puan atınca canavarlar da güçlü gelir<br>
           ${kmod() >= 2 ? `<b>${kmod() === 3 ? '😈 Korkutucu' : '⚔️ Heyecanlı'}:</b> 🛡️ Zırhlı Goblin'e yalnız sarı, Kalkanlı Trol'e 7 ve üstü işler (canavarlar geliştikçe eşik yükselir) · 🧙 Şaman düşmanları geliştirir ·
-          ejderha sarısız ${OFKE_SINIR[kmod()]} seride ateş topu atar (sıradaki okçu SARI atarsa söner) · kale düşerse ${GERI_DALGA[kmod()]} dalga geri${kmod() === 3 ? ' · kalenin 2 canı var' : ''}<br>` : ''}<i>(kapatmak için dokun)</i></small>`);
+          ejderha sarısız ${OFKE_SINIR[kmod()]} seride ateş topu atar (sıradaki okçu SARI atarsa söner) · kale düşerse ${GERI_DALGA[kmod()]} dalga geri (🚩 kontrol noktasının gerisine asla: ejderhadan sonra 4, 7, 10…)${kmod() === 3 ? ' · kalenin 2 canı var' : ''}<br>` : ''}<i>(kapatmak için dokun)</i></small>`);
         const d = $('kale-dev'); if (d) { d.style.pointerEvents = 'auto'; d.onclick = () => { d.classList.remove('goster'); d.style.pointerEvents = ''; d.onclick = null; }; }
     }
     function yeniOyunSor() {
-        const f = () => { const st = durum(); st.can = kalpSayisi(); st.evreGor = 1; st.catlak = 0; yeniDalga(st, 1); kaydet(); kaleSahneKur(); if (typeof showToast === 'function') showToast('🔄 Kale savunması baştan başladı!', 'success'); };
+        const f = () => { const st = durum(); st.can = kalpSayisi(); st.evreGor = 1; st.catlak = 0; st.kontrol = 1; st.yeniKontrol = 0; yeniDalga(st, 1); kaydet(); kaleSahneKur(); if (typeof showToast === 'function') showToast('🔄 Kale savunması baştan başladı!', 'success'); };
         if (typeof onayIste === 'function') onayIste('Kale savunması 1. dalgadan yeniden başlasın mı?<br><small>Sporcuların serileri silinmez.</small>', f, 'Baştan başla', 'Vazgeç'); else f();
     }
 
