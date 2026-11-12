@@ -18,7 +18,7 @@ export default async function ({ log }) {
     const tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
     // yüksek ortalamalı (eşik sarı) bir çocuk öne: özel atışta mavinin yettiği görülsün
     tum.sort((a, b) => (kmCanavarSporcuOrtalama(b.g, b.ad) || 0) - (kmCanavarSporcuOrtalama(a.g, a.ad) || 0));
-    localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); localStorage.setItem('dag_km_oyun_sessiz', '1');
+    localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); localStorage.setItem('dag_km_zombimod_' + (_kmAktifKonum || 'varsayilan'), 'normal'); localStorage.setItem('dag_km_oyun_sessiz', '1');
     _kmListe = tum.slice(0, n); kmOyunTemaSec('zombi'); kmSekme('oyunlar');
     for (let i = 0; i < 100 && !document.querySelector('#zb-kalabalik .zb-kisi'); i++) await new Promise((r) => setTimeout(r, 100));
     document.querySelectorAll('#yk-ortu').forEach((e) => e.remove());

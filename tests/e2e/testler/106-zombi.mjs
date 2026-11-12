@@ -11,7 +11,7 @@ export default async function ({ log }) {
     yedek = await p.evaluate(() => JSON.stringify(_kmListe));
     const n = await p.evaluate(() => {
       const tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
-      _kmListe = tum.slice(0, 6); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); kmOyunTemaSec('zombi'); return _kmListe.length;
+      _kmListe = tum.slice(0, 6); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); localStorage.setItem('dag_km_zombimod_' + (_kmAktifKonum || 'varsayilan'), 'normal'); kmOyunTemaSec('zombi'); return _kmListe.length;
     });
     dogrula(n >= 3, 'en az 3 sporcu gerekli');
     await p.waitForSelector('#zb-kalabalik .zb-kisi', { timeout: 30000 });

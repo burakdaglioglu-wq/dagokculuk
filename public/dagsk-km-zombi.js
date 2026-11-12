@@ -38,23 +38,40 @@
     const ISIRIK_ARALIK = 1; // simülasyon: her atışta 1 ısırık, 8-24 çocukta aynı dengeyi veriyor (ok başı %40 iyi atış: ~%80 kazanma, kalabalığın ~%40'ı zombi; kötü gün ~%20)
     function esikOf(ort) { return ort >= 7 ? 9 : ort >= 5 ? 7 : 5; } // yeni başlayan maviye, orta kırmızıya, iyi sarıya vurunca panzehir
     function panzehirSay(puanlar, esik) { return puanlar.filter((p) => p >= esik).length; }
-    function baslangicSay(n) { return Math.max(1, Math.round(n / 6)); }
+    /* v411 MODLAR (2026-11-12; kullanıcı: "zombi oyunu kolay bitiyor, modları olsun, birkaç eğlence modu da olsun korkutucu ya da dostane"). Kural = başlangıç zombi oranı,
+       ısırık sıklığı, çift ısırık şansı, süper panzehir (3 iyi ok = 2 kişi). Simülasyon (ok başı %40 iyi, 6 ok): normal ~%100, zor ~%95, kâbus ~%85; 3 ok: normal ~%80, zor ~%20, kâbus ~%3.
+       Eğlence modları kuralları ödünç alır: Korkutucu = Zor kuralı + karanlık/kızıl sis/çığlık; Dostane = Kolay kuralı + sevimli zombiler (ısırmaz, sarılır). */
+    const MODLAR = {
+        kolay: { ik: '🙂', ad: 'Kolay', grup: 'zorluk', bas: 1 / 8, her: 2, ek: 0, ikili: 0, kisa: 'Az zombi, 2 atışta bir ısırık' },
+        normal: { ik: '🧟', ad: 'Normal', grup: 'zorluk', bas: 1 / 6, her: 1, ek: 0, ikili: 0, kisa: 'Her atıştan sonra bir ısırık' },
+        zor: { ik: '😈', ad: 'Zor', grup: 'zorluk', bas: 1 / 4, her: 1, ek: .25, ikili: 3, kisa: 'Çok zombi, bazen ÇİFT ısırık · 3 iyi ok = 2 kişi kurtulur' },
+        kabus: { ik: '💀', ad: 'Kâbus', grup: 'zorluk', bas: 1 / 3, her: 1, ek: .3, ikili: 3, kisa: 'Kalabalığın üçte biri zombi başlar · sık çift ısırık' },
+        korku: { ik: '👻', ad: 'Korkutucu', grup: 'eglence', kural: 'zor', kisa: 'Karanlık gece, kızıl sis, ani çığlıklar · Zor kuralı' },
+        dost: { ik: '🧸', ad: 'Dostane', grup: 'eglence', kural: 'kolay', kisa: 'Sevimli zombiler ısırmaz, sarılır · Kolay kuralı' }
+    };
+    const modOf = (st) => (st && MODLAR[st.mod]) ? st.mod : 'normal';
+    const kuralOf = (st) => { const m = MODLAR[modOf(st)]; return m.kural ? MODLAR[m.kural] : m; };
+    const dostMu = (st) => modOf(st) === 'dost';
+    function baslangicSay(n, st) { return Math.max(1, Math.round(n * (st ? kuralOf(st).bas : 1 / 6))); }
     function isirikSay() { return 1; }
     function kazandi(z, n) { return z < n - z; }
     // Seri sonucu: { iyilesen: [...], isirilan: [...], dalga: bool }. secici(dizi) rastgele seçim (test sabitler).
-    function adimHesapla(st, key, puanlar, esik, herkes, secici, dalgaAcik) {
+    function adimHesapla(st, key, puanlar, esik, herkes, secici, dalgaAcik, zar) {
+        const kr = kuralOf(st); zar = zar || Math.random;
         const r = { iyilesen: [], isirilan: [], dalga: false, panzehir: panzehirSay(puanlar, esik) };
-        let hak = r.panzehir > 0 ? 1 : 0; // bir seride en çok bir kişi: oyunu tek çocuk bitiremesin
+        let hak = r.panzehir > 0 ? 1 : 0; // bir seride en çok bir kişi: oyunu tek çocuk bitiremesin (v411 Zor/Kâbus: 3 iyi ok = süper panzehir, 2 kişi)
+        if (hak && kr.ikili && r.panzehir >= kr.ikili) { hak = 2; r.super = true; }
         if (hak && st.zombi[key]) { r.iyilesen.push(key); hak--; }
-        else if (hak) { const adaylar = herkes.filter((k) => st.zombi[k]); if (adaylar.length) r.iyilesen.push(adaylar.slice().sort((a, b) => (st.zamani[a] || 0) - (st.zamani[b] || 0))[0]); }
+        if (hak) { const adaylar = herkes.filter((k) => st.zombi[k] && !r.iyilesen.includes(k)).sort((a, b) => (st.zamani[a] || 0) - (st.zamani[b] || 0)); r.iyilesen.push(...adaylar.slice(0, hak)); }
         r.iyilesen.forEach((k) => { delete st.zombi[k]; delete st.zamani[k]; });
         st.seri = (st.seri || 0) + 1;
-        if (st.seri % ISIRIK_ARALIK === 0) {
+        if (st.seri % (ISIRIK_ARALIK * (kr.her || 1)) === 0) {
             const z = herkes.filter((k) => st.zombi[k]).length;
             if (z === 0) { if (dalgaAcik && herkes.length > 1) { r.dalga = true; const a = herkes.filter((k) => !r.iyilesen.includes(k)); const k = secici(a.length ? a : herkes); if (k) { r.isirilan.push(k); st.zombi[k] = 1; st.zamani[k] = st.seri; st.isirik[k] = (st.isirik[k] || 0) + 1; } } }
             else {
                 let bos = herkes.filter((k) => !st.zombi[k] && !r.iyilesen.includes(k));
-                for (let i = isirikSay(z); i > 0 && bos.length; i--) { // en az ısırılan öncelikli: hep aynı çocuk zombi olmasın
+                const sayi = isirikSay(z) + (kr.ek && zar() < kr.ek ? 1 : 0); if (sayi > 1) r.cift = true;
+                for (let i = sayi; i > 0 && bos.length; i--) { // en az ısırılan öncelikli: hep aynı çocuk zombi olmasın
                     const en = Math.min(...bos.map((k) => st.isirik[k] || 0)), k = secici(bos.filter((x) => (st.isirik[x] || 0) === en));
                     st.zombi[k] = 1; st.zamani[k] = st.seri; st.isirik[k] = (st.isirik[k] || 0) + 1; r.isirilan.push(k); bos = bos.filter((x) => x !== k);
                 }
@@ -66,7 +83,9 @@
 
     /* ---- durum ---- */
     let _st = null, _ham = null, _kn = null, _z = [], _kilit = false, _kur = '';
-    function yeniOyun() { return { tarih: bugun(), zombi: {}, zamani: {}, isirik: {}, atan: {}, kurtardi: {}, seri: 0, faz: 'oyun', basladi: false, finalAdlar: null, kazandi: null }; }
+    const modAnahtar = () => 'dag_km_zombimod_' + konum();
+    function sonMod() { try { const m = localStorage.getItem(modAnahtar()); return MODLAR[m] ? m : 'normal'; } catch (e) { return 'normal'; } }
+    function yeniOyun(mod) { return { tarih: bugun(), mod: MODLAR[mod] ? mod : sonMod(), zombi: {}, zamani: {}, isirik: {}, atan: {}, kurtardi: {}, seri: 0, faz: 'oyun', basladi: false, finalAdlar: null, kazandi: null }; }
     function durum() {
         let ham = null; try { ham = localStorage.getItem(anahtar()); } catch (e) { }
         if (_kn !== konum() || ham !== _ham || !_st) { try { _st = JSON.parse(ham || 'null'); } catch (e) { _st = null; } _kn = konum(); _ham = ham; }
@@ -87,7 +106,7 @@
     function salginBaslat(st) {
         const l = kalabalik(); if (!l.length) return [];
         const z = [], kalan = l.slice();
-        for (let i = kasabalilar().length ? 2 : baslangicSay(l.length); i > 0 && kalan.length; i--) { const k = rastgele(kalan); z.push(k); st.zombi[k] = 1; st.zamani[k] = 0; kalan.splice(kalan.indexOf(k), 1); }
+        for (let i = Math.min(Math.max(1, Math.floor((l.length - 1) / 2)), Math.max(kasabalilar().length ? 2 : 1, baslangicSay(l.length, st))); i > 0 && kalan.length; i--) { const k = rastgele(kalan); z.push(k); st.zombi[k] = 1; st.zamani[k] = 0; kalan.splice(kalan.indexOf(k), 1); }
         st.basladi = true; return z;
     }
     function bitir(st) {
@@ -131,6 +150,8 @@
         kacti: () => ton(220, .14, 0, 'triangle', .05),
         boom: () => { gurultu(1.2, .5, 0, 500); davul(0, 1); davul(.25, .7); },
         ozel: () => { const a = ac(); if (!a) return; try { const t = a.currentTime, o = a.createOscillator(), g = a.createGain(); o.type = 'square'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(880, t + .5); o.connect(g); g.connect(a.destination); zarf(g, t, .01, .4, .2, .08); o.start(t); o.stop(t + .7); } catch (e) { } [.7, .88, 1.06].forEach((d) => davul(d, .9)); },
+        ciglik: () => { const a = ac(); if (!a) return; try { const t = a.currentTime, o = a.createOscillator(), g = a.createGain(), fl = a.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.setValueAtTime(480, t); o.frequency.exponentialRampToValueAtTime(1500, t + .22); o.frequency.exponentialRampToValueAtTime(850, t + .75); fl.type = 'bandpass'; fl.frequency.value = 1500; fl.Q.value = 2.5; o.connect(fl); fl.connect(g); g.connect(a.destination); zarf(g, t, .02, .4, .4, .1); o.start(t); o.stop(t + .95); } catch (e) { } gurultu(.5, .1, 0, 3200, 'bandpass'); },
+        saril: () => { ton(392, .12, 0, 'triangle', .06); ton(523, .14, .1, 'triangle', .06); ton(784, .22, .22, 'sine', .05); },
         zafer: () => { akor([[523, 0], [659, .18], [784, .36], [1047, .6]]); cinlama([1568, 2093, 2637], 1.2, .08); },
         yenilgi: () => { SES.boom(); [220, 185, 147, 110].forEach((f, i) => ton(f, .34, .3 + i * .2, 'sawtooth', .07)); hirilti(.35, .7); hirilti(.3, 1.3); }
     };
@@ -347,6 +368,7 @@
     function guncelle() {
         const kok = $('zb-icerik'); if (!kok) return; const st = durum();
         if (st.faz === 'son' && (_finalOynuyor || _kilit)) return; // final sahnesi oynuyor, kabuk erken çağırsa da kesilmesin
+        modSahne(st);
         if (st.faz === 'son') { if (!_gok) _gok = { tip: st.kazandi ? 'safak' : 'kizil', t0: 0 }; if (azHareket()) canliCiz(performance.now()); return sonCiz(st); }
         _gok = null;
         if (!$('zb-oyun')) oyunIskelet();
@@ -363,6 +385,7 @@
         const yaz = (id, v) => { const e = $(id); if (e && e.textContent !== String(v)) e.textContent = v; };
         yaz('zb-z', zs); yaz('zb-s', saglam); yaz('zb-at', tek ? 'Tur ' + Math.min(turSay(), ((st.atan[kimlik(atabilenler()[0])] || 0) + 1)) + ' / ' + turSay() : a + ' / ' + n + ' attı'); yaz('zb-kim', akt ? buyuk(ilkAd(akt.ad)) : '');
         const b = $('zb-bar'); if (b) b.style.width = (nK ? zs / nK * 100 : 0) + '%';
+        const mo = MODLAR[modOf(st)]; yaz('zb-kl', mo.ik + ' ' + buyuk(mo.ad) + ' · ' + modKural(st)); const mb = $('zb-mod-btn'); if (mb && mb.getAttribute('data-m') !== modOf(st)) { mb.setAttribute('data-m', modOf(st)); mb.innerHTML = mo.ik + ' Mod: ' + esc(mo.ad) + ' ▾' + (typeof yeniRozet === 'function' ? yeniRozet() : ''); }
         if (!_kilit) ozelKarar(st);
         const ozelSen = akt && ozelBu(st, kimlik(akt));
         if (akt) { const es = ozelSen ? 5 : esikOf(ortalama(akt)), h = $('zb-yan-hedef'); if (h) h.setAttribute('data-esik', es); yaz('zb-yan-ad', buyuk(ilkAd(akt.ad))); yaz('zb-yan-esik', ozelSen ? '⚡ Özel atış: maviye vursan yeter' : (st.zombi[kimlik(akt)] ? 'Kendini kurtar: ' : 'Panzehir: ') + (es >= 9 ? 'sarıya vur' : es >= 7 ? 'kırmızıya ya da sarıya vur' : 'maviye ya da içine vur')); }
@@ -398,18 +421,36 @@
         sonra(() => ozelKapa(), 8000);
     }
     function ozelKapa() { const d = $('zb-ozel'); if (d) d.remove(); }
+    /* ---- v411 modlar: seçici, sahne görünümü, rövanş ---- */
+    function modKural(st) { const k = kuralOf(st), sar = dostMu(st) ? 'sarılma' : 'ısırık'; return (k.her > 1 ? '2 atışta bir ' + sar : 'Her atıştan sonra ' + sar) + (k.ek ? ', bazen ÇİFT' : ''); }
+    function modSahne(st) { const sa = document.querySelector('.zb-sahne'); if (sa && sa.getAttribute('data-mod') !== modOf(st)) sa.setAttribute('data-mod', modOf(st)); }
+    const MOD_SIRA = ['kolay', 'normal', 'zor', 'kabus'];
+    function modOner(st) { const m = modOf(st); if (!st.kazandi) return m; if (m === 'korku') return 'kabus'; if (m === 'dost') return 'normal'; const i = MOD_SIRA.indexOf(m); return MOD_SIRA[Math.min(MOD_SIRA.length - 1, i + 1)]; }
+    const modKart = (m, secili, ek) => { const o = MODLAR[m]; return '<button type="button" class="zb-ms-kart' + (secili ? ' secili' : '') + '" data-zbmod="' + m + '" data-g="' + m + '"><b><i>' + o.ik + '</i>' + esc(o.ad) + (ek || '') + '</b><span>' + esc(o.kisa) + '</span></button>'; };
+    function modSec() {
+        modKapa(); const kok = $('zb-oyun'); if (!kok) return; const m = modOf(durum()), d = document.createElement('div'); d.id = 'zb-modsec'; d.className = 'zb-modsec'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Mod seç');
+        const grup = (g) => Object.keys(MODLAR).filter((k) => MODLAR[k].grup === g).map((k) => modKart(k, k === m)).join('');
+        d.innerHTML = '<div class="zb-ms-kutu"><div class="zb-ms-bas"><h3>Mod seç</h3><button type="button" class="zb-kucuk" id="zb-ms-kapa" aria-label="Kapat">✕</button></div><small>ZORLUK</small><div class="zb-ms-izgara">' + grup('zorluk') + '</div><small>EĞLENCE</small><div class="zb-ms-izgara">' + grup('eglence') + '</div><p class="zb-ms-not">Seçince yeni salgın başlar. Sporcu serileri silinmez.</p></div>';
+        kok.appendChild(d);
+    }
+    function modKapa() { const d = $('zb-modsec'); if (d) d.remove(); }
+    function modUygula(m) {
+        if (!MODLAR[m]) return; modKapa(); try { localStorage.setItem(modAnahtar(), m); } catch (e) { }
+        const st = durum(), f = () => { zamanTemizle(); duyuruKapa(); ozelKapa(); _ozelGosterilen = ''; _kilit = false; _gok = null; _st = yeniOyun(m); kaydet(); _kur = ''; $('zb-icerik').innerHTML = ''; guncelle(); };
+        if (st.faz === 'oyun' && st.seri > 0 && typeof onayIste === 'function' && !document.fullscreenElement) onayIste('Yeni salgın <b>' + MODLAR[m].ik + ' ' + esc(MODLAR[m].ad) + '</b> modunda başlasın mı?<br><small>Bu salgın biter. Sporcu serileri silinmez.</small>', f, 'Başlat', 'Vazgeç'); else f();
+    }
     function oyunIskelet() {
-        $('zb-icerik').innerHTML = '<div class="zb-oyun" id="zb-oyun"><div class="zb-ust"><div class="zb-say z"><b id="zb-z">0</b><span>ZOMBİ</span></div><div class="zb-orta"><div class="zb-cubuk" role="img" aria-label="Zombi ve sağlam oranı"><i id="zb-bar"></i></div><div class="zb-bilgi"><span class="zb-sira-hud">Sıra: <b id="zb-kim"></b></span><span id="zb-at"></span><span class="zb-kl">Her atıştan sonra ısırık</span></div></div><div class="zb-say s"><b id="zb-s">0</b><span>SAĞLAM</span></div></div>'
+        $('zb-icerik').innerHTML = '<div class="zb-oyun" id="zb-oyun"><div class="zb-ust"><div class="zb-say z"><b id="zb-z">0</b><span>ZOMBİ</span></div><div class="zb-orta"><div class="zb-cubuk" role="img" aria-label="Zombi ve sağlam oranı"><i id="zb-bar"></i></div><div class="zb-bilgi"><span class="zb-sira-hud">Sıra: <b id="zb-kim"></b></span><span id="zb-at"></span><span class="zb-kl" id="zb-kl">Her atıştan sonra ısırık</span></div></div><div class="zb-say s"><b id="zb-s">0</b><span>SAĞLAM</span></div></div>'
             + '<div class="zb-duyuru" id="zb-duyuru" aria-live="polite"></div><div class="zb-kalabalik" id="zb-kalabalik"></div>'
             + '<div class="zb-yan" id="zb-yan"><div class="zb-yan-hedef" id="zb-yan-hedef" data-esik="7"><svg viewBox="0 0 120 120" role="img" aria-label="Hedefte panzehir bölgesi"><circle class="m" cx="60" cy="60" r="58"/><circle class="k" cx="60" cy="60" r="39"/><circle class="s" cx="60" cy="60" r="20"/></svg></div><div class="zb-yan-yazi"><small>SIRADA</small><b id="zb-yan-ad"></b><span id="zb-yan-esik"></span></div>'
-            + '<div class="zb-arac"><button type="button" class="zb-kucuk" id="zb-nasil" aria-label="Nasıl oynanır">?</button><button type="button" class="zb-kucuk" id="zb-yeni-btn" aria-label="Yeni salgın">↻</button><button type="button" class="zb-kucuk genis" id="zb-bitir" hidden>Hep birlikte bitir</button></div></div></div>';
+            + '<div class="zb-arac"><button type="button" class="zb-kucuk" id="zb-nasil" aria-label="Nasıl oynanır">?</button><button type="button" class="zb-kucuk" id="zb-yeni-btn" aria-label="Yeni salgın">↻</button><button type="button" class="zb-kucuk genis zb-mod-btn" id="zb-mod-btn"></button><button type="button" class="zb-kucuk genis" id="zb-bitir" hidden>Hep birlikte bitir</button></div></div></div>';
         kalabalikKur();
     }
     function sonCiz(st) {
         const k = st.kazandi, l = st.finalAdlar || [], n = l.length, z = st.sonZ != null ? st.sonZ : zombiSay(st);
         const sinif = liste().map((s, i) => '<span class="zb-son-kisi' + (k ? '' : ' zombi') + '" style="--g:' + (i % 7) + '">' + kisiHtml(kimlik(s), renk(i)) + '</span>').join('');
-        $('zb-icerik').innerHTML = '<div class="zb-son ' + (k ? 'kazandi' : 'kaybetti') + '" id="zb-son"><span class="zb-et">Herkes attı</span><h2>' + (k ? 'SALGIN DURDU!' : 'ÇATI DÜŞTÜ!') + '</h2><p class="zb-sonuc"><b>' + (n - z) + '</b> sağlam · <b>' + z + '</b> zombi</p><p class="zb-cumle">' + (k ? 'Helikopter geldi, hep birlikte kurtuldunuz. Panzehir son zombilere de yetti.' : 'Bir dahaki sefere hep birlikte. Rövanş?') + '</p><div class="zb-adlar"><small>Bu salgında savaşanlar</small><span>' + l.map(esc).join(' · ') + '</span></div><button type="button" class="zb-buyuk" id="zb-yeni-son">Yeni salgın</button><div class="zb-son-kal" aria-hidden="true">' + sinif + '</div></div>';
-        _kur = ''; _sah.anahtar = ''; sahneOlc();
+        $('zb-icerik').innerHTML = '<div class="zb-son ' + (k ? 'kazandi' : 'kaybetti') + '" id="zb-son"><span class="zb-et">Herkes attı</span><h2>' + (k ? 'SALGIN DURDU!' : dostMu(st) ? 'ÇATI DÜŞTÜ! ZOMBİ PARTİSİ!' : 'ÇATI DÜŞTÜ!') + '</h2><p class="zb-sonuc"><b>' + (n - z) + '</b> sağlam · <b>' + z + '</b> zombi</p><p class="zb-cumle">' + (k ? 'Helikopter geldi, hep birlikte kurtuldunuz. Panzehir son zombilere de yetti.' : dostMu(st) ? 'Zombiler herkese sarıldı, çatıda dans var! Rövanş?' : 'Bir dahaki sefere hep birlikte. Rövanş?') + '</p><div class="zb-adlar"><small>Bu salgında savaşanlar</small><span>' + l.map(esc).join(' · ') + '</span></div><button type="button" class="zb-buyuk" id="zb-yeni-son">Yeni salgın</button>' + (function () { const on = modOner(st), m = modOf(st); return '<div class="zb-son-mod"><small>' + MODLAR[m].ik + ' Bu salgın: ' + esc(MODLAR[m].ad) + ' · Rövanş hangi modda?' + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</small><div class="zb-ms-izgara">' + Object.keys(MODLAR).map((x) => modKart(x, x === on, x === on && on !== m ? ' <em>↑ daha zor</em>' : '')).join('') + '</div></div>'; })() + '<div class="zb-son-kal" aria-hidden="true">' + sinif + '</div></div>';
+        _kur = ''; _sah.anahtar = ''; modSahne(st); sahneOlc();
     }
     function duyur(metin, sinif) { const d = $('zb-duyuru'); if (!d) return; const u = document.querySelector('.zb-ust'); if (u) d.style.top = (u.offsetHeight + 4) + 'px'; d.className = 'zb-duyuru ac ' + (sinif || ''); d.textContent = metin; }
     function duyuruKapa() { const d = $('zb-duyuru'); if (d) d.className = 'zb-duyuru'; }
@@ -437,7 +478,7 @@
         if (!kp || azHareket()) { _finalOynuyor = false; return sonrasi(); }
         _finalOynuyor = true;
         const el = Array.from(kp.querySelectorAll('.zb-kisi')), bitti = () => { _finalOynuyor = false; npcTemizle(); sonrasi(); };
-        duyur(k ? 'SALGIN DURDU! HELİKOPTER GELİYOR!' : 'ZOMBİLER ÇATIYA ÇIKTI!', k ? 'iyi' : 'kotu');
+        duyur(k ? 'SALGIN DURDU! HELİKOPTER GELİYOR!' : dostMu(st) ? 'ZOMBİLER HERKESE SARILDI!' : 'ZOMBİLER ÇATIYA ÇIKTI!', k ? 'iyi' : 'kotu');
         if (k) {
             const z = el.filter((b) => b.classList.contains('zombi'));
             z.forEach((b, i) => sonra(() => { b.classList.remove('zombi'); isaretle(b.getAttribute('data-k'), 'kurtuldu', 900); const m = kisiMerkez(b.getAttribute('data-k')); if (m) patla(m.x, m.y, ['#9BEA5A', '#FFD86B', '#FFFFFF'], 14); if (i % 2 === 0) ton(880 + i * 40, .12, 0, 'triangle', .05); }, 500 + i * 120));
@@ -452,9 +493,12 @@
     }
     function acilis(z) {
         _kilit = true; const adlar = z.map((k) => kasabaliMi(k) ? 'BİR KASABALI' : buyuk(ilkAd(k.slice(k.indexOf('|') + 1)))).join(', ');
-        duyur('SALGIN BAŞLADI! ' + adlar + ' ZOMBİ OLDU!', 'kotu'); SES.isir(); z.forEach((k) => isaretle(k, 'isirildi', 900));
+        const st = durum(), m = modOf(st), mo = MODLAR[m];
+        duyur((m === 'dost' ? '🧸 SEVİMLİ ZOMBİLER GELDİ! ' : m === 'korku' ? '👻 KARANLIK ÇÖKTÜ... ' : m === 'normal' ? '' : mo.ik + ' ' + buyuk(mo.ad) + ' MOD! ') + 'SALGIN BAŞLADI! ' + adlar + ' ZOMBİ OLDU!', 'kotu'); if (m === 'dost') SES.saril(); else { SES.isir(); if (m === 'korku') { SES.ciglik(); flas(); } } z.forEach((k) => isaretle(k, 'isirildi', 900));
         sonra(() => { duyuruKapa(); _kilit = false; }, 2200);
     }
+
+    function flas() { const t = $('zb-tema'); if (!t || azHareket()) return; t.classList.remove('flas'); void t.offsetWidth; t.classList.add('flas'); }
 
     /* ---- seri ---- */
     function zbSeri(s, i, kaydedilecek, done) {
@@ -465,7 +509,7 @@
         if (!st.basladi) salginBaslat(st);
         const key = kimlik(s), puanlar = (kaydedilecek || []).map((k) => puan(k.puan)), ozel = ozelBu(st, key), esik = ozel ? 5 : esikOf(ortalama(s)), herkes = kalabalik();
         ozelKapa();
-        const r = adimHesapla(st, key, puanlar, esik, herkes, rastgele, ic('dalga'));
+        const r = adimHesapla(st, key, puanlar, esik, herkes, rastgele, ic('dalga')), dost = dostMu(st), korku = modOf(st) === 'korku';
         if (ozel) { st.ozelOlan = st.ozelOlan || {}; st.ozelOlan[key] = 1; st.ozel = null; }
         st.atan[key] = (st.atan[key] || 0) + 1;
         if (r.iyilesen.length) st.kurtardi[key] = (st.kurtardi[key] || 0) + 1;
@@ -480,14 +524,15 @@
         const ara = Object.assign({}, st.zombi); r.isirilan.forEach((k) => delete ara[k]); if (!r.iyilesen.length) goster(ara);
         let bek = 0;
         if (r.iyilesen.length) {
-            const h = r.iyilesen[0]; okUcur(key, h); SES.ok();
-            sonra(() => { goster(ara); isaretle(h, 'kurtuldu', 1000); SES.kurtar(); const m = kisiMerkez(h); if (m) patla(m.x, m.y, ['#9BEA5A', '#D8FFB0', '#FFD86B', '#FFFFFF'], 30); }, 300);
-            duyur(h === key ? adi + ' PANZEHİRİ VURDU, İYİLEŞTİ!' : adi + ' PANZEHİR ATTI, ' + adOf(h) + ' KURTULDU!', 'iyi'); bek = 1300;
+            const h = r.iyilesen[0]; r.iyilesen.forEach((x) => okUcur(key, x)); SES.ok();
+            sonra(() => { goster(ara); r.iyilesen.forEach((x) => { isaretle(x, 'kurtuldu', 1000); const m = kisiMerkez(x); if (m) patla(m.x, m.y, ['#9BEA5A', '#D8FFB0', '#FFD86B', '#FFFFFF'], 30); }); SES.kurtar(); if (r.super) cinlama([1568, 1976, 2349], .35, .1); }, 300);
+            if (r.super && r.iyilesen.length > 1) { duyur('⚡ SÜPER PANZEHİR! ' + adi + ': ' + r.iyilesen.map((x) => x === key ? 'KENDİSİ' : adOf(x)).join(' VE ') + ' KURTULDU!', 'iyi'); bek = 1700; }
+            else { duyur(h === key ? adi + ' PANZEHİRİ VURDU, İYİLEŞTİ!' : adi + ' PANZEHİR ATTI, ' + adOf(h) + ' KURTULDU!', 'iyi'); bek = 1300; }
         } else if (r.panzehir) { duyur(adi + ' PANZEHİR ATTI! ZOMBİ KALMADI!', 'iyi'); SES.kurtar(); bek = 1100; }
         else { duyur(adi + ': AZ KALDI!', ''); SES.kacti(); bek = 900; }
         if (r.isirilan.length) {
-            sonra(() => { SES.atla(); r.isirilan.forEach(npcGonder); }, bek); bek += 420;
-            sonra(() => { goster(st.zombi); SES.isir(); r.isirilan.forEach((k) => { isaretle(k, 'isirildi', 1000); const m = kisiMerkez(k); if (m) patla(m.x, m.y, ['#9BEA5A', '#5D9436', '#EDE6C8'], 18); }); _npc.forEach((n) => { n.style.top = '0px'; n.style.opacity = '0'; }); sonra(npcTemizle, 1100); const sah = $('zb-kalabalik'); if (sah && !azHareket()) { sah.classList.remove('sars'); void sah.offsetWidth; sah.classList.add('sars'); } duyur((r.dalga ? 'YENİ DALGA! ' : 'ZOMBİLER SALDIRDI! ') + r.isirilan.map(adOf).join(', ') + ' ISIRILDI!', 'kotu'); }, bek); bek += 1300;
+            sonra(() => { if (dost) ton(523, .1, 0, 'triangle', .05); else SES.atla(); r.isirilan.forEach(npcGonder); }, bek); bek += 420;
+            sonra(() => { goster(st.zombi); if (dost) SES.saril(); else { SES.isir(); if (korku) { SES.ciglik(); flas(); } } r.isirilan.forEach((k) => { isaretle(k, 'isirildi', 1000); const m = kisiMerkez(k); if (m) patla(m.x, m.y, dost ? ['#FF9BCF', '#FFD1E8', '#FFFFFF'] : ['#9BEA5A', '#5D9436', '#EDE6C8'], 18); }); _npc.forEach((n) => { n.style.top = '0px'; n.style.opacity = '0'; }); sonra(npcTemizle, 1100); const sah = $('zb-kalabalik'); if (sah && !azHareket()) { sah.classList.remove('sars'); void sah.offsetWidth; sah.classList.add('sars'); } duyur((r.dalga ? 'YENİ DALGA! ' : r.cift ? (dost ? 'ÇİFT SARILMA! ' : 'ÇİFT ISIRIK! ') : dost ? 'SARILMA SALDIRISI! ' : korku ? 'AAAH! ' : 'ZOMBİLER SALDIRDI! ') + r.isirilan.map(adOf).join(', ') + (dost ? ' SARILDI!' : ' ISIRILDI!'), 'kotu'); }, bek); bek += r.cift ? 1600 : 1300;
         }
         sonra(() => {
             duyuruKapa();
@@ -502,7 +547,7 @@
         if (kalan > 0 && typeof onayIste === 'function' && !document.fullscreenElement) onayIste('Salgın şimdi bitsin mi?<br><small>' + kalan + ' çocuk henüz atmadı. Sonuçta herkesin adı görünür.</small>', f, 'Hep birlikte bitir', 'Bekle'); else f();
     }
     function nasil() {
-        const m = 'Ekrandakiler bu sınıf. Birkaç kişi zombi başlar.<br>Atış iyiyse panzehir olur: bir zombi kurtulur, zombi çocuk önce kendini kurtarır. "İyi atış" çocuğun kendi seviyesine göre: yeni başlayana mavi, ortaya kırmızı, iyiye sarı.<br>Her atıştan sonra zombiler bir kişiyi ısırır.<br>Herkes atınca sağlam çoğunluktaysa salgın durur.';
+        const m = 'Ekrandakiler bu sınıf. Birkaç kişi zombi başlar.<br>Atış iyiyse panzehir olur: bir zombi kurtulur, zombi çocuk önce kendini kurtarır. "İyi atış" çocuğun kendi seviyesine göre: yeni başlayana mavi, ortaya kırmızı, iyiye sarı.<br>Her atıştan sonra zombiler bir kişiyi ısırır.<br>Herkes atınca sağlam çoğunluktaysa salgın durur.<br><br><b>Modlar</b> (alttaki Mod düğmesi):<br>' + Object.keys(MODLAR).map((k) => MODLAR[k].ik + ' <b>' + MODLAR[k].ad + '</b>: ' + MODLAR[k].kisa).join('<br>');
         if (typeof onayIste === 'function' && !document.fullscreenElement) onayIste(m, () => { }, 'Tamam', 'Kapat');
     }
     function yeniSor() {
@@ -512,10 +557,10 @@
     }
     function zbSahneKur() {
         const p = panel(); if (!p) return; css(); zamanTemizle(); _kilit = false; _kur = '';
-        p.innerHTML = '<div class="zb-sahne"><canvas id="zb-zemin" aria-hidden="true"></canvas><canvas id="zb-canli" aria-hidden="true"></canvas><div id="zb-icerik"></div><canvas id="zb-efekt" aria-hidden="true"></canvas></div>'; _fx = []; _okEf = []; _npc = []; _sah = { w: 0, h: 0, bar: 0, ufuk: 0, anahtar: '' };
+        p.innerHTML = '<div class="zb-sahne"><canvas id="zb-zemin" aria-hidden="true"></canvas><canvas id="zb-canli" aria-hidden="true"></canvas><div class="zb-tema" id="zb-tema" aria-hidden="true"></div><div id="zb-icerik"></div><canvas id="zb-efekt" aria-hidden="true"></canvas></div>'; _fx = []; _okEf = []; _npc = []; _sah = { w: 0, h: 0, bar: 0, ufuk: 0, anahtar: '' };
         p.onclick = (e) => {
             const t = e.target.closest ? e.target.closest('button') : null; if (!t) return;
-            if (t.id === 'zb-nasil') nasil(); else if (t.id === 'zb-yeni-btn' || t.id === 'zb-yeni-son') yeniSor(); else if (t.id === 'zb-bitir') zbFinalZorla();
+            if (t.getAttribute('data-zbmod')) modUygula(t.getAttribute('data-zbmod')); else if (t.id === 'zb-mod-btn') modSec(); else if (t.id === 'zb-ms-kapa') modKapa(); else if (t.id === 'zb-nasil') nasil(); else if (t.id === 'zb-yeni-btn' || t.id === 'zb-yeni-son') yeniSor(); else if (t.id === 'zb-bitir') zbFinalZorla();
         };
         guncelle(); sahneOlc();
         if (window.ResizeObserver) { if (p._zbRo) p._zbRo.disconnect(); p._zbRo = new ResizeObserver(() => { const kp = $('zb-kalabalik'); if (!kp) return void sahneOlc(); kp.classList.remove('gecis'); yerlesim(); requestAnimationFrame(() => requestAnimationFrame(() => { if (kp.isConnected && !azHareket()) kp.classList.add('gecis'); })); }); p._zbRo.observe(p); }
@@ -548,6 +593,20 @@
             + '.zb-oz-ust{font-size:clamp(14px,2vw,24px);font-weight:900;letter-spacing:.3em;color:#E3B6FF}.zb-oz-ik{font-size:clamp(64px,13vw,150px);line-height:1}.zb-oz-ad{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(48px,9vw,120px);font-weight:800;line-height:.95;color:#fff;text-shadow:0 0 24px #B26BFF}'
             + '.zb-oz-gorev{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(26px,4.6vw,60px);font-weight:800;line-height:1.05;color:#FFE066;max-width:95%}.zb-oz-kolay{display:flex;align-items:center;gap:10px;font-size:clamp(17px,2.4vw,30px);font-weight:800;padding:6px 18px;border-radius:30px;background:rgba(255,255,255,.1)}.zb-oz-kolay i{width:1.3em;height:1.3em;border-radius:50%;background:#2F7FD6;box-shadow:0 0 0 4px rgba(255,255,255,.2)}.zb-oz-alt{font-size:13px;color:#B9B2C9}'
             + '@keyframes zb-oz-gel{from{opacity:0;transform:scale(1.12)}}@media(prefers-reduced-motion:no-preference){.zb-oz-ik{animation:zb-zipla 1s ease-in-out infinite}}'
+            + '.zb-mod-btn{border-color:#6B5A2A;background:#2A2410;color:#FFE08A}.zb-mod-btn .dag-yeni{margin-left:6px}'
+            + '.zb-modsec{position:absolute;inset:0;z-index:210;display:flex;align-items:center;justify-content:center;padding:8px;background:rgba(3,6,8,.72)}.zb-ms-kutu{width:min(760px,100%);max-height:100%;overflow-y:auto;box-sizing:border-box;padding:12px 14px;border-radius:16px;background:#101A17;border:1px solid #2E3D37;display:flex;flex-direction:column;gap:8px}'
+            + '.zb-ms-bas{display:flex;align-items:center;justify-content:space-between}.zb-ms-bas h3{margin:0;font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(26px,3vw,36px);font-weight:800}.zb-ms-kutu>small,.zb-son-mod small{font-size:12.5px;font-weight:800;letter-spacing:.1em;color:#B9C6B3}.zb-ms-not{margin:0;font-size:13px;color:#B9C6B3}'
+            + '.zb-ms-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}.zb-ms-kart{min-height:64px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:8px 12px;border-radius:12px;border:2px solid #2E3D37;background:#17211E;color:#F2F6EE;font:inherit;cursor:pointer}.zb-ms-kart b{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:clamp(17px,1.9vw,22px);font-weight:800}.zb-ms-kart b i{font-style:normal;font-size:1.3em}.zb-ms-kart em{font-style:normal;font-size:12px;padding:1px 7px;border-radius:8px;background:#FFC24B;color:#1A1000}.zb-ms-kart span{font-size:13px;line-height:1.3;color:#C9D4C4}.zb-ms-kart.secili{border-color:#FFC24B;background:#2A2410}'
+            + '.zb-ms-kart[data-g="korku"]{background:#220B0E;border-color:#5A1A20}.zb-ms-kart[data-g="dost"]{background:#2A1626;border-color:#6B3A5E}.zb-ms-kart[data-g="kabus"]{background:#1F0F14}.zb-ms-kart.secili[data-g]{border-color:#FFC24B}.zb-son-mod{flex:none;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;background:rgba(8,12,12,.72)}'
+            + '.zb-tema{position:absolute;inset:0;pointer-events:none;display:none}.zb-tema.flas{display:block}'
+            + '.zb-sahne[data-mod="korku"] #zb-zemin,.zb-sahne[data-mod="korku"] #zb-canli{filter:brightness(.5) saturate(.45) hue-rotate(-35deg)}.zb-sahne[data-mod="korku"] .zb-tema{display:block;background:radial-gradient(ellipse at 50% 42%,transparent 22%,rgba(80,0,0,.5) 68%,rgba(0,0,0,.88)),linear-gradient(to top,rgba(150,12,12,.4),transparent 45%)}'
+            + '.zb-sahne[data-mod="korku"] .zb-kisi.zombi .zb-svg{filter:drop-shadow(0 0 9px rgba(255,30,30,.9))}.zb-sahne[data-mod="korku"] .zb-say.z b,.zb-sahne[data-mod="korku"] .zb-say.z span,.zb-sahne[data-mod="korku"] .zb-duyuru.kotu{color:#FF5A5A}'
+            + '.zb-sahne[data-mod="kabus"] #zb-zemin{filter:hue-rotate(-55deg) saturate(1.5) brightness(.8)}.zb-sahne[data-mod="kabus"] .zb-tema{display:block;background:linear-gradient(rgba(150,0,30,.28),transparent 55%)}'
+            + '.zb-sahne[data-mod="dost"] #zb-zemin,.zb-sahne[data-mod="dost"] #zb-canli{filter:sepia(.3) saturate(1.5) hue-rotate(-30deg) brightness(1.4)}.zb-sahne[data-mod="dost"] .zb-tema{display:block;background:linear-gradient(rgba(255,150,205,.24),rgba(255,214,140,.14))}'
+            + '.zb-sahne[data-mod="dost"] .zombi .zb-svg,.zb-sahne[data-mod="dost"] .zb-npc .zb-svg{filter:hue-rotate(185deg) saturate(1.2) drop-shadow(0 0 7px #FF9BCF)}.zb-sahne[data-mod="dost"] .zb-kisi.zombi .zb-kafa:after{content:"💗";position:absolute;top:-4px;right:6%;font-size:clamp(12px,1.6vw,20px);z-index:3}'
+            + '.zb-sahne[data-mod="dost"] .zb-say.z b,.zb-sahne[data-mod="dost"] .zb-say.z span,.zb-sahne[data-mod="dost"] .zb-duyuru.kotu,.zb-sahne[data-mod="dost"] .zb-kisi.zombi .zb-ad{color:#FFB3DA}.zb-sahne[data-mod="dost"] .zb-cubuk i{background:#FF8CC6}'
+            + '@media(prefers-reduced-motion:no-preference){.zb-sahne[data-mod="korku"] .zb-tema{animation:zb-simsek 11s infinite}.zb-tema.flas{animation:zb-flas .7s ease-out!important}.zb-sahne[data-mod="dost"] .zb-kisi.zombi .zb-kafa:after{animation:zb-zipla 1.4s ease-in-out infinite}}'
+            + '@keyframes zb-simsek{0%,88%,100%{opacity:1}89%{opacity:.35}90%{opacity:1}91.5%{opacity:.5}93%{opacity:1}}@keyframes zb-flas{0%{background:rgba(255,0,0,.55)}100%{background:transparent}}'
             + '.zb-kisi.kasabali{cursor:default}.zb-kisi.kasabali .zb-ad{opacity:.6;font-weight:700}'
             + '.zb-sahne button:focus-visible{outline:3px solid #FFC24B;outline-offset:2px}'
             + '@media(prefers-reduced-motion:no-preference){.zb-spr{animation:zb-kare 1.3s steps(2,jump-end) infinite}.zombi .zb-spr{animation-duration:.7s}.zb-son.kazandi .zb-son-kisi:not(.zombi) .zb-svg{animation:zb-zipla .8s ease-in-out infinite;animation-delay:calc(var(--g) * -.11s)}@keyframes zb-kare{from{background-position:0 0}to{background-position:200% 0}}.zb-kisi.zombi .zb-svg{animation:zb-sal 1.5s ease-in-out infinite;transform-origin:50% 100%}.zb-kisi.isirildi .zb-svg{animation:zb-isir .9s}.zb-kisi.kurtuldu .zb-svg{animation:zb-kurtul .9s}.zb-kisi.aktif:not(.zombi) .zb-svg{animation:zb-zipla .9s ease-in-out infinite}@keyframes zb-sal{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}@keyframes zb-zipla{0%,100%{transform:none}50%{transform:translateY(-6%)}}@keyframes zb-isir{0%{transform:scale(1)}20%{transform:scale(1.28) rotate(-8deg)}40%{transform:scale(1.1) rotate(8deg)}60%{transform:scale(1.22) rotate(-5deg)}100%{transform:none}}@keyframes zb-kurtul{0%{transform:scale(.8)}35%{transform:scale(1.35) translateY(-12%)}100%{transform:none}}@keyframes zb-sars{20%{transform:translateX(9px)}45%{transform:translateX(-8px)}70%{transform:translateX(5px)}}}'
@@ -564,5 +623,6 @@
     window.zbAyarUygula = () => { if ($('zb-icerik')) guncelle(); };
     window.zbFinalZorla = zbFinalZorla;
     window.zbDurum = durum;
-    window._zbIc = { esikOf, panzehirSay, baslangicSay, isirikSay, kazandi, adimHesapla, ISIRIK_ARALIK };
+    window._zbIc = { esikOf, panzehirSay, baslangicSay, isirikSay, kazandi, adimHesapla, ISIRIK_ARALIK, MODLAR, kuralOf };
+    window.zbModSec = modUygula;
 })();

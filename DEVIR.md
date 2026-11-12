@@ -5792,3 +5792,12 @@ paneli/ana ekran — düğmenin ortasındaki öğe gerçekten düğme mi + onay 
 - v410: sınıf turu bitince `yzHyBotAtis` tam ekran kaplaması (z 31800, TV 31500 üstü, skor penceresi 32000 altı): robot geri teper, okları (`window._kmHayaliOkListesi`, app.js `_kmHayaliTurUret` yazar) hedefe düşer, sayaç, "SETİ … ALDI". Oynayana kadar sahnede sonuç gizli (`_yzHy.gizli`).
 - `yzTkGirisKaydet` sarmalı: gerçekten kaydedildiyse (seri sayısı arttı) robot çocuğa göre konuşur (`yzHyCocukYorum`, hep cesaretlendirici), sonra `yzHySiradaki` → bu turu atmamış sıradaki çocuğun penceresi kendiliğinden açılır (`_yzHy.devamT`, yalnız son kaydınki). 🔊 robot sesi speechSynthesis tr-TR (`dag_yz_hy_ses`).
 - Test 122 genişletildi (otomatik sıradaki, robot atışı + sonuç, üç sarı yorumu). Testte günlük seri limitine takılmayan sporcular seçilir.
+
+## 125. 🧟 Zombi modları (2026-11-12, v411)
+
+Kullanıcı: "zombi oyunu kolay bitiyor, modları olsun, birkaç eğlence modu da olsun korkutucu ya da dostane".
+- `MODLAR` (dagsk-km-zombi.js): kolay (1/8 zombi, 2 atışta bir ısırık), normal (eskisi, değişmedi), zor (1/4, %25 çift ısırık, 3 iyi ok = süper panzehir 2 kişi), kabus (1/3, %30 çift, süper panzehir); eğlence: korku (Zor kuralı + karanlık/kızıl sis/şimşek/çığlık/kırmızı flaş), dost (Kolay kuralı + pembe sevimli zombiler 💗, "sarıldı", yumuşak ses).
+- `adimHesapla(..., zar)` 8. argüman çift ısırık zarı; `st.mod` yoksa normal. Başlangıç zombisi en çok (n-1)/2.
+- Mod düğmesi oyunda (`#zb-mod-btn` → `#zb-modsec`), seçince yeni salgın; sonuç ekranında rövanş modu kartları (kazanınca bir üst zorluk önerilir). Son mod `dag_km_zombimod_<konum>` (km-ortak ile cihazlara gider; testler 'normal'e sabitler).
+- Simülasyon (ok başı %40 iyi): 6 ok → normal ~%100, zor ~%95, kâbus ~%85; 3 ok → normal ~%80, zor ~%20, kâbus ~%3. Kural adımı keskin: gerçek sınıfta ayarlamak gerekebilir.
+- Test 123 (+106/119 mod sabitleme).
