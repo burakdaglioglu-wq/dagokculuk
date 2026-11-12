@@ -11,7 +11,7 @@ export default async function ({ log }) {
     yedek = await p.evaluate(() => JSON.stringify(_kmListe));
     const n = await p.evaluate(() => {
       const tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
-      _kmListe = tum.slice(0, 4); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); kmOyunTemaSec('zombi'); return _kmListe.length;
+      _kmListe = tum.slice(0, 6); localStorage.removeItem('dag_km_zombi_' + (_kmAktifKonum || 'varsayilan')); kmOyunTemaSec('zombi'); return _kmListe.length;
     });
     dogrula(n >= 3, 'en az 3 sporcu gerekli');
     await p.waitForSelector('#zb-kalabalik .zb-kisi', { timeout: 30000 });
@@ -56,7 +56,7 @@ export default async function ({ log }) {
     let son = null; for (const j of kalan) son = await seri(['9', '9', '7'], j);
     esit(son.st.faz, 'son', 'herkes atınca bitmeli'); esit((son.st.finalAdlar || []).length, kalan.length, 'finalde herkesin adı');
     await p.waitForSelector('#zb-son', { timeout: 8000 }); const sonYazi = await p.locator('#zb-son').innerText();
-    dogrula(/SALGIN DURDU|ŞEHİR DÜŞTÜ/i.test(sonYazi), 'sonuç başlığı: ' + sonYazi.slice(0, 60));
+    dogrula(/SALGIN DURDU|ÇATI DÜŞTÜ/i.test(sonYazi), 'sonuç başlığı: ' + sonYazi.slice(0, 60));
     dogrula(!/kahraman/i.test(sonYazi), 'son atan öne çıkmamalı');
     // yeni salgın + 12 saat
     await p.locator('#zb-yeni-son').click(); await p.waitForSelector('#zb-kalabalik .zb-kisi');

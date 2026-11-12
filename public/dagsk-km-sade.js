@@ -87,6 +87,14 @@ function ksUst(geriFn, etiket, sagHTML) {
 // ---------------------------------------------------------------- yeni özellikler (v375)
 const KS_YENILER = [
     {
+        id: 'film', ad: 'Okçuluk Filmi', ne: '3 dakikalık tam ekran film: biz kimiz, okçuluk nedir, klasik ve makaralı yay, zor anlar, atış okulu (formdan nişangâha), yarışmalar ve gelecek. Loş başlar, gaza getiren müzikle biter.',
+        ikon: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/><path d="M10 13l4 2.5-4 2.5z"/>',
+        ozellik: [['Seslendirme + altyazı', 'Türkçe ses okur, büyük altyazı çıkar; 🗣️ ile kapatılır.'], ['Müzik', 'Loş açılış, zor anlarda sakin, sonra yükselen final.'], ['Atış okulu', 'Dağınık oklarda form, toplu ama kenarda oklarda nişangâh (oku takip et).'], ['Kulübün fotoğrafları', 'Salon, takım ve yarışma fotoğrafları.']],
+        adim: ['Sesi aç, mümkünse TV ekranına yansıt.', '▶ İzle düğmesine bas; çubuğa dokunarak ileri/geri sarabilirsin.', 'Bitince Tekrar izle ya da Kapat.'],
+        not: 'Sporcular da kendi ana ekranlarından açabilir. Seslendirme cihazın Türkçe sesine bağlıdır.',
+        ac: 'Filmi izle'
+    },
+    {
         id: 'cokaci', ad: 'Çok Açılı Kamera', ne: 'Dört telefona kadar aynı anda çeker; bilgisayarda önden, yandan, arkadan ve hedef görüntüsü yan yana görünür.',
         ikon: '<rect x="3" y="5" width="8" height="6" rx="1"/><rect x="13" y="5" width="8" height="6" rx="1"/><rect x="3" y="13" width="8" height="6" rx="1"/><rect x="13" y="13" width="8" height="6" rx="1"/>',
         ozellik: [
@@ -157,6 +165,7 @@ function ksYenilerHTML() {
 }
 function ksYeniAc(id) {
     ksKapat();
+    if (id === 'film') { if (typeof dagFilmAcYukle === 'function') dagFilmAcYukle(); return; }
     if (id === 'foto') { kmAracSec('skor'); showToast('Sporcuya dokun, sonra Fotoğrafla puanla', 'info'); }
     else kmAracSec(id);
 }

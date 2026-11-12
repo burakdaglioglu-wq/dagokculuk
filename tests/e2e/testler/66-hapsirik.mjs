@@ -40,7 +40,7 @@ export default async function ({ log }) {
       const st = JSON.parse(localStorage.getItem('dag_km_hapsirik_' + (_kmAktifKonum || 'varsayilan')));
       return { ad: s.ad, once, sonra: (sp.seriler || []).length, st, sira: _kmOyunAktifIndex, i };
     }, oklar);
-    const r1 = await seri(['10', '7', '5']);
+    const r1 = await seri(['10', '9', 'M']); // gizli puan 5–8: ilk seri onu bulmasın (tarihe göre değişir)
     esit(r1.sonra, r1.once + 1, 'seri gerçek kayda yazılmadı');
     dogrula(r1.st.gidik > 0, 'gıdık artmadı');
     dogrula(r1.sira !== r1.i, 'sıra sonraki sporcuya geçmedi');
@@ -61,8 +61,14 @@ export default async function ({ log }) {
     esit(r3.st.hapsirtanlar.length, 1, 'hapşırık kaydedilmedi');
     dogrula(r3.st.tip !== tip0, 'sıradaki yaratık aynı tip geldi (' + tip0 + ')');
     esit(r3.st.no, 1, 'yaratık numarası');
-    await p.waitForTimeout(7000);
-    dogrula(await p.evaluate(() => /Hapşırtan/.test(document.getElementById('hps-dev').textContent)), 'kahraman anı (Hapşırtan) gösterilmedi');
+    await p.waitForTimeout(5600);
+    // v405: son atan kahraman değil — "HEP BİRLİKTE HAPŞIRTTINIZ", katkısı olan herkesin adı ve tacı
+    const hb = await p.evaluate(() => ({ yazi: document.getElementById('hps-dev').textContent, tac: document.querySelectorAll('#hps-cocuklar .hps-tac').length }));
+    dogrula(/HEP BİRLİKTE/.test(hb.yazi) && !/Hapşırtan:/.test(hb.yazi), 'hep birlikte anı gösterilmedi: ' + hb.yazi.slice(0, 80));
+    dogrula(hb.yazi.toLocaleLowerCase('tr-TR').includes(r3.ad.trim().split(/\s+/)[0].toLocaleLowerCase('tr-TR')), 'hapşırtanlar arasında ad yok: ' + hb.yazi); dogrula(hb.tac >= 1, 'taç yok');
+    // v405 rastgele sıra: bir turda herkes bir kez (tekrar yok), önizleme "rastgele"
+    const rs = await p.evaluate(() => { _kmRastgeleTur = {}; const at = _kmOyunRosterCache.map((s, j) => (turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]) ? j : -1).filter((j) => j >= 0), n = at.length, gor = []; let i = at[0]; for (let k = 0; k < n - 1; k++) { i = kmOyunRastgeleSiradaki(i); gor.push(i); } return { n, ayri: new Set(gor).size, kendi: gor.includes(at[0]), acik: kmOyunRastgeleMi() }; }); // atamayan (kaydı olmayan) çocuk sıraya girmez
+    dogrula(rs.acik, 'rastgele sıra açık değil'); if (rs.n > 2) esit(rs.ayri, rs.n - 1, 'bir turda aynı çocuk iki kez geldi');
     const rozet = await p.evaluate((ad) => { const s = _kmOyunRosterCache.find((x) => x.ad === ad); const sp = turnuvaDB[s.g][s.ad]; return sp.oyun && sp.oyun.hapsirik && sp.oyun.hapsirik.hapsirtti; }, r3.ad);
     dogrula(rozet >= 1, 'hapşırtan rozeti yazılmadı');
     // 12 yaratığın hepsi çizilir (farklı gövdeler)

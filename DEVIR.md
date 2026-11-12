@@ -5738,3 +5738,31 @@ Kullanıcı: "çocuklar hep aynı şeyi yaptığı için sıkılıyor (at, puan 
 - Zombi Salgını → çocukların sevdiği v384 sürümüne döndü (`dagsk-km-zombi.js` = 405c627, `?v=4`). Geceler, özel oklar, dev zombi, sığınak, görevler/kalas, gerilim katmanı YOK. Testler: 106-zombi eski haline döndü, 117-zombi-2 silindi. Eski kayıtlar uyumlu (yeni alanlar yok sayılır). 👥 Kimler var paneli (app.js) KALDI.
 - `KM_OYUN_GIZLI = ['tahta','timsah','bomba']` + `kmOyunGorunurMu`: oyun seçicide, "Bugünün teması"nda, son oyunda (`kmAnaSonOyun`) ve `KM_DA_OYUN` önerilerinde görünmezler. Kod ve dosyalar duruyor; düzeltilmeden listeye geri koyma.
 - KURAL: yeni oyun / büyük mekanik ancak şunlarla: koçun yüksek sesle söyleyebileceği tek cümlelik kural, ok başına ≤1 dokunuş, 18–24 gerçek adla 360–390 px ve TV boyutunda tam tur simülasyonu, yayından ÖNCE kullanıcıya ekran görüntüsü.
+
+## 117. 🗺️ Sınıf Yolculuğu (2026-11-12, v404)
+- Kullanıcı: "oyunlar ilerlemiyor, yeni yaptıkların bir amacı yok" → sıkıcı, hep aynı, hepsi. Ekranda iki taslak gösterildi (A Harita / B Kasabamız), **A seçildi**.
+- TEK KURAL: her iyi ok sınıfı bir adım ilerletir. "İyi" = Zombi'nin `esikOf(kmCanavarSporcuOrtalama)` eşiği (ort ≥7 → 9+, ≥5 → 7+, yoksa 5+). Hangi oyun açık olursa olsun aynı sayaç; oyun kuralları DEĞİŞMEDİ. Koça ek dokunuş yok.
+- Modül `public/dagsk-km-yolculuk.js?v=1` (yk*): `ykCiz` · `ykSeri(s, kaydedilecek, seriId)` · `ykGeriAl(seriId)` · `ykHaritaAc` · `_ykIc`. app.js: `#yk-serit` `#km-oyun-govde`'nin ilk çocuğu (sahneyi kapatmaz, tam ekranda büyür); `kmYolculukCiz` Oyunlar çizilince; `kmYolculukSeri` `kmOyunIlerlet/devamEt` içinde (özel ders hariç); `ykGeriAl` `kmOyunSonGirisiGeriAl` içinde (Yarışma'nın geri alması DEĞİL).
+- 12 durak (Köy → … → 🐉 Ejder Dağı), sonra n. yolculuk baştan. Hedef = sınıf mevcudu × 1,7 (8–80), durak başlarken; koç haritada ± ile değiştirebilir, kapatıp açabilir. Ders başı kartı günde bir kez; durak geçince 2,2 sn sonra kutlama + bütün sınıfın adı (9 sn, final 15 sn). Iska serisi sayılmaz, puf çıkmaz. Ceza yok, sıralama yok.
+- Kalıcı: `dag_yolculuk_<konum>` (12 saat sıfırlamasına GİRMEZ). **Yalnızca bu cihazda** (buluta senkron yok).
+- Test: `118-yolculuk`. Çocuklarla DENENMEDİ.
+- v405 ek: ders başı kartı yalnız oyun gövdesini kaplar (araç çubuğu açık), 10 sn sonra / ilk seride kapanır, haritada "Ders başı kartı: açık/kapalı" (`dag_yolculuk_ders_basi`; testler '0' başlar, 118 açar).
+
+## 118. 🧟 Zombi "Çatıda Kurtarma" + özel atış + tek sporcu + ses (2026-11-12, v405)
+- Kullanıcı: görünümü değiştir/geliştir, sesi güzelleştir/özelleştir, bazen tek sporcu olur, bazen özel atış (gözler kapalı maviye at, ekranda kocaman). İki canlı taslaktan **B Çatıda Kurtarma** seçildi. KURALLAR AYNI.
+- `dagsk-km-zombi.js?v=5`: zemin = gece göğü + şehir silüeti (anten ışıkları) + merdiven uçları + beton çatı + helipad; `#zb-barikat` = çatı kenarı (id korunur); helikopter tarar, kazanınca helipada iner. Kayıp: "ÇATI DÜŞTÜ!".
+- Özel atış: `st.seri % 5 === 4` sıradaki çocuğa (çocuk başına bir kez, `st.ozelOlan`), kart `#zb-ozel` (8 sn / dokun), o atışta eşik 5 (mavi). Sıra başka çocuğa geçerse kart onunla gider. Türler `ozel_goz/uc/heykel/sessiz/sayar`, hepsi `ozel` (KM_OYUN_ICERIK). Ad speechSynthesis ile (`sesAd`).
+- Az kişi: atan <6 → `kasaba|N` adsız kasabalılar (kalabalık 8, 2 zombi başlar), atmaz, sonuca sayılır; tek sporcu 3 tur. `kasaba` ile kapatılır.
+- Ses: katmanlı hırıltı, davul ısırık, çınlama panzehir, akor zafer; arka plan rüzgâr+pervane (`ortam`) yalnız oyun açıkken, sekme gizlenince durur. Test: 106 (6 çocuk), 119-zombi-cati.
+
+## 119. 🤧 Hapşırık: hep birlikte + rastgele sıra + yumuşak geçişler (2026-11-12, v405)
+- Kullanıcı: hapşırınca tek kişinin adı çıkıyor ("ben hapşırttım siz bir şey yapmadınız"); sıra hep aynı, hep aynı çocuk hapşırtıyor; sıra rastgele olsun, kendim de seçeyim; geçiş animasyonları kötü.
+- Hapşırınca bu yaratığa tüy atan HERKES (`katkilar`) taç + zıplama + "HEP BİRLİKTE HAPŞIRTTINIZ" + adlar; rozet hepsine. "Son tüyü o attı" / "En çok gıdıklayan" KALKTI. `hapsirtanlar` kaydı `{tip,katkilar,t}`.
+- Tören 21 → 12 sn; çocuklar sahneden çıkmaz; yaratık yürüyerek çıkar, yenisi kayarak gelir (`hpsSahneKur(p, gecis)`); `#hps-svg` her kurulumda solarak belirir.
+- Rastgele sıra (app.js `kmOyunRastgeleMi/Siradaki/Sec`, `KM_OYUN_RASTGELE_TEMALAR=['hapsirik']`, içerik `rastgele`): turda herkes bir kez (atamayanlar hariç), sıradaki rastgele; çocuğa dokun = seç; 🎲 düğmesi; dock SONRA "🎲 rastgele". Modül `?v=2`.
+
+## 120. 🎬 Okçuluk filmi (2026-11-12, v405)
+- Kullanıcı: ~3 dk film (biz kimiz, okçuluk, klasik/makaralı yay, amaç, zor anlar → düzenli antrenman, atış yönleri → form → nişangâh, yarışma, madalya, oyunlar, yarışma modu, okul/iş hayatı, liderlik, arkadaşlık; loş → gaza getiren müzik).
+- `public/dagsk-film.js?v=1`, `dagFilmAc()` / app.js `dagFilmAcYukle()`. 186 sn, 10 sahne, tek canvas 1600x900 + kulübün fotoğrafları (galeri/hero/kulup/vitrin) Ken Burns + WebAudio müzik (84 BPM; los/yumusak/zor/yuksel/epik/son) + speechSynthesis tr-TR + altyazı (ekranda yazanlar `, 0` ile altyazıya yazılmaz). Her şey t'ye bağlı: duraklat/sar/tekrar.
+- Açılış: Karışık Sınıf aracı `film` (Oyun & motivasyon, YENİ), KS_YENILER ilk kart, sporcunun ana ekranında 🎬 kart (`sporcuAnaDoldur`). Test: 120-film.
+- Instagram (@dagokculuk) girişsiz okunamıyor; gönderi linkleri ya da dosyalar gelirse filme eklenebilir.

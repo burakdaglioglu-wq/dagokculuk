@@ -649,12 +649,12 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
           <g id="hps-cocuklar">${cocuk}</g>
         </svg>
         <div class="hps-hud"><div class="hps-hud-ust"><span class="hps-ad" id="hps-ad"></span><span class="hps-cip" id="hps-gizli-cip"></span>
-          <button class="hps-btn" id="hps-ses-btn" title="Ses">🔊</button><button class="hps-btn" id="hps-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hps-btn" id="hps-yeni-btn" title="Yeni yaratık">🔄</button></div>
+          <button class="hps-btn" id="hps-zar-btn" title="Sıradakini rastgele seç">🎲</button><button class="hps-btn" id="hps-ses-btn" title="Ses">🔊</button><button class="hps-btn" id="hps-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hps-btn" id="hps-yeni-btn" title="Yeni yaratık">🔄</button></div>
           <div class="hps-bar"><i id="hps-bar-ic"></i><span id="hps-bar-yazi"></span></div></div>
         <div class="hps-ust" id="hps-ust"></div>
-        <div class="hps-dev" id="hps-dev"></div>`;
+        <div class="hps-dev" id="hps-dev"></div>${ic('rastgele') ? '<div class="hps-ipucu" id="hps-ipucu">🎲 Sıra rastgele · çocuğa dokunup seçebilirsin</div>' : ''}`;
     }
-    function hpsSahneKur(p) {
+    function hpsSahneKur(p, gecis) {
         p = p || panel(); if (!p) return; css();
         zamanTemizle(); _toren = false;
         const st = durum(); _aktifTip = st.tip; const c = Y[st.tip];
@@ -665,8 +665,11 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
         if (st.bulan) gizliIzCiz(st);
         $('hps-ses-btn').onclick = () => { try { localStorage.setItem('dag_hps_ses', sesAcik() ? '0' : '1'); } catch (e) { } hudCiz(); if (sesAcik()) SES.ruya(); };
         $('hps-nasil-btn').onclick = nasil;
+        const zar = $('hps-zar-btn'); if (zar) { zar.style.display = ic('rastgele') ? '' : 'none'; zar.onclick = () => { if (_toren) return; if (typeof kmOyunRastgeleSec === 'function') kmOyunRastgeleSec(); SES.tuy && SES.tuy(); }; }
         $('hps-yeni-btn').onclick = yeniOyunSor;
         hudCiz(); hpsGuncelle();
+        // v405 yumuşak geçiş: sahne her kurulumda solarak belirir (CSS hps-belir); törenden sonra yeni yaratık sağdan kayarak gelir
+        if (gecis) { const y = $('hps-yaratik'); if (y) { y.style.transition = 'none'; y.style.transform = 'translate(460px,0) scale(.7)'; y.style.opacity = 0; void y.getBoundingClientRect(); y.style.transition = 'transform 1.3s cubic-bezier(.22,1.25,.4,1),opacity .5s ease'; y.style.transform = ''; y.style.opacity = 1; } }
         clearInterval(_horT); _sonVurus = Date.now();
         _horT = setInterval(() => {
             if (!panel() || !panel().isConnected || (typeof _kmOyunAktifTema !== 'undefined' && _kmOyunAktifTema !== 'hapsirik') || (typeof _kmAktifSekme !== 'undefined' && _kmAktifSekme !== 'oyunlar')) { clearInterval(_horT); return; }
@@ -765,10 +768,12 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                 if (st.gidik >= st.gerekli) {
                     if (!st.sahte && ic('sahte') && hash(st.tarih + '|' + st.no + '|' + st.seri) % 2 === 0) { st.sahte = true; st.gidik = Math.round(st.gerekli * .8); o.sahte = true; }
                     else {
-                        const kac = Object.entries(st.katki).sort((a, b) => b[1] - a[1])[0];
-                        hapsirdi = { tip: st.tip, no: st.no, ad: s.ad, g: s.g, i: i, gizliBulan: st.bulan, enCok: kac ? kac[0] : null, adi: yaratikAdi(st) };
-                        st.hapsirtanlar.push({ tip: st.tip, ad: s.ad, g: s.g, t: Date.now() });
-                        rozetYaz(s.g, s.ad, 'hapsirtti');
+                        // v405 (kullanıcı: "hapşırınca o kişinin ismi yazıyor, diğerleri 'ben hapşırttım siz bir şey yapmadınız'a giriyor, bu kötü"):
+                        // son atan kahraman DEĞİL. Bu yaratığa tüy atan herkes hapşırtmış sayılır; rozet hepsine, ekranda hepsinin adı.
+                        const katkilar = Object.keys(st.katki).filter((k) => st.katki[k] > 0);
+                        hapsirdi = { tip: st.tip, no: st.no, ad: s.ad, g: s.g, i: i, katkilar: katkilar, adi: yaratikAdi(st) };
+                        st.hapsirtanlar.push({ tip: st.tip, katkilar: katkilar, t: Date.now() });
+                        katkilar.forEach((k) => { const j = k.indexOf('|'); rozetYaz(k.slice(0, j), k.slice(j + 1), 'hapsirtti'); });
                         yeniYaratik(st, st.no + 1);
                     }
                 }
@@ -868,26 +873,29 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                 }
                 hs.innerHTML = x;
             }
-        }, 3200);
-        sonra(() => { const bs = $('hps-bas'); if (bs) bs.classList.remove('hps-bas-ileri'); goz(1, true); goz(2, true); agiz('utanc'); const y = $('hps-yanak'); if (y) y.setAttribute('opacity', .8); konus('...ben mi yaptım onu? 😳', 1800); }, 4500);
-        // 🏅 kahraman anı — son tüyü atan
+        }, 2400);
+        sonra(() => { const bs = $('hps-bas'); if (bs) bs.classList.remove('hps-bas-ileri'); goz(1, true); goz(2, true); agiz('utanc'); const y = $('hps-yanak'); if (y) y.setAttribute('opacity', .8); konus('...ben mi yaptım onu? 😳', 1600); }, 3500);
+        // 🎉 v405: HEP BİRLİKTE — bu yaratığa tüy atan herkesin başına taç, hepsi zıplar, adları birlikte yazılır (son atan öne çıkmaz)
         sonra(() => {
-            SES.fanfar(); const ce = $('hps-c' + h.i);
-            if (ce) { ce.classList.add('hps-kahraman'); const g = ce.querySelector('g'); if (g) g.insertAdjacentHTML('beforeend', '<text y="-50" text-anchor="middle" font-size="22">👑</text>'); }
-            let resim = '';
-            try { const s = liste()[h.i]; if (s && typeof kmOyunKarakterBilgi === 'function' && typeof kmOyunHayvanKarakterAta === 'function') resim = `<img class="hps-kahr-img" src="${kmOyunKarakterBilgi(kmOyunHayvanKarakterAta(s)).src}" alt="">`; } catch (e) { }
-            dev(`${resim}<br>Hapşırtan: ${kacis(ilkAd(h.ad))}! 🏅<small>Son tüyü o attı · rozet kazandı</small>`);
-        }, 6200);
-        sonra(() => { SES.cokyasa(); dev('Hep birlikte:<br>ÇOK YAŞA! 🗣️<small>Sınıfça bağırın!</small>'); }, 8800);
-        sonra(() => { const d = $('hps-dev'); if (d) d.classList.remove('goster'); agiz('gulumse'); konus('Sağ olun! Buyrun, geçin 😊', 2400); }, 11300);
-        sonra(() => { const y = $('hps-yaratik'); if (y) y.style.transform = 'translate(250px,-8px) scale(.82)'; const is = $('hps-isik'); if (is) is.setAttribute('opacity', 1); }, 12800);
-        sonra(() => { document.querySelectorAll('#hps-cocuklar .hps-cocuk').forEach((e) => { e.querySelector('.hps-ci').classList.add('hps-hop'); e.style.transform = 'translate(560px,' + (+e.dataset.dy || 0) + 'px)'; e.style.opacity = 0; }); }, 13600);
+            SES.fanfar();
+            const kat = h.katkilar && h.katkilar.length ? h.katkilar : [h.g + '|' + h.ad], adlar = [];
+            liste().forEach((s, j) => {
+                if (kat.indexOf(s.g + '|' + s.ad) < 0) return; adlar.push(ilkAd(s.ad));
+                const ce = $('hps-c' + j); if (!ce) return; ce.classList.add('hps-kahraman');
+                const g = ce.querySelector('g'); if (g && !g.querySelector('.hps-tac')) g.insertAdjacentHTML('beforeend', '<text class="hps-tac" y="-50" text-anchor="middle" font-size="22">👑</text>');
+                const ci = ce.querySelector('.hps-ci'); if (ci) { ci.style.animationDelay = (j % 6) * -.07 + 's'; ci.classList.add('hps-hop'); }
+            });
+            dev(`HEP BİRLİKTE<br>HAPŞIRTTINIZ! 🎉<small>${adlar.map(kacis).join(' · ')}</small>`);
+        }, 4700);
+        sonra(() => { SES.cokyasa(); dev('Hep birlikte:<br>ÇOK YAŞA! 🗣️<small>Sınıfça bağırın!</small>'); }, 7300);
         sonra(() => {
-            const enCok = h.enCok ? liste().find((s) => s.g + '|' + s.ad === h.enCok) : null, bulan = h.gizliBulan ? liste().find((s) => s.g + '|' + s.ad === h.gizliBulan) : null;
-            const st = durum(), yeni = Y[st.tip];
-            dev(`${c.ikon} ${kacis(h.adi)} hapşırdı! 🎉<small>🏅 Hapşırtan: ${kacis(ilkAd(h.ad))}${enCok ? ' · ✨ En çok gıdıklayan: ' + kacis(ilkAd(enCok.ad)) : ''}${bulan ? ' · ✨ Gizli noktayı bulan: ' + kacis(ilkAd(bulan.ad)) : ''}<br>Sıradaki: ${yeni.ikon} ${kacis(yaratikAdi(st))}</small>`, 5200);
-        }, 16000);
-        sonra(() => { _toren = false; hpsSahneKur(); SES.geldi(); const p = panel(); if (p) { const y = $('hps-yaratik'); if (y) { y.style.transition = 'none'; y.style.transform = 'translate(420px,0) scale(.7)'; void y.getBoundingClientRect(); y.style.transition = 'transform 1.4s cubic-bezier(.3,1.2,.5,1)'; y.style.transform = ''; } } }, 21400);
+            const d = $('hps-dev'); if (d) d.classList.remove('goster'); agiz('gulumse'); konus('Sağ olun! Buyrun, geçin 😊', 1800);
+            document.querySelectorAll('#hps-cocuklar .hps-ci.hps-hop').forEach((e) => e.classList.remove('hps-hop'));
+        }, 9300);
+        // yaratık yolu açıp yürüyerek çıkar (çocuklar YERİNDE kalır: eskiden sağa gidip yeni sahnede birden geri beliriyorlardı)
+        sonra(() => { const y = $('hps-yaratik'); if (y) { y.style.transition = 'transform 1.6s cubic-bezier(.5,0,.75,0),opacity 1.2s ease .5s'; y.style.transform = 'translate(520px,-10px) scale(.75)'; y.style.opacity = 0; } const is = $('hps-isik'); if (is) is.setAttribute('opacity', 1); }, 9900);
+        sonra(() => { const st = durum(), yeni = Y[st.tip]; dev(`Sıradaki: ${yeni.ikon} ${kacis(yaratikAdi(st))}<small>${kacis(h.adi)} hapşırdı, yol açıldı!</small>`, 1500); }, 10600);
+        sonra(() => { _toren = false; hpsSahneKur(null, true); SES.geldi(); }, 12000);
     }
     function nasil() {
         const st = durum(), c = Y[st.tip], b = c.bolge;
@@ -967,8 +975,13 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 @keyframes hpsSavrul{0%{transform:translateX(0)}25%{transform:translateX(-24px)}100%{transform:translateX(0)}}
 .hps-salla{animation:hpsSalla .1s linear 10}
 @keyframes hpsSalla{0%,100%{transform:translate(0,0)}25%{transform:translate(-6px,3px)}75%{transform:translate(6px,-3px)}}
-.hps-hop{animation:hpsHop .4s ease-in-out infinite}
-@keyframes hpsHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.hps-hop{transform-box:fill-box;transform-origin:50% 100%;animation:hpsHop .5s cubic-bezier(.3,0,.4,1) infinite}
+#hps-svg{animation:hpsBelir .45s ease both}
+@keyframes hpsBelir{from{opacity:0}to{opacity:1}}
+.hps-tac{animation:hpsTac .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes hpsTac{from{opacity:0;transform:translateY(-14px) scale(.4)}to{opacity:1;transform:none}}
+.hps-ipucu{position:absolute;left:10px;bottom:10px;z-index:6;font-size:12.5px;font-weight:800;color:#fff;background:rgba(20,26,40,.72);border-radius:999px;padding:6px 12px;pointer-events:none}
+@keyframes hpsHop{0%,100%{transform:translateY(0) scaleY(1)}12%{transform:translateY(0) scaleY(.9)}50%{transform:translateY(-14px) scaleY(1.04)}88%{transform:translateY(0) scaleY(.94)}}
 .hps-kahraman .hps-ci{filter:drop-shadow(0 0 10px #ffd860)}
 #hps-ruya-ic.hps-kikir{animation:hpsKikir .7s ease}
 @media (max-width:700px){.hps-hud{width:62%}.hps-ad,.hps-cip{font-size:12px;padding:4px 9px}}
@@ -978,7 +991,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 
     // Sahne kurulurken ekrandaki gizli yeri hatırla (aynı seride hapşırık olursa durum yeni yaratığa geçer)
     const _kur = hpsSahneKur;
-    window.hpsSahneKur = function (p) { _kur(p); try { _ekranGizli = Object.assign({}, durum().gizli); } catch (e) { } };
+    window.hpsSahneKur = function (p, gecis) { _kur(p, gecis); try { _ekranGizli = Object.assign({}, durum().gizli); } catch (e) { } };
     hpsSahneKur = window.hpsSahneKur; // eslint-disable-line no-func-assign
     window.hpsGuncelle = hpsGuncelle;
     window.hpsSeri = hpsSeri;
