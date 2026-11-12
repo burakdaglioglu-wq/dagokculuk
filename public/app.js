@@ -30138,11 +30138,13 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // 3/6 seçimi, ek atışta 1) BİREBİR atıyor; skorbord her gerçek turdan SONRA çizildiği için
         // değer o turun ok sayısını yansıtıyor.
         function _kmHayaliTurUret() {
-            let ort = HAYALI_ZORLUKLER[_kmHayaliZorluk].ort, toplam = 0;
+            let ort = HAYALI_ZORLUKLER[_kmHayaliZorluk].ort, toplam = 0, oklar = [];
             let okSayisi = Math.max(1, _kmYarismaOkSayisi || 3);
             for(let i = 0; i < _kmYarismaFormat; i++) { // takım büyüklüğü kadar "sanal okçu" katkısı
-                for(let j = 0; j < okSayisi; j++) toplam += _kmHayaliOkUret(ort);
+                for(let j = 0; j < okSayisi; j++) { let o = _kmHayaliOkUret(ort); oklar.push(o); toplam += o; }
             }
+            // v410: robotun tek tek okları — atış animasyonu (dagsk-km-yarisma-pro.js yzHyBotAtis) bunları hedefe düşürür
+            try { (window._kmHayaliOkListesi = window._kmHayaliOkListesi || [])[_kmHayaliTurlar.length] = oklar; } catch(e) {}
             return toplam;
         }
         function _kmHayaliYorumEkle(kategori) {

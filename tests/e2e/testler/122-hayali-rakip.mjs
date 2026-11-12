@@ -11,8 +11,8 @@ export default async function ({ log }) {
     await karisikSinifArac(p, 'yarisma');
     yedek = await p.evaluate(() => ({ tur: localStorage.getItem(yzAnahtar()), mod: localStorage.getItem('dag_yz_mod'), liste: JSON.stringify(_kmListe) }));
     const n = await p.evaluate(() => {
-      _yz.ses = false;
-      const l = []; ['minikler', 'kucukler', 'yildizlar', 'buyukler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (l.length < 8 && !turnuvaDB[g][ad].pasif) l.push({ g, ad }); }));
+      _yz.ses = false; localStorage.setItem('dag_yz_hy_ses', '0');
+      const l = []; ['minikler', 'kucukler', 'yildizlar', 'buyukler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (l.length < 8 && !turnuvaDB[g][ad].pasif && (typeof bugunkuSeriSayisi !== 'function' || bugunkuSeriSayisi(turnuvaDB[g][ad]) < 5)) l.push({ g, ad }); })); // günlük seri limitine takılmayanlar
       _kmListe = l; kmYarismaSifirla(); _kmYarismaBracketGorunum = null;
       window.__hyOnce = l.map((s) => (turnuvaDB[s.g][s.ad].seriler || []).length); window.__hyTop = l.map((s) => turnuvaDB[s.g][s.ad].toplamSkor);
       window.__hyL = l;
@@ -34,6 +34,9 @@ export default async function ({ log }) {
       for (const v of ['9', '7', '8']) await p.locator('#yz-tk-giris .yz-tk-pad button', { hasText: new RegExp('^' + v + '$') }).first().click();
       await p.locator('#yz-tk-giris button', { hasText: 'Kaydet' }).click(); await p.waitForTimeout(250);
     }
+    await p.waitForSelector('#yz-tk-giris', { timeout: 4000 }); // v410: sıradaki kendiliğinden açıldı
+    esit(await p.evaluate(() => _yzTk.giris.k), await p.evaluate(() => _kmTakimlar[0].uyeler[3].g + '|' + _kmTakimlar[0].uyeler[3].ad), 'kaydetten sonra 4. çocuk açılmalı');
+    await p.evaluate(() => yzTkGirisKapat());
     esit(await p.locator('#km-icerik .yz-hy-cocuk.atti').count(), 3, '3 çocuk "✓ attı" olmalı');
     dogrula(/3\/8 attı/.test(await p.locator('#km-icerik .yz-hy-tur').textContent()), '"3/8 attı" yazmıyor');
     dogrula(await p.evaluate(() => _kmHayaliTurlar.length === 0), 'robot, sınıfta herkes atmadan turunu attı');
@@ -62,6 +65,24 @@ export default async function ({ log }) {
     dogrula(await p.evaluate(() => _kmHayaliTurlar.length === 1), 'herkes atınca robot turunu atmadı');
     dogrula(/2\. (SET|TUR)/.test(await p.locator('#yz-tk-tv .yz-hy-tur').textContent()), 'herkes atınca 2. set/tura geçmedi');
     esit(await p.locator('#yz-tk-tv .yz-hy-cocuk.atti').count(), 0, 'yeni turda herkes "sırada" olmalı');
+    // v410: robot atışı kaplaması → sonuç → sıradaki çocuğun penceresi kendiliğinden
+    await p.waitForSelector('#yz-hy-atis', { timeout: 4000 });
+    await p.waitForTimeout(2200); await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-robot-atis.png' });
+    await p.waitForSelector('#yz-hy-at-sonuc.goster', { timeout: 8000 });
+    await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-robot-sonuc.png' });
+    await p.locator('#yz-hy-atis').click();
+    await p.waitForSelector('#yz-tk-giris', { timeout: 4000 });
+    const ilk = await p.evaluate(() => _yzTk.giris && _yzTk.giris.k);
+    esit(ilk, await p.evaluate(() => _kmTakimlar[0].uyeler[0].g + '|' + _kmTakimlar[0].uyeler[0].ad), 'tur bitince sıradaki = listenin ilki olmalı');
+    dogrula(/Sırada|hazır mısın|atıyor/.test(await p.locator('#yz-tk-tv .yz-hy-balon').textContent()), 'robot sıradakini çağırmadı');
+    // kaydet → bir sonraki kendiliğinden açılır, robot yorum yapar
+    await p.evaluate(() => yzTkOkSayiSec(3));
+    for (const v of ['10', '9', '9']) await p.locator('#yz-tk-giris .yz-tk-pad button', { hasText: new RegExp('^' + v + '$') }).first().click();
+    await p.locator('#yz-tk-giris button', { hasText: 'Kaydet' }).click(); await p.waitForTimeout(300);
+    dogrula(/sarı|Devrelerim/.test(await p.locator('#yz-tk-tv .yz-hy-balon').textContent()), 'robot üç sarıya yorum yapmadı');
+    await p.waitForSelector('#yz-tk-giris', { timeout: 4000 });
+    esit(await p.evaluate(() => _yzTk.giris && _yzTk.giris.k), await p.evaluate(() => _kmTakimlar[0].uyeler[1].g + '|' + _kmTakimlar[0].uyeler[1].ad), 'kaydetten sonra ikinci çocuk açılmadı');
+    await p.evaluate(() => yzTkGirisKapat());
     await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-tv2.png' });
     await p.evaluate(() => yzTkTvKapat()); await p.waitForTimeout(200);
 

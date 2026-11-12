@@ -4366,11 +4366,11 @@ document.addEventListener('mousedown', function () { yzHoverKapat(); }, true);
 // (set / toplam / tur hedefine göre), tur kutuları, robotun konuşma balonu ve çocuk düğmeleri (dokun → skor gir,
 // aynı yzTkGirisAc penceresi → kmYarismaSeriKaydet). Çocuklara puan SIRALAMASI gösterilmez (yalnız "bu turda attı ✓").
 // ================================================================================================
-let _yzHy = { sayim: {}, son: null, botN: 0, botSon: null };
+let _yzHy = { sayim: {}, son: null, botN: 0, botSon: null, gizli: null, konus: null };
 function yzHyVeri() {
     try { if (typeof _kmHayaliRakipGuncelle === 'function') _kmHayaliRakipGuncelle(); } catch (e) {}
     let A = _kmTakimlar[0], B = _kmTakimlar[1] || { ad: 'Robot', renk: '#a78bfa', uyeler: [] };
-    let ta = _kmYarismaTurBazliPuanlar(A), tb = (_kmHayaliTurlar || []).slice();
+    let ta = _kmYarismaTurBazliPuanlar(A), tb = (_kmHayaliTurlar || []).slice(); if (_yzHy.gizli != null) tb = tb.slice(0, _yzHy.gizli); // robot atışı oynayana kadar sonucu sakla
     let deg = null;
     try { deg = kmYarismaMacSonucDegerlendir([{ t: A, idx: 0, turlar: ta }, { t: B, idx: 1, turlar: tb }]); } catch (e) {}
     let z = HAYALI_ZORLUKLER[_kmHayaliZorluk] || HAYALI_ZORLUKLER.dengeli;
@@ -4427,9 +4427,10 @@ function yzHyHTML(v, olay, tv) {
         : ek ? '<div class="yz-hy-son ek">🎯 BERABERE — EK ATIŞ: tek ok!</div>'
         : '<div class="yz-hy-tur"><b>' + (enAz + 1) + '. ' + (setMod ? 'SET' : 'TUR') + '</b> · ' + atti + '/' + v.uyeler.length + ' attı' + (olay.son ? ' · 🎯 <b>' + esc(yzKisaAd(olay.son.ad)) + '</b> attı!' : '') + '</div>';
     let ilkSoz = (HAYALI_SOZLER.baslangic[v.zor] || [''])[0];
-    let balon = olay.bot ? 'Ben de attım: <b>' + olay.bot.p + '</b>!' : esc(v.yorum || ilkSoz);
+    let konus = _yzHy.konus && Date.now() - _yzHy.konus.z < 9000 ? _yzHy.konus.metin : null;
+    let balon = konus ? esc(konus) : olay.bot ? 'Ben de attım: <b>' + olay.bot.p + '</b>!' : esc(v.yorum || ilkSoz);
     return '<div class="yz-hy' + (tv ? ' tv' : '') + (kaz != null ? ' bitti' : '') + '">'
-        + '<div class="yz-hy-ust"><div class="yz-hy-hedef">🤖 HAYALİ RAKİP · ' + esc(v.z.ad) + '<small>' + hedefYazi + '</small></div></div>'
+        + '<div class="yz-hy-ust"><div class="yz-hy-hedef">🤖 HAYALİ RAKİP · ' + esc(v.z.ad) + '<small>' + hedefYazi + '</small></div><button type="button" class="yz-hy-ses" onclick="yzHySesDegis()" title="Robotun sesi">' + (yzHySesAcik() ? '🔊' : '🔇') + '</button></div>'
         + '<div class="yz-hy-sahne">'
         + '<div class="yz-hy-taraf sinif' + (kaz === 0 ? ' kazan' : '') + '" style="--hr:' + v.A.renk + '"><div class="yz-hy-sinif-ik">🏹</div><button type="button" class="yz-hy-ad yz-hy-ad-btn" onclick="yzHyAdDegis()" title="Takım adını değiştir">' + esc(adA) + ' <span class="yz-hy-kalem">✏️</span></button><div class="yz-hy-puan">' + buyuk[0] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + ' · ' + v.uyeler.length + ' okçu birlikte</div></div>'
         + '<div class="yz-hy-vs">VS</div>'
@@ -4528,4 +4529,166 @@ function yzHyCss() {
         } catch (e) { console.warn('hayali sahne', e); }
         return r;
     };
+})();
+
+// ================================================================================================
+// 🤖 HAYALİ RAKİP 2 (v410, 2026-11-12 — kullanıcı: "hayali takımın atışları da görsel açıdan heyecan katsın; kaydetten sonra
+// otomatik diğerine geçsin; karşı takım cümleler kursun").
+//   1) Sınıfta herkes turu atınca ROBOT ATIŞI: tam ekran kaplama — robot geri teper, okları (app.js _kmHayaliOkListesi) tek tek
+//      hedefe saplanır, sayaç yükselir, sonra "SETİ SINIF / ROBOT ALDI" açıklanır. Dokununca geçilir.
+//   2) Kaydet → sıradaki (bu turu henüz atmamış) çocuğun skor penceresi kendiliğinden açılır (robot atışı varsa ondan sonra).
+//   3) Robot konuşur: her seriden sonra çocuğa göre (sarı, iyi seri, ıska → nazik), kendi atışından önce/sonra, sıradakini çağırır.
+//      Balonda + (🔊 açıksa) sesli (speechSynthesis tr-TR). Çocuk puanları KARŞILAŞTIRILMAZ, kimse kötülenmez.
+// ================================================================================================
+function yzHySesAcik() { try { return localStorage.getItem('dag_yz_hy_ses') !== '0'; } catch (e) { return true; } }
+function yzHySesDegis() {
+    let a = !yzHySesAcik(); try { localStorage.setItem('dag_yz_hy_ses', a ? '1' : '0'); } catch (e) {}
+    if (!a) try { speechSynthesis.cancel(); } catch (e) {}
+    if (typeof kmYarismaCiz === 'function') kmYarismaCiz();
+    if (document.getElementById('yz-tk-tv')) { _yzTk.imza = ''; yzTkCiz(); }
+}
+function yzHyYenile() { try { if (typeof kmYarismaCiz === 'function' && document.getElementById('km-icerik')) kmYarismaCiz(); if (document.getElementById('yz-tk-tv')) { _yzTk.imza = ''; yzTkCiz(); } } catch (e) {} }
+function yzHySec(a) { return a[Math.floor(Math.random() * a.length)]; }
+function yzHyKonus(metin, sesli) {
+    _yzHy.konus = { metin: metin, z: Date.now() };
+    document.querySelectorAll('.yz-hy-balon').forEach(function (b) { b.textContent = metin; b.classList.remove('yz-hy-balon-yeni'); void b.offsetWidth; b.classList.add('yz-hy-balon-yeni'); });
+    let at = document.querySelector('#yz-hy-atis .yz-hy-at-balon'); if (at) at.textContent = metin;
+    if (sesli === false || !yzHySesAcik()) return;
+    try {
+        if (!window.speechSynthesis) return;
+        speechSynthesis.cancel();
+        let u = new SpeechSynthesisUtterance(metin.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}️]/gu, '').replace(/\s+/g, ' ').trim());
+        u.lang = 'tr-TR'; u.rate = 1.05; u.pitch = 1.35;
+        let ses = speechSynthesis.getVoices().filter(function (x) { return /^tr/i.test(x.lang); })[0]; if (ses) u.voice = ses;
+        speechSynthesis.speak(u);
+    } catch (e) {}
+}
+function yzHyIlkAd(ad) { return String(ad || '').trim().split(/\s+/)[0]; }
+// Çocuğun serisine robotun cevabı — hep cesaretlendirici, sayı karşılaştırması yok
+function yzHyCocukYorum(ad, oklar) {
+    let a = yzHyIlkAd(ad), d = oklar.map(function (p) { return YZ_DEGER[p] || 0; });
+    let sari = oklar.filter(function (p) { return p === 'X' || p === '10' || p === '9'; }).length, iska = oklar.filter(function (p) { return p === 'M'; }).length;
+    let ort = d.reduce(function (x, y) { return x + y; }, 0) / Math.max(1, d.length);
+    if (sari >= 3) return yzHySec([a + ' üç sarı! Devrelerim yandı! 🔥', 'Bu ne! ' + a + ' hep sarıya attı, ben korktum 😱']);
+    if (sari === 2) return yzHySec([a + ' iki sarı attı! Bip bop… bu beni zorlar 😳', 'Vay ' + a + '! İki tane sarı, işim zor 😬']);
+    if (sari === 1) return yzHySec([a + "'den bir sarı! 💛 Güzel nişan", 'Sarı geldi! ' + a + ' hedefe kilitlendi 🎯']);
+    if (ort >= 7) return yzHySec(['Güzel seri ' + a + '! Sınıf güçleniyor 💪', a + ' çok güzel attı. Ben de dikkatli olmalıyım 🤖']);
+    if (iska >= 2) return yzHySec(['Sorun yok ' + a + ', bir sonraki ok daha iyi olacak 💪', a + ', nefes al, çapa ve bırak. Sen yaparsın! 🙂']);
+    return yzHySec(['Her ok sınıfa puan! Teşekkürler ' + a + ' 🙂', a + ' attı, sınıf ilerliyor! 🏹', 'İyi gidiyor ' + a + '! Bakalım sırada kim var 👀']);
+}
+function yzHySiradakiYorum(ad) { let a = yzHyIlkAd(ad); return yzHySec(['Sırada ' + a + '! Göster bakalım 🏹', a + ', hazır mısın? Hedef seni bekliyor 🎯', 'Şimdi ' + a + ' atıyor… sessizlik lütfen 🤫']); }
+// sıradaki: bu turu henüz atmamış, listede şimdikinden sonraki ilk çocuk (döngüsel)
+function yzHySiradaki(kSimdi) {
+    let v = yzHyVeri(), n = v.uyeler.map(function (u) { return u.seriler.length; }); if (!n.length) return null;
+    let enAz = Math.min.apply(null, n), i0 = v.uyeler.findIndex(function (u) { return u.k === kSimdi; });
+    for (let s = 1; s <= v.uyeler.length; s++) { let u = v.uyeler[(i0 + s + v.uyeler.length) % v.uyeler.length]; if (u.seriler.length === enAz) return u; }
+    return null;
+}
+// ---- 🎯 robot atış kaplaması
+function yzHyBip(f, sure, tip) {
+    if (!yzHySesAcik()) return;
+    try {
+        let c = _yzHy.ac || (_yzHy.ac = new (window.AudioContext || window.webkitAudioContext)()), o = c.createOscillator(), g = c.createGain();
+        o.type = tip || 'square'; o.frequency.value = f; g.gain.setValueAtTime(.06, c.currentTime); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + sure);
+        o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + sure);
+    } catch (e) {}
+}
+function yzHyHedefSVG() {
+    let h = [['#f8fafc', 1], ['#f8fafc', .9], ['#1f2937', .8], ['#1f2937', .7], ['#2563eb', .6], ['#2563eb', .5], ['#dc2626', .4], ['#dc2626', .3], ['#facc15', .2], ['#facc15', .1]];
+    return '<svg class="yz-hy-at-hedef" viewBox="-110 -110 220 220">' + h.map(function (x) { return '<circle r="' + (x[1] * 100) + '" fill="' + x[0] + '" stroke="' + (x[0] === '#1f2937' ? '#9ca3af' : '#111') + '" stroke-width=".6"/>'; }).join('') + '<line x1="-4" y1="0" x2="4" y2="0" stroke="#111" stroke-width=".8"/><line x1="0" y1="-4" x2="0" y2="4" stroke="#111" stroke-width=".8"/><g id="yz-hy-at-oklar"></g></svg>';
+}
+function yzHyBotAtis(turIdx, bitince) {
+    yzHyCss();
+    let oklar = (window._kmHayaliOkListesi || [])[turIdx], v = yzHyVeri();
+    let bot = (_kmHayaliTurlar || [])[turIdx], biz = v.ta[turIdx];
+    if (bot == null) { if (bitince) bitince(); return; }
+    if (!oklar || !oklar.length) { oklar = [bot]; }
+    let goster = oklar.length > 36 ? oklar.slice(0, 36) : oklar, adim = Math.max(60, Math.min(260, Math.round(2600 / goster.length)));
+    let adA = /^Takım [0-9]+$/.test(v.A.ad || '') ? 'SINIF' : v.A.ad, setMod = !v.deg || !v.deg.kural || v.deg.kural.hedefTip === 'set';
+    let el = document.getElementById('yz-hy-atis'); if (el) el.remove();
+    el = document.createElement('div'); el.id = 'yz-hy-atis'; el.className = 'yz-hy-atis';
+    el.innerHTML = '<div class="yz-hy-at-ic"><div class="yz-hy-at-sol"><div class="yz-hy-at-balon">Şimdi sıra bende! Bip bop… 🤖</div>' + yzHyRobotSVG(v.zor, false) + '<div class="yz-hy-at-ad">' + esc(v.B.ad) + '</div></div>'
+        + '<div class="yz-hy-at-orta">' + yzHyHedefSVG() + '<div class="yz-hy-at-sayac"><small>ROBOTUN ' + (turIdx + 1) + '. ' + (setMod ? 'SETİ' : 'TURU') + '</small><b id="yz-hy-at-say">0</b></div></div></div>'
+        + '<div class="yz-hy-at-sonuc" id="yz-hy-at-sonuc"></div><div class="yz-hy-at-gec">dokun → geç</div>';
+    document.body.appendChild(el);
+    let bitti = false, zaman = [];
+    let kapat = function () { if (bitti) return; bitti = true; zaman.forEach(clearTimeout); el.classList.add('cik'); _yzHy.gizli = null; yzHyYenile(); setTimeout(function () { el.remove(); if (bitince) bitince(); }, 350); };
+    el.onclick = kapat;
+    yzHyKonus('Şimdi sıra bende! Bip bop… 🤖');
+    let toplam = 0, g = el.querySelector('#yz-hy-at-oklar'), say = el.querySelector('#yz-hy-at-say'), robot = el.querySelector('.yz-hy-robot');
+    let olcek = goster === oklar ? 1 : bot / Math.max(1, goster.reduce(function (a, b) { return a + b; }, 0));
+    goster.forEach(function (p, i) {
+        zaman.push(setTimeout(function () {
+            let r = p <= 0 ? 104 + Math.random() * 4 : (10 - p + Math.random() * .9) * 10, a = Math.random() * Math.PI * 2;
+            let x = Math.cos(a) * r, y = Math.sin(a) * r;
+            g.insertAdjacentHTML('beforeend', '<g class="yz-hy-at-ok" style="--x:' + x.toFixed(1) + 'px;--y:' + y.toFixed(1) + 'px"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.4" fill="' + (p >= 9 ? '#22c55e' : '#111827') + '" stroke="#fff" stroke-width="1.4"/></g>');
+            toplam += p; say.textContent = i === goster.length - 1 ? bot : Math.round(toplam * olcek);
+            if (robot) { robot.classList.remove('tep'); void robot.getBoundingClientRect(); robot.classList.add('tep'); }
+            yzHyBip(p >= 9 ? 880 : p <= 0 ? 160 : 300 + p * 40, .08, p <= 0 ? 'sawtooth' : 'square');
+        }, 700 + i * adim));
+    });
+    let son = 700 + goster.length * adim + 500;
+    zaman.push(setTimeout(function () {
+        let s = el.querySelector('#yz-hy-at-sonuc'), kim = biz > bot ? 'a' : bot > biz ? 'b' : 'e';
+        s.innerHTML = '<span style="color:' + v.A.renk + '">' + esc(adA) + ' <b>' + biz + '</b></span><span class="vs">—</span><span style="color:' + v.B.renk + '"><b>' + bot + '</b> ROBOT</span>'
+            + '<div class="yz-hy-at-kazan ' + kim + '">' + (kim === 'a' ? '🏆 ' + (setMod ? 'SETİ' : 'TURU') + ' ' + esc(adA) + ' ALDI!' : kim === 'b' ? '🤖 ' + (setMod ? 'SETİ' : 'TURU') + ' ROBOT ALDI!' : '🤝 BERABERE!') + '</div>';
+        s.classList.add('goster');
+        if (kim === 'a') { yzHyBip(660, .15, 'triangle'); setTimeout(function () { yzHyBip(990, .3, 'triangle'); }, 160); }
+        else yzHyBip(220, .3, 'sawtooth');
+        yzHyKonus(kim === 'a' ? yzHySec(['Ahh! Pillerim bitiyor… 🔋 Bu ' + (setMod ? 'set' : 'tur') + ' sizin!', 'Nasıl olur! Sınıf beni geçti 😵', 'Tamam tamam, bu sefer kazandınız… ama bekleyin 😤'])
+            : kim === 'b' ? yzHySec(['Bu ' + (setMod ? 'seti' : 'turu') + ' ben aldım! Ama pes etmeyin 😄', 'Bip bop, kazandım! Hadi yakalayın beni 🤖', 'Benim devrelerim çok hızlı! Sıradaki sizin olabilir 😏'])
+            : 'Berabere! Çok heyecanlı 😮');
+    }, son));
+    zaman.push(setTimeout(kapat, son + 3600));
+}
+// ---- Kaydet → yorum, robot atışı, sıradaki
+(function () {
+    let asilKaydet = yzTkGirisKaydet;
+    yzTkGirisKaydet = function () {
+        let g = _yzTk.giris, hayali = typeof _kmRakipTipi !== 'undefined' && _kmRakipTipi === 'hayali' && _kmYarismaAktif;
+        if (!hayali || !g || g.oklar.length < g.okSay) return asilKaydet.apply(this, arguments);
+        clearTimeout(_yzHy.devamT); // yalnız EN SON kaydın 'sıradaki' zamanlayıcısı çalışsın
+        let k = g.k, oklar = g.oklar.slice(), once = (_kmHayaliTurlar || []).length;
+        let sayi = function () { let i = k.indexOf('|'), sp = turnuvaDB[k.slice(0, i)] && turnuvaDB[k.slice(0, i)][k.slice(i + 1)]; return sp ? (sp.seriler || []).length : 0; }, n0 = sayi();
+        let r = asilKaydet.apply(this, arguments);
+        if (sayi() <= n0) return r; // kaydedilmedi (ör. günlük limit onayı bekliyor) → yorum/sıradaki yok
+        try {
+            if (typeof _kmHayaliRakipGuncelle === 'function') _kmHayaliRakipGuncelle();
+            let sonra = (_kmHayaliTurlar || []).length, aktif = _kmYarismaAktif;
+            yzHyKonus(yzHyCocukYorum(yzKAd(k), oklar));
+            let devam = function () {
+                if (!_kmYarismaAktif || _kmRakipTipi !== 'hayali') return;
+                let s = yzHySiradaki(k); if (!s) return;
+                _yzHy.devamT = setTimeout(function () { if (!_kmYarismaAktif || _yzTk.giris || document.getElementById('yz-hy-atis')) return; yzHyKonus(yzHySiradakiYorum(s.ad)); yzTkGirisAc(yzEnc(s.k), yzTkOkSayisi(yzHyVeri().deg && yzHyVeri().deg.kural, yzHyVeri().deg)); }, 400);
+            };
+            if (sonra > once) { _yzHy.gizli = once; yzHyYenile(); setTimeout(function () { yzHyBotAtis(sonra - 1, devam); }, 1500); }
+            else if (aktif) _yzHy.devamT = setTimeout(devam, 1400);
+        } catch (e) { console.warn('hayali kaydet', e); }
+        return r;
+    };
+    // yeni maç: robot okları baştan
+    if (typeof kmYarismaBaslat === 'function') { let asilB = kmYarismaBaslat; kmYarismaBaslat = function () { window._kmHayaliOkListesi = []; _yzHy.konus = null; _yzHy.sayim = {}; _yzHy.botN = 0; return asilB.apply(this, arguments); }; }
+})();
+(function () {
+    let st = document.createElement('style'); st.id = 'yz-hy2-css';
+    st.textContent = [
+        '.yz-hy-ust{position:relative}.yz-hy-ses{position:absolute;right:0;top:0;width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;font-size:18px;cursor:pointer}',
+        '.yz-hy-balon-yeni{animation:yzHyBalon .5s cubic-bezier(.2,1.4,.4,1)}@keyframes yzHyBalon{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}',
+        '.yz-hy-atis{position:fixed;inset:0;z-index:31800;background:radial-gradient(90% 70% at 50% 40%,rgba(49,46,129,.96),rgba(3,7,18,.97));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;color:#fff;cursor:pointer;animation:yzHyAtGir .35s ease-out}',
+        '.yz-hy-atis.cik{opacity:0;transition:opacity .3s}@keyframes yzHyAtGir{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}',
+        '.yz-hy-at-ic{display:flex;align-items:center;justify-content:center;gap:5vw;width:min(1400px,94vw)}',
+        '.yz-hy-at-sol{display:flex;flex-direction:column;align-items:center;gap:1vh;min-width:0}.yz-hy-at-sol .yz-hy-robot{width:auto;height:min(30vh,40vw);animation:yzHyBob 1.4s ease-in-out infinite}.yz-hy-at-sol .yz-hy-robot.tep{animation:yzHyTep .18s ease-out}',
+        '@keyframes yzHyTep{0%{transform:translateX(0)}40%{transform:translateX(-14px) rotate(-5deg)}100%{transform:none}}',
+        '.yz-hy-at-balon{background:#fff;color:#1e1b4b;border-radius:16px;padding:8px 14px;font-weight:800;font-size:clamp(14px,2.4vh,30px);max-width:min(420px,40vw);text-align:center}',
+        '.yz-hy-at-ad{font-weight:900;font-size:clamp(16px,3vh,40px);color:#c4b5fd}',
+        '.yz-hy-at-orta{display:flex;flex-direction:column;align-items:center;gap:1vh}.yz-hy-at-hedef{width:min(46vh,44vw);height:auto;filter:drop-shadow(0 10px 40px rgba(250,204,21,.25))}',
+        '.yz-hy-at-ok{animation:yzHyOk .28s cubic-bezier(.2,1.6,.4,1) both;transform-box:fill-box;transform-origin:center}@keyframes yzHyOk{0%{transform:scale(3);opacity:0}100%{transform:none;opacity:1}}',
+        '.yz-hy-at-sayac{text-align:center}.yz-hy-at-sayac small{display:block;font-weight:900;letter-spacing:.2em;color:#a5b4fc;font-size:clamp(11px,1.8vh,22px)}.yz-hy-at-sayac b{font-size:clamp(48px,10vh,140px);font-weight:900;line-height:1;text-shadow:0 0 30px #8b5cf6}',
+        '.yz-hy-at-sonuc{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1.4vw;font-size:clamp(22px,5vh,72px);font-weight:900;opacity:0;transform:scale(.7);transition:all .45s cubic-bezier(.2,1.5,.4,1)}.yz-hy-at-sonuc.goster{opacity:1;transform:none}.yz-hy-at-sonuc .vs{color:#64748b}',
+        '.yz-hy-at-kazan{flex-basis:100%;text-align:center;font-size:clamp(24px,6vh,90px);padding:.6vh 2vw;border-radius:18px}.yz-hy-at-kazan.a{color:#fde047;background:rgba(250,204,21,.15);animation:yzHyZipla .6s ease-in-out infinite alternate}.yz-hy-at-kazan.b{color:#c4b5fd;background:rgba(139,92,246,.18)}.yz-hy-at-kazan.e{color:#fff}',
+        '.yz-hy-at-gec{position:absolute;bottom:2vh;right:2vw;font-size:13px;color:#94a3b8}',
+        '@media (max-width:700px){.yz-hy-at-ic{flex-direction:column;gap:2vh}.yz-hy-at-sol .yz-hy-robot{height:18vh}.yz-hy-at-balon{max-width:86vw}}',
+        '@media (prefers-reduced-motion:reduce){.yz-hy-atis,.yz-hy-atis *{animation:none!important;transition:none!important}}'
+    ].join('\n');
+    document.head.appendChild(st);
 })();

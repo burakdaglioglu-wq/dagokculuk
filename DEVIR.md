@@ -5785,3 +5785,10 @@ paneli/ana ekran — düğmenin ortasındaki öğe gerçekten düğme mi + onay 
 - Küçük yaş, herkes tek hayali rakibe karşı. Tablet canlı maç ekranı ve 📺 TV (`yzTkHTML` hayali dalı) aynı sahneyi çiziyor: `yzHyHTML` (dagsk-km-yarisma-pro.js sonu). SINIF ↔ SVG robot (zorluğa göre renk, önde olunca üzgün), yarış pisti (set/toplam/tur hedefi), tur kutuları, robot balonu, çocuk düğmeleri (dokun → `yzTkGirisAc` → `kmYarismaSeriKaydet`). Sıralama yok, yalnız ✓ attı / 🏹 sırada.
 - BUG düzeltmesi: `_kmHayaliRakipGuncelle` robot turunu artık sınıfta HERKES o turu atınca üretiyor (eskiden ilk çocuk atınca → set 3/8 kişiyle karar veriliyordu).
 - Test 122 (tablet 1180, TV 1920, telefon 390).
+
+## 124. 🤖 Hayali Rakip 2: robot atışı, otomatik sıradaki, robot konuşur (2026-11-12, v409–v410)
+
+- v409: takım adı — sahnede ada dokun (`yzHyAdDegis`), kurulumda "Takımın adı" kutusu.
+- v410: sınıf turu bitince `yzHyBotAtis` tam ekran kaplaması (z 31800, TV 31500 üstü, skor penceresi 32000 altı): robot geri teper, okları (`window._kmHayaliOkListesi`, app.js `_kmHayaliTurUret` yazar) hedefe düşer, sayaç, "SETİ … ALDI". Oynayana kadar sahnede sonuç gizli (`_yzHy.gizli`).
+- `yzTkGirisKaydet` sarmalı: gerçekten kaydedildiyse (seri sayısı arttı) robot çocuğa göre konuşur (`yzHyCocukYorum`, hep cesaretlendirici), sonra `yzHySiradaki` → bu turu atmamış sıradaki çocuğun penceresi kendiliğinden açılır (`_yzHy.devamT`, yalnız son kaydınki). 🔊 robot sesi speechSynthesis tr-TR (`dag_yz_hy_ses`).
+- Test 122 genişletildi (otomatik sıradaki, robot atışı + sonuç, üç sarı yorumu). Testte günlük seri limitine takılmayan sporcular seçilir.
