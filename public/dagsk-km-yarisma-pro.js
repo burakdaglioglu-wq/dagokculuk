@@ -3232,7 +3232,7 @@ function yzSihirbazCiz() {
             + '<div class="yz-alt">Değiştirmek için: bir sporcuya dokun → başka takımdaki sporcuya dokun (yer değiştirir) ya da “＋ buraya taşı”.</div>';
     } else if (_yzK.tur === 'hayali') {
         takimHTML = (_kmTakimlar[0] ? '<div class="yz-sk-cipler" style="margin-top:8px;align-items:center"><span class="yz-alt">Takımın adı:</span><input class="yz-tk-ad-gir" style="--tr:var(--accent-orange);max-width:260px" value="' + esc(/^Takım [0-9]+$/.test(_kmTakimlar[0].ad || '') ? '' : _kmTakimlar[0].ad) + '" placeholder="SINIF" maxlength="24" aria-label="Takım adı" oninput="yzTakimAd(0,this.value,1)" onchange="yzTakimAd(0,this.value)" onkeydown="if(event.key===\'Enter\')this.blur()"></div>' : '')
-            + '<div class="yz-sk-cipler" style="margin-top:8px"><span class="yz-alt" style="align-self:center">Rakip zorluğu:</span>' + ['rookie', 'dengeli', 'usta'].map(function (z) { return '<button class="yz-cip' + (_kmHayaliZorluk === z ? ' aktif' : '') + '" onclick="_kmHayaliZorluk=\'' + z + '\'; kmYarismaKurulumCiz()">' + HAYALI_ZORLUKLER[z].avatar + ' ' + HAYALI_ZORLUKLER[z].ad + '</button>'; }).join('') + '</div>';
+            + yzHyKurulumHTML();
     } else {
         let n = kat.length, tur = n >= 2 ? Math.ceil(Math.log2(n)) : 0;
         takimHTML = '<div class="yz-alt" style="margin-top:6px">' + (n >= 2 ? n + ' sporcu · ' + tur + ' tur' + (n & (n - 1) ? ' · bazı sporcular ilk turu bay geçer' : '') : 'En az 2 sporcu seç.') + '</div>';
@@ -4374,6 +4374,7 @@ function yzHyVeri() {
     let deg = null;
     try { deg = kmYarismaMacSonucDegerlendir([{ t: A, idx: 0, turlar: ta }, { t: B, idx: 1, turlar: tb }]); } catch (e) {}
     let z = HAYALI_ZORLUKLER[_kmHayaliZorluk] || HAYALI_ZORLUKLER.dengeli;
+    try { if (deg && deg.durum === 'bitti' && _yzHy.gizli == null && B.hyMac) yzHySonucIsle(deg.kazananIdx, B); } catch (e) {}
     return { A: A, B: B, ta: ta, tb: tb, deg: deg, uyeler: yzTkUyeler(A, _kmYarismaBaslangicPuan, false), z: z, zor: HAYALI_ZORLUKLER[_kmHayaliZorluk] ? _kmHayaliZorluk : 'dengeli', yorum: (_kmHayaliYorumGecmisi[0] || {}).metin || '' };
 }
 function yzHySonTespit(v) {
@@ -4422,21 +4423,22 @@ function yzHyHTML(v, olay, tv) {
         let a = v.ta[i], b = v.tb[i], c = a != null && b != null ? (a > b ? 'a' : b > a ? 'b' : 'e') : '';
         kutular += '<div class="yz-hy-kutu ' + c + '"><small>' + (k && setMod && i >= k.maxSet ? 'EK' : (i + 1) + '. ' + (setMod ? 'SET' : 'TUR')) + '</small><b class="ka">' + (a != null ? a : '·') + '</b><b class="kb">' + (b != null ? b : '·') + '</b></div>';
     }
-    let durum = kaz === 0 ? '<div class="yz-hy-son kaz">🏆 ' + esc(adA) + ' KAZANDI! Hep birlikte yendiniz!</div>'
-        : kaz === 1 ? '<div class="yz-hy-son kay">🤖 Bu sefer robot kazandı — rövanş!</div>'
+    let durum = kaz === 0 ? '<div class="yz-hy-son kaz">🏆 ' + esc(adA) + ' KAZANDI! Hep birlikte yendiniz!<small>' + (sv >= 5 ? '👑 PATRONU YENDİNİZ! Efsane sınıf!' : R.ik + ' ' + esc(R.ad) + ' güçlendi: gelecek maçta ' + YZ_HY_SV_AD[sv] + '!') + '</small></div>'
+        : kaz === 1 ? '<div class="yz-hy-son kay">' + R.ik + ' Bu sefer ' + esc(R.kisa.toLocaleLowerCase('tr-TR')) + ' kazandı — rövanş!<small>' + svAd + ' seviyesinde tekrar deneyin</small></div>'
         : ek ? '<div class="yz-hy-son ek">🎯 BERABERE — EK ATIŞ: tek ok!</div>'
         : '<div class="yz-hy-tur"><b>' + (enAz + 1) + '. ' + (setMod ? 'SET' : 'TUR') + '</b> · ' + atti + '/' + v.uyeler.length + ' attı' + (olay.son ? ' · 🎯 <b>' + esc(yzKisaAd(olay.son.ad)) + '</b> attı!' : '') + '</div>';
-    let ilkSoz = (HAYALI_SOZLER.baslangic[v.zor] || [''])[0];
+    let R = yzHyRakip(), sv = yzHySv(), rk = yzHyRakipKey(), svAd = YZ_HY_SV_AD[sv - 1]; yzHyYayinCss();
+    let ilkSoz = R.basla[0];
     let konus = _yzHy.konus && Date.now() - _yzHy.konus.z < 9000 ? _yzHy.konus.metin : null;
     let balon = konus ? esc(konus) : olay.bot ? 'Ben de attım: <b>' + olay.bot.p + '</b>!' : esc(v.yorum || ilkSoz);
     return '<div class="yz-hy' + (tv ? ' tv' : '') + (kaz != null ? ' bitti' : '') + '">'
-        + '<div class="yz-hy-ust"><div class="yz-hy-hedef">🤖 HAYALİ RAKİP · ' + esc(v.z.ad) + '<small>' + hedefYazi + '</small></div><button type="button" class="yz-hy-ses" onclick="yzHySesDegis()" title="Robotun sesi">' + (yzHySesAcik() ? '🔊' : '🔇') + '</button></div>'
+        + '<div class="yz-hy-ust"><div class="yz-hy-hedef">' + R.ik + ' HAYALİ RAKİP · ' + esc(R.ad) + '<span class="yz-hy-sv-rozet">' + svAd + '</span><small>' + hedefYazi + '</small></div><button type="button" class="yz-hy-ses" onclick="yzHySesDegis()" title="Rakibin sesi">' + (yzHySesAcik() ? '🔊' : '🔇') + '</button></div>'
         + '<div class="yz-hy-sahne">'
         + '<div class="yz-hy-taraf sinif' + (kaz === 0 ? ' kazan' : '') + '" style="--hr:' + v.A.renk + '"><div class="yz-hy-sinif-ik">🏹</div><button type="button" class="yz-hy-ad yz-hy-ad-btn" onclick="yzHyAdDegis()" title="Takım adını değiştir">' + esc(adA) + ' <span class="yz-hy-kalem">✏️</span></button><div class="yz-hy-puan">' + buyuk[0] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + ' · ' + v.uyeler.length + ' okçu birlikte</div></div>'
         + '<div class="yz-hy-vs">VS</div>'
-        + '<div class="yz-hy-taraf rakip' + (kaz === 1 ? ' kazan' : '') + (olay.bot ? ' atti' : '') + '" style="--hr:' + v.B.renk + '"><div class="yz-hy-balon">' + balon + '</div>' + yzHyRobotSVG(v.zor, buyuk[0] > buyuk[1]) + '<div class="yz-hy-ad">' + esc(v.B.ad) + '</div><div class="yz-hy-puan">' + buyuk[1] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + '</div></div>'
+        + '<div class="yz-hy-taraf rakip' + (kaz === 1 ? ' kazan' : '') + (olay.bot ? ' atti' : '') + '" style="--hr:' + v.B.renk + '"><div class="yz-hy-balon">' + balon + '</div>' + yzHyRakipSVG(rk, sv, buyuk[0] > buyuk[1]) + '<div class="yz-hy-ad">' + esc(v.B.ad) + '</div><div class="yz-hy-puan">' + buyuk[1] + '</div><div class="yz-hy-alt">' + (setMod ? 'set puanı' : 'puan') + '</div></div>'
         + '</div>'
-        + '<div class="yz-hy-pist">' + pist(0, v.A.renk, '🏹', 'SINIF') + pist(1, v.B.renk, '🤖', 'ROBOT') + '</div>'
+        + '<div class="yz-hy-pist">' + pist(0, v.A.renk, '🏹', 'SINIF') + pist(1, v.B.renk, R.ik, R.kisa) + '</div>'
         + '<div class="yz-hy-kutular" style="--ra:' + v.A.renk + ';--rb:' + v.B.renk + '">' + kutular + '</div>'
         + durum
         + '<div class="yz-hy-cocuklar">' + cocuk + '</div>'
@@ -4503,7 +4505,7 @@ function yzHyCss() {
         if (v && v.mod === 'hayali' && typeof _kmYarismaAktif !== 'undefined' && _kmYarismaAktif && _kmTakimlar[0]) {
             yzHyCss();
             let hv = yzHyVeri(), olay = yzHySonTespit(hv);
-            return '<button class="yz-tv-kapat" onclick="yzTkTvKapat()">✕ Kapat</button><div class="yz-tv-bas"><div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">SINIF vs ROBOT</div><div class="yz-tv-alt">hep birlikte · her ok sınıfın</div></div>' + yzTkSayacHTML('yz-tk-tv-sayac') + '</div>'
+            return '<button class="yz-tv-kapat" onclick="yzTkTvKapat()">✕ Kapat</button><div class="yz-tv-bas"><div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">SINIF vs ' + yzHyRakip().kisa + '</div><div class="yz-tv-alt">hep birlikte · her ok sınıfın</div></div>' + yzTkSayacHTML('yz-tk-tv-sayac') + '</div>'
                 + '<div class="yz-tk-govde">' + yzHyHTML(hv, olay, true) + '</div>';
         }
         let h = asilHTML.apply(this, arguments);
@@ -4558,7 +4560,7 @@ function yzHyKonus(metin, sesli) {
         if (!window.speechSynthesis) return;
         speechSynthesis.cancel();
         let u = new SpeechSynthesisUtterance(metin.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}️]/gu, '').replace(/\s+/g, ' ').trim());
-        u.lang = 'tr-TR'; u.rate = 1.05; u.pitch = 1.35;
+        let R = yzHyRakip(); u.lang = 'tr-TR'; u.rate = R.rate || 1.05; u.pitch = R.pitch || 1.35;
         let ses = speechSynthesis.getVoices().filter(function (x) { return /^tr/i.test(x.lang); })[0]; if (ses) u.voice = ses;
         speechSynthesis.speak(u);
     } catch (e) {}
@@ -4569,10 +4571,11 @@ function yzHyCocukYorum(ad, oklar) {
     let a = yzHyIlkAd(ad), d = oklar.map(function (p) { return YZ_DEGER[p] || 0; });
     let sari = oklar.filter(function (p) { return p === 'X' || p === '10' || p === '9'; }).length, iska = oklar.filter(function (p) { return p === 'M'; }).length;
     let ort = d.reduce(function (x, y) { return x + y; }, 0) / Math.max(1, d.length);
-    if (sari >= 3) return yzHySec([a + ' üç sarı! Devrelerim yandı! 🔥', 'Bu ne! ' + a + ' hep sarıya attı, ben korktum 😱']);
-    if (sari === 2) return yzHySec([a + ' iki sarı attı! Bip bop… bu beni zorlar 😳', 'Vay ' + a + '! İki tane sarı, işim zor 😬']);
+    let R = yzHyRakip();
+    if (sari >= 3) return yzHySec([a + ' üç sarı! ' + R.sari, 'Bu ne! ' + a + ' hep sarıya attı, ben korktum 😱']);
+    if (sari === 2) return yzHySec([a + ' iki sarı attı! ' + R.kork, 'Vay ' + a + '! İki tane sarı, işim zor 😬']);
     if (sari === 1) return yzHySec([a + "'den bir sarı! 💛 Güzel nişan", 'Sarı geldi! ' + a + ' hedefe kilitlendi 🎯']);
-    if (ort >= 7) return yzHySec(['Güzel seri ' + a + '! Sınıf güçleniyor 💪', a + ' çok güzel attı. Ben de dikkatli olmalıyım 🤖']);
+    if (ort >= 7) return yzHySec(['Güzel seri ' + a + '! Sınıf güçleniyor 💪', a + ' çok güzel attı. Ben de dikkatli olmalıyım ' + R.ik]);
     if (iska >= 2) return yzHySec(['Sorun yok ' + a + ', bir sonraki ok daha iyi olacak 💪', a + ', nefes al, çapa ve bırak. Sen yaparsın! 🙂']);
     return yzHySec(['Her ok sınıfa puan! Teşekkürler ' + a + ' 🙂', a + ' attı, sınıf ilerliyor! 🏹', 'İyi gidiyor ' + a + '! Bakalım sırada kim var 👀']);
 }
@@ -4597,50 +4600,235 @@ function yzHyHedefSVG() {
     let h = [['#f8fafc', 1], ['#f8fafc', .9], ['#1f2937', .8], ['#1f2937', .7], ['#2563eb', .6], ['#2563eb', .5], ['#dc2626', .4], ['#dc2626', .3], ['#facc15', .2], ['#facc15', .1]];
     return '<svg class="yz-hy-at-hedef" viewBox="-110 -110 220 220">' + h.map(function (x) { return '<circle r="' + (x[1] * 100) + '" fill="' + x[0] + '" stroke="' + (x[0] === '#1f2937' ? '#9ca3af' : '#111') + '" stroke-width=".6"/>'; }).join('') + '<line x1="-4" y1="0" x2="4" y2="0" stroke="#111" stroke-width=".8"/><line x1="0" y1="-4" x2="0" y2="4" stroke="#111" stroke-width=".8"/><g id="yz-hy-at-oklar"></g></svg>';
 }
+// ================================================================================================
+// v412 (2026-11-12) HAYALİ RAKİP 3 — kullanıcı: "rakip seç + seviye atla, ve bunlara gerçek yarışma atışları gibi animasyon ver".
+//   RAKİPLER: 🤖 Robot Bip-Bop, 🐉 Ateş Ejderhası, 🏴‍☠️ Korsan Kaptan, 👽 Uzaylı Zıp — her birinin çizimi, sesi (perde/hız) ve cümleleri ayrı.
+//   SEVİYE: her rakibin her grup için (sınıftaki çoğunluk grubu: minikler/küçükler…) Sv.1–4 + 👑 PATRON. Rakibin ok ortalaması SINIFIN KENDİ
+//     ortalamasına göre: Sv.1 −1.6 … Sv.3 −0.3 … PATRON +0.9 (küçükler de büyükler de aynı heyecanı yaşar). Sınıf maçı kazanınca rakip bir seviye
+//     güçlenir (bir maç bir kez sayılır: _kmTakimlar[1].hyMac). Koç kurulumda −/＋ ile elle değiştirebilir. 'dag_km_hyseviye_<konum>' km-ortak ile cihazlara gider.
+//   ATIŞ: yayın tarzı — CANLI şeridi, skor tabelası, atış hattında okçu yayı çeker/bırakır, ok uçar, HEDEF KAMERASI'nda ok saplanır + puan patlar,
+//     alt bantta ad/seviye/ok no/nabız ve spiker; ilk 3 ok tek tek, kalanlar hızlı. Dokun → geç.
+// ================================================================================================
+const YZ_HY_RAKIP = {
+    robot: { ad: 'Robot Bip-Bop', kisa: 'ROBOT', ik: '🤖', renk: '#a78bfa', pitch: 1.35, rate: 1.05, nabiz: '⚙️ {n} RPM', nb: 118,
+        basla: ['Bip bop! Hedef sistemlerim hazır 🤖', 'Sistemlerim çalışıyor. Hazır mısınız? 🤖'], atiyor: ['Şimdi sıra bende! Bip bop… 🤖', 'Hedef kilitlendi… ateş! 🎯'],
+        sinif: ['Ahh! Pillerim bitiyor… 🔋 Bu {s} sizin!', 'Nasıl olur! Devrelerim karıştı 😵'], ben: ['Bu {s} ben aldım! Ama pes etmeyin 😄', 'Bip bop, kazandım! Hadi yakalayın beni 🤖'],
+        sari: 'Devrelerim yandı! 🔥', kork: 'Bip bop… bu beni zorlar 😳', yenildi: 'Sistem çöktü! Beni yendiniz! Yükseltme takıp geri geleceğim 🔧', yendi: 'Bip bop, bu maç benim! Rövanşa hazırım 🤖' },
+    ejderha: { ad: 'Ateş Ejderhası', kisa: 'EJDERHA', ik: '🐉', renk: '#f97316', pitch: .55, rate: .9, nabiz: '🔥 {n}°', nb: 900,
+        basla: ['Grrr! Ben Ateş Ejderhası! Oklarınız beni korkutamaz 🔥'], atiyor: ['Şimdi ejderha ateşi geliyor! 🔥', 'Grrr… nefesimi tutuyorum… BIRAK! 🐉'],
+        sinif: ['Ateşim söndü! Bu {s} sizin 💨', 'Grr! Bu sınıf ejderhadan güçlü! 😵'], ben: ['Grrr! Bu {s} ejderhanın! 🔥', 'Ateşim çok sıcak, yetişebilir misiniz? 🐉'],
+        sari: 'Kanatlarım titredi! 😱', kork: 'Grr… kuyruğum titriyor 😳', yenildi: 'Ahh! Ateşim söndü! Mağarama dönüp daha güçlü geleceğim 🐉', yendi: 'Grrr! Hazine benim! Rövanş ister misiniz? 🔥' },
+    korsan: { ad: 'Korsan Kaptan', kisa: 'KAPTAN', ik: '🏴‍☠️', renk: '#eab308', pitch: .8, rate: .95, nabiz: '♥ {n}', nb: 104,
+        basla: ['Yo-ho-ho! Hazinemi almak isteyen okçular, hazır olun! 🏴‍☠️'], atiyor: ['Yelkenler fora! Okum geliyor! ⚓', 'Tek gözle bile nişan alırım, yo-ho! 🏴‍☠️'],
+        sinif: ['Gemim batıyor! Bu {s} sizin ⚓', 'Hay papağanımın tüyü! Siz kazandınız 🦜'], ben: ['Yo-ho-ho! Bu {s} kaptanın! 🏴‍☠️', 'Hazine bende kalacak, tayfa! 💰'],
+        sari: 'Papağanım bayıldı! 🦜', kork: 'Bu tayfa çok güçlü… 😳', yenildi: 'Hazinem sizin oldu! Ama yeni gemimle geri döneceğim ⚓', yendi: 'Yo-ho-ho! Hazine benim! Rövanşa var mısınız? 💰' },
+    uzayli: { ad: 'Uzaylı Zıp', kisa: 'UZAYLI', ik: '👽', renk: '#22c55e', pitch: 1.8, rate: 1.15, nabiz: '📡 {n} Hz', nb: 77,
+        basla: ['Zıp zıp! Uzaydan okçuluk öğrenmeye geldim 👽'], atiyor: ['Uzay oku fırlatılıyor! 🚀', 'Antenlerim hedefi buldu… zıp! 👽'],
+        sinif: ['Gezegenime haber vermeliyim, bu {s} sizin! 🛸', 'Zıp! Dünyalılar çok iyi atıyor 😵'], ben: ['Zıp zıp! Bu {s} uzaylının! 👽', 'Uzay oklarım çok hızlı! 🚀'],
+        sari: 'Antenlerim kıvrıldı! 😱', kork: 'Uzay gemim titriyor 😳', yenildi: 'Zıp! Dünyalılar kazandı! Daha güçlü bir gemiyle döneceğim 🛸', yendi: 'Zıp zıp, bu maç benim! Bir daha oynayalım mı? 👽' }
+};
+const YZ_HY_SV = [-1.6, -0.9, -0.3, 0.3, 0.9], YZ_HY_SV_AD = ['Sv.1', 'Sv.2', 'Sv.3', 'Sv.4', '👑 PATRON'];
+function yzHyRakipKey(kurulum) {
+    let t = !kurulum && typeof _kmTakimlar !== 'undefined' && _kmTakimlar && _kmTakimlar[1], k = t && t.hyRakip;
+    if (!k) { k = _yzHy.secRakip; if (!k) try { k = localStorage.getItem('dag_yz_hy_rakip'); } catch (e) {} }
+    return YZ_HY_RAKIP[k] ? k : 'robot';
+}
+function yzHyRakip(kurulum) { return YZ_HY_RAKIP[yzHyRakipKey(kurulum)]; }
+function yzHySv() { let t = typeof _kmTakimlar !== 'undefined' && _kmTakimlar && _kmTakimlar[1]; return (t && t.hySeviye) || ({ rookie: 1, dengeli: 3, usta: 4 }[typeof _kmHayaliZorluk !== 'undefined' ? _kmHayaliZorluk : ''] || 3); }
+function yzHySeviyeAnahtar() { return 'dag_km_hyseviye_' + ((typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum) ? _kmAktifKonum : 'varsayilan'); }
+function yzHySeviyeOku() { try { return JSON.parse(localStorage.getItem(yzHySeviyeAnahtar()) || '{}') || {}; } catch (e) { return {}; } }
+function yzHyGrup(uyeler) { let c = {}, en = 'genel', n = 0; (uyeler || []).forEach(function (u) { c[u.g] = (c[u.g] || 0) + 1; }); Object.keys(c).forEach(function (g) { if (c[g] > n) { n = c[g]; en = g; } }); return en; }
+function yzHySeviye(grup, rk) { let d = yzHySeviyeOku(), x = d[grup] && d[grup][rk]; return Math.max(1, Math.min(5, (x && x.sv) || 1)); }
+function yzHySeviyeYaz(grup, rk, sv, mac) {
+    let d = yzHySeviyeOku(); d[grup] = d[grup] || {}; let x = d[grup][rk] || {}; x.sv = Math.max(1, Math.min(5, sv)); if (mac != null) x.mac = mac; d[grup][rk] = x;
+    try { localStorage.setItem(yzHySeviyeAnahtar(), JSON.stringify(d)); } catch (e) {}
+}
+function yzHySinifOrt(uyeler) {
+    let l = (uyeler || []).map(function (u) { try { return typeof kmCanavarSporcuOrtalama === 'function' ? (kmCanavarSporcuOrtalama(u.g, u.ad) || 0) : 0; } catch (e) { return 0; } }).filter(function (x) { return x > 0; });
+    return l.length ? l.reduce(function (a, b) { return a + b; }, 0) / l.length : 6;
+}
+function yzHyOrt(sv, uyeler) { return Math.round(Math.max(2, Math.min(9.6, yzHySinifOrt(uyeler) + YZ_HY_SV[sv - 1])) * 100) / 100; }
+window.yzHyOrtHesap = function () { let t = typeof _kmTakimlar !== 'undefined' && _kmTakimlar && _kmTakimlar[1]; return t && t.hyOrt ? t.hyOrt : null; };
+// Maç bitti → seviye (bir maç bir kez). Sınıf kazanınca rakip güçlenir, kaybedince aynı seviyede rövanş.
+function yzHySonucIsle(kaz, B) {
+    if (!B || !B.hyMac || !B.hyRakip) return;
+    let d = yzHySeviyeOku(), x = d[B.hyGrup] && d[B.hyGrup][B.hyRakip]; if (x && x.mac === B.hyMac) return;
+    let R = YZ_HY_RAKIP[B.hyRakip] || YZ_HY_RAKIP.robot;
+    yzHySeviyeYaz(B.hyGrup, B.hyRakip, kaz === 0 ? B.hySeviye + 1 : B.hySeviye, B.hyMac);
+    setTimeout(function () { yzHyKonus(kaz === 0 ? (B.hySeviye >= 5 ? 'Patronu yendiniz! Siz efsane bir sınıfsınız! 👑' : R.yenildi) : R.yendi); }, 600);
+}
+function yzHyTac(sv) { return sv >= 5 ? '<path d="M28 -2 L32 -16 L41 -7 L50 -19 L59 -7 L68 -16 L72 -2 Z" fill="#facc15" stroke="#a16207" stroke-width="2"/><circle cx="50" cy="-9" r="2.6" fill="#ef4444"/>' : ''; }
+function yzHyRakipSVG(rk, sv, kizgin) {
+    sv = sv || 1; let vb = sv >= 5 ? '0 -22 100 142' : '0 0 100 120', tac = yzHyTac(sv);
+    if (rk === 'ejderha') {
+        let c = '#f97316', k = '#c2410c', a = '#fdba74';
+        return '<svg class="yz-hy-robot rk-ejderha" viewBox="' + vb + '" aria-hidden="true"><path d="M24 74 L2 38 L10 62 L0 58 L16 86 Z" fill="' + k + '"/><path d="M76 74 L98 38 L90 62 L100 58 L84 86 Z" fill="' + k + '"/>'
+            + '<ellipse cx="50" cy="94" rx="27" ry="25" fill="' + c + '"/><ellipse cx="50" cy="98" rx="15" ry="17" fill="#fde68a"/><path d="M43 86h14M42 96h16M43 106h14" stroke="#f59e0b" stroke-width="2"/>'
+            + '<path d="M30 30 L22 6 L42 24 Z" fill="#fde68a"/><path d="M70 30 L78 6 L58 24 Z" fill="#fde68a"/><ellipse cx="50" cy="45" rx="29" ry="25" fill="' + c + '"/>'
+            + '<path d="M41 22 L45 13 L49 22 M51 22 L55 13 L59 22" fill="' + k + '"/><ellipse cx="50" cy="58" rx="18" ry="11" fill="' + a + '"/><circle cx="44" cy="56" r="2" fill="#7c2d12"/><circle cx="56" cy="56" r="2" fill="#7c2d12"/>'
+            + '<circle cx="38" cy="40" r="7.5" fill="#fff"/><circle cx="62" cy="40" r="7.5" fill="#fff"/><circle class="yz-hy-goz" cx="39" cy="41" r="3.8" fill="#111"/><circle class="yz-hy-goz" cx="61" cy="41" r="3.8" fill="#111"/>'
+            + (kizgin ? '<path d="M29 30 L45 35 M71 30 L55 35" stroke="#111" stroke-width="3" stroke-linecap="round"/><path d="M41 65 Q50 60 59 65" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round"/>' : '<path d="M41 63 Q50 69 59 63" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M46 66 l2 4 l2 -4" fill="#fff"/>') + tac + '</svg>';
+    }
+    if (rk === 'korsan') {
+        return '<svg class="yz-hy-robot rk-korsan" viewBox="' + vb + '" aria-hidden="true"><rect x="22" y="80" width="56" height="38" rx="13" fill="#b91c1c"/><rect x="22" y="98" width="56" height="7" fill="#3f2a14"/><rect x="45" y="97" width="10" height="9" rx="2" fill="#facc15"/><circle cx="50" cy="88" r="2.4" fill="#facc15"/>'
+            + '<circle cx="50" cy="57" r="23" fill="#f2c79a"/><path d="M28 60 Q50 98 72 60 Q63 74 50 74 Q37 74 28 60Z" fill="#5a3417"/>'
+            + '<ellipse cx="40" cy="53" rx="7" ry="6" fill="#111"/><path d="M27 45 L72 59" stroke="#111" stroke-width="2.4"/><circle cx="60" cy="53" r="5.6" fill="#fff"/><circle class="yz-hy-goz" cx="60" cy="54" r="3" fill="#111"/>'
+            + (kizgin ? '<path d="M53 44 L67 47" stroke="#3f2a14" stroke-width="3" stroke-linecap="round"/><path d="M43 69 Q50 65 57 69" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round"/>' : '<path d="M42 66 Q50 72 58 66" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round"/>')
+            + '<path d="M14 42 Q50 4 86 42 Q50 32 14 42Z" fill="#111827"/><path d="M20 40 Q50 26 80 40" stroke="#facc15" stroke-width="2" fill="none"/><circle cx="50" cy="26" r="5.5" fill="#f8fafc"/><path d="M45 34 L55 38 M55 34 L45 38" stroke="#f8fafc" stroke-width="2"/><circle cx="48" cy="25.5" r="1.2" fill="#111"/><circle cx="52" cy="25.5" r="1.2" fill="#111"/>' + tac + '</svg>';
+    }
+    if (rk === 'uzayli') {
+        let c = '#4ade80', k = '#15803d';
+        return '<svg class="yz-hy-robot rk-uzayli" viewBox="' + vb + '" aria-hidden="true"><path d="M38 22 L28 4" stroke="' + k + '" stroke-width="3"/><path d="M62 22 L72 4" stroke="' + k + '" stroke-width="3"/><circle class="yz-hy-anten" cx="28" cy="4" r="4.5" fill="#fde047"/><circle class="yz-hy-anten" cx="72" cy="4" r="4.5" fill="#fde047"/>'
+            + '<rect x="33" y="80" width="34" height="34" rx="13" fill="' + c + '"/><rect x="33" y="94" width="34" height="5" fill="#a3e635"/><path d="M33 86 L22 100 M67 86 L78 100" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>'
+            + '<path d="M50 14 C82 14 88 42 77 60 C69 73 59 80 50 80 C41 80 31 73 23 60 C12 42 18 14 50 14Z" fill="' + c + '"/>'
+            + '<ellipse cx="37" cy="47" rx="9.5" ry="13" fill="#0b1020" transform="rotate(-22 37 47)"/><ellipse cx="63" cy="47" rx="9.5" ry="13" fill="#0b1020" transform="rotate(22 63 47)"/><circle class="yz-hy-goz" cx="34" cy="42" r="3" fill="#e0f2fe"/><circle class="yz-hy-goz" cx="60" cy="42" r="3" fill="#e0f2fe"/>'
+            + (kizgin ? '<path d="M44 69 Q50 65 56 69" stroke="' + k + '" stroke-width="3" fill="none" stroke-linecap="round"/>' : '<ellipse cx="50" cy="68" rx="5" ry="3.4" fill="' + k + '"/>') + tac + '</svg>';
+    }
+    let s = yzHyRobotSVG(sv <= 2 ? 'rookie' : sv === 3 ? 'dengeli' : 'usta', kizgin);
+    return sv >= 5 ? s.replace('viewBox="0 0 100 120"', 'viewBox="' + vb + '"').replace('</svg>', tac + '</svg>') : s;
+}
+// ---- kurulum: rakip kartları + seviye
+function yzHyKurulumHTML() {
+    yzHyYayinCss();
+    let rk = yzHyRakipKey(true), A = (typeof _kmTakimlar !== 'undefined' && _kmTakimlar[0]) || { uyeler: [] }, gr = yzHyGrup(A.uyeler), R = YZ_HY_RAKIP[rk], sv = yzHySeviye(gr, rk);
+    return '<div class="yz-hy-kur"><span class="yz-alt">Rakibi seç' + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</span><div class="yz-hy-kur-l">' + Object.keys(YZ_HY_RAKIP).map(function (k) {
+        let r = YZ_HY_RAKIP[k], s = yzHySeviye(gr, k);
+        return '<button type="button" class="yz-hy-kur-k' + (k === rk ? ' sec' : '') + '" data-rk="' + k + '" style="--hr:' + r.renk + '" onclick="yzHyRakipSec(\'' + k + '\')"><span class="yz-hy-kur-svg">' + yzHyRakipSVG(k, s, false) + '</span><b>' + esc(r.ad) + '</b><small>' + YZ_HY_SV_AD[s - 1] + '</small></button>';
+    }).join('') + '</div><div class="yz-hy-kur-sv"><span><em>' + R.ik + ' <b>' + esc(R.ad) + '</b> · seviye <b class="yz-hy-kur-svd">' + YZ_HY_SV_AD[sv - 1] + '</b></em><small>Sınıf yenince bir seviye güçlenir · güç sınıfın kendi ortalamasına göre</small></span>'
+        + '<button type="button" class="yz-cip" onclick="yzHySeviyeElle(-1)" aria-label="Seviye düşür">−</button><button type="button" class="yz-cip" onclick="yzHySeviyeElle(1)" aria-label="Seviye artır">＋</button></div></div>';
+}
+function yzHyRakipSec(k) { if (!YZ_HY_RAKIP[k]) return; _yzHy.secRakip = k; try { localStorage.setItem('dag_yz_hy_rakip', k); } catch (e) {} if (typeof kmYarismaKurulumCiz === 'function') kmYarismaKurulumCiz(); }
+function yzHySeviyeElle(d) { let rk = yzHyRakipKey(true), gr = yzHyGrup(((typeof _kmTakimlar !== 'undefined' && _kmTakimlar[0]) || {}).uyeler); yzHySeviyeYaz(gr, rk, yzHySeviye(gr, rk) + d); if (typeof kmYarismaKurulumCiz === 'function') kmYarismaKurulumCiz(); }
+// maç başlarken rakip + seviye + güç takıma yazılır (kurulum paketiyle birlikte saklanır)
+(function () {
+    if (typeof kmYarismaBaslat !== 'function') return;
+    let asil = kmYarismaBaslat;
+    kmYarismaBaslat = function () {
+        let r = asil.apply(this, arguments);
+        try {
+            if (_kmRakipTipi === 'hayali' && _kmTakimlar[1] && _kmTakimlar[0]) {
+                let rk = yzHyRakipKey(true), gr = yzHyGrup(_kmTakimlar[0].uyeler), sv = yzHySeviye(gr, rk), R = YZ_HY_RAKIP[rk];
+                _kmTakimlar[1].hyRakip = rk; _kmTakimlar[1].hySeviye = sv; _kmTakimlar[1].hyGrup = gr; _kmTakimlar[1].hyOrt = yzHyOrt(sv, _kmTakimlar[0].uyeler); _kmTakimlar[1].hyMac = Date.now();
+                _kmTakimlar[1].ad = R.ad + ' · ' + YZ_HY_SV_AD[sv - 1].replace('👑 ', ''); _kmTakimlar[1].renk = R.renk;
+                _kmHayaliZorluk = sv <= 2 ? 'rookie' : sv === 3 ? 'dengeli' : 'usta';
+                _yzHy.konus = { metin: yzHySec(R.basla), z: Date.now() };
+                if (typeof _kmYarismaKurulumKaydet === 'function') _kmYarismaKurulumKaydet();
+                if (typeof kmYarismaCiz === 'function' && document.getElementById('km-icerik')) kmYarismaCiz();
+            }
+        } catch (e) { console.warn('hayali rakip', e); }
+        return r;
+    };
+})();
+// ---- 📺 yayın tarzı atış
+const YZ_HY_SPIKER = function (p) { return p >= 10 ? 'MÜKEMMEL! ONLUK!' : p === 9 ? 'SARI! DOKUZ!' : p >= 7 ? 'KIRMIZI · ' + p : p >= 5 ? 'MAVİ · ' + p : p >= 3 ? 'SİYAH · ' + p : p >= 1 ? 'BEYAZ · ' + p : 'ISKA!'; };
+function yzHyYaySVG() { return '<svg class="yz-hy-yay" viewBox="0 0 90 140" aria-hidden="true"><path d="M44 6 Q74 70 44 134" stroke="#78350f" stroke-width="6" fill="none" stroke-linecap="round"/><rect x="52" y="60" width="9" height="20" rx="3" fill="#1f2937"/><polyline class="ip" points="44,6 44,70 44,134" stroke="#e5e7eb" stroke-width="1.6" fill="none"/><g class="yz-hy-yay-ok"><line class="g" x1="44" y1="70" x2="86" y2="70" stroke="#f8fafc" stroke-width="2.4"/><path d="M86 66 L90 70 L86 74 Z" fill="#cbd5e1"/><path class="t" d="M44 70 l7 -5 M44 70 l7 5" stroke="#ef4444" stroke-width="3"/></g></svg>'; }
 function yzHyBotAtis(turIdx, bitince) {
-    yzHyCss();
+    yzHyCss(); yzHyYayinCss();
     let oklar = (window._kmHayaliOkListesi || [])[turIdx], v = yzHyVeri();
     let bot = (_kmHayaliTurlar || [])[turIdx], biz = v.ta[turIdx];
     if (bot == null) { if (bitince) bitince(); return; }
-    if (!oklar || !oklar.length) { oklar = [bot]; }
-    let goster = oklar.length > 36 ? oklar.slice(0, 36) : oklar, adim = Math.max(60, Math.min(260, Math.round(2600 / goster.length)));
-    let adA = /^Takım [0-9]+$/.test(v.A.ad || '') ? 'SINIF' : v.A.ad, setMod = !v.deg || !v.deg.kural || v.deg.kural.hedefTip === 'set';
+    if (!oklar || !oklar.length) oklar = [bot];
+    let goster = oklar.length > 36 ? oklar.slice(0, 36) : oklar, olcek = goster === oklar ? 1 : bot / Math.max(1, goster.reduce(function (a, b) { return a + b; }, 0));
+    let R = yzHyRakip(), sv = yzHySv(), rk = yzHyRakipKey();
+    let adA = /^Takım [0-9]+$/.test(v.A.ad || '') ? 'SINIF' : v.A.ad, setMod = !v.deg || !v.deg.kural || v.deg.kural.hedefTip === 'set', sk = setMod ? 'set' : 'tur';
+    let topA = v.ta.slice(0, turIdx + 1).reduce(function (a, b) { return a + b; }, 0);
     let el = document.getElementById('yz-hy-atis'); if (el) el.remove();
-    el = document.createElement('div'); el.id = 'yz-hy-atis'; el.className = 'yz-hy-atis';
-    el.innerHTML = '<div class="yz-hy-at-ic"><div class="yz-hy-at-sol"><div class="yz-hy-at-balon">Şimdi sıra bende! Bip bop… 🤖</div>' + yzHyRobotSVG(v.zor, false) + '<div class="yz-hy-at-ad">' + esc(v.B.ad) + '</div></div>'
-        + '<div class="yz-hy-at-orta">' + yzHyHedefSVG() + '<div class="yz-hy-at-sayac"><small>ROBOTUN ' + (turIdx + 1) + '. ' + (setMod ? 'SETİ' : 'TURU') + '</small><b id="yz-hy-at-say">0</b></div></div></div>'
+    el = document.createElement('div'); el.id = 'yz-hy-atis'; el.className = 'yz-hy-atis yayin'; el.style.setProperty('--hr', R.renk);
+    let ruz = ['↗', '→', '↘', '←', '↖'][Math.floor(Math.random() * 5)] + ' ' + (1 + Math.floor(Math.random() * 3)) + ' m/s';
+    el.innerHTML = '<div class="yy-ust"><span class="yy-canli"><i></i>CANLI</span><span class="yy-bas">🏹 HAYALİ RAKİP · ' + (turIdx + 1) + '. ' + (setMod ? 'SET' : 'TUR') + '</span><span class="yy-skor"><b style="color:' + v.A.renk + '">' + esc(adA) + ' ' + (biz != null ? biz : '') + '</b><i>vs</i><b style="color:' + R.renk + '">' + R.ik + ' <u id="yz-hy-at-say">0</u></b></span></div>'
+        + '<div class="yy-govde"><div class="yy-hat"><div class="yy-zemin"></div><div class="yy-uzak"></div><div class="yy-ruzgar">🚩 <small>rüzgâr ' + ruz + '</small></div>'
+        + '<div class="yy-okcu"><div class="yy-kar">' + yzHyRakipSVG(rk, sv, false) + '</div>' + yzHyYaySVG() + '</div><div class="yy-ucan" id="yz-hy-ucan"></div><div class="yz-hy-at-balon">' + esc(yzHySec(R.atiyor)) + '</div></div>'
+        + '<div class="yy-kam"><span class="yy-kam-et">🎥 HEDEF KAMERASI</span><div class="yy-hedef">' + yzHyHedefSVG() + '<i class="yy-nisan" id="yz-hy-nisan"></i></div><div class="yy-pop" id="yz-hy-pop"></div></div></div>'
+        + '<div class="yy-alt"><span class="yy-ik">' + R.ik + '</span><b>' + esc(R.ad) + '</b><span class="yy-sv">' + YZ_HY_SV_AD[sv - 1] + '</span><span id="yz-hy-ok-no">OK 1 / ' + goster.length + '</span><span id="yz-hy-nabiz">' + R.nabiz.replace('{n}', R.nb) + '</span><span class="yy-spiker" id="yz-hy-spiker">Nişan alıyor…</span></div>'
         + '<div class="yz-hy-at-sonuc" id="yz-hy-at-sonuc"></div><div class="yz-hy-at-gec">dokun → geç</div>';
     document.body.appendChild(el);
-    let bitti = false, zaman = [];
+    let bitti = false, zaman = [], t = function (fn, ms) { zaman.push(setTimeout(function () { if (!bitti) fn(); }, ms)); };
     let kapat = function () { if (bitti) return; bitti = true; zaman.forEach(clearTimeout); el.classList.add('cik'); _yzHy.gizli = null; yzHyYenile(); setTimeout(function () { el.remove(); if (bitince) bitince(); }, 350); };
     el.onclick = kapat;
-    yzHyKonus('Şimdi sıra bende! Bip bop… 🤖');
-    let toplam = 0, g = el.querySelector('#yz-hy-at-oklar'), say = el.querySelector('#yz-hy-at-say'), robot = el.querySelector('.yz-hy-robot');
-    let olcek = goster === oklar ? 1 : bot / Math.max(1, goster.reduce(function (a, b) { return a + b; }, 0));
-    goster.forEach(function (p, i) {
-        zaman.push(setTimeout(function () {
-            let r = p <= 0 ? 104 + Math.random() * 4 : (10 - p + Math.random() * .9) * 10, a = Math.random() * Math.PI * 2;
-            let x = Math.cos(a) * r, y = Math.sin(a) * r;
-            g.insertAdjacentHTML('beforeend', '<g class="yz-hy-at-ok" style="--x:' + x.toFixed(1) + 'px;--y:' + y.toFixed(1) + 'px"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.4" fill="' + (p >= 9 ? '#22c55e' : '#111827') + '" stroke="#fff" stroke-width="1.4"/></g>');
-            toplam += p; say.textContent = i === goster.length - 1 ? bot : Math.round(toplam * olcek);
-            if (robot) { robot.classList.remove('tep'); void robot.getBoundingClientRect(); robot.classList.add('tep'); }
-            yzHyBip(p >= 9 ? 880 : p <= 0 ? 160 : 300 + p * 40, .08, p <= 0 ? 'sawtooth' : 'square');
-        }, 700 + i * adim));
-    });
-    let son = 700 + goster.length * adim + 500;
-    zaman.push(setTimeout(function () {
+    yzHyKonus(el.querySelector('.yz-hy-at-balon').textContent);
+    let toplam = 0, g = el.querySelector('#yz-hy-at-oklar'), say = el.querySelector('#yz-hy-at-say'), ip = el.querySelector('.yz-hy-yay .ip'), yayOk = el.querySelector('.yz-hy-yay-ok'), kar = el.querySelector('.yy-kar');
+    let hedefEl = el.querySelector('.yy-hedef'), pop = el.querySelector('#yz-hy-pop'), spk = el.querySelector('#yz-hy-spiker'), okNo = el.querySelector('#yz-hy-ok-no'), nab = el.querySelector('#yz-hy-nabiz'), nisan = el.querySelector('#yz-hy-nisan');
+    let ipCek = function (x) { if (ip) ip.setAttribute('points', '44,6 ' + x + ',70 44,134'); if (yayOk) yayOk.setAttribute('transform', 'translate(' + (x - 44) + ' 0)'); };
+    let okKoy = function (p, i) {
+        let r = p <= 0 ? 104 + Math.random() * 4 : (10 - p + Math.random() * .9) * 10, a = Math.random() * Math.PI * 2, x = Math.cos(a) * r, y = Math.sin(a) * r;
+        g.insertAdjacentHTML('beforeend', '<g class="yz-hy-at-ok"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.4" fill="' + (p >= 9 ? '#22c55e' : '#111827') + '" stroke="#fff" stroke-width="1.4"/></g>');
+        toplam += p; say.textContent = i === goster.length - 1 ? bot : Math.round(toplam * olcek);
+        return { x: x, y: y };
+    };
+    let H = Math.min(goster.length, 3), ADIM = 1800, bas = 500;
+    for (let h = 0; h < H; h++) (function (h) {
+        let t0 = bas + h * ADIM, p = goster[h];
+        t(function () { okNo.textContent = 'OK ' + (h + 1) + ' / ' + goster.length; spk.textContent = h ? 'Yeni ok… nişan' : 'Nişan alıyor…'; pop.className = 'yy-pop'; yayOk.style.opacity = '1'; nisan.className = 'yy-nisan ac'; nab.textContent = R.nabiz.replace('{n}', R.nb + Math.round((Math.random() - .3) * R.nb * .12)); kar.classList.add('cek'); }, t0);
+        for (let s = 1; s <= 6; s++) t(function () { ipCek(44 - s * 5); }, t0 + s * 80);
+        t(function () { // bırak
+            ipCek(44); yayOk.style.opacity = '0'; kar.classList.remove('cek'); el.querySelector('.yz-hy-yay').classList.remove('tit'); void el.offsetWidth; el.querySelector('.yz-hy-yay').classList.add('tit');
+            let u = el.querySelector('#yz-hy-ucan'); u.classList.remove('uc'); void u.offsetWidth; u.classList.add('uc'); spk.textContent = 'BIRAKTI!'; yzHyBip(150, .12, 'triangle');
+        }, t0 + 750);
+        t(function () { // saplandı
+            nisan.className = 'yy-nisan'; let k = okKoy(p, h);
+            hedefEl.classList.remove('sars'); void hedefEl.offsetWidth; hedefEl.classList.add('sars');
+            pop.innerHTML = '<b>' + (p >= 10 ? '10' : p) + '</b><small>' + YZ_HY_SPIKER(p) + '</small>'; pop.className = 'yy-pop ac p' + (p >= 9 ? 's' : p >= 7 ? 'k' : p >= 5 ? 'm' : p >= 1 ? 'b' : 'i');
+            pop.style.setProperty('--px', (50 + k.x / 2.2) + '%'); pop.style.setProperty('--py', (50 + k.y / 2.2) + '%');
+            spk.textContent = YZ_HY_SPIKER(p); yzHyBip(90, .1, 'square'); yzHyBip(p >= 9 ? 880 : p <= 0 ? 160 : 300 + p * 40, .14, p <= 0 ? 'sawtooth' : 'triangle');
+        }, t0 + 1130);
+    })(h);
+    let kalan = goster.slice(H), hizBas = bas + H * ADIM, adim = kalan.length ? Math.max(50, Math.min(160, Math.round(1800 / kalan.length))) : 0;
+    if (kalan.length) t(function () { pop.className = 'yy-pop'; spk.textContent = '⏩ Kalan ' + kalan.length + ' ok'; el.classList.add('hizli'); }, hizBas);
+    kalan.forEach(function (p, j) { t(function () { okKoy(p, H + j); okNo.textContent = 'OK ' + (H + j + 1) + ' / ' + goster.length; yzHyBip(p >= 9 ? 880 : 300 + p * 40, .05, 'square'); }, hizBas + 300 + j * adim); });
+    let son = hizBas + (kalan.length ? 300 + kalan.length * adim + 300 : 0);
+    t(function () {
         let s = el.querySelector('#yz-hy-at-sonuc'), kim = biz > bot ? 'a' : bot > biz ? 'b' : 'e';
-        s.innerHTML = '<span style="color:' + v.A.renk + '">' + esc(adA) + ' <b>' + biz + '</b></span><span class="vs">—</span><span style="color:' + v.B.renk + '"><b>' + bot + '</b> ROBOT</span>'
-            + '<div class="yz-hy-at-kazan ' + kim + '">' + (kim === 'a' ? '🏆 ' + (setMod ? 'SETİ' : 'TURU') + ' ' + esc(adA) + ' ALDI!' : kim === 'b' ? '🤖 ' + (setMod ? 'SETİ' : 'TURU') + ' ROBOT ALDI!' : '🤝 BERABERE!') + '</div>';
-        s.classList.add('goster');
-        if (kim === 'a') { yzHyBip(660, .15, 'triangle'); setTimeout(function () { yzHyBip(990, .3, 'triangle'); }, 160); }
-        else yzHyBip(220, .3, 'sawtooth');
-        yzHyKonus(kim === 'a' ? yzHySec(['Ahh! Pillerim bitiyor… 🔋 Bu ' + (setMod ? 'set' : 'tur') + ' sizin!', 'Nasıl olur! Sınıf beni geçti 😵', 'Tamam tamam, bu sefer kazandınız… ama bekleyin 😤'])
-            : kim === 'b' ? yzHySec(['Bu ' + (setMod ? 'seti' : 'turu') + ' ben aldım! Ama pes etmeyin 😄', 'Bip bop, kazandım! Hadi yakalayın beni 🤖', 'Benim devrelerim çok hızlı! Sıradaki sizin olabilir 😏'])
-            : 'Berabere! Çok heyecanlı 😮');
-    }, son));
-    zaman.push(setTimeout(kapat, son + 3600));
+        s.innerHTML = '<span style="color:' + v.A.renk + '">' + esc(adA) + ' <b>' + biz + '</b></span><span class="vs">—</span><span style="color:' + R.renk + '"><b>' + bot + '</b> ' + R.kisa + '</span>'
+            + '<div class="yz-hy-at-kazan ' + kim + '">' + (kim === 'a' ? '🏆 ' + (setMod ? 'SETİ' : 'TURU') + ' ' + esc(adA) + ' ALDI!' : kim === 'b' ? R.ik + ' ' + (setMod ? 'SETİ' : 'TURU') + ' ' + R.kisa + ' ALDI!' : '🤝 BERABERE!') + '</div>';
+        s.classList.add('goster'); el.classList.add('sonuc'); spk.textContent = (setMod ? 'SET' : 'TUR') + ' BİTTİ'; okNo.textContent = goster.length + ' ok';
+        if (kim === 'a') { yzHyBip(660, .15, 'triangle'); setTimeout(function () { yzHyBip(990, .3, 'triangle'); }, 160); } else yzHyBip(220, .3, 'sawtooth');
+        yzHyKonus(kim === 'a' ? yzHySec(R.sinif).replace('{s}', sk) : kim === 'b' ? yzHySec(R.ben).replace('{s}', sk) : 'Berabere! Çok heyecanlı 😮');
+    }, son);
+    t(kapat, son + 3400);
+    void topA;
 }
+function yzHyYayinCss() {
+    if (document.getElementById('yz-hy3-css')) return;
+    let st = document.createElement('style'); st.id = 'yz-hy3-css';
+    st.textContent = [
+        '.yz-hy-atis.yayin{justify-content:flex-start;gap:0;padding:0;background:#05070f}',
+        '.yy-ust{flex:none;width:100%;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:1.2vh 2vw;background:linear-gradient(90deg,#0b1224,#111a33);border-bottom:2px solid var(--hr);font-weight:900;font-size:clamp(13px,2.2vh,24px)}',
+        '.yy-canli{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;background:#dc2626;letter-spacing:.1em;font-size:.8em}.yy-canli i{width:.6em;height:.6em;border-radius:50%;background:#fff;animation:yyYan 1s steps(2) infinite}@keyframes yyYan{50%{opacity:.2}}',
+        '.yy-bas{flex:1;letter-spacing:.06em;color:#cbd5e1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yy-skor{display:flex;gap:10px;align-items:baseline;padding:4px 14px;border-radius:8px;background:#020617;border:1px solid #334155;font-size:1.25em}.yy-skor i{color:#64748b;font-size:.7em}.yy-skor u{text-decoration:none;font-variant-numeric:tabular-nums}',
+        '.yy-govde{flex:1;min-height:0;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}',
+        '.yy-hat{position:relative;overflow:hidden;background:linear-gradient(#1e3a8a 0%,#60a5fa 48%,#4d7c0f 48.2%,#365314 100%)}',
+        '.yy-zemin{position:absolute;left:-30%;right:-30%;top:48%;bottom:0;background:repeating-linear-gradient(90deg,transparent 0 11%,rgba(255,255,255,.35) 11% 11.6%);transform:perspective(260px) rotateX(58deg);transform-origin:50% 0}',
+        '.yy-uzak{position:absolute;right:16%;top:39%;width:4.5vh;height:4.5vh;border-radius:50%;background:radial-gradient(#facc15 0 20%,#dc2626 20% 40%,#2563eb 40% 60%,#111827 60% 80%,#f8fafc 80%);box-shadow:0 1.4vh 0 -1.6vh #78350f}',
+        '.yy-ruzgar{position:absolute;right:4%;top:6%;font-size:clamp(16px,3vh,30px);display:flex;flex-direction:column;align-items:center}.yy-ruzgar small{font-size:clamp(10px,1.4vh,14px);font-weight:800;color:#e2e8f0;background:rgba(2,6,23,.6);padding:1px 6px;border-radius:5px}',
+        '.yy-okcu{position:absolute;left:6%;bottom:6%;height:58%;display:flex;align-items:flex-end}.yy-kar{height:100%}.yy-kar svg{height:100%;width:auto;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}.yy-kar.cek svg{transform:rotate(-3deg) translateX(-4%);transition:transform .45s}',
+        '.yz-hy-yay{height:62%;width:auto;margin:0 0 12% -14%;overflow:visible}.yz-hy-yay.tit{animation:yyTit .35s}@keyframes yyTit{25%{transform:translateX(-4px) rotate(-3deg)}60%{transform:translateX(3px) rotate(2deg)}}',
+        '.yy-ucan{position:absolute;left:30%;bottom:27%;width:9vh;height:4px;border-radius:2px;background:linear-gradient(90deg,#ef4444 0 18%,#f8fafc 18%);opacity:0;transform-origin:0 50%}.yy-ucan.uc{animation:yyUc .4s cubic-bezier(.3,.1,.6,1) forwards}',
+        '@keyframes yyUc{0%{opacity:1;transform:translate(0,0) rotate(-14deg) scale(1)}100%{opacity:0;transform:translate(26vw,-18vh) rotate(-6deg) scale(.15)}}',
+        '.yz-hy-atis.yayin .yz-hy-at-balon{position:absolute;left:4%;top:5%;max-width:70%;padding:1vh 1.4vw;border-radius:14px 14px 14px 4px;background:#fff;color:#0f172a;font-weight:800;font-size:clamp(13px,2.2vh,24px)}',
+        '.yy-kam{position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#3f3f46 0%,#18181b 70%);border-left:3px solid #020617;overflow:hidden}',
+        '.yy-kam-et{position:absolute;left:12px;top:10px;font-size:clamp(11px,1.6vh,16px);font-weight:900;letter-spacing:.12em;color:#f87171;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:5px}',
+        '.yy-hedef{position:relative;height:min(78%,46vw);aspect-ratio:1}.yy-hedef .yz-hy-at-hedef{width:100%;height:100%;display:block}.yy-hedef.sars{animation:yySars .3s}@keyframes yySars{30%{transform:scale(1.03) translate(3px,-2px)}70%{transform:scale(.99) translate(-2px,1px)}}',
+        '.yy-nisan{position:absolute;left:50%;top:50%;width:22%;height:22%;margin:-11% 0 0 -11%;border:3px solid rgba(34,211,238,.9);border-radius:50%;opacity:0;pointer-events:none}.yy-nisan:before,.yy-nisan:after{content:"";position:absolute;background:rgba(34,211,238,.9)}.yy-nisan:before{left:50%;top:-20%;bottom:-20%;width:2px}.yy-nisan:after{top:50%;left:-20%;right:-20%;height:2px}',
+        '.yy-nisan.ac{opacity:1;animation:yyNisan .9s ease-in-out infinite alternate}@keyframes yyNisan{0%{transform:translate(-14%,9%)}50%{transform:translate(10%,-8%)}100%{transform:translate(-4%,4%)}}',
+        '.yy-pop{position:absolute;left:var(--px,50%);top:var(--py,50%);transform:translate(-50%,-120%) scale(.4);opacity:0;display:flex;flex-direction:column;align-items:center;padding:.6vh 1.6vh;border-radius:14px;background:#111827;border:3px solid #fff;pointer-events:none}',
+        '.yy-pop.ac{opacity:1;transform:translate(-50%,-120%) scale(1);transition:transform .35s cubic-bezier(.2,1.6,.4,1),opacity .15s}.yy-pop b{font-size:clamp(34px,9vh,110px);line-height:1;font-weight:900}.yy-pop small{font-size:clamp(11px,1.8vh,18px);font-weight:900;letter-spacing:.06em}',
+        '.yy-pop.ps{background:#facc15;color:#1a1000}.yy-pop.pk{background:#dc2626}.yy-pop.pm{background:#2563eb}.yy-pop.pb{background:#334155}.yy-pop.pi{background:#52525b}',
+        '.yy-alt{flex:none;width:100%;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:1.2vh 2vw;background:linear-gradient(90deg,var(--hr),#0b1224 55%);font-weight:900;font-size:clamp(13px,2.3vh,26px)}.yy-ik{font-size:1.5em}.yy-sv{padding:2px 10px;border-radius:6px;background:rgba(0,0,0,.4)}',
+        '#yz-hy-ok-no,#yz-hy-nabiz{color:#e2e8f0;font-variant-numeric:tabular-nums}.yy-spiker{margin-left:auto;color:#fde047;letter-spacing:.04em}',
+        '.yz-hy-atis.yayin .yz-hy-at-sonuc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.7);padding:2.4vh 3vw;border-radius:22px;background:rgba(2,6,23,.94);border:3px solid var(--hr);box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:3;width:max-content;max-width:94vw}',
+        '.yz-hy-atis.yayin .yz-hy-at-sonuc.goster{transform:translate(-50%,-50%) scale(1)}.yz-hy-atis.yayin .yz-hy-at-gec{position:absolute;right:1.5vw;bottom:8vh;z-index:4}',
+        '@media (max-aspect-ratio:1/1){.yy-govde{grid-template-columns:1fr;grid-template-rows:minmax(0,.85fr) minmax(0,1.15fr)}.yy-kam{border-left:0;border-top:3px solid #020617}.yy-hedef{height:min(84%,84vw)}.yy-ucan.uc{animation-name:yyUcD}.yy-uzak{right:12%}}',
+        '@keyframes yyUcD{0%{opacity:1;transform:translate(0,0) rotate(-14deg) scale(1)}100%{opacity:0;transform:translate(48vw,-12vh) rotate(-6deg) scale(.15)}}',
+        // kurulum kartları
+        '.yz-hy-kur{margin-top:10px;display:flex;flex-direction:column;gap:8px}.yz-hy-kur-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}',
+        '.yz-hy-kur-k{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;border-radius:14px;border:2px solid var(--border-color,#334155);background:var(--bg-panel,#0f172a);color:inherit;font:inherit;cursor:pointer;min-height:44px}.yz-hy-kur-k.sec{border-color:var(--hr);background:color-mix(in srgb,var(--hr) 18%,transparent)}',
+        '.yz-hy-kur-svg svg{height:64px;width:auto;display:block}.yz-hy-kur-k b{font-size:14px}.yz-hy-kur-k small{font-size:12px;font-weight:800;opacity:.8}',
+        '.yz-hy-kur-sv{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.yz-hy-kur-sv>span{flex:1;min-width:200px;display:flex;flex-direction:column;font-size:14px}.yz-hy-kur-sv small{opacity:.7;font-size:12px}.yz-hy-kur-sv em{font-style:normal}.yz-hy-kur-sv .yz-cip{min-width:44px;min-height:44px;font-size:20px}',
+        '.yz-hy-sv-rozet{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;background:rgba(0,0,0,.35);font-size:.8em}.yz-hy-son small{display:block;font-size:.62em;opacity:.9;margin-top:4px}'
+    ].join('');
+    document.head.appendChild(st);
+}
+
 // ---- Kaydet → yorum, robot atışı, sıradaki
 (function () {
     let asilKaydet = yzTkGirisKaydet;

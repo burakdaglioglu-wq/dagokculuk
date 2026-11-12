@@ -9,7 +9,7 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'yarisma');
-    yedek = await p.evaluate(() => ({ tur: localStorage.getItem(yzAnahtar()), mod: localStorage.getItem('dag_yz_mod'), liste: JSON.stringify(_kmListe) }));
+    yedek = await p.evaluate(() => ({ tur: localStorage.getItem(yzAnahtar()), mod: localStorage.getItem('dag_yz_mod'), liste: JSON.stringify(_kmListe), sv: localStorage.getItem(yzHySeviyeAnahtar()), rk: localStorage.getItem('dag_yz_hy_rakip') }));
     const n = await p.evaluate(() => {
       _yz.ses = false; localStorage.setItem('dag_yz_hy_ses', '0');
       const l = []; ['minikler', 'kucukler', 'yildizlar', 'buyukler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (l.length < 8 && !turnuvaDB[g][ad].pasif && (typeof bugunkuSeriSayisi !== 'function' || bugunkuSeriSayisi(turnuvaDB[g][ad]) < 5)) l.push({ g, ad }); })); // günlük seri limitine takılmayanlar
@@ -17,14 +17,24 @@ export default async function ({ log }) {
       window.__hyOnce = l.map((s) => (turnuvaDB[s.g][s.ad].seriler || []).length); window.__hyTop = l.map((s) => turnuvaDB[s.g][s.ad].toplamSkor);
       window.__hyL = l;
       _yzK.tur = 'hayali'; _yzK.haric = {}; yzModAyarla('takim'); yzTakimlariKur(); _kmHayaliZorluk = 'dengeli';
-      kmYarismaBaslat();
+      localStorage.setItem(yzHySeviyeAnahtar(), JSON.stringify({ [yzHyGrup(_kmTakimlar[0].uyeler)]: { ejderha: { sv: 3 } } }));
+      kmYarismaKurulumCiz();
       return l.length;
     });
+    // v412: kurulumda 4 rakip kartı → Ejderha seç (Sv.3)
+    await p.waitForTimeout(300);
+    esit(await p.locator('.yz-hy-kur-k').count(), 4, 'kurulumda 4 rakip');
+    await p.locator('.yz-hy-kur-k[data-rk="ejderha"]').click(); await p.waitForTimeout(300);
+    dogrula(/Sv.3/.test(await p.locator('.yz-hy-kur-svd').textContent()), 'ejderha seviyesi Sv.3 görünmeli');
+    await p.locator('.yz-hy-kur').scrollIntoViewIfNeeded(); await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-kurulum.png' });
+    const rk = await p.evaluate(() => { kmYarismaBaslat(); const B = _kmTakimlar[1]; return { rk: B.hyRakip, sv: B.hySeviye, ad: B.ad, ort: B.hyOrt, sinif: yzHySinifOrt(_kmTakimlar[0].uyeler) }; });
+    esit(rk.rk, 'ejderha', 'rakip ejderha'); esit(rk.sv, 3, 'seviye 3'); dogrula(/Ateş Ejderhası/.test(rk.ad), 'rakip adı: ' + rk.ad);
+    dogrula(Math.abs(rk.ort - Math.max(2, Math.min(9.6, rk.sinif - 0.3))) < 0.02, 'Sv.3 gücü sınıf ortalaması -0.3 olmalı: ' + JSON.stringify(rk));
     dogrula(n === 8, 'testte 8 sporcu gerekli (gelen ' + n + ')');
     await p.waitForTimeout(400);
     dogrula(await p.locator('#km-icerik .yz-hy').count() === 1, 'tablette Hayali Rakip sahnesi çizilmedi');
     esit(await p.locator('#km-icerik .yz-hy-cocuk').count(), 8, 'her çocuk için düğme olmalı');
-    dogrula(await p.locator('#km-icerik .yz-hy-robot').count() === 1, 'robot çizilmedi');
+    dogrula(await p.locator('#km-icerik .yz-hy-robot.rk-ejderha').count() === 1, 'ejderha çizilmedi');
 
     // 3 çocuk atsın (skor girişi penceresinden)
     for (let i = 0; i < 3; i++) {
@@ -67,8 +77,9 @@ export default async function ({ log }) {
     esit(await p.locator('#yz-tk-tv .yz-hy-cocuk.atti').count(), 0, 'yeni turda herkes "sırada" olmalı');
     // v410: robot atışı kaplaması → sonuç → sıradaki çocuğun penceresi kendiliğinden
     await p.waitForSelector('#yz-hy-atis', { timeout: 4000 });
-    await p.waitForTimeout(2200); await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-robot-atis.png' });
-    await p.waitForSelector('#yz-hy-at-sonuc.goster', { timeout: 8000 });
+    dogrula(await p.locator('#yz-hy-atis.yayin .yy-kam').count() === 1, 'yayın tarzı atış (hedef kamerası) yok');
+    await p.waitForSelector('#yz-hy-pop.ac', { timeout: 4000 }); await p.waitForTimeout(250); await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-robot-atis.png' });
+    await p.waitForSelector('#yz-hy-at-sonuc.goster', { timeout: 16000 });
     await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-robot-sonuc.png' });
     await p.locator('#yz-hy-atis').click();
     await p.waitForSelector('#yz-tk-giris', { timeout: 4000 });
@@ -86,6 +97,9 @@ export default async function ({ log }) {
     await p.screenshot({ path: 'tests/e2e/_cikti/122-hayali-tv2.png' });
     await p.evaluate(() => yzTkTvKapat()); await p.waitForTimeout(200);
 
+    // v412: maç kazanılınca seviye bir kez artar
+    const svx = await p.evaluate(() => { const B = _kmTakimlar[1], g = B.hyGrup; const once = yzHySeviye(g, 'ejderha'); yzHySonucIsle(0, B); yzHySonucIsle(0, B); return [once, yzHySeviye(g, 'ejderha')]; });
+    esit(JSON.stringify(svx), JSON.stringify([3, 4]), 'kazanınca bir seviye (bir kez)');
     // 📱 telefon
     await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => kmYarismaCiz()); await p.waitForTimeout(400);
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), '390 px yatay taşma');
@@ -99,6 +113,7 @@ export default async function ({ log }) {
         try { yzTkTvKapat(); } catch (e) {}
         try { _kmYarismaAktifMaciTemizle(); } catch (e) {}
         _kmRakipTipi = 'gercek'; kmYarismaSifirla();
+        if (y) { if (y.sv == null) localStorage.removeItem(yzHySeviyeAnahtar()); else localStorage.setItem(yzHySeviyeAnahtar(), y.sv); if (y.rk == null) localStorage.removeItem('dag_yz_hy_rakip'); else localStorage.setItem('dag_yz_hy_rakip', y.rk); }
         if (y) { if (y.tur == null) localStorage.removeItem(yzAnahtar()); else localStorage.setItem(yzAnahtar(), y.tur); if (y.mod == null) localStorage.removeItem('dag_yz_mod'); else localStorage.setItem('dag_yz_mod', y.mod); _kmListe = JSON.parse(y.liste); }
         try { kaydet(); } catch (e) {}
       }, yedek);

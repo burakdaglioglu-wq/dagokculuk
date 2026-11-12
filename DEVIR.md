@@ -5801,3 +5801,11 @@ Kullanıcı: "zombi oyunu kolay bitiyor, modları olsun, birkaç eğlence modu d
 - Mod düğmesi oyunda (`#zb-mod-btn` → `#zb-modsec`), seçince yeni salgın; sonuç ekranında rövanş modu kartları (kazanınca bir üst zorluk önerilir). Son mod `dag_km_zombimod_<konum>` (km-ortak ile cihazlara gider; testler 'normal'e sabitler).
 - Simülasyon (ok başı %40 iyi): 6 ok → normal ~%100, zor ~%95, kâbus ~%85; 3 ok → normal ~%80, zor ~%20, kâbus ~%3. Kural adımı keskin: gerçek sınıfta ayarlamak gerekebilir.
 - Test 123 (+106/119 mod sabitleme).
+
+## 126. 🎮 Hayali Rakip 3: rakip seç + seviye + yayın tarzı atış (2026-11-12, v412)
+
+Kullanıcı: "rakip seç + seviye atla, ve bunlara gerçek yarışma atışları gibi animasyon ver".
+- `YZ_HY_RAKIP` (dagsk-km-yarisma-pro.js): robot / ejderha / korsan / uzayli. Her birinin çizimi (`yzHyRakipSVG`, sınıf `yz-hy-robot rk-<ad>`), konuşma perdesi/hızı, cümleleri (başla, atıyor, sınıf aldı, ben aldım, yenildi/yendi) ayrı.
+- Seviye Sv.1–4 + 👑 PATRON, her rakip için sınıfın çoğunluk grubunda ayrı (`dag_km_hyseviye_<konum>` = {grup: {rakip: {sv, mac}}}, km-ortak ile paylaşılır). Güç = sınıfın kendi ok ortalaması + [−1.6, −0.9, −0.3, +0.3, +0.9] (`_kmTakimlar[1].hyOrt`, app.js `_kmHayaliTurUret` `window.yzHyOrtHesap` kancası). Sınıf kazanınca +1 (`yzHySonucIsle`, `hyMac` ile bir maç bir kez); kaybedince aynı seviyede rövanş. Kurulumda kartlar + −/＋.
+- `yzHyBotAtis` yeniden yazıldı: CANLI şeridi + skor, atış hattı (okçu yayı çeker, ok uçar, rüzgâr bayrağı), HEDEF KAMERASI (nişangâh, saplanma, puan patlaması), alt bant (ad, seviye, ok no, nabız, spiker). İlk 3 ok tek tek (~1.8 sn), kalanlar hızlı. Dokun → geç.
+- Test 122 genişletildi (kurulum kartları, ejderha Sv.3, güç, yayın ekranı, seviye bir kez artar). Test 87 eski kodda da kırık (yerel veri), bu sürümle ilgisi yok.

@@ -30138,7 +30138,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // 3/6 seçimi, ek atışta 1) BİREBİR atıyor; skorbord her gerçek turdan SONRA çizildiği için
         // değer o turun ok sayısını yansıtıyor.
         function _kmHayaliTurUret() {
-            let ort = HAYALI_ZORLUKLER[_kmHayaliZorluk].ort, toplam = 0, oklar = [];
+            let ort = (typeof window.yzHyOrtHesap === 'function' && window.yzHyOrtHesap()) || HAYALI_ZORLUKLER[_kmHayaliZorluk].ort, toplam = 0, oklar = []; // v412: rakip seviyesi sınıfın ortalamasına göre
             let okSayisi = Math.max(1, _kmYarismaOkSayisi || 3);
             for(let i = 0; i < _kmYarismaFormat; i++) { // takım büyüklüğü kadar "sanal okçu" katkısı
                 for(let j = 0; j < okSayisi; j++) { let o = _kmHayaliOkUret(ort); oklar.push(o); toplam += o; }
