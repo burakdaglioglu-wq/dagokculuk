@@ -47,6 +47,7 @@ import { registerKmOrtakRoutes } from "./routes/kmOrtak";
 import { registerYayinRoutes } from "./routes/yayin";
 import { registerFotoRoutes } from "./routes/fotolar";
 import { registerSporcuGirisRoutes } from "./routes/sporcuGiris";
+import { registerInstagramRoutes } from "./routes/instagram";
 import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeReminders, checkAndSendBirthdayReminders } from "./lib/reminders";
 import { checkAndSendAidatYoneticiOzet } from "./lib/aidatYonetici";
 import { checkAndSendYarismaReminders } from "./lib/yarismaHatirlatma";
@@ -71,6 +72,7 @@ registerLiveRoutes(router);
 registerVeliRaporRoutes(router);
 registerVeliOdemeRoutes(router);
 registerFizikselRoutes(router);
+registerInstagramRoutes(router);
 registerPushRoutes(router);
 registerDuelloRoutes(router);
 registerDuyuruRoutes(router);
@@ -172,6 +174,7 @@ const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/fiziksel-ozet",
   "/api/fiziksel/:grup/:ad",
   "/api/fiziksel-foto/:id",
+  "/api/instagram/durum",
   "/api/milo/dues",
   "/api/milo/personnel",
   "/api/milo/attendance/personnel",

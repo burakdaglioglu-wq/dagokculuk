@@ -11,6 +11,8 @@ not_found_handling = "404-page"
 [vars]
 VAPID_PUBLIC_KEY = "BJoUE7lqnbeHkP2OazmC7VgisBDxegUjDaHu_d300A__oRhynyNThVFkDinq9OnpKhcKznVvw_q2rtSK3OlHnno"
 VAPID_SUBJECT = "mailto:burakdaglioglu@gmail.com"
+IG_APP_ID = "2932147217178539"
+IG_CONFIG_ID = "2057574144952562"
 
 [[d1_databases]]
 binding = "DB"
