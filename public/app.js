@@ -19837,7 +19837,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         // 🗺️ Sınıf Yolculuğu (v404): her iyi ok (çocuğun kendi seviyesine göre) sınıfı haritada ilerletir; bütün oyunlarda aynı sayaç. Bkz. dagsk-km-yolculuk.js.
-        function kmYolculukHazir() { return dagskEkYukle('dagsk-km-yolculuk.js?v=1'); }
+        function kmYolculukHazir() { return dagskEkYukle('dagsk-km-yolculuk.js?v=2'); }
         function kmYolculukCiz() { kmYolculukHazir().then(function() { if(typeof ykCiz === 'function') ykCiz(); }).catch(function() {}); }
         function kmYolculukSeri(s, kaydedilecek, seriId) { kmYolculukHazir().then(function() { if(typeof ykSeri === 'function') ykSeri(s, kaydedilecek, seriId); }).catch(function() {}); }
         function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=6'); }
@@ -27051,6 +27051,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunResyncAktif();
             kmOyunChipleriCiz();
             kmOyunLiderCiz();
+            try { kmYolculukCiz(); } catch(e) {} // v414: Zombi'de yolculuk şeridi zombi şehrine döner
             kmOyunKameraKilitButonGuncelle();
             // DÜZELTME (Faz 16, 2026-09-18, gerçek testte yakalandı) — kmOyunPadCiz() burada HİÇ
             // çağrılmıyordu, yani pad'in disabled durumu tema değişince YENİDEN DEĞERLENDİRİLMİYORDU

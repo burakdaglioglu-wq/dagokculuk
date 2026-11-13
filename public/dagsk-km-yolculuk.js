@@ -20,7 +20,28 @@
         ['🏰', 'Kale', 'Kaleye', 'Kaleye vardık!'],
         ['🐉', 'Ejder Dağı', 'Ejder Dağına', 'Ejder Dağına ulaştık!']
     ];
+    // 🧟 v414 (kullanıcı: "bunu zombi moduna geçir, önce köprüdeki zombileri geçelim sonra kulede..."): Zombi oyunu açıkken
+    // AYNI sayaç/durak, zombi şehri olarak görünür — her iyi ok bir zombiyi yener. [ikon, ad, bulunma hali, başarı]
+    const ZOMBI_DURAKLAR = [
+        ['🏠', 'Sığınak', 'Sığınakta', 'Sığınaktan çıktık!'],
+        ['🌉', 'Köprü', 'Köprüde', 'Köprüyü temizledik!'],
+        ['🗼', 'Kule', 'Kulede', 'Kuleyi temizledik!'],
+        ['🏫', 'Okul', 'Okulda', 'Okulu temizledik!'],
+        ['🛒', 'Market', 'Markette', 'Marketi temizledik!'],
+        ['🏥', 'Hastane', 'Hastanede', 'Hastaneyi temizledik!'],
+        ['🚉', 'İstasyon', 'İstasyonda', 'İstasyonu temizledik!'],
+        ['🎡', 'Lunapark', 'Lunaparkta', 'Lunaparkı temizledik!'],
+        ['🏭', 'Fabrika', 'Fabrikada', 'Fabrikayı temizledik!'],
+        ['🏟️', 'Stadyum', 'Stadyumda', 'Stadyumu temizledik!'],
+        ['🏰', 'Kale', 'Kalede', 'Kaleyi geri aldık!'],
+        ['👑', 'Zombi Kralı', 'Zombi Kralının ininde', 'Zombi Kralını yendik! Şehir kurtuldu!']
+    ];
     const SON = DURAKLAR.length - 1;
+    const zombiMi = () => { try { return typeof _kmOyunAktifTema !== 'undefined' && _kmOyunAktifTema === 'zombi'; } catch (e) { return false; } };
+    const D = (i) => (zombiMi() ? ZOMBI_DURAKLAR : DURAKLAR)[Math.max(0, Math.min(i, SON))];
+    // "Ormana 5 iyi ok kaldı" · zombi: "Köprüde 5 zombi kaldı"
+    const kalanYazi = (h, n) => zombiMi() ? h[2] + ' ' + n + ' zombi kaldı' : h[2] + ' ' + n + ' iyi ok kaldı';
+    const ustYazi = () => zombiMi() ? 'Zombi Şehri' : 'Sınıf Yolculuğu';
     const KISI_BASI = 1.7;
     const $ = (id) => document.getElementById(id);
     const konum = () => (typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum) || 'varsayilan';
@@ -49,9 +70,9 @@
     // ── Şerit ──────────────────────────────────────────────────────────────
     function seritHTML(st) {
         if (!st.acik) return '<button class="yk-kapali" onclick="ykHaritaAc()">🗺️ Sınıf Yolculuğu kapalı · aç</button>';
-        const h = DURAKLAR[Math.min(st.durak + 1, SON)], kalan = Math.max(0, st.hedef - st.sayac), yuzde = Math.min(100, Math.round(st.sayac / st.hedef * 100));
-        return '<button class="yk-serit-ic" onclick="ykHaritaAc()" aria-label="Sınıf yolculuğu haritasını aç">'
-            + '<span class="yk-ik">' + h[0] + '</span><span class="yk-orta"><b>' + esc(h[2]) + ' ' + kalan + ' iyi ok kaldı</b>'
+        const h = D(st.durak + 1), kalan = Math.max(0, st.hedef - st.sayac), yuzde = Math.min(100, Math.round(st.sayac / st.hedef * 100));
+        return '<button class="yk-serit-ic' + (zombiMi() ? ' yk-zombi' : '') + '" onclick="ykHaritaAc()" aria-label="Sınıf yolculuğu haritasını aç">'
+            + '<span class="yk-ik">' + h[0] + (zombiMi() ? '🧟' : '') + '</span><span class="yk-orta"><b>' + esc(kalanYazi(h, kalan)) + '</b>'
             + '<span class="yk-bar"><span style="width:' + yuzde + '%"></span></span></span><span class="yk-say">' + st.sayac + '/' + st.hedef + '</span></button>';
     }
     function ykCiz() {
@@ -74,13 +95,17 @@
         if (st.durak < SON) { const f = Math.min(1, st.sayac / st.hedef), a = st.durak, b = a + 1; dYesil += 'L' + (px(a) + (px(b) - px(a)) * f).toFixed(1) + ' ' + (py(a) + (py(b) - py(a)) * f).toFixed(1); }
         let s = '<svg class="yk-harita" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Sınıf yolculuğu haritası" style="' + (boy || '') + '">'
             + '<path d="' + d + '" stroke="rgba(255,255,255,.18)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-            + '<path d="' + dYesil + '" stroke="#3ddc97" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
-        DURAKLAR.forEach((k, i) => {
+            + '<path d="' + dYesil + '" stroke="' + (zombiMi() ? '#9BEA5A' : '#3ddc97') + '" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        const zm = zombiMi();
+        (zm ? ZOMBI_DURAKLAR : DURAKLAR).forEach((k, i) => {
             const gecti = i <= st.durak, hedef = i === st.durak + 1, adli = hedef || i === SON;
             // telefonda 12 ad üst üste biniyordu: yalnızca hedef ve Ejder Dağı yazılı (bulunduğumuz yeri sarı nokta gösterir)
             const ax = Math.max(40, Math.min(W - 40, px(i)));
             s += '<g opacity="' + (gecti || hedef ? 1 : .45) + '"><text x="' + px(i) + '" y="' + (py(i) - 16) + '" font-size="' + (hedef ? 38 : 26) + '" text-anchor="middle">' + k[0] + '</text>'
-                + (adli ? '<text x="' + ax + '" y="' + (py(i) + 38) + '" font-size="' + (hedef ? 22 : 17) + '" font-weight="900" fill="' + (hedef ? '#ffd34d' : '#cfd6e2') + '" text-anchor="middle">' + esc(k[1]) + '</text>' : '') + '</g>';
+                // zombi şehri: temizlenmemiş her durakta zombi, temizlenende yeşil tik
+                + (zm && i > 0 ? (gecti ? '<text x="' + (px(i) + 15) + '" y="' + (py(i) - 34) + '" font-size="15" text-anchor="middle">✅</text>' : '<text x="' + (px(i) + (hedef ? 22 : 15)) + '" y="' + (py(i) - (hedef ? 44 : 34)) + '" font-size="' + (hedef ? 24 : 16) + '" text-anchor="middle">🧟</text>') : '')
+                // son durak sağa yaslı ("Zombi Kralı" uzun, kesiliyordu)
+                + (adli ? '<text x="' + (i === SON ? W - 4 : ax) + '" y="' + (py(i) + 38) + '" font-size="' + (hedef ? 22 : 17) + '" font-weight="900" fill="' + (hedef ? '#ffd34d' : '#cfd6e2') + '" text-anchor="' + (i === SON ? 'end' : 'middle') + '">' + esc(k[1]) + '</text>' : '') + '</g>';
         });
         const ci = st.durak < SON ? st.durak + Math.min(1, st.sayac / st.hedef) : SON;
         const a = Math.floor(ci), f = ci - a, b = Math.min(SON, a + 1), cx = px(a) + (px(b) - px(a)) * f, cy = py(a) + (py(b) - py(a)) * f;
@@ -102,22 +127,24 @@
     function sinifAdi() { try { return typeof kmKonumAdi === 'function' ? kmKonumAdi() : ''; } catch (e) { return ''; } }
 
     function dersBasi(st) {
-        const h = DURAKLAR[Math.min(st.durak + 1, SON)];
-        ortu('<small class="yk-ust">' + esc(sinifAdi()) + ' · Sınıf Yolculuğu' + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</small>'
+        const h = D(st.durak + 1), n = st.hedef - st.sayac, zm = zombiMi();
+        ortu('<small class="yk-ust">' + esc(sinifAdi()) + ' · ' + ustYazi() + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</small>'
             + haritaSVG(st)
-            + '<div class="yk-buyuk">Bugün ' + (st.hedef - st.sayac) + ' iyi ok atarsak ' + h[0] + ' ' + esc(h[2]) + ' varırız.</div>'
-            + '<div class="yk-alt">Herkesin iyi oku sayılır, hangi oyunu oynarsak oynayalım. İyi ok herkesin kendi seviyesine göre: yeni başlayana mavi, ortaya kırmızı, iyiye sarı.</div>'
+            + (zm ? '<div class="yk-buyuk">' + h[0] + ' ' + esc(h[2]) + ' ' + n + ' zombi var! Hep birlikte temizleyelim.</div>'
+                + '<div class="yk-alt">Her iyi ok bir zombiyi yener. Önce ' + esc(h[1]) + ', sonra ' + esc(D(st.durak + 2)[1]) + '… en sonunda Zombi Kralı. İyi ok herkesin kendi seviyesine göre: yeni başlayana mavi, ortaya kırmızı, iyiye sarı.</div>'
+                : '<div class="yk-buyuk">Bugün ' + n + ' iyi ok atarsak ' + h[0] + ' ' + esc(h[2]) + ' varırız.</div>'
+                + '<div class="yk-alt">Herkesin iyi oku sayılır, hangi oyunu oynarsak oynayalım. İyi ok herkesin kendi seviyesine göre: yeni başlayana mavi, ortaya kırmızı, iyiye sarı.</div>')
             + '<button class="yk-btn" onclick="ykBasla()">Başlayalım</button>', 'yk-bas');
         clearTimeout(_basZaman); _basZaman = setTimeout(() => { const o = $('yk-ortu'); if (o && o.classList.contains('yk-bas')) ykBasla(); }, 10000);
     }
     function ykBasla() { clearTimeout(_basZaman); const st = oku(); st.basGun = bugun(); yaz(st); kap(); ykCiz(); }
 
     function ykHaritaAc() {
-        const st = oku(), h = DURAKLAR[Math.min(st.durak + 1, SON)];
-        ortu('<small class="yk-ust">' + esc(sinifAdi()) + ' · Sınıf Yolculuğu' + (st.tur > 1 ? ' · ' + st.tur + '. yolculuk' : '') + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</small>'
+        const st = oku(), h = D(st.durak + 1);
+        ortu('<small class="yk-ust">' + esc(sinifAdi()) + ' · ' + ustYazi() + (st.tur > 1 ? ' · ' + st.tur + '. yolculuk' : '') + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</small>'
             + haritaSVG(st)
-            + (st.acik ? '<div class="yk-buyuk">' + h[0] + ' ' + esc(h[2]) + ' ' + Math.max(0, st.hedef - st.sayac) + ' iyi ok kaldı</div>' : '<div class="yk-buyuk">Yolculuk kapalı</div>')
-            + '<div class="yk-alt">Her iyi ok sınıfı bir adım ilerletir. Hedef tutmazsa bir sonraki derste kaldığımız yerden devam ederiz.</div>'
+            + (st.acik ? '<div class="yk-buyuk">' + h[0] + ' ' + esc(kalanYazi(h, Math.max(0, st.hedef - st.sayac))) + '</div>' : '<div class="yk-buyuk">Yolculuk kapalı</div>')
+            + '<div class="yk-alt">' + (zombiMi() ? 'Her iyi ok bir zombiyi yener; durak temizlenince sıradakine geçeriz.' : 'Her iyi ok sınıfı bir adım ilerletir.') + ' Hedef tutmazsa bir sonraki derste kaldığımız yerden devam ederiz.</div>'
             + '<div class="yk-ayar"><span>Bu durak için hedef</span><button onclick="ykHedef(-5)" aria-label="Hedefi azalt">−</button><b id="yk-hedef-yazi">' + st.hedef + '</b><button onclick="ykHedef(5)" aria-label="Hedefi artır">+</button></div>'
             + '<div class="yk-alt-btn"><button onclick="ykBasKarti()">Ders başı kartı: ' + (basKartiAcik() ? 'açık' : 'kapalı') + '</button><button onclick="ykAcKapa()">' + (st.acik ? 'Yolculuğu kapat' : 'Yolculuğu aç') + '</button><button class="yk-btn" onclick="ykKapat()">Tamam</button></div>');
     }
@@ -144,7 +171,7 @@
             gecilen = st.durak;
             if (st.durak >= SON) { st.tur = (st.tur || 1) + 1; st.durak = 0; }
         }
-        yaz(st); ykCiz(); puf(ilkAd(s.ad) + ' +' + iyi + ' ' + DURAKLAR[Math.min((gecilen != null ? gecilen : st.durak + 1), SON)][0]);
+        yaz(st); ykCiz(); puf(ilkAd(s.ad) + ' +' + iyi + ' ' + (zombiMi() ? '🧟' : D(gecilen != null ? gecilen : st.durak + 1)[0]));
         if (gecilen != null) { clearTimeout(_basariZaman); _basariZaman = setTimeout(() => basari(gecilen), 2200); }
         return iyi;
     }
@@ -161,11 +188,11 @@
         setTimeout(() => p.remove(), 2600);
     }
     function basari(i) {
-        const k = DURAKLAR[i], final = i >= SON, st = oku();
+        const k = D(i), final = i >= SON, st = oku(), zm = zombiMi();
         let adlar = []; try { adlar = (_kmOyunRosterCache || []).map((x) => ilkAd(x.ad)); } catch (e) { }
-        const sonraki = final ? DURAKLAR[1] : DURAKLAR[Math.min(i + 1, SON)];
+        const sonraki = final ? D(1) : D(i + 1);
         const o = ortu('<div class="yk-dev">' + k[0] + '</div><div class="yk-buyuk">' + esc(k[3]) + '</div>'
-            + (final ? '<div class="yk-alt">Bütün yolculuğu bitirdik! ' + (st.tur) + '. yolculuk başlıyor.</div>' : '<div class="yk-alt2">Sıradaki durak: ' + sonraki[0] + ' ' + esc(sonraki[1]) + ' (' + st.hedef + ' iyi ok)</div>')
+            + (final ? '<div class="yk-alt">' + (zm ? 'Bütün şehri zombilerden kurtardık! ' : 'Bütün yolculuğu bitirdik! ') + (st.tur) + '. yolculuk başlıyor.</div>' : '<div class="yk-alt2">Sıradaki durak: ' + sonraki[0] + ' ' + esc(sonraki[1]) + ' (' + st.hedef + (zm ? ' zombi' : ' iyi ok') + ')</div>')
             + haritaSVG(st)
             + (adlar.length ? '<div class="yk-adlar">Hep birlikte: ' + adlar.map(esc).join(', ') + '</div>' : '')
             + '<button class="yk-btn" onclick="ykKapat()">Devam</button>', 'yk-basari' + (final ? ' yk-final' : ''));
@@ -213,5 +240,5 @@
 
     window.ykCiz = ykCiz; window.ykSeri = ykSeri; window.ykGeriAl = ykGeriAl; window.ykHaritaAc = ykHaritaAc;
     window.ykBasla = ykBasla; window.ykHedef = ykHedef; window.ykAcKapa = ykAcKapa; window.ykKapat = ykKapat; window.ykBasKarti = ykBasKarti;
-    window._ykIc = { DURAKLAR, esikOf, oku, yaz, anahtar, hedefHesapla };
+    window._ykIc = { DURAKLAR, ZOMBI_DURAKLAR, esikOf, oku, yaz, anahtar, hedefHesapla };
 })();

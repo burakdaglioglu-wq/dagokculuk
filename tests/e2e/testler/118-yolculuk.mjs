@@ -22,7 +22,9 @@ export default async function ({ log }) {
     // 1) ders başı kartı
     await p.waitForSelector('#yk-ortu.yk-bas', { timeout: 10000 });
     const bas = await p.locator('#yk-ortu .yk-buyuk').innerText();
-    dogrula(/iyi ok atarsak/.test(bas) && /Ormana varırız/.test(bas), 'ders başı hedef cümlesi: ' + bas);
+    // v414: Zombi açıkken yolculuk zombi şehri — "Köprüde N zombi var!"
+    dogrula(/Köprüde \d+ zombi var/.test(bas), 'zombi ders başı cümlesi: ' + bas);
+    dogrula(/Zombi Şehri/.test(await p.locator('#yk-ortu .yk-ust').textContent()), 'zombi başlığı');
     dogrula(await p.locator('#yk-ortu svg.yk-harita').count() === 1, 'haritada çizim yok');
     await p.locator('#yk-ortu .yk-btn').click();
     esit(await p.locator('#yk-ortu').count(), 0, 'Başlayalım kartı kapatmalı');
@@ -53,24 +55,27 @@ export default async function ({ log }) {
     await p.evaluate(() => { const st = _ykIc.oku(); st.hedef = 5; st.elle = true; _ykIc.yaz(st); ykCiz(); });
     const r1 = await seri(['X', '10', '9']);
     esit(r1.st.sayac, 3, 'X/10/9 → 3 iyi ok'); esit(r1.st.durak, 0, 'henüz durak geçilmedi');
-    dogrula(/Ormana 2 iyi ok kaldı/.test(await p.locator('#yk-serit').innerText()), 'şerit yazısı: ' + await p.locator('#yk-serit').innerText());
+    dogrula(/Köprüde 2 zombi kaldı/.test(await p.locator('#yk-serit').innerText()), 'zombi şerit yazısı: ' + await p.locator('#yk-serit').innerText());
     const r2 = await seri(['X', '10', '9']);
-    esit(r2.st.durak, 1, 'Orman geçilmeli'); esit(r2.st.sayac, 0, 'yeni durakta sayaç sıfır'); esit(r2.st.elle, false, 'yeni durakta hedef yeniden hesaplanır');
+    esit(r2.st.durak, 1, 'ilk durak geçilmeli'); esit(r2.st.sayac, 0, 'yeni durakta sayaç sıfır'); esit(r2.st.elle, false, 'yeni durakta hedef yeniden hesaplanır');
     await p.waitForSelector('#yk-ortu.yk-basari', { timeout: 6000 });
     const bs = await p.locator('#yk-ortu').innerText();
-    dogrula(/Ormana vardık/.test(bs), 'kutlama başlığı: ' + bs.slice(0, 80));
+    dogrula(/Köprüyü temizledik/.test(bs), 'zombi kutlama başlığı: ' + bs.slice(0, 80));
     const adlar = await p.evaluate(() => _kmOyunRosterCache.map((x) => String(x.ad).trim().split(/\s+/)[0]));
     dogrula(adlar.every((a) => bs.includes(a)), 'kutlamada herkesin adı olmalı');
-    dogrula(/Köprü/.test(bs), 'sıradaki durak yazmalı');
+    dogrula(/Sıradaki durak: .*Kule/.test(bs), 'sıradaki durak Kule yazmalı');
     // 5) geri al → durak geri gelir, kutlama kapanır
     const ga = await p.evaluate(async () => { window.confirm = () => true; kmOyunSonGirisiGeriAl(); await new Promise((r) => setTimeout(r, 200)); return { st: _ykIc.oku(), ortu: !!document.getElementById('yk-ortu') }; });
     esit(ga.st.durak, 0, 'geri al durağı geri getirmeli'); esit(ga.st.sayac, 3, 'geri al sayacı geri getirmeli'); esit(ga.ortu, false, 'geri alınca kutlama kapanmalı');
     // 6) oyun değişince aynı sayaç (Hapşırık) ve gene ilerler
     await p.evaluate(() => kmOyunTemaSec('hapsirik')); await p.waitForTimeout(600);
-    dogrula(/Ormana 2 iyi ok kaldı/.test(await p.locator('#yk-serit').innerText()), 'oyun değişince sayaç kalmalı');
+    dogrula(/Ormana 2 iyi ok kaldı/.test(await p.locator('#yk-serit').innerText()), 'oyun değişince sayaç kalmalı, normal harita: ' + await p.locator('#yk-serit').innerText());
     const r3 = await seri(['X', '10', '9']);
     esit(r3.st.durak, 1, 'başka oyunda da ilerlemeli');
     await p.evaluate(() => { const el = document.getElementById('yk-ortu'); if (el) el.remove(); });
+    // Zombi'ye dönünce aynı durak zombi şehri olarak: sıradaki Kule
+    await p.evaluate(() => kmOyunTemaSec('zombi')); await p.waitForTimeout(600);
+    dogrula(/Kulede \d+ zombi kaldı/.test(await p.locator('#yk-serit').innerText()), 'zombiye dönünce Kule: ' + await p.locator('#yk-serit').innerText());
     // 7) 12 saat kuralı yolculuğu silmez
     const k = await anahtar();
     const on2 = await p.evaluate((k) => { localStorage.setItem('dag_km_oyun_son_' + (_kmAktifKonum || 'varsayilan'), String(Date.now() - 13 * 3600000)); try { kmOyunBayatSifirla(); } catch (e) { return 'hata:' + e.message; } return localStorage.getItem(k) ? 'duruyor' : 'silindi'; }, k);
