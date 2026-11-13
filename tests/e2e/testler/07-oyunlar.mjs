@@ -137,6 +137,16 @@ export default async function ({ log }) {
     dogrula(cnv.anka.tip === 'zumruduanka' && cnv.anka.dirildi && cnv.anka.can === 30, 'Zümrüdüanka dirilmedi: ' + JSON.stringify(cnv.anka));
     dogrula(cnv.jole, 'jöle ikiye bölünmedi');
     esit(cnv.mamut, 415, 'mamut ıskada iyileşmedi');
+    // ⚔️ v416 Epik Arena: kamera grubu, korlar, her okçuda yay + kalkan; karşı saldırıda herkes birlikte kalkan kaldırır
+    const epik = await p.evaluate(async () => {
+      kmOyunTemaSec('canavar'); await new Promise((r) => setTimeout(r, 400));
+      const okcu = document.querySelectorAll('#km-cnv-parti .km-cnv-okcu').length, yay = document.querySelectorAll('#km-cnv-parti .km-cnv-kahraman-yay').length;
+      kmCanavarKarsiSaldiri(_kmCanavar.aktif); await new Promise((r) => setTimeout(r, 300));
+      const kalkan = [...document.querySelectorAll('#km-cnv-parti .km-cnv-kalkan-k')].filter((k) => k.getAttribute('opacity') === '1').length;
+      return { kam: !!document.getElementById('km-cnv-kam'), kor: document.querySelectorAll('#km-cnv-epik .km-cnv-kor').length, okcu, yay, kalkan };
+    });
+    dogrula(epik.kam && epik.kor > 10 && epik.okcu > 0 && epik.yay === epik.okcu, 'Epik Arena katmanı/kahraman yayı eksik: ' + JSON.stringify(epik));
+    if (!(await p.evaluate(() => kmOyunKameraAzaltilmisHareketMi()))) esit(epik.kalkan, epik.okcu, 'karşı saldırıda herkes kalkan kaldırmadı');
     // 📖 Canavar rehberi: 23 tür kartı; "Bununla savaş" sahnedeki canavarı değiştirir
     const yedekCnv = await p.evaluate(() => JSON.stringify(_kmCanavar));
     await p.evaluate(() => { kmOyunTemaSec('canavar'); _kmCanavar.aktif.can = _kmCanavar.aktif.maxCan; kmCanavarKaydet(); kmOyunCanavarHudGuncelle(); });
