@@ -28,6 +28,9 @@ export default async function ({ log }) {
     });
     dogrula(adil.i !== 0, `adil başlangıç: daha önce ilk başlayan ${adil.ilk} yine başladı`);
     await p.waitForFunction(() => !!document.getElementById('hps-svg'), null, { timeout: 30000 });
+    // v415 Masal Kitabı: kamera grubu, kürk ışığı geçişleri, ateş böceği/kar
+    const masal = await p.evaluate(() => ({ kam: !!document.getElementById('hps-kam'), boya: document.querySelectorAll('#hps-svg radialGradient[id^="hps-m-"]').length, bocek: document.querySelectorAll('#hps-bocekler circle').length }));
+    dogrula(masal.kam && masal.boya >= 2 && masal.bocek > 5, 'masal görünümü yok: ' + JSON.stringify(masal));
     // aynı gün tekrar açınca sıra zıplamaz
     const ayni = await p.evaluate(() => { _kmOyunAktifIndex = (_kmOyunAktifIndex + 1) % _kmOyunRosterCache.length; const once = _kmOyunAktifIndex; kmOyunTemaSec('zirve'); kmOyunTemaSec('hapsirik'); return { once, sonra: _kmOyunAktifIndex }; });
     esit(ayni.sonra, ayni.once, 'aynı gün tema tekrar açılınca sıra başa zıpladı');
@@ -63,6 +66,9 @@ export default async function ({ log }) {
     esit(r3.st.no, 1, 'yaratık numarası');
     await p.waitForTimeout(5600);
     // v405: son atan kahraman değil — "HEP BİRLİKTE HAPŞIRTTINIZ", katkısı olan herkesin adı ve tacı
+    // v415: büyük yazı skor kutusunun arkasında kalmasın
+    const ust = await p.evaluate(() => { const d = document.getElementById('hps-dev').getBoundingClientRect(), k = document.getElementById('km-oyun-dok'); if (!k || k.offsetParent === null) return 0; const r = k.getBoundingClientRect(); const w = Math.max(0, Math.min(d.right, r.right) - Math.max(d.left, r.left)), h = Math.max(0, Math.min(d.bottom, r.bottom) - Math.max(d.top, r.top)); return Math.round(w * h / Math.max(1, d.width * d.height) * 100); });
+    dogrula(ust < 15, 'HEP BİRLİKTE yazısının %' + ust + "'i skor kutusunun altında");
     const hb = await p.evaluate(() => ({ yazi: document.getElementById('hps-dev').textContent, tac: document.querySelectorAll('#hps-cocuklar .hps-tac').length }));
     dogrula(/HEP BİRLİKTE/.test(hb.yazi) && !/Hapşırtan:/.test(hb.yazi), 'hep birlikte anı gösterilmedi: ' + hb.yazi.slice(0, 80));
     dogrula(hb.yazi.toLocaleLowerCase('tr-TR').includes(r3.ad.trim().split(/\s+/)[0].toLocaleLowerCase('tr-TR')), 'hapşırtanlar arasında ad yok: ' + hb.yazi); dogrula(hb.tac >= 1, 'taç yok');

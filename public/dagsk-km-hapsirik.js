@@ -82,6 +82,81 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
     const TUY_SVG_IC = '<path d="M35 4C22 5 9 15 7 31c5-1 11-4 15-8-4 0-6-1-7-2 4 0 8-2 11-5-3 0-5-1-6-2 5-1 9-4 15-10z" fill="#fff7e6" stroke="#c9a66b" stroke-width="1.6" stroke-linejoin="round"/><path d="M35 4L4 37" stroke="#a8844a" stroke-width="2" stroke-linecap="round"/>';
     function og(id, x, y) { return `id="${id}" style="transform-box:view-box;transform-origin:${x}px ${y}px"`; }
 
+    /* ---------------- 📖 MASAL KİTABI GÖRÜNÜMÜ (v415, kullanıcı iki taslaktan "Masal Kitabı"nı seçti) ----------------
+       Yaratıklar tek tek yeniden çizilmedi: her düz renk otomatik olarak üstten ışık alan yumuşak bir kürk geçişine döner,
+       koyu konturlar silikleşir (göz/ağız hariç). Arkada ay ışığı + katman katman manzara + ateş böceği/kar, önde çimen,
+       kenarlarda gölge. Hapşırık yaklaşınca kamera yüze yaklaşır (kamYakin/kamGeri). */
+    function hx(h) { h = h.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16)); }
+    function karis(a, b, t) { const x = hx(a), y = hx(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+    const BOYAMA = ['#ffffff', '#1e1a18', '#5a2620', '#cfe9ff'];
+    function masalBoya(svg, c) {
+        const renkler = new Set(); svg.replace(/fill="(#[0-9a-fA-F]{6})"/g, (m, r) => { renkler.add(r.toLowerCase()); return m; });
+        let defs = '';
+        renkler.forEach((r) => { if (BOYAMA.indexOf(r) >= 0) return; defs += `<radialGradient id="hps-m-${r.slice(1)}" cx=".38" cy=".28" r=".9"><stop offset="0" stop-color="${karis(r, '#fff4dc', .32)}"/><stop offset=".55" stop-color="${r}"/><stop offset="1" stop-color="${karis(r, '#0a0710', .38)}"/></radialGradient>`; });
+        svg = svg.replace(/fill="(#[0-9a-fA-F]{6})"/g, (m, r) => BOYAMA.indexOf(r.toLowerCase()) >= 0 ? m : `fill="url(#hps-m-${r.toLowerCase().slice(1)})"`);
+        // ince koyu konturlar silikleşir (kalın uzuv çizgileri — kuyruk/hortum — olduğu gibi kalır)
+        if (c.koyu) svg = svg.split(`stroke="${c.koyu}"`).join(`stroke="${c.koyu}" stroke-opacity=".3"`);
+        return { svg, defs };
+    }
+    const MANZARA = { ejder: 'dag', kurbaga: 'orman', mamut: 'kar', ayi: 'orman', timsah: 'orman', kaplumbaga: 'deniz', balina: 'deniz', salyangoz: 'tepe', aslan: 'savana', penguen: 'kar', ahtapot: 'deniz', baykus: 'orman' };
+    // sözde-rastgele ama her çizimde aynı (titreme yok)
+    function sr(i) { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
+    function manzaraSVG(tip, c) {
+        const tur = MANZARA[tip] || 'orman', g0 = c.gok[0], g1 = c.gok[1];
+        const renk = [karis(g1, g0, .2), karis(g0, g1, .25), karis(g0, '#05070c', .35)];
+        let s = '';
+        if (tur === 'dag' || tur === 'kar') {
+            [0, 1, 2].forEach((k) => {
+                const taban = 500, r = tur === 'kar' ? [karis(g1, '#ffffff', .45), karis(g1, '#dfeaf5', .2), karis(g0, g1, .45)][k] : renk[k];
+                let d = `M-400 ${taban}`; const zirveler = [];
+                for (let x = -400 + k * 70; x <= 1400; x += 190 + k * 50) { const h = 120 + sr(x + k * 7) * (150 - k * 30); d += ` L${x} ${taban - h}`; zirveler.push([x, taban - h]); d += ` L${x + 95 + k * 25} ${taban - h * .45}`; }
+                s += `<path d="${d} L1400 ${taban}Z" fill="${r}" opacity="${[.55, .75, .95][k]}"/>`;
+                if (tur === 'kar' && k < 2) s += zirveler.map(([x, y]) => `<path d="M${x - 30} ${y + 34} L${x} ${y} L${x + 30} ${y + 34} q-15 -8 -30 4 q-15 -12 -30 -4z" fill="#ffffff" opacity=".75"/>`).join('');
+            });
+        } else if (tur === 'orman') {
+            [[.4, renk[0], 380, 0], [.65, renk[1], 420, 1], [.95, renk[2], 470, 2]].forEach(([o, r, taban, k]) => {
+                for (let x = -400 + k * 37; x < 1400; x += 64 + k * 14) { const h = 110 + sr(x * 3 + k) * 100, w = 34 + k * 7; s += `<path d="M${x} ${taban} l${w} -${h} l${w} ${h}z M${x + 8} ${taban - h * .35} l${w - 8} -${h * .5} l${w - 8} ${h * .5}z" fill="${r}" opacity="${o}"/>`; }
+                s += `<rect x="-400" y="${taban - 2}" width="1800" height="${504 - taban}" fill="${r}" opacity="${o}"/>`;
+            });
+        } else if (tur === 'tepe') {
+            [0, 1, 2].forEach((k) => { let d = `M-400 500 L-400 ${380 + k * 30}`; for (let x = -400; x < 1400; x += 260) d += ` Q${x + 130} ${300 + k * 40 + sr(x + k) * 50} ${x + 260} ${380 + k * 30}`; s += `<path d="${d} L1400 500Z" fill="${karis(renk[k], '#2f5a2a', .35)}" opacity="${[.5, .75, .95][k]}"/>`; });
+        } else if (tur === 'savana') {
+            s += `<path d="M-400 500 L-400 420 Q0 360 300 410 T1000 390 T1400 410 L1400 500Z" fill="${renk[1]}" opacity=".7"/>`;
+            [[-120, 1], [160, .8], [880, 1.1], [1150, .9]].forEach(([x, b]) => { s += `<g opacity=".85" fill="${renk[2]}"><rect x="${x - 5 * b}" y="${500 - 110 * b}" width="${10 * b}" height="${110 * b}"/><ellipse cx="${x}" cy="${500 - 115 * b}" rx="${85 * b}" ry="${18 * b}"/><ellipse cx="${x - 30 * b}" cy="${500 - 128 * b}" rx="${45 * b}" ry="${12 * b}"/></g>`; });
+        } else { // deniz
+            s += `<rect x="-400" y="380" width="1800" height="125" fill="${karis(g0, g1, .55)}" opacity=".9"/>`;
+            s += [0, 1, 2, 3, 4].map((k) => `<ellipse cx="470" cy="${392 + k * 22}" rx="${70 - k * 10}" ry="3" fill="#fff4d0" opacity="${.45 - k * .07}"/>`).join('');
+            s += `<path d="M-200 382 q90 -50 180 0z M760 382 q120 -70 260 0z" fill="${renk[2]}" opacity=".8"/>`;
+        }
+        // sis
+        s += `<rect x="-400" y="360" width="1800" height="140" fill="url(#hps-sis)"/>`;
+        return s;
+    }
+    function masalDefs() {
+        return `<radialGradient id="hps-ay"><stop offset="0" stop-color="#fff6d6" stop-opacity=".85"/><stop offset=".22" stop-color="#ffe9a8" stop-opacity=".3"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+          <radialGradient id="hps-bocekg"><stop offset="0" stop-color="#fffbd0"/><stop offset=".35" stop-color="#fff07a" stop-opacity=".8"/><stop offset="1" stop-color="#ffe066" stop-opacity="0"/></radialGradient>
+          <radialGradient id="hps-polen"><stop offset="0" stop-color="#fffbe0"/><stop offset=".45" stop-color="#ffe27a" stop-opacity=".85"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></radialGradient>
+          <radialGradient id="hps-golge"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+          <radialGradient id="hps-vinyet" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>
+          <linearGradient id="hps-sis" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfe8ff" stop-opacity="0"/><stop offset=".6" stop-color="#dfe8ff" stop-opacity=".09"/><stop offset="1" stop-color="#dfe8ff" stop-opacity="0"/></linearGradient>`;
+    }
+    function ayVeBocek(tip) {
+        const kar = MANZARA[tip] === 'kar';
+        // Baykuş'un sahnesinde zaten kocaman bir ay var
+        let s = tip === 'baykus' ? '' : `<circle cx="470" cy="84" r="150" fill="url(#hps-ay)"/><circle cx="470" cy="84" r="30" fill="#fff4d0"/><circle cx="460" cy="76" r="6" fill="#efe0b4" opacity=".6"/><circle cx="480" cy="94" r="4" fill="#efe0b4" opacity=".5"/>`;
+        s += '<g id="hps-bocekler">' + Array.from({ length: kar ? 26 : 14 }, (_, i) => kar
+            ? `<circle class="hps-kar" style="animation-delay:-${(sr(i + 3) * 9).toFixed(1)}s;animation-duration:${(7 + sr(i) * 5).toFixed(1)}s" cx="${(sr(i + 1) * 1100 - 50).toFixed(0)}" cy="-20" r="${(2 + sr(i + 7) * 3).toFixed(1)}" fill="#fff" opacity=".8"/>`
+            : `<circle class="hps-bocek" style="animation-delay:-${(sr(i + 3) * 4).toFixed(1)}s;animation-duration:${(3 + sr(i) * 2.5).toFixed(1)}s" cx="${(sr(i + 1) * 1000).toFixed(0)}" cy="${(170 + sr(i + 5) * 300).toFixed(0)}" r="9" fill="url(#hps-bocekg)"/>`).join('') + '</g>';
+        return s;
+    }
+    function onPlan(tip, c) {
+        const tur = MANZARA[tip] || 'orman';
+        if (tur === 'deniz') return '';
+        if (tur === 'kar') return `<path d="M-400 560 L-400 540 Q-200 515 0 538 T400 536 T800 540 T1200 532 T1400 540 V560Z" fill="#f4f9ff" opacity=".9"/>`;
+        const r = karis(c.zemin[0], '#05070c', .55);
+        return '<g opacity=".95">' + Array.from({ length: 70 }, (_, i) => { const x = 440 + i * 9 + sr(i) * 6, h = 18 + sr(i + 9) * 30, e = (sr(i + 4) - .5) * 14; return `<path d="M${x.toFixed(0)} 562 q${e.toFixed(0)} -${(h * .6).toFixed(0)} ${(e * .5).toFixed(0)} -${h.toFixed(0)}" stroke="${r}" stroke-width="5" fill="none" stroke-linecap="round"/>`; }).join('') + '</g>';
+    }
+
     const Y = {
         ejder: {
             ad: 'Uykucu Ejder', ikon: '🐉', perde: 1, ten: '#6fae74', koyu: '#2f5e3a', karin: '#e8dca0',
@@ -623,11 +698,14 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                 <circle class="hps-halka" cx="0" cy="-20" r="25" fill="none" stroke="#ffd23f" stroke-width="3" opacity="0"/>
                 <text class="hps-ad-yazi" y="15" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" stroke="#1b2233" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke">${kacis(ilkAd(s.ad)).slice(0, 8)}</text></g></g>`;
         });
+        const boya = masalBoya(c.svg(c), c);
         return `<svg id="hps-svg" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
-          <defs><linearGradient id="hps-gok" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.gok[0]}"/><stop offset="1" stop-color="${c.gok[1]}"/></linearGradient>
-          <radialGradient id="hps-isikg" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#ffe7a8"/><stop offset=".5" stop-color="#e8b860" stop-opacity=".7"/><stop offset="1" stop-color="#e8b860" stop-opacity="0"/></radialGradient></defs>
-          <rect x="-400" y="-200" width="1800" height="960" fill="url(#hps-gok)"/>
+          <defs><linearGradient id="hps-gok" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${karis(c.gok[0], '#05070c', .3)}"/><stop offset="1" stop-color="${c.gok[1]}"/></linearGradient>
+          <radialGradient id="hps-isikg" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#ffe7a8"/><stop offset=".5" stop-color="#e8b860" stop-opacity=".7"/><stop offset="1" stop-color="#e8b860" stop-opacity="0"/></radialGradient>${masalDefs()}${boya.defs}</defs>
+          <g id="hps-kam" style="transform-box:view-box;transform-origin:0 0">
+          <rect x="-400" y="-200" width="1800" height="960" fill="url(#hps-gok)"/>${ayVeBocek(st.tip)}
           ${[[90, 70], [180, 130], [300, 60], [420, 110], [560, 50], [640, 90], [760, 40], [880, 70], [60, 200]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#fff" opacity="${st.tip === 'ayi' ? .35 : .6}"/>`).join('')}
+          ${manzaraSVG(st.tip, c)}
           ${st.tip === 'mamut' ? [[120, 300], [260, 250], [380, 320]].map((p) => `<path d="M${p[0] - 90} 500 L${p[0]} ${p[1]} L${p[0] + 90} 500Z" fill="#cfe2ef" opacity=".25"/>`).join('') : ''}
           ${st.tip === 'kurbaga' ? [140, 200, 330, 390].map((x, i) => `<path d="M${x} 500 q${4 + i} -60 ${-6 + i * 3} -${90 + i * 12}" stroke="#2f5a4c" stroke-width="5" fill="none"/><ellipse cx="${x - 6 + i * 3}" cy="${410 - i * 12}" rx="6" ry="16" fill="#5a4330"/>`).join('') : ''}
           ${st.tip === 'ayi' ? [70, 150, 260, 350].map((x, i) => `<path d="M${x} ${180 + (i % 2) * 40} l50 140 h-100z M${x} ${240 + (i % 2) * 40} l60 150 h-120z" fill="#122a1a" opacity=".8"/><rect x="${x - 7}" y="${380 + (i % 2) * 40}" width="14" height="${130 - (i % 2) * 40}" fill="#24180e"/>`).join('') : ''}
@@ -637,7 +715,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
             ${c.arka()}
             <ellipse id="hps-isik" cx="${c.isikXY[0]}" cy="${c.isikXY[1]}" rx="190" ry="160" fill="url(#hps-isikg)" opacity="0" style="transition:opacity 1.5s"/>
             <text x="748" y="${c.yerY || ({ mamut: 176, ayi: 104, kurbaga: 150 })[st.tip] || 132}" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" opacity=".6">${c.yer}</text>
-            <g id="hps-yaratik" style="transform-box:view-box;transform-origin:690px 500px;transition:transform 1.8s ease-in-out"><g ${og('hps-yuvarlan', 690, 500)}>${c.svg(c)}<g id="hps-gizli-iz"></g></g></g>
+            <g id="hps-yaratik" style="transform-box:view-box;transform-origin:690px 500px;transition:transform 1.8s ease-in-out"><ellipse cx="680" cy="504" rx="330" ry="30" fill="url(#hps-golge)"/><g ${og('hps-yuvarlan', 690, 500)}>${boya.svg}<g id="hps-gizli-iz"></g></g></g>
             <g id="hps-ruya" style="transform-box:view-box;transform-origin:${c.ruyaXY[0]}px ${c.ruyaXY[1]}px;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .35s">
               <g fill="#fff" opacity=".92" transform="translate(${c.ruyaXY[0]} ${c.ruyaXY[1]}) scale(${c.ruyaAyna ? -1.15 : 1.15} 1.15) translate(-332 -225)"><circle cx="430" cy="312" r="7" opacity=".9"/><circle cx="405" cy="288" r="11" opacity=".9"/><circle cx="300" cy="215" r="44"/><circle cx="350" cy="200" r="50"/><circle cx="392" cy="225" r="38"/><circle cx="335" cy="250" r="40"/><circle cx="268" cy="245" r="32"/></g>
               <g ${og('hps-ruya-ic', c.ruyaXY[0], c.ruyaXY[1])}><text id="hps-ruya-emoji" x="${c.ruyaXY[0]}" y="${c.ruyaXY[1] - 4}" text-anchor="middle" font-size="46">${c.ruya[0]}</text><g id="hps-ruya-tuy" opacity="0" transform="translate(${c.ruyaXY[0] + 40} ${c.ruyaXY[1] - 46}) scale(.9)">${TUY_SVG_IC}</g></g>
@@ -645,8 +723,11 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
             </g>
             <g id="hps-hapsu"></g>
           </g>
+          ${onPlan(st.tip, c)}
+          <rect x="-400" y="-200" width="1800" height="960" fill="url(#hps-vinyet)" pointer-events="none"/>
           <path d="M-400 560 V226 Q60 180 190 194 Q320 210 430 284 V560Z" fill="${c.zemin[0]}" opacity=".92"/><path d="M-400 226 Q60 180 190 194 Q320 210 430 284" fill="none" stroke="${c.zemin[1]}" stroke-width="6"/>
           <g id="hps-cocuklar">${cocuk}</g>
+          </g>
         </svg>
         <div class="hps-hud"><div class="hps-hud-ust"><span class="hps-ad" id="hps-ad"></span><span class="hps-cip" id="hps-gizli-cip"></span>
           <button class="hps-btn" id="hps-zar-btn" title="Sıradakini rastgele seç">🎲</button><button class="hps-btn" id="hps-ses-btn" title="Ses">🔊</button><button class="hps-btn" id="hps-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hps-btn" id="hps-yeni-btn" title="Yeni yaratık">🔄</button></div>
@@ -718,7 +799,42 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
         b.textContent = t; b.style.left = (r.left + r.width * .45 - pr.left) + 'px'; b.style.top = (r.top - pr.top) + 'px'; b.classList.add('goster');
         clearTimeout(_balonT); _balonT = setTimeout(() => b.classList.remove('goster'), ms || 1900);
     }
-    function dev(html, ms) { const d = $('hps-dev'); if (!d) return; d.innerHTML = html; d.classList.add('goster'); if (ms) sonra(() => d.classList.remove('goster'), ms); }
+    function dev(html, ms) { const d = $('hps-dev'); if (!d) return; d.innerHTML = html; devYerlestir(d); d.classList.add('goster'); if (ms) sonra(() => d.classList.remove('goster'), ms); }
+    // v415: büyük yazı skor kutusunun (km-oyun-dok, z 7) ARKASINDA kalıyordu — kutunun kapatmadığı boşluğa ortalanır.
+    function devYerlestir(d) {
+        d.style.left = ''; d.style.top = ''; d.style.width = ''; d.style.fontSize = '';
+        const p = panel(), k = document.getElementById('km-oyun-dok'); if (!p || !k || k.offsetParent === null) return;
+        const pr = p.getBoundingClientRect(), kr = k.getBoundingClientRect();
+        if (kr.width < 10 || kr.bottom < pr.top || kr.top > pr.bottom) return;
+        const sol = kr.left - pr.left, sag = pr.right - kr.right;
+        if (Math.max(sol, sag) >= pr.width * .42) {
+            const x0 = sag >= sol ? kr.right - pr.left : 0, w = sag >= sol ? sag : sol;
+            d.style.left = (x0 + w / 2) + 'px'; d.style.width = (w * .94) + 'px';
+            // "HAPŞIRTTINIZ! 🎉" (~15 harf) boş alana sığsın
+            d.style.fontSize = Math.max(26, Math.min(84, w * .085)) + 'px';
+        } else if (kr.top - pr.top > pr.height * .3) d.style.top = ((kr.top - pr.top) / 2) + 'px';
+    }
+    // 🎥 Kamera: hapşırık yaklaşınca yaratığın yüzüne yaklaşır, hapşırıkla geri çekilir.
+    let _kamT = null;
+    const AZ_HAREKET = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
+    function kamYakin(s, ms) {
+        const sv = $('hps-svg'), k = $('hps-kam'), b = $('hps-h-burun'); if (AZ_HAREKET || !sv || !k || !b || !k.animate) return;
+        k.getAnimations().forEach((a) => a.cancel());
+        const m = sv.getScreenCTM(), e = b.getScreenCTM(); if (!m || !e) return;
+        const pt = sv.createSVGPoint(); pt.x = +b.getAttribute('cx'); pt.y = +b.getAttribute('cy'); const p = pt.matrixTransform(m.inverse().multiply(e));
+        _kamT = `translate(${(600 - p.x * s).toFixed(1)}px,${(290 - p.y * s).toFixed(1)}px) scale(${s})`;
+        k.animate([{ transform: 'translate(0px,0px) scale(1)' }, { transform: _kamT }], { duration: ms, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' });
+    }
+    function kamGeri(ms) {
+        const k = $('hps-kam'); if (!k || !_kamT || !k.animate) return; const once = _kamT; _kamT = null;
+        k.getAnimations().forEach((a) => a.cancel());
+        k.animate([{ transform: once }, { transform: 'translate(0px,0px) scale(1)' }], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
+    }
+    // gülen gözler: kapalı göz çizgisi ters döner (‿ → ^^), ağız gülümser, sonra uykuya döner
+    function gulumse(ms) {
+        ['hps-gk1', 'hps-gk2'].forEach((id) => anim(id, 'hps-goz-gul'));
+        agiz('gulumse'); setTimeout(() => { if (!_toren && $('hps-agiz')) agiz(((durum().gidik || 0) / (durum().gerekli || 1)) >= .75 ? 'ha' : 'uyku'); }, ms || 900);
+    }
     function ucur(i, hedefId, cb) {
         const u = $('hps-ust'), c = $('hps-c' + i), h = $(hedefId); if (!u || !h) { cb(); return; }
         const a = c ? nokta(c.querySelector('.hps-ci') || c) : { x: 40, y: 200 }, b = nokta(h), k = olcek();
@@ -828,10 +944,10 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                 dev(`GİZLİ NOKTA! ${gb.emoji}<small>${kacis(ilkAd(s.ad))} buldu: ${gb.ad.toLocaleLowerCase('tr')} çok gıdıklanıyor · artık her <b>${okDeger(o.v)}</b> buraya gider</small>`, 2600);
                 if (!hapsirdi) hudCiz(); else { const cip = $('hps-gizli-cip'); if (cip) cip.innerHTML = `${gb.emoji} <b>${okDeger(o.v)}</b> = ${gb.ad.toLocaleLowerCase('tr')}`; }
             }
-        } else if (o.yer === 'burun') { SES.burun(); anim('hps-burun', 'hps-kipir'); pop(rnd(['hı... hıı', 'fıss!', 'hıhh?']), 'hps-h-burun', -50, 28, '#ffd0dc'); const b = $('hps-balon'); if (b) { b.style.display = 'none'; setTimeout(() => { if (b.isConnected && !_toren) b.style.display = ''; }, 2500); } }
-        else if (o.yer === 'gobek') { SES.kikir(); anim(_aktifTip === 'kurbaga' ? 'hps-gidi' : 'hps-govde', _aktifTip === 'kurbaga' ? 'hps-sisir' : 'hps-kikir'); pop(rnd(['kıkıkı!', 'hihihi', 'kih kih']), 'hps-h-gobek', -80, 28, '#ffe9a8'); }
-        else if (o.yer === 'ayak') { SES.ayak(); anim('hps-ayak', 'hps-ayak-salla'); pop(rnd(['hiii!', 'ayy', 'kıpır kıpır']), 'hps-h-ayak', -60, 24, '#d8f0ff'); }
-        else if (o.yer === 'kuyruk') { SES.kuyruk(); anim('hps-kuyruk', _aktifTip === 'kurbaga' ? 'hps-kipir' : 'hps-kuyruk-salla'); pop(c.kuyrukSoz || (_aktifTip === 'ayi' ? 'kulak kıpır!' : _aktifTip === 'kurbaga' ? 'hıhı sırtım!' : 'fış fış'), 'hps-h-kuyruk', -40, 22, '#e8f0d8'); }
+        } else if (o.yer === 'burun') { SES.burun(); anim('hps-burun', 'hps-kipir'); anim('hps-bas', 'hps-bas-sars'); pop(rnd(['hı... hıı', 'fıss!', 'hıhh?']), 'hps-h-burun', -50, 28, '#ffd0dc'); const b = $('hps-balon'); if (b) { b.style.display = 'none'; setTimeout(() => { if (b.isConnected && !_toren) b.style.display = ''; }, 2500); } }
+        else if (o.yer === 'gobek') { SES.kikir(); anim(_aktifTip === 'kurbaga' ? 'hps-gidi' : 'hps-govde', _aktifTip === 'kurbaga' ? 'hps-sisir' : 'hps-kikir'); anim('hps-bas', 'hps-bas-kikir'); anim('hps-yuvarlan', 'hps-titre'); gulumse(1000); pop(rnd(['kıkıkı!', 'hihihi', 'kih kih']), 'hps-h-gobek', -80, 28, '#ffe9a8'); }
+        else if (o.yer === 'ayak') { SES.ayak(); anim('hps-ayak', 'hps-ayak-salla'); gulumse(800); pop(rnd(['hiii!', 'ayy', 'kıpır kıpır']), 'hps-h-ayak', -60, 24, '#d8f0ff'); }
+        else if (o.yer === 'kuyruk') { SES.kuyruk(); anim('hps-kuyruk', _aktifTip === 'kurbaga' ? 'hps-kipir' : 'hps-kuyruk-salla'); setTimeout(() => anim('hps-kulak', 'hps-kulak-cirp'), 250); pop(c.kuyrukSoz || (_aktifTip === 'ayi' ? 'kulak kıpır!' : _aktifTip === 'kurbaga' ? 'hıhı sırtım!' : 'fış fış'), 'hps-h-kuyruk', -40, 22, '#e8f0d8'); }
         if (o.v === 'X') pop('X! ×1.5', o.yer === 'gizli' ? 'hps-h-' + (_ekranGizli || durum().gizli).yer : 'hps-h-' + o.yer, -110, 22, '#ffe08a');
         if (o.oran >= .5 && o.oran < 1 && Math.random() < .55) { goz(2, true); setTimeout(() => goz(2, false), 800); konus(rnd(['Mmm... kim o?', 'Hıı... rüya mı bu?', 'Beş dakika daha...']), 1500); }
         if (o.oran >= .75 && o.oran < 1) { agiz('ha'); pop('ha...', 'hps-h-burun', -30, 30); }
@@ -839,15 +955,22 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
     function nefesAl() {
         const st = durum(); void st;
         const b = $('hps-balon'); if (b) b.style.display = 'none'; const z = $('hps-zzz'); if (z) z.style.display = 'none';
-        pop('ha...', 'hps-h-burun', -40, 34); SES.ha(0);
+        pop('ha...', 'hps-h-burun', -40, 34); SES.ha(0); kamYakin(1.55, 2100);
         sonra(() => { pop('haa...', 'hps-h-burun', -70, 44); SES.ha(1); }, 700);
-        sonra(() => { pop('HAAAA...', 'hps-h-burun', -100, 58); SES.ha(2); const n = $('hps-nefes'); if (n) n.setAttribute('class', 'hps-nefes-al'); const bs = $('hps-bas'); if (bs) bs.classList.add('hps-bas-geri'); agiz('acik'); }, 1400);
+        sonra(() => { pop('HAAAA...', 'hps-h-burun', -100, 58); SES.ha(2); anim('hps-yuvarlan', 'hps-titre-uzun'); const n = $('hps-nefes'); if (n) n.setAttribute('class', 'hps-nefes-al'); const bs = $('hps-bas'); if (bs) bs.classList.add('hps-bas-geri'); agiz('acik'); }, 1400);
+    }
+    function cocuklarSavrul() {
+        document.querySelectorAll('#hps-cocuklar .hps-ci').forEach((e, j) => {
+            if (!e.animate || AZ_HAREKET) return; e.style.transformBox = 'fill-box'; e.style.transformOrigin = '50% 100%';
+            const d = 16 + (j % 3) * 7, r = 14 + (j % 4) * 4;
+            e.animate([{ transform: 'translateX(0) rotate(0)' }, { transform: `translateX(-${d}px) rotate(-${r}deg)`, offset: .22 }, { transform: `translateX(-${d * .4}px) rotate(-${r * .35}deg)`, offset: .6 }, { transform: 'translateX(0) rotate(0)' }], { duration: 1700, delay: (j % 6) * 55, easing: 'ease-out' });
+        });
     }
     function sahteGoster() {
         _toren = true; nefesAl();
         sonra(() => {
             SES.gecti(); const n = $('hps-nefes'); if (n) n.setAttribute('class', 'hps-nefes'); const bs = $('hps-bas'); if (bs) bs.classList.remove('hps-bas-geri'); agiz('uyku');
-            pop('...hıh.', 'hps-h-burun', -40, 40, '#cfe3ff');
+            pop('...hıh.', 'hps-h-burun', -40, 40, '#cfe3ff'); kamGeri(1100);
             sonra(() => { dev('Geçti! 😅<small>Biraz daha gıdıklayın!</small>', 1800); const z = $('hps-zzz'); if (z) z.style.display = ''; _toren = false; hudCiz(); ruyaAsamaUygula(durum(), true); }, 700);
         }, 3200);
     }
@@ -862,7 +985,8 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
             const r = $('hps-ruya'); if (r) { r.style.transform = 'scale(1.3)'; r.style.opacity = 0; pop('POF!', 'hps-ruya-emoji', 0, 34); }
             dev('HAPŞUUUU!', 1400);
             const w = document.getElementById('km-oyun-sahne') || panel(); w.classList.add('hps-salla'); setTimeout(() => w.classList.remove('hps-salla'), 1100);
-            anim('hps-cocuklar', 'hps-savrul');
+            cocuklarSavrul();
+            const km = $('hps-kam'); if (km && _kamT && km.animate) { const t0 = _kamT; km.getAnimations().forEach((a) => a.cancel()); km.animate([{ transform: t0 }, { transform: t0.replace(/scale\(([\d.]+)\)/, (m, v) => 'scale(' + (+v * 1.06) + ')') }], { duration: 160, easing: 'ease-out', fill: 'forwards' }); setTimeout(() => kamGeri(1500), 700); }
             const hs = $('hps-hapsu'), bn = $('hps-h-burun'); if (hs && bn) {
                 const ox = +bn.getAttribute('cx'), oy = +bn.getAttribute('cy'); let x = '';
                 for (let k = 0; k < 28; k++) {
@@ -871,7 +995,9 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                     else if (c.hapsirik.cesit === 'yaprak') x += k % 2 ? `<text class="hps-bulut" ${og2} x="${px}" y="${py}" font-size="30">${rnd(['🍂', '🍃', '🍁'])}</text>` : `<circle class="hps-bulut" ${og2} cx="${px}" cy="${py}" r="${14 + Math.random() * 24}" fill="${cl}" opacity=".7"/>`;
                     else { x += `<circle class="hps-bulut" ${og2} cx="${px}" cy="${py}" r="${20 + Math.random() * 34}" fill="${cl}"/>`; if (c.hapsirik.cesit === 'kar' && k % 3 === 0) x += `<text class="hps-bulut" ${og2} x="${px}" y="${py}" font-size="28">❄️</text>`; }
                 }
-                hs.innerHTML = x;
+                // 📖 ağır çekim parlayan polen
+                for (let k = 0; k < 18; k++) { const a = Math.PI * (.6 + Math.random() * .8), d = 80 + Math.random() * 360, gec = (Math.random() * .4).toFixed(2); x += `<circle class="hps-bulut" style="transform-box:view-box;transform-origin:${ox}px ${oy}px;animation-delay:${gec}s" cx="${ox + Math.cos(a) * d}" cy="${oy + Math.sin(a) * d * .6}" r="${8 + Math.random() * 16}" fill="url(#hps-polen)"/>`; }
+                hs.innerHTML = x; hs.classList.add('hps-yavas');
             }
         }, 2400);
         sonra(() => { const bs = $('hps-bas'); if (bs) bs.classList.remove('hps-bas-ileri'); goz(1, true); goz(2, true); agiz('utanc'); const y = $('hps-yanak'); if (y) y.setAttribute('opacity', .8); konus('...ben mi yaptım onu? 😳', 1600); }, 3500);
@@ -950,15 +1076,15 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 .hps-nefes-al{animation:hpsNefesAl 1.6s ease-in forwards}
 @keyframes hpsNefesAl{to{transform:scale(1.07,1.16)}}
 .hps-kipir{animation:hpsKipir .6s ease}
-@keyframes hpsKipir{0%,100%{transform:scale(1)}25%{transform:scale(1.35,1.15)}50%{transform:scale(.9)}75%{transform:scale(1.2,1.1)}}
-.hps-kikir{animation:hpsKikir .7s ease}
-@keyframes hpsKikir{0%,100%{transform:translateY(0)}20%{transform:translateY(-8px)}40%{transform:translateY(0)}60%{transform:translateY(-6px)}80%{transform:translateY(0)}}
+@keyframes hpsKipir{0%,100%{transform:scale(1)}20%{transform:scale(1.5,.78)}40%{transform:scale(.82,1.22)}60%{transform:scale(1.35,.85)}80%{transform:scale(.95,1.08)}}
+.hps-kikir{animation:hpsKikir .95s ease}
+@keyframes hpsKikir{0%,100%{transform:scale(1,1)}15%{transform:scale(1.06,.88) translateY(4px)}32%{transform:scale(.95,1.09) translateY(-10px)}50%{transform:scale(1.05,.92)}68%{transform:scale(.97,1.05) translateY(-5px)}84%{transform:scale(1.02,.97)}}
 .hps-sisir{animation:hpsSisir .9s ease}
 @keyframes hpsSisir{0%,100%{transform:scale(1)}30%{transform:scale(1.6,1.9)}60%{transform:scale(1.3,1.5)}}
 .hps-ayak-salla{animation:hpsAyak .7s ease}
-@keyframes hpsAyak{0%,100%{transform:rotate(0)}25%{transform:rotate(-16deg)}50%{transform:rotate(12deg)}75%{transform:rotate(-8deg)}}
-.hps-kuyruk-salla{animation:hpsKuyruk .8s ease}
-@keyframes hpsKuyruk{0%,100%{transform:rotate(0)}30%{transform:rotate(-9deg)}60%{transform:rotate(6deg)}}
+@keyframes hpsAyak{0%,100%{transform:rotate(0)}18%{transform:rotate(-28deg)}36%{transform:rotate(10deg)}54%{transform:rotate(-22deg)}72%{transform:rotate(6deg)}88%{transform:rotate(-6deg)}}
+.hps-kuyruk-salla{animation:hpsKuyruk 1s ease}
+@keyframes hpsKuyruk{0%,100%{transform:rotate(0)}18%{transform:rotate(-20deg)}36%{transform:rotate(16deg)}54%{transform:rotate(-14deg)}72%{transform:rotate(9deg)}88%{transform:rotate(-4deg)}}
 .hps-kahkaha{animation:hpsKahkaha 1.3s ease}
 @keyframes hpsKahkaha{0%,100%{transform:rotate(0)}15%{transform:rotate(-4deg) translateY(-6px)}30%{transform:rotate(3deg)}45%{transform:rotate(-3deg) translateY(-4px)}60%{transform:rotate(2deg)}80%{transform:rotate(-1deg)}}
 .hps-kulak-cirp{animation:hpsKulak .25s ease 4}
@@ -974,7 +1100,23 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 .hps-savrul{animation:hpsSavrul 1s ease-out}
 @keyframes hpsSavrul{0%{transform:translateX(0)}25%{transform:translateX(-24px)}100%{transform:translateX(0)}}
 .hps-salla{animation:hpsSalla .1s linear 10}
-@keyframes hpsSalla{0%,100%{transform:translate(0,0)}25%{transform:translate(-6px,3px)}75%{transform:translate(6px,-3px)}}
+@keyframes hpsSalla{0%,100%{transform:translate(0,0)}25%{transform:translate(-10px,5px)}75%{transform:translate(10px,-5px)}}
+/* 📖 v415 Masal Kitabı */
+.hps-bas-sars{animation:hpsBasSars .8s ease}
+@keyframes hpsBasSars{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}55%{transform:rotate(3deg)}80%{transform:rotate(-1.5deg)}}
+.hps-bas-kikir{animation:hpsBasKikir .95s ease}
+@keyframes hpsBasKikir{0%,100%{transform:rotate(0)}20%{transform:rotate(5deg) translateY(-4px)}40%{transform:rotate(-3deg)}60%{transform:rotate(4deg) translateY(-3px)}80%{transform:rotate(-2deg)}}
+.hps-titre{animation:hpsTitre .9s linear}
+@keyframes hpsTitre{0%,100%{transform:translateX(0)}12%,37%,62%{transform:translateX(-5px)}25%,50%,75%{transform:translateX(5px)}}
+.hps-titre-uzun{animation:hpsTitre .5s linear 2}
+[id^="hps-gk"].hps-goz-gul{transform-box:fill-box;transform-origin:50% 50%;animation:hpsGozGul 1s ease}
+@keyframes hpsGozGul{0%,100%{transform:scaleY(1)}12%,82%{transform:scaleY(-1.1)}}
+#hps-agiz,[id^="hps-gk"],[id^="hps-go"] circle{stroke-opacity:1!important}
+.hps-bocek{animation:hpsBocek 4s ease-in-out infinite}
+@keyframes hpsBocek{0%,100%{transform:translate(0,0);opacity:.15}50%{transform:translate(22px,-26px);opacity:1}}
+.hps-kar{animation:hpsKar 9s linear infinite}
+@keyframes hpsKar{from{transform:translate(0,0)}to{transform:translate(-60px,620px)}}
+.hps-yavas .hps-bulut{animation-duration:2.6s;animation-timing-function:cubic-bezier(.1,.7,.3,1)}
 .hps-hop{transform-box:fill-box;transform-origin:50% 100%;animation:hpsHop .5s cubic-bezier(.3,0,.4,1) infinite}
 #hps-svg{animation:hpsBelir .45s ease both}
 @keyframes hpsBelir{from{opacity:0}to{opacity:1}}

@@ -19144,7 +19144,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         </div>`;
         // 🐉 Ortak Canavar paneli (2026-09-24) — SVG doğrudan çocuk (.km-oyun-panel > svg deseni). Parti
         // solda, canavar sağda (x=900); HUD (can barı/evre), hasar tablosu, ganimet rafı HTML overlay.
-        // 🤧 Hapşırık (2026-10-27) — içi dagsk-km-hapsirik.js?v=2'te kurulur (hpsSahneKur).
+        // 🤧 Hapşırık (2026-10-27) — içi dagsk-km-hapsirik.js?v=3'te kurulur (hpsSahneKur).
         if(tid === 'hapsirik') return '<div class="km-oyun-panel km-oyun-panel-hapsirik" id="km-oyun-panel-hapsirik"></div>';
         // 🦸 Blok Kahramanlar (2026-11-03) — içi dagsk-km-blok.js'te kurulur (blkSahneKur, tek tuval).
         if(tid === 'blok') return '<div class="km-oyun-panel km-oyun-panel-blok" id="km-oyun-panel-blok"></div>';
@@ -19751,7 +19751,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let aktifMi = tid === _kmOyunAktifTema;
                 return '<div class="card" onclick="kmOyunKartSec(\'' + tid + '\')" style="cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:44px;' + (aktifMi ? ' border-color:var(--accent);' : '') + '">'
                     + '<div style="font-size:22px; line-height:1;">' + t.ikon + '</div>'
-                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + (tid === 'zombi' && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
+                    + '<div style="font-weight:800; font-size:12.5px;">' + t.ad + ((tid === 'zombi' || tid === 'hapsirik') && typeof yeniRozet === 'function' ? yeniRozet() : '') + '</div>'
                     + '<div style="font-size:10px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + t.aciklama + '</div>'
                     + '</div>';
             }).join('')
@@ -19785,11 +19785,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunPartiAc() { kmOyunSeciciKapat(); kmSekme('parti'); }
         function kmOyunYuvaAc() { kmOyunSeciciKapat(); kmSekme('yuva'); }
         function kmOyunKurtarmaAc() { kmOyunSeciciKapat(); kmSekme('kurtarma'); }
-        // 🤧 Hapşırık — kabuk teması; durum + çizim public/dagsk-km-hapsirik.js?v=2'te (ilk açılışta tembel yüklenir).
+        // 🤧 Hapşırık — kabuk teması; durum + çizim public/dagsk-km-hapsirik.js?v=3'te (ilk açılışta tembel yüklenir).
         // Tam ekran TIKLAMA ANINDA istenir: tarayıcı yalnız kullanıcı hareketinin içinde izin veriyor, dosya ilk kez inerken o an
         // kaçıyordu (kullanıcı: "tanıtım tam ekran moduna geçmiyor"). vtKapat bu bayrakla tam ekrandan çıkar.
         function vitrinAc() { try { if(!document.fullscreenElement && document.documentElement.requestFullscreen) { window._vtTamIstendi = true; document.documentElement.requestFullscreen().catch(function() { window._vtTamIstendi = false; }); } } catch(e) {} dagskEkYukle('dagsk-vitrin.js').then(function() { vtAc(); }).catch(function() { showToast('Tanıtım ekranı yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
-        function kmOyunHapsirikHazir() { return dagskEkYukle('dagsk-km-hapsirik.js?v=2'); }
+        function kmOyunHapsirikHazir() { return dagskEkYukle('dagsk-km-hapsirik.js?v=3'); }
         function kmOyunSahneKurHapsirik() { kmOyunHapsirikHazir().then(function() { if(_kmOyunAktifTema === 'hapsirik' && document.getElementById('km-oyun-panel-hapsirik')) hpsSahneKur(); }).catch(function() { showToast('Hapşırık yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncHapsirik() { if(typeof hpsGuncelle === 'function' && document.getElementById('hps-svg')) hpsGuncelle(); else kmOyunSahneKurHapsirik(); }
         // 🐠 Sınıf Akvaryumu — kabuk teması; durum + çizim public/dagsk-km-akvaryum.js'te (ilk açılışta tembel yüklenir).
@@ -27161,7 +27161,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(_kmOyunAktifTema === 'kule') artis = 0;
             // Ortak Canavar (2026-09-24) — frac/yol YOK; hasar kmOyunAnimateCanavar'da paylaşılan cana uygulanır.
             if(_kmOyunAktifTema === 'canavar') { artis = 0; kmCanavarDurumEmin(); }
-            // 🤧 Hapşırık (2026-10-27) — frac/yol YOK; gıdık dagsk-km-hapsirik.js?v=2'te paylaşılan yaratığa uygulanır.
+            // 🤧 Hapşırık (2026-10-27) — frac/yol YOK; gıdık dagsk-km-hapsirik.js?v=3'te paylaşılan yaratığa uygulanır.
             if(_kmOyunAktifTema === 'hapsirik') artis = 0;
             if(_kmOyunAktifTema === 'zombi' || _kmOyunAktifTema === 'tahta' || _kmOyunAktifTema === 'timsah' || _kmOyunAktifTema === 'bomba') artis = 0; // 🧟 puan yok, kalabalık değişir (dagsk-km-zombi.js)
             if(_kmOyunAktifTema === 'blok') artis = 0; // 🦸 frac/yol yok; hasar dagsk-km-blok.js'te paylaşılan boss'a
