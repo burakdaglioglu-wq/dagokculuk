@@ -31300,7 +31300,9 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 tamamlananSet++;
                 let maxPuan = Math.max.apply(null, buTur);
                 let kazananSayisi = buTur.filter(function(p) { return p === maxPuan; }).length;
-                buTur.forEach(function(p, idx) { setPuanlari[idx] += (kazananSayisi === n) ? 1 : (p === maxPuan ? 2 : 0); });
+                // v417 (2026-11-15, kullanıcı: "yendiyse 2 puan, berabere ise 1"): sette en yüksek puan TEK takımdaysa 2,
+                // en yüksekte birden fazla takım eşitse (3 takımda ikisi eşit de olabilir) eşit olanların her biri 1 alır.
+                buTur.forEach(function(p, idx) { setPuanlari[idx] += p === maxPuan ? (kazananSayisi > 1 ? 1 : 2) : 0; });
             }
             return { setPuanlari: setPuanlari, tamamlananSet: tamamlananSet };
         }
@@ -31339,6 +31341,42 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             }
             return kural;
         }
+        // 🤝 HEP BİRLİKTE (v417, 2026-11-15) — kullanıcı: "9 kişilik sınıfta 3 takım yarıştırmak istedim, sen 3'lü ile 3'lüyü
+        // yarıştırıp birini rastgele üst tura çıkardın; üçü de tek bir amaç için yarışsın, yendiyse 2 puan, berabere 1".
+        // 3+ takım AYNI maçta: her sette hepsi atar, sette en yüksek takım 2 set puanı, en yüksekte eşitlik varsa eşitlerin
+        // her biri 1. Bir set ancak HER takımın HER sporcusu o seriyi attığında sayılır (ilk atan sporcuyla set kapanmasın).
+        // kural.maxSet set oynanır (herkes her seti atar, erken bitiş yok); sonda en çok set puanı alan kazanır,
+        // en üstte eşitlik varsa SADECE eşit takımlar ek atış yapar (her sporcu 1 ok), tek kalana kadar.
+        function _kmYarismaTakimTamamTur(x) {
+            if(x.tamamTur != null) return x.tamamTur;
+            let uyeler = (x.t && x.t.uyeler) || [];
+            if(!uyeler.length) return (x.turlar || []).length;
+            return Math.min.apply(null, uyeler.map(function(u) {
+                let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad]; if(!sp) return 0;
+                let snap = _kmYarismaBaslangicPuan[u.g + '|' + u.ad] || { seriSayisi: 0 };
+                return Math.max(0, (sp.seriler || []).length - (snap.seriSayisi || 0));
+            }));
+        }
+        function _kmYarismaCokluDegerlendir(taraflar, kural) {
+            kural.cokTaraf = true;
+            let tamam = taraflar.map(_kmYarismaTakimTamamTur);
+            let normal = taraflar.map(function(x, i) { return x.turlar.slice(0, Math.min(tamam[i], kural.maxSet)); });
+            let setSonuc = _kmYarismaSetPuanlariHesapla(normal);
+            let toplamlar = taraflar.map(function(x, i) { return x.turlar.slice(0, Math.min(tamam[i], kural.maxSet)).reduce(function(a, b) { return a + b; }, 0); });
+            let sonuc = { kural: kural, setSonuc: setSonuc, toplamlar: toplamlar, durum: 'devam', kazananIdx: null, shootoffAktif: false, ekAtisanlar: [], tamamTur: tamam };
+            if(setSonuc.tamamlananSet < kural.maxSet) return sonuc;
+            let enCok = Math.max.apply(null, setSonuc.setPuanlari);
+            let onde = setSonuc.setPuanlari.map(function(p, i) { return p === enCok ? i : -1; }).filter(function(i) { return i >= 0; });
+            if(onde.length === 1) { sonuc.durum = 'bitti'; sonuc.kazananIdx = onde[0]; return sonuc; }
+            sonuc.shootoffAktif = true;
+            for(let s = kural.maxSet; ; s++) {
+                if(onde.some(function(i) { return tamam[i] <= s; })) { sonuc.durum = 'shootoff'; sonuc.ekAtisanlar = onde; return sonuc; }
+                let p = onde.map(function(i) { return taraflar[i].turlar[s] || 0; }), m = Math.max.apply(null, p);
+                let yeni = onde.filter(function(i, j) { return p[j] === m; });
+                if(yeni.length === 1) { sonuc.durum = 'bitti'; sonuc.kazananIdx = yeni[0]; return sonuc; }
+                onde = yeni;
+            }
+        }
         // Normal setlerin (kuralın maxSet'i içindeki turlar) ötesindeki turları, İLK KESİN SONUÇLANAN
         // (berabere olmayan) turdan itibaren ek atış olarak değerlendirir — art arda ek atış deseni.
         function _kmYarismaShootoffDegerlendir(turlarListesi, kural) {
@@ -31361,6 +31399,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmYarismaMacSonucDegerlendir(taraflar) {
             let kural = kmYarismaMacKuralSecimi(taraflar);
             let turlarListesi = taraflar.map(function(x) { return x.turlar; });
+            if(taraflar.length > 2 && kural.hedefTip === 'set') return _kmYarismaCokluDegerlendir(taraflar, kural);
             let normalTurlar = turlarListesi.map(function(t) { return t.slice(0, kural.maxSet); });
             let setSonuc = _kmYarismaSetPuanlariHesapla(normalTurlar);
             // TOPLAM PUAN yarışı (2026-09-19): İLK k turunda (her iki taraf da o turu tamamlamışken) en az
@@ -31779,6 +31818,14 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ];
                 let deg = kmYarismaMacSonucDegerlendir(taraflar);
                 if(deg.durum === 'bitti') { _kmYarismaSonGiris = null; kmYarismaBitir(); }
+                return;
+            }
+            // v417 🤝 Hep birlikte (3+ takım tek maç): son set + gerekiyorsa ek atış bitince maç kendiliğinden biter.
+            if(_kmYarismaAktif && _kmRakipTipi !== 'hayali') {
+                let taraflar = _kmYarismaAktifTakimlar().map(function(t) { return { t: t, idx: _kmTakimlar.indexOf(t), turlar: _kmYarismaTurBazliPuanlar(t) }; });
+                if(taraflar.length < 3) return;
+                let deg = kmYarismaMacSonucDegerlendir(taraflar);
+                if(deg.durum === 'bitti') { _kmYarismaSonGiris = null; kmYarismaBitir(); }
             }
         }
         // Konsolide "canlı maç" görünümü — takım kimliği (SVG ikon+renk) + set puanı + sporcu listesi
@@ -31822,6 +31869,37 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <button class="km-ydok-kaydet" onclick="kmYarismaSeriKaydet()" ${tamam ? '' : 'disabled'}>${tamam ? '✔ Seti Kaydet · ' + seriToplam + ' puan' : 'Seti Kaydet'}</button>
             </div>`;
         }
+        // v417 🤝 Hep birlikte — kural satırı + set tablosu (satır = set, sütun = takım; hücre = set toplamı ve aldığı puan).
+        function _kmYarismaCokluKuralHTML(taraflar, d) {
+            let k = d.kural, set = d.setSonuc.tamamlananSet;
+            let ek = d.durum === 'shootoff' ? '<br><span style="color:var(--gold); font-weight:800;">⚡ EŞİTLİK — EK ATIŞ: ' + d.ekAtisanlar.map(function(i) { return esc(taraflar[i].t.ad); }).join(' · ') + ' (her sporcu 1 ok, tek kalana kadar)</span>' : '';
+            let durum = d.durum === 'bitti' ? '🏆 ' + esc(taraflar[d.kazananIdx].t.ad) + ' kazandı' : 'Set ' + Math.min(set + 1, k.maxSet) + '/' + k.maxSet;
+            return `<div style="text-align:center; font-size:11px; color:var(--text-muted); margin-bottom:10px; line-height:1.5;">
+                <b style="color:var(--text-main);">🤝 ${taraflar.length} takım birlikte</b> · her sette en yüksek takım <b style="color:var(--text-main);">2</b>, eşitse <b style="color:var(--text-main);">1</b> puan · ${k.maxSet} set · <b style="color:var(--text-main);">${durum}</b>
+                <br>Set, takımdaki herkes o seriyi atınca sayılır.${ek}
+            </div>`;
+        }
+        function _kmYarismaCokluTabloHTML(taraflar, d) {
+            let k = d.kural, tamam = d.tamamTur || [];
+            let maxGor = Math.max(k.maxSet, Math.max.apply(null, taraflar.map(function(x) { return x.turlar.length; })));
+            let th = 'padding:6px 4px; font-size:10px; font-weight:800; letter-spacing:.04em; color:var(--text-muted); text-align:center;';
+            let bas = '<tr><th style="' + th + '">SET</th>' + taraflar.map(function(x) { return '<th style="' + th + ' color:' + x.t.renk + ';">' + esc(x.t.ad) + '</th>'; }).join('') + '</tr>';
+            let satirlar = '';
+            for(let s = 0; s < maxGor; s++) {
+                let ekMi = s >= k.maxSet;
+                let p = taraflar.map(function(x) { return x.turlar[s]; });
+                let kapandi = !ekMi && s < d.setSonuc.tamamlananSet;
+                let m = kapandi ? Math.max.apply(null, p) : null, es = kapandi ? p.filter(function(v) { return v === m; }).length : 0;
+                satirlar += '<tr style="border-top:1px solid var(--border-color);"><td style="' + th + '">' + (ekMi ? 'EK' : s + 1) + '</td>' + taraflar.map(function(x, i) {
+                    let v = p[i], bitti = tamam[i] > s;
+                    if(v === undefined) return '<td style="text-align:center; color:var(--text-muted);">·</td>';
+                    let puan = kapandi && v === m ? (es > 1 ? '+1' : '+2') : '';
+                    return '<td style="text-align:center; padding:6px 4px; font-weight:800; font-size:15px; font-variant-numeric:tabular-nums; ' + (bitti ? '' : 'opacity:.5;') + (puan ? 'color:' + x.t.renk + ';' : '') + '">' + v + (puan ? ' <small style="font-size:10px;">' + puan + '</small>' : '') + (bitti ? '' : ' <small style="font-size:9px; font-weight:600;">atıyor</small>') + '</td>';
+                }).join('') + '</tr>';
+            }
+            let sp = '<tr style="border-top:2px solid var(--border-color);"><td style="' + th + '">PUAN</td>' + taraflar.map(function(x, i) { return '<td style="text-align:center; padding:7px 4px; font-weight:900; font-size:18px; color:' + x.t.renk + ';">' + d.setSonuc.setPuanlari[i] + '</td>'; }).join('') + '</tr>';
+            return '<div style="margin-top:4px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:13px; padding:8px 10px; overflow-x:auto;"><table style="width:100%; border-collapse:collapse;"><thead>' + bas + '</thead><tbody>' + satirlar + sp + '</tbody></table></div>';
+        }
         function _kmYarismaCanliMacHTML(taraflar, ekBtnHTML) {
             kmOyunSayacAyarYukle();
             // GERÇEK BİR SENKRON BUG'I (gerçek testte yakalandı): bu fonksiyon sadece HTML STRING
@@ -31835,7 +31913,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Faz 17b (2026-09-18) — 2 taraflı maçlarda GERÇEK kural (hedef set puanı/max set/ek atış)
             // devreye giriyor; 3-4 taraflı (flat, artık pratikte erişilemeyen eski dal) N'li karşılaştırma
             // hâlâ sınırsız/bilgi-amaçlı set puanı gösteriyor (hedef kavramı yok, WA kuralları hep 2 taraflı).
-            let degerlendirme = taraflar.length === 2 ? kmYarismaMacSonucDegerlendir(taraflar) : null;
+            let degerlendirme = taraflar.length >= 2 ? kmYarismaMacSonucDegerlendir(taraflar) : null; // v417: 3+ takım (hep birlikte) da gerçek kuralla
             let setSonuc = degerlendirme ? degerlendirme.setSonuc : _kmYarismaSetPuanlariHesapla(taraflar.map(function(x) { return x.turlar; }));
             let tumUyeler = [].concat.apply([], taraflar.map(function(x) { return x.t.uyeler; }));
             let kisaAdlar = kmYarismaKisaAdListesi(tumUyeler);
@@ -31843,7 +31921,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             tumUyeler.forEach(function(u, i) { kisaAdMap[u.g + '|' + u.ad] = kisaAdlar[i]; });
 
             let toplamModu = !!(degerlendirme && (degerlendirme.kural.hedefTip === 'toplam' || degerlendirme.kural.hedefTip === 'tur'));
-            let hedefSatiriHTML = degerlendirme ? `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">
+            let hedefSatiriHTML = degerlendirme && degerlendirme.kural.cokTaraf ? _kmYarismaCokluKuralHTML(taraflar, degerlendirme) : degerlendirme ? `<div style="text-align:center; font-size:10px; color:var(--text-muted); margin-bottom:10px;">
                 ${degerlendirme.kural.tip === 'takim' ? 'Takım maçı' : 'Bireysel maç'} · ${toplamModu
                     ? (degerlendirme.kural.hedefTip === 'tur' ? 'Antrenman maçı: ' + degerlendirme.kural.hedefTur + ' tur · Tamamlanan tur: ' + setSonuc.tamamlananSet : 'İlk ' + degerlendirme.kural.hedefPuan + ' puana ulaşan kazanır · Tamamlanan tur: ' + setSonuc.tamamlananSet)
                     : 'İlk ' + degerlendirme.kural.hedefSetPuani + ' set puanına ulaşan kazanır (max ' + degerlendirme.kural.maxSet + ' set) · Tamamlanan set: ' + setSonuc.tamamlananSet}
@@ -31941,7 +32019,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div style="display:flex; align-items:stretch; gap:6px; margin-bottom:8px;">${takimKartlari.join(vsHTML)}</div>
                 ${hedefSatiriHTML}
                 ${siraHTML}
-                ${(function() { if(taraflar.length === 2) { _kmYarismaSonSkorKartiTaraflar = taraflar; return kmYarismaSkorKartiHTML(taraflar, degerlendirme); } return ''; })()}
+                ${(function() { if(taraflar.length === 2) { _kmYarismaSonSkorKartiTaraflar = taraflar; return kmYarismaSkorKartiHTML(taraflar, degerlendirme); } return degerlendirme && degerlendirme.kural.cokTaraf ? _kmYarismaCokluTabloHTML(taraflar, degerlendirme) : ''; })()}
                 <div style="display:flex; justify-content:center; gap:8px; margin-top:10px;">
                     <span onclick="kmYarismaTakimDuzenleAc()" style="cursor:pointer; font-size:10px; font-weight:700; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:8px; padding:5px 10px; margin-bottom:8px;">✏️ Takımları Düzenle</span>
                     <span id="km-yarisma-sayac-toggle" onclick="kmOyunSayacDegistir()" style="cursor:pointer; font-size:10px; font-weight:700; color:${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--text-muted)'}; border:1px dashed ${_kmOyunSayacAcik ? 'var(--gold)' : 'var(--border-color)'}; border-radius:8px; padding:5px 10px; margin-bottom:8px;">⏱️ Sayaç ${_kmOyunSayacAcik ? 'Açık' : 'Kapalı'}</span>
@@ -32029,13 +32107,25 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 let enYuksek = siraliTakimlar.length ? siraliTakimlar[0].puan : 0;
                 let enYuksekSayisi = siraliTakimlar.filter(x => x.puan === enYuksek).length;
                 let kazananAd = (siraliTakimlar.length && enYuksekSayisi === 1) ? siraliTakimlar[0].t.ad : 'Berabere';
+                // v417 🤝 Hep birlikte: sıralama SET PUANINA göre (eşitse toplam), kazanan maçın kuralından (ek atış dahil).
+                let cokluDeg = null;
                 try {
-                    kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 YARIŞMA BİTTİ! 🏆', ad: kazananAd === 'Berabere' ? 'BERABERE!' : kazananAd + ' KAZANDI', aciklama: siraliTakimlar.map(x => x.t.ad + ' ' + x.puan).join(' — ') + (mvp && mvp.fark > 0 ? ' · 🌟 MVP: ' + mvp.ad : ''), deger: '🎉' });
+                    let tr = siraliTakimlar.map(x => ({ t: x.t, idx: _kmTakimlar.indexOf(x.t), turlar: _kmYarismaTurBazliPuanlar(x.t) }));
+                    if(tr.length > 2) { let dg = kmYarismaMacSonucDegerlendir(tr); if(dg.kural.cokTaraf) cokluDeg = { dg, tr }; }
+                } catch(e) {}
+                if(cokluDeg) {
+                    siraliTakimlar.forEach((x, i) => { x.sp = cokluDeg.dg.setSonuc.setPuanlari[i]; x.kaz = cokluDeg.dg.kazananIdx === i; });
+                    siraliTakimlar.sort((a, b) => (b.kaz - a.kaz) || (b.sp - a.sp) || (b.puan - a.puan));
+                    let ilk = siraliTakimlar[0], ikinci = siraliTakimlar[1];
+                    kazananAd = ilk.kaz || ilk.sp > ikinci.sp ? ilk.t.ad : 'Berabere';
+                }
+                try {
+                    kutlamaKuyrukEkle({ emoji: '🏆', banner: '🏆 YARIŞMA BİTTİ! 🏆', ad: kazananAd === 'Berabere' ? 'BERABERE!' : kazananAd + ' KAZANDI', aciklama: siraliTakimlar.map(x => x.t.ad + ' ' + (x.sp != null ? x.sp + ' puan (' + x.puan + ' p)' : x.puan)).join(' — ') + (mvp && mvp.fark > 0 ? ' · 🌟 MVP: ' + mvp.ad : ''), deger: '🎉' });
                 } catch(e) {}
                 _kmYarismaGecmisi.unshift({
                     tarih: bugunISO(), saat: new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }),
                     format: _kmYarismaFormat,
-                    takimlar: siraliTakimlar.map(x => ({ ad: x.t.ad, uyeler: x.t.uyeler.map(u => u.ad), puan: x.puan, dengelenmisOran: x.oran })),
+                    takimlar: siraliTakimlar.map(x => ({ ad: x.t.ad, uyeler: x.t.uyeler.map(u => u.ad), puan: x.puan, setPuan: x.sp != null ? x.sp : undefined, dengelenmisOran: x.oran })),
                     kazananAd,
                     mvpAd: (mvp && mvp.fark > 0) ? mvp.ad : null
                 });
