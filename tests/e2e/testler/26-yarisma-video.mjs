@@ -10,7 +10,7 @@ export default async function ({ log }) {
   const b = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
   const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
   const tok = await oturumAl();
-  await ctx.addInitScript((tk) => { try { localStorage.setItem('dag_oturum', tk); } catch (e) {} }, tok);
+  await ctx.addInitScript((tk) => { try { localStorage.setItem('dag_oturum', tk); if (!localStorage.getItem('dag_yz_kur_ayrintili')) localStorage.setItem('dag_yz_kur_ayrintili', '1'); } catch (e) {} }, tok); // v418: eski (ayrıntılı) kurulum formu
   const p = await ctx.newPage();
   const hatalar = []; p.on('pageerror', (e) => { if (!/Failed to fetch/.test(e.message)) hatalar.push(e.message); });
   p.on('dialog', (d) => d.accept());

@@ -109,7 +109,7 @@ function yzSahneCiz(el, o) {
         sat.querySelector('.r').textContent = r.sira; sat.querySelector('.n').textContent = yzKisaAd(yzKAd(r.k)); sat.querySelector('.s').textContent = t ? '+' + yzTop(t) : ''; sat.querySelector('.t').textContent = r.toplam;
     });
     // yönetim düğmeleri
-    el.querySelector('#yzs-kontrol').innerHTML = '<button class="yz-tv-k" onclick="yzTvKapat()">✕ Kapat</button>' + yzTvKontrolHTML(o) + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
+    el.querySelector('#yzs-kontrol').innerHTML = '<button class="yz-tv-k" onclick="yzTvKapat()">✕ Kapat</button>' + yzTvKontrolHTML(o) + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'hatlar\')" title="Her hedef bir sütun, fotoğraflı">🎯 Hatlar</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
 }
 function yzsCss() {
     if (document.getElementById('yzs-css')) return;

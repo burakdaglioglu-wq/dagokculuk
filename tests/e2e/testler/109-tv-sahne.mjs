@@ -12,7 +12,7 @@ export default async function ({ log }) {
     await karisikSinifArac(p, 'yarisma', 'kmYarismaGiris');
     yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), g: localStorage.getItem('dag_yz_tv_gorunum') }));
     const n = await p.evaluate(() => {
-      localStorage.removeItem('dag_yz_tv_gorunum'); // ilk açılış
+      localStorage.setItem('dag_yz_tv_gorunum', 'sahne'); // v418: ilk açılış artık Hedef hatları (test 126) — burada Sahne seçili
       const tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif) tum.push({ g, ad }); }));
       const l = tum.slice(0, 24); _kmListe = l; localStorage.removeItem(yzAnahtar()); _yz.kurulum = null; yzModAyarla('siralama'); yzCiz();
       yzKurAyar('kayit', false); yzKurAyar('yuz', '10k'); const t = yzKurulumTaslak(); t.katilimci = l.map((k) => k.g + '|' + k.ad); t.format = yzFormatAnahtar(6, 6); yzCiz(); yzBaslat();
@@ -21,7 +21,7 @@ export default async function ({ log }) {
     });
     await p.evaluate(() => yzTvAc());
     await p.waitForSelector('#yz-tv .yzs-tv', { timeout: 15000 });
-    esit(await p.evaluate(() => yzTvGorunum()), 'sahne', 'ilk açılışta Sahne olmalı');
+    esit(await p.evaluate(() => yzTvGorunum()), 'sahne', 'Sahne seçili olmalı');
     esit(await p.locator('#yz-tv .yzs-tsat').count(), n, 'sıralamada herkes');
     dogrula(await p.evaluate(() => { const k = document.querySelector('.yzs-tkap').getBoundingClientRect(), s = [...document.querySelectorAll('.yzs-tsat')].pop().getBoundingClientRect(); return s.bottom <= k.bottom + 2; }), n + ' sporcu sığmıyor');
     dogrula(await p.locator('#yz-tv #yz-tv-sayac').count() === 1, 'sahnede sayaç yok');

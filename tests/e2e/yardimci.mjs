@@ -50,7 +50,7 @@ export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900
   if (girisli) { const t = await oturumAl(); await ctx.addInitScript((tk) => { try { localStorage.setItem('dag_oturum', tk); } catch (e) {} }, t); }
   await ctx.addInitScript(() => { window.__acilan = []; window.open = (u) => { window.__acilan.push(u); return null; }; });
   // v388: TV ilk açılışta Sahne; eski testler Tablo görünümüne bakar (Sahne testi 109 anahtarı kendisi siler)
-  await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yz_tv_gorunum')) localStorage.setItem('dag_yz_tv_gorunum', 'tablo'); } catch (e) {} });
+  await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yz_tv_gorunum')) localStorage.setItem('dag_yz_tv_gorunum', 'tablo'); localStorage.setItem('dag_yz_tv_v418', '1'); if (!localStorage.getItem('dag_yz_kur_ayrintili')) localStorage.setItem('dag_yz_kur_ayrintili', '1'); } catch (e) {} });
   // v404: Yolculuk'un ders başı kartı oyun ekranını kaplar; testler kapalı başlar (118 kendisi açar)
   await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yolculuk_ders_basi')) localStorage.setItem('dag_yolculuk_ders_basi', '0'); } catch (e) {} });
   const p = await ctx.newPage();

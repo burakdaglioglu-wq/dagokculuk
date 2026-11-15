@@ -26,7 +26,7 @@ export default async function ({ log }) {
     // süren tur ekranından 🏆 Yarışma → tür seçimi (eskiden tura geri atıyordu)
     await p.evaluate(() => yzTurlereDon()); await p.waitForTimeout(200);
     dogrula(await p.locator('.yz-tk-serit', { hasText: 'Sıralama turu sürüyor' }).count() === 1, '"Tura dön" şeridi yok — tür seçimi açılmadı');
-    await p.locator('.yz-tur', { hasText: 'Takım Yarışması' }).click(); await p.waitForTimeout(300);
+    await p.locator('.yzr-k', { hasText: 'Takım Yarışması' }).click(); await p.waitForTimeout(300);
     dogrula(await p.evaluate(() => _yz.mod === 'takim' && _yzK.tur === 'takim' && !!document.querySelector('.yz-tk-ad-gir')), 'Takım Yarışması kurulumu açılmadı');
     dogrula(/Takım Yarışması/.test(await p.locator('.yz-ust-bar').textContent()), 'üst çubukta "Takım Yarışması" yok');
     // 5v5 → 2 takım

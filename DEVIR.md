@@ -5820,3 +5820,26 @@ Kullanıcı: "9 kişilik sınıfta 3'erli takım yarıştırmak istedim; sen 3'l
 - Ekranlar: tablette kural satırı + set tablosu (`_kmYarismaCokluKuralHTML/TabloHTML`, "atıyor" = set henüz kapanmadı); TV `yzTkCokluHTML` büyük sayı = puan, set kutuları +2/+1, ek atış şeridi; final ekranı 3 kutu tek sırada (`.yzs-skor.cok`), "eşitlik ek atışla bozuldu".
 - Test 125 (9 sporcu → 3×3, 2/1 puan, yarım set sayılmaz, A-B ek atış, kendiliğinden biter, TV + final, 390 px). Gerçek sınıfta denenmedi.
 - Açık: takım kuralı sporcu başına 6 ok/seri öneriyor (eski davranış, değiştirilmedi) — çocuklar 3 ok atıyorsa Gelişmiş'ten 3 ok seçilmeli.
+
+## 128. 🖼️ Resimli kurulum (A) + 🎯 TV "Hedef hatları" (2, 2026-11-15, v418)
+
+Kullanıcı: "TV ekranı ve TV ekranı öncesi tema, stil, kurulum daha güzel, daha anlaşılır olsun, hatta fotoğraflı seçim; tarayıcıdan sun". Taslak: https://claude.ai/artifact/65kYZB6D3zQBGWCK6PcoyW. Kullanıcının cevabı: "a ve 2'yi yap".
+- **Kurulum A** (dagsk-km-yarisma-pro.js sonunda `yzr*` bloğu): `yzSecimCiz` ve `yzKurulumHTML` üzerine yazıldı. Eski tek sayfa `_yzrEskiKurulumHTML` olarak duruyor.
+  - Adım çubuğu: 1 Ne oynuyoruz → 2 Kimler burada → 3 Nasıl atılacak → 4 TV nasıl görünsün.
+  - 1: SVG resimli tür kartları (Sıralama, Takım, Düello, Hayali, Doğrudan Eleme) ve kamera kartları.
+  - 2: sporcu yüzleri (`fotoAvatarHTML`, yalnız veli izinli foto, yoksa baş harf). Dokununca gri olur; hedef başı 1–4 resimli.
+  - 3: seri / ok / mesafe / hedef kâğıdı / süre resimli; elle süre `<details>`.
+  - 4: TV görünümü resimli (Hedef hatları / Sahne / Tablo), renk (Kömür / Gece / Kestane), kayıt ve lig, özet, "▶ Başlat ve TV'yi aç" (`yzrBaslat(true)`).
+  - Taslak verisi değişmedi (`yzKurAyar`, `yzKurSeriOk`, `yzKurSporcu`…).
+  - "⚙️ Ayrıntılı ayarlar" eski formu açar ve cihazda hatırlanır (`dag_yz_kur_ayrintili`). Doğrudan eleme her zaman eski formda.
+  - e2e yardımcı bu anahtarı '1' yazar, eski testler eski formu görür; 126 '0' yazar.
+- **TV 2** `public/dagsk-tv-hatlar.js` (`yzh*`, lazy, `YZ_HATLAR_DOSYA`):
+  - 1920×1080 ölçekli. Her hedef bir sütun; satırda harf, "✓ +seri / bekliyor", foto, ad, toplam, son seri, sıra (puan yoksa sıra / taç yok).
+  - Lider vurgulu; az önce giren 7 sn yeşil. Dokununca `yzGirisAc`.
+  - Altta ilk 3 ve "x/N girdi". Hedef > 8 ise 2 sıra, > 16 ise 3 sıra; dar sütunda foto üstte küçülür.
+  - Renk `dag_yz_tv_renk`; altta 🎨 düğmesi döngüyle değiştirir. Kontrol çubuğu Sahne'deki gibi kendini gizler.
+- `yzTvGorunum`: 'hatlar' | 'sahne' | 'tablo'. Herkes bir kez hatlar'a geçer (`dag_yz_tv_v418`); Tablo seçmiş olan Tablo'da kalır. Tablo ve Sahne'de 🎯 Hatlar düğmesi var.
+- Testler:
+  - 126 yeni: 4 adım, Başlat ve TV, 18/24/30 sporcu sığar, ✓ girdi, yeni vurgu, dokun → giriş, renk, Sahne ⇄ Hatlar, 390 px, ayrıntılı hatırlanır.
+  - 109/113 artık 'sahne'yi açıkça seçiyor; 90 tür kartı `.yzr-k`.
+- Açık: gerçek salonda TV'de denenmedi. Mola sırasında hatlar mola slaytı göstermiyor; sayaç ☕ MOLA gösteriyor.

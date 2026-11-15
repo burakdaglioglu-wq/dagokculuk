@@ -12,7 +12,7 @@ export default async function ({ log }) {
     yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), liste: JSON.stringify(_kmListe), hat: localStorage.getItem(kmHatAnahtari()), dev: localStorage.getItem('dag_yz_dev_sayac'), gor: localStorage.getItem('dag_yz_tv_gorunum') }));
     await p.evaluate(() => {
       let tum = []; ['buyukler', 'yildizlar', 'kucukler', 'minikler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { if (!turnuvaDB[g][ad].pasif && !turnuvaDB[g][ad].donduruldu) tum.push({ g, ad }); }));
-      _kmListe = tum.slice(0, 5); localStorage.removeItem(kmHatAnahtari()); localStorage.removeItem(yzAnahtar()); localStorage.removeItem('dag_yz_tv_gorunum'); localStorage.setItem('dag_yz_dev_sayac', '0');
+      _kmListe = tum.slice(0, 5); localStorage.removeItem(kmHatAnahtari()); localStorage.removeItem(yzAnahtar()); localStorage.setItem('dag_yz_tv_gorunum', 'sahne'); localStorage.setItem('dag_yz_dev_sayac', '0');
       _yz.kurulum = null; yzModAyarla('siralama'); yzCiz(); yzKurAyar('kayit', false);
     });
     await p.locator('button:has-text("Turu başlat")').click(); await p.waitForTimeout(400);
