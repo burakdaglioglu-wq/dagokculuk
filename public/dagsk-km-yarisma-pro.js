@@ -5312,3 +5312,136 @@ function yzrCss() {
     ].join('\n');
     document.head.appendChild(st);
 }
+
+// ================================================================================================
+// 👥 TAKIM MAÇI CANLI EKRANI · "A · Takım sütunları" (v419, 2026-11-15). Kullanıcı tablet ekranının fotoğrafını gönderdi: "bu ekran o
+// kadar kötü dizayn edilmiş, görselleri o kadar kötü ki" → taslak https://claude.ai/artifact/JULFg8TJfG2wqPA7un7C9m'den "A".
+// Her takım kendi renginde bir sütun: kaçıncı, büyük puan (kurala göre set puanı / toplam), hedefe ilerleme çubuğu; içinde sporcular
+// fotoğraflarıyla (veli izni yoksa baş harf), "👉 sırada / bu seri bekliyor / ✓ bu seriyi attı" ve toplamı. Sporcuya dokun → alttan
+// skor girişi (app.js _kmYarismaPadHTML, aynı kayıt yolu kmYarismaSeriKaydet). Hem düz maç (2+ takım, hep birlikte) hem eleme ağacındaki
+// maç bu ekranı kullanır; Hayali Rakip kendi sahnesinde kalır. Skor kartı (2 takım) ve set tablosu (3+ takım) altta durur.
+// ================================================================================================
+(function () {
+    if (typeof _kmYarismaCanliMacHTML !== 'function') return;
+    const asil = _kmYarismaCanliMacHTML;
+    _kmYarismaCanliMacHTML = function (taraflar, ekBtnHTML) {
+        if (typeof _kmRakipTipi !== 'undefined' && _kmRakipTipi === 'hayali') return asil.apply(this, arguments);
+        try { return yzAmHTML(taraflar, ekBtnHTML); } catch (e) { console.warn('takım maçı ekranı', e); return asil.apply(this, arguments); }
+    };
+})();
+function yzAmSeriSay(u) {
+    let sp = turnuvaDB[u.g] && turnuvaDB[u.g][u.ad], baz = (typeof _kmYarismaAktifBaslangicMap === 'function' ? _kmYarismaAktifBaslangicMap() : {})[u.g + '|' + u.ad];
+    return sp && baz ? Math.max(0, (sp.seriler || []).length - (baz.seriSayisi || 0)) : 0;
+}
+function yzAmAvatar(u, px) {
+    let st = 'width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px * 0.36) + 'px;';
+    if (typeof fotoAvatarHTML === 'function') return fotoAvatarHTML('s:' + u.g + '|' + u.ad, u.ad, 'yzam-av', false, st);
+    return '<span class="yzam-av" style="' + st + '">' + esc(String(u.ad).trim().split(/\s+/).slice(0, 2).map(function (s) { return s.charAt(0); }).join('').toLocaleUpperCase('tr-TR')) + '</span>';
+}
+function yzAmKapat() { if (_kmYarismaAktifSporcuKey) kmYarismaSporcuSec(_kmYarismaAktifSporcuKey); }
+function yzAmHTML(taraflar, ekBtnHTML) {
+    yzAmCss();
+    let deg = taraflar.length >= 2 ? kmYarismaMacSonucDegerlendir(taraflar) : null, k = deg ? deg.kural : null;
+    let setMod = !k || k.hedefTip === 'set', toplamMod = k && k.hedefTip === 'toplam', turMod = k && k.hedefTip === 'tur';
+    let tumU = [].concat.apply([], taraflar.map(function (x) { return x.t.uyeler; })), kisa = kmYarismaKisaAdListesi(tumU), kisaMap = {};
+    tumU.forEach(function (u, i) { kisaMap[u.g + '|' + u.ad] = kisa[i]; });
+    // puan + ilerleme
+    let puan = taraflar.map(function (x, i) { return toplamMod || turMod ? (deg.toplamlar[i] || 0) : (deg ? deg.setSonuc.setPuanlari[i] : 0); });
+    let tavan = toplamMod ? k.hedefPuan : turMod ? null : k && k.cokTaraf ? k.maxSet * 2 : k ? k.hedefSetPuani : 6;
+    let tamamTur = deg ? deg.setSonuc.tamamlananSet : 0;
+    let oran = function (i) { return turMod ? Math.min(1, tamamTur / (k.hedefTur || 1)) : Math.min(1, (puan[i] || 0) / (tavan || 1)); };
+    let etiket = setMod ? 'set puanı' : toplamMod ? '/ ' + k.hedefPuan : 'toplam';
+    let topl = taraflar.map(function (x) { return x.puan != null ? x.puan : x.turlar.reduce(function (a, b) { return a + b; }, 0); });
+    let sirali = taraflar.map(function (x, i) { return i; }).sort(function (a, b) { return puan[b] - puan[a] || topl[b] - topl[a]; }), siraVar = puan.some(function (p) { return p > 0; }) || topl.some(function (p) { return p > 0; });
+    let kaz = deg && deg.durum === 'bitti' ? deg.kazananIdx : null, ek = deg && deg.durum === 'shootoff';
+    // bu seri: herkesin en az attığı seri sayısı; sırada = takımlar arasında sırayla ilk eksik olan
+    let say = {}; tumU.forEach(function (u) { say[u.g + '|' + u.ad] = yzAmSeriSay(u); });
+    let enAz = tumU.length ? Math.min.apply(null, tumU.map(function (u) { return say[u.g + '|' + u.ad]; })) : 0, sirada = null;
+    let enUzun = Math.max.apply(null, taraflar.map(function (x) { return x.t.uyeler.length; }));
+    for (let j = 0; j < enUzun && !sirada; j++) for (let i = 0; i < taraflar.length && !sirada; i++) { let u = taraflar[i].t.uyeler[j]; if (u && say[u.g + '|' + u.ad] === enAz) sirada = u.g + '|' + u.ad; }
+    if (kaz != null) sirada = null;
+    // kural satırı
+    let kural = k && k.cokTaraf ? '🤝 <b>' + taraflar.length + ' takım birlikte</b> · sette en yüksek takım <b>2</b>, eşitse <b>1</b> puan · ' + k.maxSet + ' set'
+        : toplamMod ? '🏁 <b>' + k.hedefPuan + ' puana ilk ulaşan takım kazanır</b>'
+        : turMod ? '🏋️ <b>' + k.hedefTur + ' tur antrenman maçı</b> · sonunda toplamı yüksek olan önde'
+        : k ? '🎯 <b>Set sistemi</b> · seti alan 2, berabere 1 · <b>' + k.hedefSetPuani + '</b> set puanına ulaşan kazanır' : '';
+    let durum = kaz != null ? ' · <b style="color:' + taraflar[kaz].t.renk + '">🏆 ' + esc(taraflar[kaz].t.ad) + ' kazandı</b>'
+        : ek ? ' · <b class="yzam-ek">⚡ Eşitlik — ek atış' + (deg.ekAtisanlar && deg.ekAtisanlar.length ? ': ' + deg.ekAtisanlar.map(function (i) { return esc(taraflar[i].t.ad); }).join(' · ') : '') + ' (1 ok)</b>'
+        : ' · şu an <b>' + (enAz + 1) + '. ' + (setMod ? 'set' : 'seri') + '</b>';
+    let sutunlar = taraflar.map(function (x, i) {
+        let yer = sirali.indexOf(i) + 1, ikon = typeof kmYarismaIkonSvg === 'function' ? kmYarismaIkonSvg(_kmTakimIkonAl(x.t, x.idx), 20) : '';
+        let uyeler = x.t.uyeler.map(function (u) {
+            let key = u.g + '|' + u.ad, n = say[key], sec = _kmYarismaAktifSporcuKey === key, bu = n > enAz;
+            let alt = key === sirada ? '👉 sırada' : bu ? '✓ bu seriyi attı' : 'bu seri bekliyor';
+            return '<button type="button" class="yzam-u' + (sec ? ' secili' : '') + (key === sirada ? ' sirada' : '') + (bu ? ' atti' : '') + '" onclick="kmYarismaSporcuSec(\'' + key.replace(/'/g, "\\'") + '\')">'
+                + yzAmAvatar(u, 48) + '<span class="ad">' + esc(kisaMap[key] || u.ad) + '<small>' + alt + '</small></span><span class="p">' + x.bireyselFark(u) + '</span></button>';
+        }).join('');
+        return '<div class="yzam-t' + (yer === 1 && siraVar ? ' onde' : '') + (kaz === i ? ' kaz' : kaz != null ? ' kay' : '') + '" style="--tr:' + x.t.renk + '">'
+            + '<div class="yzam-tb"><div class="yzam-ad"><span class="ik">' + ikon + '</span><span class="isim">' + esc(x.t.ad) + '</span><span class="yer">' + (kaz === i ? '🏆' : siraVar ? yer + '.' : '') + '</span></div>'
+            + '<div class="yzam-puan"><b>' + puan[i] + '</b><small>' + etiket + '</small></div>'
+            + '<div class="yzam-bar"><i style="width:' + (oran(i) * 100).toFixed(1) + '%"></i></div>'
+            + (setMod || turMod ? '<div class="yzam-alt">' + (x.puan != null ? x.puan + ' puan toplam' : '') + '</div>' : '') + '</div>'
+            + '<div class="yzam-uyeler">' + uyeler + '</div></div>';
+    }).join('');
+    // alttan skor girişi
+    let cek = '';
+    if (_kmYarismaAktifSporcuKey) {
+        let x = taraflar.find(function (y) { return y.t.uyeler.some(function (u) { return u.g + '|' + u.ad === _kmYarismaAktifSporcuKey; }); });
+        if (x) {
+            let u = x.t.uyeler.find(function (v) { return v.g + '|' + v.ad === _kmYarismaAktifSporcuKey; });
+            cek = '<div class="yzam-cek-arka" onclick="yzAmKapat()"></div><div class="yzam-cek" style="--tr:' + x.t.renk + '"><div class="yzam-cek-bas"><span class="yzam-cek-tk">' + esc(x.t.ad) + ' · ' + esc(u.ad) + ' · ' + (say[_kmYarismaAktifSporcuKey] + 1) + '. seri · toplam ' + x.bireyselFark(u) + '</span><button type="button" class="yzam-kapat" onclick="yzAmKapat()" aria-label="Kapat">✕</button></div>'
+                + _kmYarismaPadHTML(kisaMap[_kmYarismaAktifSporcuKey] || u.ad, ek, x.t.renk) + '</div>';
+        }
+    }
+    let son = '';
+    if (_kmYarismaSonGiris) {
+        let sg = _kmYarismaSonGiris;
+        son = '<div class="yzam-son"><span>Son giriş: <b>' + esc(kisaMap[sg.grup + '|' + sg.ad] || sg.ad) + '</b> ' + sg.oklar.map(function (v) { return '<i class="km-oyun-padbtn ' + (KM_OYUN_PAD_RENK[v] || '') + '">' + esc(v) + '</i>'; }).join('') + ' <b>' + sg.seriPuan + 'p</b></span><button type="button" onclick="kmYarismaSonGirisiGeriAl()">↩️ Geri al</button></div>';
+    }
+    let tablo = '';
+    if (taraflar.length === 2) { _kmYarismaSonSkorKartiTaraflar = taraflar; tablo = kmYarismaSkorKartiHTML(taraflar, deg); }
+    else if (k && k.cokTaraf && typeof _kmYarismaCokluTabloHTML === 'function') tablo = _kmYarismaCokluTabloHTML(taraflar, deg);
+    return '<div class="yzam">'
+        + (kural ? '<div class="yzam-kural">' + kural + durum + '</div>' : '')
+        + '<div class="yzam-izgara" style="--n:' + taraflar.length + '">' + sutunlar + '</div>'
+        + son
+        + '<div class="yzam-ipucu"><span>Sporcuya dokun → skor gir. Turuncu kenar = sırada.</span><button type="button" class="yz-link" onclick="kmYarismaTakimDuzenleAc()">✏️ Takımları düzenle</button></div>'
+        + tablo + (ekBtnHTML || '') + cek + '</div>';
+}
+function yzAmCss() {
+    if (document.getElementById('yzam-css')) return;
+    let st = document.createElement('style'); st.id = 'yzam-css';
+    st.textContent = [
+        '.yzam{display:flex;flex-direction:column;gap:12px}',
+        '.yzam-kural{text-align:center;font-size:13px;color:var(--text-muted);line-height:1.5}.yzam-kural b{color:var(--text-main)}.yzam-ek{color:#facc15!important}',
+        '.yzam-izgara{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:12px}',
+        '@media (max-width:820px){.yzam-izgara{grid-template-columns:1fr}}',
+        '.yzam-t{display:flex;flex-direction:column;min-width:0;border-radius:20px;overflow:hidden;background:color-mix(in srgb,var(--tr) 9%,var(--bg-panel));border:2px solid color-mix(in srgb,var(--tr) 55%,transparent)}',
+        '.yzam-t.onde{box-shadow:0 0 0 3px color-mix(in srgb,var(--tr) 32%,transparent)}.yzam-t.kaz{box-shadow:0 0 0 4px var(--tr)}.yzam-t.kay{opacity:.6}',
+        '.yzam-tb{padding:12px 14px 10px;display:flex;flex-direction:column;gap:6px}',
+        '.yzam-ad{display:flex;align-items:center;gap:8px;color:var(--tr);font-weight:900;font-size:17px;min-width:0}.yzam-ad .ik{display:flex}.yzam-ad .isim{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '.yzam-ad .yer{margin-left:auto;font-size:12px;font-weight:900;padding:2px 10px;border-radius:999px;background:var(--tr);color:#141414}.yzam-ad .yer:empty{display:none}',
+        '.yzam-puan{display:flex;align-items:baseline;gap:8px}.yzam-puan b{font-family:"Barlow Condensed",Impact,"Arial Narrow",sans-serif;font-size:64px;line-height:.9;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text-main)}.yzam-puan small{color:var(--text-muted);font-weight:700}',
+        '.yzam-bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.yzam-bar i{display:block;height:100%;background:var(--tr);border-radius:inherit;transition:width .5s}',
+        '.yzam-alt{font-size:12px;color:var(--text-muted);font-weight:600}',
+        '.yzam-uyeler{display:flex;flex-direction:column;gap:6px;padding:4px 10px 12px}',
+        '.yzam-u{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;border:2px solid transparent;background:rgba(0,0,0,.25);color:var(--text-main);font:inherit;text-align:left;cursor:pointer;min-width:0}',
+        '.yzam-u .yzam-av{flex:none;border-radius:50%;display:grid;place-items:center;background:var(--bg-main);background-size:cover;background-position:center;color:var(--text-muted);font-weight:800;box-shadow:0 0 0 2px color-mix(in srgb,var(--tr) 60%,transparent)}',
+        '.yzam-u .ad{flex:1;min-width:0;font-weight:800;font-size:14.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.yzam-u .ad small{display:block;font-weight:600;font-size:11.5px;color:var(--text-muted)}',
+        '.yzam-u .p{font-family:"Barlow Condensed",Impact,sans-serif;font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}',
+        '.yzam-u.atti .ad small{color:#5ec98b}.yzam-u.sirada{border-color:var(--accent-orange);background:color-mix(in srgb,var(--accent-orange) 14%,rgba(0,0,0,.25))}.yzam-u.sirada .ad small{color:var(--accent-orange);font-weight:800}',
+        '.yzam-u.secili{border-color:var(--tr);background:color-mix(in srgb,var(--tr) 22%,rgba(0,0,0,.25))}',
+        '.yzam-son{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;background:var(--bg-panel);border:1px solid var(--border-color);font-size:12.5px}',
+        '.yzam-son i{display:inline-grid;place-items:center;width:22px;height:22px;min-height:0;padding:0;font-style:normal;font-size:10px;border-radius:6px;margin-left:3px}',
+        '.yzam-son button{border:1px solid #f87171;color:#f87171;background:none;border-radius:8px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer}',
+        '.yzam-ipucu{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted)}.yzam-ipucu .yz-link{margin:0}',
+        '.yzam-cek-arka{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45)}',
+        '.yzam-cek{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:61;width:min(720px,100%);max-height:88vh;overflow:auto;background:#141417;border-top:3px solid var(--tr);border-radius:22px 22px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -20px 60px rgba(0,0,0,.6);animation:yzamGir .2s ease-out}',
+        '@keyframes yzamGir{from{transform:translate(-50%,40px);opacity:0}}',
+        '.yzam-cek-bas{display:flex;align-items:center;gap:12px;margin-bottom:10px;color:#f4f4f5}.yzam-cek-bas .yzam-av{flex:none;border-radius:50%;display:grid;place-items:center;background:#27272c;background-size:cover;background-position:center;color:#a1a1aa;font-weight:800;box-shadow:0 0 0 3px var(--tr)}',
+        '.yzam-cek-tk{font-size:13px;font-weight:800;color:var(--tr);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yzam-cek-bas b{font-size:18px}.yzam-cek-bas small{display:block;color:#a1a1aa;font-size:12.5px}',
+        '.yzam-kapat{margin-left:auto;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#27272c;color:#f4f4f5;font-size:18px;cursor:pointer}',
+        '@media (prefers-reduced-motion:reduce){.yzam-cek{animation:none}.yzam-bar i{transition:none}}'
+    ].join('\n');
+    document.head.appendChild(st);
+}

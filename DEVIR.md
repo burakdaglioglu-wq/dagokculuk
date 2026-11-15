@@ -5843,3 +5843,17 @@ Kullanıcı: "TV ekranı ve TV ekranı öncesi tema, stil, kurulum daha güzel, 
   - 126 yeni: 4 adım, Başlat ve TV, 18/24/30 sporcu sığar, ✓ girdi, yeni vurgu, dokun → giriş, renk, Sahne ⇄ Hatlar, 390 px, ayrıntılı hatırlanır.
   - 109/113 artık 'sahne'yi açıkça seçiyor; 90 tür kartı `.yzr-k`.
 - Açık: gerçek salonda TV'de denenmedi. Mola sırasında hatlar mola slaytı göstermiyor; sayaç ☕ MOLA gösteriyor.
+
+## 129. 👥 Takım maçı canlı ekranı "A · Takım sütunları" (2026-11-15, v419)
+
+Kullanıcı tablet fotoğrafı gönderdi: "bu ekran o kadar kötü dizayn edilmiş, görselleri o kadar kötü ki". Taslak: https://claude.ai/artifact/JULFg8TJfG2wqPA7un7C9m. Kullanıcının seçimi: "A".
+- `_kmYarismaCanliMacHTML` sarıldı (dagsk-km-yarisma-pro.js sonu, `yzAm*`). Hayali Rakip asıl fonksiyonda kalır. Hata olursa eski çizime düşer.
+- Her takım bir sütun: ikon, ad, kaçıncı rozeti, büyük puan, ilerleme çubuğu, toplam.
+  - Büyük puan: set puanı, toplam/hedef ya da antrenman turu; `kmYarismaMacSonucDegerlendir` ile hesaplanır.
+  - Kaçıncı: puan, sonra toplam.
+- Sporcular fotoğraflı (`fotoAvatarHTML`) ve "👉 sırada / bu seri bekliyor / ✓ bu seriyi attı" durumuyla görünür.
+  - Seri sayısı `_kmYarismaAktifBaslangicMap` anlık görüntüsünden.
+  - Sırada = en az atan seri, takımlar arasında sırayla.
+- Sporcuya dokun: alttan sabit çekmece açılır, içinde asıl pad `_kmYarismaPadHTML`. Kaydet `kmYarismaSeriKaydet`'i çağırır, seçimi bırakır, çekmece kapanır.
+- Altta son giriş + Geri al, Takımları düzenle, skor kartı (2 takım) ya da çoklu set tablosu, sonra ekBtnHTML (Bitir / MVP / kazanan düğmeleri).
+- Düz maç ve eleme ağacındaki maç bu ekranı kullanır. Test 127.
