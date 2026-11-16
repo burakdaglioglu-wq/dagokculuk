@@ -5857,3 +5857,40 @@ Kullanıcı tablet fotoğrafı gönderdi: "bu ekran o kadar kötü dizayn edilmi
 - Sporcuya dokun: alttan sabit çekmece açılır, içinde asıl pad `_kmYarismaPadHTML`. Kaydet `kmYarismaSeriKaydet`'i çağırır, seçimi bırakır, çekmece kapanır.
 - Altta son giriş + Geri al, Takımları düzenle, skor kartı (2 takım) ya da çoklu set tablosu, sonra ekBtnHTML (Bitir / MVP / kazanan düğmeleri).
 - Düz maç ve eleme ağacındaki maç bu ekranı kullanır. Test 127.
+
+## 130. 🏝️ Hazine Adası 3B: üç ayrı oyun (2026-11-16, v420)
+
+Kullanıcı Hazine Adası için "tamamen yeni teknolojili harika bir oyun" istedi. Oynanabilir 3B taslak: https://claude.ai/artifact/PKbvPZwi4h9A48YuCyh79g. Yanıtı: "mükemmel, genelde de oyunları böyle yapalım, bu üçünü de ayrı oyun olarak çıkart".
+- **Dosya:** `public/dagsk-km-hazine3d.js` (`h3*`) üç Oyunlar temasını tek dosyada taşır: `filo` ⛵ Filo Yarışı, `kacis` 🏴‍☠️ Korsandan Kaçış, `topsavasi` 💣 Top Savaşı. three.js r128 yerel `/vendor`.
+- **Sahne:** gölgelendirici deniz (dalga, köpük, güneş parıltısı), ada, sandık, ayrıntılı gemiler, gülle, patlama, köpük izi, martılar.
+- **2B yedek:** WebGL yoksa, yazılımsal çizimse ya da ilk 3 sn'de kare süresi 70 ms'yi geçerse sade 2B görünüme düşer (`dag_h3_2b`). `window.__h3Zorla3B` testte zorlar.
+- **Kurallar:**
+  - Filo: `filoAdim`, ~4 turda ada; tur sonunda varanlar kazanır.
+  - Kaçış: hedef nk·21, korsan hızı nk·7/tur; yakalanınca geri düşer.
+  - Top: hasar 9-10→6, 7-8→4, 5-6→2, 3-4→1; hp nk·10; tur sonunda karşı ateş (ok başı ≥6,5 savuşturur, değilse can; 3 can biterse korsan %15 toparlanır).
+  - Sonuç hep tur sonunda, finalde herkesin adı.
+- **Gotcha'lar:**
+  - Tur sonu durumu ANINDA hesaplanır; zamanlayıcılar yalnız görseldir (`_bekleyenTur`). Sonraki seri zamanlayıcıları temizlediği için tur sayacı ilerlemiyordu.
+  - Üç panel sayfada birlikte durur: `h3SahneKur` diğer ikisini boşaltır (kimlik çakışması).
+  - Satır sonu `//` yorumu, aynı satırdaki `G3.oyun.add(korsan)`'ı yutmuştu.
+  - 12 saat önekleri tema başına: `dag_km_h3_<tid>_`.
+- **app.js:** `var KM_H3` + 24 bağlantı noktası (CSS, panel, tema tanımı, resync/sahnekur/animate, geri al anlık görüntüsü, takım dışlamaları, dock 'sag', seçicide YENİ).
+- Test 128: üç oyun baştan sona, geri al, yeni oyun, 12 saat, 18 sporcu, 390 px. `E2E_3B=1` ve `E2E_CHROMIUM_ARGS="--use-gl=angle|--ignore-gpu-blocklist"` gerçek 3B.
+
+## 131. 🎬 Okun Yolculuğu · 3B film (2026-11-16, v420)
+
+Kullanıcı: "kulüpte yayınlayabileceğim okçuluk hakkında 3 dk video, Karışık Sınıf'ta yayınla". v405 fotoğraflı film (`dagsk-film.js`) duruyor; bu ikinci film gerçek zamanlı 3B.
+- **Dosya:** `public/dagsk-film3d.js`, `dagFilm3dAc()`. app.js `dagFilm3dAcYukle` önce three.js'i yükler.
+- **Erişim:** KM aracı `film3d` (Oyun & motivasyon), KS_YENILER başı, sporcu ana ekranı kartı.
+- **Sahneler (182 sn):**
+  - açılış
+  - tarih panoları
+  - klasik (kırmızı) / makaralı (mavi) yay
+  - 3B okçuyla 8 adım (`poz()`, `kemik()` ile kol IK)
+  - ağır çekim ok uçuşu (okçu paradoksu kıvrımı)
+  - puanlama (10…1, X, seri X+9+10=29)
+  - düdükler: 2 hatta gel, 1 başla, 3 topla, çok dur
+  - kulüp fotoğrafları
+  - final ok yağmuru ve havai fişek
+- **Oynatma:** her şey t'ye bağlı, sar ve duraklat sorunsuz. Ses: speechSynthesis tr (Ahmet/Emel tercih) + WebAudio müzik (akor, uçuşta ve finalde davul). Klavye: boşluk, ←/→, Esc.
+- Test 129. Gerçek salon TV'sinde ve sesle henüz denenmedi.

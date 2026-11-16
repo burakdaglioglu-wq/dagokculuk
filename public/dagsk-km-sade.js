@@ -87,6 +87,14 @@ function ksUst(geriFn, etiket, sagHTML) {
 // ---------------------------------------------------------------- yeni özellikler (v375)
 const KS_YENILER = [
     {
+        id: 'film3d', ad: 'Okun Yolculuğu · 3B Film', ne: '3 dakikalık tamamen 3B film: okçuluğun tarihi, klasik ve makaralı yay, 3B okçuyla atışın 8 adımı, ağır çekimde okun uçuşu, puanlama, düdükler ve güvenlik, kulübümüz ve final.',
+        ikon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M21 3l-8 8M17 3h4v4"/>',
+        ozellik: [['Gerçek 3B', 'Atış alanı, dönen yaylar, okçu, ağır çekim ok uçuşu; kamera sahneler arasında dolaşır.'], ['Seslendirme + altyazı', 'Türkçe ses okur, büyük altyazı çıkar; 🗣️ ile kapatılır.'], ['Müzik', 'Sakin başlar, okun uçuşunda ve finalde davulla yükselir.'], ['Bilgi', 'Olimpik 70 m, 10…1 ve X, düdük kuralları: 2 hatta gel, 1 başla, 3 okları topla, çok düdük dur.']],
+        adim: ['Sesi aç, TV ekranına yansıt.', '▶ İzle düğmesine bas; çubuğa dokunarak ya da ⏪ ⏩ ile sar.', 'Bitince Tekrar izle ya da Kapat.'],
+        not: 'Sporcular kendi ana ekranlarından da açabilir. 3B açılmayan eski cihazda fotoğraflı Okçuluk Filmi kullanılır.',
+        ac: 'Filmi izle'
+    },
+    {
         id: 'film', ad: 'Okçuluk Filmi', ne: '3 dakikalık tam ekran film: biz kimiz, okçuluk nedir, klasik ve makaralı yay, zor anlar, atış okulu (formdan nişangâha), yarışmalar ve gelecek. Loş başlar, gaza getiren müzikle biter.',
         ikon: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/><path d="M10 13l4 2.5-4 2.5z"/>',
         ozellik: [['Seslendirme + altyazı', 'Türkçe ses okur, büyük altyazı çıkar; 🗣️ ile kapatılır.'], ['Müzik', 'Loş açılış, zor anlarda sakin, sonra yükselen final.'], ['Atış okulu', 'Dağınık oklarda form, toplu ama kenarda oklarda nişangâh (oku takip et).'], ['Kulübün fotoğrafları', 'Salon, takım ve yarışma fotoğrafları.']],
@@ -166,6 +174,7 @@ function ksYenilerHTML() {
 function ksYeniAc(id) {
     ksKapat();
     if (id === 'film') { if (typeof dagFilmAcYukle === 'function') dagFilmAcYukle(); return; }
+    if (id === 'film3d') { if (typeof dagFilm3dAcYukle === 'function') dagFilm3dAcYukle(); return; }
     if (id === 'foto') { kmAracSec('skor'); showToast('Sporcuya dokun, sonra Fotoğrafla puanla', 'info'); }
     else kmAracSec(id);
 }
