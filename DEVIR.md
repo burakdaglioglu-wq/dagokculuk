@@ -5909,3 +5909,13 @@ Kullanıcı Ninja'yı "Hazine 3B mantığında, ilerlemeli" istedi. Oynanabilir 
 - Düzeltme: modül kuralı `{flex-direction:column;right:0}` (absolute kalır, sağ kenara kadar). `?v=2`, sw CACHE v422.
 - zombi/tahta/timsah/bomba'daki sağ 195 px pay BİLEREK: skor paneli çocukları kapatmasın (testler 106/110/114/115/123 bunu ölçer) — dokunma.
 - Yeni oyun eklerken: panel CSS'inde `position` verme; boyutu `.km-oyun-panel` belirler. Ölçüm: `tests/e2e/_olcum-hepsi.mjs` (her temada panel = sahne yüksekliği mi).
+
+## 134. 🎬 Ok anı + ŞİMDİ cümlesi + Top Savaşı tehlikesi (2026-11-16, v423)
+Kullanıcı: "oyun içerikleri çok kötü, çocuklar sıkılıyor" — son haftalarda yapılan HEPSİ; sebep (seçtiği): okun etkisi görünmüyor, tehlike/heyecan yok, anlamadılar. Top Savaşı taslağı (https://claude.ai/artifact/1SXFhetjjPaBbZYbcQmac4) → "YAP".
+- **`public/dagsk-km-an.js` (an\*)**, `KM_AN_TEMALAR` (app.js): topsavasi, kacis, filo, catikosu, ejderkule, zombi, tahta, timsah, bomba, blok, canavar, hapsirik.
+  - `#an-simdi` (govde'de yk-serit altında): tek büyük "ŞİMDİ:" cümlesi + 9-10 / 7-8 / 5-6 / altı lejantı (oyunun dilinde) + "🎬 An" aç/kapat (`dag_km_an_kapali`, cihazda). `kmOyunKabukGuncelle → kmOyunAnTazele`.
+  - Ok anı: kmOyunIlerlet'te `baslatAnimasyon` öncesi `anSeriGoster(tema, s, kaydedilecek, devam)` — sahne kararır, ad büyük, oklar tek tek renkli daire + büyük yazı ("+6 SN!", "PANZEHİR OKU!", "🐟🐟 İKİ BALIK!") + sentez ses, sonra anlatıcı tek cümle (`kmOyunSesliSoyle`, sessiz ayarına uyar) → oyunun kendi animasyonu. ~3,4 sn/seri. Takım/çoklu modda yok. Skora dokunmaz.
+  - Yeni oyun ekleyince: AN tablosuna `{simdi, ok:{sari,kirmizi,mavi,siyah,beyaz,iska}, ozet:[iyi,orta,zayıf]}` + KM_AN_TEMALAR.
+- **Top Savaşı (hazine3d ?v=3)**: `TOP_CAN=6`, `TOP_TUR=4`; hpMax = nk·5. Zayıf seri (hasar ≤ ok sayısı) → `st.barut++` (afiş "KORSAN BARUT BULDU"). Tur sonu: korsan max(1, ⌊barut/3⌋) top atar, her top 1 can; `kalan--`, korsan `korsanYer(st)` ile yaklaşır. Can 0 → `kayip='batti'`, kalan 0 → `kayip='carpti'` (`kaybet()`): faz son, herkesin adı, kart "GEMİMİZ BATTI / KORSAN BİZE ÇARPTI · Rövanş". Kazanırken eski akış (herkes atınca batar).
+- Test 131 (12 oyunda şerit, an, An kapat, barut, karşı ateş, yaklaşma, kayıp, rövanş, zafer, zombi/bomba/ejderkule anı, 390 px).
+- AÇIK: diğer oyunlara tehdit (Filo, Çatı Koşusu, Ejder Kulesi, Dev Tahta'da gerçek kaybetme yok); çocuklarla denenmedi; an süresi sınıfta uzun gelirse "🎬 An" ile kapatılır.

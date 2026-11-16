@@ -17721,6 +17721,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             kmOyunKarakterSinirKisitla();
             kmOyunEtiketKenarDuzelt();
             kmOyunHeyecanTazele(_kmOyunAktifTema);
+            kmOyunAnTazele(_kmOyunAktifTema);
         }
         function kmTakimAnahtari() { return 'dag_km_takim_' + (_kmAktifKonum || 'varsayilan'); }
         function kmTakimDurumEmin() {
@@ -19355,6 +19356,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 <div id="km-oyun-secici" class="km-arac-izgara" style="display:none; margin:10px 0;"></div>
                 <div id="km-oyun-govde">
                 <div id="yk-serit"></div>
+                <div id="an-simdi"></div>
                 <div class="km-oyun-takim-toggle-row" id="km-oyun-takim-toggle-row" style="${(_kmOyunAktifTema === 'futbol' || _kmOyunAktifTema === 'futboltakim' || _kmOyunAktifTema === 'canavar' || _kmOyunAktifTema === 'hapsirik' || _kmOyunAktifTema === 'blok' || _kmOyunAktifTema === 'zombi' || _kmOyunAktifTema === 'tahta' || _kmOyunAktifTema === 'timsah' || _kmOyunAktifTema === 'bomba' || KM_H3.indexOf(_kmOyunAktifTema) !== -1 || _kmOyunAktifTema === 'akvaryum' || _kmOyunAktifTema === 'kale' || _kmOyunAktifTema === 'fener' || _kmOyunAktifTema === 'halat' || _kmOyunAktifTema === 'il' || _kmOyunAktifTema === 'yukselis') ? 'display:none;' : ''}">
                     <div class="km-oyun-takim-toggle">
                         <button class="${!_kmOyunTakimModu ? 'aktif' : ''}" data-takim="0" onclick="kmOyunModSec(false)">🏃 Bireysel</button>
@@ -19873,6 +19875,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunKaleHazir() { return dagskEkYukle('dagsk-km-kale.js'); }
         // ⚔️ Yol oyunları heyecanı + A görünümü (v340–341, dagsk-km-heyecan.js) — kmOyunKabukGuncelle her sahne kurulumu/resync'te tazeler
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
+        // 🎬 Ok anı + ŞİMDİ cümlesi + anlatıcı (v423, dagsk-km-an.js) — son haftalardaki oyunlar; kullanıcı: "çocuklar sıkılıyor, okun etkisi görünmüyor, anlamıyorlar"
+        const KM_AN_TEMALAR = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
+        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=1'); }
+        function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         const KM_OYUN_HY_TEMALAR = ['hazine', 'zirve', 'yildiz', 'pist', 'ninja', 'dag', 'balon'];
         function kmOyunHeyecanTazele(t) { if(KM_OYUN_HY_TEMALAR.indexOf(t) === -1) return; if(typeof hyTazele === 'function') { hyTazele(t); return; } kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyTazele(t); }).catch(function() {}); }
         function kmOyunSahneKurKale() { kmOyunKaleHazir().then(function() { if(_kmOyunAktifTema === 'kale' && document.getElementById('km-oyun-panel-kale')) kaleSahneKur(); }).catch(function() { showToast('Kale Savunması yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
@@ -19899,7 +19905,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         // 🏝️ Hazine Adası 3B (v420) — üç tema tek dosyada (three.js r128 yerel /vendor, WebGL yoksa sade 2B).
-        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=2'); }
+        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=3'); }
         function kmOyunSahneKurH3(tid) { kmOyunH3Hazir().then(function() { if(_kmOyunAktifTema === tid && document.getElementById('km-oyun-panel-' + tid)) h3SahneKur(tid); }).catch(function() { showToast('Hazine Adası 3B yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncH3(tid) { if(typeof h3Guncelle === 'function' && document.getElementById('h3-hud')) h3Guncelle(tid); else kmOyunSahneKurH3(tid); }
         function kmOyunAnimateH3(tid, s, i, kaydedilecek, done) { kmOyunH3Hazir().then(function() { h3Seri(tid, s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -27735,12 +27741,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // Dramatik Açıklama Modu (2026-09-03 Menzil Sahnesi fikri) — açıksa, sonucu anında göstermek
             // yerine kısa bir gerilim perdesi (davul tıkırtısı + nabız atan ikon) gösterilip SONRA normal
             // animasyon/kutlama akışı başlıyor. Pad zaten _kmOyunKilit=true ile kilitli, ekstra kilit gerekmedi.
+            function anSonrasiBasla() {
             if(_kmOyunDramatikMod) {
                 kmOyunSuspenseGoster();
                 setTimeout(function() { kmOyunSuspenseGizle(); baslatAnimasyon(); }, 1300);
             } else {
                 baslatAnimasyon();
             }
+            }
+            // 🎬 Ok anı (v423): seri önce büyük anla gösterilir (ad, oklar tek tek, anlatıcı), sonra oyunun kendi animasyonu
+            if(KM_AN_TEMALAR.indexOf(_kmOyunAktifTema) !== -1 && !takimAktifMi && !cokluAktifMi) {
+                let anTema = _kmOyunAktifTema, anOk = kaydedilecek.slice(), anBir = false, anDevam = function() { if(anBir) return; anBir = true; anSonrasiBasla(); };
+                kmOyunAnHazir().then(function() { if(typeof anSeriGoster === 'function' && _kmOyunAktifTema === anTema) anSeriGoster(anTema, s, anOk, anDevam); else anDevam(); }).catch(anDevam);
+            } else anSonrasiBasla();
             } // devamEt sonu
             // GERÇEK BUG (2026-09-25, kullanıcı: "skorları girince işle deyince skor işlenmiyor") — burada
             // hâlâ native confirm() kullanılıyordu. #seri-tamamlandi-modal'ın AYNI sınıfı zaten fark

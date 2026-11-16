@@ -40,7 +40,7 @@ export function esit(gercek, beklenen, mesaj) { if (gercek !== beklenen) throw n
 export function benzersiz(onEk) { return onEk + Array.from({ length: 5 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(''); }
 
 let _tarayici = null;
-export async function tarayici() { return _tarayici || (_tarayici = await chromium.launch({ args: (process.env.E2E_CHROMIUM_ARGS || '').split('|').filter(Boolean) })); }
+export async function tarayici() { return _tarayici || (_tarayici = await chromium.launch({ args: ['--mute-audio'].concat((process.env.E2E_CHROMIUM_ARGS || '').split('|').filter(Boolean)) })); }
 export async function tarayiciKapat() { if (_tarayici) await _tarayici.close(); _tarayici = null; }
 
 // Sayfa: oturum anahtarı önceden yazılı (girisli=true), window.open yakalanır (__acilan), sayfa hataları toplanır.
@@ -53,6 +53,10 @@ export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900
   await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yz_tv_gorunum')) localStorage.setItem('dag_yz_tv_gorunum', 'tablo'); localStorage.setItem('dag_yz_tv_v418', '1'); if (!localStorage.getItem('dag_yz_kur_ayrintili')) localStorage.setItem('dag_yz_kur_ayrintili', '1'); } catch (e) {} });
   // v404: Yolculuk'un ders başı kartı oyun ekranını kaplar; testler kapalı başlar (118 kendisi açar)
   await ctx.addInitScript(() => { try { if (!localStorage.getItem('dag_yolculuk_ders_basi')) localStorage.setItem('dag_yolculuk_ders_basi', '0'); } catch (e) {} });
+  // v423: oyunların kendi zamanlama testleri 🎬 ok anını beklemesin (131 anı kendisi açar)
+  await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('__anAyar')) { sessionStorage.setItem('__anAyar', '1'); localStorage.setItem('dag_km_an_kapali', '1'); } } catch (e) {} });
+  // v423: testler hoparlörden konuşmasın (anlatıcı Windows sesli okumasını kullanır, --mute-audio onu susturmaz)
+  if (!process.env.E2E_SES) await ctx.addInitScript(() => { try { if (window.speechSynthesis) { window.speechSynthesis.speak = () => {}; } } catch (e) {} });
   const p = await ctx.newPage();
   const hatalar = [];
   p.on('pageerror', (e) => { if (!/Failed to fetch/.test(e.message)) hatalar.push(e.message); });
