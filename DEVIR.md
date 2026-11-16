@@ -5894,3 +5894,12 @@ Kullanıcı: "kulüpte yayınlayabileceğim okçuluk hakkında 3 dk video, Karı
   - final ok yağmuru ve havai fişek
 - **Oynatma:** her şey t'ye bağlı, sar ve duraklat sorunsuz. Ses: speechSynthesis tr (Ahmet/Emel tercih) + WebAudio müzik (akor, uçuşta ve finalde davul). Klavye: boşluk, ←/→, Esc.
 - Test 129. Gerçek salon TV'sinde ve sesle henüz denenmedi.
+
+## 132. 🥷 Gölge Yolu 3B: Çatı Koşusu + Ejder Kulesi (2026-11-16, v421)
+Kullanıcı Ninja'yı "Hazine 3B mantığında, ilerlemeli" istedi. Oynanabilir taslak (https://claude.ai/artifact/YX9RUWKAKLwBt31D1xTJsU) üç mod gösterdi; seçim: "A ve C'yi ayrı yap" (B Klan Akını yapılmadı). Eski `ninja` (Ay Işığı Kalesi) yerinde duruyor.
+- Dosya: `public/dagsk-km-ninja3d.js` (`n3*`), Hazine 3B (`dagsk-km-hazine3d.js`) ile aynı kabuk: `n3SahneKur / n3Guncelle / n3Seri / n3Anlik / n3GeriYukle / n3Sporcu`. app.js'te `KM_N3 = ['catikosu','ejderkule']`, `kmOyun3BMi(t)` (H3 + N3) tüm "kendi mekaniği olan oyun" istisnalarında; yükleyiciler `kmOyunSahneKurN3 / kmOyunResyncN3 / kmOyunAnimateN3`.
+- **Çatı Koşusu** (bireysel): ilerleme = seri oranı × 40.5 birim (yol 110). 3 çatı arası; geçmek için oran ≥ 0.5, 0.5–0.6 kıl payı, ≥ 0.9 takla; aynı aralıkta 2 kalışta sensei eşiği 0.4. Tur sonunda herkes kapıdaysa ya da 5. tur bittiyse bölüm biter; varanlara ⭐ (kuşak = yıldız sayısı, Beyaz→Siyah).
+- **Ejder Kulesi** (hep birlikte): can = max(40, n·ok·8), 5. katta ×10. Hasar = ok puanı. Muhafız ancak herkes atınca düşer.
+- **İlerleme**: 5 bölüm (Köy Çatıları, Bambu Ormanı, Şelale Köprüsü, Kale Surları, Ejder Kulesi). `dag_km_n3ilerleme_<tid>_<konum>` 12 saat kuralına girmez (KM_OYUN_SIFIR_ONEK yalnız `dag_km_n3_<tid>_`). Bölüm bitişi `st.ilerlemeOnce` saklar; geri al ilerlemeyi de geri alır. "🗺️ Bölümler" → 1. bölümden başlat (yıldızlar silinir).
+- `atan[key]` = sporcunun son attığı TUR numarası (Hazine'deki sayaçtan farklı: geç gelen sporcu tek seriyle turu tamamlar).
+- Test 130 (saf kurallar, iki oyun baştan sona, geri al + ilerleme, sonraki bölüm, 12 saat, 18 sporcu, 390 px). Gerçek 3B: `E2E_3B=1 E2E_CHROMIUM_ARGS="--use-gl=angle|--ignore-gpu-blocklist"`.
