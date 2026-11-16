@@ -31,7 +31,7 @@ export default async function ({ log }) {
     };
     const idxler = () => p.evaluate(() => _kmOyunRosterCache.map((x, j) => (turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]) ? j : -1).filter((j) => j >= 0));
     // saf kurallar
-    const saf = await p.evaluate(async () => { await dagskEkYukle('dagsk-km-ninja3d.js?v=1'); const h = {}, a = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0), b = _n3Ic.kosuHesap(20, 0.5, {}, 'k', 0), b2 = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0), c = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0); return { dur: a.s1, kaldi: !!a.kaldi, gec: b.s1 > 28, kil: b.kil, ikinci: !!b2.kaldi, sensei: c.sensei && c.s1 > 28, can: _n3Ic.muhafizCan(0, 9, 3) }; });
+    const saf = await p.evaluate(async () => { await dagskEkYukle('dagsk-km-ninja3d.js?v=2'); const h = {}, a = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0), b = _n3Ic.kosuHesap(20, 0.5, {}, 'k', 0), b2 = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0), c = _n3Ic.kosuHesap(20, 0.4, h, 'k', 0); return { dur: a.s1, kaldi: !!a.kaldi, gec: b.s1 > 28, kil: b.kil, ikinci: !!b2.kaldi, sensei: c.sensei && c.s1 > 28, can: _n3Ic.muhafizCan(0, 9, 3) }; });
     esit(saf.dur, 23.5, 'yarı puan altı çatı arasında durur'); dogrula(saf.kaldi && saf.gec && saf.kil, 'yarı puan atlar (kıl payı)'); dogrula(saf.ikinci && saf.sensei, '2 kalıştan sonra sensei'); esit(saf.can, 216, 'muhafız canı');
     const sonuclar = [];
     for (const tid of TID) {

@@ -582,7 +582,7 @@
     function css() {
         if ($('n3-css')) return; const st = document.createElement('style'); st.id = 'n3-css';
         st.textContent = [
-            '.km-oyun-panel-catikosu,.km-oyun-panel-ejderkule{position:relative;flex:1;min-height:0;flex-direction:column}',
+            '.km-oyun-panel-catikosu,.km-oyun-panel-ejderkule{flex-direction:column;right:0}',
             '.n3-sahne{position:relative;flex:1;min-height:420px;width:100%;height:100%;overflow:hidden;border-radius:inherit;background:radial-gradient(ellipse at 30% 10%,#1d2a5a,#070b18 70%);font-family:Nunito,Inter,system-ui,sans-serif;color:#eef1ff}',
             '.n3-tuval{position:absolute;inset:0;width:100%;height:100%;display:block}',
             '.n3-hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:12px}',

@@ -536,7 +536,7 @@
     function css() {
         if ($('h3-css')) return; const st = document.createElement('style'); st.id = 'h3-css';
         st.textContent = [
-            '.km-oyun-panel-filo,.km-oyun-panel-kacis,.km-oyun-panel-topsavasi{position:relative;flex:1;min-height:0;flex-direction:column}',
+            '.km-oyun-panel-filo,.km-oyun-panel-kacis,.km-oyun-panel-topsavasi{flex-direction:column;right:0}',
             '.h3-sahne{position:relative;flex:1;min-height:420px;width:100%;height:100%;overflow:hidden;border-radius:inherit;background:linear-gradient(#3f9fe6 0%,#8fd0f7 34%,#cfeeff 58%,#cfeeff 100%);font-family:Inter,system-ui,sans-serif;color:#f1f7fb}',
             '.h3-sahne.duz{background:linear-gradient(#3f9fe6 0%,#8fd0f7 30%,#1d8fb8 30.5%,#0e5f86 100%)}',
             '.h3-tuval{position:absolute;inset:0;width:100%;height:100%;display:block}',

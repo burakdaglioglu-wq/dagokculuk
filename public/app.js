@@ -19899,11 +19899,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         // 🏝️ Hazine Adası 3B (v420) — üç tema tek dosyada (three.js r128 yerel /vendor, WebGL yoksa sade 2B).
-        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=1'); }
+        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=2'); }
         function kmOyunSahneKurH3(tid) { kmOyunH3Hazir().then(function() { if(_kmOyunAktifTema === tid && document.getElementById('km-oyun-panel-' + tid)) h3SahneKur(tid); }).catch(function() { showToast('Hazine Adası 3B yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncH3(tid) { if(typeof h3Guncelle === 'function' && document.getElementById('h3-hud')) h3Guncelle(tid); else kmOyunSahneKurH3(tid); }
         function kmOyunAnimateH3(tid, s, i, kaydedilecek, done) { kmOyunH3Hazir().then(function() { h3Seri(tid, s, i, kaydedilecek, done); }).catch(function() { done(); }); }
-        function kmOyunN3Hazir() { return dagskEkYukle('dagsk-km-ninja3d.js?v=1'); }
+        function kmOyunN3Hazir() { return dagskEkYukle('dagsk-km-ninja3d.js?v=2'); }
         function kmOyunSahneKurN3(tid) { kmOyunN3Hazir().then(function() { if(_kmOyunAktifTema === tid && document.getElementById('km-oyun-panel-' + tid)) n3SahneKur(tid); }).catch(function() { showToast('Gölge Yolu 3B yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncN3(tid) { if(typeof n3Guncelle === 'function' && document.getElementById('n3-hud')) n3Guncelle(tid); else kmOyunSahneKurN3(tid); }
         function kmOyunAnimateN3(tid, s, i, kaydedilecek, done) { kmOyunN3Hazir().then(function() { n3Seri(tid, s, i, kaydedilecek, done); }).catch(function() { done(); }); }

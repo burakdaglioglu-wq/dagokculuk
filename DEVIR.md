@@ -5903,3 +5903,9 @@ Kullanıcı Ninja'yı "Hazine 3B mantığında, ilerlemeli" istedi. Oynanabilir 
 - **İlerleme**: 5 bölüm (Köy Çatıları, Bambu Ormanı, Şelale Köprüsü, Kale Surları, Ejder Kulesi). `dag_km_n3ilerleme_<tid>_<konum>` 12 saat kuralına girmez (KM_OYUN_SIFIR_ONEK yalnız `dag_km_n3_<tid>_`). Bölüm bitişi `st.ilerlemeOnce` saklar; geri al ilerlemeyi de geri alır. "🗺️ Bölümler" → 1. bölümden başlat (yıldızlar silinir).
 - `atan[key]` = sporcunun son attığı TUR numarası (Hazine'deki sayaçtan farklı: geç gelen sporcu tek seriyle turu tamamlar).
 - Test 130 (saf kurallar, iki oyun baştan sona, geri al + ilerleme, sonraki bölüm, 12 saat, 18 sporcu, 390 px). Gerçek 3B: `E2E_3B=1 E2E_CHROMIUM_ARGS="--use-gl=angle|--ignore-gpu-blocklist"`.
+
+## 133. Oyun alanı sahneyi doldursun (2026-11-16, v422)
+- Sorun (laptop fotoğrafı): Hazine 3B (filo/kacis/topsavasi) ve Gölge Yolu 3B (catikosu/ejderkule) panelleri modül CSS'inde `position:relative` alıyordu → `.km-oyun-panel`'in `position:absolute; inset` kuralı ezilip panel içerik kadar (~420 px) kalıyor, sahnenin alt yarısı boş görünüyordu (tam ekranda daha da belirgin).
+- Düzeltme: modül kuralı `{flex-direction:column;right:0}` (absolute kalır, sağ kenara kadar). `?v=2`, sw CACHE v422.
+- zombi/tahta/timsah/bomba'daki sağ 195 px pay BİLEREK: skor paneli çocukları kapatmasın (testler 106/110/114/115/123 bunu ölçer) — dokunma.
+- Yeni oyun eklerken: panel CSS'inde `position` verme; boyutu `.km-oyun-panel` belirler. Ölçüm: `tests/e2e/_olcum-hepsi.mjs` (her temada panel = sahne yüksekliği mi).
