@@ -55,7 +55,7 @@ export default async function ({ log }) {
     const varis = p.evaluate(async (j) => { _kmOyunAktifIndex = j; _kmOyunSeriGirisleri = ['2', '1', 'M']; _kmOyunSeriKonumlari = []; kmOyunIlerlet(); }, ix[2]);
     await varis;
     let buyukGoruldu = false, balonGoruldu = false;
-    for (let k = 0; k < 60; k++) { await p.waitForTimeout(100); if (!buyukGoruldu && await p.locator('.zb-kral-buyuk').count()) { buyukGoruldu = true; await p.screenshot({ path: O + 'kral-catida.png' }); } if (await p.locator('.zb-balon.kral').count()) balonGoruldu = true; }
+    for (let k = 0; k < 90; k++) { await p.waitForTimeout(100); await p.evaluate(() => { const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') onayOnayla(); }); if (!buyukGoruldu && await p.locator('.zb-kral-buyuk').count()) { buyukGoruldu = true; await p.screenshot({ path: O + 'kral-catida.png' }); } if (await p.locator('.zb-balon.kral').count()) balonGoruldu = true; }
     await p.waitForFunction(() => !_kmOyunKilit, null, { timeout: 20000 });
     st = await p.evaluate(() => JSON.parse(JSON.stringify(zbDurum())));
     const sonra = await p.evaluate(() => { const s = zbDurum(); return _kmOyunRosterCache.filter((x) => s.zombi[x.g + '|' + x.ad]).length; });

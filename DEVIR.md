@@ -5934,3 +5934,21 @@ Kullanıcı Zombi için 3 tarayıcı taslağından (https://claude.ai/artifact/5
 - Görünüm: üst şeridin altında Kral köprüsü şeridi (`#zb-kral`, piksel Kral `kareKral`: yamuk taç, pelerin, göbek), çatıya varınca büyük Kral atlar (`kralAtla`). Zombi sprite: kocaman/küçük şaşı göz, bandaj, sivri diş, uzun salya; daha çok sallanır; ara sıra öne atılıp konuşma balonu (`SOZ`, moda göre komik/korku/dost). İçerik anahtarları: `kral`, `konus`.
 - SADE TAM EKRAN (kullanıcı ekran görüntüsü: "tam ekranda her yerde bir şey var, çok karışık"): `#km-oyun-wrap.km-tam` (fullscreenchange'de `kmOyunTamEkranEtiketGuncelle` koyar). Gizli: üst düğmeler (oyun adı + ⋯ Diğer + ✕ Çık kalır), sınıf yolculuğu şeridi, lejant, An düğmesi, YENİ rozetleri, hazine/ninja kural + araç satırı, zombi küçük düğmeleri, sağ panelde puan kutuları/kuşak/düğmeler/sekmeler/sıralama, canavar çipleri. Sağ panel daralır (clamp 220–300 px).
 - Test 133.
+
+## 137. 🎬 Çok açılı KAYIT + Video Analiz stüdyosu (2026-11-18, v426)
+Kullanıcı (uyumadan önce): "4'lü kamera sisteminin amacı yok, kaydet düğmesi yok; kaydedip tek ekranda ya da 4'lüye bölünmüş ekranda analiz etmek, yan yana koymak istiyorum. Bir sporcunun tam analizini yapacağız. Sen yap, kendiliğinden özellik ekleyebilirsin."
+- `dagsk-coklu-kamera.js` ?v=2: **⏺ Kaydet / ⏹ Durdur** (bağlı her açı kendi MediaRecorder'ı, 4 Mbps; `onstart` zamanından açı ofseti; en çok 2 dk), **📌 Son 12 sn'yi sakla** (tampon JPEG kareleri), **🎬 Kayıtlar (N)**. Durdurunca "Kimin atışı?" (son seçilen hatırlanır `dagsk_cokaci_son_sporcu`) → Kaydet / Kaydet ve analiz et.
+- YENİ `public/dagsk-cokaci-analiz.js` (ca*), KM aracı `videoanaliz` ("Video Analiz", Teknik & video), Teknik Analiz ekranında "🎬 Çok açılı kayıtlar" (o sporcuya süzülü).
+  - Depo: IndexedDB `dagsk-cokaci` (`klip` bilgi, `veri` = `<id>|<açı>` → `{tip:'video',blob}` ya da `{tip:'kare',kareler}`); video SUNUCUYA GİTMEZ. `navigator.storage.persist()` istenir.
+  - Stüdyo: 4'lü / tek / yan yana (iki açı seç); tek zaman çizgisi `T`, açı yereli = T − ofset − kaydırma; video oynarken sapma >140 ms ise düzeltilir, dururken kareye sarılır. MediaRecorder webm süresizliği: sona sar-başa dön.
+  - 1× ½× ¼× ⅛×, kare kare (1/30 sn), ⏪⏩ 10 kare, 🔁 Duruş→Takip döngüsü, klavye (boşluk, ←/→, Shift).
+  - ANLAR: Duruş, Çekiş, Çapa, Bırakış, Takip → çekiş / nişan / takip / toplam atış süresi; zaman çubuğunda etiket.
+  - Çizim (içerik kutusuna göre 0..1, kayda kalıcı): çizgi, açı (3 nokta, ° piksel uzayında), daire, dikey kılavuz, serbest; 🔍 yakınlaştır (1-3×), ⇆ ayna (yazı ters okunmaz).
+  - ⏱ Hizala: açı başına ±1 kare / ±½ sn ofset (telefondan yüklenen videolar için). 📁 Videolardan yeni kayıt (4 dosya → açı seç).
+  - 📸 Kare (1920×1080 PNG: düzen + çizimler + ad + an), 🎞️ Video indir (canvas.captureStream + MediaRecorder, Duruş→Takip ya da tümü, 1×/½×/¼×; telefonda paylaş).
+  - ⚖️ Karşılaştır (iki kayıt, aynı açı, 💥 bırakış anına göre hizalı) + 👻 Üst üste.
+  - 📋 TAM ANALİZ: `KM_TA_FAZLAR` 8 faz (yay sporcudan), puan 1-5, madde ✓/✗, not, 📸 fazın karesi (JPEG 1280×720) → `/api/teknik-analiz` (olusturan `cokaci:<id>`), ölçülen çekiş/nişan süresi Nişan fazının notuna eklenir. Taslak kayıtta saklanır (`klip.taslak`).
+  - 🔬 açıyı Form Lab'a ver (`flDosyaSecildi`).
+- Test 134 (sahte telefonla gerçek kayıt + 4 açılı yapay kayıtla bütün stüdyo; karne kaydı sonra silinir).
+- YEREL TEST ORTAMI: `okculuk_premium_data` tarayıcı kotası (~5 MB) dolmuştu (test sporcularının kartGecmisi, YoklamaTest 0,9 MB). Yerel D1'de adında Test geçen sporcuların `kartGecmisi_json` = '[]' yapıldı. CANLI veride boyut bilinmiyor (gerçek bir sporcu 358 KB); `localStorage.setItem` çağrıları korumasız → kullanıcıya soruldu.
+- AÇIK: gerçek 4 telefonla salonda denenmedi (eşzamanlama ofseti `onstart` zamanından, ±1-2 kare; gerekirse Hizala). Safari'de MediaRecorder mp4 verir, oynatma test edilmedi.

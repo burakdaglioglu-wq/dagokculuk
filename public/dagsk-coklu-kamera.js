@@ -8,7 +8,11 @@
      ({analiz:'kapat', kalite:'720'}), iskelet analizi telefonda çalışmaz → 4 akış akıcı kalır.
    Gecikme: her açının kareleri (≈12 kare/sn, 640 px JPEG) son 12 sn tutulur. Gecikmeli modda ekranda N sn önceki kare
      gösterilir. TEKRAR: tampon dondurulur, 4 açı aynı zaman çizgisinde birlikte oynar (1× / ¼×, sürgü, kare ileri-geri).
-     Video kaydedilmez, sunucuya gitmez.
+     Video sunucuya gitmez.
+   v426 KAYIT (2026-11-18, kullanıcı: "4'lü kameranın amacı yok, kaydet düğmesi yok; kaydedip tek ekranda ya da 4'lüde analiz etmek,
+     yan yana koymak istiyorum"): ⏺ Kaydet → bağlı her açı kendi videosu (MediaRecorder, telefonun 720p görüntüsü), ⏹ Durdur → sporcu
+     seçilir, bu cihazda saklanır (IndexedDB). 📌 Son 12 sn'yi sakla → tampondaki kareler kayıt olur (atıştan sonra basılır).
+     🎬 Kayıtlar → analiz stüdyosu (dagsk-cokaci-analiz.js, ca*): 4'lü/tek/yan yana, kare kare, anlar, çizim, tam analiz karnesi.
    ================================================================================================ */
 (function () {
     'use strict';
@@ -42,6 +46,11 @@
             + '.ck-alt{padding:10px max(14px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap}'
             + '.ck-alt input[type=range]{flex:1;min-width:160px;accent-color:#ff7a2e}.ck-alt .ck-zaman{font-variant-numeric:tabular-nums;font-weight:800;min-width:64px;text-align:right}'
             + '.ck-not{font-size:12px;color:#94a3b8;flex:1}.ck [hidden]{display:none!important}'
+            + '.ck-btn.kayit{background:#dc2626;border-color:#dc2626;color:#fff}.ck-btn.kayit.surer{animation:ck-nabiz 1.2s ease-in-out infinite;font-variant-numeric:tabular-nums}@keyframes ck-nabiz{50%{box-shadow:0 0 0 6px rgba(220,38,38,.35)}}'
+            + '.ck-kayit-isik{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:3;background:#dc2626;color:#fff;border-radius:999px;padding:3px 12px;font-weight:900;font-size:13px}'
+            + '.ck-modal{position:absolute;inset:0;z-index:8;background:rgba(3,5,8,.8);display:grid;place-items:center;padding:16px}.ck-modal>div{width:min(500px,100%);background:#0e1319;border:1px solid #273140;border-radius:18px;padding:16px;display:grid;gap:10px}'
+            + '.ck-modal h3{margin:0;font-size:19px;font-weight:900}.ck-modal p{margin:0;color:#94a3b8;font-size:14px}.ck-modal label{display:grid;gap:4px;font-size:13px;font-weight:800;color:#cbd5e1}.ck-modal select,.ck-modal input{min-height:44px;border-radius:12px;border:1px solid #273140;background:#07090c;color:inherit;padding:0 12px;font:inherit;font-size:15px}'
+            + '.ck-modal .ck-sat{display:flex;gap:6px;flex-wrap:wrap}.ck-modal .ck-sat .ck-btn{flex:1;min-height:48px}'
             + '.ck-yz{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;background:#11161d;border:1px solid var(--r);font-size:14px;font-variant-numeric:tabular-nums}.ck-yz b{color:var(--r);font-size:16px}'
             // ⧉ köşe penceresi: skor girişi altta sürer
             + '.ck.mini{inset:auto max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) auto;width:min(480px,calc(100vw - 24px));height:min(340px,55vh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);border:1px solid #273140;overflow:hidden}'
@@ -87,21 +96,29 @@
         const bagli = _ck.yer.filter((y) => y.durum === 'bagli').length;
         if (_ck.mini) {
             $('ck-ust').innerHTML = '<h1 style="font-size:14px">🎥 ' + bagli + '/4</h1><span id="ck-yz-yer">' + yzSerit() + '</span>'
-                + '<button type="button" class="ck-btn" onclick="ckMini(false)" aria-label="Büyüt">⤢ Büyüt</button><button type="button" class="ck-btn" onclick="ckKapat()" aria-label="Kapat">✕</button>';
+                + kayitDugme(bagli) + '<button type="button" class="ck-btn" onclick="ckMini(false)" aria-label="Büyüt">⤢ Büyüt</button><button type="button" class="ck-btn" onclick="ckKapat()" aria-label="Kapat">✕</button>';
             return;
         }
         $('ck-ust').innerHTML = '<h1>🎥 Çok Açılı Kamera <small style="font-weight:600;color:#94a3b8;font-size:13px">' + bagli + '/4 bağlı</small></h1>'
             + '<span id="ck-yz-yer">' + yzSerit() + '</span>'
             + (_ck.yarisma ? '<button type="button" class="ck-btn" onclick="ckMini(true)">⧉ Köşeye al · skor gir</button>' : '')
             + '<div class="ck-gr" role="group" aria-label="Gecikme">' + GECIKMELER.map((g) => '<button type="button" class="ck-btn' + (_ck.gecikme === g ? ' on' : '') + '" onclick="ckGecikme(' + g + ')"' + (_ck.tekrar ? ' disabled' : '') + '>' + (g ? g + ' sn' : 'Canlı') + '</button>').join('') + '</div>'
-            + '<button type="button" class="ck-btn' + (_ck.tekrar ? ' on' : '') + '" onclick="ckTekrar()"' + (bagli ? '' : ' disabled') + '>⏪ ' + (_ck.tekrar ? 'Tekrardan çık' : 'Son 12 sn tekrar') + '</button>'
+            + kayitDugme(bagli)
+            + '<button type="button" class="ck-btn" onclick="ckSonSakla()"' + (bagli && !_ck.kayit ? '' : ' disabled') + ' title="Az önceki atışı (son 12 sn, dört açı) kayıtlara ekle">📌 Son 12 sn\'yi sakla</button>'
+            + '<button type="button" class="ck-btn' + (_ck.tekrar ? ' on' : '') + '" onclick="ckTekrar()"' + (bagli && !_ck.kayit ? '' : ' disabled') + '>⏪ ' + (_ck.tekrar ? 'Tekrardan çık' : 'Son 12 sn tekrar') + '</button>'
+            + '<button type="button" class="ck-btn" onclick="ckKayitlar()" title="Kayıtlı çekimler: 4\'lü / tek / yan yana analiz">🎬 Kayıtlar' + (_ck.klipSay ? ' (' + _ck.klipSay + ')' : '') + '</button>'
             + '<button type="button" class="ck-btn" onclick="ckRehber(true)">❔ Nasıl kurulur?</button>'
             + '<button type="button" class="ck-btn" onclick="ckTamEkran()" aria-label="Tam ekran">⛶</button>'
             + '<button type="button" class="ck-btn" onclick="ckKapat()" aria-label="Kapat">✕</button>';
     }
+    function kayitDugme(bagli) {
+        if (_ck.kayit) return '<button type="button" class="ck-btn kayit surer" onclick="ckKayitDurdur()" aria-label="Kaydı durdur">⏹ Durdur · ' + sureYaz(performance.now() - _ck.kayit.bas) + '</button>';
+        return '<button type="button" class="ck-btn kayit" onclick="ckKayitBaslat()"' + (bagli && !_ck.tekrar && window.MediaRecorder ? '' : ' disabled') + ' title="Bağlı bütün açıları birlikte kaydet">⏺ Kaydet</button>';
+    }
+    const sureYaz = (ms) => { const t = Math.floor(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
     function altCiz() {
         const a = $('ck-alt'); if (!a) return;
-        if (!_ck.tekrar) { a.innerHTML = '<span class="ck-not">' + (_ck.gecikme ? 'Görüntü ' + _ck.gecikme + ' sn geriden geliyor: sporcu atar, döner, kendini dört açıdan izler.' : 'Bir açıya dokununca büyür. Telefonlar aynı Wi-Fi\'de olursa görüntü en akıcı olur.') + ' Video kaydedilmez.</span>'; return; }
+        if (!_ck.tekrar) { a.innerHTML = '<span class="ck-not">' + (_ck.gecikme ? 'Görüntü ' + _ck.gecikme + ' sn geriden geliyor: sporcu atar, döner, kendini dört açıdan izler.' : 'Bir açıya dokununca büyür. Telefonlar aynı Wi-Fi\'de olursa görüntü en akıcı olur.') + ' <b>⏺ Kaydet</b> ile dört açı birlikte kaydedilir, <b>🎬 Kayıtlar</b>\'da kare kare analiz edilir.</span>'; return; }
         const r = _ck.tekrar, uz = (r.son - r.bas) / 1000, poz = (r.poz - r.bas) / 1000;
         a.innerHTML = '<button type="button" class="ck-btn" onclick="ckKare(-1)" aria-label="Bir kare geri">◀︎</button>'
             + '<button type="button" class="ck-btn on" onclick="ckOynat()">' + (r.oynuyor ? '⏸' : '▶︎') + '</button>'
@@ -127,6 +144,8 @@
         const gecikmeli = goster && (_ck.gecikme > 0 || _ck.tekrar);
         y.v.hidden = !goster || gecikmeli; y.cv.hidden = !gecikmeli;
         k.classList.toggle('buyuk', _ck.buyuk === y.id);
+        let isik = k.querySelector('.ck-kayit-isik'); const kayitta = !!(_ck.kayit && _ck.kayit.r[y.id]);
+        if (kayitta && !isik) { isik = document.createElement('span'); isik.className = 'ck-kayit-isik'; isik.textContent = '● KAYIT'; k.appendChild(isik); } else if (!kayitta && isik) isik.remove();
     }
     function hepsiniCiz() { ustCiz(); altCiz(); _ck.yer.forEach(kareCiz); $('ck-izgara').classList.toggle('tek', !!_ck.buyuk); }
 
@@ -305,6 +324,74 @@
         el.innerHTML = rehberHTML(); el.scrollTop = 0;
     };
 
+    // ---- ⏺ kayıt (v426)
+    const KAYIT_EN_UZUN = 120000;
+    function analizHazir() { return typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-cokaci-analiz.js?v=1') : Promise.reject(); }
+    function kayitTuru() { const l = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4']; return l.find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || ''; }
+    function kucukYap() {
+        try { const y = _ck.yer.find((x) => x.durum === 'bagli' && x.v.videoWidth); if (!y) return ''; const c = document.createElement('canvas'), w = 360; c.width = w; c.height = Math.round(w * y.v.videoHeight / y.v.videoWidth); c.getContext('2d').drawImage(y.v, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.6); } catch (e) { return ''; }
+    }
+    window.ckKayitBaslat = function () {
+        if (!_ck || _ck.kayit) return; const tur = kayitTuru(), r = {}, bas = performance.now();
+        _ck.yer.forEach((y) => {
+            if (y.durum !== 'bagli' || !y.akis) return;
+            try {
+                const rec = new MediaRecorder(y.akis, tur ? { mimeType: tur, videoBitsPerSecond: 4e6 } : undefined), o = { rec, parca: [], bas: bas, tur: rec.mimeType || tur || 'video/webm' };
+                rec.ondataavailable = (e) => { if (e.data && e.data.size) o.parca.push(e.data); };
+                rec.onstart = () => { o.bas = performance.now(); };
+                o.bitti = new Promise((ok) => { rec.onstop = ok; });
+                rec.start(1000); r[y.id] = o;
+            } catch (e) { }
+        });
+        if (!Object.keys(r).length) return tost('Kayıt başlatılamadı: bu tarayıcı canlı görüntüyü kaydedemiyor.', 'error');
+        _ck.kayit = { bas, r, kucuk: kucukYap() };
+        _ck.kayitZ = setInterval(() => { if (!_ck || !_ck.kayit) return; if (performance.now() - _ck.kayit.bas > KAYIT_EN_UZUN) return window.ckKayitDurdur(); const b = document.querySelector('#ck-ust .ck-btn.kayit'); if (b) b.textContent = '⏹ Durdur · ' + sureYaz(performance.now() - _ck.kayit.bas); }, 250);
+        analizHazir().catch(() => { });
+        hepsiniCiz(); tost('⏺ Kayıt başladı: ' + Object.keys(r).length + ' açı.', 'success');
+    };
+    window.ckKayitDurdur = async function () {
+        if (!_ck || !_ck.kayit) return; const k = _ck.kayit; clearInterval(_ck.kayitZ); const son = performance.now();
+        Object.values(k.r).forEach((o) => { try { o.rec.stop(); } catch (e) { } });
+        await Promise.all(Object.values(k.r).map((o) => Promise.race([o.bitti, new Promise((ok) => setTimeout(ok, 4000))])));
+        _ck.kayit = null; hepsiniCiz();
+        const ilk = Math.min.apply(null, Object.values(k.r).map((o) => o.bas)), veriler = {}, acilar = [];
+        _ck.yer.forEach((y) => { const o = k.r[y.id]; if (!o || !o.parca.length) return; veriler[y.id] = { tip: 'video', blob: new Blob(o.parca, { type: o.tur.split(';')[0] }), mime: o.tur }; acilar.push({ id: y.id, ad: y.ad, ofset: Math.round(o.bas - ilk) }); });
+        if (!acilar.length) return tost('Kayıtta görüntü yok.', 'warning');
+        kaydetSor({ sure: Math.round(son - ilk), acilar, kucuk: k.kucuk, kaynak: 'canli' }, veriler);
+    };
+    window.ckSonSakla = function () {
+        if (!_ck || _ck.kayit) return; const veriler = {}, acilar = []; let ilk = Infinity, son = 0;
+        _ck.yer.forEach((y) => { if (y.kareler.length > 2) { ilk = Math.min(ilk, y.kareler[0].t); son = Math.max(son, y.kareler[y.kareler.length - 1].t); } });
+        if (!(son > ilk)) return tost('Saklamak için birkaç saniye görüntü birikmesi gerekiyor.', 'warning');
+        _ck.yer.forEach((y) => { if (y.kareler.length > 2) { veriler[y.id] = { tip: 'kare', kareler: y.kareler.map((x) => ({ t: x.t, b: x.b })) }; acilar.push({ id: y.id, ad: y.ad, ofset: Math.round(y.kareler[0].t - ilk) }); } });
+        kaydetSor({ sure: Math.round(son - ilk), acilar, kucuk: kucukYap(), kaynak: 'tampon' }, veriler);
+    };
+    function sporcuSecenek() {
+        const l = [], gor = {}, ekle = (g, ad) => { const k = g + '|' + ad; if (!ad || gor[k]) return; gor[k] = 1; l.push([k, ad]); };
+        try { (typeof _kmListe !== 'undefined' && _kmListe || []).forEach((s) => ekle(s.g, s.ad)); } catch (e) { }
+        try { Object.keys(turnuvaDB || {}).forEach((g) => { const o = turnuvaDB[g]; if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach((ad) => { const s = o[ad]; if (s && typeof s === 'object' && !s.pasif && (s.seriler || s.yay || s.toplamSkor != null)) ekle(g, ad); }); }); } catch (e) { }
+        let son = ''; try { son = localStorage.getItem('dagsk_cokaci_son_sporcu') || ''; } catch (e) { }
+        return '<option value="">— sporcu seç —</option>' + l.map(([k, ad]) => '<option value="' + esc(k) + '"' + (k === son ? ' selected' : '') + '>' + esc(ad) + '</option>').join('');
+    }
+    function kaydetSor(meta, veriler) {
+        const el = $('ck'); if (!el) return; let m = $('ck-modal'); if (m) m.remove();
+        m = document.createElement('div'); m.className = 'ck-modal'; m.id = 'ck-modal';
+        m.innerHTML = '<div><h3>💾 Kaydı sakla</h3><p>' + meta.acilar.length + ' açı · ' + (meta.sure / 1000).toFixed(1).replace('.', ',') + ' sn. Bu bilgisayarda saklanır, sunucuya video gitmez.</p>'
+            + '<label>Kimin atışı?<select id="ck-m-sp">' + sporcuSecenek() + '</select></label><label>Not (isteğe bağlı)<input id="ck-m-ad" placeholder="ör. 18 m · 2. seri · 3. ok"></label>'
+            + '<div class="ck-sat"><button type="button" class="ck-btn" id="ck-m-sil">🗑 Kaydetme</button><button type="button" class="ck-btn" id="ck-m-kay">💾 Kaydet</button><button type="button" class="ck-btn on" id="ck-m-anl">💾 Kaydet ve analiz et</button></div></div>';
+        el.appendChild(m);
+        const bitir = async (ac) => {
+            const v = $('ck-m-sp').value, i = v.indexOf('|'); meta.sporcu = v ? { g: v.slice(0, i), ad: v.slice(i + 1) } : null; meta.ad = $('ck-m-ad').value.trim();
+            try { localStorage.setItem('dagsk_cokaci_son_sporcu', v); } catch (e) { }
+            m.querySelector('div').innerHTML = '<h3>Kaydediliyor…</h3>';
+            try { await analizHazir(); const id = await window.caKlipKaydet(meta, veriler); m.remove(); _ck && (_ck.klipSay = await window.caKlipSayisi()); ustCiz(); tost('💾 Kayıt saklandı' + (meta.sporcu ? ': ' + meta.sporcu.ad : '') + '.', 'success'); if (ac) window.caAc({ id }); }
+            catch (e) { m.remove(); tost('Kayıt saklanamadı: cihazda yer kalmamış olabilir.', 'error'); }
+        };
+        $('ck-m-sil').onclick = () => { if (typeof onayIste === 'function' && !document.fullscreenElement) onayIste('Bu çekim silinsin mi?', () => m.remove(), 'Sil', 'Vazgeç'); else m.remove(); };
+        $('ck-m-kay').onclick = () => bitir(false); $('ck-m-anl').onclick = () => bitir(true);
+    }
+    window.ckKayitlar = function () { analizHazir().then(() => window.caAc()).catch(() => tost('Kayıtlar açılamadı — bağlantıyı kontrol et.', 'error')); };
+
     // ---- dışa açık
     window.ckMini = function (ac) {
         if (!_ck) return; _ck.mini = !!ac; const el = $('ck'); if (el) el.classList.toggle('mini', _ck.mini);
@@ -324,10 +411,12 @@
         _ck.yakala = setInterval(kareYakala, KARE_MS);
         if (_ck.yarisma) _ck.yzZaman = setInterval(() => { const y = $('ck-yz-yer'); if (y) y.innerHTML = yzSerit(); }, 500);
         _ck.raf = requestAnimationFrame(cizimDongu);
+        analizHazir().then(() => window.caKlipSayisi()).then((n) => { if (_ck) { _ck.klipSay = n; ustCiz(); } }).catch(() => { });
         try { if (navigator.wakeLock) _ck.kilit = await navigator.wakeLock.request('screen'); } catch (e) { }
     };
     window.ckKapat = function () {
         if (!_ck) return;
+        if (_ck.kayit) { Object.values(_ck.kayit.r).forEach((o) => { try { o.rec.stop(); } catch (e) { } }); clearInterval(_ck.kayitZ); _ck.kayit = null; }
         _ck.yer.forEach(kes); clearInterval(_ck.yakala); clearInterval(_ck.yzZaman); cancelAnimationFrame(_ck.raf);
         try { if (_ck.kilit) _ck.kilit.release(); } catch (e) { }
         try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
@@ -345,7 +434,7 @@
     window.ckBuyut = function (id) { if (!_ck) return; _ck.buyuk = _ck.buyuk === id ? null : id; hepsiniCiz(); };
     window.ckGecikme = function (g) { if (!_ck) return; _ck.gecikme = g; try { localStorage.setItem('dagsk_cokaci_gecikme', String(g)); } catch (e) { } _ck.yer.forEach((y) => { y.son = null; }); hepsiniCiz(); };
     window.ckTekrar = function () {
-        if (!_ck) return;
+        if (!_ck || _ck.kayit) return;
         if (_ck.tekrar) { _ck.tekrar = null; _ck.yer.forEach((y) => { y.son = null; }); hepsiniCiz(); return; }
         let bas = Infinity, son = 0; _ck.yer.forEach((y) => { if (y.kareler.length) { bas = Math.min(bas, y.kareler[0].t); son = Math.max(son, y.kareler[y.kareler.length - 1].t); } });
         if (!(son > bas)) return tost('Tekrar için birkaç saniye görüntü birikmesi gerekiyor.', 'warning');
