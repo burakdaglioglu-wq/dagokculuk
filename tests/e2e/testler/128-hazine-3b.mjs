@@ -24,14 +24,14 @@ export default async function ({ log }) {
       for (let k = 0, bos = 0; k < 250 && bos < 4; k++) { await new Promise((r) => setTimeout(r, 100)); const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); bos = 0; } else if (!_kmOyunKilit) bos++; else bos = 0; }
       return { key: s.g + '|' + s.ad, once, sonra: (sp.seriler || []).length, st: JSON.parse(JSON.stringify(h3Durum(_kmOyunAktifTema))) };
     }, [oklar, hedef]);
-    const ac = async (tid, n) => {
-      await p.evaluate(([tid, n]) => { _kmListe = window.__tum.slice(0, n); localStorage.removeItem('dag_km_h3_' + tid + '_' + (_kmAktifKonum || 'varsayilan')); kmOyunListeDegisti && kmOyunListeDegisti(); kmOyunTemaSec(tid); }, [tid, n]);
+    const ac = async (tid, n, adim) => {
+      await p.evaluate(([tid, n, adim]) => { _kmListe = window.__tum.slice(0, n); const kn = _kmAktifKonum || 'varsayilan'; localStorage.removeItem('dag_km_h3_' + tid + '_' + kn); localStorage.setItem('dag_km_h3sefer_' + tid + '_' + kn, JSON.stringify({ adim: adim || 0, yildiz: {}, tamam: 0 })); kmOyunListeDegisti && kmOyunListeDegisti(); kmOyunTemaSec(tid); }, [tid, n, adim]);
       await p.waitForSelector('#h3-hud #h3-serit .h3-k', { timeout: 30000 }); await p.waitForTimeout(800);
     };
     const tumunuAt = async (oklar) => { const idx = await p.evaluate(() => _kmOyunRosterCache.map((x, j) => (turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]) ? j : -1).filter((j) => j >= 0)); let r = null; for (const j of idx) r = await seri(oklar, j); return r; };
     const sonuclar = [];
     for (const tid of ['filo', 'kacis', 'topsavasi']) {
-      await ac(tid, 9);
+      await ac(tid, 9, 4); // v424: 5 ayaklı sefer — final ayağından başla (ayak geçişleri test 132)
       esit(await p.locator('#km-oyun-rightpanel').isVisible().catch(() => false), false, tid + ': puan sıralaması görünmemeli');
       const r1 = await seri(['X', '10', '10'], 0);
       esit(r1.sonra, r1.once + 1, tid + ': seri kayda yazılmadı'); esit(r1.st.atan[r1.key], 1, tid + ': atan'); esit(r1.st.faz, 'oyun', tid + ': herkes atmadan bitmemeli');
@@ -43,10 +43,11 @@ export default async function ({ log }) {
       esit((son.st.finalAdlar || []).length, 9, tid + ': finalde herkesin adı');
       await p.waitForSelector('#h3-son', { timeout: 10000 });
       const yazi = await p.locator('#h3-son').innerText();
-      dogrula(/HAZİNEYİ BULANLAR|ADAYA VARDINIZ|BATTI/i.test(yazi), tid + ': sonuç başlığı ' + yazi.slice(0, 50));
+      dogrula(/HAZİNEYİ BULANLAR|5 ADA BİTTİ|FİLOSU YOK/i.test(yazi), tid + ': sonuç başlığı ' + yazi.slice(0, 50));
       sonuclar.push(tid + ' ' + tur + ' tur');
       await p.locator('#h3-yeni-son').click(); await p.waitForTimeout(500);
       esit(await p.evaluate((tid) => h3Durum(tid).faz, tid), 'oyun', tid + ': yeni oyun');
+      esit(await p.evaluate((tid) => h3Durum(tid).adim, tid), 0, tid + ': sefer bitince baştan');
     }
     // saf kurallar
     const saf = await p.evaluate(() => ({ h: [10, 9, 8, 7, 6, 5, 4, 3, 2, 0].map(_h3Ic.topHasar).join(','), f: _h3Ic.filoAdim([10, 10, 10]).toFixed(3) }));
@@ -72,7 +73,7 @@ export default async function ({ log }) {
     log('üç oyun baştan sona: ' + sonuclar.join(' · ') + ' · geri al · yeni oyun · 12 saat · 18 sporcu · 390 px · görünüm ' + mod);
   } finally {
     try {
-      await p.evaluate((y) => { ['filo', 'kacis', 'topsavasi'].forEach((t) => localStorage.removeItem('dag_km_h3_' + t + '_' + (_kmAktifKonum || 'varsayilan'))); if (y) { _kmListe = JSON.parse(y); kmOyunListeDegisti && kmOyunListeDegisti(); } }, yedek);
+      await p.evaluate((y) => { ['filo', 'kacis', 'topsavasi'].forEach((t) => { localStorage.removeItem('dag_km_h3_' + t + '_' + (_kmAktifKonum || 'varsayilan')); localStorage.removeItem('dag_km_h3sefer_' + t + '_' + (_kmAktifKonum || 'varsayilan')); }); if (y) { _kmListe = JSON.parse(y); kmOyunListeDegisti && kmOyunListeDegisti(); } }, yedek);
     } catch (e) {}
     await ctx.close();
   }

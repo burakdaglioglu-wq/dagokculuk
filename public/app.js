@@ -14653,6 +14653,30 @@
    (2026-09-09, ilk denemede govde'yi flex yapmak TEK BAŞINA yetmedi — gerçek testte yakalandı). */
 #km-oyun-wrap:fullscreen #km-oyun-govde{ flex:1; min-height:0; }
 #km-oyun-wrap:fullscreen .km-oyun-scene{ flex:1; aspect-ratio:auto; max-height:none; min-height:0; --km-rail-genislik:clamp(300px, 24vw, 460px); }
+/* v425 SADE TAM EKRAN (2026-11-18, kullanıcı ekran görüntüsüyle: "tam ekran yaptığımda her yerde bir şey var, çok karışık, kaldır ya da sadeleştir,
+   neredeyse bütün oyunlarda"). Tam ekranda (sınıf .km-tam, fullscreenchange'de konur) yalnız oyun + ŞİMDİ cümlesi + skor girişi kalır:
+   üst satırda yalnız oyun adı, ⋯ Diğer ve Çık; sınıf yolculuğu şeridi, renk lejantı, An düğmesi, YENİ rozetleri, oyun içi kural yazıları ve
+   küçük araç düğmeleri gizlenir (tam ekrandan çıkınca hepsi yerinde). */
+#km-oyun-wrap.km-tam{ padding:8px 10px; }
+#km-oyun-wrap.km-tam .km-oyun-topbar{ margin:0 0 4px; padding:0; min-height:0; }
+#km-oyun-wrap.km-tam .km-oyun-topbar > div:first-child > .km-oyun-tam-btn,
+#km-oyun-wrap.km-tam #yk-serit, #km-oyun-wrap.km-tam #an-simdi .an-lej, #km-oyun-wrap.km-tam #an-simdi .an-dug,
+#km-oyun-wrap.km-tam .dag-yeni, #km-oyun-wrap.km-tam .km-yeni,
+#km-oyun-wrap.km-tam .h3-kural, #km-oyun-wrap.km-tam .h3-araclar, #km-oyun-wrap.km-tam .h3-sat.ince,
+#km-oyun-wrap.km-tam .n3-kural, #km-oyun-wrap.km-tam .n3-araclar,
+#km-oyun-wrap.km-tam .zb-arac .zb-kucuk:not(#zb-bitir), #km-oyun-wrap.km-tam .zb-kl{ display:none !important; }
+#km-oyun-wrap.km-tam .km-oyun-baslik{ font-size:15px; opacity:.85; }
+#km-oyun-wrap.km-tam #an-simdi{ margin:0 0 6px; padding:6px 14px; }
+#km-oyun-wrap.km-tam #an-simdi .an-cumle{ flex-basis:100%; text-align:center; }
+/* sağ panel tam ekranda: yalnız SIRADA (avatar + ad), SONRA gelenler ve Geri al. Puan/sıra kutuları, kuşak, düğmeler, sekmeler ve puan
+   sıralaması gizli (kalabalık sınıfta en uzun liste buydu; çocuklar tur sırasında sıralama görmesin). Panel daralır, sahneye yer kalır. */
+#km-oyun-wrap.km-tam .km-oyun-scene{ --km-rail-genislik:clamp(220px, 15vw, 300px); }
+#km-oyun-wrap.km-tam .km-sk-istat, #km-oyun-wrap.km-tam .km-sk-kusak, #km-oyun-wrap.km-tam .km-sk-dugmeler, #km-oyun-wrap.km-tam .km-sk-yok,
+#km-oyun-wrap.km-tam .km-sk-alt, #km-oyun-wrap.km-tam .km-sk-adimlar, #km-oyun-wrap.km-tam .km-sk-degistir, #km-oyun-wrap.km-tam .km-sk-izgara,
+#km-oyun-wrap.km-tam .km-oyun-rail-siralama-ust, #km-oyun-wrap.km-tam .km-oyun-rail-sekmeler, #km-oyun-wrap.km-tam #km-oyun-lider-ic,
+#km-oyun-wrap.km-tam .km-oyun-rail-diger, #km-oyun-wrap.km-tam .km-oyun-rail-menu,
+#km-oyun-wrap.km-tam .km-cnv-cip:not(.gorev), #km-oyun-wrap.km-tam .km-cnv-sefer{ display:none !important; }
+#km-oyun-wrap.km-tam .km-sk-ad{ font-size:clamp(22px, 1.9vw, 34px); }
 /* Sahne/panel çakışması (2026-09-09) — .km-oyun-panel eskiden inset:0 ile TAM sahne kutusunu
    kaplıyordu, sağdaki .km-oyun-rightpanel bunun ÜSTÜNE yarı saydam bir katman olarak biniyordu
    (bilerek — skor dok'u için hâlâ geçerli bir desen). Ama sağ panelin kendisi (sıralama/sporcu
@@ -17005,7 +17029,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             ejderkule: { ad: 'Ejder Kulesi', ikon: '🐉', renkler: ['#7dd3fc', '#ff5a7a', '#ffd23f', '#a78bfa', '#34d399', '#ff9a3d', '#60a5fa', '#f472b6', '#a3e635', '#22d3ee'], aciklama: '3B kule, hep birlikte: her ok muhafıza bir shuriken, puanı kadar hasar. Herkes atınca muhafız düşerse klan bir kat çıkar. 5 kat, en tepede Kızıl Ejder.', btn: 'Shuriken!', finish: '', cp: '', birim: 'hasar', bitis: '',
                 surprizler: [] },
             // 🧟 Zombi Salgını (2026-11-06, v381) — 8 yaş: iyi atış arkadaşını kurtarır, zombiler her atıştan sonra ısırır, herkes atınca sonuç. Bkz. dagsk-km-zombi.js.
-            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur, helikopter iner. Arada bir özel atış çıkar (ör. gözler kapalı): o atışta maviye vurmak yeter. Az kişiyle oynanınca ekrana adsız kasabalılar eklenir, tek sporcu 3 tur atar. Modlar: Kolay, Normal, Zor, Kâbus; eğlence için Korkutucu ve Dostane (oyunda Mod düğmesi, sonuç ekranında rövanş modu).', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
+            zombi: { ad: 'Zombi Salgını', ikon: '🧟', renkler: ['#5FD4FF', '#FFB02E', '#FF7A70', '#B79CFF', '#FF9BCF', '#4FD1C5', '#FFD166', '#8FA8FF', '#F59E5B', '#E8ECF3'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz. Birkaç çocuk zombi başlar. İyi atış (çocuğun kendi seviyesine göre) bir arkadaşını kurtarır, zombiler her atıştan sonra birini ısırır. Herkes atınca sağlam çoğunluktaysa salgın durur, helikopter iner. Zombi Kralı köprüden yürür: her seride 2 adım gelir, her panzehir oku onu 1 adım geri iter, çatıya varırsa ısırır. Arada bir özel atış çıkar (ör. gözler kapalı): o atışta maviye vurmak yeter. Az kişiyle oynanınca ekrana adsız kasabalılar eklenir, tek sporcu 3 tur atar. Modlar: Kolay, Normal, Zor, Kâbus; eğlence için Korkutucu ve Dostane (oyunda Mod düğmesi, sonuç ekranında rövanş modu).', btn: 'Atışı gönder', finish: '', cp: '', birim: 'vuruş', bitis: '',
                 surprizler: [] },
             // 🐠 Sınıf Akvaryumu (2026-10-28) — ortak oyun: her ok bir deniz canlısı, akvaryum dolunca kutlama. Bkz. dagsk-km-akvaryum.js.
             akvaryum: { ad: 'Sınıf Akvaryumu', ikon: '🐠', renkler: ['#7dd3fc', '#ffd23f', '#ff8fa8', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — her ok suya bir damla olur ve bir deniz canlısı doğar; halka ne kadar içteyse canlı o kadar büyük, 10 ve X nadir canlı getirir. Akvaryum dolunca kutlama, sonra sıradaki akvaryum!', btn: '💧 Bırak', finish: '', cp: '', birim: 'canlı', bitis: '',
@@ -19618,7 +19642,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             yol: { ad: '🏝️ Yol oyunları', not: 'Yalnız "Yol oyunları heyecanı" Heyecanlı ya da Korkutucu iken', liste: [
                 ['kovalayan', '👾', 'Arkadan kovalayan'], ['kapi', '🚧', 'Sarı kapılar'], ['konusma', '💬', 'Karakterler konuşsun']] },
             hapsirik: { ad: '🤧 Hapşırık', liste: [['rastgele', '🎲', 'Sıra rastgele (turda herkes bir kez · çocuğa dokunup seçebilirsin)'], ['gizli', '🤫', 'Gizli hassas nokta'], ['sahte', '😮', '"…hıh. Geçti!" şakası']] },
-            zombi: { ad: '🧟 Zombi Salgını', liste: [['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin'], ['ozel', '⚡', 'Özel atış (her 5 atışta bir, mavi yeter)'], ['ozel_goz', '🙈', 'Özel atış: gözler kapalı (yakın mesafe, koç yanında)'], ['ozel_uc', '⏱️', 'Özel atış: 3 saniyede bırak'], ['ozel_heykel', '🗿', 'Özel atış: 5 saniye tut'], ['ozel_sessiz', '🤫', 'Özel atış: sessiz atış'], ['ozel_sayar', '🎤', 'Özel atış: sınıf geri sayar'], ['kasaba', '🏘️', 'Az kişide adsız kasabalılar (6 kişiden az)'], ['sesAd', '🗣️', 'Ses özel atışta adı söylesin'], ['ortam', '🚁', 'Arka plan sesi (rüzgâr, helikopter)']] },
+            zombi: { ad: '🧟 Zombi Salgını', liste: [['kral', '👑', 'Zombi Kralı köprüden gelir (panzehir oku onu geri iter)'], ['konus', '💬', 'Zombiler komik sözler söylesin'], ['dalga', '🌊', 'Zombi kalmazsa yeni dalga gelsin'], ['ozel', '⚡', 'Özel atış (her 5 atışta bir, mavi yeter)'], ['ozel_goz', '🙈', 'Özel atış: gözler kapalı (yakın mesafe, koç yanında)'], ['ozel_uc', '⏱️', 'Özel atış: 3 saniyede bırak'], ['ozel_heykel', '🗿', 'Özel atış: 5 saniye tut'], ['ozel_sessiz', '🤫', 'Özel atış: sessiz atış'], ['ozel_sayar', '🎤', 'Özel atış: sınıf geri sayar'], ['kasaba', '🏘️', 'Az kişide adsız kasabalılar (6 kişiden az)'], ['sesAd', '🗣️', 'Ses özel atışta adı söylesin'], ['ortam', '🚁', 'Arka plan sesi (rüzgâr, helikopter)']] },
             tahta: { ad: '🎲 Dev Tahta', not: 'Kare türleri yeni oyunda, kartlar hemen geçerli', liste: [['kart', '🃏', 'Her elde kural kartı'], ['toplama', '🦀', 'Hedefe giderken yürüyüş kartı'], ['hareket', '🏃', 'Hareket kareleri (takım görevi)'], ['firtina', '🌪️', 'Fırtına kareleri (2 geri)'], ['ceza', '🐍', 'Ceza şansı: yılan kareleri, kötü sürpriz, kara bulut'], ['piyon', '👟', 'Piyon salonda zıplasın (koni yolu)']] },
             timsah: { ad: '🐊 Uyuyan Dev', liste: [['sans', '🎲', 'Şans olayları (ördek, dal, hapşırık · ay, balık sürüsü)'], ['kapma', '🐟', 'Uyanınca kovadan balık kapsın'], ['gerilim', '💓', 'Kalp atışı ve kızaran ekran (metre %70 üstü)']] },
             bomba: { ad: '💣 Fitil Hattı', liste: [['sans', '🎲', 'Şans olayları (kısa fitil, rüzgâr, fare · ıslak fitil, yedek fitil)'], ['ceza', '💥', 'Bomba patlayınca takım ceza görevi'], ['gerilim', '⏳', 'Fitil azalınca titreyen kart ve tik sesi']] },
@@ -19877,7 +19901,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
         // 🎬 Ok anı + ŞİMDİ cümlesi + anlatıcı (v423, dagsk-km-an.js) — son haftalardaki oyunlar; kullanıcı: "çocuklar sıkılıyor, okun etkisi görünmüyor, anlamıyorlar"
         const KM_AN_TEMALAR = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
-        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=1'); }
+        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=2'); }
         function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         const KM_OYUN_HY_TEMALAR = ['hazine', 'zirve', 'yildiz', 'pist', 'ninja', 'dag', 'balon'];
         function kmOyunHeyecanTazele(t) { if(KM_OYUN_HY_TEMALAR.indexOf(t) === -1) return; if(typeof hyTazele === 'function') { hyTazele(t); return; } kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyTazele(t); }).catch(function() {}); }
@@ -19905,7 +19929,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunResyncBomba() { if(typeof bmGuncelle === 'function' && document.getElementById('bm-icerik')) bmGuncelle(); else kmOyunSahneKurBomba(); }
         function kmOyunAnimateBomba(s, i, kaydedilecek, done) { kmOyunBombaHazir().then(function() { bmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
         // 🏝️ Hazine Adası 3B (v420) — üç tema tek dosyada (three.js r128 yerel /vendor, WebGL yoksa sade 2B).
-        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=3'); }
+        function kmOyunH3Hazir() { return dagskEkYukle('dagsk-km-hazine3d.js?v=4'); }
         function kmOyunSahneKurH3(tid) { kmOyunH3Hazir().then(function() { if(_kmOyunAktifTema === tid && document.getElementById('km-oyun-panel-' + tid)) h3SahneKur(tid); }).catch(function() { showToast('Hazine Adası 3B yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncH3(tid) { if(typeof h3Guncelle === 'function' && document.getElementById('h3-hud')) h3Guncelle(tid); else kmOyunSahneKurH3(tid); }
         function kmOyunAnimateH3(tid, s, i, kaydedilecek, done) { kmOyunH3Hazir().then(function() { h3Seri(tid, s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -19917,7 +19941,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmYolculukHazir() { return dagskEkYukle('dagsk-km-yolculuk.js?v=2'); }
         function kmYolculukCiz() { kmYolculukHazir().then(function() { if(typeof ykCiz === 'function') ykCiz(); }).catch(function() {}); }
         function kmYolculukSeri(s, kaydedilecek, seriId) { kmYolculukHazir().then(function() { if(typeof ykSeri === 'function') ykSeri(s, kaydedilecek, seriId); }).catch(function() {}); }
-        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=6'); }
+        function kmOyunZombiHazir() { return dagskEkYukle('dagsk-km-zombi.js?v=7'); }
         function kmOyunSahneKurZombi() { kmOyunZombiHazir().then(function() { if(_kmOyunAktifTema === 'zombi' && document.getElementById('km-oyun-panel-zombi')) zbSahneKur(); }).catch(function() { showToast('Zombi Salgını yüklenemedi. İnternet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncZombi() { if(typeof zbGuncelle === 'function' && document.getElementById('zb-icerik')) zbGuncelle(); else kmOyunSahneKurZombi(); }
         function kmOyunAnimateZombi(s, i, kaydedilecek, done) { kmOyunZombiHazir().then(function() { zbSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -21025,7 +21049,8 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunTamEkranEtiketGuncelle() {
             let btn = document.getElementById('km-oyun-tam-btn'); if(!btn) return;
             let aktif = !!(document.fullscreenElement || document.webkitFullscreenElement);
-            btn.textContent = aktif ? '🖥️ Tam Ekrandan Çık' : '🖥️ Tam Ekran';
+            btn.textContent = aktif ? '✕ Çık' : '🖥️ Tam Ekran';
+            let w = document.getElementById('km-oyun-wrap'), fe = document.fullscreenElement || document.webkitFullscreenElement; if(w) w.classList.toggle('km-tam', !!fe && fe === w);
         }
         document.addEventListener('fullscreenchange', kmOyunTamEkranEtiketGuncelle);
         document.addEventListener('webkitfullscreenchange', kmOyunTamEkranEtiketGuncelle);

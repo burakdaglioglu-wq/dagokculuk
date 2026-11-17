@@ -27,14 +27,15 @@
     // ok: kademe → büyük yazı; ozet: [iyi seri, orta, zayıf] — {ad} çocuğun ilk adı; simdi: tek cümle
     const AN = {
         topsavasi: { simdi: () => { const st = typeof h3Durum === 'function' ? h3Durum('topsavasi') : null, k = st && st.kalan != null ? st.kalan : 4;
-                if (st && st.faz === 'son') return st.kayip ? 'Bu sefer <b class="kirmizi">korsan kazandı.</b> Rövanş?' : 'Korsan gemisi <b>battı!</b> Hazine bütün sınıfın.';
-                return'ŞİMDİ: Korsan gemisini <b>batır!</b> ' + (k <= 1 ? '<b class="kirmizi">SON TUR</b> — batmazsa çarpar!' : k + ' tur sonra bize çarpar.'); },
+                const sf = typeof h3Sefer === 'function' ? h3Sefer('topsavasi') : null, ad = sf ? sf.ad : 'Korsan gemisi';
+                if (st && st.faz === 'son') return st.kayip ? 'Bu sefer <b class="kirmizi">' + ad + ' kazandı.</b> Rövanş kaldığınız yerden!' : '<b>Korsan filosu yok edildi!</b> Hazine bütün sınıfın.';
+                return 'ŞİMDİ: Hedef <b>' + ad + '</b> — batır! ' + (sf ? '(' + (sf.adim + 1) + '/' + sf.toplam + ') ' : '') + (k <= 1 ? '<b class="kirmizi">SON TUR</b> — batmazsa çarpar!' : k + ' tur sonra bize çarpar.'); },
             ok: { sari: 'TAM İSABET!', kirmizi: 'GÖVDEYE!', mavi: 'SIYIRDI', siyah: 'SUYA DÜŞTÜ', beyaz: 'SUYA DÜŞTÜ', iska: 'ISKA' },
             ozet: ['{ad} korsanı fena vurdu!', '{ad} isabet ettirdi.', '{ad} az vurdu. Korsan barut topluyor!'] },
-        kacis: { simdi: () => 'ŞİMDİ: Yelkenleri doldur, <b>korsana yakalanmadan</b> adaya kaç!',
+        kacis: { simdi: () => { const sf = typeof h3Sefer === 'function' ? h3Sefer('kacis') : null; return 'ŞİMDİ: Yelkenleri doldur, <b>korsana yakalanmadan</b> ' + (sf ? 'adaya kaç! Rota: <b>' + sf.ad + '</b> (' + (sf.adim + 1) + '/' + sf.toplam + ')' : 'adaya kaç!'); },
             ok: { sari: 'FIRTINA RÜZGÂRI!', kirmizi: 'GÜÇLÜ RÜZGÂR', mavi: 'ESİNTİ', siyah: 'HAFİF ESİNTİ', beyaz: 'HAFİF ESİNTİ', iska: 'RÜZGÂR YOK!' },
             ozet: ['{ad} fırtına gibi esti, gemi uçuyor!', '{ad} yelkenleri doldurdu.', 'Rüzgâr zayıf, korsanlar yaklaşıyor!'] },
-        filo: { simdi: () => 'ŞİMDİ: Gemini <b>adaya</b> sür! 9-10 atan arkadan rüzgâr alır.',
+        filo: { simdi: () => { const sf = typeof h3Sefer === 'function' ? h3Sefer('filo') : null; return 'ŞİMDİ: Gemini <b>' + (sf ? sf.ad : 'adaya') + '</b> sür! ' + (sf ? '(' + (sf.adim + 1) + '/' + sf.toplam + ') ' : '') + '9-10 atan arkadan rüzgâr alır.'; },
             ok: { sari: 'ARKADAN RÜZGÂR!', kirmizi: 'TAM YELKEN', mavi: 'İLERİ', siyah: 'AZ İLERİ', beyaz: 'AZ İLERİ', iska: 'YELKEN BOŞ' },
             ozet: ['{ad} arkadan rüzgâr aldı, uçuyor!', '{ad} ilerliyor.', '{ad} yavaşladı, rüzgâr bekliyor.'] },
         catikosu: { simdi: () => 'ŞİMDİ: Ninjanı <b>kapıya</b> koştur! Çatı arasını atlamak için seride yarı puan gerek.',

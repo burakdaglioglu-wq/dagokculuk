@@ -5919,3 +5919,18 @@ Kullanıcı: "oyun içerikleri çok kötü, çocuklar sıkılıyor" — son haft
 - **Top Savaşı (hazine3d ?v=3)**: `TOP_CAN=6`, `TOP_TUR=4`; hpMax = nk·5. Zayıf seri (hasar ≤ ok sayısı) → `st.barut++` (afiş "KORSAN BARUT BULDU"). Tur sonu: korsan max(1, ⌊barut/3⌋) top atar, her top 1 can; `kalan--`, korsan `korsanYer(st)` ile yaklaşır. Can 0 → `kayip='batti'`, kalan 0 → `kayip='carpti'` (`kaybet()`): faz son, herkesin adı, kart "GEMİMİZ BATTI / KORSAN BİZE ÇARPTI · Rövanş". Kazanırken eski akış (herkes atınca batar).
 - Test 131 (12 oyunda şerit, an, An kapat, barut, karşı ateş, yaklaşma, kayıp, rövanş, zafer, zombi/bomba/ejderkule anı, 390 px).
 - AÇIK: diğer oyunlara tehdit (Filo, Çatı Koşusu, Ejder Kulesi, Dev Tahta'da gerçek kaybetme yok); çocuklarla denenmedi; an süresi sınıfta uzun gelirse "🎬 An" ile kapatılır.
+
+## 135. 🏴‍☠️ Hazine sefer: 5 korsan gemisi / 5 ada (2026-11-17, v424)
+Kullanıcı: "gemi düşürmecede bir gemi düşünce bitiyor oyun… millet senden sıkılmaya başladı".
+- `dagsk-km-hazine3d.js` ?v=4: `KORSAN` (Sandal → Kara Yelken → Hayalet → Kızıl Kaptan → Amiral Kara Sakal; hp = nk·kat, `tur` çarpmaya kalan, `ek` fazladan top) ve `ADA` (Martı, Kayalık, Volkan, Sisli, Hazine).
+- Top Savaşı: ok başına hasar; gemi batınca o an `adim++`, sıradaki gemi gelir (fazla gülle ona), +1 ❤️, barut sıfır, `yeni` bayrağı → o tur yaklaşmaz. Amiral 0'a inince tur sonu final (herkes atınca). Kayıp → "Rövanş" aynı gemiden (6 can, sayaç baştan, korsan yarası kalır). Sıradakiler `bekleYer(j)` ile şimdikinin arkasında sıra; korsanlar ekran ortasında (sağ üst HUD + dock eskiden örtüyordu).
+- Kaçış: adaya varınca `adaVardi` → sıradaki ada, hedef ×1.08, korsan hızı ×1.06. Filo: varanlar `st.yildiz[k]++` (★ etiket), x sıfırlanır.
+- Sefer `dag_km_h3sefer_<tid>_<konum>` — `kaydet()` içinde `seferYaz(st)` ile günlük durumdan türetilir (geri al da geri alır); 12 saat kuralına GİRMEZ (ertesi ders kaldığı gemiden). "⚓ Sefer baştan" düğmesi. HUD'da sefer haritası; ŞİMDİ cümlesi `h3Sefer(tid)`.
+- Test 132 (+128, 131 güncellendi).
+
+## 136. 🧟👑 Zombi Kralı + komik-korkunç zombiler + sade tam ekran (2026-11-18, v425)
+Kullanıcı Zombi için 3 tarayıcı taslağından (https://claude.ai/artifact/5H3uUwfjWriBWAHtSoAGKM) 2.yi seçti: "zombiler biraz daha korkutucu olsun ama komik korkutucu"; sonra "zombi oyununu çıkmamışsın". Mevcut piksel çatı korundu (çocuklar seviyor), üstüne eklendi.
+- `dagsk-km-zombi.js` ?v=7: `kralAdim` — her seri +2 adım, her panzehir oku −1; yol `kralYol(n)=clamp(round(n·0.9),6,16)`; varınca `kralIsirik` (Kolay 1, Normal/Dostane 2, Zor/Kâbus/Korkutucu 3) en az ısırılana, sonra köprüye döner. Simülasyon: Normal %75 → ~%55 kazanma (16 kişi, ok başı %40 iyi). `st.kral {d, gel}`.
+- Görünüm: üst şeridin altında Kral köprüsü şeridi (`#zb-kral`, piksel Kral `kareKral`: yamuk taç, pelerin, göbek), çatıya varınca büyük Kral atlar (`kralAtla`). Zombi sprite: kocaman/küçük şaşı göz, bandaj, sivri diş, uzun salya; daha çok sallanır; ara sıra öne atılıp konuşma balonu (`SOZ`, moda göre komik/korku/dost). İçerik anahtarları: `kral`, `konus`.
+- SADE TAM EKRAN (kullanıcı ekran görüntüsü: "tam ekranda her yerde bir şey var, çok karışık"): `#km-oyun-wrap.km-tam` (fullscreenchange'de `kmOyunTamEkranEtiketGuncelle` koyar). Gizli: üst düğmeler (oyun adı + ⋯ Diğer + ✕ Çık kalır), sınıf yolculuğu şeridi, lejant, An düğmesi, YENİ rozetleri, hazine/ninja kural + araç satırı, zombi küçük düğmeleri, sağ panelde puan kutuları/kuşak/düğmeler/sekmeler/sıralama, canavar çipleri. Sağ panel daralır (clamp 220–300 px).
+- Test 133.

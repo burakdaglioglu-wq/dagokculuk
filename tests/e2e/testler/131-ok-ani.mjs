@@ -41,7 +41,7 @@ export default async function ({ log }) {
       return { ad: s.ad, an, st: typeof h3Durum === 'function' ? JSON.parse(JSON.stringify(h3Durum(_kmOyunAktifTema))) : null, perdeKaldi: !!document.querySelector('.an-perde') };
     }, [oklar, hedef, !!anBak]);
     const ac = async (tid, n) => {
-      await p.evaluate(([tid, n]) => { _kmListe = window.__tum.slice(0, n); const kn = _kmAktifKonum || 'varsayilan'; localStorage.removeItem('dag_km_h3_' + tid + '_' + kn); kmOyunListeDegisti && kmOyunListeDegisti(); kmOyunTemaSec(tid); }, [tid, n]);
+      await p.evaluate(([tid, n]) => { _kmListe = window.__tum.slice(0, n); const kn = _kmAktifKonum || 'varsayilan'; localStorage.removeItem('dag_km_h3_' + tid + '_' + kn); localStorage.removeItem('dag_km_h3sefer_' + tid + '_' + kn); kmOyunListeDegisti && kmOyunListeDegisti(); kmOyunTemaSec(tid); }, [tid, n]);
       await p.waitForSelector('#h3-hud #h3-serit .h3-k', { timeout: 30000 }); await p.waitForTimeout(800);
     };
     const idxler = () => p.evaluate(() => _kmOyunRosterCache.map((x, j) => (turnuvaDB[x.g] && turnuvaDB[x.g][x.ad]) ? j : -1).filter((j) => j >= 0));
@@ -70,10 +70,10 @@ export default async function ({ log }) {
     for (const j of ix.slice(2)) son = await seri(['3', '2', 'M'], j);
     await p.waitForTimeout(500);
     let st = await p.evaluate(() => JSON.parse(JSON.stringify(h3Durum('topsavasi'))));
-    esit(st.tur, 2, '1. tur bitmeli'); esit(st.kalan, 3, 'korsan bir tur yaklaşmalı');
+    esit(st.tur, 2, '1. tur bitmeli'); esit(st.kalan, 2, 'korsan bir tur yaklaşmalı (Sandal 3 turda çarpar)');
     dogrula(st.can < 6, 'korsan ateşi can düşürmeli (can ' + st.can + ')'); esit(st.barut, 0, 'tur sonunda barut sıfırlanır');
     const simdi = await p.locator('#an-simdi .an-cumle').innerText();
-    dogrula(/3 tur/.test(simdi), 'ŞİMDİ cümlesi kalan turu söylemeli: ' + simdi);
+    dogrula(/2 tur/.test(simdi) && /Sandal/.test(simdi), 'ŞİMDİ cümlesi gemiyi ve kalan turu söylemeli: ' + simdi);
     await p.screenshot({ path: O + 'topsavasi-tur.png' });
     // kalan turlar zayıf → kaybedilir (herkes atmadan bitmez)
     let tur = 1;
@@ -92,12 +92,12 @@ export default async function ({ log }) {
     await p.screenshot({ path: O + 'topsavasi-kayip.png' });
     await p.locator('#h3-yeni-son').click(); await p.waitForTimeout(500);
     st = await p.evaluate(() => h3Durum('topsavasi'));
-    esit(st.faz, 'oyun', 'rövanş'); esit(st.can, 6, 'rövanşta 6 can'); esit(st.kalan, 4, 'rövanşta 4 tur');
+    esit(st.faz, 'oyun', 'rövanş'); esit(st.can, 6, 'rövanşta 6 can'); esit(st.kalan, 3, 'rövanşta çarpma sayacı baştan');
     // iyi sınıf kazanır
     for (const j of ix) son = await seri(['X', '10', '10'], j);
     await p.waitForTimeout(800);
-    esit((await p.evaluate(() => h3Durum('topsavasi'))).faz, 'son', 'iyi sınıf 1 turda batırmalı');
-    esit((await p.evaluate(() => h3Durum('topsavasi'))).kayip, null, 'kazanınca kayıp yok');
+    st = await p.evaluate(() => JSON.parse(JSON.stringify(h3Durum('topsavasi'))));
+    esit(st.faz, 'oyun', 'v424: bir gemi batınca oyun bitmez'); dogrula(st.adim >= 2, 'iyi sınıf 1 turda en az 2 gemi batırmalı (adim ' + st.adim + ')'); esit(st.kayip, null, 'kayıp yok');
 
     // diğer oyunlarda an çıkıyor mu (zombi, bomba)
     for (const t of ['zombi', 'bomba', 'ejderkule']) {
@@ -118,7 +118,7 @@ export default async function ({ log }) {
     log('12 oyunda ŞİMDİ şeridi · an (ad, oklar, oyun dili) · An kapat · Top Savaşı barut + karşı ateş + yaklaşma + kayıp + rövanş + zafer · zombi/bomba/ejderkule anı · 390 px');
   } finally {
     try {
-      await p.evaluate((y) => { const kn = _kmAktifKonum || 'varsayilan'; localStorage.removeItem('dag_km_h3_topsavasi_' + kn); localStorage.removeItem('dag_km_an_kapali'); if (y) { _kmListe = JSON.parse(y); kmOyunListeDegisti && kmOyunListeDegisti(); } }, yedek);
+      await p.evaluate((y) => { const kn = _kmAktifKonum || 'varsayilan'; localStorage.removeItem('dag_km_h3_topsavasi_' + kn); localStorage.removeItem('dag_km_h3sefer_topsavasi_' + kn); localStorage.removeItem('dag_km_an_kapali'); if (y) { _kmListe = JSON.parse(y); kmOyunListeDegisti && kmOyunListeDegisti(); } }, yedek);
     } catch (e) {}
     await ctx.close();
   }
