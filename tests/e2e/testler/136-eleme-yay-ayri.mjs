@@ -58,6 +58,23 @@ export default async function ({ log }) {
     y = await p.evaluate((id) => { const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.id === id); return { a: !!(m.setler[0] && m.setler[0].a), b: !!(m.setler[0] && m.setler[0].b), pa: m.puanA }; }, mid);
     esit(JSON.stringify(y), JSON.stringify({ a: true, b: false, pa: 0 }), 'son giriş (b) silindi');
     await p.evaluate((id) => { const o = yzOku(); yzGuncelle((x) => { delete x[yzMacKey(o.durum.id, id)]; }); yzCiz(); }, mid);
+    // v432 👥 kenar yarışması: 3 sporcu seç, 2 seri, giriş + sıralama + TV
+    await p.locator('button', { hasText: '👥 Kenar yarışması' }).click();
+    await p.evaluate((sp) => { _yz.kenarSec = {}; sp.slice(4, 7).forEach((k) => { _yz.kenarSec[k] = 1; }); _yz.kenarSeri = 2; onayOnayla(); }, sp);
+    await p.waitForSelector('.yz-kenar');
+    const kn = await p.evaluate((sp) => {
+      _yz.siradaki = true; const k3 = sp.slice(4, 7), oklar = [['10', '9', '9'], ['X', '10', '10'], ['7', '6', '5']];
+      for (let s = 0; s < 2; s++) { yzKenarGir(encodeURIComponent(k3[0]), s); for (let i = 0; i < 3; i++) { oklar[i].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); } }
+      _yz.siradaki = false; const r = yzKenarSira(yzOku().kenar); return { sira: r.map((x) => x.k === k3[1] ? 'B' : x.k === k3[0] ? 'A' : 'C').join(''), top: r.map((x) => x.top), giris: !!_yz.giris };
+    }, sp);
+    esit(kn.sira + ' ' + kn.top.join('/'), 'BAC 60/56/36', 'kenar sıralaması (sıradakine geçerek giriş)');
+    await p.screenshot({ path: O + 'kenar.png' });
+    await p.locator('.yz-kenar button', { hasText: 'Bitir' }).click();
+    dogrula(/🥇/.test(await p.locator('.yz-kenar').innerText()), 'bitince madalya');
+    await p.evaluate(() => yzTvAc()); await p.waitForTimeout(1200);
+    dogrula(/Kenar yarışması/.test(await p.locator('.yz-tv-kenar').textContent()), 'TV\'de kenar kartı');
+    await p.screenshot({ path: O + 'kenar-tv.png' });
+    await p.evaluate(() => { yzTvKapat(); yzGuncelle((x) => { delete x.kenar; }); yzCiz(); });
     // tüm maçları "a" kazansın → iki şampiyon
     const oyna = () => p.evaluate(() => {
       _yz.siradaki = false;

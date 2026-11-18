@@ -5994,3 +5994,11 @@ Kullanıcı: "makaralı ile klasik aynı anda yarışınca TV ekranda sorun yaş
 - `yzBracketAyriHTML` (ana ekran + TV): her yay kendi küçük tablosu, yan yana. Yalnız BAY'den oluşan turlar atlanır, BAY–BAY maçları gizli yer tutucu. Genel final ayrı kutu.
 - `yzTvPodyumHTML`: genel finalsiz iki şampiyonda yay başına podyum şeridi.
 - Test 136 (TV adımı). Not: TV tam ekrandayken `setViewportSize` hata verir.
+
+## 143. 👥 Kenar yarışması (2026-11-18, v432)
+Kullanıcı dersten: "kalan sporcular, kenarda 3 kişi diyelim, kendi arasında yarışsın; bu seçeneği seçebileyim".
+- Eleme ekranında "👥 Kenar yarışması" şeridi (`yzKenarKartHTML`). `yzKenarAc` seçim penceresi açar: elenenler ve tabloya girmeyenler işaretli gelir, "şu an maçta" notu var, seri sayısı 2/3/5.
+- `o.kenar = { id, d, kisiler, seriSay, skor{k:[[oklar]]}, bitti }`. Giriş ortak ok ekranında `tip:'kenar'` (3 ok): `yzKenarGir`/`yzKenarKaydet`. "Kaydedince sıradakine geç" bu serideki sıradaki kişiye geçer. Karneye `yarisma-kenar` olarak yazılır (kayıt açıksa).
+- Sıralama `yzKenarSira`: toplam, sonra 10, sonra X. Tablo hücresine dokunarak düzeltilir. 🏁 Bitir madalya gösterir, Kapat siler.
+- TV: tablonun altında mor kart (`yzTvKenarHTML`).
+- Test 136. Yalnız eleme ekranında var (sıralama turunda yok).
