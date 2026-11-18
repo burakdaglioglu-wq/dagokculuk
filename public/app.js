@@ -12549,8 +12549,8 @@
             if(id === 'vitrin') { kmAracKullanildi(id); vitrinAc(); return; }
             if(id === 'film') { kmAracKullanildi(id); dagFilmAcYukle(); return; } // v405 tam ekran film
             if(id === 'film3d') { kmAracKullanildi(id); dagFilm3dAcYukle(); return; } // v420 3B film: Okun Yolculuğu
-            if(id === 'cokaci') { kmAracKullanildi(id); dagskEkYukle('dagsk-coklu-kamera.js?v=2').then(function() { window.ckAc(); }).catch(function() { showToast('Çok Açılı Kamera yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v391 tam ekran
-            if(id === 'videoanaliz') { kmAracKullanildi(id); dagskEkYukle('dagsk-cokaci-analiz.js?v=1').then(function() { window.caAc(); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v426 kayıtlar + analiz stüdyosu
+            if(id === 'cokaci') { kmAracKullanildi(id); dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(function() { window.ckAc(); }).catch(function() { showToast('Çok Açılı Kamera yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v391 tam ekran
+            if(id === 'videoanaliz') { kmAracKullanildi(id); dagskEkYukle('dagsk-cokaci-analiz.js?v=2').then(function() { window.caAc(); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v426 kayıtlar + analiz stüdyosu
             if(id === 'okhizi') { kmAracKullanildi(id); okHiziAcYukle({ km: true }); return; } // v391 tam ekran, sporcu dersten seçilir
             if(id === 'atisolcer') { kmAracKullanildi(id); hareketAc({ km: true }); return; } // tam ekran, sekme açmaz; sporcu dersten seçilir
             document.getElementById('km-sinif-karti').style.display = 'none';
@@ -12745,7 +12745,7 @@
             kuvvet: 'Yay libresi ve kuvvet takibi', performans: 'Seçilmiş takımın planı', evodev: 'Eve verilen alıştırmalar',
             makarali: 'Makaralı yaya geçiş yolu', kocluk: 'Hata seç, yaşa göre ipucu', milyonok: 'Kariyer boyu ok sayacı',
             formlab: 'Kamerayla çene altı, kol ve parmak bırakışı', vitrin: 'Oyunları tanıtır, tam ekran TV', film: '3 dk: biz kimiz, yaylar, atış okulu, gelecek',
-            atisolcer: 'Telefon kolda: nişan süresi, salınım, iz', okhizi: 'Telefon sesi dinler, okun hızını km/s söyler', cokaci: '4 telefon, 4 açı: canlı, gecikmeli, tekrar, ⏺ kayıt', videoanaliz: 'Kayıtlar: 4’lü/tek/yan yana, kare kare, tam analiz',
+            atisolcer: 'Telefon kolda: nişan süresi, salınım, iz', okhizi: 'Telefon sesi dinler, okun hızını km/s söyler', cokaci: '4 telefon, 4 açı: canlı, gecikmeli, 📺 TV ayna, ⏺ kayıt', videoanaliz: '📱 Çek, 🦴 iskelet, seri üst üste, örnekle kıyas',
         };
         // v375 (kullanıcı: "yeni yaptıklarını karışık sınıfta kutucuğun yanında yeni olarak göster, ne işe yaradığını göster"):
         // YENİ rozetleri ve ana ekrandaki satır bu tarihe kadar görünür, sonra kendiliğinden kalkar. İçerik: dagsk-km-sade.js KS_YENILER.
@@ -12761,7 +12761,7 @@
         const KM_ARAC_ANAHTAR = { // arama: sporcuların/eğitmenlerin kullanacağı kelimeler
             formlab: 'video kamera çapa çene altı bırakış analiz form yapay zeka çizim', skor: 'puan ok seri', yoklamaanaliz: 'geldi gelmedi devam',
             durus: 'video kamera duruş', canli: 'canlı skor tv ekran', veli: 'whatsapp mesaj rapor', oyunlar: 'oyun eğlence', film: 'film video izle tanıtım motivasyon yay okçuluk nedir', vitrin: 'tanıtım reklam tv ekran vitrin veli boşta',
-            kocluk: 'hata ipucu teknik', okhizi: 'yeni hız km ses mikrofon kronograf ok hızı saniye', cokaci: 'yeni video kamera telefon açı önden yandan arkadan gecikmeli ayna tekrar yavaş çekim kayıt kaydet', videoanaliz: 'yeni video kayıt kayıtlar analiz stüdyo kare kare yan yana karşılaştır çizim açı derece karne tam analiz form', atisolcer: 'yeni sensör hareket tutuş nişan süre salınım titreşim saat zamanlama tempo', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
+            kocluk: 'hata ipucu teknik', okhizi: 'yeni hız km ses mikrofon kronograf ok hızı saniye', cokaci: 'yeni video kamera telefon açı önden yandan arkadan gecikmeli ayna tekrar yavaş çekim kayıt kaydet tv', videoanaliz: 'yeni video kayıt kayıtlar analiz stüdyo kare kare yan yana karşılaştır çizim açı derece karne tam analiz form iskelet yapay zeka seri üst üste örnek atış puan çek telefon', atisolcer: 'yeni sensör hareket tutuş nişan süre salınım titreşim saat zamanlama tempo', dersler: 'ders plan kütüphane', okanaliz: 'grup isabet hedef', ritim: 'metronom tempo',
         };
         function kmAracSvg(icon, b) { return '<svg viewBox="0 0 24 24" width="' + b + '" height="' + b + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon + '</svg>'; }
         function kmAracBul(id) { return KM_ARAC_LISTESI.find(function(a){ return a.id === id; }); }
@@ -12832,7 +12832,7 @@
                 + '<span class="ks-karo-yazi"><span class="ks-kart-baslik">Form Lab</span><small>' + esc(fl) + '</small></span></button>'
                 + '<button type="button" class="ks-satir" data-ana="skor" onclick="kmAracSec(\'skor\')">' + ikon(IK.hedef, 20) + '<b>Skor Gir' + kmYeniRozet() + '</b><span>' + esc(skorDurum) + ' · serbest atış</span>' + ikon(IK.sag, 16) + '</button>'
                 + '<button type="button" class="ks-satir" data-ana="cokaci" onclick="kmAracSec(\'cokaci\')">' + ikon('<rect x="3" y="5" width="8" height="6" rx="1"/><rect x="13" y="5" width="8" height="6" rx="1"/><rect x="3" y="13" width="8" height="6" rx="1"/><rect x="13" y="13" width="8" height="6" rx="1"/>', 20) + '<b>Çok Açılı Kamera' + kmYeniRozet() + '</b><span>4 telefon, 4 açı · ⏺ kaydet · nasıl kurulur?</span>' + ikon(IK.sag, 16) + '</button>'
-                + '<button type="button" class="ks-satir" data-ana="videoanaliz" onclick="kmAracSec(\'videoanaliz\')">' + ikon('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M10 8l5 2.5-5 2.5z"/><path d="M3 20h18"/>', 20) + '<b>Video Analiz' + kmYeniRozet() + '</b><span>Kayıtlar · 4’lü / tek / yan yana · tam analiz</span>' + ikon(IK.sag, 16) + '</button>'
+                + '<button type="button" class="ks-satir" data-ana="videoanaliz" onclick="kmAracSec(\'videoanaliz\')">' + ikon('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M10 8l5 2.5-5 2.5z"/><path d="M3 20h18"/>', 20) + '<b>Video Analiz' + kmYeniRozet() + '</b><span>📱 Çek · 🦴 iskelet · seri üst üste · örnekle kıyas</span>' + ikon(IK.sag, 16) + '</button>'
                 + (kmYeniMi() ? '<button type="button" class="ks-satir ks-yeniler" onclick="ksAc(\'yeniler\')">' + kmYeniRozet() + '<b>' + KM_YENI_SAYI + ' yeni özellik</b><span>Ne işe yarar, nasıl kullanılır?</span>' + ikon(IK.sag, 16) + '</button>' : '')
                 + '<div class="ks-alt-is">'
                 + '<button type="button" onclick="ksAc(\'yeni\',\'sinif\')">' + ikon(IK.sinif, 20) + 'Yeni sınıf</button>'
@@ -13402,7 +13402,7 @@
             reader.readAsDataURL(file);
         }
         // v426: seçili sporcunun çok açılı kayıtları (dagsk-cokaci-analiz.js) — oradaki "Tam analiz" bu karneye yazar
-        function kmTaVideoAnaliz() { let sp = _kmTaSporcu; dagskEkYukle('dagsk-cokaci-analiz.js?v=1').then(function() { window.caAc({ sporcu: sp ? { g: sp.g, ad: sp.ad } : null }); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        function kmTaVideoAnaliz() { let sp = _kmTaSporcu; dagskEkYukle('dagsk-cokaci-analiz.js?v=2').then(function() { window.caAc({ sporcu: sp ? { g: sp.g, ad: sp.ad } : null }); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         function kmTaYaySec(y) { _kmTaYay = y; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; kmTeknikAnalizAnaCiz(); }
         function kmTaRehSec(i) { _kmTaRehSecili = i; kmTeknikAnalizAnaCiz(); }
 

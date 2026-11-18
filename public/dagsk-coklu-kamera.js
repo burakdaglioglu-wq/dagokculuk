@@ -13,6 +13,9 @@
      yan yana koymak istiyorum"): ⏺ Kaydet → bağlı her açı kendi videosu (MediaRecorder, telefonun 720p görüntüsü), ⏹ Durdur → sporcu
      seçilir, bu cihazda saklanır (IndexedDB). 📌 Son 12 sn'yi sakla → tampondaki kareler kayıt olur (atıştan sonra basılır).
      🎬 Kayıtlar → analiz stüdyosu (dagsk-cokaci-analiz.js, ca*): 4'lü/tek/yan yana, kare kare, anlar, çizim, tam analiz karnesi.
+   v427 📺 TV AYNA (kullanıcı taslaktan 5'i seçti): ekranda yalnız bağlı açılar, büyük "⏪ 8 sn önce" rozeti ve o anda atan sporcunun adı
+     (kare yakalanırken oyunun sıradaki sporcusu kareye yazılır); denetimler fare oynayınca görünür. 📷 Bu cihazın kamerası: telefonsuz
+     (dizüstü / tablet kamerası) bir açı — ayna, tekrar ve ⏺ kayıt onunla da çalışır, kayıtta ses de olur (bırakış ipin sesinden).
    ================================================================================================ */
 (function () {
     'use strict';
@@ -23,6 +26,7 @@
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const tost = (m, t) => { try { showToast(m, t || 'info'); } catch (e) { } };
+    const yeni = () => { try { return typeof yeniRozet === 'function' ? yeniRozet() : ''; } catch (e) { return ''; } };
     function odalarOku() { try { return JSON.parse(localStorage.getItem('dagsk_cokaci_odalar') || '{}') || {}; } catch (e) { return {}; } }
     function odalarYaz() { try { const o = {}; _ck.yer.forEach((y) => { if (y.oda) o[y.id] = { kod: y.oda.kod, gizli: y.oda.gizli }; }); localStorage.setItem('dagsk_cokaci_odalar', JSON.stringify(o)); } catch (e) { } }
 
@@ -70,14 +74,21 @@
             + '.ck-rh-aci{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.ck-rh-aci div{border-radius:12px;padding:10px 12px;background:#121a23;font-size:14px;line-height:1.4;border-left:4px solid var(--r)}'
             + '.ck-rh-aci b{display:block;font-size:15px;margin-bottom:2px}.ck-rh-uyari{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:12px;padding:10px 12px;font-size:15px;color:#fecaca}'
             + '.ck-rh-bar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:center;padding:12px max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,#07090c 35%)}'
-            + '.ck-rh-bar button{min-height:54px;min-width:min(100%,320px);border-radius:16px;border:0;background:#ff7a2e;color:#fff;font-weight:900;font-size:17px;cursor:pointer}';
+            + '.ck-rh-bar button{min-height:54px;min-width:min(100%,320px);border-radius:16px;border:0;background:#ff7a2e;color:#fff;font-weight:900;font-size:17px;cursor:pointer}'
+            // 📺 TV ayna (v427)
+            + '.ck.tv{grid-template-rows:minmax(0,1fr)}.ck.tv .ck-ust,.ck.tv .ck-alt,.ck.tv .ck-araclar,.ck.tv .ck-etiket,.ck.tv .ck-kare.bos-aci{display:none}.ck.tv .ck-izgara{padding:0;gap:4px;height:100%}.ck.tv .ck-kare{border-radius:0}'
+            + '.ck-tv{position:absolute;inset:0;z-index:4;pointer-events:none}.ck-tv-rozet{position:absolute;right:max(18px,env(safe-area-inset-right,0px));top:max(18px,env(safe-area-inset-top,0px));background:#dc2626;color:#fff;border-radius:999px;padding:8px 22px;font-weight:900;font-size:clamp(20px,2.8vw,44px);box-shadow:0 8px 30px rgba(0,0,0,.45)}.ck-tv-rozet.canli{background:#16a34a}'
+            + '.ck-tv-ad{position:absolute;left:max(18px,env(safe-area-inset-left,0px));top:max(18px,env(safe-area-inset-top,0px));background:rgba(0,0,0,.66);color:#fff;border-radius:16px;padding:8px 20px;font-weight:900;font-size:clamp(22px,3.4vw,56px);max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ck-tv-ad:empty{display:none}'
+            + '.ck-tv-cubuk{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(255,255,255,.12)}.ck-tv-cubuk i{display:block;height:100%;width:0;background:#dc2626}'
+            + '.ck-tv-alt{position:absolute;left:50%;bottom:max(22px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;opacity:0;transition:opacity .3s;pointer-events:auto;background:rgba(7,9,12,.85);border:1px solid #273140;border-radius:999px;padding:6px}.ck.tv.hareket .ck-tv-alt,.ck-tv-alt:focus-within{opacity:1}'
+            + '.ck-tv-bos{position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:22px;font-weight:800;text-align:center;padding:20px}';
         document.head.appendChild(st);
     }
     function iskelet() {
         let el = $('ck'); if (el) el.remove();
         el = document.createElement('div'); el.id = 'ck'; el.className = 'ck'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Çok Açılı Kamera');
         el.innerHTML = '<div class="ck-ust" id="ck-ust"></div><div class="ck-izgara" id="ck-izgara">'
-            + _ck.yer.map((y) => '<div class="ck-kare" id="ck-k-' + y.id + '"><video muted playsinline autoplay></video><canvas hidden></canvas><div class="ck-etiket"><i></i><span>' + esc(y.ad) + '</span></div><div class="ck-araclar"></div><div class="ck-bos"></div></div>').join('')
+            + _ck.yer.map((y) => '<div class="ck-kare bos-aci" id="ck-k-' + y.id + '"><video muted playsinline autoplay></video><canvas hidden></canvas><div class="ck-etiket"><i></i><span>' + esc(y.ad) + '</span></div><div class="ck-araclar"></div><div class="ck-bos"></div></div>').join('')
             + '</div><div class="ck-alt" id="ck-alt"></div>';
         document.body.appendChild(el);
         _ck.yer.forEach((y) => { const k = $('ck-k-' + y.id); y.v = k.querySelector('video'); y.cv = k.querySelector('canvas'); });
@@ -107,6 +118,7 @@
             + '<button type="button" class="ck-btn" onclick="ckSonSakla()"' + (bagli && !_ck.kayit ? '' : ' disabled') + ' title="Az önceki atışı (son 12 sn, dört açı) kayıtlara ekle">📌 Son 12 sn\'yi sakla</button>'
             + '<button type="button" class="ck-btn' + (_ck.tekrar ? ' on' : '') + '" onclick="ckTekrar()"' + (bagli && !_ck.kayit ? '' : ' disabled') + '>⏪ ' + (_ck.tekrar ? 'Tekrardan çık' : 'Son 12 sn tekrar') + '</button>'
             + '<button type="button" class="ck-btn" onclick="ckKayitlar()" title="Kayıtlı çekimler: 4\'lü / tek / yan yana analiz">🎬 Kayıtlar' + (_ck.klipSay ? ' (' + _ck.klipSay + ')' : '') + '</button>'
+            + '<button type="button" class="ck-btn" onclick="ckTv(true)"' + (bagli ? '' : ' disabled') + ' title="TV için sade tam ekran: gecikmeli ayna, sporcunun adı">📺 TV ayna' + yeni() + '</button>'
             + '<button type="button" class="ck-btn" onclick="ckRehber(true)">❔ Nasıl kurulur?</button>'
             + '<button type="button" class="ck-btn" onclick="ckTamEkran()" aria-label="Tam ekran">⛶</button>'
             + '<button type="button" class="ck-btn" onclick="ckKapat()" aria-label="Kapat">✕</button>';
@@ -132,22 +144,28 @@
         const i = k.querySelector('.ck-etiket i'); i.className = y.durum === 'bagli' ? 'bagli' : y.oda ? 'bekliyor' : '';
         const goster = y.durum === 'bagli' && y.akis;
         k.querySelector('.ck-araclar').innerHTML = (goster ? '<button type="button" onclick="ckBuyut(\'' + y.id + '\')" aria-label="' + esc(y.ad) + ' büyüt">' + (_ck.buyuk === y.id ? '⤡' : '⤢') + '</button>' : '')
-            + (y.oda ? '<button type="button" onclick="ckCikar(\'' + y.id + '\')" aria-label="' + esc(y.ad) + ' telefonunu çıkar">✕</button>' : '');
+            + (y.oda || y.yerel ? '<button type="button" onclick="ckCikar(\'' + y.id + '\')" aria-label="' + esc(y.ad) + ' kamerasını çıkar">✕</button>' : '');
         const bos = k.querySelector('.ck-bos');
         if (goster) { bos.hidden = true; bos.innerHTML = ''; }
         else {
             bos.hidden = false;
-            if (!y.oda) bos.innerHTML = '<b>' + esc(y.ad) + '</b><span>Bu açıya bir telefon bağla.</span><button type="button" class="ck-btn on" onclick="ckBagla(\'' + y.id + '\')">📱 Telefon bağla</button>';
+            if (!y.oda) bos.innerHTML = '<b>' + esc(y.ad) + '</b><span>Bu açıya bir telefon bağla.</span><button type="button" class="ck-btn on" onclick="ckBagla(\'' + y.id + '\')">📱 Telefon bağla</button>' + (navigator.mediaDevices && !_ck.yer.some((x) => x.yerel) ? '<button type="button" class="ck-btn" onclick="ckYerel(\'' + y.id + '\')" title="Telefonsuz: bu bilgisayarın / tabletin kamerası">📷 Bu cihazın kamerası' + yeni() + '</button>' : '');
             else if (y.link && y.durum !== 'baglaniyor') bos.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=6&data=' + encodeURIComponent(y.link) + '" alt="' + esc(y.ad) + ' telefonunun okutacağı QR kod"><b>' + esc(y.ad) + ': QR\'ı telefonla okut</b><span>Kod ' + esc(y.oda.kod) + (y.durum === 'koptu' ? ' · bağlantı koptu, telefon yeniden deniyor' : ' · telefon bekleniyor') + '</span>';
             else bos.innerHTML = '<b>' + esc(y.ad) + '</b><span>' + (y.durum === 'baglaniyor' ? 'Telefon bulundu, görüntü bağlanıyor…' : 'Hazırlanıyor…') + '</span>';
         }
         const gecikmeli = goster && (_ck.gecikme > 0 || _ck.tekrar);
         y.v.hidden = !goster || gecikmeli; y.cv.hidden = !gecikmeli;
-        k.classList.toggle('buyuk', _ck.buyuk === y.id);
+        k.classList.toggle('buyuk', _ck.buyuk === y.id); k.classList.toggle('bos-aci', !goster);
         let isik = k.querySelector('.ck-kayit-isik'); const kayitta = !!(_ck.kayit && _ck.kayit.r[y.id]);
         if (kayitta && !isik) { isik = document.createElement('span'); isik.className = 'ck-kayit-isik'; isik.textContent = '● KAYIT'; k.appendChild(isik); } else if (!kayitta && isik) isik.remove();
     }
-    function hepsiniCiz() { ustCiz(); altCiz(); _ck.yer.forEach(kareCiz); $('ck-izgara').classList.toggle('tek', !!_ck.buyuk); }
+    function hepsiniCiz() {
+        ustCiz(); altCiz(); _ck.yer.forEach(kareCiz); const iz = $('ck-izgara'); iz.classList.toggle('tek', !!_ck.buyuk);
+        // 📺 TV: yalnız bağlı açılar ekranı doldurur (1 → tam, 2 → yan yana, 3–4 → 2×2)
+        const n = _ck.yer.filter((y) => y.durum === 'bagli' && y.akis).length;
+        if (_ck.tv && !_ck.buyuk) { iz.style.gridTemplateColumns = n <= 1 ? '1fr' : '1fr 1fr'; iz.style.gridTemplateRows = n <= 2 ? '1fr' : '1fr 1fr'; } else { iz.style.gridTemplateColumns = ''; iz.style.gridTemplateRows = ''; }
+        tvCiz();
+    }
 
     // ---- WebRTC (Form Lab flTelSorgu / flTelCevapla ile aynı akış, açı başına)
     async function odaAc(y) {
@@ -193,7 +211,8 @@
     function kes(y) {
         clearTimeout(y.zaman); y.bitti = true;
         try { if (y.pc) y.pc.close(); } catch (e) { }
-        y.pc = null; y.akis = null; y.kanal = null; y.durum = null; y.kareler = [];
+        if (y.yerel && y.akis) y.akis.getTracks().forEach((t) => { try { t.stop(); } catch (e) { } });
+        y.pc = null; y.akis = null; y.kanal = null; y.durum = null; y.kareler = []; y.yerel = false;
         try { y.v.srcObject = null; } catch (e) { }
     }
     function baslat(y) { y.bitti = false; y.ilk = true; y.surum = 0; y.durum = 'bekliyor'; linkYap(y); kareCiz(y); sorgu(y); }
@@ -208,14 +227,16 @@
             const c = _ck.tuval || (_ck.tuval = document.createElement('canvas')); c.width = w; c.height = h;
             try { c.getContext('2d').drawImage(y.v, 0, 0, w, h); } catch (e) { return; }
             y.yakaliyor = true;
-            c.toBlob((b) => { y.yakaliyor = false; if (!b || !_ck) return; y.kareler.push({ t: simdi, b }); while (y.kareler.length && simdi - y.kareler[0].t > TAMPON_SN * 1000 + 500) y.kareler.shift(); }, 'image/jpeg', 0.7);
+            const ad = aktifAd(); c.toBlob((b) => { y.yakaliyor = false; if (!b || !_ck) return; y.kareler.push({ t: simdi, b, ad }); while (y.kareler.length && simdi - y.kareler[0].t > TAMPON_SN * 1000 + 500) y.kareler.shift(); }, 'image/jpeg', 0.7);
         });
     }
+    // o anda atan sporcu (Karışık Sınıf oyununun sıradaki sporcusu); yoksa boş
+    function aktifAd() { try { if (!document.getElementById('km-oyun-wrap')) return ''; const r = _kmOyunRosterCache && _kmOyunRosterCache[_kmOyunAktifIndex]; return r && r.ad ? String(r.ad) : ''; } catch (e) { return ''; } }
     function kareBul(y, t) { let en = null; for (let i = 0; i < y.kareler.length; i++) { if (y.kareler[i].t <= t) en = y.kareler[i]; else break; } return en || y.kareler[0] || null; }
     function goster(y, k) {
         if (!k || y.son === k || y.cozuyor) return;
         y.cozuyor = true; y.son = k;
-        createImageBitmap(k.b).then((bm) => { y.cozuyor = false; if (!_ck) return; if (y.cv.width !== bm.width) { y.cv.width = bm.width; y.cv.height = bm.height; } y.cv.getContext('2d').drawImage(bm, 0, 0); bm.close && bm.close(); }).catch(() => { y.cozuyor = false; });
+        if (_ck) _ck.tvAd = k.ad || ''; createImageBitmap(k.b).then((bm) => { y.cozuyor = false; if (!_ck) return; if (y.cv.width !== bm.width) { y.cv.width = bm.width; y.cv.height = bm.height; } y.cv.getContext('2d').drawImage(bm, 0, 0); bm.close && bm.close(); }).catch(() => { y.cozuyor = false; });
     }
     function cizimDongu() {
         if (!_ck) return;
@@ -227,7 +248,25 @@
         }
         if (r) r.onceki = simdi;
         if (r || _ck.gecikme > 0) { const t = r ? r.poz : simdi - _ck.gecikme * 1000; _ck.yer.forEach((y) => { if (y.durum === 'bagli' && y.kareler.length) goster(y, kareBul(y, t)); }); }
+        if (_ck.tv) tvGuncelle(simdi);
         _ck.raf = requestAnimationFrame(cizimDongu);
+    }
+    // ---- 📺 TV ayna (v427)
+    function tvCiz() {
+        const el = $('ck'); if (!el) return; let t = $('ck-tv');
+        if (!_ck.tv) { if (t) t.remove(); return; }
+        if (!t) { t = document.createElement('div'); t.id = 'ck-tv'; t.className = 'ck-tv'; el.appendChild(t); }
+        const n = _ck.yer.filter((y) => y.durum === 'bagli' && y.akis).length;
+        t.innerHTML = (n ? '' : '<div class="ck-tv-bos">Kamera bekleniyor…</div>')
+            + '<div class="ck-tv-ad" id="ck-tv-ad"></div><div class="ck-tv-rozet' + (_ck.gecikme ? '' : ' canli') + '" id="ck-tv-rozet">' + (_ck.gecikme ? '⏪ ' + _ck.gecikme + ' sn önce' : '● CANLI') + '</div>'
+            + (_ck.gecikme ? '<div class="ck-tv-cubuk"><i id="ck-tv-cubuk"></i></div>' : '')
+            + '<div class="ck-tv-alt"><div class="ck-gr" role="group" aria-label="Gecikme">' + GECIKMELER.map((g) => '<button type="button" class="ck-btn' + (_ck.gecikme === g ? ' on' : '') + '" onclick="ckGecikme(' + g + ')">' + (g ? g + ' sn' : 'Canlı') + '</button>').join('') + '</div>'
+            + '<button type="button" class="ck-btn" onclick="ckTv(false)">✕ TV modundan çık</button></div>';
+        _ck.tvAdSon = null;
+    }
+    function tvGuncelle(simdi) {
+        const a = $('ck-tv-ad'); if (a) { const ad = _ck.gecikme ? (_ck.tvAd || '') : aktifAd(); if (ad !== _ck.tvAdSon) { _ck.tvAdSon = ad; a.textContent = ad ? '🏹 ' + ad : ''; } }
+        const c = $('ck-tv-cubuk'); if (c && _ck.gecikme) { const p = ((simdi / 1000) % _ck.gecikme) / _ck.gecikme; c.style.width = (p * 100).toFixed(1) + '%'; }
     }
 
     // ---- 📖 kurulum rehberi (v392, kullanıcı: "çoklu kamerayı fotoğraf ile nasıl yapılacağını uygulamada anlat").
@@ -326,8 +365,8 @@
 
     // ---- ⏺ kayıt (v426)
     const KAYIT_EN_UZUN = 120000;
-    function analizHazir() { return typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-cokaci-analiz.js?v=1') : Promise.reject(); }
-    function kayitTuru() { const l = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4']; return l.find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || ''; }
+    function analizHazir() { return typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-cokaci-analiz.js?v=2') : Promise.reject(); }
+    function kayitTuru() { const l = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4']; return l.find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || ''; }
     function kucukYap() {
         try { const y = _ck.yer.find((x) => x.durum === 'bagli' && x.v.videoWidth); if (!y) return ''; const c = document.createElement('canvas'), w = 360; c.width = w; c.height = Math.round(w * y.v.videoHeight / y.v.videoWidth); c.getContext('2d').drawImage(y.v, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.6); } catch (e) { return ''; }
     }
@@ -412,13 +451,14 @@
         if (_ck.yarisma) _ck.yzZaman = setInterval(() => { const y = $('ck-yz-yer'); if (y) y.innerHTML = yzSerit(); }, 500);
         _ck.raf = requestAnimationFrame(cizimDongu);
         analizHazir().then(() => window.caKlipSayisi()).then((n) => { if (_ck) { _ck.klipSay = n; ustCiz(); } }).catch(() => { });
-        try { if (navigator.wakeLock) _ck.kilit = await navigator.wakeLock.request('screen'); } catch (e) { }
+        // ekran kararmasın — beklenmez (arka plandaki sekmede söz hiç dönmeyebilir)
+        try { if (navigator.wakeLock) { const d = _ck; navigator.wakeLock.request('screen').then((k) => { if (_ck === d) d.kilit = k; else k.release(); }).catch(() => { }); } } catch (e) { }
     };
     window.ckKapat = function () {
         if (!_ck) return;
         if (_ck.kayit) { Object.values(_ck.kayit.r).forEach((o) => { try { o.rec.stop(); } catch (e) { } }); clearInterval(_ck.kayitZ); _ck.kayit = null; }
         _ck.yer.forEach(kes); clearInterval(_ck.yakala); clearInterval(_ck.yzZaman); cancelAnimationFrame(_ck.raf);
-        try { if (_ck.kilit) _ck.kilit.release(); } catch (e) { }
+        try { if (_ck.kilit) _ck.kilit.release(); } catch (e) { } clearTimeout(_ck.tvGizle);
         try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
         const el = $('ck'); if (el) el.remove(); _ck = null;
     };
@@ -430,6 +470,29 @@
     window.ckCikar = function (id) {
         const y = _ck && _ck.yer.find((x) => x.id === id); if (!y) return;
         kes(y); y.oda = null; y.link = null; odalarYaz(); if (_ck.buyuk === id) _ck.buyuk = null; hepsiniCiz();
+    };
+    window.ckTv = function (ac) {
+        if (!_ck) return; _ck.tv = ac == null ? !_ck.tv : !!ac; const el = $('ck'); if (!el) return;
+        el.classList.toggle('tv', _ck.tv);
+        if (_ck.tv) {
+            if (_ck.tekrar) { _ck.tekrar = null; _ck.yer.forEach((y) => { y.son = null; }); }
+            if (_ck.mini) window.ckMini(false); window.ckRehber(false);
+            if (!_ck.gecikme) window.ckGecikme(8);
+            if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => { });
+            el.onmousemove = el.ontouchstart = () => { el.classList.add('hareket'); clearTimeout(_ck.tvGizle); _ck.tvGizle = setTimeout(() => { if ($('ck')) $('ck').classList.remove('hareket'); }, 2500); };
+        } else { el.classList.remove('hareket'); el.onmousemove = el.ontouchstart = null; if (document.fullscreenElement) document.exitFullscreen().catch(() => { }); }
+        hepsiniCiz();
+    };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _ck && _ck.tv) window.ckTv(false); });
+    document.addEventListener('fullscreenchange', () => { if (_ck && _ck.tv && !document.fullscreenElement && _ck.tvTam) window.ckTv(false); if (_ck) _ck.tvTam = !!document.fullscreenElement; });
+    window.ckYerel = async function (id) {
+        const y = _ck && _ck.yer.find((x) => x.id === id); if (!y || !navigator.mediaDevices) return;
+        const v = { width: { ideal: 1280 }, height: { ideal: 720 } }; let s = null;
+        try { s = await navigator.mediaDevices.getUserMedia({ video: v, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); }
+        catch (e) { try { s = await navigator.mediaDevices.getUserMedia({ video: v }); } catch (e2) { return tost('Bu cihazın kamerası açılamadı: tarayıcıdan kameraya izin ver.', 'error'); } }
+        if (!_ck) { s.getTracks().forEach((t) => t.stop()); return; }
+        kes(y); y.bitti = false; y.akis = s; y.yerel = true; y.v.srcObject = s; y.v.muted = true; y.v.play().catch(() => { }); y.durum = 'bagli';
+        hepsiniCiz(); tost(y.ad + ': bu cihazın kamerası', 'success');
     };
     window.ckBuyut = function (id) { if (!_ck) return; _ck.buyuk = _ck.buyuk === id ? null : id; hepsiniCiz(); };
     window.ckGecikme = function (g) { if (!_ck) return; _ck.gecikme = g; try { localStorage.setItem('dagsk_cokaci_gecikme', String(g)); } catch (e) { } _ck.yer.forEach((y) => { y.son = null; }); hepsiniCiz(); };

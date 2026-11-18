@@ -22,7 +22,7 @@ export default async function ({ log }) {
     dogrula(!!sporcu, 'en az bir sporcu gerekli');
 
     // ---------------- A) gerçek kayıt (sahte telefon)
-    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=2').then(() => ckAc())); await p.waitForSelector('#ck');
+    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(() => ckAc())); await p.waitForSelector('#ck');
     await p.waitForSelector('#ck-rh .ck-rh-bar button'); await p.click('#ck-rh .ck-rh-bar button');
     await p.click('#ck-k-on .ck-bos button'); await p.waitForSelector('#ck-k-on .ck-bos img', { timeout: 15000 });
     const link = decodeURIComponent((await p.getAttribute('#ck-k-on .ck-bos img', 'src')).split('data=')[1]).replace(/^https?:\/\/[^/]+/, B);
@@ -47,7 +47,7 @@ export default async function ({ log }) {
 
     // ---------------- B) 4 açılı yapay kayıt (her açı farklı renk, kare numarası yazılı)
     const id4 = await p.evaluate(async (sp) => {
-      await dagskEkYukle('dagsk-cokaci-analiz.js?v=1');
+      await dagskEkYukle('dagsk-cokaci-analiz.js?v=2');
       const yap = (renk, ms) => new Promise((ok) => {
         const c = document.createElement('canvas'); c.width = 640; c.height = 360; const x = c.getContext('2d'), s = c.captureStream(30), r = new MediaRecorder(s, { mimeType: 'video/webm' }), p = []; let n = 0;
         r.ondataavailable = (e) => p.push(e.data); r.onstop = () => ok(new Blob(p, { type: 'video/webm' }));
@@ -120,7 +120,7 @@ export default async function ({ log }) {
     esit(kar.duzen, 'kar', 'karşılaştırma düzeni'); esit(kar.kaydirma, 600, 'bırakışa göre hizalı (2100 − 1500)');
     await p.screenshot({ path: O + 'karsilastir.png' });
     await p.click('#ca-ust button:has-text("Üst üste")'); await p.waitForTimeout(400);
-    esit(await p.evaluate(() => getComputedStyle(document.querySelectorAll('#ca .ca-kare')[1]).opacity), '0.5', 'üst üste: ikinci kayıt yarı saydam');
+    esit(await p.evaluate(() => getComputedStyle(document.querySelectorAll('#ca .ca-kare')[1].querySelector('video')).opacity), '0.5', 'üst üste: ikinci kaydın görüntüsü yarı saydam');
     await p.screenshot({ path: O + 'ust-uste.png' });
     // telefon ekranı
     await p.evaluate((id) => caOynat(id), id4); await p.waitForFunction(() => document.querySelectorAll('#ca .ca-kare video').length === 4, null, { timeout: 20000 });

@@ -56,7 +56,7 @@ export default async function ({ log }) {
 
     // --- Çok Açılı Kamera (1 telefon)
     await p.setViewportSize({ width: 1280, height: 760 });
-    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=2').then(() => ckAc())); await p.waitForSelector('#ck');
+    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(() => ckAc())); await p.waitForSelector('#ck');
     await p.waitForSelector('#ck-rh .ck-rh-adim svg'); // hiç telefon kurulmamış: önce kurulum rehberi (v392)
     dogrula(await p.locator('#ck-rh .ck-rh-adim').count() === 6, 'rehberde 6 adım yok');
     await p.click('#ck-rh .ck-rh-bar button'); await p.waitForSelector('#ck-rh', { state: 'detached' });
