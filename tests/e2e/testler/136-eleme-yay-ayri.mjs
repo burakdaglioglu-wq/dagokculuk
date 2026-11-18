@@ -35,6 +35,14 @@ export default async function ({ log }) {
     const kl = r.toh.filter((k) => !r.seed || true);
     dogrula(Object.values(r.seed).filter((x) => x === 1).length === 2, 'her grubun kendi 1. tohumu');
     await p.screenshot({ path: O + 'tablo.png' });
+    // v431 📺 TV: klasik ve makaralı aynı anda — iki yay da canlıda, tablo yay başına ayrı
+    await p.evaluate(() => { _yz.siradaki = false; const el = yzElemeHesapla(yzOku()); ['Klasik', 'Makaralı'].forEach((g) => { const m = el.maclar.find((x) => x.oynanabilir && x.grup === g); yzMacSetGir(m.id, 'a', 0); ['9', '8', '7'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); }); yzTvAc(); });
+    await p.waitForTimeout(1500);
+    const tv = await p.evaluate(() => ({ canli: [...document.querySelectorAll('.yz-tv-canli .yz-tv-mac-tur')].map((x) => x.textContent), gruplar: document.querySelectorAll('.yz-tv-br .yz-br-grup').length, bas: (document.querySelector('.yz-tv-seri b') || {}).textContent, tas: document.documentElement.scrollWidth > innerWidth + 1 }));
+    dogrula(tv.canli.some((t) => /Klasik/.test(t)) && tv.canli.some((t) => /Makaralı/.test(t)), 'TV canlıda iki yay: ' + tv.canli.join(' | '));
+    esit(tv.gruplar, 2, 'TV tablosu yay başına ayrı'); dogrula(/KLASİK \+/.test(tv.bas || ''), 'TV başlığı: ' + tv.bas); esit(tv.tas, false, 'TV yana taşma');
+    await p.screenshot({ path: O + 'tv.png' });
+    await p.evaluate(() => { yzTvKapat(); const o = yzOku(); yzGuncelle((x) => { Object.keys(x).forEach((a) => { if (a.indexOf('m_') === 0) delete x[a]; }); }); yzCiz(); });
     // v430 🛠 yönet: tura çıksın (onaylı) → geri al → son girişi sil
     const mid = await p.evaluate(() => { const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.oynanabilir); yzMacSec(m.id); return m.id; });
     await p.locator('.yz-mac-yonet button', { hasText: 'tura çıksın' }).last().click();

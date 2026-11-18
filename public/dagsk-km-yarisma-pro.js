@@ -1954,7 +1954,7 @@ function yzElemeHesapla(o) {
             gf.forEach(function (m, j) { if (m && m.kazananK) yerler.push({ k: m.kazananK, yer: 1, metin: (j ? '⚙️ Makaralı' : '🏹 Klasik') + ' şampiyonu' }); });
             gf.forEach(function (m, j) { if (m && m.kaybedenK) yerler.push({ k: m.kaybedenK, yer: 2, metin: (j ? 'Makaralı' : 'Klasik') + ' finalisti' }); });
         }
-        return { maclar: maclar, turlar: Array.from({ length: turSon }, function (_, t) { return turAd(t); }), yerler: yerler, bitti: fin ? fin.bitti : gf.every(function (m) { return m && m.bitti; }), seedOf: seedOf, n: n, sistem: yzElemeSistem(e), dogrudan: !!e.dogrudan, ayri: true, genel: genel };
+        return { maclar: maclar, turlar: Array.from({ length: turSon }, function (_, t) { return turAd(t); }), yerler: yerler, bitti: fin ? fin.bitti : gf.every(function (m) { return m && m.bitti; }), seedOf: seedOf, n: n, sistem: yzElemeSistem(e), dogrudan: !!e.dogrudan, ayri: true, genel: genel, slotlar: e.slotlar };
     }
     let fin = bul(turSay - 1, 0), br = null;
     if (e.bronz && turSay >= 2) {
@@ -2156,7 +2156,31 @@ function yzBracketHTML(el, sec) {
             return '<div class="' + cls + '"' + (!sec.tv && (m.oynanabilir || (m.a && m.b)) ? ' onclick="yzMacSec(\'' + m.id + '\')"' : '') + '>' + (m.id === 'bronz' ? '<div class="yz-bm-et">🥉 Bronz</div>' : m.grupIlk ? '<div class="yz-bm-et">' + (m.grup === 'Makaralı' ? '⚙️ Makaralı' : '🏹 Klasik') + '</div>' : el.ayri && t === el.turlar.length - 1 && el.genel ? '<div class="yz-bm-et">🏆 Genel</div>' : '') + sat('a') + sat('b') + '</div>';
         }).join('') + '</div></div>';
     }).join('');
+    if (el.ayri) return yzBracketAyriHTML(el, sec);
     return '<div class="yz-bracket">' + kolonlar + '</div>';
+}
+// v431: klasik/makaralı ayrı tablo — her yay kendi küçük tablosu (yalnız boş BAY turları atlanır), yan yana; TV'de sığar.
+function yzBracketAyriHTML(el, sec) {
+    let h = el.n / 2, grupTur = Math.log2(el.n) - 1;
+    let kart = function (m, gizli) {
+        if (gizli) return '<div class="yz-bm" style="visibility:hidden"><div class="yz-bm-s"><span class="yz-bm-ad">·</span></div><div class="yz-bm-s"><span class="yz-bm-ad">·</span></div></div>';
+        let sat = function (t) { let k = m[t]; return '<div class="yz-bm-s' + (m.kazanan === t ? ' kaz' : m.kazanan && !m.bay ? ' kay' : '') + '"><span class="yz-bm-ad">' + (k ? yzSporcuEtiket(el, k, true) : (m.bay ? '<span class="yz-alt">BAY</span>' : '<span class="yz-alt">…</span>')) + '</span><b>' + (m.bay || m.bos || !m.a || !m.b ? '' : (m.elle ? (m.kazanan === t ? '⏫' : '') : (t === 'a' ? m.puanA : m.puanB))) + '</b></div>'; };
+        let cls = 'yz-bm' + (m.suruyor ? ' suruyor' : '') + (m.oynanabilir ? ' oyn' : '') + (m.id === _yz.aktifMac && !sec.tv ? ' aktif' : '') + (m.bitti ? ' bitti' : '');
+        return '<div class="' + cls + '"' + (!sec.tv && (m.oynanabilir || (m.a && m.b)) ? ' onclick="yzMacSec(\'' + m.id + '\')"' : '') + '>' + sat('a') + sat('b') + '</div>';
+    };
+    let grup = function (gi) {
+        let yari = (el.slotlar || []).slice(gi * h, (gi + 1) * h).filter(Boolean).length, hG = 2; while (hG < yari) hG *= 2;
+        let r0 = Math.max(0, Math.log2(h) - Math.log2(hG)), kol = '';
+        for (let t = r0; t < grupTur; t++) {
+            let adet = el.n / Math.pow(2, t + 1), ms = el.maclar.filter(function (m) { return m.tur === t && m.id !== 'bronz' && (gi ? m.i >= adet / 2 : m.i < adet / 2); });
+            let ad = t === grupTur - 1 ? 'Final' : (ms[0] ? ms[0].turAd.replace(/^(Klasik|Makaralı) /, '') : '');
+            kol += '<div class="yz-br-kol"><div class="yz-br-tur">' + esc(ad) + '</div><div class="yz-br-maclar">' + ms.map(function (m) { return kart(m, m.bos); }).join('') + '</div></div>';
+        }
+        return '<div class="yz-br-grup" style="flex:0 1 auto;min-width:0"><div class="yz-br-tur" style="text-align:left;font-size:1.05em;margin-bottom:4px">' + (gi ? '⚙️ MAKARALI' : '🏹 KLASİK') + '</div><div class="yz-bracket">' + kol + '</div></div>';
+    };
+    let genel = '';
+    if (el.genel) { let f = el.maclar.find(function (m) { return m.tur === grupTur && m.id !== 'bronz'; }); if (f) genel = '<div class="yz-br-grup" style="flex:0 0 auto"><div class="yz-br-tur" style="text-align:left;font-size:1.05em;margin-bottom:4px">🏆 GENEL FİNAL</div><div class="yz-bracket"><div class="yz-br-kol"><div class="yz-br-tur">&nbsp;</div><div class="yz-br-maclar">' + kart(f) + '</div></div></div></div>'; }
+    return '<div class="yz-br-ayri" style="display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-start">' + grup(0) + grup(1) + genel + '</div>';
 }
 function yzYayAyirSeritHTML(o, el) {
     let e = o.eleme; if (!e || (el.bitti && !el.ayri) || (el.bitti && el.genel)) return '';
@@ -2203,6 +2227,13 @@ function yzElemeHTML(o) {
 // 📺 TV — eleme
 function yzTvPodyumHTML(o) {
     let p = yzPodyumListe(o); if (!p.liste.length) return '';
+    let elA = p.eleme && o.eleme ? yzElemeHesapla(o) : null;
+    if (elA && elA.ayri && !elA.genel) { // v431: iki şampiyon — her yay kendi podyum şeridi
+        return [['🏹', 'Klasik'], ['⚙️', 'Makaralı']].map(function (g) {
+            let l = elA.yerler.filter(function (y) { return y.metin.indexOf(g[1]) !== -1; });
+            return '<div class="yz-tv-podyum"><div class="yz-tv-pod"><span class="a" style="color:#fbbf24">' + g[0] + ' ' + g[1] + '</span></div>' + l.map(function (y) { return '<div class="yz-tv-pod p' + y.yer + '"><span class="m">' + (y.yer === 1 ? '🥇' : '🥈') + '</span><span class="a">' + (typeof fotoYuzHTML === 'function' ? fotoYuzHTML(y.k, 'yz-tv-pod-foto') : '') + esc(yzKAd(y.k)) + '</span><span class="p">' + esc(y.yer === 1 ? 'Şampiyon' : 'Finalist') + '</span></div>'; }).join('') + '</div>';
+        }).join('');
+    }
     // Eleme yoksa yay filtresine uy: "Ayrı" → Klasik ve Makaralı için ayrı podyum şeridi
     if (!p.eleme) {
         let gruplar = yzGruplar(o, yzSiralama(o));
@@ -2216,18 +2247,26 @@ function yzTvPodyumHTML(o) {
 function yzTvElemeHTML(o) {
     let d = o.durum, el = yzElemeHesapla(o);
     let canli = el.maclar.filter(function (m) { return m.suruyor; });
-    if (!canli.length) canli = el.maclar.filter(function (m) { return m.oynanabilir; }).slice(0, 2);
-    canli = canli.slice(0, 3);
+    if (el.ayri) { // v431: klasik ve makaralı aynı anda — her yaydan en az bir maç ekranda
+        ['Klasik', 'Makaralı'].forEach(function (g) { if (!canli.some(function (m) { return m.grup === g; })) { let x = el.maclar.find(function (m) { return m.oynanabilir && m.grup === g; }); if (x) canli.push(x); } });
+        if (!canli.length) canli = el.maclar.filter(function (m) { return m.oynanabilir; }).slice(0, 2);
+        canli.sort(function (a, b) { return (a.grup === 'Makaralı') - (b.grup === 'Makaralı'); });
+        canli = canli.slice(0, 4);
+    } else {
+        if (!canli.length) canli = el.maclar.filter(function (m) { return m.oynanabilir; }).slice(0, 2);
+        canli = canli.slice(0, 3);
+    }
+    let gruplar = []; canli.forEach(function (m) { if (m.grup && gruplar.indexOf(m.grup) < 0) gruplar.push(m.grup); });
     let macKart = function (m) {
         let setler = ''; for (let i = 0; i < Math.max(5, m.setler.length); i++) { let s = m.setler[i]; setler += '<span class="' + (s && s.tamam ? (s.ta > s.tb ? 'a' : s.tb > s.ta ? 'b' : 'e') : '') + '">' + (s && s.ta != null ? s.ta : '·') + '<i>' + (s && s.tb != null ? s.tb : '·') + '</i></span>'; }
-        return '<div class="yz-tv-mac"><div class="yz-tv-mac-tur">' + esc(m.turAd) + (m.shootGerek ? ' · SHOOT-OFF' : '') + '</div>'
+        return '<div class="yz-tv-mac"' + (m.grup ? ' style="border-top:6px solid ' + (m.grup === 'Makaralı' ? '#38bdf8' : '#f59e0b') + '"' : '') + '><div class="yz-tv-mac-tur">' + (m.grup ? (m.grup === 'Makaralı' ? '⚙️ ' : '🏹 ') : '') + esc(m.turAd) + (m.shootGerek ? ' · SHOOT-OFF' : '') + '</div>'
             + '<div class="yz-tv-mac-sat tv-tik' + (m.kazanan === 'a' ? ' kaz' : '') + '" onclick="yzTvMacGir(\'' + m.id + '\',\'a\')" title="Skor gir"><span class="ad">' + yzFotoYuz(m.a) + '<span>' + yzSporcuEtiket(el, m.a) + '</span></span><b>' + m.puanA + '</b></div>'
             + '<div class="yz-tv-mac-sat tv-tik' + (m.kazanan === 'b' ? ' kaz' : '') + '" onclick="yzTvMacGir(\'' + m.id + '\',\'b\')" title="Skor gir"><span class="ad">' + yzFotoYuz(m.b) + '<span>' + yzSporcuEtiket(el, m.b) + '</span></span><b>' + m.puanB + '</b></div>'
             + '<div class="yz-tv-mac-setler">' + setler + '</div></div>';
     };
     return '<button class="yz-tv-kapat" onclick="yzTvKapat()">✕ Kapat</button>'
         + '<div class="yz-tv-bas"><div class="yz-tv-kimlik"><div class="yz-tv-logo">DAĞ S.K.</div><div class="yz-tv-ad">ELEME MAÇLARI</div><div class="yz-tv-alt">' + esc(d.ayar.mesafe) + ' · ' + (el.sistem === 'toplam' ? 'toplam puan · 5 seri × 3 ok' : 'set sistemi · 6 puan alan kazanır') + '</div></div>'
-        + '<div class="yz-tv-seri"><span class="yz-tv-seri-et">' + (el.bitti ? 'ELEME' : 'CANLI') + '</span><b style="font-size:3vw">' + (el.bitti ? 'BİTTİ' : canli.length ? esc(canli[0].turAd) : '—') + '</b></div>'
+        + '<div class="yz-tv-seri"><span class="yz-tv-seri-et">' + (el.bitti ? 'ELEME' : 'CANLI') + '</span><b style="font-size:3vw">' + (el.bitti ? 'BİTTİ' : gruplar.length > 1 ? '🏹 KLASİK + ⚙️ MAKARALI' : canli.length ? esc(canli[0].turAd) : '—') + '</b></div>'
         + (el.bitti ? '' : '<div class="yz-tv-saat">' + yzSayacHTML(o, 'yz-tv-sayac') + yzTvKontrolHTML(o, el) + '</div>') + '</div>'
         + (el.bitti ? yzTvPodyumHTML(Object.assign({}, o, { durum: Object.assign({}, d, { asama: 'bitti' }) })) : '')
         + '<div class="yz-tv-eleme">' + (canli.length && !el.bitti ? '<div class="yz-tv-canli">' + canli.map(macKart).join('') + '</div>' : '') + '<div class="yz-tv-br">' + yzBracketHTML(el, { tv: true }) + '</div></div>';

@@ -5987,3 +5987,10 @@ Kullanıcı maç sırasında: "düzeltmemi sağla, üst tura çıktı gibi yöne
 - **⌫ Son girişi sil** (`yzMacSonSil`): önce shoot-off/yakın seçimi, sonra son setin b, sonra a kaydı. Karnedeki oklar karnede kalır.
 - **⏫ X tura çıksın** (`yzMacElle`, onaylı) → `v.elle` = 'a'|'b'. `yzMacOlustur` puanların önüne koyar (`m.elle`). Biten maçta "🔄 Kazanan Y olsun", elle kararda "↩ Koç kararını geri al" (puanlara döner).
 - Test 136'ya eklendi.
+
+## 142. 📺 Eleme TV: klasik ve makaralı aynı anda (2026-11-18, v431)
+Kullanıcı: "makaralı ile klasik aynı anda yarışınca TV ekranda sorun yaşıyoruz".
+- `yzTvElemeHTML`: ayrı modda canlıda her yaydan en az bir maç (en çok 4). Kartın üstünde renk şeridi (klasik turuncu, makaralı mavi) + 🏹/⚙️. Başlık "🏹 KLASİK + ⚙️ MAKARALI".
+- `yzBracketAyriHTML` (ana ekran + TV): her yay kendi küçük tablosu, yan yana. Yalnız BAY'den oluşan turlar atlanır, BAY–BAY maçları gizli yer tutucu. Genel final ayrı kutu.
+- `yzTvPodyumHTML`: genel finalsiz iki şampiyonda yay başına podyum şeridi.
+- Test 136 (TV adımı). Not: TV tam ekrandayken `setViewportSize` hata verir.
