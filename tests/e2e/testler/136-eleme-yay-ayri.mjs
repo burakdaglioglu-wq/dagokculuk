@@ -35,6 +35,21 @@ export default async function ({ log }) {
     const kl = r.toh.filter((k) => !r.seed || true);
     dogrula(Object.values(r.seed).filter((x) => x === 1).length === 2, 'her grubun kendi 1. tohumu');
     await p.screenshot({ path: O + 'tablo.png' });
+    // v430 🛠 yönet: tura çıksın (onaylı) → geri al → son girişi sil
+    const mid = await p.evaluate(() => { const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.oynanabilir); yzMacSec(m.id); return m.id; });
+    await p.locator('.yz-mac-yonet button', { hasText: 'tura çıksın' }).last().click();
+    await p.evaluate(() => onayOnayla());
+    let y = await p.evaluate((id) => { const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.id === id); return { kaz: m.kazanan, elle: m.elle }; }, mid);
+    esit(y.kaz + y.elle, 'btrue', 'koç kararı: b tura çıktı');
+    dogrula(/koç kararı/.test(await p.locator('.yz-mac-sonuc').innerText()), 'sonuç yazısı');
+    await p.screenshot({ path: O + 'yonet.png' });
+    await p.locator('.yz-mac-yonet button', { hasText: 'geri al' }).click();
+    y = await p.evaluate((id) => { _yz.siradaki = false; yzMacSetGir(id, 'a', 0); ['9', '9', '9'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzMacSetGir(id, 'b', 0); ['8', '8', '8'].forEach((v) => yzOkEkle(v)); yzGirisKaydet(); yzMacSec(id); const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.id === id); return { kaz: m.kazanan, pa: m.puanA }; }, mid);
+    esit(y.kaz + '/' + y.pa, 'null/2', 'geri alındı, 1. set a\'nın');
+    await p.locator('.yz-mac-yonet button', { hasText: 'Son girişi sil' }).click();
+    y = await p.evaluate((id) => { const m = yzElemeHesapla(yzOku()).maclar.find((x) => x.id === id); return { a: !!(m.setler[0] && m.setler[0].a), b: !!(m.setler[0] && m.setler[0].b), pa: m.puanA }; }, mid);
+    esit(JSON.stringify(y), JSON.stringify({ a: true, b: false, pa: 0 }), 'son giriş (b) silindi');
+    await p.evaluate((id) => { const o = yzOku(); yzGuncelle((x) => { delete x[yzMacKey(o.durum.id, id)]; }); yzCiz(); }, mid);
     // tüm maçları "a" kazansın → iki şampiyon
     const oyna = () => p.evaluate(() => {
       _yz.siradaki = false;

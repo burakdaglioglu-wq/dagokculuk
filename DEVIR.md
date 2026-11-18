@@ -5980,3 +5980,10 @@ Kullanıcı dersten (ekran fotoğrafı): "Sıralamaya göre; Yiğit Eymen ile Ni
 - Kurulumda (iki yay varsa) "Klasik ve makaralı ayrı eşleşsin" varsayılan açık + genel final kutusu. Süren elemede şerit: "Yay türüne göre ayır" (`yzElemeYayAyir`, girilen maçlar silinir, onaylı) ve "🏆 Genel final açık/kapalı" (`yzElemeGenelFinal`).
 - Maç sistemi tek (seçilen set/toplam) — makaralıya otomatik toplam puan YAPILMADI.
 - Test 136. AÇIK: grup büyüklükleri farklıysa küçük grup tarafında çok BAY satırı görünür.
+
+## 141. 🛠 Eleme maçında yönetim (2026-11-18, v430)
+Kullanıcı maç sırasında: "düzeltmemi sağla, üst tura çıktı gibi yönetme imkânları sun".
+- Maç panelinin altında `yzMacYonetHTML`. "✏️ tablodaki sayıya dokun, düzelt" ipucu (dokunma zaten vardı).
+- **⌫ Son girişi sil** (`yzMacSonSil`): önce shoot-off/yakın seçimi, sonra son setin b, sonra a kaydı. Karnedeki oklar karnede kalır.
+- **⏫ X tura çıksın** (`yzMacElle`, onaylı) → `v.elle` = 'a'|'b'. `yzMacOlustur` puanların önüne koyar (`m.elle`). Biten maçta "🔄 Kazanan Y olsun", elle kararda "↩ Koç kararını geri al" (puanlara döner).
+- Test 136'ya eklendi.

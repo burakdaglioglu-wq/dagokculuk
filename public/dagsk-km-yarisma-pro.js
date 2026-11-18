@@ -1896,6 +1896,7 @@ function yzMacOlustur(o, e, id, tur, i, a, b, turAd, hazir) {
     else if (hazir && b && !a) { m.kazanan = 'b'; m.bay = true; }
     else if (hazir && !a && !b) m.bos = true;
     else if (a && b) Object.assign(m, yzMacPuan(v, yzElemeSistem(e)));
+    if (a && b && v && (v.elle === 'a' || v.elle === 'b')) { m.kazanan = v.elle; m.elle = true; m.shootGerek = false; } // v430 koç kararı: "tura çıksın"
     m.kazananK = m.kazanan === 'a' ? a : m.kazanan === 'b' ? b : null;
     m.kaybedenK = m.kazanan && a && b ? (m.kazanan === 'a' ? b : a) : null;
     m.bitti = !!m.kazanan || !!m.bos;
@@ -2093,7 +2094,7 @@ function yzMacPanelHTML(o, m, el) {
     let aksiyon;
     if (m.kazanan) {
         let sonraki = el.maclar.find(function (x) { return x.oynanabilir && x.id !== m.id; });
-        aksiyon = '<div class="yz-mac-sonuc">🏆 <b>' + esc(yzKAd(m.kazananK)) + '</b> kazandı · ' + m.puanA + '–' + m.puanB + '</div>' + (sonraki ? '<button class="yz-btn ana buyuk" onclick="yzMacSec(\'' + sonraki.id + '\')">▶ Sıradaki maç: ' + esc(sonraki.turAd) + '</button>' : '');
+        aksiyon = '<div class="yz-mac-sonuc">🏆 <b>' + esc(yzKAd(m.kazananK)) + '</b> ' + (m.elle ? 'üst tura çıktı (koç kararı)' : 'kazandı · ' + m.puanA + '–' + m.puanB) + '</div>' + (sonraki ? '<button class="yz-btn ana buyuk" onclick="yzMacSec(\'' + sonraki.id + '\')">▶ Sıradaki maç: ' + esc(sonraki.turAd) + '</button>' : '');
     } else if (m.shootGerek) {
         let sh = m.shoot || {}, esit = sh.a && sh.b && !m.kazanan;
         aksiyon = '<div class="yz-bilgi">🎯 ' + (topM ? 'Toplamlar eşit (' + m.puanA + '–' + m.puanB + ')' : '5–5') + ' — <b>shoot-off</b>: iki sporcu da tek ok atar, yüksek puan kazanır. <button class="yz-btn" onclick="yzShootSayac()">⏱ 40 sn başlat</button></div>'
@@ -2106,7 +2107,43 @@ function yzMacPanelHTML(o, m, el) {
     return '<div class="yz-kart yz-mac"><div class="yz-mac-bas"><div class="yz-ust-etiket">' + esc(m.turAd).toLocaleUpperCase('tr-TR') + '</div><button class="yz-link" onclick="yzMacSifirla(\'' + m.id + '\')">Maçı sıfırla</button></div>'
         + '<div class="yz-mac-skor"><div class="yz-mac-taraf' + (m.kazanan === 'a' ? ' kaz' : '') + '">' + yzSporcuEtiket(el, m.a) + '</div><div class="yz-mac-puan"><b>' + m.puanA + '</b><span>–</span><b>' + m.puanB + '</b></div><div class="yz-mac-taraf sag' + (m.kazanan === 'b' ? ' kaz' : '') + '">' + yzSporcuEtiket(el, m.b) + '</div></div>'
         + '<div class="yz-tablo-kap"><table class="yz-mac-tablo"><thead><tr>' + bas + '</tr></thead><tbody>' + satir('a') + satir('b') + '</tbody></table></div>'
-        + aksiyon + '</div>';
+        + aksiyon + yzMacYonetHTML(m) + '</div>';
+}
+// 🛠 maç yönetimi (v430, kullanıcı maç içindeyken: "düzeltmemi sağla, üst tura çıktı gibi yönetme imkânı sun")
+function yzMacYonetHTML(m) {
+    let girisVar = (m.setler || []).some(function (s) { return s && (s.a || s.b); }) || !!(m.shoot && (m.shoot.a || m.shoot.b));
+    let ad = function (t) { return esc(yzKisaAd(yzKAd(m[t]))); };
+    return '<div class="yz-mac-yonet" style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-color,rgba(127,127,127,.3));display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
+        + '<span class="yz-alt" style="flex:1 1 220px">🛠 <b>Yönet</b>' + yeniRozetGuvenli() + ' · ✏️ yanlış puan mı? Tablodaki sayıya dokun, düzelt.</span>'
+        + (girisVar ? '<button class="yz-btn" onclick="yzMacSonSil(\'' + m.id + '\')">⌫ Son girişi sil</button>' : '')
+        + (m.elle ? '<button class="yz-btn" onclick="yzMacElle(\'' + m.id + '\',null)">↩ Koç kararını geri al</button>'
+            : !m.kazanan ? ['a', 'b'].map(function (t) { return '<button class="yz-btn" onclick="yzMacElle(\'' + m.id + '\',\'' + t + '\')">⏫ ' + ad(t) + ' tura çıksın</button>'; }).join('')
+            : '<button class="yz-btn" onclick="yzMacElle(\'' + m.id + '\',\'' + (m.kazanan === 'a' ? 'b' : 'a') + '\')">🔄 Kazanan ' + ad(m.kazanan === 'a' ? 'b' : 'a') + ' olsun</button>')
+        + '</div>';
+}
+function yzMacElle(macId, t) {
+    let o = yzOku(), d = o.durum, m = yzMacBul(o, macId); if (!d || !m) return;
+    let yap = function () {
+        yzGuncelle(function (x) { let a = yzMacKey(d.id, macId), v = JSON.parse(JSON.stringify(x[a] || {})); if (t) v.elle = t; else delete v.elle; x[a] = v; });
+        let mm = yzMacBul(yzOku(), macId); _yz.aktifMac = macId; yzCiz(); if (_yz.tv) yzTvCiz();
+        showToast(t ? '⏫ ' + yzKAd(m[t]) + ' üst tura çıktı' : '↩ Koç kararı geri alındı' + (mm && mm.kazananK ? ' — puanlara göre ' + yzKAd(mm.kazananK) : ''), 'success');
+    };
+    if (!t) return yap();
+    onayIste('<b>' + esc(yzKAd(m[t])) + '</b> bu maçı kazanmış sayılıp üst tura çıksın mı?<br><span style="font-size:13px;opacity:.8">Girilen puanlar silinmez; "Koç kararını geri al" ile puanlara dönülür.</span>', yap, '⏫ Tura çıksın');
+}
+function yzMacSonSil(macId) {
+    let d = yzOku().durum; if (!d) return; let silinen = null;
+    yzGuncelle(function (x) {
+        let a = yzMacKey(d.id, macId), v = JSON.parse(JSON.stringify(x[a] || {}));
+        if (v.shoot && (v.shoot.a || v.shoot.b)) { if (v.shoot.yakin) delete v.shoot.yakin; else if (v.shoot.b) { delete v.shoot.b; silinen = 'shoot-off'; } else { delete v.shoot.a; silinen = 'shoot-off'; } if (!v.shoot.a && !v.shoot.b) delete v.shoot; if (!silinen) silinen = 'merkeze yakın seçimi'; }
+        else if (v.setler) {
+            for (let i = v.setler.length - 1; i >= 0 && !silinen; i--) { let s = v.setler[i] || {}; if (s.b) { delete s.b; silinen = (i + 1) + '. set'; } else if (s.a) { delete s.a; silinen = (i + 1) + '. set'; } }
+            while (v.setler.length && !(v.setler[v.setler.length - 1] || {}).a && !(v.setler[v.setler.length - 1] || {}).b) v.setler.pop();
+        }
+        x[a] = v;
+    });
+    _yz.aktifMac = macId; yzCiz(); if (_yz.tv) yzTvCiz();
+    showToast(silinen ? '⌫ Son giriş silindi (' + silinen + ') — karneye işlenmiş oklar karnede kalır' : 'Silinecek giriş yok', silinen ? 'success' : 'info');
 }
 function yzBracketHTML(el, sec) {
     sec = sec || {};
