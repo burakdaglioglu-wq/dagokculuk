@@ -5972,3 +5972,11 @@ Kullanıcı: "4 telefonla çekip her açıda analiz, sonra hepsini birleştirebi
 - `dagsk-coklu-kamera.js?v=4`: "Kaydı sakla" penceresinde 12 puan düğmesi (`CK_PUANLAR`, analizdeki renkler), yeniden dokununca kalkar → `meta.puan`.
 - Test 134 (puan 9 kaydedilir), 135 (4 açılı yapay kayıt: 3 satır, arkada "iskelet yok", özet kol açısını Yandan alır, 390 px taşma yok), 100.
 - AÇIK: gerçek 4 telefonla salonda denenmedi. Telefonda panel dar (tablo yatay kayar).
+
+## 140. ⚔️ Doğrudan eleme: klasik ve makaralı ayrı eşleşme (2026-11-18, v429)
+Kullanıcı dersten (ekran fotoğrafı): "Sıralamaya göre; Yiğit Eymen ile Nisanur yarışmalı, ikisi klasik. Makaralılar makaralılarla, finalde kendi içlerinde final; klasik–makaralı genel finali isteğe bağlı."
+- `yzYaySlotlar(tohumlar)`: tablonun üst yarısı klasik, alt yarısı makaralı; her grup kendi ortalama sırasıyla (yzTohum) eşleşir. `o.eleme.slotlar` varsa `yzElemeHesapla` ilk turu buradan kurar. Maç adları "Klasik Yarı Final", "Klasik Finali", "Makaralı Finali", "Genel Final". `seedOf` grup içi.
+- `o.eleme.genelFinal` (varsayılan kapalı): kapalıyken iki şampiyon (iki 1. yer), açıkken Genel Final + grup finalistleri 3. Ayrı modda bronz yok.
+- Kurulumda (iki yay varsa) "Klasik ve makaralı ayrı eşleşsin" varsayılan açık + genel final kutusu. Süren elemede şerit: "Yay türüne göre ayır" (`yzElemeYayAyir`, girilen maçlar silinir, onaylı) ve "🏆 Genel final açık/kapalı" (`yzElemeGenelFinal`).
+- Maç sistemi tek (seçilen set/toplam) — makaralıya otomatik toplam puan YAPILMADI.
+- Test 136. AÇIK: grup büyüklükleri farklıysa küçük grup tarafında çok BAY satırı görünür.
