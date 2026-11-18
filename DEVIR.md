@@ -5965,3 +5965,10 @@ Kullanıcı (uyumadan önce): "4'lü kamera sisteminin amacı yok, kaydet düğm
 - IndexedDB `onversionchange` → bağlantı kapanır (silme/yükseltme takılmasın; test bunda çöküyordu). wakeLock artık beklenmez (arka plan sekmesinde söz dönmeyebiliyordu).
 - Test 135 (E2E_POZ=1 ile gerçek model: stok fotoğraftan video, 25/25 karede kişi, 6 sn). 134 (üst üste saydamlık artık videoda) ve 100 güncellendi.
 - AÇIK: gerçek atışta ipin sesi algılaması salonda denenmedi (başka okçuların sesi karışabilir → yanlışsa 💥 elle). İskelet açıları gerçek okçu videosunda ayarlanmadı (eşikler tahmin). iPhone'da Çek (mp4) denenmedi.
+
+## 139. 📏 Açı özeti + kayıtta puan (2026-11-18, v428)
+Kullanıcı: "4 telefonla çekip her açıda analiz, sonra hepsini birleştirebiliyor muyuz?" → iki eksik kapatıldı ("Eksikleri tamamla").
+- `dagsk-cokaci-analiz.js?v=3`: tek kayıtta (hedef hariç 2+ açı) üst çubukta **📏 Açı özeti**. `caPanel('olcum')` tek kayıtta `aciOzetCiz` → her açı bir satır (bırakıştan 0,1 sn önce: dirsek, hiza, yay kolu, omuz, gövde + nişanda dirsek/baş oynaması). `ACI_GUVEN`: kol açıları yandan, omuz/gövde önden/arkadan kalın; özet cümlesi her ölçümü en güvenilir açıdan alır. İskeleti eksik açılar için `caIskeletHepsi()` (görünmeyen açılar dahil, hedef hariç). Bırakış yoksa önce 💥 ister.
+- `dagsk-coklu-kamera.js?v=4`: "Kaydı sakla" penceresinde 12 puan düğmesi (`CK_PUANLAR`, analizdeki renkler), yeniden dokununca kalkar → `meta.puan`.
+- Test 134 (puan 9 kaydedilir), 135 (4 açılı yapay kayıt: 3 satır, arkada "iskelet yok", özet kol açısını Yandan alır, 390 px taşma yok), 100.
+- AÇIK: gerçek 4 telefonla salonda denenmedi. Telefonda panel dar (tablo yatay kayar).

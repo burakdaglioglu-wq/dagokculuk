@@ -22,7 +22,7 @@ export default async function ({ log }) {
     dogrula(!!sporcu, 'en az bir sporcu gerekli');
 
     // ---------------- A) gerçek kayıt (sahte telefon)
-    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(() => ckAc())); await p.waitForSelector('#ck');
+    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=4').then(() => ckAc())); await p.waitForSelector('#ck');
     await p.waitForSelector('#ck-rh .ck-rh-bar button'); await p.click('#ck-rh .ck-rh-bar button');
     await p.click('#ck-k-on .ck-bos button'); await p.waitForSelector('#ck-k-on .ck-bos img', { timeout: 15000 });
     const link = decodeURIComponent((await p.getAttribute('#ck-k-on .ck-bos img', 'src')).split('data=')[1]).replace(/^https?:\/\/[^/]+/, B);
@@ -35,9 +35,14 @@ export default async function ({ log }) {
     dogrula(/Durdur · 0:0[2-4]/.test(await p.locator('#ck-ust .ck-btn.kayit').innerText()), 'kayıt süresi yazmalı');
     await p.click('#ck-ust .ck-btn.kayit'); await p.waitForSelector('#ck-modal #ck-m-sp', { timeout: 10000 });
     await p.selectOption('#ck-m-sp', sporcu.g + '|' + sporcu.ad); await p.fill('#ck-m-ad', 'e2e canlı');
+    // v428 puan düğmeleri: 8 → 9 seçimi, sonra 9 kalır
+    await p.click('#ck-m-puan button[data-p="8"]'); await p.click('#ck-m-puan button[data-p="9"]');
+    esit(await p.locator('#ck-m-puan button.on').count(), 1, 'tek puan seçili');
+    await p.screenshot({ path: 'tests/e2e/_cikti/134-kayit-puan.png' });
     await p.click('#ck-m-anl');
     await p.waitForSelector('#ca .ca-kare video', { timeout: 20000 }); await p.waitForTimeout(1200);
-    const canli = await p.evaluate(() => { const s = _caIc.durum(); return { n: s.kareler.length, sure: s.kareler[0].src.sure, w: s.kareler[0].src.vw, sp: s.klip.sporcu && s.klip.sporcu.ad, ad: s.klip.ad }; });
+    const canli = await p.evaluate(() => { const s = _caIc.durum(); return { n: s.kareler.length, sure: s.kareler[0].src.sure, w: s.kareler[0].src.vw, sp: s.klip.sporcu && s.klip.sporcu.ad, ad: s.klip.ad, puan: s.klip.puan }; });
+    esit(canli.puan, '9', 'kayıtta seçilen puan');
     esit(canli.n, 1, 'canlı kayıtta 1 açı'); dogrula(canli.sure > 1800, 'canlı kayıt süresi ' + canli.sure); dogrula(canli.w > 100, 'video boyutu'); esit(canli.sp, sporcu.ad, 'sporcu'); esit(canli.ad, 'e2e canlı', 'not');
     await p.evaluate(() => caKapat());
     // 📌 son 12 sn
@@ -47,7 +52,7 @@ export default async function ({ log }) {
 
     // ---------------- B) 4 açılı yapay kayıt (her açı farklı renk, kare numarası yazılı)
     const id4 = await p.evaluate(async (sp) => {
-      await dagskEkYukle('dagsk-cokaci-analiz.js?v=2');
+      await dagskEkYukle('dagsk-cokaci-analiz.js?v=3');
       const yap = (renk, ms) => new Promise((ok) => {
         const c = document.createElement('canvas'); c.width = 640; c.height = 360; const x = c.getContext('2d'), s = c.captureStream(30), r = new MediaRecorder(s, { mimeType: 'video/webm' }), p = []; let n = 0;
         r.ondataavailable = (e) => p.push(e.data); r.onstop = () => ok(new Blob(p, { type: 'video/webm' }));

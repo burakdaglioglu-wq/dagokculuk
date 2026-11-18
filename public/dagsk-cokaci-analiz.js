@@ -563,7 +563,7 @@
         }
         u.innerHTML = '<button type="button" class="ca-b" onclick="caListe()">← Kayıtlar</button>'
             + '<h1>' + (k.puan && !_ca.karsi ? puanRozet(k.puan) + ' ' : '') + esc(k.sporcu ? k.sporcu.ad : 'Sporcu seçilmedi') + '<small>' + esc(k.tarih) + (k.ad ? ' · ' + esc(k.ad) : '') + (_ca.karsi ? ' ⚖️ ' + esc(_ca.karsi.ornek ? '⭐ örnek' : _ca.karsi.tarih) : '') + '</small></h1>'
-            + iskB + (_ca.karsi ? olcB : '<button type="button" class="ca-b' + (k.ornek ? ' on' : '') + '" onclick="caOrnek(\'' + k.id + '\')" title="Örnek atış: diğer kayıtlar bununla kıyaslanır">' + (k.ornek ? '★ Örnek' : '☆ Örnek yap') + '</button>')
+            + iskB + (!_ca.karsi && k.acilar.filter((a) => a.id !== 'hedef').length > 1 ? '<button type="button" class="ca-b' + (_ca.panel && _ca.panelTur === 'olcum' ? ' on' : '') + '" onclick="caPanel(\'olcum\')" title="Bütün açıların ölçümleri tek tabloda">📏 Açı özeti' + yeni() + '</button>' : '') + (_ca.karsi ? olcB : '<button type="button" class="ca-b' + (k.ornek ? ' on' : '') + '" onclick="caOrnek(\'' + k.id + '\')" title="Örnek atış: diğer kayıtlar bununla kıyaslanır">' + (k.ornek ? '★ Örnek' : '☆ Örnek yap') + '</button>')
             + (_ca.karsi ? '<div class="ca-gr" role="group" aria-label="Açı">' + _ca.klip.acilar.map((a) => '<button type="button" class="ca-b' + (_ca.karAci === a.id ? ' on' : '') + '" onclick="caKarAci(\'' + a.id + '\')">' + esc(a.ad || ACILAR[a.id]) + '</button>').join('') + '</div>'
                 : (n > 1 ? '<div class="ca-gr" role="group" aria-label="Düzen"><button type="button" class="ca-b' + (_ca.duzen === '4' ? ' on' : '') + '" onclick="caDuzen(\'4\')">▦ ' + (n > 2 ? '4\'lü' : 'Hepsi') + '</button><button type="button" class="ca-b' + (_ca.duzen === '1' ? ' on' : '') + '" onclick="caDuzen(\'1\')">▢ Tek</button>' + (n > 2 ? '<button type="button" class="ca-b' + (_ca.duzen === '2' ? ' on' : '') + '" onclick="caDuzen(\'2\')">▥ Yan yana</button>' : '') + '</div>' : ''))
             + (!_ca.karsi ? '<button type="button" class="ca-b" onclick="caBilgi(\'' + k.id + '\')" title="Sporcu ve not">✏️ Sporcu</button><button type="button" class="ca-b" onclick="caKarsiBasla(\'' + k.id + '\');caListe()" title="Başka bir kayıtla yan yana">⚖️ Karşılaştır</button>' : '<button type="button" class="ca-b' + (_ca.hayalet ? ' on' : '') + '" onclick="caHayalet()" title="İki atışı aynı karede üst üste göster">👻 Üst üste</button><button type="button" class="ca-b" onclick="caOynat(\'' + k.id + '\')">Karşılaştırmadan çık</button>')
@@ -1045,8 +1045,43 @@
         return { med, kacan };
     }
     const hucre = (id, v) => (v == null ? '–' : id === 'hiza' ? (Math.abs(v) <= 1 ? '0°' : Math.abs(Math.round(v)) + '° ' + (v > 0 ? '↓' : '↑')) : Math.round(v) + '°');
+    // 📏 açı özeti (v428): tek kayıtta bütün açıların ölçümleri tek tabloda. Her ölçüm en doğru göründüğü açıda kalın.
+    const ACI_GUVEN = { yan: ['dirsek', 'hiza', 'yay'], on: ['omuz', 'govde'], arka: ['omuz', 'govde'] };
+    function aciOlcumleri(klip) {
+        return (klip.acilar || []).filter((a) => a.id !== 'hedef').map((a) => { const o = iskVeri(klip, a.id) ? klipOlcum(klip, a) : null; return { a, var: !!iskVeri(klip, a.id), o }; });
+    }
+    function aciOzetCiz(p) {
+        const klip = _ca.klip, r = aciOlcumleri(klip), varMi = r.some((x) => x.var), eksik = r.filter((x) => !x.var).length;
+        let h = '<h2>📏 Açı özeti' + yeni() + '</h2><p>Aynı atış, her açıdan ayrı ölçüldü (bırakıştan hemen önce). <b>Kalın</b> değer o ölçümün en doğru göründüğü açı: kol açıları yandan, omuz ve gövde önden/arkadan.</p>';
+        if (!varMi) return (p.innerHTML = h + '<div class="ca-ozet">🦴 Önce iskeleti çıkar: yapay zekâ her açıda kolları ve omuzları bulur, açıları ölçer.<div style="margin-top:8px"><button type="button" class="ca-b ana" onclick="caIskeletHepsi()">🦴 ' + r.length + ' açının iskeletini çıkar</button></div></div>');
+        if (!(klip.anlar && klip.anlar.birakis != null)) return (p.innerHTML = h + '<div class="ca-ozet">💥 Önce <b>Bırakış</b> anını işaretle (alttaki anlar satırı). Ölçümler bırakıştan hemen önceki kareden alınır.</div>');
+        const kolon = OLC_KOL.filter(([id]) => r.some((x) => x.o && x.o.b && x.o.b[id] != null)), dO = r.some((x) => x.o && x.o.dirsekOyna != null), bO = r.some((x) => x.o && x.o.basOyna != null);
+        // özet cümleleri: her ölçümün en güvenilir açıdaki değeri
+        const ozet = [];
+        kolon.forEach(([id, ad]) => { const g = r.find((x) => (ACI_GUVEN[x.a.id] || []).indexOf(id) >= 0 && x.o && x.o.b && x.o.b[id] != null) || r.find((x) => x.o && x.o.b && x.o.b[id] != null); if (g) ozet.push(ad + ' <b>' + hucre(id, g.o.b[id]) + '</b> <small>(' + esc(g.a.ad || ACILAR[g.a.id] || g.a.id) + ')</small>'); });
+        const oy = r.find((x) => x.a.id === 'yan' && x.o && x.o.dirsekOyna != null) || r.find((x) => x.o && x.o.dirsekOyna != null); if (oy) ozet.push('Nişanda dirsek <b>±' + oy.o.dirsekOyna + '°</b>');
+        h += '<div class="ca-ozet">' + (ozet.length ? ozet.join(' · ') : 'Bırakış anında hiçbir açıda kimse bulunamadı.') + '</div>';
+        h += '<div style="overflow-x:auto"><table class="ca-tablo"><tr><th>Açı</th>' + kolon.map(([, a]) => '<th>' + a + '</th>').join('') + (dO ? '<th>Nişanda dirsek</th>' : '') + (bO ? '<th>Nişanda baş</th>' : '') + '</tr>'
+            + r.map((x) => '<tr><td><i style="--r:' + (ACI_RENK[x.a.id] || '#94a3b8') + '"></i>' + esc(x.a.ad || ACILAR[x.a.id] || x.a.id) + '</td>'
+                + (!x.var ? '<td colspan="' + (kolon.length + (dO ? 1 : 0) + (bO ? 1 : 0)) + '">🦴 iskelet yok</td>'
+                    : kolon.map(([id]) => { const v = x.o && x.o.b ? x.o.b[id] : null, gv = (ACI_GUVEN[x.a.id] || []).indexOf(id) >= 0; return '<td' + (gv && v != null ? ' style="font-weight:900"' : ' style="opacity:.6"') + '>' + hucre(id, v) + '</td>'; }).join('')
+                    + (dO ? '<td>' + (x.o && x.o.dirsekOyna != null ? '±' + x.o.dirsekOyna + '°' : '–') + '</td>' : '') + (bO ? '<td>' + (x.o && x.o.basOyna != null ? '%' + x.o.basOyna : '–') + '</td>' : ''))
+                + '</tr>').join('') + '</table></div>';
+        if (eksik) h += '<p><button type="button" class="ca-b" onclick="caIskeletHepsi()">🦴 Kalan ' + eksik + ' açının iskeletini çıkar</button></p>';
+        if (!_ca.iskelet) h += '<p><button type="button" class="ca-b" onclick="caIskelet()">🦴 İskeleti ekranda göster</button></p>';
+        h += '<p>📋 Tam analiz bu ölçümleri karneye de yazar.</p>';
+        p.innerHTML = h;
+    }
+    window.caIskeletHepsi = async function () {
+        if (!_ca || _ca.mod !== 'oynat' || _ca.iskIsliyor) return;
+        const eksik = _ca.kareler.filter((k) => k.klip === _ca.klip && k.aci.id !== 'hedef' && !iskVeri(k.klip, k.aci.id));
+        if (eksik.length && !(await iskeletleriCikar(eksik))) return;
+        if (!_ca || _ca.mod !== 'oynat') return;
+        _ca.olcSon = null; altCiz(); if (_ca.panel) panelCiz();
+    };
     function olcumPanelCiz() {
         const p = $('ca-panel'); if (!p || !_ca.panel) return;
+        if (!_ca.seri && !_ca.karsi) return aciOzetCiz(p);
         const r = seriOlcumleri(), seri = !!_ca.seri, varMi = r.some((x) => x.var), renk = (i) => (seri ? SERI_RENK[i % SERI_RENK.length] : KAR_RENK[i]);
         const ad = (x) => '<td><i style="--r:' + renk(x.i) + '"></i>' + esc(klipBaslik(x.kl, x.i)) + '</td>';
         let h = '<h2>📏 Ölçümler</h2><p>' + (seri ? 'Her atışta bırakıştan hemen önceki açılar. Ortancadan çok uzaklaşan değer kırmızı.' : 'İki atışta bırakıştan hemen önceki açılar ve aradaki fark.') + ' Açılar kameraya göre ölçülür: aynı açıdan çekilmiş atışları kıyasla.</p>';

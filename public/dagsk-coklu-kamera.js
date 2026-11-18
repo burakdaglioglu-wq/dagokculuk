@@ -26,6 +26,8 @@
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const tost = (m, t) => { try { showToast(m, t || 'info'); } catch (e) { } };
+    // puan düğmeleri (v428): analiz modülündeki renklerle aynı (X/10/9 sarı, 8/7 kırmızı, 6/5 mavi, 4/3 siyah, 2/1 beyaz, M gri)
+    const CK_PUANLAR = [['X', '#facc15', '#1a1200'], ['10', '#facc15', '#1a1200'], ['9', '#facc15', '#1a1200'], ['8', '#ef4444', '#fff'], ['7', '#ef4444', '#fff'], ['6', '#38bdf8', '#fff'], ['5', '#38bdf8', '#fff'], ['4', '#111827', '#fff'], ['3', '#111827', '#fff'], ['2', '#f1f5f9', '#0f172a'], ['1', '#f1f5f9', '#0f172a'], ['M', '#475569', '#fff']];
     const yeni = () => { try { return typeof yeniRozet === 'function' ? yeniRozet() : ''; } catch (e) { return ''; } };
     function odalarOku() { try { return JSON.parse(localStorage.getItem('dagsk_cokaci_odalar') || '{}') || {}; } catch (e) { return {}; } }
     function odalarYaz() { try { const o = {}; _ck.yer.forEach((y) => { if (y.oda) o[y.id] = { kod: y.oda.kod, gizli: y.oda.gizli }; }); localStorage.setItem('dagsk_cokaci_odalar', JSON.stringify(o)); } catch (e) { } }
@@ -55,6 +57,7 @@
             + '.ck-modal{position:absolute;inset:0;z-index:8;background:rgba(3,5,8,.8);display:grid;place-items:center;padding:16px}.ck-modal>div{width:min(500px,100%);background:#0e1319;border:1px solid #273140;border-radius:18px;padding:16px;display:grid;gap:10px}'
             + '.ck-modal h3{margin:0;font-size:19px;font-weight:900}.ck-modal p{margin:0;color:#94a3b8;font-size:14px}.ck-modal label{display:grid;gap:4px;font-size:13px;font-weight:800;color:#cbd5e1}.ck-modal select,.ck-modal input{min-height:44px;border-radius:12px;border:1px solid #273140;background:#07090c;color:inherit;padding:0 12px;font:inherit;font-size:15px}'
             + '.ck-modal .ck-sat{display:flex;gap:6px;flex-wrap:wrap}.ck-modal .ck-sat .ck-btn{flex:1;min-height:48px}'
+            + '.ck-puanlar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.ck-puanlar button{min-height:44px;border-radius:12px;border:2px solid rgba(255,255,255,.18);font-weight:900;font-size:16px;cursor:pointer;font-family:inherit}.ck-puanlar button.on{outline:3px solid #fff;outline-offset:1px}.ck-modal>div{max-height:calc(100% - 8px);overflow:auto}'
             + '.ck-yz{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;background:#11161d;border:1px solid var(--r);font-size:14px;font-variant-numeric:tabular-nums}.ck-yz b{color:var(--r);font-size:16px}'
             // ⧉ köşe penceresi: skor girişi altta sürer
             + '.ck.mini{inset:auto max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) auto;width:min(480px,calc(100vw - 24px));height:min(340px,55vh);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);border:1px solid #273140;overflow:hidden}'
@@ -365,7 +368,7 @@
 
     // ---- ⏺ kayıt (v426)
     const KAYIT_EN_UZUN = 120000;
-    function analizHazir() { return typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-cokaci-analiz.js?v=2') : Promise.reject(); }
+    function analizHazir() { return typeof dagskEkYukle === 'function' ? dagskEkYukle('dagsk-cokaci-analiz.js?v=3') : Promise.reject(); }
     function kayitTuru() { const l = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4']; return l.find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || ''; }
     function kucukYap() {
         try { const y = _ck.yer.find((x) => x.durum === 'bagli' && x.v.videoWidth); if (!y) return ''; const c = document.createElement('canvas'), w = 360; c.width = w; c.height = Math.round(w * y.v.videoHeight / y.v.videoWidth); c.getContext('2d').drawImage(y.v, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.6); } catch (e) { return ''; }
@@ -416,11 +419,15 @@
         const el = $('ck'); if (!el) return; let m = $('ck-modal'); if (m) m.remove();
         m = document.createElement('div'); m.className = 'ck-modal'; m.id = 'ck-modal';
         m.innerHTML = '<div><h3>💾 Kaydı sakla</h3><p>' + meta.acilar.length + ' açı · ' + (meta.sure / 1000).toFixed(1).replace('.', ',') + ' sn. Bu bilgisayarda saklanır, sunucuya video gitmez.</p>'
-            + '<label>Kimin atışı?<select id="ck-m-sp">' + sporcuSecenek() + '</select></label><label>Not (isteğe bağlı)<input id="ck-m-ad" placeholder="ör. 18 m · 2. seri · 3. ok"></label>'
+            + '<label>Kimin atışı?<select id="ck-m-sp">' + sporcuSecenek() + '</select></label>'
+            + '<label><span>Puan ' + yeni() + ' <small style="opacity:.7;font-weight:600">(isteğe bağlı · yeniden dokununca kalkar)</small></span></label><div class="ck-puanlar" id="ck-m-puan">' + CK_PUANLAR.map(([p, a, y]) => '<button type="button" data-p="' + p + '" style="background:' + a + ';color:' + y + '">' + p + '</button>').join('') + '</div>'
+            + '<label>Not (isteğe bağlı)<input id="ck-m-ad" placeholder="ör. 18 m · 2. seri · 3. ok"></label>'
             + '<div class="ck-sat"><button type="button" class="ck-btn" id="ck-m-sil">🗑 Kaydetme</button><button type="button" class="ck-btn" id="ck-m-kay">💾 Kaydet</button><button type="button" class="ck-btn on" id="ck-m-anl">💾 Kaydet ve analiz et</button></div></div>';
         el.appendChild(m);
+        let puan = '';
+        m.querySelectorAll('#ck-m-puan button').forEach((b) => { b.onclick = () => { puan = puan === b.dataset.p ? '' : b.dataset.p; m.querySelectorAll('#ck-m-puan button').forEach((x) => x.classList.toggle('on', x.dataset.p === puan)); }; });
         const bitir = async (ac) => {
-            const v = $('ck-m-sp').value, i = v.indexOf('|'); meta.sporcu = v ? { g: v.slice(0, i), ad: v.slice(i + 1) } : null; meta.ad = $('ck-m-ad').value.trim();
+            const v = $('ck-m-sp').value, i = v.indexOf('|'); meta.sporcu = v ? { g: v.slice(0, i), ad: v.slice(i + 1) } : null; meta.ad = $('ck-m-ad').value.trim(); if (puan) meta.puan = puan;
             try { localStorage.setItem('dagsk_cokaci_son_sporcu', v); } catch (e) { }
             m.querySelector('div').innerHTML = '<h3>Kaydediliyor…</h3>';
             try { await analizHazir(); const id = await window.caKlipKaydet(meta, veriler); m.remove(); _ck && (_ck.klipSay = await window.caKlipSayisi()); ustCiz(); tost('💾 Kayıt saklandı' + (meta.sporcu ? ': ' + meta.sporcu.ad : '') + '.', 'success'); if (ac) window.caAc({ id }); }

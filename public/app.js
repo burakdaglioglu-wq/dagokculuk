@@ -12549,8 +12549,8 @@
             if(id === 'vitrin') { kmAracKullanildi(id); vitrinAc(); return; }
             if(id === 'film') { kmAracKullanildi(id); dagFilmAcYukle(); return; } // v405 tam ekran film
             if(id === 'film3d') { kmAracKullanildi(id); dagFilm3dAcYukle(); return; } // v420 3B film: Okun Yolculuğu
-            if(id === 'cokaci') { kmAracKullanildi(id); dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(function() { window.ckAc(); }).catch(function() { showToast('Çok Açılı Kamera yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v391 tam ekran
-            if(id === 'videoanaliz') { kmAracKullanildi(id); dagskEkYukle('dagsk-cokaci-analiz.js?v=2').then(function() { window.caAc(); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v426 kayıtlar + analiz stüdyosu
+            if(id === 'cokaci') { kmAracKullanildi(id); dagskEkYukle('dagsk-coklu-kamera.js?v=4').then(function() { window.ckAc(); }).catch(function() { showToast('Çok Açılı Kamera yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v391 tam ekran
+            if(id === 'videoanaliz') { kmAracKullanildi(id); dagskEkYukle('dagsk-cokaci-analiz.js?v=3').then(function() { window.caAc(); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); return; } // v426 kayıtlar + analiz stüdyosu
             if(id === 'okhizi') { kmAracKullanildi(id); okHiziAcYukle({ km: true }); return; } // v391 tam ekran, sporcu dersten seçilir
             if(id === 'atisolcer') { kmAracKullanildi(id); hareketAc({ km: true }); return; } // tam ekran, sekme açmaz; sporcu dersten seçilir
             document.getElementById('km-sinif-karti').style.display = 'none';
@@ -13402,7 +13402,7 @@
             reader.readAsDataURL(file);
         }
         // v426: seçili sporcunun çok açılı kayıtları (dagsk-cokaci-analiz.js) — oradaki "Tam analiz" bu karneye yazar
-        function kmTaVideoAnaliz() { let sp = _kmTaSporcu; dagskEkYukle('dagsk-cokaci-analiz.js?v=2').then(function() { window.caAc({ sporcu: sp ? { g: sp.g, ad: sp.ad } : null }); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        function kmTaVideoAnaliz() { let sp = _kmTaSporcu; dagskEkYukle('dagsk-cokaci-analiz.js?v=3').then(function() { window.caAc({ sporcu: sp ? { g: sp.g, ad: sp.ad } : null }); }).catch(function() { showToast('Video Analiz yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         function kmTaYaySec(y) { _kmTaYay = y; _kmTaAktifFaz = 0; _kmTaRehSecili = 0; kmTeknikAnalizAnaCiz(); }
         function kmTaRehSec(i) { _kmTaRehSecili = i; kmTeknikAnalizAnaCiz(); }
 

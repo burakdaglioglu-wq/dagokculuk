@@ -19,7 +19,7 @@ export default async function ({ log }) {
     p = await cx.newPage(); const hatalar = []; p.on('pageerror', (e) => hatalar.push(e.message));
     await p.goto(B + '/app.html'); await p.waitForFunction(() => typeof dagskEkYukle === 'function' && typeof turnuvaDB !== 'undefined'); await p.waitForTimeout(1500);
     const temizle = () => p.evaluate(() => new Promise((ok) => { try { caKapat(); } catch (e) {} const r = indexedDB.deleteDatabase('dagsk-cokaci'); r.onsuccess = r.onerror = r.onblocked = () => ok(); }));
-    await p.evaluate(() => dagskEkYukle('dagsk-cokaci-analiz.js?v=2')); await temizle();
+    await p.evaluate(() => dagskEkYukle('dagsk-cokaci-analiz.js?v=3')); await temizle();
     const sporcu = await p.evaluate(() => { for (const g of ['buyukler', 'yildizlar', 'kucukler', 'minikler']) { const o = turnuvaDB[g] || {}; const ad = Object.keys(o).find((a) => o[a] && !o[a].pasif); if (ad) return { g, ad }; } return null; });
     dogrula(!!sporcu, 'en az bir sporcu gerekli');
 
@@ -136,11 +136,33 @@ export default async function ({ log }) {
     await p.evaluate(() => caListe()); await p.waitForSelector('#ca .ca-kart');
     await p.click('#ca .ca-kart:has-text("e2e s4") button[aria-label="Düzenle"]'); await p.click('#ca-b-puan button:text-is("X")'); await p.click('#ca-b-tamam');
     await p.waitForFunction(() => [...document.querySelectorAll('#ca .ca-kart')].some((k) => /e2e s4/.test(k.textContent) && /X/.test(k.querySelector('.ca-puan') ? k.querySelector('.ca-puan').textContent : '')), null, { timeout: 8000 });
+    adim('açı özeti');
+    // 📏 açı özeti (v428): 4 açılı tek kayıt; önde + yanda iskelet var, arkada yok, hedef tabloya girmez
+    const id4 = await p.evaluate(async (sp) => {
+      const v = (await _caIc.klipListe()).find((k) => k.ad === 'e2e s1'), blob = (await new Promise((ok) => { const r = indexedDB.open('dagsk-cokaci'); r.onsuccess = () => { const t = r.result.transaction('veri').objectStore('veri').get(v.id + '|on'); t.onsuccess = () => { r.result.close(); ok(t.result); }; }; })).blob;
+      const poz = (dy) => { const n = [[0.5, 0.2], [0.45, 0.35], [0.55, 0.35], [0.33, 0.35], [0.66, 0.36 + dy], [0.21, 0.35], [0.53, 0.33], [0.46, 0.6], [0.54, 0.6], [0.46, 0.78], [0.54, 0.78], [0.46, 0.95], [0.54, 0.95]]; const o = []; n.forEach(([a, b]) => o.push(a, b, 0.99)); return o; };
+      const ver = (dy) => ({ fps: 10, w: 640, h: 360, t0: 0, k: Array.from({ length: 31 }, () => poz(dy)) });
+      const acilar = ['on', 'yan', 'arka', 'hedef'].map((id) => ({ id, ad: { on: 'Önden', yan: 'Yandan', arka: 'Arkadan', hedef: 'Hedef' }[id], ofset: 0 })), veri = {};
+      acilar.forEach((a) => { veri[a.id] = { tip: 'video', blob, mime: 'video/webm' }; });
+      return caKlipKaydet({ sporcu: sp, sure: 3000, ad: 'e2e 4 açı', puan: '9', acilar, anlar: { capa: 900, birakis: 2000 }, iskelet: { on: ver(0), yan: ver(0.03) } }, veri);
+    }, sporcu);
+    await p.evaluate((id) => caOynat(id), id4); await p.waitForFunction(() => document.querySelectorAll('#ca .ca-kare video').length === 4, null, { timeout: 20000 });
+    await p.click('#ca-ust button:has-text("Açı özeti")'); await p.waitForSelector('#ca-panel .ca-tablo');
+    const oz4 = await p.evaluate(() => ({ satir: [...document.querySelectorAll('#ca-panel .ca-tablo tr')].slice(1).map((r) => r.textContent), ozet: document.querySelector('#ca-panel .ca-ozet').textContent, kalan: !!document.querySelector('#ca-panel button[onclick="caIskeletHepsi()"]') }));
+    esit(oz4.satir.length, 3, 'hedef hariç 3 açı satırı: ' + oz4.satir.join(' | '));
+    dogrula(/iskelet yok/.test(oz4.satir[2]) && /Arkadan/.test(oz4.satir[2]), 'arkada iskelet yok');
+    dogrula(/Çekiş dirseği/.test(oz4.ozet) && /\(Yandan\)/.test(oz4.ozet), 'özet kol açısını yandan alır: ' + oz4.ozet);
+    dogrula(oz4.kalan, 'kalan açılar için iskelet düğmesi');
+    await p.screenshot({ path: O + 'aci-ozeti.png' });
+    await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(600);
+    dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'açı özeti 390 px yana taşmamalı');
+    await p.screenshot({ path: O + 'aci-ozeti-telefon.png' });
+    await p.setViewportSize({ width: 1366, height: 800 });
     await temizle();
 
     adim('C başlıyor');
     // ---------------- C) 📺 TV ayna + bu cihazın kamerası
-    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=3').then(() => ckAc())); await p.waitForSelector('#ck');
+    await p.evaluate(() => dagskEkYukle('dagsk-coklu-kamera.js?v=4').then(() => ckAc())); await p.waitForSelector('#ck');
     await p.waitForSelector('#ck-rh .ck-rh-bar button'); await p.click('#ck-rh .ck-rh-bar button');
     await p.click('#ck-k-on .ck-bos button:has-text("Bu cihazın kamerası")');
     await p.waitForFunction(() => /^1\/4/.test((document.querySelector('#ck-ust h1 small') || {}).textContent || ''), null, { timeout: 15000 });
