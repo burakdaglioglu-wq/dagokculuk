@@ -730,7 +730,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
           </g>
         </svg>
         <div class="hps-hud"><div class="hps-hud-ust"><span class="hps-ad" id="hps-ad"></span><span class="hps-cip" id="hps-gizli-cip"></span>
-          <button class="hps-btn" id="hps-zar-btn" title="Sıradakini rastgele seç">🎲</button><button class="hps-btn" id="hps-ses-btn" title="Ses">🔊</button><button class="hps-btn" id="hps-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hps-btn" id="hps-yeni-btn" title="Yeni yaratık">🔄</button></div>
+          <button class="hps-btn" id="hps-zar-btn" title="Sıradakini rastgele seç">🎲</button><button class="hps-btn" id="hps-ses-btn" title="Ses">🔊</button><button class="hps-btn" id="hps-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hps-btn" id="hps-yeni-btn" title="Yeni yaratık">🔄</button><button class="hps-btn hps-kitap-btn" id="hps-kitap-btn" title="Sınıfın kitabı">📖<b id="hps-kitap-say"></b></button></div>
           <div class="hps-bar"><i id="hps-bar-ic"></i><span id="hps-bar-yazi"></span></div></div>
         <div class="hps-ust" id="hps-ust"></div>
         <div class="hps-dev" id="hps-dev"></div>${ic('rastgele') ? '<div class="hps-ipucu" id="hps-ipucu">🎲 Sıra rastgele · çocuğa dokunup seçebilirsin</div>' : ''}`;
@@ -748,6 +748,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
         $('hps-nasil-btn').onclick = nasil;
         const zar = $('hps-zar-btn'); if (zar) { zar.style.display = ic('rastgele') ? '' : 'none'; zar.onclick = () => { if (_toren) return; if (typeof kmOyunRastgeleSec === 'function') kmOyunRastgeleSec(); SES.tuy && SES.tuy(); }; }
         $('hps-yeni-btn').onclick = yeniOyunSor;
+        const kb = $('hps-kitap-btn'); if (kb) { kb.onclick = kitapAc; const n = kitapOku().sayfalar.length; $('hps-kitap-say').textContent = n ? n : ''; }
         hudCiz(); hpsGuncelle();
         // v405 yumuşak geçiş: sahne her kurulumda solarak belirir (CSS hps-belir); törenden sonra yeni yaratık sağdan kayarak gelir
         if (gecis) { const y = $('hps-yaratik'); if (y) { y.style.transition = 'none'; y.style.transform = 'translate(460px,0) scale(.7)'; y.style.opacity = 0; void y.getBoundingClientRect(); y.style.transition = 'transform 1.3s cubic-bezier(.22,1.25,.4,1),opacity .5s ease'; y.style.transform = ''; y.style.opacity = 1; } }
@@ -888,6 +889,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
                         // son atan kahraman DEĞİL. Bu yaratığa tüy atan herkes hapşırtmış sayılır; rozet hepsine, ekranda hepsinin adı.
                         const katkilar = Object.keys(st.katki).filter((k) => st.katki[k] > 0);
                         hapsirdi = { tip: st.tip, no: st.no, ad: s.ad, g: s.g, i: i, katkilar: katkilar, adi: yaratikAdi(st) };
+                        try { const kom = []; if (st.sahte) kom.push(yaratikAdi(st) + ' önce sahte hapşırdı, herkesi kandırdı!'); if (st.bulan) kom.push(ilkAd(st.bulan.slice(st.bulan.indexOf('|') + 1)) + ' gizli gıdık yerini buldu.'); kitapEkle(hapsirdi, kom); } catch (e) { }
                         st.hapsirtanlar.push({ tip: st.tip, katkilar: katkilar, t: Date.now() });
                         katkilar.forEach((k) => { const j = k.indexOf('|'); rozetYaz(k.slice(0, j), k.slice(j + 1), 'hapsirtti'); });
                         yeniYaratik(st, st.no + 1);
@@ -1014,6 +1016,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
             dev(`HEP BİRLİKTE<br>HAPŞIRTTINIZ! 🎉<small>${adlar.map(kacis).join(' · ')}</small>`);
         }, 4700);
         sonra(() => { SES.cokyasa(); dev('Hep birlikte:<br>ÇOK YAŞA! 🗣️<small>Sınıfça bağırın!</small>'); }, 7300);
+        sonra(() => { const n = kitapOkuSay(); dev('📖 Kitaba yazıldı!<small>Sınıfın kitabı · ' + n + ' sayfa</small>', 1400); const b = $('hps-kitap-say'); if (b) b.textContent = n; }, 9300);
         sonra(() => {
             const d = $('hps-dev'); if (d) d.classList.remove('goster'); agiz('gulumse'); konus('Sağ olun! Buyrun, geçin 😊', 1800);
             document.querySelectorAll('#hps-cocuklar .hps-ci.hps-hop').forEach((e) => e.classList.remove('hps-hop'));
@@ -1023,6 +1026,62 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
         sonra(() => { const st = durum(), yeni = Y[st.tip]; dev(`Sıradaki: ${yeni.ikon} ${kacis(yaratikAdi(st))}<small>${kacis(h.adi)} hapşırdı, yol açıldı!</small>`, 1500); }, 10600);
         sonra(() => { _toren = false; hpsSahneKur(null, true); SES.geldi(); }, 12000);
     }
+    /* ---------------- 📖 SINIFIN KİTABI (v434, fikir 7) ----------------
+       Her gün kitaba bir sayfa: o gün hapşıran yaratıklar + her birini hapşırtan herkesin adı + günün komik anı (sahte hapşırık,
+       gizli yeri bulan). 12 saat kuralına girmez (anahtar dag_km_hps_kitap_<konum>), en çok 60 sayfa. 📄 ile yazdırılır / PDF. */
+    const kitapA = () => 'dag_km_hps_kitap_' + konum();
+    function kitapOku() { let k = null; try { k = JSON.parse(localStorage.getItem(kitapA()) || 'null'); } catch (e) { } if (!k || !Array.isArray(k.sayfalar)) k = { sayfalar: [] }; return k; }
+    function kitapYaz(k) { while (k.sayfalar.length > 60) k.sayfalar.shift(); try { localStorage.setItem(kitapA(), JSON.stringify(k)); } catch (e) { } }
+    function kitapEkle(h, komik) {
+        const k = kitapOku(), t = bugun(); let p = k.sayfalar.find((x) => x.tarih === t);
+        if (!p) { p = { tarih: t, yaratiklar: [], komik: [] }; k.sayfalar.push(p); }
+        const adlar = []; (h.katkilar || []).forEach((key) => { const j = key.indexOf('|'), ad = key.slice(j + 1); if (adlar.indexOf(ad) < 0) adlar.push(ad); });
+        if (!(h.katkilar || []).length && h.ad) adlar.push(h.ad);
+        p.yaratiklar.push({ tip: h.tip, ad: h.adi, ikon: (Y[h.tip] || {}).ikon || '🤧', adlar: adlar, z: Date.now() });
+        (komik || []).forEach((m) => { if (p.komik.indexOf(m) < 0) p.komik.push(m); });
+        kitapYaz(k); return k.sayfalar.length;
+    }
+    const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    function tarihYaz(t) { const p = String(t).split('-'); return p.length === 3 ? (+p[2]) + ' ' + AYLAR[(+p[1]) - 1] + ' ' + p[0] : t; }
+    function sayfaHTML(p, no) {
+        const hepsi = []; p.yaratiklar.forEach((y) => y.adlar.forEach((a) => { if (hepsi.indexOf(a) < 0) hepsi.push(a); }));
+        return '<div class="hps-sayfa"><div class="hps-sayfa-ust"><span>Sayfa ' + no + '</span><span>' + kacis(tarihYaz(p.tarih)) + '</span></div>'
+            + '<h3>' + (p.yaratiklar.length === 1 ? 'Bugün ' + kacis(p.yaratiklar[0].ad) + ' hapşırdı!' : 'Bugün ' + p.yaratiklar.length + ' yaratık hapşırdı!') + '</h3>'
+            + '<div class="hps-sayfa-yar">' + p.yaratiklar.map((y) => '<div><i>' + y.ikon + '</i><b>' + kacis(y.ad) + '</b><small>' + y.adlar.map((a) => kacis(ilkAd(a))).join(' · ') + '</small></div>').join('') + '</div>'
+            + (p.komik && p.komik.length ? '<p class="hps-sayfa-komik">😄 ' + p.komik.map(kacis).join(' ') + '</p>' : '')
+            + '<p class="hps-sayfa-alt">Bu sayfayı yazanlar: ' + hepsi.map((a) => kacis(ilkAd(a))).join(', ') + '</p></div>';
+    }
+    let _kitapSayfa = 0;
+    function kitapAc() {
+        const p = panel(); if (!p) return; const k = kitapOku(); kitapKapat();
+        _kitapSayfa = Math.max(0, k.sayfalar.length - 1);
+        const d = document.createElement('div'); d.className = 'hps-kitap'; d.id = 'hps-kitap'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Sınıfın kitabı');
+        p.appendChild(d); kitapCiz();
+    }
+    function kitapCiz() {
+        const d = $('hps-kitap'); if (!d) return; const k = kitapOku(), n = k.sayfalar.length;
+        d.innerHTML = '<div class="hps-kitap-ic"><div class="hps-kitap-bas"><b>📖 Sınıfın Hapşırık Kitabı</b><span>' + n + ' sayfa</span><button type="button" id="hps-kitap-kapat" aria-label="Kapat">✕</button></div>'
+            + (n ? sayfaHTML(k.sayfalar[_kitapSayfa], _kitapSayfa + 1) : '<div class="hps-sayfa"><h3>Kitap henüz boş</h3><p>İlk hapşırıkta ilk sayfa yazılacak. Yaratığı hep birlikte hapşırtın!</p></div>')
+            + '<div class="hps-kitap-alt"><button type="button" id="hps-k-geri"' + (_kitapSayfa > 0 ? '' : ' disabled') + '>‹ Önceki</button><button type="button" id="hps-k-yaz"' + (n ? '' : ' disabled') + '>📄 Yazdır / PDF</button><button type="button" id="hps-k-ileri"' + (_kitapSayfa < n - 1 ? '' : ' disabled') + '>Sonraki ›</button></div></div>';
+        $('hps-kitap-kapat').onclick = kitapKapat;
+        $('hps-k-geri').onclick = () => { _kitapSayfa = Math.max(0, _kitapSayfa - 1); kitapCiz(); };
+        $('hps-k-ileri').onclick = () => { _kitapSayfa = Math.min(n - 1, _kitapSayfa + 1); kitapCiz(); };
+        $('hps-k-yaz').onclick = kitapYazdir;
+    }
+    function kitapKapat() { const d = $('hps-kitap'); if (d) d.remove(); }
+    function kitapYazdir() {
+        const k = kitapOku(); if (!k.sayfalar.length) return;
+        const css = 'body{font-family:Georgia,"Times New Roman",serif;margin:0;color:#2a2018}.kapak,.hps-sayfa{page-break-after:always;min-height:92vh;padding:48px 56px;box-sizing:border-box;background:#fffaf0}.kapak{display:grid;place-content:center;text-align:center}.kapak h1{font-size:44px;margin:0}.kapak p{font-size:20px}.hps-sayfa-ust{display:flex;justify-content:space-between;color:#8a6d4a;font-size:14px;border-bottom:2px solid #e8d5b0;padding-bottom:8px}h3{font-size:30px;margin:26px 0 18px}.hps-sayfa-yar{display:grid;gap:16px}.hps-sayfa-yar div{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:4px 14px;border:2px dashed #e8d5b0;border-radius:16px;padding:12px 16px}.hps-sayfa-yar i{grid-row:span 2;font-size:54px;font-style:normal}.hps-sayfa-yar b{font-size:22px}.hps-sayfa-yar small{font-size:17px;color:#5a4630}.hps-sayfa-komik{font-size:18px;margin-top:22px}.hps-sayfa-alt{margin-top:26px;font-style:italic;color:#8a6d4a}';
+        const kn = typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum ? _kmAktifKonum : '';
+        const html = '<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Sınıfın Hapşırık Kitabı</title><style>' + css + '</style></head><body><div class="kapak"><div style="font-size:90px">📖🤧</div><h1>Sınıfın Hapşırık Kitabı</h1><p>DAĞ S.K. Okçuluk' + (kn ? ' · ' + kacis(kn) : '') + '</p><p>' + kacis(tarihYaz(k.sayfalar[0].tarih)) + ' – ' + kacis(tarihYaz(k.sayfalar[k.sayfalar.length - 1].tarih)) + ' · ' + k.sayfalar.length + ' sayfa</p></div>'
+            + k.sayfalar.map((p, i) => sayfaHTML(p, i + 1)).join('') + '</body></html>';
+        // gizli çerçeveden yazdır (açılır pencere engelinden etkilenmez); tarayıcının Yazdır penceresinde 'PDF olarak kaydet' seçilir
+        let fr = document.getElementById('hps-yazdir'); if (fr) fr.remove();
+        fr = document.createElement('iframe'); fr.id = 'hps-yazdir'; fr.title = 'Kitap yazdırma'; fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(fr); const d = fr.contentWindow.document; d.open(); d.write(html); d.close();
+        setTimeout(() => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { if (typeof showToast === 'function') showToast('Yazdırma açılamadı.', 'error'); } }, 450);
+    }
+    function kitapOkuSay() { return kitapOku().sayfalar.length; }
     function nasil() {
         const st = durum(), c = Y[st.tip], b = c.bolge;
         dev(`${c.ikon} Hapşırtın!<small style="text-align:left;display:inline-block;max-width:560px">
@@ -1051,6 +1110,15 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 .hps-hud-ust{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .hps-ad,.hps-cip{background:rgba(16,18,24,.74);color:#f3ede2;border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;white-space:nowrap}
 .hps-btn{pointer-events:auto;background:rgba(16,18,24,.74);border:0;color:#fff;border-radius:999px;width:34px;height:34px;font-size:16px;cursor:pointer}
+.hps-kitap-btn{width:auto;min-width:34px;padding:0 10px;display:inline-flex;align-items:center;gap:4px}.hps-kitap-btn b{font-size:13px}
+.hps-kitap{position:fixed;inset:0;z-index:9500;display:grid;place-items:center;background:rgba(20,14,8,.72);padding:12px;overflow:auto}
+.hps-kitap-ic{width:min(760px,100%);background:#fffaf0;color:#2a2018;border-radius:22px;padding:18px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:Georgia,'Times New Roman',serif}
+.hps-kitap-bas{display:flex;align-items:center;gap:10px;font-family:Nunito,system-ui,sans-serif}.hps-kitap-bas b{font-size:20px;flex:1}.hps-kitap-bas span{color:#8a6d4a;font-weight:800}.hps-kitap-bas button{border:0;background:#efe2c8;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}
+.hps-kitap .hps-sayfa-ust{display:flex;justify-content:space-between;color:#8a6d4a;font-size:14px;border-bottom:2px solid #e8d5b0;padding:12px 0 6px}
+.hps-kitap h3{font-size:clamp(20px,3vw,30px);margin:14px 0 12px}
+.hps-kitap .hps-sayfa-yar{display:grid;gap:10px;max-height:46vh;overflow:auto}.hps-kitap .hps-sayfa-yar div{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:2px 12px;border:2px dashed #e8d5b0;border-radius:14px;padding:8px 12px}.hps-kitap .hps-sayfa-yar i{grid-row:span 2;font-size:42px;font-style:normal}.hps-kitap .hps-sayfa-yar b{font-size:19px}.hps-kitap .hps-sayfa-yar small{font-size:15px;color:#5a4630}
+.hps-kitap .hps-sayfa-komik{font-size:16px}.hps-kitap .hps-sayfa-alt{font-style:italic;color:#8a6d4a;font-size:14px}
+.hps-kitap-alt{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:10px;font-family:Nunito,system-ui,sans-serif}.hps-kitap-alt button{border:0;border-radius:12px;min-height:44px;padding:0 16px;font-weight:900;font-size:15px;background:#efe2c8;color:#2a2018;cursor:pointer}.hps-kitap-alt button#hps-k-yaz{background:#d97a9a;color:#fff}.hps-kitap-alt button:disabled{opacity:.4;cursor:default}
 .hps-bar{position:relative;height:18px;border-radius:999px;background:rgba(16,18,24,.74);overflow:hidden}
 .hps-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d97a9a,#f2b3c8);transition:width .5s}
 .hps-bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
@@ -1133,6 +1201,7 @@ const ic = (k) => { try { return typeof kmOyunIcerik !== 'function' || kmOyunIce
 
     // Sahne kurulurken ekrandaki gizli yeri hatırla (aynı seride hapşırık olursa durum yeni yaratığa geçer)
     const _kur = hpsSahneKur;
+    window._hpsKitap = { kitapEkle, kitapOku, kitapAc, sayfaHTML };
     window.hpsSahneKur = function (p, gecis) { _kur(p, gecis); try { _ekranGizli = Object.assign({}, durum().gizli); } catch (e) { } };
     hpsSahneKur = window.hpsSahneKur; // eslint-disable-line no-func-assign
     window.hpsGuncelle = hpsGuncelle;

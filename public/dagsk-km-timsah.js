@@ -57,6 +57,10 @@
     const secimSayisi = (n) => Math.min(3, Math.max(1, Math.round(n / 3)));
     // Hedef: ok başına ~0,9 balık (orta seviye bir sınıf, timsahın kaptıkları da düşünülünce zor ama yapılabilir)
     function hedefBalik(n, tur, okOrt) { return Math.max(10, Math.round(n * tur * (okOrt || 3) * 0.9)); }
+    // v434 TAŞ YOL (fikir 4): balık hedefi nehirde 12 taşlık bir yol olarak görünür; her yeni taşın üstünde onu koyan çocuğun adı.
+    // Timsah balık kapınca son taşlar batar. Kural aynı (yeni sayı/metre yok), yalnız hedef çocuğun gözünde "karşıya geçmek".
+    const TAS = 12;
+    function taslariGuncelle(st, key) { const G = hedef(st), n = Math.max(0, Math.min(TAS, Math.floor((st.balik || 0) / Math.max(1, G) * TAS))); st.taslar = (st.taslar || []).slice(0, TAS); const ad = key ? adOf(key) : ''; while (st.taslar.length < n) st.taslar.push(ad); while (st.taslar.length > n) st.taslar.pop(); return st.taslar; }
     const kapmaOf = (balik) => Math.min(balik, Math.max(2, Math.round(balik * 0.1)));
 
     /* ---- durum ---- */
@@ -172,6 +176,7 @@
         let seg = ''; for (let i = MAX - 1; i >= 0; i--) seg += '<i data-s="' + i + '" style="--c:hsl(' + Math.round(130 - i * 13) + ' 75% 52%)"></i>';
         $('tm-icerik').innerHTML = '<div class="tm-oyun" id="tm-oyun"><div class="tm-ust">'
             + '<div class="tm-kova"><i id="tm-kova-ikon">🪣</i><div class="tm-kova-yazi"><small>KOVADAKİ BALIK</small><b><span id="tm-balik">0</span><em id="tm-hedef">/ 0</em></b></div><div class="tm-bar"><i id="tm-bar"></i><u id="tm-bar-yazi"></u></div></div>'
+            + '<div class="tm-tasyol" id="tm-tasyol" aria-label="Taş yol"></div>'
             + '<div class="tm-sayac"><small>ATTI</small><b id="tm-at">0 / 0</b><span id="tm-uyanma">😴 hiç uyanmadı</span></div></div>'
             + '<div class="tm-orta" id="tm-orta"><div class="tm-ay" aria-hidden="true"></div><div class="tm-sazlik" aria-hidden="true"></div>'
             + '<div class="tm-metre" id="tm-metre"><small>UYKU</small><div class="tm-metre-kap">' + seg + '</div><b id="tm-metre-yuz">😴</b></div>'
@@ -189,6 +194,7 @@
         yaz('tm-balik', Math.max(0, _gb)); yaz('tm-hedef', '/ ' + G);
         const bar = $('tm-bar'); if (bar) bar.style.width = Math.min(100, Math.max(0, _gb) / G * 100).toFixed(1) + '%';
         yaz('tm-bar-yazi', _gb >= G ? '🎉 HEDEF DOLDU' : '');
+        const ty = $('tm-tasyol'); if (ty) { const n = Math.max(0, Math.min(TAS, Math.floor(Math.max(0, _gb) / Math.max(1, G) * TAS))), ad = st.taslar || [], imza = n + '|' + ad.slice(0, n).join(','); if (ty._i !== imza) { ty._i = imza; let h = '<span class="tm-kiyi">🧍</span>'; for (let i = 0; i < TAS; i++) h += '<i class="tm-tas' + (i < n ? ' dolu' : '') + '">' + (i < n && ad[i] ? '<b>' + esc(String(ad[i]).slice(0, 4)) + '</b>' : '') + '</i>'; ty.innerHTML = h + '<span class="tm-kiyi karsi">' + (n >= TAS ? '🎉' : '🧺') + '</span>'; } }
         const o = $('tm-orta'); if (!o) return;
         const s = Math.max(0, Math.min(MAX, _gs));
         o.querySelectorAll('.tm-metre-kap i').forEach((e) => e.classList.toggle('dolu', +e.dataset.s < s));
@@ -234,7 +240,7 @@
     function sonCiz(st) {
         uyanKapatSessiz();
         const kaz = !!st.kazandi, l = st.finalAdlar || [];
-        const bas = kaz ? '🎉 BALIKLAR TOPLANDI!' : '🐊 TİMSAH BU SEFER DOYDU';
+        const bas = kaz ? '🎉 KARŞIYA GEÇTİNİZ! BALIK SEPETİ SINIFIN' : '🐊 TİMSAH UYANDI, YOL YARIM KALDI';
         const cumle = 'Hep birlikte <b>' + (st.balik || 0) + '</b> balık topladınız' + (st.uyanma ? ', timsah <b>' + st.uyanma + '</b> kez uyandı' + (st.gorev ? ', <b>' + st.gorev + '</b> ceza görevi yapıldı' : '') : ', timsah hiç uyanmadı') + '. '
             + (kaz ? 'Timsah hâlâ uyuyor. Bravo hepinize!' : 'Hedef ' + (st.G || 0) + ' balıktı. Rövanşta daha sessiz olalım!');
         $('tm-icerik').innerHTML = '<div class="tm-son-ekran' + (kaz ? ' kaz' : '') + '" id="tm-son-ekran"><span class="tm-et">Herkes attı' + (st.erken ? ' · erken bitti, atış başına bakıldı' : '') + '</span><h2>' + bas + '</h2><p class="tm-cumle">' + cumle + '</p>'
@@ -296,6 +302,7 @@
         st.son = [{ a: adOf(key), b: r.balik, s: r.ses }].concat(st.son || []).slice(0, 5);
         let uyan = null; if (sesYeni >= MAX) uyan = uyanKur(st);
         st.ses = sesYeni;
+        taslariGuncelle(st, key);
         const hedefYeni = !st.hedefAn && st.balik >= hedef(st); if (hedefYeni) st.hedefAn = true;
         const final = herkesAtti(st);
         if (final) bitir(st);
@@ -381,7 +388,7 @@
             + '#tm-icerik{position:absolute;inset:0;z-index:1;box-sizing:border-box;padding:10px min(440px,41%) 10px 14px}'
             + '.tm-oyun{position:relative;height:100%;display:flex;flex-direction:column;gap:8px;min-height:0}'
             + '.tm-ust{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}'
-            + '.tm-kova{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:2px 10px;align-items:center;padding:6px 12px;border-radius:14px;background:rgba(4,14,16,.75);border:1px solid rgba(123,227,107,.35)}'
+            + '.tm-tasyol{display:flex;align-items:center;gap:4px;flex:1 1 360px;min-width:0;padding:6px 10px;border-radius:14px;background:linear-gradient(180deg,#1d5f86,#133f5c);box-shadow:inset 0 3px 8px rgba(0,0,0,.35)}.tm-kiyi{font-size:clamp(18px,2.4vw,30px);flex:0 0 auto}.tm-tas{flex:1 1 0;min-width:0;height:clamp(26px,3.4vw,40px);border-radius:50%;border:2px dashed rgba(255,255,255,.28);display:grid;place-items:center;transition:all .35s}.tm-tas.dolu{background:radial-gradient(circle at 35% 30%,#b9c2cc,#6b7682 70%);border:2px solid #2b3540;box-shadow:0 3px 0 rgba(0,0,0,.35);animation:tmTas .5s ease-out}.tm-tas b{font:900 clamp(8px,.9vw,12px) Nunito,system-ui,sans-serif;color:#10161d;overflow:hidden;max-width:100%}@keyframes tmTas{0%{transform:translateY(-14px) scale(.6)}70%{transform:translateY(2px) scale(1.08)}100%{transform:none}}.tm-kova{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:2px 10px;align-items:center;padding:6px 12px;border-radius:14px;background:rgba(4,14,16,.75);border:1px solid rgba(123,227,107,.35)}'
             + '.tm-kova>i{grid-row:1 / 3;font-style:normal;font-size:38px;line-height:1;display:inline-block}.tm-kova-yazi small,.tm-sayac small{font-size:11px;font-weight:800;letter-spacing:.08em;color:#9CC7B8}'
             + '.tm-kova-yazi b{display:block;font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(30px,3.6vw,46px);font-weight:800;line-height:.95;color:#7BE36B;font-variant-numeric:tabular-nums}.tm-kova-yazi em{font-style:normal;font-size:.55em;color:#9CC7B8;margin-left:4px}'
             + '.tm-bar{position:relative;height:14px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}.tm-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#3FBF7F,#B9F26B);transition:width .25s}.tm-bar u{position:absolute;inset:0;display:grid;place-items:center;text-decoration:none;font-size:10px;font-weight:900;color:#0B2410}'

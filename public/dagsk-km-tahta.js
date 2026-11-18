@@ -98,6 +98,11 @@
         return tip === 'renk' ? { tip, renk: ['mavi', 'mavi', 'kirmizi', 'kirmizi', 'sari'][Math.floor(r() * 5)] } : { tip };
     }
     // Kazanan: takımın konumu (erken bitişte atış başına konum). Eşitlikte birden çok takım.
+    // v434 SON KAREDE DEV (fikir 8): ilk takım bitişe varınca DEV TAŞ uyanır. O andan sonra HER takımın her adımı devin canından düşer
+    // (geride kalan takımın oku da sayılır; bitişteki takımın fazla adımları da). Canı = sınıfın kalan seri sayısı × 2,5 (en az 8).
+    // Herkes atmadan dev yıkılırsa sınıf birlikte kazanır (takım sırası yine görünür). Yıkılmazsa "dev ayakta kaldı".
+    function devCan(kalanSeri) { return Math.max(8, Math.round(kalanSeri * 2.5)); }
+    function devVur(st, adim) { if (!st.dev || st.dev.yikildi || !(adim > 0)) return 0; const v = Math.min(st.dev.can, adim); st.dev.can -= v; if (st.dev.can <= 0) st.dev.yikildi = true; return v; }
     function kazananlar(poz, atis, erken) {
         const puanlar = poz.map((p, i) => erken ? (atis[i] ? p / atis[i] : -1) : p), en = Math.max(...puanlar);
         return puanlar.map((p, i) => (Math.abs(p - en) < 1e-9 && p >= 0 ? i : -1)).filter((i) => i >= 0);
@@ -233,7 +238,7 @@
         if (!k) return '<i class="tb-kart-ikon">🎲</i><div><small>BU ELİN KARTI</small><b>NORMAL EL</b><span>Kendi hedefin 2, hedefe değen 1 adım</span></div>';
         const d = KARTLAR[k.tip]; return '<i class="tb-kart-ikon"' + (k.tip === 'renk' ? ' style="background:' + HALKA_RENK[k.renk] + '"' : '') + '>' + d.ikon + '</i><div><small>BU ELİN KARTI</small><b>' + d.ad + (k.tip === 'renk' ? ' · ' + RENK_AD[k.renk] : '') + '</b><span>' + esc(d.yaz(k)) + '</span></div>';
     }
-    function takimlarCiz(st) {
+    function takimlarCiz(st) { devCiz(st);
         const l = liste(), ai = aktifIndeks(), kutu = $('tb-takimlar'); if (!kutu) return;
         const imza = st.T + '|' + l.map((s, i) => { const k = kimlik(s); return k + ':' + st.takim[k] + ':' + (st.atan[k] || 0) + ':' + (i === ai ? 1 : 0); }).join(',') + '|' + st.piyon.join(',') + '|' + st.poz.join(',') + '|' + st.cift.join(',') + '|' + (st.buz || []).join(',') + '|' + ic('piyon');
         if (kutu._imza === imza) return; kutu._imza = imza;
@@ -278,8 +283,14 @@
             + '<div class="tb-yan" id="tb-yan"><div class="tb-yan-hedef" id="tb-yan-hedef" data-esik="7"><svg viewBox="0 0 120 120" role="img" aria-label="Hedefte 2 adım bölgesi"><circle class="m" cx="60" cy="60" r="58"/><circle class="k" cx="60" cy="60" r="39"/><circle class="s" cx="60" cy="60" r="20"/></svg></div><div class="tb-yan-yazi"><small>SIRADA · <span id="tb-yan-tk"></span></small><b id="tb-yan-ad"></b><span id="tb-yan-esik"></span></div>'
             + '<div class="tb-arac"><button type="button" class="tb-kucuk" id="tb-nasil" aria-label="Nasıl oynanır">?</button><button type="button" class="tb-kucuk" id="tb-yeni-btn" aria-label="Yeni oyun">↻</button><button type="button" class="tb-kucuk genis" id="tb-kartcek">🃏 Yeni kart</button><button type="button" class="tb-kucuk genis" id="tb-bitir" hidden>Hep birlikte bitir</button></div></div></div>';
         _yer.an = ''; $('tb-takimlar')._imza = '';
+        const ust = document.querySelector('#tb-oyun .tb-ust'); if (ust && !$('tb-dev')) ust.insertAdjacentHTML('beforeend', '<div class="tb-dev" id="tb-dev" hidden></div>');
         // tahta alanı küçülünce/büyüyünce (takım listesi uzayınca, ekran dönünce) kareler yeniden dizilir
         if (window.ResizeObserver) new ResizeObserver(() => { if ($('tb-tahta')) { tahtaCiz(); if (!_kilit) piyonYerlestir(); } }).observe($('tb-tahta'));
+    }
+    function devCiz(st) {
+        const e = $('tb-dev'); if (!e) return; const d = st.dev; if (!d) { e.hidden = true; return; }
+        e.hidden = false; const h = '<i>' + (d.yikildi ? '💥' : '🗿') + '</i><div><small>' + (d.yikildi ? 'DEV TAŞ YIKILDI' : 'DEV TAŞ · hep birlikte') + '</small><span class="tb-dev-bar"><b style="width:' + (d.max ? Math.max(0, d.can) / d.max * 100 : 0).toFixed(1) + '%"></b></span><em>' + Math.max(0, d.can) + ' / ' + d.max + '</em></div>';
+        if (e._h !== h) { e._h = h; e.innerHTML = h; }
     }
     function sonCiz(st) {
         gorevKapat(false, true);
@@ -287,7 +298,7 @@
         const bas = tek ? TAKIM[kaz[0]].ikon + ' ' + TAKIM[kaz[0]].ad + ' KAZANDI!' : kaz.length ? 'BERABERE! ' + kaz.map((i) => TAKIM[i].ikon + ' ' + TAKIM[i].ad).join(' · ') : 'OYUN BİTTİ';
         const toplamAdim = Object.keys(st.adim || {}).reduce((t, k) => t + (st.adim[k] || 0), 0), gorev = (st.gorev || []).reduce((a, b) => a + b, 0);
         let tk = ''; for (let i = 0; i < st.T; i++) { const t = TAKIM[i], p = st.poz[i] || 0; tk += '<div class="tb-son-tk' + (kaz.indexOf(i) >= 0 ? ' kaz' : '') + '" style="--t:' + t.renk + '"><b>' + t.ikon + ' ' + t.ad + '</b><em>' + (p >= st.L ? 'BİTİŞ' + (p > st.L ? ' +' + (p - st.L) : '') : p + '. kare') + '</em><span>' + (l[i] || []).map(esc).join(' · ') + '</span></div>'; }
-        $('tb-icerik').innerHTML = '<div class="tb-son" id="tb-son"><span class="tb-et">Herkes attı' + (st.erken ? ' · erken bitti, atış başına bakıldı' : '') + '</span><h2>' + esc(bas) + '</h2><p class="tb-cumle">Hep birlikte <b>' + toplamAdim + '</b> adım attınız' + (gorev ? ', <b>' + gorev + '</b> hareket görevi yaptınız' : '') + '. Bravo hepinize!</p><div class="tb-son-tklar">' + tk + '</div><button type="button" class="tb-buyuk" id="tb-yeni-son">Yeni oyun</button></div>';
+        $('tb-icerik').innerHTML = '<div class="tb-son" id="tb-son"><span class="tb-et">Herkes attı' + (st.erken ? ' · erken bitti, atış başına bakıldı' : '') + '</span><h2>' + esc(bas) + '</h2><p class="tb-cumle">Hep birlikte <b>' + toplamAdim + '</b> adım attınız' + (gorev ? ', <b>' + gorev + '</b> hareket görevi yaptınız' : '') + '. ' + (st.dev ? (st.dev.yikildi ? '🗿💥 <b>Dev Taşı bütün takımlar birlikte yıktı!</b> ' : '🗿 Dev Taş bu sefer ayakta kaldı (' + st.dev.can + ' can). ') : '') + 'Bravo hepinize!</p><div class="tb-son-tklar">' + tk + '</div><button type="button" class="tb-buyuk" id="tb-yeni-son">Yeni oyun</button></div>';
         _kur = '';
     }
     function duyur(html, sinif) { const d = $('tb-duyuru'); if (!d) return; d.className = 'tb-duyuru ac ' + (sinif || ''); d.innerHTML = html; }
@@ -344,8 +355,11 @@
         }
         if (ic('ceza') && to === ara && ara < st.L && (st.kareler[ara] === 'bos' || st.kareler[ara] === 'bas' || !(adim + ek)) && from > 0 && Math.random() < BULUT_SANS) { bulut = rastgele(BULUT); to = Math.max(0, to - bulut.n); }
         const onceGor = st.poz.slice(), piyonOnce = st.piyon[ti];
+        const devVar = !!st.dev, devVurus = devVar ? devVur(st, adim + ek) : 0;
         st.poz[ti] = to; if (sur && sur.t === 'herkes') st.poz = st.poz.map((x) => x + 1);
-        st.atan[key] = (st.atan[key] || 0) + 1; st.adim[key] = (st.adim[key] || 0) + adim + ek; st.seri = (st.seri || 0) + 1;
+        st.atan[key] = (st.atan[key] || 0) + 1;
+        let devUyandi = false; if (!st.dev && ic('dev') && st.poz.some((p) => p >= st.L)) { const kalan = atabilenler().reduce((t, x) => t + Math.max(0, turSay() - (st.atan[kimlik(x)] || 0)), 0); st.dev = { can: devCan(kalan), max: devCan(kalan), yikildi: false }; devUyandi = true; }
+        const devYikildi = devVar && st.dev.yikildi && devVurus > 0 && st.dev.can === 0 && !st.dev.duyuruldu; if (devYikildi) st.dev.duyuruldu = true; st.adim[key] = (st.adim[key] || 0) + adim + ek; st.seri = (st.seri || 0) + 1;
         st.elSay = (st.elSay || 0) + 1; let yeniKart = false;
         const final = herkesAtti(st);
         if (final && gorev) { st.poz[ti] += gorev.odul; st.gorev[ti] = (st.gorev[ti] || 0) + 1; gorev = null; }
@@ -375,6 +389,9 @@
             else if (sur) ozel('<b>🃏 SÜRPRİZ: ' + sur.ikon + ' ' + sur.ad + '</b><small>' + esc(sur.yaz) + '</small>', 'iyi', SES.kart, () => { if (sur.t === 'ileri' || sur.t === 'herkes') { _gor = st.poz.slice(); document.querySelectorAll('.tb-piyon').forEach((e) => e.classList.add('uc')); piyonYerlestir(); sonra(() => document.querySelectorAll('.tb-piyon').forEach((e) => e.classList.remove('uc')), 700); } takimlarCiz(st); }, 1900);
             else if (ara >= st.L && from < st.L) ozel('<b>🏁 ' + tk.ikon + ' ' + tk.ad + ' BİTİŞTE!</b><small>Kazanan herkes atınca belli olur; fazla adımlar da sayılır.</small>', 'iyi', SES.bitis, () => { const m = merkezOf($('tb-p' + ti)); if (m) patla(m.x, m.y, [tk.renk, '#FFFFFF', '#FFD86B'], 30); }, 1800);
         }
+        if (devVurus && !devYikildi) ozel('<b>🗿 DEV TAŞ −' + devVurus + '!</b><small>' + tk.ikon + ' ' + tk.ad + ' vurdu · canı ' + st.dev.can + ' / ' + st.dev.max + ' · bütün takımlar birlikte!</small>', 'iyi', SES.roket, () => { devCiz(st); }, 1500);
+        if (devYikildi) ozel('<b>🗿💥 DEV TAŞ YIKILDI!</b><small>Bütün takımlar hep birlikte yıktı!</small>', 'iyi', SES.zafer, () => { devCiz(st); const m = merkezOf($('tb-dev')); if (m) patla(m.x, m.y, ['#FFD86B', '#FFFFFF', '#9CA3AF', '#7BE36B'], 50); }, 2200);
+        if (devUyandi) ozel('<b>🗿 DEV TAŞ UYANDI!</b><small>Artık her takımın her adımı devin canından düşer. Hep birlikte yıkın!</small>', 'kotu', SES.firtina, () => devCiz(st), 2200);
         if (bulut) ozel('<b>' + bulut.ikon + ' ' + bulut.ad + '!</b><small>' + esc(bulut.yaz) + ' Şans işi — iyi atan da yakalanır.</small>', 'kotu', SES.firtina, () => { _gor[ti] = to; const e = $('tb-p' + ti); if (e) e.classList.add('uc', 'don'); piyonYerlestir(); sonra(() => { const x = $('tb-p' + ti); if (x) x.classList.remove('uc', 'don'); }, 900); }, 1700);
         sonra(() => {
             duyuruKapa(); _gor = st.poz.slice(); piyonYerlestir(); takimlarCiz(st);
@@ -426,7 +443,7 @@
             + '#tb-efekt{position:absolute;left:0;top:0;width:100%;height:100%;z-index:3;pointer-events:none;display:block;max-width:none}'
             + '#tb-icerik{position:absolute;inset:0;z-index:1;box-sizing:border-box;padding:10px min(440px,41%) 10px 14px}'
             + '.tb-oyun{position:relative;height:100%;display:flex;flex-direction:column;gap:8px;min-height:0}'
-            + '.tb-ust{flex:none;display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr);gap:8px;align-items:stretch}'
+            + '.tb-dev{display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:14px;background:linear-gradient(90deg,#3b2f2a,#57463c);border:2px solid #ffd86b;color:#fff;min-width:220px;animation:tbDev 1.2s ease-in-out infinite alternate}.tb-dev[hidden]{display:none}.tb-dev i{font-style:normal;font-size:34px}.tb-dev div{display:grid;gap:2px;flex:1;min-width:0}.tb-dev small{font:900 12px Nunito,system-ui,sans-serif;letter-spacing:.04em;color:#ffd86b}.tb-dev-bar{display:block;height:12px;border-radius:6px;background:rgba(0,0,0,.4);overflow:hidden}.tb-dev-bar b{display:block;height:100%;background:linear-gradient(90deg,#ef4444,#f59e0b);transition:width .5s}.tb-dev em{font:900 12px Nunito,system-ui,sans-serif;font-style:normal}@keyframes tbDev{to{box-shadow:0 0 18px rgba(255,216,107,.55)}}.tb-ust{flex:none;display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr);gap:8px;align-items:stretch}'
             + '.tb-kart,.tb-yuru{display:flex;gap:10px;align-items:center;padding:6px 10px;border-radius:12px;background:rgba(8,9,26,.72);border:1px solid rgba(255,255,255,.1);min-width:0}.tb-kart{border-color:#FFC23D;box-shadow:0 0 0 1px rgba(255,194,61,.25),0 0 18px rgba(255,194,61,.15)}'
             + '.tb-kart-ikon,.tb-yuru>i{flex:none;width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-style:normal;font-size:26px;background:rgba(255,255,255,.08)}.tb-kart>div,.tb-yuru>div{min-width:0;display:flex;flex-direction:column;line-height:1.15}'
             + '.tb-kart small,.tb-yuru small,.tb-sayac small{font-size:11px;font-weight:800;letter-spacing:.08em;color:#AEB3D8}.tb-kart b,.tb-yuru b{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(20px,2.3vw,28px);font-weight:800;color:#FFD86B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tb-yuru b{color:#9BEA5A;white-space:normal;font-size:clamp(17px,1.8vw,22px);line-height:1.05}.tb-kart span{font-size:clamp(12px,1.25vw,15px);font-weight:700;color:#E3E6FF}'
@@ -473,5 +490,5 @@
     window.tbAyarUygula = () => { if ($('tb-icerik')) guncelle(); };
     window.tbFinalZorla = tbFinalZorla;
     window.tbDurum = durum;
-    window._tbIc = { esikOf, okAdim, seriAdim, uzunluk, takimSayisi, takimlaraBol, tahtaUret, kartCek, kazananlar, TAKIM, KARTLAR };
+    window._tbIc = { devCan, devVur, esikOf, okAdim, seriAdim, uzunluk, takimSayisi, takimlaraBol, tahtaUret, kartCek, kazananlar, TAKIM, KARTLAR };
 })();

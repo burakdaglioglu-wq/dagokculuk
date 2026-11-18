@@ -35,10 +35,12 @@
         kacis: { simdi: () => { const sf = typeof h3Sefer === 'function' ? h3Sefer('kacis') : null; return 'ŞİMDİ: Yelkenleri doldur, <b>korsana yakalanmadan</b> ' + (sf ? 'adaya kaç! Rota: <b>' + sf.ad + '</b> (' + (sf.adim + 1) + '/' + sf.toplam + ')' : 'adaya kaç!'); },
             ok: { sari: 'FIRTINA RÜZGÂRI!', kirmizi: 'GÜÇLÜ RÜZGÂR', mavi: 'ESİNTİ', siyah: 'HAFİF ESİNTİ', beyaz: 'HAFİF ESİNTİ', iska: 'RÜZGÂR YOK!' },
             ozet: ['{ad} fırtına gibi esti, gemi uçuyor!', '{ad} yelkenleri doldurdu.', 'Rüzgâr zayıf, korsanlar yaklaşıyor!'] },
-        filo: { simdi: () => { const sf = typeof h3Sefer === 'function' ? h3Sefer('filo') : null; return 'ŞİMDİ: Gemini <b>' + (sf ? sf.ad : 'adaya') + '</b> sür! ' + (sf ? '(' + (sf.adim + 1) + '/' + sf.toplam + ') ' : '') + '9-10 atan arkadan rüzgâr alır.'; },
+        filo: { okOzel: (v) => { const st = typeof h3Durum === 'function' ? h3Durum('filo') : null; return st && st.baskin && st.baskin.n > 0 && (kademe(v) === 'sari' || kademe(v) === 'kirmizi') ? 'KORSAN DENİZE!' : null; },
+            simdi: () => { const st = typeof h3Durum === 'function' ? h3Durum('filo') : null; if (st && st.kayip === 'soyuldu') return 'Bu sefer <b class="kirmizi">korsanlar sandığı boşalttı.</b> Rövanş!'; if (st && st.baskin && st.baskin.n > 0) return 'ŞİMDİ: <b class="kirmizi">☠️ ' + st.baskin.n + ' KORSAN</b> sandığa yürüyor! <b>7 ve üstü</b> her ok birini denize atar.'; const sf = typeof h3Sefer === 'function' ? h3Sefer('filo') : null; return 'ŞİMDİ: Gemini <b>' + (sf ? sf.ad : 'adaya') + '</b> sür! ' + (sf ? '(' + (sf.adim + 1) + '/' + sf.toplam + ') ' : '') + '9-10 atan arkadan rüzgâr alır.'; },
             ok: { sari: 'ARKADAN RÜZGÂR!', kirmizi: 'TAM YELKEN', mavi: 'İLERİ', siyah: 'AZ İLERİ', beyaz: 'AZ İLERİ', iska: 'YELKEN BOŞ' },
             ozet: ['{ad} arkadan rüzgâr aldı, uçuyor!', '{ad} ilerliyor.', '{ad} yavaşladı, rüzgâr bekliyor.'] },
-        catikosu: { simdi: () => 'ŞİMDİ: Ninjanı <b>kapıya</b> koştur! Çatı arasını atlamak için seride yarı puan gerek.',
+        catikosu: { okOzel: (v) => { const st = typeof n3Durum === 'function' ? n3Durum('catikosu') : null; return st && st.klan && st.klan.n > 0 && (kademe(v) === 'sari' || kademe(v) === 'kirmizi') ? 'KIZIL NİNJA DÜŞTÜ!' : null; },
+            simdi: () => { const st = typeof n3Durum === 'function' ? n3Durum('catikosu') : null; if (st && st.kayip) return 'Bu sefer <b class="kirmizi">Kızıl Klan kazandı.</b> Rövanş!'; if (st && st.klan && st.klan.n > 0) return 'ŞİMDİ: <b class="kirmizi">🥷 ' + st.klan.n + ' KIZIL NİNJA</b> tapınağa tırmanıyor! <b>7 ve üstü</b> her ok birini düşürür.'; return 'ŞİMDİ: Ninjanı <b>kapıya</b> koştur! Çatı arasını atlamak için seride yarı puan gerek.'; },
             ok: { sari: 'UÇUŞ!', kirmizi: 'HIZLI KOŞU', mavi: 'KOŞU', siyah: 'YAVAŞ', beyaz: 'YAVAŞ', iska: 'TÖKEZLEDİ!' },
             ozet: ['{ad} çatıların üstünden uçuyor!', '{ad} koşuyor.', '{ad} yavaşladı, çatı arası tehlikeli!'] },
         ejderkule: { simdi: () => 'ŞİMDİ: Hep birlikte <b>muhafızı düşür</b>, kuleye tırman!',
@@ -47,25 +49,28 @@
         zombi: { simdi: () => 'ŞİMDİ: Zombilere karşı <b>dayan!</b> Kırmızı ve sarı ok panzehir taşır.',
             ok: { sari: 'PANZEHİR OKU!', kirmizi: 'PANZEHİR OKU!', mavi: 'İSABET', siyah: 'İSABET', beyaz: 'SIYIRDI', iska: 'ISKA!' },
             ozet: ['{ad} zombileri geri püskürttü!', '{ad} dayandı.', 'Dikkat! Zombiler yaklaşıyor!'] },
-        tahta: { simdi: () => 'ŞİMDİ: Takımını <b>bitişe</b> taşı! İyi ok adım attırır.',
+        tahta: { simdi: () => { let d = null; try { const st = JSON.parse(localStorage.getItem('dag_km_tahta_' + ((typeof _kmAktifKonum !== 'undefined' && _kmAktifKonum) || 'varsayilan')) || 'null'); d = st && st.dev; } catch (e) { } if (d && d.yikildi) return '<b>🗿💥 Dev Taş yıkıldı!</b> Herkes atınca kazanan takım belli olur.'; if (d) return 'ŞİMDİ: <b class="kirmizi">🗿 DEV TAŞ UYANDI</b> (' + d.can + ' can) — her takımın her adımı devi vurur, hep birlikte yıkın!'; return 'ŞİMDİ: Takımını <b>bitişe</b> taşı! İyi ok adım attırır. Bitişte <b>Dev Taş</b> bekliyor.'; },
             ok: { sari: 'SÜPER OK!', kirmizi: 'İSABET', mavi: 'İSABET', siyah: 'İSABET', beyaz: 'İSABET', iska: 'ISKA' },
             ozet: ['{ad} takımını ileri fırlattı!', '{ad} adım attırdı.', '{ad} bu sefer yerinde saydı.'] },
-        timsah: { simdi: () => 'ŞİMDİ: Devi <b>uyandırmadan</b> kovayı balıkla doldur!',
+        timsah: { simdi: () => 'ŞİMDİ: Devi <b>uyandırmadan</b> taş yolu <b>karşıya</b> ulaştır! İyi ok taş koyar.',
             ok: { sari: '🐟🐟 İKİ BALIK!', kirmizi: '🐟🐟 İKİ BALIK!', mavi: '🐟 BALIK', siyah: '🐟 BALIK', beyaz: '🔊 GÜRÜLTÜ', iska: '🔊🔊 ÇOK GÜRÜLTÜ!' },
             ozet: ['{ad} kovayı balıkla doldurdu!', '{ad} balık topladı.', 'Şşşt! Çok gürültü, dev uyanıyor!'] },
-        bomba: { simdi: () => 'ŞİMDİ: Fitili <b>uzat</b>, bombayı patlatma!',
+        bomba: { simdi: () => 'ŞİMDİ: Fitili <b>uzat</b>! <b>✂️ Sarı · kırmızı · mavi</b>: renge atan o kabloyu keser, 3 kablo = bomba söner.',
             ok: { sari: '+6 SN!', kirmizi: '+6 SN!', mavi: '+2 SN', siyah: '+2 SN', beyaz: '−2 SN', iska: '−5 SN!' },
             ozet: ['{ad} fitili uzattı, bomba sakin!', '{ad} biraz zaman kazandı.', 'Fitil kısalıyor, acele edin!'] },
         blok: { simdi: () => 'ŞİMDİ: Hep birlikte <b>canavarı yık!</b>',
             ok: { sari: 'KRİTİK!', kirmizi: 'GÜÇLÜ VURUŞ', mavi: 'VURUŞ', siyah: 'SIYIRDI', beyaz: 'SIYIRDI', iska: 'ISKA' },
             ozet: ['{ad} canavara güçlü vurdu!', '{ad} isabet ettirdi.', 'Canavar kükrüyor, daha güçlü vurun!'] },
-        canavar: { simdi: () => 'ŞİMDİ: Hep birlikte <b>canavarı devir!</b>',
+        canavar: { simdi: () => { const z = zayif(); return z ? 'ŞİMDİ: Zayıf nokta <b style="color:' + z.renk + '">' + z.ikon + ' ' + buyukTR(z.ad) + '</b> (' + z.okl + ') — o renge giren ok <b>2 KAT</b> vurur!' : 'ŞİMDİ: Hep birlikte <b>canavarı devir!</b>'; },
+            okOzel: (v) => { const z = zayif(); return z && typeof KM_OYUN_PAD_RENK !== 'undefined' && KM_OYUN_PAD_RENK[String(v).toUpperCase()] === z.id ? 'ZAYIF NOKTA ×2!' : null; },
             ok: { sari: 'KRİTİK!', kirmizi: 'GÜÇLÜ VURUŞ', mavi: 'VURUŞ', siyah: 'SIYIRDI', beyaz: 'SIYIRDI', iska: 'ISKA' },
             ozet: ['{ad} canavarı sarstı!', '{ad} isabet ettirdi.', 'Canavar kükrüyor, daha güçlü vurun!'] },
         hapsirik: { simdi: () => 'ŞİMDİ: Yaratığı <b>gıdıkla</b>, hapşırt!',
             ok: { sari: 'SÜPER GIDIK!', kirmizi: 'GIDIK!', mavi: 'GIDIK', siyah: 'HAFİF GIDIK', beyaz: 'HAFİF GIDIK', iska: 'ISKA' },
             ozet: ['{ad} süper gıdıkladı!', '{ad} gıdıkladı.', 'Yaratık kıkırdamadı bile!'] }
     };
+    // Ortak Canavar zayıf nokta rengi (app.js) — v434
+    function zayif() { try { return typeof _kmCanavar !== 'undefined' && _kmCanavar && _kmCanavar.aktif && typeof kmCanavarZayifRenk === 'function' ? kmCanavarZayifRenk(_kmCanavar.aktif) : null; } catch (e) { return null; } }
     const kapali = () => { try { return localStorage.getItem('dag_km_an_kapali') === '1'; } catch (e) { return false; } };
     const sessiz = () => (typeof kmOyunSessiz === 'function' ? kmOyunSessiz() : false);
 
@@ -153,7 +158,8 @@
         const ad = ilkAd(s && s.ad);
         let p = sahne.querySelector('.an-perde'); if (p) p.remove();
         p = document.createElement('div'); p.className = 'an-perde';
-        p.innerHTML = '<div class="an-ic"><div class="an-ad">' + esc(buyukTR(ad)) + '</div><div class="an-okl">' + liste.map(() => '<span></span>').join('') + '</div><div class="an-etiket"></div><div class="an-alt"></div></div>';
+        const ik = s ? dolapIkon(s.g, s.ad) : '';
+        p.innerHTML = '<div class="an-ic"><div class="an-ad">' + (ik ? '<span class="an-ik">' + ik + '</span> ' : '') + esc(buyukTR(ad)) + '</div><div class="an-okl">' + liste.map(() => '<span></span>').join('') + '</div><div class="an-etiket"></div><div class="an-alt"></div></div>';
         sahne.appendChild(p);
         requestAnimationFrame(() => p.classList.add('ac'));
         SES.ad();
@@ -166,18 +172,201 @@
         liste.forEach((v, j) => zl.push(setTimeout(() => {
             const k = kademe(v); if (IYI[k]) iyi++; else if (k === 'mavi') orta++;
             const d = daireler[j]; d.textContent = String(v).toUpperCase(); d.style.background = RENK[k]; d.style.borderColor = '#fff'; if (k === 'siyah') { d.style.background = '#1d222b'; d.style.color = '#fff'; } if (k === 'iska') { d.style.background = '#2b3a48'; d.style.color = '#fff'; } d.classList.add('on');
-            et.textContent = T.ok[k]; et.style.color = k === 'siyah' || k === 'beyaz' ? '#e9eef5' : RENK[k]; et.classList.remove('pat'); void et.offsetWidth; et.classList.add('pat');
+            const oz = T.okOzel ? T.okOzel(v) : null; et.textContent = oz || T.ok[k]; et.style.color = oz ? '#ffd23f' : k === 'siyah' || k === 'beyaz' ? '#e9eef5' : RENK[k]; et.classList.remove('pat'); void et.offsetWidth; et.classList.add('pat');
             try { SES[k](); } catch (e) { }
         }, bas + j * adim)));
         zl.push(setTimeout(() => {
             const n = Math.max(1, liste.length), i = iyi / n >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2, cumle = T.ozet[i].replace('{ad}', ad);
-            alt.textContent = cumle; soyle(cumle);
+            const ye = _yeniEsya; alt.textContent = cumle + (ye ? '  ' + ye[1] + ' YENİ: ' + ye[2] + '!' : ''); soyle(cumle + (ye ? ' ' + ad + ' derse ' + ye[0] + '. kez geldi, ' + ye[2] + ' kazandı!' : ''));
         }, bas + liste.length * adim + 80));
         zl.push(setTimeout(sonla, bas + liste.length * adim + 1050));
     }
 
+    /* ---------------------------------------------------------------- 📜 20 saniyede kural (v434, fikir 12) */
+    // Kullanıcı (11 Kasım): "kuralları anlamadılar". Her oyun cihazda o gün ilk açılışta 3 resimli kart + anlatıcı; ŞİMDİ şeridinde 📜 ile tekrar.
+    const KURAL = {
+        topsavasi: { s: 'Her iyi ok korsan gemisine top atar. Gemiyi batırın, sıradaki korsan gelir. Zayıf seri korsana barut verir, dört turda bize çarpar!',
+            k: [['🏹', 'Ok at', 'İyi ok gemiye top atar'], ['🚢', 'Gemiyi batır', '5 korsan gemisi sırayla gelir'], ['🧨', 'Dikkat!', 'Zayıf seri korsana barut verir']] },
+        kacis: { s: 'Her ok yelkenleri doldurur. Zayıf seride korsan yaklaşır. Yakalanmadan adaya kaçın!',
+            k: [['💨', 'Rüzgâr ol', 'Her ok yelkeni doldurur'], ['🏴‍☠️', 'Korsan peşimizde', 'Zayıf seride yaklaşır'], ['🏝️', 'Adaya kaç', '5 ada, her biri daha zor']] },
+        filo: { s: 'Herkesin kendi gemisi var. Dokuz ve on atan arkadan rüzgâr alır. Adaya varan yıldız kazanır!',
+            k: [['⛵', 'Senin gemin', 'Her çocuğun gemisi var'], ['💨', '9-10 = rüzgâr', 'Arkadan rüzgârla uçarsın'], ['⭐', 'Adaya var', 'Varan yıldız alır']] },
+        catikosu: { s: 'Her ok ninjanı koşturur. Çatı arasını atlamak için yarı puan gerek. Kapıya varın!',
+            k: [['🥷', 'Ninjanı koştur', 'Her ok ileri götürür'], ['🕳️', 'Çatı arası', 'Yarı puan yoksa tökezlersin'], ['🚪', 'Kapıya var', 'Bölüm bölüm ilerle']] },
+        ejderkule: { s: 'Her ok muhafıza shuriken atar. Hep birlikte muhafızı düşürün, kuleye tırmanın!',
+            k: [['⭐', 'Shuriken at', 'Her ok muhafıza vurur'], ['🛡️', 'Hep birlikte', 'Muhafızın canı ortak'], ['🐉', 'Kuleye tırman', 'Tepede ejder bekliyor']] },
+        zombi: { s: 'Zayıf seri zombiye yem olur. Kırmızı ve sarı ok panzehirdir. İki arkadaş birlikte ısırılanı kurtarabilir!',
+            k: [['🧟', 'Zombiler geliyor', 'Zayıf seri ısırılır'], ['💉', 'Kırmızı + sarı', 'Panzehir oku, zombiyi iter'], ['🤝', 'İkili kurtarma', 'İki arkadaş birlikte kurtarır']] },
+        tahta: { s: 'İyi ok takımını ileri götürür. Sonunda dev taş bekliyor, onu bütün takımlar birlikte yıkar!',
+            k: [['🎲', 'Takımın ilerler', 'İyi ok adım attırır'], ['🃏', 'Sürpriz kare', 'Bazı kareler kart açar'], ['🗿', 'Son karede dev', 'Hep birlikte yıkılır']] },
+        timsah: { s: 'İyi ok kovaya balık atar ve nehre taş koyar. Kötü ok gürültü yapar, dev uyanır. Dev uyanmadan karşıya geçin!',
+            k: [['🐟', 'Balık topla', 'İyi ok kovaya balık'], ['🪨', 'Taş yol', 'Her taş seni karşıya yaklaştırır'], ['😴', 'Şşşt!', 'Kötü ok devi uyandırır']] },
+        bomba: { s: 'Fitil yanıyor. İyi ok süre kazandırır. İmha ekibi renge atar, o renkteki kablo kesilir. Bütün kablolar kesilince bomba söner!',
+            k: [['🧨', 'Fitil yanıyor', 'İyi ok süre kazandırır'], ['✂️', 'İmha ekibi', 'Hangi renge atarsan o kablo kesilir'], ['✅', 'Bomba söner', 'Bütün kablolar kesilince']] },
+        blok: { s: 'Hep birlikte canavara vurun. Sarı ok kritik vuruştur. Herkes atınca canavar yıkılır!',
+            k: [['👹', 'Canavar', 'Canı hepimizin ortak düşmanı'], ['🏹', 'Herkes vurur', 'Sarı ok kritik vuruş'], ['🏆', 'Birlikte yıkarız', 'Herkes atınca biter']] },
+        canavar: { s: 'Hep birlikte canavarı devirin. Canavarın göğsünde parlayan renge giren ok iki kat vurur!',
+            k: [['👹', 'Canavar', 'Canı ortak'], ['🎯', 'Zayıf nokta', 'Parlayan renk iki kat vurur'], ['🏆', 'Birlikte devir', 'Herkes atınca biter']] },
+        hapsirik: { s: 'Her ok yaratığı gıdıklar. Çubuk dolunca hapşırır ve masal kitabına yeni sayfa eklenir!',
+            k: [['🪶', 'Gıdıkla', 'Her ok gıdıklar'], ['🤧', 'Hapşırık', 'Çubuk dolunca hapşırır'], ['📖', 'Sınıfın kitabı', 'Her ders bir sayfa']] }
+    };
+    const bugunAnahtar = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const testMi = () => { try { return !!navigator.webdriver && !window.__anTest; } catch (e) { return false; } };
+    function kuralCss() {
+        if ($('an-kural-css')) return;
+        const st = document.createElement('style'); st.id = 'an-kural-css';
+        st.textContent = [
+            '.an-kural{position:fixed;inset:0;z-index:2147483000;display:flex;overflow:auto;background:rgba(3,8,18,.86);padding:16px;animation:anGir .25s ease-out}',
+            '.an-kural-ic{margin:auto;width:min(1000px,100%);display:grid;gap:clamp(10px,2vh,22px);text-align:center;color:#fff}',
+            '.an-kural-bas{font-family:"Bungee","Barlow Condensed",Impact,system-ui,sans-serif;font-size:clamp(22px,3.6vw,48px);line-height:1.05;text-shadow:0 4px 0 #000}',
+            '.an-kartlar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.6vw,22px)}',
+            '.an-kart{background:linear-gradient(180deg,#1b2a48,#111a2e);border:3px solid rgba(255,255,255,.14);border-radius:22px;padding:clamp(10px,2vw,24px) clamp(8px,1.4vw,18px);opacity:.25;transform:translateY(14px) scale(.94);transition:all .35s}',
+            '.an-kart.on{opacity:1;transform:none;border-color:#ffd23f}',
+            '.an-kart i{display:block;font-style:normal;font-size:clamp(40px,7vw,96px);line-height:1.1}',
+            '.an-kart b{display:block;margin-top:6px;font-family:"Bungee","Barlow Condensed",Impact,system-ui,sans-serif;font-weight:400;font-size:clamp(15px,2.2vw,30px);color:#ffd23f;line-height:1.1}',
+            '.an-kart span{display:block;margin-top:6px;font:800 clamp(12px,1.5vw,20px)/1.25 Nunito,Inter,system-ui,sans-serif;color:#dbe7f5}',
+            '.an-kart em{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#ffd23f;color:#1a1200;font:900 clamp(13px,1.4vw,18px) Nunito,system-ui,sans-serif;font-style:normal;margin-bottom:4px}',
+            '.an-kural-alt{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}',
+            '.an-kural-alt button{font:900 clamp(15px,1.6vw,20px) Nunito,Inter,system-ui,sans-serif;min-height:52px;padding:0 26px;border-radius:16px;border:0;cursor:pointer;background:#ffd23f;color:#1a1200}',
+            '.an-kural-alt button.ikinci{background:rgba(255,255,255,.12);color:#fff}',
+            '.an-sure{height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}.an-sure i{display:block;height:100%;background:#ffd23f;width:100%;transition:width linear}',
+            '@media (max-width:600px){.an-kartlar{grid-template-columns:1fr}.an-kart{display:grid;grid-template-columns:auto 1fr;align-items:center;text-align:left;gap:4px 12px;padding:10px 14px}.an-kart i{grid-row:span 3;font-size:44px}.an-kart b,.an-kart span{margin:0}}',
+            '.an-anlar .an-kartlar{grid-template-columns:repeat(5,minmax(0,1fr))}',
+            '.an-anlar .an-kart i{font-size:clamp(30px,4.6vw,60px)}.an-anlar .an-kart b{font-size:clamp(13px,1.6vw,22px)}',
+            '.an-anlar .an-kart{min-width:0}.an-anlar .an-kart .ad{overflow-wrap:anywhere;display:block;margin-top:8px;font-family:"Bungee","Barlow Condensed",Impact,system-ui,sans-serif;font-size:clamp(16px,2.4vw,34px);color:#fff;line-height:1}',
+            '.an-dolap-acik{margin:0;font:800 clamp(12px,1.4vw,17px) Nunito,system-ui,sans-serif;color:#cfe0f5}',
+            '.an-dolap-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:56vh;overflow:auto;text-align:left}',
+            '.an-dolap-k{background:#16223b;border:2px solid rgba(255,255,255,.1);border-radius:14px;padding:8px 12px;display:grid;gap:2px}.an-dolap-k{min-width:0}.an-dolap-k b{font:900 16px Nunito,system-ui,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.an-dolap-k .es{font-size:24px;letter-spacing:2px}.an-dolap-k .es i{font-style:normal}.an-dolap-k .es .bos{opacity:.35}.an-dolap-k small{font:800 12px Nunito,system-ui,sans-serif;color:#9fb2c4}',
+            '.an-ad .an-ik{font-size:.8em;vertical-align:.05em}',
+            '@media (max-width:900px){.an-anlar .an-kartlar{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:600px){.an-anlar .an-kartlar{grid-template-columns:1fr}}'
+        ].join('\n');
+        document.head.appendChild(st);
+    }
+    const kok = () => document.fullscreenElement || document.getElementById('karisik-platform') || document.body; // sahnenin atalarında transform var: pencere sayfanın kökünde
+    let _kuralZ = [];
+    function kuralKapat() { _kuralZ.forEach(clearTimeout); _kuralZ = []; document.querySelectorAll('.an-kural').forEach((x) => x.remove()); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { } }
+    function anKural(tema, zorla) {
+        const K = KURAL[tema]; if (!K) return false;
+        const sahne = document.querySelector('#km-oyun-wrap .km-oyun-scene'); if (!sahne) return false;
+        const an = 'dag_km_kural_' + tema;
+        if (!zorla) { if (testMi()) return false; try { if (localStorage.getItem(an) === bugunAnahtar()) return false; } catch (e) { } }
+        try { localStorage.setItem(an, bugunAnahtar()); } catch (e) { }
+        css(); kuralCss(); kuralKapat();
+        const p = document.createElement('div'); p.className = 'an-kural'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Oyunun kuralı');
+        p.innerHTML = '<div class="an-kural-ic"><div class="an-kural-bas">NASIL OYNANIR?</div><div class="an-kartlar">' + K.k.map((x, i) => '<div class="an-kart"><i>' + x[0] + '</i><b><em>' + (i + 1) + '</em><br>' + esc(x[1]) + '</b><span>' + esc(x[2]) + '</span></div>').join('') + '</div>'
+            + '<div class="an-sure"><i></i></div><div class="an-kural-alt"><button type="button" class="an-k-basla">▶ Başlayalım</button><button type="button" class="ikinci an-k-tekrar">🔊 Tekrar dinle</button></div></div>';
+        kok().appendChild(p);
+        const kartlar = p.querySelectorAll('.an-kart'), sure = 20000;
+        kartlar.forEach((k, i) => _kuralZ.push(setTimeout(() => { k.classList.add('on'); SES.ad(); }, 300 + i * 1500)));
+        _kuralZ.push(setTimeout(() => soyle(K.s), 500));
+        const bar = p.querySelector('.an-sure i'); requestAnimationFrame(() => { bar.style.transitionDuration = sure + 'ms'; bar.style.width = '0%'; });
+        _kuralZ.push(setTimeout(kuralKapat, sure));
+        p.querySelector('.an-k-basla').onclick = kuralKapat;
+        p.querySelector('.an-k-tekrar').onclick = () => soyle(K.s);
+        return true;
+    }
+
+    /* ---------------------------------------------------------------- 🎬 Günün 5 anı (v434, fikir 11) */
+    // Her seri (an kapalı olsa da) cihazda o günün listesine yazılır; "Günün anları" 5 ayrı çocuğu 5 farklı başarıyla gösterir.
+    const ANLAR_A = () => 'dag_km_anlar_' + bugunAnahtar();
+    const puanSay = (v) => { const p = String(v == null ? '' : v).toUpperCase(); return p === 'X' ? 10 : p === 'M' || p === '' ? 0 : (parseInt(p, 10) || 0); };
+    function anKaydet(tema, s, liste) {
+        if (!s || !s.ad || !liste || !liste.length) return;
+        try { const a = ANLAR_A(), l = JSON.parse(localStorage.getItem(a) || '[]'); l.push({ t: tema, k: (s.g || '') + '|' + s.ad, ad: s.ad, o: liste.map((v) => String(v).toUpperCase()), z: Date.now() }); while (l.length > 400) l.shift(); localStorage.setItem(a, JSON.stringify(l));
+            Object.keys(localStorage).forEach((x) => { if (x.indexOf('dag_km_anlar_') === 0 && x !== a) localStorage.removeItem(x); }); } catch (e) { }
+    }
+    const OYUN_AD = { topsavasi: 'Top Savaşı', kacis: 'Korsandan Kaçış', filo: 'Filo', catikosu: 'Çatı Koşusu', ejderkule: 'Ejder Kulesi', zombi: 'Zombi', tahta: 'Dev Tahta', timsah: 'Uyuyan Dev', bomba: 'Fitil Hattı', blok: 'Blok', canavar: 'Epik Arena', hapsirik: 'Hapşırık' };
+    function anGununSec(l) {
+        const kisi = {};
+        (l || []).forEach((r) => { const x = kisi[r.k] = kisi[r.k] || { k: r.k, ad: r.ad, seriler: [], sari: 0, x: 0, temiz: 0 }; const top = r.o.reduce((a, v) => a + puanSay(v), 0); x.seriler.push({ top, o: r.o, t: r.t }); r.o.forEach((v) => { const k = kademe(v); if (k === 'sari') x.sari++; if (v === 'X') x.x++; }); if (r.o.every((v) => v !== 'M' && puanSay(v) > 0)) x.temiz++; });
+        const L = Object.keys(kisi).map((k) => kisi[k]), kul = {}, sonuc = [];
+        const sec = (ikon, baslik, puan, yazi, esik) => { let en = null, ep = -Infinity; L.forEach((x) => { if (kul[x.k]) return; const p = puan(x); if (p != null && p > ep && p >= (esik || 0)) { ep = p; en = x; } }); if (en) { kul[en.k] = 1; sonuc.push({ ikon, baslik, ad: en.ad, yazi: yazi(en) }); } };
+        const enIyi = (x) => x.seriler.reduce((a, b) => (b.top > a.top ? b : a), x.seriler[0]);
+        sec('💪', 'En güçlü seri', (x) => enIyi(x).top, (x) => { const b = enIyi(x); return b.o.join(' · ') + ' — ' + (OYUN_AD[b.t] || ''); }, 1);
+        sec('🟡', 'Sarı ustası', (x) => x.sari, (x) => x.sari + ' sarı ok', 2);
+        sec('📈', 'En büyük gelişme', (x) => (x.seriler.length >= 2 ? x.seriler[x.seriler.length - 1].top - x.seriler[0].top : null), (x) => x.seriler[0].top + ' → ' + x.seriler[x.seriler.length - 1].top, 1);
+        sec('🎯', 'Hiç ıskalamadı', (x) => (x.temiz >= 2 && x.temiz === x.seriler.length ? x.temiz : null), (x) => x.temiz + ' seri, hepsi hedefte', 2);
+        sec('❌', 'X avcısı', (x) => x.x, (x) => x.x + ' kez tam merkez', 1);
+        // eksik kalırsa: en çok seri atan (emek) ve en yüksek ortalama
+        sec('🔥', 'Durmadı', (x) => x.seriler.length, (x) => x.seriler.length + ' seri attı', 2);
+        sec('⭐', 'İstikrar', (x) => x.seriler.reduce((a, b) => a + b.top, 0) / x.seriler.length, (x) => 'seri ortalaması ' + Math.round(x.seriler.reduce((a, b) => a + b.top, 0) / x.seriler.length), 1);
+        // aynı ilk ada sahip iki çocuk: soyadın ilk harfi eklenir
+        const ilkler = {}; L.forEach((x) => { const a = ilkAd(x.ad); ilkler[a] = (ilkler[a] || 0) + 1; });
+        sonuc.forEach((x) => { const a = ilkAd(x.ad), p = String(x.ad).trim().split(/s+/); x.kisa = ilkler[a] > 1 && p.length > 1 ? a + ' ' + p[p.length - 1].charAt(0) + '.' : a; });
+        return sonuc.slice(0, 5);
+    }
+    function anGununAnlari() {
+        let l = []; try { l = JSON.parse(localStorage.getItem(ANLAR_A()) || '[]'); } catch (e) { }
+        const sec = anGununSec(l);
+        const sahne = document.querySelector('#km-oyun-wrap .km-oyun-scene');
+        if (!sahne) return sec;
+        css(); kuralCss(); kuralKapat();
+        const p = document.createElement('div'); p.className = 'an-kural an-anlar'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Günün anları');
+        p.innerHTML = '<div class="an-kural-ic"><div class="an-kural-bas">🎬 GÜNÜN ' + (sec.length || '') + ' ANI</div>'
+            + (sec.length ? '<div class="an-kartlar">' + sec.map((x) => '<div class="an-kart"><i>' + x.ikon + '</i><b>' + esc(x.baslik) + '</b><span class="ad">' + esc(buyukTR(x.kisa || ilkAd(x.ad))) + '</span><span>' + esc(x.yazi) + '</span></div>').join('') + '</div>' : '<div class="an-kart on"><span>Bugün henüz seri atılmadı.</span></div>')
+            + '<div class="an-kural-alt"><button type="button" class="an-k-basla">Kapat</button></div></div>';
+        kok().appendChild(p);
+        const kartlar = p.querySelectorAll('.an-kartlar .an-kart');
+        kartlar.forEach((k, i) => _kuralZ.push(setTimeout(() => { k.classList.add('on'); try { SES.sari(); } catch (e) { } }, 400 + i * 1600)));
+        if (sec.length) _kuralZ.push(setTimeout(() => soyle('Günün anları! ' + sec.map((x) => x.baslik + ': ' + ilkAd(x.ad)).join('. ') + '. Hepinizi alkışlıyoruz!'), 500));
+        p.querySelector('.an-k-basla').onclick = kuralKapat;
+        return sec;
+    }
+
+    /* ---------------------------------------------------------------- 👕 Karakter dolabı (v434, fikir 10) */
+    // Puana değil KATILIMA göre: çocuğun oyunlarda seri attığı her gün sp.oyun.dolap.gun +1 (sporcu kaydında → sunucuya gider, her cihazda aynı).
+    const DOLAP = [[3, '🧢', 'Şapka'], [6, '🦸', 'Pelerin'], [10, '🏹', 'Altın ok kılıfı'], [15, '🎖️', 'Madalya'], [20, '👑', 'Taç'], [30, '🐉', 'Ejder pelerini']];
+    function sporcuKayit(g, ad) { try { return typeof turnuvaDB !== 'undefined' && turnuvaDB[g] && turnuvaDB[g][ad] || null; } catch (e) { return null; } }
+    function dolapGun(g, ad) { const sp = sporcuKayit(g, ad); return (sp && sp.oyun && sp.oyun.dolap && sp.oyun.dolap.gun) || 0; }
+    function dolapEsyalar(gun) { return DOLAP.filter((x) => gun >= x[0]); }
+    function dolapIkon(g, ad) { const e = dolapEsyalar(dolapGun(g, ad)); return e.length ? e[e.length - 1][1] : ''; }
+    function dolapSay(g, ad) { // bugün ilk seri → +1 gün; yeni eşya açıldıysa döner
+        const sp = sporcuKayit(g, ad); if (!sp) return null;
+        const o = typeof rfxOyunStat === 'function' ? rfxOyunStat(sp) : (sp.oyun = sp.oyun || {}); o.dolap = o.dolap || { gun: 0, son: '' };
+        const t = bugunAnahtar(); if (o.dolap.son === t) return null;
+        const once = dolapEsyalar(o.dolap.gun).length; o.dolap.gun++; o.dolap.son = t; sp.lastModified = Date.now();
+        try { if (typeof oyVeriKaydet === 'function') oyVeriKaydet(); } catch (e) { }
+        const sonra = dolapEsyalar(o.dolap.gun); return sonra.length > once ? sonra[sonra.length - 1] : null;
+    }
+    function dolapAc() {
+        const sahne = document.querySelector('#km-oyun-wrap .km-oyun-scene'); if (!sahne) return;
+        css(); kuralCss(); kuralKapat();
+        const l = (typeof _kmOyunRosterCache !== 'undefined' && _kmOyunRosterCache || []).filter((x) => sporcuKayit(x.g, x.ad));
+        const p = document.createElement('div'); p.className = 'an-kural an-dolap'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Karakter dolabı');
+        p.innerHTML = '<div class="an-kural-ic"><div class="an-kural-bas">👕 KARAKTER DOLABI</div><p class="an-dolap-acik">Derse geldikçe açılır, puana bakmaz: ' + DOLAP.map((x) => x[1] + ' ' + x[0] + '. gün').join(' · ') + '</p><div class="an-dolap-liste">'
+            + l.map((x) => { const gun = dolapGun(x.g, x.ad), e = dolapEsyalar(gun), sonraki = DOLAP.find((d) => gun < d[0]); return '<div class="an-dolap-k"><b>' + esc(ilkAd(x.ad)) + '</b><span class="es">' + (e.length ? e.map((d) => '<i title="' + esc(d[2]) + '">' + d[1] + '</i>').join('') : '<i class="bos">—</i>') + '</span><small>' + gun + ' gün' + (sonraki ? ' · ' + (sonraki[0] - gun) + ' gün sonra ' + sonraki[1] : ' · hepsi açık!') + '</small></div>'; }).join('')
+            + '</div><div class="an-kural-alt"><button type="button" class="an-k-basla">Kapat</button></div></div>';
+        kok().appendChild(p); p.querySelector('.an-k-basla').onclick = kuralKapat;
+    }
+    window.kmDolapIkon = dolapIkon;
+
+    // ŞİMDİ şeridine 📜 Kural + 🎬 Günün anları düğmeleri; kural ilk açılışta kendiliğinden
+    const _anTazeleEski = anTazele;
+    anTazele = function (tema) {
+        _anTazeleEski(tema);
+        const el = $('an-simdi'); if (!el || !AN[tema]) return;
+        let say = 0; try { const l = JSON.parse(localStorage.getItem(ANLAR_A()) || '[]'), k = {}; l.forEach((r) => { k[r.k] = 1; }); say = Object.keys(k).length; } catch (e) { }
+        const d = $('an-dug');
+        if (d && !$('an-kural-dug')) {
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'an-dug'; b.id = 'an-kural-dug'; b.textContent = '📜 Kural'; b.title = 'Kuralı 3 kartla göster ve sesli anlat'; b.onclick = () => anKural(tema, true); d.parentNode.insertBefore(b, d);
+            { const db = document.createElement('button'); db.type = 'button'; db.className = 'an-dug'; db.id = 'an-dolap-dug'; db.textContent = '👕 Dolap'; db.title = 'Derse geldikçe açılan kıyafetler'; db.onclick = dolapAc; d.parentNode.insertBefore(db, d); }
+            if (say >= 3) { const g = document.createElement('button'); g.type = 'button'; g.className = 'an-dug'; g.id = 'an-gun-dug'; g.textContent = '🎬 Günün anları'; g.title = 'Bugünün 5 anı: 5 farklı çocuk'; g.onclick = anGununAnlari; d.parentNode.insertBefore(g, d); }
+        }
+        if (!document.querySelector('.an-kural')) anKural(tema, false);
+    };
+    const _anSeriEski = anSeriGoster;
+    let _yeniEsya = null;
+    anSeriGoster = function (tema, s, oklar, devam) {
+        try { anKaydet(tema, s, (oklar || []).map((k) => (k && typeof k === 'object' ? k.puan : k))); } catch (e) { }
+        _yeniEsya = null; try { const y = s ? dolapSay(s.g, s.ad) : null; if (y) { _yeniEsya = y; if (kapali() && typeof showToast === 'function') showToast(y[1] + ' ' + ilkAd(s.ad) + ' derse ' + y[0] + '. kez geldi: ' + y[2] + ' kazandı!', 'success'); } } catch (e) { }
+        return _anSeriEski(tema, s, oklar, devam);
+    };
+
     window.anTazele = anTazele;
     window.anSeriGoster = anSeriGoster;
+    window.anKural = anKural;
+    window.anGununAnlari = anGununAnlari;
+    window.anKuralKapat = kuralKapat;
     window.AN_TEMALAR = Object.keys(AN);
-    window._anIc = { kademe: kademe, AN: AN };
+    window._anIc = { DOLAP: DOLAP, dolapSay: dolapSay, dolapGun: dolapGun, dolapIkon: dolapIkon, kademe: kademe, AN: AN, KURAL: KURAL, anGununSec: anGununSec, anKaydet: anKaydet };
 })();

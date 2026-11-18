@@ -32,7 +32,7 @@
     const panel = (tid) => $('km-oyun-panel-' + tid);
     const aktifTema = () => (typeof _kmOyunAktifTema !== 'undefined' ? _kmOyunAktifTema : '');
     const OYUN = {
-        filo: { ad: 'Filo Yarışı', ikon: '⛵', kural: 'Her ok geminizi puanı kadar ileri sürer; 9-10 atan arkadan rüzgâr alır. Herkes atınca adaya varanlar yıldız alır, yarış sıradaki adaya devam eder (5 ada).' },
+        filo: { ad: 'Filo Yarışı', ikon: '⛵', kural: 'Her ok geminizi puanı kadar ileri sürer; 9-10 atan arkadan rüzgâr alır. Herkes atınca adaya varanlar yıldız alır, yarış sıradaki adaya devam eder (5 ada). ☠️ Her 3 turda korsanlar adaya çıkar: 7 ve üstü her ok bir korsanı denize atar; sandığa varan her korsan 1 kese çalar. Sandık boşalırsa korsan kazanır.' },
         kacis: { ad: 'Korsandan Kaçış', ikon: '🏴‍☠️', kural: 'Sınıf tek gemide. Her ok yelkene rüzgâr: puanı kadar yol. Herkes atınca korsanlar yaklaşır; yakalanmadan adaya varın. 5 ada var: her adada korsanlar daha hızlı.' },
         topsavasi: { ad: 'Top Savaşı', ikon: '💣', kural: 'Her ok bir gülle: 9-10 tam isabet, 7-8 gövdeye, 5-6 sıyırır, altı denize. 5 korsan gemisi sırayla geliyor: biri batınca sıradaki gelir. Zayıf seri korsana barut verir, tur sonunda korsan ateş eder. Amiral gemisini batırın!' }
     };
@@ -41,6 +41,23 @@
     /* ---------------------------------------------------------------- kurallar (saf) */
     const FILO_HIZ = 0.48;                    // v424: 5 ada, ayak başına ortalama 7'lik seri ~3 turda adaya
     function filoAdim(puanlar) { const n = Math.max(1, puanlar.length), top = puanlar.reduce((a, b) => a + b, 0), ruzgar = puanlar.filter((p) => p >= 9).length; return top / (n * 10) * FILO_HIZ + ruzgar * 0.012; }
+    // v434 KORSAN BASKINI (fikir 1, Filo): her 3 turda korsanlar adaya çıkar, sınıfın sandığına yürür. 7+ her ok bir korsanı denize atar.
+    // Kalanlar her tur sonu 1 adım; 2 adımda sandığa varan her korsan 1 kese çalar. Sandık 5 kese; boşalırsa korsan kazanır (Rövanş: 3 kese, aynı ada).
+    const BASKIN_HER = 3, BASKIN_YOL = 2, KESE = 5;
+    function baskinSay(n) { return Math.max(3, Math.min(8, Math.round(n / 3))); }
+    function baskinOk(st, pl) { if (!st.baskin || !(st.baskin.n > 0)) return 0; const it = Math.min(st.baskin.n, pl.filter((p) => p >= 7).length); st.baskin.n -= it; return it; }
+    function baskinTur(st, n) { // tur sonu (saf): { olay: 'puskurtuldu'|'calindi'|'yaklasti'|'cikti'|null, calinan }
+        if (st.kese == null) st.kese = KESE;
+        const b = st.baskin;
+        if (b) {
+            if (b.n <= 0) { st.baskin = null; st.kese = Math.min(KESE, st.kese + 1); return { olay: 'puskurtuldu' }; }
+            b.d++;
+            if (b.d >= BASKIN_YOL) { const c = Math.min(st.kese, b.n); st.kese -= c; st.baskin = null; return { olay: 'calindi', calinan: c }; }
+            return { olay: 'yaklasti' };
+        }
+        if (st.tur % BASKIN_HER === 0) { st.baskin = { n: baskinSay(n), d: 0, ilk: baskinSay(n) }; return { olay: 'cikti' }; }
+        return { olay: null };
+    }
     const TOP_CAN = 6, TOP_TUR = 4; // v423: korsan 4 turda çarpar, gemimizin 6 canı var; zayıf seri korsana barut verir (3 barut = 1 top)
     // v424 SEFER (kullanıcı: "bir gemi düşünce bitiyor, devamı yok"): Top Savaşı'nda 5 korsan gemisi sırayla gelir (biri batınca sıradaki,
     // fazla vuruş boşa gitmez); Kaçış ve Filo'da 5 adalık rota. İlerleme 'dag_km_h3sefer_<tid>_<konum>' (12 saat kuralına girmez:
@@ -76,7 +93,7 @@
 
     /* ---------------------------------------------------------------- durum */
     const _onbellek = {};
-    function yeniOyun(tid) { const sf = seferOku(tid); return { tid: tid, tarih: bugun(), tur: 1, atan: {}, katki: {}, faz: 'oyun', x: {}, yol: 0, hedef: 0, ara: 0, hp: 0, hpMax: 0, can: tid === 'topsavasi' ? TOP_CAN : 3, barut: 0, kalan: tid === 'topsavasi' ? KORSAN[sf.adim].tur : TOP_TUR, kayip: null, turPuan: 0, turOk: 0, kazanan: null, finalAdlar: null, bas: null, adim: sf.adim, yildiz: sf.yildiz, tamam: sf.tamam, yeni: false, buTurBatan: [], sonVaran: null }; }
+    function yeniOyun(tid) { const sf = seferOku(tid); return { tid: tid, tarih: bugun(), tur: 1, atan: {}, katki: {}, faz: 'oyun', x: {}, yol: 0, hedef: 0, ara: 0, hp: 0, hpMax: 0, can: tid === 'topsavasi' ? TOP_CAN : 3, barut: 0, kalan: tid === 'topsavasi' ? KORSAN[sf.adim].tur : TOP_TUR, kayip: null, turPuan: 0, turOk: 0, kazanan: null, finalAdlar: null, bas: null, adim: sf.adim, yildiz: sf.yildiz, tamam: sf.tamam, yeni: false, buTurBatan: [], sonVaran: null, kese: KESE, baskin: null }; }
     function durum(tid) {
         let ham = null; try { ham = localStorage.getItem(anahtar(tid)); } catch (e) { }
         const o = _onbellek[tid];
@@ -292,6 +309,30 @@
         G3.korsanlar.forEach((sh, i) => { if (!sh) return; if (i < st.adim) korsanBatir(i, true); else { sh.userData.hedefP = i === st.adim ? korsanYer(st) : bekleYer(i - st.adim); if (sh.userData.etiket) sh.userData.etiket.visible = i === st.adim; } });
         G3.korsan = G3.korsanlar[st.adim] || G3.korsan; G3.adimGorsel = st.adim;
     }
+    function korsanFigur() {
+        const T = THREE, g = new T.Group();
+        const gov = new T.Mesh(new T.CylinderGeometry(0.75, 0.95, 2.4, 7), mat(0xb91c1c)); gov.position.y = 1.3; g.add(gov);
+        const bas = new T.Mesh(new T.SphereGeometry(0.72, 8, 6), mat(0xf1c27d)); bas.position.y = 3.05; g.add(bas);
+        const sapka = new T.Mesh(new T.ConeGeometry(0.95, 0.9, 3), mat(0x111111)); sapka.position.y = 3.75; sapka.rotation.y = Math.PI / 6; g.add(sapka);
+        const kilic = new T.Mesh(new T.BoxGeometry(0.16, 1.8, 0.16), mat(0xd1d5db)); kilic.position.set(0.95, 1.9, 0); kilic.rotation.z = -0.5; g.add(kilic);
+        g.scale.setScalar(1.45); return g;
+    }
+    function baskinGorsel(goster) { // sahneyi duruma uydur: kumsaldaki korsanlar sandığa doğru d adım
+        if (!G3 || G3.tid !== 'filo') return; const T = THREE, st = durum('filo');
+        if (!G3.baskinG) { G3.baskinG = new T.Group(); G3.S.add(G3.baskinG); }
+        const B = G3.baskinG; while (B.children.length) B.remove(B.children[0]);
+        if (!st.baskin || !(st.baskin.n > 0)) return;
+        const S = new T.Vector3(); G3.sandik.getWorldPosition(S);
+        const o = (st.baskin.d + 0.35) / (BASKIN_YOL + 0.35), x = S.x - 26 + o * 20;
+        for (let i = 0; i < st.baskin.n; i++) { const f = korsanFigur(); f.position.set(x - (i % 2) * 2.2, Math.max(0, S.y - 1.2), S.z + (i - (st.baskin.n - 1) / 2) * 3.4); f.rotation.y = -Math.PI / 2; B.add(f); }
+        if (goster) { G3.adaGoster = true; kameraYerlestir('filo'); setTimeout(() => { if (G3) { G3.adaGoster = false; kameraYerlestir('filo'); } }, 2400); }
+    }
+    function korsanIt(n) { // n korsan denize uçar
+        if (!G3 || !G3.baskinG) return; const B = G3.baskinG;
+        for (let i = 0; i < n && B.children.length; i++) { const f = B.children[B.children.length - 1 - i]; if (!f || f.userData.uctu) continue; f.userData.uctu = true; const p0 = f.position.clone(), p1 = p0.clone().add(new THREE.Vector3(-16 - Math.random() * 6, 0, (Math.random() - 0.5) * 8));
+            an(0.9, (q) => { f.position.lerpVectors(p0, p1, q); f.position.y = p0.y + Math.sin(q * Math.PI) * 9 - q * 3; f.rotation.z = q * 6; }, () => { sicrat(p1.x, p1.z, true); B.remove(f); }); }
+        G3.adaGoster = true; kameraYerlestir('filo'); setTimeout(() => { if (G3) { G3.adaGoster = false; kameraYerlestir('filo'); } }, 1800);
+    }
     function sahneOyunKur(tid) {
         if (!G3) return; const T = THREE, st = durum(tid), l = atabilenler();
         while (G3.oyun.children.length) G3.oyun.remove(G3.oyun.children[0]);
@@ -301,7 +342,8 @@
         if (tid === 'filo') {
             ada.position.set(84, 0, 0); ada.scale.setScalar(1.5); ada.rotation.y = -Math.PI / 2;
             const ara = l.length > 18 ? 3.4 : l.length > 12 ? 3.9 : 4.9;
-            l.forEach((s, i) => { const key = kimlik(s), g = gemi(new T.Color(renk(tid, i)).getHex()); g.scale.setScalar(0.62); const z = (i - (l.length - 1) / 2) * ara, x = XA0 + (XA1 - XA0) * Math.min(1, st.x[key] || 0); g.position.set(x, 0, z); g.userData.hedefX = x; const y = (st.yildiz || {})[key] || 0, e = etiket(ilkAd(s.ad) + (y ? ' ★' + y : ''), renk(tid, i)); e.position.y = 12.5; e.scale.multiplyScalar(2); g.add(e); G3.oyun.add(g); G3.gemiler.push(g); G3.kids[key] = g; });
+            if (G3.baskinG) { G3.S.remove(G3.baskinG); G3.baskinG = null; } setTimeout(() => baskinGorsel(false), 0);
+            l.forEach((s, i) => { const key = kimlik(s), g = gemi(new T.Color(renk(tid, i)).getHex()); g.scale.setScalar(0.62); const z = (i - (l.length - 1) / 2) * ara, x = XA0 + (XA1 - XA0) * Math.min(1, st.x[key] || 0); g.position.set(x, 0, z); g.userData.hedefX = x; const y = (st.yildiz || {})[key] || 0, e = etiket((typeof kmDolapIkon === 'function' && kmDolapIkon(s.g, s.ad) ? kmDolapIkon(s.g, s.ad) + ' ' : '') + ilkAd(s.ad) + (y ? ' ★' + y : ''), renk(tid, i)); e.position.y = 12.5; e.scale.multiplyScalar(2); g.add(e); G3.oyun.add(g); G3.gemiler.push(g); G3.kids[key] = g; });
         } else if (tid === 'kacis') {
             ada.position.set(104, 0, -8); ada.scale.setScalar(1.2); ada.rotation.y = -0.6;
             G3.biz = gemi(0xf59e5b); G3.biz.scale.setScalar(1.5); murettebat(G3.biz, l, tid); G3.oyun.add(G3.biz); G3.gemiler.push(G3.biz);
@@ -389,6 +431,9 @@
         let d = haritaHTML(tid, st);
         if (tid === 'filo') {
             const en = l.reduce((m, k) => Math.max(m, st.x[kimlik(k)] || 0), 0);
+            const kese = st.kese == null ? KESE : st.kese, bkn = st.baskin && st.baskin.n > 0 ? st.baskin : null;
+            d += '<div class="h3-sat"><span>💰 Sandık</span><span class="' + (kese <= 2 ? 'kirmizi' : '') + '">' + '💰'.repeat(Math.max(0, kese)) + '<span style="opacity:.3">' + '💰'.repeat(Math.max(0, KESE - kese)) + '</span></span></div>'
+                + (bkn ? '<div class="h3-sat"><span>☠️ Baskın</span><span class="kirmizi">' + bkn.n + ' korsan · ' + (BASKIN_YOL - bkn.d <= 1 ? 'SANDIĞIN DİBİNDE!' : (BASKIN_YOL - bkn.d) + ' tur sonra sandıkta') + '</span></div>' : '<div class="h3-sat ince"><span>☠️ Sıradaki baskın</span><span>' + (BASKIN_HER - (st.tur % BASKIN_HER || BASKIN_HER) + 1) + '. tur sonunda</span></div>');
             d += '<div class="h3-sat"><span>🏝️ En öndeki gemi</span><span>' + (en >= 1 ? 'adaya vardı!' : 'yolun %' + Math.round(en * 100) + "'i") + '</span></div><div class="h3-cub"><i style="width:' + (Math.min(1, en) * 100).toFixed(1) + '%;background:#f5c542"></i></div>';
         } else if (tid === 'kacis') {
             const o = st.hedef ? Math.min(1, st.yol / st.hedef) : 0, kalan = st.hedef ? Math.max(0, Math.round(st.hedef - st.yol)) : '…', ara = Math.max(0, Math.round(st.ara)), yakin = st.korsanHiz && st.ara < st.korsanHiz * 0.5;
@@ -418,19 +463,21 @@
         const st = durum(tid), l = atabilenler(), kap = panel(tid).querySelector('.h3-sahne'); if (!kap) return;
         let bas = '', alt = '';
         const K = KORSAN[st.adim] || KORSAN[0];
-        if (tid === 'filo') { const v = st.kazanan || []; bas = '🏆 5 ADA BİTTİ! SON HAZİNEYİ BULANLAR'; alt = '<div class="h3-son-adlar buyuk">' + v.map((k) => '<span>' + esc(ilkAd(k.slice(k.indexOf('|') + 1))) + '</span>').join('') + '</div><p>Bütün filo 5 adayı gezdi. Yıldızlar:</p>'; }
+        if (tid === 'filo' && st.kayip === 'soyuldu') { bas = '☠️ KORSANLAR SANDIĞI BOŞALTTI!'; alt = '<p>Bu sefer korsanlar kazandı. Rövanş aynı adadan: sandıkta 3 kese, gemiler kaldıkları yerde.</p>'; }
+        else if (tid === 'filo') { const v = st.kazanan || []; bas = '🏆 5 ADA BİTTİ! SON HAZİNEYİ BULANLAR'; alt = '<div class="h3-son-adlar buyuk">' + v.map((k) => '<span>' + esc(ilkAd(k.slice(k.indexOf('|') + 1))) + '</span>').join('') + '</div><p>Bütün filo 5 adayı gezdi. Yıldızlar:</p>'; }
+        else if (st.kayip === 'soyuldu') { bas = '☠️ KORSANLAR SANDIĞI BOŞALTTI!'; alt = '<p>Bu sefer korsanlar kazandı. Rövanş aynı adadan: sandıkta 3 kese, gemiler kaldıkları yerde.</p>'; }
         else if (st.kayip) { bas = st.kayip === 'batti' ? '💥 GEMİMİZ BATTI!' : '☠️ ' + esc(buyuk(K.ad)) + ' BİZE ÇARPTI!'; alt = '<p>Bu sefer ' + esc(K.ad) + ' kazandı' + (st.adim ? ' — ama filodan ' + st.adim + ' gemi batırdınız' : '') + '. Korsanın canı %' + Math.ceil(st.hp / Math.max(1, st.hpMax) * 100) + ' kaldı: Rövanş kaldığınız yerden, 6 canla.</p>'; }
         else if (tid === 'kacis') { bas = '💰 5 ADA BİTTİ! HAZİNE ADASI SİZİN'; alt = '<p>Korsanlara yakalanmadan bütün rotayı hep birlikte bitirdiniz</p>'; }
         else { bas = '👑 KORSAN FİLOSU YOK EDİLDİ!'; alt = '<p>5 korsan gemisini hep birlikte batırdınız. Hazine bütün sınıfın</p>'; }
         const yz = st.yildiz || {}, adlar = '<div class="h3-son-adlar">' + (tid === 'filo' ? l.map((s) => ilkAd(s.ad) + (yz[kimlik(s)] ? ' ★' + yz[kimlik(s)] : '')) : (st.finalAdlar || l.map((s) => ilkAd(s.ad)))).map((a) => '<span>' + esc(a) + '</span>').join('') + '</div>';
         const d = document.createElement('div'); d.id = 'h3-son'; d.className = 'h3-son';
-        d.innerHTML = '<div class="h3-son-ic"><h2>' + bas + '</h2>' + alt + adlar + '<div class="h3-son-btn"><button type="button" id="h3-yeni-son">' + (st.kayip ? '↺ Rövanş: ' + K.ikon + ' ' + esc(K.ad) : '↺ Yeni sefer') + '</button>' + (st.kayip && st.adim ? '<button type="button" id="h3-bastan" class="ikincil">Seferi baştan başlat</button>' : '') + '</div></div>';
+        d.innerHTML = '<div class="h3-son-ic"><h2>' + bas + '</h2>' + alt + adlar + '<div class="h3-son-btn"><button type="button" id="h3-yeni-son">' + (st.kayip === 'soyuldu' ? '↺ Rövanş: sandığı koru' : st.kayip ? '↺ Rövanş: ' + K.ikon + ' ' + esc(K.ad) : '↺ Yeni sefer') + '</button>' + (st.kayip && st.adim ? '<button type="button" id="h3-bastan" class="ikincil">Seferi baştan başlat</button>' : '') + '</div></div>';
         kap.appendChild(d);
     }
     // 2B sade görünüm (WebGL yok / yavaş cihaz)
     function duz2B(tid) {
         const z = $('h3-2b'); if (!z) return; const st = durum(tid), l = atabilenler();
-        if (tid === 'filo') z.innerHTML = '<div class="h3-2b-filo">' + l.map((s, i) => { const o = Math.min(1, st.x[kimlik(s)] || 0); return '<div class="h3-2b-hat"><span class="ad">' + esc(ilkAd(s.ad)) + '</span><span class="yol"><i style="left:' + (o * 92).toFixed(1) + '%;--r:' + renk(tid, liste().indexOf(s)) + '">⛵</i><b>🏝️</b></span></div>'; }).join('') + '</div>';
+        if (tid === 'filo') z.innerHTML = (st.baskin && st.baskin.n > 0 ? '<div class="h3-2b-baskin"><span class="kum">' + '☠️'.repeat(st.baskin.n) + '</span><span class="ok">' + (BASKIN_YOL - st.baskin.d <= 1 ? '→ 💰 SANDIĞIN DİBİNDE!' : '→ → 💰') + '</span><span class="kese">💰×' + (st.kese == null ? KESE : st.kese) + '</span></div>' : '') + '<div class="h3-2b-filo">' + l.map((s, i) => { const o = Math.min(1, st.x[kimlik(s)] || 0); return '<div class="h3-2b-hat"><span class="ad">' + esc(ilkAd(s.ad)) + '</span><span class="yol"><i style="left:' + (o * 92).toFixed(1) + '%;--r:' + renk(tid, liste().indexOf(s)) + '">⛵</i><b>🏝️</b></span></div>'; }).join('') + '</div>';
         else if (tid === 'kacis') { const o = st.hedef ? Math.min(1, st.yol / st.hedef) : 0, ko = Math.max(0, o - (st.hedef ? Math.max(0, st.ara) / st.hedef : 0.1)); z.innerHTML = '<div class="h3-2b-kacis"><span class="yol"><i class="biz" style="left:' + (o * 88).toFixed(1) + '%">⛵</i><i class="kor" style="left:' + (ko * 88).toFixed(1) + '%">🏴‍☠️</i><b>🏝️</b></span></div>'; }
         else z.innerHTML = '<div class="h3-2b-top"><span class="kor' + (st.faz === 'son' ? ' batti' : '') + '">🏴‍☠️</span><span class="biz">⛵</span></div>';
     }
@@ -453,6 +500,8 @@
         let ekBek = 0;
         if (tid === 'filo') {
             st.x[key] = Math.min(1.08, (st.x[key] || 0) + filoAdim(pl)); st.katki[key] = (st.katki[key] || 0) + top;
+            const itilen = baskinOk(st, pl);
+            if (itilen && cizili) { sonra(() => { korsanIt(itilen); afis(tid, '☠️ ' + adi + ' ' + itilen + ' KORSANI DENİZE ATTI!' + (st.baskin.n ? '\nkumsalda ' + st.baskin.n + ' korsan kaldı' : '\nBASKIN BİTTİ!'), '#f5c542'); SES.patla(false); hud(tid); }, 700); ekBek = 1500; }
             if (cizili) {
                 const sh = G3 && G3.kids && G3.kids[key];
                 if (sh) { sh.userData.hedefX = XA0 + (XA1 - XA0) * Math.min(1, st.x[key]); sicrat(sh.position.x - 2, sh.position.z, pl.some((p) => p >= 9)); yuzen(tid, '+' + top, sh.position.clone().setY(9), pl.some((p) => p >= 9) ? '#f5c542' : '#fff'); kameraYerlestir(tid); }
@@ -526,10 +575,14 @@
     // Tur sonu: oyun durumu HEMEN hesaplanır ve kaydedilir; zamanlayıcılar yalnız görsel (sonraki seri gelip zamanlayıcıları
     // temizlese de tur sayacı, korsan mesafesi, can kaybolmaz — 3B'de testte yakalandı).
     function turSonu(tid, sonraFn) {
-        const st = durum(tid), l = atabilenler(), cizili = !!panel(tid) && !!sonraFn, son = () => { if (sonraFn) sonraFn(); };
+        let st = durum(tid), l = atabilenler(), cizili = !!panel(tid) && !!sonraFn, son = () => { if (sonraFn) sonraFn(); };
         const biten = st.tur, ilerle = () => { st.tur++; st.turPuan = 0; st.turOk = 0; st.buTurBatan = []; kaydet(tid); };
         const SON = ADA.length - 1;
         if (tid === 'filo') {
+            const bk = l.some((s) => (st.x[kimlik(s)] || 0) >= 1) ? { olay: null } : baskinTur(st, l.length); // adaya varılan turda baskın yok
+            if (bk.olay === 'calindi' && st.kese <= 0) return kaybet(tid, 'soyuldu', cizili, son, 0);
+            const bkYaz = bk.olay === 'cikti' ? ['☠️ KORSAN BASKINI!\n' + st.baskin.n + ' korsan adaya çıktı · 7+ ok denize atar', '#ef5350'] : bk.olay === 'yaklasti' ? ['☠️ KORSANLAR SANDIĞA YAKLAŞTI!\n' + st.baskin.n + ' korsan · bir tur sonra sandıkta', '#ef5350'] : bk.olay === 'calindi' ? ['💰 KORSANLAR ' + bk.calinan + ' KESE ÇALDI!\nsandıkta ' + st.kese + ' kese kaldı', '#ef5350'] : bk.olay === 'puskurtuldu' ? ['🛡️ BASKIN PÜSKÜRTÜLDÜ!\nhep birlikte · sandığa +1 kese', '#f5c542'] : null;
+            if (bkYaz && cizili) { const sonEski = son; son = () => { afis(tid, bkYaz[0], bkYaz[1]); if (bk.olay === 'puskurtuldu') SES.zil(); else SES.alarm(); baskinGorsel(true); hud(tid); sonra(sonEski, 2600); }; }
             const varan = l.filter((s) => (st.x[kimlik(s)] || 0) >= 1).map(kimlik);
             if (varan.length) {
                 st.yildiz = Object.assign({}, st.yildiz || {}); varan.forEach((k) => { st.yildiz[k] = (st.yildiz[k] || 0) + 1; });
@@ -573,7 +626,7 @@
     function adaVardi(tid, varan, cizili, son, ilerle) { // v424: ayak bitti → kutlama, sonra sıradaki ada (oyun bitmez)
         const st = durum(tid), A = ADA[st.adim], N = ADA[st.adim + 1];
         st.sonVaran = varan || null; st.adim++;
-        if (tid === 'filo') st.x = {};
+        if (tid === 'filo') { st.x = {}; st.baskin = null; }
         else { st.yol = 0; st.hedef = Math.round(st.hedef * 1.08); st.korsanHiz = Math.round(st.korsanHiz * 1.06); st.ara = st.ara0 || Math.round(st.korsanHiz * 0.25); }
         ilerle(); if (!cizili) return son();
         if (G3) { G3.adaGoster = true; kameraYerlestir(tid); }
@@ -595,6 +648,7 @@
         st.faz = 'son'; st.kayip = neden; st.finalAdlar = l.map((s) => ilkAd(s.ad)); kaydet(tid);
         if (!cizili) { if (son) son(); return; }
         const ek = neden === 'batti' ? toplar * 300 : 0;
+        if (neden === 'soyuldu') { afis(tid, '☠️ KORSANLAR SANDIĞI BOŞALTTI!\nbu sefer korsan kazandı', '#ef5350'); SES.alarm(); baskinGorsel(true); setTimeout(() => { hud(tid); if (son) son(); }, 3600); return; }
         afis(tid, neden === 'batti' ? buyuk(K.ad) + ' ATEŞ AÇIYOR!\n💣 × ' + toplar : buyuk(K.ad) + ' TAM YOL GELİYOR!', '#ef5350'); SES.alarm();
         if (neden === 'batti') sonra(() => korsanVur(toplar), 1300); else kameraYerlestir(tid);
         sonra(() => {
@@ -633,6 +687,7 @@
     function rovans(tid) { // kayıptan sonra kaldığı gemiden: 6 can, çarpma sayacı baştan, korsanın yarası kalır
         const st = durum(tid), K = KORSAN[st.adim] || KORSAN[0];
         zTemizle(); _kilit = false; _bekleyenTur = null;
+        if (tid === 'filo') { st.faz = 'oyun'; st.kayip = null; st.kese = 3; st.baskin = null; st.tur++; st.finalAdlar = null; kaydet(tid); h3SahneKur(tid); return; }
         st.faz = 'oyun'; st.kayip = null; st.can = TOP_CAN; st.barut = 0; st.kalan = K.tur; st.yeni = false; st.tur++; st.turPuan = 0; st.turOk = 0; st.buTurBatan = []; st.finalAdlar = null;
         kaydet(tid); h3SahneKur(tid);
     }
@@ -685,7 +740,7 @@
     }
     function css() {
         if ($('h3-css')) return; const st = document.createElement('style'); st.id = 'h3-css';
-        st.textContent = [
+        st.textContent = ['.h3-2b-baskin{max-width:min(100%,calc(100% - 590px));min-width:min(100%,420px);display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 8px;padding:8px 14px;border-radius:14px;background:rgba(127,29,29,.82);border:2px solid #ef5350;color:#fff;font:900 clamp(16px,2.2vw,28px) Nunito,system-ui,sans-serif;animation:h3Bsk 1s ease-in-out infinite alternate}.h3-2b-baskin .kum{letter-spacing:2px}.h3-2b-baskin .kese{margin-left:auto}@keyframes h3Bsk{to{box-shadow:0 0 22px rgba(239,83,80,.7)}}',
             '.km-oyun-panel-filo,.km-oyun-panel-kacis,.km-oyun-panel-topsavasi{flex-direction:column;right:0}',
             '.h3-sahne{position:relative;flex:1;min-height:420px;width:100%;height:100%;overflow:hidden;border-radius:inherit;background:linear-gradient(#3f9fe6 0%,#8fd0f7 34%,#cfeeff 58%,#cfeeff 100%);font-family:Inter,system-ui,sans-serif;color:#f1f7fb}',
             '.h3-sahne.duz{background:linear-gradient(#3f9fe6 0%,#8fd0f7 30%,#1d8fb8 30.5%,#0e5f86 100%)}',
@@ -741,5 +796,5 @@
     window.h3Durum = durum;
     window.h3Oyunlar = TIDLER;
     window.h3Sefer = (tid) => { const st = durum(tid), L = seferListe(tid), o = L[st.adim] || L[0]; return { adim: st.adim, toplam: L.length, ad: o.ad, ikon: o.ikon, sonraki: L[st.adim + 1] ? L[st.adim + 1].ad : null }; };
-    window._h3Ic = { TOP_CAN, TOP_TUR, KORSAN, ADA, filoAdim, topHasar, olcek, OYUN, ekran: (ad) => { if (!G3) return null; const o = ad === 'korsan' ? G3.korsan : ad === 'biz' ? G3.biz : null; if (!o) return null; const v = o.position.clone().setY(4).project(G3.cam); return { x: Math.round((v.x + 1) / 2 * G3.kap.clientWidth), y: Math.round((1 - v.y) / 2 * G3.kap.clientHeight), w: G3.kap.clientWidth, h: G3.kap.clientHeight }; } };
+    window._h3Ic = { baskinOk, baskinTur, baskinSay, BASKIN_HER, BASKIN_YOL, KESE, TOP_CAN, TOP_TUR, KORSAN, ADA, filoAdim, topHasar, olcek, OYUN, ekran: (ad) => { if (!G3) return null; const o = ad === 'korsan' ? G3.korsan : ad === 'biz' ? G3.biz : null; if (!o) return null; const v = o.position.clone().setY(4).project(G3.cam); return { x: Math.round((v.x + 1) / 2 * G3.kap.clientWidth), y: Math.round((1 - v.y) / 2 * G3.kap.clientHeight), w: G3.kap.clientWidth, h: G3.kap.clientHeight }; } };
 })();

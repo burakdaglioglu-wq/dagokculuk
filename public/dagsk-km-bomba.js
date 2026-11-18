@@ -58,6 +58,17 @@
         return m;
     }
     // Fitile seri sonucunu uygula: biterse patlar, bomba yeniden kurulur
+    // v434 İMHA KABLOLARI (fikir 5, sadeleştirilmiş: çark yok, takımın herkesi imha ekibi): her bombada sarı · kırmızı · mavi kablo.
+    // Takımdan biri o renge (9-10 / 7-8 / 5-6) atınca o kablo kesilir (üstüne adı yazılır). Üçü de kesilince bomba SÖNER: fitil +15 sn, yeni kablolar.
+    const KABLO = ['sari', 'kirmizi', 'mavi'], KABLO_RENK = { sari: '#F5D32A', kirmizi: '#E23B2E', mavi: '#2F7FD6' }, KABLO_AD = { sari: 'SARI', kirmizi: 'KIRMIZI', mavi: 'MAVİ' }, SONME = 15;
+    const kabloOf = (p) => (p >= 9 ? 'sari' : p >= 7 ? 'kirmizi' : p >= 5 ? 'mavi' : null);
+    function kabloKes(st, ti, puanlar, ad) {
+        st.kablo = st.kablo || []; st.sondu = st.sondu || []; const k = st.kablo[ti] = st.kablo[ti] || {}, kesilen = [];
+        puanlar.forEach((p) => { const c = kabloOf(p); if (c && !k[c]) { k[c] = ad; kesilen.push(c); } });
+        const sondu = KABLO.every((c) => k[c]);
+        if (sondu) { st.sondu[ti] = (st.sondu[ti] || 0) + 1; st.kablo[ti] = {}; }
+        return { kesilen, sondu };
+    }
     function fitilUygula(f, net) { const y = f + net; return y <= 0 ? { fitil: FITIL_BAS, patladi: true } : { fitil: Math.min(FITIL_MAX, y), patladi: false }; }
     // Kazanan: en az patlama (erken bitişte seri başına), eşitlikte en uzun fitil. Yine eşitse birden çok takım.
     function kazananlar(patlama, fitil, seri, erken) {
@@ -159,10 +170,11 @@
             const t = TAKIM[ti];
             tk += '<div class="bm-tk" id="bm-tk-' + ti + '" style="--t:' + t.renk + '"><div class="bm-tk-bas"><b>' + t.ad + '</b><span class="bm-pat" id="bm-pat-' + ti + '"></span></div>'
                 + '<div class="bm-tk-bomba">' + bombaSVG(ti) + '<span class="bm-deg" id="bm-deg-' + ti + '"></span><span class="bm-bum" aria-hidden="true">💥</span></div>'
+                + '<div class="bm-kablo" id="bm-kablo-' + ti + '" aria-label="Kablolar"></div>'
                 + '<div class="bm-tk-uye" id="bm-uye-' + ti + '"></div></div>';
         }
         $('bm-icerik').innerHTML = '<div class="bm-oyun" id="bm-oyun"><div class="bm-ust">'
-            + '<div class="bm-kural"><i>💣</i><div><small>FİTİL HATTI</small><b>Fitil biterse bomba patlar</b><span>Her ok fitili 4 sn yakar · iyi oklar uzatır</span></div></div>'
+            + '<div class="bm-kural"><i>💣</i><div><small>FİTİL HATTI</small><b>Fitil biterse bomba patlar</b><span>İyi ok fitili uzatır · ✂️ renge at, kablo kesilir</span></div></div>'
             + '<div class="bm-sayac"><small>ATTI</small><b id="bm-at">0 / 0</b><span id="bm-toplam">💥 0</span></div></div>'
             + '<div class="bm-orta" id="bm-orta"><div class="bm-takimlar" id="bm-takimlar" style="--n:' + Math.max(1, st.T) + '">' + tk + '</div>'
             + '<div class="bm-duyuru" id="bm-duyuru" aria-live="polite"></div><div class="bm-ceza" id="bm-ceza" aria-live="assertive"></div></div>'
@@ -171,7 +183,13 @@
             + '<div class="bm-arac"><button type="button" class="bm-kucuk" id="bm-nasil" aria-label="Nasıl oynanır">?</button><button type="button" class="bm-kucuk" id="bm-yeni-btn" aria-label="Yeni oyun">↻</button><button type="button" class="bm-kucuk genis" id="bm-bitir" hidden>Hep birlikte bitir</button></div></div></div>';
         $('bm-oyun')._T = st.T;
     }
+    function kabloCiz(st, ti, sondu) {
+        const e = $('bm-kablo-' + ti); if (!e) return; const k = (st.kablo || [])[ti] || {};
+        const h = KABLO.map((c) => '<span class="' + (k[c] ? 'kesik' : '') + '" style="--k:' + KABLO_RENK[c] + '"><i></i><b>' + (k[c] ? '✂️ ' + esc(String(k[c]).slice(0, 8)) : '') + '</b></span>').join('') + ((st.sondu || [])[ti] ? '<em>✅×' + st.sondu[ti] + '</em>' : '');
+        if (e._h !== h) { e._h = h; e.innerHTML = h; }
+    }
     function fitilCiz(st) {
+        for (let ti = 0; ti < st.T; ti++) kabloCiz(st, ti);
         for (let ti = 0; ti < st.T; ti++) {
             const f = Math.max(0, Math.min(FITIL_MAX, _gf[ti] != null ? _gf[ti] : st.fitil[ti])), oran = f / FITIL_MAX;
             const yol = $('bm-fitil-' + ti), kiv = $('bm-kiv-' + ti), s = $('bm-sure-' + ti), kart = $('bm-tk-' + ti); if (!yol) continue;
@@ -279,6 +297,8 @@
         let olay = null; if (ic('sans') && Math.random() < OLAY_SANS) olay = Math.random() < .6 ? rastgele(OLAY_KOTU) : rastgele(OLAY_IYI);
         const f0 = st.fitil[ti], net = r.net + (olay ? olay.d : 0), sonuc = fitilUygula(f0, net);
         st.fitil[ti] = sonuc.fitil;
+        const kb = sonuc.patladi ? (st.kablo = st.kablo || [], st.kablo[ti] = {}, { kesilen: [], sondu: false }) : kabloKes(st, ti, puanlar, adOf(kimlik(s)));
+        if (kb.sondu) st.fitil[ti] = Math.min(FITIL_MAX, st.fitil[ti] + SONME);
         if (sonuc.patladi) { st.patlama[ti] = (st.patlama[ti] || 0) + 1; if (ic('ceza')) st.ceza = { ti, g: Math.floor(Math.random() * GOREV.length) }; }
         st.katki[key] = (st.katki[key] || 0) + r.kazanc;
         st.atan[key] = (st.atan[key] || 0) + 1; st.seri = (st.seri || 0) + 1; st.ok = (st.ok || 0) + puanlar.length;
@@ -302,6 +322,8 @@
             sonra(() => { duyur('<b>' + olay.ikon + ' ' + olay.ad + '!</b><small>' + tk.ad + ' takımı · ' + esc(olay.yaz) + (olay.d < 0 ? ' · Şans işi, iyi atana da çıkar.' : '') + '</small>', olay.d < 0 ? 'kotu' : 'iyi'); olay.d < 0 ? SES.kisalt() : SES.olay(); ayarla(olay.d); degGoster(ti, olay.d); if (olay.d < 0) kipir(ti, 'kipir'); }, t);
             t += 1900;
         }
+        if (kb.kesilen.length) { sonra(() => { kabloCiz(st, ti, kb.sondu ? null : undefined); duyur('<b>✂️ ' + kb.kesilen.map((c) => KABLO_AD[c]).join(' + ') + ' KABLO KESİLDİ!</b><small>' + esc(adi) + ' · ' + tk.ad + ' takımı' + (kb.sondu ? '' : ' · kalan: ' + KABLO.filter((c) => !(st.kablo[ti] || {})[c]).map((c) => KABLO_AD[c].toLocaleLowerCase('tr-TR')).join(', ')) + '</small>', 'iyi'); SES.uzat(); }, t); t += 1500; }
+        if (kb.sondu) { sonra(() => { ayarla(SONME); degGoster(ti, SONME); duyur('<b>✅ ' + tk.ad + ' BOMBASI SÖNDÜ!</b><small>Üç kablo da kesildi · fitil +' + SONME + ' sn · yeni bomba, yeni kablolar</small>', 'iyi'); SES.sondur(); kabloCiz(st, ti); const k2 = $('bm-tk-' + ti); const m = merkezOf(k2 && k2.querySelector('.bm-bomba')); if (m) patlat(m.x, m.y, ['#7BE36B', '#FFFFFF', '#4DA3FF'], 30, 6); }, t); t += 1900; }
         if (!sonuc.patladi && st.fitil[ti] <= KRITIK && ic('gerilim')) sonra(() => { [0, .35, .7, 1.05].forEach((d) => ton(1500, .04, d, 'square', .05)); }, t);
         if (sonuc.patladi) {
             sonra(() => { _gf[ti] = 0; fitilCiz(st); duyur('<b>⏳ …</b><small>' + tk.ad + ' takımının fitili bitiyor…</small>', 'kotu'); const k = $('bm-tk-' + ti); if (k) k.classList.add('kritik'); [0, .2, .4, .6, .8].forEach((d) => ton(1700, .04, d, 'square', .06)); }, t); t += azHareket() ? 300 : 1200;
@@ -372,7 +394,7 @@
             + '.bm-sayac{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 14px;border-radius:14px;background:rgba(14,8,6,.78);line-height:1.05}.bm-sayac b{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(24px,2.8vw,34px);font-weight:800;font-variant-numeric:tabular-nums}.bm-sayac span{font-size:12px;font-weight:800;color:#FFB199;white-space:nowrap}'
             + '.bm-orta{flex:1;min-height:0;position:relative;display:flex;flex-direction:column}'
             + '.bm-takimlar{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px}'
-            + '.bm-tk{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:16px;background:rgba(255,255,255,.05);border:3px solid var(--t);box-sizing:border-box}'
+            + '.bm-kablo{display:flex;gap:4px;align-items:center;margin:4px 0 2px;flex-wrap:wrap}.bm-kablo span{flex:1 1 0;min-width:0;display:grid;gap:1px}.bm-kablo span i{display:block;height:9px;border-radius:5px;background:var(--k);box-shadow:0 0 8px var(--k)}.bm-kablo span.kesik i{background:linear-gradient(90deg,var(--k) 42%,transparent 42% 58%,var(--k) 58%);box-shadow:none;opacity:.55}.bm-kablo span b{font:900 10px Nunito,system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:12px}.bm-kablo em{font:900 12px Nunito,system-ui,sans-serif;font-style:normal;color:#7BE36B}.bm-tk{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:16px;background:rgba(255,255,255,.05);border:3px solid var(--t);box-sizing:border-box}'
             + '.bm-tk-bas{display:flex;justify-content:space-between;align-items:center;gap:6px}.bm-tk-bas b{font-family:"Barlow Condensed",Impact,sans-serif;font-size:clamp(20px,2.3vw,30px);font-weight:800;color:var(--t);line-height:1}.bm-pat{font-size:clamp(14px,1.5vw,20px);white-space:nowrap}'
             + '.bm-tk-bomba{position:relative;flex:1;min-height:70px;display:flex;align-items:center;justify-content:center}.bm-bomba{width:100%;height:100%;max-height:100%;overflow:visible}'
             + '.bm-kiv{transform-box:fill-box;transform-origin:center}.bm-fitil-iz{fill:none;stroke:#3A302A;stroke-width:3;stroke-dasharray:3 4}.bm-fitil{fill:none;stroke:#D9B98A;stroke-width:5;stroke-linecap:round;transition:stroke-dasharray .35s ease}'
@@ -422,5 +444,5 @@
     window.bmAyarUygula = () => { if ($('bm-icerik')) guncelle(); };
     window.bmFinalZorla = bmFinalZorla;
     window.bmDurum = durum;
-    window._bmIc = { esikOf, okFitil, seriFitil, takimSayisi, takimlaraBol, fitilUygula, kazananlar, FITIL_BAS, FITIL_MAX, YANMA_OK, KRITIK, GOREV, TAKIM };
+    window._bmIc = { kabloKes, kabloOf, SONME, esikOf, okFitil, seriFitil, takimSayisi, takimlaraBol, fitilUygula, kazananlar, FITIL_BAS, FITIL_MAX, YANMA_OK, KRITIK, GOREV, TAKIM };
 })();

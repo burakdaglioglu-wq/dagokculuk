@@ -33,7 +33,7 @@
     const panel = (tid) => $('km-oyun-panel-' + tid);
     const aktifTema = () => (typeof _kmOyunAktifTema !== 'undefined' ? _kmOyunAktifTema : '');
     const OYUN = {
-        catikosu: { ad: 'Çatı Koşusu', ikon: '🥷', kural: 'Her ok ninjanı ileri koşturur. Çatı arasını atlamak için seride en az yarı puan gerek (3 okta 15). Kapıya varan yıldız alır, yıldızlar kuşağı yükseltir. En çok 5 tur.' },
+        catikosu: { ad: 'Çatı Koşusu', ikon: '🥷', kural: 'Her ok ninjanı ileri koşturur. Çatı arasını atlamak için seride en az yarı puan gerek (3 okta 15). Kapıya varan yıldız alır, yıldızlar kuşağı yükseltir. En çok 5 tur. 🥷 1. ve 3. tur sonunda Kızıl Klan tapınağa tırmanır: 7+ her ok birini düşürür; varanlar fener söndürür, 3 fener sönerse bölüm kaybedilir.' },
         ejderkule: { ad: 'Ejder Kulesi', ikon: '🐉', kural: 'Her ok muhafıza bir shuriken: puanı kadar hasar. Herkes atınca muhafızın canı bittiyse düşer, klan bir kat yukarı çıkar. 5. katta Kızıl Ejder.' }
     };
     const TIDLER = Object.keys(OYUN);
@@ -69,6 +69,23 @@
         }
         return { s1: s1, kil: kil, kaldi: kaldi, sensei: sensei };
     }
+    // v434 KLAN AKINI (fikir 2, Çatı Koşusu'nun tehlikesi): 1. ve 3. tur sonunda rakip Kızıl Klan tapınağa tırmanır (sınıfın üçte biri, 3–8).
+    // 7+ her ok bir ninjayı çatıdan düşürür. Bir tur sonra kalanlar tapınağa varır: her 3 ninja (yukarı yuvarlanır) bir fener söndürür.
+    // 3 fener var; hepsi sönerse bölüm kaybedilir (yıldız yok, bölüm baştan). Hepsi düşerse söndürülmüş fener yeniden yanar.
+    const FENER = 3;
+    function klanSay(n) { return Math.max(3, Math.min(8, Math.round(n / 3))); }
+    function klanOk(st, pl) { if (!st.klan || !(st.klan.n > 0)) return 0; const d = Math.min(st.klan.n, pl.filter((p) => p >= 7).length); st.klan.n -= d; return d; }
+    function klanTur(st, n) {
+        if (st.fener == null) st.fener = FENER;
+        const k = st.klan;
+        if (k) {
+            st.klan = null;
+            if (k.n <= 0) { const once = st.fener; st.fener = Math.min(FENER, st.fener + 1); return { olay: 'puskurtuldu', yandi: st.fener > once }; }
+            const son = Math.min(st.fener, Math.ceil(k.n / 3)); st.fener -= son; return { olay: 'vardi', sonen: son, n: k.n };
+        }
+        if (st.tur % 2 === 1 && st.tur < MAKS_TUR) { st.klan = { n: klanSay(n), ilk: klanSay(n) }; return { olay: 'geldi' }; }
+        return { olay: null };
+    }
     function muhafizCan(bolum, n, k) { return Math.max(40, Math.round(n * k * (bolum === 4 ? 10 : 8))); }
     function rnd(t) { let s = t * 9301 + 49297; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
 
@@ -82,7 +99,7 @@
     const yildizSay = (tid, key) => (ilerleme(tid).yildiz[key] || 0);
     const kusak = (key) => KUSAK[Math.min(6, yildizSay('catikosu', key))];
     const _onbellek = {};
-    function yeniOyun(tid) { return { tid: tid, tarih: bugun(), bolum: ilerleme(tid).bolum, tur: 1, atan: {}, katki: {}, faz: 'oyun', pos: {}, hata: {}, hp: 0, hpMax: 0, varan: null, finalAdlar: null, ilerlemeOnce: null }; }
+    function yeniOyun(tid) { return { tid: tid, tarih: bugun(), bolum: ilerleme(tid).bolum, tur: 1, atan: {}, katki: {}, faz: 'oyun', pos: {}, hata: {}, hp: 0, hpMax: 0, varan: null, finalAdlar: null, ilerlemeOnce: null, fener: FENER, klan: null, kayip: false }; }
     function durum(tid) {
         let ham = null; try { ham = localStorage.getItem(anahtar(tid)); } catch (e) { }
         const o = _onbellek[tid];
@@ -296,6 +313,19 @@
     function yUcus(s, takla) { for (const g of (G3 && G3.B) || []) if (s > g.a && s < g.b) { const u = (s - g.a) / (g.b - g.a); return { y: g.h0 + (g.h1 - g.h0) * u + Math.sin(Math.PI * u) * 3.4, rot: takla ? -Math.PI * 2 * u : -0.25 * Math.sin(Math.PI * u) }; } return { y: yAt(s) || 0, rot: 0 }; }
     const seritZ = (i, n) => (i - (n - 1) / 2) * Math.min(1.05, 21 / Math.max(1, n));
 
+    function klanGorsel() { // Kızıl Klan: sınıf ninjalarının yanında, iki yandan çatıya tırmanan kırmızı ninjalar
+        if (!G3 || G3.tid !== 'catikosu' || !G3.dunya) return; const st = durum('catikosu');
+        if (G3.klanG) { G3.dunya.remove(G3.klanG); temizle(G3.klanG); G3.klanG = null; }
+        if (!st.klan || !(st.klan.n > 0)) return;
+        const T = THREE, gr = new T.Group(), ns = Object.values(G3.nin), ort = ns.length ? ns.reduce((a, n) => a + n.position.x, 0) / ns.length : 20;
+        for (let i = 0; i < st.klan.n; i++) { const kn = ninjaYap('Kızıl', '#ff3b3b', 0x7f1d1d), x = Math.min(L - 4, ort + 6 + (i >> 1) * 3.2), y = yAt(x); kn.position.set(x, (y == null ? 4 : y) - 0.6, (i % 2 ? 1 : -1) * (12.5 + (i >> 1) * 0.6)); kn.rotation.y = Math.PI; kn.userData.klan = true; gr.add(kn); }
+        G3.klanG = gr; G3.dunya.add(gr);
+    }
+    function klanDusur(n) {
+        if (!G3 || !G3.klanG) return; const kids = G3.klanG.children.filter((c) => !c.userData.dustu);
+        for (let i = 0; i < n && i < kids.length; i++) { const k = kids[kids.length - 1 - i]; k.userData.dustu = true; const y0 = k.position.y, z0 = k.position.z; kivilcim(k.position.clone().setY(y0 + 2), 0xff5a5a, 10);
+            an(1, (p) => { k.position.y = y0 + Math.sin(Math.PI * p * 0.6) * 2 - p * p * 12; k.position.z = z0 * (1 + p * 0.5); k.userData.piv.rotation.x = p * 8; }, () => { if (G3 && G3.klanG) G3.klanG.remove(k); }, i * 0.15); }
+    }
     function sahneOyunKur(tid) {
         if (!G3) return; const T = THREE, st = durum(tid), l = atabilenler(), b = BOLUM[st.bolum] || BOLUM[0];
         if (G3.dunya) { G3.S.remove(G3.dunya); temizle(G3.dunya); }
@@ -304,11 +334,12 @@
         gokKur(b, G3.dunya);
         if (tid === 'ejderkule') kuleKur(b, G3.dunya, st.bolum); else parkurKur(b, G3.dunya, st.bolum);
         l.forEach((s, i) => {
-            const key = kimlik(s), n = ninjaYap(ilkAd(s.ad), renk(tid, liste().indexOf(s)), (tid === 'catikosu' ? kusak(key) : KUSAK[0])[1]); G3.nin[key] = n; G3.dunya.add(n);
+            const key = kimlik(s), n = ninjaYap((typeof kmDolapIkon === 'function' && kmDolapIkon(s.g, s.ad) ? kmDolapIkon(s.g, s.ad) + ' ' : '') + ilkAd(s.ad), renk(tid, liste().indexOf(s)), (tid === 'catikosu' ? kusak(key) : KUSAK[0])[1]); G3.nin[key] = n; G3.dunya.add(n);
             if (tid === 'catikosu') { const sp = Math.min(L, st.pos[key] || 0); n.userData.s = sp; n.position.set(sp, yAt(sp) || 0, seritZ(i, l.length)); }
             else { const a = Math.PI * (0.18 + 0.64 * (i / Math.max(1, l.length - 1))), rr = l.length > 18 ? 11.5 : 10; n.position.set(-Math.cos(a) * rr, 0, Math.sin(a) * rr * 0.5 + 0.5); const dx = -n.position.x, dz = -5 - n.position.z; n.rotation.y = Math.atan2(-dz, dx); n.userData.ev = n.position.clone(); }
         });
         if (tid === 'ejderkule' && st.faz === 'son' && G3.muh) G3.muh.visible = false;
+        G3.klanG = null; if (tid === 'catikosu') klanGorsel();
         kameraYerlestir(tid, true);
     }
     function kameraYerlestir(tid, aninda) {
@@ -384,6 +415,7 @@
             : s ? avatar(s, 52) + '<div class="n3-sira-yazi"><small>SIRADA · ' + st.tur + '. TUR</small><b>' + esc(ilkAd(s.ad)) + '</b>' + (tid === 'catikosu' ? '<em>' + kusak(kimlik(s))[0] + ' kuşak' + (yildizSay(tid, kimlik(s)) ? ' · ' + '⭐'.repeat(Math.min(6, yildizSay(tid, kimlik(s)))) : '') + '</em>' : '') + '</div>'
                 : '<div class="n3-sira-yazi"><small>' + st.tur + '. TUR</small><b>Sporcuya dokun</b></div>';
         let d = '<div class="n3-harita">' + harita(tid, st.bolum) + '</div>';
+        if (tid === 'catikosu') { const fn = st.fener == null ? FENER : st.fener; d += '<div class="n3-sat"><span>🏮 Tapınak fenerleri</span><span class="n3-fener">' + '🏮'.repeat(Math.max(0, fn)) + '<span style="opacity:.25;filter:grayscale(1)">' + '🏮'.repeat(Math.max(0, FENER - fn)) + '</span></span></div>' + (st.klan && st.klan.n > 0 ? '<div class="n3-sat"><span>🥷 Kızıl Klan</span><span style="color:#ff6b6b;font-weight:900">' + st.klan.n + ' ninja · tur sonunda tapınakta!</span></div>' : ''); }
         if (tid === 'catikosu') d += '<div class="n3-sat"><span>⛩️ Kapıya varan</span><span>' + kapida(st).length + ' ninja</span></div><div class="n3-sat ince"><span>Tur</span><span>' + Math.min(st.tur, MAKS_TUR) + ' / ' + MAKS_TUR + '</span></div>';
         else { const hp = st.hpMax ? st.hp : 0, mx = st.hpMax || 1; d += '<div class="n3-sat"><span>' + esc(b.muh) + '</span><span>' + (st.hpMax ? Math.max(0, hp) + ' / ' + mx : 'bekliyor') + '</span></div><div class="n3-cub"><i style="width:' + (st.hpMax ? Math.max(0, hp) / mx * 100 : 100).toFixed(1) + '%"></i></div>'; }
         d += '<div class="n3-sat ince"><span>Bu tur atan</span><span>' + buTurAtan(st) + ' / ' + l.length + '</span></div>';
@@ -399,7 +431,9 @@
         const b = BOLUM[st.bolum] || BOLUM[0], son = st.bolum >= 4, sonraki = BOLUM[(st.bolum + 1) % 5];
         const adlar = st.finalAdlar || atabilenler().map((s) => ilkAd(s.ad));
         let ic = '';
-        if (tid === 'catikosu') {
+        if (tid === 'catikosu' && st.kayip) {
+            ic = '<h2>🏮 BÜTÜN FENERLER SÖNDÜ</h2><p>Bu sefer Kızıl Klan kazandı. ' + esc(b.ad) + ' baştan: herkes yeniden koşacak, yıldızlar duruyor.</p><div class="n3-son-adlar">' + adlar.map((a) => '<span>' + esc(a) + '</span>').join('') + '</div>';
+        } else if (tid === 'catikosu') {
             const v = st.varan || [], vAd = v.map((k) => ilkAd(k.slice(k.indexOf('|') + 1)));
             const kalan = adlar.filter((a) => vAd.indexOf(a) === -1);
             ic = '<h2>' + b.ikon + ' ' + esc(buyuk(b.ad)) + ' BİTTİ</h2>'
@@ -409,14 +443,14 @@
             ic = '<h2>' + (son ? '🐉 KIZIL EJDER YENİLDİ!' : esc(buyuk(b.muh)) + ' DÜŞTÜ!') + '</h2><p>' + (son ? 'Kulenin tepesine hep birlikte çıktınız' : 'Klan Kat ' + (st.bolum + 2) + "'ye çıktı. Herkesin shurikeni değdi") + '</p><div class="n3-son-adlar">' + adlar.map((a) => '<span>' + esc(a) + '</span>').join('') + '</div>';
         }
         const d = document.createElement('div'); d.id = 'n3-son'; d.className = 'n3-son';
-        d.innerHTML = '<div class="n3-son-ic">' + ic + '<div class="n3-son-btn"><button type="button" id="n3-sonraki">' + (son ? '↺ Baştan başla: ' + BOLUM[0].ikon + ' ' + (tid === 'ejderkule' ? 'Kat 1' : BOLUM[0].ad) : '▶ Sonraki bölüm: ' + sonraki.ikon + ' ' + (tid === 'ejderkule' ? 'Kat ' + (st.bolum + 2) : sonraki.ad)) + '</button></div></div>';
+        d.innerHTML = '<div class="n3-son-ic">' + ic + '<div class="n3-son-btn"><button type="button" id="n3-sonraki"' + (st.kayip ? ' data-rovans="1"' : '') + '>' + (st.kayip ? '↺ Rövanş: ' + b.ikon + ' ' + esc(b.ad) : son ? '↺ Baştan başla: ' + BOLUM[0].ikon + ' ' + (tid === 'ejderkule' ? 'Kat 1' : BOLUM[0].ad) : '▶ Sonraki bölüm: ' + sonraki.ikon + ' ' + (tid === 'ejderkule' ? 'Kat ' + (st.bolum + 2) : sonraki.ad)) + '</button></div></div>';
         kap.appendChild(d);
     }
     function duz2B(tid) {
         const z = $('n3-2b'); if (!z) return; const st = durum(tid), l = atabilenler(), b = BOLUM[st.bolum] || BOLUM[0];
         if (tid === 'catikosu') {
             const B = parkur(st.bolum).B, araliklar = B.map((g) => '<b class="ara" style="left:' + (g.a / L * 92).toFixed(1) + '%;width:' + ((g.b - g.a) / L * 92).toFixed(1) + '%"></b>').join('');
-            z.innerHTML = '<div class="n3-2b-kosu">' + l.map((s, i) => { const o = Math.min(1, (st.pos[kimlik(s)] || 0) / L); return '<div class="n3-2b-hat"><span class="ad">' + esc(ilkAd(s.ad)) + '</span><span class="yol">' + araliklar + '<i style="left:' + (o * 92).toFixed(1) + '%;--r:' + renk(tid, liste().indexOf(s)) + '">🥷</i><em>⛩️</em></span></div>'; }).join('') + '</div>';
+            z.innerHTML = (st.klan && st.klan.n > 0 ? '<div class="n3-2b-klan"><span>' + '🥷'.repeat(st.klan.n) + '</span><b>→ 🏮 tapınağa tırmanıyor!</b><em>' + '🏮'.repeat(Math.max(0, st.fener == null ? FENER : st.fener)) + '</em></div>' : '') + '<div class="n3-2b-kosu">' + l.map((s, i) => { const o = Math.min(1, (st.pos[kimlik(s)] || 0) / L); return '<div class="n3-2b-hat"><span class="ad">' + esc(ilkAd(s.ad)) + '</span><span class="yol">' + araliklar + '<i style="left:' + (o * 92).toFixed(1) + '%;--r:' + renk(tid, liste().indexOf(s)) + '">🥷</i><em>⛩️</em></span></div>'; }).join('') + '</div>';
         } else z.innerHTML = '<div class="n3-2b-kule"><span class="muh' + (st.faz === 'son' ? ' dustu' : '') + '">' + b.e2 + '</span><span class="klan">' + '🥷'.repeat(Math.min(12, l.length)) + '</span></div>';
     }
 
@@ -435,6 +469,8 @@
         st.atan[key] = st.tur; st.katki[key] = (st.katki[key] || 0) + top;
         if (tid === 'catikosu') {
             const s0 = st.pos[key] || 0, h = kosuHesap(s0, oran, st.hata, key, st.bolum); st.pos[key] = h.s1;
+            const dusen = klanOk(st, pl);
+            if (dusen && cizili) sonra(() => { klanDusur(dusen); afis('🥷 ' + buyuk(adi) + ' ' + dusen + ' KIZIL NİNJAYI DÜŞÜRDÜ!' + (st.klan && st.klan.n ? '\nçatıda ' + st.klan.n + ' kaldı' : '\nAKIN BİTTİ!'), '#ffd23f'); SES.swish(); hud(tid); }, 900);
             if (cizili) {
                 if (n && G3) {
                     G3.sonHareket = { key: key, t: G3.t + 2.4 };
@@ -489,15 +525,26 @@
         const ilerle = () => { st.tur++; kaydet(tid); };
         if (tid === 'catikosu') {
             const varan = kapida(st).map(kimlik), l = atabilenler();
+            const kl = klanTur(st, l.length);
+            if (kl.olay === 'vardi' && st.fener <= 0) return kaybet(tid, cizili, son);
             if (varan.length === l.length || st.tur >= MAKS_TUR) return bitir(tid, varan, cizili, son);
             ilerle(); if (!cizili) return son();
-            afis(biten + '. TUR BİTTİ\n' + (varan.length ? varan.length + ' ninja kapıda' : 'herkes attı, sıradaki tur'), '#fff'); sonra(son, 1900); return;
+            const klYaz = kl.olay === 'geldi' ? ['🥷 KIZIL KLAN AKINI!\n' + st.klan.n + ' ninja tapınağa tırmanıyor · 7+ ok düşürür', '#ff6b6b'] : kl.olay === 'vardi' ? ['🏮 KIZIL KLAN TAPINAKTA!\n' + kl.sonen + ' fener söndü · ' + st.fener + ' fener kaldı', '#ff6b6b'] : kl.olay === 'puskurtuldu' ? ['🛡️ AKIN PÜSKÜRTÜLDÜ!\nhep birlikte' + (kl.yandi ? ' · bir fener yeniden yandı' : ''), '#ffd23f'] : null;
+            afis(biten + '. TUR BİTTİ\n' + (varan.length ? varan.length + ' ninja kapıda' : 'herkes attı, sıradaki tur'), '#fff');
+            if (klYaz) { sonra(() => { afis(klYaz[0], klYaz[1]); if (kl.olay === 'puskurtuldu') SES.gong(); else SES.kukre(); klanGorsel(); hud(tid); }, 1700); sonra(son, 4300); } else sonra(son, 1900); return;
         }
         if (st.hp <= 0) return bitir(tid, null, cizili, son);
         ilerle(); if (!cizili) return son();
         afis('MUHAFIZ AYAKTA!\ncanı ' + st.hp + ' kaldı, bir tur daha', '#ff9a7a'); SES.kukre();
         if (G3 && G3.muh && !G3.muh.userData.ejder) { const o = G3.muh.userData.olcek || 1; an(0.6, (p) => { if (G3 && G3.muh) G3.muh.scale.setScalar(o * (1 + Math.sin(Math.PI * p) * 0.12)); }); }
         sonra(son, 2200);
+    }
+    function kaybet(tid, cizili, son) { // 3 fener söndü: bölüm kaybedildi (yıldız yok, ilerleme değişmez)
+        const st = durum(tid), l = atabilenler();
+        st.faz = 'son'; st.kayip = true; st.varan = null; st.finalAdlar = l.map((s) => ilkAd(s.ad)); kaydet(tid);
+        if (!cizili) { if (son) son(); return; }
+        SES.kukre(); afis('🏮 BÜTÜN FENERLER SÖNDÜ!\nbu sefer Kızıl Klan kazandı', '#ff6b6b'); klanGorsel();
+        setTimeout(() => { hud(tid); if (son) son(); }, 3200);
     }
     function bitir(tid, varan, cizili, son) {
         const st = durum(tid), l = atabilenler(), il = ilerleme(tid);
@@ -617,7 +664,7 @@
             '.n3-son-adlar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.n3-son-adlar span{background:rgba(255,255,255,.1);border-radius:999px;padding:4px 12px;font-weight:800;font-size:14px}.n3-son-adlar.buyuk span{background:#ffd23f;color:#2a1c00;font-size:17px}',
             '.n3-son-btn button{border:0;background:#ffd23f;color:#2a1c00;border-radius:999px;padding:12px 24px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;min-height:48px}',
             '.n3-2b{position:absolute;inset:0;display:none;padding:150px 16px 160px;overflow:auto}.n3-sahne.duz .n3-2b{display:block}',
-            '.n3-2b-kosu{display:flex;flex-direction:column;gap:4px;max-width:900px}.n3-2b-hat{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-weight:800;font-size:13px}',
+            '.n3-2b-klan{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;max-width:900px;margin:0 0 8px;padding:8px 14px;border-radius:14px;background:rgba(127,29,29,.85);border:2px solid #ff6b6b;color:#fff;font:900 clamp(15px,2vw,26px) Nunito,system-ui,sans-serif}.n3-2b-klan em{font-style:normal;margin-left:auto}.n3-2b-kosu{display:flex;flex-direction:column;gap:4px;max-width:900px}.n3-2b-hat{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-weight:800;font-size:13px}',
             '.n3-2b-hat .yol{position:relative;height:26px;border-radius:6px;background:rgba(255,255,255,.12)}.n3-2b-hat .ara{position:absolute;top:0;bottom:0;background:#05070f}.n3-2b-hat i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:20px;transition:left .6s;filter:drop-shadow(0 0 4px var(--r,#fff))}.n3-2b-hat em{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-style:normal;font-size:18px}',
             '.n3-2b-kule{display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:20px}.n3-2b-kule .muh{font-size:120px;transition:all 1s}.n3-2b-kule .muh.dustu{transform:rotate(90deg) translateY(-30px);opacity:.3}.n3-2b-kule .klan{font-size:30px;letter-spacing:2px}',
             '@media (max-width:860px){.n3-sira-yazi b{font-size:17px}.n3-durum{margin-left:0;max-width:none}.n3-sahne{min-height:520px}.n3-kural{display:none}.n3-dg span{display:none}}',
@@ -634,5 +681,5 @@
     window.n3Durum = durum;
     window.n3Ilerleme = ilerleme;
     window.n3Oyunlar = TIDLER;
-    window._n3Ic = { kosuHesap, muhafizCan, parkur, L, OYUN, BOLUM, KUSAK };
+    window._n3Ic = { klanOk, klanTur, klanSay, FENER, kosuHesap, muhafizCan, parkur, L, OYUN, BOLUM, KUSAK };
 })();

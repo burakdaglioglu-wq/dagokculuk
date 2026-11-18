@@ -89,7 +89,7 @@ export default async function ({ log }) {
     for (const j of kalan) await seri(['8', '6', '2'], j);
     esit(await p.evaluate(() => tmDurum().faz), 'son', 'herkes atınca bitmeli (1 tur)');
     await p.waitForSelector('#tm-son-ekran', { timeout: 10000 }); const sonYazi = await p.locator('#tm-son-ekran').innerText();
-    dogrula(/BALIKLAR TOPLANDI|DOYDU/.test(sonYazi) && /balık topladınız/.test(sonYazi), 'sonuç: ' + sonYazi.slice(0, 120));
+    dogrula(/KARŞIYA GEÇTİNİZ|YOL YARIM KALDI/.test(sonYazi) && /balık topladınız/.test(sonYazi), 'sonuç: ' + sonYazi.slice(0, 120));
     const adlar = await p.evaluate(() => _kmOyunRosterCache.filter((s) => turnuvaDB[s.g] && turnuvaDB[s.g][s.ad]).map((s) => kmOyunIlkAd(s.ad).toLocaleUpperCase('tr-TR')));
     dogrula(adlar.every((a) => sonYazi.includes(a)), 'finalde herkesin adı, eksik: ' + adlar.filter((a) => !sonYazi.includes(a)).join(','));
     dogrula(!/kahraman|son atan/i.test(sonYazi), 'son atan öne çıkmamalı');

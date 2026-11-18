@@ -97,6 +97,20 @@
         }
         return r;
     }
+    /* v434 İKİLİ KURTARMA (fikir 3; kullanıcı fikir sayfasından seçti): art arda atan iki farklı çocuğun seri toplamı ok başına 5,5 ortalamayı
+       geçerse (3+3 ok → 33) en eski zombi kurtulur; ekranda İKİ AD birden. Zayıf atan da kurtarıcı olur (toplam ortak). Başarıdan sonra çift sıfırlanır.
+       Kasabalılar atmaz. Saf: st.ikili = { k, top, n } son atan. */
+    const IKILI_ORT = 5.5;
+    function ikiliEsik(n) { return Math.round(n * IKILI_ORT); }
+    function ikiliHesapla(st, key, puanlar, herkes, haric) {
+        const top = puanlar.reduce((a, b) => a + b, 0), n = puanlar.length, once = st.ikili, r = { ikili: null, kurtulan: null, top: top };
+        if (once && once.k !== key && n) {
+            const esik = ikiliEsik(once.n + n), toplam = once.top + top; r.toplam = toplam; r.esik = esik;
+            const adaylar = herkes.filter((k) => st.zombi[k] && !(haric || []).includes(k)).sort((a, b) => (st.zamani[a] || 0) - (st.zamani[b] || 0));
+            if (toplam >= esik && adaylar.length) { r.ikili = [once.k, key]; r.kurtulan = adaylar[0]; delete st.zombi[r.kurtulan]; delete st.zamani[r.kurtulan]; st.ikili = null; return r; }
+        }
+        st.ikili = n ? { k: key, top: top, n: n } : null; return r;
+    }
     const rastgele = (l) => l[Math.floor(Math.random() * l.length)];
 
     /* ---- durum ---- */
@@ -590,7 +604,9 @@
         const key = kimlik(s), puanlar = (kaydedilecek || []).map((k) => puan(k.puan)), ozel = ozelBu(st, key), esik = ozel ? 5 : esikOf(ortalama(s)), herkes = kalabalik();
         ozelKapa();
         const r = adimHesapla(st, key, puanlar, esik, herkes, rastgele, ic('dalga')), dost = dostMu(st), korku = modOf(st) === 'korku';
-        const kr = ic('kral') ? kralAdim(st, r.panzehir, herkes, r.iyilesen.concat(r.isirilan), rastgele) : null;
+        const ik = ic('ikili') ? ikiliHesapla(st, key, puanlar, herkes, r.isirilan) : null;
+        if (ik && ik.ikili) { ik.ikili.forEach((x) => { st.kurtardi[x] = (st.kurtardi[x] || 0) + 1; }); }
+        const kr = ic('kral') ? kralAdim(st, r.panzehir, herkes, r.iyilesen.concat(r.isirilan).concat(ik && ik.kurtulan ? [ik.kurtulan] : []), rastgele) : null;
         if (ozel) { st.ozelOlan = st.ozelOlan || {}; st.ozelOlan[key] = 1; st.ozel = null; }
         st.atan[key] = (st.atan[key] || 0) + 1;
         if (r.iyilesen.length) st.kurtardi[key] = (st.kurtardi[key] || 0) + 1;
@@ -615,6 +631,13 @@
         if (r.isirilan.length) {
             sonra(() => { if (dost) ton(523, .1, 0, 'triangle', .05); else SES.atla(); r.isirilan.forEach(npcGonder); }, bek); bek += 420;
             sonra(() => { goster(araKral); if (dost) SES.saril(); else { SES.isir(); if (korku) { SES.ciglik(); flas(); } } r.isirilan.forEach((k) => { isaretle(k, 'isirildi', 1000); const m = kisiMerkez(k); if (m) patla(m.x, m.y, dost ? ['#FF9BCF', '#FFD1E8', '#FFFFFF'] : ['#9BEA5A', '#5D9436', '#EDE6C8'], 18); }); _npc.forEach((n) => { n.style.top = '0px'; n.style.opacity = '0'; }); sonra(npcTemizle, 1100); const sah = $('zb-kalabalik'); if (sah && !azHareket()) { sah.classList.remove('sars'); void sah.offsetWidth; sah.classList.add('sars'); } duyur((r.dalga ? 'YENİ DALGA! ' : r.cift ? (dost ? 'ÇİFT SARILMA! ' : 'ÇİFT ISIRIK! ') : dost ? 'SARILMA SALDIRISI! ' : korku ? 'AAAH! ' : 'ZOMBİLER SALDIRDI! ') + r.isirilan.map(adOf).join(', ') + (dost ? ' SARILDI!' : ' ISIRILDI!'), 'kotu'); }, bek); bek += r.cift ? 1600 : 1300;
+        }
+        if (ik && ik.ikili) { // 🤝 iki ad birden, iki ok kurtulana uçar
+            const a0 = ik.ikili[0], a1 = ik.ikili[1], ka = Object.assign({}, st.zombi); if (kr) kr.isirilan.forEach((k) => delete ka[k]);
+            sonra(() => { okUcur(a0, ik.kurtulan); okUcur(a1, ik.kurtulan); SES.ok(); isaretle(a0, 'ikili', 1400); isaretle(a1, 'ikili', 1400); }, bek);
+            sonra(() => { goster(ka); isaretle(ik.kurtulan, 'kurtuldu', 1000); const m = kisiMerkez(ik.kurtulan); if (m) patla(m.x, m.y, ['#FFD86B', '#9BEA5A', '#FFFFFF', '#7FD3FF'], 36); SES.kurtar(); cinlama([1047, 1319, 1568], .1, .09);
+                duyur('🤝 İKİLİ PANZEHİR! ' + adOf(a0) + ' + ' + adOf(a1) + ' (' + ik.toplam + ' puan) → ' + adOf(ik.kurtulan) + ' KURTULDU!', 'iyi'); konus(ilkAd(adOf(a0)) + ' ve ' + ilkAd(adOf(a1)) + ' birlikte kurtardı!'); }, bek + 350);
+            bek += 2000;
         }
         if (kr) { // Kral: önce şeritte adım (itildiyse AYYY), vardıysa çatıya atlar ve ısırır
             const geri = kr.d < kr.once && !kr.vardi;
@@ -714,7 +737,7 @@
             + '.zb-kisi.kasabali{cursor:default}.zb-kisi.kasabali .zb-ad{opacity:.6;font-weight:700}'
             + '.zb-sahne button:focus-visible{outline:3px solid #FFC24B;outline-offset:2px}'
             + '@media(prefers-reduced-motion:no-preference){.zb-spr{animation:zb-kare 1.3s steps(2,jump-end) infinite}.zombi .zb-spr{animation-duration:.7s}.zb-son.kazandi .zb-son-kisi:not(.zombi) .zb-svg{animation:zb-zipla .8s ease-in-out infinite;animation-delay:calc(var(--g) * -.11s)}@keyframes zb-kare{from{background-position:0 0}to{background-position:200% 0}}.zb-kisi.zombi .zb-svg{animation:zb-sal 1.5s ease-in-out infinite;transform-origin:50% 100%}.zb-kisi.isirildi .zb-svg{animation:zb-isir .9s}.zb-kisi.kurtuldu .zb-svg{animation:zb-kurtul .9s}.zb-kisi.aktif:not(.zombi) .zb-svg{animation:zb-zipla .9s ease-in-out infinite}@keyframes zb-sal{0%,100%{transform:rotate(-6deg) translateY(0)}25%{transform:rotate(1deg) translateY(-3%)}50%{transform:rotate(6deg) translateY(0)}75%{transform:rotate(-1deg) translateY(-2%)}}@keyframes zb-zipla{0%,100%{transform:none}50%{transform:translateY(-6%)}}@keyframes zb-isir{0%{transform:scale(1)}20%{transform:scale(1.28) rotate(-8deg)}40%{transform:scale(1.1) rotate(8deg)}60%{transform:scale(1.22) rotate(-5deg)}100%{transform:none}}@keyframes zb-kurtul{0%{transform:scale(.8)}35%{transform:scale(1.35) translateY(-12%)}100%{transform:none}}@keyframes zb-sars{20%{transform:translateX(9px)}45%{transform:translateX(-8px)}70%{transform:translateX(5px)}}}'
-            + '.zb-kisi.kurtuldu .zb-svg{filter:drop-shadow(0 0 14px #FFD86B)}.zb-kisi.isirildi .zb-svg{filter:drop-shadow(0 0 14px #9BEA5A)}'
+            + '.zb-kisi.ikili .zb-svg{filter:drop-shadow(0 0 16px #7FD3FF) drop-shadow(0 0 6px #fff)}.zb-kisi.ikili .zb-ad{background:#7FD3FF;color:#06223a}.zb-kisi.kurtuldu .zb-svg{filter:drop-shadow(0 0 14px #FFD86B)}.zb-kisi.isirildi .zb-svg{filter:drop-shadow(0 0 14px #9BEA5A)}'
             + '@media(max-width:860px){#zb-icerik{padding:8px 8px 8px}.zb-say{min-width:58px}.zb-sira-hud{display:inline}.zb-yan{position:relative;left:auto;margin:0;width:100%;flex:none;gap:6px 10px;padding:4px 8px}.zb-yan-hedef{width:52px}.zb-yan-yazi small,.zb-yan-yazi b{display:none}.zb-yan-yazi span{font-size:14px}.zb-arac{width:auto}}';
         document.head.appendChild(st);
     }
@@ -727,6 +750,6 @@
     window.zbAyarUygula = () => { if ($('zb-icerik')) guncelle(); };
     window.zbFinalZorla = zbFinalZorla;
     window.zbDurum = durum;
-    window._zbIc = { esikOf, panzehirSay, baslangicSay, isirikSay, kazandi, adimHesapla, ISIRIK_ARALIK, MODLAR, kuralOf, kralAdim, kralYol, kralIsirik, KRAL_ADIM };
+    window._zbIc = { ikiliHesapla, ikiliEsik, esikOf, panzehirSay, baslangicSay, isirikSay, kazandi, adimHesapla, ISIRIK_ARALIK, MODLAR, kuralOf, kralAdim, kralYol, kralIsirik, KRAL_ADIM };
     window.zbModSec = modUygula;
 })();
