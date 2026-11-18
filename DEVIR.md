@@ -6002,3 +6002,11 @@ Kullanıcı dersten: "kalan sporcular, kenarda 3 kişi diyelim, kendi arasında 
 - Sıralama `yzKenarSira`: toplam, sonra 10, sonra X. Tablo hücresine dokunarak düzeltilir. 🏁 Bitir madalya gösterir, Kapat siler.
 - TV: tablonun altında mor kart (`yzTvKenarHTML`).
 - Test 136. Yalnız eleme ekranında var (sıralama turunda yok).
+
+## 144. ⚔️ Sıralama → "Bitir → eleme" + 🔁 Elenenler tablosu (2026-11-18, v433)
+Kullanıcı: "sıralamayı normal bitirebilirim ya da elemeye döndürebilirim; elenenler de yarışsın — winner'lar ve loser'lar kendi aralarında".
+- Sıralama turunun son serisinde (panel + giriş bitiş ekranı) **⚔️ Bitir → eleme** (`yzBitirEleme`). Seçenekler: İlk 4/8/16/Tümü, iki yay varsa "klasik ve makaralı ayrı" (varsayılan açık). Sonra `yzBitir(true)` + `yzElemeBaslat(n)`. Sonuç ekranındaki eleme kartında da "🏹⚙️ Klasik / makaralı ayrı" çipi (`_yz.elemeYayAyri`, bu cihaz).
+- `yzElemeBaslat` artık ayrı modda `slotlar` kurar (lig yoksa). Eski teselli/kenar silinir.
+- 🔁 **Elenenler tablosu**: `o.teselli` ikinci eleme nesnesi (id = tur id, `onek:'L'` → maç id'leri `Lt0m0`, key `m_<id>_Lt0m0`). `yzElemeHesapla(o, e2)` ikinci tabloyu hesaplar, `yzTumMaclar(o)` iki tabloyu birleştirir (`yzMacBul` + giriş başlığı bunu kullanır). Maç paneli, Yönet düğmeleri ve giriş aynen çalışır.
+- Kurulum: `yzTeselliAc` seçim penceresi (elenenler + tabloya girmeyenler işaretli, ana tabloda oynayanlar değil). Tohum ana tablodaki sıradan. Ana tablo ayrıysa ve iki yay varsa elenenler de ayrı. "Yeniden kur" / "Kapat". TV'de tablonun altında "ELENENLER TABLOSU", süren maçları canlıda.
+- Test 137 (+136 tekrar). AÇIK: çift eleme (kaybeden otomatik akış) DEĞİL; elenenler tablosu elle kurulur (yeni elenenler için "Yeniden kur", girilmiş L maçları silinir).
