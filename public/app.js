@@ -10190,15 +10190,14 @@
         }
         function yoneticiYoklamaCiz() {
             let alan = document.getElementById('yonetici-liste'); if(!alan) return;
-            let akt = (tp) => yoneticiYoklamaTip === tp ? 'background:var(--accent-orange); color:#fff;' : 'background:var(--bg-panel); color:var(--text-main);';
-            alan.innerHTML = `<div style="display:flex; gap:6px; margin-bottom:10px;">
-                <button onclick="yoneticiYoklamaTip='ozet'; _yonYokGrupFiltre='__hepsi'; yoneticiYoklamaCiz();" style="flex:1; ${akt('ozet')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📊 Özet${yeniRozet()}</button>
-                <button onclick="yoneticiYoklamaTip='gunluk'; yoneticiYoklamaCiz();" style="flex:1; ${akt('gunluk')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📋 Yoklama</button>
-                <button onclick="yoneticiYoklamaTip='aylik'; yoneticiYoklamaCiz();" style="flex:1; ${akt('aylik')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">📆 Aylık</button>
-                <button onclick="yoneticiYoklamaTip='devamsizlik'; yoneticiYoklamaCiz();" style="flex:1; ${akt('devamsizlik')} border:1px solid var(--border-color); padding:9px 4px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer;">⚠️ Devamsızlık</button>
-            </div><div id="yonetici-yoklama-ic"></div>`;
+            // v436 (2026-11-19, kullanıcı alternatif sayfasından "Yüz Kartları"nı seçti): 4 turuncu düğme yerine tek parça sekme
+            // çubuğu + yeni 📄 Rapor sekmesi (günlük / haftalık yoklama ekranda net + aynısının PDF'i).
+            yoklamaYuzCss();
+            let sk = (tp, et, ek) => '<button type="button" role="tab" aria-selected="' + (yoneticiYoklamaTip === tp) + '" class="yy-sekme-b' + (yoneticiYoklamaTip === tp ? ' on' : '') + '" onclick="yoneticiYoklamaTip=\'' + tp + '\';' + (tp === 'ozet' ? ' _yonYokGrupFiltre=\'__hepsi\';' : '') + ' yoneticiYoklamaCiz();">' + et + (ek || '') + '</button>';
+            alan.innerHTML = '<div class="yy-sekme" role="tablist">' + sk('ozet', '📊 Özet') + sk('gunluk', '📋 Yoklama', yeniRozet('2026-12-19')) + sk('rapor', '📄 Rapor', yeniRozet('2026-12-19')) + sk('aylik', '📆 Aylık') + sk('devamsizlik', '⚠️ Devam') + '</div><div id="yonetici-yoklama-ic"></div>';
             renderHedefId = 'yonetici-yoklama-ic';
             if(yoneticiYoklamaTip === 'ozet') { yoneticiYoklamaOzetCiz(); }
+            else if(yoneticiYoklamaTip === 'rapor') { yoklamaRaporEkranCiz(); }
             else if(yoneticiYoklamaTip === 'aylik') { yoneticiAylikKatilimCiz(); }
             else if(yoneticiYoklamaTip === 'devamsizlik') { yoneticiDevamsizlikSekmesiCiz(); }
             else { yoneticiYoklamaGunlukCiz(); }
@@ -10233,20 +10232,51 @@
             }
             return `<div style="background:rgba(255,98,0,0.08); border:1px solid var(--accent-orange); border-radius:8px; padding:7px 10px; margin-bottom:8px; font-size:12px; font-weight:700; color:var(--accent-orange);">📅 ${baslik}: ${icerik}${baglantiHTML}</div>`;
         }
-        let _yonYokYuz = (function() { try { return localStorage.getItem('dag_yoklama_yuz') === '1'; } catch(e) { return false; } })();
-        function yoklamaYuzSec(v) { _yonYokYuz = !!v; try { localStorage.setItem('dag_yoklama_yuz', v ? '1' : '0'); } catch(e) {} yoneticiYoklamaGunlukCiz(); }
+        // v436: Yüz Kartları artık varsayılan görünüm (yeni anahtar — eski 'dag_yoklama_yuz'=0 kayıtları yeni görünümü gizlemesin)
+        let _yonYokYuz = (function() { try { return localStorage.getItem('dag_yoklama_yuz_v2') !== '0'; } catch(e) { return true; } })();
+        function yoklamaYuzSec(v) { _yonYokYuz = !!v; try { localStorage.setItem('dag_yoklama_yuz_v2', v ? '1' : '0'); } catch(e) {} yoneticiYoklamaGunlukCiz(); }
+        function yoklamaGunKaydir(n) { let d = new Date((_yonElTarih || bugunISO()) + 'T12:00:00'); d.setDate(d.getDate() + n); let iso = bugunISO(d); if(iso > bugunISO()) return; _yonElTarih = iso; yoneticiYoklamaGunlukCiz(); }
+        function _yokTarihEt(iso) { let d = new Date(iso + 'T12:00:00'); return (iso === bugunISO() ? 'Bugün · ' : '') + GUN_ADI_TR[d.getDay()] + ' ' + d.getDate() + ' ' + ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'][d.getMonth()]; }
+        // grup seçimi: açılır menü yerine yana kayan çipler (aynı _yonYokGrupFiltre)
+        function _yokGrupCipleri(cizFn, bugunkuDersVar) {
+            let c = function(v, et, renk) { return '<button type="button" class="yy-cip' + (_yonYokGrupFiltre === v ? ' on' : '') + '"' + (renk ? ' style="--gc:' + renk + '"' : '') + ' onclick="_yonYokGrupFiltre=\'' + v + '\'; ' + cizFn + '()">' + et + '</button>'; };
+            return '<div class="yy-cipler">' + (bugunkuDersVar ? c('__bugunkuDers', '🎯 Bugünün dersi') : '') + c('__hepsi', 'Tüm gruplar') + TUM_GRUPLAR_YOK.map(function(x) { return c(x[0], esc(x[1].replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '')), GRUP_RENK[x[0]]); }).join('') + '</div>';
+        }
         function yoklamaYuzCss() {
+            yoneticiYoklamaOzetCss(); // Gece Defteri (--yz-*) tokenları
             if(document.getElementById('yy-css')) return;
             let s = document.createElement('style'); s.id = 'yy-css';
-            s.textContent = '.yy-gorunum{display:flex;gap:4px;margin-top:8px;background:var(--surface-2,rgba(0,0,0,.15));border-radius:10px;padding:3px}.yy-gorunum button{flex:1;font:inherit;font-size:12.5px;font-weight:700;padding:7px;border:0;border-radius:8px;background:transparent;color:var(--text-muted);cursor:pointer;transform:none!important}.yy-gorunum button[aria-pressed=true]{background:var(--bg-panel,#fff);color:var(--text-main);box-shadow:0 1px 3px rgba(0,0,0,.12)}'
-                + '.yy-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:6px}'
-                + '.yy-kutu{position:relative}.yy-yuz{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:14px;border:2px solid var(--border-color);background:var(--bg-panel);color:var(--text-main);cursor:pointer;font:inherit;transform:none!important}'
-                + '.yy-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:20px;background:var(--surface-2,rgba(0,0,0,.08));color:var(--text-muted)}'
-                + '.yy-yuz b{font-size:12px;line-height:1.25;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}'
-                + '.yy-isaret{position:absolute;top:58px;left:calc(50% + 14px);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;color:#fff}'
-                + '.yy-kutu.geldi .yy-yuz{border-color:var(--neon-green);background:rgba(16,185,129,.10)}.yy-kutu.geldi .yy-isaret{background:var(--neon-green)}'
-                + '.yy-kutu.gelmedi .yy-yuz{border-color:var(--neon-red);background:rgba(239,68,68,.08)}.yy-kutu.gelmedi .yy-isaret{background:var(--neon-red)}.yy-kutu.gelmedi .yy-av{opacity:.55}'
-                + '.yy-profil{position:absolute;top:4px;right:4px;border:0;background:transparent;font-size:13px;cursor:pointer;padding:4px;opacity:.7}';
+            s.textContent = '.yy-sekme{display:flex;gap:2px;padding:3px;margin-bottom:10px;border-radius:12px;background:var(--bg-panel);border:1px solid var(--border-color);overflow-x:auto;scrollbar-width:none}.yy-sekme::-webkit-scrollbar{display:none}.yy-sekme-b{flex:1 0 auto;white-space:nowrap;border:0;border-radius:9px;background:transparent;color:var(--text-muted);font:inherit;font-size:12.5px;font-weight:800;padding:9px 10px;cursor:pointer;transform:none!important}.yy-sekme-b.on{background:var(--accent-orange);color:var(--text-on-accent-dark,#1A0700)}'
+                + '.yy-gorunum{display:flex;gap:4px;background:var(--yz-panel2,rgba(0,0,0,.15));border-radius:10px;padding:3px}.yy-gorunum button{flex:1;font:inherit;font-size:12.5px;font-weight:700;padding:7px;border:0;border-radius:8px;background:transparent;color:var(--yz-soluk,var(--text-muted));cursor:pointer;transform:none!important}.yy-gorunum button[aria-pressed=true]{background:var(--yz-panel,#fff);color:var(--yz-yazi,var(--text-main));box-shadow:0 1px 3px rgba(0,0,0,.18)}'
+                + '.yy-tarih{display:flex;align-items:center;gap:6px}.yy-tarih .yy-ok{flex:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--yz-cizgi);background:var(--yz-panel);color:var(--yz-yazi);font:inherit;font-size:18px;font-weight:800;cursor:pointer}.yy-tarih .yy-ok:disabled{opacity:.3;cursor:default}.yy-tarih-ad{flex:1;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:40px;border-radius:10px;background:var(--yz-panel);border:1px solid var(--yz-cizgi);font-weight:800;font-size:14px;cursor:pointer}.yy-tarih-ad input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}'
+                + '.yy-cipler{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.yy-cipler::-webkit-scrollbar{display:none}.yy-cip{flex:none;border:1px solid var(--yz-cizgi);background:var(--yz-panel);color:var(--gc,var(--yz-soluk));border-radius:999px;padding:7px 13px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;transform:none!important}.yy-cip.on{border-color:var(--gc,var(--yz-vurgu));background:color-mix(in srgb,var(--gc,var(--yz-vurgu)) 16%,var(--yz-panel));color:var(--gc,var(--yz-vurgu))}'
+                + '.yy-sayac{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.yy-sayac div{background:var(--yz-panel);border:1px solid var(--yz-cizgi);border-radius:14px;padding:9px 6px;text-align:center}.yy-sayac b{display:block;font-family:"Roboto Mono",ui-monospace,monospace;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}.yy-sayac small{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--yz-soluk)}.yy-sayac .g b{color:#22c55e}.yy-sayac .y b{color:var(--yz-kirmizi)}'
+                + '.yy-arac{display:flex;gap:6px;flex-wrap:wrap}.yy-arac input{flex:1 1 100%;min-width:0;margin:0;background:var(--yz-panel);border-color:var(--yz-cizgi);color:var(--yz-yazi)}.yy-arac .adm-btn{flex:1 1 0;min-height:40px}.yy-ipucu{font-size:11px;color:var(--yz-soluk)}'
+                + '.yy-grup-bas{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:4px 2px -4px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gc)}.yy-grup-bas small{font-family:"Roboto Mono",ui-monospace,monospace;letter-spacing:0;text-transform:none;font-size:12px;color:var(--yz-soluk)}'
+                + '.yy-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}'
+                + '.yy-kutu{position:relative;min-width:0}.yy-yuz{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px 9px;border-radius:16px;border:2px solid var(--yz-cizgi,var(--border-color));background:var(--yz-panel,var(--bg-panel));color:var(--yz-yazi,var(--text-main));cursor:pointer;font:inherit;transform:none!important;transition:border-color .15s,background .15s}'
+                + '.yy-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:20px;background:color-mix(in srgb,var(--gc,#888) 22%,var(--yz-panel2,#222));color:var(--gc,var(--text-muted));object-fit:cover}'
+                + '.yy-yuz b{font-size:12px;line-height:1.25;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}.yy-yuz small{font-family:"Roboto Mono",ui-monospace,monospace;font-size:10.5px;color:var(--yz-soluk);min-height:13px}'
+                + '.yy-isaret{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;color:#fff;border:2px solid var(--yz-cizgi,var(--border-color));pointer-events:none}'
+                + '.yy-kutu.geldi .yy-yuz{border-color:#22c55e;background:color-mix(in srgb,#22c55e 13%,var(--yz-panel,var(--bg-panel)))}.yy-kutu.geldi .yy-isaret{background:#22c55e;border-color:#22c55e}'
+                + '.yy-kutu.gelmedi .yy-yuz{border-color:var(--yz-kirmizi,var(--neon-red))}.yy-kutu.gelmedi .yy-isaret{background:var(--yz-kirmizi,var(--neon-red));border-color:transparent}.yy-kutu.gelmedi .yy-av,.yy-kutu.gelmedi b{opacity:.5}'
+                + '.yy-profil{position:absolute;top:4px;left:4px;border:0;background:transparent;font-size:13px;cursor:pointer;padding:5px;opacity:.65}'
+                + '.yy .adm-list-row{background:var(--yz-panel);border-color:var(--yz-cizgi);color:var(--yz-yazi)}'
+                + '@media (max-width:420px){.yy-sekme-b{padding:8px 5px;font-size:11.5px}.yy-sekme .dag-yeni{font-size:0;padding:0;width:7px;height:7px;margin-left:3px;vertical-align:6px}.yy-izgara{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.yy-av{width:56px;height:56px;font-size:18px}.yy-yuz{padding:11px 3px 8px}}'
+                // 📄 Rapor ekranı (yr-*)
+                + '.yr-mod{display:flex;gap:4px;background:var(--yz-panel2);border-radius:12px;padding:3px}.yr-mod button{flex:1;border:0;border-radius:9px;padding:9px;font:inherit;font-size:13px;font-weight:800;background:transparent;color:var(--yz-soluk);cursor:pointer;transform:none!important}.yr-mod button.on{background:var(--yz-panel);color:var(--yz-yazi);box-shadow:0 1px 3px rgba(0,0,0,.2)}'
+                + '.yr-cumle{font-size:15px;line-height:1.5;font-weight:600}.yr-cumle b{font-family:"Roboto Mono",ui-monospace,monospace;font-size:17px}.yr-cumle .g{color:#22c55e}.yr-cumle .y{color:var(--yz-kirmizi)}.yr-cumle .s{color:var(--yz-soluk)}'
+                + '.yr-pdf{display:flex;gap:8px;flex-wrap:wrap}.yr-pdf .adm-btn{flex:1 1 200px;min-height:46px;font-weight:900}.yr-pdf .yoz-ana{background:var(--yz-vurgu)!important;color:var(--yz-vurgu-yazi)!important;border-color:transparent!important}'
+                + '.yr-grup{border-radius:16px;background:var(--yz-panel);border:1px solid var(--yz-cizgi);overflow:hidden;min-width:0}.yr-gb{display:flex;align-items:center;gap:10px;padding:11px 14px;background:color-mix(in srgb,var(--gc) 16%,var(--yz-panel));border-bottom:1px solid var(--yz-cizgi)}.yr-gb h4{margin:0;font-size:15px;font-weight:900;color:var(--gc);flex:1;min-width:0}.yr-gb span{font-family:"Roboto Mono",ui-monospace,monospace;font-weight:700;font-size:15px}.yr-gb small{font-size:11px;color:var(--yz-soluk);font-weight:700}'
+                + '.yr-bar{height:6px;background:var(--yz-panel2)}.yr-bar i{display:block;height:100%;background:#22c55e}'
+                + '.yr-iki{display:grid;grid-template-columns:1fr 1fr;gap:0}.yr-sut{padding:10px 12px;min-width:0}.yr-sut+.yr-sut{border-left:1px solid var(--yz-cizgi)}.yr-sut h5{margin:0 0 6px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.yr-sut.g h5{color:#22c55e}.yr-sut.y h5{color:var(--yz-kirmizi)}'
+                + '.yr-k{display:flex;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px dashed color-mix(in srgb,var(--yz-cizgi) 70%,transparent);font-size:13.5px;min-width:0}.yr-k:last-child{border-bottom:0}.yr-k b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}.yr-k small{flex:none;font-family:"Roboto Mono",ui-monospace,monospace;font-size:11px;color:var(--yz-soluk)}.yr-k .x{color:var(--yz-kirmizi);font-weight:900}'
+                + '.yr-bos{font-size:12.5px;color:var(--yz-soluk);padding:4px 0}.yr-dersyok{padding:10px 14px;font-size:12.5px;color:var(--yz-soluk)}'
+                + '.yr-tablo-k{overflow-x:auto}.yr-tablo{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.yr-tablo th{font-size:10.5px;font-weight:900;color:var(--yz-soluk);padding:7px 3px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--yz-cizgi)}.yr-tablo th.ad,.yr-tablo td.ad{text-align:left;padding-left:12px}.yr-tablo th.ders{color:var(--yz-yazi)}.yr-tablo th small{display:block;font-family:"Roboto Mono",ui-monospace,monospace;font-weight:700;font-size:11px}'
+                + '.yr-tablo td{padding:5px 3px;text-align:center;border-bottom:1px solid color-mix(in srgb,var(--yz-cizgi) 60%,transparent)}.yr-tablo td.ad{font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.yr-tablo td.top{font-family:"Roboto Mono",ui-monospace,monospace;font-weight:700;padding-right:12px;text-align:right;white-space:nowrap}.yr-tablo th.top{text-align:right;padding-right:12px}.yr-tablo tfoot td{font-family:"Roboto Mono",ui-monospace,monospace;font-weight:800;color:var(--yz-soluk);border-bottom:0}'
+                + '.yr-h{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-size:13px;font-weight:900}.yr-h.v{background:#22c55e;color:#fff}.yr-h.x{background:color-mix(in srgb,var(--yz-kirmizi) 18%,transparent);color:var(--yz-kirmizi)}.yr-h.b{color:color-mix(in srgb,var(--yz-soluk) 55%,transparent)}.yr-h.n{opacity:.25}'
+                + '.yr-tablo td.dusuk{color:var(--yz-kirmizi)}.yr-acikl{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--yz-soluk);align-items:center}.yr-acikl .yr-h{width:18px;height:18px;font-size:11px;margin-right:3px}'
+                + '@media (max-width:420px){.yr-iki{grid-template-columns:1fr}.yr-sut+.yr-sut{border-left:0;border-top:1px solid var(--yz-cizgi)}.yr-tablo{font-size:12px}.yr-h{width:21px;height:21px;font-size:12px}.yr-tablo td.ad{max-width:110px}}';
             document.head.appendChild(s);
         }
         function yoneticiYoklamaGunlukCiz() {
@@ -10289,49 +10319,41 @@
                     });
                 });
             }
-            let gelenSayi = gorunenler.filter(x => gun[x.ad] && gun[x.ad].grup === x.grup && gun[x.ad].geldi !== false).length;
+            let durumu = (x) => { let k = gun[x.ad] && gun[x.ad].grup === x.grup ? gun[x.ad] : null; return !k ? 'yok' : (k.geldi === false ? 'gelmedi' : 'geldi'); };
+            let gelenSayi = gorunenler.filter(x => durumu(x) === 'geldi').length, gelmediSayi = gorunenler.filter(x => durumu(x) === 'gelmedi').length;
+            let bugunMu = tarih === bugunISO();
 
-            let html = `<div class="adm-card">
-                <div class="adm-section-header" style="padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid var(--border-color);">
-                    <div>
-                        <div class="adm-section-title" style="color:var(--neon-green);">✅ Yoklama</div>
-                        <div class="adm-section-sub">${gelenSayi} / ${gorunenler.length} geldi</div>
-                    </div>
-                    <input type="date" value="${tarih}" max="${bugunISO()}" onchange="_yonElTarih=this.value; yoneticiYoklamaGunlukCiz();" class="adm-input" style="width:auto; padding:8px 10px; font-size:12.5px;">
-                </div>
+            // v436 Yüz Kartları (kullanıcı alternatif sayfasında 2'yi seçti): Gece Defteri zemini, ‹ gün ›, grup çipleri,
+            // geldi / gelmedi / bekliyor sayacı, 3 sütun büyük yüz kartı, sağ üstte ✓/✗.
+            let html = `<div class="yoz yy">
+                <div class="yy-tarih"><button type="button" class="yy-ok" onclick="yoklamaGunKaydir(-1)" aria-label="Önceki gün">‹</button><label class="yy-tarih-ad"><span>${esc(_yokTarihEt(tarih))}</span><input type="date" value="${tarih}" max="${bugunISO()}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){_yonElTarih=this.value; yoneticiYoklamaGunlukCiz();}" aria-label="Tarih seç"></label><button type="button" class="yy-ok" onclick="yoklamaGunKaydir(1)" ${bugunMu ? 'disabled' : ''} aria-label="Sonraki gün">›</button></div>
                 ${yoneticiYoklamaDersBilgisiHTML(_yonYokGrupFiltre, tarih)}
-                <select onchange="_yonYokGrupFiltre=this.value; yoneticiYoklamaGunlukCiz();" class="adm-select" style="margin-bottom:8px;">
-                    ${yoneticiYoklamaGrupSecenekleri(_yonYokGrupFiltre)}
-                </select>
-                <input type="text" id="yon-yoklama-gunluk-arama" value="${(_yonYokArama||'').replace(/"/g,'&quot;')}" oninput="_yonYokArama=this.value; yoneticiYoklamaGunlukCiz(); let el=document.getElementById('yon-yoklama-gunluk-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" placeholder="🔍 Sporcu ara (isim yaz)..." class="adm-input" style="margin-bottom:8px;">
-                <div style="display:flex; gap:6px;">
-                    <button onclick="yoneticiYoklamaHepsi(true)" class="adm-btn adm-btn-sm" style="flex:1; background:rgba(16,185,129,0.10); color:var(--neon-green); border-color:var(--neon-green);">✅ Hepsi Geldi</button>
-                    <button onclick="yoneticiYoklamaHepsi(false)" class="adm-btn adm-btn-sm" style="flex:1;">⬜ Temizle</button>
-                </div>
-                <div class="yy-gorunum" role="group" aria-label="Görünüm"><button onclick="yoklamaYuzSec(false)" aria-pressed="${!_yonYokYuz}">☰ Liste</button><button onclick="yoklamaYuzSec(true)" aria-pressed="${_yonYokYuz}">🖼 Yüzler</button></div>
-                <div style="font-size:10.5px; color:var(--text-muted); margin-top:8px;">${_yonYokYuz ? 'Yüze dokun: sırayla ✅ geldi → ❌ gelmedi → ⬜ boş. 👤 ile profil (fotoğraf eklemek için).' : 'Satıra dokun: sırayla ✅ geldi → ❌ gelmedi → ⬜ boş olur. Skor girenler otomatik işaretlenir. 🕐 ile geçmiş bir saat girebilirsin.'}</div>
-            </div>`;
+                ${_yokGrupCipleri('yoneticiYoklamaGunlukCiz', true)}
+                <div class="yy-sayac"><div class="g"><b>${gelenSayi}</b><small>GELDİ</small></div><div class="y"><b>${gelmediSayi}</b><small>GELMEDİ</small></div><div><b>${gorunenler.length - gelenSayi - gelmediSayi}</b><small>BEKLİYOR</small></div></div>
+                <div class="yy-arac"><input type="text" id="yon-yoklama-gunluk-arama" value="${(_yonYokArama||'').replace(/"/g,'&quot;')}" oninput="_yonYokArama=this.value; yoneticiYoklamaGunlukCiz(); let el=document.getElementById('yon-yoklama-gunluk-arama'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}" placeholder="🔍 Sporcu ara" class="adm-input"><button onclick="yoneticiYoklamaHepsi(true)" class="adm-btn adm-btn-sm">✓ Hepsi geldi</button><button onclick="yoneticiYoklamaHepsi(false)" class="adm-btn adm-btn-sm">✗ Hepsi gelmedi</button></div>
+                <div class="yy-gorunum" role="group" aria-label="Görünüm"><button onclick="yoklamaYuzSec(true)" aria-pressed="${_yonYokYuz}">🖼 Yüzler</button><button onclick="yoklamaYuzSec(false)" aria-pressed="${!_yonYokYuz}">☰ Liste</button></div>
+                <div class="yy-ipucu">${_yonYokYuz ? 'Yüze dokun: ✓ geldi → ✗ gelmedi → boş. Sol üstteki 👤 profil (fotoğraf eklemek için). Skor girenler kendiliğinden ✓ olur.' : 'Satıra dokun: ✓ geldi → ✗ gelmedi → boş. Skor girenler kendiliğinden işaretlenir. 🕐 ile geçmiş bir saat girebilirsin.'}</div>`;
 
             if(!gorunenler.length) {
                 let bosMetin = q ? 'Aramayla eşleşen sporcu yok.' : (_yonYokGrupFiltre === '__bugunkuDers' ? 'Bugün için planlanmış bir ders yok (ya da henüz kimse eklenmemiş).' : 'Bu kategoride sporcu yok.');
-                html += `<div style="text-align:center; color:var(--text-muted); padding:20px;">${bosMetin}</div>`; alan.innerHTML = html; return;
+                html += `<div class="yoz-bos" style="text-align:center;padding:20px">${bosMetin}</div></div>`; alan.innerHTML = html; return;
             }
 
             // 🖼 Fotoğrafla yoklama (2026-10-21): yüz ızgarası — yardımcı antrenör ismi bilmese de yüzden bulur
             if(_yonYokYuz) {
-                yoklamaYuzCss();
                 gosterilecekGruplar.forEach(([g, baslik]) => {
                     let satirlar = gorunenler.filter(x => x.grup === g).sort((a,b) => a.ad.localeCompare(b.ad,'tr'));
                     if(!satirlar.length) return;
-                    if(_yonYokGrupFiltre === '__hepsi') html += `<div style="font-weight:900; color:${GRUP_RENK[g]}; font-size:12.5px; margin:14px 2px 6px;">${baslik} <span style="color:var(--text-muted); font-weight:600;">· ${satirlar.length}</span></div>`;
+                    html += `<div class="yy-grup-bas" style="--gc:${GRUP_RENK[g]}"><span>${esc(baslik.replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, ''))}</span><small>${satirlar.filter(x => durumu(x) === 'geldi').length} / ${satirlar.length} geldi</small></div>`;
                     html += '<div class="yy-izgara">' + satirlar.map(({grup, ad}) => {
                         let kayit = gun[ad] && gun[ad].grup === grup ? gun[ad] : null;
                         let durum = !kayit ? 'yok' : (kayit.geldi === false ? 'gelmedi' : 'geldi');
                         let adJs = esc(ad.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
-                        return `<div class="yy-kutu ${durum}"><button class="yy-yuz" onclick="yoneticiYoklamaToggle('${grup}','${adJs}')" aria-label="${esc(ad)}: ${durum === 'geldi' ? 'geldi' : durum === 'gelmedi' ? 'gelmedi' : 'işaretsiz'}">${fotoAvatarHTML(fotoAnahtar(grup, ad), ad, 'yy-av', true)}<span class="yy-isaret">${durum === 'geldi' ? '✓' : durum === 'gelmedi' ? '✗' : ''}</span><b>${esc(ad)}</b></button><button type="button" class="yy-profil" data-sporcu="${esc(grup + '|' + ad)}" aria-label="${esc(ad)} profili">👤</button></div>`;
+                        let alt = durum === 'geldi' ? (kayit.elle ? '' : '🎯 ') + esc(kayit.saat || '') : durum === 'gelmedi' ? 'gelmedi' : '';
+                        return `<div class="yy-kutu ${durum}" style="--gc:${GRUP_RENK[grup]}"><button class="yy-yuz" onclick="yoneticiYoklamaToggle('${grup}','${adJs}')" aria-label="${esc(ad)}: ${durum === 'geldi' ? 'geldi' : durum === 'gelmedi' ? 'gelmedi' : 'işaretsiz'}">${fotoAvatarHTML(fotoAnahtar(grup, ad), ad, 'yy-av', true)}<b>${esc(ad)}</b><small>${alt}</small></button><span class="yy-isaret">${durum === 'geldi' ? '✓' : durum === 'gelmedi' ? '✗' : ''}</span><button type="button" class="yy-profil" data-sporcu="${esc(grup + '|' + ad)}" aria-label="${esc(ad)} profili">👤</button></div>`;
                     }).join('') + '</div>';
                 });
-                alan.innerHTML = html; return;
+                alan.innerHTML = html + '</div>'; return;
             }
             gosterilecekGruplar.forEach(([g, baslik]) => {
                 let satirlar = gorunenler.filter(x => x.grup === g).sort((a,b) => a.ad.localeCompare(b.ad,'tr'));
@@ -10367,7 +10389,7 @@
                 });
                 html += '</div>';
             });
-            alan.innerHTML = html;
+            alan.innerHTML = html + '</div>';
         }
         // ===== YOKLAMA ÖZETİ (2026-10-14, kullanıcı: "yoklama çok geride kaldı, düzelt ve geniş yap: bugün gelenler, bu hafta
         // gelenler gibi"). Kaynak: otomatikYoklamaDB[tarih][ad] = {saat, grup, elle, geldi} (geldi !== false = geldi). Hafta
@@ -10474,6 +10496,227 @@
             document.head.appendChild(st);
             return '';
         }
+        // ===== 📄 YOKLAMA RAPORU — GÜNLÜK / HAFTALIK (v436, 2026-11-19, kullanıcı: "haftalık günlük yoklama pdflerini daha iyi sun,
+        // sadece pdf değil ekranda da daha net anlaşılsın"). Ekran ve PDF AYNI düzen: grup başına renkli kart.
+        //  · Günlük: ✓ gelenler (saatiyle) | ✗ gelmeyenler (gelmedi işaretli ya da işaretsiz). Grubun o gün hiç işareti yoksa
+        //    "ders yok" sayılır, gelmeyen listesi uydurulmaz. Başka grupla gelen sporcu gelmeyen sayılmaz.
+        //  · Haftalık: sporcu × o grubun ders günleri tablosu (✓ / ✗ / ·), satır sonu "geldi / ders günü", altta gün toplamı.
+        let _yokRapor = { mod: 'gun', gun: null, hafta: null };
+        const _YOK_PDF_RENK = { buyukler: [37, 99, 235], yildizlar: [202, 138, 4], kucukler: [22, 163, 74], minikler: [124, 58, 237] };
+        const _YOK_AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+        function _yokGrupAd(g) { let x = TUM_GRUPLAR_YOK.find(function(t) { return t[0] === g; }); return (x ? x[1] : g).replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, ''); }
+        function _yokAktifUyeler(g) { return Object.keys(turnuvaDB[g] || {}).filter(function(ad) { let sp = turnuvaDB[g][ad]; return sp && !sp.pasif && !sp.donduruldu && yonKisiTuru(g, ad) === 'sporcu'; }).sort(function(a, b) { return a.localeCompare(b, 'tr'); }); }
+        function _yokGunGrup(iso, g) {
+            let gun = otomatikYoklamaDB[iso] || {};
+            let gelen = _yokGeldi(iso).filter(function(k) { return k.g === g; }).sort(function(a, b) { return (a.saat || '99').localeCompare(b.saat || '99') || a.ad.localeCompare(b.ad, 'tr'); });
+            let ders = Object.keys(gun).some(function(ad) { return gun[ad] && gun[ad].grup === g; });
+            let gelmeyen = [];
+            if(ders) _yokAktifUyeler(g).forEach(function(ad) { let k = gun[ad]; if(k && k.geldi !== false) return; gelmeyen.push({ ad: ad, g: g, x: !!(k && k.geldi === false && k.grup === g) }); });
+            gelmeyen.sort(function(a, b) { return (b.x - a.x) || a.ad.localeCompare(b.ad, 'tr'); });
+            return { ders: ders, gelen: gelen, gelmeyen: gelmeyen, sporcuGelen: gelen.filter(function(k) { return k.tur === 'sporcu'; }).length };
+        }
+        function _yokHaftaEt(pzt) { let son = _yokGunEkle(pzt, 6); return pzt.getDate() + (pzt.getMonth() !== son.getMonth() ? ' ' + _YOK_AYLAR[pzt.getMonth()] : '') + ' – ' + son.getDate() + ' ' + _YOK_AYLAR[son.getMonth()] + ' ' + son.getFullYear(); }
+        function _yokRaporPzt() { return _yokRapor.mod === 'gun' ? _yokPazartesi(new Date((_yokRapor.gun || bugunISO()) + 'T12:00:00')) : (_yokRapor.hafta ? new Date(_yokRapor.hafta + 'T00:00:00') : _yokPazartesi(new Date())); }
+        function _yokHaftaVeri(pzt) {
+            let gunler = []; for(let i = 0; i < 7; i++) gunler.push(bugunISO(_yokGunEkle(pzt, i)));
+            let gruplar = _yokGosterilecekGruplar().map(function(x) {
+                let g = x[0], ders = gunler.map(function(iso) { return { iso: iso, v: _yokGunGrup(iso, g) }; }).filter(function(d) { return d.v.ders; });
+                let adlar = {}; _yokAktifUyeler(g).forEach(function(ad) { adlar[ad] = 'sporcu'; });
+                ders.forEach(function(d) { d.v.gelen.forEach(function(k) { if(!adlar[k.ad]) adlar[k.ad] = k.tur; }); });
+                let satir = Object.keys(adlar).sort(function(a, b) { return a.localeCompare(b, 'tr'); }).map(function(ad) {
+                    let h = ders.map(function(d) { return d.v.gelen.some(function(k) { return k.ad === ad; }) ? 'v' : (d.v.gelmeyen.some(function(k) { return k.ad === ad && k.x; }) ? 'x' : 'b'); });
+                    return { ad: ad, tur: adlar[ad], h: h, n: h.filter(function(c) { return c === 'v'; }).length };
+                });
+                let sp = satir.filter(function(r) { return r.tur === 'sporcu'; });
+                return { g: g, ad: _yokGrupAd(g), ders: ders, satir: satir, gelenSp: sp.filter(function(r) { return r.n; }).length, sporcu: sp.length, hic: sp.filter(function(r) { return !r.n; }).length,
+                    ort: ders.length && sp.length ? Math.round(sp.reduce(function(a, r) { return a + r.n; }, 0) / (sp.length * ders.length) * 100) : 0 };
+            });
+            let dersGun = gunler.filter(function(iso) { return gruplar.some(function(gr) { return gr.ders.some(function(d) { return d.iso === iso; }); }); }).length;
+            return { gunler: gunler, gruplar: gruplar, farkli: gruplar.reduce(function(a, gr) { return a + gr.gelenSp; }, 0), katilim: gruplar.reduce(function(a, gr) { return a + gr.ders.reduce(function(b, d) { return b + d.v.sporcuGelen; }, 0); }, 0), hic: gruplar.reduce(function(a, gr) { return a + (gr.ders.length ? gr.hic : 0); }, 0), dersGun: dersGun };
+        }
+        function yoklamaRaporKaydir(n) {
+            if(_yokRapor.mod === 'gun') { let d = new Date((_yokRapor.gun || bugunISO()) + 'T12:00:00'); d.setDate(d.getDate() + n); let iso = bugunISO(d); if(iso > bugunISO()) return; _yokRapor.gun = iso; }
+            else { let p = _yokGunEkle(_yokRaporPzt(), 7 * n); if(p > new Date()) return; _yokRapor.hafta = bugunISO(p); }
+            yoklamaRaporEkranCiz();
+        }
+        function yoklamaRaporMod(m) { if(m === 'hafta') _yokRapor.hafta = bugunISO(_yokRaporPzt()); _yokRapor.mod = m; yoklamaRaporEkranCiz(); }
+        function yoklamaRaporEkranCiz() {
+            let alan = document.getElementById('yonetici-yoklama-ic'); if(!alan) return;
+            yoklamaYuzCss();
+            let gunMu = _yokRapor.mod === 'gun', bugun = bugunISO();
+            if(!_yokRapor.gun) _yokRapor.gun = bugun;
+            let pzt = _yokRaporPzt(), ileriYok = gunMu ? _yokRapor.gun >= bugun : _yokGunEkle(pzt, 7) > new Date();
+            let isim = function(g, ad, tur) { return '<b class="yn-isim yoz-isim" data-sporcu="' + esc(g + '|' + ad) + '" title="Sporcu kartını aç">' + esc(ad) + '</b>' + (tur === 'egitmen' ? ' <span class="yoz-rz e">eğitmen</span>' : tur === 'misafir' ? ' <span class="yoz-rz m">misafir</span>' : ''); };
+            let ust = '<div class="yoz yy">'
+                + '<div class="yr-mod" role="group" aria-label="Rapor türü"><button type="button" class="' + (gunMu ? 'on' : '') + '" onclick="yoklamaRaporMod(\'gun\')">📅 Günlük</button><button type="button" class="' + (gunMu ? '' : 'on') + '" onclick="yoklamaRaporMod(\'hafta\')">🗓️ Haftalık</button></div>'
+                + '<div class="yy-tarih"><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(-1)" aria-label="Önceki">‹</button><label class="yy-tarih-ad"><span>' + esc(gunMu ? _yokTarihEt(_yokRapor.gun) : (bugunISO(pzt) === bugunISO(_yokPazartesi(new Date())) ? 'Bu hafta · ' : '') + _yokHaftaEt(pzt)) + '</span><input type="date" value="' + (gunMu ? _yokRapor.gun : bugunISO(pzt)) + '" max="' + bugun + '" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){ if(_yokRapor.mod===\'gun\') _yokRapor.gun=this.value; else _yokRapor.hafta=bugunISO(_yokPazartesi(new Date(this.value+\'T12:00:00\'))); yoklamaRaporEkranCiz(); }" aria-label="Tarih seç"></label><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(1)"' + (ileriYok ? ' disabled' : '') + ' aria-label="Sonraki">›</button></div>'
+                + _yokGrupCipleri('yoklamaRaporEkranCiz', false);
+            let html = '';
+            if(gunMu) {
+                let iso = _yokRapor.gun, gruplar = _yokGosterilecekGruplar().map(function(x) { return { g: x[0], ad: _yokGrupAd(x[0]), v: _yokGunGrup(iso, x[0]) }; });
+                let dersli = gruplar.filter(function(x) { return x.v.ders; }), derssiz = gruplar.filter(function(x) { return !x.v.ders; });
+                let gel = dersli.reduce(function(a, x) { return a + x.v.sporcuGelen; }, 0), xS = dersli.reduce(function(a, x) { return a + x.v.gelmeyen.filter(function(k) { return k.x; }).length; }, 0), bS = dersli.reduce(function(a, x) { return a + x.v.gelmeyen.filter(function(k) { return !k.x; }).length; }, 0);
+                html += '<div class="yoz-kart yr-cumle">' + (dersli.length
+                    ? esc(_yokTarihEt(iso)) + ': <b class="g">' + gel + '</b> sporcu geldi' + (xS ? ', <b class="y">' + xS + '</b> gelmedi' : '') + (bS ? ', <b class="s">' + bS + '</b> kişi işaretsiz' : '') + '. Yoklaması olan grup: ' + dersli.map(function(x) { return esc(x.ad); }).join(', ') + '.'
+                    : esc(_yokTarihEt(iso)) + ': bu gün ' + (_yokGosterilecekGruplar().length > 1 ? 'hiçbir grubun' : 'bu grubun') + ' yoklaması yok.') + '</div>';
+                html += '<div class="yr-pdf"><button class="adm-btn yoz-ana" onclick="yoklamaGunPdf()">📄 Bu günün PDF\'i</button><button class="adm-btn" onclick="_yonElTarih=\'' + iso + '\'; yoneticiYoklamaTip=\'gunluk\'; yoneticiYoklamaCiz();">✍︎ Bu günün yoklamasını düzenle</button></div>';
+                dersli.forEach(function(x) {
+                    let pay = x.v.sporcuGelen, payda = pay + x.v.gelmeyen.length, oran = payda ? Math.round(pay / payda * 100) : 0;
+                    html += '<div class="yr-grup" style="--gc:' + GRUP_RENK[x.g] + '"><div class="yr-gb"><h4>' + esc(x.ad) + '</h4><span>' + pay + ' / ' + payda + '</span><small>geldi · %' + oran + '</small></div><div class="yr-bar"><i style="width:' + oran + '%"></i></div>'
+                        + '<div class="yr-iki"><div class="yr-sut g"><h5>✓ Gelenler · ' + x.v.gelen.length + '</h5>' + (x.v.gelen.length ? x.v.gelen.map(function(k) { return '<div class="yr-k">' + isim(k.g, k.ad, k.tur) + '<small>' + esc(k.saat || '') + '</small></div>'; }).join('') : '<div class="yr-bos">Kimse gelmedi.</div>') + '</div>'
+                        + '<div class="yr-sut y"><h5>✗ Gelmeyenler · ' + x.v.gelmeyen.length + '</h5>' + (x.v.gelmeyen.length ? x.v.gelmeyen.map(function(k) { return '<div class="yr-k">' + isim(k.g, k.ad) + (k.x ? '<small class="x">✗ gelmedi</small>' : '<small>işaretsiz</small>') + '</div>'; }).join('') : '<div class="yr-bos">Herkes geldi 👏</div>') + '</div></div></div>';
+                });
+                if(derssiz.length && dersli.length) html += '<div class="yoz-bos">Bu gün yoklaması olmayan: ' + derssiz.map(function(x) { return esc(x.ad); }).join(', ') + '</div>';
+            } else {
+                let h = _yokHaftaVeri(pzt);
+                html += '<div class="yoz-kart yr-cumle">' + (h.dersGun
+                    ? esc(_yokHaftaEt(pzt)) + ': <b>' + h.dersGun + '</b> ders gününde <b class="g">' + h.farkli + '</b> farklı sporcu geldi (toplam <b>' + h.katilim + '</b> katılım).' + (h.hic ? ' <b class="y">' + h.hic + '</b> sporcu bu hafta hiç gelmedi.' : ' Herkes en az bir kez geldi 👏')
+                    : esc(_yokHaftaEt(pzt)) + ': bu hafta yoklama kaydı yok.') + '</div>';
+                html += '<div class="yr-pdf"><button class="adm-btn yoz-ana" onclick="yoklamaHaftaPdf()">📄 Bu haftanın PDF\'i</button><button class="adm-btn" onclick="_yonOzHafta=\'' + bugunISO(pzt) + '\'; _yonOzGun=null; yoneticiYoklamaTip=\'ozet\'; yoneticiYoklamaCiz();">📊 Bu haftanın özeti</button></div>';
+                if(h.dersGun) html += '<div class="yr-acikl"><span><i class="yr-h v">✓</i>geldi</span><span><i class="yr-h x">✗</i>gelmedi işaretli</span><span><i class="yr-h b">·</i>kayıt yok</span><span>Sütunlar = o grubun ders günleri</span></div>';
+                h.gruplar.forEach(function(gr) {
+                    if(!gr.ders.length) { if(h.dersGun) html += '<div class="yr-grup" style="--gc:' + GRUP_RENK[gr.g] + '"><div class="yr-gb"><h4>' + esc(gr.ad) + '</h4><small>bu hafta yoklama yok</small></div></div>'; return; }
+                    let oran = gr.sporcu ? Math.round(gr.gelenSp / gr.sporcu * 100) : 0;
+                    html += '<div class="yr-grup" style="--gc:' + GRUP_RENK[gr.g] + '"><div class="yr-gb"><h4>' + esc(gr.ad) + '</h4><span>' + gr.gelenSp + ' / ' + gr.sporcu + '</span><small>geldi · ort. devam %' + gr.ort + '</small></div><div class="yr-bar"><i style="width:' + oran + '%"></i></div>'
+                        + '<div class="yr-tablo-k"><table class="yr-tablo"><thead><tr><th class="ad">Sporcu</th>' + gr.ders.map(function(d) { let dt = new Date(d.iso + 'T12:00:00'); return '<th class="ders">' + GUN_KISA_TR[dt.getDay()] + '<small>' + dt.getDate() + '</small></th>'; }).join('') + '<th class="top">Geldi</th></tr></thead><tbody>'
+                        + gr.satir.map(function(r) { return '<tr><td class="ad">' + isim(gr.g, r.ad, r.tur) + '</td>' + r.h.map(function(c) { return '<td><span class="yr-h ' + c + '">' + (c === 'v' ? '✓' : c === 'x' ? '✗' : '·') + '</span></td>'; }).join('') + '<td class="top' + (r.n ? '' : ' dusuk') + '">' + r.n + '/' + gr.ders.length + '</td></tr>'; }).join('')
+                        + '</tbody><tfoot><tr><td class="ad">Gelen</td>' + gr.ders.map(function(d) { return '<td>' + d.v.sporcuGelen + '</td>'; }).join('') + '<td class="top">%' + gr.ort + '</td></tr></tfoot></table></div></div>';
+                });
+            }
+            alan.innerHTML = ust + html + '</div>';
+        }
+        // ortak PDF parçaları (dikey A4)
+        function _yokPdfKutular(pdf, mx, uw, y, kutular) {
+            let n = kutular.length, kw = (uw - (n - 1) * 4) / n, T = _trTranslit;
+            kutular.forEach(function(k, i) { let x = mx + i * (kw + 4), r = k[2];
+                pdf.setFillColor(248, 250, 252); pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.2); pdf.roundedRect(x, y, kw, 18, 2, 2, 'FD');
+                pdf.setFillColor(r[0], r[1], r[2]); pdf.rect(x, y + 2, 1.2, 14, 'F');
+                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139); pdf.text(T(k[0]), x + 4, y + 6);
+                pdf.setFontSize(17); pdf.setTextColor(r[0], r[1], r[2]); pdf.text(String(k[1]), x + 4, y + 15); });
+            return y + 24;
+        }
+        function _yokPdfSerit(pdf, mx, uw, y, g, sol, sag) {
+            let r = _YOK_PDF_RENK[g] || [71, 85, 105], T = _trTranslit;
+            pdf.setFillColor(r[0], r[1], r[2]); pdf.roundedRect(mx, y, uw, 9, 1.5, 1.5, 'F');
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(255, 255, 255); pdf.text(T(sol.toLocaleUpperCase('tr')), mx + 3.5, y + 6.2);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.text(T(sag), mx + uw - 3.5, y + 6.2, { align: 'right' });
+            return y + 11;
+        }
+        function _yokPdfKes(pdf, v, w) { v = _trTranslit(v); while(v.length > 2 && pdf.getTextWidth(v) > w) v = v.slice(0, -1); return v; }
+        function _yokPdfTik(pdf, cx, cy) { pdf.setDrawColor(255, 255, 255); pdf.setLineWidth(0.55); pdf.line(cx - 1.5, cy, cx - 0.4, cy + 1.1); pdf.line(cx - 0.4, cy + 1.1, cx + 1.6, cy - 1.2); }
+        function _yokPdfCarpi(pdf, cx, cy) { pdf.setDrawColor(200, 50, 40); pdf.setLineWidth(0.5); pdf.line(cx - 1.2, cy - 1.2, cx + 1.2, cy + 1.2); pdf.line(cx - 1.2, cy + 1.2, cx + 1.2, cy - 1.2); }
+        function yoklamaGunPdf() {
+            showToast('PDF hazırlanıyor...', 'warning');
+            let iso = _yokRapor.gun || bugunISO(), T = _trTranslit, dt = new Date(iso + 'T12:00:00');
+            let gruplar = _yokGosterilecekGruplar().map(function(x) { return { g: x[0], ad: _yokGrupAd(x[0]), v: _yokGunGrup(iso, x[0]) }; });
+            let dersli = gruplar.filter(function(x) { return x.v.ders; }), derssiz = gruplar.filter(function(x) { return !x.v.ders; });
+            _yeniPdfAl('portrait').then(function(pdf) {
+                let W = 210, H = 297, mx = 14, uw = W - mx * 2, alt = H - 18, y;
+                let yeniSayfa = function() { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); return 14; };
+                y = _sadeBaslikCiz(pdf, mx, uw, 10, 'GÜNLÜK YOKLAMA', GUN_ADI_TR[dt.getDay()] + ' ' + dt.getDate() + ' ' + _YOK_AYLAR[dt.getMonth()] + ' ' + dt.getFullYear());
+                let gel = dersli.reduce(function(a, x) { return a + x.v.sporcuGelen; }, 0), xS = dersli.reduce(function(a, x) { return a + x.v.gelmeyen.filter(function(k) { return k.x; }).length; }, 0), bS = dersli.reduce(function(a, x) { return a + x.v.gelmeyen.filter(function(k) { return !k.x; }).length; }, 0);
+                y = _yokPdfKutular(pdf, mx, uw, y, [['GELDİ', gel, [21, 128, 61]], ['GELMEDİ (İŞARETLİ)', xS, [185, 28, 28]], ['İŞARETSİZ', bS, [100, 116, 139]]]);
+                if(!dersli.length) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(11); pdf.setTextColor(71, 85, 105); pdf.text(T('Bu gün yoklama kaydı yok.'), mx, y + 6); }
+                let yarim = uw / 2, satirH = 6.2;
+                dersli.forEach(function(x) {
+                    let pay = x.v.sporcuGelen, payda = pay + x.v.gelmeyen.length, sag = pay + ' / ' + payda + ' geldi  ·  %' + (payda ? Math.round(pay / payda * 100) : 0);
+                    let basliklar = function(devam) {
+                        y = _yokPdfSerit(pdf, mx, uw, y, x.g, x.ad + (devam ? ' (devam)' : ''), sag);
+                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5);
+                        pdf.setTextColor(21, 128, 61); pdf.text(T('GELENLER (' + x.v.gelen.length + ')'), mx + 1, y + 3.5); pdf.setTextColor(100, 116, 139); pdf.text(T('SAAT'), mx + yarim - 4, y + 3.5, { align: 'right' });
+                        pdf.setTextColor(185, 28, 28); pdf.text(T('GELMEYENLER (' + x.v.gelmeyen.length + ')'), mx + yarim + 4, y + 3.5);
+                        pdf.setDrawColor(203, 213, 225); pdf.setLineWidth(0.3); pdf.line(mx, y + 5.2, mx + uw, y + 5.2);
+                        y += 6;
+                    };
+                    if(y + 11 + 6 + satirH * Math.min(4, Math.max(x.v.gelen.length, x.v.gelmeyen.length, 1)) > alt) y = yeniSayfa();
+                    basliklar(false);
+                    let n = Math.max(x.v.gelen.length, x.v.gelmeyen.length, 1);
+                    for(let i = 0; i < n; i++) {
+                        if(y + satirH > alt) { y = yeniSayfa(); basliklar(true); }
+                        if(i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, satirH, 'F'); }
+                        let a = x.v.gelen[i], b = x.v.gelmeyen[i];
+                        if(a) {
+                            pdf.setFillColor(22, 163, 74); pdf.roundedRect(mx + 1, y + 1.2, 3.8, 3.8, 0.8, 0.8, 'F'); _yokPdfTik(pdf, mx + 2.9, y + 3.1);
+                            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42); pdf.text(_yokPdfKes(pdf, a.ad + (a.tur === 'egitmen' ? ' (egitmen)' : a.tur === 'misafir' ? ' (misafir)' : ''), yarim - 24), mx + 7, y + 4.3);
+                            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(T(a.saat || ''), mx + yarim - 4, y + 4.3, { align: 'right' });
+                        } else if(i === 0) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(148, 163, 184); pdf.text(T('Kimse gelmedi'), mx + 1, y + 4.3); }
+                        if(b) {
+                            if(b.x) _yokPdfCarpi(pdf, mx + yarim + 6, y + 3.1); else { pdf.setFillColor(203, 213, 225); pdf.circle(mx + yarim + 6, y + 3.1, 0.7, 'F'); }
+                            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(15, 23, 42); pdf.text(_yokPdfKes(pdf, b.ad, yarim - 32), mx + yarim + 10, y + 4.3);
+                            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(b.x ? 185 : 100, b.x ? 28 : 116, b.x ? 28 : 139); pdf.text(T(b.x ? 'gelmedi' : 'işaretsiz'), mx + uw - 1, y + 4.3, { align: 'right' });
+                        } else if(i === 0) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(21, 128, 61); pdf.text(T('Herkes geldi'), mx + yarim + 4, y + 4.3); }
+                        pdf.setDrawColor(226, 232, 240); pdf.setLineWidth(0.15); pdf.line(mx + yarim, y, mx + yarim, y + satirH);
+                        y += satirH;
+                    }
+                    y += 6;
+                });
+                if(derssiz.length && dersli.length) { if(y + 8 > alt) y = yeniSayfa(); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(T('Bu gün yoklaması olmayan grup: ' + derssiz.map(function(x) { return x.ad; }).join(', ')), mx, y + 3); }
+                _kurumsalAltBilgiCiz(pdf, W, H);
+                pdf.save('Yoklama_Gunluk_' + iso.replace(/-/g, '') + '.pdf');
+                showToast('PDF indirildi! 📄', 'success');
+            }).catch(function(e) { console.error(e); showToast('PDF oluşturulamadı.', 'error'); });
+        }
+        function yoklamaHaftaPdf() {
+            showToast('PDF hazırlanıyor...', 'warning');
+            let pzt = _yokRaporPzt(), h = _yokHaftaVeri(pzt), T = _trTranslit;
+            _yeniPdfAl('portrait').then(function(pdf) {
+                let W = 210, H = 297, mx = 14, uw = W - mx * 2, alt = H - 18, y;
+                let yeniSayfa = function() { pdf.addPage(); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); return 14; };
+                y = _sadeBaslikCiz(pdf, mx, uw, 10, 'HAFTALIK YOKLAMA', _yokHaftaEt(pzt) + ' haftası');
+                y = _yokPdfKutular(pdf, mx, uw, y, [['DERS GÜNÜ', h.dersGun, [15, 111, 103]], ['FARKLI SPORCU GELDİ', h.farkli, [21, 128, 61]], ['TOPLAM KATILIM', h.katilim, [37, 99, 235]], ['HİÇ GELMEYEN', h.hic, [185, 28, 28]]]);
+                // açıklama
+                pdf.setFillColor(22, 163, 74); pdf.roundedRect(mx, y - 2.6, 3.6, 3.6, 0.7, 0.7, 'F'); _yokPdfTik(pdf, mx + 1.8, y - 0.8);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(71, 85, 105); pdf.text(T('geldi'), mx + 5, y);
+                _yokPdfCarpi(pdf, mx + 18, y - 0.8); pdf.text(T('gelmedi işaretli'), mx + 21, y);
+                pdf.setFillColor(203, 213, 225); pdf.circle(mx + 46, y - 0.8, 0.7, 'F'); pdf.text(T('kayıt yok'), mx + 48.5, y);
+                pdf.text(T('Sütunlar = o grubun ders günleri. GELDİ = gelinen gün / ders günü.'), mx + uw, y, { align: 'right' });
+                y += 6;
+                if(!h.dersGun) { pdf.setFontSize(11); pdf.text(T('Bu hafta yoklama kaydı yok.'), mx, y + 6); }
+                let derssiz = [], nW = 7, adW = 66, topW = 18, satirH = 6.4;
+                h.gruplar.forEach(function(gr) {
+                    if(!gr.ders.length) { derssiz.push(gr.ad); return; }
+                    let n = gr.ders.length, cw = Math.min(16, (uw - nW - 66 - topW) / n), tabloW = uw; adW = uw - nW - topW - cw * n;
+                    let sag = gr.gelenSp + ' / ' + gr.sporcu + ' sporcu geldi  ·  ' + n + ' ders günü  ·  ort. devam %' + gr.ort;
+                    let basliklar = function(devam) {
+                        y = _yokPdfSerit(pdf, mx, uw, y, gr.g, gr.ad + (devam ? ' (devam)' : ''), sag);
+                        pdf.setFillColor(243, 246, 245); pdf.rect(mx, y, tabloW, 9, 'F');
+                        pdf.setFont('helvetica', 'bold'); pdf.setTextColor(61, 74, 71); pdf.setFontSize(7);
+                        pdf.text('#', mx + nW / 2, y + 5.8, { align: 'center' }); pdf.text(T('SPORCU'), mx + nW + 1.5, y + 5.8);
+                        gr.ders.forEach(function(d, j) { let dt = new Date(d.iso + 'T12:00:00'), cx = mx + nW + adW + j * cw + cw / 2; pdf.setFontSize(7); pdf.text(T(GUN_KISA_TR[dt.getDay()]), cx, y + 4, { align: 'center' }); pdf.setFontSize(6.5); pdf.setFont('helvetica', 'normal'); pdf.text(dt.getDate() + '.' + (dt.getMonth() + 1), cx, y + 7.6, { align: 'center' }); pdf.setFont('helvetica', 'bold'); });
+                        pdf.setFontSize(7); pdf.text(T('GELDİ'), mx + tabloW - topW / 2, y + 5.8, { align: 'center' });
+                        pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.3); pdf.line(mx, y + 9, mx + tabloW, y + 9);
+                        y += 9;
+                    };
+                    if(y + 11 + 9 + satirH * Math.min(4, gr.satir.length) + 7 > alt) y = yeniSayfa();
+                    basliklar(false);
+                    gr.satir.forEach(function(r, i) {
+                        if(y + satirH > alt) { y = yeniSayfa(); basliklar(true); }
+                        if(i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, tabloW, satirH, 'F'); }
+                        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(148, 163, 184); pdf.text(String(i + 1), mx + nW / 2, y + 4.3, { align: 'center' });
+                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.8); pdf.setTextColor(15, 23, 42); pdf.text(_yokPdfKes(pdf, r.ad + (r.tur === 'egitmen' ? ' (egitmen)' : r.tur === 'misafir' ? ' (misafir)' : ''), adW - 3), mx + nW + 1.5, y + 4.3);
+                        r.h.forEach(function(c, j) {
+                            let cx = mx + nW + adW + j * cw + cw / 2, cy = y + satirH / 2;
+                            if(c === 'v') { pdf.setFillColor(22, 163, 74); pdf.roundedRect(cx - 2.2, cy - 2.2, 4.4, 4.4, 0.8, 0.8, 'F'); _yokPdfTik(pdf, cx, cy); }
+                            else if(c === 'x') _yokPdfCarpi(pdf, cx, cy);
+                            else { pdf.setFillColor(203, 213, 225); pdf.circle(cx, cy, 0.6, 'F'); }
+                        });
+                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(r.n ? 15 : 185, r.n ? 23 : 28, r.n ? 42 : 28); pdf.text(r.n + ' / ' + n, mx + tabloW - topW / 2, y + 4.3, { align: 'center' });
+                        pdf.setDrawColor(235, 239, 243); pdf.setLineWidth(0.15); pdf.line(mx, y + satirH, mx + tabloW, y + satirH);
+                        y += satirH;
+                    });
+                    if(y + 7 > alt) y = yeniSayfa();
+                    pdf.setDrawColor(27, 36, 34); pdf.setLineWidth(0.3); pdf.line(mx, y, mx + tabloW, y);
+                    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(61, 74, 71); pdf.text(T('Gelen'), mx + nW + 1.5, y + 4.5);
+                    gr.ders.forEach(function(d, j) { pdf.text(String(d.v.sporcuGelen), mx + nW + adW + j * cw + cw / 2, y + 4.5, { align: 'center' }); });
+                    pdf.text('%' + gr.ort, mx + tabloW - topW / 2, y + 4.5, { align: 'center' });
+                    y += 12;
+                });
+                if(derssiz.length && h.dersGun) { if(y + 8 > alt) y = yeniSayfa(); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139); pdf.text(T('Bu hafta yoklaması olmayan grup: ' + derssiz.join(', ')), mx, y); }
+                _kurumsalAltBilgiCiz(pdf, W, H);
+                pdf.save('Yoklama_Haftalik_' + bugunISO(pzt).replace(/-/g, '') + '.pdf');
+                showToast('PDF indirildi! 📄', 'success');
+            }).catch(function(e) { console.error(e); showToast('PDF oluşturulamadı.', 'error'); });
+        }
         // ===== YOKLAMA PDF (2026-10-14, kullanıcı: "detaylı PDF çıktısı: grafikli, geldi/gelmedi, kim kaç gün gelmedi, ilk başlangıç
         // zamanı; yoklama çizelgesi; fiziki yoklama (boş kâğıt çizelge)"). Dönem seçilebilir. İki çıktı:
         //  1) Rapor: özet sayılar + gün gün grafik + grup grafiği + en çok gelen / en uzun gelmeyen + sporcu tablosu (başlangıç,
@@ -10497,7 +10740,11 @@
             let cip = function(id, ad) { return '<button type="button" class="yzp-cip' + (_yokPdf.donem === id ? ' on' : '') + '" onclick="_yokPdf.donem=\'' + id + '\'; yoklamaPdfPencere()">' + ad + '</button>'; };
             let gunCip = [1, 2, 3, 4, 5, 6, 0].map(function(g) { return '<button type="button" class="yzp-cip k' + (_yokPdf.gunler.indexOf(g) !== -1 ? ' on' : '') + '" onclick="yoklamaPdfGunDegis(' + g + ')">' + GUN_KISA_TR[g] + '</button>'; }).join('');
             let d = _yokPdfDonem();
+            let seciliGun = _yonOzGun || bugunISO();
             onayIste('<div style="text-align:left"><b>📄 Yoklama PDF</b>'
+                + '<div class="yzp-et" style="margin-top:12px">Sade rapor' + yeniRozet('2026-12-19') + '</div><div class="yzp-sat">'
+                + '<button type="button" class="adm-btn" style="flex:1 1 140px;font-weight:900" onclick="onayKapat(); _yokRapor.mod=\'gun\'; _yokRapor.gun=\'' + seciliGun + '\'; yoklamaGunPdf()">📅 Günlük · ' + esc(_yokTarihEt(seciliGun).replace('Bugün · ', '')) + '</button>'
+                + '<button type="button" class="adm-btn" style="flex:1 1 140px;font-weight:900" onclick="onayKapat(); _yokRapor.mod=\'hafta\'; _yokRapor.hafta=\'' + bugunISO(_yokPazartesi(new Date(seciliGun + 'T12:00:00'))) + '\'; yoklamaHaftaPdf()">🗓️ Haftalık</button></div>'
                 + '<style>.yzp-cip{border:1px solid var(--border-color);background:transparent;color:var(--text-main);border-radius:999px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;min-height:36px}.yzp-cip.on{background:var(--accent-orange);border-color:var(--accent-orange);color:var(--text-on-accent-dark,#1A0700)}.yzp-cip.k{padding:6px 9px;min-width:42px}.yzp-sat{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}.yzp-et{font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase}</style>'
                 + '<div class="yzp-et" style="margin-top:12px">Dönem</div><div class="yzp-sat">' + cip('buhafta', 'Bu hafta') + cip('buay', 'Bu ay') + cip('gecenay', 'Geçen ay') + cip('ozel', 'Özel aralık') + '</div>'
                 + (_yokPdf.donem === 'ozel' ? '<div class="yzp-sat"><input type="date" class="adm-input" style="width:auto" value="' + (_yokPdf.bas || '') + '" onchange="_yokPdf.bas=this.value"> – <input type="date" class="adm-input" style="width:auto" value="' + (_yokPdf.bit || '') + '" onchange="_yokPdf.bit=this.value"></div>' : '')
