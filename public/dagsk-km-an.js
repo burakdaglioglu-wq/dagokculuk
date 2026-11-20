@@ -110,6 +110,9 @@
             '#km-oyun-wrap:fullscreen #an-simdi .an-cumle{font-size:clamp(18px,2.2vw,32px)}',
             '.an-perde{position:absolute;inset:0;z-index:60;pointer-events:none;display:grid;place-items:center;opacity:0;transition:opacity .2s}',
             '.an-perde.ac{opacity:1}',
+            // v437 (kullanıcı: "bunu isteğe göre kapatayım") — büyük anın köşesinde kalıcı kapatma; tam ekranda da ulaşılır
+            '.an-perde .an-kapat{position:absolute;right:12px;top:12px;z-index:3;pointer-events:auto;font:800 14px Nunito,Inter,system-ui,sans-serif;padding:10px 14px;min-height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,6,16,.7);color:#f4f8ff;cursor:pointer}',
+            '.an-perde .an-kapat:hover{background:rgba(0,6,16,.9)}',
             '.an-perde::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,6,16,.25) 20%,rgba(0,6,16,.78) 78%)}',
             '.an-ic{position:relative;text-align:center;color:#fff;transform:translateY(-6%)}',
             '.an-ad{font-family:"Bungee","Barlow Condensed",Impact,system-ui,sans-serif;font-size:clamp(30px,6.5vw,84px);line-height:1;text-shadow:0 5px 0 #000,0 0 28px rgba(0,0,0,.6);animation:anGir .35s ease-out}',
@@ -159,13 +162,14 @@
         let p = sahne.querySelector('.an-perde'); if (p) p.remove();
         p = document.createElement('div'); p.className = 'an-perde';
         const ik = s ? dolapIkon(s.g, s.ad) : '';
-        p.innerHTML = '<div class="an-ic"><div class="an-ad">' + (ik ? '<span class="an-ik">' + ik + '</span> ' : '') + esc(buyukTR(ad)) + '</div><div class="an-okl">' + liste.map(() => '<span></span>').join('') + '</div><div class="an-etiket"></div><div class="an-alt"></div></div>';
+        p.innerHTML = '<div class="an-ic"><div class="an-ad">' + (ik ? '<span class="an-ik">' + ik + '</span> ' : '') + esc(buyukTR(ad)) + '</div><div class="an-okl">' + liste.map(() => '<span></span>').join('') + '</div><div class="an-etiket"></div><div class="an-alt"></div></div><button type="button" class="an-kapat" title="Seri sonrası büyük anı kapat (cihaz hatırlar; şeritteki 🎬 An ile geri açılır)">🎬 Bu ekranı kapat' + (typeof yeniRozet === 'function' ? ' ' + yeniRozet() : '') + '</button>';
         sahne.appendChild(p);
         requestAnimationFrame(() => p.classList.add('ac'));
         SES.ad();
         const zl = []; let bitirildi = false;
         const sonla = () => { if (bitirildi) return; bitirildi = true; zl.forEach(clearTimeout); _calisan = null; p.classList.remove('ac'); setTimeout(() => p.remove(), 250); bitti(); };
         _calisan = sonla;
+        p.querySelector('.an-kapat').onclick = (ev) => { ev.stopPropagation(); try { localStorage.setItem('dag_km_an_kapali', '1'); } catch (e) { } sonla(); try { anTazele(tema); } catch (e) { } if (typeof showToast === 'function') showToast('🎬 Büyük an kapatıldı. Geri açmak için şeritteki 🎬 An düğmesi.', 'info'); };
         const adim = 640, bas = 420;
         const daireler = p.querySelectorAll('.an-okl span'), et = p.querySelector('.an-etiket'), alt = p.querySelector('.an-alt');
         let iyi = 0, orta = 0;

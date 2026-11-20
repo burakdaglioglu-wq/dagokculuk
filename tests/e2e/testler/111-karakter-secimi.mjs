@@ -13,7 +13,7 @@ export default async function ({ log }) {
 
     // havuz
     const hv = await p.evaluate(() => ({ n: KM_OYUN_KARAKTERLER.length, sira: KM_OYUN_KARAKTERLER.every((k, i) => k.no === i + 1), rast: Math.max(...KM_OYUN_RASTGELE_HAVUZ), rastN: KM_OYUN_RASTGELE_HAVUZ.length, oran: KM_OYUN_HAYVAN_ORAN.length }));
-    esit(hv.n, 55, 'karakter sayısı'); dogrula(hv.sira, 'numaralar sıralı ve kalıcı olmalı'); esit(hv.rast, 26, 'rastgele atama yalnız hayvanlar'); esit(hv.rastN, 23, 'rastgele havuz'); esit(hv.oran, 55, 'oran listesi');
+    esit(hv.n, 73, 'karakter sayısı'); dogrula(hv.sira, 'numaralar sıralı ve kalıcı olmalı'); esit(hv.rast, 26, 'rastgele atama yalnız hayvanlar'); esit(hv.rastN, 23, 'rastgele havuz'); esit(hv.oran, 73, 'oran listesi');
 
     // seçici: Kale (ortak havuzu kullanan oyun)
     await p.evaluate(() => kmOyunTemaSec('kale')); await p.waitForTimeout(800);
@@ -21,8 +21,8 @@ export default async function ({ log }) {
     await p.waitForSelector('#km-oyun-karakter-modal .km-oyun-karakter-sec');
     await p.waitForFunction(() => [...document.querySelectorAll('#km-oyun-karakter-modal img')].every((i) => { i.loading = 'eager'; return i.complete; }), null, { timeout: 20000 });
     const md = await p.evaluate(() => ({ dugme: document.querySelectorAll('#km-oyun-karakter-modal .km-oyun-karakter-sec').length, grup: [...document.querySelectorAll('.km-oyun-karakter-grup')].map((g) => g.textContent.replace(/\s+/g, ' ').trim()), bozuk: [...document.querySelectorAll('#km-oyun-karakter-modal img')].filter((i) => !i.naturalWidth).map((i) => i.src) }));
-    esit(md.dugme, 55, 'seçicide 55 karakter'); esit(md.grup.length, 5, 'grup başlıkları: ' + md.grup.join(' | ')); esit(md.bozuk.length, 0, 'yüklenmeyen görsel: ' + md.bozuk.join(', '));
-    dogrula(/Okçular 14/.test(md.grup.join('|')) && /Ninjalar 8/.test(md.grup.join('|')) && /Korsanlar 7/.test(md.grup.join('|')), 'grup sayıları: ' + md.grup.join(' | '));
+    esit(md.dugme, 73, 'seçicide 73 karakter'); esit(md.grup.length, 8, 'grup başlıkları: ' + md.grup.join(' | ')); esit(md.bozuk.length, 0, 'yüklenmeyen görsel: ' + md.bozuk.join(', '));
+    dogrula(/Okçular 14/.test(md.grup.join('|')) && /Ninjalar 8/.test(md.grup.join('|')) && /Korsanlar 7/.test(md.grup.join('|')) && /Uzay 6/.test(md.grup.join('|')) && /Dinozorlar 6/.test(md.grup.join('|')) && /Kahramanlar 6/.test(md.grup.join('|')), 'grup sayıları: ' + md.grup.join(' | '));
     await p.screenshot({ path: 'tests/e2e/_cikti/111-secici.png' });
     // okçu seç → sahnede o görsel
     await p.locator('#km-oyun-karakter-modal .km-oyun-karakter-sec', { hasText: 'Elf Okçu' }).click(); await p.waitForTimeout(600);
@@ -41,7 +41,7 @@ export default async function ({ log }) {
     const bs = await p.evaluate(() => { const s = _kmOyunRosterCache[0]; return { ad: blkKahraman(s.g + '|' + s.ad), bek: _blkKahramanlar()[3] }; });
     esit(bs.ad, bs.bek, 'Blok kahraman seçimi');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('55 karakter (5 grup, görseller yüklü) · rastgele yalnız hayvan · okçu seçilip sahnede · Blok 12 kahraman seçilir');
+    log('73 karakter (8 grup, görseller yüklü) · rastgele yalnız hayvan · okçu seçilip sahnede · Blok 12 kahraman seçilir');
   } finally {
     if (yedek) await p.evaluate((y) => { const k = _kmAktifKonum || 'varsayilan'; const w = (a, v) => { if (v == null) localStorage.removeItem(a); else localStorage.setItem(a, v); }; w('dag_km_oyun_hayvan_' + k, y.h); w('dag_km_blokkh_' + k, y.b); }, yedek).catch(() => {});
     await ctx.close();
