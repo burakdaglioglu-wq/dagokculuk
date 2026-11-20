@@ -186,7 +186,16 @@ function yzOkRenk(p) { return 'yz-r-' + (p === 'X' || p === '10' || p === '9' ? 
 // YZ_KARISIK_MS'de bir (bütün cihazlarda aynı tohumla) değişir.
 const YZ_SIRA_MODLARI = { normal: '📊 Normal sıralama', ilk4: '🏅 İlk 4 kalsın', karisik: '🔀 Herkes karışık' };
 const YZ_KARISIK_MS = 5000;
-function yzSiraModu(d) { let m = d && d.ayar && d.ayar.siraModu; return YZ_SIRA_MODLARI[m] ? m : 'normal'; }
+// v440: mod YALNIZ tur sürerken; tur bitince (sonuç, TV sonuç, eleme) orijinal sıralama herkese açılır.
+function yzSiraModu(d) { let m = d && d.asama === 'tur' && d.ayar && d.ayar.siraModu; return YZ_SIRA_MODLARI[m] ? m : 'normal'; }
+function yzSiraModuVardi(d) { let m = d && d.ayar && d.ayar.siraModu; return !!(m && m !== 'normal' && YZ_SIRA_MODLARI[m]); }
+// v440 (kullanıcı: "yarışma sonunda orijinal sıralama ile elemeli maçlar tablosu da oluştur"): son seride Bitir iki yol sunar.
+function yzBitirSec() {
+    let o = yzOku(), d = o.durum; if (!d) return; let bek = yzBekleyenler(o, Math.min(d.seri, yzFormat(d).seri - 1)).length, kapat = "document.getElementById('onay-modal').style.display='none'; ";
+    onayIste('<div style="text-align:left"><b>🏁 Yarışma bitiyor</b><div class="yz-alt" style="margin:4px 0 10px">' + (bek ? bek + ' sporcu son seriyi henüz girmedi. ' : '') + 'Bitince orijinal (gerçek) sıralama herkese açılır' + (yzSiraModuVardi(d) ? ', ✦ kalkar' : '') + '.</div><div style="display:flex;flex-direction:column;gap:8px">'
+        + '<button class="yz-btn ana buyuk" id="yz-bitir-sira" onclick="' + kapat + 'yzBitir(true)">🏁 Bitir — orijinal sıralama</button>'
+        + (d.katilimci.length >= 2 ? '<button class="yz-btn buyuk" id="yz-bitir-eleme" onclick="' + kapat + 'yzBitirEleme()">⚔️ Bitir + eleme tablosu kur</button>' : '') + '</div></div>', null);
+}
 function yzSiraGizli(d, r) { let m = yzSiraModu(d); if (m === 'normal') return false; if (m === 'karisik') return true; if (r && r.siraGizli != null) return r.siraGizli; return !(r && r.toplam > 0 && r.sira <= 4); }
 // İlk 4 = listedeki ilk 4 puanlı kişi (beraberlik olsa da 4 kişi); yzKarisikSira bu işareti koyar, ekranlar yzSiraGizli ile okur.
 function yzSiraIsaretle(d, liste) { let m = yzSiraModu(d), n = 0; liste.forEach(function (r) { let sabit = m === 'normal' || (m === 'ilk4' && r.toplam > 0 && n < 4); if (sabit && m === 'ilk4') n++; r.siraGizli = !sabit; }); return liste; }
@@ -976,6 +985,7 @@ function yzSonucHTML(o) {
             + '<div class="yz-etiket" style="margin-top:10px">Tabloya kaç sporcu?</div><div class="yz-cipler">' + secenek.concat(n > varsayilan ? [n] : []).map(function (x) { return '<button class="yz-cip' + (x === varsayilan ? ' aktif' : '') + '" onclick="yzElemeBaslat(' + x + ')">' + (x === n && secenek.indexOf(x) === -1 ? 'Tümü (' + x + ', bay ile)' : 'İlk ' + x) + '</button>'; }).join('') + '</div>'
             + '<div class="yz-alt">Seçince eleme hemen başlar.</div>' + grupEleme + '</div>' : '');
     return '<div class="yz">'
+        + (yzSiraModuVardi(d) ? '<div class="yz-tk-serit yz-gercek-sira"><span><b>🏁 Orijinal sıralama açıldı</b><br><span class="yz-alt">Yarışma boyunca ' + (d.ayar.siraModu === 'ilk4' ? 'ilk 4 dışındakiler' : 'herkes') + ' karışık gösterildi; şimdi herkes gerçek yerinde. Eleme tablosu bu sıralamayla kurulur (1–son, 2–sondan bir…).</span></span>' + (elemeVar || n < 2 ? '' : '<button class="yz-btn buyuk" onclick="let e=document.getElementById(\'yz-eleme-kart\'); if(e) e.scrollIntoView({behavior:\'smooth\',block:\'center\'})">⚔️ Eleme tablosu kur</button>') + '</div>' : '')
         + '<div class="yz-sayfa-bas"><div><div class="yz-ust-etiket">' + yzKatEtiket(d) + 'SIRALAMA TURU · ' + esc(d.ayar.mesafe) + ' · ' + f.kisa + '</div><div class="yz-baslik">🏁 Sonuçlar</div></div>'
         + '<div class="yz-tur-btn yz-sonuc-ana"><button class="yz-btn tv" onclick="yzTvAc()">📺 TV ekranı</button><button class="yz-btn" onclick="yzRaporAc()">📋 Sporcu raporları</button>' + (n >= 2 ? '<button class="yz-btn" id="yz-sonuc-eleme" onclick="yzSonucElemeGit()">⚔️ Eleme</button>' : '') + '<button class="yz-btn" id="yz-sonuc-diger" onclick="yzSonucMenu()">⋯ Diğer</button><button class="yz-btn ana" onclick="yzYeniTur()">🔁 Yeni tur</button></div></div>'
         + (elemeVar ? yzPodyumHTML(o) : yzGruplar(o, sira).map(function (gr) { return yzPodyumGrupHTML(gr); }).join(''))
@@ -2398,6 +2408,7 @@ function yzElemeHTML(o) {
         + yzKenarKartHTML(o)
         + '<div class="yz-kart"><div class="yz-etiket">Eleme tablosu <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· maça dokun → aç · aynı anda birden çok maç oynanabilir</span></div><div class="yz-tablo-kap">' + yzBracketHTML(el) + '</div></div>'
         + yzTeselliKartHTML(o, elT)
+        + (el.dogrudan ? '' : '<details class="yz-kart yz-tablo-kart yz-orj-sira"' + (yzSiraModuVardi(d) ? ' open' : '') + '><summary class="yz-etiket" style="cursor:pointer">📋 Sıralama turu · orijinal sıralama <span class="yz-alt" style="text-transform:none;letter-spacing:0;font-weight:600">· eleme eşleşmeleri buna göre</span></summary><div class="yz-tablo-kap">' + yzGorunumHTML(o, yzSiralama(o), {}) + '</div></details>')
         + '</div>';
 }
 // 📺 TV — eleme
@@ -3301,7 +3312,7 @@ function yzTvKontrolHTML(o, el) {
         + dugme('👥 ' + d.katilimci.length, 'yzSporcuSecici(\'tur\')', '', 'Sporcu ekle / çıkar')
         + (bek ? dugme('✎ Skor gir (' + bek + ')', 'yzTvSiradaki()', 'ana', 'Sıradaki sporcunun skorunu gir — satıra tıklayarak da girebilirsin') : '')
         + (seri > 0 ? dugme('◀', 'yzOncekiSeri()', '', 'Önceki seriye dön (skorlar silinmez)') : '')
-        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', 'yzSonrakiSeri()', bek ? '' : 'ana', bek ? bek + ' sporcu girmedi — yine de geçebilirsin, sonradan tablodan girilir' : '') + dugme(yzTvTema() === 'kagit' ? '🌙' : '☀️', 'yzTvTemaDegis()', '', 'Görünüm: açık (Hedef Kâğıdı) / koyu') + dugme('⋯', 'yzMenu()', '', 'Tur menüsü: PDF, bitir, iptal') + '</div>';
+        + dugme(son ? '🏁 Bitir' : '▶ ' + (seri + 2) + '. seri', son ? 'yzBitirSec()' : 'yzSonrakiSeri()', bek ? '' : 'ana', bek ? bek + ' sporcu girmedi — yine de geçebilirsin, sonradan tablodan girilir' : '') + dugme(yzTvTema() === 'kagit' ? '🌙' : '☀️', 'yzTvTemaDegis()', '', 'Görünüm: açık (Hedef Kâğıdı) / koyu') + dugme('⋯', 'yzMenu()', '', 'Tur menüsü: PDF, bitir, iptal') + '</div>';
 }
 // 🥚 Yarışma → Yumurta Yuvası (2026-10-14, kullanıcı: "yumurta oyunu yarışma moduyla birlikte çalışmıyor, geçiş yeri yok").
 // Düğme, derste yumurtası olan biri varsa ya da karma derste görünür. TV/tam ekrandan gelince yumurta ekranı tam ekran açılır.

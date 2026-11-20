@@ -6060,3 +6060,11 @@ Kullanıcı: kulüp içi resmi yarışma (minik → büyük, sporcuları koç se
 - **Düğmeler**: tablet/TV görünüm çiplerinin başında 📊 Normal · 🏅 İlk 4 kalsın · 🔀 Herkesin sırasını değiştir; TV Tablo kontrolünde "… Sıra" → `yzSiraModuMenu`; tur menüsünde 🔀 Sıralama; kurulum sihirbazı TV adımında "Sıralama" kartları (`YZR_RES.sira`) → `t.siraModu` → tura geçer.
 - **✨ Işıklı Kartlar** (`dagsk-tv-kartlar.js?v=1`, `yzKartlarCiz`, CSS öneki `yzik-` — `yzk-` Yarışma Hattı dokunun!): üstte kürsü (ilk 4; karışıkta yok), altta herkes kalıcı DOM kart (transform ile kayar): avatar/foto, son serinin okları, `yzKonumlar` ile mini hedef, toplam; normal modda kart numaralı. Yeni giriş (imza değişimi) → kart yeşil yanar + övgü balonu 4 sn (ilk seri / kişisel rekor / N ok sarıda / hepsi isabet / +N / nazik cümle — asla olumsuz). Karta dokununca skor girişi. `YZ_TV_GORUNUMLER.kartlar`, Tema ve sihirbazda kart, Tablo/Sahne/Hatlar'dan geçiş düğmesi.
 - Test 146 (kurulumda mod + Kartlar, kürsü 4, ✦ ve dönüş, gerçek sıra sabit, övgü, karışıkta kürsü yok, Tablo/Sahne/Hatlar/tablet/telefon ✦, 390 px). AÇIK: gerçek TV'de ve çocuklarla denenmedi.
+
+## 150. 🏁 Yarışma sonu: orijinal sıralama + eleme tablosu (v440, 2026-11-20)
+Kullanıcı: "yarışma sonunda orijinal sıralama ile elemeli maçlar tablosu da oluştur".
+- `yzSiraModu(d)` artık YALNIZ `d.asama === 'tur'` iken mod döndürür → tur bitince (sonuç, TV sonuç, eleme) ✦ kalkar, herkes gerçek yerinde. `yzSiraModuVardi(d)` = tur karışık modda oynandı mı.
+- Son seride TV "🏁 Bitir" → `yzBitirSec()`: "🏁 Bitir — orijinal sıralama" (`yzBitir(true)`) / "⚔️ Bitir + eleme tablosu kur" (`yzBitirEleme`, v433 seçimleri: ilk 4/8/16/tümü, yay ayrı). Tabletteki iki düğme (v433) aynen. `yzSonrakiSeri` değişmedi (testler onu doğrudan kullanıyor).
+- Sonuç ekranı: mod kullanıldıysa üstte "🏁 Orijinal sıralama açıldı" bandı + "⚔️ Eleme tablosu kur" (eleme kartına kaydırır).
+- Eleme ekranı: tablonun altında `<details class="yz-orj-sira">` "📋 Sıralama turu · orijinal sıralama" (mod kullanıldıysa açık gelir). Eşleşme zaten `yzSiralama` ile (1–son, 2–sondan bir).
+- Test 147.
