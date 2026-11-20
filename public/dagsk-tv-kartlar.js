@@ -48,6 +48,31 @@
             '.yzik-alt{display:flex;align-items:center;gap:.8vw;flex-wrap:wrap}',
             '.yzik-alt .yz-tv-kontrol{margin:0}',
             '.yzik-not{font-weight:800;font-size:1.6vh;color:#93a3c7}',
+            // v443 düzen: üst bar + [ana (kürsü, kartlar, tablo örtüsü) | analiz paneli] + alt bar
+            '.yzik-govde{flex:1;min-height:0;display:flex;gap:1.2vw}',
+            '.yzik-ana{flex:1;min-width:0;display:flex;flex-direction:column;gap:1.2vh;position:relative}',
+            '.yzik-alan{flex:1;min-height:0}',
+            '.yzik-analiz{flex:none;display:flex;flex-direction:column;gap:1vh;background:rgba(255,255,255,.04);border:1px solid #24345a;border-radius:1.6vh;padding:1.2vh 1vw;overflow:hidden}',
+            '#yzk[data-analiz="buyuk"] .yzik-analiz{width:34vw}#yzk[data-analiz="kucuk"] .yzik-analiz{width:19vw}',
+            '.yzik-an-bas{display:flex;align-items:center;justify-content:space-between;gap:.6vw;font-size:2.1vh}',
+            '.yzik-an-kim{display:flex;align-items:center;gap:.7vw;font-size:2vh}.yzik-an-kim .yzik-an-ad{display:flex;flex-direction:column;min-width:0;flex:1}.yzik-an-kim .yzik-oklar{flex:none}.yzik-an-kim b{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.yzik-an-kim small{color:#93a3c7;font-weight:700;font-size:1.5vh}',
+            '.yzik-an-hedef{width:100%;flex:1;min-height:0;max-height:52vh}',
+            '#yzk[data-analiz="kucuk"] .yzik-an-cubuk, #yzk[data-analiz="kucuk"] .yzik-an-not{display:none}',
+            '.yzik-an-not{font-size:1.45vh;color:#93a3c7;font-weight:700;display:flex;align-items:center;gap:.4vw;flex-wrap:wrap}.yzik-an-not i{display:inline-block;width:1.3vh;height:1.3vh;border-radius:50%}.yzik-an-not i.yesil{background:#7cf2b4}.yzik-an-not i.beyaz{background:#fff;opacity:.6}',
+            '.yzik-an-cubuk{display:flex;flex-direction:column;gap:.45vh}.yzik-an-c{display:grid;grid-template-columns:5.5em 1fr 2.2em;align-items:center;gap:.5vw;font-size:1.55vh;font-weight:800}.yzik-an-c i{height:1.3vh;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.yzik-an-c i b{display:block;height:100%;border-radius:99px}.yzik-an-c em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}',
+            '.yzik-an-ozet{font-size:1.6vh;color:#93a3c7;font-weight:700}.yzik-an-ozet b{color:#eef3ff}',
+            // büyük, şeffaf düğmeler
+            '.yzik-arac{display:flex;gap:.7vw;flex-wrap:wrap}',
+            '.yzik-seffaf{font:800 2vh Nunito,Inter,system-ui,sans-serif;color:#eef3ff;background:rgba(255,255,255,.07);border:.2vh solid rgba(255,255,255,.28);border-radius:1.4vh;padding:1.1vh 1.2vw;min-height:5.4vh;cursor:pointer;backdrop-filter:blur(6px);white-space:nowrap}',
+            '.yzik-seffaf b{font-weight:900;color:#ffcc33}.yzik-seffaf.on{border-color:#7cf2b4;background:rgba(124,242,180,.14)}.yzik-seffaf:hover{background:rgba(255,255,255,.14)}.yzik-seffaf.kucuk{min-height:0;padding:.5vh .8vw;font-size:1.6vh}',
+            '.yzik-seffaf:focus-visible{outline:.3vh solid #ffcc33;outline-offset:.2vh}',
+            // tablo örtüsü
+            '.yzik-tablo{position:absolute;inset:0;z-index:6;background:rgba(12,20,38,.97);border:1px solid #24345a;border-radius:1.6vh;padding:1.2vh 1vw;overflow:auto;display:flex;flex-direction:column;gap:1vh}',
+            '.yzik-tablo[hidden]{display:none}.yzik-tablo-bas{display:flex;align-items:center;justify-content:space-between;font-size:2.2vh}',
+            // sayaç boyu (yzSayacHTML'in TV ölçüsü 5,6vw geniş ekranda üstten taşıyordu)
+            '#yzk .yz-sayac{min-width:0;padding:.6vh 1.4vw;border-radius:1.4vh;line-height:1}',
+            '#yzk[data-sayac="buyuk"] .yz-sayac-sure{font-size:min(8vw,12vh)}#yzk[data-sayac="buyuk"] .yz-sayac-alt{font-size:1.6vh}',
+            '#yzk[data-sayac="kucuk"] .yz-sayac-sure{font-size:min(3vw,5vh)}#yzk[data-sayac="kucuk"] .yz-sayac-alt{font-size:1.2vh}',
             '@media (prefers-reduced-motion:reduce){.yzik-c{transition:none}.yzik-balon{animation:none}}'
         ].join('\n');
         document.head.appendChild(s);
@@ -80,27 +105,67 @@
         return ['Güzel duruş, devam! 💪', 'Her ok seni geliştiriyor 🌱', 'Nefes al, sıradaki senin! 🌟', 'Cesur atış! 🏹'][(h + i) % 4];
     }
 
+    // v443 (kullanıcı: "attığı yerlerin analizlerini göster ama büyük olsun, küçültebilelim de; yanına tabloyu göster butonu,
+    // büyük, şeffaf; saniyenin de büyük küçük alternatifi"): 🎯 analiz paneli (büyük / küçük / kapalı), 📋 tablo örtüsü, ⏱ sayaç boyu.
+    function ayar(a, v) { try { if (v !== undefined) localStorage.setItem('dag_yz_k_' + a, v); return localStorage.getItem('dag_yz_k_' + a); } catch (e) { return null; } }
+    function analizBoy() { let v = ayar('analiz'); return ['buyuk', 'kucuk', 'kapali'].indexOf(v) !== -1 ? v : 'buyuk'; }
+    function sayacBoy() { return ayar('sayac') === 'kucuk' ? 'kucuk' : 'buyuk'; }
+    function yeniden() { let el = document.getElementById('yz-tv'), o = yzOku(); if (el && o.durum && o.durum.asama === 'tur') window.yzKartlarCiz(el, o); }
+    window.yzKartAnaliz = function () { let s = analizBoy(); ayar('analiz', s === 'buyuk' ? 'kucuk' : s === 'kucuk' ? 'kapali' : 'buyuk'); yeniden(); };
+    window.yzKartSayac = function () { ayar('sayac', sayacBoy() === 'buyuk' ? 'kucuk' : 'buyuk'); yeniden(); };
+    window.yzKartTablo = function () { _yzk.tablo = !_yzk.tablo; yeniden(); };
+    const HALKA = [['sari', 'Sarı', '#ffd23f', ['X', '10', '9']], ['kirmizi', 'Kırmızı', '#ff4d5e', ['8', '7']], ['mavi', 'Mavi', '#3fa7ff', ['6', '5']], ['siyah', 'Siyah', '#20242e', ['4', '3']], ['beyaz', 'Beyaz', '#f4f6fb', ['2', '1']], ['iska', 'Iska', '#4a5878', ['M']]];
+    function analizHTML(o, seri, boy) {
+        let d = o.durum, k = _yzk.sonK && d.katilimci.indexOf(_yzk.sonK) !== -1 ? _yzk.sonK : null;
+        if (!k) d.katilimci.forEach(function (x) { if (yzSkor(o, x)[seri]) k = x; });
+        let tum = [], say = {}, okN = 0, top = 0; HALKA.forEach(function (h) { say[h[0]] = 0; });
+        d.katilimci.forEach(function (x) {
+            let e = yzSkor(o, x)[seri] || []; e.forEach(function (v) { let u = String(v).toUpperCase(); HALKA.forEach(function (h) { if (h[3].indexOf(u) !== -1) say[h[0]]++; }); okN++; top += YZ_DEGER[u] || 0; });
+            try { yzKonumlar(o, x).filter(function (p) { return p.seri === seri; }).forEach(function (p) { tum.push({ x: p.x, y: p.y, k: x, n: p.n }); }); } catch (e2) {}
+        });
+        let benim = tum.filter(function (p) { return p.k === k; }), ser = k ? (yzSkor(o, k)[seri] || []) : [];
+        let r = [[100, '#f4f6fb'], [80, '#20242e'], [60, '#3fa7ff'], [40, '#ff4d5e'], [20, '#ffd23f']].map(function (x) { return '<circle r="' + x[0] + '" fill="' + x[1] + '" stroke="#0006" stroke-width="1"/>'; }).join('') + '<circle r="4" fill="none" stroke="#0008" stroke-width="1.5"/>';
+        let digerleri = tum.filter(function (p) { return p.k !== k; }).map(function (p) { return '<circle cx="' + (p.x * 100).toFixed(1) + '" cy="' + (p.y * 100).toFixed(1) + '" r="4.5" fill="#fff" fill-opacity=".55" stroke="#10131c" stroke-opacity=".6" stroke-width="1.2"/>'; }).join('');
+        let benimSvg = benim.map(function (p, i) { return '<g><circle cx="' + (p.x * 100).toFixed(1) + '" cy="' + (p.y * 100).toFixed(1) + '" r="10" fill="#7cf2b4" stroke="#0b2a1c" stroke-width="3"/><text x="' + (p.x * 100).toFixed(1) + '" y="' + (p.y * 100 + 4).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="900" fill="#0b2a1c">' + (p.n || i + 1) + '</text></g>'; }).join('');
+        let enCok = Math.max.apply(null, HALKA.map(function (h) { return say[h[0]]; }).concat([1]));
+        let cubuk = HALKA.map(function (h) { return '<div class="yzik-an-c"><span>' + h[1] + '</span><i><b style="width:' + (say[h[0]] / enCok * 100).toFixed(0) + '%;background:' + h[2] + '"></b></i><em>' + say[h[0]] + '</em></div>'; }).join('');
+        return '<div class="yzik-an-bas"><b>🎯 Atış analizi · ' + (seri + 1) + '. seri</b><button type="button" class="yzik-seffaf kucuk" onclick="yzKartAnaliz()" title="Analizi büyüt / küçült / kapat">' + (boy === 'buyuk' ? '⤡ Küçült' : '✕ Kapat') + '</button></div>'
+            + (k ? '<div class="yzik-an-kim">' + avatar(k, yzKAd(k), Math.round(innerHeight * (boy === 'buyuk' ? 0.05 : 0.035))) + '<span class="yzik-an-ad"><b>' + esc(yzKisaAd(yzKAd(k))) + '</b><small>son giren · ' + (ser.length ? 'bu seri ' + yzTop(ser) + ' puan' : 'bekliyor') + '</small></span>' + oklarHTML(ser) + '</div>' : '<div class="yzik-an-kim"><small>Bu serinin ilk skoru girilince burada</small></div>')
+            + '<svg class="yzik-an-hedef" viewBox="-110 -110 220 220" aria-label="Hedefte okların yeri">' + r + digerleri + benimSvg + '</svg>'
+            + (tum.length ? '<div class="yzik-an-not"><i class="yesil"></i> ' + esc(k ? yzKisaAd(yzKAd(k)) : '') + ' · <i class="beyaz"></i> sınıfın diğer okları (' + (tum.length - benim.length) + ')</div>' : '<div class="yzik-an-not">Ok yerleri, skor girerken hedefe dokunulursa burada görünür.</div>')
+            + '<div class="yzik-an-cubuk">' + cubuk + '</div>'
+            + '<div class="yzik-an-ozet">Sınıf bu seride <b>' + okN + '</b> ok · ok başı <b>' + (okN ? (top / okN).toFixed(1).replace('.', ',') : '–') + '</b></div>';
+    }
+
     window.yzKartlarCiz = function (el, o) {
         css();
         let d = o.durum, f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), mod = yzSiraModu(d), gercek = yzSiralama(o), simdi = Date.now();
         if (!el.classList.contains('yzk-acik') || !el.querySelector('#yzk')) {
             el.classList.add('yzk-acik'); el.classList.remove('yzs-acik', 'yzh-acik', 'kagit');
-            el.innerHTML = '<div id="yzk"><div class="yzik-bas"></div><div class="yzik-kursu"></div><div class="yzik-alan"></div><div class="yzik-alt"></div></div>';
-            _yzk = { son: {}, balon: {}, ilk: true };
+            el.innerHTML = '<div id="yzk"><div class="yzik-bas"></div><div class="yzik-govde"><div class="yzik-ana"><div class="yzik-kursu"></div><div class="yzik-alan"></div><div class="yzik-tablo" hidden></div></div><div class="yzik-analiz"></div></div><div class="yzik-alt"></div></div>';
+            _yzk = { son: {}, balon: {}, ilk: true, tablo: false, sonK: null };
         }
-        let kok = el.querySelector('#yzk');
+        let kok = el.querySelector('#yzk'), aBoy = analizBoy(), sBoy = sayacBoy();
+        kok.setAttribute('data-analiz', aBoy); kok.setAttribute('data-sayac', sBoy);
         // yeni giriş: imza değişti → parla + balon
         let yeni = {};
         gercek.forEach(function (r) {
             let sk = yzSkor(o, r.k), imza = sk.map(function (e) { return (e || []).join(''); }).join('|');
-            if (!_yzk.ilk && _yzk.son[r.k] != null && _yzk.son[r.k] !== imza) { let i = sonSeri(sk); if (i >= 0) _yzk.balon[r.k] = { t: simdi, yazi: ovgu(o, r.k, sk, i) }; }
+            if (!_yzk.ilk && _yzk.son[r.k] != null && _yzk.son[r.k] !== imza) { let i = sonSeri(sk); if (i >= 0) _yzk.balon[r.k] = { t: simdi, yazi: ovgu(o, r.k, sk, i) }; _yzk.sonK = r.k; }
             _yzk.son[r.k] = imza;
             if (_yzk.balon[r.k] && simdi - _yzk.balon[r.k].t < 4000) yeni[r.k] = _yzk.balon[r.k];
         });
         _yzk.ilk = false;
         let bek = yzBekleyenler(o, seri).length;
         kok.querySelector('.yzik-bas').innerHTML = '<div class="yzik-kim"><small>DAĞ S.K. · SIRALAMA TURU</small><b>✨ IŞIKLI KARTLAR</b><span>' + esc(yzKatEtiket(d)) + esc(d.ayar.mesafe) + ' · ' + esc(f.ad) + ' · ' + d.katilimci.length + ' sporcu · ' + (bek ? (d.katilimci.length - bek) + '/' + d.katilimci.length + ' bu seriyi girdi' : '✓ herkes girdi') + '</span></div>'
+            + '<div class="yzik-arac"><button type="button" class="yzik-seffaf' + (aBoy !== 'kapali' ? ' on' : '') + '" onclick="yzKartAnaliz()" title="Atış analizi: büyük → küçük → kapalı">🎯 Analiz <b>' + { buyuk: 'Büyük', kucuk: 'Küçük', kapali: 'Kapalı' }[aBoy] + '</b></button>'
+            + '<button type="button" class="yzik-seffaf' + (_yzk.tablo ? ' on' : '') + '" onclick="yzKartTablo()">📋 ' + (_yzk.tablo ? 'Kartlara dön' : 'Tabloyu göster') + '</button>'
+            + '<button type="button" class="yzik-seffaf" onclick="yzKartSayac()" title="Sayaç boyu">⏱ Sayaç <b>' + (sBoy === 'buyuk' ? 'Büyük' : 'Küçük') + '</b></button></div>'
             + '<div class="yzik-seri"><small>SERİ</small><b>' + (seri + 1) + '<i>/' + f.seri + '</i></b></div>' + yzSayacHTML(o, 'yz-tv-sayac');
+        // 🎯 analiz paneli + 📋 tablo örtüsü (kartların ölçüsü panel genişliğine göre alınsın diye önce bunlar)
+        let an = kok.querySelector('.yzik-analiz'); an.hidden = aBoy === 'kapali'; if (aBoy !== 'kapali') an.innerHTML = analizHTML(o, seri, aBoy);
+        let tb = kok.querySelector('.yzik-tablo'); tb.hidden = !_yzk.tablo;
+        if (_yzk.tablo) tb.innerHTML = '<div class="yzik-tablo-bas"><b>📋 Sıralama tablosu</b><button type="button" class="yzik-seffaf" onclick="yzKartTablo()">✨ Kartlara dön</button></div><div class="yz-tv-tablo">' + yzGorunumHTML(o, yzSiralama(o), { tvGiris: true, duzenle: false }) + '</div>';
         // kürsü
         let kursu = mod === 'karisik' ? [] : gercek.filter(function (r) { return r.toplam > 0; }).slice(0, 4);
         let kEl = kok.querySelector('.yzik-kursu'); kEl.hidden = !kursu.length;

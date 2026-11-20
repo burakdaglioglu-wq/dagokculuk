@@ -11,6 +11,7 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'yarisma');
+    await p.waitForFunction(() => typeof yzAnahtar === 'function' && typeof yzBaslat === 'function', null, { timeout: 20000 });
     yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), g: localStorage.getItem('dag_yz_tv_gorunum'), liste: JSON.stringify(_kmListe), a: localStorage.getItem('dag_yz_kur_ayrintili') }));
     // 12 sporcuyla kayıtsız tur, kurulumda "İlk 4 kalsın"
     const n = await p.evaluate(() => {

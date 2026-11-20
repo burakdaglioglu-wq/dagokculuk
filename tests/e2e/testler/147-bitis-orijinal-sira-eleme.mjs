@@ -11,6 +11,7 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'yarisma');
+    await p.waitForFunction(() => typeof yzAnahtar === 'function' && typeof yzBaslat === 'function', null, { timeout: 20000 });
     yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), liste: JSON.stringify(_kmListe), g: localStorage.getItem('dag_yz_tv_gorunum') }));
     // 8 sporcu, kayıtsız tur, mod ilk4, her sporcuya farklı puan → gerçek sıra belli
     const n = await p.evaluate(() => {

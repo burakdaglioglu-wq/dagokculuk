@@ -3284,7 +3284,7 @@ const YZ_SAHNE_DOSYA = 'dagsk-tv-sahne.js?v=5';
 // hatlar'a geçer (dag_yz_tv_v418); bilerek Tablo seçmiş olan Tablo'da kalır. Sahne ve Tablo seçilebilir kalır.
 const YZ_HATLAR_DOSYA = 'dagsk-tv-hatlar.js?v=5';
 const YZ_TV_GORUNUMLER = { hatlar: '🎯 Hedef hatları', sahne: '🎭 Sahne', kartlar: '✨ Işıklı Kartlar', tablo: '📋 Tablo' };
-const YZ_KARTLAR_DOSYA = 'dagsk-tv-kartlar.js?v=1'; // v439 ✨ Işıklı Kartlar (kullanıcı 3 taslaktan 1'i seçti)
+const YZ_KARTLAR_DOSYA = 'dagsk-tv-kartlar.js?v=2'; // v439 ✨ Işıklı Kartlar (kullanıcı 3 taslaktan 1'i seçti)
 function yzTvGorunum() {
     try {
         if (!localStorage.getItem('dag_yz_tv_v418')) { localStorage.setItem('dag_yz_tv_v418', '1'); if (localStorage.getItem('dag_yz_tv_gorunum') !== 'tablo') localStorage.setItem('dag_yz_tv_gorunum', 'hatlar'); }

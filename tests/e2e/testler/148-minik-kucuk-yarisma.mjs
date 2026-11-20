@@ -10,6 +10,7 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p);
     await karisikSinifArac(p, 'yarisma');
+    await p.waitForFunction(() => typeof yzAnahtar === 'function' && typeof yzBaslat === 'function', null, { timeout: 20000 });
     yedek = await p.evaluate(() => ({ yz: localStorage.getItem(yzAnahtar()), g: localStorage.getItem('dag_yz_tv_gorunum'), a: localStorage.getItem('dag_yz_kur_ayrintili') }));
     const beklenen = await p.evaluate(() => { localStorage.removeItem(yzAnahtar()); _yz.kurulum = null; _yz.mod = 'secim'; _yz.secimAcik = true; kmYarismaGiris(); return yzMinikSporcular().length; });
     dogrula(beklenen >= 2, 'testte en az 2 minik/küçük sporcu gerekli (' + beklenen + ')');

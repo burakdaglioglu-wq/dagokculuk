@@ -6082,3 +6082,9 @@ Kullanıcı ekran görüntüsü (Yeni yarışma · 45 sporcu) + "burası da sık
 - **SPORCULAR** grup düğmeleri (`ksYzGrup`, sıra Minikler · Küçükler · Yıldızlar · Büyükler, "seçili/toplam", yarım seçimde kesikli kenar): dokun = grubun hepsi girer/çıkar. Havuz = ders listesi ∪ `t.havuz` ∪ seçili; grup derste yoksa kulübün aktifleri eklenir. `t.minik` yalnız minik+küçük kaldıkça sürer. Tek tek seçim "Düzenle" (kimne) ile aynı.
 - **SIRALAMA** (Normal / İlk 4 kalsın / Herkes karışık → `t.siraModu`) ve **TV** (Hedef hatları / Işıklı Kartlar / Sahne / Tablo → `ksYzTv`) aynı ekranda.
 - Test 149.
+
+## 153. 🎯 Işıklı Kartlar: atış analizi + 📋 tablo örtüsü + ⏱ sayaç boyu (v443, 2026-11-20)
+Kullanıcı ekran görüntüsü (Kartlar, 32 sporcu) + "attığı yerlerin analizlerini göster ama büyük olsun, küçültebilelim de; yanına tabloyu göster butonu, büyük, şeffaf; saniyenin de büyük küçük alternatifi".
+- `dagsk-tv-kartlar.js?v=2`: düzen üst bar + `.yzik-govde` [`.yzik-ana` (kürsü, kartlar, `.yzik-tablo` örtüsü) | `.yzik-analiz`] + alt bar. Üst barda büyük şeffaf `.yzik-seffaf` düğmeler: 🎯 Analiz Büyük → Küçük → Kapalı (`yzKartAnaliz`, `dag_yz_k_analiz`, panel 34vw / 19vw; küçükte çubuk/not gizli), 📋 Tabloyu göster / Kartlara dön (`yzKartTablo`, `yzGorunumHTML` — sıralama modu geçerli), ⏱ Sayaç Büyük / Küçük (`yzKartSayac`, `dag_yz_k_sayac`; `min(8vw,12vh)` / `min(3vw,5vh)` — eski 5,6vw 2560 px'te üstten taşıyordu).
+- `analizHTML`: son giren (`_yzk.sonK`, imza değişiminden; yoksa bu seride gireni) avatar + okları; büyük hedefte onun konumlu okları numaralı yeşil, sınıfın diğer okları soluk beyaz (`yzKonumlar`, seri filtresi); halka çubukları (Sarı…Iska, bu serinin bütün okları, `YZ_DEGER`); "Sınıf bu seride N ok · ok başı x". Konum yoksa not.
+- Test 150 (2560×1120 + 1366×768).
