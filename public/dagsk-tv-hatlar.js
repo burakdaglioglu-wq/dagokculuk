@@ -44,7 +44,7 @@ function yzhTik() {
 function yzHatlarCiz(el, o) {
     yzhCss();
     let d = o.durum; if (!d || d.asama !== 'tur') return;
-    let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), sira = yzSiralama(o), siraMap = {}, hed = d.hedefler || {};
+    let f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), sira = yzSiraIsaretle(d, yzSiralama(o)), siraMap = {}, hed = d.hedefler || {};
     sira.forEach(function (r) { siraMap[r.k] = r; });
     if (_yzh.id !== d.id) _yzh = { id: d.id, son: {}, yeni: null, yeniT: 0, imza: '', gizleZ: null, z: _yzh.z };
     if (!el.classList.contains('yzh-acik') || !el.querySelector('.yzh-tv')) {
@@ -77,7 +77,7 @@ function yzHatlarCiz(el, o) {
     let bek = yzBekleyenler(o, seri), girdi = d.katilimci.length - bek.length;
     let yeni = _yzh.yeni && Date.now() - _yzh.yeniT <= YZH_YENI_SN ? _yzh.yeni : null;
     let slot = function (x) {
-        let r = siraMap[x.k] || { toplam: 0, sira: '–', seriT: [] }, sk = yzSkor(o, x.k), bu = sk[seri], son = null, siraVar = r.toplam > 0;
+        let r = siraMap[x.k] || { toplam: 0, sira: '–', seriT: [] }, sk = yzSkor(o, x.k), bu = sk[seri], son = null, siraVar = r.toplam > 0 && !yzSiraGizli(d, r); // v439 sıralama modu
         for (let i = sk.length - 1; i >= 0; i--) if (sk[i]) { son = yzTop(sk[i]); break; }
         return '<button type="button" class="yzh-s' + (dikey ? ' dikey' : '') + (siraVar && r.sira === 1 ? ' lider' : '') + (x.k === yeni ? ' yeni' : '') + '" onclick="yzGirisAc(\'' + yzEnc(x.k) + '\',' + seri + ')">'
             + '<span class="harf">' + esc(x.harf) + '</span><span class="dur' + (bu ? ' ok' : '') + '">' + (bu ? '✓ +' + yzTop(bu) : 'bekliyor') + '</span>'
@@ -90,7 +90,7 @@ function yzHatlarCiz(el, o) {
         let sl = gruplar[n].map(slot).join(''); for (let i = gruplar[n].length; i < hb; i++) sl += '<div class="yzh-s bos"></div>';
         return '<div class="yzh-h"><div class="yzh-hb"><b>' + (n ? '<small>HEDEF</small> ' + n : 'HEDEFSİZ') + '</b>' + (kartW >= 260 ? yzhHedefIkon() : '') + '</div>' + sl + '</div>';
     }).join('');
-    let ilk3 = sira.filter(function (r) { return r.toplam > 0; }).slice(0, 3);
+    let ilk3 = yzSiraModu(d) === 'karisik' ? [] : sira.filter(function (r) { return r.toplam > 0; }).slice(0, 3);
     let html = '<div class="yzh-bas"><div class="yzh-kim"><small>DAĞ S.K.</small><b>SIRALAMA TURU</b><span>' + esc(yzKatEtiket(d)) + esc(d.ayar.mesafe) + ' · ' + esc(f.ad) + ' · ' + d.katilimci.length + ' sporcu, ' + nH + ' hedef</span></div>'
         + '<div class="yzh-seri"><small>SERİ</small><b>' + (seri + 1) + '<i>/' + f.seri + '</i></b></div>' + yzSayacHTML(o, 'yz-tv-sayac') + '</div>'
         + '<div class="yzh-govde" style="grid-template-columns:repeat(' + sutun + ',minmax(0,1fr));grid-template-rows:repeat(' + satir + ',minmax(0,1fr));--av:' + av + 'px;--fs:' + fs + 'px">' + govde + '</div>'
@@ -102,7 +102,7 @@ function yzHatlarCiz(el, o) {
     yzhOlcekle(el);
     el.querySelector('#yzh-kontrol').innerHTML = '<button class="yz-tv-k" onclick="yzTvKapat()">✕ Kapat</button>' + yzTvKontrolHTML(o)
         + '<button class="yz-tv-k" onclick="yzhRenkDegis()" title="TV rengi: Kömür / Gece / Kestane">🎨 ' + YZH_RENKLER.find(function (x) { return x.id === renk; }).ad + '</button>'
-        + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'sahne\')" title="Son skoru gireni büyük gösterir">🎭 Sahne</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
+        + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'kartlar\')" title="Işıklı Kartlar">✨ Kartlar</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'sahne\')" title="Son skoru gireni büyük gösterir">🎭 Sahne</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
 }
 function yzhHedefIkon() { return '<svg viewBox="-1 -1 2 2" class="yzh-ikon" aria-hidden="true"><circle r="1" fill="#f1f1ec"/><circle r=".8" fill="#25262b"/><circle r=".6" fill="#2ea5de"/><circle r=".4" fill="#e8463b"/><circle r=".2" fill="#f7d23e"/></svg>'; }
 function yzhCss() {

@@ -53,7 +53,7 @@ function yzsDon() {
 }
 function yzSahneCiz(el, o) {
     yzsCss();
-    let d = o.durum, f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), sira = yzSiralama(o), yuz = yzYuz(d), siraMap = {};
+    let d = o.durum, f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), sira = yzKarisikSira(d, yzSiralama(o)), yuz = yzYuz(d), siraMap = {}; // v439 sıralama modu
     sira.forEach(function (r) { siraMap[r.k] = r; });
     if (_yzs.id !== d.id) { _yzs = { id: d.id, son: {}, spot: null, spotImza: '', gizleZ: null, kur: false }; }
     if (!el.classList.contains('yzs-acik') || !el.querySelector('.yzs-tv')) {
@@ -89,7 +89,7 @@ function yzSahneCiz(el, o) {
             sahne.innerHTML = yzsHedefSVG(yuz.halka, simdi, onceki, anim)
                 + '<div class="yzs-kim"><small>' + esc((d.hedefler || {})[sk] || '') + (sSeri >= 0 ? ' · ' + (sSeri + 1) + '. SERİ' : '') + (_yzs.sirada ? ' · SIRAYLA' : '') + '</small><div class="yzs-ad" style="font-size:' + yzsAdBoy(yzKAd(sk)) + 'px">' + esc(yzKAd(sk)) + '</div>'
                 + '<div class="yzs-oklar">' + oklar.map(function (v, j) { let a = yzsRenkAnahtar(v); return '<i style="background:' + YZS_RENK[a] + ';color:' + YZS_YAZI[a] + ';animation-delay:' + (anim ? (0.3 + j * 0.32).toFixed(2) : 0) + 's"' + (anim ? '' : ' class="dur"') + '>' + esc(v) + '</i>'; }).join('') + '</div>'
-                + '<div class="yzs-sayi"><div><small>SERİ</small><b data-say="' + sp + '">' + (anim ? 0 : sp) + '</b></div><div><small>TOPLAM</small><b>' + r.toplam + '</b></div><div class="sira"><small>SIRA</small><b>' + r.sira + '.</b></div></div>'
+                + '<div class="yzs-sayi"><div><small>SERİ</small><b data-say="' + sp + '">' + (anim ? 0 : sp) + '</b></div><div><small>TOPLAM</small><b>' + r.toplam + '</b></div><div class="sira"><small>SIRA</small><b>' + (yzSiraGizli(d, r) ? '✦' : r.sira + '.') + '</b></div></div>'
                 + (simdi.length ? '' : '<div class="yzs-not">' + (oklar.length ? 'Bu serinin okları hedefte işaretlenmedi' : 'Henüz skor yok') + '</div>') + '</div>';
             if (anim) { let b = sahne.querySelector('[data-say]'), hedef = sp, t0 = performance.now() + 300; (function k(t) { if (!b.isConnected) return; let q = Math.max(0, Math.min(1, (t - t0) / 1900)); b.textContent = Math.round(hedef * (1 - Math.pow(1 - q, 3))); if (q < 1) requestAnimationFrame(k); })(t0); }
         }
@@ -104,12 +104,12 @@ function yzSahneCiz(el, o) {
         if (!sat) { sat = document.createElement('button'); sat.type = 'button'; sat.className = 'yzs-tsat'; sat.setAttribute('data-k', r.k); sat.style.top = (i * satH) + 'px'; sat.innerHTML = '<span class="r"></span><span class="n"></span><span class="s"></span><span class="t"></span>'; tab.appendChild(sat); }
         sat.onclick = function () { yzGirisAc(yzEnc(r.k), seri); };
         sat.style.top = (i * satH) + 'px'; sat.style.height = satH + 'px'; sat.style.fontSize = fs + 'px';
-        sat.classList.toggle('ilk3', r.sira <= 3); sat.classList.toggle('aktif', r.k === sk);
+        sat.classList.toggle('ilk3', r.sira <= 3 && !yzSiraGizli(d, r)); sat.classList.toggle('aktif', r.k === sk);
         let t = yzSkor(o, r.k)[seri];
-        sat.querySelector('.r').textContent = r.sira; sat.querySelector('.n').textContent = yzKisaAd(yzKAd(r.k)); sat.querySelector('.s').textContent = t ? '+' + yzTop(t) : ''; sat.querySelector('.t').textContent = r.toplam;
+        sat.querySelector('.r').textContent = yzSiraGizli(d, r) ? '✦' : r.sira; sat.querySelector('.n').textContent = yzKisaAd(yzKAd(r.k)); sat.querySelector('.s').textContent = t ? '+' + yzTop(t) : ''; sat.querySelector('.t').textContent = r.toplam;
     });
     // yönetim düğmeleri
-    el.querySelector('#yzs-kontrol').innerHTML = '<button class="yz-tv-k" onclick="yzTvKapat()">✕ Kapat</button>' + yzTvKontrolHTML(o) + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'hatlar\')" title="Her hedef bir sütun, fotoğraflı">🎯 Hatlar</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
+    el.querySelector('#yzs-kontrol').innerHTML = '<button class="yz-tv-k" onclick="yzTvKapat()">✕ Kapat</button>' + yzTvKontrolHTML(o) + '<button class="yz-tv-k" onclick="yzTvGorunumSec(\'kartlar\')" title="Işıklı Kartlar">✨ Kartlar</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'hatlar\')" title="Her hedef bir sütun, fotoğraflı">🎯 Hatlar</button><button class="yz-tv-k" onclick="yzTvGorunumSec(\'tablo\')" title="Eski tablo görünümü">📋 Tablo</button>';
 }
 function yzsCss() {
     if (document.getElementById('yzs-css')) return;
