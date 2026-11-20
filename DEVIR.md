@@ -6068,3 +6068,10 @@ Kullanıcı: "yarışma sonunda orijinal sıralama ile elemeli maçlar tablosu d
 - Sonuç ekranı: mod kullanıldıysa üstte "🏁 Orijinal sıralama açıldı" bandı + "⚔️ Eleme tablosu kur" (eleme kartına kaydırır).
 - Eleme ekranı: tablonun altında `<details class="yz-orj-sira">` "📋 Sıralama turu · orijinal sıralama" (mod kullanıldıysa açık gelir). Eşleşme zaten `yzSiralama` ile (1–son, 2–sondan bir).
 - Test 147.
+
+## 151. 🌟 Minikler & Küçükler Yarışması — tek dokunuş + "şimdi ne yapacağım" bandı (v441, 2026-11-20)
+Kullanıcı: "minikler küçükler için yarışma sekmesinde nereye tıklayacağım çok karışık, bunları da ekle".
+- Yarışma → "Ne oynuyoruz?" İLK kart `yzrMinikSec()` (`.yzr-minik`, `YZR_RES.minik`): kulübün aktif minik + küçükleri (`yzMinikSporcular`) seçili, `t.havuz`; 6×3 (`yzFormatAnahtar(6,3)`), 18 m, 120 sn, hedef başı 3, `siraModu:'ilk4'`, TV `kartlar`, karneye işlenir; dersteki diğerleri `bilinen`e yazılır (kendiliğinden eklenmez). Bitmiş tur varsa temizlenip yeni kurulur; süren tur varsa ona gider.
+- Minik "Kimler geldi?" (`yzrMinikKimlerHTML`): yalnız havuz, Minikler / Küçükler / Eklenenler başlıkları, dokun = geldi/gelmedi (`yzKurMinikDegis`, `yzKurMinikHepsi`). Eski ekran dersteki herkesi gösteriyordu → yanlışlıkla büyük ekleniyordu.
+- `d.ayar.minik` → `yzMinikRehberHTML(yer)` 5 adımlı bant (Kimler geldi · Atış ayarı · Başlat + TV · Skor gir · Bitir → sıralama / eleme) kurulumda, tur ekranında, sonuçta; minik turunda "Derse yeni geldi" önerisi (`yzYenilerHTML`) gizli.
+- Test 148.
