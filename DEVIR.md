@@ -6075,3 +6075,10 @@ Kullanıcı: "minikler küçükler için yarışma sekmesinde nereye tıklayaca�
 - Minik "Kimler geldi?" (`yzrMinikKimlerHTML`): yalnız havuz, Minikler / Küçükler / Eklenenler başlıkları, dokun = geldi/gelmedi (`yzKurMinikDegis`, `yzKurMinikHepsi`). Eski ekran dersteki herkesi gösteriyordu → yanlışlıkla büyük ekleniyordu.
 - `d.ayar.minik` → `yzMinikRehberHTML(yer)` 5 adımlı bant (Kimler geldi · Atış ayarı · Başlat + TV · Skor gir · Bitir → sıralama / eleme) kurulumda, tur ekranında, sonuçta; minik turunda "Derse yeni geldi" önerisi (`yzYenilerHTML`) gizli.
 - Test 148.
+
+## 152. 🆕 KM sade "Yeni yarışma" ekranı: kolay seçim (v442, 2026-11-20)
+Kullanıcı ekran görüntüsü (Yeni yarışma · 45 sporcu) + "burası da sıkıntılı, seçme işi sıkıntı".
+- `dagsk-km-sade.js ksYarismaHTML`: en üstte 🌟 `ksYzMinik()` kartı (minik + küçükler kulüpten, `s6o3`, 18 m, 120 sn, `siraModu:'ilk4'`, TV kartlar, `t.minik`). `KS_YZ_HAZIR` başına **18 ok · 6 seri × 3** (eskiden "Seçili: 18 ok" yazıp hiçbir kart seçili değildi); 4 sütun, telefonda 2.
+- **SPORCULAR** grup düğmeleri (`ksYzGrup`, sıra Minikler · Küçükler · Yıldızlar · Büyükler, "seçili/toplam", yarım seçimde kesikli kenar): dokun = grubun hepsi girer/çıkar. Havuz = ders listesi ∪ `t.havuz` ∪ seçili; grup derste yoksa kulübün aktifleri eklenir. `t.minik` yalnız minik+küçük kaldıkça sürer. Tek tek seçim "Düzenle" (kimne) ile aynı.
+- **SIRALAMA** (Normal / İlk 4 kalsın / Herkes karışık → `t.siraModu`) ve **TV** (Hedef hatları / Işıklı Kartlar / Sahne / Tablo → `ksYzTv`) aynı ekranda.
+- Test 149.

@@ -332,7 +332,29 @@ function ksKimNeHTML() {
 }
 
 // ---------------------------------------------------------------- 3) yeni yarışma (tek ekran)
-const KS_YZ_HAZIR = [{ k: 'yarim', ok: '36 ok', alt: '6 seri × 6' }, { k: 'salon', ok: '60 ok', alt: 'Salon · 20 × 3' }, { k: 'tam', ok: '72 ok', alt: '12 seri × 6' }];
+// v442 (kullanıcı ekran görüntüsü: "burası da sıkıntılı, seçme işi sıkıntı"): 18 ok kalıbı eklendi (seçili olan hep bir kartta
+// görünsün; eskiden "Seçili: 18 ok" yazıp hiçbir kart seçili değildi), sporcular grup düğmeleriyle, sıralama ve TV seçimi burada.
+const KS_YZ_HAZIR = [{ k: 's6o3', ok: '18 ok', alt: '6 seri × 3 · minik' }, { k: 'yarim', ok: '36 ok', alt: '6 seri × 6' }, { k: 'salon', ok: '60 ok', alt: 'Salon · 20 × 3' }, { k: 'tam', ok: '72 ok', alt: '12 seri × 6' }];
+const KS_GRUP_SIRA = ['minikler', 'kucukler', 'yildizlar', 'buyukler'];
+function ksYzHavuz(t) { let h = {}; yzRoster().forEach(function (x) { h[x.g + '|' + x.ad] = 1; }); (t.havuz || []).concat(t.katilimci).forEach(function (k) { h[k] = 1; }); return Object.keys(h); }
+function ksYzGrup(g) {
+    let t = yzKurulumTaslak(), havuz = ksYzHavuz(t), l = havuz.filter(function (k) { return k.indexOf(g + '|') === 0; });
+    if (!l.length) { l = ksAktifSporcular(g).map(function (ad) { return g + '|' + ad; }); t.havuz = (t.havuz || []).concat(l); } // derste yoksa kulüpten
+    let hepsi = l.length && l.every(function (k) { return t.katilimci.indexOf(k) !== -1; });
+    if (hepsi) t.katilimci = t.katilimci.filter(function (k) { return l.indexOf(k) === -1; });
+    else l.forEach(function (k) { if (t.katilimci.indexOf(k) === -1) t.katilimci.push(k); });
+    if (t.minik) t.minik = t.katilimci.length > 0 && t.katilimci.every(function (k) { return /^(minikler|kucukler)|/.test(k); }); // yalnız minik+küçük kaldıkça bant sürer
+    ksCiz();
+}
+function ksYzMinik() {
+    let t = yzKurulumTaslak(), l = [];
+    ['minikler', 'kucukler'].forEach(function (g) { ksAktifSporcular(g).forEach(function (ad) { l.push(g + '|' + ad); }); });
+    if (!l.length) return showToast('Kulüpte minik / küçük sporcu bulunamadı.', 'warning');
+    t.havuz = (t.havuz || []).concat(l); t.katilimci = l.slice(); t.tur = 'siralama'; t.minik = true; t.siraModu = 'ilk4'; t.format = 's6o3'; t.sure = 120; t.mesafe = '18m'; t.hedefBasi = 3;
+    try { yzTvGorunumSec('kartlar', true); } catch (e) {}
+    ksCiz(); showToast('🌟 Minikler & Küçükler: ' + l.length + ' sporcu, 18 ok, ilk 4 kürsüde, TV Işıklı Kartlar', 'success');
+}
+function ksYzTv(g) { try { yzTvGorunumSec(g, true); } catch (e) {} ksCiz(); }
 const KS_YZ_YUZ_KISA = { '6': '6 halka', '10': '10 halka · 122', '10k': '10 halka · 80', '3lu': "3'lü dikey" };
 function ksYzHazirMi() { return typeof yzKurulumTaslak === 'function' && typeof yzBaslat === 'function'; }
 function ksYzTaslak() {
@@ -367,6 +389,7 @@ function ksYarismaHTML() {
     let karma = typeof kmKarmaMi === 'function' && kmKarmaMi();
     return ksUst('ksKapat()', 'Yarışma · ' + t.katilimci.length + ' sporcu')
         + '<h1 class="ks-e-baslik">Yeni<br>yarışma</h1>'
+        + (dogrudan ? '' : '<button type="button" class="ks-minik' + (t.minik ? ' on' : '') + '" onclick="ksYzMinik()"><span class="ks-minik-yildiz">🌟</span><span><b>Minikler &amp; Küçükler' + (t.minik ? ' · seçili' : '') + '</b><i>Tek dokunuş: minik + küçükler, 18 ok, ilk 4 kürsüde, diğerleri karışık, TV Işıklı Kartlar</i></span>' + (typeof yeniRozet === 'function' ? yeniRozet() : '') + '</button>')
         + '<div class="ks-segment" role="group" aria-label="Yarışma türü">' + cip('Sıralama turu', !dogrudan, 'ksYzAyar(\'tur\',\'siralama\')') + cip('Doğrudan eleme', dogrudan, 'ksYzAyar(\'tur\',\'eleme\')') + '</div>'
         + (dogrudan ? '<p class="ks-e-alt">Eşleştirmeli eleme tablosu · set sistemi (World Archery). Tablo boyu ve kura ayarı “Tüm ayarlar”da.</p>'
             : '<p class="ks-alan-ad">HAZIR</p><div class="ks-hazir-format">' + KS_YZ_HAZIR.map(function (h) {
@@ -376,7 +399,13 @@ function ksYarismaHTML() {
         + '<p class="ks-alan-ad">MESAFE</p><div class="ks-cipler">' + ['18m', '20m', '30m', '50m', '60m', '70m'].map(function (m) { return cip(m.replace('m', ' m'), t.mesafe === m, 'ksYzAyar(\'mesafe\',\'' + m + '\')'); }).join('') + '</div>'
         + '<p class="ks-alan-ad">HEDEF KÂĞIDI</p><div class="ks-cipler">' + Object.keys(YZ_YUZ).map(function (y) { return cip(KS_YZ_YUZ_KISA[y] || YZ_YUZ[y].ad, (t.yuz || '6') === y, 'ksYzAyar(\'yuz\',\'' + y + '\')'); }).join('') + '</div>'
         + (dogrudan ? '' : '<p class="ks-alan-ad">SERİ SÜRESİ</p><div class="ks-cipler">' + YZ_SURELER.map(function (s) { return cip(s >= 120 && s % 60 === 0 ? (s / 60) + ' dk' : s + ' sn', sure === s, 'ksYzAyar(\'sure\',' + s + ')'); }).join('') + '</div>')
-        + '<div class="ks-ozet-kart"><span class="ks-av-grup">' + (avatar || ksIkon('grup', 20)) + '</span><span class="ks-ozet-yazi"><b>' + t.katilimci.length + ' sporcu</b><i>' + (karma ? 'yarışma tarafı' : 'derstekilerin hepsi') + '</i></span>'
+        + '<p class="ks-alan-ad">SPORCULAR <span class="ks-alan-not">gruba dokun: hepsi girer / çıkar</span></p><div class="ks-cipler">' + KS_GRUP_SIRA.map(function (g) {
+            let havuz = ksYzHavuz(t).filter(function (k) { return k.indexOf(g + '|') === 0; }), sec = havuz.filter(function (k) { return t.katilimci.indexOf(k) !== -1; }).length, top = havuz.length || ksAktifSporcular(g).length;
+            return top ? cip(KS_GRUP_AD[g] + ' <b class="ks-say">' + sec + '/' + top + '</b>', sec && sec === havuz.length, 'ksYzGrup(\'' + g + '\')', sec && sec < havuz.length ? 'yarim' : '') : '';
+        }).join('') + '</div>'
+        + (dogrudan ? '' : '<p class="ks-alan-ad">SIRALAMA <span class="ks-alan-not">yarışma sürerken nasıl görünsün · sonunda gerçek sıralama açılır</span></p><div class="ks-cipler">' + [['normal', 'Normal'], ['ilk4', 'İlk 4 kalsın'], ['karisik', 'Herkes karışık']].map(function (m) { return cip(m[1], (t.siraModu || 'normal') === m[0], 'ksYzAyar(\'siraModu\',\'' + m[0] + '\')'); }).join('') + '</div>'
+            + '<p class="ks-alan-ad">TV</p><div class="ks-cipler">' + [['hatlar', 'Hedef hatları'], ['kartlar', 'Işıklı Kartlar'], ['sahne', 'Sahne'], ['tablo', 'Tablo']].map(function (g) { return cip(g[1], yzTvGorunum() === g[0], 'ksYzTv(\'' + g[0] + '\')'); }).join('') + '</div>')
+        + '<div class="ks-ozet-kart"><span class="ks-av-grup">' + (avatar || ksIkon('grup', 20)) + '</span><span class="ks-ozet-yazi"><b>' + t.katilimci.length + ' sporcu</b><i>' + (t.minik ? 'minik + küçükler' : karma ? 'yarışma tarafı' : t.katilimci.length === yzRoster().length ? 'derstekilerin hepsi' : 'seçilenler') + ' · tek tek seçmek için</i></span>'
         + '<button type="button" class="ks-link" onclick="ksEkranAc(\'kimne\')">Düzenle</button></div>'
         + '<div class="ks-link-satir"><button type="button" class="ks-link" onclick="ksTumAyarlar()">Tüm ayarlar</button><button type="button" class="ks-link" onclick="ksDigerTurler()">Takım yarışması · diğer türler</button></div>'
         + '<div class="ks-alt-bar"><button type="button" class="ks-ana-btn buyuk"' + (t.katilimci.length >= (dogrudan ? 2 : 1) ? '' : ' disabled') + ' onclick="ksYarismaBaslat()">' + ksIkon('oynat', 18) + (dogrudan ? 'Elemeyi başlat' : 'Yarışmayı başlat') + '</button>'
@@ -573,7 +602,7 @@ function ksCss() {
         + '.ks-cip{min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--ks-cizgi);background:var(--ks-kart);color:var(--ks-yazi);font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}'
         + '.ks-cip.on{background:var(--ks-acik);border-color:var(--ks-acik);color:var(--ks-acik-yazi);font-weight:800}'
         + '.ks-alan-ad{display:block;margin:8px 0 -2px;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--ks-soluk)}'
-        + '.ks-hazir-format{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}'
+        + '.ks-hazir-format{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}@media (max-width:520px){.ks-hazir-format{grid-template-columns:repeat(2,minmax(0,1fr))}}.ks-minik{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border-radius:18px;border:2px solid #ffcc33;background:linear-gradient(135deg,rgba(255,204,51,.16),rgba(124,242,180,.10));color:var(--ks-yazi);font:inherit;padding:12px 14px;margin:0 0 14px;cursor:pointer}.ks-minik.on{background:#ffcc33;color:#1a1408}.ks-minik b{display:block;font-size:17px}.ks-minik i{font-style:normal;font-size:13px;opacity:.8}.ks-minik-yildiz{font-size:28px}.ks-alan-not{font-weight:600;letter-spacing:0;text-transform:none;opacity:.7;margin-left:6px}.ks-say{font-weight:900;margin-left:4px}.ks-cip.yarim{border-style:dashed}'
         + '.ks-format{min-height:84px;border-radius:16px;border:1px solid var(--ks-cizgi);background:var(--ks-kart);color:var(--ks-yazi);font:inherit;text-align:left;padding:0 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer}'
         + '.ks-format b{font-family:var(--ks-baslik-font);font-weight:800;font-size:26px;line-height:1;text-transform:uppercase}.ks-format span{font-size:11.5px;color:var(--ks-soluk)}'
         + '.ks-format.on{border:2px solid var(--ks-vurgu);background:color-mix(in srgb,var(--ks-vurgu) 16%,var(--ks-kart))}'
