@@ -13001,7 +13001,7 @@
         function kmYeniMi(tarih) { return (tarih || bugunISO()) <= KM_YENI_BITIS; }
         // 🆕 Genel YENİ rozeti (2026-11-09, kullanıcı: "her değişime yeni ibaresi eklemeni istiyorum"). bitis = rozetin kalkacağı gün (dahil);
         // verilmezse yayından ~1 ay sonra. Her yeni özellik/değişiklik bunu kullanır; tarih geçince kendiliğinden kaybolur.
-        const DAG_YENI_VARSAYILAN = '2026-12-09';
+        const DAG_YENI_VARSAYILAN = '2026-12-23';
         function yeniRozet(bitis, ek) { return bugunISO() <= (bitis || DAG_YENI_VARSAYILAN) ? '<i class="dag-yeni' + (ek ? ' ' + ek : '') + '" title="Yeni eklendi">YENİ</i>' : ''; }
         window.yeniRozet = yeniRozet;
         function kmYeniRozet(sinif) { return kmYeniMi() ? '<i class="km-yeni' + (sinif ? ' ' + sinif : '') + '">YENİ</i>' : ''; }
@@ -20248,7 +20248,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // 🏰 Kale Savunması — kabuk teması; durum + çizim public/dagsk-km-kale.js'te (ilk açılışta tembel yüklenir).
         // 🇹🇷 Fener Alayı — kabuk teması; durum + çizim public/dagsk-km-fener.js'te (ilk açılışta tembel yüklenir).
         // 🪢 Dev Halat Çekme / 🗺️ 81 İl — kabuk temaları; durum + çizim kendi dosyalarında (ilk açılışta tembel yüklenir).
-        function kmOyunDedektifHazir() { return dagskEkYukle('dagsk-km-dedektif.js?v=1'); }
+        function kmOyunDedektifHazir() { return dagskEkYukle('dagsk-km-dedektif.js?v=2'); }
         function kmOyunSahneKurDedektif() { kmOyunDedektifHazir().then(function() { if(_kmOyunAktifTema === 'dedektif' && document.getElementById('km-oyun-panel-dedektif')) ddkSahneKur(); }).catch(function() { showToast('Dedektif Okçular yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncDedektif() { if(typeof ddkGuncelle === 'function' && document.getElementById('ddk-cv')) ddkGuncelle(); else kmOyunSahneKurDedektif(); }
         function kmOyunAnimateDedektif(s, i, kaydedilecek, done) { kmOyunDedektifHazir().then(function() { ddkSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }

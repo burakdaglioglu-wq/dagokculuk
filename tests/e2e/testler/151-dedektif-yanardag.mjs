@@ -15,7 +15,7 @@ export default async function ({ log }) {
     await karisikSinifArac(p, 'oyunlar');
     // 24 kişilik sınıf (kayıtlı sporculardan)
     const n = await p.evaluate(() => {
-      ['dag_km_dedektif_', 'dag_km_yanardag_'].forEach((a) => localStorage.removeItem(a + (_kmAktifKonum || 'varsayilan')));
+      ['dag_km_dedektif_', 'dag_km_yanardag_', 'dag_km_ddkkalici_'].forEach((a) => localStorage.removeItem(a + (_kmAktifKonum || 'varsayilan')));
       const hepsi = []; Object.keys(turnuvaDB).forEach((g) => { if (turnuvaDB[g] && typeof turnuvaDB[g] === 'object') Object.keys(turnuvaDB[g]).forEach((ad) => { const sp = turnuvaDB[g][ad]; if (sp && typeof sp === 'object' && !sp.pasif) hepsi.push({ g, ad }); }); });
       _kmListe = hepsi.slice(0, 24); kmOyunRosterYenile();
       _kmOyunRosterCache.forEach((s) => { turnuvaDB[s.g][s.ad].devamModu = true; });
@@ -38,7 +38,9 @@ export default async function ({ log }) {
     /* ---------------- DEDEKTİF ---------------- */
     const D = 'dag_km_dedektif_';
     let st = await oku(D);
-    esit(st.faz, 'basla', 'vaka başlangıç kartı ile açılmalı');
+    esit(st.faz, 'zarf', 'v446: önce 3 zarf'); esit(st.zarflar.length, 3, '3 zarf');
+    await p.click('.ddk-zarflar button'); await p.waitForTimeout(400);
+    st = await oku(D); esit(st.faz, 'basla', 'zarf seçilince vaka kartı açılmalı');
     esit(st.n, 6, 'Normal 6 şüpheli');
     dogrula(st.v.ipucu.length >= 3 && st.v.ipucu.length <= 5, 'Normal vakada 3–5 ipucu olmalı');
     await p.click('#ddk-bas'); await p.waitForTimeout(400);
@@ -79,12 +81,15 @@ export default async function ({ log }) {
     await p.click('#ddk-sucla-btn'); await tikla(st.v.h);
     await p.waitForSelector('#ddk-evet', { timeout: 5000 }); await p.click('#ddk-evet'); await p.waitForTimeout(1500);
     await foto('ddk-3-yakalandi');
-    await p.waitForTimeout(2000);
-    st = await oku(D); esit(st.faz, 'cozuldu', 'doğru suçlama vakayı kapatmalı');
-    dogrula(await p.evaluate(() => /bulundu/.test(document.getElementById('ddk-perde').textContent)), 'vaka kapandı kartı görünmedi');
+    await p.waitForTimeout(1500);
+    st = await oku(D); esit(st.faz, 'kovala', 'v446: doğru suçlama kovalamacayı başlatmalı');
+    await seri(5, ['9', '9', '9']); await p.waitForTimeout(3000);
+    st = await oku(D); esit(st.faz, 'cozuldu', 'yakalayınca vaka kapanmalı');
+    dogrula(await p.evaluate(() => /yakalandı/.test(document.getElementById('ddk-perde').textContent)), 'vaka kapandı kartı görünmedi');
     await foto('ddk-4-cozuldu');
     await p.click('#ddk-dev'); await p.waitForTimeout(400);
-    st = await oku(D); esit(st.vaka, 1, 'sıradaki vakaya geçmeli'); esit(st.faz, 'basla', 'yeni vaka kartı açılmalı');
+    st = await oku(D); esit(st.vaka, 1, 'sıradaki vakaya geçmeli'); esit(st.faz, 'zarf', 'yeni zarflar açılmalı');
+    await p.click('.ddk-zarflar button'); await p.waitForTimeout(400); esit((await oku(D)).faz, 'basla', 'yeni vaka kartı açılmalı');
     // Kolay: 4 şüpheli + uymayanlar kendiliğinden elenir; kart açıkken seri girilince oyun başlar
     await p.click('#ddk-bas'); await p.waitForTimeout(300);
     await p.click('#ddk-zor-btn'); await p.click('#ddk-perde [data-z="kolay"]'); await p.waitForTimeout(400);
