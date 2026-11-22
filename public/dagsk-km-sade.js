@@ -350,7 +350,7 @@ function ksYzMinik() {
     let t = yzKurulumTaslak(), l = [];
     ['minikler', 'kucukler'].forEach(function (g) { ksAktifSporcular(g).forEach(function (ad) { l.push(g + '|' + ad); }); });
     if (!l.length) return showToast('Kulüpte minik / küçük sporcu bulunamadı.', 'warning');
-    t.havuz = (t.havuz || []).concat(l); t.katilimci = l.slice(); t.tur = 'siralama'; t.minik = true; t.siraModu = 'ilk4'; t.format = 's6o3'; t.sure = 120; t.mesafe = '18m'; t.hedefBasi = 3;
+    t.havuz = (t.havuz || []).concat(l); t.katilimci = l.slice(); t.tur = 'siralama'; t.minik = true; t.siraModu = 'ilk4'; t.eglence = t.eglence || 'biraz'; t.format = 's6o3'; t.sure = 120; t.mesafe = '18m'; t.hedefBasi = 3;
     try { yzTvGorunumSec('kartlar', true); } catch (e) {}
     ksCiz(); showToast('🌟 Minikler & Küçükler: ' + l.length + ' sporcu, 18 ok, ilk 4 kürsüde, TV Işıklı Kartlar', 'success');
 }
@@ -404,7 +404,9 @@ function ksYarismaHTML() {
             return top ? cip(KS_GRUP_AD[g] + ' <b class="ks-say">' + sec + '/' + top + '</b>', sec && sec === havuz.length, 'ksYzGrup(\'' + g + '\')', sec && sec < havuz.length ? 'yarim' : '') : '';
         }).join('') + '</div>'
         + (dogrudan ? '' : '<p class="ks-alan-ad">SIRALAMA <span class="ks-alan-not">yarışma sürerken nasıl görünsün · sonunda gerçek sıralama açılır</span></p><div class="ks-cipler">' + [['normal', 'Normal'], ['ilk4', 'İlk 4 kalsın'], ['karisik', 'Herkes karışık']].map(function (m) { return cip(m[1], (t.siraModu || 'normal') === m[0], 'ksYzAyar(\'siraModu\',\'' + m[0] + '\')'); }).join('') + '</div>'
-            + '<p class="ks-alan-ad">TV</p><div class="ks-cipler">' + [['hatlar', 'Hedef hatları'], ['kartlar', 'Işıklı Kartlar'], ['sahne', 'Sahne'], ['tablo', 'Tablo']].map(function (g) { return cip(g[1], yzTvGorunum() === g[0], 'ksYzTv(\'' + g[0] + '\')'); }).join('') + '</div>')
+            + '<p class="ks-alan-ad">TV</p><div class="ks-cipler">' + [['hatlar', 'Hedef hatları'], ['kartlar', 'Işıklı Kartlar'], ['sahne', 'Sahne'], ['tablo', 'Tablo']].map(function (g) { return cip(g[1], yzTvGorunum() === g[0], 'ksYzTv(\'' + g[0] + '\')'); }).join('') + '</div>'
+            // v445 🎉 Eğlence (kullanıcı: "biraz eğlenceli olsun ama seçeneğe göre olsun")
+            + (yzTvGorunum() === 'kartlar' && typeof YZ_EGLENCE !== 'undefined' ? '<p class="ks-alan-ad">EĞLENCE ' + (typeof yeniRozet === 'function' ? yeniRozet() : '') + ' <span class="ks-alan-not">Sade: yalnız kartlar · Biraz: övgü + oklar hedefe konar · Çok: fotoğraf büyük, oklar uçar, konfeti + ses</span></p><div class="ks-cipler">' + [['sade', 'Sade'], ['biraz', 'Biraz eğlenceli'], ['cok', 'Çok eğlenceli']].map(function (e) { return cip(e[1], (t.eglence || 'biraz') === e[0], 'ksYzAyar(\'eglence\',\'' + e[0] + '\')'); }).join('') + '</div>' : ''))
         + '<div class="ks-ozet-kart"><span class="ks-av-grup">' + (avatar || ksIkon('grup', 20)) + '</span><span class="ks-ozet-yazi"><b>' + t.katilimci.length + ' sporcu</b><i>' + (t.minik ? 'minik + küçükler' : karma ? 'yarışma tarafı' : t.katilimci.length === yzRoster().length ? 'derstekilerin hepsi' : 'seçilenler') + ' · tek tek seçmek için</i></span>'
         + '<button type="button" class="ks-link" onclick="ksEkranAc(\'kimne\')">Düzenle</button></div>'
         + '<div class="ks-link-satir"><button type="button" class="ks-link" onclick="ksTumAyarlar()">Tüm ayarlar</button><button type="button" class="ks-link" onclick="ksDigerTurler()">Takım yarışması · diğer türler</button></div>'
