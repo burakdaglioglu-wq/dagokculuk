@@ -4334,7 +4334,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=18';
+        const YN_DOSYA = 'yonetim-panel.js?v=19';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4472,6 +4472,8 @@
                     aidatDB = aidatMerge(aidatDB, h); aidatKaydet(); return 'ok';
                 },
                 girisIste() { ynKartKapat(); yoneticiGirisIste(); },
+                kartHazirla() { return kartModulleri().then(function() { _ynkTazele(); }); },
+                okPanel: k => typeof okhPanelHTML === 'function' ? okhPanelHTML(k.grup, k.ad) : '',
                 // profilden ilgili ekrana git (Yönetici kapalıysa önce açılır; yetki yoksa PIN ekranı gelir)
                 gitYer(k, yer, ek) {
                     let acik = document.body.classList.contains('yon-acik');
@@ -4542,10 +4544,13 @@
             let yenile = () => { try { ynKartIslemYenile(); } catch(e) {} }, isler = [], progYok = !_programSlotlar.length;
             if(typeof sgYukle === 'function') isler.push(sgYukle());
             if(!_programSlotlar.length) isler.push(fetch('/api/antrenman-programi').then(r => r.json()).then(d => { _programSlotlar = d.slots || []; if(progYok && typeof ynKartYenile === 'function') ynKartYenile(); }).catch(() => {}));
-            if(typeof kyDepoSenkron === 'function') ['yarismalar', 'yarisma_sporcu'].forEach(a => isler.push(kyDepoSenkron(a, () => kyDepoOku(a), false).catch(() => {})));
+            if(typeof kyDepoSenkron === 'function') ['yarismalar', 'yarisma_sporcu', 'teknik_odak'].forEach(a => isler.push(kyDepoSenkron(a, () => kyDepoOku(a), false).catch(() => {})));
+            if(typeof yzArsivCek === 'function') yzArsivCek(function() { try { ynKartYenile(); } catch(e) {} }); // yarışma oklarının yeri (ok haritası)
             Promise.all(isler).then(yenile, yenile);
         }
-        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), dagskEkYukle('dagsk-gelisim-plan.js?v=1').catch(function() {}), dagskEkYukle('dagsk-yarismalar.js').catch(function() {}), dagskEkYukle('dagsk-sporcu-giris.js?v=3').catch(function() {})]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); _ynkTazele(); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
+        // Profilin ek modülleri (yonetim-panel.js ynKartAc → kartHazirla): giriş kodu, gelişim planı, yarışma, 🏹 ok haritası + teknik koçluk metinleri
+        function kartModulleri() { return Promise.all(['dagsk-gelisim-plan.js?v=1', 'dagsk-yarismalar.js', 'dagsk-sporcu-giris.js?v=3', 'dagsk-km-kocluk.js', 'dagsk-ok-haritasi.js?v=1'].map(function(f) { return dagskEkYukle(f).catch(function() {}); })); }
+        function sporcuProfilAc(id) { Promise.all([dagskEkYukle(YN_DOSYA), kartModulleri()]).then(function() { ynKulup(dagYonetimAdaptor()); ynKartAc(id); }).catch(function() { showToast('Profil yüklenemedi — bağlantıyı kontrol et.', 'error'); }); }
         window.ynDisDelege = true;
         document.addEventListener('click', function(e) {
             let el = e.target && e.target.closest ? e.target.closest('[data-sporcu]') : null; if(!el) return;

@@ -1127,6 +1127,8 @@
         let a = document.getElementById('yn-kart'); if (!a) { a = document.createElement('div'); a.id = 'yn-kart'; a.className = 'yn-profil-arka'; document.body.appendChild(a); }
         document.addEventListener('keydown', ynKartEsc);
         ynKartCiz(); a.scrollTop = 0;
+        // modüller (giriş kodu, gelişim, ok haritası…): profil nereden açılırsa açılsın yüklenir — eskiden Genel Bakış'tan açılınca yüklenmiyor, düğmeler soluk kalıyordu
+        if (YN.Y.kartHazirla) { let kim = id; YN.Y.kartHazirla().then(() => { if (YN.kart === kim) ynKartYenile(); }).catch(() => {}); }
     };
     function ynKartEsc(e) { if (e.key === 'Escape' && !YN.duzen) ynKartKapat(); }
     window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; YN.duzen = false; YN.alanDuz = null; YN.takAy = YN.takGun = YN.gl = null; document.removeEventListener('keydown', ynKartEsc); };
@@ -1330,6 +1332,7 @@
         // bilgiler
         let alanlar = Y.alanlar ? Y.alanlar(k) : [];
         let bilgi = `<div class="yn-alanlar">${alanlar.map(x => `<div class="yn-alan${x.tip === 'not' ? ' tam' : ''}" id="yn-a-${x.id}"><label>${esc(x.et)}</label>${YN.duzen || YN.alanDuz === x.id ? alanGirdi(x) : Y.kaydet ? `<button type="button" class="deger" onclick="ynAlanAc('${x.id}')" aria-label="${esc(x.et)}: düzelt">${alanDeger(x)}</button>` : `<div class="deger">${alanDeger(x)}</div>`}${(YN.duzen || YN.alanDuz === x.id) && x.ipucu ? `<small>${esc(x.ipucu)}</small>` : ''}${!YN.duzen && YN.alanDuz === x.id ? '<div class="yn-alan-d"><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">Kaydet</button><button class="ap-btn" onclick="YN.alanDuz=null; ynKartCiz()">Vazgeç</button></div>' : ''}</div>`).join('')}</div>`;
+        let oklar = !YN.duzen && Y.okPanel ? Y.okPanel(k) : '';
         let bilgiPanel = `<div class="ap-panel" id="yn-b-bilgi"><h3>Bilgiler <span>${YN.duzen ? 'değiştir → Kaydet' : 'düzeltmek için satıra dokun'}</span></h3>${bilgi}</div>`;
         let islemler = (Y.islemler ? Y.islemler(k) : []).map(x => `<div class="satir"><span><b>${esc(x.et)}</b><small>${esc(x.alt || '')}</small></span><button class="ap-btn${x.tehlike ? ' tehlike' : ''}" onclick="${x.fn}">${x.btn}</button></div>`).join('');
         let tel = k.tel ? telNo(k.tel) : '', bas = k.ad.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('');
@@ -1338,7 +1341,7 @@
         a.innerHTML = `<div class="ap yn-profil" id="yn-kart-ic" role="dialog" aria-modal="true" aria-label="${esc(k.ad)} profili">
             <div class="yn-p-ust yn-pdf-gizle"><button class="ap-btn" onclick="ynKartKapat()" aria-label="Geri">← <span class="yn-uz">Geri</span></button><span class="yn-p-yol">${Y.gitYer ? `<button type="button" onclick="ynYer('grup')">${esc(k.grupAd || '')}</button>` : esc(k.grupAd || '')} › <b>${esc(k.ad)}</b></span>
                 <span class="yn-p-sag">${YN.duzen ? `<button class="ap-btn" onclick="YN.duzen=false; ynKartCiz()">Vazgeç</button><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">💾 Kaydet</button>` : `${Y.kaydet ? '<button class="ap-btn ana" aria-label="Düzenle" onclick="YN.duzen=true; YN.alanDuz=null; ynKartCiz(); ynBolum(\'bilgi\')">✏️ <span class="yn-uz">Düzenle</span></button>' : ''}<button class="ap-btn" onclick="ynPdf(document.getElementById('yn-kart-ic'), 'sporcu-' + ${JSON.stringify(k.ad).replace(/"/g, '&quot;')})" aria-label="PDF">📄 <span class="yn-uz">PDF</span></button>`}</span>
-                ${YN.duzen ? '' : `<nav class="yn-p-atla" aria-label="Bölümler">${[['ozet', 'Özet'], ['gelis', '📅 Geliş'], ...(V.skorVar ? [['skor', '🎯 Skor']] : []), ['aidat', '💳 Aidat'], ['bilgi', '📝 Bilgiler'], ...(Y.ekPanel ? [['gelisim', '📈 Gelişim']] : []), ['islem', '⚙️ İşlemler']].map(x => `<button type="button" onclick="ynBolum('${x[0]}')">${x[1]}</button>`).join('')}</nav>`}</div>
+                ${YN.duzen ? '' : `<nav class="yn-p-atla" aria-label="Bölümler">${[['ozet', 'Özet'], ['gelis', '📅 Geliş'], ...(V.skorVar ? [['skor', '🎯 Skor']] : []), ...(oklar ? [['oklar', '🏹 Oklar']] : []), ['aidat', '💳 Aidat'], ['bilgi', '📝 Bilgiler'], ...(Y.ekPanel ? [['gelisim', '📈 Gelişim']] : []), ['islem', '⚙️ İşlemler']].map(x => `<button type="button" onclick="ynBolum('${x[0]}')">${x[1]}</button>`).join('')}</nav>`}</div>
             <div class="yn-p-izgara">
                 <aside class="yn-p-kimlik">
                     <div class="ap-panel yn-p-kart"><div class="yn-av"${k.fotoK ? ` data-foto-k="${esc(k.fotoK)}" data-foto-y="1"` : ""}${k.foto ? ` style="background:url('${esc(k.foto)}') center/cover;color:transparent"` : ""}>${esc(bas)}${Y.fotoDegistir ? `<button class="yn-av-foto yn-pdf-gizle" onclick="YN.Y.fotoDegistir(ynKisi())" aria-label="Fotoğrafı değiştir">📷</button>` : ""}</div><h2>${esc(k.ad)}</h2><div class="yn-p-alt">${alt}</div><div>${durum}</div></div>
@@ -1349,7 +1352,7 @@
                 </aside>
                 <main class="yn-p-icerik">
                     ${YN.duzen ? '<div class="yn-p-bant">✏️ Düzenleme modu — alanları değiştir, sonra üstten <b>💾 Kaydet</b>. İsim ya da kategori değişirse tüm geçmişi (skor, yoklama, aidat) taşınır.</div>' : ''}
-                    ${YN.duzen ? bilgiPanel : `<div class="ap-kpi yn-kutu" id="yn-b-ozet">${tiles}</div>${gelisHTML(k, V)}${skorHTML(k, V)}`}
+                    ${YN.duzen ? bilgiPanel : `<div class="ap-kpi yn-kutu" id="yn-b-ozet">${tiles}</div>${gelisHTML(k, V)}${skorHTML(k, V)}${oklar}`}
                     <div class="ap-iki">
                         <div class="ap-panel" id="yn-b-aidat"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi</span></h3>${aidat}</div>
                         <div class="ap-panel"><h3>Devam · son 6 ay <span>aya dokun → takvim</span></h3><div class="yn-devam">${devam}</div><h3 style="margin-top:14px">Geçmiş <span>satıra dokun → oraya git</span></h3><div class="yn-gecmis">${gecmis}</div></div>
