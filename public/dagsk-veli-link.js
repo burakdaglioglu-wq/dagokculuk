@@ -58,11 +58,11 @@
             let b = f.cocuk.filter(u => borcSeti()[u.id] && !u.muaf), c = b.length ? b : f.cocuk.filter(u => !u.muaf), n = c.map(u => ilkAd(u.ad)).join(' ve ');
             s.push('Merhaba, DAĞ Spor Kulübü', '', n + ' için ' + aidatAyAdUzun(ay) + ' aidatı kaydımızda görünmüyor. Ödediyseniz yazmanız yeterli, hemen düzeltelim.', '', 'Ayrıntı:');
             c.forEach(u => s.push((c.length > 1 ? ilkAd(u.ad) + ': ' : '') + odeme(u)));
-            s.push('(Girişte bu telefonun son 4 hanesi sorulur.)', '', 'Teşekkürler 🧡');
+            s.push('Sayfa açılınca telefon numaranızın *son 4 rakamını* yazın.', 'Örnek: 0532 123 45 67 ise *4567*', '', 'Teşekkürler 🧡');
         } else {
             let od = f.cocuk.filter(u => !u.muaf);
             s.push('Merhaba 🌟 DAĞ Spor Kulübü', '', adlar + ' için ' + (tur === 'odeme' ? 'ödemeleri' : od.length ? 'ödemeleri ve devamı' : 'devam ve gelişimi') + ' artık buradan görebilirsiniz:', '');
-            if (od.length) { s.push('💳 Ödemeler'); od.forEach(u => s.push((tek ? '' : ilkAd(u.ad) + ': ') + odeme(u))); s.push('(Girişte bu telefonun son 4 hanesi sorulur.)', ''); }
+            if (od.length) { s.push('💳 Ödemeler'); od.forEach(u => s.push((tek ? '' : ilkAd(u.ad) + ': ') + odeme(u))); s.push('Sayfa açılınca telefon numaranızın *son 4 rakamını* yazın.', 'Örnek: 0532 123 45 67 ise *4567*', ''); }
             if (tur === 'ikisi' || !od.length) { s.push('📊 Devam ve gelişim'); f.cocuk.forEach(u => s.push((tek ? '' : ilkAd(u.ad) + ': ') + rapor(u))); s.push(''); }
             s.push('Linkler size özeldir. Görüşmek üzere 🧡');
         }

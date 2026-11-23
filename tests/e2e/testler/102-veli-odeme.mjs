@@ -67,7 +67,7 @@ export default async function ({ log }) {
         await p.goto(`${B}/veli.html?kod=${kod}`);
         await p.waitForSelector('#son4');
         await p.fill('#son4', '1234'); await p.click('#gir');
-        await p.waitForFunction(() => document.getElementById('hata')?.textContent.includes('eşleşmedi'));
+        await p.waitForFunction(() => document.getElementById('hata')?.textContent.includes('uyuşmadı'));
         await p.fill('#son4', '2233'); await p.click('#gir');
         await p.waitForSelector('#izgara');
         esit(await p.locator('#izgara .ay').count(), 12, '12 ay olmalı');

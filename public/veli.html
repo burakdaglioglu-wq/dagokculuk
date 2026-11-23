@@ -65,13 +65,18 @@
   .btn:disabled{opacity:.5;cursor:default}
   .not{margin:0;font-size:13px;line-height:1.45;color:var(--soluk);padding:0 4px}
   /* giriş */
-  .giris{flex:1;display:flex;flex-direction:column;gap:14px;padding-top:32px}
+  .giris{flex:1;display:flex;flex-direction:column;gap:12px;padding-top:4px}
   .giris h1{font-size:54px;line-height:.92}
   .giris p{margin:0;font-size:15px;line-height:1.5;color:var(--soluk)}
-  .giris label{margin-top:18px;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--soluk)}
+  .giris p.buyuk{font-size:20px;line-height:1.35;color:var(--yazi)}.giris p.buyuk b{color:var(--vurgu2)}
+  .ornek{background:var(--kart);border-radius:16px;padding:13px 16px;display:grid;gap:2px}.ornek small{font-size:13px;color:var(--soluk)}.ornek span{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}.ornek mark{background:var(--vurgu);color:var(--vurgu-yazi);border-radius:8px;padding:1px 8px;font-weight:800}.ornek .ok{font-size:16px;color:var(--soluk)}.ornek .ok b{color:var(--yazi);font-size:19px}
+  .giris label{margin-top:6px;font-size:15px;font-weight:700;color:var(--yazi)}
   .giris input{height:72px;width:100%;padding:0 20px;border-radius:18px;border:2px solid var(--cizgi);background:var(--kart);color:var(--yazi);font-size:34px;font-weight:800;letter-spacing:.3em;outline:0}
+  .giris input::placeholder{color:var(--soluk);opacity:.6;letter-spacing:.12em}
   .giris input:focus{border-color:var(--vurgu2)}
-  .giris form{display:flex;flex-direction:column;gap:14px;flex:1}
+  .giris form{display:flex;flex-direction:column;gap:12px;flex:1}
+  .giris p.hata{color:var(--be-y);font-weight:700}.giris .hata:empty{display:none}
+  @media (max-height:700px){.giris h1{font-size:40px}.giris input{height:62px}}
   .hata{min-height:20px;margin:0;font-size:14px;font-weight:700;color:var(--kirmizi)}
   .bosluk{flex:1}
   .yukle{flex:1;display:flex;align-items:center;justify-content:center;color:var(--soluk);font-size:14px;font-weight:700}
@@ -104,10 +109,11 @@
   }
   function girisCiz(hata) {
     V.innerHTML = '<div class="giris"><span class="etiket">DAĞ Spor Kulübü · Veli</span><h1>' + esc(S.ilkAd ? S.ilkAd + ' için' : 'Veli') + '<br>ödemeler</h1>'
-      + '<p>Devam etmek için kulübe kayıtlı telefon numaranızın son 4 hanesini yazın.</p>'
-      + '<form id="f" novalidate><label for="son4">SON 4 HANE</label><input id="son4" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*" aria-describedby="hata">'
-      + '<p class="hata" id="hata" role="alert">' + esc(hata || '') + '</p><p class="not" style="padding:0">Bu telefonda hatırlanır. Numaranız değiştiyse kulübe yazın.</p><div class="bosluk"></div>'
-      + '<button class="btn ana" id="gir" type="submit">Giriş yap</button></form></div>';
+      + '<p class="buyuk">Telefon numaranızın <b>son 4 rakamını</b> yazın.</p>'
+      + '<div class="ornek" aria-label="Örnek: numaranız 0532 123 45 67 ise 4567 yazın"><small>Örnek</small><span>0532 123 <mark>45 67</mark></span><span class="ok">yazılacak: <b>4567</b></span></div>'
+      + '<form id="f" novalidate><label for="son4">Numaranızın son 4 rakamı</label><input id="son4" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*" placeholder="_ _ _ _" aria-describedby="hata">'
+      + '<p class="hata" id="hata" role="alert">' + esc(hata || '') + '</p>'
+      + '<button class="btn ana" id="gir" type="submit">Giriş yap</button><p class="not" style="padding:0">Şifre yoktur. Bu linkin geldiği telefon numarası geçerlidir. Bir kez yazmanız yeterli, bu telefonda hatırlanır.</p></form></div>';
     var i = document.getElementById('son4');
     i.addEventListener('input', function () { i.value = i.value.replace(/\D/g, '').slice(0, 4); });
     document.getElementById('f').addEventListener('submit', girisYap);
@@ -116,14 +122,14 @@
   function girisYap(e) {
     e.preventDefault();
     var i = document.getElementById('son4'), h = document.getElementById('hata'), b = document.getElementById('gir');
-    if (!/^\d{4}$/.test(i.value)) { h.textContent = '4 hane yazın.'; return; }
+    if (!/^\d{4}$/.test(i.value)) { h.textContent = 'Numaranızın son 4 rakamını yazın.'; return; }
     b.disabled = true; h.textContent = '';
     fetch('/api/veli-odeme/giris', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kod: kod, son4: i.value }) })
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (d) {
         if (d.ok && d.token) { yaz(d.token); return yukle(); }
         b.disabled = false; i.value = ''; i.focus();
-        h.textContent = d.sebep === 'kilit' ? 'Çok fazla deneme. ' + Math.max(1, Math.ceil((d.kalanMs || 60000) / 60000)) + ' dakika sonra tekrar deneyin.' : 'Numara eşleşmedi. Kulübe kayıtlı numarayı deneyin.';
+        h.textContent = d.sebep === 'kilit' ? 'Çok fazla deneme. ' + Math.max(1, Math.ceil((d.kalanMs || 60000) / 60000)) + ' dakika sonra tekrar deneyin.' : 'Bu rakamlar kayıtlı numarayla uyuşmadı. Bu linkin geldiği telefon numarasının son 4 rakamını yazın.';
       })
       .catch(function () { b.disabled = false; h.textContent = 'Bağlantı kurulamadı, tekrar deneyin.'; });
   }

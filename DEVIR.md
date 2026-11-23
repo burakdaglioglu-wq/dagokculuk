@@ -6179,3 +6179,6 @@ Kullanıcı fikir sayfasından (claude.ai/artifact/PM9KyqTzmR3HywSDwZDip8) 1. yo
 - Sunucu: migration 0051 `veli_link` (izleKodu'na bağlı; isim/telefon yok), `src/routes/veliLink.ts` (GET /api/veli-link ve POST …/gonderildi oturum ister). Açılışı `veliAcildi` yazar: veli-odeme/bilgi, veli-odeme/giris (giris), veli-rapor. Koç linki kendisi açarsa da "açtı" sayılır.
 - Dikkat çeken yer: telefon menüsünde ve Genel Bakış'ta turuncu bant (`yonVeliBantHTML`), kenar menüsünde turuncu satır + rozet. Aidat araçlarındaki `veliLinkSiradaki` kalktı → bu ekran. Profildeki 🔗 Veliye link gönder de aynı kaydı işaretler; eski cihaz-yerel `veliodeme|` işaretleri taşınmadı.
 - Test 162 (gerçek mesaj gönderilmez); 108 ve 156 uyarlandı. Gerçek telefonda / gerçek veliyle DENENMEDİ.
+
+## 167. 🔢 Veli girişi açıklaması sadeleşti (v457, 2026-11-23)
+Kullanıcı "son 4 hane"yi anlamadı, "açıklamasında sorun var". Mesajlar (Velilere Gönder, profil, aidat), `veli.html` ve `rapor.html`: "Telefon numaranızın **son 4 rakamını** yazın. Örnek: 0532 123 45 67 ise 4567". `veli.html` girişinde örnek kutusu, Giriş düğmesi kutunun hemen altında (390×663'te kaydırmadan), hata metni "Bu linkin geldiği numara…". Doğrulama kuralı değişmedi. `dagsk-veli-link.js?v=2`.
