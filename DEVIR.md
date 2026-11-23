@@ -6139,3 +6139,8 @@ Kullanıcı ekran görüntüsü (telefonda ⋯ Diğer): "bu kısım çok iğren�
 - Alt çubukta **Menü** (eski Diğer). `#yon-diger-sheet`: ✕, arama (ekran adı + `YON_MENU_KELIME` anlam kelimeleri, kelime başından; sporcu → profil), 4 canlı kart (`YON_MENU_KART`: Yoklama, Aidat, Program, Skor Girenler; `yonMenuDurum`), altta iki hizalı sütun. Alt çubuk z 6 → menü açıkken de dokunulur.
 - `YONETICI_BOLUMLER` işe göre 4 grup (DERS · SPORCULAR · VELİ & KULÜP · BAKIM); masaüstü kenar menüsü aynı listeden. `YON_IKON`/`yonIkon(k)` çizgi ikonlar: menü + alt çubuk + kenar menüsü. Yeni ekran eklerken ikonunu da ekle (yoksa emoji'ye düşer).
 - Test 156. Gerçek telefonda DENENMEDİ.
+
+## 160. 🔒 Aidat kilidi + Yönetici üst çubuğu (v450, 2026-11-23)
+Kullanıcı ekran görüntüsü ("Bu kısımda", cümle yarım): kahverengi kart, kesilen PIN noktaları, sıkışık üst çubuk, sağdan kesilen sayı şeridi.
+- `aidatKilitEkraniHTML` (`akl*`, `#akl`): rakam tuşları, nokta satırı (PIN uzadıkça artar), hata ekranda (`_aklHata`), "PIN'imde harf var" → yazı alanı (`dag_aidat_kilit_yazi`). `egitmenRenderAidat` kilit ekranı açıkken yeniden çizmez (senkron yazılan PIN'i siliyordu). Otomatik gönderim YOK (yanlış deneme sayacı).
+- Üst çubuk `.yon-ust-dug` (çizgi ikon, 40 px); telefonda durum yalnız nokta (sorun varsa yazı), şerit 4 eşit sütun. Test 157 (PIN yanıtı sahte). Milo kilit ekranı değişmedi. Gerçek telefonda DENENMEDİ.

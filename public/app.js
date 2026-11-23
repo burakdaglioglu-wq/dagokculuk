@@ -3804,28 +3804,51 @@
 
         /* Aidat'a özel EK kilit — yönetici PIN'inden ayrı. Aidat'a her girişte (sekme değişince veya
            yönetici paneli kapanınca) yeniden kilitlenir; yönetici PIN'i tek başına yetmez. */
+        // 🔒 Aidat kilidi (v450, 2026-11-23, kullanıcı ekran görüntüsü): giriş ekranındaki gibi büyük rakam tuşları; eski 120 px kutuda
+        // PIN noktaları kesiliyordu. Harfli PIN için yazı alanı (seçim bu cihazda hatırlanır). Hata ekranın içinde yazar.
+        let _aklBuf = '', _aklMesgul = false, _aklYazi = (function() { try { return localStorage.getItem('dag_aidat_kilit_yazi') === '1'; } catch(e) { return false; } })();
         function aidatKilitEkraniHTML() {
-            return `<div class="glass-panel" style="padding:24px; border-radius:12px; text-align:center;">
-                <div style="font-size:32px; margin-bottom:10px;">🔒</div>
-                <div style="font-weight:800; font-size:15px; margin-bottom:6px;">Aidat — Ek Güvenlik</div>
-                <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Aidat PIN'ini girin (ayrı bir aidat PIN'i ayarlanmadıysa kendi PIN'in).</div>
-                <input type="password" id="aidat-kilit-pin" maxlength="64" placeholder="••••••" autocomplete="off" style="width:120px; text-align:center; font-size:22px; letter-spacing:8px; padding:10px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px;" onkeydown="if(event.key==='Enter') aidatKilitDogrula();">
-                <br>
-                <button onclick="aidatKilitDogrula()" style="background:var(--gold); color:#1b1b1b; border:none; padding:10px 24px; border-radius:10px; font-weight:800; cursor:pointer;">Kilidi Aç</button>
-            </div>`;
+            _aklBuf = '';
+            let tus = n => `<button type="button" class="akl-tus" onclick="aklRakam('${n}')">${n}</button>`;
+            let giris = _aklYazi
+                ? `<input type="password" id="aidat-kilit-pin" class="akl-yazi" maxlength="64" placeholder="Aidat PIN'i" aria-label="Aidat PIN'i" autocomplete="off" onkeydown="if(event.key==='Enter') aidatKilitDogrula();"><button type="button" class="akl-ac" onclick="aidatKilitDogrula()">Aç</button>`
+                : `<div class="akl-noktalar" id="akl-noktalar" role="status" aria-label="0 rakam girildi">${aklNoktaHTML()}</div><div class="akl-tuslar">${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(tus).join('')}<button type="button" class="akl-tus yan" onclick="aklSil()" aria-label="Son rakamı sil"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9L3 12zM12 9.5l5 5M17 9.5l-5 5"/></svg></button>${tus('0')}<button type="button" class="akl-tus tamam" onclick="aidatKilitDogrula()" aria-label="Kilidi aç">Aç</button></div>`;
+            return `<div class="akl" id="akl"><span class="akl-ik"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2"/></svg></span>
+                <h3>Aidat kilitli</h3><p id="akl-mesaj" aria-live="polite">Aidat PIN'ini gir. Ayrı PIN ayarlamadıysan kendi giriş PIN'in.</p>${giris}
+                <button type="button" class="akl-mod" onclick="aklModDegistir()">${_aklYazi ? 'Rakam tuşlarına dön' : 'PIN\'imde harf var'}</button></div>`;
         }
-        // Aidat ek kilidi tek çekirdek (aidat ekranı + sporcu kartı): doğruysa kilit bu oturumda açılır
-        async function aidatKilitAc(pin) {
+        function aklNoktaHTML() { let n = Math.max(6, _aklBuf.length), h = ''; for(let i = 0; i < n; i++) h += '<i' + (i < _aklBuf.length ? ' class="dolu"' : '') + '></i>'; return h; }
+        function aklCiz() { let e = document.getElementById('akl-noktalar'); if(e) { e.innerHTML = aklNoktaHTML(); e.setAttribute('aria-label', _aklBuf.length + ' rakam girildi'); } }
+        function aklRakam(n) { if(_aklMesgul || _aklBuf.length >= 16) return; _aklBuf += n; aklMesaj(''); aklCiz(); }
+        function aklSil() { if(_aklMesgul) return; _aklBuf = _aklBuf.slice(0, -1); aklCiz(); }
+        function aklMesaj(m, hata) { let e = document.getElementById('akl-mesaj'); if(e && (m || e.classList.contains('hata'))) { e.textContent = m || 'Aidat PIN\'ini gir.'; e.classList.toggle('hata', !!hata); } }
+        function aklModDegistir() { _aklYazi = !_aklYazi; try { localStorage.setItem('dag_aidat_kilit_yazi', _aklYazi ? '1' : '0'); } catch(e) {} let k = document.getElementById('akl'); if(k) k.outerHTML = aidatKilitEkraniHTML(); let e = document.getElementById('aidat-kilit-pin'); if(e) e.focus(); }
+        document.addEventListener('keydown', function(e) {
+            let k = document.getElementById('akl'); if(!k || _aklYazi || !k.offsetParent || document.getElementById('yn-kart') || e.ctrlKey || e.metaKey || e.altKey) return;
+            if(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if(/^\d$/.test(e.key)) { aklRakam(e.key); e.preventDefault(); }
+            else if(e.key === 'Backspace') { aklSil(); e.preventDefault(); }
+            else if(e.key === 'Enter' && !(e.target && e.target.tagName === 'BUTTON')) { aidatKilitDogrula(); e.preventDefault(); }
+        });
+        let _aklHata = '';
+        async function aidatKilitAc(pin, sessiz) {
             let r = await girisApi('/aidat-dogrula', { pin: pin }).catch(function() { return { ok: false, status: 0, data: {} }; });
             if(r.ok) { _aidatKilitAcikMi = true; return true; }
-            showToast(r.status === 401 && r.data.error === 'oturum-yok' ? 'Oturumun sona ermiş — yeniden giriş yap.' : girisHataMesaji(r), 'error');
+            _aklHata = r.status === 401 && r.data.error === 'oturum-yok' ? 'Oturumun sona ermiş, yeniden giriş yap.' : girisHataMesaji(r);
+            if(!sessiz) showToast(_aklHata, 'error');
             return false;
         }
         async function aidatKilitDogrula() {
-            let girilen = (document.getElementById('aidat-kilit-pin').value || '').trim();
-            if(!girilen) return showToast('PIN girin.', 'error');
-            if(await aidatKilitAc(girilen)) { egitmenRenderAidat(); return; }
-            let el = document.getElementById('aidat-kilit-pin'); if(el) { el.value = ''; el.focus(); }
+            if(_aklMesgul) return;
+            let alan = document.getElementById('aidat-kilit-pin'), girilen = (alan ? alan.value : _aklBuf).trim();
+            if(!girilen) return aklMesaj('Önce PIN\'i gir.', true);
+            _aklMesgul = true; let k = document.getElementById('akl'); if(k) k.classList.add('bekle');
+            let ok = await aidatKilitAc(girilen, true); _aklMesgul = false;
+            if(ok) { _aklBuf = ''; egitmenRenderAidat(); return; }
+            k = document.getElementById('akl'); if(!k) return showToast(_aklHata, 'error');
+            k.classList.remove('bekle', 'salla'); void k.offsetWidth; k.classList.add('salla');
+            _aklBuf = ''; aklCiz(); aklMesaj(_aklHata, true);
+            alan = document.getElementById('aidat-kilit-pin'); if(alan) { alan.value = ''; alan.focus(); }
         }
 
         let _aidatKartSinir = 40;
@@ -4186,7 +4209,7 @@
 
         function egitmenRenderAidat() {
             let alan = document.getElementById(renderHedefId); if(!alan) return;
-            if(!_aidatKilitAcikMi) { alan.innerHTML = aidatKilitEkraniHTML(); setTimeout(() => { let el = document.getElementById('aidat-kilit-pin'); if(el) el.focus(); }, 100); return; }
+            if(!_aidatKilitAcikMi) { if(alan.querySelector('#akl')) return; /* arka plan yenilemesi yazılan PIN'i silmesin */ alan.innerHTML = aidatKilitEkraniHTML(); setTimeout(() => { let el = document.getElementById('aidat-kilit-pin'); if(el) el.focus(); }, 100); return; }
             if(!aidatAy) aidatAy = bugunISO().slice(0, 7);
             if(!_aidatAyarSenk) { _aidatAyarSenk = true; aidatVarsayilanSenkron(false).then(degisti => { if(degisti && egitmenAltSekme === 'aidat') egitmenRenderAidat(); }); }
 
@@ -8561,8 +8584,9 @@
             let bagli = false;
             try { bagli = window.dagskSync && window.dagskSync.wsBagliMi(); } catch(e) {}
             let bekleyen = (typeof _seriBekleyen !== 'undefined') ? _seriBekleyen.length : 0;
+            el.classList.toggle('iyi', bagli && bekleyen === 0); el.title = bagli ? 'Çevrimiçi' : 'Bağlantı yok';
             if(bagli && bekleyen === 0) {
-                el.innerHTML = `<span class="yon-sync-dot online"></span>Çevrimiçi`;
+                el.innerHTML = `<span class="yon-sync-dot online"></span><span class="yon-sync-yazi">Çevrimiçi</span>`;
                 el.style.background = 'rgba(16,185,129,0.12)'; el.style.color = 'var(--neon-green)';
             } else if(bagli && bekleyen > 0) {
                 el.innerHTML = `<span class="yon-sync-dot online"></span>${bekleyen} gönderiliyor`;
@@ -8706,9 +8730,9 @@
         // bir sekme seçilince otomatik kapanıyor.
         function yoneticiAktifSekmeBilgi() {
             for(const [, sekler] of YONETICI_BOLUMLER) {
-                for(const [k, ikon, l] of sekler) { if(k === yoneticiSekmeAktif) return { ikon, l }; }
+                for(const [k, ikon, l] of sekler) { if(k === yoneticiSekmeAktif) return { k, ikon, l }; }
             }
-            return { ikon: '📊', l: 'Genel Bakış' };
+            return { k: 'panel', ikon: '📊', l: 'Genel Bakış' };
         }
         // MOBİL ALT NAVİGASYON — 4 sabit sekme (Ana Sayfa/Skorlar/Canlı/Diğer). "Canlı" bir modal
         // sekmesi DEĞİL — paneli kapatıp ana uygulamanın kendi "Canlı Takip" sekmesine köprü kurar
@@ -8839,7 +8863,7 @@
         }
         function yoneticiNavCiz() {
             let etiket = document.getElementById('yon-aktif-sekme-etiket');
-            if(etiket) { let bilgi = yoneticiAktifSekmeBilgi(); etiket.innerHTML = `<span style="font-size:17px;">${bilgi.ikon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${bilgi.l}</span>`; }
+            if(etiket) { let bilgi = yoneticiAktifSekmeBilgi(); etiket.innerHTML = `<span style="color:var(--accent-orange); display:flex;">${yonIkon(bilgi.k) || bilgi.ikon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${bilgi.l}</span>`; }
             _yonDigerAcik = false;
             let sheet = document.getElementById('yon-diger-sheet'); if(sheet) sheet.classList.remove('acik');
             try { _yonSayilarSon = yoneticiSayilar(); } catch(e) {}

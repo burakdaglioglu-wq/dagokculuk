@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v449</b> · Yönetici menüsü yenilendi</div>
+        <div style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v450</b> · Yönetici menüsü + aidat kilidi yenilendi</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -1793,11 +1793,11 @@
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                         <div id="yon-aktif-sekme-etiket" style="flex:1; min-width:0; display:flex; align-items:center; gap:7px; font-weight:900; color:var(--text-main); font-size:15px; letter-spacing:-.2px;"></div>
                         <span id="yon-sync-badge-top" class="yon-sync-badge"></span>
-                        <button class="dagsk-yenile-fab" title="Sayfayı Yenile" style="width:34px; height:34px; flex-shrink:0;" onclick="this.classList.add('donuyor'); bulutManuelYenile(); yoneticiSekme(yoneticiSekmeAktif); setTimeout(()=>this.classList.remove('donuyor'), 800);">
+                        <button class="yon-ust-dug" title="Yenile" aria-label="Yenile" onclick="this.classList.add('donuyor'); bulutManuelYenile(); yoneticiSekme(yoneticiSekmeAktif); setTimeout(()=>this.classList.remove('donuyor'), 800);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         </button>
-                        <button onclick="anaMenuAc()" class="adm-btn" title="Ana Menü" style="min-height:36px; padding:0 10px; font-size:12px; font-weight:800; border-radius:11px; flex-shrink:0; white-space:nowrap;">🏠 Ana Menü</button>
-                        <button onclick="yoneticiPaneliKapat()" class="adm-btn" style="min-height:36px; width:36px; padding:0; font-size:14px; border-radius:11px; flex-shrink:0;">✕</button>
+                        <button onclick="anaMenuAc()" class="yon-ust-dug genis" title="Ana Menü" aria-label="Ana Menü"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 4.5l8 7M6 10v9.5h12V10M10 19.5v-5h4v5"/></svg><span>Ana Menü</span></button>
+                        <button onclick="yoneticiPaneliKapat()" class="yon-ust-dug" title="Yöneticiyi kapat" aria-label="Yöneticiyi kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
                     </div>
                     <!-- Sayı şeridi (2026-10-02): aidatı geciken / bugün gelen / atılan seri — dokununca ilgili sekme. -->
                     <div id="yon-serit" class="yon-serit" role="navigation" aria-label="Bugünün sayıları"></div>
