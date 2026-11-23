@@ -6189,3 +6189,10 @@ Kullanıcı: "bazen sporcuların yanında açıyorum, maddi olan her şeyi kapat
 - Gizliyken: Genel Bakış aidat kutuları (tek "Maddi bilgiler" kutusu), aidat grafiği, aidat işleri, grup sütunları, sayı şeridi, menü + kenar rozeti, antrenör ana ekranı, yapılacaklar aidat, Velilere Gönder ödemeyen/muaf, profil aidat + muaf. `yoneticiSayilar().aidat` gizliyken null. Aidat PIN'i girilince göz açılır; göz kapatılınca aidat ekranı yeniden kilitlenir.
 - YENİ maddi sayı/yazı ekleyen her ekran `paraGizliMi()` kontrol etmeli. Katılım grafiği tarihleri `gg.aa` (telefonda alt satıra kayıp sütunları bozuyordu).
 - Testler `sayfaAc` ile açık başlar (`window.__testParaAcik`); gizliyi test 163 dener (`paraGizli: true`).
+
+## 169. 👻 Hayalet Avcıları sadeleşti (v459, 2026-11-23)
+Kullanıcı: "hayalet nasıl kaçıyor anlamıyor ve neye ateş etmem gerektiği gibi, biraz karışıklıklar var". `dagsk-km-hayalet.js?v=2`, test 154.
+- **Neye atılır:** fener her zaman bir eşyada (`hedefSec`: 👀 görünen hayalet → tıkırtı → en yakın "?"); üstte tek cümle "KEREM: 7 ve üstü at → DOLABI AÇ / HAYALETİ YAKALA"; duvarda 3 satırlık kural levhası ve "5 SERİ KALDI" levhası. Telefonda aynı cümle sahnenin altında büyük (`#hyl-simdi`).
+- **Nasıl kaçar:** yalnız zayıf okla (1–6). İz çizilir, "KOLTUĞA kaçtı, peşinden!" yazar, kaçtığı yerde görünür kalır, fener peşinden gider. Gizli kıpırdama, ılık/soğuk, sessizce silinen BOŞ işareti ve parıltı KALDIRILDI (geri ekleme).
+- Boş eşya: yanında saklı hayalet varsa yan eşyalar sallanır TIK TIK (sınıf sol/sağ seçer), yoksa yandakiler de BOŞ. 10/X saklı bir hayaleti gösterir. Kral vurulunca yeniden saklanır. Süre dolunca hayaletler göz önünde pencereden uçar. Oda başında saklanma sahnesi.
+- Süre: Kolay 5 / Normal 5 / Zor 6 seri (eski 10/8/7 ile süre hiç dolmuyordu). Kavanozlar puan panelinin üstünde. Sınıfta DENENMEDİ.

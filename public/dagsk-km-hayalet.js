@@ -1,15 +1,15 @@
 /* ================================================================================================
    👻 HAYALET AVCILARI — Karışık Sınıf › Oyunlar teması 'hayalet' (v447, 2026-11-23).
    Kullanıcı 6 fikirlik sayfadan (claude.ai/artifact/7Kktd8PBRe7ryD6jFTtJuh) "Resim Avı" + "Hayalet Avcıları"nı seçti.
-   OYUN: karanlık konağın bir odasında 2–3 yaramaz hayalet eşyaların arkasına saklanmış. Sınıf hangi eşyaya bakılacağını
-   seçer (koç eşyaya dokunur). Seri girilince her ok el feneri olur:
-     • eşik+ ok: hayalet oradaysa YAKALANIR (kavanoza); yoksa eşya BOŞ işaretlenir + ipucu: 🌡️ ılık (yanındaki eşyada
-       hayalet var) / 🥶 soğuk. Boş çıkınca fener en yakın işaretsiz eşyaya kayar (serinin kalan okları boşa gitmesin).
-     • eşiğin altı: hayalet oradaysa ürküp başka eşyaya KAÇAR (işaret varsa silinir); yoksa "ışık zayıf".
-     • 10/X: süper fener — ayrıca bir hayaletin saklandığı eşya bir seri boyunca parıldar.
-   Her N seride bir hayalet yer değiştirir (girdiği eşyanın BOŞ işareti silinir → dikkatli çocuk fark eder).
-   Gece yarısı (saat dolunca) kalan hayaletler kaçar → oda yeniden. 5 oda + Hayalet Kral (3 kez yakalanmalı) = konak temiz, sezon.
-   ZORLUK: Kolay 5 eşya / 2 hayalet / 10 seri / 5+ / 3 seride bir kıpırdar · Normal 6/3/8/7+/2 · Zor 7/3/7/8+/her seri.
+   v459 SADELEŞTİRME (kullanıcı: "hayalet nasıl kaçıyor anlamıyor ve neye ateş etmem gerektiği gibi karışıklıklar var"):
+     • Fener HER ZAMAN bir eşyada (hedefSec): 👀 görünen hayalet → tıkırtı gelen eşya → en yakın "?" eşya. Koç dokunursa sınıfın seçtiği.
+     • Altta tek cümle: "KEREM: 7 ve üstü at → DOLABI AÇ / HAYALETİ YAKALA". Duvarda 3 satırlık kural levhası hep açık.
+     • eşik+ : hayalet varsa kavanoza; yoksa BOŞ + yanında hayalet varsa yan eşyalar sallanır "TIK TIK?", yoksa yandakiler de BOŞ.
+     • eşik altı: hayalet oradaysa GÖRE GÖRE kaçar (iz + "KOLTUĞA KAÇTI"), kaçtığı yerde 👀 görünür kalır, fener peşinden gider.
+       Hayalet yoksa eşya kapalı kalır. 0 = ıska. Hayalet YALNIZ zayıf okla kaçar; gizli kıpırdama ve ılık/soğuk KALDIRILDI.
+     • 10/X: ayrıca saklı bir hayaleti gösterir (👀).
+   Süre (seri) dolunca kalan hayaletler ekranda pencereden uçar → oda yeniden. 5 oda + Hayalet Kral (3 kez; vurulunca yeniden saklanır).
+   ZORLUK: Kolay 5 eşya / 2 hayalet / 5 seri / 5+ · Normal 6/3/5/7+ · Zor 7/3/6/8+ (400'er serilik simülasyonla ayarlandı).
    KABUK: hylSahneKur · hylGuncelle · hylSeri · hylAnlik · hylGeriYukle · hylSporcu
    DURUM 'dag_km_hayalet_<konum>' günlük · KALICI 'dag_km_hylkalici_<konum>' (oda, sezon, kavanoz, rütbe, rozet).
    ================================================================================================ */
@@ -40,6 +40,7 @@
                 fener: () => ton(1200, .08, 'square', .04, 1800),
                 yakala: () => { [660, 880, 1100, 1320].forEach((f, i) => ton(f, .2, 'triangle', .1, null, i * .07)); ton(200, .3, 'sine', .1, 80, .05); },
                 kacti: () => { ton(500, .4, 'sine', .1, 1400); },
+                tik: () => [0, .16, .5, .66].forEach((g) => ton(420, .06, 'square', .06, 300, g)),
                 bos: () => ton(260, .18, 'triangle', .07, 200),
                 uu: () => { ton(220, .9, 'sine', .08, 330); ton(330, .9, 'sine', .05, 220, .1); },
                 gece: () => { for (let i = 0; i < 6; i++) ton(523, .35, 'triangle', .08, null, i * .45); },
@@ -51,14 +52,14 @@
 
     /* ---------- VERİ ---------- */
     const DZ = {
-        kolay: { ad: '🐣 Kolay', d: '5 eşya · 2 hayalet · 10 seri · 5+', es: 5, hy: 2, saat: 10, esik: 5, kipir: 3 },
-        normal: { ad: '🦊 Normal', d: '6 eşya · 3 hayalet · 8 seri · 7+', es: 6, hy: 3, saat: 8, esik: 7, kipir: 2 },
-        zor: { ad: '🧠 Zor', d: '7 eşya · 3 hayalet · 7 seri · 8+ · her seri kıpırdar', es: 7, hy: 3, saat: 7, esik: 8, kipir: 1 }
+        kolay: { ad: '🐣 Kolay', d: '5 eşya · 2 hayalet · 5 seri · 5+', es: 5, hy: 2, saat: 5, esik: 5 },
+        normal: { ad: '🦊 Normal', d: '6 eşya · 3 hayalet · 5 seri · 7+', es: 6, hy: 3, saat: 5, esik: 7 },
+        zor: { ad: '🧠 Zor', d: '7 eşya · 3 hayalet · 6 seri · 8+', es: 7, hy: 3, saat: 6, esik: 8 }
     };
     const ESYA = {
-        dolap: { ad: 'Dolap', h: 250 }, koltuk: { ad: 'Koltuk', h: 140 }, saat: { ad: 'Saat', h: 270 }, sandik: { ad: 'Sandık', h: 100 },
-        somine: { ad: 'Şömine', h: 190 }, kitaplik: { ad: 'Kitaplık', h: 250 }, piyano: { ad: 'Piyano', h: 160 }, varil: { ad: 'Fıçı', h: 120 },
-        yatak: { ad: 'Yatak', h: 130 }, ayna: { ad: 'Ayna', h: 220 }, kazan: { ad: 'Kazan', h: 120 }, heykel: { ad: 'Zırh', h: 260 }
+        dolap: { ad: 'Dolap', h: 215, i: 'DOLABI', e: 'DOLABA' }, koltuk: { ad: 'Koltuk', h: 140, i: 'KOLTUĞU', e: 'KOLTUĞA' }, saat: { ad: 'Saat', h: 225, i: 'SAATİ', e: 'SAATE' }, sandik: { ad: 'Sandık', h: 100, i: 'SANDIĞI', e: 'SANDIĞA' },
+        somine: { ad: 'Şömine', h: 190, i: 'ŞÖMİNEYİ', e: 'ŞÖMİNEYE' }, kitaplik: { ad: 'Kitaplık', h: 215, i: 'KİTAPLIĞI', e: 'KİTAPLIĞA' }, piyano: { ad: 'Piyano', h: 160, i: 'PİYANOYU', e: 'PİYANOYA' }, varil: { ad: 'Fıçı', h: 120, i: 'FIÇIYI', e: 'FIÇIYA' },
+        yatak: { ad: 'Yatak', h: 130, i: 'YATAĞI', e: 'YATAĞA' }, ayna: { ad: 'Ayna', h: 205, i: 'AYNAYI', e: 'AYNAYA' }, kazan: { ad: 'Kazan', h: 120, i: 'KAZANI', e: 'KAZANA' }, heykel: { ad: 'Zırh', h: 225, i: 'ZIRHI', e: 'ZIRHA' }
     };
     const ODALAR = [
         { id: 'hol', ad: 'Giriş Holü', duvar: ['#3a2a4a', '#2a1e36'], es: ['dolap', 'koltuk', 'saat', 'heykel', 'ayna', 'sandik', 'somine'] },
@@ -90,30 +91,41 @@
     function bosDurum(zor) { const st = { tarih: bugun(), zor: zor || 'normal', faz: 'basla', hepAtan: [], toplamOk: 0, katki: {}, sonTop: {} }; odaKur(st); return st; }
     function odaKur(st) {
         const Kl = kal(), Z = DZ[st.zor] || DZ.normal, O = odaBul(Kl.oda), kralMi = O.id === 'kral';
-        st.oda = Kl.oda; st.esik = st.esikEl || Z.esik; st.maxSaat = Z.saat + (kralMi ? 2 : 0); st.saat = 0; st.kipir = Z.kipir;
+        st.oda = Kl.oda; st.esik = st.esikEl || Z.esik; st.maxSaat = Z.saat + (kralMi ? 2 : 0); st.saat = 0;
         const tipler = karistir(O.es).slice(0, Z.es), gen = (R0 - L0) / Z.es;
         st.es = tipler.map((t, i) => ({ t, x: Math.round(L0 + gen * (i + .5)), w: Math.round(Math.min(gen - 14, 150)), h: ESYA[t].h }));
         const yer = karistir(st.es.map((_, i) => i));
         st.hy = kralMi ? [yer[0]] : yer.slice(0, Z.hy); st.kralCan = kralMi ? 3 : 0;
-        st.bos = st.es.map(() => null); st.secili = null; st.parilti = null; st.turAtan = []; st.turRozet = {}; st.yakalanan = 0; st.son = null; st.rovans = false;
+        st.bos = st.es.map(() => null); st.gor = st.hy.map(() => false); st.duy = []; st.elle = false; st.secili = null; hedefSec(st); st.turAtan = []; st.turRozet = {}; st.yakalanan = 0; st.son = null; st.rovans = false;
     }
     function durum() {
         if (_stKonum !== konum()) { _st = null; _stHam = null; _stKonum = konum(); }
         let ham = null; try { ham = localStorage.getItem(anahtar()); } catch (e) { }
         if (ham !== _stHam) { _stHam = ham; try { _st = ham ? JSON.parse(ham) : null; } catch (e) { _st = null; } }
         if (!_st || _st.tarih !== bugun() || !_st.es || !_st.hy) { _st = bosDurum(_st && _st.zor); kaydet(); }
+        if (!Array.isArray(_st.gor)) { _st.gor = _st.hy.map(() => false); _st.duy = []; _st.elle = false; } // v458 ve öncesinden kalan oda
+        if (_st.secili == null || _st.bos[_st.secili]) hedefSec(_st);
         return _st;
     }
     function kaydet() { try { _stHam = JSON.stringify(_st); localStorage.setItem(anahtar(), _stHam); } catch (e) { } }
     function kalan(st) { return st.hy.filter((h) => h >= 0).length; }
     function hayaletVar(st, i) { return st.hy.indexOf(i) !== -1; }
-    function tasi(st, hj, yeniYer) { st.hy[hj] = yeniYer; if (st.bos[yeniYer]) st.bos[yeniYer] = null; if (st.parilti != null && !hayaletVar(st, st.parilti)) st.parilti = null; }
-    function sicaklik(st, i) { return (hayaletVar(st, i - 1) || hayaletVar(st, i + 1)) ? 'ilik' : 'soguk'; }
-    function yakinIsaretsiz(st, i) { let en = -1, d = 1e9; st.es.forEach((_, j) => { if (j !== i && !st.bos[j] && Math.abs(j - i) < d) { d = Math.abs(j - i); en = j; } }); return en; }
+    // Hayalet başka eşyaya geçer (mümkünse hayaletsiz bir eşyaya); gor=true → gittiği yer görünür kalır
+    function tasi(st, hj, yeniYer, gor) { st.hy[hj] = yeniYer; st.bos[yeniYer] = null; st.gor[hj] = !!gor; st.duy = []; }
+    function kacacakYer(st, i) { const bas = st.es.map((_, k) => k).filter((k) => k !== i), bosY = bas.filter((k) => !hayaletVar(st, k)); return sec(bosY.length ? bosY : bas); }
+    function gorunenVar(st, i) { return st.hy.some((h, k) => h === i && st.gor[k]); }
+    function sakliVar(st, i) { return st.hy.some((h, k) => h === i && !st.gor[k]); }
+    // Fenerin kendiliğinden gideceği eşya: görünen hayalet → tıkırtı → en yakın "?" eşya
+    function hedefSec(st) {
+        st.elle = false; const i0 = st.secili == null ? Math.floor(st.es.length / 2) : st.secili, yakin = (l) => l.slice().sort((a, b) => Math.abs(a - i0) - Math.abs(b - i0))[0];
+        const G = st.hy.filter((h, k) => h >= 0 && st.gor[k]), D = (st.duy || []).filter((k) => !st.bos[k]), Q = st.es.map((_, k) => k).filter((k) => !st.bos[k]);
+        st.secili = G.length ? yakin(G) : D.length ? yakin(D) : Q.length ? yakin(Q) : i0;
+    }
 
     /* ---------- ÇİZİM ---------- */
     let _cv = null, _ctx = null, _raf = 0, _son = 0, _olcek = 1, _ox = 0, _oy = 0, _dpr = 1, _perdeFaz = null, _zaman = [], _kimSon = 0;
-    const FX = { p: [], f: [], gh: [], fener: null, shake: 0 };
+    const FX = { p: [], f: [], gh: [], fener: null, shake: 0, band: null, iz: null, sallan: {} };
+    function band(t, alt, renk, ms) { FX.band = { t, alt: alt || '', r: renk, t0: performance.now(), ms: ms || 1500 }; }
     function panel() { return $('km-oyun-panel-hayalet'); }
     function sonra(fn, ms) { const t = setTimeout(() => { _zaman = _zaman.filter((x) => x !== t); fn(); }, ms); _zaman.push(t); return t; }
     const bekle = (ms) => new Promise((r) => sonra(r, ms));
@@ -158,26 +170,44 @@
         const g = x.createLinearGradient(0, 74, 0, ZEMIN); g.addColorStop(0, O.duvar[0]); g.addColorStop(1, O.duvar[1]); x.fillStyle = g; x.fillRect(0, 0, W, H);
         x.fillStyle = 'rgba(255,255,255,.035)'; for (let k = L0 - 20; k < W; k += 46) x.fillRect(k, 80, 18, ZEMIN - 80);
         // pencere + ay
+        x.save(); x.translate(0, 52);
         x.fillStyle = '#0b1028'; yuv(x, 860, 110, 150, 170, 70); x.fill(); x.strokeStyle = '#4a3a2a'; x.lineWidth = 8; x.stroke(); x.fillStyle = '#f4f0d0'; x.beginPath(); x.arc(960, 160, 22, 0, 7); x.fill(); x.fillStyle = '#0b1028'; x.beginPath(); x.arc(950, 152, 20, 0, 7); x.fill();
         x.strokeStyle = '#4a3a2a'; x.lineWidth = 5; x.beginPath(); x.moveTo(935, 112); x.lineTo(935, 278); x.moveTo(862, 200); x.lineTo(1008, 200); x.stroke();
+        x.restore();
         // zemin
         const z = x.createLinearGradient(0, ZEMIN, 0, H); z.addColorStop(0, '#3a2414'); z.addColorStop(1, '#1a0e08'); x.fillStyle = z; x.fillRect(0, ZEMIN, W, H - ZEMIN);
         x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 2; for (let k = 0; k < W; k += 90) { x.beginPath(); x.moveTo(k, ZEMIN); x.lineTo(k - 60, H); x.stroke(); }
         // sol: avcının köşesi (kavanoz rafı çizimi dinamik)
         x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(0, 74, 508, H - 74); x.fillStyle = '#0e0a14'; x.fillRect(506, 74, 6, H - 74);
-        x.fillStyle = '#5a3a22'; x.fillRect(20, 362, 470, 14); x.fillStyle = '#3a2414'; x.fillRect(40, 376, 12, 30); x.fillRect(458, 376, 12, 30);
+        x.fillStyle = '#5a3a22'; x.fillRect(20, 312, 470, 10);
     }
     function kavanozCiz(x, st, t) {
-        const n = st.oda >= ODALAR.length ? 1 : st.hy.length, Kl = kal();
-        yaz(x, '🫙 BU ODANIN KAVANOZLARI', 255, 236, 20, '#ffe2a0');
+        const n = st.oda >= ODALAR.length ? 1 : st.hy.length;
         for (let i = 0; i < n; i++) {
-            const cx = 255 + (i - (n - 1) / 2) * 110, by = 360, dolu = i < st.yakalanan;
-            x.fillStyle = 'rgba(200,230,255,.18)'; yuv(x, cx - 38, by - 90, 76, 90, 14); x.fill(); x.strokeStyle = 'rgba(220,240,255,.6)'; x.lineWidth = 3; x.stroke();
-            x.fillStyle = '#8a6a44'; x.fillRect(cx - 32, by - 100, 64, 12);
-            if (dolu) hayaletCiz(x, cx, by - 46, .55, 1, t + i * 400, st.oda >= ODALAR.length);
-            else yaz(x, '?', cx, by - 44, 36, 'rgba(255,255,255,.35)');
+            const cx = 255 + (i - (n - 1) / 2) * 110, by = 312, dolu = i < st.yakalanan;
+            x.fillStyle = 'rgba(200,230,255,.18)'; yuv(x, cx - 34, by - 72, 68, 72, 12); x.fill(); x.strokeStyle = 'rgba(220,240,255,.6)'; x.lineWidth = 3; x.stroke();
+            x.fillStyle = '#8a6a44'; x.fillRect(cx - 28, by - 82, 56, 11);
+            if (dolu) hayaletCiz(x, cx, by - 36, .5, 1, t + i * 400, st.oda >= ODALAR.length);
+            else yaz(x, '?', cx, by - 36, 32, 'rgba(255,255,255,.35)');
         }
-        yaz(x, 'Toplam kavanoz: ' + (Kl.kavanoz || 0) + ' 👻', 255, 428, 20, '#c8d0f0');
+    }
+    // Duvardaki kural levhası: hep aynı üç satır
+    function kuralLevha(x, st) {
+        x.save(); x.fillStyle = 'rgba(14,10,26,.86)'; yuv(x, 534, 156, 300, 156, 16); x.fill(); x.strokeStyle = '#6a5490'; x.lineWidth = 3; x.stroke(); x.restore();
+        [[st.esik + ' ve üstü', 'YAKALAR', '#5ee39b'], ['1 – ' + (st.esik - 1), 'HAYALET KAÇAR', '#ff8a7a'], ['10 ve X', 'HAYALET GÖSTERİR', '#ffd34a']].forEach((r, i) => { const y = 183 + i * 50; yaz(x, r[0], 552, y - 10, 23, r[2], { al: 'left' }); yaz(x, r[1], 552, y + 14, 18, '#fff', { al: 'left' }); });
+    }
+    function sureLevha(x, st, t) {
+        if (st.faz !== 'oyun') return; const k = Math.max(0, st.maxSaat - st.saat), az = k <= 2;
+        x.save(); x.fillStyle = 'rgba(14,10,26,.86)'; yuv(x, 1030, 156, 230, 156, 16); x.fill(); x.strokeStyle = az ? '#ff7a6a' : '#6a5490'; x.lineWidth = az ? 5 : 3; x.stroke(); x.restore();
+        yaz(x, String(k), 1145, 200, 70, az ? '#ff7a6a' : '#fff', { a: az ? .6 + Math.sin(t / 150) * .4 : 1 });
+        yaz(x, k === 1 ? 'SON SERİ' : 'SERİ KALDI', 1145, 252, 24, az ? '#ff9a8a' : '#ffe2a0'); yaz(x, 'sonra pencereden kaçarlar', 1145, 286, 17, '#c8d0f0');
+    }
+    // Her okun sonucu: ne oldu + şimdi ne olacak
+    function bandCiz(x) {
+        const b = FX.band; if (!b) return; const g = performance.now() - b.t0; if (g > b.ms) { FX.band = null; return; }
+        const a = Math.min(1, g / 120, (b.ms - g) / 200), y = 84; x.save(); x.globalAlpha = Math.max(0, a); x.fillStyle = 'rgba(8,6,16,.95)'; yuv(x, L0, y, 734, 120, 20); x.fill(); x.strokeStyle = b.r; x.lineWidth = 6; x.stroke();
+        const sig = (m, s, yy, r) => { x.font = s + 'px ' + DF; while (x.measureText(m).width > 690 && s > 16) { s -= 2; x.font = s + 'px ' + DF; } yaz(x, m, L0 + 367, yy, s, r, { a: Math.max(0, a) }); };
+        sig(b.t, 46, y + (b.alt ? 42 : 60), b.r); if (b.alt) sig(b.alt, 30, y + 90, '#fff'); x.restore();
     }
     function ciz(t, dt) {
         const x = _ctx, st = _st || durum(); if (!x) return;
@@ -188,20 +218,26 @@
         if (FX.shake) { x.translate(rnd(-FX.shake, FX.shake), rnd(-FX.shake, FX.shake)); FX.shake *= .9; if (FX.shake < .3) FX.shake = 0; }
         if (!_statik || _statikOlcek !== sc || _statikOda !== st.oda) { _statik = document.createElement('canvas'); _statik.width = Math.ceil(W * sc); _statik.height = Math.ceil(H * sc); const s2 = _statik.getContext('2d'); s2.setTransform(sc, 0, 0, sc, 0, 0); statikCiz(s2, st); _statikOlcek = sc; _statikOda = st.oda; }
         x.drawImage(_statik, 0, 0, W, H);
-        // eşyalar
-        st.es.forEach((e, i) => esyaCiz(x, e, t));
-        // karanlık örtü (fener açıkken delik)
-        x.save(); x.fillStyle = 'rgba(4,4,12,.55)'; x.fillRect(L0 - 20, 74, W, ZEMIN - 74 + 110); x.restore();
-        // seçili eşya: sarı ok + çerçeve
+        // eşyalar (tıkırtı gelen sallanır)
+        st.es.forEach((e, i) => { const tik = !st.bos[i] && (st.duy || []).indexOf(i) !== -1; x.save(); if (tik) { x.translate(e.x, ZEMIN); x.rotate(Math.sin(t / 45) * .03 * (Math.sin(t / 400) > -.2 ? 1 : 0)); x.translate(-e.x, -ZEMIN); } esyaCiz(x, e, t); x.restore(); });
+        // karanlık: yalnız fenerin baktığı eşya aydınlık
+        const hd = st.faz === 'oyun' && st.secili != null ? st.es[st.secili] : null;
+        x.save(); x.fillStyle = 'rgba(4,4,12,.62)'; x.beginPath(); x.rect(L0 - 18, 74, W, H); if (hd) { x.ellipse(hd.x, ZEMIN - hd.h / 2, hd.w * .72, hd.h / 2 + 34, 0, 0, Math.PI * 2, true); } x.fill('evenodd');
+        if (hd) { const gr = x.createLinearGradient(0, H, 0, ZEMIN - hd.h / 2); gr.addColorStop(0, 'rgba(255,236,160,.32)'); gr.addColorStop(1, 'rgba(255,236,160,0)'); x.fillStyle = gr; x.beginPath(); x.moveTo(890 - 14, H); x.lineTo(hd.x - hd.w * .72, ZEMIN - hd.h / 2); x.lineTo(hd.x + hd.w * .72, ZEMIN - hd.h / 2); x.lineTo(890 + 14, H); x.closePath(); x.fill(); }
+        x.restore();
+        kuralLevha(x, st); sureLevha(x, st, t);
+        // kaçış izi
+        if (FX.iz) { const z = FX.iz; z.l -= dt; if (z.l <= 0) FX.iz = null; else { x.save(); x.globalAlpha = Math.min(1, z.l / 600); x.strokeStyle = '#ff8a7a'; x.lineWidth = 6; x.setLineDash([4, 16]); x.lineCap = 'round'; x.beginPath(); x.moveTo(z.x0, z.y0); x.quadraticCurveTo((z.x0 + z.x1) / 2, Math.min(z.y0, z.y1) - 150, z.x1, z.y1); x.stroke(); x.restore(); } }
         st.es.forEach((e, i) => {
-            const U = esUst(e);
-            if (st.bos[i]) { x.save(); x.fillStyle = 'rgba(8,10,20,.55)'; x.fillRect(e.x - e.w / 2 - 6, U - 6, e.w + 12, e.h + 12); x.restore(); yaz(x, st.bos[i] === 'ilik' ? '🌡️' : '🥶', e.x, U + e.h / 2 - 14, 40, '#fff'); yaz(x, st.bos[i] === 'ilik' ? 'ILIK' : 'BOŞ', e.x, U + e.h / 2 + 22, 24, st.bos[i] === 'ilik' ? '#ffb36b' : '#9ad8ff'); }
-            if (st.parilti === i) { for (let k2 = 0; k2 < 3; k2++) { const a = t / 300 + k2 * 2.1; yaz(x, '✨', e.x + Math.cos(a) * e.w * .5, U - 10 + Math.sin(a) * 16, 28, '#fff'); } }
-            if (st.secili === i && st.faz === 'oyun') { const b = Math.sin(t / 220) * 6; x.strokeStyle = '#ffd34a'; x.lineWidth = 5; x.setLineDash([12, 8]); x.strokeRect(e.x - e.w / 2 - 10, U - 10, e.w + 20, e.h + 20); x.setLineDash([]); yaz(x, '🔦', e.x, U - 44 - b, 40, '#fff'); }
-            yaz(x, (i + 1) + ' · ' + ESYA[e.t].ad, e.x, ZEMIN + 26, 20, st.secili === i ? '#ffd34a' : '#e8e0ff');
+            const U = esUst(e), su = st.secili === i && st.faz === 'oyun', gorunen = st.hy.findIndex((h, k) => h === i && st.gor[k]), ucuyor = FX.gh.some((g) => g.hedef === i);
+            if (st.bos[i]) { x.save(); x.fillStyle = 'rgba(8,10,20,.6)'; x.fillRect(e.x - e.w / 2 - 6, U - 6, e.w + 12, e.h + 12); x.restore(); yaz(x, 'BOŞ', e.x, ZEMIN - Math.min(e.h / 2, 80), 32, '#9aa6c8'); }
+            else if (gorunen !== -1) { if (!ucuyor) { x.save(); x.beginPath(); x.rect(e.x - 90, U - 140, 180, 148); x.clip(); hayaletCiz(x, e.x + Math.sin(t / 260) * 5, U - 14 + Math.sin(t / 380) * 5, .95, 1, t, st.oda >= ODALAR.length); x.restore(); yaz(x, 'BURADA', e.x, ZEMIN - Math.min(e.h / 2, 50), 27, '#ffb0a4'); } }
+            else { const tik = (st.duy || []).indexOf(i) !== -1; yaz(x, '?', e.x, ZEMIN - Math.min(e.h / 2, 90), 64, tik ? '#ffd34a' : 'rgba(255,255,255,.8)'); if (tik) yaz(x, 'TIK TIK', e.x, ZEMIN - Math.min(e.h / 2, 90) - 46, 24, '#ffd34a'); }
+            if (su) { const b = Math.sin(t / 220) * 5, ty = U - (gorunen !== -1 ? 78 : 44); x.strokeStyle = '#ffd34a'; x.lineWidth = 6; x.setLineDash([]); yuv(x, e.x - e.w / 2 - 12, U - 12, e.w + 24, e.h + 24, 16); x.stroke(); yaz(x, '🔦', e.x, ty - b, 40, '#fff'); x.fillStyle = '#ffd34a'; x.beginPath(); x.moveTo(e.x - 14, ty + 22 - b); x.lineTo(e.x + 14, ty + 22 - b); x.lineTo(e.x, ty + 38 - b); x.closePath(); x.fill(); }
+            yaz(x, ESYA[e.t].ad, e.x, ZEMIN + 27, su ? 26 : 21, su ? '#ffd34a' : '#e8e0ff');
         });
         // hayalet animasyonları (yakalanan kavanoza uçar, kaçan süzülür)
-        FX.gh = FX.gh.filter((g) => { g.u += dt / g.d; const u = Math.min(1, g.u); hayaletCiz(x, lerp(g.x0, g.x1, u), lerp(g.y0, g.y1, u) - Math.sin(u * Math.PI) * g.yay, lerp(g.s0, g.s1, u), g.a ? 1 - u * .3 : 1, t, g.kral); return g.u < 1; });
+        FX.gh = FX.gh.filter((g) => { g.u += dt / g.d; const u = Math.max(0, Math.min(1, g.u)); if (g.u < 0) return true; hayaletCiz(x, lerp(g.x0, g.x1, u), lerp(g.y0, g.y1, u) - Math.sin(u * Math.PI) * g.yay, lerp(g.s0, g.s1, u), g.a ? 1 - u * .3 : 1, t, g.kral); return g.u < 1; });
         // fener ışığı
         if (FX.fener) { const f = FX.fener; f.u += dt / 500; const a = Math.max(0, 1 - Math.abs(f.u - .5) * 2); x.save(); x.globalCompositeOperation = 'lighter'; const gr = x.createRadialGradient(f.x, f.y, 10, f.x, f.y, 150 * f.g); gr.addColorStop(0, 'rgba(255,240,180,' + (.55 * a) + ')'); gr.addColorStop(1, 'rgba(255,240,180,0)'); x.fillStyle = gr; x.beginPath(); x.moveTo(890, H); x.lineTo(f.x - 90 * f.g, f.y - 60); x.lineTo(f.x + 90 * f.g, f.y - 60); x.closePath(); x.fill(); x.beginPath(); x.arc(f.x, f.y, 150 * f.g, 0, 7); x.fill(); x.restore(); if (f.u >= 1) FX.fener = null; }
         kavanozCiz(x, st, t);
@@ -217,34 +253,41 @@
         const kalanS = st.maxSaat - st.saat, cx = 520, cy = 37; x.fillStyle = '#f4efe2'; x.beginPath(); x.arc(cx, cy, 30, 0, 7); x.fill(); x.strokeStyle = '#222'; x.lineWidth = 4; x.stroke();
         for (let i = 0; i < st.maxSaat; i++) { const a = -Math.PI / 2 + i / st.maxSaat * Math.PI * 2; x.fillStyle = i < st.saat ? '#7a3ad8' : '#222'; x.beginPath(); x.arc(cx + Math.cos(a) * 21, cy + Math.sin(a) * 21, 3.4, 0, 7); x.fill(); }
         const teh = kalanS <= 2 && st.faz === 'oyun';
-        yaz(x, '🕛 GECE YARISINA ' + kalanS + ' SERİ', cx + 44, 26, 25, teh ? '#ff7a6a' : '#fff', { al: 'left', a: teh ? .6 + Math.sin(t / 150) * .4 : 1 });
-        yaz(x, st.oda >= ODALAR.length ? 'Hayalet Kral: ' + st.kralCan + ' kez daha yakala!' : kalan(st) + ' hayalet saklanıyor', cx + 44, 56, 18, '#c8d0f0', { al: 'left' });
+        yaz(x, st.oda >= ODALAR.length ? 'HAYALET KRAL' : '👻 ' + kalan(st) + ' HAYALET KALDI', cx + 44, 26, 25, '#fff', { al: 'left' });
+        yaz(x, (st.oda >= ODALAR.length ? st.kralCan + ' kez daha yakala · ' : st.yakalanan + ' yakalandı · ') + kalanS + ' seri kaldı', cx + 44, 56, 18, teh ? '#ff9a8a' : '#c8d0f0', { al: 'left' });
         // şimdi cümlesi
         if (st.faz === 'oyun') {
-            const s = aktif(), e = st.secili != null ? st.es[st.secili] : null;
-            const cumle = (s ? '🏹 ' + K.ilkAd(s.ad).toUpperCase() + ' atıyor · ' : '') + (e ? 'Fener: ' + ESYA[e.t].ad.toUpperCase() + ' · ' + st.esik + '+ yakalar' : '👆 Sınıf bir eşya seçsin, koç dokunsun');
-            yuv(x, L0 - 10, 664, 740, 48, 14); x.fillStyle = 'rgba(10,12,24,.9)'; x.fill(); let fs = 28; x.font = fs + 'px ' + DF; while (x.measureText(cumle).width > 716 && fs > 18) { fs -= 2; x.font = fs + 'px ' + DF; } yaz(x, cumle, L0 + 360, 688, fs, e ? '#fff' : '#ffd34a');
+            const e = st.secili != null ? st.es[st.secili] : null;
+            const gv = e && gorunenVar(st, st.secili), cumle = '🏹 ' + simdiCumle(st);
+            yuv(x, L0, 84, 734, 62, 16); x.fillStyle = gv ? '#5a1620' : '#14203e'; x.fill(); x.strokeStyle = gv ? '#ff8a7a' : '#ffd34a'; x.lineWidth = 4; x.stroke(); let fs = 38; x.font = fs + 'px ' + DF; while (x.measureText(cumle).width > 716 && fs > 18) { fs -= 2; x.font = fs + 'px ' + DF; } yaz(x, cumle, L0 + 367, 116, fs, '#fff'); if (FX.band) bandCiz(x);
         }
     }
     function dongu(t) {
         _raf = 0; if (!_cv || !document.body.contains(_cv)) { _cv = null; return; }
         const dt = Math.min(50, t - _son); _son = t;
-        if (_cv.offsetParent !== null) { ciz(t, dt); if (t - _kimSon > 300) { _kimSon = t; kimCiz(); } }
+        if (_cv.offsetParent !== null) { ciz(t, dt); if (t - _kimSon > 300) { _kimSon = t; kimCiz(); simdiCiz(); } }
         _raf = requestAnimationFrame(dongu);
+    }
+    function simdiCumle(st) { const s = aktif(), e = st.secili != null ? st.es[st.secili] : null; return (s ? K.ilkAd(s.ad).toLocaleUpperCase('tr-TR') + ': ' : '') + st.esik + ' ve üstü at → ' + (e && gorunenVar(st, st.secili) ? 'HAYALETİ YAKALA' : e ? ESYA[e.t].i + ' AÇ' : ''); }
+    // Telefonda sahne küçülür: aynı cümle / okun sonucu sahnenin altında büyük yazıyla
+    function simdiCiz() {
+        const el = $('hyl-simdi'); if (!el) return; const st = _st || durum(), goster = st.faz === 'oyun' && _olcek < .5 && _oy > 60; el.hidden = !goster; if (!goster) return;
+        el.style.top = (_oy + H * _olcek + 8) + 'px'; const b = FX.band, h = b ? '<b style="color:' + b.r + '">' + K.kacis(b.t) + '</b><span>' + K.kacis(b.alt) + '</span>' : '<b>🏹 ' + K.kacis(simdiCumle(st)) + '</b><span>1 – ' + (st.esik - 1) + ': hayalet kaçar · 10 ve X: hayalet gösterir</span>';
+        if (el._h !== h) { el._h = h; el.innerHTML = h; }
     }
     function boyutla() {
         if (!_cv) return; const r = _cv.getBoundingClientRect(); if (!r.width || !r.height) return;
         _dpr = Math.min(2, window.devicePixelRatio || 1); _cv.width = Math.round(r.width * _dpr); _cv.height = Math.round(r.height * _dpr);
         _olcek = Math.min(r.width / W, r.height / H); _ox = (r.width - W * _olcek) / 2; _oy = (r.height - H * _olcek) / 2; _statik = null;
         const k = $('hyl-kim'); if (k) { k.style.left = (_ox + 14 * _olcek) + 'px'; k.style.top = (_oy + 86 * _olcek) + 'px'; k.style.width = (480 * _olcek) + 'px'; k.style.fontSize = (10 * _olcek) + 'px'; }
-        const p = $('hyl-pop'); if (p) { p.style.left = (_ox + 560 * _olcek) + 'px'; p.style.top = (_oy + 90 * _olcek) + 'px'; p.style.width = (660 * _olcek) + 'px'; p.style.fontSize = (10 * _olcek) + 'px'; }
+        const p = $('hyl-pop'); if (p) { p.style.left = (_ox + 14 * _olcek) + 'px'; p.style.top = (_oy + 228 * _olcek) + 'px'; p.style.width = (480 * _olcek) + 'px'; p.style.fontSize = (8 * _olcek) + 'px'; }
     }
     function hylSahneKur(p) {
         p = p || panel(); if (!p) return; css(); K.css(); _zaman.forEach(clearTimeout); _zaman = []; _perdeFaz = null;
         p.innerHTML = `<div class="hyl-kap"><canvas id="hyl-cv"></canvas>
           <div class="hyl-hud"><button class="hyl-btn" id="hyl-zor-btn" title="Zorluk">⚙️</button><button class="hyl-btn" id="hyl-ses-btn" title="Ses">🔊</button><button class="hyl-btn" id="hyl-nasil-btn" title="Nasıl oynanır?">❓</button><button class="hyl-btn" id="hyl-yeni-btn" title="Bu odayı baştan">🔄</button></div>
           <div class="hyl-kim" id="hyl-kim" hidden></div><div class="kk-pop" id="hyl-pop" hidden></div>
-          <div class="hyl-perde" id="hyl-perde" hidden></div></div>`;
+          <div class="hyl-simdi" id="hyl-simdi" hidden></div><div class="hyl-perde" id="hyl-perde" hidden></div></div>`;
         _cv = $('hyl-cv'); _ctx = _cv.getContext('2d');
         try { new ResizeObserver(boyutla).observe(_cv); } catch (e) { window.addEventListener('resize', boyutla); }
         boyutla();
@@ -265,7 +308,8 @@
         const r = _cv.getBoundingClientRect(), qx = (e.clientX - r.left - _ox) / _olcek, qy = (e.clientY - r.top - _oy) / _olcek;
         const i = st.es.findIndex((es) => Math.abs(qx - es.x) <= es.w / 2 + 12 && qy >= esUst(es) - 60 && qy <= ZEMIN + 40);
         if (i < 0) return;
-        st.secili = i; kaydet(); ses('sec'); fxYazi(st.es[i].x, esUst(st.es[i]) - 80, 'Fener: ' + ESYA[st.es[i].t].ad + '!', '#ffd34a', 32, 50);
+        if (st.bos[i]) { fxYazi(st.es[i].x, esUst(st.es[i]) - 30, 'Burası boş', '#9ad8ff', 30, 50); return; }
+        st.secili = i; st.elle = true; kaydet(); ses('sec');
     }
 
     /* ---------- PERDELER ---------- */
@@ -274,14 +318,15 @@
     function zorSecHTML(a) { return '<p><b>Zorluk seç:</b></p><div class="hyl-zorsec">' + Object.keys(DZ).map((k) => '<button type="button" data-z="' + k + '" class="' + (k === a ? 'on' : '') + '"><span class="n">' + DZ[k].ad + '</span><span class="d">' + DZ[k].d + '</span></button>').join('') + '</div>'; }
     function adlarHTML(l) { return '<div class="hyl-adlar">' + l.slice().sort((a, b) => String(a).localeCompare(String(b), 'tr')).map((a) => '<span>' + K.kacis(K.ilkAd(a)) + '</span>').join('') + '</div>'; }
     function konakHTML(oda) { return '<div class="hyl-konak">' + ODALAR.map((o, i) => '<span class="' + (i < oda ? 'temiz' : i === oda ? 'su' : '') + '">' + (i < oda ? '✅' : i === oda ? '👻' : '🚪') + '<b>' + K.kacis(o.ad) + '</b></span>').join('') + '<span class="' + (oda >= ODALAR.length ? 'su' : '') + '">👑<b>Kule</b></span></div>'; }
+    function kuralHTML(st) { return '<div class="hyl-kural"><div class="iyi"><b>' + st.esik + ' ve üstü</b><span>Fenerin baktığı eşya açılır. Hayalet oradaysa <b>yakalanır</b>. Boşsa yandan gelen tık tık sesi ipucudur.</span></div><div class="kotu"><b>1 – ' + (st.esik - 1) + '</b><span>Hayalet oradaysa <b>başka eşyaya kaçar</b>. Nereye kaçtığını görürsün, peşinden at.</span></div><div class="altin"><b>10 ve X</b><span>Ayrıca saklanan bir hayaleti <b>gösterir</b>.</span></div></div>'; }
     function perdeCiz(st) {
         _perdeFaz = st.faz; const O = odaBul(st.oda), Kl = kal(), kralMi = st.oda >= ODALAR.length;
         if (st.faz === 'oyun') { perdeKapat(); return; }
         if (st.faz === 'basla') {
             perde('<span class="hyl-etiket">' + (kralMi ? '👑 SON ODA' : 'Oda ' + (st.oda + 1) + '/5') + ' · Sezon ' + (Kl.sezon || 1) + '</span><h2>' + (kralMi ? 'Hayalet Kral!' : K.kacis(O.ad)) + (typeof yeniRozet === 'function' ? ' ' + yeniRozet() : '') + '</h2>' + konakHTML(st.oda)
-                + '<p>' + (kralMi ? 'Bütün hayaletlerin kralı kulede saklanıyor. <b>3 kez</b> yakalamak gerek, her yakalanışta başka eşyaya kaçar!' : '<b>' + st.hy.length + ' yaramaz hayalet</b> eşyaların arkasına saklandı. Sınıf hangi eşyaya bakılacağını seçer, koç dokunur. Güçlü ok (' + st.esik + '+) yakalar, zayıf ok hayaleti ürkütüp kaçırır. Boş çıkan eşya ipucu verir: 🌡️ ılık = yanında hayalet var.') + ' Gece yarısına kadar yakalayın!</p>'
-                + (st.oda === 0 && !st.rovans ? zorSecHTML(st.zor) : '') + '<div class="hyl-butonlar"><button class="hyl-b" id="hyl-bas">🔦 Avı başlat</button></div><p class="hyl-not">İlk seri girilince kendiliğinden başlar. Eşya seçilmezse fener en soldakine bakar.</p>', (p) => {
-                    p.querySelector('#hyl-bas').onclick = () => { const s = durum(); s.faz = 'oyun'; kaydet(); ses('uu'); hylGuncelle(); };
+                + '<p>' + (kralMi ? 'Bütün hayaletlerin kralı bu eşyalardan birinde. <b>3 kez</b> yakalayın; her yakalanışta yeniden saklanır. ' : 'Eşyaların arkasında <b>' + st.hy.length + ' hayalet</b> saklanıyor. ') + '<b>' + st.maxSaat + ' seride</b> hepsini yakalayın, yoksa kalanlar pencereden kaçar.</p>' + kuralHTML(st)
+                + '<div class="hyl-butonlar"><button class="hyl-b" id="hyl-bas">🔦 Avı başlat</button></div>' + (st.oda === 0 && !st.rovans ? zorSecHTML(st.zor) : '') + '<p class="hyl-not">📣 Koç söyler: "Kendi hedefine at. ' + st.esik + ' ve üstü eşyayı açar, zayıf ok hayaleti kaçırır!" · Sınıf başka eşya isterse koç o eşyaya dokunur.</p>', (p) => {
+                    p.querySelector('#hyl-bas').onclick = () => { const s = durum(); s.faz = 'oyun'; kaydet(); ses('uu'); hylGuncelle(); saklanma(); };
                     p.querySelectorAll('[data-z]').forEach((b) => b.onclick = () => zorAyarla(b.dataset.z));
                 });
         } else if (st.faz === 'temiz') {
@@ -290,7 +335,7 @@
                     p.querySelector('#hyl-dev').onclick = () => { const s = durum(); odaKur(s); s.faz = 'basla'; kaydet(); hylGuncelle(); };
                 });
         } else if (st.faz === 'gece') {
-            perde('<div class="hyl-buyuk">🕛👻💨</div><h2>Gece yarısı!</h2><p>' + kalan(st) + ' hayalet pencereden uçup gitti… Ama odayı biliyoruz, yeniden deneyelim!</p><div class="hyl-butonlar"><button class="hyl-b kirmizi" id="hyl-rov">🔁 Bu oda yeniden</button></div>', (p) => {
+            perde('<div class="hyl-buyuk">🕛👻💨</div><h2>Süre doldu!</h2><p>' + st.maxSaat + ' seride <b>' + st.yakalanan + '</b> hayalet yakaladık, <b>' + kalan(st) + '</b> hayalet pencereden kaçtı. Hepsini yakalayana kadar bu odadayız, yeniden deneyelim!</p><div class="hyl-butonlar"><button class="hyl-b kirmizi" id="hyl-rov">🔁 Bu oda yeniden</button></div>', (p) => {
                 p.querySelector('#hyl-rov').onclick = () => { const s = durum(); odaKur(s); s.rovans = true; s.faz = 'basla'; kaydet(); hylGuncelle(); };
             });
         } else if (st.faz === 'final') {
@@ -310,8 +355,14 @@
         _perdeFaz = 'ayar';
     }
     function nasil() {
-        perde('<h2>👻 Nasıl oynanır?</h2><p class="hyl-sol">📣 <b>Koç söyler:</b> "Hangi eşyaya bakalım? Güçlü ok güçlü fener!"<br>👆 Sınıf eşyayı seçer, koç eşyaya dokunur (sarı çerçeve).<br>🔦 Eşiği geçen ok: hayalet oradaysa yakalanır, yoksa eşya BOŞ olur ve ipucu verir: 🌡️ ılık = yanındaki eşyada hayalet var, 🥶 soğuk = yanında yok. Fener kendiliğinden en yakın işaretsiz eşyaya kayar.<br>😱 Zayıf ok hayaleti ürkütür, başka eşyaya kaçar. <b>10/X</b> süper fener: bir hayaletin yeri parıldar ✨.<br>👻 Hayaletler ara ara yer değiştirir; girdiği eşyanın BOŞ işareti silinir — fark eden kazanır!<br>🕛 Gece yarısı gelirse kalan hayaletler kaçar. 5 oda + Hayalet Kral = konak temiz.<br>🏅 Rozetler: fenerci, hayalet yakalayan, süper fener, üçü de iyi, gelişen.</p><div class="hyl-butonlar"><button class="hyl-b" id="hyl-tamam">Tamam</button></div>', (p) => { p.querySelector('#hyl-tamam').onclick = () => { _perdeFaz = null; hylGuncelle(); }; });
+        const st = durum();
+        perde('<h2>👻 Nasıl oynanır?</h2><p>Herkes <b>kendi hedefine</b> atar. Fenerin baktığı eşya sarı çerçevelidir; sınıf başka eşya isterse koç ona dokunur.</p>' + kuralHTML(st) + '<p>Hayalet <b>yalnız zayıf okla</b> kaçar. Süre dolunca kalanlar pencereden gider, oda baştan oynanır. 5 oda + Hayalet Kral = konak temiz.</p><div class="hyl-butonlar"><button class="hyl-b" id="hyl-tamam">Tamam</button></div>', (p) => { p.querySelector('#hyl-tamam').onclick = () => { _perdeFaz = null; hylGuncelle(); }; });
         _perdeFaz = 'nasil';
+    }
+    // Oda başında: hayaletler göz önünde koşup eşyaların arkasına saklanır (gerçek yerleri göstermez)
+    function saklanma() {
+        const st = durum(), n = st.oda >= ODALAR.length ? 1 : st.hy.length; band(n === 1 ? '👑 HAYALET KRAL SAKLANIYOR!' : '👻 ' + n + ' HAYALET SAKLANIYOR!', 'Her biri bir eşyanın arkasında', '#c9a6ff', 2600);
+        for (let k = 0; k < n; k++) FX.gh.push({ x0: 935, y0: 250, x1: L0 + 60 + (R0 - L0 - 120) * (k + .5) / n, y1: 470, s0: .6, s1: .9, u: -k * .25, d: 1500, yay: 60, a: true, kral: st.oda >= ODALAR.length });
     }
     function yeniSor() {
         perde('<h2>🔄 Bu oda baştan mı?</h2><p>Eşyalar ve hayaletlerin yeri değişir. Oda numarası aynı kalır.</p><div class="hyl-butonlar"><button class="hyl-b kirmizi" id="hyl-evet">Evet, baştan</button><button class="hyl-b ikincil" id="hyl-hayir">Vazgeç</button></div>', (p) => {
@@ -345,45 +396,50 @@
         if (st.faz === 'gece') { odaKur(st); }
         if (st.faz === 'final') { _st = bosDurum(st.zor); st = _st; }
         const S = durum(); S.faz = 'oyun'; _perdeFaz = null; perdeKapat();
-        if (S.secili == null || S.bos[S.secili]) { const j = S.es.findIndex((_, k) => !S.bos[k]); S.secili = j >= 0 ? j : 0; }
+        if (S.secili == null || S.bos[S.secili]) hedefSec(S);
         const key = s.g + '|' + s.ad, oklar = (kaydedilecek || []).map((k) => okDeger(k.puan));
         if (S.turAtan.indexOf(s.ad) === -1) S.turAtan.push(s.ad); if (S.hepAtan.indexOf(s.ad) === -1) S.hepAtan.push(s.ad); S.toplamOk += oklar.length;
         const top = oklar.reduce((a, b) => a + b, 0); S.sonTop = S.sonTop || {};
         if (oklar.some((p) => p === 10)) rozetVer(S, s, 'altin');
         if (oklar.length >= 3 && oklar.every((p) => p >= S.esik)) rozetVer(S, s, 'uclu');
         if (S.sonTop[key] != null && top >= S.sonTop[key] + 3) rozetVer(S, s, 'gelisen');
-        S.sonTop[key] = top; S.parilti = null; kaydet(); kimCiz(true);
+        S.sonTop[key] = top; kaydet(); kimCiz(true);
+        const kim = K.ilkAd(s.ad).toLocaleUpperCase('tr-TR'), sure = oklar.length > 3 ? 620 : 1150; FX.band = null;
         const gorsel = !!(_cv && document.body.contains(_cv) && _cv.offsetParent !== null);
         (async () => {
             for (const p of oklar) {
                 if (S.faz !== 'oyun') break;
-                const i2 = S.secili, e = S.es[i2], U = esUst(e), iyi = p >= S.esik;
+                if (S.secili == null || S.bos[S.secili]) hedefSec(S);
+                const i2 = S.secili, e = S.es[i2], E = ESYA[e.t], U = esUst(e), iyi = p >= S.esik, on = kim + ' ' + p;
                 if (gorsel) { ses('fener'); FX.fener = { x: e.x, y: U + e.h / 2, u: 0, g: p === 0 ? .2 : .4 + Math.min(10, p) / 12 }; await bekle(420); }
-                const hj = S.hy.indexOf(i2);
+                let hj = S.hy.findIndex((h, k) => h === i2 && S.gor[k]); if (hj === -1) hj = S.hy.indexOf(i2);
                 if (iyi) {
                     fenerSay(s); rozetVer(S, s, 'fener'); S.katki[key] = (S.katki[key] || 0) + 1;
                     if (hj !== -1) { // YAKALANDI
                         const kralMi = S.oda >= ODALAR.length;
-                        if (kralMi && S.kralCan > 1) { S.kralCan--; const yeniYer = sec(S.es.map((_, k) => k).filter((k) => k !== i2)); tasi(S, hj, yeniYer);
-                            if (gorsel) { ses('kacti'); FX.shake = 8; FX.gh.push({ x0: e.x, y0: U, x1: S.es[yeniYer].x, y1: esUst(S.es[yeniYer]), s0: 1.3, s1: .6, u: 0, d: 900, yay: 120, kral: true }); fxYazi(e.x, U - 70, 'VURDUK! ' + S.kralCan + ' kez daha!', '#ffd34a', 40, 90); }
+                        if (kralMi && S.kralCan > 1) { // Kral vurulunca bütün eşyalar yeniden "?"
+                            S.kralCan--; const yeniYer = kacacakYer(S, i2); S.bos = S.es.map(() => null); tasi(S, hj, yeniYer, false); S.secili = i2; S.elle = false;
+                            if (gorsel) { ses('yakala'); FX.shake = 8; fxParca(e.x, U, 40, ['#c9a6ff', '#fff', '#ffd34a']); FX.gh.push({ x0: e.x, y0: U, x1: 935, y1: 250, s0: 1.3, s1: .3, u: 0, d: 800, yay: 60, a: true, kral: true }); band(on + ' · KRAL VURULDU!', 'Yeniden saklandı · ' + S.kralCan + ' kez daha', '#ffd34a', sure + 500); }
                             rozetVer(S, s, 'yakala');
                         } else {
-                            S.hy[hj] = -1; S.yakalanan++; if (S.parilti != null && !hayaletVar(S, S.parilti)) S.parilti = null; const Kl = kal(); Kl.kavanoz = (Kl.kavanoz || 0) + 1; kalKaydet(); rozetVer(S, s, 'yakala'); if (kralMi) S.kralCan = 0;
-                            if (gorsel) { ses('yakala'); FX.shake = 10; fxParca(e.x, U, 50, ['#9fd8ff', '#fff', '#c9a6ff', '#ffd34a']); const jx = 255 + ((S.yakalanan - 1) - ((kralMi ? 1 : S.hy.length) - 1) / 2) * 110; FX.gh.push({ x0: e.x, y0: U - 20, x1: jx, y1: 314, s0: 1.2, s1: .55, u: 0, d: 1000, yay: 140, kral: kralMi }); fxYazi(e.x, U - 70, '👻 YAKALANDI!', '#5ee39b', 52, 100); }
-                            // aynı eşyada başka hayalet yoksa boş say
-                            if (!hayaletVar(S, i2)) S.bos[i2] = sicaklik(S, i2);
+                            S.hy[hj] = -1; S.gor[hj] = false; S.duy = []; S.yakalanan++; const Kl = kal(); Kl.kavanoz = (Kl.kavanoz || 0) + 1; kalKaydet(); rozetVer(S, s, 'yakala'); if (kralMi) S.kralCan = 0;
+                            if (gorsel) { ses('yakala'); FX.shake = 10; fxParca(e.x, U, 50, ['#9fd8ff', '#fff', '#c9a6ff', '#ffd34a']); const jx = 255 + ((S.yakalanan - 1) - ((kralMi ? 1 : S.hy.length) - 1) / 2) * 110; FX.gh.push({ x0: e.x, y0: U - 20, x1: jx, y1: 276, s0: 1.2, s1: .5, u: 0, d: 1000, yay: 140, kral: kralMi }); band(on + ' · HAYALET YAKALANDI!', kalan(S) ? kalan(S) + ' hayalet kaldı' : 'Hepsi kavanozda!', '#5ee39b', sure + 300); }
+                            const ikinci = S.hy.indexOf(i2); if (ikinci !== -1) S.gor[ikinci] = true; else S.bos[i2] = 'bos'; // aynı eşyada bir hayalet daha varsa görünür
                         }
-                    } else { // BOŞ + sıcaklık ipucu, fener en yakın işaretsiz eşyaya kayar
-                        S.bos[i2] = sicaklik(S, i2);
-                        if (gorsel) { ses('bos'); fxYazi(e.x, U - 70, S.bos[i2] === 'ilik' ? '🌡️ ILIK! Yanında biri var!' : '🥶 Boş, soğuk…', S.bos[i2] === 'ilik' ? '#ffb36b' : '#9ad8ff', 34, 90); }
+                    } else { // BOŞ: yanında saklı hayalet varsa yan eşyalar tıkırdar, yoksa onlar da boştur
+                        S.bos[i2] = 'bos'; const yan = [i2 - 1, i2 + 1].filter((k) => k >= 0 && k < S.es.length && !S.bos[k] && !gorunenVar(S, k)), ses2 = yan.some((k) => sakliVar(S, k));
+                        S.duy = ses2 ? yan : (S.duy || []).filter((k) => !S.bos[k]); if (!ses2) yan.forEach((k) => { S.bos[k] = 'bos'; }); S.duy = S.duy.filter((k) => !S.bos[k]);
+                        if (gorsel) { ses(ses2 ? 'tik' : 'bos'); band(on + ' · ' + E.i + ' AÇTI, BOŞ!', ses2 ? (yan.length === 1 ? 'Yandan ses geliyor: ' + ESYA[S.es[yan[0]].t].ad : 'Yandan ses geliyor! Soldan mı, sağdan mı?') : yan.length ? 'Yandakiler de boş' : 'Başka eşyaya bak', '#9ad8ff', sure + 300); }
                     }
-                    if (p === 10) { const yer = S.hy.filter((h) => h >= 0); if (yer.length) { S.parilti = sec(yer); if (gorsel) fxYazi(S.es[S.parilti].x, esUst(S.es[S.parilti]) - 110, '✨ SÜPER FENER!', '#fff', 30, 90); } }
-                    if (S.bos[i2]) { const j = yakinIsaretsiz(S, i2); if (j >= 0) { S.secili = j; if (gorsel) fxYazi(S.es[j].x, esUst(S.es[j]) - 40, '🔦 → ' + ESYA[S.es[j].t].ad, '#ffd34a', 26, 60); } }
-                } else if (hj !== -1 && p > 0) { // ürktü, kaçtı
-                    const yeniYer = sec(S.es.map((_, k) => k).filter((k) => k !== i2)); tasi(S, hj, yeniYer);
-                    if (gorsel) { ses('kacti'); FX.gh.push({ x0: e.x, y0: U, x1: S.es[yeniYer].x, y1: esUst(S.es[yeniYer]), s0: .9, s1: .2, u: 0, d: 800, yay: 160, a: true, kral: S.oda >= ODALAR.length }); fxYazi(e.x, U - 70, '😱 ÜRKTÜ, KAÇTI!', '#ff8a7a', 40, 90); }
-                } else if (gorsel) { ses('bos'); fxYazi(e.x, U - 60, p === 0 ? 'ISKA' : 'Işık zayıf… (' + S.esik + '+)', '#e8d8c0', 32, 70); }
-                kaydet(); if (gorsel) await bekle(240);
+                    if (p === 10) { const sk = S.hy.map((h, k) => h >= 0 && !S.gor[k] ? k : -1).filter((k) => k >= 0); if (sk.length && !(S.oda >= ODALAR.length)) { const g = sec(sk); S.gor[g] = true; S.duy = S.duy.filter((k) => k !== S.hy[g]); if (gorsel) { await bekle(sure * .7); ses('uu'); band(on + ' · SÜPER FENER!', 'Hayalet göründü: ' + ESYA[S.es[S.hy[g]].t].ad, '#ffd34a', sure + 300); } } }
+                    if (!S.elle || S.bos[i2] || S.secili !== i2) hedefSec(S);
+                } else if (hj !== -1 && p > 0) { // zayıf ok: göz göre göre kaçar, fener peşinden gider
+                    const yeniYer = kacacakYer(S, i2), y = S.es[yeniYer]; tasi(S, hj, yeniYer, true);
+                    if (!hayaletVar(S, i2)) S.bos[i2] = 'bos';
+                    S.secili = yeniYer; S.elle = false;
+                    if (gorsel) { ses('kacti'); FX.iz = { x0: e.x, y0: U, x1: y.x, y1: esUst(y), l: 2600 }; FX.gh.push({ x0: e.x, y0: U - 14, x1: y.x, y1: esUst(y) - 14, s0: 1.1, s1: .95, u: 0, d: 1000, yay: 150, hedef: yeniYer, kral: S.oda >= ODALAR.length }); band(on + ' · ZAYIF OK, HAYALET KAÇTI!', ESYA[y.t].e + ' kaçtı, peşinden!', '#ff8a7a', sure + 400); }
+                } else if (gorsel) { ses('bos'); band(on + (p === 0 ? ' · ISKA' : ' · ZAYIF OK'), (gorunenVar(S, i2) ? 'Yakalamak' : E.i + ' açmak') + ' için ' + S.esik + ' ve üstü', '#e8d8c0', sure); }
+                kaydet(); if (gorsel) await bekle(sure);
                 if (kalan(S) === 0) break;
             }
             if (kalan(S) === 0 && S.faz === 'oyun') {
@@ -393,19 +449,16 @@
                 kalKaydet(); kaydet(); bitirD(); hylGuncelle(); return;
             }
             S.saat++;
-            // 👻 kıpırdama: her `kipir` seride bir hayalet başka eşyaya geçer (girdiği eşyanın işareti silinir)
-            if (S.faz === 'oyun' && S.saat < S.maxSaat && S.saat % S.kipir === 0) {
-                const hjs = S.hy.map((h, k) => h >= 0 ? k : -1).filter((k) => k >= 0);
-                if (hjs.length) { const hj = sec(hjs), eski = S.hy[hj], yeniYer = sec(S.es.map((_, k) => k).filter((k) => k !== eski)); tasi(S, hj, yeniYer); if (gorsel) { ses('uu'); fxYazi(890, 330, '👻 Bir hayalet yer değiştirdi!', '#c9a6ff', 40, 120); } }
-            }
-            if (gorsel && S.maxSaat - S.saat === 2) { fxYazi(890, 380, '🕛 2 seri sonra gece yarısı!', '#ff8a6a', 36, 110); }
             kaydet(); bitirD();
-            if (S.saat >= S.maxSaat) { if (gorsel) { ses('gece'); await bekle(1600); } S.faz = 'gece'; kaydet(); hylGuncelle(); }
+            if (S.saat >= S.maxSaat) {
+                if (gorsel) { ses('gece'); band('🕛 SÜRE DOLDU!', kalan(S) + ' hayalet pencereden kaçıyor', '#ff8a7a', 2600); S.hy.forEach((h, k) => { if (h >= 0) { const e = S.es[h]; FX.gh.push({ x0: e.x, y0: esUst(e), x1: 935, y1: 250, s0: 1.1, s1: .2, u: -k * .25, d: 1300, yay: 60, kral: S.oda >= ODALAR.length }); } }); S.gor = S.gor.map(() => false); await bekle(2600); }
+                S.faz = 'gece'; kaydet(); hylGuncelle();
+            } else if (gorsel && S.maxSaat - S.saat <= 2) band('🕛 ' + (S.maxSaat - S.saat === 1 ? 'SON SERİ!' : 'SON 2 SERİ!'), 'Süre dolarsa kalanlar pencereden kaçar', '#ff8a7a', 1800);
         })().catch(() => bitirD());
-        setTimeout(bitirD, 7000);
+        setTimeout(bitirD, 8000);
     }
     function hylAnlik() { const a = JSON.parse(JSON.stringify(durum())); a._kal = JSON.parse(JSON.stringify(kal())); return a; }
-    function hylGeriYukle(k) { if (!k) return; _zaman.forEach(clearTimeout); _zaman = []; k = JSON.parse(JSON.stringify(k)); if (k._kal) { _kal = k._kal; _kalKonum = konum(); kalKaydet(); delete k._kal; } _st = k; _stKonum = konum(); kaydet(); _perdeFaz = null; FX.gh = []; FX.fener = null; if (panel()) hylGuncelle(); }
+    function hylGeriYukle(k) { if (!k) return; _zaman.forEach(clearTimeout); _zaman = []; k = JSON.parse(JSON.stringify(k)); if (k._kal) { _kal = k._kal; _kalKonum = konum(); kalKaydet(); delete k._kal; } _st = k; _stKonum = konum(); kaydet(); _perdeFaz = null; FX.gh = []; FX.fener = null; FX.band = null; FX.iz = null; if (panel()) hylGuncelle(); }
     function hylSporcu(g, ad) { const st = durum(), n = st.katki[g + '|' + ad] || 0; return n ? '🔦' + n : '-'; }
 
     /* ---------- STİL ---------- */
@@ -420,6 +473,7 @@
 .hyl-hud{position:absolute;right:8px;top:6px;display:flex;gap:5px;z-index:2}
 .hyl-btn{background:rgba(10,12,24,.85);border:1px solid #5a4680;color:#fff;border-radius:999px;min-width:36px;height:36px;font-size:16px;cursor:pointer;padding:0 10px;font-weight:900}
 .hyl-kim{position:absolute;z-index:3}.hyl-kim[hidden]{display:none}
+.hyl-simdi{position:absolute;left:8px;right:8px;z-index:3;background:rgba(14,10,26,.95);border:2px solid #ffd34a;border-radius:14px;padding:8px 12px;text-align:center;color:#fff;pointer-events:none}.hyl-simdi[hidden]{display:none}.hyl-simdi b{display:block;font-family:"Lilita One","Baloo 2",sans-serif;font-weight:400;font-size:17px;line-height:1.2}.hyl-simdi span{font-size:14px;font-weight:700;color:#d8d0f0}
 .hyl-perde{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:2%;background:rgba(5,4,14,.66);backdrop-filter:blur(2px)}
 .hyl-perde[hidden]{display:none}
 .hyl-kart{max-width:820px;width:100%;max-height:100%;overflow:auto;background:linear-gradient(160deg,#ece4ff,#d6c8f4);color:#221a34;border:2px solid #8a6ad0;border-radius:20px;padding:clamp(12px,2.6vw,26px);display:flex;flex-direction:column;gap:clamp(6px,1.2vw,12px);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
@@ -431,6 +485,8 @@
 .hyl-adlar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.hyl-adlar span{background:#3a2a66;color:#fff;border-radius:999px;padding:3px 12px;font-weight:800;font-size:clamp(13px,1.6vw,17px)}
 .hyl-konak{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.hyl-konak span{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border-radius:12px;padding:6px 8px;min-width:74px;font-size:clamp(20px,2.6vw,28px);border:2px solid transparent}
 .hyl-konak span b{font-size:11px;font-weight:900;color:#3a2a66}.hyl-konak span.temiz{background:#e2f8ec}.hyl-konak span.su{border-color:#8a6ad0;background:#f4eeff}
+.hyl-kural{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left}.hyl-kural>div{border-radius:14px;padding:10px 14px;background:#fff;border-left:8px solid #2fae6b}.hyl-kural>.kotu{border-color:#d93a3a}.hyl-kural>.altin{border-color:#e0a000}
+.hyl-kural>div>b{display:block;font-family:"Lilita One","Baloo 2",sans-serif;font-weight:400;font-size:clamp(20px,2.4vw,28px);color:#221a34}.hyl-kural span{font-size:clamp(14px,1.5vw,17px);line-height:1.35;color:#2e2440}
 .hyl-butonlar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .hyl-b{border:0;cursor:pointer;font-family:"Lilita One","Baloo 2",sans-serif;font-size:clamp(17px,2.2vw,23px);padding:10px 22px;border-radius:14px;background:#ffc94a;color:#241800}
 .hyl-b.kirmizi{background:#d93a3a;color:#fff}.hyl-b.ikincil{background:#3a2a66;color:#fff}
@@ -439,7 +495,7 @@
 .hyl-zorsec button.on{border-color:#ff9a1a;box-shadow:0 0 0 3px rgba(255,154,26,.35)}
 .hyl-zorsec .n{font-family:"Lilita One","Baloo 2",sans-serif;font-size:clamp(17px,2.4vw,25px)}.hyl-zorsec .d{font-weight:800;font-size:12px;opacity:.8}
 .hyl-esik{display:flex;gap:8px;justify-content:center}.hyl-esik button{cursor:pointer;border-radius:12px;padding:8px 16px;font-weight:900;font-size:18px;background:#fff;border:2px solid #c8b8f0}.hyl-esik button.on{border-color:#ff9a1a;background:#ffe2a8}
-@media (max-width:600px){.hyl-zorsec{grid-template-columns:1fr}.hyl-zorsec .d{display:none}}`;
+@media (max-width:600px){.hyl-kural{grid-template-columns:1fr;gap:6px}.hyl-kural>div{padding:7px 12px}.hyl-konak{display:none}.hyl-zorsec{grid-template-columns:1fr}.hyl-zorsec .d{display:none}}`;
         document.head.appendChild(st);
     }
 
