@@ -38,7 +38,7 @@
         return l.sort((x, y) => x.cocuk[0].ad.localeCompare(y.cocuk[0].ad, 'tr'));
     }
     let borclu = null;
-    function borcSeti() { if (borclu) return borclu; borclu = {}; try { if (typeof apOzet === 'function' && Object.keys(aidatDB || {}).length) apOzet(aidatPanelAdaptor()).bek.forEach(s => { borclu[s.k.id] = 1; }); } catch (e) {} return borclu; }
+    function borcSeti() { if (typeof paraGizliMi === 'function' && paraGizliMi()) return {}; if (borclu) return borclu; borclu = {}; try { if (typeof apOzet === 'function' && Object.keys(aidatDB || {}).length) apOzet(aidatPanelAdaptor()).bek.forEach(s => { borclu[s.k.id] = 1; }); } catch (e) {} return borclu; }
     function durum(f) {
         let k = f.cocuk.map(kayitAl), en = a => Math.max(0, ...k.map(x => x[a] || 0)), g = k.length && k.every(x => x.gonderildi) ? en('gonderildi') : 0;
         return { gonderildi: g, kim: (k.find(x => x.gonderen) || {}).gonderen || '', acildi: en('acildi'), giris: en('giris'), borc: f.cocuk.some(u => borcSeti()[u.id]), tel: !!f.tel };
@@ -102,13 +102,14 @@
         if (!VG.liste) kartBagla();
     }
     window.vgCiz = ciz;
+    window.vgPara = function () { borclu = null; if (VG.suz === 'borc' && paraGizliMi()) siraKur('yeni'); ciz(); }; // 👁 göz açılıp kapanınca
     const etiket = d => !d.tel ? '<i class="vg-e y">numara yok</i>' : d.giris ? '<i class="vg-e a">✓ ödeme ekranına girdi · ' + ne(d.giris) + '</i>' : d.acildi ? '<i class="vg-e a">✓ linke girdi · ' + ne(d.acildi) + '</i>' : d.gonderildi ? '<i class="vg-e g">gönderildi · ' + ne(d.gonderildi) + (d.kim ? ' · ' + E(d.kim) : '') + '</i>' : '<i class="vg-e">gönderilmedi</i>';
     function kartHTML() {
         let f = simdiki(), top = VG.sira ? VG.sira.length : 0, geri = VG.sonGiden ? '<div class="vg-geri"><span>✓ ' + E(VG.sonGiden.ad) + ' gönderildi işaretlendi</span><button type="button" onclick="vgGeriAl()">Gitmedi, geri al</button></div>' : '';
         if (!f) { let ad = (SUZ.find(x => x[0] === VG.suz) || [])[1]; return geri + '<div class="vg-bos"><b>' + (VG.suz === 'yeni' ? 'Numarası olan bütün velilere gitti 🎉' : '“' + ad + '” listesinde kimse yok') + '</b><br>Yukarıdan başka bir liste seç.</div>'; }
         kodHazirla(f);
         let d = durum(f), n = f.cocuk.length, hazir = f.cocuk.every(u => kayitAl(u).kod), duzen = VG.duzen || !f.tel, uygun = gonderilir(f);
-        let cocuk = f.cocuk.map(u => '<button type="button" class="vg-cocuk" onclick="sporcuProfilAc(' + escQ(u.id) + ')">' + (typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(u.g, u.ad), u.ad, 'vg-av', true) : '') + '<span><b>' + E(u.ad) + '</b><small>' + GRUP[u.g] + (u.muaf ? ' · muaf' : '') + (borcSeti()[u.id] ? ' · <em>bu ay ödemedi</em>' : '') + '</small></span></button>').join('');
+        let cocuk = f.cocuk.map(u => '<button type="button" class="vg-cocuk" onclick="sporcuProfilAc(' + escQ(u.id) + ')">' + (typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(u.g, u.ad), u.ad, 'vg-av', true) : '') + '<span><b>' + E(u.ad) + '</b><small>' + GRUP[u.g] + (u.muaf && !(typeof paraGizliMi === 'function' && paraGizliMi()) ? ' · muaf' : '') + (borcSeti()[u.id] ? ' · <em>bu ay ödemedi</em>' : '') + '</small></span></button>').join('');
         let wa = f.tel ? (!uygun ? '<button type="button" class="vg-wa" disabled>Muaf: ödeme mesajı gitmez</button>' : hazir ? '<a class="vg-wa" id="vg-wa" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + f.tel + '&amp;text=' + encodeURIComponent(mesaj(f)) + '" onclick="vgGitti()">' + WA + (d.gonderildi ? 'Tekrar gönder' : 'WhatsApp’ta gönder') + '</a>' : '<button type="button" class="vg-wa" disabled>Link hazırlanıyor…</button>') : '<button type="button" class="vg-wa" disabled>Önce numarayı yaz</button>';
         return geri + '<div class="vg-kart" id="vg-kart" data-id="' + E(f.id) + '"><div class="vg-k-ust"><div><small>Veli</small><strong>' + E(f.veli || 'Veli adı yazılmamış') + '</strong></div>' + etiket(d) + '</div>'
             + '<div class="vg-cocuklar">' + cocuk + '</div>' + (n > 1 ? '<p class="vg-not">Aynı numara: ' + n + ' kardeş, tek mesaj.</p>' : '')

@@ -30,7 +30,7 @@ function ypTarih(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateStr
 function ypAidatListe(bugun, ay) {
     bugun = bugun || new Date(); ay = ay || ypIso(bugun).slice(0, 7);
     let is = [];
-    if (typeof apOzet === 'function' && typeof aidatPanelAdaptor === 'function' && typeof aidatDB !== 'undefined' && Object.keys(aidatDB || {}).length) {
+    if (!(typeof paraGizliMi === 'function' && paraGizliMi()) && typeof apOzet === 'function' && typeof aidatPanelAdaptor === 'function' && typeof aidatDB !== 'undefined' && Object.keys(aidatDB || {}).length) {
         apOzet(aidatPanelAdaptor(), ay).bek.forEach(function (s) {
             // Aidat sisteminde hiç takibi olmayan (ödemesi de katılma tarihi de yok) sporcu listeyi boğmasın.
             if (!s.son && !s.k.katilma) return;

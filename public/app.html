@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div class="giris-surum" style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v457</b> · Velilere gönder: giriş açıklaması sadeleşti</div>
+        <div class="giris-surum" style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v458</b> · Maddi bilgiler için göz düğmesi</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -1792,6 +1792,7 @@
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                         <div id="yon-aktif-sekme-etiket" style="flex:1; min-width:0; display:flex; align-items:center; gap:7px; font-weight:900; color:var(--text-main); font-size:15px; letter-spacing:-.2px;"></div>
                         <span id="yon-sync-badge-top" class="yon-sync-badge"></span>
+                        <button class="yon-ust-dug yon-para" id="yon-para-btn" onclick="paraGoster(paraGizliMi())" aria-label="Maddi bilgileri göster"></button>
                         <button class="yon-ust-dug" title="Yenile" aria-label="Yenile" onclick="this.classList.add('donuyor'); bulutManuelYenile(); yoneticiSekme(yoneticiSekmeAktif); setTimeout(()=>this.classList.remove('donuyor'), 800);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         </button>

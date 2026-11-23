@@ -2584,6 +2584,7 @@
         @media (prefers-reduced-motion: reduce) { .akl.salla { animation: none; } }
         /* Yönetici üst çubuğu (v450): düğmeler aynı boy, ikon çizgi; telefonda durum yalnız nokta, sayı şeridi kesilmez */
         .yon-ust-dug { width: 40px; height: 40px; min-height: 40px; flex: none; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0; font: inherit; font-size: 12.5px; font-weight: 800; white-space: nowrap; cursor: pointer; transform: none !important; }
+        .yon-ust-dug.yon-para { color: var(--text-muted); } .yon-ust-dug.yon-para.acik { color: #1d0d02; background: #ff6a1a; border-color: #ff6a1a; }
         .yon-ust-dug.genis { width: auto; padding: 0 12px; }
         .yon-ust-dug svg { width: 18px; height: 18px; }
         .yon-ust-dug.donuyor svg { animation: dagsk-yenile-spin .7s linear; }
@@ -2592,7 +2593,7 @@
             .yon-topbar { padding: 12px 0 8px; }
             .yon-ust-dug.genis { width: 40px; padding: 0; } .yon-ust-dug.genis span { display: none; }
             .yon-sync-badge.iyi { padding: 0; width: 24px; justify-content: center; background: transparent !important; } .yon-sync-badge.iyi .yon-sync-yazi { display: none; }
-            .yon-serit:not(:empty) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+            .yon-serit:not(:empty) { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
             .yon-serit-btn { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; min-height: 54px; padding: 6px 9px; font-size: 11px; line-height: 1.2; white-space: normal; text-align: left; transform: none !important; }
             .yon-serit-btn b { font-size: 18px; line-height: 1.2; }
         }

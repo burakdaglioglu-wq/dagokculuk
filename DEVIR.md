@@ -6182,3 +6182,10 @@ Kullanıcı fikir sayfasından (claude.ai/artifact/PM9KyqTzmR3HywSDwZDip8) 1. yo
 
 ## 167. 🔢 Veli girişi açıklaması sadeleşti (v457, 2026-11-23)
 Kullanıcı "son 4 hane"yi anlamadı, "açıklamasında sorun var". Mesajlar (Velilere Gönder, profil, aidat), `veli.html` ve `rapor.html`: "Telefon numaranızın **son 4 rakamını** yazın. Örnek: 0532 123 45 67 ise 4567". `veli.html` girişinde örnek kutusu, Giriş düğmesi kutunun hemen altında (390×663'te kaydırmadan), hata metni "Bu linkin geldiği numara…". Doğrulama kuralı değişmedi. `dagsk-veli-link.js?v=2`.
+
+## 168. 👁 Maddi bilgiler gözü (v458, 2026-11-23)
+Kullanıcı: "bazen sporcuların yanında açıyorum, maddi olan her şeyi kapat-aç göz koy, tıkladığımda göreyim".
+- Her açılışta GİZLİ (`paraGizliMi`, `paraGoster`, üst çubuk `#yon-para-btn`). Yönetici kapanınca, uygulama arka plana geçince, 3 dk sonra kendiliğinden gizlenir (aidat ekranı açıkken süre işlemez). Durum hiçbir yere kaydedilmez. Milo'da aynısı `yonetim-panel.js` içinde (Genel Bakış başlığında düğme; Milo menü/aidat sekmeleri kapsam dışı).
+- Gizliyken: Genel Bakış aidat kutuları (tek "Maddi bilgiler" kutusu), aidat grafiği, aidat işleri, grup sütunları, sayı şeridi, menü + kenar rozeti, antrenör ana ekranı, yapılacaklar aidat, Velilere Gönder ödemeyen/muaf, profil aidat + muaf. `yoneticiSayilar().aidat` gizliyken null. Aidat PIN'i girilince göz açılır; göz kapatılınca aidat ekranı yeniden kilitlenir.
+- YENİ maddi sayı/yazı ekleyen her ekran `paraGizliMi()` kontrol etmeli. Katılım grafiği tarihleri `gg.aa` (telefonda alt satıra kayıp sütunları bozuyordu).
+- Testler `sayfaAc` ile açık başlar (`window.__testParaAcik`); gizliyi test 163 dener (`paraGizli: true`).

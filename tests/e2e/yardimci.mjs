@@ -44,7 +44,7 @@ export async function tarayici() { return _tarayici || (_tarayici = await chromi
 export async function tarayiciKapat() { if (_tarayici) await _tarayici.close(); _tarayici = null; }
 
 // Sayfa: oturum anahtarı önceden yazılı (girisli=true), window.open yakalanır (__acilan), sayfa hataları toplanır.
-export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900 } = {}) {
+export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900, paraGizli = false } = {}) {
   const b = await tarayici();
   const ctx = await b.newContext({ viewport: { width: genislik, height: yukseklik }, acceptDownloads: true });
   if (girisli) { const t = await oturumAl(); await ctx.addInitScript((tk) => { try { localStorage.setItem('dag_oturum', tk); } catch (e) {} }, t); }
@@ -57,6 +57,8 @@ export async function sayfaAc({ girisli = true, genislik = 1280, yukseklik = 900
   await ctx.addInitScript(() => { try { if (!sessionStorage.getItem('__anAyar')) { sessionStorage.setItem('__anAyar', '1'); localStorage.setItem('dag_km_an_kapali', '1'); } } catch (e) {} });
   // v423: testler hoparlörden konuşmasın (anlatıcı Windows sesli okumasını kullanır, --mute-audio onu susturmaz)
   if (!process.env.E2E_SES) await ctx.addInitScript(() => { try { if (window.speechSynthesis) { window.speechSynthesis.speak = () => {}; } } catch (e) {} });
+  // v458: maddi bilgiler her açılışta gizli; testler açık başlar (163 gizliyi dener: sayfaAc({ paraGizli: true }))
+  if (!paraGizli) await ctx.addInitScript(() => { window.__testParaAcik = true; });
   const p = await ctx.newPage();
   const hatalar = [];
   p.on('pageerror', (e) => { if (!/Failed to fetch/.test(e.message)) hatalar.push(e.message); });
