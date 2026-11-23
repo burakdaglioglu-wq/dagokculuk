@@ -6144,3 +6144,9 @@ Kullanıcı ekran görüntüsü (telefonda ⋯ Diğer): "bu kısım çok iğren�
 Kullanıcı ekran görüntüsü ("Bu kısımda", cümle yarım): kahverengi kart, kesilen PIN noktaları, sıkışık üst çubuk, sağdan kesilen sayı şeridi.
 - `aidatKilitEkraniHTML` (`akl*`, `#akl`): rakam tuşları, nokta satırı (PIN uzadıkça artar), hata ekranda (`_aklHata`), "PIN'imde harf var" → yazı alanı (`dag_aidat_kilit_yazi`). `egitmenRenderAidat` kilit ekranı açıkken yeniden çizmez (senkron yazılan PIN'i siliyordu). Otomatik gönderim YOK (yanlış deneme sayacı).
 - Üst çubuk `.yon-ust-dug` (çizgi ikon, 40 px); telefonda durum yalnız nokta (sorun varsa yazı), şerit 4 eşit sütun. Test 157 (PIN yanıtı sahte). Milo kilit ekranı değişmedi. Gerçek telefonda DENENMEDİ.
+
+## 161. 📱 Giriş PIN ekranı telefona sığar + açılış donması (v451, 2026-11-23)
+Kullanıcı (iPhone Chrome, 390×663): "ilk açtığımda altta kalmış, kasarak hareket ediyormuş gibi".
+- **Yerleşim:** `.gs-giris-acik` iken vizör, `.giris-surum`, `#giris-oturum-bilgi` gizli; tuşlar dvh ile boyutlanır, `Gir` düğmesi; giriş animasyonu / backdrop-filter yok, `touch-action: manipulation`. Önceki taşma 216 px → 0.
+- **Donma:** ilk senkron PIN yazılırken çalışıyordu; `silinmeEngelliyor`/`silindiMi` her sporcu için `silinenlerDB`'yi, `seriIptalMi` her seri için `iptalSerilerDB`'yi baştan tarıyordu → `_silindiKaydi` (Map) ve `seriIptalMi` (Set), artımlı. **Bu iki dizi yalnız push ya da yeniden atama ile değiştirilir (yerinde splice/düzenleme YOK).** Master verisi iki kez JSON.parse ediliyordu → bir kez. Yerel veride 5× yavaş işlemcide en uzun iş 3232 → 927 ms (yerel veri ~739 test sporculu; gerçek veride kazanç ölçülmedi).
+- Test 158 (PIN sunucuya gönderilmez; hızlı arama = eski tarama). Gerçek telefonda DENENMEDİ.

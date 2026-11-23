@@ -2447,7 +2447,23 @@
         @media (prefers-reduced-motion: reduce) { .gs-salla { animation:none; } }
 
         .gv-ust { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-        .gs-tuslar .pin-btn { padding:14px 0; }
+        .gs-tuslar .pin-btn { padding:0; height:clamp(50px, 9.2vh, 66px); height:clamp(50px, 9.2dvh, 66px); border:1px solid rgba(255,255,255,.14); border-radius:16px; background:#1c1c1f; font-size:25px; font-weight:700; font-family:inherit; font-variant-numeric:tabular-nums; display:grid; place-items:center; touch-action:manipulation; transform:none !important; transition:none; -webkit-tap-highlight-color:transparent; }
+        .gs-tuslar .pin-btn:active { background:#3a3a40; color:#fff; }
+        .gs-tuslar .pin-btn.gs-tus-kucuk { background:transparent; border-color:transparent; }
+        .gs-tuslar .pin-btn.gs-tus-tamam { font-size:19px; background:var(--accent-orange) !important; border-color:var(--accent-orange) !important; color:#1a0c00 !important; font-weight:800; }
+        .gs-aciklama { font-size:14px; color:var(--text-muted); text-align:center; }
+        .gs-kisi, .gs-ikincil, .gs-passkey, .gs-ana-btn { touch-action:manipulation; transform:none !important; }
+        .gs-ikincil { min-height:44px; } .gs-hatirla { min-height:32px; }
+        /* PIN ekranı (v451): tuşlar kaydırmadan sığsın, açılışta hiçbir şey kaymasın — vizör, sürüm, hesap satırı (önceki ekranda var)
+           gizli; giriş animasyonu ve bulanıklık efekti yok (telefonda takılma). */
+        #giris-ekrani.gs-giris-acik > * { animation:none; }
+        #giris-ekrani.gs-giris-acik > .gv-vizor, #giris-ekrani.gs-giris-acik > .giris-surum, #giris-ekrani.gs-giris-acik > #giris-oturum-bilgi { display:none !important; }
+        #giris-ekrani.gs-giris-acik { gap:10px; padding:14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
+        #giris-ekrani.gs-giris-acik .gs-panel { gap:12px; }
+        #giris-ekrani.gs-giris-acik .gs-kisi, #giris-ekrani.gs-giris-acik .gs-not { -webkit-backdrop-filter:none !important; backdrop-filter:none !important; background:#1c1c1f; }
+        #giris-ekrani.gs-giris-acik h2#giris-baslik { font-size:26px !important; margin:0 !important; text-shadow:none !important; }
+        @media (max-width:700px) { #giris-ekrani.gs-giris-acik #btn-tema-degistir { display:none; } #giris-ekrani .gv-vizor { --w:min(190px, 46vw) !important; margin-top:34px; } .gs-oturum { flex-wrap:nowrap; max-width:100%; } .gs-oturum span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .gs-oturum button { min-height:40px; flex:none; } }
+        body.light-theme .gs-tuslar .pin-btn { background:#1c1c1f; color:#fff; border-color:rgba(255,255,255,.14); }
         @media (max-height: 900px) { #giris-ekrani.gs-giris-acik .kurumsal-logo { display:none; } #giris-ekrani.gs-giris-acik h2 { margin-bottom:6px; } }
         .gs-hatirla input[type="checkbox"] { -webkit-appearance:checkbox !important; appearance:auto !important; flex-shrink:0; }
 

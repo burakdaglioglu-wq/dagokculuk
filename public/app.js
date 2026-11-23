@@ -6618,14 +6618,30 @@
         let sonGeriYukleme = parseInt(localStorage.getItem('dag_son_geri_yukleme')) || 0;
         function sonGeriYuklemeKaydet(t) { if(t && t > sonGeriYukleme) { sonGeriYukleme = t; try { localStorage.setItem('dag_son_geri_yukleme', String(t)); } catch(e) {} } }
 
-        function silindiMi(g, ad) { return silinenlerDB.some(s => s.grup === g && s.ad === ad); }
+        // KASMA DÜZELTMESİ (v451, 2026-11-23, kullanıcı: "telefonda ilk açtığımda kasarak hareket ediyor"): açılışta her sporcu için silinenler,
+        // her seri için iptal listesi baştan sona taranıyordu (PIN yazarken ekran donuyordu). Artık anahtar → kayıt haritası: dizi
+        // değişince baştan, sona eklenince yalnız yeniler işlenir (bu diziler yalnız push ya da yeniden atama ile değişir).
+        let _silH = { d: null, n: 0, h: null }, _iptH = { d: null, n: 0, h: null };
+        function _silindiKaydi(g, ad) {
+            let d = silinenlerDB, x = _silH;
+            if(x.d !== d || x.n > d.length) { x.d = d; x.n = 0; x.h = new Map(); }
+            for(; x.n < d.length; x.n++) { let s = d[x.n]; if(!s) continue; let k = s.grup + '|' + s.ad; if(!x.h.has(k)) x.h.set(k, s); }
+            return x.h.get(g + '|' + ad);
+        }
+        function silindiMi(g, ad) { return !!_silindiKaydi(g, ad); }
         function silinenlerKaydet() { try { localStorage.setItem('okculuk_silinenler', JSON.stringify(silinenlerDB)); } catch(e) {} }
         // ===== YENİ: İPTAL EDİLEN SERİLER + RESET ZAMANI + AKILLI TOMBSTONE =====
         // Yönetici bir seriyi silince ID'si buraya girer → tüm cihazlarda kalıcı silinir, geri gelmez
         let iptalSerilerDB = [];
         try { iptalSerilerDB = JSON.parse(localStorage.getItem('dag_iptal_seriler') || '[]') || []; } catch(e) { iptalSerilerDB = []; }
         function iptalSerilerKaydet() { try { if(iptalSerilerDB.length > 800) iptalSerilerDB = iptalSerilerDB.slice(-800); localStorage.setItem('dag_iptal_seriler', JSON.stringify(iptalSerilerDB)); } catch(e) {} }
-        function seriIptalMi(id) { return !!id && iptalSerilerDB.indexOf(id) >= 0; }
+        function seriIptalMi(id) {
+            if(!id) return false;
+            let d = iptalSerilerDB, x = _iptH;
+            if(x.d !== d || x.n > d.length) { x.d = d; x.n = 0; x.h = new Set(); }
+            for(; x.n < d.length; x.n++) x.h.add(d[x.n]);
+            return x.h.has(id);
+        }
         // DÜZELTME: bir kulüp rekoru kıran seri sonradan iptal edilirse rekor hiç geri alınmıyordu —
         // turnuvaDB'yi (iptal'liler hariç) baştan tarayarak o rekor alanını yeniden hesaplar.
         function _rekorAlaniYenidenHesapla(ozellikFn) {
@@ -6743,7 +6759,7 @@
         function resetZamaniAyarla(t) { if(t && t > resetZamani) { resetZamani = t; try { localStorage.setItem('dag_reset_zamani', String(resetZamani)); } catch(e) {} } }
         // Tombstone yaş kontrolü: sporcu kaydı silinme kaydından DAHA YENİ ise yaşar (yeniden eklenen sporcu artık silinmez!)
         function silinmeEngelliyor(g, ad, sp) {
-            let kayit = silinenlerDB.find(s => s.grup === g && s.ad === ad);
+            let kayit = _silindiKaydi(g, ad);
             if(!kayit) return false;
             // KESİN SİLME (2026-10-02, kullanıcı: "bazı sporcuları sildiğimde geri tekrar sisteme düşüyor"): eskiden
             // silinmeden sonra güncellenmiş bir kopya (eski veriyi tutan başka bir cihazdan gelen yoklama/puan) silme
@@ -6807,7 +6823,7 @@
                     // Sporcu daha sonra yeniden eklendiyse tombstone düşer ve sporcu YAŞAR.
                     if(silinmeEngelliyor(g, ad, enYeni)) {
                         // Taşıma kaydıysa kopyayı çöpe atma — serileri kalan kopyaya katılmak üzere sakla
-                        let ts = silinenlerDB.find(s => s.grup === g && s.ad === ad);
+                        let ts = _silindiKaydi(g, ad);
                         if(ts && ts.tasindi && enYeni) _tasKurbanlari.push({ ad: ad, kopya: enYeni });
                         return;
                     }
@@ -7024,7 +7040,7 @@
             }
             if(p.silinenler && Array.isArray(p.silinenler)) { p.silinenler.forEach(s => { if(s && s.ad && s.grup && !silindiMi(s.grup, s.ad)) silinenlerDB.push({ ad: s.ad, grup: s.grup, tarih: s.tarih || Date.now(), tasindi: s.tasindi || false }); }); silinenlerKaydet(); }
             if(p.resetZamani) resetZamaniAyarla(p.resetZamani);
-            if(p.iptalSeriler && Array.isArray(p.iptalSeriler)) { p.iptalSeriler.forEach(id => { if(id && iptalSerilerDB.indexOf(id) < 0) iptalSerilerDB.push(id); }); iptalSerilerKaydet(); }
+            if(p.iptalSeriler && Array.isArray(p.iptalSeriler)) { p.iptalSeriler.forEach(id => { if(id && !seriIptalMi(id)) iptalSerilerDB.push(id); }); iptalSerilerKaydet(); }
             if(p.turnuvaDB) turnuvaDB = turnuvaDBMerge(turnuvaDB, p.turnuvaDB); // ÜZERİNE YAZMA — birleştir
             if(p.takimlarDB) takimlarDB = _diziBirlestir(takimlarDB, p.takimlarDB, t => t.lig + '|' + t.ad);
             if(p.antrenmanlarDB) antrenmanlarDB = _diziBirlestir(antrenmanlarDB, p.antrenmanlarDB, a => a.id, a => a.lastModified);
@@ -7105,12 +7121,11 @@
                     try {
                         if(doc.exists && doc.data() && doc.data().veri) {
                             let uzakJSON = doc.data().veri;
-                            let uzakSayi = jsonSporcuSayisi(uzakJSON);
+                            let p = JSON.parse(uzakJSON), uzakSayi = sporcuSayisi(p.turnuvaDB || {}); // aynı ~2 MB iki kez çözülmesin
                             if(uzakSayi > 0) {
                                 // DÜZELTME: Eskiden "Firestore kazanır" mantığıyla yerel veri TAMAMEN eziliyordu.
                                 // Sayfa açıldıktan hemen sonra eklenen sporcu, bulut çekimi gelince siliniyordu.
                                 // Artık BİRLEŞTİRME yapılır: yereldeki yeni sporcu korunur, silinenler tombstone ile temizlenir.
-                                let p = JSON.parse(uzakJSON);
                                 bulutVeriyiUygula(p);
                                 sonBulutJSON = uzakJSON;
                                 bulutDurum('☁️ senkron ✓', 'var(--neon-green)');
@@ -7145,7 +7160,7 @@
                         if(d.veri === sonBulutJSON) return;
                         try {
                             let p = JSON.parse(d.veri);
-                            let uzakSayi = jsonSporcuSayisi(d.veri);
+                            let uzakSayi = sporcuSayisi(p.turnuvaDB || {});
                             if(uzakSayi > 0 && p.turnuvaDB) {
                                 // TEK MERGE YOLU: bulutVeriyiUygula → turnuvaDBMerge
                                 // (elmas koruması, seriId bazlı birleştirme, tombstone kuralları hepsi tek yerde)
@@ -8100,7 +8115,7 @@
             let el = document.getElementById('giris-oturum-bilgi'); if(!el) return;
             if(!_oturum) { el.style.display = 'none'; el.innerHTML = ''; return; }
             el.style.display = 'flex';
-            el.innerHTML = `<span>👤 <b>${esc(_oturum.ad)}</b> ${_oturum.rol === 'yonetici' ? '· yönetici' : '· eğitmen'}${_oturum.hatirla ? ' · bu cihaz hatırlanıyor' : ''}</span><button onclick="hesabimAc()">Hesabım</button><button onclick="girisCikisYap()">Çıkış</button>`;
+            el.innerHTML = `<span>👤 <b>${esc(_oturum.ad)}</b> ${_oturum.rol === 'yonetici' ? '· yönetici' : '· eğitmen'}${_oturum.hatirla ? ' · hatırlanıyor' : ''}</span><button onclick="hesabimAc()">Hesabım</button><button onclick="girisCikisYap()">Çıkış</button>`;
         }
         async function girisCikisYap() {
             try { await girisApi('/cikis', {}); } catch(e) {}
@@ -8165,7 +8180,7 @@
                     <button class="gs-ikincil" onclick="sifreGeri()">İptal</button>`;
                 setTimeout(function() { let e = document.getElementById('gs-ad'); if(e) e.focus(); }, 50);
                 return;
-            } else if(_girisMod === 'dogrula') ust = `<div class="gs-not">🛡️ Yönetici paneli için PIN'ini tekrar gir (güvenlik gereği).</div>`;
+            } else if(_girisMod === 'dogrula') ust = `<div class="gs-aciklama">Güvenlik için PIN'ini tekrar gir.</div>`;
             let kisiler = '';
             if(_girisMod === 'giris') {
                 let liste = girisKisiListesi();
@@ -8176,7 +8191,7 @@
                 ? `<input id="gs-sifre-alan" class="gs-giris" type="password" placeholder="Şifre" maxlength="64" autocomplete="current-password" onkeydown="if(event.key==='Enter') girisGonder();"><button class="gs-ana-btn" onclick="girisGonder()">Giriş</button>`
                 : `<div id="sifre-display" class="gs-noktalar" aria-live="polite"></div>
                    <div class="gs-tuslar">${['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(function(n) { return `<button class="pin-btn" onclick="sifreRakam('${n}')">${n}</button>`; }).join('')}
-                   <button class="pin-btn gs-tus-kucuk" onclick="sifreSil()" aria-label="Sil">⌫</button><button class="pin-btn" onclick="sifreRakam('0')">0</button><button class="pin-btn gs-tus-tamam" onclick="girisGonder()" aria-label="Giriş">✓</button></div>`;
+                   <button class="pin-btn gs-tus-kucuk" onclick="sifreSil()" aria-label="Sil"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9L3 12zM12 9.5l5 5M17 9.5l-5 5"/></svg></button><button class="pin-btn" onclick="sifreRakam('0')">0</button><button class="pin-btn gs-tus-tamam" onclick="girisGonder()" aria-label="Giriş">Gir</button></div>`;
             let hatirlaVar = _girisMod === 'giris' || _girisMod === 'kurulum';
             let hatirlaVars = true; try { hatirlaVars = localStorage.getItem('dag_hatirla_tercih') !== '0'; } catch(e) {}
             kap.innerHTML = `${ust}${kisiler}${giris}
