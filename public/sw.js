@@ -1,4 +1,4 @@
-const CACHE = 'dag-sk-v453';
+const CACHE = 'dag-sk-v454';
 // Form Lab yapay zekâ dosyaları (MediaPipe wasm + modeller, ~20 MB): sürümlü kabuk önbelleğinden AYRI ve kalıcı —
 // her deploy'da silinmez, önce önbellekten sunulur (bir kez iner, sonra internetsiz de açılır). Adresler sürüm
 // numarası taşıdığı için içerik değişmez; yeni sürüm = yeni adres.
@@ -37,7 +37,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
     const url = new URL(e.request.url);
     if (e.request.method !== 'GET') return;
-    if (url.pathname.startsWith('/api/') || url.pathname === '/ws') return;
+    if (url.pathname.startsWith('/api/') || url.pathname === '/ws' || url.pathname.startsWith('/video/') || e.request.headers.has('range')) return; // videolar önbelleğe girmez (parçalı indirme bozulur)
     if (mlMi(url)) {
         e.respondWith(caches.open(ML_CACHE).then((c) => c.match(e.request.url).then((r) => r || fetch(e.request).then((res) => {
             if (res && res.status === 200 && res.type !== 'opaque') c.put(e.request.url, res.clone());

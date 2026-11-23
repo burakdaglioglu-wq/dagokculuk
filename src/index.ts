@@ -52,6 +52,7 @@ import { checkAndSendReminders, checkAndSendAidatReminders, checkAndSendBelgeRem
 import { checkAndSendAidatYoneticiOzet } from "./lib/aidatYonetici";
 import { checkAndSendYarismaReminders } from "./lib/yarismaHatirlatma";
 import { archiveOldAttendance } from "./lib/attendanceArchive";
+import { siteVideo } from "./lib/siteVideo";
 
 export { ClubSync } from "./durable-objects/ClubSync";
 
@@ -207,6 +208,9 @@ export default {
     if (url.pathname === "/favicon.ico") {
       return Response.redirect(`${url.origin}/favicon.png`, 302);
     }
+
+    const video = /^\/video\/([^/]+)\.mp4$/.exec(url.pathname);
+    if (video && (request.method === "GET" || request.method === "HEAD")) return siteVideo(request, env, video[1]);
 
     if (url.pathname === "/ws") {
       const id = env.CLUB_SYNC.idFromName("dagsk-club");
