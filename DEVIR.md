@@ -6222,3 +6222,6 @@ Kullanıcı "buradaki video kalitesi çok düşük" → iki ekran resminden 1'i 
 
 ## 175. 👁 Giriş ekranında göz efekti (v462, 2026-11-24)
 Kullanıcı: "giriş kısmındaki göze efekt mi eklesen". Platform Seçin ekranındaki `.gv-vizor`: 8 sn döngü — göz kırpar, odak halkası daralır, göze yaklaşır, göz bebeğinde hedef renkleri yanar (iki göz), etiket ODAK ARANIYOR → HEDEF NET. Yalnız CSS (transform/opacity) + satır içi SVG (`viewBox 0 0 1620 519`, `gz-*`); yeni görsel `/hero/goz.webp` (27 KB, kaynak `_yerel-gorseller/webfoto/dagtoprakweb-sade.png`). Bilgisayarda vizör 420 px. Hareketi azalt: durur. PIN ekranında vizör yine gizli. Test 158.
+
+## 176. 👁 Site girişi göz açılışı (2026-11-24)
+Kullanıcı "siteye de yap". Giriş videosunun ilk 4,2 sn'si: okçunun gözü, odak halkası, göz bebeğinde hedef, hedef büyür → gerçek hedefler. Üretici `_reklam/arsiv/kurgu/site-goz.mjs` (uygulamadaki `gz-svg`'yi app.html'den alır, kare kare çizer) → `site-panel.mjs` başa ekler; önce site-goz, sonra site-panel çalıştır. Video değişince `index.html` `giris-…mp4?v=N` artır. Telefonda pencere 0,5–4 sn arası göze gider (göz 720×1280 karenin %50/%36'sı); panelde etiket 1,7 sn'de HEDEF NET olur. Test 161.

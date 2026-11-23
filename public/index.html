@@ -1642,7 +1642,11 @@
       var k = 1 - Math.exp(-(mod === 'kullanici' ? 12 : 2.4) * dt);
       x += (hedef.x - x) * k; y += (hedef.y - y) * k;
       var mesafe = Math.hypot(hedef.x - x, hedef.y - y);
-      if(mod === 'gez'){
+      // açılış sahnesi: videoda okçunun gözü görünürken pencere göze gider (site-goz.mjs: göz 720×1280 karenin %50/%36'sında)
+      var vt = videoAcik ? vNet.currentTime : 99, gozde = mod === 'gez' && vt > 0.5 && vt < 4;
+      if(gozde){ var gs = Math.max(W / 720, H / 1280); hedef = sinirla({ x: W / 2, y: H / 2 - 0.14 * 1280 * gs }); durak = 'goz'; kilit(vt > 1.7 && mesafe < 24); etiketYaz(kilitli ? 'HEDEF NET' : 'ODAK ARANIYOR'); }
+      else if(durak === 'goz' && mod === 'gez'){ kilit(false); yeniDurak(); }
+      else if(mod === 'gez'){
         if(mesafe < 3){
           if(!hedef._varis) hedef._varis = simdi;
           if(durak === 'kilit'){ kilit(true); etiketYaz('HEDEF NET'); }
@@ -1673,9 +1677,9 @@
       var ag = navigator.connection || {}; if(azHareket || ag.saveData || /2g|3g/.test(ag.effectiveType || '')) return;
       var ad = W / H > 1 ? 'panel' : 'dik', hazir = 0;
       function oldu(){ if(++hazir < 2) return; videoAcik = true; hero.classList.add('video-var'); if(hero.getBoundingClientRect().bottom > 0 && !document.hidden) videoOyna(); }
-      [[vNet, ''], [vBul, '-b']].forEach(function(q){ var v = q[0]; v.muted = true; v.addEventListener('canplay', function ilk(){ v.removeEventListener('canplay', ilk); oldu(); }); v.src = '/video/giris-' + ad + q[1] + '.mp4'; v.preload = 'auto'; v.load(); });
+      [[vNet, ''], [vBul, '-b']].forEach(function(q){ var v = q[0]; v.muted = true; v.addEventListener('canplay', function ilk(){ v.removeEventListener('canplay', ilk); oldu(); }); v.src = '/video/giris-' + ad + q[1] + '.mp4?v=3'; v.preload = 'auto'; v.load(); });
       // iki kopya aynı karede kalsın
-      vNet.addEventListener('timeupdate', function(){ if(!vBul.seeking && Math.abs(vNet.currentTime - vBul.currentTime) > 0.12) vBul.currentTime = vNet.currentTime; });
+      vNet.addEventListener('timeupdate', function(){ if(panel){ var ara = vNet.currentTime < 1.7; kilit(!ara); etiketYaz(ara ? 'ODAK ARANIYOR' : 'HEDEF NET'); } if(!vBul.seeking && Math.abs(vNet.currentTime - vBul.currentTime) > 0.12) vBul.currentTime = vNet.currentTime; });
     }
     if(document.readyState === 'complete') setTimeout(videoKur, 600); else window.addEventListener('load', function(){ setTimeout(videoKur, 600); });
     olc();
