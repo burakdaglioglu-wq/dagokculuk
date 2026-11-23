@@ -6214,3 +6214,8 @@ Kullanıcı "çok güzel olmuş, siteye de yükle, ilk yaptıklarını" → oyun
 ## 173. 🥇 Site: "İlk kez bu salonda oynandı" (2026-11-24)
 Kullanıcı "ilk olduğumuzu siteye ekle". Yeni bölüm `#ilk` (videoların altında): 30+ oyun (görünür 35 tema), 70+ kahraman, "gerçek ok atılmadan oyun ilerlemez", Eylül/Ekim/Kasım 2026 (tarihler git'ten). SSS'ye 2 soru, meta açıklamaya "kulübün kendi yazdığı oyunlar".
 - "Türkiye'de / dünyada ilk, tek" YAZILMAZ: ispat yükü reklam verende; yurt dışında SAFE Archery var. Türkiye'de benzeri kısa aramada bulunamadı (kanıt değil). Test 161 bu sözleri engeller.
+
+## 174. 🎬 Site girişi: tek büyük net panel (2026-11-24)
+Kullanıcı "buradaki video kalitesi çok düşük" → iki ekran resminden 1'i seçti. Sebep: dikey çekim geniş ekrana kesilip büyütülüyordu + crf 30. `giris-genis*` KALKTI.
+- Bilgisayar (en ≥ 1000, yatay): `.vz-panel` — gezen küçük pencere yerine sağda 3:4 net panel (`giris-panel.mp4` 1080×1440, 7,6 MB, sayfa açıldıktan sonra iner) + bulanık arka plan (`giris-panel-b.mp4`). Fareyi izlemez. Telefon ve dar ekran: eski vizör, video yenilendi (`giris-dik.mp4` 4,2 MB).
+- Üretici `_reklam/arsiv/kurgu/site-panel.mjs` (geçişler xfade, gürültü azaltma; ilk sahnede TV'deki sporcu adı bulanıklaştırılır). `site-arka.mjs` eski. Test 161.
