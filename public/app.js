@@ -10459,7 +10459,7 @@
                 // 📄 Rapor ekranı (yr-*)
                 + '.yr-mod{display:flex;gap:4px;background:var(--yz-panel2);border-radius:12px;padding:3px}.yr-mod button{flex:1;border:0;border-radius:9px;padding:9px;font:inherit;font-size:13px;font-weight:800;background:transparent;color:var(--yz-soluk);cursor:pointer;transform:none!important}.yr-mod button.on{background:var(--yz-panel);color:var(--yz-yazi);box-shadow:0 1px 3px rgba(0,0,0,.2)}'
                 + '.yr-cumle{font-size:15px;line-height:1.5;font-weight:600}.yr-cumle b{font-family:"Roboto Mono",ui-monospace,monospace;font-size:17px}.yr-cumle .g{color:#22c55e}.yr-cumle .y{color:var(--yz-kirmizi)}.yr-cumle .s{color:var(--yz-soluk)}'
-                + '.yr-pdf{display:flex;gap:8px;flex-wrap:wrap}.yr-pdf .adm-btn{flex:1 1 200px;min-height:46px;font-weight:900}.yr-pdf .yoz-ana{background:var(--yz-vurgu)!important;color:var(--yz-vurgu-yazi)!important;border-color:transparent!important}'
+                + '.yr-ay{display:flex;flex-direction:column;gap:8px;padding:12px 14px}.yr-ay-ust{display:flex;align-items:center;justify-content:space-between;gap:10px}.yr-ay-ust b{font-size:17px}.yr-ay .yy-ok{width:44px;height:44px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:inherit;font-size:20px}.yr-ay .yy-ok:disabled{opacity:.3}.yr-ay .adm-btn{min-height:50px;font-weight:900;font-size:16px}.yr-ay small{opacity:.75;font-size:13px}.yr-pdf{display:flex;gap:8px;flex-wrap:wrap}.yr-pdf .adm-btn{flex:1 1 200px;min-height:46px;font-weight:900}.yr-pdf .yoz-ana{background:var(--yz-vurgu)!important;color:var(--yz-vurgu-yazi)!important;border-color:transparent!important}'
                 + '.yr-grup{border-radius:16px;background:var(--yz-panel);border:1px solid var(--yz-cizgi);overflow:hidden;min-width:0}.yr-gb{display:flex;align-items:center;gap:10px;padding:11px 14px;background:color-mix(in srgb,var(--gc) 16%,var(--yz-panel));border-bottom:1px solid var(--yz-cizgi)}.yr-gb h4{margin:0;font-size:15px;font-weight:900;color:var(--gc);flex:1;min-width:0}.yr-gb span{font-family:"Roboto Mono",ui-monospace,monospace;font-weight:700;font-size:15px}.yr-gb small{font-size:11px;color:var(--yz-soluk);font-weight:700}'
                 + '.yr-bar{height:6px;background:var(--yz-panel2)}.yr-bar i{display:block;height:100%;background:#22c55e}'
                 + '.yr-iki{display:grid;grid-template-columns:1fr 1fr;gap:0}.yr-sut{padding:10px 12px;min-width:0}.yr-sut+.yr-sut{border-left:1px solid var(--yz-cizgi)}.yr-sut h5{margin:0 0 6px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.yr-sut.g h5{color:#22c55e}.yr-sut.y h5{color:var(--yz-kirmizi)}'
@@ -10743,7 +10743,7 @@
             let ust = '<div class="yoz yy">'
                 + '<div class="yr-mod" role="group" aria-label="Rapor türü"><button type="button" class="' + (gunMu ? 'on' : '') + '" onclick="yoklamaRaporMod(\'gun\')">📅 Günlük</button><button type="button" class="' + (gunMu ? '' : 'on') + '" onclick="yoklamaRaporMod(\'hafta\')">🗓️ Haftalık</button></div>'
                 + '<div class="yy-tarih"><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(-1)" aria-label="Önceki">‹</button><label class="yy-tarih-ad"><span>' + esc(gunMu ? _yokTarihEt(_yokRapor.gun) : (bugunISO(pzt) === bugunISO(_yokPazartesi(new Date())) ? 'Bu hafta · ' : '') + _yokHaftaEt(pzt)) + '</span><input type="date" value="' + (gunMu ? _yokRapor.gun : bugunISO(pzt)) + '" max="' + bugun + '" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){ if(_yokRapor.mod===\'gun\') _yokRapor.gun=this.value; else _yokRapor.hafta=bugunISO(_yokPazartesi(new Date(this.value+\'T12:00:00\'))); yoklamaRaporEkranCiz(); }" aria-label="Tarih seç"></label><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(1)"' + (ileriYok ? ' disabled' : '') + ' aria-label="Sonraki">›</button></div>'
-                + _yokGrupCipleri('yoklamaRaporEkranCiz', false);
+                + _yokGrupCipleri('yoklamaRaporEkranCiz', false) + _yokAyKartHTML();
             let html = '';
             if(gunMu) {
                 let iso = _yokRapor.gun, gruplar = _yokGosterilecekGruplar().map(function(x) { return { g: x[0], ad: _yokGrupAd(x[0]), v: _yokGunGrup(iso, x[0]) }; });
@@ -11098,6 +11098,78 @@
                 pdf.save('Yoklama_Raporu_' + d.gunler[0].replace(/-/g, '') + '_' + d.gunler[d.gunler.length - 1].replace(/-/g, '') + '.pdf');
                 showToast('PDF indirildi! 📄', 'success');
             }).catch(function(e) { console.error(e); showToast('PDF oluşturulamadı.', 'error'); });
+        }
+        // 🖨️ AYLIK YOKLAMA LİSTESİ (v460, 2026-11-23, kullanıcı: "bu ay gelmiş olanlar işaretli PDF çıktısı alayım, yoklamayı fiziksel
+        // takip edeyim; ödeme yaptıkları günleri turuncu işaretle ama ödeme günü olarak YAZMASIN"). Yatay A4, grup başına sayfa: sporcu × ayın
+        // günleri; geldiği gün tik, ödeme günü turuncu zemin. Turuncunun anlamı hiçbir yerde yazmaz (açıklama EKLEME). Kalan günler elle doldurulur.
+        let _yokAyYM = null;
+        function _yokAyKartHTML() {
+            let ym = _yokAyYM || bugunISO().slice(0, 7), ileri = ym < bugunISO().slice(0, 7);
+            return '<div class="yoz-kart yr-ay"><div class="yr-ay-ust"><button type="button" class="yy-ok" onclick="_yokAyKaydir(-1)" aria-label="Önceki ay">‹</button><b>' + esc(_YOK_AYLAR[+ym.slice(5) - 1] + ' ' + ym.slice(0, 4)) + '</b><button type="button" class="yy-ok" onclick="_yokAyKaydir(1)"' + (ileri ? '' : ' disabled') + ' aria-label="Sonraki ay">›</button></div>'
+                + '<button class="adm-btn yoz-ana" onclick="yoklamaAyListePdf()">🖨️ Aylık yoklama listesi (PDF) ' + yeniRozet() + '</button><small>Geldikleri günler işaretli, kalan günler elle doldurmak için boş.</small></div>';
+        }
+        function _yokAyKaydir(n) { let ym = _yokAyYM || bugunISO().slice(0, 7), d = new Date(+ym.slice(0, 4), +ym.slice(5) - 1 + n, 1), y = bugunISO(d).slice(0, 7); if(y > bugunISO().slice(0, 7)) return; _yokAyYM = y; yoklamaRaporEkranCiz(); }
+        // { gunler, gruplar: [{ g, ad, satir: [{ ad, gel: {iso:1}, ode: {iso:1} }] }] } — geliş: yoklama + skor girilen gün (profil takvimi ile aynı)
+        function _yokAyVeri(ym, aidat) {
+            let gunler = _ayTumGunTarihleri(ym), gel = {}, ekle = function(g, ad, iso) { let k = g + '|' + ad; (gel[k] = gel[k] || {})[iso] = 1; };
+            gunler.forEach(function(iso) { _yokGeldi(iso).forEach(function(k) { if(k.tur !== 'egitmen' && k.g) ekle(k.g, k.ad, iso); }); });
+            let gruplar = _yokGosterilecekGruplar().map(function(x) {
+                let g = x[0], adlar = {};
+                Object.keys(turnuvaDB[g] || {}).forEach(function(ad) {
+                    let sp = turnuvaDB[g][ad]; if(!sp || yonKisiTuru(g, ad) === 'egitmen') return;
+                    [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(function(c) { return c.seriler || []; })).forEach(function(s) { if(s && s.tarih && !s.iptal && String(s.tarih).slice(0, 7) === ym) ekle(g, ad, String(s.tarih).slice(0, 10)); });
+                });
+                _yokAktifUyeler(g).forEach(function(ad) { adlar[ad] = 1; });
+                Object.keys(gel).forEach(function(k) { if(k.indexOf(g + '|') === 0) adlar[k.slice(g.length + 1)] = 1; });
+                let satir = Object.keys(adlar).sort(function(a, b) { return a.localeCompare(b, 'tr'); }).map(function(ad) {
+                    let ode = {}; Object.keys((aidat || {})[ad] || {}).forEach(function(ay) { let r = aidat[ad][ay]; if(!r || !r.odendi) return; let t = String(r.odemeTarihi || (ay === ym && r.tarih ? bugunISO(new Date(r.tarih)) : '')).slice(0, 10); if(t.slice(0, 7) === ym) ode[t] = 1; });
+                    return { ad: ad, gel: gel[g + '|' + ad] || {}, ode: ode };
+                });
+                return { g: g, ad: _yokGrupAd(g), satir: satir };
+            }).filter(function(x) { return x.satir.length; });
+            return { gunler: gunler, gruplar: gruplar };
+        }
+        async function yoklamaAyListePdf() {
+            showToast('Liste hazırlanıyor...', 'warning');
+            let ym = _yokAyYM || bugunISO().slice(0, 7), aidat = aidatDB, eski = false;
+            try { let r = await fetch('/api/dues'); if(!r.ok) throw 0; let h = {}; ((await r.json()).dues || []).forEach(function(x) { (h[x.ad] = h[x.ad] || {})[x.ay] = x; }); aidat = aidatMerge(JSON.parse(JSON.stringify(aidatDB)), h); } catch(e) { eski = true; }
+            let v = _yokAyVeri(ym, aidat), T = _trTranslit, ayAd = _YOK_AYLAR[+ym.slice(5) - 1] + ' ' + ym.slice(0, 4);
+            if(!v.gruplar.length) return showToast('Bu grupta sporcu yok.', 'error');
+            try {
+                let pdf = await _yeniPdfAl('landscape'), W = 297, H = 210, mx = 8, uw = W - mx * 2, nW = 7, adW = 50, topW = 11, gw = (uw - nW - adW - topW) / v.gunler.length, ilk = true;
+                v.gruplar.forEach(function(gr) {
+                    let satirlar = gr.satir.concat([null, null, null]), ust = 27, alan = H - ust - 9, sh = Math.max(5.2, Math.min(7.2, alan / satirlar.length)), sayfaSatir = Math.floor(alan / sh), y, rk = _YOK_PDF_RENK[gr.g] || [71, 85, 105];
+                    for(let b = 0; b < satirlar.length; b += sayfaSatir) {
+                        if(!ilk) { pdf.addPage('a4', 'landscape'); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); } ilk = false;
+                        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.setTextColor(27, 36, 34); pdf.text(T(gr.ad + ' · ' + ayAd + ' yoklama listesi' + (b ? ' (devamı)' : '')), mx, 13);
+                        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118); pdf.text(T('DAĞ Spor Kulübü · ' + gr.satir.length + ' sporcu · ' + new Date().toLocaleDateString('tr-TR')), mx + uw, 13, { align: 'right' });
+                        y = 16.5; pdf.setFillColor(rk[0], rk[1], rk[2]); pdf.rect(mx, y, uw, 1.2, 'F'); y += 1.2;
+                        pdf.setFillColor(243, 246, 245); pdf.rect(mx, y, uw, 9.3, 'F'); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(27, 36, 34); pdf.setFontSize(7.5);
+                        pdf.text('#', mx + nW / 2, y + 6, { align: 'center' }); pdf.text(T('AD SOYAD'), mx + nW + 2, y + 6); pdf.text('TOP.', mx + uw - topW / 2, y + 6, { align: 'center' });
+                        v.gunler.forEach(function(iso, j) { let dt = new Date(iso + 'T12:00:00'), cx = mx + nW + adW + (j + .5) * gw; pdf.setFontSize(8.5); pdf.text(String(dt.getDate()), cx, y + 4.4, { align: 'center' }); pdf.setFontSize(5.5); pdf.setTextColor(100, 116, 139); pdf.text(T(GUN_KISA_TR[dt.getDay()]), cx, y + 8, { align: 'center' }); pdf.setTextColor(27, 36, 34); });
+                        y = ust; let y0 = y, dilim = satirlar.slice(b, b + sayfaSatir);
+                        dilim.forEach(function(s, i) {
+                            if(i % 2) { pdf.setFillColor(248, 250, 252); pdf.rect(mx, y, uw, sh, 'F'); }
+                            if(s) {
+                                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139); pdf.text(String(b + i + 1), mx + nW / 2, y + sh / 2 + 1.1, { align: 'center' });
+                                pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.2); pdf.setTextColor(15, 23, 42); pdf.text(_yokPdfKes(pdf, s.ad, adW - 3), mx + nW + 2, y + sh / 2 + 1.3);
+                                let n = 0;
+                                v.gunler.forEach(function(iso, j) { let x = mx + nW + adW + j * gw, cx = x + gw / 2, cy = y + sh / 2;
+                                    if(s.ode[iso]) { pdf.setFillColor(255, 140, 20); pdf.rect(x, y, gw, sh, 'F'); }
+                                    if(s.gel[iso]) { n++; pdf.setDrawColor(15, 23, 42); pdf.setLineWidth(0.6); pdf.line(cx - 1.6, cy + .1, cx - .4, cy + 1.3); pdf.line(cx - .4, cy + 1.3, cx + 1.8, cy - 1.4); } });
+                                pdf.setFontSize(8); if(n) pdf.text(String(n), mx + uw - topW / 2, y + sh / 2 + 1.3, { align: 'center' });
+                            }
+                            y += sh;
+                        });
+                        pdf.setDrawColor(190, 198, 208); pdf.setLineWidth(0.18);
+                        for(let i = 0; i <= dilim.length; i++) pdf.line(mx, y0 + i * sh, mx + uw, y0 + i * sh);
+                        for(let j = 0; j <= v.gunler.length; j++) { let x = mx + nW + adW + j * gw, pzt = j < v.gunler.length && new Date(v.gunler[j] + 'T12:00:00').getDay() === 1; pdf.setLineWidth(pzt ? 0.5 : 0.18); pdf.line(x, y0, x, y); }
+                        pdf.setLineWidth(0.3); pdf.setDrawColor(120, 130, 142); pdf.rect(mx, 17.7, uw, y - 17.7); pdf.line(mx + nW + adW, 17.7, mx + nW + adW, y);
+                    }
+                });
+                pdf.save('Yoklama_Listesi_' + ym + '.pdf');
+                showToast(eski ? 'PDF indirildi. İnternet yok: turuncu günler bu cihazdaki son kayda göre.' : 'PDF indirildi! 🖨️', eski ? 'warning' : 'success');
+            } catch(e) { console.error(e); showToast('PDF oluşturulamadı.', 'error'); }
         }
         function yoklamaBosCizelgePdf() {
             onayKapat(); showToast('Çizelge hazırlanıyor...', 'warning');

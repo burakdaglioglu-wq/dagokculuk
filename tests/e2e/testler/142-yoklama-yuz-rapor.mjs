@@ -80,6 +80,15 @@ export default async function ({ log }) {
     esit(dl2.suggestedFilename(), 'Yoklama_Haftalik_20250106.pdf', 'haftalık PDF adı');
     await dl2.saveAs(CIKTI + 'Yoklama_Haftalik.pdf');
 
+    // 3b) v460 aylık liste: geldiği gün tik, ödeme günü turuncu (ödeme tarihi o aydaysa; başka ay / ödenmemiş sayılmaz), yazıda "ödeme" geçmez
+    const ay = await p.evaluate(({ PZT, CAR, s }) => { const v = _yokAyVeri('2025-01', { [s.b[0]]: { '2024-12': { odendi: true, odemeTarihi: '2025-01-03' }, '2025-01': { odendi: true, odemeTarihi: '2025-02-01' }, '2025-02': { odendi: false, odemeTarihi: '2025-01-20' } } }); const gr = v.gruplar.find((x) => x.g === 'buyukler'), r = (ad) => gr.satir.find((x) => x.ad === ad); return { gun: v.gunler.length, g0: Object.keys(r(s.b[0]).gel).sort().join(), o0: Object.keys(r(s.b[0]).ode).join(), g1: Object.keys(r(s.b[1]).gel).join(), kart: document.querySelector('.yr-ay').textContent }; }, { PZT, CAR, s });
+    esit(ay.gun, 31, 'ayın tüm günleri'); dogrula(ay.g0.includes(PZT) && ay.g0.includes(CAR), 'geldiği günler: ' + ay.g0); dogrula(!ay.g1.includes(CAR), 'gelmedi işaretli gün sayılmaz'); esit(ay.o0, '2025-01-03', 'ödeme günü');
+    dogrula(!/ödeme|aidat/i.test(ay.kart), 'kartta ödeme yazmamalı');
+    const [dl3] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), p.evaluate(() => { _yokAyYM = '2025-01'; return yoklamaAyListePdf(); })]);
+    esit(dl3.suggestedFilename(), 'Yoklama_Listesi_2025-01.pdf', 'aylık PDF adı'); await dl3.saveAs(CIKTI + 'Yoklama_Listesi.pdf');
+    await p.evaluate(() => { _yokAyYM = null; yoklamaRaporEkranCiz(); }); dogrula(await yataydaTasmaYok(p), 'aylık kart 390 px taşıyor');
+    await p.locator('.yr-ay').screenshot({ path: CIKTI + 'yoklama-ay-kart.png' });
+
     // 4) masaüstü görünüm
     await p.setViewportSize({ width: 1280, height: 900 }); await p.waitForTimeout(200);
     await p.screenshot({ path: CIKTI + 'yoklama-rapor-hafta-1280.png', fullPage: true });

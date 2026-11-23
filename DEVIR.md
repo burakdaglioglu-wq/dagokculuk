@@ -6196,3 +6196,8 @@ Kullanıcı: "hayalet nasıl kaçıyor anlamıyor ve neye ateş etmem gerektiği
 - **Nasıl kaçar:** yalnız zayıf okla (1–6). İz çizilir, "KOLTUĞA kaçtı, peşinden!" yazar, kaçtığı yerde görünür kalır, fener peşinden gider. Gizli kıpırdama, ılık/soğuk, sessizce silinen BOŞ işareti ve parıltı KALDIRILDI (geri ekleme).
 - Boş eşya: yanında saklı hayalet varsa yan eşyalar sallanır TIK TIK (sınıf sol/sağ seçer), yoksa yandakiler de BOŞ. 10/X saklı bir hayaleti gösterir. Kral vurulunca yeniden saklanır. Süre dolunca hayaletler göz önünde pencereden uçar. Oda başında saklanma sahnesi.
 - Süre: Kolay 5 / Normal 5 / Zor 6 seri (eski 10/8/7 ile süre hiç dolmuyordu). Kavanozlar puan panelinin üstünde. Sınıfta DENENMEDİ.
+
+## 170. 🖨️ Aylık yoklama listesi PDF (v460, 2026-11-23)
+Kullanıcı: ayın gelenleri işaretli PDF, fiziksel takip; ödeme günleri turuncu ama PDF'te yazmasın.
+- Yönetici › Yoklama › 📄 Rapor üstünde ay kartı (`_yokAyKartHTML`, `_yokAyVeri`, `yoklamaAyListePdf`). Yatay A4, grup başına sayfa, ayın tüm günleri; geliş = yoklama + skor girilen gün; sonda 3 boş satır.
+- Turuncu = `odemeTarihi` o aya düşen ödenmiş kayıt (tarih yoksa yalnız o ayın kaydının işaretlenme günü). PDF açılırken `/api/dues` taze çekilir. Anlamı hiçbir yerde YAZILMAZ (açıklama ekleme); göz kapalıyken de çıkar. Test 142.
