@@ -817,7 +817,18 @@ function miloYonetimAdaptor() {
             miloDuesTum = (await miloApi('/dues')).dues;
         },
         ozet(k) { let u = miloUyeBul(k), t = x => x ? String(x).split('-').reverse().join('.') : ''; return [['Grup', u.grup], ['Doğum', t(u.dogumTarihi)], ['Katılma', t(u.katilmaTarihi)], ['Veli', u.acilKisi || ''], ['Telefon', u.acilTelefon || ''], ['2. veli', [u.veli2Kisi, u.veli2Telefon].filter(Boolean).join(' · ')]]; },
-        kpiEk(k) { let u = miloUyeBul(k); return u.boy || u.kilo ? [{ et: 'Boy / kilo', deger: (u.boy || '–') + ' / ' + (u.kilo || '–'), alt: 'cm / kg' }] : []; },
+        kpiEk(k) { let u = miloUyeBul(k); return u.boy || u.kilo ? [{ et: 'Boy / kilo', deger: (u.boy || '–') + ' / ' + (u.kilo || '–'), alt: 'cm / kg', alan: 'boy' }] : []; },
+        gelisDetay(k) {
+            let gunler = {}, geldi = {};
+            miloAttendanceTum.forEach(a => { let t = String(a.tarih || '').slice(0, 10); if (a.geldi) (geldi[t] = geldi[t] || {})[a.ad] = 1; if (a.ad === k.ad) gunler[t] = { geldi: !!a.geldi, saat: a.elle && a.saat === '12:00' ? '' : String(a.saat || '').slice(0, 5), kaynak: 'yoklama', seri: [] }; });
+            return { gunler, dersler: (miloProgram || []).map(s => ({ id: s.id, ad: s.grup || 'Ders', gunler: (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number), bas: s.baslangicSaat, bit: s.bitisSaat, iptal: (s.istisnalar || []).map(i => i.tarih), kayitli: (s.katilimcilar || []).some(x => x.grup === k.grup && x.ad === k.ad), yapildi: t => !!geldi[t] && (s.katilimcilar || []).some(x => x.ad !== k.ad && geldi[t][x.ad]) })) };
+        },
+        async gelisYaz(k, iso, d, saat) {
+            let b = { tarih: iso, ad: k.ad };
+            await miloApi('/attendance/auto', { method: d ? 'POST' : 'DELETE', body: JSON.stringify(d ? Object.assign(b, { grup: k.grup, saat, elle: true, geldi: d === 'g' }) : b) });
+            miloAttendanceTum = (await miloApi('/attendance/auto')).attendance;
+        },
+        async aidatYukle() { miloDuesTum = (await miloApi('/dues')).dues || []; return 'ok'; },
         alanlar(k) {
             let u = miloUyeBul(k), gruplar = [...new Set(miloUyeler.map(x => x.grup))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'tr'));
             return [
@@ -898,8 +909,8 @@ document.addEventListener('click', function (e) {
 async function miloKartAc(grup, ad) {
     ynKulup(miloYonetimAdaptor()); ynKartAc(grup + '|' + ad);
     try {
-        let l = await Promise.all([miloDuesTum.length ? null : miloApi('/dues'), miloAttendanceTum.length ? null : miloApi('/attendance/auto')]);
-        if (l[0]) miloDuesTum = l[0].dues || []; if (l[1]) miloAttendanceTum = l[1].attendance || [];
+        let l = await Promise.all([miloProgram.length ? null : miloApi('/antrenman-programi'), miloAttendanceTum.length ? null : miloApi('/attendance/auto')]); // aidatı profil kendisi ister (aidatYukle)
+        if (l[0]) miloProgram = l[0].slots || []; if (l[1]) miloAttendanceTum = l[1].attendance || [];
         if (l[0] || l[1]) ynKartYenile();
     } catch (e) {}
 }

@@ -871,7 +871,6 @@
 .ap .yn-bos{color:var(--ap-soluk);font-size:13px;padding:10px 0}
 .yn-profil-arka{position:fixed;inset:0;z-index:26000;background:#0f1216;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .yn-profil-arka>.ap.yn-profil{border:0;border-radius:0;min-height:100%;padding:0 0 40px;gap:0}
-.ap .yn-p-ust{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(15,18,22,.97);border-bottom:1px solid var(--ap-cizgi);flex-wrap:wrap}
 .ap .yn-p-yol{flex:1 1 140px;min-width:0;color:var(--ap-soluk);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ap .yn-p-yol b{color:var(--ap-yazi)}
 .ap .yn-p-sag{display:flex;gap:6px}
 .ap .yn-p-izgara{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;padding:16px;max-width:1240px;margin:0 auto;width:100%;align-items:start}
@@ -946,6 +945,60 @@
 .ap .yn-devam small{font-size:11px;color:var(--ap-soluk)}.ap .yn-devam b{font-size:11px}
 .ap.yn-pdf-cekim .yn-pdf-gizle{display:none!important}
 .ap #yn-ek-yuva .adm-card{background:transparent;border:0;box-shadow:none;padding:0;margin:8px 0 0}
+.ap .yn-p-ust{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px 10px;padding:10px 16px;background:#0f1216;border-bottom:1px solid var(--ap-cizgi);flex-wrap:wrap}
+.ap .yn-p-atla{flex:1 0 100%;width:100%;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.ap .yn-p-atla::-webkit-scrollbar{display:none}
+.ap .yn-p-atla button{flex:0 0 auto;font:inherit;font-size:12.5px;font-weight:700;min-height:36px;padding:6px 12px;border-radius:99px;border:1px solid var(--ap-cizgi);background:transparent;color:var(--ap-soluk);cursor:pointer;transform:none!important}
+.ap .yn-p-atla button:hover{color:var(--ap-yazi);border-color:var(--ap-soluk)}
+.ap .yn-p-yol button{font:inherit;color:inherit;background:none;border:0;padding:6px 0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;transform:none!important}
+@media (max-width:600px){.ap .yn-p-ust{padding:8px 12px}.ap .yn-p-ust .yn-uz{display:none}.ap .yn-p-ust .yn-p-yol{flex:1 1 60px}.ap .yn-p-ust .ap-btn{min-height:40px;min-width:42px}}
+.ap [id^="yn-b-"],.ap #yn-gd{scroll-margin-top:118px}
+.ap .yn-kutu>button{min-height:88px}.ap .yn-kutu>button::after{content:'›';position:absolute;right:11px;top:7px;font-size:18px;color:var(--ap-soluk);line-height:1}
+.ap .ap-kpi.yn-kutu{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:600px){.ap .ap-kpi.yn-kutu{grid-template-columns:1fr 1fr}.ap .yn-alan input,.ap .yn-alan select,.ap .yn-alan textarea,.ap #yn-kart-pin{font-size:16px!important}}
+.ap .yn-parla{animation:ynParla 1.3s ease-out}@keyframes ynParla{0%,40%{box-shadow:0 0 0 2px var(--ap-vurgu)}100%{box-shadow:0 0 0 2px transparent}}
+.ap .yn-dl button{font:inherit;color:inherit;background:none;border:0;padding:4px 0;margin:-4px 0;cursor:pointer;text-align:right;max-width:100%;overflow-wrap:anywhere;transform:none!important}.ap .yn-dl button::after{content:' ›';color:var(--ap-soluk)}
+.ap .yn-g-ozet{margin:0 0 10px;font-size:14px;line-height:1.5}.ap .yn-g-ozet b{color:#f0c860}
+.ap .yn-g-seg{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.ap .yn-g-seg button,.ap .yn-g-cip button{font:inherit;font-size:12.5px;font-weight:700;min-height:38px;padding:6px 11px;border-radius:8px;border:1px solid var(--ap-cizgi);background:transparent;color:var(--ap-soluk);cursor:pointer;transform:none!important}
+.ap .yn-g-seg button[aria-pressed=true]{background:var(--ap-kart2);border-color:var(--ap-vurgu);color:var(--ap-yazi)}
+.ap .yn-g-say{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-bottom:10px}
+@media (max-width:600px){.ap .yn-g-say{grid-template-columns:1fr 1fr}}
+.ap .yn-g-say button{font:inherit;text-align:left;cursor:pointer;border:1px solid transparent;border-radius:9px;background:var(--ap-kart2);color:var(--ap-yazi);padding:9px 11px;display:grid;gap:1px;min-height:58px;transform:none!important}
+.ap .yn-g-say button[aria-pressed=true]{border-color:var(--ap-vurgu)}.ap .yn-g-say b{font-size:18px;font-variant-numeric:tabular-nums}.ap .yn-g-say small{font-size:12px;color:var(--ap-soluk)}
+.ap .yn-g-liste{border:1px solid var(--ap-cizgi);border-radius:10px;padding:10px;margin-bottom:12px}.ap .yn-g-liste>div:first-child{font-size:12.5px;color:var(--ap-soluk);margin-bottom:7px}
+.ap .yn-g-cip{display:flex;flex-wrap:wrap;gap:6px}.ap .yn-g-cip button{color:var(--ap-yazi);background:var(--ap-kart2)}.ap .yn-g-cip button.k{color:var(--ap-kotu)}.ap .yn-g-cip small{color:var(--ap-soluk);font-weight:600}
+.ap .yn-g-iki{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1000px){.ap .yn-g-iki{grid-template-columns:minmax(0,1fr)}}
+.ap .yn-g-iki h4{margin:0 0 7px;font-size:13px;font-weight:800;color:var(--ap-yazi)}.ap .yn-g-iki h4 span{font-weight:500;color:var(--ap-soluk);font-size:12px;margin-left:6px}
+.ap .yn-t-ust{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;text-align:center}.ap .yn-t-ust b{font-size:14.5px}.ap .yn-t-ust small{display:block;color:var(--ap-soluk);font-size:12px}.ap .yn-t-ust .ap-btn{min-width:44px;min-height:40px}
+.ap .yn-t{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;border-radius:9px}
+.ap .yn-t>span{font-size:11px;font-weight:700;color:var(--ap-soluk);text-align:center;padding-bottom:2px}
+.ap .yn-t button{font:inherit;cursor:pointer;min-height:48px;padding:3px 0;border-radius:9px;border:1px solid transparent;background:var(--ap-kart2);color:var(--ap-soluk);display:grid;align-content:center;justify-items:center;gap:0;transform:none!important;min-width:0}
+.ap .yn-t button b{font-size:13.5px;font-variant-numeric:tabular-nums;font-weight:700}.ap .yn-t button em{font-style:normal;font-size:10.5px;font-variant-numeric:tabular-nums;line-height:1.1}
+.ap .yn-t button.g{background:var(--ap-iyi);color:#06140c}.ap .yn-t button.y{background:var(--ap-kotu-z);border-color:rgba(239,100,97,.5);color:var(--ap-kotu)}.ap .yn-t button.f{background:transparent}.ap .yn-t button.d{border:1px dashed var(--ap-soluk)}
+.ap .yn-t button.bg b{text-decoration:underline;text-underline-offset:3px}.ap .yn-t button.sec{outline:2px solid var(--ap-vurgu);outline-offset:1px}
+.ap .yn-t-lej{display:flex;gap:4px 12px;flex-wrap:wrap;font-size:11.5px;color:var(--ap-soluk);margin-top:7px;line-height:1.4}.ap .yn-t-lej i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.ap .yn-isi{width:calc(100% + 8px);border-collapse:separate;border-spacing:4px;table-layout:fixed;margin:-4px}.ap .yn-isi th{font-size:11.5px;font-weight:700;color:var(--ap-soluk);padding:2px}.ap .yn-isi th:first-child{width:52px;text-align:left;font-variant-numeric:tabular-nums}
+.ap .yn-isi td{padding:0;background:var(--ap-kart2);border-radius:8px;height:42px}.ap .yn-isi td button{font:inherit;font-weight:800;font-size:14px;width:100%;height:42px;border:1px solid transparent;border-radius:8px;cursor:pointer;color:var(--ap-yazi);padding:0;transform:none!important}
+.ap .yn-isi td button[aria-pressed=true]{border-color:var(--ap-vurgu);box-shadow:inset 0 0 0 1px var(--ap-vurgu)}
+.ap .yn-gd{margin-top:10px;border:1px solid var(--ap-vurgu);border-radius:10px;padding:11px 12px;background:var(--ap-kart2)}
+.ap .yn-gd-b{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.ap .yn-gd-b b{font-size:14.5px}
+.ap .yn-gd p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ap-soluk)}.ap .yn-gd p b{color:var(--ap-yazi)}
+.ap .yn-gd-s{display:grid;gap:5px;margin-top:8px}.ap .yn-gd-s>div{display:flex;align-items:center;gap:8px;font-size:12.5px}.ap .yn-gd-s>div>small{width:40px;flex:none;color:var(--ap-soluk);font-variant-numeric:tabular-nums}.ap .yn-gd-s>div>b{margin-left:auto;font-variant-numeric:tabular-nums}
+.ap .yn-ok{display:flex;gap:3px;flex-wrap:wrap;min-width:0}.ap .yn-ok i{font-style:normal;min-width:22px;height:22px;padding:0 3px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:800;background:#3a4150;color:#fff}
+.ap .yn-ok i.s{background:#f2c230;color:#221a00}.ap .yn-ok i.k{background:#c93c34}.ap .yn-ok i.m{background:#2b6cb0}.ap .yn-ok i.z{background:#0d1014;box-shadow:inset 0 0 0 1px var(--ap-soluk)}.ap .yn-ok i.b{background:#e8ebf0;color:#14171c}
+.ap .yn-gd-d{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.ap .yn-gd-d .ap-btn{min-height:40px}
+.ap .yn-sk{display:flex;gap:6px;align-items:flex-end;height:118px;margin-bottom:10px}
+.ap .yn-sk button{flex:1 1 0;min-width:0;max-width:64px;height:100%;font:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--ap-yazi);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;transform:none!important}
+.ap .yn-sk i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--ap-vurgu);min-height:3px}.ap .yn-sk b{font-size:11.5px;font-variant-numeric:tabular-nums}.ap .yn-sk small{font-size:10.5px;color:var(--ap-soluk);white-space:nowrap}.ap .yn-sk button:hover i{filter:brightness(1.15)}
+.ap button.yn-sat{font:inherit;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--ap-cizgi);color:var(--ap-yazi);cursor:pointer;display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 2px;min-height:44px;font-size:13px;transform:none!important}
+.ap button.yn-sat:hover{background:var(--ap-kart2)}.ap button.yn-sat span{color:var(--ap-soluk);min-width:0}.ap button.yn-sat>b:last-child{font-variant-numeric:tabular-nums}
+.ap button.yn-olay{font:inherit;font-size:12.5px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--ap-cizgi);color:var(--ap-yazi);cursor:pointer;min-height:40px;align-items:center;transform:none!important}.ap button.yn-olay:first-child{border-top:0}.ap button.yn-olay:hover{background:var(--ap-kart2)}
+.ap .yn-devam button{font:inherit;background:none;border:0;padding:0;color:var(--ap-yazi);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;transform:none!important}
+.ap button.deger{font:inherit;font-size:14px;text-align:left;width:100%;background:none;border:0;border-bottom:1px dashed var(--ap-cizgi);border-radius:0;color:var(--ap-yazi);padding:9px 24px 9px 0;min-height:42px;cursor:pointer;position:relative;white-space:pre-wrap;overflow-wrap:anywhere;transform:none!important}.ap button.deger::after{content:'✎';position:absolute;right:2px;top:9px;color:var(--ap-soluk)}.ap button.deger:hover{border-bottom-color:var(--ap-vurgu)}
+.ap .yn-alan-d{display:flex;gap:6px;margin-top:4px}.ap .yn-alan-d .ap-btn{min-height:40px}
+.ap button.ynk-s{font:inherit;font-size:12.5px;background:none;border:0;padding:4px 0;width:100%;cursor:pointer;min-height:34px;text-align:left;transform:none!important}.ap button.ynk-s b::after{content:' ›';color:var(--ap-soluk)}
+@media (prefers-reduced-motion:reduce){.ap .yn-parla{animation:none}}
 @media print{.yn-profil-arka{position:static}}`;
         document.head.appendChild(s);
     }
@@ -1069,14 +1122,15 @@
     window.ynKartAc = function (id, ay) {
         css(); if (!YN.Y) return;
         let l = document.getElementById('yn-ara-liste'); if (l) { l.innerHTML = ''; l.className = ''; }
-        YN.kart = id; YN.kartAy = ay || null; YN.kartYil = (ay || bugun()).slice(0, 4); YN.duzen = false;
+        if (YN.kart !== id) YN.takAy = YN.takGun = YN.gl = null;
+        YN.kart = id; YN.kartAy = ay || null; YN.kartYil = (ay || bugun()).slice(0, 4); YN.duzen = false; YN.alanDuz = null; YN.aidatDurum = null;
         let a = document.getElementById('yn-kart'); if (!a) { a = document.createElement('div'); a.id = 'yn-kart'; a.className = 'yn-profil-arka'; document.body.appendChild(a); }
         document.addEventListener('keydown', ynKartEsc);
         ynKartCiz(); a.scrollTop = 0;
     };
     function ynKartEsc(e) { if (e.key === 'Escape' && !YN.duzen) ynKartKapat(); }
-    window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; YN.duzen = false; document.removeEventListener('keydown', ynKartEsc); };
-    window.ynKartYenile = function () { if (YN.kart && document.getElementById('yn-kart') && !YN.duzen) ynKartCiz(); };
+    window.ynKartKapat = function () { let a = document.getElementById('yn-kart'); if (a) a.remove(); YN.kart = null; YN.duzen = false; YN.alanDuz = null; YN.takAy = YN.takGun = YN.gl = null; document.removeEventListener('keydown', ynKartEsc); };
+    window.ynKartYenile = function () { if (YN.kart && document.getElementById('yn-kart') && !YN.duzen && !YN.alanDuz) ynKartCiz(); };
     // yalnız "Kayıt işlemleri" kartları (Y.islemPanel → #ynk-panel): sunucudan gelen giriş/yarışma/program bilgisi kartın geri
     // kalanını (yazılmakta olan plan, aidat formu) silmeden yerine konur
     window.ynKartIslemYenile = function () { let k = YN.kart && ynKisi(), el = document.getElementById('ynk-panel'); if (k && el && YN.Y.islemPanel) el.outerHTML = YN.Y.islemPanel(k); };
@@ -1090,14 +1144,144 @@
         if (a.tip === 'not') return `<textarea data-alan="${a.id}" maxlength="500">${esc(d)}</textarea>`;
         return `<input data-alan="${a.id}" type="${a.tip === 'tarih' ? 'date' : a.tip === 'sayi' ? 'number' : a.tip === 'tel' ? 'tel' : 'text'}" value="${esc(d)}"${a.tip === 'tarih' ? ` max="${bugun()}"` : ''}>`;
     }
+    // ---- 📅 Geliş + 🎯 Skor (v448, 2026-11-23, kullanıcı: "geldiği günlerin özeti, saat dilimleri; buradaki her şeye tıklayabilme, oraya gitmesi gerek") ----
+    //   gelisDetay(k) → { gunler: { iso: { geldi, saat, kaynak: 'skor'|'yoklama', seri: [{ oklar, puan, saat }] } },
+    //                     dersler: [{ id, ad, gunler: [0-6], bas, bit, iptal: [iso], kayitli, yapildi(iso) }] }
+    //   gelisYaz(k, iso, 'g'|'y'|null, saat) → Promise · aidatYukle() → Promise<'ok'|'oturum'|'hata'> · girisIste() · gitYer(k, yer, ek)
+    // Saat dilimi = o günün program dersi (kayıtlı olduğu ders önce; yoksa saati en yakın ders), ders yoksa kayıt saatinin saat başı.
+    // Kaçırdı: 'gelmedi' işaretli, ya da kayıtlı dersi o gün YAPILMIŞ (başkası gelmiş) ve kendisi yok. Ders yapılmadıysa sayılmaz;
+    // derse ilk geldiği günden önceki haftalar da sayılmaz (programa sonradan eklenmiş olabilir).
+    const GUN_K = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'], GUN_U = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'], GUN_SIRA = [1, 2, 3, 4, 5, 6, 0];
+    const YN_OZET_ALAN = { Kategori: 'grup', Grup: 'grup', 'Doğum': 'dogum', 'Katılma': 'katilma', Veli: 'veli', Telefon: 'tel', '2. veli': 'veli2', 'Sporcu kodu': '*' };
+    const gunNo = t => new Date(t + 'T12:00:00').getDay(), dkS = s => { let p = String(s || '0:0').split(':'); return +p[0] * 60 + (+p[1] || 0); };
+    const gunEkle = (t, n) => { let d = new Date(t + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };
+    const tarihTR = t => +t.slice(8) + ' ' + AY_K[+t.slice(5, 7) - 1];
+    const okPuan = o => { let v = String(o).toUpperCase(); return v === 'X' ? 10 : v === 'M' ? 0 : +v || 0; };
+    const okOrt = l => { let n = 0, p = 0; l.forEach(x => (x.oklar || []).forEach(o => { n++; p += okPuan(o); })); return { n, p, ort: n ? p / n : null }; };
+    const yz1 = v => v == null ? '—' : v.toFixed(1).replace('.', ',');
+    function gelisVeri(k) {
+        let Y = YN.Y, D = Y.gelisDetay ? Y.gelisDetay(k) : null, b = bugun();
+        if (!D) { D = { gunler: {}, dersler: [] }; ((Y.gelisler() || {})[k.ad] || []).forEach(t => { D.gunler[t] = { geldi: true, saat: '', seri: [] }; }); }
+        let gd = t => D.dersler.filter(s => s.gunler.indexOf(gunNo(t)) >= 0 && (s.iptal || []).indexOf(t) < 0);
+        let bul = (l, dk) => l.filter(s => dk >= dkS(s.bas) - 45 && dk <= dkS(s.bit) + 30).sort((x, y) => Math.abs(dkS(x.bas) - dk) - Math.abs(dkS(y.bas) - dk))[0] || null;
+        let gel = [], ilkDers = {};
+        Object.keys(D.gunler).sort().forEach(t => {
+            let r = D.gunler[t]; r.seri = r.seri || []; if (!r.geldi) return; gel.push(t);
+            let l = gd(t), kay = l.filter(s => s.kayitli), dk = r.saat ? dkS(r.saat) : null;
+            r.ders = (dk != null && (bul(kay, dk) || bul(l, dk))) || (kay.length === 1 && (dk == null || r.kaynak !== 'skor') ? kay[0] : null);
+            r.dilim = r.ders ? r.ders.bas : r.saat ? r.saat.slice(0, 2) + ':00' : '';
+            r.ek = D.dersler.some(s => s.kayitli) && !kay.length; // kayıtlı ders günü değildi
+            if (r.ders && r.ders.kayitli && !ilkDers[r.ders.id]) ilkDers[r.ders.id] = t;
+        });
+        let kac = {}; // iso → kaçırdığı ders (programda dersi yoksa null)
+        Object.keys(D.gunler).forEach(t => { if (!D.gunler[t].geldi && t <= b) kac[t] = gd(t).filter(s => s.kayitli)[0] || null; });
+        D.dersler.filter(s => s.kayitli && ilkDers[s.id]).forEach(s => { for (let t = ilkDers[s.id]; t < b; t = gunEkle(t, 1)) if (s.gunler.indexOf(gunNo(t)) >= 0 && !D.gunler[t] && (s.iptal || []).indexOf(t) < 0 && s.yapildi && s.yapildi(t)) kac[t] = s; });
+        let donem = n => {
+            let bas = n ? gunEkle(b, -n + 1) : '0000', g = gel.filter(t => t >= bas), kc = Object.keys(kac).filter(t => t >= bas).sort(), ilk = gel[0] && gel[0] > bas ? gel[0] : n ? bas : b, ara = null;
+            g.concat(g.length ? [b] : []).forEach((t, i, l) => { if (i) { let f = gunFark(l[i - 1], t); if (!ara || f > ara.f) ara = { f, a: l[i - 1], z: t, simdi: i === l.length - 1 }; } });
+            return { gel: g, kac: kc, ek: g.filter(t => D.gunler[t].ek), ara, hafta: Math.max(1, (gunFark(ilk, b) + 1) / 7), oran: D.dersler.some(s => s.kayitli) && g.length + kc.length >= 3 ? Math.round(g.length / (g.length + kc.length) * 100) : null };
+        };
+        let cift = l => { let h = {}; l.forEach(t => { let a = gunNo(t) + '|' + D.gunler[t].dilim; (h[a] = h[a] || { g: gunNo(t), d: D.gunler[t].dilim, n: 0 }).n++; }); return Object.keys(h).map(a => h[a]).sort((x, y) => y.n - x.n || !x.d - !y.d); };
+        return { D, gel, kac, donem, cift, gd, skorVar: gel.some(t => D.gunler[t].seri.length) };
+    }
+    const YN_DONEM = [[30, '1 ay'], [90, '3 ay'], [180, '6 ay'], [365, '1 yıl'], [0, 'Tümü']];
+    function gelisHTML(k, V) {
+        V = V || gelisVeri(k); let n = YN.donem == null ? 90 : YN.donem, d = V.donem(n), D = V.D, gl = YN.gl, b = bugun(), kayitli = D.dersler.some(s => s.kayitli);
+        let cift = V.cift(d.gel), sik = cift.filter(c => c.n >= 2).slice(0, 3), gunAd = c => `<b>${GUN_U[c.g]}${c.d ? ' ' + c.d : ''}</b> (${c.n})`;
+        let ozet = !d.gel.length ? 'Bu dönemde geldiği gün yok.' : (sik.length ? 'En çok ' + sik.map(gunAd).join(', ') + ' geliyor. ' : '') + `Haftada ortalama <b>${yz1(d.gel.length / d.hafta)}</b> gün.`;
+        let say = (tip, deger, alt) => `<button type="button" aria-pressed="${!!gl && gl.tip === tip}" onclick="ynGl('${tip}')"><b>${deger}</b><small>${alt}</small></button>`;
+        let sayilar = say('gel', d.gel.length, 'gün geldi') + say('kac', d.kac.length, 'ders kaçırdı') + (kayitli ? say('ek', d.ek.length, 'kendi günü dışında') : '') + say('ara', d.ara ? d.ara.f + ' gün' : '—', 'en uzun ara');
+        let liste = '';
+        if (gl) {
+            let l = gl.tip === 'kac' ? d.kac : gl.tip === 'ek' ? d.ek : gl.tip === 'dilim' ? d.gel.filter(t => gunNo(t) === gl.g && D.gunler[t].dilim === gl.d) : d.gel;
+            let bas = gl.tip === 'ara' ? (d.ara ? `${tarihTR(d.ara.a)} → ${d.ara.simdi ? 'bugün' : tarihTR(d.ara.z)} arası ${d.ara.f} gün gelmedi` : 'Yeterli kayıt yok') : gl.tip === 'kac' ? 'Kaçırdığı dersler' : gl.tip === 'ek' ? 'Kendi ders günü dışında geldiği günler' : gl.tip === 'dilim' ? `${GUN_U[gl.g]} ${gl.d || 'saati belli olmayan'} gelişleri` : 'Geldiği günler';
+            if (gl.tip === 'ara') l = d.ara ? [d.ara.a].concat(d.ara.simdi ? [] : [d.ara.z]) : [];
+            liste = `<div class="yn-g-liste"><div>${bas}${gl.tip === 'ara' ? '' : ' · ' + l.length}</div><div class="yn-g-cip">${l.slice().reverse().slice(0, 80).map(t => `<button type="button" class="${gl.tip === 'kac' ? 'k' : ''}" onclick="ynGunAc('${t}')">${tarihTR(t)} <small>${GUN_K[gunNo(t)]}${gl.tip === 'kac' ? (V.kac[t] ? ' ' + V.kac[t].bas : '') : D.gunler[t].dilim ? ' ' + D.gunler[t].dilim : ''}</small></button>`).join('')}</div></div>`;
+        }
+        // gün × saat
+        let gunler = GUN_SIRA.filter(g => cift.some(c => c.g === g)), dilimler = [...new Set(cift.map(c => c.d))].sort((x, y) => (x || '99').localeCompare(y || '99')), mx = Math.max(1, ...cift.map(c => c.n));
+        let isi = cift.length ? `<table class="yn-isi"><thead><tr><th></th>${gunler.map(g => `<th>${GUN_K[g]}</th>`).join('')}</tr></thead><tbody>${dilimler.map(s => `<tr><th>${s || 'saat ?'}</th>${gunler.map(g => { let c = cift.find(x => x.g === g && x.d === s); return `<td>${c ? `<button type="button" aria-pressed="${!!gl && gl.tip === 'dilim' && gl.g === g && gl.d === s}" aria-label="${GUN_U[g]} ${s || 'saati belli değil'}: ${c.n} kez" style="background:rgba(63,191,127,${(0.18 + 0.62 * c.n / mx).toFixed(2)})" onclick="ynDilim(${g},'${s}')">${c.n}</button>` : ''}</td>`; }).join('')}</tr>`).join('')}</tbody></table><div class="yn-t-lej"><span>Saat = o günkü dersin başlangıcı; derse denk gelmiyorsa kayıt saati.${dilimler.indexOf('') >= 0 ? ' “saat ?” = saati yazılmamış.' : ''}</span></div>` : '<div class="yn-bos">Kayıt yok.</div>';
+        // takvim (bu ay hiç gelmediyse son geldiği ay açılır)
+        let m = YN.takAy, sonAy = V.gel.length ? V.gel[V.gel.length - 1].slice(0, 7) : '';
+        if (!m) m = sonAy && sonAy < b.slice(0, 7) ? sonAy : b.slice(0, 7);
+        let [yy, mm] = m.split('-').map(Number), bos = (new Date(yy, mm - 1, 1).getDay() + 6) % 7, son = new Date(yy, mm, 0).getDate(), hc = '';
+        for (let i = 0; i < bos; i++) hc += '<span></span>';
+        for (let i = 1; i <= son; i++) {
+            let t = m + '-' + String(i).padStart(2, '0'), r = D.gunler[t], kd = V.gd(t).filter(s => s.kayitli)[0], geldi = r && r.geldi, kc = t in V.kac;
+            let c = geldi ? 'g' : kc ? 'y' : t > b ? (kd ? 'f d' : 'f') : '', et = geldi ? r.dilim : kd && (t >= b || kc) ? kd.bas : '';
+            hc += `<button type="button" class="${c}${t === b ? ' bg' : ''}${YN.takGun === t ? ' sec' : ''}" onclick="ynGunAc('${t}')" aria-label="${i} ${AY_UZUN_TR[mm - 1]}${geldi ? ': geldi ' + r.dilim : kc ? ': gelmedi' : ''}"><b>${i}</b><em>${et}</em></button>`;
+        }
+        let ayN = V.gel.filter(t => t.slice(0, 7) === m).length, ayK = Object.keys(V.kac).filter(t => t.slice(0, 7) === m).length;
+        let takvim = `<div class="yn-t-ust"><button class="ap-btn" onclick="ynAyAc('${ayEkle(m, -1)}',1)" aria-label="Önceki ay">‹</button><span><b>${AY_UZUN_TR[mm - 1]} ${yy}</b><small>${ayN} gün geldi${ayK ? ' · ' + ayK + ' kaçırdı' : ''}</small></span><button class="ap-btn" onclick="ynAyAc('${ayEkle(m, 1)}',1)" aria-label="Sonraki ay">›</button></div><div class="yn-t">${GUN_SIRA.map(g => `<span>${GUN_K[g]}</span>`).join('')}${hc}</div><div class="yn-t-lej"><span><i style="background:var(--ap-iyi)"></i>geldi</span><span><i style="background:var(--ap-kotu-z);border:1px solid var(--ap-kotu)"></i>gelmedi</span>${kayitli ? '<span><i style="border:1px dashed var(--ap-soluk)"></i>gelecek dersi</span>' : ''}</div>`;
+        return `<div class="ap-panel" id="yn-b-gelis"><h3><b>📅 Geldiği günler ve saatler${typeof yeniRozet === 'function' ? ' ' + yeniRozet() : ''}</b><span>güne, sayıya, saate dokun</span></h3>
+            <div class="yn-g-seg yn-pdf-gizle" role="group" aria-label="Dönem">${YN_DONEM.map(x => `<button type="button" aria-pressed="${x[0] === n}" onclick="YN.donem=${x[0]}; ynGelisCiz()">${x[1]}</button>`).join('')}</div>
+            <p class="yn-g-ozet">${ozet}</p><div class="yn-g-say">${sayilar}</div>${liste}
+            <div class="yn-g-iki"><div>${takvim}${YN.takGun ? gunHTML(k, V, YN.takGun) : ''}</div><div><h4>Hangi gün, hangi saatte<span>${(YN_DONEM.find(x => x[0] === n) || ['', ''])[1]}</span></h4>${isi}</div></div></div>`;
+    }
+    const okSinif = o => { let v = okPuan(o); return String(o).toUpperCase() === 'M' ? '' : v >= 9 ? 's' : v >= 7 ? 'k' : v >= 5 ? 'm' : v >= 3 ? 'z' : 'b'; };
+    function gunHTML(k, V, t) {
+        let Y = YN.Y, D = V.D, r = D.gunler[t], b = bugun(), kd = V.gd(t).filter(s => s.kayitli), p = t.split('-'), bas = `${+p[2]} ${AY_UZUN_TR[+p[1] - 1]} ${p[0]} ${GUN_U[gunNo(t)]}`, kc = t in V.kac;
+        let etk = r && r.geldi ? '<span class="ap-etk i">✓ Geldi</span>' : kc ? '<span class="ap-etk k">✗ Gelmedi</span>' : t > b ? '<span class="ap-etk m">gelecek</span>' : '<span class="ap-etk">kayıt yok</span>';
+        let ic = '';
+        if (r && r.geldi) ic += `<p>${r.saat ? `⏰ <b>${esc(r.saat)}</b> ${r.kaynak === 'skor' ? 'ilk skoru' : 'yoklama kaydı'} · ` : ''}${r.ders ? `Ders: <b>${esc(r.ders.ad)} ${r.ders.bas}–${r.ders.bit}</b>${r.ders.kayitli ? '' : ' (kayıtlı olmadığı ders)'}` : 'Programdaki bir derse denk gelmiyor'}</p>`;
+        else if (kd.length) ic += `<p>Dersi: <b>${kd.map(s => esc(s.ad) + ' ' + s.bas + '–' + s.bit).join(', ')}</b>${!r && kc ? ' · ders yapıldı, bu sporcunun kaydı yok' : ''}</p>`;
+        else if (!r) ic += '<p>Bu gün kayıtlı dersi yok.</p>';
+        if (r && r.seri.length) {
+            let o = okOrt(r.seri), en = Math.max(...r.seri.map(x => okOrt([x]).p)), tum = YN.seriTum === t;
+            ic += `<p>🎯 <b>${r.seri.length} seri</b> · ${o.n} ok · ok başı <b>${yz1(o.ort)}</b> · en iyi seri <b>${en}</b></p><div class="yn-gd-s">${r.seri.slice(0, tum ? 99 : 6).map(x => `<div><small>${x.saat || ''}</small><span class="yn-ok">${(x.oklar || []).map(v => `<i class="${okSinif(v)}">${esc(v)}</i>`).join('')}</span><b>${okOrt([x]).p}</b></div>`).join('')}</div>${r.seri.length > 6 && !tum ? `<button class="ap-link" style="margin-top:8px;min-height:32px" onclick="YN.seriTum='${t}'; ynGelisCiz()">${r.seri.length - 6} seri daha</button>` : ''}`;
+        }
+        let yaz = Y.gelisYaz && t <= b && !(r && r.seri.length) ? `${r && r.geldi ? '' : `<button class="ap-btn iyi" onclick="ynGunYaz('${t}','g')">✓ Geldi yap</button>`}${r && !r.geldi ? '' : `<button class="ap-btn" onclick="ynGunYaz('${t}','y')">✗ Gelmedi yap</button>`}${r ? `<button class="ap-btn" onclick="ynGunYaz('${t}',null)">Kaydı kaldır</button>` : ''}` : '';
+        return `<div class="yn-gd" id="yn-gd"><div class="yn-gd-b"><b>${bas}</b>${etk}</div>${ic}<div class="yn-gd-d yn-pdf-gizle">${yaz}${Y.gitYer && t <= b ? `<button class="ap-btn" onclick="ynYer('yoklama','${t}')">📋 O günün yoklaması</button>` : ''}${Y.gitYer && r && r.seri.length ? '<button class="ap-btn" onclick="ynYer(\'skor\')">🎯 Skorları düzelt</button>' : ''}<button class="ap-btn" onclick="YN.takGun=null; ynGelisCiz()">Kapat</button></div></div>`;
+    }
+    function skorHTML(k, V) {
+        if (!V.skorVar) return '';
+        let gun = V.gel.map(t => ({ t, l: V.D.gunler[t].seri, o: okOrt(V.D.gunler[t].seri) })).filter(x => x.o.n); if (!gun.length) return '';
+        let hepsi = l => okOrt([].concat(...l.map(x => x.l))), son = gun.slice(-10), mx = Math.max(...son.map(x => x.o.ort), 0.1), tum = hepsi(gun), s3 = hepsi(gun.slice(-3)), o3 = hepsi(gun.slice(-6, -3)), f = gun.length >= 6 ? s3.ort - o3.ort : null;
+        let enS = null; gun.forEach(x => x.l.forEach(y => { let p = okOrt([y]).p; if (!enS || p > enS.p) enS = { p, t: x.t }; }));
+        return `<div class="ap-panel" id="yn-b-skor"><h3>🎯 Skor <span>güne dokun → o günün serileri</span></h3>
+            <p class="yn-g-ozet">Ok başı ortalama <b>${yz1(tum.ort)}</b> · ${tum.n} ok, ${gun.length} atış günü.${f == null ? '' : ` Son 3 atış günü <b>${yz1(s3.ort)}</b>, önceki 3 gün ${yz1(o3.ort)} ${Math.abs(f) < 0.1 ? '(benzer)' : f > 0 ? '↑' : '↓'}.`}</p>
+            <div class="yn-sk">${son.map(x => `<button type="button" onclick="ynGunAc('${x.t}')" aria-label="${tarihTR(x.t)}: ok başı ${yz1(x.o.ort)}"><b>${yz1(x.o.ort)}</b><i style="height:${Math.round(x.o.ort / mx * 76)}px"></i><small>${+x.t.slice(8)}.${x.t.slice(5, 7)}</small></button>`).join('')}</div>
+            ${gun.slice(-4).reverse().map(x => `<button type="button" class="yn-sat" onclick="ynGunAc('${x.t}')"><b>${tarihTR(x.t)} ${GUN_K[gunNo(x.t)]}</b><span>${x.l.length} seri · ${x.o.n} ok</span><b>${yz1(x.o.ort)} ›</b></button>`).join('')}
+            <div class="ap-alt yn-pdf-gizle"><button class="ap-link" style="min-height:36px" onclick="ynGunAc('${enS.t}')">En iyi seri ${enS.p} · ${tarihTR(enS.t)}</button>${YN.Y.gitYer ? '<button class="ap-btn" onclick="ynYer(\'skor\')">Skorları düzelt</button>' : ''}</div></div>`;
+    }
+    // ---- dokunma / gitme ----
+    window.ynGelisCiz = function () { let el = document.getElementById('yn-b-gelis'), k = YN.kart && ynKisi(); if (el && k) el.outerHTML = gelisHTML(k); };
+    window.ynBolum = function (ad, sec) { let e = document.querySelector(sec || '#yn-b-' + ad); if (!e) return; e.scrollIntoView({ behavior: 'smooth', block: sec ? 'center' : 'start' }); e.classList.remove('yn-parla'); void e.offsetWidth; e.classList.add('yn-parla'); };
+    window.ynGunAc = function (t) { YN.takGun = t; YN.takAy = t.slice(0, 7); ynGelisCiz(); ynBolum('', '#yn-gd'); };
+    window.ynAyAc = function (m, yerinde) { YN.takAy = m; YN.takGun = null; ynGelisCiz(); if (!yerinde) ynBolum('', '#yn-b-gelis .yn-t'); };
+    window.ynGl = function (tip, donem) { if (donem != null) YN.donem = donem; YN.gl = donem == null && YN.gl && YN.gl.tip === tip ? null : { tip }; ynGelisCiz(); if (donem != null) ynBolum('gelis'); };
+    window.ynDilim = function (g, d, donem) { if (donem != null) YN.donem = donem; let x = YN.gl; YN.gl = donem == null && x && x.tip === 'dilim' && x.g === g && x.d === d ? null : { tip: 'dilim', g, d }; ynGelisCiz(); ynBolum('gelis'); };
+    window.ynYer = function (yer, ek) { let k = ynKisi(); if (k && YN.Y.gitYer) YN.Y.gitYer(k, yer, ek); };
+    window.ynOdemeAc = function (m) { YN.kartYil = m.slice(0, 4); YN.kartAy = m; ynKartCiz(); ynBolum('aidat'); };
+    window.ynAlanAc = function (id) {
+        let k = ynKisi(); if (!k || !YN.Y.kaydet || !(YN.Y.alanlar(k) || []).some(x => x.id === id)) return ynBolum('bilgi');
+        YN.alanDuz = id; ynKartCiz(); ynBolum('', '#yn-a-' + id);
+        let e = document.querySelector('#yn-a-' + id + ' input,#yn-a-' + id + ' select,#yn-a-' + id + ' textarea'); if (e) e.focus({ preventScroll: true });
+    };
+    window.ynAidatGit = function () {
+        ynBolum('aidat'); if (YN.aidatDurum === 'oturum' && YN.Y.girisIste) return YN.Y.girisIste(); if (YN.aidatDurum === 'hata') return ynAidatYukle();
+        let e = document.getElementById('yn-kart-pin'); if (e) e.focus({ preventScroll: true });
+    };
+    // Aidat verisi gelmemişse profil kendisi ister (eskiden sonsuza dek "yükleniyor" yazıyordu: oturum düşmüş ya da senkron bitmemiş)
+    window.ynAidatYukle = function () {
+        if (!YN.Y.aidatYukle || YN.aidatDurum === 'yukleniyor') return; YN.aidatDurum = 'yukleniyor'; let kim = YN.kart;
+        YN.Y.aidatYukle().catch(() => 'hata').then(r => { if (YN.kart !== kim) return; YN.aidatDurum = r; ynKartYenile(); });
+    };
+    window.ynGunYaz = async function (t, s) {
+        let k = ynKisi(); if (!k || !YN.Y.gelisYaz) return; let V = gelisVeri(k), kd = V.gd(t).filter(x => x.kayitli)[0], r = V.D.gunler[t];
+        try { await YN.Y.gelisYaz(k, t, s, (r && r.saat) || (kd && kd.bas) || '12:00'); tost(s === 'g' ? '✓ ' + tarihTR(t) + ' geldi' : s === 'y' ? tarihTR(t) + ' gelmedi' : tarihTR(t) + ' kaydı kaldırıldı', s === 'g' ? 'success' : 'warning'); }
+        catch (e) { tost('Kaydedilemedi: bağlantıyı kontrol et.', 'error'); }
+        sonra();
+    };
     function ynKartCiz() {
         let a = document.getElementById('yn-kart'), Y = YN.Y; if (!a) return;
         let k = ynKisi();
         if (!k) { a.innerHTML = '<div class="ap yn-profil"><div class="yn-p-ust"><button class="ap-btn" onclick="ynKartKapat()">← Geri</button></div><div class="yn-bos">Sporcu bulunamadı (silinmiş ya da adı değişmiş olabilir).</div></div>'; return; }
-        let G = (Y.gelisler() || {})[k.ad] || [], b = bugun(), ay = b.slice(0, 7), sonG = G.length ? G[G.length - 1] : null;
+        let V = gelisVeri(k), G = V.gel, b = bugun(), ay = b.slice(0, 7), sonG = G.length ? G[G.length - 1] : null;
         let ayGelis = m => G.filter(t => t.slice(0, 7) === m).length, son3 = [0, -1, -2].reduce((t, n) => t + ayGelis(ayEkle(ay, n)), 0);
-        let aidatHazir = !Y.aidatHazir || Y.aidatHazir(), aidatAcik = (Y.aidatAcik ? Y.aidatAcik() : true) && aidatHazir, A = Y.aidat;
+        let aidatHazir = !Y.aidatHazir || Y.aidatHazir() || YN.aidatDurum === 'ok', aidatAcik = (Y.aidatAcik ? Y.aidatAcik() : true) && aidatHazir, A = Y.aidat;
         if (aidatAcik && A && A.hazirla) A.hazirla(ay);
+        if (!aidatHazir && Y.aidatYukle && !YN.aidatDurum) ynAidatYukle();
         let yas = k.yas != null ? k.yas : k.dogum ? Math.floor((Date.now() - new Date(k.dogum + 'T12:00:00')) / (365.25 * 864e5)) : null;
         let durum = (k.pasif ? '<span class="ap-etk k">Pasif</span>' : '<span class="ap-etk i">Aktif</span>') + (k.turAd ? ` <span class="ap-etk m">${esc(k.turAd)}</span>` : '') + (k.muaf ? ' <span class="ap-etk m">Aidattan muaf</span>' : '');
         // aidat: bu yıl ödenmemiş (borç sayılan) aylar
@@ -1107,14 +1291,17 @@
         if (aidatAcik) [0, -1, -2, -3, -4, -5].forEach(n => { if (ayDurum(ayEkle(ay, n))[0] === 'bor') acikAy++; });
         let borAylar = []; if (aidatAcik) for (let n = 0; n < 12; n++) { let m = ayEkle(ay, -n); if (ayDurum(m)[0] === 'bor') borAylar.unshift(m); }
         if (aidatAcik) for (let i = 1; i <= 12; i++) { let m = yil + '-' + String(i).padStart(2, '0'), d = ayDurum(m), n = ayGelis(m); hucre += `<button class="${d[0]}${YN.kartAy === m ? ' sec' : ''}" onclick="ynKartAySec('${m}')" aria-label="${ayKisa(m)} ${yil}: ${d[1]}${n ? ', ' + n + ' ders' : ''}"><small>${ayKisa(m)}</small><b>${d[1]}</b><em>${n ? n + ' ders' : '·'}</em></button>`; }
-        let tile = (cls, et, deger, alt) => `<div class="${cls}"><small>${et}</small><b class="ap-num">${deger}</b><span>${alt}</span></div>`;
-        let tiles = tile('', 'Son geliş', sonG ? gunYaz(gunFark(sonG, b)) : '—', sonG ? sonG.split('-').reverse().join('.') : 'yoklama kaydı yok')
-            + tile('iyi', 'Bu ay', ayGelis(ay) + ' ders', 'son 3 ayda ' + son3 + ' ders')
-            + (!aidatAcik ? tile('', 'Aidat', '🔒', aidatHazir ? 'aidat PIN\'i ile görünür' : 'yükleniyor') : k.muaf ? tile('', 'Aidat', 'Muaf', 'ödeme beklenmiyor') : acikAy ? tile('kotu', 'Aidat · açık', tl(acikAy * A.aylik(k)), acikAy + ' ay ödenmemiş (son 6 ay)') : tile('iyi', 'Aidat', 'Güncel', 'son 6 ayda açık yok'))
-            + (Y.kpiEk ? Y.kpiEk(k) : []).map(x => tile('', x.et, x.deger, x.alt)).join('');
+        let tile = (cls, et, deger, alt, fn) => `<button type="button" class="${cls}" onclick="${fn}"><small>${et}</small><b class="ap-num">${deger}</b><span>${alt}</span></button>`;
+        let dn = V.donem(90), enC = V.cift(dn.gel).filter(c => c.d)[0], gecN = ayGelis(ayEkle(ay, -1)), aDur = YN.aidatDurum;
+        let tiles = tile('', 'Son geliş', sonG ? gunYaz(gunFark(sonG, b)) : '—', sonG ? GUN_U[gunNo(sonG)] + ' · ' + sonG.split('-').reverse().join('.') : 'yoklama kaydı yok', sonG ? `ynGunAc('${sonG}')` : "ynBolum('gelis')")
+            + tile('iyi', 'Bu ay', ayGelis(ay) + ' ders', 'geçen ay ' + gecN + ' · son 3 ayda ' + son3, `ynAyAc('${ay}')`)
+            + (enC ? tile('', 'Genelde geldiği', GUN_K[enC.g] + ' ' + enC.d, 'son 3 ayda ' + enC.n + ' kez', `ynDilim(${enC.g},'${enC.d}',90)`) : '')
+            + (dn.oran != null ? tile(dn.oran >= 75 ? 'iyi' : dn.oran >= 50 ? 'uyari' : 'kotu', 'Derse katılım', '%' + dn.oran, dn.kac.length ? 'son 3 ayda ' + dn.kac.length + ' ders kaçırdı' : 'son 3 ayda hiç kaçırmadı', "ynGl('kac',90)") : '')
+            + (!aidatAcik ? tile('', 'Aidat', aidatHazir ? '🔒' : aDur === 'oturum' ? '🔑' : aDur === 'hata' ? '⚠️' : '…', aidatHazir ? 'dokun, aidat PIN\'ini gir' : aDur === 'oturum' ? 'dokun, giriş yap' : aDur === 'hata' ? 'alınamadı · dokun, yeniden dene' : 'yükleniyor', 'ynAidatGit()') : k.muaf ? tile('', 'Aidat', 'Muaf', 'ödeme beklenmiyor', 'ynAidatGit()') : acikAy ? tile('kotu', 'Aidat · açık', tl(acikAy * A.aylik(k)), acikAy + ' ay ödenmemiş (son 6 ay)', 'ynAidatGit()') : tile('iyi', 'Aidat', 'Güncel', 'son 6 ayda açık yok', 'ynAidatGit()'))
+            + (Y.kpiEk ? Y.kpiEk(k) : []).map(x => tile('', x.et, x.deger, x.alt, x.alan ? `ynAlanAc('${x.alan}')` : "ynBolum('skor')")).join('');
         // aidat paneli
         let aidat;
-        if (!aidatHazir) aidat = '<div class="yn-bos">Aidat bilgisi yükleniyor…</div>';
+        if (!aidatHazir) aidat = YN.aidatDurum === 'oturum' ? `<div class="yn-bos">🔑 Bu cihazda oturum kapanmış; aidat bilgisi girişten sonra gelir.</div>${Y.girisIste ? '<button class="ap-btn ana" onclick="YN.Y.girisIste()">Giriş yap</button> ' : ''}<button class="ap-btn" onclick="ynAidatYukle()">↻ Yeniden dene</button>` : YN.aidatDurum === 'hata' ? '<div class="yn-bos">Aidat bilgisi alınamadı. Bağlantını kontrol et.</div><button class="ap-btn ana" onclick="ynAidatYukle()">↻ Yeniden dene</button>' : '<div class="yn-bos">Aidat bilgisi yükleniyor…</div>';
         else if (!aidatAcik) aidat = `<div class="yn-bos">🔒 Aidat bilgileri aidat PIN'i ile görünür.</div><div class="ap-filtre yn-pdf-gizle"><input type="password" id="yn-kart-pin" placeholder="Aidat PIN'i" autocomplete="off" style="max-width:180px" onkeydown="if(event.key==='Enter') ynKartPin()"><button class="ap-btn ana" onclick="ynKartPin()">🔓 Göster</button></div>`;
         else {
             let form = '';
@@ -1130,44 +1317,45 @@
             // muaf + aidat başlangıcı (2026-10-23, kullanıcı: "sporcu kartının aidat bölümünde muaf olarak da işaretleyebileyim")
             let basMetin = !basl ? 'henüz ödeme / ders yok' : ayKisa(basl.ay) + ' ' + basl.ay.slice(0, 4) + (basl.kaynak === 'katilma' ? ' · katılma tarihi' : basl.kaynak === 'odeme' ? ' · ilk ödemeden' : ' · ilk dersten');
             let ayar = Y.kaydet ? `<div class="yn-aidat-ayar yn-pdf-gizle"><button class="ap-btn${k.muaf ? ' ana' : ''}" aria-pressed="${!!k.muaf}" onclick="ynKartMuaf(${k.muaf ? 'false' : 'true'})">🎗️ ${k.muaf ? 'Muaf ✓ (kaldır)' : 'Muaf yap'}</button>${borAylar.length && Y.aidatDondur ? `<button class="ap-btn" onclick="ynKartDondur(${esc(JSON.stringify(borAylar))})" title="Gelmediği / pasife almayı unuttuğun aylar: borç sayılmaz">❄️ Ödenmemiş ${borAylar.length} ayı dondur</button>` : ''}<span>Aidat başlangıcı: <b>${basMetin}</b><small>Yanlışsa başladığı aya dokun → 📌 Bu aydan başladı</small></span>${kartOdemeDuzeni(A, k)}</div>` : '';
-            aidat = ayar + `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi / ❄️ dondurulmuş</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartCiz()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartCiz()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}`;
+            aidat = ayar + `<div class="ap-alt yn-pdf-gizle" style="margin:0 0 8px"><span>Bir aya dokun → ödendi / ödenmedi / ❄️ dondurulmuş</span><span style="display:flex;gap:6px;align-items:center"><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil-1); YN.kartAy=null; ynKartCiz()" aria-label="Önceki yıl">‹</button><b class="ap-num">${yil}</b><button class="ap-btn" onclick="YN.kartYil=String(+YN.kartYil+1); YN.kartAy=null; ynKartCiz()" aria-label="Sonraki yıl">›</button></span></div><div class="yn-aylar">${hucre}</div>${form}${Y.gitYer ? `<div class="ap-alt yn-pdf-gizle"><span></span><button class="ap-btn" onclick="ynYer('aidat')">💳 Aidat ekranında aç</button></div>` : ''}`;
         }
         // devam + geçmiş (yoklama, ödemeler, katılma — en yeni üstte)
         let aylar6 = [-5, -4, -3, -2, -1, 0].map(n => ayEkle(ay, n)), dm = Math.max(1, ...aylar6.map(ayGelis));
-        let devam = aylar6.map(m => `<div><b class="ap-num">${ayGelis(m)}</b><i style="height:${ayGelis(m) / dm * 100}%"></i><small>${ayKisa(m)}</small></div>`).join('');
-        let olay = G.slice(-6).map(t => ({ t, m: 'Derse geldi' }));
-        if (aidatAcik) for (let n = 0; n < 12; n++) { let m = ayEkle(ay, -n), r = A.kayit(k.ad, m); if (r && r.odendi) olay.push({ t: apOdemeGunu(r) || m + '-01', m: AY_UZUN_TR[+m.slice(5, 7) - 1] + ' aidatı ödendi' + (r.tutar ? ' · ' + tl(r.tutar) : '') + (r.notMetin ? ' · ' + r.notMetin : '') }); }
-        if (k.katilma) olay.push({ t: k.katilma, m: 'Kulübe katıldı' });
+        let devam = aylar6.map(m => `<button type="button" onclick="ynAyAc('${m}')" aria-label="${ayKisa(m)}: ${ayGelis(m)} gün, takvimi aç"><b class="ap-num">${ayGelis(m)}</b><i style="height:${Math.round(ayGelis(m) / dm * 48)}px"></i><small>${ayKisa(m)}</small></button>`).join('');
+        let olay = G.slice(-6).map(t => ({ t, m: 'Derse geldi' + (V.D.gunler[t] && V.D.gunler[t].dilim ? ' · ' + V.D.gunler[t].dilim : ''), fn: `ynGunAc('${t}')` }));
+        if (aidatAcik) for (let n = 0; n < 12; n++) { let m = ayEkle(ay, -n), r = A.kayit(k.ad, m); if (r && r.odendi) olay.push({ t: apOdemeGunu(r) || m + '-01', m: AY_UZUN_TR[+m.slice(5, 7) - 1] + ' aidatı ödendi' + (r.tutar ? ' · ' + tl(r.tutar) : '') + (r.notMetin ? ' · ' + r.notMetin : ''), fn: `ynOdemeAc('${m}')` }); }
+        if (k.katilma) olay.push({ t: k.katilma, m: 'Kulübe katıldı', fn: "ynAlanAc('katilma')" });
         olay.sort((x, y) => y.t.localeCompare(x.t));
-        let gecmis = olay.length ? olay.slice(0, 10).map(o => `<div class="yn-olay"><time class="ap-num">${o.t.split('-').reverse().join('.')}</time><span>${esc(o.m)}</span></div>`).join('') : '<div class="yn-bos">Kayıt yok.</div>';
+        let gecmis = olay.length ? olay.slice(0, 10).map(o => `<button type="button" class="yn-olay" onclick="${o.fn}"><time class="ap-num">${o.t.split('-').reverse().join('.')}</time><span>${esc(o.m)}</span></button>`).join('') : '<div class="yn-bos">Kayıt yok.</div>';
         // bilgiler
         let alanlar = Y.alanlar ? Y.alanlar(k) : [];
-        let bilgi = `<div class="yn-alanlar">${alanlar.map(x => `<div class="yn-alan${x.tip === 'not' ? ' tam' : ''}"><label>${esc(x.et)}</label>${YN.duzen ? alanGirdi(x) : `<div class="deger">${alanDeger(x)}</div>`}${YN.duzen && x.ipucu ? `<small>${esc(x.ipucu)}</small>` : ''}</div>`).join('')}</div>`;
+        let bilgi = `<div class="yn-alanlar">${alanlar.map(x => `<div class="yn-alan${x.tip === 'not' ? ' tam' : ''}" id="yn-a-${x.id}"><label>${esc(x.et)}</label>${YN.duzen || YN.alanDuz === x.id ? alanGirdi(x) : Y.kaydet ? `<button type="button" class="deger" onclick="ynAlanAc('${x.id}')" aria-label="${esc(x.et)}: düzelt">${alanDeger(x)}</button>` : `<div class="deger">${alanDeger(x)}</div>`}${(YN.duzen || YN.alanDuz === x.id) && x.ipucu ? `<small>${esc(x.ipucu)}</small>` : ''}${!YN.duzen && YN.alanDuz === x.id ? '<div class="yn-alan-d"><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">Kaydet</button><button class="ap-btn" onclick="YN.alanDuz=null; ynKartCiz()">Vazgeç</button></div>' : ''}</div>`).join('')}</div>`;
+        let bilgiPanel = `<div class="ap-panel" id="yn-b-bilgi"><h3>Bilgiler <span>${YN.duzen ? 'değiştir → Kaydet' : 'düzeltmek için satıra dokun'}</span></h3>${bilgi}</div>`;
         let islemler = (Y.islemler ? Y.islemler(k) : []).map(x => `<div class="satir"><span><b>${esc(x.et)}</b><small>${esc(x.alt || '')}</small></span><button class="ap-btn${x.tehlike ? ' tehlike' : ''}" onclick="${x.fn}">${x.btn}</button></div>`).join('');
         let tel = k.tel ? telNo(k.tel) : '', bas = k.ad.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('');
         let ozet = (Y.ozet ? Y.ozet(k) : []).filter(x => x[1] !== '' && x[1] != null);
         let alt = [k.grupAd, yas != null ? yas + ' yaş' : '', k.cinsiyetAd, k.yay].filter(Boolean).map(esc).join(' · ');
         a.innerHTML = `<div class="ap yn-profil" id="yn-kart-ic" role="dialog" aria-modal="true" aria-label="${esc(k.ad)} profili">
-            <div class="yn-p-ust yn-pdf-gizle"><button class="ap-btn" onclick="ynKartKapat()">← Geri</button><span class="yn-p-yol">${esc(k.grupAd || '')} › <b>${esc(k.ad)}</b></span>
-                <span class="yn-p-sag">${YN.duzen ? `<button class="ap-btn" onclick="YN.duzen=false; ynKartCiz()">Vazgeç</button><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">💾 Kaydet</button>` : `${Y.kaydet ? '<button class="ap-btn ana" onclick="YN.duzen=true; ynKartCiz()">✏️ Düzenle</button>' : ''}<button class="ap-btn" onclick="ynPdf(document.getElementById('yn-kart-ic'), 'sporcu-' + ${JSON.stringify(k.ad).replace(/"/g, '&quot;')})">📄 PDF</button>`}</span></div>
+            <div class="yn-p-ust yn-pdf-gizle"><button class="ap-btn" onclick="ynKartKapat()" aria-label="Geri">← <span class="yn-uz">Geri</span></button><span class="yn-p-yol">${Y.gitYer ? `<button type="button" onclick="ynYer('grup')">${esc(k.grupAd || '')}</button>` : esc(k.grupAd || '')} › <b>${esc(k.ad)}</b></span>
+                <span class="yn-p-sag">${YN.duzen ? `<button class="ap-btn" onclick="YN.duzen=false; ynKartCiz()">Vazgeç</button><button class="ap-btn ana" onclick="ynKartBilgiKaydet()">💾 Kaydet</button>` : `${Y.kaydet ? '<button class="ap-btn ana" aria-label="Düzenle" onclick="YN.duzen=true; YN.alanDuz=null; ynKartCiz(); ynBolum(\'bilgi\')">✏️ <span class="yn-uz">Düzenle</span></button>' : ''}<button class="ap-btn" onclick="ynPdf(document.getElementById('yn-kart-ic'), 'sporcu-' + ${JSON.stringify(k.ad).replace(/"/g, '&quot;')})" aria-label="PDF">📄 <span class="yn-uz">PDF</span></button>`}</span>
+                ${YN.duzen ? '' : `<nav class="yn-p-atla" aria-label="Bölümler">${[['ozet', 'Özet'], ['gelis', '📅 Geliş'], ...(V.skorVar ? [['skor', '🎯 Skor']] : []), ['aidat', '💳 Aidat'], ['bilgi', '📝 Bilgiler'], ...(Y.ekPanel ? [['gelisim', '📈 Gelişim']] : []), ['islem', '⚙️ İşlemler']].map(x => `<button type="button" onclick="ynBolum('${x[0]}')">${x[1]}</button>`).join('')}</nav>`}</div>
             <div class="yn-p-izgara">
                 <aside class="yn-p-kimlik">
                     <div class="ap-panel yn-p-kart"><div class="yn-av"${k.fotoK ? ` data-foto-k="${esc(k.fotoK)}" data-foto-y="1"` : ""}${k.foto ? ` style="background:url('${esc(k.foto)}') center/cover;color:transparent"` : ""}>${esc(bas)}${Y.fotoDegistir ? `<button class="yn-av-foto yn-pdf-gizle" onclick="YN.Y.fotoDegistir(ynKisi())" aria-label="Fotoğrafı değiştir">📷</button>` : ""}</div><h2>${esc(k.ad)}</h2><div class="yn-p-alt">${alt}</div><div>${durum}</div></div>
-                    ${ozet.length ? `<div class="ap-panel"><dl class="yn-dl">${ozet.map(x => `<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl></div>` : ''}
+                    ${ozet.length ? `<div class="ap-panel"><dl class="yn-dl">${ozet.map(x => `<dt>${esc(x[0])}</dt><dd>${Y.kaydet && !YN.duzen && YN_OZET_ALAN[x[0]] ? `<button type="button" onclick="${YN_OZET_ALAN[x[0]] === '*' ? "ynBolum('islem')" : `ynAlanAc('${YN_OZET_ALAN[x[0]]}')`}">${esc(x[1])}</button>` : esc(x[1])}</dd>`).join('')}</dl></div>` : ''}
                     <div class="yn-p-hizli yn-pdf-gizle">${tel ? `<a class="ap-btn" href="tel:+${tel}" style="text-decoration:none;text-align:center">📞 Ara</a><button class="ap-btn" onclick="window.open('https://api.whatsapp.com/send?phone=${tel}','_blank')">💬 WhatsApp</button>` : '<span class="ap-etk u" style="grid-column:1/-1;text-align:center">Veli telefonu yok</span>'}
                         ${Y.veliLink ? `<button class="ap-btn ana yn-veli-link" style="grid-column:1/-1;min-height:48px" onclick="YN.Y.veliLink(ynKisi())">🔗 Veliye link gönder</button>` : ''}
                         ${Y.pasifYap ? `<button class="ap-btn${k.pasif ? ' iyi' : ''}" style="grid-column:1/-1" onclick="ynKartPasif(${k.pasif ? 'false' : 'true'})">${k.pasif ? '▶ Aktif et' : '⏸ Pasife al'}</button>` : ''}</div>
                 </aside>
                 <main class="yn-p-icerik">
                     ${YN.duzen ? '<div class="yn-p-bant">✏️ Düzenleme modu — alanları değiştir, sonra üstten <b>💾 Kaydet</b>. İsim ya da kategori değişirse tüm geçmişi (skor, yoklama, aidat) taşınır.</div>' : ''}
-                    <div class="ap-kpi">${tiles}</div>
-                    <div class="ap-panel"><h3>Bilgiler <span>${YN.duzen ? 'değiştir → Kaydet' : 'düzeltmek için ✏️ Düzenle'}</span></h3>${bilgi}</div>
-                    ${!YN.duzen && Y.ekPanel ? Y.ekPanel(k) : ''}
+                    ${YN.duzen ? bilgiPanel : `<div class="ap-kpi yn-kutu" id="yn-b-ozet">${tiles}</div>${gelisHTML(k, V)}${skorHTML(k, V)}`}
                     <div class="ap-iki">
-                        <div class="ap-panel"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi</span></h3>${aidat}</div>
-                        <div class="ap-panel"><h3>Devam · son 6 ay <span>ayda geldiği gün</span></h3><div class="yn-devam">${devam}</div><h3 style="margin-top:14px">Geçmiş <span>son olaylar</span></h3><div class="yn-gecmis">${gecmis}</div></div>
+                        <div class="ap-panel" id="yn-b-aidat"><h3>Aidat · ${yil} <span>yeşil ödendi · kırmızı ödenmedi</span></h3>${aidat}</div>
+                        <div class="ap-panel"><h3>Devam · son 6 ay <span>aya dokun → takvim</span></h3><div class="yn-devam">${devam}</div><h3 style="margin-top:14px">Geçmiş <span>satıra dokun → oraya git</span></h3><div class="yn-gecmis">${gecmis}</div></div>
                     </div>
-                    ${Y.islemPanel ? Y.islemPanel(k) : islemler ? `<div class="yn-tehlike yn-pdf-gizle"><h4>Kayıt işlemleri</h4>${islemler}</div>` : ''}
+                    ${YN.duzen ? '' : bilgiPanel + (Y.ekPanel ? `<div id="yn-b-gelisim" style="display:flex;flex-direction:column;gap:12px">${Y.ekPanel(k)}</div>` : '')}
+                    <div id="yn-b-islem">${Y.islemPanel ? Y.islemPanel(k) : islemler ? `<div class="yn-tehlike yn-pdf-gizle"><h4>Kayıt işlemleri</h4>${islemler}</div>` : ''}</div>
                 </main>
             </div>
         </div>`;
@@ -1181,10 +1369,10 @@
         let eski = {}; (Y.alanlar(k) || []).forEach(x => { eski[x.id] = x.deger == null ? '' : String(x.deger); });
         let yeni = {}, kap = document.getElementById('yn-kart-ic');
         kap.querySelectorAll('[data-alan]').forEach(e => { let v = e.dataset.tip === 'seg' ? ((e.querySelector('[aria-pressed="true"]') || {}).dataset || {}).v : e.value; if (v == null) v = ''; v = String(v).trim(); if (v !== eski[e.dataset.alan]) yeni[e.dataset.alan] = v; });
-        if (!Object.keys(yeni).length) { YN.duzen = false; return ynKartCiz(); }
+        if (!Object.keys(yeni).length) { YN.duzen = false; YN.alanDuz = null; return ynKartCiz(); }
         if (yeni.dogum && yeni.dogum > bugun()) return tost('Doğum tarihi gelecekte olamaz.', 'error');
-        let btn = kap.querySelector('.yn-p-sag .ana'); if (btn) { btn.disabled = true; btn.textContent = 'Kaydediliyor…'; }
-        try { let id = await Y.kaydet(k, yeni); if (id) YN.kart = id; YN.duzen = false; tost('✓ Bilgiler kaydedildi', 'success'); }
+        let btn = kap.querySelector(YN.alanDuz ? '.yn-alan-d .ana' : '.yn-p-sag .ana'); if (btn) { btn.disabled = true; btn.textContent = 'Kaydediliyor…'; }
+        try { let id = await Y.kaydet(k, yeni); if (id) YN.kart = id; YN.duzen = false; YN.alanDuz = null; tost('✓ Bilgiler kaydedildi', 'success'); }
         catch (e) { tost('Kaydedilemedi: ' + (e && e.message ? e.message : 'bağlantıyı kontrol et') + ' — hiçbir şey değişmedi.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '💾 Kaydet'; } return; }
         sonra();
     };

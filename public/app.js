@@ -4311,7 +4311,7 @@
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=17';
+        const YN_DOSYA = 'yonetim-panel.js?v=18';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4403,7 +4403,7 @@
                     let y = typeof yrsKartVeri === 'function' ? yrsKartVeri(k.grup, k.ad) : null;
                     let skor = `<div class="ynk-k"><h5>${ik('sr', '🏆')}Skor & yarışma</h5>
                         ${y ? `<div class="ynk-yar"><b>${y.seri ? y.puan : '—'}</b><span><b>${esc(y.ad)}</b><small>${esc(y.tarih)} · ${y.seri ? y.seri + ' seri' + (y.bitti ? ' · bitti' : '') : 'sunucuya skor gelmedi'}</small>${y.serit.length ? '<div class="ynk-serit">' + y.serit.map(c => '<i style="background:' + c + '"></i>').join('') + '</div>' : ''}</span></div>` : '<div class="ynk-s"><span>Yarışma</span><b>henüz yok</b></div>'}
-                        <div class="ynk-s"><span>Antrenman</span><b>${(sp.kartGecmisi || []).length} kart · ${(sp.seriler || []).length} açık seri</b></div>
+                        <button type="button" class="ynk-s" onclick="ynBolum('skor')"><span>Antrenman</span><b>${(sp.kartGecmisi || []).length} kart · ${(sp.seriler || []).length} açık seri</b></button>
                         <div class="ynk-d">${y ? `<button class="ap-btn" onclick="yrsKarttanAc(${a},${b})">📊 Isı haritası</button>` : ''}<button class="ap-btn" onclick="ynKartKapat(); ysSkorlaraGit(${a},${b})">🎯 Skorları düzelt</button></div></div>`;
                     let fk = fotoAnahtar(k.grup, k.ad), f = fotoBilgi(fk) || {};
                     let foto = `<div class="ynk-k"><h5>${ik('mv', '🪪')}Fotoğraf & sporcu kartı</h5>
@@ -4412,13 +4412,55 @@
                     let dersler = _programSlotlar.filter(s => (s.katilimcilar || []).some(x => x.grup === k.grup && x.ad === k.ad)).flatMap(s => (s.gunler || [s.gun]).map(g => ({ g, s }))).sort((x, z) => ((x.g + 6) % 7) - ((z.g + 6) % 7) || String(x.s.baslangicSaat).localeCompare(String(z.s.baslangicSaat)));
                     let ay = bugunISO().slice(0, 7), gel = ((this.gelisler() || {})[k.ad] || []).filter(t => t.slice(0, 7) === ay).length;
                     let prog = `<div class="ynk-k"><h5>${ik('ys', '📅')}Haftalık program</h5>
-                        <div class="ynk-s"><span>Dersleri</span><b>${!_programSlotlar.length ? '…' : dersler.length ? esc(dersler.map(x => GUN_KISA_TR[x.g] + ' ' + x.s.baslangicSaat).join(' · ')) : 'programda yok'}</b></div>
-                        <div class="ynk-s"><span>Bu ay geldiği</span><b>${gel} gün</b></div>
+                        <button type="button" class="ynk-s" onclick="ynKartKapat(); sporcuProgramAc(${a},${b})"><span>Dersleri</span><b>${!_programSlotlar.length ? '…' : dersler.length ? esc(dersler.map(x => GUN_KISA_TR[x.g] + ' ' + x.s.baslangicSaat).join(' · ')) : 'programda yok'}</b></button>
+                        <button type="button" class="ynk-s" onclick="ynAyAc('${ay}')"><span>Bu ay geldiği</span><b>${gel} gün</b></button>
                         <div class="ynk-d"><button class="ap-btn" onclick="ynKartKapat(); sporcuProgramAc(${a},${b})">📅 Programı düzenle</button></div></div>`;
                     return `<div class="ynk yn-pdf-gizle" id="ynk-panel"><h4>Kayıt işlemleri</h4><div class="ynk-izgara"><div class="ynk-gb">UYGULAMA & SKOR</div>${giris}${skor}<div class="ynk-gb">KART & PROGRAM</div>${foto}${prog}</div>
                         <div class="ynk-alt"><span>Kayıt bakımı — aynı kişi iki kez yazıldıysa birleştir; silinen Silinenler'den geri alınabilir.</span><div><button class="ap-btn" onclick="ynKartKapat(); _ky.ara=${b}; yoneticiSekme('ciftkayit')">🧹 Çift kayıt</button><button class="ap-btn tehlike" onclick="yoneticiSil(${a},${b})">🗑 Sil</button></div></div></div>`;
                 },
                 kpiEk(k) { let sp = turnuvaDB[k.grup][k.ad], r = _raporIstatistik(sp); return r.seriSayisi ? [{ et: 'Seri ortalaması', deger: r.ort, alt: r.seriSayisi + ' seri · en iyi ' + r.enIyi }] : []; },
+                // 📅 profil › Geldiği günler ve saatler (v448): gün kayıtları (yoklama + skor) ve ders programı. Saat: o gün atılan ilk
+                // serinin gerçek saati; seri yoksa yoklama kaydının saati (Defter'in '12:00'si saat sayılmaz).
+                gelisDetay(k) {
+                    let sp = turnuvaDB[k.grup][k.ad] || {}, gunler = {}, gor = {}, s2 = x => String(x).padStart(2, '0');
+                    let baskasi = r => r.grup && r.grup !== k.grup && turnuvaDB[r.grup] && turnuvaDB[r.grup][k.ad];
+                    Object.keys(otomatikYoklamaDB || {}).forEach(t => { let r = (otomatikYoklamaDB[t] || {})[k.ad]; if(!r || baskasi(r)) return; gunler[t.slice(0, 10)] = { geldi: r.geldi !== false, saat: r.elle && r.saat === '12:00' ? '' : String(r.saat || '').slice(0, 5), kaynak: 'yoklama', seri: [] }; });
+                    [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(x => x.seriler || [])).forEach(x => {
+                        if(!x || !x.tarih || x.iptal || (x.seriId && gor[x.seriId])) return; if(x.seriId) gor[x.seriId] = 1;
+                        let t = String(x.tarih).slice(0, 10), g = gunler[t] = gunler[t] || { geldi: true, saat: '', kaynak: 'skor', seri: [] }, z = x.t ? new Date(x.t) : null;
+                        g.geldi = true; g.seri.push({ oklar: x.oklar || [], puan: x.puan, t: x.t || 0, saat: z && bugunISO(z) === t ? s2(z.getHours()) + ':' + s2(z.getMinutes()) : '' });
+                    });
+                    Object.keys(gunler).forEach(t => { let g = gunler[t]; g.seri.sort((a, b) => a.t - b.t); let ilk = g.seri.find(x => x.saat); if(ilk) { g.saat = ilk.saat; g.kaynak = 'skor'; } });
+                    let dersler = (_programSlotlar || []).map(s => ({ id: s.id, ad: s.grup || 'Ders', gunler: (s.gunler && s.gunler.length ? s.gunler : [s.gun]).map(Number), bas: s.baslangicSaat, bit: s.bitisSaat, iptal: (s.istisnalar || []).map(i => i.tarih),
+                        kayitli: (s.katilimcilar || []).some(x => x.grup === k.grup && x.ad === k.ad),
+                        yapildi: t => { let g = otomatikYoklamaDB[t]; return !!g && (s.katilimcilar || []).some(x => x.ad !== k.ad && g[x.ad] && g[x.ad].geldi !== false); } }));
+                    return { gunler, dersler };
+                },
+                async gelisYaz(k, iso, d, saat) {
+                    let g = otomatikYoklamaDB[iso] = otomatikYoklamaDB[iso] || {}, b = { tarih: iso, ad: k.ad };
+                    if(d) g[k.ad] = { saat, grup: k.grup, elle: true, geldi: d === 'g' }; else delete g[k.ad];
+                    otomatikYoklamaKaydet(); _ynGelisOnbellek = null; bekleyenGonderim = true;
+                    let r = await fetch('/api/attendance/auto', { method: d ? 'POST' : 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify(d ? Object.assign(b, { grup: k.grup, saat, elle: true, geldi: d === 'g' }) : b) });
+                    if(!r.ok) throw new Error('kayıt');
+                },
+                async aidatYukle() {
+                    let r = await fetch('/api/dues'); if(r.status === 401) return 'oturum'; if(!r.ok) return 'hata';
+                    let h = {}; ((await r.json()).dues || []).forEach(x => { (h[x.ad] = h[x.ad] || {})[x.ay] = { odendi: x.odendi, tutar: x.tutar, tarih: x.tarih, notMetin: x.notMetin, odemeTarihi: x.odemeTarihi, yontem: x.yontem || null, giren: x.giren || null, veliNot: x.veliNot || null }; });
+                    aidatDB = aidatMerge(aidatDB, h); aidatKaydet(); return 'ok';
+                },
+                girisIste() { ynKartKapat(); yoneticiGirisIste(); },
+                // profilden ilgili ekrana git (Yönetici kapalıysa önce açılır; yetki yoksa PIN ekranı gelir)
+                gitYer(k, yer, ek) {
+                    let acik = document.body.classList.contains('yon-acik');
+                    if(!acik && !yoneticiYetkiVarMi()) { ynKartKapat(); yoneticiGirisIste(); return; }
+                    ynKartKapat(); if(!acik) _yoneticiPaneliAcIc();
+                    setTimeout(function() {
+                        if(yer === 'yoklama') { _yonElTarih = ek; yoneticiYoklamaTip = 'gunluk'; yoneticiSekme('yoklama'); _yonYokGrupFiltre = k.grup; yoneticiYoklamaCiz(); }
+                        else if(yer === 'aidat') { _aidatAltSekme = 'panel'; AP.liste = 'bekleyen'; AP.grup = 'tumu'; AP.ay = null; AP.sayfa = 0; AP.arama = k.ad; AP.acik = null; yoneticiSekme('aidat'); }
+                        else if(yer === 'skor') ysSkorlaraGit(k.grup, k.ad);
+                        else if(yer === 'grup') { _yonGrupFiltre = k.grup; yoneticiSekme('kullanicilar'); }
+                    }, acik ? 0 : 120);
+                },
                 sonra() { try { if(document.getElementById('yonetici-modal') && document.body.classList.contains('yon-acik') && yoneticiSekmeAktif !== 'panel' && yoneticiSekmeAktif !== 'aidat') yoneticiSekme(yoneticiSekmeAktif); } catch(e) {} },
                 // derse geldiği günler: yoklama + skor girilen günler (aidatDevamHaritasi ile aynı kaynaklar), 2 sn önbellek (bir çizimde birden çok çağrı)
                 gelisler() {
@@ -4474,9 +4516,9 @@
         // 👤 Sporcu profili HER YERDEN (2026-10-21): adı data-sporcu="grup|ad" taşıyan öğeye dokununca açılır (satırın kendi işinden önce)
         // sporcu kartı açılınca Kayıt işlemleri kartlarının sunucu bilgileri: giriş durumu, yarışmalar, ders programı → kart yenilenir
         function _ynkTazele() {
-            let yenile = () => { try { ynKartIslemYenile(); } catch(e) {} }, isler = [];
+            let yenile = () => { try { ynKartIslemYenile(); } catch(e) {} }, isler = [], progYok = !_programSlotlar.length;
             if(typeof sgYukle === 'function') isler.push(sgYukle());
-            if(!_programSlotlar.length) isler.push(fetch('/api/antrenman-programi').then(r => r.json()).then(d => { _programSlotlar = d.slots || []; }).catch(() => {}));
+            if(!_programSlotlar.length) isler.push(fetch('/api/antrenman-programi').then(r => r.json()).then(d => { _programSlotlar = d.slots || []; if(progYok && typeof ynKartYenile === 'function') ynKartYenile(); }).catch(() => {}));
             if(typeof kyDepoSenkron === 'function') ['yarismalar', 'yarisma_sporcu'].forEach(a => isler.push(kyDepoSenkron(a, () => kyDepoOku(a), false).catch(() => {})));
             Promise.all(isler).then(yenile, yenile);
         }
