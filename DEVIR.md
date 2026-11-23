@@ -6210,3 +6210,7 @@ Kullanıcı: "çıktıyı nereden alacağım göremedim, ayın geri kalanı boş
 
 ## 172. 🎬 Sitede üç oyun videosu (2026-11-23)
 Kullanıcı "çok güzel olmuş, siteye de yükle, ilk yaptıklarını" → oyun Reels 1–3 (`oyun-bizde`, `tek-ok`, `bugun-ne-yaptin`; 720×1280, 1,8–2,8 MB, `public/site-video/`, kapaklar yüzsüz oyun karesi). Site `#video` bölümünde "Salondan ve oyunlarımızdan" (`.vd-uc`): masaüstü üç sütun, telefonda yana kaydırmalı. Aynı `[data-video]` kalıbı (dokunmadan inmez). 4–12 sitede YOK. Test 161.
+
+## 173. 🥇 Site: "İlk kez bu salonda oynandı" (2026-11-24)
+Kullanıcı "ilk olduğumuzu siteye ekle". Yeni bölüm `#ilk` (videoların altında): 30+ oyun (görünür 35 tema), 70+ kahraman, "gerçek ok atılmadan oyun ilerlemez", Eylül/Ekim/Kasım 2026 (tarihler git'ten). SSS'ye 2 soru, meta açıklamaya "kulübün kendi yazdığı oyunlar".
+- "Türkiye'de / dünyada ilk, tek" YAZILMAZ: ispat yükü reklam verende; yurt dışında SAFE Archery var. Türkiye'de benzeri kısa aramada bulunamadı (kanıt değil). Test 161 bu sözleri engeller.

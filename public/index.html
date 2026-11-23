@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DAĞ Okçuluk · Pendik okçuluk kulübü · Ücretsiz deneme dersi</title>
-<meta name="description" content="Pendik'te okçuluk kulübü: 5 yaştan yetişkine okçuluk dersleri, haftalık ders saatleri ve ücretsiz deneme dersi. Ekipman kulüpten. DAĞ Spor Kulübü, Pendik / İstanbul.">
+<meta name="description" content="Pendik'te okçuluk kulübü: 5 yaştan yetişkine okçuluk dersleri, kulübün kendi yazdığı okçuluk oyunları, ders saatleri ve ücretsiz deneme dersi. Ekipman kulüpten. DAĞ Spor Kulübü, Pendik / İstanbul.">
 <link rel="canonical" href="https://dagsporkulubu.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -493,6 +493,22 @@
     .vd-uc::-webkit-scrollbar{ display:none; }
     .vd-mini{ flex:0 0 min(66vw,290px); scroll-snap-align:start; } }
   @media (prefers-reduced-motion: reduce){ .vd-oynat span{ transition:none; } }
+  /* İlk kez bu salonda (2026-11-24): yalnız kanıtlanabilir söz. Aylar = oyun dosyalarının git tarihi; "Türkiye'de ilk / tek" YAZMA */
+  .ilk-sayi{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:30px 0 clamp(34px,5vw,56px); }
+  .ilk-sayi > div{ padding:22px 24px; border-left:1px solid var(--line); }
+  .ilk-sayi > div:first-child{ border-left:0; padding-left:0; }
+  .ilk-sayi b{ display:block; font:900 clamp(34px,4.6vw,54px)/1 'Archivo',sans-serif; color:var(--accent); }
+  .ilk-sayi span{ display:block; margin-top:8px; font-size:15px; line-height:1.45; color:var(--ink-soft); }
+  .ilk-aylar{ list-style:none; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(18px,2.6vw,34px); }
+  .ilk-ust{ position:relative; padding-top:22px; margin-bottom:14px; border-top:2px solid var(--accent); }
+  .ilk-nokta{ position:absolute; left:0; top:-7px; width:12px; height:12px; border-radius:50%; background:var(--accent); }
+  .ilk-ay h3{ font:900 22px/1.1 'Archivo',sans-serif; text-transform:uppercase; }
+  .ilk-ay h3 span{ color:var(--ink-soft); font-weight:500; }
+  .ilk-ay img{ display:block; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:#0b0a09; }
+  .ilk-ay p{ margin-top:12px; font-size:16px; line-height:1.5; }
+  .ilk-ay .ilk-oyunlar{ margin-top:6px; font-size:14.5px; line-height:1.6; color:var(--ink-soft); }
+  @media (max-width:820px){ .ilk-aylar{ grid-template-columns:minmax(0,1fr); gap:34px; }
+    .ilk-sayi{ grid-template-columns:minmax(0,1fr); } .ilk-sayi b{ font-size:30px; white-space:nowrap; } .ilk-sayi > div{ display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:center; padding:16px 0; border-left:0; border-top:1px solid var(--line); } .ilk-sayi > div:first-child{ border-top:0; } .ilk-sayi span{ margin-top:0; } }
   /* Oyunlarla okçuluk (2026-10-05) */
   .oy-adimlar{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:28px 0 34px; }
   .oy-adim{ display:flex; gap:14px; align-items:flex-start; padding:18px; border:1px solid var(--line); border-radius:6px; background:var(--panel); }
@@ -983,7 +999,31 @@
   </div>
 </section>
 
-<section class="s2 s2-alt" id="fotograflar" aria-labelledby="foto-baslik">
+<section class="s2 s2-alt" id="ilk" aria-labelledby="ilk-baslik">
+  <div class="wrap">
+    <div class="s2-etiket">Burada başladı</div>
+    <h2 class="s2-h2" id="ilk-baslik">İlk kez bu salonda oynandı</h2>
+    <p class="s2-giris">Bu oyunları hazır almadık. Hepsini DAĞ Okçuluk için kendimiz yazdık ve ilk kez kendi sporcularımızla, bu salonda oynadık.</p>
+    <div class="ilk-sayi">
+      <div><b>30+</b><span>okçuluk oyunu. Hepsi kulüpte yazıldı.</span></div>
+      <div><b>70+</b><span>kahraman. Her çocuk kendininkini seçer.</span></div>
+      <div><b>1 kural</b><span>Gerçek ok atılmadan oyun ilerlemez.</span></div>
+    </div>
+    <ol class="ilk-aylar">
+      <li class="ilk-ay reveal"><div class="ilk-ust"><span class="ilk-nokta" aria-hidden="true"></span><h3>Eylül <span>2026</span></h3></div>
+        <img src="/oyunlar/zirve.webp" alt="Zirve Yolu oyunundan bir ekran" width="960" height="498" loading="lazy" decoding="async">
+        <p>İlk oyunlar derse girdi. Puan, bir yolculuğa dönüştü.</p><p class="ilk-oyunlar">Zirve Yolu, Hazine Adası, Düello Arena, Pist Yarışı, Ortak Canavar</p></li>
+      <li class="ilk-ay reveal"><div class="ilk-ust"><span class="ilk-nokta" aria-hidden="true"></span><h3>Ekim <span>2026</span></h3></div>
+        <img src="/oyunlar/ilk-ekim.webp" alt="Hapşırık oyunundan bir ekran: dev ahtapot hapşırmak üzere" width="960" height="540" loading="lazy" decoding="async">
+        <p>Bütün sınıf aynı oyuna birlikte attı. Cumhuriyet haftasına özel oyunlar geldi.</p><p class="ilk-oyunlar">Hapşırık, Kale Savunması, Fener Alayı, 81 İl: Bayrak Kapmaca, Dev Halat Çekme</p></li>
+      <li class="ilk-ay reveal"><div class="ilk-ust"><span class="ilk-nokta" aria-hidden="true"></span><h3>Kasım <span>2026</span></h3></div>
+        <img src="/oyunlar/ilk-kasim.webp" alt="Blok Kahramanlar oyunundan bir ekran: okçular dev krakene atıyor" width="960" height="540" loading="lazy" decoding="async">
+        <p>Üç boyutlu sahneler ve uzun hikâyeler geldi.</p><p class="ilk-oyunlar">Blok Kahramanlar, Zombi Salgını, Filo Yarışı, Dedektif Okçular, Hayalet Avcıları</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="s2" id="fotograflar" aria-labelledby="foto-baslik">
   <div class="wrap">
     <div class="s2-bas s2-bas-yan">
       <div>
@@ -1002,7 +1042,7 @@
   </div>
 </section>
 
-<section class="s2" id="neden" aria-labelledby="neden-baslik">
+<section class="s2 s2-alt" id="neden" aria-labelledby="neden-baslik">
   <div class="wrap neden-grid">
     <div>
       <div class="s2-etiket">Neden biz</div>
@@ -1257,6 +1297,16 @@
     <div class="sss-liste">
 
       <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Oyunlar başka kulüplerde de var mı? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Oyunlarımızı kendimiz yazdık; şu an yalnız <strong>DAĞ Okçuluk derslerinde</strong> oynanıyor. Hazır bir program ya da satın alınmış bir oyun değil.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
+        <button class="sss-soru" onclick="sssToggle(this)">Çocuğum ders boyunca ekrana mı bakacak? <span class="sss-ok">+</span></button>
+        <div class="sss-yanit"><div class="sss-yanit-ic">Hayır. Çocuk kendi yayıyla <strong>gerçek hedefe gerçek ok</strong> atar; oyun, attığı puanla duvardaki ekranda ilerler. Ok atılmadan oyun ilerlemez. Teknik ve güvenlik çalışması her zaman dersin içindedir.</div></div>
+      </div>
+
+      <div class="sss-madde reveal">
         <button class="sss-soru" onclick="sssToggle(this)">Kaç yaşında başlanabilir? <span class="sss-ok">+</span></button>
         <div class="sss-yanit"><div class="sss-yanit-ic">Okçuluk branşımıza <strong>5 yaşından</strong> itibaren kayıt yaptırabilirsiniz. Minikler grubumuz, küçük yaştaki sporcular için özel olarak tasarlanmış, oyun temelli bir eğitim süreciyle başlar. Üst sınır yok — yetişkinlerimiz de var.</div></div>
       </div>
@@ -1389,6 +1439,7 @@
         <a href="#cimnastik">Cimnastik</a>
         <a href="#programlar">Programlar</a>
       <a href="#saatler">Ders saatleri</a>
+        <a href="#ilk">Oyunların hikâyesi</a>
         <a href="#fotograflar">Fotoğraflar</a>
         <a href="#sss">SSS</a>
         <a href="#yorumlar">Yorumlar</a>
