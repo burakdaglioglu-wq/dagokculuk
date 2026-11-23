@@ -2674,16 +2674,36 @@
             text-transform: uppercase; color: #fff; margin: 4px 0 6px; text-shadow: 0 4px 24px rgba(0,0,0,.4); }
         .gv-vizor { --w: min(300px, 74vw); position: relative; width: calc(var(--w) * 1.24); height: calc(var(--w) * .32 * 1.5); display: grid; place-items: center; margin: 6px 0 2px; }
         .gv-pencere { position: relative; width: var(--w); height: calc(var(--w) * .32); overflow: hidden; border: 1.5px solid rgba(255,255,255,.75); border-radius: 2px; box-shadow: 0 10px 40px rgba(0,0,0,.45); }
-        .gv-pencere img { position: absolute; max-width: none; width: calc(var(--w) / .30); left: calc(var(--w) * -1.833); top: calc(var(--w) * -.979); }
-        .gv-vizor i { position: absolute; width: calc(var(--w) * .11); height: calc(var(--w) * .11); border: 0 solid #fff; animation: gvKilit 3.6s ease-in-out infinite; }
+        /* göz efekti (v462): odak halkası göze kilitlenir, göz bebeğinde hedef yanar, göz kırpar; yalnız transform/opacity */
+        .gz-kare, .gz-kare img, .gz-svg, .gz-golge { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+        .gz-kare { --gz: 2; transform-origin: 44.2% 45.8%; animation: gzYak 8s cubic-bezier(.45,0,.2,1) infinite; }
+        .gz-golge { background: radial-gradient(circle at 44.2% 46%, rgba(14,12,10,0) 22%, rgba(14,12,10,.62) 78%); opacity: 0; animation: gzGor 8s linear infinite; }
+        .gz-karis { opacity: .88; } .gz-isik { opacity: .9; } .gz-lid { animation: gzGor 8s linear infinite; opacity: 0; }
+        .gz-iris { animation: gzIris 8s cubic-bezier(.2,.9,.25,1.2) infinite; }
+        .gz-kapak { transform: translateY(-160px); animation: gzKirp 8s linear infinite; }
+        .gz-halka, .gz-vur, .gz-don { transform-origin: 716px 240px; }
+        .gz-halka { animation: gzHalka 8s cubic-bezier(.3,0,.2,1) infinite; }
+        .gz-don { animation: gzDon 5s linear infinite; }
+        .gz-vur { opacity: 0; animation: gzVur 8s ease-out infinite; }
+        @keyframes gzYak { 0%, 14% { transform: scale(1); } 30%, 80% { transform: scale(var(--gz)); } 93%, 100% { transform: scale(1); } }
+        @keyframes gzGor { 0%, 18% { opacity: 0; } 31%, 78% { opacity: 1; } 90%, 100% { opacity: 0; } }
+        @keyframes gzIris { 0%, 31% { opacity: 0; transform: scale(.15); } 36%, 46% { opacity: 1; transform: scale(1); } 52% { transform: scale(.88); } 64%, 77% { opacity: 1; transform: scale(1); } 84%, 100% { opacity: 0; transform: scale(.6); } }
+        @keyframes gzHalka { 0%, 12% { opacity: 0; transform: scale(3.4); } 20% { opacity: .9; } 30% { opacity: 1; transform: scale(.92); } 33%, 77% { opacity: 1; transform: scale(1); } 85%, 100% { opacity: 0; transform: scale(1.5); } }
+        @keyframes gzDon { to { transform: rotate(360deg); } }
+        @keyframes gzVur { 0%, 30% { opacity: 0; transform: scale(1); } 31% { opacity: .95; } 40%, 100% { opacity: 0; transform: scale(2.1); } }
+        @keyframes gzKirp { 0%, 6.4% { transform: translateY(-160px); } 7.6%, 7.9% { transform: none; } 9.8%, 57.5% { transform: translateY(-160px); } 58.6%, 58.9% { transform: none; } 60.8%, 100% { transform: translateY(-160px); } }
+        @media (max-width: 700px) { .gz-kare { --gz: 2.5; } }
+        .gv-vizor i { position: absolute; width: calc(var(--w) * .11); height: calc(var(--w) * .11); border: 0 solid #fff; animation: gvKilit 8s ease-in-out infinite; }
         .gv-vizor i:nth-of-type(1) { left: 0; top: 0; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 6px; }
         .gv-vizor i:nth-of-type(2) { right: 0; top: 0; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 6px; }
         .gv-vizor i:nth-of-type(3) { left: 0; bottom: 0; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 6px; }
         .gv-vizor i:nth-of-type(4) { right: 0; bottom: 0; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 6px; }
-        @keyframes gvKilit { 0%, 70%, 100% { transform: scale(1); opacity: 1; } 78% { transform: scale(1.18); opacity: .5; } 88% { transform: scale(.94); opacity: 1; } }
+        @keyframes gvKilit { 0%, 12%, 100% { transform: scale(1); opacity: .6; } 24% { transform: scale(1.18); opacity: .6; } 31% { transform: scale(.94); opacity: 1; } 35%, 80% { transform: scale(1); opacity: 1; } }
         .gv-etiket { position: absolute; left: 0; bottom: -22px; font: 500 10.5px/1 'Roboto Mono', ui-monospace, monospace; letter-spacing: .16em; color: #fff; }
+        .gv-etiket b { font-weight: 500; animation: gzYaziB 8s linear infinite; } .gv-etiket b:first-child { position: absolute; left: 15px; white-space: nowrap; animation-name: gzYaziA; }
+        @keyframes gzYaziA { 0%, 30% { opacity: 1; } 31%, 84% { opacity: 0; } 86%, 100% { opacity: 1; } } @keyframes gzYaziB { 0%, 30% { opacity: 0; } 31%, 84% { opacity: 1; } 86%, 100% { opacity: 0; } }
         .gv-etiket::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff6a1a; box-shadow: 0 0 10px #ff6a1a; margin-right: 8px; }
-        @media (prefers-reduced-motion: reduce) { .gv-vizor i { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .gv-vizor i, .gv-vizor * { animation: none !important; } .gv-etiket b:first-child { display: none; } .gz-kare { transform: scale(1.4); } }
         #giris-ekrani .gv-vizor + h2 { margin-top: 20px; }
 
         /* Platform kartları: vizör köşeli cam kart + çizgi ikon */
@@ -2705,6 +2725,7 @@
         #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) .kurumsal-logo { display: none; }
         #giris-ekrani:not(:has(#giris-lig[style*="display: flex"])) h2#giris-baslik { margin-top: 30px; }
         .gv-vizor { --w: min(300px, 58vw); }
+        @media (min-width: 900px) and (min-height: 780px) { .gv-vizor { --w: 420px; } }
         #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(240px, 50vw); }
         @media (max-width: 600px) { #giris-ekrani:has(#giris-sifre[style*="display: flex"]) .gv-vizor, #giris-ekrani:has(#giris-sporcu[style*="display: flex"]) .gv-vizor { --w: min(200px, 46vw); margin-top: 44px; } }
 

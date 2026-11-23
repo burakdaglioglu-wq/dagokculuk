@@ -6219,3 +6219,6 @@ Kullanıcı "ilk olduğumuzu siteye ekle". Yeni bölüm `#ilk` (videoların alt�
 Kullanıcı "buradaki video kalitesi çok düşük" → iki ekran resminden 1'i seçti. Sebep: dikey çekim geniş ekrana kesilip büyütülüyordu + crf 30. `giris-genis*` KALKTI.
 - Bilgisayar (en ≥ 1000, yatay): `.vz-panel` — gezen küçük pencere yerine sağda 3:4 net panel (`giris-panel.mp4` 1080×1440, 7,6 MB, sayfa açıldıktan sonra iner) + bulanık arka plan (`giris-panel-b.mp4`). Fareyi izlemez. Telefon ve dar ekran: eski vizör, video yenilendi (`giris-dik.mp4` 4,2 MB).
 - Üretici `_reklam/arsiv/kurgu/site-panel.mjs` (geçişler xfade, gürültü azaltma; ilk sahnede TV'deki sporcu adı bulanıklaştırılır). `site-arka.mjs` eski. Test 161.
+
+## 175. 👁 Giriş ekranında göz efekti (v462, 2026-11-24)
+Kullanıcı: "giriş kısmındaki göze efekt mi eklesen". Platform Seçin ekranındaki `.gv-vizor`: 8 sn döngü — göz kırpar, odak halkası daralır, göze yaklaşır, göz bebeğinde hedef renkleri yanar (iki göz), etiket ODAK ARANIYOR → HEDEF NET. Yalnız CSS (transform/opacity) + satır içi SVG (`viewBox 0 0 1620 519`, `gz-*`); yeni görsel `/hero/goz.webp` (27 KB, kaynak `_yerel-gorseller/webfoto/dagtoprakweb-sade.png`). Bilgisayarda vizör 420 px. Hareketi azalt: durur. PIN ekranında vizör yine gizli. Test 158.

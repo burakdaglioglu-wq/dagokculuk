@@ -41,7 +41,11 @@ export default async function ({ log }) {
   // girişsiz: kişi seçimi + hatırla + parmak izi düğmesiyle en uzun hali
   const { ctx, p } = await sayfaAc({ girisli: false, genislik: 390, yukseklik: 663 });
   try {
-    await uygulamaAc(p); await p.evaluate(() => platformSec('yonetici')); await p.waitForSelector('#giris-sifre .pin-btn'); await p.evaluate(() => { _girisDurum.passkeyVar = true; girisPaneliCiz(); });
+    await uygulamaAc(p);
+    // göz efekti (v462): platform ekranında görünür, kaydırmadan sığar; iki gözde hedef, yalnız transform/opacity oynar
+    const gz = await p.evaluate(() => { const e = document.getElementById('giris-ekrani'), im = document.querySelector('.gz-kare img'); return { gen: im.naturalWidth, iris: document.querySelectorAll('.gz-iris').length, tas: e.scrollHeight - e.clientHeight, ozl: [...new Set(document.getAnimations().filter((a) => a.effect.target && a.effect.target.closest('.gv-vizor')).flatMap((a) => a.effect.getKeyframes().flatMap((k) => Object.keys(k))))].filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)).sort().join() }; });
+    dogrula(gz.gen === 1620 && gz.iris === 2 && gz.tas <= 1 && gz.ozl === 'opacity,transform', 'göz efekti ' + JSON.stringify(gz));
+    await p.evaluate(() => platformSec('yonetici')); await p.waitForSelector('#giris-sifre .pin-btn'); await p.evaluate(() => { _girisDurum.passkeyVar = true; girisPaneliCiz(); });
     await olc(p, 'giriş', 663); if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-g3.png' });
     await p.evaluate(() => { sifreGeri(); platformSec('egitmen'); }); await olc(p, 'eğitmen', 663); if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-g4.png' });
   } finally { await ctx.close(); }
