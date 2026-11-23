@@ -1105,11 +1105,55 @@
         .yon-bottom-nav button .yon-bn-icon { font-size: 18px; line-height: 1; }
         .yon-bottom-nav button.aktif { color: var(--accent-orange); background: rgba(255,98,0,0.1); }
         /* "Diğer" alt-menü sayfası (Silinenler/Eğitmen Panosu/Yoklama/Rapor/Aidat/Personel/Yedek) */
+        /* Yönetici menüsü (v449): alt çubuk menü açıkken de görünür (z 6) — tekrar dokununca kapanır */
         .yon-diger-sheet {
             position: absolute; inset: 0; background: var(--bg-main); z-index: 5; display: none;
-            flex-direction: column; padding: 12px 14px; overflow-y: auto;
+            flex-direction: column; padding: 14px 16px calc(84px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         .yon-diger-sheet.acik { display: flex; }
+        .yon-bottom-nav { position: relative; z-index: 6; }
+        .yon-ik { width: 20px; height: 20px; display: block; flex: none; }
+        .yon-bottom-nav .yon-ik { width: 22px; height: 22px; }
+        .yon-sidebar-btn .yon-ik { width: 18px; height: 18px; }
+        .ym-ust { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .ym-ust h3 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .yon-diger-sheet button { font-family: inherit; transform: none !important; touch-action: manipulation; }
+        .ym-kapat { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--bg-panel); color: var(--text-main); display: grid; place-items: center; cursor: pointer; padding: 0; }
+        .ym-ara { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 12px; background: var(--bg-panel); border: 1px solid var(--border-color); color: var(--text-muted); margin-bottom: 12px; flex: none; }
+        .ym-ara:focus-within { border-color: var(--accent-orange); }
+        .yon-diger-sheet .ym-ara input { flex: 1; min-width: 0; width: auto; margin: 0; font: inherit; font-size: 16px; height: 46px; padding: 0; border: 0 !important; outline: 0; box-shadow: none !important; background: transparent !important; color: var(--text-main); }
+        .ym-kartlar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ym-kart { text-align: left; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-panel); color: var(--text-main); padding: 13px 14px; min-height: 112px; display: flex; flex-direction: column; cursor: pointer; min-width: 0; }
+        .ym-kart b { font-size: 16px; font-weight: 800; padding-top: 10px; }
+        .ym-kart small { font-size: 12.5px; line-height: 1.35; color: var(--text-muted); overflow-wrap: anywhere; }
+        .ym-kart small b { font-size: inherit; padding: 0; color: var(--text-main); }
+        .ym-kart small.dikkat, .ym-kart small.dikkat b, .ym-oge small.dikkat { color: #e8a33d; }
+        .ym-ik { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+        .ym-kart .ym-ik { width: 40px; height: 40px; }
+        .iyi > .ym-ik { background: rgba(63,191,127,.15); color: #3fbf7f; }
+        .mavi > .ym-ik { background: rgba(96,165,250,.15); color: #6aabf7; }
+        .altin > .ym-ik { background: rgba(212,167,58,.16); color: #e0b64c; }
+        .gri > .ym-ik { background: rgba(143,152,167,.15); color: var(--text-muted); }
+        .ym-bas { margin: 18px 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text-muted); }
+        .ym-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ym-oge { display: flex; align-items: center; gap: 10px; text-align: left; min-height: 58px; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 13px; background: var(--bg-panel); color: var(--text-main); cursor: pointer; min-width: 0; }
+        .ym-ad { min-width: 0; display: grid; gap: 1px; }
+        .ym-ad b { font-size: 13.5px; font-weight: 700; line-height: 1.2; overflow-wrap: break-word; }
+        .ym-ad small b { font-size: inherit; }
+        body.light-theme .ym-kart small.dikkat, body.light-theme .ym-kart small.dikkat b, body.light-theme .ym-oge small.dikkat { color: #9a5b00; }
+        body.light-theme .iyi > .ym-ik { color: #12805a; } body.light-theme .mavi > .ym-ik { color: #2563c9; } body.light-theme .altin > .ym-ik { color: #8a6100; }
+        .yon-sidebar-btn + .yon-sidebar-group-title { margin-top: 12px; }
+        .yon-bottom-nav button { font-size: 11px; min-height: 48px; }
+        .ym-ad small { font-size: 11.5px; color: var(--text-muted); line-height: 1.25; }
+        .ym-kart.acik, .ym-oge.acik { border-color: var(--accent-orange); }
+        .ym-kart:active, .ym-oge:active, .ym-sporcu button:active { filter: brightness(1.25); }
+        .ym-sporcu { display: grid; border: 1px solid var(--border-color); border-radius: 13px; overflow: hidden; background: var(--bg-panel); }
+        .ym-sporcu button { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 54px; padding: 8px 12px; border: 0; border-top: 1px solid var(--border-color); background: transparent; color: var(--text-main); text-align: left; cursor: pointer; }
+        .ym-sporcu button:first-child { border-top: 0; }
+        .ym-sporcu b { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ym-sporcu small { font-size: 12px; color: var(--text-muted); }
+        .ym-av { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: rgba(212,167,58,.16); color: #e0b64c; }
+        .ym-bos { padding: 26px 4px; text-align: center; color: var(--text-muted); font-size: 14px; }
         /* Bağlantı durumu rozeti — yeşil/kırmızı nabız noktası + metin */
         .yon-sync-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 20px; white-space: nowrap; }
         .yon-sync-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }

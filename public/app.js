@@ -8693,11 +8693,12 @@
         // sarmalı grid basıyordu (styles.css:311 — karşılıksız kalan kural). Artık hizliGecisBariCiz()
         // ile aynı, kanıtlanmış yatay kaydırma deseni kullanılıyor — her bölüm kendi tek satırında,
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
+        // v449: işe göre gruplar (telefon menüsü ve masaüstü kenar menüsü aynı listeden)
         const YONETICI_BOLUMLER = [
-            ['YÖNETİM', [['panel','📊','Genel Bakış'],['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['fiziksel','🗂️','Fiziksel Dosya'],['silinenler','🗑️','Silinenler'],['ciftkayit','🧹','Çift Kayıt'],['guvenlik','🔐','Güvenlik']]],
-            ['PERSONEL', [['kisiler','🪪','Eğitmen & Misafir']]],
-            ['ANTRENMAN', [['bugunskor','🎯','Skor Girenler'],['yoklama','✅','Yoklama'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü'],['program','📅','Antrenman Programı']]],
-            ['KULÜP İŞLERİ', [['rapor','📄','Aile Raporu'],['aidat','💳','Aidat'],['deneme','🌱','Deneme Dersleri'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['belge','📋','Belge Takibi'],['vitrin','📺','Tanıtım Ekranı'],['yedek','💾','Yedek']]]
+            ['DERS', [['panel','📊','Genel Bakış'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı'],['bugunskor','🎯','Skor Girenler'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü']]],
+            ['SPORCULAR', [['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['fiziksel','🗂️','Fiziksel Dosya'],['belge','📋','Belge Takibi'],['deneme','🌱','Deneme Dersleri']]],
+            ['VELİ & KULÜP', [['aidat','💳','Aidat'],['rapor','📄','Aile Raporu'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['kisiler','🪪','Eğitmen & Misafir'],['vitrin','📺','Tanıtım Ekranı']]],
+            ['BAKIM', [['ciftkayit','🧹','Çift Kayıt'],['silinenler','🗑️','Silinenler'],['yedek','💾','Yedek'],['guvenlik','🔐','Güvenlik']]]
         ];
         // DÜZELTME: eskiden 9 sekme butonu HER ZAMAN ekranda açık duruyordu — telefonda modalın
         // yarısına yakınını kaplayıp asıl içeriğe çok az yer bırakıyordu. Artık hamburger menü:
@@ -8714,25 +8715,90 @@
         // (tüm ligler, tüm sporcular — zaten var olan tek doğruluk kaynağı, burada tekrar üretilmiyor).
         // Az kullanılan 7 bölüm (Silinenler, Eğitmen Panosu, Bugün Skor Girenler, Yoklama, Aile Raporu,
         // Aidat, Personel, Yedek) "⋯ Diğer" sayfasına toplanır.
-        const YON_ALT_NAV = [ ['panel','🏠','Ana Sayfa'], ['kullanicilar','🎯','Skorlar'], ['__canli','📡','Canlı'], ['__diger','⋯','Diğer'] ];
+        const YON_ALT_NAV = [ ['panel','🏠','Ana Sayfa'], ['kullanicilar','🎯','Skorlar'], ['__canli','📡','Canlı'], ['__diger','⋯','Menü'] ];
         function yoneticiAltNavCiz() {
             let nav = document.getElementById('yon-bottom-nav'); if(!nav) return;
             nav.innerHTML = YON_ALT_NAV.map(([k, ikon, l]) => {
                 let aktif = (k === '__diger') ? _yonDigerAcik : (k === yoneticiSekmeAktif && !_yonDigerAcik);
-                return `<button onclick="${k === '__canli' ? 'yoneticiCanliyaGit()' : k === '__diger' ? 'yoneticiDigerSheetAcKapat()' : `yoneticiSekme('${k}')`}" class="${aktif ? 'aktif' : ''}"><span class="yon-bn-icon">${ikon}</span>${l}</button>`;
+                return `<button onclick="${k === '__canli' ? 'yoneticiCanliyaGit()' : k === '__diger' ? 'yoneticiDigerSheetAcKapat()' : `yoneticiSekme('${k}')`}" class="${aktif ? 'aktif' : ''}"><span class="yon-bn-icon">${yonIkon(k === 'kullanicilar' ? 'bugunskor' : k) || ikon}</span>${l}</button>`;
             }).join('');
         }
         let _yonDigerAcik = false;
+        // 📱 YÖNETİCİ MENÜSÜ (v449, 2026-11-23, kullanıcı: "bu kısım çok iğrenç duruyor") — eski "Diğer" sayfası: boyu farklı emoji kutuları,
+        // tam ekran açılıp alt çubuğu da örtüyordu ve kapatma düğmesi yoktu. Şimdi: arama (ekran + sporcu), 4 büyük canlı kart,
+        // altta hizalı iki sütun; çizgi ikonlar (yonIkon) telefonda, alt çubukta ve masaüstü kenar menüsünde aynı.
+        const YON_IKON = {
+            panel: '<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z"/>',
+            kullanicilar: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.4 3.4 0 0 1 0 6.4M18 14.9c2 .7 3.2 2.4 3.5 5.1"/>',
+            girisler: '<circle cx="7.5" cy="15.5" r="4"/><path d="M10.5 12.5 20 3M16.5 6.5l3 3M14 9l2 2"/>',
+            hizliduzenle: '<path d="M4 20h4L19.5 8.5a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4"/>',
+            fiziksel: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM7 13h10M7 16.5h6"/>',
+            silinenler: '<path d="M4 6.5h16M9 6.5V4h6v2.5M6 6.5 7 20h10l1-13.5M10 10.5v6M14 10.5v6"/>',
+            ciftkayit: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/>',
+            guvenlik: '<path d="M12 3 4.5 6v5.5c0 4.5 3 8 7.5 9.5 4.5-1.5 7.5-5 7.5-9.5V6zM9 12l2.2 2.2L15.2 10"/>',
+            kisiler: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.8" cy="11" r="2.2"/><path d="M5.5 16.2c.5-1.7 1.8-2.5 3.3-2.5s2.8.8 3.3 2.5M15 10h3.5M15 13.5h3.5"/>',
+            bugunskor: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
+            yoklama: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12.3 2.8 2.8L16.2 9.5"/>',
+            defter: '<path d="M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6zM6 3.5v17M3.5 8H6M3.5 12H6M3.5 16H6M10 8.5h5M10 12h5"/>',
+            gunluk: '<path d="M6.5 3.5h7.5l4.5 4.5v12.5h-12zM14 3.5V8h4.5M9.5 12h6M9.5 15.5h6"/>',
+            program: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3v4M16 3v4M8 13.5h2M14 13.5h2M8 17h2"/>',
+            rapor: '<path d="M6.5 3.5h7.5l4.5 4.5v12.5h-12zM14 3.5V8h4.5M9.5 17v-3M12.5 17v-5.5M15.5 17v-2"/>',
+            aidat: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M6.5 14.8h4"/>',
+            deneme: '<path d="M12 20.5V11M12 11c0-3.6-2.6-5.5-7-5.5 0 3.8 2.6 5.5 7 5.5zM12 13.5c0-3 2.2-4.7 6.5-4.7 0 3.2-2.3 4.7-6.5 4.7z"/>',
+            duyuru: '<path d="M4 10v4h3.5L17 19V5l-9.5 5zM7.5 14l1.3 5.5h2.4L10 14.8M20 9.8c.8.6 1.2 1.3 1.2 2.2s-.4 1.6-1.2 2.2"/>',
+            ihtiyac: '<path d="M4 5.5h16v11h-8.5L7 20.5v-4H4zM8 9.5h8M8 12.8h5"/>',
+            belge: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 3h6v3.5H9zM8.5 11.5l1.2 1.2 2-2.2M14 11.8h2.5M8.5 16l1.2 1.2 2-2.2M14 16.3h2.5"/>',
+            vitrin: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
+            yedek: '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+            __canli: '<circle cx="12" cy="12" r="2"/><path d="M8 16a5.6 5.6 0 0 1 0-8M16 8a5.6 5.6 0 0 1 0 8M5 19a9.8 9.8 0 0 1 0-14M19 5a9.8 9.8 0 0 1 0 14"/>',
+            __diger: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
+            ara: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>', kapat: '<path d="m6 6 12 12M18 6 6 18"/>'
+        };
+        function yonIkon(k) { return YON_IKON[k] ? '<svg class="yon-ik" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + YON_IKON[k] + '</svg>' : ''; }
+        const YON_MENU_KART = ['yoklama', 'aidat', 'program', 'bugunskor'];
+        const YON_MENU_RENK = { DERS: 'iyi', SPORCULAR: 'mavi', 'VELİ & KULÜP': 'altin', BAKIM: 'gri' };
+        const YON_MENU_KELIME = { yoklama: 'geldi gelmedi devam rapor', aidat: 'ödeme para borç tahsilat kasa gider', program: 'ders saat takvim', bugunskor: 'bugün puan seri', girisler: 'kod pin şifre', hizliduzenle: 'telefon doğum tarihi toplu', fiziksel: 'boy kilo ölçüm', ciftkayit: 'birleştir aynı isim', silinenler: 'geri al', guvenlik: 'pin şifre kullanıcı', kisiler: 'personel maaş bordro antrenör', rapor: 'veli karne pdf', deneme: 'aday yeni kayıt', duyuru: 'bildirim mesaj', ihtiyac: 'istek', belge: 'evrak sağlık lisans', vitrin: 'tv salon', yedek: 'geri yükle', defter: 'telafi', gunluk: 'not' };
+        const YON_MENU_AD = { program: 'Program', bugunskor: 'Skor Girenler', yoklama: 'Yoklama', aidat: 'Aidat' };
+        let _yonMenuDers = null;
+        function yonMenuGit(k) { if(_yonDigerAcik) yoneticiDigerSheetAcKapat(); yoneticiSekme(k); }
+        function yonMenuSporcu(id) { if(_yonDigerAcik) yoneticiDigerSheetAcKapat(); sporcuProfilAc(id); }
+        // kart / satır durumu: [metin, dikkat mi]
+        function yonMenuDurum(k) {
+            let s = _yonSayilarSon || {};
+            if(k === 'yoklama') return s.gelen ? ['bugün <b>' + s.gelen + '</b> kişi geldi'] : ['bugün henüz kayıt yok'];
+            if(k === 'aidat') return s.aidat ? ['<b>' + s.aidat + '</b> kişi bu ay ödemedi', 1] : s.aidat === 0 ? ['bu ay herkes ödedi'] : ['ödeme gir, borçluları gör'];
+            if(k === 'bugunskor') return s.seri ? ['bugün <b>' + s.atan + '</b> kişi · ' + s.seri + ' seri'] : ['bugün skor girilmedi'];
+            if(k === 'program') { let d = _yonMenuDers; if(!d) return ['ders saatleri']; return d.length ? [(d[0].simdi ? 'şimdi ' : 'sıradaki ') + '<b>' + esc(d[0].s.baslangicSaat) + '</b> ' + esc(d[0].s.grup || 'Ders')] : ['bugün kalan ders yok']; }
+            if(k === 'kullanicilar') return s.aktif ? [s.aktif + ' aktif sporcu'] : null;
+            if(k === 'kisiler') return s.personelToplam && s.personel ? ['bugün ' + s.personel + ' eğitmen geldi'] : null;
+            if(k === 'deneme') { let n = denemeDikkatSayisi(); return n ? [n + ' aday dönüş bekliyor', 1] : null; }
+            return null;
+        }
+        function yonMenuListeHTML(q) {
+            let hepsi = YONETICI_BOLUMLER.flatMap(([b, l]) => l.map(x => ({ b, k: x[0], l: x[2] })));
+            let oge = x => { let d = yonMenuDurum(x.k); return '<button type="button" class="ym-oge ' + (YON_MENU_RENK[x.b] || 'gri') + (yoneticiSekmeAktif === x.k ? ' acik' : '') + '"' + (yoneticiSekmeAktif === x.k ? ' aria-current="page"' : '') + ' onclick="yonMenuGit(\'' + x.k + '\')"><span class="ym-ik">' + yonIkon(x.k) + '</span><span class="ym-ad"><b>' + x.l + '</b>' + (d ? '<small' + (d[1] ? ' class="dikkat"' : '') + '>' + d[0] + '</small>' : '') + '</span></button>'; };
+            let n = turkceNormalize((q || '').trim());
+            if(n) {
+                let ek = hepsi.filter(x => (' ' + turkceNormalize(x.l + ' ' + (YON_MENU_KELIME[x.k] || ''))).includes(' ' + n));
+                let sp = []; AIDAT_GRUPLAR.forEach(g => Object.keys(turnuvaDB[g] || {}).forEach(ad => { if(turkceNormalize(ad).includes(n)) sp.push({ g, ad, pasif: !!(turnuvaDB[g][ad] || {}).pasif }); }));
+                sp.sort((a, b) => (a.pasif - b.pasif) || a.ad.localeCompare(b.ad, 'tr'));
+                if(!ek.length && !sp.length) return '<div class="ym-bos">“' + esc(q.trim()) + '” için ekran ya da sporcu bulunamadı.</div>';
+                return (ek.length ? '<h4 class="ym-bas">EKRANLAR</h4><div class="ym-izgara">' + ek.map(oge).join('') + '</div>' : '') + (sp.length ? '<h4 class="ym-bas">SPORCULAR</h4><div class="ym-sporcu">' + sp.slice(0, 12).map(x => '<button type="button" onclick="yonMenuSporcu(' + escQ(x.g + '|' + x.ad) + ')">' + (typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(x.g, x.ad), x.ad, 'ym-av', true) : '') + '<b>' + esc(x.ad) + '</b><small>' + (LIG_ETIKET_KISA_AIDAT[x.g] || x.g) + (x.pasif ? ' · pasif' : '') + '</small></button>').join('') + '</div>' : '');
+            }
+            let kart = k => { let x = hepsi.find(y => y.k === k), d = yonMenuDurum(k); return '<button type="button" class="ym-kart ' + (YON_MENU_RENK[x.b] || 'gri') + (yoneticiSekmeAktif === k ? ' acik' : '') + '" onclick="yonMenuGit(\'' + k + '\')"><span class="ym-ik">' + yonIkon(k) + '</span><b>' + YON_MENU_AD[k] + '</b><small' + (d[1] ? ' class="dikkat"' : '') + '>' + d[0] + '</small></button>'; };
+            return '<div class="ym-kartlar">' + YON_MENU_KART.map(kart).join('') + '</div>' + YONETICI_BOLUMLER.map(([b, l]) => { let o = l.filter(x => x[0] !== 'panel' && YON_MENU_KART.indexOf(x[0]) < 0); return o.length ? '<h4 class="ym-bas">' + b + '</h4><div class="ym-izgara">' + o.map(x => oge({ b, k: x[0], l: x[2] })).join('') + '</div>' : ''; }).join('');
+        }
+        function yonMenuAra(q) { let e = document.getElementById('ym-liste'); if(e) e.innerHTML = yonMenuListeHTML(q); }
         function yoneticiDigerSheetAcKapat() {
             _yonDigerAcik = !_yonDigerAcik;
             let sheet = document.getElementById('yon-diger-sheet'); if(!sheet) return;
             sheet.classList.toggle('acik', _yonDigerAcik);
             if(_yonDigerAcik) {
-                let digerBolumler = YONETICI_BOLUMLER.map(([baslik, sekler]) => [baslik, sekler.filter(([k]) => k !== 'panel' && k !== 'kullanicilar')]).filter(([, s]) => s.length);
-                sheet.innerHTML = digerBolumler.map(([baslik, sekler]) => `<div class="adm-nav-group">
-                    <div class="adm-nav-title">${baslik}</div>
-                    <div class="adm-nav-row" style="flex-wrap:wrap;">${sekler.map(([k, ikon, l]) => `<button onclick="yoneticiDigerSheetAcKapat(); yoneticiSekme('${k}')" class="adm-nav-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"><span class="adm-nav-icon">${ikon}</span>${l}</button>`).join('')}</div>
-                </div>`).join('');
+                sheet.innerHTML = '<div class="ym-ust"><h3>Menü ' + yeniRozet() + '</h3><button type="button" class="ym-kapat" onclick="yoneticiDigerSheetAcKapat()" aria-label="Menüyü kapat">' + yonIkon('kapat') + '</button></div>'
+                    + '<label class="ym-ara">' + yonIkon('ara') + '<input type="search" id="ym-ara" placeholder="Ekran ya da sporcu ara" aria-label="Ekran ya da sporcu ara" autocomplete="off" oninput="yonMenuAra(this.value)" onkeydown="if(event.key===\'Enter\'){let b=document.querySelector(\'#ym-liste button\'); if(b) b.click();}"></label>'
+                    + '<div id="ym-liste">' + yonMenuListeHTML('') + '</div>';
+                sheet.scrollTop = 0;
+                if(typeof kmProgramSlotlariGetir === 'function') kmProgramSlotlariGetir().then(sl => { _yonMenuDers = kmBugunDersleri(sl || []); let a = document.getElementById('ym-ara'); if(_yonDigerAcik && a && !a.value) yonMenuAra(''); }).catch(() => {});
             }
             yoneticiAltNavCiz();
         }
@@ -8745,7 +8811,7 @@
         // MASAÜSTÜ SIDEBAR — ≥900px'te her zaman açık, tüm bölümler tek bakışta (hamburger'a gerek yok).
         function yoneticiSidebarCiz() {
             let nav = document.getElementById('yon-sidebar-nav'); if(!nav) return;
-            let html = `<button onclick="yoneticiCanliyaGit()" class="yon-sidebar-btn" style="background:rgba(16,185,129,0.12); color:var(--neon-green); margin-bottom:10px;"><span class="yon-sb-icon">📡</span>Canlı Takip'i Aç</button>`;
+            let html = `<button onclick="yoneticiCanliyaGit()" class="yon-sidebar-btn" style="background:rgba(16,185,129,0.12); color:var(--neon-green); margin-bottom:10px;"><span class="yon-sb-icon">${yonIkon('__canli')}</span>Canlı Takip'i Aç</button>`;
             YONETICI_BOLUMLER.forEach(([baslik, sekler]) => {
                 html += `<div class="yon-sidebar-group-title">${baslik}</div>`;
                 sekler.forEach(([k, ikon, l]) => {
@@ -8754,7 +8820,7 @@
                     if(s && k === 'aidat' && s.aidat) rozet = `<span class="yon-sb-rozet kirmizi">${s.aidat}</span>`;
                     if(s && k === 'yoklama' && s.gelen) rozet = `<span class="yon-sb-rozet">${s.gelen}</span>`;
                     if(k === 'deneme') { let n = denemeDikkatSayisi(); if(n) rozet = `<span class="yon-sb-rozet kirmizi">${n}</span>`; }
-                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${ikon}</span>${l}${rozet}</button>`;
+                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${yonIkon(k) || ikon}</span>${l}${rozet}</button>`;
                 });
             });
             nav.innerHTML = html;

@@ -6133,3 +6133,9 @@ Kullanıcı (telefon ekranı): "bu kısmı çok geliştirmemiz gerekiyor — spo
 - Kutular `button` (`.yn-kutu`), üstte bölüm çubuğu (`ynBolum`), kimlik satırları ve Bilgiler satırları → yalnız o alan düzenlenir (`YN.alanDuz`, `ynAlanAc`), Devam çubuğu → o ay, Geçmiş satırı → gün / ödeme ayı, Kayıt işlemleri satırları, kategori → liste (`gitYer`).
 - **Aidat "yükleniyor"da kalma hatası**: profil aidat verisi yoksa kendisi ister (`aidatYukle`); oturum düşmüşse 🔑 giriş yap, hata ise ⚠️ yeniden dene.
 - Adaptör: `gelisDetay`, `gelisYaz`, `aidatYukle`, `girisIste`, `gitYer` (DAĞ); Milo ilk üçü. Test 155. Gerçek telefonda / gerçek veriyle DENENMEDİ.
+
+## 159. 📱 Yönetici menüsü (v449, 2026-11-23)
+Kullanıcı ekran görüntüsü (telefonda ⋯ Diğer): "bu kısım çok iğrenç duruyor". Eski sayfa boyu farklı emoji kutularıydı; tam ekran açılıp alt çubuğu da örtüyordu, kapatma düğmesi yoktu.
+- Alt çubukta **Menü** (eski Diğer). `#yon-diger-sheet`: ✕, arama (ekran adı + `YON_MENU_KELIME` anlam kelimeleri, kelime başından; sporcu → profil), 4 canlı kart (`YON_MENU_KART`: Yoklama, Aidat, Program, Skor Girenler; `yonMenuDurum`), altta iki hizalı sütun. Alt çubuk z 6 → menü açıkken de dokunulur.
+- `YONETICI_BOLUMLER` işe göre 4 grup (DERS · SPORCULAR · VELİ & KULÜP · BAKIM); masaüstü kenar menüsü aynı listeden. `YON_IKON`/`yonIkon(k)` çizgi ikonlar: menü + alt çubuk + kenar menüsü. Yeni ekran eklerken ikonunu da ekle (yoksa emoji'ye düşer).
+- Test 156. Gerçek telefonda DENENMEDİ.
