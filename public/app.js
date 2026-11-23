@@ -7857,6 +7857,11 @@
             try { egitmenOzetCiz(); } catch(e) {}
         }
         function egitmenCikis() { location.reload(); }
+        // 👁 giriş ekranındaki canlı göz: sayfa yüklenip boşa çıkınca, yalnız giriş ekranı açıksa iner; hareketi azalt / veri tasarrufunda fotoğraf kalır
+        (function gozCanli() {
+            let yukle = function() { let im = document.querySelector('.gz-foto'), ag = navigator.connection || {}; if(!im || matchMedia('(prefers-reduced-motion: reduce)').matches || ag.saveData) return; let g = document.getElementById('giris-ekrani'); if(!g || getComputedStyle(g).display === 'none') return; let y = new Image(); y.onload = function() { im.src = y.src; }; y.src = '/hero/goz-canli.webp'; };
+            if(document.readyState === 'complete') setTimeout(yukle, 900); else window.addEventListener('load', function() { setTimeout(yukle, 900); });
+        })();
         function kapatGirisEkrani() { document.getElementById('giris-ekrani').style.display = 'none'; }
         function platformSec(p) {
             if(p === 'egitmen' || p === 'yonetici') { girisPlatformAc(p); return; }

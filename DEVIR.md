@@ -6225,3 +6225,7 @@ Kullanıcı: "giriş kısmındaki göze efekt mi eklesen". Platform Seçin ekran
 
 ## 176. 👁 Site girişi göz açılışı (2026-11-24)
 Kullanıcı "siteye de yap". Giriş videosunun ilk 4,2 sn'si: okçunun gözü, odak halkası, göz bebeğinde hedef, hedef büyür → gerçek hedefler. Üretici `_reklam/arsiv/kurgu/site-goz.mjs` (uygulamadaki `gz-svg`'yi app.html'den alır, kare kare çizer) → `site-panel.mjs` başa ekler; önce site-goz, sonra site-panel çalıştır. Video değişince `index.html` `giris-…mp4?v=N` artır. Telefonda pencere 0,5–4 sn arası göze gider (göz 720×1280 karenin %50/%36'sı); panelde etiket 1,7 sn'de HEDEF NET olur. Test 161.
+
+## 177. 👁 Göz gerçekçi (v463, 2026-11-24) — §175 ve §176'nın görünümünün yerini aldı
+Kullanıcı "daha gerçekçi, şu an biraz olmamış gibi": çizim hedef, turuncu halka, göz kırpma KALKTI (geri ekleme). `site-goz.mjs` v2 (tuval): doğal kahverengi iris, fotoğraftaki gerçek hedef + yay küresel bükülüp gözde yansır, alan derinliği, el kamerası oynaması, hafif film greni; yansımanın içinden IMG_9413 açılır (4,2 sn'nin sonunda çekimin 1,8. sn'si, `site-panel.mjs` oradan sürer).
+- Uygulama: SVG/CSS yerine `.gz-foto` (`goz.webp` 27 KB) → açılıştan 0,9 sn sonra `goz-canli.webp` (494 KB, 6 sn döngü, `gozCanli()`); hareketi azalt / veri tasarrufu / giriş ekranı kapalı → inmez. `node site-goz.mjs app` üretir. Test 158, 161.
