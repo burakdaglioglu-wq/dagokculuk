@@ -42,9 +42,7 @@ export default async function ({ log }) {
   const { ctx, p } = await sayfaAc({ girisli: false, genislik: 390, yukseklik: 663 });
   try {
     await uygulamaAc(p);
-    // canlı göz (v463): hareketli görsel açılıştan sonra gelir, ekran kaydırmadan sığar
-    await p.waitForFunction(() => /goz-canli/.test(document.querySelector('.gz-foto').src) && document.querySelector('.gz-foto').naturalWidth === 840, null, { timeout: 15000 });
-    dogrula(await p.evaluate(() => { const e = document.getElementById('giris-ekrani'); return e.scrollHeight - e.clientHeight <= 1; }), 'göz ekranı taşırmamalı');
+    dogrula(await p.evaluate(() => { const e = document.getElementById('giris-ekrani'); return e.scrollHeight - e.clientHeight <= 1 && document.querySelector('.gz-foto').naturalWidth === 1620; }), 'göz ekranı taşırmamalı');
     await p.evaluate(() => platformSec('yonetici')); await p.waitForSelector('#giris-sifre .pin-btn'); await p.evaluate(() => { _girisDurum.passkeyVar = true; girisPaneliCiz(); });
     await olc(p, 'giriş', 663); if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-g3.png' });
     await p.evaluate(() => { sifreGeri(); platformSec('egitmen'); }); await olc(p, 'eğitmen', 663); if (process.env.E2E_EKRAN) await p.screenshot({ path: process.env.E2E_EKRAN + '-g4.png' });
