@@ -4501,7 +4501,7 @@
                     });
                 },
                 dersBaslat: i => yoneticiDersBaslat(i),
-                ustBant: () => yonVeliBantHTML(),
+                ustBant: () => yonVeliBantHTML() + yokCiktiBantHTML(),
                 fotoDegistir: k => { if(k) ysFotoSec(k.grup, k.ad); }, // profil avatarındaki 📷
                 veliLink: k => { if(k) veliLinkGonder(k.grup, k.ad); }, // profilde 🔗 Veliye link gönder (ödeme + gelişim, tek mesaj)
                 ekPanel: k => (typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '') + (typeof yrsKarneHTML === 'function' ? yrsKarneHTML(k.grup, k.ad) : ''), // 📈 Gelişim (plan · grup · his) + 🏆 sezon karnesi (v313)
@@ -8743,7 +8743,7 @@
         // taşan buton kaydırılarak görülüyor, sabit sütun sayısı yok.
         // v449: işe göre gruplar (telefon menüsü ve masaüstü kenar menüsü aynı listeden)
         const YONETICI_BOLUMLER = [
-            ['DERS', [['panel','📊','Genel Bakış'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı'],['bugunskor','🎯','Skor Girenler'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü']]],
+            ['DERS', [['panel','📊','Genel Bakış'],['yoklama','✅','Yoklama'],['yokcikti','🖨️','Yoklama Çıktısı'],['program','📅','Antrenman Programı'],['bugunskor','🎯','Skor Girenler'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü']]],
             ['SPORCULAR', [['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['fiziksel','🗂️','Fiziksel Dosya'],['belge','📋','Belge Takibi'],['deneme','🌱','Deneme Dersleri']]],
             ['VELİ & KULÜP', [['velilink','💌','Velilere Gönder'],['aidat','💳','Aidat'],['rapor','📄','Aile Raporu'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['kisiler','🪪','Eğitmen & Misafir'],['vitrin','📺','Tanıtım Ekranı']]],
             ['BAKIM', [['ciftkayit','🧹','Çift Kayıt'],['silinenler','🗑️','Silinenler'],['yedek','💾','Yedek'],['guvenlik','🔐','Güvenlik']]]
@@ -8798,6 +8798,7 @@
             belge: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 3h6v3.5H9zM8.5 11.5l1.2 1.2 2-2.2M14 11.8h2.5M8.5 16l1.2 1.2 2-2.2M14 16.3h2.5"/>',
             vitrin: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
             yedek: '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+            yokcikti: '<path d="M7 9V3.5h10V9M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17h-2M7 14h10v6.5H7z"/>',
             velilink: '<path d="M3.5 6h17v12.5h-17zM3.5 7l8.5 6.5L20.5 7"/>',
             __canli: '<circle cx="12" cy="12" r="2"/><path d="M8 16a5.6 5.6 0 0 1 0-8M16 8a5.6 5.6 0 0 1 0 8M5 19a9.8 9.8 0 0 1 0-14M19 5a9.8 9.8 0 0 1 0 14"/>',
             __diger: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
@@ -8806,7 +8807,7 @@
         function yonIkon(k) { return YON_IKON[k] ? '<svg class="yon-ik" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + YON_IKON[k] + '</svg>' : ''; }
         const YON_MENU_KART = ['yoklama', 'aidat', 'program', 'bugunskor'];
         const YON_MENU_RENK = { DERS: 'iyi', SPORCULAR: 'mavi', 'VELİ & KULÜP': 'altin', BAKIM: 'gri' };
-        const YON_MENU_KELIME = { yoklama: 'geldi gelmedi devam rapor', aidat: 'ödeme para borç tahsilat kasa gider', program: 'ders saat takvim', bugunskor: 'bugün puan seri', velilink: 'veli link gönder whatsapp numara telefon aidat takip', girisler: 'kod pin şifre', hizliduzenle: 'telefon doğum tarihi toplu', fiziksel: 'boy kilo ölçüm', ciftkayit: 'birleştir aynı isim', silinenler: 'geri al', guvenlik: 'pin şifre kullanıcı', kisiler: 'personel maaş bordro antrenör', rapor: 'veli karne pdf', deneme: 'aday yeni kayıt', duyuru: 'bildirim mesaj', ihtiyac: 'istek', belge: 'evrak sağlık lisans', vitrin: 'tv salon', yedek: 'geri yükle', defter: 'telafi', gunluk: 'not' };
+        const YON_MENU_KELIME = { yoklama: 'geldi gelmedi devam rapor', yokcikti: 'fiziksel yazdır kağıt liste pdf çizelge aylık çıktı al', aidat: 'ödeme para borç tahsilat kasa gider', program: 'ders saat takvim', bugunskor: 'bugün puan seri', velilink: 'veli link gönder whatsapp numara telefon aidat takip', girisler: 'kod pin şifre', hizliduzenle: 'telefon doğum tarihi toplu', fiziksel: 'boy kilo ölçüm', ciftkayit: 'birleştir aynı isim', silinenler: 'geri al', guvenlik: 'pin şifre kullanıcı', kisiler: 'personel maaş bordro antrenör', rapor: 'veli karne pdf', deneme: 'aday yeni kayıt', duyuru: 'bildirim mesaj', ihtiyac: 'istek', belge: 'evrak sağlık lisans', vitrin: 'tv salon', yedek: 'geri yükle', defter: 'telafi', gunluk: 'not' };
         const YON_MENU_AD = { program: 'Program', bugunskor: 'Skor Girenler', yoklama: 'Yoklama', aidat: 'Aidat' };
         let _yonMenuDers = null;
         function yonMenuGit(k) { if(_yonDigerAcik) yoneticiDigerSheetAcKapat(); yoneticiSekme(k); }
@@ -8836,7 +8837,7 @@
                 return (ek.length ? '<h4 class="ym-bas">EKRANLAR</h4><div class="ym-izgara">' + ek.map(oge).join('') + '</div>' : '') + (sp.length ? '<h4 class="ym-bas">SPORCULAR</h4><div class="ym-sporcu">' + sp.slice(0, 12).map(x => '<button type="button" onclick="yonMenuSporcu(' + escQ(x.g + '|' + x.ad) + ')">' + (typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(x.g, x.ad), x.ad, 'ym-av', true) : '') + '<b>' + esc(x.ad) + '</b><small>' + (LIG_ETIKET_KISA_AIDAT[x.g] || x.g) + (x.pasif ? ' · pasif' : '') + '</small></button>').join('') + '</div>' : '');
             }
             let kart = k => { let x = hepsi.find(y => y.k === k), d = yonMenuDurum(k); return '<button type="button" class="ym-kart ' + (YON_MENU_RENK[x.b] || 'gri') + (yoneticiSekmeAktif === k ? ' acik' : '') + '" onclick="yonMenuGit(\'' + k + '\')"><span class="ym-ik">' + yonIkon(k) + '</span><b>' + YON_MENU_AD[k] + '</b><small' + (d[1] ? ' class="dikkat"' : '') + '>' + d[0] + '</small></button>'; };
-            return yonVeliBantHTML() + '<div class="ym-kartlar">' + YON_MENU_KART.map(kart).join('') + '</div>' + YONETICI_BOLUMLER.map(([b, l]) => { let o = l.filter(x => x[0] !== 'panel' && x[0] !== 'velilink' && YON_MENU_KART.indexOf(x[0]) < 0); return o.length ? '<h4 class="ym-bas">' + b + '</h4><div class="ym-izgara">' + o.map(x => oge({ b, k: x[0], l: x[2] })).join('') + '</div>' : ''; }).join('');
+            return yonVeliBantHTML() + yokCiktiBantHTML() + '<div class="ym-kartlar">' + YON_MENU_KART.map(kart).join('') + '</div>' + YONETICI_BOLUMLER.map(([b, l]) => { let o = l.filter(x => x[0] !== 'panel' && x[0] !== 'velilink' && x[0] !== 'yokcikti' && YON_MENU_KART.indexOf(x[0]) < 0); return o.length ? '<h4 class="ym-bas">' + b + '</h4><div class="ym-izgara">' + o.map(x => oge({ b, k: x[0], l: x[2] })).join('') + '</div>' : ''; }).join('');
         }
         // 💌 Velilere Gönder bandı (menü + Genel Bakış): sayı yalnız sunucudan geldiyse yazar
         function yonVeliOzetYazi() { let o = typeof vgOzet === 'function' ? vgOzet() : null; if(!o) return 'Aidat ve devam linkini tek tek, kolayca gönder'; return o.kalan ? o.kalan + ' veliye henüz gitmedi' + (o.telsiz ? ' · ' + o.telsiz + ' numara eksik' : '') : o.acmadi ? o.acmadi + ' veli linki açmadı' : o.telsiz ? o.telsiz + ' sporcunun veli numarası eksik' : 'Hepsi gitti'; }
@@ -8939,6 +8940,7 @@
         function yoneticiSekme(k) {
             // 📺 Tanıtım Ekranı (2026-10-27): sekme değil — salondaki bilgisayar boştayken tam ekran oyun vitrini (dagsk-vitrin.js)
             if(k === 'vitrin') { vitrinAc(); return; }
+            if(k === 'yokcikti') { yoklamaCiktiAc(); return; } // 🖨️ v461: sekme değil, pencere
             // Eğitmen Panosu ve eski Personel (2026-10-21) → 🪪 Eğitmen & Misafir (dagsk-personel.js): kadro, profil, 💰 ödemeler & bordro
             if(k === 'egitmen' || k === 'personel') { if(k === 'personel' && typeof PS !== 'undefined') PS.sekme = 'para'; else window._psIlkSekme = k === 'personel' ? 'para' : 'egitmen'; k = 'kisiler'; }
             if(k !== 'aidat' && !(k === 'kisiler' && yoneticiSekmeAktif === 'kisiler')) _aidatKilitAcikMi = false; // Aidat'tan çıkınca ek kilit yeniden devreye girsin (personel ekranı içinde yenilemede değil)
@@ -10387,7 +10389,7 @@
             // çubuğu + yeni 📄 Rapor sekmesi (günlük / haftalık yoklama ekranda net + aynısının PDF'i).
             yoklamaYuzCss();
             let sk = (tp, et, ek) => '<button type="button" role="tab" aria-selected="' + (yoneticiYoklamaTip === tp) + '" class="yy-sekme-b' + (yoneticiYoklamaTip === tp ? ' on' : '') + '" onclick="yoneticiYoklamaTip=\'' + tp + '\';' + (tp === 'ozet' ? ' _yonYokGrupFiltre=\'__hepsi\';' : '') + ' yoneticiYoklamaCiz();">' + et + (ek || '') + '</button>';
-            alan.innerHTML = '<div class="yy-sekme" role="tablist">' + sk('ozet', '📊 Özet') + sk('gunluk', '📋 Yoklama', yeniRozet('2026-12-19')) + sk('rapor', '📄 Rapor', yeniRozet('2026-12-19')) + sk('aylik', '📆 Aylık') + sk('devamsizlik', '⚠️ Devam') + '</div><div id="yonetici-yoklama-ic"></div>';
+            alan.innerHTML = '<div class="yy-sekme" role="tablist">' + sk('ozet', '📊 Özet') + sk('gunluk', '📋 Yoklama', yeniRozet('2026-12-19')) + sk('rapor', '📄 Rapor', yeniRozet('2026-12-19')) + sk('aylik', '📆 Aylık') + sk('devamsizlik', '⚠️ Devam') + '</div>' + yokCiktiBantHTML() + '<div id="yonetici-yoklama-ic"></div>';
             renderHedefId = 'yonetici-yoklama-ic';
             if(yoneticiYoklamaTip === 'ozet') { yoneticiYoklamaOzetCiz(); }
             else if(yoneticiYoklamaTip === 'rapor') { yoklamaRaporEkranCiz(); }
@@ -10459,7 +10461,7 @@
                 // 📄 Rapor ekranı (yr-*)
                 + '.yr-mod{display:flex;gap:4px;background:var(--yz-panel2);border-radius:12px;padding:3px}.yr-mod button{flex:1;border:0;border-radius:9px;padding:9px;font:inherit;font-size:13px;font-weight:800;background:transparent;color:var(--yz-soluk);cursor:pointer;transform:none!important}.yr-mod button.on{background:var(--yz-panel);color:var(--yz-yazi);box-shadow:0 1px 3px rgba(0,0,0,.2)}'
                 + '.yr-cumle{font-size:15px;line-height:1.5;font-weight:600}.yr-cumle b{font-family:"Roboto Mono",ui-monospace,monospace;font-size:17px}.yr-cumle .g{color:#22c55e}.yr-cumle .y{color:var(--yz-kirmizi)}.yr-cumle .s{color:var(--yz-soluk)}'
-                + '.yr-ay{display:flex;flex-direction:column;gap:8px;padding:12px 14px}.yr-ay-ust{display:flex;align-items:center;justify-content:space-between;gap:10px}.yr-ay-ust b{font-size:17px}.yr-ay .yy-ok{width:44px;height:44px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:inherit;font-size:20px}.yr-ay .yy-ok:disabled{opacity:.3}.yr-ay .adm-btn{min-height:50px;font-weight:900;font-size:16px}.yr-ay small{opacity:.75;font-size:13px}.yr-pdf{display:flex;gap:8px;flex-wrap:wrap}.yr-pdf .adm-btn{flex:1 1 200px;min-height:46px;font-weight:900}.yr-pdf .yoz-ana{background:var(--yz-vurgu)!important;color:var(--yz-vurgu-yazi)!important;border-color:transparent!important}'
+                + '.yr-pdf{display:flex;gap:8px;flex-wrap:wrap}.yr-pdf .adm-btn{flex:1 1 200px;min-height:46px;font-weight:900}.yr-pdf .yoz-ana{background:var(--yz-vurgu)!important;color:var(--yz-vurgu-yazi)!important;border-color:transparent!important}'
                 + '.yr-grup{border-radius:16px;background:var(--yz-panel);border:1px solid var(--yz-cizgi);overflow:hidden;min-width:0}.yr-gb{display:flex;align-items:center;gap:10px;padding:11px 14px;background:color-mix(in srgb,var(--gc) 16%,var(--yz-panel));border-bottom:1px solid var(--yz-cizgi)}.yr-gb h4{margin:0;font-size:15px;font-weight:900;color:var(--gc);flex:1;min-width:0}.yr-gb span{font-family:"Roboto Mono",ui-monospace,monospace;font-weight:700;font-size:15px}.yr-gb small{font-size:11px;color:var(--yz-soluk);font-weight:700}'
                 + '.yr-bar{height:6px;background:var(--yz-panel2)}.yr-bar i{display:block;height:100%;background:#22c55e}'
                 + '.yr-iki{display:grid;grid-template-columns:1fr 1fr;gap:0}.yr-sut{padding:10px 12px;min-width:0}.yr-sut+.yr-sut{border-left:1px solid var(--yz-cizgi)}.yr-sut h5{margin:0 0 6px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.yr-sut.g h5{color:#22c55e}.yr-sut.y h5{color:var(--yz-kirmizi)}'
@@ -10743,7 +10745,7 @@
             let ust = '<div class="yoz yy">'
                 + '<div class="yr-mod" role="group" aria-label="Rapor türü"><button type="button" class="' + (gunMu ? 'on' : '') + '" onclick="yoklamaRaporMod(\'gun\')">📅 Günlük</button><button type="button" class="' + (gunMu ? '' : 'on') + '" onclick="yoklamaRaporMod(\'hafta\')">🗓️ Haftalık</button></div>'
                 + '<div class="yy-tarih"><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(-1)" aria-label="Önceki">‹</button><label class="yy-tarih-ad"><span>' + esc(gunMu ? _yokTarihEt(_yokRapor.gun) : (bugunISO(pzt) === bugunISO(_yokPazartesi(new Date())) ? 'Bu hafta · ' : '') + _yokHaftaEt(pzt)) + '</span><input type="date" value="' + (gunMu ? _yokRapor.gun : bugunISO(pzt)) + '" max="' + bugun + '" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){ if(_yokRapor.mod===\'gun\') _yokRapor.gun=this.value; else _yokRapor.hafta=bugunISO(_yokPazartesi(new Date(this.value+\'T12:00:00\'))); yoklamaRaporEkranCiz(); }" aria-label="Tarih seç"></label><button type="button" class="yy-ok" onclick="yoklamaRaporKaydir(1)"' + (ileriYok ? ' disabled' : '') + ' aria-label="Sonraki">›</button></div>'
-                + _yokGrupCipleri('yoklamaRaporEkranCiz', false) + _yokAyKartHTML();
+                + _yokGrupCipleri('yoklamaRaporEkranCiz', false);
             let html = '';
             if(gunMu) {
                 let iso = _yokRapor.gun, gruplar = _yokGosterilecekGruplar().map(function(x) { return { g: x[0], ad: _yokGrupAd(x[0]), v: _yokGunGrup(iso, x[0]) }; });
@@ -10935,6 +10937,7 @@
             let d = _yokPdfDonem();
             let seciliGun = _yonOzGun || bugunISO();
             onayIste('<div style="text-align:left"><b>📄 Yoklama PDF</b>'
+                + '<button type="button" class="adm-btn" style="width:100%;margin-top:12px;min-height:50px;background:var(--accent-orange);color:var(--text-on-accent-dark,#1A0700);border-color:var(--accent-orange);font-weight:900" onclick="onayKapat(); yoklamaCiktiAc()">🖨️ Fiziksel yoklama çıktısı ' + yeniRozet() + '</button>'
                 + '<div class="yzp-et" style="margin-top:12px">Sade rapor' + yeniRozet('2026-12-19') + '</div><div class="yzp-sat">'
                 + '<button type="button" class="adm-btn" style="flex:1 1 140px;font-weight:900" onclick="onayKapat(); _yokRapor.mod=\'gun\'; _yokRapor.gun=\'' + seciliGun + '\'; yoklamaGunPdf()">📅 Günlük · ' + esc(_yokTarihEt(seciliGun).replace('Bugün · ', '')) + '</button>'
                 + '<button type="button" class="adm-btn" style="flex:1 1 140px;font-weight:900" onclick="onayKapat(); _yokRapor.mod=\'hafta\'; _yokRapor.hafta=\'' + bugunISO(_yokPazartesi(new Date(seciliGun + 'T12:00:00'))) + '\'; yoklamaHaftaPdf()">🗓️ Haftalık</button></div>'
@@ -11102,45 +11105,73 @@
         // 🖨️ AYLIK YOKLAMA LİSTESİ (v460, 2026-11-23, kullanıcı: "bu ay gelmiş olanlar işaretli PDF çıktısı alayım, yoklamayı fiziksel
         // takip edeyim; ödeme yaptıkları günleri turuncu işaretle ama ödeme günü olarak YAZMASIN"). Yatay A4, grup başına sayfa: sporcu × ayın
         // günleri; geldiği gün tik, ödeme günü turuncu zemin. Turuncunun anlamı hiçbir yerde yazmaz (açıklama EKLEME). Kalan günler elle doldurulur.
-        let _yokAyYM = null;
-        function _yokAyKartHTML() {
-            let ym = _yokAyYM || bugunISO().slice(0, 7), ileri = ym < bugunISO().slice(0, 7);
-            return '<div class="yoz-kart yr-ay"><div class="yr-ay-ust"><button type="button" class="yy-ok" onclick="_yokAyKaydir(-1)" aria-label="Önceki ay">‹</button><b>' + esc(_YOK_AYLAR[+ym.slice(5) - 1] + ' ' + ym.slice(0, 4)) + '</b><button type="button" class="yy-ok" onclick="_yokAyKaydir(1)"' + (ileri ? '' : ' disabled') + ' aria-label="Sonraki ay">›</button></div>'
-                + '<button class="adm-btn yoz-ana" onclick="yoklamaAyListePdf()">🖨️ Aylık yoklama listesi (PDF) ' + yeniRozet() + '</button><small>Geldikleri günler işaretli, kalan günler elle doldurmak için boş.</small></div>';
+        // v461 (kullanıcı: "çıktıyı nereden alacağım göremedim"): Rapor sekmesinin içindeki kart yerine tek pencere (yoklamaCiktiAc); Yoklama'nın
+        // her sekmesinden, Yönetici menüsünden ve Genel Bakış'tan açılır. PDF pencere açılınca hazırlanır (iPhone'da paylaş/yazdır dokunma anında olmalı).
+        let _yokAyYM = null, _yokAyGrup = '__hepsi', _yokCk = { no: 0, pdf: null };
+        function yokCiktiBantHTML() { return '<button type="button" class="yon-veli tamam yok-ck-bant" onclick="yoklamaCiktiAc()"><span class="ym-ik">' + yonIkon('yokcikti') + '</span><span><b>Yoklama çıktısı al ' + yeniRozet() + '</b><small>' + _YOK_AYLAR[+bugunISO().slice(5, 7) - 1] + ' listesi, gelenler işaretli</small></span><em class="ok">›</em></button>'; }
+        function yoklamaCiktiAc() {
+            if(_yonDigerAcik) yoneticiDigerSheetAcKapat();
+            _yokAyYM = null; _yokAyGrup = '__hepsi';
+            let e = document.getElementById('yok-cikti'); if(!e) { e = document.createElement('div'); e.id = 'yok-cikti'; e.setAttribute('role', 'dialog'); e.setAttribute('aria-modal', 'true'); e.setAttribute('aria-label', 'Yoklama çıktısı'); e.addEventListener('click', function(o) { if(o.target === e) yoklamaCiktiKapat(); }); document.body.appendChild(e); }
+            _yokCiktiYenile();
         }
-        function _yokAyKaydir(n) { let ym = _yokAyYM || bugunISO().slice(0, 7), d = new Date(+ym.slice(0, 4), +ym.slice(5) - 1 + n, 1), y = bugunISO(d).slice(0, 7); if(y > bugunISO().slice(0, 7)) return; _yokAyYM = y; yoklamaRaporEkranCiz(); }
+        function yoklamaCiktiKapat() { _yokCk.no++; if(_yokCk.url) URL.revokeObjectURL(_yokCk.url); _yokCk.pdf = _yokCk.url = _yokCk.dosya = null; let e = document.getElementById('yok-cikti'); if(e) e.remove(); }
+        function _yokAyKaydir(n) { let ym = _yokAyYM || bugunISO().slice(0, 7), y = bugunISO(new Date(+ym.slice(0, 4), +ym.slice(5) - 1 + n, 1)).slice(0, 7); if(y > bugunISO().slice(0, 7)) return; _yokAyYM = y; _yokCiktiYenile(); }
+        function _yokCiktiGrup(g) { _yokAyGrup = g; _yokCiktiYenile(); }
+        function _yokCiktiYenile() {
+            let e = document.getElementById('yok-cikti'); if(!e) return;
+            let no = ++_yokCk.no, bg = bugunISO(), ym = _yokAyYM || bg.slice(0, 7), buAy = ym === bg.slice(0, 7), ay = _YOK_AYLAR[+ym.slice(5) - 1], son = _ayTumGunTarihleri(ym).length, gun = +bg.slice(8);
+            if(_yokCk.url) URL.revokeObjectURL(_yokCk.url); _yokCk.pdf = _yokCk.url = _yokCk.dosya = null;
+            let ozet = buAy && gun < son ? '<div><b>1–' + gun + ' ' + ay + '</b> gelenler işaretli</div><div><b>' + (gun + 1 === son ? son : (gun + 1) + '–' + son) + ' ' + ay + '</b> boş, elle işaretlersin</div>' : '<div><b>' + ay + '</b> gelenler işaretli</div>';
+            let cip = function(g, ad) { return '<button type="button" aria-pressed="' + (_yokAyGrup === g) + '" onclick="_yokCiktiGrup(\'' + g + '\')">' + esc(ad) + '</button>'; };
+            e.innerHTML = '<div class="yck-kutu"><div class="yck-ust"><h3>Yoklama çıktısı</h3><button type="button" class="ym-kapat" onclick="yoklamaCiktiKapat()" aria-label="Kapat">' + yonIkon('kapat') + '</button></div>'
+                + '<div class="yck-ay"><button type="button" onclick="_yokAyKaydir(-1)" aria-label="Önceki ay">‹</button><b>' + ay + ' ' + ym.slice(0, 4) + '</b><button type="button" onclick="_yokAyKaydir(1)"' + (buAy ? ' disabled' : '') + ' aria-label="Sonraki ay">›</button></div>'
+                + '<div class="yck-grup" role="group" aria-label="Grup">' + cip('__hepsi', 'Bütün gruplar') + TUM_GRUPLAR_YOK.map(function(x) { return cip(x[0], _yokGrupAd(x[0])); }).join('') + '</div>'
+                + '<div class="yck-ozet">' + ozet + '</div><div class="yck-dug"><button type="button" class="yck-ana" id="yck-yaz" disabled onclick="yoklamaCiktiYazdir()">Hazırlanıyor…</button><button type="button" id="yck-in" disabled onclick="yoklamaCiktiIndir()">PDF indir</button></div><p id="yck-not" role="status"></p></div>';
+            _yokAyPdfYap(ym, _yokAyGrup).then(function(r) {
+                if(no !== _yokCk.no) return;
+                let y = document.getElementById('yck-yaz'), nt = document.getElementById('yck-not');
+                if(!r.pdf) { y.textContent = 'Liste boş'; nt.textContent = 'Bu grupta sporcu yok.'; return; }
+                let ad = 'Yoklama_Listesi_' + ym + '.pdf', blob = r.pdf.output('blob'), dosya = null; try { dosya = new File([blob], ad, { type: 'application/pdf' }); } catch(x) {}
+                _yokCk.pdf = r.pdf; _yokCk.ad = ad; _yokCk.url = URL.createObjectURL(blob);
+                _yokCk.dosya = dosya && 'ontouchstart' in window && navigator.canShare && navigator.canShare({ files: [dosya] }) ? dosya : null;
+                y.textContent = _yokCk.dosya ? 'Yazdır / Paylaş' : 'Aç ve yazdır'; y.disabled = false; document.getElementById('yck-in').disabled = false;
+                nt.textContent = r.sayfa + ' sayfa, yatay A4. Renkli yazdır.' + (r.eski ? ' İnternet yok: bu cihazdaki son kayıtlar kullanıldı.' : '');
+            }).catch(function(x) { console.error(x); if(no !== _yokCk.no) return; let y = document.getElementById('yck-yaz'); y.textContent = 'Hazırlanamadı, tekrar dene'; y.disabled = false; y.onclick = _yokCiktiYenile; });
+        }
+        function yoklamaCiktiYazdir() { if(_yokCk.dosya) { navigator.share({ files: [_yokCk.dosya] }).catch(function(x) { if(x && x.name !== 'AbortError') yoklamaCiktiIndir(); }); return; } if(_yokCk.url && !window.open(_yokCk.url, '_blank')) yoklamaCiktiIndir(); }
+        function yoklamaCiktiIndir() { if(_yokCk.pdf) { _yokCk.pdf.save(_yokCk.ad); showToast('PDF indirildi!', 'success'); } }
         // { gunler, gruplar: [{ g, ad, satir: [{ ad, gel: {iso:1}, ode: {iso:1} }] }] } — geliş: yoklama + skor girilen gün (profil takvimi ile aynı)
-        function _yokAyVeri(ym, aidat) {
-            let gunler = _ayTumGunTarihleri(ym), gel = {}, ekle = function(g, ad, iso) { let k = g + '|' + ad; (gel[k] = gel[k] || {})[iso] = 1; };
-            gunler.forEach(function(iso) { _yokGeldi(iso).forEach(function(k) { if(k.tur !== 'egitmen' && k.g) ekle(k.g, k.ad, iso); }); });
-            let gruplar = _yokGosterilecekGruplar().map(function(x) {
+        function _yokAyVeri(ym, aidat, grup) {
+            let gunler = _ayTumGunTarihleri(ym), bugun = bugunISO(), gel = {}, ekle = function(g, ad, iso) { let k = g + '|' + ad; (gel[k] = gel[k] || {})[iso] = 1; };
+            gunler.forEach(function(iso) { if(iso <= bugun) _yokGeldi(iso).forEach(function(k) { if(k.tur !== 'egitmen' && k.g) ekle(k.g, k.ad, iso); }); });
+            let gruplar = TUM_GRUPLAR_YOK.filter(function(x) { return !grup || grup === '__hepsi' || x[0] === grup; }).map(function(x) {
                 let g = x[0], adlar = {};
                 Object.keys(turnuvaDB[g] || {}).forEach(function(ad) {
                     let sp = turnuvaDB[g][ad]; if(!sp || yonKisiTuru(g, ad) === 'egitmen') return;
-                    [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(function(c) { return c.seriler || []; })).forEach(function(s) { if(s && s.tarih && !s.iptal && String(s.tarih).slice(0, 7) === ym) ekle(g, ad, String(s.tarih).slice(0, 10)); });
+                    [].concat(sp.seriler || [], ...(sp.kartGecmisi || []).map(function(c) { return c.seriler || []; })).forEach(function(s) { if(s && s.tarih && !s.iptal && String(s.tarih).slice(0, 7) === ym && String(s.tarih).slice(0, 10) <= bugun) ekle(g, ad, String(s.tarih).slice(0, 10)); });
                 });
                 _yokAktifUyeler(g).forEach(function(ad) { adlar[ad] = 1; });
                 Object.keys(gel).forEach(function(k) { if(k.indexOf(g + '|') === 0) adlar[k.slice(g.length + 1)] = 1; });
                 let satir = Object.keys(adlar).sort(function(a, b) { return a.localeCompare(b, 'tr'); }).map(function(ad) {
-                    let ode = {}; Object.keys((aidat || {})[ad] || {}).forEach(function(ay) { let r = aidat[ad][ay]; if(!r || !r.odendi) return; let t = String(r.odemeTarihi || (ay === ym && r.tarih ? bugunISO(new Date(r.tarih)) : '')).slice(0, 10); if(t.slice(0, 7) === ym) ode[t] = 1; });
+                    let ode = {}; Object.keys((aidat || {})[ad] || {}).forEach(function(ay) { let r = aidat[ad][ay]; if(!r || !r.odendi) return; let t = String(r.odemeTarihi || (ay === ym && r.tarih ? bugunISO(new Date(r.tarih)) : '')).slice(0, 10); if(t.slice(0, 7) === ym && t <= bugun) ode[t] = 1; });
                     return { ad: ad, gel: gel[g + '|' + ad] || {}, ode: ode };
                 });
                 return { g: g, ad: _yokGrupAd(g), satir: satir };
             }).filter(function(x) { return x.satir.length; });
             return { gunler: gunler, gruplar: gruplar };
         }
-        async function yoklamaAyListePdf() {
-            showToast('Liste hazırlanıyor...', 'warning');
-            let ym = _yokAyYM || bugunISO().slice(0, 7), aidat = aidatDB, eski = false;
+        async function _yokAyPdfYap(ym, grup) {
+            let aidat = aidatDB, eski = false, sayfa = 0;
             try { let r = await fetch('/api/dues'); if(!r.ok) throw 0; let h = {}; ((await r.json()).dues || []).forEach(function(x) { (h[x.ad] = h[x.ad] || {})[x.ay] = x; }); aidat = aidatMerge(JSON.parse(JSON.stringify(aidatDB)), h); } catch(e) { eski = true; }
-            let v = _yokAyVeri(ym, aidat), T = _trTranslit, ayAd = _YOK_AYLAR[+ym.slice(5) - 1] + ' ' + ym.slice(0, 4);
-            if(!v.gruplar.length) return showToast('Bu grupta sporcu yok.', 'error');
-            try {
+            let v = _yokAyVeri(ym, aidat, grup), T = _trTranslit, ayAd = _YOK_AYLAR[+ym.slice(5) - 1] + ' ' + ym.slice(0, 4);
+            if(!v.gruplar.length) return { pdf: null };
+            {
                 let pdf = await _yeniPdfAl('landscape'), W = 297, H = 210, mx = 8, uw = W - mx * 2, nW = 7, adW = 50, topW = 11, gw = (uw - nW - adW - topW) / v.gunler.length, ilk = true;
                 v.gruplar.forEach(function(gr) {
                     let satirlar = gr.satir.concat([null, null, null]), ust = 27, alan = H - ust - 9, sh = Math.max(5.2, Math.min(7.2, alan / satirlar.length)), sayfaSatir = Math.floor(alan / sh), y, rk = _YOK_PDF_RENK[gr.g] || [71, 85, 105];
                     for(let b = 0; b < satirlar.length; b += sayfaSatir) {
-                        if(!ilk) { pdf.addPage('a4', 'landscape'); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); } ilk = false;
+                        if(!ilk) { pdf.addPage('a4', 'landscape'); pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, 'F'); } ilk = false; sayfa++;
                         pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.setTextColor(27, 36, 34); pdf.text(T(gr.ad + ' · ' + ayAd + ' yoklama listesi' + (b ? ' (devamı)' : '')), mx, 13);
                         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(107, 121, 118); pdf.text(T('DAĞ Spor Kulübü · ' + gr.satir.length + ' sporcu · ' + new Date().toLocaleDateString('tr-TR')), mx + uw, 13, { align: 'right' });
                         y = 16.5; pdf.setFillColor(rk[0], rk[1], rk[2]); pdf.rect(mx, y, uw, 1.2, 'F'); y += 1.2;
@@ -11167,9 +11198,8 @@
                         pdf.setLineWidth(0.3); pdf.setDrawColor(120, 130, 142); pdf.rect(mx, 17.7, uw, y - 17.7); pdf.line(mx + nW + adW, 17.7, mx + nW + adW, y);
                     }
                 });
-                pdf.save('Yoklama_Listesi_' + ym + '.pdf');
-                showToast(eski ? 'PDF indirildi. İnternet yok: turuncu günler bu cihazdaki son kayda göre.' : 'PDF indirildi! 🖨️', eski ? 'warning' : 'success');
-            } catch(e) { console.error(e); showToast('PDF oluşturulamadı.', 'error'); }
+                return { pdf: pdf, sayfa: sayfa, eski: eski };
+            }
         }
         function yoklamaBosCizelgePdf() {
             onayKapat(); showToast('Çizelge hazırlanıyor...', 'warning');

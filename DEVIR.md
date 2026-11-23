@@ -6201,3 +6201,9 @@ Kullanıcı: "hayalet nasıl kaçıyor anlamıyor ve neye ateş etmem gerektiği
 Kullanıcı: ayın gelenleri işaretli PDF, fiziksel takip; ödeme günleri turuncu ama PDF'te yazmasın.
 - Yönetici › Yoklama › 📄 Rapor üstünde ay kartı (`_yokAyKartHTML`, `_yokAyVeri`, `yoklamaAyListePdf`). Yatay A4, grup başına sayfa, ayın tüm günleri; geliş = yoklama + skor girilen gün; sonda 3 boş satır.
 - Turuncu = `odemeTarihi` o aya düşen ödenmiş kayıt (tarih yoksa yalnız o ayın kaydının işaretlenme günü). PDF açılırken `/api/dues` taze çekilir. Anlamı hiçbir yerde YAZILMAZ (açıklama ekleme); göz kapalıyken de çıkar. Test 142.
+
+## 171. 🖨️ Yoklama çıktısı kolay bulunur (v461, 2026-11-23)
+Kullanıcı: "çıktıyı nereden alacağım göremedim, ayın geri kalanı boş kalsın biz yapalım".
+- Rapor sekmesindeki ay kartı KALKTI → tek pencere `yoklamaCiktiAc` (`#yok-cikti`, `_yokCk`): ay, grup (varsayılan Bütün gruplar), Yazdır / Paylaş, PDF indir. Bant `yokCiktiBantHTML`: Yoklama'nın her sekmesi, Yönetici menüsü, Genel Bakış; kenar menüsü `yokcikti` (sekme değil); Özet'teki PDF penceresinin ilk düğmesi.
+- PDF pencere açılınca hazırlanır (`_yokAyPdfYap`), düğme hazır olunca açılır: iPhone'da `navigator.share` dokunma anında olmalı. Bugünden sonraki günler her zaman boş (geliş ve turuncu). Eskiden gruplar Yoklama süzgecine bağlıydı (yalnız bir grup çıkabiliyordu).
+- Test 142, 156, 162. Gerçek telefonda DENENMEDİ.

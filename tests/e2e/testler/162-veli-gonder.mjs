@@ -11,8 +11,8 @@ export default async function ({ log }) {
   try {
     await uygulamaAc(p); await p.waitForFunction((a) => turnuvaDB.minikler[a] && turnuvaDB.minikler[a].acilTelefon, A2, { timeout: 30000 }); await yoneticiAc(p);
     // dikkat çeken yer: Genel Bakış bandı + menü
-    await p.waitForSelector('#yn-genel .yon-veli', { timeout: 20000 }); await p.locator('#yon-bottom-nav button', { hasText: 'Menü' }).click(); await p.waitForSelector('#ym-liste > .yon-veli'); if (process.env.E2E_EKRAN) { await p.waitForTimeout(900); await p.screenshot({ path: process.env.E2E_EKRAN + '-vg0.png' }); }
-    await p.locator('#ym-liste > .yon-veli').click(); await p.waitForSelector('#vg-kart', { timeout: 15000 });
+    await p.waitForSelector('#yn-genel .yon-veli:not(.yok-ck-bant)', { timeout: 20000 }); await p.locator('#yon-bottom-nav button', { hasText: 'Menü' }).click(); await p.waitForSelector('#ym-liste > .yon-veli:not(.yok-ck-bant)'); if (process.env.E2E_EKRAN) { await p.waitForTimeout(900); await p.screenshot({ path: process.env.E2E_EKRAN + '-vg0.png' }); }
+    await p.locator('#ym-liste > .yon-veli:not(.yok-ck-bant)').click(); await p.waitForSelector('#vg-kart', { timeout: 15000 });
     const f = await p.evaluate((a) => { vgSuz('yeni'); vgSec('yildizlar|' + a); return VG.sira.length; }, A1); dogrula(f >= 2, 'sıra');
     // kardeşler tek kart (farklı yazılmış aynı numara), tek mesajda iki link, tutar yok
     esit(await p.locator('#vg-kart .vg-cocuk').count(), 2, 'kardeşler tek kart'); await p.waitForSelector('#vg-wa', { timeout: 10000 });

@@ -81,13 +81,24 @@ export default async function ({ log }) {
     await dl2.saveAs(CIKTI + 'Yoklama_Haftalik.pdf');
 
     // 3b) v460 aylık liste: geldiği gün tik, ödeme günü turuncu (ödeme tarihi o aydaysa; başka ay / ödenmemiş sayılmaz), yazıda "ödeme" geçmez
-    const ay = await p.evaluate(({ PZT, CAR, s }) => { const v = _yokAyVeri('2025-01', { [s.b[0]]: { '2024-12': { odendi: true, odemeTarihi: '2025-01-03' }, '2025-01': { odendi: true, odemeTarihi: '2025-02-01' }, '2025-02': { odendi: false, odemeTarihi: '2025-01-20' } } }); const gr = v.gruplar.find((x) => x.g === 'buyukler'), r = (ad) => gr.satir.find((x) => x.ad === ad); return { gun: v.gunler.length, g0: Object.keys(r(s.b[0]).gel).sort().join(), o0: Object.keys(r(s.b[0]).ode).join(), g1: Object.keys(r(s.b[1]).gel).join(), kart: document.querySelector('.yr-ay').textContent }; }, { PZT, CAR, s });
+    const ay = await p.evaluate(({ PZT, CAR, s }) => { const v = _yokAyVeri('2025-01', { [s.b[0]]: { '2024-12': { odendi: true, odemeTarihi: '2025-01-03' }, '2025-01': { odendi: true, odemeTarihi: '2025-02-01' }, '2025-02': { odendi: false, odemeTarihi: '2025-01-20' } } }); const gr = v.gruplar.find((x) => x.g === 'buyukler'), r = (ad) => gr.satir.find((x) => x.ad === ad); return { gun: v.gunler.length, g0: Object.keys(r(s.b[0]).gel).sort().join(), o0: Object.keys(r(s.b[0]).ode).join(), g1: Object.keys(r(s.b[1]).gel).join() }; }, { PZT, CAR, s });
     esit(ay.gun, 31, 'ayın tüm günleri'); dogrula(ay.g0.includes(PZT) && ay.g0.includes(CAR), 'geldiği günler: ' + ay.g0); dogrula(!ay.g1.includes(CAR), 'gelmedi işaretli gün sayılmaz'); esit(ay.o0, '2025-01-03', 'ödeme günü');
-    dogrula(!/ödeme|aidat/i.test(ay.kart), 'kartta ödeme yazmamalı');
-    const [dl3] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), p.evaluate(() => { _yokAyYM = '2025-01'; return yoklamaAyListePdf(); })]);
+    // v461: bant Yoklama'nın her sekmesinde + menüde + Genel Bakış'ta; pencere bütün gruplarla açılır, ileri günler boş
+    for (const t of ['ozet', 'gunluk', 'rapor', 'aylik', 'devamsizlik']) { await p.evaluate((t) => { yoneticiYoklamaTip = t; yoneticiYoklamaCiz(); }, t); esit(await p.locator('#yonetici-liste .yok-ck-bant').count(), 1, t + ' sekmesinde çıktı bandı'); const k = await p.locator('#yonetici-liste .yok-ck-bant').boundingBox(); dogrula(k.width > 300, 'bant dar: ' + k.width); if (t === 'gunluk') await p.screenshot({ path: CIKTI + 'yoklama-cikti-bant.png' }); }
+    await p.evaluate(() => yoneticiSekme('panel')); await p.waitForSelector('#yn-genel .yok-ck-bant'); await p.screenshot({ path: CIKTI + 'yoklama-cikti-genel.png' });
+    await p.evaluate(() => yoneticiDigerSheetAcKapat()); await p.waitForTimeout(400); await p.screenshot({ path: CIKTI + 'yoklama-cikti-menu.png' }); await p.locator('#ym-liste .yok-ck-bant').click();
+    await p.waitForFunction(() => { const b = document.getElementById('yck-yaz'); return b && !b.disabled; }, null, { timeout: 60000 });
+    const pen = await p.evaluate(() => ({ yazi: document.getElementById('yok-cikti').textContent, grup: _yokAyGrup, ileri: (() => { const d = new Date(); d.setDate(d.getDate() + 1); const i = bugunISO(d); otomatikYoklamaDB[i] = { [_yokAktifUyeler('buyukler')[0]]: { saat: '10:00', grup: 'buyukler', geldi: true } }; const v = _yokAyVeri(i.slice(0, 7), { [_yokAktifUyeler('buyukler')[1]]: { [i.slice(0, 7)]: { odendi: true, odemeTarihi: i } } }); delete otomatikYoklamaDB[i]; return v.gruplar.some((g) => g.satir.some((r) => r.gel[i] || r.ode[i])); })() }));
+    dogrula(!/ödeme|aidat/i.test(pen.yazi), 'pencerede ödeme yazmamalı'); esit(pen.grup, '__hepsi', 'bütün gruplar'); dogrula(!pen.ileri, 'ileri günler boş olmalı'); dogrula(/sayfa/.test(pen.yazi), 'sayfa sayısı');
+    dogrula(await p.evaluate(() => { const b = document.getElementById('yck-in').getBoundingClientRect(), e = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return e && e.id === 'yck-in' && b.bottom <= innerHeight; }), 'indir düğmesi örtülü');
+    await p.setViewportSize({ width: 390, height: 663 }); await p.waitForTimeout(200); await p.screenshot({ path: CIKTI + 'yoklama-cikti-pencere.png' }); await p.setViewportSize({ width: 390, height: 844 });
+    await p.locator('.yck-grup button', { hasText: 'Küçükler' }).click(); await p.waitForFunction(() => !document.getElementById('yck-yaz').disabled, null, { timeout: 60000 }); esit(await p.evaluate(() => _yokAyGrup), 'kucukler', 'grup seçimi');
+    await p.evaluate(() => { _yokAyGrup = '__hepsi'; _yokAyYM = '2025-01'; _yokCiktiYenile(); }); await p.waitForFunction(() => !document.getElementById('yck-in').disabled, null, { timeout: 60000 });
+    const [dl3] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), p.locator('#yck-in').click()]);
     esit(dl3.suggestedFilename(), 'Yoklama_Listesi_2025-01.pdf', 'aylık PDF adı'); await dl3.saveAs(CIKTI + 'Yoklama_Listesi.pdf');
-    await p.evaluate(() => { _yokAyYM = null; yoklamaRaporEkranCiz(); }); dogrula(await yataydaTasmaYok(p), 'aylık kart 390 px taşıyor');
-    await p.locator('.yr-ay').screenshot({ path: CIKTI + 'yoklama-ay-kart.png' });
+    dogrula(await yataydaTasmaYok(p), 'çıktı penceresi 390 px taşıyor');
+    await p.locator('#yok-cikti .ym-kapat').click(); esit(await p.locator('#yok-cikti').count(), 0, 'pencere kapanmalı');
+    await p.evaluate(() => { yoneticiSekme('yoklama'); yoneticiYoklamaTip = 'rapor'; _yokRapor.mod = 'hafta'; yoneticiYoklamaCiz(); });
 
     // 4) masaüstü görünüm
     await p.setViewportSize({ width: 1280, height: 900 }); await p.waitForTimeout(200);

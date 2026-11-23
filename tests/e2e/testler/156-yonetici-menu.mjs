@@ -12,7 +12,7 @@ export default async function ({ log }) {
       const b = document.querySelector('#yon-bottom-nav button:last-child'), br = r(b), ust = document.elementFromPoint(br.left + br.width / 2, br.top + br.height / 2);
       return { kart: k.length, oge: g.length, say, genis: new Set(g.map((x) => Math.round(x.width))).size, sol: new Set(g.map((x) => Math.round(x.left))).size, kisa: Math.min(...g.map((x) => x.height)), nav: b.contains(ust), svg: document.querySelectorAll('#yon-diger-sheet .ym-kart .ym-ik svg, #yon-diger-sheet .ym-oge .ym-ik svg').length, tas: document.getElementById('yon-diger-sheet').scrollWidth > document.getElementById('yon-diger-sheet').clientWidth + 1 };
     });
-    esit(o.kart, 4, 'kart'); esit(o.kart + o.oge, o.say - 2, 'Genel Bakış ve Velilere Gönder (üstte ayrı bant) dışındaki bütün ekranlar menüde'); esit(o.svg, o.kart + o.oge, 'her öğede ikon');
+    esit(o.kart, 4, 'kart'); esit(o.kart + o.oge, o.say - 3, 'Genel Bakış, Velilere Gönder ve Yoklama Çıktısı (üstte ayrı bant) dışındaki bütün ekranlar menüde'); esit(o.svg, o.kart + o.oge, 'her öğede ikon');
     esit(o.genis, 1, 'kutular aynı genişlikte'); esit(o.sol, 2, 'iki hizalı sütun'); dogrula(o.kisa >= 52, 'dokunma boyu'); dogrula(o.nav, 'alt çubuk menü açıkken de dokunulur'); dogrula(!o.tas, 'yatay taşma');
     if (process.env.E2E_EKRAN) { await p.waitForTimeout(800); await p.screenshot({ path: process.env.E2E_EKRAN + '-m1.png' }); await p.evaluate(() => { let s = document.getElementById('yon-diger-sheet'); s.scrollTop = s.scrollHeight; }); await p.waitForTimeout(200); await p.screenshot({ path: process.env.E2E_EKRAN + '-m2.png' }); await p.evaluate(() => { document.getElementById('yon-diger-sheet').scrollTop = 0; }); }
     // kapatma: ✕ ve alt çubuk
