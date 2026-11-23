@@ -6157,3 +6157,9 @@ Kullanıcı: "sporcunun attığı oklar, ısı haritası, puan ortalaması, okla
 - Konum: `detayliOklar` (kart geçmişi dahil, 10 birim = 1 halka) + `dag_yz_arsiv` kon (× halka × 10). Puan ortalaması bütün serilerden; "N okun M tanesinin yeri biliniyor" yazar. 10'dan az konumda yön/hata UYDURULMAZ. Sıkı ama kayık grup → önce nişangah. Yorulma: gün içi ilk/son üçte bir (≥6 serilik ≥2 gün). Sağ-sol sağ elle atana göre (sporcunun eli kayıtlı değil).
 - **Modül hatası**: profil Genel Bakış / arama / aidat listesinden `ynKartAc` ile açılınca giriş kodu, gelişim ve yarışma modülleri yüklenmiyordu (soluk düğmeler, boş Gelişim). Artık `kartHazirla` (`kartModulleri`) her yoldan yükler; `yonetim-panel.js?v=19`.
 - Test 159. Gerçek veriyle / antrenörle DENENMEDİ; hata eşikleri ayarlanmadı.
+
+## 163. 🏠 Antrenör ana ekranı (v453, 2026-11-23)
+Kullanıcı (boş "Ana Ekran — Sporcu girişi yap" + kahverengi Ana Menü penceresi): "burası çok saçma".
+- `public/dagsk-koc-ana.js?v=1` (`kocAnaCiz`, `koc*`, `body.koc-ana` sabit grafit renkler): Karışık Sınıf kartı (süren ders), bugünün dersleri (Başlat), 4 canlı kart (Yönetici, Yarışmalar, Canlı Takip, Özel Ders), lig seç → skor, diğer ekranlar, son skorlar / gelmeyenler (ad → profil). `sporcuAnaDoldur` `kocMu()` ise bunu çizer; sporcu girişinde eskisi gibi.
+- `anaMenuAc` artık pencere açmaz, bu ekrana döner (`#ana-menu-modal` ve `anaMenu*` silindi). `kocModuHazirla`: soğuk yönetici girişinde platform `egitmen`, "SEÇİLMEDİ" yazısı yok. Ana ekrandayken `grupKurulumu` → skor sekmesi. `kocAnaYenile` senkronda en fazla 5 sn'de bir, kaydırma korunur.
+- Eğitmen girişindeki EĞİTMEN PANELİ (`#giris-lig`) DEĞİŞMEDİ (testler ve KM girişi ona bağlı). Diğer sekmelerin kahverengi teması değişmedi. Test 160; 58 ve 156 yeni menü gruplarına uyarlandı. Gerçek telefonda DENENMEDİ.

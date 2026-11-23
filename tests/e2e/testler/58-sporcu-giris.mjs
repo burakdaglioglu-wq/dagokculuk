@@ -12,7 +12,7 @@ export default async function ({ log }) {
     await uygulamaAc(p);
     await yoneticiAc(p, 'girisler');
     await p.waitForSelector('#yonetici-liste .sg-satir', { state: 'attached', timeout: 20000 });
-    dogrula(await p.evaluate(() => YONETICI_BOLUMLER[0][1].some((x) => x[0] === 'girisler')), 'menüde Sporcu Girişleri yok');
+    dogrula(await p.evaluate(() => YONETICI_BOLUMLER.some((b) => b[1].some((x) => x[0] === 'girisler'))), 'menüde Sporcu Girişleri yok');
     // telefonun da gördüğü (silinmemiş) bir sporcu: girişsiz sporcu listesinde olan ilk test sporcusu
     const telListe = (await (await fetch(B + '/api/athletes')).json()).athletes;
     s = await p.evaluate(() => { let l = sgSporcular(); let x = l.find((y) => y.ad === 'YoklamaTest') || l.find((y) => /TEST/i.test(y.ad) && !/KULLANICI/.test(y.ad)) || l.find((y) => !/KULLANICI/.test(y.ad)); return { g: x.g, ad: x.ad, k: x.k }; });

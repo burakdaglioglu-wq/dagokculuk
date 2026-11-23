@@ -56,7 +56,7 @@
         <button id="kapat-giris-btn" onclick="kapatGirisEkrani()">✖ Kapat</button>
         <div class="kurumsal-logo"><img class="kurumsal-logo-img" src="/tanitim-logo.png" alt="DAĞ S.K."></div>
         <div class="gv-vizor" aria-hidden="true"><span class="gv-pencere"><img src="/hero/net-900.webp" alt=""></span><i></i><i></i><i></i><i></i><span class="gv-etiket">HEDEF NET</span></div>
-        <div class="giris-surum" style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v452</b> · Sporcu profili: ısı haritası, yön, olası hatalar</div>
+        <div class="giris-surum" style="font-size:10px; color:var(--text-muted); margin-bottom:4px;">Sürüm <b id="app-surum-yazi">v453</b> · Antrenör ana ekranı yenilendi</div>
         <h2 id="giris-baslik">Platform Seçin</h2>
         <div id="giris-oturum-bilgi" class="gs-oturum" style="display:none;"></div>
         <div id="giris-platform" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:15px;">
@@ -421,14 +421,13 @@
         <div class="grup-satir">
             <div style="display:flex; align-items:center; gap:8px;">
                 <div class="mini-logo">DAĞ S.K</div>
-                <span style="font-size:9px; color:var(--text-muted); font-weight:bold;">v99</span>
                 <div id="aktif-grup-etiket" class="baslik" style="font-weight:bold;">SEÇİLMEDİ</div>
                 <span id="bulut-durum" onclick="bulutManuelYenile()" title="Bulut senkron" style="font-size:11px; font-weight:bold; color:var(--text-muted); cursor:pointer; white-space:nowrap;">☁️ —</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
                 <input type="number" id="toplam-seri-ayar" value="12" min="1" max="60" class="sadece-egitmen" title="Atış serisi sayısı" style="width: 50px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main); padding:6px; border-radius:6px; text-align:center;" onchange="seriSayisiAyarla(this.value)">
-                <button onclick="anaMenuAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🏠 Ana Menü</button>
-                <button onclick="ligDegistirAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🔄 Lig Değiştir</button>
+                <button onclick="anaMenuAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">Ana ekran</button>
+                <button onclick="ligDegistirAc()" class="sadece-egitmen" style="background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border-color); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">Lig değiştir</button>
                 <button onclick="egitmenCikis()" class="sadece-egitmen" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold;">🚪 Çıkış</button>
                 <button onclick="sporcuCikis()" class="sadece-sporcu" style="background:rgba(239,68,68,0.15); color:var(--text-main); border:1px solid var(--neon-red); padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; display:none;">🚪 Çıkış</button>
             </div>
@@ -1830,28 +1829,6 @@
             <div class="yon-bottom-nav" id="yon-bottom-nav"></div>
             <!-- "Diğer" sayfası — mobilde alt navdaki taşma menüsü -->
             <div class="yon-diger-sheet" id="yon-diger-sheet"></div>
-        </div>
-    </div>
-
-    <!-- ANA MENÜ (koç için seçim ekranı, 2026-09-13) — "yönetici panelinde ana menüye dön yok,
-         genel olarak banner'a ana menüye dön, ana menüde seçim menüsü olsun" bulgusu üzerine.
-         Yönetici Paneli'nin başlığından VE ana uygulamanın üst bar'ından açılıyor. -->
-    <div id="ana-menu-modal" class="modal-overlay">
-        <div class="modal-content glass-panel" style="max-width:480px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                <span style="font-weight:900; font-size:16px;">🏠 Ana Menü</span>
-                <button onclick="anaMenuKapat()" class="adm-btn adm-btn-sm" style="min-width:30px; padding:0;">✕</button>
-            </div>
-            <div class="anamenu-grid">
-                <div class="lig-tile" onclick="anaMenuGit('canlitakip')"><div class="ikon">📡</div><div class="ad">Canlı Takip</div></div>
-                <div class="lig-tile" onclick="anaMenuGit('skor')"><div class="ikon">🎯</div><div class="ad">Skor Gir</div></div>
-                <div class="lig-tile" onclick="anaMenuGit('timer')"><div class="ikon">⏱️</div><div class="ad">Sayaç</div></div>
-                <div class="lig-tile" onclick="anaMenuGit('klasman')"><div class="ikon">🏆</div><div class="ad">Klasman</div></div>
-                <div class="lig-tile" onclick="anaMenuGit('liderlik')"><div class="ikon">🏅</div><div class="ad">Liderlik</div></div>
-                <div class="lig-tile" onclick="anaMenuKmAc()"><div class="ikon">🎮</div><div class="ad">Karışık Sınıf</div></div>
-                <div class="lig-tile" onclick="anaMenuYoneticiAc()"><div class="ikon">⚙️</div><div class="ad">Yönetici Paneli</div></div>
-                <div class="lig-tile" onclick="anaMenuLigDegistir()"><div class="ikon">🔄</div><div class="ad">Lig Değiştir</div></div>
-            </div>
         </div>
     </div>
 

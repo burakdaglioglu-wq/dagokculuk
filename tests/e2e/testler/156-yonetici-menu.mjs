@@ -8,7 +8,7 @@ export default async function ({ log }) {
     const menuDugme = p.locator('#yon-bottom-nav button', { hasText: 'Menü' });
     await menuDugme.click(); await p.waitForSelector('#ym-liste .ym-kart');
     const o = await p.evaluate(() => {
-      const r = (e) => e.getBoundingClientRect(), k = [...document.querySelectorAll('.ym-kart')].map(r), g = [...document.querySelectorAll('.ym-oge')].map(r), say = YONETICI_BOLUMLER.flatMap((x) => x[1]).length;
+      const r = (e) => e.getBoundingClientRect(), k = [...document.querySelectorAll('#ym-liste .ym-kart')].map(r), g = [...document.querySelectorAll('#ym-liste .ym-oge')].map(r), say = YONETICI_BOLUMLER.flatMap((x) => x[1]).length;
       const b = document.querySelector('#yon-bottom-nav button:last-child'), br = r(b), ust = document.elementFromPoint(br.left + br.width / 2, br.top + br.height / 2);
       return { kart: k.length, oge: g.length, say, genis: new Set(g.map((x) => Math.round(x.width))).size, sol: new Set(g.map((x) => Math.round(x.left))).size, kisa: Math.min(...g.map((x) => x.height)), nav: b.contains(ust), svg: document.querySelectorAll('#yon-diger-sheet .ym-ik svg').length, tas: document.getElementById('yon-diger-sheet').scrollWidth > document.getElementById('yon-diger-sheet').clientWidth + 1 };
     });
@@ -27,7 +27,7 @@ export default async function ({ log }) {
     await p.locator('.ym-sporcu button').first().click(); await p.waitForSelector('#yn-kart h2', { timeout: 10000 });
     esit(await p.locator('#yn-kart h2').textContent(), sp.ad, 'sporcu profili'); await p.evaluate(() => ynKartKapat());
     // öğe → ekran
-    await menuDugme.click(); await p.locator('.ym-oge', { hasText: 'Çift Kayıt' }).click(); await p.waitForTimeout(400);
+    await menuDugme.click(); await p.locator('#ym-liste .ym-oge', { hasText: 'Çift Kayıt' }).click(); await p.waitForTimeout(400);
     dogrula(await p.evaluate(() => yoneticiSekmeAktif === 'ciftkayit' && !document.getElementById('yon-diger-sheet').classList.contains('acik')), 'ekrana gitmeli, menü kapanmalı');
     // açık tema + masaüstü
     if (process.env.E2E_EKRAN) { await p.evaluate(() => document.body.classList.add('light-theme')); await menuDugme.click(); await p.waitForTimeout(400); await p.screenshot({ path: process.env.E2E_EKRAN + '-m4.png' }); await p.evaluate(() => { document.body.classList.remove('light-theme'); yoneticiDigerSheetAcKapat(); }); }

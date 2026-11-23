@@ -7073,6 +7073,7 @@
         function tumEkranlariYenile() {
             // Yönetici açıkken arkadaki (gizli) sporcu listeleri çizilmez — kapanınca yoneticiPaneliKapat bir kez çizer (kasma)
             let yonAcik = document.body.classList.contains('yon-acik');
+            try { if(!yonAcik && typeof kocAnaYenile === 'function') kocAnaYenile(); } catch(e) {}
             if(!yonAcik) {
                 try { sporcuListesiniYenile(); } catch(e) {}
                 try { siralamaListesiDoldur(); } catch(e) {}
@@ -8689,7 +8690,7 @@
             try { let b = document.getElementById('pwa-banner'); if(b && b.style.display !== 'none') { b.dataset.admGizli = '1'; b.style.display = 'none'; } } catch(e) {}
             try { let b = document.getElementById('bayat-veri-banner'); if(b && b.style.display !== 'none') { b.dataset.admGizli = '1'; b.style.display = 'none'; } } catch(e) {}
             // v373 (kullanıcı: 'yöneticide de bu ekrana atıyor' — boş Canlı Takip): arka plan artık Ana Ekran
-            if(sogukBaslangic) { try { sekmeAc('ana'); } catch(e) {} }
+            if(sogukBaslangic) kocModuHazirla();
             yoneticiSekmeAktif = 'panel'; yoneticiSekme('panel');
             try { sistemDurumGuncelle(); } catch(e) {}
         }
@@ -8720,15 +8721,19 @@
         // ekranı kuruldu. Her buton var olan, zaten test edilmiş bir navigasyon fonksiyonunu
         // çağırıyor (sekmeAc/kmAc/yoneticiPaneliAc/ligDegistirAc) — burada YENİ bir ekran/mantık
         // İCAT EDİLMEDİ, sadece hepsine TEK bir yerden ulaşan bir kapı eklendi.
+        // v453 (2026-11-23, kullanıcı: "burası çok saçma"): ayrı "Ana Menü" penceresi ve antrenöre "Sporcu girişi yap" diyen boş ekran
+        // kalktı → antrenörün gerçek ana ekranı (dagsk-koc-ana.js). Yönetici kapanınca ve 🏠 Ana Menü'de buraya gelinir.
+        function kocMu() { return !loggedInSporcu && (aktifPlatform === 'egitmen' || !!_oturum); }
+        function kocModuHazirla() {
+            if(!kocMu()) return;
+            aktifPlatform = 'egitmen';
+            let et = document.getElementById('aktif-grup-etiket'); if(et && /SEÇİLMEDİ/.test(et.innerText)) et.innerText = LIG_ETIKET[aktifGrup] || LIG_ETIKET.buyukler;
+            if(!_anaSekmeSistemiBaslatildiMi) { _egitmenOturumBasladi = true; try { sekmeAc('ana'); tablariPlatformaGoreAyarla(); } catch(e) {} }
+        }
         function anaMenuAc() {
             try { let ym = document.getElementById('yonetici-modal'); if(ym && ym.style.display !== 'none') yoneticiPaneliKapat(); } catch(e) {}
-            let m = document.getElementById('ana-menu-modal'); if(m) m.style.display = 'flex';
+            kocModuHazirla(); try { sekmeAc('ana'); document.getElementById('icerik-ana').scrollTop = 0; } catch(e) {}
         }
-        function anaMenuKapat() { let m = document.getElementById('ana-menu-modal'); if(m) m.style.display = 'none'; }
-        function anaMenuGit(sekmeAd) { anaMenuKapat(); try { sekmeAc(sekmeAd); } catch(e) {} }
-        function anaMenuKmAc() { anaMenuKapat(); try { kmAc(); } catch(e) {} }
-        function anaMenuYoneticiAc() { anaMenuKapat(); try { yoneticiPaneliAc(); } catch(e) {} }
-        function anaMenuLigDegistir() { anaMenuKapat(); try { ligDegistirAc(); } catch(e) {} }
         let yoneticiSekmeAktif = 'panel';
         let yoneticiYoklamaTip = 'ozet';
         // DÜZELTME: eskiden 9 buton her zaman 3'lü sabit grid'lerde basılıyordu (ANTRENMAN grubunda
@@ -33471,6 +33476,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             document.getElementById('giris-ekrani').style.display = 'none';
             kronometreSifirla(); skorEkraniniKapat(); sporcuListesiniYenile(); takimDropdownDoldur(); takimListesiCiz();
             tablariPlatformaGoreAyarla();
+            if(document.body.classList.contains('koc-ana')) sekmeAc('skor'); // ana ekrandayken lig seçildi → o ligin skoru
         }
         
         // FAZ 3 — "Daha" paneli aç/kapat. sekmeAc()'ten bağımsız, sadece görünürlük kontrolü.
@@ -33497,6 +33503,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             document.querySelectorAll('.sekme-icerik').forEach(c => c.classList.remove('aktif')); 
             document.getElementById('tab-' + sekmeAd).classList.add('aktif'); 
             document.getElementById('icerik-' + sekmeAd).classList.add('aktif'); 
+            try { document.body.classList.toggle('koc-ana', sekmeAd === 'ana' && kocMu()); } catch(e) {}
             if(sekmeAd === 'skor') skorEkraniniKapat(); 
             if(sekmeAd === 'liderlik') { siralamaListesiDoldur(); }
             if(sekmeAd === 'klasman') { try { sezonSayaciniGuncelle(); } catch(e) {} klasmanDoldur();
@@ -35190,6 +35197,12 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         window.dagFilm3dAcYukle = dagFilm3dAcYukle;
         function sporcuAnaDoldur() {
             let el = document.getElementById('icerik-ana'); if(!el) return;
+            if(kocMu()) {
+                if(typeof kocAnaCiz === 'function') { kocAnaCiz(el); return; }
+                if(!document.getElementById('koc-ana')) el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
+                dagskEkYukle('dagsk-koc-ana.js?v=1').then(function() { if(kocMu() && el.classList.contains('aktif')) kocAnaCiz(el); }).catch(function() { el.innerHTML = '<div style="padding:40px 16px;text-align:center">Ana ekran yüklenemedi.<br><button class="btn" style="margin-top:12px" onclick="sporcuAnaDoldur()">Yeniden dene</button></div>'; });
+                return;
+            }
             let ad = loggedInSporcu || oyunSeciliSporcu || basariSeciliSporcu || '';
             if(!ad) { el.innerHTML = `<div style="text-align:center; padding:40px 16px; color:var(--text-muted);"><div style="font-size:48px; margin-bottom:12px;">🏠</div><div style="font-size:16px; font-weight:bold;">Ana Ekran</div><div style="margin-top:8px; font-size:13px;">Sporcu girişi yap</div></div>`; return; }
             let f = basariSporcuBul(ad); if(!f) { el.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Sporcu bulunamadı.</div>'; return; }
