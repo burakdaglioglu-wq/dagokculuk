@@ -6168,3 +6168,7 @@ Kullanıcı (boş "Ana Ekran — Sporcu girişi yap" + kahverengi Ana Menü penc
 - Site `#video` bölümü (Branşlar ile Fotoğraflar arası): "Bir velinin gözünden" = `_reklam/sinema` DAG-veli-notu-reklam-feed → 864×1080, sessiz, 3,7 MB `public/site-video/veli-notu.mp4` + kapak (yüzsüz kare). `[data-video]` kalıbı: dokununca oynar, `preload=none`, bitince kapak döner. Yeni video = dosyayı `public/site-video/<ad>.mp4` koy (≤25 MB), `<source src="/video/<ad>.mp4">`.
 - **Range şart:** statik sunum Range'i yok sayar (200) → iPhone oynatmaz; `src/lib/siteVideo.ts` `/video/<ad>.mp4` → 206. SW `/video/` ve Range isteklerine dokunmaz. Test 161.
 - **Arşiv (yalnız bu bilgisayarda, git'e girmez):** `node _reklam/arsiv/ekle.mjs <dosya|klasör> [--not "…"] [--yalniz-liste]` → `_reklam/arsiv/YYYY-AA/`, kare şeridi, `liste.json` + `LISTE.md` (kullanım yeri, yayın izni sütunu). Disk %98 dolu (20 GB boş); eski ham çekimler (~15 GB) kopyalanmadı.
+
+## 165. 🎬 Site girişi arka plan videosu + TV / Instagram kurguları (v455, 2026-11-23)
+- `.vz-hero`: alttaki bulanık fotoğrafın yerine bulanık video (`giris-{genis,dik}-b.mp4`, 92–152 KB), vizör penceresinde aynı videonun net hali (`giris-{genis,dik}.mp4`, 1,8–2,4 MB); `timeupdate` ile eşit tutulur. Sayfa yüklendikten sonra iner; hareketi azalt / veri tasarrufu / 2g-3g'de hiç inmez, fotoğraflar kalır; görünmezken durur. Üretici `_reklam/arsiv/kurgu/site-arka.mjs` (yüzü net görünmeyen sahneler). Test 161.
+- `_reklam/arsiv/kurgu/`: `tv.mjs` → DAG-salon-TV.mp4 (1920×1080), `instagram.mjs` → reels / gonderi / kapak. Hepsi sessiz.
