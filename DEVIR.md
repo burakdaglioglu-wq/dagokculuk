@@ -6207,3 +6207,6 @@ Kullanıcı: "çıktıyı nereden alacağım göremedim, ayın geri kalanı boş
 - Rapor sekmesindeki ay kartı KALKTI → tek pencere `yoklamaCiktiAc` (`#yok-cikti`, `_yokCk`): ay, grup (varsayılan Bütün gruplar), Yazdır / Paylaş, PDF indir. Bant `yokCiktiBantHTML`: Yoklama'nın her sekmesi, Yönetici menüsü, Genel Bakış; kenar menüsü `yokcikti` (sekme değil); Özet'teki PDF penceresinin ilk düğmesi.
 - PDF pencere açılınca hazırlanır (`_yokAyPdfYap`), düğme hazır olunca açılır: iPhone'da `navigator.share` dokunma anında olmalı. Bugünden sonraki günler her zaman boş (geliş ve turuncu). Eskiden gruplar Yoklama süzgecine bağlıydı (yalnız bir grup çıkabiliyordu).
 - Test 142, 156, 162. Gerçek telefonda DENENMEDİ.
+
+## 172. 🎬 Sitede üç oyun videosu (2026-11-23)
+Kullanıcı "çok güzel olmuş, siteye de yükle, ilk yaptıklarını" → oyun Reels 1–3 (`oyun-bizde`, `tek-ok`, `bugun-ne-yaptin`; 720×1280, 1,8–2,8 MB, `public/site-video/`, kapaklar yüzsüz oyun karesi). Site `#video` bölümünde "Salondan ve oyunlarımızdan" (`.vd-uc`): masaüstü üç sütun, telefonda yana kaydırmalı. Aynı `[data-video]` kalıbı (dokunmadan inmez). 4–12 sitede YOK. Test 161.
