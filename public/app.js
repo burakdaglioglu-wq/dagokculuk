@@ -4156,17 +4156,12 @@
                     + '📊 Devam takvimi ve gelişim:\n' + rapor + '\n\nGörüşmek üzere 🧡';
                 let numara = telefonWaFormat(tel || ''), url = (numara ? 'https://api.whatsapp.com/send?phone=' + numara + '&text=' : 'https://api.whatsapp.com/send?text=') + encodeURIComponent(metin);
                 if(w) w.location.href = url; else window.open(url, '_blank');
+                if(tel) fetch('/api/veli-link/gonderildi', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kodlar: [d.kod], tur: 'ikisi' }) }).catch(() => {}); // 💌 Velilere Gönder listesiyle ortak
                 if(tel) aidatGonderildiIsaretle('veliodeme|' + ad);
                 if(!tel) showToast('Veli telefonu kayıtlı değil: WhatsApp\'ta kişiyi sen seç. Ödeme ekranı telefon ister, bu yüzden yalnız gelişim linki gitti.', 'warning');
             }).catch(() => { if(w) w.close(); showToast('Link oluşturulamadı, internet bağlantısını kontrol et.', 'error'); });
         }
         // Yönetim › Aidat araçları: linki henüz gitmemiş, telefonu olan, muaf olmayan sıradaki aile (tüm gruplar)
-        function veliLinkSiradaki() {
-            let gon = aidatGonderildi(), l = _aidatGelirOzetHesapla(aidatAy || bugunISO().slice(0, 7), true).kisiler.filter(x => !x.sp.aidatMuaf && aidatVeliOdemeTel(x.sp) && !gon['veliodeme|' + x.ad]);
-            if(!l.length) { showToast('Telefonu kayıtlı bütün velilere link gitti.', 'success'); return; }
-            veliLinkGonder(l[0].g, l[0].ad);
-            showToast(l[0].ad + ' velisine gidiyor · kalan ' + (l.length - 1), 'info');
-        }
         function aidatVeliOzetKopyala(i) {
             let x = (_aidatVeliOzetListe || [])[i]; if(!x) return;
             aidatRaporLinkAl(x, aidatAy).then(link => { try { navigator.clipboard.writeText(aidatVeliOzetMetin(x, aidatAy, link)).then(() => showToast('Mesaj kopyalandı', 'success')); } catch(e) {} });
@@ -4330,11 +4325,11 @@
                     deneme() { return fetch('/api/push/yonetici-deneme', { method: 'POST' }).then(r => r.json()); }
                 },
                 pdf(ay, grup) { let eski = _aidatGrupFiltre; _aidatOdemeAy = ay; _aidatGrupFiltre = grup; try { aidatOdemeDurumPdf(); } finally { _aidatGrupFiltre = eski; } },
-                araclar: [['📤 Velilere link gönder (sıradaki)', 'veliLinkSiradaki()'], ['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
+                araclar: [['💌 Velilere gönder', "yoneticiSekme('velilink')"], ['📋 Kim ödedi · 6 aylık tablo', 'aidatOdemeDurumAc(AP.ay)'], ['📄 Kâr-zarar (6 ay)', 'aidatKarZararPdf()'], ['📄 Gelir raporu', 'aidatAy=AP.ay; aidatGelirRaporu()'], ['➕ Yeni sporcu', "_aidatAltSekme='gelir'; _aidatSporcuEkleAcik=true; egitmenRenderAidat()"], ['💬 Veli özetleri', "_aidatAltSekme='gelir'; _aidatVeliOzetAcik=true; egitmenRenderAidat()"], ['⚙️ Varsayılan tutar', "_aidatAltSekme='gelir'; egitmenRenderAidat()"], ['🔐 Aidat şifresi', 'aidatSifreAc()']]
             };
         }
         // 🏠 Yönetim paneli (yonetim-panel.js: Genel Bakış, sporcu kartı, ekran PDF'i) için DAĞ verisi. Milo'da aynı arayüz (milo/app.js).
-        const YN_DOSYA = 'yonetim-panel.js?v=19';
+        const YN_DOSYA = 'yonetim-panel.js?v=20';
         let _ynGelisOnbellek = null;
         function dagYonetimAdaptor() {
             return {
@@ -4506,6 +4501,7 @@
                     });
                 },
                 dersBaslat: i => yoneticiDersBaslat(i),
+                ustBant: () => yonVeliBantHTML(),
                 fotoDegistir: k => { if(k) ysFotoSec(k.grup, k.ad); }, // profil avatarındaki 📷
                 veliLink: k => { if(k) veliLinkGonder(k.grup, k.ad); }, // profilde 🔗 Veliye link gönder (ödeme + gelişim, tek mesaj)
                 ekPanel: k => (typeof gelisimPanelHTML === 'function' ? gelisimPanelHTML(k.grup, k.ad) : '') + (typeof yrsKarneHTML === 'function' ? yrsKarneHTML(k.grup, k.ad) : ''), // 📈 Gelişim (plan · grup · his) + 🏆 sezon karnesi (v313)
@@ -8692,6 +8688,7 @@
             // v373 (kullanıcı: 'yöneticide de bu ekrana atıyor' — boş Canlı Takip): arka plan artık Ana Ekran
             if(sogukBaslangic) kocModuHazirla();
             yoneticiSekmeAktif = 'panel'; yoneticiSekme('panel');
+            try { yonVeliYukle(); } catch(e) {}
             try { sistemDurumGuncelle(); } catch(e) {}
         }
         // DÜZELTME: "✕ Çıkış" eskiden _kilitKaldir() + location.reload() yapıyordu — sadece düzenleme
@@ -8746,7 +8743,7 @@
         const YONETICI_BOLUMLER = [
             ['DERS', [['panel','📊','Genel Bakış'],['yoklama','✅','Yoklama'],['program','📅','Antrenman Programı'],['bugunskor','🎯','Skor Girenler'],['defter','📒','Öğrenci Defteri'],['gunluk','📝','Ders Günlüğü']]],
             ['SPORCULAR', [['kullanicilar','👥','Sporcular & Skor'],['girisler','🔑','Sporcu Girişleri'],['hizliduzenle','📝','Hızlı Düzenle'],['fiziksel','🗂️','Fiziksel Dosya'],['belge','📋','Belge Takibi'],['deneme','🌱','Deneme Dersleri']]],
-            ['VELİ & KULÜP', [['aidat','💳','Aidat'],['rapor','📄','Aile Raporu'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['kisiler','🪪','Eğitmen & Misafir'],['vitrin','📺','Tanıtım Ekranı']]],
+            ['VELİ & KULÜP', [['velilink','💌','Velilere Gönder'],['aidat','💳','Aidat'],['rapor','📄','Aile Raporu'],['duyuru','📢','Duyuru Gönder'],['ihtiyac','💬','Öneri, Övgü & Şikayet'],['kisiler','🪪','Eğitmen & Misafir'],['vitrin','📺','Tanıtım Ekranı']]],
             ['BAKIM', [['ciftkayit','🧹','Çift Kayıt'],['silinenler','🗑️','Silinenler'],['yedek','💾','Yedek'],['guvenlik','🔐','Güvenlik']]]
         ];
         // DÜZELTME: eskiden 9 sekme butonu HER ZAMAN ekranda açık duruyordu — telefonda modalın
@@ -8799,6 +8796,7 @@
             belge: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 3h6v3.5H9zM8.5 11.5l1.2 1.2 2-2.2M14 11.8h2.5M8.5 16l1.2 1.2 2-2.2M14 16.3h2.5"/>',
             vitrin: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
             yedek: '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+            velilink: '<path d="M3.5 6h17v12.5h-17zM3.5 7l8.5 6.5L20.5 7"/>',
             __canli: '<circle cx="12" cy="12" r="2"/><path d="M8 16a5.6 5.6 0 0 1 0-8M16 8a5.6 5.6 0 0 1 0 8M5 19a9.8 9.8 0 0 1 0-14M19 5a9.8 9.8 0 0 1 0 14"/>',
             __diger: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
             ara: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>', kapat: '<path d="m6 6 12 12M18 6 6 18"/>'
@@ -8806,7 +8804,7 @@
         function yonIkon(k) { return YON_IKON[k] ? '<svg class="yon-ik" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + YON_IKON[k] + '</svg>' : ''; }
         const YON_MENU_KART = ['yoklama', 'aidat', 'program', 'bugunskor'];
         const YON_MENU_RENK = { DERS: 'iyi', SPORCULAR: 'mavi', 'VELİ & KULÜP': 'altin', BAKIM: 'gri' };
-        const YON_MENU_KELIME = { yoklama: 'geldi gelmedi devam rapor', aidat: 'ödeme para borç tahsilat kasa gider', program: 'ders saat takvim', bugunskor: 'bugün puan seri', girisler: 'kod pin şifre', hizliduzenle: 'telefon doğum tarihi toplu', fiziksel: 'boy kilo ölçüm', ciftkayit: 'birleştir aynı isim', silinenler: 'geri al', guvenlik: 'pin şifre kullanıcı', kisiler: 'personel maaş bordro antrenör', rapor: 'veli karne pdf', deneme: 'aday yeni kayıt', duyuru: 'bildirim mesaj', ihtiyac: 'istek', belge: 'evrak sağlık lisans', vitrin: 'tv salon', yedek: 'geri yükle', defter: 'telafi', gunluk: 'not' };
+        const YON_MENU_KELIME = { yoklama: 'geldi gelmedi devam rapor', aidat: 'ödeme para borç tahsilat kasa gider', program: 'ders saat takvim', bugunskor: 'bugün puan seri', velilink: 'veli link gönder whatsapp numara telefon aidat takip', girisler: 'kod pin şifre', hizliduzenle: 'telefon doğum tarihi toplu', fiziksel: 'boy kilo ölçüm', ciftkayit: 'birleştir aynı isim', silinenler: 'geri al', guvenlik: 'pin şifre kullanıcı', kisiler: 'personel maaş bordro antrenör', rapor: 'veli karne pdf', deneme: 'aday yeni kayıt', duyuru: 'bildirim mesaj', ihtiyac: 'istek', belge: 'evrak sağlık lisans', vitrin: 'tv salon', yedek: 'geri yükle', defter: 'telafi', gunluk: 'not' };
         const YON_MENU_AD = { program: 'Program', bugunskor: 'Skor Girenler', yoklama: 'Yoklama', aidat: 'Aidat' };
         let _yonMenuDers = null;
         function yonMenuGit(k) { if(_yonDigerAcik) yoneticiDigerSheetAcKapat(); yoneticiSekme(k); }
@@ -8835,7 +8833,15 @@
                 return (ek.length ? '<h4 class="ym-bas">EKRANLAR</h4><div class="ym-izgara">' + ek.map(oge).join('') + '</div>' : '') + (sp.length ? '<h4 class="ym-bas">SPORCULAR</h4><div class="ym-sporcu">' + sp.slice(0, 12).map(x => '<button type="button" onclick="yonMenuSporcu(' + escQ(x.g + '|' + x.ad) + ')">' + (typeof fotoAvatarHTML === 'function' ? fotoAvatarHTML(fotoAnahtar(x.g, x.ad), x.ad, 'ym-av', true) : '') + '<b>' + esc(x.ad) + '</b><small>' + (LIG_ETIKET_KISA_AIDAT[x.g] || x.g) + (x.pasif ? ' · pasif' : '') + '</small></button>').join('') + '</div>' : '');
             }
             let kart = k => { let x = hepsi.find(y => y.k === k), d = yonMenuDurum(k); return '<button type="button" class="ym-kart ' + (YON_MENU_RENK[x.b] || 'gri') + (yoneticiSekmeAktif === k ? ' acik' : '') + '" onclick="yonMenuGit(\'' + k + '\')"><span class="ym-ik">' + yonIkon(k) + '</span><b>' + YON_MENU_AD[k] + '</b><small' + (d[1] ? ' class="dikkat"' : '') + '>' + d[0] + '</small></button>'; };
-            return '<div class="ym-kartlar">' + YON_MENU_KART.map(kart).join('') + '</div>' + YONETICI_BOLUMLER.map(([b, l]) => { let o = l.filter(x => x[0] !== 'panel' && YON_MENU_KART.indexOf(x[0]) < 0); return o.length ? '<h4 class="ym-bas">' + b + '</h4><div class="ym-izgara">' + o.map(x => oge({ b, k: x[0], l: x[2] })).join('') + '</div>' : ''; }).join('');
+            return yonVeliBantHTML() + '<div class="ym-kartlar">' + YON_MENU_KART.map(kart).join('') + '</div>' + YONETICI_BOLUMLER.map(([b, l]) => { let o = l.filter(x => x[0] !== 'panel' && x[0] !== 'velilink' && YON_MENU_KART.indexOf(x[0]) < 0); return o.length ? '<h4 class="ym-bas">' + b + '</h4><div class="ym-izgara">' + o.map(x => oge({ b, k: x[0], l: x[2] })).join('') + '</div>' : ''; }).join('');
+        }
+        // 💌 Velilere Gönder bandı (menü + Genel Bakış): sayı yalnız sunucudan geldiyse yazar
+        function yonVeliOzetYazi() { let o = typeof vgOzet === 'function' ? vgOzet() : null; if(!o) return 'Aidat ve devam linkini tek tek, kolayca gönder'; return o.kalan ? o.kalan + ' veliye henüz gitmedi' + (o.telsiz ? ' · ' + o.telsiz + ' numara eksik' : '') : o.acmadi ? o.acmadi + ' veli linki açmadı' : o.telsiz ? o.telsiz + ' sporcunun veli numarası eksik' : 'Hepsi gitti'; }
+        function yonVeliBantHTML() { let o = typeof vgOzet === 'function' ? vgOzet() : null; return '<button type="button" class="yon-veli' + (o && !o.kalan && !o.telsiz ? ' tamam' : '') + '" onclick="yonMenuGit(\'velilink\')"><span class="ym-ik">' + yonIkon('velilink') + '</span><span><b>Velilere gönder ' + yeniRozet() + '</b><small>' + yonVeliOzetYazi() + '</small></span>' + (o && o.kalan ? '<em>' + o.kalan + '</em>' : '<em class="ok">›</em>') + '</button>'; }
+        let _yonVeliYuklendi = 0;
+        function yonVeliYukle() { // Yönetici açılınca bir kez (10 dk): rozet ve bant sayıları
+            if(Date.now() - _yonVeliYuklendi < 600000 || !_oturumToken) return; _yonVeliYuklendi = Date.now();
+            dagskEkYukle('dagsk-veli-link.js?v=1').then(function() { return vgYukle(); }).then(function() { yoneticiSidebarCiz(); let b = document.querySelector('#yn-genel .yon-veli'); if(b) b.outerHTML = yonVeliBantHTML(); }).catch(function() { _yonVeliYuklendi = 0; });
         }
         function yonMenuAra(q) { let e = document.getElementById('ym-liste'); if(e) e.innerHTML = yonMenuListeHTML(q); }
         function yoneticiDigerSheetAcKapat() {
@@ -8868,8 +8874,9 @@
                     if(s && k === 'kullanicilar') rozet = `<span class="yon-sb-rozet">${s.aktif}</span>`;
                     if(s && k === 'aidat' && s.aidat) rozet = `<span class="yon-sb-rozet kirmizi">${s.aidat}</span>`;
                     if(s && k === 'yoklama' && s.gelen) rozet = `<span class="yon-sb-rozet">${s.gelen}</span>`;
+                    if(k === 'velilink') { let o = typeof vgOzet === 'function' ? vgOzet() : null; if(o && o.kalan) rozet = `<span class="yon-sb-rozet turuncu">${o.kalan}</span>`; }
                     if(k === 'deneme') { let n = denemeDikkatSayisi(); if(n) rozet = `<span class="yon-sb-rozet kirmizi">${n}</span>`; }
-                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${yonIkon(k) || ikon}</span>${l}${rozet}</button>`;
+                    html += `<button onclick="yoneticiSekme('${k}')" class="yon-sidebar-btn${k === 'velilink' ? ' one' : ''}${yoneticiSekmeAktif === k ? ' aktif' : ''}"${yoneticiSekmeAktif === k ? ' aria-current="page"' : ''}><span class="yon-sb-icon">${yonIkon(k) || ikon}</span>${l}${rozet}</button>`;
                 });
             });
             nav.innerHTML = html;
@@ -8936,7 +8943,7 @@
             try { let la = document.getElementById('yonetici-liste'); if(la) { if(k === 'yoklama') sadeYoklamaCss(); la.classList.toggle('sade-yok', k === 'yoklama'); } } catch(e) {}
             let arama = document.getElementById('yonetici-arama');
             let ligBar = document.getElementById('yon-lig-bar');
-            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'girisler' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
+            if(ligBar) ligBar.style.display = (k === 'kullanicilar' || k === 'velilink' || k === 'girisler' || k === 'yedek' || k === 'silinenler' || k === 'panel' || k === 'rapor' || k === 'yoklama' || k === 'personel' || k === 'bugunskor' || k === 'duyuru' || k === 'ihtiyac' || k === 'belge' || k === 'ciftkayit' || k === 'kisiler' || k === 'aidat' || k === 'deneme') ? 'none' : 'grid'; // Aidat kendi grup seçimini kullanır (aidatGrupCipleriHTML)
             yoneticiLigButonGuncelle();
             if(k === 'kullanicilar') { renderHedefId = 'yonetici-liste'; if(arama) arama.style.display = 'block'; yoneticiPaneliCiz(); return; }
             if(arama) arama.style.display = 'none';
@@ -8961,6 +8968,13 @@
             if(k === 'silinenler') { yoneticiSilinenlerCiz(); return; }
             if(k === 'ciftkayit') { kyCiftKayitCiz(); return; }
             // 🔑 Sporcu Girişleri (2026-10-25) — kodlar, giriş aç/kapat, son giriş, WhatsApp / QR kart (dagsk-sporcu-giris.js)
+            if(k === 'velilink') {
+                let la = document.getElementById('yonetici-liste');
+                if(la && typeof vgAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
+                renderHedefId = 'yonetici-liste';
+                dagskEkYukle('dagsk-veli-link.js?v=1').then(() => { if(yoneticiSekmeAktif === 'velilink') vgAc(); }).catch(() => { if(la) la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yüklenemedi. Bağlantını kontrol et.</div>'; });
+                return;
+            }
             if(k === 'girisler') {
                 let la = document.getElementById('yonetici-liste');
                 if(la && typeof sgAc !== 'function') la.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted)">Yükleniyor…</div>';
@@ -9148,7 +9162,7 @@
         let _yonSayilarSon = null;
         function yoneticiSeritCiz(s) {
             let el = document.getElementById('yon-serit'); if(!el) return;
-            if(yoneticiSekmeAktif === 'panel') { el.innerHTML = ''; return; } // Genel Bakış'ta büyük kutular zaten var
+            if(yoneticiSekmeAktif === 'panel' || yoneticiSekmeAktif === 'velilink') { el.innerHTML = ''; return; } // Genel Bakış'ta büyük kutular zaten var
             s = s || _yonSayilarSon || yoneticiSayilar();
             let b = (r, deger, et, sekme, ac) => `<button class="yon-serit-btn${yoneticiSekmeAktif === sekme ? ' aktif' : ''}" style="--r:${r}" onclick="yoneticiSekme('${sekme}')" aria-label="${ac}"><b>${deger}</b>${et}</button>`;
             el.innerHTML = b('var(--neon-red)', s.aidat == null ? '–' : s.aidat, 'aidatı geciken', 'aidat', 'Aidatı gecikenler: ' + (s.aidat == null ? 'bilinmiyor' : s.aidat))

@@ -3,6 +3,7 @@ import type { Env } from "../env";
 import { json, badRequest, notFound, readJson, unauthorized } from "../lib/json";
 import { basariliTemizle, basarisizKaydet, bytesB64u, gunluk, kilitKalan, rastgele, sha256Hex } from "../lib/giris";
 import { getMeta } from "../db/meta";
+import { veliAcildi } from "./veliLink";
 import { turkiyeSaatBilgisi } from "../lib/reminders";
 
 /** Veli ödeme ekranı (2026-11-04, public/veli.html). Kullanıcı kararları: önce DAĞ; giriş = kişiye özel link + kayıtlı telefonun son 4 hanesi;
@@ -87,6 +88,7 @@ export function registerVeliOdemeRoutes(router: Router): void {
     if (!KOD.test(params.kod)) return notFound("kod");
     const s = await sporcuBul(env, params.kod);
     if (!s) return notFound("kod");
+    await veliAcildi(env, params.kod);
     return json({ ad: ilkAd(s.ad), telefonVar: !!(son4Al(s.acilTelefon) || son4Al(s.veli2Telefon)) }, { headers: NO_STORE });
   });
 
@@ -106,6 +108,7 @@ export function registerVeliOdemeRoutes(router: Router): void {
     const now = Date.now(), token = bytesB64u(rastgele(32));
     await env.DB.prepare("DELETE FROM veli_oturum WHERE bitis < ?").bind(now).run();
     await env.DB.prepare("INSERT INTO veli_oturum (token_ozet, izle_kodu, son4, olusturma, bitis) VALUES (?, ?, ?, ?, ?)").bind(await sha256Hex(token), kod, girilen, now, now + OTURUM_MS).run();
+    await veliAcildi(env, kod, true);
     await gunluk(env.DB, { ad: "Veli · " + s!.ad }, "veli-giris").catch(() => {});
     return json({ ok: true, token }, { headers: NO_STORE });
   });

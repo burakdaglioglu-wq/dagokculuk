@@ -1,3 +1,4 @@
+import { veliAcildi } from "./veliLink";
 import type { Router } from "../router";
 import { json, badRequest, notFound } from "../lib/json";
 import { resolveIzleKodu } from "../db/athletes";
@@ -13,6 +14,7 @@ export function registerVeliRaporRoutes(router: Router): void {
     if (!hedef) return notFound("invalid code");
     const ay = new URL(request.url).searchParams.get("ay") || "";
     if (!/^\d{4}-\d{2}$/.test(ay)) return badRequest("ay=YYYY-MM required");
+    await veliAcildi(env, params.kod); // 💌 Velilere Gönder: linki açtı
     const like = ay + "-%";
 
     const { results: yoklama } = await env.DB.prepare(

@@ -19,6 +19,7 @@ import { registerMetaRoutes } from "./routes/meta";
 import { registerLiveRoutes } from "./routes/live";
 import { registerVeliRaporRoutes } from "./routes/veliRapor";
 import { registerVeliOdemeRoutes } from "./routes/veliOdeme";
+import { registerVeliLinkRoutes } from "./routes/veliLink";
 import { registerFizikselRoutes } from "./routes/fiziksel";
 import { registerPushRoutes } from "./routes/push";
 import { registerDuelloRoutes } from "./routes/duello";
@@ -72,6 +73,7 @@ registerMetaRoutes(router);
 registerLiveRoutes(router);
 registerVeliRaporRoutes(router);
 registerVeliOdemeRoutes(router);
+registerVeliLinkRoutes(router);
 registerFizikselRoutes(router);
 registerInstagramRoutes(router);
 registerPushRoutes(router);
@@ -162,6 +164,7 @@ const PUBLIC_YAZMA_YOLLARI = new Set<string>([
 // sync.js bu okumalardan 401 alırsa ilgili alanı ATLAR (yerel veri silinmez), senkronun geri kalanı sürer.
 const OTURUMLU_OKUMA_YOLLARI = new Set<string>([
   "/api/dues",
+  "/api/veli-link",
   "/api/personnel",
   "/api/attendance/personnel",
   "/api/gider",

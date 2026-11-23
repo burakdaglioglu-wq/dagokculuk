@@ -1074,6 +1074,7 @@
             <div class="ap-bas"><div><h2>${selam}${Y.kullanici ? ', ' + esc(Y.kullanici) : ''}</h2><small>${tarih} · ${esc(Y.ad || '')}</small></div>
                 <div class="ap-arac yn-pdf-gizle"><div class="yn-ara"><input type="search" id="yn-ara-girdi" placeholder="Sporcu ara (pasifler dahil)" aria-label="Sporcu ara" autocomplete="off" oninput="ynAra(this.value)" onkeydown="if(event.key==='Enter'){let b=document.querySelector('.yn-ara-liste button'); if(b) b.click();} if(event.key==='Escape'){this.value=''; ynAra('');}"><div id="yn-ara-liste"></div></div>
                 ${(Y.araclar || []).map(x => `<button class="ap-btn" onclick="${x[1]}">${x[0]}</button>`).join('')}<button class="ap-btn ana" onclick="ynPdf(document.getElementById('yn-genel'), 'genel-bakis')">📄 PDF</button></div></div>
+            ${Y.ustBant ? Y.ustBant() : ''}
             <div class="ap-kpi">${kpiler}</div>
             <div class="ap-iki">
                 <div class="ap-panel"><h3>Katılım · son 8 hafta <span>haftada derse gelen farklı sporcu</span></h3><div class="ap-grafik" style="grid-template-columns:repeat(${d.haftalar.length},minmax(0,1fr))">${katilim}</div></div>

@@ -23,7 +23,7 @@ export default async function ({ log }) {
     dogrula(/\/veli\.html\?kod=/.test(metin) && /\/rapor\.html\?kod=/.test(metin), 'mesajda iki link yok: ' + metin.slice(0, 200));
     dogrula(!/₺/.test(metin), 'mesajda tutar olmamalı');
     // Yönetim › Aidat araçlarında sıradaki
-    dogrula(await p.evaluate(() => typeof veliLinkSiradaki === 'function' && JSON.stringify(aidatPanelAdaptor().araclar[0]).includes('veliLinkSiradaki')), 'Aidat araçlarında ilk sırada değil');
+    dogrula(await p.evaluate(() => JSON.stringify(aidatPanelAdaptor().araclar[0]).includes('velilink')), 'Aidat araçlarında ilk sırada değil');
     // telefonsuz: numarasız + yalnız rapor
     const t = await p.evaluate(() => { for (const g of AIDAT_GRUPLAR) for (const ad of Object.keys(turnuvaDB[g] || {})) { const sp = turnuvaDB[g][ad]; if (!sp.pasif && !aidatVeliOdemeTel(sp)) return { g, ad }; } return null; });
     if (t) {
