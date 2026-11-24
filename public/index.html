@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta property="og:title" content="DAĞ Okçuluk — Her şey bulanık, hedef net.">
-<meta property="og:description" content="Ekran yok, acele yok. Sadece tek bir hedef var. Pendik'te okçuluk; ilk ders ücretsiz.">
+<meta property="og:description" content="Gerçek ok. Gerçek hedef. Kendi oyunumuz. Pendik'te okçuluk; ilk ders ücretsiz.">
 <meta property="og:image" content="https://dagsporkulubu.com/hero/paylas.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -106,52 +106,22 @@
   .hero-logo-wrap{ display:flex; justify-content:center; }
   .hero-logo-wrap img{ width:100%; max-width:340px; filter:drop-shadow(0 20px 50px rgba(255,106,26,0.25)); }
 
-  /* VİZÖR HERO (2026-10-02) — afiş "Her şey bulanık, hedef net.": bütün fotoğraf bulanık, yalnız vizör kutusunun içi net.
-     Kutu masaüstünde imleci, mobilde parmağı izler; boşta kendi gezinir ve arada yüze kilitlenir. */
+  /* GİRİŞ "SİNEMA" (2026-11-24, kullanıcı 4 seçenekten seçti): kutu yok; salon videosu sağdan karanlığa karışır, telefonda tam ekran.
+     Eski vizör / gezen pencere / bulanık kopya kaldırıldı. Kapak fotoğrafı hemen, video sayfa yüklendikten sonra gelir. */
   .vz-hero{ position:relative; overflow:hidden; isolation:isolate; background:#141210;
     height:calc(100svh - 62px); min-height:600px; max-height:980px; touch-action:pan-y; }
-  .vz-resim{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 22%; display:block; max-width:none; transition:opacity 1.1s ease; }
-  .vz-resim.vz-s2{ object-position:50% 52%; }
-  .vz-resim.vz-gizli{ opacity:0; }
-  .vz-bulanik.vz-s2{ filter:saturate(.75) brightness(.6); }
-  .vz-resim.vz-s3{ object-position:50% 46%; }
-  .vz-bulanik.vz-s3{ filter:saturate(.8) brightness(.6); }
-  .vz-bulanik{ z-index:1; filter:saturate(.8) brightness(.78); }
-  /* 🎬 arka plan videosu (2026-11-23): bulanık kopya altta, net kopya yalnız vizör penceresinde; yüklenene kadar fotoğraflar durur */
-  .vz-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; max-width:none; opacity:0; transition:opacity 1.1s ease; pointer-events:none; }
-  .vz-video-b{ z-index:1; }
-  .vz-pencere .vz-video-n{ inset:auto; left:0; top:0; will-change:transform; }
-  .vz-hero.video-var .vz-video{ opacity:1; }
-  .vz-hero.video-var .vz-resim{ opacity:0; }
-  /* bilgisayarda (v2, 2026-11-24): gezen küçük pencere yerine tek büyük net panel; dikey çekim kesilip büyütülmez */
-  .vz-panel .vz-bulanik, .vz-panel .vz-video-b{ filter:brightness(.5) saturate(.9); transform:scale(1.04); }
-  .vz-panel .vz-pencere{ border-radius:3px; box-shadow:0 30px 90px rgba(0,0,0,.45); background:#0e0c0a; }
-  .vz-panel .vz-cerceve{ display:none; }
-  .vz-panel .vz-k{ --kol:46px; }
-  .vz-panel .vz-etiket{ font-size:13px; }
-  .vz-panel .vz-ipucu{ visibility:hidden; }
-  .vz-karart{ position:absolute; inset:0; z-index:2; pointer-events:none;
-    background:linear-gradient(180deg, rgba(14,12,10,.55) 0%, rgba(14,12,10,0) 22%, rgba(14,12,10,0) 52%, rgba(14,12,10,.72) 100%),
-               linear-gradient(90deg, rgba(14,12,10,.45) 0%, rgba(14,12,10,0) 55%); }
-  .vz-pencere{ position:absolute; left:0; top:0; z-index:3; overflow:hidden; border-radius:2px; will-change:transform; pointer-events:none; }
-  .vz-pencere .vz-resim{ inset:auto; left:0; top:0; will-change:transform; }
-  .vz-vizor{ position:absolute; left:0; top:0; z-index:4; pointer-events:none; will-change:transform; }
-  .vz-vizor-ic{ position:absolute; inset:0; }
-  .vz-hero.kilit .vz-vizor-ic{ animation:vzOdak .55s cubic-bezier(.2,.8,.2,1); }
+  .vz-sin{ position:absolute; z-index:1; top:0; bottom:0; right:0; width:66%; overflow:hidden; -webkit-mask-image:linear-gradient(90deg,transparent,rgba(0,0,0,.2) 14%,#000 46%); mask-image:linear-gradient(90deg,transparent,rgba(0,0,0,.2) 14%,#000 46%); }
+  .vz-sin img, .vz-sin video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 42%; display:block; max-width:none; }
+  .vz-sin video{ opacity:0; transition:opacity 1.2s ease; pointer-events:none; }
+  .vz-hero.video-var .vz-sin video{ opacity:1; }
+  .vz-karart{ position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(14,12,10,.72) 0%, rgba(14,12,10,0) 26%, rgba(14,12,10,0) 70%, rgba(14,12,10,.82) 100%); }
+  .vz-yer{ text-shadow:0 1px 10px rgba(0,0,0,.75); }
   @keyframes vzOdak{ 0%{ transform:scale(1.12); opacity:.55; } 55%{ transform:scale(.97); opacity:1; } 100%{ transform:scale(1); } }
   .vz-k{ position:absolute; width:var(--kol); height:var(--kol); border:0 solid #fff; filter:drop-shadow(0 0 6px rgba(0,0,0,.35)); }
   .vz-k1{ left:0; top:0; border-top-width:3px; border-left-width:3px; border-top-left-radius:6px; }
   .vz-k2{ right:0; top:0; border-top-width:3px; border-right-width:3px; border-top-right-radius:6px; }
   .vz-k3{ left:0; bottom:0; border-bottom-width:3px; border-left-width:3px; border-bottom-left-radius:6px; }
   .vz-k4{ right:0; bottom:0; border-bottom-width:3px; border-right-width:3px; border-bottom-right-radius:6px; }
-  .vz-cerceve{ position:absolute; border:1.5px solid rgba(255,255,255,.72); border-radius:2px; }
-  .vz-etiket{ position:absolute; left:0; top:calc(100% + 10px); white-space:nowrap; font:500 11px/1 'Roboto Mono',ui-monospace,monospace;
-    letter-spacing:.14em; color:rgba(255,255,255,.82); text-shadow:0 1px 6px rgba(0,0,0,.6); }
-  .vz-etiket::before{ content:''; display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:8px; vertical-align:0;
-    background:rgba(255,255,255,.5); }
-  .vz-hero.kilit .vz-etiket{ color:#fff; }
-  .vz-hero.kilit .vz-etiket::before{ background:var(--accent); box-shadow:0 0 10px var(--accent); }
-
   .vz-ust, .vz-alt-serit{ position:absolute; left:0; right:0; z-index:5; display:flex; justify-content:space-between; gap:16px;
     padding:0 clamp(16px,4vw,56px); font-family:'Roboto Mono',ui-monospace,monospace; color:rgba(255,255,255,.78); }
   .vz-ust{ top:clamp(18px,4vh,40px); align-items:flex-start; }
@@ -172,19 +142,15 @@
   .vz-alt-serit a:hover{ color:#fff; }
   .vz-tel{ letter-spacing:.06em; }
   .vz-tel b{ font-weight:700; color:#fff; }
-  .vz-ipucu{ align-self:center; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:rgba(255,255,255,.55); }
-  .vz-ipucu .dokun{ display:none; }
-  @media (hover:none){ .vz-ipucu .imlec{ display:none; } .vz-ipucu .dokun{ display:inline; } }
   @media (max-width:860px){
     .vz-hero{ height:calc(100svh - 62px); min-height:600px; }
-    .vz-resim{ object-position:78% 16%; }
-    .vz-resim.vz-s2{ object-position:50% 45%; }
+    .vz-sin{ width:100%; -webkit-mask-image:none; mask-image:none; }
+    .vz-sin img, .vz-sin video{ object-position:50% 30%; }
     .vz-karart{ background:linear-gradient(180deg, rgba(14,12,10,.5) 0%, rgba(14,12,10,0) 20%, rgba(14,12,10,0) 38%, rgba(14,12,10,.86) 78%, rgba(14,12,10,.92) 100%); }
     .vz-metin{ left:16px; right:16px; max-width:none; bottom:118px; }
     .vz-slogan{ margin-bottom:18px; }
     .vz-cta a{ flex:1 1 auto; text-align:center; padding:14px 18px; }
     .vz-alt-serit{ flex-wrap:wrap; row-gap:4px; padding-right:16px; }
-    .vz-ipucu{ display:none; }
   }
   @media (max-width:760px){
     /* altta sabit 'Deneme dersi' çubuğu (52px) ve yüzen WhatsApp var: hero onların üstünde bitsin, CTA'yı onlar taşısın */
@@ -878,42 +844,11 @@
 </div>
 
 <section class="vz-hero" id="okculuk" aria-label="DAĞ Okçuluk — Her şey bulanık, hedef net">
-  <picture>
-    <source srcset="/hero/bulanik.webp" type="image/webp">
-    <img class="vz-resim vz-bulanik vz-s1" data-sahne="0" src="/hero/bulanik.jpg" alt="" fetchpriority="high">
-  </picture>
-  <picture>
-    <source srcset="/hero/salon-bulanik.webp" type="image/webp">
-    <img class="vz-resim vz-bulanik vz-s2 vz-gizli" data-sahne="1" src="/hero/salon-bulanik.jpg" alt="">
-  </picture>
-  <picture>
-    <source data-srcset="/kulup/salon2-bulanik.webp" type="image/webp">
-    <img class="vz-resim vz-bulanik vz-s3 vz-gizli" data-sahne="2" data-src="/kulup/salon2-bulanik.jpg" alt="">
-  </picture>
-  <video class="vz-video vz-video-b" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
+  <div class="vz-sin" aria-hidden="true">
+    <picture><source media="(max-width:860px)" srcset="/hero/sinema-dik.webp" type="image/webp"><img src="/hero/sinema-genis.webp" alt="" width="1560" height="1280" fetchpriority="high"></picture>
+    <video muted loop playsinline preload="none" tabindex="-1"></video>
+  </div>
   <div class="vz-karart"></div>
-  <div class="vz-pencere" id="vzPencere">
-    <video class="vz-video vz-video-n" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
-    <picture>
-      <source srcset="/hero/net-900.webp 900w, /hero/net-1600.webp 1600w, /hero/net-1800.webp 1800w" sizes="100vw" type="image/webp">
-      <img class="vz-resim vz-net vz-s1" data-sahne="0" srcset="/hero/net-900.jpg 900w, /hero/net-1600.jpg 1600w" sizes="100vw" src="/hero/net-1600.jpg" alt="DAĞ Okçuluk salonunda yayını gerip hedefe nişan alan genç okçu">
-    </picture>
-    <picture>
-      <source data-srcset="/hero/salon-900.webp 900w, /hero/salon-1600.webp 1600w, /hero/salon-2400.webp 2400w" sizes="100vw" type="image/webp">
-      <img class="vz-resim vz-net vz-s2 vz-gizli" data-sahne="1" data-srcset="/hero/salon-900.jpg 900w, /hero/salon-1600.jpg 1600w" sizes="100vw" data-src="/hero/salon-1600.jpg" alt="DAĞ Okçuluk atış salonunda hedeflere nişan alan iki sporcu" decoding="async">
-    </picture>
-    <picture>
-      <source data-srcset="/kulup/salon2-900.webp 900w, /kulup/salon2-1600.webp 1600w, /kulup/salon2-2400.webp 2400w" sizes="100vw" type="image/webp">
-      <img class="vz-resim vz-net vz-s3 vz-gizli" data-sahne="2" data-srcset="/kulup/salon2-900.jpg 900w, /kulup/salon2-1600.jpg 1600w" sizes="100vw" data-src="/kulup/salon2-1600.jpg" alt="DAĞ Okçuluk salonunda kulüp formalı manken, makaralı yay ve hedefler" decoding="async">
-    </picture>
-  </div>
-  <div class="vz-vizor" id="vzVizor" aria-hidden="true">
-    <div class="vz-vizor-ic">
-      <span class="vz-k vz-k1"></span><span class="vz-k vz-k2"></span><span class="vz-k vz-k3"></span><span class="vz-k vz-k4"></span>
-      <span class="vz-cerceve" id="vzCerceve"></span>
-    </div>
-    <span class="vz-etiket" id="vzEtiket">ODAK ARANIYOR</span>
-  </div>
 
   <div class="vz-ust">
     <div class="vz-marka"><img src="/logo-k.webp" alt="DAĞ Okçuluk logosu"><span>DAĞ OKÇULUK</span></div>
@@ -922,7 +857,7 @@
 
   <div class="vz-metin">
     <h1 class="vz-baslik"><span class="vz-soft">Her şey<br>bulanık</span><span class="vz-keskin">Hedef net.</span><span class="sr-only"> DAĞ Okçuluk, Pendik okçuluk kulübü</span></h1>
-    <p class="vz-slogan">Ekran yok, acele yok.<br>Sadece tek bir hedef var.</p>
+    <p class="vz-slogan">Gerçek ok. Gerçek hedef.<br>Kendi oyunumuz.</p>
     <div class="vz-cta">
       <a href="https://api.whatsapp.com/send?phone=905469107893&amp;text=Merhaba%2C%20%C3%BCcretsiz%20deneme%20dersi%20almak%20istiyorum." class="btn-birincil" target="_blank" rel="noopener">Ücretsiz deneme dersi</a>
       <a href="#programlar" class="btn-ikincil">Programları gör</a>
@@ -931,7 +866,6 @@
 
   <div class="vz-alt-serit">
     <a href="https://www.instagram.com/dagokculuk/" target="_blank" rel="noopener">@dagokculuk</a>
-    <span class="vz-ipucu" aria-hidden="true"><span class="imlec">İmleci gezdir · neyin net olduğunu sen seç</span><span class="dokun">Parmağını gezdir · neyin net olduğunu sen seç</span></span>
     <a class="vz-tel" href="tel:+905469107893">Deneme dersi: <b>0546 910 78 93</b></a>
   </div>
 </section>
@@ -1544,153 +1478,21 @@
   }
   yildizOlustur('yildizCim', 'ico-star', '#7fe0d3');
 
-  // Vizör hero — bulanık fotoğrafın üstünde net bir pencere. İmleç/parmak varsa onu izler; 2,5 sn dokunulmazsa kendi
-  // gezinir, birkaç durakta bir sahnedeki hedefe kilitlenir ("HEDEF NET"). İki sahne var (okçu yakın plan, salon):
-  // bir sahnenin kilit hedefleri bitince diğerine yumuşak geçer. Yalnız transform kullanır, görünmezken durur.
+  // Giriş "Sinema": kapak hemen görünür; video sayfa yüklenip boşa çıkınca iner (hareketi azalt / veri tasarrufu / yavaş hatta hiç inmez), görünmezken durur
   (function(){
-    var hero = document.getElementById('okculuk'), pen = document.getElementById('vzPencere');
-    var viz = document.getElementById('vzVizor'), cer = document.getElementById('vzCerceve'), etiket = document.getElementById('vzEtiket');
-    if(!hero || !pen || !viz) return;
-    // hedefler fotoğraf içinde oransal (x, y); oran = en / boy
-    var SAHNELER = [
-      { oran: 1800 / 2295, hedefler: [{ x: 0.70, y: 0.268 }] },
-      { oran: 3024 / 4032, hedefler: [{ x: 0.50, y: 0.425 }, { x: 0.925, y: 0.47 }] },
-      // 3. sahne (2026-10-06): kulüp forması giydirilmiş manken + makaralı yay + duvardaki hedef
-      { oran: 3024 / 4032, hedefler: [{ x: 0.30, y: 0.41 }, { x: 0.66, y: 0.40 }, { x: 0.845, y: 0.475 }] }
-    ];
-    var netler = pen.querySelectorAll('.vz-net'), bulaniklar = hero.querySelectorAll('.vz-bulanik');
-    var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var vNet = pen.querySelector('.vz-video-n'), vBul = hero.querySelector('.vz-video-b');
-    var W = 0, H = 0, w = 0, h = 0, altSinir = 0, aktif = 0, hedefNo = 0, noktalar = [[], [], []];
-    var x = 0, y = 0, hedef = { x: 0, y: 0 }, mod = 'gez', sonKullanici = 0, durak = '', bekle = 0, sayac = 0, kilitli = false, kilitNokta = null;
-    var calisiyor = false, son = 0, yazi = '';
-    var panel = false;
-    function olc(){
-      W = hero.clientWidth; H = hero.clientHeight;
-      panel = W >= 1000 && W / H > 1.15; hero.classList.toggle('vz-panel', panel);
-      if(panel){
-        // başlığın sağından ekranın sağına kalan boşluğun ortası; altta telefon satırına değmez
-        var pb = Math.round(hero.querySelector('.vz-alt-serit').offsetHeight + Math.max(18, Math.min(36, H * 0.04)) + 52), pt = 40;
-        h = H - pt - pb; w = Math.round(h * 0.75);
-        var rg = document.createRange(); rg.selectNodeContents(hero.querySelector('.vz-baslik .vz-keskin'));
-        var sol = rg.getBoundingClientRect().right - hero.getBoundingClientRect().left + 60, yer = hero.querySelector('.vz-yer').getBoundingClientRect().left - hero.getBoundingClientRect().left - 46 - sol;
-        if(w > Math.min(yer, 660)){ w = Math.round(Math.min(yer, 660)); h = Math.round(w / 0.75); }
-        x = sol + yer / 2; y = pt + (H - pt - pb) / 2; kilitli = false; kilit(true); etiketYaz('HEDEF NET');
-        [].forEach.call(netler, function(n){ n.style.width = w + 'px'; n.style.height = h + 'px'; });
-        vNet.style.width = w + 'px'; vNet.style.height = h + 'px'; pen.style.width = w + 'px'; pen.style.height = h + 'px';
-        viz.style.width = (w + 32) + 'px'; viz.style.height = (h + 32) + 'px'; viz._dx = viz._dy = 16; altSinir = H; ciz(); return;
-      }
-      w = Math.round(Math.min(Math.max(W * (W < 700 ? 0.5 : W < 1100 ? 0.34 : 0.26), 160), 400)); h = Math.round(w * 0.34);
-      SAHNELER.forEach(function(s, i){
-        var cs = getComputedStyle(netler[i]).objectPosition.split(' '), px = parseFloat(cs[0]) / 100, py = parseFloat(cs[1]) / 100;
-        var rw, rh; if(W / H > s.oran){ rw = W; rh = W / s.oran; } else { rh = H; rw = H * s.oran; }
-        var kx = (rw - W) * px, ky = (rh - H) * py;
-        noktalar[i] = s.hedefler.map(function(t){ return { x: t.x * rw - kx, y: t.y * rh - ky }; });
-        netler[i].style.width = W + 'px'; netler[i].style.height = H + 'px';
-      });
-      vNet.style.width = W + 'px'; vNet.style.height = H + 'px';
-      pen.style.width = w + 'px'; pen.style.height = h + 'px';
-      var dx = Math.round(w * 0.12), dy = Math.round(h * 0.26);
-      viz.style.width = (w + dx * 2) + 'px'; viz.style.height = (h + dy * 2) + 'px';
-      viz.style.setProperty('--kol', Math.round(w * 0.11) + 'px');
-      cer.style.left = dx + 'px'; cer.style.top = dy + 'px'; cer.style.width = w + 'px'; cer.style.height = h + 'px';
-      viz._dx = dx; viz._dy = dy;
-      // telefonda başlık fotoğrafın alt yarısında: vizör ve etiketi başlığın üstüne inmesin
-      var metin = hero.querySelector('.vz-metin');
-      altSinir = W < 700 && metin ? metin.offsetTop - h / 2 - dy - 30 : H;
+    var hero = document.getElementById('okculuk'), v = hero && hero.querySelector('.vz-sin video'), hazir = false, gorunur = true;
+    if(!v) return;
+    function oyna(){ if(hazir && gorunur && !document.hidden){ var p = v.play(); if(p) p.catch(function(){}); } else v.pause(); }
+    function kur(){
+      var ag = navigator.connection || {}; if(matchMedia('(prefers-reduced-motion: reduce)').matches || ag.saveData || /2g|3g/.test(ag.effectiveType || '')) return;
+      v.muted = true;
+      v.addEventListener('canplay', function(){ hazir = true; oyna(); });
+      v.addEventListener('playing', function(){ hero.classList.add('video-var'); });
+      v.src = '/video/sinema-' + (matchMedia('(max-width:860px)').matches ? 'dik' : 'genis') + '.mp4?v=1'; v.preload = 'auto'; v.load();
     }
-    function sinirla(p){ var mx = w / 2 + (viz._dx || 0) + 6, my = h / 2 + (viz._dy || 0) + 6; return { x: Math.min(Math.max(p.x, mx), W - mx), y: Math.min(Math.max(p.y, my), H - my - 22, altSinir) }; }
-    function ciz(){
-      var l = Math.round(x - w / 2), t = Math.round(y - h / 2);
-      pen.style.transform = 'translate(' + l + 'px,' + t + 'px)';
-      var ic = panel ? 'none' : 'translate(' + (-l) + 'px,' + (-t) + 'px)';
-      for(var i = 0; i < netler.length; i++) netler[i].style.transform = ic;
-      vNet.style.transform = ic;
-      viz.style.transform = 'translate(' + (l - viz._dx) + 'px,' + (t - viz._dy) + 'px)';
-    }
-    function etiketYaz(s){ if(s !== yazi){ yazi = s; etiket.textContent = s; } }
-    function kilit(ac){
-      if(ac === kilitli) return; kilitli = ac;
-      hero.classList.remove('kilit'); if(ac){ void hero.offsetWidth; hero.classList.add('kilit'); }
-    }
-    function sahneSec(i){
-      aktif = i; hedefNo = 0;
-      [netler, bulaniklar].forEach(function(l){ for(var k = 0; k < l.length; k++) l[k].classList.toggle('vz-gizli', +l[k].dataset.sahne !== i); });
-    }
-    function yakinHedef(){
-      var n = noktalar[aktif], r = Math.max(w * 0.22, 30);
-      for(var i = 0; i < n.length; i++) if(Math.hypot(n[i].x - x, n[i].y - y) < r) return n[i];
-      return null;
-    }
-    function yeniDurak(){
-      sayac++;
-      if(sayac % 3 === 0){ kilitNokta = noktalar[aktif][hedefNo]; hedef = sinirla(kilitNokta); bekle = 3200; durak = 'kilit'; }
-      else { hedef = sinirla({ x: W * (0.15 + Math.random() * 0.75), y: H * (0.12 + Math.random() * 0.7) }); bekle = 700; durak = 'rastgele'; }
-      hedef._varis = 0;
-    }
-    function durakBitti(){
-      if(durak === 'kilit'){
-        hedefNo++;
-        if(hedefNo >= SAHNELER[aktif].hedefler.length) sahneSec((aktif + 1) % SAHNELER.length);
-      }
-      kilit(false); yeniDurak();
-    }
-    function kare(simdi){
-      if(!calisiyor || panel){ calisiyor = false; return; }
-      var dt = Math.min(0.05, (simdi - (son || simdi)) / 1000); son = simdi;
-      if(mod === 'kullanici' && simdi - sonKullanici > 2500){ mod = 'gez'; sayac = 2; hedefNo = 0; yeniDurak(); }
-      var k = 1 - Math.exp(-(mod === 'kullanici' ? 12 : 2.4) * dt);
-      x += (hedef.x - x) * k; y += (hedef.y - y) * k;
-      var mesafe = Math.hypot(hedef.x - x, hedef.y - y);
-      if(mod === 'gez'){
-        if(mesafe < 3){
-          if(!hedef._varis) hedef._varis = simdi;
-          if(durak === 'kilit'){ kilit(true); etiketYaz('HEDEF NET'); }
-          if(simdi - hedef._varis > bekle) durakBitti();
-        } else if(!kilitli) etiketYaz('ODAK ARANIYOR');
-        else if(mesafe > 20) kilit(false);
-      } else {
-        var yk = !!yakinHedef(); kilit(yk); etiketYaz(yk ? 'HEDEF NET' : 'ODAK SENDE');
-      }
-      ciz();
-      requestAnimationFrame(kare);
-    }
-    function kullanici(cx, cy){
-      if(panel) return;
-      var r = hero.getBoundingClientRect();
-      hedef = sinirla({ x: cx - r.left, y: cy - r.top }); mod = 'kullanici'; sonKullanici = performance.now();
-      if(azHareket){ x = hedef.x; y = hedef.y; ciz(); var yk = !!yakinHedef(); kilit(yk); etiketYaz(yk ? 'HEDEF NET' : 'ODAK SENDE'); }
-    }
-    hero.addEventListener('pointermove', function(e){ if(e.pointerType !== 'touch') kullanici(e.clientX, e.clientY); });
-    hero.addEventListener('touchstart', function(e){ var t = e.touches[0]; if(t) kullanici(t.clientX, t.clientY); }, { passive: true });
-    hero.addEventListener('touchmove', function(e){ var t = e.touches[0]; if(t) kullanici(t.clientX, t.clientY); }, { passive: true });
-    function basla(){ videoOyna(); if(calisiyor || azHareket || panel) return; calisiyor = true; son = 0; requestAnimationFrame(kare); }
-    function dur(){ calisiyor = false; vNet.pause(); vBul.pause(); }
-    // 🎬 sayfa yüklenip boşa çıkınca iner; hareketi azalt / veri tasarrufu / yavaş hatta hiç inmez, fotoğraflar kalır
-    var videoAcik = false;
-    function videoOyna(){ if(videoAcik) [vNet, vBul].forEach(function(v){ var p = v.play(); if(p) p.catch(function(){}); }); }
-    function videoKur(){
-      var ag = navigator.connection || {}; if(azHareket || ag.saveData || /2g|3g/.test(ag.effectiveType || '')) return;
-      var ad = W / H > 1 ? 'panel' : 'dik', hazir = 0;
-      function oldu(){ if(++hazir < 2) return; videoAcik = true; hero.classList.add('video-var'); if(hero.getBoundingClientRect().bottom > 0 && !document.hidden) videoOyna(); }
-      [[vNet, ''], [vBul, '-b']].forEach(function(q){ var v = q[0]; v.muted = true; v.addEventListener('canplay', function ilk(){ v.removeEventListener('canplay', ilk); oldu(); }); v.src = '/video/giris-' + ad + q[1] + '.mp4?v=5'; v.preload = 'auto'; v.load(); });
-      // iki kopya aynı karede kalsın
-      vNet.addEventListener('timeupdate', function(){ if(!vBul.seeking && Math.abs(vNet.currentTime - vBul.currentTime) > 0.12) vBul.currentTime = vNet.currentTime; });
-    }
-    if(document.readyState === 'complete') setTimeout(videoKur, 600); else window.addEventListener('load', function(){ setTimeout(videoKur, 600); });
-    olc();
-    if(panel){ hedef = { x: x, y: y }; }
-    else if(azHareket){ hedef = sinirla(noktalar[0][0]); x = hedef.x; y = hedef.y; ciz(); kilit(true); etiketYaz('HEDEF NET'); }
-    else { var bas = sinirla({ x: W * 0.32, y: H * 0.62 }); x = bas.x; y = bas.y; ciz(); sayac = 2; yeniDurak(); }
-    window.addEventListener('resize', function(){
-      var eski = panel; olc(); if(panel) return;
-      if(eski){ kilit(false); mod = 'gez'; sayac = 0; yeniDurak(); x = W * 0.5; y = H * 0.3; basla(); }
-      if(mod === 'gez' && durak === 'kilit') hedef = sinirla(noktalar[aktif][Math.min(hedefNo, noktalar[aktif].length - 1)]); else hedef = sinirla(hedef);
-      var p = sinirla({ x: x, y: y }); x = p.x; y = p.y; ciz();
-    });
-    if('IntersectionObserver' in window) new IntersectionObserver(function(es){ es[0].isIntersecting && !document.hidden ? basla() : dur(); }).observe(hero);
-    else basla();
-    document.addEventListener('visibilitychange', function(){ if(document.hidden) dur(); else if(hero.getBoundingClientRect().bottom > 0) basla(); });
+    if(document.readyState === 'complete') setTimeout(kur, 400); else window.addEventListener('load', function(){ setTimeout(kur, 400); });
+    if('IntersectionObserver' in window) new IntersectionObserver(function(es){ gorunur = es[0].isIntersecting; oyna(); }).observe(hero);
+    document.addEventListener('visibilitychange', oyna);
   })();
 
   // Ziyaret sayacı — yönetici panelinde aylık toplam olarak görünür, siteye hiçbir şey yazdırmaz.
@@ -1824,14 +1626,6 @@
     var io = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ io.disconnect(); yukle(); } }, { rootMargin: '900px 0px' });
     io.observe(yer);
   })();
-
-  // Salon sahnesinin net görseli ilk açılışta indirilmesin: sayfa yüklendikten sonra yerleşir (sahne ~10 sn sonra açılır).
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      document.querySelectorAll('.vz-hero [data-srcset]').forEach(function(el){ el.srcset = el.dataset.srcset; el.removeAttribute('data-srcset'); });
-      document.querySelectorAll('.vz-hero img[data-src]').forEach(function(el){ el.src = el.dataset.src; el.removeAttribute('data-src'); });
-    }, 1200);
-  });
 
   // Fotoğraf vizörü — masaüstünde üstüne gelince (CSS :hover), her cihazda ekranın orta bandına girince netleşir.
   (function(){
