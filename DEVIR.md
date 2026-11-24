@@ -6236,3 +6236,8 @@ Kullanıcı gerçekçi hale de "yok olmamış" dedi. Site girişi §174'e dönd�
 ## 179. 🎬 Site girişi "Sinema" (2026-11-24) — §165, §174 vizörünün yerini aldı
 Kullanıcı dört oynayan seçenekten **4**'ü seçti. Kutu / gezen vizör / bulanık kopya KALKTI. `.vz-sin`: bilgisayarda sağ %66, soldan maskeyle karanlığa karışır; ≤860 px tam ekran, altta karartma. Kapak `hero/sinema-{genis,dik}.webp` hemen, video `/video/sinema-{genis,dik}.mp4?v=1` (1560×1280 / 900×1200) yüklendikten sonra. Slogan: "Gerçek ok. Gerçek hedef. Kendi oyunumuz." (og:description de).
 - Üretici `_reklam/arsiv/kurgu/site-sinema.mjs`; yürüyüşün 4K aslı `_reklam/Yeni klasör/hedefe-yurume.JPG` (uzantısı JPG, içi HEVC video; hedef-onu-sayim, hedefte-puan-sayma, can-yusuf-arkadan-atis da öyle). Video değişince `?v` artır. Test 161.
+
+## 180. 🖨️ Yoklama çıktısı ders gruplarına göre (v465, 2026-11-24)
+Kullanıcı: "PDF yoklama çıktısında grup şeklinde yapmamışsın". Çıktı yalnız yaş grubuna (Büyükler…) ayrılıyordu. Artık varsayılan **Ders grupları** (ders programı: gün + saat + ders adı), ikinci seçenek Yaş grupları.
+- `_yokDersGruplari` (aynı saat + aynı kadro = tek grup; kayıtlısı olmayan ders çıkmaz), `_yokAyDersVeri`: tik yalnız o dersin günlerinde, hiçbir dersi olmayan güne geldiyse telafi olarak görünür; kayıtsızlar sonda "Derse kayıtlı değil · yaş grubu". Ders olmayan günler gri, iptal ders günü sayılmaz.
+- Her grup renkli başlıklı ayrı tablo, sığmayan grup yeni sayfadan; program her açılışta taze, gelmezse yaş gruplarına düşer. Turuncu kuralı aynı (§170). Günlük / haftalık / detaylı PDF'ler hâlâ yaş grubuna göre. Test 142.

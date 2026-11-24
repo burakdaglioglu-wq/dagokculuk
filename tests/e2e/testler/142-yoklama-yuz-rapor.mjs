@@ -92,8 +92,25 @@ export default async function ({ log }) {
     dogrula(!/ödeme|aidat/i.test(pen.yazi), 'pencerede ödeme yazmamalı'); esit(pen.grup, '__hepsi', 'bütün gruplar'); dogrula(!pen.ileri, 'ileri günler boş olmalı'); dogrula(/sayfa/.test(pen.yazi), 'sayfa sayısı');
     dogrula(await p.evaluate(() => { const b = document.getElementById('yck-in').getBoundingClientRect(), e = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return e && e.id === 'yck-in' && b.bottom <= innerHeight; }), 'indir düğmesi örtülü');
     await p.setViewportSize({ width: 390, height: 663 }); await p.waitForTimeout(200); await p.screenshot({ path: CIKTI + 'yoklama-cikti-pencere.png' }); await p.setViewportSize({ width: 390, height: 844 });
+    // v465: varsayılan ders grupları — tik yalnız o dersin gününde, telafi görünür, derse kayıtlı olmayan kaybolmaz, aynı kadro tek grup
+    esit(await p.evaluate(() => _yokAyMod), 'ders', 'varsayılan ders grupları');
+    const dg = await p.evaluate(({ s, PZT, CAR }) => {
+      const k = (ad) => ({ grup: 'buyukler', ad }), sl = [
+        { id: 1, grup: 'Zirve Ekibi', gunler: [1], baslangicSaat: '17:30', bitisSaat: '18:45', katilimcilar: [k(s.b[0]), k(s.b[1])] },
+        { id: 2, grup: 'Zirve Ekibi', gunler: [3], baslangicSaat: '17:30', bitisSaat: '18:45', katilimcilar: [k(s.b[0])], istisnalar: [{ tarih: '2025-01-15' }] },
+        { id: 3, grup: 'Temel', gunler: [2], baslangicSaat: '16:00', bitisSaat: '17:00', katilimcilar: [k(s.b[2])] }, { id: 4, grup: 'Temel', gunler: [5], baslangicSaat: '16:00', bitisSaat: '17:00', katilimcilar: [k(s.b[2])] },
+        { id: 5, grup: 'Boş', gunler: [6], baslangicSaat: '10:00', bitisSaat: '11:00', katilimcilar: [] }];
+      const ham = _yokAyVeri('2025-01', {}), v = _yokAyDersVeri(ham, sl), g = (id) => v.gruplar.find((x) => x.g === id), gel = (id, ad) => Object.keys(g(id).satir.find((r) => r.ad === ad).gel).join();
+      const kisi = new Set(); v.gruplar.forEach((x) => x.satir.forEach((r) => kisi.add(x.ad.startsWith('Derse') ? x.ad + r.ad : 'd' + r.ad)));
+      return { adlar: v.gruplar.filter((x) => x.g !== '__yok').map((x) => x.ad), pzt: gel('d1', s.b[0]), car: gel('d2', s.b[0]), iptal: !!g('d2').gun['2025-01-15'], gun: Object.keys(g('d2').gun).length, toplam: ham.gruplar.reduce((a, x) => a + x.satir.length, 0), kisi: kisi.size, tek: _yokAyDersVeri(ham, sl, 'd2').gruplar.length };
+    }, { s, PZT, CAR });
+    esit(dg.adlar.join(' / '), 'Pazartesi 17:30–18:45 · Zirve Ekibi / Salı + Cuma 16:00–17:00 · Temel / Çarşamba 17:30–18:45 · Zirve Ekibi', 'ders grupları sırası');
+    esit(dg.pzt, PZT, 'pazartesi grubunda yalnız pazartesi'); esit(dg.car, CAR, 'çarşamba grubunda yalnız çarşamba'); dogrula(!dg.iptal && dg.gun === 4, 'iptal ders günü sayılmaz: ' + dg.gun); esit(dg.kisi, dg.toplam, 'kimse kaybolmaz'); esit(dg.tek, 1, 'tek ders seçimi');
+    if (await p.locator('.yck-mod').count()) { dogrula(/grup, yatay A4/.test(await p.locator('#yck-not').textContent()), 'grup sayısı'); await p.locator('.yck-mod button', { hasText: 'Yaş grupları' }).click(); }
     await p.locator('.yck-grup button', { hasText: 'Küçükler' }).click(); await p.waitForFunction(() => !document.getElementById('yck-yaz').disabled, null, { timeout: 60000 }); esit(await p.evaluate(() => _yokAyGrup), 'kucukler', 'grup seçimi');
     await p.evaluate(() => { _yokAyGrup = '__hepsi'; _yokAyYM = '2025-01'; _yokCiktiYenile(); }); await p.waitForFunction(() => !document.getElementById('yck-in').disabled, null, { timeout: 60000 });
+    await p.evaluate((s) => { const k = (i) => ({ grup: 'buyukler', ad: _yokAktifUyeler('buyukler')[i] }); _yokCk.slot = [1, 2, 3, 4].map((n) => ({ id: n, grup: n % 2 ? 'Zirve Ekibi' : 'Temel Kadro', gunler: n === 1 ? [1, 3] : [n], baslangicSaat: '17:30', bitisSaat: '18:45', katilimcilar: Array.from({ length: n === 4 ? 34 : 9 }, (_, i) => k(i + n - 1)) })); _yokAyMod = 'ders'; _yokCiktiYenile(); }, s); await p.waitForFunction(() => !document.getElementById('yck-in').disabled, null, { timeout: 60000 });
+    await p.setViewportSize({ width: 390, height: 663 }); await p.waitForTimeout(200); await p.screenshot({ path: CIKTI + 'yoklama-cikti-ders.png' }); dogrula(await p.evaluate(() => document.getElementById('yck-in').getBoundingClientRect().bottom <= innerHeight), 'ders modunda indir düğmesi ekrana sığmıyor'); await p.setViewportSize({ width: 390, height: 844 });
     const [dl3] = await Promise.all([p.waitForEvent('download', { timeout: 60000 }), p.locator('#yck-in').click()]);
     esit(dl3.suggestedFilename(), 'Yoklama_Listesi_2025-01.pdf', 'aylık PDF adı'); await dl3.saveAs(CIKTI + 'Yoklama_Listesi.pdf');
     dogrula(await yataydaTasmaYok(p), 'çıktı penceresi 390 px taşıyor');
