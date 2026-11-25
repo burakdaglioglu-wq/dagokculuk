@@ -320,8 +320,8 @@
         if (!_kal || typeof _kal !== 'object') _kal = { parca: 0, sezon: 1, son: [], ipucu: {}, rozet: {} };
         _kal.ipucu = _kal.ipucu || {}; _kal.rozet = _kal.rozet || {}; _kal.album = _kal.album || []; return _kal;
     }
-    function kalKaydet() { try { _kalHam = JSON.stringify(_kal); localStorage.setItem(kalAnahtar(), _kalHam); } catch (e) { } }
-    function kaydet() { try { _stHam = JSON.stringify(_st); localStorage.setItem(anahtar(), _stHam); } catch (e) { } }
+    function kalKaydet() { try { _kalHam = JSON.stringify(_kal); localStorage.setItem(kalAnahtar(), _kalHam); } catch (e) { try { _kalHam = localStorage.getItem(kalAnahtar()); } catch (e2) { } } }
+    function kaydet() { try { _stHam = JSON.stringify(_st); localStorage.setItem(anahtar(), _stHam); } catch (e) { try { _stHam = localStorage.getItem(anahtar()); } catch (e2) { } } } // hafıza doluysa bellekteki durumla sürer, eski kayda dönmez
 
     /* ---------------- ÇİZİM YARDIMCILARI ---------------- */
     function yaz(x, t, px, py, size, renk, o) { o = o || {}; x.save(); x.font = size + 'px ' + (o.font || DF); x.textAlign = o.al || 'center'; x.textBaseline = 'middle'; if (o.a != null) x.globalAlpha *= o.a; if (o.kontur !== false) { x.lineJoin = 'round'; x.lineWidth = o.kalin || Math.max(4, size / 7); x.strokeStyle = o.kontur || 'rgba(0,0,0,.75)'; x.strokeText(t, px, py); } x.fillStyle = renk; x.fillText(t, px, py); x.restore(); }

@@ -80,6 +80,8 @@ export async function karisikSinifArac(p, aracId, fnAd) {
     const sec = (await api('/api/athletes')).d.athletes.filter((a) => !a.pasif && !silinen.has(a.grup + '|' + a.ad)).slice(0, 8).map((a) => ({ g: a.grup, ad: a.ad }));
     await api('/api/meta/karisik_sinif_liste_varsayilan', { method: 'PUT', body: JSON.stringify({ value: JSON.stringify(sec) }) });
   }
+  // Yerel veri çok büyükse tarayıcı kotası (5 MB) dolar ve oyun testleri kota hatasına düşer: ana kopya yalnız bellekte tutulur (sunucu verisine dokunmaz)
+  await p.evaluate(() => { let t = 0; for (let i = 0; i < localStorage.length; i++) t += localStorage.getItem(localStorage.key(i)).length; if (t < 4e6) return; const o = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'okculuk_premium_data') return; return o.call(this, k, v); }; localStorage.removeItem('okculuk_premium_data'); });
   await p.locator("button[onclick=\"platformSec('egitmen')\"]").click(); await p.waitForTimeout(600);
   await p.locator('#km-giris-btn').click();
   await p.locator('button:has-text("Derse Devam Et")').first().waitFor({ timeout: 40000 }).catch(() => {});

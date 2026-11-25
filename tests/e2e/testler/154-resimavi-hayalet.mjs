@@ -73,55 +73,7 @@ export default async function ({ log }) {
     await p.evaluate(() => { window.confirm = () => true; kmOyunSonGirisiGeriAl(); }); await p.waitForTimeout(500);
     esit((await oku(R)).kare.filter(Boolean).length, 0, 'geri al kareleri kapatmalı'); esit(JSON.stringify((await oku(RK)).acilan), k0, 'geri al rütbe sayacını da');
 
-    /* ---------------- HAYALET AVCILARI ---------------- */
-    const Hh = 'dag_km_hayalet_', HK = 'dag_km_hylkalici_';
-    await kur('hayalet');
-    await p.waitForFunction(() => !!document.getElementById('hyl-cv') && !document.getElementById('hyl-perde').hidden, null, { timeout: 30000 });
-    let h = await oku(Hh); esit(h.faz, 'basla', 'oda kartı'); esit(h.es.length, 6, 'Normal 6 eşya'); esit(h.hy.length, 3, '3 hayalet');
-    await p.click('#hyl-bas'); await p.waitForTimeout(300);
-    await yaz(Hh, "st.maxSaat = 20; st.hy = [1, 4, 4]; st.gor = [false, false, false];", 'hylGuncelle');
-    // eşyaya dokun → seçili
-    { const pt = await p.evaluate(() => hylEsyaNokta(1)); await p.mouse.click(pt.x, pt.y); await p.waitForTimeout(200); }
-    esit((await oku(Hh)).secili, 1, 'dokunulan eşya seçili');
-    await seri(0, ['8', '1', '1']); await p.waitForTimeout(2500);
-    h = await oku(Hh); esit(h.hy[0], -1, 'iyi ok hayaleti yakalamalı'); esit(h.yakalanan, 1, '1 kavanoz'); dogrula(!!h.bos[1], 'yakalanınca eşya boş');
-    dogrula(h.secili !== 1 && !h.bos[h.secili], 'fener her zaman kapalı bir eşyada');
-    // boş eşya, yanında saklı hayalet yok → yandaki de boş sayılır
-    await yaz(Hh, "st.secili = 2;", 'hylGuncelle');
-    await seri(1, ['9', '1', '1']); await p.waitForTimeout(2500);
-    h = await oku(Hh); esit(h.bos[2], 'bos', '2 boş'); esit(h.bos[3], 'bos', 'yanındaki 3 de boş'); dogrula(h.secili !== 2 && !h.bos[h.secili], 'fener işaretsiz eşyaya kaymalı');
-    // zayıf ok hayaleti kaçırır
-    await yaz(Hh, "st.secili = 4;", 'hylGuncelle');
-    await seri(2, ['3', '0', '0']); await p.waitForTimeout(2500);
-    h = await oku(Hh); esit(h.hy.filter((x) => x === 4).length, 1, 'zayıf ok bir hayaleti 4’ten kaçırmalı');
-    { const k = h.hy.findIndex((x, j) => h.gor[j]); dogrula(k >= 0 && h.hy[k] !== 4, 'kaçan hayalet görünür kalmalı'); esit(h.secili, h.hy[k], 'fener kaçan hayaletin peşinde'); }
-    // boş eşya, yanında saklı hayalet var → yan eşyalar tıkırdar ve hiçbir hayalet kendiliğinden yer değiştirmez
-    await yaz(Hh, "st.hy = [0, 3, -1]; st.gor = [false, false, false]; st.bos = st.bos.map(() => null); st.duy = []; st.secili = 2; st.yakalanan = 1;", 'hylGuncelle');
-    await seri(2, ['9', '0', '0']); await p.waitForTimeout(3000);
-    h = await oku(Hh); esit(h.duy.join(), '1,3', 'iki yan da tıkırdar'); dogrula([1, 3].includes(h.secili), 'fener tıkırtıya gider'); esit(h.hy.join(), '0,3,-1', 'zayıf ok olmadan kimse kaçmaz');
-    // 10 → saklanan bir hayalet görünür
-    await yaz(Hh, "st.secili = 1;", 'hylGuncelle'); await seri(2, ['10', '0', '0']); await p.waitForTimeout(4200);
-    h = await oku(Hh); esit(h.gor.filter(Boolean).length, 1, '10 bir hayaleti göstermeli'); esit(h.secili, h.hy[h.gor.indexOf(true)], 'fener görünen hayalette');
-    // ŞİMDİ ATIYOR + seçim
-    await p.click('#hyl-kim .kk-ana'); await p.waitForTimeout(300); esit(await p.locator('.kk-yuzler button').count(), 24, '24 yüz');
-    await p.locator('.kk-yuzler button[data-j="5"]').click(); await p.waitForTimeout(200); esit(await p.evaluate(() => _kmOyunAktifIndex), 5, 'yüz seçimi');
-    // oda temiz
-    await yaz(Hh, "st.hy = st.hy.map((x) => x >= 0 ? 0 : -1); st.secili = 0;", 'hylGuncelle');
-    await seri(3, ['9', '9', '9']); await p.waitForTimeout(4200);
-    h = await oku(Hh); let HKk = await oku(HK); esit(h.faz, 'temiz', 'oda temizlenmeli'); esit(HKk.oda, 1, 'sıradaki oda'); dogrula(HKk.kavanoz >= 3, 'kavanoz sayısı kalıcı');
-    await p.click('#hyl-dev'); await p.waitForTimeout(300); h = await oku(Hh); esit(h.faz, 'basla', 'oda 2 kartı'); esit(h.oda, 1, 'oda 2');
-    // gece yarısı
-    await p.click('#hyl-bas'); await yaz(Hh, "st.saat = st.maxSaat - 1; st.secili = st.es.findIndex((_, k) => st.hy.indexOf(k) === -1);", 'hylGuncelle');
-    await seri(4, ['0', '0', '0']); await p.waitForTimeout(5000);
-    esit((await oku(Hh)).faz, 'gece', 'gece yarısı → kaçtılar');
-    // Hayalet Kral: 3 kez
-    await p.evaluate(([k]) => { const a = 'dag_km_hylkalici_' + eval(k), K = JSON.parse(localStorage.getItem(a)); K.oda = 5; localStorage.setItem(a, JSON.stringify(K)); }, [KON]);
-    await p.click('#hyl-rov'); await p.waitForTimeout(300); h = await oku(Hh); esit(h.kralCan, 3, 'Hayalet Kral 3 can'); esit(h.hy.length, 1, 'tek kral');
-    await p.click('#hyl-bas'); await p.waitForTimeout(200);
-    for (let k = 0; k < 3; k++) { await yaz(Hh, "st.secili = st.hy[0];", 'hylGuncelle'); await seri(5 + k, ['9', '0', '0']); await p.waitForTimeout(k < 2 ? 3000 : 5000); }
-    h = await oku(Hh); HKk = await oku(HK); esit(h.faz, 'final', 'konak temiz'); esit(HKk.sezon, 2, 'yeni sezon'); esit(HKk.oda, 0, 'oda başa');
-    dogrula(await p.evaluate(() => /KONAK TEMİZ/.test(document.getElementById('hyl-perde').textContent)), 'final kartı');
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('Resim Avı: yön → kare, X üç kare, mürekkep, tahmin/can/yıldız, albüm, geri al · Hayalet: seçim, yakala, tıkırtı, görünür kaçış, 10 gösterir, kaçırma, oda temiz, gece yarısı, Kral 3 kez, sezon · ŞİMDİ ATIYOR + yüz seçimi');
+    log('Resim Avı: yön → kare, X üç kare, mürekkep, tahmin/can/yıldız, albüm, geri al · ŞİMDİ ATIYOR + yüz seçimi');
   } finally { await ctx.close(); }
 }

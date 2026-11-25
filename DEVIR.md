@@ -6259,3 +6259,13 @@ v466 yayınlanmamıştı; kullanıcı sınıfta eski sürümü oynadı: "yine ay
 - **Seviye kalıcı** (`K.zor`): eskiden her gün Normal'e dönüyordu. Seviye seçimi her zarf ekranında.
 - **Kadro** 13 → 40 cins: 18 hayvan, 6 robot/uzaylı, 8 canavar ('tur' = canavar), 6 kostümlü insan (olay yerine göre `SAHNE.ozel`), 8 saç. `K.sonCins` (18) son görülenleri sona atar, `K.sonKadro` aynı kadro türünü arka arkaya vermez.
 - Denge (benzetim, küçükler puanı): Normal ~5,5 seri, Zor ~7,3, Karmaşık ~8, Efsane ortak/yalancı çözüm ~%45. Testler 151, 153, 164 (`ddkKilitsizTest`), 165 (yeni). Sınıfta DENENMEDİ.
+
+## 183. 👻 Hayalet Avcıları 2.0 (v467, 2026-11-26)
+Kullanıcı: "diğer oyunu da geliştir hayaleti". Ölçüm: eski sürüm gerçek puanlarla %98–100 kazanılıyor, oda 2–3 seride bitiyordu; bütün hayaletler aynı, oda sırası sabit, seviye her gün Normal'e dönüyordu. v459 kuralı korunur: tek ışıklı hedef + tek cümle, gizli değişiklik YOK.
+- `dagsk-km-hayalet-kadro.js?v=1` (HYLK: yalnız çizim): 32 hayalet + 4 patron (sezona göre), 12 yeni eşya, oda süsü, 3 yakalama efekti. `dagsk-km-hayalet.js?v=3`.
+- **Kapı** (`faz:'kapi'`, `st.kapilar`): 12 odadan 3'ü, portrelerle; sınıf seçer, seri girilirse rastgele. `K.gez` oynanan odalar, `K.sonKim` son görülenler, `K.album` kalıcı albüm (36; olmayanlar öncelikli).
+- **Durum**: `st.kim/can/canTop` `st.hy` ile aynı sırada; `st.kav` kavanozdakiler. zirh = kalp (vurulunca kaçmaz), hirsiz = zayıf okta kaçar + kavanozdakini salar (`salinan`, görünür). Olaylar: isik (ilk iyi ok yakar), dans (`es[].n` kimlik; hayalet eşyasıyla gider).
+- **Seviye** `DZ` 5 (kolay…efsane), `K.zor` kalıcı, 2 temiz odada üst seviye teklifi. 10/X: Kolay/Normal gösterir (2/1 kez), Zor+ iki kalp. Benzetim küçükler: Zor ~%90 / 5,6 seri, Kâbus ~%58, Efsane ~%36.
+- ŞİMDİ ATIYOR bu oyunda ince şerit (yalnız CSS, `.hyl-kim`). Tuzak: `.hyl-kap #hyl-cv` (canvas geneli portreleri bozar).
+- **Skor güvenliği**: `_skorKaydetCekirdek` yerel yazması try/catch içinde. Tarayıcı kotası (5 MB) dolunca hata `seriBulutaYaz`'dan ÖNCE atılıyor, seri buluta hiç gitmiyordu. Yerelde `okculuk_premium_data` 3,8 MB, 3,2'si `kartGecmisi`: kalıcı küçültme AÇIK İŞ. Oyun `kaydet()` kotada bellekten sürer (hayalet, dedektif).
+- Testler: 166 (yeni, v459 kuralları da burada), 154 artık yalnız Resim Avı; `karisikSinifArac` yerel veri > 4 MB ise ana kopyayı bellekte tutar. Sınıfta DENENMEDİ.

@@ -17709,7 +17709,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // 🖼️ Resim Avı + 👻 Hayalet Avcıları (v447, 2026-11-23) — kullanıcı 6 fikirden seçti. Bkz. dagsk-km-resimavi.js / dagsk-km-hayalet.js (+ dagsk-km-oyunkit.js).
             resimavi: { ad: 'Resim Avı', ikon: '🖼️', renkler: ['#ffc94a', '#ff8a6a', '#7dd3fc', '#a8e6a1', '#c9a6ff', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — karelerle kapalı gizli bir resim: iyi atılan her ok bir kare açar, okun hedefte gittiği yön resmin o köşesi! Sınıf ne olduğunu tahmin eder, koç şıkka dokunur. Az kareyle bilene çok yıldız, albümler ders ders dolar. Kolay / Normal / Zor.', btn: '🖼️ Kare', finish: '', cp: '', birim: 'kare', bitis: '',
                 surprizler: [] },
-            hayalet: { ad: 'Hayalet Avcıları', ikon: '👻', renkler: ['#b58cff', '#ffc94a', '#7dd3fc', '#a8e6a1', '#ff8aa8', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — konakta hayaletler eşyaların arkasına saklandı. Herkes kendi hedefine atar: güçlü ok fenerin baktığı eşyayı açar ve hayaleti yakalar, zayıf ok hayaleti başka eşyaya kaçırır (nereye kaçtığı görünür). Süre dolmadan hepsi kavanoza! 5 oda + Hayalet Kral. Kolay / Normal / Zor.', btn: '🔦 Fener', finish: '', cp: '', birim: 'fener', bitis: '',
+            hayalet: { ad: 'Hayalet Avcıları', ikon: '👻', renkler: ['#b58cff', '#ffc94a', '#7dd3fc', '#a8e6a1', '#ff8aa8', '#ffb36b'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — konakta hayaletler eşyaların arkasına saklandı. Herkes kendi hedefine atar: güçlü ok fenerin baktığı eşyayı açar ve hayaleti yakalar, zayıf ok hayaleti başka eşyaya kaçırır (nereye kaçtığı görünür). Süre dolmadan hepsi kavanoza! Sınıf kapı seçer, 12 oda, 32 hayalet + 4 patron, albüm. 5 seviye: Kolay / Normal / Zor / Kâbus / Efsane.', btn: '🔦 Fener', finish: '', cp: '', birim: 'fener', bitis: '',
                 surprizler: [] },
             yanardag: { ad: 'Yanardağ Hazinesi', ikon: '🌋', renkler: ['#ff8a3a', '#ffd23f', '#7dd3fc', '#a8e6a1', '#c9a6ff', '#ff6a8a'], aciklama: 'Sporcular gerçekten atış yapar, siz sonucu buradan girersiniz — iyi atılan her ok bir ejder yumurtasını tekneye kurtarır. Lav akıyor, yanardağ ne zaman patlayacak bilinmiyor: her seriden sonra sınıf oylar, DEVAM mı KAÇ mı? Kolay / Normal / Zor.', btn: '🥚 Kurtar', finish: '', cp: '', birim: 'yumurta', bitis: '',
                 surprizler: [] },
@@ -20620,7 +20620,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         // 🏰 Kale Savunması — kabuk teması; durum + çizim public/dagsk-km-kale.js'te (ilk açılışta tembel yüklenir).
         // 🇹🇷 Fener Alayı — kabuk teması; durum + çizim public/dagsk-km-fener.js'te (ilk açılışta tembel yüklenir).
         // 🪢 Dev Halat Çekme / 🗺️ 81 İl — kabuk temaları; durum + çizim kendi dosyalarında (ilk açılışta tembel yüklenir).
-        function kmOyunDedektifHazir() { return dagskEkYukle('dagsk-km-dedektif-kadro.js?v=1').then(function() { return dagskEkYukle('dagsk-km-dedektif.js?v=3'); }); }
+        function kmOyunDedektifHazir() { return dagskEkYukle('dagsk-km-dedektif-kadro.js?v=1').then(function() { return dagskEkYukle('dagsk-km-dedektif.js?v=4'); }); }
         function kmOyunSahneKurDedektif() { kmOyunDedektifHazir().then(function() { if(_kmOyunAktifTema === 'dedektif' && document.getElementById('km-oyun-panel-dedektif')) ddkSahneKur(); }).catch(function() { showToast('Dedektif Okçular yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncDedektif() { if(typeof ddkGuncelle === 'function' && document.getElementById('ddk-cv')) ddkGuncelle(); else kmOyunSahneKurDedektif(); }
         function kmOyunAnimateDedektif(s, i, kaydedilecek, done) { kmOyunDedektifHazir().then(function() { ddkSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -20633,7 +20633,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunSahneKurResimavi() { kmOyunResimaviHazir().then(function() { if(_kmOyunAktifTema === 'resimavi' && document.getElementById('km-oyun-panel-resimavi')) rsmSahneKur(); }).catch(function() { showToast('Resim Avı yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncResimavi() { if(typeof rsmGuncelle === 'function' && document.getElementById('rsm-sahne')) rsmGuncelle(); else kmOyunSahneKurResimavi(); }
         function kmOyunAnimateResimavi(s, i, kaydedilecek, done) { kmOyunResimaviHazir().then(function() { rsmSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
-        function kmOyunHayaletHazir() { return kmOyunKitHazir().then(function() { return dagskEkYukle('dagsk-km-hayalet.js?v=2'); }); }
+        function kmOyunHayaletHazir() { return kmOyunKitHazir().then(function() { return dagskEkYukle('dagsk-km-hayalet-kadro.js?v=1'); }).then(function() { return dagskEkYukle('dagsk-km-hayalet.js?v=3'); }); }
         function kmOyunSahneKurHayalet() { kmOyunHayaletHazir().then(function() { if(_kmOyunAktifTema === 'hayalet' && document.getElementById('km-oyun-panel-hayalet')) hylSahneKur(); }).catch(function() { showToast('Hayalet Avcıları yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
         function kmOyunResyncHayalet() { if(typeof hylGuncelle === 'function' && document.getElementById('hyl-cv')) hylGuncelle(); else kmOyunSahneKurHayalet(); }
         function kmOyunAnimateHayalet(s, i, kaydedilecek, done) { kmOyunHayaletHazir().then(function() { hylSeri(s, i, kaydedilecek, done); }).catch(function() { done(); }); }
@@ -35039,7 +35039,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             try { sporcuPuanlariYenidenHesapla(grupData); } catch(e) {}
             grupData.lastModified = Date.now(); grupData.sonSkorZamani = Date.now();
             bekleyenGonderim = true;
-            localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB));
+            try { localStorage.setItem('okculuk_premium_data', JSON.stringify(turnuvaDB)); } catch(e) { console.warn('Yerel hafıza dolu, seri yine de buluta gidiyor', e && e.name); } // v467: kota dolunca hata seriBulutaYaz'a hiç gelmiyordu, skor kayboluyordu
             seriBulutaYaz(seriDoc);
             // 🥚 Yumurta Yuvası (2026-10-11): her gerçek seri yumurtayı ısıtır — evre değiştiyse kutla (dagsk-km-yuva.js).
             try { if(typeof window.yuvaSeriSonrasi === 'function') setTimeout(function(){ try { window.yuvaSeriSonrasi(grup, sporcu); } catch(e) {} }, 0); } catch(e) {}
