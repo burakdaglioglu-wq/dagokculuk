@@ -6241,3 +6241,21 @@ Kullanıcı dört oynayan seçenekten **4**'ü seçti. Kutu / gezen vizör / bul
 Kullanıcı: "PDF yoklama çıktısında grup şeklinde yapmamışsın". Çıktı yalnız yaş grubuna (Büyükler…) ayrılıyordu. Artık varsayılan **Ders grupları** (ders programı: gün + saat + ders adı), ikinci seçenek Yaş grupları.
 - `_yokDersGruplari` (aynı saat + aynı kadro = tek grup; kayıtlısı olmayan ders çıkmaz), `_yokAyDersVeri`: tik yalnız o dersin günlerinde, hiçbir dersi olmayan güne geldiyse telafi olarak görünür; kayıtsızlar sonda "Derse kayıtlı değil · yaş grubu". Ders olmayan günler gri, iptal ders günü sayılmaz.
 - Her grup renkli başlıklı ayrı tablo, sığmayan grup yeni sayfadan; program her açılışta taze, gelmezse yaş gruplarına düşer. Turuncu kuralı aynı (§170). Günlük / haftalık / detaylı PDF'ler hâlâ yaş grubuna göre. Test 142.
+
+## 181. 🕵️ Dedektif Okçular 3.0 (v466, 2026-11-25)
+Kullanıcı: "iyi gidiyor ama tekrar ediyor; önce zor, sonra karmaşık zor; daha da animasyonlar, farklı karakterler". `dagsk-km-dedektif-kadro.js?v=1` (DDKK: yalnız çizim) + `dagsk-km-dedektif.js?v=3`.
+- **Vaka türleri** `TIP`/`URET`: klasik · foto (ipucu = hırsızın kırpılmış çizimi, şüpheliler aynı cins) · sorgu (masum doğru, hırsız yalan; n 5/6, `c.no`) · ortak (`v.h2`, `c.kim`, `st.yak`) · yalanci (`c.yalan`; 10/X `yalanAcik`). Zarfta `zarfTip`, vaka kartında tek cümle kural, sahnede mor şerit.
+- **Seviyeler** `DZ`: + karmasik (birleşik ipuçları `c.t` = veya/biri/say), + efsane. Yanlış suçlamasız 2 yakalama (`K.ust`) → "Üst seviye" düğmesi.
+- **Kadro**: `SAHNE.kadro` insan/hayvan/robot/karisik ('tur' ipucu yalnız karisik); özellikler + bere, şemsiye, balon (`el`), desen, kırmızı palto. 5 yeni yer (sirk, kar, lunapark `yay`, kamp, lab), 10 yeni vaka (28).
+- **Hamleler** 7 (`st.karanlik` = karanlik|sis|gazete; fare, saat); son 3 hamle tekrar etmez. **Final** `finalTip` kos/kapi/balon (`st.kov.mod`), kos zemini + kizak/gezegen/ip, muz (Karmaşık+). **Yakalama** kafes/ağ/köpek/araba 2,1 sn. Olay filmi 2,6 sn (`_film`, dokun = geç, seri girilirse biter). Kamera yakınlaşması, konuşma balonu, giriş yürüyüşü yalnız görüntü.
+- **Albüm** kalıcı `K.album` (en çok 30), `K.yakSay`. Elenen şüpheli `golgeTuval` ile karartılır. Telefonda HUD altta. Kartlar `.ddk-kap #ddk-cv` (canvas geneli DEĞİL; portreleri bozar).
+- **ŞİMDİ ATIYOR kartı ince şerit** (kullanıcı: "çok büyük, ekranı kaplıyor"): 1366 ekranda 370×112 → 295×47; SONRA yalnız yuvarlak (ad title/aria-label), rütbe yalnız simge, en küçük yazı 5 px taban, ölçek < .5 ise `.dar` (SONRA gizli). Boyut kontrolü 153.
+- Testler 151, 153 (klasik/kos'a sabitlendi), 164 (yeni). Sınıfta DENENMEDİ. Hayalet Avcıları sırada.
+
+## 182. 🔒 Dedektif: gerçek zorluk + tekrar etmeyen kadro (v466 yayın, 2026-11-25)
+v466 yayınlanmamıştı; kullanıcı sınıfta eski sürümü oynadı: "yine aynı, hep aynı karakterler vardı, bir de zorluğu o kadar değildi". Gerçek puanlarda 8+ oranı %60–78, 10 oranı %30–40: 3–5 iyi ok (2 seri) vakayı bitiriyordu, saat hiç hissedilmiyordu.
+- **Kilitli ipuçları**: `DZ.kilit` toplam iyi ok (7/11/16/18/18, sorguda +5), `kilitKur` kartlara böler (`v.kilit`, `st.dolu`); noktalar kartta (`kilitCiz`). Rüzgâr/fare kırılan noktaları da götürür. Vuran herkes katkı alır. Eski kayıtlarda `v.kilit` yoksa 1.
+- **10/X** `DZ.altin`: Kolay/Normal kart açarsa baykuş eler (en çok 2/1 kez), Zor+ çift nokta, eleme yok. **Ceza** 2/2/3/3/4 seri. Zor+ 8 şüpheli, `benzer` (şapka + palto HARİÇ; aynı bere herkesi aynı gösteriyordu). Efsane 9+. Finaller sıkılaştı (Normal 5 kapı / 2 seri; koşuda hırsız 4, Zor+ 5 önde).
+- **Seviye kalıcı** (`K.zor`): eskiden her gün Normal'e dönüyordu. Seviye seçimi her zarf ekranında.
+- **Kadro** 13 → 40 cins: 18 hayvan, 6 robot/uzaylı, 8 canavar ('tur' = canavar), 6 kostümlü insan (olay yerine göre `SAHNE.ozel`), 8 saç. `K.sonCins` (18) son görülenleri sona atar, `K.sonKadro` aynı kadro türünü arka arkaya vermez.
+- Denge (benzetim, küçükler puanı): Normal ~5,5 seri, Zor ~7,3, Karmaşık ~8, Efsane ortak/yalancı çözüm ~%45. Testler 151, 153, 164 (`ddkKilitsizTest`), 165 (yeni). Sınıfta DENENMEDİ.

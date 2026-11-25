@@ -17,6 +17,7 @@ export default async function ({ log }) {
     const n = await p.evaluate(() => {
       ['dag_km_dedektif_', 'dag_km_yanardag_', 'dag_km_ddkkalici_'].forEach((a) => localStorage.removeItem(a + (_kmAktifKonum || 'varsayilan')));
       const hepsi = []; Object.keys(turnuvaDB).forEach((g) => { if (turnuvaDB[g] && typeof turnuvaDB[g] === 'object') Object.keys(turnuvaDB[g]).forEach((ad) => { const sp = turnuvaDB[g][ad]; if (sp && typeof sp === 'object' && !sp.pasif) hepsi.push({ g, ad }); }); });
+      window.ddkKilitsizTest = true; // kilitler 165'te denenir
       _kmListe = hepsi.slice(0, 24); kmOyunRosterYenile();
       _kmOyunRosterCache.forEach((s) => { turnuvaDB[s.g][s.ad].devamModu = true; });
       kmOyunTemaSec('dedektif');
@@ -39,6 +40,7 @@ export default async function ({ log }) {
     const D = 'dag_km_dedektif_';
     let st = await oku(D);
     esit(st.faz, 'zarf', 'v446: önce 3 zarf'); esit(st.zarflar.length, 3, '3 zarf');
+    await p.evaluate((D) => { const a = D + (_kmAktifKonum || 'varsayilan'), q = JSON.parse(localStorage.getItem(a)); q.zarfTip = ['klasik', 'klasik', 'klasik']; localStorage.setItem(a, JSON.stringify(q)); ddkGuncelle(); }, D); // v466: vaka türleri (166) — burada klasik
     await p.click('.ddk-zarflar button'); await p.waitForTimeout(400);
     st = await oku(D); esit(st.faz, 'basla', 'zarf seçilince vaka kartı açılmalı');
     esit(st.n, 6, 'Normal 6 şüpheli');
@@ -77,13 +79,14 @@ export default async function ({ log }) {
     await p.waitForSelector('#ddk-evet', { timeout: 5000 }); await p.click('#ddk-evet'); await p.waitForTimeout(1800);
     st = await oku(D); esit(st.masum[yanlis], 1, 'yanlış suçlanan MASUM olmalı'); esit(st.saat, Math.min(st.maxSaat, saat0 + 2), 'yanlış suçlama 2 seri kaybettirmeli');
     await foto('ddk-2-masum');
-    // doğru suçlama
+    // doğru suçlama (v466: final kovalamaca; kapı/balon 164'te)
+    await p.evaluate((D) => { const a = D + (_kmAktifKonum || 'varsayilan'), q = JSON.parse(localStorage.getItem(a)); q.finalTip = 'kos'; localStorage.setItem(a, JSON.stringify(q)); ddkGuncelle(); }, D);
     await p.click('#ddk-sucla-btn'); await tikla(st.v.h);
     await p.waitForSelector('#ddk-evet', { timeout: 5000 }); await p.click('#ddk-evet'); await p.waitForTimeout(1500);
     await foto('ddk-3-yakalandi');
     await p.waitForTimeout(1500);
     st = await oku(D); esit(st.faz, 'kovala', 'v446: doğru suçlama kovalamacayı başlatmalı');
-    await seri(5, ['9', '9', '9']); await p.waitForTimeout(3000);
+    await seri(5, ['10', '10', '9']); await p.waitForTimeout(3000);
     st = await oku(D); esit(st.faz, 'cozuldu', 'yakalayınca vaka kapanmalı');
     dogrula(await p.evaluate(() => /yakalandı/.test(document.getElementById('ddk-perde').textContent)), 'vaka kapandı kartı görünmedi');
     await foto('ddk-4-cozuldu');
@@ -100,15 +103,15 @@ export default async function ({ log }) {
     esit(st.x.filter(Boolean).length, beklenenX, 'Kolay: uymayanlar kendiliğinden çizilmeli');
     await foto('ddk-5-kolay');
     // Zor: DEĞİLDİ ipuçları üretilmeli
-    await p.click('#ddk-zor-btn'); await p.click('#ddk-perde [data-z="zor"]'); await p.waitForTimeout(400);
-    st = await oku(D); esit(st.maxSaat, 7, 'Zor 7 seri'); esit(st.esik, 8, 'Zor eşik 8'); dogrula(st.v.ipucu.filter((c) => c.not).length >= 2, 'Zor vakada en az 2 "DEĞİLDİ" ipucu');
+    await p.click('#ddk-zor-btn'); await p.click('#ddk-perde [data-z="zor"]'); await p.evaluate(() => ddkVakaTest('zor', 'klasik', 'kupa', { faz: 'basla', olaylar: [] })); await p.waitForTimeout(400);
+    st = await oku(D); esit(st.maxSaat, 9, 'Zor 9 seri'); esit(st.esik, 8, 'Zor eşik 8'); dogrula(st.v.ipucu.filter((c) => c.not).length >= 2, 'Zor vakada en az 2 "DEĞİLDİ" ipucu');
     // ipucu üretici: her zorlukta hırsız tek kişiye iner (100 deneme)
     // (sayfa içi üretici kapalı; durumdan doğrula)
     const tek = (s) => s.v.s.filter((o) => s.v.ipucu.every((c) => c.not ? o[c.k] !== c.v : o[c.k] === c.v)).length;
     esit(tek(st), 1, 'ipuçları hırsızı tek kişiye indirmeli');
     // tren: saat dolunca kaçar
     await p.click('#ddk-bas'); await p.waitForTimeout(300);
-    for (let k = 0; k < 7; k++) await seri(3 + k, ['1', '1', '1']);
+    for (let k = 0; k < 9; k++) await seri(3 + k, ['1', '1', '1']);
     await p.waitForTimeout(3200);
     st = await oku(D); esit(st.faz, 'kacti', 'saat dolunca tren kalkmalı');
     dogrula(await p.evaluate(() => /Tren kalktı/.test(document.getElementById('ddk-perde').textContent)), 'tren kalktı kartı yok');

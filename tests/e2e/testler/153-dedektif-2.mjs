@@ -12,7 +12,7 @@ export default async function ({ log }) {
     await p.evaluate(() => {
       ['dag_km_dedektif_', 'dag_km_ddkkalici_'].forEach((a) => localStorage.removeItem(a + (_kmAktifKonum || 'varsayilan')));
       const hepsi = []; ['minikler', 'kucukler', 'yildizlar', 'buyukler'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { const sp = turnuvaDB[g][ad]; if (sp && !sp.pasif) hepsi.push({ g, ad }); }));
-      _kmListe = hepsi.slice(0, 24); kmOyunRosterYenile(); _kmOyunRosterCache.forEach((s) => { turnuvaDB[s.g][s.ad].devamModu = true; });
+      window.ddkKilitsizTest = true; _kmListe = hepsi.slice(0, 24); kmOyunRosterYenile(); _kmOyunRosterCache.forEach((s) => { turnuvaDB[s.g][s.ad].devamModu = true; });
       kmOyunTemaSec('dedektif');
     });
     await p.waitForFunction(() => !!document.getElementById('ddk-cv') && !document.getElementById('ddk-perde').hidden, null, { timeout: 30000 });
@@ -24,7 +24,9 @@ export default async function ({ log }) {
     // 1 💌 zarflar: 3 farklı vaka, mümkünse 3 farklı olay yeri; seri girilirse ok bir zarf açar
     let st = await oku(); esit(st.faz, 'zarf', 'zarf ekranı'); esit(new Set(st.zarflar).size, 3, '3 farklı vaka');
     const yerler = await p.evaluate((z) => z.map((id) => document.querySelector('.ddk-zarflar [data-v="' + id + '"] .z-yer').textContent), st.zarflar); esit(yerler.length, 3, 'zarflarda yer adı');
+    await yaz("st.zarfTip = ['klasik', 'klasik', 'klasik'];"); // v466: vaka türleri ayrı testte (166)
     await seri(0, ['3', '2', '1']); await p.waitForTimeout(800);
+    await yaz("st.finalTip = 'kos'; st.olaylar = [];");
     st = await oku(); esit(st.faz, 'oyun', 'seri bir zarfı açıp soruşturmayı başlatmalı'); dogrula(st.zarflar.indexOf(st.vid) !== -1, 'açılan vaka zarflardan biri olmalı');
     dogrula(!!st.sahne, 'olay yeri olmalı');
 
@@ -37,6 +39,7 @@ export default async function ({ log }) {
     const ad1 = await p.evaluate(() => kmOyunIlkAd(_kmOyunRosterCache[1].ad));
     esit(await p.evaluate(() => document.querySelector('#ddk-kim .ddk-kim-ad b').textContent), ad1, 'kartta atan çocuğun adı');
     esit(await p.locator('#ddk-kim .ddk-sonra-k').count(), 2, 'sonra gelen 2 kişi');
+    { const b = await p.evaluate(() => { const k = document.querySelector('#ddk-kim').getBoundingClientRect(), c = document.getElementById('ddk-cv').getBoundingClientRect(), d = document.getElementById('km-oyun-dok').getBoundingClientRect(); return { w: k.width / c.width, h: k.height / c.height, ust: d.top - k.bottom }; }); dogrula(b.w < .4 && b.h < .11, 'v466: kart ince şerit olmalı (kullanıcı: çok büyük): ' + JSON.stringify(b)); dogrula(b.ust > 0, 'kart skor paneline girmemeli: ' + b.ust); }
     await p.click('#ddk-kim-btn'); await p.waitForTimeout(300);
     esit(await p.locator('.ddk-yuzler button').count(), 24, 'seçim ekranında 24 yüz');
     dogrula(await p.evaluate(() => document.querySelector('.ddk-yuzler button').classList.contains('atti') === false), 'atmayanlar önce');
@@ -73,11 +76,11 @@ export default async function ({ log }) {
     await yaz("st.saat = 0;"); st = await oku();
     await p.click('#ddk-sucla-btn'); { const xy = await p.evaluate((h) => ddkSupheliNokta(h), st.v.h); await p.mouse.click(xy.x, xy.y); }
     await p.waitForSelector('#ddk-evet'); await p.click('#ddk-evet'); await p.waitForTimeout(3300);
-    st = await oku(); esit(st.faz, 'kovala', 'kovalamaca başlamalı'); esit(st.kov.d, 0, 'dedektif başta'); esit(st.kov.h, 3, 'Normal: hırsız 3 önde');
+    st = await oku(); esit(st.faz, 'kovala', 'kovalamaca başlamalı'); esit(st.kov.d, 0, 'dedektif başta'); esit(st.kov.h, 4, 'Normal: hırsız 4 önde');
     dogrula(await p.evaluate(() => !document.getElementById('ddk-kim').hidden), 'kovalarken de ŞİMDİ ATIYOR kartı');
     await seri(6, ['9', '2', '2']); await p.waitForTimeout(2000);
-    st = await oku(); esit(st.kov.d, 1, 'iyi ok bir atlayış'); esit(st.kov.h, 4, 'seri sonunda hırsız bir kaçar');
-    for (let k = 0; k < 3; k++) { await seri(7 + k, ['1', '1', '1']); await p.waitForTimeout(1300); }
+    st = await oku(); esit(st.kov.d, 1, 'iyi ok bir atlayış'); esit(st.kov.h, 5, 'seri sonunda hırsız bir kaçar');
+    for (let k = 0; k < 1; k++) { await seri(7 + k, ['1', '1', '1']); await p.waitForTimeout(1300); }
     await p.waitForTimeout(2200);
     st = await oku(); K = await kal(); esit(st.faz, 'cozuldu', 'hırsız sona varınca kaçmalı'); esit(st.parcaKazandi, false, 'kaçınca parça yok'); esit(K.parca || 0, 0, 'harita boş');
     dogrula(await p.evaluate(() => /kaçtı/.test(document.getElementById('ddk-perde').textContent)), 'kaçtı kartı');
