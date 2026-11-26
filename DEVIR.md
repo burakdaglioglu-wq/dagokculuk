@@ -6269,3 +6269,27 @@ Kullanıcı: "diğer oyunu da geliştir hayaleti". Ölçüm: eski sürüm gerçe
 - ŞİMDİ ATIYOR bu oyunda ince şerit (yalnız CSS, `.hyl-kim`). Tuzak: `.hyl-kap #hyl-cv` (canvas geneli portreleri bozar).
 - **Skor güvenliği**: `_skorKaydetCekirdek` yerel yazması try/catch içinde. Tarayıcı kotası (5 MB) dolunca hata `seriBulutaYaz`'dan ÖNCE atılıyor, seri buluta hiç gitmiyordu. Yerelde `okculuk_premium_data` 3,8 MB, 3,2'si `kartGecmisi`: kalıcı küçültme AÇIK İŞ. Oyun `kaydet()` kotada bellekten sürer (hayalet, dedektif).
 - Testler: 166 (yeni, v459 kuralları da burada), 154 artık yalnız Resim Avı; `karisikSinifArac` yerel veri > 4 MB ise ana kopyayı bellekte tutar. Sınıfta DENENMEDİ.
+
+## 184. ➕ Yarışma Artı (v468, 2026-11-26)
+
+Kullanıcı telefondan yönetirken: "yarışma alanını nasıl geliştirelim?" → 8 öneri → "hepsini yap". Yeni dosya
+`public/dagsk-yarisma-arti.js` (ya*), `dagsk-km-yarisma-pro.js`'in sonunda `dagskEkYukle` ile yüklenir (masa + TV). Var olan
+fonksiyonları sarar: yzGirisCiz, yzGirisKaydet, yzCiz, yzTurHTML, yzMenu, yzSonucHTML, yzKurulumHTML, yzHedefAta, yzTvCiz.
+- **🎤 Sesle puan**: Web Speech (tr-TR, continuous). `yaSesCoz`: on/dokuz…bir, iks/x → X, ıska/sıfır/boş/0 → M, rakam dizisi açgözlü
+  ("9810" → 9,8,10); komutlar sil/geri, atla/sıradaki, kaydet/tamam, dur. Oklar dolunca 1,5 sn sonra kendiliğinden kaydeder (Bekle ile
+  durur), "Kaydedince sıradakine geç" açıksa sıradaki açılır. Puan + yön modunda bekleyen yön önce kapanır. Desteklemeyen tarayıcıda düğme yok.
+- **👍 Tek elle çubuk** (≤ 820 px, tur ekranı): ↩ Düzelt (bu cihazda son kaydedilen giriş, `_ya.son`) · ▶ Sıradaki (hedef sırasında
+  ilk girilmemiş; seri bitince sonraki seri + süre / turu bitir) · 🎤 · ⏱ (süre yoksa).
+- **🌟 Rekor anı**: yeni seri > aynı mesafe + kağıt + ok sayısındaki arşiv serileri ve bu turun önceki serileri (en az 3 önceki seri yoksa
+  sayılmaz) → ortak kayda `rekorAn` (tek anahtar); masada toast, TV'de 6,5 sn kutlama (foto, sayı, konfeti, kısa fanfar). Sıralama yok.
+- **🪄 Otomatik kur**: resimli kurulumun "Kimler burada?" adımında ve ayrıntılı kurulumda kart. Yaşların ≥ %60'ı 9–12 ve 13 üstü yoksa
+  9–12 kategorisi; Klasik önce, makaralılar YENİ hedeften; aynı yayda seviye (son 5 tur ok ort.) yakın olanlar aynı hedefte; hedef başı
+  ≤5 → 2, ≤15 → 3, sonra 4. Önizleme → Böyle başlat / Uygula. Plan `t.yaHedef` + `t.yaHb`; koç kişi ekler ya da hedef başını değiştirirse
+  eski sıralı atamaya döner.
+- **🧭 Koç özeti** (⋯ Diğer menüsünün başı + sonuç ekranı): ok ort. son 3 tura göre ±0,3 ilerleyen/gerileyen, 2. yarı ≥ 0,7 düşen,
+  yön (≥ 6 konumlu ok, ortalama kayma ≥ 0,14 yarıçap, 8 yön), aynı seviye, ilk turu. İsim → yzAnalizAc.
+- **🗺️ Yolculuk** (aynı yerler): arşivdeki her tur bir taş (ok ort.), bugünkü tur dahil; veli mesajı yalnız kendi gelişimi (sıralama ve
+  para yok), WhatsApp `api.whatsapp.com/send` + `acilTelefon`. Liste ekranında herkese tek dokunuş 📲.
+- Araç ızgarası bilerek ≤ 7 düğme (test 105); yeni araçlar ızgaraya EKLENMEZ. Pencereler z-index 32100 (KM ekranının üstü).
+- Test 167. Gerçek telefonda ses tanıma, salonda TV kutlaması DENENMEDİ. "Yönler görünmüyor" (§101) için uzak D1 okuması yine
+  otomatik izin sınıflandırıcısınca reddedildi, kullanıcıya soruldu. Masa ekranı için A/B taslağı: https://claude.ai/artifact/P5F8zAHY5CEnWYeLJAa6j4

@@ -5853,3 +5853,10 @@ function yzAmCss() {
     ].join('\n');
     document.head.appendChild(st);
 }
+// ➕ v468 Yarışma Artı (dagsk-yarisma-arti.js, ya*): sesle puan, telefonda tek elle çubuk, rekor anı, otomatik kurulum, koç özeti, yolculuk.
+(function () {
+    if (typeof dagskEkYukle !== 'function') return;
+    dagskEkYukle('dagsk-yarisma-arti.js?v=1').then(function () {
+        try { if (_yz.mod === 'siralama' && document.getElementById('km-icerik') && (typeof _kmAktifSekme === 'undefined' || _kmAktifSekme === 'yarisma')) yzCiz(); } catch (e) {}
+    }).catch(function () {});
+})();
