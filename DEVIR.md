@@ -6312,3 +6312,13 @@ Kullanıcı TV taslaklarından **B · İki perde**yi seçti (https://claude.ai/a
 - **Merak anı:** seri tamamlanınca (≥ 3 sporcu, ≥ 1 önceki seri) bu turdaki kendi ortalamasına göre en çok gelişen; ad 2,4 sn bulanık, 9 sn sonra kapanır. Her seri bir kez.
 - Perde değişince yalnız bir kez belirme animasyonu (`.gir`); yeni puanda ekran titremez.
 - Tema penceresi, resimli kurulum 4. adım, Tablo'daki düğmeler: 🎬 İki perde. Test 169.
+
+## 187. ❤️ Gerilim katmanı: sınıfın 3 kalbi + tahmin + görev + sürpriz kart + yol ayrımı (v471, 2026-11-27)
+Kullanıcı: "çocuklar neden sıkılmaya başladı" → seçtiği sebepler 2 kaybetme korkusu yok · 3 sıradakiler boş · 4 kalıp aynı; "sen yap üzerinden gideriz".
+- `public/dagsk-km-gerilim.js` (gr*), Ortak Canavar · Blok · Zombi · Dedektif · Hayalet (`KM_GR_TEMALAR`). Oyunların kendi durumuna dokunmaz.
+- Kişiye göre hedef = `kmCanavarSporcuOrtalama` × ok sayısı; altı = kötü seri → öfke +100·K/çocuk (K: Kolay 5, Normal 7, Zor 9, Kâbus 11). 100 → saldırı, 1 kalp.
+- Tur = bugünkü çocuk sayısı kadar seri; kazanan/kaybeden yalnız tur sonunda. Kalp 0 → son şans (iki sarı = 1 kalp). Tur sonu oy: kolay yol (seviye −1, 1 ⭐) / zor yol (+1, 3 ⭐).
+- Tahmin (2 seride bir, "Çoğunluk bildi" = öfke −½ adım) · görev (saldırıdan önce bir kez, "Yaptılar" = −1 adım) · sürpriz kart her 3 seride (cift/sifa/altin/sari/koro).
+- Denge simülasyonu: tur kazanma Kolay ≈%100, Normal ≈%90, Zor ≈%70, Kâbus ≈%50, 8–30 kişide benzer.
+- Durum `dag_km_gr_<konum>` (SIFIR_ONEK), ⭐ `dag_km_grk_<konum>`, cihaz ayarı `dag_km_gr_ayar` (seviye/kapalı per oyun). Perdeler `position:fixed` sayfa kökünde (sahne kaydırılmışken de görünür).
+- Kancalar: kmOyunKabukGuncelle → kmOyunGerilimTazele; bitirOrtak sonu → grSeriSonu; geri al anlığı `gerilim`. Test 170.
