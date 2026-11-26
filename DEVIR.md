@@ -6301,3 +6301,14 @@ Kullanıcı telefondan yönetiyor; A/B taslağından (https://claude.ai/artifact
 - Ekran: üstte yapışkan seri + girildi çubuğu + süre (`#yz-sayac`, dokun → başlat / süre menüsü) + ⋯ (`yzMenu`). Hedef hedef satırlar `.ya-hs` (`tamam` yeşil · `sira` turuncu "SIRADA" · `bek` soluk "GİR"), dokun → `yzGirisAc`. Altta TV / Sporcular / Seri ekle / önceki seri / Mola; son seri tamamsa "Bitir → eleme" ve "1 seri daha". İlerleme alttaki `#ya-bar` çubuğunda.
 - "Ayrıntılı ekran" → `localStorage.dag_yz_masa = 'eski'` (eski panel; üstte "📱 Sade telefon ekranına dön"). Döndürmede 600 px sınırı geçilirse yeniden çizilir.
 - Test 168. TV için iki yeni taslak: https://claude.ai/artifact/EpqhVs8DJtGajpEKCB5g28 (A Hatlar cilalı · B İki perde) — kullanıcının seçimi bekleniyor.
+
+## 186. 🎬 TV "İki perde" (v470, 2026-11-26)
+
+Kullanıcı TV taslaklarından **B · İki perde**yi seçti (https://claude.ai/artifact/EpqhVs8DJtGajpEKCB5g28).
+- `public/dagsk-tv-perde.js` (yzp*, `YZ_PERDE_DOSYA`, tembel yüklenir). Yalnız Sıralama Turu sürerken; eleme ve sonuçlar Tablo'da.
+- **Yeni varsayılan:** `yzTvGorunum` bir kez (`dag_yz_tv_v470`) `perde`ye geçirir; Tablo seçmiş olan Tablo'da kalır. e2e yardımcısı `v470`'i de yazar (eski TV testleri kendi görünümünde kalsın).
+- **Atış perdesi:** sayaç fazı hazirlik / atis / son iken. Dev halka (`.yzp-halka-ilerle`, 250 ms `yzpTik` ile azalır) + `#yz-tv-sayac` + hedef hedef hattakiler (girmiş olan soluk). Uygulamada A/B/C sıra sıra atış yok; herkes aynı sürede atar, perde bunu gösterir.
+- **Puan perdesi:** herkes bir kart (bu serinin puanı, ✓ girdi / bekliyor, toplam), girilen kart dönerek açılır; sağda son girenin hedefi (`yzPKey` konumları, numaralı) + `yaEnIyiSeri` ile "kendi rekoruna N kaldı / yeni kendi rekoru". Sıra numarası yok.
+- **Merak anı:** seri tamamlanınca (≥ 3 sporcu, ≥ 1 önceki seri) bu turdaki kendi ortalamasına göre en çok gelişen; ad 2,4 sn bulanık, 9 sn sonra kapanır. Her seri bir kez.
+- Perde değişince yalnız bir kez belirme animasyonu (`.gir`); yeni puanda ekran titremez.
+- Tema penceresi, resimli kurulum 4. adım, Tablo'daki düğmeler: 🎬 İki perde. Test 169.
