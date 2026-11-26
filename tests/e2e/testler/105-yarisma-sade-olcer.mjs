@@ -147,7 +147,7 @@ export default async function ({ log }) {
 
     // ---- telefonda sıralama kartları: tablo gizli, kart açılır, seriye dokununca giriş açılır
     await p.setViewportSize({ width: 390, height: 844 });
-    await p.evaluate(() => { _yz.telAcik = {}; yzCiz(); }); await p.waitForTimeout(200);
+    await p.evaluate(() => { localStorage.setItem('dag_yz_masa', 'eski'); _yz.telAcik = {}; yzCiz(); }); await p.waitForTimeout(200); // v469: telefonun varsayılanı Hedef hattı (test 168); burada ayrıntılı ekran
     dogrula(!(await p.locator('.yz-tablo-genis').first().isVisible()), 'telefonda tablo görünmemeli');
     const tk = p.locator('.yz-tel-kart').first(); dogrula(await tk.isVisible(), 'telefonda kart yok');
     dogrula((await tk.locator('summary').boundingBox()).height >= 60, 'kart küçük');
@@ -217,6 +217,7 @@ export default async function ({ log }) {
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log(adlar.length + ' sporcu · panel · seri ekle (3 yer) · sporcu penceresi · ölçer: süre, skor, masa ezilmez, eşleşme · 390 px');
   } finally {
+    await p.evaluate(() => localStorage.removeItem('dag_yz_masa')).catch(() => {});
     await p.evaluate((y) => { try { try { hkKapat(); } catch (e) { } if (y) { if (y.yz) localStorage.setItem(yzAnahtar(), y.yz); else localStorage.removeItem(yzAnahtar()); if (y.olcer) localStorage.setItem('dagsk_atis_olcer', y.olcer); else localStorage.removeItem('dagsk_atis_olcer'); _kmListe = JSON.parse(y.liste); _yz.siradaki = y.siradaki; } } catch (e) { } }, yedek).catch(() => { });
     await ctx.close();
   }

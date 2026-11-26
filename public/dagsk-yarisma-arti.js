@@ -315,6 +315,56 @@ function yaPencere(baslik, govde) {
 }
 function yaPencereKapat() { let el = document.getElementById('ya-pencere'); if (el) el.remove(); }
 
+
+// ------------------------------------------------------------------------------------------------ 📱 HEDEF HATTI (telefon masası)
+// 2026-11-26 (kullanıcı telefondan yönetiyor; A/B taslağından "A · Hedef hattı"): telefonda tur ekranı yalnız seri, süre ve
+// hedef hedef sporcular. Kim girdi (yeşil), kim sırada (turuncu), kim bekliyor (soluk) renginden anlaşılır. Sporcuya dokun →
+// puan penceresi. İlerleme alttaki çubukta (Sıradaki / seri tamam → sonraki seri). Tablo, grafik, araçlar ⋯ ve "Ayrıntılı ekran"da.
+const YA_MASA_ANAHTAR = 'dag_yz_masa';
+function yaHatGenislik() { return (window.innerWidth || document.documentElement.clientWidth || 1000) <= 600; }
+function yaHatMi(o) {
+    let d = o && o.durum; if (!d || d.asama !== 'tur' || !d.ayar || d.ayar.dogrudan || d.ayar.minik) return false;
+    try { if (localStorage.getItem(YA_MASA_ANAHTAR) === 'eski') return false; } catch (e) {}
+    return yaHatGenislik();
+}
+function yaMasaSec(m) { try { if (m === 'eski') localStorage.setItem(YA_MASA_ANAHTAR, 'eski'); else localStorage.removeItem(YA_MASA_ANAHTAR); } catch (e) {} yzCiz(); window.scrollTo(0, 0); }
+function yaHatHTML(o) {
+    let d = o.durum, f = yzFormat(d), seri = Math.min(d.seri, f.seri - 1), n = d.katilimci.length;
+    let bek = yzBekleyenler(o, seri), girilen = n - bek.length, sonSeri = seri >= f.seri - 1, tamam = !bek.length;
+    let sira = {}; yzSiralama(o).forEach(function (r) { sira[r.k] = r; });
+    let sir = yaSiradaki(o), siradaki = sir && sir.k;
+    let yariArasi = f.yari && seri === f.yari && d.katilimci.every(function (k) { return !yzSkor(o, k)[seri]; });
+    let gruplar = {}; yzHedefSirasi(o).forEach(function (k) { let h = String((d.hedefler || {})[k] || '?'), no = h.replace(/[A-D]$/, ''); (gruplar[no] = gruplar[no] || []).push(k); });
+    let liste = Object.keys(gruplar).sort(function (a, b) { return (+a) - (+b); }).map(function (no) {
+        let ks = gruplar[no], mak = ks.every(function (k) { return yaYay(k) === 'Makaralı'; });
+        return '<div class="ya-hh"><h3>HEDEF ' + esc(no) + (mak ? ' · MAKARALI' : '') + '</h3>' + ks.map(function (k) {
+            let e = yzSkor(o, k)[seri], r = sira[k] || { toplam: 0 }, durum = e ? 'tamam' : k === siradaki ? 'sira' : 'bek';
+            return '<button class="ya-hs ' + durum + '" data-k="' + yaA(k) + '" onclick="yzGirisAc(\'' + yzEnc(k) + '\',' + seri + ')">' + yzFotoYuz(k, 'ya-hs-yuz')
+                + '<span class="ya-hs-ad">' + esc(yzKisaAd(yzKAd(k))) + '<small>' + esc((d.hedefler || {})[k] || '') + ' · Toplam ' + r.toplam + (d.okK && d.okK[k] ? ' · ' + d.okK[k] + ' ok' : '') + '</small></span>'
+                + '<span class="ya-hs-pu">' + (e ? yzTop(e) : durum === 'sira' ? 'SIRADA' : 'GİR') + '</span></button>';
+        }).join('') + '</div>';
+    }).join('');
+    let sonIs = tamam && sonSeri ? '<div class="ya-hat-son">' + (n >= 2 ? '<button class="yz-btn buyuk" onclick="yzBitirEleme()">⚔️ Bitir → eleme</button>' : '') + '<button class="yz-btn buyuk" onclick="yzSeriUzat(1, true)">➕ 1 seri daha</button></div>' : '';
+    return '<div class="yz ya-hat">'
+        + '<div class="ya-hat-bas"><div class="ya-hat-seri">' + (seri + 1) + '<small>/' + f.seri + '</small></div>'
+        + '<div class="ya-hat-bilgi"><span>' + yzKatEtiket(d) + 'SERİ · ' + esc(d.ayar.mesafe) + ' · ' + esc(f.kisa) + '</span><span><b>' + girilen + '/' + n + '</b> girildi' + (f.yari ? ' · ' + (seri < f.yari ? '1.' : '2.') + ' yarı' : '') + '</span><i><b style="width:' + Math.round(girilen / Math.max(1, n) * 100) + '%"></b></i></div>'
+        + '<button class="ya-hat-sure" onclick="' + (o.sayac ? 'yzSureMenu()' : 'yzSayacBaslat()') + '" aria-label="' + (o.sayac ? 'Süre' : 'Süreyi başlat') + '">' + yzSayacHTML(o, 'yz-sayac') + '</button>'
+        + '<button class="ya-hat-menu" onclick="yzMenu()" aria-label="Diğer: TV, analiz, mola, hedefler">⋯</button></div>'
+        + (yariArasi ? '<div class="yz-bilgi">☕ 1. yarı bitti — kısa mola. Hazır olunca süreyi başlat.</div>' : '')
+        + yzYenilerHTML(o, false)
+        + '<div class="ya-hat-liste">' + liste + '</div>' + sonIs
+        + '<div class="ya-hat-is">'
+        + '<button class="yz-btn" onclick="yzTvAc()">📺 TV</button>'
+        + '<button class="yz-btn" onclick="yzSporcuSecici(\'tur\')">👥 Sporcular (' + n + ')</button>'
+        + '<button class="yz-btn" onclick="yzSeriUzat(1)">➕ Seri ekle</button>'
+        + (seri > 0 ? '<button class="yz-btn" onclick="yzOncekiSeri()">◀ ' + seri + '. seri</button>' : '')
+        + (o.sayac ? '<button class="yz-btn" onclick="yzSayacDurdur()">⏹ Süreyi sıfırla</button>' : '')
+        + '<button class="yz-btn yz-mola-btn" onclick="yzMolaMenu()">' + yzMolaBtnYazi(o) + '</button>'
+        + '</div>'
+        + '<button class="ya-hat-ayr" onclick="yaMasaSec(\'eski\')">Ayrıntılı ekran: tablo, grafik, tüm araçlar →</button>'
+        + '</div>';
+}
+
 // ------------------------------------------------------------------------------------------------ bağlantılar (sarmalayıcılar)
 (function () {
     // 🎤 giriş penceresine mikrofon + durum satırı
@@ -350,7 +400,15 @@ function yaPencereKapat() { let el = document.getElementById('ya-pencere'); if (
     yzCiz = function () { let r = asilCiz.apply(this, arguments); try { yaBarYenile(); } catch (e) {} return r; };
     // Araç ızgarası bilerek en fazla 7 düğme (v380 sadelik, test 105) — Koç özeti ve Yolculuk "⋯ Diğer" menüsünün başında
     let asilTur = yzTurHTML;
-    yzTurHTML = function () { return asilTur.apply(this, arguments) + '<div class="ya-bar-bosluk"></div>'; };
+    yzTurHTML = function (o) {
+        let bos = '<div class="ya-bar-bosluk"></div>';
+        if (yaHatMi(o)) return yaHatHTML(o) + bos;
+        let geri = o && o.durum && o.durum.asama === 'tur' && yaHatGenislik() && !o.durum.ayar.dogrudan && !o.durum.ayar.minik ? '<button class="ya-hat-ayr ust" onclick="yaMasaSec()">📱 Sade telefon ekranına dön</button>' : '';
+        return geri + asilTur.apply(this, arguments) + bos;
+    };
+    // telefon ↔ geniş ekran geçişinde (döndürme) tur ekranı yeniden çizilsin
+    let sonGen = yaHatGenislik();
+    window.addEventListener('resize', function () { let g = yaHatGenislik(); if (g === sonGen) return; sonGen = g; try { let d = yzOku().durum; if (d && d.asama === 'tur' && _yz.mod === 'siralama' && document.querySelector('#km-icerik .ya-hat, #km-icerik .yz-a-grid') && !_yz.giris) yzCiz(); } catch (e) {} });
     let asilMenu = yzMenu;
     yzMenu = function () {
         let r = asilMenu.apply(this, arguments);
@@ -414,6 +472,26 @@ function yaPencereKapat() { let el = document.getElementById('ya-pencere'); if (
         '.ya-bar-ana{flex:1;min-width:0;height:62px;border-radius:14px;border:0;background:linear-gradient(135deg,#f97316,#f59e0b);color:#111;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:0 14px;font:inherit;cursor:pointer;text-align:left}',
         '.ya-bar-ana small{font-size:12px;font-weight:700;opacity:.75}.ya-bar-ana b{font-size:19px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}',
         '.ya-bar-ana.tamam{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}',
+        '.ya-hat{display:flex;flex-direction:column;gap:12px;padding:4px 2px 0;color:#f4f4f5}',
+        '.ya-hat-bas{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px;border-radius:18px;background:rgba(17,19,24,.96);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}',
+        '.ya-hat-seri{font-size:42px;font-weight:900;line-height:.9;font-variant-numeric:tabular-nums}.ya-hat-seri small{font-size:19px;color:#a1a1aa;font-weight:800}',
+        '.ya-hat-bilgi{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:800;letter-spacing:.03em;color:#a1a1aa}.ya-hat-bilgi span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ya-hat-bilgi b{color:#f4f4f5}',
+        '.ya-hat-bilgi i{display:block;height:6px;border-radius:9px;background:#2a2d35;overflow:hidden;margin-top:2px}.ya-hat-bilgi i b{display:block;height:100%;background:#f59e5b;border-radius:9px;transition:width .3s}',
+        '.ya-hat-sure{border:0;background:none;padding:0;cursor:pointer;font:inherit;color:inherit}.ya-hat-sure .yz-sayac{min-width:74px;padding:5px 8px;border-radius:14px}.ya-hat-sure .yz-sayac-sure{font-size:24px}.ya-hat-sure .yz-sayac-alt{font-size:9px;letter-spacing:.08em}',
+        '.ya-hat-menu{flex:0 0 46px;height:46px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#23262d;color:#f4f4f5;font-size:24px;font-weight:900;cursor:pointer;line-height:1}',
+        '.ya-hat-liste{display:flex;flex-direction:column;gap:14px}',
+        '.ya-hh{display:flex;flex-direction:column;gap:6px}.ya-hh h3{margin:0 4px;font-size:11px;letter-spacing:.14em;color:#a1a1aa;font-weight:900}',
+        '.ya-hs{display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:9px 12px;border-radius:15px;background:#1b1d22;border:1.5px solid transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}',
+        '.ya-hs:focus-visible,.ya-hat-menu:focus-visible,.ya-hat-sure:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}',
+        '.ya-hs .ya-hs-yuz{width:38px;height:38px;margin:0;font-size:13px;background-color:#2a2d35;color:#d4d4d8;border-color:transparent}',
+        '.ya-hs-ad{flex:1;min-width:0;font-weight:800;font-size:16.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ya-hs-ad small{display:block;font-weight:600;font-size:12px;color:#a1a1aa}',
+        '.ya-hs-pu{min-width:48px;text-align:right;font-size:27px;font-weight:900;font-variant-numeric:tabular-nums}',
+        '.ya-hs.tamam .ya-hs-pu{color:#34d399}.ya-hs.tamam .ya-hs-yuz{border-color:#34d399}',
+        '.ya-hs.sira{border-color:#f59e5b;background:linear-gradient(90deg,rgba(245,158,91,.2),#1b1d22 72%)}.ya-hs.sira .ya-hs-pu{font-size:13px;letter-spacing:.06em;color:#f59e5b}',
+        '.ya-hs.bek .ya-hs-pu{font-size:13px;color:#71717a;letter-spacing:.06em}',
+        '.ya-hat-son{display:flex;gap:8px;flex-wrap:wrap}.ya-hat-son .yz-btn{flex:1}',
+        '.ya-hat-is{display:flex;flex-wrap:wrap;gap:8px}.ya-hat-is .yz-btn{flex:1 1 auto;min-height:46px}',
+        '.ya-hat-ayr{background:none;border:0;color:#a1a1aa;font:inherit;font-size:13.5px;font-weight:700;padding:10px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.ya-hat-ayr.ust{display:block;margin:0 auto 6px;color:#f59e5b}',
         '.ya-p-arka{position:fixed;inset:0;z-index:32100;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}',
         '.ya-p{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;background:#17191e;color:#f4f4f5;border:1px solid rgba(255,255,255,.1);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5)}',
         '.ya-p-bas{position:sticky;top:0;background:#17191e;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:17px;z-index:1}',

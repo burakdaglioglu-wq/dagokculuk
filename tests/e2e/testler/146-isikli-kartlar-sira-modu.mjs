@@ -73,7 +73,7 @@ export default async function ({ log }) {
     // tablet: tablo ✦ + mod çipleri, telefon taşmaz
     await p.evaluate(() => yzCiz()); await p.waitForTimeout(500);
     dogrula(await p.locator('#km-icerik .yz-siramod button').count() >= 3, 'tablette mod düğmeleri yok');
-    await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => yzCiz()); await p.waitForTimeout(500);
+    await p.setViewportSize({ width: 390, height: 844 }); await p.evaluate(() => { localStorage.setItem('dag_yz_masa', 'eski'); yzCiz(); }); // v469: ayrıntılı ekran await p.waitForTimeout(500);
     dogrula(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), '390 px taşıyor');
     esit(await p.evaluate(() => [...document.querySelectorAll('.yz-tel-kart .yz-tel-sira')].filter((s) => s.textContent === '✦').length), tb.n - 4, 'telefon kartları: ilk 4 dışında ✦');
     esit(await p.evaluate(() => [...document.querySelectorAll('.yz-sp-top')].filter((s) => /✦/.test(s.textContent)).length), tb.n - 4, 'hedef kartları: ilk 4 dışında ✦');
@@ -84,6 +84,7 @@ export default async function ({ log }) {
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
     log('kurulumda mod + Kartlar · kürsü 4, diğerleri ✦ ve dönüyor, gerçek sıra sabit · övgü balonu · karışıkta kürsü yok · Tablo/Sahne/Hatlar/tablet/telefon ✦');
   } finally {
+    await p.evaluate(() => localStorage.removeItem('dag_yz_masa')).catch(() => {});
     if (yedek) await p.evaluate((y) => { const w = (a, v) => { if (v == null) localStorage.removeItem(a); else localStorage.setItem(a, v); }; w(yzAnahtar(), y.yz); w('dag_yz_tv_gorunum', y.g); w('dag_yz_kur_ayrintili', y.a); _kmListe = JSON.parse(y.liste); }, yedek).catch(() => {});
     await ctx.close();
   }

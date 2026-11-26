@@ -6293,3 +6293,11 @@ fonksiyonları sarar: yzGirisCiz, yzGirisKaydet, yzCiz, yzTurHTML, yzMenu, yzSon
 - Araç ızgarası bilerek ≤ 7 düğme (test 105); yeni araçlar ızgaraya EKLENMEZ. Pencereler z-index 32100 (KM ekranının üstü).
 - Test 167. Gerçek telefonda ses tanıma, salonda TV kutlaması DENENMEDİ. "Yönler görünmüyor" (§101) için uzak D1 okuması yine
   otomatik izin sınıflandırıcısınca reddedildi, kullanıcıya soruldu. Masa ekranı için A/B taslağı: https://claude.ai/artifact/P5F8zAHY5CEnWYeLJAa6j4
+
+## 185. 📱 Telefonda "Hedef hattı" masa ekranı (v469, 2026-11-26)
+
+Kullanıcı telefondan yönetiyor; A/B taslağından (https://claude.ai/artifact/P5F8zAHY5CEnWYeLJAa6j4) **A · Hedef hattı**nı seçti.
+- `public/dagsk-yarisma-arti.js`: `yaHatMi` / `yaHatHTML` / `yaMasaSec`. `yzTurHTML` sarmalayıcısı genişlik ≤ 600 px'te (sıralama turu, doğrudan eleme ve minik değil) eski komuta paneli yerine hattı çizer.
+- Ekran: üstte yapışkan seri + girildi çubuğu + süre (`#yz-sayac`, dokun → başlat / süre menüsü) + ⋯ (`yzMenu`). Hedef hedef satırlar `.ya-hs` (`tamam` yeşil · `sira` turuncu "SIRADA" · `bek` soluk "GİR"), dokun → `yzGirisAc`. Altta TV / Sporcular / Seri ekle / önceki seri / Mola; son seri tamamsa "Bitir → eleme" ve "1 seri daha". İlerleme alttaki `#ya-bar` çubuğunda.
+- "Ayrıntılı ekran" → `localStorage.dag_yz_masa = 'eski'` (eski panel; üstte "📱 Sade telefon ekranına dön"). Döndürmede 600 px sınırı geçilirse yeniden çizilir.
+- Test 168. TV için iki yeni taslak: https://claude.ai/artifact/EpqhVs8DJtGajpEKCB5g28 (A Hatlar cilalı · B İki perde) — kullanıcının seçimi bekleniyor.
