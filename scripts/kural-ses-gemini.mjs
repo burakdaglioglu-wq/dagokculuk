@@ -8,7 +8,7 @@ const KOK = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(
 const ANAHTAR = (process.env.GEMINI_API_KEY || (() => { try { return fs.readFileSync(path.join(os.homedir(), '.dagsk-gemini-key'), 'utf8'); } catch (e) { return ''; } })()).trim();
 if (!ANAHTAR) { console.error('Anahtar yok: GEMINI_API_KEY ya da ~/.dagsk-gemini-key'); process.exit(1); }
 const FF = process.env.FFMPEG || 'ffmpeg';
-const TARZ = 'Heyecanlı bir Türk maç spikeri gibi oku: çocuklardan oluşan bir okçuluk sınıfına sesleniyorsun, enerjik, sıcak, doğal ve akıcı; ünlem cümlelerinde coş, üç noktada kısa bir gerilim beklemesi yap. Metni aynen oku, hiçbir şey ekleme:';
+const TARZ = 'Heyecanlı bir Türk maç spikeri gibi oku: çocuklardan oluşan bir okçuluk sınıfına sesleniyorsun, enerjik, sıcak ve doğal; ACELE ETME, net ve orta tempoda konuş; ünlem cümlelerinde coş, üç noktada kısa bir gerilim beklemesi yap. Metni aynen oku, hiçbir şey ekleme:';
 export const SPIKER = {
   topsavasi: 'Korsanlar geliyor! Her iyi ok, korsan gemisine bir top atar! Gemiyi batırın, sıradaki korsan gelsin! Ama dikkat... zayıf seri korsana barut verir. Dört turda bize çarpar! Hazır mısınız?',
   kacis: 'Yelkenler açıldı! Her ok yelkenleri dolduruyor! Zayıf seride korsan yaklaşıyor... Yakalanmadan adaya kaçın! Hadi!',

@@ -9,7 +9,7 @@ export default async function ({ log }) {
     await karisikSinifArac(p, 'oyunlar');
     await p.evaluate(() => { localStorage.removeItem('dag_km_oyun_sessiz'); localStorage.removeItem('dag_km_an_kapali'); kmOyunTemaSec('blok'); });
     await p.waitForFunction(() => typeof anSeriGoster === 'function' && !!window.AN_CUMLE && !!document.querySelector('#km-oyun-wrap .km-oyun-scene'), null, { timeout: 20000 });
-    esit(await p.evaluate(() => window.anAdSlug('Çağrı Şükrü')), 'cagri', 'ad dosya adı Türkçe harfleri sadeleştirmeli');
+    esit(await p.evaluate(() => window.anAdSlug('Çağrı Şükrü  Yılmaz')), 'cagri-sukru-yilmaz', 'ad soyad dosya adı Türkçe harfleri sadeleştirmeli (v476)');
     const var_ = await p.evaluate(() => fetch('/ses/an/var.json?v=1').then((r) => r.json()));
     dogrula(var_.blok && var_.blok.every((k) => k.length === 6), 'blok: 3 kademede 6 cümle sesi hazır olmalı');
     await p.evaluate(() => new Promise((r) => setTimeout(r, 400))); // var.json yüklensin
@@ -31,10 +31,10 @@ export default async function ({ log }) {
     // iyi seri, adı kayıtlı sporcu → önce ad, sonra blok-0-j
     let r = await seri('blok', 'Burak Test', ['X', '10', '9']);
     const adS = r.ses.find((x) => /\/ses\/ad\//.test(x[0])), cS = r.ses.find((x) => /\/ses\/an\//.test(x[0]));
-    dogrula(adS && /\/ses\/ad\/burak\.mp3\?v=\d+$/.test(adS[0]) && adS[1], 'ad kaydı çalmalı: ' + JSON.stringify(r.ses));
+    dogrula(adS && /\/ses\/ad\/burak-test\.mp3\?v=\d+$/.test(adS[0]), 'önce ad-soyad kaydı istenmeli (v476): ' + JSON.stringify(r.ses));
     dogrula(cS && /\/ses\/an\/blok-0-[0-5]\.mp3\?v=\d+$/.test(cS[0]) && cS[1], 'iyi seri cümlesi çalmalı: ' + JSON.stringify(r.ses));
     esit(r.konus.length, 0, 'kayıt varken robot ses konuşmamalı');
-    dogrula(/^Burak! /.test(r.alt), 'ekranda "Ad! cümle" yazmalı: ' + r.alt);
+    dogrula(/^Burak Test! /.test(r.alt), 'ekranda "Ad Soyad! cümle" yazmalı: ' + r.alt);
     await p.screenshot({ path: 'tests/e2e/_cikti/172-spiker.png' });
 
     // zayıf seri → kademe 2; adı kayıtsız sporcu → ad dosyası 404, yine de cümle çalar
@@ -57,6 +57,16 @@ export default async function ({ log }) {
       const havuz = await p.evaluate((t) => window.AN_CUMLE[t][0], t2);
       dogrula(havuz.some((c) => r.konus[0] === 'Elif! ' + c), t2 + ': yeni cümle havuzundan okumalı: ' + r.konus[0]);
     }
+    // v476: bütün oyunlar — kendi cümlesi olmayan oyun (ör. yanardag) "genel" havuzdan konuşur
+    const g = await p.evaluate(() => { window.__konus = []; window.__ses = []; const ok = window.anSpikerSoyle('yanardag', { ad: 'Elif Kaya', g: 'x' }, ['X', '10', '9']); return new Promise((r) => setTimeout(() => r({ ok, konus: window.__konus.slice(), ses: window.__ses.map((x) => x.src), havuz: window.AN_CUMLE.genel[0] }), 600)); });
+    dogrula(g.ok, 'anSpikerSoyle diğer oyunda çalışmalı');
+    const genelSesli = !!(vj.genel && vj.genel[0] && vj.genel[0].length);
+    if (genelSesli) dogrula(g.ses.some((x) => /\/ses\/an\/genel-0-\d\.mp3/.test(x)), 'genel kayıt çalmalı: ' + g.ses.join(' '));
+    else dogrula(g.konus.length === 1 && g.havuz.some((c) => g.konus[0] === 'Elif Kaya! ' + c), 'genel havuzdan ad soyadla okumalı: ' + g.konus.join(' | '));
+    // sessizde konuşmaz
+    const z = await p.evaluate(() => { localStorage.setItem('dag_km_oyun_sessiz', '1'); const r = window.anSpikerSoyle('yanardag', { ad: 'Elif' }, ['X']); localStorage.removeItem('dag_km_oyun_sessiz'); return r; });
+    esit(z, false, 'sessizde spiker konuşmamalı');
+
     dogrula(hatalar.length === 0, 'sayfa hatası olmamalı: ' + hatalar.join(' | '));
     log('seri spiker: ad + cümle kaydı, kayıtsız ad, tekrar yok, sesi olmayan oyunda yeni cümle (' + (t2 || '-') + ') ✓');
   } finally { await ctx.close(); }

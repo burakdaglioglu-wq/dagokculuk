@@ -6399,3 +6399,21 @@ Kullanıcı: "skor vurduğumda 'Burak canavarı güçlü vurdu' gibi o ses hâl�
   - art arda 3 seride 3 farklı cümle geliyor;
   - sesi olmayan oyun yeni havuzdan tarayıcı sesiyle okunuyor;
   - `adSlug` doğru.
+
+### 189.1 v476 (2026-11-28): ad soyad, bütün oyunlar, daha sakin tempo
+Kullanıcı: "soy isimlerini de söyle", "bütün oyunlarda ses geçerli olsun", "sadece hızlı mı konuşuyor".
+- **Ad soyad:**
+  - `adSlug` artık tam adı veriyor ("Çağrı Şükrü Yılmaz" → `cagri-sukru-yilmaz`).
+  - Önce `/ses/ad/<adsoyad>.mp3` istenir, yoksa eski ilk ad kaydına (`cagri.mp3`) düşer.
+  - Ekranda ve yedek seste "Ad Soyad! cümle" geçer. Büyük başlıkta yine ilk ad var.
+  - Betiğin `ad` kipi uzak D1'deki ad soyadları üretir, parti büyüklüğü 14.
+  - **Google TTS'e artık sporcuların ad soyadı gidiyor:** kullanıcı istedi ve bilgilendirildi.
+- **Bütün oyunlar:** `anSpikerSoyle(tema, s, oklar)` eklendi. app.js `kmOyunIlerlet` onu şu durumlarda çağırır:
+  - KM_AN_TEMALAR dışındaki her oyunda;
+  - takım/çoklu modda;
+  - AN oyunlarında "An: kapalı" iken.
+  - Oyunun kendi cümlesi yoksa `AN_CUMLE.genel` (3×6 okçuluk cümlesi) kullanılır.
+  - `kmOyunSesliSoyle`, spiker kaydı çalarken (`anSpikerMesgul`) robot sesle araya girmez.
+- **Tempo:** iki betiğin tarifine "ACELE ETME, net ve orta tempoda" eklendi. Yeni üretimler buna göre yapılacak.
+- **AÇIK:** `genel` cümle sesleri ve bütün sesler 3.8-flash ile `--yeniden` üretilecek, ad soyad kayıtları da üretilecek.
+- **Test:** 172'ye eklenenler: ad soyad dosya adı, diğer oyunda (yanardag) `genel` havuzdan konuşma, sessizde konuşmama.

@@ -39,11 +39,16 @@
 "bomba": [["Fitili uzattı, bomba sakin!", "Süre kazandık, harika!", "İmha ekibinin yıldızı!", "Fitil söndü sanki, müthiş!", "Ne soğukkanlılık!", "Kablo kesildi, bravo!"], ["Biraz zaman kazandı!", "Fitil yavaşladı!", "Güzel seri, saniyeler bizde!", "Bir nefes aldık!", "Bomba biraz sakinledi!", "Devam, süre lehimize!"], ["Fitil kısalıyor, acele edin!", "Tik tak, tik tak!", "Kıvılcımlar yaklaşıyor!", "Sıradaki kurtarsın bizi!", "Bomba ısınıyor, dikkat!", "Saniyeler azalıyor, odaklanalım!"]],
 "blok": [["Canavara güçlü vurdu!", "Canavar sendeledi!", "Bloklar uçuşuyor!", "Ne darbe! Canavar sallanıyor!", "Kritik vuruş geliyor!", "Canavarın zırhı çatladı!"], ["İsabet ettirdi!", "Canavara bir darbe daha!", "Güzel vuruş!", "Canavar hissetti!", "Bir blok daha düştü!", "Devam, canavar yoruluyor!"], ["Canavar kükrüyor, daha güçlü vurun!", "Canavar güldü, intikam zamanı!", "Bu sefer olmadı, sıradaki vursun!", "Canavar dişlerini gösteriyor!", "Bloklar sağlam, hep birlikte kıralım!", "Canavar sinirlendi, dikkat!"]],
 "canavar": [["Canavarı sarstı!", "Arena sallanıyor!", "Zayıf noktaya tam isabet!", "Ne vuruş! Canavar dizlerinin üstünde!", "Seyirciler ayakta!", "Canavarın canı eriyor!"], ["İsabet ettirdi!", "Canavara bir darbe!", "Güzel atış!", "Canavar geriledi!", "Arena alkışlıyor!", "Devam, az kaldı!"], ["Canavar kükrüyor, daha güçlü vurun!", "Canavar kalkanını kaldırdı!", "Arena sessiz, sıradaki coştursun!", "Canavar sırıtıyor, gösterelim ona!", "Bu sefer kaçtı, bir dahakine!", "Parlayan renge nişan alalım!"]],
-"hapsirik": [["Süper gıdıkladı!", "Yaratık kahkahadan yerlere yattı!", "Hapşırık geliyor!", "Burnu kıpır kıpır!", "Ne gıdıklama! Kitap sayfası yakın!", "Yaratık gözyaşları içinde gülüyor!"], ["Gıdıkladı!", "Yaratık kıkırdadı!", "Burnu kaşınıyor!", "Güzel bir tüy darbesi!", "Çubuk doluyor!", "Biraz daha, hapşırmak üzere!"], ["Yaratık kıkırdamadı bile!", "Tüy havada kaldı!", "Yaratık esniyor, daha çok gıdıklayalım!", "Burnu rahat, bir dahakine!", "Yaratık bekliyor, sıradaki gıdıklasın!", "Hapşırık kaçtı, tekrar deneyelim!"]]
+"hapsirik": [["Süper gıdıkladı!", "Yaratık kahkahadan yerlere yattı!", "Hapşırık geliyor!", "Burnu kıpır kıpır!", "Ne gıdıklama! Kitap sayfası yakın!", "Yaratık gözyaşları içinde gülüyor!"], ["Gıdıkladı!", "Yaratık kıkırdadı!", "Burnu kaşınıyor!", "Güzel bir tüy darbesi!", "Çubuk doluyor!", "Biraz daha, hapşırmak üzere!"], ["Yaratık kıkırdamadı bile!", "Tüy havada kaldı!", "Yaratık esniyor, daha çok gıdıklayalım!", "Burnu rahat, bir dahakine!", "Yaratık bekliyor, sıradaki gıdıklasın!", "Hapşırık kaçtı, tekrar deneyelim!"]],
+"genel": [["Muhteşem bir seri!", "Tam on ikiden!", "Oklar hedefin kalbinde!", "Ne seri ama!", "Şampiyon gibi atış!", "Hedef alev aldı!"], ["Güzel bir seri!", "İsabetler geliyor!", "Sağlam atışlar!", "İyi gidiyor!", "Hedefe yaklaşıyor!", "Devam, böyle!"], ["Bu sefer olmadı, sıradaki seride!", "Derin nefes, bir dahakine!", "Pes yok, devam!", "Odaklan, hedef seni bekliyor!", "Her ok bir ders, devam!", "Sakin ol, yeniden dene!"]]
 }/*AN_CUMLE_SON*/;
     const AN_SES_V = 1, AD_SES_V = 1;
-    // ad → dosya adı (Türkçe harfler sadeleşir): "Çağrı" → "cagri". scripts/an-ses-gemini.mjs aynısını kullanır.
-    const adSlug = (ad) => String(ad || '').trim().split(/\s+/)[0].toLocaleLowerCase('tr-TR').replace(/[çğıöşüâîû]/g, (c) => ({ 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u' }[c])).replace(/[^a-z0-9]/g, '');
+    // ad → dosya adı (Türkçe harfler sadeleşir). v476 (kullanıcı: "soy isimlerini de söyle"): spiker AD SOYAD söyler →
+    // "Çağrı Şükrü Yılmaz" → "cagri-sukru-yilmaz". Ad-soyad kaydı yoksa eski ilk ad kaydına ("cagri") düşer. scripts/an-ses-gemini.mjs aynısını kullanır.
+    const sadele = (w) => w.toLocaleLowerCase('tr-TR').replace(/[çğıöşüâîû]/g, (c) => ({ 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u' }[c])).replace(/[^a-z0-9]/g, '');
+    const adSlug = (ad) => String(ad || '').trim().split(/\s+/).map(sadele).filter(Boolean).join('-');
+    const ilkAdSlug = (ad) => sadele(String(ad || '').trim().split(/\s+/)[0] || '');
+    const tamAdTR = (ad) => String(ad || '').trim().split(/\s+/).filter(Boolean).map((w) => w.toLocaleLowerCase('tr-TR').replace(/^./, (c) => c.toLocaleUpperCase('tr-TR'))).join(' ');
     // Hangi cümlelerin sesi hazır: /ses/an/var.json (üretim betiği yazar). Hazır olan varsa yalnız onlardan seçilir;
     // o oyunun sesi henüz yoksa yine 6 farklı cümleden seçilir, tarayıcı sesiyle okunur.
     let AN_VAR = {};
@@ -63,7 +68,10 @@
     // Önceden yükle; cal() çağrılınca önce ad, bitince cümle. Ad dosyası yoksa yalnız cümle; cümle de yoksa yedek (tarayıcı sesi).
     function spikerHazirla(tema, k, j, ad, yedekMetin) {
         let adA = null, cA = null;
-        try { if (ad) { adA = new Audio('/ses/ad/' + adSlug(ad) + '.mp3?v=' + AD_SES_V); adA.preload = 'auto'; adA.onerror = () => { adA._yok = true; }; }
+        try { if (ad) { // önce ad-soyad kaydı, yoksa ilk ad kaydı
+                const tam = adSlug(ad), ilk = ilkAdSlug(ad);
+                adA = new Audio('/ses/ad/' + tam + '.mp3?v=' + AD_SES_V); adA.preload = 'auto';
+                adA.onerror = () => { if (!adA._ilk && ilk && ilk !== tam) { adA._ilk = true; adA.src = '/ses/ad/' + ilk + '.mp3?v=' + AD_SES_V; adA.load(); } else adA._yok = true; }; }
             cA = new Audio('/ses/an/' + tema + '-' + k + '-' + j + '.mp3?v=' + AN_SES_V); cA.preload = 'auto'; cA.onerror = () => { cA._yok = true; }; } catch (e) { }
         return function cal() {
             if (sessiz()) return;
@@ -230,8 +238,9 @@
         liste.forEach((v) => { const k = kademe(v); if (IYI[k]) iyi++; else if (k === 'mavi') orta++; });
         const sk = iyi / Math.max(1, liste.length) >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2;
         const cj = cumleSec(tema, sk), spikerCumle = cj >= 0 ? AN_CUMLE[tema][sk][cj] : '';
-        const ekranCumle = spikerCumle ? (ad ? ad + '! ' : '') + spikerCumle : T.ozet[sk].replace('{ad}', ad);
-        const spikerCal = cj >= 0 && sesVarMi(tema, sk, cj) ? spikerHazirla(tema, sk, cj, ad, ekranCumle) : null;
+        const tamAd = tamAdTR(s && s.ad) || ad; // spiker ad soyad söyler (v476)
+        const ekranCumle = spikerCumle ? (tamAd ? tamAd + '! ' : '') + spikerCumle : T.ozet[sk].replace('{ad}', ad);
+        const spikerCal = cj >= 0 && sesVarMi(tema, sk, cj) ? spikerHazirla(tema, sk, cj, s && s.ad, ekranCumle) : null;
         liste.forEach((v, j) => zl.push(setTimeout(() => {
             const k = kademe(v);
             const d = daireler[j]; d.textContent = String(v).toUpperCase(); d.style.background = RENK[k]; d.style.borderColor = '#fff'; if (k === 'siyah') { d.style.background = '#1d222b'; d.style.color = '#fff'; } if (k === 'iska') { d.style.background = '#2b3a48'; d.style.color = '#fff'; } d.classList.add('on');
@@ -442,6 +451,20 @@
 
     window.anTazele = anTazele;
     window.anSeriGoster = anSeriGoster;
+    // v476 (kullanıcı: "bütün oyunlarda ses geçerli olsun"): büyük an gösterilmeyen her durumda (diğer oyunlar, takım/çoklu mod,
+    // "An: kapalı") yalnız spiker sesi: ad soyad + oyunun kendi cümlesi, oyunun cümlesi yoksa "genel" havuz. app.js kmOyunIlerlet çağırır.
+    function anSpikerSoyle(tema, s, oklar) {
+        if (sessiz() || !s) return false;
+        const liste = (oklar || []).map((k) => (k && typeof k === 'object' ? k.puan : k)); if (!liste.length) return false;
+        let iyi = 0, orta = 0; liste.forEach((v) => { const k = kademe(v); if (IYI[k]) iyi++; else if (k === 'mavi') orta++; });
+        const sk = iyi / liste.length >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2, t = AN_CUMLE[tema] ? tema : 'genel';
+        const j = cumleSec(t, sk); if (j < 0) return false;
+        const tamAd = tamAdTR(s.ad), metin = (tamAd ? tamAd + '! ' : '') + AN_CUMLE[t][sk][j];
+        if (sesVarMi(t, sk, j)) { const cal = spikerHazirla(t, sk, j, s.ad, metin); setTimeout(cal, 350); } else soyle(metin);
+        return true;
+    }
+    window.anSpikerSoyle = anSpikerSoyle;
+    window.anSpikerMesgul = () => _spiker.some((a) => a && !a.paused && !a.ended);
     window.anKural = anKural;
     window.anGununAnlari = anGununAnlari;
     window.anKuralKapat = kuralKapat;

@@ -19122,6 +19122,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         }
         function kmOyunSesliSoyle(metin) {
             if(kmOyunSessiz()) return;
+            try { if(typeof window.anSpikerMesgul === 'function' && window.anSpikerMesgul()) return; } catch(e) {} // v476: spiker kaydı çalarken robot ses araya girmesin
             try {
                 if(!window.speechSynthesis) return;
                 window.speechSynthesis.cancel();
@@ -20660,7 +20661,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
         // 🎬 Ok anı + ŞİMDİ cümlesi + anlatıcı (v423, dagsk-km-an.js) — son haftalardaki oyunlar; kullanıcı: "çocuklar sıkılıyor, okun etkisi görünmüyor, anlamıyorlar"
         const KM_AN_TEMALAR = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
-        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=7'); }
+        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=8'); }
         function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         // ❤️ Gerilim katmanı (v471, dagsk-km-gerilim.js) — kullanıcı: "çocuklar sıkılıyor" → sınıfın 3 kalbi + öfke + tahmin + kalkan görevi + sürpriz kart + yol ayrımı
         const KM_GR_TEMALAR = ['canavar', 'blok', 'zombi', 'dedektif', 'hayalet', 'yanardag', 'kale', 'ninja'];
@@ -29029,8 +29030,19 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             // 🎬 Ok anı (v423): seri önce büyük anla gösterilir (ad, oklar tek tek, anlatıcı), sonra oyunun kendi animasyonu
             if(KM_AN_TEMALAR.indexOf(_kmOyunAktifTema) !== -1 && !takimAktifMi && !cokluAktifMi) {
                 let anTema = _kmOyunAktifTema, anOk = kaydedilecek.slice(), anBir = false, anDevam = function() { if(anBir) return; anBir = true; anSonrasiBasla(); };
-                kmOyunAnHazir().then(function() { if(typeof anSeriGoster === 'function' && _kmOyunAktifTema === anTema) anSeriGoster(anTema, s, anOk, anDevam); else anDevam(); }).catch(anDevam);
-            } else anSonrasiBasla();
+                kmOyunAnHazir().then(function() {
+                    if(typeof anSeriGoster === 'function' && _kmOyunAktifTema === anTema) {
+                        // "An: kapalı" ise büyük an çıkmaz ama spiker yine konuşur (v476)
+                        try { if(localStorage.getItem('dag_km_an_kapali') === '1' && typeof anSpikerSoyle === 'function') anSpikerSoyle(anTema, s, anOk); } catch(e) {}
+                        anSeriGoster(anTema, s, anOk, anDevam);
+                    } else anDevam();
+                }).catch(anDevam);
+            } else {
+                // v476 (kullanıcı: "bütün oyunlarda ses geçerli olsun"): diğer oyunlar + takım/çoklu modda yalnız spiker sesi
+                let spTema = _kmOyunAktifTema, spOk = kaydedilecek.slice();
+                try { kmOyunAnHazir().then(function() { if(typeof anSpikerSoyle === 'function' && _kmOyunAktifTema === spTema) anSpikerSoyle(spTema, s, spOk); }).catch(function() {}); } catch(e) {}
+                anSonrasiBasla();
+            }
             } // devamEt sonu
             // GERÇEK BUG (2026-09-25, kullanıcı: "skorları girince işle deyince skor işlenmiyor") — burada
             // hâlâ native confirm() kullanılıyordu. #seri-tamamlandi-modal'ın AYNI sınıfı zaten fark

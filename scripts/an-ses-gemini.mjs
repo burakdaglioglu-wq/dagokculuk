@@ -12,8 +12,8 @@ if (!ANAHTAR) { console.error('Anahtar yok: GEMINI_API_KEY ya da ~/.dagsk-gemini
 const FF = process.env.FFMPEG || 'ffmpeg';
 const arg = process.argv.slice(2), sec = Object.fromEntries(arg.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.slice(2).split('='); return [k, v == null ? true : v]; }));
 const [kip, ...temalar] = arg.filter((a) => !a.startsWith('--'));
-const MODEL = sec.model || process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts', SES = sec.ses || 'Fenrir', PARTI = Number(sec.parti || { cumle: 14, ad: 18, kural: 4 }[kip] || 14); // model bir istekte en fazla ~60 sn ses veriyor
-const TARZ = 'Heyecanlı bir Türk maç spikeri gibi oku: çocuklardan oluşan bir okçuluk sınıfına sesleniyorsun, enerjik, sıcak, doğal ve akıcı.';
+const MODEL = sec.model || process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts', SES = sec.ses || 'Fenrir', PARTI = Number(sec.parti || { cumle: 14, ad: 14, kural: 4 }[kip] || 14); // model bir istekte en fazla ~60 sn ses veriyor
+const TARZ = 'Heyecanlı bir Türk maç spikeri gibi oku: çocuklardan oluşan bir okçuluk sınıfına sesleniyorsun, enerjik, sıcak ve doğal. ACELE ETME: net, anlaşılır, orta tempoda konuş; kelimeleri yutma (v476, kullanıcı: çok hızlı).';
 const TALIMAT = {
   cumle: TARZ + ' Aşağıdaki satırları sırayla, her birini ayrı bir spiker repliği gibi oku. Her satırdan sonra BİR SANİYE sus. Satır numarası ya da başka hiçbir şey söyleme:',
   ad: TARZ + ' Aşağıdaki isimleri, sahneye çıkan bir sporcuyu anons eder gibi coşkuyla, her birini bir kez söyle. Her isimden sonra BİR SANİYE sus. Başka hiçbir şey söyleme:',
@@ -32,7 +32,9 @@ function isler() {
   }
   if (kip === 'ad') {
     const out = execSync('npx wrangler d1 execute dagsk-db --remote --json --command "SELECT ad FROM athletes WHERE pasif = 0"', { cwd: KOK, encoding: 'utf8', maxBuffer: 1e8 });
-    const adlar = new Map(); for (const r of JSON.parse(out.slice(out.indexOf('[')))[0].results) { const a = String(r.ad || '').trim().split(/\s+/)[0]; const sl = adSlug(a); if (sl && !/^(test|iptal|deneme)/.test(sl) && !adlar.has(sl)) adlar.set(sl, basHarf(a)); }
+    // v476: AD SOYAD (kullanıcı: 'soy isimlerini de söyle'); dosya: ad-soyad slug (uygulamadaki adSlug ile aynı)
+    const sade = (w) => w.toLocaleLowerCase('tr-TR').replace(/[çğıöşüâîû]/g, (c) => ({ 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u' }[c])).replace(/[^a-z0-9]/g, '');
+    const adlar = new Map(); for (const r of JSON.parse(out.slice(out.indexOf('[')))[0].results) { const k = String(r.ad || '').trim().split(/\s+/).filter(Boolean); const sl = k.map(sade).filter(Boolean).join('-'); if (sl && !/^(test|iptal|deneme)/.test(sl) && !adlar.has(sl)) adlar.set(sl, k.map(basHarf).join(' ')); }
     return [...adlar].map(([sl, a]) => ({ dosya: `public/ses/ad/${sl}.mp3`, metin: a + '!' }));
   }
   if (kip === 'kural') {
