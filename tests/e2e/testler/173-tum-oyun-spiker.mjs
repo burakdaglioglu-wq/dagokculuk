@@ -22,8 +22,11 @@ export default async function ({ log }) {
     }, t);
     const seri = (oklar) => p.evaluate(async (oklar) => { window.__olay = []; _kmOyunAktifIndex = 0; _kmOyunSeriGirisleri = oklar.slice(); _kmOyunSeriKonumlari = []; kmOyunIlerlet(); for (let k = 0; k < 120 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 150)); const m = document.getElementById('onay-modal'); if (m && getComputedStyle(m).display !== 'none') { onayOnayla(); for (let k = 0; k < 120 && _kmOyunKilit; k++) await new Promise((r) => setTimeout(r, 150)); } await new Promise((r) => setTimeout(r, 2500)); return { olay: window.__olay.slice(), ad: _kmOyunRosterCache[0].ad }; }, oklar);
     const sonuc = [];
-    for (const t of ['dedektif', 'yanardag', 'hayalet', 'kale', 'ninja', 'blok']) {
-      await kur(t); await p.waitForTimeout(2500);
+    // BÜTÜN oyunlar (KM_OYUN_TEMALAR) — kullanıcı: 'diğerleri?'
+    const temalar = await p.evaluate(() => Object.keys(KM_OYUN_TEMALAR));
+    log('oyun sayısı: ' + temalar.length);
+    for (const t of temalar) {
+      try { await kur(t); } catch (e) { sonuc.push(t + ': kurulamadı ' + e.message.slice(0, 120)); continue; } await p.waitForTimeout(2500);
       await p.evaluate(() => { document.querySelectorAll('.an-kural').forEach((x) => x.remove()); try { anKuralKapat(); } catch (e) { } });
       const r = await seri(['X', '10', '9']);
       const ilk = r.ad.split(/\s+/)[0].toLocaleLowerCase('tr-TR');
