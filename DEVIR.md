@@ -6330,3 +6330,25 @@ Kullanıcı: "bu sistemi blok kah, yanardağ, zombi, kale savunması, ninja oyun
 - Ninja'da "Takım" modu = bütün sınıf tek takım → katman çalışır; "Klan" (takımlar yarışır) → şerit gizli, seri sayılmaz. Kanca koşulu `!takimAktifMi && !cokluAktifMi` → `!cokluAktifMi` (diğer oyunlarda takımGeçerliMi zaten false, davranış aynı).
 - Yanardağ'ın DEVAM/KAÇ oyu her seriden sonra açık kalır; katmanın perdeleri onun üstünde çıkar ve kapanır, tıklanmayan perdeler oyu engellemez.
 - `dagsk-km-gerilim.js?v=2`, sw `dag-sk-v472`. Test 170 bu üç oyunda gerçek seri girer (tur sayılır, öfke dolar).
+
+## 188. 🔊 "Nasıl oynanır?" kural ekranı doğal sesle (v473, 2026-11-28)
+Kullanıcı: "seslendirme o kadar kötü ki heceleyerek söylüyor, ses tonu gerçek değil".
+- **Sebep:** kural ekranı tarayıcının yerleşik sesini kullanıyordu. Windows'ta Chrome'da bu çoğunlukla Tolga ya da Google Türkçe oluyor, ikisi de robotik.
+- **Çözüm:** 12 kural cümlesi sabit olduğundan önceden doğal sesle kaydedildi.
+  - Ses: Microsoft `tr-TR-AhmetNeural`, hız +%10, incelik +4Hz.
+  - Kayıtlar `public/ses/kural/<tema>.mp3`, toplam ~600 KB.
+- **Kod:**
+  - `dagsk-km-an.js` → `kuralSoyle(tema, metin)` dosyayı çalar. Dosya yüklenmezse ya da `play()` reddedilirse `soyle()` ile eski tarayıcı sesine döner.
+  - `kuralKapat()` sesi durdurur, "Tekrar dinle" baştan çalar, sessiz ayarına uyulur.
+  - "Tekrar dinle" düğmesinde YENİ rozeti var (2026-12-12'ye kadar).
+- **Değişken cümleler** (çocuk adları, Günün anları) hâlâ tarayıcı sesiyle okunuyor. `kmOyunSesliSesSec` artık şu sırayla ses seçiyor: Edge doğal Ahmet → diğer natural/online/neural sesler → Google → Tolga olmayan herhangi bir ses.
+- **Yeniden üretmek ya da başka ses seçmek:**
+  - Kural metni değişirse ya da yeni oyuna kural eklenirse mp3 yeniden üretilmeli ve `KURAL_SES_V` 1 artırılmalı.
+  - Araç: npm `msedge-tts` (projeye ekli değil, geçici bir klasöre kurulur). `KURAL` içindeki `s: '...'` metinleri okunur ve `toStream(metin, {rate:'+10%', pitch:'+4Hz'})` → MP3 24kHz 48kbit üretilir.
+  - Kadın sesi için `tr-TR-EmelNeural` kullanılabilir.
+- **Test:** `171-kural-ses` kontrol ediyor:
+  - 12 dosya 200 dönüyor ve `audio/mpeg`;
+  - kural açılınca kayıt bir kez çalıyor ve robot ses konuşmuyor;
+  - "Tekrar dinle" ve "Başlayalım" sesi doğru durduruyor;
+  - dosya çalınamazsa yedek ses devreye giriyor;
+  - sessiz modda hiç ses çıkmıyor.

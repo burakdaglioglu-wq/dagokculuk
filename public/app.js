@@ -19110,7 +19110,11 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
             if(!sesler.length) return null;
             let tr = sesler.filter(function(v) { return v.lang && v.lang.toLowerCase().indexOf('tr') === 0; });
             if(!tr.length) return null;
-            let iyi = tr.find(function(v) { return /google|natural|online|wavenet|neural/i.test(v.name); });
+            // v473: önce Edge'in doğal sesleri (Ahmet/Emel "Online (Natural)"), sonra diğer sinirsel sesler, sonra Google; robotik Tolga en son
+            let iyi = tr.find(function(v) { return /natural/i.test(v.name) && /ahmet/i.test(v.name); })
+                || tr.find(function(v) { return /natural|online|neural|wavenet/i.test(v.name); })
+                || tr.find(function(v) { return /google/i.test(v.name); })
+                || tr.find(function(v) { return !/tolga/i.test(v.name); });
             return iyi || tr[0];
         }
         if(window.speechSynthesis) {
@@ -20656,7 +20660,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
         // 🎬 Ok anı + ŞİMDİ cümlesi + anlatıcı (v423, dagsk-km-an.js) — son haftalardaki oyunlar; kullanıcı: "çocuklar sıkılıyor, okun etkisi görünmüyor, anlamıyorlar"
         const KM_AN_TEMALAR = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
-        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=4'); }
+        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=5'); }
         function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         // ❤️ Gerilim katmanı (v471, dagsk-km-gerilim.js) — kullanıcı: "çocuklar sıkılıyor" → sınıfın 3 kalbi + öfke + tahmin + kalkan görevi + sürpriz kart + yol ayrımı
         const KM_GR_TEMALAR = ['canavar', 'blok', 'zombi', 'dedektif', 'hayalet', 'yanardag', 'kale', 'ninja'];

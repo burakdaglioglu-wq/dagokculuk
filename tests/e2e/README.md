@@ -39,6 +39,7 @@ Her test kendi verisini benzersiz isimlerle oluşturur ve sonunda siler. Başar�
 | `67-gunluk-seri-limiti` | Günlük seri limiti yalnız bugünün serilerini sayar (eski kart serileri limiti doldurmaz) |
 | `68-vitrin` | Yönetici › Tanıtım Ekranı: ilk oyun + alt bant, görüntüler sunucudan gelir, ara kart, 390 px taşma yok, Esc kapatır |
 | `170-gerilim` | Oyunlar › Gerilim katmanı (v472: + Yanardağ, Kale, Ninja gerçek seri): 3 kalp, öfke, saldırı, görev, sürpriz kart, tahmin, son şans, tur sonu + yol oyu, geri al, telefon |
+| `171-kural-ses` | Oyunlar › "Nasıl oynanır?" doğal ses (v473): 12 mp3 sunucuda, kayıt çalar (robot ses yok), Tekrar dinle / Başlayalım durdurur, çalınamazsa tarayıcı sesine düşer, sessizde sessiz |
 | `69-akvaryum` | Oyunlar › Sınıf Akvaryumu: gerçek seri, her isabet bir canlı (iska yok), X nadir + rozet, geri al, dolunca tören → sıradaki akvaryum, 5 akvaryum, çocuğa dokununca sıra, Akvaryum seviyesi |
 | `70-kale` | Oyunlar › Kale Savunması: gerçek seri, ok en öndeki düşmana hasar (ıska vermez), düşmanlar yaklaşır, geri al, dalga temiz → 2. dalga + rozet, kapıya varan can alır, kale düşerse aynı dalga baştan, 5 düşman tipi (domuz yok), çocuğa dokununca sıra, Kale seviyesi |
 | `71-fener` | Oyunlar › Fener Alayı (29 Ekim): hedef = Cumhuriyet'in yaşı, halka → fener sayısı (ıska 0, X 5), 1923 bilgi kartı, geri al, hepsi yanınca tören → 2. tur + rozet, çocuğa dokununca sıra |

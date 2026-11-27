@@ -248,7 +248,22 @@
     }
     const kok = () => document.fullscreenElement || document.getElementById('karisik-platform') || document.body; // sahnenin atalarında transform var: pencere sayfanın kökünde
     let _kuralZ = [];
-    function kuralKapat() { _kuralZ.forEach(clearTimeout); _kuralZ = []; document.querySelectorAll('.an-kural').forEach((x) => x.remove()); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { } }
+    // v473: kullanıcı "seslendirme çok kötü, heceleyerek söylüyor, ses gerçek değil" → kural cümleleri sabit olduğu için
+    // önceden doğal sesle (Microsoft Ahmet sinirsel, +%10 hız) kaydedildi: /ses/kural/<tema>.mp3. Her cihazda aynı ses.
+    // Dosya yüklenemezse (çevrimdışı vb.) eski tarayıcı sesine düşer. Yeniden üretmek: DEVIR.md §188.
+    const KURAL_SES_V = 1;
+    let _kuralSes = null;
+    function kuralSesDur() { try { if (_kuralSes) { _kuralSes.pause(); _kuralSes = null; } } catch (e) { } }
+    function kuralSoyle(tema, metin) {
+        if (sessiz() || !metin) return;
+        kuralSesDur(); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
+        let dustu = false; const yedek = () => { if (dustu) return; dustu = true; _kuralSes = null; soyle(metin); };
+        try {
+            const a = new Audio('/ses/kural/' + tema + '.mp3?v=' + KURAL_SES_V); _kuralSes = a;
+            a.onerror = yedek; const p = a.play(); if (p && p.catch) p.catch(yedek);
+        } catch (e) { yedek(); }
+    }
+    function kuralKapat() { _kuralZ.forEach(clearTimeout); _kuralZ = []; document.querySelectorAll('.an-kural').forEach((x) => x.remove()); kuralSesDur(); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { } }
     function anKural(tema, zorla) {
         const K = KURAL[tema]; if (!K) return false;
         const sahne = document.querySelector('#km-oyun-wrap .km-oyun-scene'); if (!sahne) return false;
@@ -258,15 +273,15 @@
         css(); kuralCss(); kuralKapat();
         const p = document.createElement('div'); p.className = 'an-kural'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Oyunun kuralı');
         p.innerHTML = '<div class="an-kural-ic"><div class="an-kural-bas">NASIL OYNANIR?</div><div class="an-kartlar">' + K.k.map((x, i) => '<div class="an-kart"><i>' + x[0] + '</i><b><em>' + (i + 1) + '</em><br>' + esc(x[1]) + '</b><span>' + esc(x[2]) + '</span></div>').join('') + '</div>'
-            + '<div class="an-sure"><i></i></div><div class="an-kural-alt"><button type="button" class="an-k-basla">▶ Başlayalım</button><button type="button" class="ikinci an-k-tekrar">🔊 Tekrar dinle</button></div></div>';
+            + '<div class="an-sure"><i></i></div><div class="an-kural-alt"><button type="button" class="an-k-basla">▶ Başlayalım</button><button type="button" class="ikinci an-k-tekrar">🔊 Tekrar dinle' + (typeof window.yeniRozet === 'function' ? ' ' + window.yeniRozet('2026-12-12') : '') + '</button></div></div>';
         kok().appendChild(p);
         const kartlar = p.querySelectorAll('.an-kart'), sure = 20000;
         kartlar.forEach((k, i) => _kuralZ.push(setTimeout(() => { k.classList.add('on'); SES.ad(); }, 300 + i * 1500)));
-        _kuralZ.push(setTimeout(() => soyle(K.s), 500));
+        _kuralZ.push(setTimeout(() => kuralSoyle(tema, K.s), 500));
         const bar = p.querySelector('.an-sure i'); requestAnimationFrame(() => { bar.style.transitionDuration = sure + 'ms'; bar.style.width = '0%'; });
         _kuralZ.push(setTimeout(kuralKapat, sure));
         p.querySelector('.an-k-basla').onclick = kuralKapat;
-        p.querySelector('.an-k-tekrar').onclick = () => soyle(K.s);
+        p.querySelector('.an-k-tekrar').onclick = () => kuralSoyle(tema, K.s);
         return true;
     }
 
