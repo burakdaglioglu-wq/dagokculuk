@@ -6322,3 +6322,11 @@ Kullanıcı: "çocuklar neden sıkılmaya başladı" → seçtiği sebepler 2 ka
 - Denge simülasyonu: tur kazanma Kolay ≈%100, Normal ≈%90, Zor ≈%70, Kâbus ≈%50, 8–30 kişide benzer.
 - Durum `dag_km_gr_<konum>` (SIFIR_ONEK), ⭐ `dag_km_grk_<konum>`, cihaz ayarı `dag_km_gr_ayar` (seviye/kapalı per oyun). Perdeler `position:fixed` sayfa kökünde (sahne kaydırılmışken de görünür).
 - Kancalar: kmOyunKabukGuncelle → kmOyunGerilimTazele; bitirOrtak sonu → grSeriSonu; geri al anlığı `gerilim`. Test 170.
+
+### 187.1 v472 (2026-11-27): katman Yanardağ, Kale Savunması ve Ninja'ya da geçti
+Kullanıcı: "bu sistemi blok kah, yanardağ, zombi, kale savunması, ninja oyunu, dedektif gibi oyunlara da aktar" (blok/zombi/dedektif zaten vardı).
+- `KM_GR_TEMALAR` += `yanardag`, `kale`, `ninja`; `TEMA`: Lav canavarı 🔥 (Yanardağ'ın kendi "🌋 Öfke"siyle karışmasın diye yanardağ değil), Düşman ordusu ⚔️, Bekçiler 🏮.
+- Şeritteki kalplerin üstünde artık "SINIF" yazar (Kale'nin kendi sur kalpleri var).
+- Ninja'da "Takım" modu = bütün sınıf tek takım → katman çalışır; "Klan" (takımlar yarışır) → şerit gizli, seri sayılmaz. Kanca koşulu `!takimAktifMi && !cokluAktifMi` → `!cokluAktifMi` (diğer oyunlarda takımGeçerliMi zaten false, davranış aynı).
+- Yanardağ'ın DEVAM/KAÇ oyu her seriden sonra açık kalır; katmanın perdeleri onun üstünde çıkar ve kapanır, tıklanmayan perdeler oyu engellemez.
+- `dagsk-km-gerilim.js?v=2`, sw `dag-sk-v472`. Test 170 bu üç oyunda gerçek seri girer (tur sayılır, öfke dolar).

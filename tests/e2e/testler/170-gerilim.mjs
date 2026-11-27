@@ -75,6 +75,21 @@ export default async function ({ log }) {
     await p.click('#gr-ayar-dug'); await p.click('.gr-menu button[data-sv="kapat"]'); dogrula(/kapalı/.test(await p.textContent('#gr-serit')), 'kapalı'); const ts = (await D('canavar')).turSeri; await seri(11, ['0', '0', '0']); esit((await D('canavar')).turSeri, ts, 'kapalıyken sayılmaz'); await p.click('#gr-ac');
     // 11) diğer oyunlar: şerit çıkar; başka oyunda çıkmaz
     for (const t of ['zombi', 'blok', 'dedektif', 'hayalet']) { await p.evaluate((t) => kmOyunTemaSec(t), t); await p.waitForFunction(() => document.getElementById('gr-serit') && document.getElementById('gr-serit').classList.contains('ac'), null, { timeout: 30000 }); await p.waitForTimeout(1200); await foto('gr-' + t); }
+    // 11b) v472: Yanardağ, Kale Savunması, Ninja — şerit + gerçek seri girişi kancayı çalıştırır (tur sayılır, öfke dolar)
+    for (const [t, dus] of [['yanardag', 'LAV CANAVARI'], ['kale', 'DÜŞMAN ORDUSU'], ['ninja', 'BEKÇİLER']]) {
+      await kur(t, 12);
+      await p.waitForFunction(() => typeof grTazele === 'function' && document.getElementById('gr-serit') && document.getElementById('gr-serit').classList.contains('ac'), null, { timeout: 60000 });
+      await p.waitForTimeout(1500);
+      dogrula((await p.textContent('#gr-serit')).indexOf(dus) !== -1, t + ': şeritte düşman adı ' + dus);
+      dogrula(/Tur 1 · 0\/12/.test(await p.textContent('#gr-serit')), t + ': tur sayacı 0/12');
+      await ayarla(t, 'd.olay = null; d.kalkanVerildi = true; d.tahmin = null; d.th = {};');
+      await seri(0, ['0', '0', '0']);
+      const durumYaz = await p.evaluate(([t, k]) => ({ kilit: _kmOyunKilit, coklu: typeof _kmOyunCokluMu !== 'undefined' ? _kmOyunCokluMu : null, takim: _kmOyunTakimModu, tema: _kmOyunAktifTema, d: (JSON.parse(localStorage.getItem('dag_km_gr_' + eval(k)) || '{}'))[t] }), [t, KON]);
+      await p.waitForFunction(([t, k]) => ((JSON.parse(localStorage.getItem('dag_km_gr_' + eval(k)) || '{}'))[t] || {}).turSeri >= 1, [t, KON], { timeout: 40000 }).catch(() => log(t + ' durum: ' + JSON.stringify(durumYaz).slice(0, 300)));
+      await perdeBekle(); const dt = await D(t);
+      esit(dt.turSeri, 1, t + ': seri sayıldı ' + JSON.stringify(durumYaz).slice(0, 400)); dogrula(dt.ofke > 0, t + ': kötü seri öfke doldurdu: ' + dt.ofke);
+      await foto('gr-' + t);
+    }
     await p.evaluate(() => kmOyunTemaSec('hapsirik')); await p.waitForTimeout(800); dogrula(!(await p.evaluate(() => document.getElementById('gr-serit').classList.contains('ac'))), 'Hapşırık\'ta şerit yok');
     // 12) telefon: şerit taşmaz
     { const t2 = await sayfaAc({ genislik: 1280, yukseklik: 800 }); try { await uygulamaAc(t2.p); await karisikSinifArac(t2.p, 'oyunlar'); await t2.p.setViewportSize({ width: 390, height: 844 }); await t2.p.evaluate(() => { const a = []; ['minikler', 'kucukler', 'yildizlar'].forEach((g) => Object.keys(turnuvaDB[g] || {}).forEach((ad) => { const sp = turnuvaDB[g][ad]; if (sp && !sp.pasif) a.push({ g, ad }); })); _kmListe = a.slice(0, 24); kmOyunRosterYenile(); kmOyunTemaSec('canavar'); });
@@ -82,7 +97,7 @@ export default async function ({ log }) {
       await t2.p.waitForTimeout(500); if (CIKTI) await t2.p.screenshot({ path: CIKTI + '/gr-tel.png' });
       const tas = await t2.p.evaluate(() => { const e = document.getElementById('gr-serit'); return Math.max(e.scrollWidth - e.clientWidth, document.documentElement.scrollWidth - document.documentElement.clientWidth); }); dogrula(tas <= 1, 'telefonda şerit taşmamalı: ' + tas); esit(t2.hatalar.length, 0, 'telefon: ' + t2.hatalar.join(' | ')); } finally { await t2.ctx.close(); } }
     esit(hatalar.length, 0, 'sayfa hatası: ' + hatalar.join(' | '));
-    log('şerit · kişiye göre hedef · öfke · saldırı · geri al · kalkan görevi · sürpriz kart (şifa, altın) · tahmin · son şans · tur kazan/kaybet + yol oyu + ⭐ · kapat/aç · 5 oyun · telefon');
+    log('şerit · kişiye göre hedef · öfke · saldırı · geri al · kalkan görevi · sürpriz kart (şifa, altın) · tahmin · son şans · tur kazan/kaybet + yol oyu + ⭐ · kapat/aç · 8 oyun (v472 yanardağ, kale, ninja gerçek seri) · telefon');
   } finally {
     await p.evaluate(() => { try { localStorage.removeItem('dag_km_an_kapali'); } catch (e) { } }).catch(() => {});
     await ctx.close();

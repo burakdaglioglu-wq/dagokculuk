@@ -20659,9 +20659,10 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=4'); }
         function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         // ❤️ Gerilim katmanı (v471, dagsk-km-gerilim.js) — kullanıcı: "çocuklar sıkılıyor" → sınıfın 3 kalbi + öfke + tahmin + kalkan görevi + sürpriz kart + yol ayrımı
-        const KM_GR_TEMALAR = ['canavar', 'blok', 'zombi', 'dedektif', 'hayalet'];
-        function kmOyunGerilimHazir() { return dagskEkYukle('dagsk-km-gerilim.js?v=1'); }
-        function kmOyunGerilimTazele(t) { let el = document.getElementById('gr-serit'); if(KM_GR_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof grTazele === 'function') { grTazele(t); return; } kmOyunGerilimHazir().then(function() { if(_kmOyunAktifTema === t && typeof grTazele === 'function') grTazele(t); }).catch(function() {}); }
+        const KM_GR_TEMALAR = ['canavar', 'blok', 'zombi', 'dedektif', 'hayalet', 'yanardag', 'kale', 'ninja'];
+        function kmOyunGerilimHazir() { return dagskEkYukle('dagsk-km-gerilim.js?v=2'); }
+        // v472: Ninja'nın 'Takım' modu = bütün sınıf tek takım (hep birlikte) → katman çalışır; 'Klan' (takımlar yarışır) → kapalı
+        function kmOyunGerilimTazele(t) { let el = document.getElementById('gr-serit'); if(KM_GR_TEMALAR.indexOf(t) === -1 || (_kmOyunTakimModu && _kmOyunCokluMu)) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof grTazele === 'function') { grTazele(t); return; } kmOyunGerilimHazir().then(function() { if(_kmOyunAktifTema === t && typeof grTazele === 'function') grTazele(t); }).catch(function() {}); }
         const KM_OYUN_HY_TEMALAR = ['hazine', 'zirve', 'yildiz', 'pist', 'ninja', 'dag', 'balon'];
         function kmOyunHeyecanTazele(t) { if(KM_OYUN_HY_TEMALAR.indexOf(t) === -1) return; if(typeof hyTazele === 'function') { hyTazele(t); return; } kmOyunHeyecanHazir().then(function() { if(_kmOyunAktifTema === t) hyTazele(t); }).catch(function() {}); }
         function kmOyunSahneKurKale() { kmOyunKaleHazir().then(function() { if(_kmOyunAktifTema === 'kale' && document.getElementById('km-oyun-panel-kale')) kaleSahneKur(); }).catch(function() { showToast('Kale Savunması yüklenemedi — internet bağlantısını kontrol et.', 'error'); }); }
@@ -28796,7 +28797,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 ninjaFener: ninjaFener ? ninjaFener.eski : null,
                 sisFosil: (_kmOyunAktifTema === 'sisharita') ? JSON.parse(JSON.stringify(_kmSisFosil)) : null,
                 heyecan: (typeof hyAnlik === 'function' && !takimAktifMi && !cokluAktifMi) ? hyAnlik(_kmOyunAktifTema) : null,
-                gerilim: (typeof grAnlik === 'function' && KM_GR_TEMALAR.indexOf(_kmOyunAktifTema) !== -1 && !takimAktifMi && !cokluAktifMi) ? grAnlik(_kmOyunAktifTema) : null };
+                gerilim: (typeof grAnlik === 'function' && KM_GR_TEMALAR.indexOf(_kmOyunAktifTema) !== -1 && !cokluAktifMi) ? grAnlik(_kmOyunAktifTema) : null };
             kmOyunGeriAlBtnGuncelle();
 
             function bitirOrtak() {
@@ -28966,7 +28967,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
                 if(typeof hySeriSonu === 'function' && !takimAktifMi && !cokluAktifMi) { try { hySeriSonu(_kmOyunAktifTema, s, yolHy); } catch(e) {} }
                 _kmOyunSeriGirisleri = []; _kmOyunSeriKonumlari = [];
                 kmOyunSlotlariCiz(); kmOyunPadCiz();
-                setTimeout(function() { _kmOyunKilit = false; kmOyunSlotlariCiz(); document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.disabled = false; }); kmOyunSayacYeniSeri(); if(!takimAktifMi && !cokluAktifMi && KM_GR_TEMALAR.indexOf(_kmOyunAktifTema) !== -1) { let grT = _kmOyunAktifTema; kmOyunGerilimHazir().then(function() { if(typeof grSeriSonu === 'function' && _kmOyunAktifTema === grT) grSeriSonu(grT, s, kaydedilecek); }).catch(function() {}); } }, 200);
+                setTimeout(function() { _kmOyunKilit = false; kmOyunSlotlariCiz(); document.querySelectorAll('.km-oyun-mode-btn').forEach(function(b) { b.disabled = false; }); kmOyunSayacYeniSeri(); if(!cokluAktifMi && KM_GR_TEMALAR.indexOf(_kmOyunAktifTema) !== -1) { let grT = _kmOyunAktifTema; kmOyunGerilimHazir().then(function() { if(typeof grSeriSonu === 'function' && _kmOyunAktifTema === grT) grSeriSonu(grT, s, kaydedilecek); }).catch(function() {}); } }, 200);
             }
 
             function baslatAnimasyon() {

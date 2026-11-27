@@ -30,7 +30,11 @@
         blok: { dus: 'Canavar', sal: 'CANAVAR SALDIRDI!', ik: '👾' },
         zombi: { dus: 'Zombiler', sal: 'ZOMBİLER SALDIRDI!', ik: '🧟' },
         dedektif: { dus: 'Hırsız çete', sal: 'HIRSIZLAR SALDIRDI!', ik: '🦹' },
-        hayalet: { dus: 'Hayaletler', sal: 'HAYALETLER SALDIRDI!', ik: '👻' }
+        hayalet: { dus: 'Hayaletler', sal: 'HAYALETLER SALDIRDI!', ik: '👻' },
+        // v472: kullanıcı 'bu sistemi yanardağ, kale savunması, ninja oyununa da aktar' dedi
+        yanardag: { dus: 'Lav canavarı', sal: 'LAV CANAVARI SALDIRDI!', ik: '🔥' },  // yanardağın kendi '🌋 Öfke'si var — karışmasın
+        kale: { dus: 'Düşman ordusu', sal: 'DÜŞMAN ORDUSU SURA SALDIRDI!', ik: '⚔️' },
+        ninja: { dus: 'Bekçiler', sal: 'BEKÇİLER BASKIN YAPTI!', ik: '🏮' }
     };
     const SEVIYE = ['kolay', 'normal', 'zor', 'kabus'];
     const SV = { kolay: { ad: '🐣 Kolay', k: 5 }, normal: { ad: '🦊 Normal', k: 7 }, zor: { ad: '🔥 Zor', k: 9 }, kabus: { ad: '💀 Kâbus', k: 11 } };
@@ -88,6 +92,7 @@
             '#gr-serit{display:none;align-items:center;gap:4px 10px;flex-wrap:wrap;margin:0 0 6px;padding:4px 10px;border-radius:14px;background:linear-gradient(90deg,rgba(40,8,14,.92),rgba(14,20,40,.92));border:1px solid rgba(255,120,120,.28);color:#f6f8ff;font:800 14px/1.2 Nunito,Inter,system-ui,sans-serif}',
             '#gr-serit.ac{display:flex}',
             '#gr-serit .gr-kalp{font-size:clamp(18px,2vw,24px);letter-spacing:2px;white-space:nowrap}#gr-serit .gr-kalp s{text-decoration:none;filter:grayscale(1);opacity:.3}',
+            '#gr-serit .gr-sinif{display:block;font-size:10px;font-weight:900;letter-spacing:.14em;color:#ffb3b3;line-height:1;margin-bottom:2px}',
             '#gr-serit .gr-kalp.son{animation:grTit .45s infinite alternate}',
             '#gr-serit .gr-ofke{flex:1 1 180px;min-width:150px;display:grid;gap:3px}',
             '#gr-serit .gr-ofke small{font-size:12px;color:#ffb3b3;letter-spacing:.03em}',
@@ -163,7 +168,7 @@
         const kalp = d.kalp > 0 ? '❤️'.repeat(d.kalp) + '<s>❤️</s>'.repeat(3 - d.kalp) : '<s>❤️❤️❤️</s>';
         const dolu = d.ofke + a >= 100;
         const olay = d.olay ? OLAY[d.olay] : null;
-        el.innerHTML = '<span class="gr-kalp' + (d.kalp <= 1 ? ' son' : '') + '" title="Sınıfın kalbi">' + kalp + '</span>'
+        el.innerHTML = '<span class="gr-kalp' + (d.kalp <= 1 ? ' son' : '') + '" title="Sınıfın kalbi"><small class="gr-sinif">SINIF</small>' + kalp + '</span>'
             + '<div class="gr-ofke"><small>' + T.ik + ' ' + esc(buyuk(T.dus)) + ' ÖFKESİ' + (dolu ? ' — SALDIRIYA HAZIR!' : '') + '</small><div class="gr-cubuk' + (dolu ? ' dolu' : '') + '"><i style="width:' + Math.min(100, Math.round(d.ofke)) + '%"></i></div></div>'
             + '<span class="gr-cip" title="Herkes bir kez atınca tur biter">Tur ' + d.tur + ' · ' + Math.min(d.turSeri, d.turKisi) + '/' + d.turKisi + '</span>'
             + '<span class="gr-cip">' + SV[sv].ad + (d.yol ? (d.yol === 'zor' ? ' · 🌋 zor yol' : ' · 🌲 kolay yol') : '') + '</span>'
