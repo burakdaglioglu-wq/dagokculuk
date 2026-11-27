@@ -6367,3 +6367,35 @@ Kullanıcı: "daha iyi spiker olsun, çok yapay zekasın". Edge'in Ahmet sesi ye
 - **Kalan 6 oyun** hâlâ Ahmet sesinde: bomba, canavar, hapsirik, tahta, timsah, zombi. Kota yenilenince şöyle tamamlanacak:
   - `GEMINI_TTS_MODEL=gemini-3.8-flash-tts node scripts/kural-ses-gemini.mjs hepsi Fenrir bomba canavar hapsirik tahta timsah zombi`
   - sonra `KURAL_SES_V` 3'e çıkarılacak.
+
+## 189. 🎙️ Seri sonu spiker: ad + cümle, her sporcu için farklı cümleler (v475, 2026-11-28)
+Kullanıcı: "skor vurduğumda 'Burak canavarı güçlü vurdu' gibi o ses hâlâ eski; orayı da düzelt, her sporcu için farklı cümleler kursun".
+- **Cümleler:** `dagsk-km-an.js` → `AN_CUMLE[tema][kademe]`. 12 oyun, 3 kademe (0 iyi / 1 orta / 2 zayıf), her kademede 6 cümle; toplam 216 cümle, adsız yazılır.
+  - Bu blok JSON olarak kalmalı: üretim betiği onu `/*AN_CUMLE*/` işaretleri arasından okuyor.
+  - Zayıf seri cümleleri yüreklendirir, kimseyi utandırmaz.
+  - Ekranda "Ad! cümle" yazar.
+  - Seçim rastgele, ama aynı kademede son 3 cümle tekrar etmez.
+- **Ses:**
+  - ad kaydı `/ses/ad/<adSlug>.mp3` ("Burak!") çalar, bitince cümle kaydı `/ses/an/<tema>-<k>-<j>.mp3` gelir;
+  - ikisi de oklar düşerken önceden yüklenir;
+  - ad kaydı yoksa yalnızca cümle çalar;
+  - `/ses/an/var.json`'da o oyunun sesi yoksa yeni cümle tarayıcı sesiyle okunur.
+- **`adSlug`** Türkçe harfleri sadeleştirir ("Çağrı" → `cagri`). Betik de aynı fonksiyonu kullanıyor.
+- **Üretim betiği:** `scripts/an-ses-gemini.mjs cumle|ad|kural [tema…] [--model=] [--yeniden]`
+  - Toplu okutur: tek istekte birden çok satır okunur, ses sessizliklerden bölünür.
+  - Bölme dinamik programlamayla yapılır: parça süresi harf sayısıyla orantılı olmalı, sınır sessizliği ≥0,5 sn olmalı, yoksa parti yarıya bölünüp yeniden istenir.
+  - Ham kayıt `_ses-ornek/ham/` klasörüne yazılır; `bol <kip>` yeni istek harcamadan yeniden böler.
+  - Adlar uzak D1'den gelir: `athletes pasif=0`, **yalnızca ilk ad**; test/iptal kayıtları atlanır.
+  - Bir istek yaklaşık 60 sn ses verebilir. Parti büyüklükleri: cümlede 14, adda 18, kuralda 4.
+- **Kota:** ücretsiz anahtarda TTS modeli başına günde 10 istek. 2.5-pro kapalı (0).
+- **v475'te yayında olanlar:** Blok'un 18 cümlesi (3.1 ve 2.5 modelleri) ve 25 ad.
+- **AÇIK:**
+  - kalan 11 oyunun cümleleri (198), kalan yaklaşık 42 ad, 6 kural;
+  - sonra hepsi `--yeniden` ile tek modelde (3.8-flash) yeniden üretilip ses birliği sağlanacak;
+  - üretimden sonra `AN_SES_V` / `AD_SES_V` +1.
+- **Test:** `172-seri-spiker` kontrol ediyor:
+  - önce ad, sonra cümle kaydı çalıyor;
+  - kaydı olmayan adda yalnızca cümle çalıyor;
+  - art arda 3 seride 3 farklı cümle geliyor;
+  - sesi olmayan oyun yeni havuzdan tarayıcı sesiyle okunuyor;
+  - `adSlug` doğru.

@@ -24,6 +24,59 @@
     }
     const RENK = { sari: '#ffd23f', kirmizi: '#ff5a5a', mavi: '#4aa8ff', siyah: '#d5dbe4', beyaz: '#f4f4f4', iska: '#9fb2c4' };
     const IYI = { sari: 1, kirmizi: 1 };
+    // v475 — seri sonu spiker (kullanıcı: "oyun içi ses hâlâ eski, her sporcu için farklı cümleler kursun"):
+    // ad ayrı kayıt (/ses/ad/<adSlug>.mp3, "Burak!") + oyunun 3 kademesinden (iyi/orta/zayıf) rastgele cümle (/ses/an/<tema>-<k>-<j>.mp3).
+    // Sesler Gemini "Fenrir" (scripts/an-ses-gemini.mjs bu bloğu okur — JSON kalmalı). Zayıf seri cümleleri yüreklendirir, utandırmaz.
+    /*AN_CUMLE*/const AN_CUMLE = {
+"topsavasi": [["Korsan gemisine tam isabet!", "Toplar patlıyor, korsan sarsıldı!", "Ne atış! Korsanın direği yıkıldı!", "Gemi su alıyor, harika seri!", "Korsan kaptan şaşkın, müthiş vuruş!", "Top üstüne top, korsan batıyor!"], ["Topu gemiye ulaştırdı!", "Güzel isabet, korsan hissetti!", "Korsan gemisinde bir delik daha!", "Sağlam bir atış!", "Korsana bir top daha!", "İyi gidiyor, devam!"], ["Bu sefer olmadı, korsan barut topluyor!", "Korsan gülüyor, sıradaki gösterecek!", "Toplar suya düştü, dikkat!", "Korsan yaklaşıyor, hep birlikte toparlanalım!", "Ucu ucuna kaçtı, bir dahakine!", "Barut fıçısı doluyor, acele edelim!"]],
+"kacis": [["Fırtına gibi esti, gemi uçuyor!", "Yelkenler patladı, ne hız!", "Korsanlar toz yuttu!", "Rüzgârın kralı geldi!", "Gemi dalgaların üstünden uçuyor!", "Müthiş seri, korsanlar geride kaldı!"], ["Yelkenleri doldurdu!", "Gemi ilerliyor, güzel!", "Rüzgâr arkamızda!", "Bir adım daha uzaklaştık!", "Sağlam bir seri!", "Rotada ilerliyoruz!"], ["Rüzgâr zayıf, korsanlar yaklaşıyor!", "Yelkenler sarktı, dikkat!", "Korsan dürbünle bakıyor, hızlanalım!", "Bu sefer rüzgâr küstü, sıradaki üflesin!", "Korsanlar kürek çekiyor, acele!", "Az kaldı yakalanıyorduk!"]],
+"filo": [["Arkadan rüzgâr aldı, uçuyor!", "Gemisi roket gibi!", "Rakip gemiler şaşkın!", "Adaya doğru dev bir sıçrama!", "Muhteşem seri, yelkenler dolu!", "Dalgaları yararak geçiyor!"], ["İlerliyor!", "Gemisi yol aldı!", "Güzel bir rüzgâr!", "Adaya biraz daha yaklaştı!", "Sakin ama emin adımlarla!", "Rotayı koruyor!"], ["Yavaşladı, rüzgâr bekliyor!", "Yelkenler biraz boş kaldı!", "Bir sonraki seride rüzgâr onun!", "Dalgalar zorladı ama pes yok!", "Gemi demir attı, kısa bir mola!", "Sabır, rüzgâr geri gelecek!"]],
+"catikosu": [["Çatıların üstünden uçuyor!", "Ninja gibi sessiz, ninja gibi hızlı!", "Ne sıçrayış! Çatı arası geçildi!", "Gölge gibi kayıp gitti!", "Kiremitler bile duymadı!", "Muhteşem ninja koşusu!"], ["Koşuyor!", "Çatıdan çatıya ilerliyor!", "Güzel bir adım!", "Ninja yolda!", "Sağlam ilerleme!", "Kapıya biraz daha yaklaştı!"], ["Yavaşladı, çatı arası tehlikeli!", "Ayağı kaydı ama düşmedi!", "Kiremitler tıngırdadı, dikkat!", "Bekçiler duymasın, toparlan!", "Bu sefer tökezledi, sıradaki atlasın!", "Derin nefes, ninja geri döner!"]],
+"ejderkule": [["Muhafızı sarstı!", "Shurikenler yağmur gibi!", "Muhafızın kalkanı titriyor!", "Ne atış! Muhafız sendeledi!", "Kuleye giden yol açılıyor!", "Ejder bile duydu bu vuruşu!"], ["İsabet ettirdi!", "Shuriken hedefte!", "Muhafız bir adım geriledi!", "Güzel vuruş!", "Kalkana bir çizik daha!", "Devam, muhafız yoruluyor!"], ["Muhafız gülüyor, daha sert vurun!", "Shurikenler kalkana çarptı!", "Muhafız esniyor, hadi uyandıralım!", "Bu sefer olmadı, sıradaki göstersin!", "Kule hâlâ uzak, hep birlikte!", "Muhafız rahatladı, hemen toparlanalım!"]],
+"zombi": [["Zombileri geri püskürttü!", "Zombiler kaçışıyor!", "Barikat sağlam, harika seri!", "Zombi sürüsü dağıldı!", "Ne cesaret! Zombiler korktu!", "Panzehir gibi seri!"], ["Dayandı!", "Barikatı tuttu!", "Zombileri durdurdu!", "Sağlam bekçi!", "Bir zombi daha geri döndü!", "İyi savunma!"], ["Dikkat, zombiler yaklaşıyor!", "Barikat sallanıyor!", "Zombiler homurdanıyor, toparlanalım!", "Bir arkadaş kurtarmaya hazır olsun!", "Kapı gıcırdıyor, acele!", "Zombiler kokuyu aldı, dikkat!"]],
+"tahta": [["Takımını ileri fırlattı!", "Dev adımlar atıldı!", "Takım uçuyor!", "Kareler birer birer geçiliyor!", "Ne seri! Takım şaha kalktı!", "Dev taşa bir adım daha!"], ["Adım attırdı!", "Takım ilerliyor!", "Güzel bir ilerleme!", "Bir kare daha!", "Sağlam seri!", "Yol devam ediyor!"], ["Bu sefer yerinde saydı!", "Takım bekliyor, sıradaki koştursun!", "Bu sefer tutmadı ama oyun bitmedi!", "Kısa bir mola, sonra hücum!", "Dikkat, kötü sürpriz kapıda!", "Takım sana güveniyor, bir dahakine!"]],
+"timsah": [["Kovayı balıkla doldurdu!", "Balıklar uçuşuyor!", "Dev mışıl mışıl, taşlar yerinde!", "Nehre taş üstüne taş!", "Sessiz ve kusursuz!", "Karşıya yaklaştık, harika!"], ["Balık topladı!", "Kovaya bir balık daha!", "Bir taş daha nehirde!", "Sessizce ilerliyor!", "Güzel, dev hâlâ uyuyor!", "Yavaş ama emin!"], ["Şşşt! Çok gürültü, dev uyanıyor!", "Dev bir gözünü açtı!", "Horlama durdu, dikkat!", "Balıklar kaçtı, sessiz olalım!", "Dev kıpırdandı, parmak uçlarında!", "Az kaldı uyanıyordu!"]],
+"bomba": [["Fitili uzattı, bomba sakin!", "Süre kazandık, harika!", "İmha ekibinin yıldızı!", "Fitil söndü sanki, müthiş!", "Ne soğukkanlılık!", "Kablo kesildi, bravo!"], ["Biraz zaman kazandı!", "Fitil yavaşladı!", "Güzel seri, saniyeler bizde!", "Bir nefes aldık!", "Bomba biraz sakinledi!", "Devam, süre lehimize!"], ["Fitil kısalıyor, acele edin!", "Tik tak, tik tak!", "Kıvılcımlar yaklaşıyor!", "Sıradaki kurtarsın bizi!", "Bomba ısınıyor, dikkat!", "Saniyeler azalıyor, odaklanalım!"]],
+"blok": [["Canavara güçlü vurdu!", "Canavar sendeledi!", "Bloklar uçuşuyor!", "Ne darbe! Canavar sallanıyor!", "Kritik vuruş geliyor!", "Canavarın zırhı çatladı!"], ["İsabet ettirdi!", "Canavara bir darbe daha!", "Güzel vuruş!", "Canavar hissetti!", "Bir blok daha düştü!", "Devam, canavar yoruluyor!"], ["Canavar kükrüyor, daha güçlü vurun!", "Canavar güldü, intikam zamanı!", "Bu sefer olmadı, sıradaki vursun!", "Canavar dişlerini gösteriyor!", "Bloklar sağlam, hep birlikte kıralım!", "Canavar sinirlendi, dikkat!"]],
+"canavar": [["Canavarı sarstı!", "Arena sallanıyor!", "Zayıf noktaya tam isabet!", "Ne vuruş! Canavar dizlerinin üstünde!", "Seyirciler ayakta!", "Canavarın canı eriyor!"], ["İsabet ettirdi!", "Canavara bir darbe!", "Güzel atış!", "Canavar geriledi!", "Arena alkışlıyor!", "Devam, az kaldı!"], ["Canavar kükrüyor, daha güçlü vurun!", "Canavar kalkanını kaldırdı!", "Arena sessiz, sıradaki coştursun!", "Canavar sırıtıyor, gösterelim ona!", "Bu sefer kaçtı, bir dahakine!", "Parlayan renge nişan alalım!"]],
+"hapsirik": [["Süper gıdıkladı!", "Yaratık kahkahadan yerlere yattı!", "Hapşırık geliyor!", "Burnu kıpır kıpır!", "Ne gıdıklama! Kitap sayfası yakın!", "Yaratık gözyaşları içinde gülüyor!"], ["Gıdıkladı!", "Yaratık kıkırdadı!", "Burnu kaşınıyor!", "Güzel bir tüy darbesi!", "Çubuk doluyor!", "Biraz daha, hapşırmak üzere!"], ["Yaratık kıkırdamadı bile!", "Tüy havada kaldı!", "Yaratık esniyor, daha çok gıdıklayalım!", "Burnu rahat, bir dahakine!", "Yaratık bekliyor, sıradaki gıdıklasın!", "Hapşırık kaçtı, tekrar deneyelim!"]]
+}/*AN_CUMLE_SON*/;
+    const AN_SES_V = 1, AD_SES_V = 1;
+    // ad → dosya adı (Türkçe harfler sadeleşir): "Çağrı" → "cagri". scripts/an-ses-gemini.mjs aynısını kullanır.
+    const adSlug = (ad) => String(ad || '').trim().split(/\s+/)[0].toLocaleLowerCase('tr-TR').replace(/[çğıöşüâîû]/g, (c) => ({ 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u' }[c])).replace(/[^a-z0-9]/g, '');
+    // Hangi cümlelerin sesi hazır: /ses/an/var.json (üretim betiği yazar). Hazır olan varsa yalnız onlardan seçilir;
+    // o oyunun sesi henüz yoksa yine 6 farklı cümleden seçilir, tarayıcı sesiyle okunur.
+    let AN_VAR = {};
+    try { fetch('/ses/an/var.json?v=' + AN_SES_V).then((r) => (r.ok ? r.json() : {})).then((j) => { AN_VAR = j || {}; }).catch(() => { }); } catch (e) { }
+    const sesVarMi = (tema, k, j) => !!(AN_VAR[tema] && AN_VAR[tema][k] && AN_VAR[tema][k].indexOf(j) >= 0);
+    const _sonCumle = {}; // tema-kademe → son seçilen cümle sıraları (aynısı üst üste gelmesin)
+    function cumleSec(tema, k) {
+        const h = AN_CUMLE[tema] && AN_CUMLE[tema][k]; if (!h || !h.length) return -1;
+        const sesli = (AN_VAR[tema] && AN_VAR[tema][k] || []).filter((i) => i < h.length);
+        const havuz = sesli.length ? sesli : h.map((_, i) => i);
+        const a = tema + '-' + k, son = _sonCumle[a] || [], uygun = havuz.filter((i) => son.indexOf(i) < 0);
+        const l = uygun.length ? uygun : havuz, j = l[Math.floor(Math.random() * l.length)];
+        son.push(j); if (son.length > Math.min(3, havuz.length - 1)) son.shift(); _sonCumle[a] = son; return j;
+    }
+    let _spiker = [];
+    function spikerDur() { _spiker.forEach((a) => { try { a.onended = a.onerror = null; a.pause(); } catch (e) { } }); _spiker = []; }
+    // Önceden yükle; cal() çağrılınca önce ad, bitince cümle. Ad dosyası yoksa yalnız cümle; cümle de yoksa yedek (tarayıcı sesi).
+    function spikerHazirla(tema, k, j, ad, yedekMetin) {
+        let adA = null, cA = null;
+        try { if (ad) { adA = new Audio('/ses/ad/' + adSlug(ad) + '.mp3?v=' + AD_SES_V); adA.preload = 'auto'; adA.onerror = () => { adA._yok = true; }; }
+            cA = new Audio('/ses/an/' + tema + '-' + k + '-' + j + '.mp3?v=' + AN_SES_V); cA.preload = 'auto'; cA.onerror = () => { cA._yok = true; }; } catch (e) { }
+        return function cal() {
+            if (sessiz()) return;
+            spikerDur(); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
+            if (!cA || cA._yok) { soyle(yedekMetin); return; }
+            _spiker = [adA, cA].filter(Boolean);
+            const cumleCal = () => { cA.onerror = () => { soyle(yedekMetin); }; const p = cA.play(); if (p && p.catch) p.catch(() => soyle(yedekMetin)); };
+            if (!adA || adA._yok) return cumleCal();
+            adA.onended = () => setTimeout(cumleCal, 60); adA.onerror = cumleCal;
+            const p = adA.play(); if (p && p.catch) p.catch(cumleCal);
+        };
+    }
+    window.anAdSlug = adSlug; window.AN_CUMLE = AN_CUMLE;
     // ok: kademe → büyük yazı; ozet: [iyi seri, orta, zayıf] — {ad} çocuğun ilk adı; simdi: tek cümle
     const AN = {
         topsavasi: { simdi: () => { const st = typeof h3Durum === 'function' ? h3Durum('topsavasi') : null, k = st && st.kalan != null ? st.kalan : 4;
@@ -172,16 +225,22 @@
         p.querySelector('.an-kapat').onclick = (ev) => { ev.stopPropagation(); try { localStorage.setItem('dag_km_an_kapali', '1'); } catch (e) { } sonla(); try { anTazele(tema); } catch (e) { } if (typeof showToast === 'function') showToast('🎬 Büyük an kapatıldı. Geri açmak için şeritteki 🎬 An düğmesi.', 'info'); };
         const adim = 640, bas = 420;
         const daireler = p.querySelectorAll('.an-okl span'), et = p.querySelector('.an-etiket'), alt = p.querySelector('.an-alt');
+        // seri kademesi baştan bilinir → spiker sesi oklar düşerken önceden yüklenir
         let iyi = 0, orta = 0;
+        liste.forEach((v) => { const k = kademe(v); if (IYI[k]) iyi++; else if (k === 'mavi') orta++; });
+        const sk = iyi / Math.max(1, liste.length) >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2;
+        const cj = cumleSec(tema, sk), spikerCumle = cj >= 0 ? AN_CUMLE[tema][sk][cj] : '';
+        const ekranCumle = spikerCumle ? (ad ? ad + '! ' : '') + spikerCumle : T.ozet[sk].replace('{ad}', ad);
+        const spikerCal = cj >= 0 && sesVarMi(tema, sk, cj) ? spikerHazirla(tema, sk, cj, ad, ekranCumle) : null;
         liste.forEach((v, j) => zl.push(setTimeout(() => {
-            const k = kademe(v); if (IYI[k]) iyi++; else if (k === 'mavi') orta++;
+            const k = kademe(v);
             const d = daireler[j]; d.textContent = String(v).toUpperCase(); d.style.background = RENK[k]; d.style.borderColor = '#fff'; if (k === 'siyah') { d.style.background = '#1d222b'; d.style.color = '#fff'; } if (k === 'iska') { d.style.background = '#2b3a48'; d.style.color = '#fff'; } d.classList.add('on');
             const oz = T.okOzel ? T.okOzel(v) : null; et.textContent = oz || T.ok[k]; et.style.color = oz ? '#ffd23f' : k === 'siyah' || k === 'beyaz' ? '#e9eef5' : RENK[k]; et.classList.remove('pat'); void et.offsetWidth; et.classList.add('pat');
             try { SES[k](); } catch (e) { }
         }, bas + j * adim)));
         zl.push(setTimeout(() => {
-            const n = Math.max(1, liste.length), i = iyi / n >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2, cumle = T.ozet[i].replace('{ad}', ad);
-            const ye = _yeniEsya; alt.textContent = cumle + (ye ? '  ' + ye[1] + ' YENİ: ' + ye[2] + '!' : ''); soyle(cumle + (ye ? ' ' + ad + ' derse ' + ye[0] + '. kez geldi, ' + ye[2] + ' kazandı!' : ''));
+            const ye = _yeniEsya; alt.textContent = ekranCumle + (ye ? '  ' + ye[1] + ' YENİ: ' + ye[2] + '!' : '');
+            if (spikerCal) spikerCal(); else soyle(ekranCumle + (ye ? ' ' + ad + ' derse ' + ye[0] + '. kez geldi, ' + ye[2] + ' kazandı!' : ''));
         }, bas + liste.length * adim + 80));
         zl.push(setTimeout(sonla, bas + liste.length * adim + 1050));
     }
