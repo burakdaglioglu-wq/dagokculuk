@@ -249,9 +249,9 @@
     const kok = () => document.fullscreenElement || document.getElementById('karisik-platform') || document.body; // sahnenin atalarında transform var: pencere sayfanın kökünde
     let _kuralZ = [];
     // v473: kullanıcı "seslendirme çok kötü, heceleyerek söylüyor, ses gerçek değil" → kural cümleleri sabit olduğu için
-    // önceden doğal sesle (Microsoft Ahmet sinirsel, +%10 hız) kaydedildi: /ses/kural/<tema>.mp3. Her cihazda aynı ses.
+    // önceden kaydedildi: /ses/kural/<tema>.mp3. v474: kullanıcı "daha iyi spiker" → Gemini TTS "Fenrir" (scripts/kural-ses-gemini.mjs). Her cihazda aynı ses.
     // Dosya yüklenemezse (çevrimdışı vb.) eski tarayıcı sesine düşer. Yeniden üretmek: DEVIR.md §188.
-    const KURAL_SES_V = 1;
+    const KURAL_SES_V = 2;
     let _kuralSes = null;
     function kuralSesDur() { try { if (_kuralSes) { _kuralSes.pause(); _kuralSes = null; } } catch (e) { } }
     function kuralSoyle(tema, metin) {

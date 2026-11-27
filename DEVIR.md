@@ -6352,3 +6352,18 @@ Kullanıcı: "seslendirme o kadar kötü ki heceleyerek söylüyor, ses tonu ger
   - "Tekrar dinle" ve "Başlayalım" sesi doğru durduruyor;
   - dosya çalınamazsa yedek ses devreye giriyor;
   - sessiz modda hiç ses çıkmıyor.
+
+### 188.1 v474 (2026-11-28): Gemini "Fenrir" spiker sesi
+Kullanıcı: "daha iyi spiker olsun, çok yapay zekasın". Edge'in Ahmet sesi yetmedi. Edge'in çok dilli sesleri ücretsiz uçta kapalı.
+- **Ses:** Gemini TTS, ses `Fenrir` (kullanıcı 6 sesten 1'i seçti). Model `gemini-3.8-flash-tts`.
+- **Metin:** ayrı spiker metinleri (`SPIKER` içinde), anlamı KURAL ile aynı. Ekrandaki kartlar ve yedek tarayıcı sesi hâlâ `KURAL.s`'yi kullanıyor.
+- **Betik:** `scripts/kural-ses-gemini.mjs`
+  - `ornek [ses,…]` → `_ses-ornek/` (gitignore'da);
+  - `hepsi <ses> [tema…]` → `public/ses/kural/`.
+  - Anahtar `~/.dagsk-gemini-key` dosyasında ya da `GEMINI_API_KEY` ortam değişkeninde. **Repoya asla yazılmaz.**
+  - En iyi modeli zorlamak için: `GEMINI_TTS_MODEL=gemini-3.8-flash-tts`.
+- **Ücretsiz kota:** model başına günde 10 istek. Bitince 429 (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`) döner.
+- **v474'te Fenrir'le yayına giren 6 oyun:** topsavasi, kacis, filo, catikosu, ejderkule, blok.
+- **Kalan 6 oyun** hâlâ Ahmet sesinde: bomba, canavar, hapsirik, tahta, timsah, zombi. Kota yenilenince şöyle tamamlanacak:
+  - `GEMINI_TTS_MODEL=gemini-3.8-flash-tts node scripts/kural-ses-gemini.mjs hepsi Fenrir bomba canavar hapsirik tahta timsah zombi`
+  - sonra `KURAL_SES_V` 3'e çıkarılacak.

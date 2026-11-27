@@ -13,7 +13,7 @@ export default async function ({ log }) {
     // 12 kural dosyası sunucuda gerçekten mp3 olarak duruyor
     const dosyalar = await p.evaluate(async () => {
       const t = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
-      const r = await Promise.all(t.map((k) => fetch('/ses/kural/' + k + '.mp3?v=1').then((x) => [k, x.status, x.headers.get('content-type'), Number(x.headers.get('content-length') || 0)])));
+      const r = await Promise.all(t.map((k) => fetch('/ses/kural/' + k + '.mp3?v=2').then((x) => [k, x.status, x.headers.get('content-type'), Number(x.headers.get('content-length') || 0)])));
       return r.filter((x) => x[1] !== 200 || !/audio\/mpeg/.test(x[2]));
     });
     esit(dosyalar.length, 0, 'bütün kural sesleri 200 + audio/mpeg olmalı: ' + JSON.stringify(dosyalar));
