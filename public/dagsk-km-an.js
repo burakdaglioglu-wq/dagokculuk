@@ -76,9 +76,9 @@
         return function cal() {
             if (sessiz()) return;
             spikerDur(); try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
-            if (!cA || cA._yok) { soyle(yedekMetin); return; }
+            if (!cA || cA._yok) { soyle(yedekMetin, true); return; }
             _spiker = [adA, cA].filter(Boolean);
-            const cumleCal = () => { cA.onerror = () => { soyle(yedekMetin); }; const p = cA.play(); if (p && p.catch) p.catch(() => soyle(yedekMetin)); };
+            const cumleCal = () => { cA.onerror = () => { soyle(yedekMetin, true); }; const p = cA.play(); if (p && p.catch) p.catch(() => soyle(yedekMetin, true)); };
             if (!adA || adA._yok) return cumleCal();
             adA.onended = () => setTimeout(cumleCal, 60); adA.onerror = cumleCal;
             const p = adA.play(); if (p && p.catch) p.catch(cumleCal);
@@ -149,9 +149,9 @@
         iska: () => { gurultu(0.5, 0.25, 2600, 'highpass'); ton(220, 0.3, 0.05, 0.05, 'sawtooth'); },
         ad: () => { ton(523, 0.12, 0.07, 0); ton(784, 0.18, 0.07, 0.09); }
     };
-    function soyle(metin) {
+    function soyle(metin, sp) { // sp=true: seri sonu spikeri (başka konuşma onu kesmez, v477)
         if (sessiz() || !metin) return;
-        if (typeof kmOyunSesliSoyle === 'function') { kmOyunSesliSoyle(metin); return; }
+        if (typeof kmOyunSesliSoyle === 'function') { kmOyunSesliSoyle(metin, !!sp); return; }
         try { if (!window.speechSynthesis) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(metin); u.lang = 'tr-TR'; u.rate = 0.95; speechSynthesis.speak(u); } catch (e) { }
     }
 
@@ -249,7 +249,7 @@
         }, bas + j * adim)));
         zl.push(setTimeout(() => {
             const ye = _yeniEsya; alt.textContent = ekranCumle + (ye ? '  ' + ye[1] + ' YENİ: ' + ye[2] + '!' : '');
-            if (spikerCal) spikerCal(); else soyle(ekranCumle + (ye ? ' ' + ad + ' derse ' + ye[0] + '. kez geldi, ' + ye[2] + ' kazandı!' : ''));
+            if (spikerCal) spikerCal(); else soyle(ekranCumle + (ye ? ' ' + ad + ' derse ' + ye[0] + '. kez geldi, ' + ye[2] + ' kazandı!' : ''), true);
         }, bas + liste.length * adim + 80));
         zl.push(setTimeout(sonla, bas + liste.length * adim + 1050));
     }
@@ -460,7 +460,7 @@
         const sk = iyi / liste.length >= 0.6 ? 0 : (iyi >= 1 || orta >= 2) ? 1 : 2, t = AN_CUMLE[tema] ? tema : 'genel';
         const j = cumleSec(t, sk); if (j < 0) return false;
         const tamAd = tamAdTR(s.ad), metin = (tamAd ? tamAd + '! ' : '') + AN_CUMLE[t][sk][j];
-        if (sesVarMi(t, sk, j)) { const cal = spikerHazirla(t, sk, j, s.ad, metin); setTimeout(cal, 350); } else soyle(metin);
+        if (sesVarMi(t, sk, j)) { const cal = spikerHazirla(t, sk, j, s.ad, metin); setTimeout(cal, 350); } else soyle(metin, true);
         return true;
     }
     window.anSpikerSoyle = anSpikerSoyle;

@@ -19120,16 +19120,25 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         if(window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = function() { _kmOyunSesliSes = kmOyunSesliSesSec(); };
         }
-        function kmOyunSesliSoyle(metin) {
+        // v477 (kullanıcı: "dedektifte yok"): seri sonu spikeri KESİLMEZ. Spiker konuşurken gelen başka cümle (gerilim katmanı,
+        // banner) onu iptal etmez: spiker kaydı çalıyorsa kısa aralıklarla bekler, spiker tarayıcı sesiyle konuşuyorsa sıraya girer.
+        // sp=true → bu cümle spikerin kendisi (an.js anSpikerSoyle / seri sonu anı).
+        let _kmSpikerTTS = 0; // spiker cümlesinin bitmesi beklenen zaman (ms); onend gelmezse 9 sn sonra kendiliğinden düşer
+        function kmOyunSesliSoyle(metin, sp, _deneme) {
             if(kmOyunSessiz()) return;
-            try { if(typeof window.anSpikerMesgul === 'function' && window.anSpikerMesgul()) return; } catch(e) {} // v476: spiker kaydı çalarken robot ses araya girmesin
+            if(!sp) {
+                let mesgul = false; try { mesgul = typeof window.anSpikerMesgul === 'function' && window.anSpikerMesgul(); } catch(e) {}
+                if(mesgul && (_deneme || 0) < 12) { setTimeout(function() { kmOyunSesliSoyle(metin, false, (_deneme || 0) + 1); }, 500); return; }
+            }
             try {
                 if(!window.speechSynthesis) return;
-                window.speechSynthesis.cancel();
+                let spikerKonusuyor = Date.now() < _kmSpikerTTS;
+                if(sp || !spikerKonusuyor) window.speechSynthesis.cancel(); // spiker konuşuyorsa iptal etme, sıraya gir
                 let u = new SpeechSynthesisUtterance(metin);
                 u.lang = 'tr-TR'; u.rate = 0.88; u.pitch = 0.96;
                 if(!_kmOyunSesliSes) _kmOyunSesliSes = kmOyunSesliSesSec();
                 if(_kmOyunSesliSes) u.voice = _kmOyunSesliSes;
+                if(sp) { _kmSpikerTTS = Date.now() + 9000; u.onend = u.onerror = function() { _kmSpikerTTS = 0; }; }
                 window.speechSynthesis.speak(u);
             } catch(e) {}
         }
@@ -20661,7 +20670,7 @@ div.km-oyun-siradaki-vurgu{ outline:2px solid #fff; outline-offset:1px; border-r
         function kmOyunHeyecanHazir() { return dagskEkYukle('dagsk-km-heyecan.js'); }
         // 🎬 Ok anı + ŞİMDİ cümlesi + anlatıcı (v423, dagsk-km-an.js) — son haftalardaki oyunlar; kullanıcı: "çocuklar sıkılıyor, okun etkisi görünmüyor, anlamıyorlar"
         const KM_AN_TEMALAR = ['topsavasi', 'kacis', 'filo', 'catikosu', 'ejderkule', 'zombi', 'tahta', 'timsah', 'bomba', 'blok', 'canavar', 'hapsirik'];
-        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=8'); }
+        function kmOyunAnHazir() { return dagskEkYukle('dagsk-km-an.js?v=9'); }
         function kmOyunAnTazele(t) { let el = document.getElementById('an-simdi'); if(KM_AN_TEMALAR.indexOf(t) === -1) { if(el) { el.classList.remove('ac'); el.innerHTML = ''; } return; } if(typeof anTazele === 'function') { anTazele(t); return; } kmOyunAnHazir().then(function() { if(_kmOyunAktifTema === t && typeof anTazele === 'function') anTazele(t); }).catch(function() {}); }
         // ❤️ Gerilim katmanı (v471, dagsk-km-gerilim.js) — kullanıcı: "çocuklar sıkılıyor" → sınıfın 3 kalbi + öfke + tahmin + kalkan görevi + sürpriz kart + yol ayrımı
         const KM_GR_TEMALAR = ['canavar', 'blok', 'zombi', 'dedektif', 'hayalet', 'yanardag', 'kale', 'ninja'];

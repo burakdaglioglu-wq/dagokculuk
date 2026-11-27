@@ -6417,3 +6417,13 @@ Kullanıcı: "soy isimlerini de söyle", "bütün oyunlarda ses geçerli olsun",
 - **Tempo:** iki betiğin tarifine "ACELE ETME, net ve orta tempoda" eklendi. Yeni üretimler buna göre yapılacak.
 - **AÇIK:** `genel` cümle sesleri ve bütün sesler 3.8-flash ile `--yeniden` üretilecek, ad soyad kayıtları da üretilecek.
 - **Test:** 172'ye eklenenler: ad soyad dosya adı, diğer oyunda (yanardag) `genel` havuzdan konuşma, sessizde konuşmama.
+
+### 189.2 v477 (2026-11-28): spiker kesilmiyor (Dedektif)
+Kullanıcı: "tüm oyunlarda var mı, dedektifte yok şu an".
+- **Sebep:** spiker Dedektif'te de konuşuyordu, ama yaklaşık 2 saniye sonra gerilim katmanının cümlesi `kmOyunSesliSoyle` içinde `speechSynthesis.cancel()` çağırıp onu kesiyordu.
+- **Düzeltme:** `kmOyunSesliSoyle(metin, sp)`.
+  - `sp=true` spikerin kendi cümlesi. Bitmesi beklenen zaman `_kmSpikerTTS`'te tutulur (onend gelmezse 9 sn sonra düşer).
+  - Spiker tarayıcı sesiyle konuşurken gelen başka cümle iptal etmez, sıraya girer.
+  - Spiker kaydı çalarken gelen cümle atılmaz: 500 ms aralıkla en çok 12 kez bekler.
+  - an.js'te `soyle(metin, true)` yalnızca spiker yollarında kullanılır.
+- **Test:** `173-tum-oyun-spiker`, gerçek `kmOyunIlerlet` ile dedektif, yanardag, hayalet, kale, ninja ve blok'ta kontrol eder: spiker konuşmalı ya da kayıt çalmalı, sonraki 6 sn içinde iptal edilmemeli.
